@@ -10,9 +10,12 @@ HartreeFock::HartreeFock(Operator *hbare)
    Hbare = hbare;
    tolerance = 1e-10;
    ediff = 1.0;
-   int norbits = Hbare->GetModelSpace()->GetNumberOrbits();
+   ModelSpace * ms = Hbare->GetModelSpace();
+   int norbits = ms->GetNumberOrbits();
+   int nKets = ms->GetNumberKets();
 
    C    = arma::mat(norbits,norbits,arma::fill::eye);
+   Vmon = arma::mat(2*nKets,2*nKets);
    prev_energies = arma::vec(norbits,arma::fill::zeros);
 
    t = Hbare->OneBody;
@@ -40,7 +43,7 @@ void HartreeFock::Solve()
 //   C.swap_cols(0,10);
 //   C.swap_cols(1,11);
    UpdateH();
-//   return;
+   return;
 /*
    cout << "Input H" << endl;
    H.print();
@@ -61,14 +64,14 @@ void HartreeFock::Solve()
 //      UpdateHFOrbits();
       UpdateDensityMatrix();
       UpdateH();
-/*   cout << "-----------------------------------------------------------------" << endl;
+   cout << "-----------------------------------------------------------------" << endl;
    cout << "Input H " << iter << endl;
    H.print();
    cout << "Input t" << endl;
    t.print();
    cout << "Input Vab" << endl;
    Vab.print();
-*/
+
 //      for (int a=0;a<norbits;a++)
 //      {
 //         if (Hbare->GetModelSpace()->GetOrbit(a)->hvq>0) continue;
@@ -234,15 +237,15 @@ void HartreeFock::Diagonalize2()
 // Construct the unnormalized monople Hamiltonian
 // <ab|V_mon|cd> = Sum_J (2J+1) <ab|V|cd>_J
 //**************************************************
-/*
+
 void HartreeFock::BuildMonopoleV()
 {
-   int nKets = Hbare->GetModelSpace()->GetNumberKets();
    ModelSpace * ms = Hbare->GetModelSpace();
+   int nKets = ms->GetNumberKets();
    //Vmon = arma::mat(2*nKets,2*nKets,arma::fill::zeros);
-   Vmon = arma::sp_mat(2*nKets,2*nKets);
+//   Vmon = arma::sp_mat(2*nKets,2*nKets);
    cout << "nKets = " << nKets << endl;
-//   Vmon.zeros();
+   Vmon.zeros();
 
    int ketcheck = ms->GetKetIndex(0,11);
    int bracheck = ms->GetKetIndex(1,10);
@@ -284,141 +287,36 @@ void HartreeFock::BuildMonopoleV()
       }
 //      cout << a << " " << bra->a << " " << bra->b << endl;
    }
-   cout << "Vmon = " << endl;
-   Vmon.print();
 
-   Vmon.submat(0,0,6,6).print();
-   cout << "<0  0| Vmon |0   0> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(0,0)) << endl;
-   cout << "<0  0| Vmon |10  0> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(0,10)+nKets) << endl;
-   cout << "<0 10| Vmon |10 10> = " << Vmon(ms->GetKetIndex(0,10), ms->GetKetIndex(10,10)) << endl;
-   cout << "<0  0| Vmon |10 10> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(10,10)) << endl;
-   cout << "<0 10| Vmon |10  0> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(0,10)+nKets) << endl;
-   cout << "<0  1| Vmon |10  1> = " << Vmon(ms->GetKetIndex(0,1), ms->GetKetIndex(1,10)+nKets) << endl;
-   cout << "<0  1| Vmon |10 11> = " << Vmon(ms->GetKetIndex(0,1), ms->GetKetIndex(10,11)) << endl;
-   cout << "<0 11| Vmon |10 11> = " << Vmon(ms->GetKetIndex(0,11), ms->GetKetIndex(10,11)) << endl;
-   cout << "<0 11| Vmon |10  1> = " << Vmon(ms->GetKetIndex(0,11), ms->GetKetIndex(1,10)+nKets) << endl;
-
-
-//   cout << "<5  1| Vmon |5  1> = " << Vmon(ms->GetKetIndex(1,5)+nKets, ms->GetKetIndex(1,5)+nKets) << endl;
-//   cout << "<5 11| Vmon |5 11> = " << Vmon(ms->GetKetIndex(1,10), ms->GetKetIndex(1,10)) << endl;
-//   cout << "<5  1| Vmon |5 11> = " << Vmon(ms->GetKetIndex(1,5)+nKets, ms->GetKetIndex(5,11)) << endl;
-}
-
-*/
-
-
-
-
-
-
-
-
-//**************************************************
-// BuildMonopoleV()
-// Construct the unnormalized monople Hamiltonian
-// <ab|V_mon|cd> = Sum_J (2J+1) <ab|V|cd>_J
-//**************************************************
-void HartreeFock::BuildMonopoleV()
-{
-  cout << "Start building monopole" << endl;
-   int nKets = Hbare->GetModelSpace()->GetNumberKets();
-   ModelSpace * ms = Hbare->GetModelSpace();
-   Vmon = arma::mat(2*nKets,2*nKets,arma::fill::zeros);
-  // Vmon = arma::sp_mat(2*nKets,2*nKets);
-   cout << "nKets = " << nKets << endl;
-//   Vmon.zeros();
-
-   int ketcheck = ms->GetKetIndex(0,11);
-   int bracheck = ms->GetKetIndex(1,10);
-  
-
-   for (int J=0;J<JMAX;++J)
-   {
-      for (int par=0;par<=1;++par)
-      {
-         for (int Tz=-1;Tz<=1;++Tz)
-         {
-            TwoBodyChannel * channel = Hbare->GetTwoBodyChannel(J,par,Tz);
-            int npq = channel->Number_pq_configs;
-            if (npq < 1) continue;
-            cout << "  In channel J,p,t = " << J << " " << par << " " << Tz << "  npq = " << npq << endl;
-            for (int i=0;i<npq;++i)
-            {
-               int a = channel->GetKetIndex(i);
-               Ket *bra = ms->GetKet(a);
-               for (int j=i;j<npq;++j)
-               {
-                  int b = channel->GetKetIndex(j);
-                  Ket *ket = ms->GetKet(b);
-                  double tbme = channel->GetTBME(bra,ket);
-                  Vmon(a,b)             += (2*J+1)*tbme;
-                  Vmon(a+nKets,b)       += (2*J+1)*bra->Phase(J)*tbme;
-                  Vmon(a,b+nKets)       += (2*J+1)*ket->Phase(J)*tbme;
-                  Vmon(a+nKets,b+nKets) += (2*J+1)*bra->Phase(J)*ket->Phase(J)*tbme;
-               }
-            }
-         }
-      }
-   }
-  cout << "Done building monopole" << endl;
- 
-/*   
-   for (int a=0;a<nKets;a++)
-   {
-      Ket* bra = Hbare->GetModelSpace()->GetKet(a%nKets);
-      int par = bra->parity;
-      int Tz = bra->Tz;
-      for (int b=a;b<nKets;b++)
-      {
-         Ket* ket = Hbare->GetModelSpace()->GetKet(b%nKets);
-         if (ket->parity != bra->parity or ket->Tz != bra->Tz) continue; // Interaction conserves T_z, parity
-
-         int jmin = max(bra->Jmin, ket->Jmin);
-         int jmax = min(bra->Jmax, ket->Jmax);
-//         cout << "jmin = " << jmin << "  jmax = " << jmax << endl;
-         int jstep = max(bra->Jstep, ket->Jstep);
-         for (int J=jmin;J<=jmax;J+=jstep)
-         {
-            TwoBodyChannel * channel = Hbare->GetTwoBodyChannel(J,par,Tz);
-            double tbme = channel->GetTBME(bra,ket);
-            Vmon(a,b)             += (2*J+1)*tbme;
-            Vmon(a+nKets,b)       += (2*J+1)*bra->Phase(J)*tbme;
-            Vmon(a,b+nKets)       += (2*J+1)*ket->Phase(J)*tbme;
-            Vmon(a+nKets,b+nKets) += (2*J+1)*bra->Phase(J)*ket->Phase(J)*tbme;
-            //if (a==ketcheck and b==bracheck)
-            if ((a==ketcheck and b==bracheck) or (a==bracheck and b==ketcheck))
-            {
-               cout << "KetCheck: J = " << J << " par = " << par << " Tz = " << Tz << " TBME = " << channel->GetTBME(bra,ket) << " Vmon(a,b) = " << Vmon(a,b) << " (" << Vmon(b,a) << ")" << endl;
-            }
-//            cout << "Building monopole: " << a << " " << b << " " << J << endl;
-         }
-         Vmon(b,a) = Vmon(a,b);
-         Vmon(b,a+nKets) = Vmon(a+nKets,b);
-         Vmon(b+nKets,a) = Vmon(a,b+nKets);
-         Vmon(b+nKets,a+nKets) = Vmon(a+nKets,b+nKets);
-      }
-//      cout << a << " " << bra->a << " " << bra->b << endl;
-   }
-*/
 //   cout << "Vmon = " << endl;
 //   Vmon.print();
-/*
-   Vmon.submat(0,0,6,6).print();
-   cout << "<0  0| Vmon |0   0> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(0,0)) << endl;
-   cout << "<0  0| Vmon |10  0> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(0,10)+nKets) << endl;
-   cout << "<0 10| Vmon |10 10> = " << Vmon(ms->GetKetIndex(0,10), ms->GetKetIndex(10,10)) << endl;
-   cout << "<0  0| Vmon |10 10> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(10,10)) << endl;
-   cout << "<0 10| Vmon |10  0> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(0,10)+nKets) << endl;
-   cout << "<0  1| Vmon |10  1> = " << Vmon(ms->GetKetIndex(0,1), ms->GetKetIndex(1,10)+nKets) << endl;
-   cout << "<0  1| Vmon |10 11> = " << Vmon(ms->GetKetIndex(0,1), ms->GetKetIndex(10,11)) << endl;
-   cout << "<0 11| Vmon |10 11> = " << Vmon(ms->GetKetIndex(0,11), ms->GetKetIndex(10,11)) << endl;
-   cout << "<0 11| Vmon |10  1> = " << Vmon(ms->GetKetIndex(0,11), ms->GetKetIndex(1,10)+nKets) << endl;
-*/
+//
+//   Vmon.submat(0,0,6,6).print();
+//   cout << "<0  0| Vmon |0   0> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(0,0)) << endl;
+//   cout << "<0  0| Vmon |10  0> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(0,10)+nKets) << endl;
+//   cout << "<0 10| Vmon |10 10> = " << Vmon(ms->GetKetIndex(0,10), ms->GetKetIndex(10,10)) << endl;
+//   cout << "<0  0| Vmon |10 10> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(10,10)) << endl;
+//   cout << "<0 10| Vmon |10  0> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(0,10)+nKets) << endl;
+//   cout << "<0  1| Vmon |10  1> = " << Vmon(ms->GetKetIndex(0,1), ms->GetKetIndex(1,10)+nKets) << endl;
+//   cout << "<0  1| Vmon |10 11> = " << Vmon(ms->GetKetIndex(0,1), ms->GetKetIndex(10,11)) << endl;
+//   cout << "<0 11| Vmon |10 11> = " << Vmon(ms->GetKetIndex(0,11), ms->GetKetIndex(10,11)) << endl;
+//   cout << "<0 11| Vmon |10  1> = " << Vmon(ms->GetKetIndex(0,11), ms->GetKetIndex(1,10)+nKets) << endl;
+
 
 //   cout << "<5  1| Vmon |5  1> = " << Vmon(ms->GetKetIndex(1,5)+nKets, ms->GetKetIndex(1,5)+nKets) << endl;
 //   cout << "<5 11| Vmon |5 11> = " << Vmon(ms->GetKetIndex(1,10), ms->GetKetIndex(1,10)) << endl;
 //   cout << "<5  1| Vmon |5 11> = " << Vmon(ms->GetKetIndex(1,5)+nKets, ms->GetKetIndex(5,11)) << endl;
 }
+
+
+
+
+
+
+
+
+
+
 
 
 //**************************************************************************
@@ -484,13 +382,16 @@ void HartreeFock::UpdateH()
                ket = ms->GetKetIndex(min(b,j),max(b,j));
                if (b>j) ket += nKets;
 
-               Vab(a,b) += rho(i,j)*Vmon(bra,ket);
+               //Vab(a,b) += rho(i,j)*Vmon(bra,ket);
+               Vab(a,b) += rho(i,j)*Vmon(min(bra,ket),max(bra,ket));
 
-               if (a==0 and b==10 and abs(rho(i,j))>1e-6)
+//               if (a==0 and b==10 and abs(rho(i,j))>1e-6)
+               if (0)//abs(rho(i,j))>1e-5)
                {
                   cout << "rho(" << i << "," << j << ") = " << rho(i,j)
                        << "   < " << a << " " << i << " | Vmon | "
-                       <<  b << " " << j << " > = "  << Vmon(bra,ket)
+                       <<  b << " " << j << " > = "  << Vmon(min(bra,ket),max(bra,ket))
+//                       <<  b << " " << j << " > = "  << Vmon(bra,ket)
                        << "  Vab = " << Vab(a,b)/(ja+1) << endl;
                }
            }
