@@ -21,20 +21,21 @@ TwoBodyChannel::TwoBodyChannel(int j, int p, int t, Operator * op)
    hermitian = op->IsHermitian();
    antihermitian = op->IsAntiHermitian();
    modelspace = op->GetModelSpace();
-   Number_pq_configs = 0;
+   NumberKets = 0;
    int nk = modelspace->GetNumberKets();
-   pqindex.resize(nk,-1);
+   KetMap.resize(nk,-1);
    for (int i=0;i<nk;i++)
    {
       Ket *ket = modelspace->GetKet(i);
-      if (CheckChannel_pq(ket->p, ket->q))
+      if ( CheckChannel_ket(ket) )
+      //if (CheckChannel_pq(ket->p, ket->q))
       {
-         pqindex[i] = Number_pq_configs;
+         KetMap[i] = NumberKets;
          KetList.push_back(i);
-         Number_pq_configs++;
+         NumberKets++;
       }
    }
-   TBME = arma::mat(Number_pq_configs, Number_pq_configs, arma::fill::zeros);
+   TBME = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
 
 }
 
@@ -47,9 +48,9 @@ TwoBodyChannel::TwoBodyChannel(const TwoBodyChannel& rhs)
    hermitian         = rhs.hermitian;
    antihermitian     = rhs.antihermitian;
    modelspace        = rhs.modelspace;
-   Number_pq_configs = rhs.Number_pq_configs;
+   NumberKets = rhs.NumberKets;
    TBME              = rhs.TBME;
-   pqindex           = rhs.pqindex;
+   KetMap            = rhs.KetMap;
    KetList           = rhs.KetList;
 }
 
@@ -62,9 +63,9 @@ TwoBodyChannel& TwoBodyChannel::operator=(const TwoBodyChannel& rhs)
    hermitian         = rhs.hermitian;
    antihermitian     = rhs.antihermitian;
    modelspace        = rhs.modelspace;
-   Number_pq_configs = rhs.Number_pq_configs;
+   NumberKets = rhs.NumberKets;
    TBME              = rhs.TBME;
-   pqindex           = rhs.pqindex;
+   KetMap            = rhs.KetMap;
    KetList           = rhs.KetList;
    return *this;
 }
@@ -104,32 +105,36 @@ TwoBodyChannel& TwoBodyChannel::operator-(const TwoBodyChannel& rhs)
 
 
 
-float TwoBodyChannel::GetTBME(int bra, int ket)
+float TwoBodyChannel::GetTBME(int bra, int ket) const 
 {
-   int bra_ind = Getpqconfig(bra);
-   int ket_ind = Getpqconfig(ket);
-   if (bra_ind < 0 || ket_ind < 0) return 0;
-   if (bra_ind > Number_pq_configs || ket_ind > Number_pq_configs) return 0;
+   //int bra_ind = Getpqconfig(bra);
+   //int ket_ind = Getpqconfig(ket);
+   int bra_ind = GetLocalIndex(bra);
+   int ket_ind = GetLocalIndex(ket);
+   if (bra_ind < 0 or ket_ind < 0) return 0;
+   if (bra_ind > NumberKets or ket_ind > NumberKets) return 0;
    return TBME(bra_ind, ket_ind);
 }
 
-float TwoBodyChannel::GetTBME(Ket *bra, Ket *ket)
+float TwoBodyChannel::GetTBME(Ket *bra, Ket *ket) const
 {
-   int bra_ind = Getpqconfig(bra->p,bra->q);
-   int ket_ind = Getpqconfig(ket->p,ket->q);
-   if (bra_ind < 0 || ket_ind < 0) return 0;
-   if (bra_ind > Number_pq_configs || ket_ind > Number_pq_configs) return 0;
+//   int bra_ind = Getpqconfig(bra->p,bra->q);
+//   int ket_ind = Getpqconfig(ket->p,ket->q);
+   int bra_ind = GetLocalIndex(bra->p,bra->q);
+   int ket_ind = GetLocalIndex(ket->p,ket->q);
+   if (bra_ind < 0 or ket_ind < 0) return 0;
+   if (bra_ind > NumberKets or ket_ind > NumberKets) return 0;
    return TBME(bra_ind, ket_ind);
 }
 
 void TwoBodyChannel::SetTBME(int bra, int ket, float tbme)
 {
-   int bra_ind = Getpqconfig(bra);
-   int ket_ind = Getpqconfig(ket);
+   int bra_ind = GetLocalIndex(bra);
+   int ket_ind = GetLocalIndex(ket);
    if ( (bra_ind < 0) or (ket_ind < 0) or
-       (bra_ind > Number_pq_configs) or (ket_ind > Number_pq_configs) )
+       (bra_ind > NumberKets) or (ket_ind > NumberKets) )
    {
-     cerr << "Bad assignment of tbme!"
+     cout << "Bad assignment of tbme!"
          << " < " << bra << " | V | "
          << ket << " > "
          << "J,parity,Tz = " << J << "," << parity << "," << Tz
@@ -141,10 +146,10 @@ void TwoBodyChannel::SetTBME(int bra, int ket, float tbme)
 
 void TwoBodyChannel::SetTBME(Ket *bra, Ket *ket, float tbme)
 {
-   int bra_ind = Getpqconfig(bra->p,bra->q);
-   int ket_ind = Getpqconfig(ket->p,ket->q);
+   int bra_ind = GetLocalIndex(bra->p,bra->q);
+   int ket_ind = GetLocalIndex(ket->p,ket->q);
    if ( (bra_ind < 0) or (ket_ind < 0) or
-       (bra_ind > Number_pq_configs) or (ket_ind > Number_pq_configs) )
+       (bra_ind > NumberKets) or (ket_ind > NumberKets) )
    {
             int ja,la,ta,jb,lb,tb;
    int a = bra->p;
@@ -155,7 +160,6 @@ void TwoBodyChannel::SetTBME(Ket *bra, Ket *ket, float tbme)
    jb = modelspace->GetOrbit(b)->j2;
    lb = modelspace->GetOrbit(b)->l;
    tb = modelspace->GetOrbit(b)->tz2;
-     //cerr << "Bad assignment of tbme!"
      cout << "Bad assignment of tbme!"
          << " < " << bra->p << " " << bra->q << " | V | "
          << ket->p << " " << ket->q << " > "
@@ -166,7 +170,7 @@ void TwoBodyChannel::SetTBME(Ket *bra, Ket *ket, float tbme)
          << "    modelspace bra index = " << modelspace->GetKetIndex(bra)
          << " out of " << modelspace->GetNumberKets()
          << endl
-         << "  check_pq_channel = " << CheckChannel_pq(bra->p,bra->q) << endl
+         << "  check_ket_channel = " << CheckChannel_ket(bra) << endl
          << " check parity: " << (la+lb)%2 << " = " << parity << "?" << endl
          << " check Tz: " << ta+tb << " = " << 2*Tz << "?" << endl
          << " check J: " << ja+jb << " >= " << 2*J << "?" << endl
@@ -185,21 +189,17 @@ void TwoBodyChannel::SetTBME(Ket *bra, Ket *ket, float tbme)
 }
 
 
-bool TwoBodyChannel::CheckChannel_pq(int p, int q)
+bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
 {
-   int jp,lp,tp,jq,lq,tq;
-   jp = modelspace->GetOrbit(p)->j2;
-   lp = modelspace->GetOrbit(p)->l;
-   tp = modelspace->GetOrbit(p)->tz2;
-   jq = modelspace->GetOrbit(q)->j2;
-   lq = modelspace->GetOrbit(q)->l;
-   tq = modelspace->GetOrbit(q)->tz2;
+   if ((p==q) and (J%2 != 0)) return false; // Pauli principle
+   Orbit * op = modelspace->GetOrbit(p);
+   Orbit * oq = modelspace->GetOrbit(q);
 
-   if ((lp+lq)%2 != parity) return false;
-   if ((tp+tq) != 2*Tz) return false;
-   if (jp+jq < 2*J) return false;
-   if (abs(jp-jq) > 2*J) return false;
-   if ((p==q) and (J%2!=0)) return false; // Pauli principle
+   if ((op->l + oq->l)%2 != parity) return false;
+   if ((op->tz2 + oq->tz2) != 2*Tz) return false;
+   if (op->j2 + oq->j2 < 2*J)       return false;
+   if (abs(op->j2 - oq->j2) > 2*J)  return false;
+
    return true;
 }
 
@@ -226,6 +226,7 @@ Operator::Operator(ModelSpace* ms)
   OneBody = arma::mat(nOneBody,nOneBody,arma::fill::zeros);
 //  OneBody.resize( nOneBody*nOneBody, 0.0);
   TwoBodyJmax = 0;
+  nChannels = 2*3*JMAX;
 
   for (int J=0;J<JMAX;J++)
   {
@@ -234,9 +235,9 @@ Operator::Operator(ModelSpace* ms)
       for (int tz=-1;tz<=1;tz++)
       {
          //TwoBody[J][par][(tz+1)] = new TwoBodyChannel(J,par,tz,this);
-         //if (J>TwoBodyJmax && TwoBody[J][par][tz+1]->Number_pq_configs > 0 ) TwoBodyJmax = J;
+         //if (J>TwoBodyJmax && TwoBody[J][par][tz+1]->GetNumberKets() > 0 ) TwoBodyJmax = J;
          TwoBody[J][par][(tz+1)] = TwoBodyChannel(J,par,tz,this);
-         if (J>TwoBodyJmax && TwoBody[J][par][tz+1].Number_pq_configs > 0 ) TwoBodyJmax = J;
+         if (J>TwoBodyJmax && TwoBody[J][par][tz+1].GetNumberKets() > 0 ) TwoBodyJmax = J;
       }
     }
   }
@@ -272,6 +273,7 @@ Operator::Operator(const Operator& op)
      }
    }
    TwoBodyJmax = op.TwoBodyJmax;
+   nChannels = op.nChannels;
 }
 
 
@@ -302,11 +304,11 @@ void Operator::PrintOut()
         {
            TwoBodyChannel *tbc = GetTwoBodyChannel(j,p,t);
            cout << tbc->J << " " << tbc->parity << " "
-                     << tbc->Tz << "  ===> " << tbc->Number_pq_configs << endl;
-           if (tbc->Number_pq_configs>20) continue;
-           for (int i=0;i<tbc->Number_pq_configs;i++)
+                     << tbc->Tz << "  ===> " << tbc->GetNumberKets() << endl;
+           if (tbc->GetNumberKets()>20) continue;
+           for (int i=0;i<tbc->GetNumberKets();i++)
            {
-             for (int ii=0;ii<tbc->Number_pq_configs;ii++)
+             for (int ii=0;ii<tbc->GetNumberKets();ii++)
              {
                 cout << tbc->TBME(i,ii) << " ";
              }
@@ -318,8 +320,63 @@ void Operator::PrintOut()
 }
 
 
+
+
 Operator Operator::DoNormalOrdering()
 {
+   Operator opNO = Operator(modelspace);
+   opNO.ZeroBody = ZeroBody;
+   opNO.OneBody = OneBody;
+   int norbits = modelspace->GetNumberOrbits();
+   int nkets = modelspace->GetNumberKets();
+
+   for (int k=0;k<norbits;++k)
+   {
+      Orbit * orb = modelspace->GetOrbit(k);
+      if (orb->hvq > 0) continue;
+      opNO.ZeroBody += (orb->j2+1) * OneBody(k,k);
+   }
+
+   int nchan = this->GetNumberTwoBodyChannels();
+   for (int i=0;i<nchan;++i)
+   {
+      TwoBodyChannel *tbc = this->GetTwoBodyChannel(i);
+      opNO.SetTwoBodyChannel(i, *(tbc) );
+      int npq = tbc->GetNumberKets();
+      for (int k=0;k<npq;++k)
+      {
+         Ket * ket = tbc->GetKet(k);
+         Orbit *oa = modelspace->GetOrbit(ket->p);
+         Orbit *ob = modelspace->GetOrbit(ket->q);
+         if ( oa->hvq == 0 and ob->hvq == 0)
+         {
+            opNO.ZeroBody += tbc->TBME(k,k) * (2*tbc->J+1) / (1.0+ket->delta_pq());
+         }
+
+         for (int m=k;m<npq;++m)
+         {
+            Ket * bra = tbc->GetKet(m);
+            Orbit *oc = modelspace->GetOrbit(bra->p);
+            Orbit *od = modelspace->GetOrbit(bra->q);
+            int J = tbc->J;
+            if (bra->q == ket->q and ob->hvq==0)
+            {
+               opNO.OneBody(bra->p,ket->p) += (2*J+1)/(oa->j2+1) * tbc->TBME(m,k);
+               opNO.OneBody(ket->p,bra->p) += (2*J+1)/(oa->j2+1) * tbc->TBME(m,k);
+            }
+            if (bra->p == ket->p and oa->hvq==0)
+            {
+               opNO.OneBody(bra->q,ket->q) += (2*J+1)/(ob->j2+1) * tbc->TBME(m,k);
+            }
+            if (bra->p == ket->q and oa->hvq==0)
+            {
+               opNO.OneBody(bra->q,ket->p) += (2*J+1)/(ob->j2+1) * bra->Phase(J) * tbc->TBME(m,k);
+            }
+         }
+
+      }
+   }
+   return opNO;
 }
 
 
@@ -367,7 +424,7 @@ void Operator::WriteTwoBody(const char* filename)
       {
          for (int J=0;J<JMAX;++J)
          {
-            int npq = TwoBody[J][p][Tz+1].Number_pq_configs;
+            int npq = TwoBody[J][p][Tz+1].GetNumberKets();
             if (npq<1) continue;
             for (int i=0;i<npq;++i)
             {
@@ -411,31 +468,32 @@ void Operator::WriteTwoBody(const char* filename)
    tbfile.close();
 }
 
-Operator Operator::Commutator(const Operator& opleft, const Operator& opright)
+//Operator Operator::Commutator(const Operator& opleft, const Operator& opright)
+Operator Operator::Commutator(const Operator& opright)
 {
    Operator out = opright;
    out.EraseZeroBody();
    out.EraseOneBody();
    out.EraseTwoBody();
 
-   out.ZeroBody  = comm110(opleft.OneBody, opright.OneBody);
-   out.OneBody  = comm111(opleft.OneBody, opright.OneBody);
+   out.ZeroBody  = comm110(OneBody, opright.OneBody);
+   out.OneBody  = comm111(OneBody, opright.OneBody);
 
-   for (int J=0;J<JMAX;J++)
+   //for (int J=0;J<JMAX;J++)
+   for (int J=0;J<TwoBodyJmax;J++)
    {
-      for (int p=0;p<2;p++)
+      for (int p=0;p<=1;p++)
       {
-         for (int t=0;t<3;t++)
+         for (int t=0;t<=2;t++)
          {
-//            out.ZeroBody += comm210(opleft.TwoBody[J][p][t], opright.OneBody) - comm210(opright.TwoBody[J][p][t],opleft.OneBody);
-            out.ZeroBody += comm220(opleft.TwoBody[J][p][t], opright.TwoBody[J][p][t]);
+            out.ZeroBody += comm220(TwoBody[J][p][t], opright.TwoBody[J][p][t]);
 
-            out.OneBody += comm211(opleft.TwoBody[J][p][t], opright.OneBody) - comm211(opright.TwoBody[J][p][t],opleft.OneBody);
-            out.OneBody += comm221(opleft.TwoBody[J][p][t], opright.TwoBody[J][p][t]);
+            out.OneBody += comm211(TwoBody[J][p][t], opright.OneBody) - comm211(opright.TwoBody[J][p][t],OneBody);
+            out.OneBody += comm221(TwoBody[J][p][t], opright.TwoBody[J][p][t]);
 
-            out.TwoBody[J][p][t]  = comm112(opleft.OneBody, opright.OneBody);
-            out.TwoBody[J][p][t] += comm212(opleft.TwoBody[J][p][t], opright.OneBody) - comm212(opright.TwoBody[J][p][t],opleft.OneBody);
-            out.TwoBody[J][p][t] += comm222(opleft.TwoBody[J][p][t], opright.TwoBody[J][p][t]);
+            out.TwoBody[J][p][t]  = comm112(OneBody, opright.OneBody);
+            out.TwoBody[J][p][t] += comm212(TwoBody[J][p][t], opright.OneBody) - comm212(opright.TwoBody[J][p][t],OneBody);
+            out.TwoBody[J][p][t] += comm222(TwoBody[J][p][t], opright.TwoBody[J][p][t]);
          }
       }
    }
@@ -446,9 +504,9 @@ Operator Operator::Commutator(const Operator& opleft, const Operator& opright)
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Below is the implementation of the commutators in the various channels
-//
+///////////////////////////////////////////////////////////////////////////////////////////
 
-float Operator::comm110(arma::mat obleft, arma::mat obright)
+float Operator::comm110(const arma::mat& obleft, const arma::mat& obright)
 {
    float comm = 0;
    comm = trace(P_hole_onebody*(obleft*obright - obright*obleft));
@@ -459,10 +517,10 @@ float Operator::comm110(arma::mat obleft, arma::mat obright)
 
 //*****************************************************************************************
 
-float Operator::comm220(TwoBodyChannel tbleft, TwoBodyChannel tbright)
+float Operator::comm220(const TwoBodyChannel& tbleft, const TwoBodyChannel& tbright)
 {
    float comm = 0;
-   int npq = tbleft.Number_pq_configs;
+   int npq = tbleft.GetNumberKets();
    // Projector onto hole-hole states
    arma::mat P_hh = arma::mat(npq,npq,arma::fill::zeros);
    // Projector onto partile-particle states
@@ -482,7 +540,7 @@ float Operator::comm220(TwoBodyChannel tbleft, TwoBodyChannel tbright)
 
 //*****************************************************************************************
 
-arma::mat Operator::comm111(arma::mat obleft, arma::mat obright)
+arma::mat Operator::comm111(const arma::mat& obleft, const arma::mat& obright)
 {
    arma::mat comm = obleft*obright - obright*obleft;
    return comm;
@@ -490,7 +548,8 @@ arma::mat Operator::comm111(arma::mat obleft, arma::mat obright)
 
 //*****************************************************************************************
 
-arma::mat Operator::comm211(TwoBodyChannel tbleft, arma::mat obright)
+// NOT YET FINISHED...
+arma::mat Operator::comm211(const TwoBodyChannel& tbleft, const arma::mat& obright)
 {
    arma::mat comm = obright;
    return comm;
@@ -499,9 +558,9 @@ arma::mat Operator::comm211(TwoBodyChannel tbleft, arma::mat obright)
 //*****************************************************************************************
 
 // NOT YET FINISHED...
-arma::mat Operator::comm221(TwoBodyChannel tbleft, TwoBodyChannel tbright)
+arma::mat Operator::comm221(const TwoBodyChannel& tbleft, const TwoBodyChannel& tbright)
 {
-   int npq = tbleft.Number_pq_configs;
+   int npq = tbleft.GetNumberKets();
    // Projector onto hole-hole states, etc
    arma::mat P_hh = arma::mat(npq,npq,arma::fill::zeros);
    arma::mat P_pp = arma::mat(npq,npq,arma::fill::zeros);
@@ -534,7 +593,7 @@ arma::mat Operator::comm221(TwoBodyChannel tbleft, TwoBodyChannel tbright)
 
 //*****************************************************************************************
 
-TwoBodyChannel Operator::comm112(arma::mat obleft, arma::mat obright)
+TwoBodyChannel Operator::comm112(const arma::mat& obleft, const arma::mat& obright)
 {
    TwoBodyChannel comm = TwoBodyChannel();
    return comm;
@@ -542,7 +601,7 @@ TwoBodyChannel Operator::comm112(arma::mat obleft, arma::mat obright)
 
 //*****************************************************************************************
 
-TwoBodyChannel Operator::comm212(TwoBodyChannel tbleft, arma::mat obright)
+TwoBodyChannel Operator::comm212(const TwoBodyChannel& tbleft, const arma::mat& obright)
 {
    TwoBodyChannel comm = tbleft;
    return comm;
@@ -550,7 +609,7 @@ TwoBodyChannel Operator::comm212(TwoBodyChannel tbleft, arma::mat obright)
 
 //*****************************************************************************************
 
-TwoBodyChannel Operator::comm222(TwoBodyChannel tbleft, TwoBodyChannel tbright)
+TwoBodyChannel Operator::comm222(const TwoBodyChannel& tbleft, const TwoBodyChannel& tbright)
 {
    TwoBodyChannel comm = tbleft;
    return comm;

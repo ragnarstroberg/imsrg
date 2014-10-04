@@ -38,12 +38,12 @@ int main()
    hf.Solve();
 //   hf.PrintOrbits();
    hf.TransformToHFBasis(&H_bare,&H_hf);
-
+/*
    H_bare.WriteOneBody("../output/Hbare1b.out");
    H_bare.WriteTwoBody("../output/Hbare2b.out");
    H_hf.WriteOneBody("../output/HF1b.out");
    H_hf.WriteTwoBody("../output/HF2b.out");
-
+*/
 //   H_bare->OneBody.print();
 //   cout << endl << endl;
 //   H_hf->OneBody.print();
@@ -56,6 +56,11 @@ int main()
 
    cout << "EHF = " << hf.EHF << endl;
    cout << "EHF2 = " << hf2.EHF << endl;
+   cout << "Start normal ordering" << endl;
+   Operator HFNO = H_hf.DoNormalOrdering();
+   cout << "Normal ordered zero-body part = " << HFNO.ZeroBody << endl;
+   cout << "Normal ordered one-body part: " << endl;
+//   HFNO.OneBody.print();
 
   return 0;
 }

@@ -13,9 +13,6 @@ Setting TBME 011101 J=0 to -6.30674 (-6.30674)
 Setting TBME 011101 J=1 to 5.57079 (-5.57079)
 read TBME 2626 J=0 (-2.96307)
 read TBME 2626 J=1 (-0.28355)
-nKets = 1596
-KetCheck: J = 0 par = 0 Tz = 0 TBME = -6.30674 Vmon(a,b) = -6.30674 (0)
-KetCheck: J = 1 par = 0 Tz = 0 TBME = 5.57079 Vmon(a,b) = 10.4056 (0)
 ediff = 8.66871
 ediff = 4.20796
 ediff = 0.0850914
@@ -40,26 +37,30 @@ ediff = 1.43018e-07
 ediff = 6.93444e-08
 ediff = 3.36234e-08
 ediff = 1.63029e-08
-ediff = 7.90483e-09
+ediff = 7.90484e-09
 ediff = 3.83282e-09
 ediff = 1.85842e-09
 ediff = 9.01096e-10
 ediff = 4.36916e-10
 ediff = 2.11846e-10
 ediff = 1.02719e-10
-ediff = 4.98048e-11
+ediff = 4.98051e-11
+Fock matrix:
 Repeating the HF procedure on the HF-basis Hamiltonian
  ==============================================================================
-nKets = 1596
-KetCheck: J = 0 par = 0 Tz = 0 TBME = -4.05664 Vmon(a,b) = -4.05664 (0)
-KetCheck: J = 1 par = 0 Tz = 0 TBME = 3.65513 Vmon(a,b) = 6.90875 (0)
 ediff = 9.24573
 ediff = 3.57919
 ediff = 4.48762e-09
 ediff = 1.94977e-09
-ediff = 7.40775e-10
+ediff = 7.40776e-10
 ediff = 3.66224e-10
 ediff = 1.69518e-10
-ediff = 8.34098e-11
+ediff = 8.34102e-11
 EHF = -133.675
 EHF2 = -133.675
+Start normal ordering
+In Operator the modelspace has norbits = 56
+OneBody size = 3136
+TwoBody size = 1274406
+Normal ordered zero-body part = -133.675
+Normal ordered one-body part: 

@@ -15,6 +15,8 @@ HartreeFock::HartreeFock(Operator *hbare)
    int nKets = ms->GetNumberKets();
 
    C    = arma::mat(norbits,norbits,arma::fill::eye);
+   Vab  = arma::mat(norbits,norbits);
+   H    = arma::mat(norbits,norbits);
    Vmon = arma::mat(2*nKets,2*nKets);
    prev_energies = arma::vec(norbits,arma::fill::zeros);
 
@@ -231,92 +233,46 @@ void HartreeFock::Diagonalize2()
 }
 
 
-
-
 //**************************************************
 // BuildMonopoleV()
 // Construct the unnormalized monople Hamiltonian
-// <ab|V_mon|cd> = Sum_J (2J+1) <ab|V|cd>_J
+// <ab|V_mon|cd> = Sum_J (2J+1) <ab|V|cd>_J.
+//   To facilitate looping, the matrix has 4 blocks.
+//   If a<=b and c<=d, the matrix looks like:
+//
+//         [ <ab|V|cd> ... <ab|V|dc> ]
+//    V  = |     :             :     |
+//         [ <ba|V|cd> ... <ba|V|dc> ]
+//         
 //**************************************************
 
 void HartreeFock::BuildMonopoleV()
 {
-   ModelSpace * ms = Hbare->GetModelSpace();
-   int nKets = ms->GetNumberKets();
-   //Vmon = arma::mat(2*nKets,2*nKets,arma::fill::zeros);
-//   Vmon = arma::sp_mat(2*nKets,2*nKets);
-   cout << "nKets = " << nKets << endl;
+   int nKets = Hbare->GetModelSpace()->GetNumberKets();
    Vmon.zeros();
-
-   int ketcheck = ms->GetKetIndex(0,11);
-   int bracheck = ms->GetKetIndex(1,10);
+   int nchan = Hbare->GetNumberTwoBodyChannels();
    
-   
-   for (int a=0;a<nKets;a++)
+   for (int i=0;i<nchan;++i) // loop over J,p,Tz channels
    {
-      Ket* bra = Hbare->GetModelSpace()->GetKet(a%nKets);
-      int par = bra->parity;
-      int Tz = bra->Tz;
-      for (int b=a;b<nKets;b++)
+      TwoBodyChannel *tbc = Hbare->GetTwoBodyChannel(i);
+      int J = tbc->J;
+      int npq = tbc->GetNumberKets();
+      for (int a=0;a<npq;++a)
       {
-         Ket* ket = Hbare->GetModelSpace()->GetKet(b%nKets);
-         if (ket->parity != bra->parity or ket->Tz != bra->Tz) continue; // Interaction conserves T_z, parity
-
-         int jmin = max(bra->Jmin, ket->Jmin);
-         int jmax = min(bra->Jmax, ket->Jmax);
-//         cout << "jmin = " << jmin << "  jmax = " << jmax << endl;
-         int jstep = max(bra->Jstep, ket->Jstep);
-         for (int J=jmin;J<=jmax;J+=jstep)
+         Ket * bra = tbc->GetKet(a);
+         int ibra = tbc->GetKetIndex(a);
+         for (int b=0;b<npq;++b)
          {
-            TwoBodyChannel * channel = Hbare->GetTwoBodyChannel(J,par,Tz);
-
-            Vmon(a,b)             += (2*J+1)*channel->GetTBME(bra,ket);
-            Vmon(a+nKets,b)       += (2*J+1)*bra->Phase(J)*channel->GetTBME(bra,ket);
-            Vmon(a,b+nKets)       += (2*J+1)*ket->Phase(J)*channel->GetTBME(bra,ket);
-            Vmon(a+nKets,b+nKets) += (2*J+1)*bra->Phase(J)*ket->Phase(J)*channel->GetTBME(bra,ket);
-            //if (a==ketcheck and b==bracheck)
-            if ((a==ketcheck and b==bracheck) or (a==bracheck and b==ketcheck))
-            {
-               cout << "KetCheck: J = " << J << " par = " << par << " Tz = " << Tz << " TBME = " << channel->GetTBME(bra,ket) << " Vmon(a,b) = " << Vmon(a,b) << " (" << Vmon(b,a) << ")" << endl;
-            }
-//            cout << "Building monopole: " << a << " " << b << " " << J << endl;
+            Ket * ket  = tbc->GetKet(b);
+            int iket = tbc->GetKetIndex(b);
+            Vmon(ibra,iket) += (2*J+1)*tbc->GetTBME(bra,ket);
+            Vmon(ibra+nKets,iket) += (2*J+1)*bra->Phase(J)*tbc->GetTBME(bra,ket);
+            Vmon(ibra,iket+nKets) += (2*J+1)*ket->Phase(J)*tbc->GetTBME(bra,ket);
+            Vmon(ibra+nKets,iket+nKets) += (2*J+1)*bra->Phase(J)*ket->Phase(J)*tbc->GetTBME(bra,ket);
          }
-         Vmon(b,a) = Vmon(a,b);
-         Vmon(b,a+nKets) = Vmon(a+nKets,b);
-         Vmon(b+nKets,a) = Vmon(a,b+nKets);
-         Vmon(b+nKets,a+nKets) = Vmon(a+nKets,b+nKets);
       }
-//      cout << a << " " << bra->a << " " << bra->b << endl;
    }
-
-//   cout << "Vmon = " << endl;
-//   Vmon.print();
-//
-//   Vmon.submat(0,0,6,6).print();
-//   cout << "<0  0| Vmon |0   0> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(0,0)) << endl;
-//   cout << "<0  0| Vmon |10  0> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(0,10)+nKets) << endl;
-//   cout << "<0 10| Vmon |10 10> = " << Vmon(ms->GetKetIndex(0,10), ms->GetKetIndex(10,10)) << endl;
-//   cout << "<0  0| Vmon |10 10> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(10,10)) << endl;
-//   cout << "<0 10| Vmon |10  0> = " << Vmon(ms->GetKetIndex(0,0), ms->GetKetIndex(0,10)+nKets) << endl;
-//   cout << "<0  1| Vmon |10  1> = " << Vmon(ms->GetKetIndex(0,1), ms->GetKetIndex(1,10)+nKets) << endl;
-//   cout << "<0  1| Vmon |10 11> = " << Vmon(ms->GetKetIndex(0,1), ms->GetKetIndex(10,11)) << endl;
-//   cout << "<0 11| Vmon |10 11> = " << Vmon(ms->GetKetIndex(0,11), ms->GetKetIndex(10,11)) << endl;
-//   cout << "<0 11| Vmon |10  1> = " << Vmon(ms->GetKetIndex(0,11), ms->GetKetIndex(1,10)+nKets) << endl;
-
-
-//   cout << "<5  1| Vmon |5  1> = " << Vmon(ms->GetKetIndex(1,5)+nKets, ms->GetKetIndex(1,5)+nKets) << endl;
-//   cout << "<5 11| Vmon |5 11> = " << Vmon(ms->GetKetIndex(1,10), ms->GetKetIndex(1,10)) << endl;
-//   cout << "<5  1| Vmon |5 11> = " << Vmon(ms->GetKetIndex(1,5)+nKets, ms->GetKetIndex(5,11)) << endl;
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -340,20 +296,16 @@ void HartreeFock::UpdateDensityMatrix()
       }
    }
    rho = C * Pcore * C.t();
-
-//   cout << "rho: " << endl;
-//   rho.print();
-
 }
 
 
 //*********************************************************************
 // UpdateH() -- [See Suhonen eq 4.85]
 // <a|H|b> = <a|t|b>  +  Sum_ij <i|rho|j> <ai|V_mon|bj>
-// Where H is the 1-body Hamiltonian to be diagonalized
-// t is the kinetic energy
-// rho is the density matrix defined in UpdateDensityMatrix()
-// V_mon is the monopole 2-body interaction.
+// * H is the fock matrix, to be diagonalized
+// * t is the kinetic energy
+// * rho is the density matrix defined in UpdateDensityMatrix()
+// * V_mon is the monopole component of the 2-body interaction.
 //*********************************************************************
 void HartreeFock::UpdateH()
 {
@@ -361,21 +313,19 @@ void HartreeFock::UpdateH()
    int norbits = ms->GetNumberOrbits();
    int nKets = ms->GetNumberKets();
    int bra, ket;
-   //Vab.zeros();
-   Vab  = arma::mat(norbits,norbits,arma::fill::zeros);
-
+//   Vab  = arma::mat(norbits,norbits,arma::fill::zeros);
+   Vab.zeros();
    for (int a=0;a<norbits;a++)
    {
-      int ja = ms->GetOrbit(a)->j2;
       for (int b=a;b<norbits;b++)
       {
-         if (ms->GetOrbit(a)->j2  != ms->GetOrbit(b)->j2) continue;
+         if (ms->GetOrbit(a)->j2  != ms->GetOrbit(b)->j2)  continue;
          if (ms->GetOrbit(a)->tz2 != ms->GetOrbit(b)->tz2) continue;
-         if (ms->GetOrbit(a)->l   != ms->GetOrbit(b)->l) continue;
+         if (ms->GetOrbit(a)->l   != ms->GetOrbit(b)->l)   continue;
          for (int i=0;i<norbits;i++)
          {
-               // The monopoles are listed for |ab> fist with a<=b, then for a>=b
-               // so if a>b, add nKets.
+            // The monopoles are listed for |ab> fist with a<=b, then for a>=b
+            // so if a>b, add nKets.
             bra = ms->GetKetIndex(min(a,i),max(a,i));
             if (a>i) bra += nKets;
             for (int j=0;j<norbits;j++)
@@ -383,45 +333,16 @@ void HartreeFock::UpdateH()
                ket = ms->GetKetIndex(min(b,j),max(b,j));
                if (b>j) ket += nKets;
 
-               //Vab(a,b) += rho(i,j)*Vmon(bra,ket);
-               Vab(a,b) += rho(i,j)*Vmon(min(bra,ket),max(bra,ket));
+               Vab(a,b) += rho(i,j)*Vmon(min(bra,ket),max(bra,ket)); // <i|rho|j> * <ai|Vmon|bj>
 
-//               if (a==0 and b==10 and abs(rho(i,j))>1e-6)
-               if (0)//abs(rho(i,j))>1e-5)
-               {
-                  cout << "rho(" << i << "," << j << ") = " << rho(i,j)
-                       << "   < " << a << " " << i << " | Vmon | "
-                       <<  b << " " << j << " > = "  << Vmon(min(bra,ket),max(bra,ket))
-//                       <<  b << " " << j << " > = "  << Vmon(bra,ket)
-                       << "  Vab = " << Vab(a,b)/(ja+1) << endl;
-               }
            }
          }
-         Vab(a,b) /= (ja+1);
-         Vab(b,a) = Vab(a,b);
+         Vab(a,b) /= (ms->GetOrbit(a)->j2+1); // divide by 2ja+1
+         Vab(b,a) = Vab(a,b);  // Hermitian & real => symmetric
       }
    }
    H = t + Vab;
-/*   cout << "tab: " << endl;
-   t.print();
-   cout << "Vab: " << endl;
-   Vab.print();
-   cout << "Hab: " << endl;
-   H.print();
-*/
-/*
-  for (int a=0;a<norbits;a++)
-  {
-      Orbit* oa = ms->GetOrbit(a);
-      for (int b=0;b<norbits;b++)
-      {
-         Orbit* ob = ms->GetOrbit(b);
-         if (oa->j2 != ob->j2 or oa->l != ob->l or oa->tz2 != ob->tz2) continue;
-         
-         cout << "H("<<a<<","<<b<<") = t(a,b) + V(a,b) = " << t(a,b) << " + " << Vab(a,b) << " = " << H(a,b) << endl;
-      }
-  }
-*/
+
 }
 
 
@@ -508,6 +429,9 @@ void HartreeFock::TransformToHFBasis(Operator *OpIn, Operator *OpHF)
 {
    // Maybe put in a check that they should have the same modelspace?
 
+   cout << "Fock matrix:" << endl;
+//   (C.t() * H * C).print();
+
    ModelSpace * ms = OpIn->GetModelSpace();
    int norbits = ms->GetNumberOrbits();
 
@@ -518,37 +442,29 @@ void HartreeFock::TransformToHFBasis(Operator *OpIn, Operator *OpHF)
    //Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
    // for each channel J,p,Tz
 
-   for (int J=0; J<JMAX; J++)
+   int nchan = OpIn->GetNumberTwoBodyChannels();
+   for (int i=0;i<nchan;++i)
    {
-      for (int parity = 0; parity <=1; parity++)
-      {
-         for (int Tz = -1; Tz<=1; Tz++)
+      TwoBodyChannel *chin = OpIn->GetTwoBodyChannel(i);
+      int npq = chin->GetNumberKets();
+      if (npq<1) continue;
+      TwoBodyChannel *chhf = OpHF->GetTwoBodyChannel(i);
+      arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+      arma::mat Dexch = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ba> = <ji|ab>
+      for (int i=0; i<npq; i++)       // loop over all possible original basis configurations <pq| in this J,p,Tz channel
+      {                               // i and j are the indices of the small matrix for this channel
+         Ket * bra = chin->GetKet(i); // bra is in the original basis
+         for (int j=0; j<npq; j++)       // loop over all possible HF configurations |pq> in this J,p,Tz channel
          {
-            TwoBodyChannel *chin = OpIn->GetTwoBodyChannel(J,parity,Tz);
-            int npq = chin->Number_pq_configs;
-            if (npq<1) continue;
-            TwoBodyChannel *chhf = OpHF->GetTwoBodyChannel(J,parity,Tz);
-            arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
-            arma::mat Dexch = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ba> = <ji|ab>
-            for (int i=0; i<npq; i++) // loop over all possible original basis configurations <pq| in this J,p,Tz channel
-            {   // i and j are the indices of the small matrix for this channel
-               Ket * bra = chin->GetKet(i); // bra is in the original basis
-               for (int j=0; j<npq; j++) // loop over all possible HF configurations |pq> in this J,p,Tz channel
-               {
-                  Ket * ket = chin->GetKet(j); // ket is in the HF basis
-                  D(i,j) = C(bra->p,ket->p) * C(bra->q,ket->q) * 1./(1.0+bra->delta_pq());
-
-                  Dexch(i,j) = C(bra->p,ket->q) * C(bra->q,ket->p) * ket->Phase(J) * 1./(1.0+bra->delta_pq());
-
-               }
-            }
-
-           chhf->TBME  = D.t()     * chin->TBME * D;
-           chhf->TBME += Dexch.t() * chin->TBME * D;
-           chhf->TBME += D.t()     * chin->TBME * Dexch;
-           chhf->TBME += Dexch.t() * chin->TBME * Dexch;
+            Ket * ket = chin->GetKet(j); // ket is in the HF basis
+            D(i,j) = C(bra->p,ket->p) * C(bra->q,ket->q) * 1./(1.0+bra->delta_pq());
+            Dexch(i,j) = C(bra->p,ket->q) * C(bra->q,ket->p) * ket->Phase(chin->J) * 1./(1.0+bra->delta_pq());
          }
       }
+     chhf->TBME  = D.t()     * chin->TBME * D;
+     chhf->TBME += Dexch.t() * chin->TBME * D;
+     chhf->TBME += D.t()     * chin->TBME * Dexch;
+     chhf->TBME += Dexch.t() * chin->TBME * Dexch;
    }
 }
 

@@ -1,6 +1,6 @@
 CC = g++
 
-FLAGS = -larmadillo
+FLAGS = -larmadillo -O3
 
 all: mysrg
 	
