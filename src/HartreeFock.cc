@@ -43,7 +43,7 @@ void HartreeFock::Solve()
 //   C.swap_cols(0,10);
 //   C.swap_cols(1,11);
    UpdateH();
-   return;
+//   return;
 /*
    cout << "Input H" << endl;
    H.print();
@@ -64,6 +64,7 @@ void HartreeFock::Solve()
 //      UpdateHFOrbits();
       UpdateDensityMatrix();
       UpdateH();
+/*
    cout << "-----------------------------------------------------------------" << endl;
    cout << "Input H " << iter << endl;
    H.print();
@@ -71,7 +72,7 @@ void HartreeFock::Solve()
    t.print();
    cout << "Input Vab" << endl;
    Vab.print();
-
+*/
 //      for (int a=0;a<norbits;a++)
 //      {
 //         if (Hbare->GetModelSpace()->GetOrbit(a)->hvq>0) continue;
@@ -80,8 +81,8 @@ void HartreeFock::Solve()
 //      cout << endl;
 
       Diagonalize2();
-      cout << "Energies:" << endl;
-      energies.print();
+//      cout << "Energies:" << endl;
+//      energies.print();
 //      cout << "Eigenvectors:" << endl;
 //      C.print();
 
@@ -514,8 +515,6 @@ void HartreeFock::TransformToHFBasis(Operator *OpIn, Operator *OpHF)
 
    OpHF->OneBody = C.t() * OpIn->OneBody * C;
 
-//   OpHF->OneBody = C.t() * ((0.5*(2*H-Vab))) * C;
-
    //Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
    // for each channel J,p,Tz
 
@@ -526,40 +525,28 @@ void HartreeFock::TransformToHFBasis(Operator *OpIn, Operator *OpHF)
          for (int Tz = -1; Tz<=1; Tz++)
          {
             TwoBodyChannel *chin = OpIn->GetTwoBodyChannel(J,parity,Tz);
-            int i00= 0;
-//            int i010= chin->GetKetIndex( modelspace->GetKet(0,10));
             int npq = chin->Number_pq_configs;
             if (npq<1) continue;
             TwoBodyChannel *chhf = OpHF->GetTwoBodyChannel(J,parity,Tz);
             arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
             arma::mat Dexch = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ba> = <ji|ab>
-            for (int i=0; i<npq; i++) // loop over all possible HF configurations <pq| in this J,p,Tz channel
-            {
-               Ket * bra = ms->GetKet( chin->GetKetIndex(i) );
-               for (int j=0; j<npq; j++) // loop over all possible original basis configurations |pq> in this J,p,Tz channel
+            for (int i=0; i<npq; i++) // loop over all possible original basis configurations <pq| in this J,p,Tz channel
+            {   // i and j are the indices of the small matrix for this channel
+               Ket * bra = chin->GetKet(i); // bra is in the original basis
+               for (int j=0; j<npq; j++) // loop over all possible HF configurations |pq> in this J,p,Tz channel
                {
-                  Ket * ket = ms->GetKet( chin->GetKetIndex(j) );
-                  D(i,j) = C(ket->p,bra->p) * C(ket->q,bra->q) * 1./sqrt( (1.0+bra->delta_pq())*(1.0+ket->delta_pq()) );
-//                  if (! bra->delta_pq())
-//                  {
-                     //Dexch(i,j) = C(ket->p,bra->q) * C(ket->q,bra->q) * bra->Phase(J) * 1./sqrt((1+ket->delta_pq())*(1+bra->delta_pq()));
-                     Dexch(i,j) = C(ket->p,bra->q) * C(ket->q,bra->p) * bra->Phase(J) * 1./sqrt((1+ket->delta_pq())*(1+bra->delta_pq()));
-                     //Dexch(i,j) = C(ket->p,bra->q) * C(ket->q,bra->q) * bra->Phase(J) * 1./sqrt((1+ket->delta_pq())*(1+bra->delta_pq()));
-//                     Dexch(i,j) = C(ket->p,bra->q) * C(ket->q,bra->q) * bra->Phase(J) ;
-//                  }
+                  Ket * ket = chin->GetKet(j); // ket is in the HF basis
+                  D(i,j) = C(bra->p,ket->p) * C(bra->q,ket->q) * 1./(1.0+bra->delta_pq());
+
+                  Dexch(i,j) = C(bra->p,ket->q) * C(bra->q,ket->p) * ket->Phase(J) * 1./(1.0+bra->delta_pq());
+
                }
             }
-           if (J==0 and parity==0 and Tz==-1) cout << "D(0,0)^2: " << D(0,0)*D(0,0) << endl;
-           if (J==0 and parity==0 and Tz==-1) cout << "Dexch(0,0)^2: " << Dexch(0,0)*Dexch(0,0) << endl;
-           if (J==0 and parity==0 and Tz==-1) cout << "TBME(0,0) = " << chin->TBME(0,0) << endl;
+
            chhf->TBME  = D.t()     * chin->TBME * D;
-           if (J==0 and parity==0 and Tz==-1) cout << "Direct: " << chhf->TBME(i00,i00) << endl;
            chhf->TBME += Dexch.t() * chin->TBME * D;
-           if (J==0 and parity==0 and Tz==-1) cout << "Exch1: " << chhf->TBME(i00,i00) << endl;
            chhf->TBME += D.t()     * chin->TBME * Dexch;
-           if (J==0 and parity==0 and Tz==-1) cout << "Exch2: " << chhf->TBME(i00,i00) << endl;
            chhf->TBME += Dexch.t() * chin->TBME * Dexch;
-           if (J==0 and parity==0 and Tz==-1) cout << "Double exch: " << chhf->TBME(i00,i00) << endl;
          }
       }
    }

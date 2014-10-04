@@ -44,7 +44,8 @@ class TwoBodyChannel
    float GetTBME(Ket *bra, Ket *ket); // Use the bra and ket objects directly
    void SetTBME(int bra, int ket, float tbme);
    void SetTBME(Ket *bra, Ket *ket, float tbme);
-   int GetKetIndex(int i){ return KetList[i];};
+   int GetKetIndex(int i){ return KetList[i];}; // i goes from 1 to Number_pq_configs. the output is the ket index in the modelspace numbering scheme
+   Ket * GetKet(int i){ return modelspace->GetKet(KetList[i]);};
 
  private:
    //Fields
