@@ -1,10 +1,15 @@
 #include "ReadWrite.hh"
+#include "ModelSpace.hh"
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <sstream>
+#include "string.h"
 
 #define LINESIZE 400
 
 using namespace std;
 
-//void ReadWrite::ReadModelSpace( char* filename, ModelSpace * modelspace)
 ModelSpace ReadWrite::ReadModelSpace( char* filename)
 {
 
@@ -37,7 +42,6 @@ ModelSpace ReadWrite::ReadModelSpace( char* filename)
    ss >> A;
    ss.str(string()); // clear up the stringstream
    ss.clear();
-//   cout << "I think that A is " << A << endl;
    
    while (!strstr(line,"Oscillator length") && !infile.eof())
    {
@@ -45,12 +49,8 @@ ModelSpace ReadWrite::ReadModelSpace( char* filename)
    }
    ss << line;
    ss >> cbuf[0] >> cbuf[1] >> cbuf[2] >> cbuf[3] >> fbuf[0] >> hw;
-   //modelspace->hbar_omega = hw;
-   //modelspace->target_mass = A;
    modelspace.SetHbarOmega(hw);
    modelspace.SetTargetMass(A);
-//   modelspace.hbar_omega = hw;
-//   modelspace.target_mass = A;
    cout << "Set hbar_omega to " << hw << endl;
 
    while (!strstr(line,"Legend:") && !infile.eof())
@@ -65,7 +65,6 @@ ModelSpace ReadWrite::ReadModelSpace( char* filename)
       hvq = 0; // 0=hole 1=valence 2=particle outside the valence space
       if (strstr(cbuf[1],"particle")) hvq++;
       if (strstr(cbuf[2],"outside")) hvq++;
-      //modelspace->AddOrbit( Orbit(n,l,j2,tz2,hvq,spe) );
       modelspace.AddOrbit( Orbit(n,l,j2,tz2,hvq,spe) );
    
    }
@@ -77,15 +76,6 @@ ModelSpace ReadWrite::ReadModelSpace( char* filename)
 }
 
 
-//void ReadWrite::ReadBareInteraction( char* filename, Operator *Hbare)
-//{
-  // Not yet implemented.
-
-//}
-
-
-
-//void ReadWrite::ReadBareTBME( char* filename, Operator *Hbare)
 void ReadWrite::ReadBareTBME( char* filename, Operator& Hbare)
 {
 
@@ -109,6 +99,7 @@ void ReadWrite::ReadBareTBME( char* filename, Operator& Hbare)
      infile.getline(line,LINESIZE);
   }
 
+  int nline=0;
   while ( infile >> Tz >> Par >> J2  // Read tbme
                  >> a >> b >> c >> d
                  >> tbme >> fbuf[0] >> fbuf[1] >> fbuf[2] )
@@ -118,15 +109,10 @@ void ReadWrite::ReadBareTBME( char* filename, Operator& Hbare)
         cout << "read TBME " << a << b << c << d << " J=" << J2/2 << " ("<<tbme<<")" << endl;
      }
      a--; b--; c--; d--; // Fortran -> C  => 1->0
-     //TwoBodyChannel * h2body = &(Hbare->TwoBody[J2/2][Par][Tz+1]);
-     //Ket * bra = Hbare->GetModelSpace()->GetKet(min(a,b),max(a,b));
-     //Ket * ket = Hbare->GetModelSpace()->GetKet(min(c,d),max(c,d));
-     TwoBodyChannel * h2body = Hbare.GetTwoBodyChannel(J2/2,Par,Tz);
+     TwoBodyChannel h2body = Hbare.GetTwoBodyChannel(J2/2,Par,Tz);
      Ket * bra = Hbare.GetModelSpace()->GetKet(min(a,b),max(a,b));
      Ket * ket = Hbare.GetModelSpace()->GetKet(min(c,d),max(c,d));
      if (bra==NULL or ket==NULL) continue;
-     //tbme -= fbuf[2] * Hbare->GetModelSpace()->hbar_omega / Hbare->GetModelSpace()->target_mass;  // Some sort of COM correction. Check this
-     //tbme -= fbuf[2] * Hbare.GetModelSpace()->hbar_omega / Hbare.GetModelSpace()->target_mass;  // Some sort of COM correction. Check this
      tbme -= fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  // Some sort of COM correction. Check this
      float phase = 1.0;
      if (a==b) phase *= sqrt(2.);   // Symmetry factor. Confirm that this should be here
@@ -134,12 +120,14 @@ void ReadWrite::ReadBareTBME( char* filename, Operator& Hbare)
      if (a>b) phase *= bra->Phase(J2/2);
      if (c>d) phase *= ket->Phase(J2/2);
      //h2body->SetTBME(bra,ket, phase*tbme); // can later change this to [bra,ket] to speed up.
-     h2body->SetTBME(bra,ket, phase*tbme);
+     h2body.SetTBME(bra,ket, phase*tbme);
      //if (a==0 and b==11 and c==1 and d==10)
      if (a==0 and b==11 and c==10 and d==1)
      {
         cout << "Setting TBME " << a << b << c << d << " J=" << J2/2 << " to " << phase*tbme << " ("<<tbme<<")" << endl;
      }
+     ++nline;
+     cout << nline << endl;
   }
 
   return;
@@ -164,6 +152,83 @@ void ReadWrite::CalculateKineticEnergy(Operator *Hbare)
    }
    Hbare->OneBody *= (1-1./A);
 
+}
+
+
+void ReadWrite::WriteOneBody(Operator& op, const char* filename)
+{
+   ofstream obfile;
+   obfile.open(filename, ofstream::out);
+   int norbits = op.GetModelSpace()->GetNumberOrbits();
+   for (int i=0;i<norbits;i++)
+   {
+      for (int j=0;j<norbits;j++)
+      {
+         if (abs(op.GetOneBody(i,j)) > 1e-6)
+         {
+            obfile << i << "    " << j << "       " << op.GetOneBody(i,j) << endl;
+
+         }
+      }
+   }
+   obfile.close();
+}
+
+
+
+void ReadWrite::WriteTwoBody(Operator& op, const char* filename)
+{
+   ofstream tbfile;
+   tbfile.open(filename, ofstream::out);
+   ModelSpace * modelspace = op.GetModelSpace();
+   for (int Tz=-1;Tz<=1;++Tz)
+   {
+      for (int p=0;p<=1;++p)
+      {
+         for (int J=0;J<JMAX;++J)
+         {
+            int npq = op.TwoBody[J][p][Tz+1].GetNumberKets();
+            if (npq<1) continue;
+            for (int i=0;i<npq;++i)
+            {
+               int iket = op.TwoBody[J][p][Tz+1].GetKetIndex(i);
+               Ket *bra = modelspace->GetKet(iket);
+               Orbit *oa = modelspace->GetOrbit(bra->p);
+               Orbit *ob = modelspace->GetOrbit(bra->q);
+               for (int j=i;j<npq;++j)
+               {
+                  int jket = op.TwoBody[J][p][Tz+1].GetKetIndex(j);
+                  Ket *ket = modelspace->GetKet(jket);
+                  //double tbme = TwoBody[J][p][Tz+1].TBME(i,j);
+                  double tbme = op.TwoBody[J][p][Tz+1].GetTBME(bra,ket);
+                  if ( abs(tbme)<1e-4 ) continue;
+                  Orbit *oc = modelspace->GetOrbit(ket->p);
+                  Orbit *od = modelspace->GetOrbit(ket->q);
+                  int wint = 4;
+                  int wfloat = 12;
+/*                  tbfile 
+                         << setw(wint)   << oa->n  << setw(wint) << oa->l  << setw(wint)<< oa->j2 << setw(wint) << oa->tz2 
+                         << setw(wint+2) << ob->n  << setw(wint) << ob->l  << setw(wint)<< ob->j2 << setw(wint) << ob->tz2 
+                         << setw(wint+2) << oc->n  << setw(wint) << oc->l  << setw(wint)<< oc->j2 << setw(wint) << oc->tz2 
+                         << setw(wint+2) << od->n  << setw(wint) << od->l  << setw(wint)<< od->j2 << setw(wint) << od->tz2 
+                         << setw(wint+3) << J << setw(wfloat) << std::fixed << tbme// << endl;
+                         << "    < " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << " >" << endl;
+                         //<< setw(wint+2) << p   << setw(wint) << Tz << setw(wint) << J << setw(wfloat) << std::fixed << tbme << endl;
+*/
+                  tbfile 
+                         << setw(wint) << bra->p
+                         << setw(wint) << bra->q
+                         << setw(wint) << ket->p
+                         << setw(wint) << ket->q
+                         << setw(wint+3) << J << setw(wfloat) << std::fixed << tbme// << endl;
+                         << "    < " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << " >" << endl;
+                         //<< setw(wint+2) << p   << setw(wint) << Tz << setw(wint) << J << setw(wfloat) << std::fixed << tbme << endl;
+               }
+            }
+         }
+      }
+   }
+   tbfile.close();
 }
 
 

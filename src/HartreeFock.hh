@@ -37,7 +37,8 @@ class HartreeFock
    void BuildKineticEnergy(float hw);
    void PrintRho(int );
    void CalcEHF();
-   void TransformToHFBasis(Operator *OpIn, Operator *OpHF);
+   Operator TransformToHFBasis( Operator& OpIn);
+//   void TransformToHFBasis(Operator *OpIn, Operator *OpHF);
    void ReorderCoefficients();
 
 };

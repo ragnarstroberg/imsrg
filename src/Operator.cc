@@ -241,7 +241,12 @@ Operator::Operator(ModelSpace* ms)
       }
     }
   }
-  GetSPEFromModelSpace();
+
+  for (int i=0;i<nOneBody;i++)
+  {
+     OneBody(i,i) = modelspace->GetOrbit(i)->spe;
+  }
+
   P_hole_onebody = arma::mat(nOneBody,nOneBody,arma::fill::zeros);
   P_particle_onebody = arma::mat(nOneBody,nOneBody,arma::fill::eye);
   for (int i=0;i<nOneBody;i++)
@@ -283,17 +288,8 @@ Operator Operator::operator=(const Operator& rhs)
 }
 
 
-void Operator::GetSPEFromModelSpace()
-{
-   int norbits = modelspace->GetNumberOrbits();
-   for (int i=0;i<norbits;i++)
-   {
-      OneBody(i,i) = modelspace->GetOrbit(i)->spe;
-   }
-}
 
-
-void Operator::PrintOut()
+void Operator::PrintOut() 
 {
    //for (int j=0; j<JMAX; j++)
    for (int j=0; j<TwoBodyJmax; j++)
@@ -302,15 +298,15 @@ void Operator::PrintOut()
      {
         for (int t=-1; t<=1; t++)
         {
-           TwoBodyChannel *tbc = GetTwoBodyChannel(j,p,t);
-           cout << tbc->J << " " << tbc->parity << " "
-                     << tbc->Tz << "  ===> " << tbc->GetNumberKets() << endl;
-           if (tbc->GetNumberKets()>20) continue;
-           for (int i=0;i<tbc->GetNumberKets();i++)
+           TwoBodyChannel tbc = GetTwoBodyChannel(j,p,t);
+           cout << tbc.J << " " << tbc.parity << " "
+                     << tbc.Tz << "  ===> " << tbc.GetNumberKets() << endl;
+           if (tbc.GetNumberKets()>20) continue;
+           for (int i=0;i<tbc.GetNumberKets();i++)
            {
-             for (int ii=0;ii<tbc->GetNumberKets();ii++)
+             for (int ii=0;ii<tbc.GetNumberKets();ii++)
              {
-                cout << tbc->TBME(i,ii) << " ";
+                cout << tbc.TBME(i,ii) << " ";
              }
                 cout << endl;
            }
@@ -340,37 +336,37 @@ Operator Operator::DoNormalOrdering()
    int nchan = this->GetNumberTwoBodyChannels();
    for (int i=0;i<nchan;++i)
    {
-      TwoBodyChannel *tbc = this->GetTwoBodyChannel(i);
-      opNO.SetTwoBodyChannel(i, *(tbc) );
-      int npq = tbc->GetNumberKets();
+      TwoBodyChannel tbc = GetTwoBodyChannel(i);
+      opNO.SetTwoBodyChannel(i, tbc );
+      int npq = tbc.GetNumberKets();
       for (int k=0;k<npq;++k)
       {
-         Ket * ket = tbc->GetKet(k);
+         Ket * ket = tbc.GetKet(k);
          Orbit *oa = modelspace->GetOrbit(ket->p);
          Orbit *ob = modelspace->GetOrbit(ket->q);
          if ( oa->hvq == 0 and ob->hvq == 0)
          {
-            opNO.ZeroBody += tbc->TBME(k,k) * (2*tbc->J+1) / (1.0+ket->delta_pq());
+            opNO.ZeroBody += tbc.TBME(k,k) * (2*tbc.J+1) / (1.0+ket->delta_pq());
          }
 
          for (int m=k;m<npq;++m)
          {
-            Ket * bra = tbc->GetKet(m);
+            Ket * bra = tbc.GetKet(m);
             Orbit *oc = modelspace->GetOrbit(bra->p);
             Orbit *od = modelspace->GetOrbit(bra->q);
-            int J = tbc->J;
+            int J = tbc.J;
             if (bra->q == ket->q and ob->hvq==0)
             {
-               opNO.OneBody(bra->p,ket->p) += (2*J+1)/(oa->j2+1) * tbc->TBME(m,k);
-               opNO.OneBody(ket->p,bra->p) += (2*J+1)/(oa->j2+1) * tbc->TBME(m,k);
+               opNO.OneBody(bra->p,ket->p) += (2*J+1)/(oa->j2+1) * tbc.TBME(m,k);
+               opNO.OneBody(ket->p,bra->p) += (2*J+1)/(oa->j2+1) * tbc.TBME(m,k);
             }
             if (bra->p == ket->p and oa->hvq==0)
             {
-               opNO.OneBody(bra->q,ket->q) += (2*J+1)/(ob->j2+1) * tbc->TBME(m,k);
+               opNO.OneBody(bra->q,ket->q) += (2*J+1)/(ob->j2+1) * tbc.TBME(m,k);
             }
             if (bra->p == ket->q and oa->hvq==0)
             {
-               opNO.OneBody(bra->q,ket->p) += (2*J+1)/(ob->j2+1) * bra->Phase(J) * tbc->TBME(m,k);
+               opNO.OneBody(bra->q,ket->p) += (2*J+1)/(ob->j2+1) * bra->Phase(J) * tbc.TBME(m,k);
             }
          }
 
@@ -395,7 +391,7 @@ void Operator::EraseTwoBody()
    }
 }
 
-
+/*
 void Operator::WriteOneBody(const char* filename)
 {
    ofstream obfile;
@@ -413,7 +409,9 @@ void Operator::WriteOneBody(const char* filename)
    }
    obfile.close();
 }
+*/
 
+/*
 void Operator::WriteTwoBody(const char* filename)
 {
    ofstream tbfile;
@@ -443,15 +441,15 @@ void Operator::WriteTwoBody(const char* filename)
                   Orbit *od = modelspace->GetOrbit(ket->q);
                   int wint = 4;
                   int wfloat = 12;
-/*                  tbfile 
-                         << setw(wint)   << oa->n  << setw(wint) << oa->l  << setw(wint)<< oa->j2 << setw(wint) << oa->tz2 
-                         << setw(wint+2) << ob->n  << setw(wint) << ob->l  << setw(wint)<< ob->j2 << setw(wint) << ob->tz2 
-                         << setw(wint+2) << oc->n  << setw(wint) << oc->l  << setw(wint)<< oc->j2 << setw(wint) << oc->tz2 
-                         << setw(wint+2) << od->n  << setw(wint) << od->l  << setw(wint)<< od->j2 << setw(wint) << od->tz2 
-                         << setw(wint+3) << J << setw(wfloat) << std::fixed << tbme// << endl;
-                         << "    < " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << " >" << endl;
-                         //<< setw(wint+2) << p   << setw(wint) << Tz << setw(wint) << J << setw(wfloat) << std::fixed << tbme << endl;
-*/
+//                  tbfile 
+//                         << setw(wint)   << oa->n  << setw(wint) << oa->l  << setw(wint)<< oa->j2 << setw(wint) << oa->tz2 
+//                         << setw(wint+2) << ob->n  << setw(wint) << ob->l  << setw(wint)<< ob->j2 << setw(wint) << ob->tz2 
+//                         << setw(wint+2) << oc->n  << setw(wint) << oc->l  << setw(wint)<< oc->j2 << setw(wint) << oc->tz2 
+//                         << setw(wint+2) << od->n  << setw(wint) << od->l  << setw(wint)<< od->j2 << setw(wint) << od->tz2 
+//                         << setw(wint+3) << J << setw(wfloat) << std::fixed << tbme// << endl;
+//                         << "    < " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << " >" << endl;
+//                         //<< setw(wint+2) << p   << setw(wint) << Tz << setw(wint) << J << setw(wfloat) << std::fixed << tbme << endl;
+//
                   tbfile 
                          << setw(wint) << bra->p
                          << setw(wint) << bra->q
@@ -467,6 +465,8 @@ void Operator::WriteTwoBody(const char* filename)
    }
    tbfile.close();
 }
+
+*/
 
 //Operator Operator::Commutator(const Operator& opleft, const Operator& opright)
 Operator Operator::Commutator(const Operator& opright)

@@ -18,7 +18,6 @@ class TwoBodyChannel
    int J;
    int parity;
    int Tz;
-   ModelSpace * modelspace;
    arma::mat TBME;  // matrix of the two body matrix elements, where the indices label 2-body kets.
 
    // Constructors
@@ -36,9 +35,9 @@ class TwoBodyChannel
    //Methods
    float GetTBME(int bra, int ket) const ; // Use the modelspace index of the bra and ket
    float GetTBME(Ket *bra, Ket *ket) const ; // Use the bra and ket objects directly
+   int GetNumberKets() const {return NumberKets;};
    void SetTBME(int bra, int ket, float tbme);
    void SetTBME(Ket *bra, Ket *ket, float tbme);
-   int GetNumberKets() const {return NumberKets;};
 
    int GetLocalIndex(int ketindex) const { return KetMap[ketindex];}; // modelspace ket index => local ket index
    int GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];};
@@ -47,6 +46,7 @@ class TwoBodyChannel
 
  private:
    //Fields
+   ModelSpace * modelspace;
    vector<int> KetMap;  // eg [ -1, -1, 0, -1, 1, -1, -1, 2 ...] Used for asking what is the local (channel) index of this ket
    vector<int> KetList; // eg [2, 4, 7, ...] Used for looping over all the kets in the channel
    int NumberKets;  // Number of pq configs that participate in this channel
@@ -71,36 +71,42 @@ class Operator
   //Constructors
   Operator();
   Operator(ModelSpace*);
+
   //Overloaded operators
   Operator(const Operator&);
   Operator operator=(const Operator&);
 
   //Methods
-  float GetOneBody(int i,int j){return OneBody[i,j];};
+  float GetOneBody(int i,int j) {return OneBody[i,j];};
   void SetOneBody(int i, int j, float val){ OneBody[i,j] = val;};
   Operator Commutator(const Operator& opright);
   Operator BCH_Product(const Operator&, const Operator&); // not yet implemented
   Operator BCH_Transform(const Operator&, const Operator&); // not yet implemented
-  TwoBodyChannel* GetTwoBodyChannel(int j, int p, int t){return &(TwoBody[j][p][(t+1)]);};
-  TwoBodyChannel* GetTwoBodyChannel(int N){return &(TwoBody[N%JMAX][(N/JMAX)%2][N/(2*JMAX)]);};
+  //TwoBodyChannel& GetTwoBodyChannel(int j, int p, int t) {return (TwoBody[j][p][(t+1)]);};
+  //TwoBodyChannel& GetTwoBodyChannel(int N) {return (TwoBody[N%JMAX][(N/JMAX)%2][N/(2*JMAX)]);};
+//  const TwoBodyChannel& GetTwoBodyChannel(int N) const {return  (TwoBody[N%JMAX][(N/JMAX)%2][N/(2*JMAX)]);};
+//  const TwoBodyChannel& GetTwoBodyChannel(int j, int p, int t) const {return (TwoBody[j][p][(t+1)]);};
+  TwoBodyChannel GetTwoBodyChannel(int j, int p, int t)const {return (TwoBody[j][p][(t+1)]);};
+  TwoBodyChannel GetTwoBodyChannel(int N)const {return (TwoBody[N%JMAX][(N/JMAX)%2][N/(2*JMAX)]);};
+//  TwoBodyChannel* GetTwoBodyChannel(int j, int p, int t)const {return &(TwoBody[j][p][(t+1)]);};
+//  TwoBodyChannel* GetTwoBodyChannel(int N)const {return &(TwoBody[N%JMAX][(N/JMAX)%2][N/(2*JMAX)]);};
   void SetTwoBodyChannel(int N, const TwoBodyChannel& tbc){ TwoBody[N%JMAX][(N/JMAX)%2][N/(2*JMAX)] = tbc;};
   void SetTwoBodyChannel(int j, int p, int t, const TwoBodyChannel& tbc) {TwoBody[j][p][t+1] = tbc;};
-  int GetNumberTwoBodyChannels(){return nChannels;};
-  void PrintOut();
+  int GetNumberTwoBodyChannels()const {return nChannels;};
+  void PrintOut() ;
   void UpdateCrossCoupled(); // Not implemented, because I don't fully understand it.
-  ModelSpace * GetModelSpace(){return modelspace;};
-  void GetSPEFromModelSpace();
+  ModelSpace * GetModelSpace() const {return modelspace;};
   void SetHermitian() {hermitian=true;antihermitian=false;};
   void SetAntiHermitian() {antihermitian=true;hermitian=false;};
   void SetNonHermitian() {antihermitian=false;hermitian=false;};
-  bool IsHermitian(){return hermitian;};
-  bool IsAntiHermitian(){return antihermitian;};
+  bool IsHermitian()const {return hermitian;};
+  bool IsAntiHermitian()const {return antihermitian;};
   void EraseZeroBody(){ZeroBody = 0;}; // set zero-body term to zero
   void EraseOneBody(){OneBody.zeros();}; // set all one-body terms to zero
   void EraseTwoBody(); // set all two-body terms to zero
   Operator DoNormalOrdering(); // Do normal ordering -- not implemented yet
-  void WriteOneBody(const char* filename);
-  void WriteTwoBody(const char* filename);
+//  void WriteOneBody(const char* filename)const;
+//  void WriteTwoBody(const char* filename)const;
 
  private:
   //Fields
