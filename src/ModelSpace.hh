@@ -16,7 +16,7 @@ class Orbit
    int l;
    int j2;
    int tz2;
-   int hvq; // h=0, v=1, q=-1
+   int hvq; // hole=0, valence=1, qspace=-1
    float spe;
 
    Orbit();
@@ -47,6 +47,32 @@ class ModelSpace
 {
 
  public:
+
+   // Constructors
+   ModelSpace();
+   //ModelSpace(ModelSpace*);
+   ModelSpace(const ModelSpace&);
+   // Overloaded operators
+   ModelSpace operator=(const ModelSpace&); 
+
+   Orbit* GetOrbit(int i) const {return Orbits[i];}; 
+   Ket* GetKet(int i) const {return Kets[i];};
+   Ket* GetKet(int p, int q) const {return Kets[GetKetIndex(p,q)];};
+   int GetKetIndex(int p, int q) const {return q*(q+1)/2+p;}; // convention is a<=b
+   int GetKetIndex(Ket * ket) const {return ket->q*(ket->q+1)/2+ket->p;}; // convention is a<=b
+   int GetNumberOrbits() const {return norbits;};
+   int GetNumberKets() const {return Kets.size();};
+   void AddOrbit(Orbit orb);
+   void SetupKets();
+   void SetHbarOmega(float hw) {hbar_omega = hw;};
+   void SetTargetMass(int A) {target_mass = A;};
+   float GetHbarOmega() const {return hbar_omega;};
+   int GetTargetMass() const {return target_mass;};
+
+   int Index1(int n, int l, int j2, int tz2){return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
+   int Index2(int p, int q){return p*norbits + q;};
+
+ private:
    // Fields
    int norbits;
    int nCore;
@@ -55,33 +81,6 @@ class ModelSpace
    int target_mass;
    std::vector<Orbit*> Orbits;
    std::vector<Ket*> Kets;
-   // Constructors
-   ModelSpace();
-   ModelSpace(ModelSpace*);
-   // Overloaded operators
-//   ModelSpace operator=(const ModelSpace&); 
-
-   Orbit* GetOrbit(int i) {return Orbits[i];}; 
-   Ket* GetKet(int i) {return Kets[i];};
-   Ket* GetKet(int p, int q) {return Kets[GetKetIndex(p,q)];};
-   int GetKetIndex(int p, int q) {return q*(q+1)/2+p;}; // convention is a<=b
-   int GetKetIndex(Ket * ket) {return ket->q*(ket->q+1)/2+ket->p;}; // convention is a<=b
-   int GetNumberOrbits() {return norbits;};
-   int GetNumberKets() {return Kets.size();};
-   void AddOrbit(Orbit orb);
-   void SetupKets();
-
-   int Index1(int n, int l, int j2, int tz2){return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
-//   int Index1(int n, int l, int j2, int tz2){return(2*n+l)*(2*n+l+1) + j2-1 + (tz2+1)/2 ;};
-//   int Index2(int a, int b, int J){return J*norbits*norbits + a*norbits + b;};
-   int Index2(int p, int q){return p*norbits + q;};
-
- private:
-   int maxn;
-   int maxl;
-   int maxjw;
-   int maxtz;
-
 
 };
 

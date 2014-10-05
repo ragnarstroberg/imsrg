@@ -96,22 +96,27 @@ ModelSpace::ModelSpace()
 }
 
 
-ModelSpace::ModelSpace(ModelSpace* ms)
+//ModelSpace::ModelSpace(ModelSpace* ms)
+ModelSpace::ModelSpace(const ModelSpace& ms)
 {
    nCore = 0;
    norbits = 0;
    maxj = 0;
-   hbar_omega = ms->hbar_omega;
-   target_mass = ms->target_mass;
-   int norbits = ms->GetNumberOrbits();
+   hbar_omega = ms.hbar_omega;
+   target_mass = ms.target_mass;
+   int norbits = ms.GetNumberOrbits();
    for (int i=0;i<norbits;i++)
    {
-      AddOrbit( *(ms->GetOrbit(i)) );
+      AddOrbit( Orbit(*ms.GetOrbit(i)) );
    }
    SetupKets();
 }
 
 
+ModelSpace ModelSpace::operator=(const ModelSpace& ms)
+{
+   return ModelSpace(ms);
+}
 
 void ModelSpace::AddOrbit(Orbit orb)
 {

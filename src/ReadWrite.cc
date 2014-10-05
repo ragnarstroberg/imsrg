@@ -23,7 +23,7 @@ ModelSpace ReadWrite::ReadModelSpace( char* filename)
    if ( not infile.good() )
    {
       cerr << "Trouble reading file " << filename << endl;
-      return 0;
+      return modelspace;
    }
    
    infile.getline(line,LINESIZE);
@@ -47,8 +47,10 @@ ModelSpace ReadWrite::ReadModelSpace( char* filename)
    ss >> cbuf[0] >> cbuf[1] >> cbuf[2] >> cbuf[3] >> fbuf[0] >> hw;
    //modelspace->hbar_omega = hw;
    //modelspace->target_mass = A;
-   modelspace.hbar_omega = hw;
-   modelspace.target_mass = A;
+   modelspace.SetHbarOmega(hw);
+   modelspace.SetTargetMass(A);
+//   modelspace.hbar_omega = hw;
+//   modelspace.target_mass = A;
    cout << "Set hbar_omega to " << hw << endl;
 
    while (!strstr(line,"Legend:") && !infile.eof())
@@ -124,7 +126,8 @@ void ReadWrite::ReadBareTBME( char* filename, Operator& Hbare)
      Ket * ket = Hbare.GetModelSpace()->GetKet(min(c,d),max(c,d));
      if (bra==NULL or ket==NULL) continue;
      //tbme -= fbuf[2] * Hbare->GetModelSpace()->hbar_omega / Hbare->GetModelSpace()->target_mass;  // Some sort of COM correction. Check this
-     tbme -= fbuf[2] * Hbare.GetModelSpace()->hbar_omega / Hbare.GetModelSpace()->target_mass;  // Some sort of COM correction. Check this
+     //tbme -= fbuf[2] * Hbare.GetModelSpace()->hbar_omega / Hbare.GetModelSpace()->target_mass;  // Some sort of COM correction. Check this
+     tbme -= fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  // Some sort of COM correction. Check this
      float phase = 1.0;
      if (a==b) phase *= sqrt(2.);   // Symmetry factor. Confirm that this should be here
      if (c==d) phase *= sqrt(2.);   // Symmetry factor. Confirm that this should be here
@@ -146,8 +149,8 @@ void ReadWrite::ReadBareTBME( char* filename, Operator& Hbare)
 void ReadWrite::CalculateKineticEnergy(Operator *Hbare)
 {
    int norbits = Hbare->GetModelSpace()->GetNumberOrbits();
-   int A = Hbare->GetModelSpace()->target_mass;
-   float hw = Hbare->GetModelSpace()->hbar_omega;
+   int A = Hbare->GetModelSpace()->GetTargetMass();
+   float hw = Hbare->GetModelSpace()->GetHbarOmega();
    for (int a=0;a<norbits;a++)
    {
       Orbit * orba = Hbare->GetModelSpace()->GetOrbit(a);

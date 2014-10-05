@@ -30,7 +30,7 @@ HartreeFock::HartreeFock(Operator *hbare)
 
 void HartreeFock::Solve()
 {
-   int ncore = Hbare->GetModelSpace()->nCore;
+//   int ncore = Hbare->GetModelSpace()->nCore;
    int norbits = Hbare->GetModelSpace()->GetNumberOrbits();
    int iter = 0; // counter so we don't go on forever
    ModelSpace *ms = Hbare->GetModelSpace();
