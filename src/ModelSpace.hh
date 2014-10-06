@@ -39,11 +39,11 @@ class Ket  //  | pq >
    int Jmax;
    int Jstep;
    // Constructors
-   Ket();
+   Ket(){};
    Ket(ModelSpace * ms, int p, int q);
    // Methods
    int Phase(int J);
-   int delta_pq(){return p==q?1:0;};
+   int delta_pq(){return p==q ? 1 : 0;};
 
  private:
    // Fields
@@ -66,8 +66,8 @@ class ModelSpace
    Orbit* GetOrbit(int i) const {return Orbits[i];}; 
    Ket* GetKet(int i) const {return Kets[i];};
    Ket* GetKet(int p, int q) const {return Kets[GetKetIndex(p,q)];};
-   int GetKetIndex(int p, int q) const {return q*(q+1)/2+p;}; // convention is a<=b
-   int GetKetIndex(Ket * ket) const {return ket->q*(ket->q+1)/2+ket->p;}; // convention is a<=b
+   int GetKetIndex(int p, int q) const {return q*(q+1)/2+p;}; // convention is p<=q
+   int GetKetIndex(Ket * ket) const {return ket->q*(ket->q+1)/2+ket->p;}; // convention is p<=q
    int GetNumberOrbits() const {return norbits;};
    int GetNumberKets() const {return Kets.size();};
    void AddOrbit(Orbit orb);

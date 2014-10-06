@@ -24,7 +24,7 @@ class HartreeFock
    
 
  //  HartreeFock(Operator * hbare=NULL, Operator *hhf=NULL);
-   HartreeFock(Operator * hbare=NULL);
+   HartreeFock(Operator * hbare);
    void BuildMonopoleV();
    void Diagonalize();
    void Diagonalize2();
@@ -39,6 +39,7 @@ class HartreeFock
    void CalcEHF();
    Operator TransformToHFBasis( Operator& OpIn);
 //   void TransformToHFBasis(Operator *OpIn, Operator *OpHF);
+//   void TransformToHFBasis(Operator& OpIn, Operator& OpHF);
    void ReorderCoefficients();
 
 };

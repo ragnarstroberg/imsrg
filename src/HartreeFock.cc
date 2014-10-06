@@ -5,8 +5,9 @@
 using namespace std;
 
 //HartreeFock::HartreeFock(Operator *hbare, Operator *hhf)
-HartreeFock::HartreeFock(Operator *hbare)
+HartreeFock::HartreeFock(Operator *hbare=NULL)
 {
+   if (hbare ==NULL) cout << "Ah! Null operator" << endl;
    Hbare = hbare;
    tolerance = 1e-10;
    ediff = 1.0;
@@ -128,7 +129,12 @@ void HartreeFock::Solve()
   }
 */
 //   UpdateHFOrbits();
-   
+   cout << "T: " << endl;
+   ( C.t() * t * C ).print();
+   cout << "Vab: " << endl;
+   ( C.t() * Vab * C ).print();
+   cout << "H: " << endl;
+   ( C.t() * H * C ).print();
 }
 
 void HartreeFock::CalcEHF()
@@ -248,27 +254,28 @@ void HartreeFock::Diagonalize2()
 
 void HartreeFock::BuildMonopoleV()
 {
-   int nKets = Hbare->GetModelSpace()->GetNumberKets();
    Vmon.zeros();
+   int nKets = Hbare->GetModelSpace()->GetNumberKets();
    int nchan = Hbare->GetNumberTwoBodyChannels();
    
    for (int i=0;i<nchan;++i) // loop over J,p,Tz channels
    {
-      TwoBodyChannel tbc = Hbare->GetTwoBodyChannel(i);
-      int J = tbc.J;
-      int npq = tbc.GetNumberKets();
+      TwoBodyChannel *tbc = Hbare->GetTwoBodyChannel(i);
+      int J = tbc->J;
+      int npq = tbc->GetNumberKets();
       for (int a=0;a<npq;++a)
       {
-         Ket * bra = tbc.GetKet(a);
-         int ibra = tbc.GetKetIndex(a);
+         Ket * bra = tbc->GetKet(a);
+         int ibra = tbc->GetKetIndex(a);
          for (int b=0;b<npq;++b)
          {
-            Ket * ket  = tbc.GetKet(b);
-            int iket = tbc.GetKetIndex(b);
-            Vmon(ibra,iket) += (2*J+1)*tbc.GetTBME(bra,ket);
-            Vmon(ibra+nKets,iket) += (2*J+1)*bra->Phase(J)*tbc.GetTBME(bra,ket);
-            Vmon(ibra,iket+nKets) += (2*J+1)*ket->Phase(J)*tbc.GetTBME(bra,ket);
-            Vmon(ibra+nKets,iket+nKets) += (2*J+1)*bra->Phase(J)*ket->Phase(J)*tbc.GetTBME(bra,ket);
+            Ket * ket  = tbc->GetKet(b);
+            int iket = tbc->GetKetIndex(b);
+            double tbme = (2*J+1)*tbc->GetTBME(bra,ket);
+            Vmon(ibra,iket) += tbme;
+            Vmon(ibra+nKets,iket) += bra->Phase(J)*tbme;
+            Vmon(ibra,iket+nKets) += ket->Phase(J)*tbme;
+            Vmon(ibra+nKets,iket+nKets) += bra->Phase(J)*ket->Phase(J)*tbme;
          }
       }
    }
@@ -287,12 +294,12 @@ void HartreeFock::UpdateDensityMatrix()
    int norbits = ms->GetNumberOrbits();
 
    // Pcore is a projector onto core orbits.
-   arma::mat Pcore = arma::mat(norbits,norbits,arma::fill::eye);
+   arma::mat Pcore = arma::mat(norbits,norbits,arma::fill::zeros);
    for (int beta=0;beta<norbits;beta++)
    {
-      if (ms->GetOrbit(beta)->hvq > 0) // hvq==0 means hole state
+      if (ms->GetOrbit(beta)->hvq == 0) // hvq==0 means hole state
       {
-         Pcore(beta,beta) = 0;
+         Pcore(beta,beta) = 1;
       }
    }
    rho = C * Pcore * C.t();
@@ -313,7 +320,6 @@ void HartreeFock::UpdateH()
    int norbits = ms->GetNumberOrbits();
    int nKets = ms->GetNumberKets();
    int bra, ket;
-//   Vab  = arma::mat(norbits,norbits,arma::fill::zeros);
    Vab.zeros();
    for (int a=0;a<norbits;a++)
    {
@@ -350,7 +356,7 @@ bool HartreeFock::CheckConvergence()
 {
    arma::vec de = energies - prev_energies;
    ediff = sqrt(arma::dot(de,de)) / energies.size();
-   cout << "ediff = " << ediff << endl;
+//   cout << "ediff = " << ediff << endl;
    return (ediff < tolerance);
 }
 
@@ -425,20 +431,20 @@ void HartreeFock::ReorderCoefficients()
 }
 
 
-//void HartreeFock::TransformToHFBasis(Operator *OpIn, Operator *OpHF)
 Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
 {
    // Maybe put in a check that they should have the same modelspace?
 
+   Operator OpHF = Operator(OpIn.GetModelSpace());
    cout << "Fock matrix:" << endl;
-//   (C.t() * H * C).print();
-
-   ModelSpace * ms = OpIn.GetModelSpace();
-   int norbits = ms->GetNumberOrbits();
+   (C.t() * H * C).print();
 
    //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>.
-   Operator OpHF = OpIn;
    OpHF.OneBody = C.t() * OpIn.OneBody * C;
+   cout << " HF one-body: " << endl;
+   OpHF.OneBody.print();
+   cout << " But t is " << endl;
+   (C.t() * t * C).print();
 
    //Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
    // for each channel J,p,Tz
@@ -446,26 +452,36 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
    int nchan = OpIn.GetNumberTwoBodyChannels();
    for (int i=0;i<nchan;++i)
    {
-      TwoBodyChannel chin = OpIn.GetTwoBodyChannel(i);
-      int npq = chin.GetNumberKets();
+      //TwoBodyChannel chin = OpIn.GetTwoBodyChannel(i);
+      TwoBodyChannel* chin = OpIn.GetTwoBodyChannel(i);
+      //int npq = chin.GetNumberKets();
+      int npq = chin->GetNumberKets();
       if (npq<1) continue;
-      TwoBodyChannel chhf = OpHF.GetTwoBodyChannel(i);
+      //TwoBodyChannel chhf = OpHF.GetTwoBodyChannel(i);
+      TwoBodyChannel *chhf = OpHF.GetTwoBodyChannel(i);
       arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
       arma::mat Dexch = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ba> = <ji|ab>
       for (int i=0; i<npq; i++)       // loop over all possible original basis configurations <pq| in this J,p,Tz channel
       {                               // i and j are the indices of the small matrix for this channel
-         Ket * bra = chin.GetKet(i); // bra is in the original basis
+         //Ket * bra = chin.GetKet(i); // bra is in the original basis
+         Ket * bra = chin->GetKet(i); // bra is in the original basis
          for (int j=0; j<npq; j++)       // loop over all possible HF configurations |pq> in this J,p,Tz channel
          {
-            Ket * ket = chin.GetKet(j); // ket is in the HF basis
+            Ket * ket = chin->GetKet(j); // ket is in the HF basis
+            //Ket * ket = chin.GetKet(j); // ket is in the HF basis
             D(i,j) = C(bra->p,ket->p) * C(bra->q,ket->q) * 1./(1.0+bra->delta_pq());
-            Dexch(i,j) = C(bra->p,ket->q) * C(bra->q,ket->p) * ket->Phase(chin.J) * 1./(1.0+bra->delta_pq());
+            //Dexch(i,j) = C(bra->p,ket->q) * C(bra->q,ket->p) * ket->Phase(chin.J) * 1./(1.0+bra->delta_pq());
+            Dexch(i,j) = C(bra->p,ket->q) * C(bra->q,ket->p) * ket->Phase(chin->J) * 1./(1.0+bra->delta_pq());
          }
       }
-     chhf.TBME  = D.t()     * chin.TBME * D;
-     chhf.TBME += Dexch.t() * chin.TBME * D;
-     chhf.TBME += D.t()     * chin.TBME * Dexch;
-     chhf.TBME += Dexch.t() * chin.TBME * Dexch;
+     //chhf.TBME  = D.t()     * chin.TBME * D;
+     //chhf.TBME += Dexch.t() * chin.TBME * D;
+     //chhf.TBME += D.t()     * chin.TBME * Dexch;
+     //chhf.TBME += Dexch.t() * chin.TBME * Dexch;
+     chhf->TBME  = D.t()     * chin->TBME * D;
+     chhf->TBME += Dexch.t() * chin->TBME * D;
+     chhf->TBME += D.t()     * chin->TBME * Dexch;
+     chhf->TBME += Dexch.t() * chin->TBME * Dexch;
    }
    return OpHF;
 }

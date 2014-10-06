@@ -41,15 +41,6 @@ void Orbit::Set(int nn, int ll, int jj2, int ttz2, int hhvq, float e)
 
 //************************************************************************
 
-
-
-Ket::Ket()
-{
-}
-
-
-
-
 Ket::Ket(ModelSpace * modelspace, int pp, int qq)
 {
    ms = modelspace;
@@ -133,20 +124,16 @@ void ModelSpace::SetupKets()
       int j2 = GetOrbit(i)->j2;
       if ( j2 > maxj) maxj = j2;
    }
-   cout << "Done finding maxj = " << maxj << endl;
 
    for (int q=0;q<norbits;q++)
    {
-     int jb = GetOrbit(q)->j2;
-     int tzb = GetOrbit(q)->tz2;
-     int parb = (GetOrbit(q)->l)%2;
+//     int tzb = GetOrbit(q)->tz2;
+//     int parb = (GetOrbit(q)->l)%2;
      for (int p=0;p<=q;p++)
      {
         index = q*(q+1)/2 + p;
         if (index >= Kets.size()) Kets.resize(index+1,NULL);
         Kets[index] = new Ket(this,p,q);
-
-       }
      }
-
+   }
 }

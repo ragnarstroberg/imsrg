@@ -23,14 +23,15 @@ class TwoBodyChannel
    // Constructors
    TwoBodyChannel();
    TwoBodyChannel(int j, int p, int t, Operator *op);
-   TwoBodyChannel(const TwoBodyChannel&);
+   TwoBodyChannel(int N, Operator *op);
+   TwoBodyChannel(const TwoBodyChannel& rhs) {Copy(rhs);};
 
    //Overloaded operators
-   TwoBodyChannel& operator=(const TwoBodyChannel&);
+   TwoBodyChannel& operator=(const TwoBodyChannel& rhs) {Copy(rhs); return *this;};
    TwoBodyChannel& operator+=(const TwoBodyChannel&);
-   TwoBodyChannel& operator+(const TwoBodyChannel&);
+   TwoBodyChannel operator+(const TwoBodyChannel& rhs){return TwoBodyChannel(*this) += rhs;};
    TwoBodyChannel& operator-=(const TwoBodyChannel&);
-   TwoBodyChannel& operator-(const TwoBodyChannel&);
+   TwoBodyChannel operator-(const TwoBodyChannel& rhs){return TwoBodyChannel(*this) -= rhs;};
 
    //Methods
    float GetTBME(int bra, int ket) const ; // Use the modelspace index of the bra and ket
@@ -38,6 +39,7 @@ class TwoBodyChannel
    int GetNumberKets() const {return NumberKets;};
    void SetTBME(int bra, int ket, float tbme);
    void SetTBME(Ket *bra, Ket *ket, float tbme);
+   void SetTBME(const arma::mat& tbme){ TBME = tbme;};
 
    int GetLocalIndex(int ketindex) const { return KetMap[ketindex];}; // modelspace ket index => local ket index
    int GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];};
@@ -55,6 +57,7 @@ class TwoBodyChannel
    //Methods
    bool CheckChannel_ket(int p, int q) const;  // check if |pq> participates in this channel
    bool CheckChannel_ket(Ket *ket) const {return CheckChannel_ket(ket->p,ket->q);};  // check if |pq> participates in this channel
+   void Copy(const TwoBodyChannel &);
    
 };
 
@@ -66,32 +69,29 @@ class Operator
   //Fields
   float ZeroBody;
   arma::mat OneBody;
-  TwoBodyChannel TwoBody[JMAX][2][3]; // Might be advantageous to flatten this down to a 1d array to simplify looping
+  //TwoBodyChannel TwoBody[JMAX][2][3]; // Might be advantageous to flatten this down to a 1d array to simplify looping
+  TwoBodyChannel TwoBody[JMAX*2*3]; // Might be advantageous to flatten this down to a 1d array to simplify looping
 
   //Constructors
   Operator();
   Operator(ModelSpace*);
+  Operator( const Operator& rhs){Copy(rhs);};
 
   //Overloaded operators
-  Operator(const Operator&);
-  Operator operator=(const Operator&);
+  Operator operator=( const Operator& rhs) {Copy(rhs); return *this;};
 
   //Methods
   float GetOneBody(int i,int j) {return OneBody[i,j];};
-  void SetOneBody(int i, int j, float val){ OneBody[i,j] = val;};
+  void SetOneBody(int i, int j, float val) { OneBody[i,j] = val;};
   Operator Commutator(const Operator& opright);
   Operator BCH_Product(const Operator&, const Operator&); // not yet implemented
   Operator BCH_Transform(const Operator&, const Operator&); // not yet implemented
-  //TwoBodyChannel& GetTwoBodyChannel(int j, int p, int t) {return (TwoBody[j][p][(t+1)]);};
-  //TwoBodyChannel& GetTwoBodyChannel(int N) {return (TwoBody[N%JMAX][(N/JMAX)%2][N/(2*JMAX)]);};
-//  const TwoBodyChannel& GetTwoBodyChannel(int N) const {return  (TwoBody[N%JMAX][(N/JMAX)%2][N/(2*JMAX)]);};
-//  const TwoBodyChannel& GetTwoBodyChannel(int j, int p, int t) const {return (TwoBody[j][p][(t+1)]);};
-  TwoBodyChannel GetTwoBodyChannel(int j, int p, int t)const {return (TwoBody[j][p][(t+1)]);};
-  TwoBodyChannel GetTwoBodyChannel(int N)const {return (TwoBody[N%JMAX][(N/JMAX)%2][N/(2*JMAX)]);};
-//  TwoBodyChannel* GetTwoBodyChannel(int j, int p, int t)const {return &(TwoBody[j][p][(t+1)]);};
-//  TwoBodyChannel* GetTwoBodyChannel(int N)const {return &(TwoBody[N%JMAX][(N/JMAX)%2][N/(2*JMAX)]);};
-  void SetTwoBodyChannel(int N, const TwoBodyChannel& tbc){ TwoBody[N%JMAX][(N/JMAX)%2][N/(2*JMAX)] = tbc;};
-  void SetTwoBodyChannel(int j, int p, int t, const TwoBodyChannel& tbc) {TwoBody[j][p][t+1] = tbc;};
+  TwoBodyChannel* GetTwoBodyChannel(int j, int p, int t) {return &(TwoBody[(t+1)*2*JMAX + p*JMAX + j]);};
+  TwoBodyChannel* GetTwoBodyChannel(int N) {return &(TwoBody[N]);};
+  arma::mat GetTBME(int N) const {return TwoBody[N].TBME;};
+  arma::mat GetTBME(int j, int p, int t) const {return TwoBody[(t+1)*2*JMAX + p*JMAX + j].TBME;};
+  void SetTwoBodyChannel(int N, const TwoBodyChannel& tbc){ TwoBody[N] = tbc;};
+  void SetTwoBodyChannel(int j, int p, int t, const TwoBodyChannel& tbc) {TwoBody[(t+1)*2*JMAX + p*JMAX + j] = tbc;};
   int GetNumberTwoBodyChannels()const {return nChannels;};
   void PrintOut() ;
   void UpdateCrossCoupled(); // Not implemented, because I don't fully understand it.
@@ -105,8 +105,6 @@ class Operator
   void EraseOneBody(){OneBody.zeros();}; // set all one-body terms to zero
   void EraseTwoBody(); // set all two-body terms to zero
   Operator DoNormalOrdering(); // Do normal ordering -- not implemented yet
-//  void WriteOneBody(const char* filename)const;
-//  void WriteTwoBody(const char* filename)const;
 
  private:
   //Fields
@@ -116,6 +114,7 @@ class Operator
   int TwoBodyJmax;
   int nChannels;
   //Methods
+  void Copy(const Operator& rhs);
   float comm110(const arma::mat&, const arma::mat&);
   float comm220(const TwoBodyChannel&,const TwoBodyChannel&);
   arma::mat comm111(const arma::mat&, const arma::mat&);
