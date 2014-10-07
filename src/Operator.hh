@@ -37,8 +37,9 @@ class TwoBodyChannel
    TwoBodyChannel operator-(const TwoBodyChannel& rhs){return TwoBodyChannel(*this) -= rhs;};
 
    //Methods
-   float GetTBME(int bra, int ket) const ; // Use the modelspace index of the bra and ket
-   float GetTBME(Ket *bra, Ket *ket) const ; // Use the bra and ket objects directly
+   double GetTBME(int bra, int ket) const ; // Use the modelspace index of the bra and ket
+   double GetTBME(Ket *bra, Ket *ket) const ; // Use the bra and ket objects directly
+   double GetTBME(int a, int b, int c, int d);
    int GetNumberKets() const {return NumberKets;};
    void SetTBME(int bra, int ket, float tbme);
    void SetTBME(Ket *bra, Ket *ket, float tbme);
@@ -87,7 +88,8 @@ class Operator
   //Methods
   float GetOneBody(int i,int j) {return OneBody[i,j];};
   void SetOneBody(int i, int j, float val) { OneBody[i,j] = val;};
-  Operator Commutator(const Operator& opright);
+  //Operator Commutator(const Operator& opright);
+  Operator Commutator(Operator& opright);
   Operator BCH_Product(const Operator&, const Operator&); // not yet implemented
   Operator BCH_Transform(const Operator&, const Operator&); // not yet implemented
   TwoBodyChannel* GetTwoBodyChannel(int j, int p, int t) {return &(TwoBody[(t+1)*2*JMAX + p*JMAX + j]);};
@@ -119,6 +121,7 @@ class Operator
   int nChannels;
   //Methods
   void Copy(const Operator& rhs);
+/*
   double comm110(const arma::mat&, const arma::mat&);
   double comm220(const TwoBodyChannel&,const TwoBodyChannel&);
   arma::mat comm111(const arma::mat&, const arma::mat&);
@@ -127,6 +130,16 @@ class Operator
   TwoBodyChannel comm112(const arma::mat&, const arma::mat&);
   TwoBodyChannel comm212(const TwoBodyChannel&, const arma::mat&);
   TwoBodyChannel comm222(const TwoBodyChannel&,const TwoBodyChannel&);
+*/  
+  double comm110(Operator& opright);
+  double comm220(Operator& opright);
+  arma::mat comm111(Operator& opright);
+  arma::mat comm211(Operator& opright);
+  arma::mat comm221(Operator& opright);
+  TwoBodyChannel comm112(Operator& opright, int ch);
+  TwoBodyChannel comm212(Operator& opright, int ch);
+  TwoBodyChannel comm222(Operator& opright, int ch);
+
   arma::mat P_hole_onebody; // Projector onto one-body hole states, ie the number operator n
   arma::mat P_particle_onebody; // Projector onto one-body particle states, ie nbar
   

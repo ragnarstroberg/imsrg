@@ -69,7 +69,7 @@ int main()
    HFNO.OneBody.print();
    Operator Hcomm = HFNO.Commutator(H_bare);
    cout << "Commutator zerobody: " << Hcomm.ZeroBody << endl;
-   cout << "Commutator one body:";
+   cout << "Commutator one body:" << endl;;
    Hcomm.OneBody.print();
 
   return 0;
