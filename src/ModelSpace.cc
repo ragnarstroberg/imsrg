@@ -1,5 +1,6 @@
 #include "ModelSpace.hh"
 #include <iostream>
+#include <vector>
 #include <cmath>
 
 using namespace std;
@@ -74,7 +75,7 @@ int Ket::Phase(int J)
 
 ModelSpace::ModelSpace()
 {
-   nCore = 0;
+//   nCore = 0;
    norbits = 0;
    maxj = 0;
    hbar_omega=20;
@@ -84,7 +85,7 @@ ModelSpace::ModelSpace()
 
 ModelSpace::ModelSpace(const ModelSpace& ms)
 {
-   nCore = 0;
+//   nCore = 0;
    norbits = 0;
    maxj = 0;
    hbar_omega = ms.hbar_omega;
@@ -95,6 +96,10 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
       AddOrbit( Orbit(*ms.GetOrbit(i)) );
    }
    SetupKets();
+//   hole = hole;
+//   particle=particle;
+//   valence = valence;
+//   qspace = qspace;
 }
 
 
@@ -109,7 +114,11 @@ void ModelSpace::AddOrbit(Orbit orb)
    if (Orbits.size() <= ind) Orbits.resize(ind+1,NULL);
    Orbits[ind] = (new Orbit(orb));
    norbits = Orbits.size();
-   if (orb.hvq == 0) nCore+=orb.j2+1; // 0 means hole (ie core), 1 means valence, 2 means outside the model space
+//   if (orb.hvq == 0) nCore+=orb.j2+1; // 0 means hole (ie core), 1 means valence, 2 means outside the model space
+   if (orb.hvq == 0) hole.push_back(ind);
+   if (orb.hvq == 1) valence.push_back(ind);
+   if (orb.hvq == 2) qspace.push_back(ind);
+   if (orb.hvq >0) particle.push_back(ind);
 }
 
 

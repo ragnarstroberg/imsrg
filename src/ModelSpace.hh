@@ -7,6 +7,8 @@ class Orbit;
 class Ket;
 class ModelSpace;
 
+using namespace std;
+
 class Orbit
 {
  public:
@@ -77,11 +79,15 @@ class ModelSpace
    int GetTargetMass() const {return target_mass;};
    int Index1(int n, int l, int j2, int tz2){return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
    int Index2(int p, int q){return p*norbits + q;};
+   vector<int> hole;
+   vector<int> valence;
+   vector<int> qspace;
+   vector<int> particle;
 
  private:
    // Fields
    int norbits;
-   int nCore;
+//   int nCore;
    int maxj;
    float hbar_omega;
    int target_mass;

@@ -25,26 +25,14 @@ int main()
    //ModelSpace * modelspace = new ModelSpace();
    ReadWrite rw = ReadWrite();
    ModelSpace modelspace = rw.ReadModelSpace(inputsps);
-   cout << "About to set up the kets." << endl;
    modelspace.SetupKets();
-   cout << "Done setting up the kets" << endl;
    ModelSpace ms2 = modelspace;
-   cout << "Read in the modelspace. Norbits = " << modelspace.GetNumberOrbits() << endl;
-   //rw.ReadModelSpace(inputsps,modelspace);
-   cout << "Initializing the bare operator..." << endl;
    Operator H_bare =  Operator(&modelspace);
-//   Operator H_hf   =  Operator(&modelspace);
-   cout << "Calculating the kinetic energy..." << endl;
    rw.CalculateKineticEnergy(&H_bare);
-   cout << "Reading in the TBME's..." << endl;
    rw.ReadBareTBME(inputtbme, H_bare);
-   cout << "Done reading in the interaction" << endl;
 
    HartreeFock  hf = HartreeFock(&H_bare);
-   cout << "Solving HF equations..." << endl;
    hf.Solve();
-   cout << "Transforming to HF basis..." << endl;
-//   hf.PrintOrbits();
 
    Operator H_hf = hf.TransformToHFBasis(H_bare);
    cout << "After transformation, one body piece is"<< endl;
@@ -79,6 +67,10 @@ int main()
    cout << "Normal ordered zero-body part = " << HFNO.ZeroBody << endl;
    cout << "Normal ordered one-body part: " << endl;
    HFNO.OneBody.print();
+   Operator Hcomm = HFNO.Commutator(H_bare);
+   cout << "Commutator zerobody: " << Hcomm.ZeroBody << endl;
+   cout << "Commutator one body:";
+   Hcomm.OneBody.print();
 
   return 0;
 }

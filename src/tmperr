@@ -1,0 +1,72 @@
+Operator.cc: In member function ‘double Operator::comm110(const mat&, const mat&)’:
+Operator.cc:437:84: error: no match for ‘operator=’ (operand types are ‘arma::subview_elem2<double, arma::Mat<unsigned int>, arma::Mat<unsigned int> >’ and ‘int’)
+    jmatrix.submat(arma::uvec(modelspace->particle) , arma::uvec(modelspace->hole)) = 1;
+                                                                                    ^
+Operator.cc:437:84: note: candidates are:
+In file included from /usr/include/armadillo:169:0,
+                 from Operator.hh:6,
+                 from Operator.cc:2:
+/usr/include/armadillo_bits/subview_elem2_bones.hpp:61:50: note: template<class T3, class T4> void arma::subview_elem2<eT, T1, T2>::operator=(const arma::subview_elem2<eT, T1, T2>&) [with T3 = T3; T4 = T4; eT = double; T1 = arma::Mat<unsigned int>; T2 = arma::Mat<unsigned int>]
+   template<typename T3, typename T4> inline void operator=   (const subview_elem2<eT,T3,T4>& x);
+                                                  ^
+/usr/include/armadillo_bits/subview_elem2_bones.hpp:61:50: note:   template argument deduction/substitution failed:
+Operator.cc:437:84: note:   mismatched types ‘const arma::subview_elem2<double, T1, T2>’ and ‘int’
+    jmatrix.submat(arma::uvec(modelspace->particle) , arma::uvec(modelspace->hole)) = 1;
+                                                                                    ^
+In file included from /usr/include/armadillo:502:0,
+                 from Operator.hh:6,
+                 from Operator.cc:2:
+/usr/include/armadillo_bits/subview_elem2_meat.hpp:417:1: note: void arma::subview_elem2<eT, T1, T2>::operator=(const arma::subview_elem2<eT, T1, T2>&) [with eT = double; T1 = arma::Mat<unsigned int>; T2 = arma::Mat<unsigned int>]
+ subview_elem2<eT,T1,T2>::operator= (const subview_elem2<eT,T1,T2>& x)
+ ^
+/usr/include/armadillo_bits/subview_elem2_meat.hpp:417:1: note:   no known conversion for argument 1 from ‘int’ to ‘const arma::subview_elem2<double, arma::Mat<unsigned int>, arma::Mat<unsigned int> >&’
+In file included from /usr/include/armadillo:169:0,
+                 from Operator.hh:6,
+                 from Operator.cc:2:
+/usr/include/armadillo_bits/subview_elem2_bones.hpp:69:39: note: template<class expr> void arma::subview_elem2<eT, T1, T2>::operator=(const arma::Base<eT, T1>&) [with expr = expr; eT = double; T1 = arma::Mat<unsigned int>; T2 = arma::Mat<unsigned int>]
+   template<typename expr> inline void operator=  (const Base<eT,expr>& x);
+                                       ^
+/usr/include/armadillo_bits/subview_elem2_bones.hpp:69:39: note:   template argument deduction/substitution failed:
+Operator.cc:437:84: note:   mismatched types ‘const arma::Base<double, T1>’ and ‘int’
+    jmatrix.submat(arma::uvec(modelspace->particle) , arma::uvec(modelspace->hole)) = 1;
+                                                                                    ^
+Operator.cc:438:84: error: no match for ‘operator=’ (operand types are ‘arma::subview_elem2<double, arma::Mat<unsigned int>, arma::Mat<unsigned int> >’ and ‘int’)
+    jmatrix.submat(arma::uvec(modelspace->hole), arma::uvec(modelspace->particle) ) =-1;
+                                                                                    ^
+Operator.cc:438:84: note: candidates are:
+In file included from /usr/include/armadillo:169:0,
+                 from Operator.hh:6,
+                 from Operator.cc:2:
+/usr/include/armadillo_bits/subview_elem2_bones.hpp:61:50: note: template<class T3, class T4> void arma::subview_elem2<eT, T1, T2>::operator=(const arma::subview_elem2<eT, T1, T2>&) [with T3 = T3; T4 = T4; eT = double; T1 = arma::Mat<unsigned int>; T2 = arma::Mat<unsigned int>]
+   template<typename T3, typename T4> inline void operator=   (const subview_elem2<eT,T3,T4>& x);
+                                                  ^
+/usr/include/armadillo_bits/subview_elem2_bones.hpp:61:50: note:   template argument deduction/substitution failed:
+Operator.cc:438:84: note:   mismatched types ‘const arma::subview_elem2<double, T1, T2>’ and ‘int’
+    jmatrix.submat(arma::uvec(modelspace->hole), arma::uvec(modelspace->particle) ) =-1;
+                                                                                    ^
+In file included from /usr/include/armadillo:502:0,
+                 from Operator.hh:6,
+                 from Operator.cc:2:
+/usr/include/armadillo_bits/subview_elem2_meat.hpp:417:1: note: void arma::subview_elem2<eT, T1, T2>::operator=(const arma::subview_elem2<eT, T1, T2>&) [with eT = double; T1 = arma::Mat<unsigned int>; T2 = arma::Mat<unsigned int>]
+ subview_elem2<eT,T1,T2>::operator= (const subview_elem2<eT,T1,T2>& x)
+ ^
+/usr/include/armadillo_bits/subview_elem2_meat.hpp:417:1: note:   no known conversion for argument 1 from ‘int’ to ‘const arma::subview_elem2<double, arma::Mat<unsigned int>, arma::Mat<unsigned int> >&’
+In file included from /usr/include/armadillo:169:0,
+                 from Operator.hh:6,
+                 from Operator.cc:2:
+/usr/include/armadillo_bits/subview_elem2_bones.hpp:69:39: note: template<class expr> void arma::subview_elem2<eT, T1, T2>::operator=(const arma::Base<eT, T1>&) [with expr = expr; eT = double; T1 = arma::Mat<unsigned int>; T2 = arma::Mat<unsigned int>]
+   template<typename expr> inline void operator=  (const Base<eT,expr>& x);
+                                       ^
+/usr/include/armadillo_bits/subview_elem2_bones.hpp:69:39: note:   template argument deduction/substitution failed:
+Operator.cc:438:84: note:   mismatched types ‘const arma::Base<double, T1>’ and ‘int’
+    jmatrix.submat(arma::uvec(modelspace->hole), arma::uvec(modelspace->particle) ) =-1;
+                                                                                    ^
+Operator.cc: At global scope:
+Operator.cc:453:7: error: prototype for ‘float Operator::comm220(const TwoBodyChannel&, const TwoBodyChannel&)’ does not match any in class ‘Operator’
+ float Operator::comm220(const TwoBodyChannel& tbleft, const TwoBodyChannel& tbright)
+       ^
+In file included from Operator.cc:2:0:
+Operator.hh:119:10: error: candidate is: double Operator::comm220(const TwoBodyChannel&, const TwoBodyChannel&)
+   double comm220(const TwoBodyChannel&,const TwoBodyChannel&);
+          ^
+make: *** [Operator.o] Error 1

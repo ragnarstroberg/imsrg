@@ -19,12 +19,15 @@ class TwoBodyChannel
    int parity;
    int Tz;
    arma::mat TBME;  // matrix of the two body matrix elements, where the indices label 2-body kets.
+   arma::mat Proj_pp; // Projector onto pp kets
+   arma::mat Proj_hh; // Projector onto hh kets
 
    // Constructors
    TwoBodyChannel();
    TwoBodyChannel(int j, int p, int t, Operator *op);
    TwoBodyChannel(int N, Operator *op);
    TwoBodyChannel(const TwoBodyChannel& rhs) {Copy(rhs);};
+   void Initialize(int N, Operator *op);
 
    //Overloaded operators
    TwoBodyChannel& operator=(const TwoBodyChannel& rhs) {Copy(rhs); return *this;};
@@ -44,7 +47,8 @@ class TwoBodyChannel
    int GetLocalIndex(int ketindex) const { return KetMap[ketindex];}; // modelspace ket index => local ket index
    int GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];};
    int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
-   Ket * GetKet(int i) const { return modelspace->GetKet(KetList[i]);};
+   Ket * GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; // get pointer to ket using local index
+
 
  private:
    //Fields
@@ -115,8 +119,8 @@ class Operator
   int nChannels;
   //Methods
   void Copy(const Operator& rhs);
-  float comm110(const arma::mat&, const arma::mat&);
-  float comm220(const TwoBodyChannel&,const TwoBodyChannel&);
+  double comm110(const arma::mat&, const arma::mat&);
+  double comm220(const TwoBodyChannel&,const TwoBodyChannel&);
   arma::mat comm111(const arma::mat&, const arma::mat&);
   arma::mat comm211(const TwoBodyChannel&,const arma::mat&);
   arma::mat comm221(const TwoBodyChannel&, const TwoBodyChannel&);
