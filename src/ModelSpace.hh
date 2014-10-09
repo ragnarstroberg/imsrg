@@ -2,12 +2,17 @@
 #define ModelSpace_h 1
 
 #include <vector>
+#include <armadillo>
+
+#define JMAX 30
 
 class Orbit;
 class Ket;
 class ModelSpace;
 
 using namespace std;
+
+
 
 class Orbit
 {
@@ -27,6 +32,8 @@ class Orbit
    // Methods
    void Set(int n, int l, int j2, int tz2, int hvq, float spe);
 };
+
+
 
 
 class Ket  //  | pq >
@@ -53,10 +60,69 @@ class Ket  //  | pq >
 
 };
 
+
+
+
+class TwoBodyChannel
+{
+ public:
+   //Fields
+   int J;
+   int parity;
+   int Tz;
+   arma::mat Proj_pp; // Projector onto pp kets
+   arma::mat Proj_hh; // Projector onto hh kets
+
+   // Constructors
+   TwoBodyChannel();
+   TwoBodyChannel(int j, int p, int t, ModelSpace* ms);
+   TwoBodyChannel(int N, ModelSpace* ms);
+   TwoBodyChannel(const TwoBodyChannel& rhs) {Copy(rhs);};
+   void Initialize(int N, ModelSpace* ms);
+
+   //Overloaded operators
+   TwoBodyChannel& operator=(const TwoBodyChannel& rhs) {Copy(rhs); return *this;};
+   TwoBodyChannel& operator+=(const TwoBodyChannel&);
+   TwoBodyChannel operator+(const TwoBodyChannel& rhs){return TwoBodyChannel(*this) += rhs;};
+   TwoBodyChannel& operator-=(const TwoBodyChannel&);
+   TwoBodyChannel operator-(const TwoBodyChannel& rhs){return TwoBodyChannel(*this) -= rhs;};
+
+   //Methods
+   int GetNumberKets() const {return NumberKets;};
+   int GetLocalIndex(int ketindex) const { return KetMap[ketindex];}; // modelspace ket index => local ket index
+   //int GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];};
+   int GetLocalIndex(int p, int q) const ;
+   int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
+   //Ket * GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; // get pointer to ket using local index
+   Ket * GetKet(int i) const ; // get pointer to ket using local index
+
+
+ private:
+   //Fields
+   ModelSpace * modelspace;
+   int NumberKets;  // Number of pq configs that participate in this channel
+   vector<int> KetMap;  // eg [ -1, -1, 0, -1, 1, -1, -1, 2 ...] Used for asking what is the local (channel) index of this ket
+   vector<int> KetList; // eg [2, 4, 7, ...] Used for looping over all the kets in the channel
+   //Methods
+   bool CheckChannel_ket(int p, int q) const;  // check if |pq> participates in this channel
+   bool CheckChannel_ket(Ket *ket) const {return CheckChannel_ket(ket->p,ket->q);};  // check if |pq> participates in this channel
+   void Copy(const TwoBodyChannel &);
+   
+};
+
+
+
+
+
 class ModelSpace
 {
 
  public:
+   // Fields
+   vector<int> hole;
+   vector<int> valence;
+   vector<int> qspace;
+   vector<int> particles;
 
    // Constructors
    ModelSpace();
@@ -65,34 +131,41 @@ class ModelSpace
    ModelSpace operator=(const ModelSpace&); 
    // Methods
    void SetupKets();
+   void AddOrbit(Orbit orb);
+   // Setter/Getters
    Orbit* GetOrbit(int i) const {return Orbits[i];}; 
    Ket* GetKet(int i) const {return Kets[i];};
-   Ket* GetKet(int p, int q) const {return Kets[GetKetIndex(p,q)];};
-   int GetKetIndex(int p, int q) const {return q*(q+1)/2+p;}; // convention is p<=q
-   int GetKetIndex(Ket * ket) const {return ket->q*(ket->q+1)/2+ket->p;}; // convention is p<=q
+   Ket* GetKet(int p, int q) const {return Kets[Index2(p,q)];};
+   int GetKetIndex(int p, int q) const {return Index2(p,q);}; // convention is p<=q
+   int GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
+   //int GetKetIndex(int p, int q) const {return q*(q+1)/2+p;}; // convention is p<=q
+   //int GetKetIndex(Ket * ket) const {return ket->q*(ket->q+1)/2+ket->p;}; // convention is p<=q
    int GetNumberOrbits() const {return norbits;};
    int GetNumberKets() const {return Kets.size();};
-   void AddOrbit(Orbit orb);
    void SetHbarOmega(float hw) {hbar_omega = hw;};
    void SetTargetMass(int A) {target_mass = A;};
    float GetHbarOmega() const {return hbar_omega;};
    int GetTargetMass() const {return target_mass;};
-   int Index1(int n, int l, int j2, int tz2){return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
-   int Index2(int p, int q){return p*norbits + q;};
-   vector<int> hole;
-   vector<int> valence;
-   vector<int> qspace;
-   vector<int> particle;
+   int GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
+   TwoBodyChannel& GetTwoBodyChannel(int ch) {return TwoBodyChannels[ch];};
+   int GetTwoBodyJmax() const {return TwoBodyJmax;};
+
+   int Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
+   //int Index2(int p, int q) const {return q*norbits + p;};
+   int Index2(int p, int q) const {return q*(q+1)/2 + p;};
+
 
  private:
    // Fields
    int norbits;
-//   int nCore;
    int maxj;
+   int TwoBodyJmax;
    float hbar_omega;
    int target_mass;
    std::vector<Orbit*> Orbits;
    std::vector<Ket*> Kets;
+   std::vector<TwoBodyChannel> TwoBodyChannels;
+   int nTwoBodyChannels;
 
 };
 

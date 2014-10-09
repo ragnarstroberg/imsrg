@@ -10,7 +10,7 @@
 using namespace std;
 
 class Operator;
-
+/*
 class TwoBodyChannel
 {
  public:
@@ -65,7 +65,7 @@ class TwoBodyChannel
    void Copy(const TwoBodyChannel &);
    
 };
-
+*/
 
 
 class Operator
@@ -74,8 +74,7 @@ class Operator
   //Fields
   float ZeroBody;
   arma::mat OneBody;
-  //TwoBodyChannel TwoBody[JMAX][2][3]; // Might be advantageous to flatten this down to a 1d array to simplify looping
-  TwoBodyChannel TwoBody[JMAX*2*3]; // Might be advantageous to flatten this down to a 1d array to simplify looping
+  arma::mat TwoBody[JMAX*2*3];
 
   //Constructors
   Operator();
@@ -86,31 +85,45 @@ class Operator
   Operator operator=( const Operator& rhs) {Copy(rhs); return *this;};
 
   //Methods
+  // One body setter/getters
   float GetOneBody(int i,int j) {return OneBody[i,j];};
   void SetOneBody(int i, int j, float val) { OneBody[i,j] = val;};
-  //Operator Commutator(const Operator& opright);
+
+  //TwoBody setter/getters
+  double GetTBME(int ch, int a, int b, int c, int d) const;
+  void   SetTBME(int ch, int a, int b, int c, int d, double tbme);
+  double GetTBME(int ch, Ket *bra, Ket *ket) const;
+  void   SetTBME(int ch, Ket *bra, Ket* ket, double tbme);
+  double GetTBME(int j, int p, int t, Ket* bra, Ket* ket) const;
+  void   SetTBME(int j, int p, int t, Ket* bra, Ket* ket, double tbme);
+  double GetTBME(int j, int p, int t, int a, int b, int c, int d) const;
+  void   SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
+
+  // Access the whole Two body matrix for a given channel
+//  arma::mat& GetTwoBody(int ch) const {return TwoBody[ch];};  // not so useful if TwoBody is public...
+//  void       SetTwoBody(int ch, const arma::mat& tbme){ TwoBody[ch] = tbme;};
+//  arma::mat& GetTwoBody(int j, int p, int t) const {return TwoBody[(t+1)*2*JMAX + p*JMAX + j];};
+//  void       SetTwoBody(int j, int p, int t, const arma::mat& tb) {TwoBody[(t+1)*2*JMAX + p*JMAX + j] = tb;};
+
+  // The actually interesting methods
   Operator Commutator(Operator& opright);
   Operator BCH_Product(const Operator&, const Operator&); // not yet implemented
   Operator BCH_Transform(const Operator&, const Operator&); // not yet implemented
-  TwoBodyChannel* GetTwoBodyChannel(int j, int p, int t) {return &(TwoBody[(t+1)*2*JMAX + p*JMAX + j]);};
-  TwoBodyChannel* GetTwoBodyChannel(int N) {return &(TwoBody[N]);};
-  arma::mat GetTBME(int N) const {return TwoBody[N].TBME;};
-  arma::mat GetTBME(int j, int p, int t) const {return TwoBody[(t+1)*2*JMAX + p*JMAX + j].TBME;};
-  void SetTwoBodyChannel(int N, const TwoBodyChannel& tbc){ TwoBody[N] = tbc;};
-  void SetTwoBodyChannel(int j, int p, int t, const TwoBodyChannel& tbc) {TwoBody[(t+1)*2*JMAX + p*JMAX + j] = tbc;};
-  int GetNumberTwoBodyChannels()const {return nChannels;};
-  void PrintOut() ;
-  void UpdateCrossCoupled(); // Not implemented, because I don't fully understand it.
+  Operator DoNormalOrdering(); // Do normal ordering -- not implemented yet
+
   ModelSpace * GetModelSpace() const {return modelspace;};
+
+  void EraseZeroBody(){ZeroBody = 0;}; // set zero-body term to zero
+  void EraseOneBody(){OneBody.zeros();}; // set all one-body terms to zero
+  void EraseTwoBody(); // set all two-body terms to zero
+
   void SetHermitian() {hermitian=true;antihermitian=false;};
   void SetAntiHermitian() {antihermitian=true;hermitian=false;};
   void SetNonHermitian() {antihermitian=false;hermitian=false;};
   bool IsHermitian()const {return hermitian;};
   bool IsAntiHermitian()const {return antihermitian;};
-  void EraseZeroBody(){ZeroBody = 0;}; // set zero-body term to zero
-  void EraseOneBody(){OneBody.zeros();}; // set all one-body terms to zero
-  void EraseTwoBody(); // set all two-body terms to zero
-  Operator DoNormalOrdering(); // Do normal ordering -- not implemented yet
+
+  void PrintOut() ;
 
  private:
   //Fields
@@ -131,14 +144,15 @@ class Operator
   TwoBodyChannel comm212(const TwoBodyChannel&, const arma::mat&);
   TwoBodyChannel comm222(const TwoBodyChannel&,const TwoBodyChannel&);
 */  
+  void UpdateCrossCoupled(); // Not implemented, because I don't fully understand it.
   double comm110(Operator& opright);
   double comm220(Operator& opright);
   arma::mat comm111(Operator& opright);
   arma::mat comm211(Operator& opright);
   arma::mat comm221(Operator& opright);
-  TwoBodyChannel comm112(Operator& opright, int ch);
-  TwoBodyChannel comm212(Operator& opright, int ch);
-  TwoBodyChannel comm222(Operator& opright, int ch);
+  arma::mat comm212(Operator& opright, int ch);
+  arma::mat comm222_ph(Operator& opright, int ch);
+  arma::mat comm222_pphh(Operator& opright, int ch);
 
   arma::mat P_hole_onebody; // Projector onto one-body hole states, ie the number operator n
   arma::mat P_particle_onebody; // Projector onto one-body particle states, ie nbar

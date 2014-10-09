@@ -103,17 +103,26 @@ void ReadWrite::ReadBareTBME( char* filename, Operator& Hbare)
                  >> a >> b >> c >> d
                  >> tbme >> fbuf[0] >> fbuf[1] >> fbuf[2] )
   {
-     a--; b--; c--; d--; // Fortran -> C  => 1->0
-     Ket * bra = Hbare.GetModelSpace()->GetKet(min(a,b),max(a,b));
-     Ket * ket = Hbare.GetModelSpace()->GetKet(min(c,d),max(c,d));
-     if (bra==NULL or ket==NULL) continue;
+     a--; b--; c--; d--; // Fortran -> C  ==> 1 -> 0
+//     Ket * bra = Hbare.GetModelSpace()->GetKet(min(a,b),max(a,b));
+//     Ket * ket = Hbare.GetModelSpace()->GetKet(min(c,d),max(c,d));
+//     if (bra==NULL or ket==NULL) continue;
      tbme -= fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  // Some sort of COM correction. Check this
      //float phase = 1.0;
-     float phase = sqrt( (1.0+bra->delta_pq())*(1.0+ket->delta_pq()) );
+     if (a==b) tbme *= sqrt(2);
+     if (c==d) tbme *= sqrt(2);
+     Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d,tbme);
+//     Hbare.SetTBME(J2/2,Par,Tz,c,d,a,b,tbme);
+/*
+     float phase = sqrt( (1.0+bra->delta_pq())*(1.0+ket->delta_pq()) );  // normalization. check this.
      if (a>b) phase *= bra->Phase(J2/2);
      if (c>d) phase *= ket->Phase(J2/2);
-     Hbare.GetTwoBodyChannel(J2/2,Par,Tz)->SetTBME(bra,ket,phase*tbme);
-
+     //Hbare.GetTwoBodyChannel(J2/2,Par,Tz)->SetTBME(bra,ket,phase*tbme);
+//     cout << "J P T   a b c d " << J2/2 << " " << Par << " " << Tz << "    " << a << " " << b << " " << c << " " << d << endl;
+//     cout << "< " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << "> " << endl;
+     Hbare.SetTBME(J2/2,Par,Tz,bra,ket,phase*tbme);
+     Hbare.SetTBME(J2/2,Par,Tz,ket,bra,phase*tbme);
+*/
   }
 
   return;
@@ -129,12 +138,25 @@ void ReadWrite::CalculateKineticEnergy(Operator *Hbare)
    {
       Orbit * orba = Hbare->GetModelSpace()->GetOrbit(a);
       Hbare->OneBody(a,a) = 0.5 * hw * (2*orba->n + orba->l +3./2); 
-      if (orba->n > 0)
+//      if (orba->n == 0) continue;
+      for (int b=0;b<norbits;b++)  // make this better one OneBodyChannel is implemented
       {
-         int b = Hbare->GetModelSpace()->Index1(orba->n-1, orba->l, orba->j2, orba->tz2);
-         Hbare->OneBody(a,b) = 0.5 * hw * sqrt( (orba->n)*(orba->n + orba->l +1./2));
-         Hbare->OneBody(b,a) = Hbare->OneBody(a,b);
+         Orbit * orbb = Hbare->GetModelSpace()->GetOrbit(b);
+         if (orba->l == orbb->l and orba->j2 == orbb->j2 and orba->tz2 == orbb->tz2)
+         {
+            if (orba->n == orbb->n)
+               Hbare->OneBody(a,a) = 0.5 * hw * (2*orba->n + orba->l +3./2); 
+            else if (orba->n == orbb->n+1)
+               Hbare->OneBody(a,b) = 0.5 * hw * sqrt( (orba->n)*(orba->n + orba->l +1./2));
+            else if (orba->n == orbb->n-1)
+               Hbare->OneBody(a,b) = 0.5 * hw * sqrt( (orbb->n)*(orbb->n + orbb->l +1./2));
+         }
       }
+//      {
+//         int b = Hbare->GetModelSpace()->Index1(orba->n-1, orba->l, orba->j2, orba->tz2);
+//         Hbare->OneBody(a,b) = 0.5 * hw * sqrt( (orba->n)*(orba->n + orba->l +1./2));
+//         Hbare->OneBody(b,a) = Hbare->OneBody(a,b);
+//      }
    }
    Hbare->OneBody *= (1-1./A);
 
@@ -167,21 +189,24 @@ void ReadWrite::WriteTwoBody(Operator& op, const char* filename)
    ofstream tbfile;
    tbfile.open(filename, ofstream::out);
    ModelSpace * modelspace = op.GetModelSpace();
-   int nchan = op.GetNumberTwoBodyChannels();
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+   //int nchan = op.GetNumberTwoBodyChannels();
    for (int ch=0;ch<nchan;++ch)
    {
-      TwoBodyChannel * tbc = op.GetTwoBodyChannel(ch);
-      int npq = tbc->GetNumberKets();
+      //TwoBodyChannel * tbc = op.GetTwoBodyChannel(ch);
+      TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
+      int npq = tbc.GetNumberKets();
       if (npq<1) continue;
       for (int i=0;i<npq;++i)
       {
-         Ket *bra = tbc->GetKet(i);
+         Ket *bra = tbc.GetKet(i);
          Orbit *oa = modelspace->GetOrbit(bra->p);
          Orbit *ob = modelspace->GetOrbit(bra->q);
          for (int j=i;j<npq;++j)
          {
-            Ket *ket = tbc->GetKet(j);
-            double tbme = tbc->GetTBME(bra,ket);
+            Ket *ket = tbc.GetKet(j);
+            //double tbme = tbc.GetTBME(bra,ket);
+            double tbme = op.GetTBME(ch,bra,ket);
             if ( abs(tbme)<1e-4 ) continue;
             Orbit *oc = modelspace->GetOrbit(ket->p);
             Orbit *od = modelspace->GetOrbit(ket->q);
@@ -201,7 +226,7 @@ void ReadWrite::WriteTwoBody(Operator& op, const char* filename)
                    << setw(wint) << bra->q
                    << setw(wint) << ket->p
                    << setw(wint) << ket->q
-                   << setw(wint+3) << tbc->J << setw(wfloat) << std::fixed << tbme// << endl;
+                   << setw(wint+3) << tbc.J << setw(wfloat) << std::fixed << tbme// << endl;
                    << "    < " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << " >" << endl;
          }
       }

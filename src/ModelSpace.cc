@@ -70,8 +70,91 @@ int Ket::Phase(int J)
 
 //************************************************************************
 
+TwoBodyChannel::TwoBodyChannel()
+{}
+
+TwoBodyChannel::TwoBodyChannel(int j, int p, int t, ModelSpace *ms)
+{
+  Initialize(JMAX*2*t + JMAX*p + j, ms);
+}
+
+TwoBodyChannel::TwoBodyChannel(int N, ModelSpace *ms)
+{
+   Initialize(N,ms);
+}
+
+void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
+{
+   J = N%JMAX;
+   parity = (N/JMAX)%2;
+   Tz = (N/(2*JMAX)-1);
+   modelspace = ms;
+   NumberKets = 0;
+   int nk = modelspace->GetNumberKets();
+   KetMap.resize(nk,-1);
+   for (int i=0;i<nk;i++)
+   {
+      Ket *ket = modelspace->GetKet(i);
+      if ( CheckChannel_ket(ket) )
+      {
+         KetMap[i] = NumberKets;
+         KetList.push_back(i);
+         NumberKets++;
+      }
+   }
+   Proj_pp = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
+   Proj_hh = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
+   //for (int &i: KetList) // C++11 syntax
+   for (int i=0;i<NumberKets;i++)
+   {
+      Ket *ket = GetKet(i);
+      if ( modelspace->GetOrbit(ket->p)->hvq ==0 and modelspace->GetOrbit(ket->q)->hvq==0)
+      {
+         Proj_hh(i,i) = 1;
+      }
+      if ( modelspace->GetOrbit(ket->p)->hvq >0 and modelspace->GetOrbit(ket->q)->hvq>0)
+      {
+         Proj_pp(i,i) = 1;
+      }
+   }
+
+}
 
 
+void TwoBodyChannel::Copy( const TwoBodyChannel& rhs)
+{
+   J                 = rhs.J;
+   parity            = rhs.parity;
+   Tz                = rhs.Tz;
+   modelspace        = rhs.modelspace;
+   NumberKets        = rhs.NumberKets;
+   Proj_hh           = rhs.Proj_hh;
+   Proj_pp           = rhs.Proj_pp;
+   KetMap            = rhs.KetMap;
+   KetList           = rhs.KetList;
+}
+
+
+int TwoBodyChannel::GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];}; 
+Ket * TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; // get pointer to ket using local index
+
+
+bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
+{
+   if ((p==q) and (J%2 != 0)) return false; // Pauli principle
+   Orbit * op = modelspace->GetOrbit(p);
+   Orbit * oq = modelspace->GetOrbit(q);
+   if ((op->l + oq->l)%2 != parity) return false;
+   if ((op->tz2 + oq->tz2) != 2*Tz) return false;
+   if (op->j2 + oq->j2 < 2*J)       return false;
+   if (abs(op->j2 - oq->j2) > 2*J)  return false;
+
+   return true;
+}
+
+
+
+//************************************************************************
 
 ModelSpace::ModelSpace()
 {
@@ -114,35 +197,38 @@ void ModelSpace::AddOrbit(Orbit orb)
    if (Orbits.size() <= ind) Orbits.resize(ind+1,NULL);
    Orbits[ind] = (new Orbit(orb));
    norbits = Orbits.size();
+   if (orb.j2 > maxj)
+   {
+      maxj = orb.j2;
+      //nTwoBodyChannels = 2*3*(maxj+1);
+      nTwoBodyChannels = 2*3*(JMAX);
+   }
 //   if (orb.hvq == 0) nCore+=orb.j2+1; // 0 means hole (ie core), 1 means valence, 2 means outside the model space
    if (orb.hvq == 0) hole.push_back(ind);
    if (orb.hvq == 1) valence.push_back(ind);
    if (orb.hvq == 2) qspace.push_back(ind);
-   if (orb.hvq >0) particle.push_back(ind);
+   if (orb.hvq >0) particles.push_back(ind);
 }
 
 
 
 void ModelSpace::SetupKets()
 {
-   maxj = 0;
    int index = 0;
-   for (int i=0;i<norbits;i++)
-   {
-      if (Orbits[i] == NULL) continue;
-      int j2 = GetOrbit(i)->j2;
-      if ( j2 > maxj) maxj = j2;
-   }
 
-   for (int q=0;q<norbits;q++)
+   for (int p=0;p<norbits;p++)
    {
-//     int tzb = GetOrbit(q)->tz2;
-//     int parb = (GetOrbit(q)->l)%2;
-     for (int p=0;p<=q;p++)
+     for (int q=p;q<norbits;q++)
      {
-        index = q*(q+1)/2 + p;
+        //index = q*(q+1)/2 + p;
+        //index = q*norbits + p;
+        index = Index2(p,q);
         if (index >= Kets.size()) Kets.resize(index+1,NULL);
         Kets[index] = new Ket(this,p,q);
      }
+   }
+   for (int ch=0;ch<nTwoBodyChannels;++ch)
+   {
+      TwoBodyChannels.push_back(TwoBodyChannel(ch,this));
    }
 }
