@@ -10,7 +10,35 @@
 
 using namespace std;
 
-ModelSpace ReadWrite::ReadModelSpace( char* filename)
+
+void ReadWrite::ReadSettingsFile( char* filename)
+{
+   char line[LINESIZE];
+   string lstr;
+   ifstream fin;
+   fin.open(filename);
+   cout << "Reading settings file " << filename << endl;
+   while (fin.getline(line,LINESIZE))
+   {
+      lstr = string(line);
+      lstr = lstr.substr(0, lstr.find_first_of("#"));
+      int colon = lstr.find_first_of(":");
+      string param = lstr.substr(0, colon);
+      if ( param.size() <1) continue;
+      string value = lstr.substr(colon+1, lstr.length()-colon);
+      value.erase(0,value.find_first_not_of(" \t\r\n"));
+      value.erase(value.find_last_not_of(" \t\r\n")+1);
+      if (value.size() < 1) continue;
+      InputParameters[param] = value;
+      cout << "parameter: [" << param << "] = [" << value << "]" << endl;
+   }
+
+}
+
+
+
+
+ModelSpace ReadWrite::ReadModelSpace( const char* filename)
 {
 
    ModelSpace modelspace;
@@ -76,7 +104,7 @@ ModelSpace ReadWrite::ReadModelSpace( char* filename)
 }
 
 
-void ReadWrite::ReadBareTBME( char* filename, Operator& Hbare)
+void ReadWrite::ReadBareTBME( const char* filename, Operator& Hbare)
 {
 
   ifstream infile;
@@ -104,25 +132,13 @@ void ReadWrite::ReadBareTBME( char* filename, Operator& Hbare)
                  >> tbme >> fbuf[0] >> fbuf[1] >> fbuf[2] )
   {
      a--; b--; c--; d--; // Fortran -> C  ==> 1 -> 0
-//     Ket * bra = Hbare.GetModelSpace()->GetKet(min(a,b),max(a,b));
-//     Ket * ket = Hbare.GetModelSpace()->GetKet(min(c,d),max(c,d));
-//     if (bra==NULL or ket==NULL) continue;
+
      tbme -= fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  // Some sort of COM correction. Check this
-     //float phase = 1.0;
+
      if (a==b) tbme *= sqrt(2);
      if (c==d) tbme *= sqrt(2);
+
      Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d,tbme);
-//     Hbare.SetTBME(J2/2,Par,Tz,c,d,a,b,tbme);
-/*
-     float phase = sqrt( (1.0+bra->delta_pq())*(1.0+ket->delta_pq()) );  // normalization. check this.
-     if (a>b) phase *= bra->Phase(J2/2);
-     if (c>d) phase *= ket->Phase(J2/2);
-     //Hbare.GetTwoBodyChannel(J2/2,Par,Tz)->SetTBME(bra,ket,phase*tbme);
-//     cout << "J P T   a b c d " << J2/2 << " " << Par << " " << Tz << "    " << a << " " << b << " " << c << " " << d << endl;
-//     cout << "< " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << "> " << endl;
-     Hbare.SetTBME(J2/2,Par,Tz,bra,ket,phase*tbme);
-     Hbare.SetTBME(J2/2,Par,Tz,ket,bra,phase*tbme);
-*/
   }
 
   return;

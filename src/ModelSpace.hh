@@ -90,10 +90,8 @@ class TwoBodyChannel
    //Methods
    int GetNumberKets() const {return NumberKets;};
    int GetLocalIndex(int ketindex) const { return KetMap[ketindex];}; // modelspace ket index => local ket index
-   //int GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];};
    int GetLocalIndex(int p, int q) const ;
    int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
-   //Ket * GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; // get pointer to ket using local index
    Ket * GetKet(int i) const ; // get pointer to ket using local index
 
 
@@ -138,8 +136,6 @@ class ModelSpace
    Ket* GetKet(int p, int q) const {return Kets[Index2(p,q)];};
    int GetKetIndex(int p, int q) const {return Index2(p,q);}; // convention is p<=q
    int GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
-   //int GetKetIndex(int p, int q) const {return q*(q+1)/2+p;}; // convention is p<=q
-   //int GetKetIndex(Ket * ket) const {return ket->q*(ket->q+1)/2+ket->p;}; // convention is p<=q
    int GetNumberOrbits() const {return norbits;};
    int GetNumberKets() const {return Kets.size();};
    void SetHbarOmega(float hw) {hbar_omega = hw;};
@@ -147,7 +143,9 @@ class ModelSpace
    float GetHbarOmega() const {return hbar_omega;};
    int GetTargetMass() const {return target_mass;};
    int GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
-   TwoBodyChannel& GetTwoBodyChannel(int ch) {return TwoBodyChannels[ch];};
+   //TwoBodyChannel& GetTwoBodyChannel(int ch) {return TwoBodyChannels[ch];};
+   TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
+   TwoBodyChannel* GetTwoBodyChannel_ptr(int ch) {return (&TwoBodyChannels[ch]);};
    int GetTwoBodyJmax() const {return TwoBodyJmax;};
 
    int Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};

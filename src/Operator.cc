@@ -107,7 +107,7 @@ void Operator::PrintOut()
 
 double Operator::GetTBME(int ch, int a, int b, int c, int d) const
 {
-   TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
+   TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch);
    int bra_ind = tbc.GetLocalIndex(min(a,b),max(a,b));
    int ket_ind = tbc.GetLocalIndex(min(c,d),max(c,d));
    if (bra_ind < 0 or ket_ind < 0 or bra_ind > tbc.GetNumberKets() or ket_ind > tbc.GetNumberKets() )
@@ -122,7 +122,7 @@ double Operator::GetTBME(int ch, int a, int b, int c, int d) const
 
 void Operator::SetTBME(int ch, int a, int b, int c, int d, double tbme)
 {
-   TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
+   TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
    int bra_ind = tbc.GetLocalIndex(min(a,b),max(a,b));
    int ket_ind = tbc.GetLocalIndex(min(c,d),max(c,d));
    double phase = 1;
@@ -190,7 +190,7 @@ Operator Operator::DoNormalOrdering()
    for (int ch=0;ch<nChannels;++ch)
    {
       //TwoBodyChannel *tbc = GetTwoBodyChannel(ch);
-      TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
+      TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch);
       //opNO.SetTwoBody(ch, TwoBody[ch] );
       opNO.TwoBody[ch] = TwoBody[ch];
       int npq = tbc.GetNumberKets();
@@ -324,7 +324,7 @@ double Operator::comm220( Operator& opright)
    double comm = 0;
    for (int ch=0;ch<nChannels;++ch)
    {
-      TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       //comm += 0.5*(2*tbleft->J+1) * arma::accu( tbleft->Proj_hh * tbleft->TBME * tbleft->Proj_pp * tbright->TBME);
       //comm += 0.5*(2*tbc.J+1) * arma::accu( tbc.Proj_hh * TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch]);
       comm += (2*tbc.J+1) * arma::accu( tbc.Proj_hh * TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch]);
@@ -370,7 +370,7 @@ arma::mat Operator::comm211(Operator& opright)
           {
              for (int ch=0;ch<nChannels;++ch)
              {
-                TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
+                TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
                 if (tbc.GetNumberKets() < 1) continue;
                 int ind_ai = tbc.GetLocalIndex(min(a,i),max(a,i));
                 int ind_aj = tbc.GetLocalIndex(min(a,j),max(a,j));
@@ -407,7 +407,7 @@ arma::mat Operator::comm221(Operator& opright)
    arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
    for (int ch=0;ch<nChannels;++ch)
    {
-      TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       int npq = tbc.GetNumberKets();
 
       arma::mat Mpph = (TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_pp * TwoBody[ch]);
@@ -453,7 +453,7 @@ arma::mat Operator::comm221(Operator& opright)
 //
 arma::mat Operator::comm212(Operator& opright, int ch )
 {
-   TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
+   TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
    int npq = tbc.GetNumberKets();
    int norbits = modelspace->GetNumberOrbits();
    arma::mat comm = arma::mat(npq,npq,arma::fill::zeros);
@@ -489,7 +489,7 @@ arma::mat Operator::comm212(Operator& opright, int ch )
 //
 arma::mat Operator::comm222_ph(Operator& opright, int ch )
 {
-   TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
+   TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
    arma::mat comm  = (        TwoBody[ch] * (tbc.Proj_pp - tbc.Proj_hh) * opright.TwoBody[ch])
                    - (opright.TwoBody[ch] * (tbc.Proj_pp - tbc.Proj_hh) *         TwoBody[ch]);
 

@@ -269,7 +269,7 @@ void HartreeFock::BuildMonopoleV()
    for (int ch=0;ch<nchan;++ch) // loop over J,p,Tz channels
    {
       //TwoBodyChannel *tbc = Hbare->GetTwoBodyChannel(i);
-      TwoBodyChannel tbc = Hbare->GetModelSpace()->GetTwoBodyChannel(ch);
+      TwoBodyChannel& tbc = Hbare->GetModelSpace()->GetTwoBodyChannel(ch);
 //      cout << "J,p,t = " << tbc.J << " " << tbc.parity << " " << tbc.Tz << endl;
 //      Hbare->TwoBody[ch].print();
       int J = tbc.J;
@@ -457,9 +457,6 @@ void HartreeFock::ReorderCoefficients()
 
 Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
 {
-   // Maybe put in a check that they should have the same modelspace?
-
-   //Operator OpHF = Operator(OpIn.GetModelSpace());
    Operator OpHF = OpIn;
 
    //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>.
@@ -470,7 +467,7 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
    int nchan = OpIn.GetModelSpace()->GetNumberTwoBodyChannels();
    for (int ch=0;ch<nchan;++ch)
    {
-      TwoBodyChannel tbc = OpIn.GetModelSpace()->GetTwoBodyChannel(ch);
+      TwoBodyChannel& tbc = OpIn.GetModelSpace()->GetTwoBodyChannel(ch);
       int npq = tbc.GetNumberKets();
       if (npq<1) continue;
       arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>

@@ -6,42 +6,44 @@
 
 using namespace std;
 
-int main()
+int main(int argc, char**argv)
 {
 
-
-   char inputsps[100] = "../input/s.sps";
-//   char inputsps[100] = "../input/sd.sps";
-   //char inputsps[100] = "../input/sd4.sps";
-
-   char inputtbme[100] = "../input/vspsd.int";
-//   char inputtbme[100] = "../input/vs.int";
-//   char inputtbme[100] = "../input/vjason2.0.int";
-//   char inputtbme[100] = "../input/vjason1.8.int";
-//   char inputtbme[100] = "../input/tbme1.int";
-//   char inputtbme[100] = "../input/tbme2.int";
-//   char inputtbme[100] = "../input/vsrg1.8_n3lo500_w_coulomb_emax6_hw24.int";
-
-   //ModelSpace * modelspace = new ModelSpace();
    ReadWrite rw = ReadWrite();
+
+   char default_settings_file[200] = "settings.inp";
+
+   if (argc>1)
+      rw.ReadSettingsFile(argv[1]);
+   else
+      rw.ReadSettingsFile(default_settings_file);
+
+   string inputsps = rw.InputParameters["inputsps"];
+   string inputtbme = rw.InputParameters["inputtbme"];
+
    cout << "Reading in the modelspace" << endl;
-   ModelSpace modelspace = rw.ReadModelSpace(inputsps);
+   ModelSpace modelspace = rw.ReadModelSpace(inputsps.c_str());
+
    cout << "Setting up the kets" << endl;
    modelspace.SetupKets();
-   cout << "Done setting up the kets" << endl;
+
    cout << "Creating H_bare" << endl;
    Operator H_bare =  Operator(&modelspace);
+
    cout << "Calculating the kinetic energy" << endl;
    rw.CalculateKineticEnergy(&H_bare);
+
    cout << "Reading in the TBME " << endl;
-   rw.ReadBareTBME(inputtbme, H_bare);
+   rw.ReadBareTBME(inputtbme.c_str(), H_bare);
 
    cout << "setting up HF" << endl;
    HartreeFock  hf = HartreeFock(&H_bare);
+
    cout << "solving HF" << endl;
    hf.Solve();
 
    Operator H_hf = hf.TransformToHFBasis(H_bare);
+
    cout << "After transformation, one body piece is"<< endl;
    H_hf.OneBody.print();
 /*

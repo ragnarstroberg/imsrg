@@ -1,0 +1,13 @@
+
+#inputsps:	../input/s.sps
+inputsps:	../input/sd.sps
+#inputsps:	../input/sd4.sps
+
+#inputtbme:	../input/vspsd.int
+#inputtbme:	../input/vs.int
+inputtbme:	../input/vjason2.0.int
+#inputtbme:	../input/vjason1.8.int
+#inputtbme:	../input/tbme1.int
+#inputtbme:	../input/tbme2.int
+#inputtbme:	../input/vsrg1.8_n3lo500_w_coulomb_emax6_hw24.int
+
