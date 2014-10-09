@@ -83,6 +83,10 @@ class Operator
 
   //Overloaded operators
   Operator operator=( const Operator& rhs) {Copy(rhs); return *this;};
+  Operator& operator+=( const Operator& rhs);
+  Operator& operator+( const Operator& rhs);
+  Operator& operator*=( const double rhs);
+  Operator& operator*( const double rhs);
 
   //Methods
   // One body setter/getters
@@ -107,9 +111,11 @@ class Operator
 
   // The actually interesting methods
   Operator Commutator(Operator& opright);
-  Operator BCH_Product(const Operator&, const Operator&); // not yet implemented
-  Operator BCH_Transform(const Operator&, const Operator&); // not yet implemented
+  Operator BCH_Product( Operator& ); // not yet implemented
+  Operator BCH_Transform( Operator& ); // not yet implemented
   Operator DoNormalOrdering(); // Do normal ordering -- not implemented yet
+
+  double Norm();
 
   ModelSpace * GetModelSpace() const {return modelspace;};
 

@@ -103,8 +103,6 @@ void Operator::PrintOut()
 
 
 
-
-
 double Operator::GetTBME(int ch, int a, int b, int c, int d) const
 {
    TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch);
@@ -166,6 +164,39 @@ void Operator::SetTBME(int j, int p, int t, Ket* bra, Ket* ket, double tbme)
 {
    int ch = (t+1)*2*JMAX + p*JMAX + j;
    SetTBME(ch,bra,ket,tbme);
+}
+
+// multiply operator by a scalar
+Operator& Operator::operator*=(const double rhs)
+{
+   ZeroBody *= rhs;
+   OneBody *= rhs;
+   for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
+   {
+      TwoBody[ch] *= rhs;
+   }
+   return *this;
+}
+
+Operator& Operator::operator*(const double rhs)
+{
+   return ( Operator(*this) *= rhs );
+}
+
+Operator& Operator::operator+=(const Operator& rhs)
+{
+   ZeroBody += rhs.ZeroBody;
+   OneBody += rhs.OneBody;
+   for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
+   {
+      TwoBody[ch] += rhs.TwoBody[ch];
+   }
+   return *this;
+}
+
+Operator& Operator::operator+(const Operator& rhs)
+{
+   return ( Operator(*this) += rhs );
 }
 
 
@@ -255,13 +286,55 @@ void Operator::EraseTwoBody()
    for (int ch=0;ch<nChannels;++ch)
    {
        TwoBody[ch].zeros();
-       //GetTwoBodyChannel(ch)->TBME.zeros();
    }
 }
 
 
 
-//Operator Operator::Commutator(const Operator& opright)
+//*****************************************************************************************
+//  OpOut = exp(Omega) Op exp(-Omega)
+//  Eventually, add some checking for convergence.
+Operator Operator::BCH_Transform( Operator &Omega)
+{
+   Operator OpOut = *this;
+   Operator OpNested = *this;
+   double prefactor = 1.0;
+   for (int i=1; i<6; ++i)
+   {
+      prefactor /= i;
+      OpNested = Omega.Commutator(OpNested);
+      OpOut += OpNested * prefactor;
+   }
+   return OpOut;
+}
+
+
+//*****************************************************************************************
+//  OpOut = Omega_N+1, where
+//  exp(Omega_N+1) = exp(dOmega) * exp(Omega_N)
+//  Omega_N+1 = Omega_N + dOmega + 1/2[dOmega, Omega_N] + 1/12 [dOmega,[dOmega,Omega_N]] + 1/12 [Omega_N,[Omega_N,dOmega]] + ...
+//  Eventually, add some checking for convergence.
+Operator Operator::BCH_Product( Operator &dOmega)
+{
+   Operator OpNested = dOmega.Commutator(*this);
+   Operator OpOut = *this + dOmega + OpNested*(1./2) + ( dOmega.Commutator(OpNested) + OpNested.Commutator(*this) )*(1./12);
+   return OpOut;
+}
+
+
+double Operator::Norm()
+{
+   double nrm = ZeroBody*ZeroBody;
+   nrm += pow(arma::norm(OneBody,"fro"),2);
+   for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
+   {
+      nrm += pow(arma::norm(TwoBody[ch],"fro"),2);
+   }
+   return sqrt(nrm);
+}
+
+
+
 Operator Operator::Commutator(Operator& opright)
 {
    Operator out = opright;

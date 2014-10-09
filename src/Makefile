@@ -4,7 +4,7 @@ FLAGS = -larmadillo -O3 -std=c++11
 
 all: mysrg
 	
-OBJ = ModelSpace.o ReadWrite.o Operator.o HartreeFock.o
+OBJ = ModelSpace.o ReadWrite.o Operator.o HartreeFock.o IMSRGSolver.o
 
 mysrg: main.cc $(OBJ)
 	$(CC) $(FLAGS) $^ -o $@ $(FLAGS) 
