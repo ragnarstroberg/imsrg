@@ -18,6 +18,7 @@ class IMSRGSolver
   Operator H_0;
   Operator H_s;
   Operator H_od;
+  Operator H_diag;
   Operator Eta;
   double s;
   double ds;
