@@ -13,6 +13,7 @@ class IMSRGSolver
   Operator Transform(Operator& OpIn);
 
   private:
+  ModelSpace* modelspace;
   Operator Omega;
   Operator dOmega;
   Operator H_0;

@@ -1,6 +1,10 @@
 
 #inputsps:	../input/s.sps
-inputsps:	../input/sd.sps
+#inputsps:	../input/sd.sps
+#inputsps:	../input/O16.sps
+#inputsps:	../input/O22.sps
+#inputsps:	../input/O24.sps
+inputsps:	../input/O28.sps
 #inputsps:	../input/sd4.sps
 
 #inputtbme:	../input/vspsd.int

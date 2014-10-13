@@ -441,15 +441,18 @@ void HartreeFock::ReorderCoefficients()
    {
       float fmax = 0.0;
       int kmax;
+      int sign = 1;
       for (int k=0;k<norbits;k++)
       {
          if ( abs(C_tmp(i,k)) > fmax )
          {
             fmax = abs(C_tmp(i,k));
             kmax = k;
+            if (C_tmp(i,k) < 0) sign = 1;
          }
       }
-      C.col(kmax) = C_tmp.col(i);
+      // make sure we have a positive coefficient for the biggest term
+      C.col(kmax) = C_tmp.col(i) * sign;
       energies(kmax) = e_tmp(i);
    }
 }

@@ -12,6 +12,7 @@ IMSRGSolver::IMSRGSolver(Operator H_in)
    smax  = 5.0;
    H_0 = H_in;
    H_s = H_in;
+   modelspace = H_0.GetModelSpace();
 }
 
 
@@ -20,7 +21,7 @@ void IMSRGSolver::Solve()
 {
 
    int imax = 50;
-   for (int istep=0;i<imax;++istep)
+   for (int istep=0;istep<imax;++istep)
    {
       UpdateEta();
       UpdateOmega();
@@ -64,14 +65,16 @@ void IMSRGSolver::UpdateEta()
       {
          for (int &b : modelspace->valence)
          {
-            H_diag(a,b) =0;
-            H_diag(b,a) =0;
+            H_diag.OneBody(a,b) =0;
+            H_diag.OneBody(b,a) =0;
          }
       }
 
-      for (int ch=0;ch<modelspace->GetNumberTowBodyChannels();++ch)
+      for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
       {  // Note, should also decouple the v and q spaces
-         H_diag.TwoBody[ch] = (P_hh*H_diag.TwoBody[ch] + P_pp*H_diag.TwoBody[ch]);
+         // This is wrong. The projection operator should be different.
+         TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+         H_diag.TwoBody[ch] = (tbc.Proj_hh*H_diag.TwoBody[ch] + tbc.Proj_pp*H_diag.TwoBody[ch]);
       }
 
       Eta = H_diag.Commutator(H_s);
