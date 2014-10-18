@@ -2,6 +2,7 @@
 #include "ReadWrite.hh"
 #include "Operator.hh"
 #include "HartreeFock.hh"
+#include "IMSRGSolver.hh"
 #include <iostream>
 
 using namespace std;
@@ -36,6 +37,8 @@ int main(int argc, char**argv)
    cout << "Reading in the TBME " << endl;
    rw.ReadBareTBME(inputtbme.c_str(), H_bare);
 
+   cout << "Norm of H_bare = " << H_bare.Norm() << endl;
+
    cout << "setting up HF" << endl;
    HartreeFock  hf = HartreeFock(&H_bare);
 
@@ -46,6 +49,10 @@ int main(int argc, char**argv)
 
    cout << "After transformation, one body piece is"<< endl;
    H_hf.OneBody.print();
+
+   cout << "***** Bare Two Body Part *****" << endl;
+   H_bare.PrintTwoBody();
+
 /*
    H_bare.WriteOneBody("../output/Hbare1b.out");
    H_bare.WriteTwoBody("../output/Hbare2b.out");
@@ -77,12 +84,15 @@ int main(int argc, char**argv)
    cout << "Normal ordered zero-body part = " << HFNO.ZeroBody << endl;
    cout << "Normal ordered one-body part: " << endl;
    HFNO.OneBody.print();
-   HbareNO.OneBody.print();
-   Operator Hcomm = HFNO.Commutator(HbareNO);
-//   Operator Hcomm = HbareNO.Commutator(H_bare);
-   cout << "Commutator zerobody: " << Hcomm.ZeroBody << endl;
-   cout << "Commutator one body:" << endl;;
-   Hcomm.OneBody.print();
+//   HbareNO.OneBody.print();
+//   Operator Hcomm = HFNO.Commutator(HbareNO);
+//   cout << "Commutator zerobody: " << Hcomm.ZeroBody << endl;
+//   cout << "Commutator one body:" << endl;;
+//   Hcomm.OneBody.print();
+
+   //IMSRGSolver imsrgsolver = IMSRGSolver(HFNO);
+   IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
+   imsrgsolver.Solve();
 
   return 0;
 }

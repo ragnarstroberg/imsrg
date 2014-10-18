@@ -99,22 +99,28 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
       {
          KetMap[i] = NumberKets;
          KetList.push_back(i);
+         int hp = ms->GetOrbit(ket->p)->hvq;
+         int hq = ms->GetOrbit(ket->q)->hvq;
+         if (hp==0 and hq==0) KetIndex_hh.push_back(NumberKets);
+         else if (hp>0 and hq>0) KetIndex_pp.push_back(NumberKets);
+         else KetIndex_ph.push_back(NumberKets);
          NumberKets++;
       }
    }
    Proj_pp = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
    Proj_hh = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
-   //for (int &i: KetList) // C++11 syntax
    for (int i=0;i<NumberKets;i++)
    {
       Ket *ket = GetKet(i);
       if ( modelspace->GetOrbit(ket->p)->hvq ==0 and modelspace->GetOrbit(ket->q)->hvq==0)
       {
          Proj_hh(i,i) = 1;
+         //Proj_hh(i,i) = sqrt(1.0+ket->delta_pq());
       }
       if ( modelspace->GetOrbit(ket->p)->hvq >0 and modelspace->GetOrbit(ket->q)->hvq>0)
       {
          Proj_pp(i,i) = 1;
+         //Proj_pp(i,i) = sqrt(1.0+ket->delta_pq());
       }
    }
 
@@ -132,6 +138,9 @@ void TwoBodyChannel::Copy( const TwoBodyChannel& rhs)
    Proj_pp           = rhs.Proj_pp;
    KetMap            = rhs.KetMap;
    KetList           = rhs.KetList;
+   KetIndex_pp        = rhs.KetIndex_pp;
+   KetIndex_ph        = rhs.KetIndex_ph;
+   KetIndex_hh        = rhs.KetIndex_hh;
 }
 
 

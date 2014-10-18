@@ -23,11 +23,11 @@ class Operator
   Operator( const Operator& rhs){Copy(rhs);};
 
   //Overloaded operators
-  Operator operator=( const Operator& rhs) {Copy(rhs); return *this;};
+  Operator& operator=( const Operator& rhs) {Copy(rhs); return *this;};
   Operator& operator+=( const Operator& rhs);
-  Operator& operator+( const Operator& rhs);
+  Operator operator+( const Operator& rhs);
   Operator& operator*=( const double rhs);
-  Operator& operator*( const double rhs);
+  Operator operator*( const double rhs);
 
   //Methods
   // One body setter/getters
@@ -43,6 +43,9 @@ class Operator
   void   SetTBME(int j, int p, int t, Ket* bra, Ket* ket, double tbme);
   double GetTBME(int j, int p, int t, int a, int b, int c, int d) const;
   void   SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
+
+  double GetTBMEmonopole(int a, int b, int c, int d);
+  double GetTBMEmonopole(Ket * bra, Ket * ket);
 
   // The actually interesting methods
   Operator Commutator(Operator& opright);
@@ -64,9 +67,10 @@ class Operator
   bool IsHermitian()const {return hermitian;};
   bool IsAntiHermitian()const {return antihermitian;};
 
+  void PrintTwoBody() ;
   void PrintOut() ;
 
- private:
+ //private:
   //Fields
   ModelSpace * modelspace;
   bool hermitian;
@@ -80,8 +84,10 @@ class Operator
   double comm110(Operator& opright);
   double comm220(Operator& opright);
   arma::mat comm111(Operator& opright);
+  arma::mat comm121(Operator& opright);
   arma::mat comm211(Operator& opright);
   arma::mat comm221(Operator& opright);
+  arma::mat comm122(Operator& opright, int ch);
   arma::mat comm212(Operator& opright, int ch);
   arma::mat comm222_ph(Operator& opright, int ch);
   arma::mat comm222_pphh(Operator& opright, int ch);

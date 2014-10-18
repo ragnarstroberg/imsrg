@@ -48,12 +48,12 @@ void HartreeFock::Solve()
 //   C.swap_cols(1,11);
    UpdateH();
 //   return;
-   cout << "Input H" << endl;
-   H.print();
    cout << "Input t" << endl;
    t.print();
    cout << "Input Vab" << endl;
    Vab.print();
+   cout << "Input H" << endl;
+   H.print();
 /*
    cout << "Input Vmon" << endl;
    Vmon.print();
@@ -134,14 +134,15 @@ void HartreeFock::Solve()
   }
 */
 //   UpdateHFOrbits();
-/*
+
+cout << "Transformed: " << endl;
    cout << "T: " << endl;
    ( C.t() * t * C ).print();
    cout << "Vab: " << endl;
    ( C.t() * Vab * C ).print();
    cout << "H: " << endl;
    ( C.t() * H * C ).print();
-*/
+
   cout << "Energies: " << endl;
   energies.print();
 }
@@ -260,6 +261,7 @@ void HartreeFock::Diagonalize2()
 //         
 //**************************************************
 
+/*
 void HartreeFock::BuildMonopoleV()
 {
    Vmon.zeros();
@@ -285,7 +287,8 @@ void HartreeFock::BuildMonopoleV()
             //double tbme = (2*J+1)*tbc.GetTBME(bra,ket);
 //            if (a==0 and b==5)
 //              cout << "J = " << J << ". Adding " << Hbare->TwoBody[ch](a,b) << endl;
-            double tbme = (2*J+1)* Hbare->TwoBody[ch](a,b);
+            //double tbme = (2*J+1)* Hbare->TwoBody[ch](a,b);
+            double tbme = (2*J+1)* sqrt((1+bra->delta_pq())*(1+ket->delta_pq())) *Hbare->TwoBody[ch](a,b);
             Vmon(ibra,iket) += tbme;
             Vmon(ibra+nKets,iket) += bra->Phase(J)*tbme;
             Vmon(ibra,iket+nKets) += ket->Phase(J)*tbme;
@@ -293,6 +296,47 @@ void HartreeFock::BuildMonopoleV()
          }
       }
    }
+}
+*/
+
+//**************************************************
+// BuildMonopoleV()
+// Construct the unnormalized monople Hamiltonian
+// <ab|V_mon|cd> = Sum_J (2J+1) <ab|V|cd>_J.
+//  I calculate and store each term, rather than
+//  repeatedly calculating things.
+//   To facilitate looping, the matrix has 4 blocks.
+//   If a<=b and c<=d, the matrix looks like:
+//
+//         [ <ab|V|cd> ... <ab|V|dc> ]
+//    V  = |     :             :     |
+//         [ <ba|V|cd> ... <ba|V|dc> ]
+//         
+//**************************************************
+void HartreeFock::BuildMonopoleV()
+{
+   Vmon.zeros();
+   int nKets = Hbare->GetModelSpace()->GetNumberKets();
+   for (int ibra=0;ibra<nKets;++ibra)
+   {
+      Ket * bra = Hbare->GetModelSpace()->GetKet(ibra);
+      int a = bra->p;
+      int b = bra->q;
+      Orbit * oa = Hbare->GetModelSpace()->GetOrbit(a);
+      Orbit * ob = Hbare->GetModelSpace()->GetOrbit(b);
+      double norm = (oa->j2+1)*(ob->j2+1);
+      for (int iket=0;iket<nKets;++iket)
+      {
+         Ket * ket = Hbare->GetModelSpace()->GetKet(iket);
+         int c = ket->p;
+         int d = ket->q;
+         Vmon(ibra,iket)             = Hbare->GetTBMEmonopole(a,b,c,d) * norm;
+         Vmon(ibra+nKets,iket)       = Hbare->GetTBMEmonopole(b,a,c,d) * norm;
+         Vmon(ibra,iket+nKets)       = Hbare->GetTBMEmonopole(a,b,d,c) * norm;
+         Vmon(ibra+nKets,iket+nKets) = Hbare->GetTBMEmonopole(b,a,d,c) * norm;
+      }
+   }
+   
 }
 
 
@@ -314,15 +358,6 @@ void HartreeFock::UpdateDensityMatrix()
        Pcore(beta,beta) = 1;
    }
 
-/*
-   for (int beta=0;beta<norbits;beta++)
-   {
-      if (ms->GetOrbit(beta)->hvq == 0) // hvq==0 means hole state
-      {
-         Pcore(beta,beta) = 1;
-      }
-   }
-*/
    rho = C * Pcore * C.t();
 }
 
@@ -478,19 +513,37 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
       for (int i=0; i<npq; i++)       // loop over all possible original basis configurations <pq| in this J,p,Tz channel
       {                               // i and j are the indices of the small matrix for this channel
          Ket * bra = tbc.GetKet(i); // bra is in the original basis
-         for (int j=0; j<npq; j++)       // loop over all possible HF configurations |pq> in this J,p,Tz channel
+         for (int j=0; j<npq; j++)       // loop over all possible HF configurations |p'q'> in this J,p,Tz channel
          {
             Ket * ket = tbc.GetKet(j); // ket is in the HF basis
-            D(i,j) = C(bra->p,ket->p) * C(bra->q,ket->q) * 1./(1.0+bra->delta_pq());
-            Dexch(i,j) = C(bra->p,ket->q) * C(bra->q,ket->p) * ket->Phase(tbc.J) * 1./(1.0+bra->delta_pq());
+            double normfactor = sqrt((1.0+ket->delta_pq())/(1.0+bra->delta_pq()));
+            D(i,j) = C(bra->p,ket->p) * C(bra->q,ket->q) * normfactor;
+            Dexch(i,j) = C(bra->p,ket->q) * C(bra->q,ket->p) * ket->Phase(tbc.J) * (1-ket->delta_pq()) * normfactor;
+            //D(i,j) = C(bra->p,ket->p) * C(bra->q,ket->q) * 1./(1.0+bra->delta_pq());
+            //Dexch(i,j) = C(bra->p,ket->q) * C(bra->q,ket->p) * ket->Phase(tbc.J) * 1./(1.0+bra->delta_pq());
          }
       }
 
-     OpHF.TwoBody[ch]  = D.t()       * OpIn.TwoBody[ch] * D;
+
+     OpHF.TwoBody[ch]   = D.t()      * OpIn.TwoBody[ch] * D;
      OpHF.TwoBody[ch]  += Dexch.t()  * OpIn.TwoBody[ch] * D;
      OpHF.TwoBody[ch]  += D.t()      * OpIn.TwoBody[ch] * Dexch;
      OpHF.TwoBody[ch]  += Dexch.t()  * OpIn.TwoBody[ch] * Dexch;
 
+/*
+     if (tbc.J == 4 and tbc.parity == 0 and tbc.Tz == 1)
+     {
+        cout << "================ J=4 P=0 Tz=1 ======================" << endl;
+        cout << "TwoBody In:" << endl;
+        OpIn.TwoBody[ch].print();
+        cout << "D: " << endl;
+        D.print();
+        cout << "Dexch: " << endl;
+        Dexch.print();
+        cout << "TwoBody out:" << endl;
+        OpHF.TwoBody[ch].print();
+     }
+*/
    }
    return OpHF;
 }

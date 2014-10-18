@@ -135,8 +135,10 @@ void ReadWrite::ReadBareTBME( const char* filename, Operator& Hbare)
 
      tbme -= fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  // Some sort of COM correction. Check this
 
-     if (a==b) tbme *= sqrt(2);
-     if (c==d) tbme *= sqrt(2);
+// NORMALIZATION: Use normalized, antisymmetrized TBME's
+// NORMALIZATION: Use un-normalized, antisymmetrized TBME's
+//     if (a==b) tbme *= sqrt(2);
+//     if (c==d) tbme *= sqrt(2);
 
      Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d,tbme);
   }
@@ -154,8 +156,7 @@ void ReadWrite::CalculateKineticEnergy(Operator *Hbare)
    {
       Orbit * orba = Hbare->GetModelSpace()->GetOrbit(a);
       Hbare->OneBody(a,a) = 0.5 * hw * (2*orba->n + orba->l +3./2); 
-//      if (orba->n == 0) continue;
-      for (int b=0;b<norbits;b++)  // make this better one OneBodyChannel is implemented
+      for (int b=0;b<norbits;b++)  // make this better once OneBodyChannel is implemented
       {
          Orbit * orbb = Hbare->GetModelSpace()->GetOrbit(b);
          if (orba->l == orbb->l and orba->j2 == orbb->j2 and orba->tz2 == orbb->tz2)
@@ -168,11 +169,6 @@ void ReadWrite::CalculateKineticEnergy(Operator *Hbare)
                Hbare->OneBody(a,b) = 0.5 * hw * sqrt( (orbb->n)*(orbb->n + orbb->l +1./2));
          }
       }
-//      {
-//         int b = Hbare->GetModelSpace()->Index1(orba->n-1, orba->l, orba->j2, orba->tz2);
-//         Hbare->OneBody(a,b) = 0.5 * hw * sqrt( (orba->n)*(orba->n + orba->l +1./2));
-//         Hbare->OneBody(b,a) = Hbare->OneBody(a,b);
-//      }
    }
    Hbare->OneBody *= (1-1./A);
 
@@ -222,7 +218,7 @@ void ReadWrite::WriteTwoBody(Operator& op, const char* filename)
          {
             Ket *ket = tbc.GetKet(j);
             //double tbme = tbc.GetTBME(bra,ket);
-            double tbme = op.GetTBME(ch,bra,ket);
+            double tbme = op.GetTBME(ch,bra,ket) / sqrt( (1.0+bra->delta_pq())*(1.0+ket->delta_pq()));
             if ( abs(tbme)<1e-4 ) continue;
             Orbit *oc = modelspace->GetOrbit(ket->p);
             Orbit *od = modelspace->GetOrbit(ket->q);

@@ -93,6 +93,9 @@ class TwoBodyChannel
    int GetLocalIndex(int p, int q) const ;
    int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
    Ket * GetKet(int i) const ; // get pointer to ket using local index
+   vector<int> KetIndex_pp;
+   vector<int> KetIndex_ph;
+   vector<int> KetIndex_hh;
 
 
  private:

@@ -53,7 +53,7 @@ Operator::Operator(ModelSpace* ms) // Create a zero-valued operator in a given m
 void Operator::Copy(const Operator& op)
 {
    modelspace    = op.modelspace;
-   nChannels     = op.nChannels;
+   nChannels     = modelspace->GetNumberTwoBodyChannels();
    hermitian     = op.hermitian;
    antihermitian = op.antihermitian;
    ZeroBody      = op.ZeroBody;
@@ -66,6 +66,23 @@ void Operator::Copy(const Operator& op)
    P_particle_onebody = op.P_particle_onebody;
 }
 
+
+void Operator::PrintTwoBody()
+{
+   for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      cout << "J,p,t = " << tbc.J << " " << tbc.parity << " " << tbc.Tz << endl;
+      for (int ik=0;ik<tbc.GetNumberKets();++ik)
+      {
+         Ket * ket = tbc.GetKet(ik);
+         cout << "| " << ket->p << " " << ket->q << " >  ";
+      }
+      cout << endl;
+      TwoBody[ch].print();
+      cout << endl;
+   }
+}
 
 void Operator::PrintOut() 
 {
@@ -113,8 +130,12 @@ double Operator::GetTBME(int ch, int a, int b, int c, int d) const
      return 0;
    }
    double phase = 1;
-   if (a>b) phase *= tbc.GetKet(bra_ind)->Phase(tbc.J);
-   if (c>d) phase *= tbc.GetKet(ket_ind)->Phase(tbc.J);
+   Ket * bra = tbc.GetKet(bra_ind);
+   Ket * ket = tbc.GetKet(ket_ind);
+   if (a>b) phase *= bra->Phase(tbc.J) ;
+   if (c>d) phase *= ket->Phase(tbc.J);
+   if (a==b) phase *= sqrt(1.0+bra->delta_pq());
+   if (c==d) phase *= sqrt(1.0+ket->delta_pq());
    return phase * TwoBody[ch](bra_ind, ket_ind);
 }
 
@@ -166,6 +187,40 @@ void Operator::SetTBME(int j, int p, int t, Ket* bra, Ket* ket, double tbme)
    SetTBME(ch,bra,ket,tbme);
 }
 
+
+double Operator::GetTBMEmonopole(int a, int b, int c, int d)
+{
+   double mon = 0;
+   Orbit *oa = modelspace->GetOrbit(a);
+   Orbit *ob = modelspace->GetOrbit(b);
+   Orbit *oc = modelspace->GetOrbit(c);
+   Orbit *od = modelspace->GetOrbit(d);
+   int Tzab = (oa->tz2 + ob->tz2)/2;
+   int parityab = (oa->l + ob->l)%2;
+   int Tzcd = (oc->tz2 + od->tz2)/2;
+   int paritycd = (oc->l + od->l)%2;
+
+   if (Tzab != Tzcd or parityab != paritycd) return 0;
+
+   int jmin = abs(oa->j2 - ob->j2)/2;
+   int jmax = (oa->j2 + ob->j2)/2;
+   
+   for (int J=jmin;J<=jmax;++J)
+   {
+      mon += (2*J+1) * GetTBME(J,parityab,Tzab,a,b,c,d);
+   }
+   mon /= (oa->j2 +1)*(ob->j2+1);
+//   if (a==b) mon /= sqrt(2);
+//   if (c==d) mon /= sqrt(2);
+   return mon;
+}
+
+double Operator::GetTBMEmonopole(Ket * bra, Ket * ket)
+{
+   return GetTBMEmonopole(bra->p,bra->q,ket->p,ket->q);
+}
+
+
 // multiply operator by a scalar
 Operator& Operator::operator*=(const double rhs)
 {
@@ -178,9 +233,18 @@ Operator& Operator::operator*=(const double rhs)
    return *this;
 }
 
-Operator& Operator::operator*(const double rhs)
+Operator Operator::operator*(const double rhs)
 {
-   return ( Operator(*this) *= rhs );
+   Operator opout = Operator(*this);
+   opout *= rhs;
+   return opout;
+}
+
+// Add non-member operator so we can multiply an operator
+// by a scalar from the lhs, i.e. s*O = O*s
+inline Operator operator*(const double lhs, Operator& rhs)
+{
+   return rhs * lhs;
 }
 
 Operator& Operator::operator+=(const Operator& rhs)
@@ -194,7 +258,7 @@ Operator& Operator::operator+=(const Operator& rhs)
    return *this;
 }
 
-Operator& Operator::operator+(const Operator& rhs)
+Operator Operator::operator+(const Operator& rhs)
 {
    return ( Operator(*this) += rhs );
 }
@@ -243,8 +307,9 @@ Operator Operator::DoNormalOrdering()
                if ( (iket = tbc.GetLocalIndex(min(b,h),max(b,h)))<0) continue;
                Ket * bra = tbc.GetKet(ibra);
                Ket * ket = tbc.GetKet(iket);
-               //double tbme = (2*J+1.0)/(orba->j2+1)*tbc.GetTBME(bra,ket);
-               double tbme = (2*J+1.0)/(orba->j2+1) * GetTBME(ch,bra,ket);
+//               double tbme = (2*J+1.0)/(orba->j2+1) * GetTBME(ch,bra,ket);
+               //double tbme = (2*J+1.0)/(orba->j2+1) * sqrt( (1+bra->delta_pq())*(1+ket->delta_pq()) ) * GetTBME(ch,bra,ket);
+               double tbme = (2*J+1.0)/(orba->j2+1)  * GetTBME(ch,bra,ket);
 
                if (a<=h and b<=h) opNO.OneBody(a,b) += tbme;
                if (a>h and b<=h) opNO.OneBody(a,b) += bra->Phase(J)*tbme;
@@ -269,8 +334,8 @@ Operator Operator::DoNormalOrdering()
          // Sum over diagonal two-body terms with both orbits in the core
          if ( oa->hvq == 0 and ob->hvq == 0)
          {
-            //opNO.ZeroBody += tbc->TBME(k,k) * (2*tbc->J+1) / (1.0+ket->delta_pq());  // <ab|V|ab>  (a,b in core)
-            opNO.ZeroBody += TwoBody[ch](k,k) * (2*tbc.J+1) / (1.0+ket->delta_pq());  // <ab|V|ab>  (a,b in core)
+//            opNO.ZeroBody += TwoBody[ch](k,k) * (2*tbc.J+1) / (1.0+ket->delta_pq());  // <ab|V|ab>  (a,b in core)
+            opNO.ZeroBody += TwoBody[ch](k,k) * (2*tbc.J+1);  // <ab|V|ab>  (a,b in core)
          }
 
       } // for k
@@ -321,14 +386,24 @@ Operator Operator::BCH_Product( Operator &dOmega)
    return OpOut;
 }
 
-
+// Frobenius norm of the operator
 double Operator::Norm()
 {
    double nrm = ZeroBody*ZeroBody;
-   nrm += pow(arma::norm(OneBody,"fro"),2);
+   double n1 = arma::norm(OneBody,"fro");
+//   double n1 = arma::accu(OneBody.t()*OneBody);
+   nrm += n1*n1;
+//   nrm += n1;
+   cout << "Onebody =  " << endl; OneBody.print();
+   cout << "One body norm = " << n1 << endl;
+//   cout << "One body norm = " << sqrt(n1) << endl;
    for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
    {
-      nrm += pow(arma::norm(TwoBody[ch],"fro"),2);
+      double n2 = arma::norm(TwoBody[ch],"fro");
+//      double n2 = arma::accu(TwoBody[ch].t()*TwoBody[ch]);
+      nrm += n2*n2;
+//      nrm += n2;
+//      nrm += pow(arma::norm(TwoBody[ch],"fro"),2);
    }
    return sqrt(nrm);
 }
@@ -341,14 +416,17 @@ Operator Operator::Commutator(Operator& opright)
    out.EraseZeroBody();
    out.EraseOneBody();
    out.EraseTwoBody();
+   if ( (IsHermitian() and opright.IsHermitian()) or (IsAntiHermitian() and opright.IsAntiHermitian()) ) out.SetAntiHermitian();
+   else if ( (IsHermitian() and opright.IsAntiHermitian()) or (IsAntiHermitian() and opright.IsHermitian()) ) out.SetHermitian();
+   else out.SetNonHermitian();
 
    out.ZeroBody  = comm110(opright) + comm220(opright) ;
 
-   out.OneBody  = comm111(opright) + comm211(opright) - opright.comm211(*this)  + comm221(opright);
+   out.OneBody  = comm111(opright) + comm121(opright) + comm211(opright) + comm221(opright);
 
    for (int ch=0;ch<nChannels; ++ch)
    {
-      out.TwoBody[ch] = comm212(opright,ch) - opright.comm212(*this,ch) + comm222_ph(opright,ch) + comm222_pphh(opright,ch);
+      out.TwoBody[ch] = comm122(opright,ch) + comm212(opright,ch) + comm222_ph(opright,ch) + comm222_pphh(opright,ch);
    }
 
    return out;
@@ -366,6 +444,7 @@ Operator Operator::Commutator(Operator& opright)
 //  [X1,Y1](0) = Sum_ab (2j_a+1) x_ab y_ba  (n_a-n_b) 
 //             = Sum_a  (2j_a+1)  (xy-yx)_aa n_a
 //
+// -- AGREES WITH NATHAN'S RESULTS
 double Operator::comm110(Operator& opright)
 {
   if (IsHermitian() and opright.IsHermitian()) return 0; // I think this is the case
@@ -374,7 +453,7 @@ double Operator::comm110(Operator& opright)
    double comm = 0;
    int norbits = modelspace->GetNumberOrbits();
    arma::mat xyyx = OneBody*opright.OneBody - opright.OneBody*OneBody;
-   for ( int& a : modelspace->particles) // C++11 range-for syntax: loop over all elements of the vector <particle>
+   for ( int& a : modelspace->hole) // C++11 range-for syntax: loop over all elements of the vector <particle>
    {
       comm += (modelspace->GetOrbit(a)->j2+1)*xyyx(a,a);
    }
@@ -389,18 +468,19 @@ double Operator::comm110(Operator& opright)
 //
 //  [ X^(2), Y^(2) ]^(0) = 1/2 Sum_abcd  Sum_J (2J+1) x_abcd y_cdab (n_a n_b nbar_c nbar_d)
 //                       = 1/2 Sum_J (2J+1) Sum_abcd x_abcd y_cdab (n_a n_b nbar_c nbar_d)  
-//                       = 1/2 Sum_J (2J+1) Sum_ab  P_hh*(X*P_pp*Y)_abab  
+//                       = 1/2 Sum_J (2J+1) Sum_ab  (X*P_pp*Y)_abab  P_hh
 //
-//
+//  -- AGREES WITH NATHAN'S RESULTS (within < 1%)
 double Operator::comm220( Operator& opright)
 {
+   if (IsHermitian() and opright.IsHermitian()) return 0; // I think this is the case
+   if (IsAntiHermitian() and opright.IsAntiHermitian()) return 0; // I think this is the case
    double comm = 0;
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      //comm += 0.5*(2*tbleft->J+1) * arma::accu( tbleft->Proj_hh * tbleft->TBME * tbleft->Proj_pp * tbright->TBME);
-      //comm += 0.5*(2*tbc.J+1) * arma::accu( tbc.Proj_hh * TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch]);
-      comm += (2*tbc.J+1) * arma::accu( tbc.Proj_hh * TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch]);
+      comm += 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] );
+
    }
    return comm;
 }
@@ -411,25 +491,26 @@ double Operator::comm220( Operator& opright)
 //        |        _        |
 //  X .___|            Y.___|              [X1,Y1](1)  =  XY - YX
 //        |                 |
-
+//
+// -- AGREES WITH NATHAN'S RESULTS
 arma::mat Operator::comm111(Operator & opright)
 {
    return OneBody*opright.OneBody - opright.OneBody*OneBody;
 }
 
 //*****************************************************************************************
-// 
-//      i |              i |
-//        |    ___.Y       |__X__
-//        |___(_)    _     |   (_)__.     [X2,Y1](1)  =  1/(2j_i+1) sum_ab(n_a-n_b)y_ab 
-//      j | X            j |        Y            * sum_J (2J+1) x_biaj^(J)  
-//                                             
-//                                               = 1/(2j+1) sum_a n_a sum_J (2J+1)
+//                                       |
+//      i |              i |             |
+//        |    ___.Y       |__X__        |
+//        |___(_)    _     |   (_)__.    |  [X2,Y1](1)  =  1/(2j_i+1) sum_ab(n_a-n_b)y_ab 
+//      j | X            j |        Y    |        * sum_J (2J+1) x_biaj^(J)  
+//                                       |      
+//---------------------------------------*        = 1/(2j+1) sum_a n_a sum_J (2J+1)
 //                                                  * sum_b y_ab x_biaj - yba x_aibj
 //
-arma::mat Operator::comm211(Operator& opright)
+// -- AGREES WITH NATHAN'S RESULTS 
+arma::mat Operator::comm121(Operator& opright)
 {
-//  cout << "In comm211" << endl;
    int norbits = modelspace->GetNumberOrbits();
    arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
    for (int i=0;i<norbits;++i)
@@ -441,37 +522,38 @@ arma::mat Operator::comm211(Operator& opright)
           if (oi->j2 != oj->j2 or oi->l != oj->l or oi->tz2 != oj->tz2) continue; // At some point, make a OneBodyChannel class...
           for (int &a : modelspace->hole)  // C++11 syntax
           {
-             for (int ch=0;ch<nChannels;++ch)
+             Orbit *oa = modelspace->GetOrbit(a);
+             for (int b=0;b<norbits;++b)
              {
-                TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-                if (tbc.GetNumberKets() < 1) continue;
-                int ind_ai = tbc.GetLocalIndex(min(a,i),max(a,i));
-                int ind_aj = tbc.GetLocalIndex(min(a,j),max(a,j));
-                if ( ind_ai < 0 and ind_aj < 0) continue; 
-                double commijJ = 0;
-                for (int b=0;b<norbits; ++b)
-                {
-                   commijJ += opright.OneBody(a,b) * GetTBME(ch,b,i,a,j) - opright.OneBody(b,a) * GetTBME(ch,a,i,b,j);
-                }
-                comm(i,j) += commijJ*(2*tbc.J+1);
+                Orbit *ob = modelspace->GetOrbit(b);
+                comm(i,j) += (ob->j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
+                comm(i,j) -= (oa->j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
              }
           }
-          comm(i,j) /= (modelspace->GetOrbit(i)->j2 + 1);
       }
    }
    return comm;
 }
 
+
+// Same as above, just reversed
+arma::mat Operator::comm211(Operator& opright)
+{
+   return -opright.comm121(*this);
+}
+
+
 //*****************************************************************************************
 //
-//      i |             i |
-//        |__Y___         |__X___
-//        |____(_)  _     |____(_)     [X2,Y2](1)  =  1/(2(2j_i+1)) sum_J (2J+1) 
-//      j | X           j |  Y            * sum_abc (nbar_a*nbar_b*n_c + n_a*n_b*nbar_c)
-//                                         * (x_ciab y_abcj - y_ciab xabcj)
+//      i |              i |            [X2,Y2](1)  =  1/(2(2j_i+1)) sum_J (2J+1) 
+//        |__Y__           |__X__           * sum_abc (nbar_a*nbar_b*n_c + n_a*n_b*nbar_c)
+//        |    /\          |    /\          * (x_ciab y_abcj - y_ciab xabcj)
+//        |   (  )   _     |   (  )                                                                                      
+//        |____\/          |____\/       = 1/(2(2j+1)) sum_J (2J+1)
+//      j | X            j |  Y            *  sum_c ( Pp*X*Phh*Y*Pp - Pp*Y*Phh*X*Pp)  - (Ph*X*Ppp*Y*Ph - Ph*Y*Ppp*X*Ph)_cicj
+//                                     
 //
-//                                   = 1/(2(2j+1)) sum_J (2J+1)
-//                                     *  sum_c ( Pp*X*Phh*Y - Pp*Y*Phh*X)  - (Ph*X*Ppp*Y - Ph*Y*Ppp*X)_cicj
+//                                     
 //
 arma::mat Operator::comm221(Operator& opright)
 {
@@ -485,34 +567,51 @@ arma::mat Operator::comm221(Operator& opright)
 
       arma::mat Mpph = (TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_pp * TwoBody[ch]);
       arma::mat Mhhp = (TwoBody[ch] * tbc.Proj_hh * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_hh * TwoBody[ch]);
+//      cout << "Mpph:" << endl; Mpph.print();
+//      cout << "Mhhp:" << endl; Mhhp.print();
 
       for (int i=0;i<norbits;++i)
       {
          Orbit *oi = modelspace->GetOrbit(i);
-         double angmomfactor = (2*tbc.J+1)/(2*(oi->j2 +1));
+         double angmomfactor = (2*tbc.J+1.0)/(oi->j2 +1.0);
          for (int j=0;j<norbits;++j)
          {
             Orbit *oj = modelspace->GetOrbit(j);
             if (oi->j2 != oj->j2 or oi->l != oj->l or oi->tz2 != oj->tz2) continue;
+            // Sum c over holes and include the nbar_a * nbar_b terms
             for (int &c : modelspace->hole)
             {
                int ibra = tbc.GetLocalIndex(c,i);
                int iket = tbc.GetLocalIndex(c,j);
                if (ibra<0 or iket < 0) continue;
+               //if (ch==0)
+               if (i==0 and j==0)
+               {
+                  //cout << "ibra = " << ibra << "  iket = " << iket << "  Mpph(ibra,iket) = " << Mpph(ibra,iket) << endl;
+                  cout << "i,j,c = " << i << " " << j << " " << c << " J = " << tbc.J <<  "  Mpph(ibra,iket) = " << Mpph(ibra,iket) << endl;
+               }
                comm(i,j) +=  angmomfactor * Mpph(ibra,iket);
             }
+            // Sum c over particles and include the n_a * n_b terms
             for (int &c : modelspace->particles)
             {
                int ibra = tbc.GetLocalIndex(c,i);
                int iket = tbc.GetLocalIndex(c,j);
                if (ibra<0 or iket < 0) continue;
+               //if (ch==0)
+               if (i==0 and j==0)
+               {
+                  //cout << "ibra = " << ibra << "  iket = " << iket << "  Mhhp(ibra,iket) = " << Mhhp(ibra,iket) << endl;
+                  cout << "i,j,c = " << i << " " << j << " " << c << " J = " << tbc.J << "  Mhhp(ibra,iket) = " << Mhhp(ibra,iket) << endl;
+               }
                comm(i,j) +=  angmomfactor * Mhhp(ibra,iket);
             }
+
          } // for j
       } // for i
    } //for ch
    
-   return comm;
+   return 0.5*comm;
 }
 
 
@@ -524,33 +623,43 @@ arma::mat Operator::comm221(Operator& opright)
 //    |_____|               |      |_____.Y        
 //    |  X  |               |      |            
 //
-arma::mat Operator::comm212(Operator& opright, int ch )
+// -- AGREES WITH NATHAN'S RESULTS
+arma::mat Operator::comm122(Operator& opright, int ch )
 {
    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
    int npq = tbc.GetNumberKets();
    int norbits = modelspace->GetNumberOrbits();
    arma::mat comm = arma::mat(npq,npq,arma::fill::zeros);
-   for (int a=0;a<norbits;++a)
+   for (int ibra = 0;ibra<npq; ++ibra)
    {
-      for (int ibra = 0;ibra<npq; ++ibra)
+      Ket * bra = tbc.GetKet(ibra);
+      int i = bra->p;
+      int j = bra->q;
+      for (int iket=0;iket<npq; ++iket)
       {
-         Ket * bra = tbc.GetKet(ibra);
-         int i = bra->p;
-         int j = bra->q;
-         for (int iket=0;iket<npq; ++iket)
+         Ket * ket = tbc.GetKet(iket);
+         int k = ket->p;
+         int l = ket->q;
+         for (int a=0;a<norbits;++a)
          {
-            Ket * ket = tbc.GetKet(iket);
-            int k = ket->p;
-            int l = ket->q;
-            comm(ibra,iket) += opright.OneBody(i,a) * GetTBME(ch,a,j,k,l);
-            comm(ibra,iket) += opright.OneBody(j,a) * GetTBME(ch,i,a,k,l);
-            comm(ibra,iket) -= opright.OneBody(a,k) * GetTBME(ch,i,j,a,l);
-            comm(ibra,iket) -= opright.OneBody(a,l) * GetTBME(ch,i,j,k,a);
+            comm(ibra,iket) += OneBody(i,a) * opright.GetTBME(ch,a,j,k,l);
+            comm(ibra,iket) += OneBody(j,a) * opright.GetTBME(ch,i,a,k,l);
+            comm(ibra,iket) -= OneBody(a,k) * opright.GetTBME(ch,i,j,a,l);
+            comm(ibra,iket) -= OneBody(a,l) * opright.GetTBME(ch,i,j,k,a);
          }
+         comm(ibra,iket) /= sqrt( (1.0+bra->delta_pq())*(1.0+ket->delta_pq()) );
       }
    }
    return comm;
 }
+
+// Same as above, just reversed
+arma::mat Operator::comm212(Operator& opright, int ch )
+{
+   return -opright.comm122(*this, ch);
+}
+
+
 
 //*****************************************************************************************
 //
@@ -560,13 +669,16 @@ arma::mat Operator::comm212(Operator& opright, int ch )
 //  |__X__|      |__Y__|   
 //  |     |      |     |   
 //
+// -- APPEARS TO AGREE WITH NATHAN'S RESULTS
+//   although I'm not sure why there's a missing 1/2... 
 arma::mat Operator::comm222_ph(Operator& opright, int ch )
 {
    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-   arma::mat comm  = (        TwoBody[ch] * (tbc.Proj_pp - tbc.Proj_hh) * opright.TwoBody[ch])
-                   - (opright.TwoBody[ch] * (tbc.Proj_pp - tbc.Proj_hh) *         TwoBody[ch]);
+   arma::mat P = tbc.Proj_pp - tbc.Proj_hh;
+   arma::mat comm  =  TwoBody[ch] * P * opright.TwoBody[ch]  - opright.TwoBody[ch] * P * TwoBody[ch];
 
-   return 0.5*comm;
+   //return 0.5*comm;
+   return 1*comm;
 }
 
 //*****************************************************************************************
