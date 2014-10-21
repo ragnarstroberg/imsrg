@@ -136,6 +136,8 @@ double Operator::GetTBME(int ch, int a, int b, int c, int d) const
    if (c>d) phase *= ket->Phase(tbc.J);
    if (a==b) phase *= sqrt(1.0+bra->delta_pq());
    if (c==d) phase *= sqrt(1.0+ket->delta_pq());
+//   if (a==b) phase /= sqrt(1.0+bra->delta_pq());
+//   if (c==d) phase /= sqrt(1.0+ket->delta_pq());
    return phase * TwoBody[ch](bra_ind, ket_ind);
 }
 
@@ -553,65 +555,49 @@ arma::mat Operator::comm211(Operator& opright)
 //      j | X            j |  Y            *  sum_c ( Pp*X*Phh*Y*Pp - Pp*Y*Phh*X*Pp)  - (Ph*X*Ppp*Y*Ph - Ph*Y*Ppp*X*Ph)_cicj
 //                                     
 //
-//                                     
-//
+// -- AGREES WITH NATHAN'S RESULTS 
+//   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
 arma::mat Operator::comm221(Operator& opright)
 {
 
    int norbits = modelspace->GetNumberOrbits();
    arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
+   Operator Mpp = opright;
+   Operator Mhh = opright;
+
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       int npq = tbc.GetNumberKets();
+      
+      Mpp.TwoBody[ch] = (TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_pp * TwoBody[ch]);
+      Mhh.TwoBody[ch] = (TwoBody[ch] * tbc.Proj_hh * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_hh * TwoBody[ch]);
 
-      arma::mat Mpph = (TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_pp * TwoBody[ch]);
-      arma::mat Mhhp = (TwoBody[ch] * tbc.Proj_hh * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_hh * TwoBody[ch]);
-//      cout << "Mpph:" << endl; Mpph.print();
-//      cout << "Mhhp:" << endl; Mhhp.print();
-
+      // If commutator is hermitian or antihermitian, we only
+      // need to do half the sum. Add this.
       for (int i=0;i<norbits;++i)
       {
          Orbit *oi = modelspace->GetOrbit(i);
-         double angmomfactor = (2*tbc.J+1.0)/(oi->j2 +1.0);
          for (int j=0;j<norbits;++j)
          {
             Orbit *oj = modelspace->GetOrbit(j);
             if (oi->j2 != oj->j2 or oi->l != oj->l or oi->tz2 != oj->tz2) continue;
+            double cijJ = 0;
             // Sum c over holes and include the nbar_a * nbar_b terms
             for (int &c : modelspace->hole)
             {
-               int ibra = tbc.GetLocalIndex(c,i);
-               int iket = tbc.GetLocalIndex(c,j);
-               if (ibra<0 or iket < 0) continue;
-               //if (ch==0)
-               if (i==0 and j==0)
-               {
-                  //cout << "ibra = " << ibra << "  iket = " << iket << "  Mpph(ibra,iket) = " << Mpph(ibra,iket) << endl;
-                  cout << "i,j,c = " << i << " " << j << " " << c << " J = " << tbc.J <<  "  Mpph(ibra,iket) = " << Mpph(ibra,iket) << endl;
-               }
-               comm(i,j) +=  angmomfactor * Mpph(ibra,iket);
-            }
+               cijJ +=   Mpp.GetTBME(ch,i,c,j,c);
             // Sum c over particles and include the n_a * n_b terms
+            }
             for (int &c : modelspace->particles)
             {
-               int ibra = tbc.GetLocalIndex(c,i);
-               int iket = tbc.GetLocalIndex(c,j);
-               if (ibra<0 or iket < 0) continue;
-               //if (ch==0)
-               if (i==0 and j==0)
-               {
-                  //cout << "ibra = " << ibra << "  iket = " << iket << "  Mhhp(ibra,iket) = " << Mhhp(ibra,iket) << endl;
-                  cout << "i,j,c = " << i << " " << j << " " << c << " J = " << tbc.J << "  Mhhp(ibra,iket) = " << Mhhp(ibra,iket) << endl;
-               }
-               comm(i,j) +=  angmomfactor * Mhhp(ibra,iket);
+               cijJ +=  Mhh.GetTBME(ch,i,c,j,c);
             }
-
+            comm(i,j) += (2*tbc.J+1.0)/(oi->j2 +1.0) * cijJ;
          } // for j
       } // for i
    } //for ch
-   
-   return 0.5*comm;
+   return comm;
 }
 
 
@@ -670,15 +656,16 @@ arma::mat Operator::comm212(Operator& opright, int ch )
 //  |     |      |     |   
 //
 // -- APPEARS TO AGREE WITH NATHAN'S RESULTS
-//   although I'm not sure why there's a missing 1/2... 
+//   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
 arma::mat Operator::comm222_ph(Operator& opright, int ch )
 {
    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-   arma::mat P = tbc.Proj_pp - tbc.Proj_hh;
-   arma::mat comm  =  TwoBody[ch] * P * opright.TwoBody[ch]  - opright.TwoBody[ch] * P * TwoBody[ch];
-
-   //return 0.5*comm;
-   return 1*comm;
+      arma::mat Mpp = (TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_pp * TwoBody[ch]);
+      arma::mat Mhh = (TwoBody[ch] * tbc.Proj_hh * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_hh * TwoBody[ch]);
+   arma::mat comm = Mpp - Mhh;
+//   arma::mat P = tbc.Proj_pp - tbc.Proj_hh;
+//   arma::mat comm  =  TwoBody[ch] * P * opright.TwoBody[ch]  - opright.TwoBody[ch] * P * TwoBody[ch];
+   return comm;
 }
 
 //*****************************************************************************************

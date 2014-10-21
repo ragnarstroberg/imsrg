@@ -94,5 +94,14 @@ int main(int argc, char**argv)
    IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
    imsrgsolver.Solve();
 
+   for (int &c : modelspace.hole)
+   {
+      cout << "hole: " << c << endl;
+   }
+   for (int &c : modelspace.particles)
+   {
+      cout << "particle: " << c << endl;
+   }
+
   return 0;
 }

@@ -86,15 +86,21 @@ ModelSpace ReadWrite::ReadModelSpace( const char* filename)
       infile.getline(line,LINESIZE);
    }
    cout << "done reading header" << endl;
-   while (!infile.eof())
+//   while (!infile.eof())
+//   {
+//      infile >> cbuf[0] >> ibuf[0] >> n >> l >> j2 >> tz2
+//             >> ibuf[1] >> spe >> fbuf[0]  >> cbuf[1] >> cbuf[2];
+//      if (infile.eof()) break;
+   while (  infile >> cbuf[0] >> ibuf[0] >> n >> l >> j2 >> tz2
+             >> ibuf[1] >> spe >> fbuf[0]  >> cbuf[1] >> cbuf[2])
    {
-      infile >> cbuf[0] >> ibuf[0] >> n >> l >> j2 >> tz2
-             >> ibuf[1] >> spe >> fbuf[0]  >> cbuf[1] >> cbuf[2];
       hvq = 0; // 0=hole 1=valence 2=particle outside the valence space
       if (strstr(cbuf[1],"particle")) hvq++;
       if (strstr(cbuf[2],"outside")) hvq++;
+      cout << "ReadWrite adding orbit with n,l,j,tz = " << n << "," << l
+      << j2 << "," << tz2 << endl;
       modelspace.AddOrbit( Orbit(n,l,j2,tz2,hvq,spe) );
-   
+
    }
    cout << "done reading interaction" << endl;
    
@@ -135,10 +141,7 @@ void ReadWrite::ReadBareTBME( const char* filename, Operator& Hbare)
 
      tbme -= fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  // Some sort of COM correction. Check this
 
-// NORMALIZATION: Use normalized, antisymmetrized TBME's
-// NORMALIZATION: Use un-normalized, antisymmetrized TBME's
-//     if (a==b) tbme *= sqrt(2);
-//     if (c==d) tbme *= sqrt(2);
+// NORMALIZATION: Read in normalized, antisymmetrized TBME's
 
      Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d,tbme);
   }

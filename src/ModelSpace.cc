@@ -91,7 +91,7 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
    modelspace = ms;
    NumberKets = 0;
    int nk = modelspace->GetNumberKets();
-   KetMap.resize(nk,-1);
+   KetMap.resize(nk,-1); // set all values to -1
    for (int i=0;i<nk;i++)
    {
       Ket *ket = modelspace->GetKet(i);
@@ -202,6 +202,7 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
 
 void ModelSpace::AddOrbit(Orbit orb)
 {
+   cout << "Adding orbit with n,l,j,tz = " << orb.n << "," << orb.l << "," << orb.j2 << "," << orb.tz2 << endl;
    int ind = Index1(orb.n, orb.l, orb.j2, orb.tz2);
    if (Orbits.size() <= ind) Orbits.resize(ind+1,NULL);
    Orbits[ind] = (new Orbit(orb));
@@ -241,3 +242,32 @@ void ModelSpace::SetupKets()
       TwoBodyChannels.push_back(TwoBodyChannel(ch,this));
    }
 }
+
+
+
+
+double ModelSpace::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
+{
+// Don't really need to store all of them, only need to store
+// unique combinations. Implement this if it becomes a speed/storage issue
+//   int jlist[6] = {j1,j2,j3,J1,J2,J3};
+//   int klist[6];
+//   kmin = =std::min_element(jlist,jlist+6);
+   
+
+/*//   long int key = 10000000000*k1 + 100000000*k2 + 1000000*k3 + 10000*K1 + 100*K2 + K3
+   long int key = 10000000000*j1 + 100000000*j2 + 1000000*j3 + 10000*J1 + 100*J2 + J3;
+   map<long int,double>::iterator it = SixJList.find(key);
+   if (it != map::end)
+   {
+      return SitJList(it)->second();
+
+   }
+
+   double sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
+   map[key] = sixj;
+   return sixj;
+*/
+}
+
+

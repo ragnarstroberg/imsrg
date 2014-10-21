@@ -2,6 +2,7 @@
 #define ModelSpace_h 1
 
 #include <vector>
+#include <map>
 #include <armadillo>
 
 #define JMAX 30
@@ -98,7 +99,7 @@ class TwoBodyChannel
    vector<int> KetIndex_hh;
 
 
- private:
+// private:
    //Fields
    ModelSpace * modelspace;
    int NumberKets;  // Number of pq configs that participate in this channel
@@ -150,6 +151,7 @@ class ModelSpace
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
    TwoBodyChannel* GetTwoBodyChannel_ptr(int ch) {return (&TwoBodyChannels[ch]);};
    int GetTwoBodyJmax() const {return TwoBodyJmax;};
+   double GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3);
 
    int Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
    //int Index2(int p, int q) const {return q*norbits + p;};
@@ -167,6 +169,7 @@ class ModelSpace
    std::vector<Ket*> Kets;
    std::vector<TwoBodyChannel> TwoBodyChannels;
    int nTwoBodyChannels;
+   std::map<long int,double> SixJList;
 
 };
 
