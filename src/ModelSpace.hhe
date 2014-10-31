@@ -107,7 +107,7 @@ class TwoBodyChannel
    vector<int> KetList; // eg [2, 4, 7, ...] Used for looping over all the kets in the channel
    vector<int> KetMap;  // eg [ -1, -1, 0, -1, 1, -1, -1, 2 ...] Used for asking what is the local index of this ket. -1 means the ket doesn't participate in this channel
    //Methods
-   virtual bool CheckChannel_ket(int p, int q) const;  // check if |pq> participates in this channel
+   bool CheckChannel_ket(int p, int q) const;  // check if |pq> participates in this channel
    bool CheckChannel_ket(Ket *ket) const {return CheckChannel_ket(ket->p,ket->q);};  // check if |pq> participates in this channel
    void Copy(const TwoBodyChannel &);
    
@@ -115,13 +115,9 @@ class TwoBodyChannel
 
 class TwoBodyChannel_CC : public TwoBodyChannel
 {
-  public:
-   TwoBodyChannel_CC();
-   TwoBodyChannel_CC(int j, int p, int t, ModelSpace* ms);
-   TwoBodyChannel_CC(int N, ModelSpace* ms);
-   TwoBodyChannel_CC(const TwoBodyChannel& rhs) {Copy(rhs);};
-//   void Initialize(int N, ModelSpace* ms);
-   bool CheckChannel_ket(int p, int q) const;  // check if |pq> participates in this channel
+
+   
+
 };
 
 
@@ -131,10 +127,10 @@ class ModelSpace
 
  public:
    // Fields
-   vector<int> holes;
-   vector<int> particles;
+   vector<int> hole;
    vector<int> valence;
    vector<int> qspace;
+   vector<int> particles;
 
    // Constructors
    ModelSpace();
@@ -159,7 +155,6 @@ class ModelSpace
    int GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
    //TwoBodyChannel& GetTwoBodyChannel(int ch) {return TwoBodyChannels[ch];};
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
-   TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
    TwoBodyChannel* GetTwoBodyChannel_ptr(int ch) {return (&TwoBodyChannels[ch]);};
    int GetTwoBodyJmax() const {return TwoBodyJmax;};
    //double GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3);
@@ -182,7 +177,6 @@ class ModelSpace
    std::vector<Orbit*> Orbits;
    std::vector<Ket*> Kets;
    std::vector<TwoBodyChannel> TwoBodyChannels;
-   std::vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
    int nTwoBodyChannels;
    std::map<long int,double> SixJList;
 

@@ -141,9 +141,7 @@ void ReadWrite::ReadBareTBME( const char* filename, Operator& Hbare)
 
 // NORMALIZATION: Read in normalized, antisymmetrized TBME's
 
-     cout << "about to set the TMBE" << endl;
      Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d,tbme);
-     cout << "done setting the TMBE" << endl;
   }
 
   return;

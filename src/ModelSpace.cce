@@ -129,13 +129,11 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
       }
       if ( hvqa==0 and hvqb>0 )
       {
-         //Proj_ph_cc(i,i) = 1-2*((int(j2a+j2b)/2)%2);
-         Proj_ph_cc(i,i) = 1;
+         Proj_ph_cc(i,i) = 1-2*((j2a+j2b)%4);
       }
       if ( hvqa>0 and hvqb==0 )
       {
-         Proj_ph_cc(i,i) = -(1);
-         //Proj_ph_cc(i,i) = -(1-2*((int(j2a+j2b)/2)%2));
+         Proj_ph_cc(i,i) = -(1-2*((j2a+j2b)%4));
       }
    }
 
@@ -177,35 +175,6 @@ bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
    return true;
 }
 
-//************************************************************************
-
-TwoBodyChannel_CC::TwoBodyChannel_CC()
-{}
-
-TwoBodyChannel_CC::TwoBodyChannel_CC(int j, int p, int t, ModelSpace *ms)
-{
-  Initialize(JMAX*2*t + JMAX*p + j, ms);
-}
-
-TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
-{
-   Initialize(N,ms);
-}
-
-
-
-bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
-{
-//   if ((p==q) and (J%2 != 0)) return false; // Pauli principle
-   Orbit * op = modelspace->GetOrbit(p);
-   Orbit * oq = modelspace->GetOrbit(q);
-   if ((op->l + oq->l)%2 != parity) return false;
-   if (abs(op->tz2 + oq->tz2) != 2*Tz) return false;
-   if (op->j2 + oq->j2 < 2*J)       return false;
-   if (abs(op->j2 - oq->j2) > 2*J)  return false;
-
-   return true;
-}
 
 
 //************************************************************************
@@ -258,17 +227,16 @@ void ModelSpace::AddOrbit(Orbit orb)
       nTwoBodyChannels = 2*3*(JMAX);
    }
 //   if (orb.hvq == 0) nCore+=orb.j2+1; // 0 means hole (ie core), 1 means valence, 2 means outside the model space
-   if (orb.hvq == 0) holes.push_back(ind);
-   if (orb.hvq > 0) particles.push_back(ind);
+   if (orb.hvq == 0) hole.push_back(ind);
    if (orb.hvq == 1) valence.push_back(ind);
    if (orb.hvq == 2) qspace.push_back(ind);
+   if (orb.hvq >0) particles.push_back(ind);
 }
 
 int ModelSpace::GetTwoBodyChannelIndex(int j, int p, int t)
 {
    return (t+1)*2*JMAX + p*JMAX + j;
 }
-
 
 void ModelSpace::SetupKets()
 {
@@ -288,9 +256,6 @@ void ModelSpace::SetupKets()
    for (int ch=0;ch<nTwoBodyChannels;++ch)
    {
       TwoBodyChannels.push_back(TwoBodyChannel(ch,this));
-      TwoBodyChannels_CC.push_back(TwoBodyChannel_CC(ch,this));
-      cout << "ch = " << ch << " " << TwoBodyChannels[ch].J << " " << TwoBodyChannels[ch].parity << " " << TwoBodyChannels[ch].Tz << " nKets = " << TwoBodyChannels[ch].GetNumberKets()
-      << "  " << TwoBodyChannels_CC[ch].GetNumberKets() << endl;
    }
 }
 

@@ -95,48 +95,22 @@ void IMSRGSolver::Solve()
 
    cout << endl << " Updating Hs Cross Coupled..." << endl;
    H_s.UpdateCrossCoupled();
-   cout << endl << " Updating Eta Cross Coupled..." << endl;
+   cout << endl << " Updating Hs Cross Coupled..." << endl;
    Eta.UpdateCrossCoupled();
-   cout << "Hs Cross-Coupled left: " << endl;
-   //H_s.TwoBody_CC[0].print();
-      TwoBodyChannel_CC& tbc_print = modelspace->GetTwoBodyChannel_CC(120);
-      cout << "J,p,t = " << tbc_print.J << " " << tbc_print.parity << " " << tbc_print.Tz << endl;
-      for (int ik=0;ik<tbc_print.GetNumberKets();++ik)
-      {
-         Ket * ket = tbc_print.GetKet(ik);
-         cout << "| " << ket->p << " " << ket->q << " >  ";
-      }
-      cout << endl;
-   H_s.TwoBody_CC_left[120].print();
-   cout << "Hs Cross-Coupled right: " << endl;
-   H_s.TwoBody_CC_right[120].print();
-   cout << " odd parity:" << endl;
-   TwoBodyChannel_CC& tbc_print2 = modelspace->GetTwoBodyChannel_CC(150);
-      cout << "J,p,t = " << tbc_print2.J << " " << tbc_print2.parity << " " << tbc_print2.Tz << endl;
-      for (int ik=0;ik<tbc_print2.GetNumberKets();++ik)
-      {
-         Ket * ket = tbc_print2.GetKet(ik);
-         cout << "| " << ket->p << " " << ket->q << " >  ";
-      }
-      cout << endl;
-   cout << "Left" << endl;
-   H_s.TwoBody_CC_left[150].print();
-   cout << "Right" << endl;
-   H_s.TwoBody_CC_right[150].print();
+   cout << "Hs Cross-Coupled: " << endl;
+   H_s.TwoBody_CC[0].print();
    H_s.PrintTwoBody();
    cout << "Eta Cross-Coupled: " << endl;
-   Eta.TwoBody_CC_left[0].print();
+   Eta.TwoBody_CC[0].print();
    Eta.PrintTwoBody();
    commOp.EraseTwoBody();
    Eta.comm222_ph(H_s,commOp);
    cout << "comm_222_ph, ch=0 = " << endl;
    commOp.TwoBody[0].print();
-   commOp.PrintTwoBody();
    commOp.EraseTwoBody();
-//   Eta.comm222_ph_slow(H_s,commOp);
-//   cout << "THe slow way ... " << endl;
-//   commOp.TwoBody[0].print();
-
+   Eta.comm222_ph_slow(H_s,commOp);
+   cout << "THe slow way ... " << endl;
+   commOp.TwoBody[0].print();
 //   TwoBodyChannel& tbc = Eta.GetModelSpace()->GetTwoBodyChannel(1);
 //   cout << "J = " << tbc.J << "  Tz = " << tbc.Tz << "  P = " << tbc.parity << endl;
 //   arma::mat X2Y2_2 = Eta.comm222_ph(H_s,1);
@@ -198,7 +172,7 @@ void IMSRGSolver::UpdateEta()
    {
       H_diag = H_s;
       H_diag.ZeroBody = 0;
-      for (int &a : modelspace->holes)
+      for (int &a : modelspace->hole)
       {
          for (int &b : modelspace->valence)
          {
@@ -226,7 +200,7 @@ void IMSRGSolver::UpdateEta()
       for ( int &i : modelspace->particles)
       {
          Orbit *oi = modelspace->GetOrbit(i);
-         for (int &a : modelspace->holes)
+         for (int &a : modelspace->hole)
          {
             Orbit *oa = modelspace->GetOrbit(a);
             if (oi->j2 != oa->j2 or oi->l != oa->l or oi->tz2 != oa->tz2) continue;

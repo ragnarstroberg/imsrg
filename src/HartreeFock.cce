@@ -353,7 +353,7 @@ void HartreeFock::UpdateDensityMatrix()
 
    // Pcore is a projector onto core orbits.
    arma::mat Pcore = arma::mat(norbits,norbits,arma::fill::zeros);
-   for (int &beta : ms->holes)
+   for (int &beta : ms->hole)
    {
        Pcore(beta,beta) = 1;
    }

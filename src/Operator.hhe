@@ -16,8 +16,7 @@ class Operator
   float ZeroBody;
   arma::mat OneBody;
   arma::mat TwoBody[JMAX*2*3];
-  arma::mat TwoBody_CC_left[JMAX*2*3]; // cross-coupled
-  arma::mat TwoBody_CC_right[JMAX*2*3]; // cross-coupled
+  arma::mat TwoBody_CC[JMAX*2*3]; // cross-coupled
 
   //Constructors
   Operator();
