@@ -46,6 +46,8 @@ class Operator
   double GetTBME(int j, int p, int t, int a, int b, int c, int d) const;
   void   SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
 
+  double GetTBME_NoPhase(int ch, int a, int b, int c, int d) const;
+
   double GetTBMEmonopole(int a, int b, int c, int d);
   double GetTBMEmonopole(Ket * bra, Ket * ket);
 
@@ -69,6 +71,8 @@ class Operator
   bool IsHermitian()const {return hermitian;};
   bool IsAntiHermitian()const {return antihermitian;};
 
+  void SetCrossCoupled(bool tf=true){cross_coupled = tf;};
+
   void PrintTwoBody() ;
   void PrintOut() ;
 
@@ -77,6 +81,7 @@ class Operator
   ModelSpace * modelspace;
   bool hermitian;
   bool antihermitian;
+  bool cross_coupled;
   int TwoBodyJmax;
   int nChannels;
   //Methods

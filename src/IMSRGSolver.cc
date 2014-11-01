@@ -107,9 +107,9 @@ void IMSRGSolver::Solve()
          cout << "| " << ket->p << " " << ket->q << " >  ";
       }
       cout << endl;
-   H_s.TwoBody_CC_left[120].print();
+   H_s.TwoBody_CC_left[151].print();
    cout << "Hs Cross-Coupled right: " << endl;
-   H_s.TwoBody_CC_right[120].print();
+   H_s.TwoBody_CC_right[151].print();
    cout << " odd parity:" << endl;
    TwoBodyChannel_CC& tbc_print2 = modelspace->GetTwoBodyChannel_CC(150);
       cout << "J,p,t = " << tbc_print2.J << " " << tbc_print2.parity << " " << tbc_print2.Tz << endl;
@@ -120,13 +120,15 @@ void IMSRGSolver::Solve()
       }
       cout << endl;
    cout << "Left" << endl;
-   H_s.TwoBody_CC_left[150].print();
+   H_s.TwoBody_CC_left[151].print();
    cout << "Right" << endl;
-   H_s.TwoBody_CC_right[150].print();
-   H_s.PrintTwoBody();
+   H_s.TwoBody_CC_right[151].print();
+//   H_s.PrintTwoBody();
    cout << "Eta Cross-Coupled: " << endl;
-   Eta.TwoBody_CC_left[0].print();
-   Eta.PrintTwoBody();
+   Eta.TwoBody_CC_left[151].print();
+   cout << endl;
+   Eta.TwoBody_CC_right[151].print();
+//   Eta.PrintTwoBody();
    commOp.EraseTwoBody();
    Eta.comm222_ph(H_s,commOp);
    cout << "comm_222_ph, ch=0 = " << endl;

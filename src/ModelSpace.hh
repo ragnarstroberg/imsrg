@@ -166,6 +166,7 @@ class ModelSpace
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    int GetTwoBodyChannelIndex(int j, int p, int t);
+   int phase(double x) {return 1-2*(int(x)%2);};
 
    int Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
    //int Index2(int p, int q) const {return q*norbits + p;};

@@ -111,7 +111,8 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
    // Set up projectors which are used in the commutators
    Proj_pp = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
    Proj_hh = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
-   Proj_ph_cc = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
+   //Proj_ph_cc = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
+   Proj_ph_cc = arma::mat(2*NumberKets, 2*NumberKets, arma::fill::zeros);
    for (int i=0;i<NumberKets;i++)
    {
       Ket *ket = GetKet(i);
@@ -129,11 +130,14 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
       }
       if ( hvqa==0 and hvqb>0 )
       {
-         //Proj_ph_cc(i,i) = 1-2*((int(j2a+j2b)/2)%2);
+//         Proj_ph_cc(i,i) = 1-2*((int(j2a+j2b)/2)%2);
+//         Proj_ph_cc(i+NumberKets,i+NumberKets) = -(1-2*((int(j2a+j2b)/2)%2));
          Proj_ph_cc(i,i) = 1;
+         Proj_ph_cc(i+NumberKets,i+NumberKets) = -1;
       }
       if ( hvqa>0 and hvqb==0 )
       {
+         //Proj_ph_cc(i,i) = 1;
          Proj_ph_cc(i,i) = -(1);
          //Proj_ph_cc(i,i) = -(1-2*((int(j2a+j2b)/2)%2));
       }
