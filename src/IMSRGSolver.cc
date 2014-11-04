@@ -3,6 +3,7 @@
 
 
 
+// Constructor
 IMSRGSolver::IMSRGSolver(Operator H_in)
 {
    method = "BCH";
@@ -18,6 +19,11 @@ IMSRGSolver::IMSRGSolver(Operator H_in)
    Eta.EraseTwoBody();
    Eta.SetAntiHermitian();
    modelspace = H_0.GetModelSpace();
+   Omega = H_s;
+   Omega.EraseZeroBody();
+   Omega.EraseOneBody();
+   Omega.EraseTwoBody();
+   dOmega = Omega;
 }
 
 
@@ -25,7 +31,7 @@ IMSRGSolver::IMSRGSolver(Operator H_in)
 void IMSRGSolver::Solve()
 {
 
-
+/*
    cout << "Norm of Hs = " << H_s.Norm() << endl;
    H_s.PrintTwoBody();
 
@@ -131,10 +137,24 @@ void IMSRGSolver::Solve()
 //   Eta.PrintTwoBody();
    commOp.EraseTwoBody();
    Eta.comm222_ph(H_s,commOp);
-   cout << "comm_222_ph, ch=0 = " << endl;
-   commOp.TwoBody[0].print();
+   cout << "comm_222_ph, ch=123 = " << endl;
+   commOp.TwoBody[modelspace->GetTwoBodyChannelIndex(1,0,1)].print();
    commOp.PrintTwoBody();
+
+   commOp.EraseZeroBody();
+   commOp.EraseOneBody();
    commOp.EraseTwoBody();
+//   commOp = Eta.Commutator(H_s);
+   commOp.ZeroBody = Eta.comm110(H_s) + Eta.comm220(H_s);
+//   commOp.OneBody = Eta.comm111(H_s) + Eta.comm121(H_s) ;//+ Eta.comm221(H_s);
+   Eta.comm122(H_s,commOp);
+//   Eta.comm222_pp_hh(H_s,commOp);
+//   Eta.comm222_ph(H_s,commOp);
+   cout << "Norm comm = " << commOp.Norm() << endl;
+   cout << "commOp.ZeroBody = " << commOp.ZeroBody << endl;
+   cout << "commOp.OneBody = " << endl; commOp.OneBody.print();
+   cout << endl << "commOp.TwoBody = " << endl; commOp.PrintTwoBody();
+   
 //   Eta.comm222_ph_slow(H_s,commOp);
 //   cout << "THe slow way ... " << endl;
 //   commOp.TwoBody[0].print();
@@ -153,14 +173,19 @@ void IMSRGSolver::Solve()
 //   X2Y2_2.print();
 
 
-   return;
-   int imax = 50;
+*/
+
+//   return;
+   int imax = 100;
+   cout << " i     s       E0           ||Omega||" << "    ||dOmega|| " << endl;
+//      cout << 0 << "      " << 0 * ds << "      " << H_s.ZeroBody << "     " << Omega.Norm() << "     " << dOmega.Norm() << endl;
    for (int istep=0;istep<imax;++istep)
    {
+      cout << istep << "      " << istep * ds << "      " << H_s.ZeroBody << "     " << Omega.Norm() << "     " << dOmega.Norm() << endl;
       UpdateEta();
+
       UpdateOmega();
       UpdateH();
-
 
    }
 
@@ -223,7 +248,6 @@ void IMSRGSolver::UpdateEta()
 
    if (generator == "white")
    {
-      cout << "Starting the one body part of ETA " << endl;
       // One body piece -- eliminate ph bits
       for ( int &i : modelspace->particles)
       {
@@ -240,7 +264,6 @@ void IMSRGSolver::UpdateEta()
          }
       
       }
-      cout << "Done with the one body part of ETA " << endl;
       // Two body piece -- eliminate pp'hh' bits
       // This could likely be sped up by constructing and storing the monopole matrix
       int nchan = modelspace->GetNumberTwoBodyChannels();
@@ -264,18 +287,18 @@ void IMSRGSolver::UpdateEta()
                denominator       -= H_s.GetTBMEmonopole(i,b,i,b); // ph'ph'
                denominator       -= H_s.GetTBMEmonopole(j,a,j,a); // p'hp'h
                denominator       -= H_s.GetTBMEmonopole(j,b,j,b); // p'h'p'h'
-               if (ch==0)
-               {
-                  cout << "ijab = " << i << "," << j << "," << a << "," << b << "  denom_A = " << denominator << endl;
-                  cout << "TBMEmonopole(i,j,i,j) = " <<  H_s.GetTBMEmonopole(i,j,i,j) << endl;
-                  cout << "TBMEmonopole(a,b,a,b) = " <<  H_s.GetTBMEmonopole(a,b,a,b) << endl;
-                  cout << "TBMEmonopole(i,a,i,a) = " <<  H_s.GetTBMEmonopole(i,a,i,a) << endl;
-                  cout << "TBMEmonopole(i,b,i,b) = " <<  H_s.GetTBMEmonopole(i,b,i,b) << endl;
-                  cout << "TBMEmonopole(j,a,j,a) = " <<  H_s.GetTBMEmonopole(j,a,j,a) << endl;
-                  cout << "TBMEmonopole(j,b,j,b) = " <<  H_s.GetTBMEmonopole(j,b,j,b) << endl;
-                  cout << "      denom = " << denominator + H_s.OneBody(i,i)+ H_s.OneBody(j,j) - H_s.OneBody(a,a) - H_s.OneBody(b,b)
-                       << "   numerator = " << H_s.TwoBody[ch](ibra,iket) << endl;
-               }
+//             if (ch==0)
+//             {
+//                cout << "ijab = " << i << "," << j << "," << a << "," << b << "  denom_A = " << denominator << endl;
+//                cout << "TBMEmonopole(i,j,i,j) = " <<  H_s.GetTBMEmonopole(i,j,i,j) << endl;
+//                cout << "TBMEmonopole(a,b,a,b) = " <<  H_s.GetTBMEmonopole(a,b,a,b) << endl;
+//                cout << "TBMEmonopole(i,a,i,a) = " <<  H_s.GetTBMEmonopole(i,a,i,a) << endl;
+//                cout << "TBMEmonopole(i,b,i,b) = " <<  H_s.GetTBMEmonopole(i,b,i,b) << endl;
+//                cout << "TBMEmonopole(j,a,j,a) = " <<  H_s.GetTBMEmonopole(j,a,j,a) << endl;
+//                cout << "TBMEmonopole(j,b,j,b) = " <<  H_s.GetTBMEmonopole(j,b,j,b) << endl;
+//                cout << "      denom = " << denominator + H_s.OneBody(i,i)+ H_s.OneBody(j,j) - H_s.OneBody(a,a) - H_s.OneBody(b,b)
+//                     << "   numerator = " << H_s.TwoBody[ch](ibra,iket) << endl;
+//             }
                denominator += H_s.OneBody(i,i)+ H_s.OneBody(j,j) - H_s.OneBody(a,a) - H_s.OneBody(b,b);
                Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket)/denominator;
                Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ;
@@ -285,7 +308,6 @@ void IMSRGSolver::UpdateEta()
       }
 
    } // if white
-//   ds = 1.0;
    dOmega = Eta * ds;
 }
 

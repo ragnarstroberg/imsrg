@@ -25,8 +25,8 @@ int main(int argc, char**argv)
    cout << "Reading in the modelspace" << endl;
    ModelSpace modelspace = rw.ReadModelSpace(inputsps.c_str());
 
-   cout << "Setting up the kets" << endl;
-   modelspace.SetupKets();
+//   cout << "Setting up the kets" << endl;
+//   modelspace.SetupKets();
 
    cout << "Creating H_bare" << endl;
    Operator H_bare =  Operator(&modelspace);
@@ -47,11 +47,11 @@ int main(int argc, char**argv)
 
    Operator H_hf = hf.TransformToHFBasis(H_bare);
 
-   cout << "After transformation, one body piece is"<< endl;
-   H_hf.OneBody.print();
+//   cout << "After transformation, one body piece is"<< endl;
+//   H_hf.OneBody.print();
 
-   cout << "***** Bare Two Body Part *****" << endl;
-   H_bare.PrintTwoBody();
+//   cout << "***** Bare Two Body Part *****" << endl;
+//   H_bare.PrintTwoBody();
 
 /*
    H_bare.WriteOneBody("../output/Hbare1b.out");
@@ -78,23 +78,24 @@ int main(int argc, char**argv)
 
    cout << "EHF = " << hf.EHF << endl;
    cout << "EHF2 = " << hf2.EHF << endl;
-   cout << "Start normal ordering" << endl;
+//   cout << "Start normal ordering" << endl;
    Operator HFNO = H_hf.DoNormalOrdering();
    Operator HbareNO = H_bare.DoNormalOrdering();
-   cout << "Normal ordered zero-body part = " << HFNO.ZeroBody << endl;
-   cout << "Normal ordered one-body part: " << endl;
-   HFNO.OneBody.print();
+//   cout << "Normal ordered zero-body part = " << HFNO.ZeroBody << endl;
+//   cout << "Normal ordered one-body part: " << endl;
+
+//   HFNO.OneBody.print();
 //   HbareNO.OneBody.print();
 //   Operator Hcomm = HFNO.Commutator(HbareNO);
 //   cout << "Commutator zerobody: " << Hcomm.ZeroBody << endl;
 //   cout << "Commutator one body:" << endl;;
 //   Hcomm.OneBody.print();
 
-   //IMSRGSolver imsrgsolver = IMSRGSolver(HFNO);
-   IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
+   IMSRGSolver imsrgsolver = IMSRGSolver(HFNO);
+//   IMSRGSolver imsrgsolver = IMSRGSolver(HareNO);
    imsrgsolver.Solve();
 
-  cout << "SixJ(1,1,1,1,1,1) = " << modelspace.GetSixJ(1,1,1,1,1,1) << endl;
+//  cout << "SixJ(1,1,1,1,1,1) = " << modelspace.GetSixJ(1,1,1,1,1,1) << endl;
 
   return 0;
 }

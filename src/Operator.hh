@@ -56,6 +56,7 @@ class Operator
   Operator BCH_Product( Operator& ); // not yet implemented
   Operator BCH_Transform( Operator& ); // not yet implemented
   Operator DoNormalOrdering(); // Do normal ordering -- not implemented yet
+  void Eye(); // set to identity operator
 
   double Norm();
 

@@ -130,17 +130,21 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
       }
       if ( hvqa==0 and hvqb>0 )
       {
-//         Proj_ph_cc(i,i) = 1-2*((int(j2a+j2b)/2)%2);
-//         Proj_ph_cc(i+NumberKets,i+NumberKets) = -(1-2*((int(j2a+j2b)/2)%2));
+         //Proj_ph_cc(i,i) = 1-2*((int(j2a+j2b)/2)%2);
+         //Proj_ph_cc(i+NumberKets,i+NumberKets) = -(1-2*((int(j2a+j2b)/2)%2));
+//         Proj_ph_cc(i,i) = modelspace->phase((j2a+j2b)/2);
+//         Proj_ph_cc(i+NumberKets,i+NumberKets) = -modelspace->phase((j2a+j2b)/2);
          Proj_ph_cc(i,i) = 1;
-         Proj_ph_cc(i+NumberKets,i+NumberKets) = -1;
+//         Proj_ph_cc(i+NumberKets,i+NumberKets) = -1;
       }
+/*
       if ( hvqa>0 and hvqb==0 )
       {
          //Proj_ph_cc(i,i) = 1;
          Proj_ph_cc(i,i) = -(1);
          //Proj_ph_cc(i,i) = -(1-2*((int(j2a+j2b)/2)%2));
       }
+*/
    }
 
 }
@@ -293,8 +297,8 @@ void ModelSpace::SetupKets()
    {
       TwoBodyChannels.push_back(TwoBodyChannel(ch,this));
       TwoBodyChannels_CC.push_back(TwoBodyChannel_CC(ch,this));
-      cout << "ch = " << ch << " " << TwoBodyChannels[ch].J << " " << TwoBodyChannels[ch].parity << " " << TwoBodyChannels[ch].Tz << " nKets = " << TwoBodyChannels[ch].GetNumberKets()
-      << "  " << TwoBodyChannels_CC[ch].GetNumberKets() << endl;
+//      cout << "ch = " << ch << " " << TwoBodyChannels[ch].J << " " << TwoBodyChannels[ch].parity << " " << TwoBodyChannels[ch].Tz << " nKets = " << TwoBodyChannels[ch].GetNumberKets()
+//      << "  " << TwoBodyChannels_CC[ch].GetNumberKets() << endl;
    }
 }
 

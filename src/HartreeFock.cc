@@ -48,12 +48,12 @@ void HartreeFock::Solve()
 //   C.swap_cols(1,11);
    UpdateH();
 //   return;
-   cout << "Input t" << endl;
-   t.print();
-   cout << "Input Vab" << endl;
-   Vab.print();
-   cout << "Input H" << endl;
-   H.print();
+//   cout << "Input t" << endl;
+//   t.print();
+//   cout << "Input Vab" << endl;
+//   Vab.print();
+//   cout << "Input H" << endl;
+//   H.print();
 /*
    cout << "Input Vmon" << endl;
    Vmon.print();
@@ -95,14 +95,14 @@ void HartreeFock::Solve()
 //      cout << iter << ":  " << ediff << endl;
       iter++;
    }
-   cout << "output H" << endl;
-   H.print();
-   cout << "output t" << endl;
-   t.print();
-   cout << "Output Vab" << endl;
-   Vab.print();
-   cout << "Cia:" << endl;
-   C.print();
+//   cout << "output H" << endl;
+//   H.print();
+//   cout << "output t" << endl;
+//   t.print();
+//   cout << "Output Vab" << endl;
+//   Vab.print();
+//   cout << "Cia:" << endl;
+//   C.print();
 /*
    cout << "Output CHC" << endl;
    (C.t() * H * C).print();
@@ -135,16 +135,16 @@ void HartreeFock::Solve()
 */
 //   UpdateHFOrbits();
 
-cout << "Transformed: " << endl;
-   cout << "T: " << endl;
-   ( C.t() * t * C ).print();
-   cout << "Vab: " << endl;
-   ( C.t() * Vab * C ).print();
-   cout << "H: " << endl;
-   ( C.t() * H * C ).print();
+//   cout << "Transformed: " << endl;
+//   cout << "T: " << endl;
+//   ( C.t() * t * C ).print();
+//   cout << "Vab: " << endl;
+//   ( C.t() * Vab * C ).print();
+//   cout << "H: " << endl;
+//   ( C.t() * H * C ).print();
 
-  cout << "Energies: " << endl;
-  energies.print();
+//  cout << "Energies: " << endl;
+//  energies.print();
 }
 
 void HartreeFock::CalcEHF()

@@ -103,6 +103,7 @@ ModelSpace ReadWrite::ReadModelSpace( const char* filename)
    cout << "done reading interaction" << endl;
    
    infile.close();
+   modelspace.SetupKets();
 
    return modelspace;
 }
