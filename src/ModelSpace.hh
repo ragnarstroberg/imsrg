@@ -58,6 +58,7 @@ class Ket  //  | pq >
  private:
    // Fields
    ModelSpace * ms;
+   int phase_prefactor;
 
 };
 
@@ -139,8 +140,10 @@ class ModelSpace
    // Constructors
    ModelSpace();
    ModelSpace(const ModelSpace&);
+
    // Overloaded operators
    ModelSpace operator=(const ModelSpace&); 
+
    // Methods
    void SetupKets();
    void AddOrbit(Orbit orb);
@@ -170,7 +173,7 @@ class ModelSpace
 
    int Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
    //int Index2(int p, int q) const {return q*norbits + p;};
-   int Index2(int p, int q) const {return q*(q+1)/2 + p;};
+   inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
 
 
  private:

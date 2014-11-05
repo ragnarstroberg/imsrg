@@ -9,8 +9,9 @@ IMSRGSolver::IMSRGSolver(Operator H_in)
    method = "BCH";
    generator = "white";
    s = 0;
+   //ds = 10;
    ds = 0.1;
-   smax  = 5.0;
+   smax  = 2.0;
    H_0 = H_in;
    H_s = H_in;
    Eta = H_in;
@@ -176,19 +177,29 @@ void IMSRGSolver::Solve()
 */
 
 //   return;
+   ofstream flowf;
+   if (flowfile != "")
+      flowf.open(flowfile,ofstream::out);
    int imax = 100;
-   cout << " i     s       E0           ||Omega||" << "    ||dOmega|| " << endl;
+   cout << " i     s       E0       ||H||        ||Omega||" << "    ||dOmega*ds|| " << endl;
 //      cout << 0 << "      " << 0 * ds << "      " << H_s.ZeroBody << "     " << Omega.Norm() << "     " << dOmega.Norm() << endl;
-   for (int istep=0;istep<imax;++istep)
+   for (int istep=0;s<smax;++istep)
    {
-      cout << istep << "      " << istep * ds << "      " << H_s.ZeroBody << "     " << Omega.Norm() << "     " << dOmega.Norm() << endl;
+      cout << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.Norm() << "     " << Omega.Norm() << "     " << Eta.Norm() << endl;
+      if ( flowf.good() )
+         flowf << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.Norm() << "     " << Omega.Norm() << "     " << Eta.Norm() << endl;
       UpdateEta();
 
       UpdateOmega();
       UpdateH();
+      s += ds;
 
    }
 
+//   H_s.Commutator(Eta); // Add extra commutator for comparing with Nathan
+   
+   if (flowfile != "")
+      flowf.close();
 /*
   Do stuff...
 */
@@ -213,7 +224,8 @@ void IMSRGSolver::UpdateOmega()
 
 void IMSRGSolver::UpdateH()
 {
-   H_s = H_s.BCH_Transform( dOmega );
+   //H_s = H_s.BCH_Transform( dOmega );
+   H_s = H_0.BCH_Transform( Omega );
 }
 
 

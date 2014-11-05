@@ -60,14 +60,21 @@ Ket::Ket(ModelSpace * modelspace, int pp, int qq)
       Jmax--;
       Jstep++;
    }
+   phase_prefactor = modelspace->phase((op->j2+oq->j2)/2);
 }
 
+int Ket::Phase(int J)
+{
+//   int exponent = (ms->GetOrbit(p)->j2 + ms->GetOrbit(q)->j2)/2 + J + 1;
+   return phase_prefactor * ms->phase(J+1);
+}
+/*
 int Ket::Phase(int J)
 {
    int exponent = (ms->GetOrbit(p)->j2 + ms->GetOrbit(q)->j2)/2 + J + 1;
    return 1- 2*(exponent%2);
 }
-
+*/
 
 //************************************************************************
 
@@ -169,6 +176,7 @@ void TwoBodyChannel::Copy( const TwoBodyChannel& rhs)
 
 
 int TwoBodyChannel::GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];}; 
+
 Ket * TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; // get pointer to ket using local index
 
 
@@ -305,26 +313,58 @@ void ModelSpace::SetupKets()
 
 
 
-//double ModelSpace::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
 double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3)
 {
+// { j1 j2 j3 }
+// { J1 J2 J3 }
+//
+// Use 2J in the key so we don't have to worry about half-integers
 // Don't really need to store all of them, only need to store
-// unique combinations. Implement this if it becomes a speed/storage issue
-//   int jlist[6] = {j1,j2,j3,J1,J2,J3};
-//   int klist[6];
-//   kmin = =std::min_element(jlist,jlist+6);
-   // use 2J in the key so we don't have to worry about half-integers
-   int k1 = int(2*j1);
-   int k2 = int(2*j2);
-   int k3 = int(2*j3);
-   int K1 = int(2*J1);
-   int K2 = int(2*J2);
-   int K3 = int(2*J3);
+// unique combinations. Since j1,j2,J1,J2 are half-integer
+// and j3,J3 are integer, I only swap around the half-integer ones.
+   double jlist[4] = {j1,j2,J1,J2};
+   int imin = 0;
+   double jmin = 9999;
+   int k1,k2,k3,K1,K2,K3;
+   for (int i=0;i<4;++i)
+   {
+      if (jlist[i] < jmin)
+      {
+         imin = i;
+         jmin = jlist[i];
+      }
+   }
+   switch (imin)
+   {
+      case 0:
+      k1 = int(2*j1);
+      k2 = int(2*j2);
+      K1 = int(2*J1);
+      K2 = int(2*J2);
+      case 1:
+      k1 = int(2*j2);
+      k2 = int(2*j1);
+      K1 = int(2*J2);
+      K2 = int(2*J1);
+      case 2:
+      k1 = int(2*J1);
+      k2 = int(2*J2);
+      K1 = int(2*j1);
+      K2 = int(2*j2);
+      case 3:
+      k1 = int(2*J2);
+      k2 = int(2*J1);
+      K1 = int(2*j2);
+      K2 = int(2*j1);
+   }
+
+   k3 = int(2*j3);
+   K3 = int(2*J3);
    long int key = 10000000000*k1 + 100000000*k2 + 1000000*k3 + 10000*K1 + 100*K2 + K3;
-//   long int key = 10000000000*j1 + 100000000*j2 + 1000000*j3 + 10000*J1 + 100*J2 + J3;
    map<long int,double>::iterator it = SixJList.find(key);
    if ( it != SixJList.end() )  return it->second;
 
+   // if we didn't find it, we need to calculate it.
    double sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
    SixJList[key] = sixj;
    return sixj;

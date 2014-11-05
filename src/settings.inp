@@ -1,5 +1,6 @@
 
-inputsps:	../input/s.sps
+inputsps:	../input/He4_lmax6.sps
+#inputsps:	../input/s.sps
 #inputsps:	../input/s_14.sps
 #inputsps:	../input/s_ox.sps
 #inputsps:	../input/sd.sps
@@ -10,13 +11,17 @@ inputsps:	../input/s.sps
 #inputsps:	../input/O28.sps
 #inputsps:	../input/sd4.sps
 
-inputtbme:	../input/vspsd.int
+#inputtbme:	../input/vspsd.int
 #inputtbme:	../input/vspsd_14.int
 #inputtbme:	../input/vs.int
-#inputtbme:	../input/vjason2.0.int
+inputtbme:	../input/vjason2.0.int
 #inputtbme:	../input/vragnar.int
 #inputtbme:	../input/vjason1.8.int
 #inputtbme:	../input/tbme1.int
 #inputtbme:	../input/tbme2.int
 #inputtbme:	../input/vsrg1.8_n3lo500_w_coulomb_emax6_hw24.int
 
+
+flowfile:	../output/BCH_flow_vspsd.dat
+ds:		0.1
+smax:		0.2

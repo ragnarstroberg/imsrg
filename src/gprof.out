@@ -1,0 +1,780 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 31.18     10.58    10.58       26     0.41     0.62  Operator::comm122(Operator&, Operator&)
+ 26.35     19.52     8.94       26     0.34     0.53  Operator::comm222_ph(Operator&, Operator&)
+ 15.83     24.89     5.37 3049602894     0.00     0.00  TwoBodyChannel::GetLocalIndex(int, int) const
+ 15.46     30.14     5.25 99328112     0.00     0.00  ModelSpace::GetSixJ(double, double, double, double, double, double)
+  3.45     31.31     1.17 62944728     0.00     0.00  Operator::GetTBME(int, int, int, int, int) const
+  1.83     31.93     0.62 216070704     0.00     0.00  TwoBodyChannel::GetKet(int) const
+  1.56     32.46     0.53                             TwoBodyChannel::TwoBodyChannel()
+  1.13     32.84     0.39 163627912     0.00     0.00  Ket::Phase(int)
+  0.94     33.16     0.32       52     0.01     0.03  Operator::UpdateCrossCoupled()
+  0.59     33.36     0.20 11870124     0.00     0.00  Operator::GetTBMEmonopole(int, int, int, int)
+  0.53     33.54     0.18        1     0.18     0.55  HartreeFock::BuildMonopoleV()
+  0.28     33.64     0.10 108910351     0.00     0.00  ModelSpace::GetTwoBodyChannelIndex(int, int, int)
+  0.27     33.73     0.09       25     0.00     0.00  HartreeFock::UpdateH()
+  0.21     33.80     0.07       26     0.00     0.04  Operator::comm222_pp_hh_221(Operator&, Operator&)
+  0.09     33.83     0.03    39495     0.00     0.00  AngMom::SixJ(double, double, double, double, double, double)
+  0.06     33.85     0.02     2534     0.00     0.00  arma::enable_if2<arma::is_arma_type<arma::Mat<double> >::value, arma::Mat<double>::pod_type>::result arma::norm<arma::Mat<double> >(arma::Mat<double> const&, char const*, arma::arma_real_or_cx_only<arma::Mat<double>::elem_type>::result const*) [clone .constprop.87]
+  0.06     33.87     0.02       28     0.00     0.00  Operator::operator+=(Operator const&)
+  0.06     33.89     0.02                             Operator::Eye()
+  0.04     33.90     0.02                             Ket::Ket(ModelSpace*, int, int)
+  0.03     33.91     0.01       28     0.00     0.00  Operator::operator*=(double)
+  0.03     33.92     0.01       26     0.00     0.00  Operator::comm220(Operator&)
+  0.01     33.93     0.01      870     0.00     0.00  TwoBodyChannel::Copy(TwoBodyChannel const&)
+  0.01     33.93     0.01        1     0.01     0.01  ModelSpace::ModelSpace()
+  0.00     33.93     0.00   467031     0.00     0.00  Operator::SetTBME(int, int, int, int, int, double)
+  0.00     33.93     0.00   467031     0.00     0.00  Operator::SetTBME(int, int, int, int, int, int, int, double)
+  0.00     33.93     0.00   287280     0.00     0.00  TwoBodyChannel::CheckChannel_ket(int, int) const
+  0.00     33.93     0.00    39495     0.00     0.00  std::_Rb_tree_iterator<std::pair<long const, double> > std::_Rb_tree<long, std::pair<long const, double>, std::_Select1st<std::pair<long const, double> >, std::less<long>, std::allocator<std::pair<long const, double> > >::_M_emplace_hint_unique<std::piecewise_construct_t const&, std::tuple<long const&>, std::tuple<> >(std::_Rb_tree_const_iterator<std::pair<long const, double> >, std::piecewise_construct_t const&, std::tuple<long const&>&&, std::tuple<>&&)
+  0.00     33.93     0.00    37517     0.00     0.00  void arma::glue_times::apply<double, false, false, false, arma::Mat<double>, arma::Mat<double> >(arma::Mat<double>&, arma::Mat<double> const&, arma::Mat<double> const&, double)
+  0.00     33.93     0.00    28133     0.00     0.00  arma::Mat<double>::~Mat()
+  0.00     33.93     0.00    18748     0.00     0.00  arma::Mat<double>::Mat<arma::fill::fill_zeros>(unsigned int, unsigned int, arma::fill::fill_class<arma::fill::fill_zeros> const&) [clone .constprop.89]
+  0.00     33.93     0.00    18723     0.00     0.00  arma::Mat<double>::operator=(arma::Mat<double>&&)
+  0.00     33.93     0.00    18720     0.00     0.00  arma::Proxy<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> >::Proxy(arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&)
+  0.00     33.93     0.00    15896     0.00     0.00  arma::Mat<double>::init_warm(unsigned int, unsigned int)
+  0.00     33.93     0.00     9408     0.00     0.00  void arma::glue_times_redirect2_helper<false>::apply<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times> const&)
+  0.00     33.93     0.00     9360     0.00     0.00  void arma::eglue_core<arma::eglue_minus>::apply<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>, arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> >(arma::Mat<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>::elem_type>&, arma::eGlue<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>, arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>, arma::eglue_minus> const&)
+  0.00     33.93     0.00     4680     0.00     0.00  void arma::eglue_core<arma::eglue_minus>::apply_inplace_plus<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::eGlue<arma::Mat<double>, arma::Mat<double>, arma::eglue_minus> const&)
+  0.00     33.93     0.00     4350     0.00     0.00  std::vector<int, std::allocator<int> >::operator=(std::vector<int, std::allocator<int> > const&)
+  0.00     33.93     0.00     4320     0.00     0.00  void arma::glue_times_redirect3_helper<false>::apply<arma::Mat<double>, arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&)
+  0.00     33.93     0.00     2197     0.00     0.00  void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&)
+  0.00     33.93     0.00      629     0.00     0.00  arma::Mat<double>::steal_mem(arma::Mat<double>&)
+  0.00     33.93     0.00      624     0.00     0.00  bool arma::auxlib::eig_sym_dc<double, arma::Mat<double> >(arma::Col<double>&, arma::Mat<double>&, arma::Base<double, arma::Mat<double> > const&)
+  0.00     33.93     0.00      386     0.00     0.00  arma::Mat<double>::operator=(arma::Mat<double> const&)
+  0.00     33.93     0.00      360     0.00     0.00  std::vector<int, std::allocator<int> >::_M_fill_insert(__gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > >, unsigned long, int const&)
+  0.00     33.93     0.00      237     0.00     0.00  void arma::glue_times::apply_inplace_plus<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>, arma::Mat<double> >(arma::Mat<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>::elem_type>&, arma::Glue<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&, int) [clone .constprop.131]
+  0.00     33.93     0.00      180     0.00     0.00  TwoBodyChannel::Initialize(int, ModelSpace*)
+  0.00     33.93     0.00      180     0.00     0.00  TwoBodyChannel::Initialize(int, ModelSpace*) [clone .constprop.154]
+  0.00     33.93     0.00      180     0.00     0.00  TwoBodyChannel::TwoBodyChannel(int, ModelSpace*)
+  0.00     33.93     0.00      149     0.00     0.00  Operator::Copy(Operator const&)
+  0.00     33.93     0.00      114     0.00     0.00  Operator::Operator(Operator const&)
+  0.00     33.93     0.00      111     0.00     0.00  std::vector<Ket*, std::allocator<Ket*> >::_M_fill_insert(__gnu_cxx::__normal_iterator<Ket**, std::vector<Ket*, std::allocator<Ket*> > >, unsigned long, Ket* const&)
+  0.00     33.93     0.00      106     0.00     0.00  Operator::~Operator()
+  0.00     33.93     0.00       80     0.00     0.00  void arma::glue_times_redirect3_helper<false>::apply<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Op<arma::Mat<double>, arma::op_htrans>::elem_type>&, arma::Glue<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&)
+  0.00     33.93     0.00       56     0.00     0.00  ModelSpace::AddOrbit(Orbit)
+  0.00     33.93     0.00       56     0.00     0.00  Orbit::Orbit(int, int, int, int, int, float)
+  0.00     33.93     0.00       56     0.00     0.00  std::vector<Orbit*, std::allocator<Orbit*> >::_M_fill_insert(__gnu_cxx::__normal_iterator<Orbit**, std::vector<Orbit*, std::allocator<Orbit*> > >, unsigned long, Orbit* const&)
+  0.00     33.93     0.00       42     0.00     0.00  arma::Mat<double>::pod_type arma::arma_vec_norm_2<arma::Mat<double> >(arma::Proxy<arma::Mat<double> > const&, arma::arma_not_cx<arma::Mat<double>::elem_type>::result const*)
+  0.00     33.93     0.00       28     0.00     0.00  void arma::arrayops::inplace_plus_base<double>(double*, double const*, unsigned int)
+  0.00     33.93     0.00       28     0.00     0.00  Operator::EraseTwoBody()
+  0.00     33.93     0.00       26     0.00     0.00  void arma::arrayops::inplace_set<double>(double*, double, unsigned int) [clone .constprop.140]
+  0.00     33.93     0.00       26     0.00     1.26  Operator::Commutator(Operator&)
+  0.00     33.93     0.00       26     0.00     0.00  Operator::comm110(Operator&)
+  0.00     33.93     0.00       26     0.00     0.00  Operator::comm111(Operator&)
+  0.00     33.93     0.00       26     0.00     0.00  Operator::comm121(Operator&)
+  0.00     33.93     0.00       25     0.00     0.00  HartreeFock::CheckConvergence()
+  0.00     33.93     0.00       25     0.00     0.00  HartreeFock::UpdateDensityMatrix()
+  0.00     33.93     0.00       25     0.00     0.00  void arma::eglue_core<arma::eglue_plus>::apply<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::eGlue<arma::Mat<double>, arma::Mat<double>, arma::eglue_plus> const&)
+  0.00     33.93     0.00       25     0.00     0.00  void arma::glue_times::apply<double, false, true, false, arma::Mat<double>, arma::Mat<double> >(arma::Mat<double>&, arma::Mat<double> const&, arma::Mat<double> const&, double)
+  0.00     33.93     0.00       24     0.00     0.00  HartreeFock::Diagonalize2()
+  0.00     33.93     0.00       12     0.00     0.00  Operator::Norm()
+  0.00     33.93     0.00        9     0.00     0.00  void std::vector<TwoBodyChannel, std::allocator<TwoBodyChannel> >::_M_emplace_back_aux<TwoBodyChannel>(TwoBodyChannel&&)
+  0.00     33.93     0.00        9     0.00     0.00  void std::vector<TwoBodyChannel_CC, std::allocator<TwoBodyChannel_CC> >::_M_emplace_back_aux<TwoBodyChannel_CC>(TwoBodyChannel_CC&&)
+  0.00     33.93     0.00        7     0.00     0.00  Operator::Operator()
+  0.00     33.93     0.00        5     0.00     0.00  std::_Rb_tree_iterator<std::pair<std::string const, std::string> > std::_Rb_tree<std::string, std::pair<std::string const, std::string>, std::_Select1st<std::pair<std::string const, std::string> >, std::less<std::string>, std::allocator<std::pair<std::string const, std::string> > >::_M_emplace_hint_unique<std::piecewise_construct_t const&, std::tuple<std::string const&>, std::tuple<> >(std::_Rb_tree_const_iterator<std::pair<std::string const, std::string> >, std::piecewise_construct_t const&, std::tuple<std::string const&>&&, std::tuple<>&&)
+  0.00     33.93     0.00        2     0.00     2.52  IMSRGSolver::UpdateOmega()
+  0.00     33.93     0.00        2     0.00    13.83  IMSRGSolver::UpdateH()
+  0.00     33.93     0.00        2     0.00     0.00  IMSRGSolver::UpdateEta()
+  0.00     33.93     0.00        2     0.00     0.00  arma::Mat<double>::init_cold()
+  0.00     33.93     0.00        2     0.00     2.52  Operator::BCH_Product(Operator&)
+  0.00     33.93     0.00        2     0.00    13.83  Operator::BCH_Transform(Operator&)
+  0.00     33.93     0.00        2     0.00     0.00  Operator::operator*(double)
+  0.00     33.93     0.00        1     0.00     0.00  _GLOBAL__sub_I__ZN11HartreeFockC2EP8Operator
+  0.00     33.93     0.00        1     0.00     0.00  _GLOBAL__sub_I__ZN11IMSRGSolverC2E8Operator
+  0.00     33.93     0.00        1     0.00     0.00  _GLOBAL__sub_I__ZN5OrbitC2Ev
+  0.00     33.93     0.00        1     0.00     0.00  _GLOBAL__sub_I__ZN6AngMom3fctEd
+  0.00     33.93     0.00        1     0.00     0.00  _GLOBAL__sub_I__ZN8OperatorC2Ev
+  0.00     33.93     0.00        1     0.00     0.00  _GLOBAL__sub_I__ZN9ReadWrite16ReadSettingsFileEPc
+  0.00     33.93     0.00        1     0.00     0.00  _GLOBAL__sub_I_main
+  0.00     33.93     0.00        1     0.00     0.01  ModelSpace::SetupKets()
+  0.00     33.93     0.00        1     0.00     0.00  HartreeFock::ReorderCoefficients()
+  0.00     33.93     0.00        1     0.00     0.00  arma::Mat<double>::eye()
+  0.00     33.93     0.00        1     0.00     0.00  arma::Mat<double>::Mat(arma::Mat<double> const&)
+  0.00     33.93     0.00        1     0.00     0.00  std::_Rb_tree<std::string, std::pair<std::string const, std::string>, std::_Select1st<std::pair<std::string const, std::string> >, std::less<std::string>, std::allocator<std::pair<std::string const, std::string> > >::_M_get_insert_unique_pos(std::string const&)
+  0.00     33.93     0.00        1     0.00     0.00  std::_Rb_tree<long, std::pair<long const, double>, std::_Select1st<std::pair<long const, double> >, std::less<long>, std::allocator<std::pair<long const, double> > >::_M_erase(std::_Rb_tree_node<std::pair<long const, double> >*)
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+           this function is profiled, else blank.
+ 
+ self      the average number of milliseconds spent in this
+ms/call    function per call, if this function is profiled,
+	   else blank.
+
+ total     the average number of milliseconds spent in this
+ms/call    function and its descendents per call, if this 
+	   function is profiled, else blank.
+
+name       the name of the function.  This is the minor sort
+           for this listing. The index shows the location of
+	   the function in the gprof listing. If the index is
+	   in parenthesis it shows where it would appear in
+	   the gprof listing if it were to be printed.
+
+Copyright (C) 2012 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+		     Call graph (explanation follows)
+
+
+granularity: each sample hit covers 2 byte(s) for 0.03% of 33.93 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     96.4    0.00   32.71                 IMSRGSolver::Solve() [1]
+                0.00   27.66       2/2           IMSRGSolver::UpdateH() [3]
+                0.00    5.03       2/2           IMSRGSolver::UpdateOmega() [9]
+                0.00    0.02      12/12          Operator::Norm() [27]
+                0.00    0.00       2/2           IMSRGSolver::UpdateEta() [41]
+-----------------------------------------------
+                0.00    5.02       4/26          Operator::BCH_Product(Operator&) [10]
+                0.00   27.64      22/26          Operator::BCH_Transform(Operator&) [4]
+[2]     96.3    0.00   32.66      26         Operator::Commutator(Operator&) [2]
+               10.58    5.62      26/26          Operator::comm122(Operator&, Operator&) [5]
+                8.94    4.82      26/26          Operator::comm222_ph(Operator&, Operator&) [6]
+                0.32    1.33      52/52          Operator::UpdateCrossCoupled() [11]
+                0.07    0.91      26/26          Operator::comm222_pp_hh_221(Operator&, Operator&) [13]
+                0.00    0.06      26/26          Operator::comm121(Operator&) [23]
+                0.01    0.00      26/26          Operator::comm220(Operator&) [31]
+                0.00    0.00      26/28          Operator::EraseTwoBody() [84]
+                0.00    0.00      26/114         Operator::Operator(Operator const&) [75]
+                0.00    0.00      26/26          Operator::comm110(Operator&) [86]
+                0.00    0.00      26/26          Operator::comm111(Operator&) [87]
+                0.00    0.00      26/15896       arma::Mat<double>::init_warm(unsigned int, unsigned int) [59]
+-----------------------------------------------
+                0.00   27.66       2/2           IMSRGSolver::Solve() [1]
+[3]     81.5    0.00   27.66       2         IMSRGSolver::UpdateH() [3]
+                0.00   27.66       2/2           Operator::BCH_Transform(Operator&) [4]
+                0.00    0.00       2/149         Operator::Copy(Operator const&) [74]
+-----------------------------------------------
+                0.00   27.66       2/2           IMSRGSolver::UpdateH() [3]
+[4]     81.5    0.00   27.66       2         Operator::BCH_Transform(Operator&) [4]
+                0.00   27.64      22/26          Operator::Commutator(Operator&) [2]
+                0.02    0.00      22/28          Operator::operator+=(Operator const&) [26]
+                0.01    0.00      22/28          Operator::operator*=(double) [30]
+                0.00    0.00      46/106         Operator::~Operator() [77]
+                0.00    0.00      26/114         Operator::Operator(Operator const&) [75]
+                0.00    0.00      22/149         Operator::Copy(Operator const&) [74]
+-----------------------------------------------
+               10.58    5.62      26/26          Operator::Commutator(Operator&) [2]
+[5]     47.7   10.58    5.62      26         Operator::comm122(Operator&, Operator&) [5]
+                4.79    0.00 2719994368/3049602894     TwoBodyChannel::GetLocalIndex(int, int) const [7]
+                0.47    0.00 163942584/216070704     TwoBodyChannel::GetKet(int) const [14]
+                0.36    0.00 151633768/163627912     Ket::Phase(int) [19]
+-----------------------------------------------
+                8.94    4.82      26/26          Operator::Commutator(Operator&) [2]
+[6]     40.6    8.94    4.82      26         Operator::comm222_ph(Operator&, Operator&) [6]
+                4.40    0.03 83238896/99328112     ModelSpace::GetSixJ(double, double, double, double, double, double) [8]
+                0.29    0.00 166477792/3049602894     TwoBodyChannel::GetLocalIndex(int, int) const [7]
+                0.07    0.00 83238896/108910351     ModelSpace::GetTwoBodyChannelIndex(int, int, int) [20]
+                0.04    0.00 12308816/216070704     TwoBodyChannel::GetKet(int) const [14]
+                0.00    0.00    9360/9408        void arma::glue_times_redirect2_helper<false>::apply<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times> const&) [60]
+                0.00    0.00    9360/28133       arma::Mat<double>::~Mat() [55]
+-----------------------------------------------
+                0.00    0.00   72784/3049602894     Operator::DoNormalOrdering() [44]
+                0.00    0.00  934062/3049602894     Operator::SetTBME(int, int, int, int, int, double) [38]
+                0.06    0.00 36234432/3049602894     Operator::UpdateCrossCoupled() [11]
+                0.22    0.00 125889456/3049602894     Operator::GetTBME(int, int, int, int, int) const [12]
+                0.29    0.00 166477792/3049602894     Operator::comm222_ph(Operator&, Operator&) [6]
+                4.79    0.00 2719994368/3049602894     Operator::comm122(Operator&, Operator&) [5]
+[7]     15.8    5.37    0.00 3049602894         TwoBodyChannel::GetLocalIndex(int, int) const [7]
+-----------------------------------------------
+                0.85    0.00 16089216/99328112     Operator::UpdateCrossCoupled() [11]
+                4.40    0.03 83238896/99328112     Operator::comm222_ph(Operator&, Operator&) [6]
+[8]     15.5    5.25    0.03 99328112         ModelSpace::GetSixJ(double, double, double, double, double, double) [8]
+                0.03    0.00   39495/39495       AngMom::SixJ(double, double, double, double, double, double) [24]
+                0.00    0.00   39495/39495       std::_Rb_tree_iterator<std::pair<long const, double> > std::_Rb_tree<long, std::pair<long const, double>, std::_Select1st<std::pair<long const, double> >, std::less<long>, std::allocator<std::pair<long const, double> > >::_M_emplace_hint_unique<std::piecewise_construct_t const&, std::tuple<long const&>, std::tuple<> >(std::_Rb_tree_const_iterator<std::pair<long const, double> >, std::piecewise_construct_t const&, std::tuple<long const&>&&, std::tuple<>&&) [53]
+-----------------------------------------------
+                0.00    5.03       2/2           IMSRGSolver::Solve() [1]
+[9]     14.8    0.00    5.03       2         IMSRGSolver::UpdateOmega() [9]
+                0.00    5.03       2/2           Operator::BCH_Product(Operator&) [10]
+                0.00    0.00       2/149         Operator::Copy(Operator const&) [74]
+-----------------------------------------------
+                0.00    5.03       2/2           IMSRGSolver::UpdateOmega() [9]
+[10]    14.8    0.00    5.03       2         Operator::BCH_Product(Operator&) [10]
+                0.00    5.02       4/26          Operator::Commutator(Operator&) [2]
+                0.00    0.00       6/28          Operator::operator+=(Operator const&) [26]
+                0.00    0.00       4/28          Operator::operator*=(double) [30]
+                0.00    0.00       8/106         Operator::~Operator() [77]
+                0.00    0.00       6/114         Operator::Operator(Operator const&) [75]
+-----------------------------------------------
+                0.32    1.33      52/52          Operator::Commutator(Operator&) [2]
+[11]     4.9    0.32    1.33      52         Operator::UpdateCrossCoupled() [11]
+                0.85    0.00 16089216/99328112     ModelSpace::GetSixJ(double, double, double, double, double, double) [8]
+                0.30    0.09 16089216/62944728     Operator::GetTBME(int, int, int, int, int) const [12]
+                0.06    0.00 36234432/3049602894     TwoBodyChannel::GetLocalIndex(int, int) const [7]
+                0.01    0.00 16089216/108910351     ModelSpace::GetTwoBodyChannelIndex(int, int, int) [20]
+                0.01    0.00 4578080/216070704     TwoBodyChannel::GetKet(int) const [14]
+                0.00    0.00   18720/18748       arma::Mat<double>::Mat<arma::fill::fill_zeros>(unsigned int, unsigned int, arma::fill::fill_class<arma::fill::fill_zeros> const&) [clone .constprop.89] [56]
+                0.00    0.00   18720/28133       arma::Mat<double>::~Mat() [55]
+                0.00    0.00   18720/18723       arma::Mat<double>::operator=(arma::Mat<double>&&) [57]
+-----------------------------------------------
+                0.00    0.00     784/62944728     Operator::DoNormalOrdering() [44]
+                0.17    0.05 9115208/62944728     Operator::GetTBMEmonopole(int, int, int, int) [18]
+                0.30    0.09 16089216/62944728     Operator::UpdateCrossCoupled() [11]
+                0.70    0.21 37739520/62944728     Operator::comm222_pp_hh_221(Operator&, Operator&) [13]
+[12]     4.5    1.17    0.34 62944728         Operator::GetTBME(int, int, int, int, int) const [12]
+                0.22    0.00 125889456/3049602894     TwoBodyChannel::GetLocalIndex(int, int) const [7]
+                0.10    0.00 33983048/216070704     TwoBodyChannel::GetKet(int) const [14]
+                0.03    0.00 10768144/163627912     Ket::Phase(int) [19]
+-----------------------------------------------
+                0.07    0.91      26/26          Operator::Commutator(Operator&) [2]
+[13]     2.9    0.07    0.91      26         Operator::comm222_pp_hh_221(Operator&, Operator&) [13]
+                0.70    0.21 37739520/62944728     Operator::GetTBME(int, int, int, int, int) const [12]
+                0.00    0.00   18720/18720       arma::Proxy<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> >::Proxy(arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&) [58]
+                0.00    0.00    9360/15896       arma::Mat<double>::init_warm(unsigned int, unsigned int) [59]
+                0.00    0.00    9360/9360        void arma::eglue_core<arma::eglue_minus>::apply<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>, arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> >(arma::Mat<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>::elem_type>&, arma::eGlue<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>, arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>, arma::eglue_minus> const&) [61]
+                0.00    0.00    4680/4680        void arma::eglue_core<arma::eglue_minus>::apply_inplace_plus<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::eGlue<arma::Mat<double>, arma::Mat<double>, arma::eglue_minus> const&) [62]
+                0.00    0.00      52/114         Operator::Operator(Operator const&) [75]
+                0.00    0.00      52/106         Operator::~Operator() [77]
+-----------------------------------------------
+                0.00    0.00   12984/216070704     IMSRGSolver::UpdateEta() [41]
+                0.00    0.00   14336/216070704     Operator::DoNormalOrdering() [44]
+                0.00    0.00  296792/216070704     Operator::SetTBME(int, int, int, int, int, double) [38]
+                0.00    0.00  934064/216070704     HartreeFock::TransformToHFBasis(Operator&) [36]
+                0.01    0.00 4578080/216070704     Operator::UpdateCrossCoupled() [11]
+                0.04    0.00 12308816/216070704     Operator::comm222_ph(Operator&, Operator&) [6]
+                0.10    0.00 33983048/216070704     Operator::GetTBME(int, int, int, int, int) const [12]
+                0.47    0.00 163942584/216070704     Operator::comm122(Operator&, Operator&) [5]
+[14]     1.8    0.62    0.00 216070704         TwoBodyChannel::GetKet(int) const [14]
+-----------------------------------------------
+                0.18    0.37       1/1           HartreeFock::HartreeFock(Operator*) [16]
+[15]     1.6    0.18    0.37       1         HartreeFock::BuildMonopoleV() [15]
+                0.17    0.20 10188864/11870124     Operator::GetTBMEmonopole(int, int, int, int) [18]
+                0.00    0.00       1/26          void arma::arrayops::inplace_set<double>(double*, double, unsigned int) [clone .constprop.140] [85]
+-----------------------------------------------
+                                                 <spontaneous>
+[16]     1.6    0.00    0.55                 HartreeFock::HartreeFock(Operator*) [16]
+                0.18    0.37       1/1           HartreeFock::BuildMonopoleV() [15]
+                0.00    0.00       5/629         arma::Mat<double>::steal_mem(arma::Mat<double>&) [66]
+                0.00    0.00       1/15896       arma::Mat<double>::init_warm(unsigned int, unsigned int) [59]
+                0.00    0.00       1/25          HartreeFock::UpdateDensityMatrix() [89]
+-----------------------------------------------
+                                                 <spontaneous>
+[17]     1.6    0.53    0.00                 TwoBodyChannel::TwoBodyChannel() [17]
+-----------------------------------------------
+                0.00    0.00    3948/11870124     IMSRGSolver::UpdateEta() [41]
+                0.03    0.03 1677312/11870124     Operator::comm121(Operator&) [23]
+                0.17    0.20 10188864/11870124     HartreeFock::BuildMonopoleV() [15]
+[18]     1.3    0.20    0.23 11870124         Operator::GetTBMEmonopole(int, int, int, int) [18]
+                0.17    0.05 9115208/62944728     Operator::GetTBME(int, int, int, int, int) const [12]
+                0.01    0.00 9115208/108910351     ModelSpace::GetTwoBodyChannelIndex(int, int, int) [20]
+-----------------------------------------------
+                0.00    0.00    1528/163627912     Operator::DoNormalOrdering() [44]
+                0.00    0.00  296792/163627912     Operator::SetTBME(int, int, int, int, int, double) [38]
+                0.00    0.00  927680/163627912     HartreeFock::TransformToHFBasis(Operator&) [36]
+                0.03    0.00 10768144/163627912     Operator::GetTBME(int, int, int, int, int) const [12]
+                0.36    0.00 151633768/163627912     Operator::comm122(Operator&, Operator&) [5]
+[19]     1.1    0.39    0.00 163627912         Ket::Phase(int) [19]
+-----------------------------------------------
+                0.00    0.00  467031/108910351     Operator::SetTBME(int, int, int, int, int, int, int, double) [43]
+                0.01    0.00 9115208/108910351     Operator::GetTBMEmonopole(int, int, int, int) [18]
+                0.01    0.00 16089216/108910351     Operator::UpdateCrossCoupled() [11]
+                0.07    0.00 83238896/108910351     Operator::comm222_ph(Operator&, Operator&) [6]
+[20]     0.3    0.10    0.00 108910351         ModelSpace::GetTwoBodyChannelIndex(int, int, int) [20]
+-----------------------------------------------
+                0.09    0.00      25/25          HartreeFock::Solve() [22]
+[21]     0.3    0.09    0.00      25         HartreeFock::UpdateH() [21]
+                0.00    0.00      25/26          void arma::arrayops::inplace_set<double>(double*, double, unsigned int) [clone .constprop.140] [85]
+                0.00    0.00      25/15896       arma::Mat<double>::init_warm(unsigned int, unsigned int) [59]
+                0.00    0.00      25/25          void arma::eglue_core<arma::eglue_plus>::apply<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::eGlue<arma::Mat<double>, arma::Mat<double>, arma::eglue_plus> const&) [90]
+-----------------------------------------------
+                                                 <spontaneous>
+[22]     0.3    0.00    0.09                 HartreeFock::Solve() [22]
+                0.09    0.00      25/25          HartreeFock::UpdateH() [21]
+                0.00    0.00      25/25          HartreeFock::CheckConvergence() [88]
+                0.00    0.00      24/25          HartreeFock::UpdateDensityMatrix() [89]
+                0.00    0.00      24/24          HartreeFock::Diagonalize2() [92]
+                0.00    0.00       1/1           HartreeFock::ReorderCoefficients() [103]
+-----------------------------------------------
+                0.00    0.06      26/26          Operator::Commutator(Operator&) [2]
+[23]     0.2    0.00    0.06      26         Operator::comm121(Operator&) [23]
+                0.03    0.03 1677312/11870124     Operator::GetTBMEmonopole(int, int, int, int) [18]
+                0.00    0.00      26/18748       arma::Mat<double>::Mat<arma::fill::fill_zeros>(unsigned int, unsigned int, arma::fill::fill_class<arma::fill::fill_zeros> const&) [clone .constprop.89] [56]
+-----------------------------------------------
+                0.03    0.00   39495/39495       ModelSpace::GetSixJ(double, double, double, double, double, double) [8]
+[24]     0.1    0.03    0.00   39495         AngMom::SixJ(double, double, double, double, double, double) [24]
+-----------------------------------------------
+                0.02    0.00    2534/2534        Operator::Norm() [27]
+[25]     0.1    0.02    0.00    2534         arma::enable_if2<arma::is_arma_type<arma::Mat<double> >::value, arma::Mat<double>::pod_type>::result arma::norm<arma::Mat<double> >(arma::Mat<double> const&, char const*, arma::arma_real_or_cx_only<arma::Mat<double>::elem_type>::result const*) [clone .constprop.87] [25]
+                0.00    0.00      42/42          arma::Mat<double>::pod_type arma::arma_vec_norm_2<arma::Mat<double> >(arma::Proxy<arma::Mat<double> > const&, arma::arma_not_cx<arma::Mat<double>::elem_type>::result const*) [82]
+-----------------------------------------------
+                0.00    0.00       6/28          Operator::BCH_Product(Operator&) [10]
+                0.02    0.00      22/28          Operator::BCH_Transform(Operator&) [4]
+[26]     0.1    0.02    0.00      28         Operator::operator+=(Operator const&) [26]
+                0.00    0.00      28/28          void arma::arrayops::inplace_plus_base<double>(double*, double const*, unsigned int) [83]
+-----------------------------------------------
+                0.00    0.02      12/12          IMSRGSolver::Solve() [1]
+[27]     0.1    0.00    0.02      12         Operator::Norm() [27]
+                0.02    0.00    2534/2534        arma::enable_if2<arma::is_arma_type<arma::Mat<double> >::value, arma::Mat<double>::pod_type>::result arma::norm<arma::Mat<double> >(arma::Mat<double> const&, char const*, arma::arma_real_or_cx_only<arma::Mat<double>::elem_type>::result const*) [clone .constprop.87] [25]
+-----------------------------------------------
+                                                 <spontaneous>
+[28]     0.1    0.02    0.00                 Operator::Eye() [28]
+-----------------------------------------------
+                                                 <spontaneous>
+[29]     0.0    0.02    0.00                 Ket::Ket(ModelSpace*, int, int) [29]
+-----------------------------------------------
+                0.00    0.00       2/28          Operator::operator*(double) [42]
+                0.00    0.00       4/28          Operator::BCH_Product(Operator&) [10]
+                0.01    0.00      22/28          Operator::BCH_Transform(Operator&) [4]
+[30]     0.0    0.01    0.00      28         Operator::operator*=(double) [30]
+-----------------------------------------------
+                0.01    0.00      26/26          Operator::Commutator(Operator&) [2]
+[31]     0.0    0.01    0.00      26         Operator::comm220(Operator&) [31]
+                0.00    0.00    4320/4320        void arma::glue_times_redirect3_helper<false>::apply<arma::Mat<double>, arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&) [64]
+-----------------------------------------------
+                                                 <spontaneous>
+[32]     0.0    0.00    0.01                 ReadWrite::ReadModelSpace(char const*) [32]
+                0.01    0.00       1/1           ModelSpace::ModelSpace() [35]
+                0.00    0.01       1/1           ModelSpace::SetupKets() [34]
+                0.00    0.00      56/56          Orbit::Orbit(int, int, int, int, int, float) [80]
+                0.00    0.00      56/56          ModelSpace::AddOrbit(Orbit) [79]
+-----------------------------------------------
+                0.00    0.00     264/870         void std::vector<TwoBodyChannel, std::allocator<TwoBodyChannel> >::_M_emplace_back_aux<TwoBodyChannel>(TwoBodyChannel&&) [39]
+                0.00    0.00     264/870         void std::vector<TwoBodyChannel_CC, std::allocator<TwoBodyChannel_CC> >::_M_emplace_back_aux<TwoBodyChannel_CC>(TwoBodyChannel_CC&&) [40]
+                0.00    0.00     342/870         ModelSpace::SetupKets() [34]
+[33]     0.0    0.01    0.00     870         TwoBodyChannel::Copy(TwoBodyChannel const&) [33]
+                0.00    0.00    4350/4350        std::vector<int, std::allocator<int> >::operator=(std::vector<int, std::allocator<int> > const&) [63]
+-----------------------------------------------
+                0.00    0.01       1/1           ReadWrite::ReadModelSpace(char const*) [32]
+[34]     0.0    0.00    0.01       1         ModelSpace::SetupKets() [34]
+                0.00    0.00     342/870         TwoBodyChannel::Copy(TwoBodyChannel const&) [33]
+                0.00    0.00       9/9           void std::vector<TwoBodyChannel, std::allocator<TwoBodyChannel> >::_M_emplace_back_aux<TwoBodyChannel>(TwoBodyChannel&&) [39]
+                0.00    0.00       9/9           void std::vector<TwoBodyChannel_CC, std::allocator<TwoBodyChannel_CC> >::_M_emplace_back_aux<TwoBodyChannel_CC>(TwoBodyChannel_CC&&) [40]
+                0.00    0.00     180/180         TwoBodyChannel::Initialize(int, ModelSpace*) [clone .constprop.154] [72]
+                0.00    0.00     180/180         TwoBodyChannel::TwoBodyChannel(int, ModelSpace*) [73]
+                0.00    0.00     111/111         std::vector<Ket*, std::allocator<Ket*> >::_M_fill_insert(__gnu_cxx::__normal_iterator<Ket**, std::vector<Ket*, std::allocator<Ket*> > >, unsigned long, Ket* const&) [76]
+-----------------------------------------------
+                0.01    0.00       1/1           ReadWrite::ReadModelSpace(char const*) [32]
+[35]     0.0    0.01    0.00       1         ModelSpace::ModelSpace() [35]
+-----------------------------------------------
+                                                 <spontaneous>
+[36]     0.0    0.00    0.00                 HartreeFock::TransformToHFBasis(Operator&) [36]
+                0.00    0.00  934064/216070704     TwoBodyChannel::GetKet(int) const [14]
+                0.00    0.00  927680/163627912     Ket::Phase(int) [19]
+                0.00    0.00     237/237         void arma::glue_times::apply_inplace_plus<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>, arma::Mat<double> >(arma::Mat<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>::elem_type>&, arma::Glue<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&, int) [clone .constprop.131] [70]
+                0.00    0.00      80/80          void arma::glue_times_redirect3_helper<false>::apply<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Op<arma::Mat<double>, arma::op_htrans>::elem_type>&, arma::Glue<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&) [78]
+                0.00    0.00       1/149         Operator::Copy(Operator const&) [74]
+-----------------------------------------------
+                                                 <spontaneous>
+[37]     0.0    0.00    0.00                 ReadWrite::ReadBareTBME(char const*, Operator&) [37]
+                0.00    0.00  467031/467031      Operator::SetTBME(int, int, int, int, int, double) [38]
+                0.00    0.00  467031/467031      Operator::SetTBME(int, int, int, int, int, int, int, double) [43]
+-----------------------------------------------
+                0.00    0.00  467031/467031      ReadWrite::ReadBareTBME(char const*, Operator&) [37]
+[38]     0.0    0.00    0.00  467031         Operator::SetTBME(int, int, int, int, int, double) [38]
+                0.00    0.00  934062/3049602894     TwoBodyChannel::GetLocalIndex(int, int) const [7]
+                0.00    0.00  296792/216070704     TwoBodyChannel::GetKet(int) const [14]
+                0.00    0.00  296792/163627912     Ket::Phase(int) [19]
+-----------------------------------------------
+                0.00    0.00       9/9           ModelSpace::SetupKets() [34]
+[39]     0.0    0.00    0.00       9         void std::vector<TwoBodyChannel, std::allocator<TwoBodyChannel> >::_M_emplace_back_aux<TwoBodyChannel>(TwoBodyChannel&&) [39]
+                0.00    0.00     264/870         TwoBodyChannel::Copy(TwoBodyChannel const&) [33]
+-----------------------------------------------
+                0.00    0.00       9/9           ModelSpace::SetupKets() [34]
+[40]     0.0    0.00    0.00       9         void std::vector<TwoBodyChannel_CC, std::allocator<TwoBodyChannel_CC> >::_M_emplace_back_aux<TwoBodyChannel_CC>(TwoBodyChannel_CC&&) [40]
+                0.00    0.00     264/870         TwoBodyChannel::Copy(TwoBodyChannel const&) [33]
+-----------------------------------------------
+                0.00    0.00       2/2           IMSRGSolver::Solve() [1]
+[41]     0.0    0.00    0.00       2         IMSRGSolver::UpdateEta() [41]
+                0.00    0.00       2/2           Operator::operator*(double) [42]
+                0.00    0.00    3948/11870124     Operator::GetTBMEmonopole(int, int, int, int) [18]
+                0.00    0.00   12984/216070704     TwoBodyChannel::GetKet(int) const [14]
+                0.00    0.00       2/149         Operator::Copy(Operator const&) [74]
+-----------------------------------------------
+                0.00    0.00       2/2           IMSRGSolver::UpdateEta() [41]
+[42]     0.0    0.00    0.00       2         Operator::operator*(double) [42]
+                0.00    0.00       2/28          Operator::operator*=(double) [30]
+                0.00    0.00       2/114         Operator::Operator(Operator const&) [75]
+-----------------------------------------------
+                0.00    0.00  467031/467031      ReadWrite::ReadBareTBME(char const*, Operator&) [37]
+[43]     0.0    0.00    0.00  467031         Operator::SetTBME(int, int, int, int, int, int, int, double) [43]
+                0.00    0.00  467031/108910351     ModelSpace::GetTwoBodyChannelIndex(int, int, int) [20]
+-----------------------------------------------
+                                                 <spontaneous>
+[44]     0.0    0.00    0.00                 Operator::DoNormalOrdering() [44]
+                0.00    0.00   72784/3049602894     TwoBodyChannel::GetLocalIndex(int, int) const [7]
+                0.00    0.00   14336/216070704     TwoBodyChannel::GetKet(int) const [14]
+                0.00    0.00     784/62944728     Operator::GetTBME(int, int, int, int, int) const [12]
+                0.00    0.00    1528/163627912     Ket::Phase(int) [19]
+                0.00    0.00     362/386         arma::Mat<double>::operator=(arma::Mat<double> const&) [68]
+                0.00    0.00       2/114         Operator::Operator(Operator const&) [75]
+-----------------------------------------------
+                0.00    0.00  287280/287280      TwoBodyChannel::Initialize(int, ModelSpace*) [71]
+[52]     0.0    0.00    0.00  287280         TwoBodyChannel::CheckChannel_ket(int, int) const [52]
+-----------------------------------------------
+                0.00    0.00   39495/39495       ModelSpace::GetSixJ(double, double, double, double, double, double) [8]
+[53]     0.0    0.00    0.00   39495         std::_Rb_tree_iterator<std::pair<long const, double> > std::_Rb_tree<long, std::pair<long const, double>, std::_Select1st<std::pair<long const, double> >, std::less<long>, std::allocator<std::pair<long const, double> > >::_M_emplace_hint_unique<std::piecewise_construct_t const&, std::tuple<long const&>, std::tuple<> >(std::_Rb_tree_const_iterator<std::pair<long const, double> >, std::piecewise_construct_t const&, std::tuple<long const&>&&, std::tuple<>&&) [53]
+-----------------------------------------------
+                0.00    0.00      25/37517       HartreeFock::UpdateDensityMatrix() [89]
+                0.00    0.00      52/37517       Operator::comm111(Operator&) [87]
+                0.00    0.00   37440/37517       arma::Proxy<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> >::Proxy(arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&) [58]
+[54]     0.0    0.00    0.00   37517         void arma::glue_times::apply<double, false, false, false, arma::Mat<double>, arma::Mat<double> >(arma::Mat<double>&, arma::Mat<double> const&, arma::Mat<double> const&, double) [54]
+-----------------------------------------------
+                0.00    0.00       2/28133       HartreeFock::ReorderCoefficients() [103]
+                0.00    0.00       3/28133       Operator::Operator(ModelSpace*) [178]
+                0.00    0.00      48/28133       HartreeFock::Diagonalize2() [92]
+                0.00    0.00    9360/28133       Operator::comm222_ph(Operator&, Operator&) [6]
+                0.00    0.00   18720/28133       Operator::UpdateCrossCoupled() [11]
+[55]     0.0    0.00    0.00   28133         arma::Mat<double>::~Mat() [55]
+-----------------------------------------------
+                0.00    0.00       2/18748       Operator::Operator(ModelSpace*) [178]
+                0.00    0.00      26/18748       Operator::comm121(Operator&) [23]
+                0.00    0.00   18720/18748       Operator::UpdateCrossCoupled() [11]
+[56]     0.0    0.00    0.00   18748         arma::Mat<double>::Mat<arma::fill::fill_zeros>(unsigned int, unsigned int, arma::fill::fill_class<arma::fill::fill_zeros> const&) [clone .constprop.89] [56]
+-----------------------------------------------
+                0.00    0.00       3/18723       Operator::Operator(ModelSpace*) [178]
+                0.00    0.00   18720/18723       Operator::UpdateCrossCoupled() [11]
+[57]     0.0    0.00    0.00   18723         arma::Mat<double>::operator=(arma::Mat<double>&&) [57]
+                0.00    0.00    5203/15896       arma::Mat<double>::init_warm(unsigned int, unsigned int) [59]
+-----------------------------------------------
+                0.00    0.00   18720/18720       Operator::comm222_pp_hh_221(Operator&, Operator&) [13]
+[58]     0.0    0.00    0.00   18720         arma::Proxy<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> >::Proxy(arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&) [58]
+                0.00    0.00   37440/37517       void arma::glue_times::apply<double, false, false, false, arma::Mat<double>, arma::Mat<double> >(arma::Mat<double>&, arma::Mat<double> const&, arma::Mat<double> const&, double) [54]
+-----------------------------------------------
+                0.00    0.00       1/15896       HartreeFock::HartreeFock(Operator*) [16]
+                0.00    0.00       5/15896       arma::Mat<double>::steal_mem(arma::Mat<double>&) [66]
+                0.00    0.00      25/15896       HartreeFock::CheckConvergence() [88]
+                0.00    0.00      25/15896       HartreeFock::UpdateH() [21]
+                0.00    0.00      26/15896       Operator::Commutator(Operator&) [2]
+                0.00    0.00     180/15896       Operator::Operator(ModelSpace*) [178]
+                0.00    0.00     447/15896       Operator::Copy(Operator const&) [74]
+                0.00    0.00     624/15896       bool arma::auxlib::eig_sym_dc<double, arma::Mat<double> >(arma::Col<double>&, arma::Mat<double>&, arma::Base<double, arma::Mat<double> > const&) [67]
+                0.00    0.00    5203/15896       arma::Mat<double>::operator=(arma::Mat<double>&&) [57]
+                0.00    0.00    9360/15896       Operator::comm222_pp_hh_221(Operator&, Operator&) [13]
+[59]     0.0    0.00    0.00   15896         arma::Mat<double>::init_warm(unsigned int, unsigned int) [59]
+-----------------------------------------------
+                0.00    0.00      48/9408        Operator::comm110(Operator&) [86]
+                0.00    0.00    9360/9408        Operator::comm222_ph(Operator&, Operator&) [6]
+[60]     0.0    0.00    0.00    9408         void arma::glue_times_redirect2_helper<false>::apply<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times> const&) [60]
+-----------------------------------------------
+                0.00    0.00    9360/9360        Operator::comm222_pp_hh_221(Operator&, Operator&) [13]
+[61]     0.0    0.00    0.00    9360         void arma::eglue_core<arma::eglue_minus>::apply<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>, arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> >(arma::Mat<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>::elem_type>&, arma::eGlue<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>, arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>, arma::eglue_minus> const&) [61]
+-----------------------------------------------
+                0.00    0.00    4680/4680        Operator::comm222_pp_hh_221(Operator&, Operator&) [13]
+[62]     0.0    0.00    0.00    4680         void arma::eglue_core<arma::eglue_minus>::apply_inplace_plus<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::eGlue<arma::Mat<double>, arma::Mat<double>, arma::eglue_minus> const&) [62]
+-----------------------------------------------
+                0.00    0.00    4350/4350        TwoBodyChannel::Copy(TwoBodyChannel const&) [33]
+[63]     0.0    0.00    0.00    4350         std::vector<int, std::allocator<int> >::operator=(std::vector<int, std::allocator<int> > const&) [63]
+-----------------------------------------------
+                0.00    0.00    4320/4320        Operator::comm220(Operator&) [31]
+[64]     0.0    0.00    0.00    4320         void arma::glue_times_redirect3_helper<false>::apply<arma::Mat<double>, arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&) [64]
+-----------------------------------------------
+                0.00    0.00      16/2197        ModelSpace::AddOrbit(Orbit) [79]
+                0.00    0.00      72/2197        HartreeFock::Diagonalize2() [92]
+                0.00    0.00     906/2197        TwoBodyChannel::Initialize(int, ModelSpace*) [clone .constprop.154] [72]
+                0.00    0.00    1203/2197        TwoBodyChannel::Initialize(int, ModelSpace*) [71]
+[65]     0.0    0.00    0.00    2197         void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) [65]
+-----------------------------------------------
+                0.00    0.00       5/629         HartreeFock::HartreeFock(Operator*) [16]
+                0.00    0.00     624/629         HartreeFock::Diagonalize2() [92]
+[66]     0.0    0.00    0.00     629         arma::Mat<double>::steal_mem(arma::Mat<double>&) [66]
+                0.00    0.00       5/15896       arma::Mat<double>::init_warm(unsigned int, unsigned int) [59]
+-----------------------------------------------
+                0.00    0.00     624/624         HartreeFock::Diagonalize2() [92]
+[67]     0.0    0.00    0.00     624         bool arma::auxlib::eig_sym_dc<double, arma::Mat<double> >(arma::Col<double>&, arma::Mat<double>&, arma::Base<double, arma::Mat<double> > const&) [67]
+                0.00    0.00     624/15896       arma::Mat<double>::init_warm(unsigned int, unsigned int) [59]
+-----------------------------------------------
+                0.00    0.00      24/386         HartreeFock::Diagonalize2() [92]
+                0.00    0.00     362/386         Operator::DoNormalOrdering() [44]
+[68]     0.0    0.00    0.00     386         arma::Mat<double>::operator=(arma::Mat<double> const&) [68]
+-----------------------------------------------
+                0.00    0.00     180/360         TwoBodyChannel::Initialize(int, ModelSpace*) [71]
+                0.00    0.00     180/360         TwoBodyChannel::Initialize(int, ModelSpace*) [clone .constprop.154] [72]
+[69]     0.0    0.00    0.00     360         std::vector<int, std::allocator<int> >::_M_fill_insert(__gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > >, unsigned long, int const&) [69]
+-----------------------------------------------
+                0.00    0.00     237/237         HartreeFock::TransformToHFBasis(Operator&) [36]
+[70]     0.0    0.00    0.00     237         void arma::glue_times::apply_inplace_plus<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>, arma::Mat<double> >(arma::Mat<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>::elem_type>&, arma::Glue<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&, int) [clone .constprop.131] [70]
+-----------------------------------------------
+                0.00    0.00     180/180         TwoBodyChannel::TwoBodyChannel(int, ModelSpace*) [73]
+[71]     0.0    0.00    0.00     180         TwoBodyChannel::Initialize(int, ModelSpace*) [71]
+                0.00    0.00  287280/287280      TwoBodyChannel::CheckChannel_ket(int, int) const [52]
+                0.00    0.00    1203/2197        void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) [65]
+                0.00    0.00     180/360         std::vector<int, std::allocator<int> >::_M_fill_insert(__gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > >, unsigned long, int const&) [69]
+-----------------------------------------------
+                0.00    0.00     180/180         ModelSpace::SetupKets() [34]
+[72]     0.0    0.00    0.00     180         TwoBodyChannel::Initialize(int, ModelSpace*) [clone .constprop.154] [72]
+                0.00    0.00     906/2197        void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) [65]
+                0.00    0.00     180/360         std::vector<int, std::allocator<int> >::_M_fill_insert(__gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > >, unsigned long, int const&) [69]
+-----------------------------------------------
+                0.00    0.00     180/180         ModelSpace::SetupKets() [34]
+[73]     0.0    0.00    0.00     180         TwoBodyChannel::TwoBodyChannel(int, ModelSpace*) [73]
+                0.00    0.00     180/180         TwoBodyChannel::Initialize(int, ModelSpace*) [71]
+-----------------------------------------------
+                0.00    0.00       1/149         HartreeFock::TransformToHFBasis(Operator&) [36]
+                0.00    0.00       2/149         IMSRGSolver::UpdateOmega() [9]
+                0.00    0.00       2/149         IMSRGSolver::UpdateH() [3]
+                0.00    0.00       2/149         IMSRGSolver::UpdateEta() [41]
+                0.00    0.00       5/149         IMSRGSolver::IMSRGSolver(Operator) [118]
+                0.00    0.00      22/149         Operator::BCH_Transform(Operator&) [4]
+                0.00    0.00     115/149         Operator::Operator(Operator const&) [75]
+[74]     0.0    0.00    0.00     149         Operator::Copy(Operator const&) [74]
+                0.00    0.00     447/15896       arma::Mat<double>::init_warm(unsigned int, unsigned int) [59]
+-----------------------------------------------
+                0.00    0.00       2/114         Operator::operator*(double) [42]
+                0.00    0.00       2/114         Operator::DoNormalOrdering() [44]
+                0.00    0.00       6/114         Operator::BCH_Product(Operator&) [10]
+                0.00    0.00      26/114         Operator::Commutator(Operator&) [2]
+                0.00    0.00      26/114         Operator::BCH_Transform(Operator&) [4]
+                0.00    0.00      52/114         Operator::comm222_pp_hh_221(Operator&, Operator&) [13]
+[75]     0.0    0.00    0.00     114         Operator::Operator(Operator const&) [75]
+                0.00    0.00     115/149         Operator::Copy(Operator const&) [74]
+-----------------------------------------------
+                0.00    0.00     111/111         ModelSpace::SetupKets() [34]
+[76]     0.0    0.00    0.00     111         std::vector<Ket*, std::allocator<Ket*> >::_M_fill_insert(__gnu_cxx::__normal_iterator<Ket**, std::vector<Ket*, std::allocator<Ket*> > >, unsigned long, Ket* const&) [76]
+-----------------------------------------------
+                0.00    0.00       8/106         Operator::BCH_Product(Operator&) [10]
+                0.00    0.00      46/106         Operator::BCH_Transform(Operator&) [4]
+                0.00    0.00      52/106         Operator::comm222_pp_hh_221(Operator&, Operator&) [13]
+[77]     0.0    0.00    0.00     106         Operator::~Operator() [77]
+-----------------------------------------------
+                0.00    0.00      80/80          HartreeFock::TransformToHFBasis(Operator&) [36]
+[78]     0.0    0.00    0.00      80         void arma::glue_times_redirect3_helper<false>::apply<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Op<arma::Mat<double>, arma::op_htrans>::elem_type>&, arma::Glue<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&) [78]
+-----------------------------------------------
+                0.00    0.00      56/56          ReadWrite::ReadModelSpace(char const*) [32]
+[79]     0.0    0.00    0.00      56         ModelSpace::AddOrbit(Orbit) [79]
+                0.00    0.00      56/56          std::vector<Orbit*, std::allocator<Orbit*> >::_M_fill_insert(__gnu_cxx::__normal_iterator<Orbit**, std::vector<Orbit*, std::allocator<Orbit*> > >, unsigned long, Orbit* const&) [81]
+                0.00    0.00      16/2197        void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) [65]
+-----------------------------------------------
+                0.00    0.00      56/56          ReadWrite::ReadModelSpace(char const*) [32]
+[80]     0.0    0.00    0.00      56         Orbit::Orbit(int, int, int, int, int, float) [80]
+-----------------------------------------------
+                0.00    0.00      56/56          ModelSpace::AddOrbit(Orbit) [79]
+[81]     0.0    0.00    0.00      56         std::vector<Orbit*, std::allocator<Orbit*> >::_M_fill_insert(__gnu_cxx::__normal_iterator<Orbit**, std::vector<Orbit*, std::allocator<Orbit*> > >, unsigned long, Orbit* const&) [81]
+-----------------------------------------------
+                0.00    0.00      42/42          arma::enable_if2<arma::is_arma_type<arma::Mat<double> >::value, arma::Mat<double>::pod_type>::result arma::norm<arma::Mat<double> >(arma::Mat<double> const&, char const*, arma::arma_real_or_cx_only<arma::Mat<double>::elem_type>::result const*) [clone .constprop.87] [25]
+[82]     0.0    0.00    0.00      42         arma::Mat<double>::pod_type arma::arma_vec_norm_2<arma::Mat<double> >(arma::Proxy<arma::Mat<double> > const&, arma::arma_not_cx<arma::Mat<double>::elem_type>::result const*) [82]
+-----------------------------------------------
+                0.00    0.00      28/28          Operator::operator+=(Operator const&) [26]
+[83]     0.0    0.00    0.00      28         void arma::arrayops::inplace_plus_base<double>(double*, double const*, unsigned int) [83]
+-----------------------------------------------
+                0.00    0.00       2/28          IMSRGSolver::IMSRGSolver(Operator) [118]
+                0.00    0.00      26/28          Operator::Commutator(Operator&) [2]
+[84]     0.0    0.00    0.00      28         Operator::EraseTwoBody() [84]
+-----------------------------------------------
+                0.00    0.00       1/26          HartreeFock::BuildMonopoleV() [15]
+                0.00    0.00      25/26          HartreeFock::UpdateH() [21]
+[85]     0.0    0.00    0.00      26         void arma::arrayops::inplace_set<double>(double*, double, unsigned int) [clone .constprop.140] [85]
+-----------------------------------------------
+                0.00    0.00      26/26          Operator::Commutator(Operator&) [2]
+[86]     0.0    0.00    0.00      26         Operator::comm110(Operator&) [86]
+                0.00    0.00      48/9408        void arma::glue_times_redirect2_helper<false>::apply<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times> const&) [60]
+-----------------------------------------------
+                0.00    0.00      26/26          Operator::Commutator(Operator&) [2]
+[87]     0.0    0.00    0.00      26         Operator::comm111(Operator&) [87]
+                0.00    0.00      52/37517       void arma::glue_times::apply<double, false, false, false, arma::Mat<double>, arma::Mat<double> >(arma::Mat<double>&, arma::Mat<double> const&, arma::Mat<double> const&, double) [54]
+-----------------------------------------------
+                0.00    0.00      25/25          HartreeFock::Solve() [22]
+[88]     0.0    0.00    0.00      25         HartreeFock::CheckConvergence() [88]
+                0.00    0.00      25/15896       arma::Mat<double>::init_warm(unsigned int, unsigned int) [59]
+-----------------------------------------------
+                0.00    0.00       1/25          HartreeFock::HartreeFock(Operator*) [16]
+                0.00    0.00      24/25          HartreeFock::Solve() [22]
+[89]     0.0    0.00    0.00      25         HartreeFock::UpdateDensityMatrix() [89]
+                0.00    0.00      25/37517       void arma::glue_times::apply<double, false, false, false, arma::Mat<double>, arma::Mat<double> >(arma::Mat<double>&, arma::Mat<double> const&, arma::Mat<double> const&, double) [54]
+                0.00    0.00      25/25          void arma::glue_times::apply<double, false, true, false, arma::Mat<double>, arma::Mat<double> >(arma::Mat<double>&, arma::Mat<double> const&, arma::Mat<double> const&, double) [91]
+-----------------------------------------------
+                0.00    0.00      25/25          HartreeFock::UpdateH() [21]
+[90]     0.0    0.00    0.00      25         void arma::eglue_core<arma::eglue_plus>::apply<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::eGlue<arma::Mat<double>, arma::Mat<double>, arma::eglue_plus> const&) [90]
+-----------------------------------------------
+                0.00    0.00      25/25          HartreeFock::UpdateDensityMatrix() [89]
+[91]     0.0    0.00    0.00      25         void arma::glue_times::apply<double, false, true, false, arma::Mat<double>, arma::Mat<double> >(arma::Mat<double>&, arma::Mat<double> const&, arma::Mat<double> const&, double) [91]
+-----------------------------------------------
+                0.00    0.00      24/24          HartreeFock::Solve() [22]
+[92]     0.0    0.00    0.00      24         HartreeFock::Diagonalize2() [92]
+                0.00    0.00     624/629         arma::Mat<double>::steal_mem(arma::Mat<double>&) [66]
+                0.00    0.00     624/624         bool arma::auxlib::eig_sym_dc<double, arma::Mat<double> >(arma::Col<double>&, arma::Mat<double>&, arma::Base<double, arma::Mat<double> > const&) [67]
+                0.00    0.00      72/2197        void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&) [65]
+                0.00    0.00      48/28133       arma::Mat<double>::~Mat() [55]
+                0.00    0.00      24/386         arma::Mat<double>::operator=(arma::Mat<double> const&) [68]
+-----------------------------------------------
+                0.00    0.00       7/7           IMSRGSolver::IMSRGSolver(Operator) [118]
+[93]     0.0    0.00    0.00       7         Operator::Operator() [93]
+-----------------------------------------------
+                0.00    0.00       5/5           ReadWrite::ReadSettingsFile(char*) [186]
+[94]     0.0    0.00    0.00       5         std::_Rb_tree_iterator<std::pair<std::string const, std::string> > std::_Rb_tree<std::string, std::pair<std::string const, std::string>, std::_Select1st<std::pair<std::string const, std::string> >, std::less<std::string>, std::allocator<std::pair<std::string const, std::string> > >::_M_emplace_hint_unique<std::piecewise_construct_t const&, std::tuple<std::string const&>, std::tuple<> >(std::_Rb_tree_const_iterator<std::pair<std::string const, std::string> >, std::piecewise_construct_t const&, std::tuple<std::string const&>&&, std::tuple<>&&) [94]
+                0.00    0.00       1/1           std::_Rb_tree<std::string, std::pair<std::string const, std::string>, std::_Select1st<std::pair<std::string const, std::string> >, std::less<std::string>, std::allocator<std::pair<std::string const, std::string> > >::_M_get_insert_unique_pos(std::string const&) [106]
+-----------------------------------------------
+                0.00    0.00       1/2           Operator::Operator(ModelSpace*) [178]
+                0.00    0.00       1/2           HartreeFock::ReorderCoefficients() [103]
+[95]     0.0    0.00    0.00       2         arma::Mat<double>::init_cold() [95]
+-----------------------------------------------
+                0.00    0.00       1/1           __libc_csu_init [206]
+[96]     0.0    0.00    0.00       1         _GLOBAL__sub_I__ZN11HartreeFockC2EP8Operator [96]
+-----------------------------------------------
+                0.00    0.00       1/1           __libc_csu_init [206]
+[97]     0.0    0.00    0.00       1         _GLOBAL__sub_I__ZN11IMSRGSolverC2E8Operator [97]
+-----------------------------------------------
+                0.00    0.00       1/1           __libc_csu_init [206]
+[98]     0.0    0.00    0.00       1         _GLOBAL__sub_I__ZN5OrbitC2Ev [98]
+-----------------------------------------------
+                0.00    0.00       1/1           __libc_csu_init [206]
+[99]     0.0    0.00    0.00       1         _GLOBAL__sub_I__ZN6AngMom3fctEd [99]
+-----------------------------------------------
+                0.00    0.00       1/1           __libc_csu_init [206]
+[100]    0.0    0.00    0.00       1         _GLOBAL__sub_I__ZN8OperatorC2Ev [100]
+-----------------------------------------------
+                0.00    0.00       1/1           __libc_csu_init [206]
+[101]    0.0    0.00    0.00       1         _GLOBAL__sub_I__ZN9ReadWrite16ReadSettingsFileEPc [101]
+-----------------------------------------------
+                0.00    0.00       1/1           __libc_csu_init [206]
+[102]    0.0    0.00    0.00       1         _GLOBAL__sub_I_main [102]
+-----------------------------------------------
+                0.00    0.00       1/1           HartreeFock::Solve() [22]
+[103]    0.0    0.00    0.00       1         HartreeFock::ReorderCoefficients() [103]
+                0.00    0.00       2/28133       arma::Mat<double>::~Mat() [55]
+                0.00    0.00       1/1           arma::Mat<double>::Mat(arma::Mat<double> const&) [105]
+                0.00    0.00       1/2           arma::Mat<double>::init_cold() [95]
+-----------------------------------------------
+                0.00    0.00       1/1           Operator::Operator(ModelSpace*) [178]
+[104]    0.0    0.00    0.00       1         arma::Mat<double>::eye() [104]
+-----------------------------------------------
+                0.00    0.00       1/1           HartreeFock::ReorderCoefficients() [103]
+[105]    0.0    0.00    0.00       1         arma::Mat<double>::Mat(arma::Mat<double> const&) [105]
+-----------------------------------------------
+                0.00    0.00       1/1           std::_Rb_tree_iterator<std::pair<std::string const, std::string> > std::_Rb_tree<std::string, std::pair<std::string const, std::string>, std::_Select1st<std::pair<std::string const, std::string> >, std::less<std::string>, std::allocator<std::pair<std::string const, std::string> > >::_M_emplace_hint_unique<std::piecewise_construct_t const&, std::tuple<std::string const&>, std::tuple<> >(std::_Rb_tree_const_iterator<std::pair<std::string const, std::string> >, std::piecewise_construct_t const&, std::tuple<std::string const&>&&, std::tuple<>&&) [94]
+[106]    0.0    0.00    0.00       1         std::_Rb_tree<std::string, std::pair<std::string const, std::string>, std::_Select1st<std::pair<std::string const, std::string> >, std::less<std::string>, std::allocator<std::pair<std::string const, std::string> > >::_M_get_insert_unique_pos(std::string const&) [106]
+-----------------------------------------------
+                                6095             std::_Rb_tree<long, std::pair<long const, double>, std::_Select1st<std::pair<long const, double> >, std::less<long>, std::allocator<std::pair<long const, double> > >::_M_erase(std::_Rb_tree_node<std::pair<long const, double> >*) [107]
+                0.00    0.00       1/1           ModelSpace::~ModelSpace() [110]
+[107]    0.0    0.00    0.00       1+6095    std::_Rb_tree<long, std::pair<long const, double>, std::_Select1st<std::pair<long const, double> >, std::less<long>, std::allocator<std::pair<long const, double> > >::_M_erase(std::_Rb_tree_node<std::pair<long const, double> >*) [107]
+                                6095             std::_Rb_tree<long, std::pair<long const, double>, std::_Select1st<std::pair<long const, double> >, std::less<long>, std::allocator<std::pair<long const, double> > >::_M_erase(std::_Rb_tree_node<std::pair<long const, double> >*) [107]
+-----------------------------------------------
+
+ This table describes the call tree of the program, and was sorted by
+ the total amount of time spent in each function and its children.
+
+ Each entry in this table consists of several lines.  The line with the
+ index number at the left hand margin lists the current function.
+ The lines above it list the functions that called this function,
+ and the lines below it list the functions this one called.
+ This line lists:
+     index	A unique number given to each element of the table.
+		Index numbers are sorted numerically.
+		The index number is printed next to every function name so
+		it is easier to look up where the function is in the table.
+
+     % time	This is the percentage of the `total' time that was spent
+		in this function and its children.  Note that due to
+		different viewpoints, functions excluded by options, etc,
+		these numbers will NOT add up to 100%.
+
+     self	This is the total amount of time spent in this function.
+
+     children	This is the total amount of time propagated into this
+		function by its children.
+
+     called	This is the number of times the function was called.
+		If the function called itself recursively, the number
+		only includes non-recursive calls, and is followed by
+		a `+' and the number of recursive calls.
+
+     name	The name of the current function.  The index number is
+		printed after it.  If the function is a member of a
+		cycle, the cycle number is printed between the
+		function's name and the index number.
+
+
+ For the function's parents, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the function into this parent.
+
+     children	This is the amount of time that was propagated from
+		the function's children into this parent.
+
+     called	This is the number of times this parent called the
+		function `/' the total number of times the function
+		was called.  Recursive calls to the function are not
+		included in the number after the `/'.
+
+     name	This is the name of the parent.  The parent's index
+		number is printed after it.  If the parent is a
+		member of a cycle, the cycle number is printed between
+		the name and the index number.
+
+ If the parents of the function cannot be determined, the word
+ `<spontaneous>' is printed in the `name' field, and all the other
+ fields are blank.
+
+ For the function's children, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the child into the function.
+
+     children	This is the amount of time that was propagated from the
+		child's children to the function.
+
+     called	This is the number of times the function called
+		this child `/' the total number of times the child
+		was called.  Recursive calls by the child are not
+		listed in the number after the `/'.
+
+     name	This is the name of the child.  The child's index
+		number is printed after it.  If the child is a
+		member of a cycle, the cycle number is printed
+		between the name and the index number.
+
+ If there are any cycles (circles) in the call graph, there is an
+ entry for the cycle-as-a-whole.  This entry shows who called the
+ cycle (as parents) and the members of the cycle (as children.)
+ The `+' recursive calls entry shows the number of function calls that
+ were internal to the cycle, and the calls entry for each member shows,
+ for that member, how many times it was called from other members of
+ the cycle.
+
+Copyright (C) 2012 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+Index by function name
+
+  [96] _GLOBAL__sub_I__ZN11HartreeFockC2EP8Operator [70] void arma::glue_times::apply_inplace_plus<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>, arma::Mat<double> >(arma::Mat<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>::elem_type>&, arma::Glue<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&, int) [clone .constprop.131] [28] Operator::Eye()
+  [97] _GLOBAL__sub_I__ZN11IMSRGSolverC2E8Operator [54] void arma::glue_times::apply<double, false, false, false, arma::Mat<double>, arma::Mat<double> >(arma::Mat<double>&, arma::Mat<double> const&, arma::Mat<double> const&, double) [74] Operator::Copy(Operator const&)
+  [98] _GLOBAL__sub_I__ZN5OrbitC2Ev [91] void arma::glue_times::apply<double, false, true, false, arma::Mat<double>, arma::Mat<double> >(arma::Mat<double>&, arma::Mat<double> const&, arma::Mat<double> const&, double) [27] Operator::Norm()
+  [99] _GLOBAL__sub_I__ZN6AngMom3fctEd [82] arma::Mat<double>::pod_type arma::arma_vec_norm_2<arma::Mat<double> >(arma::Proxy<arma::Mat<double> > const&, arma::arma_not_cx<arma::Mat<double>::elem_type>::result const*) [38] Operator::SetTBME(int, int, int, int, int, double)
+ [100] _GLOBAL__sub_I__ZN8OperatorC2Ev [60] void arma::glue_times_redirect2_helper<false>::apply<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times> const&) [43] Operator::SetTBME(int, int, int, int, int, int, int, double)
+ [101] _GLOBAL__sub_I__ZN9ReadWrite16ReadSettingsFileEPc [78] void arma::glue_times_redirect3_helper<false>::apply<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Op<arma::Mat<double>, arma::op_htrans>::elem_type>&, arma::Glue<arma::Glue<arma::Op<arma::Mat<double>, arma::op_htrans>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&) [86] Operator::comm110(Operator&)
+ [102] _GLOBAL__sub_I_main    [64] void arma::glue_times_redirect3_helper<false>::apply<arma::Mat<double>, arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&) [87] Operator::comm111(Operator&)
+  [20] ModelSpace::GetTwoBodyChannelIndex(int, int, int) [104] arma::Mat<double>::eye() [23] Operator::comm121(Operator&)
+   [8] ModelSpace::GetSixJ(double, double, double, double, double, double) [95] arma::Mat<double>::init_cold() [5] Operator::comm122(Operator&, Operator&)
+  [79] ModelSpace::AddOrbit(Orbit) [59] arma::Mat<double>::init_warm(unsigned int, unsigned int) [31] Operator::comm220(Operator&)
+  [34] ModelSpace::SetupKets() [66] arma::Mat<double>::steal_mem(arma::Mat<double>&) [75] Operator::Operator(Operator const&)
+  [35] ModelSpace::ModelSpace() [105] arma::Mat<double>::Mat(arma::Mat<double> const&) [93] Operator::Operator()
+  [92] HartreeFock::Diagonalize2() [56] arma::Mat<double>::Mat<arma::fill::fill_zeros>(unsigned int, unsigned int, arma::fill::fill_class<arma::fill::fill_zeros> const&) [clone .constprop.89] [77] Operator::~Operator()
+  [15] HartreeFock::BuildMonopoleV() [55] arma::Mat<double>::~Mat() [30] Operator::operator*=(double)
+  [88] HartreeFock::CheckConvergence() [57] arma::Mat<double>::operator=(arma::Mat<double>&&) [42] Operator::operator*(double)
+ [103] HartreeFock::ReorderCoefficients() [68] arma::Mat<double>::operator=(arma::Mat<double> const&) [26] Operator::operator+=(Operator const&)
+  [89] HartreeFock::UpdateDensityMatrix() [25] arma::enable_if2<arma::is_arma_type<arma::Mat<double> >::value, arma::Mat<double>::pod_type>::result arma::norm<arma::Mat<double> >(arma::Mat<double> const&, char const*, arma::arma_real_or_cx_only<arma::Mat<double>::elem_type>::result const*) [clone .constprop.87] [7] TwoBodyChannel::GetLocalIndex(int, int) const
+  [21] HartreeFock::UpdateH() [58] arma::Proxy<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> >::Proxy(arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> const&) [52] TwoBodyChannel::CheckChannel_ket(int, int) const
+   [9] IMSRGSolver::UpdateOmega() [67] bool arma::auxlib::eig_sym_dc<double, arma::Mat<double> >(arma::Col<double>&, arma::Mat<double>&, arma::Base<double, arma::Mat<double> > const&) [14] TwoBodyChannel::GetKet(int) const
+   [3] IMSRGSolver::UpdateH() [85] void arma::arrayops::inplace_set<double>(double*, double, unsigned int) [clone .constprop.140] [12] Operator::GetTBME(int, int, int, int, int) const
+  [41] IMSRGSolver::UpdateEta() [83] void arma::arrayops::inplace_plus_base<double>(double*, double const*, unsigned int) [39] void std::vector<TwoBodyChannel, std::allocator<TwoBodyChannel> >::_M_emplace_back_aux<TwoBodyChannel>(TwoBodyChannel&&)
+  [71] TwoBodyChannel::Initialize(int, ModelSpace*) [80] Orbit::Orbit(int, int, int, int, int, float) [40] void std::vector<TwoBodyChannel_CC, std::allocator<TwoBodyChannel_CC> >::_M_emplace_back_aux<TwoBodyChannel_CC>(TwoBodyChannel_CC&&)
+  [72] TwoBodyChannel::Initialize(int, ModelSpace*) [clone .constprop.154] [24] AngMom::SixJ(double, double, double, double, double, double) [76] std::vector<Ket*, std::allocator<Ket*> >::_M_fill_insert(__gnu_cxx::__normal_iterator<Ket**, std::vector<Ket*, std::allocator<Ket*> > >, unsigned long, Ket* const&)
+  [33] TwoBodyChannel::Copy(TwoBodyChannel const&) [2] Operator::Commutator(Operator&) [81] std::vector<Orbit*, std::allocator<Orbit*> >::_M_fill_insert(__gnu_cxx::__normal_iterator<Orbit**, std::vector<Orbit*, std::allocator<Orbit*> > >, unsigned long, Orbit* const&)
+  [17] TwoBodyChannel::TwoBodyChannel() [6] Operator::comm222_ph(Operator&, Operator&) [69] std::vector<int, std::allocator<int> >::_M_fill_insert(__gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > >, unsigned long, int const&)
+  [73] TwoBodyChannel::TwoBodyChannel(int, ModelSpace*) [10] Operator::BCH_Product(Operator&) [65] void std::vector<int, std::allocator<int> >::_M_emplace_back_aux<int const&>(int const&)
+  [19] Ket::Phase(int)        [84] Operator::EraseTwoBody() [63] std::vector<int, std::allocator<int> >::operator=(std::vector<int, std::allocator<int> > const&)
+  [29] Ket::Ket(ModelSpace*, int, int) [4] Operator::BCH_Transform(Operator&) [94] std::_Rb_tree_iterator<std::pair<std::string const, std::string> > std::_Rb_tree<std::string, std::pair<std::string const, std::string>, std::_Select1st<std::pair<std::string const, std::string> >, std::less<std::string>, std::allocator<std::pair<std::string const, std::string> > >::_M_emplace_hint_unique<std::piecewise_construct_t const&, std::tuple<std::string const&>, std::tuple<> >(std::_Rb_tree_const_iterator<std::pair<std::string const, std::string> >, std::piecewise_construct_t const&, std::tuple<std::string const&>&&, std::tuple<>&&)
+  [90] void arma::eglue_core<arma::eglue_plus>::apply<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::eGlue<arma::Mat<double>, arma::Mat<double>, arma::eglue_plus> const&) [18] Operator::GetTBMEmonopole(int, int, int, int) [106] std::_Rb_tree<std::string, std::pair<std::string const, std::string>, std::_Select1st<std::pair<std::string const, std::string> >, std::less<std::string>, std::allocator<std::pair<std::string const, std::string> > >::_M_get_insert_unique_pos(std::string const&)
+  [62] void arma::eglue_core<arma::eglue_minus>::apply_inplace_plus<arma::Mat<double>, arma::Mat<double> >(arma::Mat<arma::Mat<double>::elem_type>&, arma::eGlue<arma::Mat<double>, arma::Mat<double>, arma::eglue_minus> const&) [13] Operator::comm222_pp_hh_221(Operator&, Operator&) [53] std::_Rb_tree_iterator<std::pair<long const, double> > std::_Rb_tree<long, std::pair<long const, double>, std::_Select1st<std::pair<long const, double> >, std::less<long>, std::allocator<std::pair<long const, double> > >::_M_emplace_hint_unique<std::piecewise_construct_t const&, std::tuple<long const&>, std::tuple<> >(std::_Rb_tree_const_iterator<std::pair<long const, double> >, std::piecewise_construct_t const&, std::tuple<long const&>&&, std::tuple<>&&)
+  [61] void arma::eglue_core<arma::eglue_minus>::apply<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>, arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times> >(arma::Mat<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>::elem_type>&, arma::eGlue<arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>, arma::Glue<arma::Glue<arma::Mat<double>, arma::Mat<double>, arma::glue_times>, arma::Mat<double>, arma::glue_times>, arma::eglue_minus> const&) [11] Operator::UpdateCrossCoupled() [107] std::_Rb_tree<long, std::pair<long const, double>, std::_Select1st<std::pair<long const, double> >, std::less<long>, std::allocator<std::pair<long const, double> > >::_M_erase(std::_Rb_tree_node<std::pair<long const, double> >*)

@@ -28,8 +28,12 @@ class Operator
   Operator& operator=( const Operator& rhs) {Copy(rhs); return *this;};
   Operator& operator+=( const Operator& rhs);
   Operator operator+( const Operator& rhs);
+  Operator& operator-=( const Operator& rhs);
+  Operator operator-( const Operator& rhs);
   Operator& operator*=( const double rhs);
   Operator operator*( const double rhs);
+  Operator& operator/=( const double rhs);
+  Operator operator/( const double rhs);
 
   //Methods
   // One body setter/getters
@@ -98,6 +102,7 @@ class Operator
   void comm222_pp_hh(Operator& opright, Operator& opout);
   void comm222_ph(Operator& opright, Operator& opout);
   void comm222_ph_slow(Operator& opright, Operator& opout);
+  void comm222_pp_hh_221(Operator& opright, Operator& opout);
 
   arma::mat P_hole_onebody; // Projector onto one-body hole states, ie the number operator n
   arma::mat P_particle_onebody; // Projector onto one-body particle states, ie nbar

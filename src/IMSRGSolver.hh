@@ -3,6 +3,10 @@
 #define IMSRGSolver_h 1
 
 #include "Operator.hh"
+#include <fstream>
+#include <string>
+
+using namespace std;
 
 class IMSRGSolver
 {
@@ -11,6 +15,9 @@ class IMSRGSolver
   IMSRGSolver(Operator H_in);
   void Solve();
   Operator Transform(Operator& OpIn);
+  void SetFlowFile(string s){flowfile = s;};
+  void SetDs(double d){ds = d;};
+  void SetSmax(double d){smax = d;};
 
   private:
   ModelSpace* modelspace;
@@ -26,6 +33,7 @@ class IMSRGSolver
   double smax;
   string method;
   string generator;
+  string flowfile;
 
   void UpdateEta();
   void UpdateOmega();

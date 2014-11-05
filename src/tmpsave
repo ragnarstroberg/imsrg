@@ -1,0 +1,21 @@
+Reading settings file settings.inp
+parameter: [inputsps] = [../input/He4_lmax6.sps]
+parameter: [inputtbme] = [../input/vjason2.0.int]
+parameter: [flowfile] = [../output/BCH_flow_vspsd.dat]
+parameter: [ds] = [0.1]
+parameter: [smax] = [0.2]
+Reading in the modelspace
+Set hbar_omega to 24
+done reading header
+done reading interaction
+Creating H_bare
+Calculating the kinetic energy
+Reading in the TBME 
+Norm of H_bare = 1438.93
+setting up HF
+solving HF
+EHF = -21.9258
+Norm of HFNO = 1430.77
+ i     s       E0       ||H||        ||Omega||    ||dOmega*ds|| 
+0      0      -21.9258     1430.77     0     0
+1      0.1      -23.3159     1430.75     0.0243399     0.243399

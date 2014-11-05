@@ -4,6 +4,8 @@
 #include "HartreeFock.hh"
 #include "IMSRGSolver.hh"
 #include <iostream>
+#include <fstream>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -19,8 +21,12 @@ int main(int argc, char**argv)
    else
       rw.ReadSettingsFile(default_settings_file);
 
-   string inputsps = rw.InputParameters["inputsps"];
+   string inputsps  = rw.InputParameters["inputsps"];
    string inputtbme = rw.InputParameters["inputtbme"];
+   string flowfile  = rw.InputParameters["flowfile"];
+   string ds_str    = rw.InputParameters["ds"];
+   string smax_str  = rw.InputParameters["smax"];
+
 
    cout << "Reading in the modelspace" << endl;
    ModelSpace modelspace = rw.ReadModelSpace(inputsps.c_str());
@@ -70,17 +76,19 @@ int main(int argc, char**argv)
 //   H_hf->OneBody.print();
 
 
-   cout << "Repeating the HF procedure on the HF-basis Hamiltonian" << endl;
-   cout << " ==============================================================================" << endl;
-   HartreeFock  hf2 = HartreeFock(&H_hf);
-   hf2.Solve();
-   cout << "Done solving" << endl;
+//   cout << "Repeating the HF procedure on the HF-basis Hamiltonian" << endl;
+//   cout << " ==============================================================================" << endl;
+//   HartreeFock  hf2 = HartreeFock(&H_hf);
+//   hf2.Solve();
+//   cout << "Done solving" << endl;
 
    cout << "EHF = " << hf.EHF << endl;
-   cout << "EHF2 = " << hf2.EHF << endl;
+//   cout << "EHF2 = " << hf2.EHF << endl;
 //   cout << "Start normal ordering" << endl;
    Operator HFNO = H_hf.DoNormalOrdering();
    Operator HbareNO = H_bare.DoNormalOrdering();
+
+   cout << "Norm of HFNO = " << HFNO.Norm() << endl;
 //   cout << "Normal ordered zero-body part = " << HFNO.ZeroBody << endl;
 //   cout << "Normal ordered one-body part: " << endl;
 
@@ -92,10 +100,21 @@ int main(int argc, char**argv)
 //   Hcomm.OneBody.print();
 
    IMSRGSolver imsrgsolver = IMSRGSolver(HFNO);
-//   IMSRGSolver imsrgsolver = IMSRGSolver(HareNO);
+//   IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
+   imsrgsolver.SetFlowFile(flowfile);
+   if (ds_str != "")
+   {
+      double ds = strtod(ds_str.c_str(),NULL);
+      imsrgsolver.SetDs(ds);
+   }
+   if (smax_str != "")
+   {
+      double smax = strtod(smax_str.c_str(),NULL);
+      imsrgsolver.SetSmax(smax);
+   }
+//   IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
    imsrgsolver.Solve();
 
-//  cout << "SixJ(1,1,1,1,1,1) = " << modelspace.GetSixJ(1,1,1,1,1,1) << endl;
 
   return 0;
 }
