@@ -10,13 +10,14 @@ Orbit::Orbit()
 {
 }
 
-Orbit::Orbit(int nn, int ll, int jj2, int ttz2, int hhvq, float e=0.0)
+Orbit::Orbit(int nn, int ll, int jj2, int ttz2, int pph, int iio, float e=0.0)
 {
    n = nn;
    l = ll;
    j2 = jj2;
    tz2 = ttz2;
-   hvq = hhvq;
+   ph = pph;
+   io = iio;
    spe = e;
 }
 
@@ -26,17 +27,19 @@ Orbit::Orbit(const Orbit& orb)
   l = orb.l;
   j2 = orb.j2;
   tz2 = orb.tz2;
-  hvq = orb.hvq;
+  ph = orb.ph;
+  io = orb.io;
   spe = orb.spe;
 }
 
-void Orbit::Set(int nn, int ll, int jj2, int ttz2, int hhvq, float e)
+void Orbit::Set(int nn, int ll, int jj2, int ttz2, int pph, int iio, float e)
 {
    n = nn;
    l = ll;
    j2 = jj2;
-   this->tz2 = ttz2;
-   hvq = hhvq;
+   tz2 = ttz2;
+   ph = pph;
+   io = iio;
    spe = e;
 }
 
@@ -65,16 +68,8 @@ Ket::Ket(ModelSpace * modelspace, int pp, int qq)
 
 int Ket::Phase(int J)
 {
-//   int exponent = (ms->GetOrbit(p)->j2 + ms->GetOrbit(q)->j2)/2 + J + 1;
    return phase_prefactor * ms->phase(J+1);
 }
-/*
-int Ket::Phase(int J)
-{
-   int exponent = (ms->GetOrbit(p)->j2 + ms->GetOrbit(q)->j2)/2 + J + 1;
-   return 1- 2*(exponent%2);
-}
-*/
 
 //************************************************************************
 
@@ -107,51 +102,73 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
       {
          KetMap[i] = NumberKets;
          KetList.push_back(i);
-         int hp = ms->GetOrbit(ket->p)->hvq;
-         int hq = ms->GetOrbit(ket->q)->hvq;
-         if (hp==0 and hq==0) KetIndex_hh.push_back(NumberKets);
-         else if (hp>0 and hq>0) KetIndex_pp.push_back(NumberKets);
-         else KetIndex_ph.push_back(NumberKets);
+         int php = ms->GetOrbit(ket->p)->ph;
+         int phq = ms->GetOrbit(ket->q)->ph;
+         int iop = ms->GetOrbit(ket->p)->io;
+         int ioq = ms->GetOrbit(ket->q)->io;
+
+         if (( php + phq) == 2) // hh
+         {
+            KetIndex_hh.push_back(NumberKets);
+         }
+         else if ((php + phq) == 0) // pp
+         {
+            KetIndex_pp.push_back(NumberKets);
+            if ((iop + ioq) == 0)
+            {
+               KetIndex_vv.push_back(NumberKets);
+            }
+            if ((iop + ioq) == 1)
+            {
+               KetIndex_vq.push_back(NumberKets);
+            }
+            if ((iop + ioq) == 2)
+            {
+               KetIndex_qq.push_back(NumberKets);
+            }
+         }
+         else //ph
+         {
+            KetIndex_ph.push_back(NumberKets);
+            if ((iop + ioq) == 1)
+            {
+               KetIndex_vh.push_back(NumberKets);
+            }
+            if ((iop + ioq) == 2)
+            {
+               KetIndex_hq.push_back(NumberKets);
+            }
+         }
+//         if (iop + ioq == 2) KetIndex_qq.push_back(NumberKets);
+//         else if (iop + ioq == 0) KetIndex_vv.push_back(NumberKets);
+//         else KetIndex_vq.push_back(NumberKets);
          NumberKets++;
       }
    }
+  
    // Set up projectors which are used in the commutators
    Proj_pp = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
    Proj_hh = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
-   //Proj_ph_cc = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
    Proj_ph_cc = arma::mat(2*NumberKets, 2*NumberKets, arma::fill::zeros);
    for (int i=0;i<NumberKets;i++)
    {
       Ket *ket = GetKet(i);
-      int hvqa = modelspace->GetOrbit(ket->p)->hvq;
-      int hvqb = modelspace->GetOrbit(ket->q)->hvq;
+      int pha = modelspace->GetOrbit(ket->p)->ph;
+      int phb = modelspace->GetOrbit(ket->q)->ph;
       int j2a = modelspace->GetOrbit(ket->p)->j2;
       int j2b = modelspace->GetOrbit(ket->q)->j2;
-      if ( hvqa ==0 and hvqb==0 )
+
+      switch (pha+phb)
       {
-         Proj_hh(i,i) = 1;
+         case 0:
+           Proj_pp(i,i) = 1;
+           break;
+         case 2:
+           Proj_hh(i,i) = 1;
+           break;
       }
-      if ( hvqa>0 and hvqb>0 )
-      {
-         Proj_pp(i,i) = 1;
-      }
-      if ( hvqa==0 and hvqb>0 )
-      {
-         //Proj_ph_cc(i,i) = 1-2*((int(j2a+j2b)/2)%2);
-         //Proj_ph_cc(i+NumberKets,i+NumberKets) = -(1-2*((int(j2a+j2b)/2)%2));
-//         Proj_ph_cc(i,i) = modelspace->phase((j2a+j2b)/2);
-//         Proj_ph_cc(i+NumberKets,i+NumberKets) = -modelspace->phase((j2a+j2b)/2);
-         Proj_ph_cc(i,i) = 1;
-//         Proj_ph_cc(i+NumberKets,i+NumberKets) = -1;
-      }
-/*
-      if ( hvqa>0 and hvqb==0 )
-      {
-         //Proj_ph_cc(i,i) = 1;
-         Proj_ph_cc(i,i) = -(1);
-         //Proj_ph_cc(i,i) = -(1-2*((int(j2a+j2b)/2)%2));
-      }
-*/
+
+
    }
 
 }
@@ -166,12 +183,18 @@ void TwoBodyChannel::Copy( const TwoBodyChannel& rhs)
    NumberKets        = rhs.NumberKets;
    Proj_hh           = rhs.Proj_hh;
    Proj_pp           = rhs.Proj_pp;
-   Proj_ph_cc        = rhs.Proj_ph_cc;
+//   Proj_ph_cc        = rhs.Proj_ph_cc;
    KetMap            = rhs.KetMap;
    KetList           = rhs.KetList;
+
    KetIndex_pp       = rhs.KetIndex_pp;
    KetIndex_ph       = rhs.KetIndex_ph;
    KetIndex_hh       = rhs.KetIndex_hh;
+   KetIndex_qq       = rhs.KetIndex_qq;
+   KetIndex_vq       = rhs.KetIndex_vq;
+   KetIndex_hq       = rhs.KetIndex_hq;
+   KetIndex_vh       = rhs.KetIndex_vh;
+   KetIndex_vv       = rhs.KetIndex_vv;
 }
 
 
@@ -249,10 +272,6 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
       AddOrbit( Orbit(*ms.GetOrbit(i)) );
    }
    SetupKets();
-//   hole = hole;
-//   particle=particle;
-//   valence = valence;
-//   qspace = qspace;
 }
 
 
@@ -270,14 +289,12 @@ void ModelSpace::AddOrbit(Orbit orb)
    if (orb.j2 > maxj)
    {
       maxj = orb.j2;
-      //nTwoBodyChannels = 2*3*(maxj+1);
       nTwoBodyChannels = 2*3*(JMAX);
    }
-//   if (orb.hvq == 0) nCore+=orb.j2+1; // 0 means hole (ie core), 1 means valence, 2 means outside the model space
-   if (orb.hvq == 0) holes.push_back(ind);
-   if (orb.hvq > 0) particles.push_back(ind);
-   if (orb.hvq == 1) valence.push_back(ind);
-   if (orb.hvq == 2) qspace.push_back(ind);
+   if (orb.ph == 0) particles.push_back(ind);
+   if (orb.ph == 1) holes.push_back(ind);
+   if (orb.io == 0) valence.push_back(ind);
+   if (orb.io == 1) qspace.push_back(ind);
 }
 
 int ModelSpace::GetTwoBodyChannelIndex(int j, int p, int t)
@@ -294,8 +311,6 @@ void ModelSpace::SetupKets()
    {
      for (int q=p;q<norbits;q++)
      {
-        //index = q*(q+1)/2 + p;
-        //index = q*norbits + p;
         index = Index2(p,q);
         if (index >= Kets.size()) Kets.resize(index+1,NULL);
         Kets[index] = new Ket(this,p,q);
@@ -305,8 +320,6 @@ void ModelSpace::SetupKets()
    {
       TwoBodyChannels.push_back(TwoBodyChannel(ch,this));
       TwoBodyChannels_CC.push_back(TwoBodyChannel_CC(ch,this));
-//      cout << "ch = " << ch << " " << TwoBodyChannels[ch].J << " " << TwoBodyChannels[ch].parity << " " << TwoBodyChannels[ch].Tz << " nKets = " << TwoBodyChannels[ch].GetNumberKets()
-//      << "  " << TwoBodyChannels_CC[ch].GetNumberKets() << endl;
    }
 }
 

@@ -23,15 +23,16 @@ class Orbit
    int l;
    int j2;
    int tz2;
-   int hvq; // hole=0, valence=1, qspace=2
+   int ph; // particle=0, hole=1
+   int io; // inside=0, outside=1
    float spe;
 
    //Constructors
    Orbit();
-   Orbit(int n ,int l, int j, int t, int hvq ,float spe);
+   Orbit(int n ,int l, int j, int t, int ph, int io, float spe);
    Orbit(const Orbit&);
    // Methods
-   void Set(int n, int l, int j2, int tz2, int hvq, float spe);
+   void Set(int n, int l, int j2, int tz2, int ph, int io, float spe);
 };
 
 
@@ -99,6 +100,11 @@ class TwoBodyChannel
    vector<int> KetIndex_pp;
    vector<int> KetIndex_ph;
    vector<int> KetIndex_hh;
+   vector<int> KetIndex_vv;
+   vector<int> KetIndex_vq;
+   vector<int> KetIndex_vh;
+   vector<int> KetIndex_hq;
+   vector<int> KetIndex_qq;
 
 
 // private:

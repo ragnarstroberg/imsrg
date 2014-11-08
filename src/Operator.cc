@@ -20,7 +20,7 @@ Operator::Operator(ModelSpace* ms) // Create a zero-valued operator in a given m
   modelspace = ms;
   hermitian = true;
   antihermitian = false;
-  cross_coupled = false;
+//  cross_coupled = false;
   ZeroBody = 0;
   int nOneBody = modelspace->GetNumberOrbits();
   int nKets = modelspace->GetNumberKets();
@@ -33,18 +33,6 @@ Operator::Operator(ModelSpace* ms) // Create a zero-valued operator in a given m
       TwoBody[ch] = arma::mat(npq,npq,arma::fill::zeros);
   }
 
-  // Not sure if this stuff is used...
-  P_hole_onebody = arma::mat(nOneBody,nOneBody,arma::fill::zeros);
-  P_particle_onebody = arma::mat(nOneBody,nOneBody,arma::fill::eye);
-  for (int i=0;i<nOneBody;i++)
-  {
-     if (modelspace->GetOrbit(i)->hvq == 0)
-     {
-        P_hole_onebody(i,i) = 1;
-        P_particle_onebody(i,i) = 0;
-     }
-  }
-  
 }
 
 void Operator::Copy(const Operator& op)
@@ -53,15 +41,13 @@ void Operator::Copy(const Operator& op)
    nChannels     = modelspace->GetNumberTwoBodyChannels();
    hermitian     = op.hermitian;
    antihermitian = op.antihermitian;
-   cross_coupled = op.cross_coupled;
+//   cross_coupled = op.cross_coupled;
    ZeroBody      = op.ZeroBody;
    OneBody       = op.OneBody;
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBody[ch] = op.TwoBody[ch];
    }
-   P_hole_onebody = op.P_hole_onebody;
-   P_particle_onebody = op.P_particle_onebody;
 }
 
 
@@ -151,7 +137,7 @@ double Operator::GetTBME(int ch, int a, int b, int c, int d) const
 }
 
 
-
+/*
 double Operator::GetTBME_NoPhase(int ch, int a, int b, int c, int d) const
 {
    auto& tbc = cross_coupled ? modelspace->GetTwoBodyChannel_CC(ch) : modelspace->GetTwoBodyChannel(ch);
@@ -170,7 +156,7 @@ double Operator::GetTBME_NoPhase(int ch, int a, int b, int c, int d) const
    if (c==d) phase *= sqrt(1.0+ket->delta_pq());
    return phase * TwoBody[ch](bra_ind, ket_ind);
 }
-
+*/
 
 void Operator::SetTBME(int ch, int a, int b, int c, int d, double tbme)
 {
@@ -342,76 +328,55 @@ Operator Operator::DoNormalOrdering()
    opNO.OneBody = OneBody;
    int norbits = modelspace->GetNumberOrbits();
 
-   //for (int k=0;k<norbits;++k)
-   for (int &k : modelspace->holes) // C++11 syntax
+   for (int &k : modelspace->holes) // loop over hole orbits
    {
-//      Orbit * orb = modelspace->GetOrbit(k);
-//      if (orb->hvq > 0) continue;
       opNO.ZeroBody += (modelspace->GetOrbit(k)->j2+1) * OneBody(k,k);
    }
-//   cout << "after first loop, zero body part is" << opNO.ZeroBody << endl;
 
 
-   //////////////////////// v--This works, but it's the slow way (optimize if needed) /////////////////////
    for (int ch=0;ch<nChannels;++ch)
    {
-      //TwoBodyChannel *tbc = GetTwoBodyChannel(ch);
       TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch);
-      //opNO.SetTwoBody(ch, TwoBody[ch] );
-      opNO.TwoBody[ch] = TwoBody[ch];
-      int npq = tbc.GetNumberKets();
       int J = tbc.J;
 
+      // Zero body part
+      for (int& k : tbc.KetIndex_hh) // loop over hole-hole kets in this channel
+      {
+        opNO.ZeroBody += TwoBody[ch](k,k) * (2*J+1);  // <ab|V|ab>  (a,b in core)
+      }
+
+      // One body part
       int ibra,iket;
       for (int a=0;a<norbits;++a)
       {
          Orbit *orba = modelspace->GetOrbit(a);
-         for (int b=a;b<norbits;++b)
+         int bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
+         for (int b=bstart;b<norbits;++b)
          {
             Orbit *orbb = modelspace->GetOrbit(b);
             if (orbb->j2 != orba->j2 or orbb->tz2 != orba->tz2 or orbb->l != orba->l) continue;
-            //for (int c=0;c<norbits;++c)
             for (int &h : modelspace->holes)  // C++11 syntax
             {
-              // if ( modelspace->GetOrbit(c)->hvq >0 ) continue;
                if ( (ibra = tbc.GetLocalIndex(min(a,h),max(a,h)))<0) continue;
                if ( (iket = tbc.GetLocalIndex(min(b,h),max(b,h)))<0) continue;
                Ket * bra = tbc.GetKet(ibra);
                Ket * ket = tbc.GetKet(iket);
-//               double tbme = (2*J+1.0)/(orba->j2+1) * GetTBME(ch,bra,ket);
-               //double tbme = (2*J+1.0)/(orba->j2+1) * sqrt( (1+bra->delta_pq())*(1+ket->delta_pq()) ) * GetTBME(ch,bra,ket);
                double tbme = (2*J+1.0)/(orba->j2+1)  * GetTBME(ch,bra,ket);
+               int phase = 1;
+               if (a>h) phase *= bra->Phase(J);
+               if (b>h) phase *= ket->Phase(J);
 
-               if (a<=h and b<=h) opNO.OneBody(a,b) += tbme;
-               if (a>h and b<=h) opNO.OneBody(a,b) += bra->Phase(J)*tbme;
-               if (a<=h and b>h) opNO.OneBody(a,b) += ket->Phase(J)*tbme;
-               if (a>h and b>h) opNO.OneBody(a,b) += bra->Phase(J)*ket->Phase(J)*tbme;
+               opNO.OneBody(a,b) += phase * tbme;
             }
             if (hermitian) opNO.OneBody(b,a) = opNO.OneBody(a,b);
             if (antihermitian) opNO.OneBody(b,a) = -opNO.OneBody(a,b);
          }
       }
-   //////////////////////// ^-- This works, but it's the slow way (I think) /////////////////////
 
+   // Trivial two body part
+      opNO.TwoBody[ch] = TwoBody[ch];
 
-      for (int k=0;k<npq;++k) // loop over kets in this channel
-      {
-         Ket * ket = tbc.GetKet(k);
-         Orbit *oa = modelspace->GetOrbit(ket->p);
-         Orbit *ob = modelspace->GetOrbit(ket->q);
-
-//         if (oa->hvq > 0 and ob->hvq > 0) continue; // need at least one orbit in the core
-
-         // Sum over diagonal two-body terms with both orbits in the core
-         if ( oa->hvq == 0 and ob->hvq == 0)
-         {
-//            opNO.ZeroBody += TwoBody[ch](k,k) * (2*tbc.J+1) / (1.0+ket->delta_pq());  // <ab|V|ab>  (a,b in core)
-            opNO.ZeroBody += TwoBody[ch](k,k) * (2*tbc.J+1);  // <ab|V|ab>  (a,b in core)
-         }
-
-      } // for k
-   } // for ch
-//   cout << "after second loop, zero body part is" << opNO.ZeroBody << endl;
+   } // loop over channels
    return opNO;
 }
 
@@ -446,149 +411,82 @@ void Operator::EraseTwoBody()
 void Operator::UpdateCrossCoupled()
 {
    // loop over cross-coupled channels
-   int norbits = modelspace->GetNumberOrbits();
    for (int ch_cc=0; ch_cc<nChannels; ++ch_cc)
    {
       TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
       int nKets_cc = tbc_cc.GetNumberKets();
-//      TwoBody_CC_left[ch_cc] = arma::mat(nKets_cc,nKets_cc,arma::fill::zeros);
-//      TwoBody_CC_right[ch_cc] = arma::mat(nKets_cc,nKets_cc,arma::fill::zeros);
+      int nph_kets = tbc_cc.KetIndex_ph.size();
+      int J_cc = tbc_cc.J;
 
-//// These matrices don't actually need to be square. Save some space by fixing that...
-//      TwoBody_CC_left[ch_cc] = arma::mat(2*nKets_cc,2*nKets_cc,arma::fill::zeros);
-//      TwoBody_CC_right[ch_cc] = arma::mat(2*nKets_cc,2*nKets_cc,arma::fill::zeros);
-      TwoBody_CC_left[ch_cc] = arma::mat(2*nKets_cc,2*nKets_cc,arma::fill::zeros);
-      TwoBody_CC_right[ch_cc] = arma::mat(2*nKets_cc,2*nKets_cc,arma::fill::zeros);
+//   These matrices don't actually need to be square, since we only care about
+//   the particle-hole kets, which we sum over via matrix multiplication:
+//   [ ]                  [     ]
+//   |L|  x  [  R   ]  =  |  M  |
+//   [ ]                  [     ]
+//
+      TwoBody_CC_left[ch_cc]  = arma::mat(2*nKets_cc, nph_kets,   arma::fill::zeros);
+      TwoBody_CC_right[ch_cc] = arma::mat(nph_kets,   2*nKets_cc, arma::fill::zeros);
 
-      // loop over cross-coupled bras <ac| in this channel
-      //for (int ibra_cc=0; ibra_cc<nKets_cc; ++ibra_cc)
-      //for (int a=0; a<norbits; ++a)
-      for (int& a : modelspace->holes)
+      // loop over cross-coupled ph bras <ac| in this channel
+      for (int i_ph=0; i_ph<nph_kets; ++i_ph)
       {
-        //for (int c=0; c<norbits; ++c)
-        for (int& c : modelspace->particles)
-        {
-         int ibra_cc = tbc_cc.GetLocalIndex(min(a,c),max(a,c));
-         if (ibra_cc < 0) continue;
-         Ket * bra_cc = tbc_cc.GetKet(ibra_cc);
-//         if (a>c) ibra_cc += nKets_cc;
-         //Ket * bra_cc = tbc_cc.GetKet(ibra_cc);
-//         int a = bra_cc->p;
-//         int c = bra_cc->q;
+         Ket * bra_cc = tbc_cc.GetKet( tbc_cc.KetIndex_ph[i_ph] );
+         int a = bra_cc->p;
+         int c = bra_cc->q;
          Orbit * oa = modelspace->GetOrbit(a);
          Orbit * oc = modelspace->GetOrbit(c);
          double ja = oa->j2/2.0;
          double jc = oc->j2/2.0;
 
          // loop over cross-coupled kets |bd> in this channel
-         //for (int iket_cc=0; iket_cc<nKets_cc; ++iket_cc)
-         for (int b=0; b<norbits; ++b)
+         // we go to 2*nKets to include |bd> and |db>
+         for (int iket_cc=0; iket_cc<2*nKets_cc; ++iket_cc)
          {
-         for (int d=0; d<norbits; ++d)
-         {
-           int iket_cc = tbc_cc.GetLocalIndex(min(b,d),max(b,d));
-           if (iket_cc < 0) continue;
-           Ket * ket_cc = tbc_cc.GetKet(iket_cc);
-           if (b>d) iket_cc += nKets_cc;
-       //     Ket * ket_cc = tbc_cc.GetKet(iket_cc);
-       //     int b = ket_cc->p;
-       //     int d = ket_cc->q;
+            Ket * ket_cc = tbc_cc.GetKet(iket_cc%nKets_cc);
+            int b = iket_cc < nKets_cc ? ket_cc->p : ket_cc->q;
+            int d = iket_cc < nKets_cc ? ket_cc->q : ket_cc->p;
             Orbit * ob = modelspace->GetOrbit(b);
             Orbit * od = modelspace->GetOrbit(d);
             double jb = ob->j2/2.0;
             double jd = od->j2/2.0;
 
+            int phase_ad = modelspace->phase(ja+jd);
+
             // Get Tz,parity and range of J for <ab || cd > coupling
             int Tz_std = (oa->tz2 + ob->tz2)/2;
             int parity_std = (oa->l + ob->l)%2;
-//            if ( (oc->tz2 + od->tz2)/2 != Tz_std) continue;
-//            if ( (oc->l + od->l)%2 != parity_std) continue;
-
-            //int jmin = max(abs(oa->j2-ob->j2),abs(oc->j2-od->j2))/2;
-            //int jmax = min(oa->j2+ob->j2,oc->j2+od->j2)/2;
             int jmin = max(abs(ja-jb),abs(jc-jd));
             int jmax = min(ja+jb,jc+jd);
-//               if (ch_cc==0 )
-//                  cout << endl << "a,b,c,d = " << a << " " << b << " " << c << " " << d << endl;
-
-
             double sm = 0;
             for (int J_std=jmin; J_std<=jmax; ++J_std)
             {
-               //double sixj = modelspace->GetSixJ(oa->j2/2.,oc->j2/2.,tbc_cc.J,od->j2/2.,ob->j2/2.,J_std);
-               double sixj = modelspace->GetSixJ(ja,jc,tbc_cc.J,jd,jb,J_std);
+               double sixj = modelspace->GetSixJ(ja,jc,J_cc,jd,jb,J_std);
                if (sixj == 0) continue;
-               //int phase = 1-2*(int(oa->j2+od->j2)/2+tbc_cc.J+J_std+1)%2;
-               //int phase = 1-2*((int(oa->j2+od->j2)/2+tbc_cc.J+J_std)%2);
                int phase = modelspace->phase(J_std);
                double tbme = GetTBME(J_std,parity_std,Tz_std,a,b,c,d);
-               sm += (2*J_std+1) * phase * sixj * tbme * sqrt(2*tbc_cc.J+1); // added in for convenience...
-               //sm += (2*J_std+1) * phase * sixj * tbme;
-               //if ( (ch_cc==120 and ibra_cc==10 and iket_cc==10) or (ch_cc==150 and ibra_cc==0 and iket_cc==0) )
-               //if ( (ch_cc==151 and ibra_cc==0 and iket_cc==0) or (ch_cc==150 and ibra_cc==0 and iket_cc==0) )
-//             if ( (ch_cc==151) )
-//             {
-//                cout << " Jcc = " << tbc_cc.J << " pcc = " << tbc_cc.parity << " Tz_cc = " << tbc_cc.Tz
-//                     << " ibra_cc = " << ibra_cc << " iket_cc = " << iket_cc << endl;
-//                cout << "  J= " << J_std << " p= " << parity_std << " Tz = " << Tz_std << " phase = " << phase << " sixj = " << sixj 
-//                     << " < " << a << " " << b << " | V | " << c << " " << d  << " > = " << tbme << endl;
-//                cout << "abcd = " << a << "," << b << "," << c << "," << d << endl;
-//                cout << "    { " << ja << "  " << jc << "  " << tbc_cc.J << " }" << endl;
-//                cout << "    { " << jd << "  " << jb << "  " << J_std    << " }" << endl;
-//                cout << "   TwoBody_CC_left: " << sm << endl;
-//                cout << endl;
-//             }
+               sm += (2*J_std+1) * phase * sixj * tbme ; 
             }
-            //TwoBody_CC_left[ch_cc](ibra_cc,iket_cc) = sm;
-            //TwoBody_CC_left[ch_cc](iket_cc,ibra_cc) = sm * modelspace->phase( (oa->j2+od->j2)/2+tbc_cc.J );
-            TwoBody_CC_left[ch_cc](iket_cc,ibra_cc) = sm * modelspace->phase( ja+jd+tbc_cc.J );
+            TwoBody_CC_left[ch_cc](iket_cc,i_ph) = sm * phase_ad;
+
 
             // Get Tz,parity and range of J for <cb || ad > coupling
             Tz_std = (oa->tz2 + od->tz2)/2;
             parity_std = (oa->l + od->l)%2;
-            //jmin = max(abs(oc->j2-ob->j2),abs(oa->j2-od->j2))/2;
-            //jmax = min(oc->j2+ob->j2,oa->j2+od->j2)/2;
             jmin = max(abs(jc-jb),abs(ja-jd));
             jmax = min(jc+jb,ja+jd);
             sm = 0;
             for (int J_std=jmin; J_std<=jmax; ++J_std)
             {
-               //double sixj = modelspace->GetSixJ(oa->j2/2.,oc->j2/2.,tbc_cc.J,ob->j2/2.,od->j2/2.,J_std);
-               double sixj = modelspace->GetSixJ(ja,jc,tbc_cc.J,jb,jd,J_std);
+               double sixj = modelspace->GetSixJ(ja,jc,J_cc,jb,jd,J_std);
                if (sixj == 0) continue;
-               //int phase = 1-2*(int(oa->j2+od->j2)/2+tbc_cc.J+J_std+1)%2;
-               //int phase = 1-2*((int(oa->j2+ob->j2)/2+tbc_cc.J+J_std)%2);
                int phase = modelspace->phase(J_std);
-               //double tbme = GetTBME(J_std,parity_std,Tz_std,a,b,c,d);
                double tbme = GetTBME(J_std,parity_std,Tz_std,c,b,a,d);
-               //sm += (2*J_std+1) * phase * sixj * tbme;
-               sm += (2*J_std+1) * phase * sixj * tbme * sqrt(2*tbc_cc.J+1); // sqrt(2J+1) added for convenience?
-               //if (ch_cc==120 and ibra_cc==10 and iket_cc==10)
-               //if ( (ch_cc==120 and ibra_cc==10 and iket_cc==10) or (ch_cc==150 and ibra_cc==0 and iket_cc==0) )
-               //if ( (ch_cc==151 and ibra_cc==0 and iket_cc==0) or (ch_cc==150 and ibra_cc==0 and iket_cc==0) )
-//             if ( (ch_cc==151) )
-//             {
-//                cout << " Jcc = " << tbc_cc.J << " pcc = " << tbc_cc.parity << " Tz_cc = " << tbc_cc.Tz
-//                     << " ibra_cc = " << ibra_cc << " iket_cc = " << iket_cc << endl;
-//                cout << " J= " << J_std << " p= " << parity_std << " Tz = " << Tz_std << " phase = " << phase << " sixj = " << sixj
-//                     << " < " << c << " " << b << " | V | " << a << " " << d  << " > = " << tbme << endl;
-//                cout << "cbad = " << c << "," << b << "," << a << "," << d << endl;
-//                cout << "    { " << ja << "  " << jc << "  " << tbc_cc.J << " }" << endl;
-//                cout << "    { " << jb << "  " << jd << "  " << J_std    << " }" << endl;
-//                cout << "   TwoBody_CC_right: " << sm << endl;
-//                cout << endl;
-//             }
+               sm += (2*J_std+1) * phase * sixj * tbme ;
             }
-            //TwoBody_CC_right[ch_cc](ibra_cc,iket_cc) = sm * modelspace->phase(ja+jb+tbc_cc.J);
-            TwoBody_CC_right[ch_cc](ibra_cc,iket_cc) = sm * modelspace->phase(ja+jd+tbc_cc.J+1);
-//            TwoBody_CC_right[ch_cc](iket_cc,ibra_cc) = sm;
-
+            TwoBody_CC_right[ch_cc](i_ph,iket_cc) = - sm * phase_ad;
 
          }
       }
-      
-   }
-   }
    }
 }
 
@@ -598,39 +496,79 @@ void Operator::UpdateCrossCoupled()
 //  Eventually, add some checking for convergence.
 Operator Operator::BCH_Transform( Operator &Omega)
 {
+   double bch_threshold = 1e-6;
+   double nx = Norm();
+   double ny = Omega.Norm();
    Operator OpOut = *this;
    Operator OpNested = *this;
-//   double prefactor = 1.0;
+   cout << "BCH_Transform error <= " << (nx+ny)*bch_threshold << endl;
    for (int i=1; i<12; ++i)
    {
-//      prefactor /= i;
       OpNested = Omega.Commutator(OpNested) *( 1/((double)i));
       
       OpOut += OpNested;
-//      OpOut += OpNested * prefactor;
+
+      if (OpNested.Norm() < (nx+ny)*bch_threshold) return OpOut;
+
    }
+   cout << "Warning: BCH_Transform didn't coverge after 12 nested commutators" << endl;
    return OpOut;
 }
 
 
 //*****************************************************************************************
-//  OpOut = Omega_N+1, where
-//  exp(Omega_N+1) = exp(dOmega) * exp(Omega_N)
-//  Omega_N+1 = Omega_N + dOmega + 1/2[dOmega, Omega_N] + 1/12 [dOmega,[dOmega,Omega_N]] + 1/12 [Omega_N,[Omega_N,dOmega]] + ...
-//  Eventually, add some checking for convergence.
-Operator Operator::BCH_Product( Operator &dOmega)
+// Baker-Campbell-Hausdorff formula
+//  returns Z, where
+//  exp(Z) = exp(X) * exp(Y).
+//  Z = X + Y + 1/2[X, Y]
+//     + 1/12 [X,[X,Y]] + 1/12 [Y,[Y,X]]
+//     - 1/24 [Y,[X,[X,Y]]]
+//     - 1/720 [Y,[Y,[Y,[Y,X]]]] - 1/720 [X,[X,[X,[X,Y]]]]
+//     + ...
+Operator Operator::BCH_Product( Operator &Y)
 {
-   Operator OpOut = *this;
-   //Operator OpNested = dOmega.Commutator(*this);
-   Operator OpNested = Commutator(dOmega);
-   OpOut += dOmega;
-   OpOut += OpNested*(-1./2);
-   //OpOut += ( dOmega.Commutator(OpNested) + OpNested.Commutator(*this) )*(1./12);
-   Operator OpNested2 = Commutator(OpNested);
-   OpOut += OpNested2*(1/12.);
-// This doesn't have any noticeable (so far) impact on the result...
-//   OpOut += dOmega.Commutator(OpNested2)*(-1/720);
-   return OpOut;
+   Operator &X = *this;
+   double bch_prod_threshold = 1e-4;
+
+   Operator Z = X + Y; 
+
+   Operator OpNested = X.Commutator(Y);
+   Z += OpNested*(1./2);    // [X,Y]
+   double nx = X.Norm();
+   double ny = Y.Norm();
+   double nc1 = OpNested.Norm();
+   cout << "BCH_Product error <= " << (nx+ny)*bch_prod_threshold << endl;
+
+   if ( nc1/2 < (nx+ny)*bch_prod_threshold ) return Z;
+
+   Operator OpNested2 = OpNested.Commutator(Y); // [[X,Y],Y] = [Y,[Y,X]]
+   double nc2 = OpNested2.Norm();
+   Z += OpNested2 * (1/12.);      // [Y,[Y,X]]
+
+   if ( nc2/12 < (nx+ny)*bch_prod_threshold ) return Z;
+
+   OpNested = X.Commutator(OpNested); // [X,[X,Y]]
+   double nc3 = OpNested.Norm();
+   Z += OpNested * (1/12.);      // [Y,[Y,X]]
+
+   if ( nc3/12 < (nx+ny)*bch_prod_threshold ) return Z;
+
+   cout << "Warning: BCH product expansion not converged after 3 commutators!" << endl;
+
+   Operator OpNested3 = Y.Commutator(OpNested);
+   double nc4 = OpNested3.Norm();
+   Z += OpNested3*(-1./24);
+
+   Operator Optmp = Y.Commutator(OpNested2);
+   Operator OpNested4 = Y.Commutator(Optmp); // [Y,[Y,[Y,[Y,X]]]]
+   double nc5 = OpNested4.Norm();
+   Optmp = X.Commutator(OpNested);
+   Operator OpNested5 = X.Commutator(Optmp); // [X,[X,[X,[X,Y]]]]
+   double nc6 = OpNested5.Norm();
+   Z += (OpNested4 + OpNested5)*(-1./720);
+
+
+   return Z;
 }
 
 // Frobenius norm of the operator
@@ -638,25 +576,33 @@ double Operator::Norm()
 {
    //double nrm = ZeroBody*ZeroBody;
    double nrm = 0;
-   double n1 = arma::norm(OneBody,"fro");
-//   double n1 = arma::accu(OneBody.t()*OneBody);
-   nrm += n1*n1;
-//   nrm += n1;
-//   cout << "Onebody =  " << endl; OneBody.print();
-//   cout << "One body norm = " << n1 << endl;
-//   cout << "One body norm = " << sqrt(n1) << endl;
+   double n1 = OneBodyNorm();
+   double n2 = TwoBodyNorm();
+   return sqrt(n1*n1+n2*n2);
+//   nrm += n1*n1;
+//   for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
+//   {
+//      double n2 = arma::norm(TwoBody[ch],"fro");
+//      nrm += n2*n2;
+//   }
+//   return sqrt(nrm);
+}
+
+double Operator::OneBodyNorm()
+{
+   return arma::norm(OneBody,"fro");
+}
+
+double Operator::TwoBodyNorm()
+{
+   double nrm = 0;
    for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
    {
       double n2 = arma::norm(TwoBody[ch],"fro");
-//      double n2 = arma::accu(TwoBody[ch].t()*TwoBody[ch]);
-//      cout << "in Norm. ch = " << ch << " n2 = " << n2*n2 << endl;
       nrm += n2*n2;
-//      nrm += n2;
-//      nrm += pow(arma::norm(TwoBody[ch],"fro"),2);
    }
    return sqrt(nrm);
 }
-
 
 
 Operator Operator::Commutator(Operator& opright)
@@ -1330,15 +1276,14 @@ void Operator::comm222_ph(Operator& opright, Operator& opout )
             double jk = ok->j2/2.;
             double jl = ol->j2/2.;
 
+
+            double comm = 0;
+
             // now loop over the cross coupled TBME's
             int parity_cc = (oi->l+ok->l)%2;
             int Tz_cc = abs(oi->tz2+ok->tz2)/2;
-            //int jmin = max(abs(int(ji-jj)),abs(int(jk-jl)));
-            //int jmax = min(int(ji+jj),int(jk-jl));
             int jmin = max(abs(int(jj-jl)),abs(int(jk-ji)));
             int jmax = min(int(jj+jl),int(jk+ji));
-            double comm = 0;
-//            cout << "Begin J loop at ch = " << ch << ", nkets(120) = " << modelspace->GetTwoBodyChannel(120).GetNumberKets() << endl;
             for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
             {
                double sixj = modelspace->GetSixJ(jk,jl,tbc.J,jj,ji,Jprime);
@@ -1352,17 +1297,8 @@ void Operator::comm222_ph(Operator& opright, Operator& opout )
                  double me2 = N2[ch_cc](indx_jl,indx_ik);
                  double me3 = N2[ch_cc](indx_ik,indx_jl);
                  double me4 = N1[ch_cc](indx_ik,indx_jl);
-               comm -= (1) * phase * sixj * (me1-me2-me3+me4);
-//               if (ch==modelspace->GetTwoBodyChannelIndex(1,0,1) and ((ibra == 0 and iket == 3) or (ibra==3 and iket ==0)) )
-//               {
-//                  cout << "Jprime = " << Jprime << " parity_cc = " << parity_cc << " Tz_cc = " << Tz_cc 
-//                       << "  ijkl = " << i << "," << j << "," << k << "," << l
-//                       << " me1 = " << me1 << " me2 = " << me2 
-//                       << " me3 = " << me3 << " me4 = " << me4
-//                       << " sixj("<<jk<<","<<jl<<","<<tbc.J<<","<<jj<<","<<ji<<","<<Jprime<<") = " << sixj << " phase = " << phase
-//                       <<  "  comm(" << ibra << "," << iket << ") = " << comm
-//                       << endl;
-//               }
+               //comm -= phase * sixj * (me1-me2-me3+me4);
+               comm -= (2*Jprime+1) * phase * sixj * (me1-me2-me3+me4);
             }
 
             parity_cc = (oi->l+ol->l)%2;
@@ -1371,7 +1307,6 @@ void Operator::comm222_ph(Operator& opright, Operator& opout )
             jmax = min(int(ji+jl),int(jk+jj));
             for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
             {
-
                int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
                int indx_il = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(i,l),max(i,l));
                int indx_jk = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(j,k),max(j,k));
@@ -1383,17 +1318,8 @@ void Operator::comm222_ph(Operator& opright, Operator& opout )
                double me2 = N2[ch_cc](indx_il,indx_jk);
                double me3 = N2[ch_cc](indx_jk,indx_il);
                double me4 = N1[ch_cc](indx_jk,indx_il);
-               comm -= (1) * phase * sixj * (me1-me2-me3+me4);
-//               if (ch==modelspace->GetTwoBodyChannelIndex(1,0,1) and ((ibra == 0 and iket == 3) or (ibra==3 and iket ==0)) )
-//               {
-//                  cout << "~Jprime = " << Jprime << " parity_cc = " << parity_cc << " Tz_cc = " << Tz_cc
-//                       << "  ijkl = " << i << "," << j << "," << k << "," << l
-//                       << " me1 = " << me1 << " me2 = " << me2 
-//                       << " me3 = " << me3 << " me4 = " << me4
-//                       << " sixj("<<jk<<","<<jl<<","<<tbc.J<<","<<ji<<","<<jj<<","<<Jprime<<") = " << sixj << " phase = " << phase
-//                       <<  "  comm(" << ibra << "," << iket << ") = " << comm
-//                       << endl;
-//               }
+               //comm -=  phase * sixj * (me1-me2-me3+me4);
+               comm -= (2*Jprime+1) * phase * sixj * (me1-me2-me3+me4);
             }
             comm /= sqrt((1.0+bra->delta_pq())*(1.0+ket->delta_pq()));
             opout.TwoBody[ch](ibra,iket) += comm;

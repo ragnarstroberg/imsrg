@@ -79,12 +79,6 @@ void HartreeFock::Solve()
    cout << "Input Vab" << endl;
    Vab.print();
 */
-//      for (int a=0;a<norbits;a++)
-//      {
-//         if (Hbare->GetModelSpace()->GetOrbit(a)->hvq>0) continue;
-//         cout << Hbare->GetModelSpace()->GetOrbit(a)->spe << " " ;
-//      }
-//      cout << endl;
 
       Diagonalize2();
 //      cout << "Energies:" << endl;
@@ -443,9 +437,11 @@ void HartreeFock::UpdateHFOrbits()
          Tz += C2*orbi->tz2;
       }
       int indx = ms->Index1(round(N), round(L), round(J), round(Tz));
-      int Hvq = ms->GetOrbit(indx)->hvq;
+      int ph = ms->GetOrbit(indx)->ph;
+      int io = ms->GetOrbit(indx)->io;
       Orbit *orba = Hbare->GetModelSpace()->GetOrbit(a);
-      orba->Set(round(N),round(L),round(J),round(Tz),Hvq,energies[a]);
+      //orba->Set(round(N),round(L),round(J),round(Tz),Hvq,energies[a]);
+      orba->Set(round(N),round(L),round(J),round(Tz),ph,io,energies[a]);
    }
 }
 
@@ -460,7 +456,7 @@ void HartreeFock::PrintOrbits()
      Orbit * orba = ms->GetOrbit(a);
      cout << a << ": E= " << orba->spe << " L=" << orba->l
           << " J=" << orba->j2 << " N=" << orba->n << " Tz=" << orba->tz2
-          << " Hvq=" << orba->hvq << endl;
+          << " ph=" << orba->ph << " io=" << orba->io << endl;
   }
 
 }

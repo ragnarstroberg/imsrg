@@ -18,8 +18,9 @@ class IMSRGSolver
   void SetFlowFile(string s){flowfile = s;};
   void SetDs(double d){ds = d;};
   void SetSmax(double d){smax = d;};
+  void SetGenerator(string g){generator = g;};
 
-  private:
+//  private:
   ModelSpace* modelspace;
   Operator Omega;
   Operator dOmega;
@@ -28,9 +29,13 @@ class IMSRGSolver
   Operator H_od;
   Operator H_diag;
   Operator Eta;
+  int istep;
+  int i_full_BCH;
   double s;
   double ds;
+  double ds_max;
   double smax;
+  double norm_domega;
   string method;
   string generator;
   string flowfile;
@@ -38,6 +43,14 @@ class IMSRGSolver
   void UpdateEta();
   void UpdateOmega();
   void UpdateH();
+
+  void WriteFlowStatus(ostream&);
+
+  void ConstructGenerator_Wegner();
+  void ConstructGenerator_White();
+  void ConstructGenerator_ShellModel();
+  double GetEpsteinNesbet1bDenominator(int i, int j);
+  double GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket);
 
 };
 

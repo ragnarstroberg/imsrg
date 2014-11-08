@@ -16,9 +16,13 @@ class ReadWrite
    void CalculateKineticEnergy(Operator *Hbare);
    void WriteOneBody(Operator &, const char*);
    void WriteTwoBody(Operator &, const char*);
-   //std::map<char*, char*> InputParameters;
-   std::map<string,string> InputParameters;
+   void WriteValenceOneBody(Operator &, const char*);
+   void WriteValenceTwoBody(Operator &, const char*);
+   void WriteNuShellX_sps( Operator& op, const char* filename);
+   void WriteNuShellX_int( Operator& op, const char* filename);
+   void WriteAntoine_int( Operator& op, const char* filename); // <- not implemented yet...
 
+   std::map<string,string> InputParameters;
 };
 
 

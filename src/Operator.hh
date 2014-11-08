@@ -37,8 +37,8 @@ class Operator
 
   //Methods
   // One body setter/getters
-  float GetOneBody(int i,int j) {return OneBody[i,j];};
-  void SetOneBody(int i, int j, float val) { OneBody[i,j] = val;};
+  float GetOneBody(int i,int j) {return OneBody(i,j);};
+  void SetOneBody(int i, int j, float val) { OneBody(i,j) = val;};
 
   //TwoBody setter/getters
   double GetTBME(int ch, int a, int b, int c, int d) const;
@@ -50,7 +50,7 @@ class Operator
   double GetTBME(int j, int p, int t, int a, int b, int c, int d) const;
   void   SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
 
-  double GetTBME_NoPhase(int ch, int a, int b, int c, int d) const;
+//  double GetTBME_NoPhase(int ch, int a, int b, int c, int d) const;
 
   double GetTBMEmonopole(int a, int b, int c, int d);
   double GetTBMEmonopole(Ket * bra, Ket * ket);
@@ -63,6 +63,8 @@ class Operator
   void Eye(); // set to identity operator
 
   double Norm();
+  double OneBodyNorm();
+  double TwoBodyNorm();
 
   ModelSpace * GetModelSpace() const {return modelspace;};
 
@@ -75,8 +77,9 @@ class Operator
   void SetNonHermitian() {antihermitian=false;hermitian=false;};
   bool IsHermitian()const {return hermitian;};
   bool IsAntiHermitian()const {return antihermitian;};
+  bool IsNonHermitian()const {return not (hermitian or antihermitian);};
 
-  void SetCrossCoupled(bool tf=true){cross_coupled = tf;};
+//  void SetCrossCoupled(bool tf=true){cross_coupled = tf;};
 
   void PrintTwoBody() ;
   void PrintOut() ;
@@ -86,7 +89,7 @@ class Operator
   ModelSpace * modelspace;
   bool hermitian;
   bool antihermitian;
-  bool cross_coupled;
+//  bool cross_coupled;
   int TwoBodyJmax;
   int nChannels;
   //Methods
@@ -103,10 +106,6 @@ class Operator
   void comm222_ph(Operator& opright, Operator& opout);
   void comm222_ph_slow(Operator& opright, Operator& opout);
   void comm222_pp_hh_221(Operator& opright, Operator& opout);
-
-  arma::mat P_hole_onebody; // Projector onto one-body hole states, ie the number operator n
-  arma::mat P_particle_onebody; // Projector onto one-body particle states, ie nbar
-  
 
 
 };

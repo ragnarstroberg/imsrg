@@ -26,13 +26,12 @@ int main(int argc, char**argv)
    string flowfile  = rw.InputParameters["flowfile"];
    string ds_str    = rw.InputParameters["ds"];
    string smax_str  = rw.InputParameters["smax"];
+   string generator = rw.InputParameters["generator"];
+   if (generator == "") generator = "white";
 
 
    cout << "Reading in the modelspace" << endl;
    ModelSpace modelspace = rw.ReadModelSpace(inputsps.c_str());
-
-//   cout << "Setting up the kets" << endl;
-//   modelspace.SetupKets();
 
    cout << "Creating H_bare" << endl;
    Operator H_bare =  Operator(&modelspace);
@@ -102,6 +101,10 @@ int main(int argc, char**argv)
    IMSRGSolver imsrgsolver = IMSRGSolver(HFNO);
 //   IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
    imsrgsolver.SetFlowFile(flowfile);
+   //imsrgsolver.SetGenerator("white");
+   //imsrgsolver.SetGenerator("shell-model");
+   imsrgsolver.SetGenerator(generator);
+
    if (ds_str != "")
    {
       double ds = strtod(ds_str.c_str(),NULL);
@@ -115,6 +118,15 @@ int main(int argc, char**argv)
 //   IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
    imsrgsolver.Solve();
 
+   rw.WriteValenceOneBody(HFNO,"../output/O16_lmax6_SM_1b_bare.int");
+   rw.WriteValenceTwoBody(HFNO,"../output/O16_lmax6_SM_2b_bare.int");
+   rw.WriteValenceOneBody(imsrgsolver.H_s,"../output/O16_lmax6_SM_1b.int");
+   rw.WriteValenceTwoBody(imsrgsolver.H_s,"../output/O16_lmax6_SM_2b.int");
+
+   rw.WriteNuShellX_int(imsrgsolver.H_s,"../output/O16srg.int");
+   rw.WriteNuShellX_sps(imsrgsolver.H_s,"../output/O16srg.sp");
+
+//   rw.WriteNuShellX_int(HFNO,"../output/He4_bare.int");
 
   return 0;
 }

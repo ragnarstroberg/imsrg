@@ -1,5 +1,7 @@
 
-inputsps:	../input/He4_lmax6.sps
+#inputsps:	../input/He4_lmax6.sps
+#inputsps:	../input/He4_lmax6_SM.sps
+inputsps:	../input/O16_lmax6_SM.sps
 #inputsps:	../input/s.sps
 #inputsps:	../input/s_14.sps
 #inputsps:	../input/s_ox.sps
@@ -24,4 +26,5 @@ inputtbme:	../input/vjason2.0.int
 
 flowfile:	../output/BCH_flow_vspsd.dat
 ds:		0.1
-smax:		0.2
+smax:		50.0
+generator:	shell-model
