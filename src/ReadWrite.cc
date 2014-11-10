@@ -114,6 +114,7 @@ void ReadWrite::ReadBareTBME( const char* filename, Operator& Hbare)
   int Tz,Par,J2,a,b,c,d;
   float fbuf[3];
   float tbme;
+  int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
 
   infile.open(filename);
   if ( !infile.good() )
@@ -133,6 +134,7 @@ void ReadWrite::ReadBareTBME( const char* filename, Operator& Hbare)
                  >> a >> b >> c >> d
                  >> tbme >> fbuf[0] >> fbuf[1] >> fbuf[2] )
   {
+     if (a>norbits or b>norbits or c>norbits or d>norbits) continue;
      a--; b--; c--; d--; // Fortran -> C  ==> 1 -> 0
 
      tbme -= fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  // Some sort of COM correction. Check this
