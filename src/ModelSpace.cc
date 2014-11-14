@@ -63,12 +63,12 @@ Ket::Ket(ModelSpace * modelspace, int pp, int qq)
       Jmax--;
       Jstep++;
    }
-   phase_prefactor = modelspace->phase((op->j2+oq->j2)/2);
+   phase_prefactor = - ms->phase((op->j2+oq->j2)/2);
 }
 
 int Ket::Phase(int J)
 {
-   return phase_prefactor * ms->phase(J+1);
+   return phase_prefactor * ms->phase(J);
 }
 
 //************************************************************************
@@ -295,6 +295,8 @@ void ModelSpace::AddOrbit(Orbit orb)
    if (orb.ph == 1) holes.push_back(ind);
    if (orb.io == 0) valence.push_back(ind);
    if (orb.io == 1) qspace.push_back(ind);
+   if (orb.tz2<0) proton_orbits.push_back(ind);
+   if (orb.tz2>0) neutron_orbits.push_back(ind);
 }
 
 int ModelSpace::GetTwoBodyChannelIndex(int j, int p, int t)
@@ -322,8 +324,6 @@ void ModelSpace::SetupKets()
       TwoBodyChannels_CC.push_back(TwoBodyChannel_CC(ch,this));
    }
 }
-
-
 
 
 double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3)
@@ -408,3 +408,7 @@ double ModelSpace::GetNineJ(double j1,double j2, double J12, double j3, double j
    }
    return ninej;
 }
+
+
+
+

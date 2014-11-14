@@ -5,13 +5,15 @@
 using namespace std;
 
 //HartreeFock::HartreeFock(Operator *hbare, Operator *hhf)
-HartreeFock::HartreeFock(Operator *hbare=NULL)
+//HartreeFock::HartreeFock(Operator *hbare=NULL)
+HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
 {
-   if (hbare ==NULL) cout << "Ah! Null operator" << endl;
-   Hbare = hbare;
+//   if (hbare ==NULL) cout << "Ah! Null operator" << endl;
+//   Hbare = hbare;
    tolerance = 1e-10;
    ediff = 1.0;
-   ModelSpace * ms = Hbare->GetModelSpace();
+   //ModelSpace * ms = Hbare->GetModelSpace();
+   ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
    int nKets = ms->GetNumberKets();
 
@@ -22,7 +24,8 @@ HartreeFock::HartreeFock(Operator *hbare=NULL)
    //Vmon = arma::mat(nKets,nKets);
    prev_energies = arma::vec(norbits,arma::fill::zeros);
 
-   t = Hbare->OneBody;
+   //t = Hbare->OneBody;
+   t = Hbare.OneBody;
    energies = t.diag();
    UpdateDensityMatrix();
    BuildMonopoleV();
@@ -33,9 +36,11 @@ HartreeFock::HartreeFock(Operator *hbare=NULL)
 void HartreeFock::Solve()
 {
 //   int ncore = Hbare->GetModelSpace()->nCore;
-   int norbits = Hbare->GetModelSpace()->GetNumberOrbits();
+   //int norbits = Hbare->GetModelSpace()->GetNumberOrbits();
+   int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
    int iter = 0; // counter so we don't go on forever
-   ModelSpace *ms = Hbare->GetModelSpace();
+   //ModelSpace *ms = Hbare->GetModelSpace();
+   ModelSpace *ms = Hbare.GetModelSpace();
 
 /*
    C(0,0) = sqrt(2./3);
@@ -143,9 +148,11 @@ void HartreeFock::Solve()
 
 void HartreeFock::CalcEHF()
 {
-   ModelSpace * ms = Hbare->GetModelSpace();
+   //ModelSpace * ms = Hbare->GetModelSpace();
+   ModelSpace * ms = Hbare.GetModelSpace();
    EHF = 0;
-   int norbits = Hbare->GetModelSpace()->GetNumberOrbits();
+   //int norbits = Hbare->GetModelSpace()->GetNumberOrbits();
+   int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
    for (int i=0;i<norbits;i++)
    {
       for (int j=0;j<norbits;j++)
@@ -192,7 +199,8 @@ void HartreeFock::Diagonalize2()
    arma::mat C_ch;
    arma::vec E_ch;
    bool success;
-   int norbits = Hbare->GetModelSpace()->GetNumberOrbits();
+   //int norbits = Hbare->GetModelSpace()->GetNumberOrbits();
+   int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
    for (int p = 0; p<=1;p++)
    {
       for (int Tz = -1; Tz<=1; Tz+=2)
@@ -205,7 +213,8 @@ void HartreeFock::Diagonalize2()
              orbit_list.resize(0);
              for (int a=0;a<norbits;a++)
              {
-                Orbit *orba = Hbare->GetModelSpace()->GetOrbit(a);
+                //Orbit *orba = Hbare->GetModelSpace()->GetOrbit(a);
+                Orbit *orba = Hbare.GetModelSpace()->GetOrbit(a);
                 if (orba->j2==J and orba->tz2==Tz and (orba->l%2)==p)
                 {
                    orbit_list.push_back(a);
@@ -310,24 +319,33 @@ void HartreeFock::BuildMonopoleV()
 void HartreeFock::BuildMonopoleV()
 {
    Vmon.zeros();
-   int nKets = Hbare->GetModelSpace()->GetNumberKets();
+   //int nKets = Hbare->GetModelSpace()->GetNumberKets();
+   int nKets = Hbare.GetModelSpace()->GetNumberKets();
    for (int ibra=0;ibra<nKets;++ibra)
    {
-      Ket * bra = Hbare->GetModelSpace()->GetKet(ibra);
+      //Ket * bra = Hbare->GetModelSpace()->GetKet(ibra);
+      Ket * bra = Hbare.GetModelSpace()->GetKet(ibra);
       int a = bra->p;
       int b = bra->q;
-      Orbit * oa = Hbare->GetModelSpace()->GetOrbit(a);
-      Orbit * ob = Hbare->GetModelSpace()->GetOrbit(b);
+      //Orbit * oa = Hbare->GetModelSpace()->GetOrbit(a);
+      //Orbit * ob = Hbare->GetModelSpace()->GetOrbit(b);
+      Orbit * oa = Hbare.GetModelSpace()->GetOrbit(a);
+      Orbit * ob = Hbare.GetModelSpace()->GetOrbit(b);
       double norm = (oa->j2+1)*(ob->j2+1);
       for (int iket=0;iket<nKets;++iket)
       {
-         Ket * ket = Hbare->GetModelSpace()->GetKet(iket);
+         //Ket * ket = Hbare->GetModelSpace()->GetKet(iket);
+         Ket * ket = Hbare.GetModelSpace()->GetKet(iket);
          int c = ket->p;
          int d = ket->q;
-         Vmon(ibra,iket)             = Hbare->GetTBMEmonopole(a,b,c,d) * norm;
-         Vmon(ibra+nKets,iket)       = Hbare->GetTBMEmonopole(b,a,c,d) * norm;
-         Vmon(ibra,iket+nKets)       = Hbare->GetTBMEmonopole(a,b,d,c) * norm;
-         Vmon(ibra+nKets,iket+nKets) = Hbare->GetTBMEmonopole(b,a,d,c) * norm;
+//       Vmon(ibra,iket)             = Hbare->GetTBMEmonopole(a,b,c,d) * norm;
+//       Vmon(ibra+nKets,iket)       = Hbare->GetTBMEmonopole(b,a,c,d) * norm;
+//       Vmon(ibra,iket+nKets)       = Hbare->GetTBMEmonopole(a,b,d,c) * norm;
+//       Vmon(ibra+nKets,iket+nKets) = Hbare->GetTBMEmonopole(b,a,d,c) * norm;
+         Vmon(ibra,iket)             = Hbare.GetTBMEmonopole(a,b,c,d) * norm;
+         Vmon(ibra+nKets,iket)       = Hbare.GetTBMEmonopole(b,a,c,d) * norm;
+         Vmon(ibra,iket+nKets)       = Hbare.GetTBMEmonopole(a,b,d,c) * norm;
+         Vmon(ibra+nKets,iket+nKets) = Hbare.GetTBMEmonopole(b,a,d,c) * norm;
       }
    }
    
@@ -342,7 +360,8 @@ void HartreeFock::BuildMonopoleV()
 //**************************************************************************
 void HartreeFock::UpdateDensityMatrix()
 {
-   ModelSpace * ms = Hbare->GetModelSpace();
+   //ModelSpace * ms = Hbare->GetModelSpace();
+   ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
 
    // Pcore is a projector onto core orbits.
@@ -366,7 +385,8 @@ void HartreeFock::UpdateDensityMatrix()
 //*********************************************************************
 void HartreeFock::UpdateH()
 {
-   ModelSpace * ms = Hbare->GetModelSpace();
+   //ModelSpace * ms = Hbare->GetModelSpace();
+   ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
    int nKets = ms->GetNumberKets();
    int bra, ket;
@@ -419,7 +439,8 @@ bool HartreeFock::CheckConvergence()
 // Some more thought should go into how to do this properly.
 void HartreeFock::UpdateHFOrbits()
 {
-   ModelSpace * ms = Hbare->GetModelSpace();
+   //ModelSpace * ms = Hbare->GetModelSpace();
+   ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
    for (int a=0;a<norbits;a++) // loop over HF basis
    {
@@ -439,7 +460,7 @@ void HartreeFock::UpdateHFOrbits()
       int indx = ms->Index1(round(N), round(L), round(J), round(Tz));
       int ph = ms->GetOrbit(indx)->ph;
       int io = ms->GetOrbit(indx)->io;
-      Orbit *orba = Hbare->GetModelSpace()->GetOrbit(a);
+      Orbit *orba = ms->GetOrbit(a);
       //orba->Set(round(N),round(L),round(J),round(Tz),Hvq,energies[a]);
       orba->Set(round(N),round(L),round(J),round(Tz),ph,io,energies[a]);
    }
@@ -449,7 +470,8 @@ void HartreeFock::UpdateHFOrbits()
 
 void HartreeFock::PrintOrbits()
 {
-  ModelSpace * ms = Hbare->GetModelSpace();
+  //ModelSpace * ms = Hbare->GetModelSpace();
+  ModelSpace * ms = Hbare.GetModelSpace();
   int norbits = ms->GetNumberOrbits();
   for (int a=0;a<norbits;a++)
   {
@@ -464,7 +486,8 @@ void HartreeFock::PrintOrbits()
 
 void HartreeFock::ReorderCoefficients()
 {
-   ModelSpace * ms = Hbare->GetModelSpace();
+   //ModelSpace * ms = Hbare->GetModelSpace();
+   ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
    arma::mat C_tmp = C;
    arma::vec e_tmp = energies;

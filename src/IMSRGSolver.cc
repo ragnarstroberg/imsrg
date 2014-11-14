@@ -41,19 +41,18 @@ void IMSRGSolver::Solve()
       flowf.open(flowfile,ofstream::out);
    cout << " i     s       E0       ||H_1||      ||H_2||        ||Omega||     || Eta||    ||dOmega||     " << endl;
 
-   UpdateEta();
-   dOmega = Eta * ds; // Here's the Euler step.
-//   double norm1 = dOmega.Norm();
-   Operator H_last;
-   Operator Omega_last;
-   double norm_eta = Eta.Norm();
-   double norm_eta_last = norm_eta;
+
+   double norm_eta,norm_eta_last;
 
    for (istep=0;s<smax;++istep)
    {
-      // Write details of the flow
-      WriteFlowStatus(flowf);
-      WriteFlowStatus(cout);
+      UpdateEta();
+      norm_eta = Eta.Norm();
+      ds = min(norm_domega / norm_eta, ds_max); 
+      if (ds == ds_max) norm_domega /=2;
+      if (s+ds > smax) ds = smax-s;
+      s += ds;
+      dOmega = Eta * ds; // Here's the Euler step.
 
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
       Omega = dOmega.BCH_Product( Omega ); 
@@ -68,18 +67,11 @@ void IMSRGSolver::Solve()
          H_s = H_s.BCH_Transform( dOmega );  // less accurate, but converges with fewer commutators, since ||dOmega|| < ||Omega||
       }
 
-      UpdateEta();   // generator for this step
-      norm_eta = Eta.Norm();
 
-      // choose ds such that ||dOmega|| = norm_domega (a fixed value)
-      ds = min(norm_domega / norm_eta, ds_max); 
-      if (ds == ds_max) norm_domega /=2;
+      // Write details of the flow
+      WriteFlowStatus(flowf);
+      WriteFlowStatus(cout);
 
-      dOmega = Eta * ds; // Here's the Euler step.
-      s += ds;
-      norm_eta_last = norm_eta;
-      H_last = H_s;
-      Omega_last = Omega;
 
    }
    // if the last calculation of H_s was the quick way,
@@ -87,6 +79,8 @@ void IMSRGSolver::Solve()
    if (istep%i_full_BCH != i_full_BCH-1)
    {
       H_s = H_0.BCH_Transform( Omega ); 
+      WriteFlowStatus(flowf);
+      WriteFlowStatus(cout);
    }
 
    if (flowfile != "")
@@ -96,30 +90,11 @@ void IMSRGSolver::Solve()
 
 
 
+// Returns exp(Omega) OpIn exp(-Omega)
 Operator IMSRGSolver::Transform(Operator& OpIn)
 {
-   return OpIn.BCH_Transform(Omega);
+   return OpIn.BCH_Transform( Omega );
 }
-
-
-void IMSRGSolver::UpdateOmega()
-{
-   Omega = dOmega.BCH_Product(Omega);
-}
-
-
-
-// Decide whether it's better to do the full
-// transformation at each step, or just update
-void IMSRGSolver::UpdateH()
-{
-   if (int(s/ds)%10 ==9)
-      H_s = H_0.BCH_Transform( Omega );
-   else
-      H_s = H_s.BCH_Transform( dOmega );
-}
-
-
 
 
 void IMSRGSolver::UpdateEta()
@@ -136,6 +111,10 @@ void IMSRGSolver::UpdateEta()
    else if (generator == "shell-model")
    {
      ConstructGenerator_ShellModel();
+   }
+   else if (generator == "shell-model-1hw") // Doesn't work yet
+   {
+     ConstructGenerator_ShellModel1hw(); // Doesn't work yet
    }
 
 }
@@ -169,8 +148,8 @@ double IMSRGSolver::GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket)
 
    denominator += H_s.OneBody(i,i)+ H_s.OneBody(j,j) - H_s.OneBody(a,a) - H_s.OneBody(b,b);
 
-   if (abs(denominator ) < 0.01)
-      cout << "2b denominator "  << ch << " " << ibra << "," << iket << " = " << denominator << endl;
+//   if (abs(denominator ) < 0.01)
+//      cout << "2b denominator "  << ch << " " << ibra << "," << iket << " = " << denominator << endl;
    return denominator;
 }
 
@@ -316,6 +295,77 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
 
     }
 }
+
+
+// This is half-baked and doesn't work yet.
+void IMSRGSolver::ConstructGenerator_ShellModel1hw()
+{
+   ConstructGenerator_White(); // Start with the White generator
+
+   // One body piece -- make sure the valence one-body part is diagonal
+   for ( int &i : modelspace->valence)
+   {
+      Orbit *oi = modelspace->GetOrbit(i);
+      for (int &j : modelspace->particles)
+      {
+         if (i==j) continue;
+         Orbit *oj = modelspace->GetOrbit(j);
+         double denominator = GetEpsteinNesbet1bDenominator(i,j);
+         Eta.OneBody(i,j) = H_s.OneBody(i,j)/denominator;
+         Eta.OneBody(j,i) = - Eta.OneBody(i,j);
+      }
+   
+   }
+   // Two body piece -- eliminate ppvh and qqvv  ( vv'hh' was already accounted for with White )
+
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+
+      for (int& ibra : tbc.KetIndex_pp)
+      {
+         for (int& iket : tbc.KetIndex_vh)
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+
+      for (int& ibra : tbc.KetIndex_vv)
+      {
+         for (int& iket : tbc.KetIndex_qq)
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+
+      // Drive diagonal qqqq pieces to high energy to raise the energy of Nhw excitations with N>1
+      for (int& ibra : tbc.KetIndex_qq)
+      {
+        for (int& iket : tbc.KetIndex_qq)
+        {
+         if (iket == ibra) continue;
+         double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+//         Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+         Eta.TwoBody[ch](ibra,iket) = (10.0 - H_s.TwoBody[ch](ibra,iket) )/10.0;//  / denominator;
+         //Eta.TwoBody[ch](ibra,iket) = (H_s.TwoBody[ch](ibra,iket) -1.0 )/1.0 ;// / denominator;
+         Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+       }  
+      }
+
+    }
+}
+
+
+
+
+
+
+
 
 
 

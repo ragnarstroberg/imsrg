@@ -3,8 +3,10 @@
 #include "Operator.hh"
 #include "HartreeFock.hh"
 #include "IMSRGSolver.hh"
+#include "imsrg_util.hh"
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include <stdlib.h>
 
 using namespace std;
@@ -13,96 +15,66 @@ int main(int argc, char**argv)
 {
 
    ReadWrite rw = ReadWrite();
+   // If a settings file isn't given as a command line arg, look for the default file
+   string settings_file = argc>1 ? string(argv[1]) : "settings.inp";
+   rw.ReadSettingsFile(settings_file);
 
-   char default_settings_file[200] = "settings.inp";
+   // These are parameters that may be used in the settings file
+   string inputsps	= rw.InputParameters["inputsps"];
+   string inputtbme	= rw.InputParameters["inputtbme"];
+   string darmstadttbme	= rw.InputParameters["darmstadttbme"];
+   string darmstadtEmax	= rw.InputParameters["darmstadtEmax"];
+   string flowfile	= rw.InputParameters["flowfile"];
+   string ds_str	= rw.InputParameters["ds"];
+   string smax_str	= rw.InputParameters["smax"];
+   string generator	= rw.InputParameters["generator"];
 
-   if (argc>1)
-      rw.ReadSettingsFile(argv[1]);
-   else
-      rw.ReadSettingsFile(default_settings_file);
-
-   string inputsps  = rw.InputParameters["inputsps"];
-   string inputtbme = rw.InputParameters["inputtbme"];
-   string flowfile  = rw.InputParameters["flowfile"];
-   string ds_str    = rw.InputParameters["ds"];
-   string smax_str  = rw.InputParameters["smax"];
-   string generator = rw.InputParameters["generator"];
    if (generator == "") generator = "white";
 
 
-   cout << "Reading in the modelspace" << endl;
-   ModelSpace modelspace = rw.ReadModelSpace(inputsps.c_str());
+   cout << "Reading in the modelspace from " << inputsps << endl;
+   ModelSpace modelspace = rw.ReadModelSpace(inputsps);
 
-   cout << "Creating H_bare" << endl;
    Operator H_bare =  Operator(&modelspace);
+   H_bare.SetHermitian(); // just to be sure
 
-   cout << "Calculating the kinetic energy" << endl;
-   rw.CalculateKineticEnergy(&H_bare);
+   H_bare.CalculateKineticEnergy();
 
-   cout << "Reading in the TBME " << endl;
-   rw.ReadBareTBME(inputtbme.c_str(), H_bare);
+   if (inputtbme != "")
+   {
+      cout << "Reading Oslo-style TBME from " << inputtbme << endl;
+      rw.ReadBareTBME(inputtbme, H_bare);
+      rw.WriteTwoBody(H_bare,"../output/Oslo_H_bare.out");
+   }
+   else if (darmstadttbme != "")
+   {
+      int Emax = darmstadtEmax != "" ? atoi(darmstadtEmax.c_str()) : -1;
+      cout << "Reading Darmstadt-style TBME from " << darmstadttbme << " with Emax " << Emax << endl;
+      rw.ReadBareTBME_Darmstadt(darmstadttbme, H_bare, Emax);
+      rw.WriteTwoBody(H_bare,"../output/Darmstadt_H_bare.out");
+   }
 
    cout << "Norm of H_bare = " << H_bare.Norm() << endl;
 
-   cout << "setting up HF" << endl;
-   HartreeFock  hf = HartreeFock(&H_bare);
-
-   cout << "solving HF" << endl;
+   HartreeFock  hf = HartreeFock(H_bare);
    hf.Solve();
 
    Operator H_hf = hf.TransformToHFBasis(H_bare);
-
-//   cout << "After transformation, one body piece is"<< endl;
-//   H_hf.OneBody.print();
-
-//   cout << "***** Bare Two Body Part *****" << endl;
-//   H_bare.PrintTwoBody();
-
-/*
-   H_bare.WriteOneBody("../output/Hbare1b.out");
-   H_bare.WriteTwoBody("../output/Hbare2b.out");
-   H_hf.WriteOneBody("../output/HF1b.out");
-   H_hf.WriteTwoBody("../output/HF2b.out");
-*/
-/*   cout << "Writing to file..." << endl;
-   rw.WriteOneBody(H_bare,"../output/Hbare1b.out");
-   rw.WriteTwoBody(H_bare,"../output/Hbare2b.out");
-   rw.WriteOneBody(H_hf,"../output/HF1b.out");
-   rw.WriteTwoBody(H_hf,"../output/HF2b.out");
-*/
-//   H_bare->OneBody.print();
-//   cout << endl << endl;
-//   H_hf->OneBody.print();
+   HartreeFock hf2 = HartreeFock(H_hf);
+   hf2.Solve();
 
 
-//   cout << "Repeating the HF procedure on the HF-basis Hamiltonian" << endl;
-//   cout << " ==============================================================================" << endl;
-//   HartreeFock  hf2 = HartreeFock(&H_hf);
-//   hf2.Solve();
-//   cout << "Done solving" << endl;
 
    cout << "EHF = " << hf.EHF << endl;
-//   cout << "EHF2 = " << hf2.EHF << endl;
-//   cout << "Start normal ordering" << endl;
+   cout << "EHF2 = " << hf2.EHF << endl;
    Operator HFNO = H_hf.DoNormalOrdering();
    Operator HbareNO = H_bare.DoNormalOrdering();
 
    cout << "Norm of HFNO = " << HFNO.Norm() << endl;
-//   cout << "Normal ordered zero-body part = " << HFNO.ZeroBody << endl;
-//   cout << "Normal ordered one-body part: " << endl;
-
-//   HFNO.OneBody.print();
-//   HbareNO.OneBody.print();
-//   Operator Hcomm = HFNO.Commutator(HbareNO);
-//   cout << "Commutator zerobody: " << Hcomm.ZeroBody << endl;
-//   cout << "Commutator one body:" << endl;;
-//   Hcomm.OneBody.print();
 
    IMSRGSolver imsrgsolver = IMSRGSolver(HFNO);
 //   IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
    imsrgsolver.SetFlowFile(flowfile);
-   //imsrgsolver.SetGenerator("white");
-   //imsrgsolver.SetGenerator("shell-model");
    imsrgsolver.SetGenerator(generator);
 
    if (ds_str != "")
@@ -115,13 +87,44 @@ int main(int argc, char**argv)
       double smax = strtod(smax_str.c_str(),NULL);
       imsrgsolver.SetSmax(smax);
    }
-//   IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
-   imsrgsolver.Solve();
 
-   rw.WriteValenceOneBody(HFNO,"../output/O16_lmax6_SM_1b_bare.int");
-   rw.WriteValenceTwoBody(HFNO,"../output/O16_lmax6_SM_2b_bare.int");
-   rw.WriteValenceOneBody(imsrgsolver.H_s,"../output/O16_lmax6_SM_1b.int");
-   rw.WriteValenceTwoBody(imsrgsolver.H_s,"../output/O16_lmax6_SM_2b.int");
+/////// THIS IS THE TIME CONSUMING PART //////////
+   imsrgsolver.Solve();
+//////////////////////////////////////////////////
+
+
+
+  
+  cout << endl << " density: " << endl;
+
+  int nr_steps = 100;
+  vector<double> R(nr_steps,0);
+  double dr = 0.1;
+  for (int i=0;i<nr_steps;++i) R[i] = i*dr;
+
+  cout << "Calculating occupation numbers..." << endl;
+
+  //vector<double> occ = imsrg_utis::GetOccupations(hf,imsrgsolver);
+  vector<double> occ = imsrg_util::GetOccupations(hf);
+
+  vector<double>dens_P = imsrg_util::GetDensity(occ,R,modelspace.proton_orbits,modelspace);
+  vector<double>dens_N = imsrg_util::GetDensity(occ,R,modelspace.neutron_orbits,modelspace);
+
+  for (int i=0;i<nr_steps;++i)
+  {
+     cout << R[i] << " " << dens_P[i] << " " << dens_N[i] << endl;
+  }
+
+//  Operator Np0s1 = StandardOperators::NumberOp(modelspace,0,0,1,-1); // proton 0s1/2
+//  Operator Np0s1_hf = hf.TransformToHFBasis(Np0s1);
+//  Operator Np0s1_NO = Np0s1_hf.DoNormalOrdering();
+//  Operator Np0s1_final = imsrgsolver.Transform(Np0s1_NO);
+//  cout << "proton 0s1/2 occupation = " << Np0s1_final.ZeroBody << endl;
+
+//   rw.WriteValenceOneBody(HFNO,"../output/O16_lmax6_SM_1b_bare.int");
+//   rw.WriteValenceTwoBody(HFNO,"../output/O16_lmax6_SM_2b_bare.int");
+//   rw.WriteValenceOneBody(imsrgsolver.H_s,"../output/O16_lmax6_SM_1b.int");
+//   rw.WriteValenceTwoBody(imsrgsolver.H_s,"../output/O16_lmax6_SM_2b.int");
 
    rw.WriteNuShellX_int(imsrgsolver.H_s,"../output/O16srg.int");
    rw.WriteNuShellX_sps(imsrgsolver.H_s,"../output/O16srg.sp");

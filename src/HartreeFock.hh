@@ -17,14 +17,14 @@ class HartreeFock
    arma::mat Vmon;          // Monopole 2-body interaction
    arma::vec energies;      // vector of single particle energies
    arma::vec prev_energies; // SPE's from last iteration
-   Operator *Hbare;          // Pointer to (input) bare Hamiltonian
+   Operator& Hbare;          // Pointer to (input) bare Hamiltonian
    double ediff;              // Energy difference from last iteration
    double tolerance;          // tolerance for convergence
    double EHF;
    
 
  //  HartreeFock(Operator * hbare=NULL, Operator *hhf=NULL);
-   HartreeFock(Operator * hbare);
+   HartreeFock(Operator&  hbare);
    void BuildMonopoleV();
    void Diagonalize();
    void Diagonalize2();

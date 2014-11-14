@@ -7,6 +7,8 @@
 
 #define JMAX 30
 
+class ModelSpace;
+
 using namespace std;
 
 class Operator
@@ -61,6 +63,7 @@ class Operator
   Operator BCH_Transform( Operator& ); // not yet implemented
   Operator DoNormalOrdering(); // Do normal ordering -- not implemented yet
   void Eye(); // set to identity operator
+  void CalculateKineticEnergy();
 
   double Norm();
   double OneBodyNorm();
