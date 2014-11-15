@@ -34,4 +34,5 @@ flowfile:	../output/BCH_flow_emax6.dat
 ds:		0.1
 smax:		4.0
 #generator:	shell-model
-generator:	white
+#generator:	white
+generator:	atan

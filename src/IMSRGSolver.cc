@@ -108,6 +108,10 @@ void IMSRGSolver::UpdateEta()
    {
      ConstructGenerator_White();
    } 
+   else if (generator == "atan")
+   {
+     ConstructGenerator_Atan();
+   } 
    else if (generator == "shell-model")
    {
      ConstructGenerator_ShellModel();
@@ -363,7 +367,41 @@ void IMSRGSolver::ConstructGenerator_ShellModel1hw()
 
 
 
+void IMSRGSolver::ConstructGenerator_Atan()
+{
+   // One body piece -- eliminate ph bits
+   for ( int &i : modelspace->particles)
+   {
+      Orbit *oi = modelspace->GetOrbit(i);
+      for (int &a : modelspace->holes)
+      {
+         Orbit *oa = modelspace->GetOrbit(a);
+         double denominator = GetEpsteinNesbet1bDenominator(i,a);
+         //Eta.OneBody(i,a) = H_s.OneBody(i,a)/denominator;
+         Eta.OneBody(i,a) = 0.5*atan(2*H_s.OneBody(i,a)/denominator);
+         Eta.OneBody(a,i) = - Eta.OneBody(i,a);
+      }
+   }
 
+   // Two body piece -- eliminate pp'hh' bits
+   // This could likely be sped up by constructing and storing the monopole matrix
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      for (int& ibra : tbc.KetIndex_pp)
+      {
+         for (int& iket : tbc.KetIndex_hh)
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+
+            //Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+            Eta.TwoBody[ch](ibra,iket) = 0.5*atan(2*H_s.TwoBody[ch](ibra,iket) / denominator);
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+    }
+}
 
 
 

@@ -48,6 +48,7 @@ class IMSRGSolver
 
   void ConstructGenerator_Wegner();
   void ConstructGenerator_White();
+  void ConstructGenerator_Atan();
   void ConstructGenerator_ShellModel();
   void ConstructGenerator_ShellModel1hw(); // Doesn't work yet
   double GetEpsteinNesbet1bDenominator(int i, int j);
