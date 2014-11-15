@@ -84,6 +84,41 @@ namespace imsrg_util
  }
 
 
+ Operator PSquaredOp(ModelSpace& modelspace)
+ {
+   Operator PsqOp = Operator(&modelspace);
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   for (int ch=0; ch<nchan; ++ch)
+   {
+      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+      int nkets = tbc.GetNumberKets();
+      for (int ibra=0;ibra<nkets;++ibra)
+      {
+         Ket * bra = tbc.GetKet(ibra);
+         for (int iket=ibra;iket<nkets;++iket)
+         {
+            Ket * ket = tbc.GetKet(iket);
+            double mat_el = PSquaredMatEl(modelspace,bra,ket,tbc.J);
+            PsqOp.TwoBody[ch](ibra,iket) = mat_el;
+            PsqOp.TwoBody[ch](iket,ibra) = mat_el;
+         }
+      }
+   }
+
+ }
+
+ double PSquaredMatEl(ModelSpace& modelspace, Ket* bra, Ket* ket, int J)
+ {
+   Orbit * oa = modelspace.GetOrbit(bra->p);
+   Orbit * ob = modelspace.GetOrbit(bra->q);
+   Orbit * oc = modelspace.GetOrbit(ket->p);
+   Orbit * od = modelspace.GetOrbit(ket->q);
+   
+
+   return 0;
+ }
+
+
 }
 
 

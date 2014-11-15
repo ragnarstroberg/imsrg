@@ -54,6 +54,7 @@ int main(int argc, char**argv)
       rw.WriteTwoBody(H_bare,"../output/Darmstadt_H_bare.out");
    }
 
+
    cout << "Norm of H_bare = " << H_bare.Norm() << endl;
 
    HartreeFock  hf = HartreeFock(H_bare);
