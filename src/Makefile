@@ -1,7 +1,7 @@
 CC = g++
 
 #FLAGS = -larmadillo -O3 -std=c++11
-FLAGS = -larmadillo -O3 -std=c++11  -lgsl #-fopenmp 
+FLAGS = -larmadillo -O3 -std=c++11  -lgsl -fopenmp 
 #FLAGS = -larmadillo -O3 -std=c++11 -pg
 
 all: mysrg

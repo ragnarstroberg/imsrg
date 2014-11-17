@@ -82,6 +82,7 @@ int main(int argc, char**argv)
    {
       double ds = strtod(ds_str.c_str(),NULL);
       imsrgsolver.SetDs(ds);
+      imsrgsolver.SetdOmega(ds);
    }
    if (smax_str != "")
    {
@@ -95,7 +96,7 @@ int main(int argc, char**argv)
 
 
 
-  
+ /* 
   cout << endl << " density: " << endl;
 
   int nr_steps = 100;
@@ -105,7 +106,7 @@ int main(int argc, char**argv)
 
   cout << "Calculating occupation numbers..." << endl;
 
-  //vector<double> occ = imsrg_utis::GetOccupations(hf,imsrgsolver);
+  //vector<double> occ = imsrg_util::GetOccupations(hf,imsrgsolver);
   vector<double> occ = imsrg_util::GetOccupations(hf);
 
   vector<double>dens_P = imsrg_util::GetDensity(occ,R,modelspace.proton_orbits,modelspace);
@@ -115,6 +116,7 @@ int main(int argc, char**argv)
   {
      cout << R[i] << " " << dens_P[i] << " " << dens_N[i] << endl;
   }
+*/
 
 //  Operator Np0s1 = StandardOperators::NumberOp(modelspace,0,0,1,-1); // proton 0s1/2
 //  Operator Np0s1_hf = hf.TransformToHFBasis(Np0s1);
@@ -127,8 +129,8 @@ int main(int argc, char**argv)
 //   rw.WriteValenceOneBody(imsrgsolver.H_s,"../output/O16_lmax6_SM_1b.int");
 //   rw.WriteValenceTwoBody(imsrgsolver.H_s,"../output/O16_lmax6_SM_2b.int");
 
-   rw.WriteNuShellX_int(imsrgsolver.H_s,"../output/O16srg.int");
-   rw.WriteNuShellX_sps(imsrgsolver.H_s,"../output/O16srg.sp");
+   rw.WriteNuShellX_int(imsrgsolver.H_s,"../output/Ca40srg.int");
+   rw.WriteNuShellX_sps(imsrgsolver.H_s,"../output/Ca40srg.sp");
 
 //   rw.WriteNuShellX_int(HFNO,"../output/He4_bare.int");
 

@@ -708,10 +708,13 @@ double Operator::comm220( Operator& opright)
    if (IsHermitian() and opright.IsHermitian()) return 0; // I think this is the case
    if (IsAntiHermitian() and opright.IsAntiHermitian()) return 0; // I think this is the case
    double comm = 0;
+//   #pragma omp parallel for
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      comm += 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] );
+      double c = 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] );
+//      #pragma omp atomic
+      comm += c;
 
    }
    return comm;
@@ -745,7 +748,7 @@ arma::mat Operator::comm121(Operator& opright)
 {
    int norbits = modelspace->GetNumberOrbits();
    arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
-   #pragma omp parallel for
+//   #pragma omp parallel for
    for (int i=0;i<norbits;++i)
    {
       Orbit *oi = modelspace->GetOrbit(i);
@@ -847,7 +850,7 @@ void Operator::comm122(Operator& opright, Operator& opout )
 {
    int herm = opout.IsHermitian() ? 1 : -1;
 
-  #pragma omp parallel for
+//  #pragma omp parallel for schedule(dynamic,10)
    for (int ch=0; ch<nChannels; ++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -936,7 +939,7 @@ void Operator::comm122(Operator& opright, Operator& opout )
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
 void Operator::comm222_pp_hh(Operator& opright, Operator& opout )
 {
-   #pragma omp parallel for
+   #pragma omp parallel for schedule(dynamic,3)
    for (int ch=0; ch<nChannels; ++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -958,29 +961,48 @@ void Operator::comm222_pp_hh(Operator& opright, Operator& opout )
 void Operator::comm222_pp_hh_221(Operator& opright, Operator& opout )
 {
 
+   int herm = opout.IsHermitian() ? 1 : -1;
    int norbits = modelspace->GetNumberOrbits();
    Operator Mpp = opright;
    Operator Mhh = opright;
 
-   #pragma omp parallel for
+   #pragma omp parallel for schedule(dynamic,3)
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       int npq = tbc.GetNumberKets();
       
-      Mpp.TwoBody[ch] = (TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_pp * TwoBody[ch]);
-      Mhh.TwoBody[ch] = (TwoBody[ch] * tbc.Proj_hh * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_hh * TwoBody[ch]);
+//      Mpp.TwoBody[ch] = (TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_pp * TwoBody[ch]);
+//      Mhh.TwoBody[ch] = (TwoBody[ch] * tbc.Proj_hh * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_hh * TwoBody[ch]);
+      Mpp.TwoBody[ch] = TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch];
+      Mhh.TwoBody[ch] = TwoBody[ch] * tbc.Proj_hh * opright.TwoBody[ch];
+      if (opout.IsHermitian())
+      {
+         Mpp.TwoBody[ch] += Mpp.TwoBody[ch].t();
+         Mhh.TwoBody[ch] += Mhh.TwoBody[ch].t();
+      }
+      else if (opout.IsAntiHermitian())
+      {
+         Mpp.TwoBody[ch] -= Mpp.TwoBody[ch].t();
+         Mhh.TwoBody[ch] -= Mhh.TwoBody[ch].t();
+      }
+      else
+      {
+        Mpp.TwoBody[ch] -= opright.TwoBody[ch] * tbc.Proj_pp * TwoBody[ch];
+        Mhh.TwoBody[ch] -= opright.TwoBody[ch] * tbc.Proj_hh * TwoBody[ch];
+      }
+
 
       // The two body part
       opout.TwoBody[ch] += Mpp.TwoBody[ch] - Mhh.TwoBody[ch];
 
-      // The one body part
-      // If commutator is hermitian or antihermitian, we only
-      // need to do half the sum. Add this.
+      #pragma omp parallel for schedule(dynamic,3)
       for (int i=0;i<norbits;++i)
       {
          Orbit *oi = modelspace->GetOrbit(i);
-         for (int j=0;j<norbits;++j)
+         int jmin = opout.IsNonHermitian() ? 0 : i;
+         //for (int j=0;j<norbits;++j)
+         for (int j=jmin;j<norbits;++j)
          {
             Orbit *oj = modelspace->GetOrbit(j);
             if (oi->j2 != oj->j2 or oi->l != oj->l or oi->tz2 != oj->tz2) continue;
@@ -996,7 +1018,12 @@ void Operator::comm222_pp_hh_221(Operator& opright, Operator& opout )
                cijJ +=  Mhh.GetTBME(ch,i,c,j,c);
             }
             //comm(i,j) += (2*tbc.J+1.0)/(oi->j2 +1.0) * cijJ;
-            opout.OneBody(i,j) += (2*tbc.J+1.0)/(oi->j2 +1.0) * cijJ;
+            cijJ *= (2*tbc.J+1.0)/(oi->j2+1.0);
+            opout.OneBody(i,j) += cijJ;
+            if (! opout.IsNonHermitian() and i!=j)
+            {
+               opout.OneBody(j,i) += herm * cijJ;
+            }
          } // for j
       } // for i
    } //for ch
@@ -1107,7 +1134,7 @@ void Operator::comm222_ph(Operator& opright, Operator& opout )
    // Construct the intermediate matrices N1 and N2
    arma::mat N1[nChannels];
    arma::mat N2[nChannels];
-//   #pragma omp parallel for
+//   #pragma omp parallel for // figure out why this causes a segfault
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel_CC& tbc_CC = modelspace->GetTwoBodyChannel_CC(ch);

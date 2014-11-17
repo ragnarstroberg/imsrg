@@ -17,6 +17,7 @@ class IMSRGSolver
   Operator Transform(Operator& OpIn);
   void SetFlowFile(string s){flowfile = s;};
   void SetDs(double d){ds = d;};
+  void SetdOmega(double d){norm_domega = d;};
   void SetSmax(double d){smax = d;};
   void SetGenerator(string g){generator = g;};
 
@@ -50,6 +51,7 @@ class IMSRGSolver
   void ConstructGenerator_White();
   void ConstructGenerator_Atan();
   void ConstructGenerator_ShellModel();
+  void ConstructGenerator_ShellModel_Atan();
   void ConstructGenerator_ShellModel1hw(); // Doesn't work yet
   double GetEpsteinNesbet1bDenominator(int i, int j);
   double GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket);
