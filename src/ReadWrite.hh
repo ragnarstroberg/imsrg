@@ -10,6 +10,7 @@
 class ReadWrite
 {
  public:
+   ReadWrite();
    void ReadSettingsFile(  string filename);
    ModelSpace ReadModelSpace( string filename);
    void ReadBareTBME( string filename, Operator& Hbare);
@@ -23,6 +24,10 @@ class ReadWrite
    void WriteAntoine_int( Operator& op, string filename); // <- not implemented yet...
 
    std::map<string,string> InputParameters;
+
+   bool doCoM_corr;
+   void SetCoMCorr(bool b){doCoM_corr = b;};
+
 };
 
 

@@ -40,3 +40,5 @@ smax:		15.0
 #generator:	shell-model-atan
 generator:	white
 #generator:	atan
+
+com-correction:	true

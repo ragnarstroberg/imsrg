@@ -10,6 +10,11 @@
 
 using namespace std;
 
+ReadWrite::ReadWrite()
+{
+   doCoM_corr = true;
+}
+
 
 void ReadWrite::ReadSettingsFile( string filename)
 {
@@ -141,8 +146,14 @@ void ReadWrite::ReadBareTBME( string filename, Operator& Hbare)
 
 // NORMALIZATION: Read in normalized, antisymmetrized TBME's
 
-     //Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme-com_corr );
-     Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme ); // Don't do COM correction, for comparison with Darmstadt interaction.
+     if (doCoM_corr)
+     {
+        Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme-com_corr );
+     }
+     else
+     {
+        Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme ); // Don't do COM correction, for comparison with Darmstadt interaction.
+     }
 
   }
 

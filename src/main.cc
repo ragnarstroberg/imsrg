@@ -30,8 +30,10 @@ int main(int argc, char**argv)
    string ds_str	= rw.InputParameters["ds"];
    string smax_str	= rw.InputParameters["smax"];
    string generator	= rw.InputParameters["generator"];
+   string comcorr	= rw.InputParameters["com-correction"];
 
    if (generator == "") generator = "white";
+   if (comcorr == "false" or comcorr == "False" or comcorr == "FALSE") rw.SetCoMCorr(false);
 
 
    cout << "Reading in the modelspace from " << inputsps << endl;
