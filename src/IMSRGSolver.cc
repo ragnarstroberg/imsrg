@@ -136,10 +136,10 @@ void IMSRGSolver::UpdateEta()
 double IMSRGSolver::GetEpsteinNesbet1bDenominator(int i, int j)
 {
    double denominator = H_s.OneBody(i,i) - H_s.OneBody(j,j) - H_s.GetTBMEmonopole(j,i,j,i);
-   if (abs(denominator ) < 0.01)
-      cout << "1b denominator " << i << "," << j << " = " << denominator << endl;;
    return denominator;
 }
+
+
 
 double IMSRGSolver::GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket)
 {
@@ -414,7 +414,8 @@ void IMSRGSolver::ConstructGenerator_Atan()
 
 void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
 {
-   ConstructGenerator_White(); // Start with the White generator
+   //ConstructGenerator_White(); // Start with the White generator
+   ConstructGenerator_Atan(); // Start with the White generator
 
    // One body piece -- make sure the valence one-body part is diagonal
    for ( int &i : modelspace->valence)

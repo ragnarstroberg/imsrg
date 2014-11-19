@@ -1,5 +1,5 @@
 
-#inputsps:	../input/He4_lmax6.sps
+inputsps:	../input/He4_lmax6.sps
 #inputsps:	../input/He4_lmax6_SM.sps
 #inputsps:	../input/O16_lmax6.sps
 #inputsps:	../input/O16_lmax8.sps
@@ -7,7 +7,7 @@
 #inputsps:	../input/Si28_lmax6.sps
 #inputsps:	../input/O16_lmax6_SM.sps
 #inputsps:	../input/Ca40_lmax6_SM.sps
-inputsps:	../input/Ca40_lmax6.sps
+#inputsps:	../input/Ca40_lmax6.sps
 #inputsps:	../input/O16_hw24_emax6.sps
 #inputsps:	../input/O16_hw24_emax2.sps
 #inputsps:	../input/s.sps
@@ -23,18 +23,19 @@ inputsps:	../input/Ca40_lmax6.sps
 
 #inputtbme:	../input/vspsd.int
 #inputtbme:	../input/vs.int
-#inputtbme:	../input/vjason2.0.int
+inputtbme:	../input/vjason2.0.int
 #inputtbme:	../input/vsrg2.0_n3lo_noEmpot_Gaute_emax8_hw24.int
-inputtbme:	../input/vsrg1.8_n3lo500_w_coulomb_emax6_hw24.int
+#inputtbme:	../input/vsrg1.8_n3lo500_w_coulomb_emax6_hw24.int
 
 #darmstadttbme:	../input/chi2b_srg0400_eMax02_hwHO024.me2j
 #darmstadttbme:	../input/chi2b_srg0800_eMax02_hwHO024.me2j
 #darmstadttbme:	../input/chi2b_srg0800_eMax06_EMax06_hwHO024.me2j
 #darmstadtEmax:	6
 #flowfile:	../output/BCH_flow_vspsd.dat
-flowfile:	../output/BCH_flow_emax6.dat
+#flowfile:	../output/BCH_flow_emax6.dat
+flowfile:	../output/BCH_flow_He4_emax6.dat
 ds:		0.5
-smax:		20.0
+smax:		15.0
 #generator:	shell-model
 #generator:	shell-model-atan
 generator:	white

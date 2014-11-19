@@ -9,6 +9,8 @@
 #include <vector>
 #include <stdlib.h>
 
+#include "AngMom.hh"
+
 using namespace std;
 
 int main(int argc, char**argv)
@@ -34,7 +36,18 @@ int main(int argc, char**argv)
 
    cout << "Reading in the modelspace from " << inputsps << endl;
    ModelSpace modelspace = rw.ReadModelSpace(inputsps);
+/*
+   cout << "Calculating Mosh(0,0,1,0,0,1,0,1,0)..." << endl;
+   double mosh = AngMom::Moshinsky(0,0,1,0,0,1,0,1,0);
+   cout << "result: " << mosh << endl;
 
+   Operator Top = imsrg_util::PSquaredOp(modelspace);
+   
+   cout << "I think <00|Top|00> = " << Top.TwoBody[0](0,0) << endl;
+
+   rw.WriteTwoBody(Top,"../output/T.int");
+   return 0;
+*/
    Operator H_bare =  Operator(&modelspace);
    H_bare.SetHermitian(); // just to be sure
 
