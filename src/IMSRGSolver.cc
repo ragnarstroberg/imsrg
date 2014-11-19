@@ -45,8 +45,15 @@ void IMSRGSolver::Solve()
 
    for (istep=0;s<smax;++istep)
    {
+
       UpdateEta();
+
+      // Write details of the flow
+      WriteFlowStatus(flowf);
+      WriteFlowStatus(cout);
+
       norm_eta = Eta.Norm();
+      // ds should never be more than 1, as this is over-rotating
       ds = min(norm_domega / norm_eta, ds_max); 
       if (ds == ds_max) norm_domega /=2;
       if (s+ds > smax) ds = smax-s;
@@ -67,9 +74,6 @@ void IMSRGSolver::Solve()
       }
 
 
-      // Write details of the flow
-      WriteFlowStatus(flowf);
-      WriteFlowStatus(cout);
 
 
    }
@@ -484,7 +488,8 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
 {
 //      cout << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     "  << Eta.Norm() << "   "  << dOmega.Norm() << endl;
       if ( f.good() )
-         f << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     " << Eta.Norm() << "   " << dOmega.Norm() << endl;
+//         f << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     " << Eta.Norm() << "   " << dOmega.Norm() << endl;
+         f << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     " << Eta.OneBodyNorm() << Eta.TwoBodyNorm() << "   " << dOmega.Norm() << endl;
 
 }
 

@@ -22,6 +22,7 @@ class Operator
   arma::mat TwoBody_CC_right[JMAX*2*3]; // cross-coupled
 
   //Constructors
+  // In the future, consider using C++11 rvalues / move constructor to avoid copies in certain cases
   Operator();
   Operator(ModelSpace*);
   Operator( const Operator& rhs){Copy(rhs);};
@@ -97,6 +98,13 @@ class Operator
   int nChannels;
   //Methods
   void Copy(const Operator& rhs);
+
+  static double bch_transform_threshold;
+  static double bch_product_threshold;
+
+  static void Set_BCH_Transform_Threshold(double x){bch_transform_threshold=x;};
+  static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
+
   
   void UpdateCrossCoupled(); 
   double comm110(Operator& opright);

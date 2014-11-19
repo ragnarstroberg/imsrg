@@ -15,6 +15,9 @@ using namespace std;
 Operator::Operator()
 {}
 
+double  Operator::bch_transform_threshold = 1e-6;
+double  Operator::bch_product_threshold = 1e-4;
+
 Operator::Operator(ModelSpace* ms) // Create a zero-valued operator in a given model space
 {
   modelspace = ms;
@@ -526,25 +529,24 @@ void Operator::UpdateCrossCoupled()
 
 //*****************************************************************************************
 //  OpOut = exp(Omega) Op exp(-Omega)
-//  Eventually, add some checking for convergence.
 Operator Operator::BCH_Transform( Operator &Omega)
 {
-   double bch_threshold = 1e-6;
+//   double bch_transform_threshold = 1e-6;
+   int max_iter = 12;
    double nx = Norm();
    double ny = Omega.Norm();
    Operator OpOut = *this;
    Operator OpNested = *this;
-//   cout << "BCH_Transform error <= " << (nx+ny)*bch_threshold << endl;
-   for (int i=1; i<12; ++i)
+   for (int i=1; i<max_iter; ++i)
    {
-      OpNested = Omega.Commutator(OpNested) *( 1/((double)i));
+      OpNested = Omega.Commutator(OpNested) / i;
       
       OpOut += OpNested;
 
-      if (OpNested.Norm() < (nx+ny)*bch_threshold) return OpOut;
+      if (OpNested.Norm() < (nx+ny)*bch_transform_threshold) return OpOut;
 
    }
-   cout << "Warning: BCH_Transform didn't coverge after 12 nested commutators" << endl;
+   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
    return OpOut;
 }
 
@@ -560,45 +562,66 @@ Operator Operator::BCH_Transform( Operator &Omega)
 //     + ...
 Operator Operator::BCH_Product( Operator &Y)
 {
-   Operator &X = *this;
-   double bch_prod_threshold = 1e-4;
+   Operator& X = *this;
+//   double bch_product_threshold = 1e-4;
 
    Operator Z = X + Y; 
 
-   Operator OpNested = X.Commutator(Y);
-   Z += OpNested*(1./2);    // [X,Y]
+//   Operator OpNested = X.Commutator(Y);
+   Operator XY = X.Commutator(Y);
+//   Z += OpNested*(1./2);    // [X,Y]
+   Z += XY*(1./2);    // [X,Y]
    double nx = X.Norm();
    double ny = Y.Norm();
-   double nc1 = OpNested.Norm();
+//   double nc1 = OpNested.Norm();
+   double nc1 = XY.Norm();
 //   cout << "BCH_Product error <= " << (nx+ny)*bch_prod_threshold << endl;
 
-   if ( nc1/2 < (nx+ny)*bch_prod_threshold ) return Z;
+   if ( nc1/2 < (nx+ny)*bch_product_threshold ) return Z;
 
-   Operator OpNested2 = OpNested.Commutator(Y); // [[X,Y],Y] = [Y,[Y,X]]
-   double nc2 = OpNested2.Norm();
-   Z += OpNested2 * (1/12.);      // [Y,[Y,X]]
+//   Operator OpNested2 = OpNested.Commutator(Y); // [[X,Y],Y] = [Y,[Y,X]]
+   Operator YYX = XY.Commutator(Y); // [[X,Y],Y] = [Y,[Y,X]]
+   double nc2 = YYX.Norm();
+//   double nc2 = OpNested2.Norm();
+//   Z += OpNested2 * (1/12.);      // [Y,[Y,X]]
+   Z += YYX * (1/12.);      // [Y,[Y,X]]
 
-   if ( nc2/12 < (nx+ny)*bch_prod_threshold ) return Z;
+   if ( nc2/12 < (nx+ny)*bch_product_threshold ) return Z;
 
-   OpNested = X.Commutator(OpNested); // [X,[X,Y]]
-   double nc3 = OpNested.Norm();
-   Z += OpNested * (1/12.);      // [Y,[Y,X]]
+   Operator XXY = X.Commutator(XY); // [X,[X,Y]]
+//   OpNested = X.Commutator(OpNested); // [X,[X,Y]]
+//   double nc3 = OpNested.Norm();
+   double nc3 = XXY.Norm();
+   Z += XXY * (1/12.);      // [X,[X,Y]]
+//   Z += OpNested * (1/12.);      // [X,[X,Y]]
 
-   if ( nc3/12 < (nx+ny)*bch_prod_threshold ) return Z;
+   if ( nc3/12 < (nx+ny)*bch_product_threshold ) return Z;
 
    cout << "Warning: BCH product expansion not converged after 3 commutators!" << endl;
 
-   Operator OpNested3 = Y.Commutator(OpNested);
-   double nc4 = OpNested3.Norm();
-   Z += OpNested3*(-1./24);
+   Operator YXXY = Y.Commutator(XXY); // [Y,[X,[X,Y]]]
+//   Operator OpNested3 = Y.Commutator(OpNested);
+//   double nc4 = OpNested3.Norm();
+   double nc4 = YXXY.Norm();
+//   Z += OpNested3*(-1./24);
+   Z += YXXY*(-1./24);
 
-   Operator Optmp = Y.Commutator(OpNested2);
-   Operator OpNested4 = Y.Commutator(Optmp); // [Y,[Y,[Y,[Y,X]]]]
-   double nc5 = OpNested4.Norm();
-   Optmp = X.Commutator(OpNested);
-   Operator OpNested5 = X.Commutator(Optmp); // [X,[X,[X,[X,Y]]]]
-   double nc6 = OpNested5.Norm();
-   Z += (OpNested4 + OpNested5)*(-1./720);
+   Operator YYYX = Y.Commutator(YYX) ;
+   Operator YYYYX = Y.Commutator(YYYX) ;
+//   Operator YYYYX = Y.Commutator( Y.Commutator(YYX) );
+//   Operator Optmp = Y.Commutator(OpNested2); // [Y,[Y,[Y,X]]]
+//   Operator OpNested4 = Y.Commutator(Optmp); // [Y,[Y,[Y,[Y,X]]]]
+//   double nc5 = OpNested4.Norm();
+   double nc5 = YYYYX.Norm();
+//   Optmp = X.Commutator(OpNested);
+//   Operator OpNested5 = X.Commutator(Optmp); // [X,[X,[X,[X,Y]]]]
+   Operator XXXY =  X.Commutator(XXY) ; // [X,[X,[X,[X,Y]]]]
+   Operator XXXXY = X.Commutator(XXXY) ; // [X,[X,[X,[X,Y]]]]
+//   Operator XXXXY = X.Commutator( X.Commutator(XXY) ); // [X,[X,[X,[X,Y]]]]
+   //double nc6 = OpNested5.Norm();
+   double nc6 = XXXXY.Norm();
+//   Z += (OpNested4 + OpNested5)*(-1./720);
+   Z += (YYYYX + XXXXY)*(-1./720);
 
 
    return Z;

@@ -161,7 +161,71 @@ void ReadWrite::ReadBareTBME( string filename, Operator& Hbare)
 }
 
 
+void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
+{
 
+  ifstream infile;
+  char line[LINESIZE];
+  int Tz2,Par,J2,a,b,c,d;
+  int na,nb,nc,nd;
+  int la,lb,lc,ld;
+  int ja,jb,jc,jd;
+  float fbuf[3];
+  float tbme;
+  ModelSpace * modelspace = Hbare.GetModelSpace();
+  int norbits = modelspace->GetNumberOrbits();
+
+  infile.open(filename);
+  if ( !infile.good() )
+  {
+     cerr << "Trouble reading file " << filename << endl;
+     return;
+  }
+
+//  infile.getline(line,LINESIZE);
+
+//  while (!strstr(line,"<ab|V|cd>") && !infile.eof()) // Skip lines until we see the header
+  //for (int& i : modelspace->holes ) // skip spe's at the top
+  for (int i=0;i<6;++i ) // skip spe's at the top
+  {
+     infile.getline(line,LINESIZE);
+     cout << "skipping line: " << line << endl;
+  }
+
+  // read the file one line at a time
+  //while ( infile >> Tz >> Par >> J2 >> a >> b >> c >> d >> tbme >> fbuf[0] >> fbuf[1] >> fbuf[2] )
+  while ( infile >> na >> la >> ja >> nb >> lb >> jb >> nc >> lc >> jc >> nd >> ld >> jd >> Tz2 >> J2 >> tbme )
+  {
+     int tza = Tz2<0 ? -1 : 1;
+     int tzb = Tz2<2 ? -1 : 1;
+     int tzc = Tz2<0 ? -1 : 1;
+     int tzd = Tz2<2 ? -1 : 1;
+     a = modelspace->Index1(na,la,ja,tza);
+     b = modelspace->Index1(nb,lb,jb,tzb);
+     c = modelspace->Index1(nc,lc,jc,tzc);
+     d = modelspace->Index1(nd,ld,jd,tzd);
+     // if the matrix element is outside the model space, ignore it.
+     if (a>norbits or b>norbits or c>norbits or d>norbits) continue;
+     Par = (la+lb)%2;
+//     a--; b--; c--; d--; // Fortran -> C  ==> 1 -> 0
+
+//     double com_corr = fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  // Some sort of COM correction. Check this
+
+// NORMALIZATION: Read in normalized, antisymmetrized TBME's
+
+//     if (doCoM_corr)
+//     {
+//        Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme-com_corr );
+//     }
+//     else
+//     {
+        Hbare.SetTBME(J2/2,Par,Tz2/2,a,b,c,d, tbme ); // Don't do COM correction, for comparison with Darmstadt interaction.
+//     }
+
+  }
+
+  return;
+}
 
 
 // Read TBME's in Darmstadt format

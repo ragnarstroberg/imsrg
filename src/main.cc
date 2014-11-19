@@ -26,11 +26,14 @@ int main(int argc, char**argv)
    string inputtbme	= rw.InputParameters["inputtbme"];
    string darmstadttbme	= rw.InputParameters["darmstadttbme"];
    string darmstadtEmax	= rw.InputParameters["darmstadtEmax"];
+   string jasontbme	= rw.InputParameters["jasontbme"];
    string flowfile	= rw.InputParameters["flowfile"];
    string ds_str	= rw.InputParameters["ds"];
    string smax_str	= rw.InputParameters["smax"];
    string generator	= rw.InputParameters["generator"];
    string comcorr	= rw.InputParameters["com-correction"];
+   string bch_prod_thr	= rw.InputParameters["BCH-product-threshold"];
+   string bch_trans_thr	= rw.InputParameters["BCH-transform-threshold"];
 
    if (generator == "") generator = "white";
    if (comcorr == "false" or comcorr == "False" or comcorr == "FALSE") rw.SetCoMCorr(false);
@@ -51,7 +54,18 @@ int main(int argc, char**argv)
    return 0;
 */
    Operator H_bare =  Operator(&modelspace);
+   Operator H_3N =  Operator(&modelspace);
    H_bare.SetHermitian(); // just to be sure
+   H_3N.SetHermitian(); // just to be sure
+
+   rw.ReadBareTBME_Jason(jasontbme, H_3N);
+   Operator H3NO = H_3N.DoNormalOrdering();
+
+   cout << "Zero body part = " << H3NO.ZeroBody << endl;
+   rw.WriteOneBody(H3NO,"../output/H3_1b_NO.out");
+   rw.WriteTwoBody(H3NO,"../output/H3_2b_NO.out");
+
+   return 0;
 
    H_bare.CalculateKineticEnergy();
 
@@ -92,6 +106,16 @@ int main(int argc, char**argv)
 //   IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
    imsrgsolver.SetFlowFile(flowfile);
    imsrgsolver.SetGenerator(generator);
+   if (bch_prod_thr != "")
+   {
+      double thr = strtod(bch_prod_thr.c_str(),NULL);
+      Operator::Set_BCH_Product_Threshold(thr);
+   }
+   if (bch_trans_thr != "")
+   {
+      double thr = strtod(bch_trans_thr.c_str(),NULL);
+      Operator::Set_BCH_Transform_Threshold(thr);
+   }
 
    if (ds_str != "")
    {
