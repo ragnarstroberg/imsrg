@@ -34,6 +34,8 @@ int main(int argc, char**argv)
    string comcorr	= rw.InputParameters["com-correction"];
    string bch_prod_thr	= rw.InputParameters["BCH-product-threshold"];
    string bch_trans_thr	= rw.InputParameters["BCH-transform-threshold"];
+   string occfile	= rw.InputParameters["occupation-file"];
+   string densfile	= rw.InputParameters["density-file"];
 
    if (generator == "") generator = "white";
    if (comcorr == "false" or comcorr == "False" or comcorr == "FALSE") rw.SetCoMCorr(false);
@@ -54,18 +56,19 @@ int main(int argc, char**argv)
    return 0;
 */
    Operator H_bare =  Operator(&modelspace);
-   Operator H_3N =  Operator(&modelspace);
    H_bare.SetHermitian(); // just to be sure
-   H_3N.SetHermitian(); // just to be sure
 
-   rw.ReadBareTBME_Jason(jasontbme, H_3N);
-   Operator H3NO = H_3N.DoNormalOrdering();
+//   Operator H_3N =  Operator(&modelspace);
+//   H_3N.SetHermitian(); // just to be sure
 
-   cout << "Zero body part = " << H3NO.ZeroBody << endl;
-   rw.WriteOneBody(H3NO,"../output/H3_1b_NO.out");
-   rw.WriteTwoBody(H3NO,"../output/H3_2b_NO.out");
+//   rw.ReadBareTBME_Jason(jasontbme, H_3N);
+//   Operator H3NO = H_3N.DoNormalOrdering();
 
-   return 0;
+//   cout << "Zero body part = " << H3NO.ZeroBody << endl;
+//   rw.WriteOneBody(H3NO,"../output/H3_1b_NO.out");
+//   rw.WriteTwoBody(H3NO,"../output/H3_2b_NO.out");
+
+//   return 0;
 
    H_bare.CalculateKineticEnergy();
 
@@ -135,28 +138,60 @@ int main(int argc, char**argv)
 
 
 
- /* 
-  cout << endl << " density: " << endl;
-
-  int nr_steps = 100;
-  vector<double> R(nr_steps,0);
-  double dr = 0.1;
-  for (int i=0;i<nr_steps;++i) R[i] = i*dr;
-
-  cout << "Calculating occupation numbers..." << endl;
-
-  //vector<double> occ = imsrg_util::GetOccupations(hf,imsrgsolver);
-  vector<double> occ = imsrg_util::GetOccupations(hf);
-
-  vector<double>dens_P = imsrg_util::GetDensity(occ,R,modelspace.proton_orbits,modelspace);
-  vector<double>dens_N = imsrg_util::GetDensity(occ,R,modelspace.neutron_orbits,modelspace);
-
-  for (int i=0;i<nr_steps;++i)
+  if (occfile != "" or densfile != "")
   {
-     cout << R[i] << " " << dens_P[i] << " " << dens_N[i] << endl;
-  }
-*/
 
+    int nr_steps = 100;
+    vector<double> R(nr_steps,0);
+    double dr = 0.1;
+    for (int i=0;i<nr_steps;++i) R[i] = i*dr;
+  
+    cout << "Calculating occupation numbers..." << endl;
+  
+    vector<double> occ = imsrg_util::GetOccupations(hf,imsrgsolver);
+    //vector<double> occ = imsrg_util::GetOccupations(hf);
+
+    // This should probably go in the ReadWrite class...
+    if (occfile != "")
+    {
+      ofstream occf;
+      occf.open(occfile,ofstream::out);
+      for (int i=0;i<modelspace.GetNumberOrbits();i+=2)
+      {
+         Orbit *oi = modelspace.GetOrbit(i);
+         cout << i << "  " << oi->n << " " << oi->l << "  " << oi->j2/2 << " " << occ[i] << " " << occ[i+1] << endl;
+         occf << i << "  " << oi->n << " " << oi->l << "  " << oi->j2/2 << " " << occ[i] << " " << occ[i+1] << endl;
+      }
+      occf.close();
+    }
+
+    if (densfile  != "")
+    {
+      vector<double>dens_P = imsrg_util::GetDensity(occ,R,modelspace.proton_orbits,modelspace);
+      vector<double>dens_N = imsrg_util::GetDensity(occ,R,modelspace.neutron_orbits,modelspace);
+
+      ofstream densf;
+      densf.open(densfile,ofstream::out);
+      double rms_n = 0;
+      double rms_p = 0;
+      double norm_n = 0;
+      double norm_p = 0;
+      for (int i=0;i<R.size();++i)
+      {
+         cout << R[i] << " " << dens_P[i] << " " << dens_N[i] << endl;
+         densf << R[i] << " " << dens_P[i] << " " << dens_N[i] << endl;
+         rms_n += dens_N[i]*dens_N[i]*pow(R[i],4)*dr;
+         rms_p += dens_P[i]*dens_P[i]*pow(R[i],4)*dr;
+         norm_n += dens_N[i]*dens_N[i]*pow(R[i],2)*dr;
+         norm_p += dens_P[i]*dens_P[i]*pow(R[i],2)*dr;
+      }
+      rms_n = sqrt(rms_n / norm_n );
+      rms_p = sqrt(rms_p / norm_p );
+      cout << "neutron rms: " << rms_n << endl;
+      cout << "proton rms: "  << rms_p << endl;
+      densf.close();
+    }
+  }
 //  Operator Np0s1 = StandardOperators::NumberOp(modelspace,0,0,1,-1); // proton 0s1/2
 //  Operator Np0s1_hf = hf.TransformToHFBasis(Np0s1);
 //  Operator Np0s1_NO = Np0s1_hf.DoNormalOrdering();
@@ -168,8 +203,8 @@ int main(int argc, char**argv)
 //   rw.WriteValenceOneBody(imsrgsolver.H_s,"../output/O16_lmax6_SM_1b.int");
 //   rw.WriteValenceTwoBody(imsrgsolver.H_s,"../output/O16_lmax6_SM_2b.int");
 
-   rw.WriteNuShellX_int(imsrgsolver.H_s,"../output/Ca40srg.int");
-   rw.WriteNuShellX_sps(imsrgsolver.H_s,"../output/Ca40srg.sp");
+//   rw.WriteNuShellX_int(imsrgsolver.H_s,"../output/Ca40srg.int");
+//   rw.WriteNuShellX_sps(imsrgsolver.H_s,"../output/Ca40srg.sp");
 
 //   rw.WriteNuShellX_int(HFNO,"../output/He4_bare.int");
 

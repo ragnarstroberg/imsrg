@@ -38,7 +38,7 @@ void IMSRGSolver::Solve()
    ofstream flowf;
    if (flowfile != "")
       flowf.open(flowfile,ofstream::out);
-   cout << " i     s       E0       ||H_1||      ||H_2||        ||Omega||     || Eta||    ||dOmega||     " << endl;
+   cout << " i     s       E0       ||H_1||      ||H_2||        ||Omega||     || Eta_1||    || Eta_2 ||    ||dOmega||     " << endl;
 
 
    double norm_eta,norm_eta_last;
@@ -489,7 +489,7 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
 //      cout << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     "  << Eta.Norm() << "   "  << dOmega.Norm() << endl;
       if ( f.good() )
 //         f << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     " << Eta.Norm() << "   " << dOmega.Norm() << endl;
-         f << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     " << Eta.OneBodyNorm() << Eta.TwoBodyNorm() << "   " << dOmega.Norm() << endl;
+         f << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     " << Eta.OneBodyNorm() << "    " << Eta.TwoBodyNorm() << "   " << dOmega.Norm() << endl;
 
 }
 
