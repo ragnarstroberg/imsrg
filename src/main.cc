@@ -86,7 +86,7 @@ int main(int argc, char**argv)
       rw.WriteTwoBody(H_bare,"../output/Darmstadt_H_bare.out");
    }
 
-   H_bare += H3NO;
+//   H_bare += H3NO;
 
    cout << "Norm of H_bare = " << H_bare.Norm() << endl;
 
@@ -98,12 +98,14 @@ int main(int argc, char**argv)
    hf2.Solve();
 
 
-
    cout << "EHF = " << hf.EHF << endl;
    cout << "EHF2 = " << hf2.EHF << endl;
    Operator HFNO = H_hf.DoNormalOrdering();
    Operator HbareNO = H_bare.DoNormalOrdering();
 
+
+   Operator H3N_hf = hf.TransformToHFBasis(H3NO);
+   HFNO += H3N_hf;
    cout << "Norm of HFNO = " << HFNO.Norm() << endl;
 
    IMSRGSolver imsrgsolver = IMSRGSolver(HFNO);
