@@ -58,17 +58,17 @@ int main(int argc, char**argv)
    Operator H_bare =  Operator(&modelspace);
    H_bare.SetHermitian(); // just to be sure
 
-//   Operator H_3N =  Operator(&modelspace);
-//   H_3N.SetHermitian(); // just to be sure
+   Operator H_3N =  Operator(&modelspace);
+   H_3N.SetHermitian(); // just to be sure
 
-//   rw.ReadBareTBME_Jason(jasontbme, H_3N);
-//   Operator H3NO = H_3N.DoNormalOrdering();
+   rw.ReadBareTBME_Jason(jasontbme, H_3N);
+   Operator H3NO = H_3N.DoNormalOrdering();
+   H3NO.ZeroBody /= 3.0;
+   H3NO.OneBody /= 2.0;
 
-//   cout << "Zero body part = " << H3NO.ZeroBody << endl;
-//   rw.WriteOneBody(H3NO,"../output/H3_1b_NO.out");
-//   rw.WriteTwoBody(H3NO,"../output/H3_2b_NO.out");
-
-//   return 0;
+   cout << "Zero body part = " << H3NO.ZeroBody << endl;
+   rw.WriteOneBody(H3NO,"../output/H3_1b_NO.out");
+   rw.WriteTwoBody(H3NO,"../output/H3_2b_NO.out");
 
    H_bare.CalculateKineticEnergy();
 
@@ -86,6 +86,7 @@ int main(int argc, char**argv)
       rw.WriteTwoBody(H_bare,"../output/Darmstadt_H_bare.out");
    }
 
+   H_bare += H3NO;
 
    cout << "Norm of H_bare = " << H_bare.Norm() << endl;
 
