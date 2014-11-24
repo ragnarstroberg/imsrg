@@ -597,7 +597,7 @@ Operator Operator::BCH_Product( Operator &Y)
 
    if ( nc3/12 < (nx+ny)*bch_product_threshold ) return Z;
 
-   cout << "Warning: BCH product expansion not converged after 3 commutators!" << endl;
+   cout << "Warning: BCH product expansion not converged after 3 nested commutators!" << endl;
 
    Operator YXXY = Y.Commutator(XXY); // [Y,[X,[X,Y]]]
 //   Operator OpNested3 = Y.Commutator(OpNested);
@@ -623,6 +623,8 @@ Operator Operator::BCH_Product( Operator &Y)
 //   Z += (OpNested4 + OpNested5)*(-1./720);
    Z += (YYYYX + XXXXY)*(-1./720);
 
+   if ( nc6/720 < (nx+ny)*bch_product_threshold ) return Z;
+   cout << "Warning: BCH product expansion not converged after 5 nested commutators!" << endl;
 
    return Z;
 }

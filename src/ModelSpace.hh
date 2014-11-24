@@ -122,14 +122,23 @@ class TwoBodyChannel
    int GetLocalIndex(int p, int q) const ;
    int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
    Ket * GetKet(int i) const ; // get pointer to ket using local index
-   vector<int> KetIndex_pp;
+   vector<int> KetIndex_pp; //maybe don't need
    vector<int> KetIndex_ph;
    vector<int> KetIndex_hh;
    vector<int> KetIndex_vv;
-   vector<int> KetIndex_vq;
-   vector<int> KetIndex_vh;
-   vector<int> KetIndex_hq;
-   vector<int> KetIndex_qq;
+//   vector<int> KetIndex_vq; // don't need
+//   vector<int> KetIndex_qq; // don't need
+   vector<int> KetIndex_holeq_holeq; 
+   vector<int> KetIndex_particleq_particleq;
+   vector<int> KetIndex_v_holeq; // added
+   vector<int> KetIndex_v_particleq; //added
+//   vector<int> KetIndex_particleq_holeq; // don't need
+
+//   vector<int> KetIndex_vh;
+//   vector<int> KetIndex_hq;
+//   vector<int> KetIndex_holeq_holeq;
+//   vector<int> KetIndex_particleq_particleq;
+//   vector<int> KetIndex_particleq_particleq;
 
 
 // private:
@@ -224,6 +233,8 @@ class ModelSpace
    vector<int> particles;
    vector<int> valence;
    vector<int> qspace;
+   vector<int> hole_qspace;
+   vector<int> particle_qspace;
 
    // Constructors
    ModelSpace();

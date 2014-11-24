@@ -54,9 +54,9 @@ void IMSRGSolver::Solve()
 
       norm_eta = Eta.Norm();
       // ds should never be more than 1, as this is over-rotating
-      ds = min(norm_domega / norm_eta, ds_max); 
-      if (ds == ds_max) norm_domega /=2;
-      if (s+ds > smax) ds = smax-s;
+//      ds = min(norm_domega / norm_eta, ds_max); 
+//      if (ds == ds_max) norm_domega /=2;
+//      if (s+ds > smax) ds = smax-s;
       s += ds;
       dOmega = Eta * ds; // Here's the Euler step.
 
@@ -145,6 +145,7 @@ double IMSRGSolver::GetEpsteinNesbet1bDenominator(int i, int j)
 
 
 
+// This could likely be sped up by constructing and storing the monopole matrix
 double IMSRGSolver::GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket)
 {
    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -210,18 +211,17 @@ void IMSRGSolver::ConstructGenerator_White()
       }
    }
 
-   // Two body piece -- eliminate pp'hh' bits
-   // This could likely be sped up by constructing and storing the monopole matrix
+   // Two body piece -- eliminate pp'hh' bits. Note that the hh'hp pieces are accounted
+   // for in the normal ordered one-body part.
    int nchan = modelspace->GetNumberTwoBodyChannels();
    for (int ch=0;ch<nchan;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      for (int& ibra : tbc.KetIndex_pp)
+      for (int& ibra : tbc.KetIndex_hh)
       {
-         for (int& iket : tbc.KetIndex_hh)
+         for (int& iket : tbc.KetIndex_pp)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
-
             Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
             Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
@@ -237,84 +237,117 @@ void IMSRGSolver::ConstructGenerator_White()
 
 void IMSRGSolver::ConstructGenerator_ShellModel()
 {
-   ConstructGenerator_White(); // Start with the White generator
+//   ConstructGenerator_White(); // Start with the White generator
 
    // One body piece -- make sure the valence one-body part is diagonal
    for ( int &i : modelspace->valence)
    {
       Orbit *oi = modelspace->GetOrbit(i);
-      for (int &j : modelspace->particles)
+      for (int j=0; j<modelspace->GetNumberOrbits(); ++j)
+//      for (int &j : modelspace->particles)
       {
          if (i==j) continue;
          Orbit *oj = modelspace->GetOrbit(j);
          double denominator = GetEpsteinNesbet1bDenominator(i,j);
          Eta.OneBody(i,j) = H_s.OneBody(i,j)/denominator;
          Eta.OneBody(j,i) = - Eta.OneBody(i,j);
-         if (abs(Eta.OneBody(i,j)) > 1e5)
-         {
-            cout << "Eta OneBody(" << i << "," << j << ") =  "<< Eta.OneBody(i,j) << endl;
-         }
       }
    
    }
    // Two body piece -- eliminate ppvh and pqvv  ( vv'hh' was already accounted for with White )
+   // This is still no good...
 
    int nchan = modelspace->GetNumberTwoBodyChannels();
    for (int ch=0;ch<nchan;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
-
-      for (int& ibra : tbc.KetIndex_pp)
-      {
-         for (int& iket : tbc.KetIndex_vh)
-         {
-            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
-            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
-            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
-            if (abs(Eta.TwoBody[ch](ibra,iket)) > 1e5)
-               cout << "Eta TwoBody_ppvh(" << ibra << "," << iket << ") =  "<< Eta.TwoBody[ch](ibra,iket) << endl;
-         }
-      }
+      // Decouple vv from qq and qv
 
       for (int& ibra : tbc.KetIndex_vv)
       {
-         for (int& iket : tbc.KetIndex_qq)
+//         for (int& iket : tbc.KetIndex_qq) // this includes vv qh  which we don't want to include...
+         for (int& iket : tbc.KetIndex_particleq_particleq) 
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
             Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
-            if (abs(Eta.TwoBody[ch](ibra,iket)) > 1e5)
-               cout << "Eta TwoBody_vvqq(" << ibra << "," << iket << ") =  "<< Eta.TwoBody[ch](ibra,iket) << endl;
+         }
+
+         for (int& iket : tbc.KetIndex_holeq_holeq) 
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
+         for (int& iket : tbc.KetIndex_v_particleq) 
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
+         for (int& iket : tbc.KetIndex_v_holeq) 
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
+
+      }
+
+
+      // Decouple hh states
+
+      for (int& ibra : tbc.KetIndex_holeq_holeq)
+      {
+         for (int& iket : tbc.KetIndex_particleq_particleq)
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
+         for (int& iket : tbc.KetIndex_v_particleq)
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
 
-      for (int& ibra : tbc.KetIndex_vv)
+      // Decouple vh states
+
+      for (int& ibra : tbc.KetIndex_v_holeq)
       {
-         for (int& iket : tbc.KetIndex_vq)
+         for (int& iket : tbc.KetIndex_particleq_particleq)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
             Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
-            if (abs(Eta.TwoBody[ch](ibra,iket)) > 1e5)
-            {
-               Ket * bra = tbc.GetKet(ibra);
-               Ket * ket = tbc.GetKet(iket);
-               cout << "Eta TwoBody_vvvq(" << bra->p << "," << bra->q << "," << ket->p << "," << ket->q << ") (J="<<tbc.J << ") =  "<< Eta.TwoBody[ch](ibra,iket)
-                    << ",  denominator = " << denominator << endl;
-               
-            }
+         }
+
+         for (int& iket : tbc.KetIndex_v_particleq)
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
+
 
 
     }
 }
 
 
+
 // This is half-baked and doesn't work yet.
 void IMSRGSolver::ConstructGenerator_ShellModel1hw()
 {
+/*
    ConstructGenerator_White(); // Start with the White generator
 
    // One body piece -- make sure the valence one-body part is diagonal
@@ -373,8 +406,8 @@ void IMSRGSolver::ConstructGenerator_ShellModel1hw()
       }
 
     }
+*/
 }
-
 
 
 
@@ -418,19 +451,17 @@ void IMSRGSolver::ConstructGenerator_Atan()
 
 void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
 {
-   //ConstructGenerator_White(); // Start with the White generator
-   ConstructGenerator_Atan(); // Start with the White generator
-
+/*
    // One body piece -- make sure the valence one-body part is diagonal
    for ( int &i : modelspace->valence)
    {
       Orbit *oi = modelspace->GetOrbit(i);
-      for (int &j : modelspace->particles)
+      for (int j=0; j<modelspace->GetNumberOrbits(); ++j)
+//      for (int &j : modelspace->particles)
       {
          if (i==j) continue;
          Orbit *oj = modelspace->GetOrbit(j);
          double denominator = GetEpsteinNesbet1bDenominator(i,j);
-         //Eta.OneBody(i,j) = H_s.OneBody(i,j)/denominator;
          Eta.OneBody(i,j) = 0.5*atan(2*H_s.OneBody(i,j)/denominator);
          Eta.OneBody(j,i) = - Eta.OneBody(i,j);
       }
@@ -444,52 +475,66 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
 
-      for (int& ibra : tbc.KetIndex_pp)
-      {
-         for (int& iket : tbc.KetIndex_vh)
-         {
-            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
-            //Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
-            Eta.TwoBody[ch](ibra,iket) = 0.5*atan(2*H_s.TwoBody[ch](ibra,iket) / denominator);
-            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
-         }
-      }
+      // Decouple vv from qq and qv
 
       for (int& ibra : tbc.KetIndex_vv)
       {
          for (int& iket : tbc.KetIndex_qq)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
-            //Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
             Eta.TwoBody[ch](ibra,iket) = 0.5*atan(2*H_s.TwoBody[ch](ibra,iket) / denominator);
             Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
+
 
       for (int& ibra : tbc.KetIndex_vv)
       {
          for (int& iket : tbc.KetIndex_vq)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
-            //Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
             Eta.TwoBody[ch](ibra,iket) = 0.5*atan(2*H_s.TwoBody[ch](ibra,iket) / denominator);
             Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
 
 
-    }
+      // Decouple the hole qstates (core) from particle qstates
+
+      for (int& ibra : tbc.KetIndex_holeq_holeq)
+      {
+         for (int& iket : tbc.KetIndex_particleq_holeq)
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = 0.5*atan(2*H_s.TwoBody[ch](ibra,iket) / denominator);
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+
+
+      for (int& ibra : tbc.KetIndex_holeq_holeq)
+      {
+         for (int& iket : tbc.KetIndex_particleq_particleq)
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = 0.5*atan(2*H_s.TwoBody[ch](ibra,iket) / denominator);
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+
+   }
+*/
 }
-
-
 
 
 void IMSRGSolver::WriteFlowStatus(ostream& f)
 {
-//      cout << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     "  << Eta.Norm() << "   "  << dOmega.Norm() << endl;
-      if ( f.good() )
-//         f << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     " << Eta.Norm() << "   " << dOmega.Norm() << endl;
-         f << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     " << Eta.OneBodyNorm() << "    " << Eta.TwoBodyNorm() << "   " << dOmega.Norm() << endl;
+   if ( f.good() )
+   {
+      f.width(11);
+      f.precision(10);
+      f << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     " << Eta.OneBodyNorm() << "    " << Eta.TwoBodyNorm() << "   " << dOmega.Norm() << endl;
+   }
 
 }
 

@@ -36,6 +36,8 @@ int main(int argc, char**argv)
    string bch_trans_thr	= rw.InputParameters["BCH-transform-threshold"];
    string occfile	= rw.InputParameters["occupation-file"];
    string densfile	= rw.InputParameters["density-file"];
+   string nushellx_sps	= rw.InputParameters["nushellx_sps"];
+   string nushellx_int	= rw.InputParameters["nushellx_int"];
 
    if (generator == "") generator = "white";
    if (comcorr == "false" or comcorr == "False" or comcorr == "FALSE") rw.SetCoMCorr(false);
@@ -58,17 +60,17 @@ int main(int argc, char**argv)
    Operator H_bare =  Operator(&modelspace);
    H_bare.SetHermitian(); // just to be sure
 
-   Operator H_3N =  Operator(&modelspace);
-   H_3N.SetHermitian(); // just to be sure
+//   Operator H_3N =  Operator(&modelspace);
+//   H_3N.SetHermitian(); // just to be sure
 
-   rw.ReadBareTBME_Jason(jasontbme, H_3N);
-   Operator H3NO = H_3N.DoNormalOrdering();
-   H3NO.ZeroBody /= 3.0;
-   H3NO.OneBody /= 2.0;
+//   rw.ReadBareTBME_Jason(jasontbme, H_3N);
+//   Operator H3NO = H_3N.DoNormalOrdering();
+//   H3NO.ZeroBody /= 3.0;
+//   H3NO.OneBody /= 2.0;
 
-   cout << "Zero body part = " << H3NO.ZeroBody << endl;
-   rw.WriteOneBody(H3NO,"../output/H3_1b_NO.out");
-   rw.WriteTwoBody(H3NO,"../output/H3_2b_NO.out");
+//   cout << "Zero body part = " << H3NO.ZeroBody << endl;
+//   rw.WriteOneBody(H3NO,"../output/H3_1b_NO.out");
+//   rw.WriteTwoBody(H3NO,"../output/H3_2b_NO.out");
 
    H_bare.CalculateKineticEnergy();
 
@@ -90,22 +92,27 @@ int main(int argc, char**argv)
 
    cout << "Norm of H_bare = " << H_bare.Norm() << endl;
 
+   // Testing Hellmann-Feynman way of getting observable.
+//   Operator n0p3 = imsrg_util::NumberOp(modelspace,0, 1, 3, 1);
+//   H_bare += n0p3;
+
    HartreeFock  hf = HartreeFock(H_bare);
    hf.Solve();
 
    Operator H_hf = hf.TransformToHFBasis(H_bare);
-   HartreeFock hf2 = HartreeFock(H_hf);
-   hf2.Solve();
+//   HartreeFock hf2 = HartreeFock(H_hf);
+//   hf2.Solve();
 
 
    cout << "EHF = " << hf.EHF << endl;
-   cout << "EHF2 = " << hf2.EHF << endl;
+//   cout << "EHF2 = " << hf2.EHF << endl;
    Operator HFNO = H_hf.DoNormalOrdering();
    Operator HbareNO = H_bare.DoNormalOrdering();
 
 
-   Operator H3N_hf = hf.TransformToHFBasis(H3NO);
-   HFNO += H3N_hf;
+
+//   Operator H3N_hf = hf.TransformToHFBasis(H3NO);
+//   HFNO += H3N_hf;
    cout << "Norm of HFNO = " << HFNO.Norm() << endl;
 
    IMSRGSolver imsrgsolver = IMSRGSolver(HFNO);
@@ -139,7 +146,11 @@ int main(int argc, char**argv)
    imsrgsolver.Solve();
 //////////////////////////////////////////////////
 
-
+//   n0p3 = hf.TransformToHFBasis(n0p3);
+//   n0p3 = n0p3.DoNormalOrdering();
+//   n0p3 = imsrgsolver.Transform(n0p3);
+//   cout.precision(10);
+//   cout << "n0p3 zero body = " << n0p3.ZeroBody << endl;
 
   if (occfile != "" or densfile != "")
   {
@@ -195,19 +206,25 @@ int main(int argc, char**argv)
       densf.close();
     }
   }
-//  Operator Np0s1 = StandardOperators::NumberOp(modelspace,0,0,1,-1); // proton 0s1/2
-//  Operator Np0s1_hf = hf.TransformToHFBasis(Np0s1);
-//  Operator Np0s1_NO = Np0s1_hf.DoNormalOrdering();
-//  Operator Np0s1_final = imsrgsolver.Transform(Np0s1_NO);
-//  cout << "proton 0s1/2 occupation = " << Np0s1_final.ZeroBody << endl;
 
 //   rw.WriteValenceOneBody(HFNO,"../output/O16_lmax6_SM_1b_bare.int");
 //   rw.WriteValenceTwoBody(HFNO,"../output/O16_lmax6_SM_2b_bare.int");
 //   rw.WriteValenceOneBody(imsrgsolver.H_s,"../output/O16_lmax6_SM_1b.int");
 //   rw.WriteValenceTwoBody(imsrgsolver.H_s,"../output/O16_lmax6_SM_2b.int");
 
+  if (nushellx_sps != "")
+      rw.WriteNuShellX_sps(imsrgsolver.H_s,nushellx_sps);
+  if (nushellx_int != "")
+      rw.WriteNuShellX_int(imsrgsolver.H_s,nushellx_int);
+
 //   rw.WriteNuShellX_int(imsrgsolver.H_s,"../output/Ca40srg.int");
 //   rw.WriteNuShellX_sps(imsrgsolver.H_s,"../output/Ca40srg.sp");
+//   rw.WriteNuShellX_int(imsrgsolver.H_s,"../output/O16srg.int");
+//   rw.WriteNuShellX_sps(imsrgsolver.H_s,"../output/O16srg.sp");
+//   rw.WriteNuShellX_int(imsrgsolver.H_s,"../output/Si34srg.int");
+//   rw.WriteNuShellX_sps(imsrgsolver.H_s,"../output/Si34srg.sp");
+//   rw.WriteNuShellX_int(imsrgsolver.H_s,"../output/He4srg.int");
+//   rw.WriteNuShellX_sps(imsrgsolver.H_s,"../output/He4srg.sp");
 
 //   rw.WriteNuShellX_int(HFNO,"../output/He4_bare.int");
 

@@ -110,38 +110,40 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
          if (( php + phq) == 2) // hh
          {
             KetIndex_hh.push_back(NumberKets);
+            if ((iop+ioq)==2) // qq
+               KetIndex_holeq_holeq.push_back(NumberKets);
          }
          else if ((php + phq) == 0) // pp
          {
             KetIndex_pp.push_back(NumberKets);
-            if ((iop + ioq) == 0)
-            {
-               KetIndex_vv.push_back(NumberKets);
-            }
-            if ((iop + ioq) == 1)
-            {
-               KetIndex_vq.push_back(NumberKets);
-            }
-            if ((iop + ioq) == 2)
-            {
-               KetIndex_qq.push_back(NumberKets);
-            }
+            if ((iop+ioq)==2) // qq
+               KetIndex_particleq_particleq.push_back(NumberKets);
          }
          else //ph
          {
             KetIndex_ph.push_back(NumberKets);
-            if ((iop + ioq) == 1)
-            {
-               KetIndex_vh.push_back(NumberKets);
-            }
-            if ((iop + ioq) == 2)
-            {
-               KetIndex_hq.push_back(NumberKets);
-            }
+//            if ((iop+ioq)==2) // qq
+//               KetIndex_particleq_holeq.push_back(NumberKets);
          }
-//         if (iop + ioq == 2) KetIndex_qq.push_back(NumberKets);
-//         else if (iop + ioq == 0) KetIndex_vv.push_back(NumberKets);
-//         else KetIndex_vq.push_back(NumberKets);
+
+         if ((iop + ioq) == 0) // vv
+         {
+            KetIndex_vv.push_back(NumberKets);
+         }
+
+         if ((iop + ioq) == 1) // vq
+         {
+           if ((iop + php == 2) or (ioq+phq==2) ) // the qspace orbit is a hole
+              KetIndex_v_holeq.push_back(NumberKets);
+           else // v particle_q
+              KetIndex_v_particleq.push_back(NumberKets);
+//            KetIndex_vq.push_back(NumberKets);
+         }
+//         if ((iop + ioq) == 2) // qq
+//         {
+//            KetIndex_qq.push_back(NumberKets);
+//         }
+
          NumberKets++;
       }
    }
@@ -183,18 +185,22 @@ void TwoBodyChannel::Copy( const TwoBodyChannel& rhs)
    NumberKets        = rhs.NumberKets;
    Proj_hh           = rhs.Proj_hh;
    Proj_pp           = rhs.Proj_pp;
-//   Proj_ph_cc        = rhs.Proj_ph_cc;
    KetMap            = rhs.KetMap;
    KetList           = rhs.KetList;
 
    KetIndex_pp       = rhs.KetIndex_pp;
    KetIndex_ph       = rhs.KetIndex_ph;
    KetIndex_hh       = rhs.KetIndex_hh;
-   KetIndex_qq       = rhs.KetIndex_qq;
-   KetIndex_vq       = rhs.KetIndex_vq;
-   KetIndex_hq       = rhs.KetIndex_hq;
-   KetIndex_vh       = rhs.KetIndex_vh;
+//   KetIndex_qq       = rhs.KetIndex_qq;
+//   KetIndex_vq       = rhs.KetIndex_vq;
    KetIndex_vv       = rhs.KetIndex_vv;
+   KetIndex_holeq_holeq         = rhs.KetIndex_holeq_holeq;
+   KetIndex_particleq_particleq = rhs.KetIndex_particleq_particleq;
+   KetIndex_v_holeq     = rhs.KetIndex_v_holeq;
+   KetIndex_v_particleq     = rhs.KetIndex_v_particleq;
+//   KetIndex_particleq_holeq     = rhs.KetIndex_particleq_holeq;
+//   KetIndex_hq       = rhs.KetIndex_hq;
+//   KetIndex_vh       = rhs.KetIndex_vh;
 }
 
 
@@ -235,7 +241,6 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
 
 bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
 {
-//   if ((p==q) and (J%2 != 0)) return false; // Pauli principle
    Orbit * op = modelspace->GetOrbit(p);
    Orbit * oq = modelspace->GetOrbit(q);
    if ((op->l + oq->l)%2 != parity) return false;
@@ -251,7 +256,6 @@ bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
 
 ModelSpace::ModelSpace()
 {
-//   nCore = 0;
    norbits = 0;
    maxj = 0;
    hbar_omega=20;
@@ -261,7 +265,6 @@ ModelSpace::ModelSpace()
 
 ModelSpace::ModelSpace(const ModelSpace& ms)
 {
-//   nCore = 0;
    norbits = 0;
    maxj = 0;
    hbar_omega = ms.hbar_omega;
@@ -294,7 +297,13 @@ void ModelSpace::AddOrbit(Orbit orb)
    if (orb.ph == 0) particles.push_back(ind);
    if (orb.ph == 1) holes.push_back(ind);
    if (orb.io == 0) valence.push_back(ind);
-   if (orb.io == 1) qspace.push_back(ind);
+//   if (orb.io == 1) qspace.push_back(ind);
+   if (orb.io == 1)
+   {
+     qspace.push_back(ind);
+     if (orb.ph == 0) particle_qspace.push_back(ind);
+     if (orb.ph == 1) hole_qspace.push_back(ind);
+   }
    if (orb.tz2<0) proton_orbits.push_back(ind);
    if (orb.tz2>0) neutron_orbits.push_back(ind);
 }

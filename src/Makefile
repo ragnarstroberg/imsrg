@@ -1,4 +1,5 @@
 CC = g++
+# Need to do a better job with the dependencies...
 
 #FLAGS = -larmadillo -O3 -std=c++11
 FLAGS = -larmadillo -O3 -std=c++11  -lgsl -fopenmp 

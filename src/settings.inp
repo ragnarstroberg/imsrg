@@ -1,15 +1,22 @@
 
 #inputsps:	../input/He4_lmax6.sps
+inputsps:	../input/He4_emax8.sps
+#inputsps:	../input/He4_emax4.sps
 #inputsps:	../input/He4_lmax6_SM.sps
 #inputsps:	../input/O16_lmax6.sps
-inputsps:	../input/O16_hw13.53_nmax6.sps
+#inputsps:	../input/O22_lmax6.sps
+#inputsps:	../input/O16_hw13.53_nmax6.sps
 #inputsps:	../input/O16_3b.sps
 #inputsps:	../input/O16_lmax8.sps
 #inputsps:	../input/O24_lmax6.sps
 #inputsps:	../input/Si28_lmax6.sps
 #inputsps:	../input/O16_lmax6_SM.sps
+#inputsps:	../input/Si34_lmax6_SM.sps
+#inputsps:	../input/O28_lmax6_SM.sps
 #inputsps:	../input/Ca40_lmax6_SM.sps
+#inputsps:	../input/Ca40_hw24_emax8.sps
 #inputsps:	../input/Ca40_lmax6.sps
+#inputsps:	../input/O22_hw24_emax8.sps
 #inputsps:	../input/O16_hw24_emax8.sps
 #inputsps:	../input/O16_hw24_emax6.sps
 #inputsps:	../input/O16_hw24_emax4.sps
@@ -27,8 +34,8 @@ inputsps:	../input/O16_hw13.53_nmax6.sps
 #inputtbme:	../input/vspsd.int
 #inputtbme:	../input/vs.int
 #inputtbme:	../input/vjason2.0.int
-inputtbme:	../input/vnn_hw13.53_n3loEM_vlk20em_N13_J9.dat
-#inputtbme:	../input/vsrg2.0_n3lo_noEmpot_Gaute_emax8_hw24.int
+#inputtbme:	../input/vnn_hw13.53_n3loEM_vlk20em_N13_J9.dat
+inputtbme:	../input/vsrg2.0_n3lo_noEmpot_Gaute_emax8_hw24.int
 #inputtbme:	../input/vsrg1.8_n3lo500_w_coulomb_emax6_hw24.int
 
 #darmstadttbme:	../input/chi2b_srg0400_eMax02_hwHO024.me2j
@@ -36,15 +43,20 @@ inputtbme:	../input/vnn_hw13.53_n3loEM_vlk20em_N13_J9.dat
 #darmstadttbme:	../input/chi2b_srg0800_eMax06_EMax06_hwHO024.me2j
 #darmstadtEmax:	6
 
-jasontbme:	../input/f3b.dat
+#jasontbme:	../input/f3b.dat
 #jasontbme:	../input/jtwobody_SI_oslo1_jsTNF_Nmax_18_J12max_8_hbarOmega_13.53_Fit_cutoff_2.00_nexp_4_c1_-0.81_c3_-3.20_c4_5.40_cD_1.57_cE_-0.10_2pi_0.00_2pi1pi_0.00_2picont_0.00_rings_0.00_J3max_9_id_1_new_ho_7_16O.dat
 
 #flowfile:	../output/BCH_flow_vspsd.dat
 #flowfile:	../output/BCH_flow_emax6.dat
-#flowfile:	../output/BCH_flow_He4_emax6.dat
-flowfile:	../output/BCH_flow_O16_emax6.dat
-ds:		0.5
-smax:		20.0
+flowfile:	../output/BCH_flow_He4_emax8.dat
+#flowfile:	../output/BCH_flow_He4_emax4.dat
+#flowfile:	../output/BCH_flow_He4_emax6_SM.dat
+#flowfile:	../output/BCH_flow_O16_emax6_occ_0p3.dat
+#flowfile:	../output/BCH_flow_O16_emax6.dat
+#flowfile:	../output/BCH_flow_O22_emax8.dat
+#flowfile:	../output/BCH_flow_Si34_emax6.dat
+ds:		0.1
+smax:		15.0
 #generator:	shell-model
 #generator:	shell-model-atan
 generator:	white
@@ -58,7 +70,18 @@ BCH-product-threshold:	1e-4
 BCH-transform-threshold: 1e-6
 
 
-#occupation-file:	../output/O16_occ_emax6.dat
-#density-file:	../output/O16_dens_emax6.dat
+#occupation-file:	../output/O22_occ_emax8.dat
+#density-file:	../output/O22_dens_emax8.dat
+#occupation-file:	../output/Si28_occ_emax6.dat
+#density-file:	../output/Si28_dens_emax6.dat
 #occupation-file:	../output/O16_occ_emax6_HF.dat
 #density-file:	../output/O16_dens_emax6_HF.dat
+
+#nushellx_sps:	../output/Si28sd.sp
+#nushellx_int:	../output/Si28sd.int
+#nushellx_sps:	../output/O16bare.sp
+#nushellx_int:	../output/O16bare.int
+#nushellx_sps:	../output/Ca40srg8.sp
+#nushellx_int:	../output/Ca40srg8.int
+
+

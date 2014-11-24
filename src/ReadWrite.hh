@@ -6,6 +6,8 @@
 #include <string>
 #include "Operator.hh"
 
+// ToDo: Add WriteOperator/ ReadOperator methods, which stores an operator in
+// a convenient method for reading back in another calculation
 
 class ReadWrite
 {

@@ -319,29 +319,20 @@ void HartreeFock::BuildMonopoleV()
 void HartreeFock::BuildMonopoleV()
 {
    Vmon.zeros();
-   //int nKets = Hbare->GetModelSpace()->GetNumberKets();
    int nKets = Hbare.GetModelSpace()->GetNumberKets();
    for (int ibra=0;ibra<nKets;++ibra)
    {
-      //Ket * bra = Hbare->GetModelSpace()->GetKet(ibra);
       Ket * bra = Hbare.GetModelSpace()->GetKet(ibra);
       int a = bra->p;
       int b = bra->q;
-      //Orbit * oa = Hbare->GetModelSpace()->GetOrbit(a);
-      //Orbit * ob = Hbare->GetModelSpace()->GetOrbit(b);
       Orbit * oa = Hbare.GetModelSpace()->GetOrbit(a);
       Orbit * ob = Hbare.GetModelSpace()->GetOrbit(b);
       double norm = (oa->j2+1)*(ob->j2+1);
       for (int iket=0;iket<nKets;++iket)
       {
-         //Ket * ket = Hbare->GetModelSpace()->GetKet(iket);
          Ket * ket = Hbare.GetModelSpace()->GetKet(iket);
          int c = ket->p;
          int d = ket->q;
-//       Vmon(ibra,iket)             = Hbare->GetTBMEmonopole(a,b,c,d) * norm;
-//       Vmon(ibra+nKets,iket)       = Hbare->GetTBMEmonopole(b,a,c,d) * norm;
-//       Vmon(ibra,iket+nKets)       = Hbare->GetTBMEmonopole(a,b,d,c) * norm;
-//       Vmon(ibra+nKets,iket+nKets) = Hbare->GetTBMEmonopole(b,a,d,c) * norm;
          Vmon(ibra,iket)             = Hbare.GetTBMEmonopole(a,b,c,d) * norm;
          Vmon(ibra+nKets,iket)       = Hbare.GetTBMEmonopole(b,a,c,d) * norm;
          Vmon(ibra,iket+nKets)       = Hbare.GetTBMEmonopole(a,b,d,c) * norm;
@@ -483,10 +474,8 @@ void HartreeFock::PrintOrbits()
 
 }
 
-
 void HartreeFock::ReorderCoefficients()
 {
-   //ModelSpace * ms = Hbare->GetModelSpace();
    ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
    arma::mat C_tmp = C;
@@ -502,7 +491,7 @@ void HartreeFock::ReorderCoefficients()
          {
             fmax = abs(C_tmp(i,k));
             kmax = k;
-            if (C_tmp(i,k) < 0) sign = 1;
+            if (C_tmp(i,k) < 0) sign = -1;
          }
       }
       // make sure we have a positive coefficient for the biggest term
@@ -538,31 +527,14 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
             double normfactor = sqrt((1.0+ket->delta_pq())/(1.0+bra->delta_pq()));
             D(i,j) = C(bra->p,ket->p) * C(bra->q,ket->q) * normfactor;
             Dexch(i,j) = C(bra->p,ket->q) * C(bra->q,ket->p) * ket->Phase(tbc.J) * (1-ket->delta_pq()) * normfactor;
-            //D(i,j) = C(bra->p,ket->p) * C(bra->q,ket->q) * 1./(1.0+bra->delta_pq());
-            //Dexch(i,j) = C(bra->p,ket->q) * C(bra->q,ket->p) * ket->Phase(tbc.J) * 1./(1.0+bra->delta_pq());
          }
       }
-
 
      OpHF.TwoBody[ch]   = D.t()      * OpIn.TwoBody[ch] * D;
      OpHF.TwoBody[ch]  += Dexch.t()  * OpIn.TwoBody[ch] * D;
      OpHF.TwoBody[ch]  += D.t()      * OpIn.TwoBody[ch] * Dexch;
      OpHF.TwoBody[ch]  += Dexch.t()  * OpIn.TwoBody[ch] * Dexch;
 
-/*
-     if (tbc.J == 4 and tbc.parity == 0 and tbc.Tz == 1)
-     {
-        cout << "================ J=4 P=0 Tz=1 ======================" << endl;
-        cout << "TwoBody In:" << endl;
-        OpIn.TwoBody[ch].print();
-        cout << "D: " << endl;
-        D.print();
-        cout << "Dexch: " << endl;
-        Dexch.print();
-        cout << "TwoBody out:" << endl;
-        OpHF.TwoBody[ch].print();
-     }
-*/
    }
    return OpHF;
 }
