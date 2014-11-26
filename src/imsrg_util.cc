@@ -90,6 +90,23 @@ namespace imsrg_util
  Operator PSquaredOp(ModelSpace& modelspace)
  {
    Operator PsqOp = Operator(&modelspace);
+
+   int norb = modelspace.GetNumberOrbits();
+   for (int i=0; i<norb; ++i)
+   {
+      Orbit * oi = modelspace.GetOrbit(i);
+      for (int j=i; j<norb; ++j)
+      {
+         Orbit * oj = modelspace.GetOrbit(j);
+         if (oi->l != oj->l or oi->j2 != oj->j2 or oi->tz2 != oj->tz2) continue;
+         double tij;
+         if (oi->n == oj->n) tij = 0.5*(2*oi->n+oi->l + 1.5);
+         else if (oi->n == oj->n-1) tij = 0.5*sqrt(oj->n*(oj->n+oj->l + 0.5));
+         PsqOp.OneBody(i,j) = tij;
+         PsqOp.OneBody(j,i) = tij;
+      }
+   }
+
    int nchan = modelspace.GetNumberTwoBodyChannels();
    for (int ch=0; ch<nchan; ++ch)
    {
@@ -98,26 +115,16 @@ namespace imsrg_util
       for (int ibra=0;ibra<nkets;++ibra)
       {
          Ket * bra = tbc.GetKet(ibra);
-         int a = bra->p;
-         int b = bra->q;
          for (int iket=ibra;iket<nkets;++iket)
          {
             Ket * ket = tbc.GetKet(iket);
-            int c = ket->p;
-            int d = ket->q;
-            double mat_el = 2*TCoM(modelspace,bra,ket,tbc.J);
-            cout << " Two body part = 2 * " << mat_el/2 << endl;
-            if (b==d) mat_el -= T_1body(modelspace,a,c);
-            if (a==c) mat_el -= T_1body(modelspace,b,d);
+            double mat_el = Calculate_p1p2(modelspace,bra,ket,tbc.J);
             PsqOp.TwoBody[ch](ibra,iket) = mat_el;
             PsqOp.TwoBody[ch](iket,ibra) = mat_el;
-            cout << "< " << bra->p << " " << bra->q << " | TCoM | " << ket->p << " " << ket->q << " > = "
-                 << mat_el << " = " << PsqOp.TwoBody[ch](ibra,iket) << endl;
          }
       }
    }
    return PsqOp;
-
  }
 
  double T_1body(ModelSpace& modelspace, int a, int b)
@@ -141,8 +148,7 @@ namespace imsrg_util
  }
 
 
- double TCoM(ModelSpace& modelspace, Ket* bra, Ket* ket, int J)
- //double PSquaredMatEl(ModelSpace& modelspace, Ket* bra, Ket* ket, int J)
+ double Calculate_p1p2(ModelSpace& modelspace, Ket* bra, Ket* ket, int J)
  {
    Orbit * oa = modelspace.GetOrbit(bra->p);
    Orbit * ob = modelspace.GetOrbit(bra->q);
@@ -254,10 +260,22 @@ namespace imsrg_util
                         cout << "Mosh_ab = " << mosh_ab << "  mosh_cd = " << mosh_cd << endl;
 
                         double tcm = 0;
+                        double trel = 0;
+                        if (n_ab == n_cd)
+                        {
                         if (N_ab == N_cd) tcm = 0.5*(2*N_ab+Lam_ab+1.5);
                         else if (N_ab == N_cd+1) tcm = 0.5*sqrt(N_ab*( N_ab+Lam_ab+0.5));
                         else if (N_ab+1 == N_cd) tcm = 0.5*sqrt(N_cd*( N_cd+Lam_ab+0.5));
-                        T += tcm * njab * njcd * mosh_ab * mosh_cd * asym_factor;
+                        }
+                        if (N_ab == N_cd)
+                        {
+                        if (n_ab == n_cd) trel = 0.5*(2*n_ab+lam_ab+1.5);
+                        else if (n_ab == n_cd+1) trel = 0.5*sqrt(n_ab*( n_ab+lam_ab+0.5));
+                        else if (n_ab+1 == n_cd) trel = 0.5*sqrt(n_cd*( n_cd+lam_ab+0.5));
+                        }
+                        T += (tcm-trel) * njab * njcd * mosh_ab * mosh_cd * asym_factor;
+                        cout << "tcm = " << tcm << endl;
+                        cout << "trel = " << trel << endl;
                         cout << "T = " << T << endl;
 
                       }

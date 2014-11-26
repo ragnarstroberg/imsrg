@@ -20,6 +20,10 @@ int main(int argc, char**argv)
    // If a settings file isn't given as a command line arg, look for the default file
    string settings_file = argc>1 ? string(argv[1]) : "settings.inp";
    rw.ReadSettingsFile(settings_file);
+   if (! rw.InGoodState() )
+   {
+      return 0;
+   }
 
    // These are parameters that may be used in the settings file
    string inputsps	= rw.InputParameters["inputsps"];
@@ -29,6 +33,7 @@ int main(int argc, char**argv)
    string jasontbme	= rw.InputParameters["jasontbme"];
    string flowfile	= rw.InputParameters["flowfile"];
    string ds_str	= rw.InputParameters["ds"];
+   string domega_str	= rw.InputParameters["domega_max"];
    string smax_str	= rw.InputParameters["smax"];
    string generator	= rw.InputParameters["generator"];
    string comcorr	= rw.InputParameters["com-correction"];
@@ -45,7 +50,11 @@ int main(int argc, char**argv)
 
    cout << "Reading in the modelspace from " << inputsps << endl;
    ModelSpace modelspace = rw.ReadModelSpace(inputsps);
-/*
+   if (! rw.InGoodState() )
+   {
+      return 0;
+   }
+
    cout << "Calculating Mosh(0,0,1,0,0,1,0,1,0)..." << endl;
    double mosh = AngMom::Moshinsky(0,0,1,0,0,1,0,1,0);
    cout << "result: " << mosh << endl;
@@ -56,7 +65,7 @@ int main(int argc, char**argv)
 
    rw.WriteTwoBody(Top,"../output/T.int");
    return 0;
-*/
+
    Operator H_bare =  Operator(&modelspace);
    H_bare.SetHermitian(); // just to be sure
 
@@ -79,6 +88,10 @@ int main(int argc, char**argv)
       cout << "Reading Oslo-style TBME from " << inputtbme << endl;
       rw.ReadBareTBME(inputtbme, H_bare);
       rw.WriteTwoBody(H_bare,"../output/Oslo_H_bare.out");
+      if (! rw.InGoodState() )
+      {
+         return 0;
+      }
    }
    else if (darmstadttbme != "")
    {
@@ -86,6 +99,10 @@ int main(int argc, char**argv)
       cout << "Reading Darmstadt-style TBME from " << darmstadttbme << " with Emax " << Emax << endl;
       rw.ReadBareTBME_Darmstadt(darmstadttbme, H_bare, Emax);
       rw.WriteTwoBody(H_bare,"../output/Darmstadt_H_bare.out");
+      if (! rw.InGoodState() )
+      {
+         return 0;
+      }
    }
 
 //   H_bare += H3NO;
@@ -134,7 +151,11 @@ int main(int argc, char**argv)
    {
       double ds = strtod(ds_str.c_str(),NULL);
       imsrgsolver.SetDs(ds);
-      imsrgsolver.SetdOmega(ds);
+   }
+   if (domega_str != "")
+   {
+      double domega = strtod(domega_str.c_str(),NULL);
+      imsrgsolver.SetdOmega(domega);
    }
    if (smax_str != "")
    {

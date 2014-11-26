@@ -19,7 +19,7 @@ namespace imsrg_util
  Operator PSquaredOp(ModelSpace& modelspace);
 
  double T_1body(ModelSpace& modelspace, int a, int b);
- double TCoM(ModelSpace& modelspace, Ket* bra, Ket* ket, int J);
+ double Calculate_p1p2(ModelSpace& modelspace, Ket* bra, Ket* ket, int J);
  double HO_density(int n, int l, double hw, double r);
  vector<double> GetOccupations(HartreeFock& hf);
  vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);

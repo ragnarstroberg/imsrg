@@ -140,33 +140,11 @@ double Operator::GetTBME(int ch, int a, int b, int c, int d) const
 }
 
 
-/*
-double Operator::GetTBME_NoPhase(int ch, int a, int b, int c, int d) const
-{
-   auto& tbc = cross_coupled ? modelspace->GetTwoBodyChannel_CC(ch) : modelspace->GetTwoBodyChannel(ch);
-   int bra_ind = tbc.GetLocalIndex(min(a,b),max(a,b));
-   int ket_ind = tbc.GetLocalIndex(min(c,d),max(c,d));
-   if (bra_ind < 0 or ket_ind < 0 or bra_ind > tbc.GetNumberKets() or ket_ind > tbc.GetNumberKets() )
-     return 0;
-   Ket * bra = tbc.GetKet(bra_ind);
-   Ket * ket = tbc.GetKet(ket_ind);
-
-   double phase = 1;
-   //if (a>b) phase *= bra->Phase(tbc.J) ;
-   if (a>b) bra_ind += tbc.GetNumberKets() ;
-   if (c>d) ket_ind += tbc.GetNumberKets() ;
-   if (a==b) phase *= sqrt(1.0+bra->delta_pq());
-   if (c==d) phase *= sqrt(1.0+ket->delta_pq());
-   return phase * TwoBody[ch](bra_ind, ket_ind);
-}
-*/
-
 void Operator::SetTBME(int ch, int a, int b, int c, int d, double tbme)
 {
    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
    int bra_ind = tbc.GetLocalIndex(min(a,b),max(a,b));
    int ket_ind = tbc.GetLocalIndex(min(c,d),max(c,d));
-//   cout << "in SetTBME  ch = " << ch << " abcd = " << a << b << c << d << " bra_ind = " << bra_ind << " ket_ind = " << ket_ind << endl;
    double phase = 1;
    if (a>b) phase *= tbc.GetKet(bra_ind)->Phase(tbc.J);
    if (c>d) phase *= tbc.GetKet(ket_ind)->Phase(tbc.J);
@@ -188,28 +166,24 @@ void Operator::SetTBME(int ch, Ket* ket, Ket* bra, double tbme)
 
 double Operator::GetTBME(int j, int p, int t, int a, int b, int c, int d) const
 {
-   //int ch = (t+1)*2*JMAX + p*JMAX + j;
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    return GetTBME(ch,a,b,c,d);
 }
 
 void Operator::SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme)
 {
-   //int ch = (t+1)*2*JMAX + p*JMAX + j; // This should be altered to refer to the modelspace method.
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    SetTBME(ch,a,b,c,d,tbme);
 }
 
 double Operator::GetTBME(int j, int p, int t, Ket* bra, Ket* ket) const
 {
-   //int ch = (t+1)*2*JMAX + p*JMAX + j;
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    return GetTBME(ch,bra,ket);
 }
 
 void Operator::SetTBME(int j, int p, int t, Ket* bra, Ket* ket, double tbme)
 {
-   //int ch = (t+1)*2*JMAX + p*JMAX + j;
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    SetTBME(ch,bra,ket,tbme);
 }
@@ -237,8 +211,6 @@ double Operator::GetTBMEmonopole(int a, int b, int c, int d)
       mon += (2*J+1) * GetTBME(J,parityab,Tzab,a,b,c,d);
    }
    mon /= (oa->j2 +1)*(ob->j2+1);
-//   if (a==b) mon /= sqrt(2);
-//   if (c==d) mon /= sqrt(2);
    return mon;
 }
 

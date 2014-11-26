@@ -28,8 +28,10 @@ class ReadWrite
 
    std::map<string,string> InputParameters;
 
+   bool InGoodState(){return goodstate;};
    bool doCoM_corr;
    void SetCoMCorr(bool b){doCoM_corr = b;};
+   bool goodstate;
 
 };
 

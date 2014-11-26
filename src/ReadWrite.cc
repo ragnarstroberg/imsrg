@@ -13,6 +13,7 @@ using namespace std;
 ReadWrite::ReadWrite()
 {
    doCoM_corr = true;
+   goodstate = true;
 }
 
 
@@ -22,6 +23,11 @@ void ReadWrite::ReadSettingsFile( string filename)
    string lstr;
    ifstream fin;
    fin.open(filename);
+   if (! fin.good() )
+   {
+      cout << "Trouble reading Settings file" << endl;
+      goodstate = false;
+   }
    cout << "Reading settings file " << filename << endl;
    while (fin.getline(line,LINESIZE))
    {
@@ -61,6 +67,7 @@ ModelSpace ReadWrite::ReadModelSpace( string filename)
    if ( not infile.good() )
    {
       cerr << "Trouble reading file " << filename << endl;
+      goodstate = false;
       return modelspace;
    }
    
@@ -125,6 +132,7 @@ void ReadWrite::ReadBareTBME( string filename, Operator& Hbare)
   if ( !infile.good() )
   {
      cerr << "Trouble reading file " << filename << endl;
+     goodstate = false;
      return;
   }
 
@@ -179,6 +187,7 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
   if ( !infile.good() )
   {
      cerr << "Trouble reading file " << filename << endl;
+     goodstate = false;
      return;
   }
 
@@ -259,6 +268,7 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
   if ( !infile.good() )
   {
      cerr << "Trouble reading file " << filename << endl;
+     goodstate = false;
      return;
   }
 

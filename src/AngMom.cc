@@ -176,7 +176,7 @@ double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int
     }
    }
    int extraphase = phase(l+L+lam);
-   cout << "mosh1 = " << mosh1 << "   mosh2 = " << mosh2 << endl;
+//   cout << "mosh1 = " << mosh1 << "   mosh2 = " << mosh2 << endl;
    return extraphase * mosh1 * mosh2;
 
 }
