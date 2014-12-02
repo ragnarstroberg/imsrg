@@ -1,5 +1,6 @@
 
 #include "Operator.hh"
+#include "AngMom.hh"
 #include <cmath>
 #include <iostream>
 #include <iomanip>
@@ -390,11 +391,11 @@ void Operator::CalculateKineticEnergy()
                OneBody(a,b) = 0.5 * hw * sqrt( (orba->n)*(orba->n + orba->l +1./2));
             else if (orba->n == orbb->n-1)
                OneBody(a,b) = 0.5 * hw * sqrt( (orbb->n)*(orbb->n + orbb->l +1./2));
+            OneBody(b,a) = OneBody(a,b);
          }
-         OneBody(b,a) = OneBody(a,b);
       }
    }
-   OneBody *= (1-1./A);
+//   OneBody *= (1-1./A);
 
 }
 
@@ -539,63 +540,41 @@ Operator Operator::BCH_Product( Operator &Y)
 
    Operator Z = X + Y; 
 
-//   Operator OpNested = X.Commutator(Y);
    Operator XY = X.Commutator(Y);
-//   Z += OpNested*(1./2);    // [X,Y]
    Z += XY*(1./2);    // [X,Y]
    double nx = X.Norm();
    double ny = Y.Norm();
-//   double nc1 = OpNested.Norm();
    double nc1 = XY.Norm();
-//   cout << "BCH_Product error <= " << (nx+ny)*bch_prod_threshold << endl;
 
    if ( nc1/2 < (nx+ny)*bch_product_threshold ) return Z;
 
-//   Operator OpNested2 = OpNested.Commutator(Y); // [[X,Y],Y] = [Y,[Y,X]]
    Operator YYX = XY.Commutator(Y); // [[X,Y],Y] = [Y,[Y,X]]
    double nc2 = YYX.Norm();
-//   double nc2 = OpNested2.Norm();
-//   Z += OpNested2 * (1/12.);      // [Y,[Y,X]]
    Z += YYX * (1/12.);      // [Y,[Y,X]]
 
    if ( nc2/12 < (nx+ny)*bch_product_threshold ) return Z;
 
    Operator XXY = X.Commutator(XY); // [X,[X,Y]]
-//   OpNested = X.Commutator(OpNested); // [X,[X,Y]]
-//   double nc3 = OpNested.Norm();
    double nc3 = XXY.Norm();
    Z += XXY * (1/12.);      // [X,[X,Y]]
-//   Z += OpNested * (1/12.);      // [X,[X,Y]]
 
    if ( nc3/12 < (nx+ny)*bch_product_threshold ) return Z;
 
    cout << "Warning: BCH product expansion not converged after 3 nested commutators!" << endl;
 
    Operator YXXY = Y.Commutator(XXY); // [Y,[X,[X,Y]]]
-//   Operator OpNested3 = Y.Commutator(OpNested);
-//   double nc4 = OpNested3.Norm();
    double nc4 = YXXY.Norm();
-//   Z += OpNested3*(-1./24);
    Z += YXXY*(-1./24);
 
    Operator YYYX = Y.Commutator(YYX) ;
    Operator YYYYX = Y.Commutator(YYYX) ;
-//   Operator YYYYX = Y.Commutator( Y.Commutator(YYX) );
-//   Operator Optmp = Y.Commutator(OpNested2); // [Y,[Y,[Y,X]]]
-//   Operator OpNested4 = Y.Commutator(Optmp); // [Y,[Y,[Y,[Y,X]]]]
-//   double nc5 = OpNested4.Norm();
    double nc5 = YYYYX.Norm();
-//   Optmp = X.Commutator(OpNested);
-//   Operator OpNested5 = X.Commutator(Optmp); // [X,[X,[X,[X,Y]]]]
    Operator XXXY =  X.Commutator(XXY) ; // [X,[X,[X,[X,Y]]]]
    Operator XXXXY = X.Commutator(XXXY) ; // [X,[X,[X,[X,Y]]]]
-//   Operator XXXXY = X.Commutator( X.Commutator(XXY) ); // [X,[X,[X,[X,Y]]]]
-   //double nc6 = OpNested5.Norm();
    double nc6 = XXXXY.Norm();
-//   Z += (OpNested4 + OpNested5)*(-1./720);
    Z += (YYYYX + XXXXY)*(-1./720);
 
-   if ( nc6/720 < (nx+ny)*bch_product_threshold ) return Z;
+   if ( nc6/720. < (nx+ny)*bch_product_threshold ) return Z;
    cout << "Warning: BCH product expansion not converged after 5 nested commutators!" << endl;
 
    return Z;
@@ -604,18 +583,10 @@ Operator Operator::BCH_Product( Operator &Y)
 // Frobenius norm of the operator
 double Operator::Norm()
 {
-   //double nrm = ZeroBody*ZeroBody;
    double nrm = 0;
    double n1 = OneBodyNorm();
    double n2 = TwoBodyNorm();
    return sqrt(n1*n1+n2*n2);
-//   nrm += n1*n1;
-//   for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
-//   {
-//      double n2 = arma::norm(TwoBody[ch],"fro");
-//      nrm += n2*n2;
-//   }
-//   return sqrt(nrm);
 }
 
 double Operator::OneBodyNorm()
@@ -847,7 +818,7 @@ void Operator::comm122(Operator& opright, Operator& opout )
 {
    int herm = opout.IsHermitian() ? 1 : -1;
 
-//  #pragma omp parallel for schedule(dynamic,10)
+//   #pragma omp parallel for schedule(dynamic,10)
    for (int ch=0; ch<nChannels; ++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -963,7 +934,7 @@ void Operator::comm222_pp_hh_221(Operator& opright, Operator& opout )
    Operator Mpp = opright;
    Operator Mhh = opright;
 
-   #pragma omp parallel for schedule(dynamic,3)
+//   #pragma omp parallel for schedule(dynamic,3)
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -1085,10 +1056,14 @@ void Operator::comm222_ph_slow(Operator& opright, Operator& opout )
                         //double pref = 1-2*((J1+J2+J)%2) * (2*J1+1)*(2*J2+1);
                         double pref = (1-2*((int(ji+jk)+J1+J2)%2)) * (2*J1+1)*(2*J2+1);
                         int pref2 = 1-2*(J%2);
-                        double nj1 = modelspace->GetNineJ( ja, jl, J1,   ji, J, jj,   J2, jk, jb );
-                        double nj2 = modelspace->GetNineJ( ja, jl, J1,   jj, J, ji,   J2, jk, jb );
-                        double nj3 = modelspace->GetNineJ( jb, jl, J1,   ji, J, jj,   J2, jk, ja );
-                        double nj4 = modelspace->GetNineJ( jb, jl, J1,   jj, J, ji,   J2, jk, ja );
+//                      double nj1 = modelspace->GetNineJ( ja, jl, J1,   ji, J, jj,   J2, jk, jb );
+//                      double nj2 = modelspace->GetNineJ( ja, jl, J1,   jj, J, ji,   J2, jk, jb );
+//                      double nj3 = modelspace->GetNineJ( jb, jl, J1,   ji, J, jj,   J2, jk, ja );
+//                      double nj4 = modelspace->GetNineJ( jb, jl, J1,   jj, J, ji,   J2, jk, ja );
+                        double nj1 = AngMom::NineJ( ja, jl, J1,   ji, J, jj,   J2, jk, jb );
+                        double nj2 = AngMom::NineJ( ja, jl, J1,   jj, J, ji,   J2, jk, jb );
+                        double nj3 = AngMom::NineJ( jb, jl, J1,   ji, J, jj,   J2, jk, ja );
+                        double nj4 = AngMom::NineJ( jb, jl, J1,   jj, J, ji,   J2, jk, ja );
 
                         double me1 =         GetTBME(ch1,b,j,a,l) * opright.GetTBME(ch2,a,i,b,k) - opright.GetTBME(ch1,b,j,a,l) *         GetTBME(ch2,a,i,b,k);
                         double me2 = opright.GetTBME(ch1,b,i,a,l) *         GetTBME(ch2,a,j,b,k) -         GetTBME(ch1,b,i,a,l) * opright.GetTBME(ch2,a,j,b,k);
@@ -1131,16 +1106,16 @@ void Operator::comm222_ph(Operator& opright, Operator& opout )
    // Construct the intermediate matrices N1 and N2
    arma::mat N1[nChannels];
    arma::mat N2[nChannels];
-//   #pragma omp parallel for // figure out why this causes a segfault
+ //  #pragma omp parallel for // figure out why this causes a segfault
+ // probably better not to parallelize, since the matrix muliplication can use OMP
    for (int ch=0;ch<nChannels;++ch)
    {
-      TwoBodyChannel_CC& tbc_CC = modelspace->GetTwoBodyChannel_CC(ch);
       N1[ch] =         TwoBody_CC_left[ch] *    opright.TwoBody_CC_right[ch];
       N2[ch] = opright.TwoBody_CC_left[ch] *            TwoBody_CC_right[ch];
    }
 
    // Now evaluate the commutator for each channel (standard coupling)
-//   #pragma omp parallel for
+   #pragma omp parallel for schedule(dynamic,5)
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -1181,8 +1156,10 @@ void Operator::comm222_ph(Operator& opright, Operator& opout )
                int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
                int indx_ik = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(i,k),max(i,k));
                int indx_jl = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(j,l),max(j,l));
-               if (i>k) indx_ik += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
-               if (j>l) indx_jl += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
+               if (i>k)
+                 indx_ik += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
+               if (j>l)
+                 indx_jl += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
                double me1 = N1[ch_cc](indx_jl,indx_ik);
                double me2 = N2[ch_cc](indx_jl,indx_ik);
                double me3 = N2[ch_cc](indx_ik,indx_jl);
@@ -1200,8 +1177,10 @@ void Operator::comm222_ph(Operator& opright, Operator& opout )
                int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
                int indx_il = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(i,l),max(i,l));
                int indx_jk = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(j,k),max(j,k));
-               if (i>l) indx_il += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
-               if (j>k) indx_jk += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
+               if (i>l)
+                 indx_il += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
+               if (j>k)
+                 indx_jk += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
                double sixj = modelspace->GetSixJ(jk,jl,tbc.J,ji,jj,Jprime);
                int phase = modelspace->phase(ji+jl);
                double me1 = N1[ch_cc](indx_il,indx_jk);

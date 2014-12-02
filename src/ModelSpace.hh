@@ -267,6 +267,8 @@ class ModelSpace
    //double GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3);
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
+   double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. This is bad.
+
    int GetTwoBodyChannelIndex(int j, int p, int t);
    inline int phase(int x) {return (x%2)==0 ? 1 : -1;};
    inline int phase(double x) {return phase(int(x));};
@@ -293,6 +295,7 @@ class ModelSpace
    std::vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
    int nTwoBodyChannels;
    std::map<long int,double> SixJList;
+   std::map<long int,double> MoshList;
 
 };
 

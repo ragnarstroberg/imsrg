@@ -1,7 +1,7 @@
 
 #inputsps:	../input/He4_lmax6.sps
 #inputsps:	../input/He4_hw24_emax8.sps
-#inputsps:	../input/He4_emax4.sps
+inputsps:	../input/He4_emax4.sps
 #inputsps:	../input/He4_lmax6_SM.sps
 #inputsps:	../input/O16_lmax6.sps
 #inputsps:	../input/O22_lmax6.sps
@@ -21,7 +21,7 @@
 #inputsps:	../input/O16_hw24_emax6.sps
 #inputsps:	../input/O18_hw24_emax6.sps
 #inputsps:	../input/O16_hw24_emax4.sps
-inputsps:	../input/s.sps
+#inputsps:	../input/s.sps
 #inputsps:	../input/s_14.sps
 #inputsps:	../input/s_ox.sps
 #inputsps:	../input/sd.sps
@@ -49,9 +49,10 @@ inputtbme:	../input/vsrg2.0_n3lo_noEmpot_Gaute_emax8_hw24.int
 
 #flowfile:	../output/BCH_flow_vspsd.dat
 #flowfile:	../output/BCH_flow_emax6.dat
+flowfile:	../output/BCH_flow_He4_emax4.dat
 #flowfile:	../output/BCH_flow_He4_emax8.dat
 #flowfile:	../output/BCH_flow_O16_emax8.dat
-flowfile:	../output/BCH_flow_O18_emax6.dat
+#flowfile:	../output/BCH_flow_O18_emax6.dat
 #flowfile:	../output/BCH_flow_He4_emax4.dat
 #flowfile:	../output/BCH_flow_He4_emax6_SM.dat
 #flowfile:	../output/BCH_flow_O16_emax6_occ_0p3.dat
@@ -60,13 +61,14 @@ flowfile:	../output/BCH_flow_O18_emax6.dat
 #flowfile:	../output/BCH_flow_Si34_emax6.dat
 ds:		0.5
 domega_max:	0.5
-smax:		15.0
+smax:		5.0
 #generator:	shell-model
 #generator:	shell-model-atan
 #generator:	white
 generator:	atan
 
-com-correction:	true
+#com-correction:	true
+com-correction:	false
 
 # BCH product stops if [X,[X...]Y]] / (n! ||X|| ||Y||) < threshold
 BCH-product-threshold:	1e-4
@@ -80,8 +82,8 @@ BCH-transform-threshold: 1e-6
 #density-file:	../output/Si28_dens_emax6.dat
 #occupation-file:	../output/O16_occ_emax6_HF.dat
 #density-file:	../output/O16_dens_emax6_HF.dat
-occupation-file:	../output/O18_occ_emax6.dat
-density-file:	../output/O18_dens_emax6.dat
+#occupation-file:	../output/O18_occ_emax6.dat
+#density-file:	../output/O18_dens_emax6.dat
 
 #nushellx_sps:	../output/Si28sd.sp
 #nushellx_int:	../output/Si28sd.int

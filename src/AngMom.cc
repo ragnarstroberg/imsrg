@@ -9,13 +9,6 @@
 namespace AngMom
 {
  
-// double fct(double x)
-// {
-//    if (x<0) return 0;
-//    double f=1;
-//    for (double g=2;g<=x;g=g+1) {f *= g;}
-//    return f;
-// }
 
  double fct(double x)
  {

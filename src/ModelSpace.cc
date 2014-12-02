@@ -393,7 +393,7 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 
 }
 
-
+/*
 double ModelSpace::GetNineJ(double j1,double j2, double J12, double j3, double j4, double J34, double J13, double J24, double J)
 {
    double ninej = 0;
@@ -417,6 +417,30 @@ double ModelSpace::GetNineJ(double j1,double j2, double J12, double j3, double j
    }
    return ninej;
 }
+*/
+
+
+double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L)
+{
+   unsigned long long int key =  1000000000000 * N
+                                + 100000000000 * Lam
+                                +   1000000000 * n
+                                +    100000000 * lam
+                                +      1000000 * n1
+                                +       100000 * l1
+                                +         1000 * n2
+                                +          100 * l2
+                                +                 L;
+   map<long int,double>::iterator it = MoshList.find(key);
+   if ( it != MoshList.end() )  return it->second;
+
+   // if we didn't find it, we need to calculate it.
+   double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
+   MoshList[key] = mosh;
+   return mosh;
+
+}
+
 
 
 

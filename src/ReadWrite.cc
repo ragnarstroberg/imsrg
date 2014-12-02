@@ -157,6 +157,8 @@ void ReadWrite::ReadBareTBME( string filename, Operator& Hbare)
      if (doCoM_corr)
      {
         Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme-com_corr );
+        //Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, com_corr );
+        //Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, fbuf[2] );
      }
      else
      {

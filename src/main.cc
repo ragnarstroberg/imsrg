@@ -22,6 +22,7 @@ int main(int argc, char**argv)
    rw.ReadSettingsFile(settings_file);
    if (! rw.InGoodState() )
    {
+      cout << "ReadWrite exited in a bad state" << endl;
       return 0;
    }
 
@@ -52,22 +53,32 @@ int main(int argc, char**argv)
    ModelSpace modelspace = rw.ReadModelSpace(inputsps);
    if (! rw.InGoodState() )
    {
+      cout << "ReadWrite exited in a bad state" << endl;
       return 0;
    }
 
-   cout << "Calculating Mosh(0,0,1,0,0,1,0,1,0)..." << endl;
-   double mosh = AngMom::Moshinsky(0,0,1,0,0,1,0,1,0);
-   cout << "result: " << mosh << endl;
+//   cout << "Calculating Mosh(0,0,1,0,0,1,0,1,0)..." << endl;
+//   double mosh = AngMom::Moshinsky(0,0,1,0,0,1,0,1,0);
+//   cout << "result: " << mosh << endl;
 
-   Operator Top = imsrg_util::PSquaredOp(modelspace);
+   cout << "Calculating Tcm..." << endl;
+//   Operator Top = imsrg_util::PSquaredOp(modelspace);
+   Operator TCM_Op = imsrg_util::TCM_Op(modelspace);
+//   TCM_Op *= modelspace.GetHbarOmega() / modelspace.GetTargetMass();
    
-   cout << "I think <00|Top|00> = " << Top.TwoBody[0](0,0) << endl;
+//   cout << "I think <00|TCM_Op|00>(J=0) = " << TCM_Op.TwoBody[0](0,0) << endl;
 
-   rw.WriteTwoBody(Top,"../output/T.int");
-   return 0;
+   rw.WriteOneBody(TCM_Op,"../output/T1b.int");
+   rw.WriteTwoBody(TCM_Op,"../output/T.int");
+//   return 0;
+
+   cout << "TCM one body norm = " << TCM_Op.OneBodyNorm() << endl;
+   cout << "TCM two body norm = " << TCM_Op.TwoBodyNorm() << endl;
 
    Operator H_bare =  Operator(&modelspace);
    H_bare.SetHermitian(); // just to be sure
+
+//   H_bare -= TCM_Op;
 
 //   Operator H_3N =  Operator(&modelspace);
 //   H_3N.SetHermitian(); // just to be sure
@@ -106,8 +117,26 @@ int main(int argc, char**argv)
    }
 
 //   H_bare += H3NO;
-
+   rw.WriteTwoBody(H_bare,"../output/T_Oslo.int");
+   rw.WriteOneBody(H_bare,"../output/T1b_Oslo.int");
    cout << "Norm of H_bare = " << H_bare.Norm() << endl;
+   cout << "one body norm = " << H_bare.OneBodyNorm() << endl;
+   cout << "two body norm = " << H_bare.TwoBodyNorm() << endl;
+   cout << "Norm of TCM_Op = " << TCM_Op.Norm() << endl;
+   cout << "one body norm = " << TCM_Op.OneBodyNorm() << endl;
+   cout << "two body norm = " << TCM_Op.TwoBodyNorm() << endl;
+//   TCM_Op *= 4.0;
+   H_bare -= TCM_Op;
+//   H_bare.OneBody -= TCM_Op.OneBody;
+
+   rw.WriteOneBody(H_bare,"../output/T1b_Oslo_subtracted.int");
+   rw.WriteTwoBody(H_bare,"../output/T_Oslo_subtracted.int");
+//   rw.WriteTwoBody(H_bare,"../output/T_Oslo_subtracted_old_way.int");
+
+   cout << "Norm of H_bare_sub = " << H_bare.Norm() << endl;
+   cout << "one body norm = " << H_bare.OneBodyNorm() << endl;
+   cout << "two body norm = " << H_bare.TwoBodyNorm() << endl;
+
 
    // Testing Hellmann-Feynman way of getting observable.
 //   Operator n0p3 = imsrg_util::NumberOp(modelspace,0, 1, 3, 1);
