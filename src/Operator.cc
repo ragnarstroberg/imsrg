@@ -121,7 +121,6 @@ void Operator::Eye()
 
 double Operator::GetTBME(int ch, int a, int b, int c, int d) const
 {
-   //auto& tbc = cross_coupled ? modelspace->GetTwoBodyChannel_CC(ch) : modelspace->GetTwoBodyChannel(ch);
    TwoBodyChannel& tbc =  modelspace->GetTwoBodyChannel(ch);
    int bra_ind = tbc.GetLocalIndex(min(a,b),max(a,b));
    int ket_ind = tbc.GetLocalIndex(min(c,d),max(c,d));
@@ -146,6 +145,9 @@ void Operator::SetTBME(int ch, int a, int b, int c, int d, double tbme)
    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
    int bra_ind = tbc.GetLocalIndex(min(a,b),max(a,b));
    int ket_ind = tbc.GetLocalIndex(min(c,d),max(c,d));
+   cout << "Setting TBME. bra_ind = " << bra_ind << "  ket_ind = " << ket_ind << endl;
+   cout << " Bra index = " << modelspace->GetKetIndex(min(a,b),max(a,b))
+        << " Ket index = " << modelspace->GetKetIndex(min(c,d),max(c,d)) << endl;
    double phase = 1;
    if (a>b) phase *= tbc.GetKet(bra_ind)->Phase(tbc.J);
    if (c>d) phase *= tbc.GetKet(ket_ind)->Phase(tbc.J);

@@ -68,6 +68,8 @@ int main(int argc, char**argv)
    Operator H_3N =  Operator(&modelspace);
    H_3N.SetHermitian(); // just to be sure
 
+   cout << "Reading normal ordered 3N file from Jason" << endl;
+   rw.ReadBareTBME_Jason(jasontbme, H_3N);
 
 
 //   cout << "Zero body part = " << H3NO.ZeroBody << endl;
@@ -111,8 +113,6 @@ int main(int argc, char**argv)
 
    H_bare -= TCM_Op;
 
-   cout << "Reading normal ordered 3N file from Jason" << endl;
-   rw.ReadBareTBME_Jason(jasontbme, H_3N);
 
    Operator H3NO = H_3N.DoNormalOrdering();
    H3NO.ZeroBody /= 3.0;

@@ -215,23 +215,11 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
      b = modelspace->Index1(nb,lb,jb,tzb);
      c = modelspace->Index1(nc,lc,jc,tzc);
      d = modelspace->Index1(nd,ld,jd,tzd);
+     cout << "abcd = " << a << " " << b << " " << c << " " << d <<  " J = " << J2/2 << "  Tz = " << Tz2/2 << endl;
      // if the matrix element is outside the model space, ignore it.
      if (a>norbits or b>norbits or c>norbits or d>norbits) continue;
      Par = (la+lb)%2;
-//     a--; b--; c--; d--; // Fortran -> C  ==> 1 -> 0
-
-//     double com_corr = fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  // Some sort of COM correction. Check this
-
-// NORMALIZATION: Read in normalized, antisymmetrized TBME's
-
-//     if (doCoM_corr)
-//     {
-//        Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme-com_corr );
-//     }
-//     else
-//     {
-        Hbare.SetTBME(J2/2,Par,Tz2/2,a,b,c,d, tbme ); // Don't do COM correction, for comparison with Darmstadt interaction.
-//     }
+     Hbare.SetTBME(J2/2,Par,Tz2/2,a,b,c,d, tbme ); // Don't do COM correction, for comparison with Darmstadt interaction.
 
   }
 

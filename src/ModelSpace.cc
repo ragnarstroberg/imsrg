@@ -394,32 +394,6 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 
 }
 
-/*
-double ModelSpace::GetNineJ(double j1,double j2, double J12, double j3, double j4, double J34, double J13, double J24, double J)
-{
-   double ninej = 0;
-   //int ph = 1-2*(abs(int(J-j1))%2);
-   int ph = 1-2*(int(2*j1+J)%2);
-//   cout << "NineJ:   { " << j1  << " " << j2  << " " << J12 << " }" << endl
-//        << "         { " << j3  << " " << j4  << " " << J34 << " }" << endl
-//        << "         { " << J13 << " " << J24 << " " << J   << " }" << endl
-//        << endl;
-//   cout << "ph = " << ph << endl;
-   for (float g = fabs(J-j1); g<=J+j1; g+=1)
-   {
-      ninej +=  ph * (2*g+1)
-                * GetSixJ(j1,j2,J12,J34,J,g)
-                * GetSixJ(j3,j4,J34,j2,g,J24)
-                * GetSixJ(J13,J24,J,g,j1,j3);
-//                cout << "g = " << g << "  Six-J's: "
-//                     << GetSixJ(j1,j2,J12,J34,J,g) << " " 
-//                     << GetSixJ(j3,j4,J34,j2,g,J24) << " " 
-//                     << GetSixJ(J13,J24,J,g,j1,j3) << endl;
-   }
-   return ninej;
-}
-*/
-
 
 double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L)
 {
