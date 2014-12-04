@@ -388,6 +388,7 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 
    // if we didn't find it, we need to calculate it.
    double sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
+   #pragma omp critical
    SixJList[key] = sixj;
    return sixj;
 
@@ -436,6 +437,7 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
 
    // if we didn't find it, we need to calculate it.
    double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
+   #pragma omp critical
    MoshList[key] = mosh;
    return mosh;
 

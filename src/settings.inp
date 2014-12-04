@@ -35,8 +35,8 @@ inputsps:	../input/He4_emax4.sps
 #inputtbme:	../input/vspsd.int
 #inputtbme:	../input/vs.int
 #inputtbme:	../input/vjason2.0.int
-#inputtbme:	../input/vnn_hw13.53_n3loEM_vlk20em_N13_J9.dat
-inputtbme:	../input/vsrg2.0_n3lo_noEmpot_Gaute_emax8_hw24.int
+inputtbme:	../input/vnn_hw13.53_n3loEM_vlk20em_N13_J9.dat
+#inputtbme:	../input/vsrg2.0_n3lo_noEmpot_Gaute_emax8_hw24.int
 #inputtbme:	../input/vsrg1.8_n3lo500_w_coulomb_emax6_hw24.int
 
 #darmstadttbme:	../input/chi2b_srg0400_eMax02_hwHO024.me2j
@@ -44,7 +44,7 @@ inputtbme:	../input/vsrg2.0_n3lo_noEmpot_Gaute_emax8_hw24.int
 #darmstadttbme:	../input/chi2b_srg0800_eMax06_EMax06_hwHO024.me2j
 #darmstadtEmax:	6
 
-#jasontbme:	../input/f3b.dat
+jasontbme:	../input/f3b.dat
 #jasontbme:	../input/jtwobody_SI_oslo1_jsTNF_Nmax_18_J12max_8_hbarOmega_13.53_Fit_cutoff_2.00_nexp_4_c1_-0.81_c3_-3.20_c4_5.40_cD_1.57_cE_-0.10_2pi_0.00_2pi1pi_0.00_2picont_0.00_rings_0.00_J3max_9_id_1_new_ho_7_16O.dat
 
 #flowfile:	../output/BCH_flow_vspsd.dat
@@ -61,7 +61,7 @@ flowfile:	../output/BCH_flow_He4_emax4.dat
 #flowfile:	../output/BCH_flow_Si34_emax6.dat
 ds:		0.5
 domega_max:	0.5
-smax:		5.0
+smax:		20.0
 #generator:	shell-model
 #generator:	shell-model-atan
 #generator:	white

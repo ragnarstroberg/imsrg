@@ -676,12 +676,12 @@ double Operator::comm220( Operator& opright)
    if (IsHermitian() and opright.IsHermitian()) return 0; // I think this is the case
    if (IsAntiHermitian() and opright.IsAntiHermitian()) return 0; // I think this is the case
    double comm = 0;
-//   #pragma omp parallel for
+   #pragma omp parallel for
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       double c = 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] );
-//      #pragma omp atomic
+      #pragma omp critical
       comm += c;
 
    }
@@ -716,7 +716,7 @@ arma::mat Operator::comm121(Operator& opright)
 {
    int norbits = modelspace->GetNumberOrbits();
    arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
-//   #pragma omp parallel for
+   #pragma omp parallel for
    for (int i=0;i<norbits;++i)
    {
       Orbit *oi = modelspace->GetOrbit(i);
@@ -765,6 +765,7 @@ arma::mat Operator::comm221(Operator& opright)
    Operator Mpp = opright;
    Operator Mhh = opright;
 
+   #pragma omp parallel for schedule(dynamic,5)
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -793,6 +794,7 @@ arma::mat Operator::comm221(Operator& opright)
             {
                cijJ +=  Mhh.GetTBME(ch,i,c,j,c);
             }
+            #pragma omp critical
             comm(i,j) += (2*tbc.J+1.0)/(oi->j2 +1.0) * cijJ;
          } // for j
       } // for i
@@ -818,7 +820,7 @@ void Operator::comm122(Operator& opright, Operator& opout )
 {
    int herm = opout.IsHermitian() ? 1 : -1;
 
-//   #pragma omp parallel for schedule(dynamic,10)
+   #pragma omp parallel for schedule(dynamic,5)
    for (int ch=0; ch<nChannels; ++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -883,9 +885,12 @@ void Operator::comm122(Operator& opright, Operator& opout )
 
             }
             cijkl = (ckl*pre_kl + cij*pre_ij) / sqrt( (1.0+bra->delta_pq())*(1.0+ket->delta_pq()) );
+            #pragma omp critical
+            {
             opout.TwoBody[ch](ibra,iket) += cijkl;
             if (ibra != iket)
                opout.TwoBody[ch](iket,ibra) += herm * cijkl;
+            }
          }
       }
    }
@@ -907,7 +912,7 @@ void Operator::comm122(Operator& opright, Operator& opout )
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
 void Operator::comm222_pp_hh(Operator& opright, Operator& opout )
 {
-   #pragma omp parallel for schedule(dynamic,3)
+   #pragma omp parallel for schedule(dynamic,5)
    for (int ch=0; ch<nChannels; ++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -934,7 +939,7 @@ void Operator::comm222_pp_hh_221(Operator& opright, Operator& opout )
    Operator Mpp = opright;
    Operator Mhh = opright;
 
-//   #pragma omp parallel for schedule(dynamic,3)
+   #pragma omp parallel for schedule(dynamic,5)
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -964,7 +969,7 @@ void Operator::comm222_pp_hh_221(Operator& opright, Operator& opout )
       // The two body part
       opout.TwoBody[ch] += Mpp.TwoBody[ch] - Mhh.TwoBody[ch];
 
-      #pragma omp parallel for schedule(dynamic,3)
+//      #pragma omp parallel for schedule(dynamic,3)
       for (int i=0;i<norbits;++i)
       {
          Orbit *oi = modelspace->GetOrbit(i);
@@ -1106,7 +1111,6 @@ void Operator::comm222_ph(Operator& opright, Operator& opout )
    // Construct the intermediate matrices N1 and N2
    arma::mat N1[nChannels];
    arma::mat N2[nChannels];
- //  #pragma omp parallel for // figure out why this causes a segfault
  // probably better not to parallelize, since the matrix muliplication can use OMP
    for (int ch=0;ch<nChannels;++ch)
    {
@@ -1130,7 +1134,6 @@ void Operator::comm222_ph(Operator& opright, Operator& opout )
          double ji = oi->j2/2.;
          double jj = oj->j2/2.;
 
-         //for (int iket=0; iket<nKets; ++iket)
          for (int iket=ibra; iket<nKets; ++iket)
          {
             Ket * ket = tbc.GetKet(iket);
@@ -1164,7 +1167,6 @@ void Operator::comm222_ph(Operator& opright, Operator& opout )
                double me2 = N2[ch_cc](indx_jl,indx_ik);
                double me3 = N2[ch_cc](indx_ik,indx_jl);
                double me4 = N1[ch_cc](indx_ik,indx_jl);
-               //comm -= phase * sixj * (me1-me2-me3+me4);
                comm -= (2*Jprime+1) * phase * sixj * (me1-me2-me3+me4);
             }
 
@@ -1187,15 +1189,17 @@ void Operator::comm222_ph(Operator& opright, Operator& opout )
                double me2 = N2[ch_cc](indx_il,indx_jk);
                double me3 = N2[ch_cc](indx_jk,indx_il);
                double me4 = N1[ch_cc](indx_jk,indx_il);
-               //comm -=  phase * sixj * (me1-me2-me3+me4);
                comm -= (2*Jprime+1) * phase * sixj * (me1-me2-me3+me4);
             }
 
             comm /= sqrt((1.0+bra->delta_pq())*(1.0+ket->delta_pq()));
+            #pragma omp critical
+            {
             opout.TwoBody[ch](ibra,iket) += comm;
             if (iket != ibra)
             {
                opout.TwoBody[ch](iket,ibra) += herm*comm;
+            }
             }
          }
       }

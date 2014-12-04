@@ -57,42 +57,24 @@ int main(int argc, char**argv)
       return 0;
    }
 
-//   cout << "Calculating Mosh(0,0,1,0,0,1,0,1,0)..." << endl;
-//   double mosh = AngMom::Moshinsky(0,0,1,0,0,1,0,1,0);
-//   cout << "result: " << mosh << endl;
 
    cout << "Calculating Tcm..." << endl;
-//   Operator Top = imsrg_util::PSquaredOp(modelspace);
    Operator TCM_Op = imsrg_util::TCM_Op(modelspace);
-//   TCM_Op *= modelspace.GetHbarOmega() / modelspace.GetTargetMass();
    
-//   cout << "I think <00|TCM_Op|00>(J=0) = " << TCM_Op.TwoBody[0](0,0) << endl;
-
-   rw.WriteOneBody(TCM_Op,"../output/T1b.int");
-   rw.WriteTwoBody(TCM_Op,"../output/T.int");
-//   return 0;
-
-   cout << "TCM one body norm = " << TCM_Op.OneBodyNorm() << endl;
-   cout << "TCM two body norm = " << TCM_Op.TwoBodyNorm() << endl;
-
    Operator H_bare =  Operator(&modelspace);
    H_bare.SetHermitian(); // just to be sure
 
-//   H_bare -= TCM_Op;
 
-//   Operator H_3N =  Operator(&modelspace);
-//   H_3N.SetHermitian(); // just to be sure
+   Operator H_3N =  Operator(&modelspace);
+   H_3N.SetHermitian(); // just to be sure
 
-//   rw.ReadBareTBME_Jason(jasontbme, H_3N);
-//   Operator H3NO = H_3N.DoNormalOrdering();
-//   H3NO.ZeroBody /= 3.0;
-//   H3NO.OneBody /= 2.0;
+
 
 //   cout << "Zero body part = " << H3NO.ZeroBody << endl;
 //   rw.WriteOneBody(H3NO,"../output/H3_1b_NO.out");
 //   rw.WriteTwoBody(H3NO,"../output/H3_2b_NO.out");
 
-   H_bare.CalculateKineticEnergy();
+//   H_bare.CalculateKineticEnergy();
 
    if (inputtbme != "")
    {
@@ -116,7 +98,7 @@ int main(int argc, char**argv)
       }
    }
 
-//   H_bare += H3NO;
+/*
    rw.WriteTwoBody(H_bare,"../output/T_Oslo.int");
    rw.WriteOneBody(H_bare,"../output/T1b_Oslo.int");
    cout << "Norm of H_bare = " << H_bare.Norm() << endl;
@@ -125,44 +107,46 @@ int main(int argc, char**argv)
    cout << "Norm of TCM_Op = " << TCM_Op.Norm() << endl;
    cout << "one body norm = " << TCM_Op.OneBodyNorm() << endl;
    cout << "two body norm = " << TCM_Op.TwoBodyNorm() << endl;
-//   TCM_Op *= 4.0;
+*/
+
    H_bare -= TCM_Op;
-//   H_bare.OneBody -= TCM_Op.OneBody;
 
-   rw.WriteOneBody(H_bare,"../output/T1b_Oslo_subtracted.int");
-   rw.WriteTwoBody(H_bare,"../output/T_Oslo_subtracted.int");
-//   rw.WriteTwoBody(H_bare,"../output/T_Oslo_subtracted_old_way.int");
+   cout << "Reading normal ordered 3N file from Jason" << endl;
+   rw.ReadBareTBME_Jason(jasontbme, H_3N);
 
-   cout << "Norm of H_bare_sub = " << H_bare.Norm() << endl;
-   cout << "one body norm = " << H_bare.OneBodyNorm() << endl;
-   cout << "two body norm = " << H_bare.TwoBodyNorm() << endl;
+   Operator H3NO = H_3N.DoNormalOrdering();
+   H3NO.ZeroBody /= 3.0;
+   H3NO.OneBody /= 2.0;
+
+   Operator HbareNO = H_bare + H3NO;
 
 
    // Testing Hellmann-Feynman way of getting observable.
 //   Operator n0p3 = imsrg_util::NumberOp(modelspace,0, 1, 3, 1);
 //   H_bare += n0p3;
 
+// Remember to add option for Hartree-Fock
+   HartreeFock  hf = HartreeFock(H_bare);
+/*
    HartreeFock  hf = HartreeFock(H_bare);
    hf.Solve();
-
+   cout << "EHF = " << hf.EHF << endl;
    Operator H_hf = hf.TransformToHFBasis(H_bare);
+   cout << "Norm of HFNO = " << HFNO.Norm() << endl;
+*/
+
 //   HartreeFock hf2 = HartreeFock(H_hf);
 //   hf2.Solve();
 
 
-   cout << "EHF = " << hf.EHF << endl;
-//   cout << "EHF2 = " << hf2.EHF << endl;
-   Operator HFNO = H_hf.DoNormalOrdering();
-   Operator HbareNO = H_bare.DoNormalOrdering();
+//   Operator HFNO = H_hf.DoNormalOrdering();
+//   Operator HbareNO = H_bare.DoNormalOrdering();
 
 
 
-//   Operator H3N_hf = hf.TransformToHFBasis(H3NO);
-//   HFNO += H3N_hf;
-   cout << "Norm of HFNO = " << HFNO.Norm() << endl;
 
-   IMSRGSolver imsrgsolver = IMSRGSolver(HFNO);
-//   IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
+//   IMSRGSolver imsrgsolver = IMSRGSolver(HFNO);
+   IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
    imsrgsolver.SetFlowFile(flowfile);
    imsrgsolver.SetGenerator(generator);
    if (bch_prod_thr != "")

@@ -19,7 +19,7 @@ namespace imsrg_util
  //Operator PSquaredOp(ModelSpace& modelspace);
  Operator TCM_Op(ModelSpace& modelspace);
 
- double Calculate_p1p2(ModelSpace& modelspace, Ket* bra, Ket* ket, int J, bool exch);
+ double Calculate_p1p2(ModelSpace& modelspace, Ket* bra, Ket* ket, int J);
 // double Calculate_p1p2(ModelSpace& modelspace, Ket* bra, Ket* ket, int J);
  double Calculate_p1p2_ex(ModelSpace& modelspace, Ket* bra, Ket* ket, int J);
  double HO_density(int n, int l, double hw, double r);
