@@ -44,6 +44,8 @@ int main(int argc, char**argv)
    string densfile	= rw.InputParameters["density-file"];
    string nushellx_sps	= rw.InputParameters["nushellx_sps"];
    string nushellx_int	= rw.InputParameters["nushellx_int"];
+   string hbar_omega	= rw.InputParameters["hbar_omega"];
+   string target_mass	= rw.InputParameters["target_mass"];
 
    if (generator == "") generator = "white";
    if (comcorr == "false" or comcorr == "False" or comcorr == "FALSE") rw.SetCoMCorr(false);
@@ -57,26 +59,31 @@ int main(int argc, char**argv)
       return 0;
    }
 
+   if (hbar_omega != "")
+   {
+      double hw = strtod(hbar_omega.c_str(),NULL);
+      cout << "Setting hbar_omega to " << hw << endl;
+      modelspace.SetHbarOmega(hw);
+   }
+   if (target_mass != "")
+   {
+      int A = atoi(hbar_omega.c_str());
+      cout << "Setting target mass to " << A << endl;
+      modelspace.SetTargetMass(A);
+   }
 
-   cout << "Calculating Tcm..." << endl;
-   Operator TCM_Op = imsrg_util::TCM_Op(modelspace);
    
    Operator H_bare =  Operator(&modelspace);
    H_bare.SetHermitian(); // just to be sure
+   H_bare.CalculateKineticEnergy();
 
 
    Operator H_3N =  Operator(&modelspace);
    H_3N.SetHermitian(); // just to be sure
 
-   cout << "Reading normal ordered 3N file from Jason" << endl;
+   cout << "Reading normal ordered 3N file " << jasontbme << endl;
    rw.ReadBareTBME_Jason(jasontbme, H_3N);
 
-
-//   cout << "Zero body part = " << H3NO.ZeroBody << endl;
-//   rw.WriteOneBody(H3NO,"../output/H3_1b_NO.out");
-//   rw.WriteTwoBody(H3NO,"../output/H3_2b_NO.out");
-
-//   H_bare.CalculateKineticEnergy();
 
    if (inputtbme != "")
    {
@@ -100,17 +107,9 @@ int main(int argc, char**argv)
       }
    }
 
-/*
-   rw.WriteTwoBody(H_bare,"../output/T_Oslo.int");
-   rw.WriteOneBody(H_bare,"../output/T1b_Oslo.int");
-   cout << "Norm of H_bare = " << H_bare.Norm() << endl;
-   cout << "one body norm = " << H_bare.OneBodyNorm() << endl;
-   cout << "two body norm = " << H_bare.TwoBodyNorm() << endl;
-   cout << "Norm of TCM_Op = " << TCM_Op.Norm() << endl;
-   cout << "one body norm = " << TCM_Op.OneBodyNorm() << endl;
-   cout << "two body norm = " << TCM_Op.TwoBodyNorm() << endl;
-*/
 
+   cout << "Calculating Tcm..." << endl;
+   Operator TCM_Op = imsrg_util::TCM_Op(modelspace);
    H_bare -= TCM_Op;
 
 
@@ -118,7 +117,7 @@ int main(int argc, char**argv)
    H3NO.ZeroBody /= 3.0;
    H3NO.OneBody /= 2.0;
 
-   Operator HbareNO = H_bare + H3NO;
+   Operator HbareNO = H_bare.DoNormalOrdering() + H3NO;
 
 
    // Testing Hellmann-Feynman way of getting observable.

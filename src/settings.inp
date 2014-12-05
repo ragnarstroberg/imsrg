@@ -1,7 +1,12 @@
 
-#inputsps:	../input/He4_lmax6.sps
+#hbar_omega:	13.53
+hbar_omega:	24.0
+target_mass:	4
+
+inputsps:	../input/He4_lmax6.sps
 #inputsps:	../input/He4_hw24_emax8.sps
-inputsps:	../input/He4_emax4.sps
+#inputsps:	../input/He4_emax4.sps
+#inputsps:	../input/He4_emax4_hw13.53.sps
 #inputsps:	../input/He4_lmax6_SM.sps
 #inputsps:	../input/O16_lmax6.sps
 #inputsps:	../input/O22_lmax6.sps
@@ -35,8 +40,8 @@ inputsps:	../input/He4_emax4.sps
 #inputtbme:	../input/vspsd.int
 #inputtbme:	../input/vs.int
 #inputtbme:	../input/vjason2.0.int
-inputtbme:	../input/vnn_hw13.53_n3loEM_vlk20em_N13_J9.dat
-#inputtbme:	../input/vsrg2.0_n3lo_noEmpot_Gaute_emax8_hw24.int
+#inputtbme:	../input/vnn_hw13.53_n3loEM_vlk20em_N13_J9.dat
+inputtbme:	../input/vsrg2.0_n3lo_noEmpot_Gaute_emax8_hw24.int
 #inputtbme:	../input/vsrg1.8_n3lo500_w_coulomb_emax6_hw24.int
 
 #darmstadttbme:	../input/chi2b_srg0400_eMax02_hwHO024.me2j
@@ -49,7 +54,10 @@ jasontbme:	../input/f3b.dat
 
 #flowfile:	../output/BCH_flow_vspsd.dat
 #flowfile:	../output/BCH_flow_emax6.dat
-flowfile:	../output/BCH_flow_He4_emax4.dat
+#flowfile:	../output/BCH_flow_He4_emax4.dat
+#flowfile:	../output/BCH_flow_He4_emax4_NNonly.dat
+#flowfile:	../output/BCH_flow_He4_emax6_3N.dat
+#flowfile:	../output/BCH_flow_He4_emax6_3N.dat
 #flowfile:	../output/BCH_flow_He4_emax8.dat
 #flowfile:	../output/BCH_flow_O16_emax8.dat
 #flowfile:	../output/BCH_flow_O18_emax6.dat
@@ -61,7 +69,7 @@ flowfile:	../output/BCH_flow_He4_emax4.dat
 #flowfile:	../output/BCH_flow_Si34_emax6.dat
 ds:		0.5
 domega_max:	0.5
-smax:		20.0
+smax:		5.0
 #generator:	shell-model
 #generator:	shell-model-atan
 #generator:	white

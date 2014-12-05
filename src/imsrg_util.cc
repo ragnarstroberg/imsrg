@@ -30,7 +30,7 @@ namespace imsrg_util
  }
 
  // Just do the HF transformation
- vector<double> GetOccupations(HartreeFock& hf)
+ vector<double> GetOccupationsHF(HartreeFock& hf)
  {
     ModelSpace* modelspace = hf.Hbare.modelspace;
     int norb = modelspace->GetNumberOrbits();

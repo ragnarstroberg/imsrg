@@ -7,8 +7,6 @@
 class HartreeFock
 {
  public:
-   // Maybe switch some to sp_mat at some point? (sparse matrix)
-   //arma::mat C;             // coefficients, 1st index is ho basis, 2nd = HF basis
    arma::mat C;             // coefficients, 1st index is ho basis, 2nd = HF basis
    arma::mat rho;           // density matrix rho_ij
    arma::mat t;             // kinetic energy

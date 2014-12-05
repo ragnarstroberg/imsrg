@@ -97,7 +97,6 @@ ModelSpace ReadWrite::ReadModelSpace( string filename)
    {
       infile.getline(line,LINESIZE);
    }
-   cout << "done reading header" << endl;
 
    while (  infile >> cbuf[0] >> ibuf[0] >> n >> l >> j2 >> tz2
              >> ibuf[1] >> spe >> fbuf[0]  >> cbuf[1] >> cbuf[2])
@@ -109,7 +108,6 @@ ModelSpace ReadWrite::ReadModelSpace( string filename)
       modelspace.AddOrbit( Orbit(n,l,j2,tz2,ph,io,spe) );
 
    }
-   cout << "done reading interaction" << endl;
    
    infile.close();
    modelspace.SetupKets();
@@ -215,9 +213,8 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
      b = modelspace->Index1(nb,lb,jb,tzb);
      c = modelspace->Index1(nc,lc,jc,tzc);
      d = modelspace->Index1(nd,ld,jd,tzd);
-     cout << "abcd = " << a << " " << b << " " << c << " " << d <<  " J = " << J2/2 << "  Tz = " << Tz2/2 << endl;
      // if the matrix element is outside the model space, ignore it.
-     if (a>norbits or b>norbits or c>norbits or d>norbits) continue;
+     if (a>=norbits or b>=norbits or c>=norbits or d>=norbits) continue;
      Par = (la+lb)%2;
      Hbare.SetTBME(J2/2,Par,Tz2/2,a,b,c,d, tbme ); // Don't do COM correction, for comparison with Darmstadt interaction.
 

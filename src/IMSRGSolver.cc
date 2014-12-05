@@ -348,8 +348,7 @@ void IMSRGSolver::ConstructGenerator_Atan()
          }
       }
    }
-   //cout << "Maximum one-body term: f(" << maxi << "," << maxa << ") = " << maxval << endl;
-   cout << "Maximum one-body term: f(" << maxi << "," << maxa << ") = " << maxnum << " / " << maxdenom << " = " << 0.5*atan(2*maxnum/maxdenom) << endl;
+//   cout << "Maximum one-body term: f(" << maxi << "," << maxa << ") = " << maxnum << " / " << maxdenom << " = " << 0.5*atan(2*maxnum/maxdenom) << endl;
 
    maxnum = 0;
    maxdenom = 0;
@@ -383,22 +382,19 @@ void IMSRGSolver::ConstructGenerator_Atan()
    TwoBodyChannel& tbcmax = modelspace->GetTwoBodyChannel(maxch);
    Ket* bra  = tbcmax.GetKet(maxi);
    Ket* ket  = tbcmax.GetKet(maxa);
-   //cout << "Maximum two-body term: < " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << " >"  << "(J=" << tbcmax.J << ") = " << maxval << endl;
-   cout << "Maximum two-body term: < " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << " >"  << "(J=" << tbcmax.J << ") = "
-        << maxnum << " / " << maxdenom << " = " << 0.5*atan(2*maxnum/maxdenom) << endl;
+//   cout << "Maximum two-body term: < " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << " >"  << "(J=" << tbcmax.J << ") = "
+//        << maxnum << " / " << maxdenom << " = " << 0.5*atan(2*maxnum/maxdenom) << endl;
 }
 
 
 
 void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
 {
-/*
    // One body piece -- make sure the valence one-body part is diagonal
    for ( int &i : modelspace->valence)
    {
       Orbit *oi = modelspace->GetOrbit(i);
       for (int j=0; j<modelspace->GetNumberOrbits(); ++j)
-//      for (int &j : modelspace->particles)
       {
          if (i==j) continue;
          Orbit *oj = modelspace->GetOrbit(j);
@@ -415,57 +411,86 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
-
       // Decouple vv from qq and qv
 
       for (int& ibra : tbc.KetIndex_vv)
       {
-         for (int& iket : tbc.KetIndex_qq)
+         for (int& iket : tbc.KetIndex_particleq_particleq) 
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             Eta.TwoBody[ch](ibra,iket) = 0.5*atan(2*H_s.TwoBody[ch](ibra,iket) / denominator);
             Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
-      }
 
-
-      for (int& ibra : tbc.KetIndex_vv)
-      {
-         for (int& iket : tbc.KetIndex_vq)
+         for (int& iket : tbc.KetIndex_holeq_holeq) 
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             Eta.TwoBody[ch](ibra,iket) = 0.5*atan(2*H_s.TwoBody[ch](ibra,iket) / denominator);
             Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
-      }
 
-
-      // Decouple the hole qstates (core) from particle qstates
-
-      for (int& ibra : tbc.KetIndex_holeq_holeq)
-      {
-         for (int& iket : tbc.KetIndex_particleq_holeq)
+         for (int& iket : tbc.KetIndex_v_particleq) 
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             Eta.TwoBody[ch](ibra,iket) = 0.5*atan(2*H_s.TwoBody[ch](ibra,iket) / denominator);
             Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
+
+         for (int& iket : tbc.KetIndex_v_holeq) 
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = 0.5*atan(2*H_s.TwoBody[ch](ibra,iket) / denominator);
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
+
       }
 
+
+      // Decouple hh states
 
       for (int& ibra : tbc.KetIndex_holeq_holeq)
       {
          for (int& iket : tbc.KetIndex_particleq_particleq)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
-            Eta.TwoBody[ch](ibra,iket) = 0.5*atan(2*H_s.TwoBody[ch](ibra,iket) / denominator);
+            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
+         for (int& iket : tbc.KetIndex_v_particleq)
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
             Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
 
-   }
-*/
+      // Decouple vh states
+
+      for (int& ibra : tbc.KetIndex_v_holeq)
+      {
+         for (int& iket : tbc.KetIndex_particleq_particleq)
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
+         for (int& iket : tbc.KetIndex_v_particleq)
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
+            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+
+    }
 }
+
+
+
+
 
 
 void IMSRGSolver::WriteFlowStatus(ostream& f)
