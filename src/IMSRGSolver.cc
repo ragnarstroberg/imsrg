@@ -1,5 +1,8 @@
 
 #include "IMSRGSolver.hh"
+#include <boost/numeric/odeint.hpp>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
 
 
@@ -81,6 +84,34 @@ void IMSRGSolver::Solve()
    if (flowfile != "")
       flowf.close();
 
+}
+
+
+
+void IMSRGSolver::ODE_systemH(const Operator& x, Operator& dxdt, const double t)
+//void IMSRGSolver::operator() (const Operator& x, Operator& dxdt, const double t)
+{
+   UpdateEta();
+   dxdt = Eta.Commutator(x);
+}
+
+void IMSRGSolver::Solve_ode()
+{
+   using namespace boost::numeric::odeint;
+//   typedef adams_bashforth_moulton<Operator, double, Operator, double, vector_space_algebra> rk4;
+   typedef runge_kutta4<Operator, double, Operator, double, vector_space_algebra> rk4;
+//   typedef runge_kutta_dopri5<Operator> stepper;
+//   boost::function<void (const Operator&, Operator&, const double t)> system (boost::bind(&IMSRGSolver::ODE_systemH, *this,_1,_2,_3));
+//   boost::bind( IMSRGSolver::ODE_systemH, this, _1, _2, _3);
+//   size_t steps = integrate(rk4(), ODE_stepperH, H_s, 0, smax, ds);
+//   size_t steps = integrate_const(rk4(), system, H_s, 0, smax, ds);
+//   size_t steps = integrate_const(rk4(), boost::bind(IMSRGSolver::ODE_systemH, this,_1,_2,_3), H_s, 0, smax, ds);
+//   auto system = std::bind(&IMSRGSolver::ODE_systemH,*this, _1,_2,_3);
+   auto system = std::bind(&IMSRGSolver::ODE_systemH,*this, std::placeholders::_1,std::placeholders::_2,std::placeholders::_3);
+   size_t steps = integrate_const(rk4(), system, H_s, 0, smax, ds);
+//   size_t steps = integrate_const(rk4(), *this, H_s, 0, smax, ds);
+//   size_t steps = integrate_const(rk4(), boost::bind(IMSRGSolver::ODE_systemH, this,_1,_2,_3), H_s, 0, smax, ds);
+   
 }
 
 

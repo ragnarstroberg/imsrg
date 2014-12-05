@@ -106,6 +106,18 @@ void Operator::PrintOut()
 */
 }
 
+void Operator::ScaleOneBody(double x)
+{
+   OneBody *= x;
+}
+
+void Operator::ScaleTwoBody(double x)
+{
+   for (int ch=0; ch<nChannels; ++ch)
+   {
+      TwoBody[ch] *= x;
+   }
+}
 
 void Operator::Eye()
 {
@@ -187,7 +199,7 @@ void Operator::SetTBME(int j, int p, int t, Ket* bra, Ket* ket, double tbme)
 }
 
 
-double Operator::GetTBMEmonopole(int a, int b, int c, int d)
+double Operator::GetTBMEmonopole(int a, int b, int c, int d) const
 {
    double mon = 0;
    Orbit *oa = modelspace->GetOrbit(a);
@@ -212,7 +224,7 @@ double Operator::GetTBMEmonopole(int a, int b, int c, int d)
    return mon;
 }
 
-double Operator::GetTBMEmonopole(Ket * bra, Ket * ket)
+double Operator::GetTBMEmonopole(Ket * bra, Ket * ket) const
 {
    return GetTBMEmonopole(bra->p,bra->q,ket->p,ket->q);
 }
@@ -603,8 +615,10 @@ double Operator::TwoBodyNorm()
 }
 
 
-Operator Operator::Commutator(Operator& opright)
+Operator Operator::Commutator(const Operator& opright_in)
+//Operator Operator::Commutator(Operator& opright)
 {
+   Operator opright = opright_in;
    Operator out = opright;
 //   out.EraseZeroBody();
 //   out.EraseOneBody();
@@ -642,7 +656,8 @@ Operator Operator::Commutator(Operator& opright)
 //             = Sum_a  (2j_a+1)  (xy-yx)_aa n_a
 //
 // -- AGREES WITH NATHAN'S RESULTS
-double Operator::comm110(Operator& opright)
+double Operator::comm110(const Operator& opright)
+//double Operator::comm110(Operator& opright)
 {
   if (IsHermitian() and opright.IsHermitian()) return 0; // I think this is the case
   if (IsAntiHermitian() and opright.IsAntiHermitian()) return 0; // I think this is the case
@@ -668,7 +683,8 @@ double Operator::comm110(Operator& opright)
 //                       = 1/2 Sum_J (2J+1) Sum_ab  (X*P_pp*Y)_abab  P_hh
 //
 //  -- AGREES WITH NATHAN'S RESULTS (within < 1%)
-double Operator::comm220( Operator& opright)
+double Operator::comm220( const Operator& opright)
+//double Operator::comm220( Operator& opright)
 {
    if (IsHermitian() and opright.IsHermitian()) return 0; // I think this is the case
    if (IsAntiHermitian() and opright.IsAntiHermitian()) return 0; // I think this is the case
@@ -693,7 +709,8 @@ double Operator::comm220( Operator& opright)
 //        |                 |
 //
 // -- AGREES WITH NATHAN'S RESULTS
-arma::mat Operator::comm111(Operator & opright)
+arma::mat Operator::comm111(const Operator & opright)
+//arma::mat Operator::comm111(Operator & opright)
 {
    return OneBody*opright.OneBody - opright.OneBody*OneBody;
 }
@@ -709,7 +726,8 @@ arma::mat Operator::comm111(Operator & opright)
 //                                                  * sum_b y_ab x_biaj - yba x_aibj
 //
 // -- AGREES WITH NATHAN'S RESULTS 
-arma::mat Operator::comm121(Operator& opright)
+arma::mat Operator::comm121(const Operator& opright)
+//arma::mat Operator::comm121(Operator& opright)
 {
    int norbits = modelspace->GetNumberOrbits();
    arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
@@ -754,7 +772,8 @@ arma::mat Operator::comm121(Operator& opright)
 //
 // -- AGREES WITH NATHAN'S RESULTS 
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-arma::mat Operator::comm221(Operator& opright)
+arma::mat Operator::comm221(const Operator& opright)
+//arma::mat Operator::comm221(Operator& opright)
 {
 
    int norbits = modelspace->GetNumberOrbits();
@@ -813,7 +832,8 @@ arma::mat Operator::comm221(Operator& opright)
 //
 // -- AGREES WITH NATHAN'S RESULTS
 // Right now, this is the slowest one...
-void Operator::comm122(Operator& opright, Operator& opout )
+void Operator::comm122(const Operator& opright, Operator& opout )
+//void Operator::comm122(Operator& opright, Operator& opout )
 {
    int herm = opout.IsHermitian() ? 1 : -1;
 
@@ -907,7 +927,8 @@ void Operator::comm122(Operator& opright, Operator& opout )
 //
 // -- AGREES WITH NATHAN'S RESULTS
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-void Operator::comm222_pp_hh(Operator& opright, Operator& opout )
+void Operator::comm222_pp_hh(const Operator& opright, Operator& opout )
+//void Operator::comm222_pp_hh(Operator& opright, Operator& opout )
 {
    #pragma omp parallel for schedule(dynamic,5)
    for (int ch=0; ch<nChannels; ++ch)
@@ -928,7 +949,8 @@ void Operator::comm222_pp_hh(Operator& opright, Operator& opout )
 // Since comm222_pp_hh and comm211 both require the construction of 
 // the intermediate matrices Mpp and Mhh, we can combine them and
 // only calculate the intermediates once.
-void Operator::comm222_pp_hh_221(Operator& opright, Operator& opout )
+void Operator::comm222_pp_hh_221(const Operator& opright, Operator& opout )
+//void Operator::comm222_pp_hh_221(Operator& opright, Operator& opout )
 {
 
    int herm = opout.IsHermitian() ? 1 : -1;
@@ -1003,7 +1025,8 @@ void Operator::comm222_pp_hh_221(Operator& opright, Operator& opout )
 
 
 
-void Operator::comm222_ph_slow(Operator& opright, Operator& opout )
+void Operator::comm222_ph_slow(const Operator& opright, Operator& opout )
+//void Operator::comm222_ph_slow(Operator& opright, Operator& opout )
 {
    for (int ch=0;ch<nChannels;++ch)
    {
@@ -1100,7 +1123,8 @@ void Operator::comm222_ph_slow(Operator& opright, Operator& opout )
 //            
 // -- This appears to agree with Nathan's results
 //
-void Operator::comm222_ph(Operator& opright, Operator& opout )
+void Operator::comm222_ph(const Operator& opright, Operator& opout )
+//void Operator::comm222_ph(Operator& opright, Operator& opout )
 {
 
    int herm = opout.IsHermitian() ? 1 : -1;

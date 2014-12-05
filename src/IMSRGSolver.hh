@@ -14,6 +14,8 @@ class IMSRGSolver
   public:
   IMSRGSolver(Operator H_in);
   void Solve();
+  void Solve_ode();
+  void ODE_systemH(const Operator& x, Operator& dxdt, const double t);
   Operator Transform(Operator& OpIn);
   void SetFlowFile(string s){flowfile = s;};
   void SetDs(double d){ds = d;};

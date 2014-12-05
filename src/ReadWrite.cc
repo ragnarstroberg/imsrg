@@ -12,7 +12,7 @@ using namespace std;
 
 ReadWrite::ReadWrite()
 {
-   doCoM_corr = true;
+   doCoM_corr = false;
    goodstate = true;
 }
 
@@ -803,5 +803,56 @@ void ReadWrite::WriteValenceTwoBody(Operator& op, string filename)
 }
 
 
+void ReadWrite::WriteOperator(Operator& op, string filename)
+{
+   ofstream opfile;
+   opfile.open(filename, ofstream::out);
+   ModelSpace * modelspace = op.GetModelSpace();
+
+   if (op.IsHermitian() )
+   {
+      opfile << "Hermitian" << endl;
+   }
+   else if (op.IsAntiHermitian())
+   {
+      opfile << "Anti-Hermitian" << endl;
+   }
+   else
+   {
+      opfile << "Non-Hermitian" << endl;
+   }
+
+   opfile << "$ZeroBody:\t" << op.ZeroBody << endl << endl;
+   opfile << "$OneBody:\t" << op.ZeroBody << endl;
+
+   int nch = modelspace->GetNumberTwoBodyChannels();
+   for (int i=0;i<nch;++i)
+   {
+      int jmin = op.IsNonHermitian() ? 0 : i;
+      for (int j=jmin;j<nch;++j)
+      {
+         opfile << i << "\t" << j << "\t" << op.OneBody(i,j) << endl;
+      }
+   }
+
+   opfile << endl << "$TwoBody:\t" << op.ZeroBody << endl;
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+   for (int ch=0; ch<nchan; ++ch)
+   {
+      opfile << ch << endl;
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      int nkets = tbc.GetNumberKets();
+      for (int ibra=0; ibra<nkets; ++ibra)
+      {
+         int iket_min = op.IsNonHermitian() ? 0 : ibra;
+         for (int iket=iket_min; iket<nkets; ++iket)
+         {
+            opfile << "   " << ibra << "\t" << iket << "\t" << op.TwoBody[ch](ibra,iket) << endl;
+         }
+      }
+   }
+   opfile.close();
+
+}
 
 

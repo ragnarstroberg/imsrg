@@ -55,11 +55,16 @@ class Operator
 
 //  double GetTBME_NoPhase(int ch, int a, int b, int c, int d) const;
 
-  double GetTBMEmonopole(int a, int b, int c, int d);
-  double GetTBMEmonopole(Ket * bra, Ket * ket);
+  double GetTBMEmonopole(int a, int b, int c, int d) const;
+  double GetTBMEmonopole(Ket * bra, Ket * ket) const;
+
+
+  void ScaleOneBody(double x);
+  void ScaleTwoBody(double x);
 
   // The actually interesting methods
-  Operator Commutator(Operator& opright);
+//  Operator Commutator(Operator& opright);
+  Operator Commutator(const Operator& opright);
   Operator BCH_Product( Operator& ); // not yet implemented
   Operator BCH_Transform( Operator& ); // not yet implemented
   Operator DoNormalOrdering(); // Do normal ordering -- not implemented yet
@@ -107,16 +112,27 @@ class Operator
 
   
   void UpdateCrossCoupled(); 
-  double comm110(Operator& opright);
-  double comm220(Operator& opright);
-  arma::mat comm111(Operator& opright);
-  arma::mat comm121(Operator& opright);
-  arma::mat comm221(Operator& opright);
-  void comm122(Operator& opright, Operator& opout);
-  void comm222_pp_hh(Operator& opright, Operator& opout);
-  void comm222_ph(Operator& opright, Operator& opout);
-  void comm222_ph_slow(Operator& opright, Operator& opout);
-  void comm222_pp_hh_221(Operator& opright, Operator& opout);
+//  double comm110(Operator& opright);
+//  double comm220(Operator& opright);
+//  arma::mat comm111(Operator& opright);
+//  arma::mat comm121(Operator& opright);
+//  arma::mat comm221(Operator& opright);
+//  void comm122(Operator& opright, Operator& opout);
+//  void comm222_pp_hh(Operator& opright, Operator& opout);
+//  void comm222_ph(Operator& opright, Operator& opout);
+//  void comm222_ph_slow(Operator& opright, Operator& opout);
+//  void comm222_pp_hh_221(Operator& opright, Operator& opout);
+
+  double comm110(const Operator& opright);
+  double comm220(const Operator& opright);
+  arma::mat comm111(const Operator& opright);
+  arma::mat comm121(const Operator& opright);
+  arma::mat comm221(const Operator& opright);
+  void comm122(const Operator& opright, Operator& opout);
+  void comm222_pp_hh(const Operator& opright, Operator& opout);
+  void comm222_ph(const Operator& opright, Operator& opout);
+  void comm222_ph_slow(const Operator& opright, Operator& opout);
+  void comm222_pp_hh_221(const Operator& opright, Operator& opout);
 
 
 };

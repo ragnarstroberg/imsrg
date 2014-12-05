@@ -25,6 +25,8 @@ class ReadWrite
    void WriteNuShellX_sps( Operator& op, string filename);
    void WriteNuShellX_int( Operator& op, string filename);
    void WriteAntoine_int( Operator& op, string filename); // <- not implemented yet...
+   void WriteOperator(Operator& op, string filename);
+   void ReadOperator(Operator& op, string filename);
 
    std::map<string,string> InputParameters;
 
