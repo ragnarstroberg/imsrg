@@ -8,11 +8,43 @@
 
 using namespace std;
 
+
 class IMSRGSolver
 {
 
+  // This is used to get flow info from odeint
+  class ODE_Monitor
+  {
+    public:
+     ODE_Monitor(IMSRGSolver& solver)
+           : imsrgsolver(solver), times(solver.times), E0(solver.E0),
+              eta1(solver.eta1),eta2(solver.eta2) {};
+     vector<double>& times;
+     vector<double>& E0;
+     vector<double>& eta1;
+     vector<double>& eta2;
+     void operator() (const Operator& x, double t)
+     {
+        times.push_back(t);
+        E0.push_back(x.ZeroBody);
+        eta1.push_back(imsrgsolver.Eta.OneBodyNorm());
+        eta2.push_back(imsrgsolver.Eta.TwoBodyNorm());
+     }
+     void report()
+     {
+        for (size_t i=0; i<times.size(); ++i)
+        {
+           cout << times[i] << "  " << E0[i] << "  "
+                << eta1[i]  << "  " << eta2[i] << endl;
+        }
+     }
+    private:
+     IMSRGSolver& imsrgsolver;
+  };
+
+
   public:
-  IMSRGSolver(Operator H_in);
+  IMSRGSolver(const Operator& H_in);
   void Solve();
   void Solve_ode();
   void ODE_systemH(const Operator& x, Operator& dxdt, const double t);
@@ -42,6 +74,14 @@ class IMSRGSolver
   string method;
   string generator;
   string flowfile;
+  ODE_Monitor ode_monitor;
+
+
+  vector<double> times;
+  vector<double> E0;
+  vector<double> eta1;
+  vector<double> eta2;
+
 
   void UpdateEta();
   void UpdateOmega();
@@ -57,7 +97,14 @@ class IMSRGSolver
   double GetEpsteinNesbet1bDenominator(int i, int j);
   double GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket);
 
+
+
+
+
 };
+
+
+
 
 
 #endif

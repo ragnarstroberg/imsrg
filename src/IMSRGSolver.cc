@@ -1,13 +1,12 @@
 
 #include "IMSRGSolver.hh"
 #include <boost/numeric/odeint.hpp>
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
 
 
 
 // Constructor
-IMSRGSolver::IMSRGSolver(Operator H_in)
+IMSRGSolver::IMSRGSolver(const Operator &H_in)
+   : ode_monitor(*this)
 {
    method = "BCH";
    generator = "white";
@@ -68,18 +67,17 @@ void IMSRGSolver::Solve()
       Omega = dOmega.BCH_Product( Omega ); 
 
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
-         H_s = H_0.BCH_Transform( Omega );   
-//         H_s = H_s.BCH_Transform( dOmega );  // less accurate, but converges with fewer commutators, since ||dOmega|| < ||Omega||
+      H_s = H_0.BCH_Transform( Omega );   
 
    }
    // if the last calculation of H_s was the quick way,
    // do it again the more accurate way.
-   if (istep%i_full_BCH != i_full_BCH-1)
-   {
-      H_s = H_0.BCH_Transform( Omega ); 
-      WriteFlowStatus(flowf);
-      WriteFlowStatus(cout);
-   }
+//   if (istep%i_full_BCH != i_full_BCH-1)
+//   {
+//      H_s = H_0.BCH_Transform( Omega ); 
+//      WriteFlowStatus(flowf);
+//      WriteFlowStatus(cout);
+//   }
 
    if (flowfile != "")
       flowf.close();
@@ -88,30 +86,27 @@ void IMSRGSolver::Solve()
 
 
 
-void IMSRGSolver::ODE_systemH(const Operator& x, Operator& dxdt, const double t)
-//void IMSRGSolver::operator() (const Operator& x, Operator& dxdt, const double t)
-{
-   UpdateEta();
-   dxdt = Eta.Commutator(x);
-}
 
 void IMSRGSolver::Solve_ode()
 {
    using namespace boost::numeric::odeint;
-//   typedef adams_bashforth_moulton<Operator, double, Operator, double, vector_space_algebra> rk4;
-   typedef runge_kutta4<Operator, double, Operator, double, vector_space_algebra> rk4;
-//   typedef runge_kutta_dopri5<Operator> stepper;
-//   boost::function<void (const Operator&, Operator&, const double t)> system (boost::bind(&IMSRGSolver::ODE_systemH, *this,_1,_2,_3));
-//   boost::bind( IMSRGSolver::ODE_systemH, this, _1, _2, _3);
-//   size_t steps = integrate(rk4(), ODE_stepperH, H_s, 0, smax, ds);
-//   size_t steps = integrate_const(rk4(), system, H_s, 0, smax, ds);
-//   size_t steps = integrate_const(rk4(), boost::bind(IMSRGSolver::ODE_systemH, this,_1,_2,_3), H_s, 0, smax, ds);
-//   auto system = std::bind(&IMSRGSolver::ODE_systemH,*this, _1,_2,_3);
-   auto system = std::bind(&IMSRGSolver::ODE_systemH,*this, std::placeholders::_1,std::placeholders::_2,std::placeholders::_3);
-   size_t steps = integrate_const(rk4(), system, H_s, 0, smax, ds);
-//   size_t steps = integrate_const(rk4(), *this, H_s, 0, smax, ds);
-//   size_t steps = integrate_const(rk4(), boost::bind(IMSRGSolver::ODE_systemH, this,_1,_2,_3), H_s, 0, smax, ds);
-   
+   namespace pl = std::placeholders;
+   runge_kutta4<Operator, double, Operator, double, vector_space_algebra> stepper;
+   auto system = std::bind( &IMSRGSolver::ODE_systemH, *this, pl::_1, pl::_2, pl::_3);
+   auto monitor = ode_monitor;
+   size_t steps = integrate_const(stepper, system, H_s, s, smax, ds, monitor);
+   monitor.report();
+}
+
+
+void IMSRGSolver::ODE_systemH(const Operator& x, Operator& dxdt, const double t)
+{
+   cout << "in ODE_systemH. t = " << t << "  E0 = " << x.ZeroBody << "  Norm(x) = " << x.Norm() 
+        << "H_s zero body = " << H_s.ZeroBody 
+        << "  Eta1 = " << Eta.OneBodyNorm() << "  Eta2 = " << Eta.TwoBodyNorm() << endl;
+   H_s = x;
+   UpdateEta();
+   dxdt = Eta.Commutator(x);
 }
 
 

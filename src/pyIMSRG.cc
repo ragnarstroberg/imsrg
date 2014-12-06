@@ -77,6 +77,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
 
    class_<IMSRGSolver>("IMSRGSolver",init<Operator>())
       .def("Solve",&IMSRGSolver::Solve)
+      .def("Solve_ode",&IMSRGSolver::Solve_ode)
       .def("Transform",&IMSRGSolver::Transform)
       .def("SetFlowFile",&IMSRGSolver::SetFlowFile)
       .def("SetDs",&IMSRGSolver::SetDs)

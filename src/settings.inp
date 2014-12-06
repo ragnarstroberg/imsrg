@@ -67,9 +67,9 @@ jasontbme:	../input/f3b.dat
 #flowfile:	../output/BCH_flow_O16_emax6.dat
 #flowfile:	../output/BCH_flow_O22_emax8.dat
 #flowfile:	../output/BCH_flow_Si34_emax6.dat
-ds:		0.5
+ds:		0.1
 domega_max:	0.5
-smax:		5.0
+smax:		3.0
 #generator:	shell-model
 #generator:	shell-model-atan
 #generator:	white

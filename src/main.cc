@@ -108,16 +108,19 @@ int main(int argc, char**argv)
    }
 
 
-   cout << "Calculating Tcm..." << endl;
-   Operator TCM_Op = imsrg_util::TCM_Op(modelspace);
-   H_bare -= TCM_Op;
+//   cout << "Calculating Tcm..." << endl;
+//   Operator TCM_Op = imsrg_util::TCM_Op(modelspace);
+//   H_bare -= TCM_Op;
 
-
+   cout << "Normal Ordering H_3N" << endl;
    Operator H3NO = H_3N.DoNormalOrdering();
+   cout << "Dividing components of H_3N" << endl;
    H3NO.ZeroBody /= 3.0;
    H3NO.OneBody /= 2.0;
 
-   Operator HbareNO = H_bare.DoNormalOrdering() + H3NO;
+   cout << "Defining HbareNO" << endl;
+   Operator HbareNO = H_bare.DoNormalOrdering();
+   HbareNO += H3NO;
 
 
    // Testing Hellmann-Feynman way of getting observable.
@@ -125,6 +128,7 @@ int main(int argc, char**argv)
 //   H_bare += n0p3;
 
 // Remember to add option for Hartree-Fock
+   cout << "Constructing hf" << endl;
    HartreeFock  hf = HartreeFock(H_bare);
 /*
    HartreeFock  hf = HartreeFock(H_bare);
@@ -145,7 +149,9 @@ int main(int argc, char**argv)
 
 
 //   IMSRGSolver imsrgsolver = IMSRGSolver(HFNO);
+   cout << "Constructing IMSRGSolver " << endl;
    IMSRGSolver imsrgsolver = IMSRGSolver(HbareNO);
+   cout << "done constructing IMSRGSolver " << endl;
    imsrgsolver.SetFlowFile(flowfile);
    imsrgsolver.SetGenerator(generator);
    if (bch_prod_thr != "")
@@ -175,8 +181,10 @@ int main(int argc, char**argv)
       imsrgsolver.SetSmax(smax);
    }
 
+   cout << "Begin solving..." << endl;
 /////// THIS IS THE TIME CONSUMING PART //////////
-   imsrgsolver.Solve();
+   imsrgsolver.Solve_ode();
+//   imsrgsolver.Solve();
 //////////////////////////////////////////////////
 
 //   n0p3 = hf.TransformToHFBasis(n0p3);

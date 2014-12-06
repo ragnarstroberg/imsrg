@@ -18,25 +18,25 @@ class Operator
   float ZeroBody;
   arma::mat OneBody;
   arma::mat TwoBody[JMAX*2*3];
-  arma::mat TwoBody_CC_left[JMAX*2*3]; // cross-coupled
-  arma::mat TwoBody_CC_right[JMAX*2*3]; // cross-coupled
+//  arma::mat TwoBody_CC_left[JMAX*2*3]; // cross-coupled
+//  arma::mat TwoBody_CC_right[JMAX*2*3]; // cross-coupled
 
   //Constructors
   // In the future, consider using C++11 rvalues / move constructor to avoid copies in certain cases
   Operator();
   Operator(ModelSpace*);
-  Operator( const Operator& rhs){Copy(rhs);};
+  Operator( const Operator& rhs);
 
   //Overloaded operators
-  Operator& operator=( const Operator& rhs) {Copy(rhs); return *this;};
+  Operator& operator=( const Operator& rhs);
   Operator& operator+=( const Operator& rhs);
-  Operator operator+( const Operator& rhs);
+  Operator operator+( const Operator& rhs) const;
   Operator& operator-=( const Operator& rhs);
-  Operator operator-( const Operator& rhs);
+  Operator operator-( const Operator& rhs) const;
   Operator& operator*=( const double rhs);
-  Operator operator*( const double rhs);
+  Operator operator*( const double rhs) const;
   Operator& operator/=( const double rhs);
-  Operator operator/( const double rhs);
+  Operator operator/( const double rhs) const;
 
   //Methods
   // One body setter/getters
@@ -64,16 +64,16 @@ class Operator
 
   // The actually interesting methods
 //  Operator Commutator(Operator& opright);
-  Operator Commutator(const Operator& opright);
-  Operator BCH_Product( Operator& ); // not yet implemented
-  Operator BCH_Transform( Operator& ); // not yet implemented
-  Operator DoNormalOrdering(); // Do normal ordering -- not implemented yet
+  Operator Commutator(const Operator& opright) const;
+  Operator BCH_Product( const Operator& ) const ; 
+  Operator BCH_Transform( const Operator& ) const; 
+  Operator DoNormalOrdering(); 
   void Eye(); // set to identity operator
   void CalculateKineticEnergy();
 
-  double Norm();
-  double OneBodyNorm();
-  double TwoBodyNorm();
+  double Norm() const;
+  double OneBodyNorm() const;
+  double TwoBodyNorm() const;
 
   ModelSpace * GetModelSpace() const {return modelspace;};
 
@@ -88,10 +88,6 @@ class Operator
   bool IsAntiHermitian()const {return antihermitian;};
   bool IsNonHermitian()const {return not (hermitian or antihermitian);};
 
-//  void SetCrossCoupled(bool tf=true){cross_coupled = tf;};
-
-  void PrintTwoBody() ;
-  void PrintOut() ;
 
  //private:
   //Fields
@@ -111,7 +107,8 @@ class Operator
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
   
-  void UpdateCrossCoupled(); 
+  //void UpdateCrossCoupled(); 
+  void UpdateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) const; 
 //  double comm110(Operator& opright);
 //  double comm220(Operator& opright);
 //  arma::mat comm111(Operator& opright);
@@ -123,20 +120,24 @@ class Operator
 //  void comm222_ph_slow(Operator& opright, Operator& opout);
 //  void comm222_pp_hh_221(Operator& opright, Operator& opout);
 
-  double comm110(const Operator& opright);
-  double comm220(const Operator& opright);
-  arma::mat comm111(const Operator& opright);
-  arma::mat comm121(const Operator& opright);
-  arma::mat comm221(const Operator& opright);
-  void comm122(const Operator& opright, Operator& opout);
-  void comm222_pp_hh(const Operator& opright, Operator& opout);
-  void comm222_ph(const Operator& opright, Operator& opout);
-  void comm222_ph_slow(const Operator& opright, Operator& opout);
-  void comm222_pp_hh_221(const Operator& opright, Operator& opout);
+  double comm110(const Operator& opright) const;
+  double comm220(const Operator& opright) const;
+  arma::mat comm111(const Operator& opright) const;
+  arma::mat comm121(const Operator& opright) const;
+  arma::mat comm221(const Operator& opright) const;
+  void comm122(const Operator& opright, Operator& opout) const;
+  void comm222_pp_hh(const Operator& opright, Operator& opout) const;
+  void comm222_ph(const Operator& opright, Operator& opout) const;
+  void comm222_ph_slow(const Operator& opright, Operator& opout) const;
+  void comm222_pp_hh_221(const Operator& opright, Operator& opout) const;
 
 
 };
 
+Operator operator*(const double lhs, const Operator& rhs);
+//{
+//   return rhs * lhs;
+//}
 
 
 #endif

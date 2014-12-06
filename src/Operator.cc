@@ -13,8 +13,15 @@ using namespace std;
 //===================================================================================
 //===================================================================================
 
+
+/////////////////// CONSTRUCTORS /////////////////////////////////////////
 Operator::Operator()
-{}
+{
+   modelspace = NULL;
+   nChannels = 0;
+   hermitian = true;
+   antihermitian = false;
+}
 
 double  Operator::bch_transform_threshold = 1e-6;
 double  Operator::bch_product_threshold = 1e-4;
@@ -24,7 +31,6 @@ Operator::Operator(ModelSpace* ms) // Create a zero-valued operator in a given m
   modelspace = ms;
   hermitian = true;
   antihermitian = false;
-//  cross_coupled = false;
   ZeroBody = 0;
   int nOneBody = modelspace->GetNumberOrbits();
   int nKets = modelspace->GetNumberKets();
@@ -39,13 +45,18 @@ Operator::Operator(ModelSpace* ms) // Create a zero-valued operator in a given m
 
 }
 
+Operator::Operator(const Operator& op)
+{
+   Copy(op);
+}
+
+/////////// COPY METHOD //////////////////////////
 void Operator::Copy(const Operator& op)
 {
    modelspace    = op.modelspace;
-   nChannels     = modelspace->GetNumberTwoBodyChannels();
+   nChannels     = op.nChannels;
    hermitian     = op.hermitian;
    antihermitian = op.antihermitian;
-//   cross_coupled = op.cross_coupled;
    ZeroBody      = op.ZeroBody;
    OneBody       = op.OneBody;
    for (int ch=0;ch<nChannels;++ch)
@@ -54,82 +65,90 @@ void Operator::Copy(const Operator& op)
    }
 }
 
-
-void Operator::PrintTwoBody()
+/////////////// OVERLOADED OPERATORS =,+,-,*,etc ////////////////////
+Operator& Operator::operator=(const Operator& rhs)
 {
-   for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
+   Copy(rhs);
+   return *this;
+}
+
+// multiply operator by a scalar
+Operator& Operator::operator*=(const double rhs)
+{
+   ZeroBody *= rhs;
+   OneBody *= rhs;
+   for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
    {
-      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      cout << "J,p,t = " << tbc.J << " " << tbc.parity << " " << tbc.Tz << endl;
-      for (int ik=0;ik<tbc.GetNumberKets();++ik)
-      {
-         Ket * ket = tbc.GetKet(ik);
-         cout << "| " << ket->p << " " << ket->q << " >  ";
-      }
-      cout << endl;
-      TwoBody[ch].print();
-      cout << endl;
+      TwoBody[ch] *= rhs;
    }
+   return *this;
 }
 
-void Operator::PrintOut() 
+Operator Operator::operator*(const double rhs) const
 {
-/*
-   //for (int j=0; j<JMAX; j++)
-   for (int j=0; j<TwoBodyJmax; j++)
+   Operator opout = Operator(*this);
+   opout *= rhs;
+   return opout;
+}
+
+// Add non-member operator so we can multiply an operator
+// by a scalar from the lhs, i.e. s*O = O*s
+Operator operator*(const double lhs, const Operator& rhs)
+{
+   return rhs * lhs;
+}
+
+
+// divide operator by a scalar
+Operator& Operator::operator/=(const double rhs)
+{
+   return *this *=(1.0/rhs);
+}
+
+Operator Operator::operator/(const double rhs) const
+{
+   Operator opout = Operator(*this);
+   opout /= rhs;
+   return opout;
+}
+
+// Add operators
+Operator& Operator::operator+=(const Operator& rhs)
+{
+   ZeroBody += rhs.ZeroBody;
+   OneBody += rhs.OneBody;
+   for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
    {
-     for (int p=0; p<=1; p++)
-     {
-        for (int t=-1; t<=1; t++)
-        {
-           TwoBodyChannel *tbc = GetTwoBodyChannel(j,p,t);
-//           cout << tbc.J << " " << tbc.parity << " "
-//                     << tbc.Tz << "  ===> " << tbc.GetNumberKets() << endl;
-           cout << tbc->J << " " << tbc->parity << " "
-                     << tbc->Tz << "  ===> " << tbc->GetNumberKets() << endl;
-           if (tbc->GetNumberKets()>20) continue;
-          // if (tbc.GetNumberKets()>20) continue;
-           for (int i=0;i<tbc->GetNumberKets();i++)
-           //for (int i=0;i<tbc.GetNumberKets();i++)
-           {
-             //for (int ii=0;ii<tbc.GetNumberKets();ii++)
-             for (int ii=0;ii<tbc->GetNumberKets();ii++)
-             {
-                //cout << tbc.TBME(i,ii) << " ";
-                cout << tbc->TBME(i,ii) << " ";
-             }
-                cout << endl;
-           }
-        }
-     }
+      TwoBody[ch] += rhs.TwoBody[ch];
    }
-*/
+   return *this;
 }
 
-void Operator::ScaleOneBody(double x)
+Operator Operator::operator+(const Operator& rhs) const
 {
-   OneBody *= x;
+   return ( Operator(*this) += rhs );
 }
 
-void Operator::ScaleTwoBody(double x)
+// Subtract operators
+Operator& Operator::operator-=(const Operator& rhs)
 {
-   for (int ch=0; ch<nChannels; ++ch)
+   ZeroBody -= rhs.ZeroBody;
+   OneBody -= rhs.OneBody;
+   for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
    {
-      TwoBody[ch] *= x;
+      TwoBody[ch] -= rhs.TwoBody[ch];
    }
+   return *this;
 }
 
-void Operator::Eye()
+Operator Operator::operator-(const Operator& rhs) const
 {
-   ZeroBody = 1;
-   OneBody.eye();
-   for (int ch=0; ch<nChannels; ++ch)
-   {
-      TwoBody[ch].eye();
-   }
+   return ( Operator(*this) -= rhs );
 }
 
 
+
+///////// SETTER_GETTERS ///////////////////////////
 
 double Operator::GetTBME(int ch, int a, int b, int c, int d) const
 {
@@ -230,85 +249,12 @@ double Operator::GetTBMEmonopole(Ket * bra, Ket * ket) const
 }
 
 
-// multiply operator by a scalar
-Operator& Operator::operator*=(const double rhs)
-{
-   ZeroBody *= rhs;
-   OneBody *= rhs;
-   for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
-   {
-      TwoBody[ch] *= rhs;
-   }
-   return *this;
-}
 
-Operator Operator::operator*(const double rhs)
-{
-   Operator opout = Operator(*this);
-   opout *= rhs;
-   return opout;
-}
-
-// Add non-member operator so we can multiply an operator
-// by a scalar from the lhs, i.e. s*O = O*s
-inline Operator operator*(const double lhs, Operator& rhs)
-{
-   return rhs * lhs;
-}
-
-
-// divide operator by a scalar
-Operator& Operator::operator/=(const double rhs)
-{
-   return *this *=(1.0/rhs);
-}
-
-Operator Operator::operator/(const double rhs)
-{
-   Operator opout = Operator(*this);
-   opout /= rhs;
-   return opout;
-}
-
-// Add operators
-Operator& Operator::operator+=(const Operator& rhs)
-{
-   ZeroBody += rhs.ZeroBody;
-   OneBody += rhs.OneBody;
-   for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
-   {
-      TwoBody[ch] += rhs.TwoBody[ch];
-   }
-   return *this;
-}
-
-Operator Operator::operator+(const Operator& rhs)
-{
-   return ( Operator(*this) += rhs );
-}
-
-// Subtract operators
-Operator& Operator::operator-=(const Operator& rhs)
-{
-   ZeroBody -= rhs.ZeroBody;
-   OneBody -= rhs.OneBody;
-   for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
-   {
-      TwoBody[ch] -= rhs.TwoBody[ch];
-   }
-   return *this;
-}
-
-Operator Operator::operator-(const Operator& rhs)
-{
-   return ( Operator(*this) -= rhs );
-}
-
-//********************************************************
+////////////////// MAIN INTERFACE METHODS //////////////////////////
 
 Operator Operator::DoNormalOrdering()
 {
-   Operator opNO = Operator(*this);
+   Operator opNO = *this;
 
    // Trivial parts
    opNO.ZeroBody = ZeroBody;
@@ -381,6 +327,30 @@ void Operator::EraseTwoBody()
    }
 }
 
+void Operator::ScaleOneBody(double x)
+{
+   OneBody *= x;
+}
+
+void Operator::ScaleTwoBody(double x)
+{
+   for (int ch=0; ch<nChannels; ++ch)
+   {
+      TwoBody[ch] *= x;
+   }
+}
+
+void Operator::Eye()
+{
+   ZeroBody = 1;
+   OneBody.eye();
+   for (int ch=0; ch<nChannels; ++ch)
+   {
+      TwoBody[ch].eye();
+   }
+}
+
+
 void Operator::CalculateKineticEnergy()
 {
    OneBody.zeros();
@@ -404,9 +374,108 @@ void Operator::CalculateKineticEnergy()
          }
       }
    }
-//   OneBody *= (1-1./A);
-
 }
+
+
+//*****************************************************************************************
+//   Transform to a cross-coupled basis, for use in the 2body commutator relation
+//    using a Pandya tranformation 
+//                                               ____________________________________________________________________________
+//                                              |                                                                            |
+//   |a    |b  <ab|_J'    \a   /c  <ac|_J       |  <ac|V|bd>_J = sum_J' (2J'+1) (-1)^(ja+jd+J+J'+1) { ja jc J } <ab|V|cd>_J' |
+//   |     |               \  /                 |                                                   { jd jb J'}              |
+//   |_____|                \/_____             |____________________________________________________________________________|
+//   |  V  |      ===>         V  /\ 
+//   |     |                     /  \
+//   |c    |d  |cd>_J'          /b   \d   |bd>_J
+//
+//   STANDARD                 CROSS  
+//   COUPLING                 COUPLED  
+//                                      
+/*
+void Operator::UpdateCrossCoupled()
+{
+   // loop over cross-coupled channels
+   #pragma omp parallel for
+   for (int ch_cc=0; ch_cc<nChannels; ++ch_cc)
+   {
+      TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
+      int nKets_cc = tbc_cc.GetNumberKets();
+      int nph_kets = tbc_cc.KetIndex_ph.size();
+      int J_cc = tbc_cc.J;
+
+//   These matrices don't actually need to be square, since we only care about
+//   the particle-hole kets, which we sum over via matrix multiplication:
+//   [ ]                  [     ]
+//   |L|  x  [  R   ]  =  |  M  |
+//   [ ]                  [     ]
+//
+      TwoBody_CC_left[ch_cc]  = arma::mat(2*nKets_cc, nph_kets,   arma::fill::zeros);
+      TwoBody_CC_right[ch_cc] = arma::mat(nph_kets,   2*nKets_cc, arma::fill::zeros);
+
+      // loop over cross-coupled ph bras <ac| in this channel
+      for (int i_ph=0; i_ph<nph_kets; ++i_ph)
+      {
+         Ket * bra_cc = tbc_cc.GetKet( tbc_cc.KetIndex_ph[i_ph] );
+         int a = bra_cc->p;
+         int c = bra_cc->q;
+         Orbit * oa = modelspace->GetOrbit(a);
+         Orbit * oc = modelspace->GetOrbit(c);
+         double ja = oa->j2/2.0;
+         double jc = oc->j2/2.0;
+
+         // loop over cross-coupled kets |bd> in this channel
+         // we go to 2*nKets to include |bd> and |db>
+         for (int iket_cc=0; iket_cc<2*nKets_cc; ++iket_cc)
+         {
+            Ket * ket_cc = tbc_cc.GetKet(iket_cc%nKets_cc);
+            int b = iket_cc < nKets_cc ? ket_cc->p : ket_cc->q;
+            int d = iket_cc < nKets_cc ? ket_cc->q : ket_cc->p;
+            Orbit * ob = modelspace->GetOrbit(b);
+            Orbit * od = modelspace->GetOrbit(d);
+            double jb = ob->j2/2.0;
+            double jd = od->j2/2.0;
+
+            int phase_ad = modelspace->phase(ja+jd);
+
+            // Get Tz,parity and range of J for <ab || cd > coupling
+            int Tz_std = (oa->tz2 + ob->tz2)/2;
+            int parity_std = (oa->l + ob->l)%2;
+            int jmin = max(abs(ja-jb),abs(jc-jd));
+            int jmax = min(ja+jb,jc+jd);
+            double sm = 0;
+            for (int J_std=jmin; J_std<=jmax; ++J_std)
+            {
+               double sixj = modelspace->GetSixJ(ja,jc,J_cc,jd,jb,J_std);
+               if (sixj == 0) continue;
+               int phase = modelspace->phase(J_std);
+               double tbme = GetTBME(J_std,parity_std,Tz_std,a,b,c,d);
+               sm += (2*J_std+1) * phase * sixj * tbme ; 
+            }
+            TwoBody_CC_left[ch_cc](iket_cc,i_ph) = sm * phase_ad;
+
+
+            // Get Tz,parity and range of J for <cb || ad > coupling
+            Tz_std = (oa->tz2 + od->tz2)/2;
+            parity_std = (oa->l + od->l)%2;
+            jmin = max(abs(jc-jb),abs(ja-jd));
+            jmax = min(jc+jb,ja+jd);
+            sm = 0;
+            for (int J_std=jmin; J_std<=jmax; ++J_std)
+            {
+               double sixj = modelspace->GetSixJ(ja,jc,J_cc,jb,jd,J_std);
+               if (sixj == 0) continue;
+               int phase = modelspace->phase(J_std);
+               double tbme = GetTBME(J_std,parity_std,Tz_std,c,b,a,d);
+               sm += (2*J_std+1) * phase * sixj * tbme ;
+            }
+            TwoBody_CC_right[ch_cc](i_ph,iket_cc) = - sm * phase_ad;
+
+         }
+      }
+   }
+}
+*/
 
 
 
@@ -425,7 +494,8 @@ void Operator::CalculateKineticEnergy()
 //   STANDARD                 CROSS  
 //   COUPLING                 COUPLED  
 //                                      
-void Operator::UpdateCrossCoupled()
+//void Operator::UpdateCrossCoupled()
+void Operator::UpdateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<arma::mat> &TwoBody_CC_right) const
 {
    // loop over cross-coupled channels
    #pragma omp parallel for
@@ -511,7 +581,7 @@ void Operator::UpdateCrossCoupled()
 
 //*****************************************************************************************
 //  OpOut = exp(Omega) Op exp(-Omega)
-Operator Operator::BCH_Transform( Operator &Omega)
+Operator Operator::BCH_Transform( const Operator &Omega) const
 {
 //   double bch_transform_threshold = 1e-6;
    int max_iter = 12;
@@ -542,9 +612,9 @@ Operator Operator::BCH_Transform( Operator &Omega)
 //     - 1/24 [Y,[X,[X,Y]]]
 //     - 1/720 [Y,[Y,[Y,[Y,X]]]] - 1/720 [X,[X,[X,[X,Y]]]]
 //     + ...
-Operator Operator::BCH_Product( Operator &Y)
+Operator Operator::BCH_Product( const Operator &Y) const
 {
-   Operator& X = *this;
+   const Operator& X = *this;
 //   double bch_product_threshold = 1e-4;
 
    Operator Z = X + Y; 
@@ -590,7 +660,7 @@ Operator Operator::BCH_Product( Operator &Y)
 }
 
 // Frobenius norm of the operator
-double Operator::Norm()
+double Operator::Norm() const
 {
    double nrm = 0;
    double n1 = OneBodyNorm();
@@ -598,12 +668,12 @@ double Operator::Norm()
    return sqrt(n1*n1+n2*n2);
 }
 
-double Operator::OneBodyNorm()
+double Operator::OneBodyNorm() const
 {
    return arma::norm(OneBody,"fro");
 }
 
-double Operator::TwoBodyNorm()
+double Operator::TwoBodyNorm() const
 {
    double nrm = 0;
    for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
@@ -615,10 +685,9 @@ double Operator::TwoBodyNorm()
 }
 
 
-Operator Operator::Commutator(const Operator& opright_in)
-//Operator Operator::Commutator(Operator& opright)
+Operator Operator::Commutator(const Operator& opright) const
 {
-   Operator opright = opright_in;
+//   Operator& opright = opright_in;
    Operator out = opright;
 //   out.EraseZeroBody();
 //   out.EraseOneBody();
@@ -632,8 +701,8 @@ Operator Operator::Commutator(const Operator& opright_in)
 
    out.OneBody  = comm111(opright) + comm121(opright);// + comm221(opright);
 
-   UpdateCrossCoupled();
-   opright.UpdateCrossCoupled();
+//   UpdateCrossCoupled();
+//   opright.UpdateCrossCoupled();
 
    comm122(opright,out);
 //   comm222_pp_hh(opright,out);
@@ -656,8 +725,7 @@ Operator Operator::Commutator(const Operator& opright_in)
 //             = Sum_a  (2j_a+1)  (xy-yx)_aa n_a
 //
 // -- AGREES WITH NATHAN'S RESULTS
-double Operator::comm110(const Operator& opright)
-//double Operator::comm110(Operator& opright)
+double Operator::comm110(const Operator& opright) const
 {
   if (IsHermitian() and opright.IsHermitian()) return 0; // I think this is the case
   if (IsAntiHermitian() and opright.IsAntiHermitian()) return 0; // I think this is the case
@@ -683,8 +751,7 @@ double Operator::comm110(const Operator& opright)
 //                       = 1/2 Sum_J (2J+1) Sum_ab  (X*P_pp*Y)_abab  P_hh
 //
 //  -- AGREES WITH NATHAN'S RESULTS (within < 1%)
-double Operator::comm220( const Operator& opright)
-//double Operator::comm220( Operator& opright)
+double Operator::comm220( const Operator& opright) const
 {
    if (IsHermitian() and opright.IsHermitian()) return 0; // I think this is the case
    if (IsAntiHermitian() and opright.IsAntiHermitian()) return 0; // I think this is the case
@@ -709,8 +776,7 @@ double Operator::comm220( const Operator& opright)
 //        |                 |
 //
 // -- AGREES WITH NATHAN'S RESULTS
-arma::mat Operator::comm111(const Operator & opright)
-//arma::mat Operator::comm111(Operator & opright)
+arma::mat Operator::comm111(const Operator & opright) const
 {
    return OneBody*opright.OneBody - opright.OneBody*OneBody;
 }
@@ -726,8 +792,7 @@ arma::mat Operator::comm111(const Operator & opright)
 //                                                  * sum_b y_ab x_biaj - yba x_aibj
 //
 // -- AGREES WITH NATHAN'S RESULTS 
-arma::mat Operator::comm121(const Operator& opright)
-//arma::mat Operator::comm121(Operator& opright)
+arma::mat Operator::comm121(const Operator& opright) const
 {
    int norbits = modelspace->GetNumberOrbits();
    arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
@@ -772,8 +837,7 @@ arma::mat Operator::comm121(const Operator& opright)
 //
 // -- AGREES WITH NATHAN'S RESULTS 
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-arma::mat Operator::comm221(const Operator& opright)
-//arma::mat Operator::comm221(Operator& opright)
+arma::mat Operator::comm221(const Operator& opright) const
 {
 
    int norbits = modelspace->GetNumberOrbits();
@@ -832,8 +896,7 @@ arma::mat Operator::comm221(const Operator& opright)
 //
 // -- AGREES WITH NATHAN'S RESULTS
 // Right now, this is the slowest one...
-void Operator::comm122(const Operator& opright, Operator& opout )
-//void Operator::comm122(Operator& opright, Operator& opout )
+void Operator::comm122(const Operator& opright, Operator& opout ) const
 {
    int herm = opout.IsHermitian() ? 1 : -1;
 
@@ -927,8 +990,7 @@ void Operator::comm122(const Operator& opright, Operator& opout )
 //
 // -- AGREES WITH NATHAN'S RESULTS
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-void Operator::comm222_pp_hh(const Operator& opright, Operator& opout )
-//void Operator::comm222_pp_hh(Operator& opright, Operator& opout )
+void Operator::comm222_pp_hh(const Operator& opright, Operator& opout ) const
 {
    #pragma omp parallel for schedule(dynamic,5)
    for (int ch=0; ch<nChannels; ++ch)
@@ -949,8 +1011,7 @@ void Operator::comm222_pp_hh(const Operator& opright, Operator& opout )
 // Since comm222_pp_hh and comm211 both require the construction of 
 // the intermediate matrices Mpp and Mhh, we can combine them and
 // only calculate the intermediates once.
-void Operator::comm222_pp_hh_221(const Operator& opright, Operator& opout )
-//void Operator::comm222_pp_hh_221(Operator& opright, Operator& opout )
+void Operator::comm222_pp_hh_221(const Operator& opright, Operator& opout ) const 
 {
 
    int herm = opout.IsHermitian() ? 1 : -1;
@@ -964,8 +1025,6 @@ void Operator::comm222_pp_hh_221(const Operator& opright, Operator& opout )
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       int npq = tbc.GetNumberKets();
       
-//      Mpp.TwoBody[ch] = (TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_pp * TwoBody[ch]);
-//      Mhh.TwoBody[ch] = (TwoBody[ch] * tbc.Proj_hh * opright.TwoBody[ch] - opright.TwoBody[ch] * tbc.Proj_hh * TwoBody[ch]);
       Mpp.TwoBody[ch] = TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch];
       Mhh.TwoBody[ch] = TwoBody[ch] * tbc.Proj_hh * opright.TwoBody[ch];
       if (opout.IsHermitian())
@@ -1025,7 +1084,7 @@ void Operator::comm222_pp_hh_221(const Operator& opright, Operator& opout )
 
 
 
-void Operator::comm222_ph_slow(const Operator& opright, Operator& opout )
+void Operator::comm222_ph_slow(const Operator& opright, Operator& opout ) const
 //void Operator::comm222_ph_slow(Operator& opright, Operator& opout )
 {
    for (int ch=0;ch<nChannels;++ch)
@@ -1045,7 +1104,6 @@ void Operator::comm222_ph_slow(const Operator& opright, Operator& opout )
          Orbit * oj = modelspace->GetOrbit(j);
          double ji = oi->j2/2.;
          double jj = oj->j2/2.;
-//         cout << "ji = " << ji << "  jj = " << jj << endl;
          for (int iket=0; iket<nkets; ++iket)
          {
             Ket * ket = tbc.GetKet(iket);
@@ -1056,10 +1114,6 @@ void Operator::comm222_ph_slow(const Operator& opright, Operator& opout )
             double jk = (ok->j2/2.);
             double jl = (ol->j2/2.);
             double commijkl = 0;
-//            int phij = 1-2*((oi->j2+oj->j2)%4);
-//            int phjk = 1-2*((oj->j2+oj->j2)%4);
-//            int phil = 1-2*((oi->j2+ok->j2)%4);
-//            int phjl = 1-2*((oj->j2+ok->j2)%4);
             for (int& a : modelspace->holes)
             {
                Orbit * oa = modelspace->GetOrbit(k);
@@ -1081,10 +1135,6 @@ void Operator::comm222_ph_slow(const Operator& opright, Operator& opout )
                         //double pref = 1-2*((J1+J2+J)%2) * (2*J1+1)*(2*J2+1);
                         double pref = (1-2*((int(ji+jk)+J1+J2)%2)) * (2*J1+1)*(2*J2+1);
                         int pref2 = 1-2*(J%2);
-//                      double nj1 = modelspace->GetNineJ( ja, jl, J1,   ji, J, jj,   J2, jk, jb );
-//                      double nj2 = modelspace->GetNineJ( ja, jl, J1,   jj, J, ji,   J2, jk, jb );
-//                      double nj3 = modelspace->GetNineJ( jb, jl, J1,   ji, J, jj,   J2, jk, ja );
-//                      double nj4 = modelspace->GetNineJ( jb, jl, J1,   jj, J, ji,   J2, jk, ja );
                         double nj1 = AngMom::NineJ( ja, jl, J1,   ji, J, jj,   J2, jk, jb );
                         double nj2 = AngMom::NineJ( ja, jl, J1,   jj, J, ji,   J2, jk, jb );
                         double nj3 = AngMom::NineJ( jb, jl, J1,   ji, J, jj,   J2, jk, ja );
@@ -1123,20 +1173,29 @@ void Operator::comm222_ph_slow(const Operator& opright, Operator& opout )
 //            
 // -- This appears to agree with Nathan's results
 //
-void Operator::comm222_ph(const Operator& opright, Operator& opout )
-//void Operator::comm222_ph(Operator& opright, Operator& opout )
+void Operator::comm222_ph(const Operator& opright, Operator& opout ) const
 {
 
    int herm = opout.IsHermitian() ? 1 : -1;
 
+   // Update Cross-coupled matrix elements
+   vector<arma::mat> X_TwoBody_CC_left (nChannels,arma::mat() );
+   vector<arma::mat> X_TwoBody_CC_right (nChannels,arma::mat());
+
+   vector<arma::mat> Y_TwoBody_CC_left (nChannels,arma::mat() );
+   vector<arma::mat> Y_TwoBody_CC_right (nChannels,arma::mat());
+
+   UpdateCrossCoupled(X_TwoBody_CC_left, X_TwoBody_CC_right);
+   UpdateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right);
+
    // Construct the intermediate matrices N1 and N2
-   arma::mat N1[nChannels];
-   arma::mat N2[nChannels];
+   vector<arma::mat> N1 (nChannels, arma::mat());
+   vector<arma::mat> N2 (nChannels, arma::mat());
  // probably better not to parallelize, since the matrix muliplication can use OMP
    for (int ch=0;ch<nChannels;++ch)
    {
-      N1[ch] =         TwoBody_CC_left[ch] *    opright.TwoBody_CC_right[ch];
-      N2[ch] = opright.TwoBody_CC_left[ch] *            TwoBody_CC_right[ch];
+      N1[ch] = X_TwoBody_CC_left[ch] *  Y_TwoBody_CC_right[ch];
+      N2[ch] = Y_TwoBody_CC_left[ch] *  X_TwoBody_CC_right[ch];
    }
 
    // Now evaluate the commutator for each channel (standard coupling)

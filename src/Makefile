@@ -3,11 +3,11 @@ CC = g++
 
 #FLAGS = -larmadillo -O3 -std=c++11
 FLAGS = -larmadillo -O3 -std=c++11  -lgsl -fPIC -fopenmp 
-#FLAGS = -larmadillo -O3 -std=c++11 -pg
+#FLAGS = -larmadillo -O3 -std=c++11 -lgsl -fPIC # -v -da -Q
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
-all: mysrg
+all: mysrg pyIMSRG.so
 	
 OBJ = ModelSpace.o ReadWrite.o Operator.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o
 
