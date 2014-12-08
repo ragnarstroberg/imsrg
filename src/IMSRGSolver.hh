@@ -47,10 +47,13 @@ class IMSRGSolver
   IMSRGSolver(const Operator& H_in);
   void Solve();
   void Solve_ode();
+  void Solve_ode_magnus();
   void ODE_systemH(const Operator& x, Operator& dxdt, const double t);
+  void ODE_systemOmega(const Operator& x, Operator& dxdt, const double t);
   Operator Transform(Operator& OpIn);
   void SetFlowFile(string s){flowfile = s;};
   void SetDs(double d){ds = d;};
+  void SetDsmax(double d){ds_max = d;};
   void SetdOmega(double d){norm_domega = d;};
   void SetSmax(double d){smax = d;};
   void SetGenerator(string g){generator = g;};
@@ -65,7 +68,6 @@ class IMSRGSolver
   Operator H_diag;
   Operator Eta;
   int istep;
-  int i_full_BCH;
   double s;
   double ds;
   double ds_max;
@@ -88,6 +90,7 @@ class IMSRGSolver
   void UpdateH();
 
   void WriteFlowStatus(ostream&);
+  void WriteFlowStatusHeader(ostream&);
 
   void ConstructGenerator_Wegner();
   void ConstructGenerator_White();

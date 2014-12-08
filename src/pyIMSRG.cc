@@ -78,11 +78,13 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    class_<IMSRGSolver>("IMSRGSolver",init<Operator>())
       .def("Solve",&IMSRGSolver::Solve)
       .def("Solve_ode",&IMSRGSolver::Solve_ode)
+      .def("Solve_ode_magnus",&IMSRGSolver::Solve_ode_magnus)
       .def("Transform",&IMSRGSolver::Transform)
       .def("SetFlowFile",&IMSRGSolver::SetFlowFile)
       .def("SetDs",&IMSRGSolver::SetDs)
       .def("SetdOmega",&IMSRGSolver::SetdOmega)
       .def("SetSmax",&IMSRGSolver::SetSmax)
+      .def("SetDsmax",&IMSRGSolver::SetDsmax)
       .def("SetGenerator",&IMSRGSolver::SetGenerator)
 
    ;

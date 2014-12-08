@@ -584,7 +584,8 @@ void Operator::UpdateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<arm
 Operator Operator::BCH_Transform( const Operator &Omega) const
 {
 //   double bch_transform_threshold = 1e-6;
-   int max_iter = 12;
+   int max_iter = 20;
+   int warn_iter = 12;
    double nx = Norm();
    double ny = Omega.Norm();
    Operator OpOut = *this;
@@ -596,6 +597,10 @@ Operator Operator::BCH_Transform( const Operator &Omega) const
       OpOut += OpNested;
 
       if (OpNested.Norm() < (nx+ny)*bch_transform_threshold) return OpOut;
+      if (i == warn_iter)
+      {
+         cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
+      }
 
    }
    cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;

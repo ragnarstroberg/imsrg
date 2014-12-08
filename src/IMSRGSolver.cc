@@ -12,10 +12,8 @@ IMSRGSolver::IMSRGSolver(const Operator &H_in)
    generator = "white";
    s = 0;
    ds = 0.1;
-   //ds_max = 1.0;
    ds_max = 0.5;
    smax  = 2.0;
-   i_full_BCH = 5;
    norm_domega = 0.1;
    H_0 = H_in;
    H_s = H_in;
@@ -31,6 +29,7 @@ IMSRGSolver::IMSRGSolver(const Operator &H_in)
    Omega.EraseTwoBody();
    Omega.SetAntiHermitian();
    dOmega = Omega;
+   flowfile = "";
 }
 
 
@@ -41,21 +40,27 @@ void IMSRGSolver::Solve()
    ofstream flowf;
    if (flowfile != "")
       flowf.open(flowfile,ofstream::out);
-   cout << " i     s       E0       ||H_1||      ||H_2||        ||Omega||     || Eta_1||    || Eta_2 ||    ||dOmega||     " << endl;
+   WriteFlowStatusHeader(cout);
 
+   istep = 0;
+   UpdateEta();
 
-   double norm_eta,norm_eta_last;
+    // Write details of the flow
+   WriteFlowStatus(flowf);
+   WriteFlowStatus(cout);
 
-   for (istep=0;s<smax;++istep)
+   for (istep=1;s<smax;++istep)
    {
 
-      UpdateEta();
+ //     double norm_eta,norm_eta_last;
+//      UpdateEta();
 
       // Write details of the flow
-      WriteFlowStatus(flowf);
-      WriteFlowStatus(cout);
+//      WriteFlowStatus(flowf);
+//      WriteFlowStatus(cout);
+//      if (s>=smax) break;
 
-      norm_eta = Eta.Norm();
+      double norm_eta = Eta.Norm();
       // ds should never be more than 1, as this is over-rotating
       ds = min(norm_domega / norm_eta, ds_max); 
       if (ds == ds_max) norm_domega /=2;
@@ -67,17 +72,15 @@ void IMSRGSolver::Solve()
       Omega = dOmega.BCH_Product( Omega ); 
 
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
-      H_s = H_0.BCH_Transform( Omega );   
+      H_s = H_0.BCH_Transform( Omega );
+        
+      UpdateEta();
+
+      // Write details of the flow
+      WriteFlowStatus(flowf);
+      WriteFlowStatus(cout);
 
    }
-   // if the last calculation of H_s was the quick way,
-   // do it again the more accurate way.
-//   if (istep%i_full_BCH != i_full_BCH-1)
-//   {
-//      H_s = H_0.BCH_Transform( Omega ); 
-//      WriteFlowStatus(flowf);
-//      WriteFlowStatus(cout);
-//   }
 
    if (flowfile != "")
       flowf.close();
@@ -89,6 +92,14 @@ void IMSRGSolver::Solve()
 
 void IMSRGSolver::Solve_ode()
 {
+   if (flowfile != "")
+   {
+     ofstream flowf;
+     flowf.open(flowfile,ofstream::out);
+     WriteFlowStatus(flowf);
+     flowf.close();
+   }
+   WriteFlowStatusHeader(cout);
    using namespace boost::numeric::odeint;
    namespace pl = std::placeholders;
    runge_kutta4<Operator, double, Operator, double, vector_space_algebra> stepper;
@@ -101,12 +112,55 @@ void IMSRGSolver::Solve_ode()
 
 void IMSRGSolver::ODE_systemH(const Operator& x, Operator& dxdt, const double t)
 {
-   cout << "in ODE_systemH. t = " << t << "  E0 = " << x.ZeroBody << "  Norm(x) = " << x.Norm() 
-        << "H_s zero body = " << H_s.ZeroBody 
-        << "  Eta1 = " << Eta.OneBodyNorm() << "  Eta2 = " << Eta.TwoBodyNorm() << endl;
    H_s = x;
+   s = t;
    UpdateEta();
    dxdt = Eta.Commutator(x);
+   WriteFlowStatus(cout);
+   if (flowfile != "")
+   {
+     ofstream flowf;
+     flowf.open(flowfile,ofstream::app);
+     WriteFlowStatus(flowf);
+     flowf.close();
+   }
+}
+
+
+void IMSRGSolver::Solve_ode_magnus()
+{
+   if (flowfile != "")
+   {
+     ofstream flowf;
+     flowf.open(flowfile,ofstream::out);
+     WriteFlowStatus(flowf);
+     flowf.close();
+   }
+   WriteFlowStatusHeader(cout);
+   using namespace boost::numeric::odeint;
+   namespace pl = std::placeholders;
+   runge_kutta4<Operator, double, Operator, double, vector_space_algebra> stepper;
+   auto system = std::bind( &IMSRGSolver::ODE_systemOmega, *this, pl::_1, pl::_2, pl::_3);
+   auto monitor = ode_monitor;
+   size_t steps = integrate_const(stepper, system, Omega, s, smax, ds, monitor);
+   monitor.report();
+}
+
+void IMSRGSolver::ODE_systemOmega(const Operator& x, Operator& dxdt, const double t)
+{
+   s = t;
+   Omega = x;
+   H_s = H_0.BCH_Transform(Omega);
+   UpdateEta();
+   dxdt = Eta - 0.5*Omega.Commutator(Eta);
+   WriteFlowStatus(cout);
+   if (flowfile != "")
+   {
+     ofstream flowf;
+     flowf.open(flowfile,ofstream::app);
+     WriteFlowStatus(flowf);
+     flowf.close();
+   }
 }
 
 
@@ -523,10 +577,41 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
 {
    if ( f.good() )
    {
-      f.width(11);
-      f.precision(10);
-      f << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     " << Eta.OneBodyNorm() << "    " << Eta.TwoBodyNorm() << "   " << dOmega.Norm() << endl;
+      int fwidth = 16;
+      int fprecision = 9;
+      //f.width(20);
+//      f.precision(10);
+      f << setw(5) << istep
+        << setw(fwidth) << setprecision(3) << s
+        << setw(fwidth) << setprecision(fprecision) << H_s.ZeroBody 
+        << setw(fwidth) << setprecision(fprecision) << H_s.OneBodyNorm()
+        << setw(fwidth) << setprecision(fprecision) << H_s.TwoBodyNorm()
+        << setw(fwidth) << setprecision(fprecision) << Omega.Norm()
+        << setw(fwidth) << setprecision(fprecision) << Eta.OneBodyNorm()
+        << setw(fwidth) << setprecision(fprecision) << Eta.TwoBodyNorm()
+//        << setw(fwidth) << setprecision(fprecision) << dOmega.Norm()
+        << endl;
+//      f << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     " << Eta.OneBodyNorm() << "    " << Eta.TwoBodyNorm() << "   " << dOmega.Norm() << endl;
    }
 
 }
 
+void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
+{
+   if ( f.good() )
+   {
+      int fwidth = 16;
+      int fprecision = 9;
+      f << setw(5) << "i"
+        << setw(fwidth) << setprecision(3) << "s"
+        << setw(fwidth) << setprecision(fprecision) << "E0"
+        << setw(fwidth) << setprecision(fprecision) << "||H_1||" 
+        << setw(fwidth) << setprecision(fprecision) << "||H_2||" 
+        << setw(fwidth) << setprecision(fprecision) << "||Omega||" 
+        << setw(fwidth) << setprecision(fprecision) << "||Eta_1||" 
+        << setw(fwidth) << setprecision(fprecision) << "||Eta_2||" 
+//        << setw(fwidth) << setprecision(fprecision) << "||dOmega||" 
+        << endl;
+   }
+
+}
