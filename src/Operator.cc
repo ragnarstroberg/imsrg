@@ -692,27 +692,26 @@ double Operator::TwoBodyNorm() const
 
 Operator Operator::Commutator(const Operator& opright) const
 {
-//   Operator& opright = opright_in;
    Operator out = opright;
-//   out.EraseZeroBody();
-//   out.EraseOneBody();
+   out.EraseOneBody();
    out.EraseTwoBody();
 
    if ( (IsHermitian() and opright.IsHermitian()) or (IsAntiHermitian() and opright.IsAntiHermitian()) ) out.SetAntiHermitian();
    else if ( (IsHermitian() and opright.IsAntiHermitian()) or (IsAntiHermitian() and opright.IsHermitian()) ) out.SetHermitian();
    else out.SetNonHermitian();
 
-   out.ZeroBody  = comm110(opright) + comm220(opright) ;
+   if ( out.IsAntiHermitian() )
+      out.ZeroBody = 0;
+   else
+      out.ZeroBody  = comm110(opright) + comm220(opright) ;
 
-   out.OneBody  = comm111(opright) + comm121(opright);// + comm221(opright);
+   //out.OneBody  = comm111(opright) + comm121(opright);
+   comm111(opright, out);
+   comm121(opright, out);
 
-//   UpdateCrossCoupled();
-//   opright.UpdateCrossCoupled();
-
-   comm122(opright,out);
-//   comm222_pp_hh(opright,out);
+   comm122(opright, out);
    comm222_pp_hh_221(opright, out);
-   comm222_ph(opright,out);
+   comm222_ph(opright, out);
 
    return out;
 }
@@ -781,9 +780,11 @@ double Operator::comm220( const Operator& opright) const
 //        |                 |
 //
 // -- AGREES WITH NATHAN'S RESULTS
-arma::mat Operator::comm111(const Operator & opright) const
+//arma::mat Operator::comm111(const Operator & opright) const
+void Operator::comm111(const Operator & opright, Operator& out) const
 {
-   return OneBody*opright.OneBody - opright.OneBody*OneBody;
+//   return OneBody*opright.OneBody - opright.OneBody*OneBody;
+   out.OneBody = OneBody*opright.OneBody - opright.OneBody*OneBody;
 }
 
 //*****************************************************************************************
@@ -797,10 +798,11 @@ arma::mat Operator::comm111(const Operator & opright) const
 //                                                  * sum_b y_ab x_biaj - yba x_aibj
 //
 // -- AGREES WITH NATHAN'S RESULTS 
-arma::mat Operator::comm121(const Operator& opright) const
+//arma::mat Operator::comm121(const Operator& opright) const
+void Operator::comm121(const Operator& opright, Operator& out) const
 {
    int norbits = modelspace->GetNumberOrbits();
-   arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
+//   arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
    #pragma omp parallel for
    for (int i=0;i<norbits;++i)
    {
@@ -815,17 +817,21 @@ arma::mat Operator::comm121(const Operator& opright) const
              for (int b=0;b<norbits;++b)
              {
                 Orbit *ob = modelspace->GetOrbit(b);
-                comm(i,j) += (ob->j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
-                comm(i,j) -= (oa->j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
+                //comm(i,j) += (ob->j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
+                //comm(i,j) -= (oa->j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
+                out.OneBody(i,j) += (ob->j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
+                out.OneBody(i,j) -= (oa->j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
 
                 // comm211 part
-                comm(i,j) -= (ob->j2+1) *  opright.OneBody(a,b) * GetTBMEmonopole(b,i,a,j) ;
-                comm(i,j) += (oa->j2+1) *  opright.OneBody(b,a) * GetTBMEmonopole(a,i,b,j) ;
+                //comm(i,j) -= (ob->j2+1) *  opright.OneBody(a,b) * GetTBMEmonopole(b,i,a,j) ;
+                //comm(i,j) += (oa->j2+1) *  opright.OneBody(b,a) * GetTBMEmonopole(a,i,b,j) ;
+                out.OneBody(i,j) -= (ob->j2+1) *  opright.OneBody(a,b) * GetTBMEmonopole(b,i,a,j) ;
+                out.OneBody(i,j) += (oa->j2+1) *  opright.OneBody(b,a) * GetTBMEmonopole(a,i,b,j) ;
              }
           }
       }
    }
-   return comm;
+//   return comm;
 }
 
 
@@ -842,11 +848,12 @@ arma::mat Operator::comm121(const Operator& opright) const
 //
 // -- AGREES WITH NATHAN'S RESULTS 
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-arma::mat Operator::comm221(const Operator& opright) const
+//arma::mat Operator::comm221(const Operator& opright) const
+void Operator::comm221(const Operator& opright, Operator& out) const
 {
 
    int norbits = modelspace->GetNumberOrbits();
-   arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
+//   arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
    Operator Mpp = opright;
    Operator Mhh = opright;
 
@@ -880,11 +887,12 @@ arma::mat Operator::comm221(const Operator& opright) const
                cijJ +=  Mhh.GetTBME(ch,i,c,j,c);
             }
             #pragma omp critical
-            comm(i,j) += (2*tbc.J+1.0)/(oi->j2 +1.0) * cijJ;
+            out.OneBody(i,j) += (2*tbc.J+1.0)/(oi->j2 +1.0) * cijJ;
+            //comm(i,j) += (2*tbc.J+1.0)/(oi->j2 +1.0) * cijJ;
          } // for j
       } // for i
    } //for ch
-   return comm;
+//   return comm;
 }
 
 

@@ -449,7 +449,6 @@ void ReadWrite::WriteValenceOneBody(Operator& op, string filename)
    obfile.open(filename, ofstream::out);
    ModelSpace * modelspace = op.GetModelSpace();
    int norbits = modelspace->GetNumberOrbits();
-   //for (int i=0;i<norbits;i++)
    obfile << " Zero body part: " << op.ZeroBody << endl;
    for (int& i : modelspace->valence )
    {
@@ -479,14 +478,13 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
    int Acore = 0;
    int wint = 4; // width for printing integers
    int wfloat = 12; // width for printing floats
-   //for (int& i : modelspace->holes)
+   int pfloat = 6; // precision for printing floats
    for (int& i : modelspace->hole_qspace)
    {
       Orbit* oi = modelspace->GetOrbit(i);
       Acore += oi->j2 +1;
       if (oi->tz2 < 0)
       {
-//         Zcore += oi->j2+1;
          proton_core_orbits += 1;
       }
    }
@@ -500,10 +498,8 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
    {
       Orbit* oi = modelspace->GetOrbit(i);
       if (oi->tz2 > 0 ) continue;
-      //int nushell_indx = (i-ncore_orbits)/2 + 1;
       int nushell_indx = i/2+1 -proton_core_orbits;
       intfile << "!  " << nushell_indx << "   " << oi->n << " " << oi->l << " " << oi->j2 << "/2" << " " << oi->tz2 << "/2" << endl;
-//      intfile << "!  " << nushell_indx << "(" << i << ")   " << oi->n << " " << oi->l << " " << oi->j2 << "/2" << " " << oi->tz2 << "/2" << endl;
       ++nvalence_proton_orbits;
    }
    // then do neutron orbits
@@ -512,9 +508,7 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
       Orbit* oi = modelspace->GetOrbit(i);
       if (oi->tz2 < 0 ) continue;
       int nushell_indx = i/2+1 + nvalence_proton_orbits -neutron_core_orbits;
-//      int nushell_indx = (i-ncore_orbits)/2 + nvalence_proton_orbits + 1;
       intfile << "!  " << nushell_indx << "   " << oi->n << " " << oi->l << " " << oi->j2 << "/2" << " " << oi->tz2 << "/2" << endl;
-      //intfile << "!  " << nushell_indx << "(" << i << ")   " << oi->n << " " << oi->l << " " << oi->j2 << "/2" << " " << oi->tz2 << "/2" << endl;
    }
 
    intfile << "!" << endl;
@@ -544,12 +538,8 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
          int b = bra->q;
          Orbit* oa = modelspace->GetOrbit(a);
          Orbit* ob = modelspace->GetOrbit(b);
-//      int nushell_indx = i/2-proton_core_orbits + 1;
-//      int nushell_indx = i/2-neutron_core_orbits + nvalence_proton_orbits + 1;
          int a_ind = a/2+1 + ( oa->tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
          int b_ind = b/2+1 + ( ob->tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
-//         int a_ind = (a-ncore_orbits)/2 + (oa->tz2+1)/2*(nvalence_proton_orbits) +1;
-//         int b_ind = (b-ncore_orbits)/2 + (ob->tz2+1)/2*(nvalence_proton_orbits) +1;
          for (int& iket: tbc.KetIndex_vv)
          {
             if (iket<ibra) continue;
@@ -558,14 +548,11 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
             int d = ket->q;
             Orbit* oc = modelspace->GetOrbit(c);
             Orbit* od = modelspace->GetOrbit(d);
-//         int c_ind = c/2+1 + ( tbc.Tz <1 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
-//         int d_ind = d/2+1 + ( tbc.Tz <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
          int c_ind = c/2+1 + ( oc->tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
          int d_ind = d/2+1 + ( od->tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
-//            int c_ind = (c-ncore_orbits)/2 + (oc->tz2+1)/2*(nvalence_proton_orbits) +1;
-//            int d_ind = (d-ncore_orbits)/2 + (od->tz2+1)/2*(nvalence_proton_orbits) +1;
             int T = abs(tbc.Tz);
             double tbme = op.TwoBody[ch](ibra,iket);
+            if ( abs(tbme) < 1e-6) tbme = 0;
             if (T==0)
             {
                if (oa->j2 == ob->j2 and oa->l == ob->l and oa->n == ob->n) T = (tbc.J+1)%2;
@@ -594,8 +581,10 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
             }
             intfile
               << setw(wint) << tbc.J
+              << "   "
               << setw(wint) << T
-              << setw(wfloat) << tbme
+              << "       "
+              << setw(wfloat) << setprecision(pfloat) << tbme
               << endl;
          }
       }
@@ -648,7 +637,6 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
    {
       Orbit* oi = modelspace->GetOrbit(i);
       if (oi->tz2 > 0 ) continue;
-      //int nushell_indx = (i-ncore_orbits)/2 + 1;
       int nushell_indx = i/2-proton_core_orbits + 1;
       spfile << nushell_indx << " " << oi->n+1 << " " << oi->l << " " << oi->j2  << endl;
    }
@@ -657,7 +645,6 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
    {
       Orbit* oi = modelspace->GetOrbit(i);
       if (oi->tz2 < 0 ) continue;
-      //int nushell_indx = (i-neutron_core_orbits) + nvalence_proton_orbits + 1;
       int nushell_indx = i/2-neutron_core_orbits + nvalence_proton_orbits + 1;
       spfile << nushell_indx << " " << oi->n+1 << " " << oi->l << " " << oi->j2 << endl;
    }

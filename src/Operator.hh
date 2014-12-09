@@ -122,9 +122,12 @@ class Operator
 
   double comm110(const Operator& opright) const;
   double comm220(const Operator& opright) const;
-  arma::mat comm111(const Operator& opright) const;
-  arma::mat comm121(const Operator& opright) const;
-  arma::mat comm221(const Operator& opright) const;
+//  arma::mat comm111(const Operator& opright) const;
+//  arma::mat comm121(const Operator& opright) const;
+//  arma::mat comm221(const Operator& opright) const;
+  void comm111(const Operator& opright, Operator& opout) const;
+  void comm121(const Operator& opright, Operator& opout) const;
+  void comm221(const Operator& opright, Operator& opout) const;
   void comm122(const Operator& opright, Operator& opout) const;
   void comm222_pp_hh(const Operator& opright, Operator& opout) const;
   void comm222_ph(const Operator& opright, Operator& opout) const;

@@ -122,8 +122,6 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
          else //ph
          {
             KetIndex_ph.push_back(NumberKets);
-//            if ((iop+ioq)==2) // qq
-//               KetIndex_particleq_holeq.push_back(NumberKets);
          }
 
          if ((iop + ioq) == 0) // vv
@@ -137,12 +135,7 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
               KetIndex_v_holeq.push_back(NumberKets);
            else // v particle_q
               KetIndex_v_particleq.push_back(NumberKets);
-//            KetIndex_vq.push_back(NumberKets);
          }
-//         if ((iop + ioq) == 2) // qq
-//         {
-//            KetIndex_qq.push_back(NumberKets);
-//         }
 
          NumberKets++;
       }
@@ -191,22 +184,18 @@ void TwoBodyChannel::Copy( const TwoBodyChannel& rhs)
    KetIndex_pp       = rhs.KetIndex_pp;
    KetIndex_ph       = rhs.KetIndex_ph;
    KetIndex_hh       = rhs.KetIndex_hh;
-//   KetIndex_qq       = rhs.KetIndex_qq;
-//   KetIndex_vq       = rhs.KetIndex_vq;
    KetIndex_vv       = rhs.KetIndex_vv;
    KetIndex_holeq_holeq         = rhs.KetIndex_holeq_holeq;
    KetIndex_particleq_particleq = rhs.KetIndex_particleq_particleq;
    KetIndex_v_holeq     = rhs.KetIndex_v_holeq;
    KetIndex_v_particleq     = rhs.KetIndex_v_particleq;
-//   KetIndex_particleq_holeq     = rhs.KetIndex_particleq_holeq;
-//   KetIndex_hq       = rhs.KetIndex_hq;
-//   KetIndex_vh       = rhs.KetIndex_vh;
 }
 
 
 int TwoBodyChannel::GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];}; 
 
-Ket * TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; // get pointer to ket using local index
+// get pointer to ket using local index
+Ket * TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
 
 
 bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
@@ -237,16 +226,17 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
    Initialize(N,ms);
 }
 
-
-
+// Check cross-coupled two-body channels
+// Difference from regular channels:
+// no Pauli rule, <pp||nn> is allowed.
 bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
 {
    Orbit * op = modelspace->GetOrbit(p);
    Orbit * oq = modelspace->GetOrbit(q);
-   if ((op->l + oq->l)%2 != parity) return false;
+   if ((op->l + oq->l)%2 != parity)    return false;
    if (abs(op->tz2 + oq->tz2) != 2*Tz) return false;
-   if (op->j2 + oq->j2 < 2*J)       return false;
-   if (abs(op->j2 - oq->j2) > 2*J)  return false;
+   if (op->j2 + oq->j2 < 2*J)          return false;
+   if (abs(op->j2 - oq->j2) > 2*J)     return false;
 
    return true;
 }

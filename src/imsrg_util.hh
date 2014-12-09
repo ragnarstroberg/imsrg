@@ -18,10 +18,10 @@ namespace imsrg_util
  Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2);
  //Operator PSquaredOp(ModelSpace& modelspace);
  Operator TCM_Op(ModelSpace& modelspace);
+ Operator VCM_Op(ModelSpace& modelspace);
 
  double Calculate_p1p2(ModelSpace& modelspace, Ket* bra, Ket* ket, int J);
-// double Calculate_p1p2(ModelSpace& modelspace, Ket* bra, Ket* ket, int J);
- double Calculate_p1p2_ex(ModelSpace& modelspace, Ket* bra, Ket* ket, int J);
+ double Calculate_r1r2(ModelSpace& modelspace, Ket* bra, Ket* ket, int J);
  double HO_density(int n, int l, double hw, double r);
  vector<double> GetOccupationsHF(HartreeFock& hf);
  vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);

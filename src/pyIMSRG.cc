@@ -19,6 +19,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    class_<ModelSpace>("ModelSpace",init<>())
       .def("SetHbarOmega", &ModelSpace::SetHbarOmega)
       .def("SetTargetMass", &ModelSpace::SetTargetMass)
+      .def("GetHbarOmega", &ModelSpace::GetHbarOmega)
+      .def("GetTargetMass", &ModelSpace::GetTargetMass)
    ;
 
    class_<ReadWrite>("ReadWrite",init<>())
@@ -86,10 +88,13 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("SetSmax",&IMSRGSolver::SetSmax)
       .def("SetDsmax",&IMSRGSolver::SetDsmax)
       .def("SetGenerator",&IMSRGSolver::SetGenerator)
+      .def_readwrite("H_s", &IMSRGSolver::H_s)
+      .def_readwrite("Omega", &IMSRGSolver::Omega)
 
    ;
 
    def("TCM_Op",         imsrg_util::TCM_Op);
+   def("VCM_Op",         imsrg_util::VCM_Op);
    def("NumberOp",       imsrg_util::NumberOp);
    def("TCM_Op",         imsrg_util::TCM_Op);
    def("HO_density",     imsrg_util::HO_density);

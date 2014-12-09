@@ -52,17 +52,10 @@ void IMSRGSolver::Solve()
    for (istep=1;s<smax;++istep)
    {
 
- //     double norm_eta,norm_eta_last;
-//      UpdateEta();
-
-      // Write details of the flow
-//      WriteFlowStatus(flowf);
-//      WriteFlowStatus(cout);
-//      if (s>=smax) break;
-
       double norm_eta = Eta.Norm();
+      double norm_omega = Omega.Norm();
       // ds should never be more than 1, as this is over-rotating
-      ds = min(norm_domega / norm_eta, ds_max); 
+      ds = min(norm_domega / norm_eta / (norm_omega+1.0e-9), ds_max); 
       if (ds == ds_max) norm_domega /=2;
       if (s+ds > smax) ds = smax-s;
       s += ds;
@@ -612,6 +605,7 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << "||Eta_2||" 
 //        << setw(fwidth) << setprecision(fprecision) << "||dOmega||" 
         << endl;
+      f << "-----------------------------------------------------------------------------------------------------------------------" << endl;
    }
 
 }
