@@ -236,10 +236,10 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
   vector<int> orbits_darmstadt(nljmax,-1);
   for (int i=0;i<norb;++i)
   {
-     Orbit* oi = modelspace->GetOrbit(i);
-     if (oi->tz2 > 0 ) continue;
-     int N = 2*oi->n + oi->l;
-     int nlj = N*(N+1)/2 + max(oi->l-1,0) + (oi->j2 - abs(2*oi->l-1))/2;
+     Orbit& oi = modelspace->GetOrbit(i);
+     if (oi.tz2 > 0 ) continue;
+     int N = 2*oi.n + oi.l;
+     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2;
      orbits_darmstadt[nlj] = i;
      if (N > emax) ++emax;
   }
@@ -265,32 +265,32 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
   {
     int a =  orbits_darmstadt[nlj1];
-    Orbit * o1 = modelspace->GetOrbit(a);
-    int e1 = 2*o1->n + o1->l;
+    Orbit & o1 = modelspace->GetOrbit(a);
+    int e1 = 2*o1.n + o1.l;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
       int b =  orbits_darmstadt[nlj2];
-      Orbit * o2 = modelspace->GetOrbit(b);
-      int e2 = 2*o2->n + o2->l;
+      Orbit & o2 = modelspace->GetOrbit(b);
+      int e2 = 2*o2.n + o2.l;
       if (e1+e2 > emax) break;
-      int parity = (o1->l + o2->l) % 2;
+      int parity = (o1.l + o2.l) % 2;
 
       for(int nlj3=0; nlj3<=nlj1; ++nlj3)
       {
         int c =  orbits_darmstadt[nlj3];
-        Orbit * o3 = modelspace->GetOrbit(c);
-        int e3 = 2*o3->n + o3->l;
+        Orbit & o3 = modelspace->GetOrbit(c);
+        int e3 = 2*o3.n + o3.l;
 
         for(int nlj4=0; nlj4<=(nlj3==nlj1 ? nlj2 : nlj3); ++nlj4)
         {
           int d =  orbits_darmstadt[nlj4];
-          Orbit * o4 = modelspace->GetOrbit(d);
-          int e4 = 2*o4->n + o4->l;
+          Orbit & o4 = modelspace->GetOrbit(d);
+          int e4 = 2*o4.n + o4.l;
           if (e3+e4 > emax) break;
-          if ( (o1->l + o2->l + o3->l + o4->l)%2 != 0) continue;
-          int Jmin = max( abs(o1->j2 - o2->j2), abs(o3->j2 - o4->j2) )/2;
-          int Jmax = min (o1->j2 + o2->j2, o3->j2+o4->j2)/2;
+          if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
+          int Jmin = max( abs(o1.j2 - o2.j2), abs(o3.j2 - o4.j2) )/2;
+          int Jmax = min (o1.j2 + o2.j2, o3.j2+o4.j2)/2;
           if (Jmin > Jmax) continue;
           cout << endl << nlj1 << " " << nlj2 << " " << nlj3 << " " << nlj4 << "   -->  "
                << a << " "  
@@ -326,10 +326,10 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
                    int ibra = tbc_pp.GetLocalIndex(min(a,b),max(a,b));
                    int iket = tbc_pp.GetLocalIndex(min(c,d),max(c,d));
                    cout << "    PP: ibra,iket = " << ibra << "," << iket << endl;
-                   Ket * bra = tbc_pp.GetKet(ibra);
-                   Ket * ket = tbc_pp.GetKet(iket);
-                   if (a>b) tbme_pp *= bra->Phase(J+0);
-                   if (c>d) tbme_pp *= ket->Phase(J+0);
+                   Ket & bra = tbc_pp.GetKet(ibra);
+                   Ket & ket = tbc_pp.GetKet(iket);
+                   if (a>b) tbme_pp *= bra.Phase(J+0);
+                   if (c>d) tbme_pp *= ket.Phase(J+0);
                    Hbare.TwoBody[ch_pp](ibra,iket) = tbme_pp;
                    Hbare.TwoBody[ch_pp](iket,ibra) = tbme_pp;
              }
@@ -343,10 +343,10 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
                    int ibra = tbc_nn.GetLocalIndex(min(a,b)+1,max(a,b)+1);
                    int iket = tbc_nn.GetLocalIndex(min(c,d)+1,max(c,d)+1);
                    cout << "    NN: ibra,iket = " << ibra << "," << iket << endl;
-                   Ket * bra = tbc_nn.GetKet(ibra);
-                   Ket * ket = tbc_nn.GetKet(iket);
-                   if (a>b) tbme_nn *= bra->Phase(J+0);
-                   if (c>d) tbme_nn *= ket->Phase(J+0);
+                   Ket & bra = tbc_nn.GetKet(ibra);
+                   Ket & ket = tbc_nn.GetKet(iket);
+                   if (a>b) tbme_nn *= bra.Phase(J+0);
+                   if (c>d) tbme_nn *= ket.Phase(J+0);
                    Hbare.TwoBody[ch_nn](ibra,iket) = tbme_nn;
                    Hbare.TwoBody[ch_nn](iket,ibra) = tbme_nn;
              }
@@ -358,11 +358,11 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
                    int ibra = tbc_pn.GetLocalIndex(min(a,b+1),max(a,b+1));
                    int iket = tbc_pn.GetLocalIndex(min(c,d+1),max(c,d+1));
                    cout << "    PNPN: ibra,iket = " << ibra << "," << iket << endl;
-                   Ket * bra = tbc_pn.GetKet(ibra);
-                   Ket * ket = tbc_pn.GetKet(iket);
+                   Ket & bra = tbc_pn.GetKet(ibra);
+                   Ket & ket = tbc_pn.GetKet(iket);
                    int phase = 1;
-                   if (a > b+1) phase *= bra->Phase(J+0);
-                   if (c > d+1) phase *= ket->Phase(J+0);
+                   if (a > b+1) phase *= bra.Phase(J+0);
+                   if (c > d+1) phase *= ket.Phase(J+0);
                    Hbare.TwoBody[ch_pn](ibra,iket) = phase * tbme_pnpn;
                    Hbare.TwoBody[ch_pn](iket,ibra) = phase * tbme_pnpn;
 
@@ -375,8 +375,8 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
                    bra = tbc_pn.GetKet(ibra);
                    ket = tbc_pn.GetKet(iket);
                    phase = 1;
-                   if (a+1 > b) phase *= bra->Phase(J+0);
-                   if (c+1 > d) phase *= ket->Phase(J+0);
+                   if (a+1 > b) phase *= bra.Phase(J+0);
+                   if (c+1 > d) phase *= ket.Phase(J+0);
                    Hbare.TwoBody[ch_pn](ibra,iket) = phase * tbme_pnpn;
                    Hbare.TwoBody[ch_pn](iket,ibra) = phase * tbme_pnpn;
              }
@@ -388,11 +388,11 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
                    int ibra = tbc_pn.GetLocalIndex(min(a,b+1),max(a,b+1));
                    int iket = tbc_pn.GetLocalIndex(min(c+1,d),max(c+1,d));
                    cout << "    PNNP: ibra,iket = " << ibra << "," << iket << endl;
-                   Ket * bra = tbc_pn.GetKet(ibra);
-                   Ket * ket = tbc_pn.GetKet(iket);
+                   Ket & bra = tbc_pn.GetKet(ibra);
+                   Ket & ket = tbc_pn.GetKet(iket);
                    int phase = 1;
-                   if (a > b+1) phase *= bra->Phase(J+0);
-                   if (c+1 > d) phase *= ket->Phase(J+0);
+                   if (a > b+1) phase *= bra.Phase(J+0);
+                   if (c+1 > d) phase *= ket.Phase(J+0);
                    Hbare.TwoBody[ch_pn](ibra,iket) = phase * tbme_pnnp;
                    Hbare.TwoBody[ch_pn](iket,ibra) = phase * tbme_pnnp;
 
@@ -404,8 +404,8 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
                    bra = tbc_pn.GetKet(ibra);
                    ket = tbc_pn.GetKet(iket);
                    phase = 1;
-                   if (a+1 > b) phase *= bra->Phase(J+0);
-                   if (c > d+1) phase *= ket->Phase(J+0);
+                   if (a+1 > b) phase *= bra.Phase(J+0);
+                   if (c > d+1) phase *= ket.Phase(J+0);
                    Hbare.TwoBody[ch_pn](ibra,iket) = phase * tbme_pnnp;
                    Hbare.TwoBody[ch_pn](iket,ibra) = phase * tbme_pnnp;
 
@@ -481,9 +481,9 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
    int pfloat = 6; // precision for printing floats
    for (int& i : modelspace->hole_qspace)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      Acore += oi->j2 +1;
-      if (oi->tz2 < 0)
+      Orbit& oi = modelspace->GetOrbit(i);
+      Acore += oi.j2 +1;
+      if (oi.tz2 < 0)
       {
          proton_core_orbits += 1;
       }
@@ -496,33 +496,33 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
    // first do proton orbits
    for (int& i : modelspace->valence)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      if (oi->tz2 > 0 ) continue;
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 > 0 ) continue;
       int nushell_indx = i/2+1 -proton_core_orbits;
-      intfile << "!  " << nushell_indx << "   " << oi->n << " " << oi->l << " " << oi->j2 << "/2" << " " << oi->tz2 << "/2" << endl;
+      intfile << "!  " << nushell_indx << "   " << oi.n << " " << oi.l << " " << oi.j2 << "/2" << " " << oi.tz2 << "/2" << endl;
       ++nvalence_proton_orbits;
    }
    // then do neutron orbits
    for (int& i : modelspace->valence)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      if (oi->tz2 < 0 ) continue;
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 < 0 ) continue;
       int nushell_indx = i/2+1 + nvalence_proton_orbits -neutron_core_orbits;
-      intfile << "!  " << nushell_indx << "   " << oi->n << " " << oi->l << " " << oi->j2 << "/2" << " " << oi->tz2 << "/2" << endl;
+      intfile << "!  " << nushell_indx << "   " << oi.n << " " << oi.l << " " << oi.j2 << "/2" << " " << oi.tz2 << "/2" << endl;
    }
 
    intfile << "!" << endl;
    intfile << "-999  ";
    for (int& i : modelspace->valence)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      if (oi->tz2 > 0 ) continue;
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 > 0 ) continue;
       intfile << op.OneBody(i,i) << "  ";
    }
    for (int& i : modelspace->valence)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      if (oi->tz2 < 0 ) continue;
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 < 0 ) continue;
       intfile << op.OneBody(i,i) << "  ";
    }
    intfile << "  " << Acore << " " << Acore+2 << "  0.00000 " << endl; // No mass dependence for now...
@@ -533,38 +533,38 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
       TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
       for (int& ibra: tbc.KetIndex_vv)
       {
-         Ket *bra = tbc.GetKet(ibra);
-         int a = bra->p;
-         int b = bra->q;
-         Orbit* oa = modelspace->GetOrbit(a);
-         Orbit* ob = modelspace->GetOrbit(b);
-         int a_ind = a/2+1 + ( oa->tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
-         int b_ind = b/2+1 + ( ob->tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+         Ket &bra = tbc.GetKet(ibra);
+         int a = bra.p;
+         int b = bra.q;
+         Orbit& oa = modelspace->GetOrbit(a);
+         Orbit& ob = modelspace->GetOrbit(b);
+         int a_ind = a/2+1 + ( oa.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+         int b_ind = b/2+1 + ( ob.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
          for (int& iket: tbc.KetIndex_vv)
          {
             if (iket<ibra) continue;
-            Ket *ket = tbc.GetKet(iket);
-            int c = ket->p;
-            int d = ket->q;
-            Orbit* oc = modelspace->GetOrbit(c);
-            Orbit* od = modelspace->GetOrbit(d);
-         int c_ind = c/2+1 + ( oc->tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
-         int d_ind = d/2+1 + ( od->tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+            Ket &ket = tbc.GetKet(iket);
+            int c = ket.p;
+            int d = ket.q;
+            Orbit& oc = modelspace->GetOrbit(c);
+            Orbit& od = modelspace->GetOrbit(d);
+         int c_ind = c/2+1 + ( oc.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+         int d_ind = d/2+1 + ( od.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
             int T = abs(tbc.Tz);
             double tbme = op.TwoBody[ch](ibra,iket);
             if ( abs(tbme) < 1e-6) tbme = 0;
             if (T==0)
             {
-               if (oa->j2 == ob->j2 and oa->l == ob->l and oa->n == ob->n) T = (tbc.J+1)%2;
+               if (oa.j2 == ob.j2 and oa.l == ob.l and oa.n == ob.n) T = (tbc.J+1)%2;
                else tbme *= sqrt(2); // pn TBMEs are unnormalized
-               if (oc->j2 == od->j2 and oc->l == od->l and oc->n == od->n) T = (tbc.J+1)%2;
+               if (oc.j2 == od.j2 and oc.l == od.l and oc.n == od.n) T = (tbc.J+1)%2;
                else tbme *= sqrt(2); // pn TBMEs are unnormalized
             }
             // in NuShellX, the proton orbits must come first.
             if (a_ind > b_ind)
             {
                intfile << setw(wint) << b_ind << setw(wint) << a_ind;
-               tbme *= bra->Phase(tbc.J);
+               tbme *= bra.Phase(tbc.J);
             }
             else
             {
@@ -573,7 +573,7 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
             if (c_ind > d_ind)
             {
                intfile << setw(wint) << d_ind << setw(wint) << c_ind;
-               tbme *= ket->Phase(tbc.J);
+               tbme *= ket.Phase(tbc.J);
             }
             else
             {
@@ -609,19 +609,19 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
    //for (int& i : modelspace->holes)
    for (int& i : modelspace->hole_qspace)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      Acore += oi->j2 +1;
-      if (oi->tz2 < 0)
+      Orbit& oi = modelspace->GetOrbit(i);
+      Acore += oi.j2 +1;
+      if (oi.tz2 < 0)
       {
-         Zcore += oi->j2+1;
+         Zcore += oi.j2+1;
          proton_core_orbits += 1;
       }
    }
    neutron_core_orbits = modelspace->hole_qspace.size() - proton_core_orbits;
    for (int& i : modelspace->valence)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      if (oi->tz2 < 0)
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 < 0)
       {
          ++nvalence_proton_orbits ;
       }
@@ -635,18 +635,18 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
    // first do proton orbits
    for (int& i : modelspace->valence)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      if (oi->tz2 > 0 ) continue;
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 > 0 ) continue;
       int nushell_indx = i/2-proton_core_orbits + 1;
-      spfile << nushell_indx << " " << oi->n+1 << " " << oi->l << " " << oi->j2  << endl;
+      spfile << nushell_indx << " " << oi.n+1 << " " << oi.l << " " << oi.j2  << endl;
    }
    // then do neutron orbits
    for (int& i : modelspace->valence)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      if (oi->tz2 < 0 ) continue;
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 < 0 ) continue;
       int nushell_indx = i/2-neutron_core_orbits + nvalence_proton_orbits + 1;
-      spfile << nushell_indx << " " << oi->n+1 << " " << oi->l << " " << oi->j2 << endl;
+      spfile << nushell_indx << " " << oi.n+1 << " " << oi.l << " " << oi.j2 << endl;
    }
    spfile << endl;
    spfile.close();
@@ -669,8 +669,8 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
    int wfloat = 12; // width for printing floats
    for (int& i : modelspace->holes)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      Acore += oi->j2 +1;
+      Orbit& oi = modelspace->GetOrbit(i);
+      Acore += oi.j2 +1;
    }
    intfile << "IMSRG INTERACTION" << endl;
    // 2 indicates pn treated separately
@@ -678,23 +678,23 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
    // write NLJ of the orbits
    for (int& i : modelspace->valence)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      if (oi->tz2 > 0 ) continue;
-      intfile << oi->n*1000 + oi->l*100 + oi->j2 << " ";
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 > 0 ) continue;
+      intfile << oi.n*1000 + oi.l*100 + oi.j2 << " ";
    }
    intfile << endl;
    // Write proton SPE's
    for (int& i : modelspace->valence)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      if (oi->tz2 > 0 ) continue;
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 > 0 ) continue;
       intfile << op.OneBody(i,i) << " ";
    }
    // Write neutron SPE's
    for (int& i : modelspace->valence)
    {
-      Orbit* oi = modelspace->GetOrbit(i);
-      if (oi->tz2 < 0 ) continue;
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 < 0 ) continue;
       intfile << op.OneBody(i,i) << " ";
    }
    intfile << endl;
@@ -716,26 +716,26 @@ void ReadWrite::WriteTwoBody(Operator& op, string filename)
       int npq = tbc.GetNumberKets();
       for (int i=0;i<npq;++i)
       {
-         Ket *bra = tbc.GetKet(i);
-         Orbit *oa = modelspace->GetOrbit(bra->p);
-         Orbit *ob = modelspace->GetOrbit(bra->q);
+         Ket &bra = tbc.GetKet(i);
+         Orbit &oa = modelspace->GetOrbit(bra.p);
+         Orbit &ob = modelspace->GetOrbit(bra.q);
          for (int j=i;j<npq;++j)
          {
-            Ket *ket = tbc.GetKet(j);
-            double tbme = op.GetTBME(ch,bra,ket) / sqrt( (1.0+bra->delta_pq())*(1.0+ket->delta_pq()));
+            Ket &ket = tbc.GetKet(j);
+            double tbme = op.GetTBME(ch,bra,ket) / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
             if ( abs(tbme)<1e-4 ) continue;
-            Orbit *oc = modelspace->GetOrbit(ket->p);
-            Orbit *od = modelspace->GetOrbit(ket->q);
+            Orbit &oc = modelspace->GetOrbit(ket.p);
+            Orbit &od = modelspace->GetOrbit(ket.q);
             int wint = 4;
             int wfloat = 12;
 
             tbfile 
-                   << setw(wint) << bra->p
-                   << setw(wint) << bra->q
-                   << setw(wint) << ket->p
-                   << setw(wint) << ket->q
+                   << setw(wint) << bra.p
+                   << setw(wint) << bra.q
+                   << setw(wint) << ket.p
+                   << setw(wint) << ket.q
                    << setw(wint+3) << tbc.J << setw(wfloat) << std::fixed << tbme
-//                   << "    < " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << " >"
+//                   << "    < " << bra.p << " " << bra.q << " | V | " << ket.p << " " << ket.q << " >"
                    << endl;
          }
       }
@@ -760,29 +760,29 @@ void ReadWrite::WriteValenceTwoBody(Operator& op, string filename)
       //for (int i=0;i<npq;++i)
       for (int& i : tbc.KetIndex_vv )
       {
-         Ket *bra = tbc.GetKet(i);
-         Orbit *oa = modelspace->GetOrbit(bra->p);
-         Orbit *ob = modelspace->GetOrbit(bra->q);
+         Ket &bra = tbc.GetKet(i);
+         Orbit &oa = modelspace->GetOrbit(bra.p);
+         Orbit &ob = modelspace->GetOrbit(bra.q);
          //for (int j=i;j<npq;++j)
          for (int& j : tbc.KetIndex_vv )
          {
             if (j<i) continue;
-            Ket *ket = tbc.GetKet(j);
+            Ket &ket = tbc.GetKet(j);
             //double tbme = tbc.GetTBME(bra,ket);
-            double tbme = op.GetTBME(ch,bra,ket) / sqrt( (1.0+bra->delta_pq())*(1.0+ket->delta_pq()));
+            double tbme = op.GetTBME(ch,bra,ket) / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
             if ( abs(tbme)<1e-4 ) continue;
-            Orbit *oc = modelspace->GetOrbit(ket->p);
-            Orbit *od = modelspace->GetOrbit(ket->q);
+            Orbit &oc = modelspace->GetOrbit(ket.p);
+            Orbit &od = modelspace->GetOrbit(ket.q);
             int wint = 4;
             int wfloat = 12;
 
             tbfile 
-                   << setw(wint) << bra->p
-                   << setw(wint) << bra->q
-                   << setw(wint) << ket->p
-                   << setw(wint) << ket->q
+                   << setw(wint) << bra.p
+                   << setw(wint) << bra.q
+                   << setw(wint) << ket.p
+                   << setw(wint) << ket.q
                    << setw(wint+3) << tbc.J << setw(wfloat) << std::fixed << tbme// << endl;
-                   << "    < " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << " >" << endl;
+                   << "    < " << bra.p << " " << bra.q << " | V | " << ket.p << " " << ket.q << " >" << endl;
          }
       }
    }

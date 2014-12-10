@@ -24,7 +24,8 @@ class Operator
   //Constructors
   // In the future, consider using C++11 rvalues / move constructor to avoid copies in certain cases
   Operator();
-  Operator(ModelSpace*);
+  Operator(ModelSpace&);
+//  Operator(ModelSpace*);
   Operator( const Operator& rhs);
 
   //Overloaded operators
@@ -46,17 +47,17 @@ class Operator
   //TwoBody setter/getters
   double GetTBME(int ch, int a, int b, int c, int d) const;
   void   SetTBME(int ch, int a, int b, int c, int d, double tbme);
-  double GetTBME(int ch, Ket *bra, Ket *ket) const;
-  void   SetTBME(int ch, Ket *bra, Ket* ket, double tbme);
-  double GetTBME(int j, int p, int t, Ket* bra, Ket* ket) const;
-  void   SetTBME(int j, int p, int t, Ket* bra, Ket* ket, double tbme);
+  double GetTBME(int ch, Ket &bra, Ket &ket) const;
+  void   SetTBME(int ch, Ket &bra, Ket& ket, double tbme);
+  double GetTBME(int j, int p, int t, Ket& bra, Ket& ket) const;
+  void   SetTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme);
   double GetTBME(int j, int p, int t, int a, int b, int c, int d) const;
   void   SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
 
 //  double GetTBME_NoPhase(int ch, int a, int b, int c, int d) const;
 
   double GetTBMEmonopole(int a, int b, int c, int d) const;
-  double GetTBMEmonopole(Ket * bra, Ket * ket) const;
+  double GetTBMEmonopole(Ket & bra, Ket & ket) const;
 
 
   void ScaleOneBody(double x);
@@ -75,6 +76,7 @@ class Operator
   double OneBodyNorm() const;
   double TwoBodyNorm() const;
 
+//  ModelSpace & GetModelSpace() const {return modelspace;};
   ModelSpace * GetModelSpace() const {return modelspace;};
 
   void EraseZeroBody(){ZeroBody = 0;}; // set zero-body term to zero
@@ -92,6 +94,7 @@ class Operator
  //private:
   //Fields
   ModelSpace * modelspace;
+//  ModelSpace & modelspace;
   bool hermitian;
   bool antihermitian;
 //  bool cross_coupled;

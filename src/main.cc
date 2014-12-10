@@ -73,12 +73,12 @@ int main(int argc, char**argv)
    }
 
    
-   Operator H_bare =  Operator(&modelspace);
+   Operator H_bare =  Operator(modelspace);
    H_bare.SetHermitian(); // just to be sure
    H_bare.CalculateKineticEnergy();
 
 
-   Operator H_3N =  Operator(&modelspace);
+   Operator H_3N =  Operator(modelspace);
    H_3N.SetHermitian(); // just to be sure
 
    cout << "Reading normal ordered 3N file " << jasontbme << endl;
@@ -213,9 +213,9 @@ int main(int argc, char**argv)
       occf.open(occfile,ofstream::out);
       for (int i=0;i<modelspace.GetNumberOrbits();i+=2)
       {
-         Orbit *oi = modelspace.GetOrbit(i);
-         cout << i << "  " << oi->n << " " << oi->l << "  " << oi->j2/2 << " " << occ[i] << " " << occ[i+1] << endl;
-         occf << i << "  " << oi->n << " " << oi->l << "  " << oi->j2/2 << " " << occ[i] << " " << occ[i+1] << endl;
+         Orbit &oi = modelspace.GetOrbit(i);
+         cout << i << "  " << oi.n << " " << oi.l << "  " << oi.j2/2 << " " << occ[i] << " " << occ[i+1] << endl;
+         occf << i << "  " << oi.n << " " << oi.l << "  " << oi.j2/2 << " " << occ[i] << " " << occ[i+1] << endl;
       }
       occf.close();
     }

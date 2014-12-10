@@ -210,12 +210,12 @@ double IMSRGSolver::GetEpsteinNesbet1bDenominator(int i, int j)
 double IMSRGSolver::GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket)
 {
    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-   Ket * bra = tbc.GetKet(ibra);
-   Ket * ket = tbc.GetKet(iket);
-   int i = bra->p;
-   int j = bra->q;
-   int a = ket->p;
-   int b = ket->q;
+   Ket & bra = tbc.GetKet(ibra);
+   Ket & ket = tbc.GetKet(iket);
+   int i = bra.p;
+   int j = bra.q;
+   int a = ket.p;
+   int b = ket.q;
    double denominator = H_s.GetTBMEmonopole(i,j,i,j); // pp'pp'
    denominator       += H_s.GetTBMEmonopole(a,b,a,b); // hh'hh'
    denominator       -= H_s.GetTBMEmonopole(i,a,i,a); // phph
@@ -262,10 +262,10 @@ void IMSRGSolver::ConstructGenerator_White()
    // One body piece -- eliminate ph bits
    for ( int &i : modelspace->particles)
    {
-      Orbit *oi = modelspace->GetOrbit(i);
+      Orbit &oi = modelspace->GetOrbit(i);
       for (int &a : modelspace->holes)
       {
-         Orbit *oa = modelspace->GetOrbit(a);
+         Orbit &oa = modelspace->GetOrbit(a);
          double denominator = GetEpsteinNesbet1bDenominator(i,a);
          Eta.OneBody(i,a) = H_s.OneBody(i,a)/denominator;
          Eta.OneBody(a,i) = - Eta.OneBody(i,a);
@@ -298,11 +298,11 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
    // One body piece -- make sure the valence one-body part is diagonal
    for ( int &i : modelspace->valence)
    {
-      Orbit *oi = modelspace->GetOrbit(i);
+      Orbit &oi = modelspace->GetOrbit(i);
       for (int j=0; j<modelspace->GetNumberOrbits(); ++j)
       {
          if (i==j) continue;
-         Orbit *oj = modelspace->GetOrbit(j);
+         Orbit &oj = modelspace->GetOrbit(j);
          double denominator = GetEpsteinNesbet1bDenominator(i,j);
          Eta.OneBody(i,j) = H_s.OneBody(i,j)/denominator;
          Eta.OneBody(j,i) = - Eta.OneBody(i,j);
@@ -405,10 +405,10 @@ void IMSRGSolver::ConstructGenerator_Atan()
    int maxa = -1;
    for ( int &i : modelspace->particles)
    {
-      Orbit *oi = modelspace->GetOrbit(i);
+      Orbit &oi = modelspace->GetOrbit(i);
       for (int &a : modelspace->holes)
       {
-         Orbit *oa = modelspace->GetOrbit(a);
+         Orbit &oa = modelspace->GetOrbit(a);
          double denominator = GetEpsteinNesbet1bDenominator(i,a);
          Eta.OneBody(i,a) = 0.5*atan(2*H_s.OneBody(i,a)/denominator);
          Eta.OneBody(a,i) = - Eta.OneBody(i,a);
@@ -453,9 +453,9 @@ void IMSRGSolver::ConstructGenerator_Atan()
       }
     }
    TwoBodyChannel& tbcmax = modelspace->GetTwoBodyChannel(maxch);
-   Ket* bra  = tbcmax.GetKet(maxi);
-   Ket* ket  = tbcmax.GetKet(maxa);
-//   cout << "Maximum two-body term: < " << bra->p << " " << bra->q << " | V | " << ket->p << " " << ket->q << " >"  << "(J=" << tbcmax.J << ") = "
+   Ket & bra  = tbcmax.GetKet(maxi);
+   Ket & ket  = tbcmax.GetKet(maxa);
+//   cout << "Maximum two-body term: < " << bra.p << " " << bra.q << " | V | " << ket.p << " " << ket.q << " >"  << "(J=" << tbcmax.J << ") = "
 //        << maxnum << " / " << maxdenom << " = " << 0.5*atan(2*maxnum/maxdenom) << endl;
 }
 
@@ -466,11 +466,11 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
    // One body piece -- make sure the valence one-body part is diagonal
    for ( int &i : modelspace->valence)
    {
-      Orbit *oi = modelspace->GetOrbit(i);
+      Orbit &oi = modelspace->GetOrbit(i);
       for (int j=0; j<modelspace->GetNumberOrbits(); ++j)
       {
          if (i==j) continue;
-         Orbit *oj = modelspace->GetOrbit(j);
+         Orbit &oj = modelspace->GetOrbit(j);
          double denominator = GetEpsteinNesbet1bDenominator(i,j);
          Eta.OneBody(i,j) = 0.5*atan(2*H_s.OneBody(i,j)/denominator);
          Eta.OneBody(j,i) = - Eta.OneBody(i,j);

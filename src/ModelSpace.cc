@@ -46,24 +46,35 @@ void Orbit::Set(int nn, int ll, int jj2, int ttz2, int pph, int iio, float e)
 
 //************************************************************************
 
+Ket::Ket(ModelSpace * modelspace)
+{
+   ms = modelspace;
+}
+
 Ket::Ket(ModelSpace * modelspace, int pp, int qq)
 {
    ms = modelspace;
+   Setpq(pp,qq);
+}
+
+void Ket::Setpq(int pp, int qq)
+{
    p = pp;
    q = qq;
-   Orbit * op = ms->GetOrbit(p);
-   Orbit * oq = ms->GetOrbit(q);
-   parity = (op->l + oq->l)%2;
-   Tz = (op->tz2 + oq->tz2)/2;
-   Jmin = abs(op->j2 - oq->j2)/2;
-   Jmax = (op->j2 + oq->j2)/2;
+   Orbit & op = ms->GetOrbit(p);
+   Orbit & oq = ms->GetOrbit(q);
+   parity = (op.l + oq.l)%2;
+   Tz = (op.tz2 + oq.tz2)/2;
+   Jmin = abs(op.j2 - oq.j2)/2;
+   Jmax = (op.j2 + oq.j2)/2;
    Jstep = 1;
    if (p==q) // Pauli principle
    { 
       Jmax--;
       Jstep++;
    }
-   phase_prefactor = - ms->phase((op->j2+oq->j2)/2);
+   phase_prefactor = ms->phase((op.j2+oq.j2)/2 + 1);
+   dpq = p==q ? 1 : 0;
 }
 
 int Ket::Phase(int J)
@@ -97,15 +108,15 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
    KetMap.resize(nk,-1); // set all values to -1
    for (int i=0;i<nk;i++)
    {
-      Ket *ket = modelspace->GetKet(i);
+      Ket &ket = modelspace->GetKet(i);
       if ( CheckChannel_ket(ket) )
       {
          KetMap[i] = NumberKets;
          KetList.push_back(i);
-         int php = ms->GetOrbit(ket->p)->ph;
-         int phq = ms->GetOrbit(ket->q)->ph;
-         int iop = ms->GetOrbit(ket->p)->io;
-         int ioq = ms->GetOrbit(ket->q)->io;
+         int php = ms->GetOrbit(ket.p).ph;
+         int phq = ms->GetOrbit(ket.q).ph;
+         int iop = ms->GetOrbit(ket.p).io;
+         int ioq = ms->GetOrbit(ket.q).io;
 
          if (( php + phq) == 2) // hh
          {
@@ -147,11 +158,11 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
    Proj_ph_cc = arma::mat(2*NumberKets, 2*NumberKets, arma::fill::zeros);
    for (int i=0;i<NumberKets;i++)
    {
-      Ket *ket = GetKet(i);
-      int pha = modelspace->GetOrbit(ket->p)->ph;
-      int phb = modelspace->GetOrbit(ket->q)->ph;
-      int j2a = modelspace->GetOrbit(ket->p)->j2;
-      int j2b = modelspace->GetOrbit(ket->q)->j2;
+      Ket &ket = GetKet(i);
+      int pha = modelspace->GetOrbit(ket.p).ph;
+      int phb = modelspace->GetOrbit(ket.q).ph;
+      int j2a = modelspace->GetOrbit(ket.p).j2;
+      int j2b = modelspace->GetOrbit(ket.q).j2;
 
       switch (pha+phb)
       {
@@ -195,18 +206,18 @@ void TwoBodyChannel::Copy( const TwoBodyChannel& rhs)
 int TwoBodyChannel::GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];}; 
 
 // get pointer to ket using local index
-Ket * TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
+Ket & TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
 
 
 bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
 {
    if ((p==q) and (J%2 != 0)) return false; // Pauli principle
-   Orbit * op = modelspace->GetOrbit(p);
-   Orbit * oq = modelspace->GetOrbit(q);
-   if ((op->l + oq->l)%2 != parity) return false;
-   if ((op->tz2 + oq->tz2) != 2*Tz) return false;
-   if (op->j2 + oq->j2 < 2*J)       return false;
-   if (abs(op->j2 - oq->j2) > 2*J)  return false;
+   Orbit & op = modelspace->GetOrbit(p);
+   Orbit & oq = modelspace->GetOrbit(q);
+   if ((op.l + oq.l)%2 != parity) return false;
+   if ((op.tz2 + oq.tz2) != 2*Tz) return false;
+   if (op.j2 + oq.j2 < 2*J)       return false;
+   if (abs(op.j2 - oq.j2) > 2*J)  return false;
 
    return true;
 }
@@ -231,12 +242,12 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
 // no Pauli rule, <pp||nn> is allowed.
 bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
 {
-   Orbit * op = modelspace->GetOrbit(p);
-   Orbit * oq = modelspace->GetOrbit(q);
-   if ((op->l + oq->l)%2 != parity)    return false;
-   if (abs(op->tz2 + oq->tz2) != 2*Tz) return false;
-   if (op->j2 + oq->j2 < 2*J)          return false;
-   if (abs(op->j2 - oq->j2) > 2*J)     return false;
+   Orbit & op = modelspace->GetOrbit(p);
+   Orbit & oq = modelspace->GetOrbit(q);
+   if ((op.l + oq.l)%2 != parity)    return false;
+   if (abs(op.tz2 + oq.tz2) != 2*Tz) return false;
+   if (op.j2 + oq.j2 < 2*J)          return false;
+   if (abs(op.j2 - oq.j2) > 2*J)     return false;
 
    return true;
 }
@@ -252,7 +263,7 @@ ModelSpace::ModelSpace()
    target_mass = 16;
 }
 
-
+/*
 ModelSpace::ModelSpace(const ModelSpace& ms)
 {
    norbits = 0;
@@ -262,10 +273,36 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    int norbits = ms.GetNumberOrbits();
    for (int i=0;i<norbits;i++)
    {
-      AddOrbit( Orbit(*ms.GetOrbit(i)) );
+      AddOrbit( Orbit(ms.GetOrbit(i)) );
    }
    SetupKets();
 }
+*/
+
+ModelSpace::ModelSpace(const ModelSpace& ms)
+{
+   norbits = ms.norbits;
+   hbar_omega = ms.hbar_omega;
+   target_mass = ms.target_mass;
+
+   holes = ms.holes;
+   particles = ms.particles;
+   valence = ms.valence;
+   qspace = ms.qspace;
+   hole_qspace = ms.hole_qspace;
+   particle_qspace = ms.particle_qspace;
+   proton_orbits = ms.proton_orbits;
+   neutron_orbits = ms.neutron_orbits;
+   Orbits = ms.Orbits;
+   Kets = ms.Kets;
+   TwoBodyChannels = ms.TwoBodyChannels;
+   TwoBodyChannels_CC = ms.TwoBodyChannels_CC;
+//   for (Orbit& o : Orbits) o.modelspace = this;
+   for (Ket& k : Kets) k.ms = this;
+   for (TwoBodyChannel& tbc : TwoBodyChannels) tbc.modelspace = this;
+   for (TwoBodyChannel_CC& tbc : TwoBodyChannels_CC) tbc.modelspace = this;
+}
+
 
 
 ModelSpace ModelSpace::operator=(const ModelSpace& ms)
@@ -276,8 +313,8 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
 void ModelSpace::AddOrbit(Orbit orb)
 {
    int ind = Index1(orb.n, orb.l, orb.j2, orb.tz2);
-   if (Orbits.size() <= ind) Orbits.resize(ind+1,NULL);
-   Orbits[ind] = (new Orbit(orb));
+   if (Orbits.size() <= ind) Orbits.resize(ind+1,Orbit());
+   Orbits[ind] = Orbit(orb);
    norbits = Orbits.size();
    if (orb.j2 > maxj)
    {
@@ -287,7 +324,6 @@ void ModelSpace::AddOrbit(Orbit orb)
    if (orb.ph == 0) particles.push_back(ind);
    if (orb.ph == 1) holes.push_back(ind);
    if (orb.io == 0) valence.push_back(ind);
-//   if (orb.io == 1) qspace.push_back(ind);
    if (orb.io == 1)
    {
      qspace.push_back(ind);
@@ -313,8 +349,10 @@ void ModelSpace::SetupKets()
      for (int q=p;q<norbits;q++)
      {
         index = Index2(p,q);
-        if (index >= Kets.size()) Kets.resize(index+1,NULL);
-        Kets[index] = new Ket(this,p,q);
+        //if (index >= Kets.size()) Kets.resize(index+1,NULL);
+        if (index >= Kets.size()) Kets.resize(index+1,Ket(this));
+        Kets[index].Setpq(p,q);
+        //Kets[index] = new Ket(this,p,q);
      }
    }
    for (int ch=0;ch<nTwoBodyChannels;++ch)
