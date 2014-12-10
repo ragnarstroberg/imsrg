@@ -9,7 +9,7 @@ namespace imsrg_util
 
  Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2)
  {
-   Operator NumOp = Operator(&modelspace);
+   Operator NumOp = Operator(modelspace);
    int indx = modelspace.Index1(n,l,j2,tz2);
    NumOp.ZeroBody = 0;
    NumOp.EraseOneBody();
@@ -38,13 +38,13 @@ namespace imsrg_util
 
     for (int i=0; i<norb; ++i)
     {
-      Orbit * oi = modelspace->GetOrbit(i);
+      Orbit & oi = modelspace->GetOrbit(i);
       // Get the number operator for orbit i
-      Operator N_bare = NumberOp(*modelspace,oi->n,oi->l,oi->j2,oi->tz2);
+      Operator N_bare = NumberOp(*modelspace,oi.n,oi.l,oi.j2,oi.tz2);
       // Transform it to the normal-ordered HF basis
       Operator N_NO = hf.TransformToHFBasis(N_bare).DoNormalOrdering();
       occupation[i] = N_NO.ZeroBody;
-      cout << oi->n << " " << oi->l << " " << oi->j2 << "/2 " << occupation[i] << endl;
+      cout << oi.n << " " << oi.l << " " << oi.j2 << "/2 " << occupation[i] << endl;
     }
     return occupation;
  }
@@ -58,9 +58,9 @@ namespace imsrg_util
 
     for (int i=0; i<norb; ++i)
     {
-      Orbit * oi = modelspace->GetOrbit(i);
+      Orbit & oi = modelspace->GetOrbit(i);
       // Get the number operator for orbit i
-      Operator N_bare = NumberOp(*modelspace,oi->n,oi->l,oi->j2,oi->tz2);
+      Operator N_bare = NumberOp(*modelspace,oi.n,oi.l,oi.j2,oi.tz2);
       // Transform it to the normal-ordered HF basis
       Operator N_NO = hf.TransformToHFBasis(N_bare).DoNormalOrdering();
       // Transform to the imsrg evolved basis
@@ -77,10 +77,10 @@ namespace imsrg_util
      vector<double> dens(nr_steps,0);
      for (int& i : orbits)
      {
-       Orbit * oi = modelspace.GetOrbit(i);
+       Orbit & oi = modelspace.GetOrbit(i);
        for (int ir=0;ir<nr_steps;++ir)
        {
-          dens[ir] += HO_density(oi->n,oi->l,hw,R[ir]) * occupation[i];
+          dens[ir] += HO_density(oi.n,oi.l,hw,R[ir]) * occupation[i];
        }
      }
      return dens;
@@ -90,19 +90,19 @@ namespace imsrg_util
 // Center of mass kinetic energy, with the hw/A factor
  Operator TCM_Op(ModelSpace& modelspace)
  {
-   Operator TcmOp = Operator(&modelspace);
+   Operator TcmOp = Operator(modelspace);
 
    int norb = modelspace.GetNumberOrbits();
    for (int i=0; i<norb; ++i)
    {
-      Orbit * oi = modelspace.GetOrbit(i);
+      Orbit & oi = modelspace.GetOrbit(i);
       for (int j=i; j<norb; ++j)
       {
-         Orbit * oj = modelspace.GetOrbit(j);
-         if (oi->l != oj->l or oi->j2 != oj->j2 or oi->tz2 != oj->tz2) continue;
+         Orbit & oj = modelspace.GetOrbit(j);
+         if (oi.l != oj.l or oi.j2 != oj.j2 or oi.tz2 != oj.tz2) continue;
          double tij = 0;
-         if (oi->n == oj->n) tij = 0.5*(2*oi->n+oi->l + 1.5);
-         else if (oi->n == oj->n-1) tij = 0.5*sqrt(oj->n*(oj->n+oj->l + 0.5));
+         if (oi.n == oj.n) tij = 0.5*(2*oi.n+oi.l + 1.5);
+         else if (oi.n == oj.n-1) tij = 0.5*sqrt(oj.n*(oj.n+oj.l + 0.5));
          TcmOp.OneBody(i,j) = tij;
          TcmOp.OneBody(j,i) = tij;
       }
@@ -116,10 +116,10 @@ namespace imsrg_util
       int nkets = tbc.GetNumberKets();
       for (int ibra=0;ibra<nkets;++ibra)
       {
-         Ket * bra = tbc.GetKet(ibra);
+         Ket & bra = tbc.GetKet(ibra);
          for (int iket=ibra;iket<nkets;++iket)
          {
-            Ket * ket = tbc.GetKet(iket);
+            Ket & ket = tbc.GetKet(iket);
             double mat_el = Calculate_p1p2(modelspace,bra,ket,tbc.J);
             #pragma omp critical
             {
@@ -137,27 +137,27 @@ namespace imsrg_util
 
 
  // evaluate <bra| p1*p2 | ket> , omitting the prefactor  m * hbar_omega
- double Calculate_p1p2(ModelSpace& modelspace, Ket* bra, Ket* ket, int J)
+ double Calculate_p1p2(ModelSpace& modelspace, Ket & bra, Ket & ket, int J)
  {
-   Orbit * oa = modelspace.GetOrbit(bra->p);
-   Orbit * ob = modelspace.GetOrbit(bra->q);
-   Orbit * oc = modelspace.GetOrbit(ket->p);
-   Orbit * od = modelspace.GetOrbit(ket->q);
+   Orbit & oa = modelspace.GetOrbit(bra.p);
+   Orbit & ob = modelspace.GetOrbit(bra.q);
+   Orbit & oc = modelspace.GetOrbit(ket.p);
+   Orbit & od = modelspace.GetOrbit(ket.q);
 
-   int na = oa->n;
-   int nb = ob->n;
-   int nc = oc->n;
-   int nd = od->n;
+   int na = oa.n;
+   int nb = ob.n;
+   int nc = oc.n;
+   int nd = od.n;
 
-   int la = oa->l;
-   int lb = ob->l;
-   int lc = oc->l;
-   int ld = od->l;
+   int la = oa.l;
+   int lb = ob.l;
+   int lc = oc.l;
+   int ld = od.l;
 
-   double ja = oa->j2/2.0;
-   double jb = ob->j2/2.0;
-   double jc = oc->j2/2.0;
-   double jd = od->j2/2.0;
+   double ja = oa.j2/2.0;
+   double jb = ob.j2/2.0;
+   double jc = oc.j2/2.0;
+   double jd = od.j2/2.0;
 
    int fab = 2*na + 2*nb + la + lb;
    int fcd = 2*nc + 2*nd + lc + ld;
@@ -194,12 +194,12 @@ namespace imsrg_util
               // factor to account for antisymmetrization
               int asymm_factor = 1;
 
-              if (ket->Tz!=0)
+              if (ket.Tz!=0)
               {
                 if ((lam_ab+Sab)%2>0) continue; // Pauli rule for identical particles
                 asymm_factor = 2 ;
               }
-              else if ( (bra->p + ket->p)%2 >0) // if we have pnnp or nppn, then pick up a phase
+              else if ( (bra.p + ket.p)%2 >0) // if we have pnnp or nppn, then pick up a phase
               {
                 asymm_factor = modelspace.phase( lam_ab + Sab );
               }
@@ -246,7 +246,7 @@ namespace imsrg_util
    } // Lab
 
    // normalize
-   p1p2 /= sqrt((1.0+bra->delta_pq())*(1.0+ket->delta_pq()));
+   p1p2 /= sqrt((1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
    return p1p2 ;
 
  }
@@ -254,20 +254,20 @@ namespace imsrg_util
 // Center of mass kinetic energy, with the hw/A factor
  Operator VCM_Op(ModelSpace& modelspace)
  {
-   Operator VcmOp = Operator(&modelspace);
+   Operator VcmOp = Operator(modelspace);
 
    int norb = modelspace.GetNumberOrbits();
 //   double one_body_prefactor = 1./(
    for (int i=0; i<norb; ++i)
    {
-      Orbit * oi = modelspace.GetOrbit(i);
+      Orbit & oi = modelspace.GetOrbit(i);
       for (int j=i; j<norb; ++j)
       {
-         Orbit * oj = modelspace.GetOrbit(j);
-         if (oi->l != oj->l or oi->j2 != oj->j2 or oi->tz2 != oj->tz2) continue;
+         Orbit & oj = modelspace.GetOrbit(j);
+         if (oi.l != oj.l or oi.j2 != oj.j2 or oi.tz2 != oj.tz2) continue;
          double tij = 0;
-         if (oi->n == oj->n) tij = 0.5*(2*oi->n+oi->l + 1.5);
-         else if (oi->n == oj->n-1) tij = -0.5*sqrt(oj->n*(oj->n+oj->l + 0.5));
+         if (oi.n == oj.n) tij = 0.5*(2*oi.n+oi.l + 1.5);
+         else if (oi.n == oj.n-1) tij = -0.5*sqrt(oj.n*(oj.n+oj.l + 0.5));
          VcmOp.OneBody(i,j) = tij;
          VcmOp.OneBody(j,i) = tij;
       }
@@ -281,10 +281,10 @@ namespace imsrg_util
       int nkets = tbc.GetNumberKets();
       for (int ibra=0;ibra<nkets;++ibra)
       {
-         Ket * bra = tbc.GetKet(ibra);
+         Ket & bra = tbc.GetKet(ibra);
          for (int iket=ibra;iket<nkets;++iket)
          {
-            Ket * ket = tbc.GetKet(iket);
+            Ket & ket = tbc.GetKet(iket);
             double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J);
             #pragma omp critical
             {
@@ -301,27 +301,27 @@ namespace imsrg_util
  }
 
  // Evaluate <bra | r1*r2 | ket>, omitting the factor (hbar * omega) /(m * omega^2)
- double Calculate_r1r2(ModelSpace& modelspace, Ket* bra, Ket* ket, int J)
+ double Calculate_r1r2(ModelSpace& modelspace, Ket & bra, Ket & ket, int J)
  {
-   Orbit * oa = modelspace.GetOrbit(bra->p);
-   Orbit * ob = modelspace.GetOrbit(bra->q);
-   Orbit * oc = modelspace.GetOrbit(ket->p);
-   Orbit * od = modelspace.GetOrbit(ket->q);
+   Orbit & oa = modelspace.GetOrbit(bra.p);
+   Orbit & ob = modelspace.GetOrbit(bra.q);
+   Orbit & oc = modelspace.GetOrbit(ket.p);
+   Orbit & od = modelspace.GetOrbit(ket.q);
 
-   int na = oa->n;
-   int nb = ob->n;
-   int nc = oc->n;
-   int nd = od->n;
+   int na = oa.n;
+   int nb = ob.n;
+   int nc = oc.n;
+   int nd = od.n;
 
-   int la = oa->l;
-   int lb = ob->l;
-   int lc = oc->l;
-   int ld = od->l;
+   int la = oa.l;
+   int lb = ob.l;
+   int lc = oc.l;
+   int ld = od.l;
 
-   double ja = oa->j2/2.0;
-   double jb = ob->j2/2.0;
-   double jc = oc->j2/2.0;
-   double jd = od->j2/2.0;
+   double ja = oa.j2/2.0;
+   double jb = ob.j2/2.0;
+   double jc = oc.j2/2.0;
+   double jd = od.j2/2.0;
 
    int fab = 2*na + 2*nb + la + lb;
    int fcd = 2*nc + 2*nd + lc + ld;
@@ -358,12 +358,12 @@ namespace imsrg_util
               // factor to account for antisymmetrization
               int asymm_factor = 1;
 
-              if (ket->Tz!=0)
+              if (ket.Tz!=0)
               {
                 if ((lam_ab+Sab)%2>0) continue; // Pauli rule for identical particles
                 asymm_factor = 2 ;
               }
-              else if ( (bra->p + ket->p)%2 >0) // if we have pnnp or nppn, then pick up a phase
+              else if ( (bra.p + ket.p)%2 >0) // if we have pnnp or nppn, then pick up a phase
               {
                 asymm_factor = modelspace.phase( lam_ab + Sab );
               }
@@ -410,7 +410,7 @@ namespace imsrg_util
    } // Lab
 
    // normalize
-   r1r2 /= sqrt((1.0+bra->delta_pq())*(1.0+ket->delta_pq()));
+   r1r2 /= sqrt((1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
    return r1r2 ;
 
  }

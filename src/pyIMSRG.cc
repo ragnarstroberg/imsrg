@@ -41,7 +41,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    ;
 
    class_<Operator>("Operator",init<>())
-      .def(init< ModelSpace*>())
+      .def(init< ModelSpace&>())
       .def(self += Operator())
       .def(self + Operator())
       .def(self -= Operator())

@@ -26,9 +26,10 @@ Operator::Operator()
 double  Operator::bch_transform_threshold = 1e-6;
 double  Operator::bch_product_threshold = 1e-4;
 
-Operator::Operator(ModelSpace* ms) // Create a zero-valued operator in a given model space
+//Operator::Operator(ModelSpace* ms) // Create a zero-valued operator in a given model space
+Operator::Operator(ModelSpace& ms) // Create a zero-valued operator in a given model space
 {
-  modelspace = ms;
+  modelspace = &ms;
   hermitian = true;
   antihermitian = false;
   ZeroBody = 0;
@@ -157,12 +158,12 @@ double Operator::GetTBME(int ch, int a, int b, int c, int d) const
    int ket_ind = tbc.GetLocalIndex(min(c,d),max(c,d));
    if (bra_ind < 0 or ket_ind < 0 or bra_ind > tbc.GetNumberKets() or ket_ind > tbc.GetNumberKets() )
      return 0;
-   Ket * bra = tbc.GetKet(bra_ind);
-   Ket * ket = tbc.GetKet(ket_ind);
+   Ket & bra = tbc.GetKet(bra_ind);
+   Ket & ket = tbc.GetKet(ket_ind);
 
    double phase = 1;
-   if (a>b) phase *= bra->Phase(tbc.J) ;
-   if (c>d) phase *= ket->Phase(tbc.J);
+   if (a>b) phase *= bra.Phase(tbc.J) ;
+   if (c>d) phase *= ket.Phase(tbc.J);
    if (a==b) phase *= sqrt(2.);
    if (c==d) phase *= sqrt(2.);
    return phase * TwoBody[ch](bra_ind, ket_ind);
@@ -175,22 +176,22 @@ void Operator::SetTBME(int ch, int a, int b, int c, int d, double tbme)
    int bra_ind = tbc.GetLocalIndex(min(a,b),max(a,b));
    int ket_ind = tbc.GetLocalIndex(min(c,d),max(c,d));
    double phase = 1;
-   if (a>b) phase *= tbc.GetKet(bra_ind)->Phase(tbc.J);
-   if (c>d) phase *= tbc.GetKet(ket_ind)->Phase(tbc.J);
+   if (a>b) phase *= tbc.GetKet(bra_ind).Phase(tbc.J);
+   if (c>d) phase *= tbc.GetKet(ket_ind).Phase(tbc.J);
    TwoBody[ch](bra_ind,ket_ind) = phase * tbme;
    if (hermitian) TwoBody[ch](ket_ind,bra_ind) = phase * tbme;
    if (antihermitian) TwoBody[ch](ket_ind,bra_ind) = - phase * tbme;
 }
 
 
-double Operator::GetTBME(int ch, Ket *bra, Ket *ket) const
+double Operator::GetTBME(int ch, Ket &bra, Ket &ket) const
 {
-   return GetTBME(ch,bra->p,bra->q,ket->p,ket->q);
+   return GetTBME(ch,bra.p,bra.q,ket.p,ket.q);
 }
 
-void Operator::SetTBME(int ch, Ket* ket, Ket* bra, double tbme)
+void Operator::SetTBME(int ch, Ket& ket, Ket& bra, double tbme)
 {
-   SetTBME(ch, bra->p,bra->q,ket->p,ket->q,tbme);
+   SetTBME(ch, bra.p,bra.q,ket.p,ket.q,tbme);
 }
 
 double Operator::GetTBME(int j, int p, int t, int a, int b, int c, int d) const
@@ -205,13 +206,13 @@ void Operator::SetTBME(int j, int p, int t, int a, int b, int c, int d, double t
    SetTBME(ch,a,b,c,d,tbme);
 }
 
-double Operator::GetTBME(int j, int p, int t, Ket* bra, Ket* ket) const
+double Operator::GetTBME(int j, int p, int t, Ket& bra, Ket& ket) const
 {
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    return GetTBME(ch,bra,ket);
 }
 
-void Operator::SetTBME(int j, int p, int t, Ket* bra, Ket* ket, double tbme)
+void Operator::SetTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme)
 {
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    SetTBME(ch,bra,ket,tbme);
@@ -221,31 +222,31 @@ void Operator::SetTBME(int j, int p, int t, Ket* bra, Ket* ket, double tbme)
 double Operator::GetTBMEmonopole(int a, int b, int c, int d) const
 {
    double mon = 0;
-   Orbit *oa = modelspace->GetOrbit(a);
-   Orbit *ob = modelspace->GetOrbit(b);
-   Orbit *oc = modelspace->GetOrbit(c);
-   Orbit *od = modelspace->GetOrbit(d);
-   int Tzab = (oa->tz2 + ob->tz2)/2;
-   int parityab = (oa->l + ob->l)%2;
-   int Tzcd = (oc->tz2 + od->tz2)/2;
-   int paritycd = (oc->l + od->l)%2;
+   Orbit &oa = modelspace->GetOrbit(a);
+   Orbit &ob = modelspace->GetOrbit(b);
+   Orbit &oc = modelspace->GetOrbit(c);
+   Orbit &od = modelspace->GetOrbit(d);
+   int Tzab = (oa.tz2 + ob.tz2)/2;
+   int parityab = (oa.l + ob.l)%2;
+   int Tzcd = (oc.tz2 + od.tz2)/2;
+   int paritycd = (oc.l + od.l)%2;
 
    if (Tzab != Tzcd or parityab != paritycd) return 0;
 
-   int jmin = abs(oa->j2 - ob->j2)/2;
-   int jmax = (oa->j2 + ob->j2)/2;
+   int jmin = abs(oa.j2 - ob.j2)/2;
+   int jmax = (oa.j2 + ob.j2)/2;
    
    for (int J=jmin;J<=jmax;++J)
    {
       mon += (2*J+1) * GetTBME(J,parityab,Tzab,a,b,c,d);
    }
-   mon /= (oa->j2 +1)*(ob->j2+1);
+   mon /= (oa.j2 +1)*(ob.j2+1);
    return mon;
 }
 
-double Operator::GetTBMEmonopole(Ket * bra, Ket * ket) const
+double Operator::GetTBMEmonopole(Ket & bra, Ket & ket) const
 {
-   return GetTBMEmonopole(bra->p,bra->q,ket->p,ket->q);
+   return GetTBMEmonopole(bra.p,bra.q,ket.p,ket.q);
 }
 
 
@@ -268,7 +269,7 @@ Operator Operator::DoNormalOrdering()
 
    for (int &k : modelspace->holes) // loop over hole orbits
    {
-      opNO.ZeroBody += (modelspace->GetOrbit(k)->j2+1) * OneBody(k,k);
+      opNO.ZeroBody += (modelspace->GetOrbit(k).j2+1) * OneBody(k,k);
    }
 
    int norbits = modelspace->GetNumberOrbits();
@@ -288,22 +289,22 @@ Operator Operator::DoNormalOrdering()
       int ibra,iket;
       for (int a=0;a<norbits;++a)
       {
-         Orbit *orba = modelspace->GetOrbit(a);
+         Orbit &oa = modelspace->GetOrbit(a);
          int bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
          for (int b=bstart;b<norbits;++b)
          {
-            Orbit *orbb = modelspace->GetOrbit(b);
-            if (orbb->j2 != orba->j2 or orbb->tz2 != orba->tz2 or orbb->l != orba->l) continue;
+            Orbit &ob = modelspace->GetOrbit(b);
+            if (ob.j2 != oa.j2 or ob.tz2 != oa.tz2 or ob.l != oa.l) continue;
             for (int &h : modelspace->holes)  // C++11 syntax
             {
                if ( (ibra = tbc.GetLocalIndex(min(a,h),max(a,h)))<0) continue;
                if ( (iket = tbc.GetLocalIndex(min(b,h),max(b,h)))<0) continue;
-               Ket * bra = tbc.GetKet(ibra);
-               Ket * ket = tbc.GetKet(iket);
-               double tbme = (2*J+1.0)/(orba->j2+1)  * GetTBME(ch,bra,ket);
+               Ket & bra = tbc.GetKet(ibra);
+               Ket & ket = tbc.GetKet(iket);
+               double tbme = (2*J+1.0)/(oa.j2+1)  * GetTBME(ch,bra,ket);
                int phase = 1;
-               if (a>h) phase *= bra->Phase(J);
-               if (b>h) phase *= ket->Phase(J);
+               if (a>h) phase *= bra.Phase(J);
+               if (b>h) phase *= ket.Phase(J);
 
                opNO.OneBody(a,b) += phase * tbme;  // <ah|V|bh>
             }
@@ -359,17 +360,17 @@ void Operator::CalculateKineticEnergy()
    float hw = modelspace->GetHbarOmega();
    for (int a=0;a<norbits;++a)
    {
-      Orbit * orba = modelspace->GetOrbit(a);
-      OneBody(a,a) = 0.5 * hw * (2*orba->n + orba->l +3./2); 
+      Orbit & oa = modelspace->GetOrbit(a);
+      OneBody(a,a) = 0.5 * hw * (2*oa.n + oa.l +3./2); 
       for (int b=a+1;b<norbits;++b)  // make this better once OneBodyChannel is implemented
       {
-         Orbit * orbb = modelspace->GetOrbit(b);
-         if (orba->l == orbb->l and orba->j2 == orbb->j2 and orba->tz2 == orbb->tz2)
+         Orbit & ob = modelspace->GetOrbit(b);
+         if (oa.l == ob.l and oa.j2 == ob.j2 and oa.tz2 == ob.tz2)
          {
-            if (orba->n == orbb->n+1)
-               OneBody(a,b) = 0.5 * hw * sqrt( (orba->n)*(orba->n + orba->l +1./2));
-            else if (orba->n == orbb->n-1)
-               OneBody(a,b) = 0.5 * hw * sqrt( (orbb->n)*(orbb->n + orbb->l +1./2));
+            if (oa.n == ob.n+1)
+               OneBody(a,b) = 0.5 * hw * sqrt( (oa.n)*(oa.n + oa.l +1./2));
+            else if (oa.n == ob.n-1)
+               OneBody(a,b) = 0.5 * hw * sqrt( (ob.n)*(ob.n + ob.l +1./2));
             OneBody(b,a) = OneBody(a,b);
          }
       }
@@ -416,31 +417,31 @@ void Operator::UpdateCrossCoupled()
       // loop over cross-coupled ph bras <ac| in this channel
       for (int i_ph=0; i_ph<nph_kets; ++i_ph)
       {
-         Ket * bra_cc = tbc_cc.GetKet( tbc_cc.KetIndex_ph[i_ph] );
-         int a = bra_cc->p;
-         int c = bra_cc->q;
-         Orbit * oa = modelspace->GetOrbit(a);
-         Orbit * oc = modelspace->GetOrbit(c);
-         double ja = oa->j2/2.0;
-         double jc = oc->j2/2.0;
+         Ket & bra_cc = tbc_cc.GetKet( tbc_cc.KetIndex_ph[i_ph] );
+         int a = bra_cc.p;
+         int c = bra_cc.q;
+         Orbit & oa = modelspace->GetOrbit(a);
+         Orbit & oc = modelspace->GetOrbit(c);
+         double ja = oa.j2/2.0;
+         double jc = oc.j2/2.0;
 
          // loop over cross-coupled kets |bd> in this channel
          // we go to 2*nKets to include |bd> and |db>
          for (int iket_cc=0; iket_cc<2*nKets_cc; ++iket_cc)
          {
-            Ket * ket_cc = tbc_cc.GetKet(iket_cc%nKets_cc);
-            int b = iket_cc < nKets_cc ? ket_cc->p : ket_cc->q;
-            int d = iket_cc < nKets_cc ? ket_cc->q : ket_cc->p;
-            Orbit * ob = modelspace->GetOrbit(b);
-            Orbit * od = modelspace->GetOrbit(d);
-            double jb = ob->j2/2.0;
-            double jd = od->j2/2.0;
+            Ket & ket_cc = tbc_cc.GetKet(iket_cc%nKets_cc);
+            int b = iket_cc < nKets_cc ? ket_cc.p : ket_cc.q;
+            int d = iket_cc < nKets_cc ? ket_cc.q : ket_cc.p;
+            Orbit & ob = modelspace->GetOrbit(b);
+            Orbit & od = modelspace->GetOrbit(d);
+            double jb = ob.j2/2.0;
+            double jd = od.j2/2.0;
 
             int phase_ad = modelspace->phase(ja+jd);
 
             // Get Tz,parity and range of J for <ab || cd > coupling
-            int Tz_std = (oa->tz2 + ob->tz2)/2;
-            int parity_std = (oa->l + ob->l)%2;
+            int Tz_std = (oa.tz2 + ob.tz2)/2;
+            int parity_std = (oa.l + ob.l)%2;
             int jmin = max(abs(ja-jb),abs(jc-jd));
             int jmax = min(ja+jb,jc+jd);
             double sm = 0;
@@ -456,8 +457,8 @@ void Operator::UpdateCrossCoupled()
 
 
             // Get Tz,parity and range of J for <cb || ad > coupling
-            Tz_std = (oa->tz2 + od->tz2)/2;
-            parity_std = (oa->l + od->l)%2;
+            Tz_std = (oa.tz2 + od.tz2)/2;
+            parity_std = (oa.l + od.l)%2;
             jmin = max(abs(jc-jb),abs(ja-jd));
             jmax = min(jc+jb,ja+jd);
             sm = 0;
@@ -518,31 +519,31 @@ void Operator::UpdateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<arm
       // loop over cross-coupled ph bras <ac| in this channel
       for (int i_ph=0; i_ph<nph_kets; ++i_ph)
       {
-         Ket * bra_cc = tbc_cc.GetKet( tbc_cc.KetIndex_ph[i_ph] );
-         int a = bra_cc->p;
-         int c = bra_cc->q;
-         Orbit * oa = modelspace->GetOrbit(a);
-         Orbit * oc = modelspace->GetOrbit(c);
-         double ja = oa->j2/2.0;
-         double jc = oc->j2/2.0;
+         Ket & bra_cc = tbc_cc.GetKet( tbc_cc.KetIndex_ph[i_ph] );
+         int a = bra_cc.p;
+         int c = bra_cc.q;
+         Orbit & oa = modelspace->GetOrbit(a);
+         Orbit & oc = modelspace->GetOrbit(c);
+         double ja = oa.j2/2.0;
+         double jc = oc.j2/2.0;
 
          // loop over cross-coupled kets |bd> in this channel
          // we go to 2*nKets to include |bd> and |db>
          for (int iket_cc=0; iket_cc<2*nKets_cc; ++iket_cc)
          {
-            Ket * ket_cc = tbc_cc.GetKet(iket_cc%nKets_cc);
-            int b = iket_cc < nKets_cc ? ket_cc->p : ket_cc->q;
-            int d = iket_cc < nKets_cc ? ket_cc->q : ket_cc->p;
-            Orbit * ob = modelspace->GetOrbit(b);
-            Orbit * od = modelspace->GetOrbit(d);
-            double jb = ob->j2/2.0;
-            double jd = od->j2/2.0;
+            Ket & ket_cc = tbc_cc.GetKet(iket_cc%nKets_cc);
+            int b = iket_cc < nKets_cc ? ket_cc.p : ket_cc.q;
+            int d = iket_cc < nKets_cc ? ket_cc.q : ket_cc.p;
+            Orbit & ob = modelspace->GetOrbit(b);
+            Orbit & od = modelspace->GetOrbit(d);
+            double jb = ob.j2/2.0;
+            double jd = od.j2/2.0;
 
             int phase_ad = modelspace->phase(ja+jd);
 
             // Get Tz,parity and range of J for <ab || cd > coupling
-            int Tz_std = (oa->tz2 + ob->tz2)/2;
-            int parity_std = (oa->l + ob->l)%2;
+            int Tz_std = (oa.tz2 + ob.tz2)/2;
+            int parity_std = (oa.l + ob.l)%2;
             int jmin = max(abs(ja-jb),abs(jc-jd));
             int jmax = min(ja+jb,jc+jd);
             double sm = 0;
@@ -558,8 +559,8 @@ void Operator::UpdateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<arm
 
 
             // Get Tz,parity and range of J for <cb || ad > coupling
-            Tz_std = (oa->tz2 + od->tz2)/2;
-            parity_std = (oa->l + od->l)%2;
+            Tz_std = (oa.tz2 + od.tz2)/2;
+            parity_std = (oa.l + od.l)%2;
             jmin = max(abs(jc-jb),abs(ja-jd));
             jmax = min(jc+jb,ja+jd);
             sm = 0;
@@ -739,7 +740,7 @@ double Operator::comm110(const Operator& opright) const
    arma::mat xyyx = OneBody*opright.OneBody - opright.OneBody*OneBody;
    for ( int& a : modelspace->holes) // C++11 range-for syntax: loop over all elements of the vector <particle>
    {
-      comm += (modelspace->GetOrbit(a)->j2+1)*xyyx(a,a);
+      comm += (modelspace->GetOrbit(a).j2+1)*xyyx(a,a);
    }
    return comm;
 }
@@ -806,27 +807,27 @@ void Operator::comm121(const Operator& opright, Operator& out) const
    #pragma omp parallel for
    for (int i=0;i<norbits;++i)
    {
-      Orbit *oi = modelspace->GetOrbit(i);
+      Orbit &oi = modelspace->GetOrbit(i);
       for (int j=0;j<norbits; ++j) // Later make this j=i;j<norbits... and worry about Hermitian vs anti-Hermitian
       {
-          Orbit *oj = modelspace->GetOrbit(j);
-          if (oi->j2 != oj->j2 or oi->l != oj->l or oi->tz2 != oj->tz2) continue; // At some point, make a OneBodyChannel class...
+          Orbit &oj = modelspace->GetOrbit(j);
+          if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue; // At some point, make a OneBodyChannel class...
           for (int &a : modelspace->holes)  // C++11 syntax
           {
-             Orbit *oa = modelspace->GetOrbit(a);
+             Orbit &oa = modelspace->GetOrbit(a);
              for (int b=0;b<norbits;++b)
              {
-                Orbit *ob = modelspace->GetOrbit(b);
-                //comm(i,j) += (ob->j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
-                //comm(i,j) -= (oa->j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
-                out.OneBody(i,j) += (ob->j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
-                out.OneBody(i,j) -= (oa->j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
+                Orbit &ob = modelspace->GetOrbit(b);
+                //comm(i,j) += (ob.j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
+                //comm(i,j) -= (oa.j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
+                out.OneBody(i,j) += (ob.j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
+                out.OneBody(i,j) -= (oa.j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
 
                 // comm211 part
-                //comm(i,j) -= (ob->j2+1) *  opright.OneBody(a,b) * GetTBMEmonopole(b,i,a,j) ;
-                //comm(i,j) += (oa->j2+1) *  opright.OneBody(b,a) * GetTBMEmonopole(a,i,b,j) ;
-                out.OneBody(i,j) -= (ob->j2+1) *  opright.OneBody(a,b) * GetTBMEmonopole(b,i,a,j) ;
-                out.OneBody(i,j) += (oa->j2+1) *  opright.OneBody(b,a) * GetTBMEmonopole(a,i,b,j) ;
+                //comm(i,j) -= (ob.j2+1) *  opright.OneBody(a,b) * GetTBMEmonopole(b,i,a,j) ;
+                //comm(i,j) += (oa.j2+1) *  opright.OneBody(b,a) * GetTBMEmonopole(a,i,b,j) ;
+                out.OneBody(i,j) -= (ob.j2+1) *  opright.OneBody(a,b) * GetTBMEmonopole(b,i,a,j) ;
+                out.OneBody(i,j) += (oa.j2+1) *  opright.OneBody(b,a) * GetTBMEmonopole(a,i,b,j) ;
              }
           }
       }
@@ -870,11 +871,11 @@ void Operator::comm221(const Operator& opright, Operator& out) const
       // need to do half the sum. Add this.
       for (int i=0;i<norbits;++i)
       {
-         Orbit *oi = modelspace->GetOrbit(i);
+         Orbit &oi = modelspace->GetOrbit(i);
          for (int j=0;j<norbits;++j)
          {
-            Orbit *oj = modelspace->GetOrbit(j);
-            if (oi->j2 != oj->j2 or oi->l != oj->l or oi->tz2 != oj->tz2) continue;
+            Orbit &oj = modelspace->GetOrbit(j);
+            if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue;
             double cijJ = 0;
             // Sum c over holes and include the nbar_a * nbar_b terms
             for (int &c : modelspace->holes)
@@ -887,8 +888,8 @@ void Operator::comm221(const Operator& opright, Operator& out) const
                cijJ +=  Mhh.GetTBME(ch,i,c,j,c);
             }
             #pragma omp critical
-            out.OneBody(i,j) += (2*tbc.J+1.0)/(oi->j2 +1.0) * cijJ;
-            //comm(i,j) += (2*tbc.J+1.0)/(oi->j2 +1.0) * cijJ;
+            out.OneBody(i,j) += (2*tbc.J+1.0)/(oi.j2 +1.0) * cijJ;
+            //comm(i,j) += (2*tbc.J+1.0)/(oi.j2 +1.0) * cijJ;
          } // for j
       } // for i
    } //for ch
@@ -921,16 +922,16 @@ void Operator::comm122(const Operator& opright, Operator& opout ) const
       int norbits = modelspace->GetNumberOrbits();
       for (int ibra = 0;ibra<npq; ++ibra)
       {
-         Ket * bra = tbc.GetKet(ibra);
-         int i = bra->p;
-         int j = bra->q;
+         Ket & bra = tbc.GetKet(ibra);
+         int i = bra.p;
+         int j = bra.q;
          int indx_ij = ibra;
          double pre_ij = i==j ? sqrt(2) : 1;
          for (int iket=ibra;iket<npq; ++iket)
          {
-            Ket * ket = tbc.GetKet(iket);
-            int k = ket->p;
-            int l = ket->q;
+            Ket & ket = tbc.GetKet(iket);
+            int k = ket.p;
+            int l = ket.q;
             int indx_kl = iket;
             double pre_kl = k==l ? sqrt(2) : 1;
 
@@ -946,7 +947,7 @@ void Operator::comm122(const Operator& opright, Operator& opout ) const
 
                if (indx_aj >= 0)
                {
-                  double pre_aj = a>j ? tbc.GetKet(indx_aj)->Phase(tbc.J) : 1;
+                  double pre_aj = a>j ? tbc.GetKet(indx_aj).Phase(tbc.J) : 1;
                   if (a==j) pre_aj *= sqrt(2);
                   ckl += pre_aj  * OneBody(i,a) * opright.TwoBody[ch](indx_aj,indx_kl);
                   ckl -= pre_aj  * opright.OneBody(i,a) * TwoBody[ch](indx_aj,indx_kl);
@@ -954,7 +955,7 @@ void Operator::comm122(const Operator& opright, Operator& opout ) const
 
                if (indx_ia >= 0)
                {
-                  double pre_ia = i>a ? tbc.GetKet(indx_ia)->Phase(tbc.J) : 1;
+                  double pre_ia = i>a ? tbc.GetKet(indx_ia).Phase(tbc.J) : 1;
                   if (i==a) pre_ia *= sqrt(2);
                   ckl += pre_ia * OneBody(j,a) * opright.TwoBody[ch](indx_ia,indx_kl);
                   ckl -= pre_ia * opright.OneBody(j,a) * TwoBody[ch](indx_ia,indx_kl);
@@ -962,7 +963,7 @@ void Operator::comm122(const Operator& opright, Operator& opout ) const
 
                if (indx_al >= 0)
                {
-                  double pre_al = a>l ? tbc.GetKet(indx_al)->Phase(tbc.J) : 1;
+                  double pre_al = a>l ? tbc.GetKet(indx_al).Phase(tbc.J) : 1;
                   if (a==l) pre_al *= sqrt(2);
                   cij -= pre_al * OneBody(a,k) * opright.TwoBody[ch](indx_ij,indx_al);
                   cij += pre_al * opright.OneBody(a,k) * TwoBody[ch](indx_ij,indx_al);
@@ -970,14 +971,14 @@ void Operator::comm122(const Operator& opright, Operator& opout ) const
 
                if (indx_ka >= 0)
                {
-                  double pre_ka = k>a ? tbc.GetKet(indx_ka)->Phase(tbc.J) : 1;
+                  double pre_ka = k>a ? tbc.GetKet(indx_ka).Phase(tbc.J) : 1;
                   if (k==a) pre_ka *= sqrt(2);
                   cij -= pre_ka * OneBody(a,l) * opright.TwoBody[ch](indx_ij,indx_ka);
                   cij += pre_ka * opright.OneBody(a,l) * TwoBody[ch](indx_ij,indx_ka);
                }
 
             }
-            cijkl = (ckl*pre_kl + cij*pre_ij) / sqrt( (1.0+bra->delta_pq())*(1.0+ket->delta_pq()) );
+            cijkl = (ckl*pre_kl + cij*pre_ij) / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()) );
             #pragma omp critical
             {
             opout.TwoBody[ch](ibra,iket) += cijkl;
@@ -1063,13 +1064,13 @@ void Operator::comm222_pp_hh_221(const Operator& opright, Operator& opout ) cons
 //      #pragma omp parallel for schedule(dynamic,3)
       for (int i=0;i<norbits;++i)
       {
-         Orbit *oi = modelspace->GetOrbit(i);
+         Orbit &oi = modelspace->GetOrbit(i);
          int jmin = opout.IsNonHermitian() ? 0 : i;
          //for (int j=0;j<norbits;++j)
          for (int j=jmin;j<norbits;++j)
          {
-            Orbit *oj = modelspace->GetOrbit(j);
-            if (oi->j2 != oj->j2 or oi->l != oj->l or oi->tz2 != oj->tz2) continue;
+            Orbit &oj = modelspace->GetOrbit(j);
+            if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue;
             double cijJ = 0;
             // Sum c over holes and include the nbar_a * nbar_b terms
             for (int &c : modelspace->holes)
@@ -1081,8 +1082,8 @@ void Operator::comm222_pp_hh_221(const Operator& opright, Operator& opout ) cons
             {
                cijJ +=  Mhh.GetTBME(ch,i,c,j,c);
             }
-            //comm(i,j) += (2*tbc.J+1.0)/(oi->j2 +1.0) * cijJ;
-            cijJ *= (2*tbc.J+1.0)/(oi->j2+1.0);
+            //comm(i,j) += (2*tbc.J+1.0)/(oi.j2 +1.0) * cijJ;
+            cijJ *= (2*tbc.J+1.0)/(oi.j2+1.0);
             opout.OneBody(i,j) += cijJ;
             if (! opout.IsNonHermitian() and i!=j)
             {
@@ -1110,31 +1111,31 @@ void Operator::comm222_ph_slow(const Operator& opright, Operator& opout ) const
       int nkets = tbc.GetNumberKets();
       for (int ibra=0; ibra<nkets; ++ibra)
       {
-         Ket * bra = tbc.GetKet(ibra);
-         int i = bra->p;
-         int j = bra->q;
-         Orbit * oi = modelspace->GetOrbit(i);
-         Orbit * oj = modelspace->GetOrbit(j);
-         double ji = oi->j2/2.;
-         double jj = oj->j2/2.;
+         Ket & bra = tbc.GetKet(ibra);
+         int i = bra.p;
+         int j = bra.q;
+         Orbit & oi = modelspace->GetOrbit(i);
+         Orbit & oj = modelspace->GetOrbit(j);
+         double ji = oi.j2/2.;
+         double jj = oj.j2/2.;
          for (int iket=0; iket<nkets; ++iket)
          {
-            Ket * ket = tbc.GetKet(iket);
-            int k = ket->p;
-            int l = ket->q;
-            Orbit * ok = modelspace->GetOrbit(k);
-            Orbit * ol = modelspace->GetOrbit(l);
-            double jk = (ok->j2/2.);
-            double jl = (ol->j2/2.);
+            Ket & ket = tbc.GetKet(iket);
+            int k = ket.p;
+            int l = ket.q;
+            Orbit & ok = modelspace->GetOrbit(k);
+            Orbit & ol = modelspace->GetOrbit(l);
+            double jk = (ok.j2/2.);
+            double jl = (ol.j2/2.);
             double commijkl = 0;
             for (int& a : modelspace->holes)
             {
-               Orbit * oa = modelspace->GetOrbit(k);
-               double ja = (oa->j2/2.);
+               Orbit & oa = modelspace->GetOrbit(k);
+               double ja = (oa.j2/2.);
                for (int & b : modelspace->particles)
                {
-                  Orbit * ob = modelspace->GetOrbit(k);
-                  double jb = (ob->j2/2.);
+                  Orbit & ob = modelspace->GetOrbit(k);
+                  double jb = (ob.j2/2.);
                   int j1min = 0;
                   int j1max = 6;  // you can do better than this ...
                   int j2min = 0;
@@ -1219,30 +1220,30 @@ void Operator::comm222_ph(const Operator& opright, Operator& opout ) const
       int nKets = tbc.GetNumberKets();
       for (int ibra=0; ibra<nKets; ++ibra)
       {
-         Ket * bra = tbc.GetKet(ibra);
-         int i = bra->p;
-         int j = bra->q;
-         Orbit* oi = modelspace->GetOrbit(i);
-         Orbit* oj = modelspace->GetOrbit(j);
-         double ji = oi->j2/2.;
-         double jj = oj->j2/2.;
+         Ket & bra = tbc.GetKet(ibra);
+         int i = bra.p;
+         int j = bra.q;
+         Orbit & oi = modelspace->GetOrbit(i);
+         Orbit & oj = modelspace->GetOrbit(j);
+         double ji = oi.j2/2.;
+         double jj = oj.j2/2.;
 
          for (int iket=ibra; iket<nKets; ++iket)
          {
-            Ket * ket = tbc.GetKet(iket);
-            int k = ket->p;
-            int l = ket->q;
-            Orbit* ok = modelspace->GetOrbit(k);
-            Orbit* ol = modelspace->GetOrbit(l);
-            double jk = ok->j2/2.;
-            double jl = ol->j2/2.;
+            Ket & ket = tbc.GetKet(iket);
+            int k = ket.p;
+            int l = ket.q;
+            Orbit & ok = modelspace->GetOrbit(k);
+            Orbit & ol = modelspace->GetOrbit(l);
+            double jk = ok.j2/2.;
+            double jl = ol.j2/2.;
 
 
             double comm = 0;
 
             // now loop over the cross coupled TBME's
-            int parity_cc = (oi->l+ok->l)%2;
-            int Tz_cc = abs(oi->tz2+ok->tz2)/2;
+            int parity_cc = (oi.l+ok.l)%2;
+            int Tz_cc = abs(oi.tz2+ok.tz2)/2;
             int jmin = max(abs(int(jj-jl)),abs(int(jk-ji)));
             int jmax = min(int(jj+jl),int(jk+ji));
             for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
@@ -1263,8 +1264,8 @@ void Operator::comm222_ph(const Operator& opright, Operator& opout ) const
                comm -= (2*Jprime+1) * phase * sixj * (me1-me2-me3+me4);
             }
 
-            parity_cc = (oi->l+ol->l)%2;
-            Tz_cc = abs(oi->tz2+ol->tz2)/2;
+            parity_cc = (oi.l+ol.l)%2;
+            Tz_cc = abs(oi.tz2+ol.tz2)/2;
             jmin = max(abs(int(ji-jl)),abs(int(jk-jj)));
             jmax = min(int(ji+jl),int(jk+jj));
             for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
@@ -1285,7 +1286,7 @@ void Operator::comm222_ph(const Operator& opright, Operator& opout ) const
                comm -= (2*Jprime+1) * phase * sixj * (me1-me2-me3+me4);
             }
 
-            comm /= sqrt((1.0+bra->delta_pq())*(1.0+ket->delta_pq()));
+            comm /= sqrt((1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
             #pragma omp critical
             {
             opout.TwoBody[ch](ibra,iket) += comm;

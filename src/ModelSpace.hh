@@ -51,14 +51,17 @@ class Ket  //  | pq >
    int Jstep;
    // Constructors
    Ket(){};
+   Ket(ModelSpace * ms);
    Ket(ModelSpace * ms, int p, int q);
+   void Setpq(int p, int q);
    // Methods
    int Phase(int J);
-   int delta_pq(){return p==q ? 1 : 0;};
+   int delta_pq(){return dpq;};
+   ModelSpace * ms;
 
  private:
    // Fields
-   ModelSpace * ms;
+   int dpq;
    int phase_prefactor;
 
 };
@@ -73,15 +76,11 @@ class Ket3  //  | pqr >
    int r;
    int parity;
    int Tz;
-//   int Jmin;
-//   int Jmax;
-//   int Jstep;
    // Constructors
    Ket3(){};
    Ket3(ModelSpace * ms, int p, int q, int r);
    // Methods
    int Phase(int J);
-//   int delta_pq(){return p==q ? 1 : 0;};
 
  private:
    // Fields
@@ -111,35 +110,21 @@ class TwoBodyChannel
 
    //Overloaded operators
    TwoBodyChannel& operator=(const TwoBodyChannel& rhs) {Copy(rhs); return *this;};
-//   TwoBodyChannel& operator+=(const TwoBodyChannel&);
-//   TwoBodyChannel operator+(const TwoBodyChannel& rhs){return TwoBodyChannel(*this) += rhs;};
-//   TwoBodyChannel& operator-=(const TwoBodyChannel&);
-//   TwoBodyChannel operator-(const TwoBodyChannel& rhs){return TwoBodyChannel(*this) -= rhs;};
 
    //Methods
    int GetNumberKets() const {return NumberKets;};
    int GetLocalIndex(int ketindex) const { return KetMap[ketindex];}; // modelspace ket index => local ket index
    int GetLocalIndex(int p, int q) const ;
    int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
-   Ket * GetKet(int i) const ; // get pointer to ket using local index
+   Ket & GetKet(int i) const ; // get pointer to ket using local index
    vector<int> KetIndex_pp; //maybe don't need
    vector<int> KetIndex_ph;
    vector<int> KetIndex_hh;
    vector<int> KetIndex_vv;
-//   vector<int> KetIndex_vq; // don't need
-//   vector<int> KetIndex_qq; // don't need
    vector<int> KetIndex_holeq_holeq; 
    vector<int> KetIndex_particleq_particleq;
    vector<int> KetIndex_v_holeq; // added
    vector<int> KetIndex_v_particleq; //added
-//   vector<int> KetIndex_particleq_holeq; // don't need
-
-//   vector<int> KetIndex_vh;
-//   vector<int> KetIndex_hq;
-//   vector<int> KetIndex_holeq_holeq;
-//   vector<int> KetIndex_particleq_particleq;
-//   vector<int> KetIndex_particleq_particleq;
-
 
 // private:
    //Fields
@@ -149,7 +134,7 @@ class TwoBodyChannel
    vector<int> KetMap;  // eg [ -1, -1, 0, -1, 1, -1, -1, 2 ...] Used for asking what is the local index of this ket. -1 means the ket doesn't participate in this channel
    //Methods
    virtual bool CheckChannel_ket(int p, int q) const;  // check if |pq> participates in this channel
-   bool CheckChannel_ket(Ket *ket) const {return CheckChannel_ket(ket->p,ket->q);};  // check if |pq> participates in this channel
+   bool CheckChannel_ket(Ket &ket) const {return CheckChannel_ket(ket.p,ket.q);};  // check if |pq> participates in this channel
    void Copy(const TwoBodyChannel &);
    
 };
@@ -176,9 +161,6 @@ class ThreeBodyChannel
    int J;
    int parity;
    int Tz;
-//   arma::mat Proj_pp; // Projector onto pp kets
-//   arma::mat Proj_hh; // Projector onto hh kets
-//   arma::mat Proj_ph_cc; // Projector onto ph kets, for use with cross-coupled TBMEs
 
    // Constructors
    ThreeBodyChannel();
@@ -196,16 +178,7 @@ class ThreeBodyChannel
    int GetLocalIndex(int p, int q, int r) const ;
    int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
    Ket * GetKet(int i) const ; // get pointer to ket using local index
-/*
-   vector<int> KetIndex_pp;
-   vector<int> KetIndex_ph;
-   vector<int> KetIndex_hh;
-   vector<int> KetIndex_vv;
-   vector<int> KetIndex_vq;
-   vector<int> KetIndex_vh;
-   vector<int> KetIndex_hq;
-   vector<int> KetIndex_qq;
-*/
+
 
 // private:
    //Fields
@@ -228,13 +201,7 @@ class ModelSpace
 {
 
  public:
-   // Fields
-   vector<int> holes;
-   vector<int> particles;
-   vector<int> valence;
-   vector<int> qspace;
-   vector<int> hole_qspace;
-   vector<int> particle_qspace;
+
 
    // Constructors
    ModelSpace();
@@ -247,9 +214,12 @@ class ModelSpace
    void SetupKets();
    void AddOrbit(Orbit orb);
    // Setter/Getters
-   Orbit* GetOrbit(int i) const {return Orbits[i];}; 
-   Ket* GetKet(int i) const {return Kets[i];};
-   Ket* GetKet(int p, int q) const {return Kets[Index2(p,q)];};
+//   Orbit* GetOrbit(int i) const {return Orbits[i];}; 
+//   Ket* GetKet(int i) const {return Kets[i];};
+//   Ket* GetKet(int p, int q) const {return Kets[Index2(p,q)];};
+   Orbit& GetOrbit(int i) const {return (Orbit&) Orbits[i];}; 
+   Ket& GetKet(int i) const {return (Ket&) Kets[i];};
+   Ket& GetKet(int p, int q) const {return (Ket&) Kets[Index2(p,q)];};
    int GetKetIndex(int p, int q) const {return Index2(p,q);}; // convention is p<=q
    int GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
    int GetNumberOrbits() const {return norbits;};
@@ -262,7 +232,7 @@ class ModelSpace
    //TwoBodyChannel& GetTwoBodyChannel(int ch) {return TwoBodyChannels[ch];};
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
-   TwoBodyChannel* GetTwoBodyChannel_ptr(int ch) {return (&TwoBodyChannels[ch]);};
+//   TwoBodyChannel* GetTwoBodyChannel_ptr(int ch) {return (&TwoBodyChannels[ch]);};
    int GetTwoBodyJmax() const {return TwoBodyJmax;};
    //double GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3);
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
@@ -277,9 +247,15 @@ class ModelSpace
    //int Index2(int p, int q) const {return q*norbits + p;};
    inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
 
+   // Fields
+   vector<int> holes;
+   vector<int> particles;
+   vector<int> valence;
+   vector<int> qspace;
+   vector<int> hole_qspace;
+   vector<int> particle_qspace;
    vector<int> proton_orbits;
    vector<int> neutron_orbits;
-
 
 
  private:
@@ -289,13 +265,15 @@ class ModelSpace
    int TwoBodyJmax;
    float hbar_omega;
    int target_mass;
-   std::vector<Orbit*> Orbits;
-   std::vector<Ket*> Kets;
-   std::vector<TwoBodyChannel> TwoBodyChannels;
-   std::vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
    int nTwoBodyChannels;
-   std::map<long int,double> SixJList;
-   std::map<long int,double> MoshList;
+//   vector<Orbit*> Orbits;
+//   vector<Ket*> Kets;
+   vector<Orbit> Orbits;
+   vector<Ket> Kets;
+   vector<TwoBodyChannel> TwoBodyChannels;
+   vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
+   map<long int,double> SixJList;
+   map<long int,double> MoshList;
 
 };
 
