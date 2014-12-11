@@ -148,7 +148,7 @@ void ReadWrite::ReadBareTBME( string filename, Operator& Hbare)
      if (a>norbits or b>norbits or c>norbits or d>norbits) continue;
      a--; b--; c--; d--; // Fortran -> C  ==> 1 -> 0
 
-     double com_corr = fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  // Some sort of COM correction. Check this
+     double com_corr = fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  
 
 // NORMALIZATION: Read in normalized, antisymmetrized TBME's
 
@@ -250,7 +250,6 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
   ifstream infile;
   char line[LINESIZE];
   infile.open(filename);
-  double tbme;
   double tbme_pp,tbme_nn,tbme_10,tbme_00;
   if ( !infile.good() )
   {
@@ -292,21 +291,15 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
           int Jmin = max( abs(o1.j2 - o2.j2), abs(o3.j2 - o4.j2) )/2;
           int Jmax = min (o1.j2 + o2.j2, o3.j2+o4.j2)/2;
           if (Jmin > Jmax) continue;
-          cout << endl << nlj1 << " " << nlj2 << " " << nlj3 << " " << nlj4 << "   -->  "
-               << a << " "  
-               << b << " "  
-               << c << " "  
-               << d << " "  
-               << endl;
           for (int J=Jmin; J<=Jmax; ++J)
           {
+             // File is read here.
              infile >> tbme_00 >> tbme_nn >> tbme_10 >> tbme_pp;
 
              // convert isospin to pn formalism
              double tbme_pnpn = (tbme_10 + tbme_00)/2;
              double tbme_pnnp = (tbme_10 - tbme_00)/2;
 
-             cout << " J = " << J << " tbme: " << tbme_00 << " " << tbme_nn  << " " << tbme_10 << " " << tbme_pp << endl;
              if (a>=norb or b>=norb or c>=norb or d>=norb) continue;
 
              int ch_nn = modelspace->GetTwoBodyChannelIndex(J,parity,1);
@@ -316,102 +309,18 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
              TwoBodyChannel& tbc_pn = modelspace->GetTwoBodyChannel(ch_pn);
              TwoBodyChannel& tbc_pp = modelspace->GetTwoBodyChannel(ch_pp);
 
-             // do pp first
-
-             if (tbme_pp !=0)
+             // do pp and nn
+             if (tbme_pp !=0 or tbme_nn !=0)
              {
-                   // normalize
-                   if (a==b) tbme_pp /= sqrt(2);
-                   if (c==d) tbme_pp /= sqrt(2);
-                   int ibra = tbc_pp.GetLocalIndex(min(a,b),max(a,b));
-                   int iket = tbc_pp.GetLocalIndex(min(c,d),max(c,d));
-                   cout << "    PP: ibra,iket = " << ibra << "," << iket << endl;
-                   Ket & bra = tbc_pp.GetKet(ibra);
-                   Ket & ket = tbc_pp.GetKet(iket);
-                   if (a>b) tbme_pp *= bra.Phase(J+0);
-                   if (c>d) tbme_pp *= ket.Phase(J+0);
-                   Hbare.TwoBody[ch_pp](ibra,iket) = tbme_pp;
-                   Hbare.TwoBody[ch_pp](iket,ibra) = tbme_pp;
+                Hbare.SetTBME(ch_pp,a,b,c,d,tbme_pp);
+                Hbare.SetTBME(ch_nn,a+1,b+1,c+1,d+1,tbme_nn);
              }
 
-                   // then do nn
-             if (tbme_nn !=0)
-             {
-                  // normalize
-                   if (a==b) tbme_nn /= sqrt(2);
-                   if (c==d) tbme_nn /= sqrt(2);
-                   int ibra = tbc_nn.GetLocalIndex(min(a,b)+1,max(a,b)+1);
-                   int iket = tbc_nn.GetLocalIndex(min(c,d)+1,max(c,d)+1);
-                   cout << "    NN: ibra,iket = " << ibra << "," << iket << endl;
-                   Ket & bra = tbc_nn.GetKet(ibra);
-                   Ket & ket = tbc_nn.GetKet(iket);
-                   if (a>b) tbme_nn *= bra.Phase(J+0);
-                   if (c>d) tbme_nn *= ket.Phase(J+0);
-                   Hbare.TwoBody[ch_nn](ibra,iket) = tbme_nn;
-                   Hbare.TwoBody[ch_nn](iket,ibra) = tbme_nn;
-             }
-
-                   // now do pnpn
-
-             if (tbme_pnpn !=0)
-             {
-                   int ibra = tbc_pn.GetLocalIndex(min(a,b+1),max(a,b+1));
-                   int iket = tbc_pn.GetLocalIndex(min(c,d+1),max(c,d+1));
-                   cout << "    PNPN: ibra,iket = " << ibra << "," << iket << endl;
-                   Ket & bra = tbc_pn.GetKet(ibra);
-                   Ket & ket = tbc_pn.GetKet(iket);
-                   int phase = 1;
-                   if (a > b+1) phase *= bra.Phase(J+0);
-                   if (c > d+1) phase *= ket.Phase(J+0);
-                   Hbare.TwoBody[ch_pn](ibra,iket) = phase * tbme_pnpn;
-                   Hbare.TwoBody[ch_pn](iket,ibra) = phase * tbme_pnpn;
-
-
-                   // now do npnp
-
-                   ibra = tbc_pn.GetLocalIndex(min(a+1,b),max(a+1,b));
-                   iket = tbc_pn.GetLocalIndex(min(c+1,d),max(c+1,d));
-                   cout << "    NPNP: ibra,iket = " << ibra << "," << iket << endl;
-                   bra = tbc_pn.GetKet(ibra);
-                   ket = tbc_pn.GetKet(iket);
-                   phase = 1;
-                   if (a+1 > b) phase *= bra.Phase(J+0);
-                   if (c+1 > d) phase *= ket.Phase(J+0);
-                   Hbare.TwoBody[ch_pn](ibra,iket) = phase * tbme_pnpn;
-                   Hbare.TwoBody[ch_pn](iket,ibra) = phase * tbme_pnpn;
-             }
-
-                   // now do pnnp
-
-             if (tbme_pnnp !=0)
-             {
-                   int ibra = tbc_pn.GetLocalIndex(min(a,b+1),max(a,b+1));
-                   int iket = tbc_pn.GetLocalIndex(min(c+1,d),max(c+1,d));
-                   cout << "    PNNP: ibra,iket = " << ibra << "," << iket << endl;
-                   Ket & bra = tbc_pn.GetKet(ibra);
-                   Ket & ket = tbc_pn.GetKet(iket);
-                   int phase = 1;
-                   if (a > b+1) phase *= bra.Phase(J+0);
-                   if (c+1 > d) phase *= ket.Phase(J+0);
-                   Hbare.TwoBody[ch_pn](ibra,iket) = phase * tbme_pnnp;
-                   Hbare.TwoBody[ch_pn](iket,ibra) = phase * tbme_pnnp;
-
-                   // now do nppn
-
-                   ibra = tbc_pn.GetLocalIndex(min(a+1,b),max(a+1,b));
-                   iket = tbc_pn.GetLocalIndex(min(c,d+1),max(c,d+1));
-                   cout << "    NPPN: ibra,iket = " << ibra << "," << iket << endl;
-                   bra = tbc_pn.GetKet(ibra);
-                   ket = tbc_pn.GetKet(iket);
-                   phase = 1;
-                   if (a+1 > b) phase *= bra.Phase(J+0);
-                   if (c > d+1) phase *= ket.Phase(J+0);
-                   Hbare.TwoBody[ch_pn](ibra,iket) = phase * tbme_pnnp;
-                   Hbare.TwoBody[ch_pn](iket,ibra) = phase * tbme_pnnp;
-
-             }
-
-
+             // now do pn
+             Hbare.SetTBME(ch_pn,a,b+1,c,d+1,tbme_pnpn);
+             Hbare.SetTBME(ch_pn,a+1,b,c+1,d,tbme_pnpn);
+             Hbare.SetTBME(ch_pn,a,b+1,c+1,d,tbme_pnnp);
+             Hbare.SetTBME(ch_pn,a+1,b,c,d+1,tbme_pnnp);
           }
         }
       }

@@ -1,11 +1,4 @@
-.HartreeFock.cc.swp
-.HartreeFock.hh.swp
-.main.cc.swp
-.Makefile.swp
-.ModelSpace.cc.swp
-.ModelSpace.hh.swp
-.Operator.cc.swp
-.Operator.hh.swp
-.tmp.swp
-tmpsave
+tmp*
+./.*.swp
+*.o
 3N_N7.tar.gz

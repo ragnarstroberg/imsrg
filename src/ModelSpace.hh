@@ -173,10 +173,10 @@ class ThreeBodyChannel
    ThreeBodyChannel& operator=(const ThreeBodyChannel& rhs) {Copy(rhs); return *this;};
 
    //Methods
-   int GetNumberKets() const {return NumberKets;};
-   int GetLocalIndex(int ketindex) const { return KetMap[ketindex];}; // modelspace ket index => local ket index
+   int GetNumberKets() const {return NumberKets;} ;
+   int GetLocalIndex(int ketindex) const { return KetMap[ketindex];} ; // modelspace ket index => local ket index
    int GetLocalIndex(int p, int q, int r) const ;
-   int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
+   int GetKetIndex(int i) const { return KetList[i];} ; // local ket index => modelspace ket index
    Ket * GetKet(int i) const ; // get pointer to ket using local index
 
 
@@ -214,9 +214,6 @@ class ModelSpace
    void SetupKets();
    void AddOrbit(Orbit orb);
    // Setter/Getters
-//   Orbit* GetOrbit(int i) const {return Orbits[i];}; 
-//   Ket* GetKet(int i) const {return Kets[i];};
-//   Ket* GetKet(int p, int q) const {return Kets[Index2(p,q)];};
    Orbit& GetOrbit(int i) const {return (Orbit&) Orbits[i];}; 
    Ket& GetKet(int i) const {return (Ket&) Kets[i];};
    Ket& GetKet(int p, int q) const {return (Ket&) Kets[Index2(p,q)];};
@@ -229,12 +226,9 @@ class ModelSpace
    float GetHbarOmega() const {return hbar_omega;};
    int GetTargetMass() const {return target_mass;};
    int GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
-   //TwoBodyChannel& GetTwoBodyChannel(int ch) {return TwoBodyChannels[ch];};
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
-//   TwoBodyChannel* GetTwoBodyChannel_ptr(int ch) {return (&TwoBodyChannels[ch]);};
    int GetTwoBodyJmax() const {return TwoBodyJmax;};
-   //double GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3);
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. This is bad.
@@ -244,7 +238,6 @@ class ModelSpace
    inline int phase(double x) {return phase(int(x));};
 
    int Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
-   //int Index2(int p, int q) const {return q*norbits + p;};
    inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
 
    // Fields
@@ -266,8 +259,6 @@ class ModelSpace
    float hbar_omega;
    int target_mass;
    int nTwoBodyChannels;
-//   vector<Orbit*> Orbits;
-//   vector<Ket*> Kets;
    vector<Orbit> Orbits;
    vector<Ket> Kets;
    vector<TwoBodyChannel> TwoBodyChannels;

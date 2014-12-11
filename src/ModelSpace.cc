@@ -263,21 +263,6 @@ ModelSpace::ModelSpace()
    target_mass = 16;
 }
 
-/*
-ModelSpace::ModelSpace(const ModelSpace& ms)
-{
-   norbits = 0;
-   maxj = 0;
-   hbar_omega = ms.hbar_omega;
-   target_mass = ms.target_mass;
-   int norbits = ms.GetNumberOrbits();
-   for (int i=0;i<norbits;i++)
-   {
-      AddOrbit( Orbit(ms.GetOrbit(i)) );
-   }
-   SetupKets();
-}
-*/
 
 ModelSpace::ModelSpace(const ModelSpace& ms)
 {
@@ -297,10 +282,10 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    Kets = ms.Kets;
    TwoBodyChannels = ms.TwoBodyChannels;
    TwoBodyChannels_CC = ms.TwoBodyChannels_CC;
-//   for (Orbit& o : Orbits) o.modelspace = this;
-   for (Ket& k : Kets) k.ms = this;
-   for (TwoBodyChannel& tbc : TwoBodyChannels) tbc.modelspace = this;
-   for (TwoBodyChannel_CC& tbc : TwoBodyChannels_CC) tbc.modelspace = this;
+
+   for (Ket& k : Kets)   k.ms = this;
+   for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
+   for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
 }
 
 

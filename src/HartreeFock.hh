@@ -7,6 +7,7 @@
 class HartreeFock
 {
  public:
+   Operator& Hbare;         // Input bare Hamiltonian
    arma::mat C;             // coefficients, 1st index is ho basis, 2nd = HF basis
    arma::mat rho;           // density matrix rho_ij
    arma::mat t;             // kinetic energy
@@ -15,30 +16,25 @@ class HartreeFock
    arma::mat Vmon;          // Monopole 2-body interaction
    arma::vec energies;      // vector of single particle energies
    arma::vec prev_energies; // SPE's from last iteration
-   Operator& Hbare;          // Pointer to (input) bare Hamiltonian
-   double ediff;              // Energy difference from last iteration
-   double tolerance;          // tolerance for convergence
-   double EHF;
+   double tolerance;        // tolerance for convergence
+   double EHF;              // Hartree-Fock energy (Normal-ordered 0-body term)
    
 
- //  HartreeFock(Operator * hbare=NULL, Operator *hhf=NULL);
    HartreeFock(Operator&  hbare);
    void BuildMonopoleV();
    void Diagonalize();
-   void Diagonalize2();
    void UpdateH();
    void UpdateDensityMatrix();
    bool CheckConvergence();
    void Solve();
    void PrintOrbits();
-   void UpdateHFOrbits();
    void BuildKineticEnergy(float hw);
    void PrintRho(int );
    void CalcEHF();
-   Operator TransformToHFBasis( Operator& OpIn);
-//   void TransformToHFBasis(Operator *OpIn, Operator *OpHF);
-//   void TransformToHFBasis(Operator& OpIn, Operator& OpHF);
    void ReorderCoefficients();
+   Operator TransformToHFBasis( Operator& OpIn);
+
+   Operator GetHbare(){return Hbare;};
 
 };
 

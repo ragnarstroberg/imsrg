@@ -296,7 +296,6 @@ namespace imsrg_util
    }
    double hw = modelspace.GetHbarOmega();
    int A = modelspace.GetTargetMass();
-//   return VcmOp;
    return VcmOp *hw / ( 2*A );
  }
 
@@ -416,7 +415,149 @@ namespace imsrg_util
  }
 
 
+// Center of mass kinetic energy, with the hw/A factor
+ Operator HCM_Op(ModelSpace& modelspace)
+ {
+   Operator HcmOp = Operator(modelspace);
 
+   int norb = modelspace.GetNumberOrbits();
+//   double one_body_prefactor = 1./(
+   for (int i=0; i<norb; ++i)
+   {
+      Orbit & oi = modelspace.GetOrbit(i);
+      HcmOp.OneBody(i,i) = (2*oi.n+oi.l + 1.5);
+   }
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   #pragma omp parallel for schedule(dynamic,5) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+      int nkets = tbc.GetNumberKets();
+      for (int ibra=0;ibra<nkets;++ibra)
+      {
+         Ket & bra = tbc.GetKet(ibra);
+         for (int iket=ibra;iket<nkets;++iket)
+         {
+            Ket & ket = tbc.GetKet(iket);
+            double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J);
+            #pragma omp critical
+            {
+              HcmOp.TwoBody[ch](ibra,iket) = mat_el;
+              HcmOp.TwoBody[ch](iket,ibra) = mat_el;
+            }
+         }
+      }
+   }
+   double hw = modelspace.GetHbarOmega();
+   int A = modelspace.GetTargetMass();
+   return HcmOp *hw / ( 2*A );
+ }
+
+
+
+
+ // Evaluate <bra | hcom | ket>, omitting the factor (hbar * omega) /(m * omega^2)
+ double Calculate_hcom(ModelSpace& modelspace, Ket & bra, Ket & ket, int J)
+ {
+   Orbit & oa = modelspace.GetOrbit(bra.p);
+   Orbit & ob = modelspace.GetOrbit(bra.q);
+   Orbit & oc = modelspace.GetOrbit(ket.p);
+   Orbit & od = modelspace.GetOrbit(ket.q);
+
+   int na = oa.n;
+   int nb = ob.n;
+   int nc = oc.n;
+   int nd = od.n;
+
+   int la = oa.l;
+   int lb = ob.l;
+   int lc = oc.l;
+   int ld = od.l;
+
+   double ja = oa.j2/2.0;
+   double jb = ob.j2/2.0;
+   double jc = oc.j2/2.0;
+   double jd = od.j2/2.0;
+
+   int fab = 2*na + 2*nb + la + lb;
+   int fcd = 2*nc + 2*nd + lc + ld;
+   if (abs(fab-fcd)%2 >0) return 0; // p1*p2 only connects kets with delta N = 0,1
+   if (abs(fab-fcd)>2) return 0; // p1*p2 only connects kets with delta N = 0,1
+
+   double sa,sb,sc,sd;
+   sa=sb=sc=sd=0.5;
+
+   double hcom=0;
+
+   // First, transform to LS coupling using 9j coefficients
+   for (int Lab=abs(la-lb); Lab<= la+lb; ++Lab)
+   {
+     for (int Sab=0; Sab<=1; ++Sab)
+     {
+       if ( abs(Lab-Sab)>J or Lab+Sab<J) continue;
+
+       double njab = NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
+       if (njab == 0) continue;
+       int Scd = Sab;
+       int Lcd = Lab;
+       double njcd = NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
+       if (njcd == 0) continue;
+
+       // Next, transform to rel / com coordinates with Moshinsky tranformation
+       for (int N_ab=0; N_ab<=fab/2; ++N_ab)  // N_ab = CoM n for a,b
+       {
+         for (int Lam_ab=0; Lam_ab<= fab-2*N_ab; ++Lam_ab) // Lam_ab = CoM l for a,b
+         {
+           int Lam_cd = Lam_ab; // tcm and trel conserve lam and Lam, ie relative and com orbital angular momentum
+           for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
+           {
+              // factor to account for antisymmetrization
+              int asymm_factor = 1;
+
+              if (ket.Tz!=0)
+              {
+                if ((lam_ab+Sab)%2>0) continue; // Pauli rule for identical particles
+                asymm_factor = 2 ;
+              }
+              else if ( (bra.p + ket.p)%2 >0) // if we have pnnp or nppn, then pick up a phase
+              {
+                asymm_factor = modelspace.phase( lam_ab + Sab );
+              }
+
+              int lam_cd = lam_ab; // tcm and trel conserve lam and Lam
+              int n_ab = (fab - 2*N_ab-Lam_ab-lam_ab)/2; // n_ab is determined by energy conservation
+
+              double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
+
+              if (abs(mosh_ab)<1e-8) continue;
+
+//              for (int N_cd=max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
+//              {
+                int N_cd = N_ab;
+                int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
+                if (n_cd < 0) continue;
+                if  (n_ab != n_cd or N_ab != N_cd) continue;
+
+                double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
+                if (abs(mosh_cd)<1e-8) continue;
+
+                double prefactor = njab * njcd * mosh_ab * mosh_cd * asymm_factor;
+                hcom += (2*N_ab + Lam_ab - 2*n_ab - lam_ab) * prefactor;
+
+//              } // N_cd
+           } // lam_ab
+         } // Lam_ab
+       } // N_ab
+
+     } // Sab
+   } // Lab
+
+   // normalize
+   hcom /= sqrt((1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
+   return hcom ;
+
+ }
 
 
 
