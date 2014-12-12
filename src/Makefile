@@ -14,8 +14,8 @@ OBJ = ModelSpace.o ReadWrite.o Operator.o HartreeFock.o IMSRGSolver.o AngMom.o i
 mysrg: main.cc $(OBJ)
 	$(CC) $^ -o $@ $(FLAGS) 
 
-%.o: %.cc
-	$(CC) -c $^ -o $@ $(FLAGS) 
+%.o: %.cc %.hh
+	$(CC) -c $*.cc -o $@ $(FLAGS) 
 
 
 

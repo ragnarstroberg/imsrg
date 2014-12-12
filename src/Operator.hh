@@ -5,7 +5,7 @@
 #include "ModelSpace.hh"
 #include <armadillo>
 
-#define JMAX 30
+//#define JMAX 30
 
 class ModelSpace;
 
@@ -17,15 +17,13 @@ class Operator
   //Fields
   float ZeroBody;
   arma::mat OneBody;
-  arma::mat TwoBody[JMAX*2*3];
-//  arma::mat TwoBody_CC_left[JMAX*2*3]; // cross-coupled
-//  arma::mat TwoBody_CC_right[JMAX*2*3]; // cross-coupled
+//  array<arma::mat, JMAX*2*3> TwoBody;
+  vector<arma::mat> TwoBody;
 
   //Constructors
   // In the future, consider using C++11 rvalues / move constructor to avoid copies in certain cases
   Operator();
   Operator(ModelSpace&);
-//  Operator(ModelSpace*);
   Operator( const Operator& rhs);
 
   //Overloaded operators
@@ -64,7 +62,6 @@ class Operator
   void ScaleTwoBody(double x);
 
   // The actually interesting methods
-//  Operator Commutator(Operator& opright);
   Operator Commutator(const Operator& opright) const;
   Operator BCH_Product( const Operator& ) const ; 
   Operator BCH_Transform( const Operator& ) const; 
@@ -76,7 +73,6 @@ class Operator
   double OneBodyNorm() const;
   double TwoBodyNorm() const;
 
-//  ModelSpace & GetModelSpace() const {return modelspace;};
   ModelSpace * GetModelSpace() const {return modelspace;};
 
   void EraseZeroBody(){ZeroBody = 0;}; // set zero-body term to zero
@@ -94,57 +90,36 @@ class Operator
  //private:
   //Fields
   ModelSpace * modelspace;
-//  ModelSpace & modelspace;
   bool hermitian;
   bool antihermitian;
-//  bool cross_coupled;
-  int TwoBodyJmax;
   int nChannels;
-  //Methods
-  void Copy(const Operator& rhs);
-
   static double bch_transform_threshold;
   static double bch_product_threshold;
+
+  //Methods
+  void Copy(const Operator& rhs);
 
   static void Set_BCH_Transform_Threshold(double x){bch_transform_threshold=x;};
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
   
-  //void UpdateCrossCoupled(); 
-  void UpdateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) const; 
-//  double comm110(Operator& opright);
-//  double comm220(Operator& opright);
-//  arma::mat comm111(Operator& opright);
-//  arma::mat comm121(Operator& opright);
-//  arma::mat comm221(Operator& opright);
-//  void comm122(Operator& opright, Operator& opout);
-//  void comm222_pp_hh(Operator& opright, Operator& opout);
-//  void comm222_ph(Operator& opright, Operator& opout);
-//  void comm222_ph_slow(Operator& opright, Operator& opout);
-//  void comm222_pp_hh_221(Operator& opright, Operator& opout);
+  void CalculateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) const; 
 
-  double comm110(const Operator& opright) const;
-  double comm220(const Operator& opright) const;
-//  arma::mat comm111(const Operator& opright) const;
-//  arma::mat comm121(const Operator& opright) const;
-//  arma::mat comm221(const Operator& opright) const;
+  void comm110(const Operator& opright, Operator& opout) const;
+  void comm220(const Operator& opright, Operator& opout) const;
   void comm111(const Operator& opright, Operator& opout) const;
   void comm121(const Operator& opright, Operator& opout) const;
   void comm221(const Operator& opright, Operator& opout) const;
   void comm122(const Operator& opright, Operator& opout) const;
   void comm222_pp_hh(const Operator& opright, Operator& opout) const;
   void comm222_ph(const Operator& opright, Operator& opout) const;
-  void comm222_ph_slow(const Operator& opright, Operator& opout) const;
   void comm222_pp_hh_221(const Operator& opright, Operator& opout) const;
 
 
 };
 
+// Non member function, multiply by scalar from left side
 Operator operator*(const double lhs, const Operator& rhs);
-//{
-//   return rhs * lhs;
-//}
-
 
 #endif
 

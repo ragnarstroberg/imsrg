@@ -155,8 +155,6 @@ void ReadWrite::ReadBareTBME( string filename, Operator& Hbare)
      if (doCoM_corr)
      {
         Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme-com_corr );
-        //Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, com_corr );
-        //Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, fbuf[2] );
      }
      else
      {
@@ -225,6 +223,7 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
 
 
 // Read TBME's in Darmstadt format
+// Setting Emax=-1 just uses the single-particle emax determined by the model space
 void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax /*default=-1*/)
 {
 
@@ -241,11 +240,12 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
      int N = 2*oi.n + oi.l;
      int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2;
      orbits_darmstadt[nlj] = i;
-     if (N > emax) ++emax;
+     emax = max(emax,N);
   }
-  emax *= 2;
   if (Emax >=0)
      emax = Emax;
+  else
+     emax *= 2;
 
   ifstream infile;
   char line[LINESIZE];
@@ -272,7 +272,7 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
       int b =  orbits_darmstadt[nlj2];
       Orbit & o2 = modelspace->GetOrbit(b);
       int e2 = 2*o2.n + o2.l;
-      if (e1+e2 > emax) break;
+      if (e1+e2 > emax) continue;
       int parity = (o1.l + o2.l) % 2;
 
       for(int nlj3=0; nlj3<=nlj1; ++nlj3)
@@ -286,7 +286,7 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
           int d =  orbits_darmstadt[nlj4];
           Orbit & o4 = modelspace->GetOrbit(d);
           int e4 = 2*o4.n + o4.l;
-          if (e3+e4 > emax) break;
+          if (e3+e4 > emax) continue;
           if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
           int Jmin = max( abs(o1.j2 - o2.j2), abs(o3.j2 - o4.j2) )/2;
           int Jmax = min (o1.j2 + o2.j2, o3.j2+o4.j2)/2;
@@ -297,30 +297,40 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
              infile >> tbme_00 >> tbme_nn >> tbme_10 >> tbme_pp;
 
              // convert isospin to pn formalism
-             double tbme_pnpn = (tbme_10 + tbme_00)/2;
-             double tbme_pnnp = (tbme_10 - tbme_00)/2;
+             double tbme_pnpn = (tbme_10 + tbme_00)/2.0;
+             double tbme_pnnp = (tbme_10 - tbme_00)/2.0;
 
              if (a>=norb or b>=norb or c>=norb or d>=norb) continue;
 
-             int ch_nn = modelspace->GetTwoBodyChannelIndex(J,parity,1);
-             int ch_pn = modelspace->GetTwoBodyChannelIndex(J,parity,0);
-             int ch_pp = modelspace->GetTwoBodyChannelIndex(J,parity,-1);
-             TwoBodyChannel& tbc_nn = modelspace->GetTwoBodyChannel(ch_nn);
-             TwoBodyChannel& tbc_pn = modelspace->GetTwoBodyChannel(ch_pn);
-             TwoBodyChannel& tbc_pp = modelspace->GetTwoBodyChannel(ch_pp);
-
-             // do pp and nn
-             if (tbme_pp !=0 or tbme_nn !=0)
+             // Normalization
+             if (a==b)
              {
-                Hbare.SetTBME(ch_pp,a,b,c,d,tbme_pp);
-                Hbare.SetTBME(ch_nn,a+1,b+1,c+1,d+1,tbme_nn);
+                tbme_pp /= sqrt(2);
+                tbme_nn /= sqrt(2);
+             }
+             if (c==d)
+             {
+                tbme_pp /= sqrt(2);
+                tbme_nn /= sqrt(2);
              }
 
-             // now do pn
-             Hbare.SetTBME(ch_pn,a,b+1,c,d+1,tbme_pnpn);
-             Hbare.SetTBME(ch_pn,a+1,b,c+1,d,tbme_pnpn);
-             Hbare.SetTBME(ch_pn,a,b+1,c+1,d,tbme_pnnp);
-             Hbare.SetTBME(ch_pn,a+1,b,c,d+1,tbme_pnnp);
+             // do pp and nn
+             if (tbme_pp !=0)
+                Hbare.SetTBME(J,parity,-1,a,b,c,d,tbme_pp);
+             if (tbme_nn !=0)
+                Hbare.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,tbme_nn);
+
+             // now do pnpn, npnp, pnnp, nppn
+             if (tbme_pnpn !=0)
+             {
+               Hbare.SetTBME(J,parity,0,a,b+1,c,d+1,tbme_pnpn);
+               Hbare.SetTBME(J,parity,0,a+1,b,c+1,d,tbme_pnpn);
+             }
+             if (tbme_pnnp !=0)
+             {
+               Hbare.SetTBME(J,parity,0,a,b+1,c+1,d,tbme_pnnp);
+               Hbare.SetTBME(J,parity,0,a+1,b,c,d+1,tbme_pnnp);
+             }
           }
         }
       }

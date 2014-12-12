@@ -5,10 +5,10 @@
 #include <map>
 #include <armadillo>
 
-#define JMAX 30
+//#define JMAX 30
 
-class Orbit;
-class Ket;
+//class Orbit;
+//class Ket;
 class ModelSpace;
 
 using namespace std;
@@ -183,7 +183,7 @@ class ThreeBodyChannel
 // private:
    //Fields
    ModelSpace * modelspace;
-   int NumberKets;  // Number of pq configs that participate in this channel
+   int NumberKets;  // Number of pqr configs that participate in this channel
    vector<int> KetList; // eg [2, 4, 7, ...] Used for looping over all the kets in the channel
    vector<int> KetMap;  // eg [ -1, -1, 0, -1, 1, -1, -1, 2 ...] Used for asking what is the local index of this ket. -1 means the ket doesn't participate in this channel
    //Methods
@@ -228,7 +228,7 @@ class ModelSpace
    int GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
-   int GetTwoBodyJmax() const {return TwoBodyJmax;};
+//   int GetTwoBodyJmax() const {return TwoBodyJmax;};
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. This is bad.
@@ -249,13 +249,13 @@ class ModelSpace
    vector<int> particle_qspace;
    vector<int> proton_orbits;
    vector<int> neutron_orbits;
+   int OneBodyJmax;
+   int TwoBodyJmax;
 
 
  private:
    // Fields
    int norbits;
-   int maxj;
-   int TwoBodyJmax;
    float hbar_omega;
    int target_mass;
    int nTwoBodyChannels;

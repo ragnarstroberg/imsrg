@@ -70,8 +70,8 @@ void Ket::Setpq(int pp, int qq)
    Jstep = 1;
    if (p==q) // Pauli principle
    { 
-      Jmax--;
-      Jstep++;
+      Jmax = Jmax-1;
+      Jstep=2;
    }
    phase_prefactor = ms->phase((op.j2+oq.j2)/2 + 1);
    dpq = p==q ? 1 : 0;
@@ -89,7 +89,7 @@ TwoBodyChannel::TwoBodyChannel()
 
 TwoBodyChannel::TwoBodyChannel(int j, int p, int t, ModelSpace *ms)
 {
-  Initialize(JMAX*2*t + JMAX*p + j, ms);
+  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
 }
 
 TwoBodyChannel::TwoBodyChannel(int N, ModelSpace *ms)
@@ -99,9 +99,10 @@ TwoBodyChannel::TwoBodyChannel(int N, ModelSpace *ms)
 
 void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
 {
-   J = N%JMAX;
-   parity = (N/JMAX)%2;
-   Tz = (N/(2*JMAX)-1);
+   int tbjmax = ms->TwoBodyJmax;
+   J = N%tbjmax;
+   parity = (N/tbjmax)%2;
+   Tz = (N/(2*tbjmax)-1);
    modelspace = ms;
    NumberKets = 0;
    int nk = modelspace->GetNumberKets();
@@ -229,7 +230,7 @@ TwoBodyChannel_CC::TwoBodyChannel_CC()
 
 TwoBodyChannel_CC::TwoBodyChannel_CC(int j, int p, int t, ModelSpace *ms)
 {
-  Initialize(JMAX*2*t + JMAX*p + j, ms);
+  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
 }
 
 TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
@@ -237,7 +238,7 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
    Initialize(N,ms);
 }
 
-// Check cross-coupled two-body channels
+// Check if orbits pq participate in this cross-coupled two-body channel
 // Difference from regular channels:
 // no Pauli rule, <pp||nn> is allowed.
 bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
@@ -258,7 +259,8 @@ bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
 ModelSpace::ModelSpace()
 {
    norbits = 0;
-   maxj = 0;
+   OneBodyJmax = 0;
+   TwoBodyJmax = 0;
    hbar_omega=20;
    target_mass = 16;
 }
@@ -269,6 +271,8 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    norbits = ms.norbits;
    hbar_omega = ms.hbar_omega;
    target_mass = ms.target_mass;
+   OneBodyJmax = ms.OneBodyJmax;
+   TwoBodyJmax = ms.TwoBodyJmax;
 
    holes = ms.holes;
    particles = ms.particles;
@@ -301,11 +305,13 @@ void ModelSpace::AddOrbit(Orbit orb)
    if (Orbits.size() <= ind) Orbits.resize(ind+1,Orbit());
    Orbits[ind] = Orbit(orb);
    norbits = Orbits.size();
-   if (orb.j2 > maxj)
+   if (orb.j2 > OneBodyJmax)
    {
-      maxj = orb.j2;
-      nTwoBodyChannels = 2*3*(JMAX);
+      OneBodyJmax = orb.j2;
+      TwoBodyJmax = OneBodyJmax*2;
+      nTwoBodyChannels = 2*3*(TwoBodyJmax+1);
    }
+
    if (orb.ph == 0) particles.push_back(ind);
    if (orb.ph == 1) holes.push_back(ind);
    if (orb.io == 0) valence.push_back(ind);
@@ -321,7 +327,7 @@ void ModelSpace::AddOrbit(Orbit orb)
 
 int ModelSpace::GetTwoBodyChannelIndex(int j, int p, int t)
 {
-   return (t+1)*2*JMAX + p*JMAX + j;
+   return (t+1)*2*(TwoBodyJmax) + p*(TwoBodyJmax) + j;
 }
 
 
@@ -334,10 +340,8 @@ void ModelSpace::SetupKets()
      for (int q=p;q<norbits;q++)
      {
         index = Index2(p,q);
-        //if (index >= Kets.size()) Kets.resize(index+1,NULL);
         if (index >= Kets.size()) Kets.resize(index+1,Ket(this));
         Kets[index].Setpq(p,q);
-        //Kets[index] = new Ket(this,p,q);
      }
    }
    for (int ch=0;ch<nTwoBodyChannels;++ch)

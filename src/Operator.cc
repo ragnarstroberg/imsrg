@@ -26,7 +26,6 @@ Operator::Operator()
 double  Operator::bch_transform_threshold = 1e-6;
 double  Operator::bch_product_threshold = 1e-4;
 
-//Operator::Operator(ModelSpace* ms) // Create a zero-valued operator in a given model space
 Operator::Operator(ModelSpace& ms) // Create a zero-valued operator in a given model space
 {
   modelspace = &ms;
@@ -37,6 +36,8 @@ Operator::Operator(ModelSpace& ms) // Create a zero-valued operator in a given m
   int nKets = modelspace->GetNumberKets();
   OneBody = arma::mat(nOneBody,nOneBody,arma::fill::zeros);
   nChannels = modelspace->GetNumberTwoBodyChannels();
+
+  TwoBody.resize(nChannels, arma::mat() );
 
   for (int ch=0;ch<nChannels;++ch)
   {
@@ -60,10 +61,7 @@ void Operator::Copy(const Operator& op)
    antihermitian = op.antihermitian;
    ZeroBody      = op.ZeroBody;
    OneBody       = op.OneBody;
-   for (int ch=0;ch<nChannels;++ch)
-   {
-      TwoBody[ch] = op.TwoBody[ch];
-   }
+   TwoBody       = op.TwoBody;
 }
 
 /////////////// OVERLOADED OPERATORS =,+,-,*,etc ////////////////////
@@ -272,6 +270,8 @@ Operator Operator::DoNormalOrdering()
       opNO.ZeroBody += (modelspace->GetOrbit(k).j2+1) * OneBody(k,k);
    }
 
+
+
    int norbits = modelspace->GetNumberOrbits();
 
    for (int ch=0;ch<nChannels;++ch)
@@ -394,7 +394,7 @@ void Operator::CalculateKineticEnergy()
 //   COUPLING                 COUPLED  
 //                                      
 /*
-void Operator::UpdateCrossCoupled()
+void Operator::CalculateCrossCoupled()
 {
    // loop over cross-coupled channels
    #pragma omp parallel for
@@ -495,8 +495,8 @@ void Operator::UpdateCrossCoupled()
 //   STANDARD                 CROSS  
 //   COUPLING                 COUPLED  
 //                                      
-//void Operator::UpdateCrossCoupled()
-void Operator::UpdateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<arma::mat> &TwoBody_CC_right) const
+//void Operator::CalculateCrossCoupled()
+void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<arma::mat> &TwoBody_CC_right) const
 {
    // loop over cross-coupled channels
    #pragma omp parallel for
@@ -694,6 +694,7 @@ double Operator::TwoBodyNorm() const
 Operator Operator::Commutator(const Operator& opright) const
 {
    Operator out = opright;
+   out.EraseZeroBody();
    out.EraseOneBody();
    out.EraseTwoBody();
 
@@ -701,12 +702,12 @@ Operator Operator::Commutator(const Operator& opright) const
    else if ( (IsHermitian() and opright.IsAntiHermitian()) or (IsAntiHermitian() and opright.IsHermitian()) ) out.SetHermitian();
    else out.SetNonHermitian();
 
-   if ( out.IsAntiHermitian() )
-      out.ZeroBody = 0;
-   else
-      out.ZeroBody  = comm110(opright) + comm220(opright) ;
+   if ( not out.IsAntiHermitian() )
+   {
+      comm110(opright, out);
+      comm220(opright, out) ;
+   }
 
-   //out.OneBody  = comm111(opright) + comm121(opright);
    comm111(opright, out);
    comm121(opright, out);
 
@@ -730,19 +731,17 @@ Operator Operator::Commutator(const Operator& opright) const
 //             = Sum_a  (2j_a+1)  (xy-yx)_aa n_a
 //
 // -- AGREES WITH NATHAN'S RESULTS
-double Operator::comm110(const Operator& opright) const
+void Operator::comm110(const Operator& opright, Operator& out) const
 {
-  if (IsHermitian() and opright.IsHermitian()) return 0; // I think this is the case
-  if (IsAntiHermitian() and opright.IsAntiHermitian()) return 0; // I think this is the case
+  if (IsHermitian() and opright.IsHermitian()) return ; // I think this is the case
+  if (IsAntiHermitian() and opright.IsAntiHermitian()) return ; // I think this is the case
 
-   double comm = 0;
    int norbits = modelspace->GetNumberOrbits();
    arma::mat xyyx = OneBody*opright.OneBody - opright.OneBody*OneBody;
    for ( int& a : modelspace->holes) // C++11 range-for syntax: loop over all elements of the vector <particle>
    {
-      comm += (modelspace->GetOrbit(a).j2+1)*xyyx(a,a);
+      out.ZeroBody += (modelspace->GetOrbit(a).j2+1) * xyyx(a,a);
    }
-   return comm;
 }
 
 
@@ -756,21 +755,18 @@ double Operator::comm110(const Operator& opright) const
 //                       = 1/2 Sum_J (2J+1) Sum_ab  (X*P_pp*Y)_abab  P_hh
 //
 //  -- AGREES WITH NATHAN'S RESULTS (within < 1%)
-double Operator::comm220( const Operator& opright) const
+void Operator::comm220( const Operator& opright, Operator& out) const
 {
-   if (IsHermitian() and opright.IsHermitian()) return 0; // I think this is the case
-   if (IsAntiHermitian() and opright.IsAntiHermitian()) return 0; // I think this is the case
-   double comm = 0;
+   if (IsHermitian() and opright.IsHermitian()) return; // I think this is the case
+   if (IsAntiHermitian() and opright.IsAntiHermitian()) return; // I think this is the case
    #pragma omp parallel for
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      double c = 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] );
       #pragma omp critical
-      comm += c;
+      out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody[ch] * tbc.Proj_pp * opright.TwoBody[ch] );
 
    }
-   return comm;
 }
 
 //*****************************************************************************************
@@ -781,10 +777,8 @@ double Operator::comm220( const Operator& opright) const
 //        |                 |
 //
 // -- AGREES WITH NATHAN'S RESULTS
-//arma::mat Operator::comm111(const Operator & opright) const
 void Operator::comm111(const Operator & opright, Operator& out) const
 {
-//   return OneBody*opright.OneBody - opright.OneBody*OneBody;
    out.OneBody = OneBody*opright.OneBody - opright.OneBody*OneBody;
 }
 
@@ -799,11 +793,9 @@ void Operator::comm111(const Operator & opright, Operator& out) const
 //                                                  * sum_b y_ab x_biaj - yba x_aibj
 //
 // -- AGREES WITH NATHAN'S RESULTS 
-//arma::mat Operator::comm121(const Operator& opright) const
 void Operator::comm121(const Operator& opright, Operator& out) const
 {
    int norbits = modelspace->GetNumberOrbits();
-//   arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
    #pragma omp parallel for
    for (int i=0;i<norbits;++i)
    {
@@ -818,21 +810,16 @@ void Operator::comm121(const Operator& opright, Operator& out) const
              for (int b=0;b<norbits;++b)
              {
                 Orbit &ob = modelspace->GetOrbit(b);
-                //comm(i,j) += (ob.j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
-                //comm(i,j) -= (oa.j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
                 out.OneBody(i,j) += (ob.j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
                 out.OneBody(i,j) -= (oa.j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
 
                 // comm211 part
-                //comm(i,j) -= (ob.j2+1) *  opright.OneBody(a,b) * GetTBMEmonopole(b,i,a,j) ;
-                //comm(i,j) += (oa.j2+1) *  opright.OneBody(b,a) * GetTBMEmonopole(a,i,b,j) ;
                 out.OneBody(i,j) -= (ob.j2+1) *  opright.OneBody(a,b) * GetTBMEmonopole(b,i,a,j) ;
                 out.OneBody(i,j) += (oa.j2+1) *  opright.OneBody(b,a) * GetTBMEmonopole(a,i,b,j) ;
              }
           }
       }
    }
-//   return comm;
 }
 
 
@@ -849,12 +836,10 @@ void Operator::comm121(const Operator& opright, Operator& out) const
 //
 // -- AGREES WITH NATHAN'S RESULTS 
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-//arma::mat Operator::comm221(const Operator& opright) const
 void Operator::comm221(const Operator& opright, Operator& out) const
 {
 
    int norbits = modelspace->GetNumberOrbits();
-//   arma::mat comm = arma::mat(norbits,norbits,arma::fill::zeros);
    Operator Mpp = opright;
    Operator Mhh = opright;
 
@@ -889,11 +874,9 @@ void Operator::comm221(const Operator& opright, Operator& out) const
             }
             #pragma omp critical
             out.OneBody(i,j) += (2*tbc.J+1.0)/(oi.j2 +1.0) * cijJ;
-            //comm(i,j) += (2*tbc.J+1.0)/(oi.j2 +1.0) * cijJ;
          } // for j
       } // for i
    } //for ch
-//   return comm;
 }
 
 
@@ -1061,12 +1044,10 @@ void Operator::comm222_pp_hh_221(const Operator& opright, Operator& opout ) cons
       // The two body part
       opout.TwoBody[ch] += Mpp.TwoBody[ch] - Mhh.TwoBody[ch];
 
-//      #pragma omp parallel for schedule(dynamic,3)
       for (int i=0;i<norbits;++i)
       {
          Orbit &oi = modelspace->GetOrbit(i);
          int jmin = opout.IsNonHermitian() ? 0 : i;
-         //for (int j=0;j<norbits;++j)
          for (int j=jmin;j<norbits;++j)
          {
             Orbit &oj = modelspace->GetOrbit(j);
@@ -1082,7 +1063,6 @@ void Operator::comm222_pp_hh_221(const Operator& opright, Operator& opout ) cons
             {
                cijJ +=  Mhh.GetTBME(ch,i,c,j,c);
             }
-            //comm(i,j) += (2*tbc.J+1.0)/(oi.j2 +1.0) * cijJ;
             cijJ *= (2*tbc.J+1.0)/(oi.j2+1.0);
             opout.OneBody(i,j) += cijJ;
             if (! opout.IsNonHermitian() and i!=j)
@@ -1095,81 +1075,6 @@ void Operator::comm222_pp_hh_221(const Operator& opright, Operator& opout ) cons
 }
 
 
-
-
-
-void Operator::comm222_ph_slow(const Operator& opright, Operator& opout ) const
-//void Operator::comm222_ph_slow(Operator& opright, Operator& opout )
-{
-   for (int ch=0;ch<nChannels;++ch)
-   {
-//      if (ch>2) break;
-      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      int J = tbc.J;
-      int parity = tbc.parity;
-      int Tz = tbc.Tz;
-      int nkets = tbc.GetNumberKets();
-      for (int ibra=0; ibra<nkets; ++ibra)
-      {
-         Ket & bra = tbc.GetKet(ibra);
-         int i = bra.p;
-         int j = bra.q;
-         Orbit & oi = modelspace->GetOrbit(i);
-         Orbit & oj = modelspace->GetOrbit(j);
-         double ji = oi.j2/2.;
-         double jj = oj.j2/2.;
-         for (int iket=0; iket<nkets; ++iket)
-         {
-            Ket & ket = tbc.GetKet(iket);
-            int k = ket.p;
-            int l = ket.q;
-            Orbit & ok = modelspace->GetOrbit(k);
-            Orbit & ol = modelspace->GetOrbit(l);
-            double jk = (ok.j2/2.);
-            double jl = (ol.j2/2.);
-            double commijkl = 0;
-            for (int& a : modelspace->holes)
-            {
-               Orbit & oa = modelspace->GetOrbit(k);
-               double ja = (oa.j2/2.);
-               for (int & b : modelspace->particles)
-               {
-                  Orbit & ob = modelspace->GetOrbit(k);
-                  double jb = (ob.j2/2.);
-                  int j1min = 0;
-                  int j1max = 6;  // you can do better than this ...
-                  int j2min = 0;
-                  int j2max = 6;
-                  for (int J1=j1min; J1<=j1max; ++J1)
-                  {
-                     int ch1 = modelspace->GetTwoBodyChannelIndex(J1,parity,Tz); 
-                     for (int J2=j2min; J2<=j2max; ++J2)
-                     {
-                        int ch2 = modelspace->GetTwoBodyChannelIndex(J2,parity,Tz); 
-                        //double pref = 1-2*((J1+J2+J)%2) * (2*J1+1)*(2*J2+1);
-                        double pref = (1-2*((int(ji+jk)+J1+J2)%2)) * (2*J1+1)*(2*J2+1);
-                        int pref2 = 1-2*(J%2);
-                        double nj1 = AngMom::NineJ( ja, jl, J1,   ji, J, jj,   J2, jk, jb );
-                        double nj2 = AngMom::NineJ( ja, jl, J1,   jj, J, ji,   J2, jk, jb );
-                        double nj3 = AngMom::NineJ( jb, jl, J1,   ji, J, jj,   J2, jk, ja );
-                        double nj4 = AngMom::NineJ( jb, jl, J1,   jj, J, ji,   J2, jk, ja );
-
-                        double me1 =         GetTBME(ch1,b,j,a,l) * opright.GetTBME(ch2,a,i,b,k) - opright.GetTBME(ch1,b,j,a,l) *         GetTBME(ch2,a,i,b,k);
-                        double me2 = opright.GetTBME(ch1,b,i,a,l) *         GetTBME(ch2,a,j,b,k) -         GetTBME(ch1,b,i,a,l) * opright.GetTBME(ch2,a,j,b,k);
-                        double me3 =         GetTBME(ch1,a,j,b,l) * opright.GetTBME(ch2,b,i,a,k) - opright.GetTBME(ch1,a,j,b,l) *         GetTBME(ch2,b,i,a,k);
-                        double me4 = opright.GetTBME(ch1,a,i,b,l) *         GetTBME(ch2,b,j,a,k) -         GetTBME(ch1,a,i,b,l) * opright.GetTBME(ch2,b,j,a,k);
-
-                        commijkl += pref * (nj1 * me1 * pref2 - nj2 * me2 );
-                        commijkl -= pref * (nj3 * me3 * pref2 - nj4 * me4 );
-                     }
-                  }
-               }
-            }
-            opout.TwoBody[ch](ibra,iket) = commijkl;
-         }
-      }
-   }
-}
 
 
 //*****************************************************************************************
@@ -1193,19 +1098,19 @@ void Operator::comm222_ph(const Operator& opright, Operator& opout ) const
    int herm = opout.IsHermitian() ? 1 : -1;
 
    // Update Cross-coupled matrix elements
-   vector<arma::mat> X_TwoBody_CC_left (nChannels,arma::mat() );
-   vector<arma::mat> X_TwoBody_CC_right (nChannels,arma::mat());
+   vector<arma::mat> X_TwoBody_CC_left (nChannels, arma::mat() );
+   vector<arma::mat> X_TwoBody_CC_right (nChannels, arma::mat() );
 
-   vector<arma::mat> Y_TwoBody_CC_left (nChannels,arma::mat() );
-   vector<arma::mat> Y_TwoBody_CC_right (nChannels,arma::mat());
+   vector<arma::mat> Y_TwoBody_CC_left (nChannels, arma::mat() );
+   vector<arma::mat> Y_TwoBody_CC_right (nChannels, arma::mat() );
 
-   UpdateCrossCoupled(X_TwoBody_CC_left, X_TwoBody_CC_right);
-   UpdateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right);
+   CalculateCrossCoupled(X_TwoBody_CC_left, X_TwoBody_CC_right );
+   CalculateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right );
 
    // Construct the intermediate matrices N1 and N2
-   vector<arma::mat> N1 (nChannels, arma::mat());
-   vector<arma::mat> N2 (nChannels, arma::mat());
- // probably better not to parallelize, since the matrix muliplication can use OMP
+   vector<arma::mat> N1 (nChannels, arma::mat() );
+   vector<arma::mat> N2 (nChannels, arma::mat() );
+ // probably better not to parallelize here, since the armadillo matrix muliplication can use OMP
    for (int ch=0;ch<nChannels;++ch)
    {
       N1[ch] = X_TwoBody_CC_left[ch] *  Y_TwoBody_CC_right[ch];
@@ -1289,11 +1194,11 @@ void Operator::comm222_ph(const Operator& opright, Operator& opout ) const
             comm /= sqrt((1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
             #pragma omp critical
             {
-            opout.TwoBody[ch](ibra,iket) += comm;
-            if (iket != ibra)
-            {
-               opout.TwoBody[ch](iket,ibra) += herm*comm;
-            }
+              opout.TwoBody[ch](ibra,iket) += comm;
+              if (iket != ibra)
+              {
+                 opout.TwoBody[ch](iket,ibra) += herm*comm;
+              }
             }
          }
       }

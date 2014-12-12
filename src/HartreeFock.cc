@@ -43,12 +43,13 @@ void HartreeFock::Solve()
    {
       cerr << "Warning: Hartree-Fock calculation didn't converge after " << maxiter << " iterations." << endl;
    }
-   // Calculate the HF energy.
    CalcEHF();
 }
 
 
-
+//*******************************************************
+// Calculate the HF energy.
+//*******************************************************
 void HartreeFock::CalcEHF()
 {
    ModelSpace * ms = Hbare.GetModelSpace();
@@ -56,9 +57,10 @@ void HartreeFock::CalcEHF()
    int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
    for (int i=0;i<norbits;i++)
    {
+      int jfactor = ms->GetOrbit(i).j2 +1;
       for (int j=0;j<norbits;j++)
       {
-         EHF += 0.5 * rho(i,j) * (ms->GetOrbit(i).j2+1) * (H(i,j)+t(i,j));
+         EHF += 0.5 * rho(i,j) * jfactor * (H(i,j)+t(i,j));
       }
    }
 }
@@ -83,11 +85,13 @@ void HartreeFock::Diagonalize()
    arma::vec E_ch;
    bool success;
    int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
+   int Jmax1 = Hbare.GetModelSpace()->OneBodyJmax;
    for (int p = 0; p<=1;p++)
    {
       for (int Tz = -1; Tz<=1; Tz+=2)
       {
-          for (int J=0;J<JMAX;J++)
+          for (int J=0;J<=Jmax1;J++)
+//          for (int J=0;J<JMAX;J++)
           {
 
             // Find all the SP orbits that have quantum numbers J,p,Tz
@@ -95,7 +99,6 @@ void HartreeFock::Diagonalize()
              oit_list.resize(0);
              for (int a=0;a<norbits;a++)
              {
-                //Orbit &oa = Hbare->GetModelSpace()->GetOrbit(a);
                 Orbit &oa = Hbare.GetModelSpace()->GetOrbit(a);
                 if (oa.j2==J and oa.tz2==Tz and (oa.l%2)==p)
                 {
