@@ -19,8 +19,9 @@ HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
 
    t = Hbare.OneBody;
    energies = t.diag();
-   UpdateDensityMatrix();
    BuildMonopoleV();
+   UpdateDensityMatrix();
+   UpdateH();
 }
 
 
@@ -33,7 +34,7 @@ void HartreeFock::Solve()
    while( (! CheckConvergence()) && iterations < maxiter)
    {
       Diagonalize();  // Diagonalize the Fock matrix
-//      ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
+      ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
       UpdateDensityMatrix();  // 1 body density matrix, used in UpdateH()
       UpdateH();  // Update the Fock matrix
       ++iterations;

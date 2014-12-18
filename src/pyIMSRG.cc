@@ -53,7 +53,6 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def(self / double())
       .def_readwrite("ZeroBody", &Operator::ZeroBody)
       .def_readwrite("OneBody", &Operator::OneBody)
-//      .def_readwrite("TwoBody", &Operator::TwoBody)
       .def("ScaleOneBody", &Operator::ScaleOneBody)
       .def("ScaleTwoBody", &Operator::ScaleTwoBody)
       .def("DoNormalOrdering", &Operator::DoNormalOrdering)
@@ -66,6 +65,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("SetNonHermitian", &Operator::SetNonHermitian)
       .def("Set_BCH_Transform_Threshold", &Operator::Set_BCH_Transform_Threshold)
       .def("Set_BCH_Product_Threshold", &Operator::Set_BCH_Product_Threshold)
+      .def("PrintOneBody", &Operator::PrintOneBody)
+      .def("PrintTwoBody", &Operator::PrintTwoBody)
    ;
 
 

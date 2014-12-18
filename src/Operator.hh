@@ -90,6 +90,9 @@ class Operator
   bool IsAntiHermitian()const {return antihermitian;};
   bool IsNonHermitian()const {return not (hermitian or antihermitian);};
 
+  void PrintOneBody() const {OneBody.print();};
+  void PrintTwoBody(int ch) const {TwoBody[ch].print();};
+
 
  //private:
   //Fields

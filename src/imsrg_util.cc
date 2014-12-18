@@ -87,11 +87,15 @@ namespace imsrg_util
  }
 
 
-// Center of mass kinetic energy, with the hw/A factor
+// Center of mass kinetic energy, including the hw/A factor
  Operator TCM_Op(ModelSpace& modelspace)
  {
+
+   double hw = modelspace.GetHbarOmega();
+   int A = modelspace.GetTargetMass();
    Operator TcmOp = Operator(modelspace);
 
+   // One body piece = p**2/(2mA) = (N+3/2)hw/A
    int norb = modelspace.GetNumberOrbits();
    for (int i=0; i<norb; ++i)
    {
@@ -101,13 +105,14 @@ namespace imsrg_util
          Orbit & oj = modelspace.GetOrbit(j);
          if (oi.l != oj.l or oi.j2 != oj.j2 or oi.tz2 != oj.tz2) continue;
          double tij = 0;
-         if (oi.n == oj.n) tij = 0.5*(2*oi.n+oi.l + 1.5);
-         else if (oi.n == oj.n-1) tij = 0.5*sqrt(oj.n*(oj.n+oj.l + 0.5));
+         if (oi.n == oj.n) tij = 0.5*(2*oi.n+oi.l + 1.5) * hw/A;
+         else if (oi.n == oj.n-1) tij = 0.5*sqrt(oj.n*(oj.n+oj.l + 0.5)) * hw/A;
          TcmOp.OneBody(i,j) = tij;
          TcmOp.OneBody(j,i) = tij;
       }
    }
 
+   // Two body piece = 2*p1*p2/(2mA) = (Tcm-Trel)/A
    int nchan = modelspace.GetNumberTwoBodyChannels();
    #pragma omp parallel for schedule(dynamic,5) 
    for (int ch=0; ch<nchan; ++ch)
@@ -120,19 +125,16 @@ namespace imsrg_util
          for (int iket=ibra;iket<nkets;++iket)
          {
             Ket & ket = tbc.GetKet(iket);
-            double mat_el = Calculate_p1p2(modelspace,bra,ket,tbc.J);
+            double p1p2 = Calculate_p1p2(modelspace,bra,ket,tbc.J) * hw/A;
             #pragma omp critical
             {
-              TcmOp.TwoBody[ch](ibra,iket) = mat_el;
-              TcmOp.TwoBody[ch](iket,ibra) = mat_el;
+              TcmOp.TwoBody[ch](ibra,iket) = p1p2;
+              TcmOp.TwoBody[ch](iket,ibra) = p1p2;
             }
          }
       }
    }
-   double hw = modelspace.GetHbarOmega();
-   int A = modelspace.GetTargetMass();
-//   return TcmOp;
-   return TcmOp * ( hw / ( 2*A ));
+   return TcmOp;
  }
 
 
@@ -235,7 +237,7 @@ namespace imsrg_util
                   else if (n_ab == n_cd-1) trel = sqrt(n_cd*( n_cd+lam_cd+0.5));
                 }
                 double prefactor = njab * njcd * mosh_ab * mosh_cd * asymm_factor;
-                p1p2 += (tcm-trel) * prefactor;
+                p1p2 += (tcm-trel) * prefactor *0.5;
 
               } // N_cd
            } // lam_ab

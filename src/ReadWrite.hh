@@ -8,7 +8,7 @@
 
 // ToDo: Add WriteOperator/ ReadOperator methods, which stores an operator in
 // a convenient method for reading back in another calculation
-
+using namespace std;
 class ReadWrite
 {
  public:
@@ -34,7 +34,7 @@ class ReadWrite
 
    bool InGoodState(){return goodstate;};
    bool doCoM_corr;
-   void SetCoMCorr(bool b){doCoM_corr = b;};
+   void SetCoMCorr(bool b){doCoM_corr = b;cout <<"Setting com_corr to "<< b << endl;};
    bool goodstate;
 
 };
