@@ -222,6 +222,121 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
 }
 
 
+// Read TBME's in Petr Navratil's format
+// Setting Emax=-1 just uses the single-particle emax determined by the model space
+void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
+{
+
+  ModelSpace * modelspace = Hbare.GetModelSpace();
+  int emax = 0;
+  int norb = modelspace->GetNumberOrbits();
+  int nljmax = norb/2;
+  int herm = Hbare.IsHermitian() ? 1 : -1 ;
+  vector<int> orbits_remap(nljmax,-1);
+  for (int i=0;i<norb;++i)
+  {
+     Orbit& oi = modelspace->GetOrbit(i);
+     if (oi.tz2 > 0 ) continue;
+     int N = 2*oi.n + oi.l;
+     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2;
+     orbits_remap[nlj] = i;
+     emax = max(emax,N);
+  }
+  emax *= 2;
+
+  ifstream infile;
+  char line[LINESIZE];
+  infile.open(filename);
+  double tbme_pp,tbme_nn,tbme_10,tbme_00;
+  if ( !infile.good() )
+  {
+     cerr << "Trouble reading file " << filename << endl;
+     goodstate = false;
+     return;
+  }
+
+  // first line contains some information
+  int total_number_elements;
+  int N1max, N12max;
+  double hw, srg_lambda;
+
+  infile >> total_number_elements >> N1max >> N12max >> hw >> srg_lambda;
+
+  // from Petr: The Trel and the H_HO_rel must be scaled by (2/A) hbar Omega
+  int a,b,c,d,J,T;
+  int nlj1,nlj2,nlj3,nlj4;
+  double trel, h_ho_rel, vcoul, vpn, vpp, vnn;
+  while( infile >> nlj1 >> nlj2 >> nlj3 >> nlj4 >> J >> T >> trel >> h_ho_rel >> vcoul >> vpn >> vpp >> vnn )
+  {
+    --nlj1;--nlj2;--nlj3;--nlj4;  // Fortran -> C indexing
+    a = orbits_remap[nlj1];
+    b = orbits_remap[nlj2];
+    c = orbits_remap[nlj3];
+    d = orbits_remap[nlj4];
+    
+    //if (a>=norb or b>=norb or c>=norb or d>=norb) continue;
+    if (2*nlj1>=norb or 2*nlj2>=norb or 2*nlj3>=norb or 2*nlj4>=norb) continue;
+    Orbit oa = modelspace->GetOrbit(a);
+    Orbit ob = modelspace->GetOrbit(b);
+    int parity = (oa.l + ob.l) % 2;
+
+
+    // do pp and nn
+    if (T==1)
+    {
+      Hbare.SetTBME(J,parity,-1,a,b,c,d,vpp);
+      Hbare.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,vnn);
+    }
+
+    if (abs(vpn)<1e-6) continue;
+
+
+    // Normalization
+    if (a!=b)
+    {
+       vpn /= sqrt(2);
+    }
+    if (c!=d)
+    {
+       vpn /= sqrt(2);
+    }
+    if ( a==c and b==d )
+    {
+       vpn /= 2.0;
+    }
+
+
+   double vpnpn = vpn;
+   double vpnnp = vpn;
+   if (T==0) vpnnp *= -1;
+
+  // These normalizations seem to work. Not sure why. There must be a better way.
+  if ( a==d and b==c )
+  {
+     vpnnp /=2.0;
+  }
+
+    // now do pnpn, npnp, pnnp, nppn
+  Hbare.AddToTBME(J,parity,0,a,b+1,c,d+1,vpnpn);
+  if (a!=b and c!=d)
+     Hbare.AddToTBME(J,parity,0,a+1,b,c+1,d,vpnpn);
+  if ( c!=d)
+    Hbare.AddToTBME(J,parity,0,a,b+1,c+1,d,vpnnp);
+  if ( a!=b)
+    Hbare.AddToTBME(J,parity,0,a+1,b,c,d+1,vpnnp);
+
+
+  }
+
+  
+  return;
+}
+
+
+
+
+
+
 // Read TBME's in Darmstadt format
 // Setting Emax=-1 just uses the single-particle emax determined by the model space
 void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax /*default=-1*/)
@@ -232,14 +347,14 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
   int norb = modelspace->GetNumberOrbits();
   int nljmax = norb/2;
   int herm = Hbare.IsHermitian() ? 1 : -1 ;
-  vector<int> orbits_darmstadt(nljmax,-1);
+  vector<int> orbits_remap(nljmax,-1);
   for (int i=0;i<norb;++i)
   {
      Orbit& oi = modelspace->GetOrbit(i);
      if (oi.tz2 > 0 ) continue;
      int N = 2*oi.n + oi.l;
      int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2;
-     orbits_darmstadt[nlj] = i;
+     orbits_remap[nlj] = i;
      emax = max(emax,N);
   }
   if (Emax >=0)
@@ -263,13 +378,13 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
 
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
   {
-    int a =  orbits_darmstadt[nlj1];
+    int a =  orbits_remap[nlj1];
     Orbit & o1 = modelspace->GetOrbit(a);
     int e1 = 2*o1.n + o1.l;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
-      int b =  orbits_darmstadt[nlj2];
+      int b =  orbits_remap[nlj2];
       Orbit & o2 = modelspace->GetOrbit(b);
       int e2 = 2*o2.n + o2.l;
       if (e1+e2 > emax) continue;
@@ -277,13 +392,13 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
 
       for(int nlj3=0; nlj3<=nlj1; ++nlj3)
       {
-        int c =  orbits_darmstadt[nlj3];
+        int c =  orbits_remap[nlj3];
         Orbit & o3 = modelspace->GetOrbit(c);
         int e3 = 2*o3.n + o3.l;
 
         for(int nlj4=0; nlj4<=(nlj3==nlj1 ? nlj2 : nlj3); ++nlj4)
         {
-          int d =  orbits_darmstadt[nlj4];
+          int d =  orbits_remap[nlj4];
           Orbit & o4 = modelspace->GetOrbit(d);
           int e4 = 2*o4.n + o4.l;
           if (e3+e4 > emax) continue;
@@ -642,7 +757,8 @@ void ReadWrite::WriteTwoBody(Operator& op, string filename)
          {
             Ket &ket = tbc.GetKet(j);
             double tbme = op.GetTBME(ch,bra,ket) / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
-            if ( abs(tbme)<1e-4 ) continue;
+//            if ( abs(tbme)<1e-4 ) continue;
+            if ( abs(tbme)<1e-6 ) tbme = 0;
             Orbit &oc = modelspace->GetOrbit(ket.p);
             Orbit &od = modelspace->GetOrbit(ket.q);
             int wint = 4;

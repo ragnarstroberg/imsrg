@@ -27,19 +27,20 @@ HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
 
 void HartreeFock::Solve()
 {
-   int iter = 0; // counter so we don't go on forever
+   iterations = 0; // counter so we don't go on forever
    int maxiter = 1000;
 
-   while( (! CheckConvergence()) && iter < maxiter)
+   while( (! CheckConvergence()) && iterations < maxiter)
    {
       Diagonalize();  // Diagonalize the Fock matrix
-      ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
+//      ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
       UpdateDensityMatrix();  // 1 body density matrix, used in UpdateH()
       UpdateH();  // Update the Fock matrix
-      iter++;
+      ++iterations;
    }
 
-   if (iter==maxiter)
+   ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
+   if (iterations==maxiter)
    {
       cerr << "Warning: Hartree-Fock calculation didn't converge after " << maxiter << " iterations." << endl;
    }
@@ -79,11 +80,10 @@ void HartreeFock::CalcEHF()
 void HartreeFock::Diagonalize()
 {
    prev_energies = energies;
-   vector<int> oit_list;
+   vector<int> orbit_list;
    arma::mat H_ch;
    arma::mat C_ch;
    arma::vec E_ch;
-   bool success;
    int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
    int Jmax1 = Hbare.GetModelSpace()->OneBodyJmax;
    for (int p = 0; p<=1;p++)
@@ -91,22 +91,21 @@ void HartreeFock::Diagonalize()
       for (int Tz = -1; Tz<=1; Tz+=2)
       {
           for (int J=0;J<=Jmax1;J++)
-//          for (int J=0;J<JMAX;J++)
           {
 
             // Find all the SP orbits that have quantum numbers J,p,Tz
             // and store them in a list
-             oit_list.resize(0);
+             orbit_list.resize(0);
              for (int a=0;a<norbits;a++)
              {
                 Orbit &oa = Hbare.GetModelSpace()->GetOrbit(a);
                 if (oa.j2==J and oa.tz2==Tz and (oa.l%2)==p)
                 {
-                   oit_list.push_back(a);
+                   orbit_list.push_back(a);
                 }
              }
              // Now create submatrices corresponding to just these orbits
-             int norb = oit_list.size();
+             int norb = orbit_list.size();
              if (norb < 1) continue;
              H_ch = arma::mat(norb,norb,arma::fill::zeros);
              C_ch = arma::mat(norb,norb,arma::fill::zeros);
@@ -115,18 +114,30 @@ void HartreeFock::Diagonalize()
              {
                 for (int b=0;b<norb;b++)
                 {
-                   H_ch(a,b) = H(oit_list[a],oit_list[b]);
+                   H_ch(a,b) = H(orbit_list[a],orbit_list[b]);
                 }
              }
              // Diagonalize the submatrix
-             success = arma::eig_sym(E_ch, C_ch, H_ch);
+             bool success = false;
+             int diag_tries = 0;
+             while ( not success and diag_tries<5 )
+             {
+                success = arma::eig_sym(E_ch, C_ch, H_ch);
+                ++diag_tries;
+             }
+             if (not success)
+             {
+                cout << "Hartree-Fock: Failed to diagonalize the submatrix with J=" << J << " Tz=" << Tz << " parity = " << p
+                     << " on iteration # " << iterations << ". The submatrix looks like:" << endl;
+                H_ch.print();
+             }
              // Update the full overlap matrix C and energy vector
              for (int a=0;a<norb;a++)
              {
-                energies( oit_list[a] ) = E_ch(a);
+                energies( orbit_list[a] ) = E_ch(a);
                 for (int b=0;b<norb;b++)
                 {
-                   C(oit_list[a],oit_list[b]) = C_ch(a,b);
+                   C(orbit_list[a],orbit_list[b]) = C_ch(a,b);
                 }
              }
 

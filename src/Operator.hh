@@ -17,7 +17,6 @@ class Operator
   //Fields
   float ZeroBody;
   arma::mat OneBody;
-//  array<arma::mat, JMAX*2*3> TwoBody;
   vector<arma::mat> TwoBody;
 
   //Constructors
@@ -45,12 +44,16 @@ class Operator
   //TwoBody setter/getters
   double GetTBME(int ch, int a, int b, int c, int d) const;
   void   SetTBME(int ch, int a, int b, int c, int d, double tbme);
+  void   AddToTBME(int ch, int a, int b, int c, int d, double tbme);
   double GetTBME(int ch, Ket &bra, Ket &ket) const;
   void   SetTBME(int ch, Ket &bra, Ket& ket, double tbme);
+  void   AddToTBME(int ch, Ket &bra, Ket& ket, double tbme);
   double GetTBME(int j, int p, int t, Ket& bra, Ket& ket) const;
   void   SetTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme);
+  void   AddToTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme);
   double GetTBME(int j, int p, int t, int a, int b, int c, int d) const;
   void   SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
+  void   AddToTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
 
 //  double GetTBME_NoPhase(int ch, int a, int b, int c, int d) const;
 
@@ -58,6 +61,7 @@ class Operator
   double GetTBMEmonopole(Ket & bra, Ket & ket) const;
 
 
+  void ScaleZeroBody(double x);
   void ScaleOneBody(double x);
   void ScaleTwoBody(double x);
 

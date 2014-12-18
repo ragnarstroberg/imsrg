@@ -18,6 +18,7 @@ class HartreeFock
    arma::vec prev_energies; // SPE's from last iteration
    double tolerance;        // tolerance for convergence
    double EHF;              // Hartree-Fock energy (Normal-ordered 0-body term)
+   int iterations;          // iterations used in Solve()
    
 
    HartreeFock(Operator&  hbare);

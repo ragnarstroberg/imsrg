@@ -160,7 +160,7 @@ double Operator::GetTBME(int ch, int a, int b, int c, int d) const
    Ket & ket = tbc.GetKet(ket_ind);
 
    double phase = 1;
-   if (a>b) phase *= bra.Phase(tbc.J) ;
+   if (a>b) phase *= bra.Phase(tbc.J);
    if (c>d) phase *= ket.Phase(tbc.J);
    if (a==b) phase *= sqrt(2.);
    if (c==d) phase *= sqrt(2.);
@@ -182,6 +182,20 @@ void Operator::SetTBME(int ch, int a, int b, int c, int d, double tbme)
 }
 
 
+void Operator::AddToTBME(int ch, int a, int b, int c, int d, double tbme)
+{
+   TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+   int bra_ind = tbc.GetLocalIndex(min(a,b),max(a,b));
+   int ket_ind = tbc.GetLocalIndex(min(c,d),max(c,d));
+   double phase = 1;
+   if (a>b) phase *= tbc.GetKet(bra_ind).Phase(tbc.J);
+   if (c>d) phase *= tbc.GetKet(ket_ind).Phase(tbc.J);
+   TwoBody[ch](bra_ind,ket_ind) += phase * tbme;
+   if (hermitian) TwoBody[ch](ket_ind,bra_ind) += phase * tbme;
+   if (antihermitian) TwoBody[ch](ket_ind,bra_ind) -=  phase * tbme;
+}
+
+
 double Operator::GetTBME(int ch, Ket &bra, Ket &ket) const
 {
    return GetTBME(ch,bra.p,bra.q,ket.p,ket.q);
@@ -190,6 +204,11 @@ double Operator::GetTBME(int ch, Ket &bra, Ket &ket) const
 void Operator::SetTBME(int ch, Ket& ket, Ket& bra, double tbme)
 {
    SetTBME(ch, bra.p,bra.q,ket.p,ket.q,tbme);
+}
+
+void Operator::AddToTBME(int ch, Ket& ket, Ket& bra, double tbme)
+{
+   AddToTBME(ch, bra.p,bra.q,ket.p,ket.q,tbme);
 }
 
 double Operator::GetTBME(int j, int p, int t, int a, int b, int c, int d) const
@@ -204,6 +223,12 @@ void Operator::SetTBME(int j, int p, int t, int a, int b, int c, int d, double t
    SetTBME(ch,a,b,c,d,tbme);
 }
 
+void Operator::AddToTBME(int j, int p, int t, int a, int b, int c, int d, double tbme)
+{
+   int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
+   AddToTBME(ch,a,b,c,d,tbme);
+}
+
 double Operator::GetTBME(int j, int p, int t, Ket& bra, Ket& ket) const
 {
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
@@ -214,6 +239,12 @@ void Operator::SetTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme)
 {
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    SetTBME(ch,bra,ket,tbme);
+}
+
+void Operator::AddToTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme)
+{
+   int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
+   AddToTBME(ch,bra,ket,tbme);
 }
 
 
@@ -326,6 +357,11 @@ void Operator::EraseTwoBody()
    {
        TwoBody[ch].zeros();
    }
+}
+
+void Operator::ScaleZeroBody(double x)
+{
+   ZeroBody *= x;
 }
 
 void Operator::ScaleOneBody(double x)

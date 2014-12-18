@@ -1,8 +1,10 @@
 CC = g++
-# Need to do a better job with the dependencies...
 
 #FLAGS = -larmadillo -O3 -std=c++11
-FLAGS = -larmadillo -O3 -std=c++11  -lgsl -fPIC -fopenmp 
+#FLAGS = -larmadillo -O3 -std=c++11  -lgsl -fPIC -fopenmp 
+INCLUDE = -I./armadillo
+LIBS = -lblas -llapack -lgsl
+FLAGS =  -O3 -std=c++11  -fPIC -fopenmp 
 #FLAGS = -larmadillo -O3 -std=c++11 -lgsl -fPIC # -v -da -Q
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
@@ -12,20 +14,20 @@ all: mysrg pyIMSRG.so
 OBJ = ModelSpace.o ReadWrite.o Operator.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o
 
 mysrg: main.cc $(OBJ)
-	$(CC) $^ -o $@ $(FLAGS) 
+	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 %.o: %.cc %.hh
-	$(CC) -c $*.cc -o $@ $(FLAGS) 
+	$(CC) -c $*.cc -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 
 
 python: pyIMSRG.so
 
 pyIMSRG.so: pyIMSRG.o $(OBJ)
-	$(CC) $^ -o $@ $(FLAGS) -shared $(PYTHONFLAGS)
+	$(CC) $^ -o $@ $(FLAGS) $(INCLUDE) $(LIBS) -shared $(PYTHONFLAGS)
 
 pyIMSRG.o: pyIMSRG.cc
-	$(CC) -c $^ -o $@ -fPIC $(FLAGS) $(PYTHONFLAGS)
+	$(CC) -c $^ -o $@ -fPIC $(FLAGS) $(INCLUDE) $(LIBS) $(PYTHONFLAGS)
 
 clean:
 	rm -f *.o
