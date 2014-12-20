@@ -43,9 +43,35 @@ void Operator3::Copy(const Operator3& op)
    ThreeBody     = op.ThreeBody;
 }
 
-
-double GetThreeBodyME(int J, int Jprime, int K2, int Tz2, int parity, int i, int j, int k, int l, int m, int n)
+void AllocateThreeBody()
 {
+
+}
+
+
+//double GetThreeBodyME(int J, int Jprime, int K2, int Tz2, int parity, int i, int j, int k, int l, int m, int n)
+double GetThreeBodyME(int Jab, int Jde, int J, int tab, int tde, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in)
+{
+   // reorder so a>=b>=c and d>=e>=f
+   int a = max( max(a_in,b_in), c_in);
+   int b = max( min(a_in,b_in), min(max(a_in,b_in),c_in) );
+   int c = min( min(a_in,b_in), c_in);
+   int d = max( max(d_in,e_in), f_in);
+   int e = max( min(d_in,e_in), min(max(d_in,e_in),f_in) );
+   int f = min( min(d_in,e_in), f_in);
+
+
+   // need to figure out phase factor associated with the reordering
+   // also need to map  a => a/2
+
+   int isospin_index = tde + 2*tab + 2*(T2-1); // ranges from 0-4
+   int J_index = J + J_max*Jab + J_max*Jab_max*Jde;
+   int orbit_index_bra =  a*(a+1)*(a+2)/6 + b*(b+1)/2 + c;
+   int orbit_index_ket =  d*(d+1)*(d+2)/6 + e*(e+1)/2 + f;
+   long int orb_indx = (orbit_index_bra * orbit_index_bra+1)/2 + orbit_index_ket;
+   // this index can get huge, and lots of the terms are zero. need to map this index
+   // to a more densely packed index.
+
 
 }
 
@@ -85,6 +111,7 @@ Operator Operator3::DoNormalOrdering3()
                   opNO3.TwoBody[ch](ibra,iket) += (K2+1) * GetThreeBodyME(J,Jprime,K2,Tz2,parity,i,j,a,k,l,a);
                }
             }
+            opNO3.TwoBody[ch](ibra,iket) /= (2*J+1);
          }
       }
    }

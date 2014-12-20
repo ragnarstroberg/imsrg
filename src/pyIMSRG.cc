@@ -30,6 +30,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("ReadBareTBME_Jason", &ReadWrite::ReadBareTBME_Jason)
       .def("ReadBareTBME_Navratil", &ReadWrite::ReadBareTBME_Navratil)
       .def("ReadBareTBME_Darmstadt", &ReadWrite::ReadBareTBME_Darmstadt)
+      .def("Read_Darmstadt_3body", &ReadWrite::Read_Darmstadt_3body)
       .def("WriteOneBody", &ReadWrite::WriteOneBody)
       .def("WriteTwoBody", &ReadWrite::WriteTwoBody)
       .def("WriteValenceOneBody", &ReadWrite::WriteValenceOneBody)
@@ -91,9 +92,9 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("SetSmax",&IMSRGSolver::SetSmax)
       .def("SetDsmax",&IMSRGSolver::SetDsmax)
       .def("SetGenerator",&IMSRGSolver::SetGenerator)
+      .def("GetSystemDimension",&IMSRGSolver::GetSystemDimension)
       .def_readwrite("H_s", &IMSRGSolver::H_s)
       .def_readwrite("Omega", &IMSRGSolver::Omega)
-
    ;
 
    def("TCM_Op",         imsrg_util::TCM_Op);

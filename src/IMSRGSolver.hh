@@ -57,6 +57,7 @@ class IMSRGSolver
   void SetdOmega(double d){norm_domega = d;};
   void SetSmax(double d){smax = d;};
   void SetGenerator(string g){generator = g;};
+  int GetSystemDimension();
 
 //  private:
   ModelSpace* modelspace;

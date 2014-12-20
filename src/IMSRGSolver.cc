@@ -562,7 +562,21 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
 }
 
 
+// count number of equations to be solved
+int IMSRGSolver::GetSystemDimension()
+{
+   int dim = 1; // zero-body part
 
+   // one-body part
+   int N = H_0.OneBody.n_cols;
+   dim += N*(N+1)/2;
+   for( arma::mat& mtx : H_0.TwoBody )
+   {
+      N = mtx.n_cols;
+      dim += N*(N+1)/2;
+   }
+   return dim;
+}
 
 
 

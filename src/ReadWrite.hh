@@ -19,7 +19,8 @@ class ReadWrite
    void ReadBareTBME_Jason( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil( string filename, Operator& Hbare);
    void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax=-1);
-   vector<int> MapDarmstadtOrbits( ModelSpace* modelspace, int& Emax);
+   void Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax=-1);
+//   vector<int> MapDarmstadtOrbits( ModelSpace* modelspace, int& Emax);
    void WriteOneBody(Operator&, string);
    void WriteTwoBody(Operator&, string);
    void WriteValenceOneBody(Operator&, string);

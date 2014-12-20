@@ -231,7 +231,7 @@ class ModelSpace
 //   int GetTwoBodyJmax() const {return TwoBodyJmax;};
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
-   double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. This is bad.
+   double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. Not ideal.
 
    int GetTwoBodyChannelIndex(int j, int p, int t);
    inline int phase(int x) {return (x%2)==0 ? 1 : -1;};

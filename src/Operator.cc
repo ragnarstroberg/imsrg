@@ -13,38 +13,28 @@ using namespace std;
 //===================================================================================
 //===================================================================================
 
-
-/////////////////// CONSTRUCTORS /////////////////////////////////////////
-Operator::Operator()
-{
-   modelspace = NULL;
-   nChannels = 0;
-   hermitian = true;
-   antihermitian = false;
-}
-
 double  Operator::bch_transform_threshold = 1e-6;
 double  Operator::bch_product_threshold = 1e-4;
 
-Operator::Operator(ModelSpace& ms) // Create a zero-valued operator in a given model space
+/////////////////// CONSTRUCTORS /////////////////////////////////////////
+Operator::Operator() :
+   modelspace(NULL), nChannels(0), hermitian(true), antihermitian(false)
+{}
+
+
+// Create a zero-valued operator in a given model space
+Operator::Operator(ModelSpace& ms) : 
+    hermitian(true), antihermitian(false), ZeroBody(0) ,
+    nChannels(ms.GetNumberTwoBodyChannels()) ,
+    OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
+    TwoBody(ms.GetNumberTwoBodyChannels(), arma::mat() )
 {
   modelspace = &ms;
-  hermitian = true;
-  antihermitian = false;
-  ZeroBody = 0;
-  int nOneBody = modelspace->GetNumberOrbits();
-  int nKets = modelspace->GetNumberKets();
-  OneBody = arma::mat(nOneBody,nOneBody,arma::fill::zeros);
-  nChannels = modelspace->GetNumberTwoBodyChannels();
-
-  TwoBody.resize(nChannels, arma::mat() );
-
   for (int ch=0;ch<nChannels;++ch)
   {
       int npq = modelspace->GetTwoBodyChannel(ch).GetNumberKets();
       TwoBody[ch] = arma::mat(npq,npq,arma::fill::zeros);
   }
-
 }
 
 Operator::Operator(const Operator& op)

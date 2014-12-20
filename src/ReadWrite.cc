@@ -25,7 +25,9 @@ void ReadWrite::ReadSettingsFile( string filename)
    fin.open(filename);
    if (! fin.good() )
    {
-      cout << "Trouble reading Settings file" << endl;
+      cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+      cout << "!!!!  Trouble reading Settings file " << filename << "!!!!!!" << endl;
+      cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
       goodstate = false;
    }
    cout << "Reading settings file " << filename << endl;
@@ -365,7 +367,6 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
   ifstream infile;
   char line[LINESIZE];
   infile.open(filename);
-  double tbme_pp,tbme_nn,tbme_10,tbme_00;
   if ( !infile.good() )
   {
      cerr << "Trouble reading file " << filename << endl;
@@ -373,6 +374,7 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
      return;
   }
 
+  double tbme_pp,tbme_nn,tbme_10,tbme_00;
   // skip the first line
   infile.getline(line,LINESIZE);
 
@@ -452,8 +454,217 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
     }
   }
 
-  return;
 }
+
+
+
+void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax)
+{
+  ModelSpace * modelspace = Hbare.GetModelSpace();
+  vector<string> Llabels = {"s","p","d","f","g","h","i","j","k","l"};
+  int emax = 0;
+  int norb = modelspace->GetNumberOrbits();
+  int nljmax = norb/2;
+  int herm = Hbare.IsHermitian() ? 1 : -1 ;
+  vector<int> orbits_remap(nljmax,-1);
+  for (int i=0;i<norb;++i)
+  {
+     Orbit& oi = modelspace->GetOrbit(i);
+     if (oi.tz2 > 0 ) continue;
+     int N = 2*oi.n + oi.l;
+     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2;
+     orbits_remap[nlj] = i;
+     emax = max(emax,N);
+  }
+//  if (Emax >=0)
+     emax = Emax;
+//  else
+//     emax *= 2;
+
+  ifstream infile;
+  char line[LINESIZE];
+  infile.open(filename);
+  if ( not infile.good() )
+  {
+     cerr << "Trouble reading file " << filename << endl;
+     goodstate = false;
+     return;
+  }
+  infile.getline(line,LINESIZE);
+
+  cout << "Emax = " << emax << endl;
+  int i=0;
+  int j=0;
+
+  // begin giant nested loops
+  for(int nlj1=0; nlj1<nljmax; ++nlj1)
+  {
+    int a =  orbits_remap[nlj1];
+    Orbit & oa = modelspace->GetOrbit(a);
+    int ea = 2*oa.n + oa.l;
+    if (ea > emax) break;
+
+    for(int nlj2=0; nlj2<=nlj1; ++nlj2)
+    {
+      int b =  orbits_remap[nlj2];
+      Orbit & ob = modelspace->GetOrbit(b);
+      int eb = 2*ob.n + ob.l;
+      if ( (ea+eb) > emax) break;
+
+      for(int nlj3=0; nlj3<=nlj2; ++nlj3)
+      {
+        int c =  orbits_remap[nlj3];
+        Orbit & oc = modelspace->GetOrbit(c);
+        int ec = 2*oc.n + oc.l;
+        if ( (ea+eb+ec) > emax) break;
+
+        // Get J limits for bra <abc|
+        int JabMax  = (oa.j2 + ob.j2)/2;
+        int JabMin  = abs(oa.j2 - ob.j2)/2;
+
+        int twoJCMindownbra;
+        if (abs(oa.j2 - ob.j2) >oc.j2)
+        {
+           twoJCMindownbra = abs(oa.j2 - ob.j2)-oc.j2;
+        }
+        else if (oc.j2 < (oa.j2+ob.j2) )
+        {
+           twoJCMindownbra = 1;
+        }
+        else
+        {
+           twoJCMindownbra = oc.j2 - oa.j2 - ob.j2;
+        }
+        int twoJCMaxupbra = oa.j2 + ob.j2 + oc.j2;
+
+
+        // now loop over possible ket orbits
+        for(int nnlj1=0; nnlj1<=nlj1; ++nnlj1)
+        {
+          int d =  orbits_remap[nnlj1];
+          Orbit & od = modelspace->GetOrbit(d);
+          int ed = 2*od.n + od.l;
+          if (ed > emax) break;
+
+          for(int nnlj2=0; nnlj2 <= ((nlj1 == nnlj1) ? nlj2 : nnlj1); ++nnlj2)
+          {
+            int e =  orbits_remap[nnlj2];
+            Orbit & oe = modelspace->GetOrbit(e);
+            int ee = 2*oe.n + oe.l;
+            if ( (ed+ee) > emax) break;
+
+            int nnlj3Max = (nlj1 == nnlj1 and nlj2 == nnlj2) ? nlj3 : nnlj2;
+            for(int nnlj3=0; nnlj3 <= nnlj3Max; ++nnlj3)
+            {
+              int f =  orbits_remap[nnlj3];
+              Orbit & of = modelspace->GetOrbit(f);
+              int ef = 2*of.n + of.l;
+              if ( (ed+ee+ef) > emax) break;
+              // check parity
+              if ( (oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2 !=0 ) continue;
+
+              // Get J limits for ket |def>
+              int JJabMax = (od.j2 + oe.j2)/2;
+              int JJabMin = abs(od.j2 - oe.j2)/2;
+
+              int twoJCMindownket;
+              if ( abs(od.j2 - oe.j2) > of.j2 )
+              {
+                 twoJCMindownket = abs(od.j2 - oe.j2) - of.j2;
+              }
+              else if ( of.j2 < (od.j2+oe.j2) )
+              {
+                 twoJCMindownket = 1;
+              }
+              else
+              {
+                 twoJCMindownket = of.j2 - od.j2 - oe.j2;
+              }
+              int twoJCMaxupket = od.j2 + oe.j2 + of.j2;
+
+              int twoJCMindown = max(twoJCMindownbra, twoJCMindownket);
+              int twoJCMaxup = min(twoJCMaxupbra, twoJCMaxupket);
+              if (twoJCMindown > twoJCMaxup) continue;
+              cout << "===============================================================" << endl;
+              cout << " < "
+                   << "(" << oa.n << Llabels[oa.l] << oa.j2 << "/2) "
+                   << "(" << ob.n << Llabels[ob.l] << ob.j2 << "/2) "
+                   << "(" << oc.n << Llabels[oc.l] << oc.j2 << "/2) "
+                   << "| V | "
+                   << "(" << od.n << Llabels[od.l] << od.j2 << "/2) "
+                   << "(" << oe.n << Llabels[oe.l] << oe.j2 << "/2) "
+                   << "(" << of.n << Llabels[of.l] << of.j2 << "/2) "
+                   << " > " << endl;
+
+
+              //inner loops
+              for(int Jab = JabMin; Jab <= JabMax; Jab++)
+              {
+               for(int JJab = JJabMin; JJab <= JJabMax; JJab++)
+               {
+                //summation bounds for twoJC
+                int twoJCMin = max( abs(2*Jab - oc.j2), abs(2*JJab - of.j2));
+                int twoJCMax = min( 2*Jab + oc.j2 , 2*JJab + of.j2 );
+       
+                for(int twoJC = twoJCMin; twoJC <= twoJCMax; twoJC += 2)
+                {
+                 cout << "Jab,JJab,twoJC = " << Jab << ", " << JJab << ", " << twoJC << endl;
+                 for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
+                 {
+                  for(int ttab = 0; ttab <= 1; ttab++)
+                  {
+                   //summation bounds
+                   //int twoTMin = max( abs(2*tab -1), abs(2*ttab -1)); // twoTMin can just be used as 1
+                   int twoTMin = 1; // twoTMin can just be used as 1
+                   int twoTMax = min( 2*tab +1, 2*ttab +1);
+       
+                   for(int twoT = twoTMin; twoT <= twoTMax; twoT += 2)
+                   {
+                    double V;
+                    infile >> V;
+                    bool autozero = false;
+                    cout << i <<  ":  " << "tab,ttab,twoT = " << tab << "," << ttab << "," << twoT << "  V = " << V;
+
+                    if ( a==b and (tab+Jab)%2==0 ) autozero = true;
+                    if ( d==e and (ttab+JJab)%2==0 ) autozero = true;
+                    if ( a==b and a==c and twoT==3 and oa.j2<3 ) autozero = true;
+                    if ( d==e and d==f and twoT==3 and od.j2<3 ) autozero = true;
+                    if (autozero)
+                    {
+                       cout << " ( should be zero ) ";
+                       if (abs(V) > 1e-6)
+                       {
+                          cout << " <-------- AAAAHHHH!!!!!!!! ";
+                       }
+                       ++j;
+                    }
+                    cout << endl;
+                    i++;
+       
+                   }
+                  }//ttab
+                 }//tab
+                 cout << " ------------------------" << endl;
+                if (not infile.good() ) break;
+                }//twoJ
+               }//JJab
+       
+              }
+
+
+
+            }
+          }
+        }
+      }
+    }
+  }
+  cout << "I think there should be " << i << " matrix elements to read." << endl;
+  cout << " and " << j << " of them are identically zero" << endl;
+
+}
+
+
 
 
 
