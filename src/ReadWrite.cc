@@ -458,7 +458,8 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
 
 
 
-void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax)
+//void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax)
+void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Emax)
 {
   ModelSpace * modelspace = Hbare.GetModelSpace();
   vector<string> Llabels = {"s","p","d","f","g","h","i","j","k","l"};
@@ -623,6 +624,9 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax
                     double V;
                     infile >> V;
                     bool autozero = false;
+
+                    Hbare.SetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
+
                     cout << i <<  ":  " << "tab,ttab,twoT = " << tab << "," << ttab << "," << twoT << "  V = " << V;
 
                     if ( a==b and (tab+Jab)%2==0 ) autozero = true;

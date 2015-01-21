@@ -1,6 +1,7 @@
 #include "ModelSpace.hh"
 #include "ReadWrite.hh"
 #include "Operator.hh"
+#include "Operator3.hh"
 #include "HartreeFock.hh"
 #include "IMSRGSolver.hh"
 #include "imsrg_util.hh"
@@ -70,7 +71,34 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("PrintTwoBody", &Operator::PrintTwoBody)
    ;
 
-
+   class_<Operator3>("Operator3",init<>())
+      .def(init< ModelSpace&>())
+//      .def(self += Operator())
+//      .def(self + Operator())
+//      .def(self -= Operator())
+//      .def(self - Operator())
+//      .def(self *= double())
+//      .def(self * double())
+//      .def(self /= double())
+//      .def(self / double())
+      .def_readwrite("ZeroBody", &Operator::ZeroBody)
+      .def_readwrite("OneBody", &Operator::OneBody)
+      .def("ScaleOneBody", &Operator::ScaleOneBody)
+      .def("ScaleTwoBody", &Operator::ScaleTwoBody)
+      .def("DoNormalOrdering3", &Operator::DoNormalOrdering)
+      .def("DoNormalOrdering", &Operator::DoNormalOrdering)
+//      .def("CalculateKineticEnergy", &Operator::CalculateKineticEnergy)
+      .def("Norm", &Operator::Norm)
+      .def("OneBodyNorm", &Operator::OneBodyNorm)
+      .def("TwoBodyNorm", &Operator::TwoBodyNorm)
+      .def("SetHermitian", &Operator::SetHermitian)
+      .def("SetAntiHermitian", &Operator::SetAntiHermitian)
+      .def("SetNonHermitian", &Operator::SetNonHermitian)
+//      .def("Set_BCH_Transform_Threshold", &Operator::Set_BCH_Transform_Threshold)
+//      .def("Set_BCH_Product_Threshold", &Operator::Set_BCH_Product_Threshold)
+//      .def("PrintOneBody", &Operator::PrintOneBody)
+//      .def("PrintTwoBody", &Operator::PrintTwoBody)
+   ;
 
    class_<HartreeFock>("HartreeFock",init<Operator&>())
       .def("Solve",&HartreeFock::Solve)

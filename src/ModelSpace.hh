@@ -228,7 +228,9 @@ class ModelSpace
    int GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
-//   int GetTwoBodyJmax() const {return TwoBodyJmax;};
+   inline int GetTwoBodyJmax() const {return TwoBodyJmax;};
+   inline int GetThreeBodyJmax() const {return ThreeBodyJmax;};
+
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. Not ideal.
@@ -251,6 +253,7 @@ class ModelSpace
    vector<int> neutron_orbits;
    int OneBodyJmax;
    int TwoBodyJmax;
+   int ThreeBodyJmax;
 
 
  private:

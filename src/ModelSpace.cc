@@ -261,6 +261,7 @@ ModelSpace::ModelSpace()
    norbits = 0;
    OneBodyJmax = 0;
    TwoBodyJmax = 0;
+   ThreeBodyJmax = 0;
    hbar_omega=20;
    target_mass = 16;
 }
@@ -273,6 +274,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    target_mass = ms.target_mass;
    OneBodyJmax = ms.OneBodyJmax;
    TwoBodyJmax = ms.TwoBodyJmax;
+   ThreeBodyJmax = ms.ThreeBodyJmax;
 
    holes = ms.holes;
    particles = ms.particles;
@@ -309,6 +311,7 @@ void ModelSpace::AddOrbit(Orbit orb)
    {
       OneBodyJmax = orb.j2;
       TwoBodyJmax = OneBodyJmax*2;
+      ThreeBodyJmax = OneBodyJmax*3-1;
       nTwoBodyChannels = 2*3*(TwoBodyJmax+1);
    }
 

@@ -1131,7 +1131,8 @@ void Operator::comm222_ph(const Operator& opright, Operator& opout ) const
    vector<arma::mat> Y_TwoBody_CC_right (nChannels, arma::mat() );
 
    CalculateCrossCoupled(X_TwoBody_CC_left, X_TwoBody_CC_right );
-   CalculateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right );
+   //CalculateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right );
+   opright.CalculateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right );
 
    // Construct the intermediate matrices N1 and N2
    vector<arma::mat> N1 (nChannels, arma::mat() );
