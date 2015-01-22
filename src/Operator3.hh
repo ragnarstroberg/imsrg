@@ -7,13 +7,14 @@
 
 using namespace std;
 
-typedef unordered_map<long,vector<double> > orbit_map;
+//typedef unordered_map<long,vector<double> > orbit_map;
 
 class Operator3 : public Operator
 {
  public:
    Operator3();
    Operator3(ModelSpace&);
+   ~Operator3();
    void Copy(const Operator3&);
 
    void AllocateThreeBody();
@@ -25,8 +26,8 @@ class Operator3 : public Operator
    int GetThreeBodyChannelIndex(int J, int parity, int tab, int tde, int T2);
    long int GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, int f);
 
-   void SortOrbits(int& a,int& b,int& c,int& d,int& e, int& f);
-   double RecouplingCoefficient(int a_in, int b_in, int c_in, int a, int b, int c, int Jab_in, int Jab, int J);
+   void SortOrbits(int& a,int& b,int& c);
+   double RecouplingCoefficient(int a_in, int b_in, int c_in, int a, int b, int c, int Jab_in, int Jab, int J ,char j_or_t);
 
    // the first vector runs over K2, Tz2 and parity, the vector runs over J
 //   vector<vector<arma::mat>> ThreeBody;
@@ -41,7 +42,9 @@ class Operator3 : public Operator
 //   vector< unordered_map<long, vector<double> > > ThreeBodyMatrixElements;
 //   unordered_map<int,unordered_map<long,vector<double> > > ThreeBody;
 //   vector<unordered_map<long,vector<double> > > ThreeBody;
-   vector<orbit_map > ThreeBody;
+
+//   vector<orbit_map > ThreeBody;
+   unordered_map< long int, vector< vector<double> > > ThreeBody;
 ////   unordered_map<vector<int>, double> ThreeBodyMatrixElements;
 
    int E3max;
