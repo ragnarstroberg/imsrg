@@ -643,7 +643,7 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
 //                    }
                     if (not autozero and abs(V)>1e-5)
                     {
-                       if (a==4 and b==0 and c==0 and d==4 and e==0 and f==0)
+                       if (a==2 and b==0 and c==0 and d==4 and e==0 and f==0)
                        {
  //                      Vtest = Hbare.GetThreeBodyME(1,0,1,0,0,1,4,0,0,4,0,0);
  //                      cout << "#!#Vtest  = " << Vtest;
@@ -655,8 +655,8 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
                        double V0 = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
                        Hbare.SetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
                        double Vout = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
-//                       if (abs(V-Vout)>1e-4)
 //                       if (a==4 and b==0 and c==0 and d==4 and e==0 and f==0)
+//                       if (abs(V-Vout)>1e-4)
 //                       {
                          cout << "STARTED WITH  " << V0 << "  PUT IN " << V << "   GOT OUT " << Vout << "     Jab,JJab,twoJC,tab,ttab,twoT = "
                               << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << "   "

@@ -205,7 +205,8 @@ double Operator3::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int
         double Cj_abc = RecouplingCoefficient(a_in,b_in,c_in,a,b,c,Jab_in,Jab,J2);
         double Cj_def = RecouplingCoefficient(d_in,e_in,f_in,d,e,f,Jde_in,Jde,J2);
 
-        int J2index = (Jab_max-Jab_min)*(Jde-Jde_min) + (Jab-Jab_min);
+//        int J2index = (Jab_max-Jab_min)*(Jde-Jde_min) + (Jab-Jab_min);
+        int J2index = (Jab_max-Jab_min+1)*(Jde-Jde_min) + (Jab-Jab_min);
 
         for (int tab=tab_min; tab<=tab_max; ++tab)
         {
@@ -233,7 +234,9 @@ void Operator3::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int t
    int d=d_in;
    int e=e_in;
    int f=f_in;
-   SortOrbits(a,b,c,d,e,f);
+//   SortOrbits(a,b,c,d,e,f);
+   SortOrbits(a,b,c);
+   SortOrbits(d,e,f);
 
    Orbit& oa = modelspace->GetOrbit(a);
    Orbit& ob = modelspace->GetOrbit(b);
@@ -264,7 +267,8 @@ void Operator3::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int t
         double Cj_abc = RecouplingCoefficient(a_in,b_in,c_in,a,b,c,Jab_in,Jab,J2);
         double Cj_def = RecouplingCoefficient(d_in,e_in,f_in,d,e,f,Jde_in,Jde,J2);
 
-        int J2index = (Jab_max-Jab_min)*(Jde-Jde_min) + (Jab-Jab_min);
+//        int J2index = (Jab_max-Jab_min)*(Jde-Jde_min) + (Jab-Jab_min);
+        int J2index = (Jab_max-Jab_min + 1)*(Jde-Jde_min) + (Jab-Jab_min);
 
         for (int tab=tab_min; tab<=tab_max; ++tab)
         {
@@ -273,10 +277,15 @@ void Operator3::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int t
             double Ct_abc = RecouplingCoefficient(a_in,b_in,c_in,a,b,c,tab_in,tab,T2);
             double Ct_def = RecouplingCoefficient(d_in,e_in,f_in,d,e,f,tde_in,tde,T2);
             int ch = GetThreeBodyChannelIndex(J2,parity,tab,tde,T2);
-      if (a==4 and b==0 and c==0 and d==4 and e==0 and f==0 and Cj_abc*Cj_def*Ct_abc*Ct_def !=0)
+            cout << " Ct_abc(" << a_in << "," << b_in << "," << c_in << "," << a << "," << b << "," << c
+                 << ", " << tab_in << "," << tab << "," << T2 << ") = " << Ct_abc << endl;
+//      if (a==4 and b==0 and c==0 and d==2 and e==0 and f==0 and Cj_abc*Cj_def*Ct_abc*Ct_def !=0)
+      if (a==4 and b==0 and c==0 and d==2 and e==0 and f==0 )
       {
-           cout << "ch = " << ch << "  orbit_index = " << orbit_index << "  J2index = " << J2index << endl;
-//         cout << "Cj_abc = " << Cj_abc << "   Cj_def = " << Cj_def << "  Ct_abc = " << Ct_abc << "  Ct_def = " << Ct_def << endl;
+           cout << "ch = " << ch << "  orbit_index = " << orbit_index << "  J2index = " << J2index
+                << "  tab = " << tab << "  tde = " << tde << " T2 = " << T2 << endl;
+//                << "  Jab_min,max = " << Jab_min << "," << Jab_max << "  Jde_min,max = " << Jde_min << "," << Jde_max << endl;
+         cout << "Cj_abc = " << Cj_abc << "   Cj_def = " << Cj_def << "  Ct_abc = " << Ct_abc << "  Ct_def = " << Ct_def << endl;
       }
 
             ThreeBody[ch].at(orbit_index)[J2index] += Cj_abc * Cj_def * Ct_abc * Ct_def * V;
@@ -306,19 +315,29 @@ long int Operator3::GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, in
 {
    int orbit_index_bra =  a*(a+1)*(a+2)/6 + b*(b+1)/2 + c;
    int orbit_index_ket =  d*(d+1)*(d+2)/6 + e*(e+1)/2 + f;
-   long int orb_indx = (orbit_index_bra * (orbit_index_bra+1))/2 + orbit_index_ket;
+   long int orb_indx;
+   if (a>=d)
+   {
+      orb_indx = (orbit_index_bra * (orbit_index_bra+1))/2 + orbit_index_ket;
+   }
+   else
+   {
+      orb_indx = (orbit_index_ket * (orbit_index_ket+1))/2 + orbit_index_bra;
+   }
+
 //   cout << "GETTING ORBIT INDEX " << a << b << c << d << e << f << "   "
 //        << orbit_index_bra << " " << orbit_index_ket << "  " << orb_indx << endl;
    return orb_indx;
 }
 
-void Operator3::SortOrbits(int& a, int& b, int& c, int& d, int& e, int& f)
+//void Operator3::SortOrbits(int& a, int& b, int& c, int& d, int& e, int& f)
+void Operator3::SortOrbits(int& a, int& b, int& c)
 {
 
    if (a<b)  swap(a,b);
    if (b<c)  swap(b,c);
    if (a<b)  swap(a,b);
-
+/*
    if (d<e)  swap(d,e);
    if (e<f)  swap(e,f);
    if (d<e)  swap(d,e);
@@ -329,6 +348,7 @@ void Operator3::SortOrbits(int& a, int& b, int& c, int& d, int& e, int& f)
      swap(b,e);
      swap(c,f);
    }
+*/
 }
 
 
