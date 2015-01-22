@@ -458,7 +458,6 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
 
 
 
-//void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax)
 void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Emax)
 {
   ModelSpace * modelspace = Hbare.GetModelSpace();
@@ -496,6 +495,10 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
   cout << "Emax = " << emax << endl;
   int i=0;
   int j=0;
+
+
+   double Vtest = Hbare.GetThreeBodyME(1,0,1,0,0,1,4,0,0,4,0,0);
+   cout << "Before reading the damn file, Vtest = " << Vtest << endl; 
 
   // begin giant nested loops
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
@@ -586,16 +589,16 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
               int twoJCMindown = max(twoJCMindownbra, twoJCMindownket);
               int twoJCMaxup = min(twoJCMaxupbra, twoJCMaxupket);
               if (twoJCMindown > twoJCMaxup) continue;
-              cout << "===============================================================" << endl;
-              cout << " < "
-                   << "(" << oa.n << Llabels[oa.l] << oa.j2 << "/2) "
-                   << "(" << ob.n << Llabels[ob.l] << ob.j2 << "/2) "
-                   << "(" << oc.n << Llabels[oc.l] << oc.j2 << "/2) "
-                   << "| V | "
-                   << "(" << od.n << Llabels[od.l] << od.j2 << "/2) "
-                   << "(" << oe.n << Llabels[oe.l] << oe.j2 << "/2) "
-                   << "(" << of.n << Llabels[of.l] << of.j2 << "/2) "
-                   << " > " << endl;
+//              cout << "===============================================================" << endl;
+//              cout << " < "
+//                   << "(" << oa.n << Llabels[oa.l] << oa.j2 << "/2) "
+//                   << "(" << ob.n << Llabels[ob.l] << ob.j2 << "/2) "
+//                   << "(" << oc.n << Llabels[oc.l] << oc.j2 << "/2) "
+//                   << "| V | "
+//                   << "(" << od.n << Llabels[od.l] << od.j2 << "/2) "
+//                   << "(" << oe.n << Llabels[oe.l] << oe.j2 << "/2) "
+//                   << "(" << of.n << Llabels[of.l] << of.j2 << "/2) "
+//                   << " > " << endl;
 
 
               //inner loops
@@ -609,7 +612,7 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
        
                 for(int twoJC = twoJCMin; twoJC <= twoJCMax; twoJC += 2)
                 {
-                 cout << "Jab,JJab,twoJC = " << Jab << ", " << JJab << ", " << twoJC << endl;
+//                 cout << "Jab,JJab,twoJC = " << Jab << ", " << JJab << ", " << twoJC << endl;
                  for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
                  {
                   for(int ttab = 0; ttab <= 1; ttab++)
@@ -625,30 +628,60 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
                     infile >> V;
                     bool autozero = false;
 
-                    Hbare.SetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
 
-                    cout << i <<  ":  " << "tab,ttab,twoT = " << tab << "," << ttab << "," << twoT << "  V = " << V;
+//                    cout << i <<  ":  " << "tab,ttab,twoT = " << tab << "," << ttab << "," << twoT << "  V = " << V;
 
                     if ( a==b and (tab+Jab)%2==0 ) autozero = true;
                     if ( d==e and (ttab+JJab)%2==0 ) autozero = true;
                     if ( a==b and a==c and twoT==3 and oa.j2<3 ) autozero = true;
                     if ( d==e and d==f and twoT==3 and od.j2<3 ) autozero = true;
+
+//                    if (a<4)
+//                    {
+//                       Vtest = Hbare.GetThreeBodyME(1,0,1,0,0,1,4,0,0,4,0,0);
+//                       cout << "Vtest(a<4)  = " << Vtest << endl;
+//                    }
+                    if (not autozero and abs(V)>1e-5)
+                    {
+                       if (a==4 and b==0 and c==0 and d==4 and e==0 and f==0)
+                       {
+ //                      Vtest = Hbare.GetThreeBodyME(1,0,1,0,0,1,4,0,0,4,0,0);
+ //                      cout << "#!#Vtest  = " << Vtest;
+ //                      if (abs(Vtest)>1e-6)
+ //                      {
+ //                         cout << "   abcdef = " << a << b << c << d << e << f;
+ //                      }
+ //                      cout << endl;
+                       double V0 = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
+                       Hbare.SetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
+                       double Vout = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
+//                       if (abs(V-Vout)>1e-4)
+//                       if (a==4 and b==0 and c==0 and d==4 and e==0 and f==0)
+//                       {
+                         cout << "STARTED WITH  " << V0 << "  PUT IN " << V << "   GOT OUT " << Vout << "     Jab,JJab,twoJC,tab,ttab,twoT = "
+                              << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << "   "
+                              << " abcdef = "
+                              <<  a << " " << b << " " << c << " " << d << " "<< e << " " << f << endl;
+//                       }
+                       }
+                    }
+
                     if (autozero)
                     {
-                       cout << " ( should be zero ) ";
+//                       cout << " ( should be zero ) ";
                        if (abs(V) > 1e-6)
                        {
                           cout << " <-------- AAAAHHHH!!!!!!!! ";
                        }
                        ++j;
                     }
-                    cout << endl;
+ //                   cout << endl;
                     i++;
        
                    }
                   }//ttab
                  }//tab
-                 cout << " ------------------------" << endl;
+//                 cout << " ------------------------" << endl;
                 if (not infile.good() ) break;
                 }//twoJ
                }//JJab

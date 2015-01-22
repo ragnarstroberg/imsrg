@@ -7,6 +7,8 @@
 
 using namespace std;
 
+typedef unordered_map<long,vector<double> > orbit_map;
+
 class Operator3 : public Operator
 {
  public:
@@ -16,13 +18,15 @@ class Operator3 : public Operator
 
    void AllocateThreeBody();
 
-   double GetThreeBodyME(int Jab, int Jde, int J2, int tab, int tde, int T2, int i, int j, int k, int l, int m, int n);
-   void SetThreeBodyME(int Jab, int Jde, int J2, int tab, int tde, int T2, int i, int j, int k, int l, int m, int n, double V);
+   double GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
+   void   SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
+
    Operator DoNormalOrdering3();
    int GetThreeBodyChannelIndex(int J, int parity, int tab, int tde, int T2);
    long int GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, int f);
 
-   void SortWithPhase(int& a,int& b,int& c,int& d,int& e, int& f, int& phase);
+   void SortOrbits(int& a,int& b,int& c,int& d,int& e, int& f);
+   double RecouplingCoefficient(int a_in, int b_in, int c_in, int a, int b, int c, int Jab_in, int Jab, int J);
 
    // the first vector runs over K2, Tz2 and parity, the vector runs over J
 //   vector<vector<arma::mat>> ThreeBody;
@@ -36,8 +40,12 @@ class Operator3 : public Operator
    // (Note, probably better to use unordered_map, i.e. hash table)
 //   vector< unordered_map<long, vector<double> > > ThreeBodyMatrixElements;
 //   unordered_map<int,unordered_map<long,vector<double> > > ThreeBody;
-   vector<unordered_map<long,vector<double> > > ThreeBody;
+//   vector<unordered_map<long,vector<double> > > ThreeBody;
+   vector<orbit_map > ThreeBody;
 ////   unordered_map<vector<int>, double> ThreeBodyMatrixElements;
+
+   int E3max;
+   void SetE3max(int e){E3max = e;};
 
 };
 
