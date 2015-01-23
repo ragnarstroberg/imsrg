@@ -476,10 +476,7 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
      orbits_remap[nlj] = i;
      emax = max(emax,N);
   }
-//  if (Emax >=0)
      emax = Emax;
-//  else
-//     emax *= 2;
 
   ifstream infile;
   char line[LINESIZE];
@@ -498,7 +495,6 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
 
 
    double Vtest = Hbare.GetThreeBodyME(1,0,1,0,0,1,4,0,0,4,0,0);
-   cout << "Before reading the damn file, Vtest = " << Vtest << endl; 
 
   // begin giant nested loops
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
@@ -589,17 +585,6 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
               int twoJCMindown = max(twoJCMindownbra, twoJCMindownket);
               int twoJCMaxup = min(twoJCMaxupbra, twoJCMaxupket);
               if (twoJCMindown > twoJCMaxup) continue;
-//              cout << "===============================================================" << endl;
-//              cout << " < "
-//                   << "(" << oa.n << Llabels[oa.l] << oa.j2 << "/2) "
-//                   << "(" << ob.n << Llabels[ob.l] << ob.j2 << "/2) "
-//                   << "(" << oc.n << Llabels[oc.l] << oc.j2 << "/2) "
-//                   << "| V | "
-//                   << "(" << od.n << Llabels[od.l] << od.j2 << "/2) "
-//                   << "(" << oe.n << Llabels[oe.l] << oe.j2 << "/2) "
-//                   << "(" << of.n << Llabels[of.l] << of.j2 << "/2) "
-//                   << " > " << endl;
-
 
               //inner loops
               for(int Jab = JabMin; Jab <= JabMax; Jab++)
@@ -612,13 +597,11 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
        
                 for(int twoJC = twoJCMin; twoJC <= twoJCMax; twoJC += 2)
                 {
-//                 cout << "Jab,JJab,twoJC = " << Jab << ", " << JJab << ", " << twoJC << endl;
                  for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
                  {
                   for(int ttab = 0; ttab <= 1; ttab++)
                   {
                    //summation bounds
-                   //int twoTMin = max( abs(2*tab -1), abs(2*ttab -1)); // twoTMin can just be used as 1
                    int twoTMin = 1; // twoTMin can just be used as 1
                    int twoTMax = min( 2*tab +1, 2*ttab +1);
        
@@ -629,46 +612,23 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
                     bool autozero = false;
 
 
-//                    cout << i <<  ":  " << "tab,ttab,twoT = " << tab << "," << ttab << "," << twoT << "  V = " << V;
-
                     if ( a==b and (tab+Jab)%2==0 ) autozero = true;
                     if ( d==e and (ttab+JJab)%2==0 ) autozero = true;
                     if ( a==b and a==c and twoT==3 and oa.j2<3 ) autozero = true;
                     if ( d==e and d==f and twoT==3 and od.j2<3 ) autozero = true;
 
-//                    if (a<4)
-//                    {
-//                       Vtest = Hbare.GetThreeBodyME(1,0,1,0,0,1,4,0,0,4,0,0);
-//                       cout << "Vtest(a<4)  = " << Vtest << endl;
-//                    }
+
                     if (not autozero and abs(V)>1e-5)
                     {
-//                       if (a==2 and b==0 and c==0 and d==4 and e==0 and f==0)
-//                       {
- //                      Vtest = Hbare.GetThreeBodyME(1,0,1,0,0,1,4,0,0,4,0,0);
- //                      cout << "#!#Vtest  = " << Vtest;
- //                      if (abs(Vtest)>1e-6)
- //                      {
- //                         cout << "   abcdef = " << a << b << c << d << e << f;
- //                      }
- //                      cout << endl;
-//                         cout << " Jab,JJab,twoJC,tab,ttab,twoT = "
-//                              << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << "   "
-//                              << " abcdef = "
-//                              <<  a << " " << b << " " << c << " " << d << " "<< e << " " << f << endl;
-                       double V0 = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
-//                       cout << "    ok here. " << endl;
+//                       double V0 = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
                        Hbare.SetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
-                       double Vout = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
-//                       if (a==4 and b==0 and c==0 and d==4 and e==0 and f==0)
+//                       double Vout = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
 //                       if (abs(V-Vout)>1e-4)
-//                       if (1==1)
 //                       {
 //                         cout << "STARTED WITH  " << V0 << "  PUT IN " << V << "   GOT OUT " << Vout << "     Jab,JJab,twoJC,tab,ttab,twoT = "
 //                              << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << "   "
 //                              << " abcdef = "
 //                              <<  a << " " << b << " " << c << " " << d << " "<< e << " " << f << endl;
-//                       }
 //                       }
                     }
 
@@ -999,7 +959,6 @@ void ReadWrite::WriteTwoBody(Operator& op, string filename)
    int nchan = modelspace->GetNumberTwoBodyChannels();
    for (int ch=0;ch<nchan;++ch)
    {
-      //TwoBodyChannel * tbc = op.GetTwoBodyChannel(ch);
       TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
       int npq = tbc.GetNumberKets();
       for (int i=0;i<npq;++i)
@@ -1011,7 +970,6 @@ void ReadWrite::WriteTwoBody(Operator& op, string filename)
          {
             Ket &ket = tbc.GetKet(j);
             double tbme = op.GetTBME(ch,bra,ket) / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
-//            if ( abs(tbme)<1e-4 ) continue;
             if ( abs(tbme)<1e-6 ) tbme = 0;
             Orbit &oc = modelspace->GetOrbit(ket.p);
             Orbit &od = modelspace->GetOrbit(ket.q);
@@ -1024,7 +982,6 @@ void ReadWrite::WriteTwoBody(Operator& op, string filename)
                    << setw(wint) << ket.p
                    << setw(wint) << ket.q
                    << setw(wint+3) << tbc.J << setw(wfloat) << std::fixed << tbme
-//                   << "    < " << bra.p << " " << bra.q << " | V | " << ket.p << " " << ket.q << " >"
                    << endl;
          }
       }
@@ -1039,25 +996,20 @@ void ReadWrite::WriteValenceTwoBody(Operator& op, string filename)
    tbfile.open(filename, ofstream::out);
    ModelSpace * modelspace = op.GetModelSpace();
    int nchan = modelspace->GetNumberTwoBodyChannels();
-   //int nchan = op.GetNumberTwoBodyChannels();
    for (int ch=0;ch<nchan;++ch)
    {
-      //TwoBodyChannel * tbc = op.GetTwoBodyChannel(ch);
       TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
       int npq = tbc.GetNumberKets();
       if (npq<1) continue;
-      //for (int i=0;i<npq;++i)
       for (int& i : tbc.KetIndex_vv )
       {
          Ket &bra = tbc.GetKet(i);
          Orbit &oa = modelspace->GetOrbit(bra.p);
          Orbit &ob = modelspace->GetOrbit(bra.q);
-         //for (int j=i;j<npq;++j)
          for (int& j : tbc.KetIndex_vv )
          {
             if (j<i) continue;
             Ket &ket = tbc.GetKet(j);
-            //double tbme = tbc.GetTBME(bra,ket);
             double tbme = op.GetTBME(ch,bra,ket) / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
             if ( abs(tbme)<1e-4 ) continue;
             Orbit &oc = modelspace->GetOrbit(ket.p);
