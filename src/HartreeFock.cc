@@ -11,10 +11,11 @@ HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
    int norbits = ms->GetNumberOrbits();
    int nKets = ms->GetNumberKets();
 
-   C    = arma::mat(norbits,norbits,arma::fill::eye);
-   Vab  = arma::mat(norbits,norbits);
-   H    = arma::mat(norbits,norbits);
-   Vmon = arma::mat(2*nKets,2*nKets);
+   C         = arma::mat(norbits,norbits,arma::fill::eye);
+   Vab       = arma::mat(norbits,norbits);
+   H         = arma::mat(norbits,norbits);
+   Vmon      = arma::mat(nKets,nKets);
+   Vmon_exch = arma::mat(nKets,nKets);
    prev_energies = arma::vec(norbits,arma::fill::zeros);
 
    t = Hbare.OneBody;
@@ -151,19 +152,12 @@ void HartreeFock::Diagonalize()
 // BuildMonopoleV()
 // Construct the unnormalized monople Hamiltonian
 // <ab|V_mon|cd> = Sum_J (2J+1) <ab|V|cd>_J.
-//  I calculate and store each term, rather than
-//  repeatedly calculating things.
-//   To facilitate looping, the matrix has 4 blocks.
-//   If a<=b and c<=d, the matrix looks like:
-//
-//         [ <ab|V|cd> ... <ab|V|dc> ]
-//    V  = |     :             :     |
-//         [ <ba|V|cd> ... <ba|V|dc> ]
 //         
 //**************************************************
 void HartreeFock::BuildMonopoleV()
 {
    Vmon.zeros();
+   Vmon_exch.zeros();
    int nKets = Hbare.GetModelSpace()->GetNumberKets();
    for (int ibra=0;ibra<nKets;++ibra)
    {
@@ -172,22 +166,32 @@ void HartreeFock::BuildMonopoleV()
       int b = bra.q;
       Orbit & oa = Hbare.GetModelSpace()->GetOrbit(a);
       Orbit & ob = Hbare.GetModelSpace()->GetOrbit(b);
-      double norm = (oa.j2+1)*(ob.j2+1);
-      for (int iket=0;iket<nKets;++iket)
+      for (int iket=ibra;iket<nKets;++iket)
       {
          Ket & ket = Hbare.GetModelSpace()->GetKet(iket);
          int c = ket.p;
          int d = ket.q;
-         Vmon(ibra,iket)             = Hbare.GetTBMEmonopole(a,b,c,d) * norm;
-         Vmon(ibra+nKets,iket)       = Hbare.GetTBMEmonopole(b,a,c,d) * norm;
-         Vmon(ibra,iket+nKets)       = Hbare.GetTBMEmonopole(a,b,d,c) * norm;
-         Vmon(ibra+nKets,iket+nKets) = Hbare.GetTBMEmonopole(b,a,d,c) * norm;
+         Vmon(ibra,iket)       = Hbare.GetTBMEmonopole(a,b,c,d) * (ob.j2+1);
+         Vmon_exch(ibra,iket)  = Hbare.GetTBMEmonopole(a,b,d,c) * (ob.j2+1);
       }
    }
    
 }
 
 
+void HartreeFock::BuildMonopoleV3()
+{
+// The crucial part is
+// map |abc> to nKets3 consecutive integers for looping
+//
+// for bra = 0 ... nKets3
+//    for ket = bra ... nKets3
+//      < bra | Vmon3 | ket > = 0
+//      for Jia in allowable range
+//        for J in allowable range
+//          < bra | Vmon3 | ket > += 1/2 (2J+1)/(2Jia +1) < bra | V3(Jia,Jia,J) | ket >
+
+}
 
 //**************************************************************************
 // 1-body density matrix 
@@ -227,26 +231,27 @@ void HartreeFock::UpdateH()
    Vab.zeros();
    for (int a=0;a<norbits;a++)
    {
+      Orbit& oa = ms->GetOrbit(a);
       for (int b=a;b<norbits;b++)
       {
-         if (ms->GetOrbit(a).j2  != ms->GetOrbit(b).j2)  continue;
-         if (ms->GetOrbit(a).tz2 != ms->GetOrbit(b).tz2) continue;
-         if (ms->GetOrbit(a).l   != ms->GetOrbit(b).l)   continue;
+         Orbit& ob = ms->GetOrbit(b);
+         if (oa.j2 != ob.j2 or oa.tz2 != ob.tz2 or oa.l != ob.l)   continue;
          for (int i=0;i<norbits;i++)
          {
-            // The monopoles are listed for |ab> fist with a<=b, then for a>=b
-            // so if a>b, add nKets.
+            Orbit& oi = ms->GetOrbit(i);
             bra = ms->GetKetIndex(min(a,i),max(a,i));
-            if (a>i) bra += nKets;
             for (int j=0;j<norbits;j++)
             {
+               Orbit& oj = ms->GetOrbit(j);
+               if (oi.j2 != oj.j2 or oi.tz2 != oj.tz2 or oi.l != oj.l)   continue;
                ket = ms->GetKetIndex(min(b,j),max(b,j));
-               if (b>j) ket += nKets;
 
-               Vab(a,b) += rho(i,j)*Vmon(min(bra,ket),max(bra,ket)); // <i|rho|j> * <ai|Vmon|bj>
+               if (a>i xor b>j)
+                  Vab(a,b) += rho(i,j)*Vmon_exch(min(bra,ket),max(bra,ket)); // <i|rho|j> * <ai|Vmon|bj>
+               else
+                  Vab(a,b) += rho(i,j)*Vmon(min(bra,ket),max(bra,ket)); // <i|rho|j> * <ai|Vmon|bj>
            }
          }
-         Vab(a,b) /= (ms->GetOrbit(a).j2+1); // divide by 2ja+1
          Vab(b,a) = Vab(a,b);  // Hermitian & real => symmetric
       }
    }

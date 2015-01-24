@@ -14,6 +14,7 @@ class HartreeFock
    arma::mat Vab;           // 1 body potenial
    arma::mat H;             // 1 body Hamiltonian H_ab
    arma::mat Vmon;          // Monopole 2-body interaction
+   arma::mat Vmon_exch;          // Monopole 2-body interaction
    arma::vec energies;      // vector of single particle energies
    arma::vec prev_energies; // SPE's from last iteration
    double tolerance;        // tolerance for convergence
@@ -23,6 +24,7 @@ class HartreeFock
 
    HartreeFock(Operator&  hbare);
    void BuildMonopoleV();
+   void BuildMonopoleV3();
    void Diagonalize();
    void UpdateH();
    void UpdateDensityMatrix();
