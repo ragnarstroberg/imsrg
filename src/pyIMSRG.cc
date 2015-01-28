@@ -14,6 +14,13 @@
 
 using namespace boost::python;
 
+/*
+template<class T>
+void export_hf(std::string name) {
+boost::python::class_<foo<T>>(name.c_str());
+}
+*/
+
 BOOST_PYTHON_MODULE(pyIMSRG)
 {
 
@@ -29,7 +36,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("ReadModelSpace", &ReadWrite::ReadModelSpace)
       .def("ReadBareTBME", &ReadWrite::ReadBareTBME)
       .def("ReadBareTBME_Jason", &ReadWrite::ReadBareTBME_Jason)
-      .def("ReadBareTBME_Navratil", &ReadWrite::ReadBareTBME_Navratil)
+      .def("ReadBareTBME_Navratil", &ReadWrite::ReadBareTBME_Navratil<Operator&>)
+      .def("ReadBareTBME_Navratil", &ReadWrite::ReadBareTBME_Navratil<Operator3&>)
       .def("ReadBareTBME_Darmstadt", &ReadWrite::ReadBareTBME_Darmstadt)
       .def("Read_Darmstadt_3body", &ReadWrite::Read_Darmstadt_3body)
       .def("WriteOneBody", &ReadWrite::WriteOneBody)
@@ -73,40 +81,54 @@ BOOST_PYTHON_MODULE(pyIMSRG)
 
    class_<Operator3>("Operator3",init<>())
       .def(init< ModelSpace&>())
-//      .def(self += Operator())
-//      .def(self + Operator())
-//      .def(self -= Operator())
-//      .def(self - Operator())
-//      .def(self *= double())
-//      .def(self * double())
-//      .def(self /= double())
-//      .def(self / double())
+      .def(init< Operator3&>())
+      .def(init< Operator&>())
+      .def(self += Operator())
+      .def(self + Operator())
+      .def(self -= Operator())
+      .def(self - Operator())
+      .def(self *= double())
+      .def(self * double())
+      .def(self /= double())
+      .def(self / double())
       .def_readwrite("ZeroBody", &Operator3::ZeroBody)
       .def_readwrite("OneBody", &Operator3::OneBody)
       .def("ScaleOneBody", &Operator3::ScaleOneBody)
       .def("ScaleTwoBody", &Operator3::ScaleTwoBody)
       .def("DoNormalOrdering", &Operator3::DoNormalOrdering)
       .def("DoNormalOrdering3", &Operator3::DoNormalOrdering3)
-//      .def("CalculateKineticEnergy", &Operator::CalculateKineticEnergy)
+      .def("CalculateKineticEnergy", &Operator3::CalculateKineticEnergy)
       .def("Norm", &Operator3::Norm)
       .def("OneBodyNorm", &Operator3::OneBodyNorm)
       .def("TwoBodyNorm", &Operator3::TwoBodyNorm)
       .def("SetHermitian", &Operator3::SetHermitian)
       .def("SetAntiHermitian", &Operator3::SetAntiHermitian)
       .def("SetNonHermitian", &Operator3::SetNonHermitian)
-//      .def("Set_BCH_Transform_Threshold", &Operator::Set_BCH_Transform_Threshold)
-//      .def("Set_BCH_Product_Threshold", &Operator::Set_BCH_Product_Threshold)
-//      .def("PrintOneBody", &Operator::PrintOneBody)
-//      .def("PrintTwoBody", &Operator::PrintTwoBody)
    ;
 
+/*
    class_<HartreeFock>("HartreeFock",init<Operator&>())
       .def("Solve",&HartreeFock::Solve)
       .def("TransformToHFBasis",&HartreeFock::TransformToHFBasis)
       .def("GetHbare",&HartreeFock::GetHbare)
       .def_readonly("EHF",&HartreeFock::EHF)
    ;
+*/
 
+   class_<HartreeFock<Operator>>("HartreeFock",init<Operator&>())
+      .def("Solve",&HartreeFock<Operator>::Solve)
+      .def("TransformToHFBasis",&HartreeFock<Operator>::TransformToHFBasis)
+      .def("GetHbare",&HartreeFock<Operator>::GetHbare)
+      .def_readonly("EHF",&HartreeFock<Operator>::EHF)
+   ;
+
+
+   class_<HartreeFock<Operator3>>("HartreeFock3",init<Operator3&>())
+      .def("Solve",&HartreeFock<Operator3>::Solve)
+      .def("TransformToHFBasis",&HartreeFock<Operator3>::TransformToHFBasis)
+      .def("GetHbare",&HartreeFock<Operator3>::GetHbare)
+      .def_readonly("EHF",&HartreeFock<Operator3>::EHF)
+   ;
 
 
    class_<IMSRGSolver>("IMSRGSolver",init<Operator>())
@@ -125,14 +147,20 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def_readwrite("Omega", &IMSRGSolver::Omega)
    ;
 
-   def("TCM_Op",         imsrg_util::TCM_Op);
-   def("VCM_Op",         imsrg_util::VCM_Op);
-   def("NumberOp",       imsrg_util::NumberOp);
-   def("TCM_Op",         imsrg_util::TCM_Op);
-   def("HO_density",     imsrg_util::HO_density);
-   def("GetOccupationsHF", imsrg_util::GetOccupationsHF);
-   def("GetOccupations", imsrg_util::GetOccupations);
-   def("GetDensity",     imsrg_util::GetDensity);
+   def("TCM_Op",           imsrg_util::TCM_Op<Operator>);
+   def("TCM_Op3",          imsrg_util::TCM_Op<Operator3>);
+   def("VCM_Op",           imsrg_util::VCM_Op);
+   def("NumberOp",         imsrg_util::NumberOp<Operator>);
+   def("NumberOp",         imsrg_util::NumberOp<Operator3>);
+//   def("TCM_Op",           imsrg_util::TCM_Op);
+   def("HO_density",       imsrg_util::HO_density);
+//   def("GetOccupationsHF", imsrg_util::GetOccupationsHF);
+   def("GetOccupationsHF", imsrg_util::GetOccupationsHF<Operator>);
+   def("GetOccupationsHF3", imsrg_util::GetOccupationsHF<Operator3>);
+//   def("GetOccupations",   imsrg_util::GetOccupations);
+   def("GetOccupations",   imsrg_util::GetOccupations<Operator>);
+   def("GetOccupations3",   imsrg_util::GetOccupations<Operator3>);
+   def("GetDensity",       imsrg_util::GetDensity);
 
 
 }

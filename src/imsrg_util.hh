@@ -3,6 +3,7 @@
 
 #include "ModelSpace.hh"
 #include "Operator.hh"
+#include "Operator3.hh"
 #include "HartreeFock.hh"
 #include "IMSRGSolver.hh"
 #include <gsl/gsl_math.h>
@@ -15,9 +16,10 @@
 
 namespace imsrg_util
 {
- Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2);
+// Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2);
+ template<class OPERATOR> OPERATOR NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2);
  //Operator PSquaredOp(ModelSpace& modelspace);
- Operator TCM_Op(ModelSpace& modelspace);
+ template<class OPERATOR> OPERATOR TCM_Op(ModelSpace& modelspace, int N2max);
  Operator VCM_Op(ModelSpace& modelspace);
  Operator HCM_Op(ModelSpace& modelspace);
 
@@ -25,8 +27,10 @@ namespace imsrg_util
  double Calculate_r1r2(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);
  double Calculate_hcom(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);
  double HO_density(int n, int l, double hw, double r);
- vector<double> GetOccupationsHF(HartreeFock& hf);
- vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);
+// vector<double> GetOccupationsHF(HartreeFock& hf);
+// vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);
+ template<class OPERATOR> vector<double> GetOccupationsHF(HartreeFock<OPERATOR>& hf);
+ template<class OPERATOR> vector<double> GetOccupations(HartreeFock<OPERATOR>& hf, IMSRGSolver& imsrgsolver);
  vector<double> GetDensity(vector<double>& occ, vector<double>& R, vector<int>& orbits, ModelSpace& modelspace);
 }
 

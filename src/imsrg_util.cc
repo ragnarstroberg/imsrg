@@ -7,9 +7,12 @@ using namespace AngMom;
 namespace imsrg_util
 {
 
- Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2)
+// Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2)
+ template<class OPERATOR>
+ OPERATOR NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2)
  {
-   Operator NumOp = Operator(modelspace);
+   //Operator NumOp = Operator(modelspace);
+   OPERATOR NumOp = OPERATOR(modelspace);
    int indx = modelspace.Index1(n,l,j2,tz2);
    NumOp.ZeroBody = 0;
    NumOp.EraseOneBody();
@@ -17,6 +20,8 @@ namespace imsrg_util
    NumOp.OneBody(indx,indx) = 1;
    return NumOp;
  }
+ template Operator NumberOp<Operator>(ModelSpace&, int ,int, int, int);
+ template Operator3 NumberOp<Operator3>(ModelSpace&, int ,int, int, int);
 
 
  double HO_density(int n, int l, double hw, double r)
@@ -30,7 +35,9 @@ namespace imsrg_util
  }
 
  // Just do the HF transformation
- vector<double> GetOccupationsHF(HartreeFock& hf)
+// vector<double> GetOccupationsHF(HartreeFock& hf)
+ template<class OPERATOR>
+ vector<double> GetOccupationsHF(HartreeFock<OPERATOR> & hf)
  {
     ModelSpace* modelspace = hf.Hbare.modelspace;
     int norb = modelspace->GetNumberOrbits();
@@ -40,7 +47,7 @@ namespace imsrg_util
     {
       Orbit & oi = modelspace->GetOrbit(i);
       // Get the number operator for orbit i
-      Operator N_bare = NumberOp(*modelspace,oi.n,oi.l,oi.j2,oi.tz2);
+      OPERATOR N_bare = NumberOp<OPERATOR>(*modelspace,oi.n,oi.l,oi.j2,oi.tz2);
       // Transform it to the normal-ordered HF basis
       Operator N_NO = hf.TransformToHFBasis(N_bare).DoNormalOrdering();
       occupation[i] = N_NO.ZeroBody;
@@ -48,9 +55,13 @@ namespace imsrg_util
     }
     return occupation;
  }
+template vector<double> GetOccupationsHF<Operator>(HartreeFock<Operator>& hf);
+template vector<double> GetOccupationsHF<Operator3>(HartreeFock<Operator3>& hf);
 
  // Do the full IMSRG transformation
- vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver)
+// vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver)
+ template<class OPERATOR>
+ vector<double> GetOccupations(HartreeFock<OPERATOR>& hf, IMSRGSolver& imsrgsolver)
  {
     ModelSpace* modelspace = imsrgsolver.modelspace;
     int norb = modelspace->GetNumberOrbits();
@@ -60,7 +71,7 @@ namespace imsrg_util
     {
       Orbit & oi = modelspace->GetOrbit(i);
       // Get the number operator for orbit i
-      Operator N_bare = NumberOp(*modelspace,oi.n,oi.l,oi.j2,oi.tz2);
+      OPERATOR N_bare = NumberOp<OPERATOR>(*modelspace,oi.n,oi.l,oi.j2,oi.tz2);
       // Transform it to the normal-ordered HF basis
       Operator N_NO = hf.TransformToHFBasis(N_bare).DoNormalOrdering();
       // Transform to the imsrg evolved basis
@@ -69,6 +80,8 @@ namespace imsrg_util
     }
     return occupation;
  }
+ template vector<double> GetOccupations<Operator>(HartreeFock<Operator>& hf, IMSRGSolver& imsrgsolver);
+ template vector<double> GetOccupations<Operator3>(HartreeFock<Operator3>& hf, IMSRGSolver& imsrgsolver);
 
  vector<double> GetDensity( vector<double>& occupation, vector<double>& R, vector<int>& orbits, ModelSpace& modelspace )
  {
@@ -88,12 +101,15 @@ namespace imsrg_util
 
 
 // Center of mass kinetic energy, including the hw/A factor
- Operator TCM_Op(ModelSpace& modelspace)
+ //Operator TCM_Op(ModelSpace& modelspace, int N2max)
+ template<class OPERATOR>
+ OPERATOR TCM_Op(ModelSpace& modelspace, int N2max)
  {
 
    double hw = modelspace.GetHbarOmega();
    int A = modelspace.GetTargetMass();
-   Operator TcmOp = Operator(modelspace);
+ //  Operator TcmOp = Operator(modelspace);
+   OPERATOR TcmOp = Operator(modelspace);
 
    // One body piece = p**2/(2mA) = (N+3/2)hw/A
    int norb = modelspace.GetNumberOrbits();
@@ -103,6 +119,7 @@ namespace imsrg_util
       for (int j=i; j<norb; ++j)
       {
          Orbit & oj = modelspace.GetOrbit(j);
+         if ( 2*(oi.n+oj.n)+oi.l+oj.l > N2max) continue;
          if (oi.l != oj.l or oi.j2 != oj.j2 or oi.tz2 != oj.tz2) continue;
          double tij = 0;
          if (oi.n == oj.n) tij = 0.5*(2*oi.n+oi.l + 1.5) * hw/A;
@@ -136,6 +153,8 @@ namespace imsrg_util
    }
    return TcmOp;
  }
+ template Operator TCM_Op<Operator>(ModelSpace&, int);
+ template Operator3 TCM_Op<Operator3>(ModelSpace&, int);
 
 
  // evaluate <bra| p1*p2 | ket> , omitting the prefactor  m * hbar_omega

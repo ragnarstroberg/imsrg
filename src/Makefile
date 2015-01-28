@@ -9,7 +9,8 @@ FLAGS =  -O3 -std=c++11  -fPIC -fopenmp
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
-all: mysrg pyIMSRG.so
+all: pyIMSRG.so
+#all: mysrg pyIMSRG.so
 	
 OBJ = ModelSpace.o ReadWrite.o Operator.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o Operator3.o
 
@@ -23,7 +24,7 @@ mysrg: main.cc $(OBJ)
 
 python: pyIMSRG.so
 
-pyIMSRG.so: pyIMSRG.o $(OBJ)
+pyIMSRG.so: $(OBJ) pyIMSRG.o
 	$(CC) $^ -o $@ $(FLAGS) $(INCLUDE) $(LIBS) -shared $(PYTHONFLAGS)
 
 pyIMSRG.o: pyIMSRG.cc

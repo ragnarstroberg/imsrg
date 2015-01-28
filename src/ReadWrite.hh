@@ -18,7 +18,11 @@ class ReadWrite
    ModelSpace ReadModelSpace( string filename);
    void ReadBareTBME( string filename, Operator& Hbare);
    void ReadBareTBME_Jason( string filename, Operator& Hbare);
-   void ReadBareTBME_Navratil( string filename, Operator& Hbare);
+   template <class OPERATOR> void ReadBareTBME_Navratil( string filename, OPERATOR Hbare);
+//template <class OPERATOR> void ReadWrite::ReadBareTBME_Navratil( string, Operator&);
+//template <class OPERATOR> void ReadWrite::ReadBareTBME_Navratil( string, Operator3&);
+//   void ReadBareTBME_Navratil( string filename, Operator3& Hbare);
+//   void ReadBareTBME_Navratil( string filename, Operator& Hbare);
    void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax=-1);
    void Read_Darmstadt_3body( string filename, Operator3& Hbare, int Emax=-1);
 //   vector<int> MapDarmstadtOrbits( ModelSpace* modelspace, int& Emax);
@@ -41,6 +45,8 @@ class ReadWrite
 
 };
 
+//template void ReadWrite::ReadBareTBME_Navratil<Operator&>( string, Operator&);
+//template void ReadWrite::ReadBareTBME_Navratil<Operator3&>( string, Operator3&);
 
 
 #endif

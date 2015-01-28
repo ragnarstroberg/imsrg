@@ -4,6 +4,7 @@
 
 #include "Operator.hh"
 #include <unordered_map>
+#include <map>
 
 using namespace std;
 
@@ -14,7 +15,24 @@ class Operator3 : public Operator
  public:
    Operator3();
    Operator3(ModelSpace&);
+   Operator3(const Operator3&);
+   Operator3(const Operator&);
+
+  //Overloaded operators
+  Operator3& operator=( const Operator3& rhs);
+  Operator3& operator=( const Operator& rhs);
+  Operator3& operator+=( const Operator& rhs);
+  Operator3 operator+( const Operator& rhs) const;
+  Operator3& operator-=( const Operator& rhs);
+  Operator3 operator-( const Operator& rhs) const;
+  Operator3& operator*=( const double rhs);
+  Operator3 operator*( const double rhs) const;
+  Operator3& operator/=( const double rhs);
+  Operator3 operator/( const double rhs) const;
+
+   void Copy(const Operator&);
    void Copy(const Operator3&);
+
 
    void AllocateThreeBody();
 
@@ -31,7 +49,8 @@ class Operator3 : public Operator
 
 
    // Fields
-   unordered_map< long int, vector< vector<double> > > ThreeBody;
+   //unordered_map< long int, vector< vector<double> > > ThreeBody;
+   map< long int, vector< vector<double> > > ThreeBody;
    int E3max;
 
 };

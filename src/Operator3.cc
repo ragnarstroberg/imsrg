@@ -35,8 +35,26 @@ Operator3::Operator3(ModelSpace& ms) // Create a zero-valued operator in a given
 
 }
 
+Operator3::Operator3(const Operator3& op)
+{
+   Copy(op);
+}
+Operator3::Operator3(const Operator& op)
+{
+   Copy(op);
+}
 
 /////////// COPY METHOD //////////////////////////
+void Operator3::Copy(const Operator& rhs)
+{
+   modelspace    = rhs.modelspace;
+   nChannels     = rhs.nChannels;
+   hermitian     = rhs.hermitian;
+   antihermitian = rhs.antihermitian;
+   ZeroBody      = rhs.ZeroBody;
+   OneBody       = rhs.OneBody;
+   TwoBody       = rhs.TwoBody;
+}
 void Operator3::Copy(const Operator3& rhs)
 {
    modelspace    = rhs.modelspace;
@@ -49,6 +67,140 @@ void Operator3::Copy(const Operator3& rhs)
    ThreeBody     = rhs.ThreeBody;
 }
 
+/////////////// OVERLOADED OPERATORS =,+,-,*,etc ////////////////////
+
+Operator3& Operator3::operator=(const Operator3& rhs)
+{
+   Copy(rhs);
+   return *this;
+}
+
+// Set Operator3 to Operator2, and set 3body part to zero.
+Operator3& Operator3::operator=(const Operator& rhs)
+{
+   modelspace    = rhs.modelspace;
+   nChannels     = rhs.nChannels;
+   hermitian     = rhs.hermitian;
+   antihermitian = rhs.antihermitian;
+   ZeroBody      = rhs.ZeroBody;
+   OneBody       = rhs.OneBody;
+   TwoBody       = rhs.TwoBody;
+   AllocateThreeBody();
+   return *this;
+}
+
+// multiply operator by a scalar
+Operator3& Operator3::operator*=(const double rhs)
+{
+   ZeroBody *= rhs;
+   OneBody *= rhs;
+//   for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
+//   {
+//      TwoBody[ch] *= rhs;
+//   }
+   for (arma::mat& two_body_matrix : TwoBody)
+   {
+      two_body_matrix *= rhs;
+   }
+   for ( auto it_orb : ThreeBody)
+   {
+      for (auto it_J : it_orb.second)
+      {
+         for (double& it_J2 : it_J)
+         {
+           it_J2 *= rhs;
+         }
+      }
+   }
+   return *this;
+}
+
+Operator3 Operator3::operator*(const double rhs) const
+{
+   Operator3 opout = Operator3(*this);
+   opout *= rhs;
+   return opout;
+}
+
+// Add non-member operator so we can multiply an operator
+// by a scalar from the lhs, i.e. s*O = O*s
+Operator3 operator*(const double lhs, const Operator3& rhs)
+{
+   return rhs * lhs;
+}
+
+
+// divide operator by a scalar
+Operator3& Operator3::operator/=(const double rhs)
+{
+   return *this *=(1.0/rhs);
+}
+
+Operator3 Operator3::operator/(const double rhs) const
+{
+   Operator3 opout = Operator3(*this);
+   opout /= rhs;
+   return opout;
+}
+
+// Add Operator2 to Operator3
+Operator3& Operator3::operator+=(const Operator& rhs)
+{
+   ZeroBody += rhs.ZeroBody;
+   OneBody += rhs.OneBody;
+   for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
+   {
+      TwoBody[ch] += rhs.TwoBody[ch];
+   }
+/*   for ( auto it_orb : ThreeBody)
+   {
+      for (auto it_J : it_orb)
+      {
+         for (double& it_J2 : it_J)
+         {
+           it_J2 += rhs;
+         }
+      }
+   }
+*/
+   return *this;
+}
+
+Operator3 Operator3::operator+(const Operator& rhs) const
+{
+   return ( Operator3(*this) += rhs );
+}
+
+// Subtract operator2 from operator3
+Operator3& Operator3::operator-=(const Operator& rhs)
+{
+   ZeroBody -= rhs.ZeroBody;
+   OneBody -= rhs.OneBody;
+   for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
+   {
+      TwoBody[ch] -= rhs.TwoBody[ch];
+   }
+/*
+   for ( auto it_orb : ThreeBody)
+   {
+      for (auto it_J : it_orb)
+      {
+         for (double& it_J2 : it_J)
+         {
+           it_J2 -= rhs;
+         }
+      }
+   }
+*/
+   return *this;
+}
+
+Operator3 Operator3::operator-(const Operator& rhs) const
+{
+   return ( Operator3(*this) -= rhs );
+}
+
+///////////////////// OTHER METHODS ///////////////////////////////
 
 // Confusing nomenclature: J2 means 2 times the total J of the three body system
 void Operator3::AllocateThreeBody()
@@ -66,8 +218,6 @@ void Operator3::AllocateThreeBody()
     {
      Orbit& oc = modelspace->GetOrbit(c);
      if ((2*oa.n+oa.l + 2*ob.n+ob.l + 2*oc.n+oc.l) > E3max) continue;
-     int J2_min = max(1,oa.j2-ob.j2-oc.j2);
-     int J2_max = oa.j2+ob.j2+oc.j2;
 
      // Begin loop over ket states
      for( int d=0; d<=a; d+=2)
@@ -83,8 +233,8 @@ void Operator3::AllocateThreeBody()
         // conserve parity
         if ((oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0) continue;
 
-        J2_min = max(max(1,oa.j2-ob.j2-oc.j2), od.j2-oe.j2-of.j2);
-        J2_max = min(oa.j2+ob.j2+oc.j2, od.j2+oe.j2+of.j2);
+        int J2_min = max(max(1,oa.j2-ob.j2-oc.j2), od.j2-oe.j2-of.j2);
+        int J2_max = min(oa.j2+ob.j2+oc.j2, od.j2+oe.j2+of.j2);
         if (J2_max < J2_min) continue;
 
         long int orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
@@ -114,7 +264,10 @@ void Operator3::AllocateThreeBody()
     } //c
    } //b
   } //a
-
+//  for (auto it : ThreeBody)
+//  {
+//     cout << "it.first = " << it.first << "  it.second.size() = " << it.second.size() << endl;
+//  }
 }
 
 // Get Three Body Matrix Element in proton-neutron formalism.
@@ -287,10 +440,16 @@ void Operator3::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int t
 // Hashing function for compressing 6 orbit indices to one number
 long int Operator3::GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, int f)
 {
-   int orbit_index_bra =  a*(a+1)*(a+2)/6 + b*(b+1)/2 + c;
-   int orbit_index_ket =  d*(d+1)*(d+2)/6 + e*(e+1)/2 + f;
-   long int orb_indx = (a>=d) ? (orbit_index_bra * (orbit_index_bra+1))/2 + orbit_index_ket
-                              : (orbit_index_ket * (orbit_index_ket+1))/2 + orbit_index_bra;
+   int aa = a-a%2;
+   int bb = b-b%2;
+   int cc = c-c%2;
+   int dd = d-d%2;
+   int ee = e-e%2;
+   int ff = f-f%2;
+   int orbit_index_bra =  aa*(aa+1)*(aa+2)/6 + bb*(bb+1)/2 + cc;
+   int orbit_index_ket =  dd*(dd+1)*(dd+2)/6 + ee*(ee+1)/2 + ff;
+   long int orb_indx = (aa>=dd) ? (orbit_index_bra * (orbit_index_bra+1))/2 + orbit_index_ket
+                                : (orbit_index_ket * (orbit_index_ket+1))/2 + orbit_index_bra;
 
    return orb_indx;
 }

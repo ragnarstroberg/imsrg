@@ -4,7 +4,8 @@
 
 using namespace std;
 
-HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
+template<class OPERATOR>
+HartreeFock<OPERATOR>::HartreeFock(OPERATOR& hbare) : Hbare(hbare)
 {
    tolerance = 1e-10;
    ModelSpace * ms = Hbare.GetModelSpace();
@@ -12,7 +13,8 @@ HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
    int nKets = ms->GetNumberKets();
 
    C         = arma::mat(norbits,norbits,arma::fill::eye);
-   Vab       = arma::mat(norbits,norbits);
+   Vab       = arma::mat(norbits,norbits,arma::fill::zeros);
+   V3ab       = arma::mat(norbits,norbits,arma::fill::zeros);
    H         = arma::mat(norbits,norbits);
    Vmon      = arma::mat(nKets,nKets);
    Vmon_exch = arma::mat(nKets,nKets);
@@ -21,13 +23,17 @@ HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
    t = Hbare.OneBody;
    energies = t.diag();
    BuildMonopoleV();
+   cout << "About to build Vmon3." << endl;
+   BuildMonopoleV3();
+   cout << "Done building Vmon3." << endl;
    UpdateDensityMatrix();
    UpdateH();
 }
+template HartreeFock<Operator>::HartreeFock(Operator& );
+template HartreeFock<Operator3>::HartreeFock(Operator3& );
 
-
-
-void HartreeFock::Solve()
+template<class OPERATOR>
+void HartreeFock<OPERATOR>::Solve()
 {
    iterations = 0; // counter so we don't go on forever
    int maxiter = 1000;
@@ -48,12 +54,15 @@ void HartreeFock::Solve()
    }
    CalcEHF();
 }
+template void HartreeFock<Operator>::Solve();
+template void HartreeFock<Operator3>::Solve();
 
 
 //*******************************************************
 // Calculate the HF energy.
 //*******************************************************
-void HartreeFock::CalcEHF()
+template<class OPERATOR>
+void HartreeFock<OPERATOR>::CalcEHF()
 {
    ModelSpace * ms = Hbare.GetModelSpace();
    EHF = 0;
@@ -63,10 +72,13 @@ void HartreeFock::CalcEHF()
       int jfactor = ms->GetOrbit(i).j2 +1;
       for (int j=0;j<norbits;j++)
       {
-         EHF += 0.5 * rho(i,j) * jfactor * (H(i,j)+t(i,j));
+//         EHF += 0.5 * rho(i,j) * jfactor * (H(i,j)+t(i,j));
+         EHF +=  rho(i,j) * jfactor * (t(i,j)+0.5*Vab(i,j)+1./6*V3ab(i,j));
       }
    }
 }
+template void HartreeFock<Operator>::CalcEHF();
+template void HartreeFock<Operator3>::CalcEHF();
 
 
 ///**********************************************************************************
@@ -79,7 +91,8 @@ void HartreeFock::CalcEHF()
 // Different channels are diagonalized independently.
 // This guarantees that J,Tz, and parity remain good. 
 ///***********************************************************************************
-void HartreeFock::Diagonalize()
+template<class OPERATOR>
+void HartreeFock<OPERATOR>::Diagonalize()
 {
    prev_energies = energies;
    vector<int> orbit_list;
@@ -147,6 +160,8 @@ void HartreeFock::Diagonalize()
       } // For Tz ...
    } // For p...
 }
+template void HartreeFock<Operator>::Diagonalize();
+template void HartreeFock<Operator3>::Diagonalize();
 
 //**************************************************
 // BuildMonopoleV()
@@ -154,7 +169,8 @@ void HartreeFock::Diagonalize()
 // <ab|V_mon|cd> = Sum_J (2J+1) <ab|V|cd>_J.
 //         
 //**************************************************
-void HartreeFock::BuildMonopoleV()
+template<class OPERATOR>
+void HartreeFock<OPERATOR>::BuildMonopoleV()
 {
    Vmon.zeros();
    Vmon_exch.zeros();
@@ -166,39 +182,103 @@ void HartreeFock::BuildMonopoleV()
       int b = bra.q;
       Orbit & oa = Hbare.GetModelSpace()->GetOrbit(a);
       Orbit & ob = Hbare.GetModelSpace()->GetOrbit(b);
+      double norm = (oa.j2+1)*(ob.j2+1);
       for (int iket=ibra;iket<nKets;++iket)
       {
          Ket & ket = Hbare.GetModelSpace()->GetKet(iket);
          int c = ket.p;
          int d = ket.q;
-         Vmon(ibra,iket)       = Hbare.GetTBMEmonopole(a,b,c,d) * (ob.j2+1);
-         Vmon_exch(ibra,iket)  = Hbare.GetTBMEmonopole(a,b,d,c) * (ob.j2+1);
+         Vmon(ibra,iket)       = Hbare.GetTBMEmonopole(a,b,c,d)*norm;
+         Vmon_exch(ibra,iket)  = Hbare.GetTBMEmonopole(a,b,d,c)*norm;
       }
    }
-   
 }
+template void HartreeFock<Operator>::BuildMonopoleV();
+template void HartreeFock<Operator3>::BuildMonopoleV();
 
 
-void HartreeFock::BuildMonopoleV3()
-{
-// The crucial part is
-// map |abc> to nKets3 consecutive integers for looping
+
+// This is specific to 3 body interaction
 //
-// for bra = 0 ... nKets3
-//    for ket = bra ... nKets3
-//      < bra | Vmon3 | ket > = 0
-//      for Jia in allowable range
-//        for J in allowable range
-//          < bra | Vmon3 | ket > += 1/2 (2J+1)/(2Jia +1) < bra | V3(Jia,Jia,J) | ket >
+// <iab|Vmon3|jcd> = sum_Jia,J (2J+1)sum_tia,T (2T+1)/2 <iab|V3(Jia,Jia,J,tia,tia,T)|jcd>
+//
+template<>
+void HartreeFock<Operator>::BuildMonopoleV3()
+{}
+
+template<>
+void HartreeFock<Operator3>::BuildMonopoleV3()
+{
+   ModelSpace * modelspace = Hbare.GetModelSpace();
+   int norbits = modelspace->GetNumberOrbits();
+   for (int i=0; i<norbits; ++i)
+   {
+     Orbit& oi = modelspace->GetOrbit(i);
+     for (int a=0; a<norbits; ++a)
+     {
+       Orbit& oa = modelspace->GetOrbit(a);
+       for (int b=0; b<norbits; ++b)
+       {
+         Orbit& ob = modelspace->GetOrbit(b);
+         if ( 2*(oi.n+oa.n+ob.n)+oi.l+oa.l+ob.l > Hbare.E3max ) continue;
+         for (int j=0; j<norbits; ++j)
+         {
+           Orbit& oj = modelspace->GetOrbit(j);
+           if (oi.j2 != oj.j2 or oi.tz2 != oj.tz2 or oi.l != oj.l) continue;
+           for (int c=0; c<norbits; ++c)
+           {
+             Orbit& oc = modelspace->GetOrbit(c);
+             if (oa.j2 != oc.j2 or oa.tz2 != oc.tz2 or oa.l != oc.l) continue;
+             for (int d=0; d<norbits; ++d)
+             {
+               Orbit& od = modelspace->GetOrbit(d);
+               if ( 2*(oj.n+oc.n+od.n)+oj.l+oc.l+od.l > Hbare.E3max ) continue;
+               if (ob.j2 != od.j2 or ob.tz2 != od.tz2 or ob.l != od.l) continue;
+               if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
+               unsigned long long orbit_index_pn =  i*1000000000000000LL
+                                                  + a*1000000000000LL
+                                                  + b*1000000000
+                                                  + j*1000000
+                                                  + c*1000
+                                                  + d;
+              double v = 0;
+             int Jmin = max(max(1,oi.j2-oa.j2-ob.j2), oj.j2-oc.j2-od.j2);
+             int Jmax = min(oi.j2+oa.j2+ob.j2, oj.j2+oc.j2+od.j2);
+              for (int J=Jmin; J<=Jmax; J+=2)
+              {
+                int j2min = max( max(abs(oi.j2-oa.j2), abs(J-ob.j2)),max(abs(oj.j2-oc.j2), abs(J-od.j2) )) /2;
+                int j2max = min( min(oi.j2+oa.j2, J+ob.j2), min(oj.j2+oc.j2, J+od.j2) )/2;
+                for ( int j2=j2min; j2<j2max; ++j2)
+                {
+                  for (int T=1; T<=3; T+=2)
+                  for ( int t2 = (T-1)/2; t2<=1; ++t2)
+                  {
+                     {
+                       v += Hbare.GetThreeBodyME(j2,j2,J,t2,t2,T,i,a,b,j,c,d);
+                     }
+                  }
+                }
+              }
+              Vmon3[orbit_index_pn] = v;
+             }
+           }
+         }
+       }
+     }
+   }
 
 }
+
+
+
 
 //**************************************************************************
 // 1-body density matrix 
 // <i|rho|j> = Sum_beta <i|beta> <j|beta>
 // where beta runs over HF orbits in the core (i.e. below the fermi surface)
 //**************************************************************************
-void HartreeFock::UpdateDensityMatrix()
+template<class OPERATOR>
+void HartreeFock<OPERATOR>::UpdateDensityMatrix()
 {
    ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
@@ -212,6 +292,8 @@ void HartreeFock::UpdateDensityMatrix()
 
    rho = C * Pcore * C.t();
 }
+template void HartreeFock<Operator>::UpdateDensityMatrix();
+template void HartreeFock<Operator3>::UpdateDensityMatrix();
 
 
 //*********************************************************************
@@ -222,13 +304,15 @@ void HartreeFock::UpdateDensityMatrix()
 // * rho is the density matrix defined in UpdateDensityMatrix()
 // * V_mon is the monopole component of the 2-body interaction.
 //*********************************************************************
-void HartreeFock::UpdateH()
+template <>
+void HartreeFock<Operator>::UpdateH()
 {
    ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
    int nKets = ms->GetNumberKets();
    int bra, ket;
    Vab.zeros();
+
    for (int a=0;a<norbits;a++)
    {
       Orbit& oa = ms->GetOrbit(a);
@@ -252,28 +336,100 @@ void HartreeFock::UpdateH()
                   Vab(a,b) += rho(i,j)*Vmon(min(bra,ket),max(bra,ket)); // <i|rho|j> * <ai|Vmon|bj>
            }
          }
+         Vab(a,b) /= (oa.j2+1);
          Vab(b,a) = Vab(a,b);  // Hermitian & real => symmetric
       }
    }
    H = t + Vab;
-
 }
+
+
+
+template<>
+void HartreeFock<Operator3>::UpdateH()
+{
+   ModelSpace * ms = Hbare.GetModelSpace();
+   int norbits = ms->GetNumberOrbits();
+   int nKets = ms->GetNumberKets();
+   int bra, ket;
+   Vab.zeros();
+   V3ab.zeros();
+
+   for (int a=0;a<norbits;a++)
+   {
+      Orbit& oa = ms->GetOrbit(a);
+      for (int b=a;b<norbits;b++)
+      {
+         Orbit& ob = ms->GetOrbit(b);
+         if (oa.j2 != ob.j2 or oa.tz2 != ob.tz2 or oa.l != ob.l)   continue;
+         for (int i=0;i<norbits;i++)
+         {
+            Orbit& oi = ms->GetOrbit(i);
+            bra = ms->GetKetIndex(min(a,i),max(a,i));
+            for (int j=0;j<norbits;j++)
+            {
+               Orbit& oj = ms->GetOrbit(j);
+               if (oi.j2 != oj.j2 or oi.tz2 != oj.tz2 or oi.l != oj.l)   continue;
+               ket = ms->GetKetIndex(min(b,j),max(b,j));
+               // 2body term <ai|V|bj>
+               if (a>i xor b>j)
+                  Vab(a,b) += rho(i,j)*Vmon_exch(min(bra,ket),max(bra,ket)); // <i|rho|j> * <ai|Vmon|bj>
+               else
+                  Vab(a,b) += rho(i,j)*Vmon(min(bra,ket),max(bra,ket)); // <i|rho|j> * <ai|Vmon|bj>
+
+               // 3body term  <aik|V|bjl> <i|rho|j> <k|rho|l>
+               for (int k=0;k<norbits;++k)
+               {
+                 Orbit& ok = ms->GetOrbit(k);
+                 if ( 2*(oa.n+oi.n+ok.n)+oa.l+oi.l+ok.l > Hbare.E3max ) continue;
+                 for (int l=0;l<norbits;++l)
+                 {
+                   Orbit& ol = ms->GetOrbit(l);
+                   if ( 2*(ob.n+oj.n+ol.n)+ob.l+oj.l+ol.l > Hbare.E3max ) continue;
+                   if (ok.j2 != ol.j2 or ok.tz2 != ol.tz2 or ok.l != ol.l) continue;
+                   if ( (oa.l+oi.l+ok.l+ob.l+oj.l+ol.l)%2 >0) continue;
+                   unsigned long long orbit_index_pn =  a*1000000000000000LL
+                                                      + i*1000000000000LL
+                                                      + k*1000000000
+                                                      + b*1000000
+                                                      + j*1000
+                                                      + l;
+                   V3ab(a,b) += rho(i,j) * rho(k,l) * Vmon3[orbit_index_pn];
+//                   Vab(a,b) += rho(i,j) * rho(k,l) * Vmon3[orbit_index_pn];
+                 }
+               }
+           }
+         }
+         Vab(a,b) /= (oa.j2+1);
+         V3ab(a,b) /= (oa.j2+1);
+         Vab(b,a) = Vab(a,b);  // Hermitian & real => symmetric
+         V3ab(b,a) = V3ab(a,b);  // Hermitian & real => symmetric
+      }
+   }
+//   H = t + Vab;
+   H = t + Vab + 0.5*V3ab;
+}
+
 
 
 //********************************************************
 // Check for convergence using difference in s.p. energies
 // between iterations.
 //********************************************************
-bool HartreeFock::CheckConvergence()
+template<class OPERATOR>
+bool HartreeFock<OPERATOR>::CheckConvergence()
 {
    arma::vec de = energies - prev_energies;
    double ediff = sqrt(arma::dot(de,de)) / energies.size();
    return (ediff < tolerance);
 }
+template bool HartreeFock<Operator>::CheckConvergence();
+template bool HartreeFock<Operator3>::CheckConvergence();
 
 
 
-void HartreeFock::PrintOrbits()
+template<class OPERATOR>
+void HartreeFock<OPERATOR>::PrintOrbits()
 {
   ModelSpace * ms = Hbare.GetModelSpace();
   int norbits = ms->GetNumberOrbits();
@@ -284,15 +440,17 @@ void HartreeFock::PrintOrbits()
           << " J=" << oa.j2 << " N=" << oa.n << " Tz=" << oa.tz2
           << " ph=" << oa.ph << " io=" << oa.io << endl;
   }
-
 }
+template void HartreeFock<Operator>::PrintOrbits();
+template void HartreeFock<Operator3>::PrintOrbits();
 
 //**********************************************************************
 // Eigenvectors/values come out of the diagonalization energy-ordered.
 // We want them ordered corresponding to the input ordering, i.e. we want
 // the matrix C to be maximal and positive along the diagonal.
 //**********************************************************************
-void HartreeFock::ReorderCoefficients()
+template<class OPERATOR>
+void HartreeFock<OPERATOR>::ReorderCoefficients()
 {
    ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
@@ -317,6 +475,8 @@ void HartreeFock::ReorderCoefficients()
       energies(kmax) = e_tmp(i);
    }
 }
+template void HartreeFock<Operator>::ReorderCoefficients();
+template void HartreeFock<Operator3>::ReorderCoefficients();
 
 
 
@@ -325,13 +485,17 @@ void HartreeFock::ReorderCoefficients()
 // Takes in an operator expressed in the basis of the original Hamiltonian,
 // and returns that operator in the Hartree-Fock basis.
 //**************************************************************************
-Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
+//Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
+template<class OPERATOR>
+OPERATOR HartreeFock<OPERATOR>::TransformToHFBasis( OPERATOR& OpIn)
 {
-   Operator OpHF = OpIn;
+   OPERATOR OpHF = OpIn;
 
+   // Easy part:
    //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>.
    OpHF.OneBody = C.t() * OpIn.OneBody * C;
 
+   // Medium part:
    //Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
    // for each channel J,p,Tz. Most of the effort here is in constructing D.
    int nchan = OpIn.GetModelSpace()->GetNumberTwoBodyChannels();
@@ -369,4 +533,11 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
    }
    return OpHF;
 }
+template Operator HartreeFock<Operator>::TransformToHFBasis(Operator&);
+template Operator3 HartreeFock<Operator3>::TransformToHFBasis(Operator3&);
+
+
+
+
+
 

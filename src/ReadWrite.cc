@@ -226,7 +226,10 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
 
 // Read TBME's in Petr Navratil's format
 // Setting Emax=-1 just uses the single-particle emax determined by the model space
-void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
+//void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
+//void ReadWrite::ReadBareTBME_Navratil( string filename, Operator3& Hbare)
+template<class OPERATOR>
+void ReadWrite::ReadBareTBME_Navratil( string filename, OPERATOR Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
@@ -275,7 +278,14 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
     b = orbits_remap[nlj2];
     c = orbits_remap[nlj3];
     d = orbits_remap[nlj4];
-    
+/*
+    if (doCoM_corr)
+    {
+        vpn -= trel * 2 * hw / Hbare.GetModelSpace()->GetTargetMass();
+        vpp -= trel * 2 * hw / Hbare.GetModelSpace()->GetTargetMass();
+        vnn -= trel * 2 * hw / Hbare.GetModelSpace()->GetTargetMass();
+    }
+*/    
     //if (a>=norb or b>=norb or c>=norb or d>=norb) continue;
     if (2*nlj1>=norb or 2*nlj2>=norb or 2*nlj3>=norb or 2*nlj4>=norb) continue;
     Orbit oa = modelspace->GetOrbit(a);
@@ -328,12 +338,14 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
     Hbare.AddToTBME(J,parity,0,a+1,b,c,d+1,vpnnp);
 
 
+
   }
 
   
   return;
 }
-
+template void ReadWrite::ReadBareTBME_Navratil<Operator&>( string, Operator&);
+template void ReadWrite::ReadBareTBME_Navratil<Operator3&>( string, Operator3&);
 
 
 
