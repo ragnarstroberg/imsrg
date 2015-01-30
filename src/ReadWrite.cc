@@ -93,7 +93,7 @@ ModelSpace ReadWrite::ReadModelSpace( string filename)
    ss >> cbuf[0] >> cbuf[1] >> cbuf[2] >> cbuf[3] >> fbuf[0] >> hw;
    modelspace.SetHbarOmega(hw);
    modelspace.SetTargetMass(A);
-   cout << "Set hbar_omega to " << hw << endl;
+//   cout << "Set hbar_omega to " << hw << endl;
 
    while (!strstr(line,"Legend:") && !infile.eof())
    {
@@ -1062,24 +1062,26 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
       opfile << "Non-Hermitian" << endl;
    }
 
-   opfile << "$ZeroBody:\t" << op.ZeroBody << endl << endl;
-   opfile << "$OneBody:\t" << op.ZeroBody << endl;
+   opfile << "$ZeroBody:\t" << setprecision(10) << op.ZeroBody << endl;
+   //opfile << "$OneBody:\t" << op.ZeroBody << endl;
+   opfile << "$OneBody:\t" << endl;
 
-   int nch = modelspace->GetNumberTwoBodyChannels();
-   for (int i=0;i<nch;++i)
+   int norb = modelspace->GetNumberOrbits();
+   for (int i=0;i<norb;++i)
    {
       int jmin = op.IsNonHermitian() ? 0 : i;
-      for (int j=jmin;j<nch;++j)
+      for (int j=jmin;j<norb;++j)
       {
-         opfile << i << "\t" << j << "\t" << op.OneBody(i,j) << endl;
+         if (abs(op.OneBody(i,j)) > 0)
+            opfile << i << "\t" << j << "\t" << setprecision(10) << op.OneBody(i,j) << endl;
       }
    }
 
-   opfile << endl << "$TwoBody:\t" << op.ZeroBody << endl;
+   opfile <<  "$TwoBody:\t"  << endl;
    int nchan = modelspace->GetNumberTwoBodyChannels();
    for (int ch=0; ch<nchan; ++ch)
    {
-      opfile << ch << endl;
+//      opfile << "ch: " << ch << endl;
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       int nkets = tbc.GetNumberKets();
       for (int ibra=0; ibra<nkets; ++ibra)
@@ -1087,12 +1089,69 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
          int iket_min = op.IsNonHermitian() ? 0 : ibra;
          for (int iket=iket_min; iket<nkets; ++iket)
          {
-            opfile << "   " << ibra << "\t" << iket << "\t" << op.TwoBody[ch](ibra,iket) << endl;
+            if (abs(op.TwoBody[ch](ibra,iket)) > 1e-7)
+//            opfile << "   " << ibra << "\t" << iket << "\t" << op.TwoBody[ch](ibra,iket) << endl;
+            opfile << ch << "\t" << ibra << "\t" << iket << "\t" << setprecision(10) << op.TwoBody[ch](ibra,iket) << endl;
          }
       }
    }
    opfile.close();
 
+}
+
+
+void ReadWrite::ReadOperator(Operator &op, string filename)
+{
+   ifstream opfile;
+   opfile.open(filename);
+   ModelSpace * modelspace = op.GetModelSpace();
+
+   string tmpstring;
+   int i,j,ch;
+   double v;
+
+   opfile >> tmpstring;
+   if (tmpstring == "Hermitian")
+   {
+      op.SetHermitian();
+   }
+   else if (tmpstring == "Anti-Hermitian")
+   {
+      op.SetAntiHermitian();
+   }
+   else
+   {
+      op.SetNonHermitian();
+   }
+
+   opfile >> tmpstring >> v;
+   op.ZeroBody = v;
+
+   getline(opfile, tmpstring);
+   getline(opfile, tmpstring);
+   getline(opfile, tmpstring);
+   while (tmpstring[0] != '$')
+   {
+      stringstream ss(tmpstring);
+      ss >> i >> j >> v;
+      op.OneBody(i,j) = v;
+      if ( op.IsHermitian() )
+         op.OneBody(j,i) = v;
+      else if ( op.IsAntiHermitian() )
+         op.OneBody(j,i) = -v;
+      getline(opfile, tmpstring);
+   }
+   while (opfile >> ch >> i >> j >> v)
+   {
+      op.TwoBody[ch](i,j) = v;
+      if ( op.IsHermitian() )
+         op.TwoBody[ch](j,i) = v;
+      else if ( op.IsAntiHermitian() )
+         op.TwoBody[ch](j,i) = -v;
+  }
+
+   opfile.close();
+   
 }
 
 

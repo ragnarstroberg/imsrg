@@ -237,7 +237,7 @@ void Operator3::AllocateThreeBody()
         int J2_max = min(oa.j2+ob.j2+oc.j2, od.j2+oe.j2+of.j2);
         if (J2_max < J2_min) continue;
 
-        long int orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
+        orbindx_t orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
 
         // Get hashing index for orbits
         ThreeBody[orbit_index].resize(J2_max-J2_min+1);
@@ -340,7 +340,7 @@ double Operator3::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int
    int tde_min = T2==3 ? 1 : 0;
    int tde_max = 1;
 
-   long int orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
+   orbindx_t orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
 
    double V = 0;
    // Recouple J and T to get to the format in which it's stored.
@@ -405,7 +405,7 @@ void Operator3::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int t
    int tde_min = T2==3 ? 1 : 0;
    int tde_max = 1;
 
-   long int orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
+   orbindx_t orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
 
    for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
    {
@@ -438,8 +438,23 @@ void Operator3::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int t
 
 
 // Hashing function for compressing 6 orbit indices to one number
-long int Operator3::GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, int f)
+orbindx_t Operator3::GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, int f)
 {
+   unsigned char aa = a/2;
+   unsigned char bb = b/2;
+   unsigned char cc = c/2;
+   unsigned char dd = d/2;
+   unsigned char ee = e/2;
+   unsigned char ff = f/2;
+
+   orbindx_t orbit_index_bra = (aa << 16) + (bb << 8) + cc;
+   orbindx_t orbit_index_ket = (dd << 16) + (ee << 8) + ff;
+
+   // should change to uint64_t
+   orbindx_t orb_indx = (aa>=dd) ? (orbit_index_bra << 32) + orbit_index_ket
+                                : (orbit_index_ket << 32) + orbit_index_bra;
+
+/*
    int aa = a-a%2;
    int bb = b-b%2;
    int cc = c-c%2;
@@ -450,8 +465,40 @@ long int Operator3::GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, in
    int orbit_index_ket =  dd*(dd+1)*(dd+2)/6 + ee*(ee+1)/2 + ff;
    long int orb_indx = (aa>=dd) ? (orbit_index_bra * (orbit_index_bra+1))/2 + orbit_index_ket
                                 : (orbit_index_ket * (orbit_index_ket+1))/2 + orbit_index_bra;
-
+*/
    return orb_indx;
+}
+
+void Operator3::GetOrbitsFromIndex(orbindx_t orb_indx, int& a, int& b, int& c, int& d, int& e, int& f)
+{
+  a = ((orb_indx >> 48) & 0xF)*2;
+  b = ((orb_indx >> 40) & 0xF)*2;
+  c = ((orb_indx >> 32) & 0xF)*2;
+  d = ((orb_indx >> 16) & 0xF)*2;
+  e = ((orb_indx >> 8)  & 0xF)*2;
+  f = ( orb_indx        & 0xF)*2;
+  if (a<d)
+  {
+    swap(a,d);
+    swap(b,e);
+    swap(c,f);
+  }
+/*
+  int orbit_index_bra = int(sqrt(1+8*orb_indx)-1)/2;
+  int orbit_index_ket = orb_indx - orbit_index_bra;
+  a = int (pow(orbit_index_bra,1./3.0));
+  while (a*(a+1)*(a+2)<=6*orbit_index_bra) ++a;
+  --a;
+  orbit_index_bra -= a*(a+1)*(a+2)/6;
+  b = int(sqrt(1+8*orbit_index_bra)-1)/2;
+  c = orbit_index_bra-b*(b+1)/2;
+  d = int (pow(orbit_index_ket,1./3.0));
+  while (d*(d+1)*(d+2)<=6*orbit_index_ket) ++d;
+  --d;
+  orbit_index_ket -= d*(d+1)*(d+2)/6;
+  e = int(sqrt(1+8*orbit_index_ket)-1)/2;
+  f = orbit_index_bra-e*(e+1)/2;
+*/
 }
 
 

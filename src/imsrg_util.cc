@@ -119,7 +119,7 @@ template vector<double> GetOccupationsHF<Operator3>(HartreeFock<Operator3>& hf);
       for (int j=i; j<norb; ++j)
       {
          Orbit & oj = modelspace.GetOrbit(j);
-         if ( 2*(oi.n+oj.n)+oi.l+oj.l > N2max) continue;
+//         if ( 2*(oi.n+oj.n)+oi.l+oj.l > N2max) continue;
          if (oi.l != oj.l or oi.j2 != oj.j2 or oi.tz2 != oj.tz2) continue;
          double tij = 0;
          if (oi.n == oj.n) tij = 0.5*(2*oi.n+oi.l + 1.5) * hw/A;
@@ -139,9 +139,16 @@ template vector<double> GetOccupationsHF<Operator3>(HartreeFock<Operator3>& hf);
       for (int ibra=0;ibra<nkets;++ibra)
       {
          Ket & bra = tbc.GetKet(ibra);
+         Orbit & oi = modelspace.GetOrbit(bra.p);
+         Orbit & oj = modelspace.GetOrbit(bra.q);
+         if ( 2*(oi.n+oj.n)+oi.l+oj.l > N2max) continue;
          for (int iket=ibra;iket<nkets;++iket)
          {
+            
             Ket & ket = tbc.GetKet(iket);
+            Orbit & ok = modelspace.GetOrbit(ket.p);
+            Orbit & ol = modelspace.GetOrbit(ket.q);
+            if ( 2*(ok.n+ol.n)+ok.l+ol.l > N2max) continue;
             double p1p2 = Calculate_p1p2(modelspace,bra,ket,tbc.J) * hw/A;
             #pragma omp critical
             {

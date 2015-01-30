@@ -9,6 +9,7 @@
 using namespace std;
 
 //typedef unordered_map<long,vector<double> > orbit_map;
+typedef uint64_t orbindx_t;
 
 class Operator3 : public Operator
 {
@@ -41,7 +42,9 @@ class Operator3 : public Operator
    void   SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
 
    Operator DoNormalOrdering3();
-   long int GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, int f);
+   orbindx_t GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, int f);
+
+   void GetOrbitsFromIndex(orbindx_t orb_indx, int& a, int& b, int& c, int& d, int& e, int& f);
 
    void SortOrbits(int& a,int& b,int& c);
    double RecouplingCoefficient(int a_in, int b_in, int c_in, int a, int b, int c, int Jab_in, int Jab, int J ,char j_or_t);
@@ -50,7 +53,7 @@ class Operator3 : public Operator
 
    // Fields
    //unordered_map< long int, vector< vector<double> > > ThreeBody;
-   map< long int, vector< vector<double> > > ThreeBody;
+   map< orbindx_t, vector< vector<double> > > ThreeBody;
    int E3max;
 
 };

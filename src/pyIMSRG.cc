@@ -47,6 +47,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("WriteNuShellX_sps", &ReadWrite::WriteNuShellX_sps)
       .def("WriteNuShellX_int", &ReadWrite::WriteNuShellX_int)
       .def("WriteAntoine_int", &ReadWrite::WriteAntoine_int)
+      .def("WriteOperator", &ReadWrite::WriteOperator)
+      .def("ReadOperator", &ReadWrite::ReadOperator)
       .def("SetCoMCorr", &ReadWrite::SetCoMCorr)
       .def_readwrite("InputParameters", &ReadWrite::InputParameters)
    ;

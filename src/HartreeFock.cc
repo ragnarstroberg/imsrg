@@ -485,11 +485,12 @@ template void HartreeFock<Operator3>::ReorderCoefficients();
 // Takes in an operator expressed in the basis of the original Hamiltonian,
 // and returns that operator in the Hartree-Fock basis.
 //**************************************************************************
-//Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
-template<class OPERATOR>
-OPERATOR HartreeFock<OPERATOR>::TransformToHFBasis( OPERATOR& OpIn)
+//template<class OPERATOR>
+//OPERATOR HartreeFock<OPERATOR>::TransformToHFBasis( OPERATOR& OpIn)
+template<>
+Operator HartreeFock<Operator>::TransformToHFBasis( Operator& OpIn)
 {
-   OPERATOR OpHF = OpIn;
+   Operator OpHF = OpIn;
 
    // Easy part:
    //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>.
@@ -533,8 +534,107 @@ OPERATOR HartreeFock<OPERATOR>::TransformToHFBasis( OPERATOR& OpIn)
    }
    return OpHF;
 }
-template Operator HartreeFock<Operator>::TransformToHFBasis(Operator&);
-template Operator3 HartreeFock<Operator3>::TransformToHFBasis(Operator3&);
+//template Operator HartreeFock<Operator>::TransformToHFBasis(Operator&);
+//template Operator3 HartreeFock<Operator3>::TransformToHFBasis(Operator3&);
+
+
+
+//**************************************************************************
+// Takes in an operator expressed in the basis of the original Hamiltonian,
+// and returns that operator in the Hartree-Fock basis.
+//**************************************************************************
+template<>
+Operator3 HartreeFock<Operator3>::TransformToHFBasis( Operator3& OpIn)
+{
+   Operator3 OpHF = OpIn;
+
+   cout << "Transform one body" << endl;
+   // Easy part:
+   //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>.
+   OpHF.OneBody = C.t() * OpIn.OneBody * C;
+
+   cout << "Transform two body" << endl;
+   // Medium part:
+   //Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
+   // for each channel J,p,Tz. Most of the effort here is in constructing D.
+   int nchan = OpIn.GetModelSpace()->GetNumberTwoBodyChannels();
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = OpIn.GetModelSpace()->GetTwoBodyChannel(ch);
+      int npq = tbc.GetNumberKets();
+      if (npq<1) continue;
+
+      arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+      arma::mat Dexch = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ba> = <ji|ab>
+
+      // loop over all possible original basis configurations <pq| in this J,p,Tz channel.
+      // and all possible HF configurations |p'q'> in this J,p,Tz channel                                    
+      // bra is in the original basis, ket is in the HF basis                                              
+      // i and j are the indices of the matrix D for this channel                    
+      for (int i=0; i<npq; ++i)    
+      {
+         Ket & bra = tbc.GetKet(i);   
+         for (int j=0; j<npq; ++j)    
+         {
+            Ket & ket = tbc.GetKet(j); // 
+            double normfactor = sqrt((1.0+ket.delta_pq())/(1.0+bra.delta_pq()));
+            D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q) * normfactor;
+            Dexch(i,j) = C(bra.p,ket.q) * C(bra.q,ket.p) * ket.Phase(tbc.J) * (1-ket.delta_pq()) * normfactor;
+         }
+      }
+
+     // Do all the matrix multiplication in one expression so Armadillo can do optimizations.
+     OpHF.TwoBody[ch]   = D.t()      * OpIn.TwoBody[ch] * D
+                        + Dexch.t()  * OpIn.TwoBody[ch] * D
+                        + D.t()      * OpIn.TwoBody[ch] * Dexch
+                        + Dexch.t()  * OpIn.TwoBody[ch] * Dexch;
+
+   }
+
+   cout << "Transform three body" << endl;
+   for (auto it_ORB : OpHF.ThreeBody)
+   {
+      // capital indices are in the transformed basis
+      // equivalent to greek letters in the notes. This was just tidier.
+      // lowercase indices are in the original basis
+      int aa,bb,cc,dd,ee,ff;
+      int a,b,c,d,e,f;
+      OpHF.GetOrbitsFromIndex(it_ORB.first, aa,bb,cc,dd,ee,ff);
+      
+      for (auto it_orb : OpIn.ThreeBody)
+      {
+         OpHF.GetOrbitsFromIndex(it_orb.first, a,b,c,d,e,f);
+
+         //double coeff = C(aa,a)*C(bb,b)*C(cc,c)*C(d,dd)*C(e,ee)*C(f,ff);
+         cout << "it_orb = " << it_orb.first << endl;
+         cout << "Get C " << a << " " << b << " " << c << " " << d << " " << e << " " << f << endl;
+         double coeff = C(a,aa)*C(b,bb)*C(c,cc)*C(d,dd)*C(e,ee)*C(f,ff);
+         cout << "Got C " << endl;
+         if (abs(coeff) < 1e-6) continue;
+
+         // loop over all the J,T couplings
+         cout << "start jt loop sizes = " << it_ORB.second.size() << "," << it_orb.second.size() << endl;
+         for( auto it_J=it_ORB.second.begin(), it_j=it_orb.second.begin(); it_J!=it_ORB.second.end() and it_j!=it_orb.second.end(); ++it_J, ++it_j)
+         {
+            cout << "    J sizes = " << it_J->size() << "," << it_j->size() << endl;
+            for ( auto it_JT=it_J->begin(), it_jt=it_j->begin(); it_JT!=it_J->end() and it_jt!=it_j->end(); ++it_JT, ++it_j)
+            {
+               (*it_JT) += (*it_jt) * coeff;
+            }
+         }
+         cout << "finish jt loop" << endl;
+
+      }
+
+   }
+
+
+
+
+   return OpHF;
+}
+//template Operator HartreeFock<Operator>::TransformToHFBasis(Operator&);
+//template Operator3 HartreeFock<Operator3>::TransformToHFBasis(Operator3&);
 
 
 
