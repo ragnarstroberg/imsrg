@@ -7,7 +7,7 @@
 
 //#define JMAX 30
 
-class ModelSpace;
+//class ModelSpace;
 
 using namespace std;
 
