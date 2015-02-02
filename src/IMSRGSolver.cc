@@ -586,6 +586,7 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
    {
       int fwidth = 16;
       int fprecision = 9;
+      f.setf(ios::fixed);
       //f.width(20);
 //      f.precision(10);
       f << setw(5) << istep
@@ -609,6 +610,7 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
    {
       int fwidth = 16;
       int fprecision = 9;
+      f.setf(ios::fixed);
       f << setw(5) << "i"
         << setw(fwidth) << setprecision(3) << "s"
         << setw(fwidth) << setprecision(fprecision) << "E0"

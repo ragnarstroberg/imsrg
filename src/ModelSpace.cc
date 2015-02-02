@@ -354,7 +354,7 @@ void ModelSpace::SetupKets()
    }
 }
 
-
+// This needs to be generalized
 double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3)
 {
 // { j1 j2 j3 }
