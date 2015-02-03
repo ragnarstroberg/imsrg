@@ -226,10 +226,10 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
 
 // Read TBME's in Petr Navratil's format
 // Setting Emax=-1 just uses the single-particle emax determined by the model space
-//void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
 //void ReadWrite::ReadBareTBME_Navratil( string filename, Operator3& Hbare)
-template<class OPERATOR>
-void ReadWrite::ReadBareTBME_Navratil( string filename, OPERATOR Hbare)
+//template<class OPERATOR>
+//void ReadWrite::ReadBareTBME_Navratil( string filename, OPERATOR Hbare)
+void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
@@ -337,15 +337,10 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, OPERATOR Hbare)
   if ( a!=b)
     Hbare.AddToTBME(J,parity,0,a+1,b,c,d+1,vpnnp);
 
-
-
   }
-
   
   return;
 }
-template void ReadWrite::ReadBareTBME_Navratil<Operator&>( string, Operator&);
-template void ReadWrite::ReadBareTBME_Navratil<Operator3&>( string, Operator3&);
 
 
 
@@ -470,7 +465,8 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
 
 
 
-void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Emax)
+//void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Emax)
+void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax)
 {
   ModelSpace * modelspace = Hbare.GetModelSpace();
   vector<string> Llabels = {"s","p","d","f","g","h","i","j","k","l"};
@@ -506,7 +502,7 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
   int j=0;
 
 
-   double Vtest = Hbare.GetThreeBodyME(1,0,1,0,0,1,4,0,0,4,0,0);
+//   double Vtest = Hbare.GetThreeBodyME(1,0,1,0,0,1,4,0,0,4,0,0);
 
   // begin giant nested loops
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
@@ -674,8 +670,8 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Ema
       }
     }
   }
-  cout << "I think there should be " << i << " matrix elements to read." << endl;
-  cout << " and " << j << " of them are identically zero" << endl;
+//  cout << "I think there should be " << i << " matrix elements to read." << endl;
+//  cout << " and " << j << " of them are identically zero" << endl;
 
 }
 
@@ -811,7 +807,8 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
          int c_ind = c/2+1 + ( oc.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
          int d_ind = d/2+1 + ( od.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
             int T = abs(tbc.Tz);
-            double tbme = op.TwoBody[ch](ibra,iket);
+            //double tbme = op.TwoBody[ch](ibra,iket);
+            double tbme = op.GetTBME(ch,bra,ket);
             if ( abs(tbme) < 1e-6) tbme = 0;
             if (T==0)
             {
@@ -1086,12 +1083,18 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
       int nkets = tbc.GetNumberKets();
       for (int ibra=0; ibra<nkets; ++ibra)
       {
+         Ket& bra = tbc.GetKet(ibra);
          int iket_min = op.IsNonHermitian() ? 0 : ibra;
          for (int iket=iket_min; iket<nkets; ++iket)
          {
-            if (abs(op.TwoBody[ch](ibra,iket)) > 1e-7)
+            Ket& ket = tbc.GetKet(iket);
+            double tbme = op.GetTBME(ch,bra,ket);
+            if (abs(tbme) > 1e-7)
+            //if (abs(op.TwoBody[ch](ibra,iket)) > 1e-7)
+//            if (abs(op.GetTBME(ch,bra,ket)) > 1e-7)
 //            opfile << "   " << ibra << "\t" << iket << "\t" << op.TwoBody[ch](ibra,iket) << endl;
-            opfile << ch << "\t" << ibra << "\t" << iket << "\t" << setprecision(10) << op.TwoBody[ch](ibra,iket) << endl;
+//            opfile << ch << "\t" << ibra << "\t" << iket << "\t" << setprecision(10) << op.TwoBody[ch](ibra,iket) << endl;
+            opfile << ch << "\t" << ibra << "\t" << iket << "\t" << setprecision(10) << tbme << endl;
          }
       }
    }
@@ -1143,11 +1146,13 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
    }
    while (opfile >> ch >> i >> j >> v)
    {
-      op.TwoBody[ch](i,j) = v;
-      if ( op.IsHermitian() )
-         op.TwoBody[ch](j,i) = v;
-      else if ( op.IsAntiHermitian() )
-         op.TwoBody[ch](j,i) = -v;
+//      op.TwoBody[ch](i,j) = v;
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      op.SetTBME(ch,tbc.GetKet(i),tbc.GetKet(j),v);
+//      if ( op.IsHermitian() )
+//         op.TwoBody[ch](j,i) = v;
+//      else if ( op.IsAntiHermitian() )
+//         op.TwoBody[ch](j,i) = -v;
   }
 
    opfile.close();

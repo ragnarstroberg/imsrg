@@ -4,8 +4,7 @@
 
 using namespace std;
 
-template<class OPERATOR>
-HartreeFock<OPERATOR>::HartreeFock(OPERATOR& hbare) : Hbare(hbare)
+HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
 {
    tolerance = 1e-10;
    ModelSpace * ms = Hbare.GetModelSpace();
@@ -23,46 +22,42 @@ HartreeFock<OPERATOR>::HartreeFock(OPERATOR& hbare) : Hbare(hbare)
    t = Hbare.OneBody;
    energies = t.diag();
    BuildMonopoleV();
-   cout << "About to build Vmon3." << endl;
-   BuildMonopoleV3();
-   cout << "Done building Vmon3." << endl;
+   if (hbare.GetParticleRank()>2)
+   {
+      BuildMonopoleV3();
+   }
    UpdateDensityMatrix();
    UpdateH();
 }
-template HartreeFock<Operator>::HartreeFock(Operator& );
-template HartreeFock<Operator3>::HartreeFock(Operator3& );
 
-template<class OPERATOR>
-void HartreeFock<OPERATOR>::Solve()
+void HartreeFock::Solve()
 {
    iterations = 0; // counter so we don't go on forever
    int maxiter = 1000;
 
-   while( (! CheckConvergence()) && iterations < maxiter)
+   for (iterations=0; iterations<maxiter; ++iterations)
    {
       Diagonalize();  // Diagonalize the Fock matrix
       ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
       UpdateDensityMatrix();  // 1 body density matrix, used in UpdateH()
       UpdateH();  // Update the Fock matrix
-      ++iterations;
+      if ( CheckConvergence() ) break;
    }
 
-   ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
    if (iterations==maxiter)
    {
       cerr << "Warning: Hartree-Fock calculation didn't converge after " << maxiter << " iterations." << endl;
    }
+
+   ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
    CalcEHF();
 }
-template void HartreeFock<Operator>::Solve();
-template void HartreeFock<Operator3>::Solve();
 
 
 //*******************************************************
 // Calculate the HF energy.
 //*******************************************************
-template<class OPERATOR>
-void HartreeFock<OPERATOR>::CalcEHF()
+void HartreeFock::CalcEHF()
 {
    ModelSpace * ms = Hbare.GetModelSpace();
    EHF = 0;
@@ -77,8 +72,6 @@ void HartreeFock<OPERATOR>::CalcEHF()
       }
    }
 }
-template void HartreeFock<Operator>::CalcEHF();
-template void HartreeFock<Operator3>::CalcEHF();
 
 
 ///**********************************************************************************
@@ -91,8 +84,7 @@ template void HartreeFock<Operator3>::CalcEHF();
 // Different channels are diagonalized independently.
 // This guarantees that J,Tz, and parity remain good. 
 ///***********************************************************************************
-template<class OPERATOR>
-void HartreeFock<OPERATOR>::Diagonalize()
+void HartreeFock::Diagonalize()
 {
    prev_energies = energies;
    vector<int> orbit_list;
@@ -160,8 +152,6 @@ void HartreeFock<OPERATOR>::Diagonalize()
       } // For Tz ...
    } // For p...
 }
-template void HartreeFock<Operator>::Diagonalize();
-template void HartreeFock<Operator3>::Diagonalize();
 
 //**************************************************
 // BuildMonopoleV()
@@ -169,8 +159,7 @@ template void HartreeFock<Operator3>::Diagonalize();
 // <ab|V_mon|cd> = Sum_J (2J+1) <ab|V|cd>_J.
 //         
 //**************************************************
-template<class OPERATOR>
-void HartreeFock<OPERATOR>::BuildMonopoleV()
+void HartreeFock::BuildMonopoleV()
 {
    Vmon.zeros();
    Vmon_exch.zeros();
@@ -193,8 +182,6 @@ void HartreeFock<OPERATOR>::BuildMonopoleV()
       }
    }
 }
-template void HartreeFock<Operator>::BuildMonopoleV();
-template void HartreeFock<Operator3>::BuildMonopoleV();
 
 
 
@@ -202,12 +189,7 @@ template void HartreeFock<Operator3>::BuildMonopoleV();
 //
 // <iab|Vmon3|jcd> = sum_Jia,J (2J+1)sum_tia,T (2T+1)/2 <iab|V3(Jia,Jia,J,tia,tia,T)|jcd>
 //
-template<>
-void HartreeFock<Operator>::BuildMonopoleV3()
-{}
-
-template<>
-void HartreeFock<Operator3>::BuildMonopoleV3()
+void HartreeFock::BuildMonopoleV3()
 {
    ModelSpace * modelspace = Hbare.GetModelSpace();
    int norbits = modelspace->GetNumberOrbits();
@@ -277,8 +259,7 @@ void HartreeFock<Operator3>::BuildMonopoleV3()
 // <i|rho|j> = Sum_beta <i|beta> <j|beta>
 // where beta runs over HF orbits in the core (i.e. below the fermi surface)
 //**************************************************************************
-template<class OPERATOR>
-void HartreeFock<OPERATOR>::UpdateDensityMatrix()
+void HartreeFock::UpdateDensityMatrix()
 {
    ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
@@ -292,8 +273,6 @@ void HartreeFock<OPERATOR>::UpdateDensityMatrix()
 
    rho = C * Pcore * C.t();
 }
-template void HartreeFock<Operator>::UpdateDensityMatrix();
-template void HartreeFock<Operator3>::UpdateDensityMatrix();
 
 
 //*********************************************************************
@@ -304,49 +283,7 @@ template void HartreeFock<Operator3>::UpdateDensityMatrix();
 // * rho is the density matrix defined in UpdateDensityMatrix()
 // * V_mon is the monopole component of the 2-body interaction.
 //*********************************************************************
-template <>
-void HartreeFock<Operator>::UpdateH()
-{
-   ModelSpace * ms = Hbare.GetModelSpace();
-   int norbits = ms->GetNumberOrbits();
-   int nKets = ms->GetNumberKets();
-   int bra, ket;
-   Vab.zeros();
-
-   for (int a=0;a<norbits;a++)
-   {
-      Orbit& oa = ms->GetOrbit(a);
-      for (int b=a;b<norbits;b++)
-      {
-         Orbit& ob = ms->GetOrbit(b);
-         if (oa.j2 != ob.j2 or oa.tz2 != ob.tz2 or oa.l != ob.l)   continue;
-         for (int i=0;i<norbits;i++)
-         {
-            Orbit& oi = ms->GetOrbit(i);
-            bra = ms->GetKetIndex(min(a,i),max(a,i));
-            for (int j=0;j<norbits;j++)
-            {
-               Orbit& oj = ms->GetOrbit(j);
-               if (oi.j2 != oj.j2 or oi.tz2 != oj.tz2 or oi.l != oj.l)   continue;
-               ket = ms->GetKetIndex(min(b,j),max(b,j));
-
-               if (a>i xor b>j)
-                  Vab(a,b) += rho(i,j)*Vmon_exch(min(bra,ket),max(bra,ket)); // <i|rho|j> * <ai|Vmon|bj>
-               else
-                  Vab(a,b) += rho(i,j)*Vmon(min(bra,ket),max(bra,ket)); // <i|rho|j> * <ai|Vmon|bj>
-           }
-         }
-         Vab(a,b) /= (oa.j2+1);
-         Vab(b,a) = Vab(a,b);  // Hermitian & real => symmetric
-      }
-   }
-   H = t + Vab;
-}
-
-
-
-template<>
-void HartreeFock<Operator3>::UpdateH()
+void HartreeFock::UpdateH()
 {
    ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
@@ -377,6 +314,7 @@ void HartreeFock<Operator3>::UpdateH()
                else
                   Vab(a,b) += rho(i,j)*Vmon(min(bra,ket),max(bra,ket)); // <i|rho|j> * <ai|Vmon|bj>
 
+               if (Hbare.GetParticleRank()<3) continue;
                // 3body term  <aik|V|bjl> <i|rho|j> <k|rho|l>
                for (int k=0;k<norbits;++k)
                {
@@ -395,7 +333,6 @@ void HartreeFock<Operator3>::UpdateH()
                                                       + j*1000
                                                       + l;
                    V3ab(a,b) += rho(i,j) * rho(k,l) * Vmon3[orbit_index_pn];
-//                   Vab(a,b) += rho(i,j) * rho(k,l) * Vmon3[orbit_index_pn];
                  }
                }
            }
@@ -406,7 +343,6 @@ void HartreeFock<Operator3>::UpdateH()
          V3ab(b,a) = V3ab(a,b);  // Hermitian & real => symmetric
       }
    }
-//   H = t + Vab;
    H = t + Vab + 0.5*V3ab;
 }
 
@@ -416,20 +352,16 @@ void HartreeFock<Operator3>::UpdateH()
 // Check for convergence using difference in s.p. energies
 // between iterations.
 //********************************************************
-template<class OPERATOR>
-bool HartreeFock<OPERATOR>::CheckConvergence()
+bool HartreeFock::CheckConvergence()
 {
    arma::vec de = energies - prev_energies;
    double ediff = sqrt(arma::dot(de,de)) / energies.size();
    return (ediff < tolerance);
 }
-template bool HartreeFock<Operator>::CheckConvergence();
-template bool HartreeFock<Operator3>::CheckConvergence();
 
 
 
-template<class OPERATOR>
-void HartreeFock<OPERATOR>::PrintOrbits()
+void HartreeFock::PrintOrbits()
 {
   ModelSpace * ms = Hbare.GetModelSpace();
   int norbits = ms->GetNumberOrbits();
@@ -441,16 +373,13 @@ void HartreeFock<OPERATOR>::PrintOrbits()
           << " ph=" << oa.ph << " io=" << oa.io << endl;
   }
 }
-template void HartreeFock<Operator>::PrintOrbits();
-template void HartreeFock<Operator3>::PrintOrbits();
 
 //**********************************************************************
 // Eigenvectors/values come out of the diagonalization energy-ordered.
 // We want them ordered corresponding to the input ordering, i.e. we want
 // the matrix C to be maximal and positive along the diagonal.
 //**********************************************************************
-template<class OPERATOR>
-void HartreeFock<OPERATOR>::ReorderCoefficients()
+void HartreeFock::ReorderCoefficients()
 {
    ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
@@ -475,9 +404,6 @@ void HartreeFock<OPERATOR>::ReorderCoefficients()
       energies(kmax) = e_tmp(i);
    }
 }
-template void HartreeFock<Operator>::ReorderCoefficients();
-template void HartreeFock<Operator3>::ReorderCoefficients();
-
 
 
 
@@ -485,68 +411,9 @@ template void HartreeFock<Operator3>::ReorderCoefficients();
 // Takes in an operator expressed in the basis of the original Hamiltonian,
 // and returns that operator in the Hartree-Fock basis.
 //**************************************************************************
-//template<class OPERATOR>
-//OPERATOR HartreeFock<OPERATOR>::TransformToHFBasis( OPERATOR& OpIn)
-template<>
-Operator HartreeFock<Operator>::TransformToHFBasis( Operator& OpIn)
+Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
 {
    Operator OpHF = OpIn;
-
-   // Easy part:
-   //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>.
-   OpHF.OneBody = C.t() * OpIn.OneBody * C;
-
-   // Medium part:
-   //Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
-   // for each channel J,p,Tz. Most of the effort here is in constructing D.
-   int nchan = OpIn.GetModelSpace()->GetNumberTwoBodyChannels();
-   for (int ch=0;ch<nchan;++ch)
-   {
-      TwoBodyChannel& tbc = OpIn.GetModelSpace()->GetTwoBodyChannel(ch);
-      int npq = tbc.GetNumberKets();
-      if (npq<1) continue;
-
-      arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
-      arma::mat Dexch = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ba> = <ji|ab>
-
-      // loop over all possible original basis configurations <pq| in this J,p,Tz channel.
-      // and all possible HF configurations |p'q'> in this J,p,Tz channel                                    
-      // bra is in the original basis, ket is in the HF basis                                              
-      // i and j are the indices of the matrix D for this channel                    
-      for (int i=0; i<npq; ++i)    
-      {
-         Ket & bra = tbc.GetKet(i);   
-         for (int j=0; j<npq; ++j)    
-         {
-            Ket & ket = tbc.GetKet(j); // 
-            double normfactor = sqrt((1.0+ket.delta_pq())/(1.0+bra.delta_pq()));
-            D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q) * normfactor;
-            Dexch(i,j) = C(bra.p,ket.q) * C(bra.q,ket.p) * ket.Phase(tbc.J) * (1-ket.delta_pq()) * normfactor;
-         }
-      }
-
-     // Do all the matrix multiplication in one expression so Armadillo can do optimizations.
-     OpHF.TwoBody[ch]   = D.t()      * OpIn.TwoBody[ch] * D
-                        + Dexch.t()  * OpIn.TwoBody[ch] * D
-                        + D.t()      * OpIn.TwoBody[ch] * Dexch
-                        + Dexch.t()  * OpIn.TwoBody[ch] * Dexch;
-
-   }
-   return OpHF;
-}
-//template Operator HartreeFock<Operator>::TransformToHFBasis(Operator&);
-//template Operator3 HartreeFock<Operator3>::TransformToHFBasis(Operator3&);
-
-
-
-//**************************************************************************
-// Takes in an operator expressed in the basis of the original Hamiltonian,
-// and returns that operator in the Hartree-Fock basis.
-//**************************************************************************
-template<>
-Operator3 HartreeFock<Operator3>::TransformToHFBasis( Operator3& OpIn)
-{
-   Operator3 OpHF = OpIn;
 
    cout << "Transform one body" << endl;
    // Easy part:
@@ -584,12 +451,15 @@ Operator3 HartreeFock<Operator3>::TransformToHFBasis( Operator3& OpIn)
       }
 
      // Do all the matrix multiplication in one expression so Armadillo can do optimizations.
-     OpHF.TwoBody[ch]   = D.t()      * OpIn.TwoBody[ch] * D
-                        + Dexch.t()  * OpIn.TwoBody[ch] * D
-                        + D.t()      * OpIn.TwoBody[ch] * Dexch
-                        + Dexch.t()  * OpIn.TwoBody[ch] * Dexch;
-
+     arma::mat& IN  = (arma::mat&) OpIn.TwoBody[ch].at(ch);
+     arma::mat& OUT = (arma::mat&) OpHF.TwoBody[ch].at(ch);
+     OUT  =    D.t()      * IN * D
+             + Dexch.t()  * IN * D
+             + D.t()      * IN * Dexch
+             + Dexch.t()  * IN * Dexch;
    }
+
+   if (OpIn.GetParticleRank() < 3) return OpHF;
 
    cout << "Transform three body" << endl;
    for (auto it_ORB : OpHF.ThreeBody)
@@ -599,11 +469,11 @@ Operator3 HartreeFock<Operator3>::TransformToHFBasis( Operator3& OpIn)
       // lowercase indices are in the original basis
       int aa,bb,cc,dd,ee,ff;
       int a,b,c,d,e,f;
-      OpHF.GetOrbitsFromIndex(it_ORB.first, aa,bb,cc,dd,ee,ff);
+      OpHF.GetOrbitsFromThreeBodyIndex(it_ORB.first, aa,bb,cc,dd,ee,ff);
       
       for (auto it_orb : OpIn.ThreeBody)
       {
-         OpHF.GetOrbitsFromIndex(it_orb.first, a,b,c,d,e,f);
+         OpHF.GetOrbitsFromThreeBodyIndex(it_orb.first, a,b,c,d,e,f);
 
          //double coeff = C(aa,a)*C(bb,b)*C(cc,c)*C(d,dd)*C(e,ee)*C(f,ff);
          cout << "it_orb = " << it_orb.first << endl;
@@ -633,8 +503,6 @@ Operator3 HartreeFock<Operator3>::TransformToHFBasis( Operator3& OpIn)
 
    return OpHF;
 }
-//template Operator HartreeFock<Operator>::TransformToHFBasis(Operator&);
-//template Operator3 HartreeFock<Operator3>::TransformToHFBasis(Operator3&);
 
 
 

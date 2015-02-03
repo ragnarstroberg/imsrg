@@ -454,18 +454,6 @@ orbindx_t Operator3::GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, i
    orbindx_t orb_indx = (aa>=dd) ? (orbit_index_bra << 32) + orbit_index_ket
                                 : (orbit_index_ket << 32) + orbit_index_bra;
 
-/*
-   int aa = a-a%2;
-   int bb = b-b%2;
-   int cc = c-c%2;
-   int dd = d-d%2;
-   int ee = e-e%2;
-   int ff = f-f%2;
-   int orbit_index_bra =  aa*(aa+1)*(aa+2)/6 + bb*(bb+1)/2 + cc;
-   int orbit_index_ket =  dd*(dd+1)*(dd+2)/6 + ee*(ee+1)/2 + ff;
-   long int orb_indx = (aa>=dd) ? (orbit_index_bra * (orbit_index_bra+1))/2 + orbit_index_ket
-                                : (orbit_index_ket * (orbit_index_ket+1))/2 + orbit_index_bra;
-*/
    return orb_indx;
 }
 
@@ -483,22 +471,6 @@ void Operator3::GetOrbitsFromIndex(orbindx_t orb_indx, int& a, int& b, int& c, i
     swap(b,e);
     swap(c,f);
   }
-/*
-  int orbit_index_bra = int(sqrt(1+8*orb_indx)-1)/2;
-  int orbit_index_ket = orb_indx - orbit_index_bra;
-  a = int (pow(orbit_index_bra,1./3.0));
-  while (a*(a+1)*(a+2)<=6*orbit_index_bra) ++a;
-  --a;
-  orbit_index_bra -= a*(a+1)*(a+2)/6;
-  b = int(sqrt(1+8*orbit_index_bra)-1)/2;
-  c = orbit_index_bra-b*(b+1)/2;
-  d = int (pow(orbit_index_ket,1./3.0));
-  while (d*(d+1)*(d+2)<=6*orbit_index_ket) ++d;
-  --d;
-  orbit_index_ket -= d*(d+1)*(d+2)/6;
-  e = int(sqrt(1+8*orbit_index_ket)-1)/2;
-  f = orbit_index_bra-e*(e+1)/2;
-*/
 }
 
 

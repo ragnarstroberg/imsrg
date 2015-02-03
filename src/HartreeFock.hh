@@ -2,17 +2,14 @@
 #define HartreeFock_h
 
 #include "Operator.hh"
-#include "Operator3.hh"
+//#include "Operator3.hh"
 #include <armadillo>
 #include <map>
 
-template<class OPERATOR>
 class HartreeFock
 {
  public:
-//   Operator3& Hbare;         // Input bare Hamiltonian
-//   Operator& Hbare;         // Input bare Hamiltonian
-   OPERATOR& Hbare;         // Input bare Hamiltonian
+   Operator& Hbare;         // Input bare Hamiltonian
    arma::mat C;             // coefficients, 1st index is ho basis, 2nd = HF basis
    arma::mat rho;           // density matrix rho_ij
    arma::mat t;             // kinetic energy
@@ -30,9 +27,7 @@ class HartreeFock
    map<unsigned long long int, double> Vmon3; // Monopole 3-body interaction
    
 
-   HartreeFock(OPERATOR&  hbare);
-//   HartreeFock(Operator&  hbare);
-//   HartreeFock(Operator3&  hbare);
+   HartreeFock(Operator&  hbare);
    void BuildMonopoleV();
    void Diagonalize();
    void UpdateH();
@@ -44,15 +39,11 @@ class HartreeFock
    void PrintRho(int );
    void CalcEHF();
    void ReorderCoefficients();
-//   Operator TransformToHFBasis( Operator& OpIn);
-   OPERATOR TransformToHFBasis( OPERATOR& OpIn);
+   Operator TransformToHFBasis( Operator& OpIn);
 
    void BuildMonopoleV3();
-//   void BuildMonopoleV3(Operator& Hbare);
-//   void BuildMonopoleV3(Operator3& Hbare);
 
-//   Operator GetHbare(){return Hbare;};
-   OPERATOR GetHbare(){return Hbare;};
+   Operator GetHbare(){return Hbare;};
 
 };
 
