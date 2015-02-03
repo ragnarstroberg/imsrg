@@ -1,6 +1,6 @@
 
-#ifndef TensorOperator_h
-#define TensorOperator_h 1
+#ifndef Operator_h
+#define Operator_h 1
 
 #include "ModelSpace.hh"
 #include <armadillo>
@@ -9,7 +9,7 @@
 
 using namespace std;
 
-class TensorOperator
+class Operator
 {
  public:
   //Fields
@@ -26,21 +26,21 @@ class TensorOperator
 
   //Constructors
   // In the future, consider using C++11 rvalues / move constructor to avoid copies in certain cases
-  TensorOperator();
-//  TensorOperator(ModelSpace&);
-  TensorOperator(ModelSpace&, int Jrank, int Trank, int Parity);
-  TensorOperator( const TensorOperator& rhs);
+  Operator();
+//  Operator(ModelSpace&);
+  Operator(ModelSpace&, int Jrank, int Trank, int Parity);
+  Operator( const Operator& rhs);
 
   //Overloaded operators
-  TensorOperator& operator=( const TensorOperator& rhs);
-  TensorOperator& operator+=( const TensorOperator& rhs);
-  TensorOperator operator+( const TensorOperator& rhs) const;
-  TensorOperator& operator-=( const TensorOperator& rhs);
-  TensorOperator operator-( const TensorOperator& rhs) const;
-  TensorOperator& operator*=( const double rhs);
-  TensorOperator operator*( const double rhs) const;
-  TensorOperator& operator/=( const double rhs);
-  TensorOperator operator/( const double rhs) const;
+  Operator& operator=( const Operator& rhs);
+  Operator& operator+=( const Operator& rhs);
+  Operator operator+( const Operator& rhs) const;
+  Operator& operator-=( const Operator& rhs);
+  Operator operator-( const Operator& rhs) const;
+  Operator& operator*=( const double rhs);
+  Operator operator*( const double rhs) const;
+  Operator& operator/=( const double rhs);
+  Operator operator/( const double rhs) const;
 
   //Methods
   // One body setter/getters
@@ -101,16 +101,16 @@ class TensorOperator
   void ScaleTwoBody(double x);
 
   // The actually interesting methods
-  TensorOperator Commutator(const TensorOperator& opright) const;
-  TensorOperator BCH_Product( const TensorOperator& ) const ; 
-  TensorOperator BCH_Transform( const TensorOperator& ) const; 
-  TensorOperator DoNormalOrdering(); 
+  Operator Commutator(const Operator& opright) const;
+  Operator BCH_Product( const Operator& ) const ; 
+  Operator BCH_Transform( const Operator& ) const; 
+  Operator DoNormalOrdering(); 
   void Eye(); // set to identity operator
   void CalculateKineticEnergy();
 
-  TensorOperator CommutatorScalarScalar(const TensorOperator& opright) const;
-  TensorOperator CommutatorScalarTensor(const TensorOperator& opright) const;
-  TensorOperator CommutatorTensorTensor(const TensorOperator& opright) const;
+  Operator CommutatorScalarScalar(const Operator& opright) const;
+  Operator CommutatorScalarTensor(const Operator& opright) const;
+  Operator CommutatorTensorTensor(const Operator& opright) const;
 
   double Norm() const;
   double OneBodyNorm() const;
@@ -132,7 +132,7 @@ class TensorOperator
   static double bch_product_threshold;
 
   //Methods
-  void Copy(const TensorOperator& rhs);
+  void Copy(const Operator& rhs);
 
   static void Set_BCH_Transform_Threshold(double x){bch_transform_threshold=x;};
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
@@ -140,39 +140,39 @@ class TensorOperator
   
   void CalculateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) const; 
 
-  void comm110ss(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm220ss(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm111ss(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm121ss(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm221ss(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm122ss(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm222_pp_hhss(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm222_phss(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm222_pp_hh_221ss(const TensorOperator& opright, TensorOperator& opout) const;
+  void comm110ss(const Operator& opright, Operator& opout) const;
+  void comm220ss(const Operator& opright, Operator& opout) const;
+  void comm111ss(const Operator& opright, Operator& opout) const;
+  void comm121ss(const Operator& opright, Operator& opout) const;
+  void comm221ss(const Operator& opright, Operator& opout) const;
+  void comm122ss(const Operator& opright, Operator& opout) const;
+  void comm222_pp_hhss(const Operator& opright, Operator& opout) const;
+  void comm222_phss(const Operator& opright, Operator& opout) const;
+  void comm222_pp_hh_221ss(const Operator& opright, Operator& opout) const;
 
 // make st and tt commutators
 
-  void comm111st(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm121st(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm221st(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm122st(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm222_pp_hhst(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm222_phst(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm222_pp_hh_221st(const TensorOperator& opright, TensorOperator& opout) const;
+  void comm111st(const Operator& opright, Operator& opout) const;
+  void comm121st(const Operator& opright, Operator& opout) const;
+  void comm221st(const Operator& opright, Operator& opout) const;
+  void comm122st(const Operator& opright, Operator& opout) const;
+  void comm222_pp_hhst(const Operator& opright, Operator& opout) const;
+  void comm222_phst(const Operator& opright, Operator& opout) const;
+  void comm222_pp_hh_221st(const Operator& opright, Operator& opout) const;
 
 
-  void comm111tt(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm121tt(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm221tt(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm122tt(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm222_pp_hhtt(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm222_phtt(const TensorOperator& opright, TensorOperator& opout) const;
-  void comm222_pp_hh_221tt(const TensorOperator& opright, TensorOperator& opout) const;
+  void comm111tt(const Operator& opright, Operator& opout) const;
+  void comm121tt(const Operator& opright, Operator& opout) const;
+  void comm221tt(const Operator& opright, Operator& opout) const;
+  void comm122tt(const Operator& opright, Operator& opout) const;
+  void comm222_pp_hhtt(const Operator& opright, Operator& opout) const;
+  void comm222_phtt(const Operator& opright, Operator& opout) const;
+  void comm222_pp_hh_221tt(const Operator& opright, Operator& opout) const;
 
 };
 
 // Non member function, multiply by scalar from left side
-TensorOperator operator*(const double lhs, const TensorOperator& rhs);
+Operator operator*(const double lhs, const Operator& rhs);
 
 #endif
 

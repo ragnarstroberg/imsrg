@@ -1,12 +1,19 @@
 
 #include "IMSRGSolver.hh"
-#include <boost/numeric/odeint.hpp>
+#include <iomanip>
 
+#ifndef NO_ODE
+#include <boost/numeric/odeint.hpp>
+#endif
 
 
 // Constructor
+#ifndef NO_ODE
 IMSRGSolver::IMSRGSolver(const Operator &H_in)
    : ode_monitor(*this)
+#else
+IMSRGSolver::IMSRGSolver(const Operator &H_in)
+#endif
 {
    method = "BCH";
    generator = "white";
@@ -81,7 +88,7 @@ void IMSRGSolver::Solve()
 }
 
 
-
+#ifndef NO_ODE
 
 void IMSRGSolver::Solve_ode()
 {
@@ -156,6 +163,7 @@ void IMSRGSolver::ODE_systemOmega(const Operator& x, Operator& dxdt, const doubl
    }
 }
 
+#endif
 
 
 // Returns exp(Omega) OpIn exp(-Omega)

@@ -12,6 +12,7 @@ using namespace std;
 class IMSRGSolver
 {
 
+#ifndef NO_ODE
   // This is used to get flow info from odeint
   class ODE_Monitor
   {
@@ -41,15 +42,17 @@ class IMSRGSolver
     private:
      IMSRGSolver& imsrgsolver;
   };
-
+#endif
 
   public:
   IMSRGSolver(const Operator& H_in);
   void Solve();
+#ifndef NO_ODE
   void Solve_ode();
   void Solve_ode_magnus();
   void ODE_systemH(const Operator& x, Operator& dxdt, const double t);
   void ODE_systemOmega(const Operator& x, Operator& dxdt, const double t);
+#endif
   Operator Transform(Operator& OpIn);
   void SetFlowFile(string s){flowfile = s;};
   void SetDs(double d){ds = d;};
@@ -77,8 +80,9 @@ class IMSRGSolver
   string method;
   string generator;
   string flowfile;
+#ifndef NO_ODE
   ODE_Monitor ode_monitor;
-
+#endif
 
   vector<double> times;
   vector<double> E0;

@@ -1,5 +1,5 @@
 
-#include "TensorOperator.hh"
+#include "Operator.hh"
 #include "AngMom.hh"
 #include <cmath>
 #include <iostream>
@@ -13,17 +13,17 @@ using namespace std;
 //===================================================================================
 //===================================================================================
 
-double  TensorOperator::bch_transform_threshold = 1e-6;
-double  TensorOperator::bch_product_threshold = 1e-4;
+double  Operator::bch_transform_threshold = 1e-6;
+double  Operator::bch_product_threshold = 1e-4;
 
 /////////////////// CONSTRUCTORS /////////////////////////////////////////
-TensorOperator::TensorOperator() :
+Operator::Operator() :
    modelspace(NULL), nChannels(0), hermitian(true), antihermitian(false)
 {}
 
 
 // Create a zero-valued operator in a given model space
-TensorOperator::TensorOperator(ModelSpace& ms, int Jrank=0, int Trank=0, int p=0) : 
+Operator::Operator(ModelSpace& ms, int Jrank=0, int Trank=0, int p=0) : 
     hermitian(true), antihermitian(false), ZeroBody(0) ,
     nChannels(ms.GetNumberTwoBodyChannels()) ,
     OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
@@ -52,13 +52,13 @@ TensorOperator::TensorOperator(ModelSpace& ms, int Jrank=0, int Trank=0, int p=0
 
 }
 
-TensorOperator::TensorOperator(const TensorOperator& op)
+Operator::Operator(const Operator& op)
 {
    Copy(op);
 }
 
 /////////// COPY METHOD //////////////////////////
-void TensorOperator::Copy(const TensorOperator& op)
+void Operator::Copy(const Operator& op)
 {
    modelspace    = op.modelspace;
    nChannels     = op.nChannels;
@@ -71,14 +71,14 @@ void TensorOperator::Copy(const TensorOperator& op)
 }
 
 /////////////// OVERLOADED OPERATORS =,+,-,*,etc ////////////////////
-TensorOperator& TensorOperator::operator=(const TensorOperator& rhs)
+Operator& Operator::operator=(const Operator& rhs)
 {
    Copy(rhs);
    return *this;
 }
 
 // multiply operator by a scalar
-TensorOperator& TensorOperator::operator*=(const double rhs)
+Operator& Operator::operator*=(const double rhs)
 {
    ZeroBody *= rhs;
    OneBody *= rhs;
@@ -92,36 +92,36 @@ TensorOperator& TensorOperator::operator*=(const double rhs)
    return *this;
 }
 
-TensorOperator TensorOperator::operator*(const double rhs) const
+Operator Operator::operator*(const double rhs) const
 {
-   TensorOperator opout = TensorOperator(*this);
+   Operator opout = Operator(*this);
    opout *= rhs;
    return opout;
 }
 
 // Add non-member operator so we can multiply an operator
 // by a scalar from the lhs, i.e. s*O = O*s
-TensorOperator operator*(const double lhs, const TensorOperator& rhs)
+Operator operator*(const double lhs, const Operator& rhs)
 {
    return rhs * lhs;
 }
 
 
 // divide operator by a scalar
-TensorOperator& TensorOperator::operator/=(const double rhs)
+Operator& Operator::operator/=(const double rhs)
 {
    return *this *=(1.0/rhs);
 }
 
-TensorOperator TensorOperator::operator/(const double rhs) const
+Operator Operator::operator/(const double rhs) const
 {
-   TensorOperator opout = TensorOperator(*this);
+   Operator opout = Operator(*this);
    opout *= (1.0/rhs);
    return opout;
 }
 
 // Add operators
-TensorOperator& TensorOperator::operator+=(const TensorOperator& rhs)
+Operator& Operator::operator+=(const Operator& rhs)
 {
    ZeroBody += rhs.ZeroBody;
    OneBody += rhs.OneBody;
@@ -135,13 +135,13 @@ TensorOperator& TensorOperator::operator+=(const TensorOperator& rhs)
    return *this;
 }
 
-TensorOperator TensorOperator::operator+(const TensorOperator& rhs) const
+Operator Operator::operator+(const Operator& rhs) const
 {
-   return ( TensorOperator(*this) += rhs );
+   return ( Operator(*this) += rhs );
 }
 
 // Subtract operators
-TensorOperator& TensorOperator::operator-=(const TensorOperator& rhs)
+Operator& Operator::operator-=(const Operator& rhs)
 {
    ZeroBody -= rhs.ZeroBody;
    OneBody -= rhs.OneBody;
@@ -155,17 +155,17 @@ TensorOperator& TensorOperator::operator-=(const TensorOperator& rhs)
    return *this;
 }
 
-TensorOperator TensorOperator::operator-(const TensorOperator& rhs) const
+Operator Operator::operator-(const Operator& rhs) const
 {
-   return ( TensorOperator(*this) -= rhs );
+   return ( Operator(*this) -= rhs );
 }
 
 
 
 ///////// SETTER_GETTERS ///////////////////////////
 
-//double TensorOperator::GetTBME(int ch, int a, int b, int c, int d) const
-double TensorOperator::GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const
+//double Operator::GetTBME(int ch, int a, int b, int c, int d) const
+double Operator::GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const
 {
    TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
    TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
@@ -186,7 +186,7 @@ double TensorOperator::GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int 
 }
 
 
-void TensorOperator::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme)
+void Operator::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme)
 {
    TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
    TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
@@ -201,7 +201,7 @@ void TensorOperator::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d,
 }
 
 
-void TensorOperator::AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme)
+void Operator::AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme)
 {
    TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
    TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
@@ -215,49 +215,49 @@ void TensorOperator::AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int 
    if (antihermitian) TwoBody[ch_bra][ch_ket](ket_ind,bra_ind) -=  phase * tbme;
 }
 
-double TensorOperator::GetTBME(int ch_bra, int ch_ket, Ket &bra, Ket &ket) const
+double Operator::GetTBME(int ch_bra, int ch_ket, Ket &bra, Ket &ket) const
 {
    return GetTBME(ch_bra,ch_ket,bra.p,bra.q,ket.p,ket.q);
 }
-void TensorOperator::SetTBME(int ch_bra, int ch_ket, Ket& ket, Ket& bra, double tbme)
+void Operator::SetTBME(int ch_bra, int ch_ket, Ket& ket, Ket& bra, double tbme)
 {
    SetTBME(ch_bra, ch_ket, bra.p,bra.q,ket.p,ket.q,tbme);
 }
-void TensorOperator::AddToTBME(int ch_bra, int ch_ket, Ket& ket, Ket& bra, double tbme)
+void Operator::AddToTBME(int ch_bra, int ch_ket, Ket& ket, Ket& bra, double tbme)
 {
    AddToTBME(ch_bra, ch_ket, bra.p,bra.q,ket.p,ket.q, tbme);
 }
-double TensorOperator::GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d) const
+double Operator::GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d) const
 {
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,p_bra,t_bra);
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,p_ket,t_ket);
    return GetTBME(ch_bra,ch_ket,a,b,c,d);
 }
-void TensorOperator::SetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d, double tbme)
+void Operator::SetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d, double tbme)
 {
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,p_bra,t_bra);
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,p_ket,t_ket);
    SetTBME(ch_bra,ch_ket,a,b,c,d,tbme);
 }
-void TensorOperator::AddToTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d, double tbme)
+void Operator::AddToTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d, double tbme)
 {
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,p_bra,t_bra);
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,p_ket,t_ket);
    AddToTBME(ch_bra,ch_ket,a,b,c,d,tbme);
 }
-double TensorOperator::GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket) const
+double Operator::GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket) const
 {
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,p_bra,t_bra);
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,p_ket,t_ket);
    return GetTBME(ch_bra,ch_ket,bra,ket);
 }
-void TensorOperator::SetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket, double tbme)
+void Operator::SetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket, double tbme)
 {
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,p_bra,t_bra);
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,p_ket,t_ket);
    SetTBME(ch_bra,ch_ket,bra,ket,tbme);
 }
-void TensorOperator::AddToTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket, double tbme)
+void Operator::AddToTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket, double tbme)
 {
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,p_bra,t_bra);
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,p_ket,t_ket);
@@ -267,69 +267,69 @@ void TensorOperator::AddToTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p
 
 
 // for backwards compatibility...
-double TensorOperator::GetTBME(int ch, int a, int b, int c, int d) const
+double Operator::GetTBME(int ch, int a, int b, int c, int d) const
 {
    return GetTBME(ch,ch,a,b,c,d);
 }
 
-double TensorOperator::SetTBME(int ch, int a, int b, int c, int d, double tbme) const
+double Operator::SetTBME(int ch, int a, int b, int c, int d, double tbme) const
 {
    return SetTBME(ch,ch,a,b,c,d,tbme);
 }
 
-double TensorOperator::GetTBME(int ch, Ket &bra, Ket &ket) const
+double Operator::GetTBME(int ch, Ket &bra, Ket &ket) const
 {
    return GetTBME(ch,ch,bra.p,bra.q,ket.p,ket.q);
 }
 
-void TensorOperator::SetTBME(int ch, Ket& ket, Ket& bra, double tbme)
+void Operator::SetTBME(int ch, Ket& ket, Ket& bra, double tbme)
 {
    SetTBME(ch,ch, bra.p,bra.q,ket.p,ket.q,tbme);
 }
 
-void TensorOperator::AddToTBME(int ch, Ket& ket, Ket& bra, double tbme)
+void Operator::AddToTBME(int ch, Ket& ket, Ket& bra, double tbme)
 {
    AddToTBME(ch,ch bra.p,bra.q,ket.p,ket.q,tbme);
 }
 
-double TensorOperator::GetTBME(int j, int p, int t, int a, int b, int c, int d) const
+double Operator::GetTBME(int j, int p, int t, int a, int b, int c, int d) const
 {
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    return GetTBME(ch,ch,a,b,c,d);
 }
 
-void TensorOperator::SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme)
+void Operator::SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme)
 {
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    SetTBME(ch,ch,a,b,c,d,tbme);
 }
 
-void TensorOperator::AddToTBME(int j, int p, int t, int a, int b, int c, int d, double tbme)
+void Operator::AddToTBME(int j, int p, int t, int a, int b, int c, int d, double tbme)
 {
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    AddToTBME(ch,ch,a,b,c,d,tbme);
 }
 
-double TensorOperator::GetTBME(int j, int p, int t, Ket& bra, Ket& ket) const
+double Operator::GetTBME(int j, int p, int t, Ket& bra, Ket& ket) const
 {
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    return GetTBME(ch,ch,bra,ket);
 }
 
-void TensorOperator::SetTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme)
+void Operator::SetTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme)
 {
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    SetTBME(ch,ch,bra,ket,tbme);
 }
 
-void TensorOperator::AddToTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme)
+void Operator::AddToTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme)
 {
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    AddToTBME(ch,ch,bra,ket,tbme);
 }
 
 
-double TensorOperator::GetTBMEmonopole(int a, int b, int c, int d) const
+double Operator::GetTBMEmonopole(int a, int b, int c, int d) const
 {
    double mon = 0;
    Orbit &oa = modelspace->GetOrbit(a);
@@ -354,7 +354,7 @@ double TensorOperator::GetTBMEmonopole(int a, int b, int c, int d) const
    return mon;
 }
 
-double TensorOperator::GetTBMEmonopole(Ket & bra, Ket & ket) const
+double Operator::GetTBMEmonopole(Ket & bra, Ket & ket) const
 {
    return GetTBMEmonopole(bra.p,bra.q,ket.p,ket.q);
 }
@@ -363,9 +363,9 @@ double TensorOperator::GetTBMEmonopole(Ket & bra, Ket & ket) const
 
 ////////////////// MAIN INTERFACE METHODS //////////////////////////
 
-TensorOperator TensorOperator::DoNormalOrdering()
+Operator Operator::DoNormalOrdering()
 {
-   TensorOperator opNO = *this;
+   Operator opNO = *this;
 
    // Trivial parts
    opNO.ZeroBody = ZeroBody;
@@ -429,7 +429,7 @@ TensorOperator TensorOperator::DoNormalOrdering()
 
 
 
-void TensorOperator::EraseTwoBody()
+void Operator::EraseTwoBody()
 {
    for (int ch=0;ch<nChannels;++ch)
    {
@@ -440,17 +440,17 @@ void TensorOperator::EraseTwoBody()
    }
 }
 
-void TensorOperator::ScaleZeroBody(double x)
+void Operator::ScaleZeroBody(double x)
 {
    ZeroBody *= x;
 }
 
-void TensorOperator::ScaleOneBody(double x)
+void Operator::ScaleOneBody(double x)
 {
    OneBody *= x;
 }
 
-void TensorOperator::ScaleTwoBody(double x)
+void Operator::ScaleTwoBody(double x)
 {
    for (int ch=0; ch<nChannels; ++ch)
    {
@@ -461,7 +461,7 @@ void TensorOperator::ScaleTwoBody(double x)
    }
 }
 
-void TensorOperator::Eye()
+void Operator::Eye()
 {
    ZeroBody = 1;
    OneBody.eye();
@@ -475,7 +475,7 @@ void TensorOperator::Eye()
 }
 
 
-void TensorOperator::CalculateKineticEnergy()
+void Operator::CalculateKineticEnergy()
 {
    OneBody.zeros();
    int norbits = modelspace->GetNumberOrbits();
@@ -502,6 +502,7 @@ void TensorOperator::CalculateKineticEnergy()
 
 
 //*****************************************************************************************
+//  I think this explanation needs to be revisited...
 //   Transform to a cross-coupled basis, for use in the 2body commutator relation
 //    using a Pandya tranformation 
 //                                               ____________________________________________________________________________
@@ -516,8 +517,8 @@ void TensorOperator::CalculateKineticEnergy()
 //   STANDARD                 CROSS  
 //   COUPLING                 COUPLED  
 //                                      
-//void TensorOperator::CalculateCrossCoupled()
-void TensorOperator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<arma::mat> &TwoBody_CC_right) const
+//void Operator::CalculateCrossCoupled()
+void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<arma::mat> &TwoBody_CC_right) const
 {
    // loop over cross-coupled channels
    #pragma omp parallel for
@@ -531,7 +532,7 @@ void TensorOperator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, v
 //   These matrices don't actually need to be square, since we only care about
 //   the particle-hole kets, which we sum over via matrix multiplication:
 //   [ ]                  [     ]
-//   |L|  x  [  R   ]  =  |  M  |
+//   |L|  x  [  R   ]  =  |  N  |
 //   [ ]                  [     ]
 //
       TwoBody_CC_left[ch_cc]  = arma::mat(2*nKets_cc, nph_kets,   arma::fill::zeros);
@@ -603,15 +604,15 @@ void TensorOperator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, v
 
 //*****************************************************************************************
 //  OpOut = exp(Omega) Op exp(-Omega)
-TensorOperator TensorOperator::BCH_Transform( const TensorOperator &Omega) const
+Operator Operator::BCH_Transform( const Operator &Omega) const
 {
 //   double bch_transform_threshold = 1e-6;
    int max_iter = 20;
    int warn_iter = 12;
    double nx = Norm();
    double ny = Omega.Norm();
-   TensorOperator OpOut = *this;
-   TensorOperator OpNested = *this;
+   Operator OpOut = *this;
+   Operator OpNested = *this;
    for (int i=1; i<max_iter; ++i)
    {
       OpNested = Omega.Commutator(OpNested) / i;
@@ -639,14 +640,14 @@ TensorOperator TensorOperator::BCH_Transform( const TensorOperator &Omega) const
 //     - 1/24 [Y,[X,[X,Y]]]
 //     - 1/720 [Y,[Y,[Y,[Y,X]]]] - 1/720 [X,[X,[X,[X,Y]]]]
 //     + ...
-TensorOperator TensorOperator::BCH_Product( const TensorOperator &Y) const
+Operator Operator::BCH_Product( const Operator &Y) const
 {
-   const TensorOperator& X = *this;
+   const Operator& X = *this;
 //   double bch_product_threshold = 1e-4;
 
-   TensorOperator Z = X + Y; 
+   Operator Z = X + Y; 
 
-   TensorOperator XY = X.Commutator(Y);
+   Operator XY = X.Commutator(Y);
    Z += XY*(1./2);    // [X,Y]
    double nx = X.Norm();
    double ny = Y.Norm();
@@ -654,13 +655,13 @@ TensorOperator TensorOperator::BCH_Product( const TensorOperator &Y) const
 
    if ( nc1/2 < (nx+ny)*bch_product_threshold ) return Z;
 
-   TensorOperator YYX = XY.Commutator(Y); // [[X,Y],Y] = [Y,[Y,X]]
+   Operator YYX = XY.Commutator(Y); // [[X,Y],Y] = [Y,[Y,X]]
    double nc2 = YYX.Norm();
    Z += YYX * (1/12.);      // [Y,[Y,X]]
 
    if ( nc2/12 < (nx+ny)*bch_product_threshold ) return Z;
 
-   TensorOperator XXY = X.Commutator(XY); // [X,[X,Y]]
+   Operator XXY = X.Commutator(XY); // [X,[X,Y]]
    double nc3 = XXY.Norm();
    Z += XXY * (1/12.);      // [X,[X,Y]]
 
@@ -668,15 +669,15 @@ TensorOperator TensorOperator::BCH_Product( const TensorOperator &Y) const
 
    cout << "Warning: BCH product expansion not converged after 3 nested commutators!" << endl;
 
-   TensorOperator YXXY = Y.Commutator(XXY); // [Y,[X,[X,Y]]]
+   Operator YXXY = Y.Commutator(XXY); // [Y,[X,[X,Y]]]
    double nc4 = YXXY.Norm();
    Z += YXXY*(-1./24);
 
-   TensorOperator YYYX = Y.Commutator(YYX) ;
-   TensorOperator YYYYX = Y.Commutator(YYYX) ;
+   Operator YYYX = Y.Commutator(YYX) ;
+   Operator YYYYX = Y.Commutator(YYYX) ;
    double nc5 = YYYYX.Norm();
-   TensorOperator XXXY =  X.Commutator(XXY) ; // [X,[X,[X,[X,Y]]]]
-   TensorOperator XXXXY = X.Commutator(XXXY) ; // [X,[X,[X,[X,Y]]]]
+   Operator XXXY =  X.Commutator(XXY) ; // [X,[X,[X,[X,Y]]]]
+   Operator XXXXY = X.Commutator(XXXY) ; // [X,[X,[X,[X,Y]]]]
    double nc6 = XXXXY.Norm();
    Z += (YYYYX + XXXXY)*(-1./720);
 
@@ -687,7 +688,7 @@ TensorOperator TensorOperator::BCH_Product( const TensorOperator &Y) const
 }
 
 // Frobenius norm of the operator
-double TensorOperator::Norm() const
+double Operator::Norm() const
 {
    double nrm = 0;
    double n1 = OneBodyNorm();
@@ -695,12 +696,12 @@ double TensorOperator::Norm() const
    return sqrt(n1*n1+n2*n2);
 }
 
-double TensorOperator::OneBodyNorm() const
+double Operator::OneBodyNorm() const
 {
    return arma::norm(OneBody,"fro");
 }
 
-double TensorOperator::TwoBodyNorm() const
+double Operator::TwoBodyNorm() const
 {
    double nrm = 0;
    for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
@@ -715,7 +716,7 @@ double TensorOperator::TwoBodyNorm() const
 }
 
 
-TensorOperator TensorOperator::Commutator(const TensorOperator& opright) const
+Operator Operator::Commutator(const Operator& opright) const
 {
    if (rank_J==0 and rank_T==0 and parity==0)
    {
@@ -739,9 +740,9 @@ TensorOperator TensorOperator::Commutator(const TensorOperator& opright) const
 }
 
 
-TensorOperator TensorOperator::CommutatorScalarScalar(const TensorOperator& opright) const
+Operator Operator::CommutatorScalarScalar(const Operator& opright) const
 {
-   TensorOperator out = opright;
+   Operator out = opright;
    out.EraseZeroBody();
    out.EraseOneBody();
    out.EraseTwoBody();
@@ -768,9 +769,9 @@ TensorOperator TensorOperator::CommutatorScalarScalar(const TensorOperator& opri
 
 
 // Calculate [S,T]
-TensorOperator TensorOperator::CommutatorScalarTensor(const TensorOperator& opright) const
+Operator Operator::CommutatorScalarTensor(const Operator& opright) const
 {
-   TensorOperator out = opright; // This ensures the commutator has the same tensor rank as opright
+   Operator out = opright; // This ensures the commutator has the same tensor rank as opright
    out.EraseZeroBody();
    out.EraseOneBody();
    out.EraseTwoBody();
@@ -790,9 +791,9 @@ TensorOperator TensorOperator::CommutatorScalarTensor(const TensorOperator& opri
 }
 
 // This should really return a vector of operators, but I'm not going to write this until I need to.
-TensorOperator TensorOperator::CommutatorTensorTensor(const TensorOperator& opright) const
+Operator Operator::CommutatorTensorTensor(const Operator& opright) const
 {
-   TensorOperator out = opright;
+   Operator out = opright;
    out.EraseZeroBody();
    out.EraseOneBody();
    out.EraseTwoBody();
@@ -826,7 +827,7 @@ TensorOperator TensorOperator::CommutatorTensorTensor(const TensorOperator& opri
 //             = Sum_a  (2j_a+1)  (xy-yx)_aa n_a
 //
 // -- AGREES WITH NATHAN'S RESULTS
-void TensorOperator::comm110ss(const TensorOperator& opright, TensorOperator& out) const
+void Operator::comm110ss(const Operator& opright, Operator& out) const
 {
   if (IsHermitian() and opright.IsHermitian()) return ; // I think this is the case
   if (IsAntiHermitian() and opright.IsAntiHermitian()) return ; // I think this is the case
@@ -850,7 +851,7 @@ void TensorOperator::comm110ss(const TensorOperator& opright, TensorOperator& ou
 //                       = 1/2 Sum_J (2J+1) Sum_ab  (X*P_pp*Y)_abab  P_hh
 //
 //  -- AGREES WITH NATHAN'S RESULTS (within < 1%)
-void TensorOperator::comm220ss( const TensorOperator& opright, TensorOperator& out) const
+void Operator::comm220ss( const Operator& opright, Operator& out) const
 {
    if (IsHermitian() and opright.IsHermitian()) return; // I think this is the case
    if (IsAntiHermitian() and opright.IsAntiHermitian()) return; // I think this is the case
@@ -872,7 +873,7 @@ void TensorOperator::comm220ss( const TensorOperator& opright, TensorOperator& o
 //        |                 |
 //
 // -- AGREES WITH NATHAN'S RESULTS
-void TensorOperator::comm111ss(const TensorOperator & opright, TensorOperator& out) const
+void Operator::comm111ss(const Operator & opright, Operator& out) const
 {
    out.OneBody = OneBody*opright.OneBody - opright.OneBody*OneBody;
 }
@@ -888,7 +889,7 @@ void TensorOperator::comm111ss(const TensorOperator & opright, TensorOperator& o
 //                                                  * sum_b y_ab x_biaj - yba x_aibj
 //
 // -- AGREES WITH NATHAN'S RESULTS 
-void TensorOperator::comm121ss(const TensorOperator& opright, TensorOperator& out) const
+void Operator::comm121ss(const Operator& opright, Operator& out) const
 {
    int norbits = modelspace->GetNumberOrbits();
    #pragma omp parallel for
@@ -931,12 +932,12 @@ void TensorOperator::comm121ss(const TensorOperator& opright, TensorOperator& ou
 //
 // -- AGREES WITH NATHAN'S RESULTS 
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-void TensorOperator::comm221ss(const TensorOperator& opright, TensorOperator& out) const
+void Operator::comm221ss(const Operator& opright, Operator& out) const
 {
 
    int norbits = modelspace->GetNumberOrbits();
-   TensorOperator Mpp = opright;
-   TensorOperator Mhh = opright;
+   Operator Mpp = opright;
+   Operator Mhh = opright;
 
    #pragma omp parallel for schedule(dynamic,5)
    for (int ch=0;ch<nChannels;++ch)
@@ -988,7 +989,7 @@ void TensorOperator::comm221ss(const TensorOperator& opright, TensorOperator& ou
 //
 // -- AGREES WITH NATHAN'S RESULTS
 // Right now, this is the slowest one...
-void TensorOperator::comm122ss(const TensorOperator& opright, TensorOperator& opout ) const
+void Operator::comm122ss(const Operator& opright, Operator& opout ) const
 {
    int herm = opout.IsHermitian() ? 1 : -1;
 
@@ -1082,7 +1083,7 @@ void TensorOperator::comm122ss(const TensorOperator& opright, TensorOperator& op
 //
 // -- AGREES WITH NATHAN'S RESULTS
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-void TensorOperator::comm222_pp_hhss(const TensorOperator& opright, TensorOperator& opout ) const
+void Operator::comm222_pp_hhss(const Operator& opright, Operator& opout ) const
 {
    #pragma omp parallel for schedule(dynamic,5)
    for (int ch=0; ch<nChannels; ++ch)
@@ -1103,13 +1104,13 @@ void TensorOperator::comm222_pp_hhss(const TensorOperator& opright, TensorOperat
 // Since comm222_pp_hh and comm211 both require the construction of 
 // the intermediate matrices Mpp and Mhh, we can combine them and
 // only calculate the intermediates once.
-void TensorOperator::comm222_pp_hh_221ss(const TensorOperator& opright, TensorOperator& opout ) const 
+void Operator::comm222_pp_hh_221ss(const Operator& opright, Operator& opout ) const 
 {
 
    int herm = opout.IsHermitian() ? 1 : -1;
    int norbits = modelspace->GetNumberOrbits();
-   TensorOperator Mpp = opright;
-   TensorOperator Mhh = opright;
+   Operator Mpp = opright;
+   Operator Mhh = opright;
 
    #pragma omp parallel for schedule(dynamic,5)
    for (int ch=0;ch<nChannels;++ch)
@@ -1187,7 +1188,7 @@ void TensorOperator::comm222_pp_hh_221ss(const TensorOperator& opright, TensorOp
 //            
 // -- This appears to agree with Nathan's results
 //
-void TensorOperator::comm222_phss(const TensorOperator& opright, TensorOperator& opout ) const
+void Operator::comm222_phss(const Operator& opright, Operator& opout ) const
 {
 
    int herm = opout.IsHermitian() ? 1 : -1;
@@ -1319,7 +1320,7 @@ void TensorOperator::comm222_phss(const TensorOperator& opright, TensorOperator&
 //
 // -- AGREES WITH NATHAN'S RESULTS
 // This is no different from the scalar-scalar version
-void TensorOperator::comm111st(const TensorOperator & opright, TensorOperator& out) const
+void Operator::comm111st(const Operator & opright, Operator& out) const
 {
    out.OneBody = OneBody*opright.OneBody - opright.OneBody*OneBody;
 }
@@ -1335,7 +1336,7 @@ void TensorOperator::comm111st(const TensorOperator & opright, TensorOperator& o
 //                                                  * sum_b y_ab x_biaj - yba x_aibj
 //
 // -- AGREES WITH NATHAN'S RESULTS 
-void TensorOperator::comm121st(const TensorOperator& opright, TensorOperator& out) const
+void Operator::comm121st(const Operator& opright, Operator& out) const
 {
    int norbits = modelspace->GetNumberOrbits();
    int nch = modelspace->GetNumberTwoBodyChannels();
@@ -1397,12 +1398,12 @@ void TensorOperator::comm121st(const TensorOperator& opright, TensorOperator& ou
 //
 // -- AGREES WITH NATHAN'S RESULTS 
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-void TensorOperator::comm221st(const TensorOperator& opright, TensorOperator& out) const
+void Operator::comm221st(const Operator& opright, Operator& out) const
 {
 
    int norbits = modelspace->GetNumberOrbits();
-   TensorOperator Mpp = opright;
-   TensorOperator Mhh = opright;
+   Operator Mpp = opright;
+   Operator Mhh = opright;
 
    #pragma omp parallel for schedule(dynamic,5)
    for (int ch_bra=0;ch_bra<nChannels;++ch_bra)
@@ -1470,7 +1471,7 @@ void TensorOperator::comm221st(const TensorOperator& opright, TensorOperator& ou
 // -- AGREES WITH NATHAN'S RESULTS
 // Right now, this is the slowest one...
 // Haven't converted this one yet...
-void TensorOperator::comm122st(const TensorOperator& opright, TensorOperator& opout ) const
+void Operator::comm122st(const Operator& opright, Operator& opout ) const
 {
    int herm = opout.IsHermitian() ? 1 : -1;
 
@@ -1564,7 +1565,7 @@ void TensorOperator::comm122st(const TensorOperator& opright, TensorOperator& op
 //
 // -- AGREES WITH NATHAN'S RESULTS
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-void TensorOperator::comm222_pp_hhst(const TensorOperator& opright, TensorOperator& opout ) const
+void Operator::comm222_pp_hhst(const Operator& opright, Operator& opout ) const
 {
    #pragma omp parallel for schedule(dynamic,5)
    for (int ch_bra=0;ch_bra<nChannels;++ch_bra)
@@ -1595,13 +1596,13 @@ void TensorOperator::comm222_pp_hhst(const TensorOperator& opright, TensorOperat
 // Since comm222_pp_hh and comm211 both require the construction of 
 // the intermediate matrices Mpp and Mhh, we can combine them and
 // only calculate the intermediates once.
-void TensorOperator::comm222_pp_hh_221st(const TensorOperator& opright, TensorOperator& opout ) const 
+void Operator::comm222_pp_hh_221st(const Operator& opright, Operator& opout ) const 
 {
 
    int herm = opout.IsHermitian() ? 1 : -1;
    int norbits = modelspace->GetNumberOrbits();
-   TensorOperator Mpp = opright;
-   TensorOperator Mhh = opright;
+   Operator Mpp = opright;
+   Operator Mhh = opright;
 
 
    #pragma omp parallel for schedule(dynamic,5)
@@ -1690,7 +1691,7 @@ void TensorOperator::comm222_pp_hh_221st(const TensorOperator& opright, TensorOp
 // -- This appears to agree with Nathan's results
 //
 // Haven't converted this one yet...
-void TensorOperator::comm222_phst(const TensorOperator& opright, TensorOperator& opout ) const
+void Operator::comm222_phst(const Operator& opright, Operator& opout ) const
 {
 
    int herm = opout.IsHermitian() ? 1 : -1;
