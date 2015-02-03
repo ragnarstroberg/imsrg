@@ -285,13 +285,13 @@ void IMSRGSolver::ConstructGenerator_White()
    for (int ch=0;ch<nchan;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      arma::mat& ETA2 = (arma::mat&) Eta.TwoBody[ch].at(ch);
+      arma::mat& H2 = (arma::mat&) H_s.TwoBody[ch].at(ch);
       for (int& ibra : tbc.KetIndex_hh)
       {
          for (int& iket : tbc.KetIndex_pp)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
-            arma::mat& ETA2 = (arma::mat&) Eta.TwoBody[ch].at(ch);
-            arma::mat& H2 = (arma::mat&) H_s.TwoBody[ch].at(ch);
             ETA2(ibra,iket) =  H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
 //            Eta.TwoBody[ch](ibra,iket) = H_s.TwoBody[ch](ibra,iket) / denominator;
@@ -300,6 +300,45 @@ void IMSRGSolver::ConstructGenerator_White()
       }
     }
 }
+
+
+void IMSRGSolver::ConstructGenerator_Atan()
+{
+   // One body piece -- eliminate ph bits
+   for ( int &i : modelspace->particles)
+   {
+      Orbit &oi = modelspace->GetOrbit(i);
+      for (int &a : modelspace->holes)
+      {
+         Orbit &oa = modelspace->GetOrbit(a);
+         double denominator = GetEpsteinNesbet1bDenominator(i,a);
+         Eta.OneBody(i,a) = 0.5*atan(2*H_s.OneBody(i,a)/denominator);
+         Eta.OneBody(a,i) = - Eta.OneBody(i,a);
+      }
+   }
+
+   // Two body piece -- eliminate pp'hh' bits
+//   int nchan = modelspace->GetNumberTwoBodyChannels();
+//   for (int ch=0;ch<nchan;++ch)
+   for (int ch=0;ch<Eta.nChannels;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      arma::mat& ETA2 = (arma::mat&) Eta.TwoBody[ch].at(ch);
+      arma::mat& H2 = (arma::mat&) H_s.TwoBody[ch].at(ch);
+      for (int& ibra : tbc.KetIndex_hh)
+      {
+         for (int& iket : tbc.KetIndex_pp)
+         {
+            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket)) / denominator;
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+    }
+}
+
+
 
 
 
@@ -424,79 +463,6 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
 }
 
 
-
-
-void IMSRGSolver::ConstructGenerator_Atan()
-{
-   // One body piece -- eliminate ph bits
-   double maxnum = 0;
-   double maxdenom = 0;
-   int maxi = -1;
-   int maxa = -1;
-   for ( int &i : modelspace->particles)
-   {
-      Orbit &oi = modelspace->GetOrbit(i);
-      for (int &a : modelspace->holes)
-      {
-         Orbit &oa = modelspace->GetOrbit(a);
-         double denominator = GetEpsteinNesbet1bDenominator(i,a);
-         Eta.OneBody(i,a) = 0.5*atan(2*H_s.OneBody(i,a)/denominator);
-         Eta.OneBody(a,i) = - Eta.OneBody(i,a);
-         if ( abs(H_s.OneBody(i,a)) > abs(maxnum) ) 
-         {
-           maxnum = H_s.OneBody(i,a);
-           maxdenom = denominator;
-           maxi = i;
-           maxa = a;
-         }
-      }
-   }
-//   cout << "Maximum one-body term: f(" << maxi << "," << maxa << ") = " << maxnum << " / " << maxdenom << " = " << 0.5*atan(2*maxnum/maxdenom) << endl;
-
-   maxnum = 0;
-   maxdenom = 0;
-   maxi = -1;
-   maxa = -1;
-   int maxch = -1;
-   // Two body piece -- eliminate pp'hh' bits
-   int nchan = modelspace->GetNumberTwoBodyChannels();
-   for (int ch=0;ch<nchan;++ch)
-   {
-      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& ETA2 = (arma::mat&) Eta.TwoBody[ch].at(ch);
-      arma::mat& H2 = (arma::mat&) H_s.TwoBody[ch].at(ch);
-      for (int& ibra : tbc.KetIndex_pp)
-      {
-         for (int& iket : tbc.KetIndex_hh)
-         {
-            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
-//            cout << "Denominator2 = " << denominator << endl;
-
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket)) / denominator;
-            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
-//            Eta.TwoBody[ch](ibra,iket) = 0.5*atan(2*H_s.TwoBody[ch](ibra,iket) / denominator);
-//            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
-//            if ( abs(H_s.TwoBody[ch](ibra,iket)) > abs(maxnum) ) 
-/*
-            if ( abs(H2(ibra,iket)) > abs(maxnum) ) 
-            {
-//              maxnum = H_s.TwoBody[ch](ibra,iket);
-              maxnum = H2(ibra,iket);
-              maxdenom = denominator;
-              maxi = ibra;
-              maxa = iket;
-              maxch = ch;
-            }
-*/
-         }
-      }
-    }
-//   TwoBodyChannel& tbcmax = modelspace->GetTwoBodyChannel(maxch);
-//   Ket & bra  = tbcmax.GetKet(maxi);
-//   Ket & ket  = tbcmax.GetKet(maxa);
-//   cout << "Maximum two-body term: < " << bra.p << " " << bra.q << " | V | " << ket.p << " " << ket.q << " >"  << "(J=" << tbcmax.J << ") = "
-//        << maxnum << " / " << maxdenom << " = " << 0.5*atan(2*maxnum/maxdenom) << endl;
-}
 
 
 
