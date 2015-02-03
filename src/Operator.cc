@@ -178,7 +178,7 @@ Operator& Operator::operator*=(const double rhs)
    OneBody *= rhs;
    for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
    {
-      for ( auto twobody : TwoBody[ch] )
+      for ( auto &twobody : TwoBody[ch] )
       {
         arma::mat& matrix = twobody.second;
         matrix *= rhs;
@@ -917,13 +917,11 @@ Operator Operator::DoNormalOrdering3()
 
 
 
-
-
 void Operator::EraseTwoBody()
 {
    for (int ch=0;ch<nChannels;++ch)
    {
-      for (auto twobody : TwoBody[ch] )
+      for (auto &twobody : TwoBody[ch] )
       {
         arma::mat& matrix = twobody.second;
         matrix.zeros();
@@ -945,7 +943,7 @@ void Operator::ScaleTwoBody(double x)
 {
    for (int ch=0; ch<nChannels; ++ch)
    {
-     for ( auto twobody : TwoBody[ch] )
+     for ( auto &twobody : TwoBody[ch] )
      {
       arma::mat& matrix = twobody.second;
       matrix *= x;
@@ -959,7 +957,7 @@ void Operator::Eye()
    OneBody.eye();
    for (int ch=0; ch<nChannels; ++ch)
    {
-     for ( auto twobody : TwoBody[ch] )
+     for ( auto &twobody : TwoBody[ch] )
      {
         arma::mat& matrix = twobody.second;
         matrix.eye();
@@ -1194,14 +1192,16 @@ double Operator::OneBodyNorm() const
    return arma::norm(OneBody,"fro");
 }
 
+
+
 double Operator::TwoBodyNorm() const
 {
    double nrm = 0;
-   for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
+   for (int ch=0;ch<nChannels;++ch)
    {
-      for (auto twobody : TwoBody[ch] )
+      for (auto &twobody : TwoBody[ch] )
       {
-        arma::mat & matrix = twobody.second;
+        arma::mat& matrix = (arma::mat&) twobody.second;
         double n2 = arma::norm(matrix,"fro");
         nrm += n2*n2;
       }

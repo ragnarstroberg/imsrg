@@ -470,7 +470,7 @@ void IMSRGSolver::ConstructGenerator_Atan()
          for (int& iket : tbc.KetIndex_hh)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
-            cout << "Denominator2 = " << denominator << endl;
+//            cout << "Denominator2 = " << denominator << endl;
 
             ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket)) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
