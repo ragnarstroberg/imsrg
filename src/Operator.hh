@@ -186,6 +186,7 @@ class Operator
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
   
+  void DoPandyaTransformation(Operator&) const;
   void CalculateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) const; 
 
   void comm110ss(const Operator& opright, Operator& opout) const;
@@ -205,8 +206,9 @@ class Operator
   void comm221st(const Operator& opright, Operator& opout) const;
   void comm122st(const Operator& opright, Operator& opout) const;
   void comm222_pp_hhst(const Operator& opright, Operator& opout) const;
-  void comm222_phst(const Operator& opright, Operator& opout) const;
   void comm222_pp_hh_221st(const Operator& opright, Operator& opout) const;
+  void comm222_phst(const Operator& opright, Operator& opout) const;
+  void comm222_phst_pandya(const Operator& opright, Operator& opout) const;
 
 /*
   void comm111tt(const Operator& opright, Operator& opout) const;
