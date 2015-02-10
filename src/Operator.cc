@@ -972,7 +972,7 @@ void Operator::CalculateKineticEnergy()
    OneBody.zeros();
    int norbits = modelspace->GetNumberOrbits();
    int A = modelspace->GetTargetMass();
-   float hw = modelspace->GetHbarOmega();
+   double hw = modelspace->GetHbarOmega();
    for (int a=0;a<norbits;++a)
    {
       Orbit & oa = modelspace->GetOrbit(a);
@@ -1321,17 +1321,17 @@ Operator Operator::CommutatorScalarScalar(const Operator& opright) const
       comm220ss(opright, out) ;
    }
 
-//   comm111ss(opright, out);
-   comm111st(opright, out);  // << equivalent in scalar case
-//   comm121ss(opright, out);
-   comm121st(opright, out);  // << equivalent in scalar case
+   comm111ss(opright, out);
+//   comm111st(opright, out);  // << equivalent in scalar case
+   comm121ss(opright, out);
+//   comm121st(opright, out);  // << equivalent in scalar case
+   comm122ss(opright, out); // << This is NON DETERMINISTIC at the moment (!!!)
+//   comm122st(opright, out);
 
-//   comm122ss(opright, out);
-   comm122st(opright, out);
-//   comm222_pp_hh_221ss(opright, out);
-   comm222_pp_hh_221st(opright, out); // << equivalent in scalar case
-//   comm222_phss(opright, out);
-   comm222_phst(opright, out);
+   comm222_phss(opright, out);
+//   comm222_phst(opright, out);
+   comm222_pp_hh_221ss(opright, out);
+//   comm222_pp_hh_221st(opright, out); // << equivalent in scalar case
 
 
    return out;
@@ -1521,8 +1521,8 @@ void Operator::comm221ss(const Operator& opright, Operator& out) const
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
-      arma::mat& LHS = (arma::mat&) TwoBody.at(ch).at(ch);
-      arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch).at(ch);
+      auto& LHS = (arma::mat&) TwoBody.at(ch).at(ch);
+      auto& RHS = (arma::mat&) opright.TwoBody.at(ch).at(ch);
       arma::mat& Matrixpp = (arma::mat&) Mpp.TwoBody.at(ch).at(ch);
       arma::mat& Matrixhh = (arma::mat&) Mpp.TwoBody.at(ch).at(ch);
       
@@ -1578,9 +1578,12 @@ void Operator::comm122ss(const Operator& opright, Operator& opout ) const
    for (int ch=0; ch<nChannels; ++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& LHS = (arma::mat&) TwoBody.at(ch).at(ch);
-      arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch).at(ch);
-      arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch).at(ch);
+//      arma::mat& LHS = (arma::mat&) TwoBody.at(ch).at(ch);
+//      arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch).at(ch);
+//      arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch).at(ch);
+      auto& LHS = TwoBody.at(ch).at(ch);
+      auto& RHS = opright.TwoBody.at(ch).at(ch);
+      arma::mat& OUT = opout.TwoBody.at(ch).at(ch);
 
       int npq = tbc.GetNumberKets();
       int norbits = modelspace->GetNumberOrbits();
@@ -1643,7 +1646,7 @@ void Operator::comm122ss(const Operator& opright, Operator& opout ) const
 
             }
             cijkl = (ckl*pre_kl + cij*pre_ij) / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()) );
-            #pragma omp critical
+//            #pragma omp critical // this is unnecessary.
             {
             OUT(ibra,iket) += cijkl;
             if (ibra != iket)
@@ -1652,6 +1655,7 @@ void Operator::comm122ss(const Operator& opright, Operator& opout ) const
          }
       }
    }
+
 }
 
 
@@ -1804,6 +1808,7 @@ void Operator::comm222_phss(const Operator& opright, Operator& opout ) const
 {
 
    int herm = opout.IsHermitian() ? 1 : -1;
+   if (opout.IsNonHermitian() ) herm = 0;
 
    // Update Cross-coupled matrix elements
    vector<arma::mat> X_TwoBody_CC_left (nChannels, arma::mat() );
@@ -1813,18 +1818,17 @@ void Operator::comm222_phss(const Operator& opright, Operator& opout ) const
    vector<arma::mat> Y_TwoBody_CC_right (nChannels, arma::mat() );
 
    CalculateCrossCoupled(X_TwoBody_CC_left, X_TwoBody_CC_right );
-   //CalculateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right );
    opright.CalculateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right );
 
    // Construct the intermediate matrices N1 and N2
    vector<arma::mat> N1 (nChannels, arma::mat() );
-   vector<arma::mat> N2 (nChannels, arma::mat() );
  // probably better not to parallelize here, since the armadillo matrix muliplication can use OMP
  // I think that N1 == N2.t() ??? Check this. Nope, not so simple.
    for (int ch=0;ch<nChannels;++ch)
    {
-      N1[ch] = X_TwoBody_CC_left[ch] *  Y_TwoBody_CC_right[ch];
-      N2[ch] = Y_TwoBody_CC_left[ch] *  X_TwoBody_CC_right[ch];
+
+      N1[ch] = X_TwoBody_CC_left[ch] * Y_TwoBody_CC_right[ch] - Y_TwoBody_CC_left[ch] * X_TwoBody_CC_right[ch];
+      N1[ch] += N1[ch].t(); // maybe this works?  Yes !
    }
 
    // Now evaluate the commutator for each channel (standard coupling)
@@ -1875,10 +1879,7 @@ void Operator::comm222_phss(const Operator& opright, Operator& opout ) const
                if (j>l)
                  indx_jl += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
                double me1 = N1[ch_cc](indx_jl,indx_ik);
-               double me2 = N2[ch_cc](indx_jl,indx_ik);
-               double me3 = N2[ch_cc](indx_ik,indx_jl);
-               double me4 = N1[ch_cc](indx_ik,indx_jl);
-               comm -= (2*Jprime+1) * phase * sixj * (me1-me2-me3+me4);
+               comm -= (2*Jprime+1) * phase * sixj * (me1);
             }
 
             parity_cc = (oi.l+ol.l)%2;
@@ -1897,22 +1898,14 @@ void Operator::comm222_phss(const Operator& opright, Operator& opout ) const
                double sixj = modelspace->GetSixJ(jk,jl,tbc.J,ji,jj,Jprime);
                int phase = modelspace->phase(ji+jl);
                double me1 = N1[ch_cc](indx_il,indx_jk);
-               double me2 = N2[ch_cc](indx_il,indx_jk);
-               double me3 = N2[ch_cc](indx_jk,indx_il);
-               double me4 = N1[ch_cc](indx_jk,indx_il);
-               comm -= (2*Jprime+1) * phase * sixj * (me1-me2-me3+me4);
+               comm -= (2*Jprime+1) * phase * sixj * (me1);
             }
 
             comm /= sqrt((1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
-            #pragma omp critical
+            OUT(ibra,iket) += comm;
+            if (iket != ibra and herm !=0)
             {
-               OUT(ibra,iket) += comm;
-//              opout.TwoBody[ch](ibra,iket) += comm;
-              if (iket != ibra)
-              {
-                 OUT(iket,ibra) += herm*comm;
-//                 opout.TwoBody[ch](iket,ibra) += herm*comm;
-              }
+               OUT(iket,ibra) = herm * OUT(ibra,iket);
             }
          }
       }

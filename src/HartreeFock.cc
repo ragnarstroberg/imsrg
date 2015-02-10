@@ -387,7 +387,7 @@ void HartreeFock::ReorderCoefficients()
    arma::vec e_tmp = energies;
    for (int i=0;i<norbits;i++)
    {
-      float fmax = 0.0;
+      double fmax = 0.0;
       int kmax;
       int sign = 1;
       for (int k=0;k<norbits;k++)

@@ -23,6 +23,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("SetTargetMass", &ModelSpace::SetTargetMass)
       .def("GetHbarOmega", &ModelSpace::GetHbarOmega)
       .def("GetTargetMass", &ModelSpace::GetTargetMass)
+      .def("GetNumberOrbits", &ModelSpace::GetNumberOrbits)
    ;
 
    class_<ReadWrite>("ReadWrite",init<>())
@@ -61,6 +62,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def(self / double())
       .def_readwrite("ZeroBody", &Operator::ZeroBody)
       .def_readwrite("OneBody", &Operator::OneBody)
+      .def("GetOneBody", &Operator::GetOneBody)
       .def("ScaleOneBody", &Operator::ScaleOneBody)
       .def("ScaleTwoBody", &Operator::ScaleTwoBody)
       .def("DoNormalOrdering", &Operator::DoNormalOrdering)
@@ -153,6 +155,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("NumberOp",         imsrg_util::NumberOp);
 //   def("NumberOp",         imsrg_util::NumberOp<Operator>);
 //   def("NumberOp",         imsrg_util::NumberOp<Operator3>);
+   def("RSquaredOp",           imsrg_util::RSquaredOp);
+   def("E0Op",           imsrg_util::E0Op);
    def("TCM_Op",           imsrg_util::TCM_Op);
    def("HO_density",       imsrg_util::HO_density);
    def("GetOccupationsHF", imsrg_util::GetOccupationsHF);

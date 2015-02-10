@@ -35,7 +35,7 @@ class HartreeFock
    bool CheckConvergence();
    void Solve();
    void PrintOrbits();
-   void BuildKineticEnergy(float hw);
+   void BuildKineticEnergy(double hw);
    void PrintRho(int );
    void CalcEHF();
    void ReorderCoefficients();

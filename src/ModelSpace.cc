@@ -10,7 +10,7 @@ Orbit::Orbit()
 {
 }
 
-Orbit::Orbit(int nn, int ll, int jj2, int ttz2, int pph, int iio, float e=0.0)
+Orbit::Orbit(int nn, int ll, int jj2, int ttz2, int pph, int iio, double e=0.0)
 {
    n = nn;
    l = ll;
@@ -32,7 +32,7 @@ Orbit::Orbit(const Orbit& orb)
   spe = orb.spe;
 }
 
-void Orbit::Set(int nn, int ll, int jj2, int ttz2, int pph, int iio, float e)
+void Orbit::Set(int nn, int ll, int jj2, int ttz2, int pph, int iio, double e)
 {
    n = nn;
    l = ll;

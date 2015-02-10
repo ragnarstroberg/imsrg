@@ -466,8 +466,62 @@ namespace imsrg_util
    return HcmOp *hw / ( 2*A );
  }
 
+Operator RSquaredOp(ModelSpace& modelspace)
+{
+   Operator r2 = Operator(modelspace);
+   r2.OneBody.zeros();
+   int norbits = modelspace.GetNumberOrbits();
+   int A = modelspace.GetTargetMass();
+   double hw = modelspace.GetHbarOmega();
+   for (int a=0;a<norbits;++a)
+   {
+      Orbit & oa = modelspace.GetOrbit(a);
+      r2.OneBody(a,a) = (2*oa.n + oa.l +3./2); 
+      for (int b=a+1;b<norbits;++b) 
+      {
+         Orbit & ob = modelspace.GetOrbit(b);
+         if (oa.l == ob.l and oa.j2 == ob.j2 and oa.tz2 == ob.tz2)
+         {
+            if (oa.n == ob.n+1)
+               r2.OneBody(a,b) = sqrt( (oa.n)*(oa.n + oa.l +1./2));
+            else if (oa.n == ob.n-1)
+               r2.OneBody(a,b) = sqrt( (ob.n)*(ob.n + ob.l +1./2));
+            r2.OneBody(b,a) = r2.OneBody(a,b);
+         }
+      }
+   }
+   r2.OneBody *= (HBARC*HBARC/M_NUCLEON/hw);
+   return r2;
+}
 
-
+Operator E0Op(ModelSpace& modelspace)
+{
+   Operator e0 = Operator(modelspace);
+   e0.EraseZeroBody();
+   int norbits = modelspace.GetNumberOrbits();
+   int A = modelspace.GetTargetMass();
+   double hw = modelspace.GetHbarOmega();
+   for (int a=0;a<norbits;++a)
+   {
+      Orbit & oa = modelspace.GetOrbit(a);
+      if (oa.tz2 > 0 ) continue; // Only want to count the protons
+      e0.OneBody(a,a) = (2*oa.n + oa.l +3./2); 
+      for (int b=a+1;b<norbits;++b) 
+      {
+         Orbit & ob = modelspace.GetOrbit(b);
+         if (oa.l == ob.l and oa.j2 == ob.j2 and oa.tz2 == ob.tz2)
+         {
+            if (oa.n == ob.n+1)
+               e0.OneBody(a,b) = sqrt( (oa.n)*(oa.n + oa.l +1./2));
+            else if (oa.n == ob.n-1)
+               e0.OneBody(a,b) = sqrt( (ob.n)*(ob.n + ob.l +1./2));
+            e0.OneBody(b,a) = e0.OneBody(a,b);
+         }
+      }
+   }
+   e0.OneBody *= (HBARC*HBARC/M_NUCLEON/hw);
+   return e0;
+}
 
  // Evaluate <bra | hcom | ket>, omitting the factor (hbar * omega) /(m * omega^2)
  double Calculate_hcom(ModelSpace& modelspace, Ket & bra, Ket & ket, int J)

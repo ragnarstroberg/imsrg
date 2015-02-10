@@ -17,7 +17,7 @@ class Operator
 {
  public:
   //Fields
-  float ZeroBody;
+  double ZeroBody;
   arma::mat OneBody;
 //  vector<arma::mat> TwoBody;
 //  vector<vector<arma::mat> > TwoBody;
@@ -60,8 +60,8 @@ class Operator
 
   //Methods
   // One body setter/getters
-  float GetOneBody(int i,int j) {return OneBody(i,j);};
-  void SetOneBody(int i, int j, float val) { OneBody(i,j) = val;};
+  double GetOneBody(int i,int j) {return OneBody(i,j);};
+  void SetOneBody(int i, int j, double val) { OneBody(i,j) = val;};
 
   //TwoBody setter/getters
   double GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const;

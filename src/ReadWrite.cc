@@ -61,8 +61,8 @@ ModelSpace ReadWrite::ReadModelSpace( string filename)
    char cbuf[10][20];
    int ibuf[2];
    int n,l,j2,tz2;
-   float fbuf[2];
-   float spe,hw;
+   double fbuf[2];
+   double spe,hw;
    int A;
    
    infile.open(filename);
@@ -124,8 +124,8 @@ void ReadWrite::ReadBareTBME( string filename, Operator& Hbare)
   ifstream infile;
   char line[LINESIZE];
   int Tz,Par,J2,a,b,c,d;
-  float fbuf[3];
-  float tbme;
+  double fbuf[3];
+  double tbme;
   int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
 
   infile.open(filename);
@@ -178,8 +178,8 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
   int na,nb,nc,nd;
   int la,lb,lc,ld;
   int ja,jb,jc,jd;
-  float fbuf[3];
-  float tbme;
+  double fbuf[3];
+  double tbme;
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int norbits = modelspace->GetNumberOrbits();
 
@@ -278,14 +278,14 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
     b = orbits_remap[nlj2];
     c = orbits_remap[nlj3];
     d = orbits_remap[nlj4];
-/*
+
     if (doCoM_corr)
     {
-        vpn -= trel * 2 * hw / Hbare.GetModelSpace()->GetTargetMass();
-        vpp -= trel * 2 * hw / Hbare.GetModelSpace()->GetTargetMass();
-        vnn -= trel * 2 * hw / Hbare.GetModelSpace()->GetTargetMass();
+        vpn += trel * 2 * hw / Hbare.GetModelSpace()->GetTargetMass();
+        vpp += trel * 2 * hw / Hbare.GetModelSpace()->GetTargetMass();
+        vnn += trel * 2 * hw / Hbare.GetModelSpace()->GetTargetMass();
     }
-*/    
+    
     //if (a>=norb or b>=norb or c>=norb or d>=norb) continue;
     if (2*nlj1>=norb or 2*nlj2>=norb or 2*nlj3>=norb or 2*nlj4>=norb) continue;
     Orbit oa = modelspace->GetOrbit(a);
@@ -733,8 +733,8 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
    int neutron_core_orbits = 0;
    int Acore = 0;
    int wint = 4; // width for printing integers
-   int wfloat = 12; // width for printing floats
-   int pfloat = 6; // precision for printing floats
+   int wdouble = 12; // width for printing doubles
+   int pdouble = 6; // precision for printing doubles
    for (int& i : modelspace->hole_qspace)
    {
       Orbit& oi = modelspace->GetOrbit(i);
@@ -841,7 +841,7 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
               << "   "
               << setw(wint) << T
               << "       "
-              << setw(wfloat) << setprecision(pfloat) << tbme
+              << setw(wdouble) << setprecision(pdouble) << tbme
               << endl;
          }
       }
@@ -862,7 +862,7 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
    int Acore = 0;
    int Zcore = 0;
    int wint = 4; // width for printing integers
-   int wfloat = 12; // width for printing floats
+   int wdouble = 12; // width for printing doubles
    //for (int& i : modelspace->holes)
    for (int& i : modelspace->hole_qspace)
    {
@@ -923,7 +923,7 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
    int nvalence_proton_orbits = 0;
    int Acore = 0;
    int wint = 4; // width for printing integers
-   int wfloat = 12; // width for printing floats
+   int wdouble = 12; // width for printing doubles
    for (int& i : modelspace->holes)
    {
       Orbit& oi = modelspace->GetOrbit(i);
@@ -983,14 +983,14 @@ void ReadWrite::WriteTwoBody(Operator& op, string filename)
             Orbit &oc = modelspace->GetOrbit(ket.p);
             Orbit &od = modelspace->GetOrbit(ket.q);
             int wint = 4;
-            int wfloat = 12;
+            int wdouble = 12;
 
             tbfile 
                    << setw(wint) << bra.p
                    << setw(wint) << bra.q
                    << setw(wint) << ket.p
                    << setw(wint) << ket.q
-                   << setw(wint+3) << tbc.J << setw(wfloat) << std::fixed << tbme
+                   << setw(wint+3) << tbc.J << setw(wdouble) << std::fixed << tbme
                    << endl;
          }
       }
@@ -1024,14 +1024,14 @@ void ReadWrite::WriteValenceTwoBody(Operator& op, string filename)
             Orbit &oc = modelspace->GetOrbit(ket.p);
             Orbit &od = modelspace->GetOrbit(ket.q);
             int wint = 4;
-            int wfloat = 12;
+            int wdouble = 12;
 
             tbfile 
                    << setw(wint) << bra.p
                    << setw(wint) << bra.q
                    << setw(wint) << ket.p
                    << setw(wint) << ket.q
-                   << setw(wint+3) << tbc.J << setw(wfloat) << std::fixed << tbme// << endl;
+                   << setw(wint+3) << tbc.J << setw(wdouble) << std::fixed << tbme// << endl;
                    << "    < " << bra.p << " " << bra.q << " | V | " << ket.p << " " << ket.q << " >" << endl;
          }
       }
@@ -1108,6 +1108,7 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
    ifstream opfile;
    opfile.open(filename);
    ModelSpace * modelspace = op.GetModelSpace();
+   // Should put in some check for if the file exists
 
    string tmpstring;
    int i,j,ch;

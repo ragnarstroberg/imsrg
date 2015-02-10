@@ -25,14 +25,14 @@ class Orbit
    int tz2;
    int ph; // particle=0, hole=1
    int io; // inside=0, outside=1
-   float spe;
+   double spe;
 
    //Constructors
    Orbit();
-   Orbit(int n ,int l, int j, int t, int ph, int io, float spe);
+   Orbit(int n ,int l, int j, int t, int ph, int io, double spe);
    Orbit(const Orbit&);
    // Methods
-   void Set(int n, int l, int j2, int tz2, int ph, int io, float spe);
+   void Set(int n, int l, int j2, int tz2, int ph, int io, double spe);
 };
 
 
@@ -227,9 +227,9 @@ class ModelSpace
    int GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
    int GetNumberOrbits() const {return norbits;};
    int GetNumberKets() const {return Kets.size();};
-   void SetHbarOmega(float hw) {hbar_omega = hw;};
+   void SetHbarOmega(double hw) {hbar_omega = hw;};
    void SetTargetMass(int A) {target_mass = A;};
-   float GetHbarOmega() const {return hbar_omega;};
+   double GetHbarOmega() const {return hbar_omega;};
    int GetTargetMass() const {return target_mass;};
    int GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
@@ -265,7 +265,7 @@ class ModelSpace
  private:
    // Fields
    int norbits;
-   float hbar_omega;
+   double hbar_omega;
    int target_mass;
    int nTwoBodyChannels;
    vector<Orbit> Orbits;
