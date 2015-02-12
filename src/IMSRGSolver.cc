@@ -287,11 +287,11 @@ void IMSRGSolver::ConstructGenerator_White()
    for (int ch=0;ch<nchan;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& ETA2 = (arma::mat&) Eta.TwoBody[ch].at(ch);
-      arma::mat& H2 = (arma::mat&) H_s.TwoBody[ch].at(ch);
-      for (unsigned int& ibra : tbc.KetIndex_hh)
+      auto& ETA2 = Eta.TwoBody[ch].at(ch);
+      auto& H2 = H_s.TwoBody[ch].at(ch);
+      for (unsigned int& ibra : tbc.KetIndex_pp)
       {
-         for (unsigned int& iket : tbc.KetIndex_pp)
+         for (unsigned int& iket : tbc.KetIndex_hh)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) =  H2(ibra,iket) / denominator;
@@ -325,8 +325,8 @@ void IMSRGSolver::ConstructGenerator_Atan()
    for (int ch=0;ch<Eta.nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& ETA2 = (arma::mat&) Eta.TwoBody[ch].at(ch);
-      arma::mat& H2 = (arma::mat&) H_s.TwoBody[ch].at(ch);
+      arma::mat& ETA2 =  Eta.TwoBody[ch].at(ch);
+      arma::mat& H2 =  H_s.TwoBody[ch].at(ch);
       for (unsigned int& ibra : tbc.KetIndex_pp)
       {
          for (unsigned int& iket : tbc.KetIndex_hh)
@@ -368,15 +368,14 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
       }
    
    }
-   // Two body piece -- eliminate ppvh and pqvv  ( vv'hh' was already accounted for with White )
-
+   // Two body piece 
    int nchan = modelspace->GetNumberTwoBodyChannels();
    for (int ch=0;ch<nchan;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
-         arma::mat& ETA2 = (arma::mat&) Eta.TwoBody[ch].at(ch);
-         arma::mat& H2 = (arma::mat&) H_s.TwoBody[ch].at(ch);
+         auto& ETA2 = Eta.TwoBody[ch].at(ch);
+         auto& H2 = H_s.TwoBody[ch].at(ch);
 
       // Decouple vv from qq and qv
 
@@ -495,8 +494,8 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
    for (int ch=0;ch<nchan;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& ETA2 = (arma::mat&) Eta.TwoBody[ch].at(ch);
-      arma::mat& H2 = (arma::mat&) H_s.TwoBody[ch].at(ch);
+      arma::mat& ETA2 =  Eta.TwoBody[ch].at(ch);
+      arma::mat& H2 =  H_s.TwoBody[ch].at(ch);
       // Decouple vv from qq and qv
 
       for (int& ibra : tbc.KetIndex_vv)

@@ -7,6 +7,9 @@
 #include "string.h"
 
 #define LINESIZE 400
+#ifndef SQRT2
+  #define SQRT2 1.4142135623730950488
+#endif
 
 using namespace std;
 
@@ -306,11 +309,11 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
     // Normalization
     if (a!=b)
     {
-       vpn /= sqrt(2);
+       vpn /= SQRT2;
     }
     if (c!=d)
     {
-       vpn /= sqrt(2);
+       vpn /= SQRT2;
     }
     if ( a==c and b==d )
     {
@@ -429,13 +432,13 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
              // Normalization
              if (a==b)
              {
-                tbme_pp /= sqrt(2);
-                tbme_nn /= sqrt(2);
+                tbme_pp /= SQRT2;
+                tbme_nn /= SQRT2;
              }
              if (c==d)
              {
-                tbme_pp /= sqrt(2);
-                tbme_nn /= sqrt(2);
+                tbme_pp /= SQRT2;
+                tbme_nn /= SQRT2;
              }
 
              // do pp and nn
@@ -813,9 +816,9 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
             if (T==0)
             {
                if (oa.j2 == ob.j2 and oa.l == ob.l and oa.n == ob.n) T = (tbc.J+1)%2;
-               else tbme *= sqrt(2); // pn TBMEs are unnormalized
+               else tbme *= SQRT2; // pn TBMEs are unnormalized
                if (oc.j2 == od.j2 and oc.l == od.l and oc.n == od.n) T = (tbc.J+1)%2;
-               else tbme *= sqrt(2); // pn TBMEs are unnormalized
+               else tbme *= SQRT2; // pn TBMEs are unnormalized
             }
             // in NuShellX, the proton orbits must come first.
             if (a_ind > b_ind)
@@ -1088,13 +1091,10 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
          for (int iket=iket_min; iket<nkets; ++iket)
          {
             Ket& ket = tbc.GetKet(iket);
-            double tbme = op.GetTBME(ch,bra,ket);
+            //double tbme = op.GetTBME(ch,bra,ket);
+            double tbme = op.GetTBME(ch,ibra,iket);
             if (abs(tbme) > 1e-7)
-            //if (abs(op.TwoBody[ch](ibra,iket)) > 1e-7)
-//            if (abs(op.GetTBME(ch,bra,ket)) > 1e-7)
-//            opfile << "   " << ibra << "\t" << iket << "\t" << op.TwoBody[ch](ibra,iket) << endl;
-//            opfile << ch << "\t" << ibra << "\t" << iket << "\t" << setprecision(10) << op.TwoBody[ch](ibra,iket) << endl;
-            opfile << ch << "\t" << ibra << "\t" << iket << "\t" << setprecision(10) << tbme << endl;
+              opfile << ch << "\t" << ibra << "\t" << iket << "\t" << setprecision(10) << tbme << endl;
          }
       }
    }
@@ -1147,13 +1147,7 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
    }
    while (opfile >> ch >> i >> j >> v)
    {
-//      op.TwoBody[ch](i,j) = v;
-      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      op.SetTBME(ch,tbc.GetKet(i),tbc.GetKet(j),v);
-//      if ( op.IsHermitian() )
-//         op.TwoBody[ch](j,i) = v;
-//      else if ( op.IsAntiHermitian() )
-//         op.TwoBody[ch](j,i) = -v;
+      op.SetTBME(ch,i,j,v);
   }
 
    opfile.close();
