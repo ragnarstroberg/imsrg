@@ -10,6 +10,7 @@
 #include <boost/python/module.hpp>
 #include <boost/python/def.hpp>
 #include <boost/python.hpp>
+#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
 
 using namespace boost::python;
@@ -18,7 +19,13 @@ using namespace boost::python;
 BOOST_PYTHON_MODULE(pyIMSRG)
 {
 
+   class_<vector<string> > ("vector_string")
+      .def (vector_indexing_suite< vector<string> >())
+   ;
+
    class_<ModelSpace>("ModelSpace",init<>())
+      .def(init<ModelSpace>())
+      .def(init< int,vector<string>,vector<string> >())
       .def("SetHbarOmega", &ModelSpace::SetHbarOmega)
       .def("SetTargetMass", &ModelSpace::SetTargetMass)
       .def("GetHbarOmega", &ModelSpace::GetHbarOmega)

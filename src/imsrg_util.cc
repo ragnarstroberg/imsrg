@@ -88,10 +88,15 @@ namespace imsrg_util
  }
 
 
+// Operator TCM_Op(ModelSpace& modelspace)
+// {
+//   return TCM_Op(modelspace, modelspace.GetN2max());
+// }
 // Center of mass kinetic energy, including the hw/A factor
- Operator TCM_Op(ModelSpace& modelspace, int N2max)
+// Operator TCM_Op(ModelSpace& modelspace, int N2max)
+ Operator TCM_Op(ModelSpace& modelspace)
  {
-
+   int N2max = modelspace.GetN2max();
    double hw = modelspace.GetHbarOmega();
    int A = modelspace.GetTargetMass();
    Operator TcmOp = Operator(modelspace);

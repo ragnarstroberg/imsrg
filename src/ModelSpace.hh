@@ -212,6 +212,7 @@ class ModelSpace
    // Constructors
    ModelSpace();
    ModelSpace(const ModelSpace&);
+   ModelSpace(int Nmax, vector<string> hole_list, vector<string> inside_list);
 
    // Overloaded operators
    ModelSpace operator=(const ModelSpace&); 
@@ -237,6 +238,10 @@ class ModelSpace
    inline int GetTwoBodyJmax() const {return TwoBodyJmax;};
    inline int GetThreeBodyJmax() const {return ThreeBodyJmax;};
 
+   int GetNmax(){return Nmax;};
+   int GetN2max(){return N2max;};
+   int GetN3max(){return N3max;};
+
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. Not ideal.
@@ -257,6 +262,9 @@ class ModelSpace
    vector<int> particle_qspace;
    vector<int> proton_orbits;
    vector<int> neutron_orbits;
+   int Nmax;
+   int N2max;
+   int N3max;
    int OneBodyJmax;
    int TwoBodyJmax;
    int ThreeBodyJmax;

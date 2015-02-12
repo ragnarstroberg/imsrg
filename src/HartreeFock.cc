@@ -38,7 +38,7 @@ void HartreeFock::Solve()
    for (iterations=0; iterations<maxiter; ++iterations)
    {
       Diagonalize();  // Diagonalize the Fock matrix
-      ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
+//      ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
       UpdateDensityMatrix();  // 1 body density matrix, used in UpdateH()
       UpdateH();  // Update the Fock matrix
       if ( CheckConvergence() ) break;
@@ -383,26 +383,34 @@ void HartreeFock::ReorderCoefficients()
 {
    ModelSpace * ms = Hbare.GetModelSpace();
    int norbits = ms->GetNumberOrbits();
-   arma::mat C_tmp = C;
-   arma::vec e_tmp = energies;
-   for (int i=0;i<norbits;i++)
+
+   int nswaps = 10;
+
+   while (nswaps>0) // loop until we don't have to make any more swaps
    {
-      double fmax = 0.0;
-      int kmax;
-      int sign = 1;
-      for (int k=0;k<norbits;k++)
-      {
-         if ( abs(C_tmp(i,k)) > fmax )
-         {
-            fmax = abs(C_tmp(i,k));
-            kmax = k;
-            if (C_tmp(i,k) < 0) sign = -1;
-         }
-      }
-      // make sure we have a positive coefficient for the biggest term
-      C.col(kmax) = C_tmp.col(i) * sign;
-      energies(kmax) = e_tmp(i);
+     nswaps = 0;
+     for (int i=0;i<C.n_rows;++i) // loop through rows -> original basis states
+     {
+        arma::rowvec row = C.row(i);
+        arma::uword imax; 
+        double maxval = abs(row).max(imax);
+        if (imax == i) continue;
+        if (maxval > abs(C(imax,imax) ))
+        {
+           C.swap_cols(i,imax);
+           energies.swap_rows(i,imax);
+           ++nswaps;
+        }
+     }
    }
+   for (int i=0;i<C.n_rows;++i) // loop through original basis states
+   {
+      if ( C(i,i) < 0 )
+      {
+         C.col(i) *= -1;
+      }
+   }
+
 }
 
 
@@ -417,7 +425,8 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
 
    cout << "Transform one body" << endl;
    // Easy part:
-   //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>.
+   //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>
+   // where |i> is the original basis and |a> is the HF basis
    OpHF.OneBody = C.t() * OpIn.OneBody * C;
 
    cout << "Transform two body" << endl;

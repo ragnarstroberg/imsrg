@@ -255,6 +255,7 @@ bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
 
 
 //************************************************************************
+//************************************************************************
 
 ModelSpace::ModelSpace()
 {
@@ -264,6 +265,9 @@ ModelSpace::ModelSpace()
    ThreeBodyJmax = 0;
    hbar_omega=20;
    target_mass = 16;
+   Nmax = 0;
+   N2max = 0;
+   N3max = 0;
 }
 
 
@@ -275,6 +279,9 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    OneBodyJmax = ms.OneBodyJmax;
    TwoBodyJmax = ms.TwoBodyJmax;
    ThreeBodyJmax = ms.ThreeBodyJmax;
+   Nmax = ms.Nmax;
+   N2max = ms.N2max;
+   N3max = ms.N3max;
 
    holes = ms.holes;
    particles = ms.particles;
@@ -292,6 +299,72 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    for (Ket& k : Kets)   k.ms = this;
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
+}
+
+// orbit string representation is e.g. p0f7
+ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside_list)
+{
+
+   OneBodyJmax = 0;
+   TwoBodyJmax = 0;
+   ThreeBodyJmax = 0;
+   hbar_omega=20;
+   target_mass = 16;
+   Nmax = nmax;
+   N2max = 2*Nmax;
+   N3max = 3*Nmax;
+
+   cout << "Creating a model space with Nmax = " << Nmax << "  and hole orbits [";
+   for (string& h : hole_list)
+   {
+       cout << h << " ";
+   }
+   cout << "]   and valence space [";
+   for (string& h : inside_list)
+   {
+       cout << h << " ";
+   }
+   cout << "]" << endl;
+   
+   vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o'};
+//   map<int,char> pn_list = { (-1,'p'), (1,'n') };
+   vector<char> pn_list = { 'p', 'n' };
+
+   norbits = (Nmax+1)*(Nmax+2);
+   for (int N=0; N<=Nmax; ++N)
+   {
+     for (int l=N; l>=0; l-=2)
+     {
+       int n = (N-l)/2;
+       for (int j2=2*l+1; j2>=2*l-1 and j2>0; j2-=2)
+       {
+         for (int tz=-1; tz<=1; tz+=2)
+         {
+            int ph = 0;
+            int io = 0;
+            double spe = 0;
+            char orb_string[6];
+//            sprintf(orb_string, "%c%i%c%i", pn_list[tz], n, l_list[l], j2);
+            sprintf(orb_string, "%c%i%c%i", pn_list[(tz+1)/2], n, l_list[l], j2);
+            string orb_str = orb_string;
+            auto it_hole = find(hole_list.begin(), hole_list.end(), orb_string);
+            if ( it_hole != hole_list.end() )
+            {
+               ph=1;
+               hole_list.erase(it_hole);
+            }
+            auto it_inside = find(inside_list.begin(), inside_list.end(), orb_string);
+            if ( it_inside != inside_list.end() )
+            {
+               io=1;
+               inside_list.erase(it_inside);
+            }
+            AddOrbit(Orbit(n,l,j2,tz,ph,io,spe));
+         }
+       }
+     }
+   }
+   SetupKets();
 }
 
 
@@ -313,6 +386,12 @@ void ModelSpace::AddOrbit(Orbit orb)
       TwoBodyJmax = OneBodyJmax*2;
       ThreeBodyJmax = OneBodyJmax*3-1;
       nTwoBodyChannels = 2*3*(TwoBodyJmax+1);
+   }
+   if ( 2*orb.n+orb.l > Nmax )
+   {
+      Nmax = 2*orb.n+orb.l;
+      N2max = 2*Nmax;
+      N3max = 3*Nmax;
    }
 
    if (orb.ph == 0) particles.push_back(ind);
