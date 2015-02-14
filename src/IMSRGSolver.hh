@@ -45,7 +45,11 @@ class IMSRGSolver
 #endif
 
   public:
+  IMSRGSolver();
   IMSRGSolver(const Operator& H_in);
+  void SetHin(const Operator& H_in);
+  void Reset();
+
   void Solve();
 #ifndef NO_ODE
   void Solve_ode();
@@ -61,6 +65,22 @@ class IMSRGSolver
   void SetSmax(double d){smax = d;};
   void SetGenerator(string g){generator = g;};
   int GetSystemDimension();
+
+  void UpdateEta();
+  void UpdateOmega();
+  void UpdateH();
+
+  void WriteFlowStatus(ostream&);
+  void WriteFlowStatusHeader(ostream&);
+
+  void ConstructGenerator_Wegner();
+  void ConstructGenerator_White();
+  void ConstructGenerator_Atan();
+  void ConstructGenerator_ShellModel();
+  void ConstructGenerator_ShellModel_Atan();
+  double GetEpsteinNesbet1bDenominator(int i, int j);
+  double GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket);
+
 
 //  private:
   ModelSpace* modelspace;
@@ -80,33 +100,15 @@ class IMSRGSolver
   string method;
   string generator;
   string flowfile;
+
 #ifndef NO_ODE
   ODE_Monitor ode_monitor;
-#endif
 
   vector<double> times;
   vector<double> E0;
   vector<double> eta1;
   vector<double> eta2;
-
-
-  void UpdateEta();
-  void UpdateOmega();
-  void UpdateH();
-
-  void WriteFlowStatus(ostream&);
-  void WriteFlowStatusHeader(ostream&);
-
-  void ConstructGenerator_Wegner();
-  void ConstructGenerator_White();
-  void ConstructGenerator_Atan();
-  void ConstructGenerator_ShellModel();
-  void ConstructGenerator_ShellModel_Atan();
-  double GetEpsteinNesbet1bDenominator(int i, int j);
-  double GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket);
-
-
-
+#endif
 
 
 };

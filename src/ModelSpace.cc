@@ -123,13 +123,17 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
          {
             KetIndex_hh.push_back(NumberKets);
             if ((iop+ioq)==2) // qq
+            {
                KetIndex_holeq_holeq.push_back(NumberKets);
+            }
          }
          else if ((php + phq) == 0) // pp
          {
             KetIndex_pp.push_back(NumberKets);
             if ((iop+ioq)==2) // qq
+            {
                KetIndex_particleq_particleq.push_back(NumberKets);
+            }
          }
          else //ph
          {
@@ -341,7 +345,7 @@ ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside
          for (int tz=-1; tz<=1; tz+=2)
          {
             int ph = 0;
-            int io = 0;
+            int io = 1;
             double spe = 0;
             char orb_string[6];
 //            sprintf(orb_string, "%c%i%c%i", pn_list[tz], n, l_list[l], j2);
@@ -356,7 +360,7 @@ ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside
             auto it_inside = find(inside_list.begin(), inside_list.end(), orb_string);
             if ( it_inside != inside_list.end() )
             {
-               io=1;
+               io=0;
                inside_list.erase(it_inside);
             }
             AddOrbit(Orbit(n,l,j2,tz,ph,io,spe));

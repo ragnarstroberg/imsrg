@@ -123,6 +123,7 @@ class Operator
   // Other setter-getters
   ModelSpace * GetModelSpace() const {return modelspace;};
 
+  void Erase();
   void EraseZeroBody(){ZeroBody = 0;}; // set zero-body term to zero
   void EraseOneBody(){OneBody.zeros();}; // set all one-body terms to zero
   void EraseTwoBody(); // set all two-body terms to zero

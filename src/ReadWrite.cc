@@ -71,6 +71,9 @@ ModelSpace ReadWrite::ReadModelSpace( string filename)
    infile.open(filename);
    if ( not infile.good() )
    {
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "************************************" << endl;
       cerr << "Trouble reading file " << filename << endl;
       goodstate = false;
       return modelspace;
@@ -134,7 +137,9 @@ void ReadWrite::ReadBareTBME( string filename, Operator& Hbare)
   infile.open(filename);
   if ( !infile.good() )
   {
-     cerr << "Trouble reading file " << filename << endl;
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "************************************" << endl;
      goodstate = false;
      return;
   }
@@ -189,7 +194,9 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
   infile.open(filename);
   if ( !infile.good() )
   {
-     cerr << "Trouble reading file " << filename << endl;
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "************************************" << endl;
      goodstate = false;
      return;
   }
@@ -258,7 +265,9 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
   double tbme_pp,tbme_nn,tbme_10,tbme_00;
   if ( !infile.good() )
   {
-     cerr << "Trouble reading file " << filename << endl;
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "************************************" << endl;
      goodstate = false;
      return;
   }
@@ -379,7 +388,9 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
   infile.open(filename);
   if ( !infile.good() )
   {
-     cerr << "Trouble reading file " << filename << endl;
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "************************************" << endl;
      goodstate = false;
      return;
   }
@@ -494,7 +505,9 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax
   infile.open(filename);
   if ( not infile.good() )
   {
-     cerr << "Trouble reading file " << filename << endl;
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "************************************" << endl;
      goodstate = false;
      return;
   }

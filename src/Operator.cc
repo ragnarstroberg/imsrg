@@ -927,6 +927,12 @@ Operator Operator::DoNormalOrdering3()
 
 
 
+void Operator::Erase()
+{
+  EraseZeroBody();
+  EraseOneBody();
+  EraseTwoBody();
+}
 
 
 void Operator::EraseTwoBody()
@@ -1167,8 +1173,8 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
 Operator Operator::BCH_Transform( const Operator &Omega) const
 {
 //   double bch_transform_threshold = 1e-6;
-//   int max_iter = 20;
-   int max_iter = 6;
+   int max_iter = 20;
+//   int max_iter = 6;
    int warn_iter = 12;
    double nx = Norm();
    double ny = Omega.Norm();
@@ -1218,7 +1224,7 @@ Operator Operator::BCH_Product( const Operator &Y) const
 //   double bch_product_threshold = 1e-4;
 
    Operator Z = X + Y; 
-   return Z; // Remove this!!
+//   return Z; // Remove this!!
    Operator XY = X.Commutator(Y);
    Z += XY*(1./2);    // [X,Y]
    double nx = X.Norm();

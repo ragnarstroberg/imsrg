@@ -432,13 +432,14 @@ namespace imsrg_util
  }
 
 
+
+
 // Center of mass kinetic energy, with the hw/A factor
  Operator HCM_Op(ModelSpace& modelspace)
  {
    Operator HcmOp = Operator(modelspace);
 
    int norb = modelspace.GetNumberOrbits();
-//   double one_body_prefactor = 1./(
    for (int i=0; i<norb; ++i)
    {
       Orbit & oi = modelspace.GetOrbit(i);
@@ -458,6 +459,7 @@ namespace imsrg_util
          {
             Ket & ket = tbc.GetKet(iket);
             double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J);
+            mat_el += Calculate_p1p2(modelspace,bra,ket,tbc.J); // added this. not sure if I know what I'm doing...
             #pragma omp critical
             {
               HcmOp.SetTBME(ch,ibra,iket,mat_el);
@@ -499,6 +501,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
    return r2;
 }
 
+// Electric monopole operator
 Operator E0Op(ModelSpace& modelspace)
 {
    Operator e0 = Operator(modelspace);
@@ -527,6 +530,10 @@ Operator E0Op(ModelSpace& modelspace)
    e0.OneBody *= (HBARC*HBARC/M_NUCLEON/hw);
    return e0;
 }
+
+
+
+
 
  // Evaluate <bra | hcom | ket>, omitting the factor (hbar * omega) /(m * omega^2)
  double Calculate_hcom(ModelSpace& modelspace, Ket & bra, Ket & ket, int J)

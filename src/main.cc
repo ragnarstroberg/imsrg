@@ -183,8 +183,8 @@ int main(int argc, char**argv)
 
    cout << "Begin solving..." << endl;
 /////// THIS IS THE TIME CONSUMING PART //////////
-   imsrgsolver.Solve_ode();
-//   imsrgsolver.Solve();
+//   imsrgsolver.Solve_ode();
+   imsrgsolver.Solve();
 //////////////////////////////////////////////////
 
 //   n0p3 = hf.TransformToHFBasis(n0p3);
