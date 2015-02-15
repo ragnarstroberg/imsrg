@@ -10,7 +10,6 @@ namespace imsrg_util
  Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2)
  {
    Operator NumOp = Operator(modelspace);
-   //OPERATOR NumOp = OPERATOR(modelspace);
    int indx = modelspace.Index1(n,l,j2,tz2);
    NumOp.ZeroBody = 0;
    NumOp.EraseOneBody();

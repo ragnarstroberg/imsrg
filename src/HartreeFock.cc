@@ -430,7 +430,7 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
    OpHF.OneBody = C.t() * OpIn.OneBody * C;
 
    cout << "Transform two body" << endl;
-   // Medium part:
+   // Medium-difficulty part:
    //Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
    // for each channel J,p,Tz. Most of the effort here is in constructing D.
    int nchan = OpIn.GetModelSpace()->GetNumberTwoBodyChannels();
@@ -441,7 +441,6 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
       if (npq<1) continue;
 
       arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
-      arma::mat Dexch = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ba> = <ji|ab>
 
       // loop over all possible original basis configurations <pq| in this J,p,Tz channel.
       // and all possible HF configurations |p'q'> in this J,p,Tz channel                                    
@@ -452,20 +451,17 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
          Ket & bra = tbc.GetKet(i);   
          for (int j=0; j<npq; ++j)    
          {
-            Ket & ket = tbc.GetKet(j); // 
-            double normfactor = sqrt((1.0+ket.delta_pq())/(1.0+bra.delta_pq()));
-            D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q) * normfactor;
-            Dexch(i,j) = C(bra.p,ket.q) * C(bra.q,ket.p) * ket.Phase(tbc.J) * (1-ket.delta_pq()) * normfactor;
+            Ket & ket = tbc.GetKet(j); 
+            D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
+            if (ket.p!=ket.q) D(i,j) += C(bra.p,ket.q) * C(bra.q,ket.p) * ket.Phase(tbc.J);
+            D(i,j) *= sqrt((1.0+ket.delta_pq())/(1.0+bra.delta_pq()));
          }
       }
 
      // Do all the matrix multiplication in one expression so Armadillo can do optimizations.
-     arma::mat& IN  = (arma::mat&) OpIn.TwoBody[ch].at(ch);
-     arma::mat& OUT = (arma::mat&) OpHF.TwoBody[ch].at(ch);
-     OUT  =    D.t()      * IN * D
-             + Dexch.t()  * IN * D
-             + D.t()      * IN * Dexch
-             + Dexch.t()  * IN * Dexch;
+     auto& IN  =  OpIn.TwoBody[ch].at(ch);
+     auto& OUT =  OpHF.TwoBody[ch].at(ch);
+     OUT  =    D.t() * IN * D;
    }
 
    if (OpIn.GetParticleRank() < 3) return OpHF;

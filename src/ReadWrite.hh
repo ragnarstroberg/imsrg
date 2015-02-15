@@ -21,7 +21,10 @@ class ReadWrite
 //template <class OPERATOR> void ReadWrite::ReadBareTBME_Navratil( string, Operator3&);
 //   void ReadBareTBME_Navratil( string filename, Operator3& Hbare);
    void ReadBareTBME_Navratil( string filename, Operator& Hbare);
-   void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax=-1);
+//   void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax=-1);
+//   void ReadBareTBME_Darmstadt( string filename, Operator& Hbare);
+//   void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax);
+   void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax=-1, int lmax=-1);
 //   void Read_Darmstadt_3body( string filename, Operator3& Hbare, int Emax=-1);
    void Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax=-1);
 //   vector<int> MapDarmstadtOrbits( ModelSpace* modelspace, int& Emax);

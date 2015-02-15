@@ -226,7 +226,7 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
      // if the matrix element is outside the model space, ignore it.
      if (a>=norbits or b>=norbits or c>=norbits or d>=norbits) continue;
      Par = (la+lb)%2;
-     Hbare.SetTBME(J2/2,Par,Tz2/2,a,b,c,d, tbme ); // Don't do COM correction, for comparison with Darmstadt interaction.
+     Hbare.SetTBME(J2/2,Par,Tz2/2,a,b,c,d, tbme ); 
 
   }
 
@@ -357,10 +357,20 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
 
 
 
+//void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare )
+//{
+//   ReadBareTBME_Darmstadt( filename, Hbare, -1, -1);
+//}
+//void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax /*default=-1*/)
+//{
+//   ReadBareTBME_Darmstadt( filename, Hbare, Emax, -1);
+//}
 
 // Read TBME's in Darmstadt format
+// Admittedly this is a mess. Emax is the 2body max energy
 // Setting Emax=-1 just uses the single-particle emax determined by the model space
-void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax /*default=-1*/)
+//void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax /*default=-1*/)
+void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax /*default=-1*/, int lmax)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
@@ -377,6 +387,10 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
      int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2;
      orbits_remap[nlj] = i;
      emax = max(emax,N);
+  }
+  if (lmax<0)
+  {
+    lmax = emax;
   }
   if (Emax >=0)
      emax = Emax;
@@ -404,12 +418,14 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
     int a =  orbits_remap[nlj1];
     Orbit & o1 = modelspace->GetOrbit(a);
     int e1 = 2*o1.n + o1.l;
+    if (o1.l > lmax) continue;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
       int b =  orbits_remap[nlj2];
       Orbit & o2 = modelspace->GetOrbit(b);
       int e2 = 2*o2.n + o2.l;
+      if (o2.l > lmax) continue;
       if (e1+e2 > emax) continue;
       int parity = (o1.l + o2.l) % 2;
 
@@ -417,12 +433,14 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
       {
         int c =  orbits_remap[nlj3];
         Orbit & o3 = modelspace->GetOrbit(c);
+        if (o3.l > lmax) continue;
         int e3 = 2*o3.n + o3.l;
 
         for(int nlj4=0; nlj4<=(nlj3==nlj1 ? nlj2 : nlj3); ++nlj4)
         {
           int d =  orbits_remap[nlj4];
           Orbit & o4 = modelspace->GetOrbit(d);
+          if (o4.l > lmax) continue;
           int e4 = 2*o4.n + o4.l;
           if (e3+e4 > emax) continue;
           if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
