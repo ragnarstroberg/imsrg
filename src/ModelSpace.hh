@@ -125,6 +125,7 @@ class TwoBodyChannel
    vector<int> KetIndex_vv;
    vector<int> KetIndex_holeq_holeq; 
    vector<int> KetIndex_particleq_particleq;
+   vector<int> KetIndex_particleq_holeq;
    vector<int> KetIndex_v_holeq; // added
    vector<int> KetIndex_v_particleq; //added
 

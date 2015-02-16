@@ -119,7 +119,7 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
          int iop = ms->GetOrbit(ket.p).io;
          int ioq = ms->GetOrbit(ket.q).io;
 
-         if (( php + phq) == 2) // hh
+         if (( php + phq)==2) // hh
          {
             KetIndex_hh.push_back(NumberKets);
             if ((iop+ioq)==2) // qq
@@ -138,7 +138,12 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
          else //ph
          {
             KetIndex_ph.push_back(NumberKets);
+            if ((iop+ioq)==2) // qq
+            {
+               KetIndex_particleq_holeq.push_back(NumberKets);
+            }
          }
+
 
          if ((iop + ioq) == 0) // vv
          {
