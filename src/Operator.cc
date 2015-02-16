@@ -1344,13 +1344,14 @@ Operator Operator::CommutatorScalarScalar(const Operator& opright) const
    comm121ss(opright, out);
 //   comm121st(opright, out);  // << equivalent in scalar case
 
-   comm122ss(opright, out); // << This is NON DETERMINISTIC at the moment (!!!)
-//   comm122st(opright, out);
+   comm122ss(opright, out); // 
+//   comm122st(opright, out); // << equivalent in scalar case
+
+   comm222_pp_hh_221ss(opright, out);
+////   comm222_pp_hh_221st(opright, out); // << equivalent in scalar case
 
    comm222_phss(opright, out);
 ////   comm222_phst(opright, out);
-   comm222_pp_hh_221ss(opright, out);
-////   comm222_pp_hh_221st(opright, out); // << equivalent in scalar case
 
 
    return out;
@@ -1446,11 +1447,11 @@ void Operator::comm220ss( const Operator& opright, Operator& out) const
 {
    if (IsHermitian() and opright.IsHermitian()) return; // I think this is the case
    if (IsAntiHermitian() and opright.IsAntiHermitian()) return; // I think this is the case
-   #pragma omp parallel for
+//   #pragma omp parallel for
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      #pragma omp critical
+//      #pragma omp critical
       out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody.at(ch).at(ch) * tbc.Proj_pp * opright.TwoBody.at(ch).at(ch) );
 
    }
@@ -1776,26 +1777,14 @@ void Operator::comm222_pp_hh_221ss(const Operator& opright, Operator& opout ) co
             // Sum c over holes and include the nbar_a * nbar_b terms
             for (int &c : modelspace->holes)
             {
-//               cijJ +=   Mpp.GetTBME(ch,i,c,j,c);
                cijJ +=   Mpp.GetTBME(ch,c,i,c,j);
-//               if (i==0 and j==0 and abs(cijJ)>1e-7)
-//               {
-//                  cout << "i=0,j=0, c=" << c << " ch = " << ch << "  Mpp = " << Mpp.GetTBME(ch,i,c,j,c) << endl;
-//               }
             // Sum c over particles and include the n_a * n_b terms
             }
             for (int &c : modelspace->particles)
             {
-//               cijJ +=  Mhh.GetTBME(ch,i,c,j,c);
                cijJ +=  Mhh.GetTBME(ch,c,i,c,j);
-//               if (i==0 and j==0 and abs(cijJ)>1e-7)
-//               {
-//                  cout << "i=0,j=0, c=" << c << " ch = " << ch << "  Mhh = " << Mhh.GetTBME(ch,i,c,j,c) << endl;
-//               }
             }
             cijJ *= (2*tbc.J+1.0)/(oi.j2+1.0);
-//            if (abs(cijJ)>1e-7)
-//               cout << "@@   " << i << "   " << j << "   " << cijJ   << endl;
             opout.OneBody(i,j) += cijJ;
             if (not opout.IsNonHermitian() and i!=j)
             {
@@ -1923,10 +1912,6 @@ void Operator::comm222_phss(const Operator& opright, Operator& opout ) const
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
             comm /= norm;
-            //if (i==j and int(ji+jj+J)%2==0)
-//               cout << "i,j,J=" << i << " " << j << " " << J << "  comm = " << comm << endl;
-//            if (ji==jj and abs(comm)>1e-7)
-//               cout << "i,j,J=" << ji << " " << jj << " " << J << "  phase " << (int(ji+jj+J))%2 << "  comm = " << comm << endl;
             OUT(ibra,iket) += comm;
             if (iket != ibra and herm !=0)
             {

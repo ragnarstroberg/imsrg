@@ -369,6 +369,7 @@ void IMSRGSolver::ConstructGenerator_Atan()
 void IMSRGSolver::ConstructGenerator_ShellModel()
 {
    // One body piece -- make sure the valence one-body part is diagonal
+//   for ( int i=0; i<modelspace->GetNumberOrbits(); ++i )
    for ( int &i : modelspace->valence )
    {
       for (int j=0; j<modelspace->GetNumberOrbits(); ++j)
@@ -381,6 +382,7 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
    }
 
    // no excitations out of the core
+/*
    for (int &i : modelspace->hole_qspace )
    {
       for (int &j : modelspace->particle_qspace )
@@ -390,9 +392,14 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
          Eta.OneBody(j,i) = - Eta.OneBody(i,j);
       }
    }
-
+*/
 
    // Two body piece 
+   // we want to drive to zero any terms that take 
+   //   |hh> to |pp>
+   //   |vh> to |pp>
+   //   |vv> to |qq> or |vq>
+
    int nchan = modelspace->GetNumberTwoBodyChannels();
    for (int ch=0;ch<nchan;++ch)
    {
@@ -401,100 +408,114 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
       auto& ETA2 = Eta.TwoBody[ch].at(ch);
       auto& H2 = H_s.TwoBody[ch].at(ch);
 
-      // Decouple vv states
-      for (int& ibra : tbc.KetIndex_vv)
+      // Decouple vv states from pq states
+      for (int& iket : tbc.KetIndex_vv)
       {
-         // < vv' | qq' >
-         for (int& iket : tbc.KetIndex_particleq_particleq) 
+         // < qq' | vv' >
+         for (int& ibra : tbc.KetIndex_particleq_particleq) 
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
-         // < vv' | hh' >
-         for (int& iket : tbc.KetIndex_holeq_holeq) 
+//         // < hh' | vv' >
+//         for (int& ibra : tbc.KetIndex_holeq_holeq) 
+//         {
+//            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+//            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
+//            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+//         }
+         // < vq | vv' > 
+         for (int& ibra : tbc.KetIndex_v_particleq) 
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
-         // < vv' | vq >
-         for (int& iket : tbc.KetIndex_v_particleq) 
-         {
-            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
-            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
-            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
-         }
-         // < vv' | vh >
-         for (int& iket : tbc.KetIndex_v_holeq) 
-         {
-            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
-            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
-            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
-         }
-         // < vv' | qh >   newly added. is it right?
-         for (int& iket : tbc.KetIndex_particleq_holeq) 
-         {
-            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
-            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
-            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
-         }
+//         // < vh | vv' >   << Pauli blocked
+//         for (int& ibra : tbc.KetIndex_v_holeq) 
+//         {
+//            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+//            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
+//            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+//         }
+//         // < qh | vv' >   newly added. is it right? No, I think this should be pauli-blocked.
+//         for (int& ibra : tbc.KetIndex_particleq_holeq) 
+//         {
+//            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+//            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
+//            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+//         }
 
       }
 
 
       // Decouple hh states
 
-      for (int& ibra : tbc.KetIndex_holeq_holeq)
+      for (int& iket : tbc.KetIndex_holeq_holeq)
       {
-         // < hh' | qq >
-         for (int& iket : tbc.KetIndex_particleq_particleq)
+         // < qq' | hh' >
+         for (int& ibra : tbc.KetIndex_particleq_particleq)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
-         // < hh' | vq >
-         for (int& iket : tbc.KetIndex_v_particleq)
+         // < vq | hh' >
+         for (int& ibra : tbc.KetIndex_v_particleq)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
-         // < hh' | qh >   newly added. is it right?
-         for (int& iket : tbc.KetIndex_particleq_holeq)
+         // < vv | hh' >
+         for (int& ibra : tbc.KetIndex_vv)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
+         // < hh' | qh >   newly added. is it right? Nope. This is a one body piece.
+//         for (int& ibra : tbc.KetIndex_particleq_holeq)
+//         {
+//            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+//            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
+//            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+//         }
       }
 
       // Decouple vh states
 
-      for (int& ibra : tbc.KetIndex_v_holeq)
+      for (int& iket : tbc.KetIndex_v_holeq)
       {
-         // < vh | qq >
-         for (int& iket : tbc.KetIndex_particleq_particleq)
+         // < qq | vh >
+         for (int& ibra : tbc.KetIndex_particleq_particleq)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
-         // < vh | vq >
-         for (int& iket : tbc.KetIndex_v_particleq)
+         // < vq | vh >
+         for (int& ibra : tbc.KetIndex_v_particleq)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
-         // < vh | qh >   newly added. is it right?
-         for (int& iket : tbc.KetIndex_particleq_holeq)
+         // < vv | vh >
+         for (int& ibra : tbc.KetIndex_v_particleq)
          {
             double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
+//         // < vh | qh >   newly added. is it right?  Nope. just a 1body piece.
+//         for (int& ibra : tbc.KetIndex_particleq_holeq)
+//         {
+//            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
+//            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
+//            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+//         }
       }
 
     }
