@@ -1451,7 +1451,7 @@ void Operator::comm220ss( const Operator& opright, Operator& out) const
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-//      #pragma omp critical
+//      #pragma omp critical  // Now this is just plain stupid.
       out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody.at(ch).at(ch) * tbc.Proj_pp * opright.TwoBody.at(ch).at(ch) );
 
    }
@@ -1488,7 +1488,7 @@ void Operator::comm111ss(const Operator & opright, Operator& out) const
 void Operator::comm121ss(const Operator& opright, Operator& out) const
 {
    int norbits = modelspace->GetNumberOrbits();
-   #pragma omp parallel for
+   #pragma omp parallel for 
    for (int i=0;i<norbits;++i)
    {
       Orbit &oi = modelspace->GetOrbit(i);
@@ -1569,8 +1569,9 @@ void Operator::comm221ss(const Operator& opright, Operator& out) const
             {
                cijJ +=  Mhh.GetTBME(ch,i,c,j,c);
             }
+            cijJ *= (2*tbc.J+1.0)/(oi.j2 +1.0);
             #pragma omp critical
-            out.OneBody(i,j) += (2*tbc.J+1.0)/(oi.j2 +1.0) * cijJ;
+            out.OneBody(i,j) +=  cijJ;
          } // for j
       } // for i
    } //for ch
@@ -1667,12 +1668,9 @@ void Operator::comm122ss(const Operator& opright, Operator& opout ) const
             }
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
             cijkl = (ckl*pre_kl + cij*pre_ij) / norm;// / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()) );
-//            #pragma omp critical // this is unnecessary.
-            {
             OUT(ibra,iket) += cijkl;
-            if (ibra != iket)
-               OUT(iket,ibra) += herm * cijkl;
-            }
+            if (not opout.IsNonHermitian())
+               OUT(iket,ibra) = herm * OUT(ibra,iket);
          }
       }
    }
@@ -1727,7 +1725,7 @@ void Operator::comm222_pp_hh_221ss(const Operator& opright, Operator& opout ) co
    Operator Mpp = opout;
    Operator Mhh = opout;
 
-   #pragma omp parallel for schedule(dynamic,5)
+//   #pragma omp parallel for schedule(dynamic,5)  // This is not thread-safe
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -1785,14 +1783,27 @@ void Operator::comm222_pp_hh_221ss(const Operator& opright, Operator& opout ) co
                cijJ +=  Mhh.GetTBME(ch,c,i,c,j);
             }
             cijJ *= (2*tbc.J+1.0)/(oi.j2+1.0);
-            opout.OneBody(i,j) += cijJ;
-            if (not opout.IsNonHermitian() and i!=j)
+            #pragma omp critial
             {
-               opout.OneBody(j,i) = herm * opout.OneBody(i,j);
+            opout.OneBody(i,j) += cijJ;
             }
+//            if (not opout.IsNonHermitian() and i!=j)
+//            {
+//               opout.OneBody(j,i) = herm * opout.OneBody(i,j);
+//            }
          } // for j
       } // for i
    } //for ch
+   if (not opout.IsNonHermitian())
+   {
+     for (int i=0;i<norbits;++i)
+     {
+       for (int j=i;j<norbits;++j)
+        {
+           opout.OneBody(j,i) = herm* opout.OneBody(i,j);
+        }
+     }
+   }
 }
 
 

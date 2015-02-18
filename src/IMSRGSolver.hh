@@ -78,8 +78,13 @@ class IMSRGSolver
   void ConstructGenerator_Atan();
   void ConstructGenerator_ShellModel();
   void ConstructGenerator_ShellModel_Atan();
-  double GetEpsteinNesbet1bDenominator(int i, int j);
-  double GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket);
+//  double GetEpsteinNesbet1bDenominator(int i, int j);
+//  double GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket);
+  double Get1bDenominator_ph(int i, int j);
+  double Get1bDenominator_pp(int i, int j);
+  double Get2bDenominator_pphh(int ch, int ibra, int iket);
+  double Get2bDenominator_pppp(int ch, int ibra, int iket);
+  double Get2bDenominator_pphp(int ch, int ibra, int iket);
 
 
 //  private:
