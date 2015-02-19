@@ -258,6 +258,11 @@ Operator Operator::operator-(const Operator& rhs) const
    return ( Operator(*this) -= rhs );
 }
 
+Operator Operator::operator-() const
+{
+   return ( *this *-1 );
+}
+
 
 
 ///////// SETTER_GETTERS ///////////////////////////

@@ -53,6 +53,7 @@ class Operator
   Operator operator+( const Operator& rhs) const;
   Operator& operator-=( const Operator& rhs);
   Operator operator-( const Operator& rhs) const;
+  Operator operator-( ) const;
   Operator& operator*=( const double rhs);
   Operator operator*( const double rhs) const;
   Operator& operator/=( const double rhs);

@@ -58,6 +58,7 @@ class IMSRGSolver
   void ODE_systemOmega(const Operator& x, Operator& dxdt, const double t);
 #endif
   Operator Transform(Operator& OpIn);
+  Operator InverseTransform(Operator& OpIn);
   void SetFlowFile(string s){flowfile = s;};
   void SetDs(double d){ds = d;};
   void SetDsmax(double d){ds_max = d;};

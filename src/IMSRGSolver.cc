@@ -200,6 +200,11 @@ Operator IMSRGSolver::Transform(Operator& OpIn)
    return OpIn.BCH_Transform( Omega );
 }
 
+// Returns exp(-Omega) OpIn exp(Omega)
+Operator IMSRGSolver::InverseTransform(Operator& OpIn)
+{
+   return OpIn.BCH_Transform( -Omega );
+}
 
 void IMSRGSolver::UpdateEta()
 {
@@ -273,7 +278,7 @@ double IMSRGSolver::Get2bDenominator_pphh(int ch, int ibra, int iket)
 double IMSRGSolver::Get1bDenominator_pp(int i, int j)
 {
    double denominator = H_s.OneBody(i,i) - H_s.OneBody(j,j);
-   if (abs(denominator < 1e-6)) return 1e-3;
+   if (abs(denominator) < 1e-6) return 1e0;
    return denominator;
 }
 
@@ -432,6 +437,10 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
          double denominator = Get1bDenominator_ph(i,j);
          Eta.OneBody(i,j) = H_s.OneBody(i,j)/denominator;
          Eta.OneBody(j,i) = - Eta.OneBody(i,j);
+//         if (abs(Eta.OneBody(i,j)) > 10)
+//         {
+//           cout <<"Eta(" << i << "," << j << ") = " << Eta.OneBody(i,j) << "  -- " << H_s.OneBody(i,j) << " / " << denominator << endl;
+//         }
       }
       for (int &j : modelspace->particles )
       {
@@ -439,6 +448,11 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
          double denominator = Get1bDenominator_pp(i,j);
          Eta.OneBody(i,j) = H_s.OneBody(i,j)/denominator;
          Eta.OneBody(j,i) = - Eta.OneBody(i,j);
+         if (abs(Eta.OneBody(i,j)) > 10)
+         {
+           cout << "Eta(" << i << "," << j << ") = " << Eta.OneBody(i,j) << "  -- " << H_s.OneBody(i,j) << " / " << denominator
+                << "    ii " << H_s.OneBody(i,i) << "  jj " << H_s.OneBody(j,j) << endl;
+         }
       }
    }
 
