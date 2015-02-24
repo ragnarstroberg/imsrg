@@ -357,14 +357,6 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
 
 
 
-//void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare )
-//{
-//   ReadBareTBME_Darmstadt( filename, Hbare, -1, -1);
-//}
-//void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax /*default=-1*/)
-//{
-//   ReadBareTBME_Darmstadt( filename, Hbare, Emax, -1);
-//}
 
 // Read TBME's in Darmstadt format
 // Admittedly this is a mess. Emax is the 2body max energy
@@ -498,25 +490,30 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
 
 
 //void ReadWrite::Read_Darmstadt_3body( string filename, Operator3& Hbare, int Emax)
-void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax)
+//void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax)
+void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max)
 {
   ModelSpace * modelspace = Hbare.GetModelSpace();
-  vector<string> Llabels = {"s","p","d","f","g","h","i","j","k","l"};
-  int emax = 0;
-  int norb = modelspace->GetNumberOrbits();
-  int nljmax = norb/2;
-  int herm = Hbare.IsHermitian() ? 1 : -1 ;
+  vector<string> empty = {};
+  ModelSpace modelspace_f = ModelSpace(E1max,empty,empty);
+  // not being used// vector<string> Llabels = {"s","p","d","f","g","h","i","j","k","l"};
+  int e1max = modelspace->GetNmax();
+  int e2max = modelspace->GetN2max();
+  int e3max = modelspace->GetN3max();
+  int norb = modelspace_f.GetNumberOrbits(); // of the file
+  int nljmax = norb/2; // of the file
+  // not used //int herm = Hbare.IsHermitian() ? 1 : -1 ;
   vector<int> orbits_remap(nljmax,-1);
   for (int i=0;i<norb;++i)
   {
-     Orbit& oi = modelspace->GetOrbit(i);
+     Orbit& oi = modelspace_f.GetOrbit(i);
      if (oi.tz2 > 0 ) continue;
      int N = 2*oi.n + oi.l;
      int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2;
      orbits_remap[nlj] = i;
-     emax = max(emax,N);
+//     emax = max(emax,N);
   }
-     emax = Emax;
+//     emax = Emax;
 
   ifstream infile;
   char line[LINESIZE];
@@ -531,7 +528,7 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax
   }
   infile.getline(line,LINESIZE);
 
-  cout << "Emax = " << emax << endl;
+//  cout << "Emax = " << emax << endl;
   int i=0;
   int j=0;
 
@@ -544,21 +541,24 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax
     int a =  orbits_remap[nlj1];
     Orbit & oa = modelspace->GetOrbit(a);
     int ea = 2*oa.n + oa.l;
-    if (ea > emax) break;
+//    if (ea > emax) break;
+    if (ea > E1max) break;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
       int b =  orbits_remap[nlj2];
       Orbit & ob = modelspace->GetOrbit(b);
       int eb = 2*ob.n + ob.l;
-      if ( (ea+eb) > emax) break;
+//      if ( (ea+eb) > emax) break;
+      if ( (ea+eb) > E2max) break;
 
       for(int nlj3=0; nlj3<=nlj2; ++nlj3)
       {
         int c =  orbits_remap[nlj3];
         Orbit & oc = modelspace->GetOrbit(c);
         int ec = 2*oc.n + oc.l;
-        if ( (ea+eb+ec) > emax) break;
+//        if ( (ea+eb+ec) > emax) break;
+        if ( (ea+eb+ec) > E3max) break;
 
         // Get J limits for bra <abc|
         int JabMax  = (oa.j2 + ob.j2)/2;
@@ -586,14 +586,16 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax
           int d =  orbits_remap[nnlj1];
           Orbit & od = modelspace->GetOrbit(d);
           int ed = 2*od.n + od.l;
-          if (ed > emax) break;
+//          if (ed > emax) break;
+          if (ed > E1max) break;
 
           for(int nnlj2=0; nnlj2 <= ((nlj1 == nnlj1) ? nlj2 : nnlj1); ++nnlj2)
           {
             int e =  orbits_remap[nnlj2];
             Orbit & oe = modelspace->GetOrbit(e);
             int ee = 2*oe.n + oe.l;
-            if ( (ed+ee) > emax) break;
+//            if ( (ed+ee) > emax) break;
+            if ( (ed+ee) > E2max) break;
 
             int nnlj3Max = (nlj1 == nnlj1 and nlj2 == nnlj2) ? nlj3 : nnlj2;
             for(int nnlj3=0; nnlj3 <= nnlj3Max; ++nnlj3)
@@ -601,7 +603,8 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax
               int f =  orbits_remap[nnlj3];
               Orbit & of = modelspace->GetOrbit(f);
               int ef = 2*of.n + of.l;
-              if ( (ed+ee+ef) > emax) break;
+//              if ( (ed+ee+ef) > emax) break;
+              if ( (ed+ee+ef) > E3max) break;
               // check parity
               if ( (oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2 !=0 ) continue;
 
@@ -663,7 +666,11 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax
                     if (not autozero and abs(V)>1e-5)
                     {
 //                       double V0 = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
-                       Hbare.SetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
+                       if(ea<e1max and eb<e1max and ec<e1max and ed<e1max and ee<e1max and ef<e1max)
+                       {
+//                        cout << "abc " << a << " " << b << " " << c << "  def " << d << " " << e << " " << f << endl;
+                        Hbare.SetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
+                       }
 //                       double Vout = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
 //                       if (abs(V-Vout)>1e-4)
 //                       {

@@ -242,6 +242,9 @@ class ModelSpace
    int GetNmax(){return Nmax;};
    int GetN2max(){return N2max;};
    int GetN3max(){return N3max;};
+   void SetNmax(int n){Nmax=n;};
+   void SetN2max(int n){N2max=n;};
+   void SetN3max(int n){N3max=n;};
 
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
@@ -282,6 +285,7 @@ class ModelSpace
    vector<TwoBodyChannel> TwoBodyChannels;
    vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
    map<long int,double> SixJList;
+   map<long int,double> NineJList;
    map<long int,double> MoshList;
 
 };

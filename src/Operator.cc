@@ -37,6 +37,12 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 {
   modelspace = &ms;
   AllocateTwoBody();
+  if (particle_rank >=3)
+  {
+    cout << "allocating ThreeBody..." << endl;
+    AllocateThreeBody();
+    cout << "done allocating ThreeBody" << endl;
+  }
 }
 
 
@@ -84,6 +90,8 @@ void Operator::AllocateTwoBody()
 // Confusing nomenclature: J2 means 2 times the total J of the three body system
 void Operator::AllocateThreeBody()
 {
+  E3max = modelspace->GetN3max();
+  cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
   int norbits = modelspace->GetNumberOrbits();
   for (int a=0; a<norbits; a+=2)
   {
@@ -119,7 +127,9 @@ void Operator::AllocateThreeBody()
         orbindx3_t orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
 
         // Get hashing index for orbits
-        ThreeBody[orbit_index].resize(J2_max-J2_min+1);
+        ThreeBody[orbit_index].resize((J2_max-J2_min)/2+1);
+//        cout << "size of ThreeBody = " << ThreeBody.size() << endl;
+//        cout << "abc " << a << " " << b << " " << c << "   def " << d << " " << e << " " << f << endl;
 
         for (int J2=J2_min; J2<=J2_max; J2+=2)
         {
@@ -164,6 +174,7 @@ void Operator::Copy(const Operator& op)
    ZeroBody      = op.ZeroBody;
    OneBody       = op.OneBody;
    TwoBody       = op.TwoBody;
+   ThreeBody     = op.ThreeBody;
    TwoBodyTensorChannels       = op.TwoBodyTensorChannels;
 }
 
@@ -511,6 +522,7 @@ double Operator::GetTBMEmonopole(Ket & bra, Ket & ket) const
 // Get Three Body Matrix Element in proton-neutron formalism.
 double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int Tz, int a, int b, int c, int d, int e, int f)
 {
+//   cout << "In GetThreeBOdyME_pn()" << endl;
    Orbit& oa = modelspace->GetOrbit(a);
    Orbit& ob = modelspace->GetOrbit(b);
    Orbit& oc = modelspace->GetOrbit(c);
@@ -538,6 +550,7 @@ double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int Tz, int a
            double CG3 = AngMom::CG(tab,tza+tzb, 0.5,tzc, T/2., tza+tzb+tzc);
            double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, T/2., tzd+tze+tzf);
            if (CG3*CG4==0) continue;
+//           cout << "Calling GetThreeBodyME()" << endl;
            Vpn += CG1*CG2*CG3*CG4*GetThreeBodyME(Jab_in,Jde_in,J2,tab,tde,T,a-a%2,b-b%2,c-c%2,d-d%2,e-e%2,f-f%2);
          }
       }
@@ -550,6 +563,8 @@ double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int Tz, int a
 // Get Three Body Matrix Element in isospin formalism (which is how they're stored)
 double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in)
 {
+//   cout << "In GetThreeBodyME() " << Jab_in << " "<< Jde_in << " " << J2 << "   " << tab_in << " " << tde_in << " " << T2 << "   "
+//        << a_in << " " << b_in << " " << c_in << " " << d_in << " " << e_in << " " << f_in <<endl;
    // reorder so a>=b>=c and d>=e>=f
    int a=a_in;
    int b=b_in;
@@ -605,6 +620,8 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
             int J2Tindex = (a>=d) ? J2index*5 + 2*tab + tde + (T2-1)/2
                                   : J2index*5 + 2*tde + tab + (T2-1)/2;
 
+//            cout << "orbit_index = " << orbit_index << endl;
+//            cout << "size = " << ThreeBody.at(orbit_index).size() << endl;
             V += Cj_abc * Cj_def * Ct_abc * Ct_def * ThreeBody.at(orbit_index).at(Jindex).at(J2Tindex);
          }
         }
@@ -879,7 +896,9 @@ Operator Operator::DoNormalOrdering2()
 //
 Operator Operator::DoNormalOrdering3()
 {
+   cout << "in DoNormalOrdering3() " << endl;
    Operator opNO3 = Operator(*modelspace);
+   cout << "size of ThreeBody = " << ThreeBody.size() << endl;
 //   #pragma omp parallel for
    for (int ch=0;ch<nChannels;++ch)
    {
@@ -911,6 +930,8 @@ Operator Operator::DoNormalOrdering3()
                {
 //                  #pragma omp critical
 //                  opNO3.TwoBody[ch](ibra,iket) += (K2+1) * GetThreeBodyME_pn(tbc.J,tbc.J,K2,Tz2,i,j,a,k,l,a);
+//                  cout << "Gamma(" << ibra << "," << iket << ") = " << Gamma(ibra,iket) << endl;
+//                  cout << "ThreeBodyME = " << GetThreeBodyME_pn(tbc.J,tbc.J,K2,Tz2,i,j,a,k,l,a) << endl;
                   Gamma(ibra,iket) += (K2+1) * GetThreeBodyME_pn(tbc.J,tbc.J,K2,Tz2,i,j,a,k,l,a);
                }
             }
@@ -919,11 +940,12 @@ Operator Operator::DoNormalOrdering3()
          }
       }
    }
+   cout << "Done looping over channels" << endl;
    Operator opNO2 = opNO3.DoNormalOrdering2();
    opNO2.ScaleZeroBody(1./3.);
    opNO2.ScaleOneBody(1./2.);
 
-   // Also normal order the 1 and 2 body piece of the 3-body operator (if any)
+   // Also normal order the 1 and 2 body pieces
    opNO2 += DoNormalOrdering2();
    return opNO2;
 

@@ -423,6 +423,11 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
 {
    Operator OpHF = OpIn;
 
+   if (OpIn.rank_J + OpIn.rank_T + OpIn.parity > 0)
+   {
+      cout << "Warning, HF transformation hasn't been checked for tensor operators" << endl;
+   }
+
    cout << "Transform one body" << endl;
    // Easy part:
    //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>
@@ -467,7 +472,7 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
    if (OpIn.GetParticleRank() < 3) return OpHF;
 
    cout << "Transform three body" << endl;
-   for (auto it_ORB : OpHF.ThreeBody)
+   for (auto& it_ORB : OpHF.ThreeBody) // loop through orbit labels in the HF basis
    {
       // capital indices are in the transformed basis
       // equivalent to greek letters in the notes. This was just tidier.
@@ -476,28 +481,32 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
       int a,b,c,d,e,f;
       OpHF.GetOrbitsFromThreeBodyIndex(it_ORB.first, aa,bb,cc,dd,ee,ff);
       
-      for (auto it_orb : OpIn.ThreeBody)
+      for (auto& it_orb : OpIn.ThreeBody) // loop through orbit labels in the original basis
       {
          OpHF.GetOrbitsFromThreeBodyIndex(it_orb.first, a,b,c,d,e,f);
 
          //double coeff = C(aa,a)*C(bb,b)*C(cc,c)*C(d,dd)*C(e,ee)*C(f,ff);
-         cout << "it_orb = " << it_orb.first << endl;
-         cout << "Get C " << a << " " << b << " " << c << " " << d << " " << e << " " << f << endl;
+//         cout << "it_ORB = " << it_ORB.first << "  it_orb = " << it_orb.first << endl;
+////         cout << "Get C " << a << " " << b << " " << c << " " << d << " " << e << " " << f << endl;
+//         cout << "Get C <" << a << "|" << aa << ">  <" << b << "|" << bb << ">  <" << c << "|" << cc << ">  <" << d << "|" << dd << ">  <" << e << "|" << ee << ">  <" << f << "|" << ff << ">" << endl;
          double coeff = C(a,aa)*C(b,bb)*C(c,cc)*C(d,dd)*C(e,ee)*C(f,ff);
-         cout << "Got C " << endl;
+//         cout << "Got C " << endl;
          if (abs(coeff) < 1e-6) continue;
 
          // loop over all the J,T couplings
-         cout << "start jt loop sizes = " << it_ORB.second.size() << "," << it_orb.second.size() << endl;
+//         cout << "start jt loop sizes = " << it_ORB.second.size() << "," << it_orb.second.size() << endl;
          for( auto it_J=it_ORB.second.begin(), it_j=it_orb.second.begin(); it_J!=it_ORB.second.end() and it_j!=it_orb.second.end(); ++it_J, ++it_j)
+//         auto it_j = it_orb.second.begin();
+//         auto it_J = it_ORB.second.begin();
+//         for( ; it_J!=it_ORB.second.end() and it_j!=it_orb.second.end(); ++it_J, ++it_j)
          {
-            cout << "    J sizes = " << it_J->size() << "," << it_j->size() << endl;
-            for ( auto it_JT=it_J->begin(), it_jt=it_j->begin(); it_JT!=it_J->end() and it_jt!=it_j->end(); ++it_JT, ++it_j)
+//            cout << "    J sizes = " << it_J->size() << "," << it_j->size() << endl;
+            for ( auto it_JT=it_J->begin(), it_jt=it_j->begin(); it_JT!=it_J->end() and it_jt!=it_j->end(); ++it_JT, ++it_jt)
             {
                (*it_JT) += (*it_jt) * coeff;
             }
          }
-         cout << "finish jt loop" << endl;
+//         cout << "finish jt loop" << endl;
 
       }
 
