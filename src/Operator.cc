@@ -278,7 +278,7 @@ Operator Operator::operator-() const
 
 ///////// SETTER_GETTERS ///////////////////////////
 
-//double Operator::GetTBME(int ch, int a, int b, int c, int d) const
+/// This returns the matrix element times a factor \f$ \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \f$
 double Operator::GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const
 {
    TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
@@ -295,7 +295,6 @@ double Operator::GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) con
    if (c>d) phase *= ket.Phase(tbc_ket.J);
    if (a==b) phase *= SQRT2;
    if (c==d) phase *= SQRT2;
-//   return phase * TwoBody[ch](bra_ind, ket_ind);
    return phase * TwoBody.at(ch_bra).at(ch_ket)(bra_ind, ket_ind);
 }
 
@@ -483,7 +482,9 @@ void Operator::AddToTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme)
    AddToTBME(ch,ch,bra,ket,tbme);
 }
 
-
+/// Returns an unnormalized monopole-like (angle-averaged) term
+/// \f[ \bar{V}_{ijkl} = \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \sum_{J}(2J+1) V_{ijkl}^J \f]
+///
 double Operator::GetTBMEmonopole(int a, int b, int c, int d) const
 {
    double mon = 0;
@@ -582,6 +583,8 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
    Orbit& od = modelspace->GetOrbit(d);
    Orbit& oe = modelspace->GetOrbit(e);
    Orbit& of = modelspace->GetOrbit(f);
+   if (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l > E3max) return 0;
+   if (2*(od.n+oe.n+of.n)+od.l+oe.l+of.l > E3max) return 0;
 
    int Jindex = ( J2-max(1, max(oa.j2-ob.j2-oc.j2, od.j2-oe.j2-of.j2) ) )/2;
 
@@ -928,14 +931,9 @@ Operator Operator::DoNormalOrdering3()
                int kmax2 = 2*tbc.J+oa.j2;
                for (int K2=kmin2; K2<=kmax2; ++K2)
                {
-//                  #pragma omp critical
-//                  opNO3.TwoBody[ch](ibra,iket) += (K2+1) * GetThreeBodyME_pn(tbc.J,tbc.J,K2,Tz2,i,j,a,k,l,a);
-//                  cout << "Gamma(" << ibra << "," << iket << ") = " << Gamma(ibra,iket) << endl;
-//                  cout << "ThreeBodyME = " << GetThreeBodyME_pn(tbc.J,tbc.J,K2,Tz2,i,j,a,k,l,a) << endl;
                   Gamma(ibra,iket) += (K2+1) * GetThreeBodyME_pn(tbc.J,tbc.J,K2,Tz2,i,j,a,k,l,a);
                }
             }
-//            opNO3.TwoBody[ch](ibra,iket) /= (2*tbc.J+1);
             Gamma(ibra,iket) /= (2*tbc.J+1);
          }
       }
@@ -1363,7 +1361,8 @@ Operator Operator::CommutatorScalarScalar(const Operator& opright) const
    if ( not out.IsAntiHermitian() )
    {
       comm110ss(opright, out);
-      comm220ss(opright, out) ;
+      if (particle_rank>1 and opright.particle_rank>1)
+        comm220ss(opright, out) ;
    }
 
    comm111ss(opright, out);
@@ -1371,15 +1370,17 @@ Operator Operator::CommutatorScalarScalar(const Operator& opright) const
    comm121ss(opright, out);
 //   comm121st(opright, out);  // << equivalent in scalar case
 
-   comm122ss(opright, out); // 
+   comm122ss(opright, out); //  This is the slow one for some reason.
 //   comm122st(opright, out); // << equivalent in scalar case
 
+   if (particle_rank>1 and opright.particle_rank>1)
+   {
    comm222_pp_hh_221ss(opright, out);
 ////   comm222_pp_hh_221st(opright, out); // << equivalent in scalar case
 
    comm222_phss(opright, out);
 ////   comm222_phst(opright, out);
-
+   }
 
    return out;
 }

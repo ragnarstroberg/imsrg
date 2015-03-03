@@ -4,58 +4,154 @@
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classModelSpace_ace83628e3da0b44ae53f1548e84341a0}{{\bfseries Model\-Space} (\hyperlink{classModelSpace}{Model\-Space} $\ast$)}\label{classModelSpace_ace83628e3da0b44ae53f1548e84341a0}
+\hypertarget{classModelSpace_a9554b9bc74b82e392fafc9de496fce5f}{{\bfseries Model\-Space} (const \hyperlink{classModelSpace}{Model\-Space} \&)}\label{classModelSpace_a9554b9bc74b82e392fafc9de496fce5f}
 
 \item 
-\hypertarget{classModelSpace_af76b8aad86c7ebc938f81c48e46039b5}{\hyperlink{classOrbit}{Orbit} $\ast$ {\bfseries Get\-Orbit} (int i)}\label{classModelSpace_af76b8aad86c7ebc938f81c48e46039b5}
+\hypertarget{classModelSpace_a1d93cd1705e0f5dd3421e7617dbbc16e}{{\bfseries Model\-Space} (int Nmax, vector$<$ string $>$ hole\-\_\-list, vector$<$ string $>$ inside\-\_\-list)}\label{classModelSpace_a1d93cd1705e0f5dd3421e7617dbbc16e}
 
 \item 
-\hypertarget{classModelSpace_a72c2d4577e009a4ca8b771ad7416606b}{\hyperlink{classKet}{Ket} $\ast$ {\bfseries Get\-Ket} (int i)}\label{classModelSpace_a72c2d4577e009a4ca8b771ad7416606b}
-
-\item 
-\hypertarget{classModelSpace_a863d40e24681c22ce59869027cb907f9}{\hyperlink{classKet}{Ket} $\ast$ {\bfseries Get\-Ket} (int a, int b)}\label{classModelSpace_a863d40e24681c22ce59869027cb907f9}
-
-\item 
-\hypertarget{classModelSpace_a1dc25c23564b3f768eff5c49692d5896}{int {\bfseries Get\-Ket\-Index} (int a, int b)}\label{classModelSpace_a1dc25c23564b3f768eff5c49692d5896}
-
-\item 
-\hypertarget{classModelSpace_a4e62ad9bd7f2c6f0bdbed31b15c53d57}{int {\bfseries Get\-Ket\-Index} (\hyperlink{classKet}{Ket} $\ast$ket)}\label{classModelSpace_a4e62ad9bd7f2c6f0bdbed31b15c53d57}
-
-\item 
-\hypertarget{classModelSpace_a28c975e3a9ac7c6234b7fb11d7ddf313}{int {\bfseries Get\-Number\-Orbits} ()}\label{classModelSpace_a28c975e3a9ac7c6234b7fb11d7ddf313}
-
-\item 
-\hypertarget{classModelSpace_ae4c39da727df33111c134c0db6c41f89}{int {\bfseries Get\-Number\-Kets} ()}\label{classModelSpace_ae4c39da727df33111c134c0db6c41f89}
-
-\item 
-\hypertarget{classModelSpace_ad8acc2ca5b475862101595d911987a7e}{void {\bfseries Add\-Orbit} (\hyperlink{classOrbit}{Orbit} orb)}\label{classModelSpace_ad8acc2ca5b475862101595d911987a7e}
+\hypertarget{classModelSpace_a2b01062b499979b919b7b77b04745cbe}{\hyperlink{classModelSpace}{Model\-Space} {\bfseries operator=} (const \hyperlink{classModelSpace}{Model\-Space} \&)}\label{classModelSpace_a2b01062b499979b919b7b77b04745cbe}
 
 \item 
 \hypertarget{classModelSpace_ae1a3578ed5aabec2956998a870a4e2d2}{void {\bfseries Setup\-Kets} ()}\label{classModelSpace_ae1a3578ed5aabec2956998a870a4e2d2}
 
 \item 
-\hypertarget{classModelSpace_acdf0b97564b897d30f665a3a8f85fcf7}{int {\bfseries Index1} (int n, int l, int j2, int tz2)}\label{classModelSpace_acdf0b97564b897d30f665a3a8f85fcf7}
+\hypertarget{classModelSpace_ad8acc2ca5b475862101595d911987a7e}{void {\bfseries Add\-Orbit} (\hyperlink{classOrbit}{Orbit} orb)}\label{classModelSpace_ad8acc2ca5b475862101595d911987a7e}
 
 \item 
-\hypertarget{classModelSpace_a8b7687bd47920cb29848962bbb3a86c7}{int {\bfseries Index2} (int a, int b)}\label{classModelSpace_a8b7687bd47920cb29848962bbb3a86c7}
+\hypertarget{classModelSpace_afe51ff3553478b349eba65c61a19ca3e}{\hyperlink{classOrbit}{Orbit} \& {\bfseries Get\-Orbit} (int i) const }\label{classModelSpace_afe51ff3553478b349eba65c61a19ca3e}
+
+\item 
+\hypertarget{classModelSpace_adc36e64fb3bb4dc76819f91e9057844f}{\hyperlink{classKet}{Ket} \& {\bfseries Get\-Ket} (int i) const }\label{classModelSpace_adc36e64fb3bb4dc76819f91e9057844f}
+
+\item 
+\hypertarget{classModelSpace_ab3662f5e12ce6da0164c8adbe1abbb95}{\hyperlink{classKet}{Ket} \& {\bfseries Get\-Ket} (int p, int q) const }\label{classModelSpace_ab3662f5e12ce6da0164c8adbe1abbb95}
+
+\item 
+\hypertarget{classModelSpace_ad2622b2d268c55b89a2082189f7185b1}{int {\bfseries Get\-Ket\-Index} (int p, int q) const }\label{classModelSpace_ad2622b2d268c55b89a2082189f7185b1}
+
+\item 
+\hypertarget{classModelSpace_ae87e8738f2aed2f23eab933b77a3772f}{int {\bfseries Get\-Ket\-Index} (\hyperlink{classKet}{Ket} $\ast$ket) const }\label{classModelSpace_ae87e8738f2aed2f23eab933b77a3772f}
+
+\item 
+\hypertarget{classModelSpace_a48004a4a3d559081827da87c9c4bfe94}{int {\bfseries Get\-Number\-Orbits} () const }\label{classModelSpace_a48004a4a3d559081827da87c9c4bfe94}
+
+\item 
+\hypertarget{classModelSpace_a2a46d43beb6d4e2de8c978ff921f4047}{int {\bfseries Get\-Number\-Kets} () const }\label{classModelSpace_a2a46d43beb6d4e2de8c978ff921f4047}
+
+\item 
+\hypertarget{classModelSpace_abc4f6a563b71977d1e0a99eb5367a2d7}{void {\bfseries Set\-Hbar\-Omega} (double hw)}\label{classModelSpace_abc4f6a563b71977d1e0a99eb5367a2d7}
+
+\item 
+\hypertarget{classModelSpace_ab29013a1b7b4b8b26d5905f97c135931}{void {\bfseries Set\-Target\-Mass} (int A)}\label{classModelSpace_ab29013a1b7b4b8b26d5905f97c135931}
+
+\item 
+\hypertarget{classModelSpace_a4cf15b20d8262cdab4ab1cadd412de7f}{double {\bfseries Get\-Hbar\-Omega} () const }\label{classModelSpace_a4cf15b20d8262cdab4ab1cadd412de7f}
+
+\item 
+\hypertarget{classModelSpace_a2f6a8428767c064a63796d4fc010e41e}{int {\bfseries Get\-Target\-Mass} () const }\label{classModelSpace_a2f6a8428767c064a63796d4fc010e41e}
+
+\item 
+\hypertarget{classModelSpace_a7c0b9152d68e069f9774078bd2a429b7}{int {\bfseries Get\-Number\-Two\-Body\-Channels} () const }\label{classModelSpace_a7c0b9152d68e069f9774078bd2a429b7}
+
+\item 
+\hypertarget{classModelSpace_ab2c315fd347fe93dd63246dea3d02f35}{\hyperlink{classTwoBodyChannel}{Two\-Body\-Channel} \& {\bfseries Get\-Two\-Body\-Channel} (int ch) const }\label{classModelSpace_ab2c315fd347fe93dd63246dea3d02f35}
+
+\item 
+\hypertarget{classModelSpace_a6709279838180ef0a6745320c9ad6926}{\hyperlink{classTwoBodyChannel__CC}{Two\-Body\-Channel\-\_\-\-C\-C} \& {\bfseries Get\-Two\-Body\-Channel\-\_\-\-C\-C} (int ch) const }\label{classModelSpace_a6709279838180ef0a6745320c9ad6926}
+
+\item 
+\hypertarget{classModelSpace_a3cbf323130388fae05fed1b59c5bac90}{int {\bfseries Get\-Two\-Body\-Jmax} () const }\label{classModelSpace_a3cbf323130388fae05fed1b59c5bac90}
+
+\item 
+\hypertarget{classModelSpace_a23ec9e8797755abfc0986b2e2c73a056}{int {\bfseries Get\-Three\-Body\-Jmax} () const }\label{classModelSpace_a23ec9e8797755abfc0986b2e2c73a056}
+
+\item 
+\hypertarget{classModelSpace_aa17b852a2902e4ec22a5c87f53de2dea}{int {\bfseries Get\-Nmax} ()}\label{classModelSpace_aa17b852a2902e4ec22a5c87f53de2dea}
+
+\item 
+\hypertarget{classModelSpace_a415e7663769bcab236a66c9914f9ff13}{int {\bfseries Get\-N2max} ()}\label{classModelSpace_a415e7663769bcab236a66c9914f9ff13}
+
+\item 
+\hypertarget{classModelSpace_a15a5f8ef44f769c052ae1ae5d475fc01}{int {\bfseries Get\-N3max} ()}\label{classModelSpace_a15a5f8ef44f769c052ae1ae5d475fc01}
+
+\item 
+\hypertarget{classModelSpace_a1a50d734edaef5cb3bd79a4707ef1e82}{void {\bfseries Set\-Nmax} (int n)}\label{classModelSpace_a1a50d734edaef5cb3bd79a4707ef1e82}
+
+\item 
+\hypertarget{classModelSpace_ab13111671fc76cf1c52b98a3f78a1dcd}{void {\bfseries Set\-N2max} (int n)}\label{classModelSpace_ab13111671fc76cf1c52b98a3f78a1dcd}
+
+\item 
+\hypertarget{classModelSpace_a432f3913aa487bf7fc7c4eb5a2197599}{void {\bfseries Set\-N3max} (int n)}\label{classModelSpace_a432f3913aa487bf7fc7c4eb5a2197599}
+
+\item 
+\hypertarget{classModelSpace_a716c2bf4a6b42c1c27579b0b7804252e}{double {\bfseries Get\-Six\-J} (double j1, double j2, double j3, double J1, double J2, double J3)}\label{classModelSpace_a716c2bf4a6b42c1c27579b0b7804252e}
+
+\item 
+\hypertarget{classModelSpace_ab9303a5a0cc4513bf4ed4430d9fe86a6}{double {\bfseries Get\-Nine\-J} (double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9)}\label{classModelSpace_ab9303a5a0cc4513bf4ed4430d9fe86a6}
+
+\item 
+\hypertarget{classModelSpace_a85f0b95b2cd46504702ea80489455beb}{double {\bfseries Get\-Moshinsky} (int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L)}\label{classModelSpace_a85f0b95b2cd46504702ea80489455beb}
+
+\item 
+\hypertarget{classModelSpace_ae73e211248e6f2bd4cc1bb0f030144ce}{int {\bfseries Get\-Two\-Body\-Channel\-Index} (int j, int p, int t)}\label{classModelSpace_ae73e211248e6f2bd4cc1bb0f030144ce}
+
+\item 
+\hypertarget{classModelSpace_a6b4d1686088e3fef492df10bbd806fe2}{int {\bfseries phase} (int x)}\label{classModelSpace_a6b4d1686088e3fef492df10bbd806fe2}
+
+\item 
+\hypertarget{classModelSpace_a07d1c8f00131cc6c192d440e6be329f3}{int {\bfseries phase} (double x)}\label{classModelSpace_a07d1c8f00131cc6c192d440e6be329f3}
+
+\item 
+\hypertarget{classModelSpace_ab9e4a36b032abc3fcd81da8b2a8707d2}{int {\bfseries Index1} (int n, int l, int j2, int tz2) const }\label{classModelSpace_ab9e4a36b032abc3fcd81da8b2a8707d2}
+
+\item 
+\hypertarget{classModelSpace_acb31fdcb54a8fe3168378969176f0157}{int {\bfseries Index2} (int p, int q) const }\label{classModelSpace_acb31fdcb54a8fe3168378969176f0157}
 
 \end{DoxyCompactItemize}
 \subsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classModelSpace_ae26284ee026396d3165bb787c3b1a33b}{std\-::vector$<$ \hyperlink{classOrbit}{Orbit} $\ast$ $>$ {\bfseries Orbits}}\label{classModelSpace_ae26284ee026396d3165bb787c3b1a33b}
+\hypertarget{classModelSpace_a14bdabeefa614c27cd1cb04bd6c322b0}{vector$<$ int $>$ {\bfseries holes}}\label{classModelSpace_a14bdabeefa614c27cd1cb04bd6c322b0}
 
 \item 
-\hypertarget{classModelSpace_a16697f11b417d01b7e7972e5b4b62870}{std\-::vector$<$ \hyperlink{classKet}{Ket} $\ast$ $>$ {\bfseries Kets}}\label{classModelSpace_a16697f11b417d01b7e7972e5b4b62870}
+\hypertarget{classModelSpace_a71a4ecf5a421c9b388375abbae00023c}{vector$<$ int $>$ {\bfseries particles}}\label{classModelSpace_a71a4ecf5a421c9b388375abbae00023c}
 
 \item 
-\hypertarget{classModelSpace_af5970e6865dd69177eb0f74fa269ff17}{int {\bfseries norbits}}\label{classModelSpace_af5970e6865dd69177eb0f74fa269ff17}
+\hypertarget{classModelSpace_a024b09899e55b396cb4fc7ea5c9d6249}{vector$<$ int $>$ {\bfseries valence}}\label{classModelSpace_a024b09899e55b396cb4fc7ea5c9d6249}
 
 \item 
-\hypertarget{classModelSpace_a43c328f29287f82b04749a39b88f8402}{int {\bfseries n\-Core}}\label{classModelSpace_a43c328f29287f82b04749a39b88f8402}
+\hypertarget{classModelSpace_ae2fef3b74d96b3e519231fb5cc3c49ff}{vector$<$ int $>$ {\bfseries qspace}}\label{classModelSpace_ae2fef3b74d96b3e519231fb5cc3c49ff}
 
 \item 
-\hypertarget{classModelSpace_a85e9c691ed5c42e9ebacb6d1147bbc0d}{int {\bfseries maxj}}\label{classModelSpace_a85e9c691ed5c42e9ebacb6d1147bbc0d}
+\hypertarget{classModelSpace_a691eab13c958b567ca51f7a199c347fe}{vector$<$ int $>$ {\bfseries hole\-\_\-qspace}}\label{classModelSpace_a691eab13c958b567ca51f7a199c347fe}
+
+\item 
+\hypertarget{classModelSpace_a7943dcd4466d03a0b267d60d0e143dc4}{vector$<$ int $>$ {\bfseries particle\-\_\-qspace}}\label{classModelSpace_a7943dcd4466d03a0b267d60d0e143dc4}
+
+\item 
+\hypertarget{classModelSpace_a7318082e80152f9d1743fd485c8616f4}{vector$<$ int $>$ {\bfseries proton\-\_\-orbits}}\label{classModelSpace_a7318082e80152f9d1743fd485c8616f4}
+
+\item 
+\hypertarget{classModelSpace_a9b21ad783317bff2e75cedef0300e89a}{vector$<$ int $>$ {\bfseries neutron\-\_\-orbits}}\label{classModelSpace_a9b21ad783317bff2e75cedef0300e89a}
+
+\item 
+\hypertarget{classModelSpace_aa049d819d4d18cfb466777581cc349d2}{int {\bfseries Nmax}}\label{classModelSpace_aa049d819d4d18cfb466777581cc349d2}
+
+\item 
+\hypertarget{classModelSpace_a60db71713d3964af214756163ba0585e}{int {\bfseries N2max}}\label{classModelSpace_a60db71713d3964af214756163ba0585e}
+
+\item 
+\hypertarget{classModelSpace_ab28d5ba1838ef9d91a3f7c570530ca7c}{int {\bfseries N3max}}\label{classModelSpace_ab28d5ba1838ef9d91a3f7c570530ca7c}
+
+\item 
+\hypertarget{classModelSpace_a4c8f0a4476a3b3da3fced59d899f0134}{int {\bfseries One\-Body\-Jmax}}\label{classModelSpace_a4c8f0a4476a3b3da3fced59d899f0134}
+
+\item 
+\hypertarget{classModelSpace_aa2fd94965eb8a508e5ea7d4c879bae0b}{int {\bfseries Two\-Body\-Jmax}}\label{classModelSpace_aa2fd94965eb8a508e5ea7d4c879bae0b}
+
+\item 
+\hypertarget{classModelSpace_af9ca130d96f582d0ed1a4ef5373bcd05}{int {\bfseries Three\-Body\-Jmax}}\label{classModelSpace_af9ca130d96f582d0ed1a4ef5373bcd05}
 
 \end{DoxyCompactItemize}
 

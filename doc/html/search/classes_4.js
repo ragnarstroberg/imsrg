@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['readwrite',['ReadWrite',['../classReadWrite.html',1,'']]]
+  ['operator',['Operator',['../classOperator.html',1,'']]],
+  ['orbit',['Orbit',['../classOrbit.html',1,'']]]
 ];

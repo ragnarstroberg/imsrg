@@ -1,5 +1,7 @@
 var searchData=
 [
-  ['diagonalize',['Diagonalize',['../classHartreeFock.html#a00f7b0c4cb7373a3f1a69ca27a4dfaed',1,'HartreeFock']]],
-  ['diagonalize2',['Diagonalize2',['../classHartreeFock.html#a0e10a3dc1f022f1fdee2720e9e1a9c19',1,'HartreeFock']]]
+  ['bch_5fproduct',['BCH_Product',['../classOperator.html#a0db0f9c98175e3fd4634dc56544ce87b',1,'Operator']]],
+  ['bch_5ftransform',['BCH_Transform',['../classOperator.html#afdb54d55b3dc10baf795a59fd9129182',1,'Operator']]],
+  ['buildmonopolev',['BuildMonopoleV',['../classHartreeFock.html#a3d6bac9b4403e4bc599a89ad0c9b6056',1,'HartreeFock']]],
+  ['buildmonopolev3',['BuildMonopoleV3',['../classHartreeFock.html#a1c146af25a09f427cc626d877ec6e518',1,'HartreeFock']]]
 ];

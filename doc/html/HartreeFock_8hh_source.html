@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>My Project: HartreeFock.hh Source File</title>
+<title>IM-SRG++: HartreeFock.hh Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -22,7 +22,8 @@
  <tbody>
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
-   <div id="projectname">My Project
+   <div id="projectname">IM-SRG++
+   &#160;<span id="projectnumber">0</span>
    </div>
   </td>
  </tr>
@@ -68,7 +69,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Functions</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Variables</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -87,51 +88,83 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &quot;Operator.hh&quot;</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#include &lt;armadillo&gt;</span></div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;</div>
-<div class="line"><a name="l00007"></a><span class="lineno"><a class="line" href="classHartreeFock.html">    7</a></span>&#160;<span class="keyword">class </span><a class="code" href="classHartreeFock.html">HartreeFock</a></div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;{</div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;   arma::fmat C;             <span class="comment">// coefficients, 1st index is ho basis, 2nd = HF basis</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;   arma::fmat rho;           <span class="comment">// density matrix rho_ij</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;   arma::fmat t;             <span class="comment">// kinetic energy</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;   arma::fmat Vab;           <span class="comment">// 1 body potenial</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;   arma::fmat H;             <span class="comment">// 1 body Hamiltonian H_ab</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;   arma::fmat Vmon;          <span class="comment">// Monopole 2-body interaction</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;   arma::fvec energies;      <span class="comment">// vector of single particle energies</span></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;   arma::fvec prev_energies; <span class="comment">// SPE&#39;s from last iteration</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;   <a class="code" href="classOperator.html">Operator</a> *Hbare;          <span class="comment">// Pointer to (input) bare Hamiltonian</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;   <a class="code" href="classOperator.html">Operator</a> *Hhf;            <span class="comment">// Pointer to (output) Hamiltonian in HF basis</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;   <span class="keywordtype">float</span> ediff;              <span class="comment">// Energy difference from last iteration</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;   <span class="keywordtype">float</span> tolerance;          <span class="comment">// tolerance for convergence</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;   <span class="keywordtype">float</span> EHF;</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;   </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;   <a class="code" href="classHartreeFock.html">HartreeFock</a>(<a class="code" href="classOperator.html">Operator</a> * hbare=NULL, <a class="code" href="classOperator.html">Operator</a> *hhf=NULL);</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;   <span class="keywordtype">void</span> BuildMonopoleV();</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classHartreeFock.html#a00f7b0c4cb7373a3f1a69ca27a4dfaed">Diagonalize</a>();</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classHartreeFock.html#a0e10a3dc1f022f1fdee2720e9e1a9c19">Diagonalize2</a>();</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;   <span class="keywordtype">void</span> UpdateH();</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;   <span class="keywordtype">void</span> UpdateDensityMatrix();</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;   <span class="keywordtype">bool</span> CheckConvergence();</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;   <span class="keywordtype">void</span> Solve();</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;   <span class="keywordtype">void</span> PrintOrbits();</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;   <span class="keywordtype">void</span> UpdateHFOrbits();</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;   <span class="keywordtype">void</span> BuildKineticEnergy(<span class="keywordtype">float</span> hw);</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;   <span class="keywordtype">void</span> PrintRho(<span class="keywordtype">int</span> );</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;   <span class="keywordtype">void</span> CalcEHF();</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;};</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor"></span></div>
-<div class="ttc" id="classOperator_html"><div class="ttname"><a href="classOperator.html">Operator</a></div><div class="ttdef"><b>Definition:</b> Operator.hh:42</div></div>
-<div class="ttc" id="classHartreeFock_html"><div class="ttname"><a href="classHartreeFock.html">HartreeFock</a></div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:7</div></div>
-<div class="ttc" id="classHartreeFock_html_a00f7b0c4cb7373a3f1a69ca27a4dfaed"><div class="ttname"><a href="classHartreeFock.html#a00f7b0c4cb7373a3f1a69ca27a4dfaed">HartreeFock::Diagonalize</a></div><div class="ttdeci">void Diagonalize()</div><div class="ttdoc"> </div><div class="ttdef"><b>Definition:</b> HartreeFock.cc:164</div></div>
-<div class="ttc" id="classHartreeFock_html_a0e10a3dc1f022f1fdee2720e9e1a9c19"><div class="ttname"><a href="classHartreeFock.html#a0e10a3dc1f022f1fdee2720e9e1a9c19">HartreeFock::Diagonalize2</a></div><div class="ttdeci">void Diagonalize2()</div><div class="ttdoc"> </div><div class="ttdef"><b>Definition:</b> HartreeFock.cc:176</div></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#include &lt;map&gt;</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;</div>
+<div class="line"><a name="l00008"></a><span class="lineno"><a class="line" href="classHartreeFock.html">    8</a></span>&#160;<span class="keyword">class </span><a class="code" href="classHartreeFock.html">HartreeFock</a></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;{</div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160; <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00011"></a><span class="lineno"><a class="line" href="classHartreeFock.html#aad1a5eeadedf9689bbfc2e3d71b60aee">   11</a></span>&#160;   <a class="code" href="classOperator.html">Operator</a>&amp; <a class="code" href="classHartreeFock.html#aad1a5eeadedf9689bbfc2e3d71b60aee">Hbare</a>;         </div>
+<div class="line"><a name="l00012"></a><span class="lineno"><a class="line" href="classHartreeFock.html#a9c73247cdb9255cebabaacc99ec55086">   12</a></span>&#160;   arma::mat <a class="code" href="classHartreeFock.html#a9c73247cdb9255cebabaacc99ec55086">C</a>;             </div>
+<div class="line"><a name="l00013"></a><span class="lineno"><a class="line" href="classHartreeFock.html#a6fc0aa9f25640979d5188443a19aeea5">   13</a></span>&#160;   arma::mat <a class="code" href="classHartreeFock.html#a6fc0aa9f25640979d5188443a19aeea5">rho</a>;           </div>
+<div class="line"><a name="l00014"></a><span class="lineno"><a class="line" href="classHartreeFock.html#ac0574a970910f77d873a8f2b9beb8441">   14</a></span>&#160;   arma::mat <a class="code" href="classHartreeFock.html#ac0574a970910f77d873a8f2b9beb8441">t</a>;             </div>
+<div class="line"><a name="l00015"></a><span class="lineno"><a class="line" href="classHartreeFock.html#ae823da58505b21231d092b3ef7cec3bf">   15</a></span>&#160;   arma::mat <a class="code" href="classHartreeFock.html#ae823da58505b21231d092b3ef7cec3bf">Vij</a>;           </div>
+<div class="line"><a name="l00016"></a><span class="lineno"><a class="line" href="classHartreeFock.html#a25a0f38a655064375765f74182ce9334">   16</a></span>&#160;   arma::mat <a class="code" href="classHartreeFock.html#a25a0f38a655064375765f74182ce9334">V3ij</a>;          </div>
+<div class="line"><a name="l00017"></a><span class="lineno"><a class="line" href="classHartreeFock.html#a45136295f4834a9f692f262eee75672a">   17</a></span>&#160;   arma::mat <a class="code" href="classHartreeFock.html#a45136295f4834a9f692f262eee75672a">F</a>;             </div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;   <span class="comment">//arma::mat H;           ///&lt; 1 body Hamiltonian H_ab</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno"><a class="line" href="classHartreeFock.html#a038c93667899526e6f136695a643ad96">   19</a></span>&#160;   arma::mat <a class="code" href="classHartreeFock.html#a038c93667899526e6f136695a643ad96">Vmon</a>;          </div>
+<div class="line"><a name="l00020"></a><span class="lineno"><a class="line" href="classHartreeFock.html#a501092b930b921d0f6e8ebfb652af040">   20</a></span>&#160;   arma::mat <a class="code" href="classHartreeFock.html#a501092b930b921d0f6e8ebfb652af040">Vmon_exch</a>;     </div>
+<div class="line"><a name="l00021"></a><span class="lineno"><a class="line" href="classHartreeFock.html#a415fc1fbbba3a6a84d47e31ed18323c9">   21</a></span>&#160;   arma::vec <a class="code" href="classHartreeFock.html#a415fc1fbbba3a6a84d47e31ed18323c9">energies</a>;      </div>
+<div class="line"><a name="l00022"></a><span class="lineno"><a class="line" href="classHartreeFock.html#a43e2a195ad044947a9e1fb9f3a937d8a">   22</a></span>&#160;   arma::vec <a class="code" href="classHartreeFock.html#a43e2a195ad044947a9e1fb9f3a937d8a">prev_energies</a>; </div>
+<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="classHartreeFock.html#a22c754579ad1a45f053a5305e87d4700">   23</a></span>&#160;   <span class="keywordtype">double</span> <a class="code" href="classHartreeFock.html#a22c754579ad1a45f053a5305e87d4700">tolerance</a>;        </div>
+<div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="classHartreeFock.html#a16c9e1791919c2ceef5584bdc9b84a81">   24</a></span>&#160;   <span class="keywordtype">double</span> <a class="code" href="classHartreeFock.html#a16c9e1791919c2ceef5584bdc9b84a81">EHF</a>;              </div>
+<div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="classHartreeFock.html#a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3">   25</a></span>&#160;   <span class="keywordtype">int</span> <a class="code" href="classHartreeFock.html#a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3">iterations</a>;          </div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;   map&lt;unsigned long long int, double&gt; Vmon3; <span class="comment">// Monopole 3-body interaction</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;   </div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;   <a class="code" href="classHartreeFock.html">HartreeFock</a>(<a class="code" href="classOperator.html">Operator</a>&amp;  hbare);</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classHartreeFock.html#a3d6bac9b4403e4bc599a89ad0c9b6056">BuildMonopoleV</a>();</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classHartreeFock.html#a00f7b0c4cb7373a3f1a69ca27a4dfaed">Diagonalize</a>();</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classHartreeFock.html#a84fe0eb16f6e5835c920bf8fa98c4442">UpdateF</a>();</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classHartreeFock.html#aad38c905e7e9f9e9757b5800e6910c61">UpdateDensityMatrix</a>();</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;   <span class="keywordtype">bool</span> <a class="code" href="classHartreeFock.html#a35ab9c4f96e68b1c9acea1d1407ecc60">CheckConvergence</a>();</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;   <span class="keywordtype">void</span> Solve();</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;   <span class="keywordtype">void</span> PrintOrbits();</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="comment">//   void BuildKineticEnergy(double hw);</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="comment">//   void PrintRho(int );</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classHartreeFock.html#aef506c5c5bc0f317ceb9c71bdc44d62b">CalcEHF</a>();</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classHartreeFock.html#a2eb6754f57250a03a2e1bd3e2aef4daf">ReorderCoefficients</a>();</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;   <a class="code" href="classOperator.html">Operator</a> <a class="code" href="classHartreeFock.html#a55914915cea16669e549025c244b62d0">TransformToHFBasis</a>( <a class="code" href="classOperator.html">Operator</a>&amp; OpIn);</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classHartreeFock.html#a1c146af25a09f427cc626d877ec6e518">BuildMonopoleV3</a>();</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;   <a class="code" href="classOperator.html">Operator</a> GetHbare(){<span class="keywordflow">return</span> <a class="code" href="classHartreeFock.html#aad1a5eeadedf9689bbfc2e3d71b60aee">Hbare</a>;};</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;};</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="preprocessor"></span></div>
+<div class="ttc" id="classHartreeFock_html_a038c93667899526e6f136695a643ad96"><div class="ttname"><a href="classHartreeFock.html#a038c93667899526e6f136695a643ad96">HartreeFock::Vmon</a></div><div class="ttdeci">arma::mat Vmon</div><div class="ttdoc">Monopole 2-body interaction. </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:19</div></div>
+<div class="ttc" id="classHartreeFock_html_a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3"><div class="ttname"><a href="classHartreeFock.html#a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3">HartreeFock::iterations</a></div><div class="ttdeci">int iterations</div><div class="ttdoc">iterations used in Solve() </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:25</div></div>
+<div class="ttc" id="classHartreeFock_html_a84fe0eb16f6e5835c920bf8fa98c4442"><div class="ttname"><a href="classHartreeFock.html#a84fe0eb16f6e5835c920bf8fa98c4442">HartreeFock::UpdateF</a></div><div class="ttdeci">void UpdateF()</div><div class="ttdef"><b>Definition:</b> HartreeFock.cc:314</div></div>
+<div class="ttc" id="classOperator_html"><div class="ttname"><a href="classOperator.html">Operator</a></div><div class="ttdef"><b>Definition:</b> Operator.hh:22</div></div>
+<div class="ttc" id="classHartreeFock_html_a35ab9c4f96e68b1c9acea1d1407ecc60"><div class="ttname"><a href="classHartreeFock.html#a35ab9c4f96e68b1c9acea1d1407ecc60">HartreeFock::CheckConvergence</a></div><div class="ttdeci">bool CheckConvergence()</div><div class="ttdef"><b>Definition:</b> HartreeFock.cc:387</div></div>
+<div class="ttc" id="classHartreeFock_html_a22c754579ad1a45f053a5305e87d4700"><div class="ttname"><a href="classHartreeFock.html#a22c754579ad1a45f053a5305e87d4700">HartreeFock::tolerance</a></div><div class="ttdeci">double tolerance</div><div class="ttdoc">tolerance for convergence </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:23</div></div>
+<div class="ttc" id="classHartreeFock_html_a6fc0aa9f25640979d5188443a19aeea5"><div class="ttname"><a href="classHartreeFock.html#a6fc0aa9f25640979d5188443a19aeea5">HartreeFock::rho</a></div><div class="ttdeci">arma::mat rho</div><div class="ttdoc">density matrix rho_ij </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:13</div></div>
+<div class="ttc" id="classHartreeFock_html_aad1a5eeadedf9689bbfc2e3d71b60aee"><div class="ttname"><a href="classHartreeFock.html#aad1a5eeadedf9689bbfc2e3d71b60aee">HartreeFock::Hbare</a></div><div class="ttdeci">Operator &amp; Hbare</div><div class="ttdoc">Input bare Hamiltonian. </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:11</div></div>
+<div class="ttc" id="classHartreeFock_html"><div class="ttname"><a href="classHartreeFock.html">HartreeFock</a></div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:8</div></div>
+<div class="ttc" id="classHartreeFock_html_a415fc1fbbba3a6a84d47e31ed18323c9"><div class="ttname"><a href="classHartreeFock.html#a415fc1fbbba3a6a84d47e31ed18323c9">HartreeFock::energies</a></div><div class="ttdeci">arma::vec energies</div><div class="ttdoc">vector of single particle energies </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:21</div></div>
+<div class="ttc" id="classHartreeFock_html_a9c73247cdb9255cebabaacc99ec55086"><div class="ttname"><a href="classHartreeFock.html#a9c73247cdb9255cebabaacc99ec55086">HartreeFock::C</a></div><div class="ttdeci">arma::mat C</div><div class="ttdoc">coefficients, 1st index is ho basis, 2nd = HF basis </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:12</div></div>
+<div class="ttc" id="classHartreeFock_html_aad38c905e7e9f9e9757b5800e6910c61"><div class="ttname"><a href="classHartreeFock.html#aad38c905e7e9f9e9757b5800e6910c61">HartreeFock::UpdateDensityMatrix</a></div><div class="ttdeci">void UpdateDensityMatrix()</div><div class="ttdef"><b>Definition:</b> HartreeFock.cc:287</div></div>
+<div class="ttc" id="classHartreeFock_html_a45136295f4834a9f692f262eee75672a"><div class="ttname"><a href="classHartreeFock.html#a45136295f4834a9f692f262eee75672a">HartreeFock::F</a></div><div class="ttdeci">arma::mat F</div><div class="ttdoc">1 body Hamiltonian H_ab </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:17</div></div>
+<div class="ttc" id="classHartreeFock_html_ae823da58505b21231d092b3ef7cec3bf"><div class="ttname"><a href="classHartreeFock.html#ae823da58505b21231d092b3ef7cec3bf">HartreeFock::Vij</a></div><div class="ttdeci">arma::mat Vij</div><div class="ttdoc">1 body piece of 2 body potential </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:15</div></div>
+<div class="ttc" id="classHartreeFock_html_a43e2a195ad044947a9e1fb9f3a937d8a"><div class="ttname"><a href="classHartreeFock.html#a43e2a195ad044947a9e1fb9f3a937d8a">HartreeFock::prev_energies</a></div><div class="ttdeci">arma::vec prev_energies</div><div class="ttdoc">SPE&#39;s from last iteration. </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:22</div></div>
+<div class="ttc" id="classHartreeFock_html_a1c146af25a09f427cc626d877ec6e518"><div class="ttname"><a href="classHartreeFock.html#a1c146af25a09f427cc626d877ec6e518">HartreeFock::BuildMonopoleV3</a></div><div class="ttdeci">void BuildMonopoleV3()</div><div class="ttdef"><b>Definition:</b> HartreeFock.cc:217</div></div>
+<div class="ttc" id="classHartreeFock_html_a2eb6754f57250a03a2e1bd3e2aef4daf"><div class="ttname"><a href="classHartreeFock.html#a2eb6754f57250a03a2e1bd3e2aef4daf">HartreeFock::ReorderCoefficients</a></div><div class="ttdeci">void ReorderCoefficients()</div><div class="ttdef"><b>Definition:</b> HartreeFock.cc:414</div></div>
+<div class="ttc" id="classHartreeFock_html_ac0574a970910f77d873a8f2b9beb8441"><div class="ttname"><a href="classHartreeFock.html#ac0574a970910f77d873a8f2b9beb8441">HartreeFock::t</a></div><div class="ttdeci">arma::mat t</div><div class="ttdoc">kinetic energy </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:14</div></div>
+<div class="ttc" id="classHartreeFock_html_a55914915cea16669e549025c244b62d0"><div class="ttname"><a href="classHartreeFock.html#a55914915cea16669e549025c244b62d0">HartreeFock::TransformToHFBasis</a></div><div class="ttdeci">Operator TransformToHFBasis(Operator &amp;OpIn)</div><div class="ttdef"><b>Definition:</b> HartreeFock.cc:469</div></div>
+<div class="ttc" id="classHartreeFock_html_a501092b930b921d0f6e8ebfb652af040"><div class="ttname"><a href="classHartreeFock.html#a501092b930b921d0f6e8ebfb652af040">HartreeFock::Vmon_exch</a></div><div class="ttdeci">arma::mat Vmon_exch</div><div class="ttdoc">Monopole 2-body interaction. </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:20</div></div>
+<div class="ttc" id="classHartreeFock_html_a25a0f38a655064375765f74182ce9334"><div class="ttname"><a href="classHartreeFock.html#a25a0f38a655064375765f74182ce9334">HartreeFock::V3ij</a></div><div class="ttdeci">arma::mat V3ij</div><div class="ttdoc">1 body piece of 3 body potential </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:16</div></div>
+<div class="ttc" id="classHartreeFock_html_aef506c5c5bc0f317ceb9c71bdc44d62b"><div class="ttname"><a href="classHartreeFock.html#aef506c5c5bc0f317ceb9c71bdc44d62b">HartreeFock::CalcEHF</a></div><div class="ttdeci">void CalcEHF()</div><div class="ttdef"><b>Definition:</b> HartreeFock.cc:79</div></div>
+<div class="ttc" id="classHartreeFock_html_a00f7b0c4cb7373a3f1a69ca27a4dfaed"><div class="ttname"><a href="classHartreeFock.html#a00f7b0c4cb7373a3f1a69ca27a4dfaed">HartreeFock::Diagonalize</a></div><div class="ttdeci">void Diagonalize()</div><div class="ttdef"><b>Definition:</b> HartreeFock.cc:107</div></div>
+<div class="ttc" id="classHartreeFock_html_a16c9e1791919c2ceef5584bdc9b84a81"><div class="ttname"><a href="classHartreeFock.html#a16c9e1791919c2ceef5584bdc9b84a81">HartreeFock::EHF</a></div><div class="ttdeci">double EHF</div><div class="ttdoc">Hartree-Fock energy (Normal-ordered 0-body term) </div><div class="ttdef"><b>Definition:</b> HartreeFock.hh:24</div></div>
+<div class="ttc" id="classHartreeFock_html_a3d6bac9b4403e4bc599a89ad0c9b6056"><div class="ttname"><a href="classHartreeFock.html#a3d6bac9b4403e4bc599a89ad0c9b6056">HartreeFock::BuildMonopoleV</a></div><div class="ttdeci">void BuildMonopoleV()</div><div class="ttdef"><b>Definition:</b> HartreeFock.cc:184</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Sep 24 2014 12:55:22 for My Project by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Mar 2 2015 17:17:22 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

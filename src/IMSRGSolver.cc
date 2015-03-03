@@ -230,6 +230,10 @@ void IMSRGSolver::UpdateEta()
    {
      ConstructGenerator_ShellModel_Atan();
    }
+   else if (generator == "hartree-fock")
+   {
+     ConstructGenerator_HartreeFock();
+   }
    else
    {
       cout << "Error. Unkown generator: " << generator << endl;
@@ -683,6 +687,44 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
 
     }
 }
+
+void IMSRGSolver::ConstructGenerator_HartreeFock()
+{
+   Eta.SetParticleRank(1);
+   // One body piece -- eliminate ph bits
+   for ( int &a : modelspace->holes)
+   {
+      for (int &b : modelspace->holes)
+      {
+         // Note that for the hole-hole case, the denominator
+         // has a minus sign relative to the pp case.
+         if (a==b) continue;
+         double denominator = -Get1bDenominator_pp(a,b);
+         Eta.OneBody(a,b) = H_s.OneBody(a,b)/denominator;
+         Eta.OneBody(b,a) = - Eta.OneBody(a,b);
+      }
+   }
+   for ( int &i : modelspace->particles)
+   {
+      for (int &a : modelspace->holes)
+      {
+         double denominator = Get1bDenominator_ph(i,a);
+         Eta.OneBody(i,a) = H_s.OneBody(i,a)/denominator;
+         Eta.OneBody(a,i) = - Eta.OneBody(i,a);
+      }
+   }  
+   for ( int &i : modelspace->particles)
+   {
+      for (int &j : modelspace->particles)
+      {
+         if (i==j) continue;
+         double denominator = Get1bDenominator_pp(i,j);
+         Eta.OneBody(i,j) = H_s.OneBody(i,j)/denominator;
+         Eta.OneBody(j,i) = - Eta.OneBody(i,j);
+      }
+   }  
+}
+
 
 
 // count number of equations to be solved

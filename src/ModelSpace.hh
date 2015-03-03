@@ -66,7 +66,7 @@ class Ket  //  | pq >
 
 };
 
-
+/*
 class Ket3  //  | pqr >
 {
  public:
@@ -88,7 +88,7 @@ class Ket3  //  | pqr >
    int phase_prefactor;
 
 };
-
+*/
 
 class TwoBodyChannel
 {
@@ -195,7 +195,7 @@ class ThreeBodyChannel
    vector<int> KetMap;  // eg [ -1, -1, 0, -1, 1, -1, -1, 2 ...] Used for asking what is the local index of this ket. -1 means the ket doesn't participate in this channel
    //Methods
    virtual bool CheckChannel_ket(int p, int q, int r) const;  // check if |pqr> participates in this channel
-   bool CheckChannel_ket(Ket3 *ket) const {return CheckChannel_ket(ket->p,ket->q,ket->r);};  // check if |pqr> participates in this channel
+//   bool CheckChannel_ket(Ket3 *ket) const {return CheckChannel_ket(ket->p,ket->q,ket->r);};  // check if |pqr> participates in this channel
    void Copy(const ThreeBodyChannel &);
    
 };

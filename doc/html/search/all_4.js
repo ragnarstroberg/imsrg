@@ -1,6 +1,4 @@
 var searchData=
 [
-  ['operator',['Operator',['../classOperator.html',1,'']]],
-  ['operatorchannel',['OperatorChannel',['../classOperatorChannel.html',1,'']]],
-  ['orbit',['Orbit',['../classOrbit.html',1,'']]]
+  ['f',['F',['../classHartreeFock.html#a45136295f4834a9f692f262eee75672a',1,'HartreeFock']]]
 ];

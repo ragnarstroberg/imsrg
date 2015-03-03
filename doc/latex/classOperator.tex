@@ -1,55 +1,528 @@
 \hypertarget{classOperator}{\section{Operator Class Reference}
 \label{classOperator}\index{Operator@{Operator}}
 }
+
+
+{\ttfamily \#include $<$Operator.\-hh$>$}
+
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classOperator_aff5e2daad15c8818b12cbe1a873e472d}{float {\bfseries Get\-One\-Body} (int i)}\label{classOperator_aff5e2daad15c8818b12cbe1a873e472d}
+\hypertarget{classOperator_ae59dd1e9ea828f88637f001e987195b6}{\hyperlink{classOperator_ae59dd1e9ea828f88637f001e987195b6}{Operator} (\hyperlink{classModelSpace}{Model\-Space} \&)}\label{classOperator_ae59dd1e9ea828f88637f001e987195b6}
+
+\begin{DoxyCompactList}\small\item\em Default constructor. \end{DoxyCompactList}\item 
+\hypertarget{classOperator_ab120301ff79330ae6593fd13445f24f1}{{\bfseries Operator} (\hyperlink{classModelSpace}{Model\-Space} \&, int Jrank, int Trank, int Parity, int part\-\_\-rank)}\label{classOperator_ab120301ff79330ae6593fd13445f24f1}
 
 \item 
-\hypertarget{classOperator_ada400ee3891ab72b2550840c6414dc2f}{{\bfseries Operator} (\hyperlink{classModelSpace}{Model\-Space} $\ast$)}\label{classOperator_ada400ee3891ab72b2550840c6414dc2f}
+\hypertarget{classOperator_ae229a22ab49ca258f69c1c2c267b2aeb}{{\bfseries Operator} (const \hyperlink{classOperator}{Operator} \&rhs)}\label{classOperator_ae229a22ab49ca258f69c1c2c267b2aeb}
 
 \item 
-\hypertarget{classOperator_affa063364d74d27df82c0b7337652edb}{void {\bfseries Commutator} (\hyperlink{classOperator}{Operator} \&, \hyperlink{classOperator}{Operator} \&)}\label{classOperator_affa063364d74d27df82c0b7337652edb}
+\hypertarget{classOperator_aed04ab87654d93c3d1eec86860e41594}{void {\bfseries Allocate\-Two\-Body} ()}\label{classOperator_aed04ab87654d93c3d1eec86860e41594}
 
 \item 
-\hypertarget{classOperator_a105ee195fcae8c3b5a77dea8c0949cd3}{void {\bfseries B\-C\-H\-\_\-\-Product} (\hyperlink{classOperator}{Operator} \&, \hyperlink{classOperator}{Operator} \&)}\label{classOperator_a105ee195fcae8c3b5a77dea8c0949cd3}
+\hypertarget{classOperator_a72bde59e35fc1f0eb8b12286c411c7e9}{void {\bfseries Allocate\-Three\-Body} ()}\label{classOperator_a72bde59e35fc1f0eb8b12286c411c7e9}
 
 \item 
-\hypertarget{classOperator_a7013c10ccf897eefbfddf05af9fb86dd}{void {\bfseries B\-C\-H\-\_\-\-Transform} (\hyperlink{classOperator}{Operator} \&, \hyperlink{classOperator}{Operator} \&)}\label{classOperator_a7013c10ccf897eefbfddf05af9fb86dd}
+\hypertarget{classOperator_afad114ba9dee8b9c08af0b5d27c3ba86}{\hyperlink{classOperator}{Operator} \& {\bfseries operator=} (const \hyperlink{classOperator}{Operator} \&rhs)}\label{classOperator_afad114ba9dee8b9c08af0b5d27c3ba86}
 
 \item 
-\hypertarget{classOperator_af9d90879a89b3cdf619295f794ebb5f1}{\hyperlink{classOperatorChannel}{Operator\-Channel} $\ast$ {\bfseries Get\-Two\-Body} (int j, int p, int t)}\label{classOperator_af9d90879a89b3cdf619295f794ebb5f1}
+\hypertarget{classOperator_a0b20b0fedb0f49c4a2e69507cdcb540b}{\hyperlink{classOperator}{Operator} \& {\bfseries operator+=} (const \hyperlink{classOperator}{Operator} \&rhs)}\label{classOperator_a0b20b0fedb0f49c4a2e69507cdcb540b}
 
 \item 
-\hypertarget{classOperator_a0c8733771511fcc08cdbd3ecd70219e5}{void {\bfseries Print\-Out} ()}\label{classOperator_a0c8733771511fcc08cdbd3ecd70219e5}
+\hypertarget{classOperator_a67d89d71379a609aa018178afe1adb8d}{\hyperlink{classOperator}{Operator} {\bfseries operator+} (const \hyperlink{classOperator}{Operator} \&rhs) const }\label{classOperator_a67d89d71379a609aa018178afe1adb8d}
 
 \item 
-\hypertarget{classOperator_a3fe9d7a90ee56f01874933ba605094a4}{void {\bfseries Update\-Cross\-Coupled} ()}\label{classOperator_a3fe9d7a90ee56f01874933ba605094a4}
+\hypertarget{classOperator_a1235ee7e0ba5220a831ac0c01b2210b9}{\hyperlink{classOperator}{Operator} \& {\bfseries operator-\/=} (const \hyperlink{classOperator}{Operator} \&rhs)}\label{classOperator_a1235ee7e0ba5220a831ac0c01b2210b9}
 
 \item 
-\hypertarget{classOperator_a640785d62193b805723eb8211b9dff44}{\hyperlink{classModelSpace}{Model\-Space} $\ast$ {\bfseries Get\-Model\-Space} ()}\label{classOperator_a640785d62193b805723eb8211b9dff44}
+\hypertarget{classOperator_ac25a9769a621623062b922cb9a40a489}{\hyperlink{classOperator}{Operator} {\bfseries operator-\/} (const \hyperlink{classOperator}{Operator} \&rhs) const }\label{classOperator_ac25a9769a621623062b922cb9a40a489}
 
 \item 
-\hypertarget{classOperator_a88af8c612293573e941df797b240bb91}{void {\bfseries Get\-S\-P\-E\-From\-Model\-Space} ()}\label{classOperator_a88af8c612293573e941df797b240bb91}
+\hypertarget{classOperator_aa06ee3d5828d7bc43b3aca693ac0ef25}{\hyperlink{classOperator}{Operator} {\bfseries operator-\/} () const }\label{classOperator_aa06ee3d5828d7bc43b3aca693ac0ef25}
+
+\item 
+\hypertarget{classOperator_a9398ce826d8ef57e69a1aa776734080f}{\hyperlink{classOperator}{Operator} \& {\bfseries operator$\ast$=} (const double rhs)}\label{classOperator_a9398ce826d8ef57e69a1aa776734080f}
+
+\item 
+\hypertarget{classOperator_a0eeafc807e6ef6e3d30810f114e249bb}{\hyperlink{classOperator}{Operator} {\bfseries operator$\ast$} (const double rhs) const }\label{classOperator_a0eeafc807e6ef6e3d30810f114e249bb}
+
+\item 
+\hypertarget{classOperator_a53af250702ec7c48de5397b209ebc09e}{\hyperlink{classOperator}{Operator} \& {\bfseries operator/=} (const double rhs)}\label{classOperator_a53af250702ec7c48de5397b209ebc09e}
+
+\item 
+\hypertarget{classOperator_a60c6e3fa8da186a1183e540e6ff04421}{\hyperlink{classOperator}{Operator} {\bfseries operator/} (const double rhs) const }\label{classOperator_a60c6e3fa8da186a1183e540e6ff04421}
+
+\item 
+\hypertarget{classOperator_a34eb5fa0e6d415cd44e1a3034d1cf5c0}{double {\bfseries Get\-One\-Body} (int i, int j)}\label{classOperator_a34eb5fa0e6d415cd44e1a3034d1cf5c0}
+
+\item 
+\hypertarget{classOperator_ae85aa3d8fdaeb3cb6266c3a4494e904b}{void {\bfseries Set\-One\-Body} (int i, int j, double val)}\label{classOperator_ae85aa3d8fdaeb3cb6266c3a4494e904b}
+
+\item 
+\hypertarget{classOperator_aaa072b887da84ca14a4968df17ea8812}{double \hyperlink{classOperator_aaa072b887da84ca14a4968df17ea8812}{Get\-T\-B\-M\-E} (int ch\-\_\-bra, int ch\-\_\-ket, int a, int b, int c, int d) const }\label{classOperator_aaa072b887da84ca14a4968df17ea8812}
+
+\begin{DoxyCompactList}\small\item\em This returns the matrix element times a factor $ \sqrt{(1+\delta_{ij})(1+\delta_{kl})} $. \end{DoxyCompactList}\item 
+\hypertarget{classOperator_aee848be1803687e81732c068cb189d46}{void {\bfseries Set\-T\-B\-M\-E} (int ch\-\_\-bra, int ch\-\_\-ket, int a, int b, int c, int d, double tbme)}\label{classOperator_aee848be1803687e81732c068cb189d46}
+
+\item 
+\hypertarget{classOperator_a550f0ee9142a0f3e01d9802ebdb1c77f}{void {\bfseries Add\-To\-T\-B\-M\-E} (int ch\-\_\-bra, int ch\-\_\-ket, int a, int b, int c, int d, double tbme)}\label{classOperator_a550f0ee9142a0f3e01d9802ebdb1c77f}
+
+\item 
+\hypertarget{classOperator_ac80e23706e883b9815f8e499aafe1887}{double {\bfseries Get\-T\-B\-M\-E} (int ch\-\_\-bra, int ch\-\_\-ket, \hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket) const }\label{classOperator_ac80e23706e883b9815f8e499aafe1887}
+
+\item 
+\hypertarget{classOperator_a2f4c2afcd73548b13131b4b77ddd7e30}{void {\bfseries Set\-T\-B\-M\-E} (int ch\-\_\-bra, int ch\-\_\-ket, \hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket, double tbme)}\label{classOperator_a2f4c2afcd73548b13131b4b77ddd7e30}
+
+\item 
+\hypertarget{classOperator_a874934e8d43292a7c91ba7aac2eebb04}{void {\bfseries Add\-To\-T\-B\-M\-E} (int ch\-\_\-bra, int ch\-\_\-ket, \hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket, double tbme)}\label{classOperator_a874934e8d43292a7c91ba7aac2eebb04}
+
+\item 
+\hypertarget{classOperator_a432f18ca70103aed896b396e530d76c4}{double {\bfseries Get\-T\-B\-M\-E} (int ch\-\_\-bra, int ch\-\_\-ket, int ibra, int iket) const }\label{classOperator_a432f18ca70103aed896b396e530d76c4}
+
+\item 
+\hypertarget{classOperator_a698798e06b461283bed7a63a163a4373}{void {\bfseries Set\-T\-B\-M\-E} (int ch\-\_\-bra, int ch\-\_\-ket, int ibra, int iket, double tbme)}\label{classOperator_a698798e06b461283bed7a63a163a4373}
+
+\item 
+\hypertarget{classOperator_a3f191b350d87a2874ffd5bc9f2809326}{void {\bfseries Add\-To\-T\-B\-M\-E} (int ch\-\_\-bra, int ch\-\_\-ket, int ibra, int iket, double tbme)}\label{classOperator_a3f191b350d87a2874ffd5bc9f2809326}
+
+\item 
+\hypertarget{classOperator_a19853c96912ec051d2b55f67e560f68f}{double {\bfseries Get\-T\-B\-M\-E} (int j\-\_\-bra, int p\-\_\-bra, int t\-\_\-bra, int j\-\_\-ket, int p\-\_\-ket, int t\-\_\-ket, \hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket) const }\label{classOperator_a19853c96912ec051d2b55f67e560f68f}
+
+\item 
+\hypertarget{classOperator_a86742776dc2fe3c78d8077cbec0ce522}{void {\bfseries Set\-T\-B\-M\-E} (int j\-\_\-bra, int p\-\_\-bra, int t\-\_\-bra, int j\-\_\-ket, int p\-\_\-ket, int t\-\_\-ket, \hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket, double tbme)}\label{classOperator_a86742776dc2fe3c78d8077cbec0ce522}
+
+\item 
+\hypertarget{classOperator_a864301b26f2b3ed3ca4d0eec952a606d}{void {\bfseries Add\-To\-T\-B\-M\-E} (int j\-\_\-bra, int p\-\_\-bra, int t\-\_\-bra, int j\-\_\-ket, int p\-\_\-ket, int t\-\_\-ket, \hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket, double tbme)}\label{classOperator_a864301b26f2b3ed3ca4d0eec952a606d}
+
+\item 
+\hypertarget{classOperator_a161b7ff96ea0b7c3f0a624ecb4180965}{double {\bfseries Get\-T\-B\-M\-E} (int j\-\_\-bra, int p\-\_\-bra, int t\-\_\-bra, int j\-\_\-ket, int p\-\_\-ket, int t\-\_\-ket, int a, int b, int c, int d) const }\label{classOperator_a161b7ff96ea0b7c3f0a624ecb4180965}
+
+\item 
+\hypertarget{classOperator_a9ec3a643ae00c4f18113ef7643c41ecd}{void {\bfseries Set\-T\-B\-M\-E} (int j\-\_\-bra, int p\-\_\-bra, int t\-\_\-bra, int j\-\_\-ket, int p\-\_\-ket, int t\-\_\-ket, int a, int b, int c, int d, double tbme)}\label{classOperator_a9ec3a643ae00c4f18113ef7643c41ecd}
+
+\item 
+\hypertarget{classOperator_a1eab08cab486be5f69b2b06f834223fb}{void {\bfseries Add\-To\-T\-B\-M\-E} (int j\-\_\-bra, int p\-\_\-bra, int t\-\_\-bra, int j\-\_\-ket, int p\-\_\-ket, int t\-\_\-ket, int a, int b, int c, int d, double tbme)}\label{classOperator_a1eab08cab486be5f69b2b06f834223fb}
+
+\item 
+\hypertarget{classOperator_a7b02456755077e907395f4cc39b14e9e}{double {\bfseries Get\-T\-B\-M\-E} (int ch, int a, int b, int c, int d) const }\label{classOperator_a7b02456755077e907395f4cc39b14e9e}
+
+\item 
+\hypertarget{classOperator_a9fed52f338b7f30e3e3864412a3dbc16}{void {\bfseries Set\-T\-B\-M\-E} (int ch, int a, int b, int c, int d, double tbme)}\label{classOperator_a9fed52f338b7f30e3e3864412a3dbc16}
+
+\item 
+\hypertarget{classOperator_acf4d28b6e08bbc79cb126539500c85cd}{void {\bfseries Add\-To\-T\-B\-M\-E} (int ch, int a, int b, int c, int d, double tbme)}\label{classOperator_acf4d28b6e08bbc79cb126539500c85cd}
+
+\item 
+\hypertarget{classOperator_ab634a3d71b2dd9a84be4566ec392e062}{double {\bfseries Get\-T\-B\-M\-E} (int ch, \hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket) const }\label{classOperator_ab634a3d71b2dd9a84be4566ec392e062}
+
+\item 
+\hypertarget{classOperator_a5570a3e70d684c90b6f5f46801440a21}{void {\bfseries Set\-T\-B\-M\-E} (int ch, \hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket, double tbme)}\label{classOperator_a5570a3e70d684c90b6f5f46801440a21}
+
+\item 
+\hypertarget{classOperator_a1e529dc5c5fa5e2be3c33ab6ee0fdeaa}{void {\bfseries Add\-To\-T\-B\-M\-E} (int ch, \hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket, double tbme)}\label{classOperator_a1e529dc5c5fa5e2be3c33ab6ee0fdeaa}
+
+\item 
+\hypertarget{classOperator_ab5634a69a698cce1bb15dbc05eaf310c}{double {\bfseries Get\-T\-B\-M\-E} (int ch, int ibra, int iket) const }\label{classOperator_ab5634a69a698cce1bb15dbc05eaf310c}
+
+\item 
+\hypertarget{classOperator_ab77691d8e014655fde0731f0112aacf8}{void {\bfseries Set\-T\-B\-M\-E} (int ch, int ibra, int iket, double tbme)}\label{classOperator_ab77691d8e014655fde0731f0112aacf8}
+
+\item 
+\hypertarget{classOperator_a13bccafc49a4ec4ddb36500abf6a721d}{void {\bfseries Add\-To\-T\-B\-M\-E} (int ch, int ibra, int iket, double tbme)}\label{classOperator_a13bccafc49a4ec4ddb36500abf6a721d}
+
+\item 
+\hypertarget{classOperator_a79f6a8357aba1a53488a211428f5b046}{double {\bfseries Get\-T\-B\-M\-E} (int j, int p, int t, \hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket) const }\label{classOperator_a79f6a8357aba1a53488a211428f5b046}
+
+\item 
+\hypertarget{classOperator_a3528a3b611a37079fbe2df1d45e7dae0}{void {\bfseries Set\-T\-B\-M\-E} (int j, int p, int t, \hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket, double tbme)}\label{classOperator_a3528a3b611a37079fbe2df1d45e7dae0}
+
+\item 
+\hypertarget{classOperator_a128ef2a259a9013e78a7de578690bb79}{void {\bfseries Add\-To\-T\-B\-M\-E} (int j, int p, int t, \hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket, double tbme)}\label{classOperator_a128ef2a259a9013e78a7de578690bb79}
+
+\item 
+\hypertarget{classOperator_a9a02bbea22b1e9c3c6e2ec23ca49843a}{double {\bfseries Get\-T\-B\-M\-E} (int j, int p, int t, int a, int b, int c, int d) const }\label{classOperator_a9a02bbea22b1e9c3c6e2ec23ca49843a}
+
+\item 
+\hypertarget{classOperator_a181122181f05852394df34551dbee77a}{void {\bfseries Set\-T\-B\-M\-E} (int j, int p, int t, int a, int b, int c, int d, double tbme)}\label{classOperator_a181122181f05852394df34551dbee77a}
+
+\item 
+\hypertarget{classOperator_a14cf7e310dcf259009e5f89ea9bbcd50}{void {\bfseries Add\-To\-T\-B\-M\-E} (int j, int p, int t, int a, int b, int c, int d, double tbme)}\label{classOperator_a14cf7e310dcf259009e5f89ea9bbcd50}
+
+\item 
+double \hyperlink{classOperator_aa08e81b63a14ef552ab8bd645196cfdb}{Get\-T\-B\-M\-Emonopole} (int a, int b, int c, int d) const 
+\item 
+\hypertarget{classOperator_ab4fc7ebb40894955f10d349b1c59c8a8}{double {\bfseries Get\-T\-B\-M\-Emonopole} (\hyperlink{classKet}{Ket} \&bra, \hyperlink{classKet}{Ket} \&ket) const }\label{classOperator_ab4fc7ebb40894955f10d349b1c59c8a8}
+
+\item 
+\hypertarget{classOperator_ab2f0275c25ffb0f04935cb9d6ea043e1}{double {\bfseries Get\-Three\-Body\-M\-E} (int Jab\-\_\-in, int Jde\-\_\-in, int J2, int tab\-\_\-in, int tde\-\_\-in, int T2, int i, int j, int k, int l, int m, int n)}\label{classOperator_ab2f0275c25ffb0f04935cb9d6ea043e1}
+
+\item 
+\hypertarget{classOperator_aa6b8824f440eb3217454b9d242526fd6}{double {\bfseries Get\-Three\-Body\-M\-E\-\_\-pn} (int Jab\-\_\-in, int Jde\-\_\-in, int J2, int Tz, int i, int j, int k, int l, int m, int n)}\label{classOperator_aa6b8824f440eb3217454b9d242526fd6}
+
+\item 
+\hypertarget{classOperator_a997b0b2df75089a9e910c19410ebd8db}{void {\bfseries Set\-Three\-Body\-M\-E} (int Jab\-\_\-in, int Jde\-\_\-in, int J2, int tab\-\_\-in, int tde\-\_\-in, int T2, int i, int j, int k, int l, int m, int n, double V)}\label{classOperator_a997b0b2df75089a9e910c19410ebd8db}
+
+\item 
+\hypertarget{classOperator_a78c235a23140618f76e5d17e2afc4582}{orbindx3\-\_\-t {\bfseries Get\-Three\-Body\-Orbit\-Index} (int a, int b, int c, int d, int e, int f)}\label{classOperator_a78c235a23140618f76e5d17e2afc4582}
+
+\item 
+\hypertarget{classOperator_aaa9163ed47bb4c3330c58fcab09d4cae}{void {\bfseries Get\-Orbits\-From\-Three\-Body\-Index} (orbindx3\-\_\-t orb\-\_\-indx, int \&a, int \&b, int \&c, int \&d, int \&e, int \&f)}\label{classOperator_aaa9163ed47bb4c3330c58fcab09d4cae}
+
+\item 
+\hypertarget{classOperator_a3633fb9e34c473ce0389ebe073157171}{void {\bfseries Sort\-Three\-Body\-Orbits} (int \&a, int \&b, int \&c)}\label{classOperator_a3633fb9e34c473ce0389ebe073157171}
+
+\item 
+\hypertarget{classOperator_a894e29959b3f7b2008c4442683bf8642}{double {\bfseries Three\-Body\-Recoupling\-Coefficient} (int a\-\_\-in, int b\-\_\-in, int c\-\_\-in, int a, int b, int c, int Jab\-\_\-in, int Jab, int J, char j\-\_\-or\-\_\-t)}\label{classOperator_a894e29959b3f7b2008c4442683bf8642}
+
+\item 
+\hypertarget{classOperator_a8b32ed75e5e0d6175a2f2f517c63a89c}{void {\bfseries Set\-E3max} (int e)}\label{classOperator_a8b32ed75e5e0d6175a2f2f517c63a89c}
+
+\item 
+\hypertarget{classOperator_a037a75a9f8a0dc970e56240552cc96d2}{\hyperlink{classModelSpace}{Model\-Space} $\ast$ {\bfseries Get\-Model\-Space} () const }\label{classOperator_a037a75a9f8a0dc970e56240552cc96d2}
+
+\item 
+\hypertarget{classOperator_a8a0f7d6aa5163929850d06b31dc24a55}{void {\bfseries Erase} ()}\label{classOperator_a8a0f7d6aa5163929850d06b31dc24a55}
+
+\item 
+\hypertarget{classOperator_aee08b8c721271c700f325e02ba7b47d1}{void {\bfseries Erase\-Zero\-Body} ()}\label{classOperator_aee08b8c721271c700f325e02ba7b47d1}
+
+\item 
+\hypertarget{classOperator_ab26470d0c88d61699443223675e57bbe}{void {\bfseries Erase\-One\-Body} ()}\label{classOperator_ab26470d0c88d61699443223675e57bbe}
+
+\item 
+\hypertarget{classOperator_a5c49da3f408b79a7430af4e3ec1ff8df}{void {\bfseries Erase\-Two\-Body} ()}\label{classOperator_a5c49da3f408b79a7430af4e3ec1ff8df}
+
+\item 
+\hypertarget{classOperator_aacf220459ab56d57e8c585a5293c5d4f}{void {\bfseries Set\-Hermitian} ()}\label{classOperator_aacf220459ab56d57e8c585a5293c5d4f}
+
+\item 
+\hypertarget{classOperator_a11bd88adeab50ade02c514a1e72ffffb}{void {\bfseries Set\-Anti\-Hermitian} ()}\label{classOperator_a11bd88adeab50ade02c514a1e72ffffb}
+
+\item 
+\hypertarget{classOperator_a80823b246f657f9a8e26d1462492e116}{void {\bfseries Set\-Non\-Hermitian} ()}\label{classOperator_a80823b246f657f9a8e26d1462492e116}
+
+\item 
+\hypertarget{classOperator_ae6a0b023e0196f2eab07864844683a89}{bool {\bfseries Is\-Hermitian} () const }\label{classOperator_ae6a0b023e0196f2eab07864844683a89}
+
+\item 
+\hypertarget{classOperator_a2801d2f6b547d0e2dad7bc3b16ceafe1}{bool {\bfseries Is\-Anti\-Hermitian} () const }\label{classOperator_a2801d2f6b547d0e2dad7bc3b16ceafe1}
+
+\item 
+\hypertarget{classOperator_ad6cbbe083bab3c90f5229cd046ed118f}{bool {\bfseries Is\-Non\-Hermitian} () const }\label{classOperator_ad6cbbe083bab3c90f5229cd046ed118f}
+
+\item 
+\hypertarget{classOperator_a16a917d45b7d8c03868b6cd80b9efe7f}{int {\bfseries Get\-Particle\-Rank} () const }\label{classOperator_a16a917d45b7d8c03868b6cd80b9efe7f}
+
+\item 
+\hypertarget{classOperator_a5f12467caae7d72bad32ea5b7c378899}{int {\bfseries Get\-J\-Rank} () const }\label{classOperator_a5f12467caae7d72bad32ea5b7c378899}
+
+\item 
+\hypertarget{classOperator_af01419ad8d7a4097f5520ae6d533e93f}{int {\bfseries Get\-T\-Rank} () const }\label{classOperator_af01419ad8d7a4097f5520ae6d533e93f}
+
+\item 
+\hypertarget{classOperator_a7b3d8e2ca9f0ba631b59220cf04dbe39}{int {\bfseries Get\-Parity} () const }\label{classOperator_a7b3d8e2ca9f0ba631b59220cf04dbe39}
+
+\item 
+\hypertarget{classOperator_a77eb97b1309a1c4e20101217903b9771}{void {\bfseries Set\-Particle\-Rank} (int pr)}\label{classOperator_a77eb97b1309a1c4e20101217903b9771}
+
+\item 
+\hypertarget{classOperator_a3a25803bc77344396f2dd0e75d2a020d}{void {\bfseries Scale\-Zero\-Body} (double x)}\label{classOperator_a3a25803bc77344396f2dd0e75d2a020d}
+
+\item 
+\hypertarget{classOperator_a5466cc965277b75b14b60918f4d652ab}{void {\bfseries Scale\-One\-Body} (double x)}\label{classOperator_a5466cc965277b75b14b60918f4d652ab}
+
+\item 
+\hypertarget{classOperator_af1f244c4856d11c21f94b6c6cd24a555}{void {\bfseries Scale\-Two\-Body} (double x)}\label{classOperator_af1f244c4856d11c21f94b6c6cd24a555}
+
+\item 
+\hypertarget{classOperator_a622880b91a902c832b867c6447a262e7}{\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a622880b91a902c832b867c6447a262e7}{Do\-Normal\-Ordering} ()}\label{classOperator_a622880b91a902c832b867c6447a262e7}
+
+\begin{DoxyCompactList}\small\item\em Calls \hyperlink{classOperator_a652d989590422a2b26e662625b07254e}{Do\-Normal\-Ordering2()} or \hyperlink{classOperator_a7fd029569796107c87ff17c5a7912480}{Do\-Normal\-Ordering3()}, depending on the rank of the operator. \end{DoxyCompactList}\item 
+\hypertarget{classOperator_a652d989590422a2b26e662625b07254e}{\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a652d989590422a2b26e662625b07254e}{Do\-Normal\-Ordering2} ()}\label{classOperator_a652d989590422a2b26e662625b07254e}
+
+\begin{DoxyCompactList}\small\item\em Returns the normal ordered two-\/body operator. \end{DoxyCompactList}\item 
+\hypertarget{classOperator_a7fd029569796107c87ff17c5a7912480}{\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a7fd029569796107c87ff17c5a7912480}{Do\-Normal\-Ordering3} ()}\label{classOperator_a7fd029569796107c87ff17c5a7912480}
+
+\begin{DoxyCompactList}\small\item\em Returns the normal ordered three-\/body operator. \end{DoxyCompactList}\item 
+\hypertarget{classOperator_a23ccb8a0b3124e281b7f33e298c7d6de}{\hyperlink{classOperator}{Operator} {\bfseries Commutator} (const \hyperlink{classOperator}{Operator} \&opright) const }\label{classOperator_a23ccb8a0b3124e281b7f33e298c7d6de}
+
+\item 
+\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a0db0f9c98175e3fd4634dc56544ce87b}{B\-C\-H\-\_\-\-Product} (const \hyperlink{classOperator}{Operator} \&) const 
+\item 
+\hyperlink{classOperator}{Operator} \hyperlink{classOperator_afdb54d55b3dc10baf795a59fd9129182}{B\-C\-H\-\_\-\-Transform} (const \hyperlink{classOperator}{Operator} \&) const 
+\item 
+void \hyperlink{classOperator_a701c64f8be794e89fd28a643b56d534a}{Calculate\-Kinetic\-Energy} ()
+\item 
+\hypertarget{classOperator_a03a378f0da2fe71d8160bd3262891457}{void \hyperlink{classOperator_a03a378f0da2fe71d8160bd3262891457}{Eye} ()}\label{classOperator_a03a378f0da2fe71d8160bd3262891457}
+
+\begin{DoxyCompactList}\small\item\em set to identity operator \end{DoxyCompactList}\item 
+\hypertarget{classOperator_a0b9bd2ad0883e61e959c06abf273faa0}{\hyperlink{classOperator}{Operator} {\bfseries Commutator\-Scalar\-Scalar} (const \hyperlink{classOperator}{Operator} \&opright) const }\label{classOperator_a0b9bd2ad0883e61e959c06abf273faa0}
+
+\item 
+\hypertarget{classOperator_aa6b5af6364735c97aa201851480375c7}{\hyperlink{classOperator}{Operator} {\bfseries Commutator\-Scalar\-Tensor} (const \hyperlink{classOperator}{Operator} \&opright) const }\label{classOperator_aa6b5af6364735c97aa201851480375c7}
+
+\item 
+\hypertarget{classOperator_ab5a2d58468b9f4a9f551613f5ce36fd1}{\hyperlink{classOperator}{Operator} {\bfseries Commutator\-Tensor\-Tensor} (const \hyperlink{classOperator}{Operator} \&opright) const }\label{classOperator_ab5a2d58468b9f4a9f551613f5ce36fd1}
+
+\item 
+double \hyperlink{classOperator_acb9d7959232a636191b91f6bf5b7b0c8}{Norm} () const 
+\item 
+\hypertarget{classOperator_a72dc7aea85c7775097d235de6f17f330}{double {\bfseries One\-Body\-Norm} () const }\label{classOperator_a72dc7aea85c7775097d235de6f17f330}
+
+\item 
+\hypertarget{classOperator_af1c40bdef64ec9abd5d95e8328565a67}{double {\bfseries Two\-Body\-Norm} () const }\label{classOperator_af1c40bdef64ec9abd5d95e8328565a67}
+
+\item 
+\hypertarget{classOperator_a5ec5a8110337108ac31d3af7337e454b}{void {\bfseries Print\-One\-Body} () const }\label{classOperator_a5ec5a8110337108ac31d3af7337e454b}
+
+\item 
+\hypertarget{classOperator_a905e42cefafaca0eb155cf41b3cd37b8}{void {\bfseries Print\-Two\-Body} (int ch) const }\label{classOperator_a905e42cefafaca0eb155cf41b3cd37b8}
+
+\item 
+\hypertarget{classOperator_a851708e76dd24603d0527f6c5c1bd544}{void {\bfseries Copy} (const \hyperlink{classOperator}{Operator} \&rhs)}\label{classOperator_a851708e76dd24603d0527f6c5c1bd544}
+
+\item 
+\hypertarget{classOperator_a70139e405d99a645f57c37ccd2294c75}{void {\bfseries Do\-Pandya\-Transformation} (\hyperlink{classOperator}{Operator} \&) const }\label{classOperator_a70139e405d99a645f57c37ccd2294c75}
+
+\item 
+\hypertarget{classOperator_a4b36a16fac41d3465e9303960c3509f4}{void {\bfseries Calculate\-Cross\-Coupled} (vector$<$ arma\-::mat $>$ \&, vector$<$ arma\-::mat $>$ \&) const }\label{classOperator_a4b36a16fac41d3465e9303960c3509f4}
+
+\item 
+void \hyperlink{classOperator_a132a43b0a4a1a68e8f78af14e1eab069}{comm110ss} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const 
+\item 
+void \hyperlink{classOperator_aca98d46760c33cd12056701031cc6b4c}{comm220ss} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const 
+\item 
+void \hyperlink{classOperator_aa99f1f8918be7c5669ba9a60bed3d9cd}{comm111ss} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const 
+\item 
+void \hyperlink{classOperator_a1180fa3d9923da924aa8d17042c23ed5}{comm121ss} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const 
+\item 
+void \hyperlink{classOperator_a1a67d9f834722d027cda1525356c436b}{comm221ss} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const 
+\item 
+void \hyperlink{classOperator_aa47907c535f84e5775b92294a90c2101}{comm122ss} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const 
+\item 
+void \hyperlink{classOperator_a5f0ebafd8284747ca0dcb35bf2fd4fb0}{comm222\-\_\-pp\-\_\-hhss} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const 
+\item 
+void \hyperlink{classOperator_ac9b04d839872bbae8dbc5d7e8ee8ab56}{comm222\-\_\-phss} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const 
+\item 
+void \hyperlink{classOperator_a26be1b965a86598764be26a11490de6b}{comm222\-\_\-pp\-\_\-hh\-\_\-221ss} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const 
+\item 
+\hypertarget{classOperator_aba1d1f2bee572d9e845711c28487b680}{void {\bfseries comm111st} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const }\label{classOperator_aba1d1f2bee572d9e845711c28487b680}
+
+\item 
+\hypertarget{classOperator_a31e74fba9493fc6828402743657c4acf}{void {\bfseries comm121st} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const }\label{classOperator_a31e74fba9493fc6828402743657c4acf}
+
+\item 
+\hypertarget{classOperator_af90f2d16ebea510ae97ae4bbf6363113}{void {\bfseries comm221st} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const }\label{classOperator_af90f2d16ebea510ae97ae4bbf6363113}
+
+\item 
+\hypertarget{classOperator_a375a7289a8d39cb7354380a1714dee32}{void {\bfseries comm122st} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const }\label{classOperator_a375a7289a8d39cb7354380a1714dee32}
+
+\item 
+\hypertarget{classOperator_aa49d442b8dc21367a8973bc9814f4c96}{void {\bfseries comm222\-\_\-pp\-\_\-hhst} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const }\label{classOperator_aa49d442b8dc21367a8973bc9814f4c96}
+
+\item 
+\hypertarget{classOperator_a780b931a73017ffbc1a70e7c86ca8256}{void {\bfseries comm222\-\_\-pp\-\_\-hh\-\_\-221st} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const }\label{classOperator_a780b931a73017ffbc1a70e7c86ca8256}
+
+\item 
+\hypertarget{classOperator_a3d6754f76f04eaddc92dbbc7bbf21caa}{void {\bfseries comm222\-\_\-phst} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const }\label{classOperator_a3d6754f76f04eaddc92dbbc7bbf21caa}
+
+\item 
+\hypertarget{classOperator_a86add7287c36700de1079e1f442b1e90}{void {\bfseries comm222\-\_\-phst\-\_\-pandya} (const \hyperlink{classOperator}{Operator} \&opright, \hyperlink{classOperator}{Operator} \&opout) const }\label{classOperator_a86add7287c36700de1079e1f442b1e90}
+
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classOperator_a6f505221635444cb0b489b9ac600fd61}{static void {\bfseries Set\-\_\-\-B\-C\-H\-\_\-\-Transform\-\_\-\-Threshold} (double x)}\label{classOperator_a6f505221635444cb0b489b9ac600fd61}
+
+\item 
+\hypertarget{classOperator_a2c42843a1a557f2ab568d106e8fd23e8}{static void {\bfseries Set\-\_\-\-B\-C\-H\-\_\-\-Product\-\_\-\-Threshold} (double x)}\label{classOperator_a2c42843a1a557f2ab568d106e8fd23e8}
 
 \end{DoxyCompactItemize}
 \subsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classOperator_abf78a550ee8b0015ae8331083ec78cc8}{float {\bfseries Zero\-Body}}\label{classOperator_abf78a550ee8b0015ae8331083ec78cc8}
+\hypertarget{classOperator_a2f9f1109333a2485083cc7c090f9cd26}{double \hyperlink{classOperator_a2f9f1109333a2485083cc7c090f9cd26}{Zero\-Body}}\label{classOperator_a2f9f1109333a2485083cc7c090f9cd26}
+
+\begin{DoxyCompactList}\small\item\em The zero body piece of the operator. \end{DoxyCompactList}\item 
+arma\-::mat \hyperlink{classOperator_a14b1c78e0be45772aa57168c74d1b57c}{One\-Body}
+\item 
+vector$<$ map$<$ int, arma\-::mat $>$ $>$ \hyperlink{classOperator_a0778ed6b9b7b47e34f11fa187189c943}{Two\-Body}
+\item 
+map$<$ orbindx3\-\_\-t, vector\\*
+$<$ vector$<$ double $>$ $>$ $>$ \hyperlink{classOperator_a74ea65bd21f8bd5aa8e67782a700c377}{Three\-Body}
+\item 
+\hypertarget{classOperator_a71a7c194800e2758c42ad0d5f30299aa}{int \hyperlink{classOperator_a71a7c194800e2758c42ad0d5f30299aa}{rank\-\_\-\-J}}\label{classOperator_a71a7c194800e2758c42ad0d5f30299aa}
+
+\begin{DoxyCompactList}\small\item\em Spherical tensor rank of the operator. \end{DoxyCompactList}\item 
+\hypertarget{classOperator_ac70ee8dbbc4cb4f61972575c68bb9a51}{int \hyperlink{classOperator_ac70ee8dbbc4cb4f61972575c68bb9a51}{rank\-\_\-\-T}}\label{classOperator_ac70ee8dbbc4cb4f61972575c68bb9a51}
+
+\begin{DoxyCompactList}\small\item\em Isotensor rank of the operator. \end{DoxyCompactList}\item 
+\hypertarget{classOperator_ad628e91e2dd2542c0f34e985271adcd3}{int \hyperlink{classOperator_ad628e91e2dd2542c0f34e985271adcd3}{parity}}\label{classOperator_ad628e91e2dd2542c0f34e985271adcd3}
+
+\begin{DoxyCompactList}\small\item\em Parity of the operator, 0=even 1=odd. \end{DoxyCompactList}\item 
+\hypertarget{classOperator_a44a74c03caff49e776433e885a724956}{int \hyperlink{classOperator_a44a74c03caff49e776433e885a724956}{particle\-\_\-rank}}\label{classOperator_a44a74c03caff49e776433e885a724956}
+
+\begin{DoxyCompactList}\small\item\em Maximum particle rank. Should be 2 or 3. \end{DoxyCompactList}\item 
+\hypertarget{classOperator_aba9a01095cd3e3433716dc74daba4fcc}{vector$<$ vector$<$ int $>$ $>$ \hyperlink{classOperator_aba9a01095cd3e3433716dc74daba4fcc}{Two\-Body\-Tensor\-Channels}}\label{classOperator_aba9a01095cd3e3433716dc74daba4fcc}
+
+\begin{DoxyCompactList}\small\item\em A list of which two-\/body channels can be connected by this operator. \end{DoxyCompactList}\item 
+\hypertarget{classOperator_ace64ea3f299cfba00bc973e58ce03414}{int {\bfseries E2max}}\label{classOperator_ace64ea3f299cfba00bc973e58ce03414}
 
 \item 
-\hypertarget{classOperator_a4a6602e3321aeb0b2306f40cb5dac50a}{std\-::vector$<$ float $>$ {\bfseries One\-Body}}\label{classOperator_a4a6602e3321aeb0b2306f40cb5dac50a}
+\hypertarget{classOperator_ad3ebb434f911b9cb7c54ca6990cdda8c}{int {\bfseries E3max}}\label{classOperator_ad3ebb434f911b9cb7c54ca6990cdda8c}
 
 \item 
-\hypertarget{classOperator_ad6e1bfdec2e4bc71c96dcd4f8229dde6}{\hyperlink{classOperatorChannel}{Operator\-Channel} $\ast$ {\bfseries Two\-Body} \mbox{[}J\-M\-A\-X\mbox{]}\mbox{[}2\mbox{]}\mbox{[}3\mbox{]}}\label{classOperator_ad6e1bfdec2e4bc71c96dcd4f8229dde6}
+\hypertarget{classOperator_af08ef1c6d3ef38d08b4a6ea20b26ef22}{\hyperlink{classModelSpace}{Model\-Space} $\ast$ {\bfseries modelspace}}\label{classOperator_af08ef1c6d3ef38d08b4a6ea20b26ef22}
 
 \item 
-\hypertarget{classOperator_a3354ffab028908e806d274420cb920f0}{int {\bfseries Two\-Body\-Jmax}}\label{classOperator_a3354ffab028908e806d274420cb920f0}
+\hypertarget{classOperator_ad46a54204c51cf5c82e4c489217bd2c1}{bool {\bfseries hermitian}}\label{classOperator_ad46a54204c51cf5c82e4c489217bd2c1}
+
+\item 
+\hypertarget{classOperator_a86dd30fca215948dd9307fa45b7a2e32}{bool {\bfseries antihermitian}}\label{classOperator_a86dd30fca215948dd9307fa45b7a2e32}
+
+\item 
+\hypertarget{classOperator_a710cd3c6107a4497e90a04c1f3d2b15f}{int {\bfseries n\-Channels}}\label{classOperator_a710cd3c6107a4497e90a04c1f3d2b15f}
+
+\end{DoxyCompactItemize}
+\subsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classOperator_af4743d3c6e99ebf1915b348447c8e688}{static double {\bfseries bch\-\_\-transform\-\_\-threshold} = 1e-\/6}\label{classOperator_af4743d3c6e99ebf1915b348447c8e688}
+
+\item 
+\hypertarget{classOperator_ad4a2ba438f3286ef22cc06b61f745993}{static double {\bfseries bch\-\_\-product\-\_\-threshold} = 1e-\/4}\label{classOperator_ad4a2ba438f3286ef22cc06b61f745993}
 
 \end{DoxyCompactItemize}
 
+
+\subsection{Detailed Description}
+The \hyperlink{classOperator}{Operator} class provides a generic operator up to three-\/body, scalar or tensor. The class contains lots of methods and overloaded operators so that the resulting code that uses the operators can look as close as possible to the math that is written down. 
+
+\subsection{Member Function Documentation}
+\hypertarget{classOperator_a0db0f9c98175e3fd4634dc56544ce87b}{\index{Operator@{Operator}!B\-C\-H\-\_\-\-Product@{B\-C\-H\-\_\-\-Product}}
+\index{B\-C\-H\-\_\-\-Product@{B\-C\-H\-\_\-\-Product}!Operator@{Operator}}
+\subsubsection[{B\-C\-H\-\_\-\-Product}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Operator\-::\-B\-C\-H\-\_\-\-Product (
+\begin{DoxyParamCaption}
+\item[{const {\bf Operator} \&}]{Y}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_a0db0f9c98175e3fd4634dc56544ce87b}
+X.\-B\-C\-H\-\_\-\-Product(\-Y) returns $Z$ such that $ e^{Z} = e^{X}e^{Y}$ by employing the \href{http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula}{\tt Baker-\/\-Campbell-\/\-Hausdorff formula} \[ Z = X + Y + \frac{1}{2}[X,Y] + \frac{1}{12}([X,[X,Y]]+[Y,[Y,X]]) + \ldots \] \hypertarget{classOperator_afdb54d55b3dc10baf795a59fd9129182}{\index{Operator@{Operator}!B\-C\-H\-\_\-\-Transform@{B\-C\-H\-\_\-\-Transform}}
+\index{B\-C\-H\-\_\-\-Transform@{B\-C\-H\-\_\-\-Transform}!Operator@{Operator}}
+\subsubsection[{B\-C\-H\-\_\-\-Transform}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Operator\-::\-B\-C\-H\-\_\-\-Transform (
+\begin{DoxyParamCaption}
+\item[{const {\bf Operator} \&}]{Omega}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_afdb54d55b3dc10baf795a59fd9129182}
+X.\-B\-C\-H\-\_\-\-Transform(\-Y) returns $ Z = e^{Y} X e^{-Y} $. by employing the \href{http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula}{\tt Baker-\/\-Campbell-\/\-Hausdorff formula} \[ Z = X + [X,Y] + \frac{1}{2!}[X,[X,Y]] + \frac{1}{3!}[X,[X,[X,Y]]] + \ldots \] \hypertarget{classOperator_a701c64f8be794e89fd28a643b56d534a}{\index{Operator@{Operator}!Calculate\-Kinetic\-Energy@{Calculate\-Kinetic\-Energy}}
+\index{Calculate\-Kinetic\-Energy@{Calculate\-Kinetic\-Energy}!Operator@{Operator}}
+\subsubsection[{Calculate\-Kinetic\-Energy}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::\-Calculate\-Kinetic\-Energy (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classOperator_a701c64f8be794e89fd28a643b56d534a}
+Calculates the total kinetic energy (center of mass + relative) for each orbit in the model space, assuming a harmonic oscillator basis. \[ t_{ij} = \frac{1}{2}\epsilon_{i} \delta_{ij} \] \[ t_{ij} = \frac{1}{2} \sqrt{n_>(n_>+\ell+\frac{1}{2})} \delta_{j_ij_j}\delta_{\ell_i\ell_j} \delta_{n_>,n_<+1} \] \hypertarget{classOperator_a132a43b0a4a1a68e8f78af14e1eab069}{\index{Operator@{Operator}!comm110ss@{comm110ss}}
+\index{comm110ss@{comm110ss}!Operator@{Operator}}
+\subsubsection[{comm110ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm110ss (
+\begin{DoxyParamCaption}
+\item[{const {\bf Operator} \&}]{opright, }
+\item[{{\bf Operator} \&}]{opout}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_a132a43b0a4a1a68e8f78af14e1eab069}
+$ [X_{(1)},Y_{(1)}]_{(0)} $ \hypertarget{classOperator_aa99f1f8918be7c5669ba9a60bed3d9cd}{\index{Operator@{Operator}!comm111ss@{comm111ss}}
+\index{comm111ss@{comm111ss}!Operator@{Operator}}
+\subsubsection[{comm111ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm111ss (
+\begin{DoxyParamCaption}
+\item[{const {\bf Operator} \&}]{opright, }
+\item[{{\bf Operator} \&}]{opout}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_aa99f1f8918be7c5669ba9a60bed3d9cd}
+$ [X_{(1)},Y_{(1)}]_{(1)} $ \hypertarget{classOperator_a1180fa3d9923da924aa8d17042c23ed5}{\index{Operator@{Operator}!comm121ss@{comm121ss}}
+\index{comm121ss@{comm121ss}!Operator@{Operator}}
+\subsubsection[{comm121ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm121ss (
+\begin{DoxyParamCaption}
+\item[{const {\bf Operator} \&}]{opright, }
+\item[{{\bf Operator} \&}]{opout}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_a1180fa3d9923da924aa8d17042c23ed5}
+$ [X_{(1)},Y_{(2)}]_{(1)} -[Y_{(1)},X_{(2)}]_{(1)}$ \hypertarget{classOperator_aa47907c535f84e5775b92294a90c2101}{\index{Operator@{Operator}!comm122ss@{comm122ss}}
+\index{comm122ss@{comm122ss}!Operator@{Operator}}
+\subsubsection[{comm122ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm122ss (
+\begin{DoxyParamCaption}
+\item[{const {\bf Operator} \&}]{opright, }
+\item[{{\bf Operator} \&}]{opout}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_aa47907c535f84e5775b92294a90c2101}
+$ [X_{(1)},Y_{(2)}]_{(2)} -[Y_{(1)},X_{(2)}]_{(2)} $ \hypertarget{classOperator_aca98d46760c33cd12056701031cc6b4c}{\index{Operator@{Operator}!comm220ss@{comm220ss}}
+\index{comm220ss@{comm220ss}!Operator@{Operator}}
+\subsubsection[{comm220ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm220ss (
+\begin{DoxyParamCaption}
+\item[{const {\bf Operator} \&}]{opright, }
+\item[{{\bf Operator} \&}]{opout}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_aca98d46760c33cd12056701031cc6b4c}
+$ [X_{(2)},Y_{(2)}]_{(0)} $ \hypertarget{classOperator_a1a67d9f834722d027cda1525356c436b}{\index{Operator@{Operator}!comm221ss@{comm221ss}}
+\index{comm221ss@{comm221ss}!Operator@{Operator}}
+\subsubsection[{comm221ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm221ss (
+\begin{DoxyParamCaption}
+\item[{const {\bf Operator} \&}]{opright, }
+\item[{{\bf Operator} \&}]{opout}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_a1a67d9f834722d027cda1525356c436b}
+$ [X_{(2)},Y_{(2)}]_{(1)} $ \hypertarget{classOperator_ac9b04d839872bbae8dbc5d7e8ee8ab56}{\index{Operator@{Operator}!comm222\-\_\-phss@{comm222\-\_\-phss}}
+\index{comm222\-\_\-phss@{comm222\-\_\-phss}!Operator@{Operator}}
+\subsubsection[{comm222\-\_\-phss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm222\-\_\-phss (
+\begin{DoxyParamCaption}
+\item[{const {\bf Operator} \&}]{opright, }
+\item[{{\bf Operator} \&}]{opout}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_ac9b04d839872bbae8dbc5d7e8ee8ab56}
+The particle-\/hole piece of $ [X_{(2)},Y_{(2)}]_{(2)} $ \hypertarget{classOperator_a26be1b965a86598764be26a11490de6b}{\index{Operator@{Operator}!comm222\-\_\-pp\-\_\-hh\-\_\-221ss@{comm222\-\_\-pp\-\_\-hh\-\_\-221ss}}
+\index{comm222\-\_\-pp\-\_\-hh\-\_\-221ss@{comm222\-\_\-pp\-\_\-hh\-\_\-221ss}!Operator@{Operator}}
+\subsubsection[{comm222\-\_\-pp\-\_\-hh\-\_\-221ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm222\-\_\-pp\-\_\-hh\-\_\-221ss (
+\begin{DoxyParamCaption}
+\item[{const {\bf Operator} \&}]{opright, }
+\item[{{\bf Operator} \&}]{opout}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_a26be1b965a86598764be26a11490de6b}
+Calculate the particle-\/particle piece of $ [X_{(2)},Y_{(2)}]_{(2)} $ and $ [X_{(1)},Y_{(2)}]_{(2)} -[Y_{(1)},X_{(2)}]_{(2)} $ all in one go because they use the same intermediate matrices. \hypertarget{classOperator_a5f0ebafd8284747ca0dcb35bf2fd4fb0}{\index{Operator@{Operator}!comm222\-\_\-pp\-\_\-hhss@{comm222\-\_\-pp\-\_\-hhss}}
+\index{comm222\-\_\-pp\-\_\-hhss@{comm222\-\_\-pp\-\_\-hhss}!Operator@{Operator}}
+\subsubsection[{comm222\-\_\-pp\-\_\-hhss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm222\-\_\-pp\-\_\-hhss (
+\begin{DoxyParamCaption}
+\item[{const {\bf Operator} \&}]{opright, }
+\item[{{\bf Operator} \&}]{opout}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_a5f0ebafd8284747ca0dcb35bf2fd4fb0}
+The particle-\/particle piece of $ [X_{(2)},Y_{(2)}]_{(2)} $ \hypertarget{classOperator_aa08e81b63a14ef552ab8bd645196cfdb}{\index{Operator@{Operator}!Get\-T\-B\-M\-Emonopole@{Get\-T\-B\-M\-Emonopole}}
+\index{Get\-T\-B\-M\-Emonopole@{Get\-T\-B\-M\-Emonopole}!Operator@{Operator}}
+\subsubsection[{Get\-T\-B\-M\-Emonopole}]{\setlength{\rightskip}{0pt plus 5cm}double Operator\-::\-Get\-T\-B\-M\-Emonopole (
+\begin{DoxyParamCaption}
+\item[{int}]{a, }
+\item[{int}]{b, }
+\item[{int}]{c, }
+\item[{int}]{d}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_aa08e81b63a14ef552ab8bd645196cfdb}
+Returns an unnormalized monopole-\/like (angle-\/averaged) term \[ \bar{V}_{ijkl} = \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \sum_{J}(2J+1) V_{ijkl}^J \] \hypertarget{classOperator_acb9d7959232a636191b91f6bf5b7b0c8}{\index{Operator@{Operator}!Norm@{Norm}}
+\index{Norm@{Norm}!Operator@{Operator}}
+\subsubsection[{Norm}]{\setlength{\rightskip}{0pt plus 5cm}double Operator\-::\-Norm (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}}\label{classOperator_acb9d7959232a636191b91f6bf5b7b0c8}
+Obtain the Frobenius norm of the operator, which here is defined as \[ \|X\| = \sqrt{\|X_{(0)}\|^2 +\|X_{(1)}\|^2 +\|X_{(2)}\|^2 +\|X_{(3)}\|^2 } \] and \[ \|X_{(1)}\|^2 = \sum\limits_{ij} X_{ij}^2 \] 
+
+\subsection{Member Data Documentation}
+\hypertarget{classOperator_a14b1c78e0be45772aa57168c74d1b57c}{\index{Operator@{Operator}!One\-Body@{One\-Body}}
+\index{One\-Body@{One\-Body}!Operator@{Operator}}
+\subsubsection[{One\-Body}]{\setlength{\rightskip}{0pt plus 5cm}arma\-::mat Operator\-::\-One\-Body}}\label{classOperator_a14b1c78e0be45772aa57168c74d1b57c}
+The one body piece of the operator, stored in a single Nx\-N armadillo matrix, where N is the number of single-\/particle orbits. \hypertarget{classOperator_a74ea65bd21f8bd5aa8e67782a700c377}{\index{Operator@{Operator}!Three\-Body@{Three\-Body}}
+\index{Three\-Body@{Three\-Body}!Operator@{Operator}}
+\subsubsection[{Three\-Body}]{\setlength{\rightskip}{0pt plus 5cm}map$<$ orbindx3\-\_\-t, vector$<$ vector$<$double$>$ $>$ $>$ Operator\-::\-Three\-Body}}\label{classOperator_a74ea65bd21f8bd5aa8e67782a700c377}
+The three-\/body piece of the operator, stored in a map of vectors of vectors of doubles. The 3\-B\-M\-Es are stored in unnormalized J\-T coupled form $ \langle (ab)J_{ab}t_{ab};cJT | V | (de)J_{de}t_{de};f JT \rangle $. To minimize the number of stored matrix elements, only elements with $ a\geq b \geq c, a\geq d\geq e \geq f $ are stored. The other combinations are obtained on the fly by Get\-Three\-Body\-M\-E(). The storage format is Three\-Body\mbox{[}orbit\-\_\-index\mbox{]}\mbox{[}Jab\-\_\-index\mbox{]}\mbox{[}J\-T\-\_\-index\mbox{]}. \hypertarget{classOperator_a0778ed6b9b7b47e34f11fa187189c943}{\index{Operator@{Operator}!Two\-Body@{Two\-Body}}
+\index{Two\-Body@{Two\-Body}!Operator@{Operator}}
+\subsubsection[{Two\-Body}]{\setlength{\rightskip}{0pt plus 5cm}vector$<$map$<$int,arma\-::mat$>$ $>$ Operator\-::\-Two\-Body}}\label{classOperator_a0778ed6b9b7b47e34f11fa187189c943}
+The two-\/body piece of the operator, stored in a vector of maps of of armadillo matrices. The index of the vector indicates the J-\/coupled two-\/body channel of the ket state, while the map key is the two-\/body channel of the bra state. This is done to allow for tensor operators which connect different two-\/body channels without having to store all possible combinations. In the case of a scalar operator, there is only one map key for the bra state, corresponding to that of the ket state. The normalized J-\/coupled T\-B\-M\-E's are stored in the matrices. However, when the T\-B\-M\-E's are accessed by \hyperlink{classOperator_aaa072b887da84ca14a4968df17ea8812}{Get\-T\-B\-M\-E()}, they are returned as $ \tilde{\Gamma}_{ijkl} \equiv \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \Gamma_{ijkl} $ because the flow equations are derived in terms of $ \tilde{\Gamma} $. For efficiency, only matrix elements with $ i\leq j $ and $ k\leq l $ are stored. When performing sums that can be cast as matrix multiplication, we have something of the form \[ \tilde{Z}_{ijkl} \sim \frac{1}{2} \sum_{ab}\tilde{X}_{ijab} \tilde{Y}_{abkl} \] which may be rewritten as a restricted sum, or matrix multiplication \[ Z_{ijkl} \sim \sum_{a\leq b} X_{ijab} Y_{abkl} = \left( X\cdot Y \right)_{ijkl} \] 
 
 The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
 \item 

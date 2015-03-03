@@ -4,16 +4,70 @@
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classReadWrite_a01ee2151d7421e45ff33ca6ff9e527e6}{void {\bfseries Read\-Model\-Space} (char $\ast$filename, \hyperlink{classModelSpace}{Model\-Space} $\ast$modelspace)}\label{classReadWrite_a01ee2151d7421e45ff33ca6ff9e527e6}
+\hypertarget{classReadWrite_a7074f8c5e6b1bbeb90a4c534b913ac53}{void {\bfseries Read\-Settings\-File} (string filename)}\label{classReadWrite_a7074f8c5e6b1bbeb90a4c534b913ac53}
 
 \item 
-\hypertarget{classReadWrite_ab13acebd1adf8e282c83fd71002da9bb}{void {\bfseries Read\-Bare\-Interaction} (char $\ast$filename, \hyperlink{classOperator}{Operator} $\ast$Hbare)}\label{classReadWrite_ab13acebd1adf8e282c83fd71002da9bb}
+\hypertarget{classReadWrite_adbf1ad5fe47c97c87994cfc28df5c740}{\hyperlink{classModelSpace}{Model\-Space} {\bfseries Read\-Model\-Space} (string filename)}\label{classReadWrite_adbf1ad5fe47c97c87994cfc28df5c740}
 
 \item 
-\hypertarget{classReadWrite_a8a1036fca4fe061ca5b659efcf3dac67}{void {\bfseries Read\-Bare\-S\-P\-E} (char $\ast$filename, \hyperlink{classOperator}{Operator} $\ast$Hbare)}\label{classReadWrite_a8a1036fca4fe061ca5b659efcf3dac67}
+\hypertarget{classReadWrite_a7ebe7ea4d8a322b23b144658da562277}{void {\bfseries Read\-Bare\-T\-B\-M\-E} (string filename, \hyperlink{classOperator}{Operator} \&Hbare)}\label{classReadWrite_a7ebe7ea4d8a322b23b144658da562277}
 
 \item 
-\hypertarget{classReadWrite_aed7ececc3e58f220c70a1b9dcd692fd1}{void {\bfseries Read\-Bare\-T\-B\-M\-E} (char $\ast$filename, \hyperlink{classOperator}{Operator} $\ast$Hbare)}\label{classReadWrite_aed7ececc3e58f220c70a1b9dcd692fd1}
+\hypertarget{classReadWrite_ae5271000cceab5fcebab7e9d2faf9f1f}{void {\bfseries Read\-Bare\-T\-B\-M\-E\-\_\-\-Jason} (string filename, \hyperlink{classOperator}{Operator} \&Hbare)}\label{classReadWrite_ae5271000cceab5fcebab7e9d2faf9f1f}
+
+\item 
+\hypertarget{classReadWrite_ab66f5d7e2e352e973597915c08cad45d}{void {\bfseries Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil} (string filename, \hyperlink{classOperator}{Operator} \&Hbare)}\label{classReadWrite_ab66f5d7e2e352e973597915c08cad45d}
+
+\item 
+\hypertarget{classReadWrite_a855b459639cc52098466cbe22e6becec}{void {\bfseries Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt} (string filename, \hyperlink{classOperator}{Operator} \&Hbare, int Emax=-\/1, int lmax=-\/1)}\label{classReadWrite_a855b459639cc52098466cbe22e6becec}
+
+\item 
+\hypertarget{classReadWrite_a84c0cbaf2be415eadffb560ea0bb9785}{void {\bfseries Read\-\_\-\-Darmstadt\-\_\-3body} (string filename, \hyperlink{classOperator}{Operator} \&Hbare, int E1max, int E2max, int E3max)}\label{classReadWrite_a84c0cbaf2be415eadffb560ea0bb9785}
+
+\item 
+\hypertarget{classReadWrite_a257e2a926e252a2952b330b3655ddd3d}{void {\bfseries Write\-One\-Body} (\hyperlink{classOperator}{Operator} \&, string)}\label{classReadWrite_a257e2a926e252a2952b330b3655ddd3d}
+
+\item 
+\hypertarget{classReadWrite_a7bae483d2d587b66b3bf5ed734139cde}{void {\bfseries Write\-Two\-Body} (\hyperlink{classOperator}{Operator} \&, string)}\label{classReadWrite_a7bae483d2d587b66b3bf5ed734139cde}
+
+\item 
+\hypertarget{classReadWrite_a75dd4196074d74e1e7ea0e0b10aafc85}{void {\bfseries Write\-Valence\-One\-Body} (\hyperlink{classOperator}{Operator} \&, string)}\label{classReadWrite_a75dd4196074d74e1e7ea0e0b10aafc85}
+
+\item 
+\hypertarget{classReadWrite_aeb9256b7a68dcb45fac250b45af07548}{void {\bfseries Write\-Valence\-Two\-Body} (\hyperlink{classOperator}{Operator} \&, string)}\label{classReadWrite_aeb9256b7a68dcb45fac250b45af07548}
+
+\item 
+\hypertarget{classReadWrite_a8a7dc85b22c8f468d153d3fde9f39394}{void {\bfseries Write\-Nu\-Shell\-X\-\_\-sps} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_a8a7dc85b22c8f468d153d3fde9f39394}
+
+\item 
+\hypertarget{classReadWrite_a2028159ab7f8c227613834b39794e157}{void {\bfseries Write\-Nu\-Shell\-X\-\_\-int} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_a2028159ab7f8c227613834b39794e157}
+
+\item 
+\hypertarget{classReadWrite_a371194595d9412cbb8f1b432a6526f5a}{void {\bfseries Write\-Antoine\-\_\-int} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_a371194595d9412cbb8f1b432a6526f5a}
+
+\item 
+\hypertarget{classReadWrite_a771ed1ac7ca0cc9cb6a209da170dd351}{void {\bfseries Write\-Operator} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_a771ed1ac7ca0cc9cb6a209da170dd351}
+
+\item 
+\hypertarget{classReadWrite_ab924c67864c7af28bcc22a9b87abafb3}{void {\bfseries Read\-Operator} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_ab924c67864c7af28bcc22a9b87abafb3}
+
+\item 
+\hypertarget{classReadWrite_a05ec8e21842e94d788bb36c7d11f46b9}{bool {\bfseries In\-Good\-State} ()}\label{classReadWrite_a05ec8e21842e94d788bb36c7d11f46b9}
+
+\item 
+\hypertarget{classReadWrite_a5e81dd4ce4adfe6fc08af81440003bb9}{void {\bfseries Set\-Co\-M\-Corr} (bool b)}\label{classReadWrite_a5e81dd4ce4adfe6fc08af81440003bb9}
+
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classReadWrite_aa99ba50a35d8391285c1bdde1f1c206d}{std\-::map$<$ string, string $>$ {\bfseries Input\-Parameters}}\label{classReadWrite_aa99ba50a35d8391285c1bdde1f1c206d}
+
+\item 
+\hypertarget{classReadWrite_a3221f4b824dc385b066eca732339ee72}{bool {\bfseries do\-Co\-M\-\_\-corr}}\label{classReadWrite_a3221f4b824dc385b066eca732339ee72}
+
+\item 
+\hypertarget{classReadWrite_aaf2753e15a5e7f524d6fde9f15ab357b}{bool {\bfseries goodstate}}\label{classReadWrite_aaf2753e15a5e7f524d6fde9f15ab357b}
 
 \end{DoxyCompactItemize}
 

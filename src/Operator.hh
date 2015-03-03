@@ -13,23 +13,58 @@ using namespace std;
 
 typedef uint64_t orbindx3_t;
 
+///
+/// The Operator class provides a generic operator up to three-body, scalar or tensor.
+/// The class contains lots of methods and overloaded operators so that the resulting
+/// code that uses the operators can look as close as possible to the math that is
+/// written down.
+
 class Operator
 {
  public:
   //Fields
-  double ZeroBody;
+/// The zero body piece of the operator.
+  double ZeroBody; 
+/// The one body piece of the operator, stored in a single NxN armadillo matrix, where N is
+/// the number of single-particle orbits.
   arma::mat OneBody;
-//  vector<arma::mat> TwoBody;
-//  vector<vector<arma::mat> > TwoBody;
-  vector<map<int,arma::mat> > TwoBody;
-
+/// The two-body piece of the operator, stored in a vector of maps of of armadillo matrices.
+/// The index of the vector indicates the J-coupled two-body channel of the ket state, while the
+/// map key is the two-body channel of the bra state. This is done to allow for tensor operators
+/// which connect different two-body channels without having to store all possible combinations.
+/// In the case of a scalar operator, there is only one map key for the bra state, corresponding
+/// to that of the ket state.
+/// The normalized J-coupled TBME's are stored in the matrices. However, when the TBME's are
+/// accessed by GetTBME(), they are returned as
+/// \f$ \tilde{\Gamma}_{ijkl} \equiv \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \Gamma_{ijkl} \f$
+/// because the flow equations are derived in terms of \f$ \tilde{\Gamma} \f$.
+/// For efficiency, only matrix elements with \f$ i\leq j \f$ and \f$ k\leq l \f$
+/// are stored.
+/// When performing sums that can be cast as matrix multiplication, we have something
+/// of the form
+/// \f[
+/// \tilde{Z}_{ijkl} \sim \frac{1}{2} \sum_{ab}\tilde{X}_{ijab} \tilde{Y}_{abkl}
+/// \f]
+/// which may be rewritten as a restricted sum, or matrix multiplication
+/// \f[
+/// Z_{ijkl} \sim \sum_{a\leq b} X_{ijab} Y_{abkl} = \left( X\cdot Y \right)_{ijkl}
+/// \f]
+  vector<map<int,arma::mat> > TwoBody;  
+/// The three-body piece of the operator, stored in a map of vectors of vectors of doubles.
+/// The 3BMEs are stored in unnormalized JT coupled form
+/// \f$ \langle (ab)J_{ab}t_{ab};cJT | V | (de)J_{de}t_{de};f JT \rangle \f$.
+/// To minimize the number of stored matrix elements, only elements with
+/// \f$ a\geq b \geq c, a\geq d\geq e \geq f \f$ are stored.
+/// The other combinations are obtained on the fly by GetThreeBodyME().
+/// The storage format is ThreeBody[orbit_index][Jab_index][JT_index].
   map< orbindx3_t, vector< vector<double> > > ThreeBody;
 
-  int rank_J;
-  int rank_T;
-  int parity;
-  int particle_rank;
+  int rank_J; ///< Spherical tensor rank of the operator
+  int rank_T; ///< Isotensor rank of the operator
+  int parity; ///< Parity of the operator, 0=even 1=odd
+  int particle_rank; ///< Maximum particle rank. Should be 2 or 3.
 
+/// A list of which two-body channels can be connected by this operator
   vector<vector<int> > TwoBodyTensorChannels;
 
   int E2max; // I don't do anything with this yet...
@@ -39,7 +74,7 @@ class Operator
 
   //Constructors
   // In the future, consider using C++11 rvalues / move constructor to avoid copies in certain cases
-  Operator();
+  Operator(); /// Default constructor
   Operator(ModelSpace&);
   Operator(ModelSpace&, int Jrank, int Trank, int Parity, int part_rank);
   Operator( const Operator& rhs);
@@ -139,6 +174,7 @@ class Operator
   int GetJRank()const {return rank_J;};
   int GetTRank()const {return rank_T;};
   int GetParity()const {return parity;};
+  void SetParticleRank(int pr) {particle_rank = pr;};
 
 
 
@@ -147,21 +183,36 @@ class Operator
   void ScaleTwoBody(double x);
 
   // The actually interesting methods
-  Operator DoNormalOrdering(); 
-  Operator DoNormalOrdering2();
-  Operator DoNormalOrdering3();
+  Operator DoNormalOrdering(); ///< Calls DoNormalOrdering2() or DoNormalOrdering3(), depending on the rank of the operator.
+  Operator DoNormalOrdering2(); ///< Returns the normal ordered two-body operator
+  Operator DoNormalOrdering3(); ///< Returns the normal ordered three-body operator
 
   Operator Commutator(const Operator& opright) const;
+/// X.BCH_Product(Y) returns \f$Z\f$ such that \f$ e^{Z} = e^{X}e^{Y}\f$
+/// by employing the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
+/// \f[ Z = X + Y + \frac{1}{2}[X,Y] + \frac{1}{12}([X,[X,Y]]+[Y,[Y,X]]) + \ldots \f]
   Operator BCH_Product( const Operator& ) const ; 
+/// X.BCH_Transform(Y) returns \f$ Z = e^{Y} X e^{-Y} \f$.
+/// by employing the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
+/// \f[ Z = X + [X,Y] + \frac{1}{2!}[X,[X,Y]] + \frac{1}{3!}[X,[X,[X,Y]]] + \ldots \f]
   Operator BCH_Transform( const Operator& ) const; 
 
+/// Calculates the total kinetic energy (center of mass + relative) for each orbit in the model space,
+/// assuming a harmonic oscillator basis.
+/// \f[ t_{ij} = \frac{1}{2}\epsilon_{i} \delta_{ij} \f]
+/// \f[ t_{ij} = \frac{1}{2} \sqrt{n_>(n_>+\ell+\frac{1}{2})} \delta_{j_ij_j}\delta_{\ell_i\ell_j} \delta_{n_>,n_<+1} \f]
   void CalculateKineticEnergy();
-  void Eye(); // set to identity operator
+  void Eye(); ///< set to identity operator
 
   Operator CommutatorScalarScalar(const Operator& opright) const;
   Operator CommutatorScalarTensor(const Operator& opright) const;
   Operator CommutatorTensorTensor(const Operator& opright) const;
 
+/// Obtain the Frobenius norm of the operator, which here is 
+/// defined as 
+/// \f[ \|X\| = \sqrt{\|X_{(0)}\|^2 +\|X_{(1)}\|^2 +\|X_{(2)}\|^2 +\|X_{(3)}\|^2 } \f]
+/// and
+/// \f[ \|X_{(1)}\|^2 = \sum\limits_{ij} X_{ij}^2 \f]
   double Norm() const;
   double OneBodyNorm() const;
   double TwoBodyNorm() const;
@@ -191,14 +242,33 @@ class Operator
   void DoPandyaTransformation(Operator&) const;
   void CalculateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) const; 
 
-  void comm110ss(const Operator& opright, Operator& opout) const;
+/// \f$ [X_{(1)},Y_{(1)}]_{(0)} \f$
+///
+  void comm110ss(const Operator& opright, Operator& opout) const; 
+/// \f$ [X_{(2)},Y_{(2)}]_{(0)} \f$
+///
   void comm220ss(const Operator& opright, Operator& opout) const;
+/// \f$ [X_{(1)},Y_{(1)}]_{(1)} \f$
+///
   void comm111ss(const Operator& opright, Operator& opout) const;
+/// \f$ [X_{(1)},Y_{(2)}]_{(1)} -[Y_{(1)},X_{(2)}]_{(1)}\f$
+///
   void comm121ss(const Operator& opright, Operator& opout) const;
+/// \f$ [X_{(2)},Y_{(2)}]_{(1)} \f$
+///
   void comm221ss(const Operator& opright, Operator& opout) const;
+/// \f$ [X_{(1)},Y_{(2)}]_{(2)} -[Y_{(1)},X_{(2)}]_{(2)} \f$
+///
   void comm122ss(const Operator& opright, Operator& opout) const;
+/// The particle-particle piece of \f$ [X_{(2)},Y_{(2)}]_{(2)} \f$
+///
   void comm222_pp_hhss(const Operator& opright, Operator& opout) const;
+/// The particle-hole piece of \f$ [X_{(2)},Y_{(2)}]_{(2)} \f$
+///
   void comm222_phss(const Operator& opright, Operator& opout) const;
+/// Calculate the particle-particle piece of \f$ [X_{(2)},Y_{(2)}]_{(2)} \f$
+/// and \f$ [X_{(1)},Y_{(2)}]_{(2)} -[Y_{(1)},X_{(2)}]_{(2)} \f$ all in one go
+/// because they use the same intermediate matrices.
   void comm222_pp_hh_221ss(const Operator& opright, Operator& opout) const;
 
 // make st and tt commutators
@@ -224,7 +294,7 @@ class Operator
 
 };
 
-// Non member function, multiply by scalar from left side
+/// Non member function, multiply by scalar from left side
 Operator operator*(const double lhs, const Operator& rhs);
 
 #endif

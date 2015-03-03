@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>My Project: ReadWrite Class Reference</title>
+<title>IM-SRG++: ReadWrite Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -22,7 +22,8 @@
  <tbody>
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
-   <div id="projectname">My Project
+   <div id="projectname">IM-SRG++
+   &#160;<span id="projectnumber">0</span>
    </div>
   </td>
  </tr>
@@ -61,6 +62,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
       <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
+      <li><a href="hierarchy.html"><span>Class&#160;Hierarchy</span></a></li>
       <li><a href="functions.html"><span>Class&#160;Members</span></a></li>
     </ul>
   </div>
@@ -69,7 +71,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Functions</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Variables</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -82,6 +84,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classReadWrite-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">ReadWrite Class Reference</div>  </div>
@@ -90,18 +93,72 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a01ee2151d7421e45ff33ca6ff9e527e6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a01ee2151d7421e45ff33ca6ff9e527e6"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadModelSpace</b> (char *filename, <a class="el" href="classModelSpace.html">ModelSpace</a> *modelspace)</td></tr>
-<tr class="separator:a01ee2151d7421e45ff33ca6ff9e527e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab13acebd1adf8e282c83fd71002da9bb"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab13acebd1adf8e282c83fd71002da9bb"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareInteraction</b> (char *filename, <a class="el" href="classOperator.html">Operator</a> *Hbare)</td></tr>
-<tr class="separator:ab13acebd1adf8e282c83fd71002da9bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8a1036fca4fe061ca5b659efcf3dac67"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8a1036fca4fe061ca5b659efcf3dac67"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareSPE</b> (char *filename, <a class="el" href="classOperator.html">Operator</a> *Hbare)</td></tr>
-<tr class="separator:a8a1036fca4fe061ca5b659efcf3dac67"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aed7ececc3e58f220c70a1b9dcd692fd1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aed7ececc3e58f220c70a1b9dcd692fd1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME</b> (char *filename, <a class="el" href="classOperator.html">Operator</a> *Hbare)</td></tr>
-<tr class="separator:aed7ececc3e58f220c70a1b9dcd692fd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7074f8c5e6b1bbeb90a4c534b913ac53"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7074f8c5e6b1bbeb90a4c534b913ac53"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadSettingsFile</b> (string filename)</td></tr>
+<tr class="separator:a7074f8c5e6b1bbeb90a4c534b913ac53"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adbf1ad5fe47c97c87994cfc28df5c740"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="adbf1ad5fe47c97c87994cfc28df5c740"></a>
+<a class="el" href="classModelSpace.html">ModelSpace</a>&#160;</td><td class="memItemRight" valign="bottom"><b>ReadModelSpace</b> (string filename)</td></tr>
+<tr class="separator:adbf1ad5fe47c97c87994cfc28df5c740"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ebe7ea4d8a322b23b144658da562277"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7ebe7ea4d8a322b23b144658da562277"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME</b> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare)</td></tr>
+<tr class="separator:a7ebe7ea4d8a322b23b144658da562277"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5271000cceab5fcebab7e9d2faf9f1f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae5271000cceab5fcebab7e9d2faf9f1f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME_Jason</b> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare)</td></tr>
+<tr class="separator:ae5271000cceab5fcebab7e9d2faf9f1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab66f5d7e2e352e973597915c08cad45d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab66f5d7e2e352e973597915c08cad45d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME_Navratil</b> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare)</td></tr>
+<tr class="separator:ab66f5d7e2e352e973597915c08cad45d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a855b459639cc52098466cbe22e6becec"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a855b459639cc52098466cbe22e6becec"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME_Darmstadt</b> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare, int Emax=-1, int lmax=-1)</td></tr>
+<tr class="separator:a855b459639cc52098466cbe22e6becec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84c0cbaf2be415eadffb560ea0bb9785"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a84c0cbaf2be415eadffb560ea0bb9785"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Read_Darmstadt_3body</b> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare, int E1max, int E2max, int E3max)</td></tr>
+<tr class="separator:a84c0cbaf2be415eadffb560ea0bb9785"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a257e2a926e252a2952b330b3655ddd3d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a257e2a926e252a2952b330b3655ddd3d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteOneBody</b> (<a class="el" href="classOperator.html">Operator</a> &amp;, string)</td></tr>
+<tr class="separator:a257e2a926e252a2952b330b3655ddd3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7bae483d2d587b66b3bf5ed734139cde"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7bae483d2d587b66b3bf5ed734139cde"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteTwoBody</b> (<a class="el" href="classOperator.html">Operator</a> &amp;, string)</td></tr>
+<tr class="separator:a7bae483d2d587b66b3bf5ed734139cde"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a75dd4196074d74e1e7ea0e0b10aafc85"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a75dd4196074d74e1e7ea0e0b10aafc85"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteValenceOneBody</b> (<a class="el" href="classOperator.html">Operator</a> &amp;, string)</td></tr>
+<tr class="separator:a75dd4196074d74e1e7ea0e0b10aafc85"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb9256b7a68dcb45fac250b45af07548"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aeb9256b7a68dcb45fac250b45af07548"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteValenceTwoBody</b> (<a class="el" href="classOperator.html">Operator</a> &amp;, string)</td></tr>
+<tr class="separator:aeb9256b7a68dcb45fac250b45af07548"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8a7dc85b22c8f468d153d3fde9f39394"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8a7dc85b22c8f468d153d3fde9f39394"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteNuShellX_sps</b> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+<tr class="separator:a8a7dc85b22c8f468d153d3fde9f39394"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2028159ab7f8c227613834b39794e157"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2028159ab7f8c227613834b39794e157"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteNuShellX_int</b> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+<tr class="separator:a2028159ab7f8c227613834b39794e157"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a371194595d9412cbb8f1b432a6526f5a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a371194595d9412cbb8f1b432a6526f5a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteAntoine_int</b> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+<tr class="separator:a371194595d9412cbb8f1b432a6526f5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a771ed1ac7ca0cc9cb6a209da170dd351"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a771ed1ac7ca0cc9cb6a209da170dd351"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteOperator</b> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+<tr class="separator:a771ed1ac7ca0cc9cb6a209da170dd351"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab924c67864c7af28bcc22a9b87abafb3"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab924c67864c7af28bcc22a9b87abafb3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadOperator</b> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+<tr class="separator:ab924c67864c7af28bcc22a9b87abafb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05ec8e21842e94d788bb36c7d11f46b9"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a05ec8e21842e94d788bb36c7d11f46b9"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>InGoodState</b> ()</td></tr>
+<tr class="separator:a05ec8e21842e94d788bb36c7d11f46b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e81dd4ce4adfe6fc08af81440003bb9"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5e81dd4ce4adfe6fc08af81440003bb9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetCoMCorr</b> (bool b)</td></tr>
+<tr class="separator:a5e81dd4ce4adfe6fc08af81440003bb9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:aa99ba50a35d8391285c1bdde1f1c206d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa99ba50a35d8391285c1bdde1f1c206d"></a>
+std::map&lt; string, string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>InputParameters</b></td></tr>
+<tr class="separator:aa99ba50a35d8391285c1bdde1f1c206d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3221f4b824dc385b066eca732339ee72"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3221f4b824dc385b066eca732339ee72"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>doCoM_corr</b></td></tr>
+<tr class="separator:a3221f4b824dc385b066eca732339ee72"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf2753e15a5e7f524d6fde9f15ab357b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aaf2753e15a5e7f524d6fde9f15ab357b"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>goodstate</b></td></tr>
+<tr class="separator:aaf2753e15a5e7f524d6fde9f15ab357b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li><a class="el" href="ReadWrite_8hh_source.html">ReadWrite.hh</a></li>
@@ -110,7 +167,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME</b> (cha
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Sep 24 2014 12:55:22 for My Project by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Mar 2 2015 17:17:22 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
