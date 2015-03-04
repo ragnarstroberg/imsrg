@@ -92,6 +92,7 @@ void Operator::AllocateThreeBody()
 {
   E3max = modelspace->GetN3max();
   cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
+  vector<double> zerovector(5,0.0);
   int norbits = modelspace->GetNumberOrbits();
   for (int a=0; a<norbits; a+=2)
   {
@@ -110,43 +111,71 @@ void Operator::AllocateThreeBody()
      for( int d=0; d<=a; d+=2)
      {
       Orbit& od = modelspace->GetOrbit(d);
-      for (int e=0; e<=d; e+=2)
+      for (int e=0; e<= (d==a ? b : d); e+=2)
       {
        Orbit& oe = modelspace->GetOrbit(e);
-       for (int f=0; f<=e; f+=2)
+       for (int f=0; f<=((d==a and e==b) ? c : e); f+=2)
        {
         Orbit& of = modelspace->GetOrbit(f);
 
         // conserve parity
         if ((oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0) continue;
 
-        int J2_min = max(max(1,oa.j2-ob.j2-oc.j2), od.j2-oe.j2-of.j2);
-        int J2_max = min(oa.j2+ob.j2+oc.j2, od.j2+oe.j2+of.j2);
-        if (J2_max < J2_min) continue;
+//        int J2_min = max(max(1,oa.j2-ob.j2-oc.j2), od.j2-oe.j2-of.j2);
+
+        int Jab_min = abs(oa.j2-ob.j2)/2;
+        int Jde_min = abs(od.j2-oe.j2)/2;
+        int Jab_max = (oa.j2+ob.j2)/2;
+        int Jde_max = (od.j2+oe.j2)/2;
 
         orbindx3_t orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
 
-        // Get hashing index for orbits
-        ThreeBody[orbit_index].resize((J2_max-J2_min)/2+1);
-//        cout << "size of ThreeBody = " << ThreeBody.size() << endl;
-//        cout << "abc " << a << " " << b << " " << c << "   def " << d << " " << e << " " << f << endl;
-
-        for (int J2=J2_min; J2<=J2_max; J2+=2)
+        for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
         {
-          // Find actually allowed ranges of Jab and Jde for this J2
-          int Jab_min = max(abs(oa.j2-ob.j2), abs(J2-oc.j2))/2;
-          int Jab_max = min(oa.j2+ob.j2, J2+oc.j2)/2;
-          int Jde_min = max(abs(od.j2-oe.j2), abs(J2-of.j2))/2;
-          int Jde_max = min(od.j2+oe.j2, J2+of.j2)/2;
-          int J_index = (J2-J2_min)/2;
+         for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
+         {
+           int J2_min = max( abs(2*Jab-oc.j2), abs(2*Jde-of.j2));
+           int J2_max = min( 2*Jab+oc.j2, 2*Jde+of.j2);
+           for (int J2=J2_min; J2<=J2_max; J2+=2)
+           {
+             ThreeBody[orbit_index][J2][Jab][Jde] = zerovector;
+           }
+         }
+        }
 
-          int nJ_twobody = (Jab_max-Jab_min+1)*(Jde_max-Jde_min+1);
 
-          if (nJ_twobody <0) continue;
-          vector<double> zerovector(nJ_twobody*5,0.0);
-          ThreeBody[orbit_index][J_index] = zerovector;
-
-        } //J2
+//        int J2_min = max(max(1, (2*max(max(oa.j2,ob.j2),oc.j2)-oa.j2-ob.j2-oc.j2)), 2*max(max(od.j2,oe.j2),of.j2)-od.j2-oe.j2-of.j2);
+//        int J2_max = min(oa.j2+ob.j2+oc.j2, od.j2+oe.j2+of.j2);
+//        if (J2_max < J2_min) continue;
+//
+//
+//        // Get hashing index for orbits
+////        ThreeBody[orbit_index].resize((J2_max-J2_min)/2+1);
+////        cout << "size of ThreeBody = " << ThreeBody.size() << endl;
+////        cout << "abc " << a << " " << b << " " << c << "   def " << d << " " << e << " " << f << endl;
+//
+//        for (int J2=J2_min; J2<=J2_max; J2+=2)
+//        {
+//          // Find actually allowed ranges of Jab and Jde for this J2
+//          int Jab_min = max(abs(oa.j2-ob.j2), abs(J2-oc.j2))/2;
+//          int Jab_max = min(oa.j2+ob.j2, J2+oc.j2)/2;
+//          int Jde_min = max(abs(od.j2-oe.j2), abs(J2-of.j2))/2;
+//          int Jde_max = min(od.j2+oe.j2, J2+of.j2)/2;
+////          int J_index = (J2-J2_min)/2;
+//
+//          int nJ_twobody = (Jab_max-Jab_min+1)*(Jde_max-Jde_min+1);
+//
+//          if (nJ_twobody <0) continue;
+////          vector<double> zerovector(nJ_twobody*5,0.0);
+//          vector<double> zerovector(5,0.0);
+//          for( int Jab=Jab_min; Jab<=Jab_max; ++Jab)
+//          {
+//           for( int Jde=Jde_min; Jde<=Jde_max; ++Jde)
+//           {
+//             ThreeBody[orbit_index][J2][Jab][Jde] = zerovector;
+//           }
+//          }
+//        } //J2
        } //f
       } //e
      } //d
@@ -521,7 +550,8 @@ double Operator::GetTBMEmonopole(Ket & bra, Ket & ket) const
 
 
 // Get Three Body Matrix Element in proton-neutron formalism.
-double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int Tz, int a, int b, int c, int d, int e, int f)
+//double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int Tz, int a, int b, int c, int d, int e, int f)
+double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int a, int b, int c, int d, int e, int f)
 {
 //   cout << "In GetThreeBOdyME_pn()" << endl;
    Orbit& oa = modelspace->GetOrbit(a);
@@ -537,7 +567,8 @@ double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int Tz, int a
    double tze = oe.tz2/2.0;
    double tzf = of.tz2/2.0;
    double Vpn=0;
-   int Tmin = abs(Tz);
+   //int Tmin = abs(Tz);
+   int Tmin = min( abs(tza+tzb+tzc), abs(tzd+tze+tzf) );
    for (int tab=abs(tza+tzb); tab<=1; ++tab)
    {
       // CG calculates the Clebsch-Gordan coefficient
@@ -551,8 +582,9 @@ double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int Tz, int a
            double CG3 = AngMom::CG(tab,tza+tzb, 0.5,tzc, T/2., tza+tzb+tzc);
            double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, T/2., tzd+tze+tzf);
            if (CG3*CG4==0) continue;
-//           cout << "Calling GetThreeBodyME()" << endl;
-           Vpn += CG1*CG2*CG3*CG4*GetThreeBodyME(Jab_in,Jde_in,J2,tab,tde,T,a-a%2,b-b%2,c-c%2,d-d%2,e-e%2,f-f%2);
+//           cout << "Calling GetThreeBodyME() " << a << b << c << d << e << f << "  " << Jab_in << " " << Jde_in << " " << J2 << endl;
+//           Vpn += CG1*CG2*CG3*CG4*GetThreeBodyME(Jab_in,Jde_in,J2,tab,tde,T,a-a%2,b-b%2,c-c%2,d-d%2,e-e%2,f-f%2);
+           Vpn += CG1*CG2*CG3*CG4*GetThreeBodyME(Jab_in,Jde_in,J2,tab,tde,T,a,b,c,d,e,f);
          }
       }
    }
@@ -574,8 +606,31 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
    int e=e_in;
    int f=f_in;
 
+//   a=a-a%2;
+//   b=b-b%2;
+//   c=c-c%2;
+//   d=d-d%2;
+//   e=e-e%2;
+//   f=f-f%2;
+
    SortThreeBodyOrbits(a,b,c);
    SortThreeBodyOrbits(d,e,f);
+   bool Recouple = false;
+   if (a!=a_in or b!=b_in or c!=c_in or d!=d_in or e!=e_in or f!=f_in) Recouple=true;
+
+   if (d/2>a/2 or (d/2==a/2 and e/2>b/2) or (d/2==a/2 and e/2==b/2 and f/2>c/2))
+   {
+      swap(a,d);
+      swap(b,e);
+      swap(c,f);
+      swap(a_in,d_in);
+      swap(b_in,e_in);
+      swap(c_in,f_in);
+      swap(Jab_in,Jde_in);
+      swap(tab_in,tde_in);
+   }
+
+
 
    Orbit& oa = modelspace->GetOrbit(a);
    Orbit& ob = modelspace->GetOrbit(b);
@@ -599,6 +654,31 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
    int tde_max = 1;
 
    orbindx3_t orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
+   
+//   int aa,bb,cc,dd,ee,ff;
+//   GetOrbitsFromThreeBodyIndex(orbit_index,aa,bb,cc,dd,ee,ff);
+//   cout << "Getting  " << a << "-" << b << "-" << c << "-" << d << "-" << e << "-" << f << "(" << orbit_index << ")"
+//        << " ==> " << aa << "-" << bb << "-" << cc << "-" << dd << "-" << ee << "-" << ff 
+//        << endl;
+   if (not Recouple)
+   {
+      int Tindex = 2*tab_in + tde_in + (T2-1)/2; 
+//      cout << "Not Recouple" << endl;
+//      cout << "orbit_index = " << orbit_index << "  J2 = " << J2 << "  Jab = " << Jab_in
+//            << "  size = " << ThreeBody.at(orbit_index).size();
+//            for ( auto it : ThreeBody.at(orbit_index) )
+//            {
+//               cout << "   " << it.first;
+//            }
+//            cout << endl;
+//            cout << "  size = " << ThreeBody.at(orbit_index).at(J2).size() ;
+//            for ( auto it : ThreeBody.at(orbit_index).at(J2) )
+//            {
+//               cout << "   " << it.first;
+//            }
+//            cout << endl;
+      return ThreeBody.at(orbit_index).at(J2).at(Jab_in).at(Jde_in).at(Tindex);
+   }
 
    double V = 0;
    // Recouple J and T to get to the format in which it's stored.
@@ -610,8 +690,8 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
         double Cj_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,Jde_in,Jde,J2,'j');
         if (Cj_abc*Cj_def == 0) continue;
 
-        int J2index = (a>=d) ? (Jab_max-Jab_min+1)*(Jde-Jde_min) + (Jab-Jab_min)
-                             : (Jde_max-Jde_min+1)*(Jab-Jab_min) + (Jde-Jde_min);
+//        int J2index = (a>=d) ? (Jab_max-Jab_min+1)*(Jde-Jde_min) + (Jab-Jab_min)
+//                             : (Jde_max-Jde_min+1)*(Jab-Jab_min) + (Jde-Jde_min);
 
         for (int tab=tab_min; tab<=tab_max; ++tab)
         {
@@ -620,12 +700,30 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
             double Ct_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,tab_in,tab,T2,'t');
             double Ct_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,tde_in,tde,T2,'t');
 
-            int J2Tindex = (a>=d) ? J2index*5 + 2*tab + tde + (T2-1)/2
-                                  : J2index*5 + 2*tde + tab + (T2-1)/2;
+//            int J2Tindex = (a>=d) ? J2index*5 + 2*tab + tde + (T2-1)/2
+//                                  : J2index*5 + 2*tde + tab + (T2-1)/2;
+            int Tindex = 2*tab + tde + (T2-1)/2;
 
-//            cout << "orbit_index = " << orbit_index << endl;
-//            cout << "size = " << ThreeBody.at(orbit_index).size() << endl;
-            V += Cj_abc * Cj_def * Ct_abc * Ct_def * ThreeBody.at(orbit_index).at(Jindex).at(J2Tindex);
+//              if (orbit_index==2257301667315968LL and J2==1)
+//              {
+//            cout << "orbit_index = " << orbit_index << " " << J2 << " " << Jab << "(" << Jab_min << ", " << oa.j2 << "," << ob.j2 << "," << oc.j2 << " "<< a << b << c << ")" <<" " << Jde << " " << Tindex << endl;
+//            cout << "size = " << ThreeBody.at(orbit_index).size();
+//            for ( auto it : ThreeBody.at(orbit_index) )
+//            {
+//               cout << "   " << it.first;
+//            }
+//            cout << endl;
+//            cout << "  size = " << ThreeBody.at(orbit_index).at(J2).size() ;
+//            for ( auto it : ThreeBody.at(orbit_index).at(J2) )
+//            {
+//               cout << "   " << it.first;
+//            }
+//            cout << endl;
+//            cout << "    size = " << ThreeBody.at(orbit_index).at(J2).at(Jab).size()<< "  first = " << ThreeBody.at(orbit_index).at(J2).at(Jab).begin()->first  << endl;
+//            cout << "      size = " << ThreeBody.at(orbit_index).at(J2).at(Jab).at(Jde).size()  << endl;
+//             }
+//            V += Cj_abc * Cj_def * Ct_abc * Ct_def * ThreeBody.at(orbit_index).at(Jindex).at(J2Tindex);
+            V += Cj_abc * Cj_def * Ct_abc * Ct_def * ThreeBody.at(orbit_index).at(J2).at(Jab).at(Jde).at(Tindex);
          }
         }
       }
@@ -648,6 +746,19 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
    int f=f_in;
    SortThreeBodyOrbits(a,b,c);
    SortThreeBodyOrbits(d,e,f);
+   bool Recouple = false;
+   if (a!=a_in or b!=b_in or c!=c_in or
+       d!=d_in or e!=e_in or f!=f_in) Recouple=true;
+
+   //if (d>a)
+   if (d/2>a/2 or (d/2==a/2 and e/2>b/2) or (d/2==a/2 and e/2==b/2 and f/2>c/2))
+   {
+      swap(a,d);
+      swap(b,e);
+      swap(c,f);
+      swap(Jab_in,Jde_in);
+      swap(tab_in,tde_in);
+   }
 
    Orbit& oa = modelspace->GetOrbit(a);
    Orbit& ob = modelspace->GetOrbit(b);
@@ -657,6 +768,18 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
    Orbit& of = modelspace->GetOrbit(f);
 
    int Jindex = ( J2-max(1, max(oa.j2-ob.j2-oc.j2, od.j2-oe.j2-of.j2) ) )/2;
+
+
+
+   orbindx3_t orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
+
+   if (not Recouple)
+   {
+      int Tindex = 2*tab_in + tde_in + (T2-1)/2; 
+      ThreeBody.at(orbit_index).at(J2).at(Jab_in).at(Jde_in).at(Tindex) = V;
+      return;
+   }
+//   cout << "Recoupling  " << a << b << c << d << e <<f << "(" << orbit_index << ")" << "   " << J2 << " " << Jab_in << " " << Jde_in << endl;
 
    int Jab_min = max(abs(oa.j2-ob.j2),abs(J2-oc.j2))/2;
    int Jab_max = min(oa.j2+ob.j2,J2+oc.j2)/2;
@@ -668,7 +791,6 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
    int tde_min = T2==3 ? 1 : 0;
    int tde_max = 1;
 
-   orbindx3_t orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
 
    for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
    {
@@ -676,9 +798,10 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
      {
         double Cj_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,Jab_in,Jab,J2,'j');
         double Cj_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,Jde_in,Jde,J2,'j');
+//        if (a<d) swap(Jab,Jde);
 
-        int J2index = (a>=d) ? (Jab_max-Jab_min+1)*(Jde-Jde_min) + (Jab-Jab_min)
-                             : (Jde_max-Jde_min+1)*(Jab-Jab_min) + (Jde-Jde_min);
+//        int J2index = (a>=d) ? (Jab_max-Jab_min+1)*(Jde-Jde_min) + (Jab-Jab_min)
+//                             : (Jde_max-Jde_min+1)*(Jab-Jab_min) + (Jde-Jde_min);
 
         for (int tab=tab_min; tab<=tab_max; ++tab)
         {
@@ -687,10 +810,15 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
             double Ct_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,tab_in,tab,T2,'t');
             double Ct_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,tde_in,tde,T2,'t');
 
-            int J2Tindex = (a>=d) ? J2index*5 + 2*tab + tde + (T2-1)/2
-                                  : J2index*5 + 2*tde + tab + (T2-1)/2;
+
+//            if (a<d) swap(tab,tde);
+//            int J2Tindex = (a>=d) ? J2index*5 + 2*tab + tde + (T2-1)/2
+//                                  : J2index*5 + 2*tde + tab + (T2-1)/2;
+            int Tindex = 2*tab + tde + (T2-1)/2;
             
-            ThreeBody.at(orbit_index).at(Jindex).at(J2Tindex) += Cj_abc * Cj_def * Ct_abc * Ct_def * V;
+
+            ThreeBody.at(orbit_index).at(J2).at(Jab).at(Jde).at(Tindex) += Cj_abc * Cj_def * Ct_abc * Ct_def * V;
+//            ThreeBody.at(orbit_index).at(Jindex).at(J2Tindex) += Cj_abc * Cj_def * Ct_abc * Ct_def * V;
 
         }
       }
@@ -715,21 +843,28 @@ orbindx3_t Operator::GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, i
    orbindx3_t orbit_index_ket = (dd << 16) + (ee << 8) + ff;
 
    // should change to uint64_t
-   orbindx3_t orb_indx = (aa>=dd) ? (orbit_index_bra << 32) + orbit_index_ket
-                                : (orbit_index_ket << 32) + orbit_index_bra;
+//   orbindx3_t orb_indx;
+   if (dd>aa or (dd==aa and ee>bb) or (dd==aa and ee==bb and ff>cc))
+   {
+      swap(orbit_index_bra, orbit_index_ket);
+   }
+   orbindx3_t orb_indx = (orbit_index_bra << 32) + orbit_index_ket;
 
    return orb_indx;
 }
 
 void Operator::GetOrbitsFromThreeBodyIndex(orbindx3_t orb_indx, int& a, int& b, int& c, int& d, int& e, int& f)
 {
-  a = ((orb_indx >> 48) & 0xF)*2;
-  b = ((orb_indx >> 40) & 0xF)*2;
-  c = ((orb_indx >> 32) & 0xF)*2;
-  d = ((orb_indx >> 16) & 0xF)*2;
-  e = ((orb_indx >> 8)  & 0xF)*2;
-  f = ( orb_indx        & 0xF)*2;
-  if (a<d)
+  int ket = orb_indx       & 0xFFFFFF;
+  int bra = (orb_indx>>32) & 0xFFFFFF;
+  a = ((bra >> 16) & 0xFF)*2;
+  b = ((bra >> 8)  & 0xFF)*2;
+  c = ((bra )      & 0xFF)*2;
+  d = ((ket >> 16) & 0xFF)*2;
+  e = ((ket >> 8)  & 0xFF)*2;
+  f = ( ket        & 0xFF)*2;
+
+  if (d>a or (d==a and e>b) or (d==a and e==b and f>c) )
   {
     swap(a,d);
     swap(b,e);
@@ -926,12 +1061,13 @@ Operator Operator::DoNormalOrdering3()
                Orbit & oa = modelspace->GetOrbit(a);
                if ( (2*(oi.n+oj.n+oa.n)+oi.l+oj.l+oa.l)>E3max) continue;
                if ( (2*(ok.n+ol.n+oa.n)+ok.l+ol.l+oa.l)>E3max) continue;
-               int Tz2 = 2*tbc.Tz + oa.tz2;
+//               int Tz2 = 2*tbc.Tz + oa.tz2;
                int kmin2 = abs(2*tbc.J-oa.j2);
                int kmax2 = 2*tbc.J+oa.j2;
-               for (int K2=kmin2; K2<=kmax2; ++K2)
+               for (int K2=kmin2; K2<=kmax2; K2+=2)
                {
-                  Gamma(ibra,iket) += (K2+1) * GetThreeBodyME_pn(tbc.J,tbc.J,K2,Tz2,i,j,a,k,l,a);
+                  Gamma(ibra,iket) += (K2+1) * GetThreeBodyME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a);
+//                  Gamma(ibra,iket) += (K2+1) * GetThreeBodyME_pn(tbc.J,tbc.J,K2,Tz2,i,j,a,k,l,a);
                }
             }
             Gamma(ibra,iket) /= (2*tbc.J+1);

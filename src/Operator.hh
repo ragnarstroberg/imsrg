@@ -57,7 +57,8 @@ class Operator
 /// \f$ a\geq b \geq c, a\geq d\geq e \geq f \f$ are stored.
 /// The other combinations are obtained on the fly by GetThreeBodyME().
 /// The storage format is ThreeBody[orbit_index][Jab_index][JT_index].
-  map< orbindx3_t, vector< vector<double> > > ThreeBody;
+  map< orbindx3_t, map< int, map<int, map<int, vector<double> > > > >ThreeBody;
+//  map< orbindx3_t, vector< vector<double> > > ThreeBody;
 
   int rank_J; ///< Spherical tensor rank of the operator
   int rank_T; ///< Isotensor rank of the operator
@@ -140,7 +141,8 @@ class Operator
 
 //// Three body setter getters
   double GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
-  double GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int Tz, int i, int j, int k, int l, int m, int n);
+//  double GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int Tz, int i, int j, int k, int l, int m, int n);
+  double GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
   void   SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
 
 
