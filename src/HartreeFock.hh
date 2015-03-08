@@ -14,8 +14,7 @@ class HartreeFock
    arma::mat t;             ///< kinetic energy
    arma::mat Vij;           ///< 1 body piece of 2 body potential
    arma::mat V3ij;          ///< 1 body piece of 3 body potential
-   arma::mat F;             ///< 1 body Hamiltonian H_ab
-   //arma::mat H;           ///< 1 body Hamiltonian H_ab
+   arma::mat F;             ///< Fock matrix
    arma::mat Vmon;          ///< Monopole 2-body interaction
    arma::mat Vmon_exch;     ///< Monopole 2-body interaction
    arma::vec energies;      ///< vector of single particle energies
@@ -34,12 +33,10 @@ class HartreeFock
    void UpdateDensityMatrix();
    bool CheckConvergence();
    void Solve();
-   void PrintOrbits();
-//   void BuildKineticEnergy(double hw);
-//   void PrintRho(int );
    void CalcEHF();
    void ReorderCoefficients();
    Operator TransformToHFBasis( Operator& OpIn);
+   Operator GetNormalOrderedH();
 
    void BuildMonopoleV3();
 

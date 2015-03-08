@@ -83,6 +83,9 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("Set_BCH_Product_Threshold", &Operator::Set_BCH_Product_Threshold)
       .def("PrintOneBody", &Operator::PrintOneBody)
       .def("PrintTwoBody", &Operator::PrintTwoBody)
+      .def("GetParticleRank", &Operator::GetParticleRank)
+      .def("GetE3max", &Operator::GetE3max)
+      .def("SetE3max", &Operator::SetE3max)
    ;
 
 
@@ -91,6 +94,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("Solve",&HartreeFock::Solve)
       .def("TransformToHFBasis",&HartreeFock::TransformToHFBasis)
       .def("GetHbare",&HartreeFock::GetHbare)
+      .def("GetNormalOrderedH",&HartreeFock::GetNormalOrderedH)
       .def_readonly("EHF",&HartreeFock::EHF)
    ;
 

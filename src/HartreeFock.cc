@@ -33,15 +33,14 @@ HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
    }
    UpdateDensityMatrix();
    UpdateF();
-   cout << "F = " << endl;
-   F.submat(0,0,11,11).print();
-   cout << "t00 = " << t(0,0) << "  V2(0,0) = " << Vij(0,0) << "  V3(0,0) = " << 0.5*V3ij(0,0) << endl;
-   cout << "t010 = " << t(0,10) << "  V2(0,10) = " << Vij(0,10) << "  V3(0,10) = " << 0.5*V3ij(0,10) << endl;
 }
 
 
 //*********************************************************************
 /// Diagonalize and update the Fock matrix until convergence.
+/// Then, call ReorderCoefficients() to make sure the index
+/// ordering and phases are preserved in the transformation
+/// from the original basis to the Hatree-Fock basis.
 //*********************************************************************
 void HartreeFock::Solve()
 {
@@ -51,7 +50,7 @@ void HartreeFock::Solve()
    for (iterations=0; iterations<maxiter; ++iterations)
    {
       Diagonalize();  // Diagonalize the Fock matrix
-//      ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
+      ReorderCoefficients(); // Reorder here so we can identify the hole orbits.
       UpdateDensityMatrix();  // 1 body density matrix, used in UpdateF()
       UpdateF();  // Update the Fock matrix
       if ( CheckConvergence() ) break;
@@ -68,8 +67,6 @@ void HartreeFock::Solve()
 
    ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
    CalcEHF();
-   cout << "F = " << endl;
-   F.submat(0,0,11,11).print();
 }
 
 
@@ -97,14 +94,11 @@ void HartreeFock::CalcEHF()
       int jfactor = ms->GetOrbit(i).j2 +1;
       for (int j=0;j<norbits;j++)
       {
-//         EHF += 0.5 * rho(i,j) * jfactor * (H(i,j)+t(i,j));
          EHF +=  rho(i,j) * jfactor * (t(i,j)+0.5*Vij(i,j)+1./6*V3ij(i,j));
          e3hf +=  rho(i,j) * jfactor * (1./6*V3ij(i,j));
       }
    }
    cout << "e3hf = " << e3hf << endl;
-   cout << "t00 = " << t(0,0) << "  V2(0,0) = " << Vij(0,0) << "  V3(0,0) = " << 0.5*V3ij(0,0) << endl;
-   cout << "t010 = " << t(0,10) << "  V2(0,10) = " << Vij(0,10) << "  V3(0,10) = " << 0.5*V3ij(0,10) << endl;
 }
 
 
@@ -215,7 +209,6 @@ void HartreeFock::BuildMonopoleV()
 //*********************************************************************
 void HartreeFock::BuildMonopoleV3()
 {
-   cout << "In BuildMonopoleV3()" << endl;
    ModelSpace * modelspace = Hbare.GetModelSpace();
    int norbits = modelspace->GetNumberOrbits();
    for (int i=0; i<norbits; ++i)
@@ -257,15 +250,7 @@ void HartreeFock::BuildMonopoleV3()
                 int Jmax = 2*j2 + min(oi.j2, oj.j2);
                 for (int J=Jmin; J<=Jmax; J+=2)
                 {
-                  for (int t2=max(oa.tz2+oc.tz2, ob.tz2+od.tz2)/2; t2<=1; ++t2)
-                  {
-                   for (int T=1;T<=(t2*2+1);T+=2)
-                   {
-//                       cout << " HF Getting " << j2 << " " << J << " " << t2 << " " << T << "  "
-//                            << a << b << i << c << d << j << "   Jmin = " << Jmin << endl;
-                       v += Hbare.GetThreeBodyME(j2,j2,J,t2,t2,T,a,c,i,b,d,j) * (J+1)*(T+1);
-                   }
-                  }
+                   v += Hbare.GetThreeBodyME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
                 }
                }
                Vmon3[orbit_index_pn] = v;
@@ -275,7 +260,6 @@ void HartreeFock::BuildMonopoleV3()
        }
      }
    }
-   cout << "Done with BuildMonopoleV3()" << endl;
 }
 
 
@@ -283,8 +267,9 @@ void HartreeFock::BuildMonopoleV3()
 
 //*********************************************************************
 /// one-body density matrix 
-/// \f$ <i|\rho|j> = \sum_{\beta} <i|\beta> <\beta|j> \f$
-/// where beta runs over HF orbits in the core (i.e. below the fermi surface)
+/// \f$ <i|\rho|j> = \sum\limits_{\beta} n_{\beta} <i|\beta> <\beta|j> \f$
+/// where \f$n_{\beta} \f$ ensureas that beta runs over HF orbits in
+/// the core (i.e. below the fermi surface)
 //*********************************************************************
 void HartreeFock::UpdateDensityMatrix()
 {
@@ -293,7 +278,7 @@ void HartreeFock::UpdateDensityMatrix()
 
    // Pcore is a projector onto core orbits.
    arma::mat Pcore = arma::mat(norbits,norbits,arma::fill::zeros);
-   for (int &beta : ms->holes)
+   for (auto& beta : ms->holes)
    {
        Pcore(beta,beta) = 1;
    }
@@ -345,6 +330,8 @@ void HartreeFock::UpdateF()
 
 
                if (Hbare.GetParticleRank()<3) continue;
+
+
                // 3body term  <aci|V|bdj> <a|rho|b> <c|rho|d>
                for (int c=0;c<norbits;++c)
                {
@@ -370,7 +357,7 @@ void HartreeFock::UpdateF()
          }
          Vij(i,j) /= (oi.j2+1);
          Vij(j,i) = Vij(i,j);  // Hermitian & real => symmetric
-         V3ij(i,j) /= 2*(oi.j2+1); // factor 2 from (2t+1)
+         V3ij(i,j) /= (oi.j2+1); //
          V3ij(j,i) = V3ij(i,j);  // Hermitian & real => symmetric
       }
    }
@@ -395,24 +382,25 @@ bool HartreeFock::CheckConvergence()
 }
 
 
-
-void HartreeFock::PrintOrbits()
-{
-  ModelSpace * ms = Hbare.GetModelSpace();
-  int norbits = ms->GetNumberOrbits();
-  for (int a=0;a<norbits;a++)
-  {
-     Orbit & oa = ms->GetOrbit(a);
-     cout << a << ": E= " << oa.spe << " L=" << oa.l
-          << " J=" << oa.j2 << " N=" << oa.n << " Tz=" << oa.tz2
-          << " ph=" << oa.ph << " io=" << oa.io << endl;
-  }
-}
-
 //**********************************************************************
 /// Eigenvectors/values come out of the diagonalization energy-ordered.
 /// We want them ordered corresponding to the input ordering, i.e. we want
 /// the matrix C to be maximal and positive along the diagonal.
+/// For a 3x3 matrix this would be something like
+/// \f[
+/// \left(
+/// \begin{array}{rrr}
+///   -0.8 & 0.2 & -0.6 \\
+///   -0.3 & 0.3 &  0.9 \\
+///    0.2 & 0.9 & -0.4 \\
+/// \end{array}\right)
+/// \rightarrow
+/// \left(\begin{array}{rrr} 
+///    0.8 & -0.6 & 0.2  \\
+///    0.3 &  0.9 & 0.3  \\
+///   -0.2 & -0.4 & 0.9  \\
+/// \end{array}\right)
+/// \f]
 //**********************************************************************
 void HartreeFock::ReorderCoefficients()
 {
@@ -455,11 +443,8 @@ void HartreeFock::ReorderCoefficients()
 //**************************************************************************
 /// Takes in an operator expressed in the basis of the original Hamiltonian,
 /// and returns that operator in the Hartree-Fock basis.
-/// \f[ t_{HF} = C^{-1} t_{HO} C \f]
-/// \f[ V_{HF}^{J} = D^{-1} V^{J}_{HO} D \f]
-/// \f[ \langle \alpha \beta \gamma | V^{(3)}_{HF} | \delta \epsilon \phi \rangle_{J_{\alpha\beta}J_{\delta\epsilon}J}
-///    = \sum_{abcdef} \langle \alpha\beta\gamma | abc \rangle \langle \delta \epsilon \phi | def \rangle
-///         \langle abc | V^{(3)}_{HO} | def \rangle_{J_{\alpha\beta}J_{\delta\epsilon}J} \f]
+/// \f[ t_{HF} = C^{\dagger} t_{HO} C \f]
+/// \f[ V_{HF}^{J} = D^{\dagger} V^{J}_{HO} D \f]
 /// The matrix \f$ D \f$ is defined as
 /// \f[ D_{ab\alpha\beta} \equiv \sqrt{ \frac{1+\delta_{ab}} {1+\delta_{\alpha\beta}} }  C_{a\alpha} C_{b\beta} \f]
 /// The factor in the square root is due to the fact that we're using normalized TBME's.
@@ -471,6 +456,7 @@ void HartreeFock::ReorderCoefficients()
 Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
 {
    Operator OpHF = OpIn;
+   OpHF.Erase();
 
    if (OpIn.rank_J + OpIn.rank_T + OpIn.parity > 0)
    {
@@ -522,121 +508,80 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
      OUT  =    D.t() * IN * D;
    }
 
-
-
-   if (OpIn.GetParticleRank() < 3) return OpHF;
-
-   ModelSpace *modelspace = OpIn.GetModelSpace();
-   int norbits = modelspace->GetNumberOrbits();
-   vector<int> tablist = {0,0,1,1,1};
-   vector<int> tdelist = {0,1,0,1,1};
-   vector<int> Tlist   = {1,1,1,1,3};
-   cout << "Transform three body" << endl;
-   for (auto& it_ORB : OpHF.ThreeBody) // loop through orbit labels in the HF basis
-   {
-      // Double indices are in the transformed basis,
-      // equivalent to greek letters in the notes.
-      // Single indices are in the original basis
-      int aa,bb,cc,dd,ee,ff;
-      int a,b,c,d,e,f;
-      OpHF.GetOrbitsFromThreeBodyIndex(it_ORB.first, aa,bb,cc,dd,ee,ff);
-
-      Orbit& oaa = modelspace->GetOrbit(aa);
-      Orbit& obb = modelspace->GetOrbit(bb);
-      Orbit& occ = modelspace->GetOrbit(cc);
-      Orbit& odd = modelspace->GetOrbit(dd);
-      Orbit& oee = modelspace->GetOrbit(ee);
-      Orbit& off = modelspace->GetOrbit(ff);
-
-      int Jab_min = abs(oaa.j2-obb.j2)/2;
-      int Jab_max = (oaa.j2+obb.j2)/2;
-      int Jde_min = abs(odd.j2-oee.j2)/2;
-      int Jde_max = (odd.j2+oee.j2)/2;
-      int tab_min = abs(oaa.tz2+obb.tz2)/2;
-      int tde_min = abs(odd.tz2+oee.tz2)/2;
-
-      vector<int> validT;
-
-      for (int tab=tab_min;tab<=1;++tab)
-      {
-        for (int tde=tde_min;tde<=1;++tde)
-        {
-          for (int T=1; T<=(2*min(tab,tde)+1); T+=2)
-          {
-             int Tindex = 2*tab + tde + (T-1)/2;
-             validT.push_back(Tindex);
-          }
-        }
-      }
-
-
-      for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
-      {
-       for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
-       {
-         int J2_min = max( abs(2*Jab-occ.j2), abs(2*Jde+off.j2));
-         int J2_max = min( 2*Jab+occ.j2, 2*Jde+off.j2);
-         for (int J2=J2_min; J2<=J2_max; J2+=2)
-         {
-           for ( int& Tindex : validT)
-           {
-             int tab = tablist[Tindex]; 
-             int tde = tdelist[Tindex]; 
-             int T = Tlist[Tindex]; 
-              
-             double& Vhf = it_ORB.second.at(J2).at(Jab).at(Jde).at(Tindex);
-
-
-             for( int a=0;a<norbits;++a)
-             {      
-              if (C(a,aa) == 0) continue;
-              Orbit& oa = modelspace->GetOrbit(a);
-              for( int b=0;b<norbits;++b)
-              {      
-               if (C(b,bb) == 0) continue;
-               Orbit& ob = modelspace->GetOrbit(b);
-               for( int c=0;c<norbits;++c)
-               {      
-                if (C(c,cc) == 0) continue;
-                Orbit& oc = modelspace->GetOrbit(c);
-                if (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l > OpIn.E3max) continue;
-                for( int d=0;d<norbits;++d)
-                {      
-                 if (C(d,dd) == 0) continue;
-                 Orbit& od = modelspace->GetOrbit(d);
-                 for( int e=0;e<norbits;++e)
-                 {      
-                  if (C(e,ee) == 0) continue;
-                  Orbit& oe = modelspace->GetOrbit(e);
-                  for( int f=0;f<norbits;++f)
-                  {      
-                  if (C(f,ff) == 0) continue;
-                  Orbit& of = modelspace->GetOrbit(f);
-                  if (2*(od.n+oe.n+of.n)+od.l+oe.l+of.l > OpIn.E3max) continue;
-       
-                  double coeff = C(a,aa)*C(b,bb)*C(c,cc)*C(d,dd)*C(e,ee)*C(f,ff);
-
-           
-                  Vhf += OpIn.GetThreeBodyME(Jab,Jde,J2,tab,tde,T,a,b,c,d,e,f) * coeff;
-                 }
-               }
-              }
-             }
-            }
-           }
-          }
-         }
-      }
-     }
-   }
-
-
-
-
    return OpHF;
 }
 
 
+/// Returns the normal-ordered Hamiltonian in the Hartree-Fock basis
+/// \f[ E_0 = E_{HF} \f]
+/// \f[ f_{ij} = C^{\dagger} F_{ij} C \f]
+/// \f[ \Gamma^{J}_{ijkl} = D^{\dagger} \left[V^{J}_{ijkl} + \sum_{ab}\sum_{J_3}(2J_{3}+1)\rho_{ab}V^{JJJ_{3}}_{ijaklb}\right] D \f]
+/// Where the matrix \f$ D\f$ is the same as the one defined in TransformToHFBasis().
+///
+Operator HartreeFock::GetNormalOrderedH()
+{
+   ModelSpace *modelspace = Hbare.GetModelSpace();
+   Operator HNO = Operator(*modelspace,0,0,0,2);
+   HNO.ZeroBody = EHF;
+   HNO.OneBody = C.t() * F * C;
+
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+   int norb = modelspace->GetNumberOrbits();
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      int J = tbc.J;
+      int npq = tbc.GetNumberKets();
+
+      arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+      arma::mat V3NO  = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+
+      for (int i=0; i<npq; ++i)    
+      {
+         Ket & bra = tbc.GetKet(i);
+         for (int j=0; j<npq; ++j)
+         {
+            Ket & ket = tbc.GetKet(j); 
+            D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
+            if (bra.p!=bra.q)
+            {
+               D(i,j) += C(bra.q,ket.p) * C(bra.p,ket.q) * bra.Phase(J);
+            }
+            if (bra.p==bra.q)    D(i,j) *= SQRT2;
+            if (ket.p==ket.q)    D(i,j) /= SQRT2;
+
+            if (Hbare.GetParticleRank()<3) continue;
+            if (i>j) continue;
+            for (int a=0; a<norb; ++a)
+            {
+              Orbit & oa = modelspace->GetOrbit(a);
+              if ( 2*oa.n+oa.l+bra.E2 > Hbare.GetE3max() ) continue;
+              for (int b=0; b<norb; ++b)
+              {
+                Orbit & ob = modelspace->GetOrbit(b);
+                if ( oa.j2 != ob.j2 or oa.l!=ob.l or oa.tz2 != ob.tz2) continue;
+                if ( 2*ob.n+ob.l+ket.E2 > Hbare.GetE3max() ) continue;
+                int J3min = abs(2*J-oa.j2);
+                int J3max = 2*J + oa.j2;
+                for (int J3=J3min; J3<=J3max; J3+=2)
+                {
+                  V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.GetThreeBodyME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
+                }
+              }
+            }
+            V3NO(i,j) /= (2*J+1);
+            V3NO(j,i) = V3NO(i,j);
+         }
+      }
+
+     auto& V2  =  Hbare.TwoBody[ch].at(ch);
+     auto& OUT =  HNO.TwoBody[ch].at(ch);
+     OUT  =    D.t() * (V2 + V3NO) * D;
+   }
+   
+   return HNO;
+
+}
 
 
 

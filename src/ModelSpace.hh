@@ -5,15 +5,10 @@
 #include <map>
 #include <armadillo>
 
-//#define JMAX 30
-
-//class Orbit;
-//class Ket;
-class ModelSpace;
 
 using namespace std;
 
-
+class ModelSpace; //forward declaration so Ket can have a pointer to ModelSpace
 
 class Orbit
 {
@@ -49,6 +44,7 @@ class Ket  //  | pq >
    int Jmin;
    int Jmax;
    int Jstep;
+   int E2;
    // Constructors
    Ket(){};
    Ket(ModelSpace * ms);
@@ -66,29 +62,8 @@ class Ket  //  | pq >
 
 };
 
-/*
-class Ket3  //  | pqr >
-{
- public:
-   // Fields
-   int p;
-   int q;
-   int r;
-   int parity;
-   int Tz;
-   // Constructors
-   Ket3(){};
-   Ket3(ModelSpace * ms, int p, int q, int r);
-   // Methods
-   int Phase(int J);
 
- private:
-   // Fields
-   ModelSpace * ms;
-   int phase_prefactor;
 
-};
-*/
 
 class TwoBodyChannel
 {
@@ -119,15 +94,21 @@ class TwoBodyChannel
    Ket & GetKet(int i) const ; // get pointer to ket using local index
 //   vector<int> KetIndex_pp; //maybe don't need
    vector<unsigned int> KetIndex_pp; //maybe don't need
-   vector<int> KetIndex_ph;
+   vector<unsigned int> KetIndex_ph;
    vector<unsigned int> KetIndex_hh;
 //   vector<int> KetIndex_hh;
-   vector<int> KetIndex_vv;
-   vector<int> KetIndex_holeq_holeq; 
-   vector<int> KetIndex_particleq_particleq;
-   vector<int> KetIndex_particleq_holeq;
-   vector<int> KetIndex_v_holeq; // added
-   vector<int> KetIndex_v_particleq; //added
+   vector<unsigned int> KetIndex_vv;
+   vector<unsigned int> KetIndex_holeq_holeq; 
+   vector<unsigned int> KetIndex_particleq_particleq;
+   vector<unsigned int> KetIndex_particleq_holeq;
+   vector<unsigned int> KetIndex_v_holeq; // added
+   vector<unsigned int> KetIndex_v_particleq; //added
+//   vector<int> KetIndex_vv;
+//   vector<int> KetIndex_holeq_holeq; 
+//   vector<int> KetIndex_particleq_particleq;
+//   vector<int> KetIndex_particleq_holeq;
+//   vector<int> KetIndex_v_holeq; // added
+//   vector<int> KetIndex_v_particleq; //added
 
 // private:
    //Fields
@@ -225,6 +206,7 @@ class ModelSpace
    Orbit& GetOrbit(int i) const {return (Orbit&) Orbits[i];}; 
    Ket& GetKet(int i) const {return (Ket&) Kets[i];};
    Ket& GetKet(int p, int q) const {return (Ket&) Kets[Index2(p,q)];};
+   int GetOrbitIndex(int n, int l, int j2, int tz2) const {return Index1(n,l,j2,tz2);};
    int GetKetIndex(int p, int q) const {return Index2(p,q);}; // convention is p<=q
    int GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
    int GetNumberOrbits() const {return norbits;};
@@ -258,14 +240,22 @@ class ModelSpace
    inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
 
    // Fields
-   vector<int> holes;
-   vector<int> particles;
-   vector<int> valence;
-   vector<int> qspace;
-   vector<int> hole_qspace;
-   vector<int> particle_qspace;
-   vector<int> proton_orbits;
-   vector<int> neutron_orbits;
+   vector<unsigned int> holes;
+   vector<unsigned int> particles;
+   vector<unsigned int> valence;
+   vector<unsigned int> qspace;
+   vector<unsigned int> hole_qspace;
+   vector<unsigned int> particle_qspace;
+   vector<unsigned int> proton_orbits;
+   vector<unsigned int> neutron_orbits;
+//   vector<int> holes;
+//   vector<int> particles;
+//   vector<int> valence;
+//   vector<int> qspace;
+//   vector<int> hole_qspace;
+//   vector<int> particle_qspace;
+//   vector<int> proton_orbits;
+//   vector<int> neutron_orbits;
    int Nmax;
    int N2max;
    int N3max;

@@ -139,43 +139,9 @@ void Operator::AllocateThreeBody()
            for (int J2=J2_min; J2<=J2_max; J2+=2)
            {
              ThreeBody[orbit_index][J2][Jab][Jde] = zerovector;
-           }
-         }
-        }
-
-
-//        int J2_min = max(max(1, (2*max(max(oa.j2,ob.j2),oc.j2)-oa.j2-ob.j2-oc.j2)), 2*max(max(od.j2,oe.j2),of.j2)-od.j2-oe.j2-of.j2);
-//        int J2_max = min(oa.j2+ob.j2+oc.j2, od.j2+oe.j2+of.j2);
-//        if (J2_max < J2_min) continue;
-//
-//
-//        // Get hashing index for orbits
-////        ThreeBody[orbit_index].resize((J2_max-J2_min)/2+1);
-////        cout << "size of ThreeBody = " << ThreeBody.size() << endl;
-////        cout << "abc " << a << " " << b << " " << c << "   def " << d << " " << e << " " << f << endl;
-//
-//        for (int J2=J2_min; J2<=J2_max; J2+=2)
-//        {
-//          // Find actually allowed ranges of Jab and Jde for this J2
-//          int Jab_min = max(abs(oa.j2-ob.j2), abs(J2-oc.j2))/2;
-//          int Jab_max = min(oa.j2+ob.j2, J2+oc.j2)/2;
-//          int Jde_min = max(abs(od.j2-oe.j2), abs(J2-of.j2))/2;
-//          int Jde_max = min(od.j2+oe.j2, J2+of.j2)/2;
-////          int J_index = (J2-J2_min)/2;
-//
-//          int nJ_twobody = (Jab_max-Jab_min+1)*(Jde_max-Jde_min+1);
-//
-//          if (nJ_twobody <0) continue;
-////          vector<double> zerovector(nJ_twobody*5,0.0);
-//          vector<double> zerovector(5,0.0);
-//          for( int Jab=Jab_min; Jab<=Jab_max; ++Jab)
-//          {
-//           for( int Jde=Jde_min; Jde<=Jde_max; ++Jde)
-//           {
-//             ThreeBody[orbit_index][J2][Jab][Jde] = zerovector;
-//           }
-//          }
-//        } //J2
+           } //J2
+         } //Jde
+        } //Jab
        } //f
       } //e
      } //d
@@ -200,6 +166,8 @@ void Operator::Copy(const Operator& op)
    rank_T        = op.rank_T;
    parity        = op.parity;
    particle_rank = op.particle_rank;
+   E2max         = op.E2max;
+   E3max         = op.E3max;
    ZeroBody      = op.ZeroBody;
    OneBody       = op.OneBody;
    TwoBody       = op.TwoBody;
@@ -337,6 +305,10 @@ void Operator::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, doubl
    double phase = 1;
    if (a>b) phase *= tbc_bra.GetKet(bra_ind).Phase(tbc_bra.J);
    if (c>d) phase *= tbc_ket.GetKet(ket_ind).Phase(tbc_ket.J);
+//   cout << "ch_bra = " << ch_bra << "  ch_ket = " << ch_ket
+//        << "   bra_ind = " << bra_ind << " (" << min(a,b) << "," << max(a,b)
+//        << ")  ket_ind = " << ket_ind << " (" << min(c,d) << "," << max(c,d)
+//        << ")  size = " << TwoBody.at(ch_bra).at(ch_ket).n_cols << endl;
    TwoBody.at(ch_bra).at(ch_ket)(bra_ind,ket_ind) = phase * tbme;
    if (hermitian) TwoBody.at(ch_bra).at(ch_ket)(ket_ind,bra_ind) = phase * tbme;
    if (antihermitian) TwoBody.at(ch_bra).at(ch_ket)(ket_ind,bra_ind) = - phase * tbme;
@@ -549,11 +521,15 @@ double Operator::GetTBMEmonopole(Ket & bra, Ket & ket) const
 
 
 
-// Get Three Body Matrix Element in proton-neutron formalism.
-//double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int Tz, int a, int b, int c, int d, int e, int f)
+//*******************************************************************
+/// Get three body matrix element in proton-neutron formalism.
+/// \f[
+///  V_{abcdef}^{(pn)} = \sum_{t_{ab} t_{de} T} <t_a t_b | t_{ab}> <t_d t_e | t_{de}>
+///  <t_{ab} t_c | T> <t_{de} t_f| T> V_{abcdef}^{t_{ab} t_{de} T}
+/// \f]
+//*******************************************************************
 double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int a, int b, int c, int d, int e, int f)
 {
-//   cout << "In GetThreeBOdyME_pn()" << endl;
    Orbit& oa = modelspace->GetOrbit(a);
    Orbit& ob = modelspace->GetOrbit(b);
    Orbit& oc = modelspace->GetOrbit(c);
@@ -567,7 +543,6 @@ double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int a, int b,
    double tze = oe.tz2/2.0;
    double tzf = of.tz2/2.0;
    double Vpn=0;
-   //int Tmin = abs(Tz);
    int Tmin = min( abs(tza+tzb+tzc), abs(tzd+tze+tzf) );
    for (int tab=abs(tza+tzb); tab<=1; ++tab)
    {
@@ -582,8 +557,6 @@ double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int a, int b,
            double CG3 = AngMom::CG(tab,tza+tzb, 0.5,tzc, T/2., tza+tzb+tzc);
            double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, T/2., tzd+tze+tzf);
            if (CG3*CG4==0) continue;
-//           cout << "Calling GetThreeBodyME() " << a << b << c << d << e << f << "  " << Jab_in << " " << Jde_in << " " << J2 << endl;
-//           Vpn += CG1*CG2*CG3*CG4*GetThreeBodyME(Jab_in,Jde_in,J2,tab,tde,T,a-a%2,b-b%2,c-c%2,d-d%2,e-e%2,f-f%2);
            Vpn += CG1*CG2*CG3*CG4*GetThreeBodyME(Jab_in,Jde_in,J2,tab,tde,T,a,b,c,d,e,f);
          }
       }
@@ -592,12 +565,17 @@ double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int a, int b,
 }
 
 
-
-// Get Three Body Matrix Element in isospin formalism (which is how they're stored)
+//*******************************************************************
+/// Get three body matrix element in isospin formalism
+/// \f$ V_{abcdef}^{J_{ab}J_{de}Jt_{ab}t_{de}T} \f$
+///  (which is how they're stored).
+/// The elements are stored with the following restrictions: \f$ a\geq b \geq c\f$,
+/// \f$ d\geq e \geq f\f$, \f$ a\geq d\f$. If \f$ a=d\f$ then \f$ b \geq e\f$,
+/// and if \f$ b=e \f$ then \f$ c \geq f \f$.
+/// Other orderings are obtained by recoupling on the fly.
+//*******************************************************************
 double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in)
 {
-//   cout << "In GetThreeBodyME() " << Jab_in << " "<< Jde_in << " " << J2 << "   " << tab_in << " " << tde_in << " " << T2 << "   "
-//        << a_in << " " << b_in << " " << c_in << " " << d_in << " " << e_in << " " << f_in <<endl;
    // reorder so a>=b>=c and d>=e>=f
    int a=a_in;
    int b=b_in;
@@ -605,13 +583,6 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
    int d=d_in;
    int e=e_in;
    int f=f_in;
-
-//   a=a-a%2;
-//   b=b-b%2;
-//   c=c-c%2;
-//   d=d-d%2;
-//   e=e-e%2;
-//   f=f-f%2;
 
    SortThreeBodyOrbits(a,b,c);
    SortThreeBodyOrbits(d,e,f);
@@ -631,7 +602,6 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
    }
 
 
-
    Orbit& oa = modelspace->GetOrbit(a);
    Orbit& ob = modelspace->GetOrbit(b);
    Orbit& oc = modelspace->GetOrbit(c);
@@ -641,44 +611,24 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
    if (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l > E3max) return 0;
    if (2*(od.n+oe.n+of.n)+od.l+oe.l+of.l > E3max) return 0;
 
-   int Jindex = ( J2-max(1, max(oa.j2-ob.j2-oc.j2, od.j2-oe.j2-of.j2) ) )/2;
+
+   orbindx3_t orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
+   
+   if (not Recouple)
+   {
+      int Tindex = 2*tab_in + tde_in + (T2-1)/2; 
+      return ThreeBody.at(orbit_index).at(J2).at(Jab_in).at(Jde_in).at(Tindex);
+   }
 
    int Jab_min = max(abs(oa.j2-ob.j2),abs(J2-oc.j2))/2;
    int Jab_max = min(oa.j2+ob.j2,J2+oc.j2)/2;
    int Jde_min = max(abs(od.j2-oe.j2),abs(J2-of.j2))/2;
    int Jde_max = min(od.j2+oe.j2,J2+of.j2)/2;
 
-   int tab_min = T2==3 ? 1 : 0;
+   int tab_min = T2==3 ? 1 : abs(oa.tz2+ob.tz2)/2;
    int tab_max = 1;
-   int tde_min = T2==3 ? 1 : 0;
+   int tde_min = T2==3 ? 1 : abs(od.tz2+oe.tz2)/2;
    int tde_max = 1;
-
-   orbindx3_t orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
-   
-//   int aa,bb,cc,dd,ee,ff;
-//   GetOrbitsFromThreeBodyIndex(orbit_index,aa,bb,cc,dd,ee,ff);
-//   cout << "Getting  " << a << "-" << b << "-" << c << "-" << d << "-" << e << "-" << f << "(" << orbit_index << ")"
-//        << " ==> " << aa << "-" << bb << "-" << cc << "-" << dd << "-" << ee << "-" << ff 
-//        << endl;
-   if (not Recouple)
-   {
-      int Tindex = 2*tab_in + tde_in + (T2-1)/2; 
-//      cout << "Not Recouple" << endl;
-//      cout << "orbit_index = " << orbit_index << "  J2 = " << J2 << "  Jab = " << Jab_in
-//            << "  size = " << ThreeBody.at(orbit_index).size();
-//            for ( auto it : ThreeBody.at(orbit_index) )
-//            {
-//               cout << "   " << it.first;
-//            }
-//            cout << endl;
-//            cout << "  size = " << ThreeBody.at(orbit_index).at(J2).size() ;
-//            for ( auto it : ThreeBody.at(orbit_index).at(J2) )
-//            {
-//               cout << "   " << it.first;
-//            }
-//            cout << endl;
-      return ThreeBody.at(orbit_index).at(J2).at(Jab_in).at(Jde_in).at(Tindex);
-   }
 
    double V = 0;
    // Recouple J and T to get to the format in which it's stored.
@@ -690,9 +640,6 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
         double Cj_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,Jde_in,Jde,J2,'j');
         if (Cj_abc*Cj_def == 0) continue;
 
-//        int J2index = (a>=d) ? (Jab_max-Jab_min+1)*(Jde-Jde_min) + (Jab-Jab_min)
-//                             : (Jde_max-Jde_min+1)*(Jab-Jab_min) + (Jde-Jde_min);
-
         for (int tab=tab_min; tab<=tab_max; ++tab)
         {
           for (int tde=tde_min; tde<=tde_max; ++tde)
@@ -700,29 +647,8 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
             double Ct_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,tab_in,tab,T2,'t');
             double Ct_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,tde_in,tde,T2,'t');
 
-//            int J2Tindex = (a>=d) ? J2index*5 + 2*tab + tde + (T2-1)/2
-//                                  : J2index*5 + 2*tde + tab + (T2-1)/2;
             int Tindex = 2*tab + tde + (T2-1)/2;
 
-//              if (orbit_index==2257301667315968LL and J2==1)
-//              {
-//            cout << "orbit_index = " << orbit_index << " " << J2 << " " << Jab << "(" << Jab_min << ", " << oa.j2 << "," << ob.j2 << "," << oc.j2 << " "<< a << b << c << ")" <<" " << Jde << " " << Tindex << endl;
-//            cout << "size = " << ThreeBody.at(orbit_index).size();
-//            for ( auto it : ThreeBody.at(orbit_index) )
-//            {
-//               cout << "   " << it.first;
-//            }
-//            cout << endl;
-//            cout << "  size = " << ThreeBody.at(orbit_index).at(J2).size() ;
-//            for ( auto it : ThreeBody.at(orbit_index).at(J2) )
-//            {
-//               cout << "   " << it.first;
-//            }
-//            cout << endl;
-//            cout << "    size = " << ThreeBody.at(orbit_index).at(J2).at(Jab).size()<< "  first = " << ThreeBody.at(orbit_index).at(J2).at(Jab).begin()->first  << endl;
-//            cout << "      size = " << ThreeBody.at(orbit_index).at(J2).at(Jab).at(Jde).size()  << endl;
-//             }
-//            V += Cj_abc * Cj_def * Ct_abc * Ct_def * ThreeBody.at(orbit_index).at(Jindex).at(J2Tindex);
             V += Cj_abc * Cj_def * Ct_abc * Ct_def * ThreeBody.at(orbit_index).at(J2).at(Jab).at(Jde).at(Tindex);
          }
         }
@@ -735,6 +661,11 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
 
 
 
+//*******************************************************************
+/// Set a three body matrix element. Since only a subset of orbit
+/// orderings are stored, we need to recouple if the input ordering
+/// is different.
+//*******************************************************************
 void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, double V)
 {
    // reorder so a>=b>=c and d>=e>=f
@@ -750,7 +681,6 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
    if (a!=a_in or b!=b_in or c!=c_in or
        d!=d_in or e!=e_in or f!=f_in) Recouple=true;
 
-   //if (d>a)
    if (d/2>a/2 or (d/2==a/2 and e/2>b/2) or (d/2==a/2 and e/2==b/2 and f/2>c/2))
    {
       swap(a,d);
@@ -767,8 +697,6 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
    Orbit& oe = modelspace->GetOrbit(e);
    Orbit& of = modelspace->GetOrbit(f);
 
-   int Jindex = ( J2-max(1, max(oa.j2-ob.j2-oc.j2, od.j2-oe.j2-of.j2) ) )/2;
-
 
 
    orbindx3_t orbit_index = GetThreeBodyOrbitIndex(a,b,c,d,e,f);
@@ -779,16 +707,15 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
       ThreeBody.at(orbit_index).at(J2).at(Jab_in).at(Jde_in).at(Tindex) = V;
       return;
    }
-//   cout << "Recoupling  " << a << b << c << d << e <<f << "(" << orbit_index << ")" << "   " << J2 << " " << Jab_in << " " << Jde_in << endl;
 
    int Jab_min = max(abs(oa.j2-ob.j2),abs(J2-oc.j2))/2;
    int Jab_max = min(oa.j2+ob.j2,J2+oc.j2)/2;
    int Jde_min = max(abs(od.j2-oe.j2),abs(J2-of.j2))/2;
    int Jde_max = min(od.j2+oe.j2,J2+of.j2)/2;
 
-   int tab_min = T2==3 ? 1 : 0;
+   int tab_min = T2==3 ? 1 : abs(oa.tz2+ob.tz2)/2;
    int tab_max = 1;
-   int tde_min = T2==3 ? 1 : 0;
+   int tde_min = T2==3 ? 1 : abs(od.tz2+oe.tz2)/2;
    int tde_max = 1;
 
 
@@ -798,10 +725,6 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
      {
         double Cj_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,Jab_in,Jab,J2,'j');
         double Cj_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,Jde_in,Jde,J2,'j');
-//        if (a<d) swap(Jab,Jde);
-
-//        int J2index = (a>=d) ? (Jab_max-Jab_min+1)*(Jde-Jde_min) + (Jab-Jab_min)
-//                             : (Jde_max-Jde_min+1)*(Jab-Jab_min) + (Jde-Jde_min);
 
         for (int tab=tab_min; tab<=tab_max; ++tab)
         {
@@ -810,15 +733,9 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
             double Ct_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,tab_in,tab,T2,'t');
             double Ct_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,tde_in,tde,T2,'t');
 
-
-//            if (a<d) swap(tab,tde);
-//            int J2Tindex = (a>=d) ? J2index*5 + 2*tab + tde + (T2-1)/2
-//                                  : J2index*5 + 2*tde + tab + (T2-1)/2;
             int Tindex = 2*tab + tde + (T2-1)/2;
-            
 
             ThreeBody.at(orbit_index).at(J2).at(Jab).at(Jde).at(Tindex) += Cj_abc * Cj_def * Ct_abc * Ct_def * V;
-//            ThreeBody.at(orbit_index).at(Jindex).at(J2Tindex) += Cj_abc * Cj_def * Ct_abc * Ct_def * V;
 
         }
       }
@@ -829,7 +746,11 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
 
 
 
-// Hashing function for compressing 6 orbit indices to one number
+//*******************************************************************
+/// Hashing function for compressing 6 orbit indices to one long long int.
+/// This number is then used as a key for the top level map of the ThreeBody
+/// storage structure.
+//*******************************************************************
 orbindx3_t Operator::GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, int f)
 {
    unsigned char aa = a/2;
@@ -842,8 +763,6 @@ orbindx3_t Operator::GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, i
    orbindx3_t orbit_index_bra = (aa << 16) + (bb << 8) + cc;
    orbindx3_t orbit_index_ket = (dd << 16) + (ee << 8) + ff;
 
-   // should change to uint64_t
-//   orbindx3_t orb_indx;
    if (dd>aa or (dd==aa and ee>bb) or (dd==aa and ee==bb and ff>cc))
    {
       swap(orbit_index_bra, orbit_index_ket);
@@ -853,6 +772,11 @@ orbindx3_t Operator::GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, i
    return orb_indx;
 }
 
+
+//*******************************************************************
+/// If we have an index, undo the hashing function
+/// and extract the corresponding orbit indices.
+//*******************************************************************
 void Operator::GetOrbitsFromThreeBodyIndex(orbindx3_t orb_indx, int& a, int& b, int& c, int& d, int& e, int& f)
 {
   int ket = orb_indx       & 0xFFFFFF;
@@ -872,7 +796,9 @@ void Operator::GetOrbitsFromThreeBodyIndex(orbindx3_t orb_indx, int& a, int& b, 
   }
 }
 
-// Rearrange (abc) so that a>=b>=c
+//*******************************************************************
+/// Rearrange orbits (abc) so that a>=b>=c
+//*******************************************************************
 void Operator::SortThreeBodyOrbits(int& a, int& b, int& c)
 {
    if (a<b)  swap(a,b);
@@ -882,7 +808,10 @@ void Operator::SortThreeBodyOrbits(int& a, int& b, int& c)
 
 
 
-// Calculate the angular momentum or isospin recoupling coefficients needed to rearrange (abc)
+//*******************************************************************
+/// Calculate the angular momentum or isospin recoupling coefficients
+/// needed to rearrange (abc) to the proper ordering.
+//*******************************************************************
 double Operator::ThreeBodyRecouplingCoefficient(int a_in, int b_in, int c_in, int a, int b, int c, int Jab_in, int Jab, int J, char j_or_t)
 {
    double C;
@@ -951,10 +880,10 @@ Operator Operator::DoNormalOrdering()
    }
 }
 
-//
-//  Normal ordering of a 2body operator
-//  currently this only handles scalar operators
-//
+//*************************************************************
+///  Normal ordering of a 2body operator
+///  currently this only handles scalar operators
+//*************************************************************
 Operator Operator::DoNormalOrdering2()
 {
    Operator opNO = *this;
@@ -965,12 +894,10 @@ Operator Operator::DoNormalOrdering2()
    opNO.TwoBody = TwoBody;
 
 
-
-   for (int &k : modelspace->holes) // loop over hole orbits
+   for (auto& k : modelspace->holes) // loop over hole orbits
    {
       opNO.ZeroBody += (modelspace->GetOrbit(k).j2+1) * OneBody(k,k);
    }
-
 
 
    int norbits = modelspace->GetNumberOrbits();
@@ -981,24 +908,22 @@ Operator Operator::DoNormalOrdering2()
       int J = tbc.J;
 
       // Zero body part
-      //for (int& iket : tbc.KetIndex_hh) // loop over hole-hole kets in this channel
-      for (unsigned int& iket : tbc.KetIndex_hh) // loop over hole-hole kets in this channel
+      for (auto& iket : tbc.KetIndex_hh) // loop over hole-hole kets in this channel
       {
-//        opNO.ZeroBody += TwoBody[ch](iket,iket) * (2*J+1);  // <ab|V|ab>  (a,b in core)
         opNO.ZeroBody += GetTBME(ch,iket,iket) * (2*J+1);  // <ab|V|ab>  (a,b in core)
       }
 
       // One body part
       int ibra,iket;
-      for (int a=0;a<norbits;++a)
+      for (unsigned int a=0;a<norbits;++a)
       {
          Orbit &oa = modelspace->GetOrbit(a);
          int bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-         for (int b=bstart;b<norbits;++b)
+         for (unsigned int b=bstart;b<norbits;++b)
          {
             Orbit &ob = modelspace->GetOrbit(b);
             if (ob.j2 != oa.j2 or ob.tz2 != oa.tz2 or ob.l != oa.l) continue;
-            for (int &h : modelspace->holes)  // C++11 syntax
+            for (auto& h : modelspace->holes)  // C++11 syntax
             {
                if ( (ibra = tbc.GetLocalIndex(min(a,h),max(a,h)))<0) continue;
                if ( (iket = tbc.GetLocalIndex(min(b,h),max(b,h)))<0) continue;
@@ -1023,15 +948,15 @@ Operator Operator::DoNormalOrdering2()
 
 
 
-
-//   Normal ordering of a 3body operator. Start by generating the normal ordered
-//   2body piece, then use DoNormalOrdering2() to get the rest. (Note that there
-//   are some numerical factors).
-//   The normal ordered two body piece is 
-//   Gamma(2)^J_ijkl = V(2)^J_ijkl + Sum_a n_a  Sum_K (2K+1)/(2J+1) V(3)^JJK_ijakla
-//   Right now, this is only set up for scalar operators, but I don't anticipate
-//   handling 3body tensor operators in the near future.
-//
+//*******************************************************************************
+///   Normal ordering of a three body operator. Start by generating the normal ordered
+///   two body piece, then use DoNormalOrdering2() to get the rest. (Note that there
+///   are some numerical factors).
+///   The normal ordered two body piece is 
+///   \f[ \Gamma^J_{ijkl} = V^J_{ijkl} + \sum_a n_a  \sum_K \frac{2K+1}{2J+1} V^{(3)JJK}_{ijakla} \f]
+///   Right now, this is only set up for scalar operators, but I don't anticipate
+///   handling 3body tensor operators in the near future.
+//*******************************************************************************
 Operator Operator::DoNormalOrdering3()
 {
    cout << "in DoNormalOrdering3() " << endl;
@@ -1056,18 +981,16 @@ Operator Operator::DoNormalOrdering3()
             int l = ket.q;
             Orbit & ok = modelspace->GetOrbit(k);
             Orbit & ol = modelspace->GetOrbit(l);
-            for (int& a : modelspace->holes)
+            for (auto& a : modelspace->holes)
             {
                Orbit & oa = modelspace->GetOrbit(a);
                if ( (2*(oi.n+oj.n+oa.n)+oi.l+oj.l+oa.l)>E3max) continue;
                if ( (2*(ok.n+ol.n+oa.n)+ok.l+ol.l+oa.l)>E3max) continue;
-//               int Tz2 = 2*tbc.Tz + oa.tz2;
                int kmin2 = abs(2*tbc.J-oa.j2);
                int kmax2 = 2*tbc.J+oa.j2;
                for (int K2=kmin2; K2<=kmax2; K2+=2)
                {
                   Gamma(ibra,iket) += (K2+1) * GetThreeBodyME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a);
-//                  Gamma(ibra,iket) += (K2+1) * GetThreeBodyME_pn(tbc.J,tbc.J,K2,Tz2,i,j,a,k,l,a);
                }
             }
             Gamma(ibra,iket) /= (2*tbc.J+1);
@@ -1093,6 +1016,8 @@ void Operator::Erase()
   EraseZeroBody();
   EraseOneBody();
   EraseTwoBody();
+  if (particle_rank >=3)
+    EraseThreeBody();
 }
 
 
@@ -1107,6 +1032,27 @@ void Operator::EraseTwoBody()
       }
    }
 }
+
+void Operator::EraseThreeBody()
+{
+  for ( auto& it_Orb : ThreeBody )
+  {
+    for ( auto& it_J : it_Orb.second )
+    {
+      for ( auto& it_Jab : it_J.second )
+      {
+        for ( auto& it_Jde : it_Jab.second )
+        {
+          for ( double& v : it_Jde.second )
+          {
+            v = 0;
+          }
+        }
+      }
+    }
+  }
+}
+
 
 void Operator::ScaleZeroBody(double x)
 {
@@ -1145,6 +1091,17 @@ void Operator::Eye()
 }
 
 
+//***********************************************
+/// Calculates the kinetic energy operator in the 
+/// harmonic oscillator basis.
+/// \f[ t_{ab} = \frac{1}{2}\hbar\omega
+/// \delta_{\ell_a \ell_b} \delta_{j_aj_b} \delta_{t_{za}t_{zb}}
+/// \left\{
+/// \begin{array}{ll}
+/// 2n_a + \ell_a + \frac{3}{2} &: n_a=n_b\\
+/// \sqrt{n_{a}(n_{a}+\ell_a + \frac{1}{2})} &: n_a=n_b+1\\
+/// \end{array} \right. \f]
+//***********************************************
 void Operator::CalculateKineticEnergy()
 {
    OneBody.zeros();
@@ -1178,6 +1135,14 @@ void Operator::CalculateKineticEnergy()
 //
 //void Operator::DoPandyaTransformation( vector<arma::mat>& TBMECC)
 // SCALAR VARIETY
+/// \f[
+///  \bar{X}^{J}_{i\bar{j}k\bar{l}} = - \sum_{J'} (2J'+1)
+///  \left\{ \begin{array}{lll}
+///  j_i  &  j_j  &  J \\
+///  j_k  &  j_l  &  J' \\
+///  \end{array} \right\}
+///  X^{J}_{ilkj}
+/// \f]
 void Operator::DoPandyaTransformation( Operator& opCC) const
 {
 
@@ -1191,6 +1156,7 @@ void Operator::DoPandyaTransformation( Operator& opCC) const
          TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
          int nKets = tbc_ket.GetNumberKets();
          arma::mat& MatrixCC = opCC.TwoBody.at(ch_bra).at(ch_ket);
+         MatrixCC.zeros();
          
          for (int ibra=0; ibra<nKets; ++ibra)
          {
@@ -1218,12 +1184,16 @@ void Operator::DoPandyaTransformation( Operator& opCC) const
                for (int Jprime=minJprime; Jprime<=maxJprime; ++Jprime)
                {
                   double sixj = modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
-                  MatrixCC(ibra,iket) += (2*Jprime+1) * sixj * GetTBME(Jprime,parity_std,Tz_std,i,l,k,j);
+                  MatrixCC(ibra,iket) -= (2*Jprime+1) * sixj * GetTBME(Jprime,parity_std,Tz_std,i,l,k,j);
                }
             }
          }
       }
    }
+
+
+
+
 
 }
 
@@ -1514,7 +1484,8 @@ Operator Operator::CommutatorScalarScalar(const Operator& opright) const
    comm222_pp_hh_221ss(opright, out);
 ////   comm222_pp_hh_221st(opright, out); // << equivalent in scalar case
 
-   comm222_phss(opright, out);
+//   comm222_phss(opright, out);
+   comm222_phst_pandya(opright, out);
 ////   comm222_phst(opright, out);
    }
 
@@ -1583,6 +1554,9 @@ Operator Operator::CommutatorTensorTensor(const Operator& opright) const
 //             = Sum_a  (2j_a+1)  (xy-yx)_aa n_a
 //
 // -- AGREES WITH NATHAN'S RESULTS
+/// \f[
+///  [X_{1)},Y_{(1)}]_{(0)} = \sum_{a} n_a (2j_a+1) \left(X_{(1)}Y_{(1)}-Y_{(1)}X_{(1)}\right)_{aa}
+/// \f]
 void Operator::comm110ss(const Operator& opright, Operator& out) const
 {
   if (IsHermitian() and opright.IsHermitian()) return ; // I think this is the case
@@ -1590,7 +1564,7 @@ void Operator::comm110ss(const Operator& opright, Operator& out) const
 
    int norbits = modelspace->GetNumberOrbits();
    arma::mat xyyx = OneBody*opright.OneBody - opright.OneBody*OneBody;
-   for ( int& a : modelspace->holes) // C++11 range-for syntax: loop over all elements of the vector <particle>
+   for ( auto& a : modelspace->holes) // C++11 range-for syntax: loop over all elements of the vector <particle>
    {
       out.ZeroBody += (modelspace->GetOrbit(a).j2+1) * xyyx(a,a);
    }
@@ -1607,6 +1581,13 @@ void Operator::comm110ss(const Operator& opright, Operator& out) const
 //                       = 1/2 Sum_J (2J+1) Sum_ab  (X*P_pp*Y)_abab  P_hh
 //
 //  -- AGREES WITH NATHAN'S RESULTS (within < 1%)
+/// \f[
+/// [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{abcd} (n_a n_b \bar{n}_c \bar{n}_d) X_{abcd}^{J} Y_{cdab}^{J}
+/// \f]
+/// may be rewritten as
+/// \f[
+/// [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{ab} (\mathcal{P}_{hh} X_{(2)}^{J} \mathcal{P}_{pp} Y_{(2)}^{J})_{abab}
+/// \f] where \f$ \mathcal{P}_{hh} \f$ is a projector onto hole-hole two body states.
 void Operator::comm220ss( const Operator& opright, Operator& out) const
 {
    if (IsHermitian() and opright.IsHermitian()) return; // I think this is the case
@@ -1629,6 +1610,9 @@ void Operator::comm220ss( const Operator& opright, Operator& out) const
 //        |                 |
 //
 // -- AGREES WITH NATHAN'S RESULTS
+/// \f[
+/// [X_{(1)},Y_{(1)}]_{(1)} = X_{(1)}Y_{(1)} - Y_{(1)}X_{(1)}
+/// \f]
 void Operator::comm111ss(const Operator & opright, Operator& out) const
 {
    out.OneBody += OneBody*opright.OneBody - opright.OneBody*OneBody;
@@ -1649,6 +1633,10 @@ void Operator::comm111ss(const Operator & opright, Operator& out) const
 //                                                      * y_ab xbiag - yba x_aibj
 //
 // -- AGREES WITH NATHAN'S RESULTS 
+/// Returns \f$ [X_{(1)},Y_{(2)}] - [Y_{(1)},X_{(2)}] \f$, where
+/// \f[
+/// [X_{(1)},Y_{(2)}]_{ij} = \frac{1}{2j_i+1}\sum_{ab} (n_a \bar{n}_b) \sum_{J} (2J+1) (X_{ab} Y^J_{biaj} - X_{ba} Y^J_{aibj})
+/// \f]
 void Operator::comm121ss(const Operator& opright, Operator& out) const
 {
    int norbits = modelspace->GetNumberOrbits();
@@ -1660,11 +1648,10 @@ void Operator::comm121ss(const Operator& opright, Operator& out) const
       {
           Orbit &oj = modelspace->GetOrbit(j);
           if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue; // At some point, make a OneBodyChannel class...
-          for (int &a : modelspace->holes)  // C++11 syntax
+          for (auto& a : modelspace->holes)  // C++11 syntax
           {
              Orbit &oa = modelspace->GetOrbit(a);
-//             for (int b=0;b<norbits;++b)
-             for (int& b : modelspace->particles)
+             for (auto& b : modelspace->particles)
              {
                 Orbit &ob = modelspace->GetOrbit(b);
                 out.OneBody(i,j) += (ob.j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
@@ -1693,6 +1680,23 @@ void Operator::comm121ss(const Operator& opright, Operator& out) const
 //
 // -- AGREES WITH NATHAN'S RESULTS 
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
+// \f[
+// [X_{(2)},Y_{(2)}]_{ij} = \frac{1}{2(2j_i+1)}\sum_{J}(2J+1)\sum_{c}
+// \left( \mathcal{P}_{pp} (X \mathcal{P}_{hh} Y^{J} 
+// - Y^{J} \mathcal{P}_{hh} X^{J}) \mathcal{P}_{pp}
+//  - \mathcal{P}_{hh} (X^{J} \mathcal{P}_{pp} Y^{J} 
+//  -  Y^{J} \mathcal{P}_{pp} X^{J}) \mathcal{P}_{hh} \right)_{cicj}
+// \f]
+/// \f[
+/// [X_{(2)},Y_{(2)}]_{ij} = \frac{1}{2(2j_i+1)}\sum_{J}(2J+1)\sum_{abc} (\bar{n}_a\bar{n}_bn_c + n_an_b\bar{n}_c)
+///  (X^{J}_{ciab} Y^{J}_{abcj} - Y^{J}_{ciab}X^{J}_{abcj})
+/// \f]
+/// This may be rewritten as
+/// \f[
+/// [X_{(2)},Y_{(2)}]_{ij} = \frac{1}{2j_i+1} \sum_{c} \sum_{J} (2J+1) \left( n_c \mathcal{M}^{J}_{pp,icjc} + \bar{n}_c\mathcal{M}^{J}_{hh,icjc} \right)
+/// \f]
+/// With the intermediate matrix \f[ \mathcal{M}^{J}_{pp} \equiv \frac{1}{2} (X^{J}\mathcal{P}_{pp} Y^{J} - Y^{J}\mathcal{P}_{pp}X^{J}) \f]
+/// and likewise for \f$ \mathcal{M}^{J}_{hh} \f$
 void Operator::comm221ss(const Operator& opright, Operator& out) const
 {
 
@@ -1724,12 +1728,12 @@ void Operator::comm221ss(const Operator& opright, Operator& out) const
             if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue;
             double cijJ = 0;
             // Sum c over holes and include the nbar_a * nbar_b terms
-            for (int &c : modelspace->holes)
+            for (auto& c : modelspace->holes)
             {
                cijJ +=   Mpp.GetTBME(ch,i,c,j,c);
             // Sum c over particles and include the n_a * n_b terms
             }
-            for (int &c : modelspace->particles)
+            for (auto& c : modelspace->particles)
             {
                cijJ +=  Mhh.GetTBME(ch,i,c,j,c);
             }
@@ -1755,6 +1759,10 @@ void Operator::comm221ss(const Operator& opright, Operator& out) const
 //
 // -- AGREES WITH NATHAN'S RESULTS
 // Right now, this is the slowest one...
+/// Returns \f$ [X_{(1)},Y_{(2)}]_{(2)} - [Y_{(1)},X_{(2)}]_{(2)} \f$, where
+/// \f[
+/// [X_{(1)},Y_{(2)}]^{J}_{ijkl} = \sum_{a} ( X_{ia}Y^{J}_{ajkl} + X_{ja}Y^{J}_{iakl} - X_{ak} Y^{J}_{ijal} - X_{al} Y^{J}_{ijka} )
+/// \f]
 void Operator::comm122ss(const Operator& opright, Operator& opout ) const
 {
    int herm = opout.IsHermitian() ? 1 : -1;
@@ -1763,9 +1771,6 @@ void Operator::comm122ss(const Operator& opright, Operator& opout ) const
    for (int ch=0; ch<nChannels; ++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-//      arma::mat& LHS = (arma::mat&) TwoBody.at(ch).at(ch);
-//      arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch).at(ch);
-//      arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch).at(ch);
       auto& LHS = TwoBody.at(ch).at(ch);
       auto& RHS = opright.TwoBody.at(ch).at(ch);
       arma::mat& OUT = opout.TwoBody.at(ch).at(ch);
@@ -1831,7 +1836,7 @@ void Operator::comm122ss(const Operator& opright, Operator& opout ) const
 
             }
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
-            cijkl = (ckl*pre_kl + cij*pre_ij) / norm;// / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()) );
+            cijkl = (ckl*pre_kl + cij*pre_ij) / norm;
             OUT(ibra,iket) += cijkl;
             if (not opout.IsNonHermitian())
                OUT(iket,ibra) = herm * OUT(ibra,iket);
@@ -1855,6 +1860,20 @@ void Operator::comm122ss(const Operator& opright, Operator& opout ) const
 //
 // -- AGREES WITH NATHAN'S RESULTS
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
+/// Calculates the part of the commutator \f$ [X_{(2)},Y_{(2)}]_{(2)} \f$ which involves particle-particle
+/// or hole-hole intermediate states.
+/// \f[
+/// [X_{(2)},Y_{(2)}]^{J}_{ijkl} = \frac{1}{2} \sum_{ab} (\bar{n}_a\bar{n}_b - n_an_b) (X^{J}_{ijab}Y^{J}_{ablk} - Y^{J}_{ijab}X^{J}_{abkl})
+/// \f]
+/// This may be written as
+/// \f[
+/// [X_{(2)},Y_{(2)}]^{J} = \mathcal{M}^{J}_{pp} - \mathcal{M}^{J}_{hh}
+/// \f]
+/// With the intermediate matrices
+/// \f[
+/// \mathcal{M}^{J}_{pp} \equiv \frac{1}{2}(X^{J} \mathcal{P}_{pp} Y^{J} - Y^{J} \mathcal{P}_{pp} X^{J})
+/// \f]
+/// and likewise for \f$ \mathcal{M}^{J}_{hh} \f$.
 void Operator::comm222_pp_hhss(const Operator& opright, Operator& opout ) const
 {
    #pragma omp parallel for schedule(dynamic,5)
@@ -1877,9 +1896,9 @@ void Operator::comm222_pp_hhss(const Operator& opright, Operator& opout ) const
 
 
 
-// Since comm222_pp_hh and comm211 both require the construction of 
-// the intermediate matrices Mpp and Mhh, we can combine them and
-// only calculate the intermediates once.
+/// Since comm222_pp_hhss() and comm221ss() both require the construction of 
+/// the intermediate matrices \f$\mathcal{M}_{pp} \f$ and \f$ \mathcal{M}_{hh} \f$, we can combine them and
+/// only calculate the intermediates once.
 void Operator::comm222_pp_hh_221ss(const Operator& opright, Operator& opout ) const 
 {
 
@@ -1937,12 +1956,12 @@ void Operator::comm222_pp_hh_221ss(const Operator& opright, Operator& opout ) co
             if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue;
             double cijJ = 0;
             // Sum c over holes and include the nbar_a * nbar_b terms
-            for (int &c : modelspace->holes)
+            for (auto& c : modelspace->holes)
             {
                cijJ +=   Mpp.GetTBME(ch,c,i,c,j);
             // Sum c over particles and include the n_a * n_b terms
             }
-            for (int &c : modelspace->particles)
+            for (auto& c : modelspace->particles)
             {
                cijJ +=  Mhh.GetTBME(ch,c,i,c,j);
             }
@@ -2148,11 +2167,11 @@ void Operator::comm121st(const Operator& opright, Operator& out) const
           if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue; // At some point, make a OneBodyChannel class...
 
           double zij = 0;
-          for (int &a : modelspace->holes)  // C++11 syntax
+          for (auto& a : modelspace->holes)  // C++11 syntax
           {
              Orbit &oa = modelspace->GetOrbit(a);
              double ja = oa.j2/2.0;
-             for (int &b : modelspace->particles)  // C++11 syntax
+             for (auto& b : modelspace->particles)  // C++11 syntax
              {
                 Orbit &ob = modelspace->GetOrbit(b);
                 double jb = ob.j2/2.0;
@@ -2250,7 +2269,7 @@ void Operator::comm221st(const Operator& opright, Operator& out) const
             if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue;
             double cijJ = 0;
             // Sum c over holes and include the nbar_a * nbar_b terms
-            for (int &c : modelspace->holes)
+            for (auto& c : modelspace->holes)
             {
                Orbit &oc = modelspace->GetOrbit(c);
                int phase = modelspace->phase((oj.j2+oc.j2)/2+J2);
@@ -2258,7 +2277,7 @@ void Operator::comm221st(const Operator& opright, Operator& out) const
                cijJ +=   Mpp.GetTBME(ch_bra,ch_ket,i,c,j,c)*phase*sixj;
             // Sum c over particles and include the n_a * n_b terms
             }
-            for (int &c : modelspace->particles)
+            for (auto& c : modelspace->particles)
             {
                Orbit &oc = modelspace->GetOrbit(c);
                int phase = modelspace->phase((oj.j2+oc.j2)/2+J2);
@@ -2512,14 +2531,14 @@ void Operator::comm222_pp_hh_221st(const Operator& opright, Operator& opout ) co
             if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue;
             double cijJ = 0;
             // Sum c over holes and include the nbar_a * nbar_b terms
-            for (int &c : modelspace->holes)
+            for (auto& c : modelspace->holes)
             {
                Orbit &oc = modelspace->GetOrbit(c);
                double sixj = modelspace->GetSixJ(J1, J2, opright.rank_J, oj.j2/2.0, oi.j2/2.0, oc.j2/2.0);
                cijJ -=   Mpp.GetTBME(ch_bra,ch_ket,c,i,j,c)*sixj;
             // Sum c over particles and include the n_a * n_b terms
             }
-            for (int &c : modelspace->particles)
+            for (auto& c : modelspace->particles)
             {
                Orbit &oc = modelspace->GetOrbit(c);
                double sixj = modelspace->GetSixJ(J1, J2, opright.rank_J, oj.j2/2.0, oi.j2/2.0, oc.j2/2.0);
@@ -2700,54 +2719,50 @@ void Operator::comm222_phst(const Operator& opright, Operator& opout ) const
 // -- This appears to agree with Nathan's results
 //
 // Haven't converted this one yet...
+///
+/// \f[
+///  [X_{(2)}Y_{(2)}]^{J}_{ijkl} = \sum_{abJ'} (n_a - n_b) (2J'+1)
+///  \left( \left\{ \begin{array}{lll}
+///  j_i & j_ j & J \\
+///  j_k & j_ l & J' \\
+///  \end{array} \right\}
+///  ( \bar{X}^{J'}_{i\bar{l}a\bar{b}} \bar{Y}^{J'}_{a\bar{b}k\bar{j}}
+///  -\bar{X}^{J'}_{i\bar{l}a\bar{b}} \bar{X}^{J'}_{a\bar{b}k\bar{j}})
+///  - (-1)^{J-j_1-j_2} [ i \leftrightarrow j ] \right)
+/// \f]
+/// This may be rewritten as
+/// \f[
+///   [X_{(2)}Y_{(2)}]^{J}_{ijkl} = \sum_{J'} (2J'+1)
+///  \left\{ \begin{array}{lll}
+///  j_i & j_ j & J \\
+///  j_k & j_ l & J' \\
+///  \end{array} \right\}
+///  ( \bar{Z}^{J'}_{i\bar{l}k\bar{j}} -
+/// (-1)^{J-j_i-j_j} 
+///  \left\{ \begin{array}{lll}
+///  j_j & j_ i & J \\
+///  j_k & j_ l & J' \\
+///  \end{array} \right\}
+/// \bar{Z}^{J'}_{j\bar{l}k\bar{i}} )
+/// \f]
+///  with the Pandya transformed commutator defined as
+/// \f[
+///  \bar{Z}^{J'}_{i\bar{j}k\bar{l}} \equiv \sum_{ab} (n_a\bar{n}_b - \bar{n}_a n_b )
+/// ( \bar{X}^{J'}_{i\bar{j}a\bar{b}} \bar{Y}^{J'}_{a\bar{b}k\bar{j}}
+///  - \bar{Y}^{J'}_{i\bar{j}a\bar{b}} \bar{X}^{J'}_{a\bar{b}k\bar{j}} )
+/// \f]
 void Operator::comm222_phst_pandya(const Operator& opright, Operator& opout ) const
 {
-/*
    int herm = opout.IsHermitian() ? 1 : -1;
+   if (opout.IsNonHermitian() ) herm = 0;
 
-
-//   vector<arma::mat> X_CC (nChannels, arma::mat() );
-//   vector<arma::mat> Y_CC (nChannels, arma::mat() );
-   Operator X_CC = Operator(modelspace,0,1,0,2);
-   Operator Y_CC = Operator(modelspace,0,1,0,2);
-
-   DoPandyaTransformation(X_CC);
-   opright.DoPandyaTransformation(Y_CC);
-
-   for (int ch=0; ch<nChannels; ++ch)
-   {
-      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch);
-      arma::uvec kets_ph = arma::uvec(tbc_bra.KetIndex_ph);
-      
+   Operator XCC = Operator(modelspace, 0,1,0,2);
+   Operator YCC = XCC;
+   Operator ZCC = XCC;
+   DoPandyaTransformation(XCC);
+   opright.DoPandyaTransformation(YCC);
    
-
-   // Update Cross-coupled matrix elements
-
-   vector<arma::mat> X_TwoBody_CC_left (nChannels, arma::mat() );
-   vector<arma::mat> X_TwoBody_CC_right (nChannels, arma::mat() );
-
-   vector<arma::mat> Y_TwoBody_CC_left (nChannels, arma::mat() );
-   vector<arma::mat> Y_TwoBody_CC_right (nChannels, arma::mat() );
-
-   CalculateCrossCoupled(X_TwoBody_CC_left, X_TwoBody_CC_right );
-   //CalculateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right );
-   opright.CalculateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right );
-
-*/
-
-/*
-   // Construct the intermediate matrices N1 and N2
-   vector<arma::mat> N1 (nChannels, arma::mat() );
-   vector<arma::mat> N2 (nChannels, arma::mat() );
- // probably better not to parallelize here, since the armadillo matrix muliplication can use OMP
- // I think that N1 == N2.t() ??? Check this. No.
-   for (int ch=0;ch<nChannels;++ch)
-   {
-      N1[ch] = X_TwoBody_CC_left[ch] * Y_TwoBody_CC_right[ch] - Y_TwoBody_CC_left[ch] * X_TwoBody_CC_right[ch];
-      N1[ch] += N1[ch].t(); // maybe this works?  Yes !
-//      N2[ch] = Y_TwoBody_CC_left[ch] *  X_TwoBody_CC_right[ch];
-//      N1[ch] -= N2[ch]; // maybe this works? Yes!
-   }
+   ZCC = 
 
    // Now evaluate the commutator for each channel (standard coupling)
    #pragma omp parallel for schedule(dynamic,5)
@@ -2755,6 +2770,7 @@ void Operator::comm222_phst_pandya(const Operator& opright, Operator& opout ) co
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch).at(ch);
+      int J = tbc.J;
 
       int nKets = tbc.GetNumberKets();
       for (int ibra=0; ibra<nKets; ++ibra)
@@ -2787,8 +2803,8 @@ void Operator::comm222_phst_pandya(const Operator& opright, Operator& opout ) co
             int jmax = min(int(jj+jl),int(jk+ji));
             for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
             {
-               double sixj = modelspace->GetSixJ(jk,jl,tbc.J,jj,ji,Jprime);
-               int phase = modelspace->phase(ji+jl+tbc.J);
+               double sixj = modelspace->GetSixJ(jk,jl,J,jj,ji,Jprime);
+               int phase = modelspace->phase(ji+jl+J);
                int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
                int indx_ik = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(i,k),max(i,k));
                int indx_jl = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(j,l),max(j,l));
@@ -2813,25 +2829,23 @@ void Operator::comm222_phst_pandya(const Operator& opright, Operator& opout ) co
                  indx_il += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
                if (j>k)
                  indx_jk += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
-               double sixj = modelspace->GetSixJ(jk,jl,tbc.J,ji,jj,Jprime);
+               double sixj = modelspace->GetSixJ(jk,jl,J,ji,jj,Jprime);
                int phase = modelspace->phase(ji+jl);
                double me1 = N1[ch_cc](indx_il,indx_jk);
                comm -= (2*Jprime+1) * phase * sixj * (me1);
             }
 
-            comm /= sqrt((1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
-            #pragma omp critical
+            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
+            comm /= norm;
+            OUT(ibra,iket) += comm;
+            if (iket != ibra and herm !=0)
             {
-               OUT(ibra,iket) += comm;
-              if (iket != ibra)
-              {
-                 OUT(iket,ibra) += herm*comm;
-              }
+               OUT(iket,ibra) = herm * OUT(ibra,iket);
             }
          }
       }
    }
-*/
+
 
 }
 

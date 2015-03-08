@@ -71,6 +71,12 @@ class Operator
   int E2max; // I don't do anything with this yet...
   int E3max;
 
+  ModelSpace * modelspace;
+  bool hermitian;
+  bool antihermitian;
+  int nChannels;
+  static double bch_transform_threshold;
+  static double bch_product_threshold;
 
 
   //Constructors
@@ -154,6 +160,7 @@ class Operator
   void SortThreeBodyOrbits(int& a,int& b,int& c);
   double ThreeBodyRecouplingCoefficient(int a_in, int b_in, int c_in, int a, int b, int c, int Jab_in, int Jab, int J ,char j_or_t);
   void SetE3max(int e){E3max = e;};
+  int GetE3max(){return E3max;};
 
 
 
@@ -165,6 +172,7 @@ class Operator
   void EraseZeroBody(){ZeroBody = 0;}; // set zero-body term to zero
   void EraseOneBody(){OneBody.zeros();}; // set all one-body terms to zero
   void EraseTwoBody(); // set all two-body terms to zero
+  void EraseThreeBody(); // set all two-body terms to zero
 
   void SetHermitian() {hermitian=true;antihermitian=false;};
   void SetAntiHermitian() {antihermitian=true;hermitian=false;};
@@ -225,15 +233,6 @@ class Operator
   void PrintTwoBody(int ch) const {TwoBody.at(ch).at(ch).print();};
 
 
- //private:
-  //Fields
-  ModelSpace * modelspace;
-  bool hermitian;
-  bool antihermitian;
-  int nChannels;
-  static double bch_transform_threshold;
-  static double bch_product_threshold;
-
   //Methods
   void Copy(const Operator& rhs);
 
@@ -244,33 +243,14 @@ class Operator
   void DoPandyaTransformation(Operator&) const;
   void CalculateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) const; 
 
-/// \f$ [X_{(1)},Y_{(1)}]_{(0)} \f$
-///
   void comm110ss(const Operator& opright, Operator& opout) const; 
-/// \f$ [X_{(2)},Y_{(2)}]_{(0)} \f$
-///
   void comm220ss(const Operator& opright, Operator& opout) const;
-/// \f$ [X_{(1)},Y_{(1)}]_{(1)} \f$
-///
   void comm111ss(const Operator& opright, Operator& opout) const;
-/// \f$ [X_{(1)},Y_{(2)}]_{(1)} -[Y_{(1)},X_{(2)}]_{(1)}\f$
-///
   void comm121ss(const Operator& opright, Operator& opout) const;
-/// \f$ [X_{(2)},Y_{(2)}]_{(1)} \f$
-///
   void comm221ss(const Operator& opright, Operator& opout) const;
-/// \f$ [X_{(1)},Y_{(2)}]_{(2)} -[Y_{(1)},X_{(2)}]_{(2)} \f$
-///
   void comm122ss(const Operator& opright, Operator& opout) const;
-/// The particle-particle piece of \f$ [X_{(2)},Y_{(2)}]_{(2)} \f$
-///
   void comm222_pp_hhss(const Operator& opright, Operator& opout) const;
-/// The particle-hole piece of \f$ [X_{(2)},Y_{(2)}]_{(2)} \f$
-///
   void comm222_phss(const Operator& opright, Operator& opout) const;
-/// Calculate the particle-particle piece of \f$ [X_{(2)},Y_{(2)}]_{(2)} \f$
-/// and \f$ [X_{(1)},Y_{(2)}]_{(2)} -[Y_{(1)},X_{(2)}]_{(2)} \f$ all in one go
-/// because they use the same intermediate matrices.
   void comm222_pp_hh_221ss(const Operator& opright, Operator& opout) const;
 
 // make st and tt commutators

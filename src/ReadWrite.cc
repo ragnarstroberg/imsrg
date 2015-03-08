@@ -362,33 +362,60 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
 // Admittedly this is a mess. Emax is the 2body max energy
 // Setting Emax=-1 just uses the single-particle emax determined by the model space
 //void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax /*default=-1*/)
-void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax /*default=-1*/, int lmax)
+//void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int emax /*default=-1*/, int lmax)
+void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int emax, int Emax, int lmax)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
-  int emax = 0;
   int norb = modelspace->GetNumberOrbits();
-  int nljmax = norb/2;
+//  int nljmax = norb/2;
   int herm = Hbare.IsHermitian() ? 1 : -1 ;
-  vector<int> orbits_remap(nljmax,-1);
+  //vector<int> orbits_remap(nljmax,-1);
+  vector<int> orbits_remap;
+
+  if (emax < 0)
+  {
+    emax = modelspace->Nmax;
+  }
+  if (lmax < 0)
+  {
+    lmax = emax;
+  }
+  int nlj = -1;
+  for (int e=0; e<emax; ++e)
+  {
+    int lmin = e%2;
+    for (int l=lmin; l<=min(e,lmax); l+=2)
+    {
+      int n = (e-l)/2;
+      int twojMin = abs(2*l-1);
+      int twojMax = 2*l+1;
+      for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
+      {
+//         nlj++;
+//         orbits_remap[nlj] = modelspace->GetOrbitIndex(n,l,twoj,-1);
+         orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
+      }
+    }
+  }
+  int nljmax = orbits_remap.size()-1;
+
+/*
   for (int i=0;i<norb;++i)
   {
      Orbit& oi = modelspace->GetOrbit(i);
      if (oi.tz2 > 0 ) continue;
+     if (oi.l > lmax ) continue;
      int N = 2*oi.n + oi.l;
      int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2;
      orbits_remap[nlj] = i;
      emax = max(emax,N);
   }
-  if (lmax<0)
-  {
-    lmax = emax;
-  }
   if (Emax >=0)
      emax = Emax;
   else
      emax *= 2;
-
+*/
   ifstream infile;
   char line[LINESIZE];
   infile.open(filename);
@@ -405,44 +432,47 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Em
   // skip the first line
   infile.getline(line,LINESIZE);
 
-  for(int nlj1=0; nlj1<nljmax; ++nlj1)
+  for(int nlj1=0; nlj1<=nljmax; ++nlj1)
   {
     int a =  orbits_remap[nlj1];
     Orbit & o1 = modelspace->GetOrbit(a);
     int e1 = 2*o1.n + o1.l;
-    if (o1.l > lmax) continue;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
       int b =  orbits_remap[nlj2];
       Orbit & o2 = modelspace->GetOrbit(b);
       int e2 = 2*o2.n + o2.l;
-      if (o2.l > lmax) continue;
-      if (e1+e2 > emax) continue;
+      if (e1+e2 > Emax) break;
       int parity = (o1.l + o2.l) % 2;
 
       for(int nlj3=0; nlj3<=nlj1; ++nlj3)
       {
         int c =  orbits_remap[nlj3];
         Orbit & o3 = modelspace->GetOrbit(c);
-        if (o3.l > lmax) continue;
         int e3 = 2*o3.n + o3.l;
 
         for(int nlj4=0; nlj4<=(nlj3==nlj1 ? nlj2 : nlj3); ++nlj4)
         {
           int d =  orbits_remap[nlj4];
           Orbit & o4 = modelspace->GetOrbit(d);
-          if (o4.l > lmax) continue;
           int e4 = 2*o4.n + o4.l;
-          if (e3+e4 > emax) continue;
+          if (e3+e4 > Emax) break;
           if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
           int Jmin = max( abs(o1.j2 - o2.j2), abs(o3.j2 - o4.j2) )/2;
           int Jmax = min (o1.j2 + o2.j2, o3.j2+o4.j2)/2;
           if (Jmin > Jmax) continue;
           for (int J=Jmin; J<=Jmax; ++J)
           {
+
+
              // File is read here.
+             // Matrix elements are stored with (T,Tz) = (0,0) (1,1) (1,0) (1,-1)
              infile >> tbme_00 >> tbme_nn >> tbme_10 >> tbme_pp;
+
+//             cout << a << "-" << b << "-" << c << "-" << d
+//                  << "   " << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp
+//                  << "   " << J << endl;
 
              // convert isospin to pn formalism
              double tbme_pnpn = (tbme_10 + tbme_00)/2.0;
@@ -747,9 +777,9 @@ void ReadWrite::WriteValenceOneBody(Operator& op, string filename)
    ModelSpace * modelspace = op.GetModelSpace();
    int norbits = modelspace->GetNumberOrbits();
    obfile << " Zero body part: " << op.ZeroBody << endl;
-   for (int& i : modelspace->valence )
+   for (auto& i : modelspace->valence )
    {
-      for (int& j : modelspace->valence )
+      for (auto& j : modelspace->valence )
       {
          double obme = op.OneBody(i,j);
          if (abs(obme) > 1e-6)
@@ -776,7 +806,7 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
    int wint = 4; // width for printing integers
    int wdouble = 12; // width for printing doubles
    int pdouble = 6; // precision for printing doubles
-   for (int& i : modelspace->hole_qspace)
+   for (auto& i : modelspace->hole_qspace)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 +1;
@@ -791,7 +821,7 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
    intfile << "! Zero body term: " << op.ZeroBody << endl;
    intfile << "! Index   nljtz" << endl;
    // first do proton orbits
-   for (int& i : modelspace->valence)
+   for (auto& i : modelspace->valence)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       if (oi.tz2 > 0 ) continue;
@@ -800,7 +830,7 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
       ++nvalence_proton_orbits;
    }
    // then do neutron orbits
-   for (int& i : modelspace->valence)
+   for (auto& i : modelspace->valence)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       if (oi.tz2 < 0 ) continue;
@@ -810,13 +840,13 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
 
    intfile << "!" << endl;
    intfile << "-999  ";
-   for (int& i : modelspace->valence)
+   for (auto& i : modelspace->valence)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       if (oi.tz2 > 0 ) continue;
       intfile << op.OneBody(i,i) << "  ";
    }
-   for (int& i : modelspace->valence)
+   for (auto& i : modelspace->valence)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       if (oi.tz2 < 0 ) continue;
@@ -828,7 +858,7 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
    for (int ch=0;ch<nchan;++ch)
    {
       TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
-      for (int& ibra: tbc.KetIndex_vv)
+      for (auto& ibra: tbc.KetIndex_vv)
       {
          Ket &bra = tbc.GetKet(ibra);
          int a = bra.p;
@@ -837,7 +867,7 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
          Orbit& ob = modelspace->GetOrbit(b);
          int a_ind = a/2+1 + ( oa.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
          int b_ind = b/2+1 + ( ob.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
-         for (int& iket: tbc.KetIndex_vv)
+         for (auto& iket: tbc.KetIndex_vv)
          {
             if (iket<ibra) continue;
             Ket &ket = tbc.GetKet(iket);
@@ -905,7 +935,7 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
    int wint = 4; // width for printing integers
    int wdouble = 12; // width for printing doubles
    //for (int& i : modelspace->holes)
-   for (int& i : modelspace->hole_qspace)
+   for (auto& i : modelspace->hole_qspace)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 +1;
@@ -916,7 +946,7 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
       }
    }
    neutron_core_orbits = modelspace->hole_qspace.size() - proton_core_orbits;
-   for (int& i : modelspace->valence)
+   for (auto& i : modelspace->valence)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       if (oi.tz2 < 0)
@@ -931,7 +961,7 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
    spfile << nvalence_orbits << endl;
    spfile << "2 " << nvalence_proton_orbits << " " << nvalence_orbits-nvalence_proton_orbits << endl;
    // first do proton orbits
-   for (int& i : modelspace->valence)
+   for (auto& i : modelspace->valence)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       if (oi.tz2 > 0 ) continue;
@@ -939,7 +969,7 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
       spfile << nushell_indx << " " << oi.n+1 << " " << oi.l << " " << oi.j2  << endl;
    }
    // then do neutron orbits
-   for (int& i : modelspace->valence)
+   for (auto& i : modelspace->valence)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       if (oi.tz2 < 0 ) continue;
@@ -965,7 +995,7 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
    int Acore = 0;
    int wint = 4; // width for printing integers
    int wdouble = 12; // width for printing doubles
-   for (int& i : modelspace->holes)
+   for (auto& i : modelspace->holes)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 +1;
@@ -974,7 +1004,7 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
    // 2 indicates pn treated separately
    intfile << "2 " << nvalence_orbits << " ";
    // write NLJ of the orbits
-   for (int& i : modelspace->valence)
+   for (auto& i : modelspace->valence)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       if (oi.tz2 > 0 ) continue;
@@ -982,14 +1012,14 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
    }
    intfile << endl;
    // Write proton SPE's
-   for (int& i : modelspace->valence)
+   for (auto& i : modelspace->valence)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       if (oi.tz2 > 0 ) continue;
       intfile << op.OneBody(i,i) << " ";
    }
    // Write neutron SPE's
-   for (int& i : modelspace->valence)
+   for (auto& i : modelspace->valence)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       if (oi.tz2 < 0 ) continue;
@@ -1051,12 +1081,12 @@ void ReadWrite::WriteValenceTwoBody(Operator& op, string filename)
       TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
       int npq = tbc.GetNumberKets();
       if (npq<1) continue;
-      for (int& i : tbc.KetIndex_vv )
+      for (auto& i : tbc.KetIndex_vv )
       {
          Ket &bra = tbc.GetKet(i);
          Orbit &oa = modelspace->GetOrbit(bra.p);
          Orbit &ob = modelspace->GetOrbit(bra.q);
-         for (int& j : tbc.KetIndex_vv )
+         for (auto& j : tbc.KetIndex_vv )
          {
             if (j<i) continue;
             Ket &ket = tbc.GetKet(j);

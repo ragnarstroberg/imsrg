@@ -17,17 +17,15 @@ void \hyperlink{classHartreeFock_aad38c905e7e9f9e9757b5800e6910c61}{Update\-Dens
 \item 
 bool \hyperlink{classHartreeFock_a35ab9c4f96e68b1c9acea1d1407ecc60}{Check\-Convergence} ()
 \item 
-\hypertarget{classHartreeFock_a0666507747c17845ab4f74b97414703c}{void {\bfseries Solve} ()}\label{classHartreeFock_a0666507747c17845ab4f74b97414703c}
-
-\item 
-\hypertarget{classHartreeFock_a91636407b2d6a3e39a4a5275c77c5ae7}{void {\bfseries Print\-Orbits} ()}\label{classHartreeFock_a91636407b2d6a3e39a4a5275c77c5ae7}
-
+void \hyperlink{classHartreeFock_a0666507747c17845ab4f74b97414703c}{Solve} ()
 \item 
 void \hyperlink{classHartreeFock_aef506c5c5bc0f317ceb9c71bdc44d62b}{Calc\-E\-H\-F} ()
 \item 
 void \hyperlink{classHartreeFock_a2eb6754f57250a03a2e1bd3e2aef4daf}{Reorder\-Coefficients} ()
 \item 
 \hyperlink{classOperator}{Operator} \hyperlink{classHartreeFock_a55914915cea16669e549025c244b62d0}{Transform\-To\-H\-F\-Basis} (\hyperlink{classOperator}{Operator} \&Op\-In)
+\item 
+\hyperlink{classOperator}{Operator} \hyperlink{classHartreeFock_a17bdb52033e2f62bba72ea86bc196b37}{Get\-Normal\-Ordered\-H} ()
 \item 
 void \hyperlink{classHartreeFock_a1c146af25a09f427cc626d877ec6e518}{Build\-Monopole\-V3} ()
 \item 
@@ -57,7 +55,7 @@ void \hyperlink{classHartreeFock_a1c146af25a09f427cc626d877ec6e518}{Build\-Monop
 \begin{DoxyCompactList}\small\item\em 1 body piece of 3 body potential \end{DoxyCompactList}\item 
 \hypertarget{classHartreeFock_a45136295f4834a9f692f262eee75672a}{arma\-::mat \hyperlink{classHartreeFock_a45136295f4834a9f692f262eee75672a}{F}}\label{classHartreeFock_a45136295f4834a9f692f262eee75672a}
 
-\begin{DoxyCompactList}\small\item\em 1 body Hamiltonian H\-\_\-ab \end{DoxyCompactList}\item 
+\begin{DoxyCompactList}\small\item\em Fock matrix. \end{DoxyCompactList}\item 
 \hypertarget{classHartreeFock_a038c93667899526e6f136695a643ad96}{arma\-::mat \hyperlink{classHartreeFock_a038c93667899526e6f136695a643ad96}{Vmon}}\label{classHartreeFock_a038c93667899526e6f136695a643ad96}
 
 \begin{DoxyCompactList}\small\item\em Monopole 2-\/body interaction. \end{DoxyCompactList}\item 
@@ -78,7 +76,7 @@ void \hyperlink{classHartreeFock_a1c146af25a09f427cc626d877ec6e518}{Build\-Monop
 \begin{DoxyCompactList}\small\item\em Hartree-\/\-Fock energy (Normal-\/ordered 0-\/body term) \end{DoxyCompactList}\item 
 \hypertarget{classHartreeFock_a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3}{int \hyperlink{classHartreeFock_a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3}{iterations}}\label{classHartreeFock_a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3}
 
-\begin{DoxyCompactList}\small\item\em iterations used in Solve() \end{DoxyCompactList}\item 
+\begin{DoxyCompactList}\small\item\em iterations used in \hyperlink{classHartreeFock_a0666507747c17845ab4f74b97414703c}{Solve()} \end{DoxyCompactList}\item 
 \hypertarget{classHartreeFock_a2a555b86527e4975d20b5c76d07314b4}{map$<$ unsigned long long int, \\*
 double $>$ {\bfseries Vmon3}}\label{classHartreeFock_a2a555b86527e4975d20b5c76d07314b4}
 
@@ -121,28 +119,42 @@ Check for convergence using difference in s.\-p. energies between iterations. Co
 {}
 \end{DoxyParamCaption}
 )}}\label{classHartreeFock_a00f7b0c4cb7373a3f1a69ca27a4dfaed}
-\mbox{[}See Suhonen eq. 4.\-85\mbox{]} Diagonalize the fock matrix $ <a|F|b> $ and put the eigenvectors in $C(i,\alpha) = <i|\alpha> $ and eigenvalues in the vector energies. Save the last vector of energies to check for convergence. Different channels are diagonalized independently. This guarantees that J,Tz, and $ \pi $ remain good. \hypertarget{classHartreeFock_a2eb6754f57250a03a2e1bd3e2aef4daf}{\index{Hartree\-Fock@{Hartree\-Fock}!Reorder\-Coefficients@{Reorder\-Coefficients}}
+\mbox{[}See Suhonen eq. 4.\-85\mbox{]} Diagonalize the fock matrix $ <a|F|b> $ and put the eigenvectors in $C(i,\alpha) = <i|\alpha> $ and eigenvalues in the vector energies. Save the last vector of energies to check for convergence. Different channels are diagonalized independently. This guarantees that J,Tz, and $ \pi $ remain good. \hypertarget{classHartreeFock_a17bdb52033e2f62bba72ea86bc196b37}{\index{Hartree\-Fock@{Hartree\-Fock}!Get\-Normal\-Ordered\-H@{Get\-Normal\-Ordered\-H}}
+\index{Get\-Normal\-Ordered\-H@{Get\-Normal\-Ordered\-H}!HartreeFock@{Hartree\-Fock}}
+\subsubsection[{Get\-Normal\-Ordered\-H}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Hartree\-Fock\-::\-Get\-Normal\-Ordered\-H (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classHartreeFock_a17bdb52033e2f62bba72ea86bc196b37}
+Returns the normal-\/ordered Hamiltonian in the Hartree-\/\-Fock basis \[ E_0 = E_{HF} \] \[ f_{ij} = C^{\dagger} F_{ij} C \] \[ \Gamma^{J}_{ijkl} = D^{\dagger} \left[V^{J}_{ijkl} + \sum_{ab}\sum_{J_3}(2J_{3}+1)\rho_{ab}V^{JJJ_{3}}_{ijaklb}\right] D \] Where the matrix $ D$ is the same as the one defined in \hyperlink{classHartreeFock_a55914915cea16669e549025c244b62d0}{Transform\-To\-H\-F\-Basis()}. \hypertarget{classHartreeFock_a2eb6754f57250a03a2e1bd3e2aef4daf}{\index{Hartree\-Fock@{Hartree\-Fock}!Reorder\-Coefficients@{Reorder\-Coefficients}}
 \index{Reorder\-Coefficients@{Reorder\-Coefficients}!HartreeFock@{Hartree\-Fock}}
 \subsubsection[{Reorder\-Coefficients}]{\setlength{\rightskip}{0pt plus 5cm}void Hartree\-Fock\-::\-Reorder\-Coefficients (
 \begin{DoxyParamCaption}
 {}
 \end{DoxyParamCaption}
 )}}\label{classHartreeFock_a2eb6754f57250a03a2e1bd3e2aef4daf}
-Eigenvectors/values come out of the diagonalization energy-\/ordered. We want them ordered corresponding to the input ordering, i.\-e. we want the matrix C to be maximal and positive along the diagonal. \hypertarget{classHartreeFock_a55914915cea16669e549025c244b62d0}{\index{Hartree\-Fock@{Hartree\-Fock}!Transform\-To\-H\-F\-Basis@{Transform\-To\-H\-F\-Basis}}
+Eigenvectors/values come out of the diagonalization energy-\/ordered. We want them ordered corresponding to the input ordering, i.\-e. we want the matrix C to be maximal and positive along the diagonal. For a 3x3 matrix this would be something like \[ \left( \begin{array}{rrr} -0.8 & 0.2 & -0.6 \\ -0.3 & 0.3 & 0.9 \\ 0.2 & 0.9 & -0.4 \\ \end{array}\right) \rightarrow \left(\begin{array}{rrr} 0.8 & -0.6 & 0.2 \\ 0.3 & 0.9 & 0.3 \\ -0.2 & -0.4 & 0.9 \\ \end{array}\right) \] \hypertarget{classHartreeFock_a0666507747c17845ab4f74b97414703c}{\index{Hartree\-Fock@{Hartree\-Fock}!Solve@{Solve}}
+\index{Solve@{Solve}!HartreeFock@{Hartree\-Fock}}
+\subsubsection[{Solve}]{\setlength{\rightskip}{0pt plus 5cm}void Hartree\-Fock\-::\-Solve (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classHartreeFock_a0666507747c17845ab4f74b97414703c}
+Diagonalize and update the Fock matrix until convergence. Then, call \hyperlink{classHartreeFock_a2eb6754f57250a03a2e1bd3e2aef4daf}{Reorder\-Coefficients()} to make sure the index ordering and phases are preserved in the transformation from the original basis to the Hatree-\/\-Fock basis. \hypertarget{classHartreeFock_a55914915cea16669e549025c244b62d0}{\index{Hartree\-Fock@{Hartree\-Fock}!Transform\-To\-H\-F\-Basis@{Transform\-To\-H\-F\-Basis}}
 \index{Transform\-To\-H\-F\-Basis@{Transform\-To\-H\-F\-Basis}!HartreeFock@{Hartree\-Fock}}
 \subsubsection[{Transform\-To\-H\-F\-Basis}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Hartree\-Fock\-::\-Transform\-To\-H\-F\-Basis (
 \begin{DoxyParamCaption}
 \item[{{\bf Operator} \&}]{Op\-In}
 \end{DoxyParamCaption}
 )}}\label{classHartreeFock_a55914915cea16669e549025c244b62d0}
-Takes in an operator expressed in the basis of the original Hamiltonian, and returns that operator in the Hartree-\/\-Fock basis. \[ t_{HF} = C^{-1} t_{HO} C \] \[ V_{HF}^{J} = D^{-1} V^{J}_{HO} D \] \[ \langle \alpha \beta \gamma | V^{(3)}_{HF} | \delta \epsilon \phi \rangle_{J_{\alpha\beta}J_{\delta\epsilon}J} = \sum_{abcdef} \langle \alpha\beta\gamma | abc \rangle \langle \delta \epsilon \phi | def \rangle \langle abc | V^{(3)}_{HO} | def \rangle_{J_{\alpha\beta}J_{\delta\epsilon}J} \] The matrix $ D $ is defined as \[ D_{ab\alpha\beta} \equiv \sqrt{ \frac{1+\delta_{ab}} {1+\delta_{\alpha\beta}} } C_{a\alpha} C_{b\beta} \] The factor in the square root is due to the fact that we're using normalized T\-B\-M\-E's. Since only kets with $ a\leq b$ are stored, we can use the antisymmetry of the T\-B\-M\-E's and define \[ D(J)_{ab\alpha\beta} \equiv \sqrt{ \frac{1+\delta_{ab}} {1+\delta_{\alpha\beta}} } \left( C_{a\alpha} C_{b\beta} -(1-\delta_{ab})(-1)^{j_a+j_b-J} C_{b\alpha}C_{a\beta}\right) \] \hypertarget{classHartreeFock_aad38c905e7e9f9e9757b5800e6910c61}{\index{Hartree\-Fock@{Hartree\-Fock}!Update\-Density\-Matrix@{Update\-Density\-Matrix}}
+Takes in an operator expressed in the basis of the original Hamiltonian, and returns that operator in the Hartree-\/\-Fock basis. \[ t_{HF} = C^{\dagger} t_{HO} C \] \[ V_{HF}^{J} = D^{\dagger} V^{J}_{HO} D \] The matrix $ D $ is defined as \[ D_{ab\alpha\beta} \equiv \sqrt{ \frac{1+\delta_{ab}} {1+\delta_{\alpha\beta}} } C_{a\alpha} C_{b\beta} \] The factor in the square root is due to the fact that we're using normalized T\-B\-M\-E's. Since only kets with $ a\leq b$ are stored, we can use the antisymmetry of the T\-B\-M\-E's and define \[ D(J)_{ab\alpha\beta} \equiv \sqrt{ \frac{1+\delta_{ab}} {1+\delta_{\alpha\beta}} } \left( C_{a\alpha} C_{b\beta} -(1-\delta_{ab})(-1)^{j_a+j_b-J} C_{b\alpha}C_{a\beta}\right) \] \hypertarget{classHartreeFock_aad38c905e7e9f9e9757b5800e6910c61}{\index{Hartree\-Fock@{Hartree\-Fock}!Update\-Density\-Matrix@{Update\-Density\-Matrix}}
 \index{Update\-Density\-Matrix@{Update\-Density\-Matrix}!HartreeFock@{Hartree\-Fock}}
 \subsubsection[{Update\-Density\-Matrix}]{\setlength{\rightskip}{0pt plus 5cm}void Hartree\-Fock\-::\-Update\-Density\-Matrix (
 \begin{DoxyParamCaption}
 {}
 \end{DoxyParamCaption}
 )}}\label{classHartreeFock_aad38c905e7e9f9e9757b5800e6910c61}
-one-\/body density matrix $ <i|\rho|j> = \sum_{\beta} <i|\beta> <\beta|j> $ where beta runs over H\-F orbits in the core (i.\-e. below the fermi surface) \hypertarget{classHartreeFock_a84fe0eb16f6e5835c920bf8fa98c4442}{\index{Hartree\-Fock@{Hartree\-Fock}!Update\-F@{Update\-F}}
+one-\/body density matrix $ <i|\rho|j> = \sum\limits_{\beta} n_{\beta} <i|\beta> <\beta|j> $ where $n_{\beta} $ ensureas that beta runs over H\-F orbits in the core (i.\-e. below the fermi surface) \hypertarget{classHartreeFock_a84fe0eb16f6e5835c920bf8fa98c4442}{\index{Hartree\-Fock@{Hartree\-Fock}!Update\-F@{Update\-F}}
 \index{Update\-F@{Update\-F}!HartreeFock@{Hartree\-Fock}}
 \subsubsection[{Update\-F}]{\setlength{\rightskip}{0pt plus 5cm}void Hartree\-Fock\-::\-Update\-F (
 \begin{DoxyParamCaption}

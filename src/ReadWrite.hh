@@ -24,7 +24,8 @@ class ReadWrite
 //   void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax=-1);
 //   void ReadBareTBME_Darmstadt( string filename, Operator& Hbare);
 //   void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax);
-   void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax=-1, int lmax=-1);
+//   void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int Emax=-1, int lmax=-1);
+   void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int E1max, int E2max, int lmax);
 //   void Read_Darmstadt_3body( string filename, Operator3& Hbare, int Emax=-1);
 //   void Read_Darmstadt_3body( string filename, Operator& Hbare, int Emax=-1);
    void Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max);

@@ -68,6 +68,7 @@ void Ket::Setpq(int pp, int qq)
    Jmin = abs(op.j2 - oq.j2)/2;
    Jmax = (op.j2 + oq.j2)/2;
    Jstep = 1;
+   E2 = 2*(op.n+oq.n)+op.l+oq.l;
    if (p==q) // Pauli principle
    { 
       Jmax = Jmax-1;

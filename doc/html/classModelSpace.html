@@ -71,7 +71,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Variables</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -117,6 +117,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>AddOrbit</b> (<a clas
 <tr class="memitem:ab3662f5e12ce6da0164c8adbe1abbb95"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab3662f5e12ce6da0164c8adbe1abbb95"></a>
 <a class="el" href="classKet.html">Ket</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>GetKet</b> (int p, int q) const </td></tr>
 <tr class="separator:ab3662f5e12ce6da0164c8adbe1abbb95"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3d8cb8214e082773caa5820773ee16e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab3d8cb8214e082773caa5820773ee16e"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>GetOrbitIndex</b> (int n, int l, int j2, int tz2) const </td></tr>
+<tr class="separator:ab3d8cb8214e082773caa5820773ee16e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad2622b2d268c55b89a2082189f7185b1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad2622b2d268c55b89a2082189f7185b1"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>GetKetIndex</b> (int p, int q) const </td></tr>
 <tr class="separator:ad2622b2d268c55b89a2082189f7185b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -201,30 +204,30 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>Index2</b> (int p, int
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a14bdabeefa614c27cd1cb04bd6c322b0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a14bdabeefa614c27cd1cb04bd6c322b0"></a>
-vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>holes</b></td></tr>
-<tr class="separator:a14bdabeefa614c27cd1cb04bd6c322b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a71a4ecf5a421c9b388375abbae00023c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a71a4ecf5a421c9b388375abbae00023c"></a>
-vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>particles</b></td></tr>
-<tr class="separator:a71a4ecf5a421c9b388375abbae00023c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a024b09899e55b396cb4fc7ea5c9d6249"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a024b09899e55b396cb4fc7ea5c9d6249"></a>
-vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>valence</b></td></tr>
-<tr class="separator:a024b09899e55b396cb4fc7ea5c9d6249"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae2fef3b74d96b3e519231fb5cc3c49ff"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae2fef3b74d96b3e519231fb5cc3c49ff"></a>
-vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>qspace</b></td></tr>
-<tr class="separator:ae2fef3b74d96b3e519231fb5cc3c49ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a691eab13c958b567ca51f7a199c347fe"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a691eab13c958b567ca51f7a199c347fe"></a>
-vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>hole_qspace</b></td></tr>
-<tr class="separator:a691eab13c958b567ca51f7a199c347fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7943dcd4466d03a0b267d60d0e143dc4"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7943dcd4466d03a0b267d60d0e143dc4"></a>
-vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>particle_qspace</b></td></tr>
-<tr class="separator:a7943dcd4466d03a0b267d60d0e143dc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7318082e80152f9d1743fd485c8616f4"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7318082e80152f9d1743fd485c8616f4"></a>
-vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>proton_orbits</b></td></tr>
-<tr class="separator:a7318082e80152f9d1743fd485c8616f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9b21ad783317bff2e75cedef0300e89a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9b21ad783317bff2e75cedef0300e89a"></a>
-vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>neutron_orbits</b></td></tr>
-<tr class="separator:a9b21ad783317bff2e75cedef0300e89a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1889eb679e73b33fb95bcbd776379073"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1889eb679e73b33fb95bcbd776379073"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>holes</b></td></tr>
+<tr class="separator:a1889eb679e73b33fb95bcbd776379073"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a58c42bd72028809326b800ac6ed23c87"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a58c42bd72028809326b800ac6ed23c87"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>particles</b></td></tr>
+<tr class="separator:a58c42bd72028809326b800ac6ed23c87"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1415697ae6703a9c555252fae4c06760"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1415697ae6703a9c555252fae4c06760"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>valence</b></td></tr>
+<tr class="separator:a1415697ae6703a9c555252fae4c06760"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f4ca826af069ca08d47548a2455b7ee"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5f4ca826af069ca08d47548a2455b7ee"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>qspace</b></td></tr>
+<tr class="separator:a5f4ca826af069ca08d47548a2455b7ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb219f02b68b954e3ed04901010a1a70"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afb219f02b68b954e3ed04901010a1a70"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>hole_qspace</b></td></tr>
+<tr class="separator:afb219f02b68b954e3ed04901010a1a70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6420ee68da314fc75bfe4aba89c1ea3d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6420ee68da314fc75bfe4aba89c1ea3d"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>particle_qspace</b></td></tr>
+<tr class="separator:a6420ee68da314fc75bfe4aba89c1ea3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0027efd87e9973ca9d4a063f3682c1ca"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0027efd87e9973ca9d4a063f3682c1ca"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>proton_orbits</b></td></tr>
+<tr class="separator:a0027efd87e9973ca9d4a063f3682c1ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6d9e055e40592de4fbbc87f6e1d6672"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa6d9e055e40592de4fbbc87f6e1d6672"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>neutron_orbits</b></td></tr>
+<tr class="separator:aa6d9e055e40592de4fbbc87f6e1d6672"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa049d819d4d18cfb466777581cc349d2"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa049d819d4d18cfb466777581cc349d2"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>Nmax</b></td></tr>
 <tr class="separator:aa049d819d4d18cfb466777581cc349d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -251,7 +254,7 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>ThreeBodyJmax</b></td>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 2 2015 17:17:22 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Mar 6 2015 14:40:45 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

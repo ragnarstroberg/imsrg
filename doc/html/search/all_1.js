@@ -10,7 +10,7 @@ var searchData=
   ['comm122ss',['comm122ss',['../classOperator.html#aa47907c535f84e5775b92294a90c2101',1,'Operator']]],
   ['comm220ss',['comm220ss',['../classOperator.html#aca98d46760c33cd12056701031cc6b4c',1,'Operator']]],
   ['comm221ss',['comm221ss',['../classOperator.html#a1a67d9f834722d027cda1525356c436b',1,'Operator']]],
-  ['comm222_5fphss',['comm222_phss',['../classOperator.html#ac9b04d839872bbae8dbc5d7e8ee8ab56',1,'Operator']]],
+  ['comm222_5fphst_5fpandya',['comm222_phst_pandya',['../classOperator.html#a86add7287c36700de1079e1f442b1e90',1,'Operator']]],
   ['comm222_5fpp_5fhh_5f221ss',['comm222_pp_hh_221ss',['../classOperator.html#a26be1b965a86598764be26a11490de6b',1,'Operator']]],
   ['comm222_5fpp_5fhhss',['comm222_pp_hhss',['../classOperator.html#a5f0ebafd8284747ca0dcb35bf2fd4fb0',1,'Operator']]]
 ];
