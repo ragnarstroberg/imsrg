@@ -368,9 +368,7 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
-//  int nljmax = norb/2;
   int herm = Hbare.IsHermitian() ? 1 : -1 ;
-  //vector<int> orbits_remap(nljmax,-1);
   vector<int> orbits_remap;
 
   if (emax < 0)
@@ -392,30 +390,13 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
       int twojMax = 2*l+1;
       for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
       {
-//         nlj++;
-//         orbits_remap[nlj] = modelspace->GetOrbitIndex(n,l,twoj,-1);
          orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
       }
     }
   }
   int nljmax = orbits_remap.size()-1;
 
-/*
-  for (int i=0;i<norb;++i)
-  {
-     Orbit& oi = modelspace->GetOrbit(i);
-     if (oi.tz2 > 0 ) continue;
-     if (oi.l > lmax ) continue;
-     int N = 2*oi.n + oi.l;
-     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2;
-     orbits_remap[nlj] = i;
-     emax = max(emax,N);
-  }
-  if (Emax >=0)
-     emax = Emax;
-  else
-     emax *= 2;
-*/
+
   ifstream infile;
   char line[LINESIZE];
   infile.open(filename);
@@ -437,6 +418,7 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
     int a =  orbits_remap[nlj1];
     Orbit & o1 = modelspace->GetOrbit(a);
     int e1 = 2*o1.n + o1.l;
+    if (e1 > modelspace->Nmax) break;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
@@ -465,20 +447,15 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
           for (int J=Jmin; J<=Jmax; ++J)
           {
 
-
              // File is read here.
-             // Matrix elements are stored with (T,Tz) = (0,0) (1,1) (1,0) (1,-1)
+             // Matrix elements are written in the file with (T,Tz) = (0,0) (1,1) (1,0) (1,-1)
              infile >> tbme_00 >> tbme_nn >> tbme_10 >> tbme_pp;
 
-//             cout << a << "-" << b << "-" << c << "-" << d
-//                  << "   " << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp
-//                  << "   " << J << endl;
+             if (a>=norb or b>=norb or c>=norb or d>=norb) continue;
 
              // convert isospin to pn formalism
              double tbme_pnpn = (tbme_10 + tbme_00)/2.0;
              double tbme_pnnp = (tbme_10 - tbme_00)/2.0;
-
-             if (a>=norb or b>=norb or c>=norb or d>=norb) continue;
 
              // Normalization
              if (a==b)

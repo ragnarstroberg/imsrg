@@ -1484,8 +1484,8 @@ Operator Operator::CommutatorScalarScalar(const Operator& opright) const
    comm222_pp_hh_221ss(opright, out);
 ////   comm222_pp_hh_221st(opright, out); // << equivalent in scalar case
 
-//   comm222_phss(opright, out);
-   comm222_phst_pandya(opright, out);
+   comm222_phss(opright, out);
+//   comm222_phst_pandya(opright, out);
 ////   comm222_phst(opright, out);
    }
 
@@ -2756,12 +2756,12 @@ void Operator::comm222_phst_pandya(const Operator& opright, Operator& opout ) co
    int herm = opout.IsHermitian() ? 1 : -1;
    if (opout.IsNonHermitian() ) herm = 0;
 
-   Operator XCC = Operator(modelspace, 0,1,0,2);
+   Operator XCC = Operator(*modelspace, 0,1,0,2);
    Operator YCC = XCC;
    Operator ZCC = XCC;
    DoPandyaTransformation(XCC);
    opright.DoPandyaTransformation(YCC);
-   
+/*   
    ZCC = 
 
    // Now evaluate the commutator for each channel (standard coupling)
@@ -2845,7 +2845,7 @@ void Operator::comm222_phst_pandya(const Operator& opright, Operator& opout ) co
          }
       }
    }
-
+*/
 
 }
 

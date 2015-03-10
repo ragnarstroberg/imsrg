@@ -277,10 +277,10 @@ double IMSRGSolver::Get2bDenominator_pphh(int ch, int ibra, int iket)
    int b = ket.q;
    double denominator = H_s.OneBody(i,i)+ H_s.OneBody(j,j) - H_s.OneBody(a,a) - H_s.OneBody(b,b);
 
-   denominator       += H_s.GetTBME(ch,ch,i,j,i,j); // pp'pp'
-   denominator       += H_s.GetTBME(ch,ch,a,b,a,b); // hh'hh'
-//   denominator       += H_s.GetTBMEmonopole(i,j,i,j); // pp'pp'
-//   denominator       += H_s.GetTBMEmonopole(a,b,a,b); // hh'hh'
+//   denominator       += H_s.GetTBME(ch,ch,i,j,i,j); // pp'pp'
+//   denominator       += H_s.GetTBME(ch,ch,a,b,a,b); // hh'hh'
+   denominator       += H_s.GetTBMEmonopole(i,j,i,j); // pp'pp'
+   denominator       += H_s.GetTBMEmonopole(a,b,a,b); // hh'hh'
    denominator       -= H_s.GetTBMEmonopole(i,a,i,a); // phph
    denominator       -= H_s.GetTBMEmonopole(i,b,i,b); // ph'ph'
    denominator       -= H_s.GetTBMEmonopole(j,a,j,a); // p'hp'h
@@ -302,8 +302,8 @@ double IMSRGSolver::Get2bDenominator_pphp(int ch, int ibra, int iket)
    int p3 = ket.q;
    double denominator = H_s.OneBody(p1,p1)+ H_s.OneBody(p2,p2) - H_s.OneBody(p3,p3) - H_s.OneBody(h,h);
 
-   denominator       += H_s.GetTBME(ch,ch,p1,p2,p1,p2); // phph
-   //denominator       += H_s.GetTBMEmonopole(p1,p2,p1,p2); // phph
+//   denominator       += H_s.GetTBME(ch,ch,p1,p2,p1,p2); // phph
+   denominator       += H_s.GetTBMEmonopole(p1,p2,p1,p2); // phph
    denominator       -= H_s.GetTBMEmonopole(p1,h,p1,h); // pp'pp'
    denominator       -= H_s.GetTBMEmonopole(p2,h,p2,h); // hh'hh'
 
@@ -322,10 +322,10 @@ double IMSRGSolver::Get2bDenominator_pppp(int ch, int ibra, int iket)
    int p4 = ket.q;
    double denominator = H_s.OneBody(p1,p1)+ H_s.OneBody(p2,p2) - H_s.OneBody(p3,p3) - H_s.OneBody(p4,p4);
 
-   denominator       += H_s.GetTBME(ch,ch,p1,p2,p1,p2); // pp'pp'
-   //denominator       += H_s.GetTBMEmonopole(p1,p2,p1,p2); // pp'pp'
-   denominator       -= H_s.GetTBME(ch,ch,p3,p4,p3,p4); // hh'hh'
-   //denominator       -= H_s.GetTBMEmonopole(p3,p4,p3,p4); // hh'hh'
+//   denominator       += H_s.GetTBME(ch,ch,p1,p2,p1,p2); // pp'pp'
+//   denominator       -= H_s.GetTBME(ch,ch,p3,p4,p3,p4); // hh'hh'
+   denominator       += H_s.GetTBMEmonopole(p1,p2,p1,p2); // pp'pp'
+   denominator       -= H_s.GetTBMEmonopole(p3,p4,p3,p4); // hh'hh'
 
    return denominator;
 }
