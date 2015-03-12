@@ -115,11 +115,11 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
       {
          KetMap[i] = NumberKets;
          KetList.push_back(i);
-         int php = ms->GetOrbit(ket.p).ph;
-         int phq = ms->GetOrbit(ket.q).ph;
-         int iop = ms->GetOrbit(ket.p).io;
-         int ioq = ms->GetOrbit(ket.q).io;
-
+//        Ket& ket = Kets[NumberKets];
+        int php = modelspace->GetOrbit(ket.p).ph;
+        int phq = modelspace->GetOrbit(ket.q).ph;
+        int iop = modelspace->GetOrbit(ket.p).io;
+        int ioq = modelspace->GetOrbit(ket.q).io;
          if (( php + phq)==2) // hh
          {
             KetIndex_hh.push_back(NumberKets);
@@ -144,8 +144,6 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
                KetIndex_particleq_holeq.push_back(NumberKets);
             }
          }
-
-
          if ((iop + ioq) == 0) // vv
          {
             KetIndex_vv.push_back(NumberKets);
@@ -158,8 +156,9 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
            else // v particle_q
               KetIndex_v_particleq.push_back(NumberKets);
          }
-
          NumberKets++;
+
+
       }
    }
   
@@ -233,6 +232,40 @@ bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
    return true;
 }
 
+
+arma::uvec TwoBodyChannel::GetKetIndex_pp() { return arma::uvec(KetIndex_pp);};
+arma::uvec TwoBodyChannel::GetKetIndex_hh() { return arma::uvec(KetIndex_hh);};
+arma::uvec TwoBodyChannel::GetKetIndex_ph() { return arma::uvec(KetIndex_ph);};
+arma::uvec TwoBodyChannel::GetKetIndex_vv() { return arma::uvec(KetIndex_vv);};
+arma::uvec TwoBodyChannel::GetKetIndex_holeq_holeq() { return arma::uvec(KetIndex_holeq_holeq);};
+arma::uvec TwoBodyChannel::GetKetIndex_particleq_particleq() { return arma::uvec(KetIndex_particleq_particleq);};
+arma::uvec TwoBodyChannel::GetKetIndex_particleq_holeq() { return arma::uvec(KetIndex_particleq_holeq);};
+arma::uvec TwoBodyChannel::GetKetIndex_v_holeq() { return arma::uvec(KetIndex_v_holeq);};
+arma::uvec TwoBodyChannel::GetKetIndex_v_particleq(){ return arma::uvec(KetIndex_v_particleq);};
+/*
+arma::uvec TwoBodyChannel::GetKetIndex_pp() { return GetKetIndexFromList(modelspace->KetIndex_pp);};
+arma::uvec TwoBodyChannel::GetKetIndex_hh() { return GetKetIndexFromList(modelspace->KetIndex_hh);};
+arma::uvec TwoBodyChannel::GetKetIndex_ph() { return GetKetIndexFromList(modelspace->KetIndex_ph);};
+arma::uvec TwoBodyChannel::GetKetIndex_vv() { return GetKetIndexFromList(modelspace->KetIndex_vv);};
+arma::uvec TwoBodyChannel::GetKetIndex_holeq_holeq() { return GetKetIndexFromList(modelspace->KetIndex_holeq_holeq);};
+arma::uvec TwoBodyChannel::GetKetIndex_particleq_particleq() { return GetKetIndexFromList(modelspace->KetIndex_particleq_particleq);};
+arma::uvec TwoBodyChannel::GetKetIndex_particleq_holeq() { return GetKetIndexFromList(modelspace->KetIndex_particleq_holeq);};
+arma::uvec TwoBodyChannel::GetKetIndex_v_holeq() { return GetKetIndexFromList(modelspace->KetIndex_v_holeq);};
+arma::uvec TwoBodyChannel::GetKetIndex_v_particleq(){ return GetKetIndexFromList(modelspace->KetIndex_v_particleq);};
+*/
+
+arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<unsigned int>& vec_in)
+{
+   vector<unsigned int> index_list (min(vec_in.size(),KetList.size()));
+   auto it = set_intersection(KetList.begin(),KetList.end(),vec_in.begin(),vec_in.end(),index_list.begin());
+   index_list.resize(it-index_list.begin());
+   for (auto& x : index_list)
+   {
+     x = KetMap[x];
+   }
+   return arma::uvec(index_list);
+}
+
 //************************************************************************
 
 TwoBodyChannel_CC::TwoBodyChannel_CC()
@@ -269,6 +302,7 @@ bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
 
 ModelSpace::ModelSpace()
 {
+  cout << "In default constructor" << endl;
    norbits = 0;
    OneBodyJmax = 0;
    TwoBodyJmax = 0;
@@ -283,6 +317,7 @@ ModelSpace::ModelSpace()
 
 ModelSpace::ModelSpace(const ModelSpace& ms)
 {
+   cout << "In copy constructor" << endl;
    norbits = ms.norbits;
    hbar_omega = ms.hbar_omega;
    target_mass = ms.target_mass;
@@ -311,10 +346,30 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
 }
 
+ModelSpace::ModelSpace(ModelSpace&& ms)
+ : norbits(ms.norbits), hbar_omega(ms.hbar_omega), target_mass(ms.target_mass),
+   OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
+   Nmax(ms.Nmax), N2max(ms.N2max), N3max(ms.N3max),
+   holes( move(ms.holes)), particles( move(ms.particles)), valence(move(ms.valence)),
+   qspace( move(ms.qspace)), hole_qspace(move(ms.hole_qspace)), proton_orbits( move(ms.proton_orbits)),
+   neutron_orbits( move(ms.neutron_orbits)), Orbits(move(ms.Orbits)), Kets(move(ms.Kets)),
+   TwoBodyChannels(move(ms.TwoBodyChannels)), TwoBodyChannels_CC(move(ms.TwoBodyChannels_CC))
+{
+
+   for (Ket& k : Kets)   k.ms = this;
+   for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
+   for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
+}
+
+
 // orbit string representation is e.g. p0f7
 ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside_list)
 {
-
+   Init(nmax,hole_list,inside_list);
+}
+//ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside_list)
+void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_list)
+{
    OneBodyJmax = 0;
    TwoBodyJmax = 0;
    ThreeBodyJmax = 0;
@@ -336,8 +391,7 @@ ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside
    }
    cout << "]" << endl;
    
-   vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o'};
-//   map<int,char> pn_list = { (-1,'p'), (1,'n') };
+   vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t'};
    vector<char> pn_list = { 'p', 'n' };
 
    norbits = (Nmax+1)*(Nmax+2);
@@ -377,9 +431,50 @@ ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside
    SetupKets();
 }
 
+// orbit string representation is e.g. p0f7
+ModelSpace::ModelSpace(int nmax, string)
+{
+
+   OneBodyJmax = 0;
+   TwoBodyJmax = 0;
+   ThreeBodyJmax = 0;
+   hbar_omega=20;
+   target_mass = 16;
+   Nmax = nmax;
+   N2max = 2*Nmax;
+   N3max = 3*Nmax;
+
+   cout << "Creating a skeleton model space with Nmax = " << Nmax << endl;
+   
+   norbits = (Nmax+1)*(Nmax+2);
+   for (int N=0; N<=Nmax; ++N)
+   {
+     for (int l=N; l>=0; l-=2)
+     {
+       int n = (N-l)/2;
+       for (int j2=2*l+1; j2>=2*l-1 and j2>0; j2-=2)
+       {
+         for (int tz=-1; tz<=1; tz+=2)
+         {
+            int ph = 0;
+            int io = 1;
+            double spe = 0;
+            AddOrbit(Orbit(n,l,j2,tz,ph,io,spe));
+         }
+       }
+     }
+   }
+}
+
+
+
 
 
 ModelSpace ModelSpace::operator=(const ModelSpace& ms)
+{
+   return ModelSpace(ms);
+}
+ModelSpace ModelSpace::operator=(ModelSpace&& ms)
 {
    return ModelSpace(ms);
 }
@@ -436,6 +531,55 @@ void ModelSpace::SetupKets()
         Kets[index].Setpq(p,q);
      }
    }
+
+  for (int index=0;index<Kets.size();++index)
+  {
+////// BEGIN ADDITION ////////
+        Ket& ket = Kets[index];
+        int php = GetOrbit(ket.p).ph;
+        int phq = GetOrbit(ket.q).ph;
+        int iop = GetOrbit(ket.p).io;
+        int ioq = GetOrbit(ket.q).io;
+         if (( php + phq)==2) // hh
+         {
+            KetIndex_hh.push_back(index);
+            if ((iop+ioq)==2) // qq
+            {
+               KetIndex_holeq_holeq.push_back(index);
+            }
+         }
+         else if ((php + phq) == 0) // pp
+         {
+            KetIndex_pp.push_back(index);
+            if ((iop+ioq)==2) // qq
+            {
+               KetIndex_particleq_particleq.push_back(index);
+            }
+         }
+         else //ph
+         {
+            KetIndex_ph.push_back(index);
+            if ((iop+ioq)==2) // qq
+            {
+               KetIndex_particleq_holeq.push_back(index);
+            }
+         }
+         if ((iop + ioq) == 0) // vv
+         {
+            KetIndex_vv.push_back(index);
+         }
+
+         if ((iop + ioq) == 1) // vq
+         {
+           if ((iop + php == 2) or (ioq+phq==2) ) // the qspace orbit is a hole
+              KetIndex_v_holeq.push_back(index);
+           else // v particle_q
+              KetIndex_v_particleq.push_back(index);
+         }
+
+   }
+//////  END ADDITION ////////
+
    for (int ch=0;ch<nTwoBodyChannels;++ch)
    {
       TwoBodyChannels.push_back(TwoBodyChannel(ch,this));

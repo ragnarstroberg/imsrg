@@ -23,8 +23,10 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    ;
 
    class_<ModelSpace>("ModelSpace",init<>())
-      .def(init<ModelSpace>())
+      .def(init<const ModelSpace&>())
+//      .def(init<ModelSpace&&>())
       .def(init< int,vector<string>,vector<string> >())
+      .def("Init", &ModelSpace::Init)
       .def("SetHbarOmega", &ModelSpace::SetHbarOmega)
       .def("SetTargetMass", &ModelSpace::SetTargetMass)
       .def("SetN3max", &ModelSpace::SetN3max)
@@ -124,8 +126,9 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("VCM_Op",           imsrg_util::VCM_Op);
    def("HCM_Op",           imsrg_util::HCM_Op);
    def("NumberOp",         imsrg_util::NumberOp);
-   def("RSquaredOp",           imsrg_util::RSquaredOp);
-   def("E0Op",           imsrg_util::E0Op);
+   def("RSquaredOp",       imsrg_util::RSquaredOp);
+   def("E0Op",             imsrg_util::E0Op);
+   def("Isospin2_Op",      imsrg_util::Isospin2_Op);
    def("HO_density",       imsrg_util::HO_density);
    def("GetOccupationsHF", imsrg_util::GetOccupationsHF);
    def("GetOccupations",   imsrg_util::GetOccupations);

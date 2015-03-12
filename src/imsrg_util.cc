@@ -640,6 +640,78 @@ Operator E0Op(ModelSpace& modelspace)
 
 
 
+ Operator Isospin2_Op(ModelSpace& modelspace)
+ {
+   Operator T2 = Operator(modelspace,0,0,0,2);
+   T2.OneBody.diag().fill(0.75);
+
+   for (int ch=0; ch<T2.nChannels; ++ch)
+   {
+     TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+     arma::mat& TB = T2.TwoBody.at(ch).at(ch);
+     // pp,nn:  2<t2.t1> = 1/(2(1+delta_ab)) along diagonal
+     if (abs(tbc.Tz) == 1)
+     {
+        TB.diag().fill(0.5); // pp,nn TBME's
+        for (int ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
+        {
+           Ket& bra = tbc.GetKet(ibra);
+           if (bra.p == bra.q)
+           {
+             TB(ibra,ibra) /= 2.;
+           }
+        }
+     }
+     else if (tbc.Tz == 0)
+     {
+        for (int ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
+        {
+           Ket& bra = tbc.GetKet(ibra);
+           Orbit& oa = modelspace.GetOrbit(bra.p);
+           Orbit& ob = modelspace.GetOrbit(bra.q);
+           for (int iket=ibra;iket<tbc.GetNumberKets(); ++iket)
+           {
+             Ket& ket = tbc.GetKet(iket);
+             Orbit& oc = modelspace.GetOrbit(ket.p);
+             Orbit& od = modelspace.GetOrbit(ket.q);
+             if (oa.j2==oc.j2 and oa.n==oc.n and oa.l==oc.l
+               and ob.j2==od.j2 and ob.n==od.n and ob.l==od.l )
+             {
+               // tz1 tz2 case
+               if( oa.tz2 == oc.tz2 and ob.tz2==od.tz2)
+               {
+                 TB(ibra,iket) -= 0.5;
+               }
+               // t+ t- case
+               if( oa.tz2 == od.tz2 and ob.tz2==oc.tz2)
+               {
+                 TB(ibra,iket) += 1.0;
+               }
+               // if a==b==c==d, we need to consider the exchange term
+               if (oa.j2==ob.j2 and oa.n==ob.n and oa.l==ob.l)
+               {
+                  int phase = bra.Phase(tbc.J);
+                  // tz1 tz2 case
+                  if( oa.tz2 == oc.tz2 and ob.tz2==od.tz2)
+                  {
+                    TB(ibra,iket) += phase * 1.0;
+                  }
+                  // t+ t- case
+                  if( oa.tz2 == od.tz2 and ob.tz2==oc.tz2)
+                  {
+                    TB(ibra,iket) -= phase * 0.5;
+                  }
+               }
+               TB(iket,ibra) = TB(ibra,iket); // hermitian
+             }
+
+           }
+        }
+     }
+   }
+   return T2;
+ }
+
 }
 
 

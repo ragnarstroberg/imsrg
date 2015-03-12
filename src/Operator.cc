@@ -908,7 +908,8 @@ Operator Operator::DoNormalOrdering2()
       int J = tbc.J;
 
       // Zero body part
-      for (auto& iket : tbc.KetIndex_hh) // loop over hole-hole kets in this channel
+//      for (auto& iket : tbc.KetIndex_hh) // loop over hole-hole kets in this channel
+      for (auto& iket : tbc.GetKetIndex_hh() ) // loop over hole-hole kets in this channel
       {
         opNO.ZeroBody += GetTBME(ch,iket,iket) * (2*J+1);  // <ab|V|ab>  (a,b in core)
       }
@@ -1223,7 +1224,9 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
    {
       TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
       int nKets_cc = tbc_cc.GetNumberKets();
-      int nph_kets = tbc_cc.KetIndex_ph.size();
+      arma::uvec kets_ph = tbc_cc.GetKetIndex_ph();
+      int nph_kets = kets_ph.n_rows;
+//      int nph_kets = tbc_cc.KetIndex_ph.size();
       int J_cc = tbc_cc.J;
 
 //   These matrices don't actually need to be square, since we only care about
@@ -1238,7 +1241,8 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
       // loop over cross-coupled ph bras <ac| in this channel
       for (int i_ph=0; i_ph<nph_kets; ++i_ph)
       {
-         Ket & bra_cc = tbc_cc.GetKet( tbc_cc.KetIndex_ph[i_ph] );
+//         Ket & bra_cc = tbc_cc.GetKet( tbc_cc.KetIndex_ph[i_ph] );
+         Ket & bra_cc = tbc_cc.GetKet( kets_ph[i_ph] );
          int a = bra_cc.p;
          int c = bra_cc.q;
          Orbit & oa = modelspace->GetOrbit(a);
@@ -1920,8 +1924,11 @@ void Operator::comm222_pp_hh_221ss(const Operator& opright, Operator& opout ) co
       arma::mat & Matrixpp = Mpp.TwoBody.at(ch).at(ch);
       arma::mat & Matrixhh = Mhh.TwoBody.at(ch).at(ch);
 
-      arma::uvec kets_pp = arma::uvec(tbc.KetIndex_pp);
-      arma::uvec kets_hh = arma::uvec(tbc.KetIndex_hh);
+//      arma::uvec kets_pp = arma::uvec(tbc.KetIndex_pp);
+//      arma::uvec kets_hh = arma::uvec(tbc.KetIndex_hh);
+      arma::uvec kets_pp = tbc.GetKetIndex_pp();
+      arma::uvec kets_hh = tbc.GetKetIndex_hh();
+
       
       Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
       Matrixhh =  LHS.cols(kets_hh) * RHS.rows(kets_hh);
@@ -2490,8 +2497,10 @@ void Operator::comm222_pp_hh_221st(const Operator& opright, Operator& opout ) co
          arma::mat& Matrixpp =  Mpp.TwoBody.at(ch_bra).at(ch_ket);
          arma::mat& Matrixhh =  Mhh.TwoBody.at(ch_bra).at(ch_ket);
      
-         arma::uvec kets_pp = arma::uvec(tbc_bra.KetIndex_pp);
-         arma::uvec kets_hh = arma::uvec(tbc_bra.KetIndex_hh);
+//         arma::uvec kets_pp = arma::uvec(tbc_bra.KetIndex_pp);
+//         arma::uvec kets_hh = arma::uvec(tbc_bra.KetIndex_hh);
+         arma::uvec kets_pp = tbc_bra.GetKetIndex_pp();
+         arma::uvec kets_hh = tbc_bra.GetKetIndex_hh();
       
          Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
          Matrixhh =  LHS.cols(kets_hh) * RHS.rows(kets_hh);
@@ -2755,12 +2764,36 @@ void Operator::comm222_phst_pandya(const Operator& opright, Operator& opout ) co
 {
    int herm = opout.IsHermitian() ? 1 : -1;
    if (opout.IsNonHermitian() ) herm = 0;
+   const Operator& X = *this;
+   const Operator& Y = opright;
+   
 
    Operator XCC = Operator(*modelspace, 0,1,0,2);
-   Operator YCC = XCC;
-   Operator ZCC = XCC;
-   DoPandyaTransformation(XCC);
-   opright.DoPandyaTransformation(YCC);
+   Operator YCC = Operator(*modelspace, 0,1,0,2);
+   Operator WCC = Operator(*modelspace, 0,1,0,2);
+   Operator W   = Operator(*modelspace, 0,0,0,2);
+
+   X.DoPandyaTransformation(XCC);
+   Y.DoPandyaTransformation(YCC);
+
+   for (int chbra=0; chbra<nChannels; ++chbra)
+   {
+     TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(chbra);
+//     arma::uvec phbras = arma::uvec(tbc_bra.KetIndex_ph);
+     arma::uvec phbras = tbc_bra.GetKetIndex_ph();
+     for ( int chket : XCC.TwoBodyTensorChannels[chbra] )
+     {
+       TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(chket);
+       arma::mat& wcc = WCC.TwoBody.at(chbra).at(chket);
+       arma::mat& xcc = XCC.TwoBody.at(chbra).at(chket);
+       arma::mat& ycc = YCC.TwoBody.at(chbra).at(chket);
+//       arma::uvec phkets = arma::uvec(tbc_ket.KetIndex_ph);
+       arma::uvec phkets = tbc_ket.GetKetIndex_ph();
+       wcc = xcc.rows(phbras) * ycc.cols(phkets);
+       wcc -= wcc.t();
+     }
+   }   
+   WCC.DoPandyaTransformation(W);
 /*   
    ZCC = 
 

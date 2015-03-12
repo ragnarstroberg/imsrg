@@ -20,10 +20,10 @@ namespace imsrg_util
  Operator PSquaredOp(ModelSpace& modelspace);
  Operator RSquaredOp(ModelSpace& modelspace);
  Operator E0Op(ModelSpace& modelspace);
-// Operator TCM_Op(ModelSpace& modelspace, int N2max);
  Operator TCM_Op(ModelSpace& modelspace);
  Operator VCM_Op(ModelSpace& modelspace);
  Operator HCM_Op(ModelSpace& modelspace);
+ Operator Isospin2_Op(ModelSpace& modelspace);
 
  double Calculate_p1p2(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);
  double Calculate_r1r2(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);

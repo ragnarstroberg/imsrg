@@ -381,9 +381,11 @@ void IMSRGSolver::ConstructGenerator_White()
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       auto& ETA2 = Eta.TwoBody[ch].at(ch);
       auto& H2 = H_s.TwoBody[ch].at(ch);
-      for ( auto& ibra : tbc.KetIndex_pp)
+//      for ( auto& ibra : tbc.KetIndex_pp)
+      for ( auto& ibra : tbc.GetKetIndex_pp() )
       {
-         for ( auto& iket : tbc.KetIndex_hh)
+//         for ( auto& iket : tbc.KetIndex_hh)
+         for ( auto& iket : tbc.GetKetIndex_hh() )
          {
             double denominator = Get2bDenominator_pphh(ch,ibra,iket);
 //            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
@@ -415,9 +417,11 @@ void IMSRGSolver::ConstructGenerator_Atan()
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       arma::mat& ETA2 =  Eta.TwoBody[ch].at(ch);
       arma::mat& H2 = H_s.TwoBody[ch].at(ch);
-      for ( auto& ibra : tbc.KetIndex_pp)
+//      for ( auto& ibra : tbc.KetIndex_pp)
+      for ( auto& ibra : tbc.GetKetIndex_pp() )
       {
-         for ( auto& iket : tbc.KetIndex_hh)
+//         for ( auto& iket : tbc.KetIndex_hh)
+         for ( auto& iket : tbc.GetKetIndex_hh() )
          {
             double denominator = Get2bDenominator_pphh(ch,ibra,iket);
 //            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
@@ -442,17 +446,12 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
    Eta.Erase();
 
    for ( auto& i : modelspace->particles )
-//   for (int &i : modelspace->valence )
    {
       for ( auto& j : modelspace->holes )
       {
          double denominator = Get1bDenominator_ph(i,j);
          Eta.OneBody(i,j) = H_s.OneBody(i,j)/denominator;
          Eta.OneBody(j,i) = - Eta.OneBody(i,j);
-//         if (abs(Eta.OneBody(i,j)) > 10)
-//         {
-//           cout <<"Eta(" << i << "," << j << ") = " << Eta.OneBody(i,j) << "  -- " << H_s.OneBody(i,j) << " / " << denominator << endl;
-//         }
       }
       for ( auto& j : modelspace->particles )
       {
@@ -460,11 +459,16 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
          double denominator = Get1bDenominator_pp(i,j);
          Eta.OneBody(i,j) = H_s.OneBody(i,j)/denominator;
          Eta.OneBody(j,i) = - Eta.OneBody(i,j);
-         if (abs(Eta.OneBody(i,j)) > 10)
-         {
-           cout << "Eta(" << i << "," << j << ") = " << Eta.OneBody(i,j) << "  -- " << H_s.OneBody(i,j) << " / " << denominator
-                << "    ii " << H_s.OneBody(i,i) << "  jj " << H_s.OneBody(j,j) << endl;
-         }
+      }
+   }
+   for ( auto& i : modelspace->holes )
+   {
+      for ( auto& j : modelspace->holes )
+      {
+         if (i==j) continue;
+         double denominator = -Get1bDenominator_pp(i,j);
+         Eta.OneBody(i,j) = H_s.OneBody(i,j)/denominator;
+         Eta.OneBody(j,i) = - Eta.OneBody(i,j);
       }
    }
 
@@ -484,10 +488,12 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
       auto& H2 = H_s.TwoBody[ch].at(ch);
 
       // Decouple vv states from pq states
-      for ( auto& iket : tbc.KetIndex_vv)
+//      for ( auto& iket : tbc.KetIndex_vv)
+      for ( auto& iket : tbc.GetKetIndex_vv() )
       {
          // < qq' | vv' >
-         for ( auto& ibra : tbc.KetIndex_particleq_particleq) 
+//         for ( auto& ibra : tbc.KetIndex_particleq_particleq) 
+         for ( auto& ibra : tbc.GetKetIndex_particleq_particleq() ) 
          {
             double denominator = Get2bDenominator_pppp(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
@@ -495,7 +501,8 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
          }
 
          // < vq | vv' > 
-         for ( auto& ibra : tbc.KetIndex_v_particleq) 
+//         for ( auto& ibra : tbc.KetIndex_v_particleq) 
+         for ( auto& ibra : tbc.GetKetIndex_v_particleq() ) 
          {
             double denominator = Get2bDenominator_pppp(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
@@ -506,24 +513,28 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
 
       // Decouple hh states
 
-      for ( auto& iket : tbc.KetIndex_holeq_holeq)
+//      for ( auto& iket : tbc.KetIndex_holeq_holeq)
+      for ( auto& iket : tbc.GetKetIndex_holeq_holeq() )
       {
          // < qq' | hh' >
-         for ( auto& ibra : tbc.KetIndex_particleq_particleq)
+//         for ( auto& ibra : tbc.KetIndex_particleq_particleq)
+         for ( auto& ibra : tbc.GetKetIndex_particleq_particleq() )
          {
             double denominator = Get2bDenominator_pphh(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
          // < vq | hh' >
-         for ( auto& ibra : tbc.KetIndex_v_particleq)
+//         for ( auto& ibra : tbc.KetIndex_v_particleq)
+         for ( auto& ibra : tbc.GetKetIndex_v_particleq() )
          {
             double denominator = Get2bDenominator_pphh(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
          // < vv | hh' >
-         for ( auto& ibra : tbc.KetIndex_vv)
+//         for ( auto& ibra : tbc.KetIndex_vv)
+         for ( auto& ibra : tbc.GetKetIndex_vv() )
          {
             double denominator = Get2bDenominator_pphh(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
@@ -534,24 +545,28 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
 
       // Decouple vh states
 
-      for ( auto& iket : tbc.KetIndex_v_holeq)
+//      for ( auto& iket : tbc.KetIndex_v_holeq)
+      for ( auto& iket : tbc.GetKetIndex_v_holeq() )
       {
          // < qq | vh >
-         for ( auto& ibra : tbc.KetIndex_particleq_particleq)
+//         for ( auto& ibra : tbc.KetIndex_particleq_particleq)
+         for ( auto& ibra : tbc.GetKetIndex_particleq_particleq() )
          {
             double denominator = Get2bDenominator_pphp(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
          // < vq | vh >
-         for ( auto& ibra : tbc.KetIndex_v_particleq)
+//         for ( auto& ibra : tbc.KetIndex_v_particleq)
+         for ( auto& ibra : tbc.GetKetIndex_v_particleq() )
          {
             double denominator = Get2bDenominator_pphp(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
          // < vv | vh >
-         for ( auto& ibra : tbc.KetIndex_vv)
+//         for ( auto& ibra : tbc.KetIndex_vv)
+         for ( auto& ibra : tbc.GetKetIndex_vv() )
          {
             double denominator = Get2bDenominator_pphp(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
@@ -597,9 +612,11 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
       arma::mat& H2 =  H_s.TwoBody[ch].at(ch);
       // Decouple vv from qq and qv
 
-      for ( auto& ibra : tbc.KetIndex_vv)
+//      for ( auto& ibra : tbc.KetIndex_vv)
+      for ( auto& ibra : tbc.GetKetIndex_vv() )
       {
-         for ( auto& iket : tbc.KetIndex_particleq_particleq) 
+//         for ( auto& iket : tbc.KetIndex_particleq_particleq) 
+         for ( auto& iket : tbc.GetKetIndex_particleq_particleq() ) 
          {
 //            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             double denominator = Get2bDenominator_pppp(ch,ibra,iket);
@@ -609,7 +626,8 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
 //            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
 
-         for ( auto& iket : tbc.KetIndex_holeq_holeq) 
+//         for ( auto& iket : tbc.KetIndex_holeq_holeq) 
+         for ( auto& iket : tbc.GetKetIndex_holeq_holeq() ) 
          {
 //            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             double denominator = Get2bDenominator_pphh(ch,ibra,iket);
@@ -619,7 +637,8 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
 //            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
 
-         for ( auto& iket : tbc.KetIndex_v_particleq) 
+//         for ( auto& iket : tbc.KetIndex_v_particleq) 
+         for ( auto& iket : tbc.GetKetIndex_v_particleq() ) 
          {
 //            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             double denominator = Get2bDenominator_pppp(ch,ibra,iket);
@@ -629,7 +648,8 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
 //            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
 
-         for ( auto& iket : tbc.KetIndex_v_holeq) 
+//         for ( auto& iket : tbc.KetIndex_v_holeq) 
+         for ( auto& iket : tbc.GetKetIndex_v_holeq() ) 
          {
 //            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             double denominator = Get2bDenominator_pphp(ch,ibra,iket);
@@ -645,9 +665,11 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
 
       // Decouple hh states
 
-      for ( auto& iket : tbc.KetIndex_holeq_holeq)
+//      for ( auto& iket : tbc.KetIndex_holeq_holeq)
+      for ( auto& iket : tbc.GetKetIndex_holeq_holeq() )
       {
-         for ( auto& ibra : tbc.KetIndex_particleq_particleq)
+//         for ( auto& ibra : tbc.KetIndex_particleq_particleq)
+         for ( auto& ibra : tbc.GetKetIndex_particleq_particleq() )
          {
 //            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             double denominator = Get2bDenominator_pphh(ch,ibra,iket);
@@ -657,7 +679,8 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
 //            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
 
-         for ( auto& ibra : tbc.KetIndex_v_particleq)
+//         for ( auto& ibra : tbc.KetIndex_v_particleq)
+         for ( auto& ibra : tbc.GetKetIndex_v_particleq() )
          {
 //            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             double denominator = Get2bDenominator_pphh(ch,ibra,iket);
@@ -670,9 +693,11 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
 
       // Decouple vh states
 
-      for ( auto& iket : tbc.KetIndex_v_holeq)
+//      for ( auto& iket : tbc.KetIndex_v_holeq)
+      for ( auto& iket : tbc.GetKetIndex_v_holeq() )
       {
-         for ( auto& ibra : tbc.KetIndex_particleq_particleq)
+//         for ( auto& ibra : tbc.KetIndex_particleq_particleq)
+         for ( auto& ibra : tbc.GetKetIndex_particleq_particleq() )
          {
 //            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             double denominator = Get2bDenominator_pphp(ch,ibra,iket);
@@ -682,7 +707,8 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
 //            Eta.TwoBody[ch](iket,ibra) = - Eta.TwoBody[ch](ibra,iket) ; // Eta needs to be antisymmetric
          }
 
-         for ( auto& ibra : tbc.KetIndex_v_particleq)
+//         for ( auto& ibra : tbc.KetIndex_v_particleq)
+         for ( auto& ibra : tbc.GetKetIndex_v_particleq() )
          {
 //            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
             double denominator = Get2bDenominator_pphp(ch,ibra,iket);

@@ -92,23 +92,28 @@ class TwoBodyChannel
    int GetLocalIndex(int p, int q) const ;
    int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
    Ket & GetKet(int i) const ; // get pointer to ket using local index
-//   vector<int> KetIndex_pp; //maybe don't need
+
    vector<unsigned int> KetIndex_pp; //maybe don't need
    vector<unsigned int> KetIndex_ph;
    vector<unsigned int> KetIndex_hh;
-//   vector<int> KetIndex_hh;
    vector<unsigned int> KetIndex_vv;
    vector<unsigned int> KetIndex_holeq_holeq; 
    vector<unsigned int> KetIndex_particleq_particleq;
    vector<unsigned int> KetIndex_particleq_holeq;
    vector<unsigned int> KetIndex_v_holeq; // added
    vector<unsigned int> KetIndex_v_particleq; //added
-//   vector<int> KetIndex_vv;
-//   vector<int> KetIndex_holeq_holeq; 
-//   vector<int> KetIndex_particleq_particleq;
-//   vector<int> KetIndex_particleq_holeq;
-//   vector<int> KetIndex_v_holeq; // added
-//   vector<int> KetIndex_v_particleq; //added
+
+
+   arma::uvec GetKetIndexFromList(vector<unsigned int>& vec_in);
+   arma::uvec GetKetIndex_pp();
+   arma::uvec GetKetIndex_hh();
+   arma::uvec GetKetIndex_ph();
+   arma::uvec GetKetIndex_vv();
+   arma::uvec GetKetIndex_holeq_holeq(); 
+   arma::uvec GetKetIndex_particleq_particleq();
+   arma::uvec GetKetIndex_particleq_holeq();
+   arma::uvec GetKetIndex_v_holeq(); // added
+   arma::uvec GetKetIndex_v_particleq(); //added
 
 // private:
    //Fields
@@ -122,8 +127,6 @@ class TwoBodyChannel
    void Copy(const TwoBodyChannel &);
    
 };
-
-
 
 
 
@@ -193,11 +196,16 @@ class ModelSpace
 
    // Constructors
    ModelSpace();
-   ModelSpace(const ModelSpace&);
+   ModelSpace(const ModelSpace&); // copy constructor
+   ModelSpace( ModelSpace&&); // move constructor
    ModelSpace(int Nmax, vector<string> hole_list, vector<string> inside_list);
+   ModelSpace(int Nmax, string);
 
    // Overloaded operators
    ModelSpace operator=(const ModelSpace&); 
+   ModelSpace operator=(ModelSpace&&); 
+
+   void Init(int Nmax, vector<string> hole_list, vector<string> inside_list);
 
    // Methods
    void SetupKets();
@@ -248,14 +256,17 @@ class ModelSpace
    vector<unsigned int> particle_qspace;
    vector<unsigned int> proton_orbits;
    vector<unsigned int> neutron_orbits;
-//   vector<int> holes;
-//   vector<int> particles;
-//   vector<int> valence;
-//   vector<int> qspace;
-//   vector<int> hole_qspace;
-//   vector<int> particle_qspace;
-//   vector<int> proton_orbits;
-//   vector<int> neutron_orbits;
+
+   vector<unsigned int> KetIndex_pp; 
+   vector<unsigned int> KetIndex_ph;
+   vector<unsigned int> KetIndex_hh;
+   vector<unsigned int> KetIndex_vv;
+   vector<unsigned int> KetIndex_holeq_holeq; 
+   vector<unsigned int> KetIndex_particleq_particleq;
+   vector<unsigned int> KetIndex_particleq_holeq;
+   vector<unsigned int> KetIndex_v_holeq; // added
+   vector<unsigned int> KetIndex_v_particleq; //added
+
    int Nmax;
    int N2max;
    int N3max;
