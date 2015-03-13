@@ -15,9 +15,14 @@ template<typename T1>
 arma_hot
 inline
 typename T1::pod_type
-arma_vec_norm_1(const Proxy<T1>& P)
+arma_vec_norm_1
+  (
+  const Proxy<T1>& P,
+  const typename arma_not_cx<typename T1::elem_type>::result* junk = 0
+  )
   {
   arma_extra_debug_sigprint();
+  arma_ignore(junk);
   
   typedef typename T1::pod_type T;
   
@@ -60,25 +65,286 @@ arma_vec_norm_1(const Proxy<T1>& P)
       }
     else
       {
+      T acc1 = T(0);
+      T acc2 = T(0);
+      
       for(uword col=0; col<n_cols; ++col)
         {
         uword i,j;
         
         for(i=0, j=1; j<n_rows; i+=2, j+=2)
           {
-          acc += std::abs(P.at(i,col));
-          acc += std::abs(P.at(j,col));
+          acc1 += std::abs(P.at(i,col));
+          acc2 += std::abs(P.at(j,col));
           }
         
         if(i < n_rows)
           {
-          acc += std::abs(P.at(i,col));
+          acc1 += std::abs(P.at(i,col));
           }
+        }
+      
+      acc = acc1 + acc2;
+      }
+    }
+  
+  return acc;
+  }
+
+
+
+template<typename T1>
+arma_hot
+inline
+typename T1::pod_type
+arma_vec_norm_1
+  (
+  const Proxy<T1>& P,
+  const typename arma_cx_only<typename T1::elem_type>::result* junk = 0
+  )
+  {
+  arma_extra_debug_sigprint();
+  arma_ignore(junk);
+  
+  typedef typename T1::elem_type eT;
+  typedef typename T1::pod_type   T;
+  
+  T acc = T(0);
+  
+  if(Proxy<T1>::prefer_at_accessor == false)
+    {
+    typename Proxy<T1>::ea_type A = P.get_ea();
+    
+    const uword N = P.get_n_elem();
+    
+    for(uword i=0; i<N; ++i)
+      {
+      const std::complex<T>& X = A[i];
+      
+      const T a = X.real();
+      const T b = X.imag();
+      
+      acc += std::sqrt( (a*a) + (b*b) );
+      }
+    }
+  else
+    {
+    const uword n_rows = P.get_n_rows();
+    const uword n_cols = P.get_n_cols();
+    
+    if(n_rows == 1)
+      {
+      for(uword col=0; col<n_cols; ++col)
+        {
+        const std::complex<T>& X = P.at(0,col);
+        
+        const T a = X.real();
+        const T b = X.imag();
+        
+        acc += std::sqrt( (a*a) + (b*b) );
+        }
+      }
+    else
+      {
+      for(uword col=0; col<n_cols; ++col)
+      for(uword row=0; row<n_rows; ++row)
+        {
+        const std::complex<T>& X = P.at(row,col);
+        
+        const T a = X.real();
+        const T b = X.imag();
+        
+        acc += std::sqrt( (a*a) + (b*b) );
         }
       }
     }
+  
+  if( (acc != T(0)) && arma_isfinite(acc) )
+    {
+    return acc;
+    }
+  else
+    {
+    arma_extra_debug_print("arma_vec_norm_1(): detected possible underflow or overflow");
     
-  return acc;
+    const quasi_unwrap<typename Proxy<T1>::stored_type> R(P.Q);
+    
+    const uword N     = R.M.n_elem;
+    const eT*   R_mem = R.M.memptr();
+    
+    T max_val = priv::most_neg<T>();
+    
+    for(uword i=0; i<N; ++i)
+      {
+      const std::complex<T>& X = R_mem[i];
+      
+      const T a = std::abs(X.real());
+      const T b = std::abs(X.imag());
+      
+      if(a > max_val)  { max_val = a; }
+      if(b > max_val)  { max_val = b; }
+      }
+    
+    if(max_val == T(0))  { return T(0); }
+    
+    T alt_acc = T(0);
+    
+    for(uword i=0; i<N; ++i)
+      {
+      const std::complex<T>& X = R_mem[i];
+      
+      const T a = X.real() / max_val;
+      const T b = X.imag() / max_val;
+      
+      alt_acc += std::sqrt( (a*a) + (b*b) );
+      }
+    
+    return ( alt_acc * max_val );
+    }
+  }
+
+
+
+template<typename eT>
+arma_hot
+inline
+eT
+arma_vec_norm_2_direct_mem_robust
+  (
+  const Mat<eT>& X
+  )
+  {
+  arma_extra_debug_sigprint();
+  
+  const uword N = X.n_elem;
+  const eT*   A = X.memptr();
+  
+  eT max_val = priv::most_neg<eT>();
+  
+  uword j;
+  
+  for(j=1; j<N; j+=2)
+    {
+    eT val_i = (*A);  A++;
+    eT val_j = (*A);  A++;
+    
+    val_i = std::abs(val_i);
+    val_j = std::abs(val_j);
+    
+    if(val_i > max_val)  { max_val = val_i; }
+    if(val_j > max_val)  { max_val = val_j; }
+    }
+  
+  if((j-1) < N)
+    {
+    const eT val_i = std::abs(*A);
+    
+    if(val_i > max_val)  { max_val = val_i; }
+    }
+  
+  if(max_val == eT(0))  { return eT(0); }
+  
+  const eT* B = X.memptr();
+  
+  eT acc1 = eT(0);
+  eT acc2 = eT(0);
+  
+  for(j=1; j<N; j+=2)
+    {
+    eT val_i = (*B);  B++;
+    eT val_j = (*B);  B++;
+    
+    val_i /= max_val;
+    val_j /= max_val;
+    
+    acc1 += val_i * val_i;
+    acc2 += val_j * val_j;
+    }
+  
+  if((j-1) < N)
+    {
+    const eT val_i = (*B) / max_val;
+    
+    acc1 += val_i * val_i;
+    }
+  
+  return ( std::sqrt(acc1 + acc2) * max_val ); 
+  }
+
+
+
+template<typename eT>
+arma_hot
+inline
+eT
+arma_vec_norm_2_direct_mem_fast
+  (
+  const Mat<eT>& X
+  )
+  {
+  arma_extra_debug_sigprint();
+  
+  const uword N = X.n_elem;
+  const eT*   A = X.memptr();
+  
+  eT acc;
+  
+  #if defined(__FINITE_MATH_ONLY__) && (__FINITE_MATH_ONLY__ > 0)
+    {
+    eT acc1 = eT(0);
+    
+    if(memory::is_aligned(A))
+      {
+      memory::mark_as_aligned(A);
+      
+      for(uword i=0; i<N; ++i)  { const eT tmp_i = A[i];  acc1 += tmp_i * tmp_i; }
+      }
+    else
+      {
+      for(uword i=0; i<N; ++i)  { const eT tmp_i = A[i];  acc1 += tmp_i * tmp_i; }
+      }
+    
+    acc = acc1;
+    }
+  #else
+    {
+    eT acc1 = eT(0);
+    eT acc2 = eT(0);
+    
+    uword j;
+    
+    for(j=1; j<N; j+=2)
+      {
+      const eT tmp_i = (*A);  A++;
+      const eT tmp_j = (*A);  A++;
+      
+      acc1 += tmp_i * tmp_i;
+      acc2 += tmp_j * tmp_j;
+      }
+    
+    if((j-1) < N)
+      {
+      const eT tmp_i = (*A);
+      
+      acc1 += tmp_i * tmp_i;
+      }
+    
+    acc = acc1 + acc2;
+    }
+  #endif
+  
+  const eT sqrt_acc = std::sqrt(acc);
+  
+  if( (sqrt_acc != eT(0)) && arma_isfinite(sqrt_acc) )
+    {
+    return sqrt_acc;
+    }
+  else
+    {
+    arma_extra_debug_print("arma_vec_norm_2_direct_mem_fast(): detected possible underflow or overflow");
+    
+    return arma_vec_norm_2_direct_mem_robust(X);
+    }
   }
 
 
@@ -96,8 +362,16 @@ arma_vec_norm_2
   arma_extra_debug_sigprint();
   arma_ignore(junk);
   
-  typedef typename T1::elem_type eT;
-  typedef typename T1::pod_type   T;
+  const bool have_direct_mem = (is_Mat<typename Proxy<T1>::stored_type>::value) || (is_subview_col<typename Proxy<T1>::stored_type>::value);
+  
+  if(have_direct_mem)
+    {
+    const quasi_unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
+    
+    return arma_vec_norm_2_direct_mem_fast(tmp.M);
+    }
+  
+  typedef typename T1::pod_type T;
   
   T acc = T(0);
   
@@ -179,59 +453,9 @@ arma_vec_norm_2
     {
     arma_extra_debug_print("arma_vec_norm_2(): detected possible underflow or overflow");
   
-    const quasi_unwrap<typename Proxy<T1>::stored_type> R(P.Q);
+    const quasi_unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
     
-    const uword N     = R.M.n_elem;
-    const eT*   R_mem = R.M.memptr();
-    
-    eT max_val = priv::most_neg<eT>();
-    
-    uword i,j;
-    
-    for(i=0, j=1; j<N; i+=2, j+=2)
-      {
-      eT val_i = R_mem[i];
-      eT val_j = R_mem[j];
-      
-      val_i = std::abs(val_i);
-      val_j = std::abs(val_j);
-      
-      if(val_i > max_val)  { max_val = val_i; }
-      if(val_j > max_val)  { max_val = val_j; }
-      }
-    
-    if(i < N)
-      {
-      const eT val_i = std::abs(R_mem[i]);
-      
-      if(val_i > max_val)  { max_val = val_i; }
-      }
-    
-    if(max_val == eT(0))  { return eT(0); }
-    
-    eT alt_acc1 = eT(0);
-    eT alt_acc2 = eT(0);
-    
-    for(i=0, j=1; j<N; i+=2, j+=2)
-      {
-      eT val_i = R_mem[i];
-      eT val_j = R_mem[j];
-      
-      val_i /= max_val;
-      val_j /= max_val;
-      
-      alt_acc1 += val_i * val_i;
-      alt_acc2 += val_j * val_j;
-      }
-    
-    if(i < N)
-      {
-      const eT val_i = R_mem[i] / max_val;
-      
-      alt_acc1 += val_i*val_i;
-      }
-    
-    return ( std::sqrt(alt_acc1 + alt_acc2) * max_val ); 
+    return arma_vec_norm_2_direct_mem_robust(tmp.M);
     }
   }
 
@@ -263,8 +487,12 @@ arma_vec_norm_2
     
     for(uword i=0; i<N; ++i)
       {
-      const T tmp = std::abs(A[i]);
-      acc += tmp*tmp;
+      const std::complex<T>& X = A[i];
+      
+      const T a = X.real();
+      const T b = X.imag();
+      
+      acc += (a*a) + (b*b);
       }
     }
   else
@@ -276,8 +504,12 @@ arma_vec_norm_2
       {
       for(uword col=0; col<n_cols; ++col)
         {
-        const T tmp = std::abs(P.at(0,col));
-        acc += tmp*tmp;
+        const std::complex<T>& X = P.at(0,col);
+        
+        const T a = X.real();
+        const T b = X.imag();
+        
+        acc += (a*a) + (b*b);
         }
       }
     else
@@ -285,8 +517,12 @@ arma_vec_norm_2
       for(uword col=0; col<n_cols; ++col)
       for(uword row=0; row<n_rows; ++row)
         {
-        const T tmp = std::abs(P.at(row,col));
-        acc += tmp*tmp;
+        const std::complex<T>& X = P.at(row,col);
+        
+        const T a = X.real();
+        const T b = X.imag();
+        
+        acc += (a*a) + (b*b);
         }
       }
     }
@@ -596,7 +832,7 @@ norm
   
   const bool is_vec = (P.get_n_rows() == 1) || (P.get_n_cols() == 1);
   
-  if(is_vec == true)
+  if(is_vec)
     {
     switch(k)
       {
@@ -632,6 +868,8 @@ norm
         return T(0);
       }
     }
+  
+  return T(0);  // prevent erroneous compiler warnings
   }
 
 
@@ -662,7 +900,7 @@ norm
   const char sig    = (method != NULL) ? method[0] : char(0);
   const bool is_vec = (P.get_n_rows() == 1) || (P.get_n_cols() == 1);
   
-  if(is_vec == true)
+  if(is_vec)
     {
     if( (sig == 'i') || (sig == 'I') || (sig == '+') )   // max norm
       {

@@ -4,13 +4,13 @@ var searchData=
   ['calcehf',['CalcEHF',['../classHartreeFock.html#aef506c5c5bc0f317ceb9c71bdc44d62b',1,'HartreeFock']]],
   ['calculatekineticenergy',['CalculateKineticEnergy',['../classOperator.html#a701c64f8be794e89fd28a643b56d534a',1,'Operator']]],
   ['checkconvergence',['CheckConvergence',['../classHartreeFock.html#a35ab9c4f96e68b1c9acea1d1407ecc60',1,'HartreeFock']]],
-  ['comm110ss',['comm110ss',['../classOperator.html#a132a43b0a4a1a68e8f78af14e1eab069',1,'Operator']]],
-  ['comm111ss',['comm111ss',['../classOperator.html#aa99f1f8918be7c5669ba9a60bed3d9cd',1,'Operator']]],
-  ['comm121ss',['comm121ss',['../classOperator.html#a1180fa3d9923da924aa8d17042c23ed5',1,'Operator']]],
-  ['comm122ss',['comm122ss',['../classOperator.html#aa47907c535f84e5775b92294a90c2101',1,'Operator']]],
-  ['comm220ss',['comm220ss',['../classOperator.html#aca98d46760c33cd12056701031cc6b4c',1,'Operator']]],
-  ['comm221ss',['comm221ss',['../classOperator.html#a1a67d9f834722d027cda1525356c436b',1,'Operator']]],
-  ['comm222_5fphst_5fpandya',['comm222_phst_pandya',['../classOperator.html#a86add7287c36700de1079e1f442b1e90',1,'Operator']]],
-  ['comm222_5fpp_5fhh_5f221ss',['comm222_pp_hh_221ss',['../classOperator.html#a26be1b965a86598764be26a11490de6b',1,'Operator']]],
-  ['comm222_5fpp_5fhhss',['comm222_pp_hhss',['../classOperator.html#a5f0ebafd8284747ca0dcb35bf2fd4fb0',1,'Operator']]]
+  ['comm110ss',['comm110ss',['../classOperator.html#a23bf6f89477ba90fd6f798374d00d9ea',1,'Operator']]],
+  ['comm111ss',['comm111ss',['../classOperator.html#a1cfdcf9d390bd8bbfdd4473c6a78071e',1,'Operator']]],
+  ['comm121ss',['comm121ss',['../classOperator.html#abb92eaedbea81e56c60939588371042f',1,'Operator']]],
+  ['comm122ss',['comm122ss',['../classOperator.html#a2214e0f4647940855ff1866c2407c078',1,'Operator']]],
+  ['comm220ss',['comm220ss',['../classOperator.html#ac924a2af30154c83d6b821707689caa5',1,'Operator']]],
+  ['comm221ss',['comm221ss',['../classOperator.html#a423dc256b5780dbee20ac81c9a655335',1,'Operator']]],
+  ['comm222_5fphst_5fpandya',['comm222_phst_pandya',['../classOperator.html#a896cd6f88a45ae1a41b9a667d1a70202',1,'Operator']]],
+  ['comm222_5fpp_5fhh_5f221ss',['comm222_pp_hh_221ss',['../classOperator.html#acb2df128030bcad71f2b3fd975ea7988',1,'Operator']]],
+  ['comm222_5fpp_5fhhss',['comm222_pp_hhss',['../classOperator.html#ad70b2fe8c17a836aa8ea8c28ad445fd0',1,'Operator']]]
 ];

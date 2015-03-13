@@ -80,7 +80,13 @@ class Operator
   static double bch_product_threshold;
   static map<string, double> timer;
 
-  static void PrintTimes();
+  static void PrintTimes(){
+   cout << "==== TIMES ====" << endl;
+   for ( auto it : timer )
+   {
+     cout << it.first << ":  " << it.second  << endl;
+   }
+   };
 
 
   //Constructors

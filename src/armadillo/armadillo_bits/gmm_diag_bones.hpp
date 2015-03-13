@@ -48,13 +48,15 @@ struct gmm_empty_arg {};
 #if defined(_OPENMP)
   struct arma_omp_state
     {
-    const int dynamic_state;
+    const int orig_dynamic_state;
     
-    inline  arma_omp_state() : dynamic_state(omp_get_dynamic()) {}
-    inline ~arma_omp_state() { omp_set_dynamic(dynamic_state); }
+    inline  arma_omp_state() : orig_dynamic_state(omp_get_dynamic()) { omp_set_dynamic(0); }
+    inline ~arma_omp_state() { omp_set_dynamic(orig_dynamic_state); }
     };
-
+#else
+  struct arma_omp_state {};
 #endif
+
 
 
 template<typename eT>
@@ -91,6 +93,9 @@ class gmm_diag
   
   inline bool load(const std::string name);
   inline bool save(const std::string name) const;
+  
+  inline Col<eT> generate()              const;
+  inline Mat<eT> generate(const uword N) const;
   
   template<typename T1> inline eT      log_p(const T1& expr, const gmm_empty_arg& junk1 = gmm_empty_arg(), typename enable_if<((is_arma_type<T1>::value) && (resolves_to_colvector<T1>::value == true ))>::result* junk2 = 0) const;
   template<typename T1> inline eT      log_p(const T1& expr, const uword gaus_id,                          typename enable_if<((is_arma_type<T1>::value) && (resolves_to_colvector<T1>::value == true ))>::result* junk2 = 0) const;
@@ -139,7 +144,9 @@ class gmm_diag
   inline void init(const uword in_n_dim, const uword in_n_gaus);
   
   inline void init_constants();
-  
+
+  inline umat internal_gen_boundaries(const uword N) const;
+
   inline eT internal_scalar_log_p(const eT* x                     ) const;
   inline eT internal_scalar_log_p(const eT* x, const uword gaus_id) const;
   
@@ -169,9 +176,9 @@ class gmm_diag
   
   inline bool em_iterate(const Mat<eT>& X, const uword max_iter, const eT var_floor, const bool verbose);
   
-  inline void em_update_params(const Mat<eT>& X, const field<uvec>& t_boundary, field< Mat<eT> >& t_acc_means, field< Mat<eT> >& t_acc_dcovs, field< Col<eT> >& t_acc_norm_lhoods, field< Col<eT> >& t_gaus_log_lhoods, Col<eT>& t_progress_log_lhoods);
+  inline void em_update_params(const Mat<eT>& X, const umat& boundaries, field< Mat<eT> >& t_acc_means, field< Mat<eT> >& t_acc_dcovs, field< Col<eT> >& t_acc_norm_lhoods, field< Col<eT> >& t_gaus_log_lhoods, Col<eT>& t_progress_log_lhoods);
   
-  inline void em_generate_acc(const Mat<eT>& X, const uvec& boundary, Mat<eT>& acc_means, Mat<eT>& acc_dcovs, Col<eT>& acc_norm_lhoods, Col<eT>& gaus_log_lhoods, eT& progress_log_lhood) const;
+  inline void em_generate_acc(const Mat<eT>& X, const uword start_index, const uword end_index, Mat<eT>& acc_means, Mat<eT>& acc_dcovs, Col<eT>& acc_norm_lhoods, Col<eT>& gaus_log_lhoods, eT& progress_log_lhood) const;
   
   inline void em_fix_params(const eT var_floor);
   };

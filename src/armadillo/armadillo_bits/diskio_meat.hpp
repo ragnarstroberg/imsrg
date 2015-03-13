@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2012 NICTA (www.nicta.com.au)
-// Copyright (C) 2008-2012 Conrad Sanderson
+// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 Conrad Sanderson
 // Copyright (C) 2009-2010 Ian Cullinan
 // Copyright (C) 2012 Ryan Curtin
 // Copyright (C) 2013 Szabolcs Horvat
@@ -913,7 +913,7 @@ diskio::save_raw_ascii(const Mat<eT>& x, std::ostream& f)
         f.width(cell_width);
         }
       
-      f << x.at(row,col);
+      arma_ostream::print_elem(f, x.at(row,col), false);
       }
       
     f.put('\n');
@@ -1039,7 +1039,7 @@ diskio::save_arma_ascii(const Mat<eT>& x, std::ostream& f)
         f.width(cell_width);
         }
       
-      f << x.at(row,col);
+      arma_ostream::print_elem(f, x.at(row,col), false);
       }
     
     f.put('\n');
@@ -1111,7 +1111,7 @@ diskio::save_csv_ascii(const Mat<eT>& x, std::ostream& f)
     {
     for(uword col=0; col < x_n_cols; ++col)
       {
-      f << x.at(row,col);
+      arma_ostream::print_elem(f, x.at(row,col), false);
       
       if( col < (x_n_cols-1) )
         {
@@ -3035,7 +3035,31 @@ diskio::load_arma_binary(SpMat<eT>& x, std::istream& f, std::string& err_msg)
     f.read( reinterpret_cast<char*>(access::rwp(x.row_indices)), std::streamsize(x.n_nonzero*sizeof(uword))  );
     f.read( reinterpret_cast<char*>(access::rwp(x.col_ptrs)),    std::streamsize((x.n_cols+1)*sizeof(uword)) );
     
-    load_okay = f.good();
+    bool check1 = true;
+    
+    for(uword i=0; i < x.n_nonzero; ++i)
+      {
+      if(x.values[i] == eT(0))  { check1 = false; break; }
+      }
+    
+    bool check2 = true;
+    
+    for(uword i=0; i < x.n_cols; ++i)
+      {
+      if(x.col_ptrs[i+1] < x.col_ptrs[i])  { check2 = false; break; }
+      }
+    
+    const bool check3 = (x.col_ptrs[x.n_cols] == x.n_nonzero);
+    
+    if((check1 == false) || (check2 == false) || (check3 == false))
+      {
+      load_okay = false;
+      err_msg = "inconsistent data in ";
+      }
+    else
+      {
+      load_okay = f.good();
+      }
     }
   else
     {
@@ -3116,7 +3140,7 @@ diskio::save_raw_ascii(const Cube<eT>& x, std::ostream& f)
           f.width(cell_width);
           }
         
-        f << x.at(row,col,slice);
+        arma_ostream::print_elem(f, x.at(row,col,slice), false);
         }
         
       f.put('\n');
@@ -3245,7 +3269,7 @@ diskio::save_arma_ascii(const Cube<eT>& x, std::ostream& f)
           f.width(cell_width);
           }
         
-        f << x.at(row,col,slice);
+        arma_ostream::print_elem(f, x.at(row,col,slice), false);
         }
       
       f.put('\n');

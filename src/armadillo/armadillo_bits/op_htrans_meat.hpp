@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2013 Conrad Sanderson
-// Copyright (C) 2008-2013 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 Conrad Sanderson
+// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
 // Copyright (C) 2012 Ryan Curtin
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -54,14 +54,18 @@ op_htrans::apply_mat_noalias(Mat<eT>& out, const Mat<eT>& A, const typename arma
     }
   else
     {
-    for(uword in_row = 0; in_row < A_n_rows; ++in_row)
+    eT* outptr = out.memptr();
+    
+    for(uword k=0; k < A_n_rows; ++k)
       {
-      const uword out_col = in_row;
+      const eT* Aptr = &(A.at(k,0));
       
-      for(uword in_col = 0; in_col < A_n_cols; ++in_col)
+      for(uword j=0; j < A_n_cols; ++j)
         {
-        const uword out_row = in_col;
-        out.at(out_row, out_col) = std::conj( A.at(in_row, in_col) );
+        (*outptr) = std::conj(*Aptr);
+        
+        Aptr += A_n_rows;
+        outptr++;
         }
       }
     }
@@ -229,20 +233,32 @@ op_htrans::apply_proxy(Mat<typename T1::elem_type>& out, const T1& X)
         {
         out.set_size(n_cols, n_rows);
         
-        for(uword k=0; k < n_cols; ++k)
-        for(uword i=0; i < n_rows; ++i)
+        eT* outptr = out.memptr();
+        
+        for(uword k=0; k < n_rows; ++k)
           {
-          out.at(k,i) = std::conj(P.at(i,k));
+          for(uword j=0; j < n_cols; ++j)
+            {
+            (*outptr) = std::conj(P.at(k,j));
+            
+            outptr++;
+            }
           }
         }
       else // aliasing
         {
         Mat<eT> out2(n_cols, n_rows);
         
-        for(uword k=0; k < n_cols; ++k)
-        for(uword i=0; i < n_rows; ++i)
+        eT* out2ptr = out2.memptr();
+        
+        for(uword k=0; k < n_rows; ++k)
           {
-          out2.at(k,i) = std::conj(P.at(i,k));
+          for(uword j=0; j < n_cols; ++j)
+            {
+            (*out2ptr) = std::conj(P.at(k,j));
+            
+            out2ptr++;
+            }
           }
         
         out.steal_mem(out2);
@@ -333,14 +349,18 @@ op_htrans2::apply_noalias(Mat<eT>& out, const Mat<eT>& A, const eT val)
     }
   else
     {
-    for(uword in_row = 0; in_row < A_n_rows; ++in_row)
+    eT* outptr = out.memptr();
+    
+    for(uword k=0; k < A_n_rows; ++k)
       {
-      const uword out_col = in_row;
+      const eT* Aptr = &(A.at(k,0));
       
-      for(uword in_col = 0; in_col < A_n_cols; ++in_col)
+      for(uword j=0; j < A_n_cols; ++j)
         {
-        const uword out_row = in_col;
-        out.at(out_row, out_col) = val * std::conj( A.at(in_row, in_col) );
+        (*outptr) = val * std::conj(*Aptr);
+        
+        Aptr += A_n_rows;
+        outptr++;
         }
       }
     }
@@ -468,20 +488,32 @@ op_htrans2::apply_proxy(Mat<typename T1::elem_type>& out, const T1& X, const typ
         {
         out.set_size(n_cols, n_rows);
         
-        for(uword k=0; k < n_cols; ++k)
-        for(uword i=0; i < n_rows; ++i)
+        eT* outptr = out.memptr();
+        
+        for(uword k=0; k < n_rows; ++k)
           {
-          out.at(k,i) = val * std::conj(P.at(i,k));
+          for(uword j=0; j < n_cols; ++j)
+            {
+            (*outptr) = val * std::conj(P.at(k,j));
+            
+            outptr++;
+            }
           }
         }
       else // aliasing
         {
         Mat<eT> out2(n_cols, n_rows);
         
-        for(uword k=0; k < n_cols; ++k)
-        for(uword i=0; i < n_rows; ++i)
+        eT* out2ptr = out2.memptr();
+        
+        for(uword k=0; k < n_rows; ++k)
           {
-          out2.at(k,i) = val * std::conj(P.at(i,k));
+          for(uword j=0; j < n_cols; ++j)
+            {
+            (*out2ptr) = val * std::conj(P.at(k,j));
+            
+            out2ptr++;
+            }
           }
         
         out.steal_mem(out2);

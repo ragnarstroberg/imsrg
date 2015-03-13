@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2013 Conrad Sanderson
-// Copyright (C) 2008-2013 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 Conrad Sanderson
+// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -698,6 +698,114 @@ Col<eT>::operator()(const span& row_span) const
 
 
 
+template<typename eT>
+arma_inline
+subview_col<eT>
+Col<eT>::head(const uword N)
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (N > Mat<eT>::n_rows), "Col::head(): size out of bounds");
+  
+  return subview_col<eT>(*this, 0, 0, N);
+  }
+
+
+
+template<typename eT>
+arma_inline
+const subview_col<eT>
+Col<eT>::head(const uword N) const
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (N > Mat<eT>::n_rows), "Col::head(): size out of bounds");
+  
+  return subview_col<eT>(*this, 0, 0, N);
+  }
+
+
+
+template<typename eT>
+arma_inline
+subview_col<eT>
+Col<eT>::tail(const uword N)
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (N > Mat<eT>::n_rows), "Col::tail(): size out of bounds");
+  
+  const uword start_row = Mat<eT>::n_rows - N;
+  
+  return subview_col<eT>(*this, 0, start_row, N);
+  }
+
+
+
+template<typename eT>
+arma_inline
+const subview_col<eT>
+Col<eT>::tail(const uword N) const
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (N > Mat<eT>::n_rows), "Col::tail(): size out of bounds");
+  
+  const uword start_row = Mat<eT>::n_rows - N;
+  
+  return subview_col<eT>(*this, 0, start_row, N);
+  }
+
+
+
+template<typename eT>
+arma_inline
+subview_col<eT>
+Col<eT>::head_rows(const uword N)
+  {
+  arma_extra_debug_sigprint();
+  
+  return (*this).head(N);
+  }
+
+
+
+template<typename eT>
+arma_inline
+const subview_col<eT>
+Col<eT>::head_rows(const uword N) const
+  {
+  arma_extra_debug_sigprint();
+  
+  return (*this).head(N);
+  }
+
+
+
+template<typename eT>
+arma_inline
+subview_col<eT>
+Col<eT>::tail_rows(const uword N)
+  {
+  arma_extra_debug_sigprint();
+  
+  return (*this).tail(N);
+  }
+
+
+
+template<typename eT>
+arma_inline
+const subview_col<eT>
+Col<eT>::tail_rows(const uword N) const
+  {
+  arma_extra_debug_sigprint();
+  
+  return (*this).tail(N);
+  }
+
+
+
 //! remove specified row
 template<typename eT>
 inline
@@ -1184,10 +1292,85 @@ Col<eT>::fixed<fixed_n_elem>::operator=(const fixed<fixed_n_elem>& X)
   {
   arma_extra_debug_sigprint();
   
-        eT* dest = (use_extra) ?   mem_local_extra : Mat<eT>::mem_local;
-  const eT* src  = (use_extra) ? X.mem_local_extra :        X.mem_local;
+  if(this != &X)
+    {
+          eT* dest = (use_extra) ?   mem_local_extra : Mat<eT>::mem_local;
+    const eT* src  = (use_extra) ? X.mem_local_extra :        X.mem_local;
+    
+    arrayops::copy( dest, src, fixed_n_elem );
+    }
   
-  arrayops::copy( dest, src, fixed_n_elem );
+  return *this;
+  }
+
+
+
+template<typename eT>
+template<uword fixed_n_elem>
+template<typename T1, typename eop_type>
+inline
+const Col<eT>&
+Col<eT>::fixed<fixed_n_elem>::operator=(const eOp<T1, eop_type>& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_type_check(( is_same_type< eT, typename T1::elem_type >::no ));
+  
+  const bool bad_alias = (eOp<T1, eop_type>::proxy_type::has_subview  &&  X.P.is_alias(*this));
+  
+  if(bad_alias == false)
+    {
+    arma_debug_assert_same_size(fixed_n_elem, uword(1), X.get_n_rows(), X.get_n_cols(), "Col::fixed::operator=");
+    
+    eop_type::apply(*this, X);
+    }
+  else
+    {
+    arma_extra_debug_print("bad_alias = true");
+    
+    Col<eT> tmp(X);
+    
+    (*this) = tmp;
+    }
+  
+  return *this;
+  }
+
+
+
+template<typename eT>
+template<uword fixed_n_elem>
+template<typename T1, typename T2, typename eglue_type>
+inline
+const Col<eT>&
+Col<eT>::fixed<fixed_n_elem>::operator=(const eGlue<T1, T2, eglue_type>& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_type_check(( is_same_type< eT, typename T1::elem_type >::no ));
+  arma_type_check(( is_same_type< eT, typename T2::elem_type >::no ));
+  
+  const bool bad_alias =
+    (
+    (eGlue<T1, T2, eglue_type>::proxy1_type::has_subview  &&  X.P1.is_alias(*this))
+    ||
+    (eGlue<T1, T2, eglue_type>::proxy2_type::has_subview  &&  X.P2.is_alias(*this))
+    );
+  
+  if(bad_alias == false)
+    {
+    arma_debug_assert_same_size(fixed_n_elem, uword(1), X.get_n_rows(), X.get_n_cols(), "Col::fixed::operator=");
+    
+    eglue_type::apply(*this, X);
+    }
+  else
+    {
+    arma_extra_debug_print("bad_alias = true");
+    
+    Col<eT> tmp(X);
+    
+    (*this) = tmp;
+    }
   
   return *this;
   }

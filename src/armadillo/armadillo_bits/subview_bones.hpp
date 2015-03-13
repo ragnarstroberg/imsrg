@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2014 Conrad Sanderson
-// Copyright (C) 2008-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 Conrad Sanderson
+// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
 // Copyright (C)      2011 James Sanders
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -107,7 +107,8 @@ class subview : public Base<eT, subview<eT> >
   
   inline bool check_overlap(const subview& x) const;
   
-  inline bool is_vec() const;
+  inline arma_warn_unused bool is_vec()    const;
+  inline arma_warn_unused bool is_finite() const;
   
   inline       subview_row<eT> row(const uword row_num);
   inline const subview_row<eT> row(const uword row_num) const;
@@ -150,34 +151,6 @@ class subview : public Base<eT, subview<eT> >
   
   inline void swap_rows(const uword in_row1, const uword in_row2);
   inline void swap_cols(const uword in_col1, const uword in_col2);
-  
-  
-  // // primitive forward iterator
-  // class iter
-  //   {
-  //   public:
-  //   
-  //   inline iter(const subview<eT>& in_M);
-  //   
-  //   arma_inline eT operator* () const;
-  //   
-  //   inline void operator++();
-  //   inline void operator++(int);
-  //   
-  //   
-  //   private:
-  //   
-  //   arma_aligned const eT* mem;
-  //   
-  //   arma_aligned uword n_rows;
-  //   
-  //   arma_aligned uword row_start;
-  //   arma_aligned uword row_end_p1;
-  //   
-  //   arma_aligned uword row;
-  //   arma_aligned uword col;
-  //   arma_aligned uword i;
-  //   };
   
   
   private:
@@ -242,7 +215,12 @@ class subview_col : public subview<eT>
   inline       subview_col<eT> subvec(const uword in_row1, const uword in_row2);
   inline const subview_col<eT> subvec(const uword in_row1, const uword in_row2) const;
   
-  // TODO: add operator()(span)
+  inline       subview_col<eT> head(const uword N);
+  inline const subview_col<eT> head(const uword N) const;
+  
+  inline       subview_col<eT> tail(const uword N);
+  inline const subview_col<eT> tail(const uword N) const;
+  
   
   protected:
   
@@ -306,7 +284,12 @@ class subview_row : public subview<eT>
   inline       subview_row<eT> subvec(const uword in_col1, const uword in_col2);
   inline const subview_row<eT> subvec(const uword in_col1, const uword in_col2) const;
   
-  // TODO: add operator()(span)
+  inline       subview_row<eT> head(const uword N);
+  inline const subview_row<eT> head(const uword N) const;
+  
+  inline       subview_row<eT> tail(const uword N);
+  inline const subview_row<eT> tail(const uword N) const;
+  
   
   protected:
   

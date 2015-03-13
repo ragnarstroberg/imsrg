@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2013 Conrad Sanderson
-// Copyright (C) 2008-2013 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 Conrad Sanderson
+// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -93,6 +93,18 @@ class Col : public Mat<eT>
   
   arma_inline       subview_col<eT> operator()(const span& row_span);
   arma_inline const subview_col<eT> operator()(const span& row_span) const;
+  
+  arma_inline       subview_col<eT> head(const uword N);
+  arma_inline const subview_col<eT> head(const uword N) const;
+  
+  arma_inline       subview_col<eT> tail(const uword N);
+  arma_inline const subview_col<eT> tail(const uword N) const;
+  
+  arma_inline       subview_col<eT> head_rows(const uword N);
+  arma_inline const subview_col<eT> head_rows(const uword N) const;
+  
+  arma_inline       subview_col<eT> tail_rows(const uword N);
+  arma_inline const subview_col<eT> tail_rows(const uword N) const;
   
   
   inline void shed_row (const uword row_num);
@@ -191,6 +203,10 @@ class Col<eT>::fixed : public Col<eT>
   #endif
   
   arma_inline const Col& operator=(const fixed<fixed_n_elem>& X);
+  
+  template<typename T1, typename eop_type> inline const Col& operator=(const eOp<T1, eop_type>& X);
+  
+  template<typename T1, typename T2, typename eglue_type> inline const Col& operator=(const eGlue<T1, T2, eglue_type>& X);
   
   arma_inline const Op< Col_fixed_type, op_htrans >  t() const;
   arma_inline const Op< Col_fixed_type, op_htrans > ht() const;

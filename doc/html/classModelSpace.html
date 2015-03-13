@@ -96,12 +96,24 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9554b9bc74b82e392fafc9de496fce5f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9554b9bc74b82e392fafc9de496fce5f"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>ModelSpace</b> (const <a class="el" href="classModelSpace.html">ModelSpace</a> &amp;)</td></tr>
 <tr class="separator:a9554b9bc74b82e392fafc9de496fce5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6fe287e59b9aca7719a553f7dedcd2d7"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6fe287e59b9aca7719a553f7dedcd2d7"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ModelSpace</b> (<a class="el" href="classModelSpace.html">ModelSpace</a> &amp;&amp;)</td></tr>
+<tr class="separator:a6fe287e59b9aca7719a553f7dedcd2d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1d93cd1705e0f5dd3421e7617dbbc16e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1d93cd1705e0f5dd3421e7617dbbc16e"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>ModelSpace</b> (int Nmax, vector&lt; string &gt; hole_list, vector&lt; string &gt; inside_list)</td></tr>
 <tr class="separator:a1d93cd1705e0f5dd3421e7617dbbc16e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a75259e2dbe635145cb2f3973866e941f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a75259e2dbe635145cb2f3973866e941f"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ModelSpace</b> (int Nmax, string)</td></tr>
+<tr class="separator:a75259e2dbe635145cb2f3973866e941f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2b01062b499979b919b7b77b04745cbe"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2b01062b499979b919b7b77b04745cbe"></a>
 <a class="el" href="classModelSpace.html">ModelSpace</a>&#160;</td><td class="memItemRight" valign="bottom"><b>operator=</b> (const <a class="el" href="classModelSpace.html">ModelSpace</a> &amp;)</td></tr>
 <tr class="separator:a2b01062b499979b919b7b77b04745cbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1d44cc22730d233506daa4f6e83187c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab1d44cc22730d233506daa4f6e83187c"></a>
+<a class="el" href="classModelSpace.html">ModelSpace</a>&#160;</td><td class="memItemRight" valign="bottom"><b>operator=</b> (<a class="el" href="classModelSpace.html">ModelSpace</a> &amp;&amp;)</td></tr>
+<tr class="separator:ab1d44cc22730d233506daa4f6e83187c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a723f9a5ffb93d5d918ad46500d6136df"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a723f9a5ffb93d5d918ad46500d6136df"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Init</b> (int Nmax, vector&lt; string &gt; hole_list, vector&lt; string &gt; inside_list)</td></tr>
+<tr class="separator:a723f9a5ffb93d5d918ad46500d6136df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae1a3578ed5aabec2956998a870a4e2d2"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae1a3578ed5aabec2956998a870a4e2d2"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetupKets</b> ()</td></tr>
 <tr class="separator:ae1a3578ed5aabec2956998a870a4e2d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -228,6 +240,33 @@ vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom">
 <tr class="memitem:aa6d9e055e40592de4fbbc87f6e1d6672"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa6d9e055e40592de4fbbc87f6e1d6672"></a>
 vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>neutron_orbits</b></td></tr>
 <tr class="separator:aa6d9e055e40592de4fbbc87f6e1d6672"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad00f41bdc579c054c01f7e39100bcae7"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad00f41bdc579c054c01f7e39100bcae7"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>KetIndex_pp</b></td></tr>
+<tr class="separator:ad00f41bdc579c054c01f7e39100bcae7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8517967ef07d888cb6ff270b51673e81"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8517967ef07d888cb6ff270b51673e81"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>KetIndex_ph</b></td></tr>
+<tr class="separator:a8517967ef07d888cb6ff270b51673e81"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74d9df38e78bf2482e9c3ac4c48131e6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a74d9df38e78bf2482e9c3ac4c48131e6"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>KetIndex_hh</b></td></tr>
+<tr class="separator:a74d9df38e78bf2482e9c3ac4c48131e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37e211e60ca5072cb6e4f6fb1099409e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a37e211e60ca5072cb6e4f6fb1099409e"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>KetIndex_vv</b></td></tr>
+<tr class="separator:a37e211e60ca5072cb6e4f6fb1099409e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf880f4d583b138059386793918024e6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aaf880f4d583b138059386793918024e6"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>KetIndex_holeq_holeq</b></td></tr>
+<tr class="separator:aaf880f4d583b138059386793918024e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7703d8b091bd01e87dbaf326d012589"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad7703d8b091bd01e87dbaf326d012589"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>KetIndex_particleq_particleq</b></td></tr>
+<tr class="separator:ad7703d8b091bd01e87dbaf326d012589"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14d0a2c0eea85d4daedf608f8f3acf55"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a14d0a2c0eea85d4daedf608f8f3acf55"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>KetIndex_particleq_holeq</b></td></tr>
+<tr class="separator:a14d0a2c0eea85d4daedf608f8f3acf55"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41719e88e36858720a4cdd19468057d2"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a41719e88e36858720a4cdd19468057d2"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>KetIndex_v_holeq</b></td></tr>
+<tr class="separator:a41719e88e36858720a4cdd19468057d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a9b12cf0ddc9393dd06adbb3c04885b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7a9b12cf0ddc9393dd06adbb3c04885b"></a>
+vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>KetIndex_v_particleq</b></td></tr>
+<tr class="separator:a7a9b12cf0ddc9393dd06adbb3c04885b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa049d819d4d18cfb466777581cc349d2"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa049d819d4d18cfb466777581cc349d2"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>Nmax</b></td></tr>
 <tr class="separator:aa049d819d4d18cfb466777581cc349d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -254,7 +293,7 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>ThreeBodyJmax</b></td>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Mar 6 2015 14:40:45 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Mar 13 2015 15:56:27 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

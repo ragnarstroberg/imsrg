@@ -12,9 +12,9 @@
 
 
 #define ARMA_VERSION_MAJOR 4
-#define ARMA_VERSION_MINOR 400
-#define ARMA_VERSION_PATCH 2
-#define ARMA_VERSION_NAME  "Winter Shark Alley"
+#define ARMA_VERSION_MINOR 650
+#define ARMA_VERSION_PATCH 3
+#define ARMA_VERSION_NAME  "Intravenous Caffeine Injector"
 
 
 

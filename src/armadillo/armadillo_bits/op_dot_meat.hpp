@@ -21,7 +21,7 @@ op_dot::direct_dot_arma(const uword n_elem, const eT* const A, const eT* const B
   {
   arma_extra_debug_sigprint();
   
-  #if (__FINITE_MATH_ONLY__ > 0)
+  #if defined(__FINITE_MATH_ONLY__) && (__FINITE_MATH_ONLY__ > 0)
     {
     eT val = eT(0);
     
@@ -248,6 +248,14 @@ op_dot::apply(const T1& X, const T2& Y)
     
     arma_debug_check( (PA.get_n_elem() != PB.get_n_elem()), "dot(): objects must have the same number of elements" );
     
+    if(is_Mat<typename Proxy<T1>::stored_type>::value && is_Mat<typename Proxy<T2>::stored_type>::value)
+      {
+      const quasi_unwrap<typename Proxy<T1>::stored_type> A(PA.Q);
+      const quasi_unwrap<typename Proxy<T2>::stored_type> B(PB.Q);
+      
+      return op_dot::direct_dot(A.M.n_elem, A.M.memptr(), B.M.memptr());
+      }
+    
     return op_dot::apply_proxy(PA,PB);
     }
   }
@@ -330,42 +338,6 @@ op_dot::apply_proxy(const Proxy<T1>& PA, const Proxy<T2>& PB)
     }
   
   return std::complex<T>(val_real, val_imag);
-  }
-
-
-
-template<typename eT, typename TA>
-arma_hot
-inline
-eT
-op_dot::dot_and_copy_row(eT* out, const TA& A, const uword row, const eT* B_mem, const uword N)
-  {
-  eT acc1 = eT(0);
-  eT acc2 = eT(0);
-  
-  uword i,j;
-  for(i=0, j=1; j < N; i+=2, j+=2)
-    {
-    const eT val_i = A.at(row, i);
-    const eT val_j = A.at(row, j);
-    
-    out[i] = val_i;
-    out[j] = val_j;
-    
-    acc1 += val_i * B_mem[i];
-    acc2 += val_j * B_mem[j];
-    }
-  
-  if(i < N)
-    {
-    const eT val_i = A.at(row, i);
-    
-    out[i] = val_i;
-    
-    acc1 += val_i * B_mem[i];
-    }
-  
-  return acc1 + acc2;
   }
 
 

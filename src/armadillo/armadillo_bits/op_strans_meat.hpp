@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2013 Conrad Sanderson
-// Copyright (C) 2008-2013 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 Conrad Sanderson
+// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
 // Copyright (C) 2012 Ryan Curtin
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -114,24 +114,25 @@ op_strans::apply_mat_noalias(Mat<eT>& out, const TA& A)
       }
     else
       {
-      for(uword k=0; k < A_n_cols; ++k)
+      eT* outptr = out.memptr();
+      
+      for(uword k=0; k < A_n_rows; ++k)
         {
-        uword i, j;
+        const eT* Aptr = &(A.at(k,0));
         
-        const eT* colptr = A.colptr(k);
-        
-        for(i=0, j=1; j < A_n_rows; i+=2, j+=2)
+        uword j;
+        for(j=1; j < A_n_cols; j+=2)
           {
-          const eT tmp_i = colptr[i];
-          const eT tmp_j = colptr[j];
+          const eT tmp_i = (*Aptr);  Aptr += A_n_rows;
+          const eT tmp_j = (*Aptr);  Aptr += A_n_rows;
           
-          out.at(k, i) = tmp_i;
-          out.at(k, j) = tmp_j;
+          (*outptr) = tmp_i;  outptr++;
+          (*outptr) = tmp_j;  outptr++;
           }
         
-        if(i < A_n_rows)
+        if((j-1) < A_n_cols)
           {
-          out.at(k, i) = colptr[i];
+          (*outptr) = (*Aptr);  outptr++;;
           }
         }
       }
@@ -159,19 +160,23 @@ op_strans::apply_mat_inplace(Mat<eT>& out)
     
     for(uword k=0; k < N; ++k)
       {
-      eT* colptr = out.colptr(k);
+      eT* colptr = &(out.at(k,k));
+      eT* rowptr = colptr;
       
-      uword i,j;
+      colptr++;
+      rowptr += N;
       
-      for(i=(k+1), j=(k+2); j < N; i+=2, j+=2)
+      uword j;
+      
+      for(j=(k+2); j < N; j+=2)
         {
-        std::swap(out.at(k,i), colptr[i]);
-        std::swap(out.at(k,j), colptr[j]);
+        std::swap( (*rowptr), (*colptr) );  rowptr += N;  colptr++;
+        std::swap( (*rowptr), (*colptr) );  rowptr += N;  colptr++;
         }
       
-      if(i < N)
+      if((j-1) < N)
         {
-        std::swap(out.at(k,i), colptr[i]);
+        std::swap( (*rowptr), (*colptr) );
         }
       }
     }
@@ -294,22 +299,27 @@ op_strans::apply_proxy(Mat<typename T1::elem_type>& out, const T1& X)
         {
         out.set_size(n_cols, n_rows);
         
-        for(uword k=0; k < n_cols; ++k)
+        eT* outptr = out.memptr();
+        
+        for(uword k=0; k < n_rows; ++k)
           {
-          uword i, j;
-          
-          for(i=0, j=1; j < n_rows; i+=2, j+=2)
+          uword j;
+          for(j=1; j < n_cols; j+=2)
             {
-            const eT tmp_i = P.at(i,k);
-            const eT tmp_j = P.at(j,k);
+            const uword i = j-1;
             
-            out.at(k,i) = tmp_i;
-            out.at(k,j) = tmp_j;
+            const eT tmp_i = P.at(k,i);
+            const eT tmp_j = P.at(k,j);
+            
+            (*outptr) = tmp_i;  outptr++;
+            (*outptr) = tmp_j;  outptr++;
             }
           
-          if(i < n_rows)
+          const uword i = j-1;
+          
+          if(i < n_cols)
             {
-            out.at(k,i) = P.at(i,k);
+            (*outptr) = P.at(k,i);  outptr++;
             }
           }
         }
@@ -317,22 +327,27 @@ op_strans::apply_proxy(Mat<typename T1::elem_type>& out, const T1& X)
         {
         Mat<eT> out2(n_cols, n_rows);
         
-        for(uword k=0; k < n_cols; ++k)
+        eT* out2ptr = out2.memptr();
+        
+        for(uword k=0; k < n_rows; ++k)
           {
-          uword i, j;
-          
-          for(i=0, j=1; j < n_rows; i+=2, j+=2)
+          uword j;
+          for(j=1; j < n_cols; j+=2)
             {
-            const eT tmp_i = P.at(i,k);
-            const eT tmp_j = P.at(j,k);
+            const uword i = j-1;
             
-            out2.at(k,i) = tmp_i;
-            out2.at(k,j) = tmp_j;
+            const eT tmp_i = P.at(k,i);
+            const eT tmp_j = P.at(k,j);
+            
+            (*out2ptr) = tmp_i;  out2ptr++;
+            (*out2ptr) = tmp_j;  out2ptr++;
             }
           
-          if(i < n_rows)
+          const uword i = j-1;
+        
+          if(i < n_cols)
             {
-            out2.at(k,i) = P.at(i,k);
+            (*out2ptr) = P.at(k,i);  out2ptr++;
             }
           }
         
@@ -481,24 +496,25 @@ op_strans2::apply_noalias(Mat<eT>& out, const TA& A, const eT val)
       }
     else
       {
-      for(uword k=0; k < A_n_cols; ++k)
+      eT* outptr = out.memptr();
+      
+      for(uword k=0; k < A_n_rows; ++k)
         {
-        uword i, j;
+        const eT* Aptr = &(A.at(k,0));
         
-        const eT* colptr = A.colptr(k);
-        
-        for(i=0, j=1; j < A_n_rows; i+=2, j+=2)
+        uword j;
+        for(j=1; j < A_n_cols; j+=2)
           {
-          const eT tmp_i = colptr[i];
-          const eT tmp_j = colptr[j];
+          const eT tmp_i = (*Aptr);  Aptr += A_n_rows;
+          const eT tmp_j = (*Aptr);  Aptr += A_n_rows;
           
-          out.at(k, i) = val * tmp_i;
-          out.at(k, j) = val * tmp_j;
+          (*outptr) = val * tmp_i;  outptr++;
+          (*outptr) = val * tmp_j;  outptr++;
           }
         
-        if(i < A_n_rows)
+        if((j-1) < A_n_cols)
           {
-          out.at(k, i) = val * colptr[i];
+          (*outptr) = val * (*Aptr);  outptr++;;
           }
         }
       }
@@ -651,22 +667,27 @@ op_strans2::apply_proxy(Mat<typename T1::elem_type>& out, const T1& X, const typ
         {
         out.set_size(n_cols, n_rows);
         
-        for(uword k=0; k < n_cols; ++k)
+        eT* outptr = out.memptr();
+        
+        for(uword k=0; k < n_rows; ++k)
           {
-          uword i, j;
-          
-          for(i=0, j=1; j < n_rows; i+=2, j+=2)
+          uword j;
+          for(j=1; j < n_cols; j+=2)
             {
-            const eT tmp_i = P.at(i,k);
-            const eT tmp_j = P.at(j,k);
+            const uword i = j-1;
             
-            out.at(k,i) = val * tmp_i;
-            out.at(k,j) = val * tmp_j;
+            const eT tmp_i = P.at(k,i);
+            const eT tmp_j = P.at(k,j);
+            
+            (*outptr) = val * tmp_i;  outptr++;
+            (*outptr) = val * tmp_j;  outptr++;
             }
           
-          if(i < n_rows)
+          const uword i = j-1;
+          
+          if(i < n_cols)
             {
-            out.at(k,i) = val * P.at(i,k);
+            (*outptr) = val * P.at(k,i);  outptr++;
             }
           }
         }
@@ -674,22 +695,27 @@ op_strans2::apply_proxy(Mat<typename T1::elem_type>& out, const T1& X, const typ
         {
         Mat<eT> out2(n_cols, n_rows);
         
-        for(uword k=0; k < n_cols; ++k)
+        eT* out2ptr = out2.memptr();
+        
+        for(uword k=0; k < n_rows; ++k)
           {
-          uword i, j;
-          
-          for(i=0, j=1; j < n_rows; i+=2, j+=2)
+          uword j;
+          for(j=1; j < n_cols; j+=2)
             {
-            const eT tmp_i = P.at(i,k);
-            const eT tmp_j = P.at(j,k);
+            const uword i = j-1;
             
-            out2.at(k,i) = val * tmp_i;
-            out2.at(k,j) = val * tmp_j;
+            const eT tmp_i = P.at(k,i);
+            const eT tmp_j = P.at(k,j);
+            
+            (*out2ptr) = val * tmp_i;  out2ptr++;
+            (*out2ptr) = val * tmp_j;  out2ptr++;
             }
           
-          if(i < n_rows)
+          const uword i = j-1;
+        
+          if(i < n_cols)
             {
-            out2.at(k,i) = val * P.at(i,k);
+            (*out2ptr) = val * P.at(k,i);  out2ptr++;
             }
           }
         

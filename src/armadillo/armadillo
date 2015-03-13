@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2014 Conrad Sanderson
-// Copyright (C) 2008-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 Conrad Sanderson
+// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -71,15 +71,7 @@
 
 
 #include "armadillo_bits/include_atlas.hpp"
-
-
-#if defined(ARMA_USE_HDF5)
-  #include <hdf5.h>
-  #if defined(H5_USE_16_API_DEFAULT) || defined(H5_USE_16_API)
-    #pragma message ("WARNING: disabling use of HDF5 due to its incompatible configuration")
-    #undef ARMA_USE_HDF5
-  #endif
-#endif
+#include "armadillo_bits/include_hdf5.hpp"
 
 
 #if defined(_OPENMP)
@@ -112,13 +104,14 @@ namespace arma
   #include "armadillo_bits/constants.hpp"
   #include "armadillo_bits/constants_compat.hpp"
   
-  #if defined(ARMA_USE_CXX11_RNG)
-    #include "armadillo_bits/arma_rng_cxx11.hpp"
-    #include "armadillo_bits/arma_rng.hpp"
-  #else  
+  #ifdef ARMA_RNG_ALT
+    #include ARMA_INCFILE_WRAP(ARMA_RNG_ALT)
+  #else
     #include "armadillo_bits/arma_rng_cxx98.hpp"
-    #include "armadillo_bits/arma_rng.hpp"
   #endif
+  
+  #include "armadillo_bits/arma_rng_cxx11.hpp"
+  #include "armadillo_bits/arma_rng.hpp"
   
   
   //
@@ -152,6 +145,7 @@ namespace arma
   #include "armadillo_bits/Row_bones.hpp"
   #include "armadillo_bits/Cube_bones.hpp"
   #include "armadillo_bits/xvec_htrans_bones.hpp"
+  #include "armadillo_bits/xtrans_mat_bones.hpp"
   #include "armadillo_bits/SizeMat_bones.hpp"
   #include "armadillo_bits/SizeCube_bones.hpp"
     
@@ -246,6 +240,7 @@ namespace arma
   #include "armadillo_bits/op_all_bones.hpp"
   #include "armadillo_bits/op_normalise_bones.hpp"
   #include "armadillo_bits/op_clamp_bones.hpp"
+  #include "armadillo_bits/op_expmat_bones.hpp"
   
   #include "armadillo_bits/glue_times_bones.hpp"
   #include "armadillo_bits/glue_mixed_bones.hpp"
@@ -443,9 +438,11 @@ namespace arma
   #include "armadillo_bits/fn_inplace_strans.hpp"
   #include "armadillo_bits/fn_inplace_trans.hpp"
   #include "armadillo_bits/fn_randi.hpp"
+  #include "armadillo_bits/fn_randg.hpp"
   #include "armadillo_bits/fn_cond.hpp"
   #include "armadillo_bits/fn_normalise.hpp"
   #include "armadillo_bits/fn_clamp.hpp"
+  #include "armadillo_bits/fn_expmat.hpp"
   
   #include "armadillo_bits/fn_speye.hpp"
   #include "armadillo_bits/fn_spones.hpp"
@@ -460,10 +457,13 @@ namespace arma
   
   #include "armadillo_bits/hdf5_misc.hpp"
   #include "armadillo_bits/fft_engine.hpp"
-  #include "armadillo_bits/gmm_misc_bones.hpp"
-  #include "armadillo_bits/gmm_misc_meat.hpp"
-  #include "armadillo_bits/gmm_diag_bones.hpp"
-  #include "armadillo_bits/gmm_diag_meat.hpp"
+  
+  #if !defined(ARMA_BAD_COMPILER)
+    #include "armadillo_bits/gmm_misc_bones.hpp"
+    #include "armadillo_bits/gmm_misc_meat.hpp"
+    #include "armadillo_bits/gmm_diag_bones.hpp"
+    #include "armadillo_bits/gmm_diag_meat.hpp"
+  #endif
   
   //
   // classes implementing various forms of dense matrix multiplication
@@ -493,6 +493,7 @@ namespace arma
   #include "armadillo_bits/Row_meat.hpp"
   #include "armadillo_bits/Cube_meat.hpp"
   #include "armadillo_bits/xvec_htrans_meat.hpp"
+  #include "armadillo_bits/xtrans_mat_meat.hpp"
   #include "armadillo_bits/SizeMat_meat.hpp"
   #include "armadillo_bits/SizeCube_meat.hpp"
   
@@ -560,6 +561,7 @@ namespace arma
   #include "armadillo_bits/op_all_meat.hpp"
   #include "armadillo_bits/op_normalise_meat.hpp"
   #include "armadillo_bits/op_clamp_meat.hpp"
+  #include "armadillo_bits/op_expmat_meat.hpp"
   
   #include "armadillo_bits/glue_times_meat.hpp"
   #include "armadillo_bits/glue_mixed_meat.hpp"

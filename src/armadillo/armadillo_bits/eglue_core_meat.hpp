@@ -1,5 +1,5 @@
-// Copyright (C) 2010-2014 Conrad Sanderson
-// Copyright (C) 2010-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2010-2015 Conrad Sanderson
+// Copyright (C) 2010-2015 NICTA (www.nicta.com.au)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -171,11 +171,11 @@
 
 
 template<typename eglue_type>
-template<typename T1, typename T2>
+template<typename outT, typename T1, typename T2>
 arma_hot
 inline
 void
-eglue_core<eglue_type>::apply(Mat<typename T1::elem_type>& out, const eGlue<T1, T2, eglue_type>& x)
+eglue_core<eglue_type>::apply(outT& out, const eGlue<T1, T2, eglue_type>& x)
   {
   arma_extra_debug_sigprint();
   
@@ -191,10 +191,9 @@ eglue_core<eglue_type>::apply(Mat<typename T1::elem_type>& out, const eGlue<T1, 
   
   if(prefer_at_accessor == false)
     {
-    const uword n_elem = (Proxy<T1>::is_fixed || Proxy<T2>::is_fixed) ? x.get_n_elem() : out.n_elem;
+    const uword n_elem = x.get_n_elem();
     
-    //if( memory::is_aligned(out_mem) )
-    if( memory::is_aligned(out_mem) && ((Proxy<T1>::is_fixed && Proxy<T2>::is_fixed) ? (x.get_n_elem() >= 32) : true) )
+    if(memory::is_aligned(out_mem))
       {
       memory::mark_as_aligned(out_mem);
       
@@ -269,7 +268,7 @@ eglue_core<eglue_type>::apply_inplace_plus(Mat<typename T1::elem_type>& out, con
   
   if(prefer_at_accessor == false)
     {
-    const uword n_elem = (Proxy<T1>::is_fixed || Proxy<T2>::is_fixed) ? x.get_n_elem() : out.n_elem;
+    const uword n_elem = x.get_n_elem();
     
     if(memory::is_aligned(out_mem))
       {
@@ -343,7 +342,7 @@ eglue_core<eglue_type>::apply_inplace_minus(Mat<typename T1::elem_type>& out, co
   
   if(prefer_at_accessor == false)
     {
-    const uword n_elem = (Proxy<T1>::is_fixed || Proxy<T2>::is_fixed) ? x.get_n_elem() : out.n_elem;
+    const uword n_elem = x.get_n_elem();
     
     if(memory::is_aligned(out_mem))
       {
@@ -417,7 +416,7 @@ eglue_core<eglue_type>::apply_inplace_schur(Mat<typename T1::elem_type>& out, co
   
   if(prefer_at_accessor == false)
     {
-    const uword n_elem = (Proxy<T1>::is_fixed || Proxy<T2>::is_fixed) ? x.get_n_elem() : out.n_elem;
+    const uword n_elem = x.get_n_elem();
     
     if(memory::is_aligned(out_mem))
       {
@@ -491,7 +490,7 @@ eglue_core<eglue_type>::apply_inplace_div(Mat<typename T1::elem_type>& out, cons
   
   if(prefer_at_accessor == false)
     {
-    const uword n_elem = (Proxy<T1>::is_fixed || Proxy<T2>::is_fixed) ? x.get_n_elem() : out.n_elem;
+    const uword n_elem = x.get_n_elem();
     
     if(memory::is_aligned(out_mem))
       {

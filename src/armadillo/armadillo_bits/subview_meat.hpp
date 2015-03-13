@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2014 Conrad Sanderson
-// Copyright (C) 2008-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 Conrad Sanderson
+// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
 // Copyright (C) 2011 James Sanders
 // Copyright (C) 2013 Ryan Curtin
 // 
@@ -1624,10 +1624,32 @@ subview<eT>::check_overlap(const subview<eT>& x) const
 
 template<typename eT>
 inline
+arma_warn_unused
 bool
 subview<eT>::is_vec() const
   {
   return ( (n_rows == 1) || (n_cols == 1) );
+  }
+
+
+
+template<typename eT>
+inline
+arma_warn_unused
+bool
+subview<eT>::is_finite() const
+  {
+  arma_extra_debug_sigprint();
+  
+  const uword local_n_rows = n_rows;
+  const uword local_n_cols = n_cols;
+  
+  for(uword ii=0; ii<local_n_cols; ++ii)
+    {
+    if(arrayops::is_finite(colptr(ii), local_n_rows) == false)  { return false; }
+    }
+  
+  return true;
   }
 
 
@@ -2940,6 +2962,66 @@ subview_col<eT>::subvec(const uword in_row1, const uword in_row2) const
 
 
 
+template<typename eT>
+inline
+subview_col<eT>
+subview_col<eT>::head(const uword N)
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (N > subview<eT>::n_rows), "subview_col::head(): size out of bounds");
+  
+  return subview_col<eT>(this->m, this->aux_col1, this->aux_row1, N);
+  }
+
+
+
+template<typename eT>
+inline
+const subview_col<eT>
+subview_col<eT>::head(const uword N) const
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (N > subview<eT>::n_rows), "subview_col::head(): size out of bounds");
+  
+  return subview_col<eT>(this->m, this->aux_col1, this->aux_row1, N);
+  }
+
+
+
+template<typename eT>
+inline
+subview_col<eT>
+subview_col<eT>::tail(const uword N)
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (N > subview<eT>::n_rows), "subview_col::tail(): size out of bounds");
+  
+  const uword start_row = subview<eT>::aux_row1 + subview<eT>::n_rows - N;
+  
+  return subview_col<eT>(this->m, this->aux_col1, start_row, N);
+  }
+
+
+
+template<typename eT>
+inline
+const subview_col<eT>
+subview_col<eT>::tail(const uword N) const
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (N > subview<eT>::n_rows), "subview_col::tail(): size out of bounds");
+  
+  const uword start_row = subview<eT>::aux_row1 + subview<eT>::n_rows - N;
+  
+  return subview_col<eT>(this->m, this->aux_col1, start_row, N);
+  }
+
+
+
 //
 //
 //
@@ -3244,6 +3326,66 @@ subview_row<eT>::subvec(const uword in_col1, const uword in_col2) const
   const uword base_col1 = this->aux_col1 + in_col1;
   
   return subview_row<eT>(this->m, this->aux_row1, base_col1, subview_n_cols);
+  }
+
+
+
+template<typename eT>
+inline
+subview_row<eT>
+subview_row<eT>::head(const uword N)
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (N > subview<eT>::n_cols), "subview_row::head(): size out of bounds");
+  
+  return subview_row<eT>(this->m, this->aux_row1, this->aux_col1, N);
+  }
+
+
+
+template<typename eT>
+inline
+const subview_row<eT>
+subview_row<eT>::head(const uword N) const
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (N > subview<eT>::n_cols), "subview_row::head(): size out of bounds");
+  
+  return subview_row<eT>(this->m, this->aux_row1, this->aux_col1, N);
+  }
+
+
+
+template<typename eT>
+inline
+subview_row<eT>
+subview_row<eT>::tail(const uword N)
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (N > subview<eT>::n_cols), "subview_row::tail(): size out of bounds");
+  
+  const uword start_col = subview<eT>::aux_col1 + subview<eT>::n_cols - N;
+  
+  return subview_row<eT>(this->m, this->aux_row1, start_col, N);
+  }
+
+
+
+template<typename eT>
+inline
+const subview_row<eT>
+subview_row<eT>::tail(const uword N) const
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_debug_check( (N > subview<eT>::n_cols), "subview_row::tail(): size out of bounds");
+  
+  const uword start_col = subview<eT>::aux_col1 + subview<eT>::n_cols - N;
+  
+  return subview_row<eT>(this->m, this->aux_row1, start_col, N);
   }
 
 
