@@ -115,47 +115,6 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
       {
          KetMap[i] = NumberKets;
          KetList.push_back(i);
-//        Ket& ket = Kets[NumberKets];
-        int php = modelspace->GetOrbit(ket.p).ph;
-        int phq = modelspace->GetOrbit(ket.q).ph;
-        int iop = modelspace->GetOrbit(ket.p).io;
-        int ioq = modelspace->GetOrbit(ket.q).io;
-         if (( php + phq)==2) // hh
-         {
-            KetIndex_hh.push_back(NumberKets);
-            if ((iop+ioq)==2) // qq
-            {
-               KetIndex_holeq_holeq.push_back(NumberKets);
-            }
-         }
-         else if ((php + phq) == 0) // pp
-         {
-            KetIndex_pp.push_back(NumberKets);
-            if ((iop+ioq)==2) // qq
-            {
-               KetIndex_particleq_particleq.push_back(NumberKets);
-            }
-         }
-         else //ph
-         {
-            KetIndex_ph.push_back(NumberKets);
-            if ((iop+ioq)==2) // qq
-            {
-               KetIndex_particleq_holeq.push_back(NumberKets);
-            }
-         }
-         if ((iop + ioq) == 0) // vv
-         {
-            KetIndex_vv.push_back(NumberKets);
-         }
-
-         if ((iop + ioq) == 1) // vq
-         {
-           if ((iop + php == 2) or (ioq+phq==2) ) // the qspace orbit is a hole
-              KetIndex_v_holeq.push_back(NumberKets);
-           else // v particle_q
-              KetIndex_v_particleq.push_back(NumberKets);
-         }
          NumberKets++;
 
 
@@ -202,14 +161,6 @@ void TwoBodyChannel::Copy( const TwoBodyChannel& rhs)
    KetMap            = rhs.KetMap;
    KetList           = rhs.KetList;
 
-   KetIndex_pp       = rhs.KetIndex_pp;
-   KetIndex_ph       = rhs.KetIndex_ph;
-   KetIndex_hh       = rhs.KetIndex_hh;
-   KetIndex_vv       = rhs.KetIndex_vv;
-   KetIndex_holeq_holeq         = rhs.KetIndex_holeq_holeq;
-   KetIndex_particleq_particleq = rhs.KetIndex_particleq_particleq;
-   KetIndex_v_holeq     = rhs.KetIndex_v_holeq;
-   KetIndex_v_particleq     = rhs.KetIndex_v_particleq;
 }
 
 
@@ -232,17 +183,6 @@ bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
    return true;
 }
 
-
-arma::uvec TwoBodyChannel::GetKetIndex_pp() { return arma::uvec(KetIndex_pp);};
-arma::uvec TwoBodyChannel::GetKetIndex_hh() { return arma::uvec(KetIndex_hh);};
-arma::uvec TwoBodyChannel::GetKetIndex_ph() { return arma::uvec(KetIndex_ph);};
-arma::uvec TwoBodyChannel::GetKetIndex_vv() { return arma::uvec(KetIndex_vv);};
-arma::uvec TwoBodyChannel::GetKetIndex_holeq_holeq() { return arma::uvec(KetIndex_holeq_holeq);};
-arma::uvec TwoBodyChannel::GetKetIndex_particleq_particleq() { return arma::uvec(KetIndex_particleq_particleq);};
-arma::uvec TwoBodyChannel::GetKetIndex_particleq_holeq() { return arma::uvec(KetIndex_particleq_holeq);};
-arma::uvec TwoBodyChannel::GetKetIndex_v_holeq() { return arma::uvec(KetIndex_v_holeq);};
-arma::uvec TwoBodyChannel::GetKetIndex_v_particleq(){ return arma::uvec(KetIndex_v_particleq);};
-/*
 arma::uvec TwoBodyChannel::GetKetIndex_pp() { return GetKetIndexFromList(modelspace->KetIndex_pp);};
 arma::uvec TwoBodyChannel::GetKetIndex_hh() { return GetKetIndexFromList(modelspace->KetIndex_hh);};
 arma::uvec TwoBodyChannel::GetKetIndex_ph() { return GetKetIndexFromList(modelspace->KetIndex_ph);};
@@ -252,7 +192,7 @@ arma::uvec TwoBodyChannel::GetKetIndex_particleq_particleq() { return GetKetInde
 arma::uvec TwoBodyChannel::GetKetIndex_particleq_holeq() { return GetKetIndexFromList(modelspace->KetIndex_particleq_holeq);};
 arma::uvec TwoBodyChannel::GetKetIndex_v_holeq() { return GetKetIndexFromList(modelspace->KetIndex_v_holeq);};
 arma::uvec TwoBodyChannel::GetKetIndex_v_particleq(){ return GetKetIndexFromList(modelspace->KetIndex_v_particleq);};
-*/
+
 
 arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<unsigned int>& vec_in)
 {
@@ -534,51 +474,49 @@ void ModelSpace::SetupKets()
 
   for (int index=0;index<Kets.size();++index)
   {
-////// BEGIN ADDITION ////////
-        Ket& ket = Kets[index];
-        int php = GetOrbit(ket.p).ph;
-        int phq = GetOrbit(ket.q).ph;
-        int iop = GetOrbit(ket.p).io;
-        int ioq = GetOrbit(ket.q).io;
-         if (( php + phq)==2) // hh
-         {
-            KetIndex_hh.push_back(index);
-            if ((iop+ioq)==2) // qq
-            {
-               KetIndex_holeq_holeq.push_back(index);
-            }
-         }
-         else if ((php + phq) == 0) // pp
-         {
-            KetIndex_pp.push_back(index);
-            if ((iop+ioq)==2) // qq
-            {
-               KetIndex_particleq_particleq.push_back(index);
-            }
-         }
-         else //ph
-         {
-            KetIndex_ph.push_back(index);
-            if ((iop+ioq)==2) // qq
-            {
-               KetIndex_particleq_holeq.push_back(index);
-            }
-         }
-         if ((iop + ioq) == 0) // vv
-         {
-            KetIndex_vv.push_back(index);
-         }
+    Ket& ket = Kets[index];
+    int php = GetOrbit(ket.p).ph;
+    int phq = GetOrbit(ket.q).ph;
+    int iop = GetOrbit(ket.p).io;
+    int ioq = GetOrbit(ket.q).io;
+     if (( php + phq)==2) // hh
+     {
+        KetIndex_hh.push_back(index);
+        if ((iop+ioq)==2) // qq
+        {
+           KetIndex_holeq_holeq.push_back(index);
+        }
+     }
+     else if ((php + phq) == 0) // pp
+     {
+        KetIndex_pp.push_back(index);
+        if ((iop+ioq)==2) // qq
+        {
+           KetIndex_particleq_particleq.push_back(index);
+        }
+     }
+     else //ph
+     {
+        KetIndex_ph.push_back(index);
+        if ((iop+ioq)==2) // qq
+        {
+           KetIndex_particleq_holeq.push_back(index);
+        }
+     }
+     if ((iop + ioq) == 0) // vv
+     {
+        KetIndex_vv.push_back(index);
+     }
 
-         if ((iop + ioq) == 1) // vq
-         {
-           if ((iop + php == 2) or (ioq+phq==2) ) // the qspace orbit is a hole
-              KetIndex_v_holeq.push_back(index);
-           else // v particle_q
-              KetIndex_v_particleq.push_back(index);
-         }
+     if ((iop + ioq) == 1) // vq
+     {
+       if ((iop + php == 2) or (ioq+phq==2) ) // the qspace orbit is a hole
+          KetIndex_v_holeq.push_back(index);
+       else // v particle_q
+          KetIndex_v_particleq.push_back(index);
+     }
 
    }
-//////  END ADDITION ////////
 
    for (int ch=0;ch<nTwoBodyChannels;++ch)
    {

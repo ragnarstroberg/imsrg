@@ -4,6 +4,7 @@
 
 #include "ModelSpace.hh"
 #include <armadillo>
+#include <string>
 #include <vector>
 #include <map>
 
@@ -77,6 +78,9 @@ class Operator
   int nChannels;
   static double bch_transform_threshold;
   static double bch_product_threshold;
+  static map<string, double> timer;
+
+  static void PrintTimes();
 
 
   //Constructors
@@ -197,15 +201,15 @@ class Operator
   Operator DoNormalOrdering2(); ///< Returns the normal ordered two-body operator
   Operator DoNormalOrdering3(); ///< Returns the normal ordered three-body operator
 
-  Operator Commutator(const Operator& opright) const;
+  Operator Commutator(  Operator& opright) ;
 /// X.BCH_Product(Y) returns \f$Z\f$ such that \f$ e^{Z} = e^{X}e^{Y}\f$
 /// by employing the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
 /// \f[ Z = X + Y + \frac{1}{2}[X,Y] + \frac{1}{12}([X,[X,Y]]+[Y,[Y,X]]) + \ldots \f]
-  Operator BCH_Product( const Operator& ) const ; 
+  Operator BCH_Product(  Operator& )  ; 
 /// X.BCH_Transform(Y) returns \f$ Z = e^{Y} X e^{-Y} \f$.
 /// by employing the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
 /// \f[ Z = X + [X,Y] + \frac{1}{2!}[X,[X,Y]] + \frac{1}{3!}[X,[X,[X,Y]]] + \ldots \f]
-  Operator BCH_Transform( const Operator& ) const; 
+  Operator BCH_Transform(  Operator& ) ; 
 
 /// Calculates the total kinetic energy (center of mass + relative) for each orbit in the model space,
 /// assuming a harmonic oscillator basis.
@@ -214,9 +218,9 @@ class Operator
   void CalculateKineticEnergy();
   void Eye(); ///< set to identity operator
 
-  Operator CommutatorScalarScalar(const Operator& opright) const;
-  Operator CommutatorScalarTensor(const Operator& opright) const;
-  Operator CommutatorTensorTensor(const Operator& opright) const;
+  Operator CommutatorScalarScalar( Operator& opright) ;
+  Operator CommutatorScalarTensor( Operator& opright) ;
+  Operator CommutatorTensorTensor( Operator& opright) ;
 
 /// Obtain the Frobenius norm of the operator, which here is 
 /// defined as 
@@ -240,29 +244,29 @@ class Operator
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
   
-  void DoPandyaTransformation(Operator&) const;
-  void CalculateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) const; 
+  void DoPandyaTransformation(Operator&) ;
+  void CalculateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) ; 
 
-  void comm110ss(const Operator& opright, Operator& opout) const; 
-  void comm220ss(const Operator& opright, Operator& opout) const;
-  void comm111ss(const Operator& opright, Operator& opout) const;
-  void comm121ss(const Operator& opright, Operator& opout) const;
-  void comm221ss(const Operator& opright, Operator& opout) const;
-  void comm122ss(const Operator& opright, Operator& opout) const;
-  void comm222_pp_hhss(const Operator& opright, Operator& opout) const;
-  void comm222_phss(const Operator& opright, Operator& opout) const;
-  void comm222_pp_hh_221ss(const Operator& opright, Operator& opout) const;
+  void comm110ss( Operator& opright, Operator& opout) ; 
+  void comm220ss( Operator& opright, Operator& opout) ;
+  void comm111ss( Operator& opright, Operator& opout) ;
+  void comm121ss( Operator& opright, Operator& opout) ;
+  void comm221ss( Operator& opright, Operator& opout) ;
+  void comm122ss( Operator& opright, Operator& opout) ;
+  void comm222_pp_hhss( Operator& opright, Operator& opout) ;
+  void comm222_phss( Operator& opright, Operator& opout) ;
+  void comm222_pp_hh_221ss( Operator& opright, Operator& opout) ;
 
 // make st and tt commutators
 
-  void comm111st(const Operator& opright, Operator& opout) const;
-  void comm121st(const Operator& opright, Operator& opout) const;
-  void comm221st(const Operator& opright, Operator& opout) const;
-  void comm122st(const Operator& opright, Operator& opout) const;
-  void comm222_pp_hhst(const Operator& opright, Operator& opout) const;
-  void comm222_pp_hh_221st(const Operator& opright, Operator& opout) const;
-  void comm222_phst(const Operator& opright, Operator& opout) const;
-  void comm222_phst_pandya(const Operator& opright, Operator& opout) const;
+  void comm111st( Operator& opright, Operator& opout) ;
+  void comm121st( Operator& opright, Operator& opout) ;
+  void comm221st( Operator& opright, Operator& opout) ;
+  void comm122st( Operator& opright, Operator& opout) ;
+  void comm222_pp_hhst( Operator& opright, Operator& opout) ;
+  void comm222_pp_hh_221st( Operator& opright, Operator& opout) ;
+  void comm222_phst( Operator& opright, Operator& opout) ;
+  void comm222_phst_pandya( Operator& opright, Operator& opout) ;
 
 /*
   void comm111tt(const Operator& opright, Operator& opout) const;
@@ -278,6 +282,9 @@ class Operator
 
 /// Non member function, multiply by scalar from left side
 Operator operator*(const double lhs, const Operator& rhs);
+Operator operator*(const double lhs, const Operator&& rhs);
+
+
 
 #endif
 

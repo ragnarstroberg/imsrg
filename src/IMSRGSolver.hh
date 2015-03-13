@@ -46,16 +46,18 @@ class IMSRGSolver
 
   public:
   IMSRGSolver();
-  IMSRGSolver(const Operator& H_in);
-  void SetHin(const Operator& H_in);
+  IMSRGSolver( Operator& H_in);
+  void SetHin( Operator& H_in);
   void Reset();
 
   void Solve();
 #ifndef NO_ODE
   void Solve_ode();
   void Solve_ode_magnus();
-  void ODE_systemH(const Operator& x, Operator& dxdt, const double t);
-  void ODE_systemOmega(const Operator& x, Operator& dxdt, const double t);
+  void ODE_systemH( Operator& x, Operator& dxdt, const double t);
+  void ODE_systemOmega( Operator& x, Operator& dxdt, const double t);
+//  void ODE_systemH(const Operator& x, Operator& dxdt, const double t);
+//  void ODE_systemOmega(const Operator& x, Operator& dxdt, const double t);
 #endif
   Operator Transform(Operator& OpIn);
   Operator InverseTransform(Operator& OpIn);

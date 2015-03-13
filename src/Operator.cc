@@ -18,6 +18,9 @@ using namespace std;
 
 double  Operator::bch_transform_threshold = 1e-6;
 double  Operator::bch_product_threshold = 1e-4;
+map<string, double> Operator::timer;
+
+
 
 /////////////////// CONSTRUCTORS /////////////////////////////////////////
 Operator::Operator() :
@@ -173,6 +176,7 @@ void Operator::Copy(const Operator& op)
    TwoBody       = op.TwoBody;
    ThreeBody     = op.ThreeBody;
    TwoBodyTensorChannels       = op.TwoBodyTensorChannels;
+//   timer         = op.timer;
 }
 
 /////////////// OVERLOADED OPERATORS =,+,-,*,etc ////////////////////
@@ -208,6 +212,10 @@ Operator Operator::operator*(const double rhs) const
 // Add non-member operator so we can multiply an operator
 // by a scalar from the lhs, i.e. s*O = O*s
 Operator operator*(const double lhs, const Operator& rhs)
+{
+   return rhs * lhs;
+}
+Operator operator*(const double lhs, const Operator&& rhs)
 {
    return rhs * lhs;
 }
@@ -268,7 +276,7 @@ Operator Operator::operator-(const Operator& rhs) const
 
 Operator Operator::operator-() const
 {
-   return ( *this *-1 );
+   return (*this)*-1.0;
 }
 
 
@@ -864,6 +872,15 @@ double Operator::ThreeBodyRecouplingCoefficient(int a_in, int b_in, int c_in, in
 
 
 
+void Operator::PrintTimes()
+{
+   cout << "==== TIMES ====" << endl;
+   for ( auto it : timer )
+   {
+//     cout << it.first << ":  " << ((float)it.second) / CLOCKS_PER_SEC << endl;
+     cout << it.first << ":  " << it.second  << endl;
+   }
+}
 
 
 ////////////////// MAIN INTERFACE METHODS //////////////////////////
@@ -1144,7 +1161,7 @@ void Operator::CalculateKineticEnergy()
 ///  \end{array} \right\}
 ///  X^{J}_{ilkj}
 /// \f]
-void Operator::DoPandyaTransformation( Operator& opCC) const
+void Operator::DoPandyaTransformation( Operator& opCC)
 {
 
    for (int ch_bra=0; ch_bra<nChannels; ++ch_bra)
@@ -1216,7 +1233,7 @@ void Operator::DoPandyaTransformation( Operator& opCC) const
 //   COUPLING                 COUPLED  
 //                                      
 //void Operator::CalculateCrossCoupled()
-void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<arma::mat> &TwoBody_CC_right) const
+void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<arma::mat> &TwoBody_CC_right)
 {
    // loop over cross-coupled channels
    #pragma omp parallel for
@@ -1305,7 +1322,7 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
 
 //*****************************************************************************************
 //  OpOut = exp(Omega) Op exp(-Omega)
-Operator Operator::BCH_Transform( const Operator &Omega) const
+Operator Operator::BCH_Transform(  Operator &Omega)
 {
 //   double bch_transform_threshold = 1e-6;
    int max_iter = 20;
@@ -1353,9 +1370,9 @@ Operator Operator::BCH_Transform( const Operator &Omega) const
 //     - 1/24 [Y,[X,[X,Y]]]
 //     - 1/720 [Y,[Y,[Y,[Y,X]]]] - 1/720 [X,[X,[X,[X,Y]]]]
 //     + ...
-Operator Operator::BCH_Product( const Operator &Y) const
+Operator Operator::BCH_Product(  Operator &Y)
 {
-   const Operator& X = *this;
+   Operator& X = *this;
 //   double bch_product_threshold = 1e-4;
 
    Operator Z = X + Y; 
@@ -1432,7 +1449,7 @@ double Operator::TwoBodyNorm() const
 }
 
 
-Operator Operator::Commutator(const Operator& opright) const
+Operator Operator::Commutator( Operator& opright)
 {
    if (rank_J==0)
    {
@@ -1457,7 +1474,7 @@ Operator Operator::Commutator(const Operator& opright) const
 }
 
 
-Operator Operator::CommutatorScalarScalar(const Operator& opright) const
+Operator Operator::CommutatorScalarScalar( Operator& opright) 
 {
    Operator out = opright;
    out.EraseZeroBody();
@@ -1475,22 +1492,39 @@ Operator Operator::CommutatorScalarScalar(const Operator& opright) const
         comm220ss(opright, out) ;
    }
 
+    double t = omp_get_wtime();
    comm111ss(opright, out);
+     t = omp_get_wtime() - t;
+    timer["comm111ss"] += t;
+
+    t = omp_get_wtime();
 //   comm111st(opright, out);  // << equivalent in scalar case
    comm121ss(opright, out);
 //   comm121st(opright, out);  // << equivalent in scalar case
+     t = omp_get_wtime() - t;
+    timer["comm121ss"] += t;
 
+    t = omp_get_wtime();
    comm122ss(opright, out); //  This is the slow one for some reason.
 //   comm122st(opright, out); // << equivalent in scalar case
+     t = omp_get_wtime() - t;
+    timer["comm122ss"] += t;
 
    if (particle_rank>1 and opright.particle_rank>1)
    {
-   comm222_pp_hh_221ss(opright, out);
+    t = omp_get_wtime();
+    comm222_pp_hh_221ss(opright, out);
+     t = omp_get_wtime() - t;
+    timer["comm222_pp_hh_221ss"] += t;
+     
 ////   comm222_pp_hh_221st(opright, out); // << equivalent in scalar case
 
-   comm222_phss(opright, out);
+    t = omp_get_wtime();
+    comm222_phss(opright, out);
 //   comm222_phst_pandya(opright, out);
 ////   comm222_phst(opright, out);
+     t = omp_get_wtime() - t;
+    timer["comm222_phss"] += t;
    }
 
    return out;
@@ -1498,7 +1532,7 @@ Operator Operator::CommutatorScalarScalar(const Operator& opright) const
 
 
 // Calculate [S,T]
-Operator Operator::CommutatorScalarTensor(const Operator& opright) const
+Operator Operator::CommutatorScalarTensor( Operator& opright) 
 {
    Operator out = opright; // This ensures the commutator has the same tensor rank as opright
    out.EraseZeroBody();
@@ -1520,7 +1554,7 @@ Operator Operator::CommutatorScalarTensor(const Operator& opright) const
 }
 
 // This should really return a vector of operators, but I'm not going to write this until I need to.
-Operator Operator::CommutatorTensorTensor(const Operator& opright) const
+Operator Operator::CommutatorTensorTensor( Operator& opright) 
 {
    Operator out = opright;
 /*
@@ -1561,7 +1595,7 @@ Operator Operator::CommutatorTensorTensor(const Operator& opright) const
 /// \f[
 ///  [X_{1)},Y_{(1)}]_{(0)} = \sum_{a} n_a (2j_a+1) \left(X_{(1)}Y_{(1)}-Y_{(1)}X_{(1)}\right)_{aa}
 /// \f]
-void Operator::comm110ss(const Operator& opright, Operator& out) const
+void Operator::comm110ss( Operator& opright, Operator& out) 
 {
   if (IsHermitian() and opright.IsHermitian()) return ; // I think this is the case
   if (IsAntiHermitian() and opright.IsAntiHermitian()) return ; // I think this is the case
@@ -1592,7 +1626,7 @@ void Operator::comm110ss(const Operator& opright, Operator& out) const
 /// \f[
 /// [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{ab} (\mathcal{P}_{hh} X_{(2)}^{J} \mathcal{P}_{pp} Y_{(2)}^{J})_{abab}
 /// \f] where \f$ \mathcal{P}_{hh} \f$ is a projector onto hole-hole two body states.
-void Operator::comm220ss( const Operator& opright, Operator& out) const
+void Operator::comm220ss(  Operator& opright, Operator& out) 
 {
    if (IsHermitian() and opright.IsHermitian()) return; // I think this is the case
    if (IsAntiHermitian() and opright.IsAntiHermitian()) return; // I think this is the case
@@ -1617,7 +1651,7 @@ void Operator::comm220ss( const Operator& opright, Operator& out) const
 /// \f[
 /// [X_{(1)},Y_{(1)}]_{(1)} = X_{(1)}Y_{(1)} - Y_{(1)}X_{(1)}
 /// \f]
-void Operator::comm111ss(const Operator & opright, Operator& out) const
+void Operator::comm111ss( Operator & opright, Operator& out) 
 {
    out.OneBody += OneBody*opright.OneBody - opright.OneBody*OneBody;
 }
@@ -1641,7 +1675,7 @@ void Operator::comm111ss(const Operator & opright, Operator& out) const
 /// \f[
 /// [X_{(1)},Y_{(2)}]_{ij} = \frac{1}{2j_i+1}\sum_{ab} (n_a \bar{n}_b) \sum_{J} (2J+1) (X_{ab} Y^J_{biaj} - X_{ba} Y^J_{aibj})
 /// \f]
-void Operator::comm121ss(const Operator& opright, Operator& out) const
+void Operator::comm121ss( Operator& opright, Operator& out) 
 {
    int norbits = modelspace->GetNumberOrbits();
    #pragma omp parallel for 
@@ -1701,7 +1735,7 @@ void Operator::comm121ss(const Operator& opright, Operator& out) const
 /// \f]
 /// With the intermediate matrix \f[ \mathcal{M}^{J}_{pp} \equiv \frac{1}{2} (X^{J}\mathcal{P}_{pp} Y^{J} - Y^{J}\mathcal{P}_{pp}X^{J}) \f]
 /// and likewise for \f$ \mathcal{M}^{J}_{hh} \f$
-void Operator::comm221ss(const Operator& opright, Operator& out) const
+void Operator::comm221ss( Operator& opright, Operator& out) 
 {
 
    int norbits = modelspace->GetNumberOrbits();
@@ -1767,7 +1801,7 @@ void Operator::comm221ss(const Operator& opright, Operator& out) const
 /// \f[
 /// [X_{(1)},Y_{(2)}]^{J}_{ijkl} = \sum_{a} ( X_{ia}Y^{J}_{ajkl} + X_{ja}Y^{J}_{iakl} - X_{ak} Y^{J}_{ijal} - X_{al} Y^{J}_{ijka} )
 /// \f]
-void Operator::comm122ss(const Operator& opright, Operator& opout ) const
+void Operator::comm122ss( Operator& opright, Operator& opout ) 
 {
    int herm = opout.IsHermitian() ? 1 : -1;
 
@@ -1878,7 +1912,7 @@ void Operator::comm122ss(const Operator& opright, Operator& opout ) const
 /// \mathcal{M}^{J}_{pp} \equiv \frac{1}{2}(X^{J} \mathcal{P}_{pp} Y^{J} - Y^{J} \mathcal{P}_{pp} X^{J})
 /// \f]
 /// and likewise for \f$ \mathcal{M}^{J}_{hh} \f$.
-void Operator::comm222_pp_hhss(const Operator& opright, Operator& opout ) const
+void Operator::comm222_pp_hhss( Operator& opright, Operator& opout ) 
 {
    #pragma omp parallel for schedule(dynamic,5)
    for (int ch=0; ch<nChannels; ++ch)
@@ -1900,10 +1934,10 @@ void Operator::comm222_pp_hhss(const Operator& opright, Operator& opout ) const
 
 
 
-/// Since comm222_pp_hhss() and comm221ss() both require the construction of 
+/// Since comm222_pp_hhss() and comm221ss() both require the ruction of 
 /// the intermediate matrices \f$\mathcal{M}_{pp} \f$ and \f$ \mathcal{M}_{hh} \f$, we can combine them and
 /// only calculate the intermediates once.
-void Operator::comm222_pp_hh_221ss(const Operator& opright, Operator& opout ) const 
+void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )  
 {
 
    int herm = opout.IsHermitian() ? 1 : -1;
@@ -2014,7 +2048,7 @@ void Operator::comm222_pp_hh_221ss(const Operator& opright, Operator& opout ) co
 //            
 // -- This appears to agree with Nathan's results
 //
-void Operator::comm222_phss(const Operator& opright, Operator& opout ) const
+void Operator::comm222_phss( Operator& opright, Operator& opout ) 
 {
 
    int herm = opout.IsHermitian() ? 1 : -1;
@@ -2027,8 +2061,11 @@ void Operator::comm222_phss(const Operator& opright, Operator& opout ) const
    vector<arma::mat> Y_TwoBody_CC_left (nChannels, arma::mat() );
    vector<arma::mat> Y_TwoBody_CC_right (nChannels, arma::mat() );
 
+   double t = omp_get_wtime();
    CalculateCrossCoupled(X_TwoBody_CC_left, X_TwoBody_CC_right );
    opright.CalculateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right );
+   t = omp_get_wtime() - t;
+   timer["CalculateCrossCoupled"] += t;
 
    // Construct the intermediate matrices N1 and N2
    vector<arma::mat> N1 (nChannels, arma::mat() );
@@ -2140,7 +2177,7 @@ void Operator::comm222_phss(const Operator& opright, Operator& opout ) const
 //        |                 |
 //
 // This is no different from the scalar-scalar version
-void Operator::comm111st(const Operator & opright, Operator& out) const
+void Operator::comm111st( Operator & opright, Operator& out) 
 {
    out.OneBody += OneBody*opright.OneBody - opright.OneBody*OneBody;
 }
@@ -2157,7 +2194,7 @@ void Operator::comm111st(const Operator & opright, Operator& out) const
 //
 // X is scalar, Y is tensor
 // 
-void Operator::comm121st(const Operator& opright, Operator& out) const
+void Operator::comm121st( Operator& opright, Operator& out) 
 {
    int norbits = modelspace->GetNumberOrbits();
    int nch = modelspace->GetNumberTwoBodyChannels();
@@ -2237,7 +2274,7 @@ void Operator::comm121st(const Operator& opright, Operator& out) const
 //
 // -- AGREES WITH NATHAN'S RESULTS 
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-void Operator::comm221st(const Operator& opright, Operator& out) const
+void Operator::comm221st( Operator& opright, Operator& out) 
 {
 
    int norbits = modelspace->GetNumberOrbits();
@@ -2314,7 +2351,7 @@ void Operator::comm221st(const Operator& opright, Operator& out) const
 // -- AGREES WITH NATHAN'S RESULTS
 // Right now, this is the slowest one...
 // Agrees with previous code in the scalar-scalar limit
-void Operator::comm122st(const Operator& opright, Operator& opout ) const
+void Operator::comm122st( Operator& opright, Operator& opout ) 
 {
    int herm = opout.IsHermitian() ? 1 : -1;
    int norbits = modelspace->GetNumberOrbits();
@@ -2414,7 +2451,7 @@ void Operator::comm122st(const Operator& opright, Operator& opout ) const
 //
 // -- AGREES WITH NATHAN'S RESULTS
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-void Operator::comm222_pp_hhst(const Operator& opright, Operator& opout ) const
+void Operator::comm222_pp_hhst( Operator& opright, Operator& opout ) 
 {
    #pragma omp parallel for schedule(dynamic,5)
    for (int ch_bra=0;ch_bra<nChannels;++ch_bra)
@@ -2464,10 +2501,10 @@ void Operator::comm222_pp_hhst(const Operator& opright, Operator& opout ) const
 
 
 
-// Since comm222_pp_hh and comm211 both require the construction of 
+// Since comm222_pp_hh and comm211 both require the ruction of 
 // the intermediate matrices Mpp and Mhh, we can combine them and
 // only calculate the intermediates once.
-void Operator::comm222_pp_hh_221st(const Operator& opright, Operator& opout ) const 
+void Operator::comm222_pp_hh_221st( Operator& opright, Operator& opout )  
 {
 
    int herm = opout.IsHermitian() ? 1 : -1;
@@ -2584,7 +2621,7 @@ void Operator::comm222_pp_hh_221st(const Operator& opright, Operator& opout ) co
 // -- This appears to agree with Nathan's results
 //
 // Haven't converted this one yet...
-void Operator::comm222_phst(const Operator& opright, Operator& opout ) const
+void Operator::comm222_phst( Operator& opright, Operator& opout ) 
 {
    int herm = opout.IsHermitian() ? 1 : -1;
 
@@ -2760,12 +2797,12 @@ void Operator::comm222_phst(const Operator& opright, Operator& opout ) const
 /// ( \bar{X}^{J'}_{i\bar{j}a\bar{b}} \bar{Y}^{J'}_{a\bar{b}k\bar{j}}
 ///  - \bar{Y}^{J'}_{i\bar{j}a\bar{b}} \bar{X}^{J'}_{a\bar{b}k\bar{j}} )
 /// \f]
-void Operator::comm222_phst_pandya(const Operator& opright, Operator& opout ) const
+void Operator::comm222_phst_pandya( Operator& opright, Operator& opout ) 
 {
    int herm = opout.IsHermitian() ? 1 : -1;
    if (opout.IsNonHermitian() ) herm = 0;
-   const Operator& X = *this;
-   const Operator& Y = opright;
+   Operator& X = *this;
+   Operator& Y = opright;
    
 
    Operator XCC = Operator(*modelspace, 0,1,0,2);

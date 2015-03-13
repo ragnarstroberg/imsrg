@@ -23,7 +23,8 @@ IMSRGSolver::IMSRGSolver()
 }
 
 // Constructor
-IMSRGSolver::IMSRGSolver(const Operator &H_in)
+//IMSRGSolver::IMSRGSolver(const Operator &H_in)
+IMSRGSolver::IMSRGSolver( Operator &H_in)
    : H_0(H_in), H_s(H_in), Eta(H_in), Omega(H_in) ,dOmega(H_in)
 #ifndef NO_ODE
     ,ode_monitor(*this)
@@ -46,7 +47,7 @@ IMSRGSolver::IMSRGSolver(const Operator &H_in)
    dOmega.SetAntiHermitian();
 }
 
-void IMSRGSolver::SetHin(const Operator & H_in)
+void IMSRGSolver::SetHin( Operator & H_in)
 {
    modelspace = H_in.GetModelSpace();
    H_0 = Operator(H_in);
@@ -138,7 +139,8 @@ void IMSRGSolver::Solve_ode()
 }
 
 
-void IMSRGSolver::ODE_systemH(const Operator& x, Operator& dxdt, const double t)
+//void IMSRGSolver::ODE_systemH(const Operator& x, Operator& dxdt, const double t)
+void IMSRGSolver::ODE_systemH( Operator& x, Operator& dxdt, const double t)
 {
    H_s = x;
    s = t;
@@ -174,7 +176,8 @@ void IMSRGSolver::Solve_ode_magnus()
    monitor.report();
 }
 
-void IMSRGSolver::ODE_systemOmega(const Operator& x, Operator& dxdt, const double t)
+//void IMSRGSolver::ODE_systemOmega(const Operator& x, Operator& dxdt, const double t)
+void IMSRGSolver::ODE_systemOmega( Operator& x, Operator& dxdt, const double t)
 {
    s = t;
    Omega = x;
@@ -203,7 +206,8 @@ Operator IMSRGSolver::Transform(Operator& OpIn)
 // Returns exp(-Omega) OpIn exp(Omega)
 Operator IMSRGSolver::InverseTransform(Operator& OpIn)
 {
-   return OpIn.BCH_Transform( -Omega );
+   Operator negomega = -Omega;
+   return OpIn.BCH_Transform( negomega );
 }
 
 void IMSRGSolver::UpdateEta()
@@ -487,6 +491,7 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
       auto& ETA2 = Eta.TwoBody[ch].at(ch);
       auto& H2 = H_s.TwoBody[ch].at(ch);
 
+
       // Decouple vv states from pq states
 //      for ( auto& iket : tbc.KetIndex_vv)
       for ( auto& iket : tbc.GetKetIndex_vv() )
@@ -516,6 +521,7 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
 //      for ( auto& iket : tbc.KetIndex_holeq_holeq)
       for ( auto& iket : tbc.GetKetIndex_holeq_holeq() )
       {
+
          // < qq' | hh' >
 //         for ( auto& ibra : tbc.KetIndex_particleq_particleq)
          for ( auto& ibra : tbc.GetKetIndex_particleq_particleq() )
@@ -532,6 +538,7 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
+
          // < vv | hh' >
 //         for ( auto& ibra : tbc.KetIndex_vv)
          for ( auto& ibra : tbc.GetKetIndex_vv() )
@@ -542,6 +549,7 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
          }
 
       }
+
 
       // Decouple vh states
 
@@ -556,6 +564,7 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
+
          // < vq | vh >
 //         for ( auto& ibra : tbc.KetIndex_v_particleq)
          for ( auto& ibra : tbc.GetKetIndex_v_particleq() )
@@ -564,6 +573,7 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
+
          // < vv | vh >
 //         for ( auto& ibra : tbc.KetIndex_vv)
          for ( auto& ibra : tbc.GetKetIndex_vv() )
@@ -574,6 +584,7 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
          }
 
       }
+
 
     }
 }

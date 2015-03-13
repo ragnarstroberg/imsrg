@@ -33,4 +33,4 @@ pyIMSRG.o: pyIMSRG.cc
 	$(CC) -c $^ -o $@ -fPIC $(FLAGS) $(INCLUDE) $(LIBS) $(PYTHONFLAGS)
 
 clean:
-	rm -f *.o
+	rm -f *.o *.so

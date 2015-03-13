@@ -88,6 +88,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetParticleRank", &Operator::GetParticleRank)
       .def("GetE3max", &Operator::GetE3max)
       .def("SetE3max", &Operator::SetE3max)
+      .def("PrintTimes", &Operator::PrintTimes)
    ;
 
 
@@ -101,7 +102,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    ;
 
 
-   class_<IMSRGSolver>("IMSRGSolver",init<Operator>())
+   class_<IMSRGSolver>("IMSRGSolver",init<Operator&>())
       .def("Solve",&IMSRGSolver::Solve)
 #ifndef NO_ODE
       .def("Solve_ode",&IMSRGSolver::Solve_ode)

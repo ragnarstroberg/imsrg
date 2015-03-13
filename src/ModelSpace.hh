@@ -93,6 +93,7 @@ class TwoBodyChannel
    int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
    Ket & GetKet(int i) const ; // get pointer to ket using local index
 
+/*
    vector<unsigned int> KetIndex_pp; //maybe don't need
    vector<unsigned int> KetIndex_ph;
    vector<unsigned int> KetIndex_hh;
@@ -102,7 +103,7 @@ class TwoBodyChannel
    vector<unsigned int> KetIndex_particleq_holeq;
    vector<unsigned int> KetIndex_v_holeq; // added
    vector<unsigned int> KetIndex_v_particleq; //added
-
+*/
 
    arma::uvec GetKetIndexFromList(vector<unsigned int>& vec_in);
    arma::uvec GetKetIndex_pp();

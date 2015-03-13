@@ -141,7 +141,7 @@ namespace imsrg_util
             Orbit & ol = modelspace.GetOrbit(ket.q);
             if ( 2*(ok.n+ol.n)+ok.l+ol.l > N2max) continue;
             double p1p2 = Calculate_p1p2(modelspace,bra,ket,tbc.J) * hw/A;
-            #pragma omp critical
+//            #pragma omp critical
             if (abs(p1p2)>1e-7)
             {
               TcmOp.SetTBME(ch,ibra,iket,p1p2);
@@ -304,7 +304,7 @@ namespace imsrg_util
          {
             Ket & ket = tbc.GetKet(iket);
             double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J);
-            #pragma omp critical
+//            #pragma omp critical
             {
               VcmOp.SetTBME(ch,ibra,iket,mat_el);
               VcmOp.SetTBME(ch,iket,ibra,mat_el);
@@ -461,7 +461,7 @@ namespace imsrg_util
             Ket & ket = tbc.GetKet(iket);
             double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J);
             mat_el += Calculate_p1p2(modelspace,bra,ket,tbc.J); // added this. not sure if I know what I'm doing...
-            #pragma omp critical
+//            #pragma omp critical
             {
               HcmOp.SetTBME(ch,ibra,iket,mat_el);
               HcmOp.SetTBME(ch,iket,ibra,mat_el);
