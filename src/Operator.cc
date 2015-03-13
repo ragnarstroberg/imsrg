@@ -871,8 +871,7 @@ double Operator::ThreeBodyRecouplingCoefficient(int a_in, int b_in, int c_in, in
 }
 
 
-/*
-static void Operator::PrintTimes()
+void Operator::PrintTimes()
 {
    cout << "==== TIMES ====" << endl;
    for ( auto it : timer )
@@ -880,7 +879,6 @@ static void Operator::PrintTimes()
      cout << it.first << ":  " << it.second  << endl;
    }
 }
-*/
 
 ////////////////// MAIN INTERFACE METHODS //////////////////////////
 

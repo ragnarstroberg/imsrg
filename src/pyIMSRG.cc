@@ -88,8 +88,6 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetParticleRank", &Operator::GetParticleRank)
       .def("GetE3max", &Operator::GetE3max)
       .def("SetE3max", &Operator::SetE3max)
-//      .staticmethod("PrintTimes")
-//      .staticmethod("PrintTimes", &Operator::PrintTimes)
       .def("PrintTimes", &Operator::PrintTimes)
    ;
 
