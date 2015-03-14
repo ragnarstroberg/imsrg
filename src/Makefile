@@ -3,7 +3,8 @@ CC = g++
 #FLAGS = -larmadillo -O3 -std=c++11
 #FLAGS = -larmadillo -O3 -std=c++11  -lgsl -fPIC -fopenmp 
 INCLUDE = -I./armadillo
-LIBS = -lblas -llapack -lgsl
+#LIBS = -lblas -llapack -lgsl
+LIBS = -lopenblas -llapack -lgsl
 FLAGS =  -O3 -std=c++11  -fPIC -fopenmp # -DNO_ODE=1
 #FLAGS = -larmadillo -O3 -std=c++11 -lgsl -fPIC # -v -da -Q
 
