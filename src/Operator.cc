@@ -2004,7 +2004,7 @@ void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )
                cijJ +=  Mhh.GetTBME(ch,c,i,c,j);
             }
             cijJ *= (2*tbc.J+1.0)/(oi.j2+1.0);
-            #pragma omp critial
+            #pragma omp critical
             {
             opout.OneBody(i,j) += cijJ;
             }

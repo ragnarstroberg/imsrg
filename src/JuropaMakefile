@@ -1,13 +1,14 @@
-CC = g++
+#CC = g++
+CC = icc
 
-#FLAGS = -larmadillo -O3 -std=c++11
-#FLAGS = -larmadillo -O3 -std=c++11  -lgsl -fPIC -fopenmp 
-INCLUDE = -I./armadillo
-#LIBS = -lblas -llapack -lgsl
-LIBS = -lopenblas -lgsl
-FLAGS =  -O3 -std=c++11  -fPIC -fopenmp  -DNO_ODE=1
+INCLUDE = -I./armadillo -I$(GSL_INC) -I$(BOOST_INC)
+LIBS = -lblas -llapack -lgsl -lgslcblas -lm
+#LIBS = -lopenblas -lgsl
+#FLAGS =  -O3 -std=c++11  -fPIC -fopenmp  -DNO_ODE=1
+FLAGS =  -O3 -std=c++11  -fPIC -openmp  -DNO_ODE=1
 
-PYTHONFLAGS = -I$(PYTHONINCLUDE) -lboost_python #-lpython 
+#PYTHONFLAGS = -I$(PYTHONINCLUDE) -lboost_python #-lpython 
+PYTHONFLAGS = -I$(PYTHON_INC) -lboost_python-gcc47-mt-1_53 #-lpython 
 
 all: pyIMSRG.so libIMSRG.so
 #all: mysrg pyIMSRG.so
