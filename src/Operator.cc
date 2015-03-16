@@ -627,7 +627,14 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
       int Tindex = 2*tab_in + tde_in + (T2-1)/2; 
       return ThreeBody.at(orbit_index).at(J2).at(Jab_in).at(Jde_in).at(Tindex);
    }
-
+   int abc_recoupling_case = GetRecouplingCase(a_in,b_in,c_in,a,b,c);
+   int def_recoupling_case = GetRecouplingCase(d_in,e_in,f_in,d,e,f);
+   double ja = oa.j2/2.0;
+   double jb = ob.j2/2.0;
+   double jc = oc.j2/2.0;
+   double jd = od.j2/2.0;
+   double je = oe.j2/2.0;
+   double jf = of.j2/2.0;
    int Jab_min = max(abs(oa.j2-ob.j2),abs(J2-oc.j2))/2;
    int Jab_max = min(oa.j2+ob.j2,J2+oc.j2)/2;
    int Jde_min = max(abs(od.j2-oe.j2),abs(J2-of.j2))/2;
@@ -644,16 +651,20 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
    {
      for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
      {
-        double Cj_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,Jab_in,Jab,J2,'j');
-        double Cj_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,Jde_in,Jde,J2,'j');
+        double Cj_abc = ThreeBodyRecouplingCoefficient(abc_recoupling_case,ja,jb,jc,Jab_in,Jab,J2);
+        double Cj_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
+//        double Cj_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,Jab_in,Jab,J2,'j');
+//        double Cj_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,Jde_in,Jde,J2,'j');
         if (Cj_abc*Cj_def == 0) continue;
 
         for (int tab=tab_min; tab<=tab_max; ++tab)
         {
           for (int tde=tde_min; tde<=tde_max; ++tde)
           {
-            double Ct_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,tab_in,tab,T2,'t');
-            double Ct_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,tde_in,tde,T2,'t');
+//            double Ct_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,tab_in,tab,T2,'t');
+//            double Ct_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,tde_in,tde,T2,'t');
+            double Ct_abc = ThreeBodyRecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
+            double Ct_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
 
             int Tindex = 2*tab + tde + (T2-1)/2;
 
@@ -694,6 +705,9 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
       swap(a,d);
       swap(b,e);
       swap(c,f);
+      swap(a_in,d_in);
+      swap(b_in,e_in);
+      swap(c_in,f_in);
       swap(Jab_in,Jde_in);
       swap(tab_in,tde_in);
    }
@@ -715,15 +729,24 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
       ThreeBody.at(orbit_index).at(J2).at(Jab_in).at(Jde_in).at(Tindex) = V;
       return;
    }
-
+   int abc_recoupling_case = GetRecouplingCase(a_in,b_in,c_in,a,b,c);
+   int def_recoupling_case = GetRecouplingCase(d_in,e_in,f_in,d,e,f);
+   double ja = oa.j2/2.0;
+   double jb = ob.j2/2.0;
+   double jc = oc.j2/2.0;
+   double jd = od.j2/2.0;
+   double je = oe.j2/2.0;
+   double jf = of.j2/2.0;
    int Jab_min = max(abs(oa.j2-ob.j2),abs(J2-oc.j2))/2;
    int Jab_max = min(oa.j2+ob.j2,J2+oc.j2)/2;
    int Jde_min = max(abs(od.j2-oe.j2),abs(J2-of.j2))/2;
    int Jde_max = min(od.j2+oe.j2,J2+of.j2)/2;
 
-   int tab_min = T2==3 ? 1 : abs(oa.tz2+ob.tz2)/2;
+//   int tab_min = T2==3 ? 1 : abs(oa.tz2+ob.tz2)/2;
+   int tab_min = T2==3 ? 1 : 0;
    int tab_max = 1;
-   int tde_min = T2==3 ? 1 : abs(od.tz2+oe.tz2)/2;
+//   int tde_min = T2==3 ? 1 : abs(od.tz2+oe.tz2)/2;
+   int tde_min = T2==3 ? 1 : 0;
    int tde_max = 1;
 
 
@@ -731,19 +754,38 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
    {
      for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
      {
-        double Cj_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,Jab_in,Jab,J2,'j');
-        double Cj_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,Jde_in,Jde,J2,'j');
+        double Cj_abc = ThreeBodyRecouplingCoefficient(abc_recoupling_case,ja,jb,jc,Jab_in,Jab,J2);
+        double Cj_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
+//        double Cj_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,Jab_in,Jab,J2,'j');
+//        double Cj_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,Jde_in,Jde,J2,'j');
+
+
+/*
+         cout << "abc_in = " << a_in << "-" << b_in << "-" << c_in <<  "   abc = " << a << "-" << b << "-" << c
+              << "  case = " << abc_recoupling_case << endl;
+         cout << "def_in = " << d_in << "-" << e_in << "-" << f_in <<  "   def = " << d << "-" << e << "-" << f 
+              << "  case = " << def_recoupling_case << endl;
+         cout << "  Jab = " << Jab << " Jab_in = " << Jab_in << "  Jde = " << Jde << " Jde_in = " << Jde_in  << "  J2 = " << J2 << endl;
+         cout << "   Cj_abc = " << Cj_abc << "  Cj_def = " << Cj_def << endl;
+*/
 
         for (int tab=tab_min; tab<=tab_max; ++tab)
         {
           for (int tde=tde_min; tde<=tde_max; ++tde)
           {
-            double Ct_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,tab_in,tab,T2,'t');
-            double Ct_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,tde_in,tde,T2,'t');
+//            double Ct_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,tab_in,tab,T2,'t');
+//            double Ct_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,tde_in,tde,T2,'t');
+            double Ct_abc = ThreeBodyRecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
+            double Ct_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
+
+//         cout << "   tab = " << tab << "  tab_in = " << tab_in << "  tde = " << tde << " tde_in = " << tde_in << "  T2 = " << T2 << endl;
+//         cout << "   Ct_abc = " << Ct_abc << "  Ct_def = " << Ct_def << endl;
 
             int Tindex = 2*tab + tde + (T2-1)/2;
 
             ThreeBody.at(orbit_index).at(J2).at(Jab).at(Jde).at(Tindex) += Cj_abc * Cj_def * Ct_abc * Ct_def * V;
+//            cout << "===" << Jab << " " << Jde << " " << J2 << "   " << tab << " " << tde << " " << T2 << endl;
+//            cout << Cj_abc << " * " << Cj_def << " * " << Ct_abc << " * " << Ct_def << " * " << V << endl;
 
         }
       }
@@ -816,10 +858,58 @@ void Operator::SortThreeBodyOrbits(int& a, int& b, int& c)
 
 
 
+double Operator::ThreeBodyRecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J)
+{
+   switch (recoupling_case)
+   {
+    case 0: return Jab==Jab_in ? 1 : 0;
+//    case 1: return modelspace->phase( jb+jc+Jab-Jab_in) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(jb, ja, Jab_in, jc, J/2., Jab);
+    case 1: return modelspace->phase( jb+jc+Jab_in-Jab) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(jb, ja, Jab, jc, J/2., Jab_in);
+    case 2: return Jab==Jab_in ? modelspace->phase(ja+jb-Jab) : 0;
+//    case 3: return modelspace->phase( jb+jc+Jab+1 ) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(ja, jb, Jab_in, jc, J/2., Jab);
+    case 3: return modelspace->phase( jb+jc+Jab_in+1) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(ja, jb, Jab, jc, J/2., Jab_in);
+//    case 4: return modelspace->phase( ja+jb-Jab_in+1) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(jb, ja, Jab_in, jc, J/2., Jab);
+    case 4: return modelspace->phase( ja+jb-Jab+1) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(jb, ja, Jab, jc, J/2., Jab_in);
+//    case 5: return -sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(ja, jb, Jab_in, jc, J/2., Jab);
+    case 5: return -sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(ja, jb, Jab, jc, J/2., Jab_in);
+    default: return 0;
+    }
+}
+
+
+// 0: (abc)_in -> (abc)
+// 1: (acb)_in -> (abc)
+// 2: (bac)_in -> (abc)
+// 3: (bca)_in -> (abc)
+// 4: (cab)_in -> (abc)
+// 5: (cba)_in -> (abc)
+int Operator::GetRecouplingCase(int a_in, int b_in, int c_in, int a, int b, int c)
+{
+/*
+   if (a==a_in and b==b_in and c==c_in) return 0;
+   if (a==a_in and b==c_in and c==b_in) return 1;
+   if (a==b_in and b==a_in and c==c_in) return 2;
+   if (a==c_in and b==a_in and c==b_in) return 3;
+   if (a==b_in and b==c_in and c==a_in) return 4;
+   if (a==c_in and b==b_in and c==a_in) return 5;
+*/
+
+   if (a_in==a) return (b_in==b) ? 0 : 1;
+   else if (a_in==b)  return (b_in==a) ? 2 : 3;
+   else return (b_in==a) ? 4 : 5;
+
+//   if (a==a_in) return (b==b_in) ? 0 : 1;
+//   else if (a==b_in)  return (b==a_in) ? 2 : 3;
+//   else return (b==a_in) ? 4 : 5;
+}
+
+
+
 //*******************************************************************
 /// Calculate the angular momentum or isospin recoupling coefficients
 /// needed to rearrange (abc) to the proper ordering.
 //*******************************************************************
+/*
 double Operator::ThreeBodyRecouplingCoefficient(int a_in, int b_in, int c_in, int a, int b, int c, int Jab_in, int Jab, int J, char j_or_t)
 {
    double C;
@@ -869,7 +959,7 @@ double Operator::ThreeBodyRecouplingCoefficient(int a_in, int b_in, int c_in, in
    return C;
 
 }
-
+*/
 
 void Operator::PrintTimes()
 {

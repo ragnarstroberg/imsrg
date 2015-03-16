@@ -162,7 +162,9 @@ class Operator
   void GetOrbitsFromThreeBodyIndex(orbindx3_t orb_indx, int& a, int& b, int& c, int& d, int& e, int& f);
 
   void SortThreeBodyOrbits(int& a,int& b,int& c);
-  double ThreeBodyRecouplingCoefficient(int a_in, int b_in, int c_in, int a, int b, int c, int Jab_in, int Jab, int J ,char j_or_t);
+  double ThreeBodyRecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J);
+//  double ThreeBodyRecouplingCoefficient(int a_in, int b_in, int c_in, int a, int b, int c, int Jab_in, int Jab, int J ,char j_or_t);
+  int GetRecouplingCase(int a_in, int b_in, int c_in, int a, int b, int c);
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};
 
