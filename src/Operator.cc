@@ -625,6 +625,7 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
    if (not Recouple)
    {
       int Tindex = 2*tab_in + tde_in + (T2-1)/2; 
+      if(a==18 and b==18 and c==18) cout << "Getting " << a << "-" << b << "-" << c << "-" << d << "-" << e << "-" << f << endl;
       return ThreeBody.at(orbit_index).at(J2).at(Jab_in).at(Jde_in).at(Tindex);
    }
    int abc_recoupling_case = GetRecouplingCase(a_in,b_in,c_in,a,b,c);
@@ -640,13 +641,16 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
    int Jde_min = max(abs(od.j2-oe.j2),abs(J2-of.j2))/2;
    int Jde_max = min(od.j2+oe.j2,J2+of.j2)/2;
 
-   int tab_min = T2==3 ? 1 : abs(oa.tz2+ob.tz2)/2;
+//   int tab_min = T2==3 ? 1 : abs(oa.tz2+ob.tz2)/2;
+   int tab_min = T2==3 ? 1 : 0;
    int tab_max = 1;
-   int tde_min = T2==3 ? 1 : abs(od.tz2+oe.tz2)/2;
+//   int tde_min = T2==3 ? 1 : abs(od.tz2+oe.tz2)/2;
+   int tde_min = T2==3 ? 1 : 0;
    int tde_max = 1;
 
    double V = 0;
    // Recouple J and T to get to the format in which it's stored.
+   if(a==18 and b==18 and c==18) cout << "Getting " << a << "-" << b << "-" << c << "-" << d << "-" << e << "-" << f << endl;
    for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
    {
      for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
@@ -655,6 +659,7 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
         double Cj_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
 //        double Cj_abc = ThreeBodyRecouplingCoefficient(a_in,b_in,c_in,a,b,c,Jab_in,Jab,J2,'j');
 //        double Cj_def = ThreeBodyRecouplingCoefficient(d_in,e_in,f_in,d,e,f,Jde_in,Jde,J2,'j');
+        if (a==18 and b==18 and c==18)cout << "    Jab = " << Jab << "  Jde = " << Jde << "  J2 = " << J2 << endl;
         if (Cj_abc*Cj_def == 0) continue;
 
         for (int tab=tab_min; tab<=tab_max; ++tab)
@@ -669,6 +674,11 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
             int Tindex = 2*tab + tde + (T2-1)/2;
 
             V += Cj_abc * Cj_def * Ct_abc * Ct_def * ThreeBody.at(orbit_index).at(J2).at(Jab).at(Jde).at(Tindex);
+            if (a==18 and b==18 and c==18)
+            {
+            cout << "     tab = " << tab << "  tde = " << tde << "  T2 = " << T2 << endl;
+            cout << "       Cj_abc = " << Cj_abc << "  Cj_def = " << Cj_def << "  Ct_abc = " << Ct_abc << "  Ct_def = " << Ct_def << "  V = " << V << endl;
+            }
          }
         }
       }
