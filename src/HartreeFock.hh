@@ -22,8 +22,7 @@ class HartreeFock
    double tolerance;        ///< tolerance for convergence
    double EHF;              ///< Hartree-Fock energy (Normal-ordered 0-body term)
    int iterations;          ///< iterations used in Solve()
-
-   map<unsigned long long int, double> Vmon3; // Monopole 3-body interaction
+   map< array<int,6>, double> Vmon3; // Monopole 3-body interaction
    
 
    HartreeFock(Operator&  hbare);

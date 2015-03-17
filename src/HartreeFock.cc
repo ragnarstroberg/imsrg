@@ -209,38 +209,135 @@ void HartreeFock::BuildMonopoleV()
 //*********************************************************************
 void HartreeFock::BuildMonopoleV3()
 {
+  // First, allocate
+  ModelSpace * modelspace = Hbare.GetModelSpace();
+  int norbits = modelspace->GetNumberOrbits();
+  vector< pair<const array<int,6>,double>*> entries;
+  for (int a=0; a<norbits; ++a)
+  {
+    Orbit& oa = modelspace->GetOrbit(a);
+    int ea = 2*oa.n + oa.l;
+    for (int b=0; b<norbits; ++b)
+    {
+      Orbit& ob = modelspace->GetOrbit(b);
+      if (oa.j2 != ob.j2 or oa.tz2 != ob.tz2 or oa.l != ob.l) continue;
+      int eb = 2*ob.n + ob.l;
+ 
+        for (int c=0; c<norbits; ++c)
+        {
+          Orbit& oc = modelspace->GetOrbit(c);
+          int ec = 2*oc.n + oc.l;
+          for (int d=0; d<norbits; ++d)
+          {
+            Orbit& od = modelspace->GetOrbit(d);
+            if (oc.j2 != od.j2 or oc.tz2 != od.tz2 or oc.l != od.l) continue;
+            int ed = 2*od.n + od.l;
+ 
+            for (int i=0; i<norbits; ++i)
+            {
+              Orbit& oi = modelspace->GetOrbit(i);
+              int ei = 2*oi.n + oi.l;
+              if ( ea+ec+ei > Hbare.E3max ) continue;
+              for (int j=0; j<norbits; ++j)
+              {
+                Orbit& oj = modelspace->GetOrbit(j);
+                if (oi.j2 != oj.j2 or oi.tz2 != oj.tz2 or oi.l != oj.l) continue;
+                int ej = 2*oj.n + oj.l;
+                if ( eb+ed+ej > Hbare.E3max ) continue;
+                if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
+                Vmon3[{a,c,i,b,d,j}] = 0;
+                entries.push_back(& (*Vmon3.find({a,c,i,b,d,j})) );
+              }
+            }
+          }
+        }
+      }
+    }
+
+   // the calculation takes longer, so parallelize that part
+   #pragma omp parallel for
+   for (auto it=entries.begin(); it<entries.end(); ++it)
+   {
+      int a=(*it)->first[0];
+      int c=(*it)->first[1];
+      int i=(*it)->first[2];
+      int b=(*it)->first[3];
+      int d=(*it)->first[4];
+      int j=(*it)->first[5];
+      double& v = (*it)->second;
+      int j2a = modelspace->GetOrbit(a).j2;
+      int j2c = modelspace->GetOrbit(c).j2;
+      int j2i = modelspace->GetOrbit(i).j2;
+      int j2b = modelspace->GetOrbit(b).j2;
+      int j2d = modelspace->GetOrbit(d).j2;
+      int j2j = modelspace->GetOrbit(j).j2;
+ 
+      int j2min = max( abs(j2a-j2c), abs(j2b-j2d) )/2;
+      int j2max = min (j2a+j2c, j2b+j2d)/2;
+      for (int j2=j2min; j2<=j2max; ++j2)
+      {
+        int Jmin = max( abs(2*j2-j2i), abs(2*j2-j2j) );
+        int Jmax = 2*j2 + min(j2i, j2j);
+        for (int J=Jmin; J<=Jmax; J+=2)
+        {
+           v += Hbare.GetThreeBodyME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
+        }
+      }
+   }
+}
+
+
+
+//*********************************************************************
+/// Construct an unnormalized three-body monopole interaction
+/// \f[ \langle iab | \bar{V}^{(3)} | jcd \rangle =
+///     \sum\limits_{J,J_{12}}\sum_{Tt_{12}}(2J+1)(2T+1) 
+///       \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle \f]
+///
+//*********************************************************************
+/*
+void HartreeFock::BuildMonopoleV3()
+{
    ModelSpace * modelspace = Hbare.GetModelSpace();
    int norbits = modelspace->GetNumberOrbits();
-   for (int i=0; i<norbits; ++i)
+
+
+ for (int a=0; a<norbits; ++a)
+ {
+   Orbit& oa = modelspace->GetOrbit(a);
+   int ea = 2*oa.n + oa.l;
+   for (int b=0; b<norbits; ++b)
    {
-     Orbit& oi = modelspace->GetOrbit(i);
-     for (int a=0; a<norbits; ++a)
-     {
-       Orbit& oa = modelspace->GetOrbit(a);
-       for (int b=0; b<norbits; ++b)
+     Orbit& ob = modelspace->GetOrbit(b);
+     int eb = 2*ob.n + ob.l;
+     if (oa.j2 != ob.j2 or oa.tz2 != ob.tz2 or oa.l != ob.l) continue;
+
+       for (int c=0; c<norbits; ++c)
        {
-         Orbit& ob = modelspace->GetOrbit(b);
-         if (oa.j2 != ob.j2 or oa.tz2 != ob.tz2 or oa.l != ob.l) continue;
-         for (int j=0; j<norbits; ++j)
+         Orbit& oc = modelspace->GetOrbit(c);
+         int ec = 2*oc.n + oc.l;
+         for (int d=0; d<norbits; ++d)
          {
-           Orbit& oj = modelspace->GetOrbit(j);
-           if (oi.j2 != oj.j2 or oi.tz2 != oj.tz2 or oi.l != oj.l) continue;
-           for (int c=0; c<norbits; ++c)
+           Orbit& od = modelspace->GetOrbit(d);
+           int ed = 2*od.n + od.l;
+           if (oc.j2 != od.j2 or oc.tz2 != od.tz2 or oc.l != od.l) continue;
+
+
+           for (int i=0; i<norbits; ++i)
            {
-             Orbit& oc = modelspace->GetOrbit(c);
-             if ( 2*(oi.n+oa.n+oc.n)+oi.l+oa.l+oc.l > Hbare.E3max ) continue;
-             for (int d=0; d<norbits; ++d)
+             Orbit& oi = modelspace->GetOrbit(i);
+             int ei = 2*oi.n + oi.l;
+             if ( ea+ec+ei > Hbare.E3max ) continue;
+             for (int j=0; j<norbits; ++j)
              {
-               Orbit& od = modelspace->GetOrbit(d);
-               if (oc.j2 != od.j2 or oc.tz2 != od.tz2 or oc.l != od.l) continue;
-               if ( 2*(oj.n+oc.n+od.n)+oj.l+oc.l+od.l > Hbare.E3max ) continue;
+               Orbit& oj = modelspace->GetOrbit(j);
+               int ej = 2*oj.n + oj.l;
+               if (oi.j2 != oj.j2 or oi.tz2 != oj.tz2 or oi.l != oj.l) continue;
+
+               if ( eb+ed+ej > Hbare.E3max ) continue;
                if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
-               unsigned long long orbit_index_pn =  a*1000000000000000LL
-                                                  + c*1000000000000LL
-                                                  + i*1000000000
-                                                  + b*1000000
-                                                  + d*1000
-                                                  + j;
+
+
                double v = 0;
                int j2min = max( abs(oa.j2-oc.j2), abs(ob.j2-od.j2) )/2;
                int j2max = min (oa.j2+oc.j2, ob.j2+od.j2)/2;
@@ -253,7 +350,7 @@ void HartreeFock::BuildMonopoleV3()
                    v += Hbare.GetThreeBodyME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
                 }
                }
-               Vmon3[orbit_index_pn] = v;
+               Vmon3[{a,c,i,b,d,j}] = v;
              }
            }
          }
@@ -261,7 +358,7 @@ void HartreeFock::BuildMonopoleV3()
      }
    }
 }
-
+*/
 
 
 
@@ -344,13 +441,7 @@ void HartreeFock::UpdateF()
                    if (oc.j2 != od.j2 or oc.tz2 != od.tz2 or oc.l != od.l) continue;
                    if ( (oi.l+oa.l+oc.l+oj.l+ob.l+od.l)%2 >0) continue;
 
-                   unsigned long long orbit_index_pn =  a*1000000000000000LL
-                                                      + c*1000000000000LL
-                                                      + i*1000000000
-                                                      + b*1000000
-                                                      + d*1000
-                                                      + j;
-                   V3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3[orbit_index_pn];
+                   V3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3[{a,c,i,b,d,j}];
                  }
                }
            }

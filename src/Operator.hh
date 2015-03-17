@@ -58,7 +58,10 @@ class Operator
 /// \f$ a\geq b \geq c, a\geq d\geq e \geq f \f$ are stored.
 /// The other combinations are obtained on the fly by GetThreeBodyME().
 /// The storage format is ThreeBody[orbit_index][Jab_index][JT_index].
-  map< orbindx3_t, map< int, map<int, map<int, vector<double> > > > >ThreeBody;
+//  map< orbindx3_t, map< int, map<int, map<int, vector<double> > > > >ThreeBody;
+//  map< orbindx3_t, map< array<int,3>,array<double,5> > >ThreeBody; // << This seems to work.
+//  map< array<int,6>, map< array<int,3>,array<double,5> > >ThreeBody; // << This seems to work.
+  map< array<int,9>,array<double,5> >ThreeBody; // 
 //  map< orbindx3_t, vector< vector<double> > > ThreeBody;
 
   int rank_J; ///< Spherical tensor rank of the operator
@@ -150,21 +153,18 @@ class Operator
 
 
 //// Three body setter getters
-  double GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
-//  double GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int Tz, int i, int j, int k, int l, int m, int n);
-  double GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
+  double AddToThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
   void   SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
+  double GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
+  double GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
 
 
 ///// Some other three body methods
-  orbindx3_t GetThreeBodyOrbitIndex(int a, int b, int c, int d, int e, int f);
 
-  void GetOrbitsFromThreeBodyIndex(orbindx3_t orb_indx, int& a, int& b, int& c, int& d, int& e, int& f);
-
-  void SortThreeBodyOrbits(int& a,int& b,int& c);
+//  void SortThreeBodyOrbits(int& a,int& b,int& c);
+  int SortThreeBodyOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c);
   double ThreeBodyRecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J);
-//  double ThreeBodyRecouplingCoefficient(int a_in, int b_in, int c_in, int a, int b, int c, int Jab_in, int Jab, int J ,char j_or_t);
-  int GetRecouplingCase(int a_in, int b_in, int c_in, int a, int b, int c);
+//  int GetRecouplingCase(int a_in, int b_in, int c_in, int a, int b, int c);
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};
 
