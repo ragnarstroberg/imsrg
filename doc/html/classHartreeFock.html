@@ -180,10 +180,9 @@ double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cl
 int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3">iterations</a></td></tr>
 <tr class="memdesc:a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">iterations used in <a class="el" href="classHartreeFock.html#a0666507747c17845ab4f74b97414703c">Solve()</a> <br/></td></tr>
 <tr class="separator:a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2a555b86527e4975d20b5c76d07314b4"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2a555b86527e4975d20b5c76d07314b4"></a>
-map&lt; unsigned long long int, <br class="typebreak"/>
-double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Vmon3</b></td></tr>
-<tr class="separator:a2a555b86527e4975d20b5c76d07314b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a552bb58da8bf501bf97003eec73830"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9a552bb58da8bf501bf97003eec73830"></a>
+map&lt; array&lt; int, 6 &gt;, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Vmon3</b></td></tr>
+<tr class="separator:a9a552bb58da8bf501bf97003eec73830"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a3d6bac9b4403e4bc599a89ad0c9b6056"></a>
@@ -389,7 +388,11 @@ double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Vmon3</b></td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>one-body density matrix <img class="formulaInl" alt="$ <i|\rho|j> = \sum\limits_{\beta} n_{\beta} <i|\beta> <\beta|j> $" src="form_115.png"/> where <img class="formulaInl" alt="$n_{\beta} $" src="form_116.png"/> ensureas that beta runs over HF orbits in the core (i.e. below the fermi surface) </p>
+<p>Construct an unnormalized three-body monopole interaction </p>
+<p class="formulaDsp">
+<img class="formulaDsp" alt="\[ \langle iab | \bar{V}^{(3)} | jcd \rangle = \sum\limits_{J,J_{12}}\sum_{Tt_{12}}(2J+1)(2T+1) \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle \]" src="form_31.png"/>
+</p>
+<p>-body density matrix <img class="formulaInl" alt="$ <i|\rho|j> = \sum\limits_{\beta} n_{\beta} <i|\beta> <\beta|j> $" src="form_115.png"/> where <img class="formulaInl" alt="$n_{\beta} $" src="form_116.png"/> ensureas that beta runs over HF orbits in the core (i.e. below the fermi surface) </p>
 
 </div>
 </div>
@@ -426,7 +429,7 @@ double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Vmon3</b></td>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Mar 13 2015 15:56:27 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 17 2015 10:32:50 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

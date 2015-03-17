@@ -104,6 +104,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("Solve",&IMSRGSolver::Solve)
 #ifndef NO_ODE
       .def("Solve_ode",&IMSRGSolver::Solve_ode)
+      .def("Solve_ode_adaptive",&IMSRGSolver::Solve_ode_adaptive)
       .def("Solve_ode_magnus",&IMSRGSolver::Solve_ode_magnus)
 #endif
       .def("Transform",&IMSRGSolver::Transform)

@@ -53,6 +53,7 @@ class IMSRGSolver
   void Solve();
 #ifndef NO_ODE
   void Solve_ode();
+  void Solve_ode_adaptive();
   void Solve_ode_magnus();
   void ODE_systemH( Operator& x, Operator& dxdt, const double t);
   void ODE_systemOmega( Operator& x, Operator& dxdt, const double t);
@@ -73,8 +74,10 @@ class IMSRGSolver
   void UpdateOmega();
   void UpdateH();
 
-  void WriteFlowStatus(ostream&);
-  void WriteFlowStatusHeader(ostream&);
+//  void WriteFlowStatus(ostream&);
+//  void WriteFlowStatusHeader(ostream&);
+  void WriteFlowStatus(string);
+  void WriteFlowStatusHeader(string);
 
   void ConstructGenerator_Wegner();
   void ConstructGenerator_White();

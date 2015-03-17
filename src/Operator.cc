@@ -598,6 +598,7 @@ void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int td
 double Operator::AddToThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, double V_in)
 {
 
+   // Re-order so that a>=b>=c, d>=e>=f
    int a,b,c,d,e,f;
    int abc_recoupling_case = SortThreeBodyOrbits(a_in,b_in,c_in,a,b,c);
    int def_recoupling_case = SortThreeBodyOrbits(d_in,e_in,f_in,d,e,f);
@@ -656,47 +657,34 @@ double Operator::AddToThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, in
    {
      for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
      {
-        double Cj_abc = ThreeBodyRecouplingCoefficient(abc_recoupling_case,ja,jb,jc,Jab_in,Jab,J2);
-        double Cj_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
+       double Cj_abc = ThreeBodyRecouplingCoefficient(abc_recoupling_case,ja,jb,jc,Jab_in,Jab,J2);
+       double Cj_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
 
-        array<double,5>& vj = ThreeBody.at({a,b,c,d,e,f,J2,Jab,Jde});
-        for (int tab=tab_min; tab<=tab_max; ++tab)
-        {
-          for (int tde=tde_min; tde<=tde_max; ++tde)
-          {
-            double Ct_abc = ThreeBodyRecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
-            double Ct_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
+       array<double,5>& vj = ThreeBody.at({a,b,c,d,e,f,J2,Jab,Jde});
+       for (int tab=tab_min; tab<=tab_max; ++tab)
+       {
+         for (int tde=tde_min; tde<=tde_max; ++tde)
+         {
+           double Ct_abc = ThreeBodyRecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
+           double Ct_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
 
-            int Tindex = 2*tab + tde + (T2-1)/2;
+           int Tindex = 2*tab + tde + (T2-1)/2;
 
-            vj[Tindex] += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
-            V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * vj[Tindex];
+           vj[Tindex] += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
+           V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * vj[Tindex];
 
-        }
-      }
-    }
-  }
-  return V_out;
+         }
+       }
+     }
+   }
+   return V_out;
 }
 
 
 
-
-
-
 //*******************************************************************
-/// Rearrange orbits (abc) so that a>=b>=c
+/// Coefficients for recoupling three body matrix elements
 //*******************************************************************
-/*
-void Operator::SortThreeBodyOrbits(int& a, int& b, int& c)
-{
-   if (a<b)  swap(a,b);
-   if (b<c)  swap(b,c);
-   if (a<b)  swap(a,b);
-}
-*/
-
-
 double Operator::ThreeBodyRecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J)
 {
    switch (recoupling_case)
@@ -712,13 +700,16 @@ double Operator::ThreeBodyRecouplingCoefficient(int recoupling_case, double ja, 
 }
 
 
-// 0: (abc)_in -> (abc)
-// 1: (acb)_in -> (abc)
-// 2: (bac)_in -> (abc)
-// 3: (bca)_in -> (abc)
-// 4: (cab)_in -> (abc)
-// 5: (cba)_in -> (abc)
-//int Operator::GetRecouplingCase(int a_in, int b_in, int c_in, int a, int b, int c)
+//*******************************************************************
+/// Rearrange orbits (abc) so that a>=b>=c
+/// and return an int which reflects the required reshuffling
+/// - 0: (abc)_in -> (abc)
+/// - 1: (acb)_in -> (abc)
+/// - 2: (bac)_in -> (abc)
+/// - 3: (bca)_in -> (abc)
+/// - 4: (cab)_in -> (abc)
+/// - 5: (cba)_in -> (abc)
+//*******************************************************************
 int Operator::SortThreeBodyOrbits(int a_in, int b_in, int c_in, int& a, int& b, int& c)
 {
    a=a_in;
@@ -905,6 +896,10 @@ void Operator::Erase()
     EraseThreeBody();
 }
 
+void Operator::EraseOneBody()
+{
+   OneBody.zeros();
+}
 
 void Operator::EraseTwoBody()
 {
@@ -918,40 +913,6 @@ void Operator::EraseTwoBody()
    }
 }
 
-/*
-void Operator::EraseThreeBody()
-{
-  for ( auto& it_Orb : ThreeBody )
-  {
-    for ( auto& it_J : it_Orb.second )
-    {
-      for ( auto& it_Jab : it_J.second )
-      {
-        for ( auto& it_Jde : it_Jab.second )
-        {
-          for ( double& v : it_Jde.second )
-          {
-            v = 0;
-          }
-        }
-      }
-    }
-  }
-}
-*/
-
-/*
-void Operator::EraseThreeBody()
-{
- for (auto& it_Orb: ThreeBody)
- {
-  for (auto& it_J : it_Orb.second)
-  {
-    it_J.second = {0.,0.,0.,0.,0.,};
-  }
- }
-}
-*/
 void Operator::EraseThreeBody()
 {
  for (auto& it_Orb: ThreeBody)

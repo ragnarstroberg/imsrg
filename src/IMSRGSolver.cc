@@ -70,17 +70,20 @@ void IMSRGSolver::Reset()
 void IMSRGSolver::Solve()
 {
    // If we have a flow output file, open it up and write to it here.
-   ofstream flowf;
-   if (flowfile != "")
-      flowf.open(flowfile,ofstream::out);
-   WriteFlowStatusHeader(cout);
+//   ofstream flowf;
+//   if (flowfile != "")
+//      flowf.open(flowfile,ofstream::out);
+//   WriteFlowStatusHeader(cout);
+   WriteFlowStatusHeader("cout");
 
    istep = 0;
    UpdateEta();
 
     // Write details of the flow
-   WriteFlowStatus(flowf);
-   WriteFlowStatus(cout);
+//   WriteFlowStatus(flowf);
+//   WriteFlowStatus(cout);
+   WriteFlowStatus(flowfile);
+   WriteFlowStatus("cout");
 
    for (istep=1;s<smax;++istep)
    {
@@ -96,39 +99,95 @@ void IMSRGSolver::Solve()
       dOmega = Eta * ds; // Here's the Euler step.
 
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
-//      cout << "Updating Omega" << endl;
       Omega = dOmega.BCH_Product( Omega ); 
 
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
-//      cout << "Udating H" << endl;
       H_s = H_0.BCH_Transform( Omega );
         
       UpdateEta();
 
       // Write details of the flow
-      WriteFlowStatus(flowf);
-      WriteFlowStatus(cout);
+//      WriteFlowStatus(flowf);
+//      WriteFlowStatus(cout);
+      WriteFlowStatus(flowfile);
+      WriteFlowStatus("cout");
 
    }
 
-   if (flowfile != "")
-      flowf.close();
+//   if (flowfile != "")
+//      flowf.close();
 
 }
 
 
 #ifndef NO_ODE
+// Implement element-wise division and abs and reduce for Operators.
+// This is required for adaptive steppers
+
+Operator operator/ (const Operator& num, const Operator& denom)
+{
+   Operator quotient = num;
+   quotient.ZeroBody /= denom.ZeroBody;
+   quotient.OneBody /= denom.OneBody;
+   for (int ch=0;ch<quotient.nChannels;++ch)
+   {
+      for (auto &twobody : quotient.TwoBody[ch] )
+      {
+        int chket = twobody.first;
+        twobody.second /= denom.TwoBody.at(ch).at(chket);
+      }
+   }
+
+}
+
+Operator abs(const Operator& opin)
+{
+   Operator opout = opin;
+   opout.ZeroBody = abs(opout.ZeroBody);
+   opout.OneBody = arma::abs(opout.OneBody);
+   for (int ch=0;ch<opout.nChannels;++ch)
+   {
+      for (auto &twobody : opout.TwoBody[ch] )
+      {
+        twobody.second = arma::abs(twobody.second);
+      }
+   }
+
+}
+// Black magic...
+namespace boost {namespace numeric {namespace odeint{
+template<>
+struct vector_space_reduce<Operator&>
+{
+   template<class Value, class Op>
+   Value operator()(const Operator& X, Op op, Value init)
+   {
+      init = op(init, X.ZeroBody());
+      for ( double& v : X.OneBody )
+      {
+         init = op(init, v) ;
+      }
+      for (int ch=0;ch<X.nChannels;++ch)
+      {
+        for (auto &twobody : X.TwoBody[ch] )
+        {
+          for (double& v : twobody )
+          {
+             init = op(init, v) ;
+          }
+        }
+      }
+      return init;
+   }
+};
+}}}
+
 
 void IMSRGSolver::Solve_ode()
 {
-   if (flowfile != "")
-   {
-     ofstream flowf;
-     flowf.open(flowfile,ofstream::out);
-     WriteFlowStatus(flowf);
-     flowf.close();
-   }
-   WriteFlowStatusHeader(cout);
+
+   WriteFlowStatusHeader("cout");
+     WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
    namespace pl = std::placeholders;
    runge_kutta4<Operator, double, Operator, double, vector_space_algebra> stepper;
@@ -138,35 +197,38 @@ void IMSRGSolver::Solve_ode()
    monitor.report();
 }
 
+void IMSRGSolver::Solve_ode_adaptive()
+{
+/*
+   WriteFlowStatusHeader("cout");
+     WriteFlowStatus(flowfile);
+   using namespace boost::numeric::odeint;
+   namespace pl = std::placeholders;
+//   auto stepper = make_controlled<runge_kutta_dopri5<Operator, double, Operator, double, vector_space_algebra> >(1e-8,1e-8);
+   auto system = std::bind( &IMSRGSolver::ODE_systemH, *this, pl::_1, pl::_2, pl::_3);
+   auto monitor = ode_monitor;
+   auto stepper = make_controlled(1e-8,1e-8, runge_kutta_dopri5<Operator, double, Operator, double, vector_space_algebra>() );
+   size_t steps = integrate_adaptive(stepper, system, H_s, s, smax, ds, monitor);
+   monitor.report();
+*/
+}
 
-//void IMSRGSolver::ODE_systemH(const Operator& x, Operator& dxdt, const double t)
+
 void IMSRGSolver::ODE_systemH( Operator& x, Operator& dxdt, const double t)
 {
    H_s = x;
    s = t;
    UpdateEta();
    dxdt = Eta.Commutator(x);
-   WriteFlowStatus(cout);
-   if (flowfile != "")
-   {
-     ofstream flowf;
-     flowf.open(flowfile,ofstream::app);
-     WriteFlowStatus(flowf);
-     flowf.close();
-   }
+   WriteFlowStatus("cout");
+   WriteFlowStatus(flowfile);
 }
 
 
 void IMSRGSolver::Solve_ode_magnus()
 {
-   if (flowfile != "")
-   {
-     ofstream flowf;
-     flowf.open(flowfile,ofstream::out);
-     WriteFlowStatus(flowf);
-     flowf.close();
-   }
-   WriteFlowStatusHeader(cout);
+   WriteFlowStatus("cout");
+   WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
    namespace pl = std::placeholders;
    runge_kutta4<Operator, double, Operator, double, vector_space_algebra> stepper;
@@ -176,7 +238,6 @@ void IMSRGSolver::Solve_ode_magnus()
    monitor.report();
 }
 
-//void IMSRGSolver::ODE_systemOmega(const Operator& x, Operator& dxdt, const double t)
 void IMSRGSolver::ODE_systemOmega( Operator& x, Operator& dxdt, const double t)
 {
    s = t;
@@ -184,26 +245,21 @@ void IMSRGSolver::ODE_systemOmega( Operator& x, Operator& dxdt, const double t)
    H_s = H_0.BCH_Transform(Omega);
    UpdateEta();
    dxdt = Eta - 0.5*Omega.Commutator(Eta);
-   WriteFlowStatus(cout);
-   if (flowfile != "")
-   {
-     ofstream flowf;
-     flowf.open(flowfile,ofstream::app);
-     WriteFlowStatus(flowf);
-     flowf.close();
-   }
+   WriteFlowStatus("cout");
+   WriteFlowStatus(flowfile);
+
 }
 
 #endif
 
 
-// Returns exp(Omega) OpIn exp(-Omega)
+/// Returns \f$ e^{Omega} \mathcal{O} e^{-Omega} \f$
 Operator IMSRGSolver::Transform(Operator& OpIn)
 {
    return OpIn.BCH_Transform( Omega );
 }
 
-// Returns exp(-Omega) OpIn exp(Omega)
+/// Returns \f$ e^{-Omega} \mathcal{O} e^{Omega} \f$
 Operator IMSRGSolver::InverseTransform(Operator& OpIn)
 {
    Operator negomega = -Omega;
@@ -249,10 +305,8 @@ void IMSRGSolver::UpdateEta()
 
 // Epstein-Nesbet energy denominators for White-type generators
 // i=particle, j=hole
-//double IMSRGSolver::GetEpsteinNesbet1bDenominator(int i, int j) 
 double IMSRGSolver::Get1bDenominator_ph(int i, int j) 
 {
-//   double denominator = H_s.OneBody(i,i) - H_s.OneBody(j,j) - H_s.GetTBMEmonopole(j,i,j,i);
    double denominator = H_s.OneBody(i,i) - H_s.OneBody(j,j) - H_s.GetTBMEmonopole(i,j,i,j);
    return denominator;
 }
@@ -269,7 +323,6 @@ double IMSRGSolver::Get1bDenominator_pp(int i, int j)
 
 // This could likely be sped up by constructing and storing the monopole matrix
 // bra=pp'  ket = hh'
-//double IMSRGSolver::GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket) 
 double IMSRGSolver::Get2bDenominator_pphh(int ch, int ibra, int iket) 
 {
    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -793,15 +846,17 @@ int IMSRGSolver::GetSystemDimension()
 
 
 
-void IMSRGSolver::WriteFlowStatus(ostream& f)
+//void IMSRGSolver::WriteFlowStatus(ostream& f)
+void IMSRGSolver::WriteFlowStatus(string fname)
 {
+   ofstream ff;
+   if (fname !="") ff.open(fname,ios::out);
+   ostream &f = fname=="cout" ? cout : ff;
    if ( f.good() )
    {
       int fwidth = 16;
       int fprecision = 9;
       f.setf(ios::fixed);
-      //f.width(20);
-//      f.precision(10);
       f << setw(5) << istep
         << setw(fwidth) << setprecision(3) << s
         << setw(fwidth) << setprecision(fprecision) << H_s.ZeroBody 
@@ -810,15 +865,17 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << Omega.Norm()
         << setw(fwidth) << setprecision(fprecision) << Eta.OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << Eta.TwoBodyNorm()
-//        << setw(fwidth) << setprecision(fprecision) << dOmega.Norm()
         << endl;
-//      f << istep << "      " << s << "      " << H_s.ZeroBody << "     " << H_s.OneBodyNorm() << "    " << H_s.TwoBodyNorm() << "     " << Omega.Norm() << "     " << Eta.OneBodyNorm() << "    " << Eta.TwoBodyNorm() << "   " << dOmega.Norm() << endl;
    }
 
 }
 
-void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
+//void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
+void IMSRGSolver::WriteFlowStatusHeader(string fname)
 {
+   ofstream ff;
+   if (fname !="") ff.open(fname,ios::out);
+   ostream &f = fname=="cout" ? cout : ff;
    if ( f.good() )
    {
       int fwidth = 16;
@@ -832,7 +889,6 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << "||Omega||" 
         << setw(fwidth) << setprecision(fprecision) << "||Eta_1||" 
         << setw(fwidth) << setprecision(fprecision) << "||Eta_2||" 
-//        << setw(fwidth) << setprecision(fprecision) << "||dOmega||" 
         << endl;
       f << "-----------------------------------------------------------------------------------------------------------------------" << endl;
    }
