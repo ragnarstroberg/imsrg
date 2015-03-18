@@ -70,11 +70,13 @@ void IMSRGSolver::Reset()
 void IMSRGSolver::Solve()
 {
    // If we have a flow output file, open it up and write to it here.
-//   ofstream flowf;
-//   if (flowfile != "")
-//      flowf.open(flowfile,ofstream::out);
-//   WriteFlowStatusHeader(cout);
-   WriteFlowStatusHeader("cout");
+   ofstream flowf;
+   if (flowfile != "")
+   {
+      flowf.open(flowfile,ofstream::out);
+      flowf.close();
+   }
+   WriteFlowStatusHeader(cout);
 
    istep = 0;
    UpdateEta();
@@ -83,7 +85,7 @@ void IMSRGSolver::Solve()
 //   WriteFlowStatus(flowf);
 //   WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
-   WriteFlowStatus("cout");
+   WriteFlowStatus(cout);
 
    for (istep=1;s<smax;++istep)
    {
@@ -110,7 +112,7 @@ void IMSRGSolver::Solve()
 //      WriteFlowStatus(flowf);
 //      WriteFlowStatus(cout);
       WriteFlowStatus(flowfile);
-      WriteFlowStatus("cout");
+      WriteFlowStatus(cout);
 
    }
 
@@ -186,8 +188,8 @@ struct vector_space_reduce<Operator&>
 void IMSRGSolver::Solve_ode()
 {
 
-   WriteFlowStatusHeader("cout");
-     WriteFlowStatus(flowfile);
+   WriteFlowStatusHeader(cout);
+   WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
    namespace pl = std::placeholders;
    runge_kutta4<Operator, double, Operator, double, vector_space_algebra> stepper;
@@ -200,7 +202,7 @@ void IMSRGSolver::Solve_ode()
 void IMSRGSolver::Solve_ode_adaptive()
 {
 /*
-   WriteFlowStatusHeader("cout");
+   WriteFlowStatusHeader(cout);
      WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
    namespace pl = std::placeholders;
@@ -220,14 +222,14 @@ void IMSRGSolver::ODE_systemH( Operator& x, Operator& dxdt, const double t)
    s = t;
    UpdateEta();
    dxdt = Eta.Commutator(x);
-   WriteFlowStatus("cout");
+   WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
 }
 
 
 void IMSRGSolver::Solve_ode_magnus()
 {
-   WriteFlowStatus("cout");
+   WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
    namespace pl = std::placeholders;
@@ -245,7 +247,7 @@ void IMSRGSolver::ODE_systemOmega( Operator& x, Operator& dxdt, const double t)
    H_s = H_0.BCH_Transform(Omega);
    UpdateEta();
    dxdt = Eta - 0.5*Omega.Commutator(Eta);
-   WriteFlowStatus("cout");
+   WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
 
 }
@@ -846,12 +848,14 @@ int IMSRGSolver::GetSystemDimension()
 
 
 
-//void IMSRGSolver::WriteFlowStatus(ostream& f)
 void IMSRGSolver::WriteFlowStatus(string fname)
 {
    ofstream ff;
-   if (fname !="") ff.open(fname,ios::out);
-   ostream &f = fname=="cout" ? cout : ff;
+   if (fname !="") ff.open(fname,ios::app);
+   WriteFlowStatus(ff);
+}
+void IMSRGSolver::WriteFlowStatus(ostream& f)
+{
    if ( f.good() )
    {
       int fwidth = 16;
@@ -870,12 +874,14 @@ void IMSRGSolver::WriteFlowStatus(string fname)
 
 }
 
-//void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
 void IMSRGSolver::WriteFlowStatusHeader(string fname)
 {
    ofstream ff;
-   if (fname !="") ff.open(fname,ios::out);
-   ostream &f = fname=="cout" ? cout : ff;
+   if (fname !="") ff.open(fname,ios::app);
+   WriteFlowStatusHeader(ff);
+}
+void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
+{
    if ( f.good() )
    {
       int fwidth = 16;

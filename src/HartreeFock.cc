@@ -88,11 +88,12 @@ void HartreeFock::CalcEHF()
    ModelSpace * ms = Hbare.GetModelSpace();
    EHF = 0;
    double e3hf = 0;
-   int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
+   int norbits = ms->GetNumberOrbits();
    for (int i=0;i<norbits;i++)
    {
-      int jfactor = ms->GetOrbit(i).j2 +1;
-      for (int j=0;j<norbits;j++)
+      Orbit& oi = ms->GetOrbit(i);
+      int jfactor = oi.j2 +1;
+      for (int j : ms->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}))
       {
          EHF +=  rho(i,j) * jfactor * (t(i,j)+0.5*Vij(i,j)+1./6*V3ij(i,j));
          e3hf +=  rho(i,j) * jfactor * (1./6*V3ij(i,j));
@@ -115,56 +116,30 @@ void HartreeFock::CalcEHF()
 void HartreeFock::Diagonalize()
 {
    prev_energies = energies;
-   vector<unsigned int> orbit_list;
-   arma::mat F_ch;
-   arma::mat C_ch;
-   arma::vec E_ch;
-   int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
-   int Jmax1 = Hbare.GetModelSpace()->OneBodyJmax;
-   for (int p = 0; p<=1;p++)
+   for ( auto& it : Hbare.GetModelSpace()->OneBodyChannels)
    {
-      for (int Tz = -1; Tz<=1; Tz+=2)
+      arma::uvec orbvec(it.second);
+      arma::mat F_ch = F.submat(orbvec,orbvec);
+      arma::mat C_ch;
+      arma::vec E_ch;
+      bool success = false;
+      int diag_tries = 0;
+      while ( not success)
       {
-          for (int J=0;J<=Jmax1;J++)
-          {
+         success = arma::eig_sym(E_ch, C_ch, F_ch);
+         ++diag_tries;
+         if (diag_tries > 5)
+         {
+           cout << "Hartree-Fock: Failed to diagonalize the submatrix " 
+                << " on iteration # " << iterations << ". The submatrix looks like:" << endl;
+           F_ch.print();
+         }
+      }
+      // Update the full overlap matrix C and energy vector
+      energies(orbvec) = E_ch;
+      C.submat(orbvec,orbvec) = C_ch;
 
-            // Find all the SP orbits that have quantum numbers J,p,Tz
-            // and store them in a list
-             orbit_list.resize(0);
-             for (int a=0;a<norbits;a++)
-             {
-                Orbit &oa = Hbare.GetModelSpace()->GetOrbit(a);
-                if (oa.j2==J and oa.tz2==Tz and (oa.l%2)==p)
-                {
-                   orbit_list.push_back(a);
-                }
-             }
-             // Now create submatrices corresponding to just these orbits
-             int norb = orbit_list.size();
-             if (norb < 1) continue;
-             arma::uvec orbvec(orbit_list);
-             F_ch = F.submat(orbvec,orbvec);
-             // Diagonalize the submatrix
-             bool success = false;
-             int diag_tries = 0;
-             while ( not success)
-             {
-                success = arma::eig_sym(E_ch, C_ch, F_ch);
-                ++diag_tries;
-                if (diag_tries > 5)
-                {
-                  cout << "Hartree-Fock: Failed to diagonalize the submatrix with J=" << J << " Tz=" << Tz << " parity = " << p
-                       << " on iteration # " << iterations << ". The submatrix looks like:" << endl;
-                  F_ch.print();
-                }
-             }
-             // Update the full overlap matrix C and energy vector
-             energies(orbvec) = E_ch;
-             C.submat(orbvec,orbvec) = C_ch;
-
-          } // for J...
-      } // For Tz ...
-   } // For p...
+   }
 }
 
 
@@ -405,18 +380,17 @@ void HartreeFock::UpdateF()
    for (int i=0;i<norbits;i++)
    {
       Orbit& oi = ms->GetOrbit(i);
-      for (int j=i;j<norbits;j++)
+      for (int j : ms->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
          Orbit& oj = ms->GetOrbit(j);
-         if (oi.j2 != oj.j2 or oi.tz2 != oj.tz2 or oi.l != oj.l)   continue;
+         if (j<i) continue;
          for (int a=0;a<norbits;++a)
          {
             Orbit& oa = ms->GetOrbit(a);
             bra = ms->GetKetIndex(min(i,a),max(i,a));
-            for (int b=0;b<norbits;b++)
+            for (int b : ms->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
             {
                Orbit& ob = ms->GetOrbit(b);
-               if (oa.j2 != ob.j2 or oa.tz2 != ob.tz2 or oa.l != ob.l)   continue;
                ket = ms->GetKetIndex(min(j,b),max(j,b));
                // 2body term <ai|V|bj>
                if (a>i xor b>j)
@@ -434,11 +408,10 @@ void HartreeFock::UpdateF()
                {
                  Orbit& oc = ms->GetOrbit(c);
                  if ( 2*(oi.n+oa.n+oc.n)+oi.l+oa.l+oc.l > Hbare.E3max ) continue;
-                 for (int d=0;d<norbits;++d)
+                 for (int d : ms->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
                  {
                    Orbit& od = ms->GetOrbit(d);
                    if ( 2*(oj.n+ob.n+od.n)+oj.l+ob.l+od.l > Hbare.E3max ) continue;
-                   if (oc.j2 != od.j2 or oc.tz2 != od.tz2 or oc.l != od.l) continue;
                    if ( (oi.l+oa.l+oc.l+oj.l+ob.l+od.l)%2 >0) continue;
 
                    V3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3[{a,c,i,b,d,j}];
@@ -647,10 +620,9 @@ Operator HartreeFock::GetNormalOrderedH()
             {
               Orbit & oa = modelspace->GetOrbit(a);
               if ( 2*oa.n+oa.l+bra.E2 > Hbare.GetE3max() ) continue;
-              for (int b=0; b<norb; ++b)
+              for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
               {
                 Orbit & ob = modelspace->GetOrbit(b);
-                if ( oa.j2 != ob.j2 or oa.l!=ob.l or oa.tz2 != ob.tz2) continue;
                 if ( 2*ob.n+ob.l+ket.E2 > Hbare.GetE3max() ) continue;
                 int J3min = abs(2*J-oa.j2);
                 int J3max = 2*J + oa.j2;

@@ -74,8 +74,8 @@ class IMSRGSolver
   void UpdateOmega();
   void UpdateH();
 
-//  void WriteFlowStatus(ostream&);
-//  void WriteFlowStatusHeader(ostream&);
+  void WriteFlowStatus(ostream&);
+  void WriteFlowStatusHeader(ostream&);
   void WriteFlowStatus(string);
   void WriteFlowStatusHeader(string);
 

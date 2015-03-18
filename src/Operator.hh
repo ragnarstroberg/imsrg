@@ -190,6 +190,8 @@ class Operator
   void ScaleZeroBody(double x);
   void ScaleOneBody(double x);
   void ScaleTwoBody(double x);
+  void Symmetrize();
+  void AntiSymmetrize();
 
   // The actually interesting methods
   Operator DoNormalOrdering(); ///< Calls DoNormalOrdering2() or DoNormalOrdering3(), depending on the rank of the operator.

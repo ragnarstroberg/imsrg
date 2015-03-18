@@ -450,6 +450,9 @@ void ModelSpace::AddOrbit(Orbit orb)
    }
    if (orb.tz2<0) proton_orbits.push_back(ind);
    if (orb.tz2>0) neutron_orbits.push_back(ind);
+
+   OneBodyChannels[{orb.l, orb.j2, orb.tz2}].push_back(ind);
+
 }
 
 int ModelSpace::GetTwoBodyChannelIndex(int j, int p, int t)
