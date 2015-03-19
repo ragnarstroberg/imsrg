@@ -31,34 +31,32 @@ Operator::Operator() :
 
 // Create a zero-valued operator in a given model space
 Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) : 
-    hermitian(true), antihermitian(false), ZeroBody(0) ,
+    hermitian(true), antihermitian(false), modelspace(&ms), ZeroBody(0) ,
     nChannels(ms.GetNumberTwoBodyChannels()) ,
     OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(ms.GetNumberTwoBodyChannels(), map<int,arma::mat>() ),
     TwoBodyTensorChannels(ms.GetNumberTwoBodyChannels(), vector<int>() ),
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank)
 {
-  modelspace = &ms;
+//  modelspace = &ms;
   AllocateTwoBody();
   if (particle_rank >=3)
   {
-    cout << "allocating ThreeBody..." << endl;
     AllocateThreeBody();
-    cout << "done allocating ThreeBody" << endl;
   }
 }
 
 
 
 Operator::Operator(ModelSpace& ms) :
-    hermitian(true), antihermitian(false), ZeroBody(0) ,
+    hermitian(true), antihermitian(false), modelspace(&ms), ZeroBody(0) ,
     nChannels(ms.GetNumberTwoBodyChannels()) ,
     OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(ms.GetNumberTwoBodyChannels(), map<int,arma::mat>() ),
     TwoBodyTensorChannels(ms.GetNumberTwoBodyChannels(), vector<int>() ),
     rank_J(0), rank_T(0), parity(0), particle_rank(2)
 {
-  modelspace = &ms;
+//  modelspace = &ms;
   AllocateTwoBody();
 }
 
@@ -77,9 +75,10 @@ void Operator::AllocateTwoBody()
      for (int ch_ket=ch_bra; ch_ket<nChannels;++ch_ket)
      {
         TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-        if ( abs(tbc_bra.J-tbc_ket.J)>rank_J or (tbc_bra.J+tbc_ket.J)<rank_J
-          or abs(tbc_bra.Tz-tbc_ket.Tz)>rank_T
-           or (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
+        if ( abs(tbc_bra.J-tbc_ket.J)>rank_J ) continue;
+        if ( (tbc_bra.J+tbc_ket.J)<rank_J ) continue;
+        if ( abs(tbc_bra.Tz-tbc_ket.Tz)>rank_T ) continue;
+        if ( (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
         
         int n_bra = tbc_bra.GetNumberKets();
         TwoBodyTensorChannels[ch_bra].push_back(ch_ket);
