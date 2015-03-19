@@ -3,6 +3,8 @@
 #define Operator_h 1
 
 #include "ModelSpace.hh"
+#include "TwoBodyME.hh"
+#include "ThreeBodyME.hh"
 #include <armadillo>
 #include <string>
 #include <vector>
@@ -50,7 +52,8 @@ class Operator
 /// \f[
 /// Z_{ijkl} \sim \sum_{a\leq b} X_{ijab} Y_{abkl} = \left( X\cdot Y \right)_{ijkl}
 /// \f]
-  vector<map<int,arma::mat> > TwoBody;  
+//  vector<map<int,arma::mat> > TwoBody;  
+  TwoBodyME TwoBody;  
 /// The three-body piece of the operator, stored in a map of vectors of vectors of doubles.
 /// The 3BMEs are stored in unnormalized JT coupled form
 /// \f$ \langle (ab)J_{ab}t_{ab};cJT | V | (de)J_{de}t_{de};f JT \rangle \f$.
@@ -58,7 +61,9 @@ class Operator
 /// \f$ a\geq b \geq c, a\geq d\geq e \geq f \f$ are stored.
 /// The other combinations are obtained on the fly by GetThreeBodyME().
 /// The storage format is ThreeBody[orbit_index][Jab_index][JT_index].
-  map< array<int,9>,array<double,5> >ThreeBody; // 
+
+//  map< array<int,9>,array<double,5> >ThreeBody; // 
+   ThreeBodyME ThreeBody;
 
   int rank_J; ///< Spherical tensor rank of the operator
   int rank_T; ///< Isotensor rank of the operator
@@ -108,7 +113,7 @@ class Operator
   // One body setter/getters
   double GetOneBody(int i,int j) {return OneBody(i,j);};
   void SetOneBody(int i, int j, double val) { OneBody(i,j) = val;};
-
+/*
   //TwoBody setter/getters
   double GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const;
   void   SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme);
@@ -146,18 +151,18 @@ class Operator
 
   double GetTBMEmonopole(int a, int b, int c, int d) const;
   double GetTBMEmonopole(Ket & bra, Ket & ket) const;
-
+*/
 
 //// Three body setter getters
-  double AddToThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
+//  double AddToThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
   void   SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
   double GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
   double GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
 
 ///// Some other three body methods
 
-  int SortThreeBodyOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c);
-  double ThreeBodyRecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J);
+//  int SortThreeBodyOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c);
+//  double ThreeBodyRecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J);
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};
 
@@ -231,7 +236,8 @@ class Operator
 
 
   void PrintOneBody() const {OneBody.print();};
-  void PrintTwoBody(int ch) const {TwoBody.at(ch).at(ch).print();};
+  //void PrintTwoBody(int ch) const {TwoBody.at(ch).at(ch).print();};
+  void PrintTwoBody(int ch) const {TwoBody.PrintMatrix(ch,ch);};
 
 
   //Methods

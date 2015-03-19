@@ -4,6 +4,9 @@
 #include <vector>
 #include <map>
 #include <armadillo>
+#ifndef SQRT2
+  #define SQRT2 1.4142135623730950488
+#endif
 
 
 using namespace std;

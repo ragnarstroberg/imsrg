@@ -116,7 +116,7 @@ void HartreeFock::CalcEHF()
 void HartreeFock::Diagonalize()
 {
    prev_energies = energies;
-   for ( auto& it : Hbare.GetModelSpace()->OneBodyChannels)
+   for ( auto& it : Hbare.GetModelSpace()->OneBodyChannels )
    {
       arma::uvec orbvec(it.second);
       arma::mat F_ch = F.submat(orbvec,orbvec);
@@ -167,8 +167,10 @@ void HartreeFock::BuildMonopoleV()
          Ket & ket = Hbare.GetModelSpace()->GetKet(iket);
          int c = ket.p;
          int d = ket.q;
-         Vmon(ibra,iket)       = Hbare.GetTBMEmonopole(a,b,c,d)*norm;
-         Vmon_exch(ibra,iket)  = Hbare.GetTBMEmonopole(a,b,d,c)*norm;
+//         Vmon(ibra,iket)       = Hbare.GetTBMEmonopole(a,b,c,d)*norm;
+//         Vmon_exch(ibra,iket)  = Hbare.GetTBMEmonopole(a,b,d,c)*norm;
+         Vmon(ibra,iket)       = Hbare.TwoBody.GetTBMEmonopole(a,b,c,d)*norm;
+         Vmon_exch(ibra,iket)  = Hbare.TwoBody.GetTBMEmonopole(a,b,d,c)*norm;
       }
    }
 }
@@ -377,6 +379,7 @@ void HartreeFock::UpdateF()
    Vij.zeros();
    V3ij.zeros();
 
+   #pragma omp parallel for
    for (int i=0;i<norbits;i++)
    {
       Orbit& oi = ms->GetOrbit(i);
@@ -567,8 +570,10 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
          }
       }
 
-     auto& IN  =  OpIn.TwoBody[ch].at(ch);
-     auto& OUT =  OpHF.TwoBody[ch].at(ch);
+//     auto& IN  =  OpIn.TwoBody[ch].at(ch);
+//     auto& OUT =  OpHF.TwoBody[ch].at(ch);
+     auto& IN  =  OpIn.TwoBody.GetMatrix(ch);
+     auto& OUT =  OpHF.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * IN * D;
    }
 
@@ -600,6 +605,7 @@ Operator HartreeFock::GetNormalOrderedH()
       arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
       arma::mat V3NO  = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
 
+      #pragma omp parallel for schedule(dynamic,1)
       for (int i=0; i<npq; ++i)    
       {
          Ket & bra = tbc.GetKet(i);
@@ -637,8 +643,10 @@ Operator HartreeFock::GetNormalOrderedH()
          }
       }
 
-     auto& V2  =  Hbare.TwoBody[ch].at(ch);
-     auto& OUT =  HNO.TwoBody[ch].at(ch);
+//     auto& V2  =  Hbare.TwoBody[ch].at(ch);
+//     auto& OUT =  HNO.TwoBody[ch].at(ch);
+     auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
+     auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
    }
    

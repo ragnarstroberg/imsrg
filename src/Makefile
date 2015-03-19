@@ -14,7 +14,8 @@ all: pyIMSRG.so libIMSRG.so
 #all: mysrg pyIMSRG.so
 	
 #OBJ = ModelSpace.o ReadWrite.o Operator.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o Operator3.o
-OBJ = ModelSpace.o ReadWrite.o Operator.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o
+OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o \
+      ReadWrite.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o
 
 mysrg: main.cc $(OBJ)
 	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 

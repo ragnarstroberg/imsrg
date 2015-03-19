@@ -162,14 +162,9 @@ void ReadWrite::ReadBareTBME( string filename, Operator& Hbare)
 
 // NORMALIZATION: Read in normalized, antisymmetrized TBME's
 
-     if (doCoM_corr)
-     {
-        Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme-com_corr );
-     }
-     else
-     {
-        Hbare.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme ); // Don't do COM correction,
-     }
+     if (doCoM_corr)  tbme-=com_corr;
+
+     Hbare.TwoBody.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme ); // Don't do COM correction,
 
   }
 
@@ -226,7 +221,8 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
      // if the matrix element is outside the model space, ignore it.
      if (a>=norbits or b>=norbits or c>=norbits or d>=norbits) continue;
      Par = (la+lb)%2;
-     Hbare.SetTBME(J2/2,Par,Tz2/2,a,b,c,d, tbme ); 
+//     Hbare.SetTBME(J2/2,Par,Tz2/2,a,b,c,d, tbme ); 
+     Hbare.TwoBody.SetTBME(J2/2,Par,Tz2/2,a,b,c,d, tbme ); 
 
   }
 
@@ -308,8 +304,10 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
     // do pp and nn
     if (T==1)
     {
-      Hbare.SetTBME(J,parity,-1,a,b,c,d,vpp);
-      Hbare.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,vnn);
+//      Hbare.SetTBME(J,parity,-1,a,b,c,d,vpp);
+//      Hbare.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,vnn);
+      Hbare.TwoBody.SetTBME(J,parity,-1,a,b,c,d,vpp);
+      Hbare.TwoBody.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,vnn);
     }
 
     if (abs(vpn)<1e-6) continue;
@@ -341,13 +339,13 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
   }
 
     // now do pnpn, npnp, pnnp, nppn
-  Hbare.AddToTBME(J,parity,0,a,b+1,c,d+1,vpnpn);
+  Hbare.TwoBody.AddToTBME(J,parity,0,a,b+1,c,d+1,vpnpn);
   if (a!=b and c!=d)
-     Hbare.AddToTBME(J,parity,0,a+1,b,c+1,d,vpnpn);
+     Hbare.TwoBody.AddToTBME(J,parity,0,a+1,b,c+1,d,vpnpn);
   if ( c!=d)
-    Hbare.AddToTBME(J,parity,0,a,b+1,c+1,d,vpnnp);
+    Hbare.TwoBody.AddToTBME(J,parity,0,a,b+1,c+1,d,vpnnp);
   if ( a!=b)
-    Hbare.AddToTBME(J,parity,0,a+1,b,c,d+1,vpnnp);
+    Hbare.TwoBody.AddToTBME(J,parity,0,a+1,b,c,d+1,vpnnp);
 
   }
   
@@ -465,20 +463,20 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
 
              // do pp and nn
              if (tbme_pp !=0)
-                Hbare.SetTBME(J,parity,-1,a,b,c,d,tbme_pp);
+                Hbare.TwoBody.SetTBME(J,parity,-1,a,b,c,d,tbme_pp);
              if (tbme_nn !=0)
-                Hbare.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,tbme_nn);
+                Hbare.TwoBody.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,tbme_nn);
 
              // now do pnpn, npnp, pnnp, nppn
              if (tbme_pnpn !=0)
              {
-               Hbare.SetTBME(J,parity,0,a,b+1,c,d+1,tbme_pnpn);
-               Hbare.SetTBME(J,parity,0,a+1,b,c+1,d,tbme_pnpn);
+               Hbare.TwoBody.SetTBME(J,parity,0,a,b+1,c,d+1,tbme_pnpn);
+               Hbare.TwoBody.SetTBME(J,parity,0,a+1,b,c+1,d,tbme_pnpn);
              }
              if (tbme_pnnp !=0)
              {
-               Hbare.SetTBME(J,parity,0,a,b+1,c+1,d,tbme_pnnp);
-               Hbare.SetTBME(J,parity,0,a+1,b,c,d+1,tbme_pnnp);
+               Hbare.TwoBody.SetTBME(J,parity,0,a,b+1,c+1,d,tbme_pnnp);
+               Hbare.TwoBody.SetTBME(J,parity,0,a+1,b,c,d+1,tbme_pnnp);
              }
           }
         }
@@ -860,7 +858,7 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
          int d_ind = d/2+1 + ( od.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
             int T = abs(tbc.Tz);
             //double tbme = op.TwoBody[ch](ibra,iket);
-            double tbme = op.GetTBME(ch,bra,ket);
+            double tbme = op.TwoBody.GetTBME(ch,bra,ket);
             if ( abs(tbme) < 1e-6) tbme = 0;
             if (T==0)
             {
@@ -1030,7 +1028,7 @@ void ReadWrite::WriteTwoBody(Operator& op, string filename)
          for (int j=i;j<npq;++j)
          {
             Ket &ket = tbc.GetKet(j);
-            double tbme = op.GetTBME(ch,bra,ket) / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
+            double tbme = op.TwoBody.GetTBME(ch,bra,ket) / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
             if ( abs(tbme)<1e-6 ) tbme = 0;
             Orbit &oc = modelspace->GetOrbit(ket.p);
             Orbit &od = modelspace->GetOrbit(ket.q);
@@ -1073,7 +1071,7 @@ void ReadWrite::WriteValenceTwoBody(Operator& op, string filename)
          {
             if (j<i) continue;
             Ket &ket = tbc.GetKet(j);
-            double tbme = op.GetTBME(ch,bra,ket) / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
+            double tbme = op.TwoBody.GetTBME(ch,bra,ket) / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
             if ( abs(tbme)<1e-4 ) continue;
             Orbit &oc = modelspace->GetOrbit(ket.p);
             Orbit &od = modelspace->GetOrbit(ket.q);
@@ -1142,8 +1140,7 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
          for (int iket=iket_min; iket<nkets; ++iket)
          {
             Ket& ket = tbc.GetKet(iket);
-            //double tbme = op.GetTBME(ch,bra,ket);
-            double tbme = op.GetTBME(ch,ibra,iket);
+            double tbme = op.TwoBody.GetTBME(ch,ibra,iket);
             if (abs(tbme) > 1e-7)
               opfile << ch << "\t" << ibra << "\t" << iket << "\t" << setprecision(10) << tbme << endl;
          }
@@ -1198,7 +1195,7 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
    }
    while (opfile >> ch >> i >> j >> v)
    {
-      op.SetTBME(ch,i,j,v);
+      op.TwoBody.SetTBME(ch,i,j,v);
   }
 
    opfile.close();

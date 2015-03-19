@@ -34,15 +34,19 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     hermitian(true), antihermitian(false), modelspace(&ms), ZeroBody(0) ,
     nChannels(ms.GetNumberTwoBodyChannels()) ,
     OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
-    TwoBody(ms.GetNumberTwoBodyChannels(), map<int,arma::mat>() ),
+//    TwoBody(ms.GetNumberTwoBodyChannels(), map<int,arma::mat>() ),
+    TwoBody(&ms,Jrank,Trank,p),
+    ThreeBody(&ms, ms.GetN3max()),
     TwoBodyTensorChannels(ms.GetNumberTwoBodyChannels(), vector<int>() ),
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank)
 {
 //  modelspace = &ms;
-  AllocateTwoBody();
+//  AllocateTwoBody();
+  TwoBody.AllocateTwoBody();
   if (particle_rank >=3)
   {
-    AllocateThreeBody();
+//    AllocateThreeBody();
+    ThreeBody.AllocateThreeBody();
   }
 }
 
@@ -52,12 +56,16 @@ Operator::Operator(ModelSpace& ms) :
     hermitian(true), antihermitian(false), modelspace(&ms), ZeroBody(0) ,
     nChannels(ms.GetNumberTwoBodyChannels()) ,
     OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
-    TwoBody(ms.GetNumberTwoBodyChannels(), map<int,arma::mat>() ),
+//    TwoBody(ms.GetNumberTwoBodyChannels(), map<int,arma::mat>() ),
+    TwoBody(&ms,0,0,0),
     TwoBodyTensorChannels(ms.GetNumberTwoBodyChannels(), vector<int>() ),
     rank_J(0), rank_T(0), parity(0), particle_rank(2)
 {
 //  modelspace = &ms;
-  AllocateTwoBody();
+//  AllocateTwoBody();
+  cout << "About to AllocateTwoBody() " << endl;
+  TwoBody.AllocateTwoBody();
+  cout << "done." << endl;
 }
 
 Operator::Operator(const Operator& op)
@@ -66,7 +74,7 @@ Operator::Operator(const Operator& op)
 }
 
 
-
+/*
 void Operator::AllocateTwoBody()
 {
   for (int ch_bra=0; ch_bra<nChannels;++ch_bra)
@@ -87,71 +95,7 @@ void Operator::AllocateTwoBody()
      }
   }
 }
-
-
-// Confusing nomenclature: J2 means 2 times the total J of the three body system
-void Operator::AllocateThreeBody()
-{
-  E3max = modelspace->GetN3max();
-  cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
-  vector<double> zerovector(5,0.0);
-  int norbits = modelspace->GetNumberOrbits();
-  for (int a=0; a<norbits; a+=2)
-  {
-   Orbit& oa = modelspace->GetOrbit(a);
-   if ((2*oa.n + oa.l)>E3max) continue;
-   for (int b=0; b<=a; b+=2)
-   {
-    Orbit& ob = modelspace->GetOrbit(b);
-    if ((2*oa.n+oa.l + 2*ob.n+ob.l) > E3max) continue;
-    for (int c=0; c<=b; c+=2)
-    {
-     Orbit& oc = modelspace->GetOrbit(c);
-     if ((2*oa.n+oa.l + 2*ob.n+ob.l + 2*oc.n+oc.l) > E3max) continue;
-
-     // Begin loop over ket states
-     for( int d=0; d<=a; d+=2)
-     {
-      Orbit& od = modelspace->GetOrbit(d);
-      for (int e=0; e<= (d==a ? b : d); e+=2)
-      {
-       Orbit& oe = modelspace->GetOrbit(e);
-       for (int f=0; f<=((d==a and e==b) ? c : e); f+=2)
-       {
-        Orbit& of = modelspace->GetOrbit(f);
-
-        // conserve parity
-        if ((oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0) continue;
-
-
-        int Jab_min = abs(oa.j2-ob.j2)/2;
-        int Jde_min = abs(od.j2-oe.j2)/2;
-        int Jab_max = (oa.j2+ob.j2)/2;
-        int Jde_max = (od.j2+oe.j2)/2;
-
-
-        for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
-        {
-         for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
-         {
-           int J2_min = max( abs(2*Jab-oc.j2), abs(2*Jde-of.j2));
-           int J2_max = min( 2*Jab+oc.j2, 2*Jde+of.j2);
-           for (int J2=J2_min; J2<=J2_max; J2+=2)
-           {
-             ThreeBody[{a,b,c,d,e,f,J2,Jab,Jde}] = {0.,0.,0.,0.,0.};
-           } //J2
-         } //Jde
-        } //Jab
-       } //f
-      } //e
-     } //d
-    } //c
-   } //b
-  } //a
-}
-
-
-
+*/
 
 
 
@@ -188,6 +132,8 @@ Operator& Operator::operator*=(const double rhs)
 {
    ZeroBody *= rhs;
    OneBody *= rhs;
+   TwoBody *= rhs;
+/*
    for (int ch=0; ch<modelspace->GetNumberTwoBodyChannels();++ch)
    {
       for ( auto &twobody : TwoBody[ch] )
@@ -196,6 +142,7 @@ Operator& Operator::operator*=(const double rhs)
         matrix *= rhs;
       }
    }
+*/
    return *this;
 }
 
@@ -236,6 +183,8 @@ Operator& Operator::operator+=(const Operator& rhs)
 {
    ZeroBody += rhs.ZeroBody;
    OneBody += rhs.OneBody;
+   TwoBody += rhs.TwoBody;
+/*
    for (int ch_bra=0; ch_bra<modelspace->GetNumberTwoBodyChannels();++ch_bra)
    {
       for (int& ch_ket : TwoBodyTensorChannels[ch_bra] )
@@ -243,6 +192,7 @@ Operator& Operator::operator+=(const Operator& rhs)
          TwoBody.at(ch_bra).at(ch_ket) += rhs.TwoBody.at(ch_bra).at(ch_ket);
       }
    }
+*/
    return *this;
 }
 
@@ -256,6 +206,8 @@ Operator& Operator::operator-=(const Operator& rhs)
 {
    ZeroBody -= rhs.ZeroBody;
    OneBody -= rhs.OneBody;
+   TwoBody -= rhs.TwoBody;
+/*
    for (int ch_bra=0; ch_bra<modelspace->GetNumberTwoBodyChannels();++ch_bra)
    {
       for (int& ch_ket : TwoBodyTensorChannels[ch_bra] )
@@ -263,6 +215,7 @@ Operator& Operator::operator-=(const Operator& rhs)
          TwoBody.at(ch_bra).at(ch_ket) -= rhs.TwoBody.at(ch_bra).at(ch_ket);
       }
    }
+*/
    return *this;
 }
 
@@ -279,7 +232,7 @@ Operator Operator::operator-() const
 
 
 ///////// SETTER_GETTERS ///////////////////////////
-
+/*
 /// This returns the matrix element times a factor \f$ \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \f$
 double Operator::GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const
 {
@@ -517,7 +470,7 @@ double Operator::GetTBMEmonopole(Ket & bra, Ket & ket) const
 {
    return GetTBMEmonopole(bra.p,bra.q,ket.p,ket.q);
 }
-
+*/
 
 
 
@@ -529,36 +482,10 @@ double Operator::GetTBMEmonopole(Ket & bra, Ket & ket) const
 ///  <t_{ab} t_c | T> <t_{de} t_f| T> V_{abcdef}^{t_{ab} t_{de} T}
 /// \f]
 //*******************************************************************
+
 double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int a, int b, int c, int d, int e, int f)
 {
-
-   double tza = modelspace->GetOrbit(a).tz2*0.5;
-   double tzb = modelspace->GetOrbit(b).tz2*0.5;
-   double tzc = modelspace->GetOrbit(c).tz2*0.5;
-   double tzd = modelspace->GetOrbit(d).tz2*0.5;
-   double tze = modelspace->GetOrbit(e).tz2*0.5;
-   double tzf = modelspace->GetOrbit(f).tz2*0.5;
-
-   double Vpn=0;
-   int Tmin = min( abs(tza+tzb+tzc), abs(tzd+tze+tzf) );
-   for (int tab=abs(tza+tzb); tab<=1; ++tab)
-   {
-      // CG calculates the Clebsch-Gordan coefficient
-      double CG1 = AngMom::CG(0.5,tza, 0.5,tzb, tab, tza+tzb);
-      for (int tde=abs(tzd+tze); tde<=1; ++tde)
-      {
-         double CG2 = AngMom::CG(0.5,tzd, 0.5,tze, tde, tzd+tze);
-         if (CG1*CG2==0) continue;
-         for (int T=Tmin; T<=3; ++T)
-         {
-           double CG3 = AngMom::CG(tab,tza+tzb, 0.5,tzc, T/2., tza+tzb+tzc);
-           double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, T/2., tzd+tze+tzf);
-           if (CG3*CG4==0) continue;
-           Vpn += CG1*CG2*CG3*CG4*GetThreeBodyME(Jab_in,Jde_in,J2,tab,tde,T,a,b,c,d,e,f);
-         }
-      }
-   }
-   return Vpn;
+  return ThreeBody.GetThreeBodyME_pn(Jab_in, Jde_in, J2, a, b, c, d, e, f);
 }
 
 
@@ -573,7 +500,8 @@ double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int a, int b,
 //*******************************************************************
 double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in)
 {
-   return AddToThreeBodyME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,0.0);
+   return ThreeBody.GetThreeBodyME(Jab_in, Jde_in, J2, tab_in, tde_in, T2, a_in, b_in, c_in, d_in, e_in, f_in);
+//   return AddToThreeBodyME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,0.0);
 }
 
 //*******************************************************************
@@ -583,150 +511,7 @@ double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int 
 //*******************************************************************
 void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, double V)
 {
-   AddToThreeBodyME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,V);
-}
-
-//*******************************************************************
-/// Since setting and getting three body matrix elements requires
-/// almost identical code, they are combined into one function
-/// which adds \f$V_{in}\f$ to the matrix element and returns
-/// its value \f$V_{out}\f$. To access a matrix element, we set
-/// \f$V_{in}=0\f$. To set the matrix element, we simply
-/// disregard $\V_{out}\f$.
-//*******************************************************************
-double Operator::AddToThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, double V_in)
-{
-
-   // Re-order so that a>=b>=c, d>=e>=f
-   int a,b,c,d,e,f;
-   int abc_recoupling_case = SortThreeBodyOrbits(a_in,b_in,c_in,a,b,c);
-   int def_recoupling_case = SortThreeBodyOrbits(d_in,e_in,f_in,d,e,f);
-
-   if (d>a or (d==a and e>b) or (d==a and e==b and f>c))
-   {
-      swap(a,d);
-      swap(b,e);
-      swap(c,f);
-      swap(Jab_in,Jde_in);
-      swap(tab_in,tde_in);
-      swap(abc_recoupling_case, def_recoupling_case);
-   }
-
-   Orbit& oa = modelspace->GetOrbit(a);
-   Orbit& ob = modelspace->GetOrbit(b);
-   Orbit& oc = modelspace->GetOrbit(c);
-   Orbit& od = modelspace->GetOrbit(d);
-   Orbit& oe = modelspace->GetOrbit(e);
-   Orbit& of = modelspace->GetOrbit(f);
-   if (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l > E3max) return 0;
-   if (2*(od.n+oe.n+of.n)+od.l+oe.l+of.l > E3max) return 0;
-
-
-   double ja = oa.j2*0.5;
-   double jb = ob.j2*0.5;
-   double jc = oc.j2*0.5;
-   double jd = od.j2*0.5;
-   double je = oe.j2*0.5;
-   double jf = of.j2*0.5;
-
-
-   int Jab_min = max( abs(ja-jb), abs(J2*0.5-jc) );
-   int Jab_max = min( ja+jb, J2*0.5+jc );
-   int Jde_min = max( abs(jd-je), abs(J2*0.5-jf) );
-   int Jde_max = min( jd+je, J2*0.5+jf );
-
-   int tab_min = T2==3 ? 1 : 0;
-   int tab_max = 1;
-   int tde_min = T2==3 ? 1 : 0;
-   int tde_max = 1;
-
-   if (abc_recoupling_case==0 or abc_recoupling_case==2)
-   {
-     Jab_min = Jab_max = Jab_in;
-     tab_min = tab_max = tab_in;
-   }
-   if (def_recoupling_case==0 or def_recoupling_case==2)
-   {
-      Jde_min = Jde_max = Jde_in;
-      tde_min = tde_max = tde_in;
-   }
-
-   double V_out = 0;
-   for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
-   {
-     for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
-     {
-       double Cj_abc = ThreeBodyRecouplingCoefficient(abc_recoupling_case,ja,jb,jc,Jab_in,Jab,J2);
-       double Cj_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
-
-       array<double,5>& vj = ThreeBody.at({a,b,c,d,e,f,J2,Jab,Jde});
-       for (int tab=tab_min; tab<=tab_max; ++tab)
-       {
-         for (int tde=tde_min; tde<=tde_max; ++tde)
-         {
-           double Ct_abc = ThreeBodyRecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
-           double Ct_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
-
-           int Tindex = 2*tab + tde + (T2-1)/2;
-
-           vj[Tindex] += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
-           V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * vj[Tindex];
-
-         }
-       }
-     }
-   }
-   return V_out;
-}
-
-
-
-//*******************************************************************
-/// Coefficients for recoupling three body matrix elements
-//*******************************************************************
-double Operator::ThreeBodyRecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J)
-{
-   switch (recoupling_case)
-   {
-    case 0: return Jab==Jab_in ? 1 : 0;
-    case 1: return modelspace->phase( jb+jc+Jab_in-Jab) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(jb, ja, Jab, jc, J/2., Jab_in);
-    case 2: return Jab==Jab_in ? modelspace->phase(ja+jb-Jab) : 0;
-    case 3: return modelspace->phase( jb+jc+Jab_in+1) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(ja, jb, Jab, jc, J/2., Jab_in);
-    case 4: return modelspace->phase( ja+jb-Jab+1) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(jb, ja, Jab, jc, J/2., Jab_in);
-    case 5: return -sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(ja, jb, Jab, jc, J/2., Jab_in);
-    default: return 0;
-    }
-}
-
-
-//*******************************************************************
-/// Rearrange orbits (abc) so that a>=b>=c
-/// and return an int which reflects the required reshuffling
-/// - 0: (abc)_in -> (abc)
-/// - 1: (acb)_in -> (abc)
-/// - 2: (bac)_in -> (abc)
-/// - 3: (bca)_in -> (abc)
-/// - 4: (cab)_in -> (abc)
-/// - 5: (cba)_in -> (abc)
-//*******************************************************************
-int Operator::SortThreeBodyOrbits(int a_in, int b_in, int c_in, int& a, int& b, int& c)
-{
-   a=a_in;
-   b=b_in;
-   c=c_in;
-   if (a<b)  swap(a,b);
-   if (b<c)  swap(b,c);
-   if (a<b)  swap(a,b);
-
-   int recoupling_case;
-   if (a_in==a)       recoupling_case = (b_in==b) ? 0 : 1;
-   else if (a_in==b)  recoupling_case = (b_in==a) ? 2 : 3;
-   else               recoupling_case = (b_in==a) ? 4 : 5;
-
-   a -= a%2;
-   b -= b%2;
-   c -= c%2;
-   return recoupling_case;
+   ThreeBody.SetThreeBodyME(Jab_in, Jde_in, J2, tab_in, tde_in, T2, a_in, b_in, c_in, d_in, e_in, f_in,V);
 }
 
 
@@ -782,10 +567,10 @@ Operator Operator::DoNormalOrdering2()
       int J = tbc.J;
 
       // Zero body part
-//      for (auto& iket : tbc.KetIndex_hh) // loop over hole-hole kets in this channel
       for (auto& iket : tbc.GetKetIndex_hh() ) // loop over hole-hole kets in this channel
       {
-        opNO.ZeroBody += GetTBME(ch,iket,iket) * (2*J+1);  // <ab|V|ab>  (a,b in core)
+//        opNO.ZeroBody += GetTBME(ch,iket,iket) * (2*J+1);  // <ab|V|ab>  (a,b in core)
+        opNO.ZeroBody += TwoBody.GetTBME(ch,iket,iket) * (2*J+1);  // <ab|V|ab>  (a,b in core)
       }
 
       // One body part
@@ -804,7 +589,8 @@ Operator Operator::DoNormalOrdering2()
                if ( (iket = tbc.GetLocalIndex(min(b,h),max(b,h)))<0) continue;
                Ket & bra = tbc.GetKet(ibra);
                Ket & ket = tbc.GetKet(iket);
-               double tbme = (2*J+1.0)/(oa.j2+1)  * GetTBME(ch,bra,ket);
+//               double tbme = (2*J+1.0)/(oa.j2+1)  * GetTBME(ch,bra,ket);
+               double tbme = (2*J+1.0)/(oa.j2+1)  * TwoBody.GetTBME(ch,bra,ket);
                int phase = 1;
                if (a>h) phase *= bra.Phase(J);
                if (b>h) phase *= ket.Phase(J);
@@ -836,12 +622,13 @@ Operator Operator::DoNormalOrdering3()
 {
    cout << "in DoNormalOrdering3() " << endl;
    Operator opNO3 = Operator(*modelspace);
-   cout << "size of ThreeBody = " << ThreeBody.size() << endl;
+   cout << "size of ThreeBody = " << ThreeBody.MatEl.size() << endl;
 //   #pragma omp parallel for
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& Gamma = (arma::mat&) opNO3.TwoBody[ch].at(ch);
+//      arma::mat& Gamma = (arma::mat&) opNO3.TwoBody[ch].at(ch);
+      arma::mat& Gamma = (arma::mat&) opNO3.TwoBody.GetMatrix(ch);
       for (int ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
       {
          Ket & bra = tbc.GetKet(ibra);
@@ -890,9 +677,11 @@ void Operator::Erase()
 {
   EraseZeroBody();
   EraseOneBody();
-  EraseTwoBody();
+//  EraseTwoBody();
+  TwoBody.Erase();
   if (particle_rank >=3)
-    EraseThreeBody();
+//    EraseThreeBody();
+    ThreeBody.Erase();
 }
 
 void Operator::EraseOneBody()
@@ -902,6 +691,8 @@ void Operator::EraseOneBody()
 
 void Operator::EraseTwoBody()
 {
+ TwoBody.Erase();
+/*
    for (int ch=0;ch<nChannels;++ch)
    {
       for (auto &twobody : TwoBody[ch] )
@@ -910,8 +701,9 @@ void Operator::EraseTwoBody()
         matrix.zeros();
       }
    }
+*/
 }
-
+/*
 void Operator::EraseThreeBody()
 {
  for (auto& it_Orb: ThreeBody)
@@ -919,7 +711,7 @@ void Operator::EraseThreeBody()
     it_Orb.second = {0.,0.,0.,0.,0.,};
  }
 }
-
+*/
 
 void Operator::ScaleZeroBody(double x)
 {
@@ -933,6 +725,8 @@ void Operator::ScaleOneBody(double x)
 
 void Operator::ScaleTwoBody(double x)
 {
+   TwoBody.Scale(x);
+/*
    for (int ch=0; ch<nChannels; ++ch)
    {
      for ( auto &twobody : TwoBody[ch] )
@@ -941,12 +735,14 @@ void Operator::ScaleTwoBody(double x)
       matrix *= x;
      }
    }
+*/
 }
 
 void Operator::Eye()
 {
    ZeroBody = 1;
    OneBody.eye();
+/*
    for (int ch=0; ch<nChannels; ++ch)
    {
      for ( auto &twobody : TwoBody[ch] )
@@ -955,6 +751,7 @@ void Operator::Eye()
         matrix.eye();
      }
    }
+*/
 }
 
 
@@ -1021,7 +818,8 @@ void Operator::DoPandyaTransformation( Operator& opCC)
       {
          TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
          int nKets = tbc_ket.GetNumberKets();
-         arma::mat& MatrixCC = opCC.TwoBody.at(ch_bra).at(ch_ket);
+//         arma::mat& MatrixCC = opCC.TwoBody.at(ch_bra).at(ch_ket);
+         arma::mat& MatrixCC = opCC.TwoBody.GetMatrix(ch_bra,ch_ket);
          MatrixCC.zeros();
          
          for (int ibra=0; ibra<nKets; ++ibra)
@@ -1050,7 +848,8 @@ void Operator::DoPandyaTransformation( Operator& opCC)
                for (int Jprime=minJprime; Jprime<=maxJprime; ++Jprime)
                {
                   double sixj = modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
-                  MatrixCC(ibra,iket) -= (2*Jprime+1) * sixj * GetTBME(Jprime,parity_std,Tz_std,i,l,k,j);
+//                  MatrixCC(ibra,iket) -= (2*Jprime+1) * sixj * GetTBME(Jprime,parity_std,Tz_std,i,l,k,j);
+                  MatrixCC(ibra,iket) -= (2*Jprime+1) * sixj * TwoBody.GetTBME(Jprime,parity_std,Tz_std,i,l,k,j);
                }
             }
          }
@@ -1139,7 +938,8 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
                double sixj = modelspace->GetSixJ(ja,jc,J_cc,jd,jb,J_std);
                if (sixj == 0) continue;
                int phase = modelspace->phase(J_std);
-               double tbme = GetTBME(J_std,parity_std,Tz_std,a,b,c,d);
+//               double tbme = GetTBME(J_std,parity_std,Tz_std,a,b,c,d);
+               double tbme = TwoBody.GetTBME(J_std,parity_std,Tz_std,a,b,c,d);
                sm += (2*J_std+1) * phase * sixj * tbme ; 
             }
             TwoBody_CC_left[ch_cc](iket_cc,i_ph) = sm * phase_ad;
@@ -1156,10 +956,10 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
                double sixj = modelspace->GetSixJ(ja,jc,J_cc,jb,jd,J_std);
                if (sixj == 0) continue;
                int phase = modelspace->phase(J_std);
-               double tbme = GetTBME(J_std,parity_std,Tz_std,c,b,a,d);
+//               double tbme = GetTBME(J_std,parity_std,Tz_std,c,b,a,d);
+               double tbme = TwoBody.GetTBME(J_std,parity_std,Tz_std,c,b,a,d);
                sm += (2*J_std+1) * phase * sixj * tbme ;
             }
-//            TwoBody_CC_right[ch_cc](i_ph,iket_cc) = - sm * phase_ad;
             TwoBody_CC_right[ch_cc](i_ph,iket_cc) =  sm * phase_ad;
 
          }
@@ -1172,7 +972,6 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
 //  OpOut = exp(Omega) Op exp(-Omega)
 Operator Operator::BCH_Transform(  Operator &Omega)
 {
-//   double bch_transform_threshold = 1e-6;
    int max_iter = 20;
 //   int max_iter = 6;
    int warn_iter = 12;
@@ -1180,22 +979,12 @@ Operator Operator::BCH_Transform(  Operator &Omega)
    double ny = Omega.Norm();
    Operator OpOut = *this;
    Operator OpNested = *this;
-//   cout << "Begin BCH_Transform: ||H1|| = " << OpOut.OneBodyNorm()
-//        << "  ||Nested1|| = " << OpNested.OneBodyNorm()
-//        << "  ||Omega1|| = " << Omega.OneBodyNorm() << endl;
    for (int i=1; i<max_iter; ++i)
    {
       OpNested = Omega.Commutator(OpNested) / i;
 
-//     cout << "Before adding: ||H1|| = " << OpOut.OneBodyNorm()
-//        << "  ||Nested1|| = " << OpNested.OneBodyNorm()
-//        << "  ||Omega1|| = " << Omega.OneBodyNorm() << endl;
-      
       OpOut += OpNested;
 
-//     cout << "In BCH_Transform: ||H1|| = " << OpOut.OneBodyNorm()
-//        << "  ||Nested1|| = " << OpNested.OneBodyNorm()
-//        << "  ||Omega1|| = " << Omega.OneBodyNorm() << endl;
       if (OpNested.Norm() < (nx+ny)*bch_transform_threshold) return OpOut;
 
       if (i == warn_iter)
@@ -1270,7 +1059,8 @@ double Operator::Norm() const
 {
    double nrm = 0;
    double n1 = OneBodyNorm();
-   double n2 = TwoBodyNorm();
+   double n2 = TwoBody.Norm();
+//   double n2 = TwoBodyNorm();
    return sqrt(n1*n1+n2*n2);
 }
 
@@ -1283,6 +1073,8 @@ double Operator::OneBodyNorm() const
 
 double Operator::TwoBodyNorm() const
 {
+  return TwoBody.Norm();
+/*
    double nrm = 0;
    for (int ch=0;ch<nChannels;++ch)
    {
@@ -1294,11 +1086,14 @@ double Operator::TwoBodyNorm() const
       }
    }
    return sqrt(nrm);
+*/
 }
 
 void Operator::Symmetrize()
 {
    OneBody = arma::symmatu(OneBody);
+   TwoBody.Symmetrize();
+/*
    for (int ch=0;ch<nChannels;++ch)
    {
      for (int chket : TwoBodyTensorChannels[ch] )
@@ -1307,6 +1102,7 @@ void Operator::Symmetrize()
        X = arma::symmatu(X);
      }
    }
+*/
 }
 
 void Operator::AntiSymmetrize()
@@ -1319,6 +1115,8 @@ void Operator::AntiSymmetrize()
         OneBody(j,i) = -OneBody(i,j);
       }
    }
+   TwoBody.AntiSymmetrize();
+/*
    for (int ch=0;ch<nChannels;++ch)
    {
      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -1337,6 +1135,7 @@ void Operator::AntiSymmetrize()
        }
      }
    }
+*/
 }
 
 Operator Operator::Commutator( Operator& opright)
@@ -1535,8 +1334,8 @@ void Operator::comm220ss(  Operator& opright, Operator& out)
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-//      #pragma omp critical  // Now this is just plain stupid.
-      out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody.at(ch).at(ch) * tbc.Proj_pp * opright.TwoBody.at(ch).at(ch) );
+//      out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody.at(ch).at(ch) * tbc.Proj_pp * opright.TwoBody.at(ch).at(ch) );
+      out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody.GetMatrix(ch) * tbc.Proj_pp * opright.TwoBody.GetMatrix(ch) );
 
    }
 }
@@ -1583,12 +1382,9 @@ void Operator::comm121ss( Operator& opright, Operator& out)
    for (int i=0;i<norbits;++i)
    {
       Orbit &oi = modelspace->GetOrbit(i);
-//      for (int j=0;j<norbits; ++j) // Later make this j=i;j<norbits... and worry about Hermitian vs anti-Hermitian
       int jmin = out.IsNonHermitian() ? 0 : i;
       for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) // Later make this j=i;j<norbits... and worry about Hermitian vs anti-Hermitian
       {
-//          Orbit &oj = modelspace->GetOrbit(j);
-//          if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue; // At some point, make a OneBodyChannel class...
           if (j<jmin) continue; // only calculate upper triangle
           for (auto& a : modelspace->holes)  // C++11 syntax
           {
@@ -1596,12 +1392,16 @@ void Operator::comm121ss( Operator& opright, Operator& out)
              for (auto& b : modelspace->particles)
              {
                 Orbit &ob = modelspace->GetOrbit(b);
-                out.OneBody(i,j) += (ob.j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
-                out.OneBody(i,j) -= (oa.j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
+//                out.OneBody(i,j) += (ob.j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
+//                out.OneBody(i,j) -= (oa.j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
+                out.OneBody(i,j) += (ob.j2+1) *  OneBody(a,b) * opright.TwoBody.GetTBMEmonopole(b,i,a,j) ;
+                out.OneBody(i,j) -= (oa.j2+1) *  OneBody(b,a) * opright.TwoBody.GetTBMEmonopole(a,i,b,j) ;
 
                 // comm211 part
-                out.OneBody(i,j) -= (ob.j2+1) *  opright.OneBody(a,b) * GetTBMEmonopole(b,i,a,j) ;
-                out.OneBody(i,j) += (oa.j2+1) *  opright.OneBody(b,a) * GetTBMEmonopole(a,i,b,j) ;
+//                out.OneBody(i,j) -= (ob.j2+1) *  opright.OneBody(a,b) * GetTBMEmonopole(b,i,a,j) ;
+//                out.OneBody(i,j) += (oa.j2+1) *  opright.OneBody(b,a) * GetTBMEmonopole(a,i,b,j) ;
+                out.OneBody(i,j) -= (ob.j2+1) *  opright.OneBody(a,b) * TwoBody.GetTBMEmonopole(b,i,a,j) ;
+                out.OneBody(i,j) += (oa.j2+1) *  opright.OneBody(b,a) * TwoBody.GetTBMEmonopole(a,i,b,j) ;
              }
           }
       }
@@ -1643,18 +1443,20 @@ void Operator::comm221ss( Operator& opright, Operator& out)
 {
 
    int norbits = modelspace->GetNumberOrbits();
-   Operator Mpp = opright;
-   Operator Mhh = opright;
+//   Operator Mpp = opright;
+//   Operator Mhh = opright;
+   TwoBodyME Mpp = opright.TwoBody;
+   TwoBodyME Mhh = opright.TwoBody;
 
    #pragma omp parallel for schedule(dynamic,1)
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
-      auto& LHS = (arma::mat&) TwoBody.at(ch).at(ch);
-      auto& RHS = (arma::mat&) opright.TwoBody.at(ch).at(ch);
-      arma::mat& Matrixpp = (arma::mat&) Mpp.TwoBody.at(ch).at(ch);
-      arma::mat& Matrixhh = (arma::mat&) Mpp.TwoBody.at(ch).at(ch);
+      auto& LHS = (arma::mat&) TwoBody.GetMatrix(ch,ch);
+      auto& RHS = (arma::mat&) opright.TwoBody.GetMatrix(ch,ch);
+      arma::mat& Matrixpp =  Mpp.GetMatrix(ch,ch);
+      arma::mat& Matrixhh =  Mpp.GetMatrix(ch,ch);
       
       Matrixpp = ( LHS * tbc.Proj_pp * RHS - RHS * tbc.Proj_pp * LHS );
       Matrixhh = ( LHS * tbc.Proj_hh * RHS - RHS * tbc.Proj_hh * LHS );
@@ -1714,9 +1516,11 @@ void Operator::comm122ss( Operator& opright, Operator& opout )
    for (int ch=0; ch<nChannels; ++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      auto& L2 = TwoBody.at(ch).at(ch);
-      auto& R2 = opright.TwoBody.at(ch).at(ch);
-      arma::mat& OUT = opout.TwoBody.at(ch).at(ch);
+//      auto& L2 = TwoBody.at(ch).at(ch);
+//      auto& R2 = opright.TwoBody.at(ch).at(ch);
+      auto& L2 = TwoBody.GetMatrix(ch,ch);
+      auto& R2 = opright.TwoBody.GetMatrix(ch,ch);
+      arma::mat& OUT = opout.TwoBody.GetMatrix(ch,ch);
 
 
       int npq = tbc.GetNumberKets();
@@ -1824,9 +1628,12 @@ void Operator::comm222_pp_hhss( Operator& opright, Operator& opout )
    for (int ch=0; ch<nChannels; ++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& LHS = (arma::mat&) TwoBody.at(ch).at(ch);
-      arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch).at(ch);
-      arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch).at(ch);
+//      arma::mat& LHS = (arma::mat&) TwoBody.at(ch).at(ch);
+//      arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch).at(ch);
+//      arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch).at(ch);
+      arma::mat& LHS = (arma::mat&) TwoBody.GetMatrix(ch,ch);
+      arma::mat& RHS = (arma::mat&) opright.TwoBody.GetMatrix(ch,ch);
+      arma::mat& OUT = (arma::mat&) opout.TwoBody.GetMatrix(ch,ch);
 
       arma::mat Mpp = (LHS * tbc.Proj_pp * RHS - RHS * tbc.Proj_pp * LHS);
       arma::mat Mhh = (LHS * tbc.Proj_hh * RHS - RHS * tbc.Proj_hh * LHS);
@@ -1849,8 +1656,10 @@ void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )
    int herm = opout.IsHermitian() ? 1 : -1;
    int norbits = modelspace->GetNumberOrbits();
 
-   Operator Mpp = opout;
-   Operator Mhh = opout;
+//   Operator Mpp = opout;
+//   Operator Mhh = opout;
+   TwoBodyME Mpp = opout.TwoBody;
+   TwoBodyME Mhh = opout.TwoBody;
 
    // Don't use omp, because the matrix multiplication is already
    // parallelized by armadillo, and the one-body part isn't thread-safe.
@@ -1858,12 +1667,15 @@ void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
-      auto& LHS = TwoBody.at(ch).at(ch);
-      auto& RHS = opright.TwoBody.at(ch).at(ch);
-      arma::mat& OUT =  opout.TwoBody.at(ch).at(ch);
+//      auto& LHS = TwoBody.at(ch).at(ch);
+//      auto& RHS = opright.TwoBody.at(ch).at(ch);
+//      arma::mat& OUT =  opout.TwoBody.at(ch).at(ch);
+      auto& LHS = TwoBody.GetMatrix(ch,ch);
+      auto& RHS = opright.TwoBody.GetMatrix(ch,ch);
+      arma::mat& OUT =  opout.TwoBody.GetMatrix(ch,ch);
 
-      arma::mat & Matrixpp = Mpp.TwoBody.at(ch).at(ch);
-      arma::mat & Matrixhh = Mhh.TwoBody.at(ch).at(ch);
+      arma::mat & Matrixpp = Mpp.GetMatrix(ch,ch);
+      arma::mat & Matrixhh = Mhh.GetMatrix(ch,ch);
 
       arma::uvec kets_pp = tbc.GetKetIndex_pp();
       arma::uvec kets_hh = tbc.GetKetIndex_hh();
@@ -1914,25 +1726,6 @@ void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )
          } // for j
       } // for i
    } //for ch
-/*
-   if (not opout.IsNonHermitian())
-   {
-    if (opout.IsHermitian())
-    {
-//       opout.OneBody = arma::symmatu(opout.OneBody);
-    }
-    else
-    {
-     for (int i=0;i<norbits;++i)
-     {
-       for (int j=i;j<norbits;++j)
-        {
-           opout.OneBody(j,i) = herm* opout.OneBody(i,j);
-        }
-     }
-    }
-   }
-*/
 }
 
 
@@ -1984,7 +1777,8 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch).at(ch);
+//      arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch).at(ch);
+      arma::mat& OUT = (arma::mat&) opout.TwoBody.GetMatrix(ch,ch);
       int J = tbc.J;
 
       int nKets = tbc.GetNumberKets();
@@ -2132,8 +1926,10 @@ void Operator::comm121st( Operator& opright, Operator& out)
                       double hatfactor_ab = (2*J+1)*sqrt((oa.j2+1));
                       double hatfactor_ba = (2*J+1)*sqrt((ob.j2+1));
    
-                      zij -= opright.OneBody(a,b)*GetTBME(ch_bra,ch_ket,b,i,a,j) * phase_ab * sixj_ab * hatfactor_ab;
-                      zij += opright.OneBody(b,a)*GetTBME(ch_bra,ch_ket,a,i,b,j) * phase_ba * sixj_ba * hatfactor_ba;
+//                      zij -= opright.OneBody(a,b)*GetTBME(ch_bra,ch_ket,b,i,a,j) * phase_ab * sixj_ab * hatfactor_ab;
+//                      zij += opright.OneBody(b,a)*GetTBME(ch_bra,ch_ket,a,i,b,j) * phase_ba * sixj_ba * hatfactor_ba;
+                      zij -= opright.OneBody(a,b)*TwoBody.GetTBME(ch_bra,ch_ket,b,i,a,j) * phase_ab * sixj_ab * hatfactor_ab;
+                      zij += opright.OneBody(b,a)*TwoBody.GetTBME(ch_bra,ch_ket,a,i,b,j) * phase_ba * sixj_ba * hatfactor_ba;
                    }
 
                    // part with opleft one body and opright two body, i.e. [X(1),Y(2)]
@@ -2146,8 +1942,10 @@ void Operator::comm121st( Operator& opright, Operator& out)
                       int phase = modelspace->phase(jj+ja+J);
                       double hatfactor = (2*J+1)*sqrt((2*Jprime+1));
 
-                      zij += OneBody(a,b)*opright.GetTBME(ch_bra,ch_ket,b,i,a,j) * phase * sixj * hatfactor;
-                      zij -= OneBody(b,a)*opright.GetTBME(ch_bra,ch_ket,a,i,b,j) * phase * sixj * hatfactor; // Here hatfactor_ab == hatfactor_ba
+//                      zij += OneBody(a,b)*opright.GetTBME(ch_bra,ch_ket,b,i,a,j) * phase * sixj * hatfactor;
+//                      zij -= OneBody(b,a)*opright.GetTBME(ch_bra,ch_ket,a,i,b,j) * phase * sixj * hatfactor; // Here hatfactor_ab == hatfactor_ba
+                      zij += OneBody(a,b)*opright.TwoBody.GetTBME(ch_bra,ch_ket,b,i,a,j) * phase * sixj * hatfactor;
+                      zij -= OneBody(b,a)*opright.TwoBody.GetTBME(ch_bra,ch_ket,a,i,b,j) * phase * sixj * hatfactor; // Here hatfactor_ab == hatfactor_ba
                    }
                 }
              }
@@ -2176,8 +1974,10 @@ void Operator::comm221st( Operator& opright, Operator& out)
 {
 
    int norbits = modelspace->GetNumberOrbits();
-   Operator Mpp = opright;
-   Operator Mhh = opright;
+//   Operator Mpp = opright;
+//   Operator Mhh = opright;
+   TwoBodyME Mpp = opright.TwoBody;
+   TwoBodyME Mhh = opright.TwoBody;
 
    #pragma omp parallel for schedule(dynamic,5)
    for (int ch_bra=0;ch_bra<nChannels;++ch_bra)
@@ -2188,10 +1988,14 @@ void Operator::comm221st( Operator& opright, Operator& out)
       {
          TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
 
-         arma::mat& LHS = (arma::mat&) TwoBody.at(ch_bra).at(ch_ket);
-         arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch_bra).at(ch_ket);
-         arma::mat& Matrixpp = (arma::mat&) Mpp.TwoBody.at(ch_bra).at(ch_ket);
-         arma::mat& Matrixhh = (arma::mat&) Mpp.TwoBody.at(ch_bra).at(ch_ket);
+//         arma::mat& LHS = (arma::mat&) TwoBody.at(ch_bra).at(ch_ket);
+//         arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch_bra).at(ch_ket);
+//         arma::mat& Matrixpp = (arma::mat&) Mpp.TwoBody.at(ch_bra).at(ch_ket);
+//         arma::mat& Matrixhh = (arma::mat&) Mpp.TwoBody.at(ch_bra).at(ch_ket);
+         arma::mat& LHS = (arma::mat&) TwoBody.GetMatrix(ch_bra,ch_ket);
+         arma::mat& RHS = (arma::mat&) opright.TwoBody.GetMatrix(ch_bra,ch_ket);
+         arma::mat& Matrixpp = (arma::mat&) Mpp.GetMatrix(ch_bra,ch_ket);
+         arma::mat& Matrixhh = (arma::mat&) Mpp.GetMatrix(ch_bra,ch_ket);
 
          int J1 = tbc_bra.J;
          int J2 = tbc_ket.J;
@@ -2271,7 +2075,8 @@ void Operator::comm122st( Operator& opright, Operator& opout )
       int Jprime = tbc_ket.J;
 //         arma::mat& LHS = (arma::mat&) TwoBody.at(ch_bra).at(ch_bra);
 //         arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch_bra).at(ch_ket);
-         arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch_bra).at(ch_ket);
+//         arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch_bra).at(ch_ket);
+         arma::mat& OUT = (arma::mat&) opout.TwoBody.GetMatrix(ch_bra,ch_ket);
 
       for (int ibra = 0;ibra<npq; ++ibra)
       {
@@ -2298,27 +2103,27 @@ void Operator::comm122st( Operator& opright, Operator& opout )
               Orbit& oa = modelspace->GetOrbit(a);
               double ja = oa.j2/2.0;
 
-               cijkl += OneBody(i,a) * opright.GetTBME(ch_bra,ch_ket,a,j,k,l);
-               cijkl += OneBody(j,a) * opright.GetTBME(ch_bra,ch_ket,i,a,k,l);
-               cijkl -= OneBody(a,k) * opright.GetTBME(ch_bra,ch_ket,i,j,a,l);
-               cijkl -= OneBody(a,l) * opright.GetTBME(ch_bra,ch_ket,i,j,k,a);
+               cijkl += OneBody(i,a) * opright.TwoBody.GetTBME(ch_bra,ch_ket,a,j,k,l);
+               cijkl += OneBody(j,a) * opright.TwoBody.GetTBME(ch_bra,ch_ket,i,a,k,l);
+               cijkl -= OneBody(a,k) * opright.TwoBody.GetTBME(ch_bra,ch_ket,i,j,a,l);
+               cijkl -= OneBody(a,l) * opright.TwoBody.GetTBME(ch_bra,ch_ket,i,j,k,a);
 
 
                double sixj_ia = modelspace->GetSixJ(J,Jprime,Lambda,ja,ji,jj);
                int phase_ia = modelspace->phase(ji+jj+J);
-               cijkl -= opright.OneBody(i,a) * GetTBME(ch_bra,ch_bra,a,j,k,l) * sixj_ia * phase_ia * sqrt((oi.j2+1)*(2*Jprime+1));
+               cijkl -= opright.OneBody(i,a) * TwoBody.GetTBME(ch_bra,ch_bra,a,j,k,l) * sixj_ia * phase_ia * sqrt((oi.j2+1)*(2*Jprime+1));
 
                double sixj_ja = modelspace->GetSixJ(J,Jprime,Lambda,ja,jj,ji);
                int phase_ja = modelspace->phase(ji+jj+J);
-               cijkl -= opright.OneBody(j,a) * GetTBME(ch_bra,ch_bra,i,a,k,l) * sixj_ja * phase_ja * sqrt((oj.j2+1)*(2*Jprime+1));
+               cijkl -= opright.OneBody(j,a) * TwoBody.GetTBME(ch_bra,ch_bra,i,a,k,l) * sixj_ja * phase_ja * sqrt((oj.j2+1)*(2*Jprime+1));
 
                double sixj_ak = modelspace->GetSixJ(J,Jprime,Lambda,jk,ja,jl);
                int phase_ak = modelspace->phase(ja+jl+J+Lambda);
-               cijkl += opright.OneBody(a,k) * GetTBME(ch_bra,ch_bra,i,j,a,l) * sixj_ak * phase_ak * sqrt((oa.j2+1)*(2*Jprime+1));
+               cijkl += opright.OneBody(a,k) * TwoBody.GetTBME(ch_bra,ch_bra,i,j,a,l) * sixj_ak * phase_ak * sqrt((oa.j2+1)*(2*Jprime+1));
 
                double sixj_al = modelspace->GetSixJ(J,Jprime,Lambda,jl,ja,jk);
                int phase_al = modelspace->phase(ja+jk+J+Lambda);
-               cijkl += opright.OneBody(a,l) * GetTBME(ch_bra,ch_bra,i,j,k,a) * sixj_al * phase_al * sqrt((oa.j2+1)*(2*Jprime+1));
+               cijkl += opright.OneBody(a,l) * TwoBody.GetTBME(ch_bra,ch_bra,i,j,k,a) * sixj_al * phase_al * sqrt((oa.j2+1)*(2*Jprime+1));
 
             }
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
@@ -2364,9 +2169,12 @@ void Operator::comm222_pp_hhst( Operator& opright, Operator& opout )
          double hatfactor = (2*J1+1)*sqrt(2*J2+1);
 
 
-         arma::mat& LHS = (arma::mat&) TwoBody.at(ch_bra).at(ch_bra);
-         arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch_bra).at(ch_ket);
-         arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch_bra).at(ch_ket);
+//         arma::mat& LHS = (arma::mat&) TwoBody.at(ch_bra).at(ch_bra);
+//         arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch_bra).at(ch_ket);
+//         arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch_bra).at(ch_ket);
+         arma::mat& LHS = (arma::mat&) TwoBody.GetMatrix(ch_bra,ch_bra);
+         arma::mat& RHS = (arma::mat&) opright.TwoBody.GetMatrix(ch_bra,ch_ket);
+         arma::mat& OUT = (arma::mat&) opout.TwoBody.GetMatrix(ch_bra,ch_ket);
 
          arma::mat Matrixpp = LHS * tbc_bra.Proj_pp * RHS;
          arma::mat Matrixhh = LHS * tbc_bra.Proj_hh * RHS;
@@ -2408,15 +2216,18 @@ void Operator::comm222_pp_hh_221st( Operator& opright, Operator& opout )
    int herm = opout.IsHermitian() ? 1 : -1;
    int norbits = modelspace->GetNumberOrbits();
 
-   Operator Mpp = opout;
-   Operator Mhh = opout;
+//   Operator Mpp = opout;
+//   Operator Mhh = opout;
+   TwoBodyME Mpp = opout.TwoBody;
+   TwoBodyME Mhh = opout.TwoBody;
 
    #pragma omp parallel for schedule(dynamic,5)
    for (int ch_bra=0;ch_bra<nChannels;++ch_bra)
    {
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
 
-      auto& LHS = TwoBody.at(ch_bra).at(ch_bra);
+//      auto& LHS = TwoBody.at(ch_bra).at(ch_bra);
+      auto& LHS = TwoBody.GetMatrix(ch_bra,ch_bra);
 
       for (int ch_ket : opright.TwoBodyTensorChannels[ch_bra] )
       {
@@ -2426,11 +2237,12 @@ void Operator::comm222_pp_hh_221st( Operator& opright, Operator& opout )
             cout << " AAH! ch_bra = " << ch_bra << "  ch_ket = " << ch_ket << endl;
          }
 
-         auto& RHS  =  opright.TwoBody.at(ch_bra).at(ch_ket);
-         arma::mat& OUT2 =    opout.TwoBody.at(ch_bra).at(ch_ket);
+//         auto& RHS  =  opright.TwoBody.at(ch_bra).at(ch_ket);
+         auto& RHS  =  opright.TwoBody.GetMatrix(ch_bra,ch_ket);
+         arma::mat& OUT2 =    opout.TwoBody.GetMatrix(ch_bra,ch_ket);
 
-         arma::mat& Matrixpp =  Mpp.TwoBody.at(ch_bra).at(ch_ket);
-         arma::mat& Matrixhh =  Mhh.TwoBody.at(ch_bra).at(ch_ket);
+         arma::mat& Matrixpp =  Mpp.GetMatrix(ch_bra,ch_ket);
+         arma::mat& Matrixhh =  Mhh.GetMatrix(ch_bra,ch_ket);
      
 //         arma::uvec kets_pp = arma::uvec(tbc_bra.KetIndex_pp);
 //         arma::uvec kets_hh = arma::uvec(tbc_bra.KetIndex_hh);
@@ -2697,6 +2509,8 @@ void Operator::comm222_phst( Operator& opright, Operator& opout )
 /// \f]
 void Operator::comm222_phst_pandya( Operator& opright, Operator& opout ) 
 {
+
+/*   
    int herm = opout.IsHermitian() ? 1 : -1;
    if (opout.IsNonHermitian() ) herm = 0;
    Operator& X = *this;
@@ -2729,7 +2543,6 @@ void Operator::comm222_phst_pandya( Operator& opright, Operator& opout )
      }
    }   
    WCC.DoPandyaTransformation(W);
-/*   
    ZCC = 
 
    // Now evaluate the commutator for each channel (standard coupling)

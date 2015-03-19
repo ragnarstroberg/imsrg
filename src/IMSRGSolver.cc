@@ -126,6 +126,8 @@ void IMSRGSolver::Solve()
 // Implement element-wise division and abs and reduce for Operators.
 // This is required for adaptive steppers
 
+
+/*
 Operator operator/ (const Operator& num, const Operator& denom)
 {
    Operator quotient = num;
@@ -133,10 +135,10 @@ Operator operator/ (const Operator& num, const Operator& denom)
    quotient.OneBody /= denom.OneBody;
    for (int ch=0;ch<quotient.nChannels;++ch)
    {
-      for (auto &twobody : quotient.TwoBody[ch] )
+      for (auto &twobody : quotient.TwoBody.MatEl[ch] )
       {
         int chket = twobody.first;
-        twobody.second /= denom.TwoBody.at(ch).at(chket);
+        twobody.second /= denom.TwoBody.GetMatrix(ch,chket);
       }
    }
 
@@ -149,7 +151,7 @@ Operator abs(const Operator& opin)
    opout.OneBody = arma::abs(opout.OneBody);
    for (int ch=0;ch<opout.nChannels;++ch)
    {
-      for (auto &twobody : opout.TwoBody[ch] )
+      for (auto &twobody : opout.TwoBody.MatEl[ch] )
       {
         twobody.second = arma::abs(twobody.second);
       }
@@ -183,7 +185,7 @@ struct vector_space_reduce<Operator&>
    }
 };
 }}}
-
+*/
 
 void IMSRGSolver::Solve_ode()
 {
@@ -309,7 +311,7 @@ void IMSRGSolver::UpdateEta()
 // i=particle, j=hole
 double IMSRGSolver::Get1bDenominator_ph(int i, int j) 
 {
-   double denominator = H_s.OneBody(i,i) - H_s.OneBody(j,j) - H_s.GetTBMEmonopole(i,j,i,j);
+   double denominator = H_s.OneBody(i,i) - H_s.OneBody(j,j) - H_s.TwoBody.GetTBMEmonopole(i,j,i,j);
    return denominator;
 }
 
@@ -338,12 +340,12 @@ double IMSRGSolver::Get2bDenominator_pphh(int ch, int ibra, int iket)
 
 //   denominator       += H_s.GetTBME(ch,ch,i,j,i,j); // pp'pp'
 //   denominator       += H_s.GetTBME(ch,ch,a,b,a,b); // hh'hh'
-   denominator       += H_s.GetTBMEmonopole(i,j,i,j); // pp'pp'
-   denominator       += H_s.GetTBMEmonopole(a,b,a,b); // hh'hh'
-   denominator       -= H_s.GetTBMEmonopole(i,a,i,a); // phph
-   denominator       -= H_s.GetTBMEmonopole(i,b,i,b); // ph'ph'
-   denominator       -= H_s.GetTBMEmonopole(j,a,j,a); // p'hp'h
-   denominator       -= H_s.GetTBMEmonopole(j,b,j,b); // p'h'p'h'
+   denominator       += H_s.TwoBody.GetTBMEmonopole(i,j,i,j); // pp'pp'
+   denominator       += H_s.TwoBody.GetTBMEmonopole(a,b,a,b); // hh'hh'
+   denominator       -= H_s.TwoBody.GetTBMEmonopole(i,a,i,a); // phph
+   denominator       -= H_s.TwoBody.GetTBMEmonopole(i,b,i,b); // ph'ph'
+   denominator       -= H_s.TwoBody.GetTBMEmonopole(j,a,j,a); // p'hp'h
+   denominator       -= H_s.TwoBody.GetTBMEmonopole(j,b,j,b); // p'h'p'h'
 
    return denominator;
 }
@@ -362,9 +364,9 @@ double IMSRGSolver::Get2bDenominator_pphp(int ch, int ibra, int iket)
    double denominator = H_s.OneBody(p1,p1)+ H_s.OneBody(p2,p2) - H_s.OneBody(p3,p3) - H_s.OneBody(h,h);
 
 //   denominator       += H_s.GetTBME(ch,ch,p1,p2,p1,p2); // phph
-   denominator       += H_s.GetTBMEmonopole(p1,p2,p1,p2); // phph
-   denominator       -= H_s.GetTBMEmonopole(p1,h,p1,h); // pp'pp'
-   denominator       -= H_s.GetTBMEmonopole(p2,h,p2,h); // hh'hh'
+   denominator       += H_s.TwoBody.GetTBMEmonopole(p1,p2,p1,p2); // phph
+   denominator       -= H_s.TwoBody.GetTBMEmonopole(p1,h,p1,h); // pp'pp'
+   denominator       -= H_s.TwoBody.GetTBMEmonopole(p2,h,p2,h); // hh'hh'
 
    return denominator;
 }
@@ -383,8 +385,8 @@ double IMSRGSolver::Get2bDenominator_pppp(int ch, int ibra, int iket)
 
 //   denominator       += H_s.GetTBME(ch,ch,p1,p2,p1,p2); // pp'pp'
 //   denominator       -= H_s.GetTBME(ch,ch,p3,p4,p3,p4); // hh'hh'
-   denominator       += H_s.GetTBMEmonopole(p1,p2,p1,p2); // pp'pp'
-   denominator       -= H_s.GetTBMEmonopole(p3,p4,p3,p4); // hh'hh'
+   denominator       += H_s.TwoBody.GetTBMEmonopole(p1,p2,p1,p2); // pp'pp'
+   denominator       -= H_s.TwoBody.GetTBMEmonopole(p3,p4,p3,p4); // hh'hh'
 
    return denominator;
 }
@@ -410,7 +412,8 @@ void IMSRGSolver::ConstructGenerator_Wegner()
       // This is wrong. The projection operator should be different.
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
    //   H_diag.TwoBody[ch] = (tbc.Proj_hh*H_diag.TwoBody[ch] + tbc.Proj_pp*H_diag.TwoBody[ch]);
-      H_diag.TwoBody[ch].at(ch) = (tbc.Proj_hh + tbc.Proj_pp) * H_diag.TwoBody[ch].at(ch);
+//      H_diag.TwoBody[ch].at(ch) = (tbc.Proj_hh + tbc.Proj_pp) * H_diag.TwoBody[ch].at(ch);
+      H_diag.TwoBody.GetMatrix(ch) = (tbc.Proj_hh + tbc.Proj_pp) * H_diag.TwoBody.GetMatrix(ch);
    }
 
    Eta = H_diag.Commutator(H_s);
@@ -438,8 +441,10 @@ void IMSRGSolver::ConstructGenerator_White()
    for (int ch=0;ch<nchan;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      auto& ETA2 = Eta.TwoBody[ch].at(ch);
-      auto& H2 = H_s.TwoBody[ch].at(ch);
+//      auto& ETA2 = Eta.TwoBody[ch].at(ch);
+//      auto& H2 = H_s.TwoBody[ch].at(ch);
+      auto& ETA2 = Eta.TwoBody.GetMatrix(ch);
+      auto& H2 = H_s.TwoBody.GetMatrix(ch);
 //      for ( auto& ibra : tbc.KetIndex_pp)
       for ( auto& ibra : tbc.GetKetIndex_pp() )
       {
@@ -474,8 +479,10 @@ void IMSRGSolver::ConstructGenerator_Atan()
    for (int ch=0;ch<Eta.nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& ETA2 =  Eta.TwoBody[ch].at(ch);
-      arma::mat& H2 = H_s.TwoBody[ch].at(ch);
+//      arma::mat& ETA2 =  Eta.TwoBody[ch].at(ch);
+//      arma::mat& H2 = H_s.TwoBody[ch].at(ch);
+      arma::mat& ETA2 =  Eta.TwoBody.GetMatrix(ch);
+      arma::mat& H2 = H_s.TwoBody.GetMatrix(ch);
 //      for ( auto& ibra : tbc.KetIndex_pp)
       for ( auto& ibra : tbc.GetKetIndex_pp() )
       {
@@ -543,8 +550,10 @@ void IMSRGSolver::ConstructGenerator_ShellModel()
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
-      auto& ETA2 = Eta.TwoBody[ch].at(ch);
-      auto& H2 = H_s.TwoBody[ch].at(ch);
+//      auto& ETA2 = Eta.TwoBody[ch].at(ch);
+//      auto& H2 = H_s.TwoBody[ch].at(ch);
+      auto& ETA2 = Eta.TwoBody.GetMatrix(ch);
+      auto& H2 = H_s.TwoBody.GetMatrix(ch);
 
 
       // Decouple vv states from pq states
@@ -674,8 +683,10 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
    for (int ch=0;ch<nchan;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& ETA2 =  Eta.TwoBody[ch].at(ch);
-      arma::mat& H2 =  H_s.TwoBody[ch].at(ch);
+//      arma::mat& ETA2 =  Eta.TwoBody[ch].at(ch);
+//      arma::mat& H2 =  H_s.TwoBody[ch].at(ch);
+      arma::mat& ETA2 =  Eta.TwoBody.GetMatrix(ch);
+      arma::mat& H2 =  H_s.TwoBody.GetMatrix(ch);
       // Decouple vv from qq and qv
 
 //      for ( auto& ibra : tbc.KetIndex_vv)
@@ -835,7 +846,7 @@ int IMSRGSolver::GetSystemDimension()
    // one-body part
    int N = H_0.OneBody.n_cols;
    dim += N*(N+1)/2;
-   for( auto channels : H_0.TwoBody )
+   for( auto channels : H_0.TwoBody.MatEl )
    {
      for( auto mtx : channels )
      {

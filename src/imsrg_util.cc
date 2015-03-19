@@ -144,8 +144,8 @@ namespace imsrg_util
 //            #pragma omp critical
             if (abs(p1p2)>1e-7)
             {
-              TcmOp.SetTBME(ch,ibra,iket,p1p2);
-              TcmOp.SetTBME(ch,iket,ibra,p1p2);
+              TcmOp.TwoBody.SetTBME(ch,ibra,iket,p1p2);
+              TcmOp.TwoBody.SetTBME(ch,iket,ibra,p1p2);
             }
          }
       }
@@ -306,8 +306,8 @@ namespace imsrg_util
             double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J);
 //            #pragma omp critical
             {
-              VcmOp.SetTBME(ch,ibra,iket,mat_el);
-              VcmOp.SetTBME(ch,iket,ibra,mat_el);
+              VcmOp.TwoBody.SetTBME(ch,ibra,iket,mat_el);
+              VcmOp.TwoBody.SetTBME(ch,iket,ibra,mat_el);
             }
          }
       }
@@ -463,8 +463,8 @@ namespace imsrg_util
             mat_el += Calculate_p1p2(modelspace,bra,ket,tbc.J); // added this. not sure if I know what I'm doing...
 //            #pragma omp critical
             {
-              HcmOp.SetTBME(ch,ibra,iket,mat_el);
-              HcmOp.SetTBME(ch,iket,ibra,mat_el);
+              HcmOp.TwoBody.SetTBME(ch,ibra,iket,mat_el);
+              HcmOp.TwoBody.SetTBME(ch,iket,ibra,mat_el);
             }
          }
       }
@@ -648,7 +648,8 @@ Operator E0Op(ModelSpace& modelspace)
    for (int ch=0; ch<T2.nChannels; ++ch)
    {
      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
-     arma::mat& TB = T2.TwoBody.at(ch).at(ch);
+//     arma::mat& TB = T2.TwoBody.at(ch).at(ch);
+     arma::mat& TB = T2.TwoBody.GetMatrix(ch);
      // pp,nn:  2<t2.t1> = 1/(2(1+delta_ab)) along diagonal
      if (abs(tbc.Tz) == 1)
      {
