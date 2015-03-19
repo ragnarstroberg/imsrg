@@ -171,6 +171,10 @@ void HartreeFock::BuildMonopoleV()
          int d = ket.q;
 //         Vmon(ibra,iket)       = Hbare.GetTBMEmonopole(a,b,c,d)*norm;
 //         Vmon_exch(ibra,iket)  = Hbare.GetTBMEmonopole(a,b,d,c)*norm;
+         if (ibra==0 and iket<10)
+         {
+           cout << a << "-" << b << "-" << c << "-" << d << "  = " << Hbare.TwoBody.GetTBMEmonopole(a,b,c,d) << endl;
+         }
          Vmon(ibra,iket)       = Hbare.TwoBody.GetTBMEmonopole(a,b,c,d)*norm;
          Vmon_exch(ibra,iket)  = Hbare.TwoBody.GetTBMEmonopole(a,b,d,c)*norm;
       }
