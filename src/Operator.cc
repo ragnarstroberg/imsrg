@@ -55,11 +55,11 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 Operator::Operator(ModelSpace& ms) :
     hermitian(true), antihermitian(false), modelspace(&ms), ZeroBody(0) ,
     nChannels(ms.GetNumberTwoBodyChannels()) ,
+    rank_J(0), rank_T(0), parity(0), particle_rank(2),
     OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
 //    TwoBody(ms.GetNumberTwoBodyChannels(), map<int,arma::mat>() ),
     TwoBody(&ms,0,0,0),
-    TwoBodyTensorChannels(ms.GetNumberTwoBodyChannels(), vector<int>() ),
-    rank_J(0), rank_T(0), parity(0), particle_rank(2)
+    TwoBodyTensorChannels(ms.GetNumberTwoBodyChannels(), vector<int>() )
 {
 //  modelspace = &ms;
 //  AllocateTwoBody();

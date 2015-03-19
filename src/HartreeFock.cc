@@ -27,6 +27,8 @@ HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
    t = Hbare.OneBody;
    energies = t.diag();
    BuildMonopoleV();
+   cout << "MonopoleV: = " << endl;
+   Vmon.submat(0,0,10,10).print();
    if (hbare.GetParticleRank()>2)
    {
       BuildMonopoleV3();
