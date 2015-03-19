@@ -466,6 +466,11 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
                 Hbare.TwoBody.SetTBME(J,parity,-1,a,b,c,d,tbme_pp);
              if (tbme_nn !=0)
                 Hbare.TwoBody.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,tbme_nn);
+             if (a==2 and b==2 and c==0 and d==0)
+             {
+             cout << "Set " << a << "-" << b << "-" << c << "-" << d << "-" << " J = " << J << "   = " << tbme_pp << endl;
+             cout << "  read back : " << Hbare.TwoBody.GetTBME(J,parity,-1,a,b,c,d) << endl;
+             }
 
              // now do pnpn, npnp, pnnp, nppn
              if (tbme_pnpn !=0)

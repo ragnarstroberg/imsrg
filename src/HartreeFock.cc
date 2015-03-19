@@ -169,16 +169,12 @@ void HartreeFock::BuildMonopoleV()
          Ket & ket = Hbare.GetModelSpace()->GetKet(iket);
          int c = ket.p;
          int d = ket.q;
-//         Vmon(ibra,iket)       = Hbare.GetTBMEmonopole(a,b,c,d)*norm;
-//         Vmon_exch(ibra,iket)  = Hbare.GetTBMEmonopole(a,b,d,c)*norm;
-         if (ibra==0 and iket<10)
-         {
-           cout << a << "-" << b << "-" << c << "-" << d << "  = " << Hbare.TwoBody.GetTBMEmonopole(a,b,c,d) << endl;
-         }
          Vmon(ibra,iket)       = Hbare.TwoBody.GetTBMEmonopole(a,b,c,d)*norm;
          Vmon_exch(ibra,iket)  = Hbare.TwoBody.GetTBMEmonopole(a,b,d,c)*norm;
       }
    }
+   Vmon = arma::symmatu(Vmon);
+   Vmon_exch = arma::symmatu(Vmon_exch);
 }
 
 
@@ -385,7 +381,7 @@ void HartreeFock::UpdateF()
    Vij.zeros();
    V3ij.zeros();
 
-   #pragma omp parallel for
+//   #pragma omp parallel for
    for (int i=0;i<norbits;i++)
    {
       Orbit& oi = ms->GetOrbit(i);
@@ -611,7 +607,7 @@ Operator HartreeFock::GetNormalOrderedH()
       arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
       arma::mat V3NO  = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
 
-      #pragma omp parallel for schedule(dynamic,1)
+//      #pragma omp parallel for schedule(dynamic,1)
       for (int i=0; i<npq; ++i)    
       {
          Ket & bra = tbc.GetKet(i);

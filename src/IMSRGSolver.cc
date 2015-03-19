@@ -82,8 +82,6 @@ void IMSRGSolver::Solve()
    UpdateEta();
 
     // Write details of the flow
-//   WriteFlowStatus(flowf);
-//   WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
    WriteFlowStatus(cout);
 
@@ -846,6 +844,8 @@ int IMSRGSolver::GetSystemDimension()
    // one-body part
    int N = H_0.OneBody.n_cols;
    dim += N*(N+1)/2;
+   dim += H_0.TwoBody.Dimension();
+/*
    for( auto channels : H_0.TwoBody.MatEl )
    {
      for( auto mtx : channels )
@@ -854,6 +854,7 @@ int IMSRGSolver::GetSystemDimension()
         dim += N*(N+1)/2;
      }
    }
+*/
    return dim;
 }
 
