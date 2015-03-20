@@ -194,7 +194,6 @@ double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int a, int b,
 double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in)
 {
    return ThreeBody.GetThreeBodyME(Jab_in, Jde_in, J2, tab_in, tde_in, T2, a_in, b_in, c_in, d_in, e_in, f_in);
-//   return AddToThreeBodyME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,0.0);
 }
 
 //*******************************************************************
@@ -240,11 +239,6 @@ Operator Operator::DoNormalOrdering2()
 {
    Operator opNO = *this;
 
-   // Trivial parts
-   opNO.ZeroBody = ZeroBody;
-   opNO.OneBody = OneBody;
-   opNO.TwoBody = TwoBody;
-
 
    for (auto& k : modelspace->holes) // loop over hole orbits
    {
@@ -254,49 +248,40 @@ Operator Operator::DoNormalOrdering2()
 
    int norbits = modelspace->GetNumberOrbits();
 
-   for (int ch=0;ch<nChannels;++ch)
+   for ( auto& itmat : TwoBody.MatEl )
    {
-      TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch);
-      int J = tbc.J;
+      int ch_bra = itmat.first[0];
+      int ch_ket = itmat.first[1];
+      
+      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+      int J_ket = tbc_ket.J;
 
       // Zero body part
-      for (auto& iket : tbc.GetKetIndex_hh() ) // loop over hole-hole kets in this channel
+      for (auto& iket : tbc_ket.GetKetIndex_hh() ) // loop over hole-hole kets in this channel
       {
-//        opNO.ZeroBody += GetTBME(ch,iket,iket) * (2*J+1);  // <ab|V|ab>  (a,b in core)
-        opNO.ZeroBody += TwoBody.GetTBME(ch,iket,iket) * (2*J+1);  // <ab|V|ab>  (a,b in core)
+        opNO.ZeroBody += TwoBody.GetTBME(ch_ket,iket,iket) * (2*J_ket+1);  // <ab|V|ab>  (a,b in core)
       }
 
       // One body part
-      int ibra,iket;
       for (unsigned int a=0;a<norbits;++a)
       {
          Orbit &oa = modelspace->GetOrbit(a);
          int bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-         for (unsigned int b=bstart;b<norbits;++b)
+         for ( auto& b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // OneBodyChannels should be moved to the operator, to accommodate tensors
          {
-            Orbit &ob = modelspace->GetOrbit(b);
-            if (ob.j2 != oa.j2 or ob.tz2 != oa.tz2 or ob.l != oa.l) continue;
+            if (b < bstart) continue;
             for (auto& h : modelspace->holes)  // C++11 syntax
             {
-               if ( (ibra = tbc.GetLocalIndex(min(a,h),max(a,h)))<0) continue;
-               if ( (iket = tbc.GetLocalIndex(min(b,h),max(b,h)))<0) continue;
-               Ket & bra = tbc.GetKet(ibra);
-               Ket & ket = tbc.GetKet(iket);
-//               double tbme = (2*J+1.0)/(oa.j2+1)  * GetTBME(ch,bra,ket);
-               double tbme = (2*J+1.0)/(oa.j2+1)  * TwoBody.GetTBME(ch,bra,ket);
-               int phase = 1;
-               if (a>h) phase *= bra.Phase(J);
-               if (b>h) phase *= ket.Phase(J);
-
-               opNO.OneBody(a,b) += phase * tbme;  // <ah|V|bh>
+               opNO.OneBody(a,b) += (2*J_ket+1.0)/(oa.j2+1)  * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
             }
-            if (hermitian) opNO.OneBody(b,a) = opNO.OneBody(a,b);
-            if (antihermitian) opNO.OneBody(b,a) = -opNO.OneBody(a,b);
          }
       }
-
-
    } // loop over channels
+
+   if (hermitian) opNO.Symmetrize();
+   if (antihermitian) opNO.AntiSymmetrize();
+
    return opNO;
 }
 
@@ -313,15 +298,16 @@ Operator Operator::DoNormalOrdering2()
 //*******************************************************************************
 Operator Operator::DoNormalOrdering3()
 {
-   cout << "in DoNormalOrdering3() " << endl;
    Operator opNO3 = Operator(*modelspace);
    cout << "size of ThreeBody = " << ThreeBody.MatEl.size() << endl;
 //   #pragma omp parallel for
-   for (int ch=0;ch<nChannels;++ch)
+//   for (int ch=0;ch<nChannels;++ch)
+   for ( auto& itmat : opNO3.TwoBody.MatEl )
    {
+      int ch = itmat.first[0]; // assume ch_bra = ch_ket for 3body...
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-//      arma::mat& Gamma = (arma::mat&) opNO3.TwoBody[ch].at(ch);
-      arma::mat& Gamma = (arma::mat&) opNO3.TwoBody.GetMatrix(ch);
+//      arma::mat& Gamma = (arma::mat&) opNO3.TwoBody.GetMatrix(ch);
+      arma::mat& Gamma = (arma::mat&) itmat.second;
       for (int ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
       {
          Ket & bra = tbc.GetKet(ibra);
@@ -352,7 +338,7 @@ Operator Operator::DoNormalOrdering3()
          }
       }
    }
-   cout << "Done looping over channels" << endl;
+   opNO3.Symmetrize();
    Operator opNO2 = opNO3.DoNormalOrdering2();
    opNO2.ScaleZeroBody(1./3.);
    opNO2.ScaleOneBody(1./2.);
@@ -370,10 +356,8 @@ void Operator::Erase()
 {
   EraseZeroBody();
   EraseOneBody();
-//  EraseTwoBody();
   TwoBody.Erase();
   if (particle_rank >=3)
-//    EraseThreeBody();
     ThreeBody.Erase();
 }
 
@@ -385,26 +369,8 @@ void Operator::EraseOneBody()
 void Operator::EraseTwoBody()
 {
  TwoBody.Erase();
-/*
-   for (int ch=0;ch<nChannels;++ch)
-   {
-      for (auto &twobody : TwoBody[ch] )
-      {
-        arma::mat& matrix = twobody.second;
-        matrix.zeros();
-      }
-   }
-*/
 }
-/*
-void Operator::EraseThreeBody()
-{
- for (auto& it_Orb: ThreeBody)
- {
-    it_Orb.second = {0.,0.,0.,0.,0.,};
- }
-}
-*/
+
 
 void Operator::ScaleZeroBody(double x)
 {
@@ -419,32 +385,13 @@ void Operator::ScaleOneBody(double x)
 void Operator::ScaleTwoBody(double x)
 {
    TwoBody.Scale(x);
-/*
-   for (int ch=0; ch<nChannels; ++ch)
-   {
-     for ( auto &twobody : TwoBody[ch] )
-     {
-      arma::mat& matrix = twobody.second;
-      matrix *= x;
-     }
-   }
-*/
 }
 
 void Operator::Eye()
 {
    ZeroBody = 1;
    OneBody.eye();
-/*
-   for (int ch=0; ch<nChannels; ++ch)
-   {
-     for ( auto &twobody : TwoBody[ch] )
-     {
-        arma::mat& matrix = twobody.second;
-        matrix.eye();
-     }
-   }
-*/
+   TwoBody.Eye();
 }
 
 
@@ -507,13 +454,9 @@ void Operator::DoPandyaTransformation( Operator& opCC)
       int ch_bra = itmat.first[0];
       int ch_ket = itmat.first[1];
       arma::mat& MatrixCC = itmat.second;
-//   for (int ch_bra=0; ch_bra<nChannels; ++ch_bra)
-//   {
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
       int nBras = tbc_bra.GetNumberKets();
       int J = tbc_bra.J;
-//      for (int& ch_ket : opCC.TwoBodyTensorChannels[ch_bra] )
-//      {
          TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
          int nKets = tbc_ket.GetNumberKets();
 //         arma::mat& MatrixCC = opCC.TwoBody.at(ch_bra).at(ch_ket);
@@ -771,35 +714,12 @@ double Operator::OneBodyNorm() const
 double Operator::TwoBodyNorm() const
 {
   return TwoBody.Norm();
-/*
-   double nrm = 0;
-   for (int ch=0;ch<nChannels;++ch)
-   {
-      for (auto &twobody : TwoBody[ch] )
-      {
-        arma::mat& matrix = (arma::mat&) twobody.second;
-        double n2 = arma::norm(matrix,"fro");
-        nrm += n2*n2;
-      }
-   }
-   return sqrt(nrm);
-*/
 }
 
 void Operator::Symmetrize()
 {
    OneBody = arma::symmatu(OneBody);
    TwoBody.Symmetrize();
-/*
-   for (int ch=0;ch<nChannels;++ch)
-   {
-     for (int chket : TwoBodyTensorChannels[ch] )
-     {
-       arma::mat& X = TwoBody[ch].at(chket);
-       X = arma::symmatu(X);
-     }
-   }
-*/
 }
 
 void Operator::AntiSymmetrize()
@@ -813,26 +733,6 @@ void Operator::AntiSymmetrize()
       }
    }
    TwoBody.AntiSymmetrize();
-/*
-   for (int ch=0;ch<nChannels;++ch)
-   {
-     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-     int nbras = tbc.GetNumberKets();
-     for (int chket : TwoBodyTensorChannels[ch] )
-     {
-       TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(chket);
-       int nkets = tbc_ket.GetNumberKets();
-       for (int ibra=0; ibra<nbras; ++ibra)
-       {
-         for (int iket=ibra+1; iket<nkets; ++iket)
-         {
-            arma::mat& X = TwoBody[ch].at(chket);
-            X(iket,ibra) = -X(ibra,iket);
-         }
-       }
-     }
-   }
-*/
 }
 
 Operator Operator::Commutator( Operator& opright)
@@ -1089,14 +989,10 @@ void Operator::comm121ss( Operator& opright, Operator& out)
              for (auto& b : modelspace->particles)
              {
                 Orbit &ob = modelspace->GetOrbit(b);
-//                out.OneBody(i,j) += (ob.j2+1) *  OneBody(a,b) * opright.GetTBMEmonopole(b,i,a,j) ;
-//                out.OneBody(i,j) -= (oa.j2+1) *  OneBody(b,a) * opright.GetTBMEmonopole(a,i,b,j) ;
                 out.OneBody(i,j) += (ob.j2+1) *  OneBody(a,b) * opright.TwoBody.GetTBMEmonopole(b,i,a,j) ;
                 out.OneBody(i,j) -= (oa.j2+1) *  OneBody(b,a) * opright.TwoBody.GetTBMEmonopole(a,i,b,j) ;
 
                 // comm211 part
-//                out.OneBody(i,j) -= (ob.j2+1) *  opright.OneBody(a,b) * GetTBMEmonopole(b,i,a,j) ;
-//                out.OneBody(i,j) += (oa.j2+1) *  opright.OneBody(b,a) * GetTBMEmonopole(a,i,b,j) ;
                 out.OneBody(i,j) -= (ob.j2+1) *  opright.OneBody(a,b) * TwoBody.GetTBMEmonopole(b,i,a,j) ;
                 out.OneBody(i,j) += (oa.j2+1) *  opright.OneBody(b,a) * TwoBody.GetTBMEmonopole(a,i,b,j) ;
              }
@@ -1140,8 +1036,6 @@ void Operator::comm221ss( Operator& opright, Operator& out)
 {
 
    int norbits = modelspace->GetNumberOrbits();
-//   Operator Mpp = opright;
-//   Operator Mhh = opright;
    TwoBodyME Mpp = opright.TwoBody;
    TwoBodyME Mhh = opright.TwoBody;
 
@@ -1163,10 +1057,11 @@ void Operator::comm221ss( Operator& opright, Operator& out)
       for (int i=0;i<norbits;++i)
       {
          Orbit &oi = modelspace->GetOrbit(i);
-         for (int j=0;j<norbits;++j)
+//         for (int j=0;j<norbits;++j)
+         for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
          {
-            Orbit &oj = modelspace->GetOrbit(j);
-            if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue;
+//            Orbit &oj = modelspace->GetOrbit(j);
+//            if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue;
             double cijJ = 0;
             // Sum c over holes and include the nbar_a * nbar_b terms
             for (auto& c : modelspace->holes)
