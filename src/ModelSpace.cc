@@ -528,69 +528,120 @@ void ModelSpace::SetupKets()
    }
 }
 
-// This needs to be generalized
+
 double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3)
+//double ModelSpace::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
 {
 // { j1 j2 j3 }
 // { J1 J2 J3 }
 //
-// Use 2J in the key so we don't have to worry about half-integers
+// Use 2J in the key so we don't have to worry about half-integers.
 // Don't really need to store all of them, only need to store
-// unique combinations. Since j1,j2,J1,J2 are half-integer
-// and j3,J3 are integer, I only swap around the half-integer ones.
-   double jlist[4] = {j1,j2,J1,J2};
-   int imin = 0;
-   double jmin = 9999;
-   int k1,k2,k3,K1,K2,K3;
-   for (int i=0;i<4;++i)
-   {
-      if (jlist[i] < jmin)
-      {
-         imin = i;
-         jmin = jlist[i];
-      }
-   }
+// unique combinations. Sort so that the smallest J is bottom right (J3)
+// and the biggest of the remaining values is top left (j1). This
+// Constitutes a unique combination.
+// 
+   int k1 = 2*j1;
+   int k2 = 2*j2;
+   int k3 = 2*j3;
+   int K1 = 2*J1;
+   int K2 = 2*J2;
+   int K3 = 2*J3;
+
+   array<int,6> klist = {k1,k2,k3,K1,K2,K3};
+   int imin = min_element(klist.begin(),klist.end()) - klist.begin();
    switch (imin)
    {
       case 0:
-      k1 = int(2*j1);
-      k2 = int(2*j2);
-      K1 = int(2*J1);
-      K2 = int(2*J2);
+        swap(k1,K3);
+        swap(K1,k3);
+        break;
       case 1:
-      k1 = int(2*j2);
-      k2 = int(2*j1);
-      K1 = int(2*J2);
-      K2 = int(2*J1);
+        swap(k2,K3);
+        swap(K2,k3);
+        break;
       case 2:
-      k1 = int(2*J1);
-      k2 = int(2*J2);
-      K1 = int(2*j1);
-      K2 = int(2*j2);
+        swap(k2,K2);
+        swap(k3,K3);
+        break;
       case 3:
-      k1 = int(2*J2);
-      k2 = int(2*J1);
-      K1 = int(2*j2);
-      K2 = int(2*j1);
+        swap(k1,k3);
+        swap(K1,K3);
+        break;
+      case 4:
+        swap(k2,k3);
+        swap(K2,K3);
+        break;
+      case 5:
+        break;
+   }
+   if (K3==0)
+   {
+      if (k1!=K2 or K1!=k2) return 0;
+      if (k1+k2>k3) return 0;
+      if (abs(k1-k2)>k3) return 0;
+      return phase((k1+k2+k3)/2) / sqrt((k1+1.)*(k2+1.));
    }
 
-   k3 = int(2*j3);
-   K3 = int(2*J3);
-   long int key = 10000000000*k1 + 100000000*k2 + 1000000*k3 + 10000*K1 + 100*K2 + K3;
-   map<long int,double>::iterator it = SixJList.find(key);
-   if ( it != SixJList.end() )  return it->second;
+   array<int,4> ksublist = {k1,k2,K1,K2};
+   int imax = max_element(ksublist.begin(),ksublist.end()) - ksublist.begin();
 
-   // if we didn't find it, we need to calculate it.
+   switch (imax)
+   {
+      case 0:
+        break;
+      case 1:
+        swap(k1,k2);
+        swap(K1,K2);
+        break;
+      case 2:
+        swap(k1,K1);
+        swap(k2,K2);
+        break;
+       case 3:
+        swap(k1,K2);
+        swap(k2,K1);
+        break;
+    }
+
+   unsigned long int key = 10000000000*k1 + 100000000*k2 + 1000000*k3 + 10000*K1 + 100*K2 + K3;
+
+//   long int key = 10000000000*K3 + 100000000*K2 + 1000000*K1 + 10000*k3 + 100*k2 + k1;
+//   array<unsigned int,6> key = {k1,k2,k3,K1,K2,K3};
+   auto it = SixJList.find(key);
+   if (it != SixJList.end() ) return it->second;
    double sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
    #pragma omp critical
    SixJList[key] = sixj;
    return sixj;
-
 }
 
 
 double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L)
 {
+   int phase_mosh = 1;
+   if (n2>n1 or (n2==n1 and l2>l1))
+   {
+      swap(n1,n2);
+      swap(l1,l2);
+      phase_mosh *= phase(Lam +L);
+   }
+   if (n>N or (n==N and n>N))
+   {
+      swap(n,N);
+      swap(lam,Lam);
+      phase_mosh *= phase(l1 +L);
+   }
+
+   if (n1>N or (n1==N and l1>Lam) or (n1==N and l1==Lam and n2>n) or (n1==N and l1==Lam and n2==n and l2>lam) )
+   {
+      swap(n1,N);
+      swap(l1,Lam);
+      swap(n2,n);
+      swap(l2,lam);
+//      phase_mosh *= phase(l2+lam); // This phase is given in Moshinsky and Brody, but with the current algorithm, it appears not to be required.
+   }
+
    unsigned long long int key =  1000000000000 * N
                                 + 100000000000 * Lam
                                 +   1000000000 * n
@@ -600,18 +651,120 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
                                 +         1000 * n2
                                 +          100 * l2
                                 +                 L;
-   map<long int,double>::iterator it = MoshList.find(key);
-   if ( it != MoshList.end() )  return it->second;
+   auto it = MoshList.find(key);
+   if ( it != MoshList.end() )  return it->second * phase_mosh;
 
    // if we didn't find it, we need to calculate it.
    double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
    #pragma omp critical
    MoshList[key] = mosh;
-   return mosh;
+   return mosh * phase_mosh;
 
 }
 
 
+void ModelSpace::PreComputeSixJs(int JMAX)
+{
+  cout << "Precomputing 6j symbols..." << endl;
+  for (int J3=1; J3<=JMAX; ++J3)
+  {
+    for (int j1=J3; j1<=JMAX; ++j1)
+    {
+      for (int J2=j1-J3; J2<j1+J3; J2+=2)
+      {
+        for (int J1=J3; J1<=j1; ++J1)
+        {
+          for (int j2=J1-J3; j2<=J1+J3; j2+=2)
+          {
+            for (int j3=max(abs(J2-J1),j1-j2); j3<=min(J1+J2,j1+j2); j3+=2)
+            {
+               unsigned long int key = 10000000000*j1 + 100000000*j2 + 1000000*j3 + 10000*J1 + 100*J2 + J3;
 
+//               array<unsigned int,6> key = {k1,k2,k3,K1,K2,K3};
+               SixJList[key] = AngMom::SixJ(0.5*j1,0.5*j2,0.5*j3,0.5*J1,0.5*J2,0.5*J3);
+            }
+          }
+        }
+      }
+    }
+  }
+  cout << "done." << endl;
+}   
+
+
+
+
+
+double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double j4, double J34, double J13, double J24, double J)
+{
+   int k1 = 2*j1;
+   int k2 = 2*j2;
+   int K12 = 2*J12;
+   int k3 = 2*j3;
+   int k4 = 2*j4;
+   int K34 = 2*J34;
+   int K13 = 2*J13;
+   int K24 = 2*J24;
+   int K = 2*J;
+
+   array<int,9> klist = {k1,k2,K12,k3,k4,K34,K13,K24,K};
+   array<double,9> jlist = {j1,j2,J12,j3,j4,J34,J13,J24,J};
+   int imin = min_element(klist.begin(),klist.end()) - klist.begin();
+   switch (imin)
+   {
+      case 0:
+       klist = {k4,K34,k3,K24,K,K13,k2,K12,k1};
+       jlist = {j4,J34,j3,J24,J,J13,j2,J12,j1};
+       break;
+      case 1:
+       klist = {K13,K,K24,k3,K34,k4,k1,K12,k2};
+       jlist = {J13,J,J24,j3,J34,j4,j1,J12,j2};
+       break;
+      case 2:
+       klist = {k3,k4,K34,K13,K24,K,k1,k2,K12};
+       jlist = {j3,j4,J34,J13,J24,J,j1,j2,J12};
+       break;
+      case 3:
+       klist = {K12,k2,k1,K,K24,K13,K34,k4,k3};
+       jlist = {J12,j2,j1,J,J24,J13,J34,j4,j3};
+       break;
+      case 4:
+       klist = {k1,K12,k2,K13,K,K24,k3,K34,k4};
+       jlist = {j1,J12,j2,J13,J,J24,j3,J34,j4};
+       break;
+      case 5:
+       klist = {K13,K24,K,k1,k2,K12,k3,k4,K34};
+       jlist = {J13,J24,J,j1,j2,J12,j3,j4,J34};
+       break;
+      case 6:
+       klist = {k2,K12,k1,k4,K34,k3,K24,K,K13};
+       jlist = {j2,J12,j1,j4,J34,j3,J24,J,J13};
+       break;
+      case 7:
+       klist = {K12,k1,k2,K34,k3,k4,K,K13,K24};
+       jlist = {J12,j1,j2,J34,j3,j4,J,J13,J24};
+       break;
+      case 8:
+       break;
+   }
+
+   unsigned long long int key =   klist[0];
+   unsigned long long int factor = 100;
+   for (int i=1; i<9; ++i)
+   {
+      key += klist[i]*factor;
+      factor *=100;
+   }
+   auto it = NineJList.find(key);
+   if (it != NineJList.end() ) return it->second;
+   double ninej = AngMom::NineJ(jlist[0],jlist[1],jlist[2],jlist[3],jlist[4],jlist[5],jlist[6],jlist[7],jlist[8]);
+   #pragma omp critical
+   NineJList[key] = ninej;
+   return ninej;
+
+   
+
+
+}
 
 
