@@ -302,12 +302,10 @@ Operator Operator::DoNormalOrdering3()
    Operator opNO3 = Operator(*modelspace);
    cout << "size of ThreeBody = " << ThreeBody.MatEl.size() << endl;
 //   #pragma omp parallel for
-//   for (int ch=0;ch<nChannels;++ch)
    for ( auto& itmat : opNO3.TwoBody.MatEl )
    {
       int ch = itmat.first[0]; // assume ch_bra = ch_ket for 3body...
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-//      arma::mat& Gamma = (arma::mat&) opNO3.TwoBody.GetMatrix(ch);
       arma::mat& Gamma = (arma::mat&) itmat.second;
       for (int ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
       {
@@ -460,8 +458,6 @@ void Operator::DoPandyaTransformation( Operator& opCC)
       int J = tbc_bra.J;
          TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
          int nKets = tbc_ket.GetNumberKets();
-//         arma::mat& MatrixCC = opCC.TwoBody.at(ch_bra).at(ch_ket);
-//         arma::mat& MatrixCC = opCC.TwoBody.GetMatrix(ch_bra,ch_ket);
          MatrixCC.zeros();
          
          for (int ibra=0; ibra<nKets; ++ibra)
@@ -490,12 +486,10 @@ void Operator::DoPandyaTransformation( Operator& opCC)
                for (int Jprime=minJprime; Jprime<=maxJprime; ++Jprime)
                {
                   double sixj = modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
-//                  MatrixCC(ibra,iket) -= (2*Jprime+1) * sixj * GetTBME(Jprime,parity_std,Tz_std,i,l,k,j);
                   MatrixCC(ibra,iket) -= (2*Jprime+1) * sixj * TwoBody.GetTBME(Jprime,parity_std,Tz_std,i,l,k,j);
                }
             }
          }
-  //    }
    }
 
 

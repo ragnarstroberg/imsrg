@@ -193,22 +193,18 @@ void HartreeFock::BuildMonopoleV3()
   {
     Orbit& oa = modelspace->GetOrbit(a);
     int ea = 2*oa.n + oa.l;
-    //for (int b=0; b<norbits; ++b)
     for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
     {
       Orbit& ob = modelspace->GetOrbit(b);
-//      if (oa.j2 != ob.j2 or oa.tz2 != ob.tz2 or oa.l != ob.l) continue;
       int eb = 2*ob.n + ob.l;
  
         for (int c=0; c<norbits; ++c)
         {
           Orbit& oc = modelspace->GetOrbit(c);
           int ec = 2*oc.n + oc.l;
-          //for (int d=0; d<norbits; ++d)
           for (int d : modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
           {
             Orbit& od = modelspace->GetOrbit(d);
-//            if (oc.j2 != od.j2 or oc.tz2 != od.tz2 or oc.l != od.l) continue;
             int ed = 2*od.n + od.l;
  
             for (int i=0; i<norbits; ++i)
@@ -216,11 +212,9 @@ void HartreeFock::BuildMonopoleV3()
               Orbit& oi = modelspace->GetOrbit(i);
               int ei = 2*oi.n + oi.l;
               if ( ea+ec+ei > Hbare.E3max ) continue;
-//              for (int j=0; j<norbits; ++j)
               for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
               {
                 Orbit& oj = modelspace->GetOrbit(j);
-//                if (oi.j2 != oj.j2 or oi.tz2 != oj.tz2 or oi.l != oj.l) continue;
                 int ej = 2*oj.n + oj.l;
                 if ( eb+ed+ej > Hbare.E3max ) continue;
                 if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
@@ -264,80 +258,6 @@ void HartreeFock::BuildMonopoleV3()
       }
    }
 }
-
-
-
-//*********************************************************************
-/// Construct an unnormalized three-body monopole interaction
-/// \f[ \langle iab | \bar{V}^{(3)} | jcd \rangle =
-///     \sum\limits_{J,J_{12}}\sum_{Tt_{12}}(2J+1)(2T+1) 
-///       \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle \f]
-///
-//*********************************************************************
-/*
-void HartreeFock::BuildMonopoleV3()
-{
-   ModelSpace * modelspace = Hbare.GetModelSpace();
-   int norbits = modelspace->GetNumberOrbits();
-
-
- for (int a=0; a<norbits; ++a)
- {
-   Orbit& oa = modelspace->GetOrbit(a);
-   int ea = 2*oa.n + oa.l;
-   for (int b=0; b<norbits; ++b)
-   {
-     Orbit& ob = modelspace->GetOrbit(b);
-     int eb = 2*ob.n + ob.l;
-     if (oa.j2 != ob.j2 or oa.tz2 != ob.tz2 or oa.l != ob.l) continue;
-
-       for (int c=0; c<norbits; ++c)
-       {
-         Orbit& oc = modelspace->GetOrbit(c);
-         int ec = 2*oc.n + oc.l;
-         for (int d=0; d<norbits; ++d)
-         {
-           Orbit& od = modelspace->GetOrbit(d);
-           int ed = 2*od.n + od.l;
-           if (oc.j2 != od.j2 or oc.tz2 != od.tz2 or oc.l != od.l) continue;
-
-
-           for (int i=0; i<norbits; ++i)
-           {
-             Orbit& oi = modelspace->GetOrbit(i);
-             int ei = 2*oi.n + oi.l;
-             if ( ea+ec+ei > Hbare.E3max ) continue;
-             for (int j=0; j<norbits; ++j)
-             {
-               Orbit& oj = modelspace->GetOrbit(j);
-               int ej = 2*oj.n + oj.l;
-               if (oi.j2 != oj.j2 or oi.tz2 != oj.tz2 or oi.l != oj.l) continue;
-
-               if ( eb+ed+ej > Hbare.E3max ) continue;
-               if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
-
-
-               double v = 0;
-               int j2min = max( abs(oa.j2-oc.j2), abs(ob.j2-od.j2) )/2;
-               int j2max = min (oa.j2+oc.j2, ob.j2+od.j2)/2;
-               for (int j2=j2min; j2<=j2max; ++j2)
-               {
-                int Jmin = max( abs(2*j2-oi.j2), abs(2*j2-oj.j2) );
-                int Jmax = 2*j2 + min(oi.j2, oj.j2);
-                for (int J=Jmin; J<=Jmax; J+=2)
-                {
-                   v += Hbare.GetThreeBodyME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
-                }
-               }
-               Vmon3[{a,c,i,b,d,j}] = v;
-             }
-           }
-         }
-       }
-     }
-   }
-}
-*/
 
 
 
