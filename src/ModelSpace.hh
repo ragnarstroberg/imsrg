@@ -2,8 +2,8 @@
 #define ModelSpace_h 1
 
 #include <vector>
-#include <map>
 #include <unordered_map>
+#include <map>
 #include <armadillo>
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
@@ -136,6 +136,52 @@ class TwoBodyChannel_CC : public TwoBodyChannel
 
 
 
+
+
+class ThreeBodyChannel
+{
+ public:
+   //Fields
+   int Jpq;
+   int J;
+   int parity;
+   int Tz;
+
+   // Constructors
+   ThreeBodyChannel();
+   ThreeBodyChannel(int jpq, int j, int p, int t, ModelSpace* ms);
+   ThreeBodyChannel(int N, ModelSpace* ms);
+   ThreeBodyChannel(const ThreeBodyChannel& rhs) {Copy(rhs);};
+   void Initialize(int N, ModelSpace* ms);
+
+   //Overloaded operators
+   ThreeBodyChannel& operator=(const ThreeBodyChannel& rhs) {Copy(rhs); return *this;};
+
+   //Methods
+   int GetNumberKets() const {return NumberKets;} ;
+   int GetLocalIndex(int ketindex) const { return KetMap[ketindex];} ; // modelspace ket index => local ket index
+   int GetLocalIndex(int p, int q, int r) const ;
+   int GetKetIndex(int i) const { return KetList[i];} ; // local ket index => modelspace ket index
+   Ket * GetKet(int i) const ; // get pointer to ket using local index
+
+
+// private:
+   //Fields
+   ModelSpace * modelspace;
+   int NumberKets;  // Number of pqr configs that participate in this channel
+   vector<int> KetList; // eg [2, 4, 7, ...] Used for looping over all the kets in the channel
+   vector<int> KetMap;  // eg [ -1, -1, 0, -1, 1, -1, -1, 2 ...] Used for asking what is the local index of this ket. -1 means the ket doesn't participate in this channel
+   //Methods
+   virtual bool CheckChannel_ket(int p, int q, int r) const;  // check if |pqr> participates in this channel
+//   bool CheckChannel_ket(Ket3 *ket) const {return CheckChannel_ket(ket->p,ket->q,ket->r);};  // check if |pqr> participates in this channel
+   void Copy(const ThreeBodyChannel &);
+   
+};
+
+
+
+
+
 class ModelSpace
 {
 
@@ -185,7 +231,7 @@ class ModelSpace
    void SetN3max(int n){N3max=n;};
 
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
-   double GetNineJ(double j1, double j2, double J12, double j3, double j4, double J34, double J13, double J24, double J);
+   double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. Not ideal.
 
    int GetTwoBodyChannelIndex(int j, int p, int t);
@@ -224,7 +270,6 @@ class ModelSpace
    map<array<int,3>,vector<unsigned int> > OneBodyChannels;
 
 
-   void PreComputeSixJs(int Jmax);
  private:
    // Fields
    int norbits;
@@ -236,13 +281,10 @@ class ModelSpace
    vector<TwoBodyChannel> TwoBodyChannels;
    vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
 //   map<long int,double> SixJList;
+
    unordered_map<unsigned long int,double> SixJList;
-//   map<array<int,6>,double> SixJList;
-//   map<unsigned long long int,double> NineJList;
    unordered_map<unsigned long long int,double> NineJList;
-//   map<unsigned long long int,double> MoshList;
    unordered_map<unsigned long long int,double> MoshList;
-//   map<long int,double> MoshList;
 
 };
 

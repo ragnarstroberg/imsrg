@@ -529,6 +529,8 @@ void ModelSpace::SetupKets()
 }
 
 
+
+
 double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3)
 //double ModelSpace::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
 {
@@ -547,6 +549,15 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
    int K1 = 2*J1;
    int K2 = 2*J2;
    int K3 = 2*J3;
+   // check triangle conditions
+   if (k1+k2<k3) return 0;
+   if (abs(k1-k2)>k3) return 0;
+   if (K1+K2<k3) return 0;
+   if (abs(K1-K2)>k3) return 0;
+   if (K1+k2<K3) return 0;
+   if (abs(K1-k2)>K3) return 0;
+   if (k1+K2<K3) return 0;
+   if (abs(k1-K2)>K3) return 0;
 
    array<int,6> klist = {k1,k2,k3,K1,K2,K3};
    int imin = min_element(klist.begin(),klist.end()) - klist.begin();
@@ -575,12 +586,10 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
       case 5:
         break;
    }
+
    if (K3==0)
    {
-      if (k1!=K2 or K1!=k2) return 0;
-      if (k1+k2>k3) return 0;
-      if (abs(k1-k2)>k3) return 0;
-      return phase((k1+k2+k3)/2) / sqrt((k1+1.)*(k2+1.));
+      return (k1==K2 and K1==k2) ? phase((k1+k2+k3)/2) / sqrt((k1+1.)*(k2+1.)) : 0;
    }
 
    array<int,4> ksublist = {k1,k2,K1,K2};
@@ -606,8 +615,6 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 
    unsigned long int key = 10000000000*k1 + 100000000*k2 + 1000000*k3 + 10000*K1 + 100*K2 + K3;
 
-//   long int key = 10000000000*K3 + 100000000*K2 + 1000000*K1 + 10000*k3 + 100*k2 + k1;
-//   array<unsigned int,6> key = {k1,k2,k3,K1,K2,K3};
    auto it = SixJList.find(key);
    if (it != SixJList.end() ) return it->second;
    double sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
@@ -615,6 +622,9 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
    SixJList[key] = sixj;
    return sixj;
 }
+
+
+
 
 
 double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L)
@@ -663,36 +673,30 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
 }
 
 
-void ModelSpace::PreComputeSixJs(int JMAX)
+/*
+
+double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L)
 {
-  cout << "Precomputing 6j symbols..." << endl;
-  for (int J3=1; J3<=JMAX; ++J3)
-  {
-    for (int j1=J3; j1<=JMAX; ++j1)
-    {
-      for (int J2=j1-J3; J2<j1+J3; J2+=2)
-      {
-        for (int J1=J3; J1<=j1; ++J1)
-        {
-          for (int j2=J1-J3; j2<=J1+J3; j2+=2)
-          {
-            for (int j3=max(abs(J2-J1),j1-j2); j3<=min(J1+J2,j1+j2); j3+=2)
-            {
-               unsigned long int key = 10000000000*j1 + 100000000*j2 + 1000000*j3 + 10000*J1 + 100*J2 + J3;
+   unsigned long long int key =  1000000000000 * N
+                                + 100000000000 * Lam
+                                +   1000000000 * n
+                                +    100000000 * lam
+                                +      1000000 * n1
+                                +       100000 * l1
+                                +         1000 * n2
+                                +          100 * l2
+                                +                 L;
+   map<long int,double>::iterator it = MoshList.find(key);
+   if ( it != MoshList.end() )  return it->second;
 
-//               array<unsigned int,6> key = {k1,k2,k3,K1,K2,K3};
-               SixJList[key] = AngMom::SixJ(0.5*j1,0.5*j2,0.5*j3,0.5*J1,0.5*J2,0.5*J3);
-            }
-          }
-        }
-      }
-    }
-  }
-  cout << "done." << endl;
-}   
+   // if we didn't find it, we need to calculate it.
+   double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
+   #pragma omp critical
+   MoshList[key] = mosh;
+   return mosh;
 
-
-
+}
+*/
 
 
 double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double j4, double J34, double J13, double J24, double J)
@@ -761,9 +765,6 @@ double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double 
    #pragma omp critical
    NineJList[key] = ninej;
    return ninej;
-
-   
-
 
 }
 

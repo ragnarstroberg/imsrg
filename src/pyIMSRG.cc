@@ -32,7 +32,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetHbarOmega", &ModelSpace::GetHbarOmega)
       .def("GetTargetMass", &ModelSpace::GetTargetMass)
       .def("GetNumberOrbits", &ModelSpace::GetNumberOrbits)
-      .def("PreComputeSixJs", &ModelSpace::PreComputeSixJs)
+//      .def("PreComputeSixJs", &ModelSpace::PreComputeSixJs)
    ;
 
    class_<ReadWrite>("ReadWrite",init<>())
