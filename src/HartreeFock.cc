@@ -27,8 +27,6 @@ HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
    t = Hbare.OneBody;
    energies = t.diag();
    BuildMonopoleV();
-   cout << "MonopoleV: = " << endl;
-   Vmon.submat(0,0,10,10).print();
    if (hbare.GetParticleRank()>2)
    {
       BuildMonopoleV3();
@@ -173,8 +171,8 @@ void HartreeFock::BuildMonopoleV()
          Vmon_exch(ibra,iket)  = Hbare.TwoBody.GetTBMEmonopole(a,b,d,c)*norm;
       }
    }
-   Vmon = arma::symmatu(Vmon);
-   Vmon_exch = arma::symmatu(Vmon_exch);
+//   Vmon = arma::symmatu(Vmon);
+//   Vmon_exch = arma::symmatu(Vmon_exch);
 }
 
 

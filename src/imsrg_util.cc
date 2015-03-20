@@ -89,10 +89,6 @@ namespace imsrg_util
  }
 
 
-// Operator TCM_Op(ModelSpace& modelspace)
-// {
-//   return TCM_Op(modelspace, modelspace.GetN2max());
-// }
 // Center of mass kinetic energy, including the hw/A factor
 // Operator TCM_Op(ModelSpace& modelspace, int N2max)
  Operator TCM_Op(ModelSpace& modelspace)
@@ -101,17 +97,17 @@ namespace imsrg_util
    double hw = modelspace.GetHbarOmega();
    int A = modelspace.GetTargetMass();
    Operator TcmOp = Operator(modelspace);
+   TcmOp.SetHermitian();
 
    // One body piece = p**2/(2mA) = (N+3/2)hw/A
    int norb = modelspace.GetNumberOrbits();
    for (int i=0; i<norb; ++i)
    {
       Orbit & oi = modelspace.GetOrbit(i);
-      for (int j=i; j<norb; ++j)
+      for (int j : modelspace.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
          Orbit & oj = modelspace.GetOrbit(j);
-//         if ( 2*(oi.n+oj.n)+oi.l+oj.l > N2max) continue;
-         if (oi.l != oj.l or oi.j2 != oj.j2 or oi.tz2 != oj.tz2) continue;
+         if (j<i) continue;
          double tij = 0;
          if (oi.n == oj.n) tij = 0.5*(2*oi.n+oi.l + 1.5) * hw/A;
          else if (oi.n == oj.n-1) tij = 0.5*sqrt(oj.n*(oj.n+oj.l + 0.5)) * hw/A;
@@ -122,7 +118,7 @@ namespace imsrg_util
 
    // Two body piece = 2*p1*p2/(2mA) = (Tcm-Trel)/A
    int nchan = modelspace.GetNumberTwoBodyChannels();
-   #pragma omp parallel for schedule(dynamic,5) 
+   #pragma omp parallel for schedule(dynamic,1) 
    for (int ch=0; ch<nchan; ++ch)
    {
       TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
@@ -141,11 +137,9 @@ namespace imsrg_util
             Orbit & ol = modelspace.GetOrbit(ket.q);
             if ( 2*(ok.n+ol.n)+ok.l+ol.l > N2max) continue;
             double p1p2 = Calculate_p1p2(modelspace,bra,ket,tbc.J) * hw/A;
-//            #pragma omp critical
             if (abs(p1p2)>1e-7)
             {
               TcmOp.TwoBody.SetTBME(ch,ibra,iket,p1p2);
-              TcmOp.TwoBody.SetTBME(ch,iket,ibra,p1p2);
             }
          }
       }
