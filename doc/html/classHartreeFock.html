@@ -13,6 +13,12 @@
 <script type="text/javascript">
   $(document).ready(function() { searchBox.OnSelectItem(0); });
 </script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+});
+</script><script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -199,9 +205,9 @@ map&lt; array&lt; int, 6 &gt;, double &gt;&#160;</td><td class="memItemRight" va
 </div><div class="memdoc">
 <p>Construct an unnormalized two-body monopole interaction </p>
 <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ \langle ab | \bar{V}^{(2)} | cd \rangle = \sqrt{(1+\delta_{ab})(1+\delta_{cd})} \sum_{J} (2J+1) \langle ab | V^{(2)} | cd \rangle_{J} \]" src="form_87.png"/>
+\[ \langle ab | \bar{V}^{(2)} | cd \rangle = \sqrt{(1+\delta_{ab})(1+\delta_{cd})} \sum_{J} (2J+1) \langle ab | V^{(2)} | cd \rangle_{J} \]
 </p>
-<p> This method utilizes the operator method <a class="el" href="classOperator.html#aa08e81b63a14ef552ab8bd645196cfdb">Operator::GetTBMEmonopole()</a> </p>
+<p> This method utilizes the operator method Operator::GetTBMEmonopole() </p>
 
 </div>
 </div>
@@ -219,7 +225,7 @@ map&lt; array&lt; int, 6 &gt;, double &gt;&#160;</td><td class="memItemRight" va
 </div><div class="memdoc">
 <p>Construct an unnormalized three-body monopole interaction </p>
 <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ \langle iab | \bar{V}^{(3)} | jcd \rangle = \sum\limits_{J,J_{12}}\sum_{Tt_{12}}(2J+1)(2T+1) \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle \]" src="form_31.png"/>
+\[ \langle iab | \bar{V}^{(3)} | jcd \rangle = \sum\limits_{J,J_{12}}\sum_{Tt_{12}}(2J+1)(2T+1) \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle \]
 </p>
  
 </div>
@@ -238,11 +244,11 @@ map&lt; array&lt; int, 6 &gt;, double &gt;&#160;</td><td class="memItemRight" va
 </div><div class="memdoc">
 <p>Calculate the HF energy. </p>
 <p class="formulaDsp">
-<img class="formulaDsp" alt="\begin{eqnarray*} E_{HF} &amp;=&amp; \sum_{\alpha} t_{\alpha\alpha} + \frac{1}{2}\sum_{\alpha\beta} V_{\alpha\beta\alpha\beta} + \frac{1}{6}\sum_{\alpha\beta\gamma} V_{\alpha\beta\gamma\alpha\beta\gamma} \\ &amp;=&amp; \sum_{ij} (2j_i+1) \rho_{ij} ( t_{ij} +\frac{1}{2}\tilde{V}^{(2)}_{ij} + \frac{1}{6}\tilde{V}^{(3)}_{ij} ) \end{eqnarray*}" src="form_54.png"/>
+\begin{eqnarray*} E_{HF} &amp;=&amp; \sum_{\alpha} t_{\alpha\alpha} + \frac{1}{2}\sum_{\alpha\beta} V_{\alpha\beta\alpha\beta} + \frac{1}{6}\sum_{\alpha\beta\gamma} V_{\alpha\beta\gamma\alpha\beta\gamma} \\ &amp;=&amp; \sum_{ij} (2j_i+1) \rho_{ij} ( t_{ij} +\frac{1}{2}\tilde{V}^{(2)}_{ij} + \frac{1}{6}\tilde{V}^{(3)}_{ij} ) \end{eqnarray*}
 </p>
 <p> Where the matrices </p>
 <p class="formulaDsp">
-<img class="formulaDsp" alt="\begin{eqnarray*} \tilde{V}^{(2)}_{ij} &amp;=&amp; \sum_{ab} \rho_{ab}\bar{V}^{(2)}_{iajb} \\ \tilde{V}^{(2)}_{ij} &amp;=&amp; \sum_{abcd} \rho_{ab}\rho_{cd} \bar{V}^{(3)}_{iacjbd} \\ \end{eqnarray*}" src="form_55.png"/>
+\begin{eqnarray*} \tilde{V}^{(2)}_{ij} &amp;=&amp; \sum_{ab} \rho_{ab}\bar{V}^{(2)}_{iajb} \\ \tilde{V}^{(2)}_{ij} &amp;=&amp; \sum_{abcd} \rho_{ab}\rho_{cd} \bar{V}^{(3)}_{iacjbd} \\ \end{eqnarray*}
 </p>
 <p> have already been calculated by <a class="el" href="classHartreeFock.html#a84fe0eb16f6e5835c920bf8fa98c4442">UpdateF()</a>. </p>
 
@@ -262,9 +268,9 @@ map&lt; array&lt; int, 6 &gt;, double &gt;&#160;</td><td class="memItemRight" va
 </div><div class="memdoc">
 <p>Check for convergence using difference in s.p. energies between iterations. Converged when </p>
 <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ \delta_{e} \equiv \sqrt{ \sum_{i}(e_{i}^{(n)}-e_{i}^{(n-1)})^2} < \textrm{tolerance} \]" src="form_62.png"/>
+\[ \delta_{e} \equiv \sqrt{ \sum_{i}(e_{i}^{(n)}-e_{i}^{(n-1)})^2} &lt; \textrm{tolerance} \]
 </p>
-<p> where <img class="formulaInl" alt="$ e_{i}^{(n)} $" src="form_59.png"/> is the <img class="formulaInl" alt="$ i $" src="form_60.png"/>th eigenvalue of the Fock matrix after <img class="formulaInl" alt="$ n $" src="form_61.png"/> iterations. </p>
+<p> where \( e_{i}^{(n)} \) is the \( i \)th eigenvalue of the Fock matrix after \( n \) iterations. </p>
 
 </div>
 </div>
@@ -280,7 +286,7 @@ map&lt; array&lt; int, 6 &gt;, double &gt;&#160;</td><td class="memItemRight" va
         </tr>
       </table>
 </div><div class="memdoc">
-<p>[See Suhonen eq. 4.85] Diagonalize the fock matrix <img class="formulaInl" alt="$ <a|F|b> $" src="form_49.png"/> and put the eigenvectors in <img class="formulaInl" alt="$C(i,\alpha) = <i|\alpha> $" src="form_35.png"/> and eigenvalues in the vector energies. Save the last vector of energies to check for convergence. Different channels are diagonalized independently. This guarantees that J,Tz, and <img class="formulaInl" alt="$ \pi $" src="form_63.png"/> remain good. </p>
+<p>[See Suhonen eq. 4.85] Diagonalize the fock matrix \( &lt;a|F|b&gt; \) and put the eigenvectors in \(C(i,\alpha) = &lt;i|\alpha&gt; \) and eigenvalues in the vector energies. Save the last vector of energies to check for convergence. Different channels are diagonalized independently. This guarantees that J,Tz, and \( \pi \) remain good. </p>
 
 </div>
 </div>
@@ -298,15 +304,15 @@ map&lt; array&lt; int, 6 &gt;, double &gt;&#160;</td><td class="memItemRight" va
 </div><div class="memdoc">
 <p>Returns the normal-ordered Hamiltonian in the Hartree-Fock basis </p>
 <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ E_0 = E_{HF} \]" src="form_94.png"/>
+\[ E_0 = E_{HF} \]
 </p>
  <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ f_{ij} = C^{\dagger} F_{ij} C \]" src="form_95.png"/>
+\[ f_{ij} = C^{\dagger} F_{ij} C \]
 </p>
  <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ \Gamma^{J}_{ijkl} = D^{\dagger} \left[V^{J}_{ijkl} + \sum_{ab}\sum_{J_3}(2J_{3}+1)\rho_{ab}V^{JJJ_{3}}_{ijaklb}\right] D \]" src="form_98.png"/>
+\[ \Gamma^{J}_{ijkl} = D^{\dagger} \left[V^{J}_{ijkl} + \sum_{ab}\sum_{J_3}(2J_{3}+1)\rho_{ab}V^{JJJ_{3}}_{ijaklb}\right] D \]
 </p>
-<p> Where the matrix <img class="formulaInl" alt="$ D$" src="form_99.png"/> is the same as the one defined in <a class="el" href="classHartreeFock.html#a55914915cea16669e549025c244b62d0">TransformToHFBasis()</a>. </p>
+<p> Where the matrix \( D\) is the same as the one defined in <a class="el" href="classHartreeFock.html#a55914915cea16669e549025c244b62d0">TransformToHFBasis()</a>. </p>
 
 </div>
 </div>
@@ -324,7 +330,7 @@ map&lt; array&lt; int, 6 &gt;, double &gt;&#160;</td><td class="memItemRight" va
 </div><div class="memdoc">
 <p>Eigenvectors/values come out of the diagonalization energy-ordered. We want them ordered corresponding to the input ordering, i.e. we want the matrix C to be maximal and positive along the diagonal. For a 3x3 matrix this would be something like </p>
 <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ \left( \begin{array}{rrr} -0.8 &amp; 0.2 &amp; -0.6 \\ -0.3 &amp; 0.3 &amp; 0.9 \\ 0.2 &amp; 0.9 &amp; -0.4 \\ \end{array}\right) \rightarrow \left(\begin{array}{rrr} 0.8 &amp; -0.6 &amp; 0.2 \\ 0.3 &amp; 0.9 &amp; 0.3 \\ -0.2 &amp; -0.4 &amp; 0.9 \\ \end{array}\right) \]" src="form_104.png"/>
+\[ \left( \begin{array}{rrr} -0.8 &amp; 0.2 &amp; -0.6 \\ -0.3 &amp; 0.3 &amp; 0.9 \\ 0.2 &amp; 0.9 &amp; -0.4 \\ \end{array}\right) \rightarrow \left(\begin{array}{rrr} 0.8 &amp; -0.6 &amp; 0.2 \\ 0.3 &amp; 0.9 &amp; 0.3 \\ -0.2 &amp; -0.4 &amp; 0.9 \\ \end{array}\right) \]
 </p>
  
 </div>
@@ -360,18 +366,18 @@ map&lt; array&lt; int, 6 &gt;, double &gt;&#160;</td><td class="memItemRight" va
 </div><div class="memdoc">
 <p>Takes in an operator expressed in the basis of the original Hamiltonian, and returns that operator in the Hartree-Fock basis. </p>
 <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ t_{HF} = C^{\dagger} t_{HO} C \]" src="form_100.png"/>
+\[ t_{HF} = C^{\dagger} t_{HO} C \]
 </p>
  <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ V_{HF}^{J} = D^{\dagger} V^{J}_{HO} D \]" src="form_101.png"/>
+\[ V_{HF}^{J} = D^{\dagger} V^{J}_{HO} D \]
 </p>
-<p> The matrix <img class="formulaInl" alt="$ D $" src="form_90.png"/> is defined as </p>
+<p> The matrix \( D \) is defined as </p>
 <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ D_{ab\alpha\beta} \equiv \sqrt{ \frac{1+\delta_{ab}} {1+\delta_{\alpha\beta}} } C_{a\alpha} C_{b\beta} \]" src="form_85.png"/>
+\[ D_{ab\alpha\beta} \equiv \sqrt{ \frac{1+\delta_{ab}} {1+\delta_{\alpha\beta}} } C_{a\alpha} C_{b\beta} \]
 </p>
-<p> The factor in the square root is due to the fact that we're using normalized TBME's. Since only kets with <img class="formulaInl" alt="$ a\leq b$" src="form_83.png"/> are stored, we can use the antisymmetry of the TBME's and define </p>
+<p> The factor in the square root is due to the fact that we're using normalized TBME's. Since only kets with \( a\leq b\) are stored, we can use the antisymmetry of the TBME's and define </p>
 <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ D(J)_{ab\alpha\beta} \equiv \sqrt{ \frac{1+\delta_{ab}} {1+\delta_{\alpha\beta}} } \left( C_{a\alpha} C_{b\beta} -(1-\delta_{ab})(-1)^{j_a+j_b-J} C_{b\alpha}C_{a\beta}\right) \]" src="form_86.png"/>
+\[ D(J)_{ab\alpha\beta} \equiv \sqrt{ \frac{1+\delta_{ab}} {1+\delta_{\alpha\beta}} } \left( C_{a\alpha} C_{b\beta} -(1-\delta_{ab})(-1)^{j_a+j_b-J} C_{b\alpha}C_{a\beta}\right) \]
 </p>
  
 </div>
@@ -390,9 +396,9 @@ map&lt; array&lt; int, 6 &gt;, double &gt;&#160;</td><td class="memItemRight" va
 </div><div class="memdoc">
 <p>Construct an unnormalized three-body monopole interaction </p>
 <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ \langle iab | \bar{V}^{(3)} | jcd \rangle = \sum\limits_{J,J_{12}}\sum_{Tt_{12}}(2J+1)(2T+1) \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle \]" src="form_31.png"/>
+\[ \langle iab | \bar{V}^{(3)} | jcd \rangle = \sum\limits_{J,J_{12}}\sum_{Tt_{12}}(2J+1)(2T+1) \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle \]
 </p>
-<p>-body density matrix <img class="formulaInl" alt="$ <i|\rho|j> = \sum\limits_{\beta} n_{\beta} <i|\beta> <\beta|j> $" src="form_115.png"/> where <img class="formulaInl" alt="$n_{\beta} $" src="form_116.png"/> ensureas that beta runs over HF orbits in the core (i.e. below the fermi surface) </p>
+<p>-body density matrix \( &lt;i|\rho|j&gt; = \sum\limits_{\beta} n_{\beta} &lt;i|\beta&gt; &lt;\beta|j&gt; \) where \(n_{\beta} \) ensureas that beta runs over HF orbits in the core (i.e. below the fermi surface) </p>
 
 </div>
 </div>
@@ -410,14 +416,14 @@ map&lt; array&lt; int, 6 &gt;, double &gt;&#160;</td><td class="memItemRight" va
 </div><div class="memdoc">
 <p>[See Suhonen eq 4.85] </p>
 <p class="formulaDsp">
-<img class="formulaDsp" alt="\[ F_{ij} = t_{ij} + \frac{1}{2j_i+1}\sum_{ab} \rho_{ab} \bar{V}^{(2)}_{iajb} + \frac{1}{2(2j_i+1)}\sum_{abcd}\rho_{ab} \rho_{cd} \bar{V}^{(3)}_{iacjbd} \]" src="form_56.png"/>
+\[ F_{ij} = t_{ij} + \frac{1}{2j_i+1}\sum_{ab} \rho_{ab} \bar{V}^{(2)}_{iajb} + \frac{1}{2(2j_i+1)}\sum_{abcd}\rho_{ab} \rho_{cd} \bar{V}^{(3)}_{iacjbd} \]
 </p>
 <ul>
-<li><img class="formulaInl" alt="$ F $" src="form_51.png"/> is the Fock matrix, to be diagonalized</li>
-<li><img class="formulaInl" alt="$ t $" src="form_42.png"/> is the kinetic energy</li>
-<li><img class="formulaInl" alt="$\rho$" src="form_43.png"/> is the density matrix defined in <a class="el" href="classHartreeFock.html#aad38c905e7e9f9e9757b5800e6910c61">UpdateDensityMatrix()</a></li>
-<li><img class="formulaInl" alt="$ \bar{V}^{(2)} $" src="form_46.png"/> is the monopole component of the 2-body interaction defined in <a class="el" href="classHartreeFock.html#a3d6bac9b4403e4bc599a89ad0c9b6056">BuildMonopoleV()</a>.</li>
-<li><img class="formulaInl" alt="$ \bar{V}^{(3)} $" src="form_47.png"/> is the monopole component of the 3-body interaction devined in <a class="el" href="classHartreeFock.html#a1c146af25a09f427cc626d877ec6e518">BuildMonopoleV3()</a>. </li>
+<li>\( F \) is the Fock matrix, to be diagonalized</li>
+<li>\( t \) is the kinetic energy</li>
+<li>\(\rho\) is the density matrix defined in <a class="el" href="classHartreeFock.html#aad38c905e7e9f9e9757b5800e6910c61">UpdateDensityMatrix()</a></li>
+<li>\( \bar{V}^{(2)} \) is the monopole component of the 2-body interaction defined in <a class="el" href="classHartreeFock.html#a3d6bac9b4403e4bc599a89ad0c9b6056">BuildMonopoleV()</a>.</li>
+<li>\( \bar{V}^{(3)} \) is the monopole component of the 3-body interaction devined in <a class="el" href="classHartreeFock.html#a1c146af25a09f427cc626d877ec6e518">BuildMonopoleV3()</a>. </li>
 </ul>
 
 </div>
@@ -429,7 +435,7 @@ map&lt; array&lt; int, 6 &gt;, double &gt;&#160;</td><td class="memItemRight" va
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 17 2015 10:32:50 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 19 2015 17:13:27 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
