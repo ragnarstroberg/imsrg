@@ -35,7 +35,7 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     nChannels(ms.GetNumberTwoBodyChannels()) ,
     OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(&ms,Jrank,Trank,p),
-    ThreeBody(&ms, ms.GetN3max()),
+    ThreeBody(&ms, ms.GetN3max()),E3max(ms.GetN3max()),
     TwoBodyTensorChannels(ms.GetNumberTwoBodyChannels(), vector<int>() ),
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank)
 {
@@ -54,6 +54,7 @@ Operator::Operator(ModelSpace& ms) :
     rank_J(0), rank_T(0), parity(0), particle_rank(2),
     OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(&ms,0,0,0),
+    ThreeBody(&ms,ms.GetN3max()), E3max(ms.GetN3max()),
     TwoBodyTensorChannels(ms.GetNumberTwoBodyChannels(), vector<int>() )
 {
   TwoBody.AllocateTwoBody();

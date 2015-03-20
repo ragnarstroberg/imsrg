@@ -23,7 +23,6 @@ HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
    Vmon      = arma::mat(nKets,nKets);
    Vmon_exch = arma::mat(nKets,nKets);
    prev_energies = arma::vec(norbits,arma::fill::zeros);
-
    t = Hbare.OneBody;
    energies = t.diag();
    BuildMonopoleV();
@@ -171,8 +170,8 @@ void HartreeFock::BuildMonopoleV()
          Vmon_exch(ibra,iket)  = Hbare.TwoBody.GetTBMEmonopole(a,b,d,c)*norm;
       }
    }
-//   Vmon = arma::symmatu(Vmon);
-//   Vmon_exch = arma::symmatu(Vmon_exch);
+   Vmon = arma::symmatu(Vmon);
+   Vmon_exch = arma::symmatu(Vmon_exch);
 }
 
 
@@ -194,20 +193,22 @@ void HartreeFock::BuildMonopoleV3()
   {
     Orbit& oa = modelspace->GetOrbit(a);
     int ea = 2*oa.n + oa.l;
-    for (int b=0; b<norbits; ++b)
+    //for (int b=0; b<norbits; ++b)
+    for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
     {
       Orbit& ob = modelspace->GetOrbit(b);
-      if (oa.j2 != ob.j2 or oa.tz2 != ob.tz2 or oa.l != ob.l) continue;
+//      if (oa.j2 != ob.j2 or oa.tz2 != ob.tz2 or oa.l != ob.l) continue;
       int eb = 2*ob.n + ob.l;
  
         for (int c=0; c<norbits; ++c)
         {
           Orbit& oc = modelspace->GetOrbit(c);
           int ec = 2*oc.n + oc.l;
-          for (int d=0; d<norbits; ++d)
+          //for (int d=0; d<norbits; ++d)
+          for (int d : modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
           {
             Orbit& od = modelspace->GetOrbit(d);
-            if (oc.j2 != od.j2 or oc.tz2 != od.tz2 or oc.l != od.l) continue;
+//            if (oc.j2 != od.j2 or oc.tz2 != od.tz2 or oc.l != od.l) continue;
             int ed = 2*od.n + od.l;
  
             for (int i=0; i<norbits; ++i)
@@ -215,10 +216,11 @@ void HartreeFock::BuildMonopoleV3()
               Orbit& oi = modelspace->GetOrbit(i);
               int ei = 2*oi.n + oi.l;
               if ( ea+ec+ei > Hbare.E3max ) continue;
-              for (int j=0; j<norbits; ++j)
+//              for (int j=0; j<norbits; ++j)
+              for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
               {
                 Orbit& oj = modelspace->GetOrbit(j);
-                if (oi.j2 != oj.j2 or oi.tz2 != oj.tz2 or oi.l != oj.l) continue;
+//                if (oi.j2 != oj.j2 or oi.tz2 != oj.tz2 or oi.l != oj.l) continue;
                 int ej = 2*oj.n + oj.l;
                 if ( eb+ed+ej > Hbare.E3max ) continue;
                 if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
@@ -232,7 +234,7 @@ void HartreeFock::BuildMonopoleV3()
     }
 
    // the calculation takes longer, so parallelize that part
-   #pragma omp parallel for
+//   #pragma omp parallel for
    for (auto it=entries.begin(); it<entries.end(); ++it)
    {
       int a=(*it)->first[0];
@@ -423,11 +425,13 @@ void HartreeFock::UpdateF()
            }
          }
          Vij(i,j) /= (oi.j2+1);
-         Vij(j,i) = Vij(i,j);  // Hermitian & real => symmetric
+//         Vij(j,i) = Vij(i,j);  // Hermitian & real => symmetric
          V3ij(i,j) /= (oi.j2+1); //
-         V3ij(j,i) = V3ij(i,j);  // Hermitian & real => symmetric
+//         V3ij(j,i) = V3ij(i,j);  // Hermitian & real => symmetric
       }
    }
+   Vij = arma::symmatu(Vij);
+   V3ij = arma::symmatu(V3ij);
    F = t + Vij + 0.5*V3ij;
 }
 
@@ -643,8 +647,6 @@ Operator HartreeFock::GetNormalOrderedH()
          }
       }
 
-//     auto& V2  =  Hbare.TwoBody[ch].at(ch);
-//     auto& OUT =  HNO.TwoBody[ch].at(ch);
      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
