@@ -515,7 +515,101 @@ void Operator::DoPandyaTransformation( Operator& opCC)
 //   STANDARD                 CROSS  
 //   COUPLING                 COUPLED  
 //                                      
-//void Operator::CalculateCrossCoupled()
+void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<arma::mat> &TwoBody_CC_right)
+{
+   // loop over cross-coupled channels
+   #pragma omp parallel for
+   for (int ch_cc=0; ch_cc<nChannels; ++ch_cc)
+   {
+      TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
+      int nKets_cc = tbc_cc.GetNumberKets();
+      arma::uvec kets_ph = tbc_cc.GetKetIndex_ph();
+      int nph_kets = kets_ph.n_rows;
+      int J_cc = tbc_cc.J;
+
+//   These matrices don't actually need to be square, since we only care about
+//   the particle-hole kets, which we sum over via matrix multiplication:
+//   [ ]                  [     ]
+//   |L|  x  [  R   ]  =  |  N  |
+//   [ ]                  [     ]
+//
+      TwoBody_CC_left[ch_cc]  = arma::mat(2*nKets_cc, nph_kets,   arma::fill::zeros);
+      TwoBody_CC_right[ch_cc] = arma::mat(nph_kets,   2*nKets_cc, arma::fill::zeros);
+
+      // loop over cross-coupled ph bras <ac| in this channel
+      for (int i_ph=0; i_ph<nph_kets; ++i_ph)
+      {
+         Ket & bra_cc = tbc_cc.GetKet( kets_ph[i_ph] );
+         int a = bra_cc.p;
+         int c = bra_cc.q;
+         Orbit & oa = modelspace->GetOrbit(a);
+         Orbit & oc = modelspace->GetOrbit(c);
+         double ja = oa.j2/2.0;
+         double jc = oc.j2/2.0;
+
+         // loop over cross-coupled kets |bd> in this channel
+         // we go to 2*nKets to include |bd> and |db>
+         for (int iket_cc=0; iket_cc<2*nKets_cc; ++iket_cc)
+         {
+            Ket & ket_cc = tbc_cc.GetKet(iket_cc%nKets_cc);
+            int b = iket_cc < nKets_cc ? ket_cc.p : ket_cc.q;
+            int d = iket_cc < nKets_cc ? ket_cc.q : ket_cc.p;
+//            int b = iket_cc < nKets_cc ? ket_cc.q : ket_cc.p;
+//            int d = iket_cc < nKets_cc ? ket_cc.p : ket_cc.q;
+            Orbit & ob = modelspace->GetOrbit(b);
+            Orbit & od = modelspace->GetOrbit(d);
+            double jb = ob.j2/2.0;
+            double jd = od.j2/2.0;
+
+//            int phase_ad = modelspace->phase(ja+jd);
+            int phase_ad = modelspace->phase(jb+jd);
+//            int phase_ad = modelspace->phase(J_cc+1);
+//            int phase_ad = modelspace->phase(2);
+//            int phase_ad = modelspace->phase(0.5+jd);
+
+
+
+
+
+            // Get Tz,parity and range of J for <ab || cd > coupling
+            int Tz_std = (oa.tz2 + ob.tz2)/2;
+            int parity_std = (oa.l + ob.l)%2;
+            int jmin = max(abs(ja-jb),abs(jc-jd));
+            int jmax = min(ja+jb,jc+jd);
+            double sm = 0;
+            for (int J_std=jmin; J_std<=jmax; ++J_std)
+            {
+               double sixj = modelspace->GetSixJ(ja,jc,J_cc,jd,jb,J_std);
+               if (abs(sixj)<1e-8) continue;
+               double tbme = TwoBody.GetTBME(J_std,parity_std,Tz_std,b,a,c,d);
+               sm += (2*J_std+1) * sixj * tbme ; 
+            }
+            TwoBody_CC_left[ch_cc](iket_cc,i_ph) = sm * phase_ad;
+
+
+            // Get Tz,parity and range of J for <cb || ad > coupling
+            Tz_std = (oa.tz2 + od.tz2)/2;
+            parity_std = (oa.l + od.l)%2;
+            jmin = max(abs(jc-jb),abs(ja-jd));
+            jmax = min(jc+jb,ja+jd);
+            sm = 0;
+            for (int J_std=jmin; J_std<=jmax; ++J_std)
+            {
+               double sixj = modelspace->GetSixJ(ja,jc,J_cc,jb,jd,J_std);
+               if (abs(sixj) < 1e-8) continue;
+               double tbme = TwoBody.GetTBME(J_std,parity_std,Tz_std,c,b,d,a);
+               sm -= (2*J_std+1) * sixj * tbme ;
+            }
+            TwoBody_CC_right[ch_cc](i_ph,iket_cc) = sm;
+
+         }
+      }
+   }
+}
+
+
+
+/*
 void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<arma::mat> &TwoBody_CC_right)
 {
    // loop over cross-coupled channels
@@ -574,7 +668,6 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
                double sixj = modelspace->GetSixJ(ja,jc,J_cc,jd,jb,J_std);
                if (sixj == 0) continue;
                int phase = modelspace->phase(J_std);
-//               double tbme = GetTBME(J_std,parity_std,Tz_std,a,b,c,d);
                double tbme = TwoBody.GetTBME(J_std,parity_std,Tz_std,a,b,c,d);
                sm += (2*J_std+1) * phase * sixj * tbme ; 
             }
@@ -592,7 +685,6 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
                double sixj = modelspace->GetSixJ(ja,jc,J_cc,jb,jd,J_std);
                if (sixj == 0) continue;
                int phase = modelspace->phase(J_std);
-//               double tbme = GetTBME(J_std,parity_std,Tz_std,c,b,a,d);
                double tbme = TwoBody.GetTBME(J_std,parity_std,Tz_std,c,b,a,d);
                sm += (2*J_std+1) * phase * sixj * tbme ;
             }
@@ -602,6 +694,8 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
       }
    }
 }
+*/
+
 
 
 //*****************************************************************************************
@@ -1364,7 +1458,6 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-//      arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch).at(ch);
       arma::mat& OUT = (arma::mat&) opout.TwoBody.GetMatrix(ch,ch);
       int J = tbc.J;
 
@@ -1401,6 +1494,7 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
             {
                double sixj = modelspace->GetSixJ(jk,jl,J,jj,ji,Jprime);
                int phase = modelspace->phase(ji+jl+J);
+//               int phase = modelspace->phase(ji+jl);
                int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
                int indx_ik = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(i,k),max(i,k));
                int indx_jl = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(j,l),max(j,l));
@@ -1427,6 +1521,7 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
                  indx_jk += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
                double sixj = modelspace->GetSixJ(jk,jl,J,ji,jj,Jprime);
                int phase = modelspace->phase(ji+jl);
+//               int phase = modelspace->phase(ji+jl+J);
                double me1 = N1[ch_cc](indx_il,indx_jk);
                comm += (2*Jprime+1) * phase * sixj * (me1);
             }
