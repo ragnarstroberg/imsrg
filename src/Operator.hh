@@ -113,48 +113,9 @@ class Operator
   // One body setter/getters
   double GetOneBody(int i,int j) {return OneBody(i,j);};
   void SetOneBody(int i, int j, double val) { OneBody(i,j) = val;};
-/*
-  //TwoBody setter/getters
-  double GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const;
-  void   SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme);
-  void   AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme);
-  double GetTBME(int ch_bra, int ch_ket, Ket &bra, Ket &ket) const;
-  void   SetTBME(int ch_bra, int ch_ket, Ket &bra, Ket& ket, double tbme);
-  void   AddToTBME(int ch_bra, int ch_ket, Ket &bra, Ket& ket, double tbme);
-  double GetTBME(int ch_bra, int ch_ket, int ibra, int iket) const;
-  void   SetTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme);
-  void   AddToTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme);
-  double GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket) const;
-  void   SetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket, double tbme);
-  void   AddToTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket, double tbme);
-  double GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d) const;
-  void   SetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d, double tbme);
-  void   AddToTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d, double tbme);
-
-  // Scalar setters/getters for backwards compatibility
-  double GetTBME(int ch, int a, int b, int c, int d) const;
-  void   SetTBME(int ch, int a, int b, int c, int d, double tbme);
-  void   AddToTBME(int ch, int a, int b, int c, int d, double tbme);
-  double GetTBME(int ch, Ket &bra, Ket &ket) const;
-  void   SetTBME(int ch, Ket &bra, Ket& ket, double tbme);
-  void   AddToTBME(int ch, Ket &bra, Ket& ket, double tbme);
-  double GetTBME(int ch, int ibra, int iket) const;
-  void   SetTBME(int ch, int ibra, int iket, double tbme);
-  void   AddToTBME(int ch, int ibra, int iket, double tbme);
-  double GetTBME(int j, int p, int t, Ket& bra, Ket& ket) const;
-  void   SetTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme);
-  void   AddToTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme);
-  double GetTBME(int j, int p, int t, int a, int b, int c, int d) const;
-  void   SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
-  void   AddToTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
 
 
-  double GetTBMEmonopole(int a, int b, int c, int d) const;
-  double GetTBMEmonopole(Ket & bra, Ket & ket) const;
-*/
-
-//// Three body setter getters
-//  double AddToThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
+//// Three body setter getters << These should probably be replaced by direct calls to ThreeBody
   void   SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
   double GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
   double GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
@@ -236,7 +197,6 @@ class Operator
 
 
   void PrintOneBody() const {OneBody.print();};
-  //void PrintTwoBody(int ch) const {TwoBody.at(ch).at(ch).print();};
   void PrintTwoBody(int ch) const {TwoBody.PrintMatrix(ch,ch);};
 
 
@@ -248,6 +208,8 @@ class Operator
 
   
   void DoPandyaTransformation(Operator&) ;
+//  void DoPandyaTransformation(vector<arma::mat>&) ;
+  void DoPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) ;
   void CalculateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) ; 
 
   void comm110ss( Operator& opright, Operator& opout) ; 
