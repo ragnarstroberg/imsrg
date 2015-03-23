@@ -559,7 +559,7 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
             parity_std = (ob.l + od.l)%2;
             jmin = max(abs(jb-jd),abs(jc-ja));
             jmax = min(jb+jd,jc+ja);
-             sm = 0;
+            sm = 0;
             for (int J_std=jmin; J_std<=jmax; ++J_std)
             {
                double sixj = modelspace->GetSixJ(jb,ja,J_cc,jc,jd,J_std);
@@ -1509,6 +1509,7 @@ void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )
 // -- This appears to agree with Nathan's results
 //
 // This version "works" with Pandya transform
+/*
 void Operator::comm222_phss( Operator& opright, Operator& opout ) 
 {
 
@@ -1526,7 +1527,7 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
    timer["DoPandyaTransformation"] += t;
 
    // Construct the intermediate matrices N1 and N2
-   vector<arma::mat> N1 (nChannels, arma::mat() );
+   vector<arma::mat> N1 (nChannels );
  // probably better not to parallelize here, since the armadillo matrix muliplication can use OMP
    for (int ch=0;ch<nChannels;++ch)
    {
@@ -1621,6 +1622,7 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
       }
    }
 }
+*/
 
 
 
@@ -1630,7 +1632,6 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
 
 
 
-/*
 // This version works with Cross Coupling
 void Operator::comm222_phss( Operator& opright, Operator& opout ) 
 {
@@ -1736,7 +1737,7 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
       }
    }
 }
-*/
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////////
