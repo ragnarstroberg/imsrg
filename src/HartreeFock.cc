@@ -513,6 +513,7 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
 ///
 Operator HartreeFock::GetNormalOrderedH()
 {
+   cout << "Getting normal-ordered H in HF basis" << endl;
    ModelSpace *modelspace = Hbare.GetModelSpace();
    Operator HNO = Operator(*modelspace,0,0,0,2);
    HNO.ZeroBody = EHF;
@@ -529,7 +530,7 @@ Operator HartreeFock::GetNormalOrderedH()
       arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
       arma::mat V3NO  = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
 
-//      #pragma omp parallel for schedule(dynamic,1)
+      #pragma omp parallel for schedule(dynamic,1)
       for (int i=0; i<npq; ++i)    
       {
          Ket & bra = tbc.GetKet(i);

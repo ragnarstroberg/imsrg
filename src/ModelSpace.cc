@@ -543,12 +543,17 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 // and the biggest of the remaining values is top left (j1). This
 // Constitutes a unique combination.
 // 
-   int k1 = 2*j1;
-   int k2 = 2*j2;
-   int k3 = 2*j3;
-   int K1 = 2*J1;
-   int K2 = 2*J2;
-   int K3 = 2*J3;
+//   int k1 = 2*j1;
+//   int k2 = 2*j2;
+//   int k3 = 2*j3;
+//   int K1 = 2*J1;
+//   int K2 = 2*J2;
+//   int K3 = 2*J3;
+
+   unsigned long int key = 20000000000*j1 + 200000000*j2 + 2000000*j3 + 20000*J1 + 200*J2 + 2*J3;
+
+// all of this cleverness just seems to slow things down.
+/*
    // check triangle conditions
    if (k1+k2<k3) return 0;
    if (abs(k1-k2)>k3) return 0;
@@ -558,7 +563,6 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
    if (abs(K1-k2)>K3) return 0;
    if (k1+K2<K3) return 0;
    if (abs(k1-K2)>K3) return 0;
-
    array<int,6> klist = {k1,k2,k3,K1,K2,K3};
    int imin = min_element(klist.begin(),klist.end()) - klist.begin();
    switch (imin)
@@ -612,8 +616,8 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
         swap(k2,K1);
         break;
     }
-
-   unsigned long int key = 10000000000*k1 + 100000000*k2 + 1000000*k3 + 10000*K1 + 100*K2 + K3;
+*/
+//   unsigned long int key = 10000000000*k1 + 100000000*k2 + 1000000*k3 + 10000*K1 + 100*K2 + K3;
 
    auto it = SixJList.find(key);
    if (it != SixJList.end() ) return it->second;

@@ -877,30 +877,6 @@ Operator Operator::CommutatorScalarTensor( Operator& opright)
    return out;
 }
 
-// This should really return a vector of operators, but I'm not going to write this until I need to.
-Operator Operator::CommutatorTensorTensor( Operator& opright) 
-{
-   Operator out = opright;
-/*
-   out.EraseZeroBody();
-   out.EraseOneBody();
-   out.EraseTwoBody();
-
-   if ( (IsHermitian() and opright.IsHermitian()) or (IsAntiHermitian() and opright.IsAntiHermitian()) ) out.SetAntiHermitian();
-   else if ( (IsHermitian() and opright.IsAntiHermitian()) or (IsAntiHermitian() and opright.IsHermitian()) ) out.SetHermitian();
-   else out.SetNonHermitian();
-
-   comm111tt(opright, out);
-   comm121tt(opright, out);
-
-   comm122tt(opright, out);
-   comm222_pp_hh_221tt(opright, out);
-   comm222_phtt(opright, out);
-*/
-   cout << "Tensor-Tensor commutator not yet implemented" << endl;
-   return out;
-}
-
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1474,6 +1450,7 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
             for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
             {
                double sixj = modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
+//               sixj = 0.01;
                if (abs(sixj)<1e-8) continue;
                int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
                TwoBodyChannel_CC& tbc = modelspace->GetTwoBodyChannel_CC(ch_cc);
@@ -1493,6 +1470,7 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
             for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
             {
                double sixj = modelspace->GetSixJ(jj,ji,J,jk,jl,Jprime);
+//               sixj = 0.01;
                if (abs(sixj)<1e-8) continue;
                int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
                TwoBodyChannel_CC& tbc = modelspace->GetTwoBodyChannel_CC(ch_cc);
