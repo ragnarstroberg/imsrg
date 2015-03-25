@@ -221,7 +221,45 @@ void TwoBodyME::AddToTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket,
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,p_ket,t_ket);
    AddToTBME(ch_bra,ch_ket,bra,ket,tbme);
 }
-
+double TwoBodyME::GetTBME_J(int j_bra, int j_ket, int a, int b, int c, int d) const
+{
+//   cout << "Calling here. " << j_bra << " " << j_ket << " " << a << " " << b << " " << c << " " << d << endl;
+   Orbit& oa = modelspace->GetOrbit(a);
+   Orbit& ob = modelspace->GetOrbit(b);
+   Orbit& oc = modelspace->GetOrbit(c);
+   Orbit& od = modelspace->GetOrbit(d);
+   int parity_bra = (oa.l+ob.l)%2;
+   int parity_ket = (oc.l+od.l)%2;
+   int Tz_bra = (oa.tz2+ob.tz2)/2;
+   int Tz_ket = (oc.tz2+od.tz2)/2;
+   if ( (parity+parity_bra+parity_ket)%2 > 0) return 0;
+   if ( abs(Tz_bra-Tz_ket)>rank_T) return 0;
+   if ( abs(j_bra-j_ket) > rank_J) return 0;
+   if ( j_bra + j_ket < rank_J) return 0;
+   int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,parity_bra,Tz_bra);
+   int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,parity_ket,Tz_ket);
+   return GetTBME(ch_bra,ch_ket,a,b,c,d);
+}
+void TwoBodyME::SetTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, double tbme)
+{
+   Orbit& oa = modelspace->GetOrbit(a);
+   Orbit& ob = modelspace->GetOrbit(b);
+   Orbit& oc = modelspace->GetOrbit(c);
+   Orbit& od = modelspace->GetOrbit(d);
+   int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,(oa.l+ob.l)%2,(oa.tz2+ob.tz2)/2);
+   int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,(oc.l+od.l)%2,(oc.tz2+od.tz2)/2);
+   SetTBME(ch_bra,ch_ket,a,b,c,d,tbme);
+}
+void TwoBodyME::AddToTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, double tbme)
+{
+   Orbit& oa = modelspace->GetOrbit(a);
+   Orbit& ob = modelspace->GetOrbit(b);
+   Orbit& oc = modelspace->GetOrbit(c);
+   Orbit& od = modelspace->GetOrbit(d);
+   int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,(oa.l+ob.l)%2,(oa.tz2+ob.tz2)/2);
+   int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,(oc.l+od.l)%2,(oc.tz2+od.tz2)/2);
+   AddToTBME(ch_bra,ch_ket,a,b,c,d,tbme);
+}
 
 
 // for backwards compatibility...
@@ -303,6 +341,23 @@ void TwoBodyME::AddToTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme)
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    AddToTBME(ch,ch,bra,ket,tbme);
 }
+
+double TwoBodyME::GetTBME_J(int j, int a, int b, int c, int d) const
+{
+   return GetTBME_J(j,j,a,b,c,d);
+}
+
+void TwoBodyME::SetTBME_J(int j, int a, int b, int c, int d, double tbme)
+{
+   SetTBME_J(j,j,a,b,c,d,tbme);
+}
+
+void TwoBodyME::AddToTBME_J(int j, int a, int b, int c, int d, double tbme)
+{
+   AddToTBME_J(j,j,a,b,c,d,tbme);
+}
+
+
 
 /// Returns an unnormalized monopole-like (angle-averaged) term
 /// \f[ \bar{V}_{ijkl} = \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \sum_{J}(2J+1) V_{ijkl}^J \f]

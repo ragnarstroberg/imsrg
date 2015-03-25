@@ -79,6 +79,9 @@ class TwoBodyME
   double GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d) const;
   void   SetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d, double tbme);
   void   AddToTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d, double tbme);
+  double GetTBME_J(int j_bra, int j_ket, int a, int b, int c, int d) const;
+  void   SetTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, double tbme);
+  void   AddToTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, double tbme);
 
   // Scalar setters/getters for backwards compatibility
   double GetTBME(int ch, int a, int b, int c, int d) const;
@@ -96,6 +99,9 @@ class TwoBodyME
   double GetTBME(int j, int p, int t, int a, int b, int c, int d) const;
   void   SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
   void   AddToTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
+  double GetTBME_J(int j, int a, int b, int c, int d) const;
+  void   SetTBME_J(int j, int a, int b, int c, int d, double tbme);
+  void   AddToTBME_J(int j, int a, int b, int c, int d, double tbme);
 
 
   double GetTBMEmonopole(int a, int b, int c, int d) const;
