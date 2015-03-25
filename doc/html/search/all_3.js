@@ -1,6 +1,8 @@
 var searchData=
 [
-  ['ehf',['EHF',['../classHartreeFock.html#a16c9e1791919c2ceef5584bdc9b84a81',1,'HartreeFock']]],
-  ['energies',['energies',['../classHartreeFock.html#a415fc1fbbba3a6a84d47e31ed18323c9',1,'HartreeFock']]],
-  ['eye',['Eye',['../classOperator.html#a03a378f0da2fe71d8160bd3262891457',1,'Operator']]]
+  ['diagonalize',['Diagonalize',['../classHartreeFock.html#a00f7b0c4cb7373a3f1a69ca27a4dfaed',1,'HartreeFock']]],
+  ['donormalordering',['DoNormalOrdering',['../classOperator.html#a622880b91a902c832b867c6447a262e7',1,'Operator']]],
+  ['donormalordering2',['DoNormalOrdering2',['../classOperator.html#a652d989590422a2b26e662625b07254e',1,'Operator']]],
+  ['donormalordering3',['DoNormalOrdering3',['../classOperator.html#a7fd029569796107c87ff17c5a7912480',1,'Operator']]],
+  ['dopandyatransformation',['DoPandyaTransformation',['../classOperator.html#ad468922e03d15318c23886e6bfecc168',1,'Operator']]]
 ];

@@ -36,7 +36,6 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(&ms,Jrank,Trank,p),
     ThreeBody(&ms, ms.GetN3max()),E3max(ms.GetN3max()),
-    TwoBodyTensorChannels(ms.GetNumberTwoBodyChannels(), vector<int>() ),
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank)
 {
   TwoBody.Allocate();
@@ -54,8 +53,7 @@ Operator::Operator(ModelSpace& ms) :
     rank_J(0), rank_T(0), parity(0), particle_rank(2),
     OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(&ms,0,0,0),
-    ThreeBody(&ms,ms.GetN3max()), E3max(ms.GetN3max()),
-    TwoBodyTensorChannels(ms.GetNumberTwoBodyChannels(), vector<int>() )
+    ThreeBody(&ms,ms.GetN3max()), E3max(ms.GetN3max())
 {
   TwoBody.Allocate();
 }
@@ -83,7 +81,6 @@ void Operator::Copy(const Operator& op)
    OneBody       = op.OneBody;
    TwoBody       = op.TwoBody;
    ThreeBody     = op.ThreeBody;
-   TwoBodyTensorChannels       = op.TwoBodyTensorChannels;
 }
 
 /////////////// OVERLOADED OPERATORS =,+,-,*,etc ////////////////////
@@ -628,7 +625,10 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
 
 
 //*****************************************************************************************
-//  OpOut = exp(Omega) Op exp(-Omega)
+/// X.BCH_Transform(Y) returns \f$ Z = e^{Y} X e^{-Y} \f$.
+/// We use the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
+/// \f[ Z = X + [X,Y] + \frac{1}{2!}[X,[X,Y]] + \frac{1}{3!}[X,[X,[X,Y]]] + \ldots \f]
+/// with all commutators truncated at the two-body level.
 Operator Operator::BCH_Transform(  Operator &Omega)
 {
    int max_iter = 20;
@@ -666,10 +666,15 @@ Operator Operator::BCH_Transform(  Operator &Omega)
 //     - 1/24 [Y,[X,[X,Y]]]
 //     - 1/720 [Y,[Y,[Y,[Y,X]]]] - 1/720 [X,[X,[X,[X,Y]]]]
 //     + ...
+
+//*****************************************************************************************
+/// X.BCH_Product(Y) returns \f$Z\f$ such that \f$ e^{Z} = e^{X}e^{Y}\f$
+/// by employing the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
+/// \f[ Z = X + Y + \frac{1}{2}[X,Y] + \frac{1}{12}([X,[X,Y]]+[Y,[Y,X]]) + \ldots \f]
+//*****************************************************************************************
 Operator Operator::BCH_Product(  Operator &Y)
 {
    Operator& X = *this;
-//   double bch_product_threshold = 1e-4;
 
    Operator Z = X + Y; 
    Operator XY = X.Commutator(Y);
@@ -682,7 +687,7 @@ Operator Operator::BCH_Product(  Operator &Y)
 
    Operator YYX = XY.Commutator(Y); // [[X,Y],Y] = [Y,[Y,X]]
    double nc2 = YYX.Norm();
-   Z += YYX * (1/12.);      // [Y,[Y,X]]
+   Z += YYX * (1/12.); 
 
    if ( nc2/12 < (nx+ny)*bch_product_threshold ) return Z;
 
@@ -698,8 +703,8 @@ Operator Operator::BCH_Product(  Operator &Y)
    double nc4 = YXXY.Norm();
    Z += YXXY*(-1./24);
 
-   Operator YYYX = Y.Commutator(YYX) ;
-   Operator YYYYX = Y.Commutator(YYYX) ;
+   Operator YYYX = Y.Commutator(YYX) ; // [Y,[Y,[Y,X]]]
+   Operator YYYYX = Y.Commutator(YYYX) ; // [Y,[Y,[Y,[Y,X]]]]
    double nc5 = YYYYX.Norm();
    Operator XXXY =  X.Commutator(XXY) ; // [X,[X,[X,[X,Y]]]]
    Operator XXXXY = X.Commutator(XXXY) ; // [X,[X,[X,[X,Y]]]]
@@ -712,13 +717,16 @@ Operator Operator::BCH_Product(  Operator &Y)
    return Z;
 }
 
-// Frobenius norm of the operator
+/// Obtain the Frobenius norm of the operator, which here is 
+/// defined as 
+/// \f[ \|X\| = \sqrt{\|X_{(1)}\|^2 +\|X_{(2)}\|^2 } \f]
+/// and
+/// \f[ \|X_{(1)}\|^2 = \sum\limits_{ij} X_{ij}^2 \f]
 double Operator::Norm() const
 {
    double nrm = 0;
    double n1 = OneBodyNorm();
    double n2 = TwoBody.Norm();
-//   double n2 = TwoBodyNorm();
    return sqrt(n1*n1+n2*n2);
 }
 
@@ -773,7 +781,8 @@ Operator Operator::Commutator( Operator& opright)
    else
    {
       cout << "In Tensor-Tensor because rank_J = " << rank_J << "  and opright.rank_J = " << opright.rank_J << endl;
-      return CommutatorTensorTensor(opright); // [T,T]
+      cout << " Tensor-Tensor commutator not yet implemented." << endl;
+      return *this;
    }
 }
 
@@ -1686,7 +1695,6 @@ void Operator::comm121st( Operator& opright, Operator& out)
                    double J = tbc_bra.J;
 
                    // part with opleft two body and opright one body, i.e. [X(2),Y(1)]  ==  -[Y(1),X(2)]
-//                   for (int ch_ket : TwoBodyTensorChannels[ch_bra])
 //                   {
                       double sixj_ab = modelspace->GetSixJ(jj, ja, J, jb, ji, Lambda);
                       double sixj_ba = modelspace->GetSixJ(jj, jb, J, ja, ji, Lambda);
@@ -1703,7 +1711,6 @@ void Operator::comm121st( Operator& opright, Operator& out)
 
                    // part with opleft one body and opright two body, i.e. [X(1),Y(2)]
                    if (oa.j2 != ob.j2) continue;  // X(1) is scalar -> ja==jb
-//                   for (int  ch_ket : opright.TwoBodyTensorChannels[ch_bra])
 //                   {
 //                      TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
                       double Jprime = tbc_ket.J;
@@ -1757,7 +1764,6 @@ void Operator::comm221st( Operator& opright, Operator& out)
       int ch_ket = itmat.first[1];
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
       int npq = tbc_bra.GetNumberKets();
-//      for (int ch_ket : opright.TwoBodyTensorChannels[ch_bra] )
 //      {
          TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
 
@@ -1846,7 +1852,6 @@ void Operator::comm122st( Operator& opright, Operator& opout )
 
 
 
-//      for (int ch_ket : opright.TwoBodyTensorChannels[ch_bra] )
 //      {
       TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
       int Jprime = tbc_ket.J;
@@ -1943,7 +1948,6 @@ void Operator::comm222_pp_hhst( Operator& opright, Operator& opout )
 //   {
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
       int npq = tbc_bra.GetNumberKets();
-//      for (int ch_ket : opright.TwoBodyTensorChannels[ch_bra] )
 //      {
          TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
          int J1 = tbc_bra.J;
@@ -2015,7 +2019,6 @@ void Operator::comm222_pp_hh_221st( Operator& opright, Operator& opout )
 //      auto& LHS = TwoBody.at(ch_bra).at(ch_bra);
       auto& LHS = TwoBody.GetMatrix(ch_bra,ch_bra);
 
-//      for (int ch_ket : opright.TwoBodyTensorChannels[ch_bra] )
 //      {
          TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
          if ( ch_ket != ch_bra )

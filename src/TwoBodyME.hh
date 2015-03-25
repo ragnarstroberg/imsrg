@@ -29,7 +29,6 @@ class TwoBodyME
 {
  public:
   ModelSpace * modelspace;
-//  vector<map<int,arma::mat> > MatEl;
   map<array<int,2>,arma::mat> MatEl;
   /// A list of which two-body channels can be connected by this operator
   vector<vector<int> > TwoBodyTensorChannels;

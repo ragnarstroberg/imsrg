@@ -105,15 +105,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aa8280e8e2c6be73a9594789127b939c1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#aa8280e8e2c6be73a9594789127b939c1">PrintTimes</a> ()</td></tr>
 <tr class="separator:aa8280e8e2c6be73a9594789127b939c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf2514c5e9f48b0a988c955a7d41c486"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="acf2514c5e9f48b0a988c955a7d41c486"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#acf2514c5e9f48b0a988c955a7d41c486">Operator</a> ()</td></tr>
+<tr class="memdesc:acf2514c5e9f48b0a988c955a7d41c486"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor. <br/></td></tr>
+<tr class="separator:acf2514c5e9f48b0a988c955a7d41c486"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae59dd1e9ea828f88637f001e987195b6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae59dd1e9ea828f88637f001e987195b6"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ae59dd1e9ea828f88637f001e987195b6">Operator</a> (<a class="el" href="classModelSpace.html">ModelSpace</a> &amp;)</td></tr>
-<tr class="memdesc:ae59dd1e9ea828f88637f001e987195b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor. <br/></td></tr>
+<tr class="memdesc:ae59dd1e9ea828f88637f001e987195b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a 2-body scalar operator. <br/></td></tr>
 <tr class="separator:ae59dd1e9ea828f88637f001e987195b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab120301ff79330ae6593fd13445f24f1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab120301ff79330ae6593fd13445f24f1"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (<a class="el" href="classModelSpace.html">ModelSpace</a> &amp;, int Jrank, int Trank, int Parity, int part_rank)</td></tr>
 <tr class="separator:ab120301ff79330ae6593fd13445f24f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae229a22ab49ca258f69c1c2c267b2aeb"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae229a22ab49ca258f69c1c2c267b2aeb"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (const <a class="el" href="classOperator.html">Operator</a> &amp;rhs)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ae229a22ab49ca258f69c1c2c267b2aeb">Operator</a> (const <a class="el" href="classOperator.html">Operator</a> &amp;rhs)</td></tr>
+<tr class="memdesc:ae229a22ab49ca258f69c1c2c267b2aeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy constructor. <br/></td></tr>
 <tr class="separator:ae229a22ab49ca258f69c1c2c267b2aeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afad114ba9dee8b9c08af0b5d27c3ba86"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afad114ba9dee8b9c08af0b5d27c3ba86"></a>
 <a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operator=</b> (const <a class="el" href="classOperator.html">Operator</a> &amp;rhs)</td></tr>
@@ -145,6 +150,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a60c6e3fa8da186a1183e540e6ff04421"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a60c6e3fa8da186a1183e540e6ff04421"></a>
 <a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>operator/</b> (const double rhs) const </td></tr>
 <tr class="separator:a60c6e3fa8da186a1183e540e6ff04421"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a851708e76dd24603d0527f6c5c1bd544"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a851708e76dd24603d0527f6c5c1bd544"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Copy</b> (const <a class="el" href="classOperator.html">Operator</a> &amp;rhs)</td></tr>
+<tr class="separator:a851708e76dd24603d0527f6c5c1bd544"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a34eb5fa0e6d415cd44e1a3034d1cf5c0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a34eb5fa0e6d415cd44e1a3034d1cf5c0"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>GetOneBody</b> (int i, int j)</td></tr>
 <tr class="separator:a34eb5fa0e6d415cd44e1a3034d1cf5c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -161,7 +169,8 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>GetE3max</b> ()</td></
 <a class="el" href="classModelSpace.html">ModelSpace</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>GetModelSpace</b> () const </td></tr>
 <tr class="separator:a037a75a9f8a0dc970e56240552cc96d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8a0f7d6aa5163929850d06b31dc24a55"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8a0f7d6aa5163929850d06b31dc24a55"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Erase</b> ()</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a8a0f7d6aa5163929850d06b31dc24a55">Erase</a> ()</td></tr>
+<tr class="memdesc:a8a0f7d6aa5163929850d06b31dc24a55"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set all matrix elements to zero. <br/></td></tr>
 <tr class="separator:a8a0f7d6aa5163929850d06b31dc24a55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aee08b8c721271c700f325e02ba7b47d1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aee08b8c721271c700f325e02ba7b47d1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>EraseZeroBody</b> ()</td></tr>
@@ -218,10 +227,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ScaleOneBody</b> (dou
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ScaleTwoBody</b> (double x)</td></tr>
 <tr class="separator:af1f244c4856d11c21f94b6c6cd24a555"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98d4075d734523186162492a4a45b420"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a98d4075d734523186162492a4a45b420"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Symmetrize</b> ()</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a98d4075d734523186162492a4a45b420">Symmetrize</a> ()</td></tr>
+<tr class="memdesc:a98d4075d734523186162492a4a45b420"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy the upper-half triangle to the lower-half triangle for each matrix. <br/></td></tr>
 <tr class="separator:a98d4075d734523186162492a4a45b420"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a21a37daa051c248109153e6502b8280f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a21a37daa051c248109153e6502b8280f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>AntiSymmetrize</b> ()</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a21a37daa051c248109153e6502b8280f">AntiSymmetrize</a> ()</td></tr>
+<tr class="memdesc:a21a37daa051c248109153e6502b8280f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy the upper-half triangle to the lower-half triangle with a minus sign. <br/></td></tr>
 <tr class="separator:a21a37daa051c248109153e6502b8280f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a622880b91a902c832b867c6447a262e7"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a622880b91a902c832b867c6447a262e7"></a>
 <a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a622880b91a902c832b867c6447a262e7">DoNormalOrdering</a> ()</td></tr>
@@ -234,8 +245,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>AntiSymmetrize</b> ()
 <tr class="memdesc:a7fd029569796107c87ff17c5a7912480"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the normal ordered three-body operator.  <a href="#a7fd029569796107c87ff17c5a7912480">More...</a><br/></td></tr>
 <tr class="separator:a7fd029569796107c87ff17c5a7912480"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9d78ca5fd265cf4ccc6cda81d35cb086"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9d78ca5fd265cf4ccc6cda81d35cb086"></a>
-<a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Commutator</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright)</td></tr>
+<a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a9d78ca5fd265cf4ccc6cda81d35cb086">Commutator</a> (<a class="el" href="classOperator.html">Operator</a> &amp;opright)</td></tr>
+<tr class="memdesc:a9d78ca5fd265cf4ccc6cda81d35cb086"><td class="mdescLeft">&#160;</td><td class="mdescRight">Z = X.Commutator(Y) means \( Z = [X,Y] \). <br/></td></tr>
 <tr class="separator:a9d78ca5fd265cf4ccc6cda81d35cb086"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a55b95477ad8674877eb4d15491cfe9a0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a55b95477ad8674877eb4d15491cfe9a0"></a>
+<a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>CommutatorScalarScalar</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright)</td></tr>
+<tr class="separator:a55b95477ad8674877eb4d15491cfe9a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7db0372f91cffc85b293f7750c72944a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7db0372f91cffc85b293f7750c72944a"></a>
+<a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>CommutatorScalarTensor</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright)</td></tr>
+<tr class="separator:a7db0372f91cffc85b293f7750c72944a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a91cd02db723ee28b7532e6af029033"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a6a91cd02db723ee28b7532e6af029033">BCH_Product</a> (<a class="el" href="classOperator.html">Operator</a> &amp;)</td></tr>
 <tr class="separator:a6a91cd02db723ee28b7532e6af029033"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adc5537604f6b71121163370aca79dfef"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#adc5537604f6b71121163370aca79dfef">BCH_Transform</a> (<a class="el" href="classOperator.html">Operator</a> &amp;)</td></tr>
@@ -246,15 +264,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>AntiSymmetrize</b> ()
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a03a378f0da2fe71d8160bd3262891457">Eye</a> ()</td></tr>
 <tr class="memdesc:a03a378f0da2fe71d8160bd3262891457"><td class="mdescLeft">&#160;</td><td class="mdescRight">set to identity operator <br/></td></tr>
 <tr class="separator:a03a378f0da2fe71d8160bd3262891457"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a55b95477ad8674877eb4d15491cfe9a0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a55b95477ad8674877eb4d15491cfe9a0"></a>
-<a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>CommutatorScalarScalar</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright)</td></tr>
-<tr class="separator:a55b95477ad8674877eb4d15491cfe9a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7db0372f91cffc85b293f7750c72944a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7db0372f91cffc85b293f7750c72944a"></a>
-<a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>CommutatorScalarTensor</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright)</td></tr>
-<tr class="separator:a7db0372f91cffc85b293f7750c72944a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa6234e3c9b20635d32a082d74d45412b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa6234e3c9b20635d32a082d74d45412b"></a>
-<a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>CommutatorTensorTensor</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright)</td></tr>
-<tr class="separator:aa6234e3c9b20635d32a082d74d45412b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acb9d7959232a636191b91f6bf5b7b0c8"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#acb9d7959232a636191b91f6bf5b7b0c8">Norm</a> () const </td></tr>
 <tr class="separator:acb9d7959232a636191b91f6bf5b7b0c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a72dc7aea85c7775097d235de6f17f330"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a72dc7aea85c7775097d235de6f17f330"></a>
@@ -269,9 +278,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>PrintOneBody</b> () c
 <tr class="memitem:a905e42cefafaca0eb155cf41b3cd37b8"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a905e42cefafaca0eb155cf41b3cd37b8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>PrintTwoBody</b> (int ch) const </td></tr>
 <tr class="separator:a905e42cefafaca0eb155cf41b3cd37b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a851708e76dd24603d0527f6c5c1bd544"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a851708e76dd24603d0527f6c5c1bd544"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Copy</b> (const <a class="el" href="classOperator.html">Operator</a> &amp;rhs)</td></tr>
-<tr class="separator:a851708e76dd24603d0527f6c5c1bd544"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad468922e03d15318c23886e6bfecc168"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ad468922e03d15318c23886e6bfecc168">DoPandyaTransformation</a> (vector&lt; arma::mat &gt; &amp;, vector&lt; arma::mat &gt; &amp;)</td></tr>
 <tr class="separator:ad468922e03d15318c23886e6bfecc168"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9082f11f4b3aaf4bb08c058c4dca707"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa9082f11f4b3aaf4bb08c058c4dca707"></a>
@@ -332,11 +338,17 @@ Public Attributes</h2></td></tr>
 double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a2f9f1109333a2485083cc7c090f9cd26">ZeroBody</a></td></tr>
 <tr class="memdesc:a2f9f1109333a2485083cc7c090f9cd26"><td class="mdescLeft">&#160;</td><td class="mdescRight">The zero body piece of the operator. <br/></td></tr>
 <tr class="separator:a2f9f1109333a2485083cc7c090f9cd26"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14b1c78e0be45772aa57168c74d1b57c"><td class="memItemLeft" align="right" valign="top">arma::mat&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a14b1c78e0be45772aa57168c74d1b57c">OneBody</a></td></tr>
+<tr class="memitem:a14b1c78e0be45772aa57168c74d1b57c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a14b1c78e0be45772aa57168c74d1b57c"></a>
+arma::mat&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a14b1c78e0be45772aa57168c74d1b57c">OneBody</a></td></tr>
+<tr class="memdesc:a14b1c78e0be45772aa57168c74d1b57c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The one body piece of the operator, stored in a single NxN armadillo matrix, where N is the number of single-particle orbits. <br/></td></tr>
 <tr class="separator:a14b1c78e0be45772aa57168c74d1b57c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:add51ac69970faff9936192fec4181e00"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classTwoBodyME.html">TwoBodyME</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#add51ac69970faff9936192fec4181e00">TwoBody</a></td></tr>
+<tr class="memitem:add51ac69970faff9936192fec4181e00"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="add51ac69970faff9936192fec4181e00"></a>
+<a class="el" href="classTwoBodyME.html">TwoBodyME</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#add51ac69970faff9936192fec4181e00">TwoBody</a></td></tr>
+<tr class="memdesc:add51ac69970faff9936192fec4181e00"><td class="mdescLeft">&#160;</td><td class="mdescRight">The two body piece of the operator. <br/></td></tr>
 <tr class="separator:add51ac69970faff9936192fec4181e00"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac9d7e28ec1958d5065e12cbf0c0e3541"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classThreeBodyME.html">ThreeBodyME</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ac9d7e28ec1958d5065e12cbf0c0e3541">ThreeBody</a></td></tr>
+<tr class="memitem:ac9d7e28ec1958d5065e12cbf0c0e3541"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac9d7e28ec1958d5065e12cbf0c0e3541"></a>
+<a class="el" href="classThreeBodyME.html">ThreeBodyME</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ac9d7e28ec1958d5065e12cbf0c0e3541">ThreeBody</a></td></tr>
+<tr class="memdesc:ac9d7e28ec1958d5065e12cbf0c0e3541"><td class="mdescLeft">&#160;</td><td class="mdescRight">The three body piece of the operator. <br/></td></tr>
 <tr class="separator:ac9d7e28ec1958d5065e12cbf0c0e3541"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a71a7c194800e2758c42ad0d5f30299aa"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a71a7c194800e2758c42ad0d5f30299aa"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a71a7c194800e2758c42ad0d5f30299aa">rank_J</a></td></tr>
@@ -354,15 +366,13 @@ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class
 int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a44a74c03caff49e776433e885a724956">particle_rank</a></td></tr>
 <tr class="memdesc:a44a74c03caff49e776433e885a724956"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum particle rank. Should be 2 or 3. <br/></td></tr>
 <tr class="separator:a44a74c03caff49e776433e885a724956"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aba9a01095cd3e3433716dc74daba4fcc"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aba9a01095cd3e3433716dc74daba4fcc"></a>
-vector&lt; vector&lt; int &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#aba9a01095cd3e3433716dc74daba4fcc">TwoBodyTensorChannels</a></td></tr>
-<tr class="memdesc:aba9a01095cd3e3433716dc74daba4fcc"><td class="mdescLeft">&#160;</td><td class="mdescRight">A list of which two-body channels can be connected by this operator. <br/></td></tr>
-<tr class="separator:aba9a01095cd3e3433716dc74daba4fcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ace64ea3f299cfba00bc973e58ce03414"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ace64ea3f299cfba00bc973e58ce03414"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>E2max</b></td></tr>
+int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ace64ea3f299cfba00bc973e58ce03414">E2max</a></td></tr>
+<tr class="memdesc:ace64ea3f299cfba00bc973e58ce03414"><td class="mdescLeft">&#160;</td><td class="mdescRight">For two-body matrix elements, \( e_i + e_j \leq \) E2max. <br/></td></tr>
 <tr class="separator:ace64ea3f299cfba00bc973e58ce03414"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad3ebb434f911b9cb7c54ca6990cdda8c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad3ebb434f911b9cb7c54ca6990cdda8c"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>E3max</b></td></tr>
+int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ad3ebb434f911b9cb7c54ca6990cdda8c">E3max</a></td></tr>
+<tr class="memdesc:ad3ebb434f911b9cb7c54ca6990cdda8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">For three-body matrix elements, \( e_i + e_j + e_k \leq \) E3max. <br/></td></tr>
 <tr class="separator:ad3ebb434f911b9cb7c54ca6990cdda8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af08ef1c6d3ef38d08b4a6ea20b26ef22"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af08ef1c6d3ef38d08b4a6ea20b26ef22"></a>
 <a class="el" href="classModelSpace.html">ModelSpace</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>modelspace</b></td></tr>
@@ -374,7 +384,8 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>hermitian</b></td></t
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>antihermitian</b></td></tr>
 <tr class="separator:a86dd30fca215948dd9307fa45b7a2e32"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a710cd3c6107a4497e90a04c1f3d2b15f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a710cd3c6107a4497e90a04c1f3d2b15f"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>nChannels</b></td></tr>
+int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a710cd3c6107a4497e90a04c1f3d2b15f">nChannels</a></td></tr>
+<tr class="memdesc:a710cd3c6107a4497e90a04c1f3d2b15f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of two-body channels \( J,\pi,T_z \) associated with the model space. <br/></td></tr>
 <tr class="separator:a710cd3c6107a4497e90a04c1f3d2b15f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
@@ -386,7 +397,8 @@ static double&#160;</td><td class="memItemRight" valign="bottom"><b>bch_transfor
 static double&#160;</td><td class="memItemRight" valign="bottom"><b>bch_product_threshold</b> = 1e-4</td></tr>
 <tr class="separator:ad4a2ba438f3286ef22cc06b61f745993"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae3de2afa3ff3dca088122a79404da831"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae3de2afa3ff3dca088122a79404da831"></a>
-static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>timer</b></td></tr>
+static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ae3de2afa3ff3dca088122a79404da831">timer</a></td></tr>
+<tr class="memdesc:ae3de2afa3ff3dca088122a79404da831"><td class="mdescLeft">&#160;</td><td class="mdescRight">For keeping timing information for various method calls. <br/></td></tr>
 <tr class="separator:ae3de2afa3ff3dca088122a79404da831"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -425,11 +437,12 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
         </tr>
       </table>
 </div><div class="memdoc">
-<p>X.BCH_Transform(Y) returns \( Z = e^{Y} X e^{-Y} \). by employing the <a href="http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula">Baker-Campbell-Hausdorff formula</a> </p>
+<p>X.BCH_Transform(Y) returns \( Z = e^{Y} X e^{-Y} \). We use the <a href="http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula">Baker-Campbell-Hausdorff formula</a> </p>
 <p class="formulaDsp">
 \[ Z = X + [X,Y] + \frac{1}{2!}[X,[X,Y]] + \frac{1}{3!}[X,[X,[X,Y]]] + \ldots \]
 </p>
- 
+<p> with all commutators truncated at the two-body level. </p>
+
 </div>
 </div>
 <a class="anchor" id="a701c64f8be794e89fd28a643b56d534a"></a>
@@ -444,13 +457,6 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Calculates the total kinetic energy (center of mass + relative) for each orbit in the model space, assuming a harmonic oscillator basis. </p>
-<p class="formulaDsp">
-\[ t_{ij} = \frac{1}{2}\epsilon_{i} \delta_{ij} \]
-</p>
- <p class="formulaDsp">
-\[ t_{ij} = \frac{1}{2} \sqrt{n_&gt;(n_&gt;+\ell+\frac{1}{2})} \delta_{j_ij_j}\delta_{\ell_i\ell_j} \delta_{n_&gt;,n_&lt;+1} \]
-</p>
 <p>Calculates the kinetic energy operator in the harmonic oscillator basis. </p>
 <p class="formulaDsp">
 \[ t_{ab} = \frac{1}{2}\hbar\omega \delta_{\ell_a \ell_b} \delta_{j_aj_b} \delta_{t_{za}t_{zb}} \left\{ \begin{array}{ll} 2n_a + \ell_a + \frac{3}{2} &amp;: n_a=n_b\\ \sqrt{n_{a}(n_{a}+\ell_a + \frac{1}{2})} &amp;: n_a=n_b+1\\ \end{array} \right. \]
@@ -837,7 +843,7 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
 </div><div class="memdoc">
 <p>Obtain the Frobenius norm of the operator, which here is defined as </p>
 <p class="formulaDsp">
-\[ \|X\| = \sqrt{\|X_{(0)}\|^2 +\|X_{(1)}\|^2 +\|X_{(2)}\|^2 +\|X_{(3)}\|^2 } \]
+\[ \|X\| = \sqrt{\|X_{(1)}\|^2 +\|X_{(2)}\|^2 } \]
 </p>
 <p> and </p>
 <p class="formulaDsp">
@@ -866,53 +872,6 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
 
 </div>
 </div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a class="anchor" id="a14b1c78e0be45772aa57168c74d1b57c"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">arma::mat Operator::OneBody</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>The one body piece of the operator, stored in a single NxN armadillo matrix, where N is the number of single-particle orbits. </p>
-
-</div>
-</div>
-<a class="anchor" id="ac9d7e28ec1958d5065e12cbf0c0e3541"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classThreeBodyME.html">ThreeBodyME</a> Operator::ThreeBody</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>The three-body piece of the operator, stored in a map of vectors of vectors of doubles. The 3BMEs are stored in unnormalized JT coupled form \( \langle (ab)J_{ab}t_{ab};cJT | V | (de)J_{de}t_{de};f JT \rangle \). To minimize the number of stored matrix elements, only elements with \( a\geq b \geq c, a\geq d\geq e \geq f \) are stored. The other combinations are obtained on the fly by GetThreeBodyME(). The storage format is ThreeBody[orbit_index][Jab_index][JT_index]. </p>
-
-</div>
-</div>
-<a class="anchor" id="add51ac69970faff9936192fec4181e00"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classTwoBodyME.html">TwoBodyME</a> Operator::TwoBody</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>The two-body piece of the operator, stored in a vector of maps of of armadillo matrices. The index of the vector indicates the J-coupled two-body channel of the ket state, while the map key is the two-body channel of the bra state. This is done to allow for tensor operators which connect different two-body channels without having to store all possible combinations. In the case of a scalar operator, there is only one map key for the bra state, corresponding to that of the ket state. The normalized J-coupled TBME's are stored in the matrices. However, when the TBME's are accessed by GetTBME(), they are returned as \( \tilde{\Gamma}_{ijkl} \equiv \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \Gamma_{ijkl} \) because the flow equations are derived in terms of \( \tilde{\Gamma} \). For efficiency, only matrix elements with \( i\leq j \) and \( k\leq l \) are stored. When performing sums that can be cast as matrix multiplication, we have something of the form </p>
-<p class="formulaDsp">
-\[ \tilde{Z}_{ijkl} \sim \frac{1}{2} \sum_{ab}\tilde{X}_{ijab} \tilde{Y}_{abkl} \]
-</p>
-<p> which may be rewritten as a restricted sum, or matrix multiplication </p>
-<p class="formulaDsp">
-\[ Z_{ijkl} \sim \sum_{a\leq b} X_{ijab} Y_{abkl} = \left( X\cdot Y \right)_{ijkl} \]
-</p>
- 
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li><a class="el" href="Operator_8hh_source.html">Operator.hh</a></li>
 <li>Operator.cc</li>
@@ -920,7 +879,7 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 25 2015 10:48:19 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 25 2015 11:27:20 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

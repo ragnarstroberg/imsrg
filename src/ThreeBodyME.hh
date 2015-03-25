@@ -3,7 +3,14 @@
 
 #include "ModelSpace.hh"
 
-
+/// The three-body piece of an operator, stored in a map of array<int,9> to array<double,5>.
+/// The 3BMEs are stored in unnormalized JT coupled form
+/// \f$ \langle (abJ_{ab}t_{ab})c | V | (deJ_{de}t_{de})f \rangle_{JT} \f$.
+/// To minimize the number of stored matrix elements, only elements with
+/// \f$ a\geq b \geq c, a\geq d\geq e \geq f \f$ are stored.
+/// The other combinations are obtained on the fly by GetME().
+/// The storage format is MatEl[{a,b,c,d,e,f,J,Jab,Jde}][T_index] =
+/// \f$ \langle (abJ_{ab}t_{ab})c | V | (deJ_{de}t_{de})f  \rangle_{JT} \f$.
 class ThreeBodyME
 {
  public:
