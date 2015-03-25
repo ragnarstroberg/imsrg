@@ -673,12 +673,12 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
 
                     if (not autozero and abs(V)>1e-5)
                     {
-                       double V0 = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
+//                       double V0 = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
                        if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
                           and ea+eb+ec<=e3max and ed+ee+ef<=e3max)
                        {
 //                        cout << "abc " << a << " " << b << " " << c << "  def " << d << " " << e << " " << f << endl;
-                        Hbare.SetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
+                        Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
 /*
                         double Vout = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
                         if (abs(V-Vout)>1e-4)

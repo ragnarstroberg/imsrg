@@ -14,7 +14,7 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
 {}
 
 // Confusing nomenclature: J2 means 2 times the total J of the three body system
-void ThreeBodyME::AllocateThreeBody()
+void ThreeBodyME::Allocate()
 {
   E3max = modelspace->GetN3max();
   cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
@@ -83,7 +83,7 @@ void ThreeBodyME::AllocateThreeBody()
 ///  <t_{ab} t_c | T> <t_{de} t_f| T> V_{abcdef}^{t_{ab} t_{de} T}
 /// \f]
 //*******************************************************************
-double ThreeBodyME::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int a, int b, int c, int d, int e, int f)
+double ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b, int c, int d, int e, int f)
 {
 
    double tza = modelspace->GetOrbit(a).tz2*0.5;
@@ -108,7 +108,7 @@ double ThreeBodyME::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int a, int
            double CG3 = AngMom::CG(tab,tza+tzb, 0.5,tzc, T/2., tza+tzb+tzc);
            double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, T/2., tzd+tze+tzf);
            if (CG3*CG4==0) continue;
-           Vpn += CG1*CG2*CG3*CG4*GetThreeBodyME(Jab_in,Jde_in,J2,tab,tde,T,a,b,c,d,e,f);
+           Vpn += CG1*CG2*CG3*CG4*GetME(Jab_in,Jde_in,J2,tab,tde,T,a,b,c,d,e,f);
          }
       }
    }
@@ -125,9 +125,9 @@ double ThreeBodyME::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int a, int
 /// and if \f$ b=e \f$ then \f$ c \geq f \f$.
 /// Other orderings are obtained by recoupling on the fly.
 //*******************************************************************
-double ThreeBodyME::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in)
+double ThreeBodyME::GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in)
 {
-   return AddToThreeBodyME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,0.0);
+   return AddToME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,0.0);
 }
 
 //*******************************************************************
@@ -135,9 +135,9 @@ double ThreeBodyME::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, i
 /// orderings are stored, we need to recouple if the input ordering
 /// is different.
 //*******************************************************************
-void ThreeBodyME::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, double V)
+void ThreeBodyME::SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, double V)
 {
-   AddToThreeBodyME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,V);
+   AddToME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,V);
 }
 
 //*******************************************************************
@@ -148,13 +148,13 @@ void ThreeBodyME::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int
 /// \f$V_{in}=0\f$. To set the matrix element, we simply
 /// disregard $\V_{out}\f$.
 //*******************************************************************
-double ThreeBodyME::AddToThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, double V_in)
+double ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, double V_in)
 {
 
    // Re-order so that a>=b>=c, d>=e>=f
    int a,b,c,d,e,f;
-   int abc_recoupling_case = SortThreeBodyOrbits(a_in,b_in,c_in,a,b,c);
-   int def_recoupling_case = SortThreeBodyOrbits(d_in,e_in,f_in,d,e,f);
+   int abc_recoupling_case = SortOrbits(a_in,b_in,c_in,a,b,c);
+   int def_recoupling_case = SortOrbits(d_in,e_in,f_in,d,e,f);
 
    if (d>a or (d==a and e>b) or (d==a and e==b and f>c))
    {
@@ -210,16 +210,16 @@ double ThreeBodyME::AddToThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in,
    {
      for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
      {
-       double Cj_abc = ThreeBodyRecouplingCoefficient(abc_recoupling_case,ja,jb,jc,Jab_in,Jab,J2);
-       double Cj_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
+       double Cj_abc = RecouplingCoefficient(abc_recoupling_case,ja,jb,jc,Jab_in,Jab,J2);
+       double Cj_def = RecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
 
        array<double,5>& vj = MatEl.at({a,b,c,d,e,f,J2,Jab,Jde});
        for (int tab=tab_min; tab<=tab_max; ++tab)
        {
          for (int tde=tde_min; tde<=tde_max; ++tde)
          {
-           double Ct_abc = ThreeBodyRecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
-           double Ct_def = ThreeBodyRecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
+           double Ct_abc = RecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
+           double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
 
            int Tindex = 2*tab + tde + (T2-1)/2;
 
@@ -238,7 +238,7 @@ double ThreeBodyME::AddToThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in,
 //*******************************************************************
 /// Coefficients for recoupling three body matrix elements
 //*******************************************************************
-double ThreeBodyME::ThreeBodyRecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J)
+double ThreeBodyME::RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J)
 {
    switch (recoupling_case)
    {
@@ -263,7 +263,7 @@ double ThreeBodyME::ThreeBodyRecouplingCoefficient(int recoupling_case, double j
 /// - 4: (cab)_in -> (abc)
 /// - 5: (cba)_in -> (abc)
 //*******************************************************************
-int ThreeBodyME::SortThreeBodyOrbits(int a_in, int b_in, int c_in, int& a, int& b, int& c)
+int ThreeBodyME::SortOrbits(int a_in, int b_in, int c_in, int& a, int& b, int& c)
 {
    a=a_in;
    b=b_in;

@@ -75,7 +75,7 @@ void TwoBodyME::Copy(const TwoBodyME& rhs)
 
 }
 
-void TwoBodyME::AllocateTwoBody()
+void TwoBodyME::Allocate()
 {
 //  MatEl.resize(nChannels);
 //  TwoBodyTensorChannels.resize(nChannels);

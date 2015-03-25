@@ -17,20 +17,20 @@ class ThreeBodyME
   ThreeBodyME(ModelSpace*);
   ThreeBodyME(ModelSpace* ms, int e3max);
 
-  void AllocateThreeBody();
+  void Allocate();
 
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};
 
 //// Three body setter getters
-  double AddToThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
-  void   SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
-  double GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
-  double GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
+  double AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
+  void   SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
+  double GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
+  double GetME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
 
 ///// Some other three body methods
 
-  int SortThreeBodyOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c);
-  double ThreeBodyRecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J);
+  int SortOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c);
+  double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J);
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};
 

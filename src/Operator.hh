@@ -94,9 +94,6 @@ class Operator
   Operator(ModelSpace&, int Jrank, int Trank, int Parity, int part_rank);
   Operator( const Operator& rhs);
 
-  void AllocateTwoBody();
-  void AllocateThreeBody();
-
   //Overloaded operators
   Operator& operator=( const Operator& rhs);
   Operator& operator+=( const Operator& rhs);
@@ -115,15 +112,6 @@ class Operator
   void SetOneBody(int i, int j, double val) { OneBody(i,j) = val;};
 
 
-//// Three body setter getters << These should probably be replaced by direct calls to ThreeBody
-  void   SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
-  double GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
-  double GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
-
-///// Some other three body methods
-
-//  int SortThreeBodyOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c);
-//  double ThreeBodyRecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J);
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};
 
@@ -206,9 +194,6 @@ class Operator
   static void Set_BCH_Transform_Threshold(double x){bch_transform_threshold=x;};
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
-  
-  void DoPandyaTransformation(Operator&) ;
-//  void DoPandyaTransformation(vector<arma::mat>&) ;
   void DoPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) ;
   void CalculateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) ; 
 
@@ -231,7 +216,6 @@ class Operator
   void comm222_pp_hhst( Operator& opright, Operator& opout) ;
   void comm222_pp_hh_221st( Operator& opright, Operator& opout) ;
   void comm222_phst( Operator& opright, Operator& opout) ;
-  void comm222_phst_pandya( Operator& opright, Operator& opout) ;
 
 /*
   void comm111tt(const Operator& opright, Operator& opout) const;

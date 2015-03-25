@@ -253,7 +253,7 @@ void HartreeFock::BuildMonopoleV3()
         int Jmax = 2*j2 + min(j2i, j2j);
         for (int J=Jmin; J<=Jmax; J+=2)
         {
-           v += Hbare.GetThreeBodyME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
+           v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
         }
       }
    }
@@ -558,7 +558,7 @@ Operator HartreeFock::GetNormalOrderedH()
                 int J3max = 2*J + oa.j2;
                 for (int J3=J3min; J3<=J3max; J3+=2)
                 {
-                  V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.GetThreeBodyME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
+                  V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
                 }
               }
             }
