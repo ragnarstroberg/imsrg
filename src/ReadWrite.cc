@@ -492,7 +492,6 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
 {
   ModelSpace * modelspace = Hbare.GetModelSpace();
   vector<string> empty = {};
-//  ModelSpace big_modelspace = ModelSpace(E1max,{},{});
   ModelSpace big_modelspace = ModelSpace(E1max,"skeleton");
   cout << "Done building big model space" << endl;
   int e1max = modelspace->GetNmax();
@@ -513,23 +512,11 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
       int twojMax = 2*l+1;
       for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
       {
-//         orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
          orbits_remap.push_back( big_modelspace.GetOrbitIndex(n,l,twoj,-1) );
       }
     }
   }
   int nljmax = orbits_remap.size()-1;
-/*
-  for (int i=0;i<nljmax;++i)
-  {
-    int a = orbits_remap[i];
-    Orbit& obig = big_modelspace.GetOrbit(a);
-    Orbit& osm = modelspace->GetOrbit(a);
-    cout << i << "  -->  " << a << "  "
-         << obig.n << " " << obig.l << " " << obig.j2 << " " << obig.tz2 << "    "
-         << osm.n << " " << osm.l << " " << osm.j2 << " " << osm.tz2 << endl;
-  }
-*/
 
 
 
@@ -551,7 +538,6 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
   {
     int a =  orbits_remap[nlj1];
-//    Orbit & oa = modelspace->GetOrbit(a);
     Orbit & oa = big_modelspace.GetOrbit(a);
     int ea = 2*oa.n + oa.l;
     if (ea > E1max) break;

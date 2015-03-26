@@ -98,7 +98,8 @@ class TwoBodyChannel
    Ket & GetKet(int i) const ; // get pointer to ket using local index
 
 
-   arma::uvec GetKetIndexFromList(vector<unsigned int>& vec_in);
+//   arma::uvec GetKetIndexFromList(vector<unsigned int>& vec_in);
+   arma::uvec GetKetIndexFromList(vector<long long unsigned int>& vec_in);
    arma::uvec GetKetIndex_pp();
    arma::uvec GetKetIndex_hh();
    arma::uvec GetKetIndex_ph();
@@ -242,24 +243,44 @@ class ModelSpace
    inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
 
    // Fields
-   vector<unsigned int> holes;
-   vector<unsigned int> particles;
-   vector<unsigned int> valence;
-   vector<unsigned int> qspace;
-   vector<unsigned int> hole_qspace;
-   vector<unsigned int> particle_qspace;
-   vector<unsigned int> proton_orbits;
-   vector<unsigned int> neutron_orbits;
+//   vector<unsigned int> holes;
+//   vector<unsigned int> particles;
+//   vector<unsigned int> valence;
+//   vector<unsigned int> qspace;
+//   vector<unsigned int> hole_qspace;
+//   vector<unsigned int> particle_qspace;
+//   vector<unsigned int> proton_orbits;
+//   vector<unsigned int> neutron_orbits;
+//
+//   vector<unsigned int> KetIndex_pp; 
+//   vector<unsigned int> KetIndex_ph;
+//   vector<unsigned int> KetIndex_hh;
+//   vector<unsigned int> KetIndex_vv;
+//   vector<unsigned int> KetIndex_holeq_holeq; 
+//   vector<unsigned int> KetIndex_particleq_particleq;
+//   vector<unsigned int> KetIndex_particleq_holeq;
+//   vector<unsigned int> KetIndex_v_holeq; // added
+//   vector<unsigned int> KetIndex_v_particleq; //added
 
-   vector<unsigned int> KetIndex_pp; 
-   vector<unsigned int> KetIndex_ph;
-   vector<unsigned int> KetIndex_hh;
-   vector<unsigned int> KetIndex_vv;
-   vector<unsigned int> KetIndex_holeq_holeq; 
-   vector<unsigned int> KetIndex_particleq_particleq;
-   vector<unsigned int> KetIndex_particleq_holeq;
-   vector<unsigned int> KetIndex_v_holeq; // added
-   vector<unsigned int> KetIndex_v_particleq; //added
+
+   vector<long long unsigned int> holes;
+   vector<long long unsigned int> particles;
+   vector<long long unsigned int> valence;
+   vector<long long unsigned int> qspace;
+   vector<long long unsigned int> hole_qspace;
+   vector<long long unsigned int> particle_qspace;
+   vector<long long unsigned int> proton_orbits;
+   vector<long long unsigned int> neutron_orbits;
+
+   vector<long long unsigned int> KetIndex_pp; 
+   vector<long long unsigned int> KetIndex_ph;
+   vector<long long unsigned int> KetIndex_hh;
+   vector<long long unsigned int> KetIndex_vv;
+   vector<long long unsigned int> KetIndex_holeq_holeq; 
+   vector<long long unsigned int> KetIndex_particleq_particleq;
+   vector<long long unsigned int> KetIndex_particleq_holeq;
+   vector<long long unsigned int> KetIndex_v_holeq; // added
+   vector<long long unsigned int> KetIndex_v_particleq; //added
 
    int Nmax;
    int N2max;
@@ -267,7 +288,12 @@ class ModelSpace
    int OneBodyJmax;
    int TwoBodyJmax;
    int ThreeBodyJmax;
-   map<array<int,3>,vector<unsigned int> > OneBodyChannels;
+//   map<array<int,3>,vector<unsigned int> > OneBodyChannels;
+   map<array<int,3>,vector<long long unsigned int> > OneBodyChannels;
+
+   vector< vector<arma::sp_mat> > PandyaMatrix;
+   void ConstructPandyaMatrix();
+
 
 
  private:
