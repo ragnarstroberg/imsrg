@@ -1,6 +1,7 @@
 #ifndef ModelSpace_h
 #define ModelSpace_h 1
 
+//#define ARMA_NO_DEBUG
 #include <vector>
 #include <unordered_map>
 #include <map>
@@ -290,9 +291,6 @@ class ModelSpace
    int ThreeBodyJmax;
 //   map<array<int,3>,vector<unsigned int> > OneBodyChannels;
    map<array<int,3>,vector<long long unsigned int> > OneBodyChannels;
-
-   vector< vector<arma::sp_mat> > PandyaMatrix;
-   void ConstructPandyaMatrix();
 
 
 

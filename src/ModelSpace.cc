@@ -528,7 +528,6 @@ void ModelSpace::SetupKets()
       TwoBodyChannels.push_back(TwoBodyChannel(ch,this));
       TwoBodyChannels_CC.push_back(TwoBodyChannel_CC(ch,this));
    }
-   ConstructPandyaMatrix();
 }
 
 
@@ -775,105 +774,4 @@ double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double 
 
 }
 
-
-void ModelSpace::ConstructPandyaMatrix()
-{
-   PandyaMatrix.resize(nTwoBodyChannels);
-   
-
-   // Allocate matrices T for Pandya transformation
-   cout << "Allocting T..." << endl;
-   for (int ch1=0; ch1<nTwoBodyChannels; ++ch1)
-   {
-     PandyaMatrix[ch1].resize(nTwoBodyChannels);
-     TwoBodyChannel& tbc1 = GetTwoBodyChannel(ch1);
-     int nkets1 = tbc1.GetNumberKets();
-     if (nkets1 <1) continue;
-     for (int ch2=0; ch2<nTwoBodyChannels; ++ch2)
-     {
-       TwoBodyChannel_CC& tbc2 =GetTwoBodyChannel_CC(ch2);
-       int nkets2 = tbc2.GetNumberKets();
-       if (nkets2 <1) continue;
-       PandyaMatrix[ch1][ch2] = arma::sp_mat(nkets1*nkets1, 4*nkets2*nkets2);
-     }
-   }
-  
-   // fill matrices...
-   cout << "filling T matrices..." << endl;
-   for (int ch1=0; ch1<nTwoBodyChannels; ++ch1)
-   {
-     TwoBodyChannel& tbc1 = GetTwoBodyChannel(ch1);
-     int nkets1 = tbc1.GetNumberKets();
-     int J = tbc1.J;
-       for (int ibra1=0; ibra1<nkets1; ++ibra1)
-       {
-         Ket & bra1 = tbc1.GetKet(ibra1);
-         int i = bra1.p;
-         int j = bra1.q;
-         Orbit & oi = GetOrbit(i);
-         Orbit & oj = GetOrbit(j);
-         double ji = oi.j2/2.;
-         double jj = oj.j2/2.;
-//         int ket1min = opout.IsHermitian() ? ibra1 : ( opout.IsAntiHermitian() ? ibra1+1 : 0);
-         int ket1min = ibra1;
-         for (int iket1=ket1min; iket1<nkets1; ++iket1)
-         {
-            Ket & ket1 = tbc1.GetKet(iket1);
-            int k = ket1.p;
-            int l = ket1.q;
-            Orbit & ok = GetOrbit(k);
-            Orbit & ol = GetOrbit(l);
-            double jk = ok.j2/2.;
-            double jl = ol.j2/2.;
-
-            int left_index = iket1*nkets1+ibra1;
-            double norm = bra1.delta_pq()==ket1.delta_pq() ? 1+bra1.delta_pq() : SQRT2;
-
-            int parity_cc = (oi.l+ol.l)%2;
-            int Tz_cc = abs(oi.tz2+ol.tz2)/2;
-            int jmin = max(abs(int(ji-jl)),abs(int(jk-jj)));
-            int jmax = min(int(ji+jl),int(jk+jj));
-
-            for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
-            {
-               double sixj = GetSixJ(ji,jj,J,jk,jl,Jprime);
-               if (abs(sixj)<1e-8) continue;
-               int ch_cc = GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
-               TwoBodyChannel_CC& tbc = GetTwoBodyChannel_CC(ch_cc);
-               int nkets_cc = tbc.GetNumberKets();
-               int indx_il = tbc.GetLocalIndex(min(i,l),max(i,l));
-               int indx_kj = tbc.GetLocalIndex(min(j,k),max(j,k));
-               if (i>l) indx_il += tbc.GetNumberKets();
-               if (k>j) indx_kj += tbc.GetNumberKets();
-               int right_index = indx_kj*2*nkets_cc+indx_il;
-               PandyaMatrix[ch1][ch_cc](left_index, right_index) += (2*Jprime+1)*sixj/norm;
-            }
-
-
-
-            parity_cc = (oi.l+ok.l)%2;
-            Tz_cc = abs(oi.tz2+ok.tz2)/2;
-            jmin = max(abs(int(jj-jl)),abs(int(jk-ji)));
-            jmax = min(int(jj+jl),int(jk+ji));
-            for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
-            {
-               double sixj = GetSixJ(jj,ji,J,jk,jl,Jprime);
-               if (abs(sixj)<1e-8) continue;
-               int ch_cc = GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
-               TwoBodyChannel_CC& tbc = GetTwoBodyChannel_CC(ch_cc);
-               int nkets_cc = tbc.GetNumberKets();
-               int indx_jl = tbc.GetLocalIndex(min(j,l),max(j,l));
-               int indx_ki = tbc.GetLocalIndex(min(i,k),max(i,k));
-               if (j>l) indx_jl += tbc.GetNumberKets();
-               if (k>i) indx_ki += tbc.GetNumberKets();
-               int right_index = indx_ki*2*nkets_cc+indx_jl;
-               PandyaMatrix[ch1][ch_cc](left_index, right_index) -= (2*Jprime+1)*sixj*phase(ji+jj-J)/norm;
-            }
-
-
-         }
-       }
-   }
-
-}
 

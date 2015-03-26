@@ -16,8 +16,8 @@ TwoBodyME::TwoBodyME(ModelSpace* ms)
 
 TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
- rank_J(rJ), rank_T(rT), parity(p), hermitian(true), antihermitian(false),
- TwoBodyTensorChannels(ms->GetNumberTwoBodyChannels())
+ rank_J(rJ), rank_T(rT), parity(p), hermitian(true), antihermitian(false)
+// TwoBodyTensorChannels(ms->GetNumberTwoBodyChannels())
 {}
 
 
@@ -71,7 +71,7 @@ void TwoBodyME::Copy(const TwoBodyME& rhs)
    rank_J     = rhs.rank_J;
    rank_T     = rhs.rank_T;
    parity     = rhs.parity;
-   TwoBodyTensorChannels = rhs.TwoBodyTensorChannels;
+//   TwoBodyTensorChannels = rhs.TwoBodyTensorChannels;
 
 }
 

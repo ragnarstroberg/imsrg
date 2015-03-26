@@ -137,6 +137,7 @@ class Operator
 
   void DoPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) ;
   void CalculateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) ; 
+  void InversePandyaTransformation(vector<arma::mat>&, vector<arma::mat>&, bool);
 
   void comm110ss( Operator& opright, Operator& opout) ; 
   void comm220ss( Operator& opright, Operator& opout) ;
