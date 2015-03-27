@@ -263,6 +263,58 @@ namespace imsrg_util
 
  }
 
+
+
+// Center of mass kinetic energy, with the hw/A factor
+ Operator R2CM_Op(ModelSpace& modelspace)
+ {
+   Operator R2cmOp = Operator(modelspace);
+
+   int norb = modelspace.GetNumberOrbits();
+   for (int i=0; i<norb; ++i)
+   {
+      Orbit & oi = modelspace.GetOrbit(i);
+      for (int j=i; j<norb; ++j)
+      {
+         Orbit & oj = modelspace.GetOrbit(j);
+         if (oi.l != oj.l or oi.j2 != oj.j2 or oi.tz2 != oj.tz2) continue;
+         double rij = 0;
+         if (oi.n == oj.n) rij = 0.5*(2*oi.n+oi.l + 1.5);
+         else if (oi.n == oj.n-1) rij = -0.5*sqrt(oj.n*(oj.n+oj.l + 0.5));
+         R2cmOp.OneBody(i,j) = rij;
+         R2cmOp.OneBody(j,i) = rij;
+      }
+   }
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   #pragma omp parallel for schedule(dynamic,1) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+      int nkets = tbc.GetNumberKets();
+      for (int ibra=0;ibra<nkets;++ibra)
+      {
+         Ket & bra = tbc.GetKet(ibra);
+         for (int iket=ibra;iket<nkets;++iket)
+         {
+            Ket & ket = tbc.GetKet(iket);
+            double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J);
+             
+            R2cmOp.TwoBody.SetTBME(ch,ibra,iket,mat_el);
+            R2cmOp.TwoBody.SetTBME(ch,iket,ibra,mat_el);
+         }
+      }
+   }
+   double hw = modelspace.GetHbarOmega();
+   int A = modelspace.GetTargetMass();
+   return R2cmOp * (HBARC*HBARC/M_NUCLEON/hw)/(A*A);
+ }
+
+
+
+
+
+
 // Center of mass kinetic energy, with the hw/A factor
  Operator VCM_Op(ModelSpace& modelspace)
  {

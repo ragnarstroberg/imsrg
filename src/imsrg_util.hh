@@ -22,6 +22,7 @@ namespace imsrg_util
  Operator E0Op(ModelSpace& modelspace);
  Operator TCM_Op(ModelSpace& modelspace);
  Operator VCM_Op(ModelSpace& modelspace);
+ Operator R2CM_Op(ModelSpace& modelspace);
  Operator HCM_Op(ModelSpace& modelspace);
  Operator Isospin2_Op(ModelSpace& modelspace);
 

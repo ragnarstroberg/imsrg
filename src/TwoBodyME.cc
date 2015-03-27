@@ -71,14 +71,11 @@ void TwoBodyME::Copy(const TwoBodyME& rhs)
    rank_J     = rhs.rank_J;
    rank_T     = rhs.rank_T;
    parity     = rhs.parity;
-//   TwoBodyTensorChannels = rhs.TwoBodyTensorChannels;
 
 }
 
 void TwoBodyME::Allocate()
 {
-//  MatEl.resize(nChannels);
-//  TwoBodyTensorChannels.resize(nChannels);
   for (int ch_bra=0; ch_bra<nChannels;++ch_bra)
   {
      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
@@ -90,8 +87,6 @@ void TwoBodyME::Allocate()
         if ( abs(tbc_bra.Tz-tbc_ket.Tz)>rank_T ) continue;
         if ( (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
         
-//        TwoBodyTensorChannels[ch_bra].push_back(ch_ket);
-//        MatEl[ch_bra][ch_ket] =  arma::mat(tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros);
         MatEl[{ch_bra,ch_ket}] =  arma::mat(tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros);
         
      }
@@ -223,7 +218,6 @@ void TwoBodyME::AddToTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket,
 }
 double TwoBodyME::GetTBME_J(int j_bra, int j_ket, int a, int b, int c, int d) const
 {
-//   cout << "Calling here. " << j_bra << " " << j_ket << " " << a << " " << b << " " << c << " " << d << endl;
    Orbit& oa = modelspace->GetOrbit(a);
    Orbit& ob = modelspace->GetOrbit(b);
    Orbit& oc = modelspace->GetOrbit(c);

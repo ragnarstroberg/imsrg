@@ -300,7 +300,7 @@ Operator Operator::DoNormalOrdering2()
 Operator Operator::DoNormalOrdering3()
 {
    Operator opNO3 = Operator(*modelspace);
-   cout << "size of ThreeBody = " << ThreeBody.MatEl.size() << endl;
+//   cout << "size of ThreeBody = " << ThreeBody.MatEl.size() << endl;
 //   #pragma omp parallel for
    for ( auto& itmat : opNO3.TwoBody.MatEl )
    {
@@ -1483,7 +1483,7 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
    t = omp_get_wtime() - t;
    timer["DoPandyaTransformation"] += t;
 
-   // Construct the intermediate matrix W
+   // Construct the intermediate matrix W_bar
    vector<arma::mat> W_bar (nChannels );
    int hx = IsHermitian() ? 1 : -1;
    int hy = opright.IsHermitian() ? 1 : -1;

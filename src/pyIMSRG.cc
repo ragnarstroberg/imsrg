@@ -125,6 +125,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
 
    def("TCM_Op",           imsrg_util::TCM_Op);
    def("VCM_Op",           imsrg_util::VCM_Op);
+   def("R2CM_Op",          imsrg_util::R2CM_Op);
    def("HCM_Op",           imsrg_util::HCM_Op);
    def("NumberOp",         imsrg_util::NumberOp);
    def("RSquaredOp",       imsrg_util::RSquaredOp);

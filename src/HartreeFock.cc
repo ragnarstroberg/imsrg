@@ -228,7 +228,7 @@ void HartreeFock::BuildMonopoleV3()
     }
 
    // the calculation takes longer, so parallelize that part
-//   #pragma omp parallel for
+   #pragma omp parallel for
    for (auto it=entries.begin(); it<entries.end(); ++it)
    {
       int a=(*it)->first[0];

@@ -17,6 +17,7 @@ class ThreeBodyME
   ModelSpace * modelspace;
 
   map< array<int,9>,array<double,5> >MatEl; //
+//  double******* MatEl; //
 
   int E3max;
   

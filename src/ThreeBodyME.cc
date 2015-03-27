@@ -14,6 +14,154 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
 {}
 
 // Confusing nomenclature: J2 means 2 times the total J of the three body system
+// this should most likely be done with vectors?
+/*
+void ThreeBodyME::Allocate()
+{
+  E3max = modelspace->GetN3max();
+  cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
+  int norbits = modelspace->GetNumberOrbits();
+
+  // Allocate pointers to a
+  int dim = 0;
+  for (int a=0; a<norbits; a+=2)
+  {
+   Orbit& oa = modelspace->GetOrbit(a);
+   if ((2*oa.n + oa.l)>E3max) break;
+   ++dim;
+  }
+  MatEl = new double******[dim]; // big ugly pointer
+
+
+  int total_dimension = 0;
+  // Allocate pointers. What a nightmare.
+  for (int a=0; a<norbits; a+=2)
+  {
+   Orbit& oa = modelspace->GetOrbit(a);
+   int ea = 2*oa.n+oa.l;
+   if (ea>E3max) break;
+   dim = 0;
+   for (int b=0; b<=a; b+=2)
+   {
+     Orbit& ob = modelspace->GetOrbit(b);
+     int eb = 2*ob.n+ob.l;
+     if ((ea+eb)>E3max) break;
+     ++dim;
+   }
+             if (dim<1) continue;
+   MatEl[a/2] = new double*****[dim];
+
+   for (int b=0; b<=a; b+=2)
+   {
+     Orbit& ob = modelspace->GetOrbit(b);
+     int eb = 2*ob.n+ob.l;
+     if ((ea+eb)>E3max) break;
+     dim = 0;
+     for (int c=0; c<=b; c+=2)
+     {
+       Orbit& oc = modelspace->GetOrbit(c);
+       int ec = 2*oc.n+oc.l;
+       if ((ea+eb+ec)>E3max) break;
+       ++dim;
+     }
+             if (dim<1) continue;
+     MatEl[a/2][b/2] = new double****[dim];
+
+     for (int c=0; c<=b; c+=2)
+     {
+       Orbit& oc = modelspace->GetOrbit(c);
+       int ec = 2*oc.n+oc.l;
+       if ((ea+eb+ec)>E3max) break;
+       dim = 0;
+       for (int d=0; d<=a; d+=2)
+       {
+         Orbit& od = modelspace->GetOrbit(d);
+         int ed = 2*od.n+od.l;
+         if (ed>E3max) break;
+         ++dim;
+       }
+             if (dim<1) continue;
+       MatEl[a/2][b/2][c/2] = new double***[dim];
+
+       for (int d=0; d<=a; d+=2)
+       {
+         Orbit& od = modelspace->GetOrbit(d);
+         int ed = 2*od.n+od.l;
+         if (ed>E3max) break;
+         dim = 0;
+         for (int e=0; e<= (d==a ? b : d); e+=2)
+         {
+           Orbit& oe = modelspace->GetOrbit(e);
+           int ee = 2*oe.n+oe.l;
+           if ((ed+ee)>E3max) break;
+           ++dim;
+         }
+             if (dim<1) continue;
+         MatEl[a/2][b/2][c/2][d/2] = new double**[dim];
+      
+         for (int e=0; e<= (d==a ? b : d); e+=2)
+         {
+           Orbit& oe = modelspace->GetOrbit(e);
+           int ee = 2*oe.n+oe.l;
+           if ((ed+ee)>E3max) break;
+           dim = 0;
+           for (int f=0; f<=((d==a and e==b) ? c : e); f+=2)
+           {
+             Orbit& of = modelspace->GetOrbit(f);
+             int ef = 2*of.n+of.l;
+             if ((ed+ee+ef)>E3max) break;
+             ++dim;
+           }
+             if (dim<1) continue;
+           MatEl[a/2][b/2][c/2][d/2][e/2] = new double*[dim];
+
+
+           for (int f=0; f<=((d==a and e==b) ? c : e); f+=2)
+           {
+             Orbit& of = modelspace->GetOrbit(f);
+             int ef = 2*of.n+of.l;
+             if ((ed+ee+ef)>E3max) break;
+             dim = 0;
+
+             int Jab_min = abs(oa.j2-ob.j2)/2;
+             int Jde_min = abs(od.j2-oe.j2)/2;
+             int Jab_max = (oa.j2+ob.j2)/2;
+             int Jde_max = (od.j2+oe.j2)/2;
+
+             for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
+             {
+              for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
+              {
+                int J2_min = max( abs(2*Jab-oc.j2), abs(2*Jde-of.j2));
+                int J2_max = min( 2*Jab+oc.j2, 2*Jde+of.j2);
+                for (int J2=J2_min; J2<=J2_max; J2+=2)
+                {
+                  dim += 5; // 5 different isospin combinations
+                  total_dimension += 5;
+                } //J2
+              } //Jde
+             } //Jab
+             if (dim<1) continue;
+             MatEl[a/2][b/2][c/2][d/2][e/2][f/2] = new double[dim];
+             for (int i=0;i<dim;++i)
+             {
+               MatEl[a/2][b/2][c/2][d/2][e/2][f/2][i] = 0;
+             }
+             cout << " " << a << "-" << b << "-" << c << "-" << d << "-" << e << "-" << f << "  :  " << dim << endl;
+             double v = MatEl[a/2][b/2][c/2][d/2][e/f][f/2][dim-1] ;
+             cout << "  " << v << endl;
+//             cout << "  " <<  MatEl[a/2][b/2][c/2][d/2][e/f][f/2][dim-1] << endl;
+           } //f
+         } //e
+       } //d
+     } //c
+   } //b
+  } //a
+  cout << "Allocated " << total_dimension << " doubles (" <<  total_dimension * sizeof(double)/1024./1024./1024. << " GB) for three body matrix elements." << endl;
+}
+*/
+
+
 void ThreeBodyME::Allocate()
 {
   E3max = modelspace->GetN3max();
@@ -73,6 +221,9 @@ void ThreeBodyME::Allocate()
    } //b
   } //a
 }
+
+
+
 
 
 
@@ -148,6 +299,114 @@ void ThreeBodyME::SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, 
 /// \f$V_{in}=0\f$. To set the matrix element, we simply
 /// disregard $\V_{out}\f$.
 //*******************************************************************
+/*
+double ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, double V_in)
+{
+
+   // Re-order so that a>=b>=c, d>=e>=f
+   int a,b,c,d,e,f;
+   int abc_recoupling_case = SortOrbits(a_in,b_in,c_in,a,b,c);
+   int def_recoupling_case = SortOrbits(d_in,e_in,f_in,d,e,f);
+
+   if (d>a or (d==a and e>b) or (d==a and e==b and f>c))
+   {
+      swap(a,d);
+      swap(b,e);
+      swap(c,f);
+      swap(Jab_in,Jde_in);
+      swap(tab_in,tde_in);
+      swap(abc_recoupling_case, def_recoupling_case);
+   }
+
+   Orbit& oa = modelspace->GetOrbit(a);
+   Orbit& ob = modelspace->GetOrbit(b);
+   Orbit& oc = modelspace->GetOrbit(c);
+   Orbit& od = modelspace->GetOrbit(d);
+   Orbit& oe = modelspace->GetOrbit(e);
+   Orbit& of = modelspace->GetOrbit(f);
+   if (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l > E3max) return 0;
+   if (2*(od.n+oe.n+of.n)+od.l+oe.l+of.l > E3max) return 0;
+
+
+   double ja = oa.j2*0.5;
+   double jb = ob.j2*0.5;
+   double jc = oc.j2*0.5;
+   double jd = od.j2*0.5;
+   double je = oe.j2*0.5;
+   double jf = of.j2*0.5;
+
+
+   int Jab_min = max( abs(ja-jb), abs(J2*0.5-jc) );
+   int Jab_max = min( ja+jb, J2*0.5+jc );
+   int Jde_min = max( abs(jd-je), abs(J2*0.5-jf) );
+   int Jde_max = min( jd+je, J2*0.5+jf );
+
+   int tab_min = T2==3 ? 1 : 0;
+   int tab_max = 1;
+   int tde_min = T2==3 ? 1 : 0;
+   int tde_max = 1;
+
+
+//   if (abc_recoupling_case==0 or abc_recoupling_case==2)
+//   {
+//     Jab_min = Jab_max = Jab_in;
+//     tab_min = tab_max = tab_in;
+//   }
+//   if (def_recoupling_case==0 or def_recoupling_case==2)
+//   {
+//      Jde_min = Jde_max = Jde_in;
+//      tde_min = tde_max = tde_in;
+//   }
+
+   cout << " " << a << "-" << b << "-" << c << "-" << d << "-" << e << "-" << f <<  endl;
+   if (a==28 and b==4 and c==0 and d==26 and e==4 and f==0 )
+   cout << " yes " << endl;
+   double* vj = MatEl[a/2][b/2][c/2][d/2][e/2][f/2];
+   if (a==28 and b==4 and c==0 and d==26 and e==4 and f==0 )
+   cout << "accessed vj " << endl;
+   double V_out = 0;
+   int J_index = 0;
+   for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
+   {
+     for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
+     {
+       double Cj_abc = RecouplingCoefficient(abc_recoupling_case,ja,jb,jc,Jab_in,Jab,J2);
+       double Cj_def = RecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
+       if (a==28 and b==4 and c==0 and d==26 and e==4 and f==0 )
+       cout << "Jab = " << Jab << "  Jde = " << Jde << endl;
+       int J2_min = max( abs(2*Jab-oc.j2), abs(2*Jde-of.j2));
+       int J2_max = min( 2*Jab+oc.j2, 2*Jde+of.j2);
+       J_index += (J2-J2_min)*5;
+
+//       array<double,5>& vj = MatEl.at({a,b,c,d,e,f,J2,Jab,Jde});
+       for (int tab=tab_min; tab<=tab_max; ++tab)
+       {
+         for (int tde=tde_min; tde<=tde_max; ++tde)
+         {
+           double Ct_abc = RecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
+           double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
+
+           int Tindex = 2*tab + tde + (T2-1)/2;
+
+//           vj[Tindex] += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
+//           V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * vj[Tindex];
+           if (a==28 and b==4 and c==0 and d==26 and e==4 and f==0 )
+           {
+            cout << "J_index = " << J_index << "  Tindex = " << Tindex << endl;
+           }
+           vj[J_index + Tindex] += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
+           V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * vj[J_index+Tindex];
+
+         }
+       }
+     }
+   }
+   return V_out;
+}
+*/
+
+
+
 double ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, double V_in)
 {
 
@@ -232,6 +491,11 @@ double ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_
    }
    return V_out;
 }
+
+
+
+
+
 
 
 
