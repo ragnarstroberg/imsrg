@@ -1,6 +1,8 @@
 
 #include "ReadWrite.hh"
 #include "ModelSpace.hh"
+#include "TwoBodyME.hh"
+#include "ThreeBodyME.hh"
 #include "Operator.hh"
 #include "HartreeFock.hh"
 #include "IMSRGSolver.hh"

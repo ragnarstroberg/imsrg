@@ -719,9 +719,7 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
         }
       }
     }
-   cout << "Done with nlj = " << nlj1 << endl;
   }
-    cout << "Done reading file. " << endl;
 
 }
 

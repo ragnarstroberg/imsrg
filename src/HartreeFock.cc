@@ -9,12 +9,19 @@
 
 using namespace std;
 
-HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
+HartreeFock::HartreeFock(Operator& hbare)
+  : Hbare(hbare), tolerance(1e-10),
+    t(Hbare.OneBody), energies(Hbare.OneBody.diag())
 {
-   tolerance = 1e-10;
+   cout << "IN HF Constructor" << endl;
+//   tolerance = 1e-10;
+   cout << "Construct ModelSpace" << endl;
    ModelSpace * ms = Hbare.GetModelSpace();
+   cout << "Done. " << ms->GetNumberOrbits() << endl;
    int norbits = ms->GetNumberOrbits();
+   cout << "norbits = " << norbits << endl;
    int nKets = ms->GetNumberKets();
+   cout << "Make matrices" << endl;
 
    C         = arma::mat(norbits,norbits,arma::fill::eye);
    Vij       = arma::mat(norbits,norbits,arma::fill::zeros);
@@ -23,11 +30,13 @@ HartreeFock::HartreeFock(Operator& hbare) : Hbare(hbare)
    Vmon      = arma::mat(nKets,nKets);
    Vmon_exch = arma::mat(nKets,nKets);
    prev_energies = arma::vec(norbits,arma::fill::zeros);
-   t = Hbare.OneBody;
-   energies = t.diag();
+//   t = Hbare.OneBody;
+//   energies = t.diag();
+   cout << "BuildMonopoleV()" << endl;
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
    {
+      cout << "BuildMonopoleV3()" << endl;
       BuildMonopoleV3();
    }
    UpdateDensityMatrix();
@@ -251,11 +260,13 @@ void HartreeFock::BuildMonopoleV3()
         int Jmax = 2*j2 + min(j2i, j2j);
         for (int J=Jmin; J<=Jmax; J+=2)
         {
-           v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
-           cout << " J2 = " << j2 << "  J =  " << J << "  " <<  Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) << endl;
+//           v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
+           double vpn = Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j);
+           v += vpn * (J+1);
+//           cout << " J2 = " << j2 << "  J =  " << J << "  " << vpn  << endl;
         }
       }
-        cout << "HF Vmon3 " << a << " " << c << " " << i << " " << b << " " << d << " " << j << "  " << v << endl;
+//        cout << "HF Vmon3 " << a << " " << c << " " << i << " " << b << " " << d << " " << j << "  " << v << endl;
    }
 }
 
