@@ -16,7 +16,8 @@ class ThreeBodyME
  public:
   ModelSpace * modelspace;
 
-  map< array<int,9>,array<double,5> >MatEl; //
+//  map< array<int,9>,array<double,5> >MatEl; //
+  vector<vector<vector<vector<vector<vector<vector<double>>>>>>> MatEl; //
 //  double******* MatEl; //
 
   int E3max;
@@ -42,7 +43,7 @@ class ThreeBodyME
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};
 
-  void Erase(); // set all two-body terms to zero
+  void Erase(); // set all three-body terms to zero
 
 
 

@@ -660,21 +660,35 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
                     if (not autozero and abs(V)>1e-5)
                     {
 //                       double V0 = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
+//                       V0 = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
                        if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
                           and ea+eb+ec<=e3max and ed+ee+ef<=e3max)
                        {
 //                        cout << "abc " << a << " " << b << " " << c << "  def " << d << " " << e << " " << f << endl;
                         Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
-/*
-                        double Vout = Hbare.GetThreeBodyME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
-                        if (abs(V-Vout)>1e-4)
-                        {
-                          cout << "STARTED WITH  " << V0 << "  PUT IN " << V << "   GOT OUT " << Vout << "     Jab,JJab,twoJC,tab,ttab,twoT = "
-                               << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << "   "
-                               << " abcdef = "
-                               <<  a << " " << b << " " << c << " " << d << " "<< e << " " << f << "  e3 = " << ea+eb+ec << " " << ed+ee+ef << endl;
-                        }
-*/
+//                        if (a<2)
+//                        {
+//                         cout << " ReadWrite: Set V = " << V << endl;
+//                        double V0 = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
+//                        cout << "--------------" << endl;
+//                        double V1 = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c+1,d,e,f+1);
+//                        cout << "abc " << a << " " << b << " " << c << "  def " << d << " " << e << " " << f
+//                             << "  Jab " << Jab << "  Jde " << JJab << "  J2 " << twoJC
+//                             << "  tab " << tab << "  tde " << ttab << "  T2 " << twoT << "   V = " << V
+//                             << "  retrieved: " << V0
+//                             << "  retrieved: " << V1
+//                             << endl<<endl;
+//                        }
+
+//                        double Vout = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
+//                        if (abs(V+V0-Vout)>1e-4)
+//                        {
+//                          cout << "STARTED WITH  " << V0 << "  PUT IN " << V  << "   EXPECTED " << V0 + V << "   GOT OUT " << Vout << "     Jab,JJab,twoJC,tab,ttab,twoT = "
+//                               << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << "   "
+//                               << " abcdef = "
+//                               <<  a << " " << b << " " << c << " " << d << " "<< e << " " << f << "  e3 = " << ea+eb+ec << " " << ed+ee+ef << endl;
+//                        }
+
                        }
                     }
 
@@ -705,7 +719,9 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
         }
       }
     }
+   cout << "Done with nlj = " << nlj1 << endl;
   }
+    cout << "Done reading file. " << endl;
 
 }
 

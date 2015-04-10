@@ -48,12 +48,13 @@ void HartreeFock::Solve()
 
    for (iterations=0; iterations<maxiter; ++iterations)
    {
-      Diagonalize();  // Diagonalize the Fock matrix
-      ReorderCoefficients(); // Reorder here so we can identify the hole orbits.
-      UpdateDensityMatrix();  // 1 body density matrix, used in UpdateF()
-      UpdateF();  // Update the Fock matrix
+      Diagonalize();          // Diagonalize the Fock matrix
+      ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
+      UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
+      UpdateF();              // Update the Fock matrix
       if ( CheckConvergence() ) break;
    }
+   CalcEHF();
 
    if (iterations==maxiter)
    {
@@ -63,9 +64,6 @@ void HartreeFock::Solve()
    {
       cout << "HF converged after " << iterations << " iterations. " << endl;
    }
-
-   ReorderCoefficients(); // Reorder C so that new ordering corresponds to original ordering
-   CalcEHF();
 }
 
 
@@ -228,7 +226,7 @@ void HartreeFock::BuildMonopoleV3()
     }
 
    // the calculation takes longer, so parallelize that part
-   #pragma omp parallel for
+//   #pragma omp parallel for
    for (auto it=entries.begin(); it<entries.end(); ++it)
    {
       int a=(*it)->first[0];
@@ -254,8 +252,10 @@ void HartreeFock::BuildMonopoleV3()
         for (int J=Jmin; J<=Jmax; J+=2)
         {
            v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
+           cout << " J2 = " << j2 << "  J =  " << J << "  " <<  Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) << endl;
         }
       }
+        cout << "HF Vmon3 " << a << " " << c << " " << i << " " << b << " " << d << " " << j << "  " << v << endl;
    }
 }
 
@@ -345,9 +345,7 @@ void HartreeFock::UpdateF()
            }
          }
          Vij(i,j) /= (oi.j2+1);
-//         Vij(j,i) = Vij(i,j);  // Hermitian & real => symmetric
-         V3ij(i,j) /= (oi.j2+1); //
-//         V3ij(j,i) = V3ij(i,j);  // Hermitian & real => symmetric
+         V3ij(i,j) /= (oi.j2+1); 
       }
    }
    Vij = arma::symmatu(Vij);
@@ -418,7 +416,7 @@ void HartreeFock::ReorderCoefficients()
         }
      }
    }
-   // Make sure the diagonal terms are positive. (For easier comparison).
+   // Make sure the diagonal terms are positive (to avoid confusion).
    for (int i=0;i<C.n_rows;++i) // loop through original basis states
    {
       if ( C(i,i) < 0 )
@@ -494,8 +492,6 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
          }
       }
 
-//     auto& IN  =  OpIn.TwoBody[ch].at(ch);
-//     auto& OUT =  OpHF.TwoBody[ch].at(ch);
      auto& IN  =  OpIn.TwoBody.GetMatrix(ch);
      auto& OUT =  OpHF.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * IN * D;

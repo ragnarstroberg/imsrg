@@ -32,6 +32,7 @@ IMSRGSolver::IMSRGSolver( Operator &H_in)
 {
    method = "BCH";
    generator = "white";
+   istep = 0;
    s = 0;
    ds = 0.1;
    ds_max = 0.5;
