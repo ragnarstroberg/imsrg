@@ -64,6 +64,7 @@ class TwoBodyME
 
  //TwoBody setter/getters
   double GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const;
+  double GetTBME_norm(int ch_bra, int ch_ket, int a, int b, int c, int d) const;
   void   SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme);
   void   AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme);
   double GetTBME(int ch_bra, int ch_ket, Ket &bra, Ket &ket) const;
@@ -87,6 +88,7 @@ class TwoBodyME
   void   SetTBME(int ch, int a, int b, int c, int d, double tbme);
   void   AddToTBME(int ch, int a, int b, int c, int d, double tbme);
   double GetTBME(int ch, Ket &bra, Ket &ket) const;
+  double GetTBME_norm(int ch, Ket &bra, Ket &ket) const;
   void   SetTBME(int ch, Ket &bra, Ket& ket, double tbme);
   void   AddToTBME(int ch, Ket &bra, Ket& ket, double tbme);
   double GetTBME(int ch, int ibra, int iket) const;
@@ -96,6 +98,7 @@ class TwoBodyME
   void   SetTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme);
   void   AddToTBME(int j, int p, int t, Ket& bra, Ket& ket, double tbme);
   double GetTBME(int j, int p, int t, int a, int b, int c, int d) const;
+  double GetTBME_norm(int j, int p, int t, int a, int b, int c, int d) const;
   void   SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
   void   AddToTBME(int j, int p, int t, int a, int b, int c, int d, double tbme);
   double GetTBME_J(int j, int a, int b, int c, int d) const;
@@ -103,7 +106,11 @@ class TwoBodyME
   void   AddToTBME_J(int j, int a, int b, int c, int d, double tbme);
 
 
+  void Set_pn_TBME_from_iso(int j, int T, int tz, int a, int b, int c, int d, double tbme);
+  double Get_iso_TBME_from_pn(int j, int T, int tz, int a, int b, int c, int d);
+
   double GetTBMEmonopole(int a, int b, int c, int d) const;
+  double GetTBMEmonopole_norm(int a, int b, int c, int d) const;
   double GetTBMEmonopole(Ket & bra, Ket & ket) const;
 
   void Erase();

@@ -115,6 +115,23 @@ double TwoBodyME::GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) co
    return phase * GetMatrix(ch_bra,ch_ket)(bra_ind, ket_ind);
 }
 
+/// This returns the matrix element times a factor \f$ \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \f$
+double TwoBodyME::GetTBME_norm(int ch_bra, int ch_ket, int a, int b, int c, int d) const
+{
+   TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
+   TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
+   int bra_ind = tbc_bra.GetLocalIndex(min(a,b),max(a,b));
+   int ket_ind = tbc_ket.GetLocalIndex(min(c,d),max(c,d));
+   if (bra_ind < 0 or ket_ind < 0 or bra_ind > tbc_bra.GetNumberKets() or ket_ind > tbc_ket.GetNumberKets() )
+     return 0;
+   Ket & bra = tbc_bra.GetKet(bra_ind);
+   Ket & ket = tbc_ket.GetKet(ket_ind);
+
+   double phase = 1;
+   if (a>b) phase *= bra.Phase(tbc_bra.J);
+   if (c>d) phase *= ket.Phase(tbc_ket.J);
+   return phase * GetMatrix(ch_bra,ch_ket)(bra_ind, ket_ind);
+}
 
 void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme)
 {
@@ -141,6 +158,7 @@ void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, do
    if (a>b) phase *= tbc_bra.GetKet(bra_ind).Phase(tbc_bra.J);
    if (c>d) phase *= tbc_ket.GetKet(ket_ind).Phase(tbc_ket.J);
    GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) += phase * tbme;
+   if (ch_bra==ch_ket and ket_ind==bra_ind) return;
    if (hermitian) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) += phase * tbme;
    if (antihermitian) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) -=  phase * tbme;
 }
@@ -272,6 +290,11 @@ double TwoBodyME::GetTBME(int ch, Ket &bra, Ket &ket) const
    return GetTBME(ch,ch,bra.p,bra.q,ket.p,ket.q);
 }
 
+double TwoBodyME::GetTBME_norm(int ch, Ket &bra, Ket &ket) const
+{
+   return GetTBME_norm(ch,ch,bra.p,bra.q,ket.p,ket.q);
+}
+
 void TwoBodyME::SetTBME(int ch, Ket& bra, Ket& ket, double tbme)
 {
    SetTBME(ch,ch,bra.p,bra.q,ket.p,ket.q,tbme);
@@ -304,6 +327,12 @@ double TwoBodyME::GetTBME(int j, int p, int t, int a, int b, int c, int d) const
 {
    int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
    return GetTBME(ch,ch,a,b,c,d);
+}
+
+double TwoBodyME::GetTBME_norm(int j, int p, int t, int a, int b, int c, int d) const
+{
+   int ch = modelspace->GetTwoBodyChannelIndex(j,p,t);
+   return GetTBME_norm(ch,ch,a,b,c,d);
 }
 
 void TwoBodyME::SetTBME(int j, int p, int t, int a, int b, int c, int d, double tbme)
@@ -351,6 +380,54 @@ void TwoBodyME::AddToTBME_J(int j, int a, int b, int c, int d, double tbme)
    AddToTBME_J(j,j,a,b,c,d,tbme);
 }
 
+///
+/// Useful for reading in files in isospin formalism
+/// \f[
+/// \left\langle ab | V | cd \right\rangle_{pnpn} = \frac{\sqrt{(1+\delta_{ab})(1+\delta_{cd})}}{2}
+///       \left( \left\langle ab | V | cd \right\rangle_{10} + \left\langle ab | V | cd \right\rangle_{00}   \right)
+/// \f]
+/// \f[
+/// \left\langle ab | V | cd \right\rangle_{pnnp} = \frac{\sqrt{(1+\delta_{ab})(1+\delta_{cd})}}{2}
+///       \left( \left\langle ab | V | cd \right\rangle_{10} - \left\langle ab | V | cd \right\rangle_{00}   \right)
+/// \f]
+///
+void TwoBodyME::Set_pn_TBME_from_iso(int j, int T, int tz, int a, int b, int c, int d, double tbme)
+{
+   // convert everyting to proton labels. Incrementing by 1 gets the neutron label
+   a -= a%2;
+   b -= b%2;
+   c -= c%2;
+   d -= d%2;
+   int parity = (modelspace->GetOrbit(a).l + modelspace->GetOrbit(b).l)%2;
+   int isospin_phase = 2*T-1;
+   tbme *= 0.5;
+   if (a==b) tbme *= SQRT2;
+   if (c==d) tbme *= SQRT2;
+   AddToTBME(j,parity,tz,a,b+1,c  ,d+1,tbme);
+   if (c!=d)
+     AddToTBME(j,parity,tz,a,b+1,c+1,d  ,tbme*isospin_phase);
+   if (a!=b and c!=d)
+     AddToTBME(j,parity,tz,a+1,b,c+1,d,tbme);
+   if (a!=b and (a!=c or b!=d) )
+     AddToTBME(j,parity,tz,a+1,b,c,d+1,tbme*isospin_phase);
+
+}
+
+double TwoBodyME::Get_iso_TBME_from_pn(int j, int T, int tz, int a, int b, int c, int d)
+{
+   // convert everyting to proton labels. Incrementing by 1 gets the neutron label
+   a -= a%2;
+   b -= b%2;
+   c -= c%2;
+   d -= d%2;
+   int parity = (modelspace->GetOrbit(a).l + modelspace->GetOrbit(b).l)%2;
+   int isospin_phase = 2*T-1;
+   double tbme = GetTBME(j,parity,tz,a,b+1,c,d+1) + GetTBME(j,parity,tz,a+1,b,c+1,d) + isospin_phase * ( GetTBME(j,parity,tz,a,b+1,c+1,d) + GetTBME(j,parity,tz,a+1,b,c,d+1) );
+   tbme *= 0.5;
+   if (a==b) tbme /= SQRT2;
+   if (c==d) tbme /= SQRT2;
+   return tbme;
+}
 
 
 /// Returns an unnormalized monopole-like (angle-averaged) term
@@ -377,6 +454,32 @@ double TwoBodyME::GetTBMEmonopole(int a, int b, int c, int d) const
    {
 
       mon += (2*J+1) * GetTBME(J,parityab,Tzab,a,b,c,d);
+   }
+   mon /= (oa.j2 +1)*(ob.j2+1);
+   return mon;
+}
+
+double TwoBodyME::GetTBMEmonopole_norm(int a, int b, int c, int d) const
+{
+   double mon = 0;
+   Orbit &oa = modelspace->GetOrbit(a);
+   Orbit &ob = modelspace->GetOrbit(b);
+   Orbit &oc = modelspace->GetOrbit(c);
+   Orbit &od = modelspace->GetOrbit(d);
+   int Tzab = (oa.tz2 + ob.tz2)/2;
+   int parityab = (oa.l + ob.l)%2;
+   int Tzcd = (oc.tz2 + od.tz2)/2;
+   int paritycd = (oc.l + od.l)%2;
+
+   if (Tzab != Tzcd or parityab != paritycd) return 0;
+
+   int jmin = abs(oa.j2 - ob.j2)/2;
+   int jmax = (oa.j2 + ob.j2)/2;
+   
+   for (int J=jmin;J<=jmax;++J)
+   {
+
+      mon += (2*J+1) * GetTBME_norm(J,parityab,Tzab,a,b,c,d);
    }
    mon /= (oa.j2 +1)*(ob.j2+1);
    return mon;

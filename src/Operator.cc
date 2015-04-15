@@ -39,10 +39,7 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank)
 {
   TwoBody.Allocate();
-  if (particle_rank >=3)
-  {
-    ThreeBody.Allocate();
-  }
+  if (particle_rank >=3) ThreeBody.Allocate();
 }
 
 
@@ -252,19 +249,18 @@ Operator Operator::DoNormalOrdering2()
    {
       int ch_bra = itmat.first[0];
       int ch_ket = itmat.first[1];
+      auto& matrix = itmat.second;
       
       TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
       int J_ket = tbc_ket.J;
 
       // Zero body part
-      for (auto& iket : tbc_ket.GetKetIndex_hh() ) // loop over hole-hole kets in this channel
-      {
-        opNO.ZeroBody += TwoBody.GetTBME(ch_ket,iket,iket) * (2*J_ket+1);  // <ab|V|ab>  (a,b in core)
-      }
+      arma::vec diagonals = matrix.diag();
+      auto hh = tbc_ket.GetKetIndex_hh();
+      opNO.ZeroBody += arma::sum( diagonals.elem(hh) ) * (2*J_ket+1);
 
       // One body part
-//      for (unsigned int a=0;a<norbits;++a)
       for (long long unsigned int a=0;a<norbits;++a)
       {
          Orbit &oa = modelspace->GetOrbit(a);

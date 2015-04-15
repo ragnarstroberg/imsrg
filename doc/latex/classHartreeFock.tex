@@ -38,6 +38,9 @@ void \hyperlink{classHartreeFock_a1c146af25a09f427cc626d877ec6e518}{Build\-Monop
 \hypertarget{classHartreeFock_aad1a5eeadedf9689bbfc2e3d71b60aee}{\hyperlink{classOperator}{Operator} \& \hyperlink{classHartreeFock_aad1a5eeadedf9689bbfc2e3d71b60aee}{Hbare}}\label{classHartreeFock_aad1a5eeadedf9689bbfc2e3d71b60aee}
 
 \begin{DoxyCompactList}\small\item\em Input bare Hamiltonian. \end{DoxyCompactList}\item 
+\hypertarget{classHartreeFock_a5d4a6814a338d7e4c17575ac74763f30}{\hyperlink{classModelSpace}{Model\-Space} $\ast$ \hyperlink{classHartreeFock_a5d4a6814a338d7e4c17575ac74763f30}{modelspace}}\label{classHartreeFock_a5d4a6814a338d7e4c17575ac74763f30}
+
+\begin{DoxyCompactList}\small\item\em Model Space of the Hamiltonian. \end{DoxyCompactList}\item 
 \hypertarget{classHartreeFock_a9c73247cdb9255cebabaacc99ec55086}{arma\-::mat \hyperlink{classHartreeFock_a9c73247cdb9255cebabaacc99ec55086}{C}}\label{classHartreeFock_a9c73247cdb9255cebabaacc99ec55086}
 
 \begin{DoxyCompactList}\small\item\em coefficients, 1st index is ho basis, 2nd = H\-F basis \end{DoxyCompactList}\item 
@@ -62,6 +65,9 @@ void \hyperlink{classHartreeFock_a1c146af25a09f427cc626d877ec6e518}{Build\-Monop
 \hypertarget{classHartreeFock_a501092b930b921d0f6e8ebfb652af040}{arma\-::mat \hyperlink{classHartreeFock_a501092b930b921d0f6e8ebfb652af040}{Vmon\-\_\-exch}}\label{classHartreeFock_a501092b930b921d0f6e8ebfb652af040}
 
 \begin{DoxyCompactList}\small\item\em Monopole 2-\/body interaction. \end{DoxyCompactList}\item 
+\hypertarget{classHartreeFock_a9700861effb1cb3739240b76ed519141}{arma\-::uvec \hyperlink{classHartreeFock_a9700861effb1cb3739240b76ed519141}{holeorbs}}\label{classHartreeFock_a9700861effb1cb3739240b76ed519141}
+
+\begin{DoxyCompactList}\small\item\em list of hole orbits for generating density matrix \end{DoxyCompactList}\item 
 \hypertarget{classHartreeFock_a415fc1fbbba3a6a84d47e31ed18323c9}{arma\-::vec \hyperlink{classHartreeFock_a415fc1fbbba3a6a84d47e31ed18323c9}{energies}}\label{classHartreeFock_a415fc1fbbba3a6a84d47e31ed18323c9}
 
 \begin{DoxyCompactList}\small\item\em vector of single particle energies \end{DoxyCompactList}\item 
@@ -90,7 +96,7 @@ void \hyperlink{classHartreeFock_a1c146af25a09f427cc626d877ec6e518}{Build\-Monop
 {}
 \end{DoxyParamCaption}
 )}}\label{classHartreeFock_a3d6bac9b4403e4bc599a89ad0c9b6056}
-Construct an unnormalized two-\/body monopole interaction \[ \langle ab | \bar{V}^{(2)} | cd \rangle = \sqrt{(1+\delta_{ab})(1+\delta_{cd})} \sum_{J} (2J+1) \langle ab | V^{(2)} | cd \rangle_{J} \] This method utilizes the operator method Operator\-::\-Get\-T\-B\-M\-Emonopole() \hypertarget{classHartreeFock_a1c146af25a09f427cc626d877ec6e518}{\index{Hartree\-Fock@{Hartree\-Fock}!Build\-Monopole\-V3@{Build\-Monopole\-V3}}
+Construct an unnormalized two-\/body monopole interaction \[ \langle ab | \bar{V}^{(2)} | cd \rangle = \sqrt{(1+\delta_{ab})(1+\delta_{cd})} \sum_{J} (2J+1) \langle ab | V^{(2)} | cd \rangle_{J} \] This method utilizes the operator method \hyperlink{classTwoBodyME_ac149e131002719a7394b76cd1c837bc2}{Two\-Body\-M\-E\-::\-Get\-T\-B\-M\-Emonopole()} \hypertarget{classHartreeFock_a1c146af25a09f427cc626d877ec6e518}{\index{Hartree\-Fock@{Hartree\-Fock}!Build\-Monopole\-V3@{Build\-Monopole\-V3}}
 \index{Build\-Monopole\-V3@{Build\-Monopole\-V3}!HartreeFock@{Hartree\-Fock}}
 \subsubsection[{Build\-Monopole\-V3}]{\setlength{\rightskip}{0pt plus 5cm}void Hartree\-Fock\-::\-Build\-Monopole\-V3 (
 \begin{DoxyParamCaption}

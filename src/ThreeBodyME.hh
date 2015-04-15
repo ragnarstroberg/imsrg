@@ -3,6 +3,7 @@
 
 #include "ModelSpace.hh"
 
+typedef float ThreeBME_type;
 /// The three-body piece of an operator, stored in a map of array<int,9> to array<double,5>.
 /// The 3BMEs are stored in unnormalized JT coupled form
 /// \f$ \langle (abJ_{ab}t_{ab})c | V | (deJ_{de}t_{de})f \rangle_{JT} \f$.
@@ -17,8 +18,7 @@ class ThreeBodyME
   ModelSpace * modelspace;
 
 //  map< array<int,9>,array<double,5> >MatEl; //
-  vector<vector<vector<vector<vector<vector<vector<double>>>>>>> MatEl; //
-//  double******* MatEl; //
+  vector<vector<vector<vector<vector<vector<vector<ThreeBME_type>>>>>>> MatEl; //
 
   int E3max;
   
@@ -31,10 +31,10 @@ class ThreeBodyME
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};
 
 //// Three body setter getters
-  double AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
-  void   SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, double V);
-  double GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
-  double GetME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
+  ThreeBME_type AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
+  void   SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
+  ThreeBME_type GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
+  ThreeBME_type GetME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
 
 ///// Some other three body methods
 

@@ -11,8 +11,7 @@ var indexSectionsWithContent =
   1: "hikmort",
   2: "i",
   3: "abcdeginoprstu",
-  4: "cefhinoprtvz",
-  5: "i"
+  4: "cefhimnoprtvz"
 };
 
 var indexSectionNames =
@@ -21,8 +20,7 @@ var indexSectionNames =
   1: "classes",
   2: "files",
   3: "functions",
-  4: "variables",
-  5: "pages"
+  4: "variables"
 };
 
 function convertToId(search)

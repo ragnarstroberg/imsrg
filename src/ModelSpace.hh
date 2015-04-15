@@ -243,25 +243,7 @@ class ModelSpace
    int Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
    inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
 
-   // Fields
-//   vector<unsigned int> holes;
-//   vector<unsigned int> particles;
-//   vector<unsigned int> valence;
-//   vector<unsigned int> qspace;
-//   vector<unsigned int> hole_qspace;
-//   vector<unsigned int> particle_qspace;
-//   vector<unsigned int> proton_orbits;
-//   vector<unsigned int> neutron_orbits;
-//
-//   vector<unsigned int> KetIndex_pp; 
-//   vector<unsigned int> KetIndex_ph;
-//   vector<unsigned int> KetIndex_hh;
-//   vector<unsigned int> KetIndex_vv;
-//   vector<unsigned int> KetIndex_holeq_holeq; 
-//   vector<unsigned int> KetIndex_particleq_particleq;
-//   vector<unsigned int> KetIndex_particleq_holeq;
-//   vector<unsigned int> KetIndex_v_holeq; // added
-//   vector<unsigned int> KetIndex_v_particleq; //added
+
 
 
    vector<long long unsigned int> holes;

@@ -9,6 +9,7 @@ class HartreeFock
 {
  public:
    Operator& Hbare;         ///< Input bare Hamiltonian
+   ModelSpace * modelspace; ///< Model Space of the Hamiltonian
    arma::mat C;             ///< coefficients, 1st index is ho basis, 2nd = HF basis
    arma::mat rho;           ///< density matrix rho_ij
    arma::mat t;             ///< kinetic energy
@@ -17,6 +18,7 @@ class HartreeFock
    arma::mat F;             ///< Fock matrix
    arma::mat Vmon;          ///< Monopole 2-body interaction
    arma::mat Vmon_exch;     ///< Monopole 2-body interaction
+   arma::uvec holeorbs;     ///< list of hole orbits for generating density matrix
    arma::vec energies;      ///< vector of single particle energies
    arma::vec prev_energies; ///< SPE's from last iteration
    double tolerance;        ///< tolerance for convergence
