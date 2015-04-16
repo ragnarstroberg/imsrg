@@ -5,6 +5,7 @@
 #include "IMSRGSolver.hh"
 #include "imsrg_util.hh"
 #include "AngMom.hh"
+#include <string>
 
 #include <boost/python/module.hpp>
 #include <boost/python/def.hpp>
@@ -24,6 +25,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
 
    class_<ModelSpace>("ModelSpace",init<>())
       .def(init<const ModelSpace&>())
+      .def(init< int, const std::string&>())
       .def(init< int,vector<string>,vector<string> >())
       .def("Init", &ModelSpace::Init)
       .def("SetHbarOmega", &ModelSpace::SetHbarOmega)

@@ -446,7 +446,6 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
   ModelSpace * modelspace = Hbare.GetModelSpace();
   vector<string> empty = {};
   ModelSpace big_modelspace = ModelSpace(E1max,"skeleton");
-  cout << "Done building big model space" << endl;
   int e1max = modelspace->GetNmax();
   int e2max = modelspace->GetN2max(); // not used yet
   int e3max = modelspace->GetN3max();

@@ -202,6 +202,18 @@ class ModelSpace
    ModelSpace operator=(ModelSpace&&); 
 
    void Init(int Nmax, vector<string> hole_list, vector<string> inside_list);
+   void Init_Skeleton(int nmax);
+   void Init_He4(int nmax);
+   void Init_O16(int nmax);
+   void Init_Ca40(int nmax);
+   void Init_PShell(int nmax);
+   void Init_SDShell(int nmax);
+   void Init_PSDShell(int nmax);
+   void Init_O16PSDShell(int nmax);
+   void Init_FPShell(int nmax);
+   void Init_SDFPShell(int nmax);
+
+
 
    // Methods
    void SetupKets();

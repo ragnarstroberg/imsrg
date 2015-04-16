@@ -25,17 +25,13 @@ HartreeFock::HartreeFock(Operator& hbare)
    Vmon_exch     = arma::mat(nKets,nKets);
    prev_energies = arma::vec(norbits,arma::fill::zeros);
    holeorbs = arma::uvec(modelspace->holes);
-   cout << "Building MonopoleV. " << endl;
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
    {
-      cout << "Building MonopoleV3. " << endl;
       BuildMonopoleV3();
    }
    UpdateDensityMatrix();
-   cout << "Updating F" << endl;
    UpdateF();
-   cout << "Done with constructor." << endl;
 }
 
 
@@ -187,33 +183,35 @@ void HartreeFock::BuildMonopoleV3()
   // First, allocate. This is fast so don't parallelize.
   int norbits = modelspace->GetNumberOrbits();
 //  vector< pair<const array<int,6>,double>*> entries;
-  for (int a=0; a<norbits; ++a)
+  for (int i=0; i<norbits; ++i)
   {
-    Orbit& oa = modelspace->GetOrbit(a);
-    int ea = 2*oa.n + oa.l;
-    for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+    Orbit& oi = modelspace->GetOrbit(i);
+    int ei = 2*oi.n + oi.l;
+    for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
-      Orbit& ob = modelspace->GetOrbit(b);
-      int eb = 2*ob.n + ob.l;
- 
-        for (int c=0; c<norbits; ++c)
+      if (j<i) continue;
+      Orbit& oj = modelspace->GetOrbit(j);
+      int ej = 2*oj.n + oj.l;
+
+      for (int a=0; a<norbits; ++a)
+      {
+        Orbit& oa = modelspace->GetOrbit(a);
+        int ea = 2*oa.n + oa.l;
+        for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
         {
-          Orbit& oc = modelspace->GetOrbit(c);
-          int ec = 2*oc.n + oc.l;
-          for (int d : modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
-          {
-            Orbit& od = modelspace->GetOrbit(d);
-            int ed = 2*od.n + od.l;
- 
-            for (int i=0; i<norbits; ++i)
+          Orbit& ob = modelspace->GetOrbit(b);
+          int eb = 2*ob.n + ob.l;
+     
+            for (int c=0; c<norbits; ++c)
             {
-              Orbit& oi = modelspace->GetOrbit(i);
-              int ei = 2*oi.n + oi.l;
+              Orbit& oc = modelspace->GetOrbit(c);
+              int ec = 2*oc.n + oc.l;
               if ( ea+ec+ei > Hbare.E3max ) continue;
-              for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+              for (int d : modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
               {
-                Orbit& oj = modelspace->GetOrbit(j);
-                int ej = 2*oj.n + oj.l;
+                Orbit& od = modelspace->GetOrbit(d);
+                int ed = 2*od.n + od.l;
+ 
                 if ( eb+ed+ej > Hbare.E3max ) continue;
                 if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
                   array<int,6> key = {a,c,i,b,d,j};
@@ -224,19 +222,22 @@ void HartreeFock::BuildMonopoleV3()
         }
       }
     }
-    cout << "Done with allocation. Now calculate in parallel." << endl;
+
 
    // the calculation takes longer, so parallelize this part
-   int imax = Vmon3.size();
-//   #pragma omp parallel for // To parallelize this, need to precompute the 6js
-   for (int ind=0; ind<imax; ++ind)
+   #pragma omp parallel for 
+   for (int ind=0; ind<Vmon3.size(); ++ind)
    {
-      int a=Vmon3[ind].first[0];
-      int c=Vmon3[ind].first[1];
-      int i=Vmon3[ind].first[2];
-      int b=Vmon3[ind].first[3];
-      int d=Vmon3[ind].first[4];
-      int j=Vmon3[ind].first[5];
+
+      const array<int,6>& orb = Vmon3[ind].first;
+      double& v         = Vmon3[ind].second;
+      int a = orb[0];
+      int c = orb[1];
+      int i = orb[2];
+      int b = orb[3];
+      int d = orb[4];
+      int j = orb[5];
+
       int j2a = modelspace->GetOrbit(a).j2;
       int j2c = modelspace->GetOrbit(c).j2;
       int j2i = modelspace->GetOrbit(i).j2;
@@ -244,7 +245,6 @@ void HartreeFock::BuildMonopoleV3()
       int j2d = modelspace->GetOrbit(d).j2;
       int j2j = modelspace->GetOrbit(j).j2;
  
-      double& v = Vmon3[i].second;
       int j2min = max( abs(j2a-j2c), abs(j2b-j2d) )/2;
       int j2max = min (j2a+j2c, j2b+j2d)/2;
       for (int j2=j2min; j2<=j2max; ++j2)
@@ -258,7 +258,6 @@ void HartreeFock::BuildMonopoleV3()
       }
       v /= (j2i+1);
    }
-   cout << "Done with calculation." << endl;
 }
 
 
@@ -293,7 +292,8 @@ void HartreeFock::UpdateF()
    Vij.zeros();
    V3ij.zeros();
 
-//   #pragma omp parallel for schedule(dynamic,1) // at the moment, this is doesn't appear to be thread safe, and I can't tell why.
+
+   // This loop isn't thread safe for some reason. Regardless, parallelizing it makes it slower. 
    for (int i=0;i<norbits;i++)
    {
       Orbit& oi = modelspace->GetOrbit(i);
@@ -316,29 +316,25 @@ void HartreeFock::UpdateF()
                   Vij(i,j) += rho(a,b)*Vmon(min(bra,ket),max(bra,ket)); // <a|rho|b> * <ai|Vmon|bj>
            }
          }
-//         Vij(i,j) /= (oi.j2+1);
       }
-         Vij.col(i) /= (oi.j2+1);
+      Vij.col(i) /= (oi.j2+1);
    }
 
    if (Hbare.GetParticleRank()>=3) 
    {
-//      for ( auto& it_3 : Vmon3 )
-//      for (auto it_3=Vmon3.begin(); it_3<Vmon3.end(); ++it_3)
-      int imax = Vmon3.size();
-//      # pragma omp parallel for
-      for (int ind=0;ind<imax; ++ind)
+      # pragma omp parallel for num_threads(2)  // Note that this is risky and not fully thread safe.
+      for (int ind=0;ind<Vmon3.size(); ++ind)
       {
+        const array<int,6>& orb = Vmon3[ind].first;
+        double& v         = Vmon3[ind].second;
+        int a = orb[0];
+        int c = orb[1];
+        int i = orb[2];
+        int b = orb[3];
+        int d = orb[4];
+        int j = orb[5];
 
-      int a=Vmon3[ind].first[0];
-      int c=Vmon3[ind].first[1];
-      int i=Vmon3[ind].first[2];
-      int b=Vmon3[ind].first[3];
-      int d=Vmon3[ind].first[4];
-      int j=Vmon3[ind].first[5];
-      double& v = Vmon3[ind].second;
-
-      V3ij(i,j) += rho(a,b) * rho(c,d) * v ;
+        V3ij(i,j) += rho(a,b) * rho(c,d) * v ;
       }
    }
 

@@ -309,6 +309,23 @@ ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside
 {
    Init(nmax,hole_list,inside_list);
 }
+
+// Shortcuts for common modelspaces
+ModelSpace::ModelSpace(int nmax, string str)
+{
+  if (str == "skeleton") Init_Skeleton(nmax);
+  else if (str == "He4") Init_He4(nmax);
+  else if (str == "O16") Init_O16(nmax);
+  else if (str == "Ca40") Init_Ca40(nmax);
+  else if (str == "p-shell") Init_PShell(nmax);
+  else if (str == "sd-shell") Init_SDShell(nmax);
+  else if (str == "psd-shell") Init_PSDShell(nmax);
+  else if (str == "o16-psd-shell") Init_O16PSDShell(nmax);
+  else if (str == "fp-shell") Init_FPShell(nmax);
+  else if (str == "sdfp-shell") Init_SDFPShell(nmax);
+  else cout << "No such pre-configured model space: " << str << endl;
+}
+
 //ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside_list)
 void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_list)
 {
@@ -350,7 +367,6 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
             int io = 1;
             double spe = 0;
             char orb_string[6];
-//            sprintf(orb_string, "%c%i%c%i", pn_list[tz], n, l_list[l], j2);
             sprintf(orb_string, "%c%i%c%i", pn_list[(tz+1)/2], n, l_list[l], j2);
             string orb_str = orb_string;
             auto it_hole = find(hole_list.begin(), hole_list.end(), orb_string);
@@ -373,8 +389,9 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
    SetupKets();
 }
 
-// orbit string representation is e.g. p0f7
-ModelSpace::ModelSpace(int nmax, string)
+
+
+void ModelSpace::Init_Skeleton(int nmax)
 {
 
    OneBodyJmax = 0;
@@ -386,7 +403,7 @@ ModelSpace::ModelSpace(int nmax, string)
    N2max = 2*Nmax;
    N3max = 3*Nmax;
 
-   cout << "Creating a skeleton model space with Nmax = " << Nmax << endl;
+//   cout << "Creating a skeleton model space with Nmax = " << Nmax << endl;
    
    norbits = (Nmax+1)*(Nmax+2);
    for (int N=0; N<=Nmax; ++N)
@@ -408,9 +425,69 @@ ModelSpace::ModelSpace(int nmax, string)
    }
 }
 
+// Some of the more common model spaces, for convenience.
+void ModelSpace::Init_He4(int nmax)
+{
+   vector<string> core = {"p0s1","n0s1"};
+   vector<string> valence = {};
+   Init(nmax,core,valence);
+}
 
+void ModelSpace::Init_O16(int nmax)
+{
+   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
+   vector<string> valence = {};
+   Init(nmax,core,valence);
+}
 
+void ModelSpace::Init_Ca40(int nmax)
+{
+   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
+   vector<string> valence = {};
+   Init(nmax,core,valence);
+}
 
+void ModelSpace::Init_PShell(int nmax)
+{
+   vector<string> core = {"p0s1","n0s1"};
+   vector<string> valence = {"p0p3","n0p3","p0p1","n0p1"};
+   Init(nmax,core,valence);
+}
+
+void ModelSpace::Init_SDShell(int nmax)
+{
+   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
+   vector<string> valence = {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
+   Init(nmax,core,valence);
+}
+
+void ModelSpace::Init_PSDShell(int nmax)
+{
+   vector<string> core = {"p0s1","n0s1"};
+   vector<string> valence = {"p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
+   Init(nmax,core,valence);
+}
+
+void ModelSpace::Init_O16PSDShell(int nmax)
+{
+   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
+   vector<string> valence = {"p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
+   Init(nmax,core,valence);
+}
+
+void ModelSpace::Init_FPShell(int nmax)
+{
+   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
+   vector<string> valence = {"p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"};
+   Init(nmax,core,valence);
+}
+
+void ModelSpace::Init_SDFPShell(int nmax)
+{
+   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
+   vector<string> valence = {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"};
+   Init(nmax,core,valence);
+}
 
 ModelSpace ModelSpace::operator=(const ModelSpace& ms)
 {
@@ -552,7 +629,6 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 
 void ModelSpace::PreCalculateMoshinsky()
 {
-  cout << "Precalculating Moshinsky Brackets." << endl;
   #pragma omp parallel for schedule(dynamic,1)
   for (int N=0; N<=N2max/2; ++N)
   {
@@ -599,7 +675,6 @@ void ModelSpace::PreCalculateMoshinsky()
    #pragma omp critical
    MoshList.insert( local_MoshList.begin(), local_MoshList.end() );
   }
-  cout << "done." << endl;
 }
 
 
