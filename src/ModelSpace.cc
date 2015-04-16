@@ -534,92 +534,12 @@ void ModelSpace::SetupKets()
 
 
 double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3)
-//double ModelSpace::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
 {
 // { j1 j2 j3 }
 // { J1 J2 J3 }
-//
-// Use 2J in the key so we don't have to worry about half-integers.
-// Don't really need to store all of them, only need to store
-// unique combinations. Sort so that the smallest J is bottom right (J3)
-// and the biggest of the remaining values is top left (j1). This
-// Constitutes a unique combination.
-// 
-//   int k1 = 2*j1;
-//   int k2 = 2*j2;
-//   int k3 = 2*j3;
-//   int K1 = 2*J1;
-//   int K2 = 2*J2;
-//   int K3 = 2*J3;
 
    unsigned long int key = 20000000000*j1 + 200000000*j2 + 2000000*j3 + 20000*J1 + 200*J2 + 2*J3;
 
-// all of this cleverness just seems to slow things down.
-/*
-   // check triangle conditions
-   if (k1+k2<k3) return 0;
-   if (abs(k1-k2)>k3) return 0;
-   if (K1+K2<k3) return 0;
-   if (abs(K1-K2)>k3) return 0;
-   if (K1+k2<K3) return 0;
-   if (abs(K1-k2)>K3) return 0;
-   if (k1+K2<K3) return 0;
-   if (abs(k1-K2)>K3) return 0;
-   array<int,6> klist = {k1,k2,k3,K1,K2,K3};
-   int imin = min_element(klist.begin(),klist.end()) - klist.begin();
-   switch (imin)
-   {
-      case 0:
-        swap(k1,K3);
-        swap(K1,k3);
-        break;
-      case 1:
-        swap(k2,K3);
-        swap(K2,k3);
-        break;
-      case 2:
-        swap(k2,K2);
-        swap(k3,K3);
-        break;
-      case 3:
-        swap(k1,k3);
-        swap(K1,K3);
-        break;
-      case 4:
-        swap(k2,k3);
-        swap(K2,K3);
-        break;
-      case 5:
-        break;
-   }
-
-   if (K3==0)
-   {
-      return (k1==K2 and K1==k2) ? phase((k1+k2+k3)/2) / sqrt((k1+1.)*(k2+1.)) : 0;
-   }
-
-   array<int,4> ksublist = {k1,k2,K1,K2};
-   int imax = max_element(ksublist.begin(),ksublist.end()) - ksublist.begin();
-
-   switch (imax)
-   {
-      case 0:
-        break;
-      case 1:
-        swap(k1,k2);
-        swap(K1,K2);
-        break;
-      case 2:
-        swap(k1,K1);
-        swap(k2,K2);
-        break;
-       case 3:
-        swap(k1,K2);
-        swap(k2,K1);
-        break;
-    }
-*/
-//   unsigned long int key = 10000000000*k1 + 100000000*k2 + 1000000*k3 + 10000*K1 + 100*K2 + K3;
 
    auto it = SixJList.find(key);
    if (it != SixJList.end() ) return it->second;
@@ -630,6 +550,27 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 }
 
 
+
+void ModelSpace::PreCalculateMoshinky()
+{
+  for (int n1=0; n1<=Nmax/2; ++n1)
+  {
+   for (int n2=0; n2<=n1; ++n2)
+   {
+    for (int l1=0; l1<=Nmax/2-n1; ++l1)
+    {
+     for (int l2=0; l2<=(n1==n2 ? l1 : Nmax/2-n2); ++l2)
+     {
+      int e2 = 2*n1+l1 + 2*n2+l2;
+      for (int L=abs(l1-l2); L<=l1+l2; ++L)
+      {
+//       for (int 
+      }
+     }
+    }
+   }
+  }
+}
 
 
 
@@ -672,7 +613,7 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
 
    // if we didn't find it, we need to calculate it.
    double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
-   #pragma omp critical
+//   #pragma omp atomic
    MoshList[key] = mosh;
    return mosh * phase_mosh;
 

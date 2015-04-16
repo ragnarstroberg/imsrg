@@ -111,11 +111,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME</b> (str
 <tr class="memitem:ae5271000cceab5fcebab7e9d2faf9f1f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae5271000cceab5fcebab7e9d2faf9f1f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME_Jason</b> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare)</td></tr>
 <tr class="separator:ae5271000cceab5fcebab7e9d2faf9f1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab66f5d7e2e352e973597915c08cad45d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab66f5d7e2e352e973597915c08cad45d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME_Navratil</b> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare)</td></tr>
+<tr class="memitem:ab66f5d7e2e352e973597915c08cad45d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#ab66f5d7e2e352e973597915c08cad45d">ReadBareTBME_Navratil</a> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare)</td></tr>
 <tr class="separator:ab66f5d7e2e352e973597915c08cad45d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7d1ea6782d893eab0217bb965fba990e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7d1ea6782d893eab0217bb965fba990e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME_Darmstadt</b> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare, int E1max, int E2max, int lmax)</td></tr>
+<tr class="memitem:a7d1ea6782d893eab0217bb965fba990e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#a7d1ea6782d893eab0217bb965fba990e">ReadBareTBME_Darmstadt</a> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare, int E1max, int E2max, int lmax)</td></tr>
 <tr class="separator:a7d1ea6782d893eab0217bb965fba990e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a84c0cbaf2be415eadffb560ea0bb9785"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a84c0cbaf2be415eadffb560ea0bb9785"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Read_Darmstadt_3body</b> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare, int E1max, int E2max, int E3max)</td></tr>
@@ -166,6 +164,79 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>doCoM_corr</b></td></
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>goodstate</b></td></tr>
 <tr class="separator:aaf2753e15a5e7f524d6fde9f15ab357b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="a7d1ea6782d893eab0217bb965fba990e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ReadWrite::ReadBareTBME_Darmstadt </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
+          <td class="paramname"><em>Hbare</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>emax</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>Emax</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>lmax</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Read TBME's from a file formatted by the Darmstadt group. The file contains just the matrix elements, and the corresponding quantum numbers are inferred. This means that the model space of the file must also be specified. emax refers to the maximum single-particle oscillator shell. Emax refers to the maximum of the sum of two single particles. lmax refers to the maximum single-particle \( \ell \). If Emax is not specified, it should be 2 \(\times\) emax. If lmax is not specified, it should be emax. Also note that the matrix elements are given in un-normalized form, i.e. they are just the M scheme matrix elements multiplied by Clebsch-Gordan coefficients for JT coupling. </p>
+
+</div>
+</div>
+<a class="anchor" id="ab66f5d7e2e352e973597915c08cad45d"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ReadWrite::ReadBareTBME_Navratil </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
+          <td class="paramname"><em>Hbare</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Read two body matrix elements from file formatted for Petr Navratil's no-core shell model code. These are given as normalized, JT coupled matix elements. Matrix elements corresponding to orbits outside the modelspace are ignored. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li><a class="el" href="ReadWrite_8hh_source.html">ReadWrite.hh</a></li>
 <li>ReadWrite.cc</li>
@@ -173,7 +244,7 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>goodstate</b></td></t
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 14 2015 15:25:28 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 15 2015 11:27:43 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

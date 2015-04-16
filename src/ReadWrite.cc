@@ -230,21 +230,18 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
 }
 
 
-// Read TBME's in Petr Navratil's format
-// Setting Emax=-1 just uses the single-particle emax determined by the model space
-//void ReadWrite::ReadBareTBME_Navratil( string filename, Operator3& Hbare)
-//template<class OPERATOR>
-//void ReadWrite::ReadBareTBME_Navratil( string filename, OPERATOR Hbare)
+/// Read two body matrix elements from file formatted for Petr Navratil's
+/// no-core shell model code.
+/// These are given as normalized, JT coupled matix elements.
+/// Matrix elements corresponding to orbits outside the modelspace are ignored.
 void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int emax = modelspace->GetNmax();
-//  int emax = 0;
   int norb = modelspace->GetNumberOrbits();
   int nljmax = norb/2;
   int herm = Hbare.IsHermitian() ? 1 : -1 ;
-//  vector<int> orbits_remap(nljmax,-1);
   unordered_map<int,int> orbits_remap;
   for (int i=0;i<norb;++i)
   {
@@ -253,9 +250,7 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
      int N = 2*oi.n + oi.l;
      int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2;
      orbits_remap[nlj] = i;
-//     emax = max(emax,N);
   }
-//  emax *= 2;
 
   ifstream infile;
   char line[LINESIZE];
@@ -327,9 +322,14 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
 
 
 
-// Read TBME's in Darmstadt format
-// Admittedly this is a mess. Emax is the 2body max energy
-// Setting emax=-1 just uses the single-particle emax determined by the model space
+/// Read TBME's from a file formatted by the Darmstadt group.
+/// The file contains just the matrix elements, and the corresponding quantum numbers
+/// are inferred. This means that the model space of the file must also be specified.
+/// emax refers to the maximum single-particle oscillator shell. Emax refers to the
+/// maximum of the sum of two single particles. lmax refers to the maximum single-particle \f$ \ell \f$.
+/// If Emax is not specified, it should be 2 \f$\times\f$ emax. If lmax is not specified, it should be emax.
+/// Also note that the matrix elements are given in un-normalized form, i.e. they are just
+/// the M scheme matrix elements multiplied by Clebsch-Gordan coefficients for JT coupling.
 void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int emax, int Emax, int lmax)
 {
 

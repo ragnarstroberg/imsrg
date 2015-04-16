@@ -89,8 +89,18 @@ namespace imsrg_util
  }
 
 
-// Center of mass kinetic energy, including the hw/A factor
-// Operator TCM_Op(ModelSpace& modelspace, int N2max)
+/// Center of mass kinetic energy, including the hw/A factor
+/// \f[
+/// T = \frac{\hbar\omega}{A}\sum_{ij} t_{ij} a^{\dagger}_{i} a_{j} + \frac{\hbar\omega}{A}\frac{1}{4}\sum_{ijkl} t_{ijkl} a^{\dagger}_{i}a^{\dagger}_{j}a_{l}a_{k}
+/// \f]
+/// with a one-body piece
+/// \f[
+/// t_{ij} = \frac{1}{2}(2n_i+\ell_i+3/2) \delta_{ij} + \frac{1}{2}\sqrt{n_j(n_j+\ell_j+\frac{1}{2})} \delta_{n_i,n_j-1}\delta_{k_i k_j}
+/// \f]
+/// where \f$k\f$ labels all quantum numbers other than \f$n\f$ and a two-body piece
+///  
+///
+///
  Operator TCM_Op(ModelSpace& modelspace)
  {
    int N2max = modelspace.GetN2max();
@@ -118,7 +128,7 @@ namespace imsrg_util
 
    // Two body piece = 2*p1*p2/(2mA) = (Tcm-Trel)/A
    int nchan = modelspace.GetNumberTwoBodyChannels();
-   #pragma omp parallel for schedule(dynamic,1) 
+//   #pragma omp parallel for schedule(dynamic,1)  // In order to make this parallel, need to precompute the Moshinsky brackets.
    for (int ch=0; ch<nchan; ++ch)
    {
       TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);

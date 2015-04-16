@@ -16,11 +16,9 @@
 \hypertarget{classReadWrite_ae5271000cceab5fcebab7e9d2faf9f1f}{void {\bfseries Read\-Bare\-T\-B\-M\-E\-\_\-\-Jason} (string filename, \hyperlink{classOperator}{Operator} \&Hbare)}\label{classReadWrite_ae5271000cceab5fcebab7e9d2faf9f1f}
 
 \item 
-\hypertarget{classReadWrite_ab66f5d7e2e352e973597915c08cad45d}{void {\bfseries Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil} (string filename, \hyperlink{classOperator}{Operator} \&Hbare)}\label{classReadWrite_ab66f5d7e2e352e973597915c08cad45d}
-
+void \hyperlink{classReadWrite_ab66f5d7e2e352e973597915c08cad45d}{Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil} (string filename, \hyperlink{classOperator}{Operator} \&Hbare)
 \item 
-\hypertarget{classReadWrite_a7d1ea6782d893eab0217bb965fba990e}{void {\bfseries Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt} (string filename, \hyperlink{classOperator}{Operator} \&Hbare, int E1max, int E2max, int lmax)}\label{classReadWrite_a7d1ea6782d893eab0217bb965fba990e}
-
+void \hyperlink{classReadWrite_a7d1ea6782d893eab0217bb965fba990e}{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt} (string filename, \hyperlink{classOperator}{Operator} \&Hbare, int E1max, int E2max, int lmax)
 \item 
 \hypertarget{classReadWrite_a84c0cbaf2be415eadffb560ea0bb9785}{void {\bfseries Read\-\_\-\-Darmstadt\-\_\-3body} (string filename, \hyperlink{classOperator}{Operator} \&Hbare, int E1max, int E2max, int E3max)}\label{classReadWrite_a84c0cbaf2be415eadffb560ea0bb9785}
 
@@ -71,6 +69,28 @@
 
 \end{DoxyCompactItemize}
 
+
+\subsection{Member Function Documentation}
+\hypertarget{classReadWrite_a7d1ea6782d893eab0217bb965fba990e}{\index{Read\-Write@{Read\-Write}!Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt@{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt}}
+\index{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt@{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt}!ReadWrite@{Read\-Write}}
+\subsubsection[{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt}]{\setlength{\rightskip}{0pt plus 5cm}void Read\-Write\-::\-Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt (
+\begin{DoxyParamCaption}
+\item[{string}]{filename, }
+\item[{{\bf Operator} \&}]{Hbare, }
+\item[{int}]{emax, }
+\item[{int}]{Emax, }
+\item[{int}]{lmax}
+\end{DoxyParamCaption}
+)}}\label{classReadWrite_a7d1ea6782d893eab0217bb965fba990e}
+Read T\-B\-M\-E's from a file formatted by the Darmstadt group. The file contains just the matrix elements, and the corresponding quantum numbers are inferred. This means that the model space of the file must also be specified. emax refers to the maximum single-\/particle oscillator shell. Emax refers to the maximum of the sum of two single particles. lmax refers to the maximum single-\/particle $ \ell $. If Emax is not specified, it should be 2 $\times$ emax. If lmax is not specified, it should be emax. Also note that the matrix elements are given in un-\/normalized form, i.\-e. they are just the M scheme matrix elements multiplied by Clebsch-\/\-Gordan coefficients for J\-T coupling. \hypertarget{classReadWrite_ab66f5d7e2e352e973597915c08cad45d}{\index{Read\-Write@{Read\-Write}!Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil@{Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil}}
+\index{Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil@{Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil}!ReadWrite@{Read\-Write}}
+\subsubsection[{Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil}]{\setlength{\rightskip}{0pt plus 5cm}void Read\-Write\-::\-Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil (
+\begin{DoxyParamCaption}
+\item[{string}]{filename, }
+\item[{{\bf Operator} \&}]{Hbare}
+\end{DoxyParamCaption}
+)}}\label{classReadWrite_ab66f5d7e2e352e973597915c08cad45d}
+Read two body matrix elements from file formatted for Petr Navratil's no-\/core shell model code. These are given as normalized, J\-T coupled matix elements. Matrix elements corresponding to orbits outside the modelspace are ignored. 
 
 The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
 \item 

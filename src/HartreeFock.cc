@@ -1,6 +1,7 @@
 
 #include "HartreeFock.hh"
 #include "ModelSpace.hh"
+#include <utility> // for make_pair
 
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
@@ -181,7 +182,7 @@ void HartreeFock::BuildMonopoleV3()
 {
   // First, allocate. This is fast so don't parallelize.
   int norbits = modelspace->GetNumberOrbits();
-  vector< pair<const array<int,6>,double>*> entries;
+//  vector< pair<const array<int,6>,double>*> entries;
   for (int a=0; a<norbits; ++a)
   {
     Orbit& oa = modelspace->GetOrbit(a);
@@ -211,8 +212,10 @@ void HartreeFock::BuildMonopoleV3()
                 int ej = 2*oj.n + oj.l;
                 if ( eb+ed+ej > Hbare.E3max ) continue;
                 if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
-                Vmon3[{a,c,i,b,d,j}] = 0;
-                entries.push_back(& (*Vmon3.find({a,c,i,b,d,j})) );
+//                Vmon3[{a,c,i,b,d,j}] = 0;
+//                entries.push_back(& (*Vmon3.find({a,c,i,b,d,j})) );
+                  array<int,6> key = {a,c,i,b,d,j};
+                  Vmon3.push_back( make_pair( key, 0.) );
               }
             }
           }
@@ -221,16 +224,17 @@ void HartreeFock::BuildMonopoleV3()
     }
 
    // the calculation takes longer, so parallelize this part
+//   for (auto it=entries.begin(); it<entries.end(); ++it)
    #pragma omp parallel for
-   for (auto it=entries.begin(); it<entries.end(); ++it)
+   for (auto it=Vmon3.begin(); it<Vmon3.end(); ++it)
    {
-      int a=(*it)->first[0];
-      int c=(*it)->first[1];
-      int i=(*it)->first[2];
-      int b=(*it)->first[3];
-      int d=(*it)->first[4];
-      int j=(*it)->first[5];
-      double& v = (*it)->second;
+      int a=(it)->first[0];
+      int c=(it)->first[1];
+      int i=(it)->first[2];
+      int b=(it)->first[3];
+      int d=(it)->first[4];
+      int j=(it)->first[5];
+      double& v = (it)->second;
       int j2a = modelspace->GetOrbit(a).j2;
       int j2c = modelspace->GetOrbit(c).j2;
       int j2i = modelspace->GetOrbit(i).j2;
@@ -246,7 +250,7 @@ void HartreeFock::BuildMonopoleV3()
         int Jmax = 2*j2 + min(j2i, j2j);
         for (int J=Jmin; J<=Jmax; J+=2)
         {
-           v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
+           v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1) / (j2i+1);
         }
       }
    }
@@ -284,14 +288,14 @@ void HartreeFock::UpdateF()
    Vij.zeros();
    V3ij.zeros();
 
-   #pragma omp parallel for
+//   #pragma omp parallel for schedule(dynamic,1) // at the moment, this is doesn't appear to be thread safe, and I can't tell why.
    for (int i=0;i<norbits;i++)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
-         Orbit& oj = modelspace->GetOrbit(j);
          if (j<i) continue;
+         Orbit& oj = modelspace->GetOrbit(j);
          for (int a=0;a<norbits;++a)
          {
             Orbit& oa = modelspace->GetOrbit(a);
@@ -302,35 +306,35 @@ void HartreeFock::UpdateF()
                ket = modelspace->GetKetIndex(min(j,b),max(j,b));
                // 2body term <ai|V|bj>
                if (a>i xor b>j)
-                  Vij(i,j) += rho(a,b)*Vmon_exch(min(bra,ket),max(bra,ket)); // <i|rho|j> * <ai|Vmon|bj>
+                  Vij(i,j) += rho(a,b)*Vmon_exch(min(bra,ket),max(bra,ket)); // <a|rho|b> * <ai|Vmon|bj>
                else
-                  Vij(i,j) += rho(a,b)*Vmon(min(bra,ket),max(bra,ket)); // <i|rho|j> * <ai|Vmon|bj>
-
-
-
-               if (Hbare.GetParticleRank()<3) continue;
-
-
-               // 3body term  <aci|V|bdj> <a|rho|b> <c|rho|d>
-               for (int c=0;c<norbits;++c)
-               {
-                 Orbit& oc = modelspace->GetOrbit(c);
-                 if ( 2*(oi.n+oa.n+oc.n)+oi.l+oa.l+oc.l > Hbare.E3max ) continue;
-                 for (int d : modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
-                 {
-                   Orbit& od = modelspace->GetOrbit(d);
-                   if ( 2*(oj.n+ob.n+od.n)+oj.l+ob.l+od.l > Hbare.E3max ) continue;
-                   if ( (oi.l+oa.l+oc.l+oj.l+ob.l+od.l)%2 >0) continue;
-
-                   V3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3[{a,c,i,b,d,j}];
-                 }
-               }
+                  Vij(i,j) += rho(a,b)*Vmon(min(bra,ket),max(bra,ket)); // <a|rho|b> * <ai|Vmon|bj>
            }
          }
-         Vij(i,j) /= (oi.j2+1);
-         V3ij(i,j) /= (oi.j2+1); 
+//         Vij(i,j) /= (oi.j2+1);
+      }
+         Vij.col(i) /= (oi.j2+1);
+   }
+
+   if (Hbare.GetParticleRank()>=3) 
+   {
+//      for ( auto& it_3 : Vmon3 )
+//      # pragma omp parallel for
+      for (auto it_3=Vmon3.begin(); it_3<Vmon3.end(); ++it_3)
+      {
+         int a = it_3->first[0];
+         int c = it_3->first[1];
+         int i = it_3->first[2];
+         int b = it_3->first[3];
+         int d = it_3->first[4];
+         int j = it_3->first[5];
+         double v = it_3->second;
+         Orbit& oi = modelspace->GetOrbit(i);
+         V3ij(i,j) += rho(a,b) * rho(c,d) * v ;
       }
    }
+
+
    Vij = arma::symmatu(Vij);
    V3ij = arma::symmatu(V3ij);
    F = t + Vij + 0.5*V3ij;

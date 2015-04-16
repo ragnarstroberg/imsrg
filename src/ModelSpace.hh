@@ -243,6 +243,7 @@ class ModelSpace
    int Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
    inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
 
+   void PreCalculateMoshinky();
 
 
 
