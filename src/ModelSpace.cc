@@ -540,7 +540,6 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 
    unsigned long int key = 20000000000*j1 + 200000000*j2 + 2000000*j3 + 20000*J1 + 200*J2 + 2*J3;
 
-
    auto it = SixJList.find(key);
    if (it != SixJList.end() ) return it->second;
    double sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
@@ -551,25 +550,56 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 
 
 
-void ModelSpace::PreCalculateMoshinky()
+void ModelSpace::PreCalculateMoshinsky()
 {
-  for (int n1=0; n1<=Nmax/2; ++n1)
+  cout << "Precalculating Moshinsky Brackets." << endl;
+  #pragma omp parallel for schedule(dynamic,1)
+  for (int N=0; N<=N2max/2; ++N)
   {
-   for (int n2=0; n2<=n1; ++n2)
+   unordered_map<unsigned long long int,double> local_MoshList;
+   for (int n=0; n<=min(N,N2max/2-N); ++n)
    {
-    for (int l1=0; l1<=Nmax/2-n1; ++l1)
+    for (int Lam=0; Lam<=N2max-2*N-2*n; ++Lam)
     {
-     for (int l2=0; l2<=(n1==n2 ? l1 : Nmax/2-n2); ++l2)
+     int lam_max = (N==n ? min(Lam,N2max-2*N-2*n-Lam) : N2max-2*N-2*n-Lam);
+     for (int lam=0; lam<=lam_max; ++lam)
      {
-      int e2 = 2*n1+l1 + 2*n2+l2;
-      for (int L=abs(l1-l2); L<=l1+l2; ++L)
+      int e2 = 2*N+Lam + 2*n+lam;
+      for (int L=abs(Lam-lam); L<=Lam+lam; ++L)
       {
-//       for (int 
+       for (int n1=0; n1<=N; ++n1)
+       {
+        for (int n2=0; n2<=min(n1,e2/2-n1); ++n2)
+        {
+         int l1max = n1==N? min(Lam,e2-2*n1-2*n2) : e2-2*n1-2*n2;
+         for (int l1=0; l1<=l1max; ++l1 )
+         {
+          int l2 = e2-2*n1-2*n2-l1;
+          if ( (l1+l2+lam+Lam)%2 >0 ) continue;
+          if ( l2<abs(L-l1) or l2>L+l1 ) continue;
+          unsigned long long int key =  1000000000000 * N
+                                       + 100000000000 * Lam
+                                       +   1000000000 * n
+                                       +    100000000 * lam
+                                       +      1000000 * n1
+                                       +       100000 * l1
+                                       +         1000 * n2
+                                       +          100 * l2
+                                       +                 L;
+          double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
+//          MoshList[key] = mosh;
+          local_MoshList[key] = mosh;
+         }
+        }
+       }
       }
      }
     }
    }
+   #pragma omp critical
+   MoshList.insert( local_MoshList.begin(), local_MoshList.end() );
   }
+  cout << "done." << endl;
 }
 
 
@@ -577,17 +607,24 @@ void ModelSpace::PreCalculateMoshinky()
 double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L)
 {
    int phase_mosh = 1;
+  int switches = 10;
+
+  while (switches > 0)
+  {
+   switches = 0;
    if (n2>n1 or (n2==n1 and l2>l1))
    {
       swap(n1,n2);
       swap(l1,l2);
-      phase_mosh *= phase(Lam +L);
+      phase_mosh *= phase(Lam+L);
+      ++switches;
    }
-   if (n>N or (n==N and n>N))
+   if (n>N or (n==N and lam>Lam))
    {
       swap(n,N);
       swap(lam,Lam);
       phase_mosh *= phase(l1 +L);
+      ++switches;
    }
 
    if (n1>N or (n1==N and l1>Lam) or (n1==N and l1==Lam and n2>n) or (n1==N and l1==Lam and n2==n and l2>lam) )
@@ -596,8 +633,10 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
       swap(l1,Lam);
       swap(n2,n);
       swap(l2,lam);
+      ++switches;
 //      phase_mosh *= phase(l2+lam); // This phase is given in Moshinsky and Brody, but with the current algorithm, it appears not to be required.
    }
+  }
 
    unsigned long long int key =  1000000000000 * N
                                 + 100000000000 * Lam
@@ -613,6 +652,7 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
 
    // if we didn't find it, we need to calculate it.
    double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
+   cout << "Shouldn't be here..." << N << " " << Lam << " " <<  n << " " << lam << " " << n1 << " " << l1 << " " << n2 << " " << l2 << " " << L << endl;
 //   #pragma omp atomic
    MoshList[key] = mosh;
    return mosh * phase_mosh;

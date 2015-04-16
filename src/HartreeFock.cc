@@ -25,13 +25,17 @@ HartreeFock::HartreeFock(Operator& hbare)
    Vmon_exch     = arma::mat(nKets,nKets);
    prev_energies = arma::vec(norbits,arma::fill::zeros);
    holeorbs = arma::uvec(modelspace->holes);
+   cout << "Building MonopoleV. " << endl;
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
    {
+      cout << "Building MonopoleV3. " << endl;
       BuildMonopoleV3();
    }
    UpdateDensityMatrix();
+   cout << "Updating F" << endl;
    UpdateF();
+   cout << "Done with constructor." << endl;
 }
 
 
@@ -212,8 +216,6 @@ void HartreeFock::BuildMonopoleV3()
                 int ej = 2*oj.n + oj.l;
                 if ( eb+ed+ej > Hbare.E3max ) continue;
                 if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
-//                Vmon3[{a,c,i,b,d,j}] = 0;
-//                entries.push_back(& (*Vmon3.find({a,c,i,b,d,j})) );
                   array<int,6> key = {a,c,i,b,d,j};
                   Vmon3.push_back( make_pair( key, 0.) );
               }
@@ -222,19 +224,19 @@ void HartreeFock::BuildMonopoleV3()
         }
       }
     }
+    cout << "Done with allocation. Now calculate in parallel." << endl;
 
    // the calculation takes longer, so parallelize this part
-//   for (auto it=entries.begin(); it<entries.end(); ++it)
-   #pragma omp parallel for
-   for (auto it=Vmon3.begin(); it<Vmon3.end(); ++it)
+   int imax = Vmon3.size();
+//   #pragma omp parallel for // To parallelize this, need to precompute the 6js
+   for (int ind=0; ind<imax; ++ind)
    {
-      int a=(it)->first[0];
-      int c=(it)->first[1];
-      int i=(it)->first[2];
-      int b=(it)->first[3];
-      int d=(it)->first[4];
-      int j=(it)->first[5];
-      double& v = (it)->second;
+      int a=Vmon3[ind].first[0];
+      int c=Vmon3[ind].first[1];
+      int i=Vmon3[ind].first[2];
+      int b=Vmon3[ind].first[3];
+      int d=Vmon3[ind].first[4];
+      int j=Vmon3[ind].first[5];
       int j2a = modelspace->GetOrbit(a).j2;
       int j2c = modelspace->GetOrbit(c).j2;
       int j2i = modelspace->GetOrbit(i).j2;
@@ -242,6 +244,7 @@ void HartreeFock::BuildMonopoleV3()
       int j2d = modelspace->GetOrbit(d).j2;
       int j2j = modelspace->GetOrbit(j).j2;
  
+      double& v = Vmon3[i].second;
       int j2min = max( abs(j2a-j2c), abs(j2b-j2d) )/2;
       int j2max = min (j2a+j2c, j2b+j2d)/2;
       for (int j2=j2min; j2<=j2max; ++j2)
@@ -250,10 +253,12 @@ void HartreeFock::BuildMonopoleV3()
         int Jmax = 2*j2 + min(j2i, j2j);
         for (int J=Jmin; J<=Jmax; J+=2)
         {
-           v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1) / (j2i+1);
+           v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
         }
       }
+      v /= (j2i+1);
    }
+   cout << "Done with calculation." << endl;
 }
 
 
@@ -319,18 +324,21 @@ void HartreeFock::UpdateF()
    if (Hbare.GetParticleRank()>=3) 
    {
 //      for ( auto& it_3 : Vmon3 )
+//      for (auto it_3=Vmon3.begin(); it_3<Vmon3.end(); ++it_3)
+      int imax = Vmon3.size();
 //      # pragma omp parallel for
-      for (auto it_3=Vmon3.begin(); it_3<Vmon3.end(); ++it_3)
+      for (int ind=0;ind<imax; ++ind)
       {
-         int a = it_3->first[0];
-         int c = it_3->first[1];
-         int i = it_3->first[2];
-         int b = it_3->first[3];
-         int d = it_3->first[4];
-         int j = it_3->first[5];
-         double v = it_3->second;
-         Orbit& oi = modelspace->GetOrbit(i);
-         V3ij(i,j) += rho(a,b) * rho(c,d) * v ;
+
+      int a=Vmon3[ind].first[0];
+      int c=Vmon3[ind].first[1];
+      int i=Vmon3[ind].first[2];
+      int b=Vmon3[ind].first[3];
+      int d=Vmon3[ind].first[4];
+      int j=Vmon3[ind].first[5];
+      double& v = Vmon3[ind].second;
+
+      V3ij(i,j) += rho(a,b) * rho(c,d) * v ;
       }
    }
 

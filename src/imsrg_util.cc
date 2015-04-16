@@ -128,7 +128,8 @@ namespace imsrg_util
 
    // Two body piece = 2*p1*p2/(2mA) = (Tcm-Trel)/A
    int nchan = modelspace.GetNumberTwoBodyChannels();
-//   #pragma omp parallel for schedule(dynamic,1)  // In order to make this parallel, need to precompute the Moshinsky brackets.
+   modelspace.PreCalculateMoshinsky();
+   #pragma omp parallel for schedule(dynamic,1)  // In order to make this parallel, need to precompute the Moshinsky brackets.
    for (int ch=0; ch<nchan; ++ch)
    {
       TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
@@ -154,6 +155,7 @@ namespace imsrg_util
          }
       }
    }
+   cout << "Done with TcmOP" << endl;
    return TcmOp;
  }
 
@@ -213,6 +215,7 @@ namespace imsrg_util
            int Lam_cd = Lam_ab; // tcm and trel conserve lam and Lam, ie relative and com orbital angular momentum
            for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
            {
+              if (Lab<abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
               // factor to account for antisymmetrization
               int asymm_factor = 1;
 

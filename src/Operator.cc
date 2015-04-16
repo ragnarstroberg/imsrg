@@ -446,7 +446,7 @@ void Operator::CalculateKineticEnergy()
 void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<arma::mat>& TwoBody_CC_ph)
 {
    // loop over cross-coupled channels
-   #pragma omp parallel for schedule(dynamic,1)
+   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
    for (int ch_cc=0; ch_cc<nChannels; ++ch_cc)
    {
       TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
@@ -1248,7 +1248,7 @@ void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )
    TwoBodyME Mhh = opout.TwoBody;
 
    // Don't use omp, because the matrix multiplication is already
-   // parallelized by armadillo, and the one-body part isn't thread-safe.
+   // parallelized by armadillo.
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -1284,31 +1284,36 @@ void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )
 
       // The two body part
       OUT += Matrixpp - Matrixhh;
+   } //for ch
 
-      // The one body part
-      for (int i=0;i<norbits;++i)
+   // The one body part
+   #pragma omp parallel for schedule(dynamic,1)
+   for (int i=0;i<norbits;++i)
+   {
+      Orbit &oi = modelspace->GetOrbit(i);
+      int jmin = opout.IsNonHermitian() ? 0 : i;
+      for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
-         Orbit &oi = modelspace->GetOrbit(i);
-         int jmin = opout.IsNonHermitian() ? 0 : i;
-         double Jfactor = (2*tbc.J+1.0)/(oi.j2+1.0);
-         for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+         if (j<jmin) continue;
+         double cijJ = 0;
+         for (int ch=0;ch<nChannels;++ch)
          {
-            if (j<jmin) continue;
-            double cijJ = 0;
+            TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+            double Jfactor = (2*tbc.J+1.0);
             // Sum c over holes and include the nbar_a * nbar_b terms
             for (auto& c : modelspace->holes)
             {
-               cijJ +=   Mpp.GetTBME(ch,c,i,c,j);
+               cijJ +=   Mpp.GetTBME(ch,c,i,c,j) * Jfactor;
             // Sum c over particles and include the n_a * n_b terms
             }
             for (auto& c : modelspace->particles)
             {
-               cijJ +=  Mhh.GetTBME(ch,c,i,c,j);
+               cijJ +=  Mhh.GetTBME(ch,c,i,c,j) * Jfactor;
             }
-            opout.OneBody(i,j) += cijJ * Jfactor;
-         } // for j
-      } // for i
-   } //for ch
+         }
+         opout.OneBody(i,j) += cijJ /(oi.j2+1.0);
+      } // for j
+   } // for i
 }
 
 
@@ -1318,8 +1323,9 @@ void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )
 
 void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::mat>& opout, bool hermitian)
 {
-    // Now do the inverse Pandya transform
-   #pragma omp parallel for schedule(dynamic,1)
+    // Do the inverse Pandya transform
+    // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
+   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -1327,7 +1333,6 @@ void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::ma
       int nKets = tbc.GetNumberKets();
 
       opout[ch] = arma::mat(nKets,nKets,arma::fill::zeros);
-//      arma::mat& OUT = (arma::mat&) opout.TwoBody.GetMatrix(ch,ch);
       for (int ibra=0; ibra<nKets; ++ibra)
       {
          Ket & bra = tbc.GetKet(ibra);
@@ -1337,9 +1342,7 @@ void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::ma
          Orbit & oj = modelspace->GetOrbit(j);
          double ji = oi.j2/2.;
          double jj = oj.j2/2.;
-//         int ketmin = opout.IsHermitian() ? ibra : ( opout.IsAntiHermitian() ? ibra+1 : 0);
          int ketmin = hermitian ? ibra : ibra+1;
-//         int ketmin =  ibra ;
          for (int iket=ketmin; iket<nKets; ++iket)
          {
             Ket & ket = tbc.GetKet(iket);
@@ -1392,7 +1395,6 @@ void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::ma
             }
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
-//            OUT(ibra,iket) += (commij - modelspace->phase(ji+jj-J)*commji) / norm;;
             opout[ch](ibra,iket) = (commij - modelspace->phase(ji+jj-J)*commji) / norm;;
          }
       }
@@ -1504,6 +1506,8 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
    }
 
 }
+
+
 
 /*
 // This version works with Cross Coupling

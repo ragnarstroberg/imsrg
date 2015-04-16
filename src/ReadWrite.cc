@@ -650,7 +650,7 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
 //                       cout << " ( should be zero ) ";
                        if (abs(V) > 1e-6 and ea<=e1max and eb<=e1max and ec<=e1max)
                        {
-                          cout << " <-------- AAAAHHHH!!!!!!!! ";
+                          cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero!" << endl;
                        }
                     }
  //                   cout << endl;
