@@ -306,12 +306,14 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 
 // orbit string representation is e.g. p0f7
 ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside_list)
+: Nmax(nmax), N2max(2*nmax), N3max(3*nmax)
 {
    Init(nmax,hole_list,inside_list);
 }
 
 // Shortcuts for common modelspaces
 ModelSpace::ModelSpace(int nmax, string str)
+: Nmax(nmax), N2max(2*nmax), N3max(3*nmax)
 {
   if (str == "skeleton") Init_Skeleton(nmax);
   else if (str == "He4") Init_He4(nmax);
@@ -653,15 +655,30 @@ void ModelSpace::PreCalculateMoshinsky()
           int l2 = e2-2*n1-2*n2-l1;
           if ( (l1+l2+lam+Lam)%2 >0 ) continue;
           if ( l2<abs(L-l1) or l2>L+l1 ) continue;
-          unsigned long long int key =  1000000000000 * N
-                                       + 100000000000 * Lam
-                                       +   1000000000 * n
-                                       +    100000000 * lam
-                                       +      1000000 * n1
-                                       +       100000 * l1
-                                       +         1000 * n2
-                                       +          100 * l2
-                                       +                 L;
+          // nmax = 16, lmax = 32 -> good up to emax=32, which I'm nowhere near.
+          unsigned long long int key =   ((unsigned long long int) N   << 40)
+                                       + ((unsigned long long int) Lam << 34)
+                                       + ((unsigned long long int) n   << 30)
+                                       + ((unsigned long long int) lam << 26)
+                                       + ((unsigned long long int) n1  << 22)
+                                       + ((unsigned long long int) l1  << 16)
+                                       + ((unsigned long long int) n2  << 12)
+                                       + ((unsigned long long int) l2  << 6 )
+                                       +  L;
+
+
+//          unsigned long long int key =  1000000000000 * N
+//                                       + 100000000000 * Lam
+//                                       +   1000000000 * n
+//                                       +    100000000 * lam
+//                                       +      1000000 * n1
+//                                       +       100000 * l1
+//                                       +         1000 * n2
+//                                       +          100 * l2
+//                                       +                 L;
+
+//          if (N==3 and n==3 and Lam==0 and lam==0)
+//          cout << N << " " << Lam << " " << n << " " << lam << " " << n1 << " " << l1 << " " << n2 << " " << l2 << " " << L << endl;
           double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
 //          MoshList[key] = mosh;
           local_MoshList[key] = mosh;
@@ -713,15 +730,25 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
    }
   }
 
-   unsigned long long int key =  1000000000000 * N
-                                + 100000000000 * Lam
-                                +   1000000000 * n
-                                +    100000000 * lam
-                                +      1000000 * n1
-                                +       100000 * l1
-                                +         1000 * n2
-                                +          100 * l2
-                                +                 L;
+          unsigned long long int key =   ((unsigned long long int) N   << 40)
+                                       + ((unsigned long long int) Lam << 34)
+                                       + ((unsigned long long int) n   << 30)
+                                       + ((unsigned long long int) lam << 26)
+                                       + ((unsigned long long int) n1  << 22)
+                                       + ((unsigned long long int) l1  << 16)
+                                       + ((unsigned long long int) n2  << 12)
+                                       + ((unsigned long long int) l2  << 6 )
+                                       +  L;
+
+//   unsigned long long int key =  1000000000000 * N
+//                                + 100000000000 * Lam
+//                                +   1000000000 * n
+//                                +    100000000 * lam
+//                                +      1000000 * n1
+//                                +       100000 * l1
+//                                +         1000 * n2
+//                                +          100 * l2
+//                                +                 L;
    auto it = MoshList.find(key);
    if ( it != MoshList.end() )  return it->second * phase_mosh;
 
