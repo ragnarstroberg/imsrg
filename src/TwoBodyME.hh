@@ -70,7 +70,7 @@ class TwoBodyME
   double GetTBME(int ch_bra, int ch_ket, Ket &bra, Ket &ket) const;
   void   SetTBME(int ch_bra, int ch_ket, Ket &bra, Ket& ket, double tbme);
   void   AddToTBME(int ch_bra, int ch_ket, Ket &bra, Ket& ket, double tbme);
-  double GetTBME(int ch_bra, int ch_ket, int ibra, int iket) const;
+  double GetTBME_norm(int ch_bra, int ch_ket, int ibra, int iket) const;
   void   SetTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme);
   void   AddToTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme);
   double GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, Ket& bra, Ket& ket) const;
@@ -91,7 +91,7 @@ class TwoBodyME
   double GetTBME_norm(int ch, Ket &bra, Ket &ket) const;
   void   SetTBME(int ch, Ket &bra, Ket& ket, double tbme);
   void   AddToTBME(int ch, Ket &bra, Ket& ket, double tbme);
-  double GetTBME(int ch, int ibra, int iket) const;
+  double GetTBME_norm(int ch, int ibra, int iket) const;
   void   SetTBME(int ch, int ibra, int iket, double tbme);
   void   AddToTBME(int ch, int ibra, int iket, double tbme);
   double GetTBME(int j, int p, int t, Ket& bra, Ket& ket) const;

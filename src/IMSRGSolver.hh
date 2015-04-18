@@ -57,8 +57,6 @@ class IMSRGSolver
   void Solve_ode_magnus();
   void ODE_systemH( Operator& x, Operator& dxdt, const double t);
   void ODE_systemOmega( Operator& x, Operator& dxdt, const double t);
-//  void ODE_systemH(const Operator& x, Operator& dxdt, const double t);
-//  void ODE_systemOmega(const Operator& x, Operator& dxdt, const double t);
 #endif
   Operator Transform(Operator& OpIn);
   Operator InverseTransform(Operator& OpIn);
@@ -85,8 +83,6 @@ class IMSRGSolver
   void ConstructGenerator_ShellModel();
   void ConstructGenerator_ShellModel_Atan();
   void ConstructGenerator_HartreeFock();
-//  double GetEpsteinNesbet1bDenominator(int i, int j);
-//  double GetEpsteinNesbet2bDenominator(int ch, int ibra, int iket);
   double Get1bDenominator_ph(int i, int j);
   double Get1bDenominator_pp(int i, int j);
   double Get2bDenominator_pphh(int ch, int ibra, int iket);
@@ -97,11 +93,8 @@ class IMSRGSolver
 //  private:
   ModelSpace* modelspace;
   Operator Omega;
-  Operator dOmega;
   Operator H_0;
   Operator H_s;
-  Operator H_od;
-  Operator H_diag;
   Operator Eta;
   int istep;
   double s;

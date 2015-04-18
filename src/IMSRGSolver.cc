@@ -25,7 +25,7 @@ IMSRGSolver::IMSRGSolver()
 // Constructor
 //IMSRGSolver::IMSRGSolver(const Operator &H_in)
 IMSRGSolver::IMSRGSolver( Operator &H_in)
-   : H_0(H_in), H_s(H_in), Eta(H_in), Omega(H_in) ,dOmega(H_in)
+   : H_0(H_in), H_s(H_in), Eta(H_in), Omega(H_in)// ,dOmega(H_in)
 #ifndef NO_ODE
     ,ode_monitor(*this)
 #endif
@@ -44,8 +44,8 @@ IMSRGSolver::IMSRGSolver( Operator &H_in)
    Eta.SetAntiHermitian();
    Omega.Erase();
    Omega.SetAntiHermitian();
-   dOmega.Erase();
-   dOmega.SetAntiHermitian();
+//   dOmega.Erase();
+//   dOmega.SetAntiHermitian();
 }
 
 void IMSRGSolver::SetHin( Operator & H_in)
@@ -57,7 +57,7 @@ void IMSRGSolver::SetHin( Operator & H_in)
    Eta.Erase();
    Eta.SetAntiHermitian();
    Omega = Eta;
-   dOmega = Eta;  
+//   dOmega = Eta;  
 }
 
 void IMSRGSolver::Reset()
@@ -65,7 +65,7 @@ void IMSRGSolver::Reset()
    s=0;
    Eta.Erase();
    Omega.Erase();
-   dOmega.Erase();
+//   dOmega.Erase();
 }
 
 void IMSRGSolver::Solve()
@@ -97,10 +97,12 @@ void IMSRGSolver::Solve()
       if (ds == ds_max) norm_domega /=2;
       if (s+ds > smax) ds = smax-s;
       s += ds;
-      dOmega = Eta * ds; // Here's the Euler step.
+//      dOmega = Eta * ds; // Here's the Euler step.
+      Eta *= ds; // Here's the Euler step.
 
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
-      Omega = dOmega.BCH_Product( Omega ); 
+//      Omega = dOmega.BCH_Product( Omega ); 
+      Omega = Eta.BCH_Product( Omega ); 
 
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
       H_s = H_0.BCH_Transform( Omega );
@@ -395,7 +397,7 @@ double IMSRGSolver::Get2bDenominator_pppp(int ch, int ibra, int iket)
 // I haven't used this, so I don't know if it's right.
 void IMSRGSolver::ConstructGenerator_Wegner()
 {
-   H_diag = H_s;
+   Operator H_diag = H_s;
    H_diag.ZeroBody = 0;
    for (auto& a : modelspace->holes)
    {
@@ -463,14 +465,25 @@ void IMSRGSolver::ConstructGenerator_White()
 void IMSRGSolver::ConstructGenerator_Atan()
 {
    // One body piece -- eliminate ph bits
-   for ( auto& i : modelspace->particles)
+   for ( auto& a : modelspace->hole_qspace)
    {
-      for ( auto& a : modelspace->holes)
+      for ( auto& i : modelspace->particles)
       {
-         //double denominator = GetEpsteinNesbet1bDenominator(i,a);
          double denominator = Get1bDenominator_ph(i,a);
          Eta.OneBody(i,a) = 0.5*atan(2*H_s.OneBody(i,a)/denominator);
          Eta.OneBody(a,i) = - Eta.OneBody(i,a);
+      }
+      // now decouple valence holes from core holes
+      if (modelspace->holes.size() != modelspace->hole_qspace.size() )
+      {
+        for ( auto& b : modelspace->valence)
+        {
+           Orbit & ob = modelspace->GetOrbit(b);
+           if (ob.ph == 0) continue;
+           double denominator = Get1bDenominator_pp(b,a);
+           Eta.OneBody(b,a) = 0.5*atan(2*H_s.OneBody(b,a)/denominator);
+           Eta.OneBody(a,b) = - Eta.OneBody(b,a);
+        }
       }
    }
 
@@ -478,21 +491,35 @@ void IMSRGSolver::ConstructGenerator_Atan()
    for (int ch=0;ch<Eta.nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-//      arma::mat& ETA2 =  Eta.TwoBody[ch].at(ch);
-//      arma::mat& H2 = H_s.TwoBody[ch].at(ch);
       arma::mat& ETA2 =  Eta.TwoBody.GetMatrix(ch);
       arma::mat& H2 = H_s.TwoBody.GetMatrix(ch);
-//      for ( auto& ibra : tbc.KetIndex_pp)
-      for ( auto& ibra : tbc.GetKetIndex_pp() )
+      for ( auto& iket : tbc.GetKetIndex_holeq_holeq() )
       {
-//         for ( auto& iket : tbc.KetIndex_hh)
-         for ( auto& iket : tbc.GetKetIndex_hh() )
+         for ( auto& ibra : tbc.GetKetIndex_pp() )
          {
             double denominator = Get2bDenominator_pphh(ch,ibra,iket);
-//            double denominator = GetEpsteinNesbet2bDenominator(ch,ibra,iket);
 
             ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+         // If there are hole orbits in the valence space, decouple those too
+         if (modelspace->holes.size() != modelspace->hole_qspace.size() )
+         {
+           for ( auto& ibra : tbc.GetKetIndex_vv() )
+           {
+              Ket& bra = modelspace->GetKet(ibra);
+              int php = modelspace->GetOrbit(bra.p).ph;
+              int phq = modelspace->GetOrbit(bra.q).ph;
+              if (php==0 and phq==0) continue;
+              double denominator;
+              if (php+phq==2) // hhhh
+                 denominator = Get2bDenominator_pppp(ch,ibra,iket);
+//              else
+//                 denominator = Get2bDenominator_ppph(ch,ibra,iket);
+  
+              ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+              ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+           }
          }
       }
     }
