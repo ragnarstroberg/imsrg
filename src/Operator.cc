@@ -628,6 +628,7 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
 /// with all commutators truncated at the two-body level.
 Operator Operator::BCH_Transform(  Operator &Omega)
 {
+   double t = omp_get_wtime();
    int max_iter = 20;
 //   int max_iter = 6;
    int warn_iter = 12;
@@ -641,8 +642,12 @@ Operator Operator::BCH_Transform(  Operator &Omega)
 
       OpOut += OpNested;
 
-      if (OpNested.Norm() < (nx+ny)*bch_transform_threshold) return OpOut;
-
+      if (OpNested.Norm() < (nx+ny)*bch_transform_threshold)
+      {
+        
+        timer["BCH_Transform"] += omp_get_wtime() - t;
+        return OpOut;
+      }
       if (i == warn_iter)
       {
          cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
@@ -650,6 +655,7 @@ Operator Operator::BCH_Transform(  Operator &Omega)
 
    }
    cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
+   timer["BCH_Transform"] += omp_get_wtime() - t;
    return OpOut;
 }
 
@@ -671,47 +677,65 @@ Operator Operator::BCH_Transform(  Operator &Omega)
 //*****************************************************************************************
 Operator Operator::BCH_Product(  Operator &Y)
 {
+   double t = omp_get_wtime();
    Operator& X = *this;
 
-   Operator Z = X + Y; 
-   Operator XY = X.Commutator(Y);
-   Z += XY*(1./2);    // [X,Y]
+//   Operator Z = X + Y; 
+//   Operator XY = X.Commutator(Y);
+   Operator Z = 0.5*(X.Commutator(Y));
+//   Z += XY*(1./2);    // [X,Y]
    double nx = X.Norm();
    double ny = Y.Norm();
-   double nc1 = XY.Norm();
+//   double nc1 = XY.Norm();
+   double nxy = Z.Norm();
 
-   if ( nc1/2 < (nx+ny)*bch_product_threshold ) return Z;
+   if ( nxy < (nx+ny)*bch_product_threshold )
+   {
+     Z += X;
+     Z += Y;
+     timer["BCH_Product"] += omp_get_wtime() - t;
+     return Z;
+   }
+//   Operator XYDiff = Y-X;
+//   Z += (1./6)* Z.Commutator( XYDiff );
+   Y -= X;
+   Z += (1./6)* Z.Commutator( Y );
+   Z += Y;
+   Z += 2*X;
 
-   Operator YYX = XY.Commutator(Y); // [[X,Y],Y] = [Y,[Y,X]]
-   double nc2 = YYX.Norm();
-   Z += YYX * (1/12.); 
-
-   if ( nc2/12 < (nx+ny)*bch_product_threshold ) return Z;
-
-   Operator XXY = X.Commutator(XY); // [X,[X,Y]]
-   double nc3 = XXY.Norm();
-   Z += XXY * (1/12.);      // [X,[X,Y]]
-
-   if ( nc3/12 < (nx+ny)*bch_product_threshold ) return Z;
-
-   cout << "Warning: BCH product expansion not converged after 3 nested commutators!" << endl;
-
-   Operator YXXY = Y.Commutator(XXY); // [Y,[X,[X,Y]]]
-   double nc4 = YXXY.Norm();
-   Z += YXXY*(-1./24);
-
-   Operator YYYX = Y.Commutator(YYX) ; // [Y,[Y,[Y,X]]]
-   Operator YYYYX = Y.Commutator(YYYX) ; // [Y,[Y,[Y,[Y,X]]]]
-   double nc5 = YYYYX.Norm();
-   Operator XXXY =  X.Commutator(XXY) ; // [X,[X,[X,[X,Y]]]]
-   Operator XXXXY = X.Commutator(XXXY) ; // [X,[X,[X,[X,Y]]]]
-   double nc6 = XXXXY.Norm();
-   Z += (YYYYX + XXXXY)*(-1./720);
-
-   if ( nc6/720. < (nx+ny)*bch_product_threshold ) return Z;
-   cout << "Warning: BCH product expansion not converged after 5 nested commutators!" << endl;
-
+   timer["BCH_Product"] += omp_get_wtime() - t;
    return Z;
+
+//   Operator YYX = XY.Commutator(Y); // [[X,Y],Y] = [Y,[Y,X]]
+//   double nc2 = YYX.Norm();
+//   Z += YYX * (1/12.); 
+//
+//   if ( nc2/12 < (nx+ny)*bch_product_threshold ) return Z;
+//
+//   Operator XXY = X.Commutator(XY); // [X,[X,Y]]
+//   double nc3 = XXY.Norm();
+//   Z += XXY * (1/12.);      // [X,[X,Y]]
+
+//   if ( nc3/12 < (nx+ny)*bch_product_threshold ) return Z;
+//
+//   cout << "Warning: BCH product expansion not converged after 3 nested commutators!" << endl;
+//
+//   Operator YXXY = Y.Commutator(XXY); // [Y,[X,[X,Y]]]
+//   double nc4 = YXXY.Norm();
+//   Z += YXXY*(-1./24);
+//
+//   Operator YYYX = Y.Commutator(YYX) ; // [Y,[Y,[Y,X]]]
+//   Operator YYYYX = Y.Commutator(YYYX) ; // [Y,[Y,[Y,[Y,X]]]]
+//   double nc5 = YYYYX.Norm();
+//   Operator XXXY =  X.Commutator(XXY) ; // [X,[X,[X,[X,Y]]]]
+//   Operator XXXXY = X.Commutator(XXXY) ; // [X,[X,[X,[X,Y]]]]
+//   double nc6 = XXXXY.Norm();
+//   Z += (YYYYX + XXXXY)*(-1./720);
+//
+//   if ( nc6/720. < (nx+ny)*bch_product_threshold ) return Z;
+//   cout << "Warning: BCH product expansion not converged after 5 nested commutators!" << endl;
+
+//   return Z;
 }
 
 /// Obtain the Frobenius norm of the operator, which here is 
@@ -760,6 +784,7 @@ void Operator::AntiSymmetrize()
 
 Operator Operator::Commutator( Operator& opright)
 {
+   timer["N_Commutators"] += 1;
    if (rank_J==0)
    {
       if (opright.rank_J==0)
@@ -926,12 +951,12 @@ void Operator::comm220ss(  Operator& opright, Operator& out)
 {
    if (IsHermitian() and opright.IsHermitian()) return; // I think this is the case
    if (IsAntiHermitian() and opright.IsAntiHermitian()) return; // I think this is the case
-//   #pragma omp parallel for
+
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-//      out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody.at(ch).at(ch) * tbc.Proj_pp * opright.TwoBody.at(ch).at(ch) );
-      out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody.GetMatrix(ch) * tbc.Proj_pp * opright.TwoBody.GetMatrix(ch) );
+//      out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( tbc.Proj_hh * TwoBody.GetMatrix(ch) * tbc.Proj_pp * opright.TwoBody.GetMatrix(ch) );
+      out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(),tbc.GetKetIndex_pp()) * opright.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(),tbc.GetKetIndex_hh()) );
 
    }
 }
@@ -1048,8 +1073,10 @@ void Operator::comm221ss( Operator& opright, Operator& out)
       arma::mat& Matrixpp =  Mpp.GetMatrix(ch,ch);
       arma::mat& Matrixhh =  Mpp.GetMatrix(ch,ch);
       
-      Matrixpp = ( LHS * tbc.Proj_pp * RHS - RHS * tbc.Proj_pp * LHS );
-      Matrixhh = ( LHS * tbc.Proj_hh * RHS - RHS * tbc.Proj_hh * LHS );
+      Matrixpp = ( LHS.rows(tbc.GetKetIndex_pp()) * RHS.cols(tbc.GetKetIndex_pp()));
+      Matrixpp -= Matrixpp.t();
+      Matrixhh = ( LHS.rows(tbc.GetKetIndex_hh()) * RHS.cols(tbc.GetKetIndex_hh()));
+      Matrixhh -= Matrixhh.t();
 
       // If commutator is hermitian or antihermitian, we only
       // need to do half the sum. Add this.
@@ -1223,9 +1250,11 @@ void Operator::comm222_pp_hhss( Operator& opright, Operator& opout )
       arma::mat& RHS = (arma::mat&) opright.TwoBody.GetMatrix(ch,ch);
       arma::mat& OUT = (arma::mat&) opout.TwoBody.GetMatrix(ch,ch);
 
-      arma::mat Mpp = (LHS * tbc.Proj_pp * RHS - RHS * tbc.Proj_pp * LHS);
-      arma::mat Mhh = (LHS * tbc.Proj_hh * RHS - RHS * tbc.Proj_hh * LHS);
-      OUT += Mpp - Mhh;
+//      arma::mat Mpp = (LHS * tbc.Proj_pp * RHS - RHS * tbc.Proj_pp * LHS);
+//      arma::mat Mhh = (LHS * tbc.Proj_hh * RHS - RHS * tbc.Proj_hh * LHS);
+      arma::mat Mpp = (LHS.rows(tbc.GetKetIndex_pp()) * RHS.cols(tbc.GetKetIndex_pp()));
+      arma::mat Mhh = (LHS.rows(tbc.GetKetIndex_hh()) * RHS.cols(tbc.GetKetIndex_hh()));
+      OUT += Mpp - Mpp.t() - Mhh + Mhh.t();
    }
 }
 
@@ -1772,8 +1801,12 @@ void Operator::comm221st( Operator& opright, Operator& out)
          int J1 = tbc_bra.J;
          int J2 = tbc_ket.J;
          double hatfactor = (2*J1+1)*sqrt(2*J2+1);
-         Matrixpp = (LHS * tbc_bra.Proj_pp * RHS  -  RHS * tbc_bra.Proj_pp * LHS);
-         Matrixhh = (LHS * tbc_bra.Proj_hh * RHS  -  RHS * tbc_bra.Proj_hh * LHS);
+         Matrixpp = (LHS.rows(tbc_bra.GetKetIndex_pp()) * RHS.cols(tbc_bra.GetKetIndex_pp()));
+         Matrixpp -= Matrixpp.t();
+         Matrixhh = (LHS.rows(tbc_bra.GetKetIndex_hh()) * RHS.cols(tbc_bra.GetKetIndex_hh()));
+         Matrixhh -= Matrixhh.t();
+//         Matrixpp = (LHS * tbc_bra.Proj_pp * RHS  -  RHS * tbc_bra.Proj_pp * LHS);
+//         Matrixhh = (LHS * tbc_bra.Proj_hh * RHS  -  RHS * tbc_bra.Proj_hh * LHS);
       
 
       // If commutator is hermitian or antihermitian, we only
@@ -1955,8 +1988,10 @@ void Operator::comm222_pp_hhst( Operator& opright, Operator& opout )
          arma::mat& RHS = (arma::mat&) opright.TwoBody.GetMatrix(ch_bra,ch_ket);
          arma::mat& OUT = (arma::mat&) opout.TwoBody.GetMatrix(ch_bra,ch_ket);
 
-         arma::mat Matrixpp = LHS * tbc_bra.Proj_pp * RHS;
-         arma::mat Matrixhh = LHS * tbc_bra.Proj_hh * RHS;
+         arma::mat Matrixpp = LHS.rows(tbc_ket.GetKetIndex_pp()) * RHS.cols(tbc_bra.GetKetIndex_pp());
+         arma::mat Matrixhh = LHS.rows(tbc_ket.GetKetIndex_hh()) * RHS.cols(tbc_bra.GetKetIndex_hh());
+//         arma::mat Matrixpp = LHS * tbc_bra.Proj_pp * RHS;
+//         arma::mat Matrixhh = LHS * tbc_bra.Proj_hh * RHS;
 
          if (opout.IsHermitian())
          {
@@ -1968,10 +2003,10 @@ void Operator::comm222_pp_hhst( Operator& opright, Operator& opout )
             Matrixpp += Matrixpp.t();
             Matrixhh += Matrixhh.t();
          }
-         else
+         else //Figure this out later...
          {
-            Matrixpp -=  RHS.t() * tbc_bra.Proj_pp * LHS.t();
-            Matrixhh -=  RHS.t() * tbc_bra.Proj_hh * LHS.t();
+//            Matrixpp -= RHS.t().rows(tbc_ket.GetKetIndex_pp()) * LHS.cols(tbc_bra.GetKetIndex_pp());
+//            Matrixhh -= RHS.t().rows(tbc_ket.GetKetIndex_hh()) * LHS.cols(tbc_bra.GetKetIndex_hh());
          }
 
       
@@ -2044,10 +2079,10 @@ void Operator::comm222_pp_hh_221st( Operator& opright, Operator& opout )
             Matrixpp -= Matrixpp.t();
             Matrixhh -= Matrixhh.t();
          }
-         else 
+         else // Figure this out later...
          {
-            Matrixpp -=  RHS.t() * tbc_bra.Proj_pp * LHS.t();
-            Matrixhh -=  RHS.t() * tbc_bra.Proj_hh * LHS.t();
+//            Matrixpp -=  RHS.t().cols(kets_pp) * LHS.t().rows(kets_pp);
+//            Matrixhh -=  RHS.t().cols(kets_hh) * LHS.t().rows(kets_hh);
          }
 
          // The two body part

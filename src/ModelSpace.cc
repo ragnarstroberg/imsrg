@@ -120,11 +120,13 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
 
       }
    }
-  
+ 
    // Set up projectors which are used in the commutators
+   // These are absolutely killing me.
+/*
    Proj_pp = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
    Proj_hh = arma::mat(NumberKets, NumberKets, arma::fill::zeros);
-   Proj_ph_cc = arma::mat(2*NumberKets, 2*NumberKets, arma::fill::zeros);
+//   Proj_ph_cc = arma::mat(2*NumberKets, 2*NumberKets, arma::fill::zeros);
    for (int i=0;i<NumberKets;i++)
    {
       Ket &ket = GetKet(i);
@@ -145,7 +147,7 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
 
 
    }
-
+*/
 }
 
 
@@ -355,6 +357,7 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
    vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t'};
    vector<char> pn_list = { 'p', 'n' };
 
+   cout << "Generating orbits, etc." << endl;
    norbits = (Nmax+1)*(Nmax+2);
    for (int N=0; N<=Nmax; ++N)
    {
@@ -388,7 +391,9 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
        }
      }
    }
+   cout << "Setting up kets" << endl;
    SetupKets();
+   cout << "Done with Init()" << endl;
 }
 
 
@@ -602,6 +607,7 @@ void ModelSpace::SetupKets()
 
    }
 
+   cout << "Set up TwoBodyChannels" << endl;
    for (int ch=0;ch<nTwoBodyChannels;++ch)
    {
       TwoBodyChannels.push_back(TwoBodyChannel(ch,this));

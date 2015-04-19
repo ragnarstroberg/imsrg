@@ -79,7 +79,7 @@ class TwoBodyChannel
    int Tz;
    arma::mat Proj_pp; // Projector onto pp kets
    arma::mat Proj_hh; // Projector onto hh kets
-   arma::mat Proj_ph_cc; // Projector onto ph kets, for use with cross-coupled TBMEs
+//   arma::mat Proj_ph_cc; // Projector onto ph kets, for use with cross-coupled TBMEs
 
    // Constructors
    TwoBodyChannel();
