@@ -21,12 +21,13 @@ double  Operator::bch_product_threshold = 1e-4;
 map<string, double> Operator::timer;
 
 
-
 /////////////////// CONSTRUCTORS /////////////////////////////////////////
 Operator::Operator() :
    modelspace(NULL), nChannels(0), hermitian(true), antihermitian(false),
     rank_J(0), rank_T(0), parity(0), particle_rank(2)
-{}
+{
+  cout << "Calling default Operator constructor" << endl;
+}
 
 
 // Create a zero-valued operator in a given model space
@@ -261,7 +262,8 @@ Operator Operator::DoNormalOrdering2()
       opNO.ZeroBody += arma::sum( diagonals.elem(hh) ) * (2*J_ket+1);
 
       // One body part
-      for (long long unsigned int a=0;a<norbits;++a)
+//      for (long long unsigned int a=0;a<norbits;++a)
+      for (index_t a=0;a<norbits;++a)
       {
          Orbit &oa = modelspace->GetOrbit(a);
          int bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
@@ -451,7 +453,7 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
    {
       TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
       int nKets_cc = tbc_cc.GetNumberKets();
-      arma::uvec kets_ph = tbc_cc.GetKetIndex_ph();
+      arma::uvec& kets_ph = tbc_cc.GetKetIndex_ph();
       int nph_kets = kets_ph.n_rows;
       int J_cc = tbc_cc.J;
 
@@ -544,7 +546,7 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
    {
       TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
       int nKets_cc = tbc_cc.GetNumberKets();
-      arma::uvec kets_ph = tbc_cc.GetKetIndex_ph();
+      arma::uvec& kets_ph = tbc_cc.GetKetIndex_ph();
       int nph_kets = kets_ph.n_rows;
       int J_cc = tbc_cc.J;
 
@@ -1274,8 +1276,8 @@ void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )
       arma::mat & Matrixpp = Mpp.GetMatrix(ch,ch);
       arma::mat & Matrixhh = Mhh.GetMatrix(ch,ch);
 
-      arma::uvec kets_pp = tbc.GetKetIndex_pp();
-      arma::uvec kets_hh = tbc.GetKetIndex_hh();
+      arma::uvec& kets_pp = tbc.GetKetIndex_pp();
+      arma::uvec& kets_hh = tbc.GetKetIndex_hh();
       
       Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
       Matrixhh =  LHS.cols(kets_hh) * RHS.rows(kets_hh);
@@ -2050,8 +2052,8 @@ void Operator::comm222_pp_hh_221st( Operator& opright, Operator& opout )
      
 //         arma::uvec kets_pp = arma::uvec(tbc_bra.KetIndex_pp);
 //         arma::uvec kets_hh = arma::uvec(tbc_bra.KetIndex_hh);
-         arma::uvec kets_pp = tbc_bra.GetKetIndex_pp();
-         arma::uvec kets_hh = tbc_bra.GetKetIndex_hh();
+         arma::uvec& kets_pp = tbc_bra.GetKetIndex_pp();
+         arma::uvec& kets_hh = tbc_bra.GetKetIndex_hh();
       
          Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
          Matrixhh =  LHS.cols(kets_hh) * RHS.rows(kets_hh);

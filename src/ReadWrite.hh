@@ -11,6 +11,7 @@ using namespace std;
 class ReadWrite
 {
  public:
+   ~ReadWrite();
    ReadWrite();
    void ReadSettingsFile(  string filename);
    ModelSpace ReadModelSpace( string filename);

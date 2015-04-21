@@ -4,9 +4,8 @@
   #define SQRT2 1.4142135623730950488
 #endif
 
-
 TwoBodyME::TwoBodyME()
-: hermitian(true),antihermitian(false)
+: hermitian(true),antihermitian(false),modelspace(NULL)
 {}
 
 TwoBodyME::TwoBodyME(ModelSpace* ms)

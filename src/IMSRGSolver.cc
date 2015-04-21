@@ -412,10 +412,14 @@ void IMSRGSolver::ConstructGenerator_Wegner()
    {  // Note, should also decouple the v and q spaces
       // This is wrong. The projection operator should be different.
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-   //   H_diag.TwoBody[ch] = (tbc.Proj_hh*H_diag.TwoBody[ch] + tbc.Proj_pp*H_diag.TwoBody[ch]);
-//      H_diag.TwoBody[ch].at(ch) = (tbc.Proj_hh + tbc.Proj_pp) * H_diag.TwoBody[ch].at(ch);
-      H_diag.TwoBody.GetMatrix(ch) = (tbc.Proj_hh + tbc.Proj_pp) * H_diag.TwoBody.GetMatrix(ch);
+      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(), tbc.GetKetIndex_ph() ).zeros();
+      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(), tbc.GetKetIndex_ph() ).zeros();
+      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_ph(), tbc.GetKetIndex_pp() ).zeros();
+      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_ph(), tbc.GetKetIndex_hh() ).zeros();
+      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(), tbc.GetKetIndex_hh() ).zeros();
+      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(), tbc.GetKetIndex_pp() ).zeros();
    }
+//   H_diag.Symmetrize();
 
    Eta = H_diag.Commutator(H_s);
 }

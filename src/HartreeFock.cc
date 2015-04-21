@@ -516,9 +516,11 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
       for (int i=0; i<npq; ++i)    
       {
          Ket & bra = tbc.GetKet(i);
+         int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
          for (int j=0; j<npq; ++j)
          {
             Ket & ket = tbc.GetKet(j); 
+            int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
             D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
             if (bra.p!=bra.q)
             {
@@ -532,11 +534,13 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
             for (int a=0; a<norb; ++a)
             {
               Orbit & oa = modelspace->GetOrbit(a);
-              if ( 2*oa.n+oa.l+bra.E2 > Hbare.GetE3max() ) continue;
+//              if ( 2*oa.n+oa.l+bra.E2 > Hbare.GetE3max() ) continue;
+              if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
               for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
               {
                 Orbit & ob = modelspace->GetOrbit(b);
-                if ( 2*ob.n+ob.l+ket.E2 > Hbare.GetE3max() ) continue;
+//                if ( 2*ob.n+ob.l+ket.E2 > Hbare.GetE3max() ) continue;
+                if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
                 int J3min = abs(2*J-oa.j2);
                 int J3max = 2*J + oa.j2;
                 for (int J3=J3min; J3<=J3max; J3+=2)

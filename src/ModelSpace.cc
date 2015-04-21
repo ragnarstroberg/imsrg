@@ -7,80 +7,42 @@
 using namespace std;
 
 Orbit::Orbit()
-{
-}
+{}
 
-Orbit::Orbit(int nn, int ll, int jj2, int ttz2, int pph, int iio, double e=0.0)
-{
-   n = nn;
-   l = ll;
-   j2 = jj2;
-   tz2 = ttz2;
-   ph = pph;
-   io = iio;
-   spe = e;
-}
+Orbit::Orbit(int n, int l, int j2, int tz2, int ph, int io, int index)
+: n(n), l(l), j2(j2), tz2(tz2),ph(ph),io(io),index(index)
+{}
 
 Orbit::Orbit(const Orbit& orb)
-{
-  n = orb.n;
-  l = orb.l;
-  j2 = orb.j2;
-  tz2 = orb.tz2;
-  ph = orb.ph;
-  io = orb.io;
-  spe = orb.spe;
-}
+: n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),ph(orb.ph),io(orb.io),index(orb.index)
+{}
 
-void Orbit::Set(int nn, int ll, int jj2, int ttz2, int pph, int iio, double e)
-{
-   n = nn;
-   l = ll;
-   j2 = jj2;
-   tz2 = ttz2;
-   ph = pph;
-   io = iio;
-   spe = e;
-}
+//void Orbit::Set(int nn, int ll, int jj2, int ttz2, int pph, int iio, int ind)
+//{
+//   n = nn;
+//   l = ll;
+//   j2 = jj2;
+//   tz2 = ttz2;
+//   ph = pph;
+//   io = iio;
+//   index = ind;
+//}
 
 
 //************************************************************************
+Ket::Ket()
+{}
 
-Ket::Ket(ModelSpace * modelspace)
+Ket::Ket(Orbit& op_in, Orbit& oq_in)
+: op(&op_in), oq(&oq_in), p(op_in.index), q(oq_in.index)
 {
-   ms = modelspace;
-}
-
-Ket::Ket(ModelSpace * modelspace, int pp, int qq)
-{
-   ms = modelspace;
-   Setpq(pp,qq);
-}
-
-void Ket::Setpq(int pp, int qq)
-{
-   p = pp;
-   q = qq;
-   Orbit & op = ms->GetOrbit(p);
-   Orbit & oq = ms->GetOrbit(q);
-   parity = (op.l + oq.l)%2;
-   Tz = (op.tz2 + oq.tz2)/2;
-   Jmin = abs(op.j2 - oq.j2)/2;
-   Jmax = (op.j2 + oq.j2)/2;
-   Jstep = 1;
-   E2 = 2*(op.n+oq.n)+op.l+oq.l;
-   if (p==q) // Pauli principle
-   { 
-      Jmax = Jmax-1;
-      Jstep=2;
-   }
-   phase_prefactor = ms->phase((op.j2+oq.j2)/2 + 1);
+   phase_prefactor = ((op->j2+oq->j2)/2 + 1) % 2==0 ? 1 : -1;
    dpq = p==q ? 1 : 0;
 }
 
 int Ket::Phase(int J)
 {
-   return phase_prefactor * ms->phase(J);
+   return phase_prefactor * (J%2==0 ? 1 : -1);
 }
 
 //************************************************************************
@@ -118,21 +80,15 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
          NumberKets++;
       }
    }
-}
-
-
-void TwoBodyChannel::Copy( const TwoBodyChannel& rhs)
-{
-   J                 = rhs.J;
-   parity            = rhs.parity;
-   Tz                = rhs.Tz;
-   modelspace        = rhs.modelspace;
-   NumberKets        = rhs.NumberKets;
-   Proj_hh           = rhs.Proj_hh;
-   Proj_pp           = rhs.Proj_pp;
-   KetMap            = rhs.KetMap;
-   KetList           = rhs.KetList;
-
+   KetIndex_pp = GetKetIndexFromList(modelspace->KetIndex_pp);
+   KetIndex_hh = GetKetIndexFromList(modelspace->KetIndex_hh);
+   KetIndex_ph = GetKetIndexFromList(modelspace->KetIndex_ph);
+   KetIndex_vv = GetKetIndexFromList(modelspace->KetIndex_vv);
+   KetIndex_holeq_holeq = GetKetIndexFromList(modelspace->KetIndex_holeq_holeq);
+   KetIndex_particleq_particleq = GetKetIndexFromList(modelspace->KetIndex_particleq_particleq);
+   KetIndex_particleq_holeq = GetKetIndexFromList(modelspace->KetIndex_particleq_holeq);
+   KetIndex_v_holeq = GetKetIndexFromList(modelspace->KetIndex_v_holeq);
+   KetIndex_v_particleq= GetKetIndexFromList(modelspace->KetIndex_v_particleq);
 }
 
 
@@ -142,35 +98,35 @@ int TwoBodyChannel::GetLocalIndex(int p, int q) const { return KetMap[modelspace
 Ket & TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
 
 
-bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
+//bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
+bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
-   if ((p==q) and (J%2 != 0)) return false; // Pauli principle
-   Orbit & op = modelspace->GetOrbit(p);
-   Orbit & oq = modelspace->GetOrbit(q);
-   if ((op.l + oq.l)%2 != parity) return false;
-   if ((op.tz2 + oq.tz2) != 2*Tz) return false;
-   if (op.j2 + oq.j2 < 2*J)       return false;
-   if (abs(op.j2 - oq.j2) > 2*J)  return false;
+   if ((op->index==oq->index) and (J%2 != 0)) return false; // Pauli principle
+//   if ((p==q) and (J%2 != 0)) return false; // Pauli principle
+//   Orbit & op = modelspace->GetOrbit(p);
+//   Orbit & oq = modelspace->GetOrbit(q);
+   if ((op->l + oq->l)%2 != parity) return false;
+   if ((op->tz2 + oq->tz2) != 2*Tz) return false;
+   if (op->j2 + oq->j2 < 2*J)       return false;
+   if (abs(op->j2 - oq->j2) > 2*J)  return false;
 
    return true;
 }
 
-arma::uvec TwoBodyChannel::GetKetIndex_pp() { return GetKetIndexFromList(modelspace->KetIndex_pp);};
-arma::uvec TwoBodyChannel::GetKetIndex_hh() { return GetKetIndexFromList(modelspace->KetIndex_hh);};
-arma::uvec TwoBodyChannel::GetKetIndex_ph() { return GetKetIndexFromList(modelspace->KetIndex_ph);};
-arma::uvec TwoBodyChannel::GetKetIndex_vv() { return GetKetIndexFromList(modelspace->KetIndex_vv);};
-arma::uvec TwoBodyChannel::GetKetIndex_holeq_holeq() { return GetKetIndexFromList(modelspace->KetIndex_holeq_holeq);};
-arma::uvec TwoBodyChannel::GetKetIndex_particleq_particleq() { return GetKetIndexFromList(modelspace->KetIndex_particleq_particleq);};
-arma::uvec TwoBodyChannel::GetKetIndex_particleq_holeq() { return GetKetIndexFromList(modelspace->KetIndex_particleq_holeq);};
-arma::uvec TwoBodyChannel::GetKetIndex_v_holeq() { return GetKetIndexFromList(modelspace->KetIndex_v_holeq);};
-arma::uvec TwoBodyChannel::GetKetIndex_v_particleq(){ return GetKetIndexFromList(modelspace->KetIndex_v_particleq);};
+arma::uvec& TwoBodyChannel::GetKetIndex_pp() { return KetIndex_pp;};
+arma::uvec& TwoBodyChannel::GetKetIndex_hh() { return KetIndex_hh;};
+arma::uvec& TwoBodyChannel::GetKetIndex_ph() { return KetIndex_ph;};
+arma::uvec& TwoBodyChannel::GetKetIndex_vv() { return KetIndex_vv;};
+arma::uvec& TwoBodyChannel::GetKetIndex_holeq_holeq() { return KetIndex_holeq_holeq;};
+arma::uvec& TwoBodyChannel::GetKetIndex_particleq_particleq() { return KetIndex_particleq_particleq;};
+arma::uvec& TwoBodyChannel::GetKetIndex_particleq_holeq() { return KetIndex_particleq_holeq;};
+arma::uvec& TwoBodyChannel::GetKetIndex_v_holeq() { return KetIndex_v_holeq;};
+arma::uvec& TwoBodyChannel::GetKetIndex_v_particleq(){ return KetIndex_v_particleq;};
 
 
-//arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<unsigned int>& vec_in)
-arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<long long unsigned int>& vec_in)
+arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<index_t>& vec_in)
 {
-//   vector<unsigned int> index_list (min(vec_in.size(),KetList.size()));
-   vector<long long unsigned int> index_list (min(vec_in.size(),KetList.size()));
+   vector<index_t> index_list (min(vec_in.size(),KetList.size()));
    auto it = set_intersection(KetList.begin(),KetList.end(),vec_in.begin(),vec_in.end(),index_list.begin());
    index_list.resize(it-index_list.begin());
    for (auto& x : index_list)
@@ -198,14 +154,15 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
 // Check if orbits pq participate in this cross-coupled two-body channel
 // Difference from regular channels:
 // no Pauli rule, <pp||nn> is allowed.
-bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
+//bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
+bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
-   Orbit & op = modelspace->GetOrbit(p);
-   Orbit & oq = modelspace->GetOrbit(q);
-   if ((op.l + oq.l)%2 != parity)    return false;
-   if (abs(op.tz2 + oq.tz2) != 2*Tz) return false;
-   if (op.j2 + oq.j2 < 2*J)          return false;
-   if (abs(op.j2 - oq.j2) > 2*J)     return false;
+//   Orbit & op = modelspace->GetOrbit(p);
+//   Orbit & oq = modelspace->GetOrbit(q);
+   if ((op->l + oq->l)%2 != parity)    return false;
+   if (abs(op->tz2 + oq->tz2) != 2*Tz) return false;
+   if (op->j2 + oq->j2 < 2*J)          return false;
+   if (abs(op->j2 - oq->j2) > 2*J)     return false;
 
    return true;
 }
@@ -213,6 +170,16 @@ bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
 
 //************************************************************************
 //************************************************************************
+
+
+unordered_map<unsigned long int,double>      ModelSpace::SixJList;
+unordered_map<unsigned long long int,double> ModelSpace::NineJList;
+unordered_map<unsigned long long int,double> ModelSpace::MoshList;
+
+ModelSpace::~ModelSpace()
+{
+  cout << "In ModelSpace destructor" << endl;
+}
 
 ModelSpace::ModelSpace()
 {
@@ -255,7 +222,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    TwoBodyChannels = ms.TwoBodyChannels;
    TwoBodyChannels_CC = ms.TwoBodyChannels_CC;
 
-   for (Ket& k : Kets)   k.ms = this;
+//   for (Ket& k : Kets)   k.ms = this;
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
 }
@@ -270,7 +237,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    TwoBodyChannels(move(ms.TwoBodyChannels)), TwoBodyChannels_CC(move(ms.TwoBodyChannels_CC))
 {
 
-   for (Ket& k : Kets)   k.ms = this;
+//   for (Ket& k : Kets)   k.ms = this;
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
 }
@@ -329,6 +296,7 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
 
    cout << "Generating orbits, etc." << endl;
    norbits = (Nmax+1)*(Nmax+2);
+   Orbits.resize(norbits);
    for (int N=0; N<=Nmax; ++N)
    {
      for (int l=N; l>=0; l-=2)
@@ -356,7 +324,10 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
                io=0;
                inside_list.erase(it_inside);
             }
-            AddOrbit(Orbit(n,l,j2,tz,ph,io,spe));
+//            AddOrbit(Orbit(n,l,j2,tz,ph,io,spe));
+            cout << "Adding Orbit with index " << Index1(n,l,j2,tz) << endl;
+//            AddOrbit(Orbit(n,l,j2,tz,ph,io,Index1(n,l,j2,tz)));
+            AddOrbit(n,l,j2,tz,ph,io);
          }
        }
      }
@@ -395,7 +366,9 @@ void ModelSpace::Init_Skeleton(int nmax)
             int ph = 0;
             int io = 1;
             double spe = 0;
-            AddOrbit(Orbit(n,l,j2,tz,ph,io,spe));
+//            AddOrbit(Orbit(n,l,j2,tz,ph,io,spe));
+//            AddOrbit(Orbit(n,l,j2,tz,ph,io,Index1(n,l,j2,tz)));
+            AddOrbit(n,l,j2,tz,ph,io);
          }
        }
      }
@@ -477,39 +450,39 @@ ModelSpace ModelSpace::operator=(ModelSpace&& ms)
 
 void ModelSpace::AddOrbit(Orbit orb)
 {
-   int ind = Index1(orb.n, orb.l, orb.j2, orb.tz2);
-   if (Orbits.size() <= ind) Orbits.resize(ind+1,Orbit());
-   Orbits[ind] = Orbit(orb);
-   norbits = Orbits.size();
-   if (orb.j2 > OneBodyJmax)
+  AddOrbit(orb.n, orb.l, orb.j2, orb.tz2, orb.ph, orb.io);
+}
+
+void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
+{
+   index_t ind = Index1(n, l, j2, tz2);
+   Orbits[ind] = Orbit(n,l,j2,tz2,ph,io,ind);
+
+   if (j2 > OneBodyJmax)
    {
-      OneBodyJmax = orb.j2;
+      OneBodyJmax = j2;
       TwoBodyJmax = OneBodyJmax*2;
       ThreeBodyJmax = OneBodyJmax*3-1;
       nTwoBodyChannels = 2*3*(TwoBodyJmax+1);
    }
-   if ( 2*orb.n+orb.l > Nmax )
-   {
-      Nmax = 2*orb.n+orb.l;
-      N2max = 2*Nmax;
-      N3max = 3*Nmax;
-   }
 
-   if (orb.ph == 0) particles.push_back(ind);
-   if (orb.ph == 1) holes.push_back(ind);
-   if (orb.io == 0) valence.push_back(ind);
-   if (orb.io == 1)
+   if (ph == 0) particles.push_back(ind);
+   if (ph == 1) holes.push_back(ind);
+   if (io == 0) valence.push_back(ind);
+   if (io == 1)
    {
      qspace.push_back(ind);
-     if (orb.ph == 0) particle_qspace.push_back(ind);
-     if (orb.ph == 1) hole_qspace.push_back(ind);
+     if (ph == 0) particle_qspace.push_back(ind);
+     if (ph == 1) hole_qspace.push_back(ind);
    }
-   if (orb.tz2<0) proton_orbits.push_back(ind);
-   if (orb.tz2>0) neutron_orbits.push_back(ind);
+   if (tz2<0) proton_orbits.push_back(ind);
+   if (tz2>0) neutron_orbits.push_back(ind);
 
-   OneBodyChannels[{orb.l, orb.j2, orb.tz2}].push_back(ind);
+   OneBodyChannels[{l, j2, tz2}].push_back(ind);
+
 
 }
+
 
 int ModelSpace::GetTwoBodyChannelIndex(int j, int p, int t)
 {
@@ -521,23 +494,23 @@ void ModelSpace::SetupKets()
 {
    int index = 0;
 
+   Kets.resize(Index2(norbits-1,norbits-1)+1);
    for (int p=0;p<norbits;p++)
    {
      for (int q=p;q<norbits;q++)
      {
         index = Index2(p,q);
-        if (index >= Kets.size()) Kets.resize(index+1,Ket(this));
-        Kets[index].Setpq(p,q);
+        Kets[index] = Ket(GetOrbit(p),GetOrbit(q));
      }
    }
 
   for (int index=0;index<Kets.size();++index)
   {
     Ket& ket = Kets[index];
-    int php = GetOrbit(ket.p).ph;
-    int phq = GetOrbit(ket.q).ph;
-    int iop = GetOrbit(ket.p).io;
-    int ioq = GetOrbit(ket.q).io;
+    int php = ket.op->ph;
+    int phq = ket.oq->ph;
+    int iop = ket.op->io;
+    int ioq = ket.oq->io;
      if (( php + phq)==2) // hh
      {
         KetIndex_hh.push_back(index);

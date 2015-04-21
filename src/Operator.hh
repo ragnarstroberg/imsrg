@@ -24,7 +24,6 @@ class Operator
  public:
   //Fields
   double ZeroBody; ///< The zero body piece of the operator.
-
   arma::mat OneBody; ///< The one body piece of the operator, stored in a single NxN armadillo matrix, where N is the number of single-particle orbits.
   TwoBodyME TwoBody; ///< The two body piece of the operator.
   ThreeBodyME ThreeBody; ///< The three body piece of the operator.
@@ -44,6 +43,7 @@ class Operator
   static double bch_transform_threshold;
   static double bch_product_threshold;
   static map<string, double> timer; ///< For keeping timing information for various method calls
+
 
   void PrintTimes();
 

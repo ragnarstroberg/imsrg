@@ -13,10 +13,13 @@
 
 using namespace std;
 
-ReadWrite::ReadWrite()
+ReadWrite::~ReadWrite()
 {
-   doCoM_corr = false;
-   goodstate = true;
+  cout << "In ReadWrite destructor" << endl;
+}
+ReadWrite::ReadWrite()
+: doCoM_corr(false), goodstate(true)
+{
 }
 
 

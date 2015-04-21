@@ -219,7 +219,8 @@ namespace imsrg_util
               // factor to account for antisymmetrization
               int asymm_factor = 1;
 
-              if (ket.Tz!=0)
+//              if (ket.Tz!=0)
+              if (ket.op->tz2 == ket.oq->tz2)
               {
                 if ((lam_ab+Sab)%2>0) continue; // Pauli rule for identical particles
                 asymm_factor = 2 ;
@@ -434,7 +435,8 @@ namespace imsrg_util
               // factor to account for antisymmetrization
               int asymm_factor = 1;
 
-              if (ket.Tz!=0)
+//              if (ket.Tz!=0)
+              if (ket.op->tz2 == ket.oq->tz2)
               {
                 if ((lam_ab+Sab)%2>0) continue; // Pauli rule for identical particles
                 asymm_factor = 2 ;
@@ -653,7 +655,8 @@ Operator E0Op(ModelSpace& modelspace)
               // factor to account for antisymmetrization
               int asymm_factor = 1;
 
-              if (ket.Tz!=0)
+//              if (ket.Tz!=0)
+              if (ket.op->tz2 == ket.oq->tz2)
               {
                 if ((lam_ab+Sab)%2>0) continue; // Pauli rule for identical particles
                 asymm_factor = 2 ;
