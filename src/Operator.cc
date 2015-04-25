@@ -21,12 +21,17 @@ double  Operator::bch_product_threshold = 1e-4;
 map<string, double> Operator::timer;
 
 
+Operator::~Operator()
+{
+   cout << "calling Operator destructor" << endl;
+}
+
 /////////////////// CONSTRUCTORS /////////////////////////////////////////
 Operator::Operator() :
    modelspace(NULL), nChannels(0), hermitian(true), antihermitian(false),
     rank_J(0), rank_T(0), parity(0), particle_rank(2)
 {
-  cout << "Calling default Operator constructor" << endl;
+//  cout << "Calling default Operator constructor" << endl;
 }
 
 
@@ -57,10 +62,24 @@ Operator::Operator(ModelSpace& ms) :
 }
 
 Operator::Operator(const Operator& op)
+: modelspace(op.modelspace), nChannels(op.nChannels),
+  hermitian(op.hermitian), antihermitian(op.antihermitian),
+  rank_J(op.rank_J), rank_T(op.rank_T), particle_rank(op.particle_rank),
+  E2max(op.E2max), E3max(op.E3max), ZeroBody(op.ZeroBody),
+  OneBody(op.OneBody), TwoBody(op.TwoBody), ThreeBody(op.ThreeBody)
 {
-   Copy(op);
+   cout << "Calling copy constructor for Operator" << endl;
 }
 
+Operator::Operator(Operator&& op)
+: modelspace(op.modelspace), nChannels(op.nChannels),
+  hermitian(op.hermitian), antihermitian(op.antihermitian),
+  rank_J(op.rank_J), rank_T(op.rank_T), particle_rank(op.particle_rank),
+  E2max(op.E2max), E3max(op.E3max), ZeroBody(op.ZeroBody),
+  OneBody(move(op.OneBody)), TwoBody(move(op.TwoBody)), ThreeBody(move(op.ThreeBody))
+{
+   cout << "Calling move constructor for Operator" << endl;
+}
 
 /////////// COPY METHOD //////////////////////////
 void Operator::Copy(const Operator& op)
@@ -84,7 +103,28 @@ void Operator::Copy(const Operator& op)
 /////////////// OVERLOADED OPERATORS =,+,-,*,etc ////////////////////
 Operator& Operator::operator=(const Operator& rhs)
 {
+//   cout << "Using copy assignment" << endl;
    Copy(rhs);
+   return *this;
+}
+
+Operator& Operator::operator=(Operator&& rhs)
+{
+//   cout << "Using move assignment" << endl;
+   modelspace    = rhs.modelspace;
+   nChannels     = rhs.nChannels;
+   hermitian     = rhs.hermitian;
+   antihermitian = rhs.antihermitian;
+   rank_J        = rhs.rank_J;
+   rank_T        = rhs.rank_T;
+   parity        = rhs.parity;
+   particle_rank = rhs.particle_rank;
+   E2max         = rhs.E2max;
+   E3max         = rhs.E3max;
+   ZeroBody      = rhs.ZeroBody;
+   OneBody       = move(rhs.OneBody);
+   TwoBody       = move(rhs.TwoBody);
+   ThreeBody     = move(rhs.ThreeBody);
    return *this;
 }
 
@@ -347,6 +387,12 @@ Operator Operator::DoNormalOrdering3()
 }
 
 
+ModelSpace* Operator::GetModelSpace()
+{
+   cout << " Getting ModelSpace." << endl;
+   cout << " Norbits = " << modelspace->GetNumberOrbits() << endl;
+   return modelspace;
+}
 
 
 void Operator::Erase()
@@ -448,9 +494,12 @@ void Operator::CalculateKineticEnergy()
 void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<arma::mat>& TwoBody_CC_ph)
 {
    // loop over cross-coupled channels
+//   for (int ch_cc=0; ch_cc<nChannels; ++ch_cc)
+   int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
    #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
-   for (int ch_cc=0; ch_cc<nChannels; ++ch_cc)
+   for (int ich=0; ich<n_nonzero; ++ich)
    {
+      int ch_cc = modelspace->SortedTwoBodyChannels_CC[ich];
       TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
       int nKets_cc = tbc_cc.GetNumberKets();
       arma::uvec& kets_ph = tbc_cc.GetKetIndex_ph();
@@ -630,6 +679,7 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
 /// with all commutators truncated at the two-body level.
 Operator Operator::BCH_Transform(  Operator &Omega)
 {
+//   cout << "BCH_Transform" << endl;
    double t = omp_get_wtime();
    int max_iter = 20;
    int warn_iter = 12;
@@ -639,8 +689,12 @@ Operator Operator::BCH_Transform(  Operator &Omega)
    Operator OpNested = *this;
    for (int i=1; i<max_iter; ++i)
    {
-      OpNested = Omega.Commutator(OpNested) / i;
+//      cout << "Assigning to commutator" << endl;
+      OpNested = Omega.Commutator(OpNested);
+//      cout << "Dividing by i" << endl;
+      OpNested /= i;
 
+//      cout << "Adding to OpOut" << endl;
       OpOut += OpNested;
 
       if (OpNested.Norm() < (nx+ny)*bch_transform_threshold)
@@ -677,12 +731,14 @@ Operator Operator::BCH_Transform(  Operator &Omega)
 //*****************************************************************************************
 Operator Operator::BCH_Product(  Operator &Y)
 {
+//   cout << "BCH_Product" << endl;
    double t = omp_get_wtime();
    Operator& X = *this;
 
 //   Operator Z = X + Y; 
 //   Operator XY = X.Commutator(Y);
-   Operator Z = 0.5*(X.Commutator(Y));
+   Operator Z = X.Commutator(Y);
+   Z *= 0.5;
 //   Z += XY*(1./2);    // [X,Y]
    double nx = X.Norm();
    double ny = Y.Norm();
@@ -936,12 +992,13 @@ void Operator::comm110ss( Operator& opright, Operator& out)
 //
 //  -- AGREES WITH NATHAN'S RESULTS (within < 1%)
 /// \f[
-/// [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{abcd} (n_a n_b \bar{n}_c \bar{n}_d) X_{abcd}^{J} Y_{cdab}^{J}
+/// [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{abcd} (n_a n_b \bar{n}_c \bar{n}_d) \tilde{X}_{abcd}^{J} \tilde{Y}_{cdab}^{J}
 /// \f]
 /// may be rewritten as
 /// \f[
-/// [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{ab} (\mathcal{P}_{hh} X_{(2)}^{J} \mathcal{P}_{pp} Y_{(2)}^{J})_{abab}
-/// \f] where \f$ \mathcal{P}_{hh} \f$ is a projector onto hole-hole two body states.
+/// [X_{(2)},Y_{(2)}]_{(0)} = 2 \sum_{J} (2J+1) Tr(X_{hh'pp'}^{J} Y_{pp'hh'}^{J})
+/// \f] where we obtain a factor of four from converting two unrestricted sums to restricted sums, i.e. \f$\sum_{ab} \rightarrow \sum_{a\leqb} \f$,
+/// and using the normalized TBME.
 void Operator::comm220ss(  Operator& opright, Operator& out) 
 {
    if (IsHermitian() and opright.IsHermitian()) return; // I think this is the case
@@ -952,9 +1009,9 @@ void Operator::comm220ss(  Operator& opright, Operator& out)
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       auto hh = tbc.GetKetIndex_hh();
       auto pp = tbc.GetKetIndex_pp();
-      out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( TwoBody.GetMatrix(ch).submat(hh,pp) * opright.TwoBody.GetMatrix(ch).submat(pp,hh) );
-//      out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(),tbc.GetKetIndex_pp()) * opright.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(),tbc.GetKetIndex_hh()) );
-
+      arma::mat& X = TwoBody.GetMatrix(ch);
+      arma::mat& Y = opright.TwoBody.GetMatrix(ch);
+      out.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( X.submat(hh,pp) * Y.submat(pp,hh) );
    }
 }
 
@@ -1114,19 +1171,22 @@ void Operator::comm221ss( Operator& opright, Operator& out)
 //    |  X  |               |      |            
 //
 // -- AGREES WITH NATHAN'S RESULTS
-// Right now, this is the slowest one...
 /// Returns \f$ [X_{(1)},Y_{(2)}]_{(2)} - [Y_{(1)},X_{(2)}]_{(2)} \f$, where
 /// \f[
 /// [X_{(1)},Y_{(2)}]^{J}_{ijkl} = \sum_{a} ( X_{ia}Y^{J}_{ajkl} + X_{ja}Y^{J}_{iakl} - X_{ak} Y^{J}_{ijal} - X_{al} Y^{J}_{ijka} )
 /// \f]
+/// here, all TBME are unnormalized, i.e. they should have a tilde.
 void Operator::comm122ss( Operator& opright, Operator& opout ) 
 {
    auto& L1 = OneBody;
    auto& R1 = opright.OneBody;
 
+//   for (int ch=0; ch<nChannels; ++ch)
+   int n_nonzero = modelspace->SortedTwoBodyChannels.size();
    #pragma omp parallel for schedule(dynamic,1)
-   for (int ch=0; ch<nChannels; ++ch)
+   for (int ich=0; ich<n_nonzero; ++ich)
    {
+      int ch = modelspace->SortedTwoBodyChannels[ich];
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       auto& L2 = TwoBody.GetMatrix(ch,ch);
       auto& R2 = opright.TwoBody.GetMatrix(ch,ch);
@@ -1265,7 +1325,8 @@ void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )
    double t = omp_get_wtime();
    // Don't use omp, because the matrix multiplication is already
    // parallelized by armadillo.
-   for (int ch=0;ch<nChannels;++ch)
+//   for (int ch=0;ch<nChannels;++ch)
+   for (int ch : modelspace->SortedTwoBodyChannels)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
@@ -1344,9 +1405,12 @@ void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::ma
 {
     // Do the inverse Pandya transform
     // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
+//   for (int ch=0;ch<nChannels;++ch)
+   int n_nonzeroChannels = modelspace->SortedTwoBodyChannels.size();
    #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
-   for (int ch=0;ch<nChannels;++ch)
+   for (int ich = 0; ich < n_nonzeroChannels; ++ich)
    {
+      int ch = modelspace->SortedTwoBodyChannels[ich];
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       int J = tbc.J;
       int nKets = tbc.GetNumberKets();
@@ -1504,8 +1568,9 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
    vector<arma::mat> W_bar (nChannels );
    int hx = IsHermitian() ? 1 : -1;
    int hy = opright.IsHermitian() ? 1 : -1;
-   // probably better not to parallelize here, since the armadillo matrix muliplication can use OMP
-   for (int ch=0;ch<nChannels;++ch)
+   // definitely better not to multithread here, since the armadillo matrix muliplication can use the threads better than I can
+//   for (int ch=0;ch<nChannels;++ch)
+   for (int ch : modelspace->SortedTwoBodyChannels_CC)
    {
       W_bar[ch] =  hx*( X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch]) ;
       if (hx*hy<0)

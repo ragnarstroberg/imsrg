@@ -6,6 +6,11 @@
 
 using namespace std;
 
+Orbit::~Orbit()
+{
+//  cout << "In Orbit destructor" << endl;
+}
+
 Orbit::Orbit()
 {}
 
@@ -17,19 +22,15 @@ Orbit::Orbit(const Orbit& orb)
 : n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),ph(orb.ph),io(orb.io),index(orb.index)
 {}
 
-//void Orbit::Set(int nn, int ll, int jj2, int ttz2, int pph, int iio, int ind)
-//{
-//   n = nn;
-//   l = ll;
-//   j2 = jj2;
-//   tz2 = ttz2;
-//   ph = pph;
-//   io = iio;
-//   index = ind;
-//}
-
 
 //************************************************************************
+//************************************************************************
+//************************************************************************
+Ket::~Ket()
+{
+//  cout << "In Ket destructor" << endl;
+}
+
 Ket::Ket()
 {}
 
@@ -46,6 +47,13 @@ int Ket::Phase(int J)
 }
 
 //************************************************************************
+//************************************************************************
+//************************************************************************
+
+TwoBodyChannel::~TwoBodyChannel()
+{
+//  cout << "In TwoBodyChannel destructor" << endl;
+}
 
 TwoBodyChannel::TwoBodyChannel()
 {}
@@ -137,6 +145,13 @@ arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<index_t>& vec_in)
 }
 
 //************************************************************************
+//************************************************************************
+//************************************************************************
+
+TwoBodyChannel_CC::~TwoBodyChannel_CC()
+{
+//   cout << "In TwoBodyChannel_CC destructor" << endl;
+}
 
 TwoBodyChannel_CC::TwoBodyChannel_CC()
 {}
@@ -178,7 +193,7 @@ unordered_map<unsigned long long int,double> ModelSpace::MoshList;
 
 ModelSpace::~ModelSpace()
 {
-  cout << "In ModelSpace destructor" << endl;
+  cout << "In ModelSpace destructor. emax = " << Nmax << endl;
 }
 
 ModelSpace::ModelSpace()
@@ -198,7 +213,7 @@ ModelSpace::ModelSpace()
 
 ModelSpace::ModelSpace(const ModelSpace& ms)
 {
-   cout << "In copy constructor" << endl;
+   cout << "In ModelSpace copy constructor" << endl;
    norbits = ms.norbits;
    hbar_omega = ms.hbar_omega;
    target_mass = ms.target_mass;
@@ -236,7 +251,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    neutron_orbits( move(ms.neutron_orbits)), Orbits(move(ms.Orbits)), Kets(move(ms.Kets)),
    TwoBodyChannels(move(ms.TwoBodyChannels)), TwoBodyChannels_CC(move(ms.TwoBodyChannels_CC))
 {
-
+   cout << "In ModelSpace move constructor" << endl;
 //   for (Ket& k : Kets)   k.ms = this;
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
@@ -270,6 +285,7 @@ ModelSpace::ModelSpace(int nmax, string str)
 //ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside_list)
 void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_list)
 {
+   cout << "In Init" << endl;
    OneBodyJmax = 0;
    TwoBodyJmax = 0;
    ThreeBodyJmax = 0;
@@ -278,6 +294,17 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
    Nmax = nmax;
    N2max = 2*Nmax;
    N3max = 3*Nmax;
+//   Orbits.clear();
+   particles.clear();
+   holes.clear();
+   valence.clear();
+   qspace.clear();
+   particle_qspace.clear();
+   hole_qspace.clear();
+   proton_orbits.clear();
+   neutron_orbits.clear();
+   OneBodyChannels.clear();
+   cout << "particles.size() = " << particles.size() << endl;
 
    cout << "Creating a model space with Nmax = " << Nmax << "  and hole orbits [";
    for (string& h : hole_list)
@@ -297,6 +324,7 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
    cout << "Generating orbits, etc." << endl;
    norbits = (Nmax+1)*(Nmax+2);
    Orbits.resize(norbits);
+   cout << "Start loop over N" << endl;
    for (int N=0; N<=Nmax; ++N)
    {
      for (int l=N; l>=0; l-=2)
@@ -324,10 +352,9 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
                io=0;
                inside_list.erase(it_inside);
             }
-//            AddOrbit(Orbit(n,l,j2,tz,ph,io,spe));
-            cout << "Adding Orbit with index " << Index1(n,l,j2,tz) << endl;
-//            AddOrbit(Orbit(n,l,j2,tz,ph,io,Index1(n,l,j2,tz)));
+//            cout << "Adding orbit with " << n << " " << l << " " << j2 << " " << tz << " " << ph << " " << io << endl;
             AddOrbit(n,l,j2,tz,ph,io);
+//            cout << "Done adding orbit " << endl;
          }
        }
      }
@@ -441,10 +468,12 @@ void ModelSpace::Init_SDFPShell(int nmax)
 
 ModelSpace ModelSpace::operator=(const ModelSpace& ms)
 {
+   cout << "In copy assignment for ModelSpace" << endl;
    return ModelSpace(ms);
 }
 ModelSpace ModelSpace::operator=(ModelSpace&& ms)
 {
+   cout << "In move assingment for ModelSpace" << endl;
    return ModelSpace(ms);
 }
 
@@ -455,8 +484,11 @@ void ModelSpace::AddOrbit(Orbit orb)
 
 void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
 {
+//   cout << "In AddOrbit" << endl;
    index_t ind = Index1(n, l, j2, tz2);
+//   cout << "Assigning Orbits[" << ind << "]. Size of Orbits = " << Orbits.size() << endl;
    Orbits[ind] = Orbit(n,l,j2,tz2,ph,io,ind);
+//   cout << "Successfully assigned" << endl;
 
    if (j2 > OneBodyJmax)
    {
@@ -465,20 +497,34 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
       ThreeBodyJmax = OneBodyJmax*3-1;
       nTwoBodyChannels = 2*3*(TwoBodyJmax+1);
    }
-
+//   cout << "pushing back particles and holes" << endl;
+//   cout << "ind = " << ind
+//        << "  particles.size() = " << particles.size()
+//        << "  holes.size() = " << holes.size()
+//        << "  valence.size() = " << valence.size()
+//        << "  qspace.size() = " << qspace.size()
+//        << "  particle_qspace.size() = " << particle_qspace.size()
+//        << "  hole_qspace.size() = " << hole_qspace.size()
+//        << endl;
    if (ph == 0) particles.push_back(ind);
    if (ph == 1) holes.push_back(ind);
+//   cout << "Done with particle/hole" << endl;
    if (io == 0) valence.push_back(ind);
+//   cout << "Done with in/out" << endl;
    if (io == 1)
    {
      qspace.push_back(ind);
      if (ph == 0) particle_qspace.push_back(ind);
      if (ph == 1) hole_qspace.push_back(ind);
    }
+//   cout << "pushing back proton/neutron" << endl;
    if (tz2<0) proton_orbits.push_back(ind);
    if (tz2>0) neutron_orbits.push_back(ind);
 
+//   cout << "About to push back OneBodyChannels. size = " << OneBodyChannels.size() << endl;
+//   cout << "l = " << l << " j2 = " << j2 << " tz2 = " << tz2 << endl;
    OneBodyChannels[{l, j2, tz2}].push_back(ind);
+//   cout << "Done with OneBodyChannels" << endl;
 
 
 }
@@ -551,11 +597,21 @@ void ModelSpace::SetupKets()
    }
 
    cout << "Set up TwoBodyChannels" << endl;
+   SortedTwoBodyChannels.resize(nTwoBodyChannels);
+   SortedTwoBodyChannels_CC.resize(nTwoBodyChannels);
    for (int ch=0;ch<nTwoBodyChannels;++ch)
    {
       TwoBodyChannels.push_back(TwoBodyChannel(ch,this));
       TwoBodyChannels_CC.push_back(TwoBodyChannel_CC(ch,this));
+      SortedTwoBodyChannels[ch] = ch;
+      SortedTwoBodyChannels_CC[ch] = ch;
    }
+   // Sort the two body channels in descending order of matrix dimension and discard the size-0 ones.
+   // Hopefully this can help with load balancing.
+   sort(SortedTwoBodyChannels.begin(),SortedTwoBodyChannels.end(),[this](int i, int j){ return TwoBodyChannels[i].GetNumberKets() > TwoBodyChannels[j].GetNumberKets(); }  );
+   sort(SortedTwoBodyChannels_CC.begin(),SortedTwoBodyChannels_CC.end(),[this](int i, int j){ return TwoBodyChannels_CC[i].GetNumberKets() > TwoBodyChannels_CC[j].GetNumberKets(); }  );
+   while (  TwoBodyChannels[ SortedTwoBodyChannels.back() ].GetNumberKets() <1 ) SortedTwoBodyChannels.pop_back();
+   while (  TwoBodyChannels_CC[ SortedTwoBodyChannels_CC.back() ].GetNumberKets() <1 ) SortedTwoBodyChannels_CC.pop_back();
 }
 
 
@@ -580,6 +636,7 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 
 void ModelSpace::PreCalculateMoshinsky()
 {
+//  if ( not MoshList.empty() ) return; // Already done calculated it...
   #pragma omp parallel for schedule(dynamic,1)
   for (int N=0; N<=N2max/2; ++N)
   {
@@ -615,21 +672,7 @@ void ModelSpace::PreCalculateMoshinsky()
                                        + ((unsigned long long int) l2  << 6 )
                                        +  L;
 
-
-//          unsigned long long int key =  1000000000000 * N
-//                                       + 100000000000 * Lam
-//                                       +   1000000000 * n
-//                                       +    100000000 * lam
-//                                       +      1000000 * n1
-//                                       +       100000 * l1
-//                                       +         1000 * n2
-//                                       +          100 * l2
-//                                       +                 L;
-
-//          if (N==3 and n==3 and Lam==0 and lam==0)
-//          cout << N << " " << Lam << " " << n << " " << lam << " " << n1 << " " << l1 << " " << n2 << " " << l2 << " " << L << endl;
           double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
-//          MoshList[key] = mosh;
           local_MoshList[key] = mosh;
          }
         }

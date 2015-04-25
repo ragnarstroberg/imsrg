@@ -39,6 +39,7 @@ class TwoBodyME
   int rank_T;
   int parity;
 
+  ~TwoBodyME();
   TwoBodyME();
   TwoBodyME(ModelSpace*);
   TwoBodyME(ModelSpace* ms, int rankJ, int rankT, int parity);

@@ -108,6 +108,8 @@ namespace imsrg_util
    int A = modelspace.GetTargetMass();
    Operator TcmOp = Operator(modelspace);
    TcmOp.SetHermitian();
+   cout << "In TCM_op. Norb = " << modelspace.GetNumberOrbits() << endl;
+   cout << "    Norb = " << TcmOp.GetModelSpace()->GetNumberOrbits() << endl;
 
    // One body piece = p**2/(2mA) = (N+3/2)hw/A
    int norb = modelspace.GetNumberOrbits();
@@ -280,6 +282,10 @@ namespace imsrg_util
 
 
 // Center of mass kinetic energy, with the hw/A factor
+/// Returns
+/// \f[ frac{1}{A^2} \left( \sum_{i}r_{i}^{2} + 2\sum_{i<j}\vec{r}_i\cdot\vec{r}_j 
+/// \f]
+/// evaluated in the oscillator basis.
  Operator R2CM_Op(ModelSpace& modelspace)
  {
    Operator R2cmOp = Operator(modelspace);
@@ -301,6 +307,7 @@ namespace imsrg_util
    }
 
    int nchan = modelspace.GetNumberTwoBodyChannels();
+   modelspace.PreCalculateMoshinsky();
    #pragma omp parallel for schedule(dynamic,1) 
    for (int ch=0; ch<nchan; ++ch)
    {
@@ -535,6 +542,9 @@ namespace imsrg_util
    return HcmOp *hw / ( 2*A );
  }
 
+/// Returns
+/// \f[ r^2 = \sum_{i} r_{i}^2 \f]
+///
 Operator RSquaredOp(ModelSpace& modelspace)
 {
    Operator r2 = Operator(modelspace);
@@ -564,6 +574,9 @@ Operator RSquaredOp(ModelSpace& modelspace)
 }
 
 // Electric monopole operator
+/// Returns
+/// \f[ r_{e}^2 = \sum_{i} e_{i} r_{i}^2 \f]
+///
 Operator E0Op(ModelSpace& modelspace)
 {
    Operator e0 = Operator(modelspace);

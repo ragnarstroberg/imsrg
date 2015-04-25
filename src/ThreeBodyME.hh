@@ -22,6 +22,7 @@ class ThreeBodyME
 
   int E3max;
   
+  ~ThreeBodyME();
   ThreeBodyME();
   ThreeBodyME(ModelSpace*);
   ThreeBodyME(ModelSpace* ms, int e3max);

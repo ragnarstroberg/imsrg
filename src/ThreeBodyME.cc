@@ -1,9 +1,15 @@
 #include "ThreeBodyME.hh"
 #include "AngMom.hh"
 
+
+ThreeBodyME::~ThreeBodyME()
+{}
+
 ThreeBodyME::ThreeBodyME()
 : modelspace(NULL)
-{}
+{
+ MatEl.resize(0);
+}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
 : modelspace(ms)

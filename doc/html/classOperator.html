@@ -120,6 +120,9 @@ Public Member Functions</h2></td></tr>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ae229a22ab49ca258f69c1c2c267b2aeb">Operator</a> (const <a class="el" href="classOperator.html">Operator</a> &amp;rhs)</td></tr>
 <tr class="memdesc:ae229a22ab49ca258f69c1c2c267b2aeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy constructor. <br/></td></tr>
 <tr class="separator:ae229a22ab49ca258f69c1c2c267b2aeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a293af74eada6fea4cd110b15d4fe1090"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a293af74eada6fea4cd110b15d4fe1090"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (<a class="el" href="classOperator.html">Operator</a> &amp;&amp;)</td></tr>
+<tr class="separator:a293af74eada6fea4cd110b15d4fe1090"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afad114ba9dee8b9c08af0b5d27c3ba86"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afad114ba9dee8b9c08af0b5d27c3ba86"></a>
 <a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operator=</b> (const <a class="el" href="classOperator.html">Operator</a> &amp;rhs)</td></tr>
 <tr class="separator:afad114ba9dee8b9c08af0b5d27c3ba86"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -150,6 +153,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a60c6e3fa8da186a1183e540e6ff04421"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a60c6e3fa8da186a1183e540e6ff04421"></a>
 <a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>operator/</b> (const double rhs) const </td></tr>
 <tr class="separator:a60c6e3fa8da186a1183e540e6ff04421"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1d24f45c7e10139e41084c8dc7f34ec"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab1d24f45c7e10139e41084c8dc7f34ec"></a>
+<a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operator=</b> (<a class="el" href="classOperator.html">Operator</a> &amp;&amp;rhs)</td></tr>
+<tr class="separator:ab1d24f45c7e10139e41084c8dc7f34ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a851708e76dd24603d0527f6c5c1bd544"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a851708e76dd24603d0527f6c5c1bd544"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Copy</b> (const <a class="el" href="classOperator.html">Operator</a> &amp;rhs)</td></tr>
 <tr class="separator:a851708e76dd24603d0527f6c5c1bd544"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -165,9 +171,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetE3max</b> (int e)<
 <tr class="memitem:a42d67df774701e40e2c49e539a68c937"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a42d67df774701e40e2c49e539a68c937"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>GetE3max</b> ()</td></tr>
 <tr class="separator:a42d67df774701e40e2c49e539a68c937"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a037a75a9f8a0dc970e56240552cc96d2"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a037a75a9f8a0dc970e56240552cc96d2"></a>
-<a class="el" href="classModelSpace.html">ModelSpace</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>GetModelSpace</b> () const </td></tr>
-<tr class="separator:a037a75a9f8a0dc970e56240552cc96d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeacbeb2efba4199ad20291b50f03f4f6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aeacbeb2efba4199ad20291b50f03f4f6"></a>
+<a class="el" href="classModelSpace.html">ModelSpace</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>GetModelSpace</b> ()</td></tr>
+<tr class="separator:aeacbeb2efba4199ad20291b50f03f4f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8a0f7d6aa5163929850d06b31dc24a55"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8a0f7d6aa5163929850d06b31dc24a55"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a8a0f7d6aa5163929850d06b31dc24a55">Erase</a> ()</td></tr>
 <tr class="memdesc:a8a0f7d6aa5163929850d06b31dc24a55"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set all matrix elements to zero. <br/></td></tr>
@@ -613,7 +619,7 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
 </p>
 <p> may be rewritten as </p>
 <p class="formulaDsp">
-\[ [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{ab} (\mathcal{P}_{hh} X_{(2)}^{J} \mathcal{P}_{pp} Y_{(2)}^{J})_{abab} \]
+\[ [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) Tr(\mathcal{P}_{hh} X_{(2)}^{J} \mathcal{P}_{pp} Y_{(2)}^{J} \mathcal{P}_{hh}) \]
 </p>
 <p> where \( \mathcal{P}_{hh} \) is a projector onto hole-hole two body states. </p>
 
@@ -882,7 +888,7 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 15 2015 11:27:43 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 22 2015 08:31:40 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -31,6 +31,7 @@ struct Orbit
    int index;
 
    //Constructors
+   ~Orbit();
    Orbit();
    Orbit(int n ,int l, int j, int t, int ph, int io, int index);
    Orbit(const Orbit&);
@@ -43,19 +44,21 @@ struct Orbit
 
 class Ket  //  | pq >
 {
+
  public:
-   // Fields
-   int p;
-   int q;
-   Orbit* op;
-   Orbit* oq;
    // Constructors
+   ~Ket();
    Ket();
    Ket(Orbit& op, Orbit& oq);
    // Methods
    int Phase(int J);
    int delta_pq(){return dpq;};
 
+   // Fields
+   int p;
+   int q;
+   Orbit* op;
+   Orbit* oq;
  private:
    // Fields
    int dpq;
@@ -75,6 +78,7 @@ class TwoBodyChannel
    int Tz;
 
    // Constructors
+   ~TwoBodyChannel();
    TwoBodyChannel();
    TwoBodyChannel(int j, int p, int t, ModelSpace* ms);
    TwoBodyChannel(int N, ModelSpace* ms);
@@ -129,6 +133,7 @@ class TwoBodyChannel
 class TwoBodyChannel_CC : public TwoBodyChannel
 {
   public:
+   ~TwoBodyChannel_CC();
    TwoBodyChannel_CC();
    TwoBodyChannel_CC(int j, int p, int t, ModelSpace* ms);
    TwoBodyChannel_CC(int N, ModelSpace* ms);
@@ -243,8 +248,10 @@ class ModelSpace
    int OneBodyJmax;
    int TwoBodyJmax;
    int ThreeBodyJmax;
-//   map<array<int,3>,vector<unsigned int> > OneBodyChannels;
    map<array<int,3>,vector<index_t> > OneBodyChannels;
+
+   vector<int> SortedTwoBodyChannels;
+   vector<int> SortedTwoBodyChannels_CC;
 
 
 

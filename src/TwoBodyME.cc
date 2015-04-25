@@ -4,6 +4,10 @@
   #define SQRT2 1.4142135623730950488
 #endif
 
+// destructor defined for debugging purposes
+TwoBodyME::~TwoBodyME()
+{}
+
 TwoBodyME::TwoBodyME()
 : hermitian(true),antihermitian(false),modelspace(NULL)
 {}

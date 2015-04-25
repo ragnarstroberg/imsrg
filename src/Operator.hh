@@ -50,10 +50,14 @@ class Operator
 
   //Constructors
   // In the future, consider using C++11 rvalues / move constructor to avoid copies in certain cases
+  ~Operator();
   Operator(); ///< Default constructor
   Operator(ModelSpace&); ///< Construct a 2-body scalar operator
+//  Operator(ModelSpace*); ///< Construct a 2-body scalar operator
   Operator(ModelSpace&, int Jrank, int Trank, int Parity, int part_rank);
   Operator( const Operator& rhs); ///< Copy constructor
+  Operator( Operator&&);
+//  Operator( Operator&&) = default;
 
   //Overloaded operators
   Operator& operator=( const Operator& rhs);
@@ -67,6 +71,9 @@ class Operator
   Operator& operator/=( const double rhs);
   Operator operator/( const double rhs) const;
 
+  Operator& operator=(Operator&& rhs);
+//  Operator& operator=(Operator&& rhs) = default;
+
   //Methods
   void Copy(const Operator& rhs);
 
@@ -78,7 +85,8 @@ class Operator
   int GetE3max(){return E3max;};
 
   // Other setter-getters
-  ModelSpace * GetModelSpace() const {return modelspace;};
+//  ModelSpace * GetModelSpace() const {return modelspace;};
+  ModelSpace * GetModelSpace();
 
   void Erase(); ///< Set all matrix elements to zero.
   void EraseZeroBody(){ZeroBody = 0;}; // set zero-body term to zero

@@ -457,7 +457,7 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
       int npq = tbc.GetNumberKets();
       if (npq<1) continue;
 
-      arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+      arma::mat D = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
 
       // loop over all possible original basis configurations <pq| in this J,p,Tz channel.
       // and all possible HF configurations |p'q'> in this J,p,Tz channel                                    
@@ -558,10 +558,14 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
    }
+   // clear up some memory
+   Vmon3.resize(0);
    
    return HNO;
 
 }
+
+
 
 
 
