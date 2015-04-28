@@ -182,7 +182,6 @@ void HartreeFock::BuildMonopoleV3()
 {
   // First, allocate. This is fast so don't parallelize.
   int norbits = modelspace->GetNumberOrbits();
-//  vector< pair<const array<int,6>,double>*> entries;
   for (int i=0; i<norbits; ++i)
   {
     Orbit& oi = modelspace->GetOrbit(i);
@@ -322,7 +321,7 @@ void HartreeFock::UpdateF()
 
    if (Hbare.GetParticleRank()>=3) 
    {
-      # pragma omp parallel for num_threads(2)  // Note that this is risky and not fully thread safe.
+//      # pragma omp parallel for num_threads(2)  // Note that this is risky and not fully thread safe.
       for (int ind=0;ind<Vmon3.size(); ++ind)
       {
         const array<int,6>& orb = Vmon3[ind].first;

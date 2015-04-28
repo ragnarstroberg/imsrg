@@ -675,7 +675,7 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
 //*****************************************************************************************
 /// X.BCH_Transform(Y) returns \f$ Z = e^{Y} X e^{-Y} \f$.
 /// We use the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
-/// \f[ Z = X + [X,Y] + \frac{1}{2!}[X,[X,Y]] + \frac{1}{3!}[X,[X,[X,Y]]] + \ldots \f]
+/// \f[ Z = X + [Y,X] + \frac{1}{2!}[Y,[Y,X]] + \frac{1}{3!}[Y,[Y,[Y,X]]] + \ldots \f]
 /// with all commutators truncated at the two-body level.
 Operator Operator::BCH_Transform(  Operator &Omega)
 {
@@ -687,6 +687,7 @@ Operator Operator::BCH_Transform(  Operator &Omega)
    double ny = Omega.Norm();
    Operator OpOut = *this;
    Operator OpNested = *this;
+   double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
    for (int i=1; i<max_iter; ++i)
    {
 //      cout << "Assigning to commutator" << endl;
@@ -697,7 +698,8 @@ Operator Operator::BCH_Transform(  Operator &Omega)
 //      cout << "Adding to OpOut" << endl;
       OpOut += OpNested;
 
-      if (OpNested.Norm() < (nx+ny)*bch_transform_threshold)
+//      if (OpNested.Norm() < (nx+ny)*bch_transform_threshold)
+      if (OpNested.Norm() < epsilon *(i+1))
       {
         timer["BCH_Transform"] += omp_get_wtime() - t;
         return OpOut;

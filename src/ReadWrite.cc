@@ -1125,6 +1125,14 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
 {
    ifstream opfile;
    opfile.open(filename);
+   if (not opfile.good() )
+   {
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+   }
    ModelSpace * modelspace = op.GetModelSpace();
    // Should put in some check for if the file exists
 
