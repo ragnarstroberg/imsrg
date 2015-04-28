@@ -176,7 +176,7 @@ void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, Ket& bra, Ket& ket, double tbm
    AddToTBME(ch_bra, ch_ket, bra.p,bra.q,ket.p,ket.q, tbme);
 }
 
-double TwoBodyME::GetTBME(int ch_bra, int ch_ket, int ibra, int iket) const
+double TwoBodyME::GetTBME_norm(int ch_bra, int ch_ket, int ibra, int iket) const
 {
    return GetMatrix(ch_bra,ch_ket)(ibra,iket);
 }
@@ -306,9 +306,9 @@ void TwoBodyME::AddToTBME(int ch, Ket& bra, Ket& ket, double tbme)
 }
 
 
-double TwoBodyME::GetTBME(int ch, int ibra, int iket) const
+double TwoBodyME::GetTBME_norm(int ch, int ibra, int iket) const
 {
-   return GetTBME(ch,ch,ibra,iket);
+   return GetTBME_norm(ch,ch,ibra,iket);
 }
 
 void TwoBodyME::SetTBME(int ch, int ibra, int iket, double tbme)

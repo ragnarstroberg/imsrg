@@ -5,7 +5,9 @@ CC = g++
 INCLUDE = -I./armadillo
 #LIBS = -lblas -llapack -lgsl
 LIBS = -lopenblas -llapack -lgsl
-FLAGS =  -O3 -std=c++11  -fPIC -fopenmp # -DNO_ODE=1
+#FLAGS =  -O3 -std=c++11  -fPIC -fopenmp # -DNO_ODE=1
+#FLAGS =  -std=c++11 -fopenmp -fPIC -g # -DNO_ODE=1
+FLAGS =  -O2 -march=native -std=c++11 -fopenmp -fPIC #-g # -DNO_ODE=1
 #FLAGS = -larmadillo -O3 -std=c++11 -lgsl -fPIC # -v -da -Q
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 

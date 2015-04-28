@@ -24,6 +24,109 @@ void ThreeBodyME::Allocate()
   int norbits = modelspace->GetNumberOrbits();
   int nvectors = 0;
   int total_dimension = 0;
+  int lmax = 500*norbits; // maybe do something with this later...
+
+  for (int a=0; a<norbits; a+=2)
+  {
+   Orbit& oa = modelspace->GetOrbit(a);
+   int ea = 2*oa.n+oa.l;
+   if (ea>E3max) break;
+   vector<vector<vector<vector<vector<vector<ThreeBME_type>>>>>> vecb;
+   for (int b=0; b<=a; b+=2)
+   {
+     if (oa.l > lmax) break;
+     Orbit& ob = modelspace->GetOrbit(b);
+     int eb = 2*ob.n+ob.l;
+     if ((ea+eb)>E3max) break;
+
+     int Jab_min = abs(oa.j2-ob.j2)/2;
+     int Jab_max = (oa.j2+ob.j2)/2;
+     vector<vector<vector<vector<vector<ThreeBME_type>>>>> vecc;
+     for (int c=0; c<=b; c+=2)
+     {
+       if (ob.l > lmax) break;
+       Orbit& oc = modelspace->GetOrbit(c);
+       int ec = 2*oc.n+oc.l;
+       if ((ea+eb+ec)>E3max) break;
+       vector<vector<vector<vector<ThreeBME_type>>>> vecd;
+       for (int d=0; d<=a; d+=2)
+       {
+         if (oc.l > lmax) break;
+         Orbit& od = modelspace->GetOrbit(d);
+         int ed = 2*od.n+od.l;
+//         if (ed>E3max) break;
+         vector<vector<vector<ThreeBME_type>>> vece;
+         for (int e=0; e<= (d==a ? b : d); e+=2)
+         {
+           if (od.l > lmax) break;
+           Orbit& oe = modelspace->GetOrbit(e);
+           int ee = 2*oe.n+oe.l;
+//           if ((ed+ee)>E3max) break;
+           vector<vector<ThreeBME_type>> vecf;
+           for (int f=0; f<=((d==a and e==b) ? c : e); f+=2)
+           {
+             if (oe.l > lmax) break;
+             Orbit& of = modelspace->GetOrbit(f);
+             int ef = 2*of.n+of.l;
+             if ((ed+ee+ef)>E3max) break;
+             if ((oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 or of.l > lmax) 
+             {
+               vecf.push_back( vector<ThreeBME_type>(0,0.0) );
+               continue;
+             }
+             int Jde_min = abs(od.j2-oe.j2)/2;
+             int Jde_max = (od.j2+oe.j2)/2;
+
+             int dim = 0;
+             for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
+             {
+              for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
+              {
+                int J2_min = max( abs(2*Jab-oc.j2), abs(2*Jde-of.j2));
+                int J2_max = min( 2*Jab+oc.j2, 2*Jde+of.j2);
+                for (int J2=J2_min; J2<=J2_max; J2+=2)
+                {
+                  dim += 5; // 5 different isospin combinations
+                } //J2
+              } //Jde
+             } //Jab
+             vecf.push_back( vector<ThreeBME_type>(dim,0.0) );
+             ++nvectors;
+             total_dimension += dim;
+//              if (dim >0)
+//              cout << "--- " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "  :  " << dim << endl;
+
+           } //f
+           vece.push_back( vecf );
+           ++nvectors;
+         } //e
+         vecd.push_back( vece );
+         ++nvectors;
+       } //d
+       vecc.push_back( vecd );
+       ++nvectors;
+     } //c
+     vecb.push_back( vecc );
+     ++nvectors;
+   } //b
+   MatEl.push_back( vecb );
+   ++nvectors;
+  } //a
+  cout << "Allocated " << total_dimension << " three body matrix elements (" <<  total_dimension * sizeof(ThreeBME_type)/1024./1024./1024. << " GB), "
+       << nvectors << " vectors (" << nvectors * 3/1024./1024./1024. <<" GB)." << endl;
+  cout << "Size MatEl =" << MatEl.size() << endl;
+
+}
+
+
+/*
+void ThreeBodyME::Allocate()
+{
+  E3max = modelspace->GetN3max();
+  cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
+  int norbits = modelspace->GetNumberOrbits();
+  int nvectors = 0;
+  int total_dimension = 0;
 
   // Allocate pointers to a
   int dim = 0;
@@ -158,8 +261,10 @@ void ThreeBodyME::Allocate()
   cout << "Allocated " << total_dimension << " three body matrix elements (" <<  total_dimension * sizeof(ThreeBME_type)/1024./1024./1024. << " GB), "
        << nvectors << " vectors (" << nvectors * 24./1024./1024./1024. <<" GB)." << endl;
 
-
 }
+*/
+
+
 
 
 /*
@@ -290,7 +395,6 @@ ThreeBME_type ThreeBodyME::GetME(int Jab_in, int Jde_in, int J2, int tab_in, int
 //*******************************************************************
 void ThreeBodyME::SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, ThreeBME_type V)
 {
-//   cout << "===== SET =====" << endl;
    AddToME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,V);
 }
 
@@ -305,22 +409,6 @@ void ThreeBodyME::SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, 
 
 ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, ThreeBME_type V_in)
 {
-
-//   int A=4;
-//   int B=2;
-//   int C=0;
-//   int D=0;
-//   int E=0;
-//   int F=0;
-//   cout << "  BEGIN Sizes: " << endl;
-//   cout << "     "  << MatEl.size() << endl; 
-//   cout << "     "  << MatEl[A/2].size() << endl; 
-//   cout << "     "  << MatEl[A/2][B/2].size() << endl; 
-//   cout << "     "  << MatEl[A/2][B/2][C/2].size() << endl; 
-//   cout << "     "  << MatEl[A/2][B/2][C/2][D/2].size() << endl; 
-//   cout << "     "  << MatEl[A/2][B/2][C/2][D/2][E/2].size() << endl; 
-//   cout << "     "  << MatEl[A/2][B/2][C/2][D/2][E/2][F/2].size() << endl;
-
 
    // Re-order so that a>=b>=c, d>=e>=f
    int a,b,c,d,e,f;
@@ -346,8 +434,6 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
    if (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l > E3max) return 0;
    if (2*(od.n+oe.n+of.n)+od.l+oe.l+of.l > E3max) return 0;
 
-
-
    double ja = oa.j2*0.5;
    double jb = ob.j2*0.5;
    double jc = oc.j2*0.5;
@@ -355,16 +441,10 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
    double je = oe.j2*0.5;
    double jf = of.j2*0.5;
 
-
-             int Jab_min = abs(ja-jb);
-             int Jde_min = abs(jd-je);
-             int Jab_max = (ja+jb);
-             int Jde_max = (jd+je);
-
-//   int Jab_min = max( abs(ja-jb), abs(J2*0.5-jc) );
-//   int Jab_max = min( ja+jb, J2*0.5+jc );
-//   int Jde_min = max( abs(jd-je), abs(J2*0.5-jf) );
-//   int Jde_max = min( jd+je, J2*0.5+jf );
+   int Jab_min = abs(ja-jb);
+   int Jde_min = abs(jd-je);
+   int Jab_max = (ja+jb);
+   int Jde_max = (jd+je);
 
    int tab_min = T2==3 ? 1 : 0;
    int tab_max = 1;
@@ -375,16 +455,29 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
 //   cout << "After swapping, " << a << " " << b << " " << c << " " << d << " " << e << " " << f << endl;
 //
 //   cout << "    setting vj" << endl;
-//   cout << "  Sizes: " << endl;
-//   cout << "     "  << MatEl.size() << endl; 
-//   cout << "     "  << MatEl[a/2].size() << endl; 
-//   cout << "     "  << MatEl[a/2][b/2].size() << endl; 
-//   cout << "     "  << MatEl[a/2][b/2][c/2].size() << endl; 
-//   cout << "     "  << MatEl[a/2][b/2][c/2][d/2].size() << endl; 
-//   cout << "     "  << MatEl[a/2][b/2][c/2][d/2][e/2].size() << endl; 
-//   cout << "     "  << MatEl[a/2][b/2][c/2][d/2][e/2][f/2].size() << endl; 
+ if (false and a==12)
+ {
+   cout << "  Sizes: " << endl;
+   cout << "     "  << MatEl.size() << endl; 
+   cout << "     "  << MatEl[a/2].size() << endl; 
+   cout << "     "  << MatEl[a/2][b/2].size() << endl; 
+   cout << "     "  << MatEl[a/2][b/2][c/2].size() << endl; 
+   cout << "     "  << MatEl[a/2][b/2][c/2][d/2].size() << endl; 
+   cout << "     "  << MatEl[a/2][b/2][c/2][d/2][e/2].size() << endl; 
+   cout << "     "  << MatEl[a/2][b/2][c/2][d/2][e/2][f/2].size() << endl; 
+ }
+                  if (false and a==12 and b==0 and c==0 and d==4 and e==4 and f==2)
+                  {
+                    cout << "   Jab_min " << Jab_min
+                         << "   Jab_max " << Jab_max
+                         << "   Jde_min " << Jde_min
+                         << "   Jde_max " << Jde_max
+                         << endl;
+                  }
+//   cout << "    accessing " << a << " " << b << " " << c << " " << d << " " << e << " " << f << endl;
    auto& vj = MatEl.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).at(f/2);
-//   cout << "    done. size = " << vj.size() << endl;
+//   cout << "    accessing " << a << " " << b << " " << c << " " << d << " " << e << " " << f << " size = " << vj.size() << endl;
+//   cout << " size = " << vj.size() << endl;
    double V_out = 0;
    int J_index = 0;
    for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
@@ -398,13 +491,6 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
        if (J2_min>J2_max) continue;
        J_index += (J2-J2_min)/2*5;
 
-//       if (abs(Cj_abc*Cj_def) < 1e-6) continue;
-//       if ( abs(V_in)<1e-6 )
-//       {
-//         cout << "Jab_in = " << Jab_in << "  Jab = " << Jab << "  "
-//              << "Jde_in = " << Jde_in << "  Jde = " << Jde << "  "
-//              << "Jab_min = " << Jab_min << "  Jde_min = "<< Jde_min << "  J2 = " << J2 << endl;
-//       }
        if (J2>=J2_min and J2<=J2_max)
        {
        for (int tab=tab_min; tab<=tab_max; ++tab)
@@ -416,37 +502,8 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
 
            int Tindex = 2*tab + tde + (T2-1)/2;
 
-//           vj[Tindex] += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
-//           V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * vj[Tindex];
-//           if (a==28 and b==4 and c==0 and d==26 and e==4 and f==0 )
-//            if (abs(V_in)<1e-6)
-//            {
-//            cout << "ja = " << oa.j2 << "/2  jb = " << ob.j2 << "/2  Jab = " << Jab << " jc = " << oc.j2
-//                 << "/2  jd = " << od.j2 << "/2  je = " << oe.j2 << "/2    Jde = " << Jde << " jf = " << of.j2
-//                 << "/2  J2 = " << J2 << "/2  J_index = " << J_index << "  Tindex = " << Tindex << endl;
-//           }
-//           vj[J_index + Tindex] += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
-//           V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * vj[J_index+Tindex];
            vj.at(J_index + Tindex) += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
            V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * vj.at(J_index+Tindex);
-//           if ( abs(V_in)>1e-6 )
-//           if ( abs(V_in)<1e-6 )
-//           {
-//             cout << "<<<<< Setting J_index = " << J_index << ", Tindex = " << Tindex << "  vj = " << vj[J_index + Tindex] << endl;
-//           }
-//           if ( abs(V_in)<1e-6 and abs(vj[J_index+Tindex])>1e-6)
-//           if ( abs(V_in)<1e-6 )
-//           {
-//              cout << "  tab = " << tab << "  tde = " << tde << "  case_abc " << abc_recoupling_case << "  case_def " << def_recoupling_case 
-//                   << "   Cj: " << Cj_abc << " " << Cj_def << "   Ct: " << Ct_abc << " " << Ct_def << " vj = " << vj[J_index+Tindex] << "  V_out = " << V_out << endl;
-//           }
-//           if (abs(V_in)<1e-6)
-//           {
-//           cout << "J_index = " << J_index << "  Tindex = " << Tindex << "   vj = " << vj[J_index + Tindex] << "   V_out = " << V_out
-//                << "   Cjs: " << Cj_abc << " " << Cj_def << "   Cts: " << Ct_abc << " " << Ct_def
-//                << "  element = " << MatEl[a/2][b/2][c/2][d/2][e/2][f/2][J_index + Tindex]
-//                << endl;
-//           }
 
          }
        }
@@ -454,8 +511,6 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
        J_index += (J2_max-J2+2)/2*5;
      }
    }
-//   if (abs(V_in)<1e-6)
-//   cout << "Returning V_out = " << V_out << endl;
    return V_out;
 }
 

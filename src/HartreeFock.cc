@@ -56,6 +56,9 @@ void HartreeFock::Solve()
    }
    CalcEHF();
 
+   cout << "rho" << endl;
+   rho.cols(holeorbs).print();
+
    if (iterations==maxiter)
       cerr << "Warning: Hartree-Fock calculation didn't converge after " << maxiter << " iterations." << endl;
    else
@@ -80,6 +83,8 @@ void HartreeFock::CalcEHF()
 {
    EHF = 0;
    double e3hf = 0;
+   double e2hf = 0;
+   double ekin = 0;
    int norbits = modelspace->GetNumberOrbits();
    for (int i=0;i<norbits;i++)
    {
@@ -87,10 +92,15 @@ void HartreeFock::CalcEHF()
       int jfactor = oi.j2 +1;
       for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}))
       {
-         EHF +=  rho(i,j) * jfactor * (t(i,j)+0.5*Vij(i,j)+1./6*V3ij(i,j));
+         ekin += rho(i,j) * jfactor * t(i,j);
+         e2hf += rho(i,j) * jfactor * 0.5 *Vij(i,j);
          e3hf +=  rho(i,j) * jfactor * (1./6*V3ij(i,j));
+//         EHF +=  rho(i,j) * jfactor * (t(i,j)+0.5*Vij(i,j)+1./6*V3ij(i,j));
       }
    }
+   EHF = ekin + e2hf + e3hf;
+   cout << "ekin = " << ekin << endl;
+   cout << "e2hf = " << e2hf << endl;
    cout << "e3hf = " << e3hf << endl;
 }
 
@@ -182,7 +192,7 @@ void HartreeFock::BuildMonopoleV3()
 {
   // First, allocate. This is fast so don't parallelize.
   int norbits = modelspace->GetNumberOrbits();
-//  vector< pair<const array<int,6>,double>*> entries;
+
   for (int i=0; i<norbits; ++i)
   {
     Orbit& oi = modelspace->GetOrbit(i);
@@ -193,6 +203,7 @@ void HartreeFock::BuildMonopoleV3()
       Orbit& oj = modelspace->GetOrbit(j);
       int ej = 2*oj.n + oj.l;
 
+
       for (int a=0; a<norbits; ++a)
       {
         Orbit& oa = modelspace->GetOrbit(a);
@@ -201,6 +212,7 @@ void HartreeFock::BuildMonopoleV3()
         {
           Orbit& ob = modelspace->GetOrbit(b);
           int eb = 2*ob.n + ob.l;
+
      
             for (int c=0; c<norbits; ++c)
             {
@@ -322,7 +334,7 @@ void HartreeFock::UpdateF()
 
    if (Hbare.GetParticleRank()>=3) 
    {
-      # pragma omp parallel for num_threads(2)  // Note that this is risky and not fully thread safe.
+//      # pragma omp parallel for num_threads(2)  // Note that this is risky and not fully thread safe.
       for (int ind=0;ind<Vmon3.size(); ++ind)
       {
         const array<int,6>& orb = Vmon3[ind].first;
@@ -341,7 +353,9 @@ void HartreeFock::UpdateF()
 
    Vij = arma::symmatu(Vij);
    V3ij = arma::symmatu(V3ij);
-   F = t + Vij + 0.5*V3ij;
+//   F = t + Vij + 0.5*V3ij;
+   F = t + Vij + V3ij/SQRT2  + (0.5-1./SQRT2)*arma::diagmat(V3ij);
+//   F = t + Vij + V3ij  + (0.5-1)*arma::diagmat(V3ij);
 }
 
 
