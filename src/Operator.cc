@@ -23,26 +23,35 @@ map<string, double> Operator::timer;
 
 Operator::~Operator()
 {
-   cout << "calling Operator destructor" << endl;
+//   cout << "calling Operator destructor" << endl;
 }
 
 /////////////////// CONSTRUCTORS /////////////////////////////////////////
-Operator::Operator() :
-   modelspace(NULL), nChannels(0), hermitian(true), antihermitian(false),
-    rank_J(0), rank_T(0), parity(0), particle_rank(2)
+Operator::Operator()
+ :   modelspace(NULL), 
+    rank_J(0), rank_T(0), parity(0), particle_rank(2),
+    hermitian(true), antihermitian(false), nChannels(0)
 {
 //  cout << "Calling default Operator constructor" << endl;
+// nChannels = 0;
+// hermitian = true;
+// antihermitian = false;
+// rank_J = 0;
+// rank_T = 0;
+// parity = 0;
+// particle_rank = 2;
+// modelspace = NULL;
 }
 
 
 // Create a zero-valued operator in a given model space
 Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) : 
-    hermitian(true), antihermitian(false), modelspace(&ms), ZeroBody(0) ,
-    nChannels(ms.GetNumberTwoBodyChannels()) ,
-    OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
-    TwoBody(&ms,Jrank,Trank,p),
-    ThreeBody(&ms, ms.GetN3max()),E3max(ms.GetN3max()),
-    rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank)
+    modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
+    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms),
+    rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank),
+    E3max(ms.GetN3max()),
+    hermitian(true), antihermitian(false),  
+    nChannels(ms.GetNumberTwoBodyChannels()) 
 {
   TwoBody.Allocate();
   if (particle_rank >=3) ThreeBody.Allocate();
@@ -51,34 +60,36 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 
 
 Operator::Operator(ModelSpace& ms) :
-    hermitian(true), antihermitian(false), modelspace(&ms), ZeroBody(0) ,
-    nChannels(ms.GetNumberTwoBodyChannels()) ,
+    modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
+    TwoBody(&ms),  ThreeBody(&ms),
     rank_J(0), rank_T(0), parity(0), particle_rank(2),
-    OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
-    TwoBody(&ms,0,0,0),
-    ThreeBody(&ms,ms.GetN3max()), E3max(ms.GetN3max())
+    E3max(ms.GetN3max()),
+    hermitian(true), antihermitian(false),  
+    nChannels(ms.GetNumberTwoBodyChannels())
 {
   TwoBody.Allocate();
 }
 
 Operator::Operator(const Operator& op)
-: modelspace(op.modelspace), nChannels(op.nChannels),
-  hermitian(op.hermitian), antihermitian(op.antihermitian),
+: modelspace(op.modelspace),  ZeroBody(op.ZeroBody),
+  OneBody(op.OneBody), TwoBody(op.TwoBody) ,ThreeBody(op.ThreeBody),
   rank_J(op.rank_J), rank_T(op.rank_T), particle_rank(op.particle_rank),
-  E2max(op.E2max), E3max(op.E3max), ZeroBody(op.ZeroBody),
-  OneBody(op.OneBody), TwoBody(op.TwoBody), ThreeBody(op.ThreeBody)
+  E2max(op.E2max), E3max(op.E3max), 
+  hermitian(op.hermitian), antihermitian(op.antihermitian),
+  nChannels(op.nChannels)
 {
-   cout << "Calling copy constructor for Operator" << endl;
+//   cout << "Calling copy constructor for Operator" << endl;
 }
 
 Operator::Operator(Operator&& op)
-: modelspace(op.modelspace), nChannels(op.nChannels),
-  hermitian(op.hermitian), antihermitian(op.antihermitian),
+: modelspace(op.modelspace), ZeroBody(op.ZeroBody),
+  OneBody(move(op.OneBody)), TwoBody(move(op.TwoBody)) , ThreeBody(move(op.ThreeBody)),
   rank_J(op.rank_J), rank_T(op.rank_T), particle_rank(op.particle_rank),
-  E2max(op.E2max), E3max(op.E3max), ZeroBody(op.ZeroBody),
-  OneBody(move(op.OneBody)), TwoBody(move(op.TwoBody)), ThreeBody(move(op.ThreeBody))
+  E2max(op.E2max), E3max(op.E3max), 
+  hermitian(op.hermitian), antihermitian(op.antihermitian),
+  nChannels(op.nChannels)
 {
-   cout << "Calling move constructor for Operator" << endl;
+//   cout << "Calling move constructor for Operator" << endl;
 }
 
 /////////// COPY METHOD //////////////////////////
@@ -204,47 +215,6 @@ Operator Operator::operator-() const
 
 
 
-//*******************************************************************
-/// Get three body matrix element in proton-neutron formalism.
-/// \f[
-///  V_{abcdef}^{(pn)} = \sum_{t_{ab} t_{de} T} <t_a t_b | t_{ab}> <t_d t_e | t_{de}>
-///  <t_{ab} t_c | T> <t_{de} t_f| T> V_{abcdef}^{t_{ab} t_{de} T}
-/// \f]
-//*******************************************************************
-/*
-double Operator::GetThreeBodyME_pn(int Jab_in, int Jde_in, int J2, int a, int b, int c, int d, int e, int f)
-{
-  return ThreeBody.GetThreeBodyME_pn(Jab_in, Jde_in, J2, a, b, c, d, e, f);
-}
-*/
-
-//*******************************************************************
-/// Get three body matrix element in isospin formalism
-/// \f$ V_{abcdef}^{J_{ab}J_{de}Jt_{ab}t_{de}T} \f$
-///  (which is how they're stored).
-/// The elements are stored with the following restrictions: \f$ a\geq b \geq c\f$,
-/// \f$ d\geq e \geq f\f$, \f$ a\geq d\f$. If \f$ a=d\f$ then \f$ b \geq e\f$,
-/// and if \f$ b=e \f$ then \f$ c \geq f \f$.
-/// Other orderings are obtained by recoupling on the fly.
-//*******************************************************************
-/*
-double Operator::GetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in)
-{
-   return ThreeBody.GetThreeBodyME(Jab_in, Jde_in, J2, tab_in, tde_in, T2, a_in, b_in, c_in, d_in, e_in, f_in);
-}
-*/
-//*******************************************************************
-/// Set a three body matrix element. Since only a subset of orbit
-/// orderings are stored, we need to recouple if the input ordering
-/// is different.
-//*******************************************************************
-/*
-void Operator::SetThreeBodyME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, double V)
-{
-   ThreeBody.SetThreeBodyME(Jab_in, Jde_in, J2, tab_in, tde_in, T2, a_in, b_in, c_in, d_in, e_in, f_in,V);
-}
-*/
-
 
 void Operator::PrintTimes()
 {
@@ -284,7 +254,7 @@ Operator Operator::DoNormalOrdering2()
    }
 
 
-   int norbits = modelspace->GetNumberOrbits();
+   index_t norbits = modelspace->GetNumberOrbits();
 
    for ( auto& itmat : TwoBody.MatEl )
    {
@@ -292,7 +262,7 @@ Operator Operator::DoNormalOrdering2()
       int ch_ket = itmat.first[1];
       auto& matrix = itmat.second;
       
-      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+//      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
       int J_ket = tbc_ket.J;
 
@@ -306,7 +276,7 @@ Operator Operator::DoNormalOrdering2()
       for (index_t a=0;a<norbits;++a)
       {
          Orbit &oa = modelspace->GetOrbit(a);
-         int bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
+         index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
          for ( auto& b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // OneBodyChannels should be moved to the operator, to accommodate tensors
          {
             if (b < bstart) continue;
@@ -338,7 +308,6 @@ Operator Operator::DoNormalOrdering2()
 Operator Operator::DoNormalOrdering3()
 {
    Operator opNO3 = Operator(*modelspace);
-//   cout << "size of ThreeBody = " << ThreeBody.MatEl.size() << endl;
 //   #pragma omp parallel for
    for ( auto& itmat : opNO3.TwoBody.MatEl )
    {
@@ -389,8 +358,6 @@ Operator Operator::DoNormalOrdering3()
 
 ModelSpace* Operator::GetModelSpace()
 {
-   cout << " Getting ModelSpace." << endl;
-   cout << " Norbits = " << modelspace->GetNumberOrbits() << endl;
    return modelspace;
 }
 
@@ -453,7 +420,6 @@ void Operator::CalculateKineticEnergy()
 {
    OneBody.zeros();
    int norbits = modelspace->GetNumberOrbits();
-   int A = modelspace->GetTargetMass();
    double hw = modelspace->GetHbarOmega();
    for (int a=0;a<norbits;++a)
    {
@@ -803,7 +769,6 @@ Operator Operator::BCH_Product(  Operator &Y)
 /// \f[ \|X_{(1)}\|^2 = \sum\limits_{ij} X_{ij}^2 \f]
 double Operator::Norm() const
 {
-   double nrm = 0;
    double n1 = OneBodyNorm();
    double n2 = TwoBody.Norm();
    return sqrt(n1*n1+n2*n2);
@@ -974,7 +939,6 @@ void Operator::comm110ss( Operator& opright, Operator& out)
   if (IsHermitian() and opright.IsHermitian()) return ; // I think this is the case
   if (IsAntiHermitian() and opright.IsAntiHermitian()) return ; // I think this is the case
 
-   int norbits = modelspace->GetNumberOrbits();
    arma::mat xyyx = OneBody*opright.OneBody - opright.OneBody*OneBody;
    for ( auto& a : modelspace->holes) 
    {
@@ -1196,7 +1160,7 @@ void Operator::comm122ss( Operator& opright, Operator& opout )
 
 
       int npq = tbc.GetNumberKets();
-      int norbits = modelspace->GetNumberOrbits();
+//      int norbits = modelspace->GetNumberOrbits();
       for (int indx_ij = 0;indx_ij<npq; ++indx_ij)
       {
          Ket & bra = tbc.GetKet(indx_ij);
@@ -1318,7 +1282,7 @@ void Operator::comm222_pp_hhss( Operator& opright, Operator& opout )
 void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )  
 {
 
-   int herm = opout.IsHermitian() ? 1 : -1;
+//   int herm = opout.IsHermitian() ? 1 : -1;
    int norbits = modelspace->GetNumberOrbits();
 
    TwoBodyME Mpp = opout.TwoBody;
@@ -1741,7 +1705,7 @@ void Operator::comm111st( Operator & opright, Operator& out)
 void Operator::comm121st( Operator& opright, Operator& out) 
 {
    int norbits = modelspace->GetNumberOrbits();
-   int nch = modelspace->GetNumberTwoBodyChannels();
+//   int nch = modelspace->GetNumberTwoBodyChannels();
    int Lambda = opright.rank_J;
    #pragma omp parallel for
    for (int i=0;i<norbits;++i)
@@ -1842,7 +1806,7 @@ void Operator::comm221st( Operator& opright, Operator& out)
       int ch_bra = itmat.first[0];
       int ch_ket = itmat.first[1];
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-      int npq = tbc_bra.GetNumberKets();
+//      int npq = tbc_bra.GetNumberKets();
 //      {
          TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
 
@@ -1857,7 +1821,7 @@ void Operator::comm221st( Operator& opright, Operator& out)
 
          int J1 = tbc_bra.J;
          int J2 = tbc_ket.J;
-         double hatfactor = (2*J1+1)*sqrt(2*J2+1);
+ //        double hatfactor = (2*J1+1)*sqrt(2*J2+1);
          Matrixpp = (LHS.rows(tbc_bra.GetKetIndex_pp()) * RHS.cols(tbc_bra.GetKetIndex_pp()));
          Matrixpp -= Matrixpp.t();
          Matrixhh = (LHS.rows(tbc_bra.GetKetIndex_hh()) * RHS.cols(tbc_bra.GetKetIndex_hh()));
@@ -2028,12 +1992,12 @@ void Operator::comm222_pp_hhst( Operator& opright, Operator& opout )
       int ch_ket = itmat.first[1];
       
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-      int npq = tbc_bra.GetNumberKets();
+//      int npq = tbc_bra.GetNumberKets();
 //      {
          TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-         int J1 = tbc_bra.J;
-         int J2 = tbc_ket.J;
-         double hatfactor = (2*J1+1)*sqrt(2*J2+1);
+//         int J1 = tbc_bra.J;
+//         int J2 = tbc_ket.J;
+//         double hatfactor = (2*J1+1)*sqrt(2*J2+1);
 
 
          arma::mat& LHS = (arma::mat&) TwoBody.GetMatrix(ch_bra,ch_bra);
@@ -2206,11 +2170,11 @@ void Operator::comm222_pp_hh_221st( Operator& opright, Operator& opout )
 // Haven't converted this one yet...
 void Operator::comm222_phst( Operator& opright, Operator& opout ) 
 {
-   int herm = opout.IsHermitian() ? 1 : -1;
+//   int herm = opout.IsHermitian() ? 1 : -1;
 
 
-   Operator Xcc = Operator(*modelspace, 0, 1, 0, 2);
-   Operator Ycc = Operator(Xcc);
+//   Operator Xcc = Operator(*modelspace, 0, 1, 0, 2);
+//   Operator Ycc = Operator(Xcc);
 
 //   DoPandyaTransformation(Xcc);
 //   opright.DoPandyaTransformation(Ycc);

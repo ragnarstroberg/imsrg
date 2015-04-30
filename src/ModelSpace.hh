@@ -17,10 +17,10 @@ typedef unsigned long long int index_t;
 
 class ModelSpace; //forward declaration so Ket can use ModelSpace
 
-//class Orbit
-struct Orbit
+//struct Orbit
+class Orbit
 {
-// public:
+ public:
    // Fields
    int n;
    int l;
@@ -35,8 +35,9 @@ struct Orbit
    Orbit();
    Orbit(int n ,int l, int j, int t, int ph, int io, int index);
    Orbit(const Orbit&);
+//   void swap(Orbit&) throw();
+//   Orbit& operator=( const Orbit& );
    // Methods
-//   void Set(int n, int l, int j2, int tz2, int ph, int io, int index);
 };
 
 
@@ -55,10 +56,10 @@ class Ket  //  | pq >
    int delta_pq(){return dpq;};
 
    // Fields
-   int p;
-   int q;
    Orbit* op;
    Orbit* oq;
+   int p;
+   int q;
  private:
    // Fields
    int dpq;
@@ -163,7 +164,7 @@ class ModelSpace
    ModelSpace operator=(ModelSpace&&); 
 
    void Init(int Nmax, vector<string> hole_list, vector<string> inside_list);
-   void Init_Skeleton(int nmax);
+//   void Init_Skeleton(int nmax);
 
    // Common model spaces
    void Init_He4(int nmax);
@@ -182,7 +183,8 @@ class ModelSpace
    void AddOrbit(Orbit orb);
    void AddOrbit(int n, int l, int j2, int tz2, int ph, int io);
    // Setter/Getters
-   Orbit& GetOrbit(int i) const {return (Orbit&) Orbits[i];}; 
+   Orbit& GetOrbit(int i) {return (Orbit&) Orbits[i];}; 
+//   Orbit& GetOrbit(int i) const {return (Orbit&) Orbits[i];}; 
    Ket& GetKet(int i) const {return (Ket&) Kets[i];};
    Ket& GetKet(int p, int q) const {return (Ket&) Kets[Index2(p,q)];};
    int GetOrbitIndex(int n, int l, int j2, int tz2) const {return Index1(n,l,j2,tz2);};
@@ -250,8 +252,8 @@ class ModelSpace
    int ThreeBodyJmax;
    map<array<int,3>,vector<index_t> > OneBodyChannels;
 
-   vector<int> SortedTwoBodyChannels;
-   vector<int> SortedTwoBodyChannels_CC;
+   vector<unsigned int> SortedTwoBodyChannels;
+   vector<unsigned int> SortedTwoBodyChannels_CC;
 
 
 

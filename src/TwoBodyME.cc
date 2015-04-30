@@ -9,18 +9,20 @@ TwoBodyME::~TwoBodyME()
 {}
 
 TwoBodyME::TwoBodyME()
-: hermitian(true),antihermitian(false),modelspace(NULL)
-{}
+: modelspace(NULL), nChannels(0), hermitian(true),antihermitian(false),
+  rank_J(0), rank_T(0), parity(0)
+{
+  cout << "Default TwoBodyME constructor" << endl;
+}
 
 TwoBodyME::TwoBodyME(ModelSpace* ms)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
- rank_J(0), rank_T(0), parity(0), hermitian(true), antihermitian(false)
+  hermitian(true), antihermitian(false), rank_J(0), rank_T(0), parity(0)
 {}
 
 TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
- rank_J(rJ), rank_T(rT), parity(p), hermitian(true), antihermitian(false)
-// TwoBodyTensorChannels(ms->GetNumberTwoBodyChannels())
+  hermitian(true), antihermitian(false), rank_J(rJ), rank_T(rT), parity(p)
 {}
 
 
@@ -37,7 +39,6 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
    {
       itmat.second *= rhs;
    }
-
    return *this;
  }
 
@@ -49,7 +50,7 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
       int ch_ket = itmat.first[1];
       itmat.second += rhs.GetMatrix(ch_bra,ch_ket);
    }
-
+   return *this;
  }
 
  TwoBodyME& TwoBodyME::operator-=(const TwoBodyME& rhs)
@@ -60,7 +61,7 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
       int ch_ket = itmat.first[1];
       itmat.second -= rhs.GetMatrix(ch_bra,ch_ket);
    }
-
+   return *this;
  }
 
 

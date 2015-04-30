@@ -108,8 +108,6 @@ namespace imsrg_util
    int A = modelspace.GetTargetMass();
    Operator TcmOp = Operator(modelspace);
    TcmOp.SetHermitian();
-   cout << "In TCM_op. Norb = " << modelspace.GetNumberOrbits() << endl;
-   cout << "    Norb = " << TcmOp.GetModelSpace()->GetNumberOrbits() << endl;
 
    // One body piece = p**2/(2mA) = (N+3/2)hw/A
    int norb = modelspace.GetNumberOrbits();
@@ -157,7 +155,6 @@ namespace imsrg_util
          }
       }
    }
-   cout << "Done with TcmOP" << endl;
    return TcmOp;
  }
 
@@ -550,7 +547,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
    Operator r2 = Operator(modelspace);
    r2.OneBody.zeros();
    int norbits = modelspace.GetNumberOrbits();
-   int A = modelspace.GetTargetMass();
+//   int A = modelspace.GetTargetMass();
    double hw = modelspace.GetHbarOmega();
    for (int a=0;a<norbits;++a)
    {
@@ -582,7 +579,7 @@ Operator E0Op(ModelSpace& modelspace)
    Operator e0 = Operator(modelspace);
    e0.EraseZeroBody();
    int norbits = modelspace.GetNumberOrbits();
-   int A = modelspace.GetTargetMass();
+//   int A = modelspace.GetTargetMass();
    double hw = modelspace.GetHbarOmega();
    for (int a=0;a<norbits;++a)
    {

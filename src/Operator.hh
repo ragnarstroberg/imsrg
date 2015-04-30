@@ -23,6 +23,7 @@ class Operator
 {
  public:
   //Fields
+  ModelSpace * modelspace;
   double ZeroBody; ///< The zero body piece of the operator.
   arma::mat OneBody; ///< The one body piece of the operator, stored in a single NxN armadillo matrix, where N is the number of single-particle orbits.
   TwoBodyME TwoBody; ///< The two body piece of the operator.
@@ -36,7 +37,6 @@ class Operator
   int E2max; ///< For two-body matrix elements, \f$ e_i + e_j \leq \f$ E2max
   int E3max; ///< For three-body matrix elements, \f$ e_i + e_j + e_k \leq \f$ E3max
 
-  ModelSpace * modelspace;
   bool hermitian;
   bool antihermitian;
   int nChannels; ///< Number of two-body channels \f$ J,\pi,T_z \f$ associated with the model space

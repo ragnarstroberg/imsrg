@@ -11,8 +11,9 @@
 using namespace std;
 
 HartreeFock::HartreeFock(Operator& hbare)
-  : Hbare(hbare), modelspace(hbare.GetModelSpace()), tolerance(1e-10),
-    t(Hbare.OneBody), energies(Hbare.OneBody.diag())
+  : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
+    t(Hbare.OneBody), energies(Hbare.OneBody.diag()),
+    tolerance(1e-10)
 {
    int norbits = modelspace->GetNumberOrbits();
    int nKets = modelspace->GetNumberKets();
@@ -225,7 +226,7 @@ void HartreeFock::BuildMonopoleV3()
 
    // the calculation takes longer, so parallelize this part
    #pragma omp parallel for 
-   for (int ind=0; ind<Vmon3.size(); ++ind)
+   for (size_t ind=0; ind<Vmon3.size(); ++ind)
    {
 
       const array<int,6>& orb = Vmon3[ind].first;
@@ -299,17 +300,17 @@ void HartreeFock::UpdateF()
       for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
          if (j<i) continue;
-         Orbit& oj = modelspace->GetOrbit(j);
+//         Orbit& oj = modelspace->GetOrbit(j);
          for (int a=0;a<norbits;++a)
          {
             Orbit& oa = modelspace->GetOrbit(a);
             bra = modelspace->GetKetIndex(min(i,a),max(i,a));
             for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
             {
-               Orbit& ob = modelspace->GetOrbit(b);
+//               Orbit& ob = modelspace->GetOrbit(b);
                ket = modelspace->GetKetIndex(min(j,b),max(j,b));
                // 2body term <ai|V|bj>
-               if (a>i xor b>j)
+               if ((a>i) xor (b>j))
                   Vij(i,j) += rho(a,b)*Vmon_exch(min(bra,ket),max(bra,ket)); // <a|rho|b> * <ai|Vmon|bj>
                else
                   Vij(i,j) += rho(a,b)*Vmon(min(bra,ket),max(bra,ket)); // <a|rho|b> * <ai|Vmon|bj>
@@ -322,7 +323,7 @@ void HartreeFock::UpdateF()
    if (Hbare.GetParticleRank()>=3) 
    {
 //      # pragma omp parallel for num_threads(2)  // Note that this is risky and not fully thread safe.
-      for (int ind=0;ind<Vmon3.size(); ++ind)
+      for (size_t ind=0;ind<Vmon3.size(); ++ind)
       {
         const array<int,6>& orb = Vmon3[ind].first;
         double& v         = Vmon3[ind].second;
@@ -383,7 +384,7 @@ bool HartreeFock::CheckConvergence()
 //**********************************************************************
 void HartreeFock::ReorderCoefficients()
 {
-   int norbits = modelspace->GetNumberOrbits();
+//   int norbits = modelspace->GetNumberOrbits();
 
    int nswaps = 10;
 
@@ -391,7 +392,7 @@ void HartreeFock::ReorderCoefficients()
    while (nswaps>0) // loop until we don't have to make any more swaps
    {
      nswaps = 0;
-     for (int i=0;i<C.n_rows;++i) // loop through rows -> original basis states
+     for (index_t i=0;i<C.n_rows;++i) // loop through rows -> original basis states
      {
         arma::rowvec row = C.row(i);
         arma::uword imax; 
@@ -406,7 +407,7 @@ void HartreeFock::ReorderCoefficients()
      }
    }
    // Make sure the diagonal terms are positive (to avoid confusion).
-   for (int i=0;i<C.n_rows;++i) // loop through original basis states
+   for (index_t i=0;i<C.n_rows;++i) // loop through original basis states
    {
       if (C(i,i) < 0)  C.col(i) *= -1;
    }
@@ -533,12 +534,10 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
             for (int a=0; a<norb; ++a)
             {
               Orbit & oa = modelspace->GetOrbit(a);
-//              if ( 2*oa.n+oa.l+bra.E2 > Hbare.GetE3max() ) continue;
               if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
               for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
               {
                 Orbit & ob = modelspace->GetOrbit(b);
-//                if ( 2*ob.n+ob.l+ket.E2 > Hbare.GetE3max() ) continue;
                 if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
                 int J3min = abs(2*J-oa.j2);
                 int J3max = 2*J + oa.j2;

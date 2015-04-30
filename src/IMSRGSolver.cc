@@ -6,6 +6,10 @@
 #include <boost/numeric/odeint.hpp>
 #endif
 
+IMSRGSolver::~IMSRGSolver()
+{
+//   cout << "In IMSRGSolver destructor." << endl;
+}
 
 IMSRGSolver::IMSRGSolver()
 #ifndef NO_ODE
@@ -56,7 +60,6 @@ void IMSRGSolver::SetHin( Operator & H_in)
    Eta.Erase();
    Eta.SetAntiHermitian();
    Omega = Eta;
-//   dOmega = Eta;  
 }
 
 void IMSRGSolver::Reset()
@@ -64,7 +67,6 @@ void IMSRGSolver::Reset()
    s=0;
    Eta.Erase();
    Omega.Erase();
-//   dOmega.Erase();
 }
 
 void IMSRGSolver::Solve()
@@ -519,7 +521,8 @@ void IMSRGSolver::ConstructGenerator_Atan()
               double denominator;
               if (php+phq==2) // hhhh
                  denominator = Get2bDenominator_pppp(ch,ibra,iket);
-//              else
+              else
+                 denominator = Get2bDenominator_pppp(ch,ibra,iket);
 //                 denominator = Get2bDenominator_ppph(ch,ibra,iket);
   
               ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);

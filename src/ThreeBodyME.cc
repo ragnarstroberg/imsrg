@@ -6,13 +6,14 @@ ThreeBodyME::~ThreeBodyME()
 {}
 
 ThreeBodyME::ThreeBodyME()
-: modelspace(NULL)
+: modelspace(NULL),E3max(0)
 {
- MatEl.resize(0);
+   cout << "Default ThreeBodyME constructor" << endl;
+// MatEl.resize(0);
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: modelspace(ms)
+: modelspace(ms), E3max(ms->N3max)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)

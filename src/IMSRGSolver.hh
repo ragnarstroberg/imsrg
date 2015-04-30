@@ -45,6 +45,7 @@ class IMSRGSolver
 #endif
 
   public:
+  ~IMSRGSolver();
   IMSRGSolver();
   IMSRGSolver( Operator& H_in);
   void SetHin( Operator& H_in);
@@ -92,11 +93,11 @@ class IMSRGSolver
 
 //  private:
   ModelSpace* modelspace;
-  Operator Omega;
 //  Operator H_0; //Having this copy is dumb.
   Operator* H_0; //Having this copy is dumb.
   Operator H_s;
   Operator Eta;
+  Operator Omega;
   int istep;
   double s;
   double ds;
