@@ -311,7 +311,6 @@ ModelSpace::ModelSpace(int nmax, string str)
 //ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside_list)
 void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_list)
 {
-   cout << "In Init" << endl;
    OneBodyJmax = 0;
    TwoBodyJmax = 0;
    ThreeBodyJmax = 0;
@@ -330,7 +329,6 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
    proton_orbits.clear();
    neutron_orbits.clear();
    OneBodyChannels.clear();
-   cout << "particles.size() = " << particles.size() << endl;
 
    cout << "Creating a model space with Nmax = " << Nmax << "  and hole orbits [";
    for (string& h : hole_list)

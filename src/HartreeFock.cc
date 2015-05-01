@@ -80,6 +80,8 @@ void HartreeFock::Solve()
 void HartreeFock::CalcEHF()
 {
    EHF = 0;
+   double e1hf = 0;
+   double e2hf = 0;
    double e3hf = 0;
    int norbits = modelspace->GetNumberOrbits();
    for (int i=0;i<norbits;i++)
@@ -88,10 +90,16 @@ void HartreeFock::CalcEHF()
       int jfactor = oi.j2 +1;
       for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}))
       {
-         EHF +=  rho(i,j) * jfactor * (t(i,j)+0.5*Vij(i,j)+1./6*V3ij(i,j));
+         e1hf += rho(i,j) * jfactor * t(i,j);
+         e2hf += rho(i,j) * jfactor * 0.5 * Vij(i,j);
          e3hf +=  rho(i,j) * jfactor * (1./6*V3ij(i,j));
+   
+//         EHF +=  rho(i,j) * jfactor * (t(i,j)+0.5*Vij(i,j)+1./6*V3ij(i,j));
       }
    }
+   EHF = e1hf + e2hf + e3hf;
+   cout << "e1hf = " << e1hf << endl;
+   cout << "e2hf = " << e2hf << endl;
    cout << "e3hf = " << e3hf << endl;
 }
 

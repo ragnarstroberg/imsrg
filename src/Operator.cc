@@ -656,15 +656,11 @@ Operator Operator::BCH_Transform(  Operator &Omega)
    double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
    for (int i=1; i<max_iter; ++i)
    {
-//      cout << "Assigning to commutator" << endl;
       OpNested = Omega.Commutator(OpNested);
-//      cout << "Dividing by i" << endl;
       OpNested /= i;
 
-//      cout << "Adding to OpOut" << endl;
       OpOut += OpNested;
 
-//      if (OpNested.Norm() < (nx+ny)*bch_transform_threshold)
       if (OpNested.Norm() < epsilon *(i+1))
       {
         timer["BCH_Transform"] += omp_get_wtime() - t;
@@ -699,18 +695,13 @@ Operator Operator::BCH_Transform(  Operator &Omega)
 //*****************************************************************************************
 Operator Operator::BCH_Product(  Operator &Y)
 {
-//   cout << "BCH_Product" << endl;
    double t = omp_get_wtime();
    Operator& X = *this;
 
-//   Operator Z = X + Y; 
-//   Operator XY = X.Commutator(Y);
    Operator Z = X.Commutator(Y);
    Z *= 0.5;
-//   Z += XY*(1./2);    // [X,Y]
    double nx = X.Norm();
    double ny = Y.Norm();
-//   double nc1 = XY.Norm();
    double nxy = Z.Norm();
 
    if ( nxy < (nx+ny)*bch_product_threshold )
@@ -720,46 +711,14 @@ Operator Operator::BCH_Product(  Operator &Y)
      timer["BCH_Product"] += omp_get_wtime() - t;
      return Z;
    }
-//   Operator XYDiff = Y-X;
-//   Z += (1./6)* Z.Commutator( XYDiff );
    Y -= X;
    Z += (1./6)* Z.Commutator( Y );
    Z += Y;
-   Z += 2*X;
+   X *=2;
+   Z += X;
 
    timer["BCH_Product"] += omp_get_wtime() - t;
    return Z;
-
-//   Operator YYX = XY.Commutator(Y); // [[X,Y],Y] = [Y,[Y,X]]
-//   double nc2 = YYX.Norm();
-//   Z += YYX * (1/12.); 
-//
-//   if ( nc2/12 < (nx+ny)*bch_product_threshold ) return Z;
-//
-//   Operator XXY = X.Commutator(XY); // [X,[X,Y]]
-//   double nc3 = XXY.Norm();
-//   Z += XXY * (1/12.);      // [X,[X,Y]]
-
-//   if ( nc3/12 < (nx+ny)*bch_product_threshold ) return Z;
-//
-//   cout << "Warning: BCH product expansion not converged after 3 nested commutators!" << endl;
-//
-//   Operator YXXY = Y.Commutator(XXY); // [Y,[X,[X,Y]]]
-//   double nc4 = YXXY.Norm();
-//   Z += YXXY*(-1./24);
-//
-//   Operator YYYX = Y.Commutator(YYX) ; // [Y,[Y,[Y,X]]]
-//   Operator YYYYX = Y.Commutator(YYYX) ; // [Y,[Y,[Y,[Y,X]]]]
-//   double nc5 = YYYYX.Norm();
-//   Operator XXXY =  X.Commutator(XXY) ; // [X,[X,[X,[X,Y]]]]
-//   Operator XXXXY = X.Commutator(XXXY) ; // [X,[X,[X,[X,Y]]]]
-//   double nc6 = XXXXY.Norm();
-//   Z += (YYYYX + XXXXY)*(-1./720);
-//
-//   if ( nc6/720. < (nx+ny)*bch_product_threshold ) return Z;
-//   cout << "Warning: BCH product expansion not converged after 5 nested commutators!" << endl;
-
-//   return Z;
 }
 
 /// Obtain the Frobenius norm of the operator, which here is 
