@@ -30,8 +30,6 @@ class TwoBodyME
  public:
   ModelSpace * modelspace;
   map<array<int,2>,arma::mat> MatEl;
-  /// A list of which two-body channels can be connected by this operator
-//  vector<vector<int> > TwoBodyTensorChannels;
   int nChannels;
   bool hermitian;
   bool antihermitian;
@@ -39,6 +37,7 @@ class TwoBodyME
   int rank_T;
   int parity;
 
+  ~TwoBodyME();
   TwoBodyME();
   TwoBodyME(ModelSpace*);
   TwoBodyME(ModelSpace* ms, int rankJ, int rankT, int parity);

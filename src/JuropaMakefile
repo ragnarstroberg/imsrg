@@ -16,7 +16,7 @@ PYTHONFLAGS = -I$(PYTHON_INC) -lboost_python-gcc47-mt-1_53 #-lpython
 all: pyIMSRG.so libIMSRG.so
 #all: mysrg pyIMSRG.so
 	
-OBJ = ModelSpace.o ReadWrite.o Operator.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o
+OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o ReadWrite.o Operator.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o
 
 mysrg: main.cc $(OBJ)
 	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 

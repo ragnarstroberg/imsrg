@@ -4,7 +4,7 @@
 #include "ModelSpace.hh"
 
 typedef float ThreeBME_type;
-/// The three-body piece of an operator, stored in a map of array<int,9> to array<double,5>.
+/// The three-body piece of an operator, stored in nested vectors.
 /// The 3BMEs are stored in unnormalized JT coupled form
 /// \f$ \langle (abJ_{ab}t_{ab})c | V | (deJ_{de}t_{de})f \rangle_{JT} \f$.
 /// To minimize the number of stored matrix elements, only elements with
@@ -16,12 +16,10 @@ class ThreeBodyME
 {
  public:
   ModelSpace * modelspace;
-
-//  map< array<int,9>,array<double,5> >MatEl; //
   vector<vector<vector<vector<vector<vector<vector<ThreeBME_type>>>>>>> MatEl; //
-
   int E3max;
   
+  ~ThreeBodyME();
   ThreeBodyME();
   ThreeBodyME(ModelSpace*);
   ThreeBodyME(ModelSpace* ms, int e3max);

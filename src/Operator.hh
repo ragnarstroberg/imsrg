@@ -23,8 +23,8 @@ class Operator
 {
  public:
   //Fields
+  ModelSpace * modelspace;
   double ZeroBody; ///< The zero body piece of the operator.
-
   arma::mat OneBody; ///< The one body piece of the operator, stored in a single NxN armadillo matrix, where N is the number of single-particle orbits.
   TwoBodyME TwoBody; ///< The two body piece of the operator.
   ThreeBodyME ThreeBody; ///< The three body piece of the operator.
@@ -37,7 +37,6 @@ class Operator
   int E2max; ///< For two-body matrix elements, \f$ e_i + e_j \leq \f$ E2max
   int E3max; ///< For three-body matrix elements, \f$ e_i + e_j + e_k \leq \f$ E3max
 
-  ModelSpace * modelspace;
   bool hermitian;
   bool antihermitian;
   int nChannels; ///< Number of two-body channels \f$ J,\pi,T_z \f$ associated with the model space
@@ -45,15 +44,20 @@ class Operator
   static double bch_product_threshold;
   static map<string, double> timer; ///< For keeping timing information for various method calls
 
+
   void PrintTimes();
 
 
   //Constructors
   // In the future, consider using C++11 rvalues / move constructor to avoid copies in certain cases
+  ~Operator();
   Operator(); ///< Default constructor
   Operator(ModelSpace&); ///< Construct a 2-body scalar operator
+//  Operator(ModelSpace*); ///< Construct a 2-body scalar operator
   Operator(ModelSpace&, int Jrank, int Trank, int Parity, int part_rank);
   Operator( const Operator& rhs); ///< Copy constructor
+  Operator( Operator&&);
+//  Operator( Operator&&) = default;
 
   //Overloaded operators
   Operator& operator=( const Operator& rhs);
@@ -67,6 +71,9 @@ class Operator
   Operator& operator/=( const double rhs);
   Operator operator/( const double rhs) const;
 
+  Operator& operator=(Operator&& rhs);
+//  Operator& operator=(Operator&& rhs) = default;
+
   //Methods
   void Copy(const Operator& rhs);
 
@@ -78,7 +85,8 @@ class Operator
   int GetE3max(){return E3max;};
 
   // Other setter-getters
-  ModelSpace * GetModelSpace() const {return modelspace;};
+//  ModelSpace * GetModelSpace() const {return modelspace;};
+  ModelSpace * GetModelSpace();
 
   void Erase(); ///< Set all matrix elements to zero.
   void EraseZeroBody(){ZeroBody = 0;}; // set zero-body term to zero

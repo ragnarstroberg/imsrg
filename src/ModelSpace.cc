@@ -6,84 +6,74 @@
 
 using namespace std;
 
-Orbit::Orbit()
+Orbit::~Orbit()
 {
+//  cout << "In Orbit destructor" << endl;
 }
 
-Orbit::Orbit(int nn, int ll, int jj2, int ttz2, int pph, int iio, double e=0.0)
-{
-   n = nn;
-   l = ll;
-   j2 = jj2;
-   tz2 = ttz2;
-   ph = pph;
-   io = iio;
-   spe = e;
-}
+Orbit::Orbit()
+: n(-1), l(-1), j2(-1), tz2(-1),ph(-1),io(-1),index(-1)
+{}
+
+Orbit::Orbit(int n, int l, int j2, int tz2, int ph, int io, int index)
+: n(n), l(l), j2(j2), tz2(tz2),ph(ph),io(io),index(index)
+{}
 
 Orbit::Orbit(const Orbit& orb)
+: n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),ph(orb.ph),io(orb.io),index(orb.index)
+{}
+
+/*
+void Orbit::swap( Orbit& orb) throw()
 {
-  n = orb.n;
-  l = orb.l;
-  j2 = orb.j2;
-  tz2 = orb.tz2;
-  ph = orb.ph;
-  io = orb.io;
-  spe = orb.spe;
+   std::swap(this->n,orb.n);
+   std::swap(this->l,orb.l);
+   std::swap(this->j2,orb.j2);
+   std::swap(this->tz2,orb.tz2);
+   std::swap(this->ph,orb.ph);
+   std::swap(this->io,orb.io);
+   std::swap(this->index,orb.index);
 }
 
-void Orbit::Set(int nn, int ll, int jj2, int ttz2, int pph, int iio, double e)
+Orbit& Orbit::operator=(const Orbit& orb)
 {
-   n = nn;
-   l = ll;
-   j2 = jj2;
-   tz2 = ttz2;
-   ph = pph;
-   io = iio;
-   spe = e;
+   Orbit tmp(orb);
+   this->swap(tmp);
+   return *this;
 }
-
+*/
 
 //************************************************************************
-
-Ket::Ket(ModelSpace * modelspace)
+//************************************************************************
+//************************************************************************
+Ket::~Ket()
 {
-   ms = modelspace;
+//  cout << "In Ket destructor" << endl;
 }
 
-Ket::Ket(ModelSpace * modelspace, int pp, int qq)
-{
-   ms = modelspace;
-   Setpq(pp,qq);
-}
+Ket::Ket()
+{}
 
-void Ket::Setpq(int pp, int qq)
+Ket::Ket(Orbit& op_in, Orbit& oq_in)
+: op(&op_in), oq(&oq_in), p(op_in.index), q(oq_in.index)
 {
-   p = pp;
-   q = qq;
-   Orbit & op = ms->GetOrbit(p);
-   Orbit & oq = ms->GetOrbit(q);
-   parity = (op.l + oq.l)%2;
-   Tz = (op.tz2 + oq.tz2)/2;
-   Jmin = abs(op.j2 - oq.j2)/2;
-   Jmax = (op.j2 + oq.j2)/2;
-   Jstep = 1;
-   E2 = 2*(op.n+oq.n)+op.l+oq.l;
-   if (p==q) // Pauli principle
-   { 
-      Jmax = Jmax-1;
-      Jstep=2;
-   }
-   phase_prefactor = ms->phase((op.j2+oq.j2)/2 + 1);
+   phase_prefactor = ((op->j2+oq->j2)/2 + 1) % 2==0 ? 1 : -1;
    dpq = p==q ? 1 : 0;
 }
 
 int Ket::Phase(int J)
 {
-   return phase_prefactor * ms->phase(J);
+   return phase_prefactor * (J%2==0 ? 1 : -1);
 }
 
 //************************************************************************
+//************************************************************************
+//************************************************************************
+
+TwoBodyChannel::~TwoBodyChannel()
+{
+//  cout << "In TwoBodyChannel destructor" << endl;
+}
 
 TwoBodyChannel::TwoBodyChannel()
 {}
@@ -118,21 +108,15 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
          NumberKets++;
       }
    }
-}
-
-
-void TwoBodyChannel::Copy( const TwoBodyChannel& rhs)
-{
-   J                 = rhs.J;
-   parity            = rhs.parity;
-   Tz                = rhs.Tz;
-   modelspace        = rhs.modelspace;
-   NumberKets        = rhs.NumberKets;
-   Proj_hh           = rhs.Proj_hh;
-   Proj_pp           = rhs.Proj_pp;
-   KetMap            = rhs.KetMap;
-   KetList           = rhs.KetList;
-
+   KetIndex_pp = GetKetIndexFromList(modelspace->KetIndex_pp);
+   KetIndex_hh = GetKetIndexFromList(modelspace->KetIndex_hh);
+   KetIndex_ph = GetKetIndexFromList(modelspace->KetIndex_ph);
+   KetIndex_vv = GetKetIndexFromList(modelspace->KetIndex_vv);
+   KetIndex_holeq_holeq = GetKetIndexFromList(modelspace->KetIndex_holeq_holeq);
+   KetIndex_particleq_particleq = GetKetIndexFromList(modelspace->KetIndex_particleq_particleq);
+   KetIndex_particleq_holeq = GetKetIndexFromList(modelspace->KetIndex_particleq_holeq);
+   KetIndex_v_holeq = GetKetIndexFromList(modelspace->KetIndex_v_holeq);
+   KetIndex_v_particleq= GetKetIndexFromList(modelspace->KetIndex_v_particleq);
 }
 
 
@@ -142,35 +126,33 @@ int TwoBodyChannel::GetLocalIndex(int p, int q) const { return KetMap[modelspace
 Ket & TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
 
 
-bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
+//bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
+bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
-   if ((p==q) and (J%2 != 0)) return false; // Pauli principle
-   Orbit & op = modelspace->GetOrbit(p);
-   Orbit & oq = modelspace->GetOrbit(q);
-   if ((op.l + oq.l)%2 != parity) return false;
-   if ((op.tz2 + oq.tz2) != 2*Tz) return false;
-   if (op.j2 + oq.j2 < 2*J)       return false;
-   if (abs(op.j2 - oq.j2) > 2*J)  return false;
+   if ((op->index==oq->index) and (J%2 != 0)) return false; // Pauli principle
+//   if ((p==q) and (J%2 != 0)) return false; // Pauli principle
+   if ((op->l + oq->l)%2 != parity) return false;
+   if ((op->tz2 + oq->tz2) != 2*Tz) return false;
+   if (op->j2 + oq->j2 < 2*J)       return false;
+   if (abs(op->j2 - oq->j2) > 2*J)  return false;
 
    return true;
 }
 
-arma::uvec TwoBodyChannel::GetKetIndex_pp() { return GetKetIndexFromList(modelspace->KetIndex_pp);};
-arma::uvec TwoBodyChannel::GetKetIndex_hh() { return GetKetIndexFromList(modelspace->KetIndex_hh);};
-arma::uvec TwoBodyChannel::GetKetIndex_ph() { return GetKetIndexFromList(modelspace->KetIndex_ph);};
-arma::uvec TwoBodyChannel::GetKetIndex_vv() { return GetKetIndexFromList(modelspace->KetIndex_vv);};
-arma::uvec TwoBodyChannel::GetKetIndex_holeq_holeq() { return GetKetIndexFromList(modelspace->KetIndex_holeq_holeq);};
-arma::uvec TwoBodyChannel::GetKetIndex_particleq_particleq() { return GetKetIndexFromList(modelspace->KetIndex_particleq_particleq);};
-arma::uvec TwoBodyChannel::GetKetIndex_particleq_holeq() { return GetKetIndexFromList(modelspace->KetIndex_particleq_holeq);};
-arma::uvec TwoBodyChannel::GetKetIndex_v_holeq() { return GetKetIndexFromList(modelspace->KetIndex_v_holeq);};
-arma::uvec TwoBodyChannel::GetKetIndex_v_particleq(){ return GetKetIndexFromList(modelspace->KetIndex_v_particleq);};
+arma::uvec& TwoBodyChannel::GetKetIndex_pp() { return KetIndex_pp;};
+arma::uvec& TwoBodyChannel::GetKetIndex_hh() { return KetIndex_hh;};
+arma::uvec& TwoBodyChannel::GetKetIndex_ph() { return KetIndex_ph;};
+arma::uvec& TwoBodyChannel::GetKetIndex_vv() { return KetIndex_vv;};
+arma::uvec& TwoBodyChannel::GetKetIndex_holeq_holeq() { return KetIndex_holeq_holeq;};
+arma::uvec& TwoBodyChannel::GetKetIndex_particleq_particleq() { return KetIndex_particleq_particleq;};
+arma::uvec& TwoBodyChannel::GetKetIndex_particleq_holeq() { return KetIndex_particleq_holeq;};
+arma::uvec& TwoBodyChannel::GetKetIndex_v_holeq() { return KetIndex_v_holeq;};
+arma::uvec& TwoBodyChannel::GetKetIndex_v_particleq(){ return KetIndex_v_particleq;};
 
 
-//arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<unsigned int>& vec_in)
-arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<long long unsigned int>& vec_in)
+arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<index_t>& vec_in)
 {
-//   vector<unsigned int> index_list (min(vec_in.size(),KetList.size()));
-   vector<long long unsigned int> index_list (min(vec_in.size(),KetList.size()));
+   vector<index_t> index_list (min(vec_in.size(),KetList.size()));
    auto it = set_intersection(KetList.begin(),KetList.end(),vec_in.begin(),vec_in.end(),index_list.begin());
    index_list.resize(it-index_list.begin());
    for (auto& x : index_list)
@@ -181,6 +163,13 @@ arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<long long unsigned int>& v
 }
 
 //************************************************************************
+//************************************************************************
+//************************************************************************
+
+TwoBodyChannel_CC::~TwoBodyChannel_CC()
+{
+//   cout << "In TwoBodyChannel_CC destructor" << endl;
+}
 
 TwoBodyChannel_CC::TwoBodyChannel_CC()
 {}
@@ -198,14 +187,13 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
 // Check if orbits pq participate in this cross-coupled two-body channel
 // Difference from regular channels:
 // no Pauli rule, <pp||nn> is allowed.
-bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
+//bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
+bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
-   Orbit & op = modelspace->GetOrbit(p);
-   Orbit & oq = modelspace->GetOrbit(q);
-   if ((op.l + oq.l)%2 != parity)    return false;
-   if (abs(op.tz2 + oq.tz2) != 2*Tz) return false;
-   if (op.j2 + oq.j2 < 2*J)          return false;
-   if (abs(op.j2 - oq.j2) > 2*J)     return false;
+   if ((op->l + oq->l)%2 != parity)    return false;
+   if (abs(op->tz2 + oq->tz2) != 2*Tz) return false;
+   if (op->j2 + oq->j2 < 2*J)          return false;
+   if (abs(op->j2 - oq->j2) > 2*J)     return false;
 
    return true;
 }
@@ -213,6 +201,17 @@ bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
 
 //************************************************************************
 //************************************************************************
+
+// Static members
+
+unordered_map<unsigned long int,double>      ModelSpace::SixJList;
+unordered_map<unsigned long long int,double> ModelSpace::NineJList;
+unordered_map<unsigned long long int,double> ModelSpace::MoshList;
+
+ModelSpace::~ModelSpace()
+{
+//  cout << "In ModelSpace destructor. emax = " << Nmax << endl;
+}
 
 ModelSpace::ModelSpace()
 {
@@ -231,7 +230,7 @@ ModelSpace::ModelSpace()
 
 ModelSpace::ModelSpace(const ModelSpace& ms)
 {
-   cout << "In copy constructor" << endl;
+   cout << "In ModelSpace copy constructor" << endl;
    norbits = ms.norbits;
    hbar_omega = ms.hbar_omega;
    target_mass = ms.target_mass;
@@ -255,22 +254,31 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    TwoBodyChannels = ms.TwoBodyChannels;
    TwoBodyChannels_CC = ms.TwoBodyChannels_CC;
 
-   for (Ket& k : Kets)   k.ms = this;
+//   for (Ket& k : Kets)   k.ms = this;
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
 }
 
 ModelSpace::ModelSpace(ModelSpace&& ms)
- : norbits(ms.norbits), hbar_omega(ms.hbar_omega), target_mass(ms.target_mass),
-   OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
-   Nmax(ms.Nmax), N2max(ms.N2max), N3max(ms.N3max),
+ :
    holes( move(ms.holes)), particles( move(ms.particles)), valence(move(ms.valence)),
    qspace( move(ms.qspace)), hole_qspace(move(ms.hole_qspace)), proton_orbits( move(ms.proton_orbits)),
-   neutron_orbits( move(ms.neutron_orbits)), Orbits(move(ms.Orbits)), Kets(move(ms.Kets)),
+   neutron_orbits( move(ms.neutron_orbits)),
+   KetIndex_pp( move(ms.KetIndex_pp)), KetIndex_ph( move(ms.KetIndex_ph)), KetIndex_hh( move(ms.KetIndex_hh)),
+   KetIndex_vv( move(ms.KetIndex_vv)), KetIndex_holeq_holeq( move(ms.KetIndex_holeq_holeq)),
+   KetIndex_particleq_particleq( move(ms.KetIndex_particleq_particleq)),
+   KetIndex_particleq_holeq( move(ms.KetIndex_particleq_holeq)),
+   KetIndex_v_holeq( move(ms.KetIndex_v_holeq)), KetIndex_v_particleq( move(ms. KetIndex_v_particleq)),
+   Nmax(ms.Nmax), N2max(ms.N2max), N3max(ms.N3max),
+   OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
+   OneBodyChannels(move(ms.OneBodyChannels)),
+   SortedTwoBodyChannels(move(ms.SortedTwoBodyChannels)),
+   SortedTwoBodyChannels_CC(move(ms.SortedTwoBodyChannels_CC)),
+   norbits(ms.norbits), hbar_omega(ms.hbar_omega), target_mass(ms.target_mass),
+   Orbits(move(ms.Orbits)), Kets(move(ms.Kets)),
    TwoBodyChannels(move(ms.TwoBodyChannels)), TwoBodyChannels_CC(move(ms.TwoBodyChannels_CC))
 {
-
-   for (Ket& k : Kets)   k.ms = this;
+   cout << "In ModelSpace move constructor" << endl;
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
 }
@@ -278,17 +286,16 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 
 // orbit string representation is e.g. p0f7
 ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside_list)
-: Nmax(nmax), N2max(2*nmax), N3max(3*nmax)
+: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), hbar_omega(20), target_mass(16)
 {
    Init(nmax,hole_list,inside_list);
 }
 
 // Shortcuts for common modelspaces
 ModelSpace::ModelSpace(int nmax, string str)
-: Nmax(nmax), N2max(2*nmax), N3max(3*nmax)
+: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), hbar_omega(20)
 {
-  if (str == "skeleton") Init_Skeleton(nmax);
-  else if (str == "He4") Init_He4(nmax);
+       if (str == "He4") Init_He4(nmax);
   else if (str == "O16") Init_O16(nmax);
   else if (str == "Ca40") Init_Ca40(nmax);
   else if (str == "p-shell") Init_PShell(nmax);
@@ -297,6 +304,7 @@ ModelSpace::ModelSpace(int nmax, string str)
   else if (str == "o16-psd-shell") Init_O16PSDShell(nmax);
   else if (str == "fp-shell") Init_FPShell(nmax);
   else if (str == "sdfp-shell") Init_SDFPShell(nmax);
+//  else if (str == "skeleton") Init_Skeleton(nmax);
   else cout << "No such pre-configured model space: " << str << endl;
 }
 
@@ -306,11 +314,21 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
    OneBodyJmax = 0;
    TwoBodyJmax = 0;
    ThreeBodyJmax = 0;
-   hbar_omega=20;
-   target_mass = 16;
+//   hbar_omega=20;
+//   target_mass = 16;
    Nmax = nmax;
    N2max = 2*Nmax;
-   N3max = 3*Nmax;
+//   N3max = 3*Nmax;
+   Orbits.clear();
+   particles.clear();
+   holes.clear();
+   valence.clear();
+   qspace.clear();
+   particle_qspace.clear();
+   hole_qspace.clear();
+   proton_orbits.clear();
+   neutron_orbits.clear();
+   OneBodyChannels.clear();
 
    cout << "Creating a model space with Nmax = " << Nmax << "  and hole orbits [";
    for (string& h : hole_list)
@@ -329,6 +347,8 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
 
    cout << "Generating orbits, etc." << endl;
    norbits = (Nmax+1)*(Nmax+2);
+   Orbits.resize(norbits);
+   cout << "Start loop over N" << endl;
    for (int N=0; N<=Nmax; ++N)
    {
      for (int l=N; l>=0; l-=2)
@@ -340,7 +360,6 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
          {
             int ph = 0;
             int io = 1;
-            double spe = 0;
             char orb_string[6];
             sprintf(orb_string, "%c%i%c%i", pn_list[(tz+1)/2], n, l_list[l], j2);
             string orb_str = orb_string;
@@ -356,7 +375,9 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
                io=0;
                inside_list.erase(it_inside);
             }
-            AddOrbit(Orbit(n,l,j2,tz,ph,io,spe));
+//            cout << "Adding orbit with " << n << " " << l << " " << j2 << " " << tz << " " << ph << " " << io << endl;
+            AddOrbit(n,l,j2,tz,ph,io);
+//            cout << "Done adding orbit " << endl;
          }
        }
      }
@@ -367,22 +388,17 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
 }
 
 
-
-void ModelSpace::Init_Skeleton(int nmax)
+/*
+void ModelSpace::Init_Skeleton(int Nmax)
 {
 
-   OneBodyJmax = 0;
-   TwoBodyJmax = 0;
-   ThreeBodyJmax = 0;
-   hbar_omega=20;
-   target_mass = 16;
-   Nmax = nmax;
    N2max = 2*Nmax;
    N3max = 3*Nmax;
 
-//   cout << "Creating a skeleton model space with Nmax = " << Nmax << endl;
-   
    norbits = (Nmax+1)*(Nmax+2);
+   Orbits.resize(norbits);
+   cout << "Creating a skeleton model space with Nmax = " << Nmax
+        << " norbits = " << norbits << " Orbits.size() = " << Orbits.size()  << endl;
    for (int N=0; N<=Nmax; ++N)
    {
      for (int l=N; l>=0; l-=2)
@@ -394,19 +410,21 @@ void ModelSpace::Init_Skeleton(int nmax)
          {
             int ph = 0;
             int io = 1;
-            double spe = 0;
-            AddOrbit(Orbit(n,l,j2,tz,ph,io,spe));
+//            cout << "Adding orbit " << n << " " << l << " " << j2 << " " << tz << " " << ph << " " << io << endl;
+            AddOrbit(n,l,j2,tz,ph,io);
          }
        }
      }
    }
 }
+*/
 
 // Some of the more common model spaces, for convenience.
 void ModelSpace::Init_He4(int nmax)
 {
    vector<string> core = {"p0s1","n0s1"};
    vector<string> valence = {};
+   target_mass = 4;
    Init(nmax,core,valence);
 }
 
@@ -414,6 +432,7 @@ void ModelSpace::Init_O16(int nmax)
 {
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
    vector<string> valence = {};
+   target_mass = 16;
    Init(nmax,core,valence);
 }
 
@@ -421,6 +440,7 @@ void ModelSpace::Init_Ca40(int nmax)
 {
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
    vector<string> valence = {};
+   target_mass = 40;
    Init(nmax,core,valence);
 }
 
@@ -428,6 +448,7 @@ void ModelSpace::Init_PShell(int nmax)
 {
    vector<string> core = {"p0s1","n0s1"};
    vector<string> valence = {"p0p3","n0p3","p0p1","n0p1"};
+   target_mass = 6;
    Init(nmax,core,valence);
 }
 
@@ -435,6 +456,7 @@ void ModelSpace::Init_SDShell(int nmax)
 {
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
    vector<string> valence = {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
+   target_mass = 18;
    Init(nmax,core,valence);
 }
 
@@ -442,6 +464,7 @@ void ModelSpace::Init_PSDShell(int nmax)
 {
    vector<string> core = {"p0s1","n0s1"};
    vector<string> valence = {"p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
+   target_mass = 16;
    Init(nmax,core,valence);
 }
 
@@ -449,6 +472,7 @@ void ModelSpace::Init_O16PSDShell(int nmax)
 {
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
    vector<string> valence = {"p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
+   target_mass = 6;
    Init(nmax,core,valence);
 }
 
@@ -456,6 +480,7 @@ void ModelSpace::Init_FPShell(int nmax)
 {
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
    vector<string> valence = {"p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"};
+   target_mass = 42;
    Init(nmax,core,valence);
 }
 
@@ -463,53 +488,73 @@ void ModelSpace::Init_SDFPShell(int nmax)
 {
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
    vector<string> valence = {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"};
+   target_mass = 18;
    Init(nmax,core,valence);
 }
 
 ModelSpace ModelSpace::operator=(const ModelSpace& ms)
 {
+   cout << "In copy assignment for ModelSpace" << endl;
    return ModelSpace(ms);
 }
 ModelSpace ModelSpace::operator=(ModelSpace&& ms)
 {
+   cout << "In move assingment for ModelSpace" << endl;
    return ModelSpace(ms);
 }
 
 void ModelSpace::AddOrbit(Orbit orb)
 {
-   int ind = Index1(orb.n, orb.l, orb.j2, orb.tz2);
-   if (Orbits.size() <= ind) Orbits.resize(ind+1,Orbit());
-   Orbits[ind] = Orbit(orb);
-   norbits = Orbits.size();
-   if (orb.j2 > OneBodyJmax)
+  AddOrbit(orb.n, orb.l, orb.j2, orb.tz2, orb.ph, orb.io);
+}
+
+void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
+{
+//   cout << "In AddOrbit" << endl;
+   index_t ind = Index1(n, l, j2, tz2);
+//   cout << "Assigning Orbits[" << ind << "]. Size of Orbits = " << Orbits.size() << endl;
+   Orbits[ind] = Orbit(n,l,j2,tz2,ph,io,ind);
+//   cout << "Successfully assigned" << endl;
+
+   if (j2 > OneBodyJmax)
    {
-      OneBodyJmax = orb.j2;
+      OneBodyJmax = j2;
       TwoBodyJmax = OneBodyJmax*2;
       ThreeBodyJmax = OneBodyJmax*3-1;
       nTwoBodyChannels = 2*3*(TwoBodyJmax+1);
    }
-   if ( 2*orb.n+orb.l > Nmax )
-   {
-      Nmax = 2*orb.n+orb.l;
-      N2max = 2*Nmax;
-      N3max = 3*Nmax;
-   }
-
-   if (orb.ph == 0) particles.push_back(ind);
-   if (orb.ph == 1) holes.push_back(ind);
-   if (orb.io == 0) valence.push_back(ind);
-   if (orb.io == 1)
+//   cout << "pushing back particles and holes" << endl;
+//   cout << "ind = " << ind
+//        << "  particles.size() = " << particles.size()
+//        << "  holes.size() = " << holes.size()
+//        << "  valence.size() = " << valence.size()
+//        << "  qspace.size() = " << qspace.size()
+//        << "  particle_qspace.size() = " << particle_qspace.size()
+//        << "  hole_qspace.size() = " << hole_qspace.size()
+//        << endl;
+   if (ph == 0) particles.push_back(ind);
+   if (ph == 1) holes.push_back(ind);
+//   cout << "Done with particle/hole" << endl;
+   if (io == 0) valence.push_back(ind);
+//   cout << "Done with in/out" << endl;
+   if (io == 1)
    {
      qspace.push_back(ind);
-     if (orb.ph == 0) particle_qspace.push_back(ind);
-     if (orb.ph == 1) hole_qspace.push_back(ind);
+     if (ph == 0) particle_qspace.push_back(ind);
+     if (ph == 1) hole_qspace.push_back(ind);
    }
-   if (orb.tz2<0) proton_orbits.push_back(ind);
-   if (orb.tz2>0) neutron_orbits.push_back(ind);
+//   cout << "pushing back proton/neutron" << endl;
+   if (tz2<0) proton_orbits.push_back(ind);
+   if (tz2>0) neutron_orbits.push_back(ind);
 
-   OneBodyChannels[{orb.l, orb.j2, orb.tz2}].push_back(ind);
+//   cout << "About to push back OneBodyChannels. size = " << OneBodyChannels.size() << endl;
+//   cout << "l = " << l << " j2 = " << j2 << " tz2 = " << tz2 << endl;
+   OneBodyChannels[{l, j2, tz2}].push_back(ind);
+//   cout << "Done with OneBodyChannels" << endl;
+
 
 }
+
 
 int ModelSpace::GetTwoBodyChannelIndex(int j, int p, int t)
 {
@@ -521,23 +566,23 @@ void ModelSpace::SetupKets()
 {
    int index = 0;
 
+   Kets.resize(Index2(norbits-1,norbits-1)+1);
    for (int p=0;p<norbits;p++)
    {
      for (int q=p;q<norbits;q++)
      {
         index = Index2(p,q);
-        if (index >= Kets.size()) Kets.resize(index+1,Ket(this));
-        Kets[index].Setpq(p,q);
+        Kets[index] = Ket(GetOrbit(p),GetOrbit(q));
      }
    }
 
-  for (int index=0;index<Kets.size();++index)
+  for (index_t index=0;index<Kets.size();++index)
   {
     Ket& ket = Kets[index];
-    int php = GetOrbit(ket.p).ph;
-    int phq = GetOrbit(ket.q).ph;
-    int iop = GetOrbit(ket.p).io;
-    int ioq = GetOrbit(ket.q).io;
+    int php = ket.op->ph;
+    int phq = ket.oq->ph;
+    int iop = ket.op->io;
+    int ioq = ket.oq->io;
      if (( php + phq)==2) // hh
      {
         KetIndex_hh.push_back(index);
@@ -578,11 +623,21 @@ void ModelSpace::SetupKets()
    }
 
    cout << "Set up TwoBodyChannels" << endl;
+   SortedTwoBodyChannels.resize(nTwoBodyChannels);
+   SortedTwoBodyChannels_CC.resize(nTwoBodyChannels);
    for (int ch=0;ch<nTwoBodyChannels;++ch)
    {
       TwoBodyChannels.push_back(TwoBodyChannel(ch,this));
       TwoBodyChannels_CC.push_back(TwoBodyChannel_CC(ch,this));
+      SortedTwoBodyChannels[ch] = ch;
+      SortedTwoBodyChannels_CC[ch] = ch;
    }
+   // Sort the two body channels in descending order of matrix dimension and discard the size-0 ones.
+   // Hopefully this can help with load balancing.
+   sort(SortedTwoBodyChannels.begin(),SortedTwoBodyChannels.end(),[this](int i, int j){ return TwoBodyChannels[i].GetNumberKets() > TwoBodyChannels[j].GetNumberKets(); }  );
+   sort(SortedTwoBodyChannels_CC.begin(),SortedTwoBodyChannels_CC.end(),[this](int i, int j){ return TwoBodyChannels_CC[i].GetNumberKets() > TwoBodyChannels_CC[j].GetNumberKets(); }  );
+   while (  TwoBodyChannels[ SortedTwoBodyChannels.back() ].GetNumberKets() <1 ) SortedTwoBodyChannels.pop_back();
+   while (  TwoBodyChannels_CC[ SortedTwoBodyChannels_CC.back() ].GetNumberKets() <1 ) SortedTwoBodyChannels_CC.pop_back();
 }
 
 
@@ -607,6 +662,7 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 
 void ModelSpace::PreCalculateMoshinsky()
 {
+//  if ( not MoshList.empty() ) return; // Already done calculated it...
   #pragma omp parallel for schedule(dynamic,1)
   for (int N=0; N<=N2max/2; ++N)
   {
@@ -642,21 +698,7 @@ void ModelSpace::PreCalculateMoshinsky()
                                        + ((unsigned long long int) l2  << 6 )
                                        +  L;
 
-
-//          unsigned long long int key =  1000000000000 * N
-//                                       + 100000000000 * Lam
-//                                       +   1000000000 * n
-//                                       +    100000000 * lam
-//                                       +      1000000 * n1
-//                                       +       100000 * l1
-//                                       +         1000 * n2
-//                                       +          100 * l2
-//                                       +                 L;
-
-//          if (N==3 and n==3 and Lam==0 and lam==0)
-//          cout << N << " " << Lam << " " << n << " " << lam << " " << n1 << " " << l1 << " " << n2 << " " << l2 << " " << L << endl;
           double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
-//          MoshList[key] = mosh;
           local_MoshList[key] = mosh;
          }
         }

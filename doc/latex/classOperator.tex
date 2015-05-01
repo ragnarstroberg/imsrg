@@ -22,6 +22,9 @@ void \hyperlink{classOperator_aa8280e8e2c6be73a9594789127b939c1}{Print\-Times} (
 \hypertarget{classOperator_ae229a22ab49ca258f69c1c2c267b2aeb}{\hyperlink{classOperator_ae229a22ab49ca258f69c1c2c267b2aeb}{Operator} (const \hyperlink{classOperator}{Operator} \&rhs)}\label{classOperator_ae229a22ab49ca258f69c1c2c267b2aeb}
 
 \begin{DoxyCompactList}\small\item\em Copy constructor. \end{DoxyCompactList}\item 
+\hypertarget{classOperator_a293af74eada6fea4cd110b15d4fe1090}{{\bfseries Operator} (\hyperlink{classOperator}{Operator} \&\&)}\label{classOperator_a293af74eada6fea4cd110b15d4fe1090}
+
+\item 
 \hypertarget{classOperator_afad114ba9dee8b9c08af0b5d27c3ba86}{\hyperlink{classOperator}{Operator} \& {\bfseries operator=} (const \hyperlink{classOperator}{Operator} \&rhs)}\label{classOperator_afad114ba9dee8b9c08af0b5d27c3ba86}
 
 \item 
@@ -52,6 +55,9 @@ void \hyperlink{classOperator_aa8280e8e2c6be73a9594789127b939c1}{Print\-Times} (
 \hypertarget{classOperator_a60c6e3fa8da186a1183e540e6ff04421}{\hyperlink{classOperator}{Operator} {\bfseries operator/} (const double rhs) const }\label{classOperator_a60c6e3fa8da186a1183e540e6ff04421}
 
 \item 
+\hypertarget{classOperator_ab1d24f45c7e10139e41084c8dc7f34ec}{\hyperlink{classOperator}{Operator} \& {\bfseries operator=} (\hyperlink{classOperator}{Operator} \&\&rhs)}\label{classOperator_ab1d24f45c7e10139e41084c8dc7f34ec}
+
+\item 
 \hypertarget{classOperator_a851708e76dd24603d0527f6c5c1bd544}{void {\bfseries Copy} (const \hyperlink{classOperator}{Operator} \&rhs)}\label{classOperator_a851708e76dd24603d0527f6c5c1bd544}
 
 \item 
@@ -67,7 +73,7 @@ void \hyperlink{classOperator_aa8280e8e2c6be73a9594789127b939c1}{Print\-Times} (
 \hypertarget{classOperator_a42d67df774701e40e2c49e539a68c937}{int {\bfseries Get\-E3max} ()}\label{classOperator_a42d67df774701e40e2c49e539a68c937}
 
 \item 
-\hypertarget{classOperator_a037a75a9f8a0dc970e56240552cc96d2}{\hyperlink{classModelSpace}{Model\-Space} $\ast$ {\bfseries Get\-Model\-Space} () const }\label{classOperator_a037a75a9f8a0dc970e56240552cc96d2}
+\hypertarget{classOperator_aeacbeb2efba4199ad20291b50f03f4f6}{\hyperlink{classModelSpace}{Model\-Space} $\ast$ {\bfseries Get\-Model\-Space} ()}\label{classOperator_aeacbeb2efba4199ad20291b50f03f4f6}
 
 \item 
 \hypertarget{classOperator_a8a0f7d6aa5163929850d06b31dc24a55}{void \hyperlink{classOperator_a8a0f7d6aa5163929850d06b31dc24a55}{Erase} ()}\label{classOperator_a8a0f7d6aa5163929850d06b31dc24a55}
@@ -352,7 +358,7 @@ Returns $ [X_{(1)},Y_{(2)}]_{(2)} - [Y_{(1)},X_{(2)}]_{(2)} $, where \[ [X_{(1)}
 \item[{{\bf Operator} \&}]{out}
 \end{DoxyParamCaption}
 )}}\label{classOperator_ac924a2af30154c83d6b821707689caa5}
-\[ [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{abcd} (n_a n_b \bar{n}_c \bar{n}_d) X_{abcd}^{J} Y_{cdab}^{J} \] may be rewritten as \[ [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{ab} (\mathcal{P}_{hh} X_{(2)}^{J} \mathcal{P}_{pp} Y_{(2)}^{J})_{abab} \] where $ \mathcal{P}_{hh} $ is a projector onto hole-\/hole two body states. \hypertarget{classOperator_a423dc256b5780dbee20ac81c9a655335}{\index{Operator@{Operator}!comm221ss@{comm221ss}}
+\[ [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{abcd} (n_a n_b \bar{n}_c \bar{n}_d) X_{abcd}^{J} Y_{cdab}^{J} \] may be rewritten as \[ [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) Tr(\mathcal{P}_{hh} X_{(2)}^{J} \mathcal{P}_{pp} Y_{(2)}^{J} \mathcal{P}_{hh}) \] where $ \mathcal{P}_{hh} $ is a projector onto hole-\/hole two body states. \hypertarget{classOperator_a423dc256b5780dbee20ac81c9a655335}{\index{Operator@{Operator}!comm221ss@{comm221ss}}
 \index{comm221ss@{comm221ss}!Operator@{Operator}}
 \subsubsection[{comm221ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm221ss (
 \begin{DoxyParamCaption}

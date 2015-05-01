@@ -2,11 +2,18 @@
 #include "AngMom.hh"
 
 
-ThreeBodyME::ThreeBodyME()
+ThreeBodyME::~ThreeBodyME()
 {}
 
+ThreeBodyME::ThreeBodyME()
+: modelspace(NULL),E3max(0)
+{
+   cout << "Default ThreeBodyME constructor" << endl;
+// MatEl.resize(0);
+}
+
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: modelspace(ms)
+: modelspace(ms), E3max(ms->N3max)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
@@ -114,7 +121,6 @@ void ThreeBodyME::Allocate()
   } //a
   cout << "Allocated " << total_dimension << " three body matrix elements (" <<  total_dimension * sizeof(ThreeBME_type)/1024./1024./1024. << " GB), "
        << nvectors << " vectors (" << nvectors * 3/1024./1024./1024. <<" GB)." << endl;
-  cout << "Size MatEl =" << MatEl.size() << endl;
 
 }
 

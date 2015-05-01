@@ -155,7 +155,6 @@ namespace imsrg_util
          }
       }
    }
-   cout << "Done with TcmOP" << endl;
    return TcmOp;
  }
 
@@ -219,7 +218,8 @@ namespace imsrg_util
               // factor to account for antisymmetrization
               int asymm_factor = 1;
 
-              if (ket.Tz!=0)
+//              if (ket.Tz!=0)
+              if (ket.op->tz2 == ket.oq->tz2)
               {
                 if ((lam_ab+Sab)%2>0) continue; // Pauli rule for identical particles
                 asymm_factor = 2 ;
@@ -279,6 +279,10 @@ namespace imsrg_util
 
 
 // Center of mass kinetic energy, with the hw/A factor
+/// Returns
+/// \f[ frac{1}{A^2} \left( \sum_{i}r_{i}^{2} + 2\sum_{i<j}\vec{r}_i\cdot\vec{r}_j 
+/// \f]
+/// evaluated in the oscillator basis.
  Operator R2CM_Op(ModelSpace& modelspace)
  {
    Operator R2cmOp = Operator(modelspace);
@@ -300,6 +304,7 @@ namespace imsrg_util
    }
 
    int nchan = modelspace.GetNumberTwoBodyChannels();
+   modelspace.PreCalculateMoshinsky();
    #pragma omp parallel for schedule(dynamic,1) 
    for (int ch=0; ch<nchan; ++ch)
    {
@@ -434,7 +439,8 @@ namespace imsrg_util
               // factor to account for antisymmetrization
               int asymm_factor = 1;
 
-              if (ket.Tz!=0)
+//              if (ket.Tz!=0)
+              if (ket.op->tz2 == ket.oq->tz2)
               {
                 if ((lam_ab+Sab)%2>0) continue; // Pauli rule for identical particles
                 asymm_factor = 2 ;
@@ -533,12 +539,15 @@ namespace imsrg_util
    return HcmOp *hw / ( 2*A );
  }
 
+/// Returns
+/// \f[ r^2 = \sum_{i} r_{i}^2 \f]
+///
 Operator RSquaredOp(ModelSpace& modelspace)
 {
    Operator r2 = Operator(modelspace);
    r2.OneBody.zeros();
    int norbits = modelspace.GetNumberOrbits();
-   int A = modelspace.GetTargetMass();
+//   int A = modelspace.GetTargetMass();
    double hw = modelspace.GetHbarOmega();
    for (int a=0;a<norbits;++a)
    {
@@ -562,12 +571,15 @@ Operator RSquaredOp(ModelSpace& modelspace)
 }
 
 // Electric monopole operator
+/// Returns
+/// \f[ r_{e}^2 = \sum_{i} e_{i} r_{i}^2 \f]
+///
 Operator E0Op(ModelSpace& modelspace)
 {
    Operator e0 = Operator(modelspace);
    e0.EraseZeroBody();
    int norbits = modelspace.GetNumberOrbits();
-   int A = modelspace.GetTargetMass();
+//   int A = modelspace.GetTargetMass();
    double hw = modelspace.GetHbarOmega();
    for (int a=0;a<norbits;++a)
    {
@@ -653,7 +665,8 @@ Operator E0Op(ModelSpace& modelspace)
               // factor to account for antisymmetrization
               int asymm_factor = 1;
 
-              if (ket.Tz!=0)
+//              if (ket.Tz!=0)
+              if (ket.op->tz2 == ket.oq->tz2)
               {
                 if ((lam_ab+Sab)%2>0) continue; // Pauli rule for identical particles
                 asymm_factor = 2 ;

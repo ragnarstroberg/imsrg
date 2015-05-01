@@ -7,17 +7,28 @@ INCLUDE = -I./armadillo
 LIBS = -lopenblas -llapack -lgsl
 #FLAGS =  -O3 -std=c++11  -fPIC -fopenmp # -DNO_ODE=1
 #FLAGS =  -std=c++11 -fopenmp -fPIC -g # -DNO_ODE=1
+<<<<<<< HEAD
 FLAGS =  -O2 -march=native -std=c++11 -fopenmp -fPIC #-g # -DNO_ODE=1
+=======
+FLAGS =  -O2 -march=native -std=c++11 -fopenmp -fPIC -DNO_ODE=1
+#FLAGS =  -std=c++11 -fopenmp -fPIC -g  -DNO_ODE=1
+SOFLABS = -std=c++11 -fopenmp -fPIC -g
+>>>>>>> master
 #FLAGS = -larmadillo -O3 -std=c++11 -lgsl -fPIC # -v -da -Q
+WARNFLAGS = -Wall -Wno-comment
+FLAGS += $(WARNFLAGS)
+SOFLAGS += $(WARNFLAGS)
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
 all: pyIMSRG.so libIMSRG.so
+#all: libIMSRG.so
 #all: mysrg pyIMSRG.so
 	
-#OBJ = ModelSpace.o ReadWrite.o Operator.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o Operator3.o
-OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o \
+OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  \
       ReadWrite.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o
+#OBJ =  CrapOperator.o 
+      
 
 mysrg: main.cc $(OBJ)
 	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
@@ -26,7 +37,7 @@ mysrg: main.cc $(OBJ)
 	$(CC) -c $*.cc -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 libIMSRG.so: $(OBJ)
-	$(CC) -shared -o $@ $^
+	$(CC) $^ -shared -o $@ $(SOFLAGS)
 
 python: pyIMSRG.so
 
@@ -34,7 +45,7 @@ pyIMSRG.so: $(OBJ) pyIMSRG.o
 	$(CC) $^ -o $@ $(FLAGS) $(INCLUDE) $(LIBS) -shared $(PYTHONFLAGS)
 
 pyIMSRG.o: pyIMSRG.cc
-	$(CC) -c $^ -o $@ -fPIC $(FLAGS) $(INCLUDE) $(LIBS) $(PYTHONFLAGS)
+	$(CC) -c $^ -o $@ $(FLAGS) $(INCLUDE) $(LIBS) $(PYTHONFLAGS)
 
 clean:
 	rm -f *.o *.so
