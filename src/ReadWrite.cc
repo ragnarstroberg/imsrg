@@ -470,12 +470,8 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
   vector<int> orbits_remap(0);
   int lmax = E1max; // haven't yet implemented the lmax truncation for 3body. Should be easy.
 
-<<<<<<< HEAD
-  for (int e=0; e<=E1max; ++e)
-=======
 //  for (int e=0; e<=E1max; ++e)
   for (int e=0; e<=min(E1max,e1max); ++e)
->>>>>>> master
   {
     int lmin = e%2;
     for (int l=lmin; l<=min(e,lmax); l+=2)
@@ -485,27 +481,18 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
       int twojMax = 2*l+1;
       for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
       {
-<<<<<<< HEAD
-         orbits_remap.push_back( big_modelspace.GetOrbitIndex(n,l,twoj,-1) );
-//         if (n==0 and l==5) cout << "Ok here. " << n << " " << l << " " << twoj << "   " << orbits_remap.size() << "  " << big_modelspace.GetOrbitIndex(n,l,twoj,-1) << endl;
-=======
 //         orbits_remap.push_back( big_modelspace.GetOrbitIndex(n,l,twoj,-1) );
          orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
->>>>>>> master
       }
     }
   }
   int nljmax = orbits_remap.size();
-<<<<<<< HEAD
-  //cout << "nljmax = " << nljmax << " -> " << orbits_remap[nljmax-1] << endl;
-=======
 //  cout << "nljmax = " << nljmax << " -> " << orbits_remap[nljmax-1] << endl;
 //  for (int k=0; k<nljmax; ++k)
 //  {
 //    cout << k << "  =>  " << orbits_remap[k] << endl;
 //  }
 
->>>>>>> master
 
 
 
@@ -653,13 +640,8 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
                        if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
                           and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max) )
                        {
-<<<<<<< HEAD
-                        Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
-//                        cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << endl;
-=======
 //                        cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << endl;
                         Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
->>>>>>> master
                        }
                     }
 
@@ -1057,13 +1039,8 @@ void ReadWrite::WriteValenceTwoBody(Operator& op, string filename)
       for (auto& i : tbc.GetKetIndex_vv() )
       {
          Ket &bra = tbc.GetKet(i);
-<<<<<<< HEAD
-         Orbit &oa = modelspace->GetOrbit(bra.p);
-         Orbit &ob = modelspace->GetOrbit(bra.q);
-=======
 //         Orbit &oa = modelspace->GetOrbit(bra.p);
 //         Orbit &ob = modelspace->GetOrbit(bra.q);
->>>>>>> master
          for (auto& j : tbc.GetKetIndex_vv() )
          {
             if (j<i) continue;
@@ -1122,12 +1099,9 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
    cout << "writing zero body part" << endl;
 
    opfile << "$ZeroBody:\t" << setprecision(10) << op.ZeroBody << endl;
-<<<<<<< HEAD
-=======
 
    cout << " norbits =  "<< modelspace->GetNumberOrbits() << endl;
    cout << "writing one body part" << endl;
->>>>>>> master
    opfile << "$OneBody:\t" << endl;
 
    int norb = modelspace->GetNumberOrbits();
@@ -1154,11 +1128,7 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
          int iket_min = op.IsNonHermitian() ? 0 : ibra;
          for (int iket=iket_min; iket<nkets; ++iket)
          {
-<<<<<<< HEAD
-            Ket& ket = tbc.GetKet(iket);
-=======
 //            Ket& ket = tbc.GetKet(iket);
->>>>>>> master
             double tbme = op.TwoBody.GetTBME_norm(ch,ibra,iket);
             if (abs(tbme) > 1e-7)
               opfile << ch << "\t" << ibra << "\t" << iket << "\t" << setprecision(10) << tbme << endl;

@@ -13,7 +13,7 @@ using namespace std;
 HartreeFock::HartreeFock(Operator& hbare)
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
     t(Hbare.OneBody), energies(Hbare.OneBody.diag()),
-    tolerance(1e-10)
+    tolerance(1e-8)
 {
    int norbits = modelspace->GetNumberOrbits();
    int nKets = modelspace->GetNumberKets();
@@ -33,6 +33,20 @@ HartreeFock::HartreeFock(Operator& hbare)
    }
    UpdateDensityMatrix();
    UpdateF();
+
+
+   CalcEHF();
+   cout << "Initial EHF = " << EHF << endl;
+   arma::uvec orbvec = {0,1,10,11};
+
+   cout << "t" << endl;
+   t.submat(orbvec,orbvec).print();
+   cout << "Vij" << endl;
+   Vij.submat(orbvec,orbvec).print();
+   cout << "V3ij" << endl;
+   (V3ij.submat(orbvec,orbvec)*0.5).print();
+   cout << "F" << endl;
+   F.submat(orbvec,orbvec).print();
 }
 
 
@@ -53,12 +67,25 @@ void HartreeFock::Solve()
       ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
       UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
       UpdateF();              // Update the Fock matrix
+
+   cout << "=================  ITERATION  " << iterations << "  ========================" << endl;
+   CalcEHF();
+   cout << "Initial EHF = " << EHF << endl;
+   arma::uvec orbvec = {0,1,10,11};
+
+   cout << "t" << endl;
+   t.submat(orbvec,orbvec).print();
+   cout << "Vij" << endl;
+   Vij.submat(orbvec,orbvec).print();
+   cout << "V3ij" << endl;
+   (V3ij.submat(orbvec,orbvec)*0.5).print();
+   cout << "F" << endl;
+   F.submat(orbvec,orbvec).print();
+
+
       if ( CheckConvergence() ) break;
    }
    CalcEHF();
-
-   cout << "rho" << endl;
-   rho.cols(holeorbs).print();
 
    if (iterations==maxiter)
       cerr << "Warning: Hartree-Fock calculation didn't converge after " << maxiter << " iterations." << endl;
@@ -86,8 +113,6 @@ void HartreeFock::CalcEHF()
    double e1hf = 0;
    double e2hf = 0;
    double e3hf = 0;
-   double e2hf = 0;
-   double ekin = 0;
    int norbits = modelspace->GetNumberOrbits();
    for (int i=0;i<norbits;i++)
    {
@@ -97,7 +122,7 @@ void HartreeFock::CalcEHF()
       {
          e1hf += rho(i,j) * jfactor * t(i,j);
          e2hf += rho(i,j) * jfactor * 0.5 * Vij(i,j);
-         e3hf +=  rho(i,j) * jfactor * (1./6*V3ij(i,j));
+         e3hf += rho(i,j) * jfactor * (1./6*V3ij(i,j));
       }
    }
    EHF = e1hf + e2hf + e3hf;
@@ -348,14 +373,16 @@ void HartreeFock::UpdateF()
         int j = orb[5];
 
         V3ij(i,j) += rho(a,b) * rho(c,d) * v ;
+        if (i%10<2 and abs(rho(a,b))>1e-6 and abs(rho(c,d))>1e-6)
+        cout << "### " << i << "," << j << "   " << rho(a,b) << " " << rho(c,d) << " " << v << endl;
       }
    }
 
 
    Vij = arma::symmatu(Vij);
    V3ij = arma::symmatu(V3ij);
-//   F = t + Vij + 0.5*V3ij;
-   F = t + Vij + V3ij/SQRT2  + (0.5-1./SQRT2)*arma::diagmat(V3ij);
+   F = t + Vij + 0.5*V3ij;
+//   F = t + Vij + V3ij/SQRT2  + (0.5-1./SQRT2)*arma::diagmat(V3ij);
 //   F = t + Vij + V3ij  + (0.5-1)*arma::diagmat(V3ij);
 }
 

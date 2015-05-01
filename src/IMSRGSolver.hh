@@ -93,13 +93,8 @@ class IMSRGSolver
 
 //  private:
   ModelSpace* modelspace;
-<<<<<<< HEAD
-  Operator Omega;
-  Operator H_0;
-=======
 //  Operator H_0; //Having this copy is dumb.
   Operator* H_0; //Having this copy is dumb.
->>>>>>> master
   Operator H_s;
   Operator Eta;
   Operator Omega;
