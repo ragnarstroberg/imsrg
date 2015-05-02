@@ -12,7 +12,7 @@ TwoBodyME::TwoBodyME()
 : modelspace(NULL), nChannels(0), hermitian(true),antihermitian(false),
   rank_J(0), rank_T(0), parity(0)
 {
-  cout << "Default TwoBodyME constructor" << endl;
+//  cout << "Default TwoBodyME constructor" << endl;
 }
 
 TwoBodyME::TwoBodyME(ModelSpace* ms)

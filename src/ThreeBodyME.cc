@@ -8,7 +8,7 @@ ThreeBodyME::~ThreeBodyME()
 ThreeBodyME::ThreeBodyME()
 : modelspace(NULL),E3max(0)
 {
-   cout << "Default ThreeBodyME constructor" << endl;
+//   cout << "Default ThreeBodyME constructor" << endl;
 // MatEl.resize(0);
 }
 
