@@ -3,7 +3,9 @@
 
 #include "ModelSpace.hh"
 
+//typedef double ThreeBME_type;
 typedef float ThreeBME_type;
+
 /// The three-body piece of an operator, stored in nested vectors.
 /// The 3BMEs are stored in unnormalized JT coupled form
 /// \f$ \langle (abJ_{ab}t_{ab})c | V | (deJ_{de}t_{de})f \rangle_{JT} \f$.

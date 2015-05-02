@@ -34,19 +34,6 @@ HartreeFock::HartreeFock(Operator& hbare)
    UpdateDensityMatrix();
    UpdateF();
 
-
-   CalcEHF();
-   cout << "Initial EHF = " << EHF << endl;
-   arma::uvec orbvec = {0,1,10,11};
-
-   cout << "t" << endl;
-   t.submat(orbvec,orbvec).print();
-   cout << "Vij" << endl;
-   Vij.submat(orbvec,orbvec).print();
-   cout << "V3ij" << endl;
-   (V3ij.submat(orbvec,orbvec)*0.5).print();
-   cout << "F" << endl;
-   F.submat(orbvec,orbvec).print();
 }
 
 
@@ -67,21 +54,6 @@ void HartreeFock::Solve()
       ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
       UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
       UpdateF();              // Update the Fock matrix
-
-   cout << "=================  ITERATION  " << iterations << "  ========================" << endl;
-   CalcEHF();
-   cout << "Initial EHF = " << EHF << endl;
-   arma::uvec orbvec = {0,1,10,11};
-
-   cout << "t" << endl;
-   t.submat(orbvec,orbvec).print();
-   cout << "Vij" << endl;
-   Vij.submat(orbvec,orbvec).print();
-   cout << "V3ij" << endl;
-   (V3ij.submat(orbvec,orbvec)*0.5).print();
-   cout << "F" << endl;
-   F.submat(orbvec,orbvec).print();
-
 
       if ( CheckConvergence() ) break;
    }
@@ -308,8 +280,7 @@ void HartreeFock::BuildMonopoleV3()
 //*********************************************************************
 void HartreeFock::UpdateDensityMatrix()
 {
-  arma::mat Ccore = C.cols(holeorbs);
-  rho = Ccore * Ccore.t();
+  rho = C.cols(holeorbs) * (C.cols(holeorbs)).t();
 }
 
 
@@ -338,14 +309,12 @@ void HartreeFock::UpdateF()
       for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
          if (j<i) continue;
-//         Orbit& oj = modelspace->GetOrbit(j);
          for (int a=0;a<norbits;++a)
          {
             Orbit& oa = modelspace->GetOrbit(a);
             bra = modelspace->GetKetIndex(min(i,a),max(i,a));
             for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
             {
-//               Orbit& ob = modelspace->GetOrbit(b);
                ket = modelspace->GetKetIndex(min(j,b),max(j,b));
                // 2body term <ai|V|bj>
                if ((a>i) xor (b>j))
@@ -373,17 +342,13 @@ void HartreeFock::UpdateF()
         int j = orb[5];
 
         V3ij(i,j) += rho(a,b) * rho(c,d) * v ;
-        if (i%10<2 and abs(rho(a,b))>1e-6 and abs(rho(c,d))>1e-6)
-        cout << "### " << i << "," << j << "   " << rho(a,b) << " " << rho(c,d) << " " << v << endl;
       }
    }
 
-
-   Vij = arma::symmatu(Vij);
+   Vij  = arma::symmatu(Vij);
    V3ij = arma::symmatu(V3ij);
+
    F = t + Vij + 0.5*V3ij;
-//   F = t + Vij + V3ij/SQRT2  + (0.5-1./SQRT2)*arma::diagmat(V3ij);
-//   F = t + Vij + V3ij  + (0.5-1)*arma::diagmat(V3ij);
 }
 
 
@@ -599,7 +564,7 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
      OUT  =    D.t() * (V2 + V3NO) * D;
    }
    // clear up some memory
-   Vmon3.resize(0);
+   Vmon3.clear();
    
    return HNO;
 

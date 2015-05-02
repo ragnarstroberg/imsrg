@@ -372,6 +372,7 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
            double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, T/2., tzd+tze+tzf);
            if (CG3*CG4==0) continue;
            Vpn += CG1*CG2*CG3*CG4*GetME(Jab_in,Jde_in,J2,tab,tde,T,a,b,c,d,e,f);
+
          }
       }
    }
@@ -431,6 +432,8 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
       swap(abc_recoupling_case, def_recoupling_case);
    }
 
+
+
    Orbit& oa = modelspace->GetOrbit(a);
    Orbit& ob = modelspace->GetOrbit(b);
    Orbit& oc = modelspace->GetOrbit(c);
@@ -458,30 +461,9 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
    int tde_max = 1;
 
 
-//   cout << "After swapping, " << a << " " << b << " " << c << " " << d << " " << e << " " << f << endl;
-//
-//   cout << "    setting vj" << endl;
- if (false and a==12)
- {
-   cout << "  Sizes: " << endl;
-   cout << "     "  << MatEl.size() << endl; 
-   cout << "     "  << MatEl[a/2].size() << endl; 
-   cout << "     "  << MatEl[a/2][b/2].size() << endl; 
-   cout << "     "  << MatEl[a/2][b/2][c/2].size() << endl; 
-   cout << "     "  << MatEl[a/2][b/2][c/2][d/2].size() << endl; 
-   cout << "     "  << MatEl[a/2][b/2][c/2][d/2][e/2].size() << endl; 
-   cout << "     "  << MatEl[a/2][b/2][c/2][d/2][e/2][f/2].size() << endl; 
- }
-                  if (false and a==12 and b==0 and c==0 and d==4 and e==4 and f==2)
-                  {
-                    cout << "   Jab_min " << Jab_min
-                         << "   Jab_max " << Jab_max
-                         << "   Jde_min " << Jde_min
-                         << "   Jde_max " << Jde_max
-                         << endl;
-                  }
-//   cout << "    accessing " << a << " " << b << " " << c << " " << d << " " << e << " " << f << endl;
+
    auto& vj = MatEl.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).at(f/2);
+   
 //   cout << "    accessing " << a << " " << b << " " << c << " " << d << " " << e << " " << f << " size = " << vj.size() << endl;
 //   cout << " size = " << vj.size() << endl;
    double V_out = 0;
@@ -489,9 +471,15 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
    for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
    {
      double Cj_abc = RecouplingCoefficient(abc_recoupling_case,ja,jb,jc,Jab_in,Jab,J2);
+     // Pick up a -1 for odd permutations
+     if (abc_recoupling_case>2) Cj_abc *= -1;
+
      for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
      {
        double Cj_def = RecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
+       // Pick up a -1 for odd permutations
+       if (def_recoupling_case>2) Cj_def *= -1;
+
        int J2_min = max( abs(2*Jab-oc.j2), abs(2*Jde-of.j2));
        int J2_max = min( 2*Jab+oc.j2, 2*Jde+of.j2);
        if (J2_min>J2_max) continue;
@@ -511,6 +499,7 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
            vj.at(J_index + Tindex) += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
            V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * vj.at(J_index+Tindex);
 
+
          }
        }
        }
@@ -519,98 +508,6 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
    }
    return V_out;
 }
-
-
-
-/*
-double ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, double V_in)
-{
-
-   // Re-order so that a>=b>=c, d>=e>=f
-   int a,b,c,d,e,f;
-   int abc_recoupling_case = SortOrbits(a_in,b_in,c_in,a,b,c);
-   int def_recoupling_case = SortOrbits(d_in,e_in,f_in,d,e,f);
-
-   if (d>a or (d==a and e>b) or (d==a and e==b and f>c))
-   {
-      swap(a,d);
-      swap(b,e);
-      swap(c,f);
-      swap(Jab_in,Jde_in);
-      swap(tab_in,tde_in);
-      swap(abc_recoupling_case, def_recoupling_case);
-   }
-
-   Orbit& oa = modelspace->GetOrbit(a);
-   Orbit& ob = modelspace->GetOrbit(b);
-   Orbit& oc = modelspace->GetOrbit(c);
-   Orbit& od = modelspace->GetOrbit(d);
-   Orbit& oe = modelspace->GetOrbit(e);
-   Orbit& of = modelspace->GetOrbit(f);
-   if (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l > E3max) return 0;
-   if (2*(od.n+oe.n+of.n)+od.l+oe.l+of.l > E3max) return 0;
-
-
-   double ja = oa.j2*0.5;
-   double jb = ob.j2*0.5;
-   double jc = oc.j2*0.5;
-   double jd = od.j2*0.5;
-   double je = oe.j2*0.5;
-   double jf = of.j2*0.5;
-
-
-   int Jab_min = max( abs(ja-jb), abs(J2*0.5-jc) );
-   int Jab_max = min( ja+jb, J2*0.5+jc );
-   int Jde_min = max( abs(jd-je), abs(J2*0.5-jf) );
-   int Jde_max = min( jd+je, J2*0.5+jf );
-
-   int tab_min = T2==3 ? 1 : 0;
-   int tab_max = 1;
-   int tde_min = T2==3 ? 1 : 0;
-   int tde_max = 1;
-
-   if (abc_recoupling_case==0 or abc_recoupling_case==2)
-   {
-     Jab_min = Jab_max = Jab_in;
-     tab_min = tab_max = tab_in;
-   }
-   if (def_recoupling_case==0 or def_recoupling_case==2)
-   {
-      Jde_min = Jde_max = Jde_in;
-      tde_min = tde_max = tde_in;
-   }
-
-   double V_out = 0;
-   for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
-   {
-     for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
-     {
-       double Cj_abc = RecouplingCoefficient(abc_recoupling_case,ja,jb,jc,Jab_in,Jab,J2);
-       double Cj_def = RecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
-
-       array<double,5>& vj = MatEl.at({a,b,c,d,e,f,J2,Jab,Jde});
-       for (int tab=tab_min; tab<=tab_max; ++tab)
-       {
-         for (int tde=tde_min; tde<=tde_max; ++tde)
-         {
-           double Ct_abc = RecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
-           double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
-
-           int Tindex = 2*tab + tde + (T2-1)/2;
-
-           vj[Tindex] += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
-           V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * vj[Tindex];
-
-         }
-       }
-     }
-   }
-   return V_out;
-}
-*/
-
-
-
 
 
 
@@ -623,10 +520,10 @@ double ThreeBodyME::RecouplingCoefficient(int recoupling_case, double ja, double
    switch (recoupling_case)
    {
     case 0: return Jab==Jab_in ? 1 : 0;
-    case 1: return modelspace->phase( jb+jc+Jab_in-Jab) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(jb, ja, Jab, jc, J/2., Jab_in);
-    case 2: return Jab==Jab_in ? modelspace->phase(ja+jb-Jab) : 0;
-    case 3: return modelspace->phase( jb+jc+Jab_in+1) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(ja, jb, Jab, jc, J/2., Jab_in);
-    case 4: return modelspace->phase( ja+jb-Jab+1) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(jb, ja, Jab, jc, J/2., Jab_in);
+    case 1: return modelspace->phase( jb+jc+Jab_in+1) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(ja, jb, Jab, jc, J/2., Jab_in);
+    case 2: return modelspace->phase( ja+jb-Jab+1) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(jb, ja, Jab, jc, J/2., Jab_in);
+    case 3: return modelspace->phase( jb+jc+Jab_in-Jab) * sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(jb, ja, Jab, jc, J/2., Jab_in);
+    case 4: return Jab==Jab_in ? modelspace->phase(ja+jb-Jab) : 0;
     case 5: return -sqrt((2*Jab_in+1)*(2*Jab+1)) * modelspace->GetSixJ(ja, jb, Jab, jc, J/2., Jab_in);
     default: return 0;
     }
@@ -637,14 +534,17 @@ double ThreeBodyME::RecouplingCoefficient(int recoupling_case, double ja, double
 /// Rearrange orbits (abc) so that a>=b>=c
 /// and return an int which reflects the required reshuffling
 /// - 0: (abc)_in -> (abc)
-/// - 1: (acb)_in -> (abc)
-/// - 2: (bac)_in -> (abc)
-/// - 3: (bca)_in -> (abc)
-/// - 4: (cab)_in -> (abc)
-/// - 5: (cba)_in -> (abc)
+/// - 1: (bca)_in -> (abc)
+/// - 2: (cab)_in -> (abc)
+/// - 3: (acb)_in -> (abc)  -- odd permutation
+/// - 4: (bac)_in -> (abc)  -- odd permutation
+/// - 5: (cba)_in -> (abc)  -- odd permutation
 //*******************************************************************
 int ThreeBodyME::SortOrbits(int a_in, int b_in, int c_in, int& a, int& b, int& c)
 {
+   a_in -= a_in%2;
+   b_in -= b_in%2;
+   c_in -= c_in%2;
    a=a_in;
    b=b_in;
    c=c_in;
@@ -653,23 +553,17 @@ int ThreeBodyME::SortOrbits(int a_in, int b_in, int c_in, int& a, int& b, int& c
    if (a<b)  swap(a,b);
 
    int recoupling_case;
-   if (a_in==a)       recoupling_case = (b_in==b) ? 0 : 1;
-   else if (a_in==b)  recoupling_case = (b_in==a) ? 2 : 3;
-   else               recoupling_case = (b_in==a) ? 4 : 5;
+   if (a_in==a)       recoupling_case = (b_in==b) ? 0 : 3;
+   else if (a_in==b)  recoupling_case = (b_in==a) ? 4 : 1;
+   else               recoupling_case = (b_in==a) ? 2 : 5;
 
-   a -= a%2;
-   b -= b%2;
-   c -= c%2;
    return recoupling_case;
 }
 
 
 void ThreeBodyME::Erase()
 {
-// for (auto& it_Orb: MatEl)
-// {
-//    it_Orb.second = {0.,0.,0.,0.,0.,};
-// }
+   MatEl.clear();
 }
 
 
