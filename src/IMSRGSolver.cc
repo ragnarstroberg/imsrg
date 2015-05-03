@@ -278,7 +278,7 @@ void IMSRGSolver::UpdateEta()
 {
    Eta.EraseOneBody();
    Eta.EraseTwoBody();
-   if (generator == "wegner")
+   if (generator == "wegner") // never tested, probably doesn't work.
    {
      ConstructGenerator_Wegner();
    } 
@@ -696,6 +696,7 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
    {
       for ( auto& j : modelspace->holes)
       {
+         if (i==j) continue;
          double denominator = Get1bDenominator_ph(i,j);
          Eta.OneBody(i,j) = 0.5*atan(2*H_s.OneBody(i,j)/denominator);
          Eta.OneBody(j,i) = - Eta.OneBody(i,j);
@@ -717,6 +718,7 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       arma::mat& ETA2 =  Eta.TwoBody.GetMatrix(ch);
       arma::mat& H2 =  H_s.TwoBody.GetMatrix(ch);
+
       // Decouple vv from qq and qv
 
       for ( auto& ibra : tbc.GetKetIndex_vv() )
@@ -724,28 +726,28 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
          for ( auto& iket : tbc.GetKetIndex_particleq_particleq() ) 
          {
             double denominator = Get2bDenominator_pppp(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket)) / denominator;
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator) ;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
 
          for ( auto& iket : tbc.GetKetIndex_holeq_holeq() ) 
          {
             double denominator = Get2bDenominator_pphh(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket)) / denominator;
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
 
          for ( auto& iket : tbc.GetKetIndex_v_particleq() ) 
          {
             double denominator = Get2bDenominator_pppp(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket)) / denominator;
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
 
          for ( auto& iket : tbc.GetKetIndex_v_holeq() ) 
          {
             double denominator = Get2bDenominator_pphp(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket)) / denominator;
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
@@ -758,14 +760,14 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
          for ( auto& ibra : tbc.GetKetIndex_particleq_particleq() )
          {
             double denominator = Get2bDenominator_pphh(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket)) / denominator;
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
 
          for ( auto& ibra : tbc.GetKetIndex_v_particleq() )
          {
             double denominator = Get2bDenominator_pphh(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket)) / denominator;
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
@@ -777,14 +779,14 @@ void IMSRGSolver::ConstructGenerator_ShellModel_Atan()
          for ( auto& ibra : tbc.GetKetIndex_particleq_particleq() )
          {
             double denominator = Get2bDenominator_pphp(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket)) / denominator;
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
 
          for ( auto& ibra : tbc.GetKetIndex_v_particleq() )
          {
             double denominator = Get2bDenominator_pphp(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket)) / denominator;
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
