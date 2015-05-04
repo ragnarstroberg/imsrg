@@ -31,6 +31,7 @@ void ThreeBodyME::Allocate()
   int norbits = modelspace->GetNumberOrbits();
   int nvectors = 0;
   int total_dimension = 0;
+  int total_dimension_with_Jcut = 0;
   int lmax = 500*norbits; // maybe do something with this later...
 
   for (int a=0; a<norbits; a+=2)
@@ -94,6 +95,7 @@ void ThreeBodyME::Allocate()
                 for (int J2=J2_min; J2<=J2_max; J2+=2)
                 {
                   dim += 5; // 5 different isospin combinations
+                  if (Jab==Jde) total_dimension_with_Jcut +=5;
                 } //J2
               } //Jde
              } //Jab
@@ -121,6 +123,7 @@ void ThreeBodyME::Allocate()
   } //a
   cout << "Allocated " << total_dimension << " three body matrix elements (" <<  total_dimension * sizeof(ThreeBME_type)/1024./1024./1024. << " GB), "
        << nvectors << " vectors (" << nvectors * 3/1024./1024./1024. <<" GB)." << endl;
+  cout << "Using only Jab = Jde elements, this would be " << total_dimension_with_Jcut << " (" << total_dimension_with_Jcut * sizeof(ThreeBME_type)/1024./1024./1024. << " GB)." << endl;
 
 }
 

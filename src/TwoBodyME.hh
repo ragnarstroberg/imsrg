@@ -84,6 +84,7 @@ class TwoBodyME
 
   // Scalar setters/getters for backwards compatibility
   double GetTBME(int ch, int a, int b, int c, int d) const;
+  double GetTBME_norm(int ch, int a, int b, int c, int d) const;
   void   SetTBME(int ch, int a, int b, int c, int d, double tbme);
   void   AddToTBME(int ch, int a, int b, int c, int d, double tbme);
   double GetTBME(int ch, Ket &bra, Ket &ket) const;

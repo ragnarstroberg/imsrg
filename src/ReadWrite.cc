@@ -806,7 +806,8 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
       if (oi.tz2 < 0 ) continue;
       intfile << op.OneBody(i,i) << "  ";
    }
-   intfile << "  " << Acore << " " << Acore+2 << "  0.00000 " << endl; // No mass dependence for now...
+   intfile << "  " << Acore << "  " << Acore+2 << "  0.00000 " << endl; // No mass dependence for now...
+
 
    int nchan = modelspace->GetNumberTwoBodyChannels();
    for (int ch=0;ch<nchan;++ch)
@@ -819,8 +820,6 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
          int b = bra.q;
          Orbit& oa = modelspace->GetOrbit(a);
          Orbit& ob = modelspace->GetOrbit(b);
-         int a_ind = a/2+1 + ( oa.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
-         int b_ind = b/2+1 + ( ob.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
          for (auto& iket: tbc.GetKetIndex_vv())
          {
             if (iket<ibra) continue;
@@ -829,43 +828,55 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
             int d = ket.q;
             Orbit& oc = modelspace->GetOrbit(c);
             Orbit& od = modelspace->GetOrbit(d);
+
+            // don't pull a_ind and b_ind out of this loop, on account of the swap below.
+            int a_ind = a/2+1 + ( oa.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+            int b_ind = b/2+1 + ( ob.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
             int c_ind = c/2+1 + ( oc.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
             int d_ind = d/2+1 + ( od.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
             int T = abs(tbc.Tz);
-//            double tbme = op.TwoBody.GetTBME(ch,bra,ket);
-            double tbme = op.TwoBody.GetTBME_norm(ch,bra,ket);
-//            cout << "~~~ " << a << " " << b << " " << c << " " << d << " => " << a_ind << " " << b_ind << " " << c_ind << " " << d_ind << "  " << tbme << endl;
+
+            double tbme = op.TwoBody.GetTBME_norm(ch,a,b,c,d);
+            // NuShellX quirk: even though it uses pn formalism, it requires that Vpnpn = Vnpnp,
+            //  i.e. the spatial wf for protons and neutrons are assumed to be the same.
+            if (oa.tz2!=ob.tz2)
+            {
+               int aa = a - oa.tz2;
+               int bb = b - ob.tz2;
+               int cc = c - oc.tz2;
+               int dd = d - od.tz2;
+               tbme += op.TwoBody.GetTBME_norm(ch,aa,bb,cc,dd);
+               tbme /= 2;
+            }
+
             if ( abs(tbme) < 1e-6) tbme = 0;
             if (T==0)
             {
                if (oa.j2 == ob.j2 and oa.l == ob.l and oa.n == ob.n) T = (tbc.J+1)%2;
-//               if (a/2==b/2) T = (tbc.J+1)%2;
                else tbme *= SQRT2; // pn TBMEs are unnormalized
                if (oc.j2 == od.j2 and oc.l == od.l and oc.n == od.n) T = (tbc.J+1)%2;
-//               if (c/2==d/2) T = (tbc.J+1)%2;
                else tbme *= SQRT2; // pn TBMEs are unnormalized
             }
-            // in NuShellX, the proton orbits must come first.
+            // in NuShellX, the proton orbits must come first. This can be achieved by
+            // ensuring that the bra and ket indices are in ascending order.
             if (a_ind > b_ind)
             {
-               intfile << setw(wint) << b_ind << setw(wint) << a_ind;
+               swap(a_ind,b_ind);
                tbme *= bra.Phase(tbc.J);
-            }
-            else
-            {
-               intfile << setw(wint) << a_ind << setw(wint) << b_ind;
             }
             if (c_ind > d_ind)
             {
-               intfile << setw(wint) << d_ind << setw(wint) << c_ind;
+               swap(c_ind,d_ind);
                tbme *= ket.Phase(tbc.J);
             }
-            else
+            if ((a_ind > c_ind) or (c_ind==a_ind and b_ind>d_ind) )
             {
-               intfile << setw(wint) << c_ind << setw(wint) << d_ind;
+              swap(a_ind,c_ind);
+              swap(b_ind,d_ind);
             }
-            intfile  << setw(wint) << tbc.J << "   "
-                     << setw(wint) << T     << "       "
+
+            intfile  << setw(wint) << a_ind << setw(wint) << b_ind << setw(wint) << c_ind << setw(wint) << d_ind << "    "
+                     << setw(wint) << tbc.J << " " << setw(wint) << T     << "       "
                      << setw(wdouble) << setiosflags(ios::fixed) << setprecision(pdouble) << tbme
                      << endl;
          }

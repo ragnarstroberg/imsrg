@@ -189,6 +189,7 @@ void HartreeFock::BuildMonopoleV()
 //*********************************************************************
 void HartreeFock::BuildMonopoleV3()
 {
+   double t = omp_get_wtime();
   // First, allocate. This is fast so don't parallelize.
   int norbits = modelspace->GetNumberOrbits();
   for (int i=0; i<norbits; ++i)
@@ -268,6 +269,7 @@ void HartreeFock::BuildMonopoleV3()
       }
       v /= (j2i+1);
    }
+   Hbare.timer["HF_BuildMonopoleV3"] += omp_get_wtime() - t;
 }
 
 
@@ -296,6 +298,7 @@ void HartreeFock::UpdateDensityMatrix()
 //*********************************************************************
 void HartreeFock::UpdateF()
 {
+   double t = omp_get_wtime();
    int norbits = modelspace->GetNumberOrbits();
    int bra, ket;
    Vij.zeros();
@@ -349,6 +352,8 @@ void HartreeFock::UpdateF()
    V3ij = arma::symmatu(V3ij);
 
    F = t + Vij + 0.5*V3ij;
+
+   Hbare.timer["HF_UpdateF"] += omp_get_wtime() - t;
 }
 
 
@@ -503,6 +508,7 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
 ///
 Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by either passing a reference or returning an rvalue
 {
+   double t = omp_get_wtime();
    cout << "Getting normal-ordered H in HF basis" << endl;
    Operator HNO = Operator(*modelspace,0,0,0,2);
    HNO.ZeroBody = EHF;
@@ -565,6 +571,7 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
    }
    // clear up some memory
    Vmon3.clear();
+   Hbare.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - t;
    
    return HNO;
 

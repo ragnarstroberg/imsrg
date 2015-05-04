@@ -283,6 +283,10 @@ double TwoBodyME::GetTBME(int ch, int a, int b, int c, int d) const
 {
    return GetTBME(ch,ch,a,b,c,d);
 }
+double TwoBodyME::GetTBME_norm(int ch, int a, int b, int c, int d) const
+{
+   return GetTBME_norm(ch,ch,a,b,c,d);
+}
 
 void TwoBodyME::SetTBME(int ch, int a, int b, int c, int d, double tbme)
 {
