@@ -90,6 +90,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetE3max", &Operator::GetE3max)
       .def("SetE3max", &Operator::SetE3max)
       .def("PrintTimes", &Operator::PrintTimes)
+      .def("BCH_Transform", &Operator::BCH_Transform)
    ;
 
 
