@@ -112,11 +112,11 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
    KetIndex_hh = GetKetIndexFromList(modelspace->KetIndex_hh);
    KetIndex_ph = GetKetIndexFromList(modelspace->KetIndex_ph);
    KetIndex_vv = GetKetIndexFromList(modelspace->KetIndex_vv);
-   KetIndex_holeq_holeq = GetKetIndexFromList(modelspace->KetIndex_holeq_holeq);
-   KetIndex_particleq_particleq = GetKetIndexFromList(modelspace->KetIndex_particleq_particleq);
-   KetIndex_particleq_holeq = GetKetIndexFromList(modelspace->KetIndex_particleq_holeq);
-   KetIndex_v_holeq = GetKetIndexFromList(modelspace->KetIndex_v_holeq);
-   KetIndex_v_particleq= GetKetIndexFromList(modelspace->KetIndex_v_particleq);
+   KetIndex_c_c = GetKetIndexFromList(modelspace->KetIndex_c_c);
+   KetIndex_q_q = GetKetIndexFromList(modelspace->KetIndex_q_q);
+   KetIndex_q_c = GetKetIndexFromList(modelspace->KetIndex_q_c);
+   KetIndex_v_c = GetKetIndexFromList(modelspace->KetIndex_v_c);
+   KetIndex_v_q= GetKetIndexFromList(modelspace->KetIndex_v_q);
 }
 
 
@@ -143,11 +143,11 @@ arma::uvec& TwoBodyChannel::GetKetIndex_pp() { return KetIndex_pp;};
 arma::uvec& TwoBodyChannel::GetKetIndex_hh() { return KetIndex_hh;};
 arma::uvec& TwoBodyChannel::GetKetIndex_ph() { return KetIndex_ph;};
 arma::uvec& TwoBodyChannel::GetKetIndex_vv() { return KetIndex_vv;};
-arma::uvec& TwoBodyChannel::GetKetIndex_holeq_holeq() { return KetIndex_holeq_holeq;};
-arma::uvec& TwoBodyChannel::GetKetIndex_particleq_particleq() { return KetIndex_particleq_particleq;};
-arma::uvec& TwoBodyChannel::GetKetIndex_particleq_holeq() { return KetIndex_particleq_holeq;};
-arma::uvec& TwoBodyChannel::GetKetIndex_v_holeq() { return KetIndex_v_holeq;};
-arma::uvec& TwoBodyChannel::GetKetIndex_v_particleq(){ return KetIndex_v_particleq;};
+arma::uvec& TwoBodyChannel::GetKetIndex_c_c() { return KetIndex_c_c;};
+arma::uvec& TwoBodyChannel::GetKetIndex_q_q() { return KetIndex_q_q;};
+arma::uvec& TwoBodyChannel::GetKetIndex_q_c() { return KetIndex_q_c;};
+arma::uvec& TwoBodyChannel::GetKetIndex_v_c() { return KetIndex_v_c;};
+arma::uvec& TwoBodyChannel::GetKetIndex_v_q(){ return KetIndex_v_q;};
 
 
 arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<index_t>& vec_in)
@@ -265,10 +265,10 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    qspace( move(ms.qspace)), hole_qspace(move(ms.hole_qspace)), proton_orbits( move(ms.proton_orbits)),
    neutron_orbits( move(ms.neutron_orbits)),
    KetIndex_pp( move(ms.KetIndex_pp)), KetIndex_ph( move(ms.KetIndex_ph)), KetIndex_hh( move(ms.KetIndex_hh)),
-   KetIndex_vv( move(ms.KetIndex_vv)), KetIndex_holeq_holeq( move(ms.KetIndex_holeq_holeq)),
-   KetIndex_particleq_particleq( move(ms.KetIndex_particleq_particleq)),
-   KetIndex_particleq_holeq( move(ms.KetIndex_particleq_holeq)),
-   KetIndex_v_holeq( move(ms.KetIndex_v_holeq)), KetIndex_v_particleq( move(ms. KetIndex_v_particleq)),
+   KetIndex_vv( move(ms.KetIndex_vv)), KetIndex_c_c( move(ms.KetIndex_c_c)),
+   KetIndex_q_q( move(ms.KetIndex_q_q)),
+   KetIndex_q_c( move(ms.KetIndex_q_c)),
+   KetIndex_v_c( move(ms.KetIndex_v_c)), KetIndex_v_q( move(ms. KetIndex_v_q)),
    Nmax(ms.Nmax), N2max(ms.N2max), N3max(ms.N3max),
    OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
    OneBodyChannels(move(ms.OneBodyChannels)),
@@ -588,7 +588,7 @@ void ModelSpace::SetupKets()
         KetIndex_hh.push_back(index);
         if ((iop+ioq)==2) // qq
         {
-           KetIndex_holeq_holeq.push_back(index);
+           KetIndex_c_c.push_back(index);
         }
      }
      else if ((php + phq) == 0) // pp
@@ -596,7 +596,7 @@ void ModelSpace::SetupKets()
         KetIndex_pp.push_back(index);
         if ((iop+ioq)==2) // qq
         {
-           KetIndex_particleq_particleq.push_back(index);
+           KetIndex_q_q.push_back(index);
         }
      }
      else //ph
@@ -604,7 +604,7 @@ void ModelSpace::SetupKets()
         KetIndex_ph.push_back(index);
         if ((iop+ioq)==2) // qq
         {
-           KetIndex_particleq_holeq.push_back(index);
+           KetIndex_q_c.push_back(index);
         }
      }
      if ((iop + ioq) == 0) // vv
@@ -615,9 +615,9 @@ void ModelSpace::SetupKets()
      if ((iop + ioq) == 1) // vq
      {
        if ((iop + php == 2) or (ioq+phq==2) ) // the qspace orbit is a hole
-          KetIndex_v_holeq.push_back(index);
+          KetIndex_v_c.push_back(index);
        else // v particle_q
-          KetIndex_v_particleq.push_back(index);
+          KetIndex_v_q.push_back(index);
      }
 
    }

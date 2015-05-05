@@ -97,11 +97,11 @@ class TwoBodyChannel
    arma::uvec KetIndex_hh ;
    arma::uvec KetIndex_ph ;
    arma::uvec KetIndex_vv ;
-   arma::uvec KetIndex_holeq_holeq;
-   arma::uvec KetIndex_particleq_particleq;
-   arma::uvec KetIndex_particleq_holeq ;
-   arma::uvec KetIndex_v_holeq ;
-   arma::uvec KetIndex_v_particleq;
+   arma::uvec KetIndex_c_c;
+   arma::uvec KetIndex_q_q;
+   arma::uvec KetIndex_q_c ;
+   arma::uvec KetIndex_v_c ;
+   arma::uvec KetIndex_v_q;
 
 
    arma::uvec GetKetIndexFromList(vector<index_t>& vec_in);
@@ -109,11 +109,11 @@ class TwoBodyChannel
    arma::uvec& GetKetIndex_hh();
    arma::uvec& GetKetIndex_ph();
    arma::uvec& GetKetIndex_vv();
-   arma::uvec& GetKetIndex_holeq_holeq(); 
-   arma::uvec& GetKetIndex_particleq_particleq();
-   arma::uvec& GetKetIndex_particleq_holeq();
-   arma::uvec& GetKetIndex_v_holeq(); // added
-   arma::uvec& GetKetIndex_v_particleq(); //added
+   arma::uvec& GetKetIndex_c_c();  // cc
+   arma::uvec& GetKetIndex_q_q();  //qq
+   arma::uvec& GetKetIndex_q_c(); // qc
+   arma::uvec& GetKetIndex_v_c(); // vc
+   arma::uvec& GetKetIndex_v_q(); // qv
 
 // private:
    //Fields
@@ -238,11 +238,11 @@ class ModelSpace
    vector<index_t> KetIndex_ph;
    vector<index_t> KetIndex_hh;
    vector<index_t> KetIndex_vv;
-   vector<index_t> KetIndex_holeq_holeq; 
-   vector<index_t> KetIndex_particleq_particleq;
-   vector<index_t> KetIndex_particleq_holeq;
-   vector<index_t> KetIndex_v_holeq; // added
-   vector<index_t> KetIndex_v_particleq; //added
+   vector<index_t> KetIndex_c_c; 
+   vector<index_t> KetIndex_q_q;
+   vector<index_t> KetIndex_q_c;
+   vector<index_t> KetIndex_v_c; // added
+   vector<index_t> KetIndex_v_q; //added
 
    int Nmax;
    int N2max;

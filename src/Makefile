@@ -7,7 +7,7 @@ INCLUDE = -I./armadillo
 LIBS = -lopenblas -llapack -lgsl
 #FLAGS =  -O3 -std=c++11  -fPIC -fopenmp # -DNO_ODE=1
 #FLAGS =  -std=c++11 -fopenmp -fPIC -g # -DNO_ODE=1
-FLAGS =  -O2 -march=native -std=c++11 -fopenmp -fPIC -DNO_ODE=1
+FLAGS =  -O2 -march=native -std=c++11 -fopenmp -fPIC -DNO_ODE=1 -g
 #FLAGS =  -std=c++11 -fopenmp -fPIC -g  -DNO_ODE=1
 SOFLABS = -std=c++11 -fopenmp -fPIC -g
 #FLAGS = -larmadillo -O3 -std=c++11 -lgsl -fPIC # -v -da -Q
@@ -21,8 +21,8 @@ all: pyIMSRG.so libIMSRG.so
 #all: libIMSRG.so
 #all: mysrg pyIMSRG.so
 	
-OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  \
-      ReadWrite.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o
+OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
+      HartreeFock.o Generator.o IMSRGSolver.o AngMom.o imsrg_util.o
 #OBJ =  CrapOperator.o 
       
 

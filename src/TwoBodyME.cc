@@ -80,6 +80,7 @@ void TwoBodyME::Copy(const TwoBodyME& rhs)
 
 void TwoBodyME::Allocate()
 {
+//  int nelem = 0;
   for (int ch_bra=0; ch_bra<nChannels;++ch_bra)
   {
      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
@@ -92,9 +93,10 @@ void TwoBodyME::Allocate()
         if ( (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
         
         MatEl[{ch_bra,ch_ket}] =  arma::mat(tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros);
-        
+//        nelem += tbc_bra.GetNumberKets() * tbc_ket.GetNumberKets();
      }
   }
+//  cout << "Allocated " << nelem << " two body matrix elements (" << nelem * sizeof(double)/1024./1024./1024. << " GB)" << endl;
 }
 
 
