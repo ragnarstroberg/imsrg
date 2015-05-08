@@ -87,6 +87,7 @@ class Operator
   // Other setter-getters
 //  ModelSpace * GetModelSpace() const {return modelspace;};
   ModelSpace * GetModelSpace();
+  void SetModelSpace(ModelSpace &ms){modelspace = &ms;};
 
   void Erase(); ///< Set all matrix elements to zero.
   void EraseZeroBody(){ZeroBody = 0;}; // set zero-body term to zero
@@ -117,6 +118,8 @@ class Operator
   Operator DoNormalOrdering(); ///< Calls DoNormalOrdering2() or DoNormalOrdering3(), depending on the rank of the operator.
   Operator DoNormalOrdering2(); ///< Returns the normal ordered two-body operator
   Operator DoNormalOrdering3(); ///< Returns the normal ordered three-body operator
+  Operator UndoNormalOrdering(); ///< Returns the operator normal-ordered wrt the vacuum
+//  Operator DoNormalOrderingCore(); /// < Returns the operator normal-ordered wrt the shell-model core.
 
   Operator Commutator(  Operator& opright) ; ///< Z = X.Commutator(Y) means \f$ Z = [X,Y] \f$
   Operator CommutatorScalarScalar( Operator& opright) ;

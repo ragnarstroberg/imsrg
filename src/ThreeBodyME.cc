@@ -21,9 +21,6 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
 {}
 
 // Confusing nomenclature: J2 means 2 times the total J of the three body system
-// this should most likely be done with vectors?
-
-
 void ThreeBodyME::Allocate()
 {
   E3max = modelspace->GetN3max();
@@ -31,7 +28,6 @@ void ThreeBodyME::Allocate()
   int norbits = modelspace->GetNumberOrbits();
   int nvectors = 0;
   int total_dimension = 0;
-//  int total_reduced_dimension = 0;
   int lmax = 500*norbits; // maybe do something with this later...
 
   for (int a=0; a<norbits; a+=2)
@@ -62,14 +58,12 @@ void ThreeBodyME::Allocate()
          if (oc.l > lmax) break;
          Orbit& od = modelspace->GetOrbit(d);
          int ed = 2*od.n+od.l;
-//         if (ed>E3max) break;
          vector<vector<vector<ThreeBME_type>>> vece;
          for (int e=0; e<= (d==a ? b : d); e+=2)
          {
            if (od.l > lmax) break;
            Orbit& oe = modelspace->GetOrbit(e);
            int ee = 2*oe.n+oe.l;
-//           if ((ed+ee)>E3max) break;
            vector<vector<ThreeBME_type>> vecf;
            for (int f=0; f<=((d==a and e==b) ? c : e); f+=2)
            {
@@ -95,15 +89,12 @@ void ThreeBodyME::Allocate()
                 for (int J2=J2_min; J2<=J2_max; J2+=2)
                 {
                   dim += 5; // 5 different isospin combinations
-//                  if (Jab==Jde) total_reduced_dimension +=5;
                 } //J2
               } //Jde
              } //Jab
              vecf.push_back( vector<ThreeBME_type>(dim,0.0) );
              ++nvectors;
              total_dimension += dim;
-//              if (dim >0)
-//              cout << "--- " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "  :  " << dim << endl;
 
            } //f
            vece.push_back( vecf );
@@ -123,221 +114,8 @@ void ThreeBodyME::Allocate()
   } //a
   cout << "Allocated " << total_dimension << " three body matrix elements (" <<  total_dimension * sizeof(ThreeBME_type)/1024./1024./1024. << " GB), "
        << nvectors << " vectors (" << nvectors * 3/1024./1024./1024. <<" GB)." << endl;
-//  cout << "Using only Jab = Jde elements, this would be " << total_reduced_dimension << " (" << total_reduced_dimension * sizeof(ThreeBME_type)/1024./1024./1024. << " GB)." << endl;
 
 }
-
-
-/*
-void ThreeBodyME::Allocate()
-{
-  E3max = modelspace->GetN3max();
-  cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
-  int norbits = modelspace->GetNumberOrbits();
-  int nvectors = 0;
-  int total_dimension = 0;
-
-  // Allocate pointers to a
-  int dim = 0;
-  for (int a=0; a<norbits; a+=2)
-  {
-   Orbit& oa = modelspace->GetOrbit(a);
-   if ((2*oa.n + oa.l)>E3max) break;
-   ++dim;
-  }
-  MatEl.resize(dim); // big ugly pointer
-  nvectors += dim;
-
-  for (int a=0; a<norbits; a+=2)
-  {
-   Orbit& oa = modelspace->GetOrbit(a);
-   int ea = 2*oa.n+oa.l;
-   if (ea>E3max) break;
-   dim = 0;
-   for (int b=0; b<=a; b+=2)
-   {
-     Orbit& ob = modelspace->GetOrbit(b);
-     int eb = 2*ob.n+ob.l;
-     if ((ea+eb)>E3max) break;
-     ++dim;
-   }
-             if (dim<1) continue;
-   MatEl[a/2].resize(dim);
-   nvectors += dim;
-
-   for (int b=0; b<=a; b+=2)
-   {
-     Orbit& ob = modelspace->GetOrbit(b);
-     int eb = 2*ob.n+ob.l;
-     if ((ea+eb)>E3max) break;
-     dim = 0;
-     for (int c=0; c<=b; c+=2)
-     {
-       Orbit& oc = modelspace->GetOrbit(c);
-       int ec = 2*oc.n+oc.l;
-       if ((ea+eb+ec)>E3max) break;
-       ++dim;
-     }
-     if (dim<1) continue;
-     MatEl[a/2][b/2].resize(dim);
-     nvectors += dim;
-     for (int c=0; c<=b; c+=2)
-     {
-       Orbit& oc = modelspace->GetOrbit(c);
-       int ec = 2*oc.n+oc.l;
-       if ((ea+eb+ec)>E3max) break;
-       dim = 0;
-       for (int d=0; d<=a; d+=2)
-       {
-         Orbit& od = modelspace->GetOrbit(d);
-         int ed = 2*od.n+od.l;
-         if (ed>E3max) break;
-         ++dim;
-       }
-             if (dim<1) continue;
-       MatEl[a/2][b/2][c/2].resize(dim);
-       nvectors += dim;
-
-       for (int d=0; d<=a; d+=2)
-       {
-         Orbit& od = modelspace->GetOrbit(d);
-         int ed = 2*od.n+od.l;
-         if (ed>E3max) break;
-         dim = 0;
-         for (int e=0; e<= (d==a ? b : d); e+=2)
-         {
-           Orbit& oe = modelspace->GetOrbit(e);
-           int ee = 2*oe.n+oe.l;
-           if ((ed+ee)>E3max) break;
-           ++dim;
-         }
-             if (dim<1) continue;
-         MatEl[a/2][b/2][c/2][d/2].resize(dim);
-         nvectors += dim;
-      
-         for (int e=0; e<= (d==a ? b : d); e+=2)
-         {
-           Orbit& oe = modelspace->GetOrbit(e);
-           int ee = 2*oe.n+oe.l;
-           if ((ed+ee)>E3max) break;
-           dim = 0;
-           for (int f=0; f<=((d==a and e==b) ? c : e); f+=2)
-           {
-             Orbit& of = modelspace->GetOrbit(f);
-             int ef = 2*of.n+of.l;
-             if ((ed+ee+ef)>E3max) break;
-             ++dim;
-           }
-             if (dim<1) continue;
-           MatEl[a/2][b/2][c/2][d/2][e/2].resize(dim);
-           nvectors += dim;
-
-           for (int f=0; f<=((d==a and e==b) ? c : e); f+=2)
-           {
-             Orbit& of = modelspace->GetOrbit(f);
-             int ef = 2*of.n+of.l;
-             if ((ed+ee+ef)>E3max) break;
-             dim = 0;
-
-             int Jab_min = abs(oa.j2-ob.j2)/2;
-             int Jde_min = abs(od.j2-oe.j2)/2;
-             int Jab_max = (oa.j2+ob.j2)/2;
-             int Jde_max = (od.j2+oe.j2)/2;
-
-
-             for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
-             {
-              for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
-              {
-                int J2_min = max( abs(2*Jab-oc.j2), abs(2*Jde-of.j2));
-                int J2_max = min( 2*Jab+oc.j2, 2*Jde+of.j2);
-                for (int J2=J2_min; J2<=J2_max; J2+=2)
-                {
-                  dim += 5; // 5 different isospin combinations
-                } //J2
-              } //Jde
-             } //Jab
-             if (dim<1) continue;
-             MatEl[a/2][b/2][c/2][d/2][e/2][f/2].resize(dim,0.0);
-             total_dimension += dim;
- 
-           } //f
-         } //e
-       } //d
-     } //c
-   } //b
-  } //a
-  cout << "Allocated " << total_dimension << " three body matrix elements (" <<  total_dimension * sizeof(ThreeBME_type)/1024./1024./1024. << " GB), "
-       << nvectors << " vectors (" << nvectors * 24./1024./1024./1024. <<" GB)." << endl;
-
-}
-*/
-
-
-
-
-/*
-void ThreeBodyME::Allocate()
-{
-  E3max = modelspace->GetN3max();
-  cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
-  vector<double> zerovector(5,0.0);
-  int norbits = modelspace->GetNumberOrbits();
-  for (int a=0; a<norbits; a+=2)
-  {
-   Orbit& oa = modelspace->GetOrbit(a);
-   if ((2*oa.n + oa.l)>E3max) continue;
-   for (int b=0; b<=a; b+=2)
-   {
-    Orbit& ob = modelspace->GetOrbit(b);
-    if ((2*oa.n+oa.l + 2*ob.n+ob.l) > E3max) continue;
-    for (int c=0; c<=b; c+=2)
-    {
-     Orbit& oc = modelspace->GetOrbit(c);
-     if ((2*oa.n+oa.l + 2*ob.n+ob.l + 2*oc.n+oc.l) > E3max) continue;
-
-     // Begin loop over ket states
-     for( int d=0; d<=a; d+=2)
-     {
-      Orbit& od = modelspace->GetOrbit(d);
-      for (int e=0; e<= (d==a ? b : d); e+=2)
-      {
-       Orbit& oe = modelspace->GetOrbit(e);
-       for (int f=0; f<=((d==a and e==b) ? c : e); f+=2)
-       {
-        Orbit& of = modelspace->GetOrbit(f);
-
-        // conserve parity
-        if ((oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0) continue;
-
-
-        int Jab_min = abs(oa.j2-ob.j2)/2;
-        int Jde_min = abs(od.j2-oe.j2)/2;
-        int Jab_max = (oa.j2+ob.j2)/2;
-        int Jde_max = (od.j2+oe.j2)/2;
-
-
-        for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
-        {
-         for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
-         {
-           int J2_min = max( abs(2*Jab-oc.j2), abs(2*Jde-of.j2));
-           int J2_max = min( 2*Jab+oc.j2, 2*Jde+of.j2);
-           for (int J2=J2_min; J2<=J2_max; J2+=2)
-           {
-             MatEl[{a,b,c,d,e,f,J2,Jab,Jde}] = {0.,0.,0.,0.,0.};
-           } //J2
-         } //Jde
-        } //Jab
-       } //f
-      } //e
-     } //d
-    } //c
-   } //b
-  } //a
-}
-*/
-
 
 
 

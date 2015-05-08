@@ -262,7 +262,6 @@ Operator Operator::DoNormalOrdering2()
       int ch_ket = itmat.first[1];
       auto& matrix = itmat.second;
       
-//      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
       int J_ket = tbc_ket.J;
 
@@ -272,7 +271,6 @@ Operator Operator::DoNormalOrdering2()
       opNO.ZeroBody += arma::sum( diagonals.elem(hh) ) * (2*J_ket+1);
 
       // One body part
-//      for (long long unsigned int a=0;a<norbits;++a)
       for (index_t a=0;a<norbits;++a)
       {
          Orbit &oa = modelspace->GetOrbit(a);
@@ -355,6 +353,113 @@ Operator Operator::DoNormalOrdering3()
 
 }
 
+
+Operator Operator::UndoNormalOrdering()
+{
+   Operator opNO = *this;
+   cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << endl;
+
+   for (auto& k : modelspace->holes) // loop over hole orbits
+   {
+      opNO.ZeroBody -= (modelspace->GetOrbit(k).j2+1) * OneBody(k,k);
+   }
+
+   index_t norbits = modelspace->GetNumberOrbits();
+
+   for ( auto& itmat : TwoBody.MatEl )
+   {
+      int ch_bra = itmat.first[0];
+      int ch_ket = itmat.first[1];
+      auto& matrix = itmat.second;
+      
+      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+      int J_ket = tbc_ket.J;
+
+      // Zero body part
+      arma::vec diagonals = matrix.diag();
+      auto hh = tbc_ket.GetKetIndex_hh();
+      opNO.ZeroBody += arma::sum( diagonals.elem(hh) ) * (2*J_ket+1);
+
+      // One body part
+      for (index_t a=0;a<norbits;++a)
+      {
+         Orbit &oa = modelspace->GetOrbit(a);
+         index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
+         for ( auto& b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // OneBodyChannels should be moved to the operator, to accommodate tensors
+         {
+            if (b < bstart) continue;
+            for (auto& h : modelspace->holes)  // C++11 syntax
+            {
+               opNO.OneBody(a,b) -= (2*J_ket+1.0)/(oa.j2+1)  * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+            }
+         }
+      }
+   } // loop over channels
+
+   if (hermitian) opNO.Symmetrize();
+   if (antihermitian) opNO.AntiSymmetrize();
+
+   cout << "Zero-body piece is now " << opNO.ZeroBody << endl;
+   return opNO;
+
+}
+
+/*
+Operator Operator::DoNormalOrderingCore()
+{
+   Operator opNO = *this;
+   cout << "Normal Ordering wrt the core. Initial ZeroBody = " << opNO.ZeroBody << endl;
+
+
+   for (auto& k : modelspace->hole_qspace) // loop over core orbits
+   {
+      opNO.ZeroBody += (modelspace->GetOrbit(k).j2+1) * OneBody(k,k);
+   }
+
+
+   index_t norbits = modelspace->GetNumberOrbits();
+
+   for ( auto& itmat : TwoBody.MatEl )
+   {
+      int ch_bra = itmat.first[0];
+      int ch_ket = itmat.first[1];
+      auto& matrix = itmat.second;
+      
+//      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+      int J_ket = tbc_ket.J;
+
+      // Zero body part
+      arma::vec diagonals = matrix.diag();
+//      auto hh = tbc_ket.GetKetIndex_hh();
+      auto cc = tbc_ket.GetKetIndex_c_c();
+      opNO.ZeroBody += arma::sum( diagonals.elem(cc) ) * (2*J_ket+1);
+
+      // One body part
+//      for (long long unsigned int a=0;a<norbits;++a)
+      for (index_t a=0;a<norbits;++a)
+      {
+         Orbit &oa = modelspace->GetOrbit(a);
+         index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
+         for ( auto& b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // OneBodyChannels should be moved to the operator, to accommodate tensors
+         {
+            if (b < bstart) continue;
+            for (auto& h : modelspace->hole_qspace)  // C++11 syntax
+            {
+               opNO.OneBody(a,b) += (2*J_ket+1.0)/(oa.j2+1)  * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+            }
+         }
+      }
+   } // loop over channels
+
+   if (hermitian) opNO.Symmetrize();
+   if (antihermitian) opNO.AntiSymmetrize();
+
+   cout << "Zero body piece is now " << opNO.ZeroBody << endl;
+
+   return opNO;
+}
+*/
 
 ModelSpace* Operator::GetModelSpace()
 {
@@ -922,7 +1027,7 @@ void Operator::comm110ss( Operator& opright, Operator& out)
 /// may be rewritten as
 /// \f[
 /// [X_{(2)},Y_{(2)}]_{(0)} = 2 \sum_{J} (2J+1) Tr(X_{hh'pp'}^{J} Y_{pp'hh'}^{J})
-/// \f] where we obtain a factor of four from converting two unrestricted sums to restricted sums, i.e. \f$\sum_{ab} \rightarrow \sum_{a\leqb} \f$,
+/// \f] where we obtain a factor of four from converting two unrestricted sums to restricted sums, i.e. \f$\sum_{ab} \rightarrow \sum_{a\leq b} \f$,
 /// and using the normalized TBME.
 void Operator::comm220ss(  Operator& opright, Operator& out) 
 {
@@ -1494,6 +1599,8 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
    int hx = IsHermitian() ? 1 : -1;
    int hy = opright.IsHermitian() ? 1 : -1;
    // definitely better not to multithread here, since the armadillo matrix muliplication can use the threads better than I can
+   // Actually, I should split this into two stages, one for big matrices where multi-threading helps the matrix multiplication
+   // and one for small matrices, where I multithread the loop over ch and do the multiplication with one thread.
    for (int ch : modelspace->SortedTwoBodyChannels_CC)
    {
       W_bar[ch] =  hx*( X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch]) ;

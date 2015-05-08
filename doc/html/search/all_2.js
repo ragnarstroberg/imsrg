@@ -2,6 +2,8 @@ var searchData=
 [
   ['c',['C',['../classHartreeFock.html#a9c73247cdb9255cebabaacc99ec55086',1,'HartreeFock']]],
   ['calcehf',['CalcEHF',['../classHartreeFock.html#aef506c5c5bc0f317ceb9c71bdc44d62b',1,'HartreeFock']]],
+  ['calculate_5fp1p2',['Calculate_p1p2',['../namespaceimsrg__util.html#a3aad21447b8e28d22597a79220ba805a',1,'imsrg_util']]],
+  ['calculate_5fr1r2',['Calculate_r1r2',['../namespaceimsrg__util.html#aa5d72d0bd9c75beb54256188e9ccfcbe',1,'imsrg_util']]],
   ['calculatekineticenergy',['CalculateKineticEnergy',['../classOperator.html#a701c64f8be794e89fd28a643b56d534a',1,'Operator']]],
   ['checkconvergence',['CheckConvergence',['../classHartreeFock.html#a35ab9c4f96e68b1c9acea1d1407ecc60',1,'HartreeFock']]],
   ['comm110ss',['comm110ss',['../classOperator.html#a23bf6f89477ba90fd6f798374d00d9ea',1,'Operator']]],

@@ -8,7 +8,8 @@
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-void \hyperlink{classOperator_aa8280e8e2c6be73a9594789127b939c1}{Print\-Times} ()
+\hypertarget{classOperator_aa8280e8e2c6be73a9594789127b939c1}{void {\bfseries Print\-Times} ()}\label{classOperator_aa8280e8e2c6be73a9594789127b939c1}
+
 \item 
 \hypertarget{classOperator_acf2514c5e9f48b0a988c955a7d41c486}{\hyperlink{classOperator_acf2514c5e9f48b0a988c955a7d41c486}{Operator} ()}\label{classOperator_acf2514c5e9f48b0a988c955a7d41c486}
 
@@ -74,6 +75,9 @@ void \hyperlink{classOperator_aa8280e8e2c6be73a9594789127b939c1}{Print\-Times} (
 
 \item 
 \hypertarget{classOperator_aeacbeb2efba4199ad20291b50f03f4f6}{\hyperlink{classModelSpace}{Model\-Space} $\ast$ {\bfseries Get\-Model\-Space} ()}\label{classOperator_aeacbeb2efba4199ad20291b50f03f4f6}
+
+\item 
+\hypertarget{classOperator_ade09f5e47031f285f10d7f4f8a5e0216}{void {\bfseries Set\-Model\-Space} (\hyperlink{classModelSpace}{Model\-Space} \&ms)}\label{classOperator_ade09f5e47031f285f10d7f4f8a5e0216}
 
 \item 
 \hypertarget{classOperator_a8a0f7d6aa5163929850d06b31dc24a55}{void \hyperlink{classOperator_a8a0f7d6aa5163929850d06b31dc24a55}{Erase} ()}\label{classOperator_a8a0f7d6aa5163929850d06b31dc24a55}
@@ -146,6 +150,9 @@ void \hyperlink{classOperator_aa8280e8e2c6be73a9594789127b939c1}{Print\-Times} (
 \begin{DoxyCompactList}\small\item\em Returns the normal ordered two-\/body operator. \end{DoxyCompactList}\item 
 \hyperlink{classOperator}{Operator} \hyperlink{classOperator_a7fd029569796107c87ff17c5a7912480}{Do\-Normal\-Ordering3} ()
 \begin{DoxyCompactList}\small\item\em Returns the normal ordered three-\/body operator. \end{DoxyCompactList}\item 
+\hypertarget{classOperator_a1932dcab2be6bb889320254cc81dd5f4}{\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a1932dcab2be6bb889320254cc81dd5f4}{Undo\-Normal\-Ordering} ()}\label{classOperator_a1932dcab2be6bb889320254cc81dd5f4}
+
+\begin{DoxyCompactList}\small\item\em Returns the operator normal-\/ordered wrt the vacuum. \end{DoxyCompactList}\item 
 \hypertarget{classOperator_a9d78ca5fd265cf4ccc6cda81d35cb086}{\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a9d78ca5fd265cf4ccc6cda81d35cb086}{Commutator} (\hyperlink{classOperator}{Operator} \&opright)}\label{classOperator_a9d78ca5fd265cf4ccc6cda81d35cb086}
 
 \begin{DoxyCompactList}\small\item\em Z = X.\-Commutator(\-Y) means $ Z = [X,Y] $. \end{DoxyCompactList}\item 
@@ -237,6 +244,9 @@ void \hyperlink{classOperator_acb2df128030bcad71f2b3fd975ea7988}{comm222\-\_\-pp
 \subsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
+\hypertarget{classOperator_af08ef1c6d3ef38d08b4a6ea20b26ef22}{\hyperlink{classModelSpace}{Model\-Space} $\ast$ {\bfseries modelspace}}\label{classOperator_af08ef1c6d3ef38d08b4a6ea20b26ef22}
+
+\item 
 \hypertarget{classOperator_a2f9f1109333a2485083cc7c090f9cd26}{double \hyperlink{classOperator_a2f9f1109333a2485083cc7c090f9cd26}{Zero\-Body}}\label{classOperator_a2f9f1109333a2485083cc7c090f9cd26}
 
 \begin{DoxyCompactList}\small\item\em The zero body piece of the operator. \end{DoxyCompactList}\item 
@@ -267,9 +277,6 @@ void \hyperlink{classOperator_acb2df128030bcad71f2b3fd975ea7988}{comm222\-\_\-pp
 \hypertarget{classOperator_ad3ebb434f911b9cb7c54ca6990cdda8c}{int \hyperlink{classOperator_ad3ebb434f911b9cb7c54ca6990cdda8c}{E3max}}\label{classOperator_ad3ebb434f911b9cb7c54ca6990cdda8c}
 
 \begin{DoxyCompactList}\small\item\em For three-\/body matrix elements, $ e_i + e_j + e_k \leq $ E3max. \end{DoxyCompactList}\item 
-\hypertarget{classOperator_af08ef1c6d3ef38d08b4a6ea20b26ef22}{\hyperlink{classModelSpace}{Model\-Space} $\ast$ {\bfseries modelspace}}\label{classOperator_af08ef1c6d3ef38d08b4a6ea20b26ef22}
-
-\item 
 \hypertarget{classOperator_ad46a54204c51cf5c82e4c489217bd2c1}{bool {\bfseries hermitian}}\label{classOperator_ad46a54204c51cf5c82e4c489217bd2c1}
 
 \item 
@@ -311,7 +318,7 @@ X.\-B\-C\-H\-\_\-\-Product(\-Y) returns $Z$ such that $ e^{Z} = e^{X}e^{Y}$ by e
 \item[{{\bf Operator} \&}]{Omega}
 \end{DoxyParamCaption}
 )}}\label{classOperator_adc5537604f6b71121163370aca79dfef}
-X.\-B\-C\-H\-\_\-\-Transform(\-Y) returns $ Z = e^{Y} X e^{-Y} $. We use the \href{http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula}{\tt Baker-\/\-Campbell-\/\-Hausdorff formula} \[ Z = X + [X,Y] + \frac{1}{2!}[X,[X,Y]] + \frac{1}{3!}[X,[X,[X,Y]]] + \ldots \] with all commutators truncated at the two-\/body level. \hypertarget{classOperator_a701c64f8be794e89fd28a643b56d534a}{\index{Operator@{Operator}!Calculate\-Kinetic\-Energy@{Calculate\-Kinetic\-Energy}}
+X.\-B\-C\-H\-\_\-\-Transform(\-Y) returns $ Z = e^{Y} X e^{-Y} $. We use the \href{http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula}{\tt Baker-\/\-Campbell-\/\-Hausdorff formula} \[ Z = X + [Y,X] + \frac{1}{2!}[Y,[Y,X]] + \frac{1}{3!}[Y,[Y,[Y,X]]] + \ldots \] with all commutators truncated at the two-\/body level. \hypertarget{classOperator_a701c64f8be794e89fd28a643b56d534a}{\index{Operator@{Operator}!Calculate\-Kinetic\-Energy@{Calculate\-Kinetic\-Energy}}
 \index{Calculate\-Kinetic\-Energy@{Calculate\-Kinetic\-Energy}!Operator@{Operator}}
 \subsubsection[{Calculate\-Kinetic\-Energy}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::\-Calculate\-Kinetic\-Energy (
 \begin{DoxyParamCaption}
@@ -350,7 +357,7 @@ Returns $ [X_{(1)},Y_{(2)}] - [Y_{(1)},X_{(2)}] $, where \[ [X_{(1)},Y_{(2)}]_{i
 \item[{{\bf Operator} \&}]{opout}
 \end{DoxyParamCaption}
 )}}\label{classOperator_a2214e0f4647940855ff1866c2407c078}
-Returns $ [X_{(1)},Y_{(2)}]_{(2)} - [Y_{(1)},X_{(2)}]_{(2)} $, where \[ [X_{(1)},Y_{(2)}]^{J}_{ijkl} = \sum_{a} ( X_{ia}Y^{J}_{ajkl} + X_{ja}Y^{J}_{iakl} - X_{ak} Y^{J}_{ijal} - X_{al} Y^{J}_{ijka} ) \] \hypertarget{classOperator_ac924a2af30154c83d6b821707689caa5}{\index{Operator@{Operator}!comm220ss@{comm220ss}}
+Returns $ [X_{(1)},Y_{(2)}]_{(2)} - [Y_{(1)},X_{(2)}]_{(2)} $, where \[ [X_{(1)},Y_{(2)}]^{J}_{ijkl} = \sum_{a} ( X_{ia}Y^{J}_{ajkl} + X_{ja}Y^{J}_{iakl} - X_{ak} Y^{J}_{ijal} - X_{al} Y^{J}_{ijka} ) \] here, all T\-B\-M\-E are unnormalized, i.\-e. they should have a tilde. \hypertarget{classOperator_ac924a2af30154c83d6b821707689caa5}{\index{Operator@{Operator}!comm220ss@{comm220ss}}
 \index{comm220ss@{comm220ss}!Operator@{Operator}}
 \subsubsection[{comm220ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm220ss (
 \begin{DoxyParamCaption}
@@ -358,7 +365,7 @@ Returns $ [X_{(1)},Y_{(2)}]_{(2)} - [Y_{(1)},X_{(2)}]_{(2)} $, where \[ [X_{(1)}
 \item[{{\bf Operator} \&}]{out}
 \end{DoxyParamCaption}
 )}}\label{classOperator_ac924a2af30154c83d6b821707689caa5}
-\[ [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{abcd} (n_a n_b \bar{n}_c \bar{n}_d) X_{abcd}^{J} Y_{cdab}^{J} \] may be rewritten as \[ [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) Tr(\mathcal{P}_{hh} X_{(2)}^{J} \mathcal{P}_{pp} Y_{(2)}^{J} \mathcal{P}_{hh}) \] where $ \mathcal{P}_{hh} $ is a projector onto hole-\/hole two body states. \hypertarget{classOperator_a423dc256b5780dbee20ac81c9a655335}{\index{Operator@{Operator}!comm221ss@{comm221ss}}
+\[ [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{abcd} (n_a n_b \bar{n}_c \bar{n}_d) \tilde{X}_{abcd}^{J} \tilde{Y}_{cdab}^{J} \] may be rewritten as \[ [X_{(2)},Y_{(2)}]_{(0)} = 2 \sum_{J} (2J+1) Tr(X_{hh'pp'}^{J} Y_{pp'hh'}^{J}) \] where we obtain a factor of four from converting two unrestricted sums to restricted sums, i.\-e. $\sum_{ab} \rightarrow \sum_{a\leq b} $, and using the normalized T\-B\-M\-E. \hypertarget{classOperator_a423dc256b5780dbee20ac81c9a655335}{\index{Operator@{Operator}!comm221ss@{comm221ss}}
 \index{comm221ss@{comm221ss}!Operator@{Operator}}
 \subsubsection[{comm221ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm221ss (
 \begin{DoxyParamCaption}
@@ -427,14 +434,7 @@ The scalar Pandya transformation is defined as \[ \bar{X}^{J}_{i\bar{j}k\bar{l}}
 {}
 \end{DoxyParamCaption}
 ) const}}\label{classOperator_acb9d7959232a636191b91f6bf5b7b0c8}
-Obtain the Frobenius norm of the operator, which here is defined as \[ \|X\| = \sqrt{\|X_{(1)}\|^2 +\|X_{(2)}\|^2 } \] and \[ \|X_{(1)}\|^2 = \sum\limits_{ij} X_{ij}^2 \] \hypertarget{classOperator_aa8280e8e2c6be73a9594789127b939c1}{\index{Operator@{Operator}!Print\-Times@{Print\-Times}}
-\index{Print\-Times@{Print\-Times}!Operator@{Operator}}
-\subsubsection[{Print\-Times}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::\-Print\-Times (
-\begin{DoxyParamCaption}
-{}
-\end{DoxyParamCaption}
-)}}\label{classOperator_aa8280e8e2c6be73a9594789127b939c1}
-Get three body matrix element in proton-\/neutron formalism. \[ V_{abcdef}^{(pn)} = \sum_{t_{ab} t_{de} T} <t_a t_b | t_{ab}> <t_d t_e | t_{de}> <t_{ab} t_c | T> <t_{de} t_f| T> V_{abcdef}^{t_{ab} t_{de} T} \] Get three body matrix element in isospin formalism $ V_{abcdef}^{J_{ab}J_{de}Jt_{ab}t_{de}T} $ (which is how they're stored). The elements are stored with the following restrictions\-: $ a\geq b \geq c$, $ d\geq e \geq f$, $ a\geq d$. If $ a=d$ then $ b \geq e$, and if $ b=e $ then $ c \geq f $. Other orderings are obtained by recoupling on the fly. Set a three body matrix element. Since only a subset of orbit orderings are stored, we need to recouple if the input ordering is different. 
+Obtain the Frobenius norm of the operator, which here is defined as \[ \|X\| = \sqrt{\|X_{(1)}\|^2 +\|X_{(2)}\|^2 } \] and \[ \|X_{(1)}\|^2 = \sum\limits_{ij} X_{ij}^2 \] 
 
 The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
 \item 

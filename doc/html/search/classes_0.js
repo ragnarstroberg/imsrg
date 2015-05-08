@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['hartreefock',['HartreeFock',['../classHartreeFock.html',1,'']]]
+  ['generator',['Generator',['../classGenerator.html',1,'']]]
 ];

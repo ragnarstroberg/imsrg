@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['operator',['Operator',['../classOperator.html',1,'']]],
-  ['orbit',['Orbit',['../structOrbit.html',1,'']]]
+  ['modelspace',['ModelSpace',['../classModelSpace.html',1,'']]]
 ];

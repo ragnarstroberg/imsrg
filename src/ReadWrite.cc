@@ -1086,13 +1086,7 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
      cout << "Trouble reading " << filename << ". Aborting WriteOperator." << endl;
      return;
    }
-   cout << "From Readwrite, address of op is " << hex << &op << dec << endl;
-   cout << "extracting modelspace" << endl;
-   cout << "From Readwrite, op says modelspace = " << hex << op.GetModelSpace() << dec << endl;
-   cout << " norbits =  "<< op.GetModelSpace()->GetNumberOrbits() << endl;
    ModelSpace * modelspace = op.GetModelSpace();
-   cout << " norbits =  "<< op.GetModelSpace()->GetNumberOrbits() << endl;
-   cout << " norbits =  "<< modelspace->GetNumberOrbits() << endl;
 
    if (op.IsHermitian() )
    {
@@ -1107,12 +1101,8 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
       opfile << "Non-Hermitian" << endl;
    }
 
-   cout << "writing zero body part" << endl;
-
    opfile << "$ZeroBody:\t" << setprecision(10) << op.ZeroBody << endl;
 
-   cout << " norbits =  "<< modelspace->GetNumberOrbits() << endl;
-   cout << "writing one body part" << endl;
    opfile << "$OneBody:\t" << endl;
 
    int norb = modelspace->GetNumberOrbits();
@@ -1126,7 +1116,6 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
       }
    }
 
-   cout << "writing two body part" << endl;
    opfile <<  "$TwoBody:\t"  << endl;
    int nchan = modelspace->GetNumberTwoBodyChannels();
    for (int ch=0; ch<nchan; ++ch)
