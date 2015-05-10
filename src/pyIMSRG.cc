@@ -103,6 +103,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("TransformToHFBasis",&HartreeFock::TransformToHFBasis)
       .def("GetHbare",&HartreeFock::GetHbare)
       .def("GetNormalOrderedH",&HartreeFock::GetNormalOrderedH)
+      .def("GetOmega",&HartreeFock::GetOmega)
       .def_readonly("EHF",&HartreeFock::EHF)
    ;
 

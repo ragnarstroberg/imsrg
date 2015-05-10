@@ -578,6 +578,36 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
 }
 
 
+arma::mat LogMat(arma::mat& X)
+{
+  arma::cx_mat eigvect;
+  arma::cx_vec eigval;
+  arma::eig_gen(eigval, eigvect, X);
+  arma::cx_mat logemat = arma::diagmat(arma::log(eigval));
+  return -arma::real( eigvect * logemat * eigvect.t() );
+}
+
+Operator HartreeFock::GetOmega()
+{
+   Operator Omega(*modelspace,0,0,0,2);
+   for ( auto& it : modelspace->OneBodyChannels )
+   {
+      arma::uvec orbvec(it.second);
+      arma::mat C_ch = C.submat(orbvec,orbvec);
+      Omega.OneBody.submat(orbvec,orbvec) = LogMat(C_ch) ;
+   }
+   arma::mat expOmega = arma::expmat(Omega.OneBody);
+   cout << "Difference = " << arma::norm(expOmega - C.t(), "frob");
+   cout << "C:" << endl;
+   C.print();
+   cout << endl << "Omega:" << endl;
+   Omega.OneBody.print();
+   cout << endl << "exp(Omega):" << endl;
+   expOmega.print();
+   return Omega;
+}
+
+
 
 
 

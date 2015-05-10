@@ -109,6 +109,9 @@ void IMSRGSolver::Solve()
       WriteFlowStatus(cout);
 
    }
+   cout << "Omega 1b: " << endl;
+   Omega.OneBody.print();
+   cout << "Omega 2b norm = " << Omega.TwoBody.Norm() << endl;
 
 
 }

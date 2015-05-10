@@ -39,6 +39,7 @@ class HartreeFock
    void ReorderCoefficients();
    Operator TransformToHFBasis( Operator& OpIn);
    Operator GetNormalOrderedH();
+   Operator GetOmega();
 
    void BuildMonopoleV3();
 

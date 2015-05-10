@@ -16,7 +16,8 @@ using namespace std;
 //===================================================================================
 //===================================================================================
 
-double  Operator::bch_transform_threshold = 1e-6;
+//double  Operator::bch_transform_threshold = 1e-6;
+double  Operator::bch_transform_threshold = 1e-9;
 double  Operator::bch_product_threshold = 1e-4;
 map<string, double> Operator::timer;
 
