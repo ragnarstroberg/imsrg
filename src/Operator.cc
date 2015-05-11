@@ -33,15 +33,6 @@ Operator::Operator()
     rank_J(0), rank_T(0), parity(0), particle_rank(2),
     hermitian(true), antihermitian(false), nChannels(0)
 {
-//  cout << "Calling default Operator constructor" << endl;
-// nChannels = 0;
-// hermitian = true;
-// antihermitian = false;
-// rank_J = 0;
-// rank_T = 0;
-// parity = 0;
-// particle_rank = 2;
-// modelspace = NULL;
 }
 
 

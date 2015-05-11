@@ -19,10 +19,9 @@ class ReadWrite
    void ReadBareTBME_Jason( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil( string filename, Operator& Hbare);
    void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int E1max, int E2max, int lmax);
-   template<typename STREAM>
-   void ReadBareTBME_Darmstadt_from_stream( STREAM & infile, Operator& Hbare, int E1max, int E2max, int lmax);
-   void ReadBareTBME_Darmstadt_gzip( string filename, Operator& Hbare, int E1max, int E2max, int lmax);
+   void ReadBareTBME_Darmstadt_from_stream( istream & infile, Operator& Hbare, int E1max, int E2max, int lmax);
    void Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max);
+   void Read_Darmstadt_3body_from_stream( istream & infile, Operator& Hbare, int E1max, int E2max, int E3max);
    void WriteOneBody(Operator&, string);
    void WriteTwoBody(Operator&, string);
    void WriteValenceOneBody(Operator&, string);
@@ -31,7 +30,7 @@ class ReadWrite
    void WriteNuShellX_int( Operator& op, string filename);
    void WriteAntoine_int( Operator& op, string filename); // <- not implemented yet...
    void WriteOperator(Operator& op, string filename);
-   void ReadOperator(Operator& op, string filename); // Not implemented yet...
+   void ReadOperator(Operator& op, string filename); 
 
    std::map<string,string> InputParameters;
 
@@ -41,11 +40,6 @@ class ReadWrite
    bool goodstate;
 
 };
-
-//template void ReadWrite::ReadBareTBME_Navratil<Operator&>( string, Operator&);
-//template void ReadWrite::ReadBareTBME_Navratil<Operator3&>( string, Operator3&);
-// template void ReadWrite::ReadBareTBME_Darmstadt_from_stream<ifstream&>( ifstream& infile, Operator& Hbare, int E1max, int E2max, int lmax);
-// template void ReadWrite::ReadBareTBME_Darmstadt_from_stream<stringstream&>( stringstream& infile, Operator& Hbare, int E1max, int E2max, int lmax);
 
 
 #endif

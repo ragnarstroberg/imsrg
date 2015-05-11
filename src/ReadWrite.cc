@@ -7,10 +7,11 @@
 #include "string.h"
 
 #include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-#define LINESIZE 400
+#define LINESIZE 496
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
 #endif
@@ -328,44 +329,46 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
 }
 
 
-
+/// Decide if the file is gzipped or ascii, create a stream, then call ReadBareTBME_Darmstadt_from_stream().
 void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int emax, int Emax, int lmax)
 {
 
   if ( filename.substr( filename.find_last_of(".")) == ".gz")
   {
     ifstream infile(filename, ios_base::in | ios_base::binary);
-    if ( !infile.good() )
-    {
-       cerr << "************************************" << endl
-            << "**    Trouble reading file  !!!   **" << filename << endl
-            << "************************************" << endl;
-       goodstate = false;
-       return;
-    }
-
-    boost::iostreams::filtering_streambuf<boost::iostreams::input> zipstream;
+    boost::iostreams::filtering_istream zipstream;
     zipstream.push(boost::iostreams::gzip_decompressor());
     zipstream.push(infile);
-    stringstream instream;
-    boost::iostreams::copy(zipstream,instream);
-    ReadBareTBME_Darmstadt_from_stream(instream, Hbare,  emax, Emax, lmax);
-
+    ReadBareTBME_Darmstadt_from_stream(zipstream, Hbare,  emax, Emax, lmax);
   }
   else
   {
     ifstream infile(filename);
-    if ( !infile.good() )
-    {
-       cerr << "************************************" << endl
-            << "**    Trouble reading file  !!!   **" << filename << endl
-            << "************************************" << endl;
-       goodstate = false;
-       return;
-    }
     ReadBareTBME_Darmstadt_from_stream(infile, Hbare,  emax, Emax, lmax);
   }
 }
+
+
+/// Decide if the file is gzipped or ascii, create a stream, then call Read_Darmstadt_3body_from_stream().
+void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max)
+{
+
+  if ( filename.substr( filename.find_last_of(".")) == ".gz")
+  {
+    ifstream infile(filename, ios_base::in | ios_base::binary);
+    boost::iostreams::filtering_istream zipstream;
+    zipstream.push(boost::iostreams::gzip_decompressor());
+    zipstream.push(infile);
+    Read_Darmstadt_3body_from_stream(zipstream, Hbare,  E1max, E2max, E3max);
+  }
+  else
+  {
+    ifstream infile(filename);
+    Read_Darmstadt_3body_from_stream(infile, Hbare,  E1max, E2max, E3max);
+  }
+}
+
+
 
 
 /// Read TBME's from a file formatted by the Darmstadt group.
@@ -376,24 +379,17 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
 /// If Emax is not specified, it should be 2 \f$\times\f$ emax. If lmax is not specified, it should be emax.
 /// Also note that the matrix elements are given in un-normalized form, i.e. they are just
 /// the M scheme matrix elements multiplied by Clebsch-Gordan coefficients for JT coupling.
-//void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int emax, int Emax, int lmax)
-template<typename STREAM>
-void ReadWrite::ReadBareTBME_Darmstadt_from_stream( STREAM & infile, Operator& Hbare, int emax, int Emax, int lmax)
+void ReadWrite::ReadBareTBME_Darmstadt_from_stream( istream & infile, Operator& Hbare, int emax, int Emax, int lmax)
 {
-
-//  ifstream infile;
-//  STREAM infile;
+  if ( !infile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
   char line[LINESIZE];
-//  infile.open(filename);
-//  if ( !infile.good() )
-//  {
-//     cerr << "************************************" << endl
-//          << "**    Trouble reading file  !!!   **" << filename << endl
-//          << "************************************" << endl;
-//     goodstate = false;
-//     return;
-//  }
-
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
   vector<int> orbits_remap;
@@ -416,9 +412,6 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( STREAM & infile, Operator& H
     }
   }
   int nljmax = orbits_remap.size()-1;
-
-
-
 
   double tbme_pp,tbme_nn,tbme_10,tbme_00;
   // skip the first line
@@ -490,130 +483,17 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( STREAM & infile, Operator& H
 }
 
 
-void ReadWrite::ReadBareTBME_Darmstadt_gzip( string filename, Operator& Hbare, int emax, int Emax, int lmax)
+
+void ReadWrite::Read_Darmstadt_3body_from_stream( istream& infile, Operator& Hbare, int E1max, int E2max, int E3max)
 {
-
-  ModelSpace * modelspace = Hbare.GetModelSpace();
-  int norb = modelspace->GetNumberOrbits();
-  vector<int> orbits_remap;
-
-  if (emax < 0)  emax = modelspace->Nmax;
-  if (lmax < 0)  lmax = emax;
-
-  for (int e=0; e<=min(emax,modelspace->Nmax); ++e)
-  {
-    int lmin = e%2;
-    for (int l=lmin; l<=min(e,lmax); l+=2)
-    {
-      int n = (e-l)/2;
-      int twojMin = abs(2*l-1);
-      int twojMax = 2*l+1;
-      for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
-      {
-         orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
-      }
-    }
-  }
-  int nljmax = orbits_remap.size()-1;
-
-
-  char line[LINESIZE];
-  ifstream infile(filename, ios_base::in | ios_base::binary);
-
   if ( !infile.good() )
   {
      cerr << "************************************" << endl
-          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "**    Trouble reading file  !!!   **" << endl
           << "************************************" << endl;
      goodstate = false;
      return;
   }
-
-  boost::iostreams::filtering_streambuf<boost::iostreams::input> zipstream;
-  zipstream.push(boost::iostreams::gzip_decompressor());
-  zipstream.push(infile);
-  stringstream instream;
-  boost::iostreams::copy(zipstream,instream);
-
-  double tbme_pp,tbme_nn,tbme_10,tbme_00;
-  // skip the first line
-//  infile.getline(line,LINESIZE);
-  instream.getline(line,LINESIZE);
-
-  for(int nlj1=0; nlj1<=nljmax; ++nlj1)
-  {
-    int a =  orbits_remap[nlj1];
-    Orbit & o1 = modelspace->GetOrbit(a);
-    int e1 = 2*o1.n + o1.l;
-    if (e1 > modelspace->Nmax) break;
-
-    for(int nlj2=0; nlj2<=nlj1; ++nlj2)
-    {
-      int b =  orbits_remap[nlj2];
-      Orbit & o2 = modelspace->GetOrbit(b);
-      int e2 = 2*o2.n + o2.l;
-      if (e1+e2 > Emax) break;
-      int parity = (o1.l + o2.l) % 2;
-
-      for(int nlj3=0; nlj3<=nlj1; ++nlj3)
-      {
-        int c =  orbits_remap[nlj3];
-        Orbit & o3 = modelspace->GetOrbit(c);
-        int e3 = 2*o3.n + o3.l;
-
-        for(int nlj4=0; nlj4<=(nlj3==nlj1 ? nlj2 : nlj3); ++nlj4)
-        {
-          int d =  orbits_remap[nlj4];
-          Orbit & o4 = modelspace->GetOrbit(d);
-          int e4 = 2*o4.n + o4.l;
-          if (e3+e4 > Emax) break;
-          if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
-          int Jmin = max( abs(o1.j2 - o2.j2), abs(o3.j2 - o4.j2) )/2;
-          int Jmax = min (o1.j2 + o2.j2, o3.j2+o4.j2)/2;
-          if (Jmin > Jmax) continue;
-          for (int J=Jmin; J<=Jmax; ++J)
-          {
-
-             // File is read here.
-             // Matrix elements are written in the file with (T,Tz) = (0,0) (1,1) (1,0) (1,-1)
-             instream >> tbme_00 >> tbme_nn >> tbme_10 >> tbme_pp;
-//             infile >> tbme_00 >> tbme_nn >> tbme_10 >> tbme_pp;
-             cout << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp << endl;
-
-             if (a>=norb or b>=norb or c>=norb or d>=norb) continue;
-
-             // Normalization. The TBMEs are read in un-normalized.
-             double norm_factor = 1;
-             if (a==b)  norm_factor /= SQRT2;
-             if (c==d)  norm_factor /= SQRT2;
-
-
-             // do pp and nn
-             if (tbme_pp !=0)
-                Hbare.TwoBody.SetTBME(J,parity,-1,a,b,c,d,tbme_pp*norm_factor);
-             if (tbme_nn !=0)
-                Hbare.TwoBody.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,tbme_nn*norm_factor);
-
-             if (tbme_10 !=0)
-                Hbare.TwoBody.Set_pn_TBME_from_iso(J,1,0,a,b,c,d,tbme_10*norm_factor);
-             if (tbme_00 !=0)
-                Hbare.TwoBody.Set_pn_TBME_from_iso(J,0,0,a,b,c,d,tbme_00*norm_factor);
-
-          }
-        }
-      }
-    }
-  }
-
-}
-
-
-
-
-
-
-void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max)
-{
   if (Hbare.particle_rank < 3)
   {
     cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << endl;
@@ -623,8 +503,6 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
     return;
   }
   ModelSpace * modelspace = Hbare.GetModelSpace();
-//  ModelSpace big_modelspace = ModelSpace(E1max,"skeleton");
-//  cout << "Done with big_modelspace" << endl;
   int e1max = modelspace->GetNmax();
   int e2max = modelspace->GetN2max(); // not used yet
   int e3max = modelspace->GetN3max();
@@ -633,7 +511,6 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
   vector<int> orbits_remap(0);
   int lmax = E1max; // haven't yet implemented the lmax truncation for 3body. Should be easy.
 
-//  for (int e=0; e<=E1max; ++e)
   for (int e=0; e<=min(E1max,e1max); ++e)
   {
     int lmin = e%2;
@@ -644,33 +521,12 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
       int twojMax = 2*l+1;
       for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
       {
-//         orbits_remap.push_back( big_modelspace.GetOrbitIndex(n,l,twoj,-1) );
          orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
       }
     }
   }
   int nljmax = orbits_remap.size();
-//  cout << "nljmax = " << nljmax << " -> " << orbits_remap[nljmax-1] << endl;
-//  for (int k=0; k<nljmax; ++k)
-//  {
-//    cout << k << "  =>  " << orbits_remap[k] << endl;
-//  }
 
-
-
-
-  ifstream infile;
-  char line[LINESIZE];
-  infile.open(filename);
-  if ( not infile.good() )
-  {
-     cerr << "************************************  " << endl
-          << "**    Trouble reading file  !!!   **  " << filename << endl
-          << "************************************  " << endl;
-     goodstate = false;
-     return;
-  }
-  infile.getline(line,LINESIZE);
 
 
   // begin giant nested loops
@@ -679,7 +535,6 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
   {
     int a =  orbits_remap[nlj1];
-//    Orbit & oa = big_modelspace.GetOrbit(a);
     Orbit & oa = modelspace->GetOrbit(a);
     int ea = 2*oa.n + oa.l;
     if (ea > E1max) break;
@@ -719,14 +574,12 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
           int d =  orbits_remap[nnlj1];
           Orbit & od = modelspace->GetOrbit(d);
           int ed = 2*od.n + od.l;
-//          if (ed > E1max) break;
 
           for(int nnlj2=0; nnlj2 <= ((nlj1 == nnlj1) ? nlj2 : nnlj1); ++nnlj2)
           {
             int e =  orbits_remap[nnlj2];
             Orbit & oe = modelspace->GetOrbit(e);
             int ee = 2*oe.n + oe.l;
-//            if ( (ed+ee) > E2max) break;
 
             int nnlj3Max = (nlj1 == nnlj1 and nlj2 == nnlj2) ? nlj3 : nnlj2;
             for(int nnlj3=0; nnlj3 <= nnlj3Max; ++nnlj3)

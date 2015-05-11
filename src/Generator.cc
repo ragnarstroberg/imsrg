@@ -453,13 +453,6 @@ void Generator::ConstructGenerator_ShellModel_Atan()
 
 
 
-
-
-
-
-
-
-
 void Generator::ConstructGenerator_HartreeFock()
 {
    Eta->SetParticleRank(1);

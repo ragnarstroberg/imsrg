@@ -578,32 +578,24 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
 }
 
 
-arma::mat LogMat(arma::mat& X)
-{
-  arma::cx_mat eigvect;
-  arma::cx_vec eigval;
-  arma::eig_gen(eigval, eigvect, X);
-  arma::cx_mat logemat = arma::diagmat(arma::log(eigval));
-  return -arma::real( eigvect * logemat * eigvect.t() );
-}
 
+/// Get the one-body generator corresponding to the transformation to the HF basis.
+/// Since the unitary transformation for HF is given by the \f $C^{-1} \f$ matrix, we have
+/// \f$ e^{-\Omega} = C \Rightarrow \Omega = -\log(C) \f$.
+/// The log is evaluated by diagonalizing the one-body submatrix and taking the log of the diagonal entries.
 Operator HartreeFock::GetOmega()
 {
-   Operator Omega(*modelspace,0,0,0,2);
+   Operator Omega(*modelspace,0,0,0,1);
+   Omega.SetAntiHermitian();
    for ( auto& it : modelspace->OneBodyChannels )
    {
       arma::uvec orbvec(it.second);
       arma::mat C_ch = C.submat(orbvec,orbvec);
-      Omega.OneBody.submat(orbvec,orbvec) = LogMat(C_ch) ;
+      arma::cx_mat eigvect;
+      arma::cx_vec eigval;
+      arma::eig_gen(eigval, eigvect, C_ch);
+      Omega.OneBody.submat(orbvec,orbvec) = -arma::real( eigvect * arma::diagmat(arma::log(eigval)) * eigvect.t()) ;
    }
-   arma::mat expOmega = arma::expmat(Omega.OneBody);
-   cout << "Difference = " << arma::norm(expOmega - C.t(), "frob");
-   cout << "C:" << endl;
-   C.print();
-   cout << endl << "Omega:" << endl;
-   Omega.OneBody.print();
-   cout << endl << "exp(Omega):" << endl;
-   expOmega.print();
    return Omega;
 }
 

@@ -10,7 +10,7 @@ FLAGS =  -O2 -march=native -std=c++11 -fopenmp -fPIC -DNO_ODE=1
 SOFLABS = -O2 -march=native -std=c++11 -fopenmp -fPIC
 WARNFLAGS = -Wall -Wno-comment
 FLAGS += $(WARNFLAGS)
-SOFLAGS += $(WARNFLAGS) -DBOOST_IOSTREAMs_NO_LIB=1
+SOFLAGS += $(WARNFLAGS)
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
