@@ -26,10 +26,10 @@ OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
 mysrg: main.cc $(OBJ)
 	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
-boost_src/gzip.o: boost_src/gzip.cc
+boost_src/gzip.o: boost_src/gzip.cpp
 	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
-boost_src/zlib.o: boost_src/zlib.cc
+boost_src/zlib.o: boost_src/zlib.cpp
 	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 
