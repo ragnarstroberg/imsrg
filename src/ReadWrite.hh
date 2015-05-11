@@ -1,11 +1,11 @@
 
 #ifndef ReadWrite_h
 #define ReadWrite_h 1
+#define BOOST_IOSTREAMS_NO_LIB 1
 
 #include <map>
 #include <string>
 #include "Operator.hh"
-//#include "Operator3.hh"
 
 using namespace std;
 class ReadWrite
@@ -19,6 +19,9 @@ class ReadWrite
    void ReadBareTBME_Jason( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil( string filename, Operator& Hbare);
    void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int E1max, int E2max, int lmax);
+   template<typename STREAM>
+   void ReadBareTBME_Darmstadt_from_stream( STREAM & infile, Operator& Hbare, int E1max, int E2max, int lmax);
+   void ReadBareTBME_Darmstadt_gzip( string filename, Operator& Hbare, int E1max, int E2max, int lmax);
    void Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max);
    void WriteOneBody(Operator&, string);
    void WriteTwoBody(Operator&, string);
@@ -41,6 +44,8 @@ class ReadWrite
 
 //template void ReadWrite::ReadBareTBME_Navratil<Operator&>( string, Operator&);
 //template void ReadWrite::ReadBareTBME_Navratil<Operator3&>( string, Operator3&);
+// template void ReadWrite::ReadBareTBME_Darmstadt_from_stream<ifstream&>( ifstream& infile, Operator& Hbare, int E1max, int E2max, int lmax);
+// template void ReadWrite::ReadBareTBME_Darmstadt_from_stream<stringstream&>( stringstream& infile, Operator& Hbare, int E1max, int E2max, int lmax);
 
 
 #endif

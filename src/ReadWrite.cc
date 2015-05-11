@@ -6,10 +6,15 @@
 #include <sstream>
 #include "string.h"
 
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+
 #define LINESIZE 400
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
 #endif
+
 
 using namespace std;
 
@@ -17,6 +22,7 @@ ReadWrite::~ReadWrite()
 {
 //  cout << "In ReadWrite destructor" << endl;
 }
+
 ReadWrite::ReadWrite()
 : doCoM_corr(false), goodstate(true)
 {
@@ -323,6 +329,43 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
 
 
 
+void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int emax, int Emax, int lmax)
+{
+
+  if ( filename.substr( filename.find_last_of(".")) == ".gz")
+  {
+    ifstream infile(filename, ios_base::in | ios_base::binary);
+    if ( !infile.good() )
+    {
+       cerr << "************************************" << endl
+            << "**    Trouble reading file  !!!   **" << filename << endl
+            << "************************************" << endl;
+       goodstate = false;
+       return;
+    }
+
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> zipstream;
+    zipstream.push(boost::iostreams::gzip_decompressor());
+    zipstream.push(infile);
+    stringstream instream;
+    boost::iostreams::copy(zipstream,instream);
+    ReadBareTBME_Darmstadt_from_stream(instream, Hbare,  emax, Emax, lmax);
+
+  }
+  else
+  {
+    ifstream infile(filename);
+    if ( !infile.good() )
+    {
+       cerr << "************************************" << endl
+            << "**    Trouble reading file  !!!   **" << filename << endl
+            << "************************************" << endl;
+       goodstate = false;
+       return;
+    }
+    ReadBareTBME_Darmstadt_from_stream(infile, Hbare,  emax, Emax, lmax);
+  }
+}
 
 
 /// Read TBME's from a file formatted by the Darmstadt group.
@@ -333,8 +376,23 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
 /// If Emax is not specified, it should be 2 \f$\times\f$ emax. If lmax is not specified, it should be emax.
 /// Also note that the matrix elements are given in un-normalized form, i.e. they are just
 /// the M scheme matrix elements multiplied by Clebsch-Gordan coefficients for JT coupling.
-void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int emax, int Emax, int lmax)
+//void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int emax, int Emax, int lmax)
+template<typename STREAM>
+void ReadWrite::ReadBareTBME_Darmstadt_from_stream( STREAM & infile, Operator& Hbare, int emax, int Emax, int lmax)
 {
+
+//  ifstream infile;
+//  STREAM infile;
+  char line[LINESIZE];
+//  infile.open(filename);
+//  if ( !infile.good() )
+//  {
+//     cerr << "************************************" << endl
+//          << "**    Trouble reading file  !!!   **" << filename << endl
+//          << "************************************" << endl;
+//     goodstate = false;
+//     return;
+//  }
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
@@ -358,25 +416,9 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
     }
   }
   int nljmax = orbits_remap.size()-1;
-//  cout << "size of orbits_remap = " << orbits_remap.size() << endl;
-//  cout << "nljmax = " << nljmax << endl;
-//  for (int k=0; k<nljmax; ++k)
-//  {
-//    cout << k << "  =>  " << orbits_remap[k] << endl;
-//  }
 
 
-  ifstream infile;
-  char line[LINESIZE];
-  infile.open(filename);
-  if ( !infile.good() )
-  {
-     cerr << "************************************" << endl
-          << "**    Trouble reading file  !!!   **" << filename << endl
-          << "************************************" << endl;
-     goodstate = false;
-     return;
-  }
+
 
   double tbme_pp,tbme_nn,tbme_10,tbme_00;
   // skip the first line
@@ -446,6 +488,127 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
   }
 
 }
+
+
+void ReadWrite::ReadBareTBME_Darmstadt_gzip( string filename, Operator& Hbare, int emax, int Emax, int lmax)
+{
+
+  ModelSpace * modelspace = Hbare.GetModelSpace();
+  int norb = modelspace->GetNumberOrbits();
+  vector<int> orbits_remap;
+
+  if (emax < 0)  emax = modelspace->Nmax;
+  if (lmax < 0)  lmax = emax;
+
+  for (int e=0; e<=min(emax,modelspace->Nmax); ++e)
+  {
+    int lmin = e%2;
+    for (int l=lmin; l<=min(e,lmax); l+=2)
+    {
+      int n = (e-l)/2;
+      int twojMin = abs(2*l-1);
+      int twojMax = 2*l+1;
+      for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
+      {
+         orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
+      }
+    }
+  }
+  int nljmax = orbits_remap.size()-1;
+
+
+  char line[LINESIZE];
+  ifstream infile(filename, ios_base::in | ios_base::binary);
+
+  if ( !infile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
+
+  boost::iostreams::filtering_streambuf<boost::iostreams::input> zipstream;
+  zipstream.push(boost::iostreams::gzip_decompressor());
+  zipstream.push(infile);
+  stringstream instream;
+  boost::iostreams::copy(zipstream,instream);
+
+  double tbme_pp,tbme_nn,tbme_10,tbme_00;
+  // skip the first line
+//  infile.getline(line,LINESIZE);
+  instream.getline(line,LINESIZE);
+
+  for(int nlj1=0; nlj1<=nljmax; ++nlj1)
+  {
+    int a =  orbits_remap[nlj1];
+    Orbit & o1 = modelspace->GetOrbit(a);
+    int e1 = 2*o1.n + o1.l;
+    if (e1 > modelspace->Nmax) break;
+
+    for(int nlj2=0; nlj2<=nlj1; ++nlj2)
+    {
+      int b =  orbits_remap[nlj2];
+      Orbit & o2 = modelspace->GetOrbit(b);
+      int e2 = 2*o2.n + o2.l;
+      if (e1+e2 > Emax) break;
+      int parity = (o1.l + o2.l) % 2;
+
+      for(int nlj3=0; nlj3<=nlj1; ++nlj3)
+      {
+        int c =  orbits_remap[nlj3];
+        Orbit & o3 = modelspace->GetOrbit(c);
+        int e3 = 2*o3.n + o3.l;
+
+        for(int nlj4=0; nlj4<=(nlj3==nlj1 ? nlj2 : nlj3); ++nlj4)
+        {
+          int d =  orbits_remap[nlj4];
+          Orbit & o4 = modelspace->GetOrbit(d);
+          int e4 = 2*o4.n + o4.l;
+          if (e3+e4 > Emax) break;
+          if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
+          int Jmin = max( abs(o1.j2 - o2.j2), abs(o3.j2 - o4.j2) )/2;
+          int Jmax = min (o1.j2 + o2.j2, o3.j2+o4.j2)/2;
+          if (Jmin > Jmax) continue;
+          for (int J=Jmin; J<=Jmax; ++J)
+          {
+
+             // File is read here.
+             // Matrix elements are written in the file with (T,Tz) = (0,0) (1,1) (1,0) (1,-1)
+             instream >> tbme_00 >> tbme_nn >> tbme_10 >> tbme_pp;
+//             infile >> tbme_00 >> tbme_nn >> tbme_10 >> tbme_pp;
+             cout << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp << endl;
+
+             if (a>=norb or b>=norb or c>=norb or d>=norb) continue;
+
+             // Normalization. The TBMEs are read in un-normalized.
+             double norm_factor = 1;
+             if (a==b)  norm_factor /= SQRT2;
+             if (c==d)  norm_factor /= SQRT2;
+
+
+             // do pp and nn
+             if (tbme_pp !=0)
+                Hbare.TwoBody.SetTBME(J,parity,-1,a,b,c,d,tbme_pp*norm_factor);
+             if (tbme_nn !=0)
+                Hbare.TwoBody.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,tbme_nn*norm_factor);
+
+             if (tbme_10 !=0)
+                Hbare.TwoBody.Set_pn_TBME_from_iso(J,1,0,a,b,c,d,tbme_10*norm_factor);
+             if (tbme_00 !=0)
+                Hbare.TwoBody.Set_pn_TBME_from_iso(J,0,0,a,b,c,d,tbme_00*norm_factor);
+
+          }
+        }
+      }
+    }
+  }
+
+}
+
+
+
 
 
 
