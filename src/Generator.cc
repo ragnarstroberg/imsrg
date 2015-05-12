@@ -124,6 +124,8 @@ void Generator::ConstructGenerator_Wegner()
 
 
 
+
+/*
 void Generator::ConstructGenerator_White()
 {
    // One body piece -- eliminate ph bits
@@ -157,6 +159,60 @@ void Generator::ConstructGenerator_White()
       }
     }
 }
+*/
+
+void Generator::ConstructGenerator_White()
+{
+   // One body piece -- eliminate ph bits
+   for ( auto& a : modelspace->hole_qspace)
+   {
+//      for ( auto& i : modelspace->particles)
+      for ( auto& i : modelspace->particle_qspace)
+      {
+         double denominator = Get1bDenominator(i,a);
+         Eta->OneBody(i,a) = H->OneBody(i,a)/denominator;
+         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+      }
+      for ( auto& i : modelspace->valence)
+      {
+         double denominator = Get1bDenominator(i,a);
+         Eta->OneBody(i,a) = H->OneBody(i,a)/denominator;
+         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+      }
+   }
+
+   // Two body piece -- eliminate pp'hh' bits
+   for (int ch=0;ch<Eta->nChannels;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
+      arma::mat& H2 = H->TwoBody.GetMatrix(ch);
+      for ( auto& iket : tbc.GetKetIndex_c_c() )
+      {
+         for ( auto& ibra : tbc.GetKetIndex_q_q() )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+         for ( auto& ibra : tbc.GetKetIndex_vv() )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+         for ( auto& ibra : tbc.GetKetIndex_v_q() )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+    }
+}
+
+
+
 
 
 
@@ -165,24 +221,32 @@ void Generator::ConstructGenerator_Atan()
    // One body piece -- eliminate ph bits
    for ( auto& a : modelspace->hole_qspace)
    {
-      for ( auto& i : modelspace->particles)
+//      for ( auto& i : modelspace->particles)
+      for ( auto& i : modelspace->particle_qspace)
       {
          double denominator = Get1bDenominator(i,a);
          Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
          Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
-      // now decouple valence holes from core holes
-      if (modelspace->holes.size() != modelspace->hole_qspace.size() )
+      for ( auto& i : modelspace->valence)
       {
-        for ( auto& b : modelspace->valence)
-        {
-           Orbit & ob = modelspace->GetOrbit(b);
-           if (ob.ph == 0) continue;
-           double denominator = Get1bDenominator(b,a);
-           Eta->OneBody(b,a) = 0.5*atan(2*H->OneBody(b,a)/denominator);
-           Eta->OneBody(a,b) = - Eta->OneBody(b,a);
-        }
+         double denominator = Get1bDenominator(i,a);
+         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
+
+      // now decouple valence holes from core holes
+//      if (modelspace->holes.size() != modelspace->hole_qspace.size() )
+//      {
+//        for ( auto& b : modelspace->valence)
+//        {
+//           Orbit & ob = modelspace->GetOrbit(b);
+//           if (ob.ph == 0) continue;
+//           double denominator = Get1bDenominator(b,a);
+//           Eta->OneBody(b,a) = 0.5*atan(2*H->OneBody(b,a)/denominator);
+//           Eta->OneBody(a,b) = - Eta->OneBody(b,a);
+//        }
+//      }
    }
 
    // Two body piece -- eliminate pp'hh' bits
@@ -214,6 +278,9 @@ void Generator::ConstructGenerator_Atan()
       }
     }
 }
+
+
+
 
 
 

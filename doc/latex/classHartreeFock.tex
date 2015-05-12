@@ -27,6 +27,8 @@ void \hyperlink{classHartreeFock_a2eb6754f57250a03a2e1bd3e2aef4daf}{Reorder\-Coe
 \item 
 \hyperlink{classOperator}{Operator} \hyperlink{classHartreeFock_a17bdb52033e2f62bba72ea86bc196b37}{Get\-Normal\-Ordered\-H} ()
 \item 
+\hyperlink{classOperator}{Operator} \hyperlink{classHartreeFock_a53011b381945ed5c61f50b209db5bf64}{Get\-Omega} ()
+\item 
 void \hyperlink{classHartreeFock_a1c146af25a09f427cc626d877ec6e518}{Build\-Monopole\-V3} ()
 \item 
 \hypertarget{classHartreeFock_a7f2a07edc3ccaa0cf9bbc0faadfd9ddf}{\hyperlink{classOperator}{Operator} {\bfseries Get\-Hbare} ()}\label{classHartreeFock_a7f2a07edc3ccaa0cf9bbc0faadfd9ddf}
@@ -132,7 +134,14 @@ Check for convergence using difference in s.\-p. energies between iterations. Co
 {}
 \end{DoxyParamCaption}
 )}}\label{classHartreeFock_a17bdb52033e2f62bba72ea86bc196b37}
-Returns the normal-\/ordered Hamiltonian in the Hartree-\/\-Fock basis \[ E_0 = E_{HF} \] \[ f_{ij} = C^{\dagger} F_{ij} C \] \[ \Gamma^{J}_{ijkl} = D^{\dagger} \left[V^{J}_{ijkl} + \sum_{ab}\sum_{J_3}(2J_{3}+1)\rho_{ab}V^{JJJ_{3}}_{ijaklb}\right] D \] Where the matrix $ D$ is the same as the one defined in \hyperlink{classHartreeFock_a55914915cea16669e549025c244b62d0}{Transform\-To\-H\-F\-Basis()}. \hypertarget{classHartreeFock_a2eb6754f57250a03a2e1bd3e2aef4daf}{\index{Hartree\-Fock@{Hartree\-Fock}!Reorder\-Coefficients@{Reorder\-Coefficients}}
+Returns the normal-\/ordered Hamiltonian in the Hartree-\/\-Fock basis \[ E_0 = E_{HF} \] \[ f_{ij} = C^{\dagger} F_{ij} C \] \[ \Gamma^{J}_{ijkl} = D^{\dagger} \left[V^{J}_{ijkl} + \sum_{ab}\sum_{J_3}(2J_{3}+1)\rho_{ab}V^{JJJ_{3}}_{ijaklb}\right] D \] Where the matrix $ D$ is the same as the one defined in \hyperlink{classHartreeFock_a55914915cea16669e549025c244b62d0}{Transform\-To\-H\-F\-Basis()}. \hypertarget{classHartreeFock_a53011b381945ed5c61f50b209db5bf64}{\index{Hartree\-Fock@{Hartree\-Fock}!Get\-Omega@{Get\-Omega}}
+\index{Get\-Omega@{Get\-Omega}!HartreeFock@{Hartree\-Fock}}
+\subsubsection[{Get\-Omega}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Hartree\-Fock\-::\-Get\-Omega (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classHartreeFock_a53011b381945ed5c61f50b209db5bf64}
+Get the one-\/body generator corresponding to the transformation to the H\-F basis. Since the unitary transformation for H\-F is given by the $ U_{HF} = C^{\dagger} $ matrix, we have $ e^{-\Omega} = C \Rightarrow \Omega = -\log(C) $. The log is evaluated by diagonalizing the one-\/body submatrix and taking the log of the diagonal entries. \hypertarget{classHartreeFock_a2eb6754f57250a03a2e1bd3e2aef4daf}{\index{Hartree\-Fock@{Hartree\-Fock}!Reorder\-Coefficients@{Reorder\-Coefficients}}
 \index{Reorder\-Coefficients@{Reorder\-Coefficients}!HartreeFock@{Hartree\-Fock}}
 \subsubsection[{Reorder\-Coefficients}]{\setlength{\rightskip}{0pt plus 5cm}void Hartree\-Fock\-::\-Reorder\-Coefficients (
 \begin{DoxyParamCaption}

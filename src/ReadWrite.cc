@@ -389,7 +389,6 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( istream & infile, Operator& 
      goodstate = false;
      return;
   }
-  char line[LINESIZE];
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
   vector<int> orbits_remap;
@@ -415,6 +414,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( istream & infile, Operator& 
 
   double tbme_pp,tbme_nn,tbme_10,tbme_00;
   // skip the first line
+  char line[LINESIZE];
   infile.getline(line,LINESIZE);
 
   for(int nlj1=0; nlj1<=nljmax; ++nlj1)
@@ -527,6 +527,11 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( istream& infile, Operator& Hba
   }
   int nljmax = orbits_remap.size();
 
+
+
+  // skip the first line
+  char line[LINESIZE];
+  infile.getline(line,LINESIZE);
 
 
   // begin giant nested loops

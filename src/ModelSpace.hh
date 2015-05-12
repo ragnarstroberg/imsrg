@@ -269,7 +269,7 @@ class ModelSpace
    vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
 //   map<long int,double> SixJList;
 
-   static unordered_map<long unsigned int,double>      SixJList;
+   static unordered_map<unsigned long int,double> SixJList;
    static unordered_map<long long unsigned int,double> NineJList;
    static unordered_map<long long unsigned int,double> MoshList;
 

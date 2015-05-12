@@ -449,6 +449,7 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
    if (OpIn.rank_J + OpIn.rank_T + OpIn.parity > 0)
    {
       cout << "Warning, HF transformation hasn't been checked for tensor operators" << endl;
+      cout << "This operator has J rank = " << OpIn.rank_J << ", T rank = " << OpIn.rank_T << " and parity = " << OpIn.parity << endl;
    }
 
    cout << "Transform one body" << endl;
@@ -580,7 +581,7 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
 
 
 /// Get the one-body generator corresponding to the transformation to the HF basis.
-/// Since the unitary transformation for HF is given by the \f $C^{-1} \f$ matrix, we have
+/// Since the unitary transformation for HF is given by the \f$ U_{HF} = C^{\dagger} \f$ matrix, we have
 /// \f$ e^{-\Omega} = C \Rightarrow \Omega = -\log(C) \f$.
 /// The log is evaluated by diagonalizing the one-body submatrix and taking the log of the diagonal entries.
 Operator HartreeFock::GetOmega()

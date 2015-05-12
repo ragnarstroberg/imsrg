@@ -62,7 +62,8 @@ class IMSRGSolver
 #endif
   Operator Transform(Operator& OpIn);
   Operator InverseTransform(Operator& OpIn);
-  void SetFlowFile(string s){flowfile = s;};
+//  void SetFlowFile(string s){flowfile = s;};
+  void SetFlowFile(string s);
   void SetDs(double d){ds = d;};
   void SetDsmax(double d){ds_max = d;};
   void SetdOmega(double d){norm_domega = d;};

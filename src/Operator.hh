@@ -80,6 +80,9 @@ class Operator
   // One body setter/getters
   double GetOneBody(int i,int j) {return OneBody(i,j);};
   void SetOneBody(int i, int j, double val) { OneBody(i,j) = val;};
+  int GetTwoBodyDimension(int ch_bra, int ch_ket){ return TwoBody.GetMatrix(ch_bra, ch_ket).n_cols;};
+  double GetTwoBody(int ch_bra, int ch_ket, int i, int j){ return TwoBody.GetMatrix(ch_bra, ch_ket)(i,j);};
+//  double GetTwoBody(int ch_bra, int ch_ket, int i, int j){ return TwoBody.GetTBME(ch_bra, ch_ket, modelspace->GetKet(i), modelspace->GetKet(j));};
 
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};

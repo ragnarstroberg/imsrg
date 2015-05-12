@@ -123,6 +123,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a55914915cea16669e549025c244b62d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a17bdb52033e2f62bba72ea86bc196b37"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#a17bdb52033e2f62bba72ea86bc196b37">GetNormalOrderedH</a> ()</td></tr>
 <tr class="separator:a17bdb52033e2f62bba72ea86bc196b37"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a53011b381945ed5c61f50b209db5bf64"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#a53011b381945ed5c61f50b209db5bf64">GetOmega</a> ()</td></tr>
+<tr class="separator:a53011b381945ed5c61f50b209db5bf64"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1c146af25a09f427cc626d877ec6e518"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#a1c146af25a09f427cc626d877ec6e518">BuildMonopoleV3</a> ()</td></tr>
 <tr class="separator:a1c146af25a09f427cc626d877ec6e518"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7f2a07edc3ccaa0cf9bbc0faadfd9ddf"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7f2a07edc3ccaa0cf9bbc0faadfd9ddf"></a>
@@ -326,6 +328,22 @@ vector&lt; pair&lt; const array&lt; int, 6 &gt;<br class="typebreak"/>
 
 </div>
 </div>
+<a class="anchor" id="a53011b381945ed5c61f50b209db5bf64"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classOperator.html">Operator</a> HartreeFock::GetOmega </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Get the one-body generator corresponding to the transformation to the HF basis. Since the unitary transformation for HF is given by the \( U_{HF} = C^{\dagger} \) matrix, we have \( e^{-\Omega} = C \Rightarrow \Omega = -\log(C) \). The log is evaluated by diagonalizing the one-body submatrix and taking the log of the diagonal entries. </p>
+
+</div>
+</div>
 <a class="anchor" id="a2eb6754f57250a03a2e1bd3e2aef4daf"></a>
 <div class="memitem">
 <div class="memproto">
@@ -441,7 +459,7 @@ vector&lt; pair&lt; const array&lt; int, 6 &gt;<br class="typebreak"/>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu May 7 2015 16:19:16 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 11 2015 13:00:34 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

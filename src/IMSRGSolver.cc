@@ -65,9 +65,10 @@ void IMSRGSolver::Reset()
    Omega.Erase();
 }
 
-void IMSRGSolver::Solve()
+
+void IMSRGSolver::SetFlowFile(string s)
 {
-   // If we have a flow output file, open it up and write to it here.
+   flowfile = s;
    ofstream flowf;
    if (flowfile != "")
    {
@@ -75,6 +76,11 @@ void IMSRGSolver::Solve()
       flowf.close();
    }
    WriteFlowStatusHeader(cout);
+}
+
+void IMSRGSolver::Solve()
+{
+   // If we have a flow output file, open it up and write to it here.
 
    istep = 0;
    generator.Update(&H_s,&Eta);
@@ -109,10 +115,6 @@ void IMSRGSolver::Solve()
       WriteFlowStatus(cout);
 
    }
-   cout << "Omega 1b: " << endl;
-   Omega.OneBody.print();
-   cout << "Omega 2b norm = " << Omega.TwoBody.Norm() << endl;
-
 
 }
 
@@ -283,9 +285,11 @@ int IMSRGSolver::GetSystemDimension()
 
 void IMSRGSolver::WriteFlowStatus(string fname)
 {
-   ofstream ff;
-   if (fname !="") ff.open(fname,ios::app);
-   WriteFlowStatus(ff);
+   if (fname !="")
+   {
+     ofstream ff(fname,ios::app);
+     WriteFlowStatus(ff);
+   }
 }
 void IMSRGSolver::WriteFlowStatus(ostream& f)
 {

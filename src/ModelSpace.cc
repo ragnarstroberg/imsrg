@@ -204,7 +204,7 @@ bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 
 // Static members
 
-unordered_map<unsigned long int,double>      ModelSpace::SixJList;
+unordered_map<unsigned long int,double> ModelSpace::SixJList;
 unordered_map<unsigned long long int,double> ModelSpace::NineJList;
 unordered_map<unsigned long long int,double> ModelSpace::MoshList;
 
@@ -648,7 +648,13 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 // { j1 j2 j3 }
 // { J1 J2 J3 }
 
-   unsigned long int key = 20000000000*j1 + 200000000*j2 + 2000000*j3 + 20000*J1 + 200*J2 + 2*J3;
+//   unsigned long long int key = 20000000000*j1 + 200000000*j2 + 2000000*j3 + 20000*J1 + 200*J2 + 2*J3;
+   unsigned long int key = (((unsigned long int) (2*j1)) << 30) +
+                           (((unsigned long int) (2*j2)) << 24) +
+                           (((unsigned long int) (2*j3)) << 18) +
+                           (((unsigned long int) (2*J1)) << 12) +
+                           (((unsigned long int) (2*J2)) <<  6) +
+                            ((unsigned long int) (2*J3));
 
    auto it = SixJList.find(key);
    if (it != SixJList.end() ) return it->second;

@@ -34,6 +34,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetHbarOmega", &ModelSpace::GetHbarOmega)
       .def("GetTargetMass", &ModelSpace::GetTargetMass)
       .def("GetNumberOrbits", &ModelSpace::GetNumberOrbits)
+      .def("GetNumberKets", &ModelSpace::GetNumberKets)
 //      .def("PreComputeSixJs", &ModelSpace::PreComputeSixJs)
    ;
 
@@ -72,6 +73,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def_readwrite("ZeroBody", &Operator::ZeroBody)
       .def_readwrite("OneBody", &Operator::OneBody)
       .def("GetOneBody", &Operator::GetOneBody)
+      .def("GetTwoBody", &Operator::GetTwoBody)
+      .def("GetTwoBodyDimension", &Operator::GetTwoBodyDimension)
       .def("ScaleOneBody", &Operator::ScaleOneBody)
       .def("ScaleTwoBody", &Operator::ScaleTwoBody)
       .def("DoNormalOrdering", &Operator::DoNormalOrdering)
@@ -127,6 +130,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetSystemDimension",&IMSRGSolver::GetSystemDimension)
       .def_readwrite("H_s", &IMSRGSolver::H_s)
       .def_readwrite("Omega", &IMSRGSolver::Omega)
+      .def_readwrite("Eta", &IMSRGSolver::Eta)
    ;
 
    def("TCM_Op",           imsrg_util::TCM_Op);
