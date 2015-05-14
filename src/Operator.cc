@@ -1491,7 +1491,8 @@ void Operator::comm222_phss( Operator& opright, Operator& opout )
    int hy = opright.IsHermitian() ? 1 : -1;
 
    int nch = modelspace->SortedTwoBodyChannels_CC.size();
-   for (int ich=0; ich<nch; ++nch)
+   #pragma omp parallel for
+   for (int ich=0; ich<nch; ++ich)
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
       W_bar[ch] =  hx*( X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch]) ;
