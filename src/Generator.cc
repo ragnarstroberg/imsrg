@@ -35,6 +35,10 @@ void Generator::Update(Operator * H_s, Operator * Eta_s)
    {
      ConstructGenerator_ShellModel_Atan();
    }
+   else if (generator_type == "shell-model-atan-cut")
+   {
+     ConstructGenerator_ShellModel_Atan_Cut();
+   }
    else if (generator_type == "hartree-fock")
    {
      ConstructGenerator_HartreeFock();
@@ -235,18 +239,6 @@ void Generator::ConstructGenerator_Atan()
          Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
 
-      // now decouple valence holes from core holes
-//      if (modelspace->holes.size() != modelspace->hole_qspace.size() )
-//      {
-//        for ( auto& b : modelspace->valence)
-//        {
-//           Orbit & ob = modelspace->GetOrbit(b);
-//           if (ob.ph == 0) continue;
-//           double denominator = Get1bDenominator(b,a);
-//           Eta->OneBody(b,a) = 0.5*atan(2*H->OneBody(b,a)/denominator);
-//           Eta->OneBody(a,b) = - Eta->OneBody(b,a);
-//        }
-//      }
    }
 
    // Two body piece -- eliminate pp'hh' bits
@@ -349,8 +341,13 @@ void Generator::ConstructGenerator_ShellModel()
          // < vq | vv' > 
          for ( auto& ibra : tbc.GetKetIndex_v_q() ) 
          {
+
+//            Ket & bra = tbc.GetKet(ibra);
+//            Ket & ket = tbc.GetKet(iket);
+//            int de = abs( 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l - 2*ket.op->n - ket.op->l - 2*ket.oq->n - ket.oq->l);
             double denominator = Get2bDenominator(ch,ibra,iket);
-            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
+//            if (abs(denominator)>1.1*modelspace->GetHbarOmega())
+              ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
@@ -410,8 +407,12 @@ void Generator::ConstructGenerator_ShellModel()
          // < vv | vh >
          for ( auto& ibra : tbc.GetKetIndex_vv() )
          {
+//            Ket & bra = tbc.GetKet(ibra);
+//            Ket & ket = tbc.GetKet(iket);
+//            int de = abs( 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l - 2*ket.op->n - ket.op->l - 2*ket.oq->n - ket.oq->l);
             double denominator = Get2bDenominator(ch,ibra,iket);
-            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
+//            if (abs(denominator)>1.1*modelspace->GetHbarOmega())
+              ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
 
@@ -439,6 +440,25 @@ void Generator::ConstructGenerator_ShellModel_Atan()
          Eta->OneBody(j,i) = - Eta->OneBody(i,j);
       }
    }
+   // Also make sure the core is decoupled
+   for ( auto& a : modelspace->hole_qspace)
+   {
+      for ( auto& i : modelspace->particle_qspace)
+      {
+         double denominator = Get1bDenominator(i,a);
+         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+      }
+      for ( auto& i : modelspace->valence)
+      {
+         double denominator = Get1bDenominator(i,a);
+         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+      }
+
+   }
+
+
    // Two body piece -- eliminate ppvh and pqvv  
 
    int nchan = modelspace->GetNumberTwoBodyChannels();
@@ -482,8 +502,13 @@ void Generator::ConstructGenerator_ShellModel_Atan()
          }
          for ( auto& ibra : tbc.GetKetIndex_v_q() ) 
          {
+//            Ket & bra = tbc.GetKet(ibra);
+//            Ket & ket = tbc.GetKet(iket);
+//            int de = abs( 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l - 2*ket.op->n - ket.op->l - 2*ket.oq->n - ket.oq->l);
             double denominator = Get2bDenominator(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+//            if (de>denominator_cutoff)
+//            if (abs(denominator)>1.1*modelspace->GetHbarOmega())
+              ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
  
@@ -508,7 +533,117 @@ void Generator::ConstructGenerator_ShellModel_Atan()
          }
         for ( auto& ibra : tbc.GetKetIndex_vv() ) 
          {
+//            Ket & bra = tbc.GetKet(ibra);
+//            Ket & ket = tbc.GetKet(iket);
+//            int de = abs( 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l - 2*ket.op->n - ket.op->l - 2*ket.oq->n - ket.oq->l);
             double denominator = Get2bDenominator(ch,ibra,iket);
+//            if (de>denominator_cutoff)
+//            if (abs(denominator)>1.1*modelspace->GetHbarOmega())
+            {
+              ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+//              cout << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << "  " << H2(ibra,iket) << " / " << denominator << endl;
+            }
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+
+    }
+}
+
+
+void Generator::ConstructGenerator_ShellModel_Atan_Cut()
+{
+   // One body piece -- make sure the valence one-body part is diagonal
+   unsigned int norbits = modelspace->GetNumberOrbits();
+   for ( auto& i : modelspace->valence)
+   {
+      for (unsigned int j=0; j<norbits; ++j)
+      {
+         if (i==j) continue;
+         double denominator = Get1bDenominator(i,j);
+         if (abs(denominator) > denominator_cutoff);
+           Eta->OneBody(i,j) = 0.5*atan(2*H->OneBody(i,j)/denominator);
+         Eta->OneBody(j,i) = - Eta->OneBody(i,j);
+      }
+   }
+   // Two body piece -- eliminate ppvh and pqvv  
+
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
+      arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
+
+      // Decouple the core
+      for ( auto& iket : tbc.GetKetIndex_c_c() )
+      {
+         for ( auto& ibra : tbc.GetKetIndex_q_q() )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+         if (abs(denominator) > denominator_cutoff);
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+         for ( auto& ibra : tbc.GetKetIndex_vv() )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+         if (abs(denominator) > denominator_cutoff);
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+         for ( auto& ibra : tbc.GetKetIndex_v_q() )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+         if (abs(denominator) > denominator_cutoff);
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+
+      // Decouple the valence space
+      for ( auto& iket : tbc.GetKetIndex_vv() )
+      {
+         for ( auto& ibra : tbc.GetKetIndex_q_q() ) 
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+         if (abs(denominator) > denominator_cutoff);
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator) ;
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+         for ( auto& ibra : tbc.GetKetIndex_v_q() ) 
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+         if (abs(denominator) > denominator_cutoff);
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+ 
+      }
+
+      // Decouple vh states
+
+      for ( auto& iket : tbc.GetKetIndex_v_c() )
+      {
+         for ( auto& ibra : tbc.GetKetIndex_q_q() )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+         if (abs(denominator) > denominator_cutoff);
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
+         for ( auto& ibra : tbc.GetKetIndex_v_q() )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+         if (abs(denominator) > denominator_cutoff);
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+        for ( auto& ibra : tbc.GetKetIndex_vv() ) 
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+         if (abs(denominator) > denominator_cutoff);
             ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
@@ -516,6 +651,10 @@ void Generator::ConstructGenerator_ShellModel_Atan()
 
     }
 }
+
+
+
+
 
 
 

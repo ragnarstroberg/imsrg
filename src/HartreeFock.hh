@@ -16,8 +16,10 @@ class HartreeFock
    arma::mat Vij;           ///< 1 body piece of 2 body potential
    arma::mat V3ij;          ///< 1 body piece of 3 body potential
    arma::mat F;             ///< Fock matrix
-   arma::mat Vmon;          ///< Monopole 2-body interaction
-   arma::mat Vmon_exch;     ///< Monopole 2-body interaction
+//   arma::mat Vmon;          ///< Monopole 2-body interaction
+//   arma::mat Vmon_exch;     ///< Monopole 2-body interaction
+   array< array< arma::mat,2>,3> Vmon;          ///< Monopole 2-body interaction
+   array< array< arma::mat,2>,3> Vmon_exch;          ///< Monopole 2-body interaction
    arma::uvec holeorbs;     ///< list of hole orbits for generating density matrix
    arma::vec energies;      ///< vector of single particle energies
    arma::vec prev_energies; ///< SPE's from last iteration

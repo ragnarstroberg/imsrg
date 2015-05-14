@@ -579,6 +579,10 @@ void ModelSpace::SetupKets()
   for (index_t index=0;index<Kets.size();++index)
   {
     Ket& ket = Kets[index];
+    int Tz = (ket.op->tz2 + ket.oq->tz2)/2;
+    int parity = (ket.op->l + ket.oq->l)%2;
+//    MonopoleKets[Tz+1][parity].push_back(index);
+    MonopoleKets[Tz+1][parity][index]=MonopoleKets[Tz+1][parity].size()-1;
     int php = ket.op->ph;
     int phq = ket.oq->ph;
     int iop = ket.op->io;

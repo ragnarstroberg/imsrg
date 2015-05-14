@@ -743,7 +743,7 @@ void Operator::CalculateCrossCoupled(vector<arma::mat> &TwoBody_CC_left, vector<
 Operator Operator::BCH_Transform(  Operator &Omega)
 {
    double t = omp_get_wtime();
-   int max_iter = 20;
+   int max_iter = 40;
    int warn_iter = 12;
    double nx = Norm();
    double ny = Omega.Norm();

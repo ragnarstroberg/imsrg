@@ -5,7 +5,7 @@ INCLUDE = -I./armadillo
 LIBS = -lopenblas -llapack -lgsl -lz
 #FLAGS =  -O3 -std=c++11  -fPIC -fopenmp # -DNO_ODE=1
 #FLAGS =  -std=c++11 -fopenmp -fPIC -g # -DNO_ODE=1
-FLAGS =  -O2 -march=native -std=c++11 -fopenmp -fPIC -DNO_ODE=1 
+FLAGS =  -O2 -march=native -std=c++11 -fopenmp -fPIC -DNO_ODE=1   -g
 #FLAGS =  -std=c++11 -fopenmp -fPIC -g  -DNO_ODE=1
 SOFLABS = -O2 -march=native -std=c++11 -fopenmp -fPIC
 WARNFLAGS = -Wall -Wno-comment

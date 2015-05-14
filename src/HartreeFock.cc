@@ -16,16 +16,27 @@ HartreeFock::HartreeFock(Operator& hbare)
     tolerance(1e-8)
 {
    int norbits = modelspace->GetNumberOrbits();
-   int nKets = modelspace->GetNumberKets();
+//   int nKets = modelspace->GetNumberKets();
 
    C             = arma::mat(norbits,norbits,arma::fill::eye);
    Vij           = arma::mat(norbits,norbits,arma::fill::zeros);
    V3ij          = arma::mat(norbits,norbits,arma::fill::zeros);
    F             = arma::mat(norbits,norbits);
-   Vmon          = arma::mat(nKets,nKets);
-   Vmon_exch     = arma::mat(nKets,nKets);
+   for (int Tz=-1;Tz<=1;++Tz)
+   {
+     for (int parity=0; parity<=1; ++parity)
+     {
+       int nKetsMon = modelspace->MonopoleKets[Tz+1][parity].size();
+       Vmon[Tz+1][parity] = arma::mat(nKetsMon,nKetsMon);
+       Vmon_exch[Tz+1][parity] = arma::mat(nKetsMon,nKetsMon);
+     }
+   }
+//   Vmon          = arma::mat(nKets,nKets);
+//   Vmon_exch     = arma::mat(nKets,nKets);
+   cout << "Done initializing" << endl;
    prev_energies = arma::vec(norbits,arma::fill::zeros);
    holeorbs = arma::uvec(modelspace->holes);
+   cout << "BuildMonopoleV" << endl;
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
    {
@@ -33,6 +44,7 @@ HartreeFock::HartreeFock(Operator& hbare)
    }
    UpdateDensityMatrix();
    UpdateF();
+   cout << "Done with constructor" << endl;
 
 }
 
@@ -154,6 +166,52 @@ void HartreeFock::Diagonalize()
 //*********************************************************************
 void HartreeFock::BuildMonopoleV()
 {
+   for (int Tz=-1; Tz<=1; ++Tz)
+   {
+     for (int parity=0; parity<=1; ++parity)
+     {
+        Vmon[Tz+1][parity].zeros();
+        Vmon_exch[Tz+1][parity].zeros();
+//        int nKetsMon = modelspace->MonopoleKets[Tz+1][parity].size();
+//        int nKets = modelspace->GetNumberKets();
+//        for (int ibra=0;ibra<nKets;++ibra)
+//        for (int ibra=0;ibra<nKetsMon;++ibra)
+        for ( auto& itbra : modelspace->MonopoleKets[Tz+1][parity] )
+        {
+//           Ket & bra = modelspace->GetKet(ibra);
+//           Ket & bra = modelspace->GetKet(modelspace->MonopoleKets[Tz+1][parity][ibra]);
+           Ket & bra = modelspace->GetKet(itbra.first);
+           int a = bra.p;
+           int b = bra.q;
+           Orbit & oa = modelspace->GetOrbit(a);
+           Orbit & ob = modelspace->GetOrbit(b);
+           double norm = (oa.j2+1)*(ob.j2+1);
+//           cout << " " << itbra.first << " => " << itbra.second << endl;
+//           for (int iket=ibra;iket<nKetsMon;++iket)
+           for ( auto& itket : modelspace->MonopoleKets[Tz+1][parity] )
+           {
+              if (itket.second < itbra.second) continue;
+//              Ket & ket = modelspace->GetKet(modelspace->MonopoleKets[Tz+1][parity][iket]);
+//             cout << "    " << itket.first << " => " << itket.second << endl;
+              Ket & ket = modelspace->GetKet(itket.first);
+              int c = ket.p;
+              int d = ket.q;
+              Vmon[Tz+1][parity](itbra.second,itket.second)       = Hbare.TwoBody.GetTBMEmonopole(a,b,c,d)*norm;
+              Vmon_exch[Tz+1][parity](itbra.second,itket.second)  = Hbare.TwoBody.GetTBMEmonopole(a,b,d,c)*norm;
+//              Vmon[Tz+1][parity](ibra,iket)       = Hbare.TwoBody.GetTBMEmonopole(a,b,c,d)*norm;
+//              Vmon_exch[Tz+1][parity](ibra,iket)  = Hbare.TwoBody.GetTBMEmonopole(a,b,d,c)*norm;
+           }
+        }
+        Vmon[Tz+1][parity] = arma::symmatu(Vmon[Tz+1][parity]);
+        Vmon_exch[Tz+1][parity] = arma::symmatu(Vmon_exch[Tz+1][parity]);
+    }
+  }
+}
+
+
+/*
+void HartreeFock::BuildMonopoleV()
+{
    Vmon.zeros();
    Vmon_exch.zeros();
    int nKets = modelspace->GetNumberKets();
@@ -177,8 +235,7 @@ void HartreeFock::BuildMonopoleV()
    Vmon = arma::symmatu(Vmon);
    Vmon_exch = arma::symmatu(Vmon_exch);
 }
-
-
+*/
 
 //*********************************************************************
 /// Construct an unnormalized three-body monopole interaction
@@ -300,7 +357,6 @@ void HartreeFock::UpdateF()
 {
    double start_time = omp_get_wtime();
    int norbits = modelspace->GetNumberOrbits();
-   int bra, ket;
    Vij.zeros();
    V3ij.zeros();
 
@@ -315,15 +371,23 @@ void HartreeFock::UpdateF()
          for (int a=0;a<norbits;++a)
          {
             Orbit& oa = modelspace->GetOrbit(a);
-            bra = modelspace->GetKetIndex(min(i,a),max(i,a));
+            int Tz = (oi.tz2+oa.tz2)/2;
+            int parity = (oi.l+oa.l)%2;
+            int bra = modelspace->GetKetIndex(min(i,a),max(i,a));
+            int local_bra = modelspace->MonopoleKets[Tz+1][parity][bra];
             for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
             {
-               ket = modelspace->GetKetIndex(min(j,b),max(j,b));
+               int ket = modelspace->GetKetIndex(min(j,b),max(j,b));
+               int local_ket = modelspace->MonopoleKets[Tz+1][parity][ket];
                // 2body term <ai|V|bj>
                if ((a>i) xor (b>j))
-                  Vij(i,j) += rho(a,b)*Vmon_exch(min(bra,ket),max(bra,ket)); // <a|rho|b> * <ai|Vmon|bj>
+                  Vij(i,j) += rho(a,b)*Vmon_exch[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|bj>
                else
-                  Vij(i,j) += rho(a,b)*Vmon(min(bra,ket),max(bra,ket)); // <a|rho|b> * <ai|Vmon|bj>
+                  Vij(i,j) += rho(a,b)*Vmon[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|bj>
+//               if ((a>i) xor (b>j))
+//                  Vij(i,j) += rho(a,b)*Vmon_exch(min(bra,ket),max(bra,ket)); // <a|rho|b> * <ai|Vmon|bj>
+//               else
+//                  Vij(i,j) += rho(a,b)*Vmon(min(bra,ket),max(bra,ket)); // <a|rho|b> * <ai|Vmon|bj>
            }
          }
       }
@@ -571,6 +635,14 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
      OUT  =    D.t() * (V2 + V3NO) * D;
    }
    // clear up some memory
+   for (int Tz=-1;Tz<=1;++Tz)
+   {
+     for (int parity=0; parity<=1; ++parity)
+     {
+       Vmon[Tz+1][parity].clear();
+       Vmon_exch[Tz+1][parity].clear();
+     }
+   }
    Vmon3.clear();
    Hbare.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;
    

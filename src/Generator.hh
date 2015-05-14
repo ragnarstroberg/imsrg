@@ -14,10 +14,12 @@ class Generator
   Operator * H;
   Operator * Eta;
   ModelSpace * modelspace;
+  double denominator_cutoff;
 
   Generator();
   void SetType(string g){generator_type = g;};
   void Update(Operator* H, Operator* Eta);
+  void SetDenominatorCutoff(double c){denominator_cutoff=c;};
 
  private:
   void ConstructGenerator_Wegner();
@@ -25,6 +27,7 @@ class Generator
   void ConstructGenerator_Atan();
   void ConstructGenerator_ShellModel();
   void ConstructGenerator_ShellModel_Atan();
+  void ConstructGenerator_ShellModel_Atan_Cut();
   void ConstructGenerator_HartreeFock();
   double Get1bDenominator(int i, int j);
   double Get2bDenominator(int ch, int ibra, int iket);

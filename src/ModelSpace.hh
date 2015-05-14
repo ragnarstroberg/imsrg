@@ -241,8 +241,11 @@ class ModelSpace
    vector<index_t> KetIndex_c_c; 
    vector<index_t> KetIndex_q_q;
    vector<index_t> KetIndex_q_c;
-   vector<index_t> KetIndex_v_c; // added
-   vector<index_t> KetIndex_v_q; //added
+   vector<index_t> KetIndex_v_c;
+   vector<index_t> KetIndex_v_q;
+
+//   array< array< vector<index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
+   array< array< unordered_map<index_t,index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
 
    int Nmax;
    int N2max;

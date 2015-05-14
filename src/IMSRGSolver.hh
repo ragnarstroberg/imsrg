@@ -79,6 +79,8 @@ class IMSRGSolver
   void WriteFlowStatus(string);
   void WriteFlowStatusHeader(string);
 
+  void SetDenominatorCutoff(double c){generator.SetDenominatorCutoff(c);};
+
 
 //  private:
   ModelSpace* modelspace;
