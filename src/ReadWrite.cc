@@ -672,6 +672,8 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( istream& infile, Operator& Hba
                        if (abs(V) > 1e-6 and ea<=e1max and eb<=e1max and ec<=e1max)
                        {
                           cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero!" << endl;
+                          goodstate = false;
+                          return;
                        }
                     }
  //                   cout << endl;
