@@ -20,6 +20,7 @@ namespace imsrg_util
  Operator PSquaredOp(ModelSpace& modelspace);
  Operator RSquaredOp(ModelSpace& modelspace);
  Operator E0Op(ModelSpace& modelspace);
+ Operator E2Op(ModelSpace& modelspace);
  Operator TCM_Op(ModelSpace& modelspace);
  Operator VCM_Op(ModelSpace& modelspace);
  Operator R2CM_Op(ModelSpace& modelspace);
@@ -30,6 +31,7 @@ namespace imsrg_util
  double Calculate_r1r2(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);
  double Calculate_hcom(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);
  double HO_density(int n, int l, double hw, double r);
+ double RadialIntegral(int na, int la, int nb, int lb, int L);
  vector<double> GetOccupationsHF(HartreeFock& hf);
  vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);
  vector<double> GetDensity(vector<double>& occ, vector<double>& R, vector<int>& orbits, ModelSpace& modelspace);

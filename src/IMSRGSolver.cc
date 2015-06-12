@@ -306,6 +306,8 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << Omega.Norm()
         << setw(fwidth) << setprecision(fprecision) << Eta.OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << Eta.TwoBodyNorm()
+        << setw(fwidth) << setprecision(0)          << H_s.timer["N_Commutators"]
+        << setprecision(fprecision)
         << endl;
    }
 

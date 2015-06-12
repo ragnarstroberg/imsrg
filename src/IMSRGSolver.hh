@@ -21,6 +21,7 @@ class IMSRGSolver
      ODE_Monitor(IMSRGSolver& solver)
            : imsrgsolver(solver), times(solver.times), E0(solver.E0),
               eta1(solver.eta1),eta2(solver.eta2) {};
+     IMSRGSolver& imsrgsolver;
      vector<double>& times;
      vector<double>& E0;
      vector<double>& eta1;
@@ -40,8 +41,6 @@ class IMSRGSolver
                 << eta1[i]  << "  " << eta2[i] << endl;
         }
      }
-    private:
-     IMSRGSolver& imsrgsolver;
   };
 #endif
 

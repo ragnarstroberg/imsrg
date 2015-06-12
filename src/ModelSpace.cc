@@ -23,25 +23,6 @@ Orbit::Orbit(const Orbit& orb)
 : n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),ph(orb.ph),io(orb.io),index(orb.index)
 {}
 
-/*
-void Orbit::swap( Orbit& orb) throw()
-{
-   std::swap(this->n,orb.n);
-   std::swap(this->l,orb.l);
-   std::swap(this->j2,orb.j2);
-   std::swap(this->tz2,orb.tz2);
-   std::swap(this->ph,orb.ph);
-   std::swap(this->io,orb.io);
-   std::swap(this->index,orb.index);
-}
-
-Orbit& Orbit::operator=(const Orbit& orb)
-{
-   Orbit tmp(orb);
-   this->swap(tmp);
-   return *this;
-}
-*/
 
 //************************************************************************
 //************************************************************************
@@ -187,7 +168,6 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
 // Check if orbits pq participate in this cross-coupled two-body channel
 // Difference from regular channels:
 // no Pauli rule, <pp||nn> is allowed.
-//bool TwoBodyChannel_CC::CheckChannel_ket(int p, int q) const
 bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
    if ((op->l + oq->l)%2 != parity)    return false;

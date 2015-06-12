@@ -801,6 +801,47 @@ Operator E0Op(ModelSpace& modelspace)
    return T2;
  }
 
-}
 
+
+  Operator E2Op(ModelSpace& modelspace)
+  {
+    Operator E2(modelspace, 2,0,0,2);
+    for (int i : modelspace.proton_orbits)
+    {
+      Orbit& oi = modelspace.GetOrbit(i);
+      for ( int j : E2.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      {
+        if (j<i) continue;
+        Orbit& oj = modelspace.GetOrbit(j);
+        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,2);
+        E2.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*5./4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, 2.0, oj.j2/2.0, 0.5,0, -0.5) * r2int;
+        E2.OneBody(j,i) = modelspace.phase(oi.j2-oj.j2) * E2.OneBody(i,j);
+      }
+    }
+    // multiply by b^2 = hbar/mw
+    E2.OneBody *= HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega();
+    return E2;
+  }
+
+
+  // This uses eq (6.41) from Suhonen.
+  // Note this is only valid for la+lb+L = even.
+  double RadialIntegral(int na, int la, int nb, int lb, int L)
+  {
+    int tau_a = max((lb-la+L)/2,0);
+    int tau_b = max((la-lb+L)/2,0);
+    int sigma_min = max(max(na-tau_a,nb-tau_b),0);
+    int sigma_max = min(na,nb);
+  
+    double term1 = AngMom::phase(na+nb) * gsl_sf_fact(tau_a)*gsl_sf_fact(tau_b) * sqrt(gsl_sf_fact(na)*gsl_sf_fact(nb) / (gsl_sf_gamma(na+la+1.5)*gsl_sf_gamma(nb+lb+1.5) ) );
+    double term2 = 0;
+    for (int sigma=sigma_min; sigma<=sigma_max; ++sigma)
+    {
+      term2 += gsl_sf_gamma(0.5*(la+lb+L)+sigma+1.5) / (gsl_sf_fact(sigma)*gsl_sf_fact(na-sigma)*gsl_sf_fact(nb-sigma)*gsl_sf_fact(sigma+tau_a-na)*gsl_sf_fact(sigma+tau_b-nb) );
+    }
+    return term1*term2;
+  
+  }
+
+}
 

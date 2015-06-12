@@ -1121,6 +1121,7 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
    {
       opfile << "Non-Hermitian" << endl;
    }
+   opfile << op.GetJRank() << "  " << op.GetTRank() << "  " << op.GetParity() << endl;
 
    opfile << "$ZeroBody:\t" << setprecision(10) << op.ZeroBody << endl;
 
@@ -1138,24 +1139,50 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
    }
 
    opfile <<  "$TwoBody:\t"  << endl;
+
+   for ( auto& it : op.TwoBody.MatEl )
+   {
+      int chbra = it.first[0];
+      int chket = it.first[1];
+      int nbras = it.second.n_rows;
+      int nkets = it.second.n_cols;
+      for (int ibra=0; ibra<nbras; ++ibra)
+      {
+        for (int iket=0; iket<nkets; ++iket)
+        {
+           double tbme = it.second(ibra,iket);
+           if ( abs(tbme) > 1e-7 )
+           {
+             cout << setw(4) << chbra << " " << setw(4) << chket << "   "
+                  << setw(4) << ibra  << " " << setw(4) << iket  << "   "
+                  << setw(10) << setprecision(6) << tbme << endl;
+           }
+        }
+      }
+   }
+
+/*
    int nchan = modelspace->GetNumberTwoBodyChannels();
    for (int ch=0; ch<nchan; ++ch)
    {
+      cout << "ch =  " << ch << endl;
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       int nkets = tbc.GetNumberKets();
       for (int ibra=0; ibra<nkets; ++ibra)
       {
-//         Ket& bra = tbc.GetKet(ibra);
          int iket_min = op.IsNonHermitian() ? 0 : ibra;
          for (int iket=iket_min; iket<nkets; ++iket)
          {
-//            Ket& ket = tbc.GetKet(iket);
+            cout << "here." << endl;
             double tbme = op.TwoBody.GetTBME_norm(ch,ibra,iket);
+            cout << "tbme = " << tbme << endl;
             if (abs(tbme) > 1e-7)
               opfile << ch << "\t" << ibra << "\t" << iket << "\t" << setprecision(10) << tbme << endl;
          }
       }
    }
+*/
+
    cout << "Closing file" << endl;
    opfile.close();
 
@@ -1178,7 +1205,7 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
    // Should put in some check for if the file exists
 
    string tmpstring;
-   int i,j,ch;
+   int i,j,chbra,chket;
    double v;
 
    opfile >> tmpstring;
@@ -1194,6 +1221,8 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
    {
       op.SetNonHermitian();
    }
+   int jrank,trank,parity;
+   opfile >> jrank >> trank >> parity;
 
    opfile >> tmpstring >> v;
    op.ZeroBody = v;
@@ -1212,10 +1241,18 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
          op.OneBody(j,i) = -v;
       getline(opfile, tmpstring);
    }
+
+  while(opfile >> chbra >> chket >> i >> i >> v)
+  {
+    op.TwoBody.SetTBME(chbra,chket,i,j,v);
+  }
+
+/*
    while (opfile >> ch >> i >> j >> v)
    {
       op.TwoBody.SetTBME(ch,i,j,v);
-  }
+   }
+*/
 
    opfile.close();
    

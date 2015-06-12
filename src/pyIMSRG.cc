@@ -141,6 +141,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("NumberOp",         imsrg_util::NumberOp);
    def("RSquaredOp",       imsrg_util::RSquaredOp);
    def("E0Op",             imsrg_util::E0Op);
+   def("E2Op",             imsrg_util::E2Op);
    def("Isospin2_Op",      imsrg_util::Isospin2_Op);
    def("HO_density",       imsrg_util::HO_density);
    def("GetOccupationsHF", imsrg_util::GetOccupationsHF);

@@ -45,6 +45,7 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     hermitian(true), antihermitian(false),  
     nChannels(ms.GetNumberTwoBodyChannels()) 
 {
+  SetUpOneBodyChannels();
   TwoBody.Allocate();
   if (particle_rank >=3) ThreeBody.Allocate();
 }
@@ -59,6 +60,7 @@ Operator::Operator(ModelSpace& ms) :
     hermitian(true), antihermitian(false),  
     nChannels(ms.GetNumberTwoBodyChannels())
 {
+  SetUpOneBodyChannels();
   TwoBody.Allocate();
 }
 
@@ -68,7 +70,7 @@ Operator::Operator(const Operator& op)
   rank_J(op.rank_J), rank_T(op.rank_T), particle_rank(op.particle_rank),
   E2max(op.E2max), E3max(op.E3max), 
   hermitian(op.hermitian), antihermitian(op.antihermitian),
-  nChannels(op.nChannels)
+  nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
 {
 //   cout << "Calling copy constructor for Operator" << endl;
 }
@@ -79,7 +81,7 @@ Operator::Operator(Operator&& op)
   rank_J(op.rank_J), rank_T(op.rank_T), particle_rank(op.particle_rank),
   E2max(op.E2max), E3max(op.E3max), 
   hermitian(op.hermitian), antihermitian(op.antihermitian),
-  nChannels(op.nChannels)
+  nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
 {
 //   cout << "Calling move constructor for Operator" << endl;
 }
@@ -101,6 +103,7 @@ void Operator::Copy(const Operator& op)
    OneBody       = op.OneBody;
    TwoBody       = op.TwoBody;
    ThreeBody     = op.ThreeBody;
+   OneBodyChannels = op.OneBodyChannels;
 }
 
 /////////////// OVERLOADED OPERATORS =,+,-,*,etc ////////////////////
@@ -128,6 +131,7 @@ Operator& Operator::operator=(Operator&& rhs)
    OneBody       = move(rhs.OneBody);
    TwoBody       = move(rhs.TwoBody);
    ThreeBody     = move(rhs.ThreeBody);
+   OneBodyChannels = move(rhs.OneBodyChannels);
    return *this;
 }
 
@@ -207,7 +211,6 @@ Operator Operator::operator-() const
 
 
 
-
 void Operator::PrintTimes()
 {
    cout << "==== TIMES ====" << endl;
@@ -216,6 +219,32 @@ void Operator::PrintTimes()
      cout << it.first << ":  " << it.second  << endl;
    }
 }
+
+
+void Operator::SetUpOneBodyChannels()
+{
+  for ( int i=0; i<modelspace->GetNumberOrbits(); ++i )
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    int lmin = max( oi.l - rank_J - parity, (oi.l+parity)%2);
+    int lmax = min( oi.l + rank_J, modelspace->Nmax);
+    for (int l=lmin; l<=lmax; l+=2)
+    {
+      int j2min = max(max(oi.j2 - 2*rank_J, 2*l-1),1);
+      int j2max = min(oi.j2 + 2*rank_J, 2*l+1);
+      for (int j2=j2min; j2<=j2max; j2+=2)
+      {
+        int tz2min = max( oi.tz2 - 2*rank_T, -1);
+        int tz2max = min( oi.tz2 + 2*rank_T, 1);
+        for (int tz2=tz2min; tz2<=tz2max; tz2+=2)
+        {
+          OneBodyChannels[ {l, j2, tz2} ].push_back(i);
+        }
+      }
+    }
+  }
+}
+
 
 ////////////////// MAIN INTERFACE METHODS //////////////////////////
 
@@ -604,11 +633,13 @@ Operator Operator::BCH_Product(  Operator &Y)
 {
    double t = omp_get_wtime();
    Operator& X = *this;
+   double nx = X.Norm();
+   double ny = Y.Norm();
+   if (nx < 1e-7) return Y;
+   if (ny < 1e-7) return X;
 
    Operator Z = X.Commutator(Y);
    Z *= 0.5;
-   double nx = X.Norm();
-   double ny = Y.Norm();
    double nxy = Z.Norm();
 
    if ( nxy < (nx+ny)*bch_product_threshold )
@@ -891,7 +922,7 @@ void Operator::comm121ss( Operator& opright, Operator& out)
    {
       Orbit &oi = modelspace->GetOrbit(i);
       int jmin = out.IsNonHermitian() ? 0 : i;
-      for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) // Later make this j=i;j<norbits... and worry about Hermitian vs anti-Hermitian
+      for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
       {
           if (j<jmin) continue; // only calculate upper triangle
           for (auto& a : modelspace->holes)  // C++11 syntax
@@ -1554,6 +1585,38 @@ void Operator::comm111st( Operator & opright, Operator& out)
 void Operator::comm121st( Operator& opright, Operator& out) 
 {
    int norbits = modelspace->GetNumberOrbits();
+   #pragma omp parallel for 
+   for (int i=0;i<norbits;++i)
+   {
+      Orbit &oi = modelspace->GetOrbit(i);
+      int jmin = out.IsNonHermitian() ? 0 : i;
+      for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
+      {
+          if (j<jmin) continue; // only calculate upper triangle
+          for (auto& a : modelspace->holes)  // C++11 syntax
+          {
+             Orbit &oa = modelspace->GetOrbit(a);
+             for (auto& b : modelspace->particles)
+             {
+                Orbit &ob = modelspace->GetOrbit(b);
+                out.OneBody(i,j) += (ob.j2+1) *  OneBody(a,b) * opright.TwoBody.GetTBMEmonopole(b,i,a,j) ;
+                out.OneBody(i,j) -= (oa.j2+1) *  OneBody(b,a) * opright.TwoBody.GetTBMEmonopole(a,i,b,j) ;
+
+                // comm211 part
+                out.OneBody(i,j) -= (ob.j2+1) *  opright.OneBody(a,b) * TwoBody.GetTBMEmonopole(b,i,a,j) ;
+                out.OneBody(i,j) += (oa.j2+1) *  opright.OneBody(b,a) * TwoBody.GetTBMEmonopole(a,i,b,j) ;
+             }
+          }
+      }
+   }
+}
+
+
+
+/*
+void Operator::comm121st( Operator& opright, Operator& out) 
+{
+   int norbits = modelspace->GetNumberOrbits();
 //   int nch = modelspace->GetNumberTwoBodyChannels();
    int Lambda = opright.rank_J;
    #pragma omp parallel for
@@ -1622,7 +1685,7 @@ void Operator::comm121st( Operator& opright, Operator& out)
       }
    }
 }
-
+*/
 
 
 

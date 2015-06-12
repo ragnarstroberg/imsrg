@@ -12,7 +12,7 @@
 
 using namespace std;
 
-typedef uint64_t orbindx3_t;
+//typedef uint64_t orbindx3_t;
 
 ///
 /// The Operator class provides a generic operator up to three-body, scalar or tensor.
@@ -43,7 +43,7 @@ class Operator
   static double bch_transform_threshold;
   static double bch_product_threshold;
   static map<string, double> timer; ///< For keeping timing information for various method calls
-
+  map<array<int,3>,vector<index_t> > OneBodyChannels;
 
   void PrintTimes();
 
@@ -116,6 +116,7 @@ class Operator
   void ScaleTwoBody(double x);
   void Symmetrize(); ///< Copy the upper-half triangle to the lower-half triangle for each matrix
   void AntiSymmetrize(); ///< Copy the upper-half triangle to the lower-half triangle with a minus sign.
+  void SetUpOneBodyChannels();
 
   // The actually interesting methods
   Operator DoNormalOrdering(); ///< Calls DoNormalOrdering2() or DoNormalOrdering3(), depending on the rank of the operator.

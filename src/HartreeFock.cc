@@ -510,12 +510,6 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
    Operator OpHF = OpIn;
    OpHF.Erase();
 
-   if (OpIn.rank_J + OpIn.rank_T + OpIn.parity > 0)
-   {
-      cout << "Warning, HF transformation hasn't been checked for tensor operators" << endl;
-      cout << "This operator has J rank = " << OpIn.rank_J << ", T rank = " << OpIn.rank_T << " and parity = " << OpIn.parity << endl;
-   }
-
    cout << "Transform one body" << endl;
    // Easy part:
    //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>
@@ -524,41 +518,65 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
 
 
    cout << "Transform two body" << endl;
-   // Medium-difficulty part:
-   //Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
+   // Moderately difficult part:
+   // Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
    // for each channel J,p,Tz. Most of the effort here is in constructing D.
-   int nchan = OpIn.GetModelSpace()->GetNumberTwoBodyChannels();
-   for (int ch=0;ch<nchan;++ch)
+
+   for ( auto& it : OpIn.TwoBody.MatEl )
    {
-      TwoBodyChannel& tbc = OpIn.GetModelSpace()->GetTwoBodyChannel(ch);
-      int npq = tbc.GetNumberKets();
-      if (npq<1) continue;
-
-      arma::mat D = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
-
+      int ch_bra = it.first[0];
+      int ch_ket = it.first[1];
+      TwoBodyChannel& tbc_bra = OpIn.GetModelSpace()->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = OpIn.GetModelSpace()->GetTwoBodyChannel(ch_ket);
+      int nbras = it.second.n_rows;
+      int nkets = it.second.n_cols;
+      arma::mat Dbra(nbras,nbras);
+      arma::mat Dket(nkets,nkets);
       // loop over all possible original basis configurations <pq| in this J,p,Tz channel.
       // and all possible HF configurations |p'q'> in this J,p,Tz channel                                    
       // bra is in the original basis, ket is in the HF basis                                              
       // i and j are the indices of the matrix D for this channel                    
-      for (int i=0; i<npq; ++i)    
+      for (int i=0; i<nkets; ++i)    
       {
-         Ket & bra = tbc.GetKet(i);   
-         for (int j=0; j<npq; ++j)    
+         Ket & ket_ho = tbc_ket.GetKet(i);   
+         for (int j=0; j<nkets; ++j)    
          {
-            Ket & ket = tbc.GetKet(j); 
-            D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
-            if (bra.p!=bra.q)
+            Ket & ket_hf = tbc_ket.GetKet(j); 
+            Dket(i,j) = C(ket_ho.p,ket_hf.p) * C(ket_ho.q,ket_hf.q);
+            if (ket_ho.p!=ket_ho.q)
             {
-               D(i,j) += C(bra.q,ket.p) * C(bra.p,ket.q) * bra.Phase(tbc.J);
+               Dket(i,j) += C(ket_ho.q, ket_hf.p) * C(ket_ho.p, ket_hf.q) * ket_ho.Phase(tbc_ket.J);
             }
-            if (bra.p==bra.q)    D(i,j) *= SQRT2;
-            if (ket.p==ket.q)    D(i,j) /= SQRT2;
+            if (ket_ho.p==ket_ho.q)    Dket(i,j) *= SQRT2;
+            if (ket_hf.p==ket_hf.q)    Dket(i,j) /= SQRT2;
          }
       }
+      if (ch_bra == ch_ket)
+      {
+        Dbra = Dket.t();
+      }
+      else
+      {
+        for (int i=0; i<nbras; ++i)    
+        {
+           Ket & bra_hf = tbc_bra.GetKet(i);   
+           for (int j=0; j<nbras; ++j)    
+           {
+              Ket & bra_ho = tbc_bra.GetKet(j); 
+              Dbra(i,j) = C(bra_ho.p,bra_hf.p) * C(bra_ho.q,bra_hf.q);
+              if (bra_ho.p!=bra_ho.q)
+              {
+                 Dbra(i,j) += C(bra_ho.q, bra_hf.p) * C(bra_ho.p, bra_hf.q) * bra_ho.Phase(tbc_bra.J);
+              }
+              if (bra_ho.p==bra_ho.q)    Dbra(i,j) *= SQRT2;
+              if (bra_hf.p==bra_hf.q)    Dbra(i,j) /= SQRT2;
+           }
+        }
+      }
+      auto& IN  =  it.second;
+      auto& OUT =  OpHF.TwoBody.GetMatrix(ch_bra,ch_ket);
+      OUT  =    Dbra * IN * Dket;
 
-     auto& IN  =  OpIn.TwoBody.GetMatrix(ch);
-     auto& OUT =  OpHF.TwoBody.GetMatrix(ch);
-     OUT  =    D.t() * IN * D;
    }
 
    return OpHF;

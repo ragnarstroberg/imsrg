@@ -8,12 +8,6 @@
 
 namespace AngMom
 {
- 
-
- double fct(double x)
- {
-   return gsl_sf_fact(int(x));
- }
 
  int phase(int x)
  {
@@ -23,12 +17,18 @@ namespace AngMom
  
  double Tri(double j1, double j2, double j3)
  {
-    return fct(j1+j2-j3) * fct(j1-j2+j3) * fct(-j1+j2+j3)/fct(j1+j2+j3+1);
+    return gsl_sf_fact(j1+j2-j3) * gsl_sf_fact(j1-j2+j3) * gsl_sf_fact(-j1+j2+j3)/gsl_sf_fact(j1+j2+j3+1);
+ }
+
+ double ThreeJ(double j1, double j2, double j3, double m1, double m2, double m3)
+ {
+   return gsl_sf_coupling_3j(int(2*j1), int(2*j2), int(2*j3), int(2*m1), int(2*m2), int(2*m3));
  }
 
  double CG(double ja, double ma, double jb, double mb, double J, double M)
  {
-    return phase(ja-jb+M) * sqrt(2*J+1) * gsl_sf_coupling_3j(int(2*ja),int(2*jb),int(2*J),int(2*ma),int(2*mb),int(2*-M));
+//    return phase(ja-jb+M) * sqrt(2*J+1) * gsl_sf_coupling_3j(int(2*ja),int(2*jb),int(2*J),int(2*ma),int(2*mb),int(2*-M));
+    return phase(ja-jb+M) * sqrt(2*J+1) * ThreeJ(ja,jb,J,ma,mb,-M);
  }
 
  double SixJ(double j1, double j2, double j3, double J1, double J2,double J3)
