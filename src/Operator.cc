@@ -1580,112 +1580,79 @@ void Operator::comm111st( Operator & opright, Operator& out)
 //---------------------------------------*        = 1/(2j+1) sum_a n_a sum_J (2J+1)
 //                                                  * sum_b y_ab x_biaj - yba x_aibj
 //
-// X is scalar, Y is tensor
-// 
-void Operator::comm121st( Operator& opright, Operator& out) 
+// X is scalar one-body, Y is tensor two-body
+// There must be a better way to do this looping. 
+//
+void Operator::comm121st( Operator& Y, Operator& Z) 
 {
    int norbits = modelspace->GetNumberOrbits();
-   #pragma omp parallel for 
-   for (int i=0;i<norbits;++i)
-   {
-      Orbit &oi = modelspace->GetOrbit(i);
-      int jmin = out.IsNonHermitian() ? 0 : i;
-      for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
-      {
-          if (j<jmin) continue; // only calculate upper triangle
-          for (auto& a : modelspace->holes)  // C++11 syntax
-          {
-             Orbit &oa = modelspace->GetOrbit(a);
-             for (auto& b : modelspace->particles)
-             {
-                Orbit &ob = modelspace->GetOrbit(b);
-                out.OneBody(i,j) += (ob.j2+1) *  OneBody(a,b) * opright.TwoBody.GetTBMEmonopole(b,i,a,j) ;
-                out.OneBody(i,j) -= (oa.j2+1) *  OneBody(b,a) * opright.TwoBody.GetTBMEmonopole(a,i,b,j) ;
-
-                // comm211 part
-                out.OneBody(i,j) -= (ob.j2+1) *  opright.OneBody(a,b) * TwoBody.GetTBMEmonopole(b,i,a,j) ;
-                out.OneBody(i,j) += (oa.j2+1) *  opright.OneBody(b,a) * TwoBody.GetTBMEmonopole(a,i,b,j) ;
-             }
-          }
-      }
-   }
-}
-
-
-
-/*
-void Operator::comm121st( Operator& opright, Operator& out) 
-{
-   int norbits = modelspace->GetNumberOrbits();
-//   int nch = modelspace->GetNumberTwoBodyChannels();
-   int Lambda = opright.rank_J;
-   #pragma omp parallel for
+   int Lambda = Z.GetJRank();
+   Operator& X = *this;
+//   #pragma omp parallel for // for starters, don't do it parallel
    for (int i=0;i<norbits;++i)
    {
       Orbit &oi = modelspace->GetOrbit(i);
       double ji = oi.j2/2.0;
-      for (int j=0;j<norbits; ++j) // Later make this j=i;j<norbits... and worry about Hermitian vs anti-Hermitian
+      for (int j : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
       {
           Orbit &oj = modelspace->GetOrbit(j);
           double jj = oj.j2/2.0;
-          if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue; // At some point, make a OneBodyChannel class...
-
-          double zij = 0;
+//          if (j<jmin) continue; // only calculate upper triangle
+          double& Zij = Z.OneBody(i,j);
           for (auto& a : modelspace->holes)  // C++11 syntax
           {
              Orbit &oa = modelspace->GetOrbit(a);
              double ja = oa.j2/2.0;
-             for (auto& b : modelspace->particles)  // C++11 syntax
-             {
-                Orbit &ob = modelspace->GetOrbit(b);
-                double jb = ob.j2/2.0;
-                for ( auto& itmat : TwoBody.MatEl )
-                {
-                  int ch_bra = itmat.first[0];
-                  int ch_ket = itmat.first[1];
-//                for (int ch_bra=0;ch_bra<nch;++ch_bra)
-//                {
-                   TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-                   TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-                   double J = tbc_bra.J;
+               for (auto& b : modelspace->particles)
+               {
+                  Orbit &ob = modelspace->GetOrbit(b);
+                  double jb = ob.j2/2.0;
+                  if (ob.j2 == oa.j2 and ob.l == oa.l and ob.tz2 == oa.tz2)
+                  {
+                    int J1min = min(abs(ji-ja),abs(jj-ja));
+                    int J1max = max(ji,jj) + ja;
+                    for (int J1=J1min; J1<=J1max; ++J1)
+                    {
+                      int phasefactor = modelspace->phase(jj+ja+J1+Lambda);
+                      int J2min = max(abs(Lambda - J1),J1min);
+                      int J2max = min(Lambda + J1,J1max);
+                      for (int J2=J2min; J2<=J2max; ++J2)
+                      {
+                        double prefactor = phasefactor * sqrt((2*J1+1)*(2*J2+1)) * modelspace->GetSixJ(J1,J2,Lambda,jj,ji,ja);
+                        if (J1>=abs(ja-ji) and J1<=ja+ji and J2>=abs(ja-jj) and J2<=ja+jj )
+                          Zij +=  prefactor * ( X.OneBody(a,b) * Y.TwoBody.GetTBME_J(J1,J2,b,i,a,j) );
+                        if (J1>=abs(ja-jj) and J1<=ja+jj and J2>=abs(ja-ji) and J2<=ja+ji )
+                          Zij -= X.OneBody(b,a) * Y.TwoBody.GetTBME_J(J1,J2,a,i,b,j)  ;
+                      }
+                    }
+                  }
 
-                   // part with opleft two body and opright one body, i.e. [X(2),Y(1)]  ==  -[Y(1),X(2)]
-//                   {
-                      double sixj_ab = modelspace->GetSixJ(jj, ja, J, jb, ji, Lambda);
-                      double sixj_ba = modelspace->GetSixJ(jj, jb, J, ja, ji, Lambda);
-                      int phase_ab = modelspace->phase(ji+jb+J);
-                      int phase_ba = modelspace->phase(ji+ja+J);
-                      double hatfactor_ab = (2*J+1)*sqrt((oa.j2+1));
-                      double hatfactor_ba = (2*J+1)*sqrt((ob.j2+1));
-   
-//                      zij -= opright.OneBody(a,b)*GetTBME(ch_bra,ch_ket,b,i,a,j) * phase_ab * sixj_ab * hatfactor_ab;
-//                      zij += opright.OneBody(b,a)*GetTBME(ch_bra,ch_ket,a,i,b,j) * phase_ba * sixj_ba * hatfactor_ba;
-                      zij -= opright.OneBody(a,b)*TwoBody.GetTBME(ch_bra,ch_ket,b,i,a,j) * phase_ab * sixj_ab * hatfactor_ab;
-                      zij += opright.OneBody(b,a)*TwoBody.GetTBME(ch_bra,ch_ket,a,i,b,j) * phase_ba * sixj_ba * hatfactor_ba;
-//                   }
+                  // Now, X is scalar two-body and Y is tensor one-body
+                  if ( (abs(ja-jb)>Lambda) or (ja+jb<Lambda) ) continue;
+                  int J1min = max(abs(ji-ja),abs(jj-jb));
+                  int J1max = min(ji+ja,jj+jb);
+                  for (int J1=J1min; J1<=J1max; ++J1)
+                  {
+                    double prefactor = modelspace->phase(ji+jb+J1) * (2*J1+1) * modelspace->GetSixJ(ja,jb,Lambda,ji,jj,J1);
+                    Zij += prefactor * X.TwoBody.GetTBME_J(J1,J1,b,i,a,j) * Y.OneBody(a,b);
+                  }
 
-                   // part with opleft one body and opright two body, i.e. [X(1),Y(2)]
-                   if (oa.j2 != ob.j2) continue;  // X(1) is scalar -> ja==jb
-//                   {
-//                      TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-                      double Jprime = tbc_ket.J;
-                      double sixj = modelspace->GetSixJ(Jprime, J, Lambda, ji, jj, ja);
-                      int phase = modelspace->phase(jj+ja+J);
-                      double hatfactor = (2*J+1)*sqrt((2*Jprime+1));
-
-//                      zij += OneBody(a,b)*opright.GetTBME(ch_bra,ch_ket,b,i,a,j) * phase * sixj * hatfactor;
-//                      zij -= OneBody(b,a)*opright.GetTBME(ch_bra,ch_ket,a,i,b,j) * phase * sixj * hatfactor; // Here hatfactor_ab == hatfactor_ba
-                      zij += OneBody(a,b)*opright.TwoBody.GetTBME(ch_bra,ch_ket,b,i,a,j) * phase * sixj * hatfactor;
-                      zij -= OneBody(b,a)*opright.TwoBody.GetTBME(ch_bra,ch_ket,a,i,b,j) * phase * sixj * hatfactor; // Here hatfactor_ab == hatfactor_ba
-//                   }
-                }
+                  J1min = max(abs(ji-jb),abs(jj-ja));
+                  J1max = min(ji+jb,jj+ja);
+                  for (int J1=J1min; J1<=J1max; ++J1)
+                  {
+                    double prefactor = modelspace->phase(ji+ja+J1) * (2*J1+1) * modelspace->GetSixJ(jb,ja,Lambda,ji,jj,J1);
+                    Zij += prefactor * X.TwoBody.GetTBME_J(J1,J1,a,i,b,j) * Y.OneBody(b,a);
+                  }
+               }
+               
+               
              }
           }
-          out.OneBody(i,j) += zij/sqrt(oi.j2+1);
       }
-   }
+   
 }
-*/
+
 
 
 
@@ -1701,80 +1668,8 @@ void Operator::comm121st( Operator& opright, Operator& out)
 //
 // -- AGREES WITH NATHAN'S RESULTS 
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-void Operator::comm221st( Operator& opright, Operator& out) 
-{
 
-   int norbits = modelspace->GetNumberOrbits();
-//   Operator Mpp = opright;
-//   Operator Mhh = opright;
-   TwoBodyME Mpp = opright.TwoBody;
-   TwoBodyME Mhh = opright.TwoBody;
-
-//   #pragma omp parallel for schedule(dynamic,5)
-   for ( auto& itmat : opright.TwoBody.MatEl )
-   {
-//   for (int ch_bra=0;ch_bra<nChannels;++ch_bra)
-//   {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
-      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-//      int npq = tbc_bra.GetNumberKets();
-//      {
-         TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-
-//         arma::mat& LHS = (arma::mat&) TwoBody.at(ch_bra).at(ch_ket);
-//         arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch_bra).at(ch_ket);
-//         arma::mat& Matrixpp = (arma::mat&) Mpp.TwoBody.at(ch_bra).at(ch_ket);
-//         arma::mat& Matrixhh = (arma::mat&) Mpp.TwoBody.at(ch_bra).at(ch_ket);
-         arma::mat& LHS = (arma::mat&) TwoBody.GetMatrix(ch_bra,ch_ket);
-         arma::mat& RHS = (arma::mat&) opright.TwoBody.GetMatrix(ch_bra,ch_ket);
-         arma::mat& Matrixpp = (arma::mat&) Mpp.GetMatrix(ch_bra,ch_ket);
-         arma::mat& Matrixhh = (arma::mat&) Mpp.GetMatrix(ch_bra,ch_ket);
-
-         int J1 = tbc_bra.J;
-         int J2 = tbc_ket.J;
- //        double hatfactor = (2*J1+1)*sqrt(2*J2+1);
-         Matrixpp = (LHS.rows(tbc_bra.GetKetIndex_pp()) * RHS.cols(tbc_bra.GetKetIndex_pp()));
-         Matrixpp -= Matrixpp.t();
-         Matrixhh = (LHS.rows(tbc_bra.GetKetIndex_hh()) * RHS.cols(tbc_bra.GetKetIndex_hh()));
-         Matrixhh -= Matrixhh.t();
-//         Matrixpp = (LHS * tbc_bra.Proj_pp * RHS  -  RHS * tbc_bra.Proj_pp * LHS);
-//         Matrixhh = (LHS * tbc_bra.Proj_hh * RHS  -  RHS * tbc_bra.Proj_hh * LHS);
-      
-
-      // If commutator is hermitian or antihermitian, we only
-      // need to do half the sum. I should add this in later.
-      for (int i=0;i<norbits;++i)
-      {
-         Orbit &oi = modelspace->GetOrbit(i);
-         for (int j=0;j<norbits;++j)
-         {
-            Orbit &oj = modelspace->GetOrbit(j);
-            if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue;
-            double cijJ = 0;
-            // Sum c over holes and include the nbar_a * nbar_b terms
-            for (auto& c : modelspace->holes)
-            {
-               Orbit &oc = modelspace->GetOrbit(c);
-               int phase = modelspace->phase((oj.j2+oc.j2)/2+J2);
-               double sixj = modelspace->GetSixJ(J1, J2, opright.rank_J, oj.j2/2.0, oi.j2/2.0, oc.j2/2.0);
-               cijJ +=   Mpp.GetTBME(ch_bra,ch_ket,i,c,j,c)*phase*sixj;
-            // Sum c over particles and include the n_a * n_b terms
-            }
-            for (auto& c : modelspace->particles)
-            {
-               Orbit &oc = modelspace->GetOrbit(c);
-               int phase = modelspace->phase((oj.j2+oc.j2)/2+J2);
-               double sixj = modelspace->GetSixJ(J1, J2, opright.rank_J, oj.j2/2.0, oi.j2/2.0, oc.j2/2.0);
-               cijJ +=   Mhh.GetTBME(ch_bra,ch_ket,i,c,j,c)*phase*sixj;
-            }
-            #pragma omp critical
-            out.OneBody(i,j) += cijJ / (oi.j2 +1.0);
-         } // for j
-      } // for i
-//   } //for ch_ket
-   } //for ch_bra
-}
+// Combined with the comm222pphh because they use the same intermediates.
 
 
 
@@ -1791,35 +1686,29 @@ void Operator::comm221st( Operator& opright, Operator& out)
 // -- AGREES WITH NATHAN'S RESULTS
 // Right now, this is the slowest one...
 // Agrees with previous code in the scalar-scalar limit
-void Operator::comm122st( Operator& opright, Operator& opout ) 
+void Operator::comm122st( Operator& Y, Operator& Z ) 
 {
-   int herm = opout.IsHermitian() ? 1 : -1;
+   int herm = Z.IsHermitian() ? 1 : -1;
    int norbits = modelspace->GetNumberOrbits();
-   int Lambda = opout.rank_J;
+   int Lambda = Z.rank_J;
+   Operator& X = *this;
 
 //   #pragma omp parallel for schedule(dynamic,5)
-    for ( auto& itmat : opright.TwoBody.MatEl )
+    for ( auto& itmat : Y.TwoBody.MatEl )
     {
      int ch_bra = itmat.first[0];
      int ch_ket = itmat.first[1];
-//   for (int ch_bra=0; ch_bra<nChannels; ++ch_bra)
-//   {
 
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-      int J = tbc_bra.J;
-      int npq = tbc_bra.GetNumberKets();
-
-
-
-//      {
       TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-      int Jprime = tbc_ket.J;
-//         arma::mat& LHS = (arma::mat&) TwoBody.at(ch_bra).at(ch_bra);
-//         arma::mat& RHS = (arma::mat&) opright.TwoBody.at(ch_bra).at(ch_ket);
-//         arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch_bra).at(ch_ket);
-         arma::mat& OUT = (arma::mat&) opout.TwoBody.GetMatrix(ch_bra,ch_ket);
+      int J1 = tbc_bra.J;
+      int J2 = tbc_ket.J;
+      int nbras = tbc_bra.GetNumberKets();
+      int nkets = tbc_ket.GetNumberKets();
+      double hatfactor = sqrt((2*J1+1)*(2*J2+1));
+      arma::mat& OUT = (arma::mat&) Z.TwoBody.GetMatrix(ch_bra,ch_ket);
 
-      for (int ibra = 0;ibra<npq; ++ibra)
+      for (int ibra = 0;ibra<nbras; ++ibra)
       {
          Ket & bra = tbc_bra.GetKet(ibra);
          int i = bra.p;
@@ -1828,7 +1717,7 @@ void Operator::comm122st( Operator& opright, Operator& opout )
          Orbit& oj = modelspace->GetOrbit(j);
          double ji = oi.j2/2.0;
          double jj = oj.j2/2.0;
-         for (int iket=ibra;iket<npq; ++iket)
+         for (int iket=0;iket<nkets; ++iket)
          {
             Ket & ket = tbc_ket.GetKet(iket);
             int k = ket.p;
@@ -1844,40 +1733,35 @@ void Operator::comm122st( Operator& opright, Operator& opout )
               Orbit& oa = modelspace->GetOrbit(a);
               double ja = oa.j2/2.0;
 
-               cijkl += OneBody(i,a) * opright.TwoBody.GetTBME(ch_bra,ch_ket,a,j,k,l);
-               cijkl += OneBody(j,a) * opright.TwoBody.GetTBME(ch_bra,ch_ket,i,a,k,l);
-               cijkl -= OneBody(a,k) * opright.TwoBody.GetTBME(ch_bra,ch_ket,i,j,a,l);
-               cijkl -= OneBody(a,l) * opright.TwoBody.GetTBME(ch_bra,ch_ket,i,j,k,a);
+               cijkl += X.OneBody(i,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,a,j,k,l);
+               cijkl += X.OneBody(j,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,a,k,l);
+               cijkl -= X.OneBody(a,k) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,a,l);
+               cijkl -= X.OneBody(a,l) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,k,a);
 
 
-               double sixj_ia = modelspace->GetSixJ(J,Jprime,Lambda,ja,ji,jj);
-               int phase_ia = modelspace->phase(ji+jj+J);
-               cijkl -= opright.OneBody(i,a) * TwoBody.GetTBME(ch_bra,ch_bra,a,j,k,l) * sixj_ia * phase_ia * sqrt((oi.j2+1)*(2*Jprime+1));
+               double prefactor = hatfactor * modelspace->phase(ji+jj+J2+Lambda) * modelspace->GetSixJ(J2,J1,Lambda,ji,ja,jj);
+               cijkl -= prefactor * Y.OneBody(i,a) * X.TwoBody.GetTBME(ch_bra,ch_bra,a,j,k,l) ;
 
-               double sixj_ja = modelspace->GetSixJ(J,Jprime,Lambda,ja,jj,ji);
-               int phase_ja = modelspace->phase(ji+jj+J);
-               cijkl -= opright.OneBody(j,a) * TwoBody.GetTBME(ch_bra,ch_bra,i,a,k,l) * sixj_ja * phase_ja * sqrt((oj.j2+1)*(2*Jprime+1));
+               prefactor = hatfactor * modelspace->phase(ji+ja+J1+Lambda) * modelspace->GetSixJ(J2,J1,Lambda,jj,ja,ji);
+               cijkl -= prefactor * Y.OneBody(j,a) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,a,k,l);
 
-               double sixj_ak = modelspace->GetSixJ(J,Jprime,Lambda,jk,ja,jl);
-               int phase_ak = modelspace->phase(ja+jl+J+Lambda);
-               cijkl += opright.OneBody(a,k) * TwoBody.GetTBME(ch_bra,ch_bra,i,j,a,l) * sixj_ak * phase_ak * sqrt((oa.j2+1)*(2*Jprime+1));
+               prefactor = hatfactor * modelspace->phase(jl+ja+J2+Lambda) * modelspace->GetSixJ(J1,J2,Lambda,jk,ja,jl);
+               cijkl += prefactor * Y.OneBody(a,k) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,a,l) ;
 
-               double sixj_al = modelspace->GetSixJ(J,Jprime,Lambda,jl,ja,jk);
-               int phase_al = modelspace->phase(ja+jk+J+Lambda);
-               cijkl += opright.OneBody(a,l) * TwoBody.GetTBME(ch_bra,ch_bra,i,j,k,a) * sixj_al * phase_al * sqrt((oa.j2+1)*(2*Jprime+1));
+               prefactor = hatfactor * modelspace->phase(jl+jk+J1+Lambda) * modelspace->GetSixJ(J1,J2,Lambda,jl,ja,jk);
+               cijkl += prefactor * Y.OneBody(a,l) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,k,a) ;
 
             }
-            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
-            cijkl /= norm;
+//            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
+//            cijkl /= norm;
             #pragma omp critical
             {
             OUT(ibra,iket) += cijkl;
-            if (ibra != iket)
-               OUT(iket,ibra) += herm * cijkl;
+//            if (ibra != iket)
+//               OUT(iket,ibra) += herm * cijkl;
             }
          }
       }
-  //    }
    }
 }
 
