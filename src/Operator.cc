@@ -46,7 +46,6 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     nChannels(ms.GetNumberTwoBodyChannels()) 
 {
   SetUpOneBodyChannels();
-  TwoBody.Allocate();
   if (particle_rank >=3) ThreeBody.Allocate();
 }
 
@@ -61,7 +60,6 @@ Operator::Operator(ModelSpace& ms) :
     nChannels(ms.GetNumberTwoBodyChannels())
 {
   SetUpOneBodyChannels();
-  TwoBody.Allocate();
 }
 
 Operator::Operator(const Operator& op)
@@ -1279,11 +1277,14 @@ void Operator::comm222_pp_hh_221ss( Operator& opright, Operator& opout )
 /// where the overbar indicates time-reversed orbits.
 /// This function is designed for use with comm222_phss() and so it takes in
 /// two arrays of matrices, one for hp terms and one for ph terms.
+//void Operator::DoPandyaTransformation(TwoBodyME& TwoBody_CC_hp, TwoBodyME& TwoBody_CC_ph)
+//void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<arma::mat>& TwoBody_CC_ph)
 void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<arma::mat>& TwoBody_CC_ph)
 {
    // loop over cross-coupled channels
 //   for (int ch_cc=0; ch_cc<nChannels; ++ch_cc)
    int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
+   int herm = IsHermitian() ? 1 : -1;
    #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
    for (int ich=0; ich<n_nonzero; ++ich)
    {
@@ -1310,7 +1311,8 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
 
          // loop over cross-coupled kets |bd> in this channel
          // we go to 2*nKets to include |bd> and |db>
-         for (int iket_cc=0; iket_cc<2*nKets_cc; ++iket_cc)
+//         for (int iket_cc=0; iket_cc<2*nKets_cc; ++iket_cc)
+         for (int iket_cc=0; iket_cc<nKets_cc; ++iket_cc)
          {
             Ket & ket_cc = tbc_cc.GetKet(iket_cc%nKets_cc);
             int c = iket_cc < nKets_cc ? ket_cc.p : ket_cc.q;
@@ -1332,6 +1334,7 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
                sm -= (2*J_std+1) * sixj * tbme ;
             }
             TwoBody_CC_hp[ch_cc](ibra,iket_cc) = sm;
+            TwoBody_CC_ph[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(ja+jb+jc+jd) * sm;
 
 
             // Exchange (a <-> b) to account for the (n_a - n_b) term
@@ -1347,6 +1350,7 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
                sm -= (2*J_std+1) * sixj * tbme ;
             }
             TwoBody_CC_ph[ch_cc](ibra,iket_cc) = sm;
+            TwoBody_CC_hp[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(ja+jb+jc+jd) * sm;
 
          }
       }
@@ -1354,7 +1358,8 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
 }
 
 
-void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::mat>& opout, bool hermitian)
+//void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::mat>& opout)
+void Operator::AddInversePandyaTransformation(vector<arma::mat>& W)
 {
     // Do the inverse Pandya transform
     // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
@@ -1368,7 +1373,7 @@ void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::ma
       int J = tbc.J;
       int nKets = tbc.GetNumberKets();
 
-      opout[ch] = arma::mat(nKets,nKets,arma::fill::zeros);
+//      opout[ch] = arma::mat(nKets,nKets,arma::fill::zeros);
       for (int ibra=0; ibra<nKets; ++ibra)
       {
          Ket & bra = tbc.GetKet(ibra);
@@ -1378,7 +1383,7 @@ void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::ma
          Orbit & oj = modelspace->GetOrbit(j);
          double ji = oi.j2/2.;
          double jj = oj.j2/2.;
-         int ketmin = hermitian ? ibra : ibra+1;
+         int ketmin = IsHermitian() ? ibra : ibra+1;
          for (int iket=ketmin; iket<nKets; ++iket)
          {
             Ket & ket = tbc.GetKet(iket);
@@ -1431,7 +1436,8 @@ void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::ma
             }
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
-            opout[ch](ibra,iket) = (commij - modelspace->phase(ji+jj-J)*commji) / norm;;
+            TwoBody.GetMatrix(ch,ch)(ibra,iket) += (commij - modelspace->phase(ji+jj-J)*commji) / norm;
+//            opout[ch](ibra,iket) = (commij - modelspace->phase(ji+jj-J)*commji) / norm;
          }
       }
    }
@@ -1500,48 +1506,44 @@ void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::ma
 ///  \right]
 ///  \f]
 ///
-void Operator::comm222_phss( Operator& opright, Operator& opout ) 
+void Operator::comm222_phss( Operator& Y, Operator& Z ) 
 {
 
+   Operator& X = *this;
    // Create Pandya-transformed hp and ph matrix elements
    vector<arma::mat> X_bar_hp (nChannels );
    vector<arma::mat> X_bar_ph (nChannels );
-
    vector<arma::mat> Y_bar_hp (nChannels );
    vector<arma::mat> Y_bar_ph (nChannels );
 
    double t = omp_get_wtime();
-   DoPandyaTransformation(X_bar_hp, X_bar_ph );
-   opright.DoPandyaTransformation(Y_bar_hp, Y_bar_ph );
+   X.DoPandyaTransformation(X_bar_hp, X_bar_ph );
+   Y.DoPandyaTransformation(Y_bar_hp, Y_bar_ph );
    timer["DoPandyaTransformation"] += omp_get_wtime() - t;
 
-   t = omp_get_wtime();
    // Construct the intermediate matrix W_bar
+   t = omp_get_wtime();
    vector<arma::mat> W_bar (nChannels );
-   int hx = IsHermitian() ? 1 : -1;
-   int hy = opright.IsHermitian() ? 1 : -1;
+//   int hx = X.IsHermitian() ? 1 : -1; // I don't remember why this is here, but the minus for anti-hermitian X makes sense...
 
-   int nch = modelspace->SortedTwoBodyChannels_CC.size();
-   #pragma omp parallel for
-   for (int ich=0; ich<nch; ++ich)
+   for (int ch : modelspace->SortedTwoBodyChannels_CC )
    {
-      int ch = modelspace->SortedTwoBodyChannels_CC[ich];
-      W_bar[ch] =  hx*( X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch]) ;
-      if (hx*hy<0)
+      if ( X.IsHermitian() )
+         W_bar[ch] =  X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch] ;
+      else
+         W_bar[ch] =  X_bar_ph[ch].t() * Y_bar_ph[ch] - X_bar_hp[ch].t() * Y_bar_hp[ch] ;
+
+      if ( Z.IsHermitian() )
         W_bar[ch] += W_bar[ch].t();
       else
         W_bar[ch] -= W_bar[ch].t();
    }
    timer["Build W_bar"] += omp_get_wtime() - t;
 
-   vector<arma::mat> W (nChannels );
+   // Perform inverse Pandya transform on W_bar to get Z
    t = omp_get_wtime();
-   InversePandyaTransformation(W_bar, W, opout.IsHermitian());
+   Z.AddInversePandyaTransformation(W_bar);
    timer["InversePandyaTransformation"] += omp_get_wtime() - t;
-   for (int ch=0; ch<nChannels; ++ch)
-   {
-     opout.TwoBody.GetMatrix(ch,ch) += W[ch];
-   }
 
 }
 
@@ -1688,7 +1690,7 @@ void Operator::comm121st( Operator& Y, Operator& Z)
 // Agrees with previous code in the scalar-scalar limit
 void Operator::comm122st( Operator& Y, Operator& Z ) 
 {
-   int herm = Z.IsHermitian() ? 1 : -1;
+//   int herm = Z.IsHermitian() ? 1 : -1;
    int norbits = modelspace->GetNumberOrbits();
    int Lambda = Z.rank_J;
    Operator& X = *this;
@@ -1779,57 +1781,7 @@ void Operator::comm122st( Operator& Y, Operator& Z )
 //
 // -- AGREES WITH NATHAN'S RESULTS
 //   No factor of 1/2 because the matrix multiplication corresponds to a restricted sum (a<=b) 
-void Operator::comm222_pp_hhst( Operator& opright, Operator& opout ) 
-{
-//   #pragma omp parallel for schedule(dynamic,5)
-   for ( auto & itmat : opright.TwoBody.MatEl )
-   {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
-      
-      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-//      int npq = tbc_bra.GetNumberKets();
-//      {
-         TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-//         int J1 = tbc_bra.J;
-//         int J2 = tbc_ket.J;
-//         double hatfactor = (2*J1+1)*sqrt(2*J2+1);
-
-
-         arma::mat& LHS = (arma::mat&) TwoBody.GetMatrix(ch_bra,ch_bra);
-         arma::mat& RHS = (arma::mat&) opright.TwoBody.GetMatrix(ch_bra,ch_ket);
-         arma::mat& OUT = (arma::mat&) opout.TwoBody.GetMatrix(ch_bra,ch_ket);
-         auto brapp = tbc_bra.GetKetIndex_pp();
-         auto ketpp = tbc_ket.GetKetIndex_pp();
-         auto brahh = tbc_bra.GetKetIndex_hh();
-         auto kethh = tbc_ket.GetKetIndex_hh();
-
-         // More thinking needed...
-         arma::mat Matrixpp = LHS.rows(ketpp) * RHS.cols(brapp);
-         arma::mat Matrixhh = LHS.rows(kethh) * RHS.cols(brahh);
-
-
-         if (opout.IsHermitian())
-         {
-            Matrixpp -= Matrixpp.t();
-            Matrixhh -= Matrixhh.t();
-         }
-         else if (opout.IsAntiHermitian())
-         {
-            Matrixpp += Matrixpp.t();
-            Matrixhh += Matrixhh.t();
-         }
-         else //Figure this out later...
-         {
-//            Matrixpp -= RHS.t().rows(tbc_ket.GetKetIndex_pp()) * LHS.cols(tbc_bra.GetKetIndex_pp());
-//            Matrixhh -= RHS.t().rows(tbc_ket.GetKetIndex_hh()) * LHS.cols(tbc_bra.GetKetIndex_hh());
-         }
-
-      
-         OUT += Matrixpp - Matrixhh;
-  //    }
-   }
-}
+// Combined with comm221 because they have the same intermediates
 
 
 
@@ -1840,175 +1792,220 @@ void Operator::comm222_pp_hhst( Operator& opright, Operator& opout )
 // Since comm222_pp_hh and comm211 both require the ruction of 
 // the intermediate matrices Mpp and Mhh, we can combine them and
 // only calculate the intermediates once.
-void Operator::comm222_pp_hh_221st( Operator& opright, Operator& opout )  
+// X is a scalar, Y is a tensor
+void Operator::comm222_pp_hh_221st( Operator& Y, Operator& Z )  
 {
 
-   int herm = opout.IsHermitian() ? 1 : -1;
+   Operator& X = *this;
+   int Lambda = Z.GetJRank();
+//   int herm = Z.IsHermitian() ? 1 : -1;
    int norbits = modelspace->GetNumberOrbits();
 
-//   Operator Mpp = opout;
-//   Operator Mhh = opout;
-   TwoBodyME Mpp = opout.TwoBody;
-   TwoBodyME Mhh = opout.TwoBody;
+   TwoBodyME Mpp = Z.TwoBody;
+   TwoBodyME Mhh = Z.TwoBody;
 
 //   #pragma omp parallel for schedule(dynamic,5)
-//   for (int ch_bra=0;ch_bra<nChannels;++ch_bra)
-//   {
-     for ( auto& itmat : opright.TwoBody.MatEl )
+     for ( auto& itmat : Y.TwoBody.MatEl )
      {
       int ch_bra = itmat.first[0];
       int ch_ket = itmat.first[1];
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
 
-//      auto& LHS = TwoBody.at(ch_bra).at(ch_bra);
-      auto& LHS = TwoBody.GetMatrix(ch_bra,ch_bra);
+      auto& LHS1 = X.TwoBody.GetMatrix(ch_bra,ch_bra);
+      auto& LHS2 = X.TwoBody.GetMatrix(ch_ket,ch_ket);
 
-//      {
-         TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-         if ( ch_ket != ch_bra )
-         {
-            cout << " AAH! ch_bra = " << ch_bra << "  ch_ket = " << ch_ket << endl;
-         }
+      auto& RHS  =  itmat.second;
+      arma::mat& OUT2 =    Z.TwoBody.GetMatrix(ch_bra,ch_ket);
 
-//         auto& RHS  =  opright.TwoBody.at(ch_bra).at(ch_ket);
-         auto& RHS  =  opright.TwoBody.GetMatrix(ch_bra,ch_ket);
-         arma::mat& OUT2 =    opout.TwoBody.GetMatrix(ch_bra,ch_ket);
-
-         arma::mat& Matrixpp =  Mpp.GetMatrix(ch_bra,ch_ket);
-         arma::mat& Matrixhh =  Mhh.GetMatrix(ch_bra,ch_ket);
+      arma::mat& Matrixpp =  Mpp.GetMatrix(ch_bra,ch_ket);
+      arma::mat& Matrixhh =  Mhh.GetMatrix(ch_bra,ch_ket);
      
-//         arma::uvec kets_pp = arma::uvec(tbc_bra.KetIndex_pp);
-//         arma::uvec kets_hh = arma::uvec(tbc_bra.KetIndex_hh);
-         arma::uvec& kets_pp = tbc_bra.GetKetIndex_pp();
-         arma::uvec& kets_hh = tbc_bra.GetKetIndex_hh();
+      arma::uvec& bras_pp = tbc_bra.GetKetIndex_pp();
+      arma::uvec& bras_hh = tbc_bra.GetKetIndex_hh();
+      arma::uvec& kets_pp = tbc_ket.GetKetIndex_pp();
+      arma::uvec& kets_hh = tbc_ket.GetKetIndex_hh();
       
-         Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
-         Matrixhh =  LHS.cols(kets_hh) * RHS.rows(kets_hh);
+      Matrixpp =  LHS1.cols(bras_pp) * RHS.rows(bras_pp) - RHS.cols(kets_pp)*LHS2.rows(kets_pp);
+      Matrixhh =  LHS1.cols(bras_hh) * RHS.rows(bras_hh) - RHS.cols(kets_hh)*LHS2.rows(kets_hh);
  
-         if (opout.IsHermitian())
-         {
-            Matrixpp += Matrixpp.t();
-            Matrixhh += Matrixhh.t();
-         }
-         else if (opout.IsAntiHermitian()) // i.e. LHS and RHS are hermitian
-         {
-            Matrixpp -= Matrixpp.t();
-            Matrixhh -= Matrixhh.t();
-         }
-         else // Figure this out later...
-         {
-//            Matrixpp -=  RHS.t().cols(kets_pp) * LHS.t().rows(kets_pp);
-//            Matrixhh -=  RHS.t().cols(kets_hh) * LHS.t().rows(kets_hh);
-         }
 
-         // The two body part
-         OUT2 += Matrixpp - Matrixhh;
+      // Now, the two body part is easy
+      OUT2 += Matrixpp - Matrixhh;
 
 
-         int J1 = tbc_bra.J;
-         int J2 = tbc_ket.J;
-         double hatfactor = (2*J1+1)*sqrt(2*J2+1);
+      // The one body part takes some additional work
+      int J1 = tbc_bra.J;
+      int J2 = tbc_ket.J;
+      double hatfactor = sqrt( (2*J1+1)*(2*J2+1) );
 
-      // The one body part
       for (int i=0;i<norbits;++i)
       {
          Orbit &oi = modelspace->GetOrbit(i);
-         int jmin = opout.IsNonHermitian() ? 0 : i;
-         for (int j=jmin;j<norbits;++j)
+         double ji = oi.j2/2.0;
+         for (int j : Z.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
          {
             Orbit &oj = modelspace->GetOrbit(j);
-            if (oi.j2 != oj.j2 or oi.l != oj.l or oi.tz2 != oj.tz2) continue;
+            double jj = oj.j2/2.0;
             double cijJ = 0;
             // Sum c over holes and include the nbar_a * nbar_b terms
             for (auto& c : modelspace->holes)
             {
                Orbit &oc = modelspace->GetOrbit(c);
-               double sixj = modelspace->GetSixJ(J1, J2, opright.rank_J, oj.j2/2.0, oi.j2/2.0, oc.j2/2.0);
-               cijJ -=   Mpp.GetTBME(ch_bra,ch_ket,c,i,j,c)*sixj;
+               double jc = oc.j2/2.0;
+               if ( not AngMom::Triangle(jc,ji,J1) or not AngMom::Triangle(jc,jj,J1)) continue;
+               double sixj = modelspace->GetSixJ(J1, J2, Lambda, jj, ji, jc);
+               cijJ +=   sixj * modelspace->phase(jj + jc + J1 + Lambda) * Mpp.GetTBME(ch_bra,ch_ket,c,i,j,c);
             // Sum c over particles and include the n_a * n_b terms
             }
             for (auto& c : modelspace->particles)
             {
                Orbit &oc = modelspace->GetOrbit(c);
-               double sixj = modelspace->GetSixJ(J1, J2, opright.rank_J, oj.j2/2.0, oi.j2/2.0, oc.j2/2.0);
-               cijJ -=   Mhh.GetTBME(ch_bra,ch_ket,c,i,j,c)*sixj;
+               double jc = oc.j2/2.0;
+               if ( not AngMom::Triangle(jc,ji,J1) or not AngMom::Triangle(jc,jj,J1)) continue;
+               double sixj = modelspace->GetSixJ(J1, J2, Lambda, jj, ji, jc);
+               cijJ -=   sixj * modelspace->phase(jj + jc + J1 + Lambda) * Mhh.GetTBME(ch_bra,ch_ket,c,i,j,c);
             }
             #pragma omp critical
-            opout.OneBody(i,j) += cijJ *hatfactor / sqrt(oi.j2 +1.0);
-            if (not opout.IsNonHermitian())
-            {
-               opout.OneBody(j,i) = herm * opout.OneBody(i,j);
-            }
+            Z.OneBody(i,j) += cijJ *hatfactor ;
          } // for j
        } // for i
-//     } //for ch_ket
-   } //for ch_bra
+   } //for itmat
 }
 
 
 
 
-//*****************************************************************************************
+
+
+//**************************************************************************
 //
-//  THIS IS THE BIG UGLY ONE.             [X2,Y2](2)_ph = -sum_ab (na-nb) sum_J' (-1)^(J'+ja+jb)
-//
-//                                                                             v----|    v----|                                    v----|    v----|
-//   |          |      |          |              * [ (-1)^(ji+jl) { jk jl J } <bi|X|aj> <ak|Y|bl>   - (-1)^(jj+jl-J') { jk jl J } <bj|X|ai> <ak|Y|bl>
-//   |     __Y__|      |     __X__|                               { jj ji J'}   ^----|    ^----|                      { jj ji J'}   ^----|    ^----|
-//   |    /\    |      |    /\    |
-//   |   (  )   |  _   |   (  )   |                                            v----|    v----|                                    v----|    v----|
-//   |____\/    |      |____\/    |            -  (-1)^(ji+jk-J') { jk jl J } <bi|X|aj> <al|Y|bk>   + (-1)^(jj+jk)    { jk jl J } <bj|X|ai> <al|Y|bk>  ]
-//   |  X       |      |  Y       |                               { jj ji J'}   ^----|    ^----|                      { jj ji J'}   ^----|    ^----|
-//           
-//            
-// -- This appears to agree with Nathan's results
-//
-// Haven't converted this one yet...
-void Operator::comm222_phst( Operator& opright, Operator& opout ) 
+//  X^J_ij`kl` = - sum_J' { i j J } (2J'+1) X^J'_ilkj
+//                        { k l J'}
+// TENSOR VARIETY
+/// The scalar Pandya transformation is defined as
+/// \f[
+///  \bar{X}^{J}_{i\bar{j}k\bar{l}} = - \sum_{J'} (2J'+1)
+///  \left\{ \begin{array}{lll}
+///  j_i  &  j_j  &  J \\
+///  j_k  &  j_l  &  J' \\
+///  \end{array} \right\}
+///  X^{J}_{ilkj}
+/// \f]
+/// where the overbar indicates time-reversed orbits.
+/// This function is designed for use with comm222_phss() and so it takes in
+/// two arrays of matrices, one for hp terms and one for ph terms.
+//void Operator::DoTensorPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<arma::mat>& TwoBody_CC_ph)
+void Operator::DoTensorPandyaTransformation(map<array<int,2>,arma::mat>& TwoBody_CC_hp, map<array<int,2>,arma::mat>& TwoBody_CC_ph)
 {
-//   int herm = opout.IsHermitian() ? 1 : -1;
-
-
-//   Operator Xcc = Operator(*modelspace, 0, 1, 0, 2);
-//   Operator Ycc = Operator(Xcc);
-
-//   DoPandyaTransformation(Xcc);
-//   opright.DoPandyaTransformation(Ycc);
-
-
-   // Update Cross-coupled matrix elements
-/*
-   vector<arma::mat> X_TwoBody_CC_left (nChannels, arma::mat() );
-   vector<arma::mat> X_TwoBody_CC_right (nChannels, arma::mat() );
-
-   vector<arma::mat> Y_TwoBody_CC_left (nChannels, arma::mat() );
-   vector<arma::mat> Y_TwoBody_CC_right (nChannels, arma::mat() );
-
-
-   CalculateCrossCoupled(X_TwoBody_CC_left, X_TwoBody_CC_right );
-   //CalculateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right );
-   opright.CalculateCrossCoupled(Y_TwoBody_CC_left, Y_TwoBody_CC_right );
-   // Construct the intermediate matrices N1 and N2
-   vector<arma::mat> N1 (nChannels, arma::mat() );
-   vector<arma::mat> N2 (nChannels, arma::mat() );
- // probably better not to parallelize here, since the armadillo matrix muliplication can use OMP
- // I think that N1 == N2.t() ??? Check this. No.
-   for (int ch=0;ch<nChannels;++ch)
+   int Lambda = rank_J;
+   // loop over cross-coupled channels
+//   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
+   for ( int ch_bra_cc : modelspace->SortedTwoBodyChannels_CC )
    {
-      N1[ch] = X_TwoBody_CC_left[ch] * Y_TwoBody_CC_right[ch] - Y_TwoBody_CC_left[ch] * X_TwoBody_CC_right[ch];
-      N1[ch] += N1[ch].t(); // maybe this works?  Yes !
-//      N2[ch] = Y_TwoBody_CC_left[ch] *  X_TwoBody_CC_right[ch];
-//      N1[ch] -= N2[ch]; // maybe this works? Yes!
+      TwoBodyChannel& tbc_bra_cc = modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
+      int Jbra_cc = tbc_bra_cc.J;
+      arma::uvec& bras_ph = tbc_bra_cc.GetKetIndex_ph();
+      int nph_bras = bras_ph.n_rows;
+      for ( int ch_ket_cc : modelspace->SortedTwoBodyChannels_CC )
+      {
+        TwoBodyChannel& tbc_ket_cc = modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
+        int Jket_cc = tbc_ket_cc.J;
+        if ( (Jbra_cc+Jket_cc < rank_J) or abs(Jbra_cc-Jket_cc)>rank_J ) continue;
+        if ( (tbc_bra_cc.parity + tbc_ket_cc.parity + parity)%2>0 ) continue;
+
+        int nKets_cc = tbc_ket_cc.GetNumberKets();
+
+        // Need to make these maps to account for ch_bra and ch_ket.
+        TwoBody_CC_hp[{ch_bra_cc,ch_ket_cc}] = arma::mat(nph_bras,   2*nKets_cc, arma::fill::zeros);
+        TwoBody_CC_ph[{ch_bra_cc,ch_ket_cc}] = arma::mat(nph_bras,   2*nKets_cc, arma::fill::zeros);
+
+        // loop over cross-coupled ph bras <ac| in this channel
+        for (int ibra=0; ibra<nph_bras; ++ibra)
+        {
+           Ket & bra_cc = tbc_bra_cc.GetKet( bras_ph[ibra] );
+           int a = bra_cc.p;
+           int b = bra_cc.q;
+           Orbit & oa = modelspace->GetOrbit(a);
+           Orbit & ob = modelspace->GetOrbit(b);
+           double ja = oa.j2*0.5;
+           double jb = ob.j2*0.5;
+
+           // loop over kets |bd> in this channel
+           // we go to 2*nKets to include |bd> and |db>
+           for (int iket_cc=0; iket_cc<2*nKets_cc; ++iket_cc)
+           {
+              Ket & ket_cc = tbc_ket_cc.GetKet(iket_cc%nKets_cc);
+              int c = iket_cc < nKets_cc ? ket_cc.p : ket_cc.q;
+              int d = iket_cc < nKets_cc ? ket_cc.q : ket_cc.p;
+              Orbit & oc = modelspace->GetOrbit(c);
+              Orbit & od = modelspace->GetOrbit(d);
+              double jc = oc.j2*0.5;
+              double jd = od.j2*0.5;
+
+
+              int j1min = abs(ja-jd);
+              int j2min = abs(jb-jc);
+              int j1max = ja+jd;
+              int j2max = jc+jb;
+              double sm = 0;
+              for (int J1=j1min; J1<=j1max; ++J1)
+              {
+                for (int J2=j2min; J2<=j2max; ++J2)
+                {
+                  double ninej = modelspace->GetNineJ(ja,jd,Jbra_cc,jb,jc,Jket_cc,J1,J2,Lambda);
+                  if (abs(ninej) < 1e-8) continue;
+                  double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
+                  double tbme = TwoBody.GetTBME_J(J1,J2,a,d,c,b);
+                  sm -= hatfactor * modelspace->phase(jb+jd+Jket_cc+J2) * ninej * tbme ;
+                }
+              }
+              TwoBody_CC_hp[{ch_bra_cc,ch_ket_cc}](ibra,iket_cc) = sm;
+
+
+              // Exchange (a <-> b) to account for the (n_a - n_b) term
+              // Get Tz,parity and range of J for <bd || ca > coupling
+              j1min = abs(jb-jd);
+              j2min = abs(jc-ja);
+              j1max = jb+jd;
+              j2max = jc+ja;
+              sm = 0;
+              for (int J1=j1min; J1<=j1max; ++J1)
+              {
+                for (int J2=j2min; J2<=j2max; ++J2)
+                {
+                  double ninej = modelspace->GetNineJ(jb,jd,Jbra_cc,ja,jc,Jket_cc,J1,J2,Lambda);
+                  if (abs(ninej) < 1e-8) continue;
+                  double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
+                  double tbme = TwoBody.GetTBME_J(J1,J2,b,d,c,a);
+                  sm -= hatfactor * modelspace->phase(ja+jd+Jket_cc+J2) * ninej * tbme ;
+                }
+              }
+              TwoBody_CC_ph[{ch_bra_cc,ch_ket_cc}](ibra,iket_cc) = sm;
+
+
+           }
+        }
+    }
    }
+}
 
-   // Now evaluate the commutator for each channel (standard coupling)
-   #pragma omp parallel for schedule(dynamic,5)
-   for (int ch=0;ch<nChannels;++ch)
+
+void Operator::InverseTensorPandyaTransformation(map<array<int,2>,arma::mat>& W, map<array<int,2>,arma::mat>& opout, bool hermitian)
+{
+    // Do the inverse Pandya transform
+    // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
+//   for (int ch=0;ch<nChannels;++ch)
+   int n_nonzeroChannels = modelspace->SortedTwoBodyChannels.size();
+   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
+   for (int ich = 0; ich < n_nonzeroChannels; ++ich)
    {
+      int ch = modelspace->SortedTwoBodyChannels[ich];
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& OUT = (arma::mat&) opout.TwoBody.at(ch).at(ch);
-
+      int J = tbc.J;
       int nKets = tbc.GetNumberKets();
+
+      opout[{ch,ch}] = arma::mat(nKets,nKets,arma::fill::zeros);
       for (int ibra=0; ibra<nKets; ++ibra)
       {
          Ket & bra = tbc.GetKet(ibra);
@@ -2018,8 +2015,8 @@ void Operator::comm222_phst( Operator& opright, Operator& opout )
          Orbit & oj = modelspace->GetOrbit(j);
          double ji = oi.j2/2.;
          double jj = oj.j2/2.;
-
-         for (int iket=ibra; iket<nKets; ++iket)
+         int ketmin = hermitian ? ibra : ibra+1;
+         for (int iket=ketmin; iket<nKets; ++iket)
          {
             Ket & ket = tbc.GetKet(iket);
             int k = ket.p;
@@ -2029,68 +2026,171 @@ void Operator::comm222_phst( Operator& opright, Operator& opout )
             double jk = ok.j2/2.;
             double jl = ol.j2/2.;
 
+            double commij = 0;
+            double commji = 0;
 
-            double comm = 0;
+            int parity_cc = (oi.l+ol.l)%2;
+            int Tz_cc = abs(oi.tz2+ol.tz2)/2;
+            int jmin = max(abs(int(ji-jl)),abs(int(jk-jj)));
+            int jmax = min(int(ji+jl),int(jk+jj));
 
-            // now loop over the cross coupled TBME's
-            int parity_cc = (oi.l+ok.l)%2;
-            int Tz_cc = abs(oi.tz2+ok.tz2)/2;
-            int jmin = max(abs(int(jj-jl)),abs(int(jk-ji)));
-            int jmax = min(int(jj+jl),int(jk+ji));
             for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
             {
-               double sixj = modelspace->GetSixJ(jk,jl,tbc.J,jj,ji,Jprime);
-               int phase = modelspace->phase(ji+jl+tbc.J);
+               double sixj = modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
+               if (abs(sixj)<1e-8) continue;
                int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
-               int indx_ik = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(i,k),max(i,k));
-               int indx_jl = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(j,l),max(j,l));
-               if (i>k)
-                 indx_ik += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
-               if (j>l)
-                 indx_jl += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
-               double me1 = N1[ch_cc](indx_jl,indx_ik);
-               comm -= (2*Jprime+1) * phase * sixj * (me1);
+               TwoBodyChannel_CC& tbc = modelspace->GetTwoBodyChannel_CC(ch_cc);
+               int indx_il = tbc.GetLocalIndex(min(i,l),max(i,l));
+               int indx_kj = tbc.GetLocalIndex(min(j,k),max(j,k));
+               if (i>l) indx_il += tbc.GetNumberKets();
+               if (k>j) indx_kj += tbc.GetNumberKets();
+               double me1 = W[{ch_cc,ch_cc}](indx_il,indx_kj);
+               commij += (2*Jprime+1) * sixj * me1;
             }
 
-            parity_cc = (oi.l+ol.l)%2;
-            Tz_cc = abs(oi.tz2+ol.tz2)/2;
-            jmin = max(abs(int(ji-jl)),abs(int(jk-jj)));
-            jmax = min(int(ji+jl),int(jk+jj));
+            // now loop over the cross coupled TBME's
+            parity_cc = (oi.l+ok.l)%2;
+            Tz_cc = abs(oi.tz2+ok.tz2)/2;
+            jmin = max(abs(int(jj-jl)),abs(int(jk-ji)));
+            jmax = min(int(jj+jl),int(jk+ji));
             for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
             {
+               double sixj = modelspace->GetSixJ(jj,ji,J,jk,jl,Jprime);
+               if (abs(sixj)<1e-8) continue;
                int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
-               int indx_il = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(i,l),max(i,l));
-               int indx_jk = modelspace->GetTwoBodyChannel_CC(ch_cc).GetLocalIndex(min(j,k),max(j,k));
-               if (i>l)
-                 indx_il += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
-               if (j>k)
-                 indx_jk += modelspace->GetTwoBodyChannel_CC(ch_cc).GetNumberKets();
-               double sixj = modelspace->GetSixJ(jk,jl,tbc.J,ji,jj,Jprime);
-               int phase = modelspace->phase(ji+jl);
-               double me1 = N1[ch_cc](indx_il,indx_jk);
-               comm -= (2*Jprime+1) * phase * sixj * (me1);
+               TwoBodyChannel_CC& tbc = modelspace->GetTwoBodyChannel_CC(ch_cc);
+               int indx_jl = tbc.GetLocalIndex(min(j,l),max(j,l));
+               int indx_ki = tbc.GetLocalIndex(min(i,k),max(i,k));
+               if (j>l) indx_jl += tbc.GetNumberKets();
+               if (k>i) indx_ki += tbc.GetNumberKets();
+               double me1 = W[{ch_cc,ch_cc}](indx_jl,indx_ki);
+               commji += (2*Jprime+1) *  sixj * me1;
             }
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
-            comm /= norm;
-            #pragma omp critical
-            {
-               OUT(ibra,iket) += comm;
-              if (iket != ibra)
-              {
-                 OUT(iket,ibra) += herm*comm;
-              }
-            }
-            if (abs(comm) > 1e-7)
-            {
-               cout << modelspace->phase(ji+jj+jk+jl) << ":  "  << comm << endl;
-            }
-
+            opout[{ch,ch}](ibra,iket) = (commij - modelspace->phase(ji+jj-J)*commji) / norm;;
          }
       }
    }
-*/
+ 
 }
+
+
+
+
+//*****************************************************************************************
+//
+//  THIS IS THE BIG UGLY ONE.     
+//                                             
+//   |          |      |          |           
+//   |     __Y__|      |     __X__|            
+//   |    /\    |      |    /\    |
+//   |   (  )   |  _   |   (  )   |            
+//   |____\/    |      |____\/    |            
+//   |  X       |      |  Y       |            
+//           
+//            
+// -- This appears to agree with Nathan's results
+//
+/// Calculates the part of \f$ [X_{(2)},Y_{(2)}]_{ijkl} \f$ which involves ph intermediate states, here indicated by \f$ Z^{J}_{ijkl} \f$
+/// \f[
+/// Z^{J}_{ijkl} = \sum_{ab}(n_a-n_b)\sum_{J'} (2J'+1)
+/// \left[
+///  \left\{ \begin{array}{lll}
+///  j_i  &  j_j  &  J \\
+///  j_k  &  j_l  &  J' \\
+///  \end{array} \right\}
+/// \left( \bar{X}^{J'}_{i\bar{l}a\bar{b}}\bar{Y}^{J'}_{a\bar{b}k\bar{j}} - 
+///   \bar{Y}^{J'}_{i\bar{l}a\bar{b}}\bar{X}^{J'}_{a\bar{b}k\bar{j}} \right)
+///  -(-1)^{j_i+j_j-J}
+///  \left\{ \begin{array}{lll}
+///  j_j  &  j_i  &  J \\
+///  j_k  &  j_l  &  J' \\
+///  \end{array} \right\}
+/// \left( \bar{X}^{J'}_{j\bar{l}a\bar{b}}\bar{Y}^{J'}_{a\bar{b}k\bar{i}} - 
+///   \bar{Y}^{J'}_{j\bar{l}a\bar{b}}\bar{X}^{J'}_{a\bar{b}k\bar{i}} \right)
+/// \right]
+/// \f]
+/// This is implemented by defining an intermediate matrix
+/// \f[
+/// \bar{W}^{J}_{i\bar{l}k\bar{j}} \equiv \sum_{ab}(n_a\bar{n}_b)
+/// \left[ \left( \bar{X}^{J'}_{i\bar{l}a\bar{b}}\bar{Y}^{J'}_{a\bar{b}k\bar{j}} - 
+///   \bar{Y}^{J'}_{i\bar{l}a\bar{b}}\bar{X}^{J'}_{a\bar{b}k\bar{j}} \right)
+/// -\left( \bar{X}^{J'}_{i\bar{l}b\bar{a}}\bar{Y}^{J'}_{b\bar{a}k\bar{j}} - 
+///    \bar{Y}^{J'}_{i\bar{l}b\bar{a}}\bar{X}^{J'}_{b\bar{a}k\bar{j}} \right)\right]
+/// \f]
+/// The Pandya-transformed matrix elements are obtained with DoPandyaTransformation().
+/// The commutator is then given by
+/// \f[
+/// Z^{J}_{ijkl} = \sum_{J'} (2J'+1)
+/// \left[
+///  \left\{ \begin{array}{lll}
+///  j_i  &  j_j  &  J \\
+///  j_k  &  j_l  &  J' \\
+///  \end{array} \right\}
+///  \bar{W}^{J'}_{i\bar{l}k\bar{j}}
+///  -(-1)^{j_i+j_j-J}
+///  \left\{ \begin{array}{lll}
+///  j_j  &  j_i  &  J \\
+///  j_k  &  j_l  &  J' \\
+///  \end{array} \right\}
+///  \bar{W}^{J'}_{j\bar{l}k\bar{i}}
+///  \right]
+///  \f]
+///
+void Operator::comm222_phst( Operator& Y, Operator& Z ) 
+{
+
+   Operator& X = *this;
+   // Create Pandya-transformed hp and ph matrix elements
+   vector<arma::mat> X_bar_hp (nChannels );
+   vector<arma::mat> X_bar_ph (nChannels );
+
+//   vector<arma::mat> Y_bar_hp (nChannels );
+//   vector<arma::mat> Y_bar_ph (nChannels );
+   vector<arma::mat> Y_bar_hp ( Y.TwoBody.MatEl.size() );
+   vector<arma::mat> Y_bar_ph ( Y.TwoBody.MatEl.size() );
+
+   double t = omp_get_wtime();
+   X.DoPandyaTransformation(X_bar_hp, X_bar_ph );
+//   Y.DoTensorPandyaTransformation(Y_bar_hp, Y_bar_ph );
+   timer["DoTensorPandyaTransformation"] += omp_get_wtime() - t;
+
+   t = omp_get_wtime();
+   // Construct the intermediate matrix W_bar
+   vector<arma::mat> W_bar (nChannels );
+   int hx = X.IsHermitian() ? 1 : -1;
+   int hy = Y.IsHermitian() ? 1 : -1;
+
+   int nch = modelspace->SortedTwoBodyChannels_CC.size();
+//   #pragma omp parallel for
+   for (int ich=0; ich<nch; ++ich)
+   {
+      int ch = modelspace->SortedTwoBodyChannels_CC[ich];
+      W_bar[ch] =  hx*( X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch]) ;
+      if (hx*hy<0)
+        W_bar[ch] += W_bar[ch].t();
+      else
+        W_bar[ch] -= W_bar[ch].t();
+   }
+   timer["Build W_bar"] += omp_get_wtime() - t;
+
+   vector<arma::mat> W (nChannels );
+   t = omp_get_wtime();
+   //InverseTensorPandyaTransformation(W_bar, W, Z.IsHermitian());
+   timer["InverseTensorPandyaTransformation"] += omp_get_wtime() - t;
+   for (int ch=0; ch<nChannels; ++ch)
+   {
+     Z.TwoBody.GetMatrix(ch,ch) += W[ch];
+   }
+
+}
+
+
+
+
+
+
 
 
 

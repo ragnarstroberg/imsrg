@@ -151,8 +151,8 @@ class Operator
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
   void DoPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) ;
-  void CalculateCrossCoupled(vector<arma::mat>&, vector<arma::mat>&) ; 
-  void InversePandyaTransformation(vector<arma::mat>&, vector<arma::mat>&, bool);
+//  void InversePandyaTransformation(vector<arma::mat>&, vector<arma::mat>&, bool);
+  void AddInversePandyaTransformation(vector<arma::mat>&);
 
   void comm110ss( Operator& opright, Operator& opout) ; 
   void comm220ss( Operator& opright, Operator& opout) ;
@@ -164,13 +164,18 @@ class Operator
   void comm222_phss( Operator& opright, Operator& opout) ;
   void comm222_pp_hh_221ss( Operator& opright, Operator& opout) ;
 
-// make st and tt commutators
+// scalar-tensor commutators
+
+//  void DoTensorPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) ;
+//  void InverseTensorPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&, bool);
+  void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>&) ;
+  void InverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>& , bool);
 
   void comm111st( Operator& opright, Operator& opout) ;
   void comm121st( Operator& opright, Operator& opout) ;
-  void comm221st( Operator& opright, Operator& opout) ;
+//  void comm221st( Operator& opright, Operator& opout) ;
   void comm122st( Operator& opright, Operator& opout) ;
-  void comm222_pp_hhst( Operator& opright, Operator& opout) ;
+//  void comm222_pp_hhst( Operator& opright, Operator& opout) ;
   void comm222_pp_hh_221st( Operator& opright, Operator& opout) ;
   void comm222_phst( Operator& opright, Operator& opout) ;
 

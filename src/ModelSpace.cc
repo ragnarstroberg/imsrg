@@ -111,7 +111,6 @@ Ket & TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]
 bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
    if ((op->index==oq->index) and (J%2 != 0)) return false; // Pauli principle
-//   if ((p==q) and (J%2 != 0)) return false; // Pauli principle
    if ((op->l + oq->l)%2 != parity) return false;
    if ((op->tz2 + oq->tz2) != 2*Tz) return false;
    if (op->j2 + oq->j2 < 2*J)       return false;
@@ -368,36 +367,6 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
 }
 
 
-/*
-void ModelSpace::Init_Skeleton(int Nmax)
-{
-
-   N2max = 2*Nmax;
-   N3max = 3*Nmax;
-
-   norbits = (Nmax+1)*(Nmax+2);
-   Orbits.resize(norbits);
-   cout << "Creating a skeleton model space with Nmax = " << Nmax
-        << " norbits = " << norbits << " Orbits.size() = " << Orbits.size()  << endl;
-   for (int N=0; N<=Nmax; ++N)
-   {
-     for (int l=N; l>=0; l-=2)
-     {
-       int n = (N-l)/2;
-       for (int j2=2*l+1; j2>=2*l-1 and j2>0; j2-=2)
-       {
-         for (int tz=-1; tz<=1; tz+=2)
-         {
-            int ph = 0;
-            int io = 1;
-//            cout << "Adding orbit " << n << " " << l << " " << j2 << " " << tz << " " << ph << " " << io << endl;
-            AddOrbit(n,l,j2,tz,ph,io);
-         }
-       }
-     }
-   }
-}
-*/
 
 // Some of the more common model spaces, for convenience.
 void ModelSpace::Init_He4(int nmax)

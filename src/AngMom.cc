@@ -19,6 +19,12 @@ namespace AngMom
  {
     return gsl_sf_fact(j1+j2-j3) * gsl_sf_fact(j1-j2+j3) * gsl_sf_fact(-j1+j2+j3)/gsl_sf_fact(j1+j2+j3+1);
  }
+ bool Triangle(double j1, double j2, double j3)
+ {
+   if (j1+j2<j3) return false;
+   if (abs(j1-j2)>j3) return false;
+   return true;
+ }
 
  double ThreeJ(double j1, double j2, double j3, double m1, double m2, double m3)
  {

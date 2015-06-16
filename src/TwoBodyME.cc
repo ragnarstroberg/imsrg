@@ -18,13 +18,22 @@ TwoBodyME::TwoBodyME()
 TwoBodyME::TwoBodyME(ModelSpace* ms)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
   hermitian(true), antihermitian(false), rank_J(0), rank_T(0), parity(0)
-{}
+{
+  Allocate();
+}
 
 TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
   hermitian(true), antihermitian(false), rank_J(rJ), rank_T(rT), parity(p)
-{}
+{
+  Allocate();
+}
 
+TwoBodyME::TwoBodyME(const TwoBodyME& tbme)
+: modelspace(tbme.modelspace), MatEl(tbme.MatEl), nChannels(tbme.nChannels),
+  hermitian(tbme.hermitian), antihermitian(tbme.antihermitian),
+  rank_J(tbme.rank_J), rank_T(tbme.rank_T), parity(tbme.parity)
+{}
 
 
  TwoBodyME& TwoBodyME::operator=(const TwoBodyME& rhs)
@@ -55,11 +64,12 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 
  TwoBodyME& TwoBodyME::operator-=(const TwoBodyME& rhs)
  {
-   for ( auto& itmat : MatEl )
+   for ( auto& itmat : rhs.MatEl )
    {
       int ch_bra = itmat.first[0];
       int ch_ket = itmat.first[1];
-      itmat.second -= rhs.GetMatrix(ch_bra,ch_ket);
+//      itmat.second -= rhs.GetMatrix(ch_bra,ch_ket);
+      GetMatrix(ch_bra,ch_ket) -= itmat.second;
    }
    return *this;
  }
@@ -80,7 +90,6 @@ void TwoBodyME::Copy(const TwoBodyME& rhs)
 
 void TwoBodyME::Allocate()
 {
-//  int nelem = 0;
   for (int ch_bra=0; ch_bra<nChannels;++ch_bra)
   {
      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
@@ -93,10 +102,8 @@ void TwoBodyME::Allocate()
         if ( (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
         
         MatEl[{ch_bra,ch_ket}] =  arma::mat(tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros);
-//        nelem += tbc_bra.GetNumberKets() * tbc_ket.GetNumberKets();
      }
   }
-//  cout << "Allocated " << nelem << " two body matrix elements (" << nelem * sizeof(double)/1024./1024./1024. << " GB)" << endl;
 }
 
 
@@ -585,6 +592,128 @@ int TwoBodyME::Dimension()
    }
    return dim;
 }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+TwoBodyME_ph::TwoBodyME_ph( TwoBodyME& TBME )
+: TwoBodyME(TBME)
+{
+  Allocate();
+  
+
+
+}
+
+
+
+
+
+void TwoBodyME_ph::DoPandyaTransformation(TwoBodyME& TwoBody_pp, string option)
+{
+//   int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
+//   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
+   for ( auto& itmat : MatEl )
+//   for (int ich=0; ich<n_nonzero; ++ich)
+   {
+/*
+      int ch_cc = modelspace->SortedTwoBodyChannels_CC[ich];
+      TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
+      int nKets_cc = tbc_cc.GetNumberKets();
+      arma::uvec& kets_ph = tbc_cc.GetKetIndex_ph();
+      int nph_kets = kets_ph.n_rows;
+      int J_cc = tbc_cc.J;
+
+      TwoBody_CC_hp[ch_cc] = arma::mat(nph_kets,   2*nKets_cc, arma::fill::zeros);
+      TwoBody_CC_ph[ch_cc] = arma::mat(nph_kets,   2*nKets_cc, arma::fill::zeros);
+
+      // loop over cross-coupled ph bras <ac| in this channel
+      for (int ibra=0; ibra<nph_kets; ++ibra)
+      {
+         Ket & bra_cc = tbc_cc.GetKet( kets_ph[ibra] );
+         int a = bra_cc.p;
+         int b = bra_cc.q;
+         Orbit & oa = modelspace->GetOrbit(a);
+         Orbit & ob = modelspace->GetOrbit(b);
+         double ja = oa.j2*0.5;
+         double jb = ob.j2*0.5;
+
+         // loop over cross-coupled kets |cd> in this channel
+         // we go to 2*nKets to include |cd> and |dc>
+         for (int iket_cc=0; iket_cc<2*nKets_cc; ++iket_cc)
+         {
+            Ket & ket_cc = tbc_cc.GetKet(iket_cc%nKets_cc);
+            int c = iket_cc < nKets_cc ? ket_cc.p : ket_cc.q;
+            int d = iket_cc < nKets_cc ? ket_cc.q : ket_cc.p;
+            Orbit & oc = modelspace->GetOrbit(c);
+            Orbit & od = modelspace->GetOrbit(d);
+            double jc = oc.j2*0.5;
+            double jd = od.j2*0.5;
+
+
+            int jmin = max(abs(ja-jd),abs(jc-jb));
+            int jmax = min(ja+jd,jc+jb);
+            double sm = 0;
+            for (int J_std=jmin; J_std<=jmax; ++J_std)
+            {
+               double sixj = modelspace->GetSixJ(ja,jb,J_cc,jc,jd,J_std);
+               if (abs(sixj) < 1e-8) continue;
+               double tbme = TwoBody.GetTBME_J(J_std,a,d,c,b);
+               sm -= (2*J_std+1) * sixj * tbme ;
+            }
+            TwoBody_CC_hp[ch_cc](ibra,iket_cc) = sm;
+
+
+            // Exchange (a <-> b) to account for the (n_a - n_b) term
+            // Get Tz,parity and range of J for <bd || ca > coupling
+            jmin = max(abs(jb-jd),abs(jc-ja));
+            jmax = min(jb+jd,jc+ja);
+            sm = 0;
+            for (int J_std=jmin; J_std<=jmax; ++J_std)
+            {
+               double sixj = modelspace->GetSixJ(jb,ja,J_cc,jc,jd,J_std);
+               if (abs(sixj) < 1e-8) continue;
+               double tbme = TwoBody.GetTBME_J(J_std,b,d,c,a);
+               sm -= (2*J_std+1) * sixj * tbme ;
+            }
+            TwoBody_CC_ph[ch_cc](ibra,iket_cc) = sm;
+
+         }
+      }
+*/
+   }
+}
+
+
+
+
+
+
+
+void TwoBodyME_ph::Allocate()
+{
+  for (int ch_bra=0; ch_bra<nChannels;++ch_bra)
+  {
+     TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+     for (int ch_ket=ch_bra; ch_ket<nChannels;++ch_ket)
+     {
+        TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+        if ( abs(tbc_bra.J-tbc_ket.J)>rank_J ) continue;
+        if ( (tbc_bra.J+tbc_ket.J)<rank_J ) continue;
+        if ( abs(tbc_bra.Tz)==abs(tbc_bra.Tz) ) continue; // this is the only difference
+        if ( (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
+        
+        MatEl[{ch_bra,ch_ket}] =  arma::mat(tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros);
+     }
+  }
+}
+
+
+
+
+
 
 
 
