@@ -169,7 +169,7 @@ class Operator
 //  void DoTensorPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) ;
 //  void InverseTensorPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&, bool);
   void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>&) ;
-  void InverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>& , bool);
+  void AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&);
 
   void comm111st( Operator& opright, Operator& opout) ;
   void comm121st( Operator& opright, Operator& opout) ;

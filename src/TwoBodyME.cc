@@ -615,10 +615,10 @@ void TwoBodyME_ph::DoPandyaTransformation(TwoBodyME& TwoBody_pp, string option)
 {
 //   int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
 //   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
+/*
    for ( auto& itmat : MatEl )
 //   for (int ich=0; ich<n_nonzero; ++ich)
    {
-/*
       int ch_cc = modelspace->SortedTwoBodyChannels_CC[ich];
       TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
       int nKets_cc = tbc_cc.GetNumberKets();
@@ -682,8 +682,8 @@ void TwoBodyME_ph::DoPandyaTransformation(TwoBodyME& TwoBody_pp, string option)
 
          }
       }
-*/
    }
+*/
 }
 
 

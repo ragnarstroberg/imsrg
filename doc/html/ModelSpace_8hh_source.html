@@ -333,45 +333,48 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;   vector&lt;index_t&gt; KetIndex_c_c; </div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;   vector&lt;index_t&gt; KetIndex_q_q;</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;   vector&lt;index_t&gt; KetIndex_q_c;</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;   vector&lt;index_t&gt; KetIndex_v_c; <span class="comment">// added</span></div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;   vector&lt;index_t&gt; KetIndex_v_q; <span class="comment">//added</span></div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;   vector&lt;index_t&gt; KetIndex_v_c;</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;   vector&lt;index_t&gt; KetIndex_v_q;</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;   <span class="keywordtype">int</span> Nmax;</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;   <span class="keywordtype">int</span> N2max;</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;   <span class="keywordtype">int</span> N3max;</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;   <span class="keywordtype">int</span> OneBodyJmax;</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;   <span class="keywordtype">int</span> TwoBodyJmax;</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;   <span class="keywordtype">int</span> ThreeBodyJmax;</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;   map&lt;array&lt;int,3&gt;,vector&lt;index_t&gt; &gt; OneBodyChannels;</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;   vector&lt;unsigned int&gt; SortedTwoBodyChannels;</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;   vector&lt;unsigned int&gt; SortedTwoBodyChannels_CC;</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;<span class="comment">//   array&lt; array&lt; vector&lt;index_t&gt;, 2&gt;,3&gt; MonopoleKets; //List of kets of a given Tz,parity</span></div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;   array&lt; array&lt; unordered_map&lt;index_t,index_t&gt;, 2&gt;,3&gt; MonopoleKets; <span class="comment">//List of kets of a given Tz,parity</span></div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;   <span class="keywordtype">int</span> Nmax;</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;   <span class="keywordtype">int</span> N2max;</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;   <span class="keywordtype">int</span> N3max;</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;   <span class="keywordtype">int</span> OneBodyJmax;</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;   <span class="keywordtype">int</span> TwoBodyJmax;</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;   <span class="keywordtype">int</span> ThreeBodyJmax;</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;   map&lt;array&lt;int,3&gt;,vector&lt;index_t&gt; &gt; OneBodyChannels;</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;   <span class="comment">// Fields</span></div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;   <span class="keywordtype">int</span> norbits;</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;   <span class="keywordtype">double</span> hbar_omega;</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;   <span class="keywordtype">int</span> target_mass;</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;   <span class="keywordtype">int</span> nTwoBodyChannels;</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;   vector&lt;Orbit&gt; Orbits;</div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;   vector&lt;Ket&gt; Kets;</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;   vector&lt;TwoBodyChannel&gt; TwoBodyChannels;</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;   vector&lt;TwoBodyChannel_CC&gt; TwoBodyChannels_CC;</div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;<span class="comment">//   map&lt;long int,double&gt; SixJList;</span></div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;   <span class="keyword">static</span> unordered_map&lt;long unsigned int,double&gt;      SixJList;</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;   <span class="keyword">static</span> unordered_map&lt;long long unsigned int,double&gt; NineJList;</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;   <span class="keyword">static</span> unordered_map&lt;long long unsigned int,double&gt; MoshList;</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;</div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;};</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;   vector&lt;unsigned int&gt; SortedTwoBodyChannels;</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;   vector&lt;unsigned int&gt; SortedTwoBodyChannels_CC;</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;   <span class="comment">// Fields</span></div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;   <span class="keywordtype">int</span> norbits;</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;   <span class="keywordtype">double</span> hbar_omega;</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;   <span class="keywordtype">int</span> target_mass;</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;   <span class="keywordtype">int</span> nTwoBodyChannels;</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;   vector&lt;Orbit&gt; Orbits;</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;   vector&lt;Ket&gt; Kets;</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;   vector&lt;TwoBodyChannel&gt; TwoBodyChannels;</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;   vector&lt;TwoBodyChannel_CC&gt; TwoBodyChannels_CC;</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;<span class="comment">//   map&lt;long int,double&gt; SixJList;</span></div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;   <span class="keyword">static</span> unordered_map&lt;unsigned long int,double&gt; SixJList;</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;   <span class="keyword">static</span> unordered_map&lt;long long unsigned int,double&gt; NineJList;</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;   <span class="keyword">static</span> unordered_map&lt;long long unsigned int,double&gt; MoshList;</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;};</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;<span class="preprocessor"></span></div>
 <div class="ttc" id="classOrbit_html"><div class="ttname"><a href="classOrbit.html">Orbit</a></div><div class="ttdef"><b>Definition:</b> ModelSpace.hh:21</div></div>
 <div class="ttc" id="classTwoBodyChannel_html"><div class="ttname"><a href="classTwoBodyChannel.html">TwoBodyChannel</a></div><div class="ttdef"><b>Definition:</b> ModelSpace.hh:73</div></div>
 <div class="ttc" id="classTwoBodyChannel__CC_html"><div class="ttname"><a href="classTwoBodyChannel__CC.html">TwoBodyChannel_CC</a></div><div class="ttdef"><b>Definition:</b> ModelSpace.hh:134</div></div>
@@ -380,7 +383,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon May 11 2015 13:00:34 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 16 2015 12:05:47 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

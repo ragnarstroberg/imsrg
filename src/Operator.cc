@@ -1359,7 +1359,7 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
 
 
 //void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::mat>& opout)
-void Operator::AddInversePandyaTransformation(vector<arma::mat>& W)
+void Operator::AddInversePandyaTransformation(vector<arma::mat>& Zbar)
 {
     // Do the inverse Pandya transform
     // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
@@ -1412,7 +1412,7 @@ void Operator::AddInversePandyaTransformation(vector<arma::mat>& W)
                int indx_kj = tbc.GetLocalIndex(min(j,k),max(j,k));
                if (i>l) indx_il += tbc.GetNumberKets();
                if (k>j) indx_kj += tbc.GetNumberKets();
-               double me1 = W[ch_cc](indx_il,indx_kj);
+               double me1 = Zbar[ch_cc](indx_il,indx_kj);
                commij += (2*Jprime+1) * sixj * me1;
             }
 
@@ -1431,7 +1431,7 @@ void Operator::AddInversePandyaTransformation(vector<arma::mat>& W)
                int indx_ki = tbc.GetLocalIndex(min(i,k),max(i,k));
                if (j>l) indx_jl += tbc.GetNumberKets();
                if (k>i) indx_ki += tbc.GetNumberKets();
-               double me1 = W[ch_cc](indx_jl,indx_ki);
+               double me1 = Zbar[ch_cc](indx_jl,indx_ki);
                commji += (2*Jprime+1) *  sixj * me1;
             }
 
@@ -1462,7 +1462,7 @@ void Operator::AddInversePandyaTransformation(vector<arma::mat>& W)
 //
 /// Calculates the part of \f$ [X_{(2)},Y_{(2)}]_{ijkl} \f$ which involves ph intermediate states, here indicated by \f$ Z^{J}_{ijkl} \f$
 /// \f[
-/// Z^{J}_{ijkl} = \sum_{ab}(n_a-n_b)\sum_{J'} (2J'+1)
+/// Z^{J}_{ijkl} = \sum_{ab}(n_a\bar{n}_b-\bar{n}_an_b)\sum_{J'} (2J'+1)
 /// \left[
 ///  \left\{ \begin{array}{lll}
 ///  j_i  &  j_j  &  J \\
@@ -1481,13 +1481,16 @@ void Operator::AddInversePandyaTransformation(vector<arma::mat>& W)
 /// \f]
 /// This is implemented by defining an intermediate matrix
 /// \f[
-/// \bar{W}^{J}_{i\bar{l}k\bar{j}} \equiv \sum_{ab}(n_a\bar{n}_b)
+/// \bar{Z}^{J}_{i\bar{l}k\bar{j}} \equiv \sum_{ab}(n_a\bar{n}_b)
 /// \left[ \left( \bar{X}^{J'}_{i\bar{l}a\bar{b}}\bar{Y}^{J'}_{a\bar{b}k\bar{j}} - 
 ///   \bar{Y}^{J'}_{i\bar{l}a\bar{b}}\bar{X}^{J'}_{a\bar{b}k\bar{j}} \right)
 /// -\left( \bar{X}^{J'}_{i\bar{l}b\bar{a}}\bar{Y}^{J'}_{b\bar{a}k\bar{j}} - 
 ///    \bar{Y}^{J'}_{i\bar{l}b\bar{a}}\bar{X}^{J'}_{b\bar{a}k\bar{j}} \right)\right]
 /// \f]
 /// The Pandya-transformed matrix elements are obtained with DoPandyaTransformation().
+/// The matrices \f$ \bar{X}^{J'}_{i\bar{l}a\bar{b}}\bar{Y}^{J'}_{a\bar{b}k\bar{j}} \f$
+/// and \f$ \bar{Y}^{J'}_{i\bar{l}a\bar{b}}\bar{X}^{J'}_{a\bar{b}k\bar{j}} \f$
+/// are related by a Hermitian conjugation, which saves two matrix multiplications.
 /// The commutator is then given by
 /// \f[
 /// Z^{J}_{ijkl} = \sum_{J'} (2J'+1)
@@ -1496,13 +1499,13 @@ void Operator::AddInversePandyaTransformation(vector<arma::mat>& W)
 ///  j_i  &  j_j  &  J \\
 ///  j_k  &  j_l  &  J' \\
 ///  \end{array} \right\}
-///  \bar{W}^{J'}_{i\bar{l}k\bar{j}}
+///  \bar{Z}^{J'}_{i\bar{l}k\bar{j}}
 ///  -(-1)^{j_i+j_j-J}
 ///  \left\{ \begin{array}{lll}
 ///  j_j  &  j_i  &  J \\
 ///  j_k  &  j_l  &  J' \\
 ///  \end{array} \right\}
-///  \bar{W}^{J'}_{j\bar{l}k\bar{i}}
+///  \bar{Z}^{J'}_{j\bar{l}k\bar{i}}
 ///  \right]
 ///  \f]
 ///
@@ -1523,26 +1526,25 @@ void Operator::comm222_phss( Operator& Y, Operator& Z )
 
    // Construct the intermediate matrix W_bar
    t = omp_get_wtime();
-   vector<arma::mat> W_bar (nChannels );
-//   int hx = X.IsHermitian() ? 1 : -1; // I don't remember why this is here, but the minus for anti-hermitian X makes sense...
+   vector<arma::mat> Z_bar (nChannels );
 
    for (int ch : modelspace->SortedTwoBodyChannels_CC )
    {
-      if ( X.IsHermitian() )
-         W_bar[ch] =  X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch] ;
+      if ( X.IsHermitian() ) // keep track of minus sign from taking transpose of X
+         Z_bar[ch] =  X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch] ;
       else
-         W_bar[ch] =  X_bar_ph[ch].t() * Y_bar_ph[ch] - X_bar_hp[ch].t() * Y_bar_hp[ch] ;
+         Z_bar[ch] =  X_bar_ph[ch].t() * Y_bar_ph[ch] - X_bar_hp[ch].t() * Y_bar_hp[ch] ;
 
-      if ( Z.IsHermitian() )
-        W_bar[ch] += W_bar[ch].t();
+      if ( Z.IsHermitian() ) // if Z is hermitian, then XY is antihermitian
+        Z_bar[ch] += Z_bar[ch].t();
       else
-        W_bar[ch] -= W_bar[ch].t();
+        Z_bar[ch] -= Z_bar[ch].t();
    }
    timer["Build W_bar"] += omp_get_wtime() - t;
 
    // Perform inverse Pandya transform on W_bar to get Z
    t = omp_get_wtime();
-   Z.AddInversePandyaTransformation(W_bar);
+   Z.AddInversePandyaTransformation(Z_bar);
    timer["InversePandyaTransformation"] += omp_get_wtime() - t;
 
 }
@@ -1991,34 +1993,42 @@ void Operator::DoTensorPandyaTransformation(map<array<int,2>,arma::mat>& TwoBody
 }
 
 
-void Operator::InverseTensorPandyaTransformation(map<array<int,2>,arma::mat>& W, map<array<int,2>,arma::mat>& opout, bool hermitian)
+void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>& W)
 {
     // Do the inverse Pandya transform
     // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
 //   for (int ch=0;ch<nChannels;++ch)
-   int n_nonzeroChannels = modelspace->SortedTwoBodyChannels.size();
-   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
-   for (int ich = 0; ich < n_nonzeroChannels; ++ich)
+//   int n_nonzeroChannels = modelspace->SortedTwoBodyChannels.size();
+//   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
+//   for (int ich = 0; ich < n_nonzeroChannels; ++ich)
+   Operator& Z = *this;
+   int Lambda = Z.rank_J;
+   for (auto& iter : Z.TwoBody.MatEl)
    {
-      int ch = modelspace->SortedTwoBodyChannels[ich];
-      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      int J = tbc.J;
-      int nKets = tbc.GetNumberKets();
+      int ch_bra = iter.first[0];
+      int ch_ket = iter.first[1];
+      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+      int J1 = tbc_bra.J;
+      int J2 = tbc_ket.J;
+      int nBras = tbc_bra.GetNumberKets();
+      int nKets = tbc_ket.GetNumberKets();
+      arma::mat& Zijkl = iter.second;
 
-      opout[{ch,ch}] = arma::mat(nKets,nKets,arma::fill::zeros);
-      for (int ibra=0; ibra<nKets; ++ibra)
+      for (int ibra=0; ibra<nBras; ++ibra)
       {
-         Ket & bra = tbc.GetKet(ibra);
+         Ket & bra = tbc_bra.GetKet(ibra);
          int i = bra.p;
          int j = bra.q;
          Orbit & oi = modelspace->GetOrbit(i);
          Orbit & oj = modelspace->GetOrbit(j);
          double ji = oi.j2/2.;
          double jj = oj.j2/2.;
-         int ketmin = hermitian ? ibra : ibra+1;
+//         int ketmin = hermitian ? ibra : ibra+1;
+         int ketmin = 0;
          for (int iket=ketmin; iket<nKets; ++iket)
          {
-            Ket & ket = tbc.GetKet(iket);
+            Ket & ket = tbc_ket.GetKet(iket);
             int k = ket.p;
             int l = ket.q;
             Orbit & ok = modelspace->GetOrbit(k);
@@ -2029,46 +2039,71 @@ void Operator::InverseTensorPandyaTransformation(map<array<int,2>,arma::mat>& W,
             double commij = 0;
             double commji = 0;
 
-            int parity_cc = (oi.l+ol.l)%2;
-            int Tz_cc = abs(oi.tz2+ol.tz2)/2;
-            int jmin = max(abs(int(ji-jl)),abs(int(jk-jj)));
-            int jmax = min(int(ji+jl),int(jk+jj));
+            // Transform W_ilkj
+            int parity_bra_cc = (oi.l+ol.l)%2;
+            int parity_ket_cc = (ok.l+oj.l)%2;
+            int Tz_bra_cc = abs(oi.tz2+ol.tz2)/2;
+            int Tz_ket_cc = abs(ok.tz2+oj.tz2)/2;
+            int j3min = abs(int(ji-jl));
+            int j4min = abs(int(jk-jj));
+            int j3max = ji+jl;
+            int j4max = jk+jj;
 
-            for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
+            for (int J3=j3min; J3<=j3max; ++J3)
             {
-               double sixj = modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
-               if (abs(sixj)<1e-8) continue;
-               int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
-               TwoBodyChannel_CC& tbc = modelspace->GetTwoBodyChannel_CC(ch_cc);
-               int indx_il = tbc.GetLocalIndex(min(i,l),max(i,l));
-               int indx_kj = tbc.GetLocalIndex(min(j,k),max(j,k));
-               if (i>l) indx_il += tbc.GetNumberKets();
-               if (k>j) indx_kj += tbc.GetNumberKets();
-               double me1 = W[{ch_cc,ch_cc}](indx_il,indx_kj);
-               commij += (2*Jprime+1) * sixj * me1;
+              int ch_bra_cc = modelspace->GetTwoBodyChannelIndex(J3,parity_bra_cc,Tz_bra_cc);
+              TwoBodyChannel_CC& tbc_bra_cc = modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
+              int indx_il = tbc_bra_cc.GetLocalIndex(min(i,l),max(i,l));
+              if (i>l) indx_il += tbc_bra_cc.GetNumberKets();
+              for (int J4=j4min; J4<=j4max; ++J4)
+              {
+                 int ch_ket_cc = modelspace->GetTwoBodyChannelIndex(J4,parity_ket_cc,Tz_ket_cc);
+                 TwoBodyChannel_CC& tbc_ket_cc = modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
+                 int indx_kj = tbc_ket_cc.GetLocalIndex(min(j,k),max(j,k));
+                 if (k>j) indx_kj += tbc_ket_cc.GetNumberKets();
+
+                  double ninej = modelspace->GetNineJ(ji,jl,J3,jj,jk,J4,J1,J2,Lambda);
+                  if (abs(ninej) < 1e-8) continue;
+                  double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*J3+1)*(2*J4+1) );
+                  double tbme = W[{ch_bra_cc,ch_ket_cc}](indx_il,indx_kj);
+                  commij -= hatfactor * modelspace->phase(jj+jl+J2+J4) * ninej * tbme ;
+              }
             }
 
-            // now loop over the cross coupled TBME's
-            parity_cc = (oi.l+ok.l)%2;
-            Tz_cc = abs(oi.tz2+ok.tz2)/2;
-            jmin = max(abs(int(jj-jl)),abs(int(jk-ji)));
-            jmax = min(int(jj+jl),int(jk+ji));
-            for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
+            // Transform W_jlki
+            parity_bra_cc = (oj.l+ol.l)%2;
+            parity_ket_cc = (ok.l+oi.l)%2;
+            Tz_bra_cc = abs(oj.tz2+ol.tz2)/2;
+            Tz_ket_cc = abs(ok.tz2+oi.tz2)/2;
+            j3min = abs(int(jj-jl));
+            j4min = abs(int(jk-ji));
+            j3max = jj+jl;
+            j4max = jk+ji;
+
+            for (int J3=j3min; J3<=j3max; ++J3)
             {
-               double sixj = modelspace->GetSixJ(jj,ji,J,jk,jl,Jprime);
-               if (abs(sixj)<1e-8) continue;
-               int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
-               TwoBodyChannel_CC& tbc = modelspace->GetTwoBodyChannel_CC(ch_cc);
-               int indx_jl = tbc.GetLocalIndex(min(j,l),max(j,l));
-               int indx_ki = tbc.GetLocalIndex(min(i,k),max(i,k));
-               if (j>l) indx_jl += tbc.GetNumberKets();
-               if (k>i) indx_ki += tbc.GetNumberKets();
-               double me1 = W[{ch_cc,ch_cc}](indx_jl,indx_ki);
-               commji += (2*Jprime+1) *  sixj * me1;
+              int ch_bra_cc = modelspace->GetTwoBodyChannelIndex(J3,parity_bra_cc,Tz_bra_cc);
+              TwoBodyChannel_CC& tbc_bra_cc = modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
+              int indx_jl = tbc_bra_cc.GetLocalIndex(min(j,l),max(j,l));
+              if (j>l) indx_jl += tbc_bra_cc.GetNumberKets();
+              for (int J4=j4min; J4<=j4max; ++J4)
+              {
+                 int ch_ket_cc = modelspace->GetTwoBodyChannelIndex(J4,parity_ket_cc,Tz_ket_cc);
+                 TwoBodyChannel_CC& tbc_ket_cc = modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
+                 int indx_ki = tbc_ket_cc.GetLocalIndex(min(k,i),max(k,i));
+                 if (k>i) indx_ki += tbc_ket_cc.GetNumberKets();
+
+                  double ninej = modelspace->GetNineJ(ji,jl,J3,jj,jk,J4,J1,J2,Lambda);
+                  if (abs(ninej) < 1e-8) continue;
+                  double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*J3+1)*(2*J4+1) );
+                  double tbme = W[{ch_bra_cc,ch_ket_cc}](indx_jl,indx_ki);
+                  commij -= hatfactor * modelspace->phase(ji+jl+J2+J4) * ninej * tbme ;
+              }
             }
 
-            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
-            opout[{ch,ch}](ibra,iket) = (commij - modelspace->phase(ji+jj-J)*commji) / norm;;
+//            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
+//            Zijkl(ibra,iket) += (commij - modelspace->phase(ji+jj-J1)*commji) / norm;
+            Zijkl(ibra,iket) += (commij - modelspace->phase(ji+jj-J1)*commji);
          }
       }
    }
@@ -2092,49 +2127,57 @@ void Operator::InverseTensorPandyaTransformation(map<array<int,2>,arma::mat>& W,
 //            
 // -- This appears to agree with Nathan's results
 //
-/// Calculates the part of \f$ [X_{(2)},Y_{(2)}]_{ijkl} \f$ which involves ph intermediate states, here indicated by \f$ Z^{J}_{ijkl} \f$
+/// Calculates the part of \f$ [X_{(2)},\mathbb{Y}^{\Lambda}_{(2)}]_{ijkl} \f$ which involves ph intermediate states, here indicated by \f$ \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} \f$
 /// \f[
-/// Z^{J}_{ijkl} = \sum_{ab}(n_a-n_b)\sum_{J'} (2J'+1)
+/// \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} = \sum_{abJ_3J_4}(n_a-n_b) \hat{J_1}\hat{J_2}\hat{J_3}\hat{J_4}
 /// \left[
 ///  \left\{ \begin{array}{lll}
-///  j_i  &  j_j  &  J \\
-///  j_k  &  j_l  &  J' \\
+///  j_i  &  j_l  &  J_3 \\
+///  j_j  &  j_k  &  J_4 \\
+///  J_1  &  J_2  &  \Lambda \\
 ///  \end{array} \right\}
-/// \left( \bar{X}^{J'}_{i\bar{l}a\bar{b}}\bar{Y}^{J'}_{a\bar{b}k\bar{j}} - 
-///   \bar{Y}^{J'}_{i\bar{l}a\bar{b}}\bar{X}^{J'}_{a\bar{b}k\bar{j}} \right)
-///  -(-1)^{j_i+j_j-J}
+/// \left( \bar{X}^{J3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - 
+///   \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right)
+///  -(-1)^{j_i+j_j-J_1}
 ///  \left\{ \begin{array}{lll}
-///  j_j  &  j_i  &  J \\
-///  j_k  &  j_l  &  J' \\
+///  j_j  &  j_l  &  J_3 \\
+///  j_i  &  j_k  &  J_4 \\
+///  J_1  &  J_2  &  \Lambda \\
 ///  \end{array} \right\}
-/// \left( \bar{X}^{J'}_{j\bar{l}a\bar{b}}\bar{Y}^{J'}_{a\bar{b}k\bar{i}} - 
-///   \bar{Y}^{J'}_{j\bar{l}a\bar{b}}\bar{X}^{J'}_{a\bar{b}k\bar{i}} \right)
+/// \left( \bar{X}^{J_3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - 
+///   \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right)
 /// \right]
 /// \f]
 /// This is implemented by defining an intermediate matrix
 /// \f[
-/// \bar{W}^{J}_{i\bar{l}k\bar{j}} \equiv \sum_{ab}(n_a\bar{n}_b)
-/// \left[ \left( \bar{X}^{J'}_{i\bar{l}a\bar{b}}\bar{Y}^{J'}_{a\bar{b}k\bar{j}} - 
-///   \bar{Y}^{J'}_{i\bar{l}a\bar{b}}\bar{X}^{J'}_{a\bar{b}k\bar{j}} \right)
-/// -\left( \bar{X}^{J'}_{i\bar{l}b\bar{a}}\bar{Y}^{J'}_{b\bar{a}k\bar{j}} - 
-///    \bar{Y}^{J'}_{i\bar{l}b\bar{a}}\bar{X}^{J'}_{b\bar{a}k\bar{j}} \right)\right]
+/// \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{i\bar{l}k\bar{j}} \equiv \sum_{ab}(n_a\bar{n}_b)
+/// \left[ \left( \bar{X}^{J3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - 
+///   \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right)
+/// -\left( \bar{X}^{J_3}_{i\bar{l}b\bar{a}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{b\bar{a}k\bar{j}} - 
+///    \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}b\bar{a}}\bar{X}^{J_4}_{b\bar{a}k\bar{j}} \right)\right]
 /// \f]
-/// The Pandya-transformed matrix elements are obtained with DoPandyaTransformation().
+/// The Pandya-transformed matrix elements are obtained with DoTensorPandyaTransformation().
+/// The matrices \f$ \bar{X}^{J_3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} \f$
+/// and \f$ \bar{\mathbb{Y}}^{J_4J_3\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_3}_{a\bar{b}k\bar{j}} \f$
+/// are related by a Hermitian conjugation, which saves two matrix multiplications, provided we
+/// take into account the phase \f$ (-1)^{J_3-J_4} \f$ from conjugating the spherical tensor.
 /// The commutator is then given by
 /// \f[
-/// Z^{J}_{ijkl} = \sum_{J'} (2J'+1)
+/// \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} = \sum_{J_3J_4} \hat{J_1}\hat{J_2}\hat{J_3}\hat{J_4}
 /// \left[
 ///  \left\{ \begin{array}{lll}
-///  j_i  &  j_j  &  J \\
-///  j_k  &  j_l  &  J' \\
+///  j_i  &  j_l  &  J_3 \\
+///  j_j  &  j_k  &  J_4 \\
+///  J_1  &  J_2  &  \Lambda \\
 ///  \end{array} \right\}
-///  \bar{W}^{J'}_{i\bar{l}k\bar{j}}
+///  \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{i\bar{l}k\bar{j}}
 ///  -(-1)^{j_i+j_j-J}
 ///  \left\{ \begin{array}{lll}
-///  j_j  &  j_i  &  J \\
-///  j_k  &  j_l  &  J' \\
+///  j_j  &  j_l  &  J_3 \\
+///  j_i  &  j_k  &  J_4 \\
+///  J_1  &  J_2  &  \Lambda \\
 ///  \end{array} \right\}
-///  \bar{W}^{J'}_{j\bar{l}k\bar{i}}
+///  \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{j\bar{l}k\bar{i}}
 ///  \right]
 ///  \f]
 ///
@@ -2146,43 +2189,39 @@ void Operator::comm222_phst( Operator& Y, Operator& Z )
    vector<arma::mat> X_bar_hp (nChannels );
    vector<arma::mat> X_bar_ph (nChannels );
 
-//   vector<arma::mat> Y_bar_hp (nChannels );
-//   vector<arma::mat> Y_bar_ph (nChannels );
-   vector<arma::mat> Y_bar_hp ( Y.TwoBody.MatEl.size() );
-   vector<arma::mat> Y_bar_ph ( Y.TwoBody.MatEl.size() );
+   map<array<int,2>,arma::mat> Y_bar_hp;
+   map<array<int,2>,arma::mat> Y_bar_ph;
 
    double t = omp_get_wtime();
    X.DoPandyaTransformation(X_bar_hp, X_bar_ph );
-//   Y.DoTensorPandyaTransformation(Y_bar_hp, Y_bar_ph );
+   Y.DoTensorPandyaTransformation(Y_bar_hp, Y_bar_ph );
    timer["DoTensorPandyaTransformation"] += omp_get_wtime() - t;
 
    t = omp_get_wtime();
    // Construct the intermediate matrix W_bar
-   vector<arma::mat> W_bar (nChannels );
-   int hx = X.IsHermitian() ? 1 : -1;
-   int hy = Y.IsHermitian() ? 1 : -1;
-
-   int nch = modelspace->SortedTwoBodyChannels_CC.size();
-//   #pragma omp parallel for
-   for (int ich=0; ich<nch; ++ich)
+   map<array<int,2>,arma::mat> Z_bar;
+   for (auto& iter : Y_bar_hp )
    {
-      int ch = modelspace->SortedTwoBodyChannels_CC[ich];
-      W_bar[ch] =  hx*( X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch]) ;
-      if (hx*hy<0)
-        W_bar[ch] += W_bar[ch].t();
+      int ch_bra_cc = iter.first[0];
+      int ch_ket_cc = iter.first[1];
+      int Jbra = modelspace->GetTwoBodyChannel_CC(ch_bra_cc).J;
+      int Jket = modelspace->GetTwoBodyChannel_CC(ch_ket_cc).J;
+      int flipphase = modelspace->phase( Jbra - Jket );
+      if (X.IsHermitian())
+        Z_bar[{ch_bra_cc,ch_ket_cc}] =  ( X_bar_hp[ch_bra_cc].t() * Y_bar_hp[{ch_bra_cc,ch_ket_cc}] - X_bar_ph[ch_bra_cc].t() * Y_bar_ph[{ch_bra_cc,ch_ket_cc}]) ;
       else
-        W_bar[ch] -= W_bar[ch].t();
+        Z_bar[{ch_bra_cc,ch_ket_cc}] =  ( X_bar_ph[ch_bra_cc].t() * Y_bar_ph[{ch_bra_cc,ch_ket_cc}] - X_bar_hp[ch_bra_cc].t() * Y_bar_hp[{ch_bra_cc,ch_ket_cc}]) ;
+      if (Z.IsHermitian())
+        Z_bar[{ch_ket_cc,ch_bra_cc}] += flipphase * Z_bar[{ch_bra_cc,ch_ket_cc}].t();
+      else
+        Z_bar[{ch_ket_cc,ch_bra_cc}] -= flipphase * Z_bar[{ch_bra_cc,ch_ket_cc}].t();
    }
    timer["Build W_bar"] += omp_get_wtime() - t;
 
    vector<arma::mat> W (nChannels );
    t = omp_get_wtime();
-   //InverseTensorPandyaTransformation(W_bar, W, Z.IsHermitian());
+   Z.AddInverseTensorPandyaTransformation(Z_bar);
    timer["InverseTensorPandyaTransformation"] += omp_get_wtime() - t;
-   for (int ch=0; ch<nChannels; ++ch)
-   {
-     Z.TwoBody.GetMatrix(ch,ch) += W[ch];
-   }
 
 }
 

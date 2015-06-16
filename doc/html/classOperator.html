@@ -167,6 +167,12 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>GetOneBody</b> (int
 <tr class="memitem:ae85aa3d8fdaeb3cb6266c3a4494e904b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae85aa3d8fdaeb3cb6266c3a4494e904b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetOneBody</b> (int i, int j, double val)</td></tr>
 <tr class="separator:ae85aa3d8fdaeb3cb6266c3a4494e904b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2b42d5c6afffc790b9a7466787d7237"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa2b42d5c6afffc790b9a7466787d7237"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>GetTwoBodyDimension</b> (int ch_bra, int ch_ket)</td></tr>
+<tr class="separator:aa2b42d5c6afffc790b9a7466787d7237"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ef7a48c8c873a79ff695a6b71d83803"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5ef7a48c8c873a79ff695a6b71d83803"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>GetTwoBody</b> (int ch_bra, int ch_ket, int i, int j)</td></tr>
+<tr class="separator:a5ef7a48c8c873a79ff695a6b71d83803"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b32ed75e5e0d6175a2f2f517c63a89c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8b32ed75e5e0d6175a2f2f517c63a89c"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetE3max</b> (int e)</td></tr>
 <tr class="separator:a8b32ed75e5e0d6175a2f2f517c63a89c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -245,6 +251,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a21a37daa051c248109153e6502b8280f">AntiSymmetrize</a> ()</td></tr>
 <tr class="memdesc:a21a37daa051c248109153e6502b8280f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy the upper-half triangle to the lower-half triangle with a minus sign. <br/></td></tr>
 <tr class="separator:a21a37daa051c248109153e6502b8280f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6168f16f6c0b2cf70a1fc0676e70523"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad6168f16f6c0b2cf70a1fc0676e70523"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetUpOneBodyChannels</b> ()</td></tr>
+<tr class="separator:ad6168f16f6c0b2cf70a1fc0676e70523"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a622880b91a902c832b867c6447a262e7"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a622880b91a902c832b867c6447a262e7"></a>
 <a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a622880b91a902c832b867c6447a262e7">DoNormalOrdering</a> ()</td></tr>
 <tr class="memdesc:a622880b91a902c832b867c6447a262e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calls <a class="el" href="classOperator.html#a652d989590422a2b26e662625b07254e" title="Returns the normal ordered two-body operator. ">DoNormalOrdering2()</a> or <a class="el" href="classOperator.html#a7fd029569796107c87ff17c5a7912480" title="Returns the normal ordered three-body operator. ">DoNormalOrdering3()</a>, depending on the rank of the operator. <br/></td></tr>
@@ -295,12 +304,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>PrintTwoBody</b> (int
 <tr class="separator:a905e42cefafaca0eb155cf41b3cd37b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad468922e03d15318c23886e6bfecc168"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ad468922e03d15318c23886e6bfecc168">DoPandyaTransformation</a> (vector&lt; arma::mat &gt; &amp;, vector&lt; arma::mat &gt; &amp;)</td></tr>
 <tr class="separator:ad468922e03d15318c23886e6bfecc168"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa9082f11f4b3aaf4bb08c058c4dca707"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa9082f11f4b3aaf4bb08c058c4dca707"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>CalculateCrossCoupled</b> (vector&lt; arma::mat &gt; &amp;, vector&lt; arma::mat &gt; &amp;)</td></tr>
-<tr class="separator:aa9082f11f4b3aaf4bb08c058c4dca707"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7827c8ef5240bd3436be60bd5632900"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae7827c8ef5240bd3436be60bd5632900"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>InversePandyaTransformation</b> (vector&lt; arma::mat &gt; &amp;, vector&lt; arma::mat &gt; &amp;, bool)</td></tr>
-<tr class="separator:ae7827c8ef5240bd3436be60bd5632900"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52dbcde640637889ab6a1dd90e1ceb62"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a52dbcde640637889ab6a1dd90e1ceb62"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>AddInversePandyaTransformation</b> (vector&lt; arma::mat &gt; &amp;)</td></tr>
+<tr class="separator:a52dbcde640637889ab6a1dd90e1ceb62"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a23bf6f89477ba90fd6f798374d00d9ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a23bf6f89477ba90fd6f798374d00d9ea">comm110ss</a> (<a class="el" href="classOperator.html">Operator</a> &amp;opright, <a class="el" href="classOperator.html">Operator</a> &amp;opout)</td></tr>
 <tr class="separator:a23bf6f89477ba90fd6f798374d00d9ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac924a2af30154c83d6b821707689caa5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ac924a2af30154c83d6b821707689caa5">comm220ss</a> (<a class="el" href="classOperator.html">Operator</a> &amp;opright, <a class="el" href="classOperator.html">Operator</a> &amp;opout)</td></tr>
@@ -319,26 +325,24 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>InversePandyaTransfor
 <tr class="separator:a030805d35049c5cd62eaa84fe42e59e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acb2df128030bcad71f2b3fd975ea7988"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#acb2df128030bcad71f2b3fd975ea7988">comm222_pp_hh_221ss</a> (<a class="el" href="classOperator.html">Operator</a> &amp;opright, <a class="el" href="classOperator.html">Operator</a> &amp;opout)</td></tr>
 <tr class="separator:acb2df128030bcad71f2b3fd975ea7988"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a079bf469ae00de721694f1674c0cae6f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a079bf469ae00de721694f1674c0cae6f">DoTensorPandyaTransformation</a> (map&lt; array&lt; int, 2 &gt;, arma::mat &gt; &amp;, map&lt; array&lt; int, 2 &gt;, arma::mat &gt; &amp;)</td></tr>
+<tr class="separator:a079bf469ae00de721694f1674c0cae6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abbc466d8e8f57deb156d9475b680fd42"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abbc466d8e8f57deb156d9475b680fd42"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>AddInverseTensorPandyaTransformation</b> (map&lt; array&lt; int, 2 &gt;, arma::mat &gt; &amp;)</td></tr>
+<tr class="separator:abbc466d8e8f57deb156d9475b680fd42"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad32f3dab6883f4a0bbf3abd416c9c756"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad32f3dab6883f4a0bbf3abd416c9c756"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>comm111st</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright, <a class="el" href="classOperator.html">Operator</a> &amp;opout)</td></tr>
 <tr class="separator:ad32f3dab6883f4a0bbf3abd416c9c756"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad6cf6f66211d0893ef0784cde14445f0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad6cf6f66211d0893ef0784cde14445f0"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>comm121st</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright, <a class="el" href="classOperator.html">Operator</a> &amp;opout)</td></tr>
 <tr class="separator:ad6cf6f66211d0893ef0784cde14445f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4d68427f2033c9e25c46674e555e05d2"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a4d68427f2033c9e25c46674e555e05d2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>comm221st</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright, <a class="el" href="classOperator.html">Operator</a> &amp;opout)</td></tr>
-<tr class="separator:a4d68427f2033c9e25c46674e555e05d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac7b9d8a707c3cfc953f070967704835e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac7b9d8a707c3cfc953f070967704835e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>comm122st</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright, <a class="el" href="classOperator.html">Operator</a> &amp;opout)</td></tr>
 <tr class="separator:ac7b9d8a707c3cfc953f070967704835e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6b1dec40442bf3f9ebe0dbc52bc2d241"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6b1dec40442bf3f9ebe0dbc52bc2d241"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>comm222_pp_hhst</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright, <a class="el" href="classOperator.html">Operator</a> &amp;opout)</td></tr>
-<tr class="separator:a6b1dec40442bf3f9ebe0dbc52bc2d241"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a850ad8c78ae948a6243e6041eaee5b64"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a850ad8c78ae948a6243e6041eaee5b64"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>comm222_pp_hh_221st</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright, <a class="el" href="classOperator.html">Operator</a> &amp;opout)</td></tr>
 <tr class="separator:a850ad8c78ae948a6243e6041eaee5b64"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0f3ee31f13fff9cb88e0e107e2acdf8a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0f3ee31f13fff9cb88e0e107e2acdf8a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>comm222_phst</b> (<a class="el" href="classOperator.html">Operator</a> &amp;opright, <a class="el" href="classOperator.html">Operator</a> &amp;opout)</td></tr>
+<tr class="memitem:a0f3ee31f13fff9cb88e0e107e2acdf8a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a0f3ee31f13fff9cb88e0e107e2acdf8a">comm222_phst</a> (<a class="el" href="classOperator.html">Operator</a> &amp;opright, <a class="el" href="classOperator.html">Operator</a> &amp;opout)</td></tr>
 <tr class="separator:a0f3ee31f13fff9cb88e0e107e2acdf8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
@@ -405,6 +409,10 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>antihermitian</b></td
 int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a710cd3c6107a4497e90a04c1f3d2b15f">nChannels</a></td></tr>
 <tr class="memdesc:a710cd3c6107a4497e90a04c1f3d2b15f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of two-body channels \( J,\pi,T_z \) associated with the model space. <br/></td></tr>
 <tr class="separator:a710cd3c6107a4497e90a04c1f3d2b15f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a380992b76bd3ef1fc2c6dd7e2debf8ff"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a380992b76bd3ef1fc2c6dd7e2debf8ff"></a>
+map&lt; array&lt; int, 3 &gt;, vector<br class="typebreak"/>
+&lt; index_t &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>OneBodyChannels</b></td></tr>
+<tr class="separator:a380992b76bd3ef1fc2c6dd7e2debf8ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -681,13 +689,13 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
           <td class="memname">void Operator::comm222_phss </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>opright</em>, </td>
+          <td class="paramname"><em>Y</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>opout</em>&#160;</td>
+          <td class="paramname"><em>Z</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -698,15 +706,53 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
 </div><div class="memdoc">
 <p>Calculates the part of \( [X_{(2)},Y_{(2)}]_{ijkl} \) which involves ph intermediate states, here indicated by \( Z^{J}_{ijkl} \) </p>
 <p class="formulaDsp">
-\[ Z^{J}_{ijkl} = \sum_{ab}(n_a-n_b)\sum_{J&#39;} (2J&#39;+1) \left[ \left\{ \begin{array}{lll} j_i &amp; j_j &amp; J \\ j_k &amp; j_l &amp; J&#39; \\ \end{array} \right\} \left( \bar{X}^{J&#39;}_{i\bar{l}a\bar{b}}\bar{Y}^{J&#39;}_{a\bar{b}k\bar{j}} - \bar{Y}^{J&#39;}_{i\bar{l}a\bar{b}}\bar{X}^{J&#39;}_{a\bar{b}k\bar{j}} \right) -(-1)^{j_i+j_j-J} \left\{ \begin{array}{lll} j_j &amp; j_i &amp; J \\ j_k &amp; j_l &amp; J&#39; \\ \end{array} \right\} \left( \bar{X}^{J&#39;}_{j\bar{l}a\bar{b}}\bar{Y}^{J&#39;}_{a\bar{b}k\bar{i}} - \bar{Y}^{J&#39;}_{j\bar{l}a\bar{b}}\bar{X}^{J&#39;}_{a\bar{b}k\bar{i}} \right) \right] \]
+\[ Z^{J}_{ijkl} = \sum_{ab}(n_a\bar{n}_b-\bar{n}_an_b)\sum_{J&#39;} (2J&#39;+1) \left[ \left\{ \begin{array}{lll} j_i &amp; j_j &amp; J \\ j_k &amp; j_l &amp; J&#39; \\ \end{array} \right\} \left( \bar{X}^{J&#39;}_{i\bar{l}a\bar{b}}\bar{Y}^{J&#39;}_{a\bar{b}k\bar{j}} - \bar{Y}^{J&#39;}_{i\bar{l}a\bar{b}}\bar{X}^{J&#39;}_{a\bar{b}k\bar{j}} \right) -(-1)^{j_i+j_j-J} \left\{ \begin{array}{lll} j_j &amp; j_i &amp; J \\ j_k &amp; j_l &amp; J&#39; \\ \end{array} \right\} \left( \bar{X}^{J&#39;}_{j\bar{l}a\bar{b}}\bar{Y}^{J&#39;}_{a\bar{b}k\bar{i}} - \bar{Y}^{J&#39;}_{j\bar{l}a\bar{b}}\bar{X}^{J&#39;}_{a\bar{b}k\bar{i}} \right) \right] \]
 </p>
 <p> This is implemented by defining an intermediate matrix </p>
 <p class="formulaDsp">
-\[ \bar{W}^{J}_{i\bar{l}k\bar{j}} \equiv \sum_{ab}(n_a\bar{n}_b) \left[ \left( \bar{X}^{J&#39;}_{i\bar{l}a\bar{b}}\bar{Y}^{J&#39;}_{a\bar{b}k\bar{j}} - \bar{Y}^{J&#39;}_{i\bar{l}a\bar{b}}\bar{X}^{J&#39;}_{a\bar{b}k\bar{j}} \right) -\left( \bar{X}^{J&#39;}_{i\bar{l}b\bar{a}}\bar{Y}^{J&#39;}_{b\bar{a}k\bar{j}} - \bar{Y}^{J&#39;}_{i\bar{l}b\bar{a}}\bar{X}^{J&#39;}_{b\bar{a}k\bar{j}} \right)\right] \]
+\[ \bar{Z}^{J}_{i\bar{l}k\bar{j}} \equiv \sum_{ab}(n_a\bar{n}_b) \left[ \left( \bar{X}^{J&#39;}_{i\bar{l}a\bar{b}}\bar{Y}^{J&#39;}_{a\bar{b}k\bar{j}} - \bar{Y}^{J&#39;}_{i\bar{l}a\bar{b}}\bar{X}^{J&#39;}_{a\bar{b}k\bar{j}} \right) -\left( \bar{X}^{J&#39;}_{i\bar{l}b\bar{a}}\bar{Y}^{J&#39;}_{b\bar{a}k\bar{j}} - \bar{Y}^{J&#39;}_{i\bar{l}b\bar{a}}\bar{X}^{J&#39;}_{b\bar{a}k\bar{j}} \right)\right] \]
 </p>
-<p> The Pandya-transformed matrix elements are obtained with <a class="el" href="classOperator.html#ad468922e03d15318c23886e6bfecc168">DoPandyaTransformation()</a>. The commutator is then given by </p>
+<p> The Pandya-transformed matrix elements are obtained with <a class="el" href="classOperator.html#ad468922e03d15318c23886e6bfecc168">DoPandyaTransformation()</a>. The matrices \( \bar{X}^{J&#39;}_{i\bar{l}a\bar{b}}\bar{Y}^{J&#39;}_{a\bar{b}k\bar{j}} \) and \( \bar{Y}^{J&#39;}_{i\bar{l}a\bar{b}}\bar{X}^{J&#39;}_{a\bar{b}k\bar{j}} \) are related by a Hermitian conjugation, which saves two matrix multiplications. The commutator is then given by </p>
 <p class="formulaDsp">
-\[ Z^{J}_{ijkl} = \sum_{J&#39;} (2J&#39;+1) \left[ \left\{ \begin{array}{lll} j_i &amp; j_j &amp; J \\ j_k &amp; j_l &amp; J&#39; \\ \end{array} \right\} \bar{W}^{J&#39;}_{i\bar{l}k\bar{j}} -(-1)^{j_i+j_j-J} \left\{ \begin{array}{lll} j_j &amp; j_i &amp; J \\ j_k &amp; j_l &amp; J&#39; \\ \end{array} \right\} \bar{W}^{J&#39;}_{j\bar{l}k\bar{i}} \right] \]
+\[ Z^{J}_{ijkl} = \sum_{J&#39;} (2J&#39;+1) \left[ \left\{ \begin{array}{lll} j_i &amp; j_j &amp; J \\ j_k &amp; j_l &amp; J&#39; \\ \end{array} \right\} \bar{Z}^{J&#39;}_{i\bar{l}k\bar{j}} -(-1)^{j_i+j_j-J} \left\{ \begin{array}{lll} j_j &amp; j_i &amp; J \\ j_k &amp; j_l &amp; J&#39; \\ \end{array} \right\} \bar{Z}^{J&#39;}_{j\bar{l}k\bar{i}} \right] \]
+</p>
+ 
+</div>
+</div>
+<a class="anchor" id="a0f3ee31f13fff9cb88e0e107e2acdf8a"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Operator::comm222_phst </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
+          <td class="paramname"><em>Y</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
+          <td class="paramname"><em>Z</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Calculates the part of \( [X_{(2)},\mathbb{Y}^{\Lambda}_{(2)}]_{ijkl} \) which involves ph intermediate states, here indicated by \( \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} \) </p>
+<p class="formulaDsp">
+\[ \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} = \sum_{abJ_3J_4}(n_a-n_b) \hat{J_1}\hat{J_2}\hat{J_3}\hat{J_4} \left[ \left\{ \begin{array}{lll} j_i &amp; j_l &amp; J_3 \\ j_j &amp; j_k &amp; J_4 \\ J_1 &amp; J_2 &amp; \Lambda \\ \end{array} \right\} \left( \bar{X}^{J3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right) -(-1)^{j_i+j_j-J_1} \left\{ \begin{array}{lll} j_j &amp; j_l &amp; J_3 \\ j_i &amp; j_k &amp; J_4 \\ J_1 &amp; J_2 &amp; \Lambda \\ \end{array} \right\} \left( \bar{X}^{J_3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right) \right] \]
+</p>
+<p> This is implemented by defining an intermediate matrix </p>
+<p class="formulaDsp">
+\[ \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{i\bar{l}k\bar{j}} \equiv \sum_{ab}(n_a\bar{n}_b) \left[ \left( \bar{X}^{J3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right) -\left( \bar{X}^{J_3}_{i\bar{l}b\bar{a}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{b\bar{a}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}b\bar{a}}\bar{X}^{J_4}_{b\bar{a}k\bar{j}} \right)\right] \]
+</p>
+<p> The Pandya-transformed matrix elements are obtained with <a class="el" href="classOperator.html#a079bf469ae00de721694f1674c0cae6f">DoTensorPandyaTransformation()</a>. The matrices \( \bar{X}^{J_3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} \) and \( \bar{\mathbb{Y}}^{J_4J_3\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_3}_{a\bar{b}k\bar{j}} \) are related by a Hermitian conjugation, which saves two matrix multiplications, provided we take into account the phase \( (-1)^{J_3-J_4} \) from conjugating the spherical tensor. The commutator is then given by </p>
+<p class="formulaDsp">
+\[ \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} = \sum_{J_3J_4} \hat{J_1}\hat{J_2}\hat{J_3}\hat{J_4} \left[ \left\{ \begin{array}{lll} j_i &amp; j_l &amp; J_3 \\ j_j &amp; j_k &amp; J_4 \\ J_1 &amp; J_2 &amp; \Lambda \\ \end{array} \right\} \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{i\bar{l}k\bar{j}} -(-1)^{j_i+j_j-J} \left\{ \begin{array}{lll} j_j &amp; j_l &amp; J_3 \\ j_i &amp; j_k &amp; J_4 \\ J_1 &amp; J_2 &amp; \Lambda \\ \end{array} \right\} \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{j\bar{l}k\bar{i}} \right] \]
 </p>
  
 </div>
@@ -848,6 +894,37 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
 
 </div>
 </div>
+<a class="anchor" id="a079bf469ae00de721694f1674c0cae6f"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Operator::DoTensorPandyaTransformation </td>
+          <td>(</td>
+          <td class="paramtype">map&lt; array&lt; int, 2 &gt;, arma::mat &gt; &amp;&#160;</td>
+          <td class="paramname"><em>TwoBody_CC_hp</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">map&lt; array&lt; int, 2 &gt;, arma::mat &gt; &amp;&#160;</td>
+          <td class="paramname"><em>TwoBody_CC_ph</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>The scalar Pandya transformation is defined as </p>
+<p class="formulaDsp">
+\[ \bar{X}^{J}_{i\bar{j}k\bar{l}} = - \sum_{J&#39;} (2J&#39;+1) \left\{ \begin{array}{lll} j_i &amp; j_j &amp; J \\ j_k &amp; j_l &amp; J&#39; \\ \end{array} \right\} X^{J}_{ilkj} \]
+</p>
+<p> where the overbar indicates time-reversed orbits. This function is designed for use with <a class="el" href="classOperator.html#a030805d35049c5cd62eaa84fe42e59e9">comm222_phss()</a> and so it takes in two arrays of matrices, one for hp terms and one for ph terms. </p>
+
+</div>
+</div>
 <a class="anchor" id="acb9d7959232a636191b91f6bf5b7b0c8"></a>
 <div class="memitem">
 <div class="memproto">
@@ -878,7 +955,7 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon May 11 2015 13:00:34 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 16 2015 12:05:47 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

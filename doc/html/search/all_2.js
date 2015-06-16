@@ -13,6 +13,7 @@ var searchData=
   ['comm220ss',['comm220ss',['../classOperator.html#ac924a2af30154c83d6b821707689caa5',1,'Operator']]],
   ['comm221ss',['comm221ss',['../classOperator.html#a423dc256b5780dbee20ac81c9a655335',1,'Operator']]],
   ['comm222_5fphss',['comm222_phss',['../classOperator.html#a030805d35049c5cd62eaa84fe42e59e9',1,'Operator']]],
+  ['comm222_5fphst',['comm222_phst',['../classOperator.html#a0f3ee31f13fff9cb88e0e107e2acdf8a',1,'Operator']]],
   ['comm222_5fpp_5fhh_5f221ss',['comm222_pp_hh_221ss',['../classOperator.html#acb2df128030bcad71f2b3fd975ea7988',1,'Operator']]],
   ['comm222_5fpp_5fhhss',['comm222_pp_hhss',['../classOperator.html#ad70b2fe8c17a836aa8ea8c28ad445fd0',1,'Operator']]],
   ['commutator',['Commutator',['../classOperator.html#a9d78ca5fd265cf4ccc6cda81d35cb086',1,'Operator']]]
