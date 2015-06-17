@@ -1153,7 +1153,7 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
            double tbme = it.second(ibra,iket);
            if ( abs(tbme) > 1e-7 )
            {
-             cout << setw(4) << chbra << " " << setw(4) << chket << "   "
+             opfile << setw(4) << chbra << " " << setw(4) << chket << "   "
                   << setw(4) << ibra  << " " << setw(4) << iket  << "   "
                   << setw(10) << setprecision(6) << tbme << endl;
            }
