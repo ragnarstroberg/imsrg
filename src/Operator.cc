@@ -1276,8 +1276,8 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
 
          // loop over cross-coupled kets |bc> in this channel
          // we go to 2*nKets to include |bc> and |cb>
-//         for (int iket_cc=0; iket_cc<nKets_cc; ++iket_cc)
-         for (int iket_cc=0; iket_cc<2*nKets_cc; ++iket_cc)
+//         for (int iket_cc=0; iket_cc<2*nKets_cc; ++iket_cc)
+         for (int iket_cc=0; iket_cc<nKets_cc; ++iket_cc)
          {
             Ket & ket_cc = tbc_cc.GetKet(iket_cc%nKets_cc);
             int c = iket_cc < nKets_cc ? ket_cc.p : ket_cc.q;
@@ -1299,7 +1299,7 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
                sm -= (2*J_std+1) * sixj * tbme ;
             }
             TwoBody_CC_hp[ch_cc](ibra,iket_cc) = sm;
-//            TwoBody_CC_ph[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(ja+jb+jc+jd) * sm;
+            TwoBody_CC_ph[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(ja+jb+jc+jd) * sm;
 
 
             // Exchange (a <-> b) to account for the (n_a - n_b) term
@@ -1315,7 +1315,7 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
                sm -= (2*J_std+1) * sixj * tbme ;
             }
             TwoBody_CC_ph[ch_cc](ibra,iket_cc) = sm;
-//            TwoBody_CC_hp[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(ja+jb+jc+jd) * sm;
+            TwoBody_CC_hp[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(ja+jb+jc+jd) * sm;
 
          }
       }
@@ -1338,7 +1338,6 @@ void Operator::AddInversePandyaTransformation(vector<arma::mat>& Zbar)
       int J = tbc.J;
       int nKets = tbc.GetNumberKets();
 
-//      opout[ch] = arma::mat(nKets,nKets,arma::fill::zeros);
       for (int ibra=0; ibra<nKets; ++ibra)
       {
          Ket & bra = tbc.GetKet(ibra);
