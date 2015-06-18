@@ -128,7 +128,7 @@ double TwoBodyME::GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) co
    return phase * GetMatrix(ch_bra,ch_ket)(bra_ind, ket_ind);
 }
 
-/// This returns the matrix element times a factor \f$ \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \f$
+/// This returns the normalized matrix element 
 double TwoBodyME::GetTBME_norm(int ch_bra, int ch_ket, int a, int b, int c, int d) const
 {
    TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
@@ -450,7 +450,7 @@ double TwoBodyME::Get_iso_TBME_from_pn(int j, int T, int tz, int a, int b, int c
 
 
 /// Returns an unnormalized monopole-like (angle-averaged) term
-/// \f[ \bar{V}_{ijkl} = \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \sum_{J}(2J+1) V_{ijkl}^J \f]
+/// \f[ \bar{V}_{ijkl} = \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \frac{\sum_{J}(2J+1) V_{ijkl}^J}{(2j_i+1)(2j_j+1)} \f]
 ///
 double TwoBodyME::GetTBMEmonopole(int a, int b, int c, int d) const
 {

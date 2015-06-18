@@ -147,6 +147,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("GetOccupationsHF", imsrg_util::GetOccupationsHF);
    def("GetOccupations",   imsrg_util::GetOccupations);
    def("GetDensity",       imsrg_util::GetDensity);
+   def("CommutatorTest",   imsrg_util::CommutatorTest);
 
 
 }

@@ -843,5 +843,57 @@ Operator E0Op(ModelSpace& modelspace)
   
   }
 
-}
+
+  void CommutatorTest(Operator& X, Operator& Y)
+  {
+    Operator Zscalar(X);
+    if ( (X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()) ) Zscalar.SetAntiHermitian();
+    if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Zscalar.SetHermitian();
+    Zscalar.Erase();
+    Operator Ztensor(Zscalar);
+    X.comm111ss(Y,Zscalar);
+    X.comm111st(Y,Ztensor);
+    cout << "comm111 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm111 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+    Zscalar.Erase();
+    Ztensor.Erase();
+    X.comm121ss(Y,Zscalar);
+    X.comm121st(Y,Ztensor);
+    cout << "comm121 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm121 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+    Zscalar.Erase();
+    Ztensor.Erase();
+    X.comm122ss(Y,Zscalar);
+    X.comm122st(Y,Ztensor);
+    cout << "comm122 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm122 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+    Zscalar.Erase();
+    Ztensor.Erase();
+    X.comm222_pp_hh_221ss(Y,Zscalar);
+    X.comm222_pp_hh_221st(Y,Ztensor);
+    Zscalar.Symmetrize();
+    cout << "comm222_pp_hh_221 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm222_pp_hh_221 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+    Zscalar.Erase();
+    Ztensor.Erase();
+    X.comm222_phss(Y,Zscalar);
+    X.comm222_phst(Y,Ztensor);
+    Zscalar.Symmetrize();
+    cout << "comm222_ph norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm222_ph diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+
+
+  }
+
+}// namespace imsrg_util
 

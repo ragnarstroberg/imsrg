@@ -35,6 +35,9 @@ namespace imsrg_util
  vector<double> GetOccupationsHF(HartreeFock& hf);
  vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);
  vector<double> GetDensity(vector<double>& occ, vector<double>& R, vector<int>& orbits, ModelSpace& modelspace);
+
+ void CommutatorTest(Operator& X, Operator& Y);
+
 }
 
 #endif
