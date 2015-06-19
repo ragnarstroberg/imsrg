@@ -324,10 +324,8 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
    vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t'};
    vector<char> pn_list = { 'p', 'n' };
 
-   cout << "Generating orbits, etc." << endl;
    norbits = (Nmax+1)*(Nmax+2);
    Orbits.resize(norbits);
-   cout << "Start loop over N" << endl;
    for (int N=0; N<=Nmax; ++N)
    {
      for (int l=N; l>=0; l-=2)
@@ -354,16 +352,12 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
                io=0;
                inside_list.erase(it_inside);
             }
-//            cout << "Adding orbit with " << n << " " << l << " " << j2 << " " << tz << " " << ph << " " << io << endl;
             AddOrbit(n,l,j2,tz,ph,io);
-//            cout << "Done adding orbit " << endl;
          }
        }
      }
    }
-   cout << "Setting up kets" << endl;
    SetupKets();
-   cout << "Done with Init()" << endl;
 }
 
 
@@ -575,7 +569,6 @@ void ModelSpace::SetupKets()
 
    }
 
-   cout << "Set up TwoBodyChannels" << endl;
    SortedTwoBodyChannels.resize(nTwoBodyChannels);
    SortedTwoBodyChannels_CC.resize(nTwoBodyChannels);
    for (int ch=0;ch<nTwoBodyChannels;++ch)

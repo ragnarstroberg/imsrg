@@ -1271,11 +1271,9 @@ void Operator::comm222_pp_hh_221ss( Operator& Y, Operator& Z )
 /// This function is designed for use with comm222_phss() and so it takes in
 /// two arrays of matrices, one for hp terms and one for ph terms.
 //void Operator::DoPandyaTransformation(TwoBodyME& TwoBody_CC_hp, TwoBodyME& TwoBody_CC_ph)
-//void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<arma::mat>& TwoBody_CC_ph)
 void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<arma::mat>& TwoBody_CC_ph)
 {
    // loop over cross-coupled channels
-//   for (int ch_cc=0; ch_cc<nChannels; ++ch_cc)
    int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
    int herm = IsHermitian() ? 1 : -1;
 //   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())

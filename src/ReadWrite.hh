@@ -8,6 +8,8 @@
 #include "Operator.hh"
 
 using namespace std;
+
+
 class ReadWrite
 {
  public:
@@ -19,9 +21,11 @@ class ReadWrite
    void ReadBareTBME_Jason( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil( string filename, Operator& Hbare);
    void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int E1max, int E2max, int lmax);
-   void ReadBareTBME_Darmstadt_from_stream( istream & infile, Operator& Hbare, int E1max, int E2max, int lmax);
+   template<class T> void ReadBareTBME_Darmstadt_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int lmax);
+//   void ReadBareTBME_Darmstadt_from_stream( istream & infile, Operator& Hbare, int E1max, int E2max, int lmax);
    void Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max);
-   void Read_Darmstadt_3body_from_stream( istream & infile, Operator& Hbare, int E1max, int E2max, int E3max);
+   template<class T>void Read_Darmstadt_3body_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int E3max);
+//   void Read_Darmstadt_3body_from_stream( istream & infile, Operator& Hbare, int E1max, int E2max, int E3max);
    void WriteOneBody(Operator&, string);
    void WriteTwoBody(Operator&, string);
    void WriteValenceOneBody(Operator&, string);
@@ -41,6 +45,18 @@ class ReadWrite
 
 };
 
+// Wrapper class so I can treat a vector of floats like a stream, using >>
+class VectorStream 
+{
+ public:
+  VectorStream(vector<float>& v) : vec(v), i(0) {};
+  VectorStream& operator>>(float& x) { x = vec[i++]; return (VectorStream&)(*this);}
+  bool good(){ return i<vec.size(); };
+  void getline(char[], int) {}; // Don't do nuthin'.
+ private:
+  vector<float>& vec;
+  long long unsigned int i;
+};
 
 #endif
 

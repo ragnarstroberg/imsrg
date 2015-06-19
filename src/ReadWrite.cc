@@ -12,10 +12,10 @@
 #include <boost/iostreams/filter/gzip.hpp>
 
 #define LINESIZE 496
+#define HEADERSIZE 500
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
 #endif
-
 
 using namespace std;
 
@@ -341,6 +341,27 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
     zipstream.push(infile);
     ReadBareTBME_Darmstadt_from_stream(zipstream, Hbare,  emax, Emax, lmax);
   }
+  else if (filename.substr( filename.find_last_of(".")) == ".bin")
+  {
+    ifstream infile(filename, ios::binary);    
+    if ( !infile.good() )
+    {
+      cerr << "problem opening " << filename << ". Exiting." << endl;
+      return ;
+    }
+    
+    int n_elem;
+    char header[HEADERSIZE];
+    infile.read((char*)&n_elem,sizeof(int));
+    infile.read(header,HEADERSIZE);
+    
+    vector<float> v(n_elem);
+    infile.read((char*)&v[0], n_elem*sizeof(float));
+    infile.close();
+    VectorStream vectorstream(v);
+    cout << "n_elem = " << n_elem << endl;
+    ReadBareTBME_Darmstadt_from_stream(vectorstream, Hbare,  emax, Emax, lmax);
+  }
   else
   {
     ifstream infile(filename);
@@ -361,6 +382,27 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
     zipstream.push(infile);
     Read_Darmstadt_3body_from_stream(zipstream, Hbare,  E1max, E2max, E3max);
   }
+  else if (filename.substr( filename.find_last_of(".")) == ".bin")
+  {
+    ifstream infile(filename, ios::binary);    
+    if ( !infile.good() )
+    {
+      cerr << "problem opening " << filename << ". Exiting." << endl;
+      return ;
+    }
+    
+    int n_elem;
+    char header[HEADERSIZE];
+    infile.read((char*)&n_elem,sizeof(int));
+    infile.read(header,HEADERSIZE);
+    
+    vector<float> v(n_elem);
+    infile.read((char*)&v[0], n_elem*sizeof(float));
+    infile.close();
+    VectorStream vectorstream(v);
+    cout << "n_elem = " << n_elem <<  endl;
+    Read_Darmstadt_3body_from_stream(vectorstream, Hbare,  E1max, E2max, E3max);
+  }
   else
   {
     ifstream infile(filename);
@@ -379,7 +421,9 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
 /// If Emax is not specified, it should be 2 \f$\times\f$ emax. If lmax is not specified, it should be emax.
 /// Also note that the matrix elements are given in un-normalized form, i.e. they are just
 /// the M scheme matrix elements multiplied by Clebsch-Gordan coefficients for JT coupling.
-void ReadWrite::ReadBareTBME_Darmstadt_from_stream( istream & infile, Operator& Hbare, int emax, int Emax, int lmax)
+//void ReadWrite::ReadBareTBME_Darmstadt_from_stream( istream& infile, Operator& Hbare, int emax, int Emax, int lmax)
+template<class T>
+void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, int emax, int Emax, int lmax)
 {
   if ( !infile.good() )
   {
@@ -412,7 +456,8 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( istream & infile, Operator& 
   }
   int nljmax = orbits_remap.size()-1;
 
-  double tbme_pp,tbme_nn,tbme_10,tbme_00;
+//  double tbme_pp,tbme_nn,tbme_10,tbme_00;
+  float tbme_pp,tbme_nn,tbme_10,tbme_00;
   // skip the first line
   char line[LINESIZE];
   infile.getline(line,LINESIZE);
@@ -484,7 +529,9 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( istream & infile, Operator& 
 
 
 
-void ReadWrite::Read_Darmstadt_3body_from_stream( istream& infile, Operator& Hbare, int E1max, int E2max, int E3max)
+//void ReadWrite::Read_Darmstadt_3body_from_stream( istream& infile, Operator& Hbare, int E1max, int E2max, int E3max)
+template <class T>
+void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, int E1max, int E2max, int E3max)
 {
   if ( !infile.good() )
   {
@@ -636,7 +683,8 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( istream& infile, Operator& Hba
        
                    for(int twoT = twoTMin; twoT <= twoTMax; twoT += 2)
                    {
-                    double V;
+//                    double V;
+                    float V;
                     infile >> V;
                     ++nread;
                     bool autozero = false;
@@ -686,6 +734,8 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( istream& infile, Operator& Hba
        
               }//Jab
 
+
+// I don't think this stuff is needed...
               int aa=a;
               int bb=b;
               int cc=c;
