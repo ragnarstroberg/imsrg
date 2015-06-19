@@ -211,10 +211,11 @@ Operator Operator::operator-() const
 
 void Operator::PrintTimes()
 {
-   cout << "==== TIMES ====" << endl;
+   cout << "====================== TIMES =======================" << endl;
+   cout.setf(ios::fixed);
    for ( auto it : timer )
    {
-     cout << it.first << ":  " << it.second  << endl;
+     cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(5) << std::right << it.second  << endl;
    }
 }
 

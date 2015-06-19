@@ -374,6 +374,7 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
 void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max)
 {
 
+  double start_time = omp_get_wtime();
   if ( filename.substr( filename.find_last_of(".")) == ".gz")
   {
     ifstream infile(filename, ios_base::in | ios_base::binary);
@@ -408,6 +409,8 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
     ifstream infile(filename);
     Read_Darmstadt_3body_from_stream(infile, Hbare,  E1max, E2max, E3max);
   }
+
+  Hbare.timer["Read_3body_file"] += omp_get_wtime() - start_time;
 }
 
 
@@ -769,6 +772,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   }
   cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << endl;
   cout << "Stored " << nkept << " floating point numbers (" << nkept * sizeof(float)/1024./1024./1024. << " GB)" << endl;
+
 }
 
 
