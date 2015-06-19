@@ -535,15 +535,17 @@ double TwoBodyME::Norm() const
 
 void TwoBodyME::Symmetrize()
 {
+  if (rank_J>0) return;
   for (auto& itmat : MatEl )
   {
-    arma::mat& matrix = itmat.second;
-    matrix = arma::symmatu(matrix);
+      arma::mat& matrix = itmat.second;
+      matrix = arma::symmatu(matrix);
   }
 }
 
 void TwoBodyME::AntiSymmetrize()
 {
+  if (rank_J>0) return;
   for (auto& itmat : MatEl )
   {
     int ch_bra = itmat.first[0];

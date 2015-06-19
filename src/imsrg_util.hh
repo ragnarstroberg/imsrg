@@ -37,6 +37,8 @@ namespace imsrg_util
  vector<double> GetDensity(vector<double>& occ, vector<double>& R, vector<int>& orbits, ModelSpace& modelspace);
 
  void CommutatorTest(Operator& X, Operator& Y);
+ void Reduce(Operator&);
+ void UnReduce(Operator&);
 
 }
 
