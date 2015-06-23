@@ -11,13 +11,19 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
+#include "H5Cpp.h"
+
 #define LINESIZE 496
 #define HEADERSIZE 500
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
 #endif
+#ifndef HBARC
+   #define HBARC 197.3269718 // hc in MeV * fm
+#endif
 
 using namespace std;
+using namespace H5;
 
 ReadWrite::~ReadWrite()
 {
@@ -375,7 +381,8 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
 {
 
   double start_time = omp_get_wtime();
-  if ( filename.substr( filename.find_last_of(".")) == ".gz")
+  string extension = filename.substr( filename.find_last_of("."));
+  if ( extension == ".gz")
   {
     ifstream infile(filename, ios_base::in | ios_base::binary);
     boost::iostreams::filtering_istream zipstream;
@@ -383,7 +390,7 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
     zipstream.push(infile);
     Read_Darmstadt_3body_from_stream(zipstream, Hbare,  E1max, E2max, E3max);
   }
-  else if (filename.substr( filename.find_last_of(".")) == ".bin")
+  else if (extension == ".bin")
   {
     ifstream infile(filename, ios::binary);    
     if ( !infile.good() )
@@ -404,8 +411,18 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
     cout << "n_elem = " << n_elem <<  endl;
     Read_Darmstadt_3body_from_stream(vectorstream, Hbare,  E1max, E2max, E3max);
   }
+  else if (extension == ".h5")
+  {
+    Read3bodyHDF5( filename, Hbare );
+  }
+  else if (extension == ".me3j")
+  {
+    ifstream infile(filename);
+    Read_Darmstadt_3body_from_stream(infile, Hbare,  E1max, E2max, E3max);
+  }
   else
   {
+    cout << "assuming " << filename << " is of me3j format ... " << endl;
     ifstream infile(filename);
     Read_Darmstadt_3body_from_stream(infile, Hbare,  E1max, E2max, E3max);
   }
@@ -779,6 +796,237 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
 
 
 
+void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis)
+{
+  H5File file(filename, H5F_ACC_RDONLY);
+  DataSet basis = file.openDataSet("alphas");
+  DataSpace basis_dspace = basis.getSpace();
+
+  int nDim = basis_dspace.getSimpleExtentNdims();
+  hsize_t iDim[6];
+  int status = basis_dspace.getSimpleExtentDims(iDim,NULL);
+  if (status != nDim)
+  {
+     cerr << "Error: Failed to read dataset dimensions!" << endl;
+     return;
+  }
+  
+  int alpha_max = iDim[0]; // alpha_max is the largest dimension
+  for (int i=0;i<nDim;++i)
+    alpha_max = max(alpha_max, int(iDim[i]));
+
+  int** dbuf = new int*[iDim[0]];
+  dbuf[0] = new int[iDim[0]*iDim[1]];
+  for (hsize_t i=1;i<iDim[0];++i)
+  {
+    dbuf[i] = dbuf[i-1] + iDim[1];
+  }
+  basis.read(&dbuf[0][0], PredType::NATIVE_INT);
+
+  Basis.resize(alpha_max);
+
+  for( int alpha=1; alpha<alpha_max; ++alpha)
+  {
+    int alphap = dbuf[alpha-1][0];
+    int n1     = dbuf[alpha-1][1];
+    int l1     = dbuf[alpha-1][2];
+    int twoj1  = dbuf[alpha-1][3];
+    int n2     = dbuf[alpha-1][4];
+    int l2     = dbuf[alpha-1][5];
+    int twoj2  = dbuf[alpha-1][6];
+    int n3     = dbuf[alpha-1][7];
+    int l3     = dbuf[alpha-1][8];
+    int twoj3  = dbuf[alpha-1][9];
+    int J12    = dbuf[alpha-1][10];
+    int twoJ   = dbuf[alpha-1][11];
+
+    int o1 = modelspace->GetOrbitIndex(n1,l1,twoj1,-1);
+    int o2 = modelspace->GetOrbitIndex(n2,l2,twoj2,-1);
+    int o3 = modelspace->GetOrbitIndex(n3,l3,twoj3,-1);
+    if (alpha != alphap)
+    {
+      cerr << "Error. alpha != alphap " << endl;
+      return;
+    }
+
+    Basis[alpha] = {o1,o2,o3,J12,twoJ};
+    
+  }
+
+  delete dbuf[0];
+  delete dbuf;
+
+}
+
+
+void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
+{
+
+  const int SLABSIZE = 10000000;
+
+  ModelSpace* modelspace = op.GetModelSpace();
+  vector<array<int,5>> Basis;
+  GetHDF5Basis(modelspace, filename, Basis);
+
+
+  H5File file(filename, H5F_ACC_RDONLY);
+  DataSet label = file.openDataSet("vtnf_labels");
+  DataSpace label_dspace = label.getSpace();
+  DataSet value = file.openDataSet("vtnf");
+  DataSpace value_dspace = value.getSpace();
+
+  int label_nDim = label_dspace.getSimpleExtentNdims();
+  if (label_nDim != 2)
+  {
+    cerr << "Error. Expected label_nDim==2, but got << label_nDim." << endl;
+    return;
+  }
+  hsize_t label_maxDim[2];
+  int label_status = label_dspace.getSimpleExtentDims(label_maxDim,NULL);
+  if (label_status != label_nDim)
+  {
+    cerr << "Error. failed to read dataset dimensions for label." << endl;
+    return;
+  }
+  
+  hsize_t label_curDim[2];
+  label_curDim[0] = min(SLABSIZE, int(label_maxDim[0]));
+  label_curDim[1] = 7 ;
+  
+  DataSpace label_buf_dspace(2,label_curDim);
+
+  int **label_buf = new int*[label_curDim[0]];
+  label_buf[0] = new int[label_curDim[0] * label_curDim[1]];
+  for (hsize_t i=1; i<label_curDim[0]; ++i)
+  {
+    label_buf[i] = label_buf[i-1] + label_curDim[1];  
+  }
+  
+  int value_nDim = value_dspace.getSimpleExtentNdims();
+  if (value_nDim != 2)
+  {
+    cerr << "Error. Expected value_nDim==2, but got << value_nDim." << endl;
+    return;
+  }
+  hsize_t value_maxDim[2];
+  int value_status = value_dspace.getSimpleExtentDims(value_maxDim,NULL);
+  if (value_status != value_nDim)
+  {
+    cerr << "Error. failed to read dataset dimensions for value." << endl;
+    return;
+  }
+  
+  hsize_t value_curDim[2];
+  value_curDim[0] = min(SLABSIZE, int(value_maxDim[0]));
+  value_curDim[1] = 1 ;
+
+  DataSpace value_buf_dspace(1,value_curDim);
+  
+  double *value_buf = new double[value_curDim[0]];
+
+  int nSlabs = (int)((double)value_maxDim[0]/((double)SLABSIZE)) + 1;
+
+  hsize_t stride[2] = {1,1};
+  hsize_t count[2] = {1,1};
+
+  for ( int n=0; n<nSlabs; ++n)
+  {
+    hsize_t start[2] = { n*value_curDim[0], 0};
+    hsize_t label_block[2];
+    hsize_t value_block[2];
+    if (n==nSlabs-1)
+    {
+      label_block[0] = label_maxDim[0]-(nSlabs-1)*SLABSIZE;
+      label_block[1] = label_maxDim[1];
+      value_block[0] = value_maxDim[0]-(nSlabs-1)*SLABSIZE;
+      value_block[1] = value_maxDim[1];
+      label_buf_dspace.close();
+      value_buf_dspace.close();
+      label_buf_dspace = DataSpace(2,label_block);
+      value_buf_dspace = DataSpace(2,value_block);
+      
+
+    }
+    else
+    {
+      label_block[0] = label_curDim[0];
+      label_block[1] = label_curDim[1];
+      value_block[0] = value_curDim[0];
+      value_block[1] = value_curDim[1];
+    }
+
+    label_dspace.selectHyperslab( H5S_SELECT_SET, count, start, stride, label_block);
+    value_dspace.selectHyperslab( H5S_SELECT_SET, count, start, stride, value_block);
+
+    label.read( &label_buf[0][0], PredType::NATIVE_INT, label_buf_dspace, label_dspace );
+
+    value.read(&value_buf[0], PredType::NATIVE_DOUBLE, value_buf_dspace, value_dspace );
+
+
+    for (hsize_t i=0; i<value_block[0]; ++i)
+    {
+       int  alpha  = label_buf[i][0];
+       int  T12    = label_buf[i][1]/2;
+       int  alphap = label_buf[i][2];
+       int  TT12   = label_buf[i][3]/2;
+       int  twoT   = label_buf[i][4];
+       int  twoJ   = label_buf[i][5];
+       int  Pi     = label_buf[i][6];
+
+       if (alpha<alphap) continue;
+
+       double me   = value_buf[i];
+       me *= HBARC*0.5;
+
+
+       int a    = Basis[alpha][0];
+       int b    = Basis[alpha][1];
+       int c    = Basis[alpha][2];
+       int J12  = Basis[alpha][3];
+       int J2   = Basis[alpha][4];
+
+       int d    = Basis[alphap][0];
+       int e    = Basis[alphap][1];
+       int f    = Basis[alphap][2];
+       int JJ12 = Basis[alphap][3];
+       int J2p  = Basis[alphap][4];
+
+       int norb = modelspace->GetNumberOrbits();
+       if (a>=norb or b>=norb or c>=norb or d>=norb or e>=norb or f>=norb) continue;
+
+       Orbit& oa = modelspace->GetOrbit(a);
+       Orbit& ob = modelspace->GetOrbit(b);
+       Orbit& oc = modelspace->GetOrbit(c);
+       Orbit& od = modelspace->GetOrbit(d);
+       Orbit& oe = modelspace->GetOrbit(e);
+       Orbit& of = modelspace->GetOrbit(f);
+       int parity_abc = ( oa.l+ob.l+oc.l )%2;
+       int parity_def = ( od.l+oe.l+of.l )%2;
+       if (parity_abc != Pi or parity_def != Pi)
+       {
+         cerr << "Error. Mismatching parity !  < "  << parity_abc << " " << parity_def << " " << Pi << "    " << endl;
+       }
+       if (J2 != twoJ or J2p != twoJ)
+       {
+         cerr << "Error. Mismatching total J! " << endl;
+       }
+
+       op.ThreeBody.SetME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f, me);
+       
+       
+
+    }
+
+
+
+  }
+
+
+}
+
+
+
+
 
 void ReadWrite::WriteOneBody(Operator& op, string filename)
 {
@@ -1024,6 +1272,7 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
 
 
 
+// This doesn't work yet!
 void ReadWrite::WriteAntoine_int(Operator& op, string filename)
 {
    ofstream intfile;

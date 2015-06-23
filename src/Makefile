@@ -2,7 +2,7 @@ CC = g++
 
 INCLUDE = -I./armadillo
 #LIBS = -lblas -llapack -lgsl
-LIBS = -lopenblas -llapack -lgsl -lz
+LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp
 #FLAGS =  -O3 -std=c++11  -fPIC -fopenmp # -DNO_ODE=1
 #FLAGS =  -std=c++11 -fopenmp -fPIC -g # -DNO_ODE=1
 FLAGS =  -O2 -march=native -std=c++11 -fopenmp -fPIC #-DNO_ODE=1 
