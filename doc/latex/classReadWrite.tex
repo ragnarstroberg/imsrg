@@ -10,9 +10,9 @@
 \hypertarget{classReadWrite_adbf1ad5fe47c97c87994cfc28df5c740}{\hyperlink{classModelSpace}{Model\-Space} {\bfseries Read\-Model\-Space} (string filename)}\label{classReadWrite_adbf1ad5fe47c97c87994cfc28df5c740}
 
 \item 
-\hypertarget{classReadWrite_a7ebe7ea4d8a322b23b144658da562277}{void {\bfseries Read\-Bare\-T\-B\-M\-E} (string filename, \hyperlink{classOperator}{Operator} \&Hbare)}\label{classReadWrite_a7ebe7ea4d8a322b23b144658da562277}
+\hypertarget{classReadWrite_aa8d42bb8082881c30331a44f01118381}{void \hyperlink{classReadWrite_aa8d42bb8082881c30331a44f01118381}{Read\-T\-B\-M\-E\-\_\-\-Oslo} (string filename, \hyperlink{classOperator}{Operator} \&Hbare)}\label{classReadWrite_aa8d42bb8082881c30331a44f01118381}
 
-\item 
+\begin{DoxyCompactList}\small\item\em Read two-\/body matrix elements from an Oslo-\/formatted file. \end{DoxyCompactList}\item 
 \hypertarget{classReadWrite_ae5271000cceab5fcebab7e9d2faf9f1f}{void {\bfseries Read\-Bare\-T\-B\-M\-E\-\_\-\-Jason} (string filename, \hyperlink{classOperator}{Operator} \&Hbare)}\label{classReadWrite_ae5271000cceab5fcebab7e9d2faf9f1f}
 
 \item 
@@ -20,42 +20,31 @@ void \hyperlink{classReadWrite_ab66f5d7e2e352e973597915c08cad45d}{Read\-Bare\-T\
 \item 
 \hypertarget{classReadWrite_a7d1ea6782d893eab0217bb965fba990e}{void \hyperlink{classReadWrite_a7d1ea6782d893eab0217bb965fba990e}{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt} (string filename, \hyperlink{classOperator}{Operator} \&Hbare, int E1max, int E2max, int lmax)}\label{classReadWrite_a7d1ea6782d893eab0217bb965fba990e}
 
-\begin{DoxyCompactList}\small\item\em Decide if the file is gzipped or ascii, create a stream, then call \hyperlink{classReadWrite_abbb3ca736743150f3c03f73905e7c5af}{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream()}. \end{DoxyCompactList}\item 
-void \hyperlink{classReadWrite_abbb3ca736743150f3c03f73905e7c5af}{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream} (istream \&infile, \hyperlink{classOperator}{Operator} \&Hbare, int E1max, int E2max, int lmax)
+\begin{DoxyCompactList}\small\item\em Decide if the file is gzipped or ascii, create a stream, then call \hyperlink{classReadWrite_a44acf6835321a8bee6a795523728da2e}{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream()}. \end{DoxyCompactList}\item 
+{\footnotesize template$<$class T $>$ }\\void \hyperlink{classReadWrite_a44acf6835321a8bee6a795523728da2e}{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream} (T \&infile, \hyperlink{classOperator}{Operator} \&Hbare, int E1max, int E2max, int lmax)
 \item 
-\hypertarget{classReadWrite_a84c0cbaf2be415eadffb560ea0bb9785}{void \hyperlink{classReadWrite_a84c0cbaf2be415eadffb560ea0bb9785}{Read\-\_\-\-Darmstadt\-\_\-3body} (string filename, \hyperlink{classOperator}{Operator} \&Hbare, int E1max, int E2max, int E3max)}\label{classReadWrite_a84c0cbaf2be415eadffb560ea0bb9785}
-
-\begin{DoxyCompactList}\small\item\em Decide if the file is gzipped or ascii, create a stream, then call Read\-\_\-\-Darmstadt\-\_\-3body\-\_\-from\-\_\-stream(). \end{DoxyCompactList}\item 
-\hypertarget{classReadWrite_a3c3b5a1a95f9ada71c259fb4d875af4d}{void {\bfseries Read\-\_\-\-Darmstadt\-\_\-3body\-\_\-from\-\_\-stream} (istream \&infile, \hyperlink{classOperator}{Operator} \&Hbare, int E1max, int E2max, int E3max)}\label{classReadWrite_a3c3b5a1a95f9ada71c259fb4d875af4d}
-
+void \hyperlink{classReadWrite_a84c0cbaf2be415eadffb560ea0bb9785}{Read\-\_\-\-Darmstadt\-\_\-3body} (string filename, \hyperlink{classOperator}{Operator} \&Hbare, int E1max, int E2max, int E3max)
 \item 
-\hypertarget{classReadWrite_a257e2a926e252a2952b330b3655ddd3d}{void {\bfseries Write\-One\-Body} (\hyperlink{classOperator}{Operator} \&, string)}\label{classReadWrite_a257e2a926e252a2952b330b3655ddd3d}
-
+{\footnotesize template$<$class T $>$ }\\void \hyperlink{classReadWrite_af229332b05276f686966fdaaa98a81fd}{Read\-\_\-\-Darmstadt\-\_\-3body\-\_\-from\-\_\-stream} (T \&infile, \hyperlink{classOperator}{Operator} \&Hbare, int E1max, int E2max, int E3max)
 \item 
-\hypertarget{classReadWrite_a7bae483d2d587b66b3bf5ed734139cde}{void {\bfseries Write\-Two\-Body} (\hyperlink{classOperator}{Operator} \&, string)}\label{classReadWrite_a7bae483d2d587b66b3bf5ed734139cde}
-
+void \hyperlink{classReadWrite_ad03f489c69c98d3ff1d33fbe9801c3d1}{Get\-H\-D\-F5\-Basis} (\hyperlink{classModelSpace}{Model\-Space} $\ast$modelspace, string filename, vector$<$ array$<$ int, 5 $>$$>$ \&Basis)
 \item 
-\hypertarget{classReadWrite_a75dd4196074d74e1e7ea0e0b10aafc85}{void {\bfseries Write\-Valence\-One\-Body} (\hyperlink{classOperator}{Operator} \&, string)}\label{classReadWrite_a75dd4196074d74e1e7ea0e0b10aafc85}
-
+void \hyperlink{classReadWrite_a52656073ac0fa73c78dbd67c0f0e81e3}{Read3body\-H\-D\-F5} (string filename, \hyperlink{classOperator}{Operator} \&op)
 \item 
-\hypertarget{classReadWrite_aeb9256b7a68dcb45fac250b45af07548}{void {\bfseries Write\-Valence\-Two\-Body} (\hyperlink{classOperator}{Operator} \&, string)}\label{classReadWrite_aeb9256b7a68dcb45fac250b45af07548}
+\hypertarget{classReadWrite_a8a7dc85b22c8f468d153d3fde9f39394}{void \hyperlink{classReadWrite_a8a7dc85b22c8f468d153d3fde9f39394}{Write\-Nu\-Shell\-X\-\_\-sps} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_a8a7dc85b22c8f468d153d3fde9f39394}
 
+\begin{DoxyCompactList}\small\item\em Write the valence model space to a Nu\-Shell\-X $\ast$.sp file. \end{DoxyCompactList}\item 
+void \hyperlink{classReadWrite_a2028159ab7f8c227613834b39794e157}{Write\-Nu\-Shell\-X\-\_\-int} (\hyperlink{classOperator}{Operator} \&op, string filename)
 \item 
-\hypertarget{classReadWrite_a8a7dc85b22c8f468d153d3fde9f39394}{void {\bfseries Write\-Nu\-Shell\-X\-\_\-sps} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_a8a7dc85b22c8f468d153d3fde9f39394}
+\hypertarget{classReadWrite_a371194595d9412cbb8f1b432a6526f5a}{void \hyperlink{classReadWrite_a371194595d9412cbb8f1b432a6526f5a}{Write\-Antoine\-\_\-int} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_a371194595d9412cbb8f1b432a6526f5a}
 
-\item 
-\hypertarget{classReadWrite_a2028159ab7f8c227613834b39794e157}{void {\bfseries Write\-Nu\-Shell\-X\-\_\-int} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_a2028159ab7f8c227613834b39794e157}
+\begin{DoxyCompactList}\small\item\em Not yet fully implemented. \end{DoxyCompactList}\item 
+\hypertarget{classReadWrite_a771ed1ac7ca0cc9cb6a209da170dd351}{void \hyperlink{classReadWrite_a771ed1ac7ca0cc9cb6a209da170dd351}{Write\-Operator} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_a771ed1ac7ca0cc9cb6a209da170dd351}
 
-\item 
-\hypertarget{classReadWrite_a371194595d9412cbb8f1b432a6526f5a}{void {\bfseries Write\-Antoine\-\_\-int} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_a371194595d9412cbb8f1b432a6526f5a}
+\begin{DoxyCompactList}\small\item\em Write an operator to a plain-\/text file. \end{DoxyCompactList}\item 
+\hypertarget{classReadWrite_ab924c67864c7af28bcc22a9b87abafb3}{void \hyperlink{classReadWrite_ab924c67864c7af28bcc22a9b87abafb3}{Read\-Operator} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_ab924c67864c7af28bcc22a9b87abafb3}
 
-\item 
-\hypertarget{classReadWrite_a771ed1ac7ca0cc9cb6a209da170dd351}{void {\bfseries Write\-Operator} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_a771ed1ac7ca0cc9cb6a209da170dd351}
-
-\item 
-\hypertarget{classReadWrite_ab924c67864c7af28bcc22a9b87abafb3}{void {\bfseries Read\-Operator} (\hyperlink{classOperator}{Operator} \&op, string filename)}\label{classReadWrite_ab924c67864c7af28bcc22a9b87abafb3}
-
-\item 
+\begin{DoxyCompactList}\small\item\em Read an operator from a plain-\/text file. \end{DoxyCompactList}\item 
 \hypertarget{classReadWrite_a05ec8e21842e94d788bb36c7d11f46b9}{bool {\bfseries In\-Good\-State} ()}\label{classReadWrite_a05ec8e21842e94d788bb36c7d11f46b9}
 
 \item 
@@ -77,17 +66,56 @@ void \hyperlink{classReadWrite_abbb3ca736743150f3c03f73905e7c5af}{Read\-Bare\-T\
 
 
 \subsection{Member Function Documentation}
-\hypertarget{classReadWrite_abbb3ca736743150f3c03f73905e7c5af}{\index{Read\-Write@{Read\-Write}!Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream@{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream}}
-\index{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream@{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream}!ReadWrite@{Read\-Write}}
-\subsubsection[{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream}]{\setlength{\rightskip}{0pt plus 5cm}void Read\-Write\-::\-Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream (
+\hypertarget{classReadWrite_ad03f489c69c98d3ff1d33fbe9801c3d1}{\index{Read\-Write@{Read\-Write}!Get\-H\-D\-F5\-Basis@{Get\-H\-D\-F5\-Basis}}
+\index{Get\-H\-D\-F5\-Basis@{Get\-H\-D\-F5\-Basis}!ReadWrite@{Read\-Write}}
+\subsubsection[{Get\-H\-D\-F5\-Basis}]{\setlength{\rightskip}{0pt plus 5cm}void Read\-Write\-::\-Get\-H\-D\-F5\-Basis (
 \begin{DoxyParamCaption}
-\item[{istream \&}]{infile, }
+\item[{{\bf Model\-Space} $\ast$}]{modelspace, }
+\item[{string}]{filename, }
+\item[{vector$<$ array$<$ int, 5 $>$$>$ \&}]{Basis}
+\end{DoxyParamCaption}
+)}}\label{classReadWrite_ad03f489c69c98d3ff1d33fbe9801c3d1}
+Read three-\/body basis from H\-D\-F5 formatted file. This routine was ported to C++ from a C routine by Heiko Hergert, with as little modification as possible. \hypertarget{classReadWrite_a52656073ac0fa73c78dbd67c0f0e81e3}{\index{Read\-Write@{Read\-Write}!Read3body\-H\-D\-F5@{Read3body\-H\-D\-F5}}
+\index{Read3body\-H\-D\-F5@{Read3body\-H\-D\-F5}!ReadWrite@{Read\-Write}}
+\subsubsection[{Read3body\-H\-D\-F5}]{\setlength{\rightskip}{0pt plus 5cm}void Read\-Write\-::\-Read3body\-H\-D\-F5 (
+\begin{DoxyParamCaption}
+\item[{string}]{filename, }
+\item[{{\bf Operator} \&}]{op}
+\end{DoxyParamCaption}
+)}}\label{classReadWrite_a52656073ac0fa73c78dbd67c0f0e81e3}
+Read three-\/body matrix elements from H\-D\-F5 formatted file. This routine was ported to C++ from a C routine by Heiko Hergert, with as little modification as possible. \hypertarget{classReadWrite_a84c0cbaf2be415eadffb560ea0bb9785}{\index{Read\-Write@{Read\-Write}!Read\-\_\-\-Darmstadt\-\_\-3body@{Read\-\_\-\-Darmstadt\-\_\-3body}}
+\index{Read\-\_\-\-Darmstadt\-\_\-3body@{Read\-\_\-\-Darmstadt\-\_\-3body}!ReadWrite@{Read\-Write}}
+\subsubsection[{Read\-\_\-\-Darmstadt\-\_\-3body}]{\setlength{\rightskip}{0pt plus 5cm}void Read\-Write\-::\-Read\-\_\-\-Darmstadt\-\_\-3body (
+\begin{DoxyParamCaption}
+\item[{string}]{filename, }
+\item[{{\bf Operator} \&}]{Hbare, }
+\item[{int}]{E1max, }
+\item[{int}]{E2max, }
+\item[{int}]{E3max}
+\end{DoxyParamCaption}
+)}}\label{classReadWrite_a84c0cbaf2be415eadffb560ea0bb9785}
+Decide the file format from the extension -- .me3j (Darmstadt group format, human-\/readable), .gz (gzipped me3j, less storage), .bin (me3j converted to binary, faster to read), .h5 (H\-D\-F5 format). Default is to assume .me3j. For the first three, the file is converted to a stream and sent to Read\-Darmstadt\-\_\-3body\-\_\-from\-\_\-stream(). For the H\-D\-F5 format, a separate function is called\-: \hyperlink{classReadWrite_a52656073ac0fa73c78dbd67c0f0e81e3}{Read3body\-H\-D\-F5()}. \hypertarget{classReadWrite_af229332b05276f686966fdaaa98a81fd}{\index{Read\-Write@{Read\-Write}!Read\-\_\-\-Darmstadt\-\_\-3body\-\_\-from\-\_\-stream@{Read\-\_\-\-Darmstadt\-\_\-3body\-\_\-from\-\_\-stream}}
+\index{Read\-\_\-\-Darmstadt\-\_\-3body\-\_\-from\-\_\-stream@{Read\-\_\-\-Darmstadt\-\_\-3body\-\_\-from\-\_\-stream}!ReadWrite@{Read\-Write}}
+\subsubsection[{Read\-\_\-\-Darmstadt\-\_\-3body\-\_\-from\-\_\-stream}]{\setlength{\rightskip}{0pt plus 5cm}template$<$class T $>$ void Read\-Write\-::\-Read\-\_\-\-Darmstadt\-\_\-3body\-\_\-from\-\_\-stream (
+\begin{DoxyParamCaption}
+\item[{T \&}]{infile, }
+\item[{{\bf Operator} \&}]{Hbare, }
+\item[{int}]{E1max, }
+\item[{int}]{E2max, }
+\item[{int}]{E3max}
+\end{DoxyParamCaption}
+)}}\label{classReadWrite_af229332b05276f686966fdaaa98a81fd}
+Read me3j format three-\/body matrix elements. Pass in E1max, E2max, E3max for the file, so that it can be properly interpreted. The modelspace truncation doesn't need to coincide with the file truncation. For example, you could have an emax=10 modelspace and read from an emax=14 file, and the matrix elements with emax$>$10 would be ignored. \hypertarget{classReadWrite_a44acf6835321a8bee6a795523728da2e}{\index{Read\-Write@{Read\-Write}!Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream@{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream}}
+\index{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream@{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream}!ReadWrite@{Read\-Write}}
+\subsubsection[{Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream}]{\setlength{\rightskip}{0pt plus 5cm}template$<$class T $>$ void Read\-Write\-::\-Read\-Bare\-T\-B\-M\-E\-\_\-\-Darmstadt\-\_\-from\-\_\-stream (
+\begin{DoxyParamCaption}
+\item[{T \&}]{infile, }
 \item[{{\bf Operator} \&}]{Hbare, }
 \item[{int}]{emax, }
 \item[{int}]{Emax, }
 \item[{int}]{lmax}
 \end{DoxyParamCaption}
-)}}\label{classReadWrite_abbb3ca736743150f3c03f73905e7c5af}
+)}}\label{classReadWrite_a44acf6835321a8bee6a795523728da2e}
 Read T\-B\-M\-E's from a file formatted by the Darmstadt group. The file contains just the matrix elements, and the corresponding quantum numbers are inferred. This means that the model space of the file must also be specified. emax refers to the maximum single-\/particle oscillator shell. Emax refers to the maximum of the sum of two single particles. lmax refers to the maximum single-\/particle $ \ell $. If Emax is not specified, it should be 2 $\times$ emax. If lmax is not specified, it should be emax. Also note that the matrix elements are given in un-\/normalized form, i.\-e. they are just the M scheme matrix elements multiplied by Clebsch-\/\-Gordan coefficients for J\-T coupling. \hypertarget{classReadWrite_ab66f5d7e2e352e973597915c08cad45d}{\index{Read\-Write@{Read\-Write}!Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil@{Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil}}
 \index{Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil@{Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil}!ReadWrite@{Read\-Write}}
 \subsubsection[{Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil}]{\setlength{\rightskip}{0pt plus 5cm}void Read\-Write\-::\-Read\-Bare\-T\-B\-M\-E\-\_\-\-Navratil (
@@ -96,7 +124,15 @@ Read T\-B\-M\-E's from a file formatted by the Darmstadt group. The file contain
 \item[{{\bf Operator} \&}]{Hbare}
 \end{DoxyParamCaption}
 )}}\label{classReadWrite_ab66f5d7e2e352e973597915c08cad45d}
-Read two body matrix elements from file formatted for Petr Navratil's no-\/core shell model code. These are given as normalized, J\-T coupled matix elements. Matrix elements corresponding to orbits outside the modelspace are ignored. 
+Read two body matrix elements from file formatted for Petr Navratil's no-\/core shell model code. These are given as normalized, J\-T coupled matix elements. Matrix elements corresponding to orbits outside the modelspace are ignored. \hypertarget{classReadWrite_a2028159ab7f8c227613834b39794e157}{\index{Read\-Write@{Read\-Write}!Write\-Nu\-Shell\-X\-\_\-int@{Write\-Nu\-Shell\-X\-\_\-int}}
+\index{Write\-Nu\-Shell\-X\-\_\-int@{Write\-Nu\-Shell\-X\-\_\-int}!ReadWrite@{Read\-Write}}
+\subsubsection[{Write\-Nu\-Shell\-X\-\_\-int}]{\setlength{\rightskip}{0pt plus 5cm}void Read\-Write\-::\-Write\-Nu\-Shell\-X\-\_\-int (
+\begin{DoxyParamCaption}
+\item[{{\bf Operator} \&}]{op, }
+\item[{string}]{filename}
+\end{DoxyParamCaption}
+)}}\label{classReadWrite_a2028159ab7f8c227613834b39794e157}
+Write the valence space part of the interaction to a Nu\-Shell\-X $\ast$.int file. Note that Nu\-Shell\-X assumes identical orbits for protons and neutrons, so that the pnpn interaction should be equal to the pnnp interaction. This is only approximately true for interactions generated with I\-M\-S\-R\-G, so some averaging is required. 
 
 The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
 \item 

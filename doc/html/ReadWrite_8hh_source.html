@@ -100,49 +100,64 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;Operator.hh&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;</div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="keyword">using namespace </span>std;</div>
-<div class="line"><a name="l00011"></a><span class="lineno"><a class="line" href="classReadWrite.html">   11</a></span>&#160;<span class="keyword">class </span><a class="code" href="classReadWrite.html">ReadWrite</a></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;{</div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;   ~<a class="code" href="classReadWrite.html">ReadWrite</a>();</div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;   <a class="code" href="classReadWrite.html">ReadWrite</a>();</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;   <span class="keywordtype">void</span> ReadSettingsFile(  <span class="keywordtype">string</span> filename);</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;   <a class="code" href="classModelSpace.html">ModelSpace</a> ReadModelSpace( <span class="keywordtype">string</span> filename);</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;   <span class="keywordtype">void</span> ReadBareTBME( <span class="keywordtype">string</span> filename, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare);</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;   <span class="keywordtype">void</span> ReadBareTBME_Jason( <span class="keywordtype">string</span> filename, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare);</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;   <span class="keywordtype">void</span> ReadBareTBME_Navratil( <span class="keywordtype">string</span> filename, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare);</div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;   <span class="keywordtype">void</span> ReadBareTBME_Darmstadt( <span class="keywordtype">string</span> filename, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare, <span class="keywordtype">int</span> E1max, <span class="keywordtype">int</span> E2max, <span class="keywordtype">int</span> lmax);</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;   <span class="keywordtype">void</span> ReadBareTBME_Darmstadt_from_stream( istream &amp; infile, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare, <span class="keywordtype">int</span> E1max, <span class="keywordtype">int</span> E2max, <span class="keywordtype">int</span> lmax);</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;   <span class="keywordtype">void</span> Read_Darmstadt_3body( <span class="keywordtype">string</span> filename, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare, <span class="keywordtype">int</span> E1max, <span class="keywordtype">int</span> E2max, <span class="keywordtype">int</span> E3max);</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;   <span class="keywordtype">void</span> Read_Darmstadt_3body_from_stream( istream &amp; infile, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare, <span class="keywordtype">int</span> E1max, <span class="keywordtype">int</span> E2max, <span class="keywordtype">int</span> E3max);</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;   <span class="keywordtype">void</span> WriteOneBody(<a class="code" href="classOperator.html">Operator</a>&amp;, <span class="keywordtype">string</span>);</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;   <span class="keywordtype">void</span> WriteTwoBody(<a class="code" href="classOperator.html">Operator</a>&amp;, <span class="keywordtype">string</span>);</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;   <span class="keywordtype">void</span> WriteValenceOneBody(<a class="code" href="classOperator.html">Operator</a>&amp;, <span class="keywordtype">string</span>);</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;   <span class="keywordtype">void</span> WriteValenceTwoBody(<a class="code" href="classOperator.html">Operator</a>&amp;, <span class="keywordtype">string</span>);</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;   <span class="keywordtype">void</span> WriteNuShellX_sps( <a class="code" href="classOperator.html">Operator</a>&amp; op, <span class="keywordtype">string</span> filename);</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;   <span class="keywordtype">void</span> WriteNuShellX_int( <a class="code" href="classOperator.html">Operator</a>&amp; op, <span class="keywordtype">string</span> filename);</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;   <span class="keywordtype">void</span> WriteAntoine_int( <a class="code" href="classOperator.html">Operator</a>&amp; op, <span class="keywordtype">string</span> filename); <span class="comment">// &lt;- not implemented yet...</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;   <span class="keywordtype">void</span> WriteOperator(<a class="code" href="classOperator.html">Operator</a>&amp; op, <span class="keywordtype">string</span> filename);</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;   <span class="keywordtype">void</span> ReadOperator(<a class="code" href="classOperator.html">Operator</a>&amp; op, <span class="keywordtype">string</span> filename); </div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;   std::map&lt;string,string&gt; InputParameters;</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;   <span class="keywordtype">bool</span> InGoodState(){<span class="keywordflow">return</span> goodstate;};</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;   <span class="keywordtype">bool</span> doCoM_corr;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;   <span class="keywordtype">void</span> SetCoMCorr(<span class="keywordtype">bool</span> b){doCoM_corr = b;cout &lt;&lt;<span class="stringliteral">&quot;Setting com_corr to &quot;</span>&lt;&lt; b &lt;&lt; endl;};</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;   <span class="keywordtype">bool</span> goodstate;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;};</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;</div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;</div>
+<div class="line"><a name="l00013"></a><span class="lineno"><a class="line" href="classReadWrite.html">   13</a></span>&#160;<span class="keyword">class </span><a class="code" href="classReadWrite.html">ReadWrite</a></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;{</div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;   ~<a class="code" href="classReadWrite.html">ReadWrite</a>();</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;   <a class="code" href="classReadWrite.html">ReadWrite</a>();</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;   <span class="keywordtype">void</span> ReadSettingsFile(  <span class="keywordtype">string</span> filename);</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;   <a class="code" href="classModelSpace.html">ModelSpace</a> ReadModelSpace( <span class="keywordtype">string</span> filename);</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;   <span class="keywordtype">void</span> ReadTBME_Oslo( <span class="keywordtype">string</span> filename, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare);</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">//   void ReadBareTBME( string filename, Operator&amp; Hbare);</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;   <span class="keywordtype">void</span> ReadBareTBME_Jason( <span class="keywordtype">string</span> filename, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare);</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;   <span class="keywordtype">void</span> ReadBareTBME_Navratil( <span class="keywordtype">string</span> filename, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare);</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;   <span class="keywordtype">void</span> ReadBareTBME_Darmstadt( <span class="keywordtype">string</span> filename, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare, <span class="keywordtype">int</span> E1max, <span class="keywordtype">int</span> E2max, <span class="keywordtype">int</span> lmax);</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;   <span class="keyword">template</span>&lt;<span class="keyword">class</span> T&gt; <span class="keywordtype">void</span> ReadBareTBME_Darmstadt_from_stream( T &amp; infile, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare, <span class="keywordtype">int</span> E1max, <span class="keywordtype">int</span> E2max, <span class="keywordtype">int</span> lmax);</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">//   void ReadBareTBME_Darmstadt_from_stream( istream &amp; infile, Operator&amp; Hbare, int E1max, int E2max, int lmax);</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;   <span class="keywordtype">void</span> Read_Darmstadt_3body( <span class="keywordtype">string</span> filename, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare, <span class="keywordtype">int</span> E1max, <span class="keywordtype">int</span> E2max, <span class="keywordtype">int</span> E3max);</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;   <span class="keyword">template</span>&lt;<span class="keyword">class</span> T&gt;<span class="keywordtype">void</span> Read_Darmstadt_3body_from_stream( T &amp; infile, <a class="code" href="classOperator.html">Operator</a>&amp; Hbare, <span class="keywordtype">int</span> E1max, <span class="keywordtype">int</span> E2max, <span class="keywordtype">int</span> E3max);</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment">//   void Read_Darmstadt_3body_from_stream( istream &amp; infile, Operator&amp; Hbare, int E1max, int E2max, int E3max);</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;   <span class="keywordtype">void</span> GetHDF5Basis( <a class="code" href="classModelSpace.html">ModelSpace</a>* modelspace, <span class="keywordtype">string</span> filename, vector&lt;array&lt;int,5&gt;&gt;&amp; Basis );</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;   <span class="keywordtype">void</span> Read3bodyHDF5( <span class="keywordtype">string</span> filename, <a class="code" href="classOperator.html">Operator</a>&amp; op);</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;   <span class="keywordtype">void</span> WriteNuShellX_sps( <a class="code" href="classOperator.html">Operator</a>&amp; op, <span class="keywordtype">string</span> filename);</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;   <span class="keywordtype">void</span> WriteNuShellX_int( <a class="code" href="classOperator.html">Operator</a>&amp; op, <span class="keywordtype">string</span> filename);</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;   <span class="keywordtype">void</span> WriteAntoine_int( <a class="code" href="classOperator.html">Operator</a>&amp; op, <span class="keywordtype">string</span> filename); <span class="comment">// &lt;- not implemented yet...</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;   <span class="keywordtype">void</span> WriteOperator(<a class="code" href="classOperator.html">Operator</a>&amp; op, <span class="keywordtype">string</span> filename);</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;   <span class="keywordtype">void</span> ReadOperator(<a class="code" href="classOperator.html">Operator</a>&amp; op, <span class="keywordtype">string</span> filename); </div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;   std::map&lt;string,string&gt; InputParameters;</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;   <span class="keywordtype">bool</span> InGoodState(){<span class="keywordflow">return</span> goodstate;};</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;   <span class="keywordtype">bool</span> doCoM_corr;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;   <span class="keywordtype">void</span> SetCoMCorr(<span class="keywordtype">bool</span> b){doCoM_corr = b;cout &lt;&lt;<span class="stringliteral">&quot;Setting com_corr to &quot;</span>&lt;&lt; b &lt;&lt; endl;};</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;   <span class="keywordtype">bool</span> goodstate;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;};</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;</div>
+<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="classVectorStream.html">   49</a></span>&#160;<span class="keyword">class </span><a class="code" href="classVectorStream.html">VectorStream</a> </div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;{</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <a class="code" href="classVectorStream.html">VectorStream</a>(vector&lt;float&gt;&amp; v) : vec(v), i(0) {};</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <a class="code" href="classVectorStream.html">VectorStream</a>&amp; operator&gt;&gt;(<span class="keywordtype">float</span>&amp; x) { x = vec[i++]; <span class="keywordflow">return</span> (<a class="code" href="classVectorStream.html">VectorStream</a>&amp;)(*this);}</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">bool</span> good(){ <span class="keywordflow">return</span> i&lt;vec.size(); };</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="keywordtype">void</span> getline(<span class="keywordtype">char</span>[], <span class="keywordtype">int</span>) {}; <span class="comment">// Don&#39;t do nuthin&#39;.</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  vector&lt;float&gt;&amp; vec;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keywordtype">long</span> <span class="keywordtype">long</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;};</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="preprocessor"></span></div>
 <div class="ttc" id="classOperator_html"><div class="ttname"><a href="classOperator.html">Operator</a></div><div class="ttdef"><b>Definition:</b> Operator.hh:22</div></div>
-<div class="ttc" id="classReadWrite_html"><div class="ttname"><a href="classReadWrite.html">ReadWrite</a></div><div class="ttdef"><b>Definition:</b> ReadWrite.hh:11</div></div>
+<div class="ttc" id="classReadWrite_html"><div class="ttname"><a href="classReadWrite.html">ReadWrite</a></div><div class="ttdef"><b>Definition:</b> ReadWrite.hh:13</div></div>
 <div class="ttc" id="classModelSpace_html"><div class="ttname"><a href="classModelSpace.html">ModelSpace</a></div><div class="ttdef"><b>Definition:</b> ModelSpace.hh:148</div></div>
+<div class="ttc" id="classVectorStream_html"><div class="ttname"><a href="classVectorStream.html">VectorStream</a></div><div class="ttdef"><b>Definition:</b> ReadWrite.hh:49</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 16 2015 12:05:47 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 23 2015 10:05:04 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

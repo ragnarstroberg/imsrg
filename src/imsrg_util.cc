@@ -823,6 +823,27 @@ Operator E0Op(ModelSpace& modelspace)
     return E2;
   }
 
+  Operator ELOp(ModelSpace& modelspace, int L)
+  {
+    Operator EL(modelspace, L,0,0,2);
+    for (int i : modelspace.proton_orbits)
+    {
+      Orbit& oi = modelspace.GetOrbit(i);
+      for ( int j : EL.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      {
+        if (j<i) continue;
+        Orbit& oj = modelspace.GetOrbit(j);
+        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L);
+        EL.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*(2*L+1)./4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, L, oj.j2/2.0, 0.5,0, -0.5) * r2int;
+        EL.OneBody(j,i) = modelspace.phase(oi.j2-oj.j2) * EL.OneBody(i,j);
+      }
+    }
+    // multiply by b^L = (hbar/mw)^L/2
+    EL.OneBody *= pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*L);
+    return E2;
+  }
+
+
 
   // This uses eq (6.41) from Suhonen.
   // Note this is only valid for la+lb+L = even.
@@ -842,6 +863,14 @@ Operator E0Op(ModelSpace& modelspace)
     return term1*term2;
   
   }
+
+
+
+
+
+
+
+
 
 
   void Reduce(Operator& X)
@@ -886,6 +915,9 @@ Operator E0Op(ModelSpace& modelspace)
     }
 
   }
+
+
+
 
 
   void CommutatorTest(Operator& X, Operator& Y)

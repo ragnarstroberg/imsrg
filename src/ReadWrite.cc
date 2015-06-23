@@ -70,77 +70,8 @@ void ReadWrite::ReadSettingsFile( string filename)
 
 
 
-ModelSpace ReadWrite::ReadModelSpace( string filename)
-{
-
-   ModelSpace modelspace;
-   ifstream infile;
-   stringstream ss;
-   char line[LINESIZE];
-   char cbuf[10][20];
-   int ibuf[2];
-   int n,l,j2,tz2;
-   double fbuf[2];
-   double spe,hw;
-   int A;
-   
-   infile.open(filename);
-   if ( not infile.good() )
-   {
-     cerr << "************************************" << endl
-          << "**    Trouble reading file  !!!   **" << filename << endl
-          << "************************************" << endl;
-      cerr << "Trouble reading file " << filename << endl;
-      goodstate = false;
-      return modelspace;
-   }
-   
-   infile.getline(line,LINESIZE);
-
-   while (!strstr(line,"Mass number") && !infile.eof())
-   {
-      infile.getline(line,LINESIZE);
-   }
-   ss << line;
-   for (int i=0;i<10;i++) ss >> cbuf[i];
-   ss >> A;
-   ss.str(string()); // clear up the stringstream
-   ss.clear();
-   
-   while (!strstr(line,"Oscillator length") && !infile.eof())
-   {
-      infile.getline(line,LINESIZE);
-   }
-   ss << line;
-   ss >> cbuf[0] >> cbuf[1] >> cbuf[2] >> cbuf[3] >> fbuf[0] >> hw;
-   modelspace.SetHbarOmega(hw);
-   modelspace.SetTargetMass(A);
-//   cout << "Set hbar_omega to " << hw << endl;
-
-   while (!strstr(line,"Legend:") && !infile.eof())
-   {
-      infile.getline(line,LINESIZE);
-   }
-
-   while (  infile >> cbuf[0] >> ibuf[0] >> n >> l >> j2 >> tz2
-             >> ibuf[1] >> spe >> fbuf[0]  >> cbuf[1] >> cbuf[2])
-   {
-      int ph = 0; // 0=particle, 1=hole 
-      int io = 0; // 0=inside, 1=outside projected model space
-      if (strstr(cbuf[1],"hole")) ph++;
-      if (strstr(cbuf[2],"outside")) io++;
-      modelspace.AddOrbit( Orbit(n,l,j2,tz2,ph,io,spe) );
-
-   }
-   
-   infile.close();
-   modelspace.SetupKets();
-
-   return modelspace;
-}
-
-
-void ReadWrite::ReadBareTBME( string filename, Operator& Hbare)
+/// Read two-body matrix elements from an Oslo-formatted file
+void ReadWrite::ReadTBME_Oslo( string filename, Operator& Hbare)
 {
 
   ifstream infile;
@@ -376,13 +307,22 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
 }
 
 
-/// Decide if the file is gzipped or ascii, create a stream, then call Read_Darmstadt_3body_from_stream().
+/// Decide the file format from the extension -- .me3j (Darmstadt group format, human-readable), .gz (gzipped me3j, less storage),
+/// .bin (me3j converted to binary, faster to read), .h5 (HDF5 format). Default is to assume .me3j.
+/// For the first three, the file is converted to a stream and sent to ReadDarmstadt_3body_from_stream().
+/// For the HDF5 format, a separate function is called: Read3bodyHDF5().
 void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max)
 {
 
   double start_time = omp_get_wtime();
   string extension = filename.substr( filename.find_last_of("."));
-  if ( extension == ".gz")
+
+  if (extension == ".me3j")
+  {
+    ifstream infile(filename);
+    Read_Darmstadt_3body_from_stream(infile, Hbare,  E1max, E2max, E3max);
+  }
+  else if ( extension == ".gz")
   {
     ifstream infile(filename, ios_base::in | ios_base::binary);
     boost::iostreams::filtering_istream zipstream;
@@ -414,11 +354,6 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
   else if (extension == ".h5")
   {
     Read3bodyHDF5( filename, Hbare );
-  }
-  else if (extension == ".me3j")
-  {
-    ifstream infile(filename);
-    Read_Darmstadt_3body_from_stream(infile, Hbare,  E1max, E2max, E3max);
   }
   else
   {
@@ -549,7 +484,9 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 
 
 
-//void ReadWrite::Read_Darmstadt_3body_from_stream( istream& infile, Operator& Hbare, int E1max, int E2max, int E3max)
+/// Read me3j format three-body matrix elements. Pass in E1max, E2max, E3max for the file, so that it can be properly interpreted.
+/// The modelspace truncation doesn't need to coincide with the file truncation. For example, you could have an emax=10 modelspace
+/// and read from an emax=14 file, and the matrix elements with emax>10 would be ignored.
 template <class T>
 void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, int E1max, int E2max, int E3max)
 {
@@ -755,31 +692,31 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
               }//Jab
 
 
-// I don't think this stuff is needed...
-              int aa=a;
-              int bb=b;
-              int cc=c;
-              int dd=d;
-              int eee=e;
-              int ff=f;
-              if (bb>aa) swap(aa,bb);
-              if (cc>bb) swap(cc,bb);
-              if (bb>aa) swap(aa,bb);
-              if (eee>dd) swap(dd,eee);
-              if (ff>eee) swap(ff,eee);
-              if (eee>dd) swap(dd,eee);
-              if (dd>aa or (dd==aa and eee>bb) or (dd==aa and eee==bb and ff>cc))
-              {
-                swap(aa,dd);
-                swap(bb,eee);
-                swap(cc,ff);
-              }
-//              if (counter > 0)
-//              cout << aa << " " << bb << " " << cc << " " << dd << " " << eee << " " << ff << "  :  " << counter << endl;
-              if (aa==12 and bb==10 and cc==0 and dd==12 and eee==6 and ff==6)
-              {
-//               cout << "~~ energies: " << ea << " " << eb << " " << ec << " " << ed << " " << ee << " " << ef  <<  "   --  " << e1max << " " << e2max << " " << e3max << " " << counter <<  endl;
-              }
+//// I don't think this stuff is needed...
+//              int aa=a;
+//              int bb=b;
+//              int cc=c;
+//              int dd=d;
+//              int eee=e;
+//              int ff=f;
+//              if (bb>aa) swap(aa,bb);
+//              if (cc>bb) swap(cc,bb);
+//              if (bb>aa) swap(aa,bb);
+//              if (eee>dd) swap(dd,eee);
+//              if (ff>eee) swap(ff,eee);
+//              if (eee>dd) swap(dd,eee);
+//              if (dd>aa or (dd==aa and eee>bb) or (dd==aa and eee==bb and ff>cc))
+//              {
+//                swap(aa,dd);
+//                swap(bb,eee);
+//                swap(cc,ff);
+//              }
+////              if (counter > 0)
+////              cout << aa << " " << bb << " " << cc << " " << dd << " " << eee << " " << ff << "  :  " << counter << endl;
+//              if (aa==12 and bb==10 and cc==0 and dd==12 and eee==6 and ff==6)
+//              {
+////               cout << "~~ energies: " << ea << " " << eb << " " << ec << " " << ed << " " << ee << " " << ef  <<  "   --  " << e1max << " " << e2max << " " << e3max << " " << counter <<  endl;
+//              }
 
             }
           }
@@ -795,10 +732,12 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
 
 
 
-
+/// Read three-body basis from HDF5 formatted file. This routine was ported to C++ from
+/// a C routine by Heiko Hergert, with as little modification as possible.
 void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis)
 {
   H5File file(filename, H5F_ACC_RDONLY);
+  // The parameter alpha enumerates the different 3body states |abc> coupled to J12 and J (no isospin)
   DataSet basis = file.openDataSet("alphas");
   DataSpace basis_dspace = basis.getSpace();
 
@@ -815,12 +754,14 @@ void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<ar
   for (int i=0;i<nDim;++i)
     alpha_max = max(alpha_max, int(iDim[i]));
 
+  // Generate a 2d buffer in contiguous memory
   int** dbuf = new int*[iDim[0]];
   dbuf[0] = new int[iDim[0]*iDim[1]];
   for (hsize_t i=1;i<iDim[0];++i)
   {
     dbuf[i] = dbuf[i-1] + iDim[1];
   }
+
   basis.read(&dbuf[0][0], PredType::NATIVE_INT);
 
   Basis.resize(alpha_max);
@@ -859,6 +800,8 @@ void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<ar
 }
 
 
+/// Read three-body matrix elements from HDF5 formatted file. This routine was ported to C++ from
+/// a C routine by Heiko Hergert, with as little modification as possible.
 void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
 {
 
@@ -895,6 +838,7 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
   
   DataSpace label_buf_dspace(2,label_curDim);
 
+  // Generate a 2d buffer in contiguous memory
   int **label_buf = new int*[label_curDim[0]];
   label_buf[0] = new int[label_curDim[0] * label_curDim[1]];
   for (hsize_t i=1; i<label_curDim[0]; ++i)
@@ -922,13 +866,16 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
 
   DataSpace value_buf_dspace(1,value_curDim);
   
+  // Generate a 1d buffer in contiguous memory, also known as an array...
   double *value_buf = new double[value_curDim[0]];
 
+  // break the file into slabs for reading
   int nSlabs = (int)((double)value_maxDim[0]/((double)SLABSIZE)) + 1;
 
   hsize_t stride[2] = {1,1};
   hsize_t count[2] = {1,1};
 
+  // loop through the slabs
   for ( int n=0; n<nSlabs; ++n)
   {
     hsize_t start[2] = { n*value_curDim[0], 0};
@@ -940,11 +887,12 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
       label_block[1] = label_maxDim[1];
       value_block[0] = value_maxDim[0]-(nSlabs-1)*SLABSIZE;
       value_block[1] = value_maxDim[1];
+
+      // Not clear exactly why this needs to be done.
       label_buf_dspace.close();
       value_buf_dspace.close();
       label_buf_dspace = DataSpace(2,label_block);
       value_buf_dspace = DataSpace(2,value_block);
-      
 
     }
     else
@@ -958,9 +906,9 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
     label_dspace.selectHyperslab( H5S_SELECT_SET, count, start, stride, label_block);
     value_dspace.selectHyperslab( H5S_SELECT_SET, count, start, stride, value_block);
 
+    // Read the lable data into label_buf, and matrix elements into value_buf
     label.read( &label_buf[0][0], PredType::NATIVE_INT, label_buf_dspace, label_dspace );
-
-    value.read(&value_buf[0], PredType::NATIVE_DOUBLE, value_buf_dspace, value_dspace );
+    value.read( &value_buf[0], PredType::NATIVE_DOUBLE, value_buf_dspace, value_dspace );
 
 
     for (hsize_t i=0; i<value_block[0]; ++i)
@@ -976,8 +924,8 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
        if (alpha<alphap) continue;
 
        double me   = value_buf[i];
+       // for some reason, we need to multiply by hc/2
        me *= HBARC*0.5;
-
 
        int a    = Basis[alpha][0];
        int b    = Basis[alpha][1];
@@ -1012,70 +960,24 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
        }
 
        op.ThreeBody.SetME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f, me);
-       
-       
 
-    }
-
-
-
-  }
-
-
+    } //loop over matrix elements
+  } // loop over slabs
 }
 
 
 
 
-
-void ReadWrite::WriteOneBody(Operator& op, string filename)
-{
-   ofstream obfile;
-   obfile.open(filename, ofstream::out);
-   int norbits = op.GetModelSpace()->GetNumberOrbits();
-   for (int i=0;i<norbits;i++)
-   {
-      for (int j=0;j<norbits;j++)
-      {
-         if (abs(op.GetOneBody(i,j)) > 1e-6)
-         {
-            obfile << i << "    " << j << "       " << op.GetOneBody(i,j) << endl;
-
-         }
-      }
-   }
-   obfile.close();
-}
-
-void ReadWrite::WriteValenceOneBody(Operator& op, string filename)
-{
-   ofstream obfile;
-   obfile.open(filename, ofstream::out);
-   ModelSpace * modelspace = op.GetModelSpace();
-//   int norbits = modelspace->GetNumberOrbits();
-   obfile << " Zero body part: " << op.ZeroBody << endl;
-   for (auto& i : modelspace->valence )
-   {
-      for (auto& j : modelspace->valence )
-      {
-         double obme = op.OneBody(i,j);
-         if (abs(obme) > 1e-6)
-         {
-            obfile << i << "    " << j << "       " << obme << endl;
-         }
-      }
-   }
-   obfile.close();
-}
-
-
+/// Write the valence space part of the interaction to a NuShellX *.int file.
+/// Note that NuShellX assumes identical orbits for protons and neutrons,
+/// so that the pnpn interaction should be equal to the pnnp interaction.
+/// This is only approximately true for interactions generated with IMSRG,
+/// so some averaging is required.
 void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
 {
    ofstream intfile;
    intfile.open(filename, ofstream::out);
    ModelSpace * modelspace = op.GetModelSpace();
-//   int ncore_orbits = modelspace->holes.size();
-//   int nvalence_orbits = modelspace->valence.size();
    int nvalence_proton_orbits = 0;
    int proton_core_orbits = 0;
    int neutron_core_orbits = 0;
@@ -1208,6 +1110,7 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
    intfile.close();
 }
 
+/// Write the valence model space to a NuShellX *.sp file.
 void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
 {
    ofstream spfile;
@@ -1272,7 +1175,7 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
 
 
 
-// This doesn't work yet!
+/// Not yet fully implemented.
 void ReadWrite::WriteAntoine_int(Operator& op, string filename)
 {
    ofstream intfile;
@@ -1320,94 +1223,16 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
 }
 
 
-void ReadWrite::WriteTwoBody(Operator& op, string filename)
-{
-   ofstream tbfile;
-   tbfile.open(filename, ofstream::out);
-   ModelSpace * modelspace = op.GetModelSpace();
-   int nchan = modelspace->GetNumberTwoBodyChannels();
-   for (int ch=0;ch<nchan;++ch)
-   {
-      TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
-      int npq = tbc.GetNumberKets();
-      for (int i=0;i<npq;++i)
-      {
-         Ket &bra = tbc.GetKet(i);
-//         Orbit &oa = modelspace->GetOrbit(bra.p);
-//         Orbit &ob = modelspace->GetOrbit(bra.q);
-         for (int j=i;j<npq;++j)
-         {
-            Ket &ket = tbc.GetKet(j);
-//            double tbme = op.TwoBody.GetTBME(ch,bra,ket) / sqrt( (1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
-            double tbme = op.TwoBody.GetTBME_norm(ch,bra,ket);
-            if ( abs(tbme)<1e-6 ) tbme = 0;
-//            Orbit &oc = modelspace->GetOrbit(ket.p);
-//            Orbit &od = modelspace->GetOrbit(ket.q);
-            int wint = 4;
-            int wdouble = 12;
-
-            tbfile 
-                   << setw(wint) << bra.p
-                   << setw(wint) << bra.q
-                   << setw(wint) << ket.p
-                   << setw(wint) << ket.q
-                   << setw(wint+3) << tbc.J << setw(wdouble) << std::fixed << tbme
-                   << endl;
-         }
-      }
-   }
-   tbfile.close();
-}
 
 
-void ReadWrite::WriteValenceTwoBody(Operator& op, string filename)
-{
-   ofstream tbfile;
-   tbfile.open(filename, ofstream::out);
-   ModelSpace * modelspace = op.GetModelSpace();
-   int nchan = modelspace->GetNumberTwoBodyChannels();
-   for (int ch=0;ch<nchan;++ch)
-   {
-      TwoBodyChannel tbc = modelspace->GetTwoBodyChannel(ch);
-      int npq = tbc.GetNumberKets();
-      if (npq<1) continue;
-      for (auto& i : tbc.GetKetIndex_vv() )
-      {
-         Ket &bra = tbc.GetKet(i);
-//         Orbit &oa = modelspace->GetOrbit(bra.p);
-//         Orbit &ob = modelspace->GetOrbit(bra.q);
-         for (auto& j : tbc.GetKetIndex_vv() )
-         {
-            if (j<i) continue;
-            Ket &ket = tbc.GetKet(j);
-            double tbme = op.TwoBody.GetTBME_norm(ch,bra,ket) ;
-            if ( abs(tbme)<1e-4 ) continue;
-//            Orbit &oc = modelspace->GetOrbit(ket.p);
-//            Orbit &od = modelspace->GetOrbit(ket.q);
-            int wint = 4;
-            int wdouble = 12;
-
-            tbfile 
-                   << setw(wint) << bra.p
-                   << setw(wint) << bra.q
-                   << setw(wint) << ket.p
-                   << setw(wint) << ket.q
-                   << setw(wint+3) << tbc.J << setw(wdouble) << std::fixed << tbme// << endl;
-                   << "    < " << bra.p << " " << bra.q << " | V | " << ket.p << " " << ket.q << " >" << endl;
-         }
-      }
-   }
-   tbfile.close();
-}
-
-
+/// Write an operator to a plain-text file
 void ReadWrite::WriteOperator(Operator& op, string filename)
 {
    ofstream opfile;
    opfile.open(filename, ofstream::out);
    if (not opfile.good() )
    {
-     cout << "Trouble reading " << filename << ". Aborting WriteOperator." << endl;
+     cout << "Trouble opening " << filename << ". Aborting WriteOperator." << endl;
      return;
    }
    ModelSpace * modelspace = op.GetModelSpace();
@@ -1464,34 +1289,11 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
       }
    }
 
-/*
-   int nchan = modelspace->GetNumberTwoBodyChannels();
-   for (int ch=0; ch<nchan; ++ch)
-   {
-      cout << "ch =  " << ch << endl;
-      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      int nkets = tbc.GetNumberKets();
-      for (int ibra=0; ibra<nkets; ++ibra)
-      {
-         int iket_min = op.IsNonHermitian() ? 0 : ibra;
-         for (int iket=iket_min; iket<nkets; ++iket)
-         {
-            cout << "here." << endl;
-            double tbme = op.TwoBody.GetTBME_norm(ch,ibra,iket);
-            cout << "tbme = " << tbme << endl;
-            if (abs(tbme) > 1e-7)
-              opfile << ch << "\t" << ibra << "\t" << iket << "\t" << setprecision(10) << tbme << endl;
-         }
-      }
-   }
-*/
-
-   cout << "Closing file" << endl;
    opfile.close();
 
 }
 
-
+/// Read an operator from a plain-text file
 void ReadWrite::ReadOperator(Operator &op, string filename)
 {
    ifstream opfile;
@@ -1504,8 +1306,6 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
      goodstate = false;
      return;
    }
-//   ModelSpace * modelspace = op.GetModelSpace();
-   // Should put in some check for if the file exists
 
    string tmpstring;
    int i,j,chbra,chket;
@@ -1549,13 +1349,6 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
   {
     op.TwoBody.SetTBME(chbra,chket,i,j,v);
   }
-
-/*
-   while (opfile >> ch >> i >> j >> v)
-   {
-      op.TwoBody.SetTBME(ch,i,j,v);
-   }
-*/
 
    opfile.close();
    

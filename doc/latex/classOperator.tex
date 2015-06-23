@@ -337,48 +337,48 @@ Calculates the kinetic energy operator in the harmonic oscillator basis. \[ t_{a
 \index{comm110ss@{comm110ss}!Operator@{Operator}}
 \subsubsection[{comm110ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm110ss (
 \begin{DoxyParamCaption}
-\item[{{\bf Operator} \&}]{opright, }
-\item[{{\bf Operator} \&}]{out}
+\item[{{\bf Operator} \&}]{Y, }
+\item[{{\bf Operator} \&}]{Z}
 \end{DoxyParamCaption}
 )}}\label{classOperator_a23bf6f89477ba90fd6f798374d00d9ea}
 \[ [X_{1)},Y_{(1)}]_{(0)} = \sum_{a} n_a (2j_a+1) \left(X_{(1)}Y_{(1)}-Y_{(1)}X_{(1)}\right)_{aa} \] \hypertarget{classOperator_a1cfdcf9d390bd8bbfdd4473c6a78071e}{\index{Operator@{Operator}!comm111ss@{comm111ss}}
 \index{comm111ss@{comm111ss}!Operator@{Operator}}
 \subsubsection[{comm111ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm111ss (
 \begin{DoxyParamCaption}
-\item[{{\bf Operator} \&}]{opright, }
-\item[{{\bf Operator} \&}]{out}
+\item[{{\bf Operator} \&}]{Y, }
+\item[{{\bf Operator} \&}]{Z}
 \end{DoxyParamCaption}
 )}}\label{classOperator_a1cfdcf9d390bd8bbfdd4473c6a78071e}
 \[ [X_{(1)},Y_{(1)}]_{(1)} = X_{(1)}Y_{(1)} - Y_{(1)}X_{(1)} \] \hypertarget{classOperator_abb92eaedbea81e56c60939588371042f}{\index{Operator@{Operator}!comm121ss@{comm121ss}}
 \index{comm121ss@{comm121ss}!Operator@{Operator}}
 \subsubsection[{comm121ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm121ss (
 \begin{DoxyParamCaption}
-\item[{{\bf Operator} \&}]{opright, }
-\item[{{\bf Operator} \&}]{out}
+\item[{{\bf Operator} \&}]{Y, }
+\item[{{\bf Operator} \&}]{Z}
 \end{DoxyParamCaption}
 )}}\label{classOperator_abb92eaedbea81e56c60939588371042f}
 Returns $ [X_{(1)},Y_{(2)}] - [Y_{(1)},X_{(2)}] $, where \[ [X_{(1)},Y_{(2)}]_{ij} = \frac{1}{2j_i+1}\sum_{ab} (n_a \bar{n}_b) \sum_{J} (2J+1) (X_{ab} Y^J_{biaj} - X_{ba} Y^J_{aibj}) \] \hypertarget{classOperator_a2214e0f4647940855ff1866c2407c078}{\index{Operator@{Operator}!comm122ss@{comm122ss}}
 \index{comm122ss@{comm122ss}!Operator@{Operator}}
 \subsubsection[{comm122ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm122ss (
 \begin{DoxyParamCaption}
-\item[{{\bf Operator} \&}]{opright, }
-\item[{{\bf Operator} \&}]{opout}
+\item[{{\bf Operator} \&}]{Y, }
+\item[{{\bf Operator} \&}]{Z}
 \end{DoxyParamCaption}
 )}}\label{classOperator_a2214e0f4647940855ff1866c2407c078}
 Returns $ [X_{(1)},Y_{(2)}]_{(2)} - [Y_{(1)},X_{(2)}]_{(2)} $, where \[ [X_{(1)},Y_{(2)}]^{J}_{ijkl} = \sum_{a} ( X_{ia}Y^{J}_{ajkl} + X_{ja}Y^{J}_{iakl} - X_{ak} Y^{J}_{ijal} - X_{al} Y^{J}_{ijka} ) \] here, all T\-B\-M\-E are unnormalized, i.\-e. they should have a tilde. \hypertarget{classOperator_ac924a2af30154c83d6b821707689caa5}{\index{Operator@{Operator}!comm220ss@{comm220ss}}
 \index{comm220ss@{comm220ss}!Operator@{Operator}}
 \subsubsection[{comm220ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm220ss (
 \begin{DoxyParamCaption}
-\item[{{\bf Operator} \&}]{opright, }
-\item[{{\bf Operator} \&}]{out}
+\item[{{\bf Operator} \&}]{Y, }
+\item[{{\bf Operator} \&}]{Z}
 \end{DoxyParamCaption}
 )}}\label{classOperator_ac924a2af30154c83d6b821707689caa5}
 \[ [X_{(2)},Y_{(2)}]_{(0)} = \frac{1}{2} \sum_{J} (2J+1) \sum_{abcd} (n_a n_b \bar{n}_c \bar{n}_d) \tilde{X}_{abcd}^{J} \tilde{Y}_{cdab}^{J} \] may be rewritten as \[ [X_{(2)},Y_{(2)}]_{(0)} = 2 \sum_{J} (2J+1) Tr(X_{hh'pp'}^{J} Y_{pp'hh'}^{J}) \] where we obtain a factor of four from converting two unrestricted sums to restricted sums, i.\-e. $\sum_{ab} \rightarrow \sum_{a\leq b} $, and using the normalized T\-B\-M\-E. \hypertarget{classOperator_a423dc256b5780dbee20ac81c9a655335}{\index{Operator@{Operator}!comm221ss@{comm221ss}}
 \index{comm221ss@{comm221ss}!Operator@{Operator}}
 \subsubsection[{comm221ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm221ss (
 \begin{DoxyParamCaption}
-\item[{{\bf Operator} \&}]{opright, }
-\item[{{\bf Operator} \&}]{out}
+\item[{{\bf Operator} \&}]{Y, }
+\item[{{\bf Operator} \&}]{Z}
 \end{DoxyParamCaption}
 )}}\label{classOperator_a423dc256b5780dbee20ac81c9a655335}
 \[ [X_{(2)},Y_{(2)}]_{ij} = \frac{1}{2(2j_i+1)}\sum_{J}(2J+1)\sum_{abc} (\bar{n}_a\bar{n}_bn_c + n_an_b\bar{n}_c) (X^{J}_{ciab} Y^{J}_{abcj} - Y^{J}_{ciab}X^{J}_{abcj}) \] This may be rewritten as \[ [X_{(2)},Y_{(2)}]_{ij} = \frac{1}{2j_i+1} \sum_{c} \sum_{J} (2J+1) \left( n_c \mathcal{M}^{J}_{pp,icjc} + \bar{n}_c\mathcal{M}^{J}_{hh,icjc} \right) \] With the intermediate matrix \[ \mathcal{M}^{J}_{pp} \equiv \frac{1}{2} (X^{J}\mathcal{P}_{pp} Y^{J} - Y^{J}\mathcal{P}_{pp}X^{J}) \] and likewise for $ \mathcal{M}^{J}_{hh} $ \hypertarget{classOperator_a030805d35049c5cd62eaa84fe42e59e9}{\index{Operator@{Operator}!comm222\-\_\-phss@{comm222\-\_\-phss}}
@@ -401,8 +401,8 @@ Calculates the part of $ [X_{(2)},\mathbb{Y}^{\Lambda}_{(2)}]_{ijkl} $ which inv
 \index{comm222\-\_\-pp\-\_\-hh\-\_\-221ss@{comm222\-\_\-pp\-\_\-hh\-\_\-221ss}!Operator@{Operator}}
 \subsubsection[{comm222\-\_\-pp\-\_\-hh\-\_\-221ss}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::comm222\-\_\-pp\-\_\-hh\-\_\-221ss (
 \begin{DoxyParamCaption}
-\item[{{\bf Operator} \&}]{opright, }
-\item[{{\bf Operator} \&}]{opout}
+\item[{{\bf Operator} \&}]{Y, }
+\item[{{\bf Operator} \&}]{Z}
 \end{DoxyParamCaption}
 )}}\label{classOperator_acb2df128030bcad71f2b3fd975ea7988}
 Since \hyperlink{classOperator_ad70b2fe8c17a836aa8ea8c28ad445fd0}{comm222\-\_\-pp\-\_\-hhss()} and \hyperlink{classOperator_a423dc256b5780dbee20ac81c9a655335}{comm221ss()} both require the ruction of the intermediate matrices $\mathcal{M}_{pp} $ and $ \mathcal{M}_{hh} $, we can combine them and only calculate the intermediates once. \hypertarget{classOperator_ad70b2fe8c17a836aa8ea8c28ad445fd0}{\index{Operator@{Operator}!comm222\-\_\-pp\-\_\-hhss@{comm222\-\_\-pp\-\_\-hhss}}
@@ -424,7 +424,7 @@ Calculates the part of the commutator $ [X_{(2)},Y_{(2)}]_{(2)} $ which involves
 
 Returns the normal ordered two-\/body operator. 
 
-Normal ordering of a 2body operator currently this only handles scalar operators \hypertarget{classOperator_a7fd029569796107c87ff17c5a7912480}{\index{Operator@{Operator}!Do\-Normal\-Ordering3@{Do\-Normal\-Ordering3}}
+Normal ordering of a 2body operator set up for scalar or tensor operators, but the tensor part hasn't been tested \hypertarget{classOperator_a7fd029569796107c87ff17c5a7912480}{\index{Operator@{Operator}!Do\-Normal\-Ordering3@{Do\-Normal\-Ordering3}}
 \index{Do\-Normal\-Ordering3@{Do\-Normal\-Ordering3}!Operator@{Operator}}
 \subsubsection[{Do\-Normal\-Ordering3}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Operator\-::\-Do\-Normal\-Ordering3 (
 \begin{DoxyParamCaption}

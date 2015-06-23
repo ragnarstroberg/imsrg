@@ -498,13 +498,13 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
           <td class="memname">void Operator::comm110ss </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>opright</em>, </td>
+          <td class="paramname"><em>Y</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>out</em>&#160;</td>
+          <td class="paramname"><em>Z</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -527,13 +527,13 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
           <td class="memname">void Operator::comm111ss </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>opright</em>, </td>
+          <td class="paramname"><em>Y</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>out</em>&#160;</td>
+          <td class="paramname"><em>Z</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -556,13 +556,13 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
           <td class="memname">void Operator::comm121ss </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>opright</em>, </td>
+          <td class="paramname"><em>Y</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>out</em>&#160;</td>
+          <td class="paramname"><em>Z</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -586,13 +586,13 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
           <td class="memname">void Operator::comm122ss </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>opright</em>, </td>
+          <td class="paramname"><em>Y</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>opout</em>&#160;</td>
+          <td class="paramname"><em>Z</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -617,13 +617,13 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
           <td class="memname">void Operator::comm220ss </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>opright</em>, </td>
+          <td class="paramname"><em>Y</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>out</em>&#160;</td>
+          <td class="paramname"><em>Z</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -651,13 +651,13 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
           <td class="memname">void Operator::comm221ss </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>opright</em>, </td>
+          <td class="paramname"><em>Y</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>out</em>&#160;</td>
+          <td class="paramname"><em>Z</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -765,13 +765,13 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
           <td class="memname">void Operator::comm222_pp_hh_221ss </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>opright</em>, </td>
+          <td class="paramname"><em>Y</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
-          <td class="paramname"><em>opout</em>&#160;</td>
+          <td class="paramname"><em>Z</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -837,7 +837,7 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
 </div><div class="memdoc">
 
 <p>Returns the normal ordered two-body operator. </p>
-<p>Normal ordering of a 2body operator currently this only handles scalar operators </p>
+<p>Normal ordering of a 2body operator set up for scalar or tensor operators, but the tensor part hasn't been tested </p>
 
 </div>
 </div>
@@ -955,7 +955,7 @@ static map&lt; string, double &gt;&#160;</td><td class="memItemRight" valign="bo
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 16 2015 12:05:47 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 23 2015 10:05:04 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

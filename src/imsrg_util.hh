@@ -21,6 +21,7 @@ namespace imsrg_util
  Operator RSquaredOp(ModelSpace& modelspace);
  Operator E0Op(ModelSpace& modelspace);
  Operator E2Op(ModelSpace& modelspace);
+ Operator ELOp(ModelSpace& modelspace);
  Operator TCM_Op(ModelSpace& modelspace);
  Operator VCM_Op(ModelSpace& modelspace);
  Operator R2CM_Op(ModelSpace& modelspace);

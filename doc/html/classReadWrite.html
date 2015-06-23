@@ -106,9 +106,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadSettingsFile</b> 
 <tr class="memitem:adbf1ad5fe47c97c87994cfc28df5c740"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="adbf1ad5fe47c97c87994cfc28df5c740"></a>
 <a class="el" href="classModelSpace.html">ModelSpace</a>&#160;</td><td class="memItemRight" valign="bottom"><b>ReadModelSpace</b> (string filename)</td></tr>
 <tr class="separator:adbf1ad5fe47c97c87994cfc28df5c740"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ebe7ea4d8a322b23b144658da562277"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7ebe7ea4d8a322b23b144658da562277"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME</b> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare)</td></tr>
-<tr class="separator:a7ebe7ea4d8a322b23b144658da562277"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8d42bb8082881c30331a44f01118381"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa8d42bb8082881c30331a44f01118381"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#aa8d42bb8082881c30331a44f01118381">ReadTBME_Oslo</a> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare)</td></tr>
+<tr class="memdesc:aa8d42bb8082881c30331a44f01118381"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read two-body matrix elements from an Oslo-formatted file. <br/></td></tr>
+<tr class="separator:aa8d42bb8082881c30331a44f01118381"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae5271000cceab5fcebab7e9d2faf9f1f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae5271000cceab5fcebab7e9d2faf9f1f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME_Jason</b> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare)</td></tr>
 <tr class="separator:ae5271000cceab5fcebab7e9d2faf9f1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -116,43 +117,37 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBareTBME_Jason</b
 <tr class="separator:ab66f5d7e2e352e973597915c08cad45d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d1ea6782d893eab0217bb965fba990e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7d1ea6782d893eab0217bb965fba990e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#a7d1ea6782d893eab0217bb965fba990e">ReadBareTBME_Darmstadt</a> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare, int E1max, int E2max, int lmax)</td></tr>
-<tr class="memdesc:a7d1ea6782d893eab0217bb965fba990e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decide if the file is gzipped or ascii, create a stream, then call <a class="el" href="classReadWrite.html#abbb3ca736743150f3c03f73905e7c5af">ReadBareTBME_Darmstadt_from_stream()</a>. <br/></td></tr>
+<tr class="memdesc:a7d1ea6782d893eab0217bb965fba990e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decide if the file is gzipped or ascii, create a stream, then call <a class="el" href="classReadWrite.html#a44acf6835321a8bee6a795523728da2e">ReadBareTBME_Darmstadt_from_stream()</a>. <br/></td></tr>
 <tr class="separator:a7d1ea6782d893eab0217bb965fba990e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abbb3ca736743150f3c03f73905e7c5af"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#abbb3ca736743150f3c03f73905e7c5af">ReadBareTBME_Darmstadt_from_stream</a> (istream &amp;infile, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare, int E1max, int E2max, int lmax)</td></tr>
-<tr class="separator:abbb3ca736743150f3c03f73905e7c5af"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a84c0cbaf2be415eadffb560ea0bb9785"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a84c0cbaf2be415eadffb560ea0bb9785"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#a84c0cbaf2be415eadffb560ea0bb9785">Read_Darmstadt_3body</a> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare, int E1max, int E2max, int E3max)</td></tr>
-<tr class="memdesc:a84c0cbaf2be415eadffb560ea0bb9785"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decide if the file is gzipped or ascii, create a stream, then call Read_Darmstadt_3body_from_stream(). <br/></td></tr>
+<tr class="memitem:a44acf6835321a8bee6a795523728da2e"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:a44acf6835321a8bee6a795523728da2e"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classReadWrite.html#a44acf6835321a8bee6a795523728da2e">ReadBareTBME_Darmstadt_from_stream</a> (T &amp;infile, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare, int E1max, int E2max, int lmax)</td></tr>
+<tr class="separator:a44acf6835321a8bee6a795523728da2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84c0cbaf2be415eadffb560ea0bb9785"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#a84c0cbaf2be415eadffb560ea0bb9785">Read_Darmstadt_3body</a> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare, int E1max, int E2max, int E3max)</td></tr>
 <tr class="separator:a84c0cbaf2be415eadffb560ea0bb9785"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3c3b5a1a95f9ada71c259fb4d875af4d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3c3b5a1a95f9ada71c259fb4d875af4d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Read_Darmstadt_3body_from_stream</b> (istream &amp;infile, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare, int E1max, int E2max, int E3max)</td></tr>
-<tr class="separator:a3c3b5a1a95f9ada71c259fb4d875af4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a257e2a926e252a2952b330b3655ddd3d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a257e2a926e252a2952b330b3655ddd3d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteOneBody</b> (<a class="el" href="classOperator.html">Operator</a> &amp;, string)</td></tr>
-<tr class="separator:a257e2a926e252a2952b330b3655ddd3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7bae483d2d587b66b3bf5ed734139cde"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7bae483d2d587b66b3bf5ed734139cde"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteTwoBody</b> (<a class="el" href="classOperator.html">Operator</a> &amp;, string)</td></tr>
-<tr class="separator:a7bae483d2d587b66b3bf5ed734139cde"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a75dd4196074d74e1e7ea0e0b10aafc85"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a75dd4196074d74e1e7ea0e0b10aafc85"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteValenceOneBody</b> (<a class="el" href="classOperator.html">Operator</a> &amp;, string)</td></tr>
-<tr class="separator:a75dd4196074d74e1e7ea0e0b10aafc85"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeb9256b7a68dcb45fac250b45af07548"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aeb9256b7a68dcb45fac250b45af07548"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteValenceTwoBody</b> (<a class="el" href="classOperator.html">Operator</a> &amp;, string)</td></tr>
-<tr class="separator:aeb9256b7a68dcb45fac250b45af07548"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af229332b05276f686966fdaaa98a81fd"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:af229332b05276f686966fdaaa98a81fd"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classReadWrite.html#af229332b05276f686966fdaaa98a81fd">Read_Darmstadt_3body_from_stream</a> (T &amp;infile, <a class="el" href="classOperator.html">Operator</a> &amp;Hbare, int E1max, int E2max, int E3max)</td></tr>
+<tr class="separator:af229332b05276f686966fdaaa98a81fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad03f489c69c98d3ff1d33fbe9801c3d1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#ad03f489c69c98d3ff1d33fbe9801c3d1">GetHDF5Basis</a> (<a class="el" href="classModelSpace.html">ModelSpace</a> *modelspace, string filename, vector&lt; array&lt; int, 5 &gt;&gt; &amp;Basis)</td></tr>
+<tr class="separator:ad03f489c69c98d3ff1d33fbe9801c3d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52656073ac0fa73c78dbd67c0f0e81e3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#a52656073ac0fa73c78dbd67c0f0e81e3">Read3bodyHDF5</a> (string filename, <a class="el" href="classOperator.html">Operator</a> &amp;op)</td></tr>
+<tr class="separator:a52656073ac0fa73c78dbd67c0f0e81e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8a7dc85b22c8f468d153d3fde9f39394"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8a7dc85b22c8f468d153d3fde9f39394"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteNuShellX_sps</b> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#a8a7dc85b22c8f468d153d3fde9f39394">WriteNuShellX_sps</a> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+<tr class="memdesc:a8a7dc85b22c8f468d153d3fde9f39394"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the valence model space to a NuShellX *.sp file. <br/></td></tr>
 <tr class="separator:a8a7dc85b22c8f468d153d3fde9f39394"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2028159ab7f8c227613834b39794e157"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2028159ab7f8c227613834b39794e157"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteNuShellX_int</b> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+<tr class="memitem:a2028159ab7f8c227613834b39794e157"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#a2028159ab7f8c227613834b39794e157">WriteNuShellX_int</a> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
 <tr class="separator:a2028159ab7f8c227613834b39794e157"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a371194595d9412cbb8f1b432a6526f5a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a371194595d9412cbb8f1b432a6526f5a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteAntoine_int</b> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#a371194595d9412cbb8f1b432a6526f5a">WriteAntoine_int</a> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+<tr class="memdesc:a371194595d9412cbb8f1b432a6526f5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Not yet fully implemented. <br/></td></tr>
 <tr class="separator:a371194595d9412cbb8f1b432a6526f5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a771ed1ac7ca0cc9cb6a209da170dd351"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a771ed1ac7ca0cc9cb6a209da170dd351"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteOperator</b> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#a771ed1ac7ca0cc9cb6a209da170dd351">WriteOperator</a> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+<tr class="memdesc:a771ed1ac7ca0cc9cb6a209da170dd351"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write an operator to a plain-text file. <br/></td></tr>
 <tr class="separator:a771ed1ac7ca0cc9cb6a209da170dd351"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab924c67864c7af28bcc22a9b87abafb3"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab924c67864c7af28bcc22a9b87abafb3"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadOperator</b> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classReadWrite.html#ab924c67864c7af28bcc22a9b87abafb3">ReadOperator</a> (<a class="el" href="classOperator.html">Operator</a> &amp;op, string filename)</td></tr>
+<tr class="memdesc:ab924c67864c7af28bcc22a9b87abafb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read an operator from a plain-text file. <br/></td></tr>
 <tr class="separator:ab924c67864c7af28bcc22a9b87abafb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a05ec8e21842e94d788bb36c7d11f46b9"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a05ec8e21842e94d788bb36c7d11f46b9"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>InGoodState</b> ()</td></tr>
@@ -174,14 +169,168 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>goodstate</b></td></t
 <tr class="separator:aaf2753e15a5e7f524d6fde9f15ab357b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="abbb3ca736743150f3c03f73905e7c5af"></a>
+<a class="anchor" id="ad03f489c69c98d3ff1d33fbe9801c3d1"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
+          <td class="memname">void ReadWrite::GetHDF5Basis </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classModelSpace.html">ModelSpace</a> *&#160;</td>
+          <td class="paramname"><em>modelspace</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">vector&lt; array&lt; int, 5 &gt;&gt; &amp;&#160;</td>
+          <td class="paramname"><em>Basis</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Read three-body basis from HDF5 formatted file. This routine was ported to C++ from a C routine by Heiko Hergert, with as little modification as possible. </p>
+
+</div>
+</div>
+<a class="anchor" id="a52656073ac0fa73c78dbd67c0f0e81e3"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ReadWrite::Read3bodyHDF5 </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
+          <td class="paramname"><em>op</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Read three-body matrix elements from HDF5 formatted file. This routine was ported to C++ from a C routine by Heiko Hergert, with as little modification as possible. </p>
+
+</div>
+</div>
+<a class="anchor" id="a84c0cbaf2be415eadffb560ea0bb9785"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ReadWrite::Read_Darmstadt_3body </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>filename</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
+          <td class="paramname"><em>Hbare</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>E1max</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>E2max</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>E3max</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Decide the file format from the extension &ndash; .me3j (Darmstadt group format, human-readable), .gz (gzipped me3j, less storage), .bin (me3j converted to binary, faster to read), .h5 (HDF5 format). Default is to assume .me3j. For the first three, the file is converted to a stream and sent to ReadDarmstadt_3body_from_stream(). For the HDF5 format, a separate function is called: <a class="el" href="classReadWrite.html#a52656073ac0fa73c78dbd67c0f0e81e3">Read3bodyHDF5()</a>. </p>
+
+</div>
+</div>
+<a class="anchor" id="af229332b05276f686966fdaaa98a81fd"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void ReadWrite::Read_Darmstadt_3body_from_stream </td>
+          <td>(</td>
+          <td class="paramtype">T &amp;&#160;</td>
+          <td class="paramname"><em>infile</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
+          <td class="paramname"><em>Hbare</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>E1max</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>E2max</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>E3max</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Read me3j format three-body matrix elements. Pass in E1max, E2max, E3max for the file, so that it can be properly interpreted. The modelspace truncation doesn't need to coincide with the file truncation. For example, you could have an emax=10 modelspace and read from an emax=14 file, and the matrix elements with emax&gt;10 would be ignored. </p>
+
+</div>
+</div>
+<a class="anchor" id="a44acf6835321a8bee6a795523728da2e"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
+      <table class="memname">
+        <tr>
           <td class="memname">void ReadWrite::ReadBareTBME_Darmstadt_from_stream </td>
           <td>(</td>
-          <td class="paramtype">istream &amp;&#160;</td>
+          <td class="paramtype">T &amp;&#160;</td>
           <td class="paramname"><em>infile</em>, </td>
         </tr>
         <tr>
@@ -246,6 +395,33 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>goodstate</b></td></t
 
 </div>
 </div>
+<a class="anchor" id="a2028159ab7f8c227613834b39794e157"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ReadWrite::WriteNuShellX_int </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
+          <td class="paramname"><em>op</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>filename</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Write the valence space part of the interaction to a NuShellX *.int file. Note that NuShellX assumes identical orbits for protons and neutrons, so that the pnpn interaction should be equal to the pnnp interaction. This is only approximately true for interactions generated with IMSRG, so some averaging is required. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li><a class="el" href="ReadWrite_8hh_source.html">ReadWrite.hh</a></li>
 <li>ReadWrite.cc</li>
@@ -253,7 +429,7 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>goodstate</b></td></t
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 16 2015 12:05:47 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 23 2015 10:05:04 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
