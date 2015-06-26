@@ -20,8 +20,9 @@ namespace imsrg_util
  Operator PSquaredOp(ModelSpace& modelspace);
  Operator RSquaredOp(ModelSpace& modelspace);
  Operator E0Op(ModelSpace& modelspace);
- Operator E2Op(ModelSpace& modelspace);
- Operator ELOp(ModelSpace& modelspace);
+// Operator E2Op(ModelSpace& modelspace);
+ Operator ElectricMultipoleOp(ModelSpace& modelspace, int L);
+ Operator MagneticMultipoleOp(ModelSpace& modelspace, int L);
  Operator TCM_Op(ModelSpace& modelspace);
  Operator VCM_Op(ModelSpace& modelspace);
  Operator R2CM_Op(ModelSpace& modelspace);
@@ -29,6 +30,7 @@ namespace imsrg_util
  Operator Isospin2_Op(ModelSpace& modelspace);
 
  double Calculate_p1p2(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);
+ void Calculate_p1p2_all(Operator& OpIn);
  double Calculate_r1r2(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);
  double Calculate_hcom(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);
  double HO_density(int n, int l, double hw, double r);

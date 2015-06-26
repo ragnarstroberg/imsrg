@@ -505,16 +505,16 @@ void HartreeFock::ReorderCoefficients()
 ///      \left( C_{a\alpha} C_{b\beta} -(1-\delta_{ab})(-1)^{j_a+j_b-J} C_{b\alpha}C_{a\beta}\right) \f]
 ///
 //**************************************************************************
-Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
+Operator HartreeFock::TransformToHFBasis( Operator OpHF)
 {
-   Operator OpHF = OpIn;
-   OpHF.Erase();
+//   Operator& OpHF = OpIn;
+//   OpHF.Erase();
 
    cout << "Transform one body" << endl;
    // Easy part:
    //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>
    // where |i> is the original basis and |a> is the HF basis
-   OpHF.OneBody = C.t() * OpIn.OneBody * C;
+   OpHF.OneBody = C.t() * OpHF.OneBody * C;
 
 
    cout << "Transform two body" << endl;
@@ -522,12 +522,12 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
    // Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
    // for each channel J,p,Tz. Most of the effort here is in constructing D.
 
-   for ( auto& it : OpIn.TwoBody.MatEl )
+   for ( auto& it : OpHF.TwoBody.MatEl )
    {
       int ch_bra = it.first[0];
       int ch_ket = it.first[1];
-      TwoBodyChannel& tbc_bra = OpIn.GetModelSpace()->GetTwoBodyChannel(ch_bra);
-      TwoBodyChannel& tbc_ket = OpIn.GetModelSpace()->GetTwoBodyChannel(ch_ket);
+      TwoBodyChannel& tbc_bra = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_ket);
       int nbras = it.second.n_rows;
       int nkets = it.second.n_cols;
       arma::mat Dbra(nbras,nbras);
@@ -580,6 +580,7 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpIn)
    }
 
    return OpHF;
+//   return OpIn;
 }
 
 

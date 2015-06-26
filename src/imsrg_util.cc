@@ -295,6 +295,132 @@ namespace imsrg_util
 
 
 
+////////////////////////////////////////////////////////////////////////////
+/////////////  IN PROGRESS...  doesn't work yet, and for now it's slower.  /
+////////////////////////////////////////////////////////////////////////////
+
+ void Calculate_p1p2_all(Operator& OpIn)
+ {
+   ModelSpace* modelspace = OpIn.GetModelSpace();
+//   modelspace->PreCalculateMoshinsky();
+   for ( int ch : modelspace->SortedTwoBodyChannels )
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      int J = tbc.J;
+      int parity = tbc.parity;
+      int Tz = tbc.parity;
+      arma::mat& MatJJ = OpIn.TwoBody.GetMatrix(ch);
+      int nkets_JJ = tbc.GetNumberKets();
+
+      // Find the maximum oscillator energy for this channel
+      Ket& ketlast = tbc.GetKet( tbc.GetNumberKets()-1 );
+      int emax_ket = 2*ketlast.op->n + 2*ketlast.oq->n + ketlast.op->l + ketlast.oq->l;
+
+      vector<array<int,6>> JacobiBasis;  // L,S,N,Lambda,n,lambda
+      for (int L=max(J-1,0); L<=J+1; ++L)
+      {
+       for ( int S=abs(J-L); S<=1; ++S)
+       {
+        for ( int N=0; N<=emax_ket/2; ++N )
+        {
+         for ( int Lambda=0; Lambda<=(emax_ket-2*N); ++Lambda)
+         {
+          for ( int lambda=abs(L-Lambda)+(L+parity)%2; lambda<=min(Lambda+L,emax_ket-2*N-Lambda); lambda+=2)
+          {
+           for ( int n =0; n<=(emax_ket-2*N-Lambda-lambda)/2; ++n)
+           {
+             JacobiBasis.push_back({L,S,N,Lambda,n,lambda});
+           }
+          }
+         }
+        }
+       }
+      }
+
+
+      int nkets_Jacobi = JacobiBasis.size();
+      arma::mat MatJacobi(nkets_Jacobi,nkets_Jacobi);
+      arma::mat Trans(nkets_Jacobi,nkets_JJ);
+      int n_nonzero = 0;
+      for (int iJJ=0; iJJ<nkets_JJ; ++iJJ)
+      {
+        Ket & ket = tbc.GetKet(iJJ);
+        int la = ket.op->l;
+        int lb = ket.oq->l;
+        int na = ket.op->n;
+        int nb = ket.oq->n;
+        double ja = ket.op->j2*0.5;
+        double jb = ket.oq->j2*0.5;
+        int ta = ket.op->n;
+        int tb = ket.oq->n;
+        for (int iJac=0; iJac<nkets_Jacobi; ++iJac)
+        {
+          int L      = JacobiBasis[iJac][0];
+          int S      = JacobiBasis[iJac][1];
+          int N      = JacobiBasis[iJac][2];
+          int Lambda = JacobiBasis[iJac][3];
+          int n      = JacobiBasis[iJac][4];
+          int lambda = JacobiBasis[iJac][5];
+
+          int Asym = 1; // Fix this...
+          double ninej = NormNineJ(la,0.5,ja,lb,0.5,jb,L,S,J);
+          if (abs(ninej)<1e-6) continue;
+          double mosh = modelspace->GetMoshinsky(N,Lambda,n,lambda,na,la,nb,lb,L);
+          if (abs(mosh)<1e-6) continue;
+          Trans(iJac,iJJ) = ninej * mosh;
+          n_nonzero += 1;
+           
+        }
+      }
+      for (int i=0; i<nkets_Jacobi; ++i)
+      {
+        int Li      = JacobiBasis[i][0];
+        int Si      = JacobiBasis[i][1];
+        int Ni      = JacobiBasis[i][2];
+        int Lambdai = JacobiBasis[i][3];
+        int ni      = JacobiBasis[i][4];
+        int lambdai = JacobiBasis[i][5];
+        for (int j=0; j<nkets_Jacobi; ++j)
+        {
+          int Lj      = JacobiBasis[j][0];
+          int Sj      = JacobiBasis[j][1];
+          int Nj      = JacobiBasis[j][2];
+          int Lambdaj = JacobiBasis[j][3];
+          int nj      = JacobiBasis[j][4];
+          int lambdaj = JacobiBasis[j][5];
+          if(Li!=Lj or Si!=Sj or Lambdai!=Lambdaj or lambdai!=lambdaj) continue;
+          double tcm = 0;
+          double trel = 0;
+          if (ni == nj)
+          {
+            if      (Ni == Nj)   tcm = (2*Ni+Lambdai+1.5);
+            else if (Ni == Nj+1) tcm = sqrt(Ni*( Ni+Lambdai+0.5));
+            else if (Ni == Nj-1) tcm = sqrt(Nj*( Nj+Lambdai+0.5));
+          }
+          if (Ni == Nj)
+          {
+            if      (ni == nj)   tcm = (2*ni+lambdai+1.5);
+            else if (ni == nj+1) tcm = sqrt(ni*( ni+lambdai+0.5));
+            else if (ni == nj-1) tcm = sqrt(nj*( nj+lambdai+0.5));
+          }
+          MatJacobi(i,j) = tcm - trel;
+        }
+      }
+
+
+      MatJJ = Trans.t() * MatJacobi * Trans;
+      cout << "ch = " << ch << "   size of JJ basis = " << nkets_JJ << "  size of Jacobi Basis = " << nkets_Jacobi << "   nonzero matrix elements = " << n_nonzero << endl;
+
+   }
+ }
+
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
 // Center of mass R^2, with the hw/A factor
 /// Returns
 /// \f[ 
@@ -599,18 +725,19 @@ Operator E0Op(ModelSpace& modelspace)
    {
       Orbit & oa = modelspace.GetOrbit(a);
       if (oa.tz2 > 0 ) continue; // Only want to count the protons
-      e0.OneBody(a,a) = (2*oa.n + oa.l +3./2); 
+      e0.OneBody(a,a) = (2*oa.n + oa.l +1.5); 
 //      for (int b=a+1;b<norbits;++b) 
-      for (int b : modelspace.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+//      for (int b : modelspace.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      for (int b : e0.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
       {
         if (b<=a) continue;
          Orbit & ob = modelspace.GetOrbit(b);
 //         if (oa.l == ob.l and oa.j2 == ob.j2 and oa.tz2 == ob.tz2)
          {
             if (oa.n == ob.n+1)
-               e0.OneBody(a,b) = -sqrt( (oa.n)*(oa.n + oa.l +1./2));
+               e0.OneBody(a,b) = -sqrt( (oa.n)*(oa.n + oa.l +0.5));
             else if (oa.n == ob.n-1)
-               e0.OneBody(a,b) = -sqrt( (ob.n)*(ob.n + ob.l +1./2));
+               e0.OneBody(a,b) = -sqrt( (ob.n)*(ob.n + ob.l +0.5));
             e0.OneBody(b,a) = e0.OneBody(a,b);
          }
       }
@@ -727,7 +854,7 @@ Operator E0Op(ModelSpace& modelspace)
  }
 
 
-
+/// Returns the \f$ T^{2} \f$ operator
  Operator Isospin2_Op(ModelSpace& modelspace)
  {
    Operator T2 = Operator(modelspace,0,0,0,2);
@@ -736,7 +863,6 @@ Operator E0Op(ModelSpace& modelspace)
    for (int ch=0; ch<T2.nChannels; ++ch)
    {
      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
-//     arma::mat& TB = T2.TwoBody.at(ch).at(ch);
      arma::mat& TB = T2.TwoBody.GetMatrix(ch);
      // pp,nn:  2<t2.t1> = 1/(2(1+delta_ab)) along diagonal
      if (abs(tbc.Tz) == 1)
@@ -803,29 +929,10 @@ Operator E0Op(ModelSpace& modelspace)
 
 
 
-  Operator E2Op(ModelSpace& modelspace)
+  /// Returns a reduced electric multipole operator with units \f$ e\f$ fm\f$^{\lambda} \f$
+  Operator ElectricMultipoleOp(ModelSpace& modelspace, int L)
   {
-    Operator E2(modelspace, 2,0,0,2);
-    for (int i : modelspace.proton_orbits)
-    {
-      Orbit& oi = modelspace.GetOrbit(i);
-      for ( int j : E2.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
-      {
-        if (j<i) continue;
-        Orbit& oj = modelspace.GetOrbit(j);
-        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,2);
-        E2.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*5./4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, 2.0, oj.j2/2.0, 0.5,0, -0.5) * r2int;
-        E2.OneBody(j,i) = modelspace.phase(oi.j2-oj.j2) * E2.OneBody(i,j);
-      }
-    }
-    // multiply by b^2 = hbar/mw
-    E2.OneBody *= HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega();
-    return E2;
-  }
-
-  Operator ELOp(ModelSpace& modelspace, int L)
-  {
-    Operator EL(modelspace, L,0,0,2);
+    Operator EL(modelspace, L,0,L%2,2);
     for (int i : modelspace.proton_orbits)
     {
       Orbit& oi = modelspace.GetOrbit(i);
@@ -833,20 +940,54 @@ Operator E0Op(ModelSpace& modelspace)
       {
         if (j<i) continue;
         Orbit& oj = modelspace.GetOrbit(j);
-        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L);
-        EL.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*(2*L+1)./4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, L, oj.j2/2.0, 0.5,0, -0.5) * r2int;
+        // multiply radial integra by b^L = (hbar/mw)^L/2
+        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L) * pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*L) ;
+        EL.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, L, oj.j2/2.0, 0.5,0, -0.5) * r2int;
         EL.OneBody(j,i) = modelspace.phase(oi.j2-oj.j2) * EL.OneBody(i,j);
       }
     }
-    // multiply by b^L = (hbar/mw)^L/2
-    EL.OneBody *= pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*L);
-    return E2;
+    return EL;
+  }
+
+  /// Returns a reduced magnetic multipole operator with units \f$ \mu_{N}\f$ fm\f$ ^{\lambda-1} \f$
+  Operator MagneticMultipoleOp(ModelSpace& modelspace, int L)
+  {
+    double gl[2] = {1.,0.};
+    double gs[2] = {5.586, -3.826};
+    Operator ML(modelspace, L,0,(L+1)%2,2);
+    if (L<1)
+    {
+      cout << "A magnetic monopole operator??? Setting it to zero." << endl;
+      return ML;
+    }
+    int norbits = modelspace.GetNumberOrbits();
+    for (int i=0; i<norbits; ++i)
+    {
+      Orbit& oi = modelspace.GetOrbit(i);
+      for ( int j : ML.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      {
+        if (j<i) continue;
+        Orbit& oj = modelspace.GetOrbit(j);
+        // multiply radial integral by b^L = (hbar/mw)^L/2
+        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L-1) * pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*(L-1));
+        int kappa = ( modelspace.phase(oi.l+(oi.j2+1)/2) * (oi.j2+1) + modelspace.phase(oj.l+(oj.j2+1)/2) * (oj.j2+1) )/2;
+        ML.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, L, oj.j2/2.0, 0.5,0, -0.5)
+                        * (L - kappa) *(gl[(oi.tz2+1)/2]*(1+kappa/(L+1))-0.5*gs[(oi.tz2+1)/2] )  * r2int;
+        ML.OneBody(j,i) = modelspace.phase(oi.j2-oj.j2) * ML.OneBody(i,j);
+      }
+    }
+    return ML;
   }
 
 
-
-  // This uses eq (6.41) from Suhonen.
-  // Note this is only valid for la+lb+L = even.
+/// Evaluate the radial integral \f[
+/// \tilde{\mathcal{R}}^{\lambda}_{ab} = \int_{0}^{\infty} dx \tilde{g}_{n_a\ell_a}(x)x^{\lambda+2}\tilde{g}_{n_b\ell_b}(x)
+/// \f]
+/// where \f$ \tilde{g}(x) \f$ is the radial part of the harmonic oscillator wave function with unit oscillator length \f$ b=1 \f$
+/// and \f$ x = r/b \f$.
+/// To obtain the radial integral for some other oscillator length, multiply by \f$ b^{\lambda} \f$.
+/// This implementation uses eq (6.41) from Suhonen.
+/// Note this is only valid for \f$ \ell_a+\ell_b+\lambda\f$ = even.
   double RadialIntegral(int na, int la, int nb, int lb, int L)
   {
     int tau_a = max((lb-la+L)/2,0);

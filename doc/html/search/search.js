@@ -10,8 +10,10 @@ var indexSectionsWithContent =
   0: "abcdefghikmnoprstuvwz",
   1: "ghikmortv",
   2: "i",
-  3: "abcdeginorstuw",
-  4: "cefhimnoprtvz"
+  3: "abcdegimnorstuw",
+  4: "cefhimnoprtvz",
+  5: "c",
+  6: "bi"
 };
 
 var indexSectionNames =
@@ -20,7 +22,9 @@ var indexSectionNames =
   1: "classes",
   2: "namespaces",
   3: "functions",
-  4: "variables"
+  4: "variables",
+  5: "related",
+  6: "pages"
 };
 
 function convertToId(search)

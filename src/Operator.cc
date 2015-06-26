@@ -225,7 +225,8 @@ void Operator::SetUpOneBodyChannels()
   for ( int i=0; i<modelspace->GetNumberOrbits(); ++i )
   {
     Orbit& oi = modelspace->GetOrbit(i);
-    int lmin = max( oi.l - rank_J - parity, (oi.l+parity)%2);
+//    int lmin = max( oi.l - rank_J - parity, (oi.l+parity)%2);
+    int lmin = max( oi.l - rank_J + (rank_J+parity)%2, (oi.l+parity)%2);
     int lmax = min( oi.l + rank_J, modelspace->Nmax);
     for (int l=lmin; l<=lmax; l+=2)
     {
@@ -548,10 +549,12 @@ Operator Operator::BCH_Transform(  Operator &Omega)
    double ny = Omega.Norm();
    Operator OpOut = *this;
    Operator OpNested = *this;
+   if (nx<1e-6) return OpOut;
    double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
    for (int i=1; i<max_iter; ++i)
    {
-      OpNested = Omega.Commutator(OpNested);
+//      OpNested = Omega.Commutator(OpNested);
+      OpNested = Commutator(Omega,OpNested);
       OpNested /= i;
 
       OpOut += OpNested;
@@ -597,7 +600,8 @@ Operator Operator::BCH_Product(  Operator &Y)
    if (nx < 1e-7) return Y;
    if (ny < 1e-7) return X;
 
-   Operator Z = X.Commutator(Y);
+//   Operator Z = X.Commutator(Y);
+   Operator Z = Commutator(X,Y);
    Z *= 0.5;
    double nxy = Z.Norm();
 
@@ -610,7 +614,8 @@ Operator Operator::BCH_Product(  Operator &Y)
    }
 
    Y -= X;
-   Z += (1./6)* Z.Commutator( Y );
+//   Z += (1./6)* Z.Commutator( Y );
+   Z += (1./6)* Commutator( Z, Y );
    Z += Y;
    X *=2;
    Z += X;
@@ -685,33 +690,38 @@ void Operator::AntiSymmetrize()
    TwoBody.AntiSymmetrize();
 }
 
-Operator Operator::Commutator( Operator& opright)
+//Operator Operator::Commutator( Operator& opright)
+/// Returns \f$ Z = [X,Y] \f$
+/// @relates Operator
+Operator Commutator( Operator& X, Operator& Y)
 {
-   timer["N_Commutators"] += 1;
-   if (rank_J==0)
+   X.timer["N_Commutators"] += 1;
+   if (X.rank_J==0)
    {
-      if (opright.rank_J==0)
+      if (Y.rank_J==0)
       {
-         return CommutatorScalarScalar(opright); // [S,S]
+         return X.CommutatorScalarScalar(Y); // [S,S]
       }
       else
       {
-         return CommutatorScalarTensor(opright); // [S,T]
+         return X.CommutatorScalarTensor(Y); // [S,T]
       }
    }
-   else if(opright.rank_J==0)
+   else if(Y.rank_J==0)
    {
-      return (-1)*opright.CommutatorScalarTensor(*this); // [T,S]
+      return (-1)*Y.CommutatorScalarTensor(X); // [T,S]
    }
    else
    {
-      cout << "In Tensor-Tensor because rank_J = " << rank_J << "  and opright.rank_J = " << opright.rank_J << endl;
+      cout << "In Tensor-Tensor because X.rank_J = " << X.rank_J << "  and Y.rank_J = " << Y.rank_J << endl;
       cout << " Tensor-Tensor commutator not yet implemented." << endl;
-      return *this;
+      return X;
    }
 }
 
 
+/// Commutator where \f$ X \f$ and \f$Y\f$ are scalar operators.
+/// Should be called through Commutator()
 Operator Operator::CommutatorScalarScalar( Operator& opright) 
 {
    Operator out = opright;
@@ -763,7 +773,8 @@ Operator Operator::CommutatorScalarScalar( Operator& opright)
 }
 
 
-// Calculate [S,T]
+/// Commutator \f$[X,Y]\f$ where \f$ X \f$ is a scalar operator and \f$Y\f$ is a tensor operator.
+/// Should be called through Commutator()
 Operator Operator::CommutatorScalarTensor( Operator& opright) 
 {
    Operator out = opright; // This ensures the commutator has the same tensor rank as opright

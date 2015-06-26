@@ -39,7 +39,8 @@ class HartreeFock
    void Solve();
    void CalcEHF();
    void ReorderCoefficients();
-   Operator TransformToHFBasis( Operator& OpIn);
+//   Operator TransformToHFBasis( Operator& OpIn);
+   Operator TransformToHFBasis( Operator OpIn);
    Operator GetNormalOrderedH();
    Operator GetOmega();
 

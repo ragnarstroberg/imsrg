@@ -221,7 +221,8 @@ void IMSRGSolver::ODE_systemH( Operator& x, Operator& dxdt, const double t)
    s = t;
 //   UpdateEta();
    generator.Update(&H_s,&Eta);
-   dxdt = Eta.Commutator(x);
+//   dxdt = Eta.Commutator(x);
+   dxdt = Commutator(Eta,x);
    WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
 }
@@ -246,7 +247,8 @@ void IMSRGSolver::ODE_systemOmega( Operator& x, Operator& dxdt, const double t)
    Omega = x;
    H_s = H_0->BCH_Transform(Omega);
    generator.Update(&H_s,&Eta);
-   dxdt = Eta - 0.5*Omega.Commutator(Eta);
+//   dxdt = Eta - 0.5*Omega.Commutator(Eta);
+   dxdt = Eta - 0.5*Commutator(Omega,Eta);
    WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
 

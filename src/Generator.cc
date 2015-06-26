@@ -123,7 +123,8 @@ void Generator::ConstructGenerator_Wegner()
    }
 //   H_diag.Symmetrize();
 
-   *Eta = H_diag.Commutator(*H);
+//   *Eta = H_diag.Commutator(*H);
+   *Eta = Commutator(H_diag,*H);
 }
 
 

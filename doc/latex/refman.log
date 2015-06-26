@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2014.9.24)  7 MAY 2015 15:24
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2014.9.24)  24 JUN 2015 14:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -916,7 +916,8 @@ Package hyperref Info: Option `unicode' set `true' on input line 104.
 File: puenc.def 2012/11/06 v6.83m Hyperref: PDF Unicode definition (HO)
 Now handling font encoding PU ...
 ... no UTF-8 mapping file for font encoding PU
-) (./refman.aux)
+)
+No file refman.aux.
 \openout1 = `refman.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 114.
@@ -933,7 +934,6 @@ LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 114.
 LaTeX Font Info:    ... okay on input line 114.
 LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 114.
 LaTeX Font Info:    Try loading font information for TS1+cmr on input line 114.
-
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmr.fd
 File: ts1cmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
@@ -1027,8 +1027,6 @@ Package: gettitlestring 2010/12/03 v1.4 Cleanup title references (HO)
 LaTeX Info: Redefining \ref on input line 114.
 LaTeX Info: Redefining \pageref on input line 114.
 LaTeX Info: Redefining \nameref on input line 114.
-
-(./refman.out) (./refman.out)
 \@outlinefile=\write4
 \openout4 = `refman.out'.
 
@@ -1039,7 +1037,8 @@ LaTeX Font Info:    Font shape `T1/phv/m/n' will be
 (Font)              scaled to size 10.79993pt on input line 122.
 LaTeX Font Info:    Font shape `T1/phv/m/n' will be
 (Font)              scaled to size 8.09995pt on input line 126.
- [1
+
+[1
 
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2
@@ -1053,15 +1052,29 @@ LaTeX Font Info:    Font shape `T1/phv/b/n' will be
 (Font)              scaled to size 22.39185pt on input line 130.
 LaTeX Font Info:    Font shape `T1/phv/bc/n' will be
 (Font)              scaled to size 22.39185pt on input line 130.
- (./refman.toc
-LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <10> not available
-(Font)              Font shape `T1/phv/b/n' tried instead on input line 1.
+\tf@toc=\write5
+\openout5 = `refman.toc'.
+
+ [3
+
+] [4
+
+]
+Package hyperref Info: Option `pageanchor' set `true' on input line 133.
+
+Chapter 1.
+LaTeX Font Info:    Font shape `T1/phv/m/n' will be
+(Font)              scaled to size 18.66588pt on input line 136.
+LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <20.74> not available
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 136.
 LaTeX Font Info:    Font shape `T1/phv/b/n' will be
-(Font)              scaled to size 8.99994pt on input line 1.
+(Font)              scaled to size 18.66588pt on input line 136.
+LaTeX Font Info:    Font shape `T1/phv/bc/n' will be
+(Font)              scaled to size 18.66588pt on input line 136.
+(./index.tex
 LaTeX Font Info:    Try loading font information for OT1+ztmcm on input line 1.
 
-
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1ztmcm.fd
+ (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1ztmcm.fd
 File: ot1ztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OT1/ztmcm.
 )
 LaTeX Font Info:    Try loading font information for OML+ztmcm on input line 1.
@@ -1093,178 +1106,59 @@ LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7.4> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1.
- [3
+) [1
 
 ]
+LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <10> not available
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 138.
+LaTeX Font Info:    Font shape `T1/phv/b/n' will be
+(Font)              scaled to size 8.99994pt on input line 138.
 LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <7> not available
-(Font)              Font shape `T1/phv/b/n' tried instead on input line 71.
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 138.
 LaTeX Font Info:    Font shape `T1/phv/b/n' will be
-(Font)              scaled to size 6.29996pt on input line 71.
- [4])
-\tf@toc=\write5
-\openout5 = `refman.toc'.
-
- [5]
-[6
+(Font)              scaled to size 6.29996pt on input line 138.
+ [2
 
 ]
-Package hyperref Info: Option `pageanchor' set `true' on input line 133.
-
-Chapter 1.
-LaTeX Font Info:    Font shape `T1/phv/m/n' will be
-(Font)              scaled to size 18.66588pt on input line 136.
-LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <20.74> not available
-(Font)              Font shape `T1/phv/b/n' tried instead on input line 136.
-LaTeX Font Info:    Font shape `T1/phv/b/n' will be
-(Font)              scaled to size 18.66588pt on input line 136.
-LaTeX Font Info:    Font shape `T1/phv/bc/n' will be
-(Font)              scaled to size 18.66588pt on input line 136.
-(./namespaces.tex
+Chapter 2.
+(./benchmarking.tex
 LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <14.4> not available
 (Font)              Font shape `T1/phv/b/n' tried instead on input line 1.
 LaTeX Font Info:    Font shape `T1/phv/b/n' will be
 (Font)              scaled to size 12.9599pt on input line 1.
 LaTeX Font Info:    Font shape `T1/phv/bc/n' will be
 (Font)              scaled to size 12.9599pt on input line 1.
-) [1
 
-] [2
 
-]
-Chapter 2.
-(./hierarchy.tex) [3] [4
+! LaTeX Error: File `Benchmark_NSCM' not found.
 
-]
-Chapter 3.
-(./annotated.tex) [5] [6
-
-]
-Chapter 4.
-(./namespaceimsrg__util.tex
-LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <12> not available
-(Font)              Font shape `T1/phv/b/n' tried instead on input line 9.
-LaTeX Font Info:    Font shape `T1/phv/b/n' will be
-(Font)              scaled to size 10.79993pt on input line 9.
-LaTeX Font Info:    Font shape `T1/phv/bc/n' will be
-(Font)              scaled to size 10.79993pt on input line 9.
-LaTeX Font Info:    Try loading font information for TS1+phv on input line 12.
-
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1phv.fd
-File: ts1phv.fd 2001/06/04 scalable font definitions for TS1/phv.
-)
-LaTeX Font Info:    Font shape `TS1/phv/m/n' will be
-(Font)              scaled to size 8.99994pt on input line 12.
-LaTeX Font Info:    Font shape `T1/phv/bc/n' will be
-(Font)              scaled to size 8.99994pt on input line 70.
-LaTeX Font Info:    Font shape `T1/phv/bc/it' in size <10> not available
-(Font)              Font shape `T1/phv/bc/sl' tried instead on input line 70.
-LaTeX Font Info:    Font shape `T1/phv/bc/sl' will be
-(Font)              scaled to size 8.99994pt on input line 70.
- [7]) [8]
-Chapter 5.
-(./classGenerator.tex) (./classHartreeFock.tex [9
-
-]
-LaTeX Font Info:    Font shape `T1/phv/m/it' in size <9> not available
-(Font)              Font shape `T1/phv/m/sl' tried instead on input line 40.
-LaTeX Font Info:    Font shape `T1/phv/m/sl' will be
-(Font)              scaled to size 8.09995pt on input line 40.
- [10]
-LaTeX Font Info:    Try loading font information for T1+ptm on input line 121.
-
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1ptm.fd
-File: t1ptm.fd 2001/06/04 font definitions for T1/ptm.
-)
-LaTeX Font Info:    Font shape `T1/phv/m/n' will be
-(Font)              scaled to size 6.65994pt on input line 121.
-LaTeX Font Info:    Font shape `T1/phv/m/n' will be
-(Font)              scaled to size 5.39996pt on input line 121.
- [11])
-(./classHolder.tex [12]) (./classIMSRGSolver.tex
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 36.
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 36.
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <5> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 36.
- [13]) (./classKet.tex)
-(./classModelSpace.tex [14] [15]) (./classOperator.tex
-LaTeX Font Info:    Try loading font information for T1+pcr on input line 6.
-
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1pcr.fd
-File: t1pcr.fd 2001/06/04 font definitions for T1/pcr.
-) [16] [17] [18]
-Underfull \hbox (badness 1975) in paragraph at lines 314--314
-\T1/phv/m/n/10 X.-B-C-H-_--Product(-Y) re-turns $\OML/ztmcm/m/it/10 Z$ \T1/phv/
-m/n/10 such that $\OML/ztmcm/m/it/10 e[] \OT1/ztmcm/m/n/10 = \OML/ztmcm/m/it/10
- e[]e[]$ \T1/phv/m/n/10 by em-ploy-ing the [][]\T1/pcr/m/n/10 Baker--Campbell--
-Hausdorff
- []
-
-[19]
-Overfull \hbox (69.94916pt too wide) detected at line 384
-\OML/ztmcm/m/it/10 Z[] \OT1/ztmcm/m/n/10 = [](\OML/ztmcm/m/it/10 n[] \OMS/ztmcm
-/m/n/10 ^^@ \OML/ztmcm/m/it/10 n[]\OT1/ztmcm/m/n/10 ) [](2\OML/ztmcm/m/it/10 J[
-] \OT1/ztmcm/m/n/10 + 1) []
- []
-
-[20] [21]) (./classOrbit.tex) (./classReadWrite.tex [22])
-(./classThreeBodyME.tex [23]) (./classTwoBodyChannel.tex
-<classTwoBodyChannel.pdf, id=1177, 501.875pt x 278.82167pt>
-File: classTwoBodyChannel.pdf Graphic file (type pdf)
-
-<use classTwoBodyChannel.pdf>
-Package pdftex.def Info: classTwoBodyChannel.pdf used on input line 7.
-(pdftex.def)             Requested size: 102.42555pt x 56.9055pt.
- [24 <./classTwoBodyChannel.pdf>])
-(./classTwoBodyChannel__CC.tex
-<classTwoBodyChannel__CC.pdf, id=1199, 501.875pt x 278.82167pt>
-File: classTwoBodyChannel__CC.pdf Graphic file (type pdf)
-
-<use classTwoBodyChannel__CC.pdf>
-Package pdftex.def Info: classTwoBodyChannel__CC.pdf used on input line 7.
-(pdftex.def)             Requested size: 102.42555pt x 56.9055pt.
- [25 <./classTwoBodyChannel__CC.pdf>])
-(./classTwoBodyME.tex [26] [27]) [28] (./refman.ind [29
-
-] [30
-
-])
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 166.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 166.
- (./refman.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 166.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 166.
-Package rerunfilecheck Info: File `refman.out' has not changed.
-(rerunfilecheck)             Checksum: EFC78A24A5C463FFA4A2205F15D47994;11009.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 166.
- ) 
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.4 \includegraphics[width=15cm]{Benchmark_NSCM}
+                                                
+? x
+ 
 Here is how much of TeX's memory you used:
- 13918 strings out of 495028
- 222910 string characters out of 6181497
- 289091 words of memory out of 5000000
- 16249 multiletter control sequences out of 15000+600000
- 99087 words of font info for 144 fonts, out of 8000000 for 9000
+ 12590 strings out of 495028
+ 172056 string characters out of 6181497
+ 252047 words of memory out of 5000000
+ 15590 multiletter control sequences out of 15000+600000
+ 51287 words of font info for 70 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 48i,13n,43p,1787b,523s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/share/texliv
-e/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texm
-f-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist
-/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/
-type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/
-public/rsfs/rsfs10.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/u
-crr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></
-usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/uhvb8ac.pfb></usr/share/t
-exlive/texmf-dist/fonts/type1/urw/helvetic/uhvbo8ac.pfb></usr/share/texlive/tex
-mf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/share/texlive/texmf-dist/font
-s/type1/urw/helvetic/uhvro8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw
-/symbol/usyr.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/symbol/usyr.pfb
-></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/te
-xlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on refman.pdf (36 pages, 248937 bytes).
+ 48i,12n,43p,236b,362s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/share/texlive/
+texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/urw/helvetic/uhvb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/ur
+w/helvetic/uhvb8ac.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/
+uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/symbol/usyr.pfb></usr
+/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on refman.pdf (6 pages, 50114 bytes).
 PDF statistics:
- 1669 PDF objects out of 1728 (max. 8388607)
- 1596 compressed objects within 16 object streams
- 592 named destinations out of 1000 (max. 500000)
- 587 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 61 PDF objects out of 1000 (max. 8388607)
+ 45 compressed objects within 1 object stream
+ 6 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
 

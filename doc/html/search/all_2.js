@@ -16,5 +16,7 @@ var searchData=
   ['comm222_5fphst',['comm222_phst',['../classOperator.html#a0f3ee31f13fff9cb88e0e107e2acdf8a',1,'Operator']]],
   ['comm222_5fpp_5fhh_5f221ss',['comm222_pp_hh_221ss',['../classOperator.html#acb2df128030bcad71f2b3fd975ea7988',1,'Operator']]],
   ['comm222_5fpp_5fhhss',['comm222_pp_hhss',['../classOperator.html#ad70b2fe8c17a836aa8ea8c28ad445fd0',1,'Operator']]],
-  ['commutator',['Commutator',['../classOperator.html#a9d78ca5fd265cf4ccc6cda81d35cb086',1,'Operator']]]
+  ['commutator',['Commutator',['../classOperator.html#aeef048661e7456fb28828096ba12cb53',1,'Operator']]],
+  ['commutatorscalarscalar',['CommutatorScalarScalar',['../classOperator.html#a55b95477ad8674877eb4d15491cfe9a0',1,'Operator']]],
+  ['commutatorscalartensor',['CommutatorScalarTensor',['../classOperator.html#a7db0372f91cffc85b293f7750c72944a',1,'Operator']]]
 ];

@@ -137,13 +137,16 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("NumberOp",         imsrg_util::NumberOp);
    def("RSquaredOp",       imsrg_util::RSquaredOp);
    def("E0Op",             imsrg_util::E0Op);
-   def("E2Op",             imsrg_util::E2Op);
+//   def("E2Op",             imsrg_util::E2Op);
+   def("ElectricMultipoleOp",             imsrg_util::ElectricMultipoleOp);
+   def("MagneticMultipoleOp",             imsrg_util::MagneticMultipoleOp);
    def("Isospin2_Op",      imsrg_util::Isospin2_Op);
    def("HO_density",       imsrg_util::HO_density);
    def("GetOccupationsHF", imsrg_util::GetOccupationsHF);
    def("GetOccupations",   imsrg_util::GetOccupations);
    def("GetDensity",       imsrg_util::GetDensity);
    def("CommutatorTest",   imsrg_util::CommutatorTest);
+   def("Calculate_p1p2_all",   imsrg_util::Calculate_p1p2_all);
 
 
 }

@@ -125,7 +125,8 @@ class Operator
   Operator UndoNormalOrdering(); ///< Returns the operator normal-ordered wrt the vacuum
 //  Operator DoNormalOrderingCore(); /// < Returns the operator normal-ordered wrt the shell-model core.
 
-  Operator Commutator(  Operator& opright) ; ///< Z = X.Commutator(Y) means \f$ Z = [X,Y] \f$
+//  Operator Commutator(  Operator& opright) ; ///< Z = X.Commutator(Y) means \f$ Z = [X,Y] \f$
+  friend Operator Commutator(Operator& X,  Operator& Y) ; 
   Operator CommutatorScalarScalar( Operator& opright) ;
   Operator CommutatorScalarTensor( Operator& opright) ;
 

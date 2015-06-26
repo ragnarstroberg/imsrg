@@ -162,14 +162,9 @@
 \hypertarget{classOperator_a1932dcab2be6bb889320254cc81dd5f4}{\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a1932dcab2be6bb889320254cc81dd5f4}{Undo\-Normal\-Ordering} ()}\label{classOperator_a1932dcab2be6bb889320254cc81dd5f4}
 
 \begin{DoxyCompactList}\small\item\em Returns the operator normal-\/ordered wrt the vacuum. \end{DoxyCompactList}\item 
-\hypertarget{classOperator_a9d78ca5fd265cf4ccc6cda81d35cb086}{\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a9d78ca5fd265cf4ccc6cda81d35cb086}{Commutator} (\hyperlink{classOperator}{Operator} \&opright)}\label{classOperator_a9d78ca5fd265cf4ccc6cda81d35cb086}
-
-\begin{DoxyCompactList}\small\item\em Z = X.\-Commutator(\-Y) means $ Z = [X,Y] $. \end{DoxyCompactList}\item 
-\hypertarget{classOperator_a55b95477ad8674877eb4d15491cfe9a0}{\hyperlink{classOperator}{Operator} {\bfseries Commutator\-Scalar\-Scalar} (\hyperlink{classOperator}{Operator} \&opright)}\label{classOperator_a55b95477ad8674877eb4d15491cfe9a0}
-
+\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a55b95477ad8674877eb4d15491cfe9a0}{Commutator\-Scalar\-Scalar} (\hyperlink{classOperator}{Operator} \&opright)
 \item 
-\hypertarget{classOperator_a7db0372f91cffc85b293f7750c72944a}{\hyperlink{classOperator}{Operator} {\bfseries Commutator\-Scalar\-Tensor} (\hyperlink{classOperator}{Operator} \&opright)}\label{classOperator_a7db0372f91cffc85b293f7750c72944a}
-
+\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a7db0372f91cffc85b293f7750c72944a}{Commutator\-Scalar\-Tensor} (\hyperlink{classOperator}{Operator} \&opright)
 \item 
 \hyperlink{classOperator}{Operator} \hyperlink{classOperator_a6a91cd02db723ee28b7532e6af029033}{B\-C\-H\-\_\-\-Product} (\hyperlink{classOperator}{Operator} \&)
 \item 
@@ -306,6 +301,11 @@ $<$ index\-\_\-t $>$ $>$ {\bfseries One\-Body\-Channels}}\label{classOperator_a3
 \hypertarget{classOperator_ae3de2afa3ff3dca088122a79404da831}{static map$<$ string, double $>$ \hyperlink{classOperator_ae3de2afa3ff3dca088122a79404da831}{timer}}\label{classOperator_ae3de2afa3ff3dca088122a79404da831}
 
 \begin{DoxyCompactList}\small\item\em For keeping timing information for various method calls. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classOperator}{Operator} \hyperlink{classOperator_aeef048661e7456fb28828096ba12cb53}{Commutator} (\hyperlink{classOperator}{Operator} \&X, \hyperlink{classOperator}{Operator} \&Y)
+\end{DoxyCompactItemize}
 
 
 \subsection{Detailed Description}
@@ -413,7 +413,21 @@ Since \hyperlink{classOperator_ad70b2fe8c17a836aa8ea8c28ad445fd0}{comm222\-\_\-p
 \item[{{\bf Operator} \&}]{opout}
 \end{DoxyParamCaption}
 )}}\label{classOperator_ad70b2fe8c17a836aa8ea8c28ad445fd0}
-Calculates the part of the commutator $ [X_{(2)},Y_{(2)}]_{(2)} $ which involves particle-\/particle or hole-\/hole intermediate states. \[ [X_{(2)},Y_{(2)}]^{J}_{ijkl} = \frac{1}{2} \sum_{ab} (\bar{n}_a\bar{n}_b - n_an_b) (X^{J}_{ijab}Y^{J}_{ablk} - Y^{J}_{ijab}X^{J}_{abkl}) \] This may be written as \[ [X_{(2)},Y_{(2)}]^{J} = \mathcal{M}^{J}_{pp} - \mathcal{M}^{J}_{hh} \] With the intermediate matrices \[ \mathcal{M}^{J}_{pp} \equiv \frac{1}{2}(X^{J} \mathcal{P}_{pp} Y^{J} - Y^{J} \mathcal{P}_{pp} X^{J}) \] and likewise for $ \mathcal{M}^{J}_{hh} $. \hypertarget{classOperator_a652d989590422a2b26e662625b07254e}{\index{Operator@{Operator}!Do\-Normal\-Ordering2@{Do\-Normal\-Ordering2}}
+Calculates the part of the commutator $ [X_{(2)},Y_{(2)}]_{(2)} $ which involves particle-\/particle or hole-\/hole intermediate states. \[ [X_{(2)},Y_{(2)}]^{J}_{ijkl} = \frac{1}{2} \sum_{ab} (\bar{n}_a\bar{n}_b - n_an_b) (X^{J}_{ijab}Y^{J}_{ablk} - Y^{J}_{ijab}X^{J}_{abkl}) \] This may be written as \[ [X_{(2)},Y_{(2)}]^{J} = \mathcal{M}^{J}_{pp} - \mathcal{M}^{J}_{hh} \] With the intermediate matrices \[ \mathcal{M}^{J}_{pp} \equiv \frac{1}{2}(X^{J} \mathcal{P}_{pp} Y^{J} - Y^{J} \mathcal{P}_{pp} X^{J}) \] and likewise for $ \mathcal{M}^{J}_{hh} $. \hypertarget{classOperator_a55b95477ad8674877eb4d15491cfe9a0}{\index{Operator@{Operator}!Commutator\-Scalar\-Scalar@{Commutator\-Scalar\-Scalar}}
+\index{Commutator\-Scalar\-Scalar@{Commutator\-Scalar\-Scalar}!Operator@{Operator}}
+\subsubsection[{Commutator\-Scalar\-Scalar}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Operator\-::\-Commutator\-Scalar\-Scalar (
+\begin{DoxyParamCaption}
+\item[{{\bf Operator} \&}]{opright}
+\end{DoxyParamCaption}
+)}}\label{classOperator_a55b95477ad8674877eb4d15491cfe9a0}
+Commutator where $ X $ and $Y$ are scalar operators. Should be called through \hyperlink{classOperator_aeef048661e7456fb28828096ba12cb53}{Commutator()} \hypertarget{classOperator_a7db0372f91cffc85b293f7750c72944a}{\index{Operator@{Operator}!Commutator\-Scalar\-Tensor@{Commutator\-Scalar\-Tensor}}
+\index{Commutator\-Scalar\-Tensor@{Commutator\-Scalar\-Tensor}!Operator@{Operator}}
+\subsubsection[{Commutator\-Scalar\-Tensor}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Operator\-::\-Commutator\-Scalar\-Tensor (
+\begin{DoxyParamCaption}
+\item[{{\bf Operator} \&}]{opright}
+\end{DoxyParamCaption}
+)}}\label{classOperator_a7db0372f91cffc85b293f7750c72944a}
+Commutator $[X,Y]$ where $ X $ is a scalar operator and $Y$ is a tensor operator. Should be called through \hyperlink{classOperator_aeef048661e7456fb28828096ba12cb53}{Commutator()} \hypertarget{classOperator_a652d989590422a2b26e662625b07254e}{\index{Operator@{Operator}!Do\-Normal\-Ordering2@{Do\-Normal\-Ordering2}}
 \index{Do\-Normal\-Ordering2@{Do\-Normal\-Ordering2}!Operator@{Operator}}
 \subsubsection[{Do\-Normal\-Ordering2}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Operator\-::\-Do\-Normal\-Ordering2 (
 \begin{DoxyParamCaption}
@@ -459,6 +473,17 @@ The scalar Pandya transformation is defined as \[ \bar{X}^{J}_{i\bar{j}k\bar{l}}
 \end{DoxyParamCaption}
 ) const}}\label{classOperator_acb9d7959232a636191b91f6bf5b7b0c8}
 Obtain the Frobenius norm of the operator, which here is defined as \[ \|X\| = \sqrt{\|X_{(1)}\|^2 +\|X_{(2)}\|^2 } \] and \[ \|X_{(1)}\|^2 = \sum\limits_{ij} X_{ij}^2 \] 
+
+\subsection{Friends And Related Function Documentation}
+\hypertarget{classOperator_aeef048661e7456fb28828096ba12cb53}{\index{Operator@{Operator}!Commutator@{Commutator}}
+\index{Commutator@{Commutator}!Operator@{Operator}}
+\subsubsection[{Commutator}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Commutator (
+\begin{DoxyParamCaption}
+\item[{{\bf Operator} \&}]{X, }
+\item[{{\bf Operator} \&}]{Y}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [friend]}}}\label{classOperator_aeef048661e7456fb28828096ba12cb53}
+Returns $ Z = [X,Y] $ 
 
 The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
 \item 

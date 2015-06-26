@@ -453,11 +453,8 @@ void ModelSpace::AddOrbit(Orbit orb)
 
 void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
 {
-//   cout << "In AddOrbit" << endl;
    index_t ind = Index1(n, l, j2, tz2);
-//   cout << "Assigning Orbits[" << ind << "]. Size of Orbits = " << Orbits.size() << endl;
    Orbits[ind] = Orbit(n,l,j2,tz2,ph,io,ind);
-//   cout << "Successfully assigned" << endl;
 
    if (j2 > OneBodyJmax)
    {
@@ -466,34 +463,20 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
       ThreeBodyJmax = OneBodyJmax*3-1;
       nTwoBodyChannels = 2*3*(TwoBodyJmax+1);
    }
-//   cout << "pushing back particles and holes" << endl;
-//   cout << "ind = " << ind
-//        << "  particles.size() = " << particles.size()
-//        << "  holes.size() = " << holes.size()
-//        << "  valence.size() = " << valence.size()
-//        << "  qspace.size() = " << qspace.size()
-//        << "  particle_qspace.size() = " << particle_qspace.size()
-//        << "  hole_qspace.size() = " << hole_qspace.size()
-//        << endl;
+
    if (ph == 0) particles.push_back(ind);
    if (ph == 1) holes.push_back(ind);
-//   cout << "Done with particle/hole" << endl;
    if (io == 0) valence.push_back(ind);
-//   cout << "Done with in/out" << endl;
    if (io == 1)
    {
      qspace.push_back(ind);
      if (ph == 0) particle_qspace.push_back(ind);
      if (ph == 1) hole_qspace.push_back(ind);
    }
-//   cout << "pushing back proton/neutron" << endl;
    if (tz2<0) proton_orbits.push_back(ind);
    if (tz2>0) neutron_orbits.push_back(ind);
 
-//   cout << "About to push back OneBodyChannels. size = " << OneBodyChannels.size() << endl;
-//   cout << "l = " << l << " j2 = " << j2 << " tz2 = " << tz2 << endl;
    OneBodyChannels[{l, j2, tz2}].push_back(ind);
-//   cout << "Done with OneBodyChannels" << endl;
 
 
 }
@@ -724,7 +707,7 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
 
    // if we didn't find it, we need to calculate it.
    double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
-   cout << "Shouldn't be here..." << N << " " << Lam << " " <<  n << " " << lam << " " << n1 << " " << l1 << " " << n2 << " " << l2 << " " << L << endl;
+//   cout << "Shouldn't be here..." << N << " " << Lam << " " <<  n << " " << lam << " " << n1 << " " << l1 << " " << n2 << " " << l2 << " " << L << endl;
 //   #pragma omp atomic
    MoshList[key] = mosh;
    return mosh * phase_mosh;
@@ -732,30 +715,6 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
 }
 
 
-/*
-
-double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L)
-{
-   unsigned long long int key =  1000000000000 * N
-                                + 100000000000 * Lam
-                                +   1000000000 * n
-                                +    100000000 * lam
-                                +      1000000 * n1
-                                +       100000 * l1
-                                +         1000 * n2
-                                +          100 * l2
-                                +                 L;
-   map<long int,double>::iterator it = MoshList.find(key);
-   if ( it != MoshList.end() )  return it->second;
-
-   // if we didn't find it, we need to calculate it.
-   double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
-   #pragma omp critical
-   MoshList[key] = mosh;
-   return mosh;
-
-}
-*/
 
 
 double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double j4, double J34, double J13, double J24, double J)

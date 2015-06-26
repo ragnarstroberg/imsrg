@@ -44,6 +44,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
+      <li><a href="pages.html"><span>Related&#160;Pages</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
       <li><a href="files.html"><span>Files</span></a></li>
@@ -78,7 +79,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -119,9 +120,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <tr class="even"><td class="entry"><a class="el" href="classOperator.html#acb2df128030bcad71f2b3fd975ea7988">comm222_pp_hh_221ss</a>(Operator &amp;opright, Operator &amp;opout)</td><td class="entry"><a class="el" href="classOperator.html">Operator</a></td><td class="entry"></td></tr>
   <tr bgcolor="#f0f0f0"><td class="entry"><b>comm222_pp_hh_221st</b>(Operator &amp;opright, Operator &amp;opout) (defined in <a class="el" href="classOperator.html">Operator</a>)</td><td class="entry"><a class="el" href="classOperator.html">Operator</a></td><td class="entry"></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="classOperator.html#ad70b2fe8c17a836aa8ea8c28ad445fd0">comm222_pp_hhss</a>(Operator &amp;opright, Operator &amp;opout)</td><td class="entry"><a class="el" href="classOperator.html">Operator</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="classOperator.html#a9d78ca5fd265cf4ccc6cda81d35cb086">Commutator</a>(Operator &amp;opright)</td><td class="entry"><a class="el" href="classOperator.html">Operator</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>CommutatorScalarScalar</b>(Operator &amp;opright) (defined in <a class="el" href="classOperator.html">Operator</a>)</td><td class="entry"><a class="el" href="classOperator.html">Operator</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0"><td class="entry"><b>CommutatorScalarTensor</b>(Operator &amp;opright) (defined in <a class="el" href="classOperator.html">Operator</a>)</td><td class="entry"><a class="el" href="classOperator.html">Operator</a></td><td class="entry"></td></tr>
+  <tr><td class="entry"><a class="el" href="classOperator.html#aeef048661e7456fb28828096ba12cb53">Commutator</a>(Operator &amp;X, Operator &amp;Y)</td><td class="entry"><a class="el" href="classOperator.html">Operator</a></td><td class="entry"><span class="mlabel">friend</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classOperator.html#a55b95477ad8674877eb4d15491cfe9a0">CommutatorScalarScalar</a>(Operator &amp;opright)</td><td class="entry"><a class="el" href="classOperator.html">Operator</a></td><td class="entry"></td></tr>
+  <tr><td class="entry"><a class="el" href="classOperator.html#a7db0372f91cffc85b293f7750c72944a">CommutatorScalarTensor</a>(Operator &amp;opright)</td><td class="entry"><a class="el" href="classOperator.html">Operator</a></td><td class="entry"></td></tr>
   <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>Copy</b>(const Operator &amp;rhs) (defined in <a class="el" href="classOperator.html">Operator</a>)</td><td class="entry"><a class="el" href="classOperator.html">Operator</a></td><td class="entry"></td></tr>
   <tr><td class="entry"><a class="el" href="classOperator.html#a622880b91a902c832b867c6447a262e7">DoNormalOrdering</a>()</td><td class="entry"><a class="el" href="classOperator.html">Operator</a></td><td class="entry"></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="classOperator.html#a652d989590422a2b26e662625b07254e">DoNormalOrdering2</a>()</td><td class="entry"><a class="el" href="classOperator.html">Operator</a></td><td class="entry"></td></tr>
@@ -202,7 +203,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </table></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 23 2015 10:05:04 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jun 24 2015 15:50:47 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

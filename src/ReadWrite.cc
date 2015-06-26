@@ -794,8 +794,8 @@ void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<ar
     
   }
 
-  delete dbuf[0];
-  delete dbuf;
+  delete[] dbuf[0];
+  delete[] dbuf;
 
 }
 
@@ -925,7 +925,7 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
 
        double me   = value_buf[i];
        // for some reason, we need to multiply by hc/2
-       me *= HBARC*0.5;
+       me *= HBARC;
 
        int a    = Basis[alpha][0];
        int b    = Basis[alpha][1];
@@ -963,6 +963,9 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
 
     } //loop over matrix elements
   } // loop over slabs
+  delete[] label_buf[0];
+  delete[] label_buf;
+  delete[] value_buf;
 }
 
 
