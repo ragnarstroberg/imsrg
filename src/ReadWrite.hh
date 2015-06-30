@@ -28,6 +28,7 @@ class ReadWrite
 //   void Read_Darmstadt_3body_from_stream( istream & infile, Operator& Hbare, int E1max, int E2max, int E3max);
    void GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis );
    void Read3bodyHDF5( string filename, Operator& op);
+   void Write_me2j( string filename, Operator& op, int emax, int e2max, int lmax);
    void WriteNuShellX_sps( Operator& op, string filename);
    void WriteNuShellX_int( Operator& op, string filename);
    void WriteAntoine_int( Operator& op, string filename); // <- not implemented yet...

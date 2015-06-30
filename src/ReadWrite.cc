@@ -217,8 +217,10 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
   int N1max, N12max;
   double hw, srg_lambda;
   int A = Hbare.GetModelSpace()->GetTargetMass();
-
-  infile >> total_number_elements >> N1max >> N12max >> hw >> srg_lambda;
+  char header[500];
+  infile.getline(header,500);
+  hw = Hbare.GetModelSpace()->GetHbarOmega();
+//  infile >> total_number_elements >> N1max >> N12max >> hw >> srg_lambda;
 
   int J,T;
   int nlj1,nlj2,nlj3,nlj4;
@@ -462,17 +464,33 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
              if (a==b)  norm_factor /= SQRT2;
              if (c==d)  norm_factor /= SQRT2;
 
+//             cout << a << " " << b << " " << c << " " << d << "   " << J << "   "
+//                  << fixed << setprecision(7) << setw(11) << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp << endl;
 
-             // do pp and nn
-             if (tbme_pp !=0)
+             if (norm_factor>0.9 or J%2==0)
+             {
                 Hbare.TwoBody.SetTBME(J,parity,-1,a,b,c,d,tbme_pp*norm_factor);
-             if (tbme_nn !=0)
                 Hbare.TwoBody.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,tbme_nn*norm_factor);
-
-             if (tbme_10 !=0)
                 Hbare.TwoBody.Set_pn_TBME_from_iso(J,1,0,a,b,c,d,tbme_10*norm_factor);
-             if (tbme_00 !=0)
+             }
+             if (norm_factor>0.9 or J%2!=0)
+             { 
                 Hbare.TwoBody.Set_pn_TBME_from_iso(J,0,0,a,b,c,d,tbme_00*norm_factor);
+             }
+             // do pp and nn
+////             if (abs(tbme_pp) >1e-6)
+//             if (tbme_pp !=0)
+//                Hbare.TwoBody.SetTBME(J,parity,-1,a,b,c,d,tbme_pp*norm_factor);
+////             if (abs(tbme_nn) >1e-6)
+//             if (tbme_nn !=0)
+//                Hbare.TwoBody.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,tbme_nn*norm_factor);
+//
+////             if (abs(tbme_10) >1e-6)
+//             if (tbme_10 !=0)
+//                Hbare.TwoBody.Set_pn_TBME_from_iso(J,1,0,a,b,c,d,tbme_10*norm_factor);
+////             if (abs(tbme_00) >1e-6)
+//             if (tbme_00 !=0)
+//                Hbare.TwoBody.Set_pn_TBME_from_iso(J,0,0,a,b,c,d,tbme_00*norm_factor);
 
           }
         }
@@ -967,6 +985,143 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
   delete[] label_buf;
   delete[] value_buf;
 }
+
+
+
+
+
+
+
+
+void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int Emax, int lmax)
+{
+  ofstream outfile(outfilename);
+  if ( !outfile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble opening file  !!!   **" << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
+  ModelSpace * modelspace = Hbare.GetModelSpace();
+  int norb = modelspace->GetNumberOrbits();
+  vector<int> orbits_remap;
+
+  if (emax < 0)  emax = modelspace->Nmax;
+  if (lmax < 0)  lmax = emax;
+
+  for (int e=0; e<=min(emax,modelspace->Nmax); ++e)
+  {
+    int lmin = e%2;
+    for (int l=lmin; l<=min(e,lmax); l+=2)
+    {
+      int n = (e-l)/2;
+      int twojMin = abs(2*l-1);
+      int twojMax = 2*l+1;
+      for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
+      {
+         orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
+      }
+    }
+  }
+  int nljmax = orbits_remap.size()-1;
+
+//  double tbme_pp,tbme_nn,tbme_10,tbme_00;
+  float tbme_pp,tbme_nn,tbme_10,tbme_00;
+  // skip the first line
+  char line[LINESIZE];
+//  infile.getline(line,LINESIZE);
+  outfile << "    blah blah blah header " << endl;
+  int icount = 0;
+
+  outfile << setiosflags(ios::fixed);
+//  outfile << setprecision(7);
+//  outfile << setw(12);
+
+  for(int nlj1=0; nlj1<=nljmax; ++nlj1)
+  {
+    int a =  orbits_remap[nlj1];
+    Orbit & o1 = modelspace->GetOrbit(a);
+    int e1 = 2*o1.n + o1.l;
+    if (e1 > emax) break;
+
+    for(int nlj2=0; nlj2<=nlj1; ++nlj2)
+    {
+      int b =  orbits_remap[nlj2];
+      Orbit & o2 = modelspace->GetOrbit(b);
+      int e2 = 2*o2.n + o2.l;
+      if (e1+e2 > Emax) break;
+      int parity = (o1.l + o2.l) % 2;
+
+      for(int nlj3=0; nlj3<=nlj1; ++nlj3)
+      {
+        int c =  orbits_remap[nlj3];
+        Orbit & o3 = modelspace->GetOrbit(c);
+        int e3 = 2*o3.n + o3.l;
+
+        for(int nlj4=0; nlj4<=(nlj3==nlj1 ? nlj2 : nlj3); ++nlj4)
+        {
+          int d =  orbits_remap[nlj4];
+          Orbit & o4 = modelspace->GetOrbit(d);
+          int e4 = 2*o4.n + o4.l;
+          if (e3+e4 > Emax) break;
+          if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
+          int Jmin = max( abs(o1.j2 - o2.j2), abs(o3.j2 - o4.j2) )/2;
+          int Jmax = min (o1.j2 + o2.j2, o3.j2+o4.j2)/2;
+          if (Jmin > Jmax) continue;
+          for (int J=Jmin; J<=Jmax; ++J)
+          {
+             double norm_factor = 1;
+             if (a==b)  norm_factor *= SQRT2;
+             if (c==d)  norm_factor *= SQRT2;
+
+             // Matrix elements are written in the file with (T,Tz) = (0,0) (1,1) (1,0) (1,-1)
+             tbme_pp = Hbare.TwoBody.GetTBME(J,parity,-1,a,b,c,d);
+             tbme_nn = Hbare.TwoBody.GetTBME(J,parity,1,a+1,b+1,c+1,d+1);
+             tbme_10 = Hbare.TwoBody.Get_iso_TBME_from_pn(J,1,0,a,b,c,d);
+             tbme_00 = Hbare.TwoBody.Get_iso_TBME_from_pn(J,0,0,a,b,c,d);
+
+             
+             outfile << setprecision(7) << setw(12) << tbme_00*norm_factor<< " "  ;
+             if ((icount++)%10==9)
+             {
+               outfile << endl;
+             }
+             outfile << setprecision(7) << setw(12) << tbme_nn<< " "  ;
+             if ((icount++)%10==9)
+             {
+               outfile << endl;
+             }
+             outfile << setprecision(7) << setw(12) << tbme_10*norm_factor << " "  ;
+             if ((icount++)%10==9)
+             {
+               outfile << endl;
+             }
+             outfile << setprecision(7) << setw(12) << tbme_pp << " "  ;
+             if ((icount++)%10==9)
+             {
+               outfile << endl;
+             }
+
+
+          }
+        }
+      }
+    }
+  }
+  if (icount%10 !=9) outfile << endl;
+
+}
+
+
+
+
+
+
+
+
+
 
 
 

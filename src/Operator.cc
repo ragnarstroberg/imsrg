@@ -65,7 +65,7 @@ Operator::Operator(ModelSpace& ms) :
 Operator::Operator(const Operator& op)
 : modelspace(op.modelspace),  ZeroBody(op.ZeroBody),
   OneBody(op.OneBody), TwoBody(op.TwoBody) ,ThreeBody(op.ThreeBody),
-  rank_J(op.rank_J), rank_T(op.rank_T), particle_rank(op.particle_rank),
+  rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank),
   E2max(op.E2max), E3max(op.E3max), 
   hermitian(op.hermitian), antihermitian(op.antihermitian),
   nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
@@ -76,7 +76,7 @@ Operator::Operator(const Operator& op)
 Operator::Operator(Operator&& op)
 : modelspace(op.modelspace), ZeroBody(op.ZeroBody),
   OneBody(move(op.OneBody)), TwoBody(move(op.TwoBody)) , ThreeBody(move(op.ThreeBody)),
-  rank_J(op.rank_J), rank_T(op.rank_T), particle_rank(op.particle_rank),
+  rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank),
   E2max(op.E2max), E3max(op.E3max), 
   hermitian(op.hermitian), antihermitian(op.antihermitian),
   nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
@@ -267,8 +267,8 @@ Operator Operator::DoNormalOrdering()
 //*************************************************************
 Operator Operator::DoNormalOrdering2()
 {
-   Operator opNO = *this;
-
+//   Operator opNO = *this;
+   Operator opNO(*this);
 
    if (opNO.rank_J==0 and opNO.rank_T==0 and opNO.parity==0)
    {
@@ -305,7 +305,6 @@ Operator Operator::DoNormalOrdering2()
          Orbit &oa = modelspace->GetOrbit(a);
          double ja = oa.j2/2.0;
          index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-//         for ( auto& b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // OneBodyChannels should be moved to the operator, to accommodate tensors
          for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // OneBodyChannels should be moved to the operator, to accommodate tensors
          {
             if (b < bstart) continue;

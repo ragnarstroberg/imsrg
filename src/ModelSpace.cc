@@ -72,9 +72,12 @@ TwoBodyChannel::TwoBodyChannel(int N, ModelSpace *ms)
 void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
 {
    int tbjmax = ms->TwoBodyJmax;
-   J = N%tbjmax;
-   parity = (N/tbjmax)%2;
-   Tz = (N/(2*tbjmax)-1);
+//   J = N%tbjmax;
+//   parity = (N/tbjmax)%2;
+//   Tz = (N/(2*tbjmax)-1);
+   J = N%(tbjmax+1);
+   parity = (N/(tbjmax+1))%2;
+   Tz = (N/(2*(tbjmax+1))-1);
    modelspace = ms;
    NumberKets = 0;
    int nk = modelspace->GetNumberKets();
@@ -459,9 +462,12 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
    if (j2 > OneBodyJmax)
    {
       OneBodyJmax = j2;
-      TwoBodyJmax = OneBodyJmax*2;
+//      TwoBodyJmax = OneBodyJmax*2;
+      TwoBodyJmax = OneBodyJmax;
       ThreeBodyJmax = OneBodyJmax*3-1;
       nTwoBodyChannels = 2*3*(TwoBodyJmax+1);
+//      cout << "TwoBodyJmax = " << TwoBodyJmax << endl;
+//      cout << "nTwoBodyChannels = " << nTwoBodyChannels << endl;
    }
 
    if (ph == 0) particles.push_back(ind);
@@ -484,7 +490,8 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
 
 int ModelSpace::GetTwoBodyChannelIndex(int j, int p, int t)
 {
-   return (t+1)*2*(TwoBodyJmax) + p*(TwoBodyJmax) + j;
+//   return (t+1)*2*(TwoBodyJmax) + p*(TwoBodyJmax) + j;
+   return (t+1)*2*(TwoBodyJmax+1) + p*(TwoBodyJmax+1) + j;
 }
 
 
