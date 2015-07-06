@@ -548,7 +548,7 @@ Operator Operator::BCH_Transform(  Operator &Omega)
    double ny = Omega.Norm();
    Operator OpOut = *this;
    Operator OpNested = *this;
-   if (nx<1e-6) return OpOut;
+   if (nx<bch_transform_threshold) return OpOut;
    double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
    for (int i=1; i<max_iter; ++i)
    {

@@ -477,20 +477,6 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
              { 
                 Hbare.TwoBody.Set_pn_TBME_from_iso(J,0,0,a,b,c,d,tbme_00*norm_factor);
              }
-             // do pp and nn
-////             if (abs(tbme_pp) >1e-6)
-//             if (tbme_pp !=0)
-//                Hbare.TwoBody.SetTBME(J,parity,-1,a,b,c,d,tbme_pp*norm_factor);
-////             if (abs(tbme_nn) >1e-6)
-//             if (tbme_nn !=0)
-//                Hbare.TwoBody.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,tbme_nn*norm_factor);
-//
-////             if (abs(tbme_10) >1e-6)
-//             if (tbme_10 !=0)
-//                Hbare.TwoBody.Set_pn_TBME_from_iso(J,1,0,a,b,c,d,tbme_10*norm_factor);
-////             if (abs(tbme_00) >1e-6)
-//             if (tbme_00 !=0)
-//                Hbare.TwoBody.Set_pn_TBME_from_iso(J,0,0,a,b,c,d,tbme_00*norm_factor);
 
           }
         }
@@ -659,7 +645,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                    for(int twoT = twoTMin; twoT <= twoTMax; twoT += 2)
                    {
 //                    double V;
-                    float V;
+                    float V = 0;
                     infile >> V;
                     ++nread;
                     bool autozero = false;
@@ -694,12 +680,12 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
 //                       cout << " ( should be zero ) ";
                        if (abs(V) > 1e-6 and ea<=e1max and eb<=e1max and ec<=e1max)
                        {
-                          cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero!" << endl;
+                          cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << endl;
                        }
                     }
  //                   cout << endl;
        
-                   }
+                   }//twoT
                   }//ttab
                  }//tab
 //                 cout << " ------------------------" << endl;
@@ -708,33 +694,6 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                }//JJab
        
               }//Jab
-
-
-//// I don't think this stuff is needed...
-//              int aa=a;
-//              int bb=b;
-//              int cc=c;
-//              int dd=d;
-//              int eee=e;
-//              int ff=f;
-//              if (bb>aa) swap(aa,bb);
-//              if (cc>bb) swap(cc,bb);
-//              if (bb>aa) swap(aa,bb);
-//              if (eee>dd) swap(dd,eee);
-//              if (ff>eee) swap(ff,eee);
-//              if (eee>dd) swap(dd,eee);
-//              if (dd>aa or (dd==aa and eee>bb) or (dd==aa and eee==bb and ff>cc))
-//              {
-//                swap(aa,dd);
-//                swap(bb,eee);
-//                swap(cc,ff);
-//              }
-////              if (counter > 0)
-////              cout << aa << " " << bb << " " << cc << " " << dd << " " << eee << " " << ff << "  :  " << counter << endl;
-//              if (aa==12 and bb==10 and cc==0 and dd==12 and eee==6 and ff==6)
-//              {
-////               cout << "~~ energies: " << ea << " " << eb << " " << ec << " " << ed << " " << ee << " " << ef  <<  "   --  " << e1max << " " << e2max << " " << e3max << " " << counter <<  endl;
-//              }
 
             }
           }
@@ -924,7 +883,7 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
     label_dspace.selectHyperslab( H5S_SELECT_SET, count, start, stride, label_block);
     value_dspace.selectHyperslab( H5S_SELECT_SET, count, start, stride, value_block);
 
-    // Read the lable data into label_buf, and matrix elements into value_buf
+    // Read the label data into label_buf, and matrix elements into value_buf
     label.read( &label_buf[0][0], PredType::NATIVE_INT, label_buf_dspace, label_dspace );
     value.read( &value_buf[0], PredType::NATIVE_DOUBLE, value_buf_dspace, value_dspace );
 
@@ -942,7 +901,6 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
        if (alpha<alphap) continue;
 
        double me   = value_buf[i];
-       // for some reason, we need to multiply by hc/2
        me *= HBARC;
 
        int a    = Basis[alpha][0];
@@ -974,7 +932,7 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
        }
        if (J2 != twoJ or J2p != twoJ)
        {
-         cerr << "Error. Mismatching total J! " << endl;
+         cerr << "Error. Mismatching total J! " << J2 << " " << J2p << " " << twoJ << endl;
        }
 
        op.ThreeBody.SetME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f, me);
@@ -1119,6 +1077,181 @@ void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int E
 
 
 
+void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2max, int E3max)
+{
+  ofstream outfile(ofilename);
+//  if ( !infile.good() )
+//  {
+//     cerr << "************************************" << endl
+//          << "**    Trouble reading file  !!!   **" << endl
+//          << "************************************" << endl;
+//     goodstate = false;
+//     return;
+//  }
+  if (Hbare.particle_rank < 3)
+  {
+    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << endl;
+    cerr << " Oops. Looks like we're trying to write 3body matrix elements from a " << Hbare.particle_rank << "-body operator. For shame..." << endl;
+    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << endl;
+    goodstate = false;
+    return;
+  }
+  ModelSpace * modelspace = Hbare.GetModelSpace();
+  int e1max = modelspace->GetNmax();
+  int e2max = modelspace->GetN2max(); // not used yet
+  int e3max = modelspace->GetN3max();
+  cout << "Writing 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << endl;
+
+  vector<int> orbits_remap(0);
+  int lmax = E1max; // haven't yet implemented the lmax truncation for 3body. Should be easy.
+
+  for (int e=0; e<=min(E1max,e1max); ++e)
+  {
+    int lmin = e%2;
+    for (int l=lmin; l<=min(e,lmax); l+=2)
+    {
+      int n = (e-l)/2;
+      int twojMin = abs(2*l-1);
+      int twojMax = 2*l+1;
+      for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
+      {
+         orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
+      }
+    }
+  }
+  int nljmax = orbits_remap.size();
+
+
+
+  // skip the first line
+//  char line[LINESIZE];
+//  infile.getline(line,LINESIZE);
+  outfile << "         header nonsense... " << endl;
+  outfile << setiosflags(ios::fixed);
+  // begin giant nested loops
+  int icount = 0;
+  for(int nlj1=0; nlj1<nljmax; ++nlj1)
+  {
+    int a =  orbits_remap[nlj1];
+    Orbit & oa = modelspace->GetOrbit(a);
+    int ea = 2*oa.n + oa.l;
+    if (ea > E1max) break;
+    if (ea > e1max) break;
+
+    for(int nlj2=0; nlj2<=nlj1; ++nlj2)
+    {
+      int b =  orbits_remap[nlj2];
+      Orbit & ob = modelspace->GetOrbit(b);
+      int eb = 2*ob.n + ob.l;
+      if ( (ea+eb) > E2max) break;
+
+      for(int nlj3=0; nlj3<=nlj2; ++nlj3)
+      {
+        int c =  orbits_remap[nlj3];
+        Orbit & oc = modelspace->GetOrbit(c);
+        int ec = 2*oc.n + oc.l;
+        if ( (ea+eb+ec) > E3max) break;
+
+        // Get J limits for bra <abc|
+        int JabMax  = (oa.j2 + ob.j2)/2;
+        int JabMin  = abs(oa.j2 - ob.j2)/2;
+
+        int twoJCMindownbra;
+        if (abs(oa.j2 - ob.j2) >oc.j2)
+           twoJCMindownbra = abs(oa.j2 - ob.j2)-oc.j2;
+        else if (oc.j2 < (oa.j2+ob.j2) )
+           twoJCMindownbra = 1;
+        else
+           twoJCMindownbra = oc.j2 - oa.j2 - ob.j2;
+        int twoJCMaxupbra = oa.j2 + ob.j2 + oc.j2;
+
+
+        // now loop over possible ket orbits
+        for(int nnlj1=0; nnlj1<=nlj1; ++nnlj1)
+        {
+          int d =  orbits_remap[nnlj1];
+          Orbit & od = modelspace->GetOrbit(d);
+          int ed = 2*od.n + od.l;
+
+          for(int nnlj2=0; nnlj2 <= ((nlj1 == nnlj1) ? nlj2 : nnlj1); ++nnlj2)
+          {
+            int e =  orbits_remap[nnlj2];
+            Orbit & oe = modelspace->GetOrbit(e);
+            int ee = 2*oe.n + oe.l;
+
+            int nnlj3Max = (nlj1 == nnlj1 and nlj2 == nnlj2) ? nlj3 : nnlj2;
+            for(int nnlj3=0; nnlj3 <= nnlj3Max; ++nnlj3)
+            {
+              int f =  orbits_remap[nnlj3];
+              Orbit & of = modelspace->GetOrbit(f);
+              int ef = 2*of.n + of.l;
+              if ( (ed+ee+ef) > E3max) break;
+              // check parity
+              if ( (oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2 !=0 ) continue;
+
+              // Get J limits for ket |def>
+              int JJabMax = (od.j2 + oe.j2)/2;
+              int JJabMin = abs(od.j2 - oe.j2)/2;
+
+              int twoJCMindownket;
+              if ( abs(od.j2 - oe.j2) > of.j2 )
+                 twoJCMindownket = abs(od.j2 - oe.j2) - of.j2;
+              else if ( of.j2 < (od.j2+oe.j2) )
+                 twoJCMindownket = 1;
+              else
+                 twoJCMindownket = of.j2 - od.j2 - oe.j2;
+
+              int twoJCMaxupket = od.j2 + oe.j2 + of.j2;
+
+              int twoJCMindown = max(twoJCMindownbra, twoJCMindownket);
+              int twoJCMaxup = min(twoJCMaxupbra, twoJCMaxupket);
+              if (twoJCMindown > twoJCMaxup) continue;
+
+              //inner loops
+              for(int Jab = JabMin; Jab <= JabMax; Jab++)
+              {
+               for(int JJab = JJabMin; JJab <= JJabMax; JJab++)
+               {
+                //summation bounds for twoJC
+                int twoJCMin = max( abs(2*Jab - oc.j2), abs(2*JJab - of.j2));
+                int twoJCMax = min( 2*Jab + oc.j2 , 2*JJab + of.j2 );
+       
+                for(int twoJC = twoJCMin; twoJC <= twoJCMax; twoJC += 2)
+                {
+                 for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
+                 {
+                  for(int ttab = 0; ttab <= 1; ttab++)
+                  {
+                   //summation bounds
+                   int twoTMin = 1; // twoTMin can just be used as 1
+                   int twoTMax = min( 2*tab +1, 2*ttab +1);
+       
+                   for(int twoT = twoTMin; twoT <= twoTMax; twoT += 2)
+                   {
+                    float V = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
+                    outfile << setprecision(7) << setw(12) << V << " "  ;
+                    if ((icount++)%10==9)
+                      outfile << endl;
+                   }//twoT
+                  }//ttab
+                 }//tab
+//                if (not infile.good() ) break;
+                }//twoJ
+               }//JJab
+       
+              }//Jab
+
+
+            }
+          }
+        }
+      }
+    }
+  }
+  if (icount%10 !=9) outfile << endl;
+
+}
+
 
 
 
@@ -1235,10 +1368,13 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
             if ( abs(tbme) < 1e-6) tbme = 0;
             if (T==0)
             {
-               if (oa.j2 == ob.j2 and oa.l == ob.l and oa.n == ob.n) T = (tbc.J+1)%2;
-               else tbme *= SQRT2; // pn TBMEs are unnormalized
-               if (oc.j2 == od.j2 and oc.l == od.l and oc.n == od.n) T = (tbc.J+1)%2;
-               else tbme *= SQRT2; // pn TBMEs are unnormalized
+               if ( not (oa.j2 == ob.j2 and oa.l == ob.l and oa.n == ob.n) ) tbme *= SQRT2; // pn TBMEs are unnormalized
+               if ( not (oc.j2 == od.j2 and oc.l == od.l and oc.n == od.n) ) tbme *= SQRT2; // pn TBMEs are unnormalized
+               T = (tbc.J+1)%2;
+//               if (oa.j2 == ob.j2 and oa.l == ob.l and oa.n == ob.n) T = (tbc.J+1)%2;
+//               else tbme *= SQRT2; // pn TBMEs are unnormalized
+//               if (oc.j2 == od.j2 and oc.l == od.l and oc.n == od.n) T = (tbc.J+1)%2;
+//               else tbme *= SQRT2; // pn TBMEs are unnormalized
             }
             // in NuShellX, the proton orbits must come first. This can be achieved by
             // ensuring that the bra and ket indices are in ascending order.

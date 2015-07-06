@@ -27,8 +27,18 @@ namespace imsrg_util
     double L = gsl_sf_laguerre_n(n, l+0.5, v*r*r);
     double rho = Norm * pow(r,2*l) * exp(-v * r*r) * L * L;
     return rho;
-
  }
+
+double HO_Radial_psi(int n, int l, double hw, double r)
+{
+   double b = sqrt( (HBARC*HBARC) / (hw * M_NUCLEON) );
+   double x = r/b;
+//   double Norm = sqrt(2*gsl_sf_fact(n)/gsl_sf_gamma(n+l+1.5));
+   double Norm = sqrt( 2*gsl_sf_fact(n) * pow(2,n+l) / M_SQRTPI / gsl_sf_doublefact(2*n+2*l+2) / pow(b,3.0) );
+   double L = gsl_sf_laguerre_n(n,l+0.5,x*x);
+   double psi = Norm * pow(x,l) * exp(-x*x*0.5) * L;
+   return psi;
+}
 
  // Just do the HF transformation
  vector<double> GetOccupationsHF(HartreeFock& hf)
@@ -85,6 +95,35 @@ namespace imsrg_util
        }
      }
      return dens;
+ }
+
+ Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace)
+ {
+    Operator DM(modelspace,0,0,0,2);
+    for (index_t a : modelspace.holes)
+    {
+       DM.OneBody(a,a) = 1.0;
+    }
+    return DM;
+ }
+
+ double Get_Charge_Density( Operator& DM, double r)
+ {
+   ModelSpace* modelspace = DM.GetModelSpace();
+   index_t norb = modelspace->GetNumberOrbits();
+   double hw = modelspace->GetHbarOmega();
+   double rho=0;
+   for (index_t i : modelspace->proton_orbits )
+   {
+      Orbit& oi = modelspace->GetOrbit(i);
+      for ( index_t j : DM.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
+      {
+        if (abs(DM.OneBody(i,j))<1e-7) continue;
+        Orbit& oj = modelspace->GetOrbit(j);
+        rho += DM.OneBody(i,j) * HO_Radial_psi(oi.n, oi.l, hw, r) * HO_Radial_psi(oj.n, oj.l, hw, r);
+      }
+   }
+   return rho;
  }
 
 
@@ -425,7 +464,7 @@ namespace imsrg_util
 /// Returns
 /// \f[ 
 /// R^{2}_{CM} = \left( \frac{1}{A}\sum_{i}\vec{r}_{i}\right)^2 =
-/// \frac{1}{A^2} \left( \sum_{i}r_{i}^{2} + 2\sum_{i<j}\vec{r}_i\cdot\vec{r}_j  \right)
+/// \frac{1}{A^2} \left( \sum_{i}r_{i}^{2} + \sum_{i\neq j}\vec{r}_i\cdot\vec{r}_j  \right)
 /// \f]
 /// evaluated in the oscillator basis.
  Operator R2CM_Op(ModelSpace& modelspace)
@@ -461,8 +500,7 @@ namespace imsrg_util
          for (int iket=ibra;iket<nkets;++iket)
          {
             Ket & ket = tbc.GetKet(iket);
-//            double mat_el = 2*Calculate_r1r2(modelspace,bra,ket,tbc.J); // should this 2 be here?
-            double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J); // should this 2 be here?
+            double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J); 
              
             R2cmOp.TwoBody.SetTBME(ch,ibra,iket,mat_el);
             R2cmOp.TwoBody.SetTBME(ch,iket,ibra,mat_el);
@@ -485,49 +523,7 @@ namespace imsrg_util
 /// evaluated in the oscillator basis.
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z)
  {
-   Operator Rp2Op = Operator(modelspace,0,0,0,2);
-
-   unsigned int norb = modelspace.GetNumberOrbits();
-   for (unsigned int i=0; i<norb; ++i)
-   {
-      Orbit & oi = modelspace.GetOrbit(i);
-      for (auto j : modelspace.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
-      {
-         if (j<i) continue;
-         Orbit & oj = modelspace.GetOrbit(j);
-         double rij = 0;
-         if (oi.n == oj.n)        rij = (2*oi.n+oi.l + 1.5);
-         else if (oi.n == oj.n-1) rij = -sqrt(oj.n*(oj.n+oj.l + 0.5));
-         rij *= ( 1.0/(A*A) +(A-2.0)/(A*Z)*(1.0-oi.tz2)/2 ); 
-         Rp2Op.OneBody(i,j) = rij;
-         Rp2Op.OneBody(j,i) = rij;
-      }
-   }
-
-   int nchan = modelspace.GetNumberTwoBodyChannels();
-   modelspace.PreCalculateMoshinsky();
-   #pragma omp parallel for schedule(dynamic,1) 
-   for (int ch=0; ch<nchan; ++ch)
-   {
-      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
-      int nkets = tbc.GetNumberKets();
-      for (int ibra=0;ibra<nkets;++ibra)
-      {
-         Ket & bra = tbc.GetKet(ibra);
-         for (int iket=ibra;iket<nkets;++iket)
-         {
-            Ket & ket = tbc.GetKet(iket);
-//            double mat_el = 2*Calculate_r1r2(modelspace,bra,ket,tbc.J); // should this 2 be here?
-            double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J); // should this 2 be here?
-            mat_el *= ( 1.0/(A*A) - (1.0-bra.op->tz2)/(A*Z) );
-            Rp2Op.TwoBody.SetTBME(ch,ibra,iket,mat_el);
-            Rp2Op.TwoBody.SetTBME(ch,iket,ibra,mat_el);
-         }
-      }
-   }
-   double hw = modelspace.GetHbarOmega();
-//   int A = modelspace.GetTargetMass();
-   return Rp2Op * (HBARC*HBARC/M_NUCLEON/hw);
+   return R2CM_Op(modelspace) + (A-2.0)/(A*Z)*R2_p1_Op(modelspace) - 2./(A*Z)*R2_p2_Op(modelspace);
  }
 
 
@@ -694,44 +690,18 @@ namespace imsrg_util
 
 
 
-// Center of mass kinetic energy, with the hw/A factor
+// Center of mass Hamiltonian
  Operator HCM_Op(ModelSpace& modelspace)
  {
-   Operator HcmOp = Operator(modelspace);
-
-   int norb = modelspace.GetNumberOrbits();
-   for (int i=0; i<norb; ++i)
-   {
-      Orbit & oi = modelspace.GetOrbit(i);
-      HcmOp.OneBody(i,i) = (2*oi.n+oi.l + 1.5);
-   }
-
-   int nchan = modelspace.GetNumberTwoBodyChannels();
-   #pragma omp parallel for schedule(dynamic,5) 
-   for (int ch=0; ch<nchan; ++ch)
-   {
-      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
-      int nkets = tbc.GetNumberKets();
-      for (int ibra=0;ibra<nkets;++ibra)
-      {
-         Ket & bra = tbc.GetKet(ibra);
-         for (int iket=ibra;iket<nkets;++iket)
-         {
-            Ket & ket = tbc.GetKet(iket);
-            double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J);
-            mat_el += Calculate_p1p2(modelspace,bra,ket,tbc.J); // added this. not sure if I know what I'm doing...
-//            #pragma omp critical
-            {
-              HcmOp.TwoBody.SetTBME(ch,ibra,iket,mat_el);
-              HcmOp.TwoBody.SetTBME(ch,iket,ibra,mat_el);
-            }
-         }
-      }
-   }
    double hw = modelspace.GetHbarOmega();
    int A = modelspace.GetTargetMass();
-   return HcmOp *hw / ( 2*A );
+   double oscillator_b2 = HBARC*HBARC/M_NUCLEON/hw;
+   Operator HcmOp = TCM_Op(modelspace) + R2CM_Op(modelspace) * (0.5*A * hw / oscillator_b2);
+   return HcmOp;
  }
+
+
+
 
 /// Returns
 /// \f[ r^2 = \sum_{i} r_{i}^2 \f]
@@ -762,6 +732,77 @@ Operator RSquaredOp(ModelSpace& modelspace)
    r2.OneBody *= (HBARC*HBARC/M_NUCLEON/hw);
    return r2;
 }
+
+
+
+/// One-body part of the proton charge radius operator.
+/// Returns
+/// \f[ 
+/// \hat{R}^{2}_{p1} = \sum_{i} e_{i}{r}_i^2
+/// \f]
+Operator R2_p1_Op(ModelSpace& modelspace)
+{
+   Operator r2 = Operator(modelspace);
+   double oscillator_b = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
+
+   for (unsigned int a : modelspace.proton_orbits )
+   {
+      Orbit & oa = modelspace.GetOrbit(a);
+      r2.OneBody(a,a) = (2*oa.n + oa.l +1.5); 
+      for ( unsigned int b : r2.OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
+      {
+        if ( b < a ) continue;
+        Orbit & ob = modelspace.GetOrbit(b);
+        {
+           if (oa.n == ob.n+1)
+              r2.OneBody(a,b) = -sqrt( (oa.n)*(oa.n + oa.l +0.5));
+           else if (oa.n == ob.n-1)
+              r2.OneBody(a,b) = -sqrt( (ob.n)*(ob.n + ob.l +0.5));
+           r2.OneBody(b,a) = r2.OneBody(a,b);
+        }
+      }
+   }
+   r2.OneBody *= oscillator_b;
+   return r2;
+}
+
+
+/// Two-body part of the proton charge radius operator.
+/// Returns
+/// \f[ 
+/// \hat{R}^{2}_{p2} = \sum_{i\neq j} e_{i}\vec{r}_i\cdot\vec{r}_j 
+/// \f]
+/// evaluated in the oscillator basis.
+ Operator R2_p2_Op(ModelSpace& modelspace)
+ {
+   Operator Rp2Op = Operator(modelspace,0,0,0,2);
+   double oscillator_b = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+//   modelspace.PreCalculateMoshinsky();
+   #pragma omp parallel for schedule(dynamic,1) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+      int nkets = tbc.GetNumberKets();
+      for (int ibra=0;ibra<nkets;++ibra)
+      {
+         Ket & bra = tbc.GetKet(ibra);
+         if (bra.op->tz2>0) continue;
+         for (int iket=ibra;iket<nkets;++iket)
+         {
+            Ket & ket = tbc.GetKet(iket);
+            double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J) * oscillator_b ; 
+            Rp2Op.TwoBody.SetTBME(ch,ibra,iket,mat_el);
+            Rp2Op.TwoBody.SetTBME(ch,iket,ibra,mat_el);
+         }
+      }
+   }
+   return Rp2Op;
+ }
+
+
+
 
 // Electric monopole operator
 /// Returns
@@ -1058,7 +1099,44 @@ Operator E0Op(ModelSpace& modelspace)
 
 
 
+  Operator AllowedFermi_Op(ModelSpace& modelspace)
+  {
+    Operator Fermi(modelspace,0,1,0,2);
+    Fermi.SetHermitian();
+    const double M_fermi = 1.0;
+    int norbits = modelspace.GetNumberOrbits();
+    for (int i=0; i<norbits; ++i)
+    {
+      Orbit& oi = modelspace.GetOrbit(i);
+      for (int j : Fermi.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
+      {
+        Orbit& oj = modelspace.GetOrbit(j);
+        if (oi.n!=oj.n or oi.tz2 == oj.tz2) continue;
+        Fermi.OneBody(i,j) = M_fermi;
+      }
+    }
+    return Fermi;
+  }
 
+  Operator AllowedGamowTeller_Op(ModelSpace& modelspace)
+  {
+    Operator GT(modelspace,1,1,0,2);
+    GT.SetHermitian();
+    int norbits = modelspace.GetNumberOrbits();
+    for (int i=0; i<norbits; ++i)
+    {
+      Orbit& oi = modelspace.GetOrbit(i);
+      for (int j : GT.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
+      {
+        Orbit& oj = modelspace.GetOrbit(j);
+        if (oi.n!=oj.n or oi.l != oj.l or oi.tz2==oj.tz2) continue;
+        double sixj = modelspace.GetSixJ(0.5,0.5,1.0,oj.j2/2.,oi.j2/2.,oi.l);
+        double M_gt = 2 * modelspace.phase(oi.l+oi.j2/2.0+1.5) * sqrt((oi.j2+1)*(oj.j2+1)) * sqrt(1.5) * sixj;
+        GT.OneBody(i,j) = M_gt;
+      }
+    }
+    return GT;
+  }
 
 
 

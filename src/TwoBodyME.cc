@@ -535,7 +535,7 @@ double TwoBodyME::Norm() const
 
 void TwoBodyME::Symmetrize()
 {
-  if (rank_J>0) return;
+  if (rank_J>0 or rank_T>0 or parity>0) return;
   for (auto& itmat : MatEl )
   {
       arma::mat& matrix = itmat.second;

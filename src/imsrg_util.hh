@@ -3,7 +3,6 @@
 
 #include "ModelSpace.hh"
 #include "Operator.hh"
-//#include "Operator3.hh"
 #include "HartreeFock.hh"
 #include "IMSRGSolver.hh"
 #include <gsl/gsl_math.h>
@@ -20,21 +19,29 @@ namespace imsrg_util
  Operator PSquaredOp(ModelSpace& modelspace);
  Operator RSquaredOp(ModelSpace& modelspace);
  Operator E0Op(ModelSpace& modelspace);
-// Operator E2Op(ModelSpace& modelspace);
  Operator ElectricMultipoleOp(ModelSpace& modelspace, int L);
  Operator MagneticMultipoleOp(ModelSpace& modelspace, int L);
  Operator TCM_Op(ModelSpace& modelspace);
  Operator VCM_Op(ModelSpace& modelspace);
  Operator R2CM_Op(ModelSpace& modelspace);
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z);
+ Operator R2_p1_Op(ModelSpace& modelspace);
+ Operator R2_p2_Op(ModelSpace& modelspace);
  Operator HCM_Op(ModelSpace& modelspace);
  Operator Isospin2_Op(ModelSpace& modelspace);
+ Operator AllowedFermi_Op(ModelSpace& modelspace);
+ Operator AllowedGamowTeller_Op(ModelSpace& modelspace);
+
+ Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace);
+ double Get_Charge_Density(Operator& DM, double r);
+
 
  double Calculate_p1p2(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);
  void Calculate_p1p2_all(Operator& OpIn);
  double Calculate_r1r2(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);
  double Calculate_hcom(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);
  double HO_density(int n, int l, double hw, double r);
+ double HO_Radial_psi(int n, int l, double hw, double r);
  double RadialIntegral(int na, int la, int nb, int lb, int L);
  vector<double> GetOccupationsHF(HartreeFock& hf);
  vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);

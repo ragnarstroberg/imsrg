@@ -47,6 +47,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("Read_Darmstadt_3body", &ReadWrite::Read_Darmstadt_3body)
       .def("Read3bodyHDF5", &ReadWrite::Read3bodyHDF5)
       .def("Write_me2j", &ReadWrite::Write_me2j)
+      .def("Write_me3j", &ReadWrite::Write_me3j)
       .def("WriteNuShellX_sps", &ReadWrite::WriteNuShellX_sps)
       .def("WriteNuShellX_int", &ReadWrite::WriteNuShellX_int)
       .def("WriteAntoine_int", &ReadWrite::WriteAntoine_int)
@@ -63,6 +64,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def(self + Operator())
       .def(self -= Operator())
       .def(self - Operator())
+      .def( - self)
       .def(self *= double())
       .def(self * double())
       .def(self /= double())
@@ -138,6 +140,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("NumberOp",         imsrg_util::NumberOp);
    def("RSquaredOp",       imsrg_util::RSquaredOp);
    def("E0Op",             imsrg_util::E0Op);
+   def("AllowedFermi_Op",             imsrg_util::AllowedFermi_Op);
+   def("AllowedGamowTeller_Op",             imsrg_util::AllowedGamowTeller_Op);
 //   def("E2Op",             imsrg_util::E2Op);
    def("ElectricMultipoleOp",             imsrg_util::ElectricMultipoleOp);
    def("MagneticMultipoleOp",             imsrg_util::MagneticMultipoleOp);
@@ -148,6 +152,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("GetDensity",       imsrg_util::GetDensity);
    def("CommutatorTest",   imsrg_util::CommutatorTest);
    def("Calculate_p1p2_all",   imsrg_util::Calculate_p1p2_all);
+   def("Single_Ref_1B_Density_Matrix", imsrg_util::Single_Ref_1B_Density_Matrix);
+   def("Get_Charge_Density", imsrg_util::Get_Charge_Density);
 
 
 }
