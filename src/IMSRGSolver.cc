@@ -22,12 +22,14 @@ IMSRGSolver::IMSRGSolver()
    ds_max = 0.5;
    smax  = 2.0;
    norm_domega = 0.1;
+   omega_norm_max = 2.0;
    flowfile = "";
 }
 
 // Constructor
 IMSRGSolver::IMSRGSolver( Operator &H_in)
-   : H_0(&H_in), H_s(H_in), Eta(H_in), Omega(H_in)// ,dOmega(H_in)
+//   : H_0(&H_in), H_s(H_in), Eta(H_in), Omega(H_in)// ,dOmega(H_in)
+   : H_0(&H_in), H_s(H_in), Eta(H_in) // ,dOmega(H_in)
 #ifndef NO_ODE
     ,ode_monitor(*this)
 #endif
@@ -39,12 +41,14 @@ IMSRGSolver::IMSRGSolver( Operator &H_in)
    ds_max = 0.5;
    smax  = 2.0;
    norm_domega = 0.1;
+   omega_norm_max = 2.0;
    flowfile = "";
    modelspace = H_in.GetModelSpace();
    Eta.Erase();
    Eta.SetAntiHermitian();
-   Omega.Erase();
-   Omega.SetAntiHermitian();
+   Omega.push_back( Eta);
+//   Omega.Erase();
+//   Omega.SetAntiHermitian();
 }
 
 void IMSRGSolver::SetHin( Operator & H_in)
@@ -55,14 +59,17 @@ void IMSRGSolver::SetHin( Operator & H_in)
    Eta = H_in;
    Eta.Erase();
    Eta.SetAntiHermitian();
-   Omega = Eta;
+//   Omega = Eta;
+   Omega.push_back(Eta);
 }
 
 void IMSRGSolver::Reset()
 {
    s=0;
    Eta.Erase();
-   Omega.Erase();
+//   Omega.Erase();
+   Omega.resize(0);
+   Omega.push_back(Eta);
 }
 
 
@@ -91,7 +98,16 @@ void IMSRGSolver::Solve()
    {
 
       double norm_eta = Eta.Norm();
-      double norm_omega = Omega.Norm();
+//      double norm_omega = Omega.Norm();
+      double norm_omega = Omega.back().Norm();
+      if (norm_omega > omega_norm_max)
+      {
+        H_saved = H_s;
+        Omega.push_back(Eta);
+        Omega.back().Erase();
+        norm_omega = 0;
+        cout << "pushing back another Omega." << endl;
+      }
       // ds should never be more than 1, as this is over-rotating
       //ds = min(norm_domega / norm_eta / (norm_omega+1.0e-9), ds_max); 
       ds = min(min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), ds_max); 
@@ -101,10 +117,19 @@ void IMSRGSolver::Solve()
       Eta *= ds; // Here's the Euler step.
 
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
-      Omega = Eta.BCH_Product( Omega ); 
+//      Omega = Eta.BCH_Product( Omega ); 
+      Omega.back() = Eta.BCH_Product( Omega.back() ); 
 
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
-      H_s = H_0->BCH_Transform( Omega );
+//      H_s = H_0->BCH_Transform( Omega );
+      if (Omega.size()<2)
+        H_s = H_0->BCH_Transform( Omega.back() );
+      else
+        H_s = H_saved.BCH_Transform( Omega.back() );
+//      for (auto omega : Omega)
+//      {
+//        H_s = H_s.BCH_Transform( omega );
+//      }
         
       generator.Update(&H_s,&Eta);
 
@@ -235,18 +260,22 @@ void IMSRGSolver::Solve_ode_magnus()
    runge_kutta4<Operator, double, Operator, double, vector_space_algebra> stepper;
    auto system = std::bind( &IMSRGSolver::ODE_systemOmega, *this, pl::_1, pl::_2, pl::_3);
    auto monitor = ode_monitor;
-   size_t steps = integrate_const(stepper, system, Omega, s, smax, ds, monitor);
+//   size_t steps = integrate_const(stepper, system, Omega, s, smax, ds, monitor);
+   size_t steps = integrate_const(stepper, system, Omega.front(), s, smax, ds, monitor);
    monitor.report();
 }
 
 void IMSRGSolver::ODE_systemOmega( Operator& x, Operator& dxdt, const double t)
 {
    s = t;
-   Omega = x;
-   H_s = H_0->BCH_Transform(Omega);
+//   Omega = x;
+   Omega.front() = x;
+//   H_s = H_0->BCH_Transform(Omega);
+   H_s = H_0->BCH_Transform(Omega.front());
    generator.Update(&H_s,&Eta);
 //   dxdt = Eta - 0.5*Omega.Commutator(Eta);
-   dxdt = Eta - 0.5*Commutator(Omega,Eta);
+//   dxdt = Eta - 0.5*Commutator(Omega,Eta);
+   dxdt = Eta - 0.5*Commutator(Omega.front(),Eta);
    WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
 
@@ -258,20 +287,40 @@ void IMSRGSolver::ODE_systemOmega( Operator& x, Operator& dxdt, const double t)
 /// Returns \f$ e^{Omega} \mathcal{O} e^{-Omega} \f$
 Operator IMSRGSolver::Transform(Operator& OpIn)
 {
-   return OpIn.BCH_Transform( Omega );
+  Operator OpOut = OpIn;
+  for (auto omega : Omega )
+  {
+    OpOut = OpOut.BCH_Transform( omega );
+  }
+  return OpOut;
+//   return OpIn.BCH_Transform( Omega );
 }
 
 Operator IMSRGSolver::Transform(Operator&& OpIn)
 {
-   return OpIn.BCH_Transform( Omega );
+  Operator OpOut = OpIn;
+  for (auto omega : Omega )
+  {
+    OpOut = OpOut.BCH_Transform( omega );
+  }
+  return OpOut;
+//   return OpIn.BCH_Transform( Omega );
 }
 
 
 /// Returns \f$ e^{-Omega} \mathcal{O} e^{Omega} \f$
 Operator IMSRGSolver::InverseTransform(Operator& OpIn)
 {
-   Operator negomega = -Omega;
-   return OpIn.BCH_Transform( negomega );
+
+  Operator OpOut = OpIn;
+  for (auto omega=Omega.end(); omega !=Omega.begin(); --omega )
+  {
+    Operator negomega = -(*omega);
+    OpOut = OpOut.BCH_Transform( negomega );
+  }
+  return OpOut;
+//   Operator negomega = -Omega;
+//   return OpIn.BCH_Transform( negomega );
 }
 
 
@@ -309,7 +358,8 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << H_s.ZeroBody 
         << setw(fwidth) << setprecision(fprecision) << H_s.OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << H_s.TwoBodyNorm()
-        << setw(fwidth) << setprecision(fprecision) << Omega.Norm()
+//        << setw(fwidth) << setprecision(fprecision) << Omega.Norm()
+        << setw(fwidth) << setprecision(fprecision) << Omega.back().Norm()
         << setw(fwidth) << setprecision(fprecision) << Eta.OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << Eta.TwoBodyNorm()
         << setw(fwidth) << setprecision(0)          << H_s.timer["N_Commutators"]

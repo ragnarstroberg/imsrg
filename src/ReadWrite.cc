@@ -864,7 +864,6 @@ void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<ar
   int alpha_max = iDim[0]; // alpha_max is the largest dimension
   for (int i=0;i<nDim;++i)
     alpha_max = max(alpha_max, int(iDim[i]));
-  cout << "alpha_max = " << alpha_max << endl;
 
   // Generate a 2d buffer in contiguous memory
   int** dbuf = new int*[iDim[0]];
@@ -876,7 +875,7 @@ void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<ar
 
   basis.read(&dbuf[0][0], PredType::NATIVE_INT);
 
-  Basis.resize(alpha_max);
+  Basis.resize(alpha_max+1);
 
   for( int alpha=1; alpha<=alpha_max; ++alpha)
   {
@@ -1038,8 +1037,6 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
        double me   = value_buf[i];
        me *= HBARC;
 //       if (alpha != alphap) me *=0.5;
-//       if (alpha != alphap or T12 != TT12) me *=0.5;
-//       if (alpha != alphap or J12 != JJ12) me *=0.5;
 
        int a    = Basis[alpha][0];
        int b    = Basis[alpha][1];
@@ -1073,24 +1070,24 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
          cerr << "Error. Mismatching total J! " << J2 << " " << J2p << " " << twoJ << "   alphas = " << alpha << ", " << alphap << endl;
        }
 
-       if (a!=c or b!=d or e!=f) me *=0.5;
+       if (a!=d or b!=e or c!=f) me *=0.5;
 //       if (alpha<50 and alphap<50)
 //       if (a<5 and b<5 and c<5 and d<5 and e<5 and f<5)
        me *= modelspace->phase(oa.n+ob.n+oc.n+od.n+oe.n+of.n); // shamelessly copying Heiko. I don't understand this.
 //       if (((alpha+1)/2==1 and (alphap/2==127)) or ( (alphap+1)/2==1 and alpha/2==127) )
-       if (((alpha+1)/2==1 or alpha/2==127) and (alphap/2==127 or (alphap+1)/2==1) )
-        {
-         double previous = op.ThreeBody.GetME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f);
-         double newme = op.ThreeBody.AddToME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f,me);
-         cout << "*** " << alpha << "  " << alphap << "  "
-              << a << "-" << b << "-" << c << " " << d << "-" << e << "-" << f << "  "
-              << T12 << "  " << TT12 << "  " << twoT << "  "
-              << J12 << "  " << JJ12 << "  " << twoJ << "  " << me << "     "
-              << previous << "  =>  "
-              <<  newme
-             << endl;
-       }
-       else
+//       if (((alpha+1)/2==1 or alpha/2==127) and (alphap/2==127 or (alphap+1)/2==1) )
+//        {
+//         double previous = op.ThreeBody.GetME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f);
+//         double newme = op.ThreeBody.AddToME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f,me);
+//         cout << "*** " << alpha << "  " << alphap << "  "
+//              << a << "-" << b << "-" << c << " " << d << "-" << e << "-" << f << "  "
+//              << T12 << "  " << TT12 << "  " << twoT << "  "
+//              << J12 << "  " << JJ12 << "  " << twoJ << "  " << me << "     "
+//              << previous << "  =>  "
+//              <<  newme
+//             << endl;
+//       }
+//       else
        op.ThreeBody.SetME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f, me);
 
     } //loop over matrix elements
@@ -1282,6 +1279,7 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
   // skip the first line
 //  char line[LINESIZE];
 //  infile.getline(line,LINESIZE);
+//  int useless_counter=0;
   outfile << "         header nonsense... " << endl;
   outfile << setiosflags(ios::fixed);
   // begin giant nested loops
@@ -1374,11 +1372,12 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
        
                 for(int twoJC = twoJCMin; twoJC <= twoJCMax; twoJC += 2)
                 {
-                 if (a<5 and b<5 and c<5 and d<5 and e<5 and f<5)
-                 {
-                 cout << "### " << a << "-" << b << "-" << c << "-" << "  " << d << "-" << e << "-" << f << "  "
-                      << Jab << " " << JJab << " " << twoJC << endl;
-                 }
+//                 ++useless_counter;
+//                 if (a<5 and b<5 and c<5 and d<5 and e<5 and f<5)
+//                 {
+//                 cout << "#" << useless_counter << "  " << a << "-" << b << "-" << c << "-" << "  " << d << "-" << e << "-" << f << "  "
+//                      << Jab << " " << JJab << " " << twoJC << endl;
+//                 }
                  for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
                  {
                   for(int ttab = 0; ttab <= 1; ttab++)
