@@ -60,6 +60,7 @@ class IMSRGSolver
   void ODE_systemOmega( Operator& x, Operator& dxdt, const double t);
 #endif
   Operator Transform(Operator& OpIn);
+  Operator Transform(Operator&& OpIn);
   Operator InverseTransform(Operator& OpIn);
 //  void SetFlowFile(string s){flowfile = s;};
   void SetFlowFile(string s);

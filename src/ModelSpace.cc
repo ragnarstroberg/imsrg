@@ -371,6 +371,7 @@ void ModelSpace::Init_He4(int nmax)
    vector<string> core = {"p0s1","n0s1"};
    vector<string> valence = {};
    target_mass = 4;
+   target_Z = 2;
    Init(nmax,core,valence);
 }
 
@@ -379,6 +380,7 @@ void ModelSpace::Init_O16(int nmax)
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
    vector<string> valence = {};
    target_mass = 16;
+   target_Z = 8;
    Init(nmax,core,valence);
 }
 
@@ -387,6 +389,7 @@ void ModelSpace::Init_Ca40(int nmax)
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
    vector<string> valence = {};
    target_mass = 40;
+   target_Z = 20;
    Init(nmax,core,valence);
 }
 
@@ -395,6 +398,7 @@ void ModelSpace::Init_PShell(int nmax)
    vector<string> core = {"p0s1","n0s1"};
    vector<string> valence = {"p0p3","n0p3","p0p1","n0p1"};
    target_mass = 6;
+   target_Z = 2;
    Init(nmax,core,valence);
 }
 
@@ -403,6 +407,7 @@ void ModelSpace::Init_SDShell(int nmax)
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
    vector<string> valence = {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
    target_mass = 18;
+   target_Z = 8;
    Init(nmax,core,valence);
 }
 
@@ -410,7 +415,8 @@ void ModelSpace::Init_PSDShell(int nmax)
 {
    vector<string> core = {"p0s1","n0s1"};
    vector<string> valence = {"p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
-   target_mass = 16;
+   target_mass = 6;
+   target_Z = 3;
    Init(nmax,core,valence);
 }
 
@@ -418,7 +424,8 @@ void ModelSpace::Init_O16PSDShell(int nmax)
 {
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
    vector<string> valence = {"p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
-   target_mass = 6;
+   target_mass = 16;
+   target_Z = 8;
    Init(nmax,core,valence);
 }
 
@@ -427,6 +434,7 @@ void ModelSpace::Init_FPShell(int nmax)
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
    vector<string> valence = {"p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"};
    target_mass = 42;
+   target_Z = 20;
    Init(nmax,core,valence);
 }
 
@@ -435,6 +443,7 @@ void ModelSpace::Init_SDFPShell(int nmax)
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
    vector<string> valence = {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"};
    target_mass = 18;
+   target_Z = 8;
    Init(nmax,core,valence);
 }
 

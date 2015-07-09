@@ -172,7 +172,6 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
 //*******************************************************************
 ThreeBME_type ThreeBodyME::GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in)
 {
-//   cout << "===== GET =====" << endl;
    return AddToME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,0.0);
 }
 

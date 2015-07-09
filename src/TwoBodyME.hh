@@ -55,9 +55,12 @@ class TwoBodyME
   bool IsHermitian(){return hermitian;};
   bool IsAntiHermitian(){return antihermitian;};
   bool IsNonHermitian(){return not (hermitian or antihermitian);};
-  void SetHermitian() {hermitian=true;antihermitian=false;};
-  void SetAntiHermitian() {antihermitian=true;hermitian=false;};
-  void SetNonHermitian() {antihermitian=false;hermitian=false;};
+//  void SetHermitian() {hermitian=true;antihermitian=false;};
+//  void SetAntiHermitian() {antihermitian=true;hermitian=false;};
+//  void SetNonHermitian() {antihermitian=false;hermitian=false;};
+  void SetHermitian();
+  void SetAntiHermitian();
+  void SetNonHermitian();
 
   arma::mat& GetMatrix(int chbra, int chket){return MatEl.at({chbra,chket});};
   arma::mat& GetMatrix(int ch){return GetMatrix(ch,ch);};

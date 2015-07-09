@@ -98,9 +98,12 @@ class Operator
   void EraseTwoBody(); // set all two-body terms to zero
   void EraseThreeBody(); // set all two-body terms to zero
 
-  void SetHermitian() {hermitian=true;antihermitian=false;};
-  void SetAntiHermitian() {antihermitian=true;hermitian=false;};
-  void SetNonHermitian() {antihermitian=false;hermitian=false;};
+//  void SetHermitian() {hermitian=true;antihermitian=false;};
+//  void SetAntiHermitian() {antihermitian=true;hermitian=false;cout << "Set to Anti-Hermitian" << endl;};
+//  void SetNonHermitian() {antihermitian=false;hermitian=false;};
+  void SetHermitian() ;
+  void SetAntiHermitian() ;
+  void SetNonHermitian() ;
   bool IsHermitian()const {return hermitian;};
   bool IsAntiHermitian()const {return antihermitian;};
   bool IsNonHermitian()const {return not (hermitian or antihermitian);};

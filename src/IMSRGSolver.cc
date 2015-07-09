@@ -80,8 +80,6 @@ void IMSRGSolver::SetFlowFile(string s)
 
 void IMSRGSolver::Solve()
 {
-   // If we have a flow output file, open it up and write to it here.
-
    istep = 0;
    generator.Update(&H_s,&Eta);
 
@@ -97,7 +95,7 @@ void IMSRGSolver::Solve()
       // ds should never be more than 1, as this is over-rotating
       //ds = min(norm_domega / norm_eta / (norm_omega+1.0e-9), ds_max); 
       ds = min(min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), ds_max); 
-      if (ds == ds_max) norm_domega /=2;
+//      if (ds == ds_max) norm_domega /=2;
       if (s+ds > smax) ds = smax-s;
       s += ds;
       Eta *= ds; // Here's the Euler step.
@@ -262,6 +260,12 @@ Operator IMSRGSolver::Transform(Operator& OpIn)
 {
    return OpIn.BCH_Transform( Omega );
 }
+
+Operator IMSRGSolver::Transform(Operator&& OpIn)
+{
+   return OpIn.BCH_Transform( Omega );
+}
+
 
 /// Returns \f$ e^{-Omega} \mathcal{O} e^{Omega} \f$
 Operator IMSRGSolver::InverseTransform(Operator& OpIn)

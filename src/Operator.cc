@@ -427,7 +427,7 @@ Operator Operator::UndoNormalOrdering()
       {
          Orbit &oa = modelspace->GetOrbit(a);
          index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-         for ( auto& b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // OneBodyChannels should be moved to the operator, to accommodate tensors
+         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // OneBodyChannels should be moved to the operator, to accommodate tensors
          {
             if (b < bstart) continue;
             for (auto& h : modelspace->holes)  // C++11 syntax
@@ -470,6 +470,27 @@ void Operator::EraseOneBody()
 void Operator::EraseTwoBody()
 {
  TwoBody.Erase();
+}
+
+void Operator::SetHermitian()
+{
+  hermitian = true;
+  antihermitian = false;
+  TwoBody.SetHermitian();
+}
+
+void Operator::SetAntiHermitian()
+{
+  hermitian = false;
+  antihermitian = true;
+  TwoBody.SetAntiHermitian();
+}
+
+void Operator::SetNonHermitian()
+{
+  hermitian = false;
+  antihermitian = false;
+  TwoBody.SetNonHermitian();
 }
 
 
@@ -670,19 +691,26 @@ void Operator::Symmetrize()
 
 void Operator::AntiSymmetrize()
 {
-   int norb = modelspace->GetNumberOrbits();
-   for (int i=0;i<norb; ++i)
+   if (rank_J==0)
    {
-     Orbit& oi = modelspace->GetOrbit(i);
-     for ( int j : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+     OneBody = arma::trimatu(OneBody) - arma::trimatu(OneBody).t();
+   }
+   else
+   {
+     int norb = modelspace->GetNumberOrbits();
+     for (int i=0;i<norb; ++i)
      {
-       if (j<= i) continue;
-       if (rank_J==0)
-        OneBody(j,i) = -OneBody(i,j);
-       else
+       Orbit& oi = modelspace->GetOrbit(i);
+       for ( int j : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
        {
-         Orbit& oj = modelspace->GetOrbit(j);
-         OneBody(j,i) = -modelspace->phase((oi.j2-oj.j2)/2) * OneBody(i,j);
+         if (j<= i) continue;
+         if (rank_J==0)
+          OneBody(j,i) = -OneBody(i,j);
+         else
+         {
+           Orbit& oj = modelspace->GetOrbit(j);
+           OneBody(j,i) = -modelspace->phase((oi.j2-oj.j2)/2) * OneBody(i,j);
+         }
        }
      }
    }

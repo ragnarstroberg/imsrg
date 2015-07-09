@@ -20,6 +20,7 @@ class ReadWrite
 //   void ReadBareTBME( string filename, Operator& Hbare);
    void ReadBareTBME_Jason( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil( string filename, Operator& Hbare);
+   void ReadBareTBME_Navratil_from_stream( istream& infile, Operator& Hbare);
    void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int E1max, int E2max, int lmax);
    template<class T> void ReadBareTBME_Darmstadt_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int lmax);
 //   void ReadBareTBME_Darmstadt_from_stream( istream & infile, Operator& Hbare, int E1max, int E2max, int lmax);
@@ -30,11 +31,18 @@ class ReadWrite
    void Read3bodyHDF5( string filename, Operator& op);
    void Write_me2j( string filename, Operator& op, int emax, int e2max, int lmax);
    void Write_me3j( string filename, Operator& op, int E1max, int E2max, int E3max);
+   void WriteTBME_Navratil( string filename, Operator& Hbare);
    void WriteNuShellX_sps( Operator& op, string filename);
    void WriteNuShellX_int( Operator& op, string filename);
    void WriteAntoine_int( Operator& op, string filename); // <- not implemented yet...
    void WriteOperator(Operator& op, string filename);
+   void WriteOperatorHuman(Operator& op, string filename);
    void ReadOperator(Operator& op, string filename); 
+   void CompareOperators(Operator& op1, Operator& op2, string filename);
+   void ReadOneBody_Takeyushi(string filename, Operator& Hbare);
+   void ReadTwoBody_Takeyushi(string filename, Operator& Hbare);
+   void WriteOneBody_Takeyushi(string filename, Operator& Hbare);
+   void WriteTwoBody_Takeyushi(string filename, Operator& Hbare);
 
    std::map<string,string> InputParameters;
 

@@ -106,6 +106,24 @@ void TwoBodyME::Allocate()
   }
 }
 
+void TwoBodyME::SetHermitian()
+{
+  hermitian = true;
+  antihermitian = false;
+}
+
+void TwoBodyME::SetAntiHermitian()
+{
+  hermitian = false;
+  antihermitian = true;
+}
+
+void TwoBodyME::SetNonHermitian()
+{
+  hermitian = false;
+  antihermitian = false;
+}
+
 
 
 /// This returns the matrix element times a factor \f$ \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \f$
@@ -156,8 +174,9 @@ void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, doub
    if (a>b) phase *= tbc_bra.GetKet(bra_ind).Phase(tbc_bra.J);
    if (c>d) phase *= tbc_ket.GetKet(ket_ind).Phase(tbc_ket.J);
    GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) = phase * tbme;
-   if (hermitian) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) = phase * tbme;
-   if (antihermitian) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) = - phase * tbme;
+   if (hermitian) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = phase * tbme;
+   if (antihermitian) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = - phase * tbme;
+//   cout << "Setting TBME. phase = " << phase << "  herm = " << hermitian << " " << antihermitian << endl;
 }
 
 
@@ -194,7 +213,7 @@ double TwoBodyME::GetTBME_norm(int ch_bra, int ch_ket, int ibra, int iket) const
    return GetMatrix(ch_bra,ch_ket)(ibra,iket);
 }
 
-void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int iket, int ibra, double tbme)
+void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme)
 {
    GetMatrix(ch_bra,ch_ket)(ibra,iket) = tbme;
    if (IsHermitian())
@@ -202,7 +221,7 @@ void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int iket, int ibra, double tbme)
    else if(IsAntiHermitian())
       GetMatrix(ch_bra,ch_ket)(iket,ibra) = -tbme;
 }
-void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int iket, int ibra, double tbme)
+void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme)
 {
    GetMatrix(ch_bra,ch_ket)(ibra,iket) += tbme;
    if (IsHermitian())
@@ -548,18 +567,19 @@ void TwoBodyME::AntiSymmetrize()
   if (rank_J>0) return;
   for (auto& itmat : MatEl )
   {
-    int ch_bra = itmat.first[0];
-    int ch_ket = itmat.first[1];
-    int nbras = modelspace->GetTwoBodyChannel(ch_bra).GetNumberKets();
-    int nkets = modelspace->GetTwoBodyChannel(ch_ket).GetNumberKets();
+//    int ch_bra = itmat.first[0];
+//    int ch_ket = itmat.first[1];
+//    int nbras = modelspace->GetTwoBodyChannel(ch_bra).GetNumberKets();
+//    int nkets = modelspace->GetTwoBodyChannel(ch_ket).GetNumberKets();
     arma::mat& matrix = itmat.second;
-    for (int ibra=0; ibra<nbras; ++ibra)
-    {
-      for (int iket=ibra+1; iket<nkets; ++iket)
-      {
-         matrix(iket,ibra) = -matrix(ibra,iket);
-      }
-    }
+    matrix = arma::trimatu(matrix) - arma::trimatu(matrix).t();
+//    for (int ibra=0; ibra<nbras; ++ibra)
+//    {
+//      for (int iket=ibra+1; iket<nkets; ++iket)
+//      {
+//         matrix(iket,ibra) = -matrix(ibra,iket);
+//      }
+//    }
   }
 
 

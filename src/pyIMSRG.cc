@@ -48,11 +48,18 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("Read3bodyHDF5", &ReadWrite::Read3bodyHDF5)
       .def("Write_me2j", &ReadWrite::Write_me2j)
       .def("Write_me3j", &ReadWrite::Write_me3j)
+      .def("WriteTBME_Navratil", &ReadWrite::WriteTBME_Navratil)
       .def("WriteNuShellX_sps", &ReadWrite::WriteNuShellX_sps)
       .def("WriteNuShellX_int", &ReadWrite::WriteNuShellX_int)
       .def("WriteAntoine_int", &ReadWrite::WriteAntoine_int)
       .def("WriteOperator", &ReadWrite::WriteOperator)
+      .def("WriteOperatorHuman", &ReadWrite::WriteOperatorHuman)
       .def("ReadOperator", &ReadWrite::ReadOperator)
+      .def("CompareOperators", &ReadWrite::CompareOperators)
+      .def("ReadOneBody_Takeyushi", &ReadWrite::ReadOneBody_Takeyushi)
+      .def("ReadTwoBody_Takeyushi", &ReadWrite::ReadTwoBody_Takeyushi)
+      .def("WriteOneBody_Takeyushi", &ReadWrite::WriteOneBody_Takeyushi)
+      .def("WriteTwoBody_Takeyushi", &ReadWrite::WriteTwoBody_Takeyushi)
       .def("SetCoMCorr", &ReadWrite::SetCoMCorr)
       .def_readwrite("InputParameters", &ReadWrite::InputParameters)
    ;
@@ -108,6 +115,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def_readonly("EHF",&HartreeFock::EHF)
    ;
 
+   // Define which overloaded version of IMSRGSolver::Transform I want to expose
+   Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
 
    class_<IMSRGSolver>("IMSRGSolver",init<Operator&>())
       .def("Solve",&IMSRGSolver::Solve)
@@ -116,7 +125,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("Solve_ode_adaptive",&IMSRGSolver::Solve_ode_adaptive)
       .def("Solve_ode_magnus",&IMSRGSolver::Solve_ode_magnus)
 #endif
-      .def("Transform",&IMSRGSolver::Transform)
+//      .def("Transform",&IMSRGSolver::Transform)
+      .def("Transform",Transform_ref)
       .def("InverseTransform",&IMSRGSolver::InverseTransform)
       .def("SetFlowFile",&IMSRGSolver::SetFlowFile)
       .def("SetDs",&IMSRGSolver::SetDs)

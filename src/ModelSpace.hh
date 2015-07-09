@@ -194,8 +194,10 @@ class ModelSpace
    int GetNumberKets() const {return Kets.size();};
    void SetHbarOmega(double hw) {hbar_omega = hw;};
    void SetTargetMass(int A) {target_mass = A;};
+   void SetTargetZ(int Z) {target_Z = Z;};
    double GetHbarOmega() const {return hbar_omega;};
    int GetTargetMass() const {return target_mass;};
+   int GetTargetZ() const {return target_Z;};
    int GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
@@ -265,6 +267,7 @@ class ModelSpace
    int norbits;
    double hbar_omega;
    int target_mass;
+   int target_Z;
    int nTwoBodyChannels;
    vector<Orbit> Orbits;
    vector<Ket> Kets;
