@@ -60,7 +60,8 @@ void IMSRGSolver::SetHin( Operator & H_in)
    Eta.Erase();
    Eta.SetAntiHermitian();
 //   Omega = Eta;
-   Omega.push_back(Eta);
+   if (Omega.back().Norm() > 1e-6)
+     Omega.push_back(Eta);
 }
 
 void IMSRGSolver::Reset()
@@ -123,9 +124,13 @@ void IMSRGSolver::Solve()
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
 //      H_s = H_0->BCH_Transform( Omega );
       if (Omega.size()<2)
+      {
         H_s = H_0->BCH_Transform( Omega.back() );
+      }
       else
+      {
         H_s = H_saved.BCH_Transform( Omega.back() );
+      }
 //      for (auto omega : Omega)
 //      {
 //        H_s = H_s.BCH_Transform( omega );
@@ -313,7 +318,7 @@ Operator IMSRGSolver::InverseTransform(Operator& OpIn)
 {
 
   Operator OpOut = OpIn;
-  for (auto omega=Omega.end(); omega !=Omega.begin(); --omega )
+  for (auto omega=Omega.rbegin(); omega !=Omega.rend(); ++omega )
   {
     Operator negomega = -(*omega);
     OpOut = OpOut.BCH_Transform( negomega );
