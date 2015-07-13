@@ -61,7 +61,11 @@ void IMSRGSolver::SetHin( Operator & H_in)
    Eta.SetAntiHermitian();
 //   Omega = Eta;
    if (Omega.back().Norm() > 1e-6)
+   {
      Omega.push_back(Eta);
+        H_saved = H_s;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size() << endl;
+   }
 }
 
 void IMSRGSolver::Reset()
@@ -71,8 +75,20 @@ void IMSRGSolver::Reset()
 //   Omega.Erase();
    Omega.resize(0);
    Omega.push_back(Eta);
+    cout << "pushing back another Omega. Omega.size = " << Omega.size() << endl;
 }
 
+void IMSRGSolver::SetGenerator(string g)
+{
+  generator.SetType(g);
+  if (Omega.back().Norm() > 1e-6)
+  {
+    Eta.Erase();
+    Omega.push_back(Eta);
+        H_saved = H_s;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size() << endl;
+  }
+}
 
 void IMSRGSolver::SetFlowFile(string s)
 {
@@ -107,7 +123,7 @@ void IMSRGSolver::Solve()
         Omega.push_back(Eta);
         Omega.back().Erase();
         norm_omega = 0;
-        cout << "pushing back another Omega." << endl;
+        cout << "pushing back another Omega. Omega.size = " << Omega.size() << endl;
       }
       // ds should never be more than 1, as this is over-rotating
       //ds = min(norm_domega / norm_eta / (norm_omega+1.0e-9), ds_max); 
@@ -150,8 +166,6 @@ void IMSRGSolver::Solve()
 #ifndef NO_ODE
 // Implement element-wise division and abs and reduce for Operators.
 // This is required for adaptive steppers
-
-
 /*
 Operator operator/ (const Operator& num, const Operator& denom)
 {
@@ -183,6 +197,7 @@ Operator abs(const Operator& opin)
    }
 
 }
+
 // Black magic...
 namespace boost {namespace numeric {namespace odeint{
 template<>

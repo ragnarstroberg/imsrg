@@ -39,10 +39,10 @@ class ReadWrite
    void WriteOperatorHuman(Operator& op, string filename);
    void ReadOperator(Operator& op, string filename); 
    void CompareOperators(Operator& op1, Operator& op2, string filename);
-   void ReadOneBody_Takeyushi(string filename, Operator& Hbare);
-   void ReadTwoBody_Takeyushi(string filename, Operator& Hbare);
-   void WriteOneBody_Takeyushi(string filename, Operator& Hbare);
-   void WriteTwoBody_Takeyushi(string filename, Operator& Hbare);
+   void ReadOneBody_Takayuki(string filename, Operator& Hbare);
+   void ReadTwoBody_Takayuki(string filename, Operator& Hbare);
+   void WriteOneBody_Takayuki(string filename, Operator& Hbare);
+   void WriteTwoBody_Takayuki(string filename, Operator& Hbare);
 
    std::map<string,string> InputParameters;
 

@@ -684,6 +684,8 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
     int ea = 2*oa.n + oa.l;
     if (ea > E1max) break;
     if (ea > e1max) break;
+//    cout << "a = " << a << endl;
+    cout << nlj1*(nlj1+1.)/(nljmax*(nljmax+1)) << " % done" << endl;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
@@ -729,7 +731,6 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
             int nnlj3Max = (nlj1 == nnlj1 and nlj2 == nnlj2) ? nlj3 : nnlj2;
             for(int nnlj3=0; nnlj3 <= nnlj3Max; ++nnlj3)
             {
-              int counter = 0;
               int f =  orbits_remap[nnlj3];
               Orbit & of = modelspace->GetOrbit(f);
               int ef = 2*of.n + of.l;
@@ -791,7 +792,6 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                        if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
                           and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max) )
                        {
-                           ++counter;
                          ++nkept;
                        }
 
@@ -1032,7 +1032,7 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
        int  twoJ   = label_buf[i][5];
        int  Pi     = label_buf[i][6];
 
-//       if (alpha<alphap) continue;
+       if (alpha<alphap) continue;
 
        double me   = value_buf[i];
        me *= HBARC;
@@ -1070,7 +1070,7 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
          cerr << "Error. Mismatching total J! " << J2 << " " << J2p << " " << twoJ << "   alphas = " << alpha << ", " << alphap << endl;
        }
 
-       if (a!=d or b!=e or c!=f) me *=0.5;
+//       if (a!=d or b!=e or c!=f) me *=0.5;
 //       if (alpha<50 and alphap<50)
 //       if (a<5 and b<5 and c<5 and d<5 and e<5 and f<5)
        me *= modelspace->phase(oa.n+ob.n+oc.n+od.n+oe.n+of.n); // shamelessly copying Heiko. I don't understand this.
@@ -1089,6 +1089,9 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
 //       }
 //       else
        op.ThreeBody.SetME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f, me);
+       if (a==d and b==e and c==f and ( J12!=JJ12 ) )
+//       if (a==d and b==e and c==f and ( J12!=JJ12 or T12 != TT12) )
+          op.ThreeBody.SetME(JJ12,J12,twoJ,TT12,T12,twoT,a,b,c,d,e,f, me);
 
     } //loop over matrix elements
   } // loop over slabs
@@ -1968,7 +1971,7 @@ void ReadWrite::CompareOperators(Operator& op1, Operator& op2, string filename)
 
 
 
-void ReadWrite::ReadOneBody_Takeyushi(string filename, Operator& Hbare)
+void ReadWrite::ReadOneBody_Takayuki(string filename, Operator& Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
@@ -1999,7 +2002,7 @@ void ReadWrite::ReadOneBody_Takeyushi(string filename, Operator& Hbare)
   }
 }
 
-void ReadWrite::ReadTwoBody_Takeyushi(string filename, Operator& Hbare)
+void ReadWrite::ReadTwoBody_Takayuki(string filename, Operator& Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
@@ -2031,7 +2034,7 @@ void ReadWrite::ReadTwoBody_Takeyushi(string filename, Operator& Hbare)
 }
 
 
-void ReadWrite::WriteOneBody_Takeyushi(string filename, Operator& Hbare)
+void ReadWrite::WriteOneBody_Takayuki(string filename, Operator& Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
@@ -2071,7 +2074,7 @@ void ReadWrite::WriteOneBody_Takeyushi(string filename, Operator& Hbare)
 
 
 
-void ReadWrite::WriteTwoBody_Takeyushi(string filename, Operator& Hbare)
+void ReadWrite::WriteTwoBody_Takayuki(string filename, Operator& Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
