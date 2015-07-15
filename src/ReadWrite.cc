@@ -685,7 +685,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
     if (ea > E1max) break;
     if (ea > e1max) break;
 //    cout << "a = " << a << endl;
-    cout << nlj1*(nlj1+1.)/(nljmax*(nljmax+1)) << " % done" << endl;
+    cout << setprecision(2) << nlj1*(nlj1+1.)/(nljmax*(nljmax+1))*100 << " % done" << endl;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
