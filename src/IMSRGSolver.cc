@@ -196,6 +196,8 @@ Operator abs(const Operator& opin)
 
 // Apply operation to each element of X and return the result
 // this is needed for ODE adaptive solver
+// USE THIS FOR BOOST VERSION < 1.56
+/*
 namespace boost {namespace numeric {namespace odeint{
 template<>
 struct vector_space_reduce< Operator >
@@ -213,7 +215,22 @@ struct vector_space_reduce< Operator >
    }
 };
 }}}
+*/
 
+// Apply operation to each element of X and return the result
+// this is needed for ODE adaptive solver
+// USE THIS FOR BOOST VERSION >= 1.56
+namespace boost {namespace numeric {namespace odeint{
+template<>
+struct vector_space_norm_inf< Operator >
+{
+   typedef double result_type;
+   double operator()(const Operator& X)
+   {
+     return X.Norm();
+   }
+};
+}}}
 
 
 void IMSRGSolver::Solve_ode()
@@ -240,7 +257,8 @@ void IMSRGSolver::Solve_ode_adaptive()
    using namespace boost::numeric::odeint;
    auto system = *this;
    typedef runge_kutta_dopri5< Operator , double , Operator ,double , vector_space_algebra > stepper;
-   size_t steps = integrate_adaptive(make_controlled<stepper>(1e-8,1e-8), system, H_s, s, smax, ds);
+   auto monitor = ode_monitor;
+   size_t steps = integrate_adaptive(make_controlled<stepper>(1e-8,1e-8), system, H_s, s, smax, ds, monitor);
    monitor.report();
 
 }
