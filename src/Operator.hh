@@ -129,9 +129,11 @@ class Operator
 //  Operator DoNormalOrderingCore(); /// < Returns the operator normal-ordered wrt the shell-model core.
 
 //  Operator Commutator(  Operator& opright) ; ///< Z = X.Commutator(Y) means \f$ Z = [X,Y] \f$
-  friend Operator Commutator(Operator& X,  Operator& Y) ; 
-  Operator CommutatorScalarScalar( Operator& opright) ;
-  Operator CommutatorScalarTensor( Operator& opright) ;
+  friend Operator Commutator(const Operator& X, const Operator& Y) ; 
+  friend Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) ;
+  friend Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) ;
+//  Operator CommutatorScalarScalar( Operator& opright) ;
+//  Operator CommutatorScalarTensor( Operator& opright) ;
 
   Operator BCH_Product(  Operator& )  ; 
   Operator BCH_Transform(  Operator& ) ; 
@@ -154,34 +156,48 @@ class Operator
   static void Set_BCH_Transform_Threshold(double x){bch_transform_threshold=x;};
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
-  void DoPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) ;
+  void DoPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) const ;
 //  void InversePandyaTransformation(vector<arma::mat>&, vector<arma::mat>&, bool);
   void AddInversePandyaTransformation(vector<arma::mat>&);
 
-  void comm110ss( Operator& opright, Operator& opout) ; 
-  void comm220ss( Operator& opright, Operator& opout) ;
-  void comm111ss( Operator& opright, Operator& opout) ;
-  void comm121ss( Operator& opright, Operator& opout) ;
-  void comm221ss( Operator& opright, Operator& opout) ;
-  void comm122ss( Operator& opright, Operator& opout) ;
-  void comm222_pp_hhss( Operator& opright, Operator& opout) ;
-  void comm222_phss( Operator& opright, Operator& opout) ;
-  void comm222_pp_hh_221ss( Operator& opright, Operator& opout) ;
+//  void comm110ss( Operator& opright, Operator& opout) ; 
+//  void comm220ss( Operator& opright, Operator& opout) ;
+//  void comm111ss( Operator& opright, Operator& opout) ;
+//  void comm121ss( Operator& opright, Operator& opout) ;
+//  void comm221ss( Operator& opright, Operator& opout) ;
+//  void comm122ss( Operator& opright, Operator& opout) ;
+//  void comm222_pp_hhss( Operator& opright, Operator& opout) ;
+//  void comm222_phss( Operator& opright, Operator& opout) ;
+//  void comm222_pp_hh_221ss( Operator& opright, Operator& opout) ;
+
+  void comm110ss( const Operator& X, const Operator& Y) ; 
+  void comm220ss( const Operator& X, const Operator& Y) ;
+  void comm111ss( const Operator& X, const Operator& Y) ;
+  void comm121ss( const Operator& X, const Operator& Y) ;
+  void comm221ss( const Operator& X, const Operator& Y) ;
+  void comm122ss( const Operator& X, const Operator& Y) ;
+  void comm222_pp_hhss( const Operator& X, const Operator& Y) ;
+  void comm222_phss( const Operator& X, const Operator& Y) ;
+  void comm222_pp_hh_221ss( const Operator& X, const Operator& Y) ;
 
 // scalar-tensor commutators
 
 //  void DoTensorPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) ;
 //  void InverseTensorPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&, bool);
-  void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>&) ;
+  void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>&) const;
   void AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&);
 
-  void comm111st( Operator& opright, Operator& opout) ;
-  void comm121st( Operator& opright, Operator& opout) ;
-//  void comm221st( Operator& opright, Operator& opout) ;
-  void comm122st( Operator& opright, Operator& opout) ;
-//  void comm222_pp_hhst( Operator& opright, Operator& opout) ;
-  void comm222_pp_hh_221st( Operator& opright, Operator& opout) ;
-  void comm222_phst( Operator& opright, Operator& opout) ;
+//  void comm111st( Operator& opright, Operator& opout) ;
+//  void comm121st( Operator& opright, Operator& opout) ;
+//  void comm122st( Operator& opright, Operator& opout) ;
+//  void comm222_pp_hh_221st( Operator& opright, Operator& opout) ;
+//  void comm222_phst( Operator& opright, Operator& opout) ;
+
+  void comm111st( const Operator& X, const Operator& Y) ;
+  void comm121st( const Operator& X, const Operator& Y) ;
+  void comm122st( const Operator& X, const Operator& Y) ;
+  void comm222_pp_hh_221st( const Operator& X, const Operator& Y) ;
+  void comm222_phst( const Operator& X, const Operator& Y) ;
 
 };
 

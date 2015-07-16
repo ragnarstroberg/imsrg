@@ -1198,8 +1198,10 @@ Operator E0Op(ModelSpace& modelspace)
     Operator Yred = Y;
     Reduce(Yred);
 
-    X.comm111ss(Y,Zscalar);
-    X.comm111st(Yred,Ztensor);
+//    X.comm111ss(Y,Zscalar);
+//    X.comm111st(Yred,Ztensor);
+    Zscalar.comm111ss(X,Y);
+    Ztensor.comm111st(X,Yred);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);

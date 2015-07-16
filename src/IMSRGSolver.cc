@@ -13,7 +13,7 @@ IMSRGSolver::~IMSRGSolver()
 
 IMSRGSolver::IMSRGSolver()
 #ifndef NO_ODE
-    :ode_monitor(*this)
+    :ode_monitor(*this),ode_mode("H")
 #endif
 {
    method = "BCH";
@@ -31,7 +31,7 @@ IMSRGSolver::IMSRGSolver( Operator &H_in)
 //   : H_0(&H_in), H_s(H_in), Eta(H_in), Omega(H_in)// ,dOmega(H_in)
    : H_0(&H_in), H_s(H_in), Eta(H_in) // ,dOmega(H_in)
 #ifndef NO_ODE
-    ,ode_monitor(*this)
+    ,ode_monitor(*this),ode_mode("H")
 #endif
 {
    method = "BCH";
@@ -147,10 +147,6 @@ void IMSRGSolver::Solve()
       {
         H_s = H_saved.BCH_Transform( Omega.back() );
       }
-//      for (auto omega : Omega)
-//      {
-//        H_s = H_s.BCH_Transform( omega );
-//      }
         
       generator.Update(&H_s,&Eta);
 
@@ -164,78 +160,71 @@ void IMSRGSolver::Solve()
 
 
 #ifndef NO_ODE
+
 // Implement element-wise division and abs and reduce for Operators.
 // This is required for adaptive steppers
-/*
 Operator operator/ (const Operator& num, const Operator& denom)
 {
    Operator quotient = num;
    quotient.ZeroBody /= denom.ZeroBody;
    quotient.OneBody /= denom.OneBody;
-   for (int ch=0;ch<quotient.nChannels;++ch)
-   {
-      for (auto &twobody : quotient.TwoBody.MatEl[ch] )
-      {
-        int chket = twobody.first;
-        twobody.second /= denom.TwoBody.GetMatrix(ch,chket);
-      }
-   }
-
+   for ( auto& itmat: quotient.TwoBody.MatEl )    itmat.second /= denom.TwoBody.GetMatrix(itmat.first[0],itmat.first[1]);
+   return quotient;
 }
 
+// Also need the dubious operation of adding a double to an operator.
+Operator operator+ (const double a, const Operator& X)
+{
+   Operator Y = X;
+   Y.ZeroBody += a;
+   for( auto& v : Y.OneBody ) v += a;
+   for ( auto& itmat: Y.TwoBody.MatEl )
+     for ( auto& v : itmat.second ) v += a;
+   return Y;
+}
+
+// Return the element-wise absolute value of an operator
+// this is needed for ODE adaptive solver
 Operator abs(const Operator& opin)
 {
    Operator opout = opin;
    opout.ZeroBody = abs(opout.ZeroBody);
    opout.OneBody = arma::abs(opout.OneBody);
-   for (int ch=0;ch<opout.nChannels;++ch)
-   {
-      for (auto &twobody : opout.TwoBody.MatEl[ch] )
-      {
-        twobody.second = arma::abs(twobody.second);
-      }
-   }
-
+   for ( auto& itmat : opout.TwoBody.MatEl )    itmat.second = arma::abs(itmat.second);
+   return opout;
 }
 
-// Black magic...
+// Apply operation to each element of X and return the result
+// this is needed for ODE adaptive solver
 namespace boost {namespace numeric {namespace odeint{
 template<>
-struct vector_space_reduce<Operator&>
+struct vector_space_reduce< Operator >
 {
-   template<class Value, class Op>
-   Value operator()(const Operator& X, Op op, Value init)
+   template<class Op>
+   double operator()(const Operator& X, Op op, double init)
    {
-      init = op(init, X.ZeroBody());
-      for ( double& v : X.OneBody )
+      init = op(init,X.ZeroBody);
+      for ( auto& v : X.OneBody )    init = op(init,v);
+      for ( auto& itmat : X.TwoBody.MatEl )
       {
-         init = op(init, v) ;
-      }
-      for (int ch=0;ch<X.nChannels;++ch)
-      {
-        for (auto &twobody : X.TwoBody[ch] )
-        {
-          for (double& v : twobody )
-          {
-             init = op(init, v) ;
-          }
-        }
+          for (auto& v : itmat.second )    init = op(init,v);
       }
       return init;
    }
 };
 }}}
-*/
+
+
 
 void IMSRGSolver::Solve_ode()
 {
 
+   ode_mode = "H";
    WriteFlowStatusHeader(cout);
    WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
-   namespace pl = std::placeholders;
    runge_kutta4<Operator, double, Operator, double, vector_space_algebra> stepper;
-   auto system = std::bind( &IMSRGSolver::ODE_systemH, *this, pl::_1, pl::_2, pl::_3);
+   auto system = *this;
    auto monitor = ode_monitor;
    size_t steps = integrate_const(stepper, system, H_s, s, smax, ds, monitor);
    monitor.report();
@@ -243,63 +232,57 @@ void IMSRGSolver::Solve_ode()
 
 void IMSRGSolver::Solve_ode_adaptive()
 {
-/*
+
+
+   ode_mode = "H";
    WriteFlowStatusHeader(cout);
-     WriteFlowStatus(flowfile);
+   WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
-   namespace pl = std::placeholders;
-//   auto stepper = make_controlled<runge_kutta_dopri5<Operator, double, Operator, double, vector_space_algebra> >(1e-8,1e-8);
-   auto system = std::bind( &IMSRGSolver::ODE_systemH, *this, pl::_1, pl::_2, pl::_3);
-   auto monitor = ode_monitor;
-   auto stepper = make_controlled(1e-8,1e-8, runge_kutta_dopri5<Operator, double, Operator, double, vector_space_algebra>() );
-   size_t steps = integrate_adaptive(stepper, system, H_s, s, smax, ds, monitor);
+   auto system = *this;
+   typedef runge_kutta_dopri5< Operator , double , Operator ,double , vector_space_algebra > stepper;
+   size_t steps = integrate_adaptive(make_controlled<stepper>(1e-8,1e-8), system, H_s, s, smax, ds);
    monitor.report();
-*/
+
 }
 
-
-void IMSRGSolver::ODE_systemH( Operator& x, Operator& dxdt, const double t)
+// Evaluate dx/dt for boost ode
+void IMSRGSolver::operator()( const Operator& x, Operator& dxdt, const double t)
 {
-   H_s = x;
    s = t;
-//   UpdateEta();
-   generator.Update(&H_s,&Eta);
-//   dxdt = Eta.Commutator(x);
-   dxdt = Commutator(Eta,x);
+   if (ode_mode == "H")
+   {
+     H_s = x;
+     generator.Update(&H_s,&Eta);
+     dxdt = Commutator(Eta,x);
+   }
+   else if (ode_mode == "Omega")
+   {
+     Omega.front() = x;
+     H_s = H_0->BCH_Transform(Omega.front());
+     generator.Update(&H_s,&Eta);
+     dxdt = Eta - 0.5*Commutator(Omega.front(),Eta);
+   }
    WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
 }
 
 
+
 void IMSRGSolver::Solve_ode_magnus()
 {
+   ode_mode = "Omega";
    WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
    namespace pl = std::placeholders;
    runge_kutta4<Operator, double, Operator, double, vector_space_algebra> stepper;
-   auto system = std::bind( &IMSRGSolver::ODE_systemOmega, *this, pl::_1, pl::_2, pl::_3);
+   auto system = *this;
    auto monitor = ode_monitor;
-//   size_t steps = integrate_const(stepper, system, Omega, s, smax, ds, monitor);
    size_t steps = integrate_const(stepper, system, Omega.front(), s, smax, ds, monitor);
    monitor.report();
 }
 
-void IMSRGSolver::ODE_systemOmega( Operator& x, Operator& dxdt, const double t)
-{
-   s = t;
-//   Omega = x;
-   Omega.front() = x;
-//   H_s = H_0->BCH_Transform(Omega);
-   H_s = H_0->BCH_Transform(Omega.front());
-   generator.Update(&H_s,&Eta);
-//   dxdt = Eta - 0.5*Omega.Commutator(Eta);
-//   dxdt = Eta - 0.5*Commutator(Omega,Eta);
-   dxdt = Eta - 0.5*Commutator(Omega.front(),Eta);
-   WriteFlowStatus(cout);
-   WriteFlowStatus(flowfile);
 
-}
 
 #endif
 

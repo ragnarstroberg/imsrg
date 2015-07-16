@@ -109,6 +109,8 @@ class IMSRGSolver
   vector<double> E0;
   vector<double> eta1;
   vector<double> eta2;
+  string ode_mode;
+  void operator()( const Operator& x, Operator& dxdt, const double t);
 
 
   void Solve_ode();

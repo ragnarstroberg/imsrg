@@ -720,23 +720,26 @@ void Operator::AntiSymmetrize()
 //Operator Operator::Commutator( Operator& opright)
 /// Returns \f$ Z = [X,Y] \f$
 /// @relates Operator
-Operator Commutator( Operator& X, Operator& Y)
+Operator Commutator( const Operator& X, const Operator& Y)
 {
    X.timer["N_Commutators"] += 1;
    if (X.rank_J==0)
    {
       if (Y.rank_J==0)
       {
-         return X.CommutatorScalarScalar(Y); // [S,S]
+//         return X.CommutatorScalarScalar(Y); // [S,S]
+         return CommutatorScalarScalar(X,Y); // [S,S]
       }
       else
       {
-         return X.CommutatorScalarTensor(Y); // [S,T]
+//         return X.CommutatorScalarTensor(Y); // [S,T]
+         return CommutatorScalarTensor(X,Y); // [S,T]
       }
    }
    else if(Y.rank_J==0)
    {
-      return (-1)*Y.CommutatorScalarTensor(X); // [T,S]
+//      return (-1)*Y.CommutatorScalarTensor(X); // [T,S]
+      return (-1)*CommutatorScalarTensor(Y,X); // [T,S]
    }
    else
    {
@@ -749,88 +752,100 @@ Operator Commutator( Operator& X, Operator& Y)
 
 /// Commutator where \f$ X \f$ and \f$Y\f$ are scalar operators.
 /// Should be called through Commutator()
-Operator Operator::CommutatorScalarScalar( Operator& opright) 
+//Operator Operator::CommutatorScalarScalar( Operator& opright) 
+Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) 
 {
-   Operator out = opright;
-   out.EraseZeroBody();
-   out.EraseOneBody();
-   out.EraseTwoBody();
+   Operator Z = Y;
+   Z.EraseZeroBody();
+   Z.EraseOneBody();
+   Z.EraseTwoBody();
 
-   if ( (IsHermitian() and opright.IsHermitian()) or (IsAntiHermitian() and opright.IsAntiHermitian()) ) out.SetAntiHermitian();
-   else if ( (IsHermitian() and opright.IsAntiHermitian()) or (IsAntiHermitian() and opright.IsHermitian()) ) out.SetHermitian();
-   else out.SetNonHermitian();
+//   if ( (IsHermitian() and opright.IsHermitian()) or (IsAntiHermitian() and opright.IsAntiHermitian()) ) out.SetAntiHermitian();
+//   else if ( (IsHermitian() and opright.IsAntiHermitian()) or (IsAntiHermitian() and opright.IsHermitian()) ) out.SetHermitian();
+//   else out.SetNonHermitian();
+   if ( (X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()) ) Z.SetAntiHermitian();
+   else if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Z.SetHermitian();
+   else Z.SetNonHermitian();
 
-   if ( not out.IsAntiHermitian() )
+   if ( not Z.IsAntiHermitian() )
    {
-      comm110ss(opright, out);
-      comm220ss(opright, out) ;
+      //X.comm110ss(Y, Z);
+      //X.comm220ss(Y, Z) ;
+      Z.comm110ss(X, Y);
+      Z.comm220ss(X, Y) ;
    }
 
-    double t = omp_get_wtime();
-   comm111ss(opright, out);
-    timer["comm111ss"] += omp_get_wtime() - t;
+   double t = omp_get_wtime();
+//   X.comm111ss(Y, Z);
+   Z.comm111ss(X, Y);
+   Z.timer["comm111ss"] += omp_get_wtime() - t;
 
     t = omp_get_wtime();
-   comm121ss(opright, out);
-    timer["comm121ss"] += omp_get_wtime() - t;
+//   X.comm121ss(opright, out);
+   Z.comm121ss(X,Y);
+    Z.timer["comm121ss"] += omp_get_wtime() - t;
 
     t = omp_get_wtime();
-   comm122ss(opright, out); 
-    timer["comm122ss"] += omp_get_wtime() - t;
+//   X.comm122ss(Y, Z); 
+   Z.comm122ss(X,Y); 
+    Z.timer["comm122ss"] += omp_get_wtime() - t;
 
-   if (particle_rank>1 and opright.particle_rank>1)
+   if (X.particle_rank>1 and Y.particle_rank>1)
    {
     t = omp_get_wtime();
-    comm222_pp_hh_221ss(opright, out);
-    timer["comm222_pp_hh_221ss"] += omp_get_wtime() - t;
+//    X.comm222_pp_hh_221ss(Y, Z);
+    Z.comm222_pp_hh_221ss(X, Y);
+    Z.timer["comm222_pp_hh_221ss"] += omp_get_wtime() - t;
      
     t = omp_get_wtime();
-    comm222_phss(opright, out);
-    timer["comm222_phss"] += omp_get_wtime() - t;
+//    X.comm222_phss(Y, Z);
+    Z.comm222_phss(X, Y);
+    Z.timer["comm222_phss"] += omp_get_wtime() - t;
    }
 
 
-   if ( out.IsHermitian() )
-      out.Symmetrize();
-   else if (out.IsAntiHermitian() )
-      out.AntiSymmetrize();
+   if ( Z.IsHermitian() )
+      Z.Symmetrize();
+   else if (Z.IsAntiHermitian() )
+      Z.AntiSymmetrize();
 
 
-   return out;
+   return Z;
 }
 
 
 /// Commutator \f$[X,Y]\f$ where \f$ X \f$ is a scalar operator and \f$Y\f$ is a tensor operator.
 /// Should be called through Commutator()
-Operator Operator::CommutatorScalarTensor( Operator& opright) 
+//Operator Operator::CommutatorScalarTensor( Operator& opright) 
+Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) 
 {
-   Operator out = opright; // This ensures the commutator has the same tensor rank as opright
-   out.EraseZeroBody();
-   out.EraseOneBody();
-   out.EraseTwoBody();
+   Operator Z = Y; // This ensures the commutator has the same tensor rank as Y
+   Z.EraseZeroBody();
+   Z.EraseOneBody();
+   Z.EraseTwoBody();
 
-   if ( (IsHermitian() and opright.IsHermitian()) or (IsAntiHermitian() and opright.IsAntiHermitian()) ) out.SetAntiHermitian();
-   else if ( (IsHermitian() and opright.IsAntiHermitian()) or (IsAntiHermitian() and opright.IsHermitian()) ) out.SetHermitian();
-   else out.SetNonHermitian();
+   if ( (X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()) ) Z.SetAntiHermitian();
+   else if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Z.SetHermitian();
+   else Z.SetNonHermitian();
 
    cout << "comm111st" << endl;
-   comm111st(opright, out);
-   cout << "comm121st" << endl;
-   comm121st(opright, out);
+   Z.comm111st(X, Y);
+   cout << "Z.comm121st" << endl;
+   Z.comm121st(X, Y);
 
-   cout << "comm122st" << endl;
-   comm122st(opright, out);
-   cout << "comm222_pp_hh_221st" << endl;
-   comm222_pp_hh_221st(opright, out);
-   cout << "comm222_phst" << endl;
-   comm222_phst(opright, out);
+   cout << "Z.comm122st" << endl;
+   Z.comm122st(X, Y);
+   cout << "Z.comm222_pp_hh_221st" << endl;
+   Z.comm222_pp_hh_221st(X, Y);
+   cout << "Z.comm222_phst" << endl;
+   Z.comm222_phst(X, Y);
 
-   if ( out.IsHermitian() )
-      out.Symmetrize();
-   else if (out.IsAntiHermitian() )
-      out.AntiSymmetrize();
+   if ( Z.IsHermitian() )
+      Z.Symmetrize();
+   else if (Z.IsAntiHermitian() )
+      Z.AntiSymmetrize();
 
-   return out;
+   return Z;
 }
 
 
@@ -851,11 +866,12 @@ Operator Operator::CommutatorScalarTensor( Operator& opright)
 /// \f[
 ///  [X_{1)},Y_{(1)}]_{(0)} = \sum_{a} n_a (2j_a+1) \left(X_{(1)}Y_{(1)}-Y_{(1)}X_{(1)}\right)_{aa}
 /// \f]
-void Operator::comm110ss( Operator& Y, Operator& Z) 
+//void Operator::comm110ss( Operator& Y, Operator& Z) 
+void Operator::comm110ss( const Operator& X, const Operator& Y) 
 {
-  Operator& X = *this;
-  if (IsHermitian() and Y.IsHermitian()) return ; // I think this is the case
-  if (IsAntiHermitian() and Y.IsAntiHermitian()) return ; // I think this is the case
+  Operator& Z = *this;
+  if (X.IsHermitian() and Y.IsHermitian()) return ; // I think this is the case
+  if (X.IsAntiHermitian() and Y.IsAntiHermitian()) return ; // I think this is the case
 
    arma::mat xyyx = X.OneBody*Y.OneBody - Y.OneBody*X.OneBody;
    for ( auto& a : modelspace->holes) 
@@ -883,19 +899,19 @@ void Operator::comm110ss( Operator& Y, Operator& Z)
 /// [X_{(2)},Y_{(2)}]_{(0)} = 2 \sum_{J} (2J+1) Tr(X_{hh'pp'}^{J} Y_{pp'hh'}^{J})
 /// \f] where we obtain a factor of four from converting two unrestricted sums to restricted sums, i.e. \f$\sum_{ab} \rightarrow \sum_{a\leq b} \f$,
 /// and using the normalized TBME.
-void Operator::comm220ss(  Operator& Y, Operator& Z) 
+void Operator::comm220ss( const Operator& X, const Operator& Y) 
 {
-   Operator& X = *this;
-   if (IsHermitian() and Y.IsHermitian()) return; // I think this is the case
-   if (IsAntiHermitian() and Y.IsAntiHermitian()) return; // I think this is the case
+   Operator& Z = *this;
+   if (X.IsHermitian() and Y.IsHermitian()) return; // I think this is the case
+   if (X.IsAntiHermitian() and Y.IsAntiHermitian()) return; // I think this is the case
 
    for (int ch=0;ch<nChannels;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       auto hh = tbc.GetKetIndex_hh();
       auto pp = tbc.GetKetIndex_pp();
-      arma::mat& X2 = X.TwoBody.GetMatrix(ch);
-      arma::mat& Y2 = Y.TwoBody.GetMatrix(ch);
+      auto & X2 = X.TwoBody.GetMatrix(ch);
+      auto & Y2 = Y.TwoBody.GetMatrix(ch);
       Z.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( X2.submat(hh,pp) * Y2.submat(pp,hh) );
    }
 }
@@ -911,9 +927,10 @@ void Operator::comm220ss(  Operator& Y, Operator& Z)
 /// \f[
 /// [X_{(1)},Y_{(1)}]_{(1)} = X_{(1)}Y_{(1)} - Y_{(1)}X_{(1)}
 /// \f]
-void Operator::comm111ss( Operator & Y, Operator& Z) 
+//void Operator::comm111ss( Operator & Y, Operator& Z) 
+void Operator::comm111ss( const Operator & X, const Operator& Y) 
 {
-   Operator& X = *this;
+   Operator& Z = *this;
    Z.OneBody += X.OneBody*Y.OneBody - Y.OneBody*X.OneBody;
 }
 
@@ -936,9 +953,10 @@ void Operator::comm111ss( Operator & Y, Operator& Z)
 /// \f[
 /// [X_{(1)},Y_{(2)}]_{ij} = \frac{1}{2j_i+1}\sum_{ab} (n_a \bar{n}_b) \sum_{J} (2J+1) (X_{ab} Y^J_{biaj} - X_{ba} Y^J_{aibj})
 /// \f]
-void Operator::comm121ss( Operator& Y, Operator& Z) 
+//void Operator::comm121ss( Operator& Y, Operator& Z) 
+void Operator::comm121ss( const Operator& X, const Operator& Y) 
 {
-   Operator& X = *this;
+   Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
    #pragma omp parallel for 
    for (int i=0;i<norbits;++i)
@@ -997,10 +1015,11 @@ void Operator::comm121ss( Operator& Y, Operator& Z)
 /// \f]
 /// With the intermediate matrix \f[ \mathcal{M}^{J}_{pp} \equiv \frac{1}{2} (X^{J}\mathcal{P}_{pp} Y^{J} - Y^{J}\mathcal{P}_{pp}X^{J}) \f]
 /// and likewise for \f$ \mathcal{M}^{J}_{hh} \f$
-void Operator::comm221ss( Operator& Y, Operator& Z) 
+//void Operator::comm221ss( Operator& Y, Operator& Z) 
+void Operator::comm221ss( const Operator& X, const Operator& Y) 
 {
 
-   Operator& X = *this;
+   Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
    TwoBodyME Mpp = Y.TwoBody;
    TwoBodyME Mhh = Y.TwoBody;
@@ -1071,11 +1090,12 @@ void Operator::comm221ss( Operator& Y, Operator& Z)
 /// [X_{(1)},Y_{(2)}]^{J}_{ijkl} = \sum_{a} ( X_{ia}Y^{J}_{ajkl} + X_{ja}Y^{J}_{iakl} - X_{ak} Y^{J}_{ijal} - X_{al} Y^{J}_{ijka} )
 /// \f]
 /// here, all TBME are unnormalized, i.e. they should have a tilde.
-void Operator::comm122ss( Operator& Y, Operator& Z ) 
+//void Operator::comm122ss( Operator& Y, Operator& Z ) 
+void Operator::comm122ss( const Operator& X, const Operator& Y ) 
 {
-   Operator& X = *this;
-   arma::mat& X1 = X.OneBody;
-   arma::mat& Y1 = Y.OneBody;
+   Operator& Z = *this;
+   auto& X1 = X.OneBody;
+   auto& Y1 = Y.OneBody;
 
    int n_nonzero = modelspace->SortedTwoBodyChannels.size();
    #pragma omp parallel for schedule(dynamic,1)
@@ -1083,9 +1103,9 @@ void Operator::comm122ss( Operator& Y, Operator& Z )
    {
       int ch = modelspace->SortedTwoBodyChannels[ich];
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& X2 = X.TwoBody.GetMatrix(ch,ch);
-      arma::mat& Y2 = Y.TwoBody.GetMatrix(ch,ch);
-      arma::mat& Z2 = Z.TwoBody.GetMatrix(ch,ch);
+      auto& X2 = X.TwoBody.GetMatrix(ch,ch);
+      auto& Y2 = Y.TwoBody.GetMatrix(ch,ch);
+      auto& Z2 = Z.TwoBody.GetMatrix(ch,ch);
 
 
       int npq = tbc.GetNumberKets();
@@ -1182,15 +1202,17 @@ void Operator::comm122ss( Operator& Y, Operator& Z )
 /// \mathcal{M}^{J}_{pp} \equiv \frac{1}{2}(X^{J} \mathcal{P}_{pp} Y^{J} - Y^{J} \mathcal{P}_{pp} X^{J})
 /// \f]
 /// and likewise for \f$ \mathcal{M}^{J}_{hh} \f$.
-void Operator::comm222_pp_hhss( Operator& opright, Operator& opout ) 
+//void Operator::comm222_pp_hhss( Operator& opright, Operator& opout ) 
+void Operator::comm222_pp_hhss( const Operator& X, const Operator& Y ) 
 {
+   Operator& Z = *this;
 //   #pragma omp parallel for schedule(dynamic,5)
    for (int ch=0; ch<nChannels; ++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& LHS = (arma::mat&) TwoBody.GetMatrix(ch,ch);
-      arma::mat& RHS = (arma::mat&) opright.TwoBody.GetMatrix(ch,ch);
-      arma::mat& OUT = (arma::mat&) opout.TwoBody.GetMatrix(ch,ch);
+      arma::mat& LHS = (arma::mat&) X.TwoBody.GetMatrix(ch,ch);
+      arma::mat& RHS = (arma::mat&) Y.TwoBody.GetMatrix(ch,ch);
+      arma::mat& OUT = (arma::mat&) Z.TwoBody.GetMatrix(ch,ch);
 
       arma::mat Mpp = (LHS.rows(tbc.GetKetIndex_pp()) * RHS.cols(tbc.GetKetIndex_pp()));
       arma::mat Mhh = (LHS.rows(tbc.GetKetIndex_hh()) * RHS.cols(tbc.GetKetIndex_hh()));
@@ -1207,11 +1229,12 @@ void Operator::comm222_pp_hhss( Operator& opright, Operator& opout )
 /// Since comm222_pp_hhss() and comm221ss() both require the ruction of 
 /// the intermediate matrices \f$\mathcal{M}_{pp} \f$ and \f$ \mathcal{M}_{hh} \f$, we can combine them and
 /// only calculate the intermediates once.
-void Operator::comm222_pp_hh_221ss( Operator& Y, Operator& Z )  
+//void Operator::comm222_pp_hh_221ss( Operator& Y, Operator& Z )  
+void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )  
 {
 
 //   int herm = Z.IsHermitian() ? 1 : -1;
-   Operator& X = *this;
+   Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
 
    TwoBodyME Mpp = Z.TwoBody;
@@ -1224,15 +1247,15 @@ void Operator::comm222_pp_hh_221ss( Operator& Y, Operator& Z )
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
-      arma::mat& LHS = X.TwoBody.GetMatrix(ch,ch);
-      arma::mat& RHS = Y.TwoBody.GetMatrix(ch,ch);
-      arma::mat& OUT =  Z.TwoBody.GetMatrix(ch,ch);
+      auto& LHS = X.TwoBody.GetMatrix(ch,ch);
+      auto& RHS = Y.TwoBody.GetMatrix(ch,ch);
+      auto& OUT = Z.TwoBody.GetMatrix(ch,ch);
 
-      arma::mat & Matrixpp = Mpp.GetMatrix(ch,ch);
-      arma::mat & Matrixhh = Mhh.GetMatrix(ch,ch);
+      auto& Matrixpp = Mpp.GetMatrix(ch,ch);
+      auto& Matrixhh = Mhh.GetMatrix(ch,ch);
 
-      arma::uvec& kets_pp = tbc.GetKetIndex_pp();
-      arma::uvec& kets_hh = tbc.GetKetIndex_hh();
+      auto& kets_pp = tbc.GetKetIndex_pp();
+      auto& kets_hh = tbc.GetKetIndex_hh();
       
       Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
       Matrixhh =  LHS.cols(kets_hh) * RHS.rows(kets_hh);
@@ -1310,7 +1333,7 @@ void Operator::comm222_pp_hh_221ss( Operator& Y, Operator& Z )
 /// This function is designed for use with comm222_phss() and so it takes in
 /// two arrays of matrices, one for hp terms and one for ph terms.
 //void Operator::DoPandyaTransformation(TwoBodyME& TwoBody_CC_hp, TwoBodyME& TwoBody_CC_ph)
-void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<arma::mat>& TwoBody_CC_ph)
+void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<arma::mat>& TwoBody_CC_ph) const
 {
    // loop over cross-coupled channels
    int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
@@ -1536,10 +1559,11 @@ void Operator::AddInversePandyaTransformation(vector<arma::mat>& Zbar)
 ///  \right]
 ///  \f]
 ///
-void Operator::comm222_phss( Operator& Y, Operator& Z ) 
+//void Operator::comm222_phss( Operator& Y, Operator& Z ) 
+void Operator::comm222_phss( const Operator& X, const Operator& Y ) 
 {
 
-   Operator& X = *this;
+   Operator& Z = *this;
    // Create Pandya-transformed hp and ph matrix elements
    vector<arma::mat> X_bar_hp (nChannels );
    vector<arma::mat> X_bar_ph (nChannels );
@@ -1597,11 +1621,14 @@ void Operator::comm222_phss( Operator& Y, Operator& Z )
 //        |                 |
 //
 // This is no different from the scalar-scalar version
-void Operator::comm111st( Operator & Y, Operator& Z) 
+void Operator::comm111st( const Operator & X, const Operator& Y)
 {
-   Operator& X = *this;
-   Z.OneBody += X.OneBody*Y.OneBody - Y.OneBody*X.OneBody;
+  comm111ss(X,Y);
 }
+//{
+//   Operator& Z = *this;
+//   Z.OneBody += X.OneBody*Y.OneBody - Y.OneBody*X.OneBody;
+//}
 
 //*****************************************************************************************
 //                                       |
@@ -1616,9 +1643,10 @@ void Operator::comm111st( Operator & Y, Operator& Z)
 // X is scalar one-body, Y is tensor two-body
 // There must be a better way to do this looping. 
 //
-void Operator::comm121st( Operator& Y, Operator& Z) 
+//void Operator::comm121st( Operator& Y, Operator& Z) 
+void Operator::comm121st( const Operator& X, const Operator& Y) 
 {
-   Operator& X = *this;
+   Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
    int Lambda = Z.GetJRank();
    #pragma omp parallel for // for starters, don't do it parallel
@@ -1705,9 +1733,10 @@ void Operator::comm121st( Operator& Y, Operator& Z)
 // -- AGREES WITH NATHAN'S RESULTS
 // Right now, this is the slowest one...
 // Agrees with previous code in the scalar-scalar limit
-void Operator::comm122st( Operator& Y, Operator& Z ) 
+//void Operator::comm122st( Operator& Y, Operator& Z ) 
+void Operator::comm122st( const Operator& X, const Operator& Y ) 
 {
-   Operator& X = *this;
+   Operator& Z = *this;
    int Lambda = Z.rank_J;
 
     vector< array<int,2> > channels;
@@ -1802,10 +1831,11 @@ void Operator::comm122st( Operator& Y, Operator& Z )
 // the intermediate matrices Mpp and Mhh, we can combine them and
 // only calculate the intermediates once.
 // X is a scalar, Y is a tensor
-void Operator::comm222_pp_hh_221st( Operator& Y, Operator& Z )  
+//void Operator::comm222_pp_hh_221st( Operator& Y, Operator& Z )  
+void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )  
 {
 
-   Operator& X = *this;
+   Operator& Z = *this;
    int Lambda = Z.GetJRank();
 
    TwoBodyME Mpp = Z.TwoBody;
@@ -1924,7 +1954,7 @@ void Operator::comm222_pp_hh_221st( Operator& Y, Operator& Z )
 /// This function is designed for use with comm222_phss() and so it takes in
 /// two arrays of matrices, one for hp terms and one for ph terms.
 //void Operator::DoTensorPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<arma::mat>& TwoBody_CC_ph)
-void Operator::DoTensorPandyaTransformation(map<array<int,2>,arma::mat>& TwoBody_CC_hp, map<array<int,2>,arma::mat>& TwoBody_CC_ph)
+void Operator::DoTensorPandyaTransformation(map<array<int,2>,arma::mat>& TwoBody_CC_hp, map<array<int,2>,arma::mat>& TwoBody_CC_ph) const
 {
    int Lambda = rank_J;
    // loop over cross-coupled channels
@@ -2207,10 +2237,11 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
 ///  \right]
 ///  \f]
 ///
-void Operator::comm222_phst( Operator& Y, Operator& Z ) 
+//void Operator::comm222_phst( Operator& Y, Operator& Z ) 
+void Operator::comm222_phst( const Operator& X, const Operator& Y ) 
 {
 
-   Operator& X = *this;
+   Operator& Z = *this;
    // Create Pandya-transformed hp and ph matrix elements
    vector<arma::mat> X_bar_hp (nChannels );
    vector<arma::mat> X_bar_ph (nChannels );
