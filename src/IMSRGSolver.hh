@@ -56,6 +56,7 @@ class IMSRGSolver
 //  void SetGenerator(string g){generator.SetType(g);};
   void SetGenerator(string g);
   void SetOmegaNormMax(double x){omega_norm_max = x;};
+  void SetODETolerance(float x){ode_e_abs=x;ode_e_rel=x;};
 
   int GetSystemDimension();
 
@@ -110,9 +111,11 @@ class IMSRGSolver
   vector<double> eta1;
   vector<double> eta2;
   string ode_mode;
+  float ode_e_abs;
+  float ode_e_rel;
+
+
   void operator()( const Operator& x, Operator& dxdt, const double t);
-
-
   void Solve_ode();
   void Solve_ode_adaptive();
   void Solve_ode_magnus();

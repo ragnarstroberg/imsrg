@@ -12,38 +12,22 @@ IMSRGSolver::~IMSRGSolver()
 }
 
 IMSRGSolver::IMSRGSolver()
+    : s(0),ds(0.1),ds_max(0.5),
+     norm_domega(0.1), omega_norm_max(2.0),method("BCH"),flowfile("")
 #ifndef NO_ODE
-    :ode_monitor(*this),ode_mode("H")
+    ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 #endif
-{
-   method = "BCH";
-   s = 0;
-   ds = 0.1;
-   ds_max = 0.5;
-   smax  = 2.0;
-   norm_domega = 0.1;
-   omega_norm_max = 2.0;
-   flowfile = "";
-}
+{}
 
 // Constructor
 IMSRGSolver::IMSRGSolver( Operator &H_in)
-//   : H_0(&H_in), H_s(H_in), Eta(H_in), Omega(H_in)// ,dOmega(H_in)
-   : H_0(&H_in), H_s(H_in), Eta(H_in) // ,dOmega(H_in)
+   : modelspace(H_in.GetModelSpace()),H_0(&H_in), H_s(H_in), Eta(H_in), // ,dOmega(H_in)
+    istep(0), s(0),ds(0.1),ds_max(0.5),
+    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),method("BCH"),flowfile("")
 #ifndef NO_ODE
-    ,ode_monitor(*this),ode_mode("H")
+    ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 #endif
 {
-   method = "BCH";
-   istep = 0;
-   s = 0;
-   ds = 0.1;
-   ds_max = 0.5;
-   smax  = 2.0;
-   norm_domega = 0.1;
-   omega_norm_max = 2.0;
-   flowfile = "";
-   modelspace = H_in.GetModelSpace();
    Eta.Erase();
    Eta.SetAntiHermitian();
    Omega.push_back( Eta);
@@ -59,7 +43,6 @@ void IMSRGSolver::SetHin( Operator & H_in)
    Eta = H_in;
    Eta.Erase();
    Eta.SetAntiHermitian();
-//   Omega = Eta;
    if (Omega.back().Norm() > 1e-6)
    {
      Omega.push_back(Eta);
@@ -258,7 +241,7 @@ void IMSRGSolver::Solve_ode_adaptive()
    auto system = *this;
    typedef runge_kutta_dopri5< Operator , double , Operator ,double , vector_space_algebra > stepper;
    auto monitor = ode_monitor;
-   size_t steps = integrate_adaptive(make_controlled<stepper>(1e-8,1e-8), system, H_s, s, smax, ds, monitor);
+   size_t steps = integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, H_s, s, smax, ds, monitor);
    monitor.report();
 
 }
