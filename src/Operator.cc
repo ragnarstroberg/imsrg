@@ -1243,8 +1243,11 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
    double t = omp_get_wtime();
    // Don't use omp, because the matrix multiplication is already
    // parallelized by armadillo.
-   for (int ch : modelspace->SortedTwoBodyChannels)
+   int nch = modelspace->SortedTwoBodyChannels.size();
+   #pragma omp parallel for schedule(dynamic,1)
+   for (int ich=0; ich<nch; ++ich)
    {
+      int ch = modelspace->SortedTwoBodyChannels[ich];
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
       auto& LHS = X.TwoBody.GetMatrix(ch,ch);
@@ -1575,17 +1578,20 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    Y.DoPandyaTransformation(Y_bar_hp, Y_bar_ph );
    timer["DoPandyaTransformation"] += omp_get_wtime() - t;
 
-   // Construct the intermediate matrix W_bar
+   // Construct the intermediate matrix Z_bar
    t = omp_get_wtime();
    vector<arma::mat> Z_bar (nChannels );
 
-   for (int ch : modelspace->SortedTwoBodyChannels_CC )
+//   for (int ch : modelspace->SortedTwoBodyChannels_CC )
+   int nch = modelspace->SortedTwoBodyChannels_CC.size();
+   #pragma omp parallel for schedule(dynamic,1)
+   for (int ich=0; ich<nch; ++ich )
    {
+      int ch = modelspace->SortedTwoBodyChannels_CC[ich];
       if ( X.IsHermitian() ) // keep track of minus sign from taking transpose of X
          Z_bar[ch] =  X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch] ;
       else
-         Z_bar[ch] =  X_bar_ph[ch].t() * Y_bar_ph[ch]  - X_bar_hp[ch].t() * Y_bar_hp[ch] ;
-//         Z_bar[ch] =  X_bar_ph[ch].t() * Y_bar_ph[ch] - X_bar_hp[ch].t() * Y_bar_hp[ch] ;
+         Z_bar[ch] =  X_bar_ph[ch].t() * Y_bar_ph[ch] - X_bar_hp[ch].t() * Y_bar_hp[ch] ;
 
       if ( Z.IsHermitian() ) // if Z is hermitian, then XY is antihermitian
         Z_bar[ch] += Z_bar[ch].t();
