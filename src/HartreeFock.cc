@@ -1,6 +1,7 @@
 
 #include "HartreeFock.hh"
 #include "ModelSpace.hh"
+#include <iomanip>
 #include <utility> // for make_pair
 
 #ifndef SQRT2
@@ -110,6 +111,7 @@ void HartreeFock::CalcEHF()
       }
    }
    EHF = e1hf + e2hf + e3hf;
+   cout << fixed << setw(10) << setprecision(7);
    cout << "e1hf = " << e1hf << endl;
    cout << "e2hf = " << e2hf << endl;
    cout << "e3hf = " << e3hf << endl;

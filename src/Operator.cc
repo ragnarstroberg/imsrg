@@ -1090,6 +1090,7 @@ void Operator::comm221ss( const Operator& X, const Operator& Y)
 /// [X_{(1)},Y_{(2)}]^{J}_{ijkl} = \sum_{a} ( X_{ia}Y^{J}_{ajkl} + X_{ja}Y^{J}_{iakl} - X_{ak} Y^{J}_{ijal} - X_{al} Y^{J}_{ijka} )
 /// \f]
 /// here, all TBME are unnormalized, i.e. they should have a tilde.
+// This is still too slow...
 //void Operator::comm122ss( Operator& Y, Operator& Z ) 
 void Operator::comm122ss( const Operator& X, const Operator& Y ) 
 {
