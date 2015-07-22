@@ -2,12 +2,13 @@ CC = g++
 
 INCLUDE = -I./armadillo
 #LIBS = -lblas -llapack -lgsl
-LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp
+#LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp
+LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
 #FLAGS =  -O3 -std=c++11  -fPIC -fopenmp # -DNO_ODE=1
 #FLAGS =  -std=c++11 -fopenmp -fPIC -g # -DNO_ODE=1
-FLAGS =  -O2 -march=native -std=c++11 -fopenmp -fPIC #-DNO_ODE=1 
+FLAGS =  -O3 -march=native -std=c++11 -fopenmp -fPIC #-DNO_ODE=1 
 #FLAGS =  -std=c++11 -fopenmp -fPIC -g  -DNO_ODE=1
-SOFLABS = -O2 -march=native -std=c++11 -fopenmp -fPIC
+SOFLABS = -O3 -march=native -std=c++11 -fopenmp -fPIC
 WARNFLAGS = -Wall -Wno-comment
 FLAGS += $(WARNFLAGS)
 SOFLAGS += $(WARNFLAGS)
