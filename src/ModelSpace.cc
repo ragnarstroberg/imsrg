@@ -324,7 +324,7 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
    }
    cout << "]" << endl;
    
-   vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t'};
+   vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o'};
    vector<char> pn_list = { 'p', 'n' };
 
    norbits = (Nmax+1)*(Nmax+2);

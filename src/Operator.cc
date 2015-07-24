@@ -831,16 +831,11 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
    else if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Z.SetHermitian();
    else Z.SetNonHermitian();
 
-   cout << "comm111st" << endl;
    Z.comm111st(X, Y);
-   cout << "Z.comm121st" << endl;
    Z.comm121st(X, Y);
 
-   cout << "Z.comm122st" << endl;
    Z.comm122st(X, Y);
-   cout << "Z.comm222_pp_hh_221st" << endl;
    Z.comm222_pp_hh_221st(X, Y);
-   cout << "Z.comm222_phst" << endl;
    Z.comm222_phst(X, Y);
 
    if ( Z.IsHermitian() )
