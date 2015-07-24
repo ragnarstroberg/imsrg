@@ -1,32 +1,47 @@
-#CC = g++
-CC = g++49
+CC = g++
+#CC = g++49
 
 #FLAGS = -larmadillo -O3 -std=c++11
 #FLAGS = -larmadillo -O3 -std=c++11  -lgsl -fPIC -fopenmp 
 INCLUDE = -I./armadillo -I$(HOME)/include
-LIBS = -lblas -llapack -lgsl -lgslcblas
-FLAGS =  -O3 -std=c++11  -fPIC -fopenmp -DNO_ODE=1
-#FLAGS = -larmadillo -O3 -std=c++11 -lgsl -fPIC # -v -da -Q
+#LIBS = -lblas -llapack -lgsl -lgslcblas
+LIBS = -lopenblas -lgsl -lz -lhdf5_cpp
+#LIBS = -lgsl
+FLAGS =  -std=c++11  -fPIC -fopenmp #-DNO_ODE=1  #-DBOOST_IOSTREAMS_NO_LIB=1
+#MKLLIBS = -L/opt/intel/mkl/10.2.2.025/lib/em64t/ \
+    -lmkl_def -lmkl_mc3 -lmkl_core -lmkl_solver_lp64 -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_lapack -liomp5 -lpthread -lm
+#    -lmkl_def -lmkl_mc3 -lmkl_core -lmkl_solver_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_lapack -liomp5 -lpthread -lm
+
+#LIBS += $(MKLLIBS)
 
 #PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 PYTHONFLAGS = -I/usr/include/python2.4 -lpython2.4 -lboost_python #-lpython 
 
 #all: pyIMSRG.so
-all: mysrg libIMSRG.so python
-#all: libIMSRG.so
+#all: mysrg libIMSRG.so python
+#all: libIMSRG.so python
+all: libIMSRG.so
 	
 #OBJ = ModelSpace.o ReadWrite.o Operator.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o Operator3.o
-OBJ = ModelSpace.o ReadWrite.o Operator.o HartreeFock.o IMSRGSolver.o AngMom.o imsrg_util.o 
+OBJ = ModelSpace.o ReadWrite.o TwoBodyME.o ThreeBodyME.o Operator.o\
+      HartreeFock.o Generator.o IMSRGSolver.o AngMom.o imsrg_util.o \
+      boost_src/gzip.o boost_src/zlib.o
 
 mysrg: main.cc $(OBJ)
 	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
+
+boost_src/gzip.o: boost_src/gzip.cpp
+	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
+
+boost_src/zlib.o: boost_src/zlib.cpp
+	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS)
 
 %.o: %.cc %.hh
 	$(CC) -c $*.cc -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 
 libIMSRG.so: $(OBJ)
-	$(CC) -shared -o $@ $^
+	$(CC) -shared -o $@ $^ -lz
 
 python: pyIMSRG.so
 
@@ -37,4 +52,4 @@ pyIMSRG.o: pyIMSRG.cc
 	$(CC) -c $^ -o $@ -fPIC $(FLAGS) $(INCLUDE) $(LIBS) $(PYTHONFLAGS)
 
 clean:
-	rm -f *.o
+	rm -f *.o *.so boost_src/*.o

@@ -403,7 +403,9 @@ Operator Operator::UndoNormalOrdering()
 
    for (auto& k : modelspace->holes) // loop over hole orbits
    {
+      cout << "*** " << opNO.ZeroBody << endl;
       opNO.ZeroBody -= (modelspace->GetOrbit(k).j2+1) * OneBody(k,k);
+      cout << "k = " << k << "  0body = " << opNO.ZeroBody << endl;
    }
 
    index_t norbits = modelspace->GetNumberOrbits();
@@ -421,6 +423,7 @@ Operator Operator::UndoNormalOrdering()
       arma::vec diagonals = matrix.diag();
       auto hh = tbc_ket.GetKetIndex_hh();
       opNO.ZeroBody += arma::sum( diagonals.elem(hh) ) * (2*J_ket+1);
+      cout << "ch_bra = " << ch_bra << "  0body = " << opNO.ZeroBody << endl;
 
       // One body part
       for (index_t a=0;a<norbits;++a)
