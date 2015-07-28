@@ -1187,6 +1187,7 @@ void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int E
           if (Jmin > Jmax) continue;
           for (int J=Jmin; J<=Jmax; ++J)
           {
+             // me2j format is unnormalized
              double norm_factor = 1;
              if (a==b)  norm_factor *= SQRT2;
              if (c==d)  norm_factor *= SQRT2;

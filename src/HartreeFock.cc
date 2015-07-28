@@ -85,7 +85,7 @@ void HartreeFock::Solve()
 /// \f}
 /// Where the matrices \f{eqnarray*}
 ///  \tilde{V}^{(2)}_{ij} &=& \sum_{ab} \rho_{ab}\bar{V}^{(2)}_{iajb} \\
-///  \tilde{V}^{(2)}_{ij} &=& \sum_{abcd} \rho_{ab}\rho_{cd} \bar{V}^{(3)}_{iacjbd} \\
+///  \tilde{V}^{(3)}_{ij} &=& \sum_{abcd} \rho_{ab}\rho_{cd} \bar{V}^{(3)}_{iacjbd} \\
 /// \f}
 /// have already been calculated by UpdateF().
 //*********************************************************************
@@ -625,6 +625,7 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
             if (bra.p==bra.q)    D(i,j) *= SQRT2;
             if (ket.p==ket.q)    D(i,j) /= SQRT2;
 
+            // Now generate the NO2B part of the 3N interaction
             if (Hbare.GetParticleRank()<3) continue;
             if (i>j) continue;
             for (int a=0; a<norb; ++a)
@@ -644,6 +645,8 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
               }
             }
             V3NO(i,j) /= (2*J+1);
+            if (bra.p==bra.q)  V3NO(i,j) /= SQRT2; // maybe ?
+            if (ket.p==ket.q)  V3NO(i,j) /= SQRT2; // maybe ?
             V3NO(j,i) = V3NO(i,j);
          }
       }
@@ -652,6 +655,7 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
    }
+
    // clear up some memory
    for (int Tz=-1;Tz<=1;++Tz)
    {
