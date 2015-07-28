@@ -43,6 +43,8 @@ class ReadWrite
    void ReadTwoBody_Takayuki(string filename, Operator& Hbare);
    void WriteOneBody_Takayuki(string filename, Operator& Hbare);
    void WriteTwoBody_Takayuki(string filename, Operator& Hbare);
+   void WriteTensorOneBody(string filename, Operator& H, string opname);
+   void WriteTensorTwoBody(string filename, Operator& H, string opname);
 
    std::map<string,string> InputParameters;
 

@@ -17,7 +17,6 @@ HartreeFock::HartreeFock(Operator& hbare)
     tolerance(1e-8)
 {
    int norbits = modelspace->GetNumberOrbits();
-//   int nKets = modelspace->GetNumberKets();
 
    C             = arma::mat(norbits,norbits,arma::fill::eye);
    Vij           = arma::mat(norbits,norbits,arma::fill::zeros);
@@ -34,7 +33,6 @@ HartreeFock::HartreeFock(Operator& hbare)
    }
 //   Vmon          = arma::mat(nKets,nKets);
 //   Vmon_exch     = arma::mat(nKets,nKets);
-   cout << "Done initializing" << endl;
    prev_energies = arma::vec(norbits,arma::fill::zeros);
    holeorbs = arma::uvec(modelspace->holes);
    cout << "BuildMonopoleV" << endl;
@@ -45,7 +43,6 @@ HartreeFock::HartreeFock(Operator& hbare)
    }
    UpdateDensityMatrix();
    UpdateF();
-   cout << "Done with constructor" << endl;
 
 }
 

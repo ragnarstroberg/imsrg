@@ -287,95 +287,98 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;   <span class="keywordtype">int</span> GetNumberKets()<span class="keyword"> const </span>{<span class="keywordflow">return</span> Kets.size();};</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;   <span class="keywordtype">void</span> SetHbarOmega(<span class="keywordtype">double</span> hw) {hbar_omega = hw;};</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;   <span class="keywordtype">void</span> SetTargetMass(<span class="keywordtype">int</span> A) {target_mass = A;};</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;   <span class="keywordtype">double</span> GetHbarOmega()<span class="keyword"> const </span>{<span class="keywordflow">return</span> hbar_omega;};</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;   <span class="keywordtype">int</span> GetTargetMass()<span class="keyword"> const </span>{<span class="keywordflow">return</span> target_mass;};</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;   <span class="keywordtype">int</span> GetNumberTwoBodyChannels()<span class="keyword"> const </span>{<span class="keywordflow">return</span> TwoBodyChannels.size();};</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;   <a class="code" href="classTwoBodyChannel.html">TwoBodyChannel</a>&amp; GetTwoBodyChannel(<span class="keywordtype">int</span> ch)<span class="keyword"> const </span>{<span class="keywordflow">return</span> (<a class="code" href="classTwoBodyChannel.html">TwoBodyChannel</a>&amp;) TwoBodyChannels[ch];};</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;   <a class="code" href="classTwoBodyChannel__CC.html">TwoBodyChannel_CC</a>&amp; GetTwoBodyChannel_CC(<span class="keywordtype">int</span> ch)<span class="keyword"> const </span>{<span class="keywordflow">return</span> (<a class="code" href="classTwoBodyChannel__CC.html">TwoBodyChannel_CC</a>&amp;) TwoBodyChannels_CC[ch];};</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;   <span class="keyword">inline</span> <span class="keywordtype">int</span> GetTwoBodyJmax()<span class="keyword"> const </span>{<span class="keywordflow">return</span> TwoBodyJmax;};</div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;   <span class="keyword">inline</span> <span class="keywordtype">int</span> GetThreeBodyJmax()<span class="keyword"> const </span>{<span class="keywordflow">return</span> ThreeBodyJmax;};</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;   <span class="keywordtype">int</span> GetNmax(){<span class="keywordflow">return</span> Nmax;};</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;   <span class="keywordtype">int</span> GetN2max(){<span class="keywordflow">return</span> N2max;};</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;   <span class="keywordtype">int</span> GetN3max(){<span class="keywordflow">return</span> N3max;};</div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;   <span class="keywordtype">void</span> SetNmax(<span class="keywordtype">int</span> n){Nmax=n;};</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;   <span class="keywordtype">void</span> SetN2max(<span class="keywordtype">int</span> n){N2max=n;};</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;   <span class="keywordtype">void</span> SetN3max(<span class="keywordtype">int</span> n){N3max=n;};</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;   <span class="keywordtype">double</span> GetSixJ(<span class="keywordtype">double</span> j1, <span class="keywordtype">double</span> j2, <span class="keywordtype">double</span> j3, <span class="keywordtype">double</span> J1, <span class="keywordtype">double</span> J2, <span class="keywordtype">double</span> J3);</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;   <span class="keywordtype">double</span> GetNineJ(<span class="keywordtype">double</span> j1, <span class="keywordtype">double</span> j2, <span class="keywordtype">double</span> j3, <span class="keywordtype">double</span> j4, <span class="keywordtype">double</span> j5, <span class="keywordtype">double</span> j6, <span class="keywordtype">double</span> j7, <span class="keywordtype">double</span> j8, <span class="keywordtype">double</span> j9);</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;   <span class="keywordtype">double</span> GetMoshinsky( <span class="keywordtype">int</span> N, <span class="keywordtype">int</span> Lam, <span class="keywordtype">int</span> n, <span class="keywordtype">int</span> lam, <span class="keywordtype">int</span> n1, <span class="keywordtype">int</span> l1, <span class="keywordtype">int</span> n2, <span class="keywordtype">int</span> l2, <span class="keywordtype">int</span> L); <span class="comment">// Inconsistent notation. Not ideal.</span></div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;   <span class="keywordtype">bool</span> SixJ_is_empty(){ <span class="keywordflow">return</span> SixJList.empty(); };</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;   <span class="keywordtype">int</span> GetTwoBodyChannelIndex(<span class="keywordtype">int</span> j, <span class="keywordtype">int</span> p, <span class="keywordtype">int</span> t);</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;   <span class="keyword">inline</span> <span class="keywordtype">int</span> phase(<span class="keywordtype">int</span> x) {<span class="keywordflow">return</span> (x%2)==0 ? 1 : -1;};</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;   <span class="keyword">inline</span> <span class="keywordtype">int</span> phase(<span class="keywordtype">double</span> x) {<span class="keywordflow">return</span> phase(<span class="keywordtype">int</span>(x));};</div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;</div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;   <span class="keyword">inline</span> <span class="keywordtype">int</span> Index1(<span class="keywordtype">int</span> n, <span class="keywordtype">int</span> l, <span class="keywordtype">int</span> j2, <span class="keywordtype">int</span> tz2)<span class="keyword"> const </span>{<span class="keywordflow">return</span>(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;   <span class="keyword">inline</span> <span class="keywordtype">int</span> Index2(<span class="keywordtype">int</span> p, <span class="keywordtype">int</span> q)<span class="keyword"> const </span>{<span class="keywordflow">return</span> q*(q+1)/2 + p;};</div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;   <span class="keywordtype">void</span> PreCalculateMoshinsky();</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;   <span class="keywordtype">void</span> SetTargetZ(<span class="keywordtype">int</span> Z) {target_Z = Z;};</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;   <span class="keywordtype">double</span> GetHbarOmega()<span class="keyword"> const </span>{<span class="keywordflow">return</span> hbar_omega;};</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;   <span class="keywordtype">int</span> GetTargetMass()<span class="keyword"> const </span>{<span class="keywordflow">return</span> target_mass;};</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;   <span class="keywordtype">int</span> GetTargetZ()<span class="keyword"> const </span>{<span class="keywordflow">return</span> target_Z;};</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;   <span class="keywordtype">int</span> GetNumberTwoBodyChannels()<span class="keyword"> const </span>{<span class="keywordflow">return</span> TwoBodyChannels.size();};</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;   <a class="code" href="classTwoBodyChannel.html">TwoBodyChannel</a>&amp; GetTwoBodyChannel(<span class="keywordtype">int</span> ch)<span class="keyword"> const </span>{<span class="keywordflow">return</span> (<a class="code" href="classTwoBodyChannel.html">TwoBodyChannel</a>&amp;) TwoBodyChannels[ch];};</div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;   <a class="code" href="classTwoBodyChannel__CC.html">TwoBodyChannel_CC</a>&amp; GetTwoBodyChannel_CC(<span class="keywordtype">int</span> ch)<span class="keyword"> const </span>{<span class="keywordflow">return</span> (<a class="code" href="classTwoBodyChannel__CC.html">TwoBodyChannel_CC</a>&amp;) TwoBodyChannels_CC[ch];};</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;   <span class="keyword">inline</span> <span class="keywordtype">int</span> GetTwoBodyJmax()<span class="keyword"> const </span>{<span class="keywordflow">return</span> TwoBodyJmax;};</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;   <span class="keyword">inline</span> <span class="keywordtype">int</span> GetThreeBodyJmax()<span class="keyword"> const </span>{<span class="keywordflow">return</span> ThreeBodyJmax;};</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;   <span class="keywordtype">int</span> GetNmax(){<span class="keywordflow">return</span> Nmax;};</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;   <span class="keywordtype">int</span> GetN2max(){<span class="keywordflow">return</span> N2max;};</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;   <span class="keywordtype">int</span> GetN3max(){<span class="keywordflow">return</span> N3max;};</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;   <span class="keywordtype">void</span> SetNmax(<span class="keywordtype">int</span> n){Nmax=n;};</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;   <span class="keywordtype">void</span> SetN2max(<span class="keywordtype">int</span> n){N2max=n;};</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;   <span class="keywordtype">void</span> SetN3max(<span class="keywordtype">int</span> n){N3max=n;};</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;   <span class="keywordtype">double</span> GetSixJ(<span class="keywordtype">double</span> j1, <span class="keywordtype">double</span> j2, <span class="keywordtype">double</span> j3, <span class="keywordtype">double</span> J1, <span class="keywordtype">double</span> J2, <span class="keywordtype">double</span> J3);</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;   <span class="keywordtype">double</span> GetNineJ(<span class="keywordtype">double</span> j1, <span class="keywordtype">double</span> j2, <span class="keywordtype">double</span> j3, <span class="keywordtype">double</span> j4, <span class="keywordtype">double</span> j5, <span class="keywordtype">double</span> j6, <span class="keywordtype">double</span> j7, <span class="keywordtype">double</span> j8, <span class="keywordtype">double</span> j9);</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;   <span class="keywordtype">double</span> GetMoshinsky( <span class="keywordtype">int</span> N, <span class="keywordtype">int</span> Lam, <span class="keywordtype">int</span> n, <span class="keywordtype">int</span> lam, <span class="keywordtype">int</span> n1, <span class="keywordtype">int</span> l1, <span class="keywordtype">int</span> n2, <span class="keywordtype">int</span> l2, <span class="keywordtype">int</span> L); <span class="comment">// Inconsistent notation. Not ideal.</span></div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;   <span class="keywordtype">bool</span> SixJ_is_empty(){ <span class="keywordflow">return</span> SixJList.empty(); };</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;   <span class="keywordtype">int</span> GetTwoBodyChannelIndex(<span class="keywordtype">int</span> j, <span class="keywordtype">int</span> p, <span class="keywordtype">int</span> t);</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;   <span class="keyword">inline</span> <span class="keywordtype">int</span> phase(<span class="keywordtype">int</span> x) {<span class="keywordflow">return</span> (x%2)==0 ? 1 : -1;};</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;   <span class="keyword">inline</span> <span class="keywordtype">int</span> phase(<span class="keywordtype">double</span> x) {<span class="keywordflow">return</span> phase(<span class="keywordtype">int</span>(x));};</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;   <span class="keyword">inline</span> <span class="keywordtype">int</span> Index1(<span class="keywordtype">int</span> n, <span class="keywordtype">int</span> l, <span class="keywordtype">int</span> j2, <span class="keywordtype">int</span> tz2)<span class="keyword"> const </span>{<span class="keywordflow">return</span>(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;   <span class="keyword">inline</span> <span class="keywordtype">int</span> Index2(<span class="keywordtype">int</span> p, <span class="keywordtype">int</span> q)<span class="keyword"> const </span>{<span class="keywordflow">return</span> q*(q+1)/2 + p;};</div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;   <span class="comment">// Data members</span></div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;   vector&lt;index_t&gt; holes;</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;   vector&lt;index_t&gt; particles;</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;   vector&lt;index_t&gt; valence;</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;   vector&lt;index_t&gt; qspace;</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;   vector&lt;index_t&gt; hole_qspace;</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;   vector&lt;index_t&gt; particle_qspace;</div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;   vector&lt;index_t&gt; proton_orbits;</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;   vector&lt;index_t&gt; neutron_orbits;</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;   vector&lt;index_t&gt; KetIndex_pp; </div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;   vector&lt;index_t&gt; KetIndex_ph;</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;   vector&lt;index_t&gt; KetIndex_hh;</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;   vector&lt;index_t&gt; KetIndex_vv;</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;   vector&lt;index_t&gt; KetIndex_c_c; </div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;   vector&lt;index_t&gt; KetIndex_q_q;</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;   vector&lt;index_t&gt; KetIndex_q_c;</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;   vector&lt;index_t&gt; KetIndex_v_c;</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;   vector&lt;index_t&gt; KetIndex_v_q;</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;<span class="comment">//   array&lt; array&lt; vector&lt;index_t&gt;, 2&gt;,3&gt; MonopoleKets; //List of kets of a given Tz,parity</span></div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;   array&lt; array&lt; unordered_map&lt;index_t,index_t&gt;, 2&gt;,3&gt; MonopoleKets; <span class="comment">//List of kets of a given Tz,parity</span></div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;   <span class="keywordtype">int</span> Nmax;</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;   <span class="keywordtype">int</span> N2max;</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;   <span class="keywordtype">int</span> N3max;</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;   <span class="keywordtype">int</span> OneBodyJmax;</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;   <span class="keywordtype">int</span> TwoBodyJmax;</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;   <span class="keywordtype">int</span> ThreeBodyJmax;</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;   map&lt;array&lt;int,3&gt;,vector&lt;index_t&gt; &gt; OneBodyChannels;</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;   vector&lt;unsigned int&gt; SortedTwoBodyChannels;</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;   vector&lt;unsigned int&gt; SortedTwoBodyChannels_CC;</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;   <span class="keywordtype">void</span> PreCalculateMoshinsky();</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;   <span class="comment">// Data members</span></div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;   vector&lt;index_t&gt; holes;</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;   vector&lt;index_t&gt; particles;</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;   vector&lt;index_t&gt; valence;</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;   vector&lt;index_t&gt; qspace;</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;   vector&lt;index_t&gt; hole_qspace;</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;   vector&lt;index_t&gt; particle_qspace;</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;   vector&lt;index_t&gt; proton_orbits;</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;   vector&lt;index_t&gt; neutron_orbits;</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;   vector&lt;index_t&gt; KetIndex_pp; </div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;   vector&lt;index_t&gt; KetIndex_ph;</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;   vector&lt;index_t&gt; KetIndex_hh;</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;   vector&lt;index_t&gt; KetIndex_vv;</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;   vector&lt;index_t&gt; KetIndex_c_c; </div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;   vector&lt;index_t&gt; KetIndex_q_q;</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;   vector&lt;index_t&gt; KetIndex_q_c;</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;   vector&lt;index_t&gt; KetIndex_v_c;</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;   vector&lt;index_t&gt; KetIndex_v_q;</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="comment">//   array&lt; array&lt; vector&lt;index_t&gt;, 2&gt;,3&gt; MonopoleKets; //List of kets of a given Tz,parity</span></div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;   array&lt; array&lt; unordered_map&lt;index_t,index_t&gt;, 2&gt;,3&gt; MonopoleKets; <span class="comment">//List of kets of a given Tz,parity</span></div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;   <span class="keywordtype">int</span> Nmax;</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;   <span class="keywordtype">int</span> N2max;</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;   <span class="keywordtype">int</span> N3max;</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;   <span class="keywordtype">int</span> OneBodyJmax;</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;   <span class="keywordtype">int</span> TwoBodyJmax;</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;   <span class="keywordtype">int</span> ThreeBodyJmax;</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;   map&lt;array&lt;int,3&gt;,vector&lt;index_t&gt; &gt; OneBodyChannels;</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;   vector&lt;unsigned int&gt; SortedTwoBodyChannels;</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;   vector&lt;unsigned int&gt; SortedTwoBodyChannels_CC;</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;   <span class="comment">// Fields</span></div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;   <span class="keywordtype">int</span> norbits;</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;   <span class="keywordtype">double</span> hbar_omega;</div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;   <span class="keywordtype">int</span> target_mass;</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;   <span class="keywordtype">int</span> nTwoBodyChannels;</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;   vector&lt;Orbit&gt; Orbits;</div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;   vector&lt;Ket&gt; Kets;</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;   vector&lt;TwoBodyChannel&gt; TwoBodyChannels;</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;   vector&lt;TwoBodyChannel_CC&gt; TwoBodyChannels_CC;</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;<span class="comment">//   map&lt;long int,double&gt; SixJList;</span></div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;   <span class="keyword">static</span> unordered_map&lt;unsigned long int,double&gt; SixJList;</div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;   <span class="keyword">static</span> unordered_map&lt;long long unsigned int,double&gt; NineJList;</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;   <span class="keyword">static</span> unordered_map&lt;long long unsigned int,double&gt; MoshList;</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;};</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;   <span class="comment">// Fields</span></div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;   <span class="keywordtype">int</span> norbits;</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;   <span class="keywordtype">double</span> hbar_omega;</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;   <span class="keywordtype">int</span> target_mass;</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;   <span class="keywordtype">int</span> target_Z;</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;   <span class="keywordtype">int</span> nTwoBodyChannels;</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;   vector&lt;Orbit&gt; Orbits;</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;   vector&lt;Ket&gt; Kets;</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;   vector&lt;TwoBodyChannel&gt; TwoBodyChannels;</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;   vector&lt;TwoBodyChannel_CC&gt; TwoBodyChannels_CC;</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;<span class="comment">//   map&lt;long int,double&gt; SixJList;</span></div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;   <span class="keyword">static</span> unordered_map&lt;unsigned long int,double&gt; SixJList;</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;   <span class="keyword">static</span> unordered_map&lt;long long unsigned int,double&gt; NineJList;</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;   <span class="keyword">static</span> unordered_map&lt;long long unsigned int,double&gt; MoshList;</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;};</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;<span class="preprocessor"></span></div>
 <div class="ttc" id="classOrbit_html"><div class="ttname"><a href="classOrbit.html">Orbit</a></div><div class="ttdef"><b>Definition:</b> ModelSpace.hh:21</div></div>
 <div class="ttc" id="classTwoBodyChannel_html"><div class="ttname"><a href="classTwoBodyChannel.html">TwoBodyChannel</a></div><div class="ttdef"><b>Definition:</b> ModelSpace.hh:73</div></div>
 <div class="ttc" id="classTwoBodyChannel__CC_html"><div class="ttname"><a href="classTwoBodyChannel__CC.html">TwoBodyChannel_CC</a></div><div class="ttdef"><b>Definition:</b> ModelSpace.hh:134</div></div>
@@ -384,7 +387,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 30 2015 16:27:36 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 22 2015 13:36:56 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
