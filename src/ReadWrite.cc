@@ -1535,10 +1535,6 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
                if ( not (oa.j2 == ob.j2 and oa.l == ob.l and oa.n == ob.n) ) tbme *= SQRT2; // pn TBMEs are unnormalized
                if ( not (oc.j2 == od.j2 and oc.l == od.l and oc.n == od.n) ) tbme *= SQRT2; // pn TBMEs are unnormalized
                T = (tbc.J+1)%2;
-//               if (oa.j2 == ob.j2 and oa.l == ob.l and oa.n == ob.n) T = (tbc.J+1)%2;
-//               else tbme *= SQRT2; // pn TBMEs are unnormalized
-//               if (oc.j2 == od.j2 and oc.l == od.l and oc.n == od.n) T = (tbc.J+1)%2;
-//               else tbme *= SQRT2; // pn TBMEs are unnormalized
             }
             // in NuShellX, the proton orbits must come first. This can be achieved by
             // ensuring that the bra and ket indices are in ascending order.
@@ -2120,6 +2116,156 @@ void ReadWrite::WriteTwoBody_Takayuki(string filename, Operator& Hbare)
 
 
 }
+
+
+void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
+{
+   ofstream outfile(filename);
+   ModelSpace * modelspace = Op.GetModelSpace();
+   int nvalence_proton_orbits = 0;
+   int proton_core_orbits = 0;
+   int neutron_core_orbits = 0;
+   int Acore = 0;
+   int wint = 4; // width for printing integers
+   int wdouble = 12; // width for printing doubles
+   int pdouble = 6; // precision for printing doubles
+   for (auto& i : modelspace->hole_qspace)
+   {
+      Orbit& oi = modelspace->GetOrbit(i);
+      Acore += oi.j2 +1;
+      if (oi.tz2 < 0)
+      {
+         proton_core_orbits += 1;
+      }
+   }
+   neutron_core_orbits = modelspace->hole_qspace.size() - proton_core_orbits;
+
+   outfile << fixed << setprecision(pdouble);
+   outfile << "!  One-body matrix elements for tensor operator: " << opname << "   generated with IM-SRG" << endl;
+   outfile << "!  Rank_J :  " << Op.GetJRank() << endl;
+   outfile << "!  Rank_T :  " << Op.GetTRank() << endl;
+   outfile << "!  Parity :  " << showpos << 1-2*Op.GetParity() << noshowpos << endl;
+   outfile << "!  Zero body term:  " << Op.ZeroBody << endl;
+   outfile << "!  index   n   l   2j   2tz " << endl;
+   // first do proton orbits
+   for (auto& i : modelspace->valence)
+   {
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 > 0 ) continue;
+      int nushell_indx = i/2+1 -proton_core_orbits;
+      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2  << "   " << setw(wint) << oi.tz2 <<  endl;
+      ++nvalence_proton_orbits;
+   }
+   // then do neutron orbits
+   for (auto& i : modelspace->valence)
+   {
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 < 0 ) continue;
+      int nushell_indx = i/2+1 + nvalence_proton_orbits -neutron_core_orbits;
+      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2 << "   " << setw(wint) << oi.tz2 << endl;
+   }
+
+   outfile << "!" << endl << "!  a   b   < a || Op || b > " << endl;
+
+   for ( auto a : modelspace->valence )
+   {
+     Orbit& oa = modelspace->GetOrbit(a);
+     int a_ind = a/2+1 + ( oa.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+//     for ( auto b : Op.OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
+      for ( auto b : modelspace->valence )
+     {
+        Orbit& ob = modelspace->GetOrbit(b);
+        double me = Op.OneBody(a,b);
+        if ( abs(me) < 1e-7 ) continue;
+        int b_ind = b/2+1 + ( ob.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+        outfile << setw(wint) << a_ind << " " << setw(wint) << b_ind << " " << setw(wdouble) << setprecision(pdouble) <<  me << endl;
+     }
+   }
+}
+
+void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
+{
+   ofstream outfile(filename);
+   ModelSpace * modelspace = Op.GetModelSpace();
+   int nvalence_proton_orbits = 0;
+   int proton_core_orbits = 0;
+   int neutron_core_orbits = 0;
+   int Acore = 0;
+   int wint = 4; // width for printing integers
+   int wdouble = 12; // width for printing doubles
+   int pdouble = 6; // precision for printing doubles
+   for (auto& i : modelspace->hole_qspace)
+   {
+      Orbit& oi = modelspace->GetOrbit(i);
+      Acore += oi.j2 +1;
+      if (oi.tz2 < 0)
+      {
+         proton_core_orbits += 1;
+      }
+   }
+   neutron_core_orbits = modelspace->hole_qspace.size() - proton_core_orbits;
+
+   outfile << fixed << setprecision(pdouble);
+   outfile << "!  Two-body matrix elements for tensor operator: " << opname << "   generated with IM-SRG" << endl;
+   outfile << "!  Rank_J :  " << Op.GetJRank() << endl;
+   outfile << "!  Rank_T :  " << Op.GetTRank() << endl;
+   outfile << "!  Parity :  " << showpos << 1-2*Op.GetParity() << noshowpos << endl;
+   outfile << "!  Zero body term:  " << Op.ZeroBody << endl;
+   outfile << "!  index   n   l   2j   2tz " << endl;
+   // first do proton orbits
+   for (auto& i : modelspace->valence)
+   {
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 > 0 ) continue;
+      int nushell_indx = i/2+1 -proton_core_orbits;
+      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2 << "   " << setw(wint) << oi.tz2 << endl;
+      ++nvalence_proton_orbits;
+   }
+   // then do neutron orbits
+   for (auto& i : modelspace->valence)
+   {
+      Orbit& oi = modelspace->GetOrbit(i);
+      if (oi.tz2 < 0 ) continue;
+      int nushell_indx = i/2+1 + nvalence_proton_orbits -neutron_core_orbits;
+      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2 << "   " << setw(wint) << oi.tz2 << endl;
+   }
+
+   outfile << "!  a    b    c    d     Jab  Jcd   <ab Jab || Op || cd Jcd>" << endl;
+   for ( auto& itmat : Op.TwoBody.MatEl )
+   {
+     TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(itmat.first[0]);
+     TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(itmat.first[1]);
+     auto& matrix = itmat.second;
+//     int nbras = tbc_bra.GetNumberKets();
+     int nkets = tbc_ket.GetNumberKets();
+//     for ( int ibra=0; ibra<nbras; ++ibra)
+     for (auto& ibra: tbc_bra.GetKetIndex_vv() )
+     {
+       Ket& bra = tbc_bra.GetKet(ibra);
+       Orbit& oa = modelspace->GetOrbit(bra.p);
+       Orbit& ob = modelspace->GetOrbit(bra.q);
+       int a_ind = oa.index/2+1 + ( oa.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+       int b_ind = ob.index/2+1 + ( ob.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+//       for ( int iket=0; iket<nkets; ++iket)
+       for (auto& iket: tbc_ket.GetKetIndex_vv() )
+       {
+         double me = matrix(ibra,iket);
+         if (abs(me) < 1e-7) continue;
+         Ket& ket = tbc_ket.GetKet(iket);
+         Orbit& oc = modelspace->GetOrbit(ket.p);
+         Orbit& od = modelspace->GetOrbit(ket.q);
+         int c_ind = oc.index/2+1 + ( oc.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+         int d_ind = od.index/2+1 + ( od.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+         outfile << setw(wint) << a_ind << " " << setw(wint) << b_ind << " " << setw(wint) << c_ind << " " << setw(wint) << d_ind << "   "
+                 << setw(wint) << tbc_bra.J << " " << setw(wint) << tbc_ket.J << "   " << setw(wdouble) << setprecision(pdouble) << me << endl;
+         
+       }
+     }
+
+   }
+
+}
+
 
 
 

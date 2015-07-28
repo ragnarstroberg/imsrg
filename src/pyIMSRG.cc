@@ -60,6 +60,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("ReadTwoBody_Takayuki", &ReadWrite::ReadTwoBody_Takayuki)
       .def("WriteOneBody_Takayuki", &ReadWrite::WriteOneBody_Takayuki)
       .def("WriteTwoBody_Takayuki", &ReadWrite::WriteTwoBody_Takayuki)
+      .def("WriteTensorOneBody", &ReadWrite::WriteTensorOneBody)
+      .def("WriteTensorTwoBody", &ReadWrite::WriteTensorTwoBody)
       .def("SetCoMCorr", &ReadWrite::SetCoMCorr)
       .def_readwrite("InputParameters", &ReadWrite::InputParameters)
    ;
