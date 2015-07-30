@@ -261,7 +261,7 @@ vector&lt; pair&lt; const array&lt; int, 6 &gt;<br class="typebreak"/>
 </p>
 <p> Where the matrices </p>
 <p class="formulaDsp">
-\begin{eqnarray*} \tilde{V}^{(2)}_{ij} &amp;=&amp; \sum_{ab} \rho_{ab}\bar{V}^{(2)}_{iajb} \\ \tilde{V}^{(2)}_{ij} &amp;=&amp; \sum_{abcd} \rho_{ab}\rho_{cd} \bar{V}^{(3)}_{iacjbd} \\ \end{eqnarray*}
+\begin{eqnarray*} \tilde{V}^{(2)}_{ij} &amp;=&amp; \sum_{ab} \rho_{ab}\bar{V}^{(2)}_{iajb} \\ \tilde{V}^{(3)}_{ij} &amp;=&amp; \sum_{abcd} \rho_{ab}\rho_{cd} \bar{V}^{(3)}_{iacjbd} \\ \end{eqnarray*}
 </p>
 <p> have already been calculated by <a class="el" href="classHartreeFock.html#a84fe0eb16f6e5835c920bf8fa98c4442">UpdateF()</a>. </p>
 
@@ -320,12 +320,15 @@ vector&lt; pair&lt; const array&lt; int, 6 &gt;<br class="typebreak"/>
 \[ E_0 = E_{HF} \]
 </p>
  <p class="formulaDsp">
-\[ f_{ij} = C^{\dagger} F_{ij} C \]
+\[ f = C^{\dagger} F C \]
 </p>
  <p class="formulaDsp">
-\[ \Gamma^{J}_{ijkl} = D^{\dagger} \left[V^{J}_{ijkl} + \sum_{ab}\sum_{J_3}(2J_{3}+1)\rho_{ab}V^{JJJ_{3}}_{ijaklb}\right] D \]
+\[ \Gamma = D^{\dagger} \left(V^{(2)}+V^{(3\rightarrow 2)} \right) D \]
 </p>
-<p> Where the matrix \( D\) is the same as the one defined in <a class="el" href="classHartreeFock.html#a4cb27e80982cbebfbd551ab61ea2a6d0">TransformToHFBasis()</a>. </p>
+ <p class="formulaDsp">
+\[ V^{(2\rightarrow 3)J}_{ijkl} \equiv \frac{1}{\sqrt{(1+\delta_{ij})(1+\delta_{kl})}}\sum_{ab}\sum_{J_3}(2J_{3}+1)\rho_{ab}V^{JJJ_{3}}_{ijaklb} \]
+</p>
+<p> Where \( F\) is the Fock matrix obtained in <a class="el" href="classHartreeFock.html#a84fe0eb16f6e5835c920bf8fa98c4442">UpdateF()</a> and the matrix \( D\) is the same as the one defined in <a class="el" href="classHartreeFock.html#a4cb27e80982cbebfbd551ab61ea2a6d0">TransformToHFBasis()</a>. </p>
 
 </div>
 </div>
@@ -460,7 +463,7 @@ vector&lt; pair&lt; const array&lt; int, 6 &gt;<br class="typebreak"/>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jul 22 2015 13:36:56 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 28 2015 11:08:56 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

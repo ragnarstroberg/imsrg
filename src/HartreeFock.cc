@@ -585,9 +585,10 @@ Operator HartreeFock::TransformToHFBasis( Operator OpHF)
 
 /// Returns the normal-ordered Hamiltonian in the Hartree-Fock basis
 /// \f[ E_0 = E_{HF} \f]
-/// \f[ f_{ij} = C^{\dagger} F_{ij} C \f]
-/// \f[ \Gamma^{J}_{ijkl} = D^{\dagger} \left[V^{J}_{ijkl} + \sum_{ab}\sum_{J_3}(2J_{3}+1)\rho_{ab}V^{JJJ_{3}}_{ijaklb}\right] D \f]
-/// Where the matrix \f$ D\f$ is the same as the one defined in TransformToHFBasis().
+/// \f[ f = C^{\dagger} F C \f]
+/// \f[ \Gamma = D^{\dagger} \left(V^{(2)}+V^{(3\rightarrow 2)} \right) D \f]
+/// \f[ V^{(2\rightarrow 3)J}_{ijkl} \equiv \frac{1}{\sqrt{(1+\delta_{ij})(1+\delta_{kl})}}\sum_{ab}\sum_{J_3}(2J_{3}+1)\rho_{ab}V^{JJJ_{3}}_{ijaklb} \f]
+/// Where \f$ F\f$ is the Fock matrix obtained in UpdateF() and the matrix \f$ D\f$ is the same as the one defined in TransformToHFBasis().
 ///
 Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by either passing a reference or returning an rvalue
 {

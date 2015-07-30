@@ -33,8 +33,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
 {
    double b = sqrt( (HBARC*HBARC) / (hw * M_NUCLEON) );
    double x = r/b;
-//   double Norm = sqrt(2*gsl_sf_fact(n)/gsl_sf_gamma(n+l+1.5));
-   double Norm = sqrt( 2*gsl_sf_fact(n) * pow(2,n+l) / M_SQRTPI / gsl_sf_doublefact(2*n+2*l+2) / pow(b,3.0) );
+   double Norm = 2*sqrt( gsl_sf_fact(n) * pow(2,n+l) / M_SQRTPI / gsl_sf_doublefact(2*n+2*l+1) / pow(b,3.0) );
    double L = gsl_sf_laguerre_n(n,l+0.5,x*x);
    double psi = Norm * pow(x,l) * exp(-x*x*0.5) * L;
    return psi;
