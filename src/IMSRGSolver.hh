@@ -53,7 +53,6 @@ class IMSRGSolver
   void SetDsmax(double d){ds_max = d;};
   void SetdOmega(double d){norm_domega = d;};
   void SetSmax(double d){smax = d;};
-//  void SetGenerator(string g){generator.SetType(g);};
   void SetGenerator(string g);
   void SetOmegaNormMax(double x){omega_norm_max = x;};
   void SetODETolerance(float x){ode_e_abs=x;ode_e_rel=x;};
@@ -69,6 +68,7 @@ class IMSRGSolver
   void WriteFlowStatusHeader(string);
 
   void SetDenominatorCutoff(double c){generator.SetDenominatorCutoff(c);};
+  void SetDenominatorDelta(double d){generator.SetDenominatorDelta(d);};
 
 
 
