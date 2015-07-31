@@ -2,7 +2,7 @@
 #include "Generator.hh"
 
 Generator::Generator()
-  : generator_type("white")
+  : generator_type("white"), denominator_delta(0)
 {}
 
 
