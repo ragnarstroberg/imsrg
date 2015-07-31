@@ -1539,18 +1539,15 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
             }
             // in NuShellX, the proton orbits must come first. This can be achieved by
             // ensuring that the bra and ket indices are in ascending order.
-            cout << a_ind << " " << b_ind << " " << c_ind << " " << d_ind << "  => " << tbme << endl;
             if (a_ind > b_ind)
             {
                swap(a_ind,b_ind);
                tbme *= bra.Phase(tbc.J);
-               cout << "flipping a,b " << a_ind << "," << b_ind << "  (J = " << tbc.J << ") => " << tbme << endl;
             }
             if (c_ind > d_ind)
             {
                swap(c_ind,d_ind);
                tbme *= ket.Phase(tbc.J);
-               cout << "flipping c,d " << c_ind << "," << d_ind <<  "  (J = " << tbc.J << ") => " << tbme << endl;
             }
             if ((a_ind > c_ind) or (c_ind==a_ind and b_ind>d_ind) )
             {
