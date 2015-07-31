@@ -42,16 +42,6 @@ SOFLAGS += $(WARNFLAGS)
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
-#all: pyIMSRG.so libIMSRG.so
-all: libIMSRG.so
-#all: mysrg pyIMSRG.so
-	
-OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
-      HartreeFock.o Generator.o IMSRGSolver.o AngMom.o imsrg_util.o\
-      boost_src/gzip.o boost_src/zlib.o
-      
->>>>>>> f1e0151286c987cf40e9f85dfb824793cc9b971a
-
 mysrg: main.cc $(OBJ)
 	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
@@ -59,12 +49,7 @@ boost_src/gzip.o: boost_src/gzip.cpp
 	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 boost_src/zlib.o: boost_src/zlib.cpp
-<<<<<<< HEAD
 	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS)
-=======
-	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
-
->>>>>>> f1e0151286c987cf40e9f85dfb824793cc9b971a
 
 %.o: %.cc %.hh
 	$(CC) -c $*.cc -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
@@ -72,11 +57,7 @@ boost_src/zlib.o: boost_src/zlib.cpp
 
 
 libIMSRG.so: $(OBJ)
-<<<<<<< HEAD
-	$(CC) -shared -o $@ $^ -lz
-=======
 	$(CC) $^ -shared -o $@ $(SOFLAGS)
->>>>>>> f1e0151286c987cf40e9f85dfb824793cc9b971a
 
 python: pyIMSRG.so
 
