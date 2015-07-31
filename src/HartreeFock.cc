@@ -108,10 +108,11 @@ void HartreeFock::CalcEHF()
       }
    }
    EHF = e1hf + e2hf + e3hf;
-   cout << fixed << setw(10) << setprecision(7);
+   cout << fixed <<  setprecision(7);
    cout << "e1hf = " << e1hf << endl;
    cout << "e2hf = " << e2hf << endl;
    cout << "e3hf = " << e3hf << endl;
+   cout << "EHF = " << EHF << endl;
 }
 
 
@@ -171,34 +172,22 @@ void HartreeFock::BuildMonopoleV()
      {
         Vmon[Tz+1][parity].zeros();
         Vmon_exch[Tz+1][parity].zeros();
-//        int nKetsMon = modelspace->MonopoleKets[Tz+1][parity].size();
-//        int nKets = modelspace->GetNumberKets();
-//        for (int ibra=0;ibra<nKets;++ibra)
-//        for (int ibra=0;ibra<nKetsMon;++ibra)
         for ( auto& itbra : modelspace->MonopoleKets[Tz+1][parity] )
         {
-//           Ket & bra = modelspace->GetKet(ibra);
-//           Ket & bra = modelspace->GetKet(modelspace->MonopoleKets[Tz+1][parity][ibra]);
            Ket & bra = modelspace->GetKet(itbra.first);
            int a = bra.p;
            int b = bra.q;
            Orbit & oa = modelspace->GetOrbit(a);
            Orbit & ob = modelspace->GetOrbit(b);
            double norm = (oa.j2+1)*(ob.j2+1);
-//           cout << " " << itbra.first << " => " << itbra.second << endl;
-//           for (int iket=ibra;iket<nKetsMon;++iket)
            for ( auto& itket : modelspace->MonopoleKets[Tz+1][parity] )
            {
               if (itket.second < itbra.second) continue;
-//              Ket & ket = modelspace->GetKet(modelspace->MonopoleKets[Tz+1][parity][iket]);
-//             cout << "    " << itket.first << " => " << itket.second << endl;
               Ket & ket = modelspace->GetKet(itket.first);
               int c = ket.p;
               int d = ket.q;
               Vmon[Tz+1][parity](itbra.second,itket.second)       = Hbare.TwoBody.GetTBMEmonopole(a,b,c,d)*norm;
               Vmon_exch[Tz+1][parity](itbra.second,itket.second)  = Hbare.TwoBody.GetTBMEmonopole(a,b,d,c)*norm;
-//              Vmon[Tz+1][parity](ibra,iket)       = Hbare.TwoBody.GetTBMEmonopole(a,b,c,d)*norm;
-//              Vmon_exch[Tz+1][parity](ibra,iket)  = Hbare.TwoBody.GetTBMEmonopole(a,b,d,c)*norm;
            }
         }
         Vmon[Tz+1][parity] = arma::symmatu(Vmon[Tz+1][parity]);
@@ -208,33 +197,6 @@ void HartreeFock::BuildMonopoleV()
 }
 
 
-/*
-void HartreeFock::BuildMonopoleV()
-{
-   Vmon.zeros();
-   Vmon_exch.zeros();
-   int nKets = modelspace->GetNumberKets();
-   for (int ibra=0;ibra<nKets;++ibra)
-   {
-      Ket & bra = modelspace->GetKet(ibra);
-      int a = bra.p;
-      int b = bra.q;
-      Orbit & oa = modelspace->GetOrbit(a);
-      Orbit & ob = modelspace->GetOrbit(b);
-      double norm = (oa.j2+1)*(ob.j2+1);
-      for (int iket=ibra;iket<nKets;++iket)
-      {
-         Ket & ket = modelspace->GetKet(iket);
-         int c = ket.p;
-         int d = ket.q;
-         Vmon(ibra,iket)       = Hbare.TwoBody.GetTBMEmonopole(a,b,c,d)*norm;
-         Vmon_exch(ibra,iket)  = Hbare.TwoBody.GetTBMEmonopole(a,b,d,c)*norm;
-      }
-   }
-   Vmon = arma::symmatu(Vmon);
-   Vmon_exch = arma::symmatu(Vmon_exch);
-}
-*/
 
 //*********************************************************************
 /// Construct an unnormalized three-body monopole interaction
