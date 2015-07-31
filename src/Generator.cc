@@ -2,7 +2,7 @@
 #include "Generator.hh"
 
 Generator::Generator()
-  : generator_type("white")
+  : generator_type("white"), denominator_delta(0)
 {}
 
 
@@ -59,7 +59,7 @@ double Generator::Get1bDenominator(int i, int j)
    int ni = modelspace->GetOrbit(i).ph;
    int nj = modelspace->GetOrbit(j).ph;
    
-   double denominator = H->OneBody(i,i) - H->OneBody(j,j);
+   double denominator = H->OneBody(i,i) - H->OneBody(j,j) + denominator_delta;
    if (ni == nj)
      return denominator;
      denominator += ( ni-nj ) * H->TwoBody.GetTBMEmonopole(i,j,i,j);
@@ -76,7 +76,7 @@ double Generator::Get2bDenominator(int ch, int ibra, int iket)
    int j = bra.q;
    int k = ket.p;
    int l = ket.q;
-   double denominator = H->OneBody(i,i)+ H->OneBody(j,j) - H->OneBody(k,k) - H->OneBody(l,l);
+   double denominator = H->OneBody(i,i)+ H->OneBody(j,j) - H->OneBody(k,k) - H->OneBody(l,l) + denominator_delta;
    int ni = bra.op->ph;
    int nj = bra.oq->ph;
    int nk = ket.op->ph;
