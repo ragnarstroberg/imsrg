@@ -1530,24 +1530,30 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
                tbme /= 2;
             }
 
-            if ( abs(tbme) < 1e-6) tbme = 0;
+//            if ( abs(tbme) < 1e-6) tbme = 0;
+            if ( abs(tbme) < 1e-6) continue;
             if (T==0)
             {
-               if ( not (oa.j2 == ob.j2 and oa.l == ob.l and oa.n == ob.n) ) tbme *= SQRT2; // pn TBMEs are unnormalized
-               if ( not (oc.j2 == od.j2 and oc.l == od.l and oc.n == od.n) ) tbme *= SQRT2; // pn TBMEs are unnormalized
+//               if ( not (oa.j2 == ob.j2 and oa.l == ob.l and oa.n == ob.n) ) tbme *= SQRT2; // pn TBMEs are unnormalized
+//               if ( not (oc.j2 == od.j2 and oc.l == od.l and oc.n == od.n) ) tbme *= SQRT2; // pn TBMEs are unnormalized
+               if ( oa.j2 != ob.j2 or oa.l != ob.l or oa.n != ob.n ) tbme *= SQRT2; // pn TBMEs are unnormalized
+               if ( oc.j2 != od.j2 or oc.l != od.l or oc.n != od.n ) tbme *= SQRT2; // pn TBMEs are unnormalized
                T = (tbc.J+1)%2;
             }
             // in NuShellX, the proton orbits must come first. This can be achieved by
             // ensuring that the bra and ket indices are in ascending order.
+            cout << a_ind << "  " << b_ind << "  " << c_ind << "  " << d_ind << "   " << tbc.J << "   " << tbme << endl;
             if (a_ind > b_ind)
             {
                swap(a_ind,b_ind);
                tbme *= bra.Phase(tbc.J);
+               cout << "Swapping a,b  =>  " <<  tbme << endl;
             }
             if (c_ind > d_ind)
             {
                swap(c_ind,d_ind);
                tbme *= ket.Phase(tbc.J);
+               cout << "Swapping c,d  =>  " <<  tbme << endl;
             }
             if ((a_ind > c_ind) or (c_ind==a_ind and b_ind>d_ind) )
             {

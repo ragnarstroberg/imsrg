@@ -377,7 +377,7 @@ Operator Operator::DoNormalOrdering3()
                int kmax2 = 2*tbc.J+oa.j2;
                for (int K2=kmin2; K2<=kmax2; K2+=2)
                {
-                  Gamma(ibra,iket) += (K2+1) * ThreeBody.GetME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a);
+                  Gamma(ibra,iket) += (K2+1) * ThreeBody.GetME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a); // This is unnormalized, but it should be normalized!!!!
                }
             }
             Gamma(ibra,iket) /= (2*tbc.J+1);
