@@ -380,7 +380,7 @@ Operator Operator::DoNormalOrdering3()
                   Gamma(ibra,iket) += (K2+1) * ThreeBody.GetME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a); // This is unnormalized, but it should be normalized!!!!
                }
             }
-            Gamma(ibra,iket) /= (2*tbc.J+1);
+            Gamma(ibra,iket) /= (2*tbc.J+1)* sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
          }
       }
    }
