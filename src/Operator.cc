@@ -380,7 +380,7 @@ Operator Operator::DoNormalOrdering3()
                   Gamma(ibra,iket) += (K2+1) * ThreeBody.GetME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a);
                }
             }
-            Gamma(ibra,iket) /= (2*tbc.J+1);
+            Gamma(ibra,iket) /= (2*tbc.J+1)* sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
          }
       }
    }
@@ -1243,7 +1243,9 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
    // Don't use omp, because the matrix multiplication is already
    // parallelized by armadillo.
    int nch = modelspace->SortedTwoBodyChannels.size();
+   #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
+   #endif
    for (int ich=0; ich<nch; ++ich)
    {
       int ch = modelspace->SortedTwoBodyChannels[ich];
@@ -1583,7 +1585,9 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
 //   for (int ch : modelspace->SortedTwoBodyChannels_CC )
    int nch = modelspace->SortedTwoBodyChannels_CC.size();
+   #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
+   #endif
    for (int ich=0; ich<nch; ++ich )
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];

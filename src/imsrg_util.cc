@@ -140,12 +140,12 @@ double HO_Radial_psi(int n, int l, double hw, double r)
 /// \f]
  Operator TCM_Op(ModelSpace& modelspace)
  {
+   double t_start = omp_get_wtime();
    int N2max = modelspace.GetN2max();
    double hw = modelspace.GetHbarOmega();
    int A = modelspace.GetTargetMass();
    Operator TcmOp = Operator(modelspace);
    TcmOp.SetHermitian();
-
    // One body piece = p**2/(2mA)
    int norb = modelspace.GetNumberOrbits();
    for (int i=0; i<norb; ++i)
@@ -192,6 +192,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
          }
       }
    }
+   TcmOp.timer["TCM_Op"] += omp_get_wtime() - t_start;
    return TcmOp;
  }
 
