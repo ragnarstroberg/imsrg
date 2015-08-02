@@ -1240,7 +1240,9 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
    // Don't use omp, because the matrix multiplication is already
    // parallelized by armadillo.
    int nch = modelspace->SortedTwoBodyChannels.size();
+   #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
+   #endif
    for (int ich=0; ich<nch; ++ich)
    {
       int ch = modelspace->SortedTwoBodyChannels[ich];
@@ -1580,7 +1582,9 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
 //   for (int ch : modelspace->SortedTwoBodyChannels_CC )
    int nch = modelspace->SortedTwoBodyChannels_CC.size();
+   #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
+   #endif
    for (int ich=0; ich<nch; ++ich )
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
