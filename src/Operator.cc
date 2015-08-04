@@ -403,7 +403,9 @@ Operator Operator::UndoNormalOrdering()
 
    for (auto& k : modelspace->holes) // loop over hole orbits
    {
+      cout << "*** " << opNO.ZeroBody << endl;
       opNO.ZeroBody -= (modelspace->GetOrbit(k).j2+1) * OneBody(k,k);
+      cout << "k = " << k << "  0body = " << opNO.ZeroBody << endl;
    }
 
    index_t norbits = modelspace->GetNumberOrbits();
@@ -421,6 +423,7 @@ Operator Operator::UndoNormalOrdering()
       arma::vec diagonals = matrix.diag();
       auto hh = tbc_ket.GetKetIndex_hh();
       opNO.ZeroBody += arma::sum( diagonals.elem(hh) ) * (2*J_ket+1);
+      cout << "ch_bra = " << ch_bra << "  0body = " << opNO.ZeroBody << endl;
 
       // One body part
       for (index_t a=0;a<norbits;++a)
@@ -1240,7 +1243,9 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
    // Don't use omp, because the matrix multiplication is already
    // parallelized by armadillo.
    int nch = modelspace->SortedTwoBodyChannels.size();
+   #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
+   #endif
    for (int ich=0; ich<nch; ++ich)
    {
       int ch = modelspace->SortedTwoBodyChannels[ich];
@@ -1580,7 +1585,9 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
 //   for (int ch : modelspace->SortedTwoBodyChannels_CC )
    int nch = modelspace->SortedTwoBodyChannels_CC.size();
+   #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
+   #endif
    for (int ich=0; ich<nch; ++ich )
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];

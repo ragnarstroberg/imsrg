@@ -1,28 +1,43 @@
 CC = g++
 
-INCLUDE = -I./armadillo
-#LIBS = -lblas -llapack -lgsl
-#LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp
-LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5
-#FLAGS =  -O3 -std=c++11  -fPIC -fopenmp # -DNO_ODE=1
-#FLAGS =  -std=c++11 -fopenmp -fPIC -g # -DNO_ODE=1
-FLAGS =  -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math#-DNO_ODE=1 
-#FLAGS =  -std=c++11 -fopenmp -fPIC -g  -DNO_ODE=1
-SOFLABS = -O3 -march=native -std=c++11 -fopenmp -fPIC
+# Compiler flags:
+#  -DNO_ODE=1 compiles without boost/ode package used for flow equation solver
+#  -DOPENBLAS_NOUSEOMP=1 removes parallel blocks which take threads away from OPENBLAS
+#                        to be used if OpenBlas was compiled without the USE_OMP flat
+
+INCLUDE   = -I./armadillo
+FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math
+SOFLABS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math
 WARNFLAGS = -Wall -Wno-comment
-FLAGS += $(WARNFLAGS)
-SOFLAGS += $(WARNFLAGS)
+FLAGS    += $(WARNFLAGS)
+SOFLAGS  += $(WARNFLAGS)
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
-all: pyIMSRG.so libIMSRG.so
-#all: libIMSRG.so
-#all: mysrg pyIMSRG.so
+THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; else ehco other; fi)
+
+ifeq ($(THEHOST),jureca) # specific options for jureca cluster
+ LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
+ FLAGS += -DOPENBLAS_NOUSEOMP=1
+ ALL = libIMSRG.so
+else
+ifeq ($(THEHOST),cougar) # specific options for cougar cluster
+ LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5
+ ALL = libIMSRG.so
+else  # default options
+ LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5
+ ALL = pyIMSRG.so libIMSRG.so
+endif
+endif
+
+all: $(ALL)
 	
+printhost:
+	@printf "THEHOST = <%s>\n" $(THEHOST)
+
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       HartreeFock.o Generator.o IMSRGSolver.o AngMom.o imsrg_util.o\
       boost_src/gzip.o boost_src/zlib.o
-      
 
 mysrg: main.cc $(OBJ)
 	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
