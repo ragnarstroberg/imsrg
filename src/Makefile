@@ -14,12 +14,14 @@ SOFLAGS  += $(WARNFLAGS)
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
-ifneq (`echo $(HOSTNAME) | grep jrl` , "") # specific options for jureca cluster
+THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; else ehco other; fi)
+
+ifeq ($(THEHOST),jureca) # specific options for jureca cluster
  LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
  FLAGS += -DOPENBLAS_NOUSEOMP=1
  ALL = libIMSRG.so
 else
-ifneq (`echo $(HOSTNAME) | grep cougar` "") # specific options for cougar cluster
+ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5
  ALL = libIMSRG.so
 else  # default options
@@ -30,6 +32,9 @@ endif
 
 all: $(ALL)
 	
+printhost:
+	@printf "THEHOST = <%s>\n" $(THEHOST)
+
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       HartreeFock.o Generator.o IMSRGSolver.o AngMom.o imsrg_util.o\
       boost_src/gzip.o boost_src/zlib.o
