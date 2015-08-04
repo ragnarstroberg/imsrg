@@ -14,7 +14,7 @@ SOFLAGS  += $(WARNFLAGS)
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
-THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; else ehco other; fi)
+THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; else echo other; fi)
 
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
  LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
