@@ -118,6 +118,83 @@ void ReadWrite::ReadTBME_Oslo( string filename, Operator& Hbare)
   return;
 }
 
+/// Read two-body matrix elements from an Oslo-formatted file
+void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
+{
+
+  ofstream outfile(filename);
+  ModelSpace* modelspace = Op.GetModelSpace();
+  int wint = 8;
+  int wdouble = 12;
+  int dprec = 6;
+  outfile << fixed;
+  outfile << setw(wint) << setprecision(dprec);
+
+  if ( !outfile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble writing file  !!!   **" << filename << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
+  outfile << "      Tz      Parity    J2        a        b        c        d     <ab|V|cd>    <ab|0|cd>    <ab|0|cd>    <ab|0|cd>" << endl;
+
+  for ( auto& itmat : Op.TwoBody.MatEl )
+  {
+    int ch = itmat.first[0]; // assume ch_bra == ch_ket
+    auto& matrix = itmat.second;
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+    int J2 = tbc.J*2;
+    int Tz = tbc.Tz;
+    int parity = tbc.parity;
+    int nkets = tbc.GetNumberKets();
+    for (int ibra=0;ibra<nkets;++ibra)
+    {
+      Ket& bra = tbc.GetKet(ibra);
+      for (int iket=ibra;iket<nkets;++iket)
+      {
+        Ket& ket = tbc.GetKet(iket);
+        double tbme = matrix(ibra,iket);
+        outfile << setw(wint) << Tz << " " << setw(wint) <<parity << " " << setw(wint) <<J2 << " " << setw(wint) << bra.p << " " << setw(wint) <<bra.q << " " << setw(wint) <<ket.p << " " << setw(wint) <<ket.q <<  " " << setw(wdouble) << setprecision(dprec) <<tbme << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << endl;
+      }
+    }
+
+  }
+
+  return;
+}
+
+
+void ReadWrite::WriteOneBody_Oslo( string filename, Operator& Op)
+{
+  ofstream outfile(filename);
+  ModelSpace* modelspace = Op.GetModelSpace();
+  int wint = 3;
+  int wdouble = 10;
+  int dprec = 6;
+  outfile << fixed;
+  outfile << setw(wint) << setprecision(dprec);
+  if ( !outfile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble writing file  !!!   **" << filename << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
+  outfile << "  a     b      <a|V|b> " << endl;
+  int norb = modelspace->GetNumberOrbits();
+  for ( int i=0;i<norb;++i)
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    for (int j : Op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    {
+      outfile << setw(wint) << i << "   " << setw(wint) << j << "   " << setw(wdouble) << Op.OneBody(i,j) << endl;
+    }
+  }
+
+}
 
 void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
 {
