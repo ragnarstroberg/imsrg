@@ -390,6 +390,8 @@ int IMSRGSolver::GetSystemDimension()
 
 
 
+
+
 void IMSRGSolver::WriteFlowStatus(string fname)
 {
    if (fname !="")
@@ -415,7 +417,8 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << Omega.back().Norm()
         << setw(fwidth) << setprecision(fprecision) << Eta.OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << Eta.TwoBodyNorm()
-        << setw(fwidth) << setprecision(0)          << H_s.timer["N_Commutators"]
+        << setw(7)      << setprecision(0)          << H_s.timer["N_Commutators"]
+        << setw(fwidth) << setprecision(fprecision) << H_s.GetMP2_Energy()
         << setprecision(fprecision)
         << endl;
    }
@@ -443,8 +446,10 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << "||Omega||" 
         << setw(fwidth) << setprecision(fprecision) << "||Eta_1||" 
         << setw(fwidth) << setprecision(fprecision) << "||Eta_2||" 
+        << setw(9)      << setprecision(fprecision) << "Ncomm" 
+        << setw(fwidth) << setprecision(fprecision) << "E(MP2)" 
         << endl;
-      f << "-----------------------------------------------------------------------------------------------------------------------" << endl;
+      f << "---------------------------------------------------------------------------------------------------------------------------------------------" << endl;
    }
 
 }

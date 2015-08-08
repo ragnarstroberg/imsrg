@@ -143,6 +143,8 @@ class Operator
   void CalculateKineticEnergy();
   void Eye(); ///< set to identity operator
 
+  double GetMP2_Energy();
+
 
   double Norm() const;
   double OneBodyNorm() const;

@@ -567,6 +567,56 @@ void Operator::Eye()
 }
 
 
+/// Calculate the second-order perturbation theory correction to the energy
+/// \f[
+/// E^{(2)} = \sum_{ia} (2 j_a +1) \frac{|f_{ia}|^2}{f_{aa}-f_{ii}}
+/// +  \sum_{\substack{i\leq j // a\leq b}}\sum_{J} (2J+1)\frac{|\Gamma_{ijab}^{J}|^2}{f_{aa}+f_{bb}-f_{ii}-f_{jj}}
+/// \f]
+///
+double Operator::GetMP2_Energy()
+{
+   double t_start = omp_get_wtime();
+   double Emp2 = 0;
+   int nparticles = modelspace->particles.size();
+   #pragma omp parallel for reduction(+:Emp2)
+   for ( int ii=0;ii<nparticles;++ii)
+   {
+     index_t i = modelspace->particles[ii];
+     double ei = OneBody(i,i);
+     Orbit& oi = modelspace->GetOrbit(i);
+     for (index_t a : modelspace->holes)
+     {
+       double ea = OneBody(a,a);
+       Orbit& oa = modelspace->GetOrbit(a);
+       Emp2 += (oa.j2+1)* OneBody(i,a)*OneBody(i,a)/(OneBody(a,a)-OneBody(i,i));
+       for (index_t j : modelspace->particles)
+       {
+         if (j<i) continue;
+         double ej = OneBody(j,j);
+         Orbit& oj = modelspace->GetOrbit(j);
+         for ( index_t b: modelspace->holes)
+         {
+           if (b<a) continue;
+           double eb = OneBody(b,b);
+           Orbit& ob = modelspace->GetOrbit(b);
+           double denom = ea+eb-ei-ej;
+           int Jmin = max(abs(oi.j2-oj.j2),abs(oa.j2-ob.j2))/2;
+           int Jmax = min(oi.j2+oj.j2,oa.j2+ob.j2)/2;
+           for (int J=Jmin; J<=Jmax; ++J)
+           {
+             double tbme = TwoBody.GetTBME_J_norm(J,a,b,i,j);
+             Emp2 += 1.00*(2*J+1)*tbme*tbme/denom; // no factor 1/4 because of the restricted sum
+           }
+         }
+       }
+     }
+   }
+   timer["GetMP2_Energy"] += omp_get_wtime() - t_start;
+   return Emp2;
+}
+
+
+
 //***********************************************
 /// Calculates the kinetic energy operator in the 
 /// harmonic oscillator basis.

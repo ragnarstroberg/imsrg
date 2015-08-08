@@ -305,6 +305,26 @@ void TwoBodyME::AddToTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, do
    AddToTBME(ch_bra,ch_ket,a,b,c,d,tbme);
 }
 
+double TwoBodyME::GetTBME_J_norm(int j_bra, int j_ket, int a, int b, int c, int d) const
+{
+   Orbit& oa = modelspace->GetOrbit(a);
+   Orbit& ob = modelspace->GetOrbit(b);
+   Orbit& oc = modelspace->GetOrbit(c);
+   Orbit& od = modelspace->GetOrbit(d);
+   int parity_bra = (oa.l+ob.l)%2;
+   int parity_ket = (oc.l+od.l)%2;
+   int Tz_bra = (oa.tz2+ob.tz2)/2;
+   int Tz_ket = (oc.tz2+od.tz2)/2;
+   if ( (parity+parity_bra+parity_ket)%2 > 0) return 0;
+   if ( abs(Tz_bra-Tz_ket)>rank_T) return 0;
+   if ( abs(j_bra-j_ket) > rank_J) return 0;
+   if ( j_bra + j_ket < rank_J) return 0;
+   int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,parity_bra,Tz_bra);
+   int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,parity_ket,Tz_ket);
+   if (ch_bra <= ch_ket)
+     return GetTBME_norm(ch_bra,ch_ket,a,b,c,d);
+   return modelspace->phase(j_bra - j_ket) * GetTBME_norm(ch_ket,ch_bra,c,d,a,b);
+}
 
 // for backwards compatibility...
 double TwoBodyME::GetTBME(int ch, int a, int b, int c, int d) const
@@ -416,6 +436,10 @@ void TwoBodyME::AddToTBME_J(int j, int a, int b, int c, int d, double tbme)
    AddToTBME_J(j,j,a,b,c,d,tbme);
 }
 
+double TwoBodyME::GetTBME_J_norm(int j, int a, int b, int c, int d) const
+{
+   return GetTBME_J_norm(j,j,a,b,c,d);
+}
 ///
 /// Useful for reading in files in isospin formalism
 /// \f[
