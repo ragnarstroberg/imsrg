@@ -63,7 +63,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("WriteTensorOneBody", &ReadWrite::WriteTensorOneBody)
       .def("WriteTensorTwoBody", &ReadWrite::WriteTensorTwoBody)
       .def("SetCoMCorr", &ReadWrite::SetCoMCorr)
-      .def("ReadTwoBodyEngell", &ReadWrite::ReadTwoBodyEngell)
+      .def("ReadTwoBodyEngel", &ReadWrite::ReadTwoBodyEngel)
       .def_readwrite("InputParameters", &ReadWrite::InputParameters)
    ;
 
