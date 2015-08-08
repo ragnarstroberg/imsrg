@@ -496,6 +496,53 @@ void Operator::SetNonHermitian()
   TwoBody.SetNonHermitian();
 }
 
+void Operator::MakeReduced()
+{
+  if (rank_J>0)
+  {
+    cout << "Trying to reduce an operator with J rank = " << rank_J << ". Not good!!!" << endl;
+    return;
+  }
+  for ( int a=0;a<modelspace->GetNumberOrbits();++a )
+  {
+    Orbit& oa = modelspace->GetOrbit(a);
+    for (int b : OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
+    {
+      if (b<a) continue;
+        OneBody(a,b) *= oa.j2+1;
+      if (a!=b)
+        OneBody(b,a) = OneBody(a,b);
+    }
+  }
+  for ( auto& itmat : TwoBody.MatEl )
+  {
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
+    itmat.second *= 2*tbc.J+1;
+  }
+}
+
+void Operator::MakeNotReduced()
+{
+  if (rank_J>0)
+  {
+    cout << "Trying to reduce an operator with J rank = " << rank_J << ". Not good!!!" << endl;
+    return;
+  }
+  for ( int a=0;a<modelspace->GetNumberOrbits();++a )
+  {
+    Orbit& oa = modelspace->GetOrbit(a);
+    for (int b : OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
+    {
+      OneBody(a,b) /= oa.j2+1;
+    }
+  }
+  for ( auto& itmat : TwoBody.MatEl )
+  {
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
+    itmat.second /= 2*tbc.J+1;
+  }
+}
+
 
 void Operator::ScaleZeroBody(double x)
 {
@@ -563,7 +610,7 @@ void Operator::CalculateKineticEnergy()
 /// We use the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
 /// \f[ Z = X + [Y,X] + \frac{1}{2!}[Y,[Y,X]] + \frac{1}{3!}[Y,[Y,[Y,X]]] + \ldots \f]
 /// with all commutators truncated at the two-body level.
-Operator Operator::BCH_Transform(  Operator &Omega)
+Operator Operator::BCH_Transform( const Operator &Omega)
 {
    double t = omp_get_wtime();
    int max_iter = 40;
@@ -726,9 +773,11 @@ void Operator::AntiSymmetrize()
 Operator Commutator( const Operator& X, const Operator& Y)
 {
    X.timer["N_Commutators"] += 1;
-   if (X.rank_J==0)
+   int xrank = X.rank_J + X.rank_T + X.parity;
+   int yrank = Y.rank_J + Y.rank_T + Y.parity;
+   if (xrank==0)
    {
-      if (Y.rank_J==0)
+      if (yrank==0)
       {
 //         return X.CommutatorScalarScalar(Y); // [S,S]
          return CommutatorScalarScalar(X,Y); // [S,S]
@@ -739,7 +788,7 @@ Operator Commutator( const Operator& X, const Operator& Y)
          return CommutatorScalarTensor(X,Y); // [S,T]
       }
    }
-   else if(Y.rank_J==0)
+   else if(yrank==0)
    {
 //      return (-1)*Y.CommutatorScalarTensor(X); // [T,S]
       return (-1)*CommutatorScalarTensor(Y,X); // [T,S]
@@ -864,7 +913,6 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
 /// \f[
 ///  [X_{1)},Y_{(1)}]_{(0)} = \sum_{a} n_a (2j_a+1) \left(X_{(1)}Y_{(1)}-Y_{(1)}X_{(1)}\right)_{aa}
 /// \f]
-//void Operator::comm110ss( Operator& Y, Operator& Z) 
 void Operator::comm110ss( const Operator& X, const Operator& Y) 
 {
   Operator& Z = *this;

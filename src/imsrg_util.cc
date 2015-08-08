@@ -390,8 +390,8 @@ double HO_Radial_psi(int n, int l, double hw, double r)
         int nb = ket.oq->n;
         double ja = ket.op->j2*0.5;
         double jb = ket.oq->j2*0.5;
-        int ta = ket.op->n;
-        int tb = ket.oq->n;
+//        int ta = ket.op->n;
+//        int tb = ket.oq->n;
         for (int iJac=0; iJac<nkets_Jacobi; ++iJac)
         {
           int L      = JacobiBasis[iJac][0];
@@ -401,7 +401,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
           int n      = JacobiBasis[iJac][4];
           int lambda = JacobiBasis[iJac][5];
 
-          int Asym = 1; // Fix this...
+//          int Asym = 1; // Fix this...
           double ninej = NormNineJ(la,0.5,ja,lb,0.5,jb,L,S,J);
           if (abs(ninej)<1e-6) continue;
           double mosh = modelspace->GetMoshinsky(N,Lambda,n,lambda,na,la,nb,lb,L);

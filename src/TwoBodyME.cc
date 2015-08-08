@@ -68,7 +68,6 @@ TwoBodyME::TwoBodyME(const TwoBodyME& tbme)
    {
       int ch_bra = itmat.first[0];
       int ch_ket = itmat.first[1];
-//      itmat.second -= rhs.GetMatrix(ch_bra,ch_ket);
       GetMatrix(ch_bra,ch_ket) -= itmat.second;
    }
    return *this;
@@ -100,7 +99,6 @@ void TwoBodyME::Allocate()
         if ( (tbc_bra.J+tbc_ket.J)<rank_J ) continue;
         if ( abs(tbc_bra.Tz-tbc_ket.Tz)>rank_T ) continue;
         if ( (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
-        
         MatEl[{ch_bra,ch_ket}] =  arma::mat(tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros);
      }
   }
@@ -174,9 +172,9 @@ void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, doub
    if (a>b) phase *= tbc_bra.GetKet(bra_ind).Phase(tbc_bra.J);
    if (c>d) phase *= tbc_ket.GetKet(ket_ind).Phase(tbc_ket.J);
    GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) = phase * tbme;
+   if (ch_ket != ch_bra) return;
    if (hermitian) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = phase * tbme;
    if (antihermitian) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = - phase * tbme;
-//   cout << "Setting TBME. phase = " << phase << "  herm = " << hermitian << " " << antihermitian << endl;
 }
 
 

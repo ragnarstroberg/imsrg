@@ -113,6 +113,8 @@ class Operator
   int GetParity()const {return parity;};
   void SetParticleRank(int pr) {particle_rank = pr;};
 
+  void MakeReduced();
+  void MakeNotReduced();
 
   void ScaleZeroBody(double x);
   void ScaleOneBody(double x);
@@ -136,7 +138,7 @@ class Operator
 //  Operator CommutatorScalarTensor( Operator& opright) ;
 
   Operator BCH_Product(  Operator& )  ; 
-  Operator BCH_Transform(  Operator& ) ; 
+  Operator BCH_Transform( const Operator& ) ; 
 
   void CalculateKineticEnergy();
   void Eye(); ///< set to identity operator

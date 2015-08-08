@@ -18,7 +18,8 @@ class IMSRGSolver
 //  private:
   ModelSpace* modelspace;
   Operator* H_0; 
-  Operator H_s;
+  vector<Operator> FlowingOps;
+//  Operator H_s;
   Operator H_saved;
   Operator Eta;
 //  Operator Omega;
@@ -40,6 +41,7 @@ class IMSRGSolver
   IMSRGSolver( Operator& H_in);
   void SetHin( Operator& H_in);
   void Reset();
+  void AddOperator(Operator& Op){FlowingOps.push_back(Op);};
 
   void Solve();
 
@@ -58,6 +60,7 @@ class IMSRGSolver
   void SetODETolerance(float x){ode_e_abs=x;ode_e_rel=x;};
 
   int GetSystemDimension();
+  Operator GetH_s(){return FlowingOps[0];};
 
   void UpdateOmega();
   void UpdateH();
@@ -86,10 +89,10 @@ class IMSRGSolver
      vector<double>& E0;
      vector<double>& eta1;
      vector<double>& eta2;
-     void operator() (const Operator& x, double t)
+     void operator() (const vector<Operator>& x, double t)
      {
         times.push_back(t);
-        E0.push_back(x.ZeroBody);
+        E0.push_back(x.front().ZeroBody);
         eta1.push_back(imsrgsolver.Eta.OneBodyNorm());
         eta2.push_back(imsrgsolver.Eta.TwoBodyNorm());
      }
@@ -115,12 +118,10 @@ class IMSRGSolver
   float ode_e_rel;
 
 
-  void operator()( const Operator& x, Operator& dxdt, const double t);
+  void operator()( const vector<Operator>& x, vector<Operator>& dxdt, const double t);
   void Solve_ode();
   void Solve_ode_adaptive();
   void Solve_ode_magnus();
-  void ODE_systemH( Operator& x, Operator& dxdt, const double t);
-  void ODE_systemOmega( Operator& x, Operator& dxdt, const double t);
 
 #endif
 

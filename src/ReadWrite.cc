@@ -2351,5 +2351,56 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
 }
 
 
+void ReadWrite::ReadTwoBodyEngel(string filename, Operator& Op)
+{
+  if ( filename.substr( filename.find_last_of(".")) == ".gz")
+  {
+    ifstream infile(filename, ios_base::in | ios_base::binary);
+    boost::iostreams::filtering_istream zipstream;
+    zipstream.push(boost::iostreams::gzip_decompressor());
+    zipstream.push(infile);
+    ReadTwoBodyEngel_from_stream(zipstream, Op);
+  }
+  else
+  {
+    ifstream infile(filename);
+    ReadTwoBodyEngel_from_stream(infile, Op);
+  }
+}
+
+// These are double beta decay matrix elements, so they are angular momentum scalars
+// and have delta Tz=2
+void ReadWrite::ReadTwoBodyEngel_from_stream( istream& infile, Operator& Op)
+{
+  int a,b,c,d,J;
+  double tbme;
+  ModelSpace* modelspace = Op.GetModelSpace();
+  int norb = modelspace->GetNumberOrbits();
+  int emax = modelspace->GetNmax();
+  while( infile >> a >> b >> c >> d >> J >> tbme )
+  {
+//   cout << a << " " << b << " " << c << " " << d << " " << J << " " << tbme << endl;
+    a = a-2;
+    b = b-2;
+    c = c-1;
+    d = d-1;
+//    Orbit& oa = modelspace->GetOrbit(a);
+//    Orbit& ob = modelspace->GetOrbit(b);
+//    Orbit& oc = modelspace->GetOrbit(c);
+//    Orbit& od = modelspace->GetOrbit(d);
+    if (a >= norb) break;
+    if (b >= norb or c>=norb or d>=norb) continue;
+//    int ea = 2*oa.n+oa.l;
+//    int eb = 2*ob.n+ob.l;
+//    int ec = 2*oc.n+oc.l;
+//    int ed = 2*od.n+od.l;
+//   cout <<  " -> " << a << " " << b << " " << c << " " << d <<  endl;
+//   cout <<  " --> " << ea << " " << eb << " " << ec << " " << ed <<  endl;
+//    if (ea>emax) break;
+//    if (eb>emax or ec>emax or ed>emax) continue;
+    Op.TwoBody.SetTBME_J(J,a,b,c,d,tbme);
+  }
+}
+
 
 
