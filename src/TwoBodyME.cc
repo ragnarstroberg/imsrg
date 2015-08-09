@@ -98,6 +98,7 @@ void TwoBodyME::Allocate()
         if ( abs(tbc_bra.J-tbc_ket.J)>rank_J ) continue;
         if ( (tbc_bra.J+tbc_ket.J)<rank_J ) continue;
         if ( abs(tbc_bra.Tz-tbc_ket.Tz)>rank_T ) continue;
+//        if ( abs(tbc_bra.Tz-tbc_ket.Tz)!=rank_T ) continue;
         if ( (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
         MatEl[{ch_bra,ch_ket}] =  arma::mat(tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros);
      }
@@ -639,6 +640,13 @@ int TwoBodyME::Dimension()
    return dim;
 }
 
+int TwoBodyME::size()
+{
+  int size=0;
+  for ( auto& itmat : MatEl )
+     size += itmat.second.size();
+  return size;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

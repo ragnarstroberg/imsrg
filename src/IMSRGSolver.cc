@@ -49,7 +49,7 @@ void IMSRGSolver::SetHin( Operator & H_in)
      Omega.push_back(Eta);
 //        H_saved = H_s;
         H_saved = FlowingOps[0];
-    cout << "pushing back another Omega. Omega.size = " << Omega.size() << endl;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
    }
 }
 
@@ -60,7 +60,7 @@ void IMSRGSolver::Reset()
 //   Omega.Erase();
    Omega.resize(0);
    Omega.push_back(Eta);
-    cout << "pushing back another Omega. Omega.size = " << Omega.size() << endl;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
 }
 
 void IMSRGSolver::SetGenerator(string g)
@@ -72,7 +72,7 @@ void IMSRGSolver::SetGenerator(string g)
     Omega.push_back(Eta);
 //        H_saved = H_s;
         H_saved = FlowingOps[0];
-    cout << "pushing back another Omega. Omega.size = " << Omega.size() << endl;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
   }
 }
 
@@ -110,7 +110,7 @@ void IMSRGSolver::Solve()
         Omega.push_back(Eta);
         Omega.back().Erase();
         norm_omega = 0;
-        cout << "pushing back another Omega. Omega.size = " << Omega.size() << endl;
+        cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
       }
       // ds should never be more than 1, as this is over-rotating
       //ds = min(norm_domega / norm_eta / (norm_omega+1.0e-9), ds_max); 
@@ -447,7 +447,7 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << "||Eta_1||" 
         << setw(fwidth) << setprecision(fprecision) << "||Eta_2||" 
         << setw(9)      << setprecision(fprecision) << "Ncomm" 
-        << setw(fwidth) << setprecision(fprecision) << "E(MP2)" 
+        << setw(12)     << setprecision(fprecision) << "E(MP2)" 
         << endl;
       f << "---------------------------------------------------------------------------------------------------------------------------------------------" << endl;
    }

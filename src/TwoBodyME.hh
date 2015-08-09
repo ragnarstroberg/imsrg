@@ -131,6 +131,7 @@ class TwoBodyME
   void Eye();
   void PrintMatrix(int chbra,int chket) const { MatEl.at({chbra,chket}).print();};
   int Dimension();
+  int size();
 
 
 };

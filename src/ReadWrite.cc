@@ -1808,21 +1808,22 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
    for ( auto& it : op.TwoBody.MatEl )
    {
       int chbra = it.first[0];
-//      int chket = it.first[1];
+      int chket = it.first[1];
       int nbras = it.second.n_rows;
       int nkets = it.second.n_cols;
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(chbra);
-//      TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(chket);
+      TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(chket);
       for (int ibra=0; ibra<nbras; ++ibra)
       {
         Ket& bra = tbc_bra.GetKet(ibra);
         for (int iket=0; iket<nkets; ++iket)
         {
-          Ket& ket = tbc_bra.GetKet(iket);
+          Ket& ket = tbc_ket.GetKet(iket);
            double tbme = it.second(ibra,iket);
            if ( abs(tbme) > 1e-7 )
            {
              opfile << setw(4) << tbc_bra.J << " " << tbc_bra.parity << " " << tbc_bra.Tz  << "    "
+                    << setw(4) << tbc_ket.J << " " << tbc_ket.parity << " " << tbc_ket.Tz  << "    "
                   << setw(4) << bra.p << " " << bra.q  << " " << ket.p << " " << ket.q  << "   "
                   << setw(10) << setprecision(6) << tbme << endl;
            }
@@ -2394,7 +2395,7 @@ void ReadWrite::ReadTwoBodyEngel_from_stream( istream& infile, Operator& Op)
 //    int eb = 2*ob.n+ob.l;
 //    int ec = 2*oc.n+oc.l;
 //    int ed = 2*od.n+od.l;
-//   cout <<  " -> " << a << " " << b << " " << c << " " << d <<  endl;
+//   cout <<  " -> " << a << " " << b << " " << c << " " << d <<  " " << J << " " << tbme << endl;
 //   cout <<  " --> " << ea << " " << eb << " " << ec << " " << ed <<  endl;
 //    if (ea>emax) break;
 //    if (eb>emax or ec>emax or ed>emax) continue;

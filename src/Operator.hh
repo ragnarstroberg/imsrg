@@ -122,6 +122,7 @@ class Operator
   void Symmetrize(); ///< Copy the upper-half triangle to the lower-half triangle for each matrix
   void AntiSymmetrize(); ///< Copy the upper-half triangle to the lower-half triangle with a minus sign.
   void SetUpOneBodyChannels();
+  int Size();
 
   // The actually interesting methods
   Operator DoNormalOrdering(); ///< Calls DoNormalOrdering2() or DoNormalOrdering3(), depending on the rank of the operator.

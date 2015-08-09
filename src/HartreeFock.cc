@@ -35,7 +35,6 @@ HartreeFock::HartreeFock(Operator& hbare)
 //   Vmon_exch     = arma::mat(nKets,nKets);
    prev_energies = arma::vec(norbits,arma::fill::zeros);
    holeorbs = arma::uvec(modelspace->holes);
-   cout << "BuildMonopoleV" << endl;
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
    {

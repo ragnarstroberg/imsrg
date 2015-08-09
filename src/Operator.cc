@@ -246,6 +246,13 @@ void Operator::SetUpOneBodyChannels()
 }
 
 
+int Operator::Size()
+{
+   return 1 + OneBody.size() + TwoBody.size();
+}
+
+
+
 ////////////////// MAIN INTERFACE METHODS //////////////////////////
 
 Operator Operator::DoNormalOrdering()
@@ -921,6 +928,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //Operator Operator::CommutatorScalarTensor( Operator& opright) 
 Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) 
 {
+   cout << "Calling CommutatorScalarTensor" << endl;
    Operator Z = Y; // This ensures the commutator has the same tensor rank as Y
    Z.EraseZeroBody();
    Z.EraseOneBody();
@@ -930,11 +938,16 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
    else if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Z.SetHermitian();
    else Z.SetNonHermitian();
 
+   cout << "comm111st" << endl;
    Z.comm111st(X, Y);
+   cout << "comm121st" << endl;
    Z.comm121st(X, Y);
 
+   cout << "comm122st" << endl;
    Z.comm122st(X, Y);
+   cout << "comm222_pp_hh_st" << endl;
    Z.comm222_pp_hh_221st(X, Y);
+   cout << "comm222_phst" << endl;
    Z.comm222_phst(X, Y);
 
    if ( Z.IsHermitian() )
@@ -1554,7 +1567,6 @@ void Operator::AddInversePandyaTransformation(vector<arma::mat>& Zbar)
             int Tz_cc = abs(oi.tz2+ol.tz2)/2;
             int jmin = max(abs(int(ji-jl)),abs(int(jk-jj)));
             int jmax = min(int(ji+jl),int(jk+jj));
-
             for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
             {
                double sixj = modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
@@ -2079,7 +2091,7 @@ void Operator::DoTensorPandyaTransformation(map<array<int,2>,arma::mat>& TwoBody
         int Jket_cc = tbc_ket_cc.J;
         if ( (Jbra_cc+Jket_cc < rank_J) or abs(Jbra_cc-Jket_cc)>rank_J ) continue;
         if ( (tbc_bra_cc.parity + tbc_ket_cc.parity + parity)%2>0 ) continue;
-        if ( abs(tbc_bra_cc.Tz + tbc_ket_cc.Tz)%2 > 0 ) continue; // need an even number of protons, even number of neutrons.
+//        if ( abs(tbc_bra_cc.Tz + tbc_ket_cc.Tz)%2 > 0 ) continue; // need an even number of protons, even number of neutrons.
 
         int nKets_cc = tbc_ket_cc.GetNumberKets();
 
@@ -2175,12 +2187,15 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
       TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
       int J1 = tbc_bra.J;
       int J2 = tbc_ket.J;
+//      cout << "-- " << ch_bra << " " << ch_ket << endl;
+//      cout << "-- Jbra = " << tbc_bra.J << " T_bra = " << tbc_bra.Tz << "   Jket = " << tbc_ket.J << " T_ket = " << tbc_ket.Tz << endl;
       int nBras = tbc_bra.GetNumberKets();
       int nKets = tbc_ket.GetNumberKets();
       arma::mat& Zijkl = iter.second;
 
       for (int ibra=0; ibra<nBras; ++ibra)
       {
+//         cout << "ibra = " << ibra << endl;
          Ket & bra = tbc_bra.GetKet(ibra);
          int i = bra.p;
          int j = bra.q;
@@ -2192,6 +2207,7 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
          int ketmin = 0;
          for (int iket=ketmin; iket<nKets; ++iket)
          {
+//           cout << "iket = " << iket << endl;
             Ket & ket = tbc_ket.GetKet(iket);
             int k = ket.p;
             int l = ket.q;
@@ -2208,9 +2224,11 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
             int parity_ket_cc = (ok.l+oj.l)%2;
             int Tz_bra_cc = abs(oi.tz2+ol.tz2)/2;
             int Tz_ket_cc = abs(ok.tz2+oj.tz2)/2;
+//            int Tz_bra_cc = (oi.tz2+ol.tz2)/2;
+//            int Tz_ket_cc = (ok.tz2+oj.tz2)/2;
             int j3min = abs(int(ji-jl));
             int j3max = ji+jl;
-
+//            cout << "before J3 loop, ti = " << oi.tz2 << " tj = " << oj.tz2 << " tk = " << ok.tz2 << " tl = " << ol.tz2  << endl;
             for (int J3=j3min; J3<=j3max; ++J3)
             {
               int ch_bra_cc = modelspace->GetTwoBodyChannelIndex(J3,parity_bra_cc,Tz_bra_cc);
@@ -2229,10 +2247,16 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
                   double ninej = modelspace->GetNineJ(ji,jl,J3,jj,jk,J4,J1,J2,Lambda);
                   if (abs(ninej) < 1e-8) continue;
                   double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*J3+1)*(2*J4+1) );
+//                  cout << "before getting tbme  ch_bra_cc = " << ch_bra_cc << "  ch_ket_cc = " << ch_ket_cc << endl;
+//                  cout << "J3 = " << J3 << " parity =  " << parity_bra_cc << " Tz = " << Tz_bra_cc << "   "
+//                       << "J4 = " << J4 << " parity =  " << parity_ket_cc << " Tz = " << Tz_ket_cc << endl;
+//                  cout << "indx_il = " << indx_il << "  indx_kj = " << indx_kj << "  size of mtx = " << Zbar[{ch_bra_cc,ch_ket_cc}].n_cols << endl;
                   double tbme = Zbar[{ch_bra_cc,ch_ket_cc}](indx_il,indx_kj);
+//                  cout << "after getting tbme" << endl;
                   commij += hatfactor * modelspace->phase(jj+jl+J2+J4) * ninej * tbme ;
               }
             }
+//            cout << "after J3 loop" << endl;
 
             // Transform Z_jlki
             parity_bra_cc = (oj.l+ol.l)%2;
@@ -2356,7 +2380,7 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    map<array<int,2>,arma::mat> Y_bar_hp;
    map<array<int,2>,arma::mat> Y_bar_ph;
 
-
+//   cout << "Pandya" << endl;
    double t = omp_get_wtime();
    X.DoPandyaTransformation(X_bar_hp, X_bar_ph );
    Y.DoTensorPandyaTransformation(Y_bar_hp, Y_bar_ph );
@@ -2367,10 +2391,12 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    // Construct the intermediate matrix Z_bar
    map<array<int,2>,arma::mat> Z_bar;
 
+//   cout << "Zbar" << endl;
    for (auto& iter : Y_bar_hp )
    {
       int ch_bra_cc = iter.first[0];
       int ch_ket_cc = iter.first[1];
+//      cout << "Build Zbar: ch_bra_cc = " << ch_bra_cc << "  ch_ket_cc = " << ch_ket_cc << endl;
       int Jbra = modelspace->GetTwoBodyChannel_CC(ch_bra_cc).J;
       int Jket = modelspace->GetTwoBodyChannel_CC(ch_ket_cc).J;
       int flipphase = modelspace->phase( Jbra - Jket ) * ( Z.IsHermitian() ? -1 : 1 );
@@ -2387,9 +2413,11 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    }
    timer["Build Z_bar"] += omp_get_wtime() - t;
 
+//   cout << "InversePandya" << endl;
    t = omp_get_wtime();
    Z.AddInverseTensorPandyaTransformation(Z_bar);
    timer["InverseTensorPandyaTransformation"] += omp_get_wtime() - t;
+//   cout << "Done" << endl;
 
 }
 
