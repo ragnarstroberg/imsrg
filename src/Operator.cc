@@ -884,32 +884,32 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
       Z.comm220ss(X, Y) ;
    }
 
-   double t = omp_get_wtime();
+   double t_start = omp_get_wtime();
 //   X.comm111ss(Y, Z);
    Z.comm111ss(X, Y);
-   Z.timer["comm111ss"] += omp_get_wtime() - t;
+   Z.timer["comm111ss"] += omp_get_wtime() - t_start;
 
-    t = omp_get_wtime();
+    t_start = omp_get_wtime();
 //   X.comm121ss(opright, out);
    Z.comm121ss(X,Y);
-    Z.timer["comm121ss"] += omp_get_wtime() - t;
+    Z.timer["comm121ss"] += omp_get_wtime() - t_start;
 
-    t = omp_get_wtime();
+    t_start = omp_get_wtime();
 //   X.comm122ss(Y, Z); 
    Z.comm122ss(X,Y); 
-    Z.timer["comm122ss"] += omp_get_wtime() - t;
+    Z.timer["comm122ss"] += omp_get_wtime() - t_start;
 
    if (X.particle_rank>1 and Y.particle_rank>1)
    {
-    t = omp_get_wtime();
+    t_start = omp_get_wtime();
 //    X.comm222_pp_hh_221ss(Y, Z);
     Z.comm222_pp_hh_221ss(X, Y);
-    Z.timer["comm222_pp_hh_221ss"] += omp_get_wtime() - t;
+    Z.timer["comm222_pp_hh_221ss"] += omp_get_wtime() - t_start;
      
-    t = omp_get_wtime();
+    t_start = omp_get_wtime();
 //    X.comm222_phss(Y, Z);
     Z.comm222_phss(X, Y);
-    Z.timer["comm222_phss"] += omp_get_wtime() - t;
+    Z.timer["comm222_phss"] += omp_get_wtime() - t_start;
    }
 
 
@@ -929,6 +929,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) 
 {
 //   cout << "Calling CommutatorScalarTensor" << endl;
+   double t_start = omp_get_wtime();
    Operator Z = Y; // This ensures the commutator has the same tensor rank as Y
    Z.EraseZeroBody();
    Z.EraseOneBody();
@@ -955,6 +956,7 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
    else if (Z.IsAntiHermitian() )
       Z.AntiSymmetrize();
 
+   Z.timer["CommutatorScalarTensor"] += omp_get_wtime() - t_start;
    return Z;
 }
 
@@ -1960,11 +1962,24 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
    TwoBodyME Mpp = Z.TwoBody;
    TwoBodyME Mhh = Z.TwoBody;
 
-//   #pragma omp parallel for schedule(dynamic,5)
+   vector<int> vch_bra;
+   vector<int> vch_ket;
+   vector<const arma::mat*> vmtx;
    for ( auto& itmat : Y.TwoBody.MatEl )
    {
-    int ch_bra = itmat.first[0];
-    int ch_ket = itmat.first[1];
+     vch_bra.push_back(itmat.first[0]);
+     vch_ket.push_back(itmat.first[1]);
+     vmtx.push_back(&(itmat.second));
+   }
+   size_t nchan = vch_bra.size();
+//   for ( auto& itmat : Y.TwoBody.MatEl )
+//   #pragma omp parallel for schedule(dynamic,1)
+   for (size_t i=0;i<nchan; ++i)
+   {
+//    int ch_bra = itmat.first[0];
+//    int ch_ket = itmat.first[1];
+    int ch_bra = vch_bra[i];
+    int ch_ket = vch_ket[i];
 
     TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
     TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
@@ -1972,7 +1987,8 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
     auto& LHS1 = X.TwoBody.GetMatrix(ch_bra,ch_bra);
     auto& LHS2 = X.TwoBody.GetMatrix(ch_ket,ch_ket);
 
-    auto& RHS  =  itmat.second;
+//    auto& RHS  =  itmat.second;
+    auto& RHS  =  *vmtx[i];
     arma::mat& OUT2 =    Z.TwoBody.GetMatrix(ch_bra,ch_ket);
 
     arma::mat& Matrixpp =  Mpp.GetMatrix(ch_bra,ch_ket);
@@ -2044,7 +2060,7 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
                }
               }
            }
-         #pragma omp critical
+//         #pragma omp critical
          Z.OneBody(i,j) += cijJ ;
       } // for j
     } // for i

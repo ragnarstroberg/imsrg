@@ -164,7 +164,6 @@ class ModelSpace
    ModelSpace operator=(ModelSpace&&); 
 
    void Init(int Nmax, vector<string> hole_list, vector<string> inside_list);
-//   void Init_Skeleton(int nmax);
 
    // Common model spaces
    void Init_He4(int nmax);
@@ -176,6 +175,7 @@ class ModelSpace
    void Init_O16PSDShell(int nmax);
    void Init_FPShell(int nmax);
    void Init_SDFPShell(int nmax);
+   void Init_FPG9Shell(int nmax);
 
 
    // Methods
