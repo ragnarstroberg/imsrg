@@ -60,7 +60,7 @@ class IMSRGSolver
   void SetODETolerance(float x){ode_e_abs=x;ode_e_rel=x;};
 
   int GetSystemDimension();
-  Operator& GetH_s(){return FlowingOps[0];};
+  Operator GetH_s(){return FlowingOps[0];};
 
   void UpdateOmega();
   void UpdateH();
