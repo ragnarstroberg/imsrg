@@ -11,6 +11,7 @@ SOFLABS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math
 WARNFLAGS = -Wall -Wno-comment
 FLAGS    += $(WARNFLAGS)
 SOFLAGS  += $(WARNFLAGS)
+INSTDIR = $(HOME)
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
@@ -24,16 +25,31 @@ else
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5
  ALL = libIMSRG.so
-else  # default options
+else  # default options. assumes boost and python are set up nicely.
  LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5
  ALL = pyIMSRG.so libIMSRG.so
 endif
 endif
 
 all: $(ALL)
+
+install:
+	@if [ ! -d $(INSTDIR)/lib ] ; then \
+	  mkdir $(INSTDIR)/lib; \
+	fi
+	@if [ ! -d $(INSTDIR)/include ] ; then \
+	  mkdir $(INSTDIR)/include; \
+	fi 
+	rm $(INSTDIR)/lib/libIMSRG.so 
+	rm $(INSTDIR)/include/armadillo
+	ln -s $(PWD)/libIMSRG.so $(INSTDIR)/lib/libIMSRG.so
+	ln -s $(PWD)/armadillo $(INSTDIR)/include/armadillo
+	@for x in *.hh; do \
+	 echo linking $(PWD)/$$x  '=>'  $(INSTDIR)/include/$$x;\
+	 rm $(INSTDIR)/include/$$x; \
+	 ln -s $(PWD)/$$x $(INSTDIR)/include/$$x; \
+	done
 	
-printhost:
-	@printf "THEHOST = <%s>\n" $(THEHOST)
 
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       HartreeFock.o Generator.o IMSRGSolver.o AngMom.o imsrg_util.o\
