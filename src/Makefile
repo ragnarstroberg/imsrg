@@ -6,8 +6,8 @@ CC = g++
 #                        to be used if OpenBlas was compiled without the USE_OMP flat
 
 INCLUDE   = -I./armadillo
-FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math
-SOFLABS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math
+FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
+SOFLABS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
 WARNFLAGS = -Wall -Wno-comment
 FLAGS    += $(WARNFLAGS)
 SOFLAGS  += $(WARNFLAGS)

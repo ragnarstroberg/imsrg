@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 //  string input3bme = "/itch/exch/BlockGen/me3j/chi2b3b400cD-02cE0098_srg0800ho40C_eMax12_EMax12_hwHO020.me3j.gz";
   string input3bme = "none";
   double hw = 20.0;
-  int targetMass = 18;
+  int targetMass = -1;
   double smax = 20.0;
   double dsmax = 0.5;
   double ds_0 = 0.5;
@@ -107,13 +107,16 @@ int main(int argc, char** argv)
     return 1;
   }
   test.close();
-  test.open(inputtbme);
-  if( not test.good() )
+  if (input3bme != "none")
   {
-    cout << "trouble reading " << inputtbme << " exiting. " << endl;
-    return 1;
+    test.open(input3bme);
+    if( not test.good() )
+    {
+      cout << "trouble reading " << input3bme << " exiting. " << endl;
+      return 1;
+    }
+    test.close();
   }
-  test.close();
 
   ReadWrite rw;
 
@@ -122,12 +125,13 @@ int main(int argc, char** argv)
   ModelSpace modelspace(eMax,nucleus);
 
   modelspace.SetHbarOmega(hw);
-//  modelspace.SetTargetMass(targetMass);
+  if (targetMass > 0)
+    modelspace.SetTargetMass(targetMass);
   modelspace.SetN3max(E3max);
   
   cout << "Making the operator..." << endl;
   int particle_rank = input3bme=="none" ? 2 : 3;
-  Operator Hbare = Operator(modelspace,0,0,0,particle_rank);
+  Operator Hbare(modelspace,0,0,0,particle_rank);
   Hbare.SetHermitian();
 
   cout << "Reading interaction..." << endl;
@@ -193,7 +197,7 @@ int main(int argc, char** argv)
 //  string omegafile(buf);
 //  rw.WriteOperator(imsrgsolver.GetOmega(0),omegafile);
   Hbare.PrintTimes();
- 
+
   return 0;
 }
 

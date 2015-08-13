@@ -581,8 +581,8 @@ void ModelSpace::SetupKets()
    SortedTwoBodyChannels_CC.resize(nTwoBodyChannels);
    for (int ch=0;ch<nTwoBodyChannels;++ch)
    {
-      TwoBodyChannels.push_back(TwoBodyChannel(ch,this));
-      TwoBodyChannels_CC.push_back(TwoBodyChannel_CC(ch,this));
+      TwoBodyChannels.push_back(move(TwoBodyChannel(ch,this)));
+      TwoBodyChannels_CC.push_back(move(TwoBodyChannel_CC(ch,this)));
       SortedTwoBodyChannels[ch] = ch;
       SortedTwoBodyChannels_CC[ch] = ch;
    }

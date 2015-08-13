@@ -109,7 +109,6 @@ double HO_Radial_psi(int n, int l, double hw, double r)
  double Get_Charge_Density( Operator& DM, double r)
  {
    ModelSpace* modelspace = DM.GetModelSpace();
-   index_t norb = modelspace->GetNumberOrbits();
    double hw = modelspace->GetHbarOmega();
    double rho=0;
    for (index_t i : modelspace->proton_orbits )
@@ -347,7 +346,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       int J = tbc.J;
       int parity = tbc.parity;
-      int Tz = tbc.parity;
+      int Tz = tbc.Tz;
       arma::mat& MatJJ = OpIn.TwoBody.GetMatrix(ch);
       int nkets_JJ = tbc.GetNumberKets();
 

@@ -2374,28 +2374,14 @@ void ReadWrite::ReadTwoBodyEngel_from_stream( istream& infile, Operator& Op)
   double tbme;
   ModelSpace* modelspace = Op.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
-  int emax = modelspace->GetNmax();
   while( infile >> a >> b >> c >> d >> J >> tbme )
   {
-//   cout << a << " " << b << " " << c << " " << d << " " << J << " " << tbme << endl;
     a = a-2;
     b = b-2;
     c = c-1;
     d = d-1;
-//    Orbit& oa = modelspace->GetOrbit(a);
-//    Orbit& ob = modelspace->GetOrbit(b);
-//    Orbit& oc = modelspace->GetOrbit(c);
-//    Orbit& od = modelspace->GetOrbit(d);
     if (a >= norb) break;
     if (b >= norb or c>=norb or d>=norb) continue;
-//    int ea = 2*oa.n+oa.l;
-//    int eb = 2*ob.n+ob.l;
-//    int ec = 2*oc.n+oc.l;
-//    int ed = 2*od.n+od.l;
-//   cout <<  " -> " << a << " " << b << " " << c << " " << d <<  " " << J << " " << tbme << endl;
-//   cout <<  " --> " << ea << " " << eb << " " << ec << " " << ed <<  endl;
-//    if (ea>emax) break;
-//    if (eb>emax or ec>emax or ed>emax) continue;
     Op.TwoBody.SetTBME_J(J,a,b,c,d,tbme);
   }
 }
