@@ -134,6 +134,12 @@
 \hypertarget{classOperator_a77eb97b1309a1c4e20101217903b9771}{void {\bfseries Set\-Particle\-Rank} (int pr)}\label{classOperator_a77eb97b1309a1c4e20101217903b9771}
 
 \item 
+\hypertarget{classOperator_ad2ec2d4cf6d17b1b7b7afc86bc03c6ed}{void {\bfseries Make\-Reduced} ()}\label{classOperator_ad2ec2d4cf6d17b1b7b7afc86bc03c6ed}
+
+\item 
+\hypertarget{classOperator_add4e26b5eb6534daed5cd40899456ed0}{void {\bfseries Make\-Not\-Reduced} ()}\label{classOperator_add4e26b5eb6534daed5cd40899456ed0}
+
+\item 
 \hypertarget{classOperator_a3a25803bc77344396f2dd0e75d2a020d}{void {\bfseries Scale\-Zero\-Body} (double x)}\label{classOperator_a3a25803bc77344396f2dd0e75d2a020d}
 
 \item 
@@ -152,6 +158,9 @@
 \hypertarget{classOperator_ad6168f16f6c0b2cf70a1fc0676e70523}{void {\bfseries Set\-Up\-One\-Body\-Channels} ()}\label{classOperator_ad6168f16f6c0b2cf70a1fc0676e70523}
 
 \item 
+\hypertarget{classOperator_ad140b7310167d34c8490ad86f2193f52}{int {\bfseries Size} ()}\label{classOperator_ad140b7310167d34c8490ad86f2193f52}
+
+\item 
 \hypertarget{classOperator_a622880b91a902c832b867c6447a262e7}{\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a622880b91a902c832b867c6447a262e7}{Do\-Normal\-Ordering} ()}\label{classOperator_a622880b91a902c832b867c6447a262e7}
 
 \begin{DoxyCompactList}\small\item\em Calls \hyperlink{classOperator_a652d989590422a2b26e662625b07254e}{Do\-Normal\-Ordering2()} or \hyperlink{classOperator_a7fd029569796107c87ff17c5a7912480}{Do\-Normal\-Ordering3()}, depending on the rank of the operator. \end{DoxyCompactList}\item 
@@ -164,13 +173,15 @@
 \begin{DoxyCompactList}\small\item\em Returns the operator normal-\/ordered wrt the vacuum. \end{DoxyCompactList}\item 
 \hyperlink{classOperator}{Operator} \hyperlink{classOperator_a6a91cd02db723ee28b7532e6af029033}{B\-C\-H\-\_\-\-Product} (\hyperlink{classOperator}{Operator} \&)
 \item 
-\hyperlink{classOperator}{Operator} \hyperlink{classOperator_adc5537604f6b71121163370aca79dfef}{B\-C\-H\-\_\-\-Transform} (\hyperlink{classOperator}{Operator} \&)
+\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a9a2d6b13d851f2655f3ef88033a24c5b}{B\-C\-H\-\_\-\-Transform} (const \hyperlink{classOperator}{Operator} \&)
 \item 
 void \hyperlink{classOperator_a701c64f8be794e89fd28a643b56d534a}{Calculate\-Kinetic\-Energy} ()
 \item 
 \hypertarget{classOperator_a03a378f0da2fe71d8160bd3262891457}{void \hyperlink{classOperator_a03a378f0da2fe71d8160bd3262891457}{Eye} ()}\label{classOperator_a03a378f0da2fe71d8160bd3262891457}
 
 \begin{DoxyCompactList}\small\item\em set to identity operator \end{DoxyCompactList}\item 
+double \hyperlink{classOperator_ad7639b562a3df5215000677b1dc499e6}{Get\-M\-P2\-\_\-\-Energy} ()
+\item 
 double \hyperlink{classOperator_acb9d7959232a636191b91f6bf5b7b0c8}{Norm} () const 
 \item 
 \hypertarget{classOperator_a72dc7aea85c7775097d235de6f17f330}{double {\bfseries One\-Body\-Norm} () const }\label{classOperator_a72dc7aea85c7775097d235de6f17f330}
@@ -319,13 +330,13 @@ The \hyperlink{classOperator}{Operator} class provides a generic operator up to 
 \item[{{\bf Operator} \&}]{Y}
 \end{DoxyParamCaption}
 )}}\label{classOperator_a6a91cd02db723ee28b7532e6af029033}
-X.\-B\-C\-H\-\_\-\-Product(\-Y) returns $Z$ such that $ e^{Z} = e^{X}e^{Y}$ by employing the \href{http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula}{\tt Baker-\/\-Campbell-\/\-Hausdorff formula} \[ Z = X + Y + \frac{1}{2}[X,Y] + \frac{1}{12}([X,[X,Y]]+[Y,[Y,X]]) + \ldots \] \hypertarget{classOperator_adc5537604f6b71121163370aca79dfef}{\index{Operator@{Operator}!B\-C\-H\-\_\-\-Transform@{B\-C\-H\-\_\-\-Transform}}
+X.\-B\-C\-H\-\_\-\-Product(\-Y) returns $Z$ such that $ e^{Z} = e^{X}e^{Y}$ by employing the \href{http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula}{\tt Baker-\/\-Campbell-\/\-Hausdorff formula} \[ Z = X + Y + \frac{1}{2}[X,Y] + \frac{1}{12}([X,[X,Y]]+[Y,[Y,X]]) + \ldots \] \hypertarget{classOperator_a9a2d6b13d851f2655f3ef88033a24c5b}{\index{Operator@{Operator}!B\-C\-H\-\_\-\-Transform@{B\-C\-H\-\_\-\-Transform}}
 \index{B\-C\-H\-\_\-\-Transform@{B\-C\-H\-\_\-\-Transform}!Operator@{Operator}}
 \subsubsection[{B\-C\-H\-\_\-\-Transform}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Operator\-::\-B\-C\-H\-\_\-\-Transform (
 \begin{DoxyParamCaption}
-\item[{{\bf Operator} \&}]{Omega}
+\item[{const {\bf Operator} \&}]{Omega}
 \end{DoxyParamCaption}
-)}}\label{classOperator_adc5537604f6b71121163370aca79dfef}
+)}}\label{classOperator_a9a2d6b13d851f2655f3ef88033a24c5b}
 X.\-B\-C\-H\-\_\-\-Transform(\-Y) returns $ Z = e^{Y} X e^{-Y} $. We use the \href{http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula}{\tt Baker-\/\-Campbell-\/\-Hausdorff formula} \[ Z = X + [Y,X] + \frac{1}{2!}[Y,[Y,X]] + \frac{1}{3!}[Y,[Y,[Y,X]]] + \ldots \] with all commutators truncated at the two-\/body level. \hypertarget{classOperator_a701c64f8be794e89fd28a643b56d534a}{\index{Operator@{Operator}!Calculate\-Kinetic\-Energy@{Calculate\-Kinetic\-Energy}}
 \index{Calculate\-Kinetic\-Energy@{Calculate\-Kinetic\-Energy}!Operator@{Operator}}
 \subsubsection[{Calculate\-Kinetic\-Energy}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\-::\-Calculate\-Kinetic\-Energy (
@@ -451,7 +462,14 @@ The scalar Pandya transformation is defined as \[ \bar{X}^{J}_{i\bar{j}k\bar{l}}
 \item[{map$<$ array$<$ int, 2 $>$, arma\-::mat $>$ \&}]{Two\-Body\-\_\-\-C\-C\-\_\-ph}
 \end{DoxyParamCaption}
 ) const}}\label{classOperator_a0617428dea2cdef1150a6bda0003c7f5}
-The scalar Pandya transformation is defined as \[ \bar{X}^{J}_{i\bar{j}k\bar{l}} = - \sum_{J'} (2J'+1) \left\{ \begin{array}{lll} j_i & j_j & J \\ j_k & j_l & J' \\ \end{array} \right\} X^{J}_{ilkj} \] where the overbar indicates time-\/reversed orbits. This function is designed for use with \hyperlink{classOperator_a25b768c4ddceead49af1c7f69d5071ea}{comm222\-\_\-phss()} and so it takes in two arrays of matrices, one for hp terms and one for ph terms. \hypertarget{classOperator_acb9d7959232a636191b91f6bf5b7b0c8}{\index{Operator@{Operator}!Norm@{Norm}}
+The scalar Pandya transformation is defined as \[ \bar{X}^{J}_{i\bar{j}k\bar{l}} = - \sum_{J'} (2J'+1) \left\{ \begin{array}{lll} j_i & j_j & J \\ j_k & j_l & J' \\ \end{array} \right\} X^{J}_{ilkj} \] where the overbar indicates time-\/reversed orbits. This function is designed for use with \hyperlink{classOperator_a25b768c4ddceead49af1c7f69d5071ea}{comm222\-\_\-phss()} and so it takes in two arrays of matrices, one for hp terms and one for ph terms. \hypertarget{classOperator_ad7639b562a3df5215000677b1dc499e6}{\index{Operator@{Operator}!Get\-M\-P2\-\_\-\-Energy@{Get\-M\-P2\-\_\-\-Energy}}
+\index{Get\-M\-P2\-\_\-\-Energy@{Get\-M\-P2\-\_\-\-Energy}!Operator@{Operator}}
+\subsubsection[{Get\-M\-P2\-\_\-\-Energy}]{\setlength{\rightskip}{0pt plus 5cm}double Operator\-::\-Get\-M\-P2\-\_\-\-Energy (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classOperator_ad7639b562a3df5215000677b1dc499e6}
+Calculate the second-\/order perturbation theory correction to the energy \[ E^{(2)} = \sum_{ia} (2 j_a +1) \frac{|f_{ia}|^2}{f_{aa}-f_{ii}} + \sum_{\substack{i\leq j // a\leq b}}\sum_{J} (2J+1)\frac{|\Gamma_{ijab}^{J}|^2}{f_{aa}+f_{bb}-f_{ii}-f_{jj}} \] \hypertarget{classOperator_acb9d7959232a636191b91f6bf5b7b0c8}{\index{Operator@{Operator}!Norm@{Norm}}
 \index{Norm@{Norm}!Operator@{Operator}}
 \subsubsection[{Norm}]{\setlength{\rightskip}{0pt plus 5cm}double Operator\-::\-Norm (
 \begin{DoxyParamCaption}

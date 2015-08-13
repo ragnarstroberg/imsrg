@@ -236,6 +236,12 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>GetParity</b> () const
 <tr class="memitem:a77eb97b1309a1c4e20101217903b9771"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a77eb97b1309a1c4e20101217903b9771"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetParticleRank</b> (int pr)</td></tr>
 <tr class="separator:a77eb97b1309a1c4e20101217903b9771"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2ec2d4cf6d17b1b7b7afc86bc03c6ed"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad2ec2d4cf6d17b1b7b7afc86bc03c6ed"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>MakeReduced</b> ()</td></tr>
+<tr class="separator:ad2ec2d4cf6d17b1b7b7afc86bc03c6ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add4e26b5eb6534daed5cd40899456ed0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="add4e26b5eb6534daed5cd40899456ed0"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>MakeNotReduced</b> ()</td></tr>
+<tr class="separator:add4e26b5eb6534daed5cd40899456ed0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a25803bc77344396f2dd0e75d2a020d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3a25803bc77344396f2dd0e75d2a020d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ScaleZeroBody</b> (double x)</td></tr>
 <tr class="separator:a3a25803bc77344396f2dd0e75d2a020d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -256,6 +262,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memitem:ad6168f16f6c0b2cf70a1fc0676e70523"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad6168f16f6c0b2cf70a1fc0676e70523"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetUpOneBodyChannels</b> ()</td></tr>
 <tr class="separator:ad6168f16f6c0b2cf70a1fc0676e70523"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad140b7310167d34c8490ad86f2193f52"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad140b7310167d34c8490ad86f2193f52"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>Size</b> ()</td></tr>
+<tr class="separator:ad140b7310167d34c8490ad86f2193f52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a622880b91a902c832b867c6447a262e7"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a622880b91a902c832b867c6447a262e7"></a>
 <a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a622880b91a902c832b867c6447a262e7">DoNormalOrdering</a> ()</td></tr>
 <tr class="memdesc:a622880b91a902c832b867c6447a262e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calls <a class="el" href="classOperator.html#a652d989590422a2b26e662625b07254e" title="Returns the normal ordered two-body operator. ">DoNormalOrdering2()</a> or <a class="el" href="classOperator.html#a7fd029569796107c87ff17c5a7912480" title="Returns the normal ordered three-body operator. ">DoNormalOrdering3()</a>, depending on the rank of the operator. <br/></td></tr>
@@ -272,14 +281,16 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetUpOneBodyChannels<
 <tr class="separator:a1932dcab2be6bb889320254cc81dd5f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a91cd02db723ee28b7532e6af029033"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a6a91cd02db723ee28b7532e6af029033">BCH_Product</a> (<a class="el" href="classOperator.html">Operator</a> &amp;)</td></tr>
 <tr class="separator:a6a91cd02db723ee28b7532e6af029033"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adc5537604f6b71121163370aca79dfef"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#adc5537604f6b71121163370aca79dfef">BCH_Transform</a> (<a class="el" href="classOperator.html">Operator</a> &amp;)</td></tr>
-<tr class="separator:adc5537604f6b71121163370aca79dfef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a2d6b13d851f2655f3ef88033a24c5b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a9a2d6b13d851f2655f3ef88033a24c5b">BCH_Transform</a> (const <a class="el" href="classOperator.html">Operator</a> &amp;)</td></tr>
+<tr class="separator:a9a2d6b13d851f2655f3ef88033a24c5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a701c64f8be794e89fd28a643b56d534a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a701c64f8be794e89fd28a643b56d534a">CalculateKineticEnergy</a> ()</td></tr>
 <tr class="separator:a701c64f8be794e89fd28a643b56d534a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a03a378f0da2fe71d8160bd3262891457"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a03a378f0da2fe71d8160bd3262891457"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a03a378f0da2fe71d8160bd3262891457">Eye</a> ()</td></tr>
 <tr class="memdesc:a03a378f0da2fe71d8160bd3262891457"><td class="mdescLeft">&#160;</td><td class="mdescRight">set to identity operator <br/></td></tr>
 <tr class="separator:a03a378f0da2fe71d8160bd3262891457"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7639b562a3df5215000677b1dc499e6"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ad7639b562a3df5215000677b1dc499e6">GetMP2_Energy</a> ()</td></tr>
+<tr class="separator:ad7639b562a3df5215000677b1dc499e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acb9d7959232a636191b91f6bf5b7b0c8"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#acb9d7959232a636191b91f6bf5b7b0c8">Norm</a> () const </td></tr>
 <tr class="separator:acb9d7959232a636191b91f6bf5b7b0c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a72dc7aea85c7775097d235de6f17f330"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a72dc7aea85c7775097d235de6f17f330"></a>
@@ -451,14 +462,14 @@ Friends</h2></td></tr>
  
 </div>
 </div>
-<a class="anchor" id="adc5537604f6b71121163370aca79dfef"></a>
+<a class="anchor" id="a9a2d6b13d851f2655f3ef88033a24c5b"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="classOperator.html">Operator</a> Operator::BCH_Transform </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classOperator.html">Operator</a> &amp;&#160;</td>
           <td class="paramname"><em>Omega</em></td><td>)</td>
           <td></td>
         </tr>
@@ -926,6 +937,25 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ad7639b562a3df5215000677b1dc499e6"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">double Operator::GetMP2_Energy </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Calculate the second-order perturbation theory correction to the energy </p>
+<p class="formulaDsp">
+\[ E^{(2)} = \sum_{ia} (2 j_a +1) \frac{|f_{ia}|^2}{f_{aa}-f_{ii}} + \sum_{\substack{i\leq j // a\leq b}}\sum_{J} (2J+1)\frac{|\Gamma_{ijab}^{J}|^2}{f_{aa}+f_{bb}-f_{ii}-f_{jj}} \]
+</p>
+ 
+</div>
+</div>
 <a class="anchor" id="acb9d7959232a636191b91f6bf5b7b0c8"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1062,7 +1092,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jul 28 2015 11:08:56 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Aug 12 2015 15:57:58 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
