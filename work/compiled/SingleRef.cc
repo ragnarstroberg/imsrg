@@ -31,6 +31,9 @@ int main(int argc, char** argv)
   double R2p = 0.770;
   double R2n = -0.1149;
   double DF = 0.033;
+  int file2e1max=12;
+  int file2e2max=24;
+  int file2lmax=10;
   int file3e1max=12;
   int file3e2max=24;
   int file3e3max=12;
@@ -69,6 +72,12 @@ int main(int argc, char** argv)
       istringstream(val) >> fmt2;
     else if (var == "omega_norm_max")
       istringstream(val) >> omega_norm_max;
+    else if (var == "file2e1max")
+      istringstream(val) >> file2e1max;
+    else if (var == "file2e2max")
+      istringstream(val) >> file2e2max;
+    else if (var == "file2lmax")
+      istringstream(val) >> file2lmax;
     else if (var == "file3e1max")
       istringstream(val) >> file3e1max;
     else if (var == "file3e2max")
@@ -136,7 +145,7 @@ int main(int argc, char** argv)
 
   cout << "Reading interaction..." << endl;
   if (fmt2 == "me2j")
-    rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,12,24,10);
+    rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
   else if (fmt2 == "navratil" or fmt2 == "Navratil")
     rw.ReadBareTBME_Navratil(inputtbme, Hbare);
 
