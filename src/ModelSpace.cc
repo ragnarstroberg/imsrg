@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <sstream>
 
 using namespace std;
 
@@ -268,39 +269,55 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 
 // orbit string representation is e.g. p0f7
 ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside_list)
-: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), hbar_omega(20), target_mass(16)
+: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20),target_mass(16)
 {
    Init(nmax,hole_list,inside_list);
 }
 
+ModelSpace::ModelSpace(int nmax, int A, int Z)
+: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20),target_mass(16)
+{
+   Init_AZ(nmax,A,Z);
+}
+
 // Shortcuts for common modelspaces
 ModelSpace::ModelSpace(int nmax, string str)
-: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), hbar_omega(20)
+: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20)
 {
-       if (str == "He4") Init_He4(nmax);
-  else if (str == "O16") Init_O16(nmax);
-  else if (str == "Ca40") Init_Ca40(nmax);
-  else if (str == "p-shell") Init_PShell(nmax);
+  
+       if (str == "p-shell") Init_PShell(nmax);
   else if (str == "sd-shell") Init_SDShell(nmax);
   else if (str == "psd-shell") Init_PSDShell(nmax);
   else if (str == "o16-psd-shell") Init_O16PSDShell(nmax);
   else if (str == "fp-shell") Init_FPShell(nmax);
   else if (str == "sdfp-shell") Init_SDFPShell(nmax);
   else if (str == "fpg9-shell") Init_FPG9Shell(nmax);
-  else cout << "No such pre-configured model space: " << str << endl;
+  else
+  {
+    vector<string> toi = {"n","H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar",
+                        "K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
+                        "Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe",
+                        "Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf",
+                        "Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb"};
+    int i=0;
+    int A,Z;
+    while (! isdigit(str[i])) i++;
+    string elem = str.substr(0,i);
+    stringstream( str.substr(i,str.size()-i)) >> A;
+    auto it_elem = find(toi.begin(),toi.end(),elem);
+    if (it_elem != toi.end())
+    {
+      Z = it_elem - toi.begin();
+      cout << "A = " << A << " elem = " << elem << " (Z = " << Z << ")" << endl;
+      Init_AZ(nmax,A,Z);
+    }
+    else cout << "No such pre-configured model space: " << str << endl;
+    
+  }
 }
 
-//ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside_list)
 void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_list)
 {
-   OneBodyJmax = 0;
-   TwoBodyJmax = 0;
-   ThreeBodyJmax = 0;
-//   hbar_omega=20;
-//   target_mass = 16;
-   Nmax = nmax;
-   N2max = 2*Nmax;
-//   N3max = 3*Nmax;
    Orbits.clear();
    particles.clear();
    holes.clear();
@@ -364,8 +381,103 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
 }
 
 
+void ModelSpace::Init_AZ(int nmax, int A, int Z)
+{
+   target_mass = A;
+   target_Z = Z;
+   Orbits.clear();
+   particles.clear();
+   holes.clear();
+   valence.clear();
+   qspace.clear();
+   particle_qspace.clear();
+   hole_qspace.clear();
+   proton_orbits.clear();
+   neutron_orbits.clear();
+   OneBodyChannels.clear();
+   norbits = (nmax+1)*(nmax+2);
+   Orbits.resize(norbits);
+   int ncore = 0;
+   int zcore = 0;
+   for (int N=0; N<=nmax; ++N)
+   {
+     for (int l=N; l>=0; l-=2)
+     {
+       int n = (N-l)/2;
+       int j2 = 2*l + 1;
+       if (zcore < Z)
+       {
+         AddOrbit(n,l,j2,-1,1,1);
+         zcore += j2+1;
+       }
+       else if (zcore == Z)
+       {
+         AddOrbit(n,l,j2,-1,0,1);
+       }
+       else 
+       {
+         cout << "!!!!!!!!!!!!!!!!!!!\nError: Bad input Z.\n!!!!!!!!!!!!!!!!!! " << endl;
+         return;
+       }
+       if (ncore < A-Z)
+       {
+         AddOrbit(n,l,j2,1,1,1);
+         ncore += j2+1;
+       }
+       else if (ncore == A-Z)
+       {
+         AddOrbit(n,l,j2,1,0,1);
+       }
+       else 
+       {
+         cout << "!!!!!!!!!!!!!!!!!!!\nError: Bad input N.\n!!!!!!!!!!!!!!!!!! " << endl;
+         return;
+       }
+     }
+     for (int l=N%2; l<=N; l+=2)
+     {
+       int n = (N-l)/2;
+       int j2 = 2*l - 1;
+       if (j2<0) continue;
+       if (zcore < Z)
+       {
+         AddOrbit(n,l,j2,-1,1,1);
+         zcore += j2+1;
+       }
+       else if (zcore == Z)
+       {
+         AddOrbit(n,l,j2,-1,0,1);
+       }
+       else 
+       {
+         cout << "!!!!!!!!!!!!!!!!!!!\nError: Bad input Z.\n!!!!!!!!!!!!!!!!!! " << endl;
+         return;
+       }
+       if (ncore < A-Z)
+       {
+         AddOrbit(n,l,j2,1,1,1);
+         ncore += j2+1;
+       }
+       else if (ncore == A-Z)
+       {
+         AddOrbit(n,l,j2,1,0,1);
+       }
+       else 
+       {
+         cout << "Error: Bad input N." << endl;
+         cout << "!!!!!!!!!!!!!!!!!!!\nError: Bad input N.\n!!!!!!!!!!!!!!!!!! " << endl;
+         return;
+       }
+     }
+
+
+   }
+   SetupKets();
+
+}
 
 // Some of the more common model spaces, for convenience.
+/*
 void ModelSpace::Init_He4(int nmax)
 {
    vector<string> core = {"p0s1","n0s1"};
@@ -392,7 +504,7 @@ void ModelSpace::Init_Ca40(int nmax)
    target_Z = 20;
    Init(nmax,core,valence);
 }
-
+*/
 void ModelSpace::Init_PShell(int nmax)
 {
    vector<string> core = {"p0s1","n0s1"};
@@ -480,12 +592,9 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
    if (j2 > OneBodyJmax)
    {
       OneBodyJmax = j2;
-//      TwoBodyJmax = OneBodyJmax*2;
       TwoBodyJmax = OneBodyJmax;
       ThreeBodyJmax = OneBodyJmax*3-1;
       nTwoBodyChannels = 2*3*(TwoBodyJmax+1);
-//      cout << "TwoBodyJmax = " << TwoBodyJmax << endl;
-//      cout << "nTwoBodyChannels = " << nTwoBodyChannels << endl;
    }
 
    if (ph == 0) particles.push_back(ind);

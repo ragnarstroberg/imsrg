@@ -158,17 +158,19 @@ class ModelSpace
    ModelSpace( ModelSpace&&); // move constructor
    ModelSpace(int Nmax, vector<string> hole_list, vector<string> inside_list);
    ModelSpace(int Nmax, string);
+   ModelSpace(int Nmax, int A, int Z);
 
    // Overloaded operators
    ModelSpace operator=(const ModelSpace&); 
    ModelSpace operator=(ModelSpace&&); 
 
    void Init(int Nmax, vector<string> hole_list, vector<string> inside_list);
+   void Init_AZ(int nmax, int A, int Z);
 
    // Common model spaces
-   void Init_He4(int nmax);
-   void Init_O16(int nmax);
-   void Init_Ca40(int nmax);
+//   void Init_He4(int nmax);
+//   void Init_O16(int nmax);
+//   void Init_Ca40(int nmax);
    void Init_PShell(int nmax);
    void Init_SDShell(int nmax);
    void Init_PSDShell(int nmax);
