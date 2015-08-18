@@ -53,11 +53,9 @@ class Operator
   ~Operator();
   Operator(); ///< Default constructor
   Operator(ModelSpace&); ///< Construct a 2-body scalar operator
-//  Operator(ModelSpace*); ///< Construct a 2-body scalar operator
   Operator(ModelSpace&, int Jrank, int Trank, int Parity, int part_rank);
   Operator( const Operator& rhs); ///< Copy constructor
   Operator( Operator&&);
-//  Operator( Operator&&) = default;
 
   //Overloaded operators
   Operator& operator=( const Operator& rhs);
@@ -72,7 +70,6 @@ class Operator
   Operator operator/( const double rhs) const;
 
   Operator& operator=(Operator&& rhs);
-//  Operator& operator=(Operator&& rhs) = default;
 
   //Methods
   void Copy(const Operator& rhs);
@@ -82,13 +79,11 @@ class Operator
   void SetOneBody(int i, int j, double val) { OneBody(i,j) = val;};
   int GetTwoBodyDimension(int ch_bra, int ch_ket){ return TwoBody.GetMatrix(ch_bra, ch_ket).n_cols;};
   double GetTwoBody(int ch_bra, int ch_ket, int i, int j){ return TwoBody.GetMatrix(ch_bra, ch_ket)(i,j);};
-//  double GetTwoBody(int ch_bra, int ch_ket, int i, int j){ return TwoBody.GetTBME(ch_bra, ch_ket, modelspace->GetKet(i), modelspace->GetKet(j));};
 
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};
 
   // Other setter-getters
-//  ModelSpace * GetModelSpace() const {return modelspace;};
   ModelSpace * GetModelSpace();
   void SetModelSpace(ModelSpace &ms){modelspace = &ms;};
 
@@ -98,9 +93,6 @@ class Operator
   void EraseTwoBody(); // set all two-body terms to zero
   void EraseThreeBody(); // set all two-body terms to zero
 
-//  void SetHermitian() {hermitian=true;antihermitian=false;};
-//  void SetAntiHermitian() {antihermitian=true;hermitian=false;cout << "Set to Anti-Hermitian" << endl;};
-//  void SetNonHermitian() {antihermitian=false;hermitian=false;};
   void SetHermitian() ;
   void SetAntiHermitian() ;
   void SetNonHermitian() ;
@@ -129,14 +121,10 @@ class Operator
   Operator DoNormalOrdering2(); ///< Returns the normal ordered two-body operator
   Operator DoNormalOrdering3(); ///< Returns the normal ordered three-body operator
   Operator UndoNormalOrdering(); ///< Returns the operator normal-ordered wrt the vacuum
-//  Operator DoNormalOrderingCore(); /// < Returns the operator normal-ordered wrt the shell-model core.
 
-//  Operator Commutator(  Operator& opright) ; ///< Z = X.Commutator(Y) means \f$ Z = [X,Y] \f$
   friend Operator Commutator(const Operator& X, const Operator& Y) ; 
   friend Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) ;
   friend Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) ;
-//  Operator CommutatorScalarScalar( Operator& opright) ;
-//  Operator CommutatorScalarTensor( Operator& opright) ;
 
   Operator BCH_Product(  Operator& )  ; 
   Operator BCH_Transform( const Operator& ) ; 
@@ -162,18 +150,8 @@ class Operator
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
   void DoPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) const ;
-//  void InversePandyaTransformation(vector<arma::mat>&, vector<arma::mat>&, bool);
   void AddInversePandyaTransformation(vector<arma::mat>&);
 
-//  void comm110ss( Operator& opright, Operator& opout) ; 
-//  void comm220ss( Operator& opright, Operator& opout) ;
-//  void comm111ss( Operator& opright, Operator& opout) ;
-//  void comm121ss( Operator& opright, Operator& opout) ;
-//  void comm221ss( Operator& opright, Operator& opout) ;
-//  void comm122ss( Operator& opright, Operator& opout) ;
-//  void comm222_pp_hhss( Operator& opright, Operator& opout) ;
-//  void comm222_phss( Operator& opright, Operator& opout) ;
-//  void comm222_pp_hh_221ss( Operator& opright, Operator& opout) ;
 
   void comm110ss( const Operator& X, const Operator& Y) ; 
   void comm220ss( const Operator& X, const Operator& Y) ;
@@ -187,16 +165,8 @@ class Operator
 
 // scalar-tensor commutators
 
-//  void DoTensorPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) ;
-//  void InverseTensorPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&, bool);
   void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>&) const;
   void AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&);
-
-//  void comm111st( Operator& opright, Operator& opout) ;
-//  void comm121st( Operator& opright, Operator& opout) ;
-//  void comm122st( Operator& opright, Operator& opout) ;
-//  void comm222_pp_hh_221st( Operator& opright, Operator& opout) ;
-//  void comm222_phst( Operator& opright, Operator& opout) ;
 
   void comm111st( const Operator& X, const Operator& Y) ;
   void comm121st( const Operator& X, const Operator& Y) ;
