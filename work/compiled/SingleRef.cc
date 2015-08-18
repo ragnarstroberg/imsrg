@@ -28,7 +28,7 @@ int main(int argc, char** argv)
   string basis = "HF";
   string method = "magnus";
   double ode_tolerance = 1e-6;
-  double R2p = 0.770;
+  double R2p = 0.8775;
   double R2n = -0.1149;
   double DF = 0.033;
   int file2e1max=12;
