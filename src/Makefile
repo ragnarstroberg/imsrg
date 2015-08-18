@@ -19,7 +19,7 @@ THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname
 
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
  LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
- FLAGS += -DOPENBLAS_NOUSEOMP=1
+# FLAGS += -DOPENBLAS_NOUSEOMP=1
  ALL = libIMSRG.so
 else
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
