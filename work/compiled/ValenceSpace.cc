@@ -127,10 +127,10 @@ int main(int argc, char** argv)
     return 1;
   }
   test.close();
-  test.open(inputtbme);
+  test.open(input3bme);
   if( not test.good() )
   {
-    cout << "trouble reading " << inputtbme << " exiting. " << endl;
+    cout << "trouble reading " << input3bme << " exiting. " << endl;
     return 1;
   }
   test.close();
