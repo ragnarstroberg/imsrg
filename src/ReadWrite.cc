@@ -1500,13 +1500,21 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
 
 
 
+void ReadWrite::WriteNuShellX_op(Operator& op, string filename)
+{
+  WriteNuShellX_intfile(op,filename,"int");
+}
+void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
+{
+  WriteNuShellX_intfile(op,filename,"op");
+}
 
 /// Write the valence space part of the interaction to a NuShellX *.int file.
 /// Note that NuShellX assumes identical orbits for protons and neutrons,
 /// so that the pnpn interaction should be equal to the pnnp interaction.
 /// This is only approximately true for interactions generated with IMSRG,
 /// so some averaging is required.
-void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
+void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode)
 {
    ofstream intfile;
    intfile.open(filename, ofstream::out);
@@ -1597,7 +1605,9 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
             double tbme = op.TwoBody.GetTBME_norm(ch,a,b,c,d);
             // NuShellX quirk: even though it uses pn formalism, it requires that Vpnpn = Vnpnp,
             //  i.e. the spatial wf for protons and neutrons are assumed to be the same.
-            if (oa.tz2!=ob.tz2)
+            // This seems to only be an issue for expectation values of operators,
+            // so the mode "op" averages Vpnpn and Vnpnp to make them equal.
+            if (mode=="op" and oa.tz2!=ob.tz2)
             {
                int aa = a - oa.tz2;
                int bb = b - ob.tz2;
@@ -1611,8 +1621,6 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
             if ( abs(tbme) < 1e-6) continue;
             if (T==0)
             {
-//               if ( not (oa.j2 == ob.j2 and oa.l == ob.l and oa.n == ob.n) ) tbme *= SQRT2; // pn TBMEs are unnormalized
-//               if ( not (oc.j2 == od.j2 and oc.l == od.l and oc.n == od.n) ) tbme *= SQRT2; // pn TBMEs are unnormalized
                if ( oa.j2 != ob.j2 or oa.l != ob.l or oa.n != ob.n ) tbme *= SQRT2; // pn TBMEs are unnormalized
                if ( oc.j2 != od.j2 or oc.l != od.l or oc.n != od.n ) tbme *= SQRT2; // pn TBMEs are unnormalized
                T = (tbc.J+1)%2;
@@ -2319,7 +2327,7 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
      TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(itmat.first[1]);
      auto& matrix = itmat.second;
 //     int nbras = tbc_bra.GetNumberKets();
-     int nkets = tbc_ket.GetNumberKets();
+//     int nkets = tbc_ket.GetNumberKets();
 //     for ( int ibra=0; ibra<nbras; ++ibra)
      for (auto& ibra: tbc_bra.GetKetIndex_vv() )
      {

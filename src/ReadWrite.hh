@@ -17,16 +17,13 @@ class ReadWrite
    ReadWrite();
    void ReadSettingsFile(  string filename);
    void ReadTBME_Oslo( string filename, Operator& Hbare);
-//   void ReadBareTBME( string filename, Operator& Hbare);
    void ReadBareTBME_Jason( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil_from_stream( istream& infile, Operator& Hbare);
    void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int E1max, int E2max, int lmax);
    template<class T> void ReadBareTBME_Darmstadt_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int lmax);
-//   void ReadBareTBME_Darmstadt_from_stream( istream & infile, Operator& Hbare, int E1max, int E2max, int lmax);
    void Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max);
    template<class T>void Read_Darmstadt_3body_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int E3max);
-//   void Read_Darmstadt_3body_from_stream( istream & infile, Operator& Hbare, int E1max, int E2max, int E3max);
    void GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis );
    void Read3bodyHDF5( string filename, Operator& op);
    void Write_me2j( string filename, Operator& op, int emax, int e2max, int lmax);
@@ -34,6 +31,8 @@ class ReadWrite
    void WriteTBME_Navratil( string filename, Operator& Hbare);
    void WriteNuShellX_sps( Operator& op, string filename);
    void WriteNuShellX_int( Operator& op, string filename);
+   void WriteNuShellX_op( Operator& op, string filename);
+   void WriteNuShellX_intfile( Operator& op, string filename, string mode); 
    void WriteAntoine_int( Operator& op, string filename); // <- not implemented yet...
    void WriteOperator(Operator& op, string filename);
    void WriteOperatorHuman(Operator& op, string filename);
