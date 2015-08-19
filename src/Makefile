@@ -7,7 +7,7 @@ CC = g++
 
 INCLUDE   = -I./armadillo
 FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
-SOFLABS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
+SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
 WARNFLAGS = -Wall -Wno-comment
 FLAGS    += $(WARNFLAGS)
 SOFLAGS  += $(WARNFLAGS)
@@ -20,6 +20,7 @@ THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
  LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
 # FLAGS += -DOPENBLAS_NOUSEOMP=1
+ SOFLAGS += -fuse-ld=bfd
  ALL = libIMSRG.so
 else
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
