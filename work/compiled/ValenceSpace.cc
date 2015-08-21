@@ -217,9 +217,9 @@ int main(int argc, char** argv)
      R2_p1 = imsrgsolver.Transform(R2_p1);
      R2_p2 = imsrgsolver.Transform(R2_p2);
      R2_cm = imsrgsolver.Transform(R2_cm);
-     rw.WriteNuShellX_int(R2_p1,intfile+"_R2p1.int");
-     rw.WriteNuShellX_int(R2_p2,intfile+"_R2p2.int");
-     rw.WriteNuShellX_int(R2_cm,intfile+"_R2cm.int");
+     rw.WriteNuShellX_op(R2_p1,intfile+"_R2p1.int");
+     rw.WriteNuShellX_op(R2_p2,intfile+"_R2p2.int");
+     rw.WriteNuShellX_op(R2_cm,intfile+"_R2cm.int");
   }
   else if (method == "flow")
   {
