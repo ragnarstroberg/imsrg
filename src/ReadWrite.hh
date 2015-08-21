@@ -66,11 +66,14 @@ class VectorStream
 {
  public:
   VectorStream(vector<float>& v) : vec(v), i(0) {};
+//  VectorStream(vector<double>& v) : vec(v), i(0) {};
   VectorStream& operator>>(float& x) { x = vec[i++]; return (VectorStream&)(*this);}
+//  VectorStream& operator>>(double& x) { x = vec[i++]; return (VectorStream&)(*this);}
   bool good(){ return i<vec.size(); };
   void getline(char[], int) {}; // Don't do nuthin'.
  private:
   vector<float>& vec;
+//  vector<double>& vec;
   long long unsigned int i;
 };
 

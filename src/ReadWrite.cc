@@ -14,7 +14,8 @@
 #include "H5Cpp.h"
 
 #define LINESIZE 496
-#define HEADERSIZE 500
+//#define HEADERSIZE 500
+#define HEADERSIZE 255
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
 #endif
@@ -497,12 +498,21 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
       cerr << "problem opening " << filename << ". Exiting." << endl;
       return ;
     }
+
+
+    infile.seekg(0, infile.end);
+    int n_elem = infile.tellg();
+    infile.seekg(0, infile.beg);
+    n_elem -= infile.tellg();
+    n_elem -= HEADERSIZE;
+    n_elem /= sizeof(float);
     
-    int n_elem;
     char header[HEADERSIZE];
-    infile.read((char*)&n_elem,sizeof(int));
+//    infile.read((char*)&n_elem,sizeof(int));
     infile.read(header,HEADERSIZE);
     
+//    vector<double> v(n_elem);
+//    infile.read((char*)&v[0], n_elem*sizeof(double));
     vector<float> v(n_elem);
     infile.read((char*)&v[0], n_elem*sizeof(float));
     infile.close();
@@ -550,11 +560,22 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
       return ;
     }
     
-    int n_elem;
+
+    infile.seekg(0, infile.end);
+    int n_elem = infile.tellg();
+    infile.seekg(0, infile.beg);
+    n_elem -= infile.tellg();
+    n_elem -= HEADERSIZE;
+    
     char header[HEADERSIZE];
-    infile.read((char*)&n_elem,sizeof(int));
+
+    n_elem /= sizeof(float);
+
+//    infile.read((char*)&n_elem,sizeof(int));
     infile.read(header,HEADERSIZE);
     
+//    vector<float> v(n_elem);
+//    infile.read((char*)&v[0], n_elem*sizeof(float));
     vector<float> v(n_elem);
     infile.read((char*)&v[0], n_elem*sizeof(float));
     infile.close();
