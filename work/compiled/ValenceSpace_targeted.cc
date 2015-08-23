@@ -146,23 +146,32 @@ int main(int argc, char** argv)
   else if (valence_space =="fp-shell")
     val = {"p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"};
 
-  if (reference == "O22")
+  if (reference == "O16")
+    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
+  else if (reference == "O22")
     core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","n0d5"};
   else if (reference == "O24")
     core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","n0d5","n1s1"};
   else if (reference == "O28")
     core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","n0d5","n1s1","n0d3"};
 
-  ModelSpace modelspace_target(emax,core,val);
+
+  ModelSpace modelspace_target(eMax,core,val);
   ModelSpace modelspace_core(eMax,valence_space);
 
-  modelspace.SetHbarOmega(hw);
-//  modelspace.SetTargetMass(targetMass);
-  modelspace.SetN3max(E3max);
+  modelspace_target.SetHbarOmega(hw);
+  modelspace_core.SetHbarOmega(hw);
+  if (targetMass > 0)
+  {
+    modelspace_target.SetTargetMass(targetMass);
+    modelspace_core.SetTargetMass(targetMass);
+  }
+  modelspace_target.SetN3max(E3max);
+  modelspace_core.SetN3max(E3max);
   
   cout << "Making the operator..." << endl;
   int particle_rank = input3bme=="none" ? 2 : 3;
-  Operator Hbare = Operator(modelspace,0,0,0,particle_rank);
+  Operator Hbare = Operator(modelspace_target,0,0,0,particle_rank);
   Hbare.SetHermitian();
 
   cout << "Reading interaction..." << endl;
@@ -178,7 +187,7 @@ int main(int argc, char** argv)
 
   Hbare.CalculateKineticEnergy();
   
-  Operator Tcm = TCM_Op(modelspace);
+  Operator Tcm = TCM_Op(modelspace_target);
   Hbare -= Tcm;
   
   HartreeFock hf(Hbare);
@@ -190,19 +199,18 @@ int main(int argc, char** argv)
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
 
-//  Operator Rp2 = Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ());
-  Operator R2_p1 = R2_p1_Op(modelspace);
-  Operator R2_p2 = R2_p2_Op(modelspace);
-  Operator R2_cm  = R2CM_Op(modelspace);
-  if (basis == "HF")
-  {
-    R2_p1 = hf.TransformToHFBasis(R2_p1);
-    R2_p2 = hf.TransformToHFBasis(R2_p2);
-    R2_cm = hf.TransformToHFBasis(R2_cm);
-  }
-  R2_p1 = R2_p1.DoNormalOrdering();
-  R2_p2 = R2_p2.DoNormalOrdering();
-  R2_cm = R2_cm.DoNormalOrdering();
+//  Operator R2_p1 = R2_p1_Op(modelspace_target);
+//  Operator R2_p2 = R2_p2_Op(modelspace_target);
+//  Operator R2_cm  = R2CM_Op(modelspace_target);
+//  if (basis == "HF")
+//  {
+//    R2_p1 = hf.TransformToHFBasis(R2_p1);
+//    R2_p2 = hf.TransformToHFBasis(R2_p2);
+//    R2_cm = hf.TransformToHFBasis(R2_cm);
+//  }
+//  R2_p1 = R2_p1.DoNormalOrdering();
+//  R2_p2 = R2_p2.DoNormalOrdering();
+//  R2_cm = R2_cm.DoNormalOrdering();
 //  cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << endl; 
 //  cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + R2p + R2n + DF) << endl; 
   
@@ -228,14 +236,29 @@ int main(int argc, char** argv)
      imsrgsolver.SetGenerator(valence_generator);
      imsrgsolver.SetSmax(smax);
      imsrgsolver.Solve();
-     rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
-     rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
-     R2_p1 = imsrgsolver.Transform(R2_p1);
-     R2_p2 = imsrgsolver.Transform(R2_p2);
-     R2_cm = imsrgsolver.Transform(R2_cm);
-     rw.WriteNuShellX_op(R2_p1,intfile+"_R2p1.int");
-     rw.WriteNuShellX_op(R2_p2,intfile+"_R2p2.int");
-     rw.WriteNuShellX_op(R2_cm,intfile+"_R2cm.int");
+
+     Operator Hprime = imsrgsolver.GetH_s().UndoNormalOrdering();
+     Hprime.SetModelSpace(modelspace_core);
+     Hprime = Hprime.DoNormalOrdering();
+     IMSRGSolver imsrgsolver2(Hprime);
+     imsrgsolver2.SetSmax(smax/2.0);
+     imsrgsolver2.SetFlowFile(flowfile+"_2");
+     imsrgsolver2.SetDsmax(dsmax);
+     imsrgsolver2.SetDenominatorDelta(denominator_delta);
+     imsrgsolver2.SetDs(ds_0);
+     imsrgsolver2.SetdOmega(min(domega,omega_norm_max+1e6));
+     imsrgsolver2.SetOmegaNormMax(omega_norm_max);
+
+     imsrgsolver2.Solve();
+
+     rw.WriteNuShellX_int(imsrgsolver2.GetH_s(),intfile+".int");
+     rw.WriteNuShellX_sps(imsrgsolver2.GetH_s(),intfile+".sp");
+//     R2_p1 = imsrgsolver.Transform(R2_p1);
+//     R2_p2 = imsrgsolver.Transform(R2_p2);
+//     R2_cm = imsrgsolver.Transform(R2_cm);
+//     rw.WriteNuShellX_op(R2_p1,intfile+"_R2p1.int");
+//     rw.WriteNuShellX_op(R2_p2,intfile+"_R2p2.int");
+//     rw.WriteNuShellX_op(R2_cm,intfile+"_R2cm.int");
   }
   else if (method == "flow")
   {
