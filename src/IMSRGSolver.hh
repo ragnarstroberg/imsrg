@@ -44,6 +44,7 @@ class IMSRGSolver
   void AddOperator(Operator& Op){FlowingOps.push_back(Op);};
 
   void Solve();
+  void Solve_magnus_euler();
 
   Operator Transform(Operator& OpIn);
   Operator Transform(Operator&& OpIn);
