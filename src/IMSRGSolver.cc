@@ -13,7 +13,7 @@ IMSRGSolver::~IMSRGSolver()
 
 IMSRGSolver::IMSRGSolver()
     : s(0),ds(0.1),ds_max(0.5),
-     norm_domega(0.1), omega_norm_max(2.0),method("BCH"),flowfile("")
+     norm_domega(0.1), omega_norm_max(2.0),method("magnus_euler"),flowfile("")
 #ifndef NO_ODE
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 #endif
@@ -23,7 +23,7 @@ IMSRGSolver::IMSRGSolver()
 IMSRGSolver::IMSRGSolver( Operator &H_in)
    : modelspace(H_in.GetModelSpace()),H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), // ,dOmega(H_in)
     istep(0), s(0),ds(0.1),ds_max(0.5),
-    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),method("BCH"),flowfile("")
+    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),method("magnus_euler"),flowfile("")
 #ifndef NO_ODE
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 #endif
@@ -90,6 +90,18 @@ void IMSRGSolver::SetFlowFile(string s)
 
 void IMSRGSolver::Solve()
 {
+  if (method == "magnus_euler" or method =="magnus")
+    Solve_magnus_euler();
+  else if (method == "flow_adaptive" or method == "flow")
+    Solve_ode_adaptive();
+  else if (method == "magnus_adaptive")
+    Solve_ode_magnus();
+  else if (method == "flow_euler")
+    Solve_ode();
+}
+
+void IMSRGSolver::Solve_magnus_euler()
+{
    istep = 0;
 //   generator.Update(&H_s,&Eta);
    generator.Update(&FlowingOps[0],&Eta);
@@ -121,7 +133,6 @@ void IMSRGSolver::Solve()
       Eta *= ds; // Here's the Euler step.
 
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
-//      Omega = Eta.BCH_Product( Omega ); 
       Omega.back() = Eta.BCH_Product( Omega.back() ); 
 
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
@@ -144,6 +155,7 @@ void IMSRGSolver::Solve()
    }
 
 }
+
 
 
 #ifndef NO_ODE
