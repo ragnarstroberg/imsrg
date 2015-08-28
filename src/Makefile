@@ -13,6 +13,11 @@ FLAGS    += $(WARNFLAGS)
 SOFLAGS  += $(WARNFLAGS)
 INSTDIR = $(HOME)
 
+ifeq ($(DEBUG),on)
+ FLAGS += -g
+ SOFLAGS += -g
+endif
+
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
 THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; else echo other; fi)

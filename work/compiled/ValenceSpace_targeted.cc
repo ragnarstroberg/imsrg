@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 //  string input3bme = "/itch/exch/BlockGen/me3j/chi2b3b400cD-02cE0098_srg0800ho40C_eMax12_EMax12_hwHO020.me3j.gz";
   string input3bme = "none";
   double hw = 20.0;
-  int targetMass = 18;
+  int targetMass = -1;
   double smax = 20.0;
   double dsmax = 0.5;
   double ds_0 = 0.5;
@@ -154,6 +154,16 @@ int main(int argc, char** argv)
     core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","n0d5","n1s1"};
   else if (reference == "O28")
     core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","n0d5","n1s1","n0d3"};
+  else if (reference == "Si28")
+    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5"};
+  else if (reference == "Si34")
+    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","n0d3","n1s1"};
+  else if (reference == "C12")
+    core = {"p0s1","n0s1","p0p3","n0p3"};
+  else if (reference == "Ca40")
+    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d5","n0d3","p1s1","n1s1"};
+  else if (reference == "Ca48")
+    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d5","n0d3","p1s1","n1s1","n0f7"};
 
 
   ModelSpace modelspace_target(eMax,core,val);
@@ -163,6 +173,7 @@ int main(int argc, char** argv)
   modelspace_core.SetHbarOmega(hw);
   if (targetMass > 0)
   {
+    cout << "Setting mass to " << targetMass << endl;
     modelspace_target.SetTargetMass(targetMass);
     modelspace_core.SetTargetMass(targetMass);
   }
@@ -189,6 +200,7 @@ int main(int argc, char** argv)
   
   Operator Tcm = TCM_Op(modelspace_target);
   Hbare -= Tcm;
+//  Hbare += Trel_Op(modelspace_target);
   
   HartreeFock hf(Hbare);
   hf.Solve();

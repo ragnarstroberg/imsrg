@@ -212,32 +212,26 @@ ModelSpace::ModelSpace()
 
 
 ModelSpace::ModelSpace(const ModelSpace& ms)
+ :
+   holes( ms.holes), particles( ms.particles), valence(ms.valence),
+   qspace( ms.qspace), hole_qspace(ms.hole_qspace), proton_orbits( ms.proton_orbits),
+   neutron_orbits( ms.neutron_orbits),
+   KetIndex_pp( ms.KetIndex_pp), KetIndex_ph( ms.KetIndex_ph), KetIndex_hh( ms.KetIndex_hh),
+   KetIndex_vv( ms.KetIndex_vv), KetIndex_c_c( ms.KetIndex_c_c),
+   KetIndex_q_q( ms.KetIndex_q_q),
+   KetIndex_q_c( ms.KetIndex_q_c),
+   KetIndex_v_c( ms.KetIndex_v_c), KetIndex_v_q( ms. KetIndex_v_q),
+   Nmax(ms.Nmax), N2max(ms.N2max), N3max(ms.N3max),
+   OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
+   OneBodyChannels(ms.OneBodyChannels),
+   SortedTwoBodyChannels(ms.SortedTwoBodyChannels),
+   SortedTwoBodyChannels_CC(ms.SortedTwoBodyChannels_CC),
+   norbits(ms.norbits), hbar_omega(ms.hbar_omega), target_mass(ms.target_mass),
+   Orbits(ms.Orbits), Kets(ms.Kets),
+   TwoBodyChannels(ms.TwoBodyChannels), TwoBodyChannels_CC(ms.TwoBodyChannels_CC)
 {
    cout << "In ModelSpace copy constructor" << endl;
-   norbits = ms.norbits;
-   hbar_omega = ms.hbar_omega;
-   target_mass = ms.target_mass;
-   OneBodyJmax = ms.OneBodyJmax;
-   TwoBodyJmax = ms.TwoBodyJmax;
-   ThreeBodyJmax = ms.ThreeBodyJmax;
-   Nmax = ms.Nmax;
-   N2max = ms.N2max;
-   N3max = ms.N3max;
-
-   holes = ms.holes;
-   particles = ms.particles;
-   valence = ms.valence;
-   qspace = ms.qspace;
-   hole_qspace = ms.hole_qspace;
-   particle_qspace = ms.particle_qspace;
-   proton_orbits = ms.proton_orbits;
-   neutron_orbits = ms.neutron_orbits;
-   Orbits = ms.Orbits;
-   Kets = ms.Kets;
-   TwoBodyChannels = ms.TwoBodyChannels;
-   TwoBodyChannels_CC = ms.TwoBodyChannels_CC;
-
-//   for (Ket& k : Kets)   k.ms = this;
+   cout << "Orbits size:  " << ms.Orbits.size() << " -> " << Orbits.size() << endl;
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
 }
@@ -262,8 +256,11 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    TwoBodyChannels(move(ms.TwoBodyChannels)), TwoBodyChannels_CC(move(ms.TwoBodyChannels_CC))
 {
    cout << "In ModelSpace move constructor" << endl;
+   cout << "Orbits size:  " << ms.Orbits.size() << " -> " << Orbits.size() << endl;
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
+   for (TwoBodyChannel& tbc : ms.TwoBodyChannels)   tbc.modelspace = NULL;
+   for (TwoBodyChannel_CC& tbc_cc : ms.TwoBodyChannels_CC)   tbc_cc.modelspace = NULL;
 }
 
 
@@ -570,13 +567,84 @@ void ModelSpace::Init_FPG9Shell(int nmax) // Ni56 core, with g9/2
 
 ModelSpace ModelSpace::operator=(const ModelSpace& ms)
 {
+   holes =  ms.holes;
+   particles =  ms.particles;
+   valence = ms.valence;
+   qspace =  ms.qspace;
+   hole_qspace = ms.hole_qspace;
+   proton_orbits =  ms.proton_orbits;
+   neutron_orbits =  ms.neutron_orbits;
+   KetIndex_pp =  ms.KetIndex_pp;
+   KetIndex_ph =  ms.KetIndex_ph;
+   KetIndex_hh =  ms.KetIndex_hh;
+   KetIndex_vv =  ms.KetIndex_vv;
+   KetIndex_c_c =  ms.KetIndex_c_c;
+   KetIndex_q_q =  ms.KetIndex_q_q;
+   KetIndex_q_c =  ms.KetIndex_q_c;
+   KetIndex_v_c =  ms.KetIndex_v_c;
+   KetIndex_v_q =  ms. KetIndex_v_q;
+   Nmax = ms.Nmax;
+   N2max = ms.N2max;
+   N3max = ms.N3max;
+   OneBodyJmax = ms.OneBodyJmax;
+   TwoBodyJmax = ms.TwoBodyJmax;
+   ThreeBodyJmax = ms.ThreeBodyJmax;
+   OneBodyChannels = ms.OneBodyChannels;
+   SortedTwoBodyChannels = ms.SortedTwoBodyChannels;
+   SortedTwoBodyChannels_CC = ms.SortedTwoBodyChannels_CC;
+   norbits = ms.norbits;
+   hbar_omega = ms.hbar_omega;
+   target_mass = ms.target_mass;
+   Orbits = ms.Orbits;
+   Kets = ms.Kets;
+   TwoBodyChannels = ms.TwoBodyChannels;
+   TwoBodyChannels_CC = ms.TwoBodyChannels_CC;
+   for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
+   for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
+
    cout << "In copy assignment for ModelSpace" << endl;
-   return ModelSpace(ms);
+   return ModelSpace(*this);
 }
 ModelSpace ModelSpace::operator=(ModelSpace&& ms)
 {
+   holes =  move(ms.holes);
+   particles =  move(ms.particles);
+   valence = move(ms.valence);
+   qspace =  move(ms.qspace);
+   hole_qspace = move(ms.hole_qspace);
+   proton_orbits =  move(ms.proton_orbits);
+   neutron_orbits =  move(ms.neutron_orbits);
+   KetIndex_pp =  move(ms.KetIndex_pp);
+   KetIndex_ph =  move(ms.KetIndex_ph);
+   KetIndex_hh =  move(ms.KetIndex_hh);
+   KetIndex_vv =  move(ms.KetIndex_vv);
+   KetIndex_c_c =  move(ms.KetIndex_c_c);
+   KetIndex_q_q =  move(ms.KetIndex_q_q);
+   KetIndex_q_c =  move(ms.KetIndex_q_c);
+   KetIndex_v_c =  move(ms.KetIndex_v_c);
+   KetIndex_v_q =  move(ms. KetIndex_v_q);
+   Nmax = move(ms.Nmax);
+   N2max = move(ms.N2max);
+   N3max = move(ms.N3max);
+   OneBodyJmax = move(ms.OneBodyJmax);
+   TwoBodyJmax = move(ms.TwoBodyJmax);
+   ThreeBodyJmax = move(ms.ThreeBodyJmax);
+   OneBodyChannels = move(ms.OneBodyChannels);
+   SortedTwoBodyChannels = move(ms.SortedTwoBodyChannels);
+   SortedTwoBodyChannels_CC = move(ms.SortedTwoBodyChannels_CC);
+   norbits = move(ms.norbits);
+   hbar_omega = move(ms.hbar_omega);
+   target_mass = move(ms.target_mass);
+   Orbits = move(ms.Orbits);
+   Kets = move(ms.Kets);
+   TwoBodyChannels = move(ms.TwoBodyChannels);
+   TwoBodyChannels_CC = move(ms.TwoBodyChannels_CC);
+   for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
+   for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
+   for (TwoBodyChannel& tbc : ms.TwoBodyChannels)   tbc.modelspace = NULL;
+   for (TwoBodyChannel_CC& tbc_cc : ms.TwoBodyChannels_CC)   tbc_cc.modelspace = NULL;
    cout << "In move assingment for ModelSpace" << endl;
-   return ModelSpace(ms);
+   return ModelSpace(*this);
 }
 
 void ModelSpace::AddOrbit(Orbit orb)

@@ -264,7 +264,7 @@ class ModelSpace
 
 
 
- private:
+// private:
    // Fields
    int norbits;
    double hbar_omega;
