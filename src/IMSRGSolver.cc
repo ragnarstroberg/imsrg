@@ -92,12 +92,16 @@ void IMSRGSolver::Solve()
 {
   if (method == "magnus_euler" or method =="magnus")
     Solve_magnus_euler();
+  else if (method == "magnus_modified_euler")
+    Solve_magnus_modified_euler();
   else if (method == "flow_adaptive" or method == "flow")
     Solve_ode_adaptive();
   else if (method == "magnus_adaptive")
     Solve_ode_magnus();
   else if (method == "flow_euler")
     Solve_ode();
+  else
+    cout << "IMSRGSolver: I don't know method " << method << endl;
 }
 
 void IMSRGSolver::Solve_magnus_euler()
@@ -156,6 +160,61 @@ void IMSRGSolver::Solve_magnus_euler()
 
 }
 
+
+void IMSRGSolver::Solve_magnus_modified_euler()
+{
+   istep = 0;
+//   generator.Update(&H_s,&Eta);
+   generator.Update(&FlowingOps[0],&Eta);
+
+   Operator H_temp;
+    // Write details of the flow
+   WriteFlowStatus(flowfile);
+   WriteFlowStatus(cout);
+
+   for (istep=1;s<smax;++istep)
+   {
+      double norm_eta = Eta.Norm();
+      double norm_omega = Omega.back().Norm();
+      if (norm_omega > omega_norm_max)
+      {
+        H_saved = FlowingOps[0];
+        Omega.push_back(Eta);
+        Omega.back().Erase();
+        norm_omega = 0;
+        cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
+      }
+      // ds should never be more than 1, as this is over-rotating
+      ds = min(min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), ds_max); 
+      if (s+ds > smax) ds = smax-s;
+      s += ds;
+
+      H_temp = FlowingOps[0] + ds * Commutator(Eta,FlowingOps[0]);
+      generator.AddToEta(&H_temp,&Eta);
+
+      Eta *= ds*0.5; // Here's the modified Euler step.
+
+      // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
+      Omega.back() = Eta.BCH_Product( Omega.back() ); 
+
+      if (Omega.size()<2)
+      {
+        FlowingOps[0] = H_0->BCH_Transform( Omega.back() );
+      }
+      else
+      {
+        FlowingOps[0] = H_saved.BCH_Transform( Omega.back() );
+      }
+        
+      generator.Update(&FlowingOps[0],&Eta);
+
+      // Write details of the flow
+      WriteFlowStatus(flowfile);
+      WriteFlowStatus(cout);
+
+   }
+
+}
 
 
 #ifndef NO_ODE
