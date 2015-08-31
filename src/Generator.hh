@@ -21,6 +21,7 @@ class Generator
   Generator();
   void SetType(string g){generator_type = g;};
   void Update(Operator* H, Operator* Eta);
+  void AddToEta(Operator* H, Operator* Eta);
   void SetDenominatorCutoff(double c){denominator_cutoff=c;};
   void SetDenominatorDelta(double d){denominator_delta=d;};
   void SetDenominatorDeltaIndex(int i){denominator_delta_index=i;};
