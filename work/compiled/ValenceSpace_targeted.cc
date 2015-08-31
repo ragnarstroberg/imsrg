@@ -161,9 +161,9 @@ int main(int argc, char** argv)
   else if (reference == "C12")
     core = {"p0s1","n0s1","p0p3","n0p3"};
   else if (reference == "Ca40")
-    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d5","n0d3","p1s1","n1s1"};
+    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
   else if (reference == "Ca48")
-    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d5","n0d3","p1s1","n1s1","n0f7"};
+    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","n0f7"};
 
 
   ModelSpace modelspace_target(eMax,core,val);

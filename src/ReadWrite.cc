@@ -1523,11 +1523,11 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
 
 void ReadWrite::WriteNuShellX_op(Operator& op, string filename)
 {
-  WriteNuShellX_intfile(op,filename,"int");
+  WriteNuShellX_intfile(op,filename,"op");
 }
 void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
 {
-  WriteNuShellX_intfile(op,filename,"op");
+  WriteNuShellX_intfile(op,filename,"int");
 }
 
 /// Write the valence space part of the interaction to a NuShellX *.int file.
