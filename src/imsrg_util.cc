@@ -346,7 +346,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       int J = tbc.J;
       int parity = tbc.parity;
-      int Tz = tbc.Tz;
+//      int Tz = tbc.Tz;
       arma::mat& MatJJ = OpIn.TwoBody.GetMatrix(ch);
       int nkets_JJ = tbc.GetNumberKets();
 

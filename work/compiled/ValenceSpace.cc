@@ -40,6 +40,7 @@ int main(int argc, char** argv)
   int file3e2max=24;
   int file3e3max=12;
   int denominator_delta=0;
+  string denominator_delta_orbit = "none";
 
 
   // Parse some command line options
@@ -103,6 +104,8 @@ int main(int argc, char** argv)
       istringstream(val) >> valence_generator;
     else if (var == "denominator_delta")
       istringstream(val) >> denominator_delta;
+    else if (var == "denominator_delta_orbit")
+      istringstream(val) >> denominator_delta_orbit;
     else
       cout << "Unknown parameter: " << var << endl;
   }
@@ -198,6 +201,8 @@ int main(int argc, char** argv)
   imsrgsolver.SetFlowFile(flowfile);
   imsrgsolver.SetDs(ds_0);
   imsrgsolver.SetDenominatorDelta(denominator_delta);
+  if (denominator_delta_orbit != "none")
+    imsrgsolver.SetDenominatorDeltaOrbit(denominator_delta_orbit);
 
   if (method == "magnus")
   {

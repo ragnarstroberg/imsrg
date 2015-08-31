@@ -682,10 +682,24 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
 
 }
 
+int ModelSpace::GetOrbitIndex(string orb)
+{
+
+  vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o'};
+  int n=-1,l=-1,j2=-1;
+  int tz2 = orb[1]=='p' ? -1 : 1;
+  stringstream(orb.substr(1,1)) >> n;
+  auto it_l = find(l_list.begin(), l_list.end(), orb[2]);
+  if ( it_l != l_list.end() )
+    l = it_l - l_list.begin();
+  else
+    cout << "Bad orbit label " << orb << endl;
+  stringstream(orb.substr(3)) >> j2;
+  return Index1(n,l,j2,tz2);
+}
 
 int ModelSpace::GetTwoBodyChannelIndex(int j, int p, int t)
 {
-//   return (t+1)*2*(TwoBodyJmax) + p*(TwoBodyJmax) + j;
    return (t+1)*2*(TwoBodyJmax+1) + p*(TwoBodyJmax+1) + j;
 }
 

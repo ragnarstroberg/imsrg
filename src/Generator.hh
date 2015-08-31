@@ -16,12 +16,15 @@ class Generator
   ModelSpace * modelspace;
   double denominator_cutoff;
   double denominator_delta;
+  int denominator_delta_index;
 
   Generator();
   void SetType(string g){generator_type = g;};
   void Update(Operator* H, Operator* Eta);
   void SetDenominatorCutoff(double c){denominator_cutoff=c;};
   void SetDenominatorDelta(double d){denominator_delta=d;};
+  void SetDenominatorDeltaIndex(int i){denominator_delta_index=i;};
+  void SetDenominatorDeltaOrbit(string orb);
 
  private:
   void ConstructGenerator_Wegner();

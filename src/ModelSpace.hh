@@ -218,6 +218,7 @@ class ModelSpace
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. Not ideal.
    bool SixJ_is_empty(){ return SixJList.empty(); };
 
+   int GetOrbitIndex(string);
    int GetTwoBodyChannelIndex(int j, int p, int t);
    inline int phase(int x) {return (x%2)==0 ? 1 : -1;};
    inline int phase(double x) {return phase(int(x));};

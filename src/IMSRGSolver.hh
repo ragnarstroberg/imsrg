@@ -73,6 +73,8 @@ class IMSRGSolver
 
   void SetDenominatorCutoff(double c){generator.SetDenominatorCutoff(c);};
   void SetDenominatorDelta(double d){generator.SetDenominatorDelta(d);};
+  void SetDenominatorDeltaIndex(int i){generator.SetDenominatorDeltaIndex(i);};
+  void SetDenominatorDeltaOrbit(string o){generator.SetDenominatorDeltaOrbit(o);};
 
 
 

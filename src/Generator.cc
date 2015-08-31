@@ -2,7 +2,7 @@
 #include "Generator.hh"
 
 Generator::Generator()
-  : generator_type("white"), denominator_delta(0)
+  : generator_type("white"), denominator_delta(0), denominator_delta_index(-1)
 {}
 
 
@@ -52,6 +52,10 @@ void Generator::Update(Operator * H_s, Operator * Eta_s)
 }
 
 
+void Generator::SetDenominatorDeltaOrbit(string orb)
+{
+  SetDenominatorDeltaIndex( modelspace->GetOrbitIndex(orb) );
+}
 
 // Epstein-Nesbet energy denominators for White-type generator_types
 double Generator::Get1bDenominator(int i, int j) 
@@ -59,9 +63,10 @@ double Generator::Get1bDenominator(int i, int j)
    int ni = modelspace->GetOrbit(i).ph;
    int nj = modelspace->GetOrbit(j).ph;
    
-   double denominator = H->OneBody(i,i) - H->OneBody(j,j) + denominator_delta;
-   if (ni == nj)
-     return denominator;
+   double denominator = H->OneBody(i,i) - H->OneBody(j,j);
+   if (i == denominator_delta_index or j==denominator_delta_index)
+     denominator += denominator_delta;
+   if (ni != nj)
      denominator += ( ni-nj ) * H->TwoBody.GetTBMEmonopole(i,j,i,j);
    return denominator;
 }

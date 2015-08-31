@@ -268,7 +268,8 @@ void IMSRGSolver::Solve_ode()
    runge_kutta4< vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
-   size_t steps = integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
+//   size_t steps = integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
+   integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
    monitor.report();
 }
 
@@ -281,7 +282,8 @@ void IMSRGSolver::Solve_ode_adaptive()
    auto system = *this;
    typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
    auto monitor = ode_monitor;
-   size_t steps = integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
+//   size_t steps = integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
+   integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
    monitor.report();
 
 }
@@ -339,7 +341,8 @@ void IMSRGSolver::Solve_ode_magnus()
    runge_kutta4<vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
-   size_t steps = integrate_const(stepper, system, Omega, s, smax, ds, monitor);
+//   size_t steps = integrate_const(stepper, system, Omega, s, smax, ds, monitor);
+   integrate_const(stepper, system, Omega, s, smax, ds, monitor);
    monitor.report();
 }
 
