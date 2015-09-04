@@ -20,6 +20,7 @@ int main(int argc, char** argv)
 //  double omega_norm_max = 2.5;
   string core_generator = "atan";
   string valence_generator = "shell-model-atan";
+//  string reference_generator = valence_generator;
   int E3max = 12;
   int eMax = 6;
   string flowfile = "default";
@@ -102,6 +103,8 @@ int main(int argc, char** argv)
       istringstream(val) >> core_generator;
     else if (var == "valence_generator")
       istringstream(val) >> valence_generator;
+//    else if (var == "reference_generator")
+//      istringstream(val) >> reference_generator;
     else if (var == "denominator_delta")
       istringstream(val) >> denominator_delta;
     else if (var == "reference")
@@ -140,34 +143,56 @@ int main(int argc, char** argv)
 
   ReadWrite rw;
 
-  vector<string> val,core;
+  vector<string> val,core,ref;
   if (valence_space == "sd-shell")
+  {
     val = {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
+    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
+  }
   else if (valence_space =="fp-shell")
+  {
     val = {"p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"};
+    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
+  }
+  else if (valence_space == "d5-shell")
+  {
+    val = {"p0d5","n0d5"};
+    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
+  }
+  else if (valence_space == "d5s1-shell")
+  {
+    val = {"p0d5","n0d5","p1s1","n1s1"};
+    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
+  }
+  else if (valence_space == "d5d3-shell")
+  {
+    val = {"p0d5","n0d5","p0d3","n0d3"};
+    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
+  }
 
   if (reference == "O16")
-    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
+    ref = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
   else if (reference == "O22")
-    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","n0d5"};
+    ref = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","n0d5"};
   else if (reference == "O24")
-    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","n0d5","n1s1"};
+    ref = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","n0d5","n1s1"};
   else if (reference == "O28")
-    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","n0d5","n1s1","n0d3"};
+    ref = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","n0d5","n1s1","n0d3"};
   else if (reference == "Si28")
-    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5"};
+    ref = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5"};
   else if (reference == "Si34")
-    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","n0d3","n1s1"};
+    ref = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","n0d3","n1s1"};
   else if (reference == "C12")
-    core = {"p0s1","n0s1","p0p3","n0p3"};
+    ref = {"p0s1","n0s1","p0p3","n0p3"};
   else if (reference == "Ca40")
-    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
+    ref = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
   else if (reference == "Ca48")
-    core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","n0f7"};
+    ref = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","n0f7"};
 
 
-  ModelSpace modelspace_target(eMax,core,val);
-  ModelSpace modelspace_core(eMax,valence_space);
+  ModelSpace modelspace_target(eMax,ref,val);
+//  ModelSpace modelspace_core(eMax,valence_space);
+  ModelSpace modelspace_core(eMax,core,val);
 
   modelspace_target.SetHbarOmega(hw);
   modelspace_core.SetHbarOmega(hw);
@@ -228,7 +253,7 @@ int main(int argc, char** argv)
   
   IMSRGSolver imsrgsolver(Hbare);
   
-  imsrgsolver.SetHin(Hbare);
+  imsrgsolver.SetMethod(method);
   imsrgsolver.SetSmax(smax);
   imsrgsolver.SetFlowFile(flowfile);
   imsrgsolver.SetDs(ds_0);
@@ -253,6 +278,7 @@ int main(int argc, char** argv)
      Hprime.SetModelSpace(modelspace_core);
      Hprime = Hprime.DoNormalOrdering();
      IMSRGSolver imsrgsolver2(Hprime);
+//     imsrgsolver2.SetGenerator(reference_generator);
      imsrgsolver2.SetSmax(smax/2.0);
      imsrgsolver2.SetFlowFile(flowfile+"_2");
      imsrgsolver2.SetDsmax(dsmax);

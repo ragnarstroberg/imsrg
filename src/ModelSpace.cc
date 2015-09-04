@@ -684,10 +684,9 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
 
 int ModelSpace::GetOrbitIndex(string orb)
 {
-
   vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o'};
   int n=-1,l=-1,j2=-1;
-  int tz2 = orb[1]=='p' ? -1 : 1;
+  int tz2 = orb[0]=='p' ? -1 : 1;
   stringstream(orb.substr(1,1)) >> n;
   auto it_l = find(l_list.begin(), l_list.end(), orb[2]);
   if ( it_l != l_list.end() )

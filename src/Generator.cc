@@ -62,6 +62,7 @@ void Generator::SetDenominatorDeltaOrbit(string orb)
      SetDenominatorDeltaIndex(-12345);
   else
      SetDenominatorDeltaIndex( modelspace->GetOrbitIndex(orb) );
+  cout << "Setting denominator delta orbit " << orb << " => " << modelspace->GetOrbitIndex(orb) << endl;
 }
 
 // Epstein-Nesbet energy denominators for White-type generator_types
