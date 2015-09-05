@@ -831,6 +831,7 @@ void Operator::AntiSymmetrize()
 Operator Commutator( const Operator& X, const Operator& Y)
 {
    X.timer["N_Commutators"] += 1;
+   double t_start = omp_get_wtime();
    int xrank = X.rank_J + X.rank_T + X.parity;
    int yrank = Y.rank_J + Y.rank_T + Y.parity;
    if (xrank==0)
@@ -857,6 +858,7 @@ Operator Commutator( const Operator& X, const Operator& Y)
       cout << " Tensor-Tensor commutator not yet implemented." << endl;
       return X;
    }
+   X.timer["Commutator"] += omp_get_wtime() - t_start;
 }
 
 
