@@ -1169,6 +1169,7 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
          cerr << "Error. Mismatching total J! " << J2 << " " << J2p << " " << twoJ << "   alphas = " << alpha << ", " << alphap << endl;
        }
 
+       me *= 0.5; // According to Heiko, this shouldn't be here. But comparing matrix elements with Petr's interaction suggests otherwise.
 //       if (a!=d or b!=e or c!=f) me *=0.5;
 //       if (alpha<50 and alphap<50)
 //       if (a<5 and b<5 and c<5 and d<5 and e<5 and f<5)
