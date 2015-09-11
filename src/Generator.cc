@@ -89,7 +89,7 @@ double Generator::Get2bDenominator(int ch, int ibra, int iket)
    int j = bra.q;
    int k = ket.p;
    int l = ket.q;
-   double denominator = H->OneBody(i,i)+ H->OneBody(j,j) - H->OneBody(k,k) - H->OneBody(l,l) + denominator_delta;
+   double denominator = H->OneBody(i,i)+ H->OneBody(j,j) - H->OneBody(k,k) - H->OneBody(l,l);
    if (denominator_delta_index == -12345) denominator += denominator_delta;
    int ni = bra.op->ph;
    int nj = bra.oq->ph;
