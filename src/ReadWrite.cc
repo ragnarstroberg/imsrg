@@ -1344,7 +1344,7 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
   value_curDim[0] = min(SLABSIZE, int(value_maxDim[0]));
   value_curDim[1] = 5 ; // c1 c3 c4 cD cE
 
-  DataSpace value_buf_dspace(1,value_curDim);
+  DataSpace value_buf_dspace(2,value_curDim);
   
   // This needs to be a 2d array now
   float **value_buf = new float*[value_curDim[0]];
@@ -1370,6 +1370,7 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
   // loop through the slabs
   for ( int n=0; n<nSlabs; ++n)
   {
+    cout << "n = " << n << endl;
     hsize_t start[2] = { n*value_curDim[0], 0};
 //    hsize_t label_block[2];
     hsize_t value_block[2];
@@ -1401,28 +1402,33 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
     // Read the label data into label_buf, and matrix elements into value_buf
 //    label.read( &label_buf[0][0], PredType::NATIVE_INT, label_buf_dspace, label_dspace );
 //    value.read( &value_buf[0], PredType::NATIVE_DOUBLE, value_buf_dspace, value_dspace );
-    value.read( &value_buf[0], PredType::NATIVE_FLOAT, value_buf_dspace, value_dspace );
+   cout << "about to do value.read()" << endl;
+    value.read( &value_buf[0][0], PredType::NATIVE_FLOAT, value_buf_dspace, value_dspace );
+   cout << "done." << endl;
 
     int t12_bra_list[5] = {0,0,1,1,1};
     int t12_ket_list[5] = {0,1,0,1,1};
     int twoT_list[5]    = {1,1,1,1,3};
 
-    for (hsize_t i=0; i<value_block[0]; ++i)
+    cout << "a = " << Basis[i_alpha_bra][0] << " norb = " << norb << endl;
+    cout << "d = " << Basis[i_alpha_ket][0] << endl;
+    for (hsize_t i=0; i<value_block[0]; i+=5)
     {
        if (i_alpha_ket==Basis.size()-1 )
        {
-         i_alpha_bra ++;
+         i_alpha_bra++;
          i_alpha_ket = i_alpha_bra;
        }
        else
        {
-         i_alpha_ket ++;
+         i_alpha_ket++;
        }
-       
 
-       int T12  = t12_bra_list[i%5];
-       int TT12 = t12_ket_list[i%5];
-       int twoT = twoT_list[i%5];
+      for (hsize_t k_iso=0;k_iso<5;++k_iso)
+      {
+       int T12  = t12_bra_list[k_iso];
+       int TT12 = t12_ket_list[k_iso];
+       int twoT = twoT_list[k_iso];
 
 //       int  alpha  = label_buf[i][0];
 //       int  T12    = label_buf[i][1]/2;
@@ -1449,8 +1455,9 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
        int JJ12 = Basis[i_alpha_ket][3];
        int J2p  = Basis[i_alpha_ket][4];
 
-       if (a>=norb ) break;
-       if ( b>=norb or c>=norb or d>=norb or e>=norb or f>=norb) continue;
+//       if (a>=norb ) break;
+//       if ( b>=norb or c>=norb or d>=norb or e>=norb or f>=norb) continue;
+       if ( a>=norb or b>=norb or c>=norb or d>=norb or e>=norb or f>=norb) continue;
        if (J2 != J2p) continue;
        Orbit& oa = modelspace->GetOrbit(a);
        Orbit& ob = modelspace->GetOrbit(b);
@@ -1462,17 +1469,12 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
        int parity_abc = ( oa.l+ob.l+oc.l )%2;
        int parity_def = ( od.l+oe.l+of.l )%2;
        if (parity_abc != parity_def) continue;
-//       if (parity_abc != Pi or parity_def != Pi)
-//       {
-//         cerr << "Error. Mismatching parity !  < "  << parity_abc << " " << parity_def << " " << Pi << "    " << endl;
-//       }
-      
 
 //       me *= 0.5; // According to Heiko, this shouldn't be here. But comparing matrix elements with Petr's interaction suggests otherwise.
 //       if (a!=d or b!=e or c!=f) me *=0.5;
 //       if (alpha<50 and alphap<50)
 //       if (a<5 and b<5 and c<5 and d<5 and e<5 and f<5)
-       float *me = value_buf[i];
+       float *me = value_buf[i+k_iso];
        float summed_me = 0;
        for (int ii=0;ii<5;++ii) summed_me += LEC[ii] * me[ii] ;
        summed_me *= HBARC;
@@ -1493,11 +1495,18 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
 //       }
 //       else
        op.ThreeBody.SetME(J12,JJ12,J2,T12,TT12,twoT,a,b,c,d,e,f, summed_me);
+       cout << "< " << i_alpha_bra << " | V | " << i_alpha_ket << " >  J:" << J12 << " " << JJ12 << " " << J2 << "   T:" << T12 << " " << TT12 << " " << twoT << "   " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "   "
+               << summed_me << " (" << me[0] << "," << me[1]
+                << "," << me[2]
+                << "," << me[3]
+                << "," << me[4] << ")"
+               << endl;
 // not sure if I still need this...
 //       if (a==d and b==e and c==f and ( J12!=JJ12 ) )
 ////       if (a==d and b==e and c==f and ( J12!=JJ12 or T12 != TT12) )
 //          op.ThreeBody.SetME(JJ12,J12,twoJ,TT12,T12,twoT,a,b,c,d,e,f, me);
 
+    } // loop over isospin
     } //loop over matrix elements
   } // loop over slabs
 //  delete[] label_buf[0];
