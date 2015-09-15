@@ -1207,74 +1207,6 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
 
 
 
-/*
-/// Read three-body basis from HDF5 formatted file. This routine was ported to C++ from
-/// a C routine by Heiko Hergert, with as little modification as possible.
-void ReadWrite::GetHDF5Basis_new( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis)
-{
-  H5File file(filename, H5F_ACC_RDONLY);
-  // The parameter alpha enumerates the different 3body states |abc> coupled to J12 and J (no isospin)
-  DataSet basis = file.openDataSet("alphas");
-  DataSpace basis_dspace = basis.getSpace();
-
-  int nDim = basis_dspace.getSimpleExtentNdims();
-  hsize_t iDim[6];
-  int status = basis_dspace.getSimpleExtentDims(iDim,NULL);
-  if (status != nDim)
-  {
-     cerr << "Error: Failed to read dataset dimensions!" << endl;
-     return;
-  }
-  
-  int alpha_max = iDim[0]; // alpha_max is the largest dimension
-  for (int i=0;i<nDim;++i)
-    alpha_max = max(alpha_max, int(iDim[i]));
-
-  // Generate a 2d buffer in contiguous memory
-  int** dbuf = new int*[iDim[0]];
-  dbuf[0] = new int[iDim[0]*iDim[1]];
-  for (hsize_t i=1;i<iDim[0];++i)
-  {
-    dbuf[i] = dbuf[i-1] + iDim[1];
-  }
-
-  basis.read(&dbuf[0][0], PredType::NATIVE_INT);
-
-  Basis.resize(alpha_max+1);
-
-  for( int alpha=1; alpha<=alpha_max; ++alpha)
-  {
-    int alphap = dbuf[alpha-1][0];
-    int n1     = dbuf[alpha-1][1];
-    int l1     = dbuf[alpha-1][2];
-    int twoj1  = dbuf[alpha-1][3];
-    int n2     = dbuf[alpha-1][4];
-    int l2     = dbuf[alpha-1][5];
-    int twoj2  = dbuf[alpha-1][6];
-    int n3     = dbuf[alpha-1][7];
-    int l3     = dbuf[alpha-1][8];
-    int twoj3  = dbuf[alpha-1][9];
-    int J12    = dbuf[alpha-1][10];
-    int twoJ   = dbuf[alpha-1][11];
-
-    int o1 = modelspace->GetOrbitIndex(n1,l1,twoj1,-1);
-    int o2 = modelspace->GetOrbitIndex(n2,l2,twoj2,-1);
-    int o3 = modelspace->GetOrbitIndex(n3,l3,twoj3,-1);
-    if (alpha != alphap)
-    {
-      cerr << "Error. alpha != alphap " << endl;
-      return;
-    }
-
-    Basis[alpha] = {o1,o2,o3,J12,twoJ};
-    
-  }
-
-  delete[] dbuf[0];
-  delete[] dbuf;
-
-}
-*/
 
 
 // THIS ONE SEEMS TO WORK, SO FAR
@@ -1288,8 +1220,15 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
   float c1 = -0.81;
   float c3 = -3.20;
   float c4 = 5.40;
-  float cD = 1.27;
-  float cE = -0.13;
+  float cD = 1.271;
+  float cE = -0.131;
+
+// N2LOSAT parameters
+//  float c1 = -1.12152120;
+//  float c3 = -3.92500586;
+//  float c4 = 3.76568716;
+//  float cD = 0.861680589;
+//  float cE = -0.03957471;
 
   float LEC[5] = {c1,c3,c4,cD,cE};
 
@@ -1301,9 +1240,9 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
 
   DataSet basis = file.openDataSet("alphas");
   DataSpace basis_dspace = basis.getSpace();
-  int nDim_basis = basis_dspace.getSimpleExtentNdims();
+//  int nDim_basis = basis_dspace.getSimpleExtentNdims();
   hsize_t iDim_basis[6];
-  int status = basis_dspace.getSimpleExtentDims(iDim_basis,NULL);
+  basis_dspace.getSimpleExtentDims(iDim_basis,NULL);
 
 
   // Generate a 2d buffer in contiguous memory
@@ -1319,9 +1258,9 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
 
   DataSet value = file.openDataSet("vtnf");
   DataSpace value_dspace = value.getSpace();
-  int nDim_value = value_dspace.getSimpleExtentNdims();
+//  int nDim_value = value_dspace.getSimpleExtentNdims();
   hsize_t value_maxDim[2];
-  int value_status = value_dspace.getSimpleExtentDims(value_maxDim,NULL);
+  value_dspace.getSimpleExtentDims(value_maxDim,NULL);
 
   hsize_t value_curDim[2];
   value_curDim[0] = value_maxDim[0];
@@ -1340,7 +1279,6 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
   int alpha_max = iDim_basis[0];
 
   int i=-5;
-  cout << "Loop over alphas goes from 0 to < " << alpha_max << endl;
   for (int alphaspp=0;alphaspp<alpha_max;++alphaspp)
   {
     int lap = dbuf[alphaspp][2];
@@ -1376,13 +1314,13 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
        for (int ii=0;ii<5;++ii) summed_me += LEC[ii] * me[ii] ;
        summed_me *= HBARC;
        summed_me *= modelspace->phase(dbuf[alphasp][1]+dbuf[alphasp][4]+dbuf[alphasp][7]+dbuf[alphaspp][1]+dbuf[alphaspp][4]+dbuf[alphaspp][7]);
-       if (alphasp==0 and alphaspp==0)
-       {
-         cout << "< 1 | V | 1 > : ";
-        for (int ii=0;ii<5;++ii)
-           cout << me[ii] << "   ";
-        cout << endl;
-       }
+//       if ((alphasp==0 and alphaspp==0) or (alphasp==1 and alphaspp==1))
+//       {
+//         cout << "< " << alphaspp << " | V | " << alphasp << " > : ";
+//        for (int ii=0;ii<5;++ii)
+//           cout << me[ii] << "   ";
+//        cout << " ===> " << summed_me << endl;
+//       }
 
 //       summed_me *= modelspace->phase(oa.n+ob.n+oc.n+od.n+oe.n+of.n) ;
 
@@ -1406,10 +1344,6 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
        }
        else if (a<norb and b<norb and c<norb and ap<norb and bp<norb and cp<norb)
        {
-//        if (a==ap and b==bp and c==cp and j12 != j12p)
-//        {
-//          summed_me *= 2;
-//        }
         op.ThreeBody.SetME(j12p,j12,jtot,T12,TT12,twoT,ap,bp,cp,a,b,c, summed_me);
         if (a==ap and b==bp and c==cp and j12 != j12p)
         {
@@ -1426,518 +1360,13 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
   delete[] value_buf[0];
   delete[] value_buf;
 
-   cout << "i = " << i << "  out of " << value_maxDim[0] << endl;
-  cout << "Writing me3j file..." << endl;
-  Write_me3j(filename + "_to_me3j", op, 2, 24, 12);
-  cout << "done" << endl;
-  cout << "All done reading." << endl;
+//   cout << "i = " << i << "  out of " << value_maxDim[0] << endl;
+//  cout << "Writing me3j file..." << endl;
+//  Write_me3j(filename + "_to_me3j", op, 2, 24, 12);
+//  cout << "done" << endl;
+//  cout << "All done reading." << endl;
 
 }
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////
-
-/*
-
-
-/// Read three-body matrix elements from HDF5 formatted file. This routine was ported to C++ from
-/// a C routine by Heiko Hergert, with as little modification as possible.
-void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
-{
-
-  float c1 = -0.81;
-  float c3 = -3.20;
-  float c4 = 5.40;
-  float cD = 1.27;
-  float cE = -0.13;
-
-//  float c1 = -0.76;
-//  float c3 = -4.78;
-//  float c4 =  3.96;
-//  float cD = -3.01;
-//  float cE = -0.69;
-
-  float LEC[5] = {c1,c3,c4,cD,cE};
-
-  const int SLABSIZE = 10000000;
-
-  ModelSpace* modelspace = op.GetModelSpace();
-  vector<array<int,5>> Basis;
-  GetHDF5Basis(modelspace, filename, Basis);
-
-
-  H5File file(filename, H5F_ACC_RDONLY);
-//  DataSet label = file.openDataSet("vtnf_labels"); // obsolete
-//  DataSpace label_dspace = label.getSpace(); // obsolete
-  DataSet value = file.openDataSet("vtnf");
-  DataSpace value_dspace = value.getSpace();
-
-//  int label_nDim = label_dspace.getSimpleExtentNdims();
-//  if (label_nDim != 2)
-//  {
-//    cerr << "Error. Expected label_nDim==2, but got << label_nDim." << endl;
-//    return;
-//  }
-//  hsize_t label_maxDim[2];
-//  int label_status = label_dspace.getSimpleExtentDims(label_maxDim,NULL);
-//  if (label_status != label_nDim)
-//  {
-//    cerr << "Error. failed to read dataset dimensions for label." << endl;
-//    return;
-//  }
-  
-//  hsize_t label_curDim[2];
-//  label_curDim[0] = min(SLABSIZE, int(label_maxDim[0]));
-//  label_curDim[1] = 7 ;
-  
-//  DataSpace label_buf_dspace(2,label_curDim);
-
-//  // Generate a 2d buffer in contiguous memory
-//  int **label_buf = new int*[label_curDim[0]];
-//  label_buf[0] = new int[label_curDim[0] * label_curDim[1]];
-//  for (hsize_t i=1; i<label_curDim[0]; ++i)
-//  {
-//    label_buf[i] = label_buf[i-1] + label_curDim[1];  
-//  }
-  
-  int value_nDim = value_dspace.getSimpleExtentNdims();
-  if (value_nDim != 2)
-  {
-    cerr << "Error. Expected value_nDim==2, but got << value_nDim." << endl;
-    return;
-  }
-  hsize_t value_maxDim[2];
-  int value_status = value_dspace.getSimpleExtentDims(value_maxDim,NULL);
-  if (value_status != value_nDim)
-  {
-    cerr << "Error. failed to read dataset dimensions for value." << endl;
-    return;
-  }
-  
-  hsize_t value_curDim[2];
-  value_curDim[0] = min(SLABSIZE, int(value_maxDim[0]));
-  value_curDim[1] = 5 ; // c1 c3 c4 cD cE
-
-  DataSpace value_buf_dspace(2,value_curDim);
-  
-  // This needs to be a 2d array now
-  float **value_buf = new float*[value_curDim[0]];
-  value_buf[0] = new float[value_curDim[0] * value_curDim[1]];
-  for (hsize_t i=1; i<value_curDim[0]; ++i)
-  {
-    value_buf[i] = value_buf[i-1] + value_curDim[1];  
-  }
-  // Generate a 1d buffer in contiguous memory, also known as an array...
-//  double *value_buf = new double[value_curDim[0]];
-
-  // break the file into slabs for reading
-  int nSlabs = (int)((double)value_maxDim[0]/((double)SLABSIZE)) + 1;
-  cout << "Reading file in " << nSlabs << " slabs." << endl;
-
-  hsize_t stride[2] = {1,1};
-  hsize_t count[2] = {1,1};
-
-//  size_t i_alpha_bra = 0; // bra/ket indices < alpha_bra | V(3) | alpha_ket >
-//  size_t i_alpha_ket = 0; 
-  size_t norb = modelspace->GetNumberOrbits();
-
-  int t12_bra_list[5] = {0,0,1,1,1};
-  int t12_ket_list[5] = {0,1,0,1,1};
-  int twoT_list[5]    = {1,1,1,1,3};
-
-  size_t alpha_max = Basis.size()-1;
-   hsize_t value_block[2];
-   value_block[0] = value_curDim[0];
-   value_block[1] = value_curDim[1];
-  size_t i=value_block[0];
-  int n=0;
-  int nread=0;
-  cout << "Loop on alpha goes from 1 to <= " << alpha_max << endl;
-  for(size_t i_alpha_bra=1;i_alpha_bra<=alpha_max;++i_alpha_bra)
-  {
-   size_t a = Basis[i_alpha_bra][0];
-   size_t b = Basis[i_alpha_bra][1];
-   size_t c = Basis[i_alpha_bra][2];
-   int J12  = Basis[i_alpha_bra][3];
-   int J2   = Basis[i_alpha_bra][4];
-//   if (a >= norb) break;
-   for (size_t i_alpha_ket=i_alpha_bra;i_alpha_ket<=alpha_max;++i_alpha_ket)
-   {
-
-       size_t d = Basis[i_alpha_ket][0];
-       size_t e = Basis[i_alpha_ket][1];
-       size_t f = Basis[i_alpha_ket][2];
-       int JJ12 = Basis[i_alpha_ket][3];
-       int J2p  = Basis[i_alpha_ket][4];
-//       if ( a>=norb or b>=norb or c>=norb or d>=norb or e>=norb or f>=norb) continue;
-       if (J2 != J2p) continue;
-       Orbit& oa = modelspace->GetOrbit(a);
-       Orbit& ob = modelspace->GetOrbit(b);
-       Orbit& oc = modelspace->GetOrbit(c);
-       Orbit& od = modelspace->GetOrbit(d);
-       Orbit& oe = modelspace->GetOrbit(e);
-       Orbit& of = modelspace->GetOrbit(f);
-
-       int parity_abc = ( oa.l+ob.l+oc.l )%2;
-       int parity_def = ( od.l+oe.l+of.l )%2;
-       if (parity_abc != parity_def) continue;
-
-       if (i>=value_block[0])
-       {
-         cout << "n = " << n << endl;
-         hsize_t start[2] = { n*value_curDim[0], 0};
-//         hsize_t value_block[2];
-         if (n==nSlabs)
-         {
-           value_block[0] = value_maxDim[0]-(nSlabs-1)*SLABSIZE;
-           value_block[1] = value_maxDim[1];
-           value_buf_dspace.close();
-           value_buf_dspace = DataSpace(2,value_block);
-         }
-         else
-         {
-           value_block[0] = value_curDim[0];
-           value_block[1] = value_curDim[1];
-         }
-     
-         value_dspace.selectHyperslab( H5S_SELECT_SET, count, start, stride, value_block);
-     
-         // Read the matrix elements into value_buf
-         value.read( &value_buf[0][0], PredType::NATIVE_FLOAT, value_buf_dspace, value_dspace );
-         i=0;
-         n++;
-         cout << "nread = " << nread << endl;
-       }
-
-       if (not( a>=norb or b>=norb or c>=norb or d>=norb or e>=norb or f>=norb))
-       {
-         for (hsize_t k_iso=0;k_iso<5;++k_iso)
-         {
-          int T12  = t12_bra_list[k_iso];
-          int TT12 = t12_ket_list[k_iso];
-          int twoT = twoT_list[k_iso];
-          float *me = value_buf[i+k_iso];
-          float summed_me = 0;
-          for (int ii=0;ii<5;++ii) summed_me += LEC[ii] * me[ii] ;
-          summed_me *= HBARC;
-          summed_me *= modelspace->phase(oa.n+ob.n+oc.n+od.n+oe.n+of.n) ;
-//       if ((a==b) and ((J12+T12)%2==0) and abs(summed_me)>1e-9)
-//         cout << "   AAAH!!! should be zero!" << endl;
-//       if ((d==e) and ((JJ12+TT12)%2==0) and abs(summed_me)>1e-9)
-//         cout << "   AAAH!!! should be zero!" << endl;
-          op.ThreeBody.SetME(J12,JJ12,J2,T12,TT12,twoT,a,b,c,d,e,f, summed_me);
-          if (i_alpha_bra != i_alpha_ket)
-            op.ThreeBody.SetME(JJ12,J12,J2,TT12,T12,twoT,d,e,f,a,b,c, summed_me);
-
-//                 cout << "< " << i_alpha_bra << " | V | " << i_alpha_ket << " >  J:" << J12 << " " << JJ12 << " " << J2
-//                      << "   T:" << T12 << " " << TT12 << " " << twoT << "   "
-//                      << a << " " << b << " " << c << " " << d << " " << e << " " << f << "   "
-//                      << summed_me << " (" << me[0] << "," << me[1]
-//                      << "," << me[2]
-//                      << "," << me[3]
-//                      << "," << me[4] << ")"
-//                      << endl;
-         }
-       }
-       i+=5;
-       nread += 5;
-
-   }
-  }
-
-
-  delete[] value_buf[0];
-  delete[] value_buf;
-  cout << "nread = " << nread << endl;
-  cout << "Writing me3j file..." << endl;
-  Write_me3j(filename + "_to_me3j", op, 2, 24, 12);
-  cout << "done" << endl;
-}
-
-*/
-
-/*
-/// Read three-body matrix elements from HDF5 formatted file. This routine was ported to C++ from
-/// a C routine by Heiko Hergert, with as little modification as possible.
-void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
-{
-
-  float c1 = -0.81;
-  float c3 = -3.20;
-  float c4 = 5.40;
-  float cD = 1.27;
-  float cE = -0.13;
-
-//  float c1 = -0.76;
-//  float c3 = -4.78;
-//  float c4 =  3.96;
-//  float cD = -3.01;
-//  float cE = -0.69;
-
-  float LEC[5] = {c1,c3,c4,cD,cE};
-
-  const int SLABSIZE = 10000000;
-
-  ModelSpace* modelspace = op.GetModelSpace();
-  vector<array<int,5>> Basis;
-  GetHDF5Basis(modelspace, filename, Basis);
-
-
-  H5File file(filename, H5F_ACC_RDONLY);
-//  DataSet label = file.openDataSet("vtnf_labels"); // obsolete
-//  DataSpace label_dspace = label.getSpace(); // obsolete
-  DataSet value = file.openDataSet("vtnf");
-  DataSpace value_dspace = value.getSpace();
-
-//  int label_nDim = label_dspace.getSimpleExtentNdims();
-//  if (label_nDim != 2)
-//  {
-//    cerr << "Error. Expected label_nDim==2, but got << label_nDim." << endl;
-//    return;
-//  }
-//  hsize_t label_maxDim[2];
-//  int label_status = label_dspace.getSimpleExtentDims(label_maxDim,NULL);
-//  if (label_status != label_nDim)
-//  {
-//    cerr << "Error. failed to read dataset dimensions for label." << endl;
-//    return;
-//  }
-  
-//  hsize_t label_curDim[2];
-//  label_curDim[0] = min(SLABSIZE, int(label_maxDim[0]));
-//  label_curDim[1] = 7 ;
-  
-//  DataSpace label_buf_dspace(2,label_curDim);
-
-//  // Generate a 2d buffer in contiguous memory
-//  int **label_buf = new int*[label_curDim[0]];
-//  label_buf[0] = new int[label_curDim[0] * label_curDim[1]];
-//  for (hsize_t i=1; i<label_curDim[0]; ++i)
-//  {
-//    label_buf[i] = label_buf[i-1] + label_curDim[1];  
-//  }
-  
-  int value_nDim = value_dspace.getSimpleExtentNdims();
-  if (value_nDim != 2)
-  {
-    cerr << "Error. Expected value_nDim==2, but got << value_nDim." << endl;
-    return;
-  }
-  hsize_t value_maxDim[2];
-  int value_status = value_dspace.getSimpleExtentDims(value_maxDim,NULL);
-  if (value_status != value_nDim)
-  {
-    cerr << "Error. failed to read dataset dimensions for value." << endl;
-    return;
-  }
-  
-  hsize_t value_curDim[2];
-  value_curDim[0] = min(SLABSIZE, int(value_maxDim[0]));
-  value_curDim[1] = 5 ; // c1 c3 c4 cD cE
-
-  DataSpace value_buf_dspace(2,value_curDim);
-  
-  // This needs to be a 2d array now
-  float **value_buf = new float*[value_curDim[0]];
-  value_buf[0] = new float[value_curDim[0] * value_curDim[1]];
-  for (hsize_t i=1; i<value_curDim[0]; ++i)
-  {
-    value_buf[i] = value_buf[i-1] + value_curDim[1];  
-  }
-  // Generate a 1d buffer in contiguous memory, also known as an array...
-//  double *value_buf = new double[value_curDim[0]];
-
-  // break the file into slabs for reading
-  int nSlabs = (int)((double)value_maxDim[0]/((double)SLABSIZE)) + 1;
-  cout << "Reading file in " << nSlabs << " slabs." << endl;
-
-  hsize_t stride[2] = {1,1};
-  hsize_t count[2] = {1,1};
-
-  size_t i_alpha_bra = 0; // bra/ket indices < alpha_bra | V(3) | alpha_ket >
-  size_t i_alpha_ket = 0; 
-  size_t norb = modelspace->GetNumberOrbits();
-
-
-  // loop through the slabs
-  for ( int n=0; n<nSlabs; ++n)
-  {
-    cout << "n = " << n << endl;
-    hsize_t start[2] = { n*value_curDim[0], 0};
-//    hsize_t label_block[2];
-    hsize_t value_block[2];
-    if (n==nSlabs-1)
-    {
-//      label_block[0] = label_maxDim[0]-(nSlabs-1)*SLABSIZE;
-//      label_block[1] = label_maxDim[1];
-      value_block[0] = value_maxDim[0]-(nSlabs-1)*SLABSIZE;
-      value_block[1] = value_maxDim[1];
-
-      // Not clear exactly why this needs to be done.
-//      label_buf_dspace.close();
-      value_buf_dspace.close();
-//      label_buf_dspace = DataSpace(2,label_block);
-      value_buf_dspace = DataSpace(2,value_block);
-
-    }
-    else
-    {
-//      label_block[0] = label_curDim[0];
-//      label_block[1] = label_curDim[1];
-      value_block[0] = value_curDim[0];
-      value_block[1] = value_curDim[1];
-    }
-
-//    label_dspace.selectHyperslab( H5S_SELECT_SET, count, start, stride, label_block);
-    value_dspace.selectHyperslab( H5S_SELECT_SET, count, start, stride, value_block);
-
-    // Read the label data into label_buf, and matrix elements into value_buf
-//    label.read( &label_buf[0][0], PredType::NATIVE_INT, label_buf_dspace, label_dspace );
-//    value.read( &value_buf[0], PredType::NATIVE_DOUBLE, value_buf_dspace, value_dspace );
-    value.read( &value_buf[0][0], PredType::NATIVE_FLOAT, value_buf_dspace, value_dspace );
-
-    int t12_bra_list[5] = {0,0,1,1,1};
-    int t12_ket_list[5] = {0,1,0,1,1};
-    int twoT_list[5]    = {1,1,1,1,3};
-
-//    cout << "alpha_bra = " << i_alpha_bra << "  alpha_ket = " << i_alpha_ket  << endl;
-//    cout << "a = " << Basis[i_alpha_bra][0] << " norb = " << norb << endl;
-//    cout << "d = " << Basis[i_alpha_ket][0] << endl;
-//    i_alpha_ket --;
-    i_alpha_bra++;
-    for (hsize_t i=0; i<value_block[0]; i+=5)
-    {
-       if (i_alpha_ket==(Basis.size()-1) )
-       {
-         cout << "end of list. i_alpha_ket = " << i_alpha_ket << "  i_alpha_bra = " << i_alpha_bra << endl;
-         cout << "    " << Basis[i_alpha_ket][0]
-              << " " << Basis[i_alpha_ket][1]
-              << " " << Basis[i_alpha_ket][2]
-              << " " << Basis[i_alpha_ket][3]
-              << " " << Basis[i_alpha_ket][4]
-              << endl;
-         i_alpha_bra++;
-         i_alpha_ket = i_alpha_bra;
-       }
-       else
-       {
-         i_alpha_ket++;
-       }
-//      cout << "alpha_bra = " << i_alpha_bra << "  alpha_ket = " << i_alpha_ket  << endl;
-
-      for (hsize_t k_iso=0;k_iso<5;++k_iso)
-      {
-       int T12  = t12_bra_list[k_iso];
-       int TT12 = t12_ket_list[k_iso];
-       int twoT = twoT_list[k_iso];
-
-//       int  alpha  = label_buf[i][0];
-//       int  T12    = label_buf[i][1]/2;
-//       int  alphap = label_buf[i][2];
-//       int  TT12   = label_buf[i][3]/2;
-//       int  twoT   = label_buf[i][4];
-//       int  twoJ   = label_buf[i][5];
-//       int  Pi     = label_buf[i][6];
-
-//       if (alpha<alphap) continue;
-
-//       double me   = value_buf[i];
-//       me *= HBARC;
-
-       size_t a = Basis[i_alpha_bra][0];
-       size_t b = Basis[i_alpha_bra][1];
-       size_t c = Basis[i_alpha_bra][2];
-       int J12  = Basis[i_alpha_bra][3];
-       int J2   = Basis[i_alpha_bra][4];
-
-       size_t d = Basis[i_alpha_ket][0];
-       size_t e = Basis[i_alpha_ket][1];
-       size_t f = Basis[i_alpha_ket][2];
-       int JJ12 = Basis[i_alpha_ket][3];
-       int J2p  = Basis[i_alpha_ket][4];
-
-//       if (a>=norb ) break;
-//       if ( b>=norb or c>=norb or d>=norb or e>=norb or f>=norb) continue;
-//       cout << "J2 = " << J2 << " " << "J2p = " << J2p << endl;
-//       if ( a>=norb or b>=norb or c>=norb or d>=norb or e>=norb or f>=norb) continue;
-//       if (J2 != J2p) continue;
-       Orbit& oa = modelspace->GetOrbit(a);
-       Orbit& ob = modelspace->GetOrbit(b);
-       Orbit& oc = modelspace->GetOrbit(c);
-       Orbit& od = modelspace->GetOrbit(d);
-       Orbit& oe = modelspace->GetOrbit(e);
-       Orbit& of = modelspace->GetOrbit(f);
-
-       int parity_abc = ( oa.l+ob.l+oc.l )%2;
-       int parity_def = ( od.l+oe.l+of.l )%2;
-//       if (parity_abc != parity_def) continue;
-
-//       me *= 0.5; // According to Heiko, this shouldn't be here. But comparing matrix elements with Petr's interaction suggests otherwise.
-//       if (a!=d or b!=e or c!=f) me *=0.5;
-//       if (alpha<50 and alphap<50)
-//       if (a<5 and b<5 and c<5 and d<5 and e<5 and f<5)
-       float *me = value_buf[i+k_iso];
-       float summed_me = 0;
-       for (int ii=0;ii<5;++ii) summed_me += LEC[ii] * me[ii] ;
-       summed_me *= HBARC;
-       summed_me *= modelspace->phase(oa.n+ob.n+oc.n+od.n+oe.n+of.n) ;
-       if ((a==b) and ((J12+T12)%2==0) and abs(summed_me)>1e-9)
-         cout << "   AAAH!!! should be zero!" << endl;
-       if ((d==e) and ((JJ12+TT12)%2==0) and abs(summed_me)>1e-9)
-         cout << "   AAAH!!! should be zero!" << endl;
-//       me *= modelspace->phase(oa.n+ob.n+oc.n+od.n+oe.n+of.n); // shamelessly copying Heiko. I don't understand this.
-//       if (((alpha+1)/2==1 and (alphap/2==127)) or ( (alphap+1)/2==1 and alpha/2==127) )
-//       if (((alpha+1)/2==1 or alpha/2==127) and (alphap/2==127 or (alphap+1)/2==1) )
-//        {
-//         double previous = op.ThreeBody.GetME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f);
-//         double newme = op.ThreeBody.AddToME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f,me);
-//         cout << "*** " << alpha << "  " << alphap << "  "
-//              << a << "-" << b << "-" << c << " " << d << "-" << e << "-" << f << "  "
-//              << T12 << "  " << TT12 << "  " << twoT << "  "
-//              << J12 << "  " << JJ12 << "  " << twoJ << "  " << me << "     "
-//              << previous << "  =>  "
-//              <<  newme
-//             << endl;
-//       }
-//       else
-       cout << "< " << i_alpha_bra << " | V | " << i_alpha_ket << " >  J:" << J12 << " " << JJ12 << " " << J2 << "   T:" << T12 << " " << TT12 << " " << twoT << "   " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "   "
-               << summed_me << " (" << me[0] << "," << me[1]
-                << "," << me[2]
-                << "," << me[3]
-                << "," << me[4] << ")"
-               << endl;
-       if ( a>=norb or b>=norb or c>=norb or d>=norb or e>=norb or f>=norb) continue;
-       if (J2 != J2p) continue;
-       if (parity_abc != parity_def) continue;
-       op.ThreeBody.SetME(J12,JJ12,J2,T12,TT12,twoT,a,b,c,d,e,f, summed_me);
-       if (i_alpha_bra != i_alpha_ket)
-         op.ThreeBody.SetME(JJ12,J12,J2,TT12,T12,twoT,d,e,f,a,b,c, summed_me);
-
-// not sure if I still need this...
-//       if (a==d and b==e and c==f and ( J12!=JJ12 ) )
-////       if (a==d and b==e and c==f and ( J12!=JJ12 or T12 != TT12) )
-//          op.ThreeBody.SetME(JJ12,J12,twoJ,TT12,T12,twoT,a,b,c,d,e,f, me);
-
-    } // loop over isospin
-    } //loop over matrix elements
-  } // loop over slabs
-//  delete[] label_buf[0];
-//  delete[] label_buf;
-  delete[] value_buf[0];
-  delete[] value_buf;
-  cout << "Writing me3j file..." << endl;
-  Write_me3j(filename + "_to_me3j", op, 2, 24, 12);
-  cout << "done" << endl;
-}
-
-
-
-*/
-
-
 
 
 
@@ -1954,7 +1383,6 @@ void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int E
      return;
   }
   ModelSpace * modelspace = Hbare.GetModelSpace();
-//  int norb = modelspace->GetNumberOrbits();
   vector<int> orbits_remap;
 
   if (emax < 0)  emax = modelspace->Nmax;
