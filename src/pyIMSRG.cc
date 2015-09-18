@@ -182,5 +182,12 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("Single_Ref_1B_Density_Matrix", imsrg_util::Single_Ref_1B_Density_Matrix);
    def("Get_Charge_Density", imsrg_util::Get_Charge_Density);
 
+   def("CG",AngMom::CG);
+   def("ThreeJ",AngMom::ThreeJ);
+   def("SixJ",AngMom::SixJ);
+   def("NineJ",AngMom::NineJ);
+   def("NormNineJ",AngMom::NormNineJ);
+   def("Moshinsky",AngMom::Moshinsky);
+
 
 }
