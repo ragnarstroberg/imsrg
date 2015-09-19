@@ -25,6 +25,7 @@ map<string, double> Operator::timer;
 Operator::~Operator()
 {
 //   cout << "calling Operator destructor" << endl;
+  timer["N_Operators"] --;
 }
 
 /////////////////// CONSTRUCTORS /////////////////////////////////////////
@@ -33,6 +34,7 @@ Operator::Operator()
     rank_J(0), rank_T(0), parity(0), particle_rank(2),
     hermitian(true), antihermitian(false), nChannels(0)
 {
+  timer["N_Operators"] ++;
 }
 
 
@@ -47,6 +49,7 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 {
   SetUpOneBodyChannels();
   if (particle_rank >=3) ThreeBody.Allocate();
+  timer["N_Operators"] ++;
 }
 
 
@@ -60,6 +63,7 @@ Operator::Operator(ModelSpace& ms) :
     nChannels(ms.GetNumberTwoBodyChannels())
 {
   SetUpOneBodyChannels();
+  timer["N_Operators"] ++;
 }
 
 Operator::Operator(const Operator& op)
@@ -71,6 +75,7 @@ Operator::Operator(const Operator& op)
   nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
 {
 //   cout << "Calling copy constructor for Operator" << endl;
+  timer["N_Operators"] ++;
 }
 
 Operator::Operator(Operator&& op)
@@ -82,6 +87,7 @@ Operator::Operator(Operator&& op)
   nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
 {
 //   cout << "Calling move constructor for Operator" << endl;
+  timer["N_Operators"] ++;
 }
 
 /////////// COPY METHOD //////////////////////////

@@ -493,6 +493,7 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << Eta.TwoBodyNorm()
         << setw(7)      << setprecision(0)          << H_s.timer["N_Commutators"]
         << setw(fwidth) << setprecision(fprecision) << H_s.GetMP2_Energy()
+        << setw(7)      << setprecision(0)         << H_s.timer["N_Operators"]
         << setprecision(fprecision)
         << endl;
    }
@@ -520,8 +521,9 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << "||Omega||" 
         << setw(fwidth) << setprecision(fprecision) << "||Eta_1||" 
         << setw(fwidth) << setprecision(fprecision) << "||Eta_2||" 
-        << setw(9)      << setprecision(fprecision) << "Ncomm" 
-        << setw(12)     << setprecision(fprecision) << "E(MP2)" 
+        << setw(7)      << setprecision(fprecision) << "Ncomm" 
+        << setw(16)     << setprecision(fprecision) << "E(MP2)" 
+        << setw(7)      << setprecision(fprecision) << "N_Ops"
         << endl;
       f << "---------------------------------------------------------------------------------------------------------------------------------------------" << endl;
    }
