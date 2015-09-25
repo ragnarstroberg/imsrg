@@ -145,7 +145,8 @@ int main(int argc, char** argv)
   ModelSpace modelspace(eMax,valence_space);
 
   modelspace.SetHbarOmega(hw);
-//  modelspace.SetTargetMass(targetMass);
+  if (targetMass>0)
+     modelspace.SetTargetMass(targetMass);
   modelspace.SetN3max(E3max);
   
   cout << "Making the operator..." << endl;
