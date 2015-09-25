@@ -130,14 +130,16 @@ int main(int argc, char** argv)
     return 1;
   }
   test.close();
-  test.open(input3bme);
-  if( not test.good() )
+  if (input3bme != "none")
   {
-    cout << "trouble reading " << input3bme << " exiting. " << endl;
-    return 1;
+    test.open(input3bme);
+    if( not test.good() )
+    {
+      cout << "trouble reading " << input3bme << " exiting. " << endl;
+      return 1;
+    }
+    test.close();
   }
-  test.close();
-
   ReadWrite rw;
 
 
