@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 //  double omega_norm_max = 2.5;
   string core_generator = "atan";
   string valence_generator = "shell-model-atan";
-//  string reference_generator = valence_generator;
+  string reference_generator = valence_generator;
   int E3max = 12;
   int eMax = 6;
   string flowfile = "default";
@@ -133,13 +133,16 @@ int main(int argc, char** argv)
     return 1;
   }
   test.close();
-  test.open(input3bme);
-  if( not test.good() )
+  if (input3bme != "none")
   {
-    cout << "trouble reading " << input3bme << " exiting. " << endl;
-    return 1;
+    test.open(input3bme);
+    if( not test.good() )
+    {
+      cout << "trouble reading " << input3bme << " exiting. " << endl;
+      return 1;
+    }
+    test.close();
   }
-  test.close();
 
   ReadWrite rw;
 
@@ -223,8 +226,9 @@ int main(int argc, char** argv)
 
   Hbare.CalculateKineticEnergy();
   
-  Operator Tcm = TCM_Op(modelspace_target);
-  Hbare -= Tcm;
+//  Operator Tcm = TCM_Op(modelspace_target);
+//  Hbare -= Tcm;
+  Hbare -= TCM_Op(modelspace_target);
 //  Hbare += Trel_Op(modelspace_target);
   
   HartreeFock hf(Hbare);
@@ -236,20 +240,6 @@ int main(int argc, char** argv)
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
 
-//  Operator R2_p1 = R2_p1_Op(modelspace_target);
-//  Operator R2_p2 = R2_p2_Op(modelspace_target);
-//  Operator R2_cm  = R2CM_Op(modelspace_target);
-//  if (basis == "HF")
-//  {
-//    R2_p1 = hf.TransformToHFBasis(R2_p1);
-//    R2_p2 = hf.TransformToHFBasis(R2_p2);
-//    R2_cm = hf.TransformToHFBasis(R2_cm);
-//  }
-//  R2_p1 = R2_p1.DoNormalOrdering();
-//  R2_p2 = R2_p2.DoNormalOrdering();
-//  R2_cm = R2_cm.DoNormalOrdering();
-//  cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << endl; 
-//  cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + R2p + R2n + DF) << endl; 
   
   IMSRGSolver imsrgsolver(Hbare);
   
@@ -262,7 +252,7 @@ int main(int argc, char** argv)
 
   if (method == "magnus")
   {
-     imsrgsolver.SetdOmega(min(domega,omega_norm_max+1e6));
+     imsrgsolver.SetdOmega(min(domega,omega_norm_max+1e-6));
      imsrgsolver.SetOmegaNormMax(omega_norm_max);
      if (nsteps > 1)
      {
@@ -278,25 +268,40 @@ int main(int argc, char** argv)
      Hprime.SetModelSpace(modelspace_core);
      Hprime = Hprime.DoNormalOrdering();
      IMSRGSolver imsrgsolver2(Hprime);
-//     imsrgsolver2.SetGenerator(reference_generator);
+     imsrgsolver2.SetGenerator(reference_generator);
      imsrgsolver2.SetSmax(smax/2.0);
      imsrgsolver2.SetFlowFile(flowfile+"_2");
      imsrgsolver2.SetDsmax(dsmax);
      imsrgsolver2.SetDenominatorDelta(denominator_delta);
      imsrgsolver2.SetDs(ds_0);
-     imsrgsolver2.SetdOmega(min(domega,omega_norm_max+1e6));
+     imsrgsolver2.SetdOmega(min(domega,omega_norm_max+1e-6));
      imsrgsolver2.SetOmegaNormMax(omega_norm_max);
 
      imsrgsolver2.Solve();
 
      rw.WriteNuShellX_int(imsrgsolver2.GetH_s(),intfile+".int");
      rw.WriteNuShellX_sps(imsrgsolver2.GetH_s(),intfile+".sp");
-//     R2_p1 = imsrgsolver.Transform(R2_p1);
-//     R2_p2 = imsrgsolver.Transform(R2_p2);
-//     R2_cm = imsrgsolver.Transform(R2_cm);
-//     rw.WriteNuShellX_op(R2_p1,intfile+"_R2p1.int");
-//     rw.WriteNuShellX_op(R2_p2,intfile+"_R2p2.int");
-//     rw.WriteNuShellX_op(R2_cm,intfile+"_R2cm.int");
+
+     vector<Operator> oplist;
+     oplist.push_back(R2_p1_Op(modelspace_target));
+     oplist.push_back(R2_p2_Op(modelspace_target));
+     oplist.push_back(R2CM_Op(modelspace_target));
+
+     for (Operator& op : oplist )
+     {
+       if (basis == "HF")
+          op = hf.TransformToHFBasis(op);
+       op = op.DoNormalOrdering();
+       op = imsrgsolver.Transform(op);
+       op = op.UndoNormalOrdering();
+       op.SetModelSpace(modelspace_core);
+       op = op.DoNormalOrdering();
+       op = imsrgsolver2.Transform(op);
+     }
+
+     rw.WriteNuShellX_op(oplist[0],intfile+"_R2p1.int");
+     rw.WriteNuShellX_op(oplist[1],intfile+"_R2p2.int");
+     rw.WriteNuShellX_op(oplist[2],intfile+"_R2cm.int");
   }
   else if (method == "flow")
   {

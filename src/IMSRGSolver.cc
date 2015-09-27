@@ -13,7 +13,7 @@ IMSRGSolver::~IMSRGSolver()
 
 IMSRGSolver::IMSRGSolver()
     : s(0),ds(0.1),ds_max(0.5),
-     norm_domega(0.1), omega_norm_max(2.0),method("magnus_euler"),flowfile("")
+     norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
 #ifndef NO_ODE
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 #endif
@@ -23,7 +23,7 @@ IMSRGSolver::IMSRGSolver()
 IMSRGSolver::IMSRGSolver( Operator &H_in)
    : modelspace(H_in.GetModelSpace()),H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), // ,dOmega(H_in)
     istep(0), s(0),ds(0.1),ds_max(0.5),
-    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),method("magnus_euler"),flowfile("")
+    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
 #ifndef NO_ODE
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 #endif
@@ -119,6 +119,10 @@ void IMSRGSolver::Solve_magnus_euler()
 
       double norm_eta = Eta.Norm();
 //      double norm_omega = Omega.Norm();
+      if (norm_eta < eta_criterion )
+      {
+        break;
+      }
       double norm_omega = Omega.back().Norm();
       if (norm_omega > omega_norm_max)
       {
@@ -357,9 +361,19 @@ void IMSRGSolver::operator()( const vector<Operator>& x, vector<Operator>& dxdt,
      FlowingOps[0] = x[0];
      auto& H_s = FlowingOps[0];
      generator.Update(&H_s,&Eta);
-     for (size_t i=0;i<x.size();++i)
+     if (Eta.Norm() < eta_criterion)
      {
-       dxdt[i] = Commutator(Eta,x[i]);
+       for (size_t i=0;i<x.size();++i)
+       {
+         dxdt[i] = 0*x[i];
+       }
+     }
+     else
+     {
+       for (size_t i=0;i<x.size();++i)
+       {
+         dxdt[i] = Commutator(Eta,x[i]);
+       }
      }
    }
    else if (ode_mode == "Omega")

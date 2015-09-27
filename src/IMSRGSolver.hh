@@ -32,6 +32,7 @@ class IMSRGSolver
   double smax;
   double norm_domega;
   double omega_norm_max;
+  double eta_criterion;
   string method;
   string flowfile;
 
@@ -61,6 +62,7 @@ class IMSRGSolver
   void SetGenerator(string g);
   void SetOmegaNormMax(double x){omega_norm_max = x;};
   void SetODETolerance(float x){ode_e_abs=x;ode_e_rel=x;};
+  void SetEtaCriterion(float x){eta_criterion = x;};
 
   int GetSystemDimension();
   Operator& GetH_s(){return FlowingOps[0];};

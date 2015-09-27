@@ -130,14 +130,16 @@ int main(int argc, char** argv)
     return 1;
   }
   test.close();
-  test.open(input3bme);
-  if( not test.good() )
+  if (input3bme != "none")
   {
-    cout << "trouble reading " << input3bme << " exiting. " << endl;
-    return 1;
+    test.open(input3bme);
+    if( not test.good() )
+    {
+      cout << "trouble reading " << input3bme << " exiting. " << endl;
+      return 1;
+    }
+    test.close();
   }
-  test.close();
-
   ReadWrite rw;
 
 
@@ -145,7 +147,8 @@ int main(int argc, char** argv)
   ModelSpace modelspace(eMax,valence_space);
 
   modelspace.SetHbarOmega(hw);
-//  modelspace.SetTargetMass(targetMass);
+  if (targetMass>0)
+     modelspace.SetTargetMass(targetMass);
   modelspace.SetN3max(E3max);
   
   cout << "Making the operator..." << endl;
@@ -196,29 +199,33 @@ int main(int argc, char** argv)
   
   IMSRGSolver imsrgsolver(Hbare);
   
+  imsrgsolver.SetMethod(method);
   imsrgsolver.SetHin(Hbare);
   imsrgsolver.SetSmax(smax);
   imsrgsolver.SetFlowFile(flowfile);
   imsrgsolver.SetDs(ds_0);
   imsrgsolver.SetDenominatorDelta(denominator_delta);
+  imsrgsolver.SetdOmega(domega);
+  imsrgsolver.SetOmegaNormMax(omega_norm_max);
+  imsrgsolver.SetODETolerance(ode_tolerance);
   if (denominator_delta_orbit != "none")
     imsrgsolver.SetDenominatorDeltaOrbit(denominator_delta_orbit);
+  if (nsteps > 1)
+  {
+    imsrgsolver.SetGenerator(core_generator);
+    imsrgsolver.Solve();
+    if (method == "magnus") smax *= 2;
+  }
+  imsrgsolver.SetGenerator(valence_generator);
+  imsrgsolver.SetSmax(smax);
+  imsrgsolver.Solve();
+
+  rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
+  rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
 
   if (method == "magnus")
   {
-     imsrgsolver.SetdOmega(domega);
-     imsrgsolver.SetOmegaNormMax(omega_norm_max);
-     if (nsteps > 1)
-     {
-       imsrgsolver.SetGenerator(core_generator);
-       imsrgsolver.Solve();
-       smax *= 2;
-     }
-     imsrgsolver.SetGenerator(valence_generator);
-     imsrgsolver.SetSmax(smax);
-     imsrgsolver.Solve();
-     rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
-     rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
+
      R2_p1 = imsrgsolver.Transform(R2_p1);
      R2_p2 = imsrgsolver.Transform(R2_p2);
      R2_cm = imsrgsolver.Transform(R2_cm);
@@ -226,21 +233,6 @@ int main(int argc, char** argv)
      rw.WriteNuShellX_op(R2_p2,intfile+"_R2p2.int");
      rw.WriteNuShellX_op(R2_cm,intfile+"_R2cm.int");
   }
-  else if (method == "flow")
-  {
-     imsrgsolver.SetODETolerance(ode_tolerance);
-     if (nsteps > 1)
-     {
-       imsrgsolver.SetGenerator(core_generator);
-       imsrgsolver.Solve_ode_adaptive();
-     }
-     imsrgsolver.SetGenerator(valence_generator);
-     imsrgsolver.SetSmax(smax);
-     imsrgsolver.Solve_ode_adaptive();
-     rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
-     rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
-  }
-
 
   Hbare.PrintTimes();
  
