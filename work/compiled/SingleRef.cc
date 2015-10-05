@@ -178,6 +178,12 @@ int main(int argc, char** argv)
   
   IMSRGSolver imsrgsolver(Hbare);
   
+  if (method=="NSmagnus")
+  {
+    omega_norm_max = 500;
+    method = "magnus";
+  }
+  imsrgsolver.SetMethod(method);
   imsrgsolver.SetGenerator(generator);
   imsrgsolver.SetHin(Hbare);
   imsrgsolver.SetSmax(smax);
@@ -185,14 +191,9 @@ int main(int argc, char** argv)
   imsrgsolver.SetDs(ds_0);
 //  imsrgsolver.SetdOmega(domega);
   imsrgsolver.SetODETolerance(ode_tolerance);
-  imsrgsolver.SetdOmega(min(domega,omega_norm_max));
+  imsrgsolver.SetdOmega(min(domega,omega_norm_max+1e-6));
   imsrgsolver.SetOmegaNormMax(omega_norm_max);
-  if (method == "magnus")
-    imsrgsolver.Solve();
-  else if (method == "flow")
-    imsrgsolver.Solve_ode_adaptive();
-  else if (method == "flow-omega")
-    imsrgsolver.Solve_ode_magnus();
+  imsrgsolver.Solve();
 
   if (method == "magnus" or method == "flow-omega")
   {

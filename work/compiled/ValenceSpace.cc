@@ -199,6 +199,11 @@ int main(int argc, char** argv)
   
   IMSRGSolver imsrgsolver(Hbare);
   
+  if (method == "NSmagnus")
+  {
+    omega_norm_max=500;
+    method = "magnus";
+  }
   imsrgsolver.SetMethod(method);
   imsrgsolver.SetHin(Hbare);
   imsrgsolver.SetSmax(smax);
