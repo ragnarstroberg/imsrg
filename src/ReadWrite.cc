@@ -562,7 +562,8 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
     
 
     infile.seekg(0, infile.end);
-    int n_elem = infile.tellg();
+//    int n_elem = infile.tellg();
+    size_t n_elem = infile.tellg();
     infile.seekg(0, infile.beg);
     n_elem -= infile.tellg();
     n_elem -= HEADERSIZE;
