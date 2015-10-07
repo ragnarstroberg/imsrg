@@ -8,7 +8,7 @@ CC = g++
 INCLUDE   = -I./armadillo
 FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
 SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
-WARNFLAGS = -Wall -Wno-comment
+WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
 FLAGS    += $(WARNFLAGS)
 SOFLAGS  += $(WARNFLAGS)
 INSTDIR = $(HOME)
