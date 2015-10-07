@@ -185,13 +185,17 @@ Operator& Operator::operator+=(const Operator& rhs)
 {
    ZeroBody += rhs.ZeroBody;
    OneBody  += rhs.OneBody;
-   TwoBody  += rhs.TwoBody;
+   if (rhs.GetParticleRank() > 1)
+     TwoBody  += rhs.TwoBody;
    return *this;
 }
 
 Operator Operator::operator+(const Operator& rhs) const
 {
-   return ( Operator(*this) += rhs );
+   if (GetParticleRank() >= rhs.GetParticleRank())
+     return ( Operator(*this) += rhs );
+   else
+     return ( Operator(rhs) += *this );
 }
 
 // Subtract operators
@@ -199,7 +203,8 @@ Operator& Operator::operator-=(const Operator& rhs)
 {
    ZeroBody -= rhs.ZeroBody;
    OneBody -= rhs.OneBody;
-   TwoBody -= rhs.TwoBody;
+   if (rhs.GetParticleRank() > 1)
+     TwoBody -= rhs.TwoBody;
    return *this;
 }
 
@@ -873,7 +878,7 @@ Operator Commutator( const Operator& X, const Operator& Y)
 //Operator Operator::CommutatorScalarScalar( Operator& opright) 
 Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) 
 {
-   Operator Z = Y;
+   Operator Z = X.GetParticleRank()>Y.GetParticleRank() ? X : Y;
    Z.EraseZeroBody();
    Z.EraseOneBody();
    Z.EraseTwoBody();
@@ -1139,57 +1144,130 @@ void Operator::comm121ss( const Operator& X, const Operator& Y)
 void Operator::comm221ss( const Operator& X, const Operator& Y) 
 {
 
+//   cout << "Begin comm211ss" << endl;
+//   cout << "Particle ranks: " << this->GetParticleRank() << " " << X.GetParticleRank() << " " << Y.GetParticleRank() << endl;
    Operator& Z = *this;
+//   cout << "Done Setting Z" << endl;
    int norbits = modelspace->GetNumberOrbits();
+//   cout << "norbits = " << norbits << endl;
    TwoBodyME Mpp = Y.TwoBody;
    TwoBodyME Mhh = Y.TwoBody;
+//   cout << "Mpp(0,0).size() = " << Mpp.GetMatrix(0,0).size() << endl;
+//   cout << "Mhh(0,0).size() = " << Mhh.GetMatrix(0,0).size() << endl;
+//   cout << "X(0,0).size() = " << X.TwoBody.GetMatrix(0,0).size() << endl;
+//   cout << "Y(0,0).size() = " << Y.TwoBody.GetMatrix(0,0).size() << endl;
+//   cout << "ppKets = " << modelspace->GetTwoBodyChannel(0).GetKetIndex_pp().size() << endl;
+//   cout << "hhKets = " << modelspace->GetTwoBodyChannel(0).GetKetIndex_hh().size() << endl;
+//
+//   cout << "Begin loop over channels. nChannels = " << nChannels << endl;
+//   cout << "X.nChannels = " << X.nChannels << endl;
+//   #pragma omp parallel for schedule(dynamic,1)
 
+
+   int nch = modelspace->SortedTwoBodyChannels.size();
+   #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
-   for (int ch=0;ch<nChannels;++ch)
+   #endif
+   for (int ich=0; ich<nch; ++ich)
    {
+      int ch = modelspace->SortedTwoBodyChannels[ich];
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
-      auto& LHS = (arma::mat&) X.TwoBody.GetMatrix(ch,ch);
-      auto& RHS = (arma::mat&) Y.TwoBody.GetMatrix(ch,ch);
-      arma::mat& Matrixpp =  Mpp.GetMatrix(ch,ch);
-      arma::mat& Matrixhh =  Mpp.GetMatrix(ch,ch);
-      
-      Matrixpp = ( LHS.rows(tbc.GetKetIndex_pp()) * RHS.cols(tbc.GetKetIndex_pp()));
-      Matrixpp -= Matrixpp.t();
-      Matrixhh = ( LHS.rows(tbc.GetKetIndex_hh()) * RHS.cols(tbc.GetKetIndex_hh()));
-      Matrixhh -= Matrixhh.t();
-   }
+      auto& LHS = X.TwoBody.GetMatrix(ch,ch);
+      auto& RHS = Y.TwoBody.GetMatrix(ch,ch);
+//      auto& OUT = Z.TwoBody.GetMatrix(ch,ch);
 
+      auto& Matrixpp = Mpp.GetMatrix(ch,ch);
+      auto& Matrixhh = Mhh.GetMatrix(ch,ch);
+
+      auto& kets_pp = tbc.GetKetIndex_pp();
+      auto& kets_hh = tbc.GetKetIndex_hh();
+      
+      Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
+      Matrixhh =  LHS.cols(kets_hh) * RHS.rows(kets_hh);
+
+      if (Z.IsHermitian())
+      {
+         Matrixpp +=  Matrixpp.t();
+         Matrixhh +=  Matrixhh.t();
+      }
+      else if (Z.IsAntiHermitian()) // i.e. LHS and RHS are both hermitian or ant-hermitian
+      {
+         Matrixpp -=  Matrixpp.t();
+         Matrixhh -=  Matrixhh.t();
+      }
+      else
+      {
+        Matrixpp -=  RHS.cols(kets_pp) * LHS.rows(kets_pp);
+        Matrixhh -=  RHS.cols(kets_hh) * LHS.rows(kets_hh);
+      }
+
+      // The two body part
+//      OUT += Matrixpp - Matrixhh;
+   } //for ch
+
+
+
+
+
+
+//   for (int ch=0;ch<nChannels;++ch)
+//   {
+//      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+//
+//      auto& LHS = (arma::mat&) X.TwoBody.GetMatrix(ch,ch);
+//      auto& RHS = (arma::mat&) Y.TwoBody.GetMatrix(ch,ch);
+//      arma::mat& Matrixpp =  Mpp.GetMatrix(ch,ch);
+//      arma::mat& Matrixhh =  Mhh.GetMatrix(ch,ch);
+//      
+//      Matrixpp = ( LHS.rows(tbc.GetKetIndex_pp()) * RHS.cols(tbc.GetKetIndex_pp()));
+//      Matrixpp -= Matrixpp.t();
+//      Matrixhh = ( LHS.rows(tbc.GetKetIndex_hh()) * RHS.cols(tbc.GetKetIndex_hh()));
+//      Matrixhh -= Matrixhh.t();
+//   }
+
+
+
+//   cout << "Mpp(0,0).size() = " << Mpp.GetMatrix(0,0).size() << endl;
+//   cout << "Mhh(0,0).size() = " << Mhh.GetMatrix(0,0).size() << endl;
+
+//   cout << "Done Building Matrixpp and Matrixhh" << endl;
    // If commutator is hermitian or antihermitian, we only
    // need to do half the sum. Add this.
-   #pragma omp parallel for schedule(dynamic,1)
+//   cout << "Size of Z.OneBody = " << Z.OneBody.size() << endl;
+//   #pragma omp parallel for schedule(dynamic,1)
    for (int i=0;i<norbits;++i)
    {
+//      cout << "i = " << i << endl;
       Orbit &oi = modelspace->GetOrbit(i);
+      int jmin = Z.IsNonHermitian() ? 0 : i;
       for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
+//         cout << "j = " << j << endl;
+//         cout << "Mpp(0,0).size() = " << Mpp.GetMatrix(0,0).size() << endl;
+//         cout << "Mhh(0,0).size() = " << Mhh.GetMatrix(0,0).size() << endl;
+         if (j<jmin) continue;
          double cijJ = 0;
-         // Sum c over holes and include the nbar_a * nbar_b terms
-         for (auto& c : modelspace->holes)
+         for (int ch=0;ch<nChannels;++ch)
          {
-           Orbit &oc = modelspace->GetOrbit(c);
-           int jmin = abs(oi.j2-oc.j2)/2;
-           int jmax = (oi.j2+oc.j2)/2;
-           for (int J=jmin; J<=jmax; ++J)
-             cijJ +=   (2*J+1) * Mpp.GetTBME_J(J,i,c,j,c);
-         // Sum c over particles and include the n_a * n_b terms
+            TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+            double Jfactor = (2*tbc.J+1.0);
+            // Sum c over holes and include the nbar_a * nbar_b terms
+            for (auto& c : modelspace->holes)
+            {
+               cijJ += Jfactor * Mpp.GetTBME(ch,c,i,c,j);
+            // Sum c over particles and include the n_a * n_b terms
+            }
+            for (auto& c : modelspace->particles)
+            {
+               cijJ += Jfactor * Mhh.GetTBME(ch,c,i,c,j);
+            }
          }
-         for (auto& c : modelspace->particles)
-         {
-           Orbit &oc = modelspace->GetOrbit(c);
-           int jmin = abs(oi.j2-oc.j2)/2;
-           int jmax = (oi.j2+oc.j2)/2;
-           for (int J=jmin; J<=jmax; ++J)
-             cijJ +=  (2*J+1) * Mhh.GetTBME_J(J,i,c,j,c);
-         }
-         Z.OneBody(i,j) +=  cijJ / (oi.j2+1.0);
+         Z.OneBody(i,j) += cijJ /(oi.j2+1.0);
       } // for j
-   } // for i
+   }
+
+
 }
 
 
