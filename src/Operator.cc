@@ -690,26 +690,15 @@ Operator Operator::BCH_Transform( const Operator &Omega)
    Operator OpNested = *this;
    if (nx<bch_transform_threshold) return OpOut;
    double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
-   for (int i=1; i<max_iter; ++i)
+   for (int i=1; i<=max_iter; ++i)
    {
-//      OpNested = Omega.Commutator(OpNested);
-      OpNested = Commutator(Omega,OpNested);
-      OpNested /= i;
-
+      OpNested = Commutator(Omega,OpNested)/i;
       OpOut += OpNested;
 
-      if (OpNested.Norm() < epsilon *(i+1))
-      {
-        timer["BCH_Transform"] += omp_get_wtime() - t;
-        return OpOut;
-      }
-      if (i == warn_iter)
-      {
-         cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
-      }
-
+      if (OpNested.Norm() < epsilon *(i+1))  break;
+      if (i == warn_iter)  cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
+      else if (i == max_iter)   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
    }
-   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
    timer["BCH_Transform"] += omp_get_wtime() - t;
    return OpOut;
 }
@@ -739,26 +728,29 @@ Operator Operator::BCH_Product(  Operator &Y)
    if (nx < 1e-7) return Y;
    if (ny < 1e-7) return X;
 
-//   Operator Z = X.Commutator(Y);
    Operator Z = Commutator(X,Y);
    Z *= 0.5;
    double nxy = Z.Norm();
 
-   if ( nxy < (nx+ny)*bch_product_threshold )
-   {
-     Z += X;
-     Z += Y;
-     timer["BCH_Product"] += omp_get_wtime() - t;
-     return Z;
-   }
-
-   Y -= X;
-//   Z += (1./6)* Z.Commutator( Y );
-   Z += (1./6)* Commutator( Z, Y );
-   Z += Y;
-   X *=2;
    Z += X;
-
+   Z += Y;
+   if (nxy > (nx+ny)*bch_product_threshold )
+   {
+     Z += (1./6) * Commutator(Z,Y-X);
+   }
+//   if ( nxy < (nx+ny)*bch_product_threshold )
+//   {
+//     Z += X;
+//     Z += Y;
+//   }
+//   else
+//   {
+//     Y -= X;
+//     Z += (1./6)* Commutator( Z, Y );
+//     Z += Y;
+//     X *=2;
+//     Z += X;
+//   }
    timer["BCH_Product"] += omp_get_wtime() - t;
    return Z;
 }
@@ -1144,25 +1136,10 @@ void Operator::comm121ss( const Operator& X, const Operator& Y)
 void Operator::comm221ss( const Operator& X, const Operator& Y) 
 {
 
-//   cout << "Begin comm211ss" << endl;
-//   cout << "Particle ranks: " << this->GetParticleRank() << " " << X.GetParticleRank() << " " << Y.GetParticleRank() << endl;
    Operator& Z = *this;
-//   cout << "Done Setting Z" << endl;
    int norbits = modelspace->GetNumberOrbits();
-//   cout << "norbits = " << norbits << endl;
    TwoBodyME Mpp = Y.TwoBody;
    TwoBodyME Mhh = Y.TwoBody;
-//   cout << "Mpp(0,0).size() = " << Mpp.GetMatrix(0,0).size() << endl;
-//   cout << "Mhh(0,0).size() = " << Mhh.GetMatrix(0,0).size() << endl;
-//   cout << "X(0,0).size() = " << X.TwoBody.GetMatrix(0,0).size() << endl;
-//   cout << "Y(0,0).size() = " << Y.TwoBody.GetMatrix(0,0).size() << endl;
-//   cout << "ppKets = " << modelspace->GetTwoBodyChannel(0).GetKetIndex_pp().size() << endl;
-//   cout << "hhKets = " << modelspace->GetTwoBodyChannel(0).GetKetIndex_hh().size() << endl;
-//
-//   cout << "Begin loop over channels. nChannels = " << nChannels << endl;
-//   cout << "X.nChannels = " << X.nChannels << endl;
-//   #pragma omp parallel for schedule(dynamic,1)
-
 
    int nch = modelspace->SortedTwoBodyChannels.size();
    #ifndef OPENBLAS_NOUSEOMP
@@ -1175,7 +1152,6 @@ void Operator::comm221ss( const Operator& X, const Operator& Y)
 
       auto& LHS = X.TwoBody.GetMatrix(ch,ch);
       auto& RHS = Y.TwoBody.GetMatrix(ch,ch);
-//      auto& OUT = Z.TwoBody.GetMatrix(ch,ch);
 
       auto& Matrixpp = Mpp.GetMatrix(ch,ch);
       auto& Matrixhh = Mhh.GetMatrix(ch,ch);
@@ -1203,49 +1179,16 @@ void Operator::comm221ss( const Operator& X, const Operator& Y)
       }
 
       // The two body part
-//      OUT += Matrixpp - Matrixhh;
    } //for ch
 
 
-
-
-
-
-//   for (int ch=0;ch<nChannels;++ch)
-//   {
-//      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-//
-//      auto& LHS = (arma::mat&) X.TwoBody.GetMatrix(ch,ch);
-//      auto& RHS = (arma::mat&) Y.TwoBody.GetMatrix(ch,ch);
-//      arma::mat& Matrixpp =  Mpp.GetMatrix(ch,ch);
-//      arma::mat& Matrixhh =  Mhh.GetMatrix(ch,ch);
-//      
-//      Matrixpp = ( LHS.rows(tbc.GetKetIndex_pp()) * RHS.cols(tbc.GetKetIndex_pp()));
-//      Matrixpp -= Matrixpp.t();
-//      Matrixhh = ( LHS.rows(tbc.GetKetIndex_hh()) * RHS.cols(tbc.GetKetIndex_hh()));
-//      Matrixhh -= Matrixhh.t();
-//   }
-
-
-
-//   cout << "Mpp(0,0).size() = " << Mpp.GetMatrix(0,0).size() << endl;
-//   cout << "Mhh(0,0).size() = " << Mhh.GetMatrix(0,0).size() << endl;
-
-//   cout << "Done Building Matrixpp and Matrixhh" << endl;
-   // If commutator is hermitian or antihermitian, we only
-   // need to do half the sum. Add this.
-//   cout << "Size of Z.OneBody = " << Z.OneBody.size() << endl;
-//   #pragma omp parallel for schedule(dynamic,1)
+   #pragma omp parallel for schedule(dynamic,1)
    for (int i=0;i<norbits;++i)
    {
-//      cout << "i = " << i << endl;
       Orbit &oi = modelspace->GetOrbit(i);
       int jmin = Z.IsNonHermitian() ? 0 : i;
       for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
-//         cout << "j = " << j << endl;
-//         cout << "Mpp(0,0).size() = " << Mpp.GetMatrix(0,0).size() << endl;
-//         cout << "Mhh(0,0).size() = " << Mhh.GetMatrix(0,0).size() << endl;
          if (j<jmin) continue;
          double cijJ = 0;
          for (int ch=0;ch<nChannels;++ch)
