@@ -732,25 +732,12 @@ Operator Operator::BCH_Product(  Operator &Y)
    Z *= 0.5;
    double nxy = Z.Norm();
 
-   Z += X;
-   Z += Y;
    if (nxy > (nx+ny)*bch_product_threshold )
    {
      Z += (1./6) * Commutator(Z,Y-X);
    }
-//   if ( nxy < (nx+ny)*bch_product_threshold )
-//   {
-//     Z += X;
-//     Z += Y;
-//   }
-//   else
-//   {
-//     Y -= X;
-//     Z += (1./6)* Commutator( Z, Y );
-//     Z += Y;
-//     X *=2;
-//     Z += X;
-//   }
+   Z += X;
+   Z += Y;
    timer["BCH_Product"] += omp_get_wtime() - t;
    return Z;
 }
