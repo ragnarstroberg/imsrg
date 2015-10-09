@@ -185,13 +185,17 @@ Operator& Operator::operator+=(const Operator& rhs)
 {
    ZeroBody += rhs.ZeroBody;
    OneBody  += rhs.OneBody;
-   TwoBody  += rhs.TwoBody;
+   if (rhs.GetParticleRank() > 1)
+     TwoBody  += rhs.TwoBody;
    return *this;
 }
 
 Operator Operator::operator+(const Operator& rhs) const
 {
-   return ( Operator(*this) += rhs );
+   if (GetParticleRank() >= rhs.GetParticleRank())
+     return ( Operator(*this) += rhs );
+   else
+     return ( Operator(rhs) += *this );
 }
 
 // Subtract operators
@@ -199,7 +203,8 @@ Operator& Operator::operator-=(const Operator& rhs)
 {
    ZeroBody -= rhs.ZeroBody;
    OneBody -= rhs.OneBody;
-   TwoBody -= rhs.TwoBody;
+   if (rhs.GetParticleRank() > 1)
+     TwoBody -= rhs.TwoBody;
    return *this;
 }
 
@@ -685,26 +690,15 @@ Operator Operator::BCH_Transform( const Operator &Omega)
    Operator OpNested = *this;
    if (nx<bch_transform_threshold) return OpOut;
    double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
-   for (int i=1; i<max_iter; ++i)
+   for (int i=1; i<=max_iter; ++i)
    {
-//      OpNested = Omega.Commutator(OpNested);
-      OpNested = Commutator(Omega,OpNested);
-      OpNested /= i;
-
+      OpNested = Commutator(Omega,OpNested)/i;
       OpOut += OpNested;
 
-      if (OpNested.Norm() < epsilon *(i+1))
-      {
-        timer["BCH_Transform"] += omp_get_wtime() - t;
-        return OpOut;
-      }
-      if (i == warn_iter)
-      {
-         cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
-      }
-
+      if (OpNested.Norm() < epsilon *(i+1))  break;
+      if (i == warn_iter)  cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
+      else if (i == max_iter)   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
    }
-   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
    timer["BCH_Transform"] += omp_get_wtime() - t;
    return OpOut;
 }
@@ -734,26 +728,16 @@ Operator Operator::BCH_Product(  Operator &Y)
    if (nx < 1e-7) return Y;
    if (ny < 1e-7) return X;
 
-//   Operator Z = X.Commutator(Y);
    Operator Z = Commutator(X,Y);
    Z *= 0.5;
    double nxy = Z.Norm();
 
-   if ( nxy < (nx+ny)*bch_product_threshold )
+   if (nxy > (nx+ny)*bch_product_threshold )
    {
-     Z += X;
-     Z += Y;
-     timer["BCH_Product"] += omp_get_wtime() - t;
-     return Z;
+     Z += (1./6) * Commutator(Z,Y-X);
    }
-
-   Y -= X;
-//   Z += (1./6)* Z.Commutator( Y );
-   Z += (1./6)* Commutator( Z, Y );
-   Z += Y;
-   X *=2;
    Z += X;
-
+   Z += Y;
    timer["BCH_Product"] += omp_get_wtime() - t;
    return Z;
 }
@@ -873,7 +857,7 @@ Operator Commutator( const Operator& X, const Operator& Y)
 //Operator Operator::CommutatorScalarScalar( Operator& opright) 
 Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) 
 {
-   Operator Z = Y;
+   Operator Z = X.GetParticleRank()>Y.GetParticleRank() ? X : Y;
    Z.EraseZeroBody();
    Z.EraseOneBody();
    Z.EraseTwoBody();
@@ -1144,52 +1128,76 @@ void Operator::comm221ss( const Operator& X, const Operator& Y)
    TwoBodyME Mpp = Y.TwoBody;
    TwoBodyME Mhh = Y.TwoBody;
 
+   int nch = modelspace->SortedTwoBodyChannels.size();
+   #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
-   for (int ch=0;ch<nChannels;++ch)
+   #endif
+   for (int ich=0; ich<nch; ++ich)
    {
+      int ch = modelspace->SortedTwoBodyChannels[ich];
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
-      auto& LHS = (arma::mat&) X.TwoBody.GetMatrix(ch,ch);
-      auto& RHS = (arma::mat&) Y.TwoBody.GetMatrix(ch,ch);
-      arma::mat& Matrixpp =  Mpp.GetMatrix(ch,ch);
-      arma::mat& Matrixhh =  Mpp.GetMatrix(ch,ch);
-      
-      Matrixpp = ( LHS.rows(tbc.GetKetIndex_pp()) * RHS.cols(tbc.GetKetIndex_pp()));
-      Matrixpp -= Matrixpp.t();
-      Matrixhh = ( LHS.rows(tbc.GetKetIndex_hh()) * RHS.cols(tbc.GetKetIndex_hh()));
-      Matrixhh -= Matrixhh.t();
-   }
+      auto& LHS = X.TwoBody.GetMatrix(ch,ch);
+      auto& RHS = Y.TwoBody.GetMatrix(ch,ch);
 
-   // If commutator is hermitian or antihermitian, we only
-   // need to do half the sum. Add this.
+      auto& Matrixpp = Mpp.GetMatrix(ch,ch);
+      auto& Matrixhh = Mhh.GetMatrix(ch,ch);
+
+      auto& kets_pp = tbc.GetKetIndex_pp();
+      auto& kets_hh = tbc.GetKetIndex_hh();
+      
+      Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
+      Matrixhh =  LHS.cols(kets_hh) * RHS.rows(kets_hh);
+
+      if (Z.IsHermitian())
+      {
+         Matrixpp +=  Matrixpp.t();
+         Matrixhh +=  Matrixhh.t();
+      }
+      else if (Z.IsAntiHermitian()) // i.e. LHS and RHS are both hermitian or ant-hermitian
+      {
+         Matrixpp -=  Matrixpp.t();
+         Matrixhh -=  Matrixhh.t();
+      }
+      else
+      {
+        Matrixpp -=  RHS.cols(kets_pp) * LHS.rows(kets_pp);
+        Matrixhh -=  RHS.cols(kets_hh) * LHS.rows(kets_hh);
+      }
+
+      // The two body part
+   } //for ch
+
+
    #pragma omp parallel for schedule(dynamic,1)
    for (int i=0;i<norbits;++i)
    {
       Orbit &oi = modelspace->GetOrbit(i);
+      int jmin = Z.IsNonHermitian() ? 0 : i;
       for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
+         if (j<jmin) continue;
          double cijJ = 0;
-         // Sum c over holes and include the nbar_a * nbar_b terms
-         for (auto& c : modelspace->holes)
+         for (int ch=0;ch<nChannels;++ch)
          {
-           Orbit &oc = modelspace->GetOrbit(c);
-           int jmin = abs(oi.j2-oc.j2)/2;
-           int jmax = (oi.j2+oc.j2)/2;
-           for (int J=jmin; J<=jmax; ++J)
-             cijJ +=   (2*J+1) * Mpp.GetTBME_J(J,i,c,j,c);
-         // Sum c over particles and include the n_a * n_b terms
+            TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+            double Jfactor = (2*tbc.J+1.0);
+            // Sum c over holes and include the nbar_a * nbar_b terms
+            for (auto& c : modelspace->holes)
+            {
+               cijJ += Jfactor * Mpp.GetTBME(ch,c,i,c,j);
+            // Sum c over particles and include the n_a * n_b terms
+            }
+            for (auto& c : modelspace->particles)
+            {
+               cijJ += Jfactor * Mhh.GetTBME(ch,c,i,c,j);
+            }
          }
-         for (auto& c : modelspace->particles)
-         {
-           Orbit &oc = modelspace->GetOrbit(c);
-           int jmin = abs(oi.j2-oc.j2)/2;
-           int jmax = (oi.j2+oc.j2)/2;
-           for (int J=jmin; J<=jmax; ++J)
-             cijJ +=  (2*J+1) * Mhh.GetTBME_J(J,i,c,j,c);
-         }
-         Z.OneBody(i,j) +=  cijJ / (oi.j2+1.0);
+         Z.OneBody(i,j) += cijJ /(oi.j2+1.0);
       } // for j
-   } // for i
+   }
+
+
 }
 
 

@@ -240,7 +240,12 @@ int main(int argc, char** argv)
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
 
-  
+   if (method == "NSmagnus")
+  {
+    omega_norm_max=500;
+    method = "magnus";
+  } 
+
   IMSRGSolver imsrgsolver(Hbare);
   
   imsrgsolver.SetMethod(method);
@@ -249,39 +254,47 @@ int main(int argc, char** argv)
   imsrgsolver.SetDs(ds_0);
   imsrgsolver.SetDsmax(dsmax);
   imsrgsolver.SetDenominatorDelta(denominator_delta);
+  imsrgsolver.SetdOmega(min(domega,omega_norm_max+1e-6));
+  imsrgsolver.SetOmegaNormMax(omega_norm_max);
+  imsrgsolver.SetODETolerance(ode_tolerance);
+
+  if (nsteps > 1)
+  {
+     imsrgsolver.SetGenerator(core_generator);
+     imsrgsolver.Solve();
+     if (method == "magnus")
+       smax *= 2;
+  }
+
+  imsrgsolver.SetGenerator(valence_generator);
+  imsrgsolver.SetSmax(smax);
+  imsrgsolver.Solve();
+
+  Operator Hprime = imsrgsolver.GetH_s().UndoNormalOrdering();
+  Hprime.SetModelSpace(modelspace_core);
+  Hprime = Hprime.DoNormalOrdering();
+
+  IMSRGSolver imsrgsolver2(Hprime);
+
+  imsrgsolver2.SetMethod(method);
+  imsrgsolver2.SetGenerator(reference_generator);
+  imsrgsolver2.SetSmax(smax);
+  imsrgsolver2.SetFlowFile(flowfile+"_2");
+  imsrgsolver2.SetDsmax(dsmax);
+  imsrgsolver2.SetDenominatorDelta(denominator_delta);
+  imsrgsolver2.SetDs(ds_0);
+  imsrgsolver2.SetdOmega(min(domega,omega_norm_max+1e-6));
+  imsrgsolver2.SetOmegaNormMax(omega_norm_max);
+  imsrgsolver2.SetODETolerance(ode_tolerance);
+
+  imsrgsolver2.Solve();
+
+  rw.WriteNuShellX_int(imsrgsolver2.GetH_s(),intfile+".int");
+  rw.WriteNuShellX_sps(imsrgsolver2.GetH_s(),intfile+".sp");
+
 
   if (method == "magnus")
   {
-     imsrgsolver.SetdOmega(min(domega,omega_norm_max+1e-6));
-     imsrgsolver.SetOmegaNormMax(omega_norm_max);
-     if (nsteps > 1)
-     {
-       imsrgsolver.SetGenerator(core_generator);
-       imsrgsolver.Solve();
-       smax *= 2;
-     }
-     imsrgsolver.SetGenerator(valence_generator);
-     imsrgsolver.SetSmax(smax);
-     imsrgsolver.Solve();
-
-     Operator Hprime = imsrgsolver.GetH_s().UndoNormalOrdering();
-     Hprime.SetModelSpace(modelspace_core);
-     Hprime = Hprime.DoNormalOrdering();
-     IMSRGSolver imsrgsolver2(Hprime);
-     imsrgsolver2.SetGenerator(reference_generator);
-     imsrgsolver2.SetSmax(smax/2.0);
-     imsrgsolver2.SetFlowFile(flowfile+"_2");
-     imsrgsolver2.SetDsmax(dsmax);
-     imsrgsolver2.SetDenominatorDelta(denominator_delta);
-     imsrgsolver2.SetDs(ds_0);
-     imsrgsolver2.SetdOmega(min(domega,omega_norm_max+1e-6));
-     imsrgsolver2.SetOmegaNormMax(omega_norm_max);
-
-     imsrgsolver2.Solve();
-
-     rw.WriteNuShellX_int(imsrgsolver2.GetH_s(),intfile+".int");
-     rw.WriteNuShellX_sps(imsrgsolver2.GetH_s(),intfile+".sp");
-
      vector<Operator> oplist;
      oplist.push_back(R2_p1_Op(modelspace_target));
      oplist.push_back(R2_p2_Op(modelspace_target));
@@ -303,20 +316,7 @@ int main(int argc, char** argv)
      rw.WriteNuShellX_op(oplist[1],intfile+"_R2p2.int");
      rw.WriteNuShellX_op(oplist[2],intfile+"_R2cm.int");
   }
-  else if (method == "flow")
-  {
-     imsrgsolver.SetODETolerance(ode_tolerance);
-     if (nsteps > 1)
-     {
-       imsrgsolver.SetGenerator(core_generator);
-       imsrgsolver.Solve_ode_adaptive();
-     }
-     imsrgsolver.SetGenerator(valence_generator);
-     imsrgsolver.SetSmax(smax);
-     imsrgsolver.Solve_ode_adaptive();
-     rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
-     rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
-  }
+  
 
 
   Hbare.PrintTimes();

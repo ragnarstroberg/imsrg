@@ -8,7 +8,7 @@ CC = g++
 INCLUDE   = -I./armadillo
 FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
 SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
-WARNFLAGS = -Wall -Wno-comment
+WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
 FLAGS    += $(WARNFLAGS)
 SOFLAGS  += $(WARNFLAGS)
 INSTDIR = $(HOME)
@@ -46,14 +46,11 @@ install:
 	@if [ ! -d $(INSTDIR)/include ] ; then \
 	  mkdir $(INSTDIR)/include; \
 	fi 
-	rm $(INSTDIR)/lib/libIMSRG.so 
-	rm $(INSTDIR)/include/armadillo
-	ln -s $(PWD)/libIMSRG.so $(INSTDIR)/lib/libIMSRG.so
-	ln -s $(PWD)/armadillo $(INSTDIR)/include/armadillo
+	ln -sf $(PWD)/libIMSRG.so $(INSTDIR)/lib/libIMSRG.so
+	ln -sf $(PWD)/armadillo $(INSTDIR)/include/armadillo
 	@for x in *.hh; do \
 	 echo linking $(PWD)/$$x  '=>'  $(INSTDIR)/include/$$x;\
-	 rm $(INSTDIR)/include/$$x; \
-	 ln -s $(PWD)/$$x $(INSTDIR)/include/$$x; \
+	 ln -sf $(PWD)/$$x $(INSTDIR)/include/$$x; \
 	done
 	
 

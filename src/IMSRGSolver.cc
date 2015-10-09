@@ -88,6 +88,7 @@ void IMSRGSolver::SetFlowFile(string s)
    WriteFlowStatusHeader(cout);
 }
 
+
 void IMSRGSolver::Solve()
 {
   if (method == "magnus_euler" or method =="magnus")
@@ -100,9 +101,19 @@ void IMSRGSolver::Solve()
     Solve_ode_magnus();
   else if (method == "flow_euler")
     Solve_ode();
+  else if (method == "restore_4th_order")
+  {
+    FlowingOps.push_back( Operator( *(FlowingOps[0].GetModelSpace()), 0,0,0,1));
+//    cout << "Checking modelspace" << endl;
+//    cout << "norbits = " << FlowingOps.back().GetModelSpace()->GetNumberOrbits() << endl;
+//    cout << "norbits = " << FlowingOps[1].GetModelSpace()->GetNumberOrbits() << endl;
+//    cout << "Particle rank = " << FlowingOps[1].GetParticleRank() << endl;
+    Solve_ode_adaptive();
+  }
   else
     cout << "IMSRGSolver: I don't know method " << method << endl;
 }
+
 
 void IMSRGSolver::Solve_magnus_euler()
 {
@@ -339,11 +350,13 @@ void IMSRGSolver::Solve_ode()
 void IMSRGSolver::Solve_ode_adaptive()
 {
    ode_mode = "H";
+   if (method == "restore_4th_order") ode_mode = "Restored";
    WriteFlowStatusHeader(cout);
    WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
    auto system = *this;
    typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
+//   typedef adams_bashforth_moulton< 4, vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
    integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
@@ -397,6 +410,48 @@ void IMSRGSolver::operator()( const vector<Operator>& x, vector<Operator>& dxdt,
        H_s = H_0->BCH_Transform(Omega_s);
      generator.Update(&H_s,&Eta);
      dxdt.back() = Eta - 0.5*Commutator(Omega_s,Eta);
+   }
+   else if (ode_mode == "Restored" )
+   {
+     FlowingOps[0] = x[0];
+     FlowingOps[1] = x[1];
+     dxdt[1] = Operator(x[1]);
+     auto& H_s = FlowingOps[0];
+     generator.Update(&H_s,&Eta);
+     if (Eta.Norm() < eta_criterion)
+     {
+       for (size_t i=0;i<x.size();++i)
+       {
+         dxdt[i] = 0*x[i];
+       }
+     }
+     else
+     {
+//       cout << "In Restored. Size of dxdt = " << dxdt.size() << endl;
+//       cout << "Particle Ranks: " << x[0].GetParticleRank() << " " << x[1].GetParticleRank() << " " << dxdt[0].GetParticleRank() << " " << dxdt[1].GetParticleRank() << endl;
+       dxdt[0] = Commutator(Eta,x[0]+x[1]);
+//       cout << "Did the first bit" << endl;
+       dxdt[1].Erase();
+//       cout << "Done erasing" << endl;
+       dxdt[1].comm221ss(Eta,x[0]);
+//       cout << "Keeping the pp and hh parts" << endl;
+       // keep only pp and hh parts of d chi/ ds
+       for (auto& a : modelspace->holes)
+       {
+         for (auto& i : modelspace->particles)
+         {
+           dxdt[1].OneBody(a,i) = 0;
+           dxdt[1].OneBody(i,a) = 0;
+         }
+       }
+//       cout << "continuing on..." << endl;
+       for (size_t i=2;i<x.size();++i)
+       {
+         dxdt[i] = Commutator(Eta,x[i]);
+       }
+//       cout << "Made it out of the first iteration" << endl;
+     }
+
    }
    WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
