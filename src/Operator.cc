@@ -21,7 +21,7 @@ using namespace std;
 //double  Operator::bch_transform_threshold = 1e-6;
 double  Operator::bch_transform_threshold = 1e-9;
 double  Operator::bch_product_threshold = 1e-4;
-map<string, double> Operator::timer;
+//map<string, double> Operator::timer;
 
 
 Operator::~Operator()
@@ -228,15 +228,15 @@ Operator Operator::operator-() const
 
 
 
-void Operator::PrintTimes()
-{
-   cout << "====================== TIMES =======================" << endl;
-   cout.setf(ios::fixed);
-   for ( auto it : timer )
-   {
-     cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(5) << std::right << it.second  << endl;
-   }
-}
+//void Operator::PrintTimes()
+//{
+//   cout << "====================== TIMES =======================" << endl;
+//   cout.setf(ios::fixed);
+//   for ( auto it : timer )
+//   {
+//     cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(5) << std::right << it.second  << endl;
+//   }
+//}
 
 
 void Operator::SetUpOneBodyChannels()
