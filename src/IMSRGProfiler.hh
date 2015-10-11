@@ -20,8 +20,11 @@ class IMSRGProfiler
   // timer and counter are declaired as static so that there's only one copy of each of them
   static map<string, double> timer; ///< For keeping timing information for various method calls
   static map<string, int> counter;
+  static float start_time;
 
+  IMSRGProfiler();
   map<string,size_t> CheckMem();
+  map<string,float> GetTimes();
   void PrintTimes();
   void PrintCounters();
   void PrintAll();

@@ -47,7 +47,7 @@ class Operator
   map<array<int,3>,vector<index_t> > OneBodyChannels;
   IMSRGProfiler profiler;
 
-//  void PrintTimes();
+  void PrintTimes(){profiler.PrintAll();};
 
 
   //Constructors

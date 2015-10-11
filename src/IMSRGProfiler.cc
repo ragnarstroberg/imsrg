@@ -1,12 +1,20 @@
 #include "IMSRGProfiler.hh"
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <omp.h>
 
 
 map<string, double> IMSRGProfiler::timer;
 map<string, int> IMSRGProfiler::counter;
+float IMSRGProfiler::start_time = -1;
 
-
+IMSRGProfiler::IMSRGProfiler()
+{
+  if (start_time < 0)
+  {
+    start_time = omp_get_wtime();
+  }
+}
 /// Check how much memory is being used.
 ///
 map<string,size_t> IMSRGProfiler::CheckMem()
@@ -25,6 +33,17 @@ size_t IMSRGProfiler::MaxMemUsage()
   struct rusage ru;
   getrusage(RUSAGE_SELF,&ru);
   return (size_t) ru.ru_maxrss;
+}
+
+map<string,float> IMSRGProfiler::GetTimes()
+{
+  struct rusage ru;
+  getrusage(RUSAGE_SELF,&ru);
+  map<string,float> times;
+  times["user"] = ru.ru_utime.tv_sec + 1e-6*ru.ru_utime.tv_usec;
+  times["system"] = ru.ru_stime.tv_sec + 1e-6*ru.ru_stime.tv_usec;
+  times["real"] = omp_get_wtime() - start_time;
+  return times;
 }
 
 void IMSRGProfiler::PrintTimes()
