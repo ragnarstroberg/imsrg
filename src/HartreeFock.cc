@@ -286,7 +286,7 @@ void HartreeFock::BuildMonopoleV3()
       }
       v /= (j2i+1);
    }
-   Hbare.timer["HF_BuildMonopoleV3"] += omp_get_wtime() - start_time;
+   profiler.timer["HF_BuildMonopoleV3"] += omp_get_wtime() - start_time;
 }
 
 
@@ -377,7 +377,7 @@ void HartreeFock::UpdateF()
 
    F = t + Vij + 0.5*V3ij;
 
-   Hbare.timer["HF_UpdateF"] += omp_get_wtime() - start_time;
+   profiler.timer["HF_UpdateF"] += omp_get_wtime() - start_time;
 }
 
 
@@ -628,7 +628,7 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
      }
    }
    Vmon3.clear();
-   Hbare.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;
+   profiler.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;
    
    return HNO;
 

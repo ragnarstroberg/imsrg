@@ -76,7 +76,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetParticleRank", &Operator::GetParticleRank)
       .def("GetE3max", &Operator::GetE3max)
       .def("SetE3max", &Operator::SetE3max)
-      .def("PrintTimes", &Operator::PrintTimes)
+//      .def("PrintTimes", &Profiler::PrintTimes)
       .def("BCH_Transform", &Operator::BCH_Transform)
    ;
 
@@ -162,6 +162,14 @@ BOOST_PYTHON_MODULE(pyIMSRG)
 //      .def_readwrite("Omega", &IMSRGSolver::Omega)
 //      .def_readwrite("Omega", &IMSRGSolver::Omega[0])
       .def_readwrite("Eta", &IMSRGSolver::Eta)
+   ;
+
+
+
+   class_<IMSRGProfiler>("IMSRGProfiler",init<>())
+       .def("PrintTimes",&IMSRGProfiler::PrintTimes)
+       .def("PrintCounters",&IMSRGProfiler::PrintCounters)
+       .def("PrintAll",&IMSRGProfiler::PrintAll)
    ;
 
    def("TCM_Op",           imsrg_util::TCM_Op);
