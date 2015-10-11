@@ -5,6 +5,7 @@
 #include "ModelSpace.hh"
 #include "TwoBodyME.hh"
 #include "ThreeBodyME.hh"
+#include "IMSRGProfiler.hh"
 #include <armadillo>
 #include <string>
 #include <vector>
@@ -44,6 +45,7 @@ class Operator
   static double bch_product_threshold;
   static map<string, double> timer; ///< For keeping timing information for various method calls
   map<array<int,3>,vector<index_t> > OneBodyChannels;
+  IMSRGProfiler profiler;
 
   void PrintTimes();
 

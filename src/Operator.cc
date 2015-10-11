@@ -1,9 +1,11 @@
 
 #include "Operator.hh"
 #include "AngMom.hh"
+#include "IMSRGProfiler.hh"
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
 #endif
@@ -25,7 +27,8 @@ map<string, double> Operator::timer;
 Operator::~Operator()
 {
 //   cout << "calling Operator destructor" << endl;
-  timer["N_Operators"] --;
+//  timer["N_Operators"] --;
+  profiler.counter["N_Operators"] --;
 }
 
 /////////////////// CONSTRUCTORS /////////////////////////////////////////
@@ -34,7 +37,8 @@ Operator::Operator()
     rank_J(0), rank_T(0), parity(0), particle_rank(2),
     hermitian(true), antihermitian(false), nChannels(0)
 {
-  timer["N_Operators"] ++;
+//  timer["N_Operators"] ++;
+  profiler.counter["N_Operators"] ++;
 }
 
 
@@ -49,7 +53,8 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 {
   SetUpOneBodyChannels();
   if (particle_rank >=3) ThreeBody.Allocate();
-  timer["N_Operators"] ++;
+//  timer["N_Operators"] ++;
+  profiler.counter["N_Operators"] ++;
 }
 
 
@@ -63,7 +68,8 @@ Operator::Operator(ModelSpace& ms) :
     nChannels(ms.GetNumberTwoBodyChannels())
 {
   SetUpOneBodyChannels();
-  timer["N_Operators"] ++;
+//  timer["N_Operators"] ++;
+  profiler.counter["N_Operators"] ++;
 }
 
 Operator::Operator(const Operator& op)
@@ -75,7 +81,8 @@ Operator::Operator(const Operator& op)
   nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
 {
 //   cout << "Calling copy constructor for Operator" << endl;
-  timer["N_Operators"] ++;
+//  timer["N_Operators"] ++;
+  profiler.counter["N_Operators"] ++;
 }
 
 Operator::Operator(Operator&& op)
@@ -87,7 +94,8 @@ Operator::Operator(Operator&& op)
   nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
 {
 //   cout << "Calling move constructor for Operator" << endl;
-  timer["N_Operators"] ++;
+//  timer["N_Operators"] ++;
+  profiler.counter["N_Operators"] ++;
 }
 
 /////////// COPY METHOD //////////////////////////
@@ -630,7 +638,8 @@ double Operator::GetMP2_Energy()
        }
      }
    }
-   timer["GetMP2_Energy"] += omp_get_wtime() - t_start;
+//   timer["GetMP2_Energy"] += omp_get_wtime() - t_start;
+   profiler.timer["GetMP2_Energy"] += omp_get_wtime() - t_start;
    return Emp2;
 }
 
@@ -699,7 +708,7 @@ Operator Operator::BCH_Transform( const Operator &Omega)
       if (i == warn_iter)  cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
       else if (i == max_iter)   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
    }
-   timer["BCH_Transform"] += omp_get_wtime() - t;
+   profiler.timer["BCH_Transform"] += omp_get_wtime() - t;
    return OpOut;
 }
 
@@ -738,7 +747,7 @@ Operator Operator::BCH_Product(  Operator &Y)
    }
    Z += X;
    Z += Y;
-   timer["BCH_Product"] += omp_get_wtime() - t;
+   profiler.timer["BCH_Product"] += omp_get_wtime() - t;
    return Z;
 }
 
@@ -820,7 +829,7 @@ void Operator::AntiSymmetrize()
 /// @relates Operator
 Operator Commutator( const Operator& X, const Operator& Y)
 {
-   X.timer["N_Commutators"] += 1;
+   X.profiler.counter["N_Commutators"] += 1;
    double t_start = omp_get_wtime();
    int xrank = X.rank_J + X.rank_T + X.parity;
    int yrank = Y.rank_J + Y.rank_T + Y.parity;
@@ -848,7 +857,7 @@ Operator Commutator( const Operator& X, const Operator& Y)
       cout << " Tensor-Tensor commutator not yet implemented." << endl;
       return X;
    }
-   X.timer["Commutator"] += omp_get_wtime() - t_start;
+   X.profiler.timer["Commutator"] += omp_get_wtime() - t_start;
 }
 
 
@@ -880,29 +889,29 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
    double t_start = omp_get_wtime();
 //   X.comm111ss(Y, Z);
    Z.comm111ss(X, Y);
-   Z.timer["comm111ss"] += omp_get_wtime() - t_start;
+   Z.profiler.timer["comm111ss"] += omp_get_wtime() - t_start;
 
     t_start = omp_get_wtime();
 //   X.comm121ss(opright, out);
    Z.comm121ss(X,Y);
-    Z.timer["comm121ss"] += omp_get_wtime() - t_start;
+   Z.profiler.timer["comm121ss"] += omp_get_wtime() - t_start;
 
     t_start = omp_get_wtime();
 //   X.comm122ss(Y, Z); 
    Z.comm122ss(X,Y); 
-    Z.timer["comm122ss"] += omp_get_wtime() - t_start;
+   Z.profiler.timer["comm122ss"] += omp_get_wtime() - t_start;
 
    if (X.particle_rank>1 and Y.particle_rank>1)
    {
     t_start = omp_get_wtime();
 //    X.comm222_pp_hh_221ss(Y, Z);
     Z.comm222_pp_hh_221ss(X, Y);
-    Z.timer["comm222_pp_hh_221ss"] += omp_get_wtime() - t_start;
+    Z.profiler.timer["comm222_pp_hh_221ss"] += omp_get_wtime() - t_start;
      
     t_start = omp_get_wtime();
 //    X.comm222_phss(Y, Z);
     Z.comm222_phss(X, Y);
-    Z.timer["comm222_phss"] += omp_get_wtime() - t_start;
+    Z.profiler.timer["comm222_phss"] += omp_get_wtime() - t_start;
    }
 
 
@@ -949,7 +958,7 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
    else if (Z.IsAntiHermitian() )
       Z.AntiSymmetrize();
 
-   Z.timer["CommutatorScalarTensor"] += omp_get_wtime() - t_start;
+   Z.profiler.timer["CommutatorScalarTensor"] += omp_get_wtime() - t_start;
    return Z;
 }
 
@@ -1413,7 +1422,7 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
       // The two body part
       OUT += Matrixpp - Matrixhh;
    } //for ch
-   timer["pphh TwoBody bit"] += omp_get_wtime() - t;
+   profiler.timer["pphh TwoBody bit"] += omp_get_wtime() - t;
 
    t = omp_get_wtime();
    // The one body part
@@ -1444,7 +1453,7 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
          Z.OneBody(i,j) += cijJ /(oi.j2+1.0);
       } // for j
    } // for i
-   timer["pphh One Body bit"] += omp_get_wtime() - t;
+   profiler.timer["pphh One Body bit"] += omp_get_wtime() - t;
 }
 
 
@@ -1706,7 +1715,7 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    double t = omp_get_wtime();
    X.DoPandyaTransformation(X_bar_hp, X_bar_ph );
    Y.DoPandyaTransformation(Y_bar_hp, Y_bar_ph );
-   timer["DoPandyaTransformation"] += omp_get_wtime() - t;
+   profiler.timer["DoPandyaTransformation"] += omp_get_wtime() - t;
 
    // Construct the intermediate matrix Z_bar
    t = omp_get_wtime();
@@ -1730,12 +1739,12 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
       else
         Z_bar[ch] -= Z_bar[ch].t();
    }
-   timer["Build Z_bar"] += omp_get_wtime() - t;
+   profiler.timer["Build Z_bar"] += omp_get_wtime() - t;
 
    // Perform inverse Pandya transform on W_bar to get Z
    t = omp_get_wtime();
    Z.AddInversePandyaTransformation(Z_bar);
-   timer["InversePandyaTransformation"] += omp_get_wtime() - t;
+   profiler.timer["InversePandyaTransformation"] += omp_get_wtime() - t;
 
 }
 
@@ -2417,7 +2426,7 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    double t = omp_get_wtime();
    X.DoPandyaTransformation(X_bar_hp, X_bar_ph );
    Y.DoTensorPandyaTransformation(Y_bar_hp, Y_bar_ph );
-   timer["DoTensorPandyaTransformation"] += omp_get_wtime() - t;
+   profiler.timer["DoTensorPandyaTransformation"] += omp_get_wtime() - t;
 
 
    t = omp_get_wtime();
@@ -2444,12 +2453,12 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
                            -flipphase * ( X_bar_ph[ch_ket_cc].t() * Y_bar_ph[{ch_ket_cc,ch_bra_cc}]  - X_bar_hp[ch_ket_cc].t() * Y_bar_hp[{ch_ket_cc,ch_bra_cc}]).t() ;
       }
    }
-   timer["Build Z_bar"] += omp_get_wtime() - t;
+   profiler.timer["Build Z_bar"] += omp_get_wtime() - t;
 
 //   cout << "InversePandya" << endl;
    t = omp_get_wtime();
    Z.AddInverseTensorPandyaTransformation(Z_bar);
-   timer["InverseTensorPandyaTransformation"] += omp_get_wtime() - t;
+   profiler.timer["InverseTensorPandyaTransformation"] += omp_get_wtime() - t;
 //   cout << "Done" << endl;
 
 }

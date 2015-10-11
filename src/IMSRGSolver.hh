@@ -6,6 +6,7 @@
 #include <string>
 #include "Operator.hh"
 #include "Generator.hh"
+#include "IMSRGProfiler.hh"
 
 using namespace std;
 
@@ -35,7 +36,7 @@ class IMSRGSolver
   double eta_criterion;
   string method;
   string flowfile;
-
+  IMSRGProfiler profiler;
 
   ~IMSRGSolver();
   IMSRGSolver();
