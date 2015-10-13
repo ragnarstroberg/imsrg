@@ -2,6 +2,7 @@
 #define HartreeFock_h
 
 #include "Operator.hh"
+#include "IMSRGProfiler.hh"
 #include <armadillo>
 #include <map>
 
@@ -28,6 +29,7 @@ class HartreeFock
    int iterations;          ///< iterations used in Solve()
 //   map< array<int,6>, double> Vmon3; // Monopole 3-body interaction
    vector< pair<const array<int,6>,double>> Vmon3;
+   IMSRGProfiler profiler;
    
 
    HartreeFock(Operator&  hbare);

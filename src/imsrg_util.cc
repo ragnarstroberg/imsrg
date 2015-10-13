@@ -191,7 +191,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
          }
       }
    }
-   TcmOp.timer["TCM_Op"] += omp_get_wtime() - t_start;
+   TcmOp.profiler.timer["TCM_Op"] += omp_get_wtime() - t_start;
    return TcmOp;
  }
 

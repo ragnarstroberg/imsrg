@@ -133,12 +133,6 @@ BOOST_PYTHON_MODULE(pyIMSRG)
 
    class_<IMSRGSolver>("IMSRGSolver",init<Operator&>())
       .def("Solve",&IMSRGSolver::Solve)
-#ifndef NO_ODE
-      .def("Solve_ode",&IMSRGSolver::Solve_ode)
-      .def("Solve_ode_adaptive",&IMSRGSolver::Solve_ode_adaptive)
-      .def("Solve_ode_magnus",&IMSRGSolver::Solve_ode_magnus)
-#endif
-//      .def("Transform",&IMSRGSolver::Transform)
       .def("Transform",Transform_ref)
       .def("InverseTransform",&IMSRGSolver::InverseTransform)
       .def("SetFlowFile",&IMSRGSolver::SetFlowFile)
@@ -154,13 +148,20 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("Reset",&IMSRGSolver::Reset)
       .def("SetGenerator",&IMSRGSolver::SetGenerator)
       .def("SetDenominatorCutoff",&IMSRGSolver::SetDenominatorCutoff)
+      .def("SetDenominatorDelta",&IMSRGSolver::SetDenominatorDelta)
+      .def("SetDenominatorDeltaOrbit",&IMSRGSolver::SetDenominatorDeltaOrbit)
       .def("GetSystemDimension",&IMSRGSolver::GetSystemDimension)
       .def("GetOmega",&IMSRGSolver::GetOmega)
       .def("GetH_s",&IMSRGSolver::GetH_s,return_value_policy<reference_existing_object>())
-//      .def_readwrite("H_s", &IMSRGSolver::H_s)
-//      .def_readwrite("Omega", &IMSRGSolver::Omega)
-//      .def_readwrite("Omega", &IMSRGSolver::Omega[0])
       .def_readwrite("Eta", &IMSRGSolver::Eta)
+   ;
+
+
+
+   class_<IMSRGProfiler>("IMSRGProfiler",init<>())
+       .def("PrintTimes",&IMSRGProfiler::PrintTimes)
+       .def("PrintCounters",&IMSRGProfiler::PrintCounters)
+       .def("PrintAll",&IMSRGProfiler::PrintAll)
    ;
 
    def("TCM_Op",           imsrg_util::TCM_Op);

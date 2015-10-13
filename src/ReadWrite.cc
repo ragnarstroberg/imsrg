@@ -596,7 +596,7 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
     Read_Darmstadt_3body_from_stream(infile, Hbare,  E1max, E2max, E3max);
   }
 
-  Hbare.timer["Read_3body_file"] += omp_get_wtime() - start_time;
+  Hbare.profiler.timer["Read_3body_file"] += omp_get_wtime() - start_time;
 }
 
 

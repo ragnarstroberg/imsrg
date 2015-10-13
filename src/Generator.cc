@@ -52,7 +52,7 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
       cout << "Error. Unkown generator_type: " << generator_type << endl;
    }
 
-   Eta->timer["UpdateEta"] += omp_get_wtime() - start_time;
+   Eta->profiler.timer["UpdateEta"] += omp_get_wtime() - start_time;
 }
 
 

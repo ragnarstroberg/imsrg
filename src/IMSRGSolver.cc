@@ -49,7 +49,10 @@ void IMSRGSolver::SetHin( Operator & H_in)
      Omega.push_back(Eta);
 //        H_saved = H_s;
         H_saved = FlowingOps[0];
-    cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size()
+         << " , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB"
+         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+         << endl;
    }
 }
 
@@ -60,7 +63,10 @@ void IMSRGSolver::Reset()
 //   Omega.Erase();
    Omega.resize(0);
    Omega.push_back(Eta);
-    cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size()
+         << " , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB"
+         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+         << endl;
 }
 
 void IMSRGSolver::SetGenerator(string g)
@@ -72,7 +78,11 @@ void IMSRGSolver::SetGenerator(string g)
     Omega.push_back(Eta);
 //        H_saved = H_s;
         H_saved = FlowingOps[0];
-    cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
+
+    cout << "pushing back another Omega. Omega.size = " << Omega.size()
+         << " , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB"
+         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+         << endl;
   }
 }
 
@@ -141,7 +151,10 @@ void IMSRGSolver::Solve_magnus_euler()
         Omega.push_back(Eta);
         Omega.back().Erase();
         norm_omega = 0;
-        cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size()
+         << " , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB"
+         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+         << endl;
       }
       // ds should never be more than 1, as this is over-rotating
       //ds = min(norm_domega / norm_eta / (norm_omega+1.0e-9), ds_max); 
@@ -197,7 +210,10 @@ void IMSRGSolver::Solve_magnus_modified_euler()
         Omega.push_back(Eta);
         Omega.back().Erase();
         norm_omega = 0;
-        cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size()
+         << " , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB"
+         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+         << endl;
       }
       // ds should never be more than 1, as this is over-rotating
       ds = min(min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), ds_max); 
@@ -399,7 +415,10 @@ void IMSRGSolver::operator()( const vector<Operator>& x, vector<Operator>& dxdt,
        Omega.push_back(Eta);
        Omega.back().Erase();
        norm_omega = 0;
-       cout << "pushing back another Omega. Omega.size = " << Omega.size() << endl;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size()
+         << " , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB"
+         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+         << endl;
      }
      Omega.back() = x.back();
      auto& Omega_s = x.back();
@@ -560,9 +579,9 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << Omega.back().Norm()
         << setw(fwidth) << setprecision(fprecision) << Eta.OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << Eta.TwoBodyNorm()
-        << setw(7)      << setprecision(0)          << H_s.timer["N_Commutators"]
+        << setw(7)      << setprecision(0)          << profiler.counter["N_Commutators"]
         << setw(fwidth) << setprecision(fprecision) << H_s.GetMP2_Energy()
-        << setw(7)      << setprecision(0)         << H_s.timer["N_Operators"]
+        << setw(7)      << setprecision(0)         << profiler.counter["N_Operators"]
         << setprecision(fprecision)
         << endl;
    }
