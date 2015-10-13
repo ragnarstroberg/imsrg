@@ -262,6 +262,7 @@ void Operator::SetUpOneBodyChannels()
       }
     }
   }
+  for (auto& it: OneBodyChannels)  it.second.shrink_to_fit();
 }
 
 
