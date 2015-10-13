@@ -124,6 +124,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetHbare",&HartreeFock::GetHbare)
       .def("GetNormalOrderedH",&HartreeFock::GetNormalOrderedH)
       .def("GetOmega",&HartreeFock::GetOmega)
+      .def("PrintSPE",&HartreeFock::PrintSPE)
       .def_readonly("EHF",&HartreeFock::EHF)
    ;
 

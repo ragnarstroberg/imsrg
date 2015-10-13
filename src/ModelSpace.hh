@@ -177,6 +177,7 @@ class ModelSpace
    void Init_O16PSDShell(int nmax);
    void Init_FPShell(int nmax);
    void Init_SDFPShell(int nmax);
+   void Init_SD3F7P3Shell(int nmax);
    void Init_FPG9Shell(int nmax);
 
 

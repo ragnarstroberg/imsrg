@@ -681,25 +681,27 @@ void Operator::CalculateKineticEnergy()
 /// with all commutators truncated at the two-body level.
 Operator Operator::BCH_Transform( const Operator &Omega)
 {
-   double t = omp_get_wtime();
+   double t_start = omp_get_wtime();
    int max_iter = 40;
    int warn_iter = 12;
    double nx = Norm();
    double ny = Omega.Norm();
    Operator OpOut = *this;
-   Operator OpNested = *this;
-   if (nx<bch_transform_threshold) return OpOut;
-   double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
-   for (int i=1; i<=max_iter; ++i)
+   if (nx>bch_transform_threshold)
    {
-      OpNested = Commutator(Omega,OpNested)/i;
-      OpOut += OpNested;
-
-      if (OpNested.Norm() < epsilon *(i+1))  break;
-      if (i == warn_iter)  cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
-      else if (i == max_iter)   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
+     Operator OpNested = *this;
+     double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
+     for (int i=1; i<=max_iter; ++i)
+     {
+        OpNested = Commutator(Omega,OpNested)/i;
+        OpOut += OpNested;
+  
+        if (OpNested.Norm() < epsilon *(i+1))  break;
+        if (i == warn_iter)  cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
+        else if (i == max_iter)   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
+     }
    }
-   timer["BCH_Transform"] += omp_get_wtime() - t;
+   timer["BCH_Transform"] += omp_get_wtime() - t_start;
    return OpOut;
 }
 
@@ -721,7 +723,7 @@ Operator Operator::BCH_Transform( const Operator &Omega)
 //*****************************************************************************************
 Operator Operator::BCH_Product(  Operator &Y)
 {
-   double t = omp_get_wtime();
+   double tstart = omp_get_wtime();
    Operator& X = *this;
    double nx = X.Norm();
    double ny = Y.Norm();
@@ -729,8 +731,8 @@ Operator Operator::BCH_Product(  Operator &Y)
    if (ny < 1e-7) return X;
 
    Operator Z = Commutator(X,Y);
-   Z *= 0.5;
    double nxy = Z.Norm();
+   Z *= 0.5;
 
    if (nxy > (nx+ny)*bch_product_threshold )
    {
@@ -738,7 +740,7 @@ Operator Operator::BCH_Product(  Operator &Y)
    }
    Z += X;
    Z += Y;
-   timer["BCH_Product"] += omp_get_wtime() - t;
+   timer["BCH_Product"] += omp_get_wtime() - tstart;
    return Z;
 }
 

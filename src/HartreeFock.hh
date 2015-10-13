@@ -48,6 +48,8 @@ class HartreeFock
 
    Operator GetHbare(){return Hbare;};
 
+   void PrintSPE(){ F.diag().print();};
+
 };
 
 
