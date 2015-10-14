@@ -21,13 +21,17 @@ namespace imsrg_util
  Operator E0Op(ModelSpace& modelspace);
  Operator ElectricMultipoleOp(ModelSpace& modelspace, int L);
  Operator MagneticMultipoleOp(ModelSpace& modelspace, int L);
+ Operator Trel_Op(ModelSpace& modelspace);
  Operator TCM_Op(ModelSpace& modelspace);
- Operator VCM_Op(ModelSpace& modelspace);
+ Operator HCM_Op(ModelSpace& modelspace);
+
  Operator R2CM_Op(ModelSpace& modelspace);
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z);
  Operator R2_p1_Op(ModelSpace& modelspace);
+ Operator R2_1body_Op(ModelSpace& modelspace, string option);
  Operator R2_p2_Op(ModelSpace& modelspace);
- Operator HCM_Op(ModelSpace& modelspace);
+ Operator R2_2body_Op(ModelSpace& modelspace, string option);
+
  Operator Isospin2_Op(ModelSpace& modelspace);
  Operator AllowedFermi_Op(ModelSpace& modelspace);
  Operator AllowedGamowTeller_Op(ModelSpace& modelspace);

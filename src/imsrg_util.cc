@@ -124,6 +124,34 @@ double HO_Radial_psi(int n, int l, double hw, double r)
    return rho;
  }
 
+/// Relative kinetic energy, includingthe hw/A factor
+/// \f[
+/// T_{rel} = T - T_{CM}
+/// \f]
+ Operator Trel_Op(ModelSpace& modelspace)
+ {
+   Operator Trel(modelspace);
+   int norbits = modelspace.GetNumberOrbits();
+   double hw = modelspace.GetHbarOmega();
+   for (int a=0;a<norbits;++a)
+   {
+      Orbit & oa = modelspace.GetOrbit(a);
+      Trel.OneBody(a,a) = 0.5 * hw * (2*oa.n + oa.l +3./2); 
+      for ( int b : Trel.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      {
+         if (b<=a) continue;
+         Orbit & ob = modelspace.GetOrbit(b);
+         if (oa.n == ob.n+1)
+            Trel.OneBody(a,b) = 0.5 * hw * sqrt( (oa.n)*(oa.n + oa.l +1./2));
+         else if (oa.n == ob.n-1)
+            Trel.OneBody(a,b) = 0.5 * hw * sqrt( (ob.n)*(ob.n + ob.l +1./2));
+         Trel.OneBody(b,a) = Trel.OneBody(a,b);
+      }
+   }
+   Trel -= TCM_Op(modelspace);
+   return Trel;
+ }
+
 
 /// Center of mass kinetic energy, including the hw/A factor
 /// \f[
@@ -522,59 +550,20 @@ double HO_Radial_psi(int n, int l, double hw, double r)
 /// evaluated in the oscillator basis.
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z)
  {
+   return R2CM_Op(modelspace) + (A-2.0)/(A*Z)*R2_1body_Op(modelspace,"proton") - 2./(A*Z)*R2_2body_Op(modelspace,"proton");
+ }
+
+ Operator Rn2_corrected_Op(ModelSpace& modelspace, int A, int Z)
+ {
+   return R2CM_Op(modelspace) + (A-2.0)/(A*N)*R2_1body_Op(modelspace,"neutron") - 2./(A*N)*R2_2body_Op(modelspace,"neutron");
+ }
+
+ Operator Rm2_corrected_Op(ModelSpace& modelspace, int A, int Z)
+ {
    return R2CM_Op(modelspace) + (A-2.0)/(A*Z)*R2_p1_Op(modelspace) - 2./(A*Z)*R2_p2_Op(modelspace);
  }
 
 
-
-
-
-// Center of mass kinetic energy, with the hw/A factor
- Operator VCM_Op(ModelSpace& modelspace)
- {
-   Operator VcmOp = Operator(modelspace);
-
-   int norb = modelspace.GetNumberOrbits();
-   for (int i=0; i<norb; ++i)
-   {
-      Orbit & oi = modelspace.GetOrbit(i);
-      for (int j=i; j<norb; ++j)
-      {
-         Orbit & oj = modelspace.GetOrbit(j);
-         if (oi.l != oj.l or oi.j2 != oj.j2 or oi.tz2 != oj.tz2) continue;
-         double tij = 0;
-         if (oi.n == oj.n) tij = 0.5*(2*oi.n+oi.l + 1.5);
-         else if (oi.n == oj.n-1) tij = -0.5*sqrt(oj.n*(oj.n+oj.l + 0.5));
-         VcmOp.OneBody(i,j) = tij;
-         VcmOp.OneBody(j,i) = tij;
-      }
-   }
-
-   int nchan = modelspace.GetNumberTwoBodyChannels();
-   #pragma omp parallel for schedule(dynamic,5) 
-   for (int ch=0; ch<nchan; ++ch)
-   {
-      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
-      int nkets = tbc.GetNumberKets();
-      for (int ibra=0;ibra<nkets;++ibra)
-      {
-         Ket & bra = tbc.GetKet(ibra);
-         for (int iket=ibra;iket<nkets;++iket)
-         {
-            Ket & ket = tbc.GetKet(iket);
-            double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J);
-//            #pragma omp critical
-            {
-              VcmOp.TwoBody.SetTBME(ch,ibra,iket,mat_el);
-              VcmOp.TwoBody.SetTBME(ch,iket,ibra,mat_el);
-            }
-         }
-      }
-   }
-   double hw = modelspace.GetHbarOmega();
-   int A = modelspace.GetTargetMass();
-   return VcmOp *hw / ( 2*A );
- }
 
  // Evaluate <bra | r1*r2 | ket>, omitting the factor (hbar * omega) /(m * omega^2)
 /// Returns the normalized, anti-symmetrized, J-coupled, two-body matrix element of \f$ \frac{m\omega^2}{\hbar \omega} \vec{r}_1\cdot\vec{r}_2 \f$.
@@ -689,7 +678,13 @@ double HO_Radial_psi(int n, int l, double hw, double r)
 
 
 
-// Center of mass Hamiltonian
+/// Center of mass Hamiltonian
+/// \f[
+/// \begin{align}
+/// H_{CM} &= T_{CM} + \frac{1}{2} Am\omega^2 R^2 \\
+///        &= T_{CM} + \frac{1}{2b^2} AR^2 \hbar\omega
+/// \end{align}
+/// \f]
  Operator HCM_Op(ModelSpace& modelspace)
  {
    double hw = modelspace.GetHbarOmega();
@@ -733,18 +728,27 @@ Operator RSquaredOp(ModelSpace& modelspace)
 }
 
 
+ Operator R2_p1_Op(ModelSpace& modelspace)
+ {
+   return R2_1body_Op(modelspace,"proton");
+ }
 
 /// One-body part of the proton charge radius operator.
 /// Returns
 /// \f[ 
 /// \hat{R}^{2}_{p1} = \sum_{i} e_{i}{r}_i^2
 /// \f]
-Operator R2_p1_Op(ModelSpace& modelspace)
-{
-   Operator r2 = Operator(modelspace);
+ Operator R2_1body_Op(ModelSpace& modelspace,string option)
+ {
+   Operator r2(modelspace);
    double oscillator_b = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
 
-   for (unsigned int a : modelspace.proton_orbits )
+   auto orbitlist = modelspace.proton_orbits;
+   if (option == "neutron") orbitlist = modelspace.neutron_orbits;
+   else if (option == "matter")  orbitlist.insert(orbitlist.end(),modelspace.neutron_orbits.begin(),modelspace.neutron_orbits.end());
+   else if (option != "proton") cout << "!!! WARNING. BAD OPTION "  << option << " FOR imsrg_util::R2_p1_Op !!!" << endl;
+ 
+   for (unsigned int a : orbitlist )
    {
       Orbit & oa = modelspace.GetOrbit(a);
       r2.OneBody(a,a) = (2*oa.n + oa.l +1.5); 
@@ -763,8 +767,12 @@ Operator R2_p1_Op(ModelSpace& modelspace)
    }
    r2.OneBody *= oscillator_b;
    return r2;
-}
+ }
 
+ Operator R2_p2_Op(ModelSpace& modelspace)
+ {
+   return R2_2body_Op(modelspace,"proton");
+ }
 
 /// Two-body part of the proton charge radius operator.
 /// Returns
@@ -772,9 +780,9 @@ Operator R2_p1_Op(ModelSpace& modelspace)
 /// \hat{R}^{2}_{p2} = \sum_{i\neq j} e_{i}\vec{r}_i\cdot\vec{r}_j 
 /// \f]
 /// evaluated in the oscillator basis.
- Operator R2_p2_Op(ModelSpace& modelspace)
+ Operator R2_2body_Op(ModelSpace& modelspace,string option)
  {
-   Operator Rp2Op = Operator(modelspace,0,0,0,2);
+   Operator Rp2Op(modelspace,0,0,0,2);
    double oscillator_b = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
 
    int nchan = modelspace.GetNumberTwoBodyChannels();
@@ -787,7 +795,9 @@ Operator R2_p1_Op(ModelSpace& modelspace)
       for (int ibra=0;ibra<nkets;++ibra)
       {
          Ket & bra = tbc.GetKet(ibra);
-         if (bra.op->tz2>0) continue;
+         if (option == "proton" and bra.op->tz2>0) continue;
+         else if (option == "neutron" and bra.op->tz2<0) continue;
+         else if (option != "matter") cout << "!!! WARNING. BAD OPTION "  << option << " FOR imsrg_util::R2_p2_Op !!!" << endl;
          for (int iket=ibra;iket<nkets;++iket)
          {
             Ket & ket = tbc.GetKet(iket);
@@ -809,7 +819,7 @@ Operator R2_p1_Op(ModelSpace& modelspace)
 ///
 Operator E0Op(ModelSpace& modelspace)
 {
-   Operator e0 = Operator(modelspace);
+   Operator e0(modelspace);
    e0.EraseZeroBody();
    e0.OneBody.zeros();
 //   unsigned int norbits = modelspace.GetNumberOrbits();

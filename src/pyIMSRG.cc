@@ -165,7 +165,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    ;
 
    def("TCM_Op",           imsrg_util::TCM_Op);
-   def("VCM_Op",           imsrg_util::VCM_Op);
+   def("Trel_Op",           imsrg_util::Trel_Op);
    def("R2CM_Op",          imsrg_util::R2CM_Op);
    def("HCM_Op",           imsrg_util::HCM_Op);
    def("NumberOp",         imsrg_util::NumberOp);
@@ -173,7 +173,6 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("E0Op",             imsrg_util::E0Op);
    def("AllowedFermi_Op",             imsrg_util::AllowedFermi_Op);
    def("AllowedGamowTeller_Op",             imsrg_util::AllowedGamowTeller_Op);
-//   def("E2Op",             imsrg_util::E2Op);
    def("ElectricMultipoleOp",             imsrg_util::ElectricMultipoleOp);
    def("MagneticMultipoleOp",             imsrg_util::MagneticMultipoleOp);
    def("Isospin2_Op",      imsrg_util::Isospin2_Op);
