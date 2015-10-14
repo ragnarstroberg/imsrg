@@ -555,12 +555,12 @@ double HO_Radial_psi(int n, int l, double hw, double r)
 
  Operator Rn2_corrected_Op(ModelSpace& modelspace, int A, int Z)
  {
-   return R2CM_Op(modelspace) + (A-2.0)/(A*N)*R2_1body_Op(modelspace,"neutron") - 2./(A*N)*R2_2body_Op(modelspace,"neutron");
+   return R2CM_Op(modelspace) + (A-2.0)/(A*(A-Z))*R2_1body_Op(modelspace,"neutron") - 2./(A*(A-Z))*R2_2body_Op(modelspace,"neutron");
  }
 
  Operator Rm2_corrected_Op(ModelSpace& modelspace, int A, int Z)
  {
-   return R2CM_Op(modelspace) + (A-2.0)/(A*Z)*R2_p1_Op(modelspace) - 2./(A*Z)*R2_p2_Op(modelspace);
+   return (1./A)*RSquaredOp(modelspace) - R2CM_Op(modelspace)  ;
  }
 
 
