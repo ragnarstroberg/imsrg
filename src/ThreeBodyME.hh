@@ -20,6 +20,7 @@ class ThreeBodyME
   ModelSpace * modelspace;
   vector<vector<vector<vector<vector<vector<vector<ThreeBME_type>>>>>>> MatEl; //
   int E3max;
+  size_t total_dimension;
   
   ~ThreeBodyME();
   ThreeBodyME();
@@ -44,7 +45,8 @@ class ThreeBodyME
   int GetE3max(){return E3max;};
 
   void Erase(); // set all three-body terms to zero
-
+  void Deallocate();
+  size_t size(){return total_dimension * sizeof(ThreeBME_type);};
 
 
 
