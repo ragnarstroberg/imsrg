@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <string>
+#include <deque>
 #include "Operator.hh"
 #include "Generator.hh"
 #include "IMSRGProfiler.hh"
@@ -19,12 +20,12 @@ class IMSRGSolver
 //  private:
   ModelSpace* modelspace;
   Operator* H_0; 
-  vector<Operator> FlowingOps;
-//  Operator H_s;
+//  vector<Operator> FlowingOps;
+  deque<Operator> FlowingOps;
   Operator H_saved;
   Operator Eta;
-//  Operator Omega;
-  vector<Operator> Omega;
+//  vector<Operator> Omega;
+  deque<Operator> Omega;
   Generator generator;
   int istep;
   double s;
@@ -97,7 +98,8 @@ class IMSRGSolver
      vector<double>& E0;
      vector<double>& eta1;
      vector<double>& eta2;
-     void operator() (const vector<Operator>& x, double t)
+//     void operator() (const vector<Operator>& x, double t)
+     void operator() (const deque<Operator>& x, double t)
      {
         times.push_back(t);
         E0.push_back(x.front().ZeroBody);
@@ -126,7 +128,8 @@ class IMSRGSolver
   float ode_e_rel;
 
 
-  void operator()( const vector<Operator>& x, vector<Operator>& dxdt, const double t);
+//  void operator()( const vector<Operator>& x, vector<Operator>& dxdt, const double t);
+  void operator()( const deque<Operator>& x, deque<Operator>& dxdt, const double t);
   void Solve_ode();
   void Solve_ode_adaptive();
   void Solve_ode_magnus();

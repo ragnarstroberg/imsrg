@@ -289,6 +289,7 @@ ModelSpace::ModelSpace(int nmax, string str)
   else if (str == "fp-shell") Init_FPShell(nmax);
   else if (str == "sdfp-shell") Init_SDFPShell(nmax);
   else if (str == "fpg9-shell") Init_FPG9Shell(nmax);
+  else if (str == "sd3f7p3-shell") Init_SD3F7P3Shell(nmax);
   else
   {
     vector<string> toi = {"n","H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar",
@@ -553,6 +554,15 @@ void ModelSpace::Init_SDFPShell(int nmax)
    vector<string> valence = {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"};
    target_mass = 18;
    target_Z = 8;
+   Init(nmax,core,valence);
+}
+
+void ModelSpace::Init_SD3F7P3Shell(int nmax) // Si28 core - for 40Ca region
+{
+   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5"};
+   vector<string> valence = {"p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p1p3","n1p3"};
+   target_mass = 40;
+   target_Z = 20;
    Init(nmax,core,valence);
 }
 

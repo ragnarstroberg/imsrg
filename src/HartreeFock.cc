@@ -250,6 +250,7 @@ void HartreeFock::BuildMonopoleV3()
         }
       }
     }
+    Vmon3.shrink_to_fit();
 
 
    // the calculation takes longer, so parallelize this part

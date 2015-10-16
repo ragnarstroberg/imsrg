@@ -47,7 +47,7 @@ install:
 	  mkdir $(INSTDIR)/include; \
 	fi 
 	ln -sf $(PWD)/libIMSRG.so $(INSTDIR)/lib/libIMSRG.so
-	ln -sf $(PWD)/armadillo $(INSTDIR)/include/armadillo
+	ln -sfT $(PWD)/armadillo $(INSTDIR)/include/armadillo
 	@for x in *.hh; do \
 	 echo linking $(PWD)/$$x  '=>'  $(INSTDIR)/include/$$x;\
 	 ln -sf $(PWD)/$$x $(INSTDIR)/include/$$x; \

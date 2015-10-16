@@ -27,6 +27,7 @@ class IMSRGProfiler
   map<string,float> GetTimes(); // real  user  sys
   void PrintTimes();
   void PrintCounters();
+  void PrintMemory();
   void PrintAll();
   size_t MaxMemUsage();
 };

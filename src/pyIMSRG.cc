@@ -76,7 +76,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetParticleRank", &Operator::GetParticleRank)
       .def("GetE3max", &Operator::GetE3max)
       .def("SetE3max", &Operator::SetE3max)
-//      .def("PrintTimes", &Profiler::PrintTimes)
+      .def("PrintTimes", &Operator::PrintTimes)
       .def("BCH_Transform", &Operator::BCH_Transform)
    ;
 
@@ -124,6 +124,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetHbare",&HartreeFock::GetHbare)
       .def("GetNormalOrderedH",&HartreeFock::GetNormalOrderedH)
       .def("GetOmega",&HartreeFock::GetOmega)
+      .def("PrintSPE",&HartreeFock::PrintSPE)
       .def_readonly("EHF",&HartreeFock::EHF)
    ;
 
@@ -132,12 +133,6 @@ BOOST_PYTHON_MODULE(pyIMSRG)
 
    class_<IMSRGSolver>("IMSRGSolver",init<Operator&>())
       .def("Solve",&IMSRGSolver::Solve)
-#ifndef NO_ODE
-      .def("Solve_ode",&IMSRGSolver::Solve_ode)
-      .def("Solve_ode_adaptive",&IMSRGSolver::Solve_ode_adaptive)
-      .def("Solve_ode_magnus",&IMSRGSolver::Solve_ode_magnus)
-#endif
-//      .def("Transform",&IMSRGSolver::Transform)
       .def("Transform",Transform_ref)
       .def("InverseTransform",&IMSRGSolver::InverseTransform)
       .def("SetFlowFile",&IMSRGSolver::SetFlowFile)
@@ -158,9 +153,6 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetSystemDimension",&IMSRGSolver::GetSystemDimension)
       .def("GetOmega",&IMSRGSolver::GetOmega)
       .def("GetH_s",&IMSRGSolver::GetH_s,return_value_policy<reference_existing_object>())
-//      .def_readwrite("H_s", &IMSRGSolver::H_s)
-//      .def_readwrite("Omega", &IMSRGSolver::Omega)
-//      .def_readwrite("Omega", &IMSRGSolver::Omega[0])
       .def_readwrite("Eta", &IMSRGSolver::Eta)
    ;
 
@@ -173,7 +165,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    ;
 
    def("TCM_Op",           imsrg_util::TCM_Op);
-   def("VCM_Op",           imsrg_util::VCM_Op);
+   def("Trel_Op",           imsrg_util::Trel_Op);
    def("R2CM_Op",          imsrg_util::R2CM_Op);
    def("HCM_Op",           imsrg_util::HCM_Op);
    def("NumberOp",         imsrg_util::NumberOp);
@@ -181,7 +173,6 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("E0Op",             imsrg_util::E0Op);
    def("AllowedFermi_Op",             imsrg_util::AllowedFermi_Op);
    def("AllowedGamowTeller_Op",             imsrg_util::AllowedGamowTeller_Op);
-//   def("E2Op",             imsrg_util::E2Op);
    def("ElectricMultipoleOp",             imsrg_util::ElectricMultipoleOp);
    def("MagneticMultipoleOp",             imsrg_util::MagneticMultipoleOp);
    def("Isospin2_Op",      imsrg_util::Isospin2_Op);
