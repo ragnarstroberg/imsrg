@@ -36,7 +36,7 @@ void ThreeBodyME::Allocate()
    Orbit& oa = modelspace->GetOrbit(a);
    int ea = 2*oa.n+oa.l;
    if (ea>E3max) break;
-   vector<vector<vector<vector<vector<vector<ThreeBME_type>>>>>> vecb;
+   vector<vector<vector<vector<vector<size_t>>>>> vecb;
    for (int b=0; b<=a; b+=2)
    {
      if (oa.l > lmax) break;
@@ -46,26 +46,26 @@ void ThreeBodyME::Allocate()
 
      int Jab_min = abs(oa.j2-ob.j2)/2;
      int Jab_max = (oa.j2+ob.j2)/2;
-     vector<vector<vector<vector<vector<ThreeBME_type>>>>> vecc;
+     vector<vector<vector<vector<size_t>>>> vecc;
      for (int c=0; c<=b; c+=2)
      {
        if (ob.l > lmax) break;
        Orbit& oc = modelspace->GetOrbit(c);
        int ec = 2*oc.n+oc.l;
        if ((ea+eb+ec)>E3max) break;
-       vector<vector<vector<vector<ThreeBME_type>>>> vecd;
+       vector<vector<vector<size_t>>> vecd;
        for (int d=0; d<=a; d+=2)
        {
          if (oc.l > lmax) break;
          Orbit& od = modelspace->GetOrbit(d);
          int ed = 2*od.n+od.l;
-         vector<vector<vector<ThreeBME_type>>> vece;
+         vector<vector<size_t>> vece;
          for (int e=0; e<= (d==a ? b : d); e+=2)
          {
            if (od.l > lmax) break;
            Orbit& oe = modelspace->GetOrbit(e);
            int ee = 2*oe.n+oe.l;
-           vector<vector<ThreeBME_type>> vecf;
+           vector<size_t> vecf;
            for (int f=0; f<=((d==a and e==b) ? c : e); f+=2)
            {
              if (oe.l > lmax) break;
@@ -74,13 +74,14 @@ void ThreeBodyME::Allocate()
              if ((ed+ee+ef)>E3max) break;
              if ((oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 or of.l > lmax) 
              {
-               vecf.push_back( vector<ThreeBME_type>(0,0.0) );
+               vecf.push_back( -1 );
                continue;
              }
+             vecf.push_back( total_dimension );
              int Jde_min = abs(od.j2-oe.j2)/2;
              int Jde_max = (od.j2+oe.j2)/2;
 
-             int dim = 0;
+//             int dim = 0;
              for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
              {
               for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
@@ -89,13 +90,14 @@ void ThreeBodyME::Allocate()
                 int J2_max = min( 2*Jab+oc.j2, 2*Jde+of.j2);
                 for (int J2=J2_min; J2<=J2_max; J2+=2)
                 {
-                  dim += 5; // 5 different isospin combinations
+//                  dim += 5; // 5 different isospin combinations
+                  total_dimension += 5; // 5 different isospin combinations
                 } //J2
               } //Jde
              } //Jab
-             vecf.push_back( vector<ThreeBME_type>(dim,0.0) );
+//             total_dimension += dim;
+//             vecf.push_back( vector<ThreeBME_type>(dim,0.0) );
              ++nvectors;
-             total_dimension += dim;
 
            } //f
            vece.push_back( vecf );
@@ -110,11 +112,14 @@ void ThreeBodyME::Allocate()
      vecb.push_back( vecc );
      ++nvectors;
    } //b
-   MatEl.push_back( vecb );
+//   MatEl.push_back( vecb );
+   OrbitIndex.push_back( vecb);
    ++nvectors;
   } //a
+  MatEl.resize(total_dimension,0.0);
+  MatEl.shrink_to_fit();
   cout << "Allocated " << total_dimension << " three body matrix elements (" <<  total_dimension * sizeof(ThreeBME_type)/1024./1024./1024. << " GB), "
-       << nvectors << " vectors (" << nvectors * 3/1024./1024./1024. <<" GB)." << endl;
+       << nvectors << " vectors (" << nvectors * sizeof(vector<size_t>)/1024./1024./1024. <<" GB)." << endl;
 
 }
 
@@ -243,7 +248,8 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
 
 
 
-   auto& vj = MatEl.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).at(f/2);
+   auto& indx = OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).at(f/2);
+   if (indx > MatEl.size()) cout << "AAAAHHH indx = " << indx << "  but MatEl.size() = " << MatEl.size() << endl;
    
 //   cout << "    accessing " << a << " " << b << " " << c << " " << d << " " << e << " " << f << " size = " << vj.size() << endl;
 //   cout << " size = " << vj.size() << endl;
@@ -268,21 +274,20 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
 
        if (J2>=J2_min and J2<=J2_max)
        {
-       for (int tab=tab_min; tab<=tab_max; ++tab)
-       {
-         double Ct_abc = RecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
-         for (int tde=tde_min; tde<=tde_max; ++tde)
+         for (int tab=tab_min; tab<=tab_max; ++tab)
          {
-           double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
+           double Ct_abc = RecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
+           for (int tde=tde_min; tde<=tde_max; ++tde)
+           {
+             double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
 
-           int Tindex = 2*tab + tde + (T2-1)/2;
+             int Tindex = 2*tab + tde + (T2-1)/2;
 
-           vj.at(J_index + Tindex) += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
-           V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * vj.at(J_index+Tindex);
+             MatEl.at(indx + J_index + Tindex) += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
+             V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * MatEl.at(indx + J_index + Tindex);
 
-
+           }
          }
-       }
        }
        J_index += (J2_max-J2+2)/2*5;
      }
