@@ -43,15 +43,16 @@ class Operator
   int nChannels; ///< Number of two-body channels \f$ J,\pi,T_z \f$ associated with the model space
   static double bch_transform_threshold;
   static double bch_product_threshold;
-//  static map<string, double> timer; ///< For keeping timing information for various method calls
+
+//  static Operator Temp; ///< Scratch space for calculations
+  Operator& Temp(); ///< Scratch space for calculations
+
   map<array<int,3>,vector<index_t> > OneBodyChannels;
   IMSRGProfiler profiler;
 
-  void PrintTimes(){profiler.PrintAll();};
 
 
   //Constructors
-  // In the future, consider using C++11 rvalues / move constructor to avoid copies in certain cases
   ~Operator();
   Operator(); ///< Default constructor
   Operator(ModelSpace&); ///< Construct a 2-body scalar operator
@@ -74,7 +75,7 @@ class Operator
   Operator& operator=(Operator&& rhs);
 
   //Methods
-  void Copy(const Operator& rhs);
+//  void Copy(const Operator& rhs);
 
   // One body setter/getters
   double GetOneBody(int i,int j) {return OneBody(i,j);};
@@ -116,7 +117,7 @@ class Operator
   void Symmetrize(); ///< Copy the upper-half triangle to the lower-half triangle for each matrix
   void AntiSymmetrize(); ///< Copy the upper-half triangle to the lower-half triangle with a minus sign.
   void SetUpOneBodyChannels();
-  int Size();
+  size_t Size();
 
   // The actually interesting methods
   Operator DoNormalOrdering(); ///< Calls DoNormalOrdering2() or DoNormalOrdering3(), depending on the rank of the operator.
@@ -124,9 +125,12 @@ class Operator
   Operator DoNormalOrdering3(); ///< Returns the normal ordered three-body operator
   Operator UndoNormalOrdering(); ///< Returns the operator normal-ordered wrt the vacuum
 
+  void SetToCommutator(const Operator& X, const Operator& Y);
+  void CommutatorScalarScalar( const Operator& X, const Operator& Y) ;
+  void CommutatorScalarTensor( const Operator& X, const Operator& Y) ;
   friend Operator Commutator(const Operator& X, const Operator& Y) ; 
-  friend Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) ;
-  friend Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) ;
+//  friend Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) ;
+//  friend Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) ;
 
   Operator BCH_Product(  Operator& )  ; 
   Operator BCH_Transform( const Operator& ) ; 
@@ -135,6 +139,7 @@ class Operator
   void Eye(); ///< set to identity operator
 
   double GetMP2_Energy();
+  void PrintTimes(){profiler.PrintAll();};
 
 
   double Norm() const;

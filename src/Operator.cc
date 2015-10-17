@@ -21,7 +21,15 @@ using namespace std;
 //double  Operator::bch_transform_threshold = 1e-6;
 double  Operator::bch_transform_threshold = 1e-9;
 double  Operator::bch_product_threshold = 1e-4;
+//Operator Operator::Temp = Operator();
+//Operator Operator::Temp = Operator();
 //map<string, double> Operator::timer;
+Operator& Operator::Temp()
+{
+  static Operator* tmp = new Operator();
+  return *tmp;
+}
+
 
 
 Operator::~Operator()
@@ -56,8 +64,6 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 //  timer["N_Operators"] ++;
   profiler.counter["N_Operators"] ++;
 }
-
-
 
 Operator::Operator(ModelSpace& ms) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
@@ -99,53 +105,55 @@ Operator::Operator(Operator&& op)
 }
 
 /////////// COPY METHOD //////////////////////////
-void Operator::Copy(const Operator& op)
-{
-   modelspace    = op.modelspace;
-   nChannels     = op.nChannels;
-   hermitian     = op.hermitian;
-   antihermitian = op.antihermitian;
-   rank_J        = op.rank_J;
-   rank_T        = op.rank_T;
-   parity        = op.parity;
-   particle_rank = op.particle_rank;
-   E2max         = op.E2max;
-   E3max         = op.E3max;
-   ZeroBody      = op.ZeroBody;
-   OneBody       = op.OneBody;
-   TwoBody       = op.TwoBody;
-   ThreeBody     = op.ThreeBody;
-   OneBodyChannels = op.OneBodyChannels;
-}
+//void Operator::Copy(const Operator& op)
+//{
+//   modelspace    = op.modelspace;
+//   nChannels     = op.nChannels;
+//   hermitian     = op.hermitian;
+//   antihermitian = op.antihermitian;
+//   rank_J        = op.rank_J;
+//   rank_T        = op.rank_T;
+//   parity        = op.parity;
+//   particle_rank = op.particle_rank;
+//   E2max         = op.E2max;
+//   E3max         = op.E3max;
+//   ZeroBody      = op.ZeroBody;
+//   OneBody       = op.OneBody;
+//   TwoBody       = op.TwoBody;
+//   ThreeBody     = op.ThreeBody;
+//   OneBodyChannels = op.OneBodyChannels;
+//}
 
 /////////////// OVERLOADED OPERATORS =,+,-,*,etc ////////////////////
-Operator& Operator::operator=(const Operator& rhs)
-{
+//Operator& Operator::operator=(const Operator& rhs)
+//{
 //   cout << "Using copy assignment" << endl;
-   Copy(rhs);
-   return *this;
-}
-
-Operator& Operator::operator=(Operator&& rhs)
-{
+//   Copy(rhs);
+//   return *this;
+//}
+//
+//Operator& Operator::operator=(Operator&& rhs)
+//{
 //   cout << "Using move assignment" << endl;
-   modelspace    = rhs.modelspace;
-   nChannels     = rhs.nChannels;
-   hermitian     = rhs.hermitian;
-   antihermitian = rhs.antihermitian;
-   rank_J        = rhs.rank_J;
-   rank_T        = rhs.rank_T;
-   parity        = rhs.parity;
-   particle_rank = rhs.particle_rank;
-   E2max         = rhs.E2max;
-   E3max         = rhs.E3max;
-   ZeroBody      = rhs.ZeroBody;
-   OneBody       = move(rhs.OneBody);
-   TwoBody       = move(rhs.TwoBody);
-   ThreeBody     = move(rhs.ThreeBody);
-   OneBodyChannels = move(rhs.OneBodyChannels);
-   return *this;
-}
+//   modelspace    = rhs.modelspace;
+//   nChannels     = rhs.nChannels;
+//   hermitian     = rhs.hermitian;
+//   antihermitian = rhs.antihermitian;
+//   rank_J        = rhs.rank_J;
+//   rank_T        = rhs.rank_T;
+//   parity        = rhs.parity;
+//   particle_rank = rhs.particle_rank;
+//   E2max         = rhs.E2max;
+//   E3max         = rhs.E3max;
+//   ZeroBody      = rhs.ZeroBody;
+//   OneBody       = move(rhs.OneBody);
+//   TwoBody       = move(rhs.TwoBody);
+//   ThreeBody     = move(rhs.ThreeBody);
+//   OneBodyChannels = move(rhs.OneBodyChannels);
+//   return *this;
+//}
+Operator& Operator::operator=(const Operator& rhs) = default;
+Operator& Operator::operator=(Operator&& rhs) = default;
 
 // multiply operator by a scalar
 Operator& Operator::operator*=(const double rhs)
@@ -266,9 +274,9 @@ void Operator::SetUpOneBodyChannels()
 }
 
 
-int Operator::Size()
+size_t Operator::Size()
 {
-   return 1 + OneBody.size() + TwoBody.size();
+   return sizeof(ZeroBody) + OneBody.size()*sizeof(double) + TwoBody.size() + ThreeBody.size();
 }
 
 
@@ -502,6 +510,12 @@ void Operator::EraseTwoBody()
  TwoBody.Erase();
 }
 
+void Operator::EraseThreeBody()
+{
+//  ThreeBody.Deallocate();
+  ThreeBody = ThreeBodyME();
+}
+
 void Operator::SetHermitian()
 {
   hermitian = true;
@@ -691,6 +705,7 @@ void Operator::CalculateKineticEnergy()
 /// with all commutators truncated at the two-body level.
 Operator Operator::BCH_Transform( const Operator &Omega)
 {
+//   return *this; // THIS NEEDS TO BE REMOVED!!!!
    double t_start = omp_get_wtime();
    int max_iter = 40;
    int warn_iter = 12;
@@ -699,11 +714,16 @@ Operator Operator::BCH_Transform( const Operator &Omega)
    Operator OpOut = *this;
    if (nx>bch_transform_threshold)
    {
-     Operator OpNested = *this;
+//     Operator OpNested = *this;
+//     Operator& OpNested = Temp;
+     Operator& OpNested = Temp();
+     OpNested = *this;
      double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
      for (int i=1; i<=max_iter; ++i)
      {
         OpNested = Commutator(Omega,OpNested)/i;
+//        OpNested.SetToCommutator(Omega,OpNested);
+//        OpNested /= i;
         OpOut += OpNested;
   
         if (OpNested.Norm() < epsilon *(i+1))  break;
@@ -733,6 +753,7 @@ Operator Operator::BCH_Transform( const Operator &Omega)
 //*****************************************************************************************
 Operator Operator::BCH_Product(  Operator &Y)
 {
+//   return Y; // THIS NEEDS TO BE REMOVED!!!!
    double tstart = omp_get_wtime();
    Operator& X = *this;
    double nx = X.Norm();
@@ -740,13 +761,19 @@ Operator Operator::BCH_Product(  Operator &Y)
    if (nx < 1e-7) return Y;
    if (ny < 1e-7) return X;
 
-   Operator Z = Commutator(X,Y);
+//   Operator Z = Commutator(X,Y);
+   Operator Z;
+   Z.SetToCommutator(X,Y);
    double nxy = Z.Norm();
    Z *= 0.5;
 
    if (nxy > (nx+ny)*bch_product_threshold )
    {
-     Z += (1./6) * Commutator(Z,Y-X);
+     Operator& tmp = Temp();
+     tmp.SetToCommutator(Z,Y-Z);
+     tmp /= 6;
+     Z += tmp;
+//     Z += (1./6) * Commutator(Z,Y-X);
    }
    Z += X;
    Z += Y;
@@ -832,8 +859,16 @@ void Operator::AntiSymmetrize()
 /// @relates Operator
 Operator Commutator( const Operator& X, const Operator& Y)
 {
-   X.profiler.counter["N_Commutators"] += 1;
+  Operator Z;
+  Z.SetToCommutator(X,Y);
+  return Z;
+}
+
+void Operator::SetToCommutator( const Operator& X, const Operator& Y)
+{
+   profiler.counter["N_Commutators"] += 1;
    double t_start = omp_get_wtime();
+   Operator& Z = *this;
    int xrank = X.rank_J + X.rank_T + X.parity;
    int yrank = Y.rank_J + Y.rank_T + Y.parity;
    if (xrank==0)
@@ -841,35 +876,41 @@ Operator Commutator( const Operator& X, const Operator& Y)
       if (yrank==0)
       {
 //         return X.CommutatorScalarScalar(Y); // [S,S]
-         return CommutatorScalarScalar(X,Y); // [S,S]
+//         return CommutatorScalarScalar(X,Y); // [S,S]
+         Z.CommutatorScalarScalar(X,Y); // [S,S]
       }
       else
       {
 //         return X.CommutatorScalarTensor(Y); // [S,T]
-         return CommutatorScalarTensor(X,Y); // [S,T]
+//         return CommutatorScalarTensor(X,Y); // [S,T]
+         Z.CommutatorScalarTensor(X,Y); // [S,T]
       }
    }
    else if(yrank==0)
    {
 //      return (-1)*Y.CommutatorScalarTensor(X); // [T,S]
-      return (-1)*CommutatorScalarTensor(Y,X); // [T,S]
+//      return (-1)*CommutatorScalarTensor(Y,X); // [T,S]
+      Z.CommutatorScalarTensor(Y,X); // [T,S]
+      Z *= -1;
    }
    else
    {
       cout << "In Tensor-Tensor because X.rank_J = " << X.rank_J << "  and Y.rank_J = " << Y.rank_J << endl;
       cout << " Tensor-Tensor commutator not yet implemented." << endl;
-      return X;
+//      return X;
    }
-   X.profiler.timer["Commutator"] += omp_get_wtime() - t_start;
+   profiler.timer["Commutator"] += omp_get_wtime() - t_start;
 }
 
 
 /// Commutator where \f$ X \f$ and \f$Y\f$ are scalar operators.
 /// Should be called through Commutator()
 //Operator Operator::CommutatorScalarScalar( Operator& opright) 
-Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) 
+//Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) 
+void Operator::CommutatorScalarScalar( const Operator& X, const Operator& Y) 
 {
-   Operator Z = X.GetParticleRank()>Y.GetParticleRank() ? X : Y;
+   Operator& Z = *this;
+   Z = X.GetParticleRank()>Y.GetParticleRank() ? X : Y;
    Z.EraseZeroBody();
    Z.EraseOneBody();
    Z.EraseTwoBody();
@@ -883,38 +924,31 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
    if ( not Z.IsAntiHermitian() )
    {
-      //X.comm110ss(Y, Z);
-      //X.comm220ss(Y, Z) ;
       Z.comm110ss(X, Y);
       Z.comm220ss(X, Y) ;
    }
 
    double t_start = omp_get_wtime();
-//   X.comm111ss(Y, Z);
    Z.comm111ss(X, Y);
-   Z.profiler.timer["comm111ss"] += omp_get_wtime() - t_start;
+   profiler.timer["comm111ss"] += omp_get_wtime() - t_start;
 
     t_start = omp_get_wtime();
-//   X.comm121ss(opright, out);
    Z.comm121ss(X,Y);
-   Z.profiler.timer["comm121ss"] += omp_get_wtime() - t_start;
+   profiler.timer["comm121ss"] += omp_get_wtime() - t_start;
 
     t_start = omp_get_wtime();
-//   X.comm122ss(Y, Z); 
    Z.comm122ss(X,Y); 
-   Z.profiler.timer["comm122ss"] += omp_get_wtime() - t_start;
+   profiler.timer["comm122ss"] += omp_get_wtime() - t_start;
 
    if (X.particle_rank>1 and Y.particle_rank>1)
    {
     t_start = omp_get_wtime();
-//    X.comm222_pp_hh_221ss(Y, Z);
     Z.comm222_pp_hh_221ss(X, Y);
-    Z.profiler.timer["comm222_pp_hh_221ss"] += omp_get_wtime() - t_start;
+    profiler.timer["comm222_pp_hh_221ss"] += omp_get_wtime() - t_start;
      
     t_start = omp_get_wtime();
-//    X.comm222_phss(Y, Z);
     Z.comm222_phss(X, Y);
-    Z.profiler.timer["comm222_phss"] += omp_get_wtime() - t_start;
+    profiler.timer["comm222_phss"] += omp_get_wtime() - t_start;
    }
 
 
@@ -924,18 +958,20 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
       Z.AntiSymmetrize();
 
 
-   return Z;
+//   return Z;
 }
 
 
 /// Commutator \f$[X,Y]\f$ where \f$ X \f$ is a scalar operator and \f$Y\f$ is a tensor operator.
 /// Should be called through Commutator()
 //Operator Operator::CommutatorScalarTensor( Operator& opright) 
-Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) 
+//Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) 
+void Operator::CommutatorScalarTensor( const Operator& X, const Operator& Y) 
 {
 //   cout << "Calling CommutatorScalarTensor" << endl;
    double t_start = omp_get_wtime();
-   Operator Z = Y; // This ensures the commutator has the same tensor rank as Y
+   Operator& Z = *this;
+   Z = Y; // This ensures the commutator has the same tensor rank as Y
    Z.EraseZeroBody();
    Z.EraseOneBody();
    Z.EraseTwoBody();
@@ -961,8 +997,8 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
    else if (Z.IsAntiHermitian() )
       Z.AntiSymmetrize();
 
-   Z.profiler.timer["CommutatorScalarTensor"] += omp_get_wtime() - t_start;
-   return Z;
+   profiler.timer["CommutatorScalarTensor"] += omp_get_wtime() - t_start;
+//   return Z;
 }
 
 
