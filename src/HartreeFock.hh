@@ -52,6 +52,8 @@ class HartreeFock
 
    void PrintSPE(){ F.diag().print();};
 
+   void FreeVmon();
+
 };
 
 

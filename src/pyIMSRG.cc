@@ -78,6 +78,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("SetE3max", &Operator::SetE3max)
       .def("PrintTimes", &Operator::PrintTimes)
       .def("BCH_Transform", &Operator::BCH_Transform)
+//      .def("EraseThreeBody", &Operator::EraseThreeBody)
+      .def("Size", &Operator::Size)
    ;
 
 
@@ -162,6 +164,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
        .def("PrintTimes",&IMSRGProfiler::PrintTimes)
        .def("PrintCounters",&IMSRGProfiler::PrintCounters)
        .def("PrintAll",&IMSRGProfiler::PrintAll)
+       .def("PrintMemory",&IMSRGProfiler::PrintMemory)
    ;
 
    def("TCM_Op",           imsrg_util::TCM_Op);

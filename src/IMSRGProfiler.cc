@@ -70,11 +70,11 @@ void IMSRGProfiler::PrintCounters()
 
 void IMSRGProfiler::PrintMemory()
 {
-   cout << "===================== MEMORY (GB) ==================" << endl;
+   cout << "===================== MEMORY (MB) ==================" << endl;
    for (auto it : CheckMem())
-     cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(3) << std::right << it.second/1024./1024 << endl;
+     cout << fixed << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(3) << std::right << it.second/1024. << endl;
 
-   cout << setw(40) << std::left << "Max Used:  " << setw(12) << setprecision(3) << std::right << MaxMemUsage()/1024./1024  << endl;
+   cout << fixed << setw(40) << std::left << "Max Used:  " << setw(12) << setprecision(3) << std::right << MaxMemUsage()/1024.  << endl;
 }
 
 void IMSRGProfiler::PrintAll()

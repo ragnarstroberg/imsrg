@@ -52,7 +52,7 @@ void IMSRGSolver::SetHin( Operator & H_in)
 //        H_saved = H_s;
         H_saved = FlowingOps[0];
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB"
+         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
          << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
          << endl;
    }
@@ -67,7 +67,7 @@ void IMSRGSolver::Reset()
 //   Omega.push_back(Eta);
    Omega.emplace_back(Eta);
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB"
+         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
          << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
          << endl;
 }
@@ -84,7 +84,7 @@ void IMSRGSolver::SetGenerator(string g)
         H_saved = FlowingOps[0];
 
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB"
+         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
          << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
          << endl;
   }
@@ -99,12 +99,12 @@ void IMSRGSolver::SetFlowFile(string s)
       flowf.open(flowfile,ofstream::out);
       flowf.close();
    }
-   WriteFlowStatusHeader(cout);
 }
 
 
 void IMSRGSolver::Solve()
 {
+  WriteFlowStatusHeader(cout);
   if (method == "magnus_euler" or method =="magnus")
     Solve_magnus_euler();
   else if (method == "magnus_modified_euler")
@@ -158,7 +158,7 @@ void IMSRGSolver::Solve_magnus_euler()
         Omega.back().Erase();
         norm_omega = 0;
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB"
+         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
          << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
          << endl;
       }
@@ -218,7 +218,7 @@ void IMSRGSolver::Solve_magnus_modified_euler()
         Omega.back().Erase();
         norm_omega = 0;
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB"
+         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
          << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
          << endl;
       }
@@ -439,7 +439,7 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
        Omega.back().Erase();
        norm_omega = 0;
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB"
+         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
          << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
          << endl;
      }

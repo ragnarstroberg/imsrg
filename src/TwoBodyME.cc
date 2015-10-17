@@ -645,7 +645,7 @@ int TwoBodyME::size()
   int size=0;
   for ( auto& itmat : MatEl )
      size += itmat.second.size();
-  return size;
+  return size*sizeof(double);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

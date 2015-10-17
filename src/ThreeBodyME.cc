@@ -355,8 +355,8 @@ void ThreeBodyME::Erase()
 /// Free up the memory used for the matrix elements
 void ThreeBodyME::Deallocate()
 {
-  MatEl.clear();
-  vector<vector<vector<vector<vector<vector<vector<ThreeBME_type>>>>>>>().swap( MatEl ); 
+  vector<ThreeBME_type>().swap(MatEl);
+  vector<vector<vector<vector<vector<vector<size_t>>>>>>().swap( OrbitIndex ); 
 }
 
 
