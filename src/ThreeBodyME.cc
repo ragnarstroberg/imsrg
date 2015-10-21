@@ -6,19 +6,20 @@ ThreeBodyME::~ThreeBodyME()
 {}
 
 ThreeBodyME::ThreeBodyME()
-: modelspace(NULL),E3max(0)
+: modelspace(NULL),E3max(0),total_dimension(0)
 {
 //   cout << "Default ThreeBodyME constructor" << endl;
 // MatEl.resize(0);
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: modelspace(ms), E3max(ms->N3max)
+: modelspace(ms), E3max(ms->N3max), total_dimension(0)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
-: modelspace(ms),E3max(e3max)
+: modelspace(ms),E3max(e3max), total_dimension(0)
 {}
+
 
 // Confusing nomenclature: J2 means 2 times the total J of the three body system
 void ThreeBodyME::Allocate()
@@ -27,7 +28,7 @@ void ThreeBodyME::Allocate()
   cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
   int norbits = modelspace->GetNumberOrbits();
   int nvectors = 0;
-  int total_dimension = 0;
+//  int total_dimension = 0;
   int lmax = 500*norbits; // maybe do something with this later...
 
   for (int a=0; a<norbits; a+=2)
@@ -351,6 +352,12 @@ void ThreeBodyME::Erase()
    MatEl.clear();
 }
 
+/// Free up the memory used for the matrix elements
+void ThreeBodyME::Deallocate()
+{
+  vector<ThreeBME_type>().swap(MatEl);
+  vector<vector<vector<vector<vector<vector<size_t>>>>>>().swap( OrbitIndex ); 
+}
 
 
 

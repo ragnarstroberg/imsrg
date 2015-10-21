@@ -15,12 +15,14 @@ TwoBodyME::TwoBodyME()
 //  cout << "Default TwoBodyME constructor" << endl;
 }
 
+
 TwoBodyME::TwoBodyME(ModelSpace* ms)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
   hermitian(true), antihermitian(false), rank_J(0), rank_T(0), parity(0)
 {
   Allocate();
 }
+
 
 TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
@@ -36,11 +38,13 @@ TwoBodyME::TwoBodyME(const TwoBodyME& tbme)
 {}
 
 
- TwoBodyME& TwoBodyME::operator=(const TwoBodyME& rhs)
- {
-   Copy(rhs);
-   return *this;
- }
+ TwoBodyME& TwoBodyME::operator=(const TwoBodyME& rhs) = default;
+ TwoBodyME& TwoBodyME::operator=(TwoBodyME&& rhs) = default;
+ //TwoBodyME& TwoBodyME::operator=(const TwoBodyME& rhs)
+ //{
+ //  Copy(rhs);
+ //  return *this;
+ //}
 
  TwoBodyME& TwoBodyME::operator*=(const double rhs)
  {
@@ -74,18 +78,18 @@ TwoBodyME::TwoBodyME(const TwoBodyME& tbme)
  }
 
 
-void TwoBodyME::Copy(const TwoBodyME& rhs)
-{
-   modelspace = rhs.modelspace;
-   MatEl      = rhs.MatEl;
-   nChannels  = rhs.nChannels;
-   hermitian  = rhs.hermitian;
-   antihermitian  = rhs.antihermitian;
-   rank_J     = rhs.rank_J;
-   rank_T     = rhs.rank_T;
-   parity     = rhs.parity;
-
-}
+//void TwoBodyME::Copy(const TwoBodyME& rhs)
+//{
+//   modelspace = rhs.modelspace;
+//   MatEl      = rhs.MatEl;
+//   nChannels  = rhs.nChannels;
+//   hermitian  = rhs.hermitian;
+//   antihermitian  = rhs.antihermitian;
+//   rank_J     = rhs.rank_J;
+//   rank_T     = rhs.rank_T;
+//   parity     = rhs.parity;
+//
+//}
 
 void TwoBodyME::Allocate()
 {
@@ -645,7 +649,7 @@ int TwoBodyME::size()
   int size=0;
   for ( auto& itmat : MatEl )
      size += itmat.second.size();
-  return size;
+  return size*sizeof(double);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

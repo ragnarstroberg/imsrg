@@ -631,20 +631,31 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
 
 }
 
+
 void HartreeFock::FreeVmon()
 {
-   // clear up some memory
-   for (int Tz=-1;Tz<=1;++Tz)
-   {
-     for (int parity=0; parity<=1; ++parity)
-     {
-       Vmon[Tz+1][parity].clear();
-       Vmon_exch[Tz+1][parity].clear();
-     }
-   }
-   Vmon3.clear();
-}
+   cout << "Before FreeVmon" << endl;
+   profiler.PrintMemory();
+   // free up some memory
+    array< array< arma::mat,2>,3>().swap(Vmon);
+    array< array< arma::mat,2>,3>().swap(Vmon_exch);
+//   for (int Tz=-1;Tz<=1;++Tz)
+//   {
+//     for (int parity=0; parity<=1; ++parity)
+//     {
+//       arma::mat().swap(Vmon[Tz+1][parity]);
+//       arma::mat().swap(Vmon_exch[Tz+1][parity]);
+////       Vmon[Tz+1][parity].clear();
+////       Vmon_exch[Tz+1][parity].clear();
+//     }
+//   }
 
+
+//   Vmon3.clear();
+   vector< pair<const array<int,6>,double>>().swap( Vmon3 );
+   cout << "After FreeVmon" << endl;
+   profiler.PrintMemory();
+}
 
 
 /// Get the one-body generator corresponding to the transformation to the HF basis.
