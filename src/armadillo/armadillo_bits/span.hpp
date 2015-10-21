@@ -48,12 +48,7 @@ class span : public span_base<>
     {
     }
   
-  // TODO:
-  // if the "explicit" keyword is removed or commented out,
-  // the compiler will be able to automatically convert integers to an instance of the span class.
-  // this is useful for Cube::operator()(span&, span&, span&),
-  // but it might have unintended consequences or interactions elsewhere.
-  // as such, removal of "explicit" needs thorough testing.
+  
   inline
   explicit
   span(const uword in_a)
@@ -64,7 +59,10 @@ class span : public span_base<>
     }
   
   
+  // the "explicit" keyword is required here to prevent a C++11 compiler
+  // automatically converting {a,b} into an instance of span() when submatrices are specified
   inline
+  explicit
   span(const uword in_a, const uword in_b)
     : a(in_a)
     , b(in_b)

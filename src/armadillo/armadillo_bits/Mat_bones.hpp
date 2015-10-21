@@ -20,23 +20,25 @@ class Mat : public Base< eT, Mat<eT> >
   public:
   
   typedef eT                                elem_type;  //!< the type of elements stored in the matrix
-  typedef typename get_pod_type<eT>::result pod_type;   //!< if eT is non-complex, pod_type is same as eT. otherwise, pod_type is the underlying type used by std::complex
+  typedef typename get_pod_type<eT>::result  pod_type;  //!< if eT is std::complex<T>, pod_type is T; otherwise pod_type is eT
   
-  const uword  n_rows;    //!< number of rows in the matrix (read-only)
-  const uword  n_cols;    //!< number of columns in the matrix (read-only)
-  const uword  n_elem;    //!< number of elements in the matrix (read-only)
+  const uword  n_rows;    //!< number of rows     (read-only)
+  const uword  n_cols;    //!< number of columns  (read-only)
+  const uword  n_elem;    //!< number of elements (read-only)
   const uhword vec_state; //!< 0: matrix layout; 1: column vector layout; 2: row vector layout
   const uhword mem_state;
   
-  // mem_state = 0: normal matrix that can be resized; 
-  // mem_state = 1: use auxiliary memory until change in the number of elements is requested;  
-  // mem_state = 2: use auxiliary memory and don't allow the number of elements to be changed; 
-  // mem_state = 3: fixed size (e.g. via template based size specification).
+  // mem_state = 0: normal matrix which manages its own memory
+  // mem_state = 1: use auxiliary memory until a size change
+  // mem_state = 2: use auxiliary memory and don't allow the number of elements to be changed
+  // mem_state = 3: fixed size (eg. via template based size specification)
   
-  arma_aligned const eT* const mem;  //!< pointer to the memory used by the matrix (memory is read-only)
+  arma_aligned const eT* const mem;  //!< pointer to the memory used for storing elements (memory is read-only)
+  
   
   protected:
-  arma_align_mem eT mem_local[ arma_config::mat_prealloc ];
+  
+  arma_align_mem eT mem_local[ arma_config::mat_prealloc ];  // local storage, for small vectors and matrices
   
   
   public:
@@ -47,10 +49,11 @@ class Mat : public Base< eT, Mat<eT> >
   inline ~Mat();
   inline  Mat();
   
-  inline Mat(const uword in_rows, const uword in_cols);
+  inline explicit Mat(const uword in_rows, const uword in_cols);
+  inline explicit Mat(const SizeMat& s);
   
-  template<typename fill_type>
-  inline Mat(const uword in_rows, const uword in_cols, const fill::fill_class<fill_type>& f);
+  template<typename fill_type> inline Mat(const uword in_rows, const uword in_cols, const fill::fill_class<fill_type>& f);
+  template<typename fill_type> inline Mat(const SizeMat& s,                         const fill::fill_class<fill_type>& f);
   
   inline                  Mat(const char*        text);
   inline const Mat& operator=(const char*        text);
@@ -65,11 +68,14 @@ class Mat : public Base< eT, Mat<eT> >
   inline                  Mat(const std::initializer_list<eT>& list);
   inline const Mat& operator=(const std::initializer_list<eT>& list);
   
+  inline                  Mat(const std::initializer_list< std::initializer_list<eT> >& list);
+  inline const Mat& operator=(const std::initializer_list< std::initializer_list<eT> >& list);
+  
   inline                  Mat(Mat&& m);
   inline const Mat& operator=(Mat&& m);
   #endif
   
-  inline Mat(      eT* aux_mem, const uword aux_n_rows, const uword aux_n_cols, const bool copy_aux_mem = true, const bool strict = true);
+  inline Mat(      eT* aux_mem, const uword aux_n_rows, const uword aux_n_cols, const bool copy_aux_mem = true, const bool strict = false);
   inline Mat(const eT* aux_mem, const uword aux_n_rows, const uword aux_n_cols);
   
   arma_inline const Mat&  operator=(const eT val);
@@ -127,6 +133,14 @@ class Mat : public Base< eT, Mat<eT> >
   inline const Mat& operator*=(const diagview<eT>& X);
   inline const Mat& operator%=(const diagview<eT>& X);
   inline const Mat& operator/=(const diagview<eT>& X);
+  
+  inline                   Mat(const spdiagview<eT>& X);
+  inline const Mat&  operator=(const spdiagview<eT>& X);
+  inline const Mat& operator+=(const spdiagview<eT>& X);
+  inline const Mat& operator-=(const spdiagview<eT>& X);
+  inline const Mat& operator*=(const spdiagview<eT>& X);
+  inline const Mat& operator%=(const spdiagview<eT>& X);
+  inline const Mat& operator/=(const spdiagview<eT>& X);
   
   template<typename T1> inline                   Mat(const subview_elem1<eT,T1>& X);
   template<typename T1> inline const Mat& operator= (const subview_elem1<eT,T1>& X);
@@ -238,11 +252,17 @@ class Mat : public Base< eT, Mat<eT> >
   template<typename T2> arma_inline const subview_elem2<eT,T2,T2> cols(const Base<uword,T2>& ci) const;
   
   
-  arma_inline subview_each1< Mat<eT>, 0 > each_col();
-  arma_inline subview_each1< Mat<eT>, 1 > each_row();
+  arma_inline       subview_each1< Mat<eT>, 0 > each_col();
+  arma_inline       subview_each1< Mat<eT>, 1 > each_row();
   
-  template<typename T1> inline subview_each2< Mat<eT>, 0, T1 > each_col(const Base<uword, T1>& indices);
-  template<typename T1> inline subview_each2< Mat<eT>, 1, T1 > each_row(const Base<uword, T1>& indices);
+  arma_inline const subview_each1< Mat<eT>, 0 > each_col() const;
+  arma_inline const subview_each1< Mat<eT>, 1 > each_row() const;
+  
+  template<typename T1> inline       subview_each2< Mat<eT>, 0, T1 > each_col(const Base<uword, T1>& indices);
+  template<typename T1> inline       subview_each2< Mat<eT>, 1, T1 > each_row(const Base<uword, T1>& indices);
+  
+  template<typename T1> inline const subview_each2< Mat<eT>, 0, T1 > each_col(const Base<uword, T1>& indices) const;
+  template<typename T1> inline const subview_each2< Mat<eT>, 1, T1 > each_row(const Base<uword, T1>& indices) const;
   
   arma_inline       diagview<eT> diag(const sword in_id = 0);
   arma_inline const diagview<eT> diag(const sword in_id = 0) const;
@@ -351,6 +371,12 @@ class Mat : public Base< eT, Mat<eT> >
   arma_inline arma_warn_unused bool is_square() const;
        inline arma_warn_unused bool is_finite() const;
   
+  inline arma_warn_unused bool has_inf() const;
+  inline arma_warn_unused bool has_nan() const;
+  
+  inline arma_warn_unused bool is_sorted(const char* direction = "ascend")       const;
+  inline arma_warn_unused bool is_sorted(const char* direction, const uword dim) const;
+  
   arma_inline arma_warn_unused bool in_range(const uword ii) const;
   arma_inline arma_warn_unused bool in_range(const span& x ) const;
   
@@ -368,10 +394,10 @@ class Mat : public Base< eT, Mat<eT> >
   arma_inline arma_warn_unused const eT* memptr() const;
   
   
-  inline void impl_print(const std::string& extra_text) const;
+  inline void impl_print(                           const std::string& extra_text) const;
   inline void impl_print(std::ostream& user_stream, const std::string& extra_text) const;
   
-  inline void impl_raw_print(const std::string& extra_text) const;
+  inline void impl_raw_print(                           const std::string& extra_text) const;
   inline void impl_raw_print(std::ostream& user_stream, const std::string& extra_text) const;
   
   
@@ -380,12 +406,16 @@ class Mat : public Base< eT, Mat<eT> >
   
   inline void set_size(const uword in_elem);
   inline void set_size(const uword in_rows, const uword in_cols);
+  inline void set_size(const SizeMat& s);
   
   inline void   resize(const uword in_elem);
   inline void   resize(const uword in_rows, const uword in_cols);
+  inline void   resize(const SizeMat& s);
   
   inline void  reshape(const uword in_rows, const uword in_cols);
-  inline void  reshape(const uword in_rows, const uword in_cols, const uword dim);
+  inline void  reshape(const SizeMat& s);
+  
+  arma_deprecated inline void reshape(const uword in_rows, const uword in_cols, const uword dim);  //!< NOTE: don't use this form: it's deprecated
   
   
   template<typename functor>
@@ -403,21 +433,26 @@ class Mat : public Base< eT, Mat<eT> >
   inline const Mat& zeros();
   inline const Mat& zeros(const uword in_elem);
   inline const Mat& zeros(const uword in_rows, const uword in_cols);
+  inline const Mat& zeros(const SizeMat& s);
   
   inline const Mat& ones();
   inline const Mat& ones(const uword in_elem);
   inline const Mat& ones(const uword in_rows, const uword in_cols);
+  inline const Mat& ones(const SizeMat& s);
   
   inline const Mat& randu();
   inline const Mat& randu(const uword in_elem);
   inline const Mat& randu(const uword in_rows, const uword in_cols);
+  inline const Mat& randu(const SizeMat& s);
   
   inline const Mat& randn();
   inline const Mat& randn(const uword in_elem);
   inline const Mat& randn(const uword in_rows, const uword in_cols);
+  inline const Mat& randn(const SizeMat& s);
   
   inline const Mat& eye();
   inline const Mat& eye(const uword in_rows, const uword in_cols);
+  inline const Mat& eye(const SizeMat& s);
   
   inline void reset();
   
@@ -635,7 +670,8 @@ class Mat : public Base< eT, Mat<eT> >
   inline void init(const std::string& text);
   
   #if defined(ARMA_USE_CXX11)
-  inline void init(const std::initializer_list<eT>& list);
+    inline void init(const std::initializer_list<eT>& list);
+    inline void init(const std::initializer_list< std::initializer_list<eT> >& list);
   #endif
   
   template<typename T1, typename T2>
@@ -708,13 +744,17 @@ class Mat<eT>::fixed : public Mat<eT>
   #if defined(ARMA_USE_CXX11)
     inline                fixed(const std::initializer_list<eT>& list);
     inline const Mat& operator=(const std::initializer_list<eT>& list);
+    
+    inline                fixed(const std::initializer_list< std::initializer_list<eT> >& list);
+    inline const Mat& operator=(const std::initializer_list< std::initializer_list<eT> >& list);
   #endif
   
   arma_inline const Mat& operator=(const fixed<fixed_n_rows, fixed_n_cols>& X);
   
-  template<typename T1, typename eop_type> inline const Mat& operator=(const eOp<T1, eop_type>& X);
-  
-  template<typename T1, typename T2, typename eglue_type> inline const Mat& operator=(const eGlue<T1, T2, eglue_type>& X);
+  #if defined(ARMA_GOOD_COMPILER)
+    template<typename T1,              typename   eop_type> inline const Mat& operator=(const   eOp<T1,       eop_type>& X);
+    template<typename T1, typename T2, typename eglue_type> inline const Mat& operator=(const eGlue<T1, T2, eglue_type>& X);
+  #endif
   
   arma_inline const Op< Mat_fixed_type, op_htrans >  t() const;
   arma_inline const Op< Mat_fixed_type, op_htrans > ht() const;

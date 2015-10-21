@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2014 Conrad Sanderson
-// Copyright (C) 2008-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 Conrad Sanderson
+// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -262,6 +262,8 @@ class gemm
         {
         arma_extra_debug_print("atlas::cblas_gemm()");
         
+        arma_debug_assert_atlas_size(A,B);
+        
         atlas::cblas_gemm<eT>
           (
           atlas::CblasColMajor,
@@ -284,12 +286,14 @@ class gemm
         {
         arma_extra_debug_print("blas::gemm()");
         
+        arma_debug_assert_blas_size(A,B);
+        
         const char trans_A = (do_trans_A) ? ( is_cx<eT>::yes ? 'C' : 'T' ) : 'N';
         const char trans_B = (do_trans_B) ? ( is_cx<eT>::yes ? 'C' : 'T' ) : 'N';
         
-        const blas_int m   = C.n_rows;
-        const blas_int n   = C.n_cols;
-        const blas_int k   = (do_trans_A) ? A.n_rows : A.n_cols;
+        const blas_int m   = blas_int(C.n_rows);
+        const blas_int n   = blas_int(C.n_cols);
+        const blas_int k   = (do_trans_A) ? blas_int(A.n_rows) : blas_int(A.n_cols);
         
         const eT local_alpha = (use_alpha) ? alpha : eT(1);
         

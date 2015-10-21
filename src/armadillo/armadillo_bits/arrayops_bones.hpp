@@ -1,5 +1,5 @@
-// Copyright (C) 2011-2014 Conrad Sanderson
-// Copyright (C) 2011-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2011-2015 Conrad Sanderson
+// Copyright (C) 2011-2015 NICTA (www.nicta.com.au)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -191,34 +191,13 @@ class arrayops
   
   template<typename eT>
   arma_hot arma_pure inline static
-  typename get_pod_type<eT>::result
-  norm_1(const eT* src, const uword n_elem);
+  bool
+  has_inf(const eT* src, const uword n_elem);
   
   template<typename eT>
   arma_hot arma_pure inline static
-  eT
-  norm_2(const eT* src, const uword n_elem, const typename arma_not_cx<eT>::result* junk = 0);
-  
-  template<typename T>
-  arma_hot arma_pure inline static
-  T
-  norm_2(const std::complex<T>* src, const uword n_elem);
-  
-  template<typename eT>
-  arma_hot arma_pure inline static
-  typename get_pod_type<eT>::result
-  norm_k(const eT* src, const uword n_elem, const int k);
-  
-  template<typename eT>
-  arma_hot arma_pure inline static
-  typename get_pod_type<eT>::result
-  norm_max(const eT* src, const uword n_elem);
-  
-  template<typename eT>
-  arma_hot arma_pure inline static
-  typename get_pod_type<eT>::result
-  norm_min(const eT* src, const uword n_elem);
-  
+  bool
+  has_nan(const eT* src, const uword n_elem);
   };
 
 

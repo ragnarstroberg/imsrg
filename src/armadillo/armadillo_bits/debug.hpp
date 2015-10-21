@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2014 Conrad Sanderson
-// Copyright (C) 2008-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 Conrad Sanderson
+// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
 // Copyright (C) 2011 Stanislav Funiak
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -458,7 +458,7 @@ arma_incompat_size_string(const subview_cube<eT>& Q, const Mat<eT>& A, const cha
 
 
 //
-// functions for checking whether two matrices have the same dimensions
+// functions for checking whether two dense matrices have the same dimensions
 
 
 
@@ -648,6 +648,31 @@ arma_assert_same_size(const subview<eT1>& A, const Proxy<eT2>& B, const char* x)
   
   const uword B_n_rows = B.get_n_rows();
   const uword B_n_cols = B.get_n_cols();
+  
+  if( (A_n_rows != B_n_rows) || (A_n_cols != B_n_cols) )
+    {
+    arma_stop( arma_incompat_size_string(A_n_rows, A_n_cols, B_n_rows, B_n_cols, x) );
+    }
+  }
+
+
+
+//
+// functions for checking whether two sparse matrices have the same dimensions
+
+
+
+template<typename eT1, typename eT2>
+arma_hot
+inline
+void
+arma_assert_same_size(const SpMat<eT1>& A, const SpMat<eT2>& B, const char* x)
+  {
+  const uword A_n_rows = A.n_rows;
+  const uword A_n_cols = A.n_cols;
+  
+  const uword B_n_rows = B.n_rows;
+  const uword B_n_cols = B.n_cols;
   
   if( (A_n_rows != B_n_rows) || (A_n_cols != B_n_cols) )
     {
@@ -1085,6 +1110,98 @@ arma_assert_mul_size(const subview<eT1>& A, const subview<eT2>& B, const char* x
 
 
 
+template<typename T1>
+arma_hot
+inline
+void
+arma_assert_blas_size(const T1& A)
+  {
+  if(sizeof(uword) >= sizeof(blas_int))
+    {
+    bool overflow;
+    
+    overflow = (A.n_rows > ARMA_MAX_BLAS_INT);
+    overflow = (A.n_cols > ARMA_MAX_BLAS_INT) || overflow;
+    
+    if(overflow)
+      {
+      arma_bad("integer overflow: matrix dimensions are too large for integer type used by BLAS and LAPACK");
+      }
+    }
+  }
+
+
+
+template<typename T1, typename T2>
+arma_hot
+inline
+void
+arma_assert_blas_size(const T1& A, const T2& B)
+  {
+  if(sizeof(uword) >= sizeof(blas_int))
+    {
+    bool overflow;
+    
+    overflow = (A.n_rows > ARMA_MAX_BLAS_INT);
+    overflow = (A.n_cols > ARMA_MAX_BLAS_INT) || overflow;
+    overflow = (B.n_rows > ARMA_MAX_BLAS_INT) || overflow;
+    overflow = (B.n_cols > ARMA_MAX_BLAS_INT) || overflow;
+    
+    if(overflow)
+      {
+      arma_bad("integer overflow: matrix dimensions are too large for integer type used by BLAS and LAPACK");
+      }
+    }
+  }
+
+
+
+template<typename T1>
+arma_hot
+inline
+void
+arma_assert_atlas_size(const T1& A)
+  {
+  if(sizeof(uword) >= sizeof(int))
+    {
+    bool overflow;
+    
+    overflow = (A.n_rows > INT_MAX);
+    overflow = (A.n_cols > INT_MAX) || overflow;
+    
+    if(overflow)
+      {
+      arma_bad("integer overflow: matrix dimensions are too large for integer type used by ATLAS");
+      }
+    }
+  }
+
+
+
+template<typename T1, typename T2>
+arma_hot
+inline
+void
+arma_assert_atlas_size(const T1& A, const T2& B)
+  {
+  if(sizeof(uword) >= sizeof(int))
+    {
+    bool overflow;
+    
+    overflow = (A.n_rows > INT_MAX);
+    overflow = (A.n_cols > INT_MAX) || overflow;
+    overflow = (B.n_rows > INT_MAX) || overflow;
+    overflow = (B.n_cols > INT_MAX) || overflow;
+    
+    if(overflow)
+      {
+      arma_bad("integer overflow: matrix dimensions are too large for integer type used by ATLAS");
+      }
+    }
+  }
+
+
+
 //
 // macros
 
@@ -1098,14 +1215,16 @@ arma_assert_mul_size(const subview<eT1>& A, const subview<eT2>& B, const char* x
   
   #undef ARMA_EXTRA_DEBUG
   
-  #define arma_debug_print                 true ? (void)0 : arma_print
-  #define arma_debug_warn                  true ? (void)0 : arma_warn
-  #define arma_debug_check                 true ? (void)0 : arma_check
-  #define arma_debug_set_error             true ? (void)0 : arma_set_error
-  #define arma_debug_assert_same_size      true ? (void)0 : arma_assert_same_size
-  #define arma_debug_assert_mul_size       true ? (void)0 : arma_assert_mul_size
-  #define arma_debug_assert_trans_mul_size true ? (void)0 : arma_assert_trans_mul_size
-  #define arma_debug_assert_cube_as_mat    true ? (void)0 : arma_assert_cube_as_mat
+  #define arma_debug_print                   true ? (void)0 : arma_print
+  #define arma_debug_warn                    true ? (void)0 : arma_warn
+  #define arma_debug_check                   true ? (void)0 : arma_check
+  #define arma_debug_set_error               true ? (void)0 : arma_set_error
+  #define arma_debug_assert_same_size        true ? (void)0 : arma_assert_same_size
+  #define arma_debug_assert_mul_size         true ? (void)0 : arma_assert_mul_size
+  #define arma_debug_assert_trans_mul_size   true ? (void)0 : arma_assert_trans_mul_size
+  #define arma_debug_assert_cube_as_mat      true ? (void)0 : arma_assert_cube_as_mat
+  #define arma_debug_assert_blas_size        true ? (void)0 : arma_assert_blas_size
+  #define arma_debug_assert_atlas_size       true ? (void)0 : arma_assert_atlas_size
   
 #else
   
@@ -1117,6 +1236,8 @@ arma_assert_mul_size(const subview<eT1>& A, const subview<eT2>& B, const char* x
   #define arma_debug_assert_mul_size       arma_assert_mul_size
   #define arma_debug_assert_trans_mul_size arma_assert_trans_mul_size
   #define arma_debug_assert_cube_as_mat    arma_assert_cube_as_mat
+  #define arma_debug_assert_blas_size      arma_assert_blas_size
+  #define arma_debug_assert_atlas_size     arma_assert_atlas_size
   
 #endif
 
@@ -1178,15 +1299,16 @@ arma_assert_mul_size(const subview<eT1>& A, const subview<eT2>& B, const char* x
         out << "@ arma_config::lapack       = " << arma_config::lapack       << '\n';
         out << "@ arma_config::blas         = " << arma_config::blas         << '\n';
         out << "@ arma_config::arpack       = " << arma_config::arpack       << '\n';
+        out << "@ arma_config::superlu      = " << arma_config::superlu      << '\n';
         out << "@ arma_config::atlas        = " << arma_config::atlas        << '\n';
         out << "@ arma_config::hdf5         = " << arma_config::hdf5         << '\n';
         out << "@ arma_config::good_comp    = " << arma_config::good_comp    << '\n';
         out << "@ arma_config::extra_code   = " << arma_config::extra_code   << '\n';
         out << "@ arma_config::mat_prealloc = " << arma_config::mat_prealloc << '\n';
         out << "@ sizeof(void*)    = " << sizeof(void*)    << '\n';
-        out << "@ sizeof(uword)    = " << sizeof(uword)    << '\n';
         out << "@ sizeof(int)      = " << sizeof(int)      << '\n';
         out << "@ sizeof(long)     = " << sizeof(long)     << '\n';
+        out << "@ sizeof(uword)    = " << sizeof(uword)    << '\n';
         out << "@ sizeof(blas_int) = " << sizeof(blas_int) << '\n';
         out << "@ little_endian    = " << little_endian    << '\n';
         out << "@ ---" << std::endl;
