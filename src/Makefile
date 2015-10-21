@@ -22,18 +22,21 @@ PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython
 
 THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; else echo other; fi)
 
+ALL = libIMSRG.so
+LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
+
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
- LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
 # FLAGS += -DOPENBLAS_NOUSEOMP=1
  SOFLAGS += -fuse-ld=bfd
- ALL = libIMSRG.so
 else
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
- LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5
- ALL = libIMSRG.so
+ LIBS += -llapack
+ ifeq ($(WITHHOARD),on)
+  LIBS += -L/opt/hoard/3.12/lib -lhoard
+ endif
 else  # default options. assumes boost and python are set up nicely.
- LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5
- ALL = pyIMSRG.so libIMSRG.so
+ LIBS += -llapack
+ ALL += libIMSRG.so
 endif
 endif
 

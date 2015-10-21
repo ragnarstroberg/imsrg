@@ -795,9 +795,9 @@ Operator RSquaredOp(ModelSpace& modelspace)
       for (int ibra=0;ibra<nkets;++ibra)
       {
          Ket & bra = tbc.GetKet(ibra);
-         if (option == "proton" and bra.op->tz2>0) continue;
-         else if (option == "neutron" and bra.op->tz2<0) continue;
-         else if (option != "matter") cout << "!!! WARNING. BAD OPTION "  << option << " FOR imsrg_util::R2_p2_Op !!!" << endl;
+         if (option=="proton" and bra.op->tz2>0) continue;
+         else if (option=="neutron" and bra.op->tz2<0) continue;
+         else if (option!="matter" and option!="proton" and option!="neutron") cout << "!!! WARNING. BAD OPTION "  << option << " FOR imsrg_util::R2_p2_Op !!!" << endl;
          for (int iket=ibra;iket<nkets;++iket)
          {
             Ket & ket = tbc.GetKet(iket);
