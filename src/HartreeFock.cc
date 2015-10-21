@@ -620,10 +620,10 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
    }
    
    cout << "Before FreeVmon:" << endl;
-   Hbare.profiler.PrintMemory();
+//   Hbare.profiler.PrintMemory();
    FreeVmon();
-   cout << "After FreeVmon:" << endl;
-   Hbare.profiler.PrintMemory();
+//   cout << "After FreeVmon:" << endl;
+//   Hbare.profiler.PrintMemory();
 
    profiler.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;
    
@@ -634,8 +634,8 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
 
 void HartreeFock::FreeVmon()
 {
-   cout << "Before FreeVmon" << endl;
-   profiler.PrintMemory();
+//   cout << "Before FreeVmon" << endl;
+//   profiler.PrintMemory();
    // free up some memory
     array< array< arma::mat,2>,3>().swap(Vmon);
     array< array< arma::mat,2>,3>().swap(Vmon_exch);
@@ -653,8 +653,8 @@ void HartreeFock::FreeVmon()
 
 //   Vmon3.clear();
    vector< pair<const array<int,6>,double>>().swap( Vmon3 );
-   cout << "After FreeVmon" << endl;
-   profiler.PrintMemory();
+//   cout << "After FreeVmon" << endl;
+//   profiler.PrintMemory();
 }
 
 
