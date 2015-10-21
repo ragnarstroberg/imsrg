@@ -10,51 +10,87 @@
 //! @{
 
 
+
 template<typename eT>
 inline
 void
-op_cumsum_mat::apply_noalias(Mat<eT>& out, const Mat<eT>& X, const uword dim)
+op_cumsum::apply_noalias(Mat<eT>& out, const Mat<eT>& X, const uword dim)
   {
   arma_extra_debug_sigprint();
   
-  out.copy_size(X);
+  uword n_rows = X.n_rows;
+  uword n_cols = X.n_cols;
   
-  const uword X_n_rows = X.n_rows;
-  const uword X_n_cols = X.n_cols;
+  out.set_size(n_rows,n_cols);
   
   if(dim == 0)
     {
-    arma_extra_debug_print("op_cumsum_mat::apply(), dim = 0");
-    
-    for(uword col=0; col<X_n_cols; ++col)
+    if(n_cols == 1)
       {
-            eT* out_colmem = out.colptr(col);
-      const eT* X_colmem   = X.colptr(col);
+      const eT*   X_mem =   X.memptr();
+            eT* out_mem = out.memptr();
       
       eT acc = eT(0);
       
-      for(uword row=0; row<X_n_rows; ++row)
+      for(uword row=0; row < n_rows; ++row)
         {
-        acc += X_colmem[row];
+        acc += X_mem[row];
         
-        out_colmem[row] = acc;
+        out_mem[row] = acc;
+        }
+      }
+    else
+      {
+      for(uword col=0; col < n_cols; ++col)
+        {
+        const eT*   X_colmem =   X.colptr(col);
+              eT* out_colmem = out.colptr(col);
+        
+        eT acc = eT(0);
+        
+        for(uword row=0; row < n_rows; ++row)
+          {
+          acc += X_colmem[row];
+          
+          out_colmem[row] = acc;
+          }
         }
       }
     }
   else
   if(dim == 1)
     {
-    arma_extra_debug_print("op_cumsum_mat::apply(), dim = 1");
-    
-    for(uword row=0; row<X_n_rows; ++row)
+    if(n_rows == 1)
       {
+      const eT*   X_mem =   X.memptr();
+            eT* out_mem = out.memptr();
+      
       eT acc = eT(0);
       
-      for(uword col=0; col<X_n_cols; ++col)
+      for(uword col=0; col < n_cols; ++col)
         {
-        acc += X.at(row,col);
+        acc += X_mem[col];
         
-        out.at(row,col) = acc;
+        out_mem[col] = acc;
+        }
+      }
+    else
+      {
+      if(n_cols > 0)
+        {
+        arrayops::copy( out.colptr(0), X.colptr(0), n_rows );
+        
+        for(uword col=1; col < n_cols; ++col)
+          {
+          const eT* out_colmem_prev = out.colptr(col-1);
+                eT* out_colmem      = out.colptr(col  );
+          const eT*   X_colmem      =   X.colptr(col  );
+          
+          for(uword row=0; row < n_rows; ++row)
+            {
+            out_colmem[row] = out_colmem_prev[row] + X_colmem[row];
+            }
+          }
         }
       }
     }
@@ -65,65 +101,38 @@ op_cumsum_mat::apply_noalias(Mat<eT>& out, const Mat<eT>& X, const uword dim)
 template<typename T1>
 inline
 void
-op_cumsum_mat::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_cumsum_mat>& in)
+op_cumsum::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_cumsum>& in)
   {
   arma_extra_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  const unwrap<T1>   tmp(in.m);
-  const Mat<eT>& X = tmp.M;
-  
   const uword dim = in.aux_uword_a;
-  arma_debug_check( (dim > 1), "cumsum(): incorrect usage. dim must be 0 or 1");
   
-  if(&out == &X)
+  arma_debug_check( (dim > 1), "cumsum(): parameter 'dim' must be 0 or 1" );
+  
+  const quasi_unwrap<T1> U(in.m);
+  
+  if(U.is_alias(out))
     {
-    Mat<eT> out2;
+    Mat<eT> tmp;
     
-    op_cumsum_mat::apply_noalias(out2, X, dim);
+    op_cumsum::apply_noalias(tmp, U.M, dim);
     
-    out.steal_mem(out2);
+    out.steal_mem(tmp);
     }
   else
     {
-    op_cumsum_mat::apply_noalias(out, X, dim);
+    op_cumsum::apply_noalias(out, U.M, dim);
     }
   }
-
-
-
-template<typename eT>
-inline
-void
-op_cumsum_vec::apply_noalias(Mat<eT>& out, const Mat<eT>& X)
-  {
-  arma_extra_debug_sigprint();
-  
-  const uword n_elem = X.n_elem;
-  
-  out.copy_size(X);
-  
-        eT* out_mem = out.memptr();
-  const eT* X_mem   = X.memptr();
-  
-  eT acc = eT(0);
-  
-  for(uword i=0; i<n_elem; ++i)
-    {
-    acc += X_mem[i];
-    
-    out_mem[i] = acc;
-    }
-  }
-
 
 
 
 template<typename T1>
 inline
 void
-op_cumsum_vec::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_cumsum_vec>& in)
+op_cumsum_default::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_cumsum_default>& in)
   {
   arma_extra_debug_sigprint();
   
@@ -131,19 +140,19 @@ op_cumsum_vec::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_cumsum_vec
   
   const quasi_unwrap<T1> U(in.m);
   
-  const Mat<eT>& X = U.M;
+  const uword dim = (T1::is_row) ? 1 : 0;
   
   if(U.is_alias(out))
     {
-    Mat<eT> out2;
+    Mat<eT> tmp;
     
-    op_cumsum_vec::apply_noalias(out2, X);
+    op_cumsum::apply_noalias(tmp, U.M, dim);
     
-    out.steal_mem(out2);
+    out.steal_mem(tmp);
     }
   else
     {
-    op_cumsum_vec::apply_noalias(out, X);
+    op_cumsum::apply_noalias(out, U.M, dim);
     }
   }
 

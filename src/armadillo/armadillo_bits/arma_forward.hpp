@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2014 Conrad Sanderson
-// Copyright (C) 2008-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 Conrad Sanderson
+// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -40,12 +40,17 @@ template<typename eT> class SpRow;
 template<typename eT> class SpSubview;
 
 template<typename eT> class diagview;
+template<typename eT> class spdiagview;
 
 template<typename eT, typename T1>              class subview_elem1;
 template<typename eT, typename T1, typename T2> class subview_elem2;
 
 template<typename parent, unsigned int mode>              class subview_each1;
 template<typename parent, unsigned int mode, typename TB> class subview_each2;
+
+template<typename eT>              class subview_cube_each1;
+template<typename eT, typename TB> class subview_cube_each2;
+
 
 class SizeMat;
 class SizeCube;
@@ -67,23 +72,36 @@ class op_diagmat;
 class op_trimat;
 class op_diagvec;
 class op_vectorise_col;
-class op_normalise_colvec;
-class op_normalise_rowvec;
+class op_normalise_vec;
 class op_clamp;
-class op_cumsum_vec;
+class op_cumsum_default;
+class op_cumprod_default;
 class op_shuffle;
+class op_shuffle_default;
 class op_sort;
+class op_sort_default;
 class op_find;
 class op_find_simple;
+class op_find_unique;
 class op_flipud;
 class op_fliplr;
 class op_real;
 class op_imag;
+class op_nonzeros;
+class op_sort_index;
+class op_stable_sort_index;
+class op_unique;
+class op_unique_index;
+class op_diff_default;
+class op_hist;
 
 class eop_conj;
 
 class glue_times;
 class glue_times_diag;
+class glue_conv;
+class glue_join_cols;
+class glue_join_rows;
 
 class glue_rel_lt;
 class glue_rel_gt;
@@ -105,8 +123,8 @@ class op_rel_gteq_post;
 class op_rel_eq;
 class op_rel_noteq;
 
-class gen_ones_diag;
-class gen_ones_full;
+class gen_eye;
+class gen_ones;
 class gen_zeros;
 class gen_randu;
 class gen_randn;
@@ -117,6 +135,12 @@ class glue_mixed_div;
 class glue_mixed_schur;
 class glue_mixed_times;
 
+class glue_hist;
+class glue_hist_default;
+
+class glue_histc;
+class glue_histc_default;
+
 class op_cx_scalar_times;
 class op_cx_scalar_plus;
 class op_cx_scalar_minus_pre;
@@ -126,11 +150,11 @@ class op_cx_scalar_div_post;
 
 
 
-class op_subview_elem_equ;
-class op_subview_elem_inplace_plus;
-class op_subview_elem_inplace_minus;
-class op_subview_elem_inplace_schur;
-class op_subview_elem_inplace_div;
+class op_internal_equ;
+class op_internal_plus;
+class op_internal_minus;
+class op_internal_schur;
+class op_internal_div;
 
 
 
@@ -253,5 +277,51 @@ namespace fill
   static const fill_class<fill_randu> randu;
   static const fill_class<fill_randn> randn;
   }
+
+//! @}
+
+
+
+//! \addtogroup fn_spsolve
+//! @{
+
+
+struct spsolve_opts_base
+  {
+  const unsigned int id;
+  
+  inline spsolve_opts_base(const unsigned int in_id) : id(in_id) {}
+  };
+
+
+struct spsolve_opts_none : public spsolve_opts_base
+  {
+  inline spsolve_opts_none() : spsolve_opts_base(0) {}
+  };
+
+
+struct superlu_opts : public spsolve_opts_base
+  {
+  typedef enum {NATURAL, MMD_ATA, MMD_AT_PLUS_A, COLAMD} permutation_type;
+  
+  typedef enum {REF_NONE, REF_SINGLE, REF_DOUBLE, REF_EXTRA} refine_type;
+  
+  bool             equilibrate;
+  bool             symmetric;
+  double           pivot_thresh;
+  permutation_type permutation;
+  refine_type      refine;
+  
+  inline superlu_opts()
+    : spsolve_opts_base(1)
+    {
+    equilibrate  = true;
+    symmetric    = false;
+    pivot_thresh = 1.0;
+    permutation  = COLAMD;
+    refine       = REF_NONE;
+    }
+  };
+
 
 //! @}

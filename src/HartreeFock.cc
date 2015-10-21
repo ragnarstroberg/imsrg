@@ -618,7 +618,21 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
    }
+   
+   cout << "Before FreeVmon:" << endl;
+   Hbare.profiler.PrintMemory();
+   FreeVmon();
+   cout << "After FreeVmon:" << endl;
+   Hbare.profiler.PrintMemory();
 
+   profiler.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;
+   
+   return HNO;
+
+}
+
+void HartreeFock::FreeVmon()
+{
    // clear up some memory
    for (int Tz=-1;Tz<=1;++Tz)
    {
@@ -629,10 +643,6 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
      }
    }
    Vmon3.clear();
-   profiler.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;
-   
-   return HNO;
-
 }
 
 

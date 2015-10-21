@@ -12,70 +12,6 @@
 
 
 template<typename eT>
-class arma_ascend_sort_helper
-  {
-  public:
-  
-  arma_inline
-  bool
-  operator() (eT a, eT b) const
-    {
-    return (a < b);
-    }
-  };
-  
-
-
-template<typename eT>
-class arma_descend_sort_helper
-  {
-  public:
-  
-  arma_inline
-  bool
-  operator() (eT a, eT b) const
-    {
-    return (a > b);
-    }
-  };
-  
-
-
-template<typename T>
-class arma_ascend_sort_helper< std::complex<T> >
-  {
-  public:
-  
-  typedef typename std::complex<T> eT;
-  
-  inline
-  bool
-  operator() (const eT& a, const eT& b) const
-    {
-    return (std::abs(a) < std::abs(b));
-    }
-  };
-
-
-
-template<typename T>
-class arma_descend_sort_helper< std::complex<T> >
-  {
-  public:
-  
-  typedef typename std::complex<T> eT;
-  
-  inline
-  bool
-  operator() (const eT& a, const eT& b) const
-    {
-    return (std::abs(a) > std::abs(b));
-    }
-  };
-
-
-
-template<typename eT>
 inline 
 void
 op_sort::direct_sort(eT* X, const uword n_elem, const uword sort_type)
@@ -171,10 +107,12 @@ op_sort::apply_noalias(Mat<eT>& out, const Mat<eT>& X, const uword sort_type, co
     return;
     }
   
+  arma_debug_check( (sort_type > 1), "sort(): parameter 'sort_type' must be 0 or 1" );
+  arma_debug_check( (X.has_nan()),   "sort(): detected NaN"                         );
   
   if(dim == 0)  // sort the contents of each column
     {
-    arma_extra_debug_print("op_sort::apply(), dim = 0");
+    arma_extra_debug_print("op_sort::apply(): dim = 0");
     
     out = X;
     
@@ -191,14 +129,14 @@ op_sort::apply_noalias(Mat<eT>& out, const Mat<eT>& X, const uword sort_type, co
     {
     if(X.n_rows == 1)  // a row vector
       {
-      arma_extra_debug_print("op_sort::apply(), dim = 1, vector specific");
+      arma_extra_debug_print("op_sort::apply(): dim = 1, vector specific");
       
       out = X;
       op_sort::direct_sort(out.memptr(), out.n_elem, sort_type);
       }
     else  // not a row vector
       {
-      arma_extra_debug_print("op_sort::apply(), dim = 1, generic");
+      arma_extra_debug_print("op_sort::apply(): dim = 1, generic");
       
       out.copy_size(X);
       
@@ -237,21 +175,49 @@ op_sort::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sort>& in)
   const uword sort_type = in.aux_uword_a;
   const uword dim       = in.aux_uword_b;
   
-  arma_debug_check( (sort_type > 1),          "sort(): incorrect usage. sort_type must be 0 or 1");
-  arma_debug_check( (dim > 1),                "sort(): incorrect usage. dim must be 0 or 1"      );
-  arma_debug_check( (X.is_finite() == false), "sort(): given object has non-finite elements"     );
-  
   if(U.is_alias(out))
     {
-    Mat<eT> out2;
+    Mat<eT> tmp;
     
-    op_sort::apply_noalias(out2, X, sort_type, dim);
+    op_sort::apply_noalias(tmp, X, sort_type, dim);
     
-    out.steal_mem(out2);
+    out.steal_mem(tmp);
     }
   else
     {
-    apply_noalias(out, X, sort_type, dim);
+    op_sort::apply_noalias(out, X, sort_type, dim);
+    }
+  }
+
+
+
+template<typename T1>
+inline
+void
+op_sort_default::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sort_default>& in)
+  {
+  arma_extra_debug_sigprint();
+  
+  typedef typename T1::elem_type eT;
+  
+  const quasi_unwrap<T1> U(in.m);
+  
+  const Mat<eT>& X = U.M;
+  
+  const uword sort_type = in.aux_uword_a;
+  const uword dim       = (T1::is_row) ? 1 : 0;
+  
+  if(U.is_alias(out))
+    {
+    Mat<eT> tmp;
+    
+    op_sort::apply_noalias(tmp, X, sort_type, dim);
+    
+    out.steal_mem(tmp);
+    }
+  else
+    {
+    op_sort::apply_noalias(out, X, sort_type, dim);
     }
   }
 

@@ -27,86 +27,86 @@ diskio::gen_txt_header(const Mat<eT>& x)
 
   arma_ignore(x);
   
-  if(is_u8<eT>::value == true)
+  if(is_u8<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_IU001");
     }
   else
-  if(is_s8<eT>::value == true)
+  if(is_s8<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_IS001");
     }
   else
-  if(is_u16<eT>::value == true)
+  if(is_u16<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_IU002");
     }
   else
-  if(is_s16<eT>::value == true)
+  if(is_s16<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_IS002");
     }
   else
-  if(is_u32<eT>::value == true)
+  if(is_u32<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_IU004");
     }
   else
-  if(is_s32<eT>::value == true)
+  if(is_s32<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_IS004");
     }
 #if defined(ARMA_USE_U64S64)
   else
-  if(is_u64<eT>::value == true)
+  if(is_u64<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_IU008");
     }
   else
-  if(is_s64<eT>::value == true)
+  if(is_s64<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_IS008");
     }
 #endif
 #if defined(ARMA_ALLOW_LONG)
   else
-  if(is_ulng_t_32<eT>::value == true)
+  if(is_ulng_t_32<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_IU004");
     }
   else
-  if(is_slng_t_32<eT>::value == true)
+  if(is_slng_t_32<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_IS004");
     }
   else
-  if(is_ulng_t_64<eT>::value == true)
+  if(is_ulng_t_64<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_IU008");
     }
   else
-  if(is_slng_t_64<eT>::value == true)
+  if(is_slng_t_64<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_IS008");
     }
 #endif
   else
-  if(is_float<eT>::value == true)
+  if(is_float<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_FN004");
     }
   else
-  if(is_double<eT>::value == true)
+  if(is_double<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_FN008");
     }
   else
-  if(is_complex_float<eT>::value == true)
+  if(is_complex_float<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_FC008");
     }
   else
-  if(is_complex_double<eT>::value == true)
+  if(is_complex_double<eT>::value)
     {
     return std::string("ARMA_MAT_TXT_FC016");
     }
@@ -133,86 +133,86 @@ diskio::gen_bin_header(const Mat<eT>& x)
   
   arma_ignore(x);
   
-  if(is_u8<eT>::value == true)
+  if(is_u8<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_IU001");
     }
   else
-  if(is_s8<eT>::value == true)
+  if(is_s8<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_IS001");
     }
   else
-  if(is_u16<eT>::value == true)
+  if(is_u16<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_IU002");
     }
   else
-  if(is_s16<eT>::value == true)
+  if(is_s16<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_IS002");
     }
   else
-  if(is_u32<eT>::value == true)
+  if(is_u32<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_IU004");
     }
   else
-  if(is_s32<eT>::value == true)
+  if(is_s32<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_IS004");
     }
 #if defined(ARMA_USE_U64S64)
   else
-  if(is_u64<eT>::value == true)
+  if(is_u64<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_IU008");
     }
   else
-  if(is_s64<eT>::value == true)
+  if(is_s64<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_IS008");
     }
 #endif
 #if defined(ARMA_ALLOW_LONG)
   else
-  if(is_ulng_t_32<eT>::value == true)
+  if(is_ulng_t_32<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_IU004");
     }
   else
-  if(is_slng_t_32<eT>::value == true)
+  if(is_slng_t_32<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_IS004");
     }
   else
-  if(is_ulng_t_64<eT>::value == true)
+  if(is_ulng_t_64<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_IU008");
     }
   else
-  if(is_slng_t_64<eT>::value == true)
+  if(is_slng_t_64<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_IS008");
     }
 #endif
   else
-  if(is_float<eT>::value == true)
+  if(is_float<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_FN004");
     }
   else
-  if(is_double<eT>::value == true)
+  if(is_double<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_FN008");
     }
   else
-  if(is_complex_float<eT>::value == true)
+  if(is_complex_float<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_FC008");
     }
   else
-  if(is_complex_double<eT>::value == true)
+  if(is_complex_double<eT>::value)
     {
     return std::string("ARMA_MAT_BIN_FC016");
     }
@@ -239,86 +239,86 @@ diskio::gen_bin_header(const SpMat<eT>& x)
 
   arma_ignore(x);
 
-  if(is_u8<eT>::value == true)
+  if(is_u8<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_IU001");
     }
   else
-  if(is_s8<eT>::value == true)
+  if(is_s8<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_IS001");
     }
   else
-  if(is_u16<eT>::value == true)
+  if(is_u16<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_IU002");
     }
   else
-  if(is_s16<eT>::value == true)
+  if(is_s16<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_IS002");
     }
   else
-  if(is_u32<eT>::value == true)
+  if(is_u32<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_IU004");
     }
   else
-  if(is_s32<eT>::value == true)
+  if(is_s32<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_IS004");
     }
 #if defined(ARMA_USE_U64S64)
   else
-  if(is_u64<eT>::value == true)
+  if(is_u64<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_IU008");
     }
   else
-  if(is_s64<eT>::value == true)
+  if(is_s64<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_IS008");
     }
 #endif
 #if defined(ARMA_ALLOW_LONG)
   else
-  if(is_ulng_t_32<eT>::value == true)
+  if(is_ulng_t_32<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_IU004");
     }
   else
-  if(is_slng_t_32<eT>::value == true)
+  if(is_slng_t_32<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_IS004");
     }
   else
-  if(is_ulng_t_64<eT>::value == true)
+  if(is_ulng_t_64<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_IU008");
     }
   else
-  if(is_slng_t_64<eT>::value == true)
+  if(is_slng_t_64<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_IS008");
     }
 #endif
   else
-  if(is_float<eT>::value == true)
+  if(is_float<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_FN004");
     }
   else
-  if(is_double<eT>::value == true)
+  if(is_double<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_FN008");
     }
   else
-  if(is_complex_float<eT>::value == true)
+  if(is_complex_float<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_FC008");
     }
   else
-  if(is_complex_double<eT>::value == true)
+  if(is_complex_double<eT>::value)
     {
     return std::string("ARMA_SPM_BIN_FC016");
     }
@@ -344,86 +344,86 @@ diskio::gen_txt_header(const Cube<eT>& x)
   
   arma_ignore(x);
 
-  if(is_u8<eT>::value == true)
+  if(is_u8<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_IU001");
     }
   else
-  if(is_s8<eT>::value == true)
+  if(is_s8<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_IS001");
     }
   else
-  if(is_u16<eT>::value == true)
+  if(is_u16<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_IU002");
     }
   else
-  if(is_s16<eT>::value == true)
+  if(is_s16<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_IS002");
     }
   else
-  if(is_u32<eT>::value == true)
+  if(is_u32<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_IU004");
     }
   else
-  if(is_s32<eT>::value == true)
+  if(is_s32<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_IS004");
     }
 #if defined(ARMA_USE_U64S64)
   else
-  if(is_u64<eT>::value == true)
+  if(is_u64<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_IU008");
     }
   else
-  if(is_s64<eT>::value == true)
+  if(is_s64<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_IS008");
     }
 #endif
 #if defined(ARMA_ALLOW_LONG)
   else
-  if(is_ulng_t_32<eT>::value == true)
+  if(is_ulng_t_32<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_IU004");
     }
   else
-  if(is_slng_t_32<eT>::value == true)
+  if(is_slng_t_32<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_IS004");
     }
   else
-  if(is_ulng_t_64<eT>::value == true)
+  if(is_ulng_t_64<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_IU008");
     }
   else
-  if(is_slng_t_64<eT>::value == true)
+  if(is_slng_t_64<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_IS008");
     }
 #endif
   else
-  if(is_float<eT>::value == true)
+  if(is_float<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_FN004");
     }
   else
-  if(is_double<eT>::value == true)
+  if(is_double<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_FN008");
     }
   else
-  if(is_complex_float<eT>::value == true)
+  if(is_complex_float<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_FC008");
     }
   else
-  if(is_complex_double<eT>::value == true)
+  if(is_complex_double<eT>::value)
     {
     return std::string("ARMA_CUB_TXT_FC016");
     }
@@ -450,86 +450,86 @@ diskio::gen_bin_header(const Cube<eT>& x)
   
   arma_ignore(x);
   
-  if(is_u8<eT>::value == true)
+  if(is_u8<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_IU001");
     }
   else
-  if(is_s8<eT>::value == true)
+  if(is_s8<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_IS001");
     }
   else
-  if(is_u16<eT>::value == true)
+  if(is_u16<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_IU002");
     }
   else
-  if(is_s16<eT>::value == true)
+  if(is_s16<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_IS002");
     }
   else
-  if(is_u32<eT>::value == true)
+  if(is_u32<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_IU004");
     }
   else
-  if(is_s32<eT>::value == true)
+  if(is_s32<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_IS004");
     }
 #if defined(ARMA_USE_U64S64)
   else
-  if(is_u64<eT>::value == true)
+  if(is_u64<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_IU008");
     }
   else
-  if(is_s64<eT>::value == true)
+  if(is_s64<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_IS008");
     }
 #endif
 #if defined(ARMA_ALLOW_LONG)
   else
-  if(is_ulng_t_32<eT>::value == true)
+  if(is_ulng_t_32<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_IU004");
     }
   else
-  if(is_slng_t_32<eT>::value == true)
+  if(is_slng_t_32<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_IS004");
     }
   else
-  if(is_ulng_t_64<eT>::value == true)
+  if(is_ulng_t_64<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_IU008");
     }
   else
-  if(is_slng_t_64<eT>::value == true)
+  if(is_slng_t_64<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_IS008");
     }
 #endif
   else
-  if(is_float<eT>::value == true)
+  if(is_float<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_FN004");
     }
   else
-  if(is_double<eT>::value == true)
+  if(is_double<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_FN008");
     }
   else
-  if(is_complex_float<eT>::value == true)
+  if(is_complex_float<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_FC008");
     }
   else
-  if(is_complex_double<eT>::value == true)
+  if(is_complex_double<eT>::value)
     {
     return std::string("ARMA_CUB_BIN_FC016");
     }
@@ -784,14 +784,14 @@ diskio::convert_naninf(eT& val, const std::string& token)
     
     if( (token2 == "inf") || (token2 == "Inf") || (token2 == "INF") )
       {
-      val = neg ? -(Datum<eT>::inf) : Datum<eT>::inf;
+      val = neg ? cond_rel< is_signed<eT>::value >::make_neg(Datum<eT>::inf) : Datum<eT>::inf;
       
       return true;
       }
     else
     if( (token2 == "nan") || (token2 == "Nan") || (token2 == "NaN") || (token2 == "NAN") )
       {
-      val = neg ? -(Datum<eT>::nan) : Datum<eT>::nan;
+      val = Datum<eT>::nan;
       
       return true;
       }
@@ -895,7 +895,7 @@ diskio::save_raw_ascii(const Mat<eT>& x, std::ostream& f)
   
   // TODO: need sane values for complex numbers
   
-  if( (is_float<eT>::value == true) || (is_double<eT>::value == true) )
+  if( (is_float<eT>::value) || (is_double<eT>::value) )
     {
     f.setf(ios::scientific);
     f.precision(12);
@@ -908,7 +908,7 @@ diskio::save_raw_ascii(const Mat<eT>& x, std::ostream& f)
       {
       f.put(' ');
       
-      if( (is_float<eT>::value == true) || (is_double<eT>::value == true) )
+      if( (is_float<eT>::value) || (is_double<eT>::value) )
         {
         f.width(cell_width);
         }
@@ -1021,7 +1021,7 @@ diskio::save_arma_ascii(const Mat<eT>& x, std::ostream& f)
   
   // TODO: need sane values for complex numbers
   
-  if( (is_float<eT>::value == true) || (is_double<eT>::value == true) )
+  if( (is_float<eT>::value) || (is_double<eT>::value) )
     {
     f.setf(ios::scientific);
     f.precision(12);
@@ -1034,7 +1034,7 @@ diskio::save_arma_ascii(const Mat<eT>& x, std::ostream& f)
       {
       f.put(' ');
       
-      if( (is_float<eT>::value == true) || (is_double<eT>::value == true) )        
+      if( (is_float<eT>::value) || (is_double<eT>::value) )        
         {
         f.width(cell_width);
         }
@@ -1098,7 +1098,7 @@ diskio::save_csv_ascii(const Mat<eT>& x, std::ostream& f)
   
   // TODO: need sane values for complex numbers
   
-  if( (is_float<eT>::value == true) || (is_double<eT>::value == true) )
+  if( (is_float<eT>::value) || (is_double<eT>::value) )
     {
     f.setf(ios::scientific);
     f.precision(12);
@@ -1458,24 +1458,31 @@ diskio::load_raw_ascii(Mat<eT>& x, std::istream& f, std::string& err_msg)
         {
         f >> token;
         
-        ss.clear();
-        ss.str(token);
-        
-        eT val = eT(0);
-        ss >> val;
-        
-        if(ss.fail() == false)
+        if( (is_signed<eT>::value == false) && (token.length() > 0) && (token[0] == '-') )
           {
-          x.at(row,col) = val;
+          x.at(row,col) = eT(0);
           }
         else
           {
-          const bool success = diskio::convert_naninf( x.at(row,col), token );
+          ss.clear();
+          ss.str(token);
           
-          if(success == false)
+          eT val = eT(0);
+          ss >> val;
+          
+          if(ss.fail() == false)
             {
-            load_okay = false;
-            err_msg = "couldn't interpret data in ";
+            x.at(row,col) = val;
+            }
+          else
+            {
+            const bool success = diskio::convert_naninf( x.at(row,col), token );
+            
+            if(success == false)
+              {
+              load_okay = false;
+              err_msg = "couldn't interpret data in ";
+              }
             }
           }
         }
@@ -1586,6 +1593,8 @@ diskio::load_arma_ascii(Mat<eT>& x, std::istream& f, std::string& err_msg)
   {
   arma_extra_debug_sigprint();
   
+  std::streampos pos = f.tellg();
+    
   bool load_okay = true;
   
   std::string f_header;
@@ -1632,6 +1641,38 @@ diskio::load_arma_ascii(Mat<eT>& x, std::istream& f, std::string& err_msg)
     {
     load_okay = false;
     err_msg = "incorrect header in ";
+    }
+  
+  
+  // allow automatic conversion of u32/s32 matrices into u64/s64 matrices
+  
+  if(load_okay == false)
+    {
+    if( (sizeof(eT) == 8) && is_same_type<uword,eT>::yes )
+      {
+      Mat<u32>    tmp;
+      std::string junk;
+      
+      f.clear();
+      f.seekg(pos);
+      
+      load_okay = diskio::load_arma_ascii(tmp, f, junk);
+      
+      if(load_okay)  { x = conv_to< Mat<eT> >::from(tmp); }
+      }
+    else
+    if( (sizeof(eT) == 8) && is_same_type<sword,eT>::yes )
+      {
+      Mat<s32>    tmp;
+      std::string junk;
+      
+      f.clear();
+      f.seekg(pos);
+      
+      load_okay = diskio::load_arma_ascii(tmp, f, junk);
+      
+      if(load_okay)  { x = conv_to< Mat<eT> >::from(tmp); }
+      }
     }
   
   return load_okay;
@@ -1742,19 +1783,26 @@ diskio::load_csv_ascii(Mat<eT>& x, std::istream& f, std::string&)
       {
       std::getline(line_stream, token, ',');
       
-      ss.clear();
-      ss.str(token);
-      
-      eT val = eT(0);
-      ss >> val;
-      
-      if(ss.fail() == false)
+      if( (is_signed<eT>::value == false) && (token.length() > 0) && (token[0] == '-') )
         {
-        x.at(row,col) = val;
+        x.at(row,col) = eT(0);
         }
       else
         {
-        diskio::convert_naninf( x.at(row,col), token );
+        ss.clear();
+        ss.str(token);
+        
+        eT val = eT(0);
+        ss >> val;
+        
+        if(ss.fail() == false)
+          {
+          x.at(row,col) = val;
+          }
+        else
+          {
+          diskio::convert_naninf( x.at(row,col), token );
+          }
         }
       
       ++col;
@@ -1800,6 +1848,8 @@ diskio::load_arma_binary(Mat<eT>& x, std::istream& f, std::string& err_msg)
   {
   arma_extra_debug_sigprint();
   
+  std::streampos pos = f.tellg();
+    
   bool load_okay = true;
   
   std::string f_header;
@@ -1824,6 +1874,38 @@ diskio::load_arma_binary(Mat<eT>& x, std::istream& f, std::string& err_msg)
     {
     load_okay = false;
     err_msg = "incorrect header in ";
+    }
+  
+  
+  // allow automatic conversion of u32/s32 matrices into u64/s64 matrices
+  
+  if(load_okay == false)
+    {
+    if( (sizeof(eT) == 8) && is_same_type<uword,eT>::yes )
+      {
+      Mat<u32>    tmp;
+      std::string junk;
+      
+      f.clear();
+      f.seekg(pos);
+      
+      load_okay = diskio::load_arma_binary(tmp, f, junk);
+      
+      if(load_okay)  { x = conv_to< Mat<eT> >::from(tmp); }
+      }
+    else
+    if( (sizeof(eT) == 8) && is_same_type<sword,eT>::yes )
+      {
+      Mat<s32>    tmp;
+      std::string junk;
+      
+      f.clear();
+      f.seekg(pos);
+      
+      load_okay = diskio::load_arma_binary(tmp, f, junk);
+      
+      if(load_okay)  { x = conv_to< Mat<eT> >::from(tmp); }
+      }
     }
   
   return load_okay;
@@ -2302,7 +2384,7 @@ diskio::save_coord_ascii(const SpMat<eT>& x, std::ostream& f)
     
     f << iter.row() << ' ' << iter.col() << ' ';
     
-    if( (is_float<eT>::value == true) || (is_double<eT>::value == true) )
+    if( (is_float<eT>::value) || (is_double<eT>::value) )
       {
       f.setf(ios::scientific);
       f.precision(12);
@@ -2356,7 +2438,7 @@ diskio::save_coord_ascii(const SpMat< std::complex<T> >& x, std::ostream& f)
     
     f << iter.row() << ' ' << iter.col() << ' ';
     
-    if( (is_float<T>::value == true) || (is_double<T>::value == true) )
+    if( (is_float<T>::value) || (is_double<T>::value) )
       {
       f.setf(ios::scientific);
       f.precision(12);
@@ -2472,6 +2554,9 @@ inline
 bool
 diskio::load_coord_ascii(SpMat<eT>& x, std::istream& f, std::string& err_msg)
   {
+  arma_extra_debug_sigprint();
+  arma_ignore(err_msg);
+  
   bool load_okay = f.good();
   
   f.clear();
@@ -2694,6 +2779,9 @@ inline
 bool
 diskio::load_coord_ascii(SpMat< std::complex<T> >& x, std::istream& f, std::string& err_msg)
   {
+  arma_extra_debug_sigprint();
+  arma_ignore(err_msg);
+  
   bool load_okay = f.good();
   
   f.clear();
@@ -3032,24 +3120,52 @@ diskio::load_arma_binary(SpMat<eT>& x, std::istream& f, std::string& err_msg)
     x.mem_resize(f_n_nz);
     
     f.read( reinterpret_cast<char*>(access::rwp(x.values)),      std::streamsize(x.n_nonzero*sizeof(eT))     );
+    
+    std::streampos pos = f.tellg();
+    
     f.read( reinterpret_cast<char*>(access::rwp(x.row_indices)), std::streamsize(x.n_nonzero*sizeof(uword))  );
     f.read( reinterpret_cast<char*>(access::rwp(x.col_ptrs)),    std::streamsize((x.n_cols+1)*sizeof(uword)) );
     
-    bool check1 = true;
+    bool check1 = true;  for(uword i=0; i < x.n_nonzero; ++i)  { if(x.values[i] == eT(0))  { check1 = false; break; } }
+    bool check2 = true;  for(uword i=0; i < x.n_cols;    ++i)  { if(x.col_ptrs[i+1] < x.col_ptrs[i])  { check2 = false; break; } }
+    bool check3 = (x.col_ptrs[x.n_cols] == x.n_nonzero);
     
-    for(uword i=0; i < x.n_nonzero; ++i)
+    if((check1 == true) && ((check2 == false) || (check3 == false)))
       {
-      if(x.values[i] == eT(0))  { check1 = false; break; }
+      if(sizeof(uword) == 8)
+        {
+        arma_extra_debug_print("detected inconsistent data while loading; re-reading integer parts as u32");
+        
+        // inconstency could be due to a different uword size used during saving,
+        // so try loading the row_indices and col_ptrs under the assumption of 32 bit unsigned integers
+        
+        f.clear();
+        f.seekg(pos);
+        
+        podarray<u32> tmp_a(x.n_nonzero );  tmp_a.zeros();
+        podarray<u32> tmp_b(x.n_cols + 1);  tmp_b.zeros();
+        
+        f.read( reinterpret_cast<char*>(tmp_a.memptr()), std::streamsize( x.n_nonzero   * sizeof(u32)) );
+        f.read( reinterpret_cast<char*>(tmp_b.memptr()), std::streamsize((x.n_cols + 1) * sizeof(u32)) );
+        
+        check2 = true;  for(uword i=0; i < x.n_cols; ++i)  { if(tmp_b[i+1] < tmp_b[i])  { check2 = false; break; } }
+        check3 = (tmp_b[x.n_cols] == x.n_nonzero);
+        
+        load_okay = f.good();
+        
+        if( load_okay && (check2 == true) && (check3 == true) )
+          {
+          arma_extra_debug_print("reading integer parts as u32 succeeded");
+          
+          arrayops::convert(access::rwp(x.row_indices), tmp_a.memptr(), x.n_nonzero );
+          arrayops::convert(access::rwp(x.col_ptrs),    tmp_b.memptr(), x.n_cols + 1);
+          }
+        else
+          {
+          arma_extra_debug_print("reading integer parts as u32 failed");
+          }
+        }
       }
-    
-    bool check2 = true;
-    
-    for(uword i=0; i < x.n_cols; ++i)
-      {
-      if(x.col_ptrs[i+1] < x.col_ptrs[i])  { check2 = false; break; }
-      }
-    
-    const bool check3 = (x.col_ptrs[x.n_cols] == x.n_nonzero);
     
     if((check1 == false) || (check2 == false) || (check3 == false))
       {
@@ -3120,7 +3236,7 @@ diskio::save_raw_ascii(const Cube<eT>& x, std::ostream& f)
   
   // TODO: need sane values for complex numbers
   
-  if( (is_float<eT>::value == true) || (is_double<eT>::value == true) )
+  if( (is_float<eT>::value) || (is_double<eT>::value) )
     {
     f.setf(ios::scientific);
     f.precision(12);
@@ -3135,7 +3251,7 @@ diskio::save_raw_ascii(const Cube<eT>& x, std::ostream& f)
         {
         f.put(' ');
         
-        if( (is_float<eT>::value == true) || (is_double<eT>::value == true) )
+        if( (is_float<eT>::value) || (is_double<eT>::value) )
           {
           f.width(cell_width);
           }
@@ -3249,7 +3365,7 @@ diskio::save_arma_ascii(const Cube<eT>& x, std::ostream& f)
   
   // TODO: need sane values for complex numbers
   
-  if( (is_float<eT>::value == true) || (is_double<eT>::value == true) )
+  if( (is_float<eT>::value) || (is_double<eT>::value) )
     {
     f.setf(ios::scientific);
     f.precision(12);
@@ -3264,7 +3380,7 @@ diskio::save_arma_ascii(const Cube<eT>& x, std::ostream& f)
         {
         f.put(' ');
         
-        if( (is_float<eT>::value == true) || (is_double<eT>::value == true) )        
+        if( (is_float<eT>::value) || (is_double<eT>::value) )        
           {
           f.width(cell_width);
           }
@@ -3557,6 +3673,8 @@ diskio::load_arma_ascii(Cube<eT>& x, std::istream& f, std::string& err_msg)
   {
   arma_extra_debug_sigprint();
   
+  std::streampos pos = f.tellg();
+    
   bool load_okay = true;
   
   std::string f_header;
@@ -3590,6 +3708,38 @@ diskio::load_arma_ascii(Cube<eT>& x, std::istream& f, std::string& err_msg)
     {
     load_okay = false;
     err_msg = "incorrect header in ";
+    }
+  
+  
+  // allow automatic conversion of u32/s32 cubes into u64/s64 cubes
+  
+  if(load_okay == false)
+    {
+    if( (sizeof(eT) == 8) && is_same_type<uword,eT>::yes )
+      {
+      Cube<u32>   tmp;
+      std::string junk;
+      
+      f.clear();
+      f.seekg(pos);
+      
+      load_okay = diskio::load_arma_ascii(tmp, f, junk);
+      
+      if(load_okay)  { x = conv_to< Cube<eT> >::from(tmp); }
+      }
+    else
+    if( (sizeof(eT) == 8) && is_same_type<sword,eT>::yes )
+      {
+      Cube<s32>   tmp;
+      std::string junk;
+      
+      f.clear();
+      f.seekg(pos);
+      
+      load_okay = diskio::load_arma_ascii(tmp, f, junk);
+      
+      if(load_okay)  { x = conv_to< Cube<eT> >::from(tmp); }
+      }
     }
   
   return load_okay;
@@ -3629,6 +3779,8 @@ diskio::load_arma_binary(Cube<eT>& x, std::istream& f, std::string& err_msg)
   {
   arma_extra_debug_sigprint();
   
+  std::streampos pos = f.tellg();
+    
   bool load_okay = true;
   
   std::string f_header;
@@ -3655,6 +3807,38 @@ diskio::load_arma_binary(Cube<eT>& x, std::istream& f, std::string& err_msg)
     {
     load_okay = false;
     err_msg = "incorrect header in ";
+    }
+  
+  
+  // allow automatic conversion of u32/s32 cubes into u64/s64 cubes
+  
+  if(load_okay == false)
+    {
+    if( (sizeof(eT) == 8) && is_same_type<uword,eT>::yes )
+      {
+      Cube<u32>   tmp;
+      std::string junk;
+      
+      f.clear();
+      f.seekg(pos);
+      
+      load_okay = diskio::load_arma_binary(tmp, f, junk);
+      
+      if(load_okay)  { x = conv_to< Cube<eT> >::from(tmp); }
+      }
+    else
+    if( (sizeof(eT) == 8) && is_same_type<sword,eT>::yes )
+      {
+      Cube<s32>   tmp;
+      std::string junk;
+      
+      f.clear();
+      f.seekg(pos);
+      
+      load_okay = diskio::load_arma_binary(tmp, f, junk);
+      
+      if(load_okay)  { x = conv_to< Cube<eT> >::from(tmp); }
+      }
     }
   
   return load_okay;

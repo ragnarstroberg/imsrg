@@ -57,6 +57,18 @@ Col<eT>::Col(const uword in_n_rows, const uword in_n_cols)
 
 
 template<typename eT>
+inline
+Col<eT>::Col(const SizeMat& s)
+  : Mat<eT>(arma_vec_indicator(), 0, 0, 1)
+  {
+  arma_extra_debug_sigprint();
+  
+  Mat<eT>::init_warm(s.n_rows, s.n_cols);
+  }
+
+
+
+template<typename eT>
 template<typename fill_type>
 inline
 Col<eT>::Col(const uword in_n_elem, const fill::fill_class<fill_type>& f)
@@ -78,6 +90,21 @@ Col<eT>::Col(const uword in_n_rows, const uword in_n_cols, const fill::fill_clas
   arma_extra_debug_sigprint();
   
   Mat<eT>::init_warm(in_n_rows, in_n_cols);
+  
+  (*this).fill(f);
+  }
+
+
+
+template<typename eT>
+template<typename fill_type>
+inline
+Col<eT>::Col(const SizeMat& s, const fill::fill_class<fill_type>& f)
+  : Mat<eT>(arma_vec_indicator(), 0, 0, 1)
+  {
+  arma_extra_debug_sigprint();
+  
+  Mat<eT>::init_warm(s.n_rows, s.n_cols);
   
   (*this).fill(f);
   }
@@ -969,7 +996,7 @@ Col<eT>::begin_row(const uword row_num)
   {
   arma_extra_debug_sigprint();
   
-  arma_debug_check( (row_num >= Mat<eT>::n_rows), "begin_row(): index out of bounds");
+  arma_debug_check( (row_num >= Mat<eT>::n_rows), "Col::begin_row(): index out of bounds");
   
   return Mat<eT>::memptr() + row_num;
   }
@@ -983,7 +1010,7 @@ Col<eT>::begin_row(const uword row_num) const
   {
   arma_extra_debug_sigprint();
   
-  arma_debug_check( (row_num >= Mat<eT>::n_rows), "begin_row(): index out of bounds");
+  arma_debug_check( (row_num >= Mat<eT>::n_rows), "Col::begin_row(): index out of bounds");
   
   return Mat<eT>::memptr() + row_num;
   }
@@ -997,7 +1024,7 @@ Col<eT>::end_row(const uword row_num)
   {
   arma_extra_debug_sigprint();
   
-  arma_debug_check( (row_num >= Mat<eT>::n_rows), "end_row(): index out of bounds");
+  arma_debug_check( (row_num >= Mat<eT>::n_rows), "Col::end_row(): index out of bounds");
   
   return Mat<eT>::memptr() + row_num + 1;
   }
@@ -1011,7 +1038,7 @@ Col<eT>::end_row(const uword row_num) const
   {
   arma_extra_debug_sigprint();
   
-  arma_debug_check( (row_num >= Mat<eT>::n_rows), "end_row(): index out of bounds");
+  arma_debug_check( (row_num >= Mat<eT>::n_rows), "Col::end_row(): index out of bounds");
   
   return Mat<eT>::memptr() + row_num + 1;
   }
@@ -1267,7 +1294,7 @@ Col<eT>::fixed<fixed_n_elem>::operator=(const subview_cube<eT>& X)
     {
     arma_extra_debug_sigprint();
     
-    const uword N = list.size();
+    const uword N = uword(list.size());
     
     arma_debug_check( (N > fixed_n_elem), "Col::fixed: initialiser list is too long" );
     
@@ -1305,75 +1332,79 @@ Col<eT>::fixed<fixed_n_elem>::operator=(const fixed<fixed_n_elem>& X)
 
 
 
-template<typename eT>
-template<uword fixed_n_elem>
-template<typename T1, typename eop_type>
-inline
-const Col<eT>&
-Col<eT>::fixed<fixed_n_elem>::operator=(const eOp<T1, eop_type>& X)
-  {
-  arma_extra_debug_sigprint();
+#if defined(ARMA_GOOD_COMPILER)
   
-  arma_type_check(( is_same_type< eT, typename T1::elem_type >::no ));
-  
-  const bool bad_alias = (eOp<T1, eop_type>::proxy_type::has_subview  &&  X.P.is_alias(*this));
-  
-  if(bad_alias == false)
+  template<typename eT>
+  template<uword fixed_n_elem>
+  template<typename T1, typename eop_type>
+  inline
+  const Col<eT>&
+  Col<eT>::fixed<fixed_n_elem>::operator=(const eOp<T1, eop_type>& X)
     {
-    arma_debug_assert_same_size(fixed_n_elem, uword(1), X.get_n_rows(), X.get_n_cols(), "Col::fixed::operator=");
+    arma_extra_debug_sigprint();
     
-    eop_type::apply(*this, X);
-    }
-  else
-    {
-    arma_extra_debug_print("bad_alias = true");
+    arma_type_check(( is_same_type< eT, typename T1::elem_type >::no ));
     
-    Col<eT> tmp(X);
+    const bool bad_alias = (eOp<T1, eop_type>::proxy_type::has_subview  &&  X.P.is_alias(*this));
     
-    (*this) = tmp;
-    }
-  
-  return *this;
-  }
-
-
-
-template<typename eT>
-template<uword fixed_n_elem>
-template<typename T1, typename T2, typename eglue_type>
-inline
-const Col<eT>&
-Col<eT>::fixed<fixed_n_elem>::operator=(const eGlue<T1, T2, eglue_type>& X)
-  {
-  arma_extra_debug_sigprint();
-  
-  arma_type_check(( is_same_type< eT, typename T1::elem_type >::no ));
-  arma_type_check(( is_same_type< eT, typename T2::elem_type >::no ));
-  
-  const bool bad_alias =
-    (
-    (eGlue<T1, T2, eglue_type>::proxy1_type::has_subview  &&  X.P1.is_alias(*this))
-    ||
-    (eGlue<T1, T2, eglue_type>::proxy2_type::has_subview  &&  X.P2.is_alias(*this))
-    );
-  
-  if(bad_alias == false)
-    {
-    arma_debug_assert_same_size(fixed_n_elem, uword(1), X.get_n_rows(), X.get_n_cols(), "Col::fixed::operator=");
+    if(bad_alias == false)
+      {
+      arma_debug_assert_same_size(fixed_n_elem, uword(1), X.get_n_rows(), X.get_n_cols(), "Col::fixed::operator=");
+      
+      eop_type::apply(*this, X);
+      }
+    else
+      {
+      arma_extra_debug_print("bad_alias = true");
+      
+      Col<eT> tmp(X);
+      
+      (*this) = tmp;
+      }
     
-    eglue_type::apply(*this, X);
-    }
-  else
-    {
-    arma_extra_debug_print("bad_alias = true");
-    
-    Col<eT> tmp(X);
-    
-    (*this) = tmp;
+    return *this;
     }
   
-  return *this;
-  }
+  
+  
+  template<typename eT>
+  template<uword fixed_n_elem>
+  template<typename T1, typename T2, typename eglue_type>
+  inline
+  const Col<eT>&
+  Col<eT>::fixed<fixed_n_elem>::operator=(const eGlue<T1, T2, eglue_type>& X)
+    {
+    arma_extra_debug_sigprint();
+    
+    arma_type_check(( is_same_type< eT, typename T1::elem_type >::no ));
+    arma_type_check(( is_same_type< eT, typename T2::elem_type >::no ));
+    
+    const bool bad_alias =
+      (
+      (eGlue<T1, T2, eglue_type>::proxy1_type::has_subview  &&  X.P1.is_alias(*this))
+      ||
+      (eGlue<T1, T2, eglue_type>::proxy2_type::has_subview  &&  X.P2.is_alias(*this))
+      );
+    
+    if(bad_alias == false)
+      {
+      arma_debug_assert_same_size(fixed_n_elem, uword(1), X.get_n_rows(), X.get_n_cols(), "Col::fixed::operator=");
+      
+      eglue_type::apply(*this, X);
+      }
+    else
+      {
+      arma_extra_debug_print("bad_alias = true");
+      
+      Col<eT> tmp(X);
+      
+      (*this) = tmp;
+      }
+    
+    return *this;
+    }
+  
+#endif
 
 
 
