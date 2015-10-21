@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <deque>
 
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
@@ -24,10 +25,18 @@ double  Operator::bch_product_threshold = 1e-4;
 //Operator Operator::Temp = Operator();
 //Operator Operator::Temp = Operator();
 //map<string, double> Operator::timer;
-Operator& Operator::Temp()
+
+//Operator& Operator::Temp()
+//{
+//  static Operator* tmp = new Operator();
+//  return *tmp;
+//}
+
+Operator& Operator::TempOp(size_t n)
 {
-  static Operator* tmp = new Operator();
-  return *tmp;
+  static deque<Operator> TempArray;
+  if (n >= TempArray.size()) TempArray.resize(n+1,*this);
+  return TempArray[n];
 }
 
 
@@ -715,13 +724,16 @@ Operator Operator::BCH_Transform( const Operator &Omega)
    if (nx>bch_transform_threshold)
    {
 //     Operator OpNested = *this;
-//     Operator& OpNested = Temp;
-     Operator& OpNested = Temp();
+     Operator& OpNested = TempOp(0);
      OpNested = *this;
      double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
      for (int i=1; i<=max_iter; ++i)
      {
-        OpNested = Commutator(Omega,OpNested)/i;
+//        OpNested = Commutator(Omega,OpNested)/i;
+        Operator& tmp1 = TempOp(1);
+        tmp1.SetToCommutator(Omega,OpNested);
+        tmp1 /= i;
+        OpNested = tmp1;
 //        OpNested.SetToCommutator(Omega,OpNested);
 //        OpNested /= i;
         OpOut += OpNested;
@@ -769,7 +781,7 @@ Operator Operator::BCH_Product(  Operator &Y)
 
    if (nxy > (nx+ny)*bch_product_threshold )
    {
-     Operator& tmp = Temp();
+     Operator& tmp = TempOp(0);
      tmp.SetToCommutator(Z,Y-Z);
      tmp /= 6;
      Z += tmp;
@@ -1414,8 +1426,8 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
    Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
 
-   TwoBodyME Mpp = Z.TwoBody;
-   TwoBodyME Mhh = Z.TwoBody;
+   TwoBodyME Mpp(Z.TwoBody);
+   TwoBodyME Mhh(Z.TwoBody);
 
    double t = omp_get_wtime();
    // Don't use omp, because the matrix multiplication is already
@@ -1515,7 +1527,8 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
 /// This function is designed for use with comm222_phss() and so it takes in
 /// two arrays of matrices, one for hp terms and one for ph terms.
 //void Operator::DoPandyaTransformation(TwoBodyME& TwoBody_CC_hp, TwoBodyME& TwoBody_CC_ph)
-void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<arma::mat>& TwoBody_CC_ph) const
+//void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<arma::mat>& TwoBody_CC_ph, string orientation="normal") const
+void Operator::DoPandyaTransformation(deque<arma::mat>& TwoBody_CC_hp, deque<arma::mat>& TwoBody_CC_ph, string orientation="normal") const
 {
    // loop over cross-coupled channels
    int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
@@ -1530,8 +1543,8 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
       int nph_kets = kets_ph.n_rows;
       int J_cc = tbc_cc.J;
 
-      TwoBody_CC_hp[ch_cc] = arma::mat(nph_kets,   2*nKets_cc, arma::fill::zeros);
-      TwoBody_CC_ph[ch_cc] = arma::mat(nph_kets,   2*nKets_cc, arma::fill::zeros);
+//      TwoBody_CC_hp[ch_cc] = arma::mat(nph_kets,   2*nKets_cc, arma::fill::zeros);
+//      TwoBody_CC_ph[ch_cc] = arma::mat(nph_kets,   2*nKets_cc, arma::fill::zeros);
 
       // loop over cross-coupled ph bras <ac| in this channel
       for (int ibra=0; ibra<nph_kets; ++ibra)
@@ -1567,10 +1580,16 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
                double tbme = TwoBody.GetTBME_J(J_std,a,d,c,b);
                sm -= (2*J_std+1) * sixj * tbme ;
             }
-            TwoBody_CC_hp[ch_cc](ibra,iket_cc) = sm;
-            TwoBody_CC_ph[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(ja+jb+jc+jd) * sm;
-
-
+            if (orientation=="normal")
+            {
+              TwoBody_CC_hp[ch_cc](ibra,iket_cc) = sm;
+              TwoBody_CC_ph[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(ja+jb+jc+jd) * sm;
+            }
+            else if (orientation=="transpose")
+            {
+              TwoBody_CC_hp[ch_cc](iket_cc,ibra) = herm*sm;
+              TwoBody_CC_ph[ch_cc](iket_cc+nKets_cc,ibra) =  modelspace->phase(ja+jb+jc+jd) * sm;
+            }
             // Exchange (a <-> b) to account for the (n_a - n_b) term
             // Get Tz,parity and range of J for <bd || ca > coupling
             jmin = max(abs(jb-jd),abs(jc-ja));
@@ -1583,8 +1602,16 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
                double tbme = TwoBody.GetTBME_J(J_std,b,d,c,a);
                sm -= (2*J_std+1) * sixj * tbme ;
             }
-            TwoBody_CC_ph[ch_cc](ibra,iket_cc) = sm;
-            TwoBody_CC_hp[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(ja+jb+jc+jd) * sm;
+            if (orientation=="normal")
+            {
+              TwoBody_CC_ph[ch_cc](ibra,iket_cc) = sm;
+              TwoBody_CC_hp[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(ja+jb+jc+jd) * sm;
+            }
+            else if (orientation=="transpose")
+            {
+              TwoBody_CC_ph[ch_cc](iket_cc,ibra) = herm*sm;
+              TwoBody_CC_hp[ch_cc](iket_cc+nKets_cc,ibra) =  modelspace->phase(ja+jb+jc+jd) * sm;
+            }
 
          }
       }
@@ -1592,8 +1619,10 @@ void Operator::DoPandyaTransformation(vector<arma::mat>& TwoBody_CC_hp, vector<a
 }
 
 
+
 //void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::mat>& opout)
-void Operator::AddInversePandyaTransformation(vector<arma::mat>& Zbar)
+//void Operator::AddInversePandyaTransformation(vector<arma::mat>& Zbar)
+void Operator::AddInversePandyaTransformation(deque<arma::mat>& Zbar)
 {
     // Do the inverse Pandya transform
     // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
@@ -1676,6 +1705,24 @@ void Operator::AddInversePandyaTransformation(vector<arma::mat>& Zbar)
 }
 
 
+deque<arma::mat> Operator::InitializePandya(size_t nch, string orientation="normal")
+{
+   deque<arma::mat> X(nch);
+   int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
+   for (int ich=0; ich<n_nonzero; ++ich)
+   {
+      int ch_cc = modelspace->SortedTwoBodyChannels_CC[ich];
+      TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
+      int nKets_cc = tbc_cc.GetNumberKets();
+      arma::uvec& kets_ph = tbc_cc.GetKetIndex_ph();
+      int nph_kets = kets_ph.n_rows;
+      if (orientation=="normal")
+         X[ch_cc] = arma::mat(nph_kets,   2*nKets_cc, arma::fill::zeros);
+      else if (orientation=="transpose")
+         X[ch_cc] = arma::mat(2*nKets_cc, nph_kets,   arma::fill::zeros);
+   }
+   return X;
+}
 
 //*****************************************************************************************
 //
@@ -1746,19 +1793,31 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
    Operator& Z = *this;
    // Create Pandya-transformed hp and ph matrix elements
-   vector<arma::mat> X_bar_hp (nChannels );
-   vector<arma::mat> X_bar_ph (nChannels );
-   vector<arma::mat> Y_bar_hp (nChannels );
-   vector<arma::mat> Y_bar_ph (nChannels );
+//   vector<arma::mat> X_bar_hp (nChannels );
+//   vector<arma::mat> X_bar_ph (nChannels );
+//   vector<arma::mat> Y_bar_hp (nChannels );
+//   vector<arma::mat> Y_bar_ph (nChannels );
+   deque<arma::mat> X_bar_hp (InitializePandya( nChannels, "transpose"));
+   deque<arma::mat> X_bar_ph (InitializePandya( nChannels, "transpose"));
+   deque<arma::mat> Y_bar_hp (InitializePandya( nChannels, "normal"));
+   deque<arma::mat> Y_bar_ph (InitializePandya( nChannels, "normal"));
+//   static vector<arma::mat> X_bar_hp = InitializePandya( nChannels, "transpose");
+//   static vector<arma::mat> X_bar_ph = InitializePandya( nChannels, "transpose");
+//   static vector<arma::mat> Y_bar_hp = InitializePandya( nChannels, "normal");
+//   static vector<arma::mat> Y_bar_ph = InitializePandya( nChannels, "normal");
 
    double t = omp_get_wtime();
-   X.DoPandyaTransformation(X_bar_hp, X_bar_ph );
-   Y.DoPandyaTransformation(Y_bar_hp, Y_bar_ph );
+//   X.DoPandyaTransformation(X_bar_hp, X_bar_ph );
+//   X.DoPandyaTransformation_Trans(X_bar_hp, X_bar_ph );
+//   Y.DoPandyaTransformation(Y_bar_hp, Y_bar_ph );
+   X.DoPandyaTransformation(X_bar_hp, X_bar_ph ,"transpose");
+   Y.DoPandyaTransformation(Y_bar_hp, Y_bar_ph, "normal" );
    profiler.timer["DoPandyaTransformation"] += omp_get_wtime() - t;
 
    // Construct the intermediate matrix Z_bar
    t = omp_get_wtime();
-   vector<arma::mat> Z_bar (nChannels );
+//   vector<arma::mat> Z_bar (nChannels );
+   deque<arma::mat> Z_bar (nChannels );
 
 //   for (int ch : modelspace->SortedTwoBodyChannels_CC )
    int nch = modelspace->SortedTwoBodyChannels_CC.size();
@@ -1768,10 +1827,11 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    for (int ich=0; ich<nch; ++ich )
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
-      if ( X.IsHermitian() ) // keep track of minus sign from taking transpose of X
-         Z_bar[ch] =  X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch] ;
-      else
-         Z_bar[ch] =  X_bar_ph[ch].t() * Y_bar_ph[ch] - X_bar_hp[ch].t() * Y_bar_hp[ch] ;
+      Z_bar[ch] =  X_bar_hp[ch] * Y_bar_hp[ch] - X_bar_ph[ch] * Y_bar_ph[ch] ;
+//      if ( X.IsHermitian() ) // keep track of minus sign from taking transpose of X
+//         Z_bar[ch] =  X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch] ;
+//      else
+//         Z_bar[ch] =  X_bar_ph[ch].t() * Y_bar_ph[ch] - X_bar_hp[ch].t() * Y_bar_hp[ch] ;
 
       if ( Z.IsHermitian() ) // if Z is hermitian, then XY is antihermitian
         Z_bar[ch] += Z_bar[ch].t();
@@ -2013,7 +2073,7 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
 
 
 
-// Since comm222_pp_hh and comm211 both require the ruction of 
+// Since comm222_pp_hh and comm211 both require the construction of 
 // the intermediate matrices Mpp and Mhh, we can combine them and
 // only calculate the intermediates once.
 // X is a scalar, Y is a tensor
@@ -2455,8 +2515,10 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
 
    Operator& Z = *this;
    // Create Pandya-transformed hp and ph matrix elements
-   vector<arma::mat> X_bar_hp (nChannels );
-   vector<arma::mat> X_bar_ph (nChannels );
+   deque<arma::mat> X_bar_hp = InitializePandya( nChannels, "transpose");
+   deque<arma::mat> X_bar_ph = InitializePandya( nChannels, "transpose");
+//   vector<arma::mat> X_bar_hp (nChannels );
+//   vector<arma::mat> X_bar_ph (nChannels );
 
    map<array<int,2>,arma::mat> Y_bar_hp;
    map<array<int,2>,arma::mat> Y_bar_ph;

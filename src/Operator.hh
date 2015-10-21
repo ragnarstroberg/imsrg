@@ -9,6 +9,7 @@
 #include <armadillo>
 #include <string>
 #include <vector>
+#include <deque>
 #include <map>
 
 using namespace std;
@@ -45,7 +46,8 @@ class Operator
   static double bch_product_threshold;
 
 //  static Operator Temp; ///< Scratch space for calculations
-  Operator& Temp(); ///< Scratch space for calculations
+//  Operator& Temp(); ///< Scratch space for calculations
+  Operator& TempOp(size_t n); ///< Scratch space for calculations
 
   map<array<int,3>,vector<index_t> > OneBodyChannels;
   IMSRGProfiler profiler;
@@ -156,8 +158,11 @@ class Operator
   static void Set_BCH_Transform_Threshold(double x){bch_transform_threshold=x;};
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
-  void DoPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) const ;
-  void AddInversePandyaTransformation(vector<arma::mat>&);
+  deque<arma::mat> InitializePandya(size_t nch, string orientation);
+//  void DoPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) const ;
+  void DoPandyaTransformation(deque<arma::mat>&, deque<arma::mat>&, string orientation) const ;
+//  void AddInversePandyaTransformation(vector<arma::mat>&);
+  void AddInversePandyaTransformation(deque<arma::mat>&);
 
 
   void comm110ss( const Operator& X, const Operator& Y) ; 

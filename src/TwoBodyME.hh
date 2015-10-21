@@ -2,6 +2,7 @@
 #ifndef TwoBodyME_h
 #define TwoBodyME_h 1
 
+#include <memory>
 #include "ModelSpace.hh"
 class TwoBodyME_ph;
 
@@ -29,7 +30,7 @@ class TwoBodyME_ph;
 class TwoBodyME
 {
  public:
-  ModelSpace * modelspace;
+  ModelSpace*  modelspace;
   map<array<int,2>,arma::mat> MatEl;
   int nChannels;
   bool hermitian;
@@ -46,6 +47,7 @@ class TwoBodyME
   TwoBodyME(ModelSpace* ms, int rankJ, int rankT, int parity);
 
   TwoBodyME& operator=(const TwoBodyME&);
+  TwoBodyME& operator=(TwoBodyME&&);
   TwoBodyME& operator*=(const double);
   TwoBodyME& operator+=(const TwoBodyME&);
   TwoBodyME& operator-=(const TwoBodyME&);

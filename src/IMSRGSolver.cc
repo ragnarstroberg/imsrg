@@ -300,9 +300,11 @@ deque<Operator> operator+ (const double a, const deque<Operator>& X)
    for ( auto& y : Y )
    {
      y.ZeroBody += a;
-     for( auto& v : y.OneBody ) v += a;
+     y.OneBody += a;
+//     for( auto& v : y.OneBody ) v += a;
      for ( auto& itmat: y.TwoBody.MatEl )
-       for ( auto& v : itmat.second ) v += a;
+      itmat.second += a;
+//       for ( auto& v : itmat.second ) v += a;
    }
    return Y;
 }

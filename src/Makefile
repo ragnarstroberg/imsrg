@@ -6,14 +6,16 @@ CC = g++
 #                        to be used if OpenBlas was compiled without the USE_OMP flat
 
 INCLUDE   = -I./armadillo
-FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
-SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
+FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  -flto
+SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  -flto
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
 FLAGS    += $(WARNFLAGS)
 SOFLAGS  += $(WARNFLAGS)
 INSTDIR = $(HOME)
 
 ifeq ($(DEBUG),on)
+ FLAGS = $(filter-out -flto, $(FLAGS))
+ SOFLAGS = $(filter-out -flto, $(SOFLAGS))
  FLAGS += -g
  SOFLAGS += -g
 endif
