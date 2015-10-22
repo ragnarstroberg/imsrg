@@ -597,7 +597,7 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
       auto& H_s = FlowingOps[0];
       f.setf(ios::fixed);
       f << setw(5) << istep
-        << setw(fwidth) << setprecision(3) << s
+        << setw(10) << setprecision(3) << s
         << setw(fwidth) << setprecision(fprecision) << H_s.ZeroBody 
         << setw(fwidth) << setprecision(fprecision) << H_s.OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << H_s.TwoBodyNorm()
@@ -607,8 +607,10 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << Eta.TwoBodyNorm()
         << setw(7)      << setprecision(0)          << profiler.counter["N_Commutators"]
         << setw(fwidth) << setprecision(fprecision) << H_s.GetMP2_Energy()
-        << setw(7)      << setprecision(0)         << profiler.counter["N_Operators"]
+        << setw(7)      << setprecision(0)          << profiler.counter["N_Operators"]
         << setprecision(fprecision)
+        << setw(14) << setprecision(3) << profiler.MaxMemUsage()/1024.
+        << setw(14) << setprecision(3) << profiler.GetTimes()["real"]
         << endl;
    }
 
@@ -628,7 +630,7 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
       int fprecision = 9;
       f.setf(ios::fixed);
       f << setw(5) << "i"
-        << setw(fwidth) << setprecision(3) << "s"
+        << setw(10) << setprecision(3) << "s"
         << setw(fwidth) << setprecision(fprecision) << "E0"
         << setw(fwidth) << setprecision(fprecision) << "||H_1||" 
         << setw(fwidth) << setprecision(fprecision) << "||H_2||" 
@@ -638,8 +640,11 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
         << setw(7)      << setprecision(fprecision) << "Ncomm" 
         << setw(16)     << setprecision(fprecision) << "E(MP2)" 
         << setw(7)      << setprecision(fprecision) << "N_Ops"
+        << setw(14) << setprecision(fprecision) << "Memory (MB)"
+        << setw(14) << setprecision(fprecision) << "Walltime (s)"
         << endl;
-      f << "---------------------------------------------------------------------------------------------------------------------------------------------" << endl;
+        for (int x=0;x<170;x++) f << "-";
+        f << endl;
    }
 
 }
