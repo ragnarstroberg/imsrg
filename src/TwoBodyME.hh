@@ -42,17 +42,17 @@ class TwoBodyME
   ~TwoBodyME();
   TwoBodyME();
   TwoBodyME(ModelSpace*);
-  TwoBodyME(const TwoBodyME&); 
+//  TwoBodyME(const TwoBodyME&); 
   TwoBodyME(TwoBodyME_ph&); // Transform a ph operator to pp.
   TwoBodyME(ModelSpace* ms, int rankJ, int rankT, int parity);
 
-  TwoBodyME& operator=(const TwoBodyME&);
-  TwoBodyME& operator=(TwoBodyME&&);
+//  TwoBodyME& operator=(const TwoBodyME&);
+//  TwoBodyME& operator=(TwoBodyME&&);
   TwoBodyME& operator*=(const double);
   TwoBodyME& operator+=(const TwoBodyME&);
   TwoBodyME& operator-=(const TwoBodyME&);
 
-  void Copy(const TwoBodyME&);
+//  void Copy(const TwoBodyME&);
   void Allocate();
   bool IsHermitian(){return hermitian;};
   bool IsAntiHermitian(){return antihermitian;};
