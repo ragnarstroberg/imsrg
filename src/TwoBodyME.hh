@@ -49,7 +49,7 @@ class TwoBodyME
   TwoBodyME& operator+=(const TwoBodyME&);
   TwoBodyME& operator-=(const TwoBodyME&);
 
-  void Copy(const TwoBodyME&);
+//  void Copy(const TwoBodyME&);
   void Allocate();
   bool IsHermitian(){return hermitian;};
   bool IsAntiHermitian(){return antihermitian;};
