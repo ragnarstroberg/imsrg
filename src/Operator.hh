@@ -14,9 +14,6 @@
 
 using namespace std;
 
-//typedef uint64_t orbindx3_t;
-
-///
 /// The Operator class provides a generic operator up to three-body, scalar or tensor.
 /// The class contains lots of methods and overloaded operators so that the resulting
 /// code that uses the operators can look as close as possible to the math that is
@@ -25,7 +22,7 @@ class Operator
 {
  public:
   //Fields
-  ModelSpace * modelspace;
+  ModelSpace * modelspace; ///< Pointer to the associated modelspace
   double ZeroBody; ///< The zero body piece of the operator.
   arma::mat OneBody; ///< The one body piece of the operator, stored in a single NxN armadillo matrix, where N is the number of single-particle orbits.
   TwoBodyME TwoBody; ///< The two body piece of the operator.
@@ -42,15 +39,14 @@ class Operator
   bool hermitian;
   bool antihermitian;
   int nChannels; ///< Number of two-body channels \f$ J,\pi,T_z \f$ associated with the model space
-  static double bch_transform_threshold;
-  static double bch_product_threshold;
 
-//  static Operator Temp; ///< Scratch space for calculations
-//  Operator& Temp(); ///< Scratch space for calculations
   Operator& TempOp(size_t n); ///< Scratch space for calculations
 
   map<array<int,3>,vector<index_t> > OneBodyChannels;
   IMSRGProfiler profiler;
+
+  static double bch_transform_threshold;
+  static double bch_product_threshold;
 
 
 
@@ -77,7 +73,6 @@ class Operator
   Operator& operator=(Operator&& rhs);
 
   //Methods
-//  void Copy(const Operator& rhs);
 
   // One body setter/getters
   double GetOneBody(int i,int j) {return OneBody(i,j);};
@@ -93,10 +88,10 @@ class Operator
   void SetModelSpace(ModelSpace &ms){modelspace = &ms;};
 
   void Erase(); ///< Set all matrix elements to zero.
-  void EraseZeroBody(){ZeroBody = 0;}; // set zero-body term to zero
-  void EraseOneBody(); // set all one-body terms to zero
-  void EraseTwoBody(); // set all two-body terms to zero
-  void EraseThreeBody(); // set all two-body terms to zero
+  void EraseZeroBody(){ZeroBody = 0;}; ///< set zero-body term to zero
+  void EraseOneBody(); ///< set all one-body terms to zero
+  void EraseTwoBody(); ///< set all two-body terms to zero
+  void EraseThreeBody(); ///< set all two-body terms to zero
 
   void SetHermitian() ;
   void SetAntiHermitian() ;
@@ -153,15 +148,11 @@ class Operator
   void PrintTwoBody(int ch) const {TwoBody.PrintMatrix(ch,ch);};
 
 
-  //Methods
-
   static void Set_BCH_Transform_Threshold(double x){bch_transform_threshold=x;};
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
   deque<arma::mat> InitializePandya(size_t nch, string orientation);
-//  void DoPandyaTransformation(vector<arma::mat>&, vector<arma::mat>&) const ;
   void DoPandyaTransformation(deque<arma::mat>&, deque<arma::mat>&, string orientation) const ;
-//  void AddInversePandyaTransformation(vector<arma::mat>&);
   void AddInversePandyaTransformation(deque<arma::mat>&);
 
 
