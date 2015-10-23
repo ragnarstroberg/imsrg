@@ -14,26 +14,20 @@ IMSRGSolver::~IMSRGSolver()
 IMSRGSolver::IMSRGSolver()
     : s(0),ds(0.1),ds_max(0.5),
      norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
-#ifndef NO_ODE
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
-#endif
 {}
 
 // Constructor
 IMSRGSolver::IMSRGSolver( Operator &H_in)
-   : modelspace(H_in.GetModelSpace()),H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), // ,dOmega(H_in)
+   : modelspace(H_in.GetModelSpace()),H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), 
     istep(0), s(0),ds(0.1),ds_max(0.5),
     smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
-#ifndef NO_ODE
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
-#endif
 {
    Eta.Erase();
    Eta.SetAntiHermitian();
 //   Omega.push_back( Eta);
    Omega.emplace_back( Eta);
-//   Omega.Erase();
-//   Omega.SetAntiHermitian();
 }
 
 void IMSRGSolver::SetHin( Operator & H_in)
@@ -49,8 +43,7 @@ void IMSRGSolver::SetHin( Operator & H_in)
    {
      Omega.emplace_back(Eta);
 //     Omega.push_back(Eta);
-//        H_saved = H_s;
-        H_saved = FlowingOps[0];
+     H_saved = FlowingOps[0];
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
          << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
          << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
@@ -62,14 +55,13 @@ void IMSRGSolver::Reset()
 {
    s=0;
    Eta.Erase();
-//   Omega.Erase();
    Omega.resize(0);
 //   Omega.push_back(Eta);
    Omega.emplace_back(Eta);
-    cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
-         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
-         << endl;
+   cout << "pushing back another Omega. Omega.size = " << Omega.size()
+        << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
+        << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+        << endl;
 }
 
 void IMSRGSolver::SetGenerator(string g)
@@ -80,7 +72,6 @@ void IMSRGSolver::SetGenerator(string g)
     Eta.Erase();
 //    Omega.push_back(Eta);
     Omega.emplace_back(Eta);
-//        H_saved = H_s;
         H_saved = FlowingOps[0];
 
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
@@ -119,10 +110,6 @@ void IMSRGSolver::Solve()
   {
 //    FlowingOps.push_back( Operator( *(FlowingOps[0].GetModelSpace()), 0,0,0,1));
     FlowingOps.emplace_back( Operator( *(FlowingOps[0].GetModelSpace()), 0,0,0,1));
-//    cout << "Checking modelspace" << endl;
-//    cout << "norbits = " << FlowingOps.back().GetModelSpace()->GetNumberOrbits() << endl;
-//    cout << "norbits = " << FlowingOps[1].GetModelSpace()->GetNumberOrbits() << endl;
-//    cout << "Particle rank = " << FlowingOps[1].GetParticleRank() << endl;
     Solve_ode_adaptive();
   }
   else
@@ -153,7 +140,6 @@ void IMSRGSolver::Solve_magnus_euler()
       if (norm_omega > omega_norm_max)
       {
         H_saved = FlowingOps[0];
-//        Omega.push_back(Eta);
         Omega.emplace_back(Eta);
         Omega.back().Erase();
         norm_omega = 0;
@@ -163,9 +149,7 @@ void IMSRGSolver::Solve_magnus_euler()
          << endl;
       }
       // ds should never be more than 1, as this is over-rotating
-      //ds = min(norm_domega / norm_eta / (norm_omega+1.0e-9), ds_max); 
       ds = min(min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), ds_max); 
-//      if (ds == ds_max) norm_domega /=2;
       if (s+ds > smax) ds = smax-s;
       s += ds;
       Eta *= ds; // Here's the Euler step.
@@ -198,7 +182,6 @@ void IMSRGSolver::Solve_magnus_euler()
 void IMSRGSolver::Solve_magnus_modified_euler()
 {
    istep = 0;
-//   generator.Update(&H_s,&Eta);
    generator.Update(&FlowingOps[0],&Eta);
 
    Operator H_temp;
@@ -213,7 +196,6 @@ void IMSRGSolver::Solve_magnus_modified_euler()
       if (norm_omega > omega_norm_max)
       {
         H_saved = FlowingOps[0];
-//        Omega.push_back(Eta);
         Omega.emplace_back(Eta);
         Omega.back().Erase();
         norm_omega = 0;

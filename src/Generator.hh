@@ -13,7 +13,7 @@ class Generator
   string generator_type;
   Operator * H;
   Operator * Eta;
-  ModelSpace * modelspace;
+  ModelSpace* modelspace;
   double denominator_cutoff;
   double denominator_delta;
   int denominator_delta_index;

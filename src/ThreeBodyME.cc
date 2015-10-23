@@ -8,8 +8,6 @@ ThreeBodyME::~ThreeBodyME()
 ThreeBodyME::ThreeBodyME()
 : modelspace(NULL),E3max(0),total_dimension(0)
 {
-//   cout << "Default ThreeBodyME constructor" << endl;
-// MatEl.resize(0);
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
@@ -28,7 +26,6 @@ void ThreeBodyME::Allocate()
   cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
   int norbits = modelspace->GetNumberOrbits();
   int nvectors = 0;
-//  int total_dimension = 0;
   int lmax = 500*norbits; // maybe do something with this later...
 
   for (int a=0; a<norbits; a+=2)
@@ -81,7 +78,6 @@ void ThreeBodyME::Allocate()
              int Jde_min = abs(od.j2-oe.j2)/2;
              int Jde_max = (od.j2+oe.j2)/2;
 
-//             int dim = 0;
              for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
              {
               for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
@@ -95,8 +91,6 @@ void ThreeBodyME::Allocate()
                 } //J2
               } //Jde
              } //Jab
-//             total_dimension += dim;
-//             vecf.push_back( vector<ThreeBME_type>(dim,0.0) );
              ++nvectors;
 
            } //f

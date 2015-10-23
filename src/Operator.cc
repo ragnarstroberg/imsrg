@@ -22,15 +22,7 @@ using namespace std;
 //double  Operator::bch_transform_threshold = 1e-6;
 double  Operator::bch_transform_threshold = 1e-9;
 double  Operator::bch_product_threshold = 1e-4;
-//Operator Operator::Temp = Operator();
-//Operator Operator::Temp = Operator();
-//map<string, double> Operator::timer;
 
-//Operator& Operator::Temp()
-//{
-//  static Operator* tmp = new Operator();
-//  return *tmp;
-//}
 
 Operator& Operator::TempOp(size_t n)
 {
@@ -40,11 +32,9 @@ Operator& Operator::TempOp(size_t n)
 }
 
 
-
+//////////////////// DESTRUCTOR //////////////////////////////////////////
 Operator::~Operator()
 {
-//   cout << "calling Operator destructor" << endl;
-//  timer["N_Operators"] --;
   profiler.counter["N_Operators"] --;
 }
 
@@ -54,7 +44,6 @@ Operator::Operator()
     rank_J(0), rank_T(0), parity(0), particle_rank(2),
     hermitian(true), antihermitian(false), nChannels(0)
 {
-//  timer["N_Operators"] ++;
   profiler.counter["N_Operators"] ++;
 }
 
@@ -70,7 +59,6 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 {
   SetUpOneBodyChannels();
   if (particle_rank >=3) ThreeBody.Allocate();
-//  timer["N_Operators"] ++;
   profiler.counter["N_Operators"] ++;
 }
 
@@ -83,7 +71,6 @@ Operator::Operator(ModelSpace& ms) :
     nChannels(ms.GetNumberTwoBodyChannels())
 {
   SetUpOneBodyChannels();
-//  timer["N_Operators"] ++;
   profiler.counter["N_Operators"] ++;
 }
 
@@ -95,8 +82,6 @@ Operator::Operator(const Operator& op)
   hermitian(op.hermitian), antihermitian(op.antihermitian),
   nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
 {
-//   cout << "Calling copy constructor for Operator" << endl;
-//  timer["N_Operators"] ++;
   profiler.counter["N_Operators"] ++;
 }
 
@@ -108,59 +93,13 @@ Operator::Operator(Operator&& op)
   hermitian(op.hermitian), antihermitian(op.antihermitian),
   nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
 {
-//   cout << "Calling move constructor for Operator" << endl;
-//  timer["N_Operators"] ++;
   profiler.counter["N_Operators"] ++;
 }
 
-/////////// COPY METHOD //////////////////////////
-//void Operator::Copy(const Operator& op)
-//{
-//   modelspace    = op.modelspace;
-//   nChannels     = op.nChannels;
-//   hermitian     = op.hermitian;
-//   antihermitian = op.antihermitian;
-//   rank_J        = op.rank_J;
-//   rank_T        = op.rank_T;
-//   parity        = op.parity;
-//   particle_rank = op.particle_rank;
-//   E2max         = op.E2max;
-//   E3max         = op.E3max;
-//   ZeroBody      = op.ZeroBody;
-//   OneBody       = op.OneBody;
-//   TwoBody       = op.TwoBody;
-//   ThreeBody     = op.ThreeBody;
-//   OneBodyChannels = op.OneBodyChannels;
-//}
+
 
 /////////////// OVERLOADED OPERATORS =,+,-,*,etc ////////////////////
-//Operator& Operator::operator=(const Operator& rhs)
-//{
-//   cout << "Using copy assignment" << endl;
-//   Copy(rhs);
-//   return *this;
-//}
-//
-//Operator& Operator::operator=(Operator&& rhs)
-//{
-//   cout << "Using move assignment" << endl;
-//   modelspace    = rhs.modelspace;
-//   nChannels     = rhs.nChannels;
-//   hermitian     = rhs.hermitian;
-//   antihermitian = rhs.antihermitian;
-//   rank_J        = rhs.rank_J;
-//   rank_T        = rhs.rank_T;
-//   parity        = rhs.parity;
-//   particle_rank = rhs.particle_rank;
-//   E2max         = rhs.E2max;
-//   E3max         = rhs.E3max;
-//   ZeroBody      = rhs.ZeroBody;
-//   OneBody       = move(rhs.OneBody);
-//   TwoBody       = move(rhs.TwoBody);
-//   ThreeBody     = move(rhs.ThreeBody);
-//   OneBodyChannels = move(rhs.OneBodyChannels);
-//   return *this;
-//}
+
 Operator& Operator::operator=(const Operator& rhs) = default;
 Operator& Operator::operator=(Operator&& rhs) = default;
 
@@ -238,6 +177,7 @@ Operator Operator::operator-(const Operator& rhs) const
    return ( Operator(*this) -= rhs );
 }
 
+// Negation operator
 Operator Operator::operator-() const
 {
    return (*this)*-1.0;
@@ -245,23 +185,11 @@ Operator Operator::operator-() const
 
 
 
-//void Operator::PrintTimes()
-//{
-//   cout << "====================== TIMES =======================" << endl;
-//   cout.setf(ios::fixed);
-//   for ( auto it : timer )
-//   {
-//     cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(5) << std::right << it.second  << endl;
-//   }
-//}
-
-
 void Operator::SetUpOneBodyChannels()
 {
   for ( int i=0; i<modelspace->GetNumberOrbits(); ++i )
   {
     Orbit& oi = modelspace->GetOrbit(i);
-//    int lmin = max( oi.l - rank_J - parity, (oi.l+parity)%2);
     int lmin = max( oi.l - rank_J + (rank_J+parity)%2, (oi.l+parity)%2);
     int lmax = min( oi.l + rank_J, modelspace->Nmax);
     for (int l=lmin; l<=lmax; l+=2)
@@ -295,13 +223,9 @@ size_t Operator::Size()
 Operator Operator::DoNormalOrdering()
 {
    if (particle_rank==3)
-   {
       return DoNormalOrdering3();
-   }
    else
-   {
       return DoNormalOrdering2();
-   }
 }
 
 //*************************************************************
@@ -311,7 +235,6 @@ Operator Operator::DoNormalOrdering()
 //*************************************************************
 Operator Operator::DoNormalOrdering2()
 {
-//   Operator opNO = *this;
    Operator opNO(*this);
 
    if (opNO.rank_J==0 and opNO.rank_T==0 and opNO.parity==0)
@@ -439,7 +362,7 @@ Operator Operator::DoNormalOrdering3()
 
 }
 
-
+/// Convert to a basis normal ordered wrt the vacuum.
 Operator Operator::UndoNormalOrdering()
 {
    Operator opNO = *this;
@@ -447,9 +370,7 @@ Operator Operator::UndoNormalOrdering()
 
    for (auto& k : modelspace->holes) // loop over hole orbits
    {
-//      cout << "*** " << opNO.ZeroBody << endl;
       opNO.ZeroBody -= (modelspace->GetOrbit(k).j2+1) * OneBody(k,k);
-//      cout << "k = " << k << "  0body = " << opNO.ZeroBody << endl;
    }
 
    index_t norbits = modelspace->GetNumberOrbits();
@@ -467,7 +388,6 @@ Operator Operator::UndoNormalOrdering()
       arma::vec diagonals = matrix.diag();
       auto hh = tbc_ket.GetKetIndex_hh();
       opNO.ZeroBody += arma::sum( diagonals.elem(hh) ) * (2*J_ket+1);
-//      cout << "ch_bra = " << ch_bra << "  0body = " << opNO.ZeroBody << endl;
 
       // One body part
       for (index_t a=0;a<norbits;++a)
@@ -521,7 +441,6 @@ void Operator::EraseTwoBody()
 
 void Operator::EraseThreeBody()
 {
-//  ThreeBody.Deallocate();
   ThreeBody = ThreeBodyME();
 }
 
@@ -662,7 +581,6 @@ double Operator::GetMP2_Energy()
        }
      }
    }
-//   timer["GetMP2_Energy"] += omp_get_wtime() - t_start;
    profiler.timer["GetMP2_Energy"] += omp_get_wtime() - t_start;
    return Emp2;
 }
@@ -680,7 +598,7 @@ double Operator::GetMP2_Energy()
 /// \sqrt{n_{a}(n_{a}+\ell_a + \frac{1}{2})} &: n_a=n_b+1\\
 /// \end{array} \right. \f]
 //***********************************************
-void Operator::CalculateKineticEnergy()
+[[deprecated]] void Operator::CalculateKineticEnergy()
 {
    OneBody.zeros();
    int norbits = modelspace->GetNumberOrbits();
@@ -714,7 +632,6 @@ void Operator::CalculateKineticEnergy()
 /// with all commutators truncated at the two-body level.
 Operator Operator::BCH_Transform( const Operator &Omega)
 {
-//   return *this; // THIS NEEDS TO BE REMOVED!!!!
    double t_start = omp_get_wtime();
    int max_iter = 40;
    int warn_iter = 12;
