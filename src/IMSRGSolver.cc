@@ -609,8 +609,8 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << H_s.GetMP2_Energy()
         << setw(7)      << setprecision(0)          << profiler.counter["N_Operators"]
         << setprecision(fprecision)
-        << setw(14) << setprecision(3) << profiler.MaxMemUsage()/1024.
-        << setw(14) << setprecision(3) << profiler.GetTimes()["real"]
+        << setw(12) << setprecision(3) << profiler.GetTimes()["real"]
+        << setw(12) << setprecision(3) << profiler.CheckMem()["RSS"]/1024. << " / " << skipws << profiler.MaxMemUsage()/1024. << fixed
         << endl;
    }
 
@@ -640,10 +640,10 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
         << setw(7)      << setprecision(fprecision) << "Ncomm" 
         << setw(16)     << setprecision(fprecision) << "E(MP2)" 
         << setw(7)      << setprecision(fprecision) << "N_Ops"
-        << setw(14) << setprecision(fprecision) << "Memory (MB)"
-        << setw(14) << setprecision(fprecision) << "Walltime (s)"
+        << setw(16) << setprecision(fprecision) << "Walltime (s)"
+        << setw(19) << setprecision(fprecision) << "Memory (MB)"
         << endl;
-        for (int x=0;x<170;x++) f << "-";
+        for (int x=0;x<175;x++) f << "-";
         f << endl;
    }
 
