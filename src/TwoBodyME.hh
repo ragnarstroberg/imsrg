@@ -2,6 +2,7 @@
 #ifndef TwoBodyME_h
 #define TwoBodyME_h 1
 
+#include <memory>
 #include "ModelSpace.hh"
 class TwoBodyME_ph;
 
@@ -29,7 +30,7 @@ class TwoBodyME_ph;
 class TwoBodyME
 {
  public:
-  ModelSpace * modelspace;
+  ModelSpace*  modelspace;
   map<array<int,2>,arma::mat> MatEl;
   int nChannels;
   bool hermitian;
@@ -41,23 +42,18 @@ class TwoBodyME
   ~TwoBodyME();
   TwoBodyME();
   TwoBodyME(ModelSpace*);
-  TwoBodyME(const TwoBodyME&); 
   TwoBodyME(TwoBodyME_ph&); // Transform a ph operator to pp.
   TwoBodyME(ModelSpace* ms, int rankJ, int rankT, int parity);
 
-  TwoBodyME& operator=(const TwoBodyME&);
   TwoBodyME& operator*=(const double);
   TwoBodyME& operator+=(const TwoBodyME&);
   TwoBodyME& operator-=(const TwoBodyME&);
 
-  void Copy(const TwoBodyME&);
+//  void Copy(const TwoBodyME&);
   void Allocate();
   bool IsHermitian(){return hermitian;};
   bool IsAntiHermitian(){return antihermitian;};
   bool IsNonHermitian(){return not (hermitian or antihermitian);};
-//  void SetHermitian() {hermitian=true;antihermitian=false;};
-//  void SetAntiHermitian() {antihermitian=true;hermitian=false;};
-//  void SetNonHermitian() {antihermitian=false;hermitian=false;};
   void SetHermitian();
   void SetAntiHermitian();
   void SetNonHermitian();
@@ -136,15 +132,7 @@ class TwoBodyME
 
 };
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-class TwoBodyME_ph : public TwoBodyME
-{
-  TwoBodyME_ph( TwoBodyME& ); // transform a pp operator to a ph basis
-  void DoPandyaTransformation(TwoBodyME&, string);
-  void Allocate();
-};
 
 
 #endif

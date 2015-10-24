@@ -364,6 +364,7 @@ arma_acos(const std::complex<T>& x)
     }
   #else
     {
+    arma_ignore(x);
     arma_stop("acos(): need C++11 compiler");
     
     return std::complex<T>(0);
@@ -388,6 +389,7 @@ arma_asin(const std::complex<T>& x)
     }
   #else
     {
+    arma_ignore(x);
     arma_stop("asin(): need C++11 compiler");
     
     return std::complex<T>(0);
@@ -412,6 +414,7 @@ arma_atan(const std::complex<T>& x)
     }
   #else
     {
+    arma_ignore(x);
     arma_stop("atan(): need C++11 compiler");
     
     return std::complex<T>(0);
@@ -443,7 +446,7 @@ arma_acosh(const eT x)
       }
     else
       {
-      if(std::numeric_limits<eT>::has_quiet_NaN == true)
+      if(std::numeric_limits<eT>::has_quiet_NaN)
         {
         return -(std::numeric_limits<eT>::quiet_NaN());
         }
@@ -503,7 +506,7 @@ arma_atanh(const eT x)
       }
     else
       {
-      if(std::numeric_limits<eT>::has_quiet_NaN == true)
+      if(std::numeric_limits<eT>::has_quiet_NaN)
         {
         return -(std::numeric_limits<eT>::quiet_NaN());
         }
@@ -533,6 +536,7 @@ arma_acosh(const std::complex<T>& x)
     }
   #else
     {
+    arma_ignore(x);
     arma_stop("acosh(): need C++11 compiler");
     
     return std::complex<T>(0);
@@ -557,6 +561,7 @@ arma_asinh(const std::complex<T>& x)
     }
   #else
     {
+    arma_ignore(x);
     arma_stop("asinh(): need C++11 compiler");
     
     return std::complex<T>(0);
@@ -581,6 +586,7 @@ arma_atanh(const std::complex<T>& x)
     }
   #else
     {
+    arma_ignore(x);
     arma_stop("atanh(): need C++11 compiler");
     
     return std::complex<T>(0);

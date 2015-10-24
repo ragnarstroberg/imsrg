@@ -8,7 +8,7 @@
 #include <iomanip>
 #include <map>
 
-/// Profiling class with a global instance called profiler.
+/// Profiling class with all static data members.
 /// This is for keeping track of timing and memory usage, etc.
 /// IMSRGProfiler methods should probably not be called inside parallel blocks.
 

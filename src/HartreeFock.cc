@@ -31,8 +31,6 @@ HartreeFock::HartreeFock(Operator& hbare)
        Vmon_exch[Tz+1][parity] = arma::mat(nKetsMon,nKetsMon);
      }
    }
-//   Vmon          = arma::mat(nKets,nKets);
-//   Vmon_exch     = arma::mat(nKets,nKets);
    prev_energies = arma::vec(norbits,arma::fill::zeros);
    holeorbs = arma::uvec(modelspace->holes);
    BuildMonopoleV();
@@ -341,14 +339,10 @@ void HartreeFock::UpdateF()
                int ket = modelspace->GetKetIndex(min(j,b),max(j,b));
                int local_ket = modelspace->MonopoleKets[Tz+1][parity][ket];
                // 2body term <ai|V|bj>
-               if ((a>i) xor (b>j))
+               if ((a>i) xor (b>j))  // code needed some obfuscation, so threw an xor in there...
                   Vij(i,j) += rho(a,b)*Vmon_exch[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|bj>
                else
                   Vij(i,j) += rho(a,b)*Vmon[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|bj>
-//               if ((a>i) xor (b>j))
-//                  Vij(i,j) += rho(a,b)*Vmon_exch(min(bra,ket),max(bra,ket)); // <a|rho|b> * <ai|Vmon|bj>
-//               else
-//                  Vij(i,j) += rho(a,b)*Vmon(min(bra,ket),max(bra,ket)); // <a|rho|b> * <ai|Vmon|bj>
            }
          }
       }
@@ -421,10 +415,7 @@ bool HartreeFock::CheckConvergence()
 //**********************************************************************
 void HartreeFock::ReorderCoefficients()
 {
-//   int norbits = modelspace->GetNumberOrbits();
-
-   int nswaps = 10;
-
+   int nswaps = 10; // keep track of the number of swaps we had to do, iterate until nswaps==0
    // first, reorder them so we still know the quantum numbers
    while (nswaps>0) // loop until we don't have to make any more swaps
    {
@@ -443,7 +434,7 @@ void HartreeFock::ReorderCoefficients()
         }
      }
    }
-   // Make sure the diagonal terms are positive (to avoid confusion).
+   // Make sure the diagonal terms are positive (to avoid confusion later).
    for (index_t i=0;i<C.n_rows;++i) // loop through original basis states
    {
       if (C(i,i) < 0)  C.col(i) *= -1;
@@ -466,24 +457,21 @@ void HartreeFock::ReorderCoefficients()
 ///      \left( C_{a\alpha} C_{b\beta} -(1-\delta_{ab})(-1)^{j_a+j_b-J} C_{b\alpha}C_{a\beta}\right) \f]
 ///
 //**************************************************************************
-Operator HartreeFock::TransformToHFBasis( Operator OpHF)
+Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
 {
-//   Operator& OpHF = OpIn;
-//   OpHF.Erase();
 
-   cout << "Transform one body" << endl;
+   Operator OpHF(OpHO);
    // Easy part:
    //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>
    // where |i> is the original basis and |a> is the HF basis
-   OpHF.OneBody = C.t() * OpHF.OneBody * C;
+   OpHF.OneBody = C.t() * OpHO.OneBody * C;
 
 
-   cout << "Transform two body" << endl;
    // Moderately difficult part:
    // Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
    // for each channel J,p,Tz. Most of the effort here is in constructing D.
 
-   for ( auto& it : OpHF.TwoBody.MatEl )
+   for ( auto& it : OpHO.TwoBody.MatEl )
    {
       int ch_bra = it.first[0];
       int ch_ket = it.first[1];
@@ -541,18 +529,17 @@ Operator HartreeFock::TransformToHFBasis( Operator OpHF)
    }
 
    return OpHF;
-//   return OpIn;
 }
 
 
-/// Returns the normal-ordered Hamiltonian in the Hartree-Fock basis
+/// Returns the normal-ordered Hamiltonian in the Hartree-Fock basis, neglecting the residual 3-body piece.
 /// \f[ E_0 = E_{HF} \f]
 /// \f[ f = C^{\dagger} F C \f]
 /// \f[ \Gamma = D^{\dagger} \left(V^{(2)}+V^{(3\rightarrow 2)} \right) D \f]
 /// \f[ V^{(2\rightarrow 3)J}_{ijkl} \equiv \frac{1}{\sqrt{(1+\delta_{ij})(1+\delta_{kl})}}\sum_{ab}\sum_{J_3}(2J_{3}+1)\rho_{ab}V^{JJJ_{3}}_{ijaklb} \f]
 /// Where \f$ F\f$ is the Fock matrix obtained in UpdateF() and the matrix \f$ D\f$ is the same as the one defined in TransformToHFBasis().
 ///
-Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by either passing a reference or returning an rvalue
+Operator HartreeFock::GetNormalOrderedH() 
 {
    double start_time = omp_get_wtime();
    cout << "Getting normal-ordered H in HF basis" << endl;
@@ -608,8 +595,8 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
               }
             }
             V3NO(i,j) /= (2*J+1);
-            if (bra.p==bra.q)  V3NO(i,j) /= SQRT2; // maybe ?
-            if (ket.p==ket.q)  V3NO(i,j) /= SQRT2; // maybe ?
+            if (bra.p==bra.q)  V3NO(i,j) /= SQRT2; 
+            if (ket.p==ket.q)  V3NO(i,j) /= SQRT2; 
             V3NO(j,i) = V3NO(i,j);
          }
       }
@@ -618,12 +605,7 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
    }
-
-//   cout << "Before Erasing Three Body:" << endl;
-//   profiler.PrintMemory();
-//   Hbare.EraseThreeBody();
-//   cout << "After Erasing Three Body:" << endl;
-//   profiler.PrintMemory();
+   
    FreeVmon();
 
    profiler.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;
@@ -632,29 +614,13 @@ Operator HartreeFock::GetNormalOrderedH()  // TODO: Avoid an extra copy by eithe
 
 }
 
+
 void HartreeFock::FreeVmon()
 {
-   cout << "Before FreeVmon" << endl;
-   profiler.PrintMemory();
    // free up some memory
-    array< array< arma::mat,2>,3>().swap(Vmon);
-    array< array< arma::mat,2>,3>().swap(Vmon_exch);
-//   for (int Tz=-1;Tz<=1;++Tz)
-//   {
-//     for (int parity=0; parity<=1; ++parity)
-//     {
-//       arma::mat().swap(Vmon[Tz+1][parity]);
-//       arma::mat().swap(Vmon_exch[Tz+1][parity]);
-////       Vmon[Tz+1][parity].clear();
-////       Vmon_exch[Tz+1][parity].clear();
-//     }
-//   }
-
-
-//   Vmon3.clear();
+   array< array< arma::mat,2>,3>().swap(Vmon);
+   array< array< arma::mat,2>,3>().swap(Vmon_exch);
    vector< pair<const array<int,6>,double>>().swap( Vmon3 );
-   cout << "After FreeVmon" << endl;
-   profiler.PrintMemory();
 }
 
 
@@ -662,6 +628,7 @@ void HartreeFock::FreeVmon()
 /// Since the unitary transformation for HF is given by the \f$ U_{HF} = C^{\dagger} \f$ matrix, we have
 /// \f$ e^{-\Omega} = C \Rightarrow \Omega = -\log(C) \f$.
 /// The log is evaluated by diagonalizing the one-body submatrix and taking the log of the diagonal entries.
+/// This is much slower than the other methods, but it might be useful.
 Operator HartreeFock::GetOmega()
 {
    Operator Omega(*modelspace,0,0,0,1);

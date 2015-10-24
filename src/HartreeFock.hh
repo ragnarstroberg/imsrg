@@ -17,8 +17,6 @@ class HartreeFock
    arma::mat Vij;           ///< 1 body piece of 2 body potential
    arma::mat V3ij;          ///< 1 body piece of 3 body potential
    arma::mat F;             ///< Fock matrix
-//   arma::mat Vmon;          ///< Monopole 2-body interaction
-//   arma::mat Vmon_exch;     ///< Monopole 2-body interaction
    array< array< arma::mat,2>,3> Vmon;          ///< Monopole 2-body interaction
    array< array< arma::mat,2>,3> Vmon_exch;          ///< Monopole 2-body interaction
    arma::uvec holeorbs;     ///< list of hole orbits for generating density matrix
@@ -27,7 +25,6 @@ class HartreeFock
    double tolerance;        ///< tolerance for convergence
    double EHF;              ///< Hartree-Fock energy (Normal-ordered 0-body term)
    int iterations;          ///< iterations used in Solve()
-//   map< array<int,6>, double> Vmon3; // Monopole 3-body interaction
    vector< pair<const array<int,6>,double>> Vmon3;
    IMSRGProfiler profiler;
    
@@ -41,8 +38,7 @@ class HartreeFock
    void Solve();
    void CalcEHF();
    void ReorderCoefficients();
-//   Operator TransformToHFBasis( Operator& OpIn);
-   Operator TransformToHFBasis( Operator OpIn);
+   Operator TransformToHFBasis( Operator& OpIn);
    Operator GetNormalOrderedH();
    Operator GetOmega();
 
