@@ -633,6 +633,7 @@ double Operator::GetMP2_Energy()
 Operator Operator::BCH_Transform( const Operator &Omega)
 {
    double t_start = omp_get_wtime();
+   size_t m_start = profiler.MaxMemUsage();
    int max_iter = 40;
    int warn_iter = 12;
    double nx = Norm();
@@ -660,6 +661,9 @@ Operator Operator::BCH_Transform( const Operator &Omega)
         else if (i == max_iter)   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
      }
    }
+   m_start = profiler.MaxMemUsage() - m_start;
+   if (m_start > 0)
+     cout << "BCH_Transform: memory usage increased by " << m_start/1024. << " MB" << endl;
    profiler.timer["BCH_Transform"] += omp_get_wtime() - t_start;
    return OpOut;
 }
@@ -682,7 +686,7 @@ Operator Operator::BCH_Transform( const Operator &Omega)
 //*****************************************************************************************
 Operator Operator::BCH_Product(  Operator &Y)
 {
-//   return Y; // THIS NEEDS TO BE REMOVED!!!!
+   size_t m_start = profiler.MaxMemUsage();
    double tstart = omp_get_wtime();
    Operator& X = *this;
    double nx = X.Norm();
@@ -706,6 +710,10 @@ Operator Operator::BCH_Product(  Operator &Y)
    }
    Z += X;
    Z += Y;
+
+   m_start = profiler.MaxMemUsage() - m_start;
+   if (m_start > 0)
+     cout << "BCH_Product: memory usage increased by " << m_start/1024. << " MB" << endl;
    profiler.timer["BCH_Product"] += omp_get_wtime() - tstart;
    return Z;
 }
@@ -834,19 +842,15 @@ void Operator::SetToCommutator( const Operator& X, const Operator& Y)
 
 /// Commutator where \f$ X \f$ and \f$Y\f$ are scalar operators.
 /// Should be called through Commutator()
-//Operator Operator::CommutatorScalarScalar( Operator& opright) 
-//Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) 
 void Operator::CommutatorScalarScalar( const Operator& X, const Operator& Y) 
 {
+   size_t m_start = profiler.MaxMemUsage();
    Operator& Z = *this;
    Z = X.GetParticleRank()>Y.GetParticleRank() ? X : Y;
    Z.EraseZeroBody();
    Z.EraseOneBody();
    Z.EraseTwoBody();
 
-//   if ( (IsHermitian() and opright.IsHermitian()) or (IsAntiHermitian() and opright.IsAntiHermitian()) ) out.SetAntiHermitian();
-//   else if ( (IsHermitian() and opright.IsAntiHermitian()) or (IsAntiHermitian() and opright.IsHermitian()) ) out.SetHermitian();
-//   else out.SetNonHermitian();
    if ( (X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()) ) Z.SetAntiHermitian();
    else if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Z.SetHermitian();
    else Z.SetNonHermitian();
@@ -886,8 +890,10 @@ void Operator::CommutatorScalarScalar( const Operator& X, const Operator& Y)
    else if (Z.IsAntiHermitian() )
       Z.AntiSymmetrize();
 
+   m_start = profiler.MaxMemUsage() - m_start;
+   if (m_start > 0)
+     cout << " CommutatorScalarScalar: memory usage increased by " << m_start/1024. << " MB" << endl;
 
-//   return Z;
 }
 
 
@@ -1339,6 +1345,7 @@ void Operator::comm222_pp_hhss( const Operator& X, const Operator& Y )
 void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )  
 {
 
+   size_t m_start = profiler.MaxMemUsage();
 //   int herm = Z.IsHermitian() ? 1 : -1;
    Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
@@ -1421,6 +1428,9 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
          Z.OneBody(i,j) += cijJ /(oi.j2+1.0);
       } // for j
    } // for i
+   m_start = profiler.MaxMemUsage() - m_start;
+   if (m_start > 0)
+     cout << "  comm222_pphh: memory usage increased by " << m_start/1024. << " MB" << endl;
    profiler.timer["pphh One Body bit"] += omp_get_wtime() - t;
 }
 
@@ -1448,6 +1458,7 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
 void Operator::DoPandyaTransformation(deque<arma::mat>& TwoBody_CC_hp, deque<arma::mat>& TwoBody_CC_ph, string orientation="normal") const
 {
    // loop over cross-coupled channels
+   size_t m_start = profiler.MaxMemUsage();
    int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
    int herm = IsHermitian() ? 1 : -1;
    #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
@@ -1533,6 +1544,9 @@ void Operator::DoPandyaTransformation(deque<arma::mat>& TwoBody_CC_hp, deque<arm
          }
       }
    }
+   m_start = profiler.MaxMemUsage() - m_start;
+   if (m_start > 0)
+     cout << "    DoPandyaTransform: memory usage increased by " << m_start/1024. << " MB" << endl;
 }
 
 
@@ -1544,6 +1558,7 @@ void Operator::AddInversePandyaTransformation(deque<arma::mat>& Zbar)
     // Do the inverse Pandya transform
     // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
 //   for (int ch=0;ch<nChannels;++ch)
+   size_t m_start = profiler.MaxMemUsage();
    int n_nonzeroChannels = modelspace->SortedTwoBodyChannels.size();
    #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
    for (int ich = 0; ich < n_nonzeroChannels; ++ich)
@@ -1618,12 +1633,16 @@ void Operator::AddInversePandyaTransformation(deque<arma::mat>& Zbar)
          }
       }
    }
+   m_start = profiler.MaxMemUsage() - m_start;
+   if (m_start > 0)
+     cout << "    AddInversePandyaTransform: memory usage increased by " << m_start/1024. << " MB" << endl;
  
 }
 
 
 deque<arma::mat> Operator::InitializePandya(size_t nch, string orientation="normal")
 {
+   size_t m_start = profiler.MaxMemUsage();
    deque<arma::mat> X(nch);
    int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
    for (int ich=0; ich<n_nonzero; ++ich)
@@ -1638,8 +1657,33 @@ deque<arma::mat> Operator::InitializePandya(size_t nch, string orientation="norm
       else if (orientation=="transpose")
          X[ch_cc] = arma::mat(2*nKets_cc, nph_kets,   arma::fill::zeros);
    }
+   m_start = profiler.MaxMemUsage() - m_start;
+   if (m_start > 0)
+     cout << "    InitializePandya: memory usage increased by " << m_start/1024. << " MB" << endl;
    return X;
 }
+
+deque<arma::mat> Operator::InitializeZ_bar(size_t nch)
+{
+   size_t m_start = profiler.MaxMemUsage();
+   deque<arma::mat> X(nch);
+   int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
+   for (int ich=0; ich<n_nonzero; ++ich)
+   {
+      int ch_cc = modelspace->SortedTwoBodyChannels_CC[ich];
+      TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
+      int nKets_cc = tbc_cc.GetNumberKets();
+//      X[ch_cc] =x;
+      X[ch_cc] = arma::mat(2*nKets_cc,   2*nKets_cc, arma::fill::zeros);
+   }
+   m_start = profiler.MaxMemUsage() - m_start;
+   if (m_start > 0)
+     cout << "    InitializeZ_bar: memory usage increased by " << m_start/1024. << " MB" << endl;
+   return X;
+}
+
+
+
 
 //*****************************************************************************************
 //
@@ -1708,21 +1752,28 @@ deque<arma::mat> Operator::InitializePandya(size_t nch, string orientation="norm
 void Operator::comm222_phss( const Operator& X, const Operator& Y ) 
 {
 
+//
+// NOTE: Right now, it appears that memory is being allocated in this method
+// but it's not clear where it's being allocated. Track this down.
+//
+
+   size_t m_start = profiler.MaxMemUsage();
+   size_t m_start2 = m_start;
    Operator& Z = *this;
    // Create Pandya-transformed hp and ph matrix elements
-//   vector<arma::mat> X_bar_hp (nChannels );
-//   vector<arma::mat> X_bar_ph (nChannels );
-//   vector<arma::mat> Y_bar_hp (nChannels );
-//   vector<arma::mat> Y_bar_ph (nChannels );
-   deque<arma::mat> X_bar_hp (InitializePandya( nChannels, "transpose"));
-   deque<arma::mat> X_bar_ph (InitializePandya( nChannels, "transpose"));
-   deque<arma::mat> Y_bar_hp (InitializePandya( nChannels, "normal"));
-   deque<arma::mat> Y_bar_ph (InitializePandya( nChannels, "normal"));
+   static deque<arma::mat> X_bar_hp (InitializePandya( nChannels, "transpose"));
+   static deque<arma::mat> X_bar_ph (InitializePandya( nChannels, "transpose"));
+   static deque<arma::mat> Y_bar_hp (InitializePandya( nChannels, "normal"));
+   static deque<arma::mat> Y_bar_ph (InitializePandya( nChannels, "normal"));
 //   static vector<arma::mat> X_bar_hp = InitializePandya( nChannels, "transpose");
 //   static vector<arma::mat> X_bar_ph = InitializePandya( nChannels, "transpose");
 //   static vector<arma::mat> Y_bar_hp = InitializePandya( nChannels, "normal");
 //   static vector<arma::mat> Y_bar_ph = InitializePandya( nChannels, "normal");
 
+   size_t m_start3 = profiler.MaxMemUsage();
+   if (m_start3 > m_start2)
+     cout << "      allocating X_bar_hp etc: memory increased by " << (m_start3-m_start2)/1024. << " MB" << endl;
+   m_start2 = m_start3;
    double t = omp_get_wtime();
 //   X.DoPandyaTransformation(X_bar_hp, X_bar_ph );
 //   X.DoPandyaTransformation_Trans(X_bar_hp, X_bar_ph );
@@ -1731,35 +1782,71 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    Y.DoPandyaTransformation(Y_bar_hp, Y_bar_ph, "normal" );
    profiler.timer["DoPandyaTransformation"] += omp_get_wtime() - t;
 
+   m_start3 = profiler.MaxMemUsage();
+   if (m_start3 > m_start2)
+     cout << "      DoPandyaTransformation : memory increased by " << (m_start3-m_start2)/1024. << " MB" << endl;
+   m_start2 = m_start3;
+
    // Construct the intermediate matrix Z_bar
    t = omp_get_wtime();
 //   vector<arma::mat> Z_bar (nChannels );
-   deque<arma::mat> Z_bar (nChannels );
+//   deque<arma::mat> Z_bar (nChannels );
+   static deque<arma::mat> Z_bar (InitializeZ_bar(nChannels) );
 
+   m_start3 = profiler.MaxMemUsage();
+   if (m_start3 > m_start2)
+     cout << "      Allocate Z_bar : memory increased by " << (m_start3-m_start2)/1024. << " MB" << endl;
+   m_start2 = m_start3;
 //   for (int ch : modelspace->SortedTwoBodyChannels_CC )
    int nch = modelspace->SortedTwoBodyChannels_CC.size();
-   #ifndef OPENBLAS_NOUSEOMP
-   #pragma omp parallel for schedule(dynamic,1)
-   #endif
+//   #ifndef OPENBLAS_NOUSEOMP
+//   #pragma omp parallel for schedule(dynamic,1)
+//   #endif
+//   for (int ich=nch-1; ich>=0; --ich )
    for (int ich=0; ich<nch; ++ich )
    {
+      size_t m_start4 = profiler.MaxMemUsage();
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
       Z_bar[ch] =  X_bar_hp[ch] * Y_bar_hp[ch] - X_bar_ph[ch] * Y_bar_ph[ch] ;
-//      if ( X.IsHermitian() ) // keep track of minus sign from taking transpose of X
-//         Z_bar[ch] =  X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch] ;
-//      else
-//         Z_bar[ch] =  X_bar_ph[ch].t() * Y_bar_ph[ch] - X_bar_hp[ch].t() * Y_bar_hp[ch] ;
+
+      m_start4 = profiler.MaxMemUsage() - m_start4;
+      if (m_start4 > 0)
+        cout << "        Z_bar multiplication. ich = " << ich << "  memptr = " << Z_bar[ch].memptr() << " : memory increased by " << m_start4/1024. << endl;
+
+      m_start4 = profiler.MaxMemUsage();
 
       if ( Z.IsHermitian() ) // if Z is hermitian, then XY is antihermitian
         Z_bar[ch] += Z_bar[ch].t();
       else
         Z_bar[ch] -= Z_bar[ch].t();
+
+      m_start4 = profiler.MaxMemUsage() - m_start4;
+      if (m_start4 > 0)
+        cout << "        Z_bar transpose. ich = " << ich << "  memptr = " << Z_bar[ch].memptr() << " : memory increased by " << m_start4/1024. << endl;
+
    }
    profiler.timer["Build Z_bar"] += omp_get_wtime() - t;
+
+
+   m_start3 = profiler.MaxMemUsage();
+   if (m_start3 > m_start2)
+     cout << "       Build Z_bar : memory increased by " << (m_start3-m_start2)/1024. << " MB" << endl;
+   m_start2 = m_start3;
+
 
    // Perform inverse Pandya transform on W_bar to get Z
    t = omp_get_wtime();
    Z.AddInversePandyaTransformation(Z_bar);
+
+   m_start3 = profiler.MaxMemUsage();
+   if (m_start3 > m_start2)
+     cout << "       AddInversePandyaTransformation : memory increased by " << (m_start3-m_start2)/1024. << " MB" << endl;
+   m_start2 = m_start3;
+
+
+   m_start = profiler.MaxMemUsage() - m_start;
+   if (m_start > 0)
+     cout << "  comm222_ph: memory usage increased by " << m_start/1024. << " MB" << endl;
    profiler.timer["InversePandyaTransformation"] += omp_get_wtime() - t;
 
 }

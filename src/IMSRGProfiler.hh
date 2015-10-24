@@ -23,13 +23,13 @@ class IMSRGProfiler
   static float start_time;
 
   IMSRGProfiler();
-  map<string,size_t> CheckMem(); // Kbytes  RSS  DIRTY
-  map<string,float> GetTimes(); // real  user  sys
-  void PrintTimes();
-  void PrintCounters();
-  void PrintMemory();
-  void PrintAll();
-  size_t MaxMemUsage();
+  map<string,size_t> CheckMem() const; // Kbytes  RSS  DIRTY
+  map<string,float> GetTimes() const; // real  user  sys
+  void PrintTimes() const;
+  void PrintCounters() const;
+  void PrintMemory() const;
+  void PrintAll() const;
+  size_t MaxMemUsage() const;
 };
 
 #endif

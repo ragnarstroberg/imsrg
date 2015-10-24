@@ -152,6 +152,7 @@ class Operator
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
   deque<arma::mat> InitializePandya(size_t nch, string orientation);
+  deque<arma::mat> InitializeZ_bar(size_t nch);
   void DoPandyaTransformation(deque<arma::mat>&, deque<arma::mat>&, string orientation) const ;
   void AddInversePandyaTransformation(deque<arma::mat>&);
 

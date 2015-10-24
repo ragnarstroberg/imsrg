@@ -19,7 +19,7 @@ IMSRGProfiler::IMSRGProfiler()
 }
 /// Check how much memory is being used.
 ///
-map<string,size_t> IMSRGProfiler::CheckMem()
+map<string,size_t> IMSRGProfiler::CheckMem() const
 {
   char cmdstring[100],outbuf[500],buf[100];
   sprintf(cmdstring,"pmap -x %d | tail -1",getpid()); // TODO make this more portable. On OSX, use vmmap. no idea for Windows...
@@ -32,14 +32,14 @@ map<string,size_t> IMSRGProfiler::CheckMem()
   return s;
 }
 
-size_t IMSRGProfiler::MaxMemUsage()
+size_t IMSRGProfiler::MaxMemUsage() const
 {
   struct rusage ru;
   getrusage(RUSAGE_SELF,&ru);
   return (size_t) ru.ru_maxrss;
 }
 
-map<string,float> IMSRGProfiler::GetTimes()
+map<string,float> IMSRGProfiler::GetTimes() const
 {
   struct rusage ru;
   getrusage(RUSAGE_SELF,&ru);
@@ -50,7 +50,7 @@ map<string,float> IMSRGProfiler::GetTimes()
   return times;
 }
 
-void IMSRGProfiler::PrintTimes()
+void IMSRGProfiler::PrintTimes() const
 {
    cout << "====================== TIMES (s) ====================" << endl;
    cout.setf(ios::fixed);
@@ -60,7 +60,7 @@ void IMSRGProfiler::PrintTimes()
      cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(5) << std::right << it.second  << endl;
 }
 
-void IMSRGProfiler::PrintCounters()
+void IMSRGProfiler::PrintCounters() const
 {
    cout << "===================== COUNTERS =====================" << endl;
    cout.setf(ios::fixed);
@@ -68,7 +68,7 @@ void IMSRGProfiler::PrintCounters()
      cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(0) << std::right << it.second  << endl;
 }
 
-void IMSRGProfiler::PrintMemory()
+void IMSRGProfiler::PrintMemory() const
 {
    cout << "===================== MEMORY (MB) ==================" << endl;
    for (auto it : CheckMem())
@@ -77,7 +77,7 @@ void IMSRGProfiler::PrintMemory()
    cout << fixed << setw(40) << std::left << "Max Used:  " << setw(12) << setprecision(3) << std::right << MaxMemUsage()/1024.  << endl;
 }
 
-void IMSRGProfiler::PrintAll()
+void IMSRGProfiler::PrintAll() const
 {
   PrintCounters();
   PrintTimes();
