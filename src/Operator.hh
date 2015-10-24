@@ -45,7 +45,9 @@ class Operator
   static double bch_product_threshold;
 
 //  static Operator Temp; ///< Scratch space for calculations
-  Operator& Temp(); ///< Scratch space for calculations
+//  Operator& Temp(); ///< Scratch space for calculations
+  Operator& TempOp(size_t n); ///< Scratch space for calculations
+//  vector<arma::mat>& TempMatVec(size_t n); ///< Scratch space for calculations
 
   map<array<int,3>,vector<index_t> > OneBodyChannels;
   IMSRGProfiler profiler;

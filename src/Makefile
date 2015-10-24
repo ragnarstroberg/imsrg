@@ -32,7 +32,7 @@ ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5
  ALL = libIMSRG.so
 else  # default options. assumes boost and python are set up nicely.
- LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5
+ LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5 #-L$(HOME)/lib -lhoard
  ALL = pyIMSRG.so libIMSRG.so
 endif
 endif

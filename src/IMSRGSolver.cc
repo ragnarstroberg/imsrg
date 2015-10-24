@@ -189,6 +189,7 @@ void IMSRGSolver::Solve_magnus_euler()
       // Write details of the flow
       WriteFlowStatus(flowfile);
       WriteFlowStatus(cout);
+      profiler.PrintMemory();
 
    }
 

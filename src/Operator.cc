@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <deque>
 
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
@@ -24,12 +25,26 @@ double  Operator::bch_product_threshold = 1e-4;
 //Operator Operator::Temp = Operator();
 //Operator Operator::Temp = Operator();
 //map<string, double> Operator::timer;
-Operator& Operator::Temp()
+
+//Operator& Operator::Temp()
+//{
+//  static Operator* tmp = new Operator();
+//  return *tmp;
+//}
+
+Operator& Operator::TempOp(size_t n)
 {
-  static Operator* tmp = new Operator();
-  return *tmp;
+  static deque<Operator> TempOpArray;
+  if (n >= TempOpArray.size()) TempOpArray.resize(n,*this);
+  return TempOpArray[n];
 }
 
+//vector<arma::mat>& Operator::TempMatVec(size_t n)
+//{
+//  static deque<vector<arma::mat>> TempMatVecArray;
+//  if (n>= TempMatVecArray.size()) TempMatVecArray.resize(max(n,(size_t)5));
+//  return TempMatVecArray[n];
+//}
 
 
 Operator::~Operator()
@@ -716,12 +731,17 @@ Operator Operator::BCH_Transform( const Operator &Omega)
    {
 //     Operator OpNested = *this;
 //     Operator& OpNested = Temp;
-     Operator& OpNested = Temp();
+     Operator& OpNested = TempOp(0);
      OpNested = *this;
+//     tmp1 = *this;
      double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
      for (int i=1; i<=max_iter; ++i)
      {
-        OpNested = Commutator(Omega,OpNested)/i;
+        Operator& tmp1 = TempOp(1);
+        tmp1.SetToCommutator(Omega,OpNested);
+        tmp1 /= i;
+        OpNested = tmp1;
+//        OpNested = Commutator(Omega,OpNested)/i;
 //        OpNested.SetToCommutator(Omega,OpNested);
 //        OpNested /= i;
         OpOut += OpNested;
@@ -769,7 +789,7 @@ Operator Operator::BCH_Product(  Operator &Y)
 
    if (nxy > (nx+ny)*bch_product_threshold )
    {
-     Operator& tmp = Temp();
+     Operator& tmp = TempOp(0);
      tmp.SetToCommutator(Z,Y-Z);
      tmp /= 6;
      Z += tmp;
@@ -1414,8 +1434,9 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
    Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
 
-   TwoBodyME Mpp = Z.TwoBody;
-   TwoBodyME Mhh = Z.TwoBody;
+   // Make these static as well
+   static TwoBodyME Mpp = Z.TwoBody;
+   static TwoBodyME Mhh = Z.TwoBody;
 
    double t = omp_get_wtime();
    // Don't use omp, because the matrix multiplication is already
@@ -1746,10 +1767,18 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
    Operator& Z = *this;
    // Create Pandya-transformed hp and ph matrix elements
-   vector<arma::mat> X_bar_hp (nChannels );
-   vector<arma::mat> X_bar_ph (nChannels );
-   vector<arma::mat> Y_bar_hp (nChannels );
-   vector<arma::mat> Y_bar_ph (nChannels );
+   static vector<arma::mat> X_bar_hp(nChannels);
+   static vector<arma::mat> X_bar_ph(nChannels);
+   static vector<arma::mat> Y_bar_hp(nChannels);
+   static vector<arma::mat> Y_bar_ph(nChannels);
+//   vector<arma::mat>& X_bar_hp  = TempMatVec(0);
+//   vector<arma::mat>& X_bar_ph  = TempMatVec(1);
+//   vector<arma::mat>& Y_bar_hp  = TempMatVec(2);
+//   vector<arma::mat>& Y_bar_ph  = TempMatVec(3);
+//   X_bar_hp.resize(nChannels);
+//   X_bar_ph.resize(nChannels);
+//   Y_bar_hp.resize(nChannels);
+//   Y_bar_ph.resize(nChannels);
 
    double t = omp_get_wtime();
    X.DoPandyaTransformation(X_bar_hp, X_bar_ph );
@@ -1758,7 +1787,9 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
    // Construct the intermediate matrix Z_bar
    t = omp_get_wtime();
-   vector<arma::mat> Z_bar (nChannels );
+//   vector<arma::mat>& Z_bar = TempMatVec(4);
+//   Z_bar.resize(nChannels );
+   static vector<arma::mat> Z_bar (nChannels );
 
 //   for (int ch : modelspace->SortedTwoBodyChannels_CC )
    int nch = modelspace->SortedTwoBodyChannels_CC.size();
