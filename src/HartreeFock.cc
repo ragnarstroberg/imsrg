@@ -471,14 +471,20 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
    // Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
    // for each channel J,p,Tz. Most of the effort here is in constructing D.
 
-   for ( auto& it : OpHO.TwoBody.MatEl )
+//   for ( auto& it : OpHO.TwoBody.MatEl )
+   for ( auto& itindex : OpHO.TwoBody.MtxIndex )
    {
-      int ch_bra = it.first[0];
-      int ch_ket = it.first[1];
+//      int ch_bra = it.first[0];
+//      int ch_ket = it.first[1];
+      int ch_bra = itindex.first[0];
+      int ch_ket = itindex.first[1];
       TwoBodyChannel& tbc_bra = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_ket);
-      int nbras = it.second.n_rows;
-      int nkets = it.second.n_cols;
+      arma::mat& IN = OpHO.TwoBody.GetMatrix(ch_bra,ch_ket);
+      int nbras = IN.n_rows;
+      int nkets = IN.n_cols;
+//      int nbras = it.second.n_rows;
+//      int nkets = it.second.n_cols;
       arma::mat Dbra(nbras,nbras);
       arma::mat Dket(nkets,nkets);
       // loop over all possible original basis configurations <pq| in this J,p,Tz channel.
@@ -522,7 +528,7 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
            }
         }
       }
-      auto& IN  =  it.second;
+//      auto& IN  =  it.second;
       auto& OUT =  OpHF.TwoBody.GetMatrix(ch_bra,ch_ket);
       OUT  =    Dbra * IN * Dket;
 

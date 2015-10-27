@@ -6,16 +6,16 @@ CC = g++
 #                        to be used if OpenBlas was compiled without the USE_OMP flat
 
 INCLUDE   = -I./armadillo
-FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  -flto
-SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  -flto
+FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  #-flto
+SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  #-flto
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
 FLAGS    += $(WARNFLAGS)
 SOFLAGS  += $(WARNFLAGS)
 INSTDIR = $(HOME)
 
 ifeq ($(DEBUG),on)
- FLAGS = $(filter-out -flto, $(FLAGS))
- SOFLAGS = $(filter-out -flto, $(SOFLAGS))
+ FLAGS := $(filter-out -flto, $(FLAGS))
+ SOFLAGS := $(filter-out -flto, $(SOFLAGS))
  FLAGS += -g
  SOFLAGS += -g
 endif
@@ -59,7 +59,7 @@ install:
 	done
 	
 
-OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
+OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o SlimMat.o Operator.o  ReadWrite.o\
       HartreeFock.o Generator.o IMSRGSolver.o AngMom.o imsrg_util.o\
       boost_src/gzip.o boost_src/zlib.o  IMSRGProfiler.o 
 

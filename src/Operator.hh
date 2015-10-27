@@ -6,6 +6,7 @@
 #include "TwoBodyME.hh"
 #include "ThreeBodyME.hh"
 #include "IMSRGProfiler.hh"
+#include "SlimMat.hh"
 #include <armadillo>
 #include <string>
 #include <vector>
@@ -130,6 +131,7 @@ class Operator
 //  friend Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) ;
 
   Operator BCH_Product(  Operator& )  ; 
+  Operator& BCH_Transform_InPlace( const Operator& ) ; 
   Operator BCH_Transform( const Operator& ) ; 
 
   void CalculateKineticEnergy();
@@ -152,9 +154,11 @@ class Operator
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
   deque<arma::mat> InitializePandya(size_t nch, string orientation);
-  deque<arma::mat> InitializeZ_bar(size_t nch);
+//  deque<arma::mat> InitializeZ_bar(size_t nch);
+  deque<SlimMat<double>> InitializeZ_bar(size_t nch);
   void DoPandyaTransformation(deque<arma::mat>&, deque<arma::mat>&, string orientation) const ;
-  void AddInversePandyaTransformation(deque<arma::mat>&);
+//  void AddInversePandyaTransformation(deque<arma::mat>&);
+  void AddInversePandyaTransformation(deque<SlimMat<double>>&);
 
 
   void comm110ss( const Operator& X, const Operator& Y) ; 

@@ -247,11 +247,15 @@ Operator Operator::DoNormalOrdering2()
 
    index_t norbits = modelspace->GetNumberOrbits();
 
-   for ( auto& itmat : TwoBody.MatEl )
+//   for ( auto& itmat : TwoBody.MatEl )
+   for ( auto& itindex : TwoBody.MtxIndex )
    {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
-      auto& matrix = itmat.second;
+//      int ch_bra = itmat.first[0];
+//      int ch_ket = itmat.first[1];
+//      auto& matrix = itmat.second;
+      int ch_bra = itindex.first[0];
+      int ch_ket = itindex.first[1];
+      auto& matrix = TwoBody.GetMatrix(ch_bra,ch_ket);
       
       TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
@@ -316,11 +320,14 @@ Operator Operator::DoNormalOrdering3()
 {
    Operator opNO3 = Operator(*modelspace);
 //   #pragma omp parallel for
-   for ( auto& itmat : opNO3.TwoBody.MatEl )
+//   for ( auto& itmat : opNO3.TwoBody.MatEl )
+   for ( auto& itindex : opNO3.TwoBody.MtxIndex )
    {
-      int ch = itmat.first[0]; // assume ch_bra = ch_ket for 3body...
+//      int ch = itmat.first[0]; // assume ch_bra = ch_ket for 3body...
+      int ch = itindex.first[0]; // assume ch_bra = ch_ket for 3body...
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      arma::mat& Gamma = (arma::mat&) itmat.second;
+//      arma::mat& Gamma = (arma::mat&) itmat.second;
+      arma::mat& Gamma =  opNO3.TwoBody.GetMatrix(ch,ch);
       for (int ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
       {
          Ket & bra = tbc.GetKet(ibra);
@@ -375,11 +382,15 @@ Operator Operator::UndoNormalOrdering()
 
    index_t norbits = modelspace->GetNumberOrbits();
 
-   for ( auto& itmat : TwoBody.MatEl )
+//   for ( auto& itmat : TwoBody.MatEl )
+   for ( auto& itindex : TwoBody.MtxIndex )
    {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
-      auto& matrix = itmat.second;
+//      int ch_bra = itmat.first[0];
+//      int ch_ket = itmat.first[1];
+//      auto& matrix = itmat.second;
+      int ch_bra = itindex.first[0];
+      int ch_ket = itindex.first[1];
+      auto& matrix = TwoBody.GetMatrix(ch_bra,ch_ket);
       
       TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
       int J_ket = tbc_ket.J;
@@ -482,10 +493,14 @@ void Operator::MakeReduced()
       OneBody(b,a) = OneBody(a,b);
     }
   }
-  for ( auto& itmat : TwoBody.MatEl )
+//  for ( auto& itmat : TwoBody.MatEl )
+  for ( auto& itindex : TwoBody.MtxIndex )
   {
-    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
-    itmat.second *= sqrt(2*tbc.J+1);
+//    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
+//    itmat.second *= sqrt(2*tbc.J+1);
+    auto ch = itindex.first[0];
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+    TwoBody.GetMatrix(ch) *= sqrt(2*tbc.J+1);
   }
 }
 
@@ -506,10 +521,14 @@ void Operator::MakeNotReduced()
       OneBody(b,a) = OneBody(a,b);
     }
   }
-  for ( auto& itmat : TwoBody.MatEl )
+//  for ( auto& itmat : TwoBody.MatEl )
+  for ( auto& itindex : TwoBody.MtxIndex )
   {
-    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
-    itmat.second /= sqrt(2*tbc.J+1);
+//    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
+//    itmat.second /= sqrt(2*tbc.J+1);
+    auto ch = itindex.first[0];
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+    TwoBody.GetMatrix(ch) /= sqrt(2*tbc.J+1);
   }
 }
 
@@ -632,14 +651,21 @@ double Operator::GetMP2_Energy()
 /// with all commutators truncated at the two-body level.
 Operator Operator::BCH_Transform( const Operator &Omega)
 {
+  Operator OpOut = *this;
+  OpOut.BCH_Transform_InPlace( Omega );
+  return OpOut;
+}
+
+Operator& Operator::BCH_Transform_InPlace( const Operator &Omega)
+{
    double t_start = omp_get_wtime();
    size_t m_start = profiler.MaxMemUsage();
    int max_iter = 40;
    int warn_iter = 12;
    double nx = Norm();
    double ny = Omega.Norm();
-   Operator OpOut = *this;
-   if (nx>bch_transform_threshold)
+   Operator& OpOut = *this;
+   if (nx > bch_transform_threshold)
    {
 //     Operator OpNested = *this;
      Operator& OpNested = TempOp(0);
@@ -1350,8 +1376,17 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
    Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
 
-   TwoBodyME Mpp(Z.TwoBody);
-   TwoBodyME Mhh(Z.TwoBody);
+   size_t m_start2 = m_start;
+
+   static TwoBodyME Mpp(Z.TwoBody); // Making these static drastically slows down the calculation?
+   static TwoBodyME Mhh(Z.TwoBody);
+//   TwoBodyME Mpp(Z.TwoBody);
+//   TwoBodyME Mhh(Z.TwoBody);
+
+   size_t m_start3 = profiler.MaxMemUsage();
+   if (m_start3 > m_start2)
+     cout << "     allocating Mpp/Mhh: memory usage increased by " << (m_start3-m_start2)/1024. << " MB" << endl;
+   m_start2 = m_start3;
 
    double t = omp_get_wtime();
    // Don't use omp, because the matrix multiplication is already
@@ -1367,7 +1402,7 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
 
       auto& LHS = X.TwoBody.GetMatrix(ch,ch);
       auto& RHS = Y.TwoBody.GetMatrix(ch,ch);
-      auto& OUT = Z.TwoBody.GetMatrix(ch,ch);
+//      auto& OUT = Z.TwoBody.GetMatrix(ch,ch);
 
       auto& Matrixpp = Mpp.GetMatrix(ch,ch);
       auto& Matrixhh = Mhh.GetMatrix(ch,ch);
@@ -1395,9 +1430,31 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
       }
 
       // The two body part
-      OUT += Matrixpp - Matrixhh;
+//      OUT += Matrixpp - Matrixhh;
    } //for ch
    profiler.timer["pphh TwoBody bit"] += omp_get_wtime() - t;
+
+   m_start3 = profiler.MaxMemUsage();
+   if (m_start3 > m_start2)
+     cout << "     Filling Matrixpp/Matrixhh: memory usage increased by " << (m_start3-m_start2)/1024. << " MB" << endl;
+   m_start2 = m_start3;
+
+   #ifndef OPENBLAS_NOUSEOMP
+   #pragma omp parallel for schedule(dynamic,1)
+   #endif
+   for (int ich=0; ich<nch; ++ich)
+   {
+      int ch = modelspace->SortedTwoBodyChannels[ich];
+      auto& OUT = Z.TwoBody.GetMatrix(ch,ch);
+      auto& Matrixpp = Mpp.GetMatrix(ch,ch);
+      auto& Matrixhh = Mhh.GetMatrix(ch,ch);
+      OUT += Matrixpp - Matrixhh;
+   }
+
+   m_start3 = profiler.MaxMemUsage();
+   if (m_start3 > m_start2)
+     cout << "     Getting pphh piece: memory usage increased by " << (m_start3-m_start2)/1024. << " MB" << endl;
+   m_start2 = m_start3;
 
    t = omp_get_wtime();
    // The one body part
@@ -1553,7 +1610,8 @@ void Operator::DoPandyaTransformation(deque<arma::mat>& TwoBody_CC_hp, deque<arm
 
 //void Operator::InversePandyaTransformation(vector<arma::mat>& W, vector<arma::mat>& opout)
 //void Operator::AddInversePandyaTransformation(vector<arma::mat>& Zbar)
-void Operator::AddInversePandyaTransformation(deque<arma::mat>& Zbar)
+//void Operator::AddInversePandyaTransformation(deque<arma::mat>& Zbar)
+void Operator::AddInversePandyaTransformation(deque<SlimMat<double>>& Zbar)
 {
     // Do the inverse Pandya transform
     // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
@@ -1663,22 +1721,34 @@ deque<arma::mat> Operator::InitializePandya(size_t nch, string orientation="norm
    return X;
 }
 
-deque<arma::mat> Operator::InitializeZ_bar(size_t nch)
+//deque<arma::mat> Operator::InitializeZ_bar(size_t nch)
+deque<SlimMat<double>> Operator::InitializeZ_bar(size_t nch)
 {
+//   cout << "In InitializeZ_bar" << endl;
    size_t m_start = profiler.MaxMemUsage();
-   deque<arma::mat> X(nch);
+//   deque<arma::mat> X(nch);
+   deque<SlimMat<double>> X(nch);
    int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
+//   int slimsize = 0;
+//   int fullsize = 0;
    for (int ich=0; ich<n_nonzero; ++ich)
    {
       int ch_cc = modelspace->SortedTwoBodyChannels_CC[ich];
       TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
       int nKets_cc = tbc_cc.GetNumberKets();
-//      X[ch_cc] =x;
-      X[ch_cc] = arma::mat(2*nKets_cc,   2*nKets_cc, arma::fill::zeros);
+//      X[ch_cc] = arma::mat(2*nKets_cc,   2*nKets_cc, arma::fill::zeros);
+//      X[ch_cc] = arma::mat( 2*nKets_cc, IsHermitian() );
+      X[ch_cc] = SlimMat<double>( 2*nKets_cc, IsHermitian() );
+//      fullsize += arma::mat(2*nKets_cc,2*nKets_cc).size();
+//      slimsize += X[ch_cc].Data.capacity();
+//      cout << "ch_cc = " << ch_cc << "  nKets_cc = " << nKets_cc << " SlimMat.Size = " << X[ch_cc].Data.capacity() 
+//           << "  arma::mat.size = " << arma::mat(2*nKets_cc, 2*nKets_cc).size() << endl;
    }
+//   cout << "fullsize: " << fullsize*sizeof(double)/1024. << "   slimsize: " << slimsize*sizeof(double)/1024. << endl;
    m_start = profiler.MaxMemUsage() - m_start;
    if (m_start > 0)
      cout << "    InitializeZ_bar: memory usage increased by " << m_start/1024. << " MB" << endl;
+//   cout << "Done InitializeZ_bar." << endl;
    return X;
 }
 
@@ -1791,7 +1861,10 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    t = omp_get_wtime();
 //   vector<arma::mat> Z_bar (nChannels );
 //   deque<arma::mat> Z_bar (nChannels );
-   static deque<arma::mat> Z_bar (InitializeZ_bar(nChannels) );
+//   static deque<arma::mat> Z_bar (InitializeZ_bar(nChannels) ); // This guy is huge.
+   static deque<SlimMat<double>> Z_bar (InitializeZ_bar(nChannels) ); // This guy is slightly less huge.
+   // allocate workspace for zbar
+   static vector<double> zbar_aux_mem( pow(2*modelspace->GetTwoBodyChannel_CC(modelspace->SortedTwoBodyChannels_CC[0]).GetNumberKets(),2),0.0 );
 
    m_start3 = profiler.MaxMemUsage();
    if (m_start3 > m_start2)
@@ -1807,7 +1880,15 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    {
       size_t m_start4 = profiler.MaxMemUsage();
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
-      Z_bar[ch] =  X_bar_hp[ch] * Y_bar_hp[ch] - X_bar_ph[ch] * Y_bar_ph[ch] ;
+//      Z_bar[ch] =  X_bar_hp[ch] * Y_bar_hp[ch] - X_bar_ph[ch] * Y_bar_ph[ch] ;
+      size_t nkets = modelspace->GetTwoBodyChannel_CC(ch).GetNumberKets();
+      arma::mat zbar(zbar_aux_mem.data(), 2*nkets, 2*nkets,false,false);
+      zbar =  X_bar_hp[ch] * Y_bar_hp[ch] - X_bar_ph[ch] * Y_bar_ph[ch] ;
+//      arma::mat zbar =  X_bar_hp[ch] * Y_bar_hp[ch] - X_bar_ph[ch] * Y_bar_ph[ch] ;
+//      arma::mat& zbar =  X_bar_hp[ch];
+//      X_bar_hp[ch] *= Y_bar_hp[ch];
+//      X_bar_ph[ch] *= Y_bar_ph[ch];
+//      X_bar_hp[ch] -= X_bar_ph[ch];
 
       m_start4 = profiler.MaxMemUsage() - m_start4;
       if (m_start4 > 0)
@@ -1816,13 +1897,24 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
       m_start4 = profiler.MaxMemUsage();
 
       if ( Z.IsHermitian() ) // if Z is hermitian, then XY is antihermitian
-        Z_bar[ch] += Z_bar[ch].t();
+        zbar += zbar.t();
+//        Z_bar[ch] += Z_bar[ch].t();
       else
-        Z_bar[ch] -= Z_bar[ch].t();
+        zbar -= zbar.t();
+
+      size_t m_start5 = profiler.MaxMemUsage();
+      if (m_start5 > m_start4)
+        cout << "        Z_bar transpose. ich = " << ich << "  memptr = " << Z_bar[ch].memptr() << " : memory increased by " << (m_start5-m_start4)/1024. << endl;
+      m_start4 = m_start5;
+
+//      cout << "About to assign zbar..." << endl;
+      Z_bar[ch] = zbar;
+      if (Z.IsAntiHermitian() ) Z_bar[ch].SetAntisymmetric();
+//      cout << "... done" << endl;
 
       m_start4 = profiler.MaxMemUsage() - m_start4;
       if (m_start4 > 0)
-        cout << "        Z_bar transpose. ich = " << ich << "  memptr = " << Z_bar[ch].memptr() << " : memory increased by " << m_start4/1024. << endl;
+        cout << "        Assign Z_bar[ch]=zbar. ich = " << ich << "  memptr = " << Z_bar[ch].memptr() << " : memory increased by " << m_start4/1024. << endl;
 
    }
    profiler.timer["Build Z_bar"] += omp_get_wtime() - t;
@@ -1990,7 +2082,8 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
    int Lambda = Z.rank_J;
 
     vector< array<int,2> > channels;
-    for ( auto& itmat : Z.TwoBody.MatEl ) channels.push_back( itmat.first );
+//    for ( auto& itmat : Z.TwoBody.MatEl ) channels.push_back( itmat.first );
+    for ( auto& itindex : Z.TwoBody.MtxIndex ) channels.push_back( itindex.first );
     int nmat = channels.size();
    #pragma omp parallel for schedule(dynamic,1)
     for (int ii=0; ii<nmat; ++ii)
@@ -2094,11 +2187,15 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
    vector<int> vch_bra;
    vector<int> vch_ket;
    vector<const arma::mat*> vmtx;
-   for ( auto& itmat : Y.TwoBody.MatEl )
+//   for ( auto& itmat : Y.TwoBody.MatEl )
+   for ( auto& itindex : Y.TwoBody.MtxIndex )
    {
-     vch_bra.push_back(itmat.first[0]);
-     vch_ket.push_back(itmat.first[1]);
-     vmtx.push_back(&(itmat.second));
+//     vch_bra.push_back(itmat.first[0]);
+//     vch_ket.push_back(itmat.first[1]);
+//     vmtx.push_back(&(itmat.second));
+     vch_bra.push_back(itindex.first[0]);
+     vch_ket.push_back(itindex.first[1]);
+     vmtx.push_back(&(Y.TwoBody.GetMatrix(itindex.first)));
    }
    size_t nchan = vch_bra.size();
 //   for ( auto& itmat : Y.TwoBody.MatEl )
@@ -2324,10 +2421,13 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
 //   for (int ich = 0; ich < n_nonzeroChannels; ++ich)
    Operator& Z = *this;
    int Lambda = Z.rank_J;
-   for (auto& iter : Z.TwoBody.MatEl)
+//   for (auto& iter : Z.TwoBody.MatEl)
+   for (auto& itindex : Z.TwoBody.MtxIndex)
    {
-      int ch_bra = iter.first[0];
-      int ch_ket = iter.first[1];
+//      int ch_bra = iter.first[0];
+//      int ch_ket = iter.first[1];
+      int ch_bra = itindex.first[0];
+      int ch_ket = itindex.first[1];
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
       int J1 = tbc_bra.J;
@@ -2336,7 +2436,8 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
 //      cout << "-- Jbra = " << tbc_bra.J << " T_bra = " << tbc_bra.Tz << "   Jket = " << tbc_ket.J << " T_ket = " << tbc_ket.Tz << endl;
       int nBras = tbc_bra.GetNumberKets();
       int nKets = tbc_ket.GetNumberKets();
-      arma::mat& Zijkl = iter.second;
+//      arma::mat& Zijkl = iter.second;
+      arma::mat& Zijkl = Z.TwoBody.GetMatrix(ch_bra,ch_ket);
 
       for (int ibra=0; ibra<nBras; ++ibra)
       {

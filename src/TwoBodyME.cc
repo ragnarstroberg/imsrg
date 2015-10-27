@@ -34,35 +34,74 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 
  TwoBodyME& TwoBodyME::operator*=(const double rhs)
  {
-   for ( auto& itmat : MatEl )
+//   for ( auto& itmat : MatEl )
+   for ( auto& itmat : MtxEl )
    {
-      itmat.second *= rhs;
+      itmat *= rhs;
    }
    return *this;
  }
 
  TwoBodyME& TwoBodyME::operator+=(const TwoBodyME& rhs)
  {
-   for ( auto& itmat : MatEl )
+//   for ( auto& itmat : MatEl )
+   for ( auto& itindex : rhs.MtxIndex )
    {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
-      itmat.second += rhs.GetMatrix(ch_bra,ch_ket);
+//      int ch_bra = itindex.first[0];
+//      int ch_ket = itindex.first[1];
+//      MtxEl[itindex.second] += rhs.GetMatrix(ch_bra,ch_ket);
+      GetMatrix(itindex.first) += rhs.GetMatrix(itindex.first);
+   }
+   return *this;
+ }
+
+ TwoBodyME& TwoBodyME::operator+=(const double rhs)
+ {
+   for ( auto& itmat : MtxEl )
+   {
+      itmat += rhs;
    }
    return *this;
  }
 
  TwoBodyME& TwoBodyME::operator-=(const TwoBodyME& rhs)
  {
-   for ( auto& itmat : rhs.MatEl )
+//   for ( auto& itmat : rhs.MatEl )
+   for ( auto& itindex : rhs.MtxIndex )
    {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
-      GetMatrix(ch_bra,ch_ket) -= itmat.second;
+//      int ch_bra = itmat.first[0];
+//      int ch_ket = itmat.first[1];
+//      GetMatrix(ch_bra,ch_ket) -= itmat.second;
+      GetMatrix(itindex.first) -= rhs.GetMatrix(itindex.first);
    }
    return *this;
  }
 
+ TwoBodyME& TwoBodyME::operator/=(const TwoBodyME& rhs)
+ {
+   for ( auto& itindex : MtxIndex )
+   {
+      GetMatrix(itindex.first) /= rhs.GetMatrix(itindex.first);
+   }
+   return *this;
+ }
+
+ TwoBodyME abs(const TwoBodyME& in)
+ {
+   TwoBodyME out(in);
+   for ( auto& itmat : out.MtxEl )   itmat = arma::abs(itmat);
+   return out;
+ }
+
+ arma::mat& TwoBodyME::GetMatrix(int chbra, int chket)
+ {
+    return MtxEl[ MtxIndex.at({chbra,chket}) ];
+ }
+
+ const arma::mat& TwoBodyME::GetMatrix(int chbra, int chket) const
+ {
+    return MtxEl[ MtxIndex.at({chbra,chket}) ];
+ }
 
 
 void TwoBodyME::Allocate()
@@ -77,7 +116,9 @@ void TwoBodyME::Allocate()
         if ( (tbc_bra.J+tbc_ket.J)<rank_J ) continue;
         if ( abs(tbc_bra.Tz-tbc_ket.Tz)>rank_T ) continue;
         if ( (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
-        MatEl[{ch_bra,ch_ket}] =  arma::mat(tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros);
+//        MatEl[{ch_bra,ch_ket}] =  arma::mat(tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros);
+        MtxIndex[{ch_bra,ch_ket}] =  MtxEl.size();
+        MtxEl.emplace_back( tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros );
      }
   }
 }
@@ -530,10 +571,12 @@ double TwoBodyME::GetTBMEmonopole(Ket & bra, Ket & ket) const
 
 void TwoBodyME::Erase()
 {
-  for ( auto& itmat : MatEl )
+//  for ( auto& itmat : MatEl )
+  for ( auto& itmat : MtxEl )
   {
-     arma::mat& matrix = itmat.second;
-     matrix.zeros();
+//     arma::mat& matrix = itmat.second;
+//     matrix.zeros();
+    itmat.zeros();
   }
 }
 
@@ -541,10 +584,12 @@ void TwoBodyME::Erase()
 double TwoBodyME::Norm() const
 {
    double nrm = 0;
-   for ( auto& itmat : MatEl )
+//   for ( auto& itmat : MatEl )
+   for ( const auto& itmat : MtxEl )
    {
-      const arma::mat& matrix = itmat.second;
-      double n2 = arma::norm(matrix,"fro");
+//      const arma::mat& matrix = itmat.second;
+//      double n2 = arma::norm(matrix,"fro");
+      double n2 = arma::norm(itmat,"fro");
       nrm += n2*n2;
    }
    return sqrt(nrm);
@@ -554,20 +599,24 @@ double TwoBodyME::Norm() const
 void TwoBodyME::Symmetrize()
 {
   if (rank_J>0 or rank_T>0 or parity>0) return;
-  for (auto& itmat : MatEl )
+//  for (auto& itmat : MatEl )
+  for (auto& itmat : MtxEl )
   {
-      arma::mat& matrix = itmat.second;
-      matrix = arma::symmatu(matrix);
+//      arma::mat& matrix = itmat.second;
+//      matrix = arma::symmatu(matrix);
+      itmat = arma::symmatu(itmat);
   }
 }
 
 void TwoBodyME::AntiSymmetrize()
 {
   if (rank_J>0) return;
-  for (auto& itmat : MatEl )
+//  for (auto& itmat : MatEl )
+  for (auto& itmat : MtxEl )
   {
-    arma::mat& matrix = itmat.second;
-    matrix = arma::trimatu(matrix) - arma::trimatu(matrix).t();
+//    arma::mat& matrix = itmat.second;
+//    matrix = arma::trimatu(matrix) - arma::trimatu(matrix).t();
+    itmat = arma::trimatu(itmat) - arma::trimatu(itmat).t();
   }
 
 
@@ -576,20 +625,24 @@ void TwoBodyME::AntiSymmetrize()
 
 void TwoBodyME::Scale(double x)
 {
-   for ( auto& itmat : MatEl )
+//   for ( auto& itmat : MatEl )
+   for ( auto& itmat : MtxEl )
    {
-      arma::mat& matrix = itmat.second;
-      matrix *= x;
+//      arma::mat& matrix = itmat.second;
+//      matrix *= x;
+      itmat *= x;
    }
 
 }
 
 void TwoBodyME::Eye()
 {
-   for ( auto& itmat : MatEl )
+//   for ( auto& itmat : MatEl )
+   for ( auto& itmat : MtxEl )
    {
-      arma::mat& matrix = itmat.second;
-      matrix.eye();
+//      arma::mat& matrix = itmat.second;
+//      matrix.eye();
+     itmat.eye();
    }
 }
 
@@ -597,9 +650,11 @@ void TwoBodyME::Eye()
 int TwoBodyME::Dimension()
 {
    int dim = 0;
-   for ( auto& itmat : MatEl )
+//   for ( auto& itmat : MatEl )
+   for ( auto& itmat : MtxEl )
    {
-      int N = itmat.second.n_cols;
+//      int N = itmat.second.n_cols;
+      int N = itmat.n_cols;
       dim += N*(N+1)/2;
    }
    return dim;
@@ -608,8 +663,10 @@ int TwoBodyME::Dimension()
 int TwoBodyME::size()
 {
   int size=0;
-  for ( auto& itmat : MatEl )
-     size += itmat.second.size();
+  for ( auto& itmat : MtxEl )
+     size += itmat.size();
+//  for ( auto& itmat : MatEl )
+//     size += itmat.second.size();
   return size*sizeof(double);
 }
 

@@ -250,7 +250,8 @@ deque<Operator> operator/ (const deque<Operator>& num, const deque<Operator>& de
    {
      quotient[i].ZeroBody /= denom[i].ZeroBody;
      quotient[i].OneBody /= denom[i].OneBody;
-     for ( auto& itmat: quotient[i].TwoBody.MatEl )    itmat.second /= denom[i].TwoBody.GetMatrix(itmat.first[0],itmat.first[1]);
+     quotient[i].TwoBody /= denom[i].TwoBody;
+//     for ( auto& itmat: quotient[i].TwoBody.MatEl )    itmat.second /= denom[i].TwoBody.GetMatrix(itmat.first[0],itmat.first[1]);
    }
    return quotient;
 }
@@ -283,9 +284,10 @@ deque<Operator> operator+ (const double a, const deque<Operator>& X)
    {
      y.ZeroBody += a;
      y.OneBody += a;
+     y.TwoBody += a;
 //     for( auto& v : y.OneBody ) v += a;
-     for ( auto& itmat: y.TwoBody.MatEl )
-      itmat.second += a;
+//     for ( auto& itmat: y.TwoBody.MatEl )
+//      itmat.second += a;
 //       for ( auto& v : itmat.second ) v += a;
    }
    return Y;
@@ -302,7 +304,8 @@ deque<Operator> abs(const deque<Operator>& OpIn)
    {
      opout.ZeroBody = abs(opout.ZeroBody);
      opout.OneBody = arma::abs(opout.OneBody);
-     for ( auto& itmat : opout.TwoBody.MatEl )    itmat.second = arma::abs(itmat.second);
+     opout.TwoBody = abs(opout.TwoBody);
+//     for ( auto& itmat : opout.TwoBody.MatEl )    itmat.second = arma::abs(itmat.second);
    }
    return OpOut;
 }
@@ -505,14 +508,24 @@ void IMSRGSolver::Solve_ode_magnus()
 
 #endif
 
+Operator& IMSRGSolver::Transform_InPlace(Operator& OpIn)
+{
+  for (auto& omega : Omega )
+  {
+    OpIn.BCH_Transform_InPlace( omega );
+  }
+  return OpIn;
+//   return OpIn.BCH_Transform( Omega );
+}
 
 /// Returns \f$ e^{Omega} \mathcal{O} e^{-Omega} \f$
 Operator IMSRGSolver::Transform(Operator& OpIn)
 {
   Operator OpOut = OpIn;
-  for (auto omega : Omega )
+  for (auto& omega : Omega )
   {
-    OpOut = OpOut.BCH_Transform( omega );
+//    OpOut = OpOut.BCH_Transform( omega );
+    OpOut.BCH_Transform_InPlace( omega );
   }
   return OpOut;
 //   return OpIn.BCH_Transform( Omega );
@@ -521,9 +534,10 @@ Operator IMSRGSolver::Transform(Operator& OpIn)
 Operator IMSRGSolver::Transform(Operator&& OpIn)
 {
   Operator OpOut = OpIn;
-  for (auto omega : Omega )
+  for (auto& omega : Omega )
   {
-    OpOut = OpOut.BCH_Transform( omega );
+//    OpOut = OpOut.BCH_Transform( omega );
+    OpOut.BCH_Transform_InPlace( omega );
   }
   return OpOut;
 //   return OpIn.BCH_Transform( Omega );

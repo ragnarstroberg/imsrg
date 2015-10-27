@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <sstream>
+//#include <unistd.h>
 #include "IMSRG.hh"
 
 using namespace imsrg_util;
@@ -97,6 +98,9 @@ int main(int argc, char** argv)
   }
 
 
+  IMSRGProfiler profiler;
+  cout << "Memory Used: " << profiler.CheckMem()["RSS"] << endl;
+
   char strbuf[200];
   if (flowfile == "default")
   {
@@ -133,6 +137,7 @@ int main(int argc, char** argv)
 
   ModelSpace modelspace(eMax,nucleus);
 
+  cout << "Memory Used: " << profiler.CheckMem()["RSS"] << endl;
   modelspace.SetHbarOmega(hw);
   if (targetMass > 0)
     modelspace.SetTargetMass(targetMass);
@@ -143,11 +148,13 @@ int main(int argc, char** argv)
   Operator Hbare(modelspace,0,0,0,particle_rank);
   Hbare.SetHermitian();
 
+  cout << "Memory Used: " << profiler.CheckMem()["RSS"] << endl;
   cout << "Reading interaction..." << endl;
   if (fmt2 == "me2j")
     rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
   else if (fmt2 == "navratil" or fmt2 == "Navratil")
     rw.ReadBareTBME_Navratil(inputtbme, Hbare);
+  cout << "Done." << endl;
 
   if (Hbare.particle_rank >=3)
   {
@@ -155,11 +162,14 @@ int main(int argc, char** argv)
     rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
   }  
 
-  Hbare.CalculateKineticEnergy();
+  cout << "Memory Used: " << profiler.CheckMem()["RSS"] << endl;
+//  Hbare.CalculateKineticEnergy();
   
-  Operator Tcm = TCM_Op(modelspace);
-  Hbare -= Tcm;
+//  Operator Tcm = TCM_Op(modelspace);
+//  Hbare -= Tcm;
+  Hbare += Trel_Op(modelspace);
   
+  cout << "Memory Used: " << profiler.CheckMem()["RSS"] << endl;
   HartreeFock hf(Hbare);
   hf.Solve();
   cout << "EHF = " << hf.EHF << endl;
@@ -169,6 +179,7 @@ int main(int argc, char** argv)
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
 
+  cout << "Memory Used: " << profiler.CheckMem()["RSS"] << endl;
   Operator Rp2 = Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ());
   if (basis == "HF")
     Rp2 = hf.TransformToHFBasis(Rp2);
@@ -176,6 +187,7 @@ int main(int argc, char** argv)
   cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << endl; 
   cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + R2p + R2n + DF) << endl; 
   
+  cout << "Memory Used: " << profiler.CheckMem()["RSS"] << endl;
   IMSRGSolver imsrgsolver(Hbare);
   
   if (method=="NSmagnus")
@@ -197,16 +209,25 @@ int main(int argc, char** argv)
 
   if (method == "magnus" or method == "flow-omega")
   {
-   Rp2 = imsrgsolver.Transform(Rp2);
+//   Rp2 = imsrgsolver.Transform(Rp2);
+   imsrgsolver.Transform_InPlace(Rp2);
    cout << " point proton radius = " << sqrt( Rp2.ZeroBody ) << endl; 
    cout << "charge radius = " << sqrt( Rp2.ZeroBody + R2p + R2n + DF) << endl; 
   }
 
+  cout << "Memory Used: " << profiler.CheckMem()["RSS"] << endl;
 //  char buf[500];
 //  sprintf(buf,"Omega_e%d_%s.op",eMax,nucleus.c_str());
 //  string omegafile(buf);
 //  rw.WriteOperator(imsrgsolver.GetOmega(0),omegafile);
-  Hbare.PrintTimes();
+//  Hbare.PrintTimes();
+//  profiler.PrintCounters();
+//  profiler.PrintTimes();
+  profiler.PrintAll();
+//  cout << "Max Mem usage = " << profiler.MaxMemUsage()/1024. << " MB" << endl;
+//  cout << "real time: " << profiler.GetTimes()["real"] << endl;
+//  cout << "user time: " << profiler.GetTimes()["user"] << endl;
+//  cout << "sys time: " << profiler.GetTimes()["system"] << endl;
 
   return 0;
 }

@@ -141,10 +141,13 @@ void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
   }
   outfile << "      Tz      Parity    J2        a        b        c        d     <ab|V|cd>    <ab|0|cd>    <ab|0|cd>    <ab|0|cd>" << endl;
 
-  for ( auto& itmat : Op.TwoBody.MatEl )
+//  for ( auto& itmat : Op.TwoBody.MatEl )
+  for ( auto& itindex : Op.TwoBody.MtxIndex )
   {
-    int ch = itmat.first[0]; // assume ch_bra == ch_ket
-    auto& matrix = itmat.second;
+//    int ch = itmat.first[0]; // assume ch_bra == ch_ket
+    int ch = itindex.first[0]; // assume ch_bra == ch_ket
+    auto& matrix = Op.TwoBody.GetMatrix(ch,ch);
+//    auto& matrix = itmat.second;
     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
     int J2 = tbc.J*2;
     int Tz = tbc.Tz;
@@ -2130,12 +2133,18 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
 
    opfile <<  "$TwoBody:\t"  << endl;
 
-   for ( auto& it : op.TwoBody.MatEl )
+//   for ( auto& it : op.TwoBody.MatEl )
+   for ( auto& itindex : op.TwoBody.MtxIndex )
    {
-      int chbra = it.first[0];
-      int chket = it.first[1];
-      int nbras = it.second.n_rows;
-      int nkets = it.second.n_cols;
+//      int chbra = it.first[0];
+//      int chket = it.first[1];
+//      int nbras = it.second.n_rows;
+//      int nkets = it.second.n_cols;
+      int chbra = itindex.first[0];
+      int chket = itindex.first[1];
+      auto& matrix = op.TwoBody.GetMatrix(chbra,chket);
+      int nbras = matrix.n_rows;
+      int nkets = matrix.n_cols;
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(chbra);
       TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(chket);
       for (int ibra=0; ibra<nbras; ++ibra)
@@ -2144,7 +2153,8 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
         for (int iket=0; iket<nkets; ++iket)
         {
           Ket& ket = tbc_ket.GetKet(iket);
-           double tbme = it.second(ibra,iket);
+//           double tbme = it.second(ibra,iket);
+           double tbme = matrix(ibra,iket);
            if ( abs(tbme) > 1e-7 )
            {
              opfile << setw(4) << tbc_bra.J << " " << tbc_bra.parity << " " << tbc_bra.Tz  << "    "
@@ -2207,17 +2217,24 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
 
    opfile <<  "$TwoBody:\t"  << endl;
 
-   for ( auto& it : op.TwoBody.MatEl )
+//   for ( auto& it : op.TwoBody.MatEl )
+   for ( auto& itindex : op.TwoBody.MtxIndex )
    {
-      int chbra = it.first[0];
-      int chket = it.first[1];
-      int nbras = it.second.n_rows;
-      int nkets = it.second.n_cols;
+//      int chbra = it.first[0];
+//      int chket = it.first[1];
+//      int nbras = it.second.n_rows;
+//      int nkets = it.second.n_cols;
+      int chbra = itindex.first[0];
+      int chket = itindex.first[1];
+      auto& matrix = op.TwoBody.GetMatrix(chbra,chket);
+      int nbras = matrix.n_rows;
+      int nkets = matrix.n_cols;
       for (int ibra=0; ibra<nbras; ++ibra)
       {
         for (int iket=0; iket<nkets; ++iket)
         {
-           double tbme = it.second(ibra,iket);
+//           double tbme = it.second(ibra,iket);
+           double tbme = matrix(ibra,iket);
            if ( abs(tbme) > 1e-7 )
            {
              opfile << setw(4) << chbra << " " << setw(4) << chket << "   "
@@ -2346,12 +2363,19 @@ void ReadWrite::CompareOperators(Operator& op1, Operator& op2, string filename)
 
    opfile <<  "$TwoBody:\t"  << endl;
 
-   for ( auto& it : op1.TwoBody.MatEl )
+//   for ( auto& it : op1.TwoBody.MatEl )
+   for ( auto& itindex : op1.TwoBody.MtxIndex )
    {
-      int chbra = it.first[0];
-      int chket = it.first[1];
-      int nbras = it.second.n_rows;
-      int nkets = it.second.n_cols;
+//      int chbra = it.first[0];
+//      int chket = it.first[1];
+//      int nbras = it.second.n_rows;
+//      int nkets = it.second.n_cols;
+      int chbra = itindex.first[0];
+      int chket = itindex.first[1];
+      auto& matrix1 = op1.TwoBody.GetMatrix(chbra,chket);
+      auto& matrix2 = op2.TwoBody.GetMatrix(chbra,chket);
+      int nbras = matrix1.n_rows;
+      int nkets = matrix1.n_cols;
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(chbra);
       for (int ibra=0; ibra<nbras; ++ibra)
       {
@@ -2359,8 +2383,10 @@ void ReadWrite::CompareOperators(Operator& op1, Operator& op2, string filename)
         for (int iket=0; iket<nkets; ++iket)
         {
           Ket& ket = tbc_bra.GetKet(iket);
-           double tbme1 = it.second(ibra,iket);
-           double tbme2 = op2.TwoBody.GetMatrix(chbra,chket)(ibra,iket);
+           double tbme1 = matrix1(ibra,iket);
+           double tbme2 = matrix2(ibra,iket);
+//           double tbme1 = it.second(ibra,iket);
+//           double tbme2 = op2.TwoBody.GetMatrix(chbra,chket)(ibra,iket);
            if ( abs(tbme1) > 1e-7 or abs(tbme2>1e-7) )
            {
              opfile << setw(4) << tbc_bra.J << " " << tbc_bra.parity << " " << tbc_bra.Tz  << "    "
@@ -2501,9 +2527,12 @@ void ReadWrite::WriteTwoBody_Takayuki(string filename, Operator& Hbare)
   ofstream outfile(filename);
   outfile << setiosflags(ios::fixed);
 
-  for ( auto& itmat : Hbare.TwoBody.MatEl )
+//  for ( auto& itmat : Hbare.TwoBody.MatEl )
+  for ( auto& itindex : Hbare.TwoBody.MtxIndex )
   {
-    int ch_ket = itmat.first[1];
+//    int ch_ket = itmat.first[1];
+    int ch_ket = itindex.first[1];
+    auto& matrix = Hbare.TwoBody.GetMatrix(ch_ket,ch_ket);
     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch_ket);
     int J = tbc.J;
     int nkets = tbc.GetNumberKets();
@@ -2513,7 +2542,8 @@ void ReadWrite::WriteTwoBody_Takayuki(string filename, Operator& Hbare)
       for (int iket=0; iket<=ibra; ++iket)
       {
         Ket& ket = tbc.GetKet(iket);
-        double tbme = itmat.second(ibra,iket);
+//        double tbme = itmat.second(ibra,iket);
+        double tbme = matrix(ibra,iket);
         if (abs(tbme)<1e-8) continue;
         outfile << setw(3) << bra.op->tz2 << " " << setw(3) << orbits_remap.at(bra.p) << " "
                 << setw(3) << bra.oq->tz2 << " " << setw(3) << orbits_remap.at(bra.q) << " "
@@ -2641,11 +2671,17 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
    }
 
    outfile << "!  a    b    c    d     Jab  Jcd   <ab Jab || Op || cd Jcd>" << endl;
-   for ( auto& itmat : Op.TwoBody.MatEl )
+//   for ( auto& itmat : Op.TwoBody.MatEl )
+   for ( auto& itindex : Op.TwoBody.MtxIndex )
    {
-     TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(itmat.first[0]);
-     TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(itmat.first[1]);
-     auto& matrix = itmat.second;
+     int chbra = itindex.first[0];
+     int chket = itindex.first[1];
+     auto& matrix = Op.TwoBody.GetMatrix(chbra,chket);
+//     TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(itmat.first[0]);
+//     TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(itmat.first[1]);
+     TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(chbra);
+     TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(chket);
+//     auto& matrix = itmat.second;
 //     int nbras = tbc_bra.GetNumberKets();
 //     int nkets = tbc_ket.GetNumberKets();
 //     for ( int ibra=0; ibra<nbras; ++ibra)

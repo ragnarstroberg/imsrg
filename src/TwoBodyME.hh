@@ -3,6 +3,7 @@
 #define TwoBodyME_h 1
 
 #include <memory>
+#include <deque>
 #include "ModelSpace.hh"
 class TwoBodyME_ph;
 
@@ -31,7 +32,10 @@ class TwoBodyME
 {
  public:
   ModelSpace*  modelspace;
-  map<array<int,2>,arma::mat> MatEl;
+//  map<array<int,2>,arma::mat> MatEl; // Overhaul this data structure
+  deque<arma::mat> MtxEl;
+  map<array<int,2>,int> MtxIndex; //TODO: give better encapsulation functions for iterating
+  
   int nChannels;
   bool hermitian;
   bool antihermitian;
@@ -47,7 +51,9 @@ class TwoBodyME
 
   TwoBodyME& operator*=(const double);
   TwoBodyME& operator+=(const TwoBodyME&);
+  TwoBodyME& operator+=(const double);
   TwoBodyME& operator-=(const TwoBodyME&);
+  TwoBodyME& operator/=(const TwoBodyME&);
 
 //  void Copy(const TwoBodyME&);
   void Allocate();
@@ -58,11 +64,14 @@ class TwoBodyME
   void SetAntiHermitian();
   void SetNonHermitian();
 
-  arma::mat& GetMatrix(int chbra, int chket){return MatEl.at({chbra,chket});};
+//  arma::mat& GetMatrix(int chbra, int chket){return MatEl.at({chbra,chket});};
+  arma::mat& GetMatrix(int chbra, int chket);
   arma::mat& GetMatrix(int ch){return GetMatrix(ch,ch);};
   arma::mat& GetMatrix(array<int,2> a){return GetMatrix(a[0],a[1]);};
-  const arma::mat& GetMatrix(int chbra, int chket)const {return  MatEl.at({chbra,chket});};
-  const arma::mat& GetMatrix(int ch)const {return  GetMatrix(ch,ch);};
+//  const arma::mat& GetMatrix(int chbra, int chket)const {return  MatEl.at({chbra,chket});};
+  const arma::mat& GetMatrix(int chbra, int chket)const;
+  const arma::mat& GetMatrix(int ch) const {return  GetMatrix(ch,ch);};
+  const arma::mat& GetMatrix(array<int,2> a)const {return GetMatrix(a[0],a[1]);};
 
  //TwoBody setter/getters
   double GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const;
@@ -125,14 +134,15 @@ class TwoBodyME
   void Symmetrize();
   void AntiSymmetrize();
   void Eye();
-  void PrintMatrix(int chbra,int chket) const { MatEl.at({chbra,chket}).print();};
+//  void PrintMatrix(int chbra,int chket) const { MatEl.at({chbra,chket}).print();};
+  void PrintMatrix(int chbra,int chket) const;
   int Dimension();
   int size();
 
 
 };
 
-
+TwoBodyME abs(const TwoBodyME&);
 
 
 #endif

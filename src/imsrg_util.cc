@@ -1066,11 +1066,14 @@ Operator E0Op(ModelSpace& modelspace)
       }
     }
 
-    for ( auto& itmat : X.TwoBody.MatEl )
+//    for ( auto& itmat : X.TwoBody.MatEl )
+    for ( auto& itindex : X.TwoBody.MtxIndex )
     {
-      int ch_bra = itmat.first[0];
+//      int ch_bra = itmat.first[0];
+      int ch_bra = itindex.first[0];
       int J = modelspace->GetTwoBodyChannel(ch_bra).J;
-      itmat.second *= sqrt(2*J+1.);
+//      itmat.second *= sqrt(2*J+1.);
+      X.TwoBody.GetMatrix(ch_bra,ch_bra) *= sqrt(2*J+1.);
     }
   }
 
@@ -1087,11 +1090,14 @@ Operator E0Op(ModelSpace& modelspace)
       }
     }
 
-    for ( auto& itmat : X.TwoBody.MatEl )
+//    for ( auto& itmat : X.TwoBody.MatEl )
+    for ( auto& itindex : X.TwoBody.MtxIndex )
     {
-      int ch_bra = itmat.first[0];
+//      int ch_bra = itmat.first[0];
+      int ch_bra = itindex.first[0];
       int J = modelspace->GetTwoBodyChannel(ch_bra).J;
-      itmat.second /= sqrt(2*J+1.);
+//      itmat.second /= sqrt(2*J+1.);
+      X.TwoBody.GetMatrix(ch_bra,ch_bra) *= sqrt(2*J+1.);
     }
 
   }

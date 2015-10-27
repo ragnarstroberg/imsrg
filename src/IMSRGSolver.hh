@@ -51,6 +51,7 @@ class IMSRGSolver
   void Solve_magnus_euler();
   void Solve_magnus_modified_euler();
 
+  Operator& Transform_InPlace(Operator& OpIn);
   Operator Transform(Operator& OpIn);
   Operator Transform(Operator&& OpIn);
   Operator InverseTransform(Operator& OpIn);
