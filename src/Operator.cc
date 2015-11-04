@@ -682,7 +682,6 @@ Operator Operator::BCH_Transform( const Operator &Omega)
 //*****************************************************************************************
 Operator Operator::BCH_Product(  Operator &Y)
 {
-//   return Y; // THIS NEEDS TO BE REMOVED!!!!
    double tstart = omp_get_wtime();
    Operator& X = *this;
    double nx = X.Norm();
@@ -690,7 +689,6 @@ Operator Operator::BCH_Product(  Operator &Y)
    if (nx < 1e-7) return Y;
    if (ny < 1e-7) return X;
 
-//   Operator Z = Commutator(X,Y);
    Operator Z;
    Z.SetToCommutator(X,Y);
    double nxy = Z.Norm();

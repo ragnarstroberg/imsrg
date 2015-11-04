@@ -38,7 +38,7 @@ ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  endif
 else  # default options. assumes boost and python are set up nicely.
  LIBS += -llapack
- ALL += libIMSRG.so
+ ALL += pyIMSRG.so
 endif
 endif
 
