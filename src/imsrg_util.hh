@@ -54,6 +54,8 @@ namespace imsrg_util
  void Reduce(Operator&);
  void UnReduce(Operator&);
 
+ template<typename T, typename... Args> T VectorUnion(T v1, T v2, Args... args);
+
 }
 
 #endif

@@ -1873,7 +1873,7 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode
 
    // Get A of the core
    int Acore=0;
-   for (auto& i : modelspace->hole_qspace)
+   for (auto& i : modelspace->core)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 + 1;
@@ -2009,7 +2009,7 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
 
    // Get A,Z of the core
    int Acore=0, Zcore=0;
-   for (auto& i : modelspace->hole_qspace)
+   for (auto& i : modelspace->core)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 + 1;
@@ -2539,7 +2539,7 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
    int wint = 4; // width for printing integers
    int wdouble = 12; // width for printing doubles
    int pdouble = 6; // precision for printing doubles
-   for (auto& i : modelspace->hole_qspace)
+   for (auto& i : modelspace->core)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 +1;
@@ -2548,7 +2548,7 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
          proton_core_orbits += 1;
       }
    }
-   neutron_core_orbits = modelspace->hole_qspace.size() - proton_core_orbits;
+   neutron_core_orbits = modelspace->core.size() - proton_core_orbits;
 
    outfile << fixed << setprecision(pdouble);
    outfile << "!  One-body matrix elements for tensor operator: " << opname << "   generated with IM-SRG" << endl;
@@ -2604,7 +2604,7 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
    int wint = 4; // width for printing integers
    int wdouble = 12; // width for printing doubles
    int pdouble = 6; // precision for printing doubles
-   for (auto& i : modelspace->hole_qspace)
+   for (auto& i : modelspace->core)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 +1;
@@ -2613,7 +2613,7 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
          proton_core_orbits += 1;
       }
    }
-   neutron_core_orbits = modelspace->hole_qspace.size() - proton_core_orbits;
+   neutron_core_orbits = modelspace->core.size() - proton_core_orbits;
 
    outfile << fixed << setprecision(pdouble);
    outfile << "!  Two-body matrix elements for tensor operator: " << opname << "   generated with IM-SRG" << endl;
