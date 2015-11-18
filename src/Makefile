@@ -60,7 +60,7 @@ install:
 	
 
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
-      HartreeFock.o Generator.o IMSRGSolver.o AngMom.o imsrg_util.o\
+      HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\
       boost_src/gzip.o boost_src/zlib.o  IMSRGProfiler.o 
 
 mysrg: main.cc $(OBJ)

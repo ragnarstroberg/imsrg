@@ -34,7 +34,7 @@ class Orbit
    //Constructors
    ~Orbit();
    Orbit();
-   Orbit(int n ,int l, int j, int t, int ph, int io, int index);
+   Orbit(int n ,int l, int j, int t, int ph, int cvq, int index);
    Orbit(const Orbit&);
 //   void swap(Orbit&) throw();
 //   Orbit& operator=( const Orbit& );
@@ -180,7 +180,7 @@ class ModelSpace
    void Init(int Nmax, string reference, string valence);
    void Init(int Nmax, string valence);
    void Init(int Nmax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list);
-   void Init(int Nmax, vector<index_t> hole_list, vector<index_t> valence_list);
+//   void Init(int Nmax, vector<index_t> hole_list, vector<index_t> valence_list);
    void Init(int Nmax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
    void Init(int Nmax, vector<string> hole_list, vector<string> valence_list);
    void Init_AZ(int nmax, int A, int Z);
@@ -219,6 +219,8 @@ class ModelSpace
    double GetHbarOmega() const {return hbar_omega;};
    int GetTargetMass() const {return target_mass;};
    int GetTargetZ() const {return target_Z;};
+   int GetAref() const {return Aref;};
+   int GetZref() const {return Zref;};
    int GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
@@ -291,6 +293,8 @@ class ModelSpace
    double hbar_omega;
    int target_mass;
    int target_Z;
+   int Aref;
+   int Zref;
    int nTwoBodyChannels;
    vector<Orbit> Orbits;
    vector<Ket> Kets;

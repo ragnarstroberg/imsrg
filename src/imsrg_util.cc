@@ -1170,20 +1170,20 @@ Operator E0Op(ModelSpace& modelspace)
   }
 
 
- template <typename T>
- T VectorUnion(T v1)
- {
-   return v1;
- }
- 
- template <typename T, typename... Args>
- T VectorUnion(T v1, T v2, Args... args)
- {
-   T vec(v1.size()+v2.size());
-   copy(v1.begin(),v1.end(),vec.begin());
-   copy(v2.begin(),v2.end(),vec.begin()+v1.size());
-   return VectorUnion(vec, args...);
- }
+// template <typename T>
+// T VectorUnion(T& v1)
+// {
+//   return v1;
+// }
+// 
+// template <typename T, typename... Args>
+// T VectorUnion(T& v1, T& v2, Args... args)
+// {
+//   T vec(v1.size()+v2.size());
+//   copy(v1.begin(),v1.end(),vec.begin());
+//   copy(v2.begin(),v2.end(),vec.begin()+v1.size());
+//   return VectorUnion(vec, args...);
+// }
  
 
 }// namespace imsrg_util

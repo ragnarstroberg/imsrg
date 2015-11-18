@@ -203,7 +203,7 @@ bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 unordered_map<unsigned long int,double> ModelSpace::SixJList;
 unordered_map<unsigned long long int,double> ModelSpace::NineJList;
 unordered_map<unsigned long long int,double> ModelSpace::MoshList;
-static map<string,vector<string>> ValenceSpaces  {
+map<string,vector<string>> ModelSpace::ValenceSpaces  {
 { "p-shell"  ,         {"p0p3","n0p3","p0p1","n0p1"}},
 { "sd-shell"  ,        {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"}},
 { "psd-shell"  ,       {"p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"}},
@@ -252,12 +252,13 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    OneBodyChannels(ms.OneBodyChannels),
    SortedTwoBodyChannels(ms.SortedTwoBodyChannels),
    SortedTwoBodyChannels_CC(ms.SortedTwoBodyChannels_CC),
-   norbits(ms.norbits), hbar_omega(ms.hbar_omega), target_mass(ms.target_mass),
+   norbits(ms.norbits), hbar_omega(ms.hbar_omega),
+   target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
    Orbits(ms.Orbits), Kets(ms.Kets),
    TwoBodyChannels(ms.TwoBodyChannels), TwoBodyChannels_CC(ms.TwoBodyChannels_CC)
 {
-   cout << "In ModelSpace copy constructor" << endl;
-   cout << "Orbits size:  " << ms.Orbits.size() << " -> " << Orbits.size() << endl;
+//   cout << "In ModelSpace copy constructor" << endl;
+//   cout << "Orbits size:  " << ms.Orbits.size() << " -> " << Orbits.size() << endl;
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
 }
@@ -284,7 +285,8 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    OneBodyChannels(move(ms.OneBodyChannels)),
    SortedTwoBodyChannels(move(ms.SortedTwoBodyChannels)),
    SortedTwoBodyChannels_CC(move(ms.SortedTwoBodyChannels_CC)),
-   norbits(ms.norbits), hbar_omega(ms.hbar_omega), target_mass(ms.target_mass),
+   norbits(ms.norbits), hbar_omega(ms.hbar_omega),
+   target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
    Orbits(move(ms.Orbits)), Kets(move(ms.Kets)),
    TwoBodyChannels(move(ms.TwoBodyChannels)), TwoBodyChannels_CC(move(ms.TwoBodyChannels_CC))
 {
@@ -316,7 +318,7 @@ ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> core_l
 ModelSpace::ModelSpace(int nmax, int A, int Z)
 : Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20),target_mass(A),target_Z(Z)
 {
-   Init(nmax,GetOrbitsAZ(A,Z),GetOrbitsAZ(A,Z));
+   Init(nmax,GetOrbitsAZ(A,Z),GetOrbitsAZ(A,Z),{});
 }
 
 // Shortcuts for common modelspaces
@@ -362,7 +364,7 @@ void ModelSpace::Init(int nmax, string valence)
      }
      target_mass = hole_list.size();
      core_list = hole_list;
-     for (auto& v : valence_list) remove(core_list.begin(),core_list.end(),v);
+     for (auto& v : valence_list) core_list.resize( remove(core_list.begin(),core_list.end(),v) - core_list.begin() );
      cout << "Valence space: " << valence << endl;
   }
   // otherwise, there's no valence space and we have a single reference
@@ -377,6 +379,15 @@ void ModelSpace::Init(int nmax, string valence)
      target_Z = Zc; 
   }
 
+  cout << "holes: ";
+  for ( auto &h : hole_list ) cout << h << " ";
+  cout << endl;
+  cout << "core: ";
+  for ( auto &h : core_list ) cout << h << " ";
+  cout << endl;
+  cout << "valence: ";
+  for ( auto &h : valence_list ) cout << h << " ";
+  cout << endl;
   Init(nmax,hole_list,core_list,valence_list);
 }
 
@@ -396,7 +407,7 @@ void ModelSpace::Init(int nmax, string reference, string valence)
   {
      valence_list = String2Index(itval->second);
      core_list = hole_list;
-     for (auto& v : valence_list) remove(core_list.begin(),core_list.end(),v);
+     for (auto& v : valence_list) core_list.resize( remove(core_list.begin(),core_list.end(),v) - core_list.begin() );
      cout << "Valence space: " << valence << endl;
      target_mass = Aref;
      target_Z = Zref;
@@ -419,7 +430,7 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> valence
 {
    // Assume core is hole states that aren't in the valence space
    vector<string> core_list( hole_list );
-   for (auto& v : valence_list) remove(core_list.begin(), core_list.end(), v);
+   for (auto& v : valence_list) core_list.resize( remove(core_list.begin(),core_list.end(),v) - core_list.begin() );
    Init(nmax,hole_list,core_list,valence_list);
 }
 
@@ -435,6 +446,7 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> core_li
   Init(nmax, String2Index(hole_list), String2Index(core_list), String2Index(valence_list) );
 }
 
+// This is the Init which should inevitably be called
 void ModelSpace::Init(int nmax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list)
 {
    Orbits.clear();
@@ -443,12 +455,14 @@ void ModelSpace::Init(int nmax, vector<index_t> hole_list, vector<index_t> core_
    core.clear();
    valence.clear();
    qspace.clear();
-//   particle_qspace.clear();
-//   hole_qspace.clear();
    proton_orbits.clear();
    neutron_orbits.clear();
    OneBodyChannels.clear();
+   cout << "Init" << endl;
 
+
+
+   // Make sure no orbits are both core and valence
    for (auto& c : core_list)
    {
      if ( find(valence_list.begin(), valence_list.end(), c) != valence_list.end() )
@@ -465,7 +479,6 @@ void ModelSpace::Init(int nmax, vector<index_t> hole_list, vector<index_t> core_
        int n = (N-l)/2;
        for (int j2=2*l+1; j2>=2*l-1 and j2>0; j2-=2)
        {
-//         for (int tz=-1; tz<=1; tz+=2)
          for (int tz : {-1, 1} )
          {
             int ph = 0;
@@ -482,6 +495,24 @@ void ModelSpace::Init(int nmax, vector<index_t> hole_list, vector<index_t> core_
      }
    }
    SetupKets();
+   target_mass = valence_list.size() > 0 ? 2 : 0;
+   target_Z = 0;
+   for (auto& c : core_list )
+   {
+     target_mass += (GetOrbit(c).j2+1);
+     if (c%2==0) target_Z += (GetOrbit(c).j2+1);
+   }
+   Aref = 0;
+   Zref = 0;
+   for (auto& c : hole_list )
+   {
+     Aref += (GetOrbit(c).j2+1);
+     if (c%2==0) Zref += (GetOrbit(c).j2+1);
+   }
+
+
+   cout << "ModelSpace main Init:  target_mass = " << target_mass << "  target_Z = " << target_Z << endl;
+   cout << "ModelSpace main Init:  Aref = " << Aref << "  Zref = " << Zref << endl;
 }
 
 
@@ -494,10 +525,11 @@ vector<index_t> ModelSpace::String2Index( vector<string> vs )
   {
     int tz2 = s[0]=='p' ? -1 : 1;
     int n,j2;
-    istringstream( s.substr(2,3) ) >> n;
+    istringstream( s.substr(1,2) ) >> n;
     int l = find(l_list.begin(),l_list.end(), s[2]) - l_list.begin();
     istringstream( s.substr(3,s.size()) ) >> j2;
     vi.push_back( Index1(n,l,j2,tz2) );
+    cout << s << " -> " << n << " " << l << " " << j2 << " " << tz2 << endl;
   }
   return vi;
 }
@@ -525,6 +557,7 @@ void ModelSpace::GetAZfromString(string str,int& A, int& Z) // TODO: accept diff
     Z =-1;
     cout << "ModelSpace::GetAZfromString :  Trouble parsing " << str << endl;
   }
+  cout << "GetAZfromString:  " << str << "  -> " << A << " " << Z << endl;
 }
 
 // Fill A orbits with Z protons and A-Z neutrons
@@ -533,7 +566,7 @@ vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)
 {
   int zz = 0;
   int nn = 0; // unfortunate there are so many n's here...
-  vector<index_t> orbitsAZ(A);
+  vector<index_t> orbitsAZ;
   for (int N=0; N<=Nmax; ++N)
   {
     for (int l=N; l>=0; l-=2)
@@ -553,7 +586,32 @@ vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)
       if (zz==Z and nn==A-Z) return orbitsAZ; // We're all done here.
       if (zz>Z or nn>A-Z) // Oops. We partially filled a shell.
       {
-        cout << "Trouble! No support yet for partially-filled shells!! (A = " <<A << ", Z = " << Z << ")" << endl;
+        cout << "Trouble! No support yet for partially-filled shells!! (A = " <<A << ", Z = " << Z << ") zz = " << zz << "  nn = " << nn <<  endl;
+        return orbitsAZ;
+      }
+    }
+    for (int l=N%2; l<=N; l+=2)
+    {
+      if (l==0) continue;
+      int n = (N-l)/2;
+      int j2 = 2*l-1;
+      if (zz < Z)
+      {
+        orbitsAZ.push_back(Index1(n,l,j2,-1));
+        zz += j2+1;
+      }
+      if (nn < A-Z)
+      {
+        orbitsAZ.push_back(Index1(n,l,j2,1));
+        nn += j2+1;
+      }
+      cout << "A,Z = " << A << "," << Z << "  nn,zz = " << nn << "," << zz << endl;
+      for ( auto& o : orbitsAZ ) cout << o << " ";
+      cout << endl;
+      if (zz==Z and nn==A-Z) return orbitsAZ; // We're all done here.
+      if (zz>Z or nn>A-Z) // Oops. We partially filled a shell.
+      {
+        cout << "Trouble! No support yet for partially-filled shells!! (A = " <<A << ", Z = " << Z << ") zz = " << zz << "  nn = " << nn <<  endl;
         return orbitsAZ;
       }
     }
@@ -804,6 +862,9 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
    norbits = ms.norbits;
    hbar_omega = ms.hbar_omega;
    target_mass = ms.target_mass;
+   target_mass = ms.target_Z;
+   Aref = ms.Aref;
+   Zref = ms.Zref;
    Orbits = ms.Orbits;
    Kets = ms.Kets;
    TwoBodyChannels = ms.TwoBodyChannels;
@@ -850,6 +911,9 @@ ModelSpace ModelSpace::operator=(ModelSpace&& ms)
    norbits = move(ms.norbits);
    hbar_omega = move(ms.hbar_omega);
    target_mass = move(ms.target_mass);
+   target_Z = move(ms.target_Z);
+   Aref = move(ms.Aref);
+   Zref = move(ms.Zref);
    Orbits = move(ms.Orbits);
    Kets = move(ms.Kets);
    TwoBodyChannels = move(ms.TwoBodyChannels);
@@ -950,13 +1014,13 @@ void ModelSpace::SetupKets()
 //    int iop = ket.op->io;
 //    int ioq = ket.oq->io;
     int cvq_p = ket.op->cvq;
-    int cvq_q = ket.op->cvq;
+    int cvq_q = ket.oq->cvq;
     if (php+phq==0) KetIndex_pp.push_back(index);
     if (php+phq==1) KetIndex_ph.push_back(index);
     if (php+phq==2) KetIndex_hh.push_back(index);
     if (cvq_p+cvq_q==0)      KetIndex_cc.push_back(index); // 00
     if (cvq_p+cvq_q==1)      KetIndex_vc.push_back(index); // 01
-    if (abs(cvq_p-cvq_q==2)) KetIndex_qc.push_back(index); // 02
+    if (abs(cvq_p-cvq_q)==2) KetIndex_qc.push_back(index); // 02
     if (cvq_p*cvq_q==1)      KetIndex_vv.push_back(index); // 11
     if (cvq_p+cvq_q==3)      KetIndex_qv.push_back(index); // 12
     if (cvq_p+cvq_q==4)      KetIndex_qq.push_back(index); // 22
@@ -998,6 +1062,24 @@ void ModelSpace::SetupKets()
 //     }
 
    }
+//   cout << "kets_cc: ";
+//   for (auto& k : KetIndex_cc ) cout << k << "->(" << GetKet(k).p << "," << GetKet(k).q << ") ";
+//   cout << endl;
+//   cout << "kets_vc: ";
+//   for (auto& k : KetIndex_vc ) cout << k << "->(" << GetKet(k).p << "," << GetKet(k).q << ") ";
+//   cout << endl;
+//   cout << "kets_qc: ";
+//   for (auto& k : KetIndex_qc ) cout << k << "->(" << GetKet(k).p << "," << GetKet(k).q << ") ";
+//   cout << endl;
+//   cout << "kets_vv: ";
+//   for (auto& k : KetIndex_vv ) cout << k << "->(" << GetKet(k).p << "," << GetKet(k).q << ") ";
+//   cout << endl;
+//   cout << "kets_qv: ";
+//   for (auto& k : KetIndex_qv ) cout << k << "->(" << GetKet(k).p << "," << GetKet(k).q << ") ";
+//   cout << endl;
+//   cout << "kets_qq: ";
+//   for (auto& k : KetIndex_qq ) cout << k << "->(" << GetKet(k).p << "," << GetKet(k).q << ") ";
+//   cout << endl;
 
    SortedTwoBodyChannels.resize(nTwoBodyChannels);
    SortedTwoBodyChannels_CC.resize(nTwoBodyChannels);

@@ -42,10 +42,10 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
    {
      ConstructGenerator_ShellModel_Atan();
    }
-   else if (generator_type == "shell-model-atan-cut")
-   {
-     ConstructGenerator_ShellModel_Atan_Cut();
-   }
+//   else if (generator_type == "shell-model-atan-cut")
+//   {
+//     ConstructGenerator_ShellModel_Atan_Cut();
+//   }
    else if (generator_type == "hartree-fock")
    {
      ConstructGenerator_HartreeFock();
@@ -213,15 +213,19 @@ void Generator::ConstructGenerator_Atan()
    for ( auto& a : modelspace->core)
 //   for ( auto& a : modelspace->hole_qspace)
    {
+//     cout << "ConstructGenerator_Atan, a = " << a << "  norbits = " << modelspace->GetNumberOrbits() << endl;
 //      for ( auto& i : modelspace->particles)
 //      for ( auto& i : modelspace->particle_qspace)
 //      for ( auto& i : modelspace->valence)
+//      cout << "    i = ";
       for ( auto& i : VectorUnion(modelspace->valence,modelspace->qspace) )
       {
+//         cout << i << " ";
          double denominator = Get1bDenominator(i,a);
          Eta->OneBody(i,a) += 0.5*atan(2*H->OneBody(i,a)/denominator);
          Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
+//      cout << endl;
 //      for ( auto& i : modelspace->valence)
 //      for ( auto& i : modelspace->qspace)
 //      {
@@ -239,10 +243,12 @@ void Generator::ConstructGenerator_Atan()
       arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
       arma::mat& H2 = H->TwoBody.GetMatrix(ch);
 //      for ( auto& iket : tbc.GetKetIndex_c_c() )
+//      cout << "ch = " << ch << "(" << tbc.J << "," << tbc.parity << "," << tbc.Tz << ")  ket_cc: ";
       for ( auto& iket : tbc.GetKetIndex_cc() )
       {
 //         for ( auto& ibra : tbc.GetKetIndex_q_q() )
 //         for ( auto& ibra : tbc.GetKetIndex_qq() )
+//         cout << iket << "->(" << modelspace->GetKet(iket).p <<"," << modelspace->GetKet(iket).q  << ") ";
          for ( auto& ibra : VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
@@ -263,6 +269,7 @@ void Generator::ConstructGenerator_Atan()
 //            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
 //         }
       }
+//      cout << endl;
     }
 }
 
