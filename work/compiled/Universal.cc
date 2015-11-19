@@ -214,7 +214,7 @@ int main(int argc, char** argv)
     if (method == "magnus")
     {
       smax *= 1.5;
-      cout << "transforming operators" << endl;
+      if (ops.size()>0) cout << "transforming operators" << endl;
       for (size_t i=0;i<ops.size();++i)
       {
         cout << opnames[i] << " " << flush;
@@ -228,10 +228,12 @@ int main(int argc, char** argv)
     int nOmega = imsrgsolver.GetOmegaSize();
     cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << endl;
     Hbare = Hbare.UndoNormalOrdering();
-    ModelSpace ms2(modelspace);
-    ms2.SetReference(ms2.core);
+
+    ModelSpace ms2(modelspace); // copy the current model space
+    ms2.SetReference(ms2.core); // chage the reference determinant
     Hbare.SetModelSpace(ms2);
-    cout << "Doing NO wrt A=" << ms2.GetAref() << " Z=" << ms2.GetZref() << endl;
+
+    cout << "Doing NO wrt A=" << ms2.GetAref() << " Z=" << ms2.GetZref() << "  norbits = " << ms2.GetNumberOrbits() << endl;
     Hbare = Hbare.DoNormalOrdering();
 
     imsrgsolver.SetHin(Hbare);

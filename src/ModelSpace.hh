@@ -249,15 +249,15 @@ class ModelSpace
    inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
 
    void PreCalculateMoshinsky();
+   void ClearVectors();
 
 
    // Data members
-   vector<index_t> holes;      // in the reference Slater determinant
-   vector<index_t> particles;  // above the reference Slater determinant
-   vector<index_t> core;       // core for decoupling
-   vector<index_t> valence;    // valence space for decoupling
-   vector<index_t> qspace;     // above the valence space for decoupling
-//   vector<index_t> particle_qspace;
+   vector<index_t> holes;           // in the reference Slater determinant
+   vector<index_t> particles;       // above the reference Slater determinant
+   vector<index_t> core;            // core for decoupling
+   vector<index_t> valence;         // valence space for decoupling
+   vector<index_t> qspace;          // above the valence space for decoupling
    vector<index_t> proton_orbits;
    vector<index_t> neutron_orbits;
 

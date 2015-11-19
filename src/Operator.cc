@@ -263,6 +263,9 @@ Operator Operator::DoNormalOrdering2()
       {
         arma::vec diagonals = matrix.diag();
         auto hh = tbc_ket.GetKetIndex_hh();
+//        cout << "hh: ";
+//        for ( auto& h : hh ) cout << h << " ";
+//        cout << endl;
         opNO.ZeroBody += arma::sum( diagonals.elem(hh) ) * (2*J_ket+1);
       }
 
@@ -272,7 +275,7 @@ Operator Operator::DoNormalOrdering2()
          Orbit &oa = modelspace->GetOrbit(a);
          double ja = oa.j2/2.0;
          index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // OneBodyChannels should be moved to the operator, to accommodate tensors
+         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
          {
             if (b < bstart) continue;
             Orbit &ob = modelspace->GetOrbit(b);
@@ -361,6 +364,8 @@ Operator Operator::DoNormalOrdering3()
    return opNO2;
 
 }
+
+
 
 /// Convert to a basis normal ordered wrt the vacuum.
 Operator Operator::UndoNormalOrdering()

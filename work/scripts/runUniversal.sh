@@ -20,9 +20,10 @@ v3n=none
 #v3n=../../input/jsTNF_Nmax_18_J12max_8_hbarOmega_20.00_Fit_cutoff_2.00_nexp_4_c1_-0.81_c3_-3.20_c4_5.40_cD_1.27_cE_-0.13_2pi_0.00_2pi1pi_0.00_2picont_0.00_rings_0.00_J3max_9_id_1_new_ant_E3_12_e_12.h5
 
 hw=20
-valence_space=sd-shell
-#valence_space=Ca40
-reference=default
+#valence_space=sd-shell
+valence_space=Ca40
+#reference=default
+reference=Ca40
 A=16
 smax=5
 emax=4
@@ -33,7 +34,8 @@ method=magnus
 omega_norm_max=0.25
 #flowfile=output/BCH_SingleRef_${}_e${emax}.dat
 file3='file3e1max=12 file3e2max=28 file3e3max=12'
-Operators=Rp2,Rm2,HCM,HCM_28
+#Operators=Rp2,Rm2,HCM,HCM_28
+Operators=Rp2
 
 $exe 2bme=${vnn} 3bme=${v3n} emax=${emax} e3max=${e3max} method=${method} valence_space=${valence_space} hw=${hw} smax=${smax} ${file3} omega_norm_max=${omega_norm_max} reference=${reference} Operators=${Operators}
 
