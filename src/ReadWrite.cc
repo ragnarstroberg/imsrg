@@ -1218,18 +1218,18 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
   ModelSpace* modelspace = op.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
 
-  float c1 = -0.81;
-  float c3 = -3.20;
-  float c4 = 5.40;
-  float cD = 1.271;
-  float cE = -0.131;
+//  float c1 = -0.81;
+//  float c3 = -3.20;
+//  float c4 = 5.40;
+//  float cD = 1.271;
+//  float cE = -0.131;
 
-// N2LOSAT parameters
-//  float c1 = -1.12152120;
-//  float c3 = -3.92500586;
-//  float c4 = 3.76568716;
-//  float cD = 0.861680589;
-//  float cE = -0.03957471;
+//   N2LOSAT parameters
+  float c1 = -1.12152120;
+  float c3 = -3.92500586;
+  float c4 = 3.76568716;
+  float cD = 0.861680589;
+  float cE = -0.03957471;
 
   float LEC[5] = {c1,c3,c4,cD,cE};
 

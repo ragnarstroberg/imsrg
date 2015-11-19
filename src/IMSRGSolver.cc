@@ -95,7 +95,6 @@ void IMSRGSolver::SetFlowFile(string s)
 
 void IMSRGSolver::Solve()
 {
-  WriteFlowStatusHeader(cout);
   if (method == "magnus_euler" or method =="magnus")
     Solve_magnus_euler();
   else if (method == "magnus_modified_euler")
@@ -333,9 +332,9 @@ struct vector_space_reduce< Operator >
 // Apply operation to each element of X and return the result
 // this is needed for ODE adaptive solver
 // USE THIS FOR BOOST VERSION >= 1.56
+//struct vector_space_norm_inf< vector<Operator> >
 namespace boost {namespace numeric {namespace odeint{
 template<>
-//struct vector_space_norm_inf< vector<Operator> >
 struct vector_space_norm_inf< deque<Operator> >
 {
    typedef double result_type;
@@ -394,6 +393,7 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
    if (ode_mode == "H")
    {
      FlowingOps[0] = x[0];
+     if (dxdt.size() < x.size()) dxdt.resize(x.size());
      auto& H_s = FlowingOps[0];
      generator.Update(&H_s,&Eta);
      if (Eta.Norm() < eta_criterion)
@@ -435,12 +435,14 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
      else
        H_s = H_0->BCH_Transform(Omega_s);
      generator.Update(&H_s,&Eta);
+     if (dxdt.size() < x.size()) dxdt.resize(x.size());
      dxdt.back() = Eta - 0.5*Commutator(Omega_s,Eta);
    }
    else if (ode_mode == "Restored" )
    {
      FlowingOps[0] = x[0];
      FlowingOps[1] = x[1];
+     if (dxdt.size() < x.size()) dxdt.resize(x.size());
      dxdt[1] = Operator(x[1]);
      auto& H_s = FlowingOps[0];
      generator.Update(&H_s,&Eta);
@@ -453,14 +455,9 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
      }
      else
      {
-//       cout << "In Restored. Size of dxdt = " << dxdt.size() << endl;
-//       cout << "Particle Ranks: " << x[0].GetParticleRank() << " " << x[1].GetParticleRank() << " " << dxdt[0].GetParticleRank() << " " << dxdt[1].GetParticleRank() << endl;
        dxdt[0] = Commutator(Eta,x[0]+x[1]);
-//       cout << "Did the first bit" << endl;
        dxdt[1].Erase();
-//       cout << "Done erasing" << endl;
        dxdt[1].comm221ss(Eta,x[0]);
-//       cout << "Keeping the pp and hh parts" << endl;
        // keep only pp and hh parts of d chi/ ds
        for (auto& a : modelspace->holes)
        {
@@ -470,7 +467,6 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
            dxdt[1].OneBody(i,a) = 0;
          }
        }
-//       cout << "continuing on..." << endl;
        for (size_t i=2;i<x.size();++i)
        {
          dxdt[i] = Commutator(Eta,x[i]);
@@ -479,8 +475,8 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
      }
 
    }
-   WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
+   WriteFlowStatus(cout);
 }
 
 
