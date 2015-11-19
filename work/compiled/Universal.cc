@@ -45,6 +45,12 @@ int main(int argc, char** argv)
   double omega_norm_max = PAR.d("omega_norm_max"); 
   double denominator_delta = PAR.d("denominator_delta");
 
+  vector<string> opnames = PAR.v("Operators");
+
+  vector<Operator> ops;
+
+
+
   // test 2bme file
   ifstream test(inputtbme);
   if( not test.good() )
@@ -69,20 +75,13 @@ int main(int argc, char** argv)
 
   ReadWrite rw;
   ModelSpace modelspace = reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space);
-  ModelSpace ms2;
+//  ModelSpace ms2;
 
-  if (reference != "default" and reference != "valece_space")
-       ms2 = ModelSpace(eMax,valence_space); // Targeted normal ordering. We'll need this for the last step.
+//  if (reference != "default" and reference != valence_space)
+//       ms2 = ModelSpace(eMax,valence_space); // Targeted normal ordering. We'll need this for the last step.
 
-  if (modelspace.valence.size() > 0) // we've got a valence space decoupling
-  {
-    if (nsteps < 0 ) nsteps = 2;
-  }
-  else // just doing a single reference decoupling
-  {
-    if (nsteps < 0 ) nsteps = 1;
-  }
-
+  if (nsteps < 0)
+    nsteps = modelspace.valence.size()>0 ? 2 : 1;
 
 
   modelspace.SetHbarOmega(hw);
@@ -123,23 +122,54 @@ int main(int argc, char** argv)
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
 
-//  Operator Rp2   = Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ());
-  Operator R2_p1 = R2_p1_Op(modelspace);
-  Operator R2_p2 = R2_p2_Op(modelspace);
-  Operator R2_cm  = R2CM_Op(modelspace);
-  if (basis == "HF")
+  // Calculate all the desired operators
+  for (auto& opname : opnames)
   {
-//    Rp2 = hf.TransformToHFBasis(Rp2);
-    R2_p1 = hf.TransformToHFBasis(R2_p1);
-    R2_p2 = hf.TransformToHFBasis(R2_p2);
-    R2_cm = hf.TransformToHFBasis(R2_cm);
+           if (opname == "R2_p1")        ops.emplace_back( R2_1body_Op(modelspace,"proton") );
+      else if (opname == "R2_p2")        ops.emplace_back( R2_2body_Op(modelspace,"proton") );
+      else if (opname == "R2_n1")        ops.emplace_back( R2_1body_Op(modelspace,"neutron") );
+      else if (opname == "R2_n2")        ops.emplace_back( R2_2body_Op(modelspace,"neutron") );
+      else if (opname == "Rp2")          ops.emplace_back( Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) );
+      else if (opname == "Rn2")          ops.emplace_back( Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) );
+      else if (opname == "Rm2")          ops.emplace_back( Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) );
+      else if (opname == "E2")           ops.emplace_back( ElectricMultipoleOp(modelspace,2) );
+      else if (opname == "M1")           ops.emplace_back( MagneticMultipoleOp(modelspace,1) );
+      else if (opname == "Fermi")        ops.emplace_back( AllowedFermi_Op(modelspace) );
+      else if (opname == "GamowTeller")  ops.emplace_back( AllowedGamowTeller_Op(modelspace) );
+      else if (opname == "R2CM")         ops.emplace_back( R2CM_Op(modelspace) );
+      else if (opname == "HCM")          ops.emplace_back( HCM_Op(modelspace) );
+      else if (opname.substr(0,4) == "HCM_") // GetHCM with a different frequency, ie HCM_24 for hw=24
+      {
+         double hw_HCM;
+         double hw_save = modelspace.GetHbarOmega();
+         istringstream(opname.substr(4,opname.size())) >> hw_HCM;
+         modelspace.SetHbarOmega(hw_HCM);
+         ops.emplace_back( HCM_Op(modelspace) );
+         modelspace.SetHbarOmega(hw_save);
+      }
+      else //need to remove from the list
+      {
+         cout << "Unknown operator: " << opname << endl;
+      }
   }
-//  Rp2 = Rp2.DoNormalOrdering();
-  R2_p1 = R2_p1.DoNormalOrdering();
-  R2_p2 = R2_p2.DoNormalOrdering();
-  R2_cm = R2_cm.DoNormalOrdering();
-//  cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << endl; 
-//  cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + R2p + R2n + DF) << endl; 
+
+
+  
+
+  for (auto& op : ops)
+  {
+     if (basis == "HF") op = hf.TransformToHFBasis(op);
+     op = op.DoNormalOrdering();
+  }
+  auto itR2p = find(opnames.begin(),opnames.end(),"Rp2");
+  if (itR2p != opnames.end())
+  {
+    Operator& Rp2 = ops[itR2p-opnames.begin()];
+    int Z = modelspace.GetTargetZ();
+    int A = modelspace.GetTargetMass();
+    cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << endl; 
+    cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
+  }
   
   IMSRGSolver imsrgsolver(Hbare);
   
@@ -172,42 +202,53 @@ int main(int argc, char** argv)
   imsrgsolver.SetSmax(smax);
   imsrgsolver.Solve();
 
-  // If we're doing targeted normal ordering for the shell model
-  // we now re-normal order wrt to the shell model core
+
+
+
+  // If we're doing targeted normal ordering 
+  // we now re-normal order wrt to the core
   // and do any remaining flow.
-  if (reference != "default"  and reference != valence_space)
+//  if (reference != "default"  and reference != valence_space)
+  if ( modelspace.core != modelspace.holes )
   {
     if (method == "magnus")
     {
       smax *= 1.5;
-      R2_p1 = imsrgsolver.Transform(R2_p1);
-      R2_p2 = imsrgsolver.Transform(R2_p2);
-      R2_cm = imsrgsolver.Transform(R2_cm);
+      cout << "transforming operators" << endl;
+      for (size_t i=0;i<ops.size();++i)
+      {
+        cout << opnames[i] << " " << flush;
+        ops[i] = imsrgsolver.Transform(ops[i]);
+      }
+      cout << endl;
       imsrgsolver.SetSmax(smax);
     }
     Hbare = imsrgsolver.GetH_s();
+
+    int nOmega = imsrgsolver.GetOmegaSize();
     cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << endl;
     Hbare = Hbare.UndoNormalOrdering();
+    ModelSpace ms2(modelspace);
+    ms2.SetReference(ms2.core);
     Hbare.SetModelSpace(ms2);
     cout << "Doing NO wrt A=" << ms2.GetAref() << " Z=" << ms2.GetZref() << endl;
     Hbare = Hbare.DoNormalOrdering();
+
     imsrgsolver.SetHin(Hbare);
     imsrgsolver.Solve();
+    // Change to the new basis, then apply the rest of the transformation to the operators
+    for (auto& op : ops)
+    {
+      op = op.UndoNormalOrdering();
+      op.SetModelSpace(ms2);
+      op = op.DoNormalOrdering();
+      op = imsrgsolver.Transform_Partial(op,nOmega);
+    }
   }
-  else if (method=="magnus" and modelspace.valence.size()==0) // run-of-the-mill single-ref calculation
-  {
-//     Rp2 = imsrgsolver.Transform(Rp2);
-     R2_p1 = imsrgsolver.Transform(R2_p1);
-     R2_p2 = imsrgsolver.Transform(R2_p2);
-     R2_cm = imsrgsolver.Transform(R2_cm);
-     int Z = modelspace.GetTargetZ();
-     int A = modelspace.GetTargetMass();
-     double rpp = R2_cm.ZeroBody + (A-2.0)/(A*Z)*R2_p1.ZeroBody -2.0/(A*Z)*R2_p2.ZeroBody;
-     double rch = rpp + R2p + R2n + DF;
-     cout << "point proton radius: " << sqrt(rpp) << endl;
-     cout << "charge radius: " << sqrt(rch) << endl;
-//     cout << "point proton radius: " << sqrt(Rp2.ZeroBody) << endl;
-  }
+
+
+
+  // Write the output
 
   // If we're doing a shell model interaction, write the
   // interaction files to disk.
@@ -218,15 +259,35 @@ int main(int argc, char** argv)
 
     if (method == "magnus")
     {
-       R2_p1 = imsrgsolver.Transform(R2_p1);
-       R2_p2 = imsrgsolver.Transform(R2_p2);
-       R2_cm = imsrgsolver.Transform(R2_cm);
-       rw.WriteNuShellX_op(R2_p1,intfile+"_R2p1.int");
-       rw.WriteNuShellX_op(R2_p2,intfile+"_R2p2.int");
-       rw.WriteNuShellX_op(R2_cm,intfile+"_R2cm.int");
+       for (int i=0;i<ops.size();++i)
+       {
+          ops[i] = imsrgsolver.Transform(ops[i]);
+          rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
+       }
     }
   }
-  cout << "E0 = " << setprecision(6) << imsrgsolver.GetH_s().ZeroBody << endl;
+  else // single ref. just print the zero body pieces out. (maybe check if its magnus?)
+  {
+    cout << "Core Energy = " << setprecision(6) << imsrgsolver.GetH_s().ZeroBody << endl;
+    for (int i=0;i<ops.size();++i)
+    {
+      Operator& op = ops[i];
+      if ( opnames[i] == "Rp2" )
+      {
+         int Z = modelspace.GetTargetZ();
+         int A = modelspace.GetTargetMass();
+         cout << " IMSRG point proton radius = " << sqrt( op.ZeroBody ) << endl; 
+         cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
+      }
+      else
+      {
+        cout << opnames[i] << " = " << ops[i].ZeroBody << endl;
+      }
+    }
+  }
+
+
+
 
   Hbare.PrintTimes();
  

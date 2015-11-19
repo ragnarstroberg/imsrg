@@ -226,6 +226,7 @@ class ModelSpace
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
    inline int GetTwoBodyJmax() const {return TwoBodyJmax;};
    inline int GetThreeBodyJmax() const {return ThreeBodyJmax;};
+   void SetReference(vector<index_t>);
 
    int GetNmax(){return Nmax;};
    int GetN2max(){return N2max;};

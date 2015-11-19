@@ -366,7 +366,7 @@ Operator Operator::DoNormalOrdering3()
 Operator Operator::UndoNormalOrdering()
 {
    Operator opNO = *this;
-   cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << endl;
+//   cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << endl;
 
    for (auto& k : modelspace->holes) // loop over hole orbits
    {
@@ -408,7 +408,7 @@ Operator Operator::UndoNormalOrdering()
    if (hermitian) opNO.Symmetrize();
    if (antihermitian) opNO.AntiSymmetrize();
 
-   cout << "Zero-body piece is now " << opNO.ZeroBody << endl;
+//   cout << "Zero-body piece is now " << opNO.ZeroBody << endl;
    return opNO;
 
 }

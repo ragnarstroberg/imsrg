@@ -55,6 +55,9 @@ class IMSRGSolver
   Operator Transform(Operator&& OpIn);
   Operator InverseTransform(Operator& OpIn);
   Operator GetOmega(int i){return Omega[i];};
+  int GetOmegaSize(){return Omega.size();};
+  Operator Transform_Partial(Operator& OpIn, int n);
+  Operator Transform_Partial(Operator&& OpIn, int n);
 
   void SetFlowFile(string s);
   void SetDs(double d){ds = d;};

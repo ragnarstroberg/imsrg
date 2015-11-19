@@ -27,6 +27,8 @@ namespace imsrg_util
 
  Operator R2CM_Op(ModelSpace& modelspace);
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z);
+ Operator Rn2_corrected_Op(ModelSpace& modelspace, int A, int Z);
+ Operator Rm2_corrected_Op(ModelSpace& modelspace, int A, int Z);
  Operator R2_p1_Op(ModelSpace& modelspace);
  Operator R2_1body_Op(ModelSpace& modelspace, string option);
  Operator R2_p2_Op(ModelSpace& modelspace);

@@ -520,13 +520,12 @@ Operator IMSRGSolver::Transform(Operator& OpIn)
 
 Operator IMSRGSolver::Transform(Operator&& OpIn)
 {
-  Operator OpOut = OpIn;
+  Operator OpOut = move(OpIn);
   for (auto omega : Omega )
   {
     OpOut = OpOut.BCH_Transform( omega );
   }
   return OpOut;
-//   return OpIn.BCH_Transform( Omega );
 }
 
 
@@ -541,10 +540,31 @@ Operator IMSRGSolver::InverseTransform(Operator& OpIn)
     OpOut = OpOut.BCH_Transform( negomega );
   }
   return OpOut;
-//   Operator negomega = -Omega;
-//   return OpIn.BCH_Transform( negomega );
 }
 
+/// Returns \f$ e^{\Omega} \mathcal{O} e^{-\Omega} \f$
+/// for the \f$\Omega_i\f$s with index greater than n.
+Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
+{
+  Operator OpOut = OpIn;
+  for (size_t i=n;i<Omega.size();++i)
+  {
+    OpOut = OpOut.BCH_Transform( Omega[i] );
+  }
+  return OpOut;
+}
+
+/// Returns \f$ e^{\Omega} \mathcal{O} e^{-\Omega} \f$
+/// for the \f$\Omega_i\f$s with index greater than n.
+Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
+{
+  Operator OpOut = move(OpIn);
+  for (size_t i=n;i<Omega.size();++i)
+  {
+    OpOut = OpOut.BCH_Transform( Omega[i] );
+  }
+  return OpOut;
+}
 
 
 // count number of equations to be solved

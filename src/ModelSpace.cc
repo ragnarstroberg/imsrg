@@ -290,8 +290,8 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    Orbits(move(ms.Orbits)), Kets(move(ms.Kets)),
    TwoBodyChannels(move(ms.TwoBodyChannels)), TwoBodyChannels_CC(move(ms.TwoBodyChannels_CC))
 {
-   cout << "In ModelSpace move constructor" << endl;
-   cout << "Orbits size:  " << ms.Orbits.size() << " -> " << Orbits.size() << endl;
+//   cout << "In ModelSpace move constructor" << endl;
+//   cout << "Orbits size:  " << ms.Orbits.size() << " -> " << Orbits.size() << endl;
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
    for (TwoBodyChannel& tbc : ms.TwoBodyChannels)   tbc.modelspace = NULL;
@@ -365,29 +365,29 @@ void ModelSpace::Init(int nmax, string valence)
      target_mass = hole_list.size();
      core_list = hole_list;
      for (auto& v : valence_list) core_list.resize( remove(core_list.begin(),core_list.end(),v) - core_list.begin() );
-     cout << "Valence space: " << valence << endl;
+//     cout << "Valence space: " << valence << endl;
   }
   // otherwise, there's no valence space and we have a single reference
   // with holes = core.
   else
   {
      GetAZfromString(valence,Ac,Zc);
-     cout << "Core: " << valence << "  => A = " << Ac << " Z = " << Zc << endl;
+//     cout << "Core: " << valence << "  => A = " << Ac << " Z = " << Zc << endl;
      core_list = GetOrbitsAZ(Ac,Zc);
      hole_list = core_list;
      target_mass = Ac;
      target_Z = Zc; 
   }
 
-  cout << "holes: ";
-  for ( auto &h : hole_list ) cout << h << " ";
-  cout << endl;
-  cout << "core: ";
-  for ( auto &h : core_list ) cout << h << " ";
-  cout << endl;
-  cout << "valence: ";
-  for ( auto &h : valence_list ) cout << h << " ";
-  cout << endl;
+//  cout << "holes: ";
+//  for ( auto &h : hole_list ) cout << h << " ";
+//  cout << endl;
+//  cout << "core: ";
+//  for ( auto &h : core_list ) cout << h << " ";
+//  cout << endl;
+//  cout << "valence: ";
+//  for ( auto &h : valence_list ) cout << h << " ";
+//  cout << endl;
   Init(nmax,hole_list,core_list,valence_list);
 }
 
@@ -398,7 +398,7 @@ void ModelSpace::Init(int nmax, string reference, string valence)
   int Ac,Zc=-1;
   vector<index_t> hole_list, valence_list, core_list;
   GetAZfromString(reference,Aref,Zref);
-  cout << "Reference: " << reference << "  => A = " << Aref << " Z = " << Zref << endl;
+//  cout << "Reference: " << reference << "  => A = " << Aref << " Z = " << Zref << endl;
   hole_list = GetOrbitsAZ(Aref,Zref);
 
   auto itval = ValenceSpaces.find(valence);
@@ -408,14 +408,14 @@ void ModelSpace::Init(int nmax, string reference, string valence)
      valence_list = String2Index(itval->second);
      core_list = hole_list;
      for (auto& v : valence_list) core_list.resize( remove(core_list.begin(),core_list.end(),v) - core_list.begin() );
-     cout << "Valence space: " << valence << endl;
+//     cout << "Valence space: " << valence << endl;
      target_mass = Aref;
      target_Z = Zref;
   }
   else  // no valence space. we've got a single-reference.
   {
      GetAZfromString(valence,Ac,Zc);
-     cout << "Core: " << valence << "  => A = " << Ac << " Z = " << Zc << endl;
+//     cout << "Core: " << valence << "  => A = " << Ac << " Z = " << Zc << endl;
      core_list = GetOrbitsAZ(Ac,Zc);
      target_mass = Ac;
      target_Z = Zc; 
@@ -454,11 +454,14 @@ void ModelSpace::Init(int nmax, vector<index_t> hole_list, vector<index_t> core_
    holes.clear();
    core.clear();
    valence.clear();
+//   holes = hole_list;
+//   core = core_list;
+//   valence = valence_list;
    qspace.clear();
    proton_orbits.clear();
    neutron_orbits.clear();
    OneBodyChannels.clear();
-   cout << "Init" << endl;
+//   cout << "Init" << endl;
 
 
 
@@ -511,8 +514,8 @@ void ModelSpace::Init(int nmax, vector<index_t> hole_list, vector<index_t> core_
    }
 
 
-   cout << "ModelSpace main Init:  target_mass = " << target_mass << "  target_Z = " << target_Z << endl;
-   cout << "ModelSpace main Init:  Aref = " << Aref << "  Zref = " << Zref << endl;
+//   cout << "ModelSpace main Init:  target_mass = " << target_mass << "  target_Z = " << target_Z << endl;
+//   cout << "ModelSpace main Init:  Aref = " << Aref << "  Zref = " << Zref << endl;
 }
 
 
@@ -529,7 +532,7 @@ vector<index_t> ModelSpace::String2Index( vector<string> vs )
     int l = find(l_list.begin(),l_list.end(), s[2]) - l_list.begin();
     istringstream( s.substr(3,s.size()) ) >> j2;
     vi.push_back( Index1(n,l,j2,tz2) );
-    cout << s << " -> " << n << " " << l << " " << j2 << " " << tz2 << endl;
+//    cout << s << " -> " << n << " " << l << " " << j2 << " " << tz2 << endl;
   }
   return vi;
 }
@@ -555,9 +558,9 @@ void ModelSpace::GetAZfromString(string str,int& A, int& Z) // TODO: accept diff
   else
   {
     Z =-1;
-    cout << "ModelSpace::GetAZfromString :  Trouble parsing " << str << endl;
+   cout << "ModelSpace::GetAZfromString :  Trouble parsing " << str << endl;
   }
-  cout << "GetAZfromString:  " << str << "  -> " << A << " " << Z << endl;
+//  cout << "GetAZfromString:  " << str << "  -> " << A << " " << Z << endl;
 }
 
 // Fill A orbits with Z protons and A-Z neutrons
@@ -605,9 +608,9 @@ vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)
         orbitsAZ.push_back(Index1(n,l,j2,1));
         nn += j2+1;
       }
-      cout << "A,Z = " << A << "," << Z << "  nn,zz = " << nn << "," << zz << endl;
-      for ( auto& o : orbitsAZ ) cout << o << " ";
-      cout << endl;
+//      cout << "A,Z = " << A << "," << Z << "  nn,zz = " << nn << "," << zz << endl;
+//      for ( auto& o : orbitsAZ ) cout << o << " ";
+//      cout << endl;
       if (zz==Z and nn==A-Z) return orbitsAZ; // We're all done here.
       if (zz>Z or nn>A-Z) // Oops. We partially filled a shell.
       {
@@ -619,6 +622,16 @@ vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)
   cout << "Trouble! Model space not big enough to fill A=" << A << " Z="<< Z << "  emax = " << Nmax << endl;
   return orbitsAZ;
 
+}
+
+
+void ModelSpace::SetReference(vector<index_t> new_reference)
+{
+  holes = new_reference;
+//  cout << "Setting new reference : ";
+//  for (auto& h : holes) cout << h << " ";
+//  cout << endl;
+  Init(Nmax, holes,core,valence);
 }
 
 
@@ -826,6 +839,7 @@ void ModelSpace::Init_FPG9Shell(int nmax) // Ni56 core, with g9/2
 */
 
 
+
 ModelSpace ModelSpace::operator=(const ModelSpace& ms)
 {
    holes =  ms.holes;
@@ -872,9 +886,12 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
 
-   cout << "In copy assignment for ModelSpace" << endl;
+//   cout << "In copy assignment for ModelSpace" << endl;
    return ModelSpace(*this);
 }
+
+
+
 ModelSpace ModelSpace::operator=(ModelSpace&& ms)
 {
    holes =  move(ms.holes);
@@ -922,9 +939,11 @@ ModelSpace ModelSpace::operator=(ModelSpace&& ms)
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
    for (TwoBodyChannel& tbc : ms.TwoBodyChannels)   tbc.modelspace = NULL;
    for (TwoBodyChannel_CC& tbc_cc : ms.TwoBodyChannels_CC)   tbc_cc.modelspace = NULL;
-   cout << "In move assingment for ModelSpace" << endl;
+//   cout << "In move assingment for ModelSpace" << endl;
    return ModelSpace(*this);
 }
+
+
 
 void ModelSpace::AddOrbit(Orbit orb)
 {
@@ -963,9 +982,9 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int cvq)
    if (tz2>0) neutron_orbits.push_back(ind);
 
    OneBodyChannels[{l, j2, tz2}].push_back(ind);
-
-
 }
+
+
 
 int ModelSpace::GetOrbitIndex(string orb)
 {
