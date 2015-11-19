@@ -24,6 +24,7 @@ int main(int argc, char** argv)
   string valence_generator = PAR.s("valence_generator");
   string fmt2 = PAR.s("fmt2");
   string denominator_delta_orbit = PAR.s("denominator_delta_orbit");
+  string LECs = PAR.s("LECs");
 
   int eMax = PAR.i("emax");
   int E3max = PAR.i("e3max");
@@ -74,6 +75,7 @@ int main(int argc, char** argv)
 
 
   ReadWrite rw;
+  rw.SetLECs_preset(LECs);
   ModelSpace modelspace = reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space);
 //  ModelSpace ms2;
 
