@@ -45,7 +45,7 @@ void IMSRGSolver::SetHin( Operator & H_in)
 //     Omega.push_back(Eta);
      H_saved = FlowingOps[0];
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
+         << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
          << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
          << endl;
    }
@@ -59,7 +59,7 @@ void IMSRGSolver::Reset()
 //   Omega.push_back(Eta);
    Omega.emplace_back(Eta);
    cout << "pushing back another Omega. Omega.size = " << Omega.size()
-        << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
+        << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
         << endl;
 }
@@ -75,7 +75,7 @@ void IMSRGSolver::SetGenerator(string g)
         H_saved = FlowingOps[0];
 
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
+         << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
          << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
          << endl;
   }
@@ -143,7 +143,7 @@ void IMSRGSolver::Solve_magnus_euler()
         Omega.back().Erase();
         norm_omega = 0;
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
+         << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
          << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
          << endl;
       }
@@ -199,7 +199,7 @@ void IMSRGSolver::Solve_magnus_modified_euler()
         Omega.back().Erase();
         norm_omega = 0;
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
+         << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
          << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
          << endl;
       }
@@ -423,7 +423,7 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
        Omega.back().Erase();
        norm_omega = 0;
     cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
+         << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
          << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
          << endl;
      }
@@ -516,13 +516,12 @@ Operator IMSRGSolver::Transform(Operator& OpIn)
 
 Operator IMSRGSolver::Transform(Operator&& OpIn)
 {
-  Operator OpOut = OpIn;
+  Operator OpOut = move(OpIn);
   for (auto omega : Omega )
   {
     OpOut = OpOut.BCH_Transform( omega );
   }
   return OpOut;
-//   return OpIn.BCH_Transform( Omega );
 }
 
 
@@ -537,10 +536,31 @@ Operator IMSRGSolver::InverseTransform(Operator& OpIn)
     OpOut = OpOut.BCH_Transform( negomega );
   }
   return OpOut;
-//   Operator negomega = -Omega;
-//   return OpIn.BCH_Transform( negomega );
 }
 
+/// Returns \f$ e^{\Omega} \mathcal{O} e^{-\Omega} \f$
+/// for the \f$\Omega_i\f$s with index greater than n.
+Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
+{
+  Operator OpOut = OpIn;
+  for (size_t i=n;i<Omega.size();++i)
+  {
+    OpOut = OpOut.BCH_Transform( Omega[i] );
+  }
+  return OpOut;
+}
+
+/// Returns \f$ e^{\Omega} \mathcal{O} e^{-\Omega} \f$
+/// for the \f$\Omega_i\f$s with index greater than n.
+Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
+{
+  Operator OpOut = move(OpIn);
+  for (size_t i=n;i<Omega.size();++i)
+  {
+    OpOut = OpOut.BCH_Transform( Omega[i] );
+  }
+  return OpOut;
+}
 
 
 // count number of equations to be solved

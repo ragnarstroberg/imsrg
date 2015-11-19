@@ -263,6 +263,9 @@ Operator Operator::DoNormalOrdering2()
       {
         arma::vec diagonals = matrix.diag();
         auto hh = tbc_ket.GetKetIndex_hh();
+//        cout << "hh: ";
+//        for ( auto& h : hh ) cout << h << " ";
+//        cout << endl;
         opNO.ZeroBody += arma::sum( diagonals.elem(hh) ) * (2*J_ket+1);
       }
 
@@ -272,7 +275,7 @@ Operator Operator::DoNormalOrdering2()
          Orbit &oa = modelspace->GetOrbit(a);
          double ja = oa.j2/2.0;
          index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // OneBodyChannels should be moved to the operator, to accommodate tensors
+         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
          {
             if (b < bstart) continue;
             Orbit &ob = modelspace->GetOrbit(b);
@@ -362,11 +365,13 @@ Operator Operator::DoNormalOrdering3()
 
 }
 
+
+
 /// Convert to a basis normal ordered wrt the vacuum.
 Operator Operator::UndoNormalOrdering()
 {
    Operator opNO = *this;
-   cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << endl;
+//   cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << endl;
 
    for (auto& k : modelspace->holes) // loop over hole orbits
    {
@@ -408,7 +413,7 @@ Operator Operator::UndoNormalOrdering()
    if (hermitian) opNO.Symmetrize();
    if (antihermitian) opNO.AntiSymmetrize();
 
-   cout << "Zero-body piece is now " << opNO.ZeroBody << endl;
+//   cout << "Zero-body piece is now " << opNO.ZeroBody << endl;
    return opNO;
 
 }
@@ -682,7 +687,6 @@ Operator Operator::BCH_Transform( const Operator &Omega)
 //*****************************************************************************************
 Operator Operator::BCH_Product(  Operator &Y)
 {
-//   return Y; // THIS NEEDS TO BE REMOVED!!!!
    double tstart = omp_get_wtime();
    Operator& X = *this;
    double nx = X.Norm();
@@ -690,7 +694,6 @@ Operator Operator::BCH_Product(  Operator &Y)
    if (nx < 1e-7) return Y;
    if (ny < 1e-7) return X;
 
-//   Operator Z = Commutator(X,Y);
    Operator Z;
    Z.SetToCommutator(X,Y);
    double nxy = Z.Norm();

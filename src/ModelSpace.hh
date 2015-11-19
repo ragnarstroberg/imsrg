@@ -27,13 +27,14 @@ class Orbit
    int j2;
    int tz2;
    int ph; // particle=0, hole=1
-   int io; // inside=0, outside=1
+//   int io; // inside=0, outside=1
+   int cvq; // core=0, valence=1, qspace=2
    int index;
 
    //Constructors
    ~Orbit();
    Orbit();
-   Orbit(int n ,int l, int j, int t, int ph, int io, int index);
+   Orbit(int n ,int l, int j, int t, int ph, int cvq, int index);
    Orbit(const Orbit&);
 //   void swap(Orbit&) throw();
 //   Orbit& operator=( const Orbit& );
@@ -96,24 +97,34 @@ class TwoBodyChannel
    arma::uvec KetIndex_pp ;
    arma::uvec KetIndex_hh ;
    arma::uvec KetIndex_ph ;
+   arma::uvec KetIndex_cc ;
+   arma::uvec KetIndex_vc ;
+   arma::uvec KetIndex_qc ;
    arma::uvec KetIndex_vv ;
-   arma::uvec KetIndex_c_c;
-   arma::uvec KetIndex_q_q;
-   arma::uvec KetIndex_q_c ;
-   arma::uvec KetIndex_v_c ;
-   arma::uvec KetIndex_v_q;
+   arma::uvec KetIndex_qv ;
+   arma::uvec KetIndex_qq ;
+//   arma::uvec KetIndex_c_c;
+//   arma::uvec KetIndex_q_q;
+//   arma::uvec KetIndex_q_c ;
+//   arma::uvec KetIndex_v_c ;
+//   arma::uvec KetIndex_v_q;
 
 
    arma::uvec GetKetIndexFromList(vector<index_t>& vec_in);
    arma::uvec& GetKetIndex_pp();
    arma::uvec& GetKetIndex_hh();
    arma::uvec& GetKetIndex_ph();
+   arma::uvec& GetKetIndex_cc();
+   arma::uvec& GetKetIndex_vc();
+   arma::uvec& GetKetIndex_qc();
    arma::uvec& GetKetIndex_vv();
-   arma::uvec& GetKetIndex_c_c();  // cc
-   arma::uvec& GetKetIndex_q_q();  //qq
-   arma::uvec& GetKetIndex_q_c(); // qc
-   arma::uvec& GetKetIndex_v_c(); // vc
-   arma::uvec& GetKetIndex_v_q(); // qv
+   arma::uvec& GetKetIndex_qv();
+   arma::uvec& GetKetIndex_qq();
+//   arma::uvec& GetKetIndex_c_c();  // cc
+//   arma::uvec& GetKetIndex_q_q();  //qq
+//   arma::uvec& GetKetIndex_q_c(); // qc
+//   arma::uvec& GetKetIndex_v_c(); // vc
+//   arma::uvec& GetKetIndex_v_q(); // qv
 
 // private:
    //Fields
@@ -156,29 +167,36 @@ class ModelSpace
    ModelSpace();
    ModelSpace(const ModelSpace&); // copy constructor
    ModelSpace( ModelSpace&&); // move constructor
-   ModelSpace(int Nmax, vector<string> hole_list, vector<string> inside_list);
-   ModelSpace(int Nmax, string);
+   ModelSpace(int Nmax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
+   ModelSpace(int Nmax, vector<string> hole_list, vector<string> valence_list);
+   ModelSpace(int Nmax, string reference, string valence);
+   ModelSpace(int Nmax, string reference);
    ModelSpace(int Nmax, int A, int Z);
 
    // Overloaded operators
    ModelSpace operator=(const ModelSpace&); 
    ModelSpace operator=(ModelSpace&&); 
 
-   void Init(int Nmax, vector<string> hole_list, vector<string> inside_list);
+   void Init(int Nmax, string reference, string valence);
+   void Init(int Nmax, string valence);
+   void Init(int Nmax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list);
+//   void Init(int Nmax, vector<index_t> hole_list, vector<index_t> valence_list);
+   void Init(int Nmax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
+   void Init(int Nmax, vector<string> hole_list, vector<string> valence_list);
    void Init_AZ(int nmax, int A, int Z);
+   void GetAZfromString(string str, int& A, int& Z);
+   vector<index_t> GetOrbitsAZ(int A, int Z);
+   vector<index_t> String2Index( vector<string> vs );
 
    // Common model spaces
-//   void Init_He4(int nmax);
-//   void Init_O16(int nmax);
-//   void Init_Ca40(int nmax);
-   void Init_PShell(int nmax);
-   void Init_SDShell(int nmax);
-   void Init_PSDShell(int nmax);
-   void Init_O16PSDShell(int nmax);
-   void Init_FPShell(int nmax);
-   void Init_SDFPShell(int nmax);
-   void Init_SD3F7P3Shell(int nmax);
-   void Init_FPG9Shell(int nmax);
+//   void Init_PShell(int nmax);
+//   void Init_SDShell(int nmax);
+//   void Init_PSDShell(int nmax);
+//   void Init_O16PSDShell(int nmax);
+//   void Init_FPShell(int nmax);
+//   void Init_SDFPShell(int nmax);
+//   void Init_SD3F7P3Shell(int nmax);
+//   void Init_FPG9Shell(int nmax);
 
 
    // Methods
@@ -201,11 +219,14 @@ class ModelSpace
    double GetHbarOmega() const {return hbar_omega;};
    int GetTargetMass() const {return target_mass;};
    int GetTargetZ() const {return target_Z;};
+   int GetAref() const {return Aref;};
+   int GetZref() const {return Zref;};
    int GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
    inline int GetTwoBodyJmax() const {return TwoBodyJmax;};
    inline int GetThreeBodyJmax() const {return ThreeBodyJmax;};
+   void SetReference(vector<index_t>);
 
    int GetNmax(){return Nmax;};
    int GetN2max(){return N2max;};
@@ -228,27 +249,27 @@ class ModelSpace
    inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
 
    void PreCalculateMoshinsky();
+   void ClearVectors();
 
 
    // Data members
-   vector<index_t> holes;
-   vector<index_t> particles;
-   vector<index_t> valence;
-   vector<index_t> qspace;
-   vector<index_t> hole_qspace;
-   vector<index_t> particle_qspace;
+   vector<index_t> holes;           // in the reference Slater determinant
+   vector<index_t> particles;       // above the reference Slater determinant
+   vector<index_t> core;            // core for decoupling
+   vector<index_t> valence;         // valence space for decoupling
+   vector<index_t> qspace;          // above the valence space for decoupling
    vector<index_t> proton_orbits;
    vector<index_t> neutron_orbits;
 
    vector<index_t> KetIndex_pp; 
    vector<index_t> KetIndex_ph;
    vector<index_t> KetIndex_hh;
+   vector<index_t> KetIndex_cc; 
+   vector<index_t> KetIndex_vc;
+   vector<index_t> KetIndex_qc;
    vector<index_t> KetIndex_vv;
-   vector<index_t> KetIndex_c_c; 
-   vector<index_t> KetIndex_q_q;
-   vector<index_t> KetIndex_q_c;
-   vector<index_t> KetIndex_v_c;
-   vector<index_t> KetIndex_v_q;
+   vector<index_t> KetIndex_qv;
+   vector<index_t> KetIndex_qq;
 
 //   array< array< vector<index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
    array< array< unordered_map<index_t,index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
@@ -264,6 +285,7 @@ class ModelSpace
    vector<unsigned int> SortedTwoBodyChannels;
    vector<unsigned int> SortedTwoBodyChannels_CC;
 
+   static map<string,vector<string>> ValenceSpaces;
 
 
 // private:
@@ -272,6 +294,8 @@ class ModelSpace
    double hbar_omega;
    int target_mass;
    int target_Z;
+   int Aref;
+   int Zref;
    int nTwoBodyChannels;
    vector<Orbit> Orbits;
    vector<Ket> Kets;

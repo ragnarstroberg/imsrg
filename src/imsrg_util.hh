@@ -27,6 +27,8 @@ namespace imsrg_util
 
  Operator R2CM_Op(ModelSpace& modelspace);
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z);
+ Operator Rn2_corrected_Op(ModelSpace& modelspace, int A, int Z);
+ Operator Rm2_corrected_Op(ModelSpace& modelspace, int A, int Z);
  Operator R2_p1_Op(ModelSpace& modelspace);
  Operator R2_1body_Op(ModelSpace& modelspace, string option);
  Operator R2_p2_Op(ModelSpace& modelspace);
@@ -54,6 +56,26 @@ namespace imsrg_util
  void Reduce(Operator&);
  void UnReduce(Operator&);
 
+
+// Templated functions need to be defined in the header file (or else explicitly declared in the .cc file).
+ template <typename T>
+ T VectorUnion(T& v1)
+ {
+   return v1;
+ }
+ 
+ template <typename T, typename... Args>
+ T VectorUnion(T& v1, T& v2, Args... args)
+ {
+   T vec(v1.size()+v2.size());
+   copy(v1.begin(),v1.end(),vec.begin());
+   copy(v2.begin(),v2.end(),vec.begin()+v1.size());
+   return VectorUnion(vec, args...);
+ }
+
 }
+
+
+
 
 #endif
