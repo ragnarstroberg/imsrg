@@ -14,7 +14,7 @@ using namespace std;
 HartreeFock::HartreeFock(Operator& hbare)
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
     t(Hbare.OneBody), energies(Hbare.OneBody.diag()),
-    tolerance(1e-8), convergence_data(5,0)
+    tolerance(1e-8), convergence_data(7,0)
 {
    int norbits = modelspace->GetNumberOrbits();
 
@@ -393,8 +393,7 @@ void HartreeFock::UpdateF()
 //********************************************************
 bool HartreeFock::CheckConvergence()
 {
-   arma::vec de = energies - prev_energies;
-   double ediff = sqrt(arma::dot(de,de)) / energies.size();
+   double ediff = arma::norm(energies-prev_energies, "frob") / energies.size();
    convergence_data.push_back(ediff); // update list of convergence checks
    convergence_data.pop_front();
    return (ediff < tolerance);
