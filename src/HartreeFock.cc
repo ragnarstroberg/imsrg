@@ -14,7 +14,7 @@ using namespace std;
 HartreeFock::HartreeFock(Operator& hbare)
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
     t(Hbare.OneBody), energies(Hbare.OneBody.diag()),
-    tolerance(1e-8)
+    tolerance(1e-8), convergence_data(5,0)
 {
    int norbits = modelspace->GetNumberOrbits();
 
@@ -66,8 +66,14 @@ void HartreeFock::Solve()
    }
    CalcEHF();
 
+   cout << setw(15) << setprecision(10);
    if (iterations==maxiter)
-      cerr << "Warning: Hartree-Fock calculation didn't converge after " << maxiter << " iterations." << endl;
+   {
+      cout << "!!!! Warning: Hartree-Fock calculation didn't converge after " << maxiter << " iterations." << endl;
+      cout << "!!!! Last " << convergence_data.size() << " points in convergence check:";
+      for (auto& x : convergence_data ) cout << x << " ";
+      cout << "  (tolerance = " << tolerance << ")" << endl;
+   }
    else
       cout << "HF converged after " << iterations << " iterations. " << endl;
 }
@@ -389,6 +395,8 @@ bool HartreeFock::CheckConvergence()
 {
    arma::vec de = energies - prev_energies;
    double ediff = sqrt(arma::dot(de,de)) / energies.size();
+   convergence_data.push_back(ediff); // update list of convergence checks
+   convergence_data.pop_front();
    return (ediff < tolerance);
 }
 

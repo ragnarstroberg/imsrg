@@ -5,6 +5,7 @@
 #include "IMSRGProfiler.hh"
 #include <armadillo>
 #include <map>
+#include <deque>
 
 class HartreeFock
 {
@@ -27,7 +28,7 @@ class HartreeFock
    int iterations;          ///< iterations used in Solve()
    vector< pair<const array<int,6>,double>> Vmon3;
    IMSRGProfiler profiler;
-   
+   deque<double> convergence_data; ///< Save last few convergence checks for diagnostics
 
    HartreeFock(Operator&  hbare);
    void BuildMonopoleV();
