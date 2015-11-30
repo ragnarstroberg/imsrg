@@ -25,8 +25,8 @@ map<string,size_t> IMSRGProfiler::CheckMem()
   sprintf(cmdstring,"pmap -x %d | tail -1",getpid()); // TODO make this more portable. On OSX, use vmmap. no idea for Windows...
   FILE* output = popen(cmdstring,"r");
   map<string,size_t> s;
-  if (fgets(outbuf,500,output) == NULL)
-    cout << " <<< IMSRGProfiler::CheckMem():  Problem reading output of pmap";
+  if (output==NULL or fgets(outbuf,500,output) == NULL)
+    cout << " <<< IMSRGProfiler::CheckMem():  Problem reading output of pmap (pid = " << getpid() << ")" << endl;
   else
     istringstream(outbuf) >> cmdstring >> buf >> s["Kbytes"] >> s["RSS"] >> s["DIRTY"];
   return s;
