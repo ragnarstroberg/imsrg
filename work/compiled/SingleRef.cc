@@ -177,7 +177,8 @@ int main(int argc, char** argv)
   cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + R2p + R2n + DF) << endl; 
   
   IMSRGSolver imsrgsolver(Hbare);
-  
+
+  imsrgsolver.SetMethod(method);
   imsrgsolver.SetGenerator(generator);
   imsrgsolver.SetHin(Hbare);
   imsrgsolver.SetSmax(smax);
@@ -187,12 +188,7 @@ int main(int argc, char** argv)
   imsrgsolver.SetODETolerance(ode_tolerance);
   imsrgsolver.SetdOmega(min(domega,omega_norm_max));
   imsrgsolver.SetOmegaNormMax(omega_norm_max);
-  if (method == "magnus")
-    imsrgsolver.Solve();
-  else if (method == "flow")
-    imsrgsolver.Solve_ode_adaptive();
-  else if (method == "flow-omega")
-    imsrgsolver.Solve_ode_magnus();
+  imsrgsolver.Solve();
 
   if (method == "magnus" or method == "flow-omega")
   {

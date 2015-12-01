@@ -14,25 +14,24 @@ IMSRGSolver::~IMSRGSolver()
 IMSRGSolver::IMSRGSolver()
     : s(0),ds(0.1),ds_max(0.5),
      norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
-#ifndef NO_ODE
+//#ifndef NO_ODE
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
-#endif
-{}
+//#endif
+{
+}
 
 // Constructor
 IMSRGSolver::IMSRGSolver( Operator &H_in)
    : modelspace(H_in.GetModelSpace()),H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), // ,dOmega(H_in)
     istep(0), s(0),ds(0.1),ds_max(0.5),
     smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
-#ifndef NO_ODE
+//#ifndef NO_ODE
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
-#endif
+//#endif
 {
    Eta.Erase();
    Eta.SetAntiHermitian();
    Omega.push_back( Eta);
-//   Omega.Erase();
-//   Omega.SetAntiHermitian();
 }
 
 void IMSRGSolver::SetHin( Operator & H_in)
@@ -341,6 +340,7 @@ void IMSRGSolver::Solve_ode_adaptive()
    ode_mode = "H";
    WriteFlowStatusHeader(cout);
    WriteFlowStatus(flowfile);
+   cout << "done writing header and status" << endl;
    using namespace boost::numeric::odeint;
    auto system = *this;
    typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;

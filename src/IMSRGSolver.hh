@@ -82,7 +82,7 @@ class IMSRGSolver
 
 
 
-#ifndef NO_ODE
+//#ifndef NO_ODE
 
   // This is used to get flow info from odeint
   class ODE_Monitor
@@ -130,7 +130,7 @@ class IMSRGSolver
   void Solve_ode_adaptive();
   void Solve_ode_magnus();
 
-#endif
+//#endif
 
 
 };
