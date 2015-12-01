@@ -299,7 +299,7 @@ void HartreeFock::BuildMonopoleV3()
 //*********************************************************************
 /// one-body density matrix 
 /// \f$ <i|\rho|j> = \sum\limits_{\beta} n_{\beta} <i|\beta> <\beta|j> \f$
-/// where \f$n_{\beta} \f$ ensureas that beta runs over HF orbits in
+/// where \f$n_{\beta} \f$ ensures that beta runs over HF orbits in
 /// the core (i.e. below the fermi surface)
 //*********************************************************************
 void HartreeFock::UpdateDensityMatrix()
@@ -346,7 +346,7 @@ void HartreeFock::UpdateF()
                int local_ket = modelspace->MonopoleKets[Tz+1][parity][ket];
                // 2body term <ai|V|bj>
                if ((a>i) xor (b>j))  // code needed some obfuscation, so threw an xor in there...
-                  Vij(i,j) += rho(a,b)*Vmon_exch[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|bj>
+                  Vij(i,j) += rho(a,b)*Vmon_exch[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|jb>
                else
                   Vij(i,j) += rho(a,b)*Vmon[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|bj>
            }
