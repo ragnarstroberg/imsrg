@@ -4,8 +4,10 @@
 
 #include <fstream>
 #include <string>
+#include <deque>
 #include "Operator.hh"
 #include "Generator.hh"
+#include "IMSRGProfiler.hh"
 
 using namespace std;
 
@@ -18,12 +20,12 @@ class IMSRGSolver
 //  private:
   ModelSpace* modelspace;
   Operator* H_0; 
-  vector<Operator> FlowingOps;
-//  Operator H_s;
+//  vector<Operator> FlowingOps;
+  deque<Operator> FlowingOps;
   Operator H_saved;
   Operator Eta;
-//  Operator Omega;
-  vector<Operator> Omega;
+//  vector<Operator> Omega;
+  deque<Operator> Omega;
   Generator generator;
   int istep;
   double s;
@@ -35,7 +37,7 @@ class IMSRGSolver
   double eta_criterion;
   string method;
   string flowfile;
-
+  IMSRGProfiler profiler;
 
   ~IMSRGSolver();
   IMSRGSolver();
@@ -53,6 +55,9 @@ class IMSRGSolver
   Operator Transform(Operator&& OpIn);
   Operator InverseTransform(Operator& OpIn);
   Operator GetOmega(int i){return Omega[i];};
+  int GetOmegaSize(){return Omega.size();};
+  Operator Transform_Partial(Operator& OpIn, int n);
+  Operator Transform_Partial(Operator&& OpIn, int n);
 
   void SetFlowFile(string s);
   void SetDs(double d){ds = d;};
@@ -82,7 +87,6 @@ class IMSRGSolver
 
 
 
-//#ifndef NO_ODE
 
   // This is used to get flow info from odeint
   class ODE_Monitor
@@ -96,7 +100,8 @@ class IMSRGSolver
      vector<double>& E0;
      vector<double>& eta1;
      vector<double>& eta2;
-     void operator() (const vector<Operator>& x, double t)
+//     void operator() (const vector<Operator>& x, double t)
+     void operator() (const deque<Operator>& x, double t)
      {
         times.push_back(t);
         E0.push_back(x.front().ZeroBody);
@@ -125,12 +130,11 @@ class IMSRGSolver
   float ode_e_rel;
 
 
-  void operator()( const vector<Operator>& x, vector<Operator>& dxdt, const double t);
+//  void operator()( const vector<Operator>& x, vector<Operator>& dxdt, const double t);
+  void operator()( const deque<Operator>& x, deque<Operator>& dxdt, const double t);
   void Solve_ode();
   void Solve_ode_adaptive();
   void Solve_ode_magnus();
-
-//#endif
 
 
 };

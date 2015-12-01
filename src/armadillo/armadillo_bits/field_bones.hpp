@@ -1,5 +1,5 @@
-// Copyright (C) 2008-2014 Conrad Sanderson
-// Copyright (C) 2008-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 Conrad Sanderson
+// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
 // Copyright (C) 2009-2010 Ian Cullinan
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -29,16 +29,16 @@ class field
   
   typedef oT object_type;
   
-  const uword n_rows;     //!< number of rows in the field (read-only)
-  const uword n_cols;     //!< number of columns in the field (read-only)
-  const uword n_slices;   //!< number of slices in the field (read-only)
-  const uword n_elem;     //!< number of elements in the field (read-only)
+  const uword n_rows;     //!< number of rows     (read-only)
+  const uword n_cols;     //!< number of columns  (read-only)
+  const uword n_slices;   //!< number of slices   (read-only)
+  const uword n_elem;     //!< number of elements (read-only)
   
   
   private:
   
-  arma_aligned oT** mem;                                     //!< pointer to memory used by the object
-  arma_aligned oT*  mem_local[ field_prealloc_n_elem::val ]; //!< Internal memory, to avoid calling the 'new' operator for small amounts of memory
+  arma_aligned oT** mem;                                     //!< pointers to stored objects
+  arma_aligned oT*  mem_local[ field_prealloc_n_elem::val ]; //!< local storage, for small fields
   
   
   public:
@@ -53,12 +53,16 @@ class field
   inline const field& operator=(const subview_field<oT>& x);
   
   inline explicit field(const uword n_elem_in);
-  inline          field(const uword n_rows_in, const uword n_cols_in);
-  inline          field(const uword n_rows_in, const uword n_cols_in, const uword n_slices_in);
+  inline explicit field(const uword n_rows_in, const uword n_cols_in);
+  inline explicit field(const uword n_rows_in, const uword n_cols_in, const uword n_slices_in);
+  inline explicit field(const SizeMat&  s);
+  inline explicit field(const SizeCube& s);
   
   inline void  set_size(const uword n_obj_in);
   inline void  set_size(const uword n_rows_in, const uword n_cols_in);
   inline void  set_size(const uword n_rows_in, const uword n_cols_in, const uword n_slices_in);
+  inline void  set_size(const SizeMat&  s);
+  inline void  set_size(const SizeCube& s);
   
   template<typename oT2>
   inline void copy_size(const field<oT2>& x);
@@ -137,7 +141,7 @@ class field
   inline const subview_field<oT> operator()(const uword in_row1, const uword in_col1, const uword in_slice1, const SizeCube& s) const;
   
   
-  inline void print(const std::string extra_text = "") const;
+  inline void print(                           const std::string extra_text = "") const;
   inline void print(std::ostream& user_stream, const std::string extra_text = "") const;
   
   inline void fill(const oT& x);

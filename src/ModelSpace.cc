@@ -13,15 +13,18 @@ Orbit::~Orbit()
 }
 
 Orbit::Orbit()
-: n(-1), l(-1), j2(-1), tz2(-1),ph(-1),io(-1),index(-1)
+: n(-1), l(-1), j2(-1), tz2(-1),ph(-1),cvq(-1),index(-1)
+//: n(-1), l(-1), j2(-1), tz2(-1),ph(-1),io(-1),index(-1)
 {}
 
-Orbit::Orbit(int n, int l, int j2, int tz2, int ph, int io, int index)
-: n(n), l(l), j2(j2), tz2(tz2),ph(ph),io(io),index(index)
+Orbit::Orbit(int n, int l, int j2, int tz2, int ph, int cvq, int index)
+: n(n), l(l), j2(j2), tz2(tz2),ph(ph),cvq(cvq),index(index)
+//: n(n), l(l), j2(j2), tz2(tz2),ph(ph),io(io),index(index)
 {}
 
 Orbit::Orbit(const Orbit& orb)
-: n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),ph(orb.ph),io(orb.io),index(orb.index)
+: n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),ph(orb.ph),cvq(orb.cvq),index(orb.index)
+//: n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),ph(orb.ph),io(orb.io),index(orb.index)
 {}
 
 
@@ -96,12 +99,17 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
    KetIndex_pp = GetKetIndexFromList(modelspace->KetIndex_pp);
    KetIndex_hh = GetKetIndexFromList(modelspace->KetIndex_hh);
    KetIndex_ph = GetKetIndexFromList(modelspace->KetIndex_ph);
+   KetIndex_cc = GetKetIndexFromList(modelspace->KetIndex_cc);
+   KetIndex_vc = GetKetIndexFromList(modelspace->KetIndex_vc);
+   KetIndex_qc = GetKetIndexFromList(modelspace->KetIndex_qc);
    KetIndex_vv = GetKetIndexFromList(modelspace->KetIndex_vv);
-   KetIndex_c_c = GetKetIndexFromList(modelspace->KetIndex_c_c);
-   KetIndex_q_q = GetKetIndexFromList(modelspace->KetIndex_q_q);
-   KetIndex_q_c = GetKetIndexFromList(modelspace->KetIndex_q_c);
-   KetIndex_v_c = GetKetIndexFromList(modelspace->KetIndex_v_c);
-   KetIndex_v_q= GetKetIndexFromList(modelspace->KetIndex_v_q);
+   KetIndex_qv = GetKetIndexFromList(modelspace->KetIndex_qv);
+   KetIndex_qq = GetKetIndexFromList(modelspace->KetIndex_qq);
+//   KetIndex_c_c = GetKetIndexFromList(modelspace->KetIndex_c_c);
+//   KetIndex_q_q = GetKetIndexFromList(modelspace->KetIndex_q_q);
+//   KetIndex_q_c = GetKetIndexFromList(modelspace->KetIndex_q_c);
+//   KetIndex_v_c = GetKetIndexFromList(modelspace->KetIndex_v_c);
+//   KetIndex_v_q= GetKetIndexFromList(modelspace->KetIndex_v_q);
 }
 
 
@@ -126,12 +134,17 @@ bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
 arma::uvec& TwoBodyChannel::GetKetIndex_pp() { return KetIndex_pp;};
 arma::uvec& TwoBodyChannel::GetKetIndex_hh() { return KetIndex_hh;};
 arma::uvec& TwoBodyChannel::GetKetIndex_ph() { return KetIndex_ph;};
+arma::uvec& TwoBodyChannel::GetKetIndex_cc() { return KetIndex_cc;};
+arma::uvec& TwoBodyChannel::GetKetIndex_vc() { return KetIndex_vc;};
+arma::uvec& TwoBodyChannel::GetKetIndex_qc() { return KetIndex_qc;};
 arma::uvec& TwoBodyChannel::GetKetIndex_vv() { return KetIndex_vv;};
-arma::uvec& TwoBodyChannel::GetKetIndex_c_c() { return KetIndex_c_c;};
-arma::uvec& TwoBodyChannel::GetKetIndex_q_q() { return KetIndex_q_q;};
-arma::uvec& TwoBodyChannel::GetKetIndex_q_c() { return KetIndex_q_c;};
-arma::uvec& TwoBodyChannel::GetKetIndex_v_c() { return KetIndex_v_c;};
-arma::uvec& TwoBodyChannel::GetKetIndex_v_q(){ return KetIndex_v_q;};
+arma::uvec& TwoBodyChannel::GetKetIndex_qv() { return KetIndex_qv;};
+arma::uvec& TwoBodyChannel::GetKetIndex_qq() { return KetIndex_qq;};
+//arma::uvec& TwoBodyChannel::GetKetIndex_c_c() { return KetIndex_c_c;};
+//arma::uvec& TwoBodyChannel::GetKetIndex_q_q() { return KetIndex_q_q;};
+//arma::uvec& TwoBodyChannel::GetKetIndex_q_c() { return KetIndex_q_c;};
+//arma::uvec& TwoBodyChannel::GetKetIndex_v_c() { return KetIndex_v_c;};
+//arma::uvec& TwoBodyChannel::GetKetIndex_v_q(){ return KetIndex_v_q;};
 
 
 arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<index_t>& vec_in)
@@ -190,6 +203,17 @@ bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 unordered_map<unsigned long int,double> ModelSpace::SixJList;
 unordered_map<unsigned long long int,double> ModelSpace::NineJList;
 unordered_map<unsigned long long int,double> ModelSpace::MoshList;
+map<string,vector<string>> ModelSpace::ValenceSpaces  {
+{ "p-shell"  ,         {"p0p3","n0p3","p0p1","n0p1"}},
+{ "sd-shell"  ,        {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"}},
+{ "psd-shell"  ,       {"p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"}},
+{ "fp-shell"  ,        {"p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"}},
+{ "sdfp-shell"  ,      {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"}},
+{ "fpg9-shell"  ,      {"p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1","p0g9","n0g9"}},
+{ "sd3f7p3-shell"  ,   {"p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p1p3","n1p3"}},
+};
+
+
 
 ModelSpace::~ModelSpace()
 {
@@ -197,66 +221,66 @@ ModelSpace::~ModelSpace()
 }
 
 ModelSpace::ModelSpace()
+:  Nmax(0), N2max(0), N3max(0), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0),
+  hbar_omega(20), target_mass(16)
 {
   cout << "In default constructor" << endl;
-   norbits = 0;
-   OneBodyJmax = 0;
-   TwoBodyJmax = 0;
-   ThreeBodyJmax = 0;
-   hbar_omega=20;
-   target_mass = 16;
-   Nmax = 0;
-   N2max = 0;
-   N3max = 0;
 }
 
 
 ModelSpace::ModelSpace(const ModelSpace& ms)
  :
-   holes( ms.holes), particles( ms.particles), valence(ms.valence),
-   qspace( ms.qspace), hole_qspace(ms.hole_qspace), proton_orbits( ms.proton_orbits),
-   neutron_orbits( ms.neutron_orbits),
+   holes( ms.holes), particles( ms.particles),
+   core(ms.core), valence(ms.valence), qspace( ms.qspace), 
+   proton_orbits( ms.proton_orbits),neutron_orbits( ms.neutron_orbits),
    KetIndex_pp( ms.KetIndex_pp), KetIndex_ph( ms.KetIndex_ph), KetIndex_hh( ms.KetIndex_hh),
-   KetIndex_vv( ms.KetIndex_vv), KetIndex_c_c( ms.KetIndex_c_c),
-   KetIndex_q_q( ms.KetIndex_q_q),
-   KetIndex_q_c( ms.KetIndex_q_c),
-   KetIndex_v_c( ms.KetIndex_v_c), KetIndex_v_q( ms. KetIndex_v_q),
+   KetIndex_cc( ms.KetIndex_cc),
+   KetIndex_vc( ms.KetIndex_vc),
+   KetIndex_qc( ms.KetIndex_qc),
+   KetIndex_vv( ms.KetIndex_vv),
+   KetIndex_qv( ms.KetIndex_qv),
+   KetIndex_qq( ms.KetIndex_qq),
    Nmax(ms.Nmax), N2max(ms.N2max), N3max(ms.N3max),
    OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
    OneBodyChannels(ms.OneBodyChannels),
    SortedTwoBodyChannels(ms.SortedTwoBodyChannels),
    SortedTwoBodyChannels_CC(ms.SortedTwoBodyChannels_CC),
-   norbits(ms.norbits), hbar_omega(ms.hbar_omega), target_mass(ms.target_mass),
+   norbits(ms.norbits), hbar_omega(ms.hbar_omega),
+   target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
+   nTwoBodyChannels(ms.nTwoBodyChannels),
    Orbits(ms.Orbits), Kets(ms.Kets),
    TwoBodyChannels(ms.TwoBodyChannels), TwoBodyChannels_CC(ms.TwoBodyChannels_CC)
 {
-   cout << "In ModelSpace copy constructor" << endl;
-   cout << "Orbits size:  " << ms.Orbits.size() << " -> " << Orbits.size() << endl;
+//   cout << "In ModelSpace copy constructor" << endl;
+//   cout << "Orbits size:  " << ms.Orbits.size() << " -> " << Orbits.size() << endl;
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
 }
 
 ModelSpace::ModelSpace(ModelSpace&& ms)
  :
-   holes( move(ms.holes)), particles( move(ms.particles)), valence(move(ms.valence)),
-   qspace( move(ms.qspace)), hole_qspace(move(ms.hole_qspace)), proton_orbits( move(ms.proton_orbits)),
+   holes( move(ms.holes)), particles( move(ms.particles)),
+   core(move(ms.core)), valence(move(ms.valence)),  qspace( move(ms.qspace)),  
+   proton_orbits( move(ms.proton_orbits)),
    neutron_orbits( move(ms.neutron_orbits)),
    KetIndex_pp( move(ms.KetIndex_pp)), KetIndex_ph( move(ms.KetIndex_ph)), KetIndex_hh( move(ms.KetIndex_hh)),
-   KetIndex_vv( move(ms.KetIndex_vv)), KetIndex_c_c( move(ms.KetIndex_c_c)),
-   KetIndex_q_q( move(ms.KetIndex_q_q)),
-   KetIndex_q_c( move(ms.KetIndex_q_c)),
-   KetIndex_v_c( move(ms.KetIndex_v_c)), KetIndex_v_q( move(ms. KetIndex_v_q)),
+   KetIndex_cc( ms.KetIndex_cc),
+   KetIndex_vc( ms.KetIndex_vc),
+   KetIndex_qc( ms.KetIndex_qc),
+   KetIndex_vv( ms.KetIndex_vv),
+   KetIndex_qv( ms.KetIndex_qv),
+   KetIndex_qq( ms.KetIndex_qq),
    Nmax(ms.Nmax), N2max(ms.N2max), N3max(ms.N3max),
    OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
    OneBodyChannels(move(ms.OneBodyChannels)),
    SortedTwoBodyChannels(move(ms.SortedTwoBodyChannels)),
    SortedTwoBodyChannels_CC(move(ms.SortedTwoBodyChannels_CC)),
-   norbits(ms.norbits), hbar_omega(ms.hbar_omega), target_mass(ms.target_mass),
+   norbits(ms.norbits), hbar_omega(ms.hbar_omega),
+   target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
+   nTwoBodyChannels(ms.nTwoBodyChannels),
    Orbits(move(ms.Orbits)), Kets(move(ms.Kets)),
    TwoBodyChannels(move(ms.TwoBodyChannels)), TwoBodyChannels_CC(move(ms.TwoBodyChannels_CC))
 {
-   cout << "In ModelSpace move constructor" << endl;
-   cout << "Orbits size:  " << ms.Orbits.size() << " -> " << Orbits.size() << endl;
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
    for (TwoBodyChannel& tbc : ms.TwoBodyChannels)   tbc.modelspace = NULL;
@@ -265,81 +289,179 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 
 
 // orbit string representation is e.g. p0f7
-ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> inside_list)
-: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20),target_mass(16)
+// Assumes that the core is hole states that aren't in the valence space.
+ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> valence_list)
+:  Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0), hbar_omega(20), target_mass(16)
 {
-   Init(nmax,hole_list,inside_list);
+   Init(nmax, hole_list, valence_list); 
 }
 
-ModelSpace::ModelSpace(int nmax, int A, int Z)
-: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20),target_mass(16)
+// If we don't want the reference to be the core
+ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list)
+: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0), hbar_omega(20), target_mass(16)
 {
-   Init_AZ(nmax,A,Z);
+   Init(nmax, hole_list, core_list, valence_list); 
+}
+
+// DO I NEED THIS? I guess it doesn't hurt too much...
+ModelSpace::ModelSpace(int nmax, int A, int Z)
+: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20),target_mass(A),target_Z(Z)
+{
+   Init(nmax,GetOrbitsAZ(A,Z),GetOrbitsAZ(A,Z),{});
 }
 
 // Shortcuts for common modelspaces
-ModelSpace::ModelSpace(int nmax, string str)
+ModelSpace::ModelSpace(int nmax, string reference, string valence)
 : Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20)
 {
-  
-       if (str == "p-shell") Init_PShell(nmax);
-  else if (str == "sd-shell") Init_SDShell(nmax);
-  else if (str == "psd-shell") Init_PSDShell(nmax);
-  else if (str == "o16-psd-shell") Init_O16PSDShell(nmax);
-  else if (str == "fp-shell") Init_FPShell(nmax);
-  else if (str == "sdfp-shell") Init_SDFPShell(nmax);
-  else if (str == "fpg9-shell") Init_FPG9Shell(nmax);
-  else
-  {
-    vector<string> toi = {"n","H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar",
-                        "K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
-                        "Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe",
-                        "Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf",
-                        "Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb"};
-    int i=0;
-    int A,Z;
-    while (! isdigit(str[i])) i++;
-    string elem = str.substr(0,i);
-    stringstream( str.substr(i,str.size()-i)) >> A;
-    auto it_elem = find(toi.begin(),toi.end(),elem);
-    if (it_elem != toi.end())
-    {
-      Z = it_elem - toi.begin();
-      cout << "A = " << A << " elem = " << elem << " (Z = " << Z << ")" << endl;
-      Init_AZ(nmax,A,Z);
-    }
-    else cout << "No such pre-configured model space: " << str << endl;
-    
-  }
+  Init(nmax,reference,valence);
 }
 
-void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_list)
+ModelSpace::ModelSpace(int nmax, string valence)
+: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20)
+{
+  Init(nmax,valence);
+}
+
+
+// Simple initialization which makes some assumptions
+void ModelSpace::Init(int nmax, string valence)
+{
+  int Ac,Zc=-1;
+  vector<index_t> hole_list, valence_list, core_list;
+
+  auto itval = ValenceSpaces.find( valence );
+
+  // if we have a valence space, like sd-shell, then we assume
+  // that holes=core and the core consists of all orbits below
+  // the lowest valence orbit
+  if ( itval != ValenceSpaces.end() )
+  {
+     valence_list = String2Index(itval->second);
+     int z=0;
+     while ( find(valence_list.begin(),valence_list.end(),z) == valence_list.end() )
+     {
+       hole_list.push_back(z);
+       z+=2;
+     }
+     target_Z = hole_list.size();
+     int n=1;
+     while ( find(valence_list.begin(),valence_list.end(),n) == valence_list.end() )
+     {
+       hole_list.push_back(n);
+       n+=2;
+     }
+     target_mass = hole_list.size();
+     core_list = hole_list;
+     for (auto& v : valence_list) core_list.resize( remove(core_list.begin(),core_list.end(),v) - core_list.begin() );
+//     cout << "Valence space: " << valence << endl;
+  }
+  // otherwise, there's no valence space and we have a single reference
+  // with holes = core.
+  else
+  {
+     GetAZfromString(valence,Ac,Zc);
+//     cout << "Core: " << valence << "  => A = " << Ac << " Z = " << Zc << endl;
+     core_list = GetOrbitsAZ(Ac,Zc);
+     hole_list = core_list;
+     target_mass = Ac;
+     target_Z = Zc; 
+  }
+
+//  cout << "holes: ";
+//  for ( auto &h : hole_list ) cout << h << " ";
+//  cout << endl;
+//  cout << "core: ";
+//  for ( auto &h : core_list ) cout << h << " ";
+//  cout << endl;
+//  cout << "valence: ";
+//  for ( auto &h : valence_list ) cout << h << " ";
+//  cout << endl;
+  Init(nmax,hole_list,core_list,valence_list);
+}
+
+// specify the reference and either the core or valence
+void ModelSpace::Init(int nmax, string reference, string valence)
+{
+  int Aref,Zref;
+  int Ac,Zc=-1;
+  vector<index_t> hole_list, valence_list, core_list;
+  GetAZfromString(reference,Aref,Zref);
+//  cout << "Reference: " << reference << "  => A = " << Aref << " Z = " << Zref << endl;
+  hole_list = GetOrbitsAZ(Aref,Zref);
+
+  auto itval = ValenceSpaces.find(valence);
+
+  if ( itval != ValenceSpaces.end() ) // we've got a valence space
+  {
+     valence_list = String2Index(itval->second);
+     core_list = hole_list;
+     for (auto& v : valence_list) core_list.resize( remove(core_list.begin(),core_list.end(),v) - core_list.begin() );
+//     cout << "Valence space: " << valence << endl;
+     target_mass = Aref;
+     target_Z = Zref;
+  }
+  else  // no valence space. we've got a single-reference.
+  {
+     GetAZfromString(valence,Ac,Zc);
+//     cout << "Core: " << valence << "  => A = " << Ac << " Z = " << Zc << endl;
+     core_list = GetOrbitsAZ(Ac,Zc);
+     target_mass = Ac;
+     target_Z = Zc; 
+  }
+
+  Init(nmax,hole_list,core_list,valence_list);
+  
+}
+
+
+void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> valence_list)
+{
+   // Assume core is hole states that aren't in the valence space
+   vector<string> core_list( hole_list );
+   for (auto& v : valence_list) core_list.resize( remove(core_list.begin(),core_list.end(),v) - core_list.begin() );
+   Init(nmax,hole_list,core_list,valence_list);
+}
+
+void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list)
+{
+   cout << "Creating a model space with Nmax = " << Nmax << "  and hole orbits [";
+   for (auto& h : hole_list)  cout << h << " ";
+   cout << "]   and core orbits [";
+   for (auto& c : core_list)    cout << c << " ";
+   cout << "]   and valence orbits [";
+   for (auto& v : valence_list)   cout << v << " ";
+   cout << "]" << endl;
+  Init(nmax, String2Index(hole_list), String2Index(core_list), String2Index(valence_list) );
+}
+
+// This is the Init which should inevitably be called
+void ModelSpace::Init(int nmax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list)
 {
    Orbits.clear();
    particles.clear();
    holes.clear();
+   core.clear();
    valence.clear();
+//   holes = hole_list;
+//   core = core_list;
+//   valence = valence_list;
    qspace.clear();
-   particle_qspace.clear();
-   hole_qspace.clear();
    proton_orbits.clear();
    neutron_orbits.clear();
    OneBodyChannels.clear();
+   nmax = Nmax;
+//   cout << "Init" << endl;
 
-   cout << "Creating a model space with Nmax = " << Nmax << "  and hole orbits [";
-   for (string& h : hole_list)
+
+
+   // Make sure no orbits are both core and valence
+   for (auto& c : core_list)
    {
-       cout << h << " ";
+     if ( find(valence_list.begin(), valence_list.end(), c) != valence_list.end() )
+       cout << "!!!!!!!!!!!!! ModelSpace::Init : Conflicting definition. Orbit " << c << " is in core and valence spaces." << endl;
    }
-   cout << "]   and valence space [";
-   for (string& h : inside_list)
-   {
-       cout << h << " ";
-   }
-   cout << "]" << endl;
    
-   vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o'};
-   vector<char> pn_list = { 'p', 'n' };
 
    norbits = (Nmax+1)*(Nmax+2);
    Orbits.resize(norbits);
@@ -350,34 +472,163 @@ void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> inside_
        int n = (N-l)/2;
        for (int j2=2*l+1; j2>=2*l-1 and j2>0; j2-=2)
        {
-         for (int tz=-1; tz<=1; tz+=2)
+         for (int tz : {-1, 1} )
          {
             int ph = 0;
-            int io = 1;
-            char orb_string[6];
-            sprintf(orb_string, "%c%i%c%i", pn_list[(tz+1)/2], n, l_list[l], j2);
-            string orb_str = orb_string;
-            auto it_hole = find(hole_list.begin(), hole_list.end(), orb_string);
-            if ( it_hole != hole_list.end() )
-            {
-               ph=1;
-               hole_list.erase(it_hole);
-            }
-            auto it_inside = find(inside_list.begin(), inside_list.end(), orb_string);
-            if ( it_inside != inside_list.end() )
-            {
-               io=0;
-               inside_list.erase(it_inside);
-            }
-            AddOrbit(n,l,j2,tz,ph,io);
+            int cvq = 2;
+            int indx = Index1(n,l,j2,tz);
+            if ( find(hole_list.begin(), hole_list.end(), indx) != hole_list.end() ) ph=1; // hole orbit
+            if ( find(core_list.begin(), core_list.end(), indx) != core_list.end() ) cvq=0; // core orbit
+            if ( find(valence_list.begin(), valence_list.end(), indx) != valence_list.end() ) cvq=1; // valence orbit
+            AddOrbit(n,l,j2,tz,ph,cvq);
+
+
          }
        }
      }
    }
    SetupKets();
+   target_mass = valence_list.size() > 0 ? 2 : 0;
+   target_Z = 0;
+   for (auto& c : core_list )
+   {
+     target_mass += (GetOrbit(c).j2+1);
+     if (c%2==0) target_Z += (GetOrbit(c).j2+1);
+   }
+   Aref = 0;
+   Zref = 0;
+   for (auto& c : hole_list )
+   {
+     Aref += (GetOrbit(c).j2+1);
+     if (c%2==0) Zref += (GetOrbit(c).j2+1);
+   }
+
+
+//   cout << "ModelSpace main Init:  target_mass = " << target_mass << "  target_Z = " << target_Z << endl;
+//   cout << "ModelSpace main Init:  Aref = " << Aref << "  Zref = " << Zref << endl;
 }
 
 
+vector<index_t> ModelSpace::String2Index( vector<string> vs )
+{
+  vector<index_t> vi;
+  vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o'};
+
+  for ( auto& s : vs )
+  {
+    int tz2 = s[0]=='p' ? -1 : 1;
+    int n,j2;
+    istringstream( s.substr(1,2) ) >> n;
+    int l = find(l_list.begin(),l_list.end(), s[2]) - l_list.begin();
+    istringstream( s.substr(3,s.size()) ) >> j2;
+    vi.push_back( Index1(n,l,j2,tz2) );
+//    cout << s << " -> " << n << " " << l << " " << j2 << " " << tz2 << endl;
+  }
+  return vi;
+}
+
+
+
+void ModelSpace::GetAZfromString(string str,int& A, int& Z) // TODO: accept different formats, e.g. 22Na vs Na22
+{
+  vector<string> periodic_table = {"n","H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar",
+                        "K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
+                        "Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe",
+                        "Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf",
+                        "Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb"};
+  int i=0;
+  while (! isdigit(str[i])) i++;
+  string elem = str.substr(0,i);
+  stringstream( str.substr(i,str.size()-i)) >> A;
+  auto it_elem = find(periodic_table.begin(),periodic_table.end(),elem);
+  if (it_elem != periodic_table.end())
+  {
+    Z = it_elem - periodic_table.begin();
+  }
+  else
+  {
+    Z =-1;
+   cout << "ModelSpace::GetAZfromString :  Trouble parsing " << str << endl;
+  }
+//  cout << "GetAZfromString:  " << str << "  -> " << A << " " << Z << endl;
+}
+
+// Fill A orbits with Z protons and A-Z neutrons
+// assuming a standard shell-model level ordering
+vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)
+{
+  int zz = 0;
+  int nn = 0; // unfortunate there are so many n's here...
+  vector<index_t> orbitsAZ;
+  for (int N=0; N<=Nmax; ++N)
+  {
+    for (int l=N; l>=0; l-=2)
+    {
+      int n = (N-l)/2;
+      int j2 = 2*l+1;
+      if (zz < Z)
+      {
+        orbitsAZ.push_back(Index1(n,l,j2,-1));
+        zz += j2+1;
+      }
+      if (nn < A-Z)
+      {
+        orbitsAZ.push_back(Index1(n,l,j2,1));
+        nn += j2+1;
+      }
+      if (zz==Z and nn==A-Z) return orbitsAZ; // We're all done here.
+      if (zz>Z or nn>A-Z) // Oops. We partially filled a shell.
+      {
+        cout << "Trouble! No support yet for partially-filled shells!! (A = " <<A << ", Z = " << Z << ") zz = " << zz << "  nn = " << nn <<  endl;
+        return orbitsAZ;
+      }
+    }
+    for (int l=N%2; l<=N; l+=2)
+    {
+      if (l==0) continue;
+      int n = (N-l)/2;
+      int j2 = 2*l-1;
+      if (zz < Z)
+      {
+        orbitsAZ.push_back(Index1(n,l,j2,-1));
+        zz += j2+1;
+      }
+      if (nn < A-Z)
+      {
+        orbitsAZ.push_back(Index1(n,l,j2,1));
+        nn += j2+1;
+      }
+//      cout << "A,Z = " << A << "," << Z << "  nn,zz = " << nn << "," << zz << endl;
+//      for ( auto& o : orbitsAZ ) cout << o << " ";
+//      cout << endl;
+      if (zz==Z and nn==A-Z) return orbitsAZ; // We're all done here.
+      if (zz>Z or nn>A-Z) // Oops. We partially filled a shell.
+      {
+        cout << "Trouble! No support yet for partially-filled shells!! (A = " <<A << ", Z = " << Z << ") zz = " << zz << "  nn = " << nn <<  endl;
+        return orbitsAZ;
+      }
+    }
+  }
+  cout << "Trouble! Model space not big enough to fill A=" << A << " Z="<< Z << "  emax = " << Nmax << endl;
+  return orbitsAZ;
+
+}
+
+
+void ModelSpace::SetReference(vector<index_t> new_reference)
+{
+  vector<index_t> c = core;
+  vector<index_t> v = valence;
+  vector<index_t> h = new_reference;
+  ClearVectors();
+//  cout << "Setting new reference : ";
+//  for (auto& h : holes) cout << h << " ";
+//  cout << endl;
+  Init(Nmax, h,c,v);
+}
+
+
+/*
 void ModelSpace::Init_AZ(int nmax, int A, int Z)
 {
    target_mass = A;
@@ -387,8 +638,9 @@ void ModelSpace::Init_AZ(int nmax, int A, int Z)
    holes.clear();
    valence.clear();
    qspace.clear();
-   particle_qspace.clear();
-   hole_qspace.clear();
+   core.clear();
+//   particle_qspace.clear();
+//   hole_qspace.clear();
    proton_orbits.clear();
    neutron_orbits.clear();
    OneBodyChannels.clear();
@@ -472,6 +724,8 @@ void ModelSpace::Init_AZ(int nmax, int A, int Z)
    SetupKets();
 
 }
+*/
+
 
 // Some of the more common model spaces, for convenience.
 /*
@@ -502,6 +756,8 @@ void ModelSpace::Init_Ca40(int nmax)
    Init(nmax,core,valence);
 }
 */
+
+/*
 void ModelSpace::Init_PShell(int nmax)
 {
    vector<string> core = {"p0s1","n0s1"};
@@ -556,6 +812,15 @@ void ModelSpace::Init_SDFPShell(int nmax)
    Init(nmax,core,valence);
 }
 
+void ModelSpace::Init_SD3F7P3Shell(int nmax) // Si28 core - for 40Ca region
+{
+   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5"};
+   vector<string> valence = {"p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p1p3","n1p3"};
+   target_mass = 40;
+   target_Z = 20;
+   Init(nmax,core,valence);
+}
+
 void ModelSpace::Init_FPG9Shell(int nmax) // Ni56 core, with g9/2
 {
    vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","p0f7","n0f7"};
@@ -564,6 +829,9 @@ void ModelSpace::Init_FPG9Shell(int nmax) // Ni56 core, with g9/2
    target_Z = 28;
    Init(nmax,core,valence);
 }
+*/
+
+
 
 ModelSpace ModelSpace::operator=(const ModelSpace& ms)
 {
@@ -571,18 +839,18 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
    particles =  ms.particles;
    valence = ms.valence;
    qspace =  ms.qspace;
-   hole_qspace = ms.hole_qspace;
+   core = ms.core;
    proton_orbits =  ms.proton_orbits;
    neutron_orbits =  ms.neutron_orbits;
    KetIndex_pp =  ms.KetIndex_pp;
    KetIndex_ph =  ms.KetIndex_ph;
    KetIndex_hh =  ms.KetIndex_hh;
+   KetIndex_cc =  ms.KetIndex_cc;
+   KetIndex_vc =  ms.KetIndex_vc;
+   KetIndex_qc =  ms.KetIndex_qc;
    KetIndex_vv =  ms.KetIndex_vv;
-   KetIndex_c_c =  ms.KetIndex_c_c;
-   KetIndex_q_q =  ms.KetIndex_q_q;
-   KetIndex_q_c =  ms.KetIndex_q_c;
-   KetIndex_v_c =  ms.KetIndex_v_c;
-   KetIndex_v_q =  ms. KetIndex_v_q;
+   KetIndex_qv =  ms.KetIndex_qv;
+   KetIndex_qq =  ms.KetIndex_qq;
    Nmax = ms.Nmax;
    N2max = ms.N2max;
    N3max = ms.N3max;
@@ -595,6 +863,9 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
    norbits = ms.norbits;
    hbar_omega = ms.hbar_omega;
    target_mass = ms.target_mass;
+   target_mass = ms.target_Z;
+   Aref = ms.Aref;
+   Zref = ms.Zref;
    Orbits = ms.Orbits;
    Kets = ms.Kets;
    TwoBodyChannels = ms.TwoBodyChannels;
@@ -602,27 +873,30 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
 
-   cout << "In copy assignment for ModelSpace" << endl;
+//   cout << "In copy assignment for ModelSpace" << endl;
    return ModelSpace(*this);
 }
+
+
+
 ModelSpace ModelSpace::operator=(ModelSpace&& ms)
 {
    holes =  move(ms.holes);
    particles =  move(ms.particles);
    valence = move(ms.valence);
    qspace =  move(ms.qspace);
-   hole_qspace = move(ms.hole_qspace);
+   core = move(ms.core);
    proton_orbits =  move(ms.proton_orbits);
    neutron_orbits =  move(ms.neutron_orbits);
    KetIndex_pp =  move(ms.KetIndex_pp);
    KetIndex_ph =  move(ms.KetIndex_ph);
    KetIndex_hh =  move(ms.KetIndex_hh);
+   KetIndex_cc =  move(ms.KetIndex_cc);
+   KetIndex_vc =  move(ms.KetIndex_vc);
+   KetIndex_qc =  move(ms.KetIndex_qc);
    KetIndex_vv =  move(ms.KetIndex_vv);
-   KetIndex_c_c =  move(ms.KetIndex_c_c);
-   KetIndex_q_q =  move(ms.KetIndex_q_q);
-   KetIndex_q_c =  move(ms.KetIndex_q_c);
-   KetIndex_v_c =  move(ms.KetIndex_v_c);
-   KetIndex_v_q =  move(ms. KetIndex_v_q);
+   KetIndex_qv =  move(ms.KetIndex_qv);
+   KetIndex_qq =  move(ms.KetIndex_qq);
    Nmax = move(ms.Nmax);
    N2max = move(ms.N2max);
    N3max = move(ms.N3max);
@@ -635,6 +909,9 @@ ModelSpace ModelSpace::operator=(ModelSpace&& ms)
    norbits = move(ms.norbits);
    hbar_omega = move(ms.hbar_omega);
    target_mass = move(ms.target_mass);
+   target_Z = move(ms.target_Z);
+   Aref = move(ms.Aref);
+   Zref = move(ms.Zref);
    Orbits = move(ms.Orbits);
    Kets = move(ms.Kets);
    TwoBodyChannels = move(ms.TwoBodyChannels);
@@ -643,19 +920,20 @@ ModelSpace ModelSpace::operator=(ModelSpace&& ms)
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
    for (TwoBodyChannel& tbc : ms.TwoBodyChannels)   tbc.modelspace = NULL;
    for (TwoBodyChannel_CC& tbc_cc : ms.TwoBodyChannels_CC)   tbc_cc.modelspace = NULL;
-   cout << "In move assingment for ModelSpace" << endl;
    return ModelSpace(*this);
 }
 
+
+
 void ModelSpace::AddOrbit(Orbit orb)
 {
-  AddOrbit(orb.n, orb.l, orb.j2, orb.tz2, orb.ph, orb.io);
+  AddOrbit(orb.n, orb.l, orb.j2, orb.tz2, orb.ph, orb.cvq);
 }
 
-void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
+void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int cvq)
 {
    index_t ind = Index1(n, l, j2, tz2);
-   Orbits[ind] = Orbit(n,l,j2,tz2,ph,io,ind);
+   Orbits[ind] = Orbit(n,l,j2,tz2,ph,cvq,ind);
 
    if (j2 > OneBodyJmax)
    {
@@ -665,22 +943,18 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, int ph, int io)
       nTwoBodyChannels = 2*3*(TwoBodyJmax+1);
    }
 
-   if (ph == 0) particles.push_back(ind);
-   if (ph == 1) holes.push_back(ind);
-   if (io == 0) valence.push_back(ind);
-   if (io == 1)
-   {
-     qspace.push_back(ind);
-     if (ph == 0) particle_qspace.push_back(ind);
-     if (ph == 1) hole_qspace.push_back(ind);
-   }
-   if (tz2<0) proton_orbits.push_back(ind);
-   if (tz2>0) neutron_orbits.push_back(ind);
+   if ( ph == 0) particles.push_back(ind);
+   if ( ph == 1) holes.push_back(ind);
+   if (cvq == 0) core.push_back(ind);
+   if (cvq == 1) valence.push_back(ind);
+   if (cvq == 2) qspace.push_back(ind);
+   if (tz2 < 0 ) proton_orbits.push_back(ind);
+   if (tz2 > 0 ) neutron_orbits.push_back(ind);
 
    OneBodyChannels[{l, j2, tz2}].push_back(ind);
-
-
 }
+
+
 
 int ModelSpace::GetOrbitIndex(string orb)
 {
@@ -703,6 +977,8 @@ int ModelSpace::GetTwoBodyChannelIndex(int j, int p, int t)
 }
 
 
+
+
 void ModelSpace::SetupKets()
 {
    int index = 0;
@@ -716,54 +992,25 @@ void ModelSpace::SetupKets()
         Kets[index] = Ket(GetOrbit(p),GetOrbit(q));
      }
    }
-
   for (index_t index=0;index<Kets.size();++index)
   {
     Ket& ket = Kets[index];
     int Tz = (ket.op->tz2 + ket.oq->tz2)/2;
     int parity = (ket.op->l + ket.oq->l)%2;
-//    MonopoleKets[Tz+1][parity].push_back(index);
-    MonopoleKets[Tz+1][parity][index]=MonopoleKets[Tz+1][parity].size()-1;
+    MonopoleKets[Tz+1][parity][index] = MonopoleKets[Tz+1][parity].size()-1;
     int php = ket.op->ph;
     int phq = ket.oq->ph;
-    int iop = ket.op->io;
-    int ioq = ket.oq->io;
-     if (( php + phq)==2) // hh
-     {
-        KetIndex_hh.push_back(index);
-        if ((iop+ioq)==2) // qq
-        {
-           KetIndex_c_c.push_back(index);
-        }
-     }
-     else if ((php + phq) == 0) // pp
-     {
-        KetIndex_pp.push_back(index);
-        if ((iop+ioq)==2) // qq
-        {
-           KetIndex_q_q.push_back(index);
-        }
-     }
-     else //ph
-     {
-        KetIndex_ph.push_back(index);
-        if ((iop+ioq)==2) // qq
-        {
-           KetIndex_q_c.push_back(index);
-        }
-     }
-     if ((iop + ioq) == 0) // vv
-     {
-        KetIndex_vv.push_back(index);
-     }
-
-     if ((iop + ioq) == 1) // vq
-     {
-       if ((iop + php == 2) or (ioq+phq==2) ) // the qspace orbit is a hole
-          KetIndex_v_c.push_back(index);
-       else // v particle_q
-          KetIndex_v_q.push_back(index);
-     }
+    int cvq_p = ket.op->cvq;
+    int cvq_q = ket.oq->cvq;
+    if (php+phq==0)          KetIndex_pp.push_back(index);
+    if (php+phq==1)          KetIndex_ph.push_back(index);
+    if (php+phq==2)          KetIndex_hh.push_back(index);
+    if (cvq_p+cvq_q==0)      KetIndex_cc.push_back(index); // 00
+    if (cvq_p+cvq_q==1)      KetIndex_vc.push_back(index); // 01
+    if (abs(cvq_p-cvq_q)==2) KetIndex_qc.push_back(index); // 02
+    if (cvq_p*cvq_q==1)      KetIndex_vv.push_back(index); // 11
+    if (cvq_p+cvq_q==3)      KetIndex_qv.push_back(index); // 12
+    if (cvq_p+cvq_q==4)      KetIndex_qq.push_back(index); // 22
 
    }
 
@@ -785,6 +1032,34 @@ void ModelSpace::SetupKets()
 }
 
 
+void ModelSpace::ClearVectors()
+{
+   holes.clear();         
+   particles.clear();     
+   core.clear();          
+   valence.clear();       
+   qspace.clear();        
+   proton_orbits.clear();  
+   neutron_orbits.clear();
+   
+   KetIndex_pp.clear();
+   KetIndex_ph.clear();
+   KetIndex_hh.clear();
+   KetIndex_cc.clear();
+   KetIndex_vc.clear();
+   KetIndex_qc.clear();
+   KetIndex_vv.clear();
+   KetIndex_qv.clear();
+   KetIndex_qq.clear();
+
+   Orbits.clear();
+   Kets.clear();
+   OneBodyChannels.clear();
+   TwoBodyChannels.clear();
+   TwoBodyChannels_CC.clear();
+   SortedTwoBodyChannels.clear();
+   SortedTwoBodyChannels_CC.clear();
+}
 
 
 double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3)

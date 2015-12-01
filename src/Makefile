@@ -6,14 +6,16 @@ CC = g++
 #                        to be used if OpenBlas was compiled without the USE_OMP flat
 
 INCLUDE   = -I./armadillo
-FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
-SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math 
-WARNFLAGS = -Wall -Wno-comment
+FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  -flto
+SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  -flto
+WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
 FLAGS    += $(WARNFLAGS)
 SOFLAGS  += $(WARNFLAGS)
 INSTDIR = $(HOME)
 
 ifeq ($(DEBUG),on)
+ FLAGS = $(filter-out -flto, $(FLAGS))
+ SOFLAGS = $(filter-out -flto, $(SOFLAGS))
  FLAGS += -g
  SOFLAGS += -g
 endif
@@ -22,18 +24,21 @@ PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython
 
 THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; else echo other; fi)
 
+ALL = libIMSRG.so
+LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
+
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
- LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
 # FLAGS += -DOPENBLAS_NOUSEOMP=1
  SOFLAGS += -fuse-ld=bfd
- ALL = libIMSRG.so
 else
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
- LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5
- ALL = libIMSRG.so
+ LIBS += -llapack
+ ifeq ($(WITHHOARD),on)
+  LIBS += -L/opt/hoard/3.12/lib -lhoard
+ endif
 else  # default options. assumes boost and python are set up nicely.
- LIBS = -lopenblas -llapack -lgsl -lz -lhdf5_cpp -lhdf5
- ALL = pyIMSRG.so libIMSRG.so
+ LIBS += -llapack
+ ALL += pyIMSRG.so
 endif
 endif
 
@@ -46,20 +51,17 @@ install:
 	@if [ ! -d $(INSTDIR)/include ] ; then \
 	  mkdir $(INSTDIR)/include; \
 	fi 
-	rm $(INSTDIR)/lib/libIMSRG.so 
-	rm $(INSTDIR)/include/armadillo
-	ln -s $(PWD)/libIMSRG.so $(INSTDIR)/lib/libIMSRG.so
-	ln -s $(PWD)/armadillo $(INSTDIR)/include/armadillo
+	ln -sf $(PWD)/libIMSRG.so $(INSTDIR)/lib/libIMSRG.so
+	ln -sfT $(PWD)/armadillo $(INSTDIR)/include/armadillo
 	@for x in *.hh; do \
 	 echo linking $(PWD)/$$x  '=>'  $(INSTDIR)/include/$$x;\
-	 rm $(INSTDIR)/include/$$x; \
-	 ln -s $(PWD)/$$x $(INSTDIR)/include/$$x; \
+	 ln -sf $(PWD)/$$x $(INSTDIR)/include/$$x; \
 	done
 	
 
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
-      HartreeFock.o Generator.o IMSRGSolver.o AngMom.o imsrg_util.o\
-      boost_src/gzip.o boost_src/zlib.o
+      HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\
+      boost_src/gzip.o boost_src/zlib.o  IMSRGProfiler.o 
 
 mysrg: main.cc $(OBJ)
 	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 

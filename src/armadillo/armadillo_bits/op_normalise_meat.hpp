@@ -1,5 +1,5 @@
-// Copyright (C) 2014 Conrad Sanderson
-// Copyright (C) 2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2014-2015 Conrad Sanderson
+// Copyright (C) 2014-2015 NICTA (www.nicta.com.au)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -15,7 +15,7 @@
 template<typename T1>
 inline
 void
-op_normalise_colvec::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_normalise_colvec>& in)
+op_normalise_vec::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_normalise_vec>& in)
   {
   arma_extra_debug_sigprint();
   
@@ -23,32 +23,9 @@ op_normalise_colvec::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_norm
   
   const uword p = in.aux_uword_a;
   
-  arma_debug_check( (p == 0), "normalise(): p must be greater than zero" );
+  arma_debug_check( (p == 0), "normalise(): parameter 'p' must be greater than zero" );
   
   const quasi_unwrap<T1> tmp(in.m);
-  
-  const T norm_val_a = norm(tmp.M, p);
-  const T norm_val_b = (norm_val_a != T(0)) ? norm_val_a : T(1);
-  
-  out = tmp.M / norm_val_b;
-  }
-
-
-
-template<typename T1>
-inline
-void
-op_normalise_rowvec::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_normalise_rowvec>& in)
-  {
-  arma_extra_debug_sigprint();
-  
-  typedef typename T1::pod_type T;
-  
-  const uword p = in.aux_uword_a;
-  
-  arma_debug_check( (p == 0), "normalise(): p must be greater than zero" );
-  
-  const unwrap<T1> tmp(in.m);
   
   const T norm_val_a = norm(tmp.M, p);
   const T norm_val_b = (norm_val_a != T(0)) ? norm_val_a : T(1);
@@ -70,8 +47,8 @@ op_normalise_mat::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_normali
   const uword p   = in.aux_uword_a;
   const uword dim = in.aux_uword_b;
   
-  arma_debug_check( (p   == 0), "normalise(): p must be greater than zero" );
-  arma_debug_check( (dim >  1), "normalise(): dim must be 0 or 1"          );
+  arma_debug_check( (p   == 0), "normalise(): parameter 'p' must be greater than zero" );
+  arma_debug_check( (dim >  1), "normalise(): parameter 'dim' must be 0 or 1"          );
   
   const unwrap<T1>   tmp(in.m);
   const Mat<eT>& A = tmp.M;

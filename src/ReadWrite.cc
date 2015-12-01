@@ -32,7 +32,7 @@ ReadWrite::~ReadWrite()
 }
 
 ReadWrite::ReadWrite()
-: doCoM_corr(false), goodstate(true)
+: doCoM_corr(false), goodstate(true),LECs({-0.81,-3.20,5.40,1.271,-0.131}) // default to the EM2.0_2.0 LECs
 {
 }
 
@@ -562,7 +562,8 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
     
 
     infile.seekg(0, infile.end);
-    int n_elem = infile.tellg();
+//    int n_elem = infile.tellg();
+    size_t n_elem = infile.tellg();
     infile.seekg(0, infile.beg);
     n_elem -= infile.tellg();
     n_elem -= HEADERSIZE;
@@ -595,7 +596,7 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
     Read_Darmstadt_3body_from_stream(infile, Hbare,  E1max, E2max, E3max);
   }
 
-  Hbare.timer["Read_3body_file"] += omp_get_wtime() - start_time;
+  Hbare.profiler.timer["Read_3body_file"] += omp_get_wtime() - start_time;
 }
 
 
@@ -1217,21 +1218,6 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
   ModelSpace* modelspace = op.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
 
-  float c1 = -0.81;
-  float c3 = -3.20;
-  float c4 = 5.40;
-  float cD = 1.271;
-  float cE = -0.131;
-
-// N2LOSAT parameters
-//  float c1 = -1.12152120;
-//  float c3 = -3.92500586;
-//  float c4 = 3.76568716;
-//  float cD = 0.861680589;
-//  float cE = -0.03957471;
-
-  float LEC[5] = {c1,c3,c4,cD,cE};
-
   int t12p_list[5] = {0,0,1,1,1};
   int t12_list[5]  = {0,1,0,1,1};
   int twoT_list[5] = {1,1,1,1,3};
@@ -1240,12 +1226,12 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
 
   DataSet basis = file.openDataSet("alphas");
   DataSpace basis_dspace = basis.getSpace();
-//  int nDim_basis = basis_dspace.getSimpleExtentNdims();
   hsize_t iDim_basis[6];
   basis_dspace.getSimpleExtentDims(iDim_basis,NULL);
 
 
   // Generate a 2d buffer in contiguous memory
+  //TODO: Do this with vectors so we don't have to worry about new and delete[]
   int** dbuf = new int*[iDim_basis[0]];
   dbuf[0] = new int[iDim_basis[0]*iDim_basis[1]];
   for (hsize_t i=1;i<iDim_basis[0];++i)
@@ -1258,7 +1244,6 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
 
   DataSet value = file.openDataSet("vtnf");
   DataSpace value_dspace = value.getSpace();
-//  int nDim_value = value_dspace.getSimpleExtentNdims();
   hsize_t value_maxDim[2];
   value_dspace.getSimpleExtentDims(value_maxDim,NULL);
 
@@ -1311,23 +1296,10 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
        int twoT = twoT_list[k_iso];
        float *me = value_buf[i+k_iso];
        float summed_me = 0;
-       for (int ii=0;ii<5;++ii) summed_me += LEC[ii] * me[ii] ;
+       for (int ii=0;ii<5;++ii) summed_me += LECs[ii] * me[ii] ;
        summed_me *= HBARC;
        summed_me *= modelspace->phase(dbuf[alphasp][1]+dbuf[alphasp][4]+dbuf[alphasp][7]+dbuf[alphaspp][1]+dbuf[alphaspp][4]+dbuf[alphaspp][7]);
-//       if ((alphasp==0 and alphaspp==0) or (alphasp==1 and alphaspp==1))
-//       {
-//         cout << "< " << alphaspp << " | V | " << alphasp << " > : ";
-//        for (int ii=0;ii<5;++ii)
-//           cout << me[ii] << "   ";
-//        cout << " ===> " << summed_me << endl;
-//       }
 
-//       summed_me *= modelspace->phase(oa.n+ob.n+oc.n+od.n+oe.n+of.n) ;
-
-
-//       cout << "< " << alphaspp << " | V | " << alphasp << " >  "
-//            << j12p << " " << j12 << " " << jtot << "  "
-//            << T12  << " " << TT12 << " " << twoT << "  =>  " << summed_me << endl;
        if ( ap==bp and (j12p+T12)%2 !=1 )
        {
          if ( abs(summed_me)>1.0e-6  )
@@ -1359,12 +1331,6 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
   delete[] dbuf;
   delete[] value_buf[0];
   delete[] value_buf;
-
-//   cout << "i = " << i << "  out of " << value_maxDim[0] << endl;
-//  cout << "Writing me3j file..." << endl;
-//  Write_me3j(filename + "_to_me3j", op, 2, 24, 12);
-//  cout << "done" << endl;
-//  cout << "All done reading." << endl;
 
 }
 
@@ -1872,7 +1838,7 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode
 
    // Get A of the core
    int Acore=0;
-   for (auto& i : modelspace->hole_qspace)
+   for (auto& i : modelspace->core)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 + 1;
@@ -2008,7 +1974,7 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
 
    // Get A,Z of the core
    int Acore=0, Zcore=0;
-   for (auto& i : modelspace->hole_qspace)
+   for (auto& i : modelspace->core)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 + 1;
@@ -2538,7 +2504,7 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
    int wint = 4; // width for printing integers
    int wdouble = 12; // width for printing doubles
    int pdouble = 6; // precision for printing doubles
-   for (auto& i : modelspace->hole_qspace)
+   for (auto& i : modelspace->core)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 +1;
@@ -2547,7 +2513,7 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
          proton_core_orbits += 1;
       }
    }
-   neutron_core_orbits = modelspace->hole_qspace.size() - proton_core_orbits;
+   neutron_core_orbits = modelspace->core.size() - proton_core_orbits;
 
    outfile << fixed << setprecision(pdouble);
    outfile << "!  One-body matrix elements for tensor operator: " << opname << "   generated with IM-SRG" << endl;
@@ -2603,7 +2569,7 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
    int wint = 4; // width for printing integers
    int wdouble = 12; // width for printing doubles
    int pdouble = 6; // precision for printing doubles
-   for (auto& i : modelspace->hole_qspace)
+   for (auto& i : modelspace->core)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 +1;
@@ -2612,7 +2578,7 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
          proton_core_orbits += 1;
       }
    }
-   neutron_core_orbits = modelspace->hole_qspace.size() - proton_core_orbits;
+   neutron_core_orbits = modelspace->core.size() - proton_core_orbits;
 
    outfile << fixed << setprecision(pdouble);
    outfile << "!  Two-body matrix elements for tensor operator: " << opname << "   generated with IM-SRG" << endl;
@@ -2712,6 +2678,24 @@ void ReadWrite::ReadTwoBodyEngel_from_stream( istream& infile, Operator& Op)
     Op.TwoBody.SetTBME_J(J,a,b,c,d,tbme);
   }
 }
+
+
+
+void ReadWrite::SetLECs(double c1, double c3, double c4, double cD, double cE)
+{
+   LECs = {c1,c3,c4,cD,cE};
+}
+
+void ReadWrite::SetLECs_preset(string key)
+{
+       if (key == "EM1.8_2.0")  LECs = {-0.81, -3.20, 5.40, 1.264, -0.120};
+  else if (key == "EM2.0_2.0")  LECs = {-0.81, -3.20, 5.40, 1.271, -0.131};
+  else if (key == "EM2.2_2.0")  LECs = {-0.81, -3.20, 5.40, 1.214, -0.137};
+  else if (key == "EM2.8_2.0")  LECs = {-0.81, -3.20, 5.40, 1.278, -0.078};
+  else if (key == "PWA2.0_2.0") LECs = {-0.76, -4.78, 3.96,-3.007, -0.686};
+  else if (key == "N2LOSAT")    LECs = {-1.12152120, -3.92500586, 3.76568716, 0.861680589, -0.03957471}; // For testing purposes only. (This uses the wrong regulator).
+}
+
 
 
 

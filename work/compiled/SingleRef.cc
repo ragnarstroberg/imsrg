@@ -129,7 +129,7 @@ int main(int argc, char** argv)
 
   ReadWrite rw;
 
-
+  IMSRGProfiler profiler;
 
   ModelSpace modelspace(eMax,nucleus);
 
@@ -143,15 +143,39 @@ int main(int argc, char** argv)
   Operator Hbare(modelspace,0,0,0,particle_rank);
   Hbare.SetHermitian();
 
+
+  cout << "Before Reading " << endl;
+  profiler.PrintMemory();
+
   cout << "Reading interaction..." << endl;
   if (fmt2 == "me2j")
     rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
   else if (fmt2 == "navratil" or fmt2 == "Navratil")
     rw.ReadBareTBME_Navratil(inputtbme, Hbare);
 
+
+//  cout << "Two body operator " << endl;
+//  profiler.PrintMemory();
+//  Hbare = Operator(modelspace,0,0,0,3);
+//  cout << "Three body operator " << endl;
+//  profiler.PrintMemory();
+//  Hbare = Operator(modelspace,0,0,0,2);
+//  cout << "Two body operator " << endl;
+//  profiler.PrintMemory();
+//  Hbare = Operator(modelspace,0,0,0,3);
+//  cout << "Three body operator " << endl;
+//  profiler.PrintMemory();
+//  Hbare = Operator(modelspace,0,0,0,2);
+//  cout << "Two body operator " << endl;
+//  profiler.PrintMemory();
+//  Hbare = Operator(modelspace,0,0,0,3);
+//  cout << "Three body operator " << endl;
+//  profiler.PrintMemory();
+
+
   if (Hbare.particle_rank >=3)
   {
-//    rw.Read_Darmstadt_3body(input3bme, Hbare, 12,24,12);
+////    rw.Read_Darmstadt_3body(input3bme, Hbare, 12,24,12);
     rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
   }  
 
@@ -164,10 +188,14 @@ int main(int argc, char** argv)
   hf.Solve();
   cout << "EHF = " << hf.EHF << endl;
   
+  cout << "Before Normal Ordering" << endl;
+  profiler.PrintMemory();
   if (basis == "HF")
     Hbare = hf.GetNormalOrderedH();
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
+  cout << "After Normal Ordering" << endl;
+  profiler.PrintMemory();
 
   Operator Rp2 = Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ());
   if (basis == "HF")
@@ -177,7 +205,12 @@ int main(int argc, char** argv)
   cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + R2p + R2n + DF) << endl; 
   
   IMSRGSolver imsrgsolver(Hbare);
-
+  
+  if (method=="NSmagnus")
+  {
+    omega_norm_max = 500;
+    method = "magnus";
+  }
   imsrgsolver.SetMethod(method);
   imsrgsolver.SetGenerator(generator);
   imsrgsolver.SetHin(Hbare);
@@ -186,7 +219,7 @@ int main(int argc, char** argv)
   imsrgsolver.SetDs(ds_0);
 //  imsrgsolver.SetdOmega(domega);
   imsrgsolver.SetODETolerance(ode_tolerance);
-  imsrgsolver.SetdOmega(min(domega,omega_norm_max));
+  imsrgsolver.SetdOmega(min(domega,omega_norm_max+1e-6));
   imsrgsolver.SetOmegaNormMax(omega_norm_max);
   imsrgsolver.Solve();
 

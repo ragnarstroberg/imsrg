@@ -14,24 +14,21 @@ IMSRGSolver::~IMSRGSolver()
 IMSRGSolver::IMSRGSolver()
     : s(0),ds(0.1),ds_max(0.5),
      norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
-//#ifndef NO_ODE
+
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
-//#endif
-{
-}
+{}
 
 // Constructor
 IMSRGSolver::IMSRGSolver( Operator &H_in)
-   : modelspace(H_in.GetModelSpace()),H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), // ,dOmega(H_in)
+   : modelspace(H_in.GetModelSpace()),H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), 
     istep(0), s(0),ds(0.1),ds_max(0.5),
     smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
-//#ifndef NO_ODE
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
-//#endif
 {
    Eta.Erase();
    Eta.SetAntiHermitian();
-   Omega.push_back( Eta);
+//   Omega.push_back( Eta);
+   Omega.emplace_back( Eta);
 }
 
 void IMSRGSolver::SetHin( Operator & H_in)
@@ -45,10 +42,13 @@ void IMSRGSolver::SetHin( Operator & H_in)
    Eta.SetAntiHermitian();
    if (Omega.back().Norm() > 1e-6)
    {
-     Omega.push_back(Eta);
-//        H_saved = H_s;
-        H_saved = FlowingOps[0];
-    cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
+     Omega.emplace_back(Eta);
+//     Omega.push_back(Eta);
+     H_saved = FlowingOps[0];
+    cout << "pushing back another Omega. Omega.size = " << Omega.size()
+         << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
+         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+         << endl;
    }
 }
 
@@ -56,10 +56,13 @@ void IMSRGSolver::Reset()
 {
    s=0;
    Eta.Erase();
-//   Omega.Erase();
    Omega.resize(0);
-   Omega.push_back(Eta);
-    cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
+//   Omega.push_back(Eta);
+   Omega.emplace_back(Eta);
+   cout << "pushing back another Omega. Omega.size = " << Omega.size()
+        << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
+        << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+        << endl;
 }
 
 void IMSRGSolver::SetGenerator(string g)
@@ -68,10 +71,14 @@ void IMSRGSolver::SetGenerator(string g)
   if (Omega.back().Norm() > 1e-6)
   {
     Eta.Erase();
-    Omega.push_back(Eta);
-//        H_saved = H_s;
+//    Omega.push_back(Eta);
+    Omega.emplace_back(Eta);
         H_saved = FlowingOps[0];
-    cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
+
+    cout << "pushing back another Omega. Omega.size = " << Omega.size()
+         << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
+         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+         << endl;
   }
 }
 
@@ -84,8 +91,8 @@ void IMSRGSolver::SetFlowFile(string s)
       flowf.open(flowfile,ofstream::out);
       flowf.close();
    }
-   WriteFlowStatusHeader(cout);
 }
+
 
 void IMSRGSolver::Solve()
 {
@@ -99,9 +106,16 @@ void IMSRGSolver::Solve()
     Solve_ode_magnus();
   else if (method == "flow_euler")
     Solve_ode();
+  else if (method == "restore_4th_order")
+  {
+//    FlowingOps.push_back( Operator( *(FlowingOps[0].GetModelSpace()), 0,0,0,1));
+    FlowingOps.emplace_back( Operator( *(FlowingOps[0].GetModelSpace()), 0,0,0,1));
+    Solve_ode_adaptive();
+  }
   else
     cout << "IMSRGSolver: I don't know method " << method << endl;
 }
+
 
 void IMSRGSolver::Solve_magnus_euler()
 {
@@ -126,15 +140,16 @@ void IMSRGSolver::Solve_magnus_euler()
       if (norm_omega > omega_norm_max)
       {
         H_saved = FlowingOps[0];
-        Omega.push_back(Eta);
+        Omega.emplace_back(Eta);
         Omega.back().Erase();
         norm_omega = 0;
-        cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size()
+         << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
+         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+         << endl;
       }
       // ds should never be more than 1, as this is over-rotating
-      //ds = min(norm_domega / norm_eta / (norm_omega+1.0e-9), ds_max); 
       ds = min(min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), ds_max); 
-//      if (ds == ds_max) norm_domega /=2;
       if (s+ds > smax) ds = smax-s;
       s += ds;
       Eta *= ds; // Here's the Euler step.
@@ -167,7 +182,6 @@ void IMSRGSolver::Solve_magnus_euler()
 void IMSRGSolver::Solve_magnus_modified_euler()
 {
    istep = 0;
-//   generator.Update(&H_s,&Eta);
    generator.Update(&FlowingOps[0],&Eta);
 
    Operator H_temp;
@@ -182,10 +196,13 @@ void IMSRGSolver::Solve_magnus_modified_euler()
       if (norm_omega > omega_norm_max)
       {
         H_saved = FlowingOps[0];
-        Omega.push_back(Eta);
+        Omega.emplace_back(Eta);
         Omega.back().Erase();
         norm_omega = 0;
-        cout << "pushing back another Omega. Omega.size = " << Omega.size() <<" , operator size = " << Omega.front().Size()*sizeof(double)/1024./1024./1024. << " GB" << endl;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size()
+         << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
+         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+         << endl;
       }
       // ds should never be more than 1, as this is over-rotating
       ds = min(min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), ds_max); 
@@ -224,9 +241,11 @@ void IMSRGSolver::Solve_magnus_modified_euler()
 
 // Implement element-wise division and abs and reduce for Operators.
 // This is required for adaptive steppers
-vector<Operator> operator/ (const vector<Operator>& num, const vector<Operator>& denom)
+//vector<Operator> operator/ (const vector<Operator>& num, const vector<Operator>& denom)
+deque<Operator> operator/ (const deque<Operator>& num, const deque<Operator>& denom)
 {
-   vector<Operator> quotient = num;
+//   vector<Operator> quotient = num;
+   deque<Operator> quotient = num;
    for ( size_t i=0;i<num.size();++i )
    {
      quotient[i].ZeroBody /= denom[i].ZeroBody;
@@ -236,39 +255,49 @@ vector<Operator> operator/ (const vector<Operator>& num, const vector<Operator>&
    return quotient;
 }
 
-vector<Operator> operator* (const double a, const vector<Operator>& X)
+//vector<Operator> operator* (const double a, const vector<Operator>& X)
+deque<Operator> operator* (const double a, const deque<Operator>& X)
 {
-  vector<Operator> Y = X;
+//  vector<Operator> Y = X;
+  deque<Operator> Y = X;
   for ( auto& y : Y )  y *= a;
   return Y;
 }
 
-vector<Operator> operator+ ( const vector<Operator>& X, const vector<Operator>& Y)
+//vector<Operator> operator+ ( const vector<Operator>& X, const vector<Operator>& Y)
+deque<Operator> operator+ ( const deque<Operator>& X, const deque<Operator>& Y)
 {
-  vector<Operator> Z = X;
+//  vector<Operator> Z = X;
+  deque<Operator> Z = X;
   for ( size_t i=0;i<Z.size();++i )  Z[i] += Y[i];
   return Z;
 }
 
 // Also need the dubious operation of adding a double to an operator.
-vector<Operator> operator+ (const double a, const vector<Operator>& X)
+//vector<Operator> operator+ (const double a, const vector<Operator>& X)
+deque<Operator> operator+ (const double a, const deque<Operator>& X)
 {
-   vector<Operator> Y = X;
+//   vector<Operator> Y = X;
+   deque<Operator> Y = X;
    for ( auto& y : Y )
    {
      y.ZeroBody += a;
-     for( auto& v : y.OneBody ) v += a;
+     y.OneBody += a;
+//     for( auto& v : y.OneBody ) v += a;
      for ( auto& itmat: y.TwoBody.MatEl )
-       for ( auto& v : itmat.second ) v += a;
+      itmat.second += a;
+//       for ( auto& v : itmat.second ) v += a;
    }
    return Y;
 }
 
 // Return the element-wise absolute value of an operator
 // this is needed for ODE adaptive solver
-vector<Operator> abs(const vector<Operator>& OpIn)
+//vector<Operator> abs(const vector<Operator>& OpIn)
+deque<Operator> abs(const deque<Operator>& OpIn)
 {
-   vector<Operator> OpOut = OpIn;
+//   vector<Operator> OpOut = OpIn;
+   deque<Operator> OpOut = OpIn;
    for (auto& opout : OpOut )
    {
      opout.ZeroBody = abs(opout.ZeroBody);
@@ -304,12 +333,14 @@ struct vector_space_reduce< Operator >
 // Apply operation to each element of X and return the result
 // this is needed for ODE adaptive solver
 // USE THIS FOR BOOST VERSION >= 1.56
+//struct vector_space_norm_inf< vector<Operator> >
 namespace boost {namespace numeric {namespace odeint{
 template<>
-struct vector_space_norm_inf< vector<Operator> >
+struct vector_space_norm_inf< deque<Operator> >
 {
    typedef double result_type;
-   double operator()(const vector<Operator>& X)
+//   double operator()(const vector<Operator>& X)
+   double operator()(const deque<Operator>& X)
    {
      double norm = 0;
      for ( auto& x : X )
@@ -327,7 +358,8 @@ void IMSRGSolver::Solve_ode()
    WriteFlowStatusHeader(cout);
    WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
-   runge_kutta4< vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
+//   runge_kutta4< vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
+   runge_kutta4< deque<Operator>, double, deque<Operator>, double, vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
@@ -338,12 +370,15 @@ void IMSRGSolver::Solve_ode()
 void IMSRGSolver::Solve_ode_adaptive()
 {
    ode_mode = "H";
+   if (method == "restore_4th_order") ode_mode = "Restored";
    WriteFlowStatusHeader(cout);
    WriteFlowStatus(flowfile);
    cout << "done writing header and status" << endl;
    using namespace boost::numeric::odeint;
    auto system = *this;
-   typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
+//   typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
+   typedef runge_kutta_dopri5< deque<Operator> , double , deque<Operator> ,double , vector_space_algebra > stepper;
+//   typedef adams_bashforth_moulton< 4, vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
    integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
@@ -353,12 +388,14 @@ void IMSRGSolver::Solve_ode_adaptive()
 
 // Evaluate dx/dt for boost ode
 //void IMSRGSolver::operator()( const Operator& x, Operator& dxdt, const double t)
-void IMSRGSolver::operator()( const vector<Operator>& x, vector<Operator>& dxdt, const double t)
+//void IMSRGSolver::operator()( const vector<Operator>& x, vector<Operator>& dxdt, const double t)
+void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, const double t)
 {
    s = t;
    if (ode_mode == "H")
    {
      FlowingOps[0] = x[0];
+     if (dxdt.size() < x.size()) dxdt.resize(x.size());
      auto& H_s = FlowingOps[0];
      generator.Update(&H_s,&Eta);
      if (Eta.Norm() < eta_criterion)
@@ -383,10 +420,14 @@ void IMSRGSolver::operator()( const vector<Operator>& x, vector<Operator>& dxdt,
      if (norm_omega > omega_norm_max) // This doesn't seem to works so well just yet...
      {
        H_saved = FlowingOps[0];
-       Omega.push_back(Eta);
+//       Omega.push_back(Eta);
+       Omega.emplace_back(Eta);
        Omega.back().Erase();
        norm_omega = 0;
-       cout << "pushing back another Omega. Omega.size = " << Omega.size() << endl;
+    cout << "pushing back another Omega. Omega.size = " << Omega.size()
+         << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
+         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+         << endl;
      }
      Omega.back() = x.back();
      auto& Omega_s = x.back();
@@ -396,10 +437,48 @@ void IMSRGSolver::operator()( const vector<Operator>& x, vector<Operator>& dxdt,
      else
        H_s = H_0->BCH_Transform(Omega_s);
      generator.Update(&H_s,&Eta);
+     if (dxdt.size() < x.size()) dxdt.resize(x.size());
      dxdt.back() = Eta - 0.5*Commutator(Omega_s,Eta);
    }
-   WriteFlowStatus(cout);
+   else if (ode_mode == "Restored" )
+   {
+     FlowingOps[0] = x[0];
+     FlowingOps[1] = x[1];
+     if (dxdt.size() < x.size()) dxdt.resize(x.size());
+     dxdt[1] = Operator(x[1]);
+     auto& H_s = FlowingOps[0];
+     generator.Update(&H_s,&Eta);
+     if (Eta.Norm() < eta_criterion)
+     {
+       for (size_t i=0;i<x.size();++i)
+       {
+         dxdt[i] = 0*x[i];
+       }
+     }
+     else
+     {
+       dxdt[0] = Commutator(Eta,x[0]+x[1]);
+       dxdt[1].Erase();
+       dxdt[1].comm221ss(Eta,x[0]);
+       // keep only pp and hh parts of d chi/ ds
+       for (auto& a : modelspace->holes)
+       {
+         for (auto& i : modelspace->particles)
+         {
+           dxdt[1].OneBody(a,i) = 0;
+           dxdt[1].OneBody(i,a) = 0;
+         }
+       }
+       for (size_t i=2;i<x.size();++i)
+       {
+         dxdt[i] = Commutator(Eta,x[i]);
+       }
+//       cout << "Made it out of the first iteration" << endl;
+     }
+
+   }
    WriteFlowStatus(flowfile);
+   WriteFlowStatus(cout);
 }
 
 
@@ -411,7 +490,8 @@ void IMSRGSolver::Solve_ode_magnus()
    WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
    namespace pl = std::placeholders;
-   runge_kutta4<vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
+//   runge_kutta4<vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
+   runge_kutta4<deque<Operator>, double, deque<Operator>, double, vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_const(stepper, system, Omega, s, smax, ds, monitor);
@@ -438,13 +518,12 @@ Operator IMSRGSolver::Transform(Operator& OpIn)
 
 Operator IMSRGSolver::Transform(Operator&& OpIn)
 {
-  Operator OpOut = OpIn;
+  Operator OpOut = move(OpIn);
   for (auto omega : Omega )
   {
     OpOut = OpOut.BCH_Transform( omega );
   }
   return OpOut;
-//   return OpIn.BCH_Transform( Omega );
 }
 
 
@@ -459,10 +538,31 @@ Operator IMSRGSolver::InverseTransform(Operator& OpIn)
     OpOut = OpOut.BCH_Transform( negomega );
   }
   return OpOut;
-//   Operator negomega = -Omega;
-//   return OpIn.BCH_Transform( negomega );
 }
 
+/// Returns \f$ e^{\Omega} \mathcal{O} e^{-\Omega} \f$
+/// for the \f$\Omega_i\f$s with index greater than n.
+Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
+{
+  Operator OpOut = OpIn;
+  for (size_t i=n;i<Omega.size();++i)
+  {
+    OpOut = OpOut.BCH_Transform( Omega[i] );
+  }
+  return OpOut;
+}
+
+/// Returns \f$ e^{\Omega} \mathcal{O} e^{-\Omega} \f$
+/// for the \f$\Omega_i\f$s with index greater than n.
+Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
+{
+  Operator OpOut = move(OpIn);
+  for (size_t i=n;i<Omega.size();++i)
+  {
+    OpOut = OpOut.BCH_Transform( Omega[i] );
+  }
+  return OpOut;
+}
 
 
 // count number of equations to be solved
@@ -497,7 +597,7 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
       auto& H_s = FlowingOps[0];
       f.setf(ios::fixed);
       f << setw(5) << istep
-        << setw(fwidth) << setprecision(3) << s
+        << setw(10) << setprecision(3) << s
         << setw(fwidth) << setprecision(fprecision) << H_s.ZeroBody 
         << setw(fwidth) << setprecision(fprecision) << H_s.OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << H_s.TwoBodyNorm()
@@ -505,10 +605,12 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << Omega.back().Norm()
         << setw(fwidth) << setprecision(fprecision) << Eta.OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << Eta.TwoBodyNorm()
-        << setw(7)      << setprecision(0)          << H_s.timer["N_Commutators"]
+        << setw(7)      << setprecision(0)          << profiler.counter["N_Commutators"]
         << setw(fwidth) << setprecision(fprecision) << H_s.GetMP2_Energy()
-        << setw(7)      << setprecision(0)         << H_s.timer["N_Operators"]
+        << setw(7)      << setprecision(0)          << profiler.counter["N_Operators"]
         << setprecision(fprecision)
+        << setw(12) << setprecision(3) << profiler.GetTimes()["real"]
+        << setw(12) << setprecision(3) << profiler.CheckMem()["RSS"]/1024. << " / " << skipws << profiler.MaxMemUsage()/1024. << fixed
         << endl;
    }
 
@@ -528,7 +630,7 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
       int fprecision = 9;
       f.setf(ios::fixed);
       f << setw(5) << "i"
-        << setw(fwidth) << setprecision(3) << "s"
+        << setw(10) << setprecision(3) << "s"
         << setw(fwidth) << setprecision(fprecision) << "E0"
         << setw(fwidth) << setprecision(fprecision) << "||H_1||" 
         << setw(fwidth) << setprecision(fprecision) << "||H_2||" 
@@ -538,8 +640,11 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
         << setw(7)      << setprecision(fprecision) << "Ncomm" 
         << setw(16)     << setprecision(fprecision) << "E(MP2)" 
         << setw(7)      << setprecision(fprecision) << "N_Ops"
+        << setw(16) << setprecision(fprecision) << "Walltime (s)"
+        << setw(19) << setprecision(fprecision) << "Memory (MB)"
         << endl;
-      f << "---------------------------------------------------------------------------------------------------------------------------------------------" << endl;
+        for (int x=0;x<175;x++) f << "-";
+        f << endl;
    }
 
 }

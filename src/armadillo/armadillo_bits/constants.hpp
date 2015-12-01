@@ -23,7 +23,7 @@ namespace priv
       {
       arma_ignore(junk);
       
-      if(std::numeric_limits<eT>::has_quiet_NaN == true)
+      if(std::numeric_limits<eT>::has_quiet_NaN)
         {
         return std::numeric_limits<eT>::quiet_NaN();
         }
@@ -65,7 +65,7 @@ namespace priv
       {
       arma_ignore(junk);
       
-      if(std::numeric_limits<eT>::has_infinity == true)
+      if(std::numeric_limits<eT>::has_infinity)
         {
         return std::numeric_limits<eT>::infinity();
         }
@@ -105,7 +105,7 @@ namespace priv
 
 
 //! various constants.
-//! Physical constants taken from NIST and WolframAlpha on 2009-06-23
+//! Physical constants taken from NIST 2010 CODATA values, and some from WolframAlpha (values provided as of 2009-06-23)
 //! http://physics.nist.gov/cuu/Constants
 //! http://www.wolframalpha.com
 //! See also http://en.wikipedia.org/wiki/Physical_constant
@@ -175,35 +175,35 @@ template<typename eT> const eT Datum<eT>::log_max   = std::log(std::numeric_limi
 template<typename eT> const eT Datum<eT>::nan       = priv::Datum_helper::nan<eT>();
 template<typename eT> const eT Datum<eT>::inf       = priv::Datum_helper::inf<eT>();
 
-template<typename eT> const eT Datum<eT>::m_u       = eT(1.660538782e-27);
-template<typename eT> const eT Datum<eT>::N_A       = eT(6.02214179e23);
-template<typename eT> const eT Datum<eT>::k         = eT(1.3806504e-23);
-template<typename eT> const eT Datum<eT>::k_evk     = eT(8.617343e-5);
-template<typename eT> const eT Datum<eT>::a_0       = eT(0.52917720859e-10);
-template<typename eT> const eT Datum<eT>::mu_B      = eT(927.400915e-26);
+template<typename eT> const eT Datum<eT>::m_u       = eT(1.660539040e-27);
+template<typename eT> const eT Datum<eT>::N_A       = eT(6.022140857e23);
+template<typename eT> const eT Datum<eT>::k         = eT(1.38064852e-23);
+template<typename eT> const eT Datum<eT>::k_evk     = eT(8.6173303e-5);
+template<typename eT> const eT Datum<eT>::a_0       = eT(0.52917721067e-10);
+template<typename eT> const eT Datum<eT>::mu_B      = eT(927.4009994e-26);
 template<typename eT> const eT Datum<eT>::Z_0       = eT(3.76730313461771e-2);
-template<typename eT> const eT Datum<eT>::G_0       = eT(7.7480917004e-5);
+template<typename eT> const eT Datum<eT>::G_0       = eT(7.7480917310e-5);
 template<typename eT> const eT Datum<eT>::k_e       = eT(8.9875517873681764e9);
 template<typename eT> const eT Datum<eT>::eps_0     = eT(8.85418781762039e-12);
-template<typename eT> const eT Datum<eT>::m_e       = eT(9.10938215e-31);
-template<typename eT> const eT Datum<eT>::eV        = eT(1.602176487e-19);
-template<typename eT> const eT Datum<eT>::ec        = eT(1.602176487e-19);
-template<typename eT> const eT Datum<eT>::F         = eT(96485.3399);
-template<typename eT> const eT Datum<eT>::alpha     = eT(7.2973525376e-3);
-template<typename eT> const eT Datum<eT>::alpha_inv = eT(137.035999679);
-template<typename eT> const eT Datum<eT>::K_J       = eT(483597.891e9);
+template<typename eT> const eT Datum<eT>::m_e       = eT(9.10938356e-31);
+template<typename eT> const eT Datum<eT>::eV        = eT(1.6021766208e-19);
+template<typename eT> const eT Datum<eT>::ec        = eT(1.6021766208e-19);
+template<typename eT> const eT Datum<eT>::F         = eT(96485.33289);
+template<typename eT> const eT Datum<eT>::alpha     = eT(7.2973525664e-3);
+template<typename eT> const eT Datum<eT>::alpha_inv = eT(137.035999139);
+template<typename eT> const eT Datum<eT>::K_J       = eT(483597.8525e9);
 template<typename eT> const eT Datum<eT>::mu_0      = eT(1.25663706143592e-06);
 template<typename eT> const eT Datum<eT>::phi_0     = eT(2.067833667e-15);
-template<typename eT> const eT Datum<eT>::R         = eT(8.314472);
-template<typename eT> const eT Datum<eT>::G         = eT(6.67428e-11);
-template<typename eT> const eT Datum<eT>::h         = eT(6.62606896e-34);
-template<typename eT> const eT Datum<eT>::h_bar     = eT(1.054571628e-34);
-template<typename eT> const eT Datum<eT>::m_p       = eT(1.672621637e-27);
-template<typename eT> const eT Datum<eT>::R_inf     = eT(10973731.568527);
+template<typename eT> const eT Datum<eT>::R         = eT(8.3144598);
+template<typename eT> const eT Datum<eT>::G         = eT(6.67408e-11);
+template<typename eT> const eT Datum<eT>::h         = eT(6.626070040e-34);
+template<typename eT> const eT Datum<eT>::h_bar     = eT(1.054571800e-34);
+template<typename eT> const eT Datum<eT>::m_p       = eT(1.672621898e-27);
+template<typename eT> const eT Datum<eT>::R_inf     = eT(10973731.568508);
 template<typename eT> const eT Datum<eT>::c_0       = eT(299792458.0);
-template<typename eT> const eT Datum<eT>::sigma     = eT(5.670400e-8);
-template<typename eT> const eT Datum<eT>::R_k       = eT(25812.807557);
-template<typename eT> const eT Datum<eT>::b         = eT(2.8977685e-3);
+template<typename eT> const eT Datum<eT>::sigma     = eT(5.670367e-8);
+template<typename eT> const eT Datum<eT>::R_k       = eT(25812.8074555);
+template<typename eT> const eT Datum<eT>::b         = eT(2.8977729e-3);
 
 
 
@@ -225,7 +225,7 @@ namespace priv
     {
     arma_ignore(junk);
     
-    if(std::numeric_limits<eT>::has_infinity == true)
+    if(std::numeric_limits<eT>::has_infinity)
       {
       return -(std::numeric_limits<eT>::infinity());
       }
@@ -258,7 +258,7 @@ namespace priv
     {
     arma_ignore(junk);
     
-    if(std::numeric_limits<eT>::has_infinity == true)
+    if(std::numeric_limits<eT>::has_infinity)
       {
       return std::numeric_limits<eT>::infinity();
       }
