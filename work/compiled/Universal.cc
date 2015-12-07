@@ -208,6 +208,21 @@ int main(int argc, char** argv)
 
 
 
+  // Transform all the operators
+  if (method == "magnus")
+  {
+    if (ops.size()>0) cout << "transforming operators" << endl;
+    for (size_t i=0;i<ops.size();++i)
+    {
+      cout << opnames[i] << " " << flush;
+      ops[i] = imsrgsolver.Transform(ops[i]);
+    }
+    cout << endl;
+    // increase smax in case we need to do additional steps
+    smax *= 1.5;
+    imsrgsolver.SetSmax(smax);
+  }
+
 
   // If we're doing targeted normal ordering 
   // we now re-normal order wrt to the core
@@ -215,18 +230,7 @@ int main(int argc, char** argv)
 //  if (reference != "default"  and reference != valence_space)
   if ( modelspace.core != modelspace.holes )
   {
-    if (method == "magnus")
-    {
-      smax *= 1.5;
-      if (ops.size()>0) cout << "transforming operators" << endl;
-      for (size_t i=0;i<ops.size();++i)
-      {
-        cout << opnames[i] << " " << flush;
-        ops[i] = imsrgsolver.Transform(ops[i]);
-      }
-      cout << endl;
-      imsrgsolver.SetSmax(smax);
-    }
+
     Hbare = imsrgsolver.GetH_s();
 
     int nOmega = imsrgsolver.GetOmegaSize();
@@ -248,6 +252,7 @@ int main(int argc, char** argv)
       op = op.UndoNormalOrdering();
       op.SetModelSpace(ms2);
       op = op.DoNormalOrdering();
+      // transform using the remaining omegas
       op = imsrgsolver.Transform_Partial(op,nOmega);
     }
   }
@@ -278,16 +283,13 @@ int main(int argc, char** argv)
     for (int i=0;i<ops.size();++i)
     {
       Operator& op = ops[i];
+      cout << opnames[i] << " = " << ops[i].ZeroBody << endl;
       if ( opnames[i] == "Rp2" )
       {
          int Z = modelspace.GetTargetZ();
          int A = modelspace.GetTargetMass();
          cout << " IMSRG point proton radius = " << sqrt( op.ZeroBody ) << endl; 
          cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
-      }
-      else
-      {
-        cout << opnames[i] << " = " << ops[i].ZeroBody << endl;
       }
     }
   }
