@@ -137,7 +137,6 @@ class IMSRGSolver
   void Solve_ode_magnus();
 
 
-
 };
 
 

@@ -1,5 +1,6 @@
 
 CC = g++
+
 FLAGS = -std=c++11 -fopenmp  -O3
 INCLUDE = -I$(HOME)/include -I$(HOME)/include/armadillo
 #LIBS = -lIMSRG -lopenblas -llapack -lgsl -lz -lhdf5 -lhdf5_cpp

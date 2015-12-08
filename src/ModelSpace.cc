@@ -217,11 +217,11 @@ map<string,vector<string>> ModelSpace::ValenceSpaces  {
 
 ModelSpace::~ModelSpace()
 {
-//  cout << "In ModelSpace destructor. emax = " << Nmax << endl;
+//  cout << "In ModelSpace destructor. emax = " << Emax << endl;
 }
 
 ModelSpace::ModelSpace()
-:  Nmax(0), N2max(0), N3max(0), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0),
+:  Emax(0), E2max(0), E3max(0), Lmax2(0), Lmax3(0), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0),
   hbar_omega(20), target_mass(16)
 {
   cout << "In default constructor" << endl;
@@ -240,7 +240,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    KetIndex_vv( ms.KetIndex_vv),
    KetIndex_qv( ms.KetIndex_qv),
    KetIndex_qq( ms.KetIndex_qq),
-   Nmax(ms.Nmax), N2max(ms.N2max), N3max(ms.N3max),
+   Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
    OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
    OneBodyChannels(ms.OneBodyChannels),
    SortedTwoBodyChannels(ms.SortedTwoBodyChannels),
@@ -270,7 +270,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    KetIndex_vv( ms.KetIndex_vv),
    KetIndex_qv( ms.KetIndex_qv),
    KetIndex_qq( ms.KetIndex_qq),
-   Nmax(ms.Nmax), N2max(ms.N2max), N3max(ms.N3max),
+   Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
    OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
    OneBodyChannels(move(ms.OneBodyChannels)),
    SortedTwoBodyChannels(move(ms.SortedTwoBodyChannels)),
@@ -290,42 +290,42 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 
 // orbit string representation is e.g. p0f7
 // Assumes that the core is hole states that aren't in the valence space.
-ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> valence_list)
-:  Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0), hbar_omega(20), target_mass(16)
+ModelSpace::ModelSpace(int emax, vector<string> hole_list, vector<string> valence_list)
+:  Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0), hbar_omega(20), target_mass(16)
 {
-   Init(nmax, hole_list, valence_list); 
+   Init(emax, hole_list, valence_list); 
 }
 
 // If we don't want the reference to be the core
-ModelSpace::ModelSpace(int nmax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list)
-: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0), hbar_omega(20), target_mass(16)
+ModelSpace::ModelSpace(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list)
+: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0), hbar_omega(20), target_mass(16)
 {
-   Init(nmax, hole_list, core_list, valence_list); 
+   Init(emax, hole_list, core_list, valence_list); 
 }
 
 // DO I NEED THIS? I guess it doesn't hurt too much...
-ModelSpace::ModelSpace(int nmax, int A, int Z)
-: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20),target_mass(A),target_Z(Z)
+ModelSpace::ModelSpace(int emax, int A, int Z)
+: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20),target_mass(A),target_Z(Z)
 {
-   Init(nmax,GetOrbitsAZ(A,Z),GetOrbitsAZ(A,Z),{});
+   Init(emax,GetOrbitsAZ(A,Z),GetOrbitsAZ(A,Z),{});
 }
 
 // Shortcuts for common modelspaces
-ModelSpace::ModelSpace(int nmax, string reference, string valence)
-: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20)
+ModelSpace::ModelSpace(int emax, string reference, string valence)
+: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20)
 {
-  Init(nmax,reference,valence);
+  Init(emax,reference,valence);
 }
 
-ModelSpace::ModelSpace(int nmax, string valence)
-: Nmax(nmax), N2max(2*nmax), N3max(3*nmax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20)
+ModelSpace::ModelSpace(int emax, string valence)
+: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20)
 {
-  Init(nmax,valence);
+  Init(emax,valence);
 }
 
 
 // Simple initialization which makes some assumptions
-void ModelSpace::Init(int nmax, string valence)
+void ModelSpace::Init(int emax, string valence)
 {
   int Ac,Zc=-1;
   vector<index_t> hole_list, valence_list, core_list;
@@ -377,11 +377,11 @@ void ModelSpace::Init(int nmax, string valence)
 //  cout << "valence: ";
 //  for ( auto &h : valence_list ) cout << h << " ";
 //  cout << endl;
-  Init(nmax,hole_list,core_list,valence_list);
+  Init(emax,hole_list,core_list,valence_list);
 }
 
 // specify the reference and either the core or valence
-void ModelSpace::Init(int nmax, string reference, string valence)
+void ModelSpace::Init(int emax, string reference, string valence)
 {
   int Aref,Zref;
   int Ac,Zc=-1;
@@ -410,33 +410,33 @@ void ModelSpace::Init(int nmax, string reference, string valence)
      target_Z = Zc; 
   }
 
-  Init(nmax,hole_list,core_list,valence_list);
+  Init(emax,hole_list,core_list,valence_list);
   
 }
 
 
-void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> valence_list)
+void ModelSpace::Init(int emax, vector<string> hole_list, vector<string> valence_list)
 {
    // Assume core is hole states that aren't in the valence space
    vector<string> core_list( hole_list );
    for (auto& v : valence_list) core_list.resize( remove(core_list.begin(),core_list.end(),v) - core_list.begin() );
-   Init(nmax,hole_list,core_list,valence_list);
+   Init(emax,hole_list,core_list,valence_list);
 }
 
-void ModelSpace::Init(int nmax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list)
+void ModelSpace::Init(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list)
 {
-   cout << "Creating a model space with Nmax = " << Nmax << "  and hole orbits [";
+   cout << "Creating a model space with Emax = " << Emax << "  and hole orbits [";
    for (auto& h : hole_list)  cout << h << " ";
    cout << "]   and core orbits [";
    for (auto& c : core_list)    cout << c << " ";
    cout << "]   and valence orbits [";
    for (auto& v : valence_list)   cout << v << " ";
    cout << "]" << endl;
-  Init(nmax, String2Index(hole_list), String2Index(core_list), String2Index(valence_list) );
+  Init(emax, String2Index(hole_list), String2Index(core_list), String2Index(valence_list) );
 }
 
 // This is the Init which should inevitably be called
-void ModelSpace::Init(int nmax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list)
+void ModelSpace::Init(int emax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list)
 {
    Orbits.clear();
    particles.clear();
@@ -450,7 +450,7 @@ void ModelSpace::Init(int nmax, vector<index_t> hole_list, vector<index_t> core_
    proton_orbits.clear();
    neutron_orbits.clear();
    OneBodyChannels.clear();
-   nmax = Nmax;
+   emax = Emax;
 //   cout << "Init" << endl;
 
 
@@ -463,9 +463,9 @@ void ModelSpace::Init(int nmax, vector<index_t> hole_list, vector<index_t> core_
    }
    
 
-   norbits = (Nmax+1)*(Nmax+2);
+   norbits = (Emax+1)*(Emax+2);
    Orbits.resize(norbits);
-   for (int N=0; N<=Nmax; ++N)
+   for (int N=0; N<=Emax; ++N)
    {
      for (int l=N; l>=0; l-=2)
      {
@@ -560,7 +560,7 @@ vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)
   int zz = 0;
   int nn = 0; // unfortunate there are so many n's here...
   vector<index_t> orbitsAZ;
-  for (int N=0; N<=Nmax; ++N)
+  for (int N=0; N<=Emax; ++N)
   {
     for (int l=N; l>=0; l-=2)
     {
@@ -609,7 +609,7 @@ vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)
       }
     }
   }
-  cout << "Trouble! Model space not big enough to fill A=" << A << " Z="<< Z << "  emax = " << Nmax << endl;
+  cout << "Trouble! Model space not big enough to fill A=" << A << " Z="<< Z << "  emax = " << Emax << endl;
   return orbitsAZ;
 
 }
@@ -624,212 +624,12 @@ void ModelSpace::SetReference(vector<index_t> new_reference)
 //  cout << "Setting new reference : ";
 //  for (auto& h : holes) cout << h << " ";
 //  cout << endl;
-  Init(Nmax, h,c,v);
+  Init(Emax, h,c,v);
 }
 
 
-/*
-void ModelSpace::Init_AZ(int nmax, int A, int Z)
-{
-   target_mass = A;
-   target_Z = Z;
-   Orbits.clear();
-   particles.clear();
-   holes.clear();
-   valence.clear();
-   qspace.clear();
-   core.clear();
-//   particle_qspace.clear();
-//   hole_qspace.clear();
-   proton_orbits.clear();
-   neutron_orbits.clear();
-   OneBodyChannels.clear();
-   norbits = (nmax+1)*(nmax+2);
-   Orbits.resize(norbits);
-   int ncore = 0;
-   int zcore = 0;
-   for (int N=0; N<=nmax; ++N)
-   {
-     for (int l=N; l>=0; l-=2)
-     {
-       int n = (N-l)/2;
-       int j2 = 2*l + 1;
-       if (zcore < Z)
-       {
-         AddOrbit(n,l,j2,-1,1,1);
-         zcore += j2+1;
-       }
-       else if (zcore == Z)
-       {
-         AddOrbit(n,l,j2,-1,0,1);
-       }
-       else 
-       {
-         cout << "!!!!!!!!!!!!!!!!!!!\nError: Bad input Z.\n!!!!!!!!!!!!!!!!!! " << endl;
-         return;
-       }
-       if (ncore < A-Z)
-       {
-         AddOrbit(n,l,j2,1,1,1);
-         ncore += j2+1;
-       }
-       else if (ncore == A-Z)
-       {
-         AddOrbit(n,l,j2,1,0,1);
-       }
-       else 
-       {
-         cout << "!!!!!!!!!!!!!!!!!!!\nError: Bad input N.\n!!!!!!!!!!!!!!!!!! " << endl;
-         return;
-       }
-     }
-     for (int l=N%2; l<=N; l+=2)
-     {
-       int n = (N-l)/2;
-       int j2 = 2*l - 1;
-       if (j2<0) continue;
-       if (zcore < Z)
-       {
-         AddOrbit(n,l,j2,-1,1,1);
-         zcore += j2+1;
-       }
-       else if (zcore == Z)
-       {
-         AddOrbit(n,l,j2,-1,0,1);
-       }
-       else 
-       {
-         cout << "!!!!!!!!!!!!!!!!!!!\nError: Bad input Z.\n!!!!!!!!!!!!!!!!!! " << endl;
-         return;
-       }
-       if (ncore < A-Z)
-       {
-         AddOrbit(n,l,j2,1,1,1);
-         ncore += j2+1;
-       }
-       else if (ncore == A-Z)
-       {
-         AddOrbit(n,l,j2,1,0,1);
-       }
-       else 
-       {
-         cout << "Error: Bad input N." << endl;
-         cout << "!!!!!!!!!!!!!!!!!!!\nError: Bad input N.\n!!!!!!!!!!!!!!!!!! " << endl;
-         return;
-       }
-     }
 
 
-   }
-   SetupKets();
-
-}
-*/
-
-
-// Some of the more common model spaces, for convenience.
-/*
-void ModelSpace::Init_He4(int nmax)
-{
-   vector<string> core = {"p0s1","n0s1"};
-   vector<string> valence = {};
-   target_mass = 4;
-   target_Z = 2;
-   Init(nmax,core,valence);
-}
-
-void ModelSpace::Init_O16(int nmax)
-{
-   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
-   vector<string> valence = {};
-   target_mass = 16;
-   target_Z = 8;
-   Init(nmax,core,valence);
-}
-
-void ModelSpace::Init_Ca40(int nmax)
-{
-   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
-   vector<string> valence = {};
-   target_mass = 40;
-   target_Z = 20;
-   Init(nmax,core,valence);
-}
-*/
-
-/*
-void ModelSpace::Init_PShell(int nmax)
-{
-   vector<string> core = {"p0s1","n0s1"};
-   vector<string> valence = {"p0p3","n0p3","p0p1","n0p1"};
-   target_mass = 6;
-   target_Z = 2;
-   Init(nmax,core,valence);
-}
-
-void ModelSpace::Init_SDShell(int nmax)
-{
-   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
-   vector<string> valence = {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
-   target_mass = 18;
-   target_Z = 8;
-   Init(nmax,core,valence);
-}
-
-void ModelSpace::Init_PSDShell(int nmax)
-{
-   vector<string> core = {"p0s1","n0s1"};
-   vector<string> valence = {"p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
-   target_mass = 6;
-   target_Z = 3;
-   Init(nmax,core,valence);
-}
-
-void ModelSpace::Init_O16PSDShell(int nmax)
-{
-   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
-   vector<string> valence = {"p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
-   target_mass = 16;
-   target_Z = 8;
-   Init(nmax,core,valence);
-}
-
-void ModelSpace::Init_FPShell(int nmax)
-{
-   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"};
-   vector<string> valence = {"p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"};
-   target_mass = 42;
-   target_Z = 20;
-   Init(nmax,core,valence);
-}
-
-void ModelSpace::Init_SDFPShell(int nmax)
-{
-   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"};
-   vector<string> valence = {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"};
-   target_mass = 18;
-   target_Z = 8;
-   Init(nmax,core,valence);
-}
-
-void ModelSpace::Init_SD3F7P3Shell(int nmax) // Si28 core - for 40Ca region
-{
-   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5"};
-   vector<string> valence = {"p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p1p3","n1p3"};
-   target_mass = 40;
-   target_Z = 20;
-   Init(nmax,core,valence);
-}
-
-void ModelSpace::Init_FPG9Shell(int nmax) // Ni56 core, with g9/2
-{
-   vector<string> core = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","p0f7","n0f7"};
-   vector<string> valence = {"p0f5","n0f5","p1p3","n1p3","p1p1","n1p1","p0g9","n0g9"};
-   target_mass = 58;
-   target_Z = 28;
-   Init(nmax,core,valence);
-}
-*/
 
 
 
@@ -851,9 +651,11 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
    KetIndex_vv =  ms.KetIndex_vv;
    KetIndex_qv =  ms.KetIndex_qv;
    KetIndex_qq =  ms.KetIndex_qq;
-   Nmax = ms.Nmax;
-   N2max = ms.N2max;
-   N3max = ms.N3max;
+   Emax = ms.Emax;
+   E2max = ms.E2max;
+   E3max = ms.E3max;
+   Lmax2 = ms.Lmax2;
+   Lmax3 = ms.Lmax3;
    OneBodyJmax = ms.OneBodyJmax;
    TwoBodyJmax = ms.TwoBodyJmax;
    ThreeBodyJmax = ms.ThreeBodyJmax;
@@ -897,9 +699,11 @@ ModelSpace ModelSpace::operator=(ModelSpace&& ms)
    KetIndex_vv =  move(ms.KetIndex_vv);
    KetIndex_qv =  move(ms.KetIndex_qv);
    KetIndex_qq =  move(ms.KetIndex_qq);
-   Nmax = move(ms.Nmax);
-   N2max = move(ms.N2max);
-   N3max = move(ms.N3max);
+   Emax = move(ms.Emax);
+   E2max = move(ms.E2max);
+   E3max = move(ms.E3max);
+   Lmax2 = move(ms.Lmax2);
+   Lmax3 = move(ms.Lmax3);
    OneBodyJmax = move(ms.OneBodyJmax);
    TwoBodyJmax = move(ms.TwoBodyJmax);
    ThreeBodyJmax = move(ms.ThreeBodyJmax);
@@ -1089,14 +893,14 @@ void ModelSpace::PreCalculateMoshinsky()
 {
 //  if ( not MoshList.empty() ) return; // Already done calculated it...
   #pragma omp parallel for schedule(dynamic,1)
-  for (int N=0; N<=N2max/2; ++N)
+  for (int N=0; N<=E2max/2; ++N)
   {
    unordered_map<unsigned long long int,double> local_MoshList;
-   for (int n=0; n<=min(N,N2max/2-N); ++n)
+   for (int n=0; n<=min(N,E2max/2-N); ++n)
    {
-    for (int Lam=0; Lam<=N2max-2*N-2*n; ++Lam)
+    for (int Lam=0; Lam<=E2max-2*N-2*n; ++Lam)
     {
-     int lam_max = (N==n ? min(Lam,N2max-2*N-2*n-Lam) : N2max-2*N-2*n-Lam);
+     int lam_max = (N==n ? min(Lam,E2max-2*N-2*n-Lam) : E2max-2*N-2*n-Lam);
      for (int lam=0; lam<=lam_max; ++lam)
      {
       int e2 = 2*N+Lam + 2*n+lam;
@@ -1112,7 +916,7 @@ void ModelSpace::PreCalculateMoshinsky()
           int l2 = e2-2*n1-2*n2-l1;
           if ( (l1+l2+lam+Lam)%2 >0 ) continue;
           if ( l2<abs(L-l1) or l2>L+l1 ) continue;
-          // nmax = 16, lmax = 32 -> good up to emax=32, which I'm nowhere near.
+          // emax = 16, lmax = 32 -> good up to emax=32, which I'm nowhere near.
           unsigned long long int key =   ((unsigned long long int) N   << 40)
                                        + ((unsigned long long int) Lam << 34)
                                        + ((unsigned long long int) n   << 30)

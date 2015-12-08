@@ -14,6 +14,7 @@ IMSRGSolver::~IMSRGSolver()
 IMSRGSolver::IMSRGSolver()
     : s(0),ds(0.1),ds_max(0.5),
      norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
+
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {}
 
@@ -372,6 +373,7 @@ void IMSRGSolver::Solve_ode_adaptive()
    if (method == "restore_4th_order") ode_mode = "Restored";
    WriteFlowStatusHeader(cout);
    WriteFlowStatus(flowfile);
+   cout << "done writing header and status" << endl;
    using namespace boost::numeric::odeint;
    auto system = *this;
 //   typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
