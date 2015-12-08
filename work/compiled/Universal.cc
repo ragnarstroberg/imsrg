@@ -28,6 +28,7 @@ int main(int argc, char** argv)
 
   int eMax = PAR.i("emax");
   int E3max = PAR.i("e3max");
+  int lmax3 = PAR.i("lmax3");
   int targetMass = PAR.i("A");
   int nsteps = PAR.i("nsteps");
   int file2e1max = PAR.i("file2e1max");
@@ -90,6 +91,8 @@ int main(int argc, char** argv)
   if (targetMass>0)
      modelspace.SetTargetMass(targetMass);
   modelspace.SetE3max(E3max);
+  if (lmax3>0)
+     modelspace.SetLmax3(lmax3);
   
   cout << "Making the operator..." << endl;
   int particle_rank = input3bme=="none" ? 2 : 3;
