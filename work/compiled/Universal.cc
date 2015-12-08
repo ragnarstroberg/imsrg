@@ -119,7 +119,7 @@ int main(int argc, char** argv)
   hf.Solve();
   cout << "EHF = " << hf.EHF << endl;
   
-  if (basis == "HF")
+  if (basis == "HF" and method !="HF")
     Hbare = hf.GetNormalOrderedH();
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
