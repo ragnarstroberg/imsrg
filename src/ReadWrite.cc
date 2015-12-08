@@ -786,9 +786,10 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
     int ea = 2*oa.n + oa.l;
     if (ea > E1max) break;
     if (ea > e1max) break;
-//    cout << "a = " << a << endl;
-    cout << setw(5) << setprecision(2) << nlj1*(nlj1+1.)/(nljmax*(nljmax+1))*100 << " % done" << '\r';
-    cout.flush();
+    cout << "a = " << a << endl;
+//    cout << setw(5) << setprecision(2) << nlj1*(nlj1+1.)/(nljmax*(nljmax+1))*100 << " % done" << '\r';
+//    cout.flush();
+    if (a==20) cout << "a==20" << endl;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
@@ -796,6 +797,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
       Orbit & ob = modelspace->GetOrbit(b);
       int eb = 2*ob.n + ob.l;
       if ( (ea+eb) > E2max) break;
+      if (a==20 and b==0) cout << " and b==0" << endl;
 
       for(int nlj3=0; nlj3<=nlj2; ++nlj3)
       {
@@ -803,6 +805,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
         Orbit & oc = modelspace->GetOrbit(c);
         int ec = 2*oc.n + oc.l;
         if ( (ea+eb+ec) > E3max) break;
+        if (a==20 and b==0 and c==0) cout << "  and c==0" << endl;
 
         // Get J limits for bra <abc|
         int JabMax  = (oa.j2 + ob.j2)/2;
@@ -824,12 +827,14 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
           int d =  orbits_remap[nnlj1];
           Orbit & od = modelspace->GetOrbit(d);
           int ed = 2*od.n + od.l;
+          if (a==20 and b==0 and c==0 and d==2) cout << "   and d==2" << endl;
 
           for(int nnlj2=0; nnlj2 <= ((nlj1 == nnlj1) ? nlj2 : nnlj1); ++nnlj2)
           {
             int e =  orbits_remap[nnlj2];
             Orbit & oe = modelspace->GetOrbit(e);
             int ee = 2*oe.n + oe.l;
+            if (a==20 and b==0 and c==0 and d==2 and e==2) cout << "   and e==2" << endl;
 
             int nnlj3Max = (nlj1 == nnlj1 and nlj2 == nnlj2) ? nlj3 : nnlj2;
             for(int nnlj3=0; nnlj3 <= nnlj3Max; ++nnlj3)
@@ -841,6 +846,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
               // check parity
               if ( (oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2 !=0 ) continue;
 
+              if (a==20 and b==0 and c==0 and d==2 and e==2 and f==0) cout << "    and f==0" << endl;
               // Get J limits for ket |def>
               int JJabMax = (od.j2 + oe.j2)/2;
               int JJabMin = abs(od.j2 - oe.j2)/2;
@@ -886,6 +892,13 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                     ++nread;
                     bool autozero = false;
 
+                    if (a==20 and b==0 and c==0 and d==2 and e==2 and f==0)
+                    {
+                      cout << "Jab,JJab,J2 = " << Jab << "," << JJab << "," << twoJC
+                           << "  tab,ttab,twoT = " << tab << "," << ttab << "," << twoT
+                           << "  V = " << setprecision(7) << V << endl;
+                    }
+                    
 
                     if ( a==b and (tab+Jab)%2==0 ) autozero = true;
                     if ( d==e and (ttab+JJab)%2==0 ) autozero = true;
@@ -913,12 +926,15 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                     if (autozero)
                     {
 //                       cout << " ( should be zero ) ";
-                       if (abs(V) > 1e-6 and ea<=e1max and eb<=e1max and ec<=e1max)
-                       {
-                          cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << endl;
-                          goodstate = false;
-                          return;
-                       }
+//                       if (abs(V) > 1e-4 and ea<=e1max and eb<=e1max and ec<=e1max)
+//                       {
+//                          cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << endl;
+//                          cout << "          <" << a << " " << b << " " << c <<" | | " << d << " " << e << " " << f << "> ("
+//                               << Jab << " " << JJab << " " << twoJC << "), (" << tab << " " << ttab << " " << twoT << ") " << endl;
+//                          cout << "line " << nread/10+2 << "  column " << nread%10 << endl;
+//                          goodstate = false;
+//                          return;
+//                       }
                     }
  //                   cout << endl;
        
@@ -1615,6 +1631,17 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
                    for(int twoT = twoTMin; twoT <= twoTMax; twoT += 2)
                    {
                     float V = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
+                    if ((a==b and (Jab+tab)%2!=1) or (d==e and (JJab+ttab)%2!=1) )
+                    {
+                      if ( abs(V) > 1e-4 )  // There may be some numerical noise from using floats and 6Js at the level of 1e-6. Ignore that.
+                      {
+                         cout << "!!! Warning: <"
+                              << a << " " << b << " " << c << " || " << d << " " << e << " " << f << "> ("
+                              << Jab << " " << JJab << " " << twoJC << ") , (" << tab << " " << ttab << " " << twoT
+                              <<") should be zero, but it's " << V << endl;
+                      }
+                      V = 0.0; // It should be zero, so set it to zero.
+                    }
                     outfile << setprecision(7) << setw(12) << V << " "  ;
                     if ((icount++)%10==9)
                       outfile << endl;
