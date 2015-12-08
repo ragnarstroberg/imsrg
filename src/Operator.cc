@@ -53,7 +53,7 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms),
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank),
-    E3max(ms.GetN3max()),
+    E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),  
     nChannels(ms.GetNumberTwoBodyChannels()) 
 {
@@ -66,7 +66,7 @@ Operator::Operator(ModelSpace& ms) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(&ms),  ThreeBody(&ms),
     rank_J(0), rank_T(0), parity(0), particle_rank(2),
-    E3max(ms.GetN3max()),
+    E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),  
     nChannels(ms.GetNumberTwoBodyChannels())
 {
@@ -191,7 +191,7 @@ void Operator::SetUpOneBodyChannels()
   {
     Orbit& oi = modelspace->GetOrbit(i);
     int lmin = max( oi.l - rank_J + (rank_J+parity)%2, (oi.l+parity)%2);
-    int lmax = min( oi.l + rank_J, modelspace->Nmax);
+    int lmax = min( oi.l + rank_J, modelspace->GetEmax() );
     for (int l=lmin; l<=lmax; l+=2)
     {
       int j2min = max(max(oi.j2 - 2*rank_J, 2*l-1),1);

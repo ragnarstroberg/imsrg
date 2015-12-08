@@ -11,7 +11,7 @@ ThreeBodyME::ThreeBodyME()
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: modelspace(ms), E3max(ms->N3max), total_dimension(0)
+: modelspace(ms), E3max(ms->E3max), total_dimension(0)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
@@ -22,7 +22,7 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
 // Confusing nomenclature: J2 means 2 times the total J of the three body system
 void ThreeBodyME::Allocate()
 {
-  E3max = modelspace->GetN3max();
+  E3max = modelspace->GetE3max();
   cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
   int norbits = modelspace->GetNumberOrbits();
   int nvectors = 0;
@@ -247,6 +247,7 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
    
 //   cout << "    accessing " << a << " " << b << " " << c << " " << d << " " << e << " " << f << " size = " << vj.size() << endl;
 //   cout << " size = " << vj.size() << endl;
+   // TODO: enforce good isospin by skipping cases with (Jab+Tab)%2==0 for identical orbits. This may or may not be a good idea...
    double V_out = 0;
    int J_index = 0;
    for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
