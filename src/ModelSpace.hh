@@ -167,23 +167,23 @@ class ModelSpace
    ModelSpace();
    ModelSpace(const ModelSpace&); // copy constructor
    ModelSpace( ModelSpace&&); // move constructor
-   ModelSpace(int Nmax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
-   ModelSpace(int Nmax, vector<string> hole_list, vector<string> valence_list);
-   ModelSpace(int Nmax, string reference, string valence);
-   ModelSpace(int Nmax, string reference);
-   ModelSpace(int Nmax, int A, int Z);
+   ModelSpace(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
+   ModelSpace(int emax, vector<string> hole_list, vector<string> valence_list);
+   ModelSpace(int emax, string reference, string valence);
+   ModelSpace(int emax, string reference);
+   ModelSpace(int emax, int A, int Z);
 
    // Overloaded operators
    ModelSpace operator=(const ModelSpace&); 
    ModelSpace operator=(ModelSpace&&); 
 
-   void Init(int Nmax, string reference, string valence);
-   void Init(int Nmax, string valence);
-   void Init(int Nmax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list);
-//   void Init(int Nmax, vector<index_t> hole_list, vector<index_t> valence_list);
-   void Init(int Nmax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
-   void Init(int Nmax, vector<string> hole_list, vector<string> valence_list);
-   void Init_AZ(int nmax, int A, int Z);
+   void Init(int emax, string reference, string valence);
+   void Init(int emax, string valence);
+   void Init(int emax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list);
+//   void Init(int emax, vector<index_t> hole_list, vector<index_t> valence_list);
+   void Init(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
+   void Init(int emax, vector<string> hole_list, vector<string> valence_list);
+   void Init_AZ(int emax, int A, int Z);
    void GetAZfromString(string str, int& A, int& Z);
    vector<index_t> GetOrbitsAZ(int A, int Z);
    vector<index_t> String2Index( vector<string> vs );
@@ -228,12 +228,16 @@ class ModelSpace
    inline int GetThreeBodyJmax() const {return ThreeBodyJmax;};
    void SetReference(vector<index_t>);
 
-   int GetNmax(){return Nmax;};
-   int GetN2max(){return N2max;};
-   int GetN3max(){return N3max;};
-   void SetNmax(int n){Nmax=n;};
-   void SetN2max(int n){N2max=n;};
-   void SetN3max(int n){N3max=n;};
+   int GetEmax(){return Emax;};
+   int GetE2max(){return E2max;};
+   int GetE3max(){return E3max;};
+   int GetLmax2(){return Lmax2;};
+   int GetLmax3(){return Lmax3;};
+   void SetEmax(int e){Emax=e;};
+   void SetE2max(int e){E2max=e;};
+   void SetE3max(int e){E3max=e;};
+   void SetLmax2(int l){Lmax2=l;};
+   void SetLmax3(int l){Lmax3=l;};
 
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
@@ -274,9 +278,11 @@ class ModelSpace
 //   array< array< vector<index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
    array< array< unordered_map<index_t,index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
 
-   int Nmax;
-   int N2max;
-   int N3max;
+   int Emax;
+   int E2max;
+   int E3max;
+   int Lmax2;
+   int Lmax3;
    int OneBodyJmax;
    int TwoBodyJmax;
    int ThreeBodyJmax;

@@ -174,7 +174,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
  Operator TCM_Op(ModelSpace& modelspace)
  {
    double t_start = omp_get_wtime();
-   int N2max = modelspace.GetN2max();
+   int E2max = modelspace.GetE2max();
    double hw = modelspace.GetHbarOmega();
    int A = modelspace.GetTargetMass();
    Operator TcmOp = Operator(modelspace);
@@ -209,14 +209,14 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
          Ket & bra = tbc.GetKet(ibra);
          Orbit & oi = modelspace.GetOrbit(bra.p);
          Orbit & oj = modelspace.GetOrbit(bra.q);
-         if ( 2*(oi.n+oj.n)+oi.l+oj.l > N2max) continue;
+         if ( 2*(oi.n+oj.n)+oi.l+oj.l > E2max) continue;
          for (int iket=ibra;iket<nkets;++iket)
          {
             
             Ket & ket = tbc.GetKet(iket);
             Orbit & ok = modelspace.GetOrbit(ket.p);
             Orbit & ol = modelspace.GetOrbit(ket.q);
-            if ( 2*(ok.n+ol.n)+ok.l+ol.l > N2max) continue;
+            if ( 2*(ok.n+ol.n)+ok.l+ol.l > E2max) continue;
             double p1p2 = Calculate_p1p2(modelspace,bra,ket,tbc.J) * hw/A;
             if (abs(p1p2)>1e-7)
             {

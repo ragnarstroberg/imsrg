@@ -293,7 +293,7 @@ void ReadWrite::ReadBareTBME_Navratil_from_stream( istream& infile, Operator& Hb
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
-//  int emax = modelspace->GetNmax();
+//  int emax = modelspace->GetEmax();
   int norb = modelspace->GetNumberOrbits();
 //  int nljmax = norb/2;
 //  int herm = Hbare.IsHermitian() ? 1 : -1 ;
@@ -391,7 +391,7 @@ void ReadWrite::WriteTBME_Navratil( string filename, Operator& Hbare)
   double hw = modelspace->GetHbarOmega();
   hw = Hbare.GetModelSpace()->GetHbarOmega();
   double srg_lambda = 0;
-  outfile << 0 << "    " << modelspace->GetNmax() << "    " << 2*modelspace->GetNmax() << "   " << hw << "     " << srg_lambda << endl;
+  outfile << 0 << "    " << modelspace->GetEmax() << "    " << 2*modelspace->GetEmax() << "   " << hw << "     " << srg_lambda << endl;
 
   outfile << setiosflags(ios::fixed);
 
@@ -628,10 +628,10 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
   int norb = modelspace->GetNumberOrbits();
   vector<int> orbits_remap;
 
-  if (emax < 0)  emax = modelspace->Nmax;
+  if (emax < 0)  emax = modelspace->Emax;
   if (lmax < 0)  lmax = emax;
 
-  for (int e=0; e<=min(emax,modelspace->Nmax); ++e)
+  for (int e=0; e<=min(emax,modelspace->Emax); ++e)
   {
     int lmin = e%2;
     for (int l=lmin; l<=min(e,lmax); l+=2)
@@ -658,7 +658,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
     int a =  orbits_remap[nlj1];
     Orbit & o1 = modelspace->GetOrbit(a);
     int e1 = 2*o1.n + o1.l;
-    if (e1 > modelspace->Nmax) break;
+    if (e1 > modelspace->Emax) break;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
@@ -745,9 +745,10 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
     return;
   }
   ModelSpace * modelspace = Hbare.GetModelSpace();
-  int e1max = modelspace->GetNmax();
-  int e2max = modelspace->GetN2max(); // not used yet
-  int e3max = modelspace->GetN3max();
+  int e1max = modelspace->GetEmax();
+  int e2max = modelspace->GetE2max(); // not used yet
+  int e3max = modelspace->GetE3max();
+  int lmax3 = modelspace->GetLmax3();
   cout << "Reading 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << endl;
 
   vector<int> orbits_remap(0);
@@ -885,6 +886,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                     infile >> V;
                     ++nread;
                     bool autozero = false;
+                    if (oa.l>lmax3 or ob.l>lmax3 or oc.l>lmax3 or od.l>lmax3 or oe.l>lmax3 or of.l>lmax3) V=0;
 
 
                     if ( a==b and (tab+Jab)%2==0 ) autozero = true;
@@ -1265,16 +1267,16 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
 
   int alpha_max = iDim_basis[0];
 
-  int i=-5;
+  int i=-5; 
   for (int alphaspp=0;alphaspp<alpha_max;++alphaspp)
   {
     int lap = dbuf[alphaspp][2];
     int lbp = dbuf[alphaspp][5];
     int lcp = dbuf[alphaspp][8];
 
-    int ap = modelspace->GetOrbitIndex(dbuf[alphaspp][1],dbuf[alphaspp][2],dbuf[alphaspp][3],-1);
-    int bp = modelspace->GetOrbitIndex(dbuf[alphaspp][4],dbuf[alphaspp][5],dbuf[alphaspp][6],-1);
-    int cp = modelspace->GetOrbitIndex(dbuf[alphaspp][7],dbuf[alphaspp][8],dbuf[alphaspp][9],-1);
+    int ap = modelspace->GetOrbitIndex(dbuf[alphaspp][1],lap,dbuf[alphaspp][3],-1);
+    int bp = modelspace->GetOrbitIndex(dbuf[alphaspp][4],lbp,dbuf[alphaspp][6],-1);
+    int cp = modelspace->GetOrbitIndex(dbuf[alphaspp][7],lcp,dbuf[alphaspp][9],-1);
     int j12p = dbuf[alphaspp][10];
     int jtotp = dbuf[alphaspp][11];
 
@@ -1283,13 +1285,15 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
       int la = dbuf[alphasp][2];
       int lb = dbuf[alphasp][5];
       int lc = dbuf[alphasp][8];
-      int a = modelspace->GetOrbitIndex(dbuf[alphasp][1],dbuf[alphasp][2],dbuf[alphasp][3],-1);
-      int b = modelspace->GetOrbitIndex(dbuf[alphasp][4],dbuf[alphasp][5],dbuf[alphasp][6],-1);
-      int c = modelspace->GetOrbitIndex(dbuf[alphasp][7],dbuf[alphasp][8],dbuf[alphasp][9],-1);
+      int a = modelspace->GetOrbitIndex(dbuf[alphasp][1],la,dbuf[alphasp][3],-1);
+      int b = modelspace->GetOrbitIndex(dbuf[alphasp][4],lb,dbuf[alphasp][6],-1);
+      int c = modelspace->GetOrbitIndex(dbuf[alphasp][7],lc,dbuf[alphasp][9],-1);
       int j12 = dbuf[alphasp][10];
       int jtot = dbuf[alphasp][11];
-      if (jtot != jtotp or (lap+lbp+lcp+la+lb+lc)%2>0) continue;
+      if (jtot != jtotp or (lap+lbp+lcp+la+lb+lc)%2>0) continue; 
       i+=5;
+      if (ap>norb or bp>norb or cp>norb) continue;
+      if (a>norb or b>norb or c>norb) continue;
       
       for (hsize_t k_iso=0;k_iso<5;++k_iso)
       {
@@ -1310,17 +1314,10 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
            cout << "AAHH!!  by J+T symmetry should be zero!" << endl;
          }
        }
-       else if ( (lap+lbp+lcp+la+lb+lc)%2 !=0 )
-       {
-         if ( abs(summed_me)>1.0e-6  )
-         {
-           cout << "AAHH!!  Parity violation! should be zero!" << endl;
-         }
-       }
-       else if (a<norb and b<norb and c<norb and ap<norb and bp<norb and cp<norb)
+       else
        {
         op.ThreeBody.SetME(j12p,j12,jtot,T12,TT12,twoT,ap,bp,cp,a,b,c, summed_me);
-        if (a==ap and b==bp and c==cp and j12 != j12p)
+        if (a==ap and b==bp and c==cp and j12 != j12p) // we're only looping through alphap > alphaspp, while I'm set up to read in all J,T possibilities for a given set of orbits
         {
           op.ThreeBody.SetME(j12,j12p,jtot,TT12,T12,twoT,ap,bp,cp,a,b,c, summed_me);
         }
@@ -1354,10 +1351,10 @@ void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int E
   ModelSpace * modelspace = Hbare.GetModelSpace();
   vector<int> orbits_remap;
 
-  if (emax < 0)  emax = modelspace->Nmax;
+  if (emax < 0)  emax = modelspace->GetEmax();
   if (lmax < 0)  lmax = emax;
 
-  for (int e=0; e<=min(emax,modelspace->Nmax); ++e)
+  for (int e=0; e<=min(emax,modelspace->GetEmax()); ++e)
   {
     int lmin = e%2;
     for (int l=lmin; l<=min(e,lmax); l+=2)
@@ -1476,9 +1473,9 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
     return;
   }
   ModelSpace * modelspace = Hbare.GetModelSpace();
-  int e1max = modelspace->GetNmax();
-  int e2max = modelspace->GetN2max(); // not used yet
-  int e3max = modelspace->GetN3max();
+  int e1max = modelspace->GetEmax();
+  int e2max = modelspace->GetE2max(); // not used yet
+  int e3max = modelspace->GetE3max();
   cout << "Writing 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << endl;
 
   vector<int> orbits_remap(0);
@@ -1506,7 +1503,8 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
 //  char line[LINESIZE];
 //  infile.getline(line,LINESIZE);
 //  int useless_counter=0;
-  outfile << "         header nonsense... " << endl;
+  time_t time_now = chrono::system_clock::to_time_t(chrono::system_clock::now());
+  outfile << "    generated by IMSRG code on " << ctime(&time_now)<< endl;
   outfile << setiosflags(ios::fixed);
   // begin giant nested loops
   int icount = 0;
@@ -1616,11 +1614,14 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
                    {
                     float V = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
                     outfile << setprecision(7) << setw(12) << V << " "  ;
-                    if ((icount++)%10==9)
-                      outfile << endl;
+//                    if ((icount++)%10==9)
+//                      outfile << endl;
                    }//twoT
                   }//ttab
                  }//tab
+                 if (icount%10 == 5)
+                      outfile << endl;
+                 icount += 5;
 //                if (not infile.good() ) break;
                 }//twoJ
                }//JJab

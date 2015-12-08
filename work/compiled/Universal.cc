@@ -89,7 +89,7 @@ int main(int argc, char** argv)
   modelspace.SetHbarOmega(hw);
   if (targetMass>0)
      modelspace.SetTargetMass(targetMass);
-  modelspace.SetN3max(E3max);
+  modelspace.SetE3max(E3max);
   
   cout << "Making the operator..." << endl;
   int particle_rank = input3bme=="none" ? 2 : 3;
