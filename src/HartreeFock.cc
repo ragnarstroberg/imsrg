@@ -13,8 +13,8 @@ using namespace std;
 
 HartreeFock::HartreeFock(Operator& hbare)
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
-    t(Hbare.OneBody), energies(Hbare.OneBody.diag()),
-    tolerance(1e-8), convergence_data(7,0)
+    KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
+    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0)
 {
    int norbits = modelspace->GetNumberOrbits();
 
@@ -67,15 +67,21 @@ void HartreeFock::Solve()
    CalcEHF();
 
    cout << setw(15) << setprecision(10);
-   if (iterations==maxiter)
+   if (iterations < maxiter)
    {
-      cout << "!!!! Warning: Hartree-Fock calculation didn't converge after " << maxiter << " iterations." << endl;
-      cout << "!!!! Last " << convergence_data.size() << " points in convergence check:";
-      for (auto& x : convergence_data ) cout << x << " ";
-      cout << "  (tolerance = " << tolerance << ")" << endl;
+      cout << "HF converged after " << iterations << " iterations. " << endl;
    }
    else
-      cout << "HF converged after " << iterations << " iterations. " << endl;
+   {
+      cout << "!!!! Warning: Hartree-Fock calculation didn't converge after " << iterations << " iterations." << endl;
+      cout << "!!!! Last " << convergence_ediff.size() << " points in convergence check:";
+      for (auto& x : convergence_ediff ) cout << x << " ";
+      cout << "  (tolerance = " << tolerance << ")" << endl;
+      cout << "!!!! Last " << convergence_EHF.size() << "  EHF values: ";
+      for (auto& x : convergence_EHF ) cout << x << " ";
+      cout << endl;
+   }
+   PrintEHF();
 }
 
 
@@ -95,9 +101,9 @@ void HartreeFock::Solve()
 void HartreeFock::CalcEHF()
 {
    EHF = 0;
-   double e1hf = 0;
-   double e2hf = 0;
-   double e3hf = 0;
+   e1hf = 0;
+   e2hf = 0;
+   e3hf = 0;
    int norbits = modelspace->GetNumberOrbits();
    for (int i=0;i<norbits;i++)
    {
@@ -105,19 +111,25 @@ void HartreeFock::CalcEHF()
       int jfactor = oi.j2 +1;
       for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}))
       {
-         e1hf += rho(i,j) * jfactor * t(i,j);
+         e1hf += rho(i,j) * jfactor * KE(i,j);
          e2hf += rho(i,j) * jfactor * 0.5 * Vij(i,j);
          e3hf += rho(i,j) * jfactor * (1./6*V3ij(i,j));
       }
    }
    EHF = e1hf + e2hf + e3hf;
+}
+
+//**************************************************************************************
+/// Print out the Hartree Fock energy, and the 1-, 2-, and 3-body contributions to it.
+//**************************************************************************************
+void HartreeFock::PrintEHF()
+{
    cout << fixed <<  setprecision(7);
    cout << "e1hf = " << e1hf << endl;
    cout << "e2hf = " << e2hf << endl;
    cout << "e3hf = " << e3hf << endl;
-   cout << "EHF = " << EHF << endl;
+   cout << "EHF = "  << EHF  << endl;
 }
-
 
 //*********************************************************************
 /// [See Suhonen eq. 4.85]
@@ -376,7 +388,7 @@ void HartreeFock::UpdateF()
    Vij  = arma::symmatu(Vij);
    V3ij = arma::symmatu(V3ij);
 
-   F = t + Vij + 0.5*V3ij;
+   F = KE + Vij + 0.5*V3ij;
 
    profiler.timer["HF_UpdateF"] += omp_get_wtime() - start_time;
 }
@@ -393,9 +405,12 @@ void HartreeFock::UpdateF()
 //********************************************************
 bool HartreeFock::CheckConvergence()
 {
+   CalcEHF();
+   convergence_EHF.push_back(EHF);
+   convergence_EHF.pop_front();
    double ediff = arma::norm(energies-prev_energies, "frob") / energies.size();
-   convergence_data.push_back(ediff); // update list of convergence checks
-   convergence_data.pop_front();
+   convergence_ediff.push_back(ediff); // update list of convergence checks
+   convergence_ediff.pop_front();
    return (ediff < tolerance);
 }
 
