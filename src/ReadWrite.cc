@@ -869,6 +869,16 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                 int twoJCMin = max( abs(2*Jab - oc.j2), abs(2*JJab - of.j2));
                 int twoJCMax = min( 2*Jab + oc.j2 , 2*JJab + of.j2 );
        
+                // read all the ME for this range of J,T into block
+                if (twoJCMin>twoJCMax) continue;
+                size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*5;
+//                cout << "constructing block of size " << blocksize << "  =5* ((" << twoJCMax << " - " << twoJCMin << ")/2+1)" << endl;
+                vector<float> block(blocksize,0);
+                for (size_t iblock=0;iblock<blocksize;iblock++) infile >> block[iblock];
+                nread += blocksize;
+//                cout << "Done making block" << endl;
+
+                #pragma omp parallel for schedule(dynamic,1) num_threads(2)// parallelize in the J loop because they can't interfere with each other
                 for(int twoJC = twoJCMin; twoJC <= twoJCMax; twoJC += 2)
                 {
                  for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
@@ -881,10 +891,11 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
        
                    for(int twoT = twoTMin; twoT <= twoTMax; twoT += 2)
                    {
-//                    double V;
-                    float V = 0;
-                    infile >> V;
-                    ++nread;
+////                    double V;
+//                    float V = 0;
+//                    infile >> V;
+                    float V = block[5*(twoJC-twoJCMin)/2+2*tab+ttab+(twoT-1)/2];
+//                    ++nread;
                     bool autozero = false;
                     if (oa.l>lmax3 or ob.l>lmax3 or oc.l>lmax3 or od.l>lmax3 or oe.l>lmax3 or of.l>lmax3) V=0;
 
@@ -919,7 +930,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                        {
                           cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << endl;
                           goodstate = false;
-                          return;
+//                          return;
                        }
                     }
  //                   cout << endl;
@@ -928,8 +939,9 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                   }//ttab
                  }//tab
 //                 cout << " ------------------------" << endl;
-                if (not infile.good() ) break;
+//                if (not infile.good() ) break;
                 }//twoJ
+                if (not goodstate or not infile.good()) return;
                }//JJab
        
               }//Jab
@@ -1279,6 +1291,7 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
     int cp = modelspace->GetOrbitIndex(dbuf[alphaspp][7],lcp,dbuf[alphaspp][9],-1);
     int j12p = dbuf[alphaspp][10];
     int jtotp = dbuf[alphaspp][11];
+    if (ap > norb) break;
 
     for (int alphasp=alphaspp; alphasp<alpha_max;++alphasp)
     {
