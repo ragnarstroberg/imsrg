@@ -787,10 +787,8 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
     int ea = 2*oa.n + oa.l;
     if (ea > E1max) break;
     if (ea > e1max) break;
-    cout << "a = " << a << endl;
 //    cout << setw(5) << setprecision(2) << nlj1*(nlj1+1.)/(nljmax*(nljmax+1))*100 << " % done" << '\r';
 //    cout.flush();
-    if (a==20) cout << "a==20" << endl;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
@@ -798,7 +796,6 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
       Orbit & ob = modelspace->GetOrbit(b);
       int eb = 2*ob.n + ob.l;
       if ( (ea+eb) > E2max) break;
-      if (a==20 and b==0) cout << " and b==0" << endl;
 
       for(int nlj3=0; nlj3<=nlj2; ++nlj3)
       {
@@ -806,7 +803,6 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
         Orbit & oc = modelspace->GetOrbit(c);
         int ec = 2*oc.n + oc.l;
         if ( (ea+eb+ec) > E3max) break;
-        if (a==20 and b==0 and c==0) cout << "  and c==0" << endl;
 
         // Get J limits for bra <abc|
         int JabMax  = (oa.j2 + ob.j2)/2;
@@ -828,14 +824,12 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
           int d =  orbits_remap[nnlj1];
           Orbit & od = modelspace->GetOrbit(d);
           int ed = 2*od.n + od.l;
-          if (a==20 and b==0 and c==0 and d==2) cout << "   and d==2" << endl;
 
           for(int nnlj2=0; nnlj2 <= ((nlj1 == nnlj1) ? nlj2 : nnlj1); ++nnlj2)
           {
             int e =  orbits_remap[nnlj2];
             Orbit & oe = modelspace->GetOrbit(e);
             int ee = 2*oe.n + oe.l;
-            if (a==20 and b==0 and c==0 and d==2 and e==2) cout << "   and e==2" << endl;
 
             int nnlj3Max = (nlj1 == nnlj1 and nlj2 == nnlj2) ? nlj3 : nnlj2;
             for(int nnlj3=0; nnlj3 <= nnlj3Max; ++nnlj3)
@@ -847,7 +841,6 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
               // check parity
               if ( (oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2 !=0 ) continue;
 
-              if (a==20 and b==0 and c==0 and d==2 and e==2 and f==0) cout << "    and f==0" << endl;
               // Get J limits for ket |def>
               int JJabMax = (od.j2 + oe.j2)/2;
               int JJabMin = abs(od.j2 - oe.j2)/2;
@@ -894,12 +887,12 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                     bool autozero = false;
                     if (oa.l>lmax3 or ob.l>lmax3 or oc.l>lmax3 or od.l>lmax3 or oe.l>lmax3 or of.l>lmax3) V=0;
 
-                    if (a==20 and b==0 and c==0 and d==2 and e==2 and f==0)
-                    {
-                      cout << "Jab,JJab,J2 = " << Jab << "," << JJab << "," << twoJC
-                           << "  tab,ttab,twoT = " << tab << "," << ttab << "," << twoT
-                           << "  V = " << setprecision(7) << V << endl;
-                    }
+//                    if (a==20 and b==0 and c==0 and d==2 and e==2 and f==0)
+//                    {
+//                      cout << "Jab,JJab,J2 = " << Jab << "," << JJab << "," << twoJC
+//                           << "  tab,ttab,twoT = " << tab << "," << ttab << "," << twoT
+//                           << "  V = " << setprecision(7) << V << endl;
+//                    }
                     
 
                     if ( a==b and (tab+Jab)%2==0 ) autozero = true;
@@ -1308,8 +1301,8 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
       int jtot = dbuf[alphasp][11];
       if (jtot != jtotp or (lap+lbp+lcp+la+lb+lc)%2>0) continue; 
       i+=5;
-      if (ap>norb or bp>norb or cp>norb) continue;
-      if (a>norb or b>norb or c>norb) continue;
+      if (ap>=norb or bp>=norb or cp>=norb) continue;
+      if (a>=norb or b>=norb or c>=norb) continue;
       
       for (hsize_t k_iso=0;k_iso<5;++k_iso)
       {
@@ -1332,6 +1325,7 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
        }
        else
        {
+//        cout << "read <" << ap << " " << bp << " " << cp << " | V | " << a << " " << b << " " << c << "  (" << j12p << " " << j12 << " " << jtot << ")  ( " << T12 << " " << TT12 << " " << twoT << endl;
         op.ThreeBody.SetME(j12p,j12,jtot,T12,TT12,twoT,ap,bp,cp,a,b,c, summed_me);
         if (a==ap and b==bp and c==cp and j12 != j12p) // we're only looping through alphap > alphaspp, while I'm set up to read in all J,T possibilities for a given set of orbits
         {
