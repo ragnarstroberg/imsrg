@@ -13,8 +13,8 @@ using namespace std;
 
 HartreeFock::HartreeFock(Operator& hbare)
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
-    t(Hbare.OneBody), energies(Hbare.OneBody.diag()),
-    tolerance(1e-8), convergence_data(7,0)
+    KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
+    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0)
 {
    int norbits = modelspace->GetNumberOrbits();
 
@@ -67,15 +67,21 @@ void HartreeFock::Solve()
    CalcEHF();
 
    cout << setw(15) << setprecision(10);
-   if (iterations==maxiter)
+   if (iterations < maxiter)
    {
-      cout << "!!!! Warning: Hartree-Fock calculation didn't converge after " << maxiter << " iterations." << endl;
-      cout << "!!!! Last " << convergence_data.size() << " points in convergence check:";
-      for (auto& x : convergence_data ) cout << x << " ";
-      cout << "  (tolerance = " << tolerance << ")" << endl;
+      cout << "HF converged after " << iterations << " iterations. " << endl;
    }
    else
-      cout << "HF converged after " << iterations << " iterations. " << endl;
+   {
+      cout << "!!!! Warning: Hartree-Fock calculation didn't converge after " << iterations << " iterations." << endl;
+      cout << "!!!! Last " << convergence_ediff.size() << " points in convergence check:";
+      for (auto& x : convergence_ediff ) cout << x << " ";
+      cout << "  (tolerance = " << tolerance << ")" << endl;
+      cout << "!!!! Last " << convergence_EHF.size() << "  EHF values: ";
+      for (auto& x : convergence_EHF ) cout << x << " ";
+      cout << endl;
+   }
+   PrintEHF();
 }
 
 
@@ -95,9 +101,9 @@ void HartreeFock::Solve()
 void HartreeFock::CalcEHF()
 {
    EHF = 0;
-   double e1hf = 0;
-   double e2hf = 0;
-   double e3hf = 0;
+   e1hf = 0;
+   e2hf = 0;
+   e3hf = 0;
    int norbits = modelspace->GetNumberOrbits();
    for (int i=0;i<norbits;i++)
    {
@@ -105,19 +111,25 @@ void HartreeFock::CalcEHF()
       int jfactor = oi.j2 +1;
       for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}))
       {
-         e1hf += rho(i,j) * jfactor * t(i,j);
+         e1hf += rho(i,j) * jfactor * KE(i,j);
          e2hf += rho(i,j) * jfactor * 0.5 * Vij(i,j);
          e3hf += rho(i,j) * jfactor * (1./6*V3ij(i,j));
       }
    }
    EHF = e1hf + e2hf + e3hf;
+}
+
+//**************************************************************************************
+/// Print out the Hartree Fock energy, and the 1-, 2-, and 3-body contributions to it.
+//**************************************************************************************
+void HartreeFock::PrintEHF()
+{
    cout << fixed <<  setprecision(7);
    cout << "e1hf = " << e1hf << endl;
    cout << "e2hf = " << e2hf << endl;
    cout << "e3hf = " << e3hf << endl;
-   cout << "EHF = " << EHF << endl;
+   cout << "EHF = "  << EHF  << endl;
 }
-
 
 //*********************************************************************
 /// [See Suhonen eq. 4.85]
@@ -376,7 +388,7 @@ void HartreeFock::UpdateF()
    Vij  = arma::symmatu(Vij);
    V3ij = arma::symmatu(V3ij);
 
-   F = t + Vij + 0.5*V3ij;
+   F = KE + Vij + 0.5*V3ij;
 
    profiler.timer["HF_UpdateF"] += omp_get_wtime() - start_time;
 }
@@ -393,9 +405,12 @@ void HartreeFock::UpdateF()
 //********************************************************
 bool HartreeFock::CheckConvergence()
 {
+   CalcEHF();
+   convergence_EHF.push_back(EHF);
+   convergence_EHF.pop_front();
    double ediff = arma::norm(energies-prev_energies, "frob") / energies.size();
-   convergence_data.push_back(ediff); // update list of convergence checks
-   convergence_data.pop_front();
+   convergence_ediff.push_back(ediff); // update list of convergence checks
+   convergence_ediff.pop_front();
    return (ediff < tolerance);
 }
 
@@ -403,8 +418,8 @@ bool HartreeFock::CheckConvergence()
 //**********************************************************************
 /// Eigenvectors/values come out of the diagonalization energy-ordered.
 /// We want them ordered corresponding to the input ordering, i.e. we want
-/// the matrix C to be maximal and positive along the diagonal.
-/// For a 3x3 matrix this would be something like
+/// the l,j,tz sub-blockes of the matrix C to be energy-ordered and positive along the diagonal.
+/// For a 3x3 matrix this would be something like (this needs to be updated)
 /// \f[
 /// \left(
 /// \begin{array}{rrr}
@@ -422,32 +437,35 @@ bool HartreeFock::CheckConvergence()
 //**********************************************************************
 void HartreeFock::ReorderCoefficients()
 {
-   int nswaps = 10; // keep track of the number of swaps we had to do, iterate until nswaps==0
-   // first, reorder them so we still know the quantum numbers
-   while (nswaps>0) // loop until we don't have to make any more swaps
+   for ( auto& it : modelspace->OneBodyChannels )
    {
-     nswaps = 0;
-     for (index_t i=0;i<C.n_rows;++i) // loop through rows -> original basis states
+     arma::uvec orbvec(it.second);
+     arma::vec E_ch = energies(orbvec);
+     int nswaps = 10; // keep track of the number of swaps we had to do, iterate until nswaps==0
+     // first, make the orbits with the same l,j,tz energy ordered
+     while (nswaps>0) // loop until we don't have to make any more swaps
      {
-        arma::rowvec row = C.row(i);
-        arma::uword imax; 
-        double maxval = abs(row).max(imax);
-        if (imax == i) continue;
-        if (maxval > abs(C(imax,imax) ))
-        {
-           C.swap_cols(i,imax);
-           energies.swap_rows(i,imax);
-           ++nswaps;
-        }
+       nswaps = 0;
+       for (index_t i=0;i<E_ch.size()-1;i++)
+       {
+         if (E_ch[i] > E_ch[i+1])
+         {
+           E_ch.swap_rows(orbvec[i],orbvec[i+1]);
+           C.swap_cols(orbvec[i],orbvec[i+1]);
+           nswaps++;
+         }
+       }
+      }
+
+     // Make sure the diagonal terms are positive (to avoid confusion later).
+     for (index_t i=0;i<C.n_rows;++i) // loop through original basis states
+     {
+        if (C(i,i) < 0)  C.col(i) *= -1;
      }
-   }
-   // Make sure the diagonal terms are positive (to avoid confusion later).
-   for (index_t i=0;i<C.n_rows;++i) // loop through original basis states
-   {
-      if (C(i,i) < 0)  C.col(i) *= -1;
    }
 
 }
+
 
 
 

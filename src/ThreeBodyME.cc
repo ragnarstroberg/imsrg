@@ -241,6 +241,12 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
    int tde_max = 1;
 
 
+//   if (a/2 >= OrbitIndex.size()) cout << "AAAAH!  a = " << a << "  >= " << OrbitIndex.size()<< endl;
+//   if (b/2 >= OrbitIndex.at(a/2).size()) cout << "AAAAH!  b = " << b <<  "  >=  " <<  OrbitIndex.at(a/2).size() << endl;
+//   if (c/2 >= OrbitIndex.at(a/2).at(b/2).size()) cout << "AAAAH!  c = " << c << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).size() << endl;
+//   if (d/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).size()) cout << "AAAAH!  d = " << d << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).size() << endl;
+//   if (e/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).size()) cout << "AAAAH!  e = " << e << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).size() << endl;
+//   if (f/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).size()) cout << "AAAAH!  f = " << f << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).size() << endl;
 
    auto& indx = OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).at(f/2);
    if (indx > MatEl.size()) cout << "AAAAHHH indx = " << indx << "  but MatEl.size() = " << MatEl.size() << endl;

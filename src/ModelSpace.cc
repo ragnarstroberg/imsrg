@@ -354,29 +354,18 @@ void ModelSpace::Init(int emax, string valence)
      target_mass = hole_list.size();
      core_list = hole_list;
      for (auto& v : valence_list) core_list.resize( remove(core_list.begin(),core_list.end(),v) - core_list.begin() );
-//     cout << "Valence space: " << valence << endl;
   }
   // otherwise, there's no valence space and we have a single reference
   // with holes = core.
   else
   {
      GetAZfromString(valence,Ac,Zc);
-//     cout << "Core: " << valence << "  => A = " << Ac << " Z = " << Zc << endl;
      core_list = GetOrbitsAZ(Ac,Zc);
      hole_list = core_list;
      target_mass = Ac;
      target_Z = Zc; 
   }
 
-//  cout << "holes: ";
-//  for ( auto &h : hole_list ) cout << h << " ";
-//  cout << endl;
-//  cout << "core: ";
-//  for ( auto &h : core_list ) cout << h << " ";
-//  cout << endl;
-//  cout << "valence: ";
-//  for ( auto &h : valence_list ) cout << h << " ";
-//  cout << endl;
   Init(emax,hole_list,core_list,valence_list);
 }
 
@@ -622,7 +611,9 @@ void ModelSpace::SetReference(vector<index_t> new_reference)
   vector<index_t> h = new_reference;
   ClearVectors();
 //  cout << "Setting new reference : ";
-//  for (auto& h : holes) cout << h << " ";
+//  for (auto& hh : h) cout << hh << " ";
+//  cout << endl;
+//  for (auto& cc : c) cout << cc << " ";
 //  cout << endl;
   Init(Emax, h,c,v);
 }
