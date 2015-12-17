@@ -437,6 +437,86 @@ bool HartreeFock::CheckConvergence()
 //**********************************************************************
 void HartreeFock::ReorderCoefficients()
 {
+   for ( auto& it : modelspace->OneBodyChannels )
+   {
+     arma::uvec orbvec(it.second);
+     arma::vec E_ch = energies(orbvec);
+     int nswaps = 10; // keep track of the number of swaps we had to do, iterate until nswaps==0
+     // first, reorder them so we still know the quantum numbers
+     while (nswaps>0) // loop until we don't have to make any more swaps
+     {
+       nswaps = 0;
+       for (index_t i=0;i<E_ch.size()-1;i++)
+       {
+         if (E_ch[i] > E_ch[i+1])
+         {
+           index_t ii = orbvec[i];
+           index_t jj = orbvec[i+1];
+           E_ch.swap_rows(ii,jj);
+           C.swap_cols(ii,jj);
+           nswaps++;
+         }
+       }
+      }
+//       for (index_t i=0;i<C.n_rows;++i) // loop through rows -> original basis states
+//       {
+//          arma::rowvec row = C.row(i);
+//          arma::uword imax; 
+//          double maxval = abs(row).max(imax);
+//          if (imax == i) continue;
+//          if (maxval > abs(C(imax,imax) ))
+//          {
+//             C.swap_cols(i,imax);
+//             energies.swap_rows(i,imax);
+//             ++nswaps;
+//          }
+//       }
+//     }
+     // Make sure the diagonal terms are positive (to avoid confusion later).
+     for (index_t i=0;i<C.n_rows;++i) // loop through original basis states
+     {
+        if (C(i,i) < 0)  C.col(i) *= -1;
+     }
+   }
+
+}
+
+
+////////////////////////////////////////////////////
+//   prev_energies = energies;
+//   for ( auto& it : modelspace->OneBodyChannels )
+//   {
+//      arma::uvec orbvec(it.second);
+//      arma::mat F_ch = F.submat(orbvec,orbvec);
+//      arma::mat C_ch;
+//      arma::vec E_ch;
+//      bool success = false;
+//      int diag_tries = 0;
+//      while ( not success)
+//      {
+//         success = arma::eig_sym(E_ch, C_ch, F_ch);
+//         ++diag_tries;
+//         if (diag_tries > 5)
+//         {
+//           cout << "Hartree-Fock: Failed to diagonalize the submatrix " 
+//                << " on iteration # " << iterations << ". The submatrix looks like:" << endl;
+//           F_ch.print();
+//           break;
+//         }
+//      }
+//      // Update the full overlap matrix C and energy vector
+//      energies(orbvec) = E_ch;
+//      C.submat(orbvec,orbvec) = C_ch;
+//
+//   }
+//
+////////////////////////////////////////////////////
+
+
+
+/*
+void HartreeFock::ReorderCoefficients()
+{
    int nswaps = 10; // keep track of the number of swaps we had to do, iterate until nswaps==0
    // first, reorder them so we still know the quantum numbers
    while (nswaps>0) // loop until we don't have to make any more swaps
@@ -463,8 +543,7 @@ void HartreeFock::ReorderCoefficients()
    }
 
 }
-
-
+*/
 
 //**************************************************************************
 /// Takes in an operator expressed in the basis of the original Hamiltonian,

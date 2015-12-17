@@ -176,7 +176,11 @@ int main(int argc, char** argv)
     cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
   }
   
-  if ( method == "HF" ) return 0;
+  if ( method == "HF" )
+  {
+   Hbare.PrintTimes();
+   return 0;
+  }
 
   IMSRGSolver imsrgsolver(Hbare);
   
