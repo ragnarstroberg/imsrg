@@ -217,6 +217,49 @@ size_t Operator::Size()
 }
 
 
+void Operator::WriteBinary(ofstream& ofs)
+{
+  ofs.write((char*)&rank_J,sizeof(rank_J));
+  ofs.write((char*)&rank_T,sizeof(rank_T));
+  ofs.write((char*)&parity,sizeof(parity));
+  ofs.write((char*)&particle_rank,sizeof(particle_rank));
+  ofs.write((char*)&E2max,sizeof(E2max));
+  ofs.write((char*)&E3max,sizeof(E3max));
+  ofs.write((char*)&hermitian,sizeof(hermitian));
+  ofs.write((char*)&antihermitian,sizeof(antihermitian));
+  ofs.write((char*)&nChannels,sizeof(nChannels));
+  ofs.write((char*)&ZeroBody,sizeof(ZeroBody));
+  ofs.write((char*)OneBody.memptr(),OneBody.size()*sizeof(double));
+  if (particle_rank > 1)
+    TwoBody.WriteBinary(ofs);
+  if (particle_rank > 2)
+    ThreeBody.WriteBinary(ofs);
+}
+
+
+void Operator::ReadBinary(ifstream& ifs)
+{
+  ifs.read((char*)&rank_J,sizeof(rank_J));
+  ifs.read((char*)&rank_T,sizeof(rank_T));
+  ifs.read((char*)&parity,sizeof(parity));
+  ifs.read((char*)&particle_rank,sizeof(particle_rank));
+  ifs.read((char*)&E2max,sizeof(E2max));
+  ifs.read((char*)&E3max,sizeof(E3max));
+  ifs.read((char*)&hermitian,sizeof(hermitian));
+  ifs.read((char*)&antihermitian,sizeof(antihermitian));
+  ifs.read((char*)&nChannels,sizeof(nChannels));
+  SetUpOneBodyChannels();
+  ifs.read((char*)&ZeroBody,sizeof(ZeroBody));
+  ifs.read((char*)OneBody.memptr(),OneBody.size()*sizeof(double));
+  if (particle_rank > 1)
+    TwoBody.ReadBinary(ifs);
+  if (particle_rank > 2)
+    ThreeBody.ReadBinary(ifs);
+}
+
+
+
+
 
 ////////////////// MAIN INTERFACE METHODS //////////////////////////
 

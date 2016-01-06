@@ -2,6 +2,7 @@
 #define ThreeBodyME_h 1
 
 #include "ModelSpace.hh"
+#include <fstream>
 
 //typedef double ThreeBME_type;
 typedef float ThreeBME_type;
@@ -51,6 +52,8 @@ class ThreeBodyME
   size_t size(){return total_dimension * sizeof(ThreeBME_type);};
 
 
+  void WriteBinary(ofstream&);
+  void ReadBinary(ifstream&);
 
 };
 

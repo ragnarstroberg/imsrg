@@ -52,14 +52,17 @@ class ReadWrite
    void SetLECs(double c1, double c3, double c4, double cD, double cE);
    array<double,5> GetLECs(){return LECs;};
    void SetLECs_preset(string);
+   void SetCoMCorr(bool b){doCoM_corr = b;cout <<"Setting com_corr to "<< b << endl;};
+   void SetScratchDir( string d){scratch_dir = d;};
+   string GetScratchDir(){return scratch_dir;};
 
    std::map<string,string> InputParameters;
 
    bool InGoodState(){return goodstate;};
    bool doCoM_corr;
-   void SetCoMCorr(bool b){doCoM_corr = b;cout <<"Setting com_corr to "<< b << endl;};
    bool goodstate;
    array<double,5> LECs;
+   string scratch_dir;
    
 
 };

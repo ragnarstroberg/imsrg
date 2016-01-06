@@ -52,11 +52,23 @@ map<string,float> IMSRGProfiler::GetTimes()
 
 void IMSRGProfiler::PrintTimes()
 {
+   auto time_tot = GetTimes();
+   
    cout << "====================== TIMES (s) ====================" << endl;
    cout.setf(ios::fixed);
    for ( auto it : timer )
-     cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(5) << std::right << it.second  << endl;
-   for (auto it : GetTimes())
+   {
+     int nfill = (int) (20 * it.second / time_tot["real"]);
+     cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(5) << std::right << it.second;
+     cout << " (" << setw(4) << setprecision(1) << 100*it.second / time_tot["real"] << "%) |";
+     for (int ifill=0; ifill<nfill; ifill++) cout << "*";
+     for (int ifill=nfill; ifill<20; ifill++) cout << " ";
+     cout << "|";
+     cout  << endl;
+     
+   }
+//   for (auto it : GetTimes())
+   for (auto it : time_tot)
      cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(5) << std::right << it.second  << endl;
 }
 
