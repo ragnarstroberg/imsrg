@@ -9,20 +9,21 @@
 IMSRGSolver::~IMSRGSolver()
 {
 //   cout << "In IMSRGSolver destructor." << endl;
+  CleanupScratch();
 }
 
 IMSRGSolver::IMSRGSolver()
     : rw(NULL),s(0),ds(0.1),ds_max(0.5),
-     norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
-    ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6), n_omega_written(0)
+     norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile(""), n_omega_written(0)
+    ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {}
 
 // Constructor
 IMSRGSolver::IMSRGSolver( Operator &H_in)
    : modelspace(H_in.GetModelSpace()),rw(NULL), H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), 
     istep(0), s(0),ds(0.1),ds_max(0.5),
-    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
-    ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6), n_omega_written(0)
+    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile(""), n_omega_written(0)
+    ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {
    Eta.Erase();
    Eta.SetAntiHermitian();
@@ -637,6 +638,22 @@ int IMSRGSolver::GetSystemDimension()
 }
 
 
+
+void IMSRGSolver::CleanupScratch()
+{
+  if (n_omega_written<0) return;
+  cout << "Cleaning up files written to scratch space" << endl;
+  char tmp[512];
+  for (int i=0;i<n_omega_written;i++)
+  {
+    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+    string fname(tmp);
+    if ( remove(tmp) !=0 )
+    {
+      cout << "Error when attempting to delete " << fname << endl;
+    }
+  }
+}
 
 
 

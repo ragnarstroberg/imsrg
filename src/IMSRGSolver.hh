@@ -92,7 +92,7 @@ class IMSRGSolver
   void SetDenominatorDeltaIndex(int i){generator.SetDenominatorDeltaIndex(i);};
   void SetDenominatorDeltaOrbit(string o){generator.SetDenominatorDeltaOrbit(o);};
 
-
+  void CleanupScratch();
 
 
   // This is used to get flow info from odeint
