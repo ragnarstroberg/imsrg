@@ -362,3 +362,22 @@ void ThreeBodyME::Deallocate()
 
 
 
+void ThreeBodyME::WriteBinary(ofstream& f)
+{
+  f.write((char*)&E3max,sizeof(E3max));
+  f.write((char*)&total_dimension,sizeof(total_dimension));
+  f.write((char*)&MatEl[0],total_dimension);
+}
+
+void ThreeBodyME::ReadBinary(ifstream& f)
+{
+  f.read((char*)&E3max,sizeof(E3max));
+  f.read((char*)&total_dimension,sizeof(total_dimension));
+  Allocate();
+  f.read((char*)&MatEl[0],total_dimension*sizeof(ThreeBME_type));
+}
+
+
+
+
+

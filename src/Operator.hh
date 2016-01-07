@@ -40,7 +40,6 @@ class Operator
   bool antihermitian;
   int nChannels; ///< Number of two-body channels \f$ J,\pi,T_z \f$ associated with the model space
 
-  Operator& TempOp(size_t n); ///< Scratch space for calculations
 
   map<array<int,3>,vector<index_t> > OneBodyChannels;
   IMSRGProfiler profiler;
@@ -73,6 +72,7 @@ class Operator
   Operator& operator=(Operator&& rhs);
 
   //Methods
+  Operator& TempOp(size_t n); ///< Static scratch space for calculations
 
   // One body setter/getters
   double GetOneBody(int i,int j) {return OneBody(i,j);};
@@ -115,6 +115,10 @@ class Operator
   void AntiSymmetrize(); ///< Copy the upper-half triangle to the lower-half triangle with a minus sign.
   void SetUpOneBodyChannels();
   size_t Size();
+
+  void WriteBinary(ofstream& ofs);
+  void ReadBinary(ifstream& ifs);
+
 
   // The actually interesting methods
   Operator DoNormalOrdering(); ///< Calls DoNormalOrdering2() or DoNormalOrdering3(), depending on the rank of the operator.

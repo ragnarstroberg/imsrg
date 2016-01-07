@@ -467,8 +467,6 @@ void HartreeFock::ReorderCoefficients()
 }
 
 
-
-
 //**************************************************************************
 /// Takes in an operator expressed in the basis of the original Hamiltonian,
 /// and returns that operator in the Hartree-Fock basis.

@@ -25,6 +25,7 @@ int main(int argc, char** argv)
   string fmt2 = PAR.s("fmt2");
   string denominator_delta_orbit = PAR.s("denominator_delta_orbit");
   string LECs = PAR.s("LECs");
+  string scratch = PAR.s("scratch");
 
   int eMax = PAR.i("emax");
   int E3max = PAR.i("e3max");
@@ -77,11 +78,8 @@ int main(int argc, char** argv)
 
   ReadWrite rw;
   rw.SetLECs_preset(LECs);
+  rw.SetScratchDir(scratch);
   ModelSpace modelspace = reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space);
-//  ModelSpace ms2;
-
-//  if (reference != "default" and reference != valence_space)
-//       ms2 = ModelSpace(eMax,valence_space); // Targeted normal ordering. We'll need this for the last step.
 
   if (nsteps < 0)
     nsteps = modelspace.valence.size()>0 ? 2 : 1;
@@ -99,21 +97,40 @@ int main(int argc, char** argv)
   Operator Hbare = Operator(modelspace,0,0,0,particle_rank);
   Hbare.SetHermitian();
 
-  cout << "Reading interaction..." << endl;
+  cout << "Reading interactions..." << endl;
+
+  { // begin scope for trel
+  Operator trel;
+  #pragma omp parallel sections 
+  {
+  #pragma omp section
+  {
   if (fmt2 == "me2j")
     rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
   else if (fmt2 == "navratil" or fmt2 == "Navratil")
     rw.ReadBareTBME_Navratil(inputtbme, Hbare);
   else if (fmt2 == "oslo" )
     rw.ReadTBME_Oslo(inputtbme, Hbare);
+   cout << "done reading 2N" << endl;
+  }
 
+  #pragma omp section
   if (Hbare.particle_rank >=3)
   {
     rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
+    cout << "done reading 3N" << endl;
   }  
 
-//  cout << "Aeff = " << modelspace.GetTargetMass() << endl;
-  Hbare += Trel_Op(modelspace);
+  #pragma omp section
+  {
+    cout << "calculating trel" << endl;
+  trel = Trel_Op(modelspace);
+   cout << "done with trel" << endl;
+  }
+//  Hbare += Trel_Op(modelspace);
+  }
+  Hbare += trel;
+  } // end scope for trel
 
 //  cout << "Just before HF, hole orbits:  ";
 //  for (auto& h : Hbare.GetModelSpace()->holes) cout << h << " ";
@@ -183,6 +200,7 @@ int main(int argc, char** argv)
   }
 
   IMSRGSolver imsrgsolver(Hbare);
+  imsrgsolver.SetReadWrite(rw);
   
   if (method == "NSmagnus") // "No split" magnus
   {

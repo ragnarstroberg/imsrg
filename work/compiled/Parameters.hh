@@ -42,6 +42,7 @@ map<string,string> Parameters::string_par = {
   {"method",			"magnus"},	// can be magnus or flow or a few other things
   {"denominator_delta_orbit",	"none"},	// pick specific orbit to apply the delta
   {"LECs",			"EM2.0_2.0"},
+  {"scratch",			""},    // scratch directory for writing operators in binary format
 };
 
 
