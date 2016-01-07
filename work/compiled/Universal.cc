@@ -176,7 +176,11 @@ int main(int argc, char** argv)
     cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
   }
   
-  if ( method == "HF" ) return 0;
+  if ( method == "HF" )
+  {
+    Hbare.PrintTimes();
+    return 0;
+  }
 
   IMSRGSolver imsrgsolver(Hbare);
   
@@ -231,6 +235,7 @@ int main(int argc, char** argv)
   // we now re-normal order wrt to the core
   // and do any remaining flow.
 //  if (reference != "default"  and reference != valence_space)
+  ModelSpace ms2(modelspace);
   if ( modelspace.core != modelspace.holes )
   {
 
@@ -240,7 +245,7 @@ int main(int argc, char** argv)
     cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << endl;
     Hbare = Hbare.UndoNormalOrdering();
 
-    ModelSpace ms2(modelspace); // copy the current model space
+//    ms2 = modelspace; // copy the current model space
     ms2.SetReference(ms2.core); // chage the reference determinant
     Hbare.SetModelSpace(ms2);
 
@@ -250,6 +255,7 @@ int main(int argc, char** argv)
     imsrgsolver.SetHin(Hbare);
     imsrgsolver.Solve();
     // Change to the new basis, then apply the rest of the transformation to the operators
+    cout << "Final transformation on the operators..." << endl;
     for (auto& op : ops)
     {
       op = op.UndoNormalOrdering();
@@ -259,7 +265,6 @@ int main(int argc, char** argv)
       op = imsrgsolver.Transform_Partial(op,nOmega);
     }
   }
-
 
 
   // Write the output
@@ -275,7 +280,7 @@ int main(int argc, char** argv)
     {
        for (int i=0;i<ops.size();++i)
        {
-          ops[i] = imsrgsolver.Transform(ops[i]);
+//          ops[i] = imsrgsolver.Transform(ops[i]);
           rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
        }
     }
