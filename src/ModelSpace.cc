@@ -209,6 +209,7 @@ map<string,vector<string>> ModelSpace::ValenceSpaces  {
 { "psd-shell"  ,       {"p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"}},
 { "fp-shell"  ,        {"p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"}},
 { "sdfp-shell"  ,      {"p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"}},
+{ "sdfpNR-shell"  ,    {"p0d5","p0d3","p1s1","n0f7","n0f5","n1p3","n1p1"}}, // protons in sd shell, neutrons in fp shell, a la SDPFU from Nowacki/Poves (NR is for neutron-rich)
 { "fpg9-shell"  ,      {"p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1","p0g9","n0g9"}},
 { "sd3f7p3-shell"  ,   {"p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p1p3","n1p3"}},
 };
