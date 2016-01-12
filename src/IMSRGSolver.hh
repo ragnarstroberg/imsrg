@@ -41,6 +41,7 @@ class IMSRGSolver
   string flowfile;
   IMSRGProfiler profiler;
   int n_omega_written;
+  int max_omega_written;
 
 
 

@@ -271,8 +271,9 @@ int main(int argc, char** argv)
     Hbare = Hbare.DoNormalOrdering();
 
     imsrgsolver.SetHin(Hbare);
+    imsrgsolver.SetEtaCriterion(1e-4);
     imsrgsolver.Solve();
-    // Change to the new basis, then apply the rest of the transformation to the operators
+    // Change operators to the new basis, then apply the rest of the transformation
     cout << "Final transformation on the operators..." << endl;
     for (auto& op : ops)
     {
