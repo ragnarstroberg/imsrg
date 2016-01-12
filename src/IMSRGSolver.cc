@@ -641,7 +641,7 @@ int IMSRGSolver::GetSystemDimension()
 
 void IMSRGSolver::CleanupScratch()
 {
-  if (n_omega_written<0) return;
+  if (n_omega_written<=0) return;
   cout << "Cleaning up files written to scratch space" << endl;
   char tmp[512];
   for (int i=0;i<n_omega_written;i++)
