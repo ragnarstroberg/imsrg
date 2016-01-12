@@ -92,25 +92,33 @@ void Parameters::ParseCommandLineArgs(int argc, char** argv)
     string val = arg.substr(pos+1);
     if (string_par.find(var) != string_par.end() )
     {
-      istringstream(val) >> string_par[var];
-      cout << var << " => " << val << endl;
+      if (val.size() > 0)
+        istringstream(val) >> string_par[var];
+      cout << var << " => " << string_par[var] << endl;
     }
     else if (double_par.find(var) != double_par.end() )
     {
-      istringstream(val) >> double_par[var];
-      cout << var << " => " << val << endl;
+      if (val.size() > 0)
+        istringstream(val) >> double_par[var];
+      cout << var << " => " << double_par[var] << endl;
     }
     else if (int_par.find(var) != int_par.end() )
     {
-      istringstream(val) >> int_par[var];
-      cout << var << " => " << val << endl;
+      if (val.size() > 0)
+        istringstream(val) >> int_par[var];
+      cout << var << " => " << int_par[var] << endl;
     }
     else if (vec_par.find(var) != vec_par.end() )
     {
-      istringstream ss(val);
-      string tmp;
-      while( getline(ss,tmp,',')) vec_par[var].push_back(tmp);
-      cout << var << " => " << val << endl;
+      if (val.size() > 0)
+      {
+        istringstream ss(val);
+        string tmp;
+        while( getline(ss,tmp,',')) vec_par[var].push_back(tmp);
+      }
+      cout << var << " => ";
+      for (auto x : vec_par[var]) cout << x << ",";
+      cout << endl;
     }
     else
     {

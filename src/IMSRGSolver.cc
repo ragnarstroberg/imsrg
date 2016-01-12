@@ -14,7 +14,7 @@ IMSRGSolver::~IMSRGSolver()
 
 IMSRGSolver::IMSRGSolver()
     : rw(NULL),s(0),ds(0.1),ds_max(0.5),
-     norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile(""), n_omega_written(0)
+     norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile(""), n_omega_written(0),max_omega_written(50)
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {}
 
@@ -22,7 +22,7 @@ IMSRGSolver::IMSRGSolver()
 IMSRGSolver::IMSRGSolver( Operator &H_in)
    : modelspace(H_in.GetModelSpace()),rw(NULL), H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), 
     istep(0), s(0),ds(0.1),ds_max(0.5),
-    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile(""), n_omega_written(0)
+    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile(""), n_omega_written(0),max_omega_written(50)
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {
    Eta.Erase();
@@ -49,6 +49,13 @@ void IMSRGSolver::NewOmega()
     Omega.back().WriteBinary(ofs);
     n_omega_written++;
     cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << endl;
+    if (n_omega_written > max_omega_written)
+    {
+      cout << "n_omega_written > max_omega_written.  (" << n_omega_written << " > " << max_omega_written
+           << " ) deleting OMEGA files and calling terminate." << endl;
+      CleanupScratch();
+      terminate();
+    }
   }
   else
   {
