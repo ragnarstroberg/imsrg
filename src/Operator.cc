@@ -219,6 +219,7 @@ size_t Operator::Size()
 
 void Operator::WriteBinary(ofstream& ofs)
 {
+  double tstart = omp_get_wtime();
   ofs.write((char*)&rank_J,sizeof(rank_J));
   ofs.write((char*)&rank_T,sizeof(rank_T));
   ofs.write((char*)&parity,sizeof(parity));
@@ -234,11 +235,13 @@ void Operator::WriteBinary(ofstream& ofs)
     TwoBody.WriteBinary(ofs);
   if (particle_rank > 2)
     ThreeBody.WriteBinary(ofs);
+  profiler.timer["Write Bnary Op"] += omp_get_wtime() - tstart;
 }
 
 
 void Operator::ReadBinary(ifstream& ifs)
 {
+  double tstart = omp_get_wtime();
   ifs.read((char*)&rank_J,sizeof(rank_J));
   ifs.read((char*)&rank_T,sizeof(rank_T));
   ifs.read((char*)&parity,sizeof(parity));
@@ -255,6 +258,7 @@ void Operator::ReadBinary(ifstream& ifs)
     TwoBody.ReadBinary(ifs);
   if (particle_rank > 2)
     ThreeBody.ReadBinary(ifs);
+  profiler.timer["Read Bnary Op"] += omp_get_wtime() - tstart;
 }
 
 
