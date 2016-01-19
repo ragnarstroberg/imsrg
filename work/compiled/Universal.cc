@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <omp.h>
 #include "IMSRG.hh"
 #include "Parameters.hh"
 
@@ -99,8 +100,8 @@ int main(int argc, char** argv)
 
   cout << "Reading interactions..." << endl;
 
-  { // begin scope for trel
-  Operator trel;
+//  { // begin scope for trel
+//  Operator trel;
   #pragma omp parallel sections 
   {
   #pragma omp section
@@ -120,21 +121,72 @@ int main(int argc, char** argv)
     rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
     cout << "done reading 3N" << endl;
   }  
+  }
+//
+//  #pragma omp section
+//  {
+//    cout << "calculating trel" << endl;
+//  trel = Trel_Op(modelspace);
+//   cout << "done with trel" << endl;
+//  }
+  Hbare += Trel_Op(modelspace);
+//  }
+//  Hbare += trel;
+//  } // end scope for trel
 
-  #pragma omp section
-  {
-    cout << "calculating trel" << endl;
-  trel = Trel_Op(modelspace);
-   cout << "done with trel" << endl;
-  }
+
+//  if (false and omp_get_num_procs() > 2)
+//  { // begin scope for trel
+//  Operator trel;
+//  omp_set_nested(1);
+//  int nth = Hbare.particle_rank >=3 ? 3 : 2;
+//  #pragma omp parallel num_threads(nth)
+//  {
+//    if (omp_get_thread_num()==0)
+//    {
+//    if (fmt2 == "me2j")
+//      rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
+//    else if (fmt2 == "navratil" or fmt2 == "Navratil")
+//      rw.ReadBareTBME_Navratil(inputtbme, Hbare);
+//    else if (fmt2 == "oslo" )
+//      rw.ReadTBME_Oslo(inputtbme, Hbare);
+//     cout << "done reading 2N" << endl;
+//    }
+//  else if (omp_get_thread_num()==1 and Hbare.particle_rank >=3)
+//  {
+//    rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
+//    cout << "done reading 3N" << endl;
+//  }  
+//  else 
+//  {
+//    cout << "calculating trel" << endl;
+//    trel = Trel_Op(modelspace);
+//    cout << "done with trel" << endl;
+//  }
+//  }
+//  Hbare += trel;
+//  } // end scope for trel
+//  else // We have to do everything in series
+//  {
+//    if (fmt2 == "me2j")
+//      rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
+//    else if (fmt2 == "navratil" or fmt2 == "Navratil")
+//      rw.ReadBareTBME_Navratil(inputtbme, Hbare);
+//    else if (fmt2 == "oslo" )
+//      rw.ReadTBME_Oslo(inputtbme, Hbare);
+//     cout << "done reading 2N" << endl;
+//  if (Hbare.particle_rank >=3)
+//  {
+//    rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
+//    cout << "done reading 3N" << endl;
+//  }  
 //  Hbare += Trel_Op(modelspace);
-  }
-  Hbare += trel;
-  } // end scope for trel
+//  }
 
 //  cout << "Just before HF, hole orbits:  ";
 //  for (auto& h : Hbare.GetModelSpace()->holes) cout << h << " ";
 //  cout << endl;
+
   HartreeFock hf(Hbare);
   hf.Solve();
   cout << "EHF = " << hf.EHF << endl;
