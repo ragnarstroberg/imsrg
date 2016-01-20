@@ -3,6 +3,7 @@
 #define TwoBodyME_h 1
 
 #include <memory>
+#include <fstream>
 #include "ModelSpace.hh"
 class TwoBodyME_ph;
 
@@ -128,6 +129,9 @@ class TwoBodyME
   void PrintMatrix(int chbra,int chket) const { MatEl.at({chbra,chket}).print();};
   int Dimension();
   int size();
+
+  void WriteBinary(ofstream&);
+  void ReadBinary(ifstream&);
 
 
 };

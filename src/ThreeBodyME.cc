@@ -11,7 +11,7 @@ ThreeBodyME::ThreeBodyME()
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: modelspace(ms), E3max(ms->N3max), total_dimension(0)
+: modelspace(ms), E3max(ms->E3max), total_dimension(0)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
@@ -22,7 +22,7 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
 // Confusing nomenclature: J2 means 2 times the total J of the three body system
 void ThreeBodyME::Allocate()
 {
-  E3max = modelspace->GetN3max();
+  E3max = modelspace->GetE3max();
   cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
   int norbits = modelspace->GetNumberOrbits();
   int nvectors = 0;
@@ -241,12 +241,19 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
    int tde_max = 1;
 
 
+//   if (a/2 >= OrbitIndex.size()) cout << "AAAAH!  a = " << a << "  >= " << OrbitIndex.size()<< endl;
+//   if (b/2 >= OrbitIndex.at(a/2).size()) cout << "AAAAH!  b = " << b <<  "  >=  " <<  OrbitIndex.at(a/2).size() << endl;
+//   if (c/2 >= OrbitIndex.at(a/2).at(b/2).size()) cout << "AAAAH!  c = " << c << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).size() << endl;
+//   if (d/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).size()) cout << "AAAAH!  d = " << d << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).size() << endl;
+//   if (e/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).size()) cout << "AAAAH!  e = " << e << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).size() << endl;
+//   if (f/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).size()) cout << "AAAAH!  f = " << f << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).size() << endl;
 
    auto& indx = OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).at(f/2);
    if (indx > MatEl.size()) cout << "AAAAHHH indx = " << indx << "  but MatEl.size() = " << MatEl.size() << endl;
    
 //   cout << "    accessing " << a << " " << b << " " << c << " " << d << " " << e << " " << f << " size = " << vj.size() << endl;
 //   cout << " size = " << vj.size() << endl;
+   // TODO: enforce good isospin by skipping cases with (Jab+Tab)%2==0 for identical orbits. This may or may not be a good idea...
    double V_out = 0;
    int J_index = 0;
    for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
@@ -352,6 +359,25 @@ void ThreeBodyME::Deallocate()
   vector<ThreeBME_type>().swap(MatEl);
   vector<vector<vector<vector<vector<vector<size_t>>>>>>().swap( OrbitIndex ); 
 }
+
+
+
+void ThreeBodyME::WriteBinary(ofstream& f)
+{
+  f.write((char*)&E3max,sizeof(E3max));
+  f.write((char*)&total_dimension,sizeof(total_dimension));
+  f.write((char*)&MatEl[0],total_dimension);
+}
+
+void ThreeBodyME::ReadBinary(ifstream& f)
+{
+  f.read((char*)&E3max,sizeof(E3max));
+  f.read((char*)&total_dimension,sizeof(total_dimension));
+  Allocate();
+  f.read((char*)&MatEl[0],total_dimension*sizeof(ThreeBME_type));
+}
+
+
 
 
 

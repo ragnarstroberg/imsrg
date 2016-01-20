@@ -9,25 +9,60 @@
 IMSRGSolver::~IMSRGSolver()
 {
 //   cout << "In IMSRGSolver destructor." << endl;
+  CleanupScratch();
 }
 
 IMSRGSolver::IMSRGSolver()
-    : s(0),ds(0.1),ds_max(0.5),
-     norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
+    : rw(NULL),s(0),ds(0.1),ds_max(0.5),
+     norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile(""), n_omega_written(0),max_omega_written(50)
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {}
 
 // Constructor
 IMSRGSolver::IMSRGSolver( Operator &H_in)
-   : modelspace(H_in.GetModelSpace()),H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), 
+   : modelspace(H_in.GetModelSpace()),rw(NULL), H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), 
     istep(0), s(0),ds(0.1),ds_max(0.5),
-    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile("")
+    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile(""), n_omega_written(0),max_omega_written(50)
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {
    Eta.Erase();
    Eta.SetAntiHermitian();
 //   Omega.push_back( Eta);
    Omega.emplace_back( Eta);
+}
+
+
+void IMSRGSolver::NewOmega()
+{
+  H_saved = FlowingOps[0];
+  cout << "pushing back another Omega. Omega.size = " << Omega.size()
+       << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
+       << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+       << endl;
+  if ((rw != NULL) and (rw->GetScratchDir() !=""))
+  {
+    
+    char tmp[512];
+    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), n_omega_written);
+    string fname(tmp);
+    ofstream ofs(fname, ios::binary);
+    Omega.back().WriteBinary(ofs);
+    n_omega_written++;
+    cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << endl;
+    if (n_omega_written > max_omega_written)
+    {
+      cout << "n_omega_written > max_omega_written.  (" << n_omega_written << " > " << max_omega_written
+           << " ) deleting OMEGA files and calling terminate." << endl;
+      CleanupScratch();
+      terminate();
+    }
+  }
+  else
+  {
+    Omega.emplace_back(Eta);
+  }
+  Omega.back().Erase();
+
 }
 
 void IMSRGSolver::SetHin( Operator & H_in)
@@ -41,13 +76,7 @@ void IMSRGSolver::SetHin( Operator & H_in)
    Eta.SetAntiHermitian();
    if (Omega.back().Norm() > 1e-6)
    {
-     Omega.emplace_back(Eta);
-//     Omega.push_back(Eta);
-     H_saved = FlowingOps[0];
-    cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
-         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
-         << endl;
+    NewOmega();
    }
 }
 
@@ -56,12 +85,7 @@ void IMSRGSolver::Reset()
    s=0;
    Eta.Erase();
    Omega.resize(0);
-//   Omega.push_back(Eta);
-   Omega.emplace_back(Eta);
-   cout << "pushing back another Omega. Omega.size = " << Omega.size()
-        << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
-        << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
-        << endl;
+   NewOmega();
 }
 
 void IMSRGSolver::SetGenerator(string g)
@@ -70,14 +94,7 @@ void IMSRGSolver::SetGenerator(string g)
   if (Omega.back().Norm() > 1e-6)
   {
     Eta.Erase();
-//    Omega.push_back(Eta);
-    Omega.emplace_back(Eta);
-        H_saved = FlowingOps[0];
-
-    cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
-         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
-         << endl;
+    NewOmega();
   }
 }
 
@@ -95,7 +112,6 @@ void IMSRGSolver::SetFlowFile(string s)
 
 void IMSRGSolver::Solve()
 {
-  WriteFlowStatusHeader(cout);
   if (method == "magnus_euler" or method =="magnus")
     Solve_magnus_euler();
   else if (method == "magnus_modified_euler")
@@ -120,7 +136,6 @@ void IMSRGSolver::Solve()
 void IMSRGSolver::Solve_magnus_euler()
 {
    istep = 0;
-//   generator.Update(&H_s,&Eta);
    generator.Update(&FlowingOps[0],&Eta);
 
     // Write details of the flow
@@ -139,14 +154,8 @@ void IMSRGSolver::Solve_magnus_euler()
       double norm_omega = Omega.back().Norm();
       if (norm_omega > omega_norm_max)
       {
-        H_saved = FlowingOps[0];
-        Omega.emplace_back(Eta);
-        Omega.back().Erase();
+        NewOmega();
         norm_omega = 0;
-    cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
-         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
-         << endl;
       }
       // ds should never be more than 1, as this is over-rotating
       ds = min(min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), ds_max); 
@@ -159,12 +168,15 @@ void IMSRGSolver::Solve_magnus_euler()
 
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
 //      H_s = H_0->BCH_Transform( Omega );
-      if (Omega.size()<2)
+//      if (Omega.size()<2 or n_omega_written<1)
+      if ((Omega.size()+n_omega_written)<2)
       {
+//        cout << "Updating with option 1" << endl;
         FlowingOps[0] = H_0->BCH_Transform( Omega.back() );
       }
       else
       {
+//        cout << "Updating with option 2" << endl;
         FlowingOps[0] = H_saved.BCH_Transform( Omega.back() );
       }
         
@@ -196,14 +208,8 @@ void IMSRGSolver::Solve_magnus_modified_euler()
       double norm_omega = Omega.back().Norm();
       if (norm_omega > omega_norm_max)
       {
-        H_saved = FlowingOps[0];
-        Omega.emplace_back(Eta);
-        Omega.back().Erase();
+        NewOmega();
         norm_omega = 0;
-    cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
-         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
-         << endl;
       }
       // ds should never be more than 1, as this is over-rotating
       ds = min(min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), ds_max); 
@@ -218,7 +224,7 @@ void IMSRGSolver::Solve_magnus_modified_euler()
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
       Omega.back() = Eta.BCH_Product( Omega.back() ); 
 
-      if (Omega.size()<2)
+      if ((Omega.size()+n_omega_written)<2)
       {
         FlowingOps[0] = H_0->BCH_Transform( Omega.back() );
       }
@@ -334,9 +340,9 @@ struct vector_space_reduce< Operator >
 // Apply operation to each element of X and return the result
 // this is needed for ODE adaptive solver
 // USE THIS FOR BOOST VERSION >= 1.56
+//struct vector_space_norm_inf< vector<Operator> >
 namespace boost {namespace numeric {namespace odeint{
 template<>
-//struct vector_space_norm_inf< vector<Operator> >
 struct vector_space_norm_inf< deque<Operator> >
 {
    typedef double result_type;
@@ -374,6 +380,7 @@ void IMSRGSolver::Solve_ode_adaptive()
    if (method == "restore_4th_order") ode_mode = "Restored";
    WriteFlowStatusHeader(cout);
    WriteFlowStatus(flowfile);
+   cout << "done writing header and status" << endl;
    using namespace boost::numeric::odeint;
    auto system = *this;
 //   typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
@@ -395,6 +402,7 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
    if (ode_mode == "H")
    {
      FlowingOps[0] = x[0];
+     if (dxdt.size() < x.size()) dxdt.resize(x.size());
      auto& H_s = FlowingOps[0];
      generator.Update(&H_s,&Eta);
      if (Eta.Norm() < eta_criterion)
@@ -418,30 +426,25 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
      double norm_omega = Omega.back().Norm();
      if (norm_omega > omega_norm_max) // This doesn't seem to works so well just yet...
      {
-       H_saved = FlowingOps[0];
-//       Omega.push_back(Eta);
-       Omega.emplace_back(Eta);
-       Omega.back().Erase();
+       NewOmega();
        norm_omega = 0;
-    cout << "pushing back another Omega. Omega.size = " << Omega.size()
-         << " , operator size = " << Omega.front().Size()/1024./1024./1024. << " GB"
-         << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
-         << endl;
      }
      Omega.back() = x.back();
      auto& Omega_s = x.back();
      Operator& H_s = FlowingOps[0];
-     if (Omega.size() > 1)
+     if ((Omega.size()+n_omega_written) > 1)
        H_s = H_saved.BCH_Transform(Omega_s);
      else
        H_s = H_0->BCH_Transform(Omega_s);
      generator.Update(&H_s,&Eta);
+     if (dxdt.size() < x.size()) dxdt.resize(x.size());
      dxdt.back() = Eta - 0.5*Commutator(Omega_s,Eta);
    }
    else if (ode_mode == "Restored" )
    {
      FlowingOps[0] = x[0];
      FlowingOps[1] = x[1];
+     if (dxdt.size() < x.size()) dxdt.resize(x.size());
      dxdt[1] = Operator(x[1]);
      auto& H_s = FlowingOps[0];
      generator.Update(&H_s,&Eta);
@@ -454,14 +457,9 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
      }
      else
      {
-//       cout << "In Restored. Size of dxdt = " << dxdt.size() << endl;
-//       cout << "Particle Ranks: " << x[0].GetParticleRank() << " " << x[1].GetParticleRank() << " " << dxdt[0].GetParticleRank() << " " << dxdt[1].GetParticleRank() << endl;
        dxdt[0] = Commutator(Eta,x[0]+x[1]);
-//       cout << "Did the first bit" << endl;
        dxdt[1].Erase();
-//       cout << "Done erasing" << endl;
        dxdt[1].comm221ss(Eta,x[0]);
-//       cout << "Keeping the pp and hh parts" << endl;
        // keep only pp and hh parts of d chi/ ds
        for (auto& a : modelspace->holes)
        {
@@ -471,7 +469,6 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
            dxdt[1].OneBody(i,a) = 0;
          }
        }
-//       cout << "continuing on..." << endl;
        for (size_t i=2;i<x.size();++i)
        {
          dxdt[i] = Commutator(Eta,x[i]);
@@ -480,8 +477,8 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
      }
 
    }
-   WriteFlowStatus(cout);
    WriteFlowStatus(flowfile);
+   WriteFlowStatus(cout);
 }
 
 
@@ -510,25 +507,45 @@ void IMSRGSolver::Solve_ode_magnus()
 /// Returns \f$ e^{Omega} \mathcal{O} e^{-Omega} \f$
 Operator IMSRGSolver::Transform(Operator& OpIn)
 {
-  Operator OpOut = OpIn;
-  for (auto omega : Omega )
-  {
-    OpOut = OpOut.BCH_Transform( omega );
-  }
-  return OpOut;
-//   return OpIn.BCH_Transform( Omega );
+  return Transform_Partial(OpIn, 0);
+//  Operator OpOut = OpIn;
+//  if ((rw != NULL) and rw->GetScratchDir() != "")
+//  {
+//    Operator omega(OpIn);
+//    for (int i=0;i<n_omega_written;i++)
+//    {
+//     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir(), getpid(), i);
+//     string fname(tmp);
+//     ifstream ifs(fname,ios::binary);
+//     omega.ReadBinary(ifs);
+//     OpOut = OpOut.BCH_Transform( omega );
+//    }
+//  }
+//  else
+//  {
+//    for (auto omega : Omega )
+//    {
+//      OpOut = OpOut.BCH_Transform( omega );
+//    }
+//  }
+//  return OpOut;
 }
 
 Operator IMSRGSolver::Transform(Operator&& OpIn)
 {
-  Operator OpOut = OpIn;
-  for (auto omega : Omega )
-  {
-    OpOut = OpOut.BCH_Transform( omega );
-  }
-  return OpOut;
-//   return OpIn.BCH_Transform( Omega );
+  return Transform_Partial(OpIn, 0);
 }
+
+
+//Operator IMSRGSolver::Transform(Operator&& OpIn)
+//{
+//  Operator OpOut = move(OpIn);
+//  for (auto omega : Omega )
+//  {
+//    OpOut = OpOut.BCH_Transform( omega );
+//  }
+//  return OpOut;
+//}
 
 
 /// Returns \f$ e^{-Omega} \mathcal{O} e^{Omega} \f$
@@ -542,10 +559,79 @@ Operator IMSRGSolver::InverseTransform(Operator& OpIn)
     OpOut = OpOut.BCH_Transform( negomega );
   }
   return OpOut;
-//   Operator negomega = -Omega;
-//   return OpIn.BCH_Transform( negomega );
 }
 
+/// Returns \f$ e^{\Omega} \mathcal{O} e^{-\Omega} \f$
+/// for the \f$\Omega_i\f$s with index greater than n.
+//Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
+//{
+//  Operator OpOut = OpIn;
+//  for (size_t i=n;i<Omega.size();++i)
+//  {
+//    OpOut = OpOut.BCH_Transform( Omega[i] );
+//  }
+//  return OpOut;
+//}
+
+/// Returns \f$ e^{\Omega} \mathcal{O} e^{-\Omega} \f$
+/// for the \f$\Omega_i\f$s with index greater than or equal to n.
+Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
+{
+  Operator OpOut = OpIn;
+  if ((rw != NULL) and rw->GetScratchDir() != "")
+  {
+    Operator omega(OpIn);
+    char tmp[512];
+    for (int i=n;i<n_omega_written;i++)
+    {
+     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+     string fname(tmp);
+     ifstream ifs(fname,ios::binary);
+     omega.ReadBinary(ifs);
+     OpOut = OpOut.BCH_Transform( omega );
+    }
+  }
+
+  for (auto omega : Omega )
+  {
+    OpOut = OpOut.BCH_Transform( omega );
+  }
+  return OpOut;
+}
+
+
+Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
+{
+  Operator OpOut = OpIn;
+  if ((rw != NULL) and rw->GetScratchDir() != "")
+  {
+    Operator omega(OpIn);
+    char tmp[512];
+    for (int i=n;i<n_omega_written;i++)
+    {
+     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+     string fname(tmp);
+     ifstream ifs(fname,ios::binary);
+     omega.ReadBinary(ifs);
+     OpOut = OpOut.BCH_Transform( omega );
+    }
+  }
+
+  for (auto omega : Omega )
+  {
+    OpOut = OpOut.BCH_Transform( omega );
+  }
+  return OpOut;
+}
+//Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
+//{
+//  Operator OpOut = move(OpIn);
+//  for (size_t i=n;i<Omega.size();++i)
+//  {
+//    OpOut = OpOut.BCH_Transform( Omega[i] );
+//  }
+//  return OpOut;
+//}
 
 
 // count number of equations to be solved
@@ -560,6 +646,22 @@ int IMSRGSolver::GetSystemDimension()
 }
 
 
+
+void IMSRGSolver::CleanupScratch()
+{
+  if (n_omega_written<=0) return;
+  cout << "Cleaning up files written to scratch space" << endl;
+  char tmp[512];
+  for (int i=0;i<n_omega_written;i++)
+  {
+    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+    string fname(tmp);
+    if ( remove(tmp) !=0 )
+    {
+      cout << "Error when attempting to delete " << fname << endl;
+    }
+  }
+}
 
 
 

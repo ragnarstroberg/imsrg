@@ -25,7 +25,6 @@ class ReadWrite
    void Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max);
    template<class T>void Read_Darmstadt_3body_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int E3max);
    void GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis );
-//   void Read3bodyHDF5( string filename, Operator& op);
    void Read3bodyHDF5( string filename, Operator& op);
    void Read3bodyHDF5_new( string filename, Operator& op);
    void Write_me2j( string filename, Operator& op, int emax, int e2max, int lmax);
@@ -50,13 +49,21 @@ class ReadWrite
    void WriteTwoBody_Oslo(string filename, Operator& Hbare);
    void ReadTwoBodyEngel(string filename, Operator& Op);
    void ReadTwoBodyEngel_from_stream(istream& infile, Operator& Op);
+   void SetLECs(double c1, double c3, double c4, double cD, double cE);
+   array<double,5> GetLECs(){return LECs;};
+   void SetLECs_preset(string);
+   void SetCoMCorr(bool b){doCoM_corr = b;cout <<"Setting com_corr to "<< b << endl;};
+   void SetScratchDir( string d){scratch_dir = d;};
+   string GetScratchDir(){return scratch_dir;};
 
    std::map<string,string> InputParameters;
 
    bool InGoodState(){return goodstate;};
    bool doCoM_corr;
-   void SetCoMCorr(bool b){doCoM_corr = b;cout <<"Setting com_corr to "<< b << endl;};
    bool goodstate;
+   array<double,5> LECs;
+   string scratch_dir;
+   
 
 };
 

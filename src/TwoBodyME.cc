@@ -615,3 +615,31 @@ int TwoBodyME::size()
 
 
 
+void TwoBodyME::WriteBinary( ofstream& of )
+{
+  of.write((char*)&nChannels,sizeof(nChannels));
+  of.write((char*)&hermitian,sizeof(hermitian));
+  of.write((char*)&antihermitian,sizeof(antihermitian));
+  of.write((char*)&rank_J,sizeof(rank_J));
+  of.write((char*)&rank_T,sizeof(rank_T));
+  of.write((char*)&parity,sizeof(parity));
+  for ( auto& itmat : MatEl )
+    of.write((char*)itmat.second.memptr(),itmat.second.size()*sizeof(double));
+
+}
+
+
+void TwoBodyME::ReadBinary( ifstream& of )
+{
+  of.read((char*)&nChannels,sizeof(nChannels));
+  of.read((char*)&hermitian,sizeof(hermitian));
+  of.read((char*)&antihermitian,sizeof(antihermitian));
+  of.read((char*)&rank_J,sizeof(rank_J));
+  of.read((char*)&rank_T,sizeof(rank_T));
+  of.read((char*)&parity,sizeof(parity));
+  Allocate();
+  for ( auto& itmat : MatEl )
+    of.read((char*)itmat.second.memptr(),itmat.second.size()*sizeof(double));
+
+}
+

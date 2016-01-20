@@ -174,7 +174,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
  Operator TCM_Op(ModelSpace& modelspace)
  {
    double t_start = omp_get_wtime();
-   int N2max = modelspace.GetN2max();
+   int E2max = modelspace.GetE2max();
    double hw = modelspace.GetHbarOmega();
    int A = modelspace.GetTargetMass();
    Operator TcmOp = Operator(modelspace);
@@ -209,14 +209,14 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
          Ket & bra = tbc.GetKet(ibra);
          Orbit & oi = modelspace.GetOrbit(bra.p);
          Orbit & oj = modelspace.GetOrbit(bra.q);
-         if ( 2*(oi.n+oj.n)+oi.l+oj.l > N2max) continue;
+         if ( 2*(oi.n+oj.n)+oi.l+oj.l > E2max) continue;
          for (int iket=ibra;iket<nkets;++iket)
          {
             
             Ket & ket = tbc.GetKet(iket);
             Orbit & ok = modelspace.GetOrbit(ket.p);
             Orbit & ol = modelspace.GetOrbit(ket.q);
-            if ( 2*(ok.n+ol.n)+ok.l+ol.l > N2max) continue;
+            if ( 2*(ok.n+ol.n)+ok.l+ol.l > E2max) continue;
             double p1p2 = Calculate_p1p2(modelspace,bra,ket,tbc.J) * hw/A;
             if (abs(p1p2)>1e-7)
             {
@@ -1167,8 +1167,24 @@ Operator E0Op(ModelSpace& modelspace)
     cout << "comm222_ph diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
 
 
-
   }
+
+
+// template <typename T>
+// T VectorUnion(T& v1)
+// {
+//   return v1;
+// }
+// 
+// template <typename T, typename... Args>
+// T VectorUnion(T& v1, T& v2, Args... args)
+// {
+//   T vec(v1.size()+v2.size());
+//   copy(v1.begin(),v1.end(),vec.begin());
+//   copy(v2.begin(),v2.end(),vec.begin()+v1.size());
+//   return VectorUnion(vec, args...);
+// }
+ 
 
 }// namespace imsrg_util
 

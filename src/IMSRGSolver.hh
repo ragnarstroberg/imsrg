@@ -8,6 +8,7 @@
 #include "Operator.hh"
 #include "Generator.hh"
 #include "IMSRGProfiler.hh"
+#include "ReadWrite.hh"
 
 using namespace std;
 
@@ -19,6 +20,7 @@ class IMSRGSolver
 
 //  private:
   ModelSpace* modelspace;
+  ReadWrite* rw;
   Operator* H_0; 
 //  vector<Operator> FlowingOps;
   deque<Operator> FlowingOps;
@@ -38,11 +40,17 @@ class IMSRGSolver
   string method;
   string flowfile;
   IMSRGProfiler profiler;
+  int n_omega_written;
+  int max_omega_written;
+
+
 
   ~IMSRGSolver();
   IMSRGSolver();
   IMSRGSolver( Operator& H_in);
+  void NewOmega();
   void SetHin( Operator& H_in);
+  void SetReadWrite( ReadWrite& r){rw = &r;};
   void Reset();
   void AddOperator(Operator& Op){FlowingOps.push_back(Op);};
 
@@ -55,6 +63,9 @@ class IMSRGSolver
   Operator Transform(Operator&& OpIn);
   Operator InverseTransform(Operator& OpIn);
   Operator GetOmega(int i){return Omega[i];};
+  int GetOmegaSize(){return Omega.size();};
+  Operator Transform_Partial(Operator& OpIn, int n);
+  Operator Transform_Partial(Operator&& OpIn, int n);
 
   void SetFlowFile(string s);
   void SetDs(double d){ds = d;};
@@ -82,7 +93,7 @@ class IMSRGSolver
   void SetDenominatorDeltaIndex(int i){generator.SetDenominatorDeltaIndex(i);};
   void SetDenominatorDeltaOrbit(string o){generator.SetDenominatorDeltaOrbit(o);};
 
-
+  void CleanupScratch();
 
 
   // This is used to get flow info from odeint
@@ -132,7 +143,6 @@ class IMSRGSolver
   void Solve_ode();
   void Solve_ode_adaptive();
   void Solve_ode_magnus();
-
 
 
 };

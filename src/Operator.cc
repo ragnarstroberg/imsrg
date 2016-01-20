@@ -58,7 +58,7 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms),
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank),
-    E3max(ms.GetN3max()),
+    E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),  
     nChannels(ms.GetNumberTwoBodyChannels()) 
 {
@@ -71,7 +71,7 @@ Operator::Operator(ModelSpace& ms) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(&ms),  ThreeBody(&ms),
     rank_J(0), rank_T(0), parity(0), particle_rank(2),
-    E3max(ms.GetN3max()),
+    E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),  
     nChannels(ms.GetNumberTwoBodyChannels())
 {
@@ -196,7 +196,7 @@ void Operator::SetUpOneBodyChannels()
   {
     Orbit& oi = modelspace->GetOrbit(i);
     int lmin = max( oi.l - rank_J + (rank_J+parity)%2, (oi.l+parity)%2);
-    int lmax = min( oi.l + rank_J, modelspace->Nmax);
+    int lmax = min( oi.l + rank_J, modelspace->GetEmax() );
     for (int l=lmin; l<=lmax; l+=2)
     {
       int j2min = max(max(oi.j2 - 2*rank_J, 2*l-1),1);
@@ -220,6 +220,49 @@ size_t Operator::Size()
 {
    return sizeof(ZeroBody) + OneBody.size()*sizeof(double) + TwoBody.size() + ThreeBody.size();
 }
+
+
+void Operator::WriteBinary(ofstream& ofs)
+{
+  ofs.write((char*)&rank_J,sizeof(rank_J));
+  ofs.write((char*)&rank_T,sizeof(rank_T));
+  ofs.write((char*)&parity,sizeof(parity));
+  ofs.write((char*)&particle_rank,sizeof(particle_rank));
+  ofs.write((char*)&E2max,sizeof(E2max));
+  ofs.write((char*)&E3max,sizeof(E3max));
+  ofs.write((char*)&hermitian,sizeof(hermitian));
+  ofs.write((char*)&antihermitian,sizeof(antihermitian));
+  ofs.write((char*)&nChannels,sizeof(nChannels));
+  ofs.write((char*)&ZeroBody,sizeof(ZeroBody));
+  ofs.write((char*)OneBody.memptr(),OneBody.size()*sizeof(double));
+  if (particle_rank > 1)
+    TwoBody.WriteBinary(ofs);
+  if (particle_rank > 2)
+    ThreeBody.WriteBinary(ofs);
+}
+
+
+void Operator::ReadBinary(ifstream& ifs)
+{
+  ifs.read((char*)&rank_J,sizeof(rank_J));
+  ifs.read((char*)&rank_T,sizeof(rank_T));
+  ifs.read((char*)&parity,sizeof(parity));
+  ifs.read((char*)&particle_rank,sizeof(particle_rank));
+  ifs.read((char*)&E2max,sizeof(E2max));
+  ifs.read((char*)&E3max,sizeof(E3max));
+  ifs.read((char*)&hermitian,sizeof(hermitian));
+  ifs.read((char*)&antihermitian,sizeof(antihermitian));
+  ifs.read((char*)&nChannels,sizeof(nChannels));
+  SetUpOneBodyChannels();
+  ifs.read((char*)&ZeroBody,sizeof(ZeroBody));
+  ifs.read((char*)OneBody.memptr(),OneBody.size()*sizeof(double));
+  if (particle_rank > 1)
+    TwoBody.ReadBinary(ifs);
+  if (particle_rank > 2)
+    ThreeBody.ReadBinary(ifs);
+}
+
+
 
 
 
@@ -268,6 +311,9 @@ Operator Operator::DoNormalOrdering2()
       {
         arma::vec diagonals = matrix.diag();
         auto hh = tbc_ket.GetKetIndex_hh();
+//        cout << "hh: ";
+//        for ( auto& h : hh ) cout << h << " ";
+//        cout << endl;
         opNO.ZeroBody += arma::sum( diagonals.elem(hh) ) * (2*J_ket+1);
       }
 
@@ -277,7 +323,7 @@ Operator Operator::DoNormalOrdering2()
          Orbit &oa = modelspace->GetOrbit(a);
          double ja = oa.j2/2.0;
          index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // OneBodyChannels should be moved to the operator, to accommodate tensors
+         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
          {
             if (b < bstart) continue;
             Orbit &ob = modelspace->GetOrbit(b);
@@ -367,11 +413,13 @@ Operator Operator::DoNormalOrdering3()
 
 }
 
+
+
 /// Convert to a basis normal ordered wrt the vacuum.
 Operator Operator::UndoNormalOrdering()
 {
    Operator opNO = *this;
-   cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << endl;
+//   cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << endl;
 
    for (auto& k : modelspace->holes) // loop over hole orbits
    {
@@ -413,7 +461,7 @@ Operator Operator::UndoNormalOrdering()
    if (hermitian) opNO.Symmetrize();
    if (antihermitian) opNO.AntiSymmetrize();
 
-   cout << "Zero-body piece is now " << opNO.ZeroBody << endl;
+//   cout << "Zero-body piece is now " << opNO.ZeroBody << endl;
    return opNO;
 
 }
@@ -699,7 +747,6 @@ Operator Operator::BCH_Transform( const Operator &Omega)
 //*****************************************************************************************
 Operator Operator::BCH_Product(  Operator &Y)
 {
-//   return Y; // THIS NEEDS TO BE REMOVED!!!!
    double tstart = omp_get_wtime();
    Operator& X = *this;
    double nx = X.Norm();
@@ -707,7 +754,6 @@ Operator Operator::BCH_Product(  Operator &Y)
    if (nx < 1e-7) return Y;
    if (ny < 1e-7) return X;
 
-//   Operator Z = Commutator(X,Y);
    Operator Z;
    Z.SetToCommutator(X,Y);
    double nxy = Z.Norm();

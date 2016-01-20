@@ -38,7 +38,7 @@ ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  endif
 else  # default options. assumes boost and python are set up nicely.
  LIBS += -llapack
- ALL += libIMSRG.so
+ ALL += pyIMSRG.so
 endif
 endif
 
@@ -60,7 +60,7 @@ install:
 	
 
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
-      HartreeFock.o Generator.o IMSRGSolver.o AngMom.o imsrg_util.o\
+      HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\
       boost_src/gzip.o boost_src/zlib.o  IMSRGProfiler.o 
 
 mysrg: main.cc $(OBJ)
