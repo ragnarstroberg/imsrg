@@ -221,6 +221,18 @@ int main(int argc, char** argv)
          ops.emplace_back( HCM_Op(modelspace) );
          modelspace.SetHbarOmega(hw_save);
       }
+      else if (opname.substr(0,4) == "Rp2Z")
+      {
+        int Z_rp;
+        istringstream(opname.substr(4,opname.size())) >> Z_rp;
+        ops.emplace_back( Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) );
+      }
+      else if (opname.substr(0,4) == "Rn2Z")
+      {
+        int Z_rp;
+        istringstream(opname.substr(4,opname.size())) >> Z_rp;
+        ops.emplace_back( Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) );
+      }
       else //need to remove from the list
       {
          cout << "Unknown operator: " << opname << endl;
