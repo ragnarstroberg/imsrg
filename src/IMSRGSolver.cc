@@ -88,9 +88,9 @@ void IMSRGSolver::Reset()
    NewOmega();
 }
 
-void IMSRGSolver::SetGenerator(string g)
+void IMSRGSolver::SetGenerator(string gen)
 {
-  generator.SetType(g);
+  generator.SetType(gen);
   if (Omega.back().Norm() > 1e-6)
   {
     Eta.Erase();
@@ -98,9 +98,9 @@ void IMSRGSolver::SetGenerator(string g)
   }
 }
 
-void IMSRGSolver::SetFlowFile(string s)
+void IMSRGSolver::SetFlowFile(string str)
 {
-   flowfile = s;
+   flowfile = str;
    ofstream flowf;
    if (flowfile != "")
    {
@@ -112,6 +112,8 @@ void IMSRGSolver::SetFlowFile(string s)
 
 void IMSRGSolver::Solve()
 {
+  if (s<1e-4)
+   WriteFlowStatusHeader(cout);
   if (method == "magnus_euler" or method =="magnus")
     Solve_magnus_euler();
   else if (method == "magnus_modified_euler")
