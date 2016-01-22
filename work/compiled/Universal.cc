@@ -196,15 +196,14 @@ int main(int argc, char** argv)
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
 
-  if (method == "MP3")
-  {
+//  if (method == "MP3")
+//  {
     double EMP2 = Hbare.GetMP2_Energy();
     double EMP3 = Hbare.GetMP3_Energy();
-    cout << "EMP2:" << EMP2 << endl; 
-    cout << "EMP3:" << EMP3 << endl; 
-    cout << "To 3rd order: E = " << Hbare.ZeroBody+EMP2+EMP3 << endl;
-  }
-
+    cout << "EMP2 = " << EMP2 << endl; 
+    cout << "EMP3 = " << EMP3 << endl; 
+    cout << "To 3rd order, E = " << Hbare.ZeroBody+EMP2+EMP3 << endl;
+//  }
 
   // Calculate all the desired operators
   for (auto& opname : opnames)
@@ -230,6 +229,18 @@ int main(int argc, char** argv)
          modelspace.SetHbarOmega(hw_HCM);
          ops.emplace_back( HCM_Op(modelspace) );
          modelspace.SetHbarOmega(hw_save);
+      }
+      else if (opname.substr(0,4) == "Rp2Z")
+      {
+        int Z_rp;
+        istringstream(opname.substr(4,opname.size())) >> Z_rp;
+        ops.emplace_back( Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) );
+      }
+      else if (opname.substr(0,4) == "Rn2Z")
+      {
+        int Z_rp;
+        istringstream(opname.substr(4,opname.size())) >> Z_rp;
+        ops.emplace_back( Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) );
       }
       else //need to remove from the list
       {

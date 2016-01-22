@@ -623,7 +623,7 @@ double Operator::GetMP2_Energy()
            for (int J=Jmin; J<=Jmax; ++J)
            {
              double tbme = TwoBody.GetTBME_J_norm(J,a,b,i,j);
-             Emp2 += 1.00*(2*J+1)*tbme*tbme/denom; // no factor 1/4 because of the restricted sum
+             Emp2 += (2*J+1)*tbme*tbme/denom; // no factor 1/4 because of the restricted sum
            }
          }
        }
@@ -634,6 +634,78 @@ double Operator::GetMP2_Energy()
 }
 
 
+//*************************************************************
+/// Calculate the third order perturbation correction to energy
+/// \f[
+/// \begin{align}
+/// \frac{1}{8}\sum_{abijpq}\sum_J (2J+1)\frac{\Gamma_{abij}^J\Gamma_{ijpq}^J\Gamma_{pqab}^J}{(f_a+f_b-f_p-f_q)(f_a+f_b-f_i-f_j)}
+/// +\sum_{abcijk}\sum_J (2J+1) \frac{\Gamma_{abij}^J\Gamma_{cjkb}^J\Gamma_{ikac}^J}{(f_a+f_b-f_i-f_j)(f_a+f_c-f_i-f_k)}
+/// \end{align}
+/// \f]
+///
+//*************************************************************
+double Operator::GetMP3_Energy()
+{
+   double t_start = omp_get_wtime();
+   double Emp3 = 0;
+   index_t nholes = modelspace->holes.size();
+   index_t norbits = modelspace->GetNumberOrbits();
+   #pragma omp parallel for reduction(+:Emp3)
+   for (index_t a=0;a<nholes;++a)
+   {
+     Orbit& oa = modelspace->GetOrbit(a);
+     for (index_t b : modelspace->holes)
+     {
+       if (a>b) continue;
+       Orbit& ob = modelspace->GetOrbit(b);
+       for (index_t i : modelspace->particles)
+       {
+         Orbit& oi = modelspace->GetOrbit(i);
+         for (index_t j : modelspace->particles)
+         {
+           if (i>j) continue;
+           Orbit& oj = modelspace->GetOrbit(j);
+           {
+             double Delta1  = OneBody(a,a)+OneBody(b,b)-OneBody(i,i)-OneBody(j,j);
+             for (index_t p=0;p<norbits;++p)
+             {
+               Orbit& op = modelspace->GetOrbit(p);
+               for (index_t q=p;q<norbits;++q)
+               {
+                 Orbit& oq = modelspace->GetOrbit(q);
+                 if (p==a and q==b) continue; 
+                 if (p==i and q==j) continue; 
+                 double Delta2 = OneBody(a,a)+OneBody(b,b)-OneBody(p,p)-OneBody(q,q);
+                 double Delta3 = OneBody(a,a)+OneBody(p,p)-OneBody(i,i)-OneBody(q,q);
+                 int Jmin =  max(abs(op.j2-oq.j2),max(abs(oi.j2-oj.j2),abs(oa.j2-ob.j2)))/2;
+                 int Jmax =  min(op.j2+oq.j2,min(oi.j2+oj.j2,oa.j2+ob.j2))/2;
+                 for (int J=Jmin;J<=Jmax;++J)
+                 {
+                   double tbme1 = TwoBody.GetTBME_J_norm(J,a,b,i,j);
+                   if (q<nholes or p>=nholes)
+                   {
+                     double tbme2 = TwoBody.GetTBME_J_norm(J,i,j,p,q);
+                     double tbme3 = TwoBody.GetTBME_J_norm(J,p,q,a,b);
+                     Emp3 += 2*(2*J+1)*tbme1*tbme2*tbme3/(Delta1*Delta2);
+                   }
+                   else
+                   {
+                     double tbme4 = TwoBody.GetTBME_J_norm(J,p,j,q,b);
+                     double tbme5 = TwoBody.GetTBME_J_norm(J,i,q,a,p);
+                     Emp3 += 16*(2*J+1)*tbme1*tbme4*tbme5/(Delta1*Delta3);
+                   }
+                 }
+               }
+             }
+           }
+         }
+       }
+     }
+   }
+
+   profiler.timer["GetMP3_Energy"] += omp_get_wtime() - t_start;
+   return Emp3;
+}
 
 //***********************************************
 /// Calculates the kinetic energy operator in the 
