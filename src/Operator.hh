@@ -141,6 +141,8 @@ class Operator
 
   double GetMP2_Energy();
   double GetMP3_Energy();
+  double MP1_Eval(Operator& );
+
   void PrintTimes(){profiler.PrintAll();};
 
 

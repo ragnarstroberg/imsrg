@@ -666,7 +666,7 @@ double Operator::GetMP3_Energy()
            if (i>j) continue;
            Orbit& oj = modelspace->GetOrbit(j);
            {
-             double Delta1  = OneBody(a,a)+OneBody(b,b)-OneBody(i,i)-OneBody(j,j);
+             double Delta_abij  = OneBody(a,a)+OneBody(b,b)-OneBody(i,i)-OneBody(j,j);
              for (index_t p=0;p<norbits;++p)
              {
                Orbit& op = modelspace->GetOrbit(p);
@@ -675,8 +675,8 @@ double Operator::GetMP3_Energy()
                  Orbit& oq = modelspace->GetOrbit(q);
                  if (p==a and q==b) continue; 
                  if (p==i and q==j) continue; 
-                 double Delta2 = OneBody(a,a)+OneBody(b,b)-OneBody(p,p)-OneBody(q,q);
-                 double Delta3 = OneBody(a,a)+OneBody(p,p)-OneBody(i,i)-OneBody(q,q);
+                 double Delta_abpq = OneBody(a,a)+OneBody(b,b)-OneBody(p,p)-OneBody(q,q);
+                 double Delta_apiq = OneBody(a,a)+OneBody(p,p)-OneBody(i,i)-OneBody(q,q);
                  int Jmin =  max(abs(op.j2-oq.j2),max(abs(oi.j2-oj.j2),abs(oa.j2-ob.j2)))/2;
                  int Jmax =  min(op.j2+oq.j2,min(oi.j2+oj.j2,oa.j2+ob.j2))/2;
                  for (int J=Jmin;J<=Jmax;++J)
@@ -686,13 +686,13 @@ double Operator::GetMP3_Energy()
                    {
                      double tbme2 = TwoBody.GetTBME_J_norm(J,i,j,p,q);
                      double tbme3 = TwoBody.GetTBME_J_norm(J,p,q,a,b);
-                     Emp3 += 2*(2*J+1)*tbme1*tbme2*tbme3/(Delta1*Delta2);
+                     Emp3 += 2*(2*J+1)*tbme1*tbme2*tbme3/(Delta_abij*Delta_abpq);
                    }
                    else
                    {
                      double tbme4 = TwoBody.GetTBME_J_norm(J,p,j,q,b);
                      double tbme5 = TwoBody.GetTBME_J_norm(J,i,q,a,p);
-                     Emp3 += 16*(2*J+1)*tbme1*tbme4*tbme5/(Delta1*Delta3);
+                     Emp3 += 16*(2*J+1)*tbme1*tbme4*tbme5/(Delta_abij*Delta_apiq);
                    }
                  }
                }
@@ -706,6 +706,40 @@ double Operator::GetMP3_Energy()
    profiler.timer["GetMP3_Energy"] += omp_get_wtime() - t_start;
    return Emp3;
 }
+
+
+//*************************************************************
+/// Evaluate first order perturbative correction to the operator's
+/// ground-state expectation value. A HF basis is assumed.
+/// \f[
+///  \mathcal{O}^{(1)} = 2\sum_{abij} \frac{H_{abij}\mathcal{O}_{ijab}}{\Delta_{abij}}
+/// \f]
+///
+//*************************************************************
+double Operator::MP1_Eval(Operator& H)
+{
+  auto& Op = *this;
+  double opval = 0;
+  int nch = modelspace->GetNumberTwoBodyChannels();
+  for (int ich=0;ich<nch;++ich)
+  {
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ich);
+    auto& Hmat = H.TwoBody.GetMatrix(ich,ich);
+    auto& Opmat = Op.TwoBody.GetMatrix(ich,ich);
+    for (auto ibra : tbc.GetKetIndex_hh() )
+    {
+      Ket& bra = tbc.GetKet(ibra);
+      for (auto iket : tbc.GetKetIndex_pp() )
+      {
+        Ket& ket = tbc.GetKet(iket);
+        double Delta_abij = H.OneBody(bra.p,bra.p) + H.OneBody(bra.q,bra.q) -H.OneBody(ket.p,ket.p) - H.OneBody(ket.q,ket.q);
+        opval += 2*Hmat(ibra,iket) * Opmat(iket,ibra) / Delta_abij;
+      }
+    }
+  }
+  return opval;
+}
+
 
 //***********************************************
 /// Calculates the kinetic energy operator in the 
