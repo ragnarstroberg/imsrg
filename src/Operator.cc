@@ -648,6 +648,7 @@ double Operator::GetMP3_Energy()
 {
    double t_start = omp_get_wtime();
    double Emp3 = 0;
+   // This can certainly be optimized, but I'll wait until this is the bottleneck.
    index_t nholes = modelspace->holes.size();
    index_t norbits = modelspace->GetNumberOrbits();
    #pragma omp parallel for reduction(+:Emp3)
