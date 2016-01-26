@@ -64,6 +64,7 @@ class IMSRGSolver
   Operator InverseTransform(Operator& OpIn);
   Operator GetOmega(int i){return Omega[i];};
   int GetOmegaSize(){return Omega.size();};
+  int GetNOmegaWritten(){return n_omega_written;};
   Operator Transform_Partial(Operator& OpIn, int n);
   Operator Transform_Partial(Operator&& OpIn, int n);
 
