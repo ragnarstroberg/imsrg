@@ -462,6 +462,14 @@ Operator Operator::UndoNormalOrdering()
 }
 
 
+Operator Operator::Truncate(int new_emax)
+{
+  Operator OpNew;
+
+  return OpNew;
+}
+
+
 ModelSpace* Operator::GetModelSpace()
 {
    return modelspace;
@@ -646,6 +654,167 @@ double Operator::GetMP2_Energy()
 //*************************************************************
 double Operator::GetMP3_Energy()
 {
+   // So far, the pp and hh parts seem to work. No such luck for the ph.
+   double t_start = omp_get_wtime();
+   double Emp3 = 0;
+   // This can certainly be optimized, but I'll wait until this is the bottleneck.
+   index_t nholes = modelspace->holes.size();
+   index_t norbits = modelspace->GetNumberOrbits();
+   int nch = modelspace->GetNumberTwoBodyChannels();
+
+/*
+   // construct Pandya-transformed ph interaction
+   deque<arma::mat> V_bar_hp (InitializePandya( nChannels, "normal"));
+   deque<arma::mat> V_bar_ph (InitializePandya( nChannels, "normal"));
+   DoPandyaTransformation(V_bar_hp, V_bar_ph ,"normal");
+   // Allocate operator for product of ph interactions
+   deque<arma::mat> X_bar (nChannels );
+   int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
+   for (int ich=0; ich<n_nonzero; ++ich)
+   {
+      int ch_cc = modelspace->SortedTwoBodyChannels_CC[ich];
+      TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
+      int nKets_cc = tbc_cc.GetNumberKets();
+      arma::uvec& kets_ph = tbc_cc.GetKetIndex_ph();
+      
+
+
+   for (int ich=0;ich<nch;++ich)
+   {
+     auto& Xbarmat = X_bar[ich];
+     for ()
+     {
+       
+     }
+   }
+*/
+
+/*
+   int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
+   for (int ich=0; ich<n_nonzero; ++ich)
+   {
+      int ch_cc = modelspace->SortedTwoBodyChannels_CC[ich];
+      TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
+      int nKets_cc = tbc_cc.GetNumberKets();
+      arma::uvec& kets_ph = tbc_cc.GetKetIndex_ph();
+      int nph_kets = kets_ph.n_rows;
+      if (orientation=="normal")
+         X[ch_cc] = arma::mat(nph_kets,   2*nKets_cc, arma::fill::zeros);
+*/
+
+   #pragma omp parallel for reduction(+:Emp3)
+   for (int ich=0;ich<nch;++ich)
+   {
+     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ich);
+     auto& Mat = TwoBody.GetMatrix(ich,ich);
+     int J = tbc.J;
+     for (auto iket_ab : tbc.GetKetIndex_hh() )
+     {
+       Ket& ket_ab = tbc.GetKet(iket_ab);
+       index_t a = ket_ab.p;
+       index_t b = ket_ab.q;
+
+       for (auto iket_ij : tbc.GetKetIndex_pp() )
+       {
+         Ket& ket_ij = tbc.GetKet(iket_ij);
+         index_t i = ket_ij.p;
+         index_t j = ket_ij.q;
+         double Delta_abij = OneBody(a,a) + OneBody(b,b) - OneBody(i,i) - OneBody(j,j);
+
+/*
+       // hh term
+         for (auto iket_cd : tbc.GetKetIndex_hh() )
+         {
+           Ket& ket_cd = tbc.GetKet(iket_cd);
+           index_t c = ket_cd.p;
+           index_t d = ket_cd.q;
+           double Delta_cdij = OneBody(c,c) + OneBody(d,d) - OneBody(i,i) - OneBody(j,j);
+           Emp3 += (2*J+1)*Mat(iket_ab,iket_ij) * Mat(iket_ij,iket_cd) * Mat(iket_cd,iket_ab) / (Delta_abij * Delta_cdij);
+         }
+
+       // pp term
+         for (auto iket_kl : tbc.GetKetIndex_pp() )
+         {
+           Ket& ket_kl = tbc.GetKet(iket_kl);
+           index_t k = ket_kl.p;
+           index_t l = ket_kl.q;
+           double Delta_abkl = OneBody(a,a) + OneBody(b,b) - OneBody(k,k) - OneBody(l,l);
+           Emp3 += (2*J+1)*Mat(iket_ab,iket_ij)*Mat(iket_ij,iket_kl)*Mat(iket_kl,iket_ab) / (Delta_abij * Delta_abkl);
+         }
+*/
+       } // for ij
+     } // for ab
+   } // for ich
+
+   #pragma omp parallel for reduction(+:Emp3)
+   for (int aa=0;aa<nholes;aa++)
+   {
+    auto a = modelspace->holes[aa];
+    Orbit& oa = modelspace->GetOrbit(a);
+    double ja = 0.5*oa.j2;
+    for (auto b : modelspace->holes)
+    {
+      Orbit& ob = modelspace->GetOrbit(b);
+      double jb = 0.5*ob.j2;
+      for (auto i : modelspace->particles)
+      {
+       Orbit& oi = modelspace->GetOrbit(i);
+       double ji = 0.5*oi.j2;
+       for(auto j : modelspace->particles)
+       {
+         Orbit& oj = modelspace->GetOrbit(j);
+         double jj = 0.5*oj.j2;
+         // Now the ph term. Yuck. 
+         double Delta_abij = OneBody(a,a) + OneBody(b,b) - OneBody(i,i) - OneBody(j,j);
+         int J1min = max(abs(ja-jb),abs(ji-jj));
+         int J1max = min(ja+jb,ji+jj);
+         for (auto c : modelspace->holes )
+         {
+           Orbit& oc = modelspace->GetOrbit(c);
+           double jc = 0.5*oc.j2;
+           for (auto k : modelspace->particles )
+           {
+             Orbit& ok = modelspace->GetOrbit(k);
+             double jk = 0.5*ok.j2;
+             double Delta_cbik = OneBody(c,c) + OneBody(b,b) - OneBody(i,i) - OneBody(k,k);
+             int J2min = max(abs(jc-ji),abs(ja-jk));
+             int J2max = min(jc+ji,ja+jk);
+             int J3min = max(abs(jc-jb),abs(jk-jj))/2;
+             int J3max = min(jc+jb,jk+jj)/2;
+//             int phasefactor = -1;
+             for (int J1=J1min;J1<=J1max;++J1)
+             {
+//               double tbme_abij = (2*J1+1)*TwoBody.GetTBME_J(J1,a,b,i,j);
+               double tbme_abij = (2*J1+1)*TwoBody.GetTBME_J(J1,a,b,i,j);
+               for (int J2=J2min;J2<=J2max;++J2)
+               {
+                 double tbme_cjak = (2*J2+1)*TwoBody.GetTBME_J(J2,c,j,a,k);
+                 for (int J3=J3min;J3<=J3max;++J3)
+                 {
+                   double tbme_ikcb = (2*J3+1)*TwoBody.GetTBME_J(J3,i,k,c,b);
+//                   int phasefactor = modelspace->phase(ji+jj+J3);
+//                   int phasefactor = modelspace->phase(ji+jj+J1);
+                   Emp3 -=  modelspace->GetNineJ(ji,jj,J1,jk,J2,ja,J3,jc,jb) * tbme_abij * tbme_cjak * tbme_ikcb / (Delta_abij * Delta_cbik);
+                 } // for J3
+               } // for J2
+             } // for J1
+           } // for k
+         } // for c
+       } // for j
+      } // for i
+     } // for b
+   } // for a
+
+
+
+   profiler.timer["GetMP3_Energy"] += omp_get_wtime() - t_start;
+   return Emp3;
+}
+
+
+/*
+double Operator::GetMP3_Energy()
+{
    double t_start = omp_get_wtime();
    double Emp3 = 0;
    // This can certainly be optimized, but I'll wait until this is the bottleneck.
@@ -707,7 +876,7 @@ double Operator::GetMP3_Energy()
    profiler.timer["GetMP3_Energy"] += omp_get_wtime() - t_start;
    return Emp3;
 }
-
+*/
 
 //*************************************************************
 /// Evaluate first order perturbative correction to the operator's
@@ -725,6 +894,7 @@ double Operator::MP1_Eval(Operator& H)
   for (int ich=0;ich<nch;++ich)
   {
     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ich);
+    int J = tbc.J;
     auto& Hmat = H.TwoBody.GetMatrix(ich,ich);
     auto& Opmat = Op.TwoBody.GetMatrix(ich,ich);
     for (auto ibra : tbc.GetKetIndex_hh() )
@@ -734,7 +904,7 @@ double Operator::MP1_Eval(Operator& H)
       {
         Ket& ket = tbc.GetKet(iket);
         double Delta_abij = H.OneBody(bra.p,bra.p) + H.OneBody(bra.q,bra.q) -H.OneBody(ket.p,ket.p) - H.OneBody(ket.q,ket.q);
-        opval += 2*Hmat(ibra,iket) * Opmat(iket,ibra) / Delta_abij;
+        opval += 2*(2*J+1)*Hmat(ibra,iket) * Opmat(iket,ibra) / Delta_abij;
       }
     }
   }
