@@ -466,13 +466,50 @@ Operator Operator::UndoNormalOrdering()
 
 }
 
-
-Operator Operator::Truncate(int new_emax)
+//********************************************
+/// Truncate an operator to a smaller emax
+/// A corresponding ModelSpace object must be
+/// created at the appropriate scope. That's why
+/// the new operator is passed as a 
+//********************************************
+Operator Operator::Truncate(ModelSpace& ms_new)
 {
-  Operator OpNew;
-
+  Operator OpNew(ms_new, rank_J, rank_T, parity, particle_rank);
+  
+  int new_emax = ms_new.GetEmax();
+  if ( new_emax > modelspace->GetEmax() )
+  {
+    cout << "Error: Cannot truncate an operator with emax = " << modelspace->GetEmax() << " to one with emax = " << new_emax << endl;
+    return OpNew;
+  }
+//  OpNew.rank_J=rank_J; 
+//  OpNew.rank_T=rank_T; 
+//  OpNew.parity=parity; 
+//  OpNew.particle_rank = particle_rank; 
+  OpNew.ZeroBody = ZeroBody;
+  OpNew.hermitian = hermitian;
+  OpNew.antihermitian = antihermitian;
+  int norb = ms_new.GetNumberOrbits();
+  OpNew.OneBody = OneBody.submat(0,0,norb-1,norb-1);
+  for (auto& itmat : OpNew.TwoBody.MatEl )
+  {
+    int ch = itmat.first[0];
+    TwoBodyChannel& tbc_new = ms_new.GetTwoBodyChannel(ch);
+    int chold = modelspace->GetTwoBodyChannelIndex(tbc_new.J,tbc_new.parity,tbc_new.Tz);
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(chold);
+    auto& Mat_new = itmat.second;
+    auto& Mat = TwoBody.GetMatrix(chold,chold);
+    int nkets = tbc_new.GetNumberKets();
+    arma::uvec ibra_old(nkets);
+    for (int ibra=0;ibra<nkets;++ibra)
+    {
+      ibra_old(ibra) = tbc.GetLocalIndex(tbc_new.GetKetIndex(ibra));
+    }
+    Mat_new = Mat.submat(ibra_old,ibra_old);
+  }
   return OpNew;
 }
+
 
 
 ModelSpace* Operator::GetModelSpace()
@@ -970,31 +1007,16 @@ Operator Operator::BCH_Transform( const Operator &Omega)
    Operator OpOut = *this;
    if (nx>bch_transform_threshold)
    {
-//     Operator OpNested = *this;
-<<<<<<< HEAD
-//     Operator& OpNested = Temp;
-=======
->>>>>>> 90c3c2ba08117af60e937c5b8253f6e0de2e17a2
      Operator& OpNested = TempOp(0);
      OpNested = *this;
 //     tmp1 = *this;
      double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
      for (int i=1; i<=max_iter; ++i)
      {
-<<<<<<< HEAD
-=======
-//        OpNested = Commutator(Omega,OpNested)/i;
->>>>>>> 90c3c2ba08117af60e937c5b8253f6e0de2e17a2
         Operator& tmp1 = TempOp(1);
         tmp1.SetToCommutator(Omega,OpNested);
         tmp1 /= i;
         OpNested = tmp1;
-<<<<<<< HEAD
-//        OpNested = Commutator(Omega,OpNested)/i;
-=======
->>>>>>> 90c3c2ba08117af60e937c5b8253f6e0de2e17a2
-//        OpNested.SetToCommutator(Omega,OpNested);
-//        OpNested /= i;
         OpOut += OpNested;
   
         if (OpNested.Norm() < epsilon *(i+1))  break;
@@ -1683,14 +1705,8 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
    Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
 
-<<<<<<< HEAD
-   // Make these static as well
    static TwoBodyME Mpp = Z.TwoBody;
    static TwoBodyME Mhh = Z.TwoBody;
-=======
-   TwoBodyME Mpp(Z.TwoBody);
-   TwoBodyME Mhh(Z.TwoBody);
->>>>>>> 90c3c2ba08117af60e937c5b8253f6e0de2e17a2
 
    double t = omp_get_wtime();
    // Don't use omp, because the matrix multiplication is already
@@ -2056,52 +2072,19 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
    Operator& Z = *this;
    // Create Pandya-transformed hp and ph matrix elements
-<<<<<<< HEAD
-   static vector<arma::mat> X_bar_hp(nChannels);
-   static vector<arma::mat> X_bar_ph(nChannels);
-   static vector<arma::mat> Y_bar_hp(nChannels);
-   static vector<arma::mat> Y_bar_ph(nChannels);
-//   vector<arma::mat>& X_bar_hp  = TempMatVec(0);
-//   vector<arma::mat>& X_bar_ph  = TempMatVec(1);
-//   vector<arma::mat>& Y_bar_hp  = TempMatVec(2);
-//   vector<arma::mat>& Y_bar_ph  = TempMatVec(3);
-//   X_bar_hp.resize(nChannels);
-//   X_bar_ph.resize(nChannels);
-//   Y_bar_hp.resize(nChannels);
-//   Y_bar_ph.resize(nChannels);
-=======
-//   vector<arma::mat> X_bar_hp (nChannels );
-//   vector<arma::mat> X_bar_ph (nChannels );
-//   vector<arma::mat> Y_bar_hp (nChannels );
-//   vector<arma::mat> Y_bar_ph (nChannels );
    deque<arma::mat> X_bar_hp (InitializePandya( nChannels, "transpose"));
    deque<arma::mat> X_bar_ph (InitializePandya( nChannels, "transpose"));
    deque<arma::mat> Y_bar_hp (InitializePandya( nChannels, "normal"));
    deque<arma::mat> Y_bar_ph (InitializePandya( nChannels, "normal"));
-//   static vector<arma::mat> X_bar_hp = InitializePandya( nChannels, "transpose");
-//   static vector<arma::mat> X_bar_ph = InitializePandya( nChannels, "transpose");
-//   static vector<arma::mat> Y_bar_hp = InitializePandya( nChannels, "normal");
-//   static vector<arma::mat> Y_bar_ph = InitializePandya( nChannels, "normal");
->>>>>>> 90c3c2ba08117af60e937c5b8253f6e0de2e17a2
 
    double t = omp_get_wtime();
-//   X.DoPandyaTransformation(X_bar_hp, X_bar_ph );
-//   X.DoPandyaTransformation_Trans(X_bar_hp, X_bar_ph );
-//   Y.DoPandyaTransformation(Y_bar_hp, Y_bar_ph );
    X.DoPandyaTransformation(X_bar_hp, X_bar_ph ,"transpose");
    Y.DoPandyaTransformation(Y_bar_hp, Y_bar_ph, "normal" );
    profiler.timer["DoPandyaTransformation"] += omp_get_wtime() - t;
 
    // Construct the intermediate matrix Z_bar
    t = omp_get_wtime();
-<<<<<<< HEAD
-//   vector<arma::mat>& Z_bar = TempMatVec(4);
-//   Z_bar.resize(nChannels );
-   static vector<arma::mat> Z_bar (nChannels );
-=======
-//   vector<arma::mat> Z_bar (nChannels );
    deque<arma::mat> Z_bar (nChannels );
->>>>>>> 90c3c2ba08117af60e937c5b8253f6e0de2e17a2
 
 //   for (int ch : modelspace->SortedTwoBodyChannels_CC )
    int nch = modelspace->SortedTwoBodyChannels_CC.size();
