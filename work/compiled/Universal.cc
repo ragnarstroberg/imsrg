@@ -196,6 +196,15 @@ int main(int argc, char** argv)
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
 
+  if (method != "HF")
+  {
+    double EMP2 = Hbare.GetMP2_Energy();
+    double EMP3 = Hbare.GetMP3_Energy();
+    cout << "EMP2 = " << EMP2 << endl; 
+    cout << "EMP3 = " << EMP3 << endl; 
+    cout << "To 3rd order, E = " << Hbare.ZeroBody+EMP2+EMP3 << endl;
+  }
+
   // Calculate all the desired operators
   for (auto& opname : opnames)
   {
@@ -221,6 +230,18 @@ int main(int argc, char** argv)
          ops.emplace_back( HCM_Op(modelspace) );
          modelspace.SetHbarOmega(hw_save);
       }
+      else if (opname.substr(0,4) == "Rp2Z")
+      {
+        int Z_rp;
+        istringstream(opname.substr(4,opname.size())) >> Z_rp;
+        ops.emplace_back( Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) );
+      }
+      else if (opname.substr(0,4) == "Rn2Z")
+      {
+        int Z_rp;
+        istringstream(opname.substr(4,opname.size())) >> Z_rp;
+        ops.emplace_back( Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) );
+      }
       else //need to remove from the list
       {
          cout << "Unknown operator: " << opname << endl;
@@ -245,7 +266,7 @@ int main(int argc, char** argv)
     cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
   }
   
-  if ( method == "HF" )
+  if ( method == "HF" or method == "MP3")
   {
     Hbare.PrintTimes();
     return 0;
@@ -311,7 +332,7 @@ int main(int argc, char** argv)
 
     Hbare = imsrgsolver.GetH_s();
 
-    int nOmega = imsrgsolver.GetOmegaSize();
+    int nOmega = imsrgsolver.GetOmegaSize() + imsrgsolver.GetNOmegaWritten();
     cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << endl;
     Hbare = Hbare.UndoNormalOrdering();
 

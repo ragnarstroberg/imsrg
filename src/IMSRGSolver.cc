@@ -47,6 +47,7 @@ void IMSRGSolver::NewOmega()
     string fname(tmp);
     ofstream ofs(fname, ios::binary);
     Omega.back().WriteBinary(ofs);
+    if (Omega.back().GetModelSpace() != Eta.GetModelSpace()) Omega.back() = Eta;
     n_omega_written++;
     cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << endl;
     if (n_omega_written > max_omega_written)
@@ -78,6 +79,10 @@ void IMSRGSolver::SetHin( Operator & H_in)
    {
     NewOmega();
    }
+   else
+   {
+     Omega.back() = Eta;
+   }
 }
 
 void IMSRGSolver::Reset()
@@ -88,9 +93,9 @@ void IMSRGSolver::Reset()
    NewOmega();
 }
 
-void IMSRGSolver::SetGenerator(string g)
+void IMSRGSolver::SetGenerator(string gen)
 {
-  generator.SetType(g);
+  generator.SetType(gen);
   if (Omega.back().Norm() > 1e-6)
   {
     Eta.Erase();
@@ -98,9 +103,9 @@ void IMSRGSolver::SetGenerator(string g)
   }
 }
 
-void IMSRGSolver::SetFlowFile(string s)
+void IMSRGSolver::SetFlowFile(string str)
 {
-   flowfile = s;
+   flowfile = str;
    ofstream flowf;
    if (flowfile != "")
    {
@@ -112,6 +117,8 @@ void IMSRGSolver::SetFlowFile(string s)
 
 void IMSRGSolver::Solve()
 {
+  if (s<1e-4)
+   WriteFlowStatusHeader(cout);
   if (method == "magnus_euler" or method =="magnus")
     Solve_magnus_euler();
   else if (method == "magnus_modified_euler")
@@ -577,6 +584,9 @@ Operator IMSRGSolver::InverseTransform(Operator& OpIn)
 /// for the \f$\Omega_i\f$s with index greater than or equal to n.
 Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
 {
+//  cout << "Calling reference version of Transform_Partial, n = " << n << " n_written = " << n_omega_written << " Omega.size() = " << Omega.size() << endl;
+//  cout << "<0|O|0> = " << OpIn.OneBody(0,0) << endl;
+//  cout << "<00|O|00> = " << OpIn.TwoBody.GetMatrix(0,0)(0,0) << endl;
   Operator OpOut = OpIn;
   if ((rw != NULL) and rw->GetScratchDir() != "")
   {
@@ -585,6 +595,7 @@ Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
     for (int i=n;i<n_omega_written;i++)
     {
      sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+//     cout << "Reading " << tmp << endl;
      string fname(tmp);
      ifstream ifs(fname,ios::binary);
      omega.ReadBinary(ifs);
@@ -592,16 +603,25 @@ Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
     }
   }
 
-  for (auto omega : Omega )
+  for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
   {
-    OpOut = OpOut.BCH_Transform( omega );
+//    cout << "i = " << i << endl;
+//    cout << "||Omega|| = " << Omega[i].Norm() << "  size = " << Omega[i].Size() << " nholes = " << Omega[i].GetModelSpace()->holes.size() <<  endl;
+    OpOut = OpOut.BCH_Transform( Omega[i] );
   }
+
+
+//  for (auto omega : Omega )
+//  {
+//    OpOut = OpOut.BCH_Transform( omega );
+//  }
   return OpOut;
 }
 
 
 Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
 {
+//  cout << "Calling r-value version of Transform_Partial, n = " << n << endl;
   Operator OpOut = OpIn;
   if ((rw != NULL) and rw->GetScratchDir() != "")
   {
@@ -617,10 +637,14 @@ Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
     }
   }
 
-  for (auto omega : Omega )
+  for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
   {
-    OpOut = OpOut.BCH_Transform( omega );
+    OpOut = OpOut.BCH_Transform( Omega[i] );
   }
+//  for (auto omega : Omega )
+//  {
+//    OpOut = OpOut.BCH_Transform( omega );
+//  }
   return OpOut;
 }
 //Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)

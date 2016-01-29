@@ -140,6 +140,7 @@ class Operator
   void Eye(); ///< set to identity operator
 
   double GetMP2_Energy();
+  double GetMP3_Energy();
   void PrintTimes(){profiler.PrintAll();};
 
 
