@@ -125,6 +125,7 @@ class Operator
   Operator DoNormalOrdering2(); ///< Returns the normal ordered two-body operator
   Operator DoNormalOrdering3(); ///< Returns the normal ordered three-body operator
   Operator UndoNormalOrdering(); ///< Returns the operator normal-ordered wrt the vacuum
+  Operator Truncate(int new_emax); ///< Returns the operator trunacted to new_emax < emax
 
   void SetToCommutator(const Operator& X, const Operator& Y);
   void CommutatorScalarScalar( const Operator& X, const Operator& Y) ;
@@ -141,6 +142,8 @@ class Operator
 
   double GetMP2_Energy();
   double GetMP3_Energy();
+  double MP1_Eval(Operator& );
+
   void PrintTimes(){profiler.PrintAll();};
 
 
