@@ -307,6 +307,47 @@ int main(int argc, char** argv)
 
   imsrgsolver.SetGenerator(valence_generator);
   imsrgsolver.SetSmax(smax);
+
+  ///////////////////////////////////////
+  // Debugging why psdNR shell doesn't work above emax=8
+  imsrgsolver.UpdateEta();
+  char tmp[400];
+  sprintf(tmp,"DEBUG_H_CoreDecoupled_emax%d_%s.dat",eMax,valence_space.c_str());
+  rw.WriteOperatorHuman(imsrgsolver.GetH_s(),string(tmp));
+  sprintf(tmp,"DEBUG_ETA_CoreDecoupled_emax%d_%s.dat",eMax,valence_space.c_str());
+  rw.WriteOperatorHuman(imsrgsolver.GetEta(),string(tmp));
+  int norb = modelspace.GetNumberOrbits();
+
+  Generator& gen = imsrgsolver.GetGenerator();
+  sprintf(tmp,"DEBUG_Delta_CoreDecoupled_emax%d_%s.dat",eMax,valence_space.c_str());
+  ofstream of(tmp);
+  for (int i=0;i<norb;++i)
+  {
+    for (int j=i;j<norb;++j)
+    {
+      of << i << " " << j << " " << gen.Get1bDenominator(i,j) << endl;
+    }
+  }
+  int nch = modelspace.GetNumberTwoBodyChannels();
+  for (int ich=0;ich<nch;++ich)
+  {
+    TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ich);
+    int nkets = tbc.GetNumberKets();
+    for (int ibra=0;ibra<nkets;++ibra)
+    {
+      Ket& bra = tbc.GetKet(ibra);
+      for (int iket=0;iket<nkets;++iket)
+      {
+        Ket& ket = tbc.GetKet(iket);
+        of << tbc.J << " " << tbc.parity << " " << tbc.Tz << "    "
+           << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << "    "
+           << gen.Get2bDenominator(ich,ibra,iket) << endl;
+      }
+    }
+  }
+  of.close();
+  ////////////////////////////
+
   imsrgsolver.Solve();
 
 

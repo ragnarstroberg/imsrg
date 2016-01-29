@@ -20,6 +20,7 @@ class Generator
 
   Generator();
   void SetType(string g){generator_type = g;};
+  string GetType(){return generator_type;};
   void Update(Operator* H, Operator* Eta);
   void AddToEta(Operator* H, Operator* Eta);
   void SetDenominatorCutoff(double c){denominator_cutoff=c;};
@@ -27,7 +28,7 @@ class Generator
   void SetDenominatorDeltaIndex(int i){denominator_delta_index=i;};
   void SetDenominatorDeltaOrbit(string orb);
 
- private:
+// private:
   void ConstructGenerator_Wegner();
   void ConstructGenerator_White();
   void ConstructGenerator_Atan();
