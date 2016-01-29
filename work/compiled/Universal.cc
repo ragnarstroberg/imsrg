@@ -255,6 +255,11 @@ int main(int argc, char** argv)
   {
      if (basis == "HF") op = hf.TransformToHFBasis(op);
      op = op.DoNormalOrdering();
+     if (method == "MP3")
+     {
+       double dop = op.MP1_Eval( Hbare );
+       cout << "Operator 1st order correction  " << dop << "  ->  " << op.ZeroBody + dop << endl;
+     }
   }
   auto itR2p = find(opnames.begin(),opnames.end(),"Rp2");
   if (itR2p != opnames.end())
