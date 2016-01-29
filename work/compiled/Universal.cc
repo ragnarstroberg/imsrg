@@ -196,14 +196,14 @@ int main(int argc, char** argv)
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
 
-//  if (method == "MP3")
-//  {
+  if (method != "HF")
+  {
     double EMP2 = Hbare.GetMP2_Energy();
     double EMP3 = Hbare.GetMP3_Energy();
     cout << "EMP2 = " << EMP2 << endl; 
     cout << "EMP3 = " << EMP3 << endl; 
     cout << "To 3rd order, E = " << Hbare.ZeroBody+EMP2+EMP3 << endl;
-//  }
+  }
 
   // Calculate all the desired operators
   for (auto& opname : opnames)
@@ -337,7 +337,7 @@ int main(int argc, char** argv)
 
     Hbare = imsrgsolver.GetH_s();
 
-    int nOmega = imsrgsolver.GetOmegaSize();
+    int nOmega = imsrgsolver.GetOmegaSize() + imsrgsolver.GetNOmegaWritten();
     cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << endl;
     Hbare = Hbare.UndoNormalOrdering();
 
