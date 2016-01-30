@@ -33,6 +33,8 @@ namespace imsrg_util
  Operator R2_1body_Op(ModelSpace& modelspace, string option);
  Operator R2_p2_Op(ModelSpace& modelspace);
  Operator R2_2body_Op(ModelSpace& modelspace, string option);
+ Operator ChargeDensityAtR(ModelSpace& modelspace, double R);
+
 
  Operator Isospin2_Op(ModelSpace& modelspace);
  Operator AllowedFermi_Op(ModelSpace& modelspace);
@@ -51,6 +53,7 @@ namespace imsrg_util
  vector<double> GetOccupationsHF(HartreeFock& hf);
  vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);
  vector<double> GetDensity(vector<double>& occ, vector<double>& R, vector<int>& orbits, ModelSpace& modelspace);
+
 
  void CommutatorTest(Operator& X, Operator& Y);
  void Reduce(Operator&);

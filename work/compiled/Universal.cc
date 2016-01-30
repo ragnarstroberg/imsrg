@@ -242,6 +242,12 @@ int main(int argc, char** argv)
         istringstream(opname.substr(4,opname.size())) >> Z_rp;
         ops.emplace_back( Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) );
       }
+      else if (opname.substr(0,3) == "rho")
+      {
+        double rr;
+        istringstream(opname.substr(3,opname.size())) >> rr;
+        ops.emplace_back( ChargeDensityAtR(modelspace,rr));
+      }
       else //need to remove from the list
       {
          cout << "Unknown operator: " << opname << endl;
@@ -269,6 +275,11 @@ int main(int argc, char** argv)
     int A = modelspace.GetTargetMass();
     cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << endl; 
     cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
+  }
+  for (int i=0;i<ops.size();++i)
+  {
+    Operator& op = ops[i];
+    cout << opnames[i] << " = " << ops[i].ZeroBody << endl;
   }
   
   if ( method == "HF" or method == "MP3")

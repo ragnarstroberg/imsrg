@@ -817,6 +817,16 @@ Operator RSquaredOp(ModelSpace& modelspace)
  }
 
 
+Operator ChargeDensityAtR(ModelSpace& modelspace, double R)
+{
+  Operator Rho(modelspace,0,0,0,2);
+  for ( auto i : modelspace.proton_orbits)
+  {
+    Orbit& oi = modelspace.GetOrbit(i);
+    Rho.OneBody(i,i) = HO_density(oi.n,oi.l,modelspace.GetHbarOmega(),R);
+  }
+  return Rho;
+}
 
 
 // Electric monopole operator
