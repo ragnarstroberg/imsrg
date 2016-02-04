@@ -955,7 +955,7 @@ Operator E0Op(ModelSpace& modelspace)
         // multiply radial integra by b^L = (hbar/mw)^L/2
         double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L) * pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*L) ;
         EL.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, L, oj.j2/2.0, 0.5,0, -0.5) * r2int;
-        EL.OneBody(j,i) = modelspace.phase(oi.j2-oj.j2) * EL.OneBody(i,j);
+        EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
       }
     }
     return EL;
