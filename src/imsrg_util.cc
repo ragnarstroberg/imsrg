@@ -19,6 +19,16 @@ namespace imsrg_util
    return NumOp;
  }
 
+ Operator NumberOpAlln(ModelSpace& modelspace, int l, int j2, int tz2)
+ {
+   Operator NumOp = Operator(modelspace);
+   for (int n=0;n<=(modelspace.GetEmax()-l)/2;++n)
+   {
+     int indx = modelspace.Index1(n,l,j2,tz2);
+     NumOp.OneBody(indx,indx) = 1;
+   }
+   return NumOp;
+ }
 
  double HO_density(int n, int l, double hw, double r)
  {
@@ -817,7 +827,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
  }
 
 
-Operator ChargeDensityAtR(ModelSpace& modelspace, double R)
+Operator ProtonDensityAtR(ModelSpace& modelspace, double R)
 {
   Operator Rho(modelspace,0,0,0,2);
   for ( auto i : modelspace.proton_orbits)
@@ -828,6 +838,16 @@ Operator ChargeDensityAtR(ModelSpace& modelspace, double R)
   return Rho;
 }
 
+Operator NeutronDensityAtR(ModelSpace& modelspace, double R)
+{
+  Operator Rho(modelspace,0,0,0,2);
+  for ( auto i : modelspace.neutron_orbits)
+  {
+    Orbit& oi = modelspace.GetOrbit(i);
+    Rho.OneBody(i,i) = HO_density(oi.n,oi.l,modelspace.GetHbarOmega(),R);
+  }
+  return Rho;
+}
 
 // Electric monopole operator
 /// Returns

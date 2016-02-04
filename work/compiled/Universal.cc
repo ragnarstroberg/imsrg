@@ -242,11 +242,42 @@ int main(int argc, char** argv)
         istringstream(opname.substr(4,opname.size())) >> Z_rp;
         ops.emplace_back( Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) );
       }
-      else if (opname.substr(0,3) == "rho")
+      else if (opname.substr(0,4) == "rhop")
       {
         double rr;
-        istringstream(opname.substr(3,opname.size())) >> rr;
-        ops.emplace_back( ChargeDensityAtR(modelspace,rr));
+        istringstream(opname.substr(4,opname.size())) >> rr;
+        ops.emplace_back( ProtonDensityAtR(modelspace,rr));
+      }
+      else if (opname.substr(0,4) == "rhon")
+      {
+        double rr;
+        istringstream(opname.substr(4,opname.size())) >> rr;
+        ops.emplace_back( NeutronDensityAtR(modelspace,rr));
+      }
+      else if (opname.substr(0,6) == "OneOcc")
+      {
+         map<char,int> lvals = {{'s',0},{'p',1},{'d',2},{'f',3},{'g',4},{'h',5}};
+         char pn,lspec;
+         int n,l,j,t;
+         istringstream(opname.substr(6,1)) >> pn;
+         istringstream(opname.substr(7,1)) >> n;
+         istringstream(opname.substr(8,1)) >> lspec;
+         istringstream(opname.substr(9,opname.size())) >> j;
+         l = lvals[lspec];
+         t = pn == 'p' ? -1 : 1;
+         ops.emplace_back( NumberOp(modelspace,n,l,j,t) );
+      }
+      else if (opname.substr(0,6) == "AllOcc")
+      {
+         map<char,int> lvals = {{'s',0},{'p',1},{'d',2},{'f',3},{'g',4},{'h',5}};
+         char pn,lspec;
+         int l,j,t;
+         istringstream(opname.substr(6,1)) >> pn;
+         istringstream(opname.substr(7,1)) >> lspec;
+         istringstream(opname.substr(8,opname.size())) >> j;
+         l = lvals[lspec];
+         t = pn == 'p' ? -1 : 1;
+         ops.emplace_back( NumberOpAlln(modelspace,l,j,t) );
       }
       else //need to remove from the list
       {
