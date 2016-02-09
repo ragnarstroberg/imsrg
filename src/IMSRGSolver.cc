@@ -560,7 +560,6 @@ Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
     for (int i=n;i<n_omega_written;i++)
     {
      sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
-//     cout << "Reading " << tmp << endl;
      string fname(tmp);
      ifstream ifs(fname,ios::binary);
      omega.ReadBinary(ifs);
@@ -572,7 +571,6 @@ Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
   {
     OpOut = OpOut.BCH_Transform( Omega[i] );
   }
-
 
   return OpOut;
 }
