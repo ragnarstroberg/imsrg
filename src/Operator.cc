@@ -1008,7 +1008,8 @@ Operator Operator::BCH_Transform( const Operator &Omega)
    if (nx>bch_transform_threshold)
    {
 //     Operator& OpNested = TempOp(0);
-     Operator& OpNested = *this;
+//     Operator& OpNested = *this;
+     Operator OpNested = *this;
 //     OpNested = *this;
 //     tmp1 = *this;
      double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
