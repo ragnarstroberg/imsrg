@@ -1007,16 +1007,22 @@ Operator Operator::BCH_Transform( const Operator &Omega)
    Operator OpOut = *this;
    if (nx>bch_transform_threshold)
    {
-     Operator& OpNested = TempOp(0);
-     OpNested = *this;
+//     Operator& OpNested = TempOp(0);
+     Operator& OpNested = *this;
+//     OpNested = *this;
 //     tmp1 = *this;
      double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
      for (int i=1; i<=max_iter; ++i)
      {
-        Operator& tmp1 = TempOp(1);
-        tmp1.SetToCommutator(Omega,OpNested);
+//        Operator& tmp1 = TempOp(1);
+//        tmp1.SetToCommutator(Omega,OpNested);
+//        cout << "Assign tmp1" << endl;
+        Operator tmp1 = Commutator(Omega,OpNested);
+//        cout << "tmp1 /=i" << endl;
         tmp1 /= i;
+//        cout << "OpNested = tmp1" << endl;
         OpNested = tmp1;
+//        cout << "OpOut += OpNested" << endl;
         OpOut += OpNested;
   
         if (OpNested.Norm() < epsilon *(i+1))  break;
@@ -1150,7 +1156,11 @@ void Operator::AntiSymmetrize()
 /// @relates Operator
 Operator Commutator( const Operator& X, const Operator& Y)
 {
-  Operator Z;
+  int jrank = max(X.rank_J,Y.rank_J);
+  int trank = max(X.rank_T,Y.rank_T);
+  int parity = (X.parity+Y.parity)%2;
+  int particlerank = max(X.particle_rank,Y.particle_rank);
+  Operator Z(*(X.modelspace),jrank,trank,parity,particlerank);
   Z.SetToCommutator(X,Y);
   return Z;
 }
@@ -1200,6 +1210,7 @@ void Operator::SetToCommutator( const Operator& X, const Operator& Y)
 //Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) 
 void Operator::CommutatorScalarScalar( const Operator& X, const Operator& Y) 
 {
+   double t_css = omp_get_wtime();
    Operator& Z = *this;
    Z = X.GetParticleRank()>Y.GetParticleRank() ? X : Y;
    Z.EraseZeroBody();
@@ -1248,6 +1259,7 @@ void Operator::CommutatorScalarScalar( const Operator& X, const Operator& Y)
    else if (Z.IsAntiHermitian() )
       Z.AntiSymmetrize();
 
+   profiler.timer["CommutatorScalarScalar"] += omp_get_wtime() - t_css;
 
 //   return Z;
 }
@@ -1259,7 +1271,6 @@ void Operator::CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) 
 void Operator::CommutatorScalarTensor( const Operator& X, const Operator& Y) 
 {
-//   cout << "Calling CommutatorScalarTensor" << endl;
    double t_start = omp_get_wtime();
    Operator& Z = *this;
    Z = Y; // This ensures the commutator has the same tensor rank as Y
@@ -1283,11 +1294,12 @@ void Operator::CommutatorScalarTensor( const Operator& X, const Operator& Y)
 //   cout << "comm222_phst" << endl;
    Z.comm222_phst(X, Y);
 
+//   cout << "symmetrize" << endl;
    if ( Z.IsHermitian() )
       Z.Symmetrize();
    else if (Z.IsAntiHermitian() )
       Z.AntiSymmetrize();
-
+//   cout << "done." << endl;
    profiler.timer["CommutatorScalarTensor"] += omp_get_wtime() - t_start;
 //   return Z;
 }
@@ -2095,11 +2107,6 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
       Z_bar[ch] =  X_bar_hp[ch] * Y_bar_hp[ch] - X_bar_ph[ch] * Y_bar_ph[ch] ;
-//      if ( X.IsHermitian() ) // keep track of minus sign from taking transpose of X
-//         Z_bar[ch] =  X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch] ;
-//      else
-//         Z_bar[ch] =  X_bar_ph[ch].t() * Y_bar_ph[ch] - X_bar_hp[ch].t() * Y_bar_hp[ch] ;
-
       if ( Z.IsHermitian() ) // if Z is hermitian, then XY is antihermitian
         Z_bar[ch] += Z_bar[ch].t();
       else
@@ -2784,50 +2791,57 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    // Create Pandya-transformed hp and ph matrix elements
    deque<arma::mat> X_bar_hp = InitializePandya( nChannels, "transpose");
    deque<arma::mat> X_bar_ph = InitializePandya( nChannels, "transpose");
-//   vector<arma::mat> X_bar_hp (nChannels );
-//   vector<arma::mat> X_bar_ph (nChannels );
 
    map<array<int,2>,arma::mat> Y_bar_hp;
    map<array<int,2>,arma::mat> Y_bar_ph;
 
-//   cout << "Pandya" << endl;
-   double t = omp_get_wtime();
-   X.DoPandyaTransformation(X_bar_hp, X_bar_ph );
+   double t_start = omp_get_wtime();
+   X.DoPandyaTransformation(X_bar_hp, X_bar_ph, "transpose" );
    Y.DoTensorPandyaTransformation(Y_bar_hp, Y_bar_ph );
-   profiler.timer["DoTensorPandyaTransformation"] += omp_get_wtime() - t;
+   profiler.timer["DoTensorPandyaTransformation"] += omp_get_wtime() - t_start;
 
 
-   t = omp_get_wtime();
+   t_start = omp_get_wtime();
    // Construct the intermediate matrix Z_bar
    map<array<int,2>,arma::mat> Z_bar;
-
-//   cout << "Zbar" << endl;
+   vector<int> ybras(Y_bar_hp.size());
+   vector<int> ykets(Y_bar_hp.size());
+   int counter = 0;
    for (auto& iter : Y_bar_hp )
    {
-      int ch_bra_cc = iter.first[0];
-      int ch_ket_cc = iter.first[1];
-//      cout << "Build Zbar: ch_bra_cc = " << ch_bra_cc << "  ch_ket_cc = " << ch_ket_cc << endl;
+      ybras[counter] = iter.first[0];
+      ykets[counter] = iter.first[1];
+      counter++;
+   }
+
+   #pragma omp parallel for
+   for(int i=0;i<counter;++i)
+   {
+//   for (auto& iter : Y_bar_hp )
+//   {
+//      int ch_bra_cc = iter.first[0];
+//      int ch_ket_cc = iter.first[1];
+      int ch_bra_cc = ybras[i];
+      int ch_ket_cc = ykets[i];
       int Jbra = modelspace->GetTwoBodyChannel_CC(ch_bra_cc).J;
       int Jket = modelspace->GetTwoBodyChannel_CC(ch_ket_cc).J;
       int flipphase = modelspace->phase( Jbra - Jket ) * ( Z.IsHermitian() ? -1 : 1 );
       if (X.IsHermitian())
       {
-        Z_bar[{ch_bra_cc,ch_ket_cc}] =  ( X_bar_hp[ch_bra_cc].t() * Y_bar_hp[{ch_bra_cc,ch_ket_cc}] - X_bar_ph[ch_bra_cc].t() * Y_bar_ph[{ch_bra_cc,ch_ket_cc}]) 
-                           -flipphase * ( X_bar_hp[ch_ket_cc].t() * Y_bar_hp[{ch_ket_cc,ch_bra_cc}] - X_bar_ph[ch_ket_cc].t() * Y_bar_ph[{ch_ket_cc,ch_bra_cc}]).t() ;
+        Z_bar[{ch_bra_cc,ch_ket_cc}] =  ( X_bar_hp[ch_bra_cc] * Y_bar_hp[{ch_bra_cc,ch_ket_cc}] - X_bar_ph[ch_bra_cc] * Y_bar_ph[{ch_bra_cc,ch_ket_cc}]) 
+                           -flipphase * ( X_bar_hp[ch_ket_cc] * Y_bar_hp[{ch_ket_cc,ch_bra_cc}] - X_bar_ph[ch_ket_cc] * Y_bar_ph[{ch_ket_cc,ch_bra_cc}]).t() ;
       }
       else
       {
-        Z_bar[{ch_bra_cc,ch_ket_cc}] =  ( X_bar_ph[ch_bra_cc].t() * Y_bar_ph[{ch_bra_cc,ch_ket_cc}]  - X_bar_hp[ch_bra_cc].t() * Y_bar_hp[{ch_bra_cc,ch_ket_cc}] )
-                           -flipphase * ( X_bar_ph[ch_ket_cc].t() * Y_bar_ph[{ch_ket_cc,ch_bra_cc}]  - X_bar_hp[ch_ket_cc].t() * Y_bar_hp[{ch_ket_cc,ch_bra_cc}]).t() ;
+        Z_bar[{ch_bra_cc,ch_ket_cc}] =  ( X_bar_ph[ch_bra_cc] * Y_bar_ph[{ch_bra_cc,ch_ket_cc}]  - X_bar_hp[ch_bra_cc] * Y_bar_hp[{ch_bra_cc,ch_ket_cc}])
+                           -flipphase * ( X_bar_ph[ch_ket_cc] * Y_bar_ph[{ch_ket_cc,ch_bra_cc}]  - X_bar_hp[ch_ket_cc] * Y_bar_hp[{ch_ket_cc,ch_bra_cc}]).t() ;
       }
    }
-   profiler.timer["Build Z_bar"] += omp_get_wtime() - t;
+   profiler.timer["Build Z_bar"] += omp_get_wtime() - t_start;
 
-//   cout << "InversePandya" << endl;
-   t = omp_get_wtime();
+   t_start = omp_get_wtime();
    Z.AddInverseTensorPandyaTransformation(Z_bar);
-   profiler.timer["InverseTensorPandyaTransformation"] += omp_get_wtime() - t;
-//   cout << "Done" << endl;
+   profiler.timer["InverseTensorPandyaTransformation"] += omp_get_wtime() - t_start;
 
 }
 
