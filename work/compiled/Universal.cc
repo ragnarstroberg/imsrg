@@ -100,8 +100,6 @@ int main(int argc, char** argv)
 
   cout << "Reading interactions..." << endl;
 
-//  { // begin scope for trel
-//  Operator trel;
   #pragma omp parallel sections 
   {
   #pragma omp section
@@ -122,70 +120,11 @@ int main(int argc, char** argv)
     cout << "done reading 3N" << endl;
   }  
   }
-//
-//  #pragma omp section
-//  {
-//    cout << "calculating trel" << endl;
-//  trel = Trel_Op(modelspace);
-//   cout << "done with trel" << endl;
-//  }
+
   Hbare += Trel_Op(modelspace);
-//  }
-//  Hbare += trel;
-//  } // end scope for trel
 
 
-//  if (false and omp_get_num_procs() > 2)
-//  { // begin scope for trel
-//  Operator trel;
-//  omp_set_nested(1);
-//  int nth = Hbare.particle_rank >=3 ? 3 : 2;
-//  #pragma omp parallel num_threads(nth)
-//  {
-//    if (omp_get_thread_num()==0)
-//    {
-//    if (fmt2 == "me2j")
-//      rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
-//    else if (fmt2 == "navratil" or fmt2 == "Navratil")
-//      rw.ReadBareTBME_Navratil(inputtbme, Hbare);
-//    else if (fmt2 == "oslo" )
-//      rw.ReadTBME_Oslo(inputtbme, Hbare);
-//     cout << "done reading 2N" << endl;
-//    }
-//  else if (omp_get_thread_num()==1 and Hbare.particle_rank >=3)
-//  {
-//    rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
-//    cout << "done reading 3N" << endl;
-//  }  
-//  else 
-//  {
-//    cout << "calculating trel" << endl;
-//    trel = Trel_Op(modelspace);
-//    cout << "done with trel" << endl;
-//  }
-//  }
-//  Hbare += trel;
-//  } // end scope for trel
-//  else // We have to do everything in series
-//  {
-//    if (fmt2 == "me2j")
-//      rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
-//    else if (fmt2 == "navratil" or fmt2 == "Navratil")
-//      rw.ReadBareTBME_Navratil(inputtbme, Hbare);
-//    else if (fmt2 == "oslo" )
-//      rw.ReadTBME_Oslo(inputtbme, Hbare);
-//     cout << "done reading 2N" << endl;
-//  if (Hbare.particle_rank >=3)
-//  {
-//    rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
-//    cout << "done reading 3N" << endl;
-//  }  
-//  Hbare += Trel_Op(modelspace);
-//  }
 
-//  cout << "Just before HF, hole orbits:  ";
-//  for (auto& h : Hbare.GetModelSpace()->holes) cout << h << " ";
-//  cout << endl;
 
   HartreeFock hf(Hbare);
   hf.Solve();
@@ -349,49 +288,7 @@ int main(int argc, char** argv)
 
   imsrgsolver.SetGenerator(valence_generator);
   imsrgsolver.SetSmax(smax);
-
-  ///////////////////////////////////////
-  // Debugging why psdNR shell doesn't work above emax=8
-  imsrgsolver.UpdateEta();
-  char tmp[400];
-  sprintf(tmp,"DEBUG_H_CoreDecoupled_emax%d_%s.dat",eMax,valence_space.c_str());
-  rw.WriteOperatorHuman(imsrgsolver.GetH_s(),string(tmp));
-  sprintf(tmp,"DEBUG_ETA_CoreDecoupled_emax%d_%s.dat",eMax,valence_space.c_str());
-  rw.WriteOperatorHuman(imsrgsolver.GetEta(),string(tmp));
-  int norb = modelspace.GetNumberOrbits();
-
-  Generator& gen = imsrgsolver.GetGenerator();
-  sprintf(tmp,"DEBUG_Delta_CoreDecoupled_emax%d_%s.dat",eMax,valence_space.c_str());
-  ofstream of(tmp);
-  for (int i=0;i<norb;++i)
-  {
-    for (int j=i;j<norb;++j)
-    {
-      of << i << " " << j << " " << gen.Get1bDenominator(i,j) << endl;
-    }
-  }
-  int nch = modelspace.GetNumberTwoBodyChannels();
-  for (int ich=0;ich<nch;++ich)
-  {
-    TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ich);
-    int nkets = tbc.GetNumberKets();
-    for (int ibra=0;ibra<nkets;++ibra)
-    {
-      Ket& bra = tbc.GetKet(ibra);
-      for (int iket=0;iket<nkets;++iket)
-      {
-        Ket& ket = tbc.GetKet(iket);
-        of << tbc.J << " " << tbc.parity << " " << tbc.Tz << "    "
-           << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << "    "
-           << gen.Get2bDenominator(ich,ibra,iket) << endl;
-      }
-    }
-  }
-  of.close();
-  ////////////////////////////
-
   imsrgsolver.Solve();
-
 
 
   // Transform all the operators
@@ -424,7 +321,6 @@ int main(int argc, char** argv)
     cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << endl;
     Hbare = Hbare.UndoNormalOrdering();
 
-//    ms2 = modelspace; // copy the current model space
     ms2.SetReference(ms2.core); // chage the reference determinant
     Hbare.SetModelSpace(ms2);
 
@@ -461,7 +357,15 @@ int main(int argc, char** argv)
        for (int i=0;i<ops.size();++i)
        {
 //          ops[i] = imsrgsolver.Transform(ops[i]);
-          rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
+          if ((ops[i].GetJRank()+ops[i].GetTRank()+ops[i].GetParity())<1)
+          {
+            rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
+          }
+          else
+          {
+            rw.WriteTensorOneBody(intfile+opnames[i]+"_1b.op",ops[i],opnames[i]);
+            rw.WriteTensorTwoBody(intfile+opnames[i]+"_2b.op",ops[i],opnames[i]);
+          }
        }
     }
   }
