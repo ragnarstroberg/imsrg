@@ -763,7 +763,7 @@ double Operator::GetMP3_Energy()
          index_t j = ket_ij.q;
          double Delta_abij = OneBody(a,a) + OneBody(b,b) - OneBody(i,i) - OneBody(j,j);
 
-/*
+
        // hh term
          for (auto iket_cd : tbc.GetKetIndex_hh() )
          {
@@ -783,50 +783,43 @@ double Operator::GetMP3_Energy()
            double Delta_abkl = OneBody(a,a) + OneBody(b,b) - OneBody(k,k) - OneBody(l,l);
            Emp3 += (2*J+1)*Mat(iket_ab,iket_ij)*Mat(iket_ij,iket_kl)*Mat(iket_kl,iket_ab) / (Delta_abij * Delta_abkl);
          }
-*/
+
        } // for ij
      } // for ab
    } // for ich
+   cout << "done with pp and hh. E(3) = " << Emp3 << endl;
 
-   #pragma omp parallel for reduction(+:Emp3)
+//   #pragma omp parallel for reduction(+:Emp3)
    for (int aa=0;aa<nholes;aa++)
    {
     auto a = modelspace->holes[aa];
-    Orbit& oa = modelspace->GetOrbit(a);
-    double ja = 0.5*oa.j2;
+    double ja = 0.5*modelspace->GetOrbit(a).j2;
     for (auto b : modelspace->holes)
     {
-      Orbit& ob = modelspace->GetOrbit(b);
-      double jb = 0.5*ob.j2;
+      double jb = 0.5*modelspace->GetOrbit(b).j2;
       for (auto i : modelspace->particles)
       {
-       Orbit& oi = modelspace->GetOrbit(i);
-       double ji = 0.5*oi.j2;
+       double ji = 0.5*modelspace->GetOrbit(i).j2;
        for(auto j : modelspace->particles)
        {
-         Orbit& oj = modelspace->GetOrbit(j);
-         double jj = 0.5*oj.j2;
+         double jj = 0.5*modelspace->GetOrbit(j).j2;
          // Now the ph term. Yuck. 
          double Delta_abij = OneBody(a,a) + OneBody(b,b) - OneBody(i,i) - OneBody(j,j);
          int J1min = max(abs(ja-jb),abs(ji-jj));
          int J1max = min(ja+jb,ji+jj);
          for (auto c : modelspace->holes )
          {
-           Orbit& oc = modelspace->GetOrbit(c);
-           double jc = 0.5*oc.j2;
+           double jc = 0.5*modelspace->GetOrbit(c).j2;
            for (auto k : modelspace->particles )
            {
-             Orbit& ok = modelspace->GetOrbit(k);
-             double jk = 0.5*ok.j2;
+             double jk = 0.5*modelspace->GetOrbit(k).j2;
              double Delta_cbik = OneBody(c,c) + OneBody(b,b) - OneBody(i,i) - OneBody(k,k);
              int J2min = max(abs(jc-ji),abs(ja-jk));
              int J2max = min(jc+ji,ja+jk);
              int J3min = max(abs(jc-jb),abs(jk-jj))/2;
              int J3max = min(jc+jb,jk+jj)/2;
-//             int phasefactor = -1;
              for (int J1=J1min;J1<=J1max;++J1)
              {
-//               double tbme_abij = (2*J1+1)*TwoBody.GetTBME_J(J1,a,b,i,j);
                double tbme_abij = (2*J1+1)*TwoBody.GetTBME_J(J1,a,b,i,j);
                for (int J2=J2min;J2<=J2max;++J2)
                {
@@ -834,8 +827,6 @@ double Operator::GetMP3_Energy()
                  for (int J3=J3min;J3<=J3max;++J3)
                  {
                    double tbme_ikcb = (2*J3+1)*TwoBody.GetTBME_J(J3,i,k,c,b);
-//                   int phasefactor = modelspace->phase(ji+jj+J3);
-//                   int phasefactor = modelspace->phase(ji+jj+J1);
                    Emp3 -=  modelspace->GetNineJ(ji,jj,J1,jk,J2,ja,J3,jc,jb) * tbme_abij * tbme_cjak * tbme_ikcb / (Delta_abij * Delta_cbik);
                  } // for J3
                } // for J2
