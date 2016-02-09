@@ -1008,13 +1008,13 @@ Operator Operator::BCH_Transform( const Operator &Omega)
      {
 //        Operator& tmp1 = TempOp(1);
 //        tmp1.SetToCommutator(Omega,OpNested);
-//        cout << "Assign tmp1" << endl;
+        cout << "Assign tmp1" << endl;
         Operator tmp1 = Commutator(Omega,OpNested);
-//        cout << "tmp1 /=i" << endl;
+        cout << "tmp1 /=i" << endl;
         tmp1 /= i;
-//        cout << "OpNested = tmp1" << endl;
+        cout << "OpNested = tmp1" << endl;
         OpNested = tmp1;
-//        cout << "OpOut += OpNested" << endl;
+        cout << "OpOut += OpNested" << endl;
         OpOut += OpNested;
   
         if (OpNested.Norm() < epsilon *(i+1))  break;
@@ -1148,11 +1148,13 @@ void Operator::AntiSymmetrize()
 /// @relates Operator
 Operator Commutator( const Operator& X, const Operator& Y)
 {
+//  if (X.GetJRank()+Y.GetJRank()>0) cout << "in Commutator" << endl;
   int jrank = max(X.rank_J,Y.rank_J);
   int trank = max(X.rank_T,Y.rank_T);
   int parity = (X.parity+Y.parity)%2;
   int particlerank = max(X.particle_rank,Y.particle_rank);
   Operator Z(*(X.modelspace),jrank,trank,parity,particlerank);
+//  if (X.GetJRank()+Y.GetJRank()>0) cout << "calling SetToCommutator" << endl;
   Z.SetToCommutator(X,Y);
   return Z;
 }
@@ -2803,6 +2805,7 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    {
       ybras[counter] = iter.first[0];
       ykets[counter] = iter.first[1];
+      Z_bar[{iter.first[0],iter.first[1]}] = arma::mat(); // important to initialize this for parallelization
       counter++;
    }
 

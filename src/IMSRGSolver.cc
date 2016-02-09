@@ -552,6 +552,7 @@ Operator IMSRGSolver::InverseTransform(Operator& OpIn)
 /// for the \f$\Omega_i\f$s with index greater than or equal to n.
 Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
 {
+//  cout << "Begin Transform_Partial" << endl;
   Operator OpOut = OpIn;
   if ((rw != NULL) and rw->GetScratchDir() != "")
   {
@@ -563,13 +564,17 @@ Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
      string fname(tmp);
      ifstream ifs(fname,ios::binary);
      omega.ReadBinary(ifs);
+//     if (OpIn.GetJRank()>0) cout << "step " << i << endl;
      OpOut = OpOut.BCH_Transform( omega );
+//     if (OpIn.GetJRank()>0)cout << "done" << endl;
     }
   }
 
   for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
   {
+//     if (OpIn.GetJRank()>0) cout << "step " << i << endl;
     OpOut = OpOut.BCH_Transform( Omega[i] );
+//     if (OpIn.GetJRank()>0)cout << "done" << endl;
   }
 
   return OpOut;
