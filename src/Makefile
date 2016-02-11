@@ -57,7 +57,11 @@ install:
 	 echo linking $(PWD)/$$x  '=>'  $(INSTDIR)/include/$$x;\
 	 ln -sf $(PWD)/$$x $(INSTDIR)/include/$$x; \
 	done
-	
+	@printf "\n\nDone installing.\n\n"
+	@echo '*********************************************************************'
+	@echo '* Make sure libIMSRG.so is in your LIBRARY_PATH and LD_LIBRARY_PATH *'
+	@echo '*********************************************************************'
+	 
 
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\

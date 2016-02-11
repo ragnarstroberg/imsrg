@@ -53,6 +53,7 @@ class IMSRGSolver
   void SetReadWrite( ReadWrite& r){rw = &r;};
   void Reset();
   void AddOperator(Operator& Op){FlowingOps.push_back(Op);};
+  void UpdateEta(); // Force eta to be calculated. For debugging.
 
   void SetMethod(string m){method=m;};
   void Solve();
@@ -64,6 +65,7 @@ class IMSRGSolver
   Operator InverseTransform(Operator& OpIn);
   Operator GetOmega(int i){return Omega[i];};
   int GetOmegaSize(){return Omega.size();};
+  int GetNOmegaWritten(){return n_omega_written;};
   Operator Transform_Partial(Operator& OpIn, int n);
   Operator Transform_Partial(Operator&& OpIn, int n);
 
@@ -79,6 +81,8 @@ class IMSRGSolver
 
   int GetSystemDimension();
   Operator& GetH_s(){return FlowingOps[0];};
+  Operator& GetEta(){return Eta;};
+  Generator& GetGenerator(){return generator;};
 
   void UpdateOmega();
   void UpdateH();

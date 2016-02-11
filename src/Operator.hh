@@ -125,6 +125,7 @@ class Operator
   Operator DoNormalOrdering2(); ///< Returns the normal ordered two-body operator
   Operator DoNormalOrdering3(); ///< Returns the normal ordered three-body operator
   Operator UndoNormalOrdering(); ///< Returns the operator normal-ordered wrt the vacuum
+  Operator Truncate(ModelSpace& ms_new); ///< Returns the operator trunacted to the new model space
 
   void SetToCommutator(const Operator& X, const Operator& Y);
   void CommutatorScalarScalar( const Operator& X, const Operator& Y) ;
@@ -140,6 +141,9 @@ class Operator
   void Eye(); ///< set to identity operator
 
   double GetMP2_Energy();
+  double GetMP3_Energy();
+  double MP1_Eval(Operator& );
+
   void PrintTimes(){profiler.PrintAll();};
 
 

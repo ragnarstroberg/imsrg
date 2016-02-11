@@ -16,6 +16,7 @@
 namespace imsrg_util
 {
  Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2);
+ Operator NumberOpAlln(ModelSpace& modelspace, int l, int j2, int tz2);
  Operator PSquaredOp(ModelSpace& modelspace);
  Operator RSquaredOp(ModelSpace& modelspace);
  Operator E0Op(ModelSpace& modelspace);
@@ -33,13 +34,16 @@ namespace imsrg_util
  Operator R2_1body_Op(ModelSpace& modelspace, string option);
  Operator R2_p2_Op(ModelSpace& modelspace);
  Operator R2_2body_Op(ModelSpace& modelspace, string option);
+ Operator ProtonDensityAtR(ModelSpace& modelspace, double R);
+ Operator NeutronDensityAtR(ModelSpace& modelspace, double R);
+
 
  Operator Isospin2_Op(ModelSpace& modelspace);
  Operator AllowedFermi_Op(ModelSpace& modelspace);
  Operator AllowedGamowTeller_Op(ModelSpace& modelspace);
 
- Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace);
- double Get_Charge_Density(Operator& DM, double r);
+ Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace); // This doesn't work
+ double Get_Charge_Density(Operator& DM, double r);  // This doesn't work
 
 
  double Calculate_p1p2(ModelSpace& modelspace, Ket & bra, Ket & ket, int J);
@@ -51,6 +55,7 @@ namespace imsrg_util
  vector<double> GetOccupationsHF(HartreeFock& hf);
  vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);
  vector<double> GetDensity(vector<double>& occ, vector<double>& R, vector<int>& orbits, ModelSpace& modelspace);
+
 
  void CommutatorTest(Operator& X, Operator& Y);
  void Reduce(Operator&);

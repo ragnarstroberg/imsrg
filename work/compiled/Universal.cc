@@ -100,92 +100,28 @@ int main(int argc, char** argv)
 
   cout << "Reading interactions..." << endl;
 
-//  { // begin scope for trel
-//  Operator trel;
   #pragma omp parallel sections 
   {
-  #pragma omp section
-  {
-  if (fmt2 == "me2j")
-    rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
-  else if (fmt2 == "navratil" or fmt2 == "Navratil")
-    rw.ReadBareTBME_Navratil(inputtbme, Hbare);
-  else if (fmt2 == "oslo" )
-    rw.ReadTBME_Oslo(inputtbme, Hbare);
-   cout << "done reading 2N" << endl;
+    #pragma omp section
+    {
+    if (fmt2 == "me2j")
+      rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
+    else if (fmt2 == "navratil" or fmt2 == "Navratil")
+      rw.ReadBareTBME_Navratil(inputtbme, Hbare);
+    else if (fmt2 == "oslo" )
+      rw.ReadTBME_Oslo(inputtbme, Hbare);
+     cout << "done reading 2N" << endl;
+    }
+  
+    #pragma omp section
+    if (Hbare.particle_rank >=3)
+    {
+      rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
+      cout << "done reading 3N" << endl;
+    }  
   }
 
-  #pragma omp section
-  if (Hbare.particle_rank >=3)
-  {
-    rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
-    cout << "done reading 3N" << endl;
-  }  
-  }
-//
-//  #pragma omp section
-//  {
-//    cout << "calculating trel" << endl;
-//  trel = Trel_Op(modelspace);
-//   cout << "done with trel" << endl;
-//  }
   Hbare += Trel_Op(modelspace);
-//  }
-//  Hbare += trel;
-//  } // end scope for trel
-
-
-//  if (false and omp_get_num_procs() > 2)
-//  { // begin scope for trel
-//  Operator trel;
-//  omp_set_nested(1);
-//  int nth = Hbare.particle_rank >=3 ? 3 : 2;
-//  #pragma omp parallel num_threads(nth)
-//  {
-//    if (omp_get_thread_num()==0)
-//    {
-//    if (fmt2 == "me2j")
-//      rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
-//    else if (fmt2 == "navratil" or fmt2 == "Navratil")
-//      rw.ReadBareTBME_Navratil(inputtbme, Hbare);
-//    else if (fmt2 == "oslo" )
-//      rw.ReadTBME_Oslo(inputtbme, Hbare);
-//     cout << "done reading 2N" << endl;
-//    }
-//  else if (omp_get_thread_num()==1 and Hbare.particle_rank >=3)
-//  {
-//    rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
-//    cout << "done reading 3N" << endl;
-//  }  
-//  else 
-//  {
-//    cout << "calculating trel" << endl;
-//    trel = Trel_Op(modelspace);
-//    cout << "done with trel" << endl;
-//  }
-//  }
-//  Hbare += trel;
-//  } // end scope for trel
-//  else // We have to do everything in series
-//  {
-//    if (fmt2 == "me2j")
-//      rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
-//    else if (fmt2 == "navratil" or fmt2 == "Navratil")
-//      rw.ReadBareTBME_Navratil(inputtbme, Hbare);
-//    else if (fmt2 == "oslo" )
-//      rw.ReadTBME_Oslo(inputtbme, Hbare);
-//     cout << "done reading 2N" << endl;
-//  if (Hbare.particle_rank >=3)
-//  {
-//    rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
-//    cout << "done reading 3N" << endl;
-//  }  
-//  Hbare += Trel_Op(modelspace);
-//  }
-
-//  cout << "Just before HF, hole orbits:  ";
-//  for (auto& h : Hbare.GetModelSpace()->holes) cout << h << " ";
-//  cout << endl;
 
   HartreeFock hf(Hbare);
   hf.Solve();
@@ -195,6 +131,16 @@ int main(int argc, char** argv)
     Hbare = hf.GetNormalOrderedH();
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
+
+  if (method != "HF")
+  {
+    cout << "Perturbative estimates of gs energy:" << endl;
+    double EMP2 = Hbare.GetMP2_Energy();
+    cout << "EMP2 = " << EMP2 << endl; 
+    double EMP3 = Hbare.GetMP3_Energy();
+    cout << "EMP3 = " << EMP3 << endl; 
+    cout << "To 3rd order, E = " << Hbare.ZeroBody+EMP2+EMP3 << endl;
+  }
 
   // Calculate all the desired operators
   for (auto& opname : opnames)
@@ -221,6 +167,55 @@ int main(int argc, char** argv)
          ops.emplace_back( HCM_Op(modelspace) );
          modelspace.SetHbarOmega(hw_save);
       }
+      else if (opname.substr(0,4) == "Rp2Z")
+      {
+        int Z_rp;
+        istringstream(opname.substr(4,opname.size())) >> Z_rp;
+        ops.emplace_back( Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) );
+      }
+      else if (opname.substr(0,4) == "Rn2Z")
+      {
+        int Z_rp;
+        istringstream(opname.substr(4,opname.size())) >> Z_rp;
+        ops.emplace_back( Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) );
+      }
+      else if (opname.substr(0,4) == "rhop")
+      {
+        double rr;
+        istringstream(opname.substr(4,opname.size())) >> rr;
+        ops.emplace_back( ProtonDensityAtR(modelspace,rr));
+      }
+      else if (opname.substr(0,4) == "rhon")
+      {
+        double rr;
+        istringstream(opname.substr(4,opname.size())) >> rr;
+        ops.emplace_back( NeutronDensityAtR(modelspace,rr));
+      }
+      else if (opname.substr(0,6) == "OneOcc")
+      {
+         map<char,int> lvals = {{'s',0},{'p',1},{'d',2},{'f',3},{'g',4},{'h',5}};
+         char pn,lspec;
+         int n,l,j,t;
+         istringstream(opname.substr(6,1)) >> pn;
+         istringstream(opname.substr(7,1)) >> n;
+         istringstream(opname.substr(8,1)) >> lspec;
+         istringstream(opname.substr(9,opname.size())) >> j;
+         l = lvals[lspec];
+         t = pn == 'p' ? -1 : 1;
+         ops.emplace_back( NumberOp(modelspace,n,l,j,t) );
+      }
+      else if (opname.substr(0,6) == "AllOcc")
+      {
+         map<char,int> lvals = {{'s',0},{'p',1},{'d',2},{'f',3},{'g',4},{'h',5}};
+         char pn,lspec;
+         int l,j,t;
+         istringstream(opname.substr(6,1)) >> pn;
+         istringstream(opname.substr(7,1)) >> lspec;
+         istringstream(opname.substr(8,opname.size())) >> j;
+         l = lvals[lspec];
+         t = pn == 'p' ? -1 : 1;
+         ops.emplace_back( NumberOpAlln(modelspace,l,j,t) );
+      }
       else //need to remove from the list
       {
          cout << "Unknown operator: " << opname << endl;
@@ -234,6 +229,11 @@ int main(int argc, char** argv)
   {
      if (basis == "HF") op = hf.TransformToHFBasis(op);
      op = op.DoNormalOrdering();
+     if (method == "MP3")
+     {
+       double dop = op.MP1_Eval( Hbare );
+       cout << "Operator 1st order correction  " << dop << "  ->  " << op.ZeroBody + dop << endl;
+     }
   }
   auto itR2p = find(opnames.begin(),opnames.end(),"Rp2");
   if (itR2p != opnames.end())
@@ -244,8 +244,13 @@ int main(int argc, char** argv)
     cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << endl; 
     cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
   }
+  for (int i=0;i<ops.size();++i)
+  {
+    Operator& op = ops[i];
+    cout << opnames[i] << " = " << ops[i].ZeroBody << endl;
+  }
   
-  if ( method == "HF" )
+  if ( method == "HF" or method == "MP3")
   {
     Hbare.PrintTimes();
     return 0;
@@ -284,7 +289,6 @@ int main(int argc, char** argv)
   imsrgsolver.Solve();
 
 
-
   // Transform all the operators
   if (method == "magnus")
   {
@@ -311,11 +315,10 @@ int main(int argc, char** argv)
 
     Hbare = imsrgsolver.GetH_s();
 
-    int nOmega = imsrgsolver.GetOmegaSize();
+    int nOmega = imsrgsolver.GetOmegaSize() + imsrgsolver.GetNOmegaWritten();
     cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << endl;
     Hbare = Hbare.UndoNormalOrdering();
 
-//    ms2 = modelspace; // copy the current model space
     ms2.SetReference(ms2.core); // chage the reference determinant
     Hbare.SetModelSpace(ms2);
 
@@ -352,7 +355,15 @@ int main(int argc, char** argv)
        for (int i=0;i<ops.size();++i)
        {
 //          ops[i] = imsrgsolver.Transform(ops[i]);
-          rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
+          if ((ops[i].GetJRank()+ops[i].GetTRank()+ops[i].GetParity())<1)
+          {
+            rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
+          }
+          else
+          {
+            rw.WriteTensorOneBody(intfile+opnames[i]+"_1b.op",ops[i],opnames[i]);
+            rw.WriteTensorTwoBody(intfile+opnames[i]+"_2b.op",ops[i],opnames[i]);
+          }
        }
     }
   }

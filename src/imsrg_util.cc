@@ -19,6 +19,16 @@ namespace imsrg_util
    return NumOp;
  }
 
+ Operator NumberOpAlln(ModelSpace& modelspace, int l, int j2, int tz2)
+ {
+   Operator NumOp = Operator(modelspace);
+   for (int n=0;n<=(modelspace.GetEmax()-l)/2;++n)
+   {
+     int indx = modelspace.Index1(n,l,j2,tz2);
+     NumOp.OneBody(indx,indx) = 1;
+   }
+   return NumOp;
+ }
 
  double HO_density(int n, int l, double hw, double r)
  {
@@ -817,7 +827,27 @@ Operator RSquaredOp(ModelSpace& modelspace)
  }
 
 
+Operator ProtonDensityAtR(ModelSpace& modelspace, double R)
+{
+  Operator Rho(modelspace,0,0,0,2);
+  for ( auto i : modelspace.proton_orbits)
+  {
+    Orbit& oi = modelspace.GetOrbit(i);
+    Rho.OneBody(i,i) = HO_density(oi.n,oi.l,modelspace.GetHbarOmega(),R);
+  }
+  return Rho;
+}
 
+Operator NeutronDensityAtR(ModelSpace& modelspace, double R)
+{
+  Operator Rho(modelspace,0,0,0,2);
+  for ( auto i : modelspace.neutron_orbits)
+  {
+    Orbit& oi = modelspace.GetOrbit(i);
+    Rho.OneBody(i,i) = HO_density(oi.n,oi.l,modelspace.GetHbarOmega(),R);
+  }
+  return Rho;
+}
 
 // Electric monopole operator
 /// Returns
@@ -945,7 +975,7 @@ Operator E0Op(ModelSpace& modelspace)
         // multiply radial integra by b^L = (hbar/mw)^L/2
         double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L) * pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*L) ;
         EL.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, L, oj.j2/2.0, 0.5,0, -0.5) * r2int;
-        EL.OneBody(j,i) = modelspace.phase(oi.j2-oj.j2) * EL.OneBody(i,j);
+        EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
       }
     }
     return EL;
@@ -975,7 +1005,7 @@ Operator E0Op(ModelSpace& modelspace)
         int kappa = ( modelspace.phase(oi.l+(oi.j2+1)/2) * (oi.j2+1) + modelspace.phase(oj.l+(oj.j2+1)/2) * (oj.j2+1) )/2;
         ML.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, L, oj.j2/2.0, 0.5,0, -0.5)
                         * (L - kappa) *(gl[(oi.tz2+1)/2]*(1+kappa/(L+1))-0.5*gs[(oi.tz2+1)/2] )  * r2int;
-        ML.OneBody(j,i) = modelspace.phase(oi.j2-oj.j2) * ML.OneBody(i,j);
+        ML.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * ML.OneBody(i,j);
       }
     }
     return ML;
