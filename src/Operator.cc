@@ -1012,13 +1012,13 @@ Operator Operator::BCH_Transform( const Operator &Omega)
      {
 //        Operator& tmp1 = TempOp(1);
 //        tmp1.SetToCommutator(Omega,OpNested);
-        cout << "Assign tmp1" << endl;
+//        cout << "Assign tmp1" << endl;
         Operator tmp1 = Commutator(Omega,OpNested);
-        cout << "tmp1 /=i" << endl;
+//        cout << "tmp1 /=i" << endl;
         tmp1 /= i;
-        cout << "OpNested = tmp1" << endl;
+//        cout << "OpNested = tmp1" << endl;
         OpNested = tmp1;
-        cout << "OpOut += OpNested" << endl;
+//        cout << "OpOut += OpNested" << endl;
         OpOut += OpNested;
   
         if (OpNested.Norm() < epsilon *(i+1))  break;
