@@ -158,6 +158,7 @@ int main(int argc, char** argv)
       else if (opname == "GamowTeller")  ops.emplace_back( AllowedGamowTeller_Op(modelspace) );
       else if (opname == "R2CM")         ops.emplace_back( R2CM_Op(modelspace) );
       else if (opname == "HCM")          ops.emplace_back( HCM_Op(modelspace) );
+      else if (opname == "Rso")          ops.emplace_back( RpSpinOrbitCorrection(modelspace) );
       else if (opname.substr(0,4) == "HCM_") // GetHCM with a different frequency, ie HCM_24 for hw=24
       {
          double hw_HCM;
