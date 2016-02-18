@@ -46,6 +46,7 @@ class Operator
 
   static double bch_transform_threshold;
   static double bch_product_threshold;
+  static bool tensor_transform_first_pass;
 
 
 
@@ -104,6 +105,7 @@ class Operator
   int GetTRank()const {return rank_T;};
   int GetParity()const {return parity;};
   void SetParticleRank(int pr) {particle_rank = pr;};
+  void ResetTensorTransformFirstPass(){tensor_transform_first_pass=true;};
 
   void MakeReduced();
   void MakeNotReduced();
