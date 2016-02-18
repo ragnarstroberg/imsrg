@@ -849,6 +849,22 @@ Operator NeutronDensityAtR(ModelSpace& modelspace, double R)
   return Rho;
 }
 
+
+Operator RpSpinOrbitCorrection(ModelSpace& modelspace)
+{
+  Operator dr_so(modelspace,0,0,0,2);
+  double M2 = M_NUCLEON*M_NUCLEON/(HBARC*HBARC);
+  int norb = modelspace.GetNumberOrbits();
+  for (int i=0;i<norb;i++)
+  {
+    Orbit& oi = modelspace.GetOrbit(i);
+    double mu_i = oi.tz2<0 ? 1.79 : -1.91;
+    int kappa = oi.j2 < 2*oi.l ? oi.l : -(oi.l+1);
+    dr_so.OneBody(i,i) = -mu_i/M2*(kappa+1);
+  }
+  return dr_so;
+}
+
 // Electric monopole operator
 /// Returns
 /// \f[ r_{e}^2 = \sum_{i} e_{i} r_{i}^2 \f]

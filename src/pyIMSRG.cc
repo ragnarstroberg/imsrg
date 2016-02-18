@@ -174,6 +174,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("HCM_Op",           imsrg_util::HCM_Op);
    def("NumberOp",         imsrg_util::NumberOp);
    def("RSquaredOp",       imsrg_util::RSquaredOp);
+   def("RpSpinOrbitCorrection", imsrg_util::RpSpinOrbitCorrection);
    def("E0Op",             imsrg_util::E0Op);
    def("AllowedFermi_Op",             imsrg_util::AllowedFermi_Op);
    def("AllowedGamowTeller_Op",             imsrg_util::AllowedGamowTeller_Op);

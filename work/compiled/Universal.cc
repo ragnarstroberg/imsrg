@@ -102,29 +102,26 @@ int main(int argc, char** argv)
 
   #pragma omp parallel sections 
   {
-  #pragma omp section
-  {
-  if (fmt2 == "me2j")
-    rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
-  else if (fmt2 == "navratil" or fmt2 == "Navratil")
-    rw.ReadBareTBME_Navratil(inputtbme, Hbare);
-  else if (fmt2 == "oslo" )
-    rw.ReadTBME_Oslo(inputtbme, Hbare);
-   cout << "done reading 2N" << endl;
-  }
-
-  #pragma omp section
-  if (Hbare.particle_rank >=3)
-  {
-    rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
-    cout << "done reading 3N" << endl;
-  }  
+    #pragma omp section
+    {
+    if (fmt2 == "me2j")
+      rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
+    else if (fmt2 == "navratil" or fmt2 == "Navratil")
+      rw.ReadBareTBME_Navratil(inputtbme, Hbare);
+    else if (fmt2 == "oslo" )
+      rw.ReadTBME_Oslo(inputtbme, Hbare);
+     cout << "done reading 2N" << endl;
+    }
+  
+    #pragma omp section
+    if (Hbare.particle_rank >=3)
+    {
+      rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
+      cout << "done reading 3N" << endl;
+    }  
   }
 
   Hbare += Trel_Op(modelspace);
-
-
-
 
   HartreeFock hf(Hbare);
   hf.Solve();
@@ -137,9 +134,10 @@ int main(int argc, char** argv)
 
   if (method != "HF")
   {
+    cout << "Perturbative estimates of gs energy:" << endl;
     double EMP2 = Hbare.GetMP2_Energy();
-    double EMP3 = Hbare.GetMP3_Energy();
     cout << "EMP2 = " << EMP2 << endl; 
+    double EMP3 = Hbare.GetMP3_Energy();
     cout << "EMP3 = " << EMP3 << endl; 
     cout << "To 3rd order, E = " << Hbare.ZeroBody+EMP2+EMP3 << endl;
   }
@@ -160,6 +158,7 @@ int main(int argc, char** argv)
       else if (opname == "GamowTeller")  ops.emplace_back( AllowedGamowTeller_Op(modelspace) );
       else if (opname == "R2CM")         ops.emplace_back( R2CM_Op(modelspace) );
       else if (opname == "HCM")          ops.emplace_back( HCM_Op(modelspace) );
+      else if (opname == "Rso")          ops.emplace_back( RpSpinOrbitCorrection(modelspace) );
       else if (opname.substr(0,4) == "HCM_") // GetHCM with a different frequency, ie HCM_24 for hw=24
       {
          double hw_HCM;
