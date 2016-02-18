@@ -1006,6 +1006,7 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
 
 double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double j4, double J34, double J13, double J24, double J)
 {
+//   cout << "Calling GetNineJ" << endl;
    int k1 = 2*j1;
    int k2 = 2*j2;
    int K12 = 2*J12;
@@ -1065,7 +1066,10 @@ double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double 
       factor *=100;
    }
    auto it = NineJList.find(key);
-   if (it != NineJList.end() ) return it->second;
+   if (it != NineJList.end() )
+   {
+     return it->second;
+   }
    double ninej = AngMom::NineJ(jlist[0],jlist[1],jlist[2],jlist[3],jlist[4],jlist[5],jlist[6],jlist[7],jlist[8]);
    #pragma omp critical
    NineJList[key] = ninej;
