@@ -110,6 +110,8 @@ int main(int argc, char** argv)
       rw.ReadBareTBME_Navratil(inputtbme, Hbare);
     else if (fmt2 == "oslo" )
       rw.ReadTBME_Oslo(inputtbme, Hbare);
+    else if (fmt2 == "oakridge" )
+      rw.ReadTBME_OakRidge(inputtbme, Hbare);
      cout << "done reading 2N" << endl;
     }
   

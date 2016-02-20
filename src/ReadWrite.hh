@@ -17,6 +17,7 @@ class ReadWrite
    ReadWrite();
    void ReadSettingsFile(  string filename);
    void ReadTBME_Oslo( string filename, Operator& Hbare);
+   void ReadTBME_OakRidge( string filename, Operator& Hbare);
    void ReadBareTBME_Jason( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil_from_stream( istream& infile, Operator& Hbare);
