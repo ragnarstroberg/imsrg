@@ -217,6 +217,18 @@ int main(int argc, char** argv)
          t = pn == 'p' ? -1 : 1;
          ops.emplace_back( NumberOpAlln(modelspace,l,j,t) );
       }
+      else if (opname.substr(0,9) == "protonFBC")
+      {
+         int nu;
+         istringstream(opname.substr(9,opname.size())) >> nu;
+         ops.emplace_back( FourierBesselCoeff( modelspace, nu, 8.0, modelspace.proton_orbits) );
+      }
+      else if (opname.substr(0,10) == "neutronFBC")
+      {
+         int nu;
+         istringstream(opname.substr(10,opname.size())) >> nu;
+         ops.emplace_back( FourierBesselCoeff( modelspace, nu, 8.0, modelspace.neutron_orbits) );
+      }
       else //need to remove from the list
       {
          cout << "Unknown operator: " << opname << endl;
@@ -333,11 +345,16 @@ int main(int argc, char** argv)
     cout << "Final transformation on the operators..." << endl;
     for (auto& op : ops)
     {
+      cout << "UndoNormalOrdering.." << endl;
       op = op.UndoNormalOrdering();
+      cout << "done." << endl;
       op.SetModelSpace(ms2);
+      cout << "ModelSpace set. DoNormalOrdering..." << endl;
       op = op.DoNormalOrdering();
+      cout << "Done. Now Transform_Partial..." << endl;
       // transform using the remaining omegas
       op = imsrgsolver.Transform_Partial(op,nOmega);
+      cout << "done." << endl;
     }
   }
 
