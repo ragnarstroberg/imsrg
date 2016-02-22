@@ -121,6 +121,76 @@ void ReadWrite::ReadTBME_Oslo( string filename, Operator& Hbare)
   return;
 }
 
+/// Read two-body matrix elements from an Oslo-formatted file, as obtained from Gaute Hagen
+void ReadWrite::ReadTBME_OakRidge( string filename, Operator& Hbare)
+{
+
+  ifstream infile;
+  char line[LINESIZE];
+  int Tz,Par,J2,a,b,c,d;
+  double fbuf[3];
+  double tbme;
+  int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
+//  cout << "norbits = " << norbits << endl;
+
+  vector<int> orbit_remap(norbits);
+  for (size_t i=0;i<orbit_remap.size();++i) orbit_remap[i] = i;
+  orbit_remap[8] = 10;
+  orbit_remap[9] = 11;
+  orbit_remap[10] = 8;
+  orbit_remap[11] = 9;
+  orbit_remap[14] = 16;
+  orbit_remap[15] = 17;
+  orbit_remap[16] = 18;
+  orbit_remap[17] = 19;
+  orbit_remap[18] = 14;
+  orbit_remap[19] = 15;
+
+  infile.open(filename);
+  if ( !infile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
+
+  infile.getline(line,LINESIZE);
+
+//  while (!strstr(line,"<ab|V|cd>") && !infile.eof()) // Skip lines until we see the header
+//  {
+//     infile.getline(line,LINESIZE);
+//  }
+
+  // read the file one line at a time
+  while ( infile >> Tz >> Par >> J2 >> a >> b >> c >> d >> tbme >> fbuf[0] >> fbuf[1]  )
+  {
+     // if the matrix element is outside the model space, ignore it.
+     a--; b--; c--; d--; // Fortran -> C  ==> 1 -> 0
+     a=orbit_remap[a];
+     b=orbit_remap[b];
+     c=orbit_remap[c];
+     d=orbit_remap[d];
+     if (a>=norbits or b>=norbits or c>=norbits or d>=norbits) continue;
+
+     double com_corr = fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  
+
+// NORMALIZATION: Read in normalized, antisymmetrized TBME's
+
+     if (doCoM_corr)  tbme-=com_corr;
+
+//     cout << "read: " << a << " " << b << " " << c << " " << d << endl;
+     Hbare.TwoBody.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme ); // Don't do COM correction,
+
+  }
+
+  return;
+}
+
+
+
+
 /// Read two-body matrix elements from an Oslo-formatted file
 void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
 {
@@ -1285,7 +1355,8 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
 
   int alpha_max = iDim_basis[0];
 
-  int i=-5; 
+//  int i=-5; 
+  long long i=-5; 
   for (int alphaspp=0;alphaspp<alpha_max;++alphaspp)
   {
     int lap = dbuf[alphaspp][2];
@@ -1324,7 +1395,8 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
        for (int ii=0;ii<5;++ii) summed_me += LECs[ii] * me[ii] ;
        summed_me *= HBARC;
        // Phase due to different conventions for HO wave functions.
-       summed_me *= modelspace->phase(dbuf[alphasp][1]+dbuf[alphasp][4]+dbuf[alphasp][7]+dbuf[alphaspp][1]+dbuf[alphaspp][4]+dbuf[alphaspp][7]);
+       // Now obsolete -- Feb 2016
+//       summed_me *= modelspace->phase(dbuf[alphasp][1]+dbuf[alphasp][4]+dbuf[alphasp][7]+dbuf[alphaspp][1]+dbuf[alphaspp][4]+dbuf[alphaspp][7]);
 
        if ( (ap==bp and (j12p+T12)%2 !=1) or ( a==b  and (j12+TT12)%2 !=1 ) )
        {
