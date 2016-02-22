@@ -219,6 +219,18 @@ int main(int argc, char** argv)
          t = pn == 'p' ? -1 : 1;
          ops.emplace_back( NumberOpAlln(modelspace,l,j,t) );
       }
+      else if (opname.substr(0,9) == "protonFBC")
+      {
+         int nu;
+         istringstream(opname.substr(9,opname.size())) >> nu;
+         ops.emplace_back( FourierBesselCoeff( modelspace, nu, 8.0, modelspace.proton_orbits) );
+      }
+      else if (opname.substr(0,10) == "neutronFBC")
+      {
+         int nu;
+         istringstream(opname.substr(10,opname.size())) >> nu;
+         ops.emplace_back( FourierBesselCoeff( modelspace, nu, 8.0, modelspace.neutron_orbits) );
+      }
       else //need to remove from the list
       {
          cout << "Unknown operator: " << opname << endl;
