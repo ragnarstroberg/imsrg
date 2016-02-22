@@ -300,6 +300,7 @@ int main(int argc, char** argv)
     {
       cout << opnames[i] << " " << flush;
       ops[i] = imsrgsolver.Transform(ops[i]);
+      cout << " (" << ops[i].ZeroBody << " ) " << endl; 
     }
     cout << endl;
     // increase smax in case we need to do additional steps
@@ -335,11 +336,15 @@ int main(int argc, char** argv)
     cout << "Final transformation on the operators..." << endl;
     for (auto& op : ops)
     {
+      double ZeroBody_before = op.ZeroBody;
       op = op.UndoNormalOrdering();
+      double ZeroBody_undo = op.ZeroBody;
       op.SetModelSpace(ms2);
       op = op.DoNormalOrdering();
+      double ZeroBody_mid = op.ZeroBody;
       // transform using the remaining omegas
       op = imsrgsolver.Transform_Partial(op,nOmega);
+      cout << ZeroBody_before << "   =>   " << ZeroBody_undo << "   =>   " << ZeroBody_mid<< "   =>   " << op.ZeroBody << endl;
     }
   }
 
