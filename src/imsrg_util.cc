@@ -1,6 +1,7 @@
 
 #include "imsrg_util.hh"
 #include "AngMom.hh"
+#include <gsl/gsl_integration.h>
 
 using namespace AngMom;
 
