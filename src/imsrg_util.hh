@@ -37,7 +37,7 @@ namespace imsrg_util
  Operator ProtonDensityAtR(ModelSpace& modelspace, double R);
  Operator NeutronDensityAtR(ModelSpace& modelspace, double R);
  Operator RpSpinOrbitCorrection(ModelSpace& modelspace);
-
+ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<index_t> index_list);
 
  Operator Isospin2_Op(ModelSpace& modelspace);
  Operator AllowedFermi_Op(ModelSpace& modelspace);
