@@ -898,6 +898,13 @@ Operator E0Op(ModelSpace& modelspace)
    return e0;
 }
 
+struct FBCIntegrandParameters{int n; int l; double hw;};
+
+double FBCIntegrand(double x, void *p)
+{
+  struct FBCIntegrandParameters * params = (struct FBCIntegrandParameters *)p;
+  return x*HO_density(params->n, params->l, params->hw, x);
+}
 
 Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<index_t> index_list)
 {
