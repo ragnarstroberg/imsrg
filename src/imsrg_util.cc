@@ -898,7 +898,35 @@ Operator E0Op(ModelSpace& modelspace)
 }
 
 
+Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<index_t> index_list)
+{
+  Operator a_nu(modelspace,0,0,0,2);
+  double omega = nu * M_PI / R; // coefficient of sine function, i.e. sin(omega*x)
+  double L = R; // range of integration
+  size_t n = 20; // number of bisections
+  gsl_integration_qawo_table * table = gsl_integration_qawo_table_alloc (omega, L, GSL_INTEG_SINE, n);
+  gsl_integration_workspace * workspace = gsl_integration_workspace_alloc ( n );
 
+  const double epsabs = 1e-5; // absolute error
+  const double epsrel = 1e-5; // relative error
+  const size_t limit = n; // maximum number of subintervals (maybe should be different?)
+  const double start = 0.0; // lower limit on integration range
+  double result;
+  double  abserr;
+  gsl_function F;
+  F.function = &FBCIntegrand;
+
+  for (auto i : index_list )
+  {
+    Orbit& oi = modelspace.GetOrbit(i);
+    struct FBCIntegrandParameters params = {oi.n, oi.l, modelspace.GetHbarOmega()};
+    F.params = &params;
+    int status = gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
+    a_nu.OneBody(i,i) = M_PI*M_PI/R/R/R * R/nu/M_PI*(result);
+    cout << "orbit,nu = " << i << "," << nu << "  => " << a_nu.OneBody(i,i) << "  from " << result << " (" << abserr << ")" << endl;
+  }
+  return a_nu;
+}
 
 
 
