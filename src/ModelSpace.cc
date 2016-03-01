@@ -234,7 +234,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
  :
    holes( ms.holes), particles( ms.particles),
    core(ms.core), valence(ms.valence), qspace( ms.qspace), 
-   proton_orbits( ms.proton_orbits),neutron_orbits( ms.neutron_orbits),
+   proton_orbits( ms.proton_orbits),neutron_orbits( ms.neutron_orbits), partial_holes(ms.partial_holes), partial_hole_occ(ms.partial_hole_occ),
    KetIndex_pp( ms.KetIndex_pp), KetIndex_ph( ms.KetIndex_ph), KetIndex_hh( ms.KetIndex_hh),
    KetIndex_cc( ms.KetIndex_cc),
    KetIndex_vc( ms.KetIndex_vc),
@@ -264,7 +264,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    holes( move(ms.holes)), particles( move(ms.particles)),
    core(move(ms.core)), valence(move(ms.valence)),  qspace( move(ms.qspace)),  
    proton_orbits( move(ms.proton_orbits)),
-   neutron_orbits( move(ms.neutron_orbits)),
+   neutron_orbits( move(ms.neutron_orbits)), partial_holes(move(ms.partial_holes)), partial_hole_occ(move(ms.partial_hole_occ)),
    KetIndex_pp( move(ms.KetIndex_pp)), KetIndex_ph( move(ms.KetIndex_ph)), KetIndex_hh( move(ms.KetIndex_hh)),
    KetIndex_cc( ms.KetIndex_cc),
    KetIndex_vc( ms.KetIndex_vc),
@@ -379,7 +379,8 @@ void ModelSpace::Init(int emax, string reference, string valence)
   vector<index_t> hole_list, valence_list, core_list;
   GetAZfromString(reference,Aref,Zref);
 //  cout << "Reference: " << reference << "  => A = " << Aref << " Z = " << Zref << endl;
-  hole_list = GetOrbitsAZ(Aref,Zref);
+//  hole_list = GetOrbitsAZ(Aref,Zref);
+  GetOrbitsAZ(Aref,Zref,hole_list,partial_list,fill_fraction);
 
   auto itval = ValenceSpaces.find(valence);
 
@@ -396,12 +397,16 @@ void ModelSpace::Init(int emax, string reference, string valence)
   {
      GetAZfromString(valence,Ac,Zc);
 //     cout << "Core: " << valence << "  => A = " << Ac << " Z = " << Zc << endl;
-     core_list = GetOrbitsAZ(Ac,Zc);
+//     core_list = GetOrbitsAZ(Ac,Zc);
+     vector<index_t> dummy1;
+     vector<double> dummy2;
+     GetOrbitsAZ(Ac,Zc,core_list,dummy1,dummy2);
      target_mass = Ac;
      target_Z = Zc; 
   }
 
-  Init(emax,hole_list,core_list,valence_list);
+//  Init(emax,hole_list,core_list,valence_list);
+  Init(emax,hole_list,core_list,valence_list,partial_list,fill_fraction);
   
 }
 
@@ -426,8 +431,15 @@ void ModelSpace::Init(int emax, vector<string> hole_list, vector<string> core_li
   Init(emax, String2Index(hole_list), String2Index(core_list), String2Index(valence_list) );
 }
 
-// This is the Init which should inevitably be called
 void ModelSpace::Init(int emax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list)
+{
+  vector<index_t> partial_list;
+  vector<double> fill_frac;
+  Init(emax,hole_list,core_list,valence_list,partial_list,fill_frac);
+}
+
+// This is the Init which should inevitably be called
+void ModelSpace::Init(int emax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list, vector<index_t> partial_hole_list, vector<double> ph_occ)
 {
    Orbits.clear();
    particles.clear();
@@ -472,12 +484,12 @@ void ModelSpace::Init(int emax, vector<index_t> hole_list, vector<index_t> core_
             if ( find(core_list.begin(), core_list.end(), indx) != core_list.end() ) cvq=0; // core orbit
             if ( find(valence_list.begin(), valence_list.end(), indx) != valence_list.end() ) cvq=1; // valence orbit
             AddOrbit(n,l,j2,tz,ph,cvq);
-
-
          }
        }
      }
    }
+   partial_holes = partial_hole_list;
+   partial_hole_occ = ph_occ;
    SetupKets();
    target_mass = valence_list.size() > 0 ? 2 : 0;
    target_Z = 0;
@@ -492,6 +504,13 @@ void ModelSpace::Init(int emax, vector<index_t> hole_list, vector<index_t> core_
    {
      Aref += (GetOrbit(c).j2+1);
      if (c%2==0) Zref += (GetOrbit(c).j2+1);
+   }
+   for (int i=0;i<partial_holes.size();i++)
+   {
+     int oc = GetOrbit(partial_holes[i]);
+     Aref += (oc.j2+1)*partial_hole_occ[i];
+     if (oc.tz2 < 0)
+       Zref += (oc.j2+1)*partial_hole_occ[i];
    }
 
 
@@ -546,62 +565,105 @@ void ModelSpace::GetAZfromString(string str,int& A, int& Z) // TODO: accept diff
 
 // Fill A orbits with Z protons and A-Z neutrons
 // assuming a standard shell-model level ordering
-vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)
+//vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)
+void ModelSpace::GetOrbitsAZ(int A, int Z, vector<index_t>& filled_orbits, vector<index_t>& partially_filled_orbits, vector<double>& fill_fraction)
 {
   int zz = 0;
   int nn = 0; // unfortunate there are so many n's here...
-  vector<index_t> orbitsAZ;
+//  vector<index_t> orbitsAZ;
+  // Here N is the major oscillator shell quantum number
+  // nn is the number of neutrons added so far
+  // n is the radial quantum number for the orbit
   for (int N=0; N<=Emax; ++N)
   {
     for (int l=N; l>=0; l-=2)
     {
       int n = (N-l)/2;
       int j2 = 2*l+1;
-      if (zz < Z)
+//      if (zz < Z)
+      if (zz+j2+1 <= Z)
       {
-        orbitsAZ.push_back(Index1(n,l,j2,-1));
+        filled_orbits.push_back(Index1(n,l,j2,-1));
         zz += j2+1;
       }
-      if (nn < A-Z)
+      else if (zz < Z)
       {
-        orbitsAZ.push_back(Index1(n,l,j2,1));
+        partially_filled_orbits.push_back(Index1(n,l,j2,-1));
+        fill_fraction.push_back( (Z-zz) / (j2+1.0));
+        zz = Z;
+      }
+      if (nn+j2+1 <= A-Z)
+      {
+        filled_orbits.push_back(Index1(n,l,j2,1));
         nn += j2+1;
       }
-      if (zz==Z and nn==A-Z) return orbitsAZ; // We're all done here.
-      if (zz>Z or nn>A-Z) // Oops. We partially filled a shell.
+      else if (nn < A-Z)
       {
-        cout << "Trouble! No support yet for partially-filled shells!! (A = " <<A << ", Z = " << Z << ") zz = " << zz << "  nn = " << nn <<  endl;
-        return orbitsAZ;
+        partially_filled_orbits.push_back(Index1(n,l,j2,1));
+        fill_fraction.push_back( (A-Z-nn) / (j2+1.0));
+        nn = A-Z;
       }
+      if (zz==Z and nn==A-Z) return; // We're all done here.
+//      if (zz>Z or nn>A-Z) // Oops. We partially filled a shell.
+//      {
+//        cout << "Trouble! No support yet for partially-filled shells!! (A = " <<A << ", Z = " << Z << ") zz = " << zz << "  nn = " << nn <<  endl;
+//        return orbitsAZ;
+//      }
     }
     for (int l=N%2; l<=N; l+=2)
     {
       if (l==0) continue;
       int n = (N-l)/2;
       int j2 = 2*l-1;
-      if (zz < Z)
+      if (zz+j2+1 <= Z)
       {
-        orbitsAZ.push_back(Index1(n,l,j2,-1));
+        filled_orbits.push_back(Index1(n,l,j2,-1));
         zz += j2+1;
       }
-      if (nn < A-Z)
+      else if (zz < Z)
       {
-        orbitsAZ.push_back(Index1(n,l,j2,1));
+        partially_filled_orbits.push_back(Index1(n,l,j2,-1));
+        fill_fraction.push_back( (Z-zz) / (j2+1.0));
+        zz = Z;
+      }
+      if (nn+j2+1 <= A-Z)
+      {
+        filled_orbits.push_back(Index1(n,l,j2,1));
         nn += j2+1;
       }
+      else if (nn < A-Z)
+      {
+        partially_filled_orbits.push_back(Index1(n,l,j2,1));
+        fill_fraction.push_back( (A-Z-nn) / (j2+1.0));
+        nn = A-Z;
+      }
+      if (zz==Z and nn==A-Z) return; // We're all done here.
+
+
+//      if (zz < Z)
+//      {
+//        orbitsAZ.push_back(Index1(n,l,j2,-1));
+//        zz += j2+1;
+//      }
+//      if (nn < A-Z)
+//      {
+//        orbitsAZ.push_back(Index1(n,l,j2,1));
+//        nn += j2+1;
+//      }
 //      cout << "A,Z = " << A << "," << Z << "  nn,zz = " << nn << "," << zz << endl;
 //      for ( auto& o : orbitsAZ ) cout << o << " ";
 //      cout << endl;
-      if (zz==Z and nn==A-Z) return orbitsAZ; // We're all done here.
-      if (zz>Z or nn>A-Z) // Oops. We partially filled a shell.
-      {
-        cout << "Trouble! No support yet for partially-filled shells!! (A = " <<A << ", Z = " << Z << ") zz = " << zz << "  nn = " << nn <<  endl;
-        return orbitsAZ;
-      }
+//      if (zz==Z and nn==A-Z) return orbitsAZ; // We're all done here.
+//      if (zz>Z or nn>A-Z) // Oops. We partially filled a shell.
+//      {
+//        cout << "Trouble! No support yet for partially-filled shells!! (A = " <<A << ", Z = " << Z << ") zz = " << zz << "  nn = " << nn <<  endl;
+//        return orbitsAZ;
+//      }
     }
   }
   cout << "Trouble! Model space not big enough to fill A=" << A << " Z="<< Z << "  emax = " << Emax << endl;
-  return orbitsAZ;
+  return;
+//  return orbitsAZ;
 
 }
 

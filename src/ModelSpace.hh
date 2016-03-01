@@ -180,12 +180,14 @@ class ModelSpace
    void Init(int emax, string reference, string valence);
    void Init(int emax, string valence);
    void Init(int emax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list);
+   void Init(int emax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list, vector<index_t> partial_list, vector<double> fill_fraction);
 //   void Init(int emax, vector<index_t> hole_list, vector<index_t> valence_list);
    void Init(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
    void Init(int emax, vector<string> hole_list, vector<string> valence_list);
    void Init_AZ(int emax, int A, int Z);
    void GetAZfromString(string str, int& A, int& Z);
-   vector<index_t> GetOrbitsAZ(int A, int Z);
+//   vector<index_t> GetOrbitsAZ(int A, int Z);
+   void GetOrbitsAZ(int A, int Z, vector<index_t>& filled_orbits, vector<index_t>& partially_filled_orbits, vector<double>& fill_fraction);
    vector<index_t> String2Index( vector<string> vs );
 
    // Common model spaces
@@ -264,6 +266,8 @@ class ModelSpace
    vector<index_t> qspace;          // above the valence space for decoupling
    vector<index_t> proton_orbits;
    vector<index_t> neutron_orbits;
+   vector<index_t> partial_holes;           // in the reference Slater determinant
+   vector<double> partial_hole_occ;           // in the reference Slater determinant
 
    vector<index_t> KetIndex_pp; 
    vector<index_t> KetIndex_ph;

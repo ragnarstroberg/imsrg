@@ -33,6 +33,8 @@ HartreeFock::HartreeFock(Operator& hbare)
    }
    prev_energies = arma::vec(norbits,arma::fill::zeros);
    holeorbs = arma::uvec(modelspace->holes);
+   partial_holeorbs = arma::uvec(modelspace->partial_holes);
+   partial_occ = arma::uvec(modelspace->partial_hole_occ);
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
    {
@@ -317,6 +319,8 @@ void HartreeFock::BuildMonopoleV3()
 void HartreeFock::UpdateDensityMatrix()
 {
   rho = C.cols(holeorbs) * (C.cols(holeorbs)).t();
+  // the % operator is element-wise multiplication
+  rho += (C.cols(partial_holeorbs) % partial_occ) * (C.cols(partial_holeorbs)%partial_occ).t();
 }
 
 
