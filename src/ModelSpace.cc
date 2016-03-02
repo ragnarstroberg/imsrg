@@ -377,6 +377,8 @@ void ModelSpace::Init(int emax, string reference, string valence)
   int Aref,Zref;
   int Ac,Zc=-1;
   vector<index_t> hole_list, valence_list, core_list;
+  vector<index_t> partial_list;
+  vector<double> fill_fraction;
   GetAZfromString(reference,Aref,Zref);
 //  cout << "Reference: " << reference << "  => A = " << Aref << " Z = " << Zref << endl;
 //  hole_list = GetOrbitsAZ(Aref,Zref);
@@ -505,9 +507,9 @@ void ModelSpace::Init(int emax, vector<index_t> hole_list, vector<index_t> core_
      Aref += (GetOrbit(c).j2+1);
      if (c%2==0) Zref += (GetOrbit(c).j2+1);
    }
-   for (int i=0;i<partial_holes.size();i++)
+   for (index_t i=0;i<partial_holes.size();i++)
    {
-     int oc = GetOrbit(partial_holes[i]);
+     Orbit& oc = GetOrbit(partial_holes[i]);
      Aref += (oc.j2+1)*partial_hole_occ[i];
      if (oc.tz2 < 0)
        Zref += (oc.j2+1)*partial_hole_occ[i];
@@ -563,6 +565,14 @@ void ModelSpace::GetAZfromString(string str,int& A, int& Z) // TODO: accept diff
 //  cout << "GetAZfromString:  " << str << "  -> " << A << " " << Z << endl;
 }
 
+vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)
+{
+  vector<index_t> filled_orbits;
+  vector<index_t> partially_filled_orbits;
+  vector<double> fill_fraction;
+  GetOrbitsAZ(A,Z,filled_orbits,partially_filled_orbits,fill_fraction);
+  return filled_orbits;
+}
 // Fill A orbits with Z protons and A-Z neutrons
 // assuming a standard shell-model level ordering
 //vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)

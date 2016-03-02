@@ -186,7 +186,7 @@ class ModelSpace
    void Init(int emax, vector<string> hole_list, vector<string> valence_list);
    void Init_AZ(int emax, int A, int Z);
    void GetAZfromString(string str, int& A, int& Z);
-//   vector<index_t> GetOrbitsAZ(int A, int Z);
+   vector<index_t> GetOrbitsAZ(int A, int Z);
    void GetOrbitsAZ(int A, int Z, vector<index_t>& filled_orbits, vector<index_t>& partially_filled_orbits, vector<double>& fill_fraction);
    vector<index_t> String2Index( vector<string> vs );
 
