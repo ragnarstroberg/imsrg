@@ -287,10 +287,20 @@ Operator Operator::DoNormalOrdering2()
    Operator opNO(*this);
 
    if (opNO.rank_J==0 and opNO.rank_T==0 and opNO.parity==0)
-   {
+   { 
+     cout << "holes: " << endl;
      for (auto& k : modelspace->holes) // loop over hole orbits
      {
         opNO.ZeroBody += (modelspace->GetOrbit(k).j2+1) * OneBody(k,k);
+        cout << k << " : 1  " << OneBody(k,k) << endl;
+     }
+     cout << "open shell: " << endl;
+     for ( auto& it : modelspace->open_shells )
+     {
+        index_t k = it.first;
+        double occ = it.second;
+        cout << it.first << " :  " << occ << "   " << OneBody(k,k) << endl;
+//        opNO.ZeroBody += (modelspace->GetOrbit(k).j2+1) * occ * OneBody(k,k);
      }
    }
 
@@ -312,10 +322,27 @@ Operator Operator::DoNormalOrdering2()
       {
         arma::vec diagonals = matrix.diag();
         auto hh = tbc_ket.GetKetIndex_hh();
-//        cout << "hh: ";
-//        for ( auto& h : hh ) cout << h << " ";
-//        cout << endl;
         opNO.ZeroBody += arma::sum( diagonals.elem(hh) ) * (2*J_ket+1);
+        cout << ch_bra << " :" << endl;
+        if (hh.size() > 0)
+        {
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+        diagonals.elem(hh).print();
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+        }
+        auto oo = tbc_ket.GetKetIndex_oo();
+        if (oo.size() > 0)
+        {
+        cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << endl;
+        oo.print();
+        (diagonals.elem(oo) ).print();
+        (diagonals.elem(oo) % tbc_ket.Ket_oo_occ).print();
+        cout << "--------" << endl;
+        tbc_ket.Ket_oo_occ.print();
+        cout << "========" << endl;
+        cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << endl;
+        }
+        opNO.ZeroBody += arma::sum( diagonals.elem(oo) % tbc_ket.Ket_oo_occ ) * (2*J_ket+1);
       }
 
       // One body part

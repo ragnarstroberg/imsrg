@@ -14,8 +14,8 @@ SOFLAGS  += $(WARNFLAGS)
 INSTDIR = $(HOME)
 
 ifeq ($(DEBUG),on)
- FLAGS = $(filter-out -flto, $(FLAGS))
- SOFLAGS = $(filter-out -flto, $(SOFLAGS))
+ FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -ffast-math  
+ SOFLAGS   = -march=native -std=c++11 -fopenmp -fPIC -ffast-math  
  FLAGS += -g
  SOFLAGS += -g
 endif
