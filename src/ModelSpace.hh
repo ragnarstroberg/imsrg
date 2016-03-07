@@ -102,7 +102,8 @@ class TwoBodyChannel
    arma::uvec KetIndex_qv ;
    arma::uvec KetIndex_qq ;
 //   arma::uvec KetIndex_oo ;
-   arma::vec  Ket_occ;
+   arma::vec  Ket_hh_occ;
+   arma::vec  Ket_ph_occ;
 
 
    arma::uvec GetKetIndexFromList(vector<index_t>& vec_in);
@@ -173,11 +174,6 @@ class ModelSpace
    void Init(int emax, string reference, string valence); // This is the usual interface
    void Init(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list); // This is in case you want a non-standard reference/valence space
    void Init(int emax, map<index_t,double> hole_list, vector<index_t> core_list, vector<index_t> valence_list); // This should inevitably be called
-//   void Init(int emax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list);
-//   void Init(int emax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list, map<index_t,double> open_shell_list);
-//   void Init(int emax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list, vector<index_t> partial_list, vector<double> fill_fraction);
-//   void Init(int emax, vector<index_t> hole_list, vector<index_t> valence_list);
-//   void Init(int emax, vector<string> hole_list, vector<string> valence_list);
 
    void GetAZfromString(string str, int& A, int& Z);
 //   vector<index_t> GetOrbitsAZ(int A, int Z);
@@ -191,7 +187,8 @@ class ModelSpace
    // Methods
    void SetupKets();
    void AddOrbit(Orbit orb);
-   void AddOrbit(int n, int l, int j2, int tz2, int ph, int io);
+//   void AddOrbit(int n, int l, int j2, int tz2, int ph, int io);
+   void AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq);
    // Setter/Getters
    Orbit& GetOrbit(int i) {return (Orbit&) Orbits[i];}; 
 //   Orbit& GetOrbit(int i) const {return (Orbit&) Orbits[i];}; 
@@ -216,6 +213,7 @@ class ModelSpace
    inline int GetTwoBodyJmax() const {return TwoBodyJmax;};
    inline int GetThreeBodyJmax() const {return ThreeBodyJmax;};
    void SetReference(vector<index_t>);
+   void SetReference(map<index_t,double>);
    void SetReference(string);
 
    int GetEmax(){return Emax;};
@@ -272,7 +270,7 @@ class ModelSpace
    vector<index_t> KetIndex_qq;
 //   vector<index_t> KetIndex_oo; // open-shell (partially-filled) orbit
 //   map<index_t,double>  Ket_oo_occ_map;
-   map<index_t,double>  Ket_occ;
+   map<index_t,double>  Ket_hh_occ;
    // NEED TO MAKE VECTOR OF oh TYPE INDICES
 
 //   array< array< vector<index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity

@@ -338,8 +338,9 @@ void HartreeFock::UpdateDensityMatrix()
 {
 
   arma::mat tmp = C.cols(holeorbs);
-  tmp.each_row() %= hole_occ;
-  rho = tmp * tmp.t();
+//  tmp.each_row() %= hole_occ;
+//  rho = tmp * tmp.t();
+  rho = (tmp.each_row() % hole_occ) * tmp.t();
 
 
 //  rho = C.cols(holeorbs) * (C.cols(holeorbs)).t();

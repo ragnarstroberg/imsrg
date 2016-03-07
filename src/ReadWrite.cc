@@ -1969,8 +1969,10 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
    int Acore = 0;
 //   int wint = 4; // width for printing integers
 //   int wdouble = 12; // width for printing doubles
-   for (auto& i : modelspace->holes)
+//   for (auto& i : modelspace->holes)
+   for (auto& it_i : modelspace->holes)
    {
+      index_t i = it_i.first;
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 +1;
    }

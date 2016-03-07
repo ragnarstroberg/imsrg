@@ -17,7 +17,8 @@ Orbit::Orbit()
 //: n(-1), l(-1), j2(-1), tz2(-1),ph(-1),io(-1),index(-1)
 {}
 
-Orbit::Orbit(int n, int l, int j2, int tz2, int ph, int cvq, int index)
+//Orbit::Orbit(int n, int l, int j2, int tz2, int ph, int cvq, int index)
+Orbit::Orbit(int n, int l, int j2, int tz2, double occ, int cvq, int index)
 : n(n), l(l), j2(j2), tz2(tz2),occ(occ),cvq(cvq),index(index)
 //: n(n), l(l), j2(j2), tz2(tz2),ph(ph),io(io),index(index)
 {}
@@ -106,18 +107,31 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
    vector<double> occvec;
    for (auto& hh : KetIndex_hh)
    {
-     Ket& ket = modelspace->GetKet(hh);
+//     Ket& ket = modelspace->GetKet(hh);
+     Ket& ket = GetKet(hh);
      double occ = modelspace->holes[ket.p] * modelspace->holes[ket.q];
      occvec.push_back(occ);
    }
-   occvec.clear();
-   for (auto& ph : KetIndex_ph)
-   {
-     Ket& ket = modelspace->GetKet(ph);
-     double occ = modelspace->holes[ket.p] * modelspace->holes[ket.q];
-     occvec.push_back(occ);
-   }
-   Ket_ph_occ = arma::vec(occvec) ;  Ket_hh_occ = arma::vec(occvec) ;
+   Ket_hh_occ = arma::vec(occvec) ;
+//   if (KetIndex_hh.size() > 0)
+//   {
+//   cout << "ch = " << N << endl;
+//   for (auto& h : KetIndex_hh)
+//   {
+//   Ket& ket_h = GetKet(h);
+//   cout << h << " (" << ket_h.p << "," << ket_h.q << ")" << endl;
+//   } 
+//  cout << Ket_hh_occ << endl;
+//   cout << "=======================================" << endl;
+//   }
+//   occvec.clear();
+//   for (auto& ph : KetIndex_ph)
+//   {
+//     Ket& ket = modelspace->GetKet(ph);
+//     double occ = modelspace->holes[ket.p] * modelspace->holes[ket.q];
+//     occvec.push_back(occ);
+//   }
+//   Ket_ph_occ = arma::vec(occvec) ;
 }
 
 
@@ -148,7 +162,7 @@ arma::uvec& TwoBodyChannel::GetKetIndex_qc() { return KetIndex_qc;};
 arma::uvec& TwoBodyChannel::GetKetIndex_vv() { return KetIndex_vv;};
 arma::uvec& TwoBodyChannel::GetKetIndex_qv() { return KetIndex_qv;};
 arma::uvec& TwoBodyChannel::GetKetIndex_qq() { return KetIndex_qq;};
-arma::uvec& TwoBodyChannel::GetKetIndex_oo() { return KetIndex_oo;};
+//arma::uvec& TwoBodyChannel::GetKetIndex_oo() { return KetIndex_oo;};
 
 
 arma::uvec TwoBodyChannel::GetKetIndexFromList(vector<index_t>& vec_in)
@@ -220,9 +234,6 @@ map<string,vector<string>> ModelSpace::ValenceSpaces  {
 };
 
 
-m
-
-
 
 ModelSpace::~ModelSpace()
 {
@@ -241,7 +252,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
  :
    holes( ms.holes), particles( ms.particles),
    core(ms.core), valence(ms.valence), qspace( ms.qspace), 
-   proton_orbits( ms.proton_orbits),neutron_orbits( ms.neutron_orbits), open_shells(ms.open_shells), //open_shell_occ(ms.open_shell_occ),
+   proton_orbits( ms.proton_orbits),neutron_orbits( ms.neutron_orbits), //open_shells(ms.open_shells), open_shell_occ(ms.open_shell_occ),
    KetIndex_pp( ms.KetIndex_pp), KetIndex_ph( ms.KetIndex_ph), KetIndex_hh( ms.KetIndex_hh),
    KetIndex_cc( ms.KetIndex_cc),
    KetIndex_vc( ms.KetIndex_vc),
@@ -249,7 +260,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    KetIndex_vv( ms.KetIndex_vv),
    KetIndex_qv( ms.KetIndex_qv),
    KetIndex_qq( ms.KetIndex_qq),
-   KetIndex_oo( ms.KetIndex_oo),
+//   KetIndex_oo( ms.KetIndex_oo),
    Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
    OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
    OneBodyChannels(ms.OneBodyChannels),
@@ -272,7 +283,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    holes( move(ms.holes)), particles( move(ms.particles)),
    core(move(ms.core)), valence(move(ms.valence)),  qspace( move(ms.qspace)),  
    proton_orbits( move(ms.proton_orbits)),
-   neutron_orbits( move(ms.neutron_orbits)), open_shells(move(ms.open_shells)), //open_shell_occ(move(ms.open_shell_occ)),
+   neutron_orbits( move(ms.neutron_orbits)), //open_shells(move(ms.open_shells)), open_shell_occ(move(ms.open_shell_occ)),
    KetIndex_pp( move(ms.KetIndex_pp)), KetIndex_ph( move(ms.KetIndex_ph)), KetIndex_hh( move(ms.KetIndex_hh)),
    KetIndex_cc( ms.KetIndex_cc),
    KetIndex_vc( ms.KetIndex_vc),
@@ -280,7 +291,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    KetIndex_vv( ms.KetIndex_vv),
    KetIndex_qv( ms.KetIndex_qv),
    KetIndex_qq( ms.KetIndex_qq),
-   KetIndex_oo( ms.KetIndex_oo),
+//   KetIndex_oo( ms.KetIndex_oo),
    Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
    OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
    OneBodyChannels(move(ms.OneBodyChannels)),
@@ -345,11 +356,11 @@ void ModelSpace::Init(int emax, string reference, string valence)
   if ( itval != ValenceSpaces.end() )
   {
      core_string = itval->second[0];
-     valence_list = String2Index( vector<string>(itval->second.begin()+1,itval->second->end())  );
+     valence_list = String2Index( vector<string>(itval->second.begin()+1,itval->second.end())  );
   }
 
   GetAZfromString(core_string,Ac,Zc);
-  for (auto& c : GetOrbitsAZ(Ac,Zc)) core_list.append(c.first);
+  for (auto& c : GetOrbitsAZ(Ac,Zc)) core_list.push_back(c.first);
   target_mass = Aref;
   target_Z = Zref;
   Init(emax,hole_list,core_list,valence_list);
@@ -424,7 +435,7 @@ void ModelSpace::Init(int emax, map<index_t,double> hole_list, vector<index_t> c
      Aref += (int)(GetOrbit(h.first).j2+1)*h.second;
      if (h.first%2==0) Zref += (int)(GetOrbit(h.first).j2+1)*h.second;
    }
-   target_Mass = Aref;
+   target_mass = Aref;
    target_Z = Zref;
 }
 
@@ -518,7 +529,18 @@ void ModelSpace::SetReference(vector<index_t> new_reference)
 {
   vector<index_t> c = core;
   vector<index_t> v = valence;
-  vector<index_t> h = new_reference;
+//  vector<index_t> h = new_reference;
+  map<index_t,double> h;
+  for (auto r : new_reference) h[r] = 1.0;
+  ClearVectors();
+  Init(Emax, h,c,v);
+}
+
+void ModelSpace::SetReference(map<index_t,double> new_reference)
+{
+  vector<index_t> c = core;
+  vector<index_t> v = valence;
+  map<index_t,double> h = new_reference;
   ClearVectors();
   Init(Emax, h,c,v);
 }
@@ -527,8 +549,8 @@ void ModelSpace::SetReference(string new_reference)
 {
   vector<index_t> c = core;
   vector<index_t> v = valence;
-  GetAZ(new_reference,Aref,Zref);
-  map<index_t,double> h = GetAZOrbits(Aref,Zref);
+  GetAZfromString(new_reference,Aref,Zref);
+  map<index_t,double> h = GetOrbitsAZ(Aref,Zref);
   ClearVectors();
   Init(Emax, h,c,v);
 }
@@ -555,7 +577,7 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
    KetIndex_vv =  ms.KetIndex_vv;
    KetIndex_qv =  ms.KetIndex_qv;
    KetIndex_qq =  ms.KetIndex_qq;
-   KetIndex_oo =  ms.KetIndex_oo;
+//   KetIndex_oo =  ms.KetIndex_oo;
    Emax = ms.Emax;
    E2max = ms.E2max;
    E3max = ms.E3max;
@@ -707,7 +729,7 @@ void ModelSpace::SetupKets()
         Kets[index] = Ket(GetOrbit(p),GetOrbit(q));
      }
    }
-  cout << "Before for loop, size = " << open_shells.size() << endl;
+//  cout << "Before for loop, size = " << open_shells.size() << endl;
   for (index_t index=0;index<Kets.size();++index)
   {
     Ket& ket = Kets[index];
@@ -724,8 +746,8 @@ void ModelSpace::SetupKets()
 //    if (php+phq==1)             KetIndex_ph.push_back(index);
 //    if (php+phq==2)             KetIndex_hh.push_back(index);
     if (occp<OCC_CUT and occq<OCC_CUT)     KetIndex_pp.push_back(index);
-    else if (occp<OCC_CUT or occq<OCC_CUT) KetIndex_ph.push_back(index);
-    else                                   KetIndex_hh.push_back(index);
+    if (occp>OCC_CUT or  occq>OCC_CUT)     KetIndex_ph.push_back(index);
+    if (occp>OCC_CUT and occq>OCC_CUT)     KetIndex_hh.push_back(index);
     if (cvq_p+cvq_q==0)                    KetIndex_cc.push_back(index); // 00
     if (cvq_p+cvq_q==1)                    KetIndex_vc.push_back(index); // 01
     if (abs(cvq_p-cvq_q)==2)               KetIndex_qc.push_back(index); // 02
