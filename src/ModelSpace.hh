@@ -9,7 +9,6 @@
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
 #endif
-#define OCC_CUT 1e-6 // occupation cutoff for definition of particle / hole
 
 
 using namespace std;
@@ -18,6 +17,7 @@ typedef unsigned long long int index_t;
 
 class ModelSpace; //forward declaration so Ket can use ModelSpace
 
+//struct Orbit
 class Orbit
 {
  public:
@@ -26,17 +26,19 @@ class Orbit
    int l;
    int j2;
    int tz2;
-//   int ph; // particle=0, hole=1
-   double occ; // occupation in reference. 1=filled
+   int ph; // particle=0, hole=1
+//   int io; // inside=0, outside=1
    int cvq; // core=0, valence=1, qspace=2
    int index;
 
    //Constructors
    ~Orbit();
    Orbit();
-//   Orbit(int n ,int l, int j, int t, int ph, int cvq, int index);
-   Orbit(int n ,int l, int j, int t, double occ, int cvq, int index);
+   Orbit(int n ,int l, int j, int t, int ph, int cvq, int index);
    Orbit(const Orbit&);
+//   void swap(Orbit&) throw();
+//   Orbit& operator=( const Orbit& );
+   // Methods
 };
 
 
@@ -101,9 +103,11 @@ class TwoBodyChannel
    arma::uvec KetIndex_vv ;
    arma::uvec KetIndex_qv ;
    arma::uvec KetIndex_qq ;
-//   arma::uvec KetIndex_oo ;
-   arma::vec  Ket_hh_occ;
-   arma::vec  Ket_ph_occ;
+//   arma::uvec KetIndex_c_c;
+//   arma::uvec KetIndex_q_q;
+//   arma::uvec KetIndex_q_c ;
+//   arma::uvec KetIndex_v_c ;
+//   arma::uvec KetIndex_v_q;
 
 
    arma::uvec GetKetIndexFromList(vector<index_t>& vec_in);
@@ -116,9 +120,11 @@ class TwoBodyChannel
    arma::uvec& GetKetIndex_vv();
    arma::uvec& GetKetIndex_qv();
    arma::uvec& GetKetIndex_qq();
-//   arma::uvec& GetKetIndex_oo();
-   arma::vec&  GetKet_hh_occ();
-   arma::vec&  GetKet_ph_occ();
+//   arma::uvec& GetKetIndex_c_c();  // cc
+//   arma::uvec& GetKetIndex_q_q();  //qq
+//   arma::uvec& GetKetIndex_q_c(); // qc
+//   arma::uvec& GetKetIndex_v_c(); // vc
+//   arma::uvec& GetKetIndex_v_q(); // qv
 
 // private:
    //Fields
@@ -164,31 +170,39 @@ class ModelSpace
    ModelSpace(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
    ModelSpace(int emax, vector<string> hole_list, vector<string> valence_list);
    ModelSpace(int emax, string reference, string valence);
-   ModelSpace(int emax, string valence);
-//   ModelSpace(int emax, int A, int Z);
+   ModelSpace(int emax, string reference);
+   ModelSpace(int emax, int A, int Z);
 
    // Overloaded operators
    ModelSpace operator=(const ModelSpace&); 
    ModelSpace operator=(ModelSpace&&); 
 
-   void Init(int emax, string reference, string valence); // This is the usual interface
-   void Init(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list); // This is in case you want a non-standard reference/valence space
-   void Init(int emax, map<index_t,double> hole_list, vector<index_t> core_list, vector<index_t> valence_list); // This should inevitably be called
-
+   void Init(int emax, string reference, string valence);
+   void Init(int emax, string valence);
+   void Init(int emax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list);
+//   void Init(int emax, vector<index_t> hole_list, vector<index_t> valence_list);
+   void Init(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
+   void Init(int emax, vector<string> hole_list, vector<string> valence_list);
+   void Init_AZ(int emax, int A, int Z);
    void GetAZfromString(string str, int& A, int& Z);
-//   vector<index_t> GetOrbitsAZ(int A, int Z);
-   map<index_t,double> GetOrbitsAZ(int A, int Z);
-//   void GetOrbitsAZ(int A, int Z, vector<index_t>& filled_orbits, vector<index_t>& partially_filled_orbits, vector<double>& fill_fraction);
-//   void GetOrbitsAZ(int A, int Z, vector<index_t>& filled_orbits, map<index_t,double>& open_shell_orbits);
+   vector<index_t> GetOrbitsAZ(int A, int Z);
    vector<index_t> String2Index( vector<string> vs );
 
+   // Common model spaces
+//   void Init_PShell(int nmax);
+//   void Init_SDShell(int nmax);
+//   void Init_PSDShell(int nmax);
+//   void Init_O16PSDShell(int nmax);
+//   void Init_FPShell(int nmax);
+//   void Init_SDFPShell(int nmax);
+//   void Init_SD3F7P3Shell(int nmax);
+//   void Init_FPG9Shell(int nmax);
 
 
    // Methods
    void SetupKets();
    void AddOrbit(Orbit orb);
-//   void AddOrbit(int n, int l, int j2, int tz2, int ph, int io);
-   void AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq);
+   void AddOrbit(int n, int l, int j2, int tz2, int ph, int io);
    // Setter/Getters
    Orbit& GetOrbit(int i) {return (Orbit&) Orbits[i];}; 
 //   Orbit& GetOrbit(int i) const {return (Orbit&) Orbits[i];}; 
@@ -213,8 +227,6 @@ class ModelSpace
    inline int GetTwoBodyJmax() const {return TwoBodyJmax;};
    inline int GetThreeBodyJmax() const {return ThreeBodyJmax;};
    void SetReference(vector<index_t>);
-   void SetReference(map<index_t,double>);
-   void SetReference(string);
 
    int GetEmax(){return Emax;};
    int GetE2max(){return E2max;};
@@ -244,20 +256,14 @@ class ModelSpace
    void ClearVectors();
 
 
-
-
    // Data members
-//   vector<index_t> holes;           // in the reference Slater determinant
-   map<index_t,double> holes;           // in the reference Slater determinant
+   vector<index_t> holes;           // in the reference Slater determinant
    vector<index_t> particles;       // above the reference Slater determinant
    vector<index_t> core;            // core for decoupling
    vector<index_t> valence;         // valence space for decoupling
    vector<index_t> qspace;          // above the valence space for decoupling
    vector<index_t> proton_orbits;
    vector<index_t> neutron_orbits;
-//   vector<index_t> open_shells;           // in the reference Slater determinant
-//   vector<double> open_shell_occ;           // in the reference Slater determinant
-//   map<index_t,double> open_shells;
 
    vector<index_t> KetIndex_pp; 
    vector<index_t> KetIndex_ph;
@@ -268,10 +274,6 @@ class ModelSpace
    vector<index_t> KetIndex_vv;
    vector<index_t> KetIndex_qv;
    vector<index_t> KetIndex_qq;
-//   vector<index_t> KetIndex_oo; // open-shell (partially-filled) orbit
-//   map<index_t,double>  Ket_oo_occ_map;
-   map<index_t,double>  Ket_hh_occ;
-   // NEED TO MAKE VECTOR OF oh TYPE INDICES
 
 //   array< array< vector<index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
    array< array< unordered_map<index_t,index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity

@@ -32,27 +32,7 @@ HartreeFock::HartreeFock(Operator& hbare)
      }
    }
    prev_energies = arma::vec(norbits,arma::fill::zeros);
-   vector<index_t> holevec;
-   vector<double> occvec;
-   for (auto& h : modelspace->holes)
-   {
-      holevec.push_back(h.first);
-      occvec.push_back(h.second);
-   }
-//   holeorbs = arma::uvec(modelspace->holes);
-   holeorbs = arma::uvec(holevec);
-   hole_occ = arma::rowvec(occvec);
-//   vector<index_t> open_shell_ind;
-//   vector<double> open_shell_occ;
-//   for (auto& it : modelspace->open_shells)
-//   {
-//     open_shell_ind.push_back(it.first);
-//     open_shell_occ.push_back(it.second);
-//   }
-//   partial_holeorbs = arma::uvec(open_shell_ind);
-//   partial_occ = arma::rowvec(open_shell_occ);
-//   partial_holeorbs.print();
-//   partial_occ.print();
+   holeorbs = arma::uvec(modelspace->holes);
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
    {
@@ -336,22 +316,7 @@ void HartreeFock::BuildMonopoleV3()
 //*********************************************************************
 void HartreeFock::UpdateDensityMatrix()
 {
-
-  arma::mat tmp = C.cols(holeorbs);
-//  tmp.each_row() %= hole_occ;
-//  rho = tmp * tmp.t();
-  rho = (tmp.each_row() % hole_occ) * tmp.t();
-
-
-//  rho = C.cols(holeorbs) * (C.cols(holeorbs)).t();
-//  // the % operator is element-wise multiplication
-//  if (partial_holeorbs.size() > 0)
-//  {
-//    arma::mat tmp = C.cols(partial_holeorbs);
-//    tmp.each_row() %= partial_occ;
-//    rho += tmp * tmp.t();
-////    rho += (C.cols(partial_holeorbs).each_row() % partial_occ) * (C.cols(partial_holeorbs).each_row() %partial_occ).t();
-//  }
+  rho = C.cols(holeorbs) * (C.cols(holeorbs)).t();
 }
 
 

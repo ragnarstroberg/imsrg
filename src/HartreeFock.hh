@@ -22,9 +22,6 @@ class HartreeFock
    array< array< arma::mat,2>,3> Vmon;          ///< Monopole 2-body interaction
    array< array< arma::mat,2>,3> Vmon_exch;          ///< Monopole 2-body interaction
    arma::uvec holeorbs;     ///< list of hole orbits for generating density matrix
-   arma::rowvec hole_occ;
-//   arma::uvec partial_holeorbs;     ///< list of hole orbits for generating density matrix
-//   arma::rowvec partial_occ;
    arma::vec energies;      ///< vector of single particle energies
    arma::vec prev_energies; ///< SPE's from last iteration
    double tolerance;        ///< tolerance for convergence

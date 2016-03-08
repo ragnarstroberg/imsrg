@@ -71,15 +71,13 @@ void Generator::SetDenominatorDeltaOrbit(string orb)
 // Epstein-Nesbet energy denominators for White-type generator_types
 double Generator::Get1bDenominator(int i, int j) 
 {
-//   int ni = modelspace->GetOrbit(i).ph;
-//   int nj = modelspace->GetOrbit(j).ph;
-   double ni = modelspace->GetOrbit(i).occ;
-   double nj = modelspace->GetOrbit(j).occ;
+   int ni = modelspace->GetOrbit(i).ph;
+   int nj = modelspace->GetOrbit(j).ph;
    
    double denominator = H->OneBody(i,i) - H->OneBody(j,j);
    if (denominator_delta_index==-12345 or i == denominator_delta_index or j==denominator_delta_index)
      denominator += denominator_delta;
-//   if (ni != nj)
+   if (ni != nj)
      denominator += ( ni-nj ) * H->TwoBody.GetTBMEmonopole(i,j,i,j);
 
    if (abs(denominator)<denominator_cutoff)
@@ -100,14 +98,10 @@ double Generator::Get2bDenominator(int ch, int ibra, int iket)
    int l = ket.q;
    double denominator = H->OneBody(i,i)+ H->OneBody(j,j) - H->OneBody(k,k) - H->OneBody(l,l);
    if (denominator_delta_index == -12345) denominator += denominator_delta;
-//   int ni = bra.op->ph;
-//   int nj = bra.oq->ph;
-//   int nk = ket.op->ph;
-//   int nl = ket.oq->ph;
-   double ni = bra.op->occ;
-   double nj = bra.oq->occ;
-   double nk = ket.op->occ;
-   double nl = ket.oq->occ;
+   int ni = bra.op->ph;
+   int nj = bra.oq->ph;
+   int nk = ket.op->ph;
+   int nl = ket.oq->ph;
 
    denominator       += ( 1-ni-nj ) * H->TwoBody.GetTBMEmonopole(i,j,i,j); // pp'pp'
    denominator       -= ( 1-nk-nl ) * H->TwoBody.GetTBMEmonopole(k,l,k,l); // hh'hh'
@@ -130,11 +124,8 @@ void Generator::ConstructGenerator_Wegner()
 {
    Operator H_diag = *H;
    H_diag.ZeroBody = 0;
-//   for (auto& a : modelspace->holes)
-   for (auto& it_a : modelspace->holes)
+   for (auto& a : modelspace->holes)
    {
-      index_t a = it_a.first;
-      double occ_a = it_a.second;
       for (auto& b : modelspace->valence)
       {
          H_diag.OneBody(a,b) =0;
@@ -300,28 +291,34 @@ void Generator::ConstructGenerator_ShellModel()
    // no excitations out of the core
 
    Eta->Erase();
-   index_t norb = modelspace->GetNumberOrbits();
 
-   for ( index_t i=0; i<norb; ++i )
+   for ( auto& i : modelspace->particles )
    {
-      for ( index_t j=0; j<i; ++j )
+//      for ( auto& j : modelspace->holes )
+//      {
+//         double denominator = Get1bDenominator(i,j);
+//         Eta->OneBody(i,j) += H->OneBody(i,j)/denominator;
+//         Eta->OneBody(j,i) = - Eta->OneBody(i,j);
+//      }
+//      for ( auto& j : modelspace->particles )
+      for ( auto& j : VectorUnion( modelspace->holes, modelspace->particles ) )
       {
-//         if (i==j) continue;
+         if (i==j) continue;
          double denominator = Get1bDenominator(i,j);
          Eta->OneBody(i,j) += H->OneBody(i,j)/denominator;
          Eta->OneBody(j,i) = - Eta->OneBody(i,j);
       }
    }
-//   for ( auto& i : modelspace->holes )
-//   {
-//      for ( auto& j : modelspace->holes )
-//      {
-//         if (i==j) continue;
-//         double denominator = -Get1bDenominator(i,j);
-//         Eta->OneBody(i,j) += H->OneBody(i,j)/denominator;
-//         Eta->OneBody(j,i) = - Eta->OneBody(i,j);
-//      }
-//   }
+   for ( auto& i : modelspace->holes )
+   {
+      for ( auto& j : modelspace->holes )
+      {
+         if (i==j) continue;
+         double denominator = -Get1bDenominator(i,j);
+         Eta->OneBody(i,j) += H->OneBody(i,j)/denominator;
+         Eta->OneBody(j,i) = - Eta->OneBody(i,j);
+      }
+   }
 
 
    // Two body piece 

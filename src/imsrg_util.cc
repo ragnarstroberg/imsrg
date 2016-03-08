@@ -110,11 +110,8 @@ double HO_Radial_psi(int n, int l, double hw, double r)
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace)
  {
     Operator DM(modelspace,0,0,0,2);
-//    for (index_t a : modelspace.holes)
-    for (auto& it_a : modelspace.holes)
+    for (index_t a : modelspace.holes)
     {
-       index_t a = it_a.first;
-       double occ_a = it_a.second;
        DM.OneBody(a,a) = 1.0;
     }
     return DM;
@@ -869,6 +866,37 @@ Operator RpSpinOrbitCorrection(ModelSpace& modelspace)
   return dr_so;
 }
 
+// Electric monopole operator
+/// Returns
+/// \f[ r_{e}^2 = \sum_{i} e_{i} r_{i}^2 \f]
+///
+Operator E0Op(ModelSpace& modelspace)
+{
+   Operator e0(modelspace);
+   e0.EraseZeroBody();
+   e0.OneBody.zeros();
+//   unsigned int norbits = modelspace.GetNumberOrbits();
+   double hw = modelspace.GetHbarOmega();
+   for (unsigned int a : modelspace.proton_orbits)
+   {
+      Orbit & oa = modelspace.GetOrbit(a);
+      e0.OneBody(a,a) = (2*oa.n + oa.l +1.5); 
+      for (unsigned int b : e0.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      {
+        if (b<=a) continue;
+        Orbit & ob = modelspace.GetOrbit(b);
+        {
+           if (oa.n == ob.n+1)
+              e0.OneBody(a,b) = -sqrt( (oa.n)*(oa.n + oa.l +0.5));
+           else if (oa.n == ob.n-1)
+              e0.OneBody(a,b) = -sqrt( (ob.n)*(ob.n + ob.l +0.5));
+           e0.OneBody(b,a) = e0.OneBody(a,b);
+        }
+      }
+   }
+   e0.OneBody *= (HBARC*HBARC/M_NUCLEON/hw);
+   return e0;
+}
 
 struct FBCIntegrandParameters{int n; int l; double hw;};
 
@@ -907,42 +935,6 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   }
   return a_nu;
 }
-
-
-// Electric monopole operator
-/// Returns
-/// \f[ r_{e}^2 = \sum_{i} e_{i} r_{i}^2 \f]
-///
-Operator E0Op(ModelSpace& modelspace)
-{
-   Operator e0(modelspace);
-   e0.EraseZeroBody();
-   e0.OneBody.zeros();
-//   unsigned int norbits = modelspace.GetNumberOrbits();
-   double hw = modelspace.GetHbarOmega();
-   for (unsigned int a : modelspace.proton_orbits)
-   {
-      Orbit & oa = modelspace.GetOrbit(a);
-      e0.OneBody(a,a) = (2*oa.n + oa.l +1.5); 
-      for (unsigned int b : e0.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
-      {
-        if (b<=a) continue;
-        Orbit & ob = modelspace.GetOrbit(b);
-        {
-           if (oa.n == ob.n+1)
-              e0.OneBody(a,b) = -sqrt( (oa.n)*(oa.n + oa.l +0.5));
-           else if (oa.n == ob.n-1)
-              e0.OneBody(a,b) = -sqrt( (ob.n)*(ob.n + ob.l +0.5));
-           e0.OneBody(b,a) = e0.OneBody(a,b);
-        }
-      }
-   }
-   e0.OneBody *= (HBARC*HBARC/M_NUCLEON/hw);
-   return e0;
-}
-
-
-
 
 
 

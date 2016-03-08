@@ -1969,10 +1969,8 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
    int Acore = 0;
 //   int wint = 4; // width for printing integers
 //   int wdouble = 12; // width for printing doubles
-//   for (auto& i : modelspace->holes)
-   for (auto& it_i : modelspace->holes)
+   for (auto& i : modelspace->holes)
    {
-      index_t i = it_i.first;
       Orbit& oi = modelspace->GetOrbit(i);
       Acore += oi.j2 +1;
    }
@@ -2066,6 +2064,8 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
         {
           Ket& ket = tbc_ket.GetKet(iket);
            double tbme = it.second(ibra,iket);
+           if (bra.p == bra.q) tbme *= sqrt(2); // For comparison with Nathan CHANGE THIS
+           if (ket.p == ket.q) tbme *= sqrt(2); // For comparison with Nathan CHANGE THIS
            if ( abs(tbme) > 1e-7 )
            {
              opfile << setw(4) << tbc_bra.J << " " << tbc_bra.parity << " " << tbc_bra.Tz  << "    "
