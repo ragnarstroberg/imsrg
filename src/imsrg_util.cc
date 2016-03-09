@@ -1192,6 +1192,83 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     Operator Yred = Y;
     Reduce(Yred);
 
+    cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << endl;
+//    X.comm111ss(Y,Zscalar);
+//    X.comm111st(Yred,Ztensor);
+    Zscalar.comm111ss(X,Y);
+    Ztensor.comm111st(X,Yred);
+    Zscalar.Symmetrize();
+    Ztensor.Symmetrize();
+    UnReduce(Ztensor);
+    cout << "comm111 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm111 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+    Zscalar.Erase();
+    Ztensor.Erase();
+    cout << "121ss" << endl;
+    Zscalar.comm121ss(X,Y);
+    cout << "121st" << endl;
+    Ztensor.comm121st(X,Yred);
+    Zscalar.Symmetrize();
+    Ztensor.Symmetrize();
+    UnReduce(Ztensor);
+    cout << "comm121 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm121 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+    Zscalar.Erase();
+    Ztensor.Erase();
+    Zscalar.comm122ss(X,Y);
+    Ztensor.comm122st(X,Yred);
+    Zscalar.Symmetrize();
+    Ztensor.Symmetrize();
+    UnReduce(Ztensor);
+    cout << "comm122 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm122 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+    Zscalar.Erase();
+    Ztensor.Erase();
+    Zscalar.comm222_pp_hh_221ss(X,Y);
+    Ztensor.comm222_pp_hh_221st(X,Yred);
+    Zscalar.Symmetrize();
+    Ztensor.Symmetrize();
+    UnReduce(Ztensor);
+    cout << "comm222_pp_hh_221 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm222_pp_hh_221 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+    Zscalar.Erase();
+    Ztensor.Erase();
+    X.comm222_phss(Y,Zscalar);
+//    Reduce(Y); // Not sure why I can't use Yred...
+    Zscalar.comm222_phss(X,Y);
+    Ztensor.comm222_phst(X,Yred);
+    Zscalar.Symmetrize();
+    Ztensor.Symmetrize();
+    UnReduce(Ztensor);
+    cout << "comm222_ph norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm222_ph diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+
+  }
+
+
+
+/*
+  void CommutatorTest(Operator& X, Operator& Y)
+  {
+    Operator Zscalar(X);
+    if ( (X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()) ) Zscalar.SetAntiHermitian();
+    if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Zscalar.SetHermitian();
+    Zscalar.Erase();
+    Operator Ztensor(Zscalar);
+    Operator Yred = Y;
+    Reduce(Yred);
+
+    cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << endl;
 //    X.comm111ss(Y,Zscalar);
 //    X.comm111st(Yred,Ztensor);
     Zscalar.comm111ss(X,Y);
@@ -1250,6 +1327,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
 
   }
+*/
+
+
 
 
 // template <typename T>

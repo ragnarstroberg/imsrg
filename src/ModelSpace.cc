@@ -113,7 +113,14 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
 }
 
 
-int TwoBodyChannel::GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];}; 
+//int TwoBodyChannel::GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];}; 
+int TwoBodyChannel::GetLocalIndex(int p, int q) const
+{
+ if (p<=q)
+   return KetMap[modelspace->GetKetIndex(p,q)];
+ else
+   return KetMap[modelspace->GetKetIndex(q,p)] + NumberKets;
+} 
 
 // get pointer to ket using local index
 Ket & TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
@@ -183,7 +190,9 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
 
 // Check if orbits pq participate in this cross-coupled two-body channel
 // Difference from regular channels:
-// no Pauli rule, <pp||nn> is allowed.
+// no Pauli rule, <pp||nn> is allowed. But |Tz| is still conserved,
+// i.e. <pp||pn> is not allowed. So we use |Tz| rather than Tz,
+// and don't use Tz=-1.
 bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
    if ((op->l + oq->l)%2 != parity)    return false;
