@@ -6,8 +6,8 @@ CC = g++
 #                        to be used if OpenBlas was compiled without the USE_OMP flat
 
 INCLUDE   = -I./armadillo
-FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  -flto
-SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  -flto
+FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  #-flto
+SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  #-flto
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
 FLAGS    += $(WARNFLAGS)
 SOFLAGS  += $(WARNFLAGS)
@@ -33,6 +33,7 @@ ifeq ($(THEHOST),jureca) # specific options for jureca cluster
 else
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  LIBS += -llapack
+ PYTHONFLAGS = -I/opt/anaconda/include/python2.7 -L/opt/boost/1.58.0/lib -lboost_python #-lpython 
  ifeq ($(WITHHOARD),on)
   LIBS += -L/opt/hoard/3.12/lib -lhoard
  endif
