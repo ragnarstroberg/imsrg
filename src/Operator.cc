@@ -2572,7 +2572,6 @@ void Operator::DoTensorPandyaTransformation( map<array<int,2>,arma::mat>& TwoBod
    for (int ich=0;ich<nch;++ich)
    {
       int ch_bra_cc = modelspace->SortedTwoBodyChannels_CC[ich];
-//      cout << "ich: " << ich << "  ch_bra_cc = " << ch_bra_cc << endl;
       TwoBodyChannel& tbc_bra_cc = modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
       int Jbra_cc = tbc_bra_cc.J;
       arma::uvec& bras_ph = tbc_bra_cc.GetKetIndex_ph();
@@ -2580,18 +2579,12 @@ void Operator::DoTensorPandyaTransformation( map<array<int,2>,arma::mat>& TwoBod
 
       for ( int ch_ket_cc : modelspace->SortedTwoBodyChannels_CC )
       {
-//        cout << "ch_ket_cc = " << ch_ket_cc << endl;
         TwoBodyChannel& tbc_ket_cc = modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
         int Jket_cc = tbc_ket_cc.J;
         if ( (Jbra_cc+Jket_cc < rank_J) or abs(Jbra_cc-Jket_cc)>rank_J ) continue;
         if ( (tbc_bra_cc.parity + tbc_ket_cc.parity + parity)%2>0 ) continue;
-//        if ( abs(tbc_bra_cc.Tz + tbc_ket_cc.Tz)%2 > 0 ) continue; // need an even number of protons, even number of neutrons.
 
         int nKets_cc = tbc_ket_cc.GetNumberKets();
-
-        // Need to make these maps to account for ch_bra and ch_ket.
-//        TwoBody_CC_hp[{ch_bra_cc,ch_ket_cc}] = arma::mat(nph_bras,   2*nKets_cc, arma::fill::zeros);
-//        TwoBody_CC_ph[{ch_bra_cc,ch_ket_cc}] = arma::mat(nph_bras,   2*nKets_cc, arma::fill::zeros);
 
 //        arma::mat& MatCC_hp = TwoBody_CC_hp[{ch_bra_cc,ch_ket_cc}];
         arma::mat& MatCC_ph = TwoBody_CC_ph[{ch_bra_cc,ch_ket_cc}];
@@ -2635,13 +2628,8 @@ void Operator::DoTensorPandyaTransformation( map<array<int,2>,arma::mat>& TwoBod
                   sm -= hatfactor * modelspace->phase(jb+jd+Jket_cc+J2) * ninej * tbme ;
                 }
               }
-//              char msg[200];
-//              sprintf(msg,"[ %d, %d // %d, %d ]",ibra,iket_cc,MatCC_ph.n_rows,MatCC_hp.n_cols);
-//              cout << msg << endl;
 //              MatCC_hp(ibra,iket_cc) = sm;
               MatCC_ph(ibra,iket_cc) = sm;
-//              TwoBody_CC_hp[{ch_bra_cc,ch_ket_cc}](ibra,iket_cc) = sm;
-
 
               // Exchange (a <-> b) to account for the (n_a - n_b) term
               // Get Tz,parity and range of J for <bd || ca > coupling
@@ -2661,11 +2649,8 @@ void Operator::DoTensorPandyaTransformation( map<array<int,2>,arma::mat>& TwoBod
                   sm -= hatfactor * modelspace->phase(ja+jd+Jket_cc+J2) * ninej * tbme ;
                 }
               }
-//              sprintf(msg,"[ %d, %d // %d, %d ]",ibra,iket_cc,MatCC_ph.n_rows,MatCC_ph.n_cols);
-//              cout << msg << endl;
 //              MatCC_ph(ibra,iket_cc) = sm;
               MatCC_ph(ibra+nph_bras,iket_cc) = sm;
-//              TwoBody_CC_ph[{ch_bra_cc,ch_ket_cc}](ibra,iket_cc) = sm;
 
            }
         }
@@ -2924,29 +2909,17 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    #pragma omp parallel for schedule(dynamic,1)
    for(int i=0;i<counter;++i)
    {
-//   for (auto& iter : Y_bar_hp )
-//   {
-//      int ch_bra_cc = iter.first[0];
-//      int ch_ket_cc = iter.first[1];
       int ch_bra_cc = ybras[i];
       int ch_ket_cc = ykets[i];
       int Jbra = modelspace->GetTwoBodyChannel_CC(ch_bra_cc).J;
       int Jket = modelspace->GetTwoBodyChannel_CC(ch_ket_cc).J;
       int flipphase = modelspace->phase( Jbra - Jket ) * ( Z.IsHermitian() ? -1 : 1 );
-      if (X.IsHermitian())
-      {
-//        Z_bar[{ch_bra_cc,ch_ket_cc}] =  ( X_bar_hp[ch_bra_cc] * Y_bar_hp[{ch_bra_cc,ch_ket_cc}] - X_bar_ph[ch_bra_cc] * Y_bar_ph[{ch_bra_cc,ch_ket_cc}]) 
-//                           -flipphase * ( X_bar_hp[ch_ket_cc] * Y_bar_hp[{ch_ket_cc,ch_bra_cc}] - X_bar_ph[ch_ket_cc] * Y_bar_ph[{ch_ket_cc,ch_bra_cc}]).t() ;
-        Z_bar[{ch_bra_cc,ch_ket_cc}] =  ( Xt_bar_ph[ch_bra_cc] * Y_bar_ph[{ch_bra_cc,ch_ket_cc}]) 
-                           -flipphase * ( Xt_bar_ph[ch_ket_cc] * Y_bar_ph[{ch_ket_cc,ch_bra_cc}]).t() ;
-      }
-      else
-      {
-//        Z_bar[{ch_bra_cc,ch_ket_cc}] =  ( X_bar_ph[ch_bra_cc] * Y_bar_ph[{ch_bra_cc,ch_ket_cc}]  - X_bar_hp[ch_bra_cc] * Y_bar_hp[{ch_bra_cc,ch_ket_cc}])
-//                           -flipphase * ( X_bar_ph[ch_ket_cc] * Y_bar_ph[{ch_ket_cc,ch_bra_cc}]  - X_bar_hp[ch_ket_cc] * Y_bar_hp[{ch_ket_cc,ch_bra_cc}]).t() ;
-        Z_bar[{ch_bra_cc,ch_ket_cc}] =  ( -Xt_bar_ph[ch_bra_cc] * Y_bar_ph[{ch_bra_cc,ch_ket_cc}]  )
-                           -flipphase * ( -Xt_bar_ph[ch_ket_cc] * Y_bar_ph[{ch_ket_cc,ch_bra_cc}]  ).t() ;
-      }
+      auto& XJ1 = Xt_bar_ph[ch_bra_cc];
+      auto& XJ2 = Xt_bar_ph[ch_ket_cc];
+      auto& YJ1J2 = Y_bar_ph[{ch_bra_cc,ch_ket_cc}]; // These two should be related...
+      auto& YJ2J1 = Y_bar_ph[{ch_ket_cc,ch_bra_cc}];
+      
+      Z_bar[{ch_bra_cc,ch_ket_cc}] = XJ1 * YJ1J2 -flipphase*(XJ2 * YJ2J1).t();
    }
    profiler.timer["Build Z_bar_tensor"] += omp_get_wtime() - t_start;
 
