@@ -1867,14 +1867,15 @@ void Operator::DoPandyaTransformation(deque<arma::mat>& TwoBody_CC_hp, deque<arm
          Ket & bra_cc = tbc_cc.GetKet( kets_ph[ibra] );
          int h = bra_cc.p;
          int p = bra_cc.q;
-         if (modelspace->GetOrbit(h).ph==0)
-         {
-           swap(p,h);
-         }
+//         if (modelspace->GetOrbit(h).ph==0)
+//         {
+//           swap(p,h);
+//         }
          Orbit & oh = modelspace->GetOrbit(h);
          Orbit & op = modelspace->GetOrbit(p);
          double jh = oh.j2*0.5;
          double jp = op.j2*0.5;
+         double na_nb_factor = oh.ph - op.ph;
 
          // loop over cross-coupled kets |cd> in this channel
          // we go to 2*nKets to include |cd> and |dc>
@@ -1899,14 +1900,19 @@ void Operator::DoPandyaTransformation(deque<arma::mat>& TwoBody_CC_hp, deque<arm
                double tbme = TwoBody.GetTBME_J(J_std,h,d,c,p);
                sm -= (2*J_std+1) * sixj * tbme ;
             }
+            // Xabij = sm
+            // Xbaji = (-1)**(a+b+i+j) Xabij
             if (orientation=="normal")
             {
               TwoBody_CC_hp[ch_cc](ibra,iket_cc) = sm;
-              TwoBody_CC_ph[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(jh+jp+jc+jd) * sm;
+              TwoBody_CC_ph[ch_cc](ibra,iket_cc+nKets_cc) =  modelspace->phase(jh+jp+jc+jd) * sm;
+//              TwoBody_CC_ph[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(jh+jp+jc+jd) * sm;
             }
+            // Xijab = hx * Xabij
+            // Xjiba = hx * (-1)**(a+b+i+j) Xabij
             else if (orientation=="transpose")
             {
-              TwoBody_CC_hp[ch_cc](iket_cc,ibra) = herm*sm;
+              TwoBody_CC_hp[ch_cc](iket_cc,ibra) = sm;
               TwoBody_CC_ph[ch_cc](iket_cc+nKets_cc,ibra) =  modelspace->phase(jh+jp+jc+jd) * sm;
 //              TwoBody_CC_ph[ch_cc](iket_cc+nKets_cc,ibra) =  - modelspace->phase(ja+jb+jc+jd) * sm;
             }
@@ -1923,19 +1929,29 @@ void Operator::DoPandyaTransformation(deque<arma::mat>& TwoBody_CC_hp, deque<arm
                double tbme = TwoBody.GetTBME_J(J_std,p,d,c,h);
                sm -= (2*J_std+1) * sixj * tbme ;
             }
+            // Xbaij = sm
+            // Xabji = (-1)**(a+b+i+j) Xbaij
             if (orientation=="normal")
             {
               TwoBody_CC_ph[ch_cc](ibra,iket_cc) = sm;
-              TwoBody_CC_hp[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(jh+jp+jc+jd) * sm;
+//              TwoBody_CC_hp[ch_cc](ibra,iket_cc+nKets_cc) = herm* modelspace->phase(jh+jp+jc+jd) * sm;
+              TwoBody_CC_hp[ch_cc](ibra,iket_cc+nKets_cc) = modelspace->phase(jh+jp+jc+jd) * sm;
             }
+            // Xijba = hx * Xbaij
+            // Xjiba = hx * (-1)**(a+b+i+j) * Xbaij
             else if (orientation=="transpose")
             {
-              TwoBody_CC_ph[ch_cc](iket_cc,ibra) = herm*sm;
+              TwoBody_CC_ph[ch_cc](iket_cc,ibra) = sm;
 //              TwoBody_CC_ph[ch_cc](iket_cc,ibra) = -herm*sm;
               TwoBody_CC_hp[ch_cc](iket_cc+nKets_cc,ibra) =  modelspace->phase(jh+jp+jc+jd) * sm;
             }
 
          }
+      }
+      if (orientation == "transpose" and herm<0)
+      {
+        TwoBody_CC_hp[ch_cc] *= -1;
+        TwoBody_CC_ph[ch_cc] *= -1;
       }
    }
 }
@@ -2144,6 +2160,8 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 //   deque<arma::mat> Y_bar_hp (InitializePandya( nChannels, "normal"));
 //   deque<arma::mat> Y_bar_ph (InitializePandya( nChannels, "normal"));
 
+
+
 // Experimental
    deque<arma::mat> X_bar_hp (InitializePandya( nChannels, "normal"));
    deque<arma::mat> X_bar_ph (InitializePandya( nChannels, "normal"));
@@ -2175,6 +2193,19 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    for (int ich=0; ich<nch; ++ich )
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
+//      cout << "ch = " << ch << endl;
+//      if( arma::norm(X_bar_ph[ch],"frob")>1e-6 or arma::norm(X_bar_hp[ch],"frob")>1e-6)
+//      {
+//      cout << "Xph + " << arma::norm(Xt_bar_ph[ch].t() + X_bar_ph[ch], "frob") << endl;
+//      cout << "Xph - " << arma::norm(Xt_bar_ph[ch].t() - X_bar_ph[ch], "frob") << endl;
+//      cout << "Xhp + " << arma::norm(Xt_bar_hp[ch].t() + X_bar_hp[ch], "frob") << endl;
+//      cout << "Xhp - " << arma::norm(Xt_bar_hp[ch].t() - X_bar_hp[ch], "frob") << endl;
+//      cout << "Yph + " << arma::norm(Yt_bar_ph[ch].t() + Y_bar_ph[ch], "frob") << endl;
+//      cout << "Yph - " << arma::norm(Yt_bar_ph[ch].t() - Y_bar_ph[ch], "frob") << endl;
+//      cout << "Yhp + " << arma::norm(Yt_bar_hp[ch].t() + Y_bar_hp[ch], "frob") << endl;
+//      cout << "Yhp - " << arma::norm(Yt_bar_hp[ch].t() - Y_bar_hp[ch], "frob") << endl;
+//      cout << endl;
+//      }
 //      cout << "ch = " << ch << " Xhpdim = (" << X_bar_hp[ch].n_rows << "," << X_bar_hp[ch].n_cols << ")  "
 //                            << " Xphdim = (" << X_bar_ph[ch].n_rows << "," << X_bar_ph[ch].n_cols << ")  "
 //                            << " Xthpdim = (" << Xt_bar_hp[ch].n_rows << "," << Xt_bar_hp[ch].n_cols << ")  "
@@ -2204,11 +2235,12 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 //      Z_bar[ch] =  hx*(X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch] )
 //                -  hy*(Y_bar_hp[ch].t() * X_bar_hp[ch] + Y_bar_ph[ch].t() * X_bar_ph[ch]);
 //      Z_bar[ch] =  hx*(X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch]);
-//      Z_bar[ch] =  (Xt_bar_hp[ch] * Y_bar_hp[ch] - Xt_bar_ph[ch] * Y_bar_ph[ch]);
-      if (hx>1)
-         Z_bar[ch] =  X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch];
-      else
-         Z_bar[ch] =  X_bar_ph[ch].t() * Y_bar_ph[ch] - X_bar_hp[ch].t() * Y_bar_hp[ch]   ;
+      Z_bar[ch] =  (Xt_bar_hp[ch] * Y_bar_hp[ch] - Xt_bar_ph[ch] * Y_bar_ph[ch]);
+//      Z_bar[ch] =  (Xt_bar_hp[ch] * Y_bar_hp[ch] + Xt_bar_ph[ch] * Y_bar_ph[ch]);
+//      if (hx>1)
+//         Z_bar[ch] =  X_bar_hp[ch].t() * Y_bar_hp[ch] - X_bar_ph[ch].t() * Y_bar_ph[ch];
+//      else
+//         Z_bar[ch] =  X_bar_ph[ch].t() * Y_bar_ph[ch] - X_bar_hp[ch].t() * Y_bar_hp[ch]   ;
 
                    
       TwoBodyChannel_CC& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch);
@@ -2227,15 +2259,22 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 //      {
 //        cout << "### ch = " << ch << " Zbar = " << Z_bar[ch](13,13) << endl;
 //      }
+
+//      cout << "ch = " << ch << endl;
+//      cout << "Norm Zbar = " << arma::norm( Z_bar[ch], "frob") << endl;
+//      cout << "Norm YX = " << arma::norm( (Yt_bar_hp[ch] * X_bar_hp[ch] - Yt_bar_ph[ch] * X_bar_ph[ch]) , "frob") << endl;
+//      cout << "Norm + = " << arma::norm( Z_bar[ch].t() + (Yt_bar_hp[ch] * X_bar_hp[ch] - Yt_bar_ph[ch] * X_bar_ph[ch]) , "frob") << endl;
+//      cout << "Norm - = " << arma::norm( Z_bar[ch].t() - (Yt_bar_hp[ch] * X_bar_hp[ch] - Yt_bar_ph[ch] * X_bar_ph[ch]) , "frob") << endl;
 //      Z_bar[ch] =  X_bar_hp[ch] * Y_bar_hp[ch] + X_bar_ph[ch] * Y_bar_ph[ch] ;
 //      Z_bar[ch] -= Z_bar[ch].t();
 //      Z_bar[ch] -= hx*hy*Z_bar[ch].t();
-      Z_bar[ch] -=  (Yt_bar_hp[ch] * X_bar_hp[ch] - Yt_bar_ph[ch] * X_bar_ph[ch]);
+//      Z_bar[ch] -=  (Yt_bar_hp[ch] * X_bar_hp[ch] - Yt_bar_ph[ch] * X_bar_ph[ch]);
+//      Z_bar[ch] -=  (Yt_bar_hp[ch] * X_bar_hp[ch] + Yt_bar_ph[ch] * X_bar_ph[ch]);
 //      Z_bar[ch] -=  hy*(Y_bar_hp[ch].t() * X_bar_hp[ch] - Y_bar_ph[ch].t() * X_bar_ph[ch]);
-//      if (hx*hy>1)
-//         Z_bar[ch] -= Z_bar[ch].t();
-//      else
-//         Z_bar[ch] += Z_bar[ch].t();
+      if (hx*hy>0)
+         Z_bar[ch] -= Z_bar[ch].t();
+      else
+         Z_bar[ch] += Z_bar[ch].t();
 
       if (tbc_cc.parity==0 and tbc_cc.Tz==1 and tbc_cc.J>0 and tbc_cc.J<5)
       {
