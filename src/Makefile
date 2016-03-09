@@ -14,8 +14,8 @@ SOFLAGS  += $(WARNFLAGS)
 INSTDIR = $(HOME)
 
 ifeq ($(DEBUG),on)
- FLAGS = $(filter-out -flto, $(FLAGS))
- SOFLAGS = $(filter-out -flto, $(SOFLAGS))
+ FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -ffast-math  
+ SOFLAGS   = -march=native -std=c++11 -fopenmp -fPIC -ffast-math  
  FLAGS += -g
  SOFLAGS += -g
 endif
@@ -38,7 +38,7 @@ ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  endif
 else  # default options. assumes boost and python are set up nicely.
  LIBS += -llapack
- ALL += pyIMSRG.so
+# ALL += pyIMSRG.so
 endif
 endif
 

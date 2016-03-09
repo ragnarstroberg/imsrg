@@ -1,0 +1,12 @@
+/*!
+\mainpage IMSRG++: an implementation of In-Medium Similarity Renormalization Group for nuclei, written in C++
+
+This should contain some background information
+\f[
+ H' = e^{\Omega}He^{-\Omega}
+\f]
+
+
+
+
+*/

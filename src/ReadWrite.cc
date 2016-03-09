@@ -2064,6 +2064,8 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
         {
           Ket& ket = tbc_ket.GetKet(iket);
            double tbme = it.second(ibra,iket);
+           if (bra.p == bra.q) tbme *= sqrt(2); // For comparison with Nathan CHANGE THIS
+           if (ket.p == ket.q) tbme *= sqrt(2); // For comparison with Nathan CHANGE THIS
            if ( abs(tbme) > 1e-7 )
            {
              opfile << setw(4) << tbc_bra.J << " " << tbc_bra.parity << " " << tbc_bra.Tz  << "    "
