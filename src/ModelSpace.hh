@@ -9,6 +9,7 @@
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
 #endif
+#define OCC_CUT 1e-6
 
 
 using namespace std;
@@ -26,7 +27,8 @@ class Orbit
    int l;
    int j2;
    int tz2;
-   int ph; // particle=0, hole=1
+   double occ; // particle=0, hole=1
+//   int ph; // particle=0, hole=1
 //   int io; // inside=0, outside=1
    int cvq; // core=0, valence=1, qspace=2
    int index;
@@ -34,7 +36,8 @@ class Orbit
    //Constructors
    ~Orbit();
    Orbit();
-   Orbit(int n ,int l, int j, int t, int ph, int cvq, int index);
+   Orbit(int n ,int l, int j, int t, double occ, int cvq, int index);
+//   Orbit(int n ,int l, int j, int t, int ph, int cvq, int index);
    Orbit(const Orbit&);
 //   void swap(Orbit&) throw();
 //   Orbit& operator=( const Orbit& );
@@ -103,11 +106,8 @@ class TwoBodyChannel
    arma::uvec KetIndex_vv ;
    arma::uvec KetIndex_qv ;
    arma::uvec KetIndex_qq ;
-//   arma::uvec KetIndex_c_c;
-//   arma::uvec KetIndex_q_q;
-//   arma::uvec KetIndex_q_c ;
-//   arma::uvec KetIndex_v_c ;
-//   arma::uvec KetIndex_v_q;
+   arma::vec  Ket_occ_hh;
+
 
 
    arma::uvec GetKetIndexFromList(vector<index_t>& vec_in);
@@ -120,11 +120,7 @@ class TwoBodyChannel
    arma::uvec& GetKetIndex_vv();
    arma::uvec& GetKetIndex_qv();
    arma::uvec& GetKetIndex_qq();
-//   arma::uvec& GetKetIndex_c_c();  // cc
-//   arma::uvec& GetKetIndex_q_q();  //qq
-//   arma::uvec& GetKetIndex_q_c(); // qc
-//   arma::uvec& GetKetIndex_v_c(); // vc
-//   arma::uvec& GetKetIndex_v_q(); // qv
+
 
 // private:
    //Fields
@@ -133,8 +129,6 @@ class TwoBodyChannel
    vector<int> KetList; // eg [2, 4, 7, ...] Used for looping over all the kets in the channel
    vector<int> KetMap;  // eg [ -1, -1, 0, -1, 1, -1, -1, 2 ...] Used for asking what is the local index of this ket. -1 means the ket doesn't participate in this channel
    //Methods
-//   virtual bool CheckChannel_ket(int p, int q) const;  // check if |pq> participates in this channel
-//   bool CheckChannel_ket(Ket &ket) const {return CheckChannel_ket(ket.p,ket.q);};  // check if |pq> participates in this channel
    virtual bool CheckChannel_ket(Orbit* op, Orbit* oq) const;  // check if |pq> participates in this channel
    bool CheckChannel_ket(Ket &ket) const {return CheckChannel_ket(ket.op,ket.oq);};  // check if |pq> participates in this channel
    
@@ -167,42 +161,29 @@ class ModelSpace
    ModelSpace();
    ModelSpace(const ModelSpace&); // copy constructor
    ModelSpace( ModelSpace&&); // move constructor
-   ModelSpace(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
    ModelSpace(int emax, vector<string> hole_list, vector<string> valence_list);
+   ModelSpace(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
    ModelSpace(int emax, string reference, string valence);
    ModelSpace(int emax, string reference);
-   ModelSpace(int emax, int A, int Z);
 
    // Overloaded operators
    ModelSpace operator=(const ModelSpace&); 
    ModelSpace operator=(ModelSpace&&); 
 
+   // Methods
+
    void Init(int emax, string reference, string valence);
-   void Init(int emax, string valence);
-   void Init(int emax, vector<index_t> hole_list, vector<index_t> core_list, vector<index_t> valence_list);
-//   void Init(int emax, vector<index_t> hole_list, vector<index_t> valence_list);
+   void Init(int emax, map<index_t,double> hole_list, vector<index_t> core_list, vector<index_t> valence_list);
    void Init(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
-   void Init(int emax, vector<string> hole_list, vector<string> valence_list);
-   void Init_AZ(int emax, int A, int Z);
+
+//   vector<index_t> GetOrbitsAZ(int A, int Z);
+   map<index_t,double> GetOrbitsAZ(int A, int Z);
    void GetAZfromString(string str, int& A, int& Z);
-   vector<index_t> GetOrbitsAZ(int A, int Z);
    vector<index_t> String2Index( vector<string> vs );
 
-   // Common model spaces
-//   void Init_PShell(int nmax);
-//   void Init_SDShell(int nmax);
-//   void Init_PSDShell(int nmax);
-//   void Init_O16PSDShell(int nmax);
-//   void Init_FPShell(int nmax);
-//   void Init_SDFPShell(int nmax);
-//   void Init_SD3F7P3Shell(int nmax);
-//   void Init_FPG9Shell(int nmax);
-
-
-   // Methods
    void SetupKets();
    void AddOrbit(Orbit orb);
-   void AddOrbit(int n, int l, int j2, int tz2, int ph, int io);
+   void AddOrbit(int n, int l, int j2, int tz2, double occ, int io);
    // Setter/Getters
    Orbit& GetOrbit(int i) {return (Orbit&) Orbits[i];}; 
 //   Orbit& GetOrbit(int i) const {return (Orbit&) Orbits[i];}; 
@@ -227,6 +208,8 @@ class ModelSpace
    inline int GetTwoBodyJmax() const {return TwoBodyJmax;};
    inline int GetThreeBodyJmax() const {return ThreeBodyJmax;};
    void SetReference(vector<index_t>);
+   void SetReference(map<index_t,double>);
+   void SetReference(string);
 
    int GetEmax(){return Emax;};
    int GetE2max(){return E2max;};
@@ -257,7 +240,8 @@ class ModelSpace
 
 
    // Data members
-   vector<index_t> holes;           // in the reference Slater determinant
+//   vector<index_t> holes;           // in the reference Slater determinant
+   map<index_t,double> holes;           // in the reference Slater determinant
    vector<index_t> particles;       // above the reference Slater determinant
    vector<index_t> core;            // core for decoupling
    vector<index_t> valence;         // valence space for decoupling
@@ -274,6 +258,7 @@ class ModelSpace
    vector<index_t> KetIndex_vv;
    vector<index_t> KetIndex_qv;
    vector<index_t> KetIndex_qq;
+   vector<double> Ket_occ_hh;
 
 //   array< array< vector<index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
    array< array< unordered_map<index_t,index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
