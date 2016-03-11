@@ -748,8 +748,6 @@ double Operator::GetMP3_Energy()
    double t_start = omp_get_wtime();
    double Emp3 = 0;
    // This can certainly be optimized, but I'll wait until this is the bottleneck.
-   index_t nholes = modelspace->holes.size();
-   index_t norbits = modelspace->GetNumberOrbits();
    int nch = modelspace->GetNumberTwoBodyChannels();
 
 /*
@@ -838,6 +836,8 @@ double Operator::GetMP3_Energy()
    cout << "done with pp and hh. E(3) = " << Emp3 << endl;
 
 /*
+   index_t nholes = modelspace->holes.size();
+   index_t norbits = modelspace->GetNumberOrbits();
 
 //   #pragma omp parallel for reduction(+:Emp3)
    for (index_t aa=0;aa<nholes;aa++)
@@ -1875,9 +1875,9 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
             for (auto& it_c : modelspace->holes)
             {
                index_t c = it_c.first;
-//               double occ_c = it_c.second;
-               cijJ += Jfactor * Mpp.GetTBME(ch,c,i,c,j); 
-               cijJ += Jfactor * Mff.GetTBME(ch,c,i,c,j);
+               double occ_c = it_c.second;
+               cijJ += Jfactor * occ_c * Mpp.GetTBME(ch,c,i,c,j); 
+               cijJ += Jfactor * (1-occ_c) * Mff.GetTBME(ch,c,i,c,j);
             // Sum c over particles and include the n_a * n_b terms
             }
             for (auto& c : modelspace->particles)
@@ -2306,7 +2306,7 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
                for (auto& b : X.OneBodyChannels.at({oa.n,oa.l,oa.j2}) ) // is this is slow, it can probably be sped up by looping over OneBodyChannels
                {
                   Orbit &ob = modelspace->GetOrbit(b);
-                  double jb = ob.j2/2.0;
+//                  double jb = ob.j2/2.0;
                   double nanb = occ_a * (1-ob.occ);
 //                  if (ob.j2 == oa.j2 and ob.l == oa.l and ob.tz2 == oa.tz2)
 //                  {
@@ -2574,8 +2574,8 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
                {
                 double hatfactor = sqrt( (2*J1+1)*(2*J2+1) );
                 double sixj = modelspace->GetSixJ(J1, J2, Lambda, jj, ji, jc);
-                cijJ += hatfactor * sixj * modelspace->phase(jj + jc + J1 + Lambda) * Mpp.GetTBME_J(J1,J2,c,i,c,j);
-                cijJ += hatfactor * sixj * modelspace->phase(jj + jc + J1 + Lambda) * Mff.GetTBME_J(J1,J2,c,i,c,j);  // This is probably right???
+                cijJ += hatfactor * sixj * modelspace->phase(jj + jc + J1 + Lambda) * occ_c * Mpp.GetTBME_J(J1,J2,c,i,c,j);
+                cijJ += hatfactor * sixj * modelspace->phase(jj + jc + J1 + Lambda) * (1-occ_c) * Mff.GetTBME_J(J1,J2,c,i,c,j);  // This is probably right???
                }
               }
            // Sum c over particles and include the n_a * n_b terms

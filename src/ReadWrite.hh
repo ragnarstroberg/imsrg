@@ -64,6 +64,8 @@ class ReadWrite
    bool goodstate;
    array<double,5> LECs;
    string scratch_dir;
+   string File2N;
+   string File3N;
    
 
 };
