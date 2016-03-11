@@ -1378,6 +1378,7 @@ void Operator::comm110ss( const Operator& X, const Operator& Y)
       index_t a = it_a.first;
       double occ_a = it_a.second;
       Z.ZeroBody += (modelspace->GetOrbit(a).j2+1) * occ_a * xyyx(a,a);
+//      cout << a << ": " << occ_a << "   " << xyyx(a,a) << "  " << Z.ZeroBody << endl;
    }
 }
 
@@ -1411,11 +1412,28 @@ void Operator::comm220ss( const Operator& X, const Operator& Y)
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       auto hh = tbc.GetKetIndex_hh();
       auto pp = tbc.GetKetIndex_pp();
+      auto ph = tbc.GetKetIndex_ph();
+      auto ppph = arma::join_cols(pp,ph);
+      if (hh.size()==0 or pp.size()==0) continue;
       auto nn = tbc.Ket_occ_hh;
-      auto nbarnbar = 1-nn; // figure out a way to do this...
-      auto & X2 = X.TwoBody.GetMatrix(ch).submat(hh,pp);
-      auto & Y2 = Y.TwoBody.GetMatrix(ch).submat(pp,hh);
-      Z.ZeroBody += 2 * (2*tbc.J+1) * arma::trace( X2 * Y2 );
+      auto nbarnbar = tbc.Ket_unocc_ph; // note: this is an arma::rowvec
+//      auto & X2 = X.TwoBody.GetMatrix(ch).submat(hh,pp);
+//      arma::mat Y2 = Y.TwoBody.GetMatrix(ch).submat(pp,hh);
+      auto & X2 = X.TwoBody.GetMatrix(ch).submat(hh,ppph);
+      arma::mat Y2 = Y.TwoBody.GetMatrix(ch).submat(ppph,hh);
+//      Y2.each_row() %= nbarnbar.t();
+//      cout << "ch = " << ch << " " << tbc.J << " " << tbc.parity << " " << tbc.Tz 
+//           << "  sizes hh,pp,ph = " << hh.size() << "," << pp.size() << "," << ph.size() << endl;
+//      cout << "Y2:"  << endl << Y2 << endl;
+//      cout << "nn: " << endl << nn << endl;
+//      cout << "nbarnbar: " << endl << nbarnbar << endl;
+//      cout << "Y2 dim = " << Y2.n_rows << "," << Y2.n_cols << "   nbarnbar.size = " << nbarnbar.size() << endl;
+//      cout << "Y2.tail_rows(nbarnbar.size()):" << Y2.tail_rows(nbarnbar.size()) << endl;
+      Y2.tail_rows(nbarnbar.size()).each_col() %= nbarnbar;
+      // Try vectorize to avoid excessive multiplications ??
+//      cout << "ch = " << ch << "X2" << endl << X2 << endl << "Y2" << endl << Y2 << endl << "  X2Y2: " << endl << arma::diagvec(X2 * Y2) << endl << "nn: " << endl << nn << endl << "ZeroBody = " << Z.ZeroBody << endl;
+      Z.ZeroBody += 2 * (2*tbc.J+1) * arma::sum(arma::diagvec( X2 * Y2 ) % nn); // This could be made more efficient, but who cares?
+//      Z.ZeroBody += 2 * (2*tbc.J+1) * arma::sum(arma::diagvec( X2 * Y2 ) ); // This could be made more efficient, but who cares?
    }
 }
 
@@ -1777,6 +1795,7 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
 
    static TwoBodyME Mpp = Z.TwoBody;
    static TwoBodyME Mhh = Z.TwoBody;
+   static TwoBodyME Mff = Z.TwoBody;
 
    double t = omp_get_wtime();
    // Don't use omp, because the matrix multiplication is already
@@ -1796,31 +1815,43 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
 
       auto& Matrixpp = Mpp.GetMatrix(ch,ch);
       auto& Matrixhh = Mhh.GetMatrix(ch,ch);
+      auto& Matrixff = Mff.GetMatrix(ch,ch);
 
       auto& kets_pp = tbc.GetKetIndex_pp();
       auto& kets_hh = tbc.GetKetIndex_hh();
+      auto& nanb = tbc.Ket_occ_hh;
+      auto& nabar_nbbar = tbc.Ket_unocc_hh;
       
       Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
-      Matrixhh =  LHS.cols(kets_hh) * RHS.rows(kets_hh);
+      Matrixhh =  LHS.cols(kets_hh) * arma::diagmat(nanb) *  RHS.rows(kets_hh) ;
+      Matrixff =  LHS.cols(kets_hh) * arma::diagmat(nabar_nbbar) *  RHS.rows(kets_hh) ;
+//      Matrixhh =  LHS.cols(kets_hh) * ( RHS.rows(kets_hh).each_col() % nanb );
+//      Matrixff =  LHS.cols(kets_hh) * ( RHS.rows(kets_hh).each_col() % nabar_nbbar); // 
 
       if (Z.IsHermitian())
       {
          Matrixpp +=  Matrixpp.t();
          Matrixhh +=  Matrixhh.t();
+         Matrixff +=  Matrixff.t();
       }
       else if (Z.IsAntiHermitian()) // i.e. LHS and RHS are both hermitian or ant-hermitian
       {
          Matrixpp -=  Matrixpp.t();
          Matrixhh -=  Matrixhh.t();
+         Matrixff +=  Matrixff.t();
       }
       else
       {
         Matrixpp -=  RHS.cols(kets_pp) * LHS.rows(kets_pp);
-        Matrixhh -=  RHS.cols(kets_hh) * LHS.rows(kets_hh);
+//        Matrixhh -=  RHS.cols(kets_hh) * ( LHS.rows(kets_hh).each_col() % nanb );
+//        Matrixff -=  RHS.cols(kets_hh) * ( LHS.rows(kets_hh).each_col() % nabar_nbbar );
+        Matrixhh =  RHS.cols(kets_hh) * arma::diagmat(nanb) *  LHS.rows(kets_hh) ;
+        Matrixff =  RHS.cols(kets_hh) * arma::diagmat(nabar_nbbar) *  LHS.rows(kets_hh) ;
       }
 
       // The two body part
-      OUT += Matrixpp - Matrixhh;
+//      OUT += Matrixpp - Matrixhh;
+      OUT += Matrixpp + Matrixff - Matrixhh;
    } //for ch
    profiler.timer["pphh TwoBody bit"] += omp_get_wtime() - t;
 
@@ -1844,9 +1875,9 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
             for (auto& it_c : modelspace->holes)
             {
                index_t c = it_c.first;
-               double occ_c = it_c.second;
-               cijJ += Jfactor * occ_c *     Mpp.GetTBME(ch,c,i,c,j); // NOTE, the occ factors should be in the Mpp already...
-               cijJ += Jfactor * (1-occ_c) * Mhh.GetTBME(ch,c,i,c,j);
+//               double occ_c = it_c.second;
+               cijJ += Jfactor * Mpp.GetTBME(ch,c,i,c,j); // NOTE, the occ factors should be in the Mpp already...
+               cijJ += Jfactor * Mff.GetTBME(ch,c,i,c,j);
             // Sum c over particles and include the n_a * n_b terms
             }
             for (auto& c : modelspace->particles)

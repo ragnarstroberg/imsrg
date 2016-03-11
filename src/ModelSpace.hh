@@ -107,6 +107,9 @@ class TwoBodyChannel
    arma::uvec KetIndex_qv ;
    arma::uvec KetIndex_qq ;
    arma::vec  Ket_occ_hh;
+   arma::vec  Ket_unocc_hh;
+   arma::vec  Ket_occ_ph;
+   arma::vec  Ket_unocc_ph;
 
 
 
@@ -259,6 +262,9 @@ class ModelSpace
    vector<index_t> KetIndex_qv;
    vector<index_t> KetIndex_qq;
    vector<double> Ket_occ_hh;
+   vector<double> Ket_unocc_hh;
+   vector<double> Ket_occ_ph;
+   vector<double> Ket_unocc_ph;
 
 //   array< array< vector<index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
    array< array< unordered_map<index_t,index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity

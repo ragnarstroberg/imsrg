@@ -103,15 +103,30 @@ void TwoBodyChannel::Initialize(int N, ModelSpace *ms)
    KetIndex_vv = GetKetIndexFromList(modelspace->KetIndex_vv);
    KetIndex_qv = GetKetIndexFromList(modelspace->KetIndex_qv);
    KetIndex_qq = GetKetIndexFromList(modelspace->KetIndex_qq);
-   vector<double> tmpvec;
+   vector<double> occvec;
+   vector<double> unoccvec;
    for (index_t i=0;i<modelspace->KetIndex_hh.size();++i)
    {
       if (CheckChannel_ket(modelspace->GetKet(modelspace->KetIndex_hh[i])))
       {
-        tmpvec.push_back( modelspace->Ket_occ_hh[i]);
+        occvec.push_back( modelspace->Ket_occ_hh[i]);
+        unoccvec.push_back( modelspace->Ket_unocc_hh[i]);
       }
    }
-   Ket_occ_hh = arma::vec(tmpvec);
+   Ket_occ_hh = arma::vec(occvec);
+   Ket_unocc_hh = arma::vec(unoccvec);
+   occvec.clear();
+   unoccvec.clear();
+   for (index_t i=0;i<modelspace->KetIndex_ph.size();++i)
+   {
+      if (CheckChannel_ket(modelspace->GetKet(modelspace->KetIndex_ph[i])))
+      {
+        occvec.push_back( modelspace->Ket_occ_ph[i]);
+        unoccvec.push_back( modelspace->Ket_unocc_ph[i]);
+      }
+   }
+   Ket_occ_ph = arma::vec(occvec);
+   Ket_unocc_ph = arma::vec(unoccvec);
 }
 
 
@@ -250,6 +265,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    KetIndex_qv( ms.KetIndex_qv),
    KetIndex_qq( ms.KetIndex_qq),
    Ket_occ_hh( ms.Ket_occ_hh),
+   Ket_unocc_hh( ms.Ket_unocc_hh),
    Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
    OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
    OneBodyChannels(ms.OneBodyChannels),
@@ -279,6 +295,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    KetIndex_qv( ms.KetIndex_qv),
    KetIndex_qq( ms.KetIndex_qq),
    Ket_occ_hh( ms.Ket_occ_hh),
+   Ket_unocc_hh( ms.Ket_unocc_hh),
    Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
    OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
    OneBodyChannels(move(ms.OneBodyChannels)),
@@ -559,6 +576,7 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
    KetIndex_qv =  ms.KetIndex_qv;
    KetIndex_qq =  ms.KetIndex_qq;
    Ket_occ_hh  =  ms.Ket_occ_hh;
+   Ket_unocc_hh  =  ms.Ket_unocc_hh;
    Emax = ms.Emax;
    E2max = ms.E2max;
    E3max = ms.E3max;
@@ -607,6 +625,7 @@ ModelSpace ModelSpace::operator=(ModelSpace&& ms)
    KetIndex_vv =  move(ms.KetIndex_vv);
    KetIndex_qv =  move(ms.KetIndex_qv);
    KetIndex_qq =  move(ms.KetIndex_qq);
+   Ket_unocc_hh =  move(ms.Ket_unocc_hh);
    Ket_occ_hh =  move(ms.Ket_occ_hh);
    Emax = move(ms.Emax);
    E2max = move(ms.E2max);
@@ -722,11 +741,17 @@ void ModelSpace::SetupKets()
     if (cvq_p+cvq_q==3)      KetIndex_qv.push_back(index); // 12
     if (cvq_p+cvq_q==4)      KetIndex_qq.push_back(index); // 22
     if (occp<OCC_CUT and occq<OCC_CUT) KetIndex_pp.push_back(index);
-    if (occp>OCC_CUT or occq>OCC_CUT)  KetIndex_ph.push_back(index);
+    if (occp>OCC_CUT or occq>OCC_CUT)
+    {
+       KetIndex_ph.push_back(index);
+       Ket_occ_ph.push_back(occp*occq);
+       Ket_unocc_ph.push_back((1-occp)*(1-occq));
+    }
     if (occp>OCC_CUT and occq>OCC_CUT)
     {
        KetIndex_hh.push_back(index);
        Ket_occ_hh.push_back(occp*occq);
+       Ket_unocc_hh.push_back((1-occp)*(1-occq));
     }
    }
 
