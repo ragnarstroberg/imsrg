@@ -299,8 +299,12 @@ int main(int argc, char** argv)
 
   Operator Comm1(modelspace,0,0,0,2);
   Operator Comm2(modelspace,0,0,0,2);
+  Operator trel = Trel_Op(modelspace);
   Operator eta(imsrgsolver.GetEta() );
   imsrgsolver.GetGenerator().Update(&Hbare,&eta);
+  CommutatorTest(eta,Hbare);
+  cout << "Now with trel..." << endl;
+  CommutatorTest(trel,Hbare);
   Comm1.comm222_phss(eta, Hbare);
   Comm2.comm222_pp_hh_221ss(eta, Hbare);
   rw.WriteOperatorHuman(Comm1,"comm222phss.op");
