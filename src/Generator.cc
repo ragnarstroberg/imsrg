@@ -5,7 +5,7 @@
 using namespace imsrg_util;
 
 Generator::Generator()
-  : generator_type("white"), denominator_delta(0), denominator_delta_index(-1), denominator_cutoff(0)
+  : generator_type("white"), denominator_cutoff(0)  , denominator_delta(0), denominator_delta_index(-1)
 {}
 
 
@@ -293,10 +293,11 @@ void Generator::ConstructGenerator_ShellModel()
    // no excitations out of the core
 
    Eta->Erase();
+   index_t norb = modelspace->GetNumberOrbits();
 
-   for (index_t i=0; i<modelspace->GetNumberOrbits(); ++i)
+   for (index_t i=0; i<norb; ++i)
    {
-     for (index_t j=i;j<modelspace->GetNumberOrbits(); ++j)
+     for (index_t j=i;j<norb; ++j)
      {
          double denominator = Get1bDenominator(i,j);
          Eta->OneBody(i,j) += H->OneBody(i,j)/denominator;
