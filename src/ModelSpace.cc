@@ -440,6 +440,14 @@ void ModelSpace::Init(int emax, map<index_t,double> hole_list, vector<index_t> c
        }
      }
    }
+   Aref = 0;
+   Zref = 0;
+   for (auto& it_h : holes)
+   {
+     Orbit& oh = GetOrbit(it_h.first);
+     Aref += (oh.j2+1)*oh.occ;
+     if (oh.tz2 < 0) Zref += (oh.j2+1)*oh.occ;
+   }
    SetupKets();
 }
 

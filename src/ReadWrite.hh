@@ -56,6 +56,12 @@ class ReadWrite
    void SetCoMCorr(bool b){doCoM_corr = b;cout <<"Setting com_corr to "<< b << endl;};
    void SetScratchDir( string d){scratch_dir = d;};
    string GetScratchDir(){return scratch_dir;};
+   int GetAref(){return Aref;};
+   int GetZref(){return Zref;};
+   void SetAref(int a){Aref = a;};
+   void SetZref(int z){Zref = z;};
+
+   // Fields
 
    std::map<string,string> InputParameters;
 
@@ -66,7 +72,9 @@ class ReadWrite
    string scratch_dir;
    string File2N;
    string File3N;
-   
+   int Aref;
+   int Zref;   
+
 
 };
 
