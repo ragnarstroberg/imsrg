@@ -34,11 +34,11 @@ ReadWrite::~ReadWrite()
 }
 
 ReadWrite::ReadWrite()
-: doCoM_corr(false), goodstate(true),LECs({-0.81,-3.20,5.40,1.271,-0.131}) // default to the EM2.0_2.0 LECs
+: doCoM_corr(false), goodstate(true),LECs({-0.81,-3.20,5.40,1.271,-0.131}),File2N("none"),File3N("none"),Aref(0),Zref(0) // default to the EM2.0_2.0 LECs
 {
 }
 
-
+// This is old and deprecated.
 void ReadWrite::ReadSettingsFile( string filename)
 {
    char line[LINESIZE];
@@ -83,6 +83,9 @@ void ReadWrite::ReadTBME_Oslo( string filename, Operator& Hbare)
   double fbuf[3];
   double tbme;
   int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
+  File2N = filename;
+  Aref = Hbare.GetModelSpace()->GetAref();
+  Zref = Hbare.GetModelSpace()->GetZref();
 
   infile.open(filename);
   if ( !infile.good() )
@@ -120,6 +123,79 @@ void ReadWrite::ReadTBME_Oslo( string filename, Operator& Hbare)
 
   return;
 }
+
+/// Read two-body matrix elements from an Oslo-formatted file, as obtained from Gaute Hagen
+void ReadWrite::ReadTBME_OakRidge( string filename, Operator& Hbare)
+{
+
+  ifstream infile;
+  char line[LINESIZE];
+  int Tz,Par,J2,a,b,c,d;
+  double fbuf[3];
+  double tbme;
+  int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
+  File2N = filename;
+  Aref = Hbare.GetModelSpace()->GetAref();
+  Zref = Hbare.GetModelSpace()->GetZref();
+//  cout << "norbits = " << norbits << endl;
+
+  vector<int> orbit_remap(norbits);
+  for (size_t i=0;i<orbit_remap.size();++i) orbit_remap[i] = i;
+  orbit_remap[8] = 10;
+  orbit_remap[9] = 11;
+  orbit_remap[10] = 8;
+  orbit_remap[11] = 9;
+  orbit_remap[14] = 16;
+  orbit_remap[15] = 17;
+  orbit_remap[16] = 18;
+  orbit_remap[17] = 19;
+  orbit_remap[18] = 14;
+  orbit_remap[19] = 15;
+
+  infile.open(filename);
+  if ( !infile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
+
+  infile.getline(line,LINESIZE);
+
+//  while (!strstr(line,"<ab|V|cd>") && !infile.eof()) // Skip lines until we see the header
+//  {
+//     infile.getline(line,LINESIZE);
+//  }
+
+  // read the file one line at a time
+  while ( infile >> Tz >> Par >> J2 >> a >> b >> c >> d >> tbme >> fbuf[0] >> fbuf[1]  )
+  {
+     // if the matrix element is outside the model space, ignore it.
+     a--; b--; c--; d--; // Fortran -> C  ==> 1 -> 0
+     a=orbit_remap[a];
+     b=orbit_remap[b];
+     c=orbit_remap[c];
+     d=orbit_remap[d];
+     if (a>=norbits or b>=norbits or c>=norbits or d>=norbits) continue;
+
+     double com_corr = fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  
+
+// NORMALIZATION: Read in normalized, antisymmetrized TBME's
+
+     if (doCoM_corr)  tbme-=com_corr;
+
+//     cout << "read: " << a << " " << b << " " << c << " " << d << endl;
+     Hbare.TwoBody.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme ); // Don't do COM correction,
+
+  }
+
+  return;
+}
+
+
+
 
 /// Read two-body matrix elements from an Oslo-formatted file
 void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
@@ -212,6 +288,9 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
   double tbme;
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int norbits = modelspace->GetNumberOrbits();
+  File2N = filename;
+  Aref = Hbare.GetModelSpace()->GetAref();
+  Zref = Hbare.GetModelSpace()->GetZref();
 
   infile.open(filename);
   if ( !infile.good() )
@@ -273,6 +352,9 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
     return;
   }
   infile.close();
+  File2N = filename;
+  Aref = Hbare.GetModelSpace()->GetAref();
+  Zref = Hbare.GetModelSpace()->GetZref();
 
   if ( filename.substr( filename.find_last_of(".")) == ".gz")
   {
@@ -484,6 +566,9 @@ void ReadWrite::WriteTBME_Navratil( string filename, Operator& Hbare)
 void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int emax, int Emax, int lmax)
 {
 
+  File2N = filename;
+  Aref = Hbare.GetModelSpace()->GetAref();
+  Zref = Hbare.GetModelSpace()->GetZref();
   if ( filename.substr( filename.find_last_of(".")) == ".gz")
   {
     ifstream infile(filename, ios_base::in | ios_base::binary);
@@ -539,6 +624,9 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
 
   double start_time = omp_get_wtime();
   string extension = filename.substr( filename.find_last_of("."));
+  File3N = filename;
+  Aref = Hbare.GetModelSpace()->GetAref();
+  Zref = Hbare.GetModelSpace()->GetZref();
 
   if (extension == ".me3j")
   {
@@ -1040,6 +1128,9 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
 {
 
   const int SLABSIZE = 10000000;
+  File3N = filename;
+  Aref = op.GetModelSpace()->GetAref();
+  Zref = op.GetModelSpace()->GetZref();
 
   ModelSpace* modelspace = op.GetModelSpace();
   vector<array<int,5>> Basis;
@@ -1239,6 +1330,9 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
 
   ModelSpace* modelspace = op.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
+  File3N = filename;
+  Aref = op.GetModelSpace()->GetAref();
+  Zref = op.GetModelSpace()->GetZref();
 
   int t12p_list[5] = {0,0,1,1,1};
   int t12_list[5]  = {0,1,0,1,1};
@@ -1285,7 +1379,8 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
 
   int alpha_max = iDim_basis[0];
 
-  int i=-5; 
+//  int i=-5; 
+  long long i=-5; 
   for (int alphaspp=0;alphaspp<alpha_max;++alphaspp)
   {
     int lap = dbuf[alphaspp][2];
@@ -1324,7 +1419,8 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
        for (int ii=0;ii<5;++ii) summed_me += LECs[ii] * me[ii] ;
        summed_me *= HBARC;
        // Phase due to different conventions for HO wave functions.
-       summed_me *= modelspace->phase(dbuf[alphasp][1]+dbuf[alphasp][4]+dbuf[alphasp][7]+dbuf[alphaspp][1]+dbuf[alphaspp][4]+dbuf[alphaspp][7]);
+       // Now obsolete -- Feb 2016
+//       summed_me *= modelspace->phase(dbuf[alphasp][1]+dbuf[alphasp][4]+dbuf[alphasp][7]+dbuf[alphaspp][1]+dbuf[alphaspp][4]+dbuf[alphaspp][7]);
 
        if ( (ap==bp and (j12p+T12)%2 !=1) or ( a==b  and (j12+TT12)%2 !=1 ) )
        {
@@ -1525,7 +1621,7 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
 //  char line[LINESIZE];
 //  infile.getline(line,LINESIZE);
 //  int useless_counter=0;
-  time_t time_now = chrono::system_clock::to_time_t(chrono::system_clock::now());
+//  time_t time_now = chrono::system_clock::to_time_t(chrono::system_clock::now());
 //  outfile << "    generated by IMSRG code on " << ctime(&time_now)<< endl;
   outfile << "(*** nsuite/me3b/v0.0.0 (Dec 22 2010) me3j-f2 ***)" << endl;
   outfile << setiosflags(ios::fixed);
@@ -1730,6 +1826,16 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode
       Acore += oi.j2 + 1;
    }
    intfile << "! shell model effective interaction generated by IMSRG" << endl;
+//   intfile << "! input 2N: " << File2N.substr(max(1,(int)File2N.find_last_of("/\\")+2)-1) << endl;
+//   intfile << "! input 3N: " << File3N.substr(max(1,(int)File2N.find_last_of("/\\")+2)-1) << endl;
+//   size_t slash_pos = File2N.find_last_of("/\\");
+//   intfile << "! input 2N: " << File2N.substr( slash_pos==string::npos ? 0 : slash_pos+1 ) << endl;
+   intfile << "! input 2N: " << File2N.substr( File2N.find_last_of("/\\")+1 ) << endl;
+   intfile << "! input 3N: " << File3N.substr( File3N.find_last_of("/\\")+1 ) << endl;
+//   slash_pos = File3N.find_last_of("/\\");
+//   intfile << "! input 3N: " << File3N.substr( slash_pos==string::npos ? 0 : slash_pos+1 ) << endl;
+   intfile << "! e1max: " << modelspace->GetEmax() << "  e2max: " << modelspace->GetE2max() << "   e3max: " << modelspace->GetE3max() << "   hw: " << modelspace->GetHbarOmega();
+   intfile << "   Aref: " << Aref << "  Zref: " << Zref << "  A_for_kinetic_energy: " << modelspace->GetTargetMass() << endl;
    intfile << "! Zero body term: " << op.ZeroBody << endl;
    intfile << "! Index   n l j tz" << endl;
 
@@ -1897,10 +2003,13 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
    int Acore = 0;
 //   int wint = 4; // width for printing integers
 //   int wdouble = 12; // width for printing doubles
-   for (auto& i : modelspace->holes)
+//   for (auto& i : modelspace->holes)
+   for (auto& it_i : modelspace->holes)
    {
+      index_t i = it_i.first;
+      double occ_i = it_i.second;
       Orbit& oi = modelspace->GetOrbit(i);
-      Acore += oi.j2 +1;
+      Acore += occ_i*(oi.j2 +1);
    }
    intfile << "IMSRG INTERACTION" << endl;
    // 2 indicates pn treated separately
@@ -1992,6 +2101,8 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
         {
           Ket& ket = tbc_ket.GetKet(iket);
            double tbme = it.second(ibra,iket);
+           if (bra.p == bra.q) tbme *= sqrt(2); // For comparison with Nathan CHANGE THIS
+           if (ket.p == ket.q) tbme *= sqrt(2); // For comparison with Nathan CHANGE THIS
            if ( abs(tbme) > 1e-7 )
            {
              opfile << setw(4) << tbc_bra.J << " " << tbc_bra.parity << " " << tbc_bra.Tz  << "    "

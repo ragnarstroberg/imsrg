@@ -46,6 +46,7 @@ class Operator
 
   static double bch_transform_threshold;
   static double bch_product_threshold;
+  static bool tensor_transform_first_pass;
 
 
 
@@ -104,6 +105,7 @@ class Operator
   int GetTRank()const {return rank_T;};
   int GetParity()const {return parity;};
   void SetParticleRank(int pr) {particle_rank = pr;};
+  void ResetTensorTransformFirstPass(){tensor_transform_first_pass=true;};
 
   void MakeReduced();
   void MakeNotReduced();
@@ -160,7 +162,8 @@ class Operator
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
 
   deque<arma::mat> InitializePandya(size_t nch, string orientation);
-  void DoPandyaTransformation(deque<arma::mat>&, deque<arma::mat>&, string orientation) const ;
+//  void DoPandyaTransformation(deque<arma::mat>&, deque<arma::mat>&, string orientation) const ;
+  void DoPandyaTransformation(deque<arma::mat>&, string orientation) const ;
   void AddInversePandyaTransformation(deque<arma::mat>&);
 
 
@@ -176,7 +179,8 @@ class Operator
 
 // scalar-tensor commutators
 
-  void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>&) const;
+//  void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>&) const;
+  void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&) const;
   void AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&);
 
   void comm111st( const Operator& X, const Operator& Y) ;

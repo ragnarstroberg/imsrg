@@ -17,6 +17,7 @@ class ReadWrite
    ReadWrite();
    void ReadSettingsFile(  string filename);
    void ReadTBME_Oslo( string filename, Operator& Hbare);
+   void ReadTBME_OakRidge( string filename, Operator& Hbare);
    void ReadBareTBME_Jason( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil_from_stream( istream& infile, Operator& Hbare);
@@ -55,6 +56,12 @@ class ReadWrite
    void SetCoMCorr(bool b){doCoM_corr = b;cout <<"Setting com_corr to "<< b << endl;};
    void SetScratchDir( string d){scratch_dir = d;};
    string GetScratchDir(){return scratch_dir;};
+   int GetAref(){return Aref;};
+   int GetZref(){return Zref;};
+   void SetAref(int a){Aref = a;};
+   void SetZref(int z){Zref = z;};
+
+   // Fields
 
    std::map<string,string> InputParameters;
 
@@ -63,7 +70,11 @@ class ReadWrite
    bool goodstate;
    array<double,5> LECs;
    string scratch_dir;
-   
+   string File2N;
+   string File3N;
+   int Aref;
+   int Zref;   
+
 
 };
 

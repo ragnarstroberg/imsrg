@@ -110,6 +110,8 @@ int main(int argc, char** argv)
       rw.ReadBareTBME_Navratil(inputtbme, Hbare);
     else if (fmt2 == "oslo" )
       rw.ReadTBME_Oslo(inputtbme, Hbare);
+    else if (fmt2 == "oakridge" )
+      rw.ReadTBME_OakRidge(inputtbme, Hbare);
      cout << "done reading 2N" << endl;
     }
   
@@ -217,6 +219,18 @@ int main(int argc, char** argv)
          t = pn == 'p' ? -1 : 1;
          ops.emplace_back( NumberOpAlln(modelspace,l,j,t) );
       }
+      else if (opname.substr(0,9) == "protonFBC")
+      {
+         int nu;
+         istringstream(opname.substr(9,opname.size())) >> nu;
+         ops.emplace_back( FourierBesselCoeff( modelspace, nu, 8.0, modelspace.proton_orbits) );
+      }
+      else if (opname.substr(0,10) == "neutronFBC")
+      {
+         int nu;
+         istringstream(opname.substr(10,opname.size())) >> nu;
+         ops.emplace_back( FourierBesselCoeff( modelspace, nu, 8.0, modelspace.neutron_orbits) );
+      }
       else //need to remove from the list
       {
          cout << "Unknown operator: " << opname << endl;
@@ -298,6 +312,7 @@ int main(int argc, char** argv)
     {
       cout << opnames[i] << " " << flush;
       ops[i] = imsrgsolver.Transform(ops[i]);
+      cout << " (" << ops[i].ZeroBody << " ) " << endl; 
     }
     cout << endl;
     // increase smax in case we need to do additional steps
@@ -311,7 +326,24 @@ int main(int argc, char** argv)
   // and do any remaining flow.
 //  if (reference != "default"  and reference != valence_space)
   ModelSpace ms2(modelspace);
-  if ( modelspace.core != modelspace.holes )
+  bool renormal_order = false;
+  if (modelspace.valence.size() > 0 )
+  {
+    renormal_order = modelspace.holes.size() != modelspace.core.size();
+    if (not renormal_order)
+    {
+      for (auto c : modelspace.core)
+      {
+         if ( (modelspace.holes.find(c) == modelspace.holes.end()) or (abs(1-modelspace.holes[c])>1e-6))
+         {
+           renormal_order = true;
+           break;
+         }
+      }
+    }
+  }
+//  if ( modelspace.core != modelspace.holes )
+  if ( renormal_order )
   {
 
     Hbare = imsrgsolver.GetH_s();
@@ -333,11 +365,15 @@ int main(int argc, char** argv)
     cout << "Final transformation on the operators..." << endl;
     for (auto& op : ops)
     {
+      double ZeroBody_before = op.ZeroBody;
       op = op.UndoNormalOrdering();
+      double ZeroBody_undo = op.ZeroBody;
       op.SetModelSpace(ms2);
       op = op.DoNormalOrdering();
+      double ZeroBody_mid = op.ZeroBody;
       // transform using the remaining omegas
       op = imsrgsolver.Transform_Partial(op,nOmega);
+      cout << ZeroBody_before << "   =>   " << ZeroBody_undo << "   =>   " << ZeroBody_mid<< "   =>   " << op.ZeroBody << endl;
     }
   }
 
