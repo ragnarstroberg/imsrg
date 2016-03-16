@@ -326,7 +326,24 @@ int main(int argc, char** argv)
   // and do any remaining flow.
 //  if (reference != "default"  and reference != valence_space)
   ModelSpace ms2(modelspace);
-  if ( modelspace.core != modelspace.holes )
+  bool renormal_order = false;
+  if (modelspace.valence.size() > 0 )
+  {
+    renormal_order = modelspace.holes.size() != modelspace.core.size();
+    if (not renormal_order)
+    {
+      for (auto c : modelspace.core)
+      {
+         if ( (modelspace.holes.find(c) == modelspace.holes.end()) or (abs(1-modelspace.holes[c])>1e-6))
+         {
+           renormal_order = true;
+           break;
+         }
+      }
+    }
+  }
+//  if ( modelspace.core != modelspace.holes )
+  if ( renormal_order )
   {
 
     Hbare = imsrgsolver.GetH_s();
