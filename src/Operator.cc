@@ -2302,10 +2302,10 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
              Orbit &oa = modelspace->GetOrbit(a);
              double ja = oa.j2/2.0;
 //               for (auto& b : modelspace->particles) // is this is slow, it can probably be sped up by looping over OneBodyChannels
-               for (auto& b : X.OneBodyChannels.at({oa.n,oa.l,oa.j2}) ) // is this is slow, it can probably be sped up by looping over OneBodyChannels
+               for (auto& b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // is this is slow, it can probably be sped up by looping over OneBodyChannels
                {
                   Orbit &ob = modelspace->GetOrbit(b);
-                  double jb = ob.j2/2.0;
+//                  double jb = ob.j2/2.0;
                   double nanb = occ_a * (1-ob.occ);
 //                  if (ob.j2 == oa.j2 and ob.l == oa.l and ob.tz2 == oa.tz2)
 //                  {
@@ -2328,7 +2328,7 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
 //                  }
                }
                // Now, X is scalar two-body and Y is tensor one-body
-               for (auto& b : Y.OneBodyChannels.at({oa.n,oa.l,oa.j2}) ) // is this is slow, it can probably be sped up by looping over OneBodyChannels
+               for (auto& b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // is this is slow, it can probably be sped up by looping over OneBodyChannels
                {
 
                   Orbit &ob = modelspace->GetOrbit(b);
