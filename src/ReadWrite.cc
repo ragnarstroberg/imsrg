@@ -1487,6 +1487,8 @@ void ReadWrite::ReadOperator_Nathan( string filename1b, string filename2b, Opera
   infile.getline(header,500);
   while ( infile >> a >> b >> c >> d >> J >> me )
   {
+    if (a==b) me /= sqrt(2);
+    if (c==d) me /= sqrt(2);
     op.TwoBody.SetTBME_J(J,a,b,c,d,me);
   }
   infile.close();
