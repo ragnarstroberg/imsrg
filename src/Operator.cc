@@ -2259,10 +2259,7 @@ void Operator::comm111st( const Operator & X, const Operator& Y)
    comm111ss(X,Y);
    profiler.timer["comm111st"] += omp_get_wtime() - tstart;
 }
-//{
-//   Operator& Z = *this;
-//   Z.OneBody += X.OneBody*Y.OneBody - Y.OneBody*X.OneBody;
-//}
+
 
 //*****************************************************************************************
 //                                       |
@@ -2284,7 +2281,7 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
    Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
    int Lambda = Z.GetJRank();
-   #pragma omp parallel for // for starters, don't do it parallel
+//   #pragma omp parallel for // for starters, don't do it parallel
    for (int i=0;i<norbits;++i)
    {
       Orbit &oi = modelspace->GetOrbit(i);
@@ -2334,26 +2331,26 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
 
                   Orbit &ob = modelspace->GetOrbit(b);
                   double jb = ob.j2/2.0;
+                  if (abs(ob.occ-1) < 1e-6) continue;
                   double nanb = occ_a * (1-ob.occ);
-//                  if ( (abs(ja-jb)>Lambda) or (ja+jb<Lambda) ) continue;
-                  int J1min = max(abs(ji-ja),abs(jj-jb));
-                  int J1max = min(ji+ja,jj+jb);
+//                  double nbna = (1-occ_a) * ob.occ;
+                  int J1min = max(abs(ji-jb),abs(jj-ja));
+                  int J1max = min(ji+jb,jj+ja);
+                  double zij = 0;
                   for (int J1=J1min; J1<=J1max; ++J1)
                   {
-                    double toscalar = sqrt((2*ja+1)/(2*ji+1));
-                    double prefactor = nanb * toscalar*  modelspace->phase(ji+jb+J1) * (2*J1+1) * modelspace->GetSixJ(ja,jb,Lambda,ji,jj,J1);
-                    Zij += prefactor * X.TwoBody.GetTBME_J(J1,J1,b,i,a,j) * Y.OneBody(a,b);
+                    zij -= modelspace->phase(ji+jb+J1) * (2*J1+1) * modelspace->GetSixJ(ja,jb,Lambda,ji,jj,J1) * X.TwoBody.GetTBME_J(J1,J1,b,i,a,j);
                   }
 
-                  J1min = max(abs(ji-jb),abs(jj-ja));
-                  J1max = min(ji+jb,jj+ja);
+                  J1min = max(abs(ji-ja),abs(jj-jb));
+                  J1max = min(ji+ja,jj+jb);
                   for (int J1=J1min; J1<=J1max; ++J1)
                   {
-                    double prefactor = nanb * modelspace->phase(ji+ja+J1) * (2*J1+1) * modelspace->GetSixJ(jb,ja,Lambda,ji,jj,J1);
-                    Zij += prefactor * X.TwoBody.GetTBME_J(J1,J1,a,i,b,j) * Y.OneBody(b,a);
+                    zij += modelspace->phase(ji+jb+J1) * (2*J1+1) * modelspace->GetSixJ(jb,ja,Lambda,ji,jj,J1) * X.TwoBody.GetTBME_J(J1,J1,a,i,b,j) ;
                   }
+
+                  Zij += nanb * Y.OneBody(a,b) * zij;
                }
-               
                
              }
           }
