@@ -2400,6 +2400,7 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
 
       for (int ibra = 0;ibra<nbras; ++ibra)
       {
+         if (ibra > 0 ) break;
          Ket & bra = tbc_bra.GetKet(ibra);
          int i = bra.p;
          int j = bra.q;
@@ -2433,32 +2434,31 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
             double prefactor = hatfactor * modelspace->phase(ji+jj+J2+Lambda) ;
             for ( int a : Y.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
             {
-               double ja = modelspace->GetOrbit(a).j2/2.0;
+               double ja = modelspace->GetOrbit(a).j2*0.5;
                cijkl -= prefactor *  modelspace->GetSixJ(J2,J1,Lambda,ji,ja,jj) * Y.OneBody(i,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,a,j,k,l) ;
             }
-            prefactor = hatfactor * modelspace->phase(ji+jj-J1+Lambda) ;
             for ( int a : Y.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
             {
-               double ja = modelspace->GetOrbit(a).j2/2.0;
+               double ja = modelspace->GetOrbit(a).j2*0.5;
+               prefactor = hatfactor * modelspace->phase(ji+ja-J1+Lambda) ;
                cijkl -= prefactor * modelspace->GetSixJ(J2,J1,Lambda,jj,ja,ji) * Y.OneBody(j,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,i,a,k,l);
             }
-            prefactor = hatfactor * modelspace->phase(jk+jl+J2+Lambda) ;
             for ( int a : Y.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
             {
-               double ja = modelspace->GetOrbit(a).j2/2.0;
+               double ja = modelspace->GetOrbit(a).j2*0.5;
+               prefactor = hatfactor * modelspace->phase(ja+jl+J2+Lambda) ;
                cijkl += prefactor * modelspace->GetSixJ(J1,J2,Lambda,jk,ja,jl) * Y.OneBody(a,k) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,a,l) ;
             }
             prefactor = hatfactor * modelspace->phase(jk+jl-J1+Lambda) ;
             for ( int a : Y.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
             {
-               double ja = modelspace->GetOrbit(a).j2/2.0;
+               double ja = modelspace->GetOrbit(a).j2*0.5;
                cijkl += prefactor * modelspace->GetSixJ(J1,J2,Lambda,jl,ja,jk) * Y.OneBody(a,l) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,k,a) ;
             }
 
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
-            cijkl /= norm;
-            Z2(ibra,iket) += cijkl;
+            Z2(ibra,iket) += cijkl /norm;
          }
       }
    }
