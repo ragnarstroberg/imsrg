@@ -7,8 +7,8 @@ exe=../compiled/Universal
 #v3n=/itch/exch/me3j/chi2b3b400cD-02cE0098_srg0800ho40C_eMax14_EMax14_hwHO020.me3j.gz
 
 vnn=../../input/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
-v3n=../../input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax12_EMax12_hwHO020.me3j.gz
-#v3n=none
+#v3n=../../input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax12_EMax12_hwHO020.me3j.gz
+v3n=none
 
 #vnn=/itch/exch/BlockGen/me2j/chi2b_srg0800_eMax12_lMax10_hwHO024.me2j.gz
 #v3n=/itch/exch/me3j/chi2b3b400cD-02cE0098_srg0800ho40C_eMax14_EMax14_hwHO024.me3j.gz
@@ -20,23 +20,26 @@ v3n=../../input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax12_EMax12_hwHO020.me3j.gz
 #vnn=../../input/chi2b_srg0625_eMax12_hwHO020.me2j.gz
 #v3n=../../input/jsTNF_Nmax_18_J12max_8_hbarOmega_20.00_Fit_cutoff_2.00_nexp_4_c1_-0.81_c3_-3.20_c4_5.40_cD_1.27_cE_-0.13_2pi_0.00_2pi1pi_0.00_2picont_0.00_rings_0.00_J3max_9_id_1_new_ant_E3_12_e_12.h5
 
+#for ((A=14;A<=28;A++)); do
+for ((A=18;A<=18;A++)); do
+
 hw=20
-valence_space=O16
-#valence_space=sd-shell
+#valence_space=O$A
+valence_space=sd-shell
 #valence_space=Ca40
 #valence_space=Si34
 #valence_space=psd-shell
 #reference=default
 #reference=Si34
 #reference=Si28
-reference=O16
-A=16
-smax=2
+reference=O$A
+#A=18
+smax=200
 emax=4
-e3max=6
-method=HF
+e3max=12
+#method=HF
 #method=MP3
-#method=magnus
+method=magnus
 #method=flow
 #method=flow-omega
 omega_norm_max=0.25
@@ -50,6 +53,7 @@ Operators=
 scratch=SCRATCH
 #scratch=
 
-$exe 2bme=${vnn} 3bme=${v3n} emax=${emax} e3max=${e3max} method=${method} valence_space=${valence_space} hw=${hw} smax=${smax} ${file3} omega_norm_max=${omega_norm_max} reference=${reference} Operators=${Operators} scratch=${scratch} A=${A}
+$exe 2bme=${vnn} 3bme=${v3n} emax=${emax} e3max=${e3max} method=${method} valence_space=${valence_space} hw=${hw} smax=${smax} ${file3} omega_norm_max=${omega_norm_max} reference=${reference} Operators=${Operators} scratch=${scratch} A=${A} use_brueckner_bch=true
 
+done
 
