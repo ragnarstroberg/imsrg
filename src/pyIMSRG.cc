@@ -16,6 +16,9 @@
 using namespace boost::python;
 
 
+  Orbit MSGetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
+
+
 BOOST_PYTHON_MODULE(pyIMSRG)
 {
 
@@ -23,12 +26,22 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def (vector_indexing_suite< vector<string> >())
    ;
 
+   class_<Orbit>("Orbit",init<>())
+     .def_readwrite("n",&Orbit::n)
+     .def_readwrite("l",&Orbit::l)
+     .def_readwrite("j2",&Orbit::j2)
+     .def_readwrite("tz2",&Orbit::tz2)
+     .def_readwrite("index",&Orbit::index)
+     .def_readwrite("occ",&Orbit::occ)
+     .def_readwrite("cvq",&Orbit::cvq)
+   ;
+
    class_<ModelSpace>("ModelSpace",init<>())
       .def(init<const ModelSpace&>())
       .def(init< int, const std::string&>())
       .def(init< int, const std::string&, const std::string&>())
       .def(init< int,vector<string>,vector<string> >())
-      .def(init< int, int ,int>())
+      .def(init< int,vector<string>,vector<string>,vector<string> >())
 //      .def("Init", &ModelSpace::Init)
       .def("SetHbarOmega", &ModelSpace::SetHbarOmega)
       .def("SetTargetMass", &ModelSpace::SetTargetMass)
@@ -37,6 +50,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetTargetMass", &ModelSpace::GetTargetMass)
       .def("GetNumberOrbits", &ModelSpace::GetNumberOrbits)
       .def("GetNumberKets", &ModelSpace::GetNumberKets)
+      .def("GetOrbit", &MSGetOrbit)
 //      .def("PreComputeSixJs", &ModelSpace::PreComputeSixJs)
    ;
 

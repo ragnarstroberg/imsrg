@@ -1,6 +1,7 @@
 
 #include "imsrg_util.hh"
 #include "AngMom.hh"
+#include <gsl/gsl_integration.h>
 
 using namespace AngMom;
 
@@ -109,8 +110,10 @@ double HO_Radial_psi(int n, int l, double hw, double r)
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace)
  {
     Operator DM(modelspace,0,0,0,2);
-    for (index_t a : modelspace.holes)
+//    for (index_t a : modelspace.holes)
+    for (auto& it_a : modelspace.holes)
     {
+       index_t a = it_a.first;
        DM.OneBody(a,a) = 1.0;
     }
     return DM;
@@ -897,8 +900,43 @@ Operator E0Op(ModelSpace& modelspace)
    return e0;
 }
 
+struct FBCIntegrandParameters{int n; int l; double hw;};
 
+double FBCIntegrand(double x, void *p)
+{
+  struct FBCIntegrandParameters * params = (struct FBCIntegrandParameters *)p;
+  return x*HO_density(params->n, params->l, params->hw, x);
+}
 
+Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<index_t> index_list)
+{
+  Operator a_nu(modelspace,0,0,0,2);
+  double omega = nu * M_PI / R; // coefficient of sine function, i.e. sin(omega*x)
+  double L = R; // range of integration
+  size_t n = 20; // number of bisections
+  gsl_integration_qawo_table * table = gsl_integration_qawo_table_alloc (omega, L, GSL_INTEG_SINE, n);
+  gsl_integration_workspace * workspace = gsl_integration_workspace_alloc ( n );
+
+  const double epsabs = 1e-5; // absolute error
+  const double epsrel = 1e-5; // relative error
+  const size_t limit = n; // maximum number of subintervals (maybe should be different?)
+  const double start = 0.0; // lower limit on integration range
+  double result;
+  double  abserr;
+  gsl_function F;
+  F.function = &FBCIntegrand;
+
+  for (auto i : index_list )
+  {
+    Orbit& oi = modelspace.GetOrbit(i);
+    struct FBCIntegrandParameters params = {oi.n, oi.l, modelspace.GetHbarOmega()};
+    F.params = &params;
+    int status = gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
+    a_nu.OneBody(i,i) = M_PI*M_PI/R/R/R * R/nu/M_PI*(result);
+    cout << "orbit,nu = " << i << "," << nu << "  => " << a_nu.OneBody(i,i) << "  from " << result << " (" << abserr << ")" << endl;
+  }
+  return a_nu;
+}
 
 
 
@@ -1156,6 +1194,83 @@ Operator E0Op(ModelSpace& modelspace)
     Operator Yred = Y;
     Reduce(Yred);
 
+    cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << endl;
+//    X.comm111ss(Y,Zscalar);
+//    X.comm111st(Yred,Ztensor);
+    Zscalar.comm111ss(X,Y);
+    Ztensor.comm111st(X,Yred);
+    Zscalar.Symmetrize();
+    Ztensor.Symmetrize();
+    UnReduce(Ztensor);
+    cout << "comm111 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm111 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+    Zscalar.Erase();
+    Ztensor.Erase();
+    cout << "121ss" << endl;
+    Zscalar.comm121ss(X,Y);
+    cout << "121st" << endl;
+    Ztensor.comm121st(X,Yred);
+    Zscalar.Symmetrize();
+    Ztensor.Symmetrize();
+    UnReduce(Ztensor);
+    cout << "comm121 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm121 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+    Zscalar.Erase();
+    Ztensor.Erase();
+    Zscalar.comm122ss(X,Y);
+    Ztensor.comm122st(X,Yred);
+    Zscalar.Symmetrize();
+    Ztensor.Symmetrize();
+    UnReduce(Ztensor);
+    cout << "comm122 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm122 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+    Zscalar.Erase();
+    Ztensor.Erase();
+    Zscalar.comm222_pp_hh_221ss(X,Y);
+    Ztensor.comm222_pp_hh_221st(X,Yred);
+    Zscalar.Symmetrize();
+    Ztensor.Symmetrize();
+    UnReduce(Ztensor);
+    cout << "comm222_pp_hh_221 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm222_pp_hh_221 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+    Zscalar.Erase();
+    Ztensor.Erase();
+    X.comm222_phss(Y,Zscalar);
+//    Reduce(Y); // Not sure why I can't use Yred...
+    Zscalar.comm222_phss(X,Y);
+    Ztensor.comm222_phst(X,Yred);
+    Zscalar.Symmetrize();
+    Ztensor.Symmetrize();
+    UnReduce(Ztensor);
+    cout << "comm222_ph norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    Zscalar -= Ztensor;
+    cout << "comm222_ph diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+
+
+  }
+
+
+
+/*
+  void CommutatorTest(Operator& X, Operator& Y)
+  {
+    Operator Zscalar(X);
+    if ( (X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()) ) Zscalar.SetAntiHermitian();
+    if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Zscalar.SetHermitian();
+    Zscalar.Erase();
+    Operator Ztensor(Zscalar);
+    Operator Yred = Y;
+    Reduce(Yred);
+
+    cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << endl;
 //    X.comm111ss(Y,Zscalar);
 //    X.comm111st(Yred,Ztensor);
     Zscalar.comm111ss(X,Y);
@@ -1214,6 +1329,9 @@ Operator E0Op(ModelSpace& modelspace)
 
 
   }
+*/
+
+
 
 
 // template <typename T>

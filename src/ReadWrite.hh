@@ -28,6 +28,7 @@ class ReadWrite
    void GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis );
    void Read3bodyHDF5( string filename, Operator& op);
    void Read3bodyHDF5_new( string filename, Operator& op);
+   void ReadOperator_Nathan( string filename1b, string filename2b, Operator& op);
    void Write_me2j( string filename, Operator& op, int emax, int e2max, int lmax);
    void Write_me3j( string filename, Operator& op, int E1max, int E2max, int E3max);
    void WriteTBME_Navratil( string filename, Operator& Hbare);
@@ -56,6 +57,12 @@ class ReadWrite
    void SetCoMCorr(bool b){doCoM_corr = b;cout <<"Setting com_corr to "<< b << endl;};
    void SetScratchDir( string d){scratch_dir = d;};
    string GetScratchDir(){return scratch_dir;};
+   int GetAref(){return Aref;};
+   int GetZref(){return Zref;};
+   void SetAref(int a){Aref = a;};
+   void SetZref(int z){Zref = z;};
+
+   // Fields
 
    std::map<string,string> InputParameters;
 
@@ -64,7 +71,11 @@ class ReadWrite
    bool goodstate;
    array<double,5> LECs;
    string scratch_dir;
-   
+   string File2N;
+   string File3N;
+   int Aref;
+   int Zref;   
+
 
 };
 

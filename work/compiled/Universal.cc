@@ -27,6 +27,7 @@ int main(int argc, char** argv)
   string denominator_delta_orbit = PAR.s("denominator_delta_orbit");
   string LECs = PAR.s("LECs");
   string scratch = PAR.s("scratch");
+  string use_brueckner_bch = PAR.s("use_brueckner_bch");
 
   int eMax = PAR.i("emax");
   int E3max = PAR.i("e3max");
@@ -97,6 +98,12 @@ int main(int argc, char** argv)
   int particle_rank = input3bme=="none" ? 2 : 3;
   Operator Hbare = Operator(modelspace,0,0,0,particle_rank);
   Hbare.SetHermitian();
+
+  if (use_brueckner_bch == "true" or use_brueckner_bch == "True")
+  {
+    Hbare.SetUseBruecknerBCH(true);
+    cout << "Using Brueckner flavor of BCH" << endl;
+  }
 
   cout << "Reading interactions..." << endl;
 
@@ -312,6 +319,7 @@ int main(int argc, char** argv)
     {
       cout << opnames[i] << " " << flush;
       ops[i] = imsrgsolver.Transform(ops[i]);
+      cout << " (" << ops[i].ZeroBody << " ) " << endl; 
     }
     cout << endl;
     // increase smax in case we need to do additional steps
@@ -325,7 +333,24 @@ int main(int argc, char** argv)
   // and do any remaining flow.
 //  if (reference != "default"  and reference != valence_space)
   ModelSpace ms2(modelspace);
-  if ( modelspace.core != modelspace.holes )
+  bool renormal_order = false;
+  if (modelspace.valence.size() > 0 )
+  {
+    renormal_order = modelspace.holes.size() != modelspace.core.size();
+    if (not renormal_order)
+    {
+      for (auto c : modelspace.core)
+      {
+         if ( (modelspace.holes.find(c) == modelspace.holes.end()) or (abs(1-modelspace.holes[c])>1e-6))
+         {
+           renormal_order = true;
+           break;
+         }
+      }
+    }
+  }
+//  if ( modelspace.core != modelspace.holes )
+  if ( renormal_order )
   {
 
     Hbare = imsrgsolver.GetH_s();
@@ -347,16 +372,15 @@ int main(int argc, char** argv)
     cout << "Final transformation on the operators..." << endl;
     for (auto& op : ops)
     {
-      cout << "UndoNormalOrdering.." << endl;
+      double ZeroBody_before = op.ZeroBody;
       op = op.UndoNormalOrdering();
-      cout << "done." << endl;
+      double ZeroBody_undo = op.ZeroBody;
       op.SetModelSpace(ms2);
-      cout << "ModelSpace set. DoNormalOrdering..." << endl;
       op = op.DoNormalOrdering();
-      cout << "Done. Now Transform_Partial..." << endl;
+      double ZeroBody_mid = op.ZeroBody;
       // transform using the remaining omegas
       op = imsrgsolver.Transform_Partial(op,nOmega);
-      cout << "done." << endl;
+      cout << ZeroBody_before << "   =>   " << ZeroBody_undo << "   =>   " << ZeroBody_mid<< "   =>   " << op.ZeroBody << endl;
     }
   }
 
