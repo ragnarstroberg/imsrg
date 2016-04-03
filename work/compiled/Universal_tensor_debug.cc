@@ -98,6 +98,11 @@ int main(int argc, char** argv)
   Operator Hbare = Operator(modelspace,0,0,0,particle_rank);
   Hbare.SetHermitian();
 
+  Operator omegaNathan = Hbare;
+  omegaNathan.SetAntiHermitian();
+  cout << "Reading in Nathan's omega" << endl;
+  rw.ReadOperator_Nathan("omega_1b.dat","omega_2b_FULL.dat",omegaNathan);
+
   cout << "Reading interactions..." << endl;
 
   #pragma omp parallel sections 
@@ -266,7 +271,48 @@ int main(int argc, char** argv)
     Operator& op = ops[i];
     cout << opnames[i] << " = " << ops[i].ZeroBody << endl;
   }
+
+
+
   
+//  cout << "create Comm111 and Comm121 " << endl;
+//  Operator Comm111(modelspace,2,0,0,2);
+//  Operator Comm121(modelspace,2,0,0,2);
+//  Operator Comm122(modelspace,2,0,0,2);
+
+//  cout << "call comm111st..." << endl;
+//  Comm111.comm111st(omegaNathan,ops[0]);
+//  cout << "Write 111" << endl;
+//  rw.WriteOperatorHuman(Comm111,"comm111_omega_nathan.op");
+//  cout << "call comm121st..." << endl;
+//  Comm121.comm121st(omegaNathan,ops[0]);
+//  Comm122.comm122st(omegaNathan,ops[0]);
+//  cout << "done. Now write operators" << endl;
+
+//  rw.WriteOperatorHuman(Comm121,"comm121_omega_nathan.op");
+//  rw.WriteOperatorHuman(Comm122,"comm122_omega_nathan.op");
+  Operator OneComm(modelspace,2,0,0,2);
+  Operator TwoComm(modelspace,2,0,0,2);
+  Operator Nested122(modelspace,2,0,0,2);
+  Operator Nested222pp(modelspace,2,0,0,2);
+  Operator Nested222ph(modelspace,2,0,0,2);
+  OneComm.SetToCommutator(omegaNathan,ops[0]);
+  rw.WriteOperatorHuman(OneComm,"One_comm_omega_nathan.op");
+  Nested122.comm122st(omegaNathan,OneComm);
+  rw.WriteOperatorHuman(Nested122,"Nested122_omega_nathan.op");
+  Nested222pp.comm222_pp_hh_221st(omegaNathan,OneComm);
+  rw.WriteOperatorHuman(Nested222pp,"Nested222pp_omega_nathan.op");
+  Nested222ph.comm222_phst(omegaNathan,OneComm);
+  rw.WriteOperatorHuman(Nested222ph,"Nested222ph_omega_nathan.op");
+  TwoComm.SetToCommutator(omegaNathan,OneComm);
+  rw.WriteOperatorHuman(TwoComm,"Two_comm_omega_nathan.op");
+
+  ops[0] = ops[0].BCH_Transform(omegaNathan);
+  rw.WriteOperatorHuman(ops[0],"E2_full_omega_nathan.op");
+ 
+
+//  CommutatorTest(omegaNathan,Hbare);
+ 
   if ( method == "HF" or method == "MP3")
   {
     Hbare.PrintTimes();
@@ -274,6 +320,7 @@ int main(int argc, char** argv)
   }
 
 
+  
 
   IMSRGSolver imsrgsolver(Hbare);
   imsrgsolver.SetReadWrite(rw);
@@ -350,7 +397,24 @@ int main(int argc, char** argv)
   // and do any remaining flow.
 //  if (reference != "default"  and reference != valence_space)
   ModelSpace ms2(modelspace);
-  if ( modelspace.core != modelspace.holes )
+  bool renormal_order = false;
+  if (modelspace.valence.size() > 0 )
+  {
+    renormal_order = modelspace.holes.size() != modelspace.core.size();
+    if (not renormal_order)
+    {
+      for (auto c : modelspace.core)
+      {
+         if ( (modelspace.holes.find(c) == modelspace.holes.end()) or (abs(1-modelspace.holes[c])>1e-6))
+         {
+           renormal_order = true;
+           break;
+         }
+      }
+    }
+  }
+//  if ( modelspace.core != modelspace.holes )
+  if ( renormal_order )
   {
 
     Hbare = imsrgsolver.GetH_s();
