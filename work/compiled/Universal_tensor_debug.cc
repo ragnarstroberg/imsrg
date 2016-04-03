@@ -309,6 +309,7 @@ int main(int argc, char** argv)
 
   ops[0] = ops[0].BCH_Transform(omegaNathan);
   rw.WriteOperatorHuman(ops[0],"E2_full_omega_nathan.op");
+
  
 
 //  CommutatorTest(omegaNathan,Hbare);

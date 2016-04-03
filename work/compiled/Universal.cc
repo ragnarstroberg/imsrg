@@ -27,6 +27,7 @@ int main(int argc, char** argv)
   string denominator_delta_orbit = PAR.s("denominator_delta_orbit");
   string LECs = PAR.s("LECs");
   string scratch = PAR.s("scratch");
+  string use_brueckner_bch = PAR.s("use_brueckner_bch");
 
   int eMax = PAR.i("emax");
   int E3max = PAR.i("e3max");
@@ -97,6 +98,12 @@ int main(int argc, char** argv)
   int particle_rank = input3bme=="none" ? 2 : 3;
   Operator Hbare = Operator(modelspace,0,0,0,particle_rank);
   Hbare.SetHermitian();
+
+  if (use_brueckner_bch == "true" or use_brueckner_bch == "True")
+  {
+    Hbare.SetUseBruecknerBCH(true);
+    cout << "Using Brueckner flavor of BCH" << endl;
+  }
 
   cout << "Reading interactions..." << endl;
 

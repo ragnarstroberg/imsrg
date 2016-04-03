@@ -47,6 +47,7 @@ class Operator
   static double bch_transform_threshold;
   static double bch_product_threshold;
   static bool tensor_transform_first_pass;
+  static bool use_brueckner_bch;
 
 
 
@@ -138,6 +139,8 @@ class Operator
 
   Operator BCH_Product(  Operator& )  ; 
   Operator BCH_Transform( const Operator& ) ; 
+  Operator Standard_BCH_Transform( const Operator& ) ; 
+  Operator Brueckner_BCH_Transform( const Operator& ) ; 
 
   void CalculateKineticEnergy();
   void Eye(); ///< set to identity operator
@@ -160,6 +163,7 @@ class Operator
 
   static void Set_BCH_Transform_Threshold(double x){bch_transform_threshold=x;};
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
+  static void SetUseBruecknerBCH(bool tf){use_brueckner_bch = tf;};
 
   deque<arma::mat> InitializePandya(size_t nch, string orientation);
 //  void DoPandyaTransformation(deque<arma::mat>&, deque<arma::mat>&, string orientation) const ;

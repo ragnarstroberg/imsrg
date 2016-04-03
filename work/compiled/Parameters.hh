@@ -43,6 +43,7 @@ map<string,string> Parameters::string_par = {
   {"denominator_delta_orbit",	"none"},	// pick specific orbit to apply the delta
   {"LECs",			"EM2.0_2.0"},
   {"scratch",			""},    // scratch directory for writing operators in binary format
+  {"use_brueckner_bch",          "false"}, // switch to Brueckner version of BCH
 };
 
 
