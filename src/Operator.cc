@@ -23,6 +23,7 @@ using namespace std;
 double  Operator::bch_transform_threshold = 1e-9;
 double  Operator::bch_product_threshold = 1e-4;
 bool Operator::tensor_transform_first_pass = true; // Flag to check if we've calculated a commutator yet
+bool Operator::use_brueckner_bch = false;
 
 Operator& Operator::TempOp(size_t n)
 {
@@ -1040,6 +1041,16 @@ double Operator::MP1_Eval(Operator& H)
 /// with all commutators truncated at the two-body level.
 Operator Operator::BCH_Transform( const Operator &Omega)
 {
+   if (use_brueckner_bch) return Brueckner_BCH_Transform( Omega );
+   else return Standard_BCH_Transform( Omega );
+}
+
+/// X.BCH_Transform(Y) returns \f$ Z = e^{Y} X e^{-Y} \f$.
+/// We use the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
+/// \f[ Z = X + [Y,X] + \frac{1}{2!}[Y,[Y,X]] + \frac{1}{3!}[Y,[Y,[Y,X]]] + \ldots \f]
+/// with all commutators truncated at the two-body level.
+Operator Operator::Standard_BCH_Transform( const Operator &Omega)
+{
    double t_start = omp_get_wtime();
    int max_iter = 40;
    int warn_iter = 12;
@@ -1073,6 +1084,21 @@ Operator Operator::BCH_Transform( const Operator &Omega)
      }
    }
    profiler.timer["BCH_Transform"] += omp_get_wtime() - t_start;
+   return OpOut;
+}
+/// Variation of the BCH transformation procedure
+/// requested by a one Mr. T.D. Morris
+/// \f[ e^{\Omega_1 + \Omega_2} X e^{-\Omega_1 - \Omega_2}
+///    \rightarrow 
+///  e^{\Omega_2} e^{\Omega_1}  X e^{-\Omega_1} e^{-\Omega_2} \f]
+Operator Operator::Brueckner_BCH_Transform( const Operator &Omega)
+{
+   Operator Omega1 = Omega;
+   Operator Omega2 = Omega;
+   Omega1.SetParticleRank(1);
+   Omega2.EraseOneBody();
+   Operator OpOut = this->Standard_BCH_Transform(Omega1);
+   OpOut = OpOut.Standard_BCH_Transform(Omega2);
    return OpOut;
 }
 
