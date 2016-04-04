@@ -28,6 +28,7 @@ class ReadWrite
    void GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis );
    void Read3bodyHDF5( string filename, Operator& op);
    void Read3bodyHDF5_new( string filename, Operator& op);
+   void ReadOperator_Nathan( string filename1b, string filename2b, Operator& op);
    void Write_me2j( string filename, Operator& op, int emax, int e2max, int lmax);
    void Write_me3j( string filename, Operator& op, int E1max, int E2max, int E3max);
    void WriteTBME_Navratil( string filename, Operator& Hbare);

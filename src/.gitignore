@@ -1,6 +1,7 @@
 tmp*
 ./.*.swp
 *.o
+*.so
 3N_N7.tar.gz
 ../output/*
 ../input/*

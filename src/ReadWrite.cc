@@ -1453,6 +1453,51 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
 
 
 
+void ReadWrite::ReadOperator_Nathan( string filename1b, string filename2b, Operator& op)
+{
+  ifstream infile(filename1b);
+  if ( !infile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble opening file  !!!   **" << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
+  index_t a,b,c,d,J;
+  double me;
+  int herm = op.IsHermitian() ? 1 : -1;
+  while ( infile >> a >> b >> me  )
+  {
+    op.OneBody(a,b) = me;
+    op.OneBody(b,a) = herm*me;
+  }
+  infile.close();
+
+  infile.open(filename2b);
+  if ( !infile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble opening file  !!!   **" << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
+  char header[500];
+  infile.getline(header,500);
+  while ( infile >> a >> b >> c >> d >> J >> me )
+  {
+    if (a==b) me /= sqrt(2);
+    if (c==d) me /= sqrt(2);
+    op.TwoBody.SetTBME_J(J,a,b,c,d,me);
+  }
+  infile.close();
+
+
+}
+
+
+
 void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int Emax, int lmax)
 {
   ofstream outfile(outfilename);
