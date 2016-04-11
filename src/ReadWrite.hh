@@ -35,8 +35,10 @@ class ReadWrite
    void WriteNuShellX_sps( Operator& op, string filename);
    void WriteNuShellX_int( Operator& op, string filename);
    void WriteNuShellX_op( Operator& op, string filename);
+   void ReadNuShellX_int( Operator& op, string filename);
    void WriteNuShellX_intfile( Operator& op, string filename, string mode); 
-   void WriteAntoine_int( Operator& op, string filename); // <- not implemented yet...
+   void WriteAntoine_int( Operator& op, string filename); 
+   void WriteAntoine_input( Operator& op, string filename, int A, int Z); 
    void WriteOperator(Operator& op, string filename);
    void WriteOperatorHuman(Operator& op, string filename);
    void ReadOperator(Operator& op, string filename); 
