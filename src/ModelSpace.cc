@@ -358,28 +358,36 @@ ModelSpace::ModelSpace(int emax, string valence)
 // This is the most convenient interface
 void ModelSpace::Init(int emax, string reference, string valence)
 {
-  int Aref,Zref;
-  int Ac,Zc=-1;
+  int Aref,Zref,Ac,Zc;
   vector<index_t> valence_list, core_list;
   map<index_t,double> hole_list,core_map;
+
   GetAZfromString(reference,Aref,Zref);
   hole_list = GetOrbitsAZ(Aref,Zref);
 
-  auto itval = ValenceSpaces.find(valence);
-
-  if ( itval != ValenceSpaces.end() ) // we've got a valence space
+  if (valence == "0hw-shell")
   {
-     string core_string = itval->second[0];
-     GetAZfromString(core_string,Ac,Zc);
-     valence_list = String2Index(vector<string>(itval->second.begin()+1,itval->second.end()));
+    Get0hwSpace(Aref,Zref,core_list,valence_list);
   }
-  else  // no valence space. we've got a single-reference.
+  else
   {
-     GetAZfromString(valence,Ac,Zc);
+    auto itval = ValenceSpaces.find(valence);
+  
+    if ( itval != ValenceSpaces.end() ) // we've got a valence space
+    {
+       string core_string = itval->second[0];
+       GetAZfromString(core_string,Ac,Zc);
+       valence_list = String2Index(vector<string>(itval->second.begin()+1,itval->second.end()));
+    }
+    else  // no valence space. we've got a single-reference.
+    {
+       GetAZfromString(valence,Ac,Zc);
+    }
+  
+    core_map = GetOrbitsAZ(Ac,Zc);
+    for (auto& it_core : core_map) core_list.push_back(it_core.first);
   }
 
-  core_map = GetOrbitsAZ(Ac,Zc);
-  for (auto& it_core : core_map) core_list.push_back(it_core.first);
   target_mass = Aref;
   target_Z = Zref;
   Init(emax,hole_list,core_list,valence_list);
@@ -541,6 +549,41 @@ map<index_t,double> ModelSpace::GetOrbitsAZ(int A, int Z)
   return holesAZ;
 
 }
+
+
+/// Find the valence space of one single major oscillator shell each for protons and neutrons (not necessarily
+/// the same shell for both) which contains the naive shell-model ground state of the reference.
+/// For example, if we want to treat C20, with 6 protons and 14 neutrons, we take the 0p shell for protons
+/// and 1s0d shell for neutrons.
+void ModelSpace::Get0hwSpace(int Aref, int Zref, vector<index_t>& core_list, vector<index_t>& valence_list)
+{
+  int Nref = Aref-Zref;
+  int OSC_protons=0,OSC_neutrons=0;
+  while ( (OSC_protons +1)*(OSC_protons +2)*(OSC_protons +3)/3 <= Zref ) OSC_protons++;
+  while ( (OSC_neutrons+1)*(OSC_neutrons+2)*(OSC_neutrons+3)/3 <= Nref ) OSC_neutrons++;
+
+  int Zcore = (OSC_protons )*(OSC_protons +1)*(OSC_protons +2)/3;
+  int Ncore = (OSC_neutrons)*(OSC_neutrons+1)*(OSC_neutrons+2)/3;
+
+  for (auto& it_core : GetOrbitsAZ(Zcore+Ncore,Zcore)) core_list.push_back(it_core.first);
+
+  for (int L=OSC_protons; L>=0; L-=2)
+  {
+    for (int j2=2*L+1;j2>max(2*L-2,0);j2-=2)
+    {
+      valence_list.push_back( GetOrbitIndex( (OSC_protons-L)/2, L, j2, -1) );
+    }
+  }
+  for (int L=OSC_neutrons; L>=0; L-=2)
+  {
+    for (int j2=2*L+1;j2>max(2*L-2,0);j2-=2)
+    {
+      valence_list.push_back( GetOrbitIndex( (OSC_neutrons-L)/2, L, j2, 1) );
+    }
+  }
+
+}
+
 
 
 void ModelSpace::SetReference(vector<index_t> new_reference)
