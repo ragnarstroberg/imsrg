@@ -2448,13 +2448,41 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
             double cijkl = 0;
 
             for ( int a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+            {
               cijkl += X.OneBody(i,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,a,j,k,l);
+               if (i==0 and j==0 and k==2 and l==2 and J1==0 and J2==2)
+               {
+                 cout << "<00 22>2  a = " << a << "  "  << X.OneBody(i,a) << " "
+                      << Y.TwoBody.GetTBME(ch_bra,ch_ket,a,j,k,l) << " =>  " << cijkl << endl;
+               }
+            }
             for ( int a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+            {
                cijkl += X.OneBody(j,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,a,k,l);
+               if (i==0 and j==0 and k==2 and l==2 and J1==0 and J2==2)
+               {
+                 cout << "<00 22>2  a = " << a << "  "  << X.OneBody(j,a) << " "
+                      << Y.TwoBody.GetTBME(ch_bra,ch_ket,i,a,k,l) << " =>  " << cijkl << endl;
+               }
+            }
             for ( int a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+            {
                cijkl -= X.OneBody(a,k) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,a,l);
+               if (i==0 and j==0 and k==2 and l==2 and J1==0 and J2==2)
+               {
+                 cout << "<00 22>2  a = " << a << "  "  << X.OneBody(a,k) << " "
+                      << Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,a,l) << " =>  " << cijkl << endl;
+               }
+            }
             for ( int a : X.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+            {
                cijkl -= X.OneBody(a,l) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,k,a);
+               if (i==0 and j==0 and k==2 and l==2 and J1==0 and J2==2)
+               {
+                 cout << "<00 22>2  a = " << a << "  "  << X.OneBody(a,l) << " "
+                      << Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,k,a) << " =>  " << cijkl << endl;
+               }
+            }
 
 
             double prefactor = hatfactor * modelspace->phase(ji+jj+J2+Lambda) ;
@@ -2462,32 +2490,62 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
             {
                double ja = modelspace->GetOrbit(a).j2*0.5;
                cijkl -= prefactor *  modelspace->GetSixJ(J2,J1,Lambda,ji,ja,jj) * Y.OneBody(i,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,a,j,k,l) ;
+               if (i==0 and j==0 and k==2 and l==2 and J1==0 and J2==2)
+               {
+                 cout << "<00 22>1  a = " << a << "  " << prefactor << " " << modelspace->GetSixJ(J2,J1,Lambda,ji,ja,jj)
+                      << " " << Y.OneBody(i,a) << " " << X.TwoBody.GetTBME(ch_ket,ch_ket,a,j,k,l) << " =>  " << cijkl << endl;
+               }
             }
             for ( int a : Y.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
             {
                double ja = modelspace->GetOrbit(a).j2*0.5;
                prefactor = hatfactor * modelspace->phase(ji+ja-J1+Lambda) ;
                cijkl -= prefactor * modelspace->GetSixJ(J2,J1,Lambda,jj,ja,ji) * Y.OneBody(j,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,i,a,k,l);
+               if (i==0 and j==0 and k==2 and l==2 and J1==0 and J2==2)
+               {
+                 cout << "<00 22>2  a = " << a << "  " << prefactor << " " << modelspace->GetSixJ(J2,J1,Lambda,jj,ja,ji)
+                      << " " << Y.OneBody(j,a) << " " << X.TwoBody.GetTBME(ch_ket,ch_ket,i,a,k,l) << " =>  " << cijkl << endl;
+               }
             }
             for ( int a : Y.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
             {
                double ja = modelspace->GetOrbit(a).j2*0.5;
                prefactor = hatfactor * modelspace->phase(ja+jl+J2+Lambda) ;
                cijkl += prefactor * modelspace->GetSixJ(J1,J2,Lambda,jk,ja,jl) * Y.OneBody(a,k) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,a,l) ;
+               if (i==0 and j==0 and k==2 and l==2 and J1==0 and J2==2)
+               {
+                 cout << "<00 22>3  a = " << a << "  " << prefactor << " " << modelspace->GetSixJ(J2,J1,Lambda,jk,ja,jl)
+                      << " " << Y.OneBody(a,k) << " " << X.TwoBody.GetTBME(ch_ket,ch_ket,i,j,a,l) << " =>  " << cijkl << endl;
+               }
             }
             prefactor = hatfactor * modelspace->phase(jk+jl-J1+Lambda) ;
             for ( int a : Y.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
             {
                double ja = modelspace->GetOrbit(a).j2*0.5;
                cijkl += prefactor * modelspace->GetSixJ(J1,J2,Lambda,jl,ja,jk) * Y.OneBody(a,l) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,k,a) ;
+               if (i==0 and j==0 and k==2 and l==2 and J1==0 and J2==2)
+               {
+                 cout << "<00 22>4  a = " << a << "  " << prefactor << " " << modelspace->GetSixJ(J2,J1,Lambda,jl,ja,jk)
+                      << " " << Y.OneBody(a,l) << " " << X.TwoBody.GetTBME(ch_ket,ch_ket,i,j,k,a) << " =>  " << cijkl << endl;
+               }
             }
 
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
             Z2(ibra,iket) += cijkl /norm;
+             if (i==0 and j==0 and k==2 and l==2 and J1==0 and J2==2)
+             {
+                cout << "norm = " << norm << "  " << cijkl / norm << "  " << Z2(ibra,iket) << endl;
+             }
          }
       }
    }
+   int chbra = modelspace->GetTwoBodyChannelIndex(0,0,-1);
+   int chket = modelspace->GetTwoBodyChannelIndex(2,0,-1);
+   int ibra = modelspace->GetTwoBodyChannel(chbra).GetLocalIndex(0,0);
+   int iket = modelspace->GetTwoBodyChannel(chket).GetLocalIndex(2,2);
+   cout << "end of comm122st. TBME = " << TwoBody.GetTBME_J_norm(0,2,0,0,2,2) << "   "
+        << TwoBody.GetMatrix( chbra,chket )(ibra,iket) <<endl;
    profiler.timer["comm122st"] += omp_get_wtime() - tstart;
 }
 
