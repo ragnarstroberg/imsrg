@@ -546,6 +546,10 @@ double TwoBodyME::Norm() const
       const arma::mat& matrix = itmat.second;
       double n2 = arma::norm(matrix,"fro");
       nrm += n2*n2;
+      // If bra and ket are different channels, we only store
+      // one ordering. For the norm, we then need a factor of 2.
+      if (itmat.first[0] != itmat.first[1])
+         nrm += n2*n2;
    }
    return sqrt(nrm);
 }

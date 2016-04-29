@@ -224,6 +224,38 @@ size_t Operator::Size()
 }
 
 
+void Operator::SetOneBody(int i, int j, double val)
+{
+ OneBody(i,j) = val;
+ if ( IsNonHermitian() ) return;
+ int flip_phase = IsHermitian() ? 1 : -1;
+ if (rank_J > 0)
+   flip_phase *= modelspace->phase( (modelspace->GetOrbit(i).j2 - modelspace->GetOrbit(j).j2) / 2 );
+ OneBody(j,i) = flip_phase * val;
+
+}
+
+void Operator::SetTwoBody(int J1, int p1, int T1, int J2, int p2, int T2, int i, int j, int k, int l, float v)
+{
+  TwoBody.SetTBME( J1,  p1,  T1,  J2,  p2,  T2,  i,  j,  k,  l, v);
+}
+
+double Operator::GetTwoBody(int ch_bra, int ch_ket, int ibra, int iket)
+{
+  if ( ch_bra <= ch_ket or IsNonHermitian() )
+  {
+    return TwoBody.GetMatrix(ch_bra, ch_ket)(ibra,iket);
+  }
+  else
+  {
+    TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+    TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+    int flipphase = modelspace->phase( tbc_bra.J - tbc_ket.J) * ( IsHermitian() ? 1 : -1 ) ;
+    return  flipphase * TwoBody.GetMatrix(ch_ket,ch_bra)(iket,ibra);
+  }
+}
+
+
 void Operator::WriteBinary(ofstream& ofs)
 {
   double tstart = omp_get_wtime();
@@ -2430,7 +2462,6 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
 
       for (int ibra = 0;ibra<nbras; ++ibra)
       {
-         if (ibra > 0 ) break;
          Ket & bra = tbc_bra.GetKet(ibra);
          int i = bra.p;
          int j = bra.q;
@@ -2452,13 +2483,21 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
             double cijkl = 0;
 
             for ( int a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+            {
               cijkl += X.OneBody(i,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,a,j,k,l);
+            }
             for ( int a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+            {
                cijkl += X.OneBody(j,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,a,k,l);
+            }
             for ( int a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+            {
                cijkl -= X.OneBody(a,k) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,a,l);
+            }
             for ( int a : X.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+            {
                cijkl -= X.OneBody(a,l) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,k,a);
+            }
 
 
             double prefactor = hatfactor * modelspace->phase(ji+jj+J2+Lambda) ;
@@ -2492,6 +2531,12 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
          }
       }
    }
+   int chbra = modelspace->GetTwoBodyChannelIndex(0,0,-1);
+   int chket = modelspace->GetTwoBodyChannelIndex(2,0,-1);
+   int ibra = modelspace->GetTwoBodyChannel(chbra).GetLocalIndex(0,0);
+   int iket = modelspace->GetTwoBodyChannel(chket).GetLocalIndex(2,2);
+   cout << "end of comm122st. TBME = " << TwoBody.GetTBME_J_norm(0,2,0,0,2,2) << "   "
+        << TwoBody.GetMatrix( chbra,chket )(ibra,iket) <<endl;
    profiler.timer["comm122st"] += omp_get_wtime() - tstart;
 }
 

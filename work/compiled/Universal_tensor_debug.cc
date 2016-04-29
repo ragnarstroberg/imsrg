@@ -275,25 +275,41 @@ int main(int argc, char** argv)
 
 
   
-  cout << "create Comm111 and Comm121 " << endl;
-  Operator Comm111(modelspace,2,0,0,2);
+//  cout << "create Comm111 and Comm121 " << endl;
+//  Operator Comm111(modelspace,2,0,0,2);
 //  Operator Comm121(modelspace,2,0,0,2);
-  Operator Comm122(modelspace,2,0,0,2);
+//  Operator Comm122(modelspace,2,0,0,2);
 
-  cout << "call comm111st..." << endl;
-  Comm111.comm111st(omegaNathan,ops[0]);
-  cout << "Write 111" << endl;
-  rw.WriteOperatorHuman(Comm111,"comm111_omega_nathan.op");
+//  cout << "call comm111st..." << endl;
+//  Comm111.comm111st(omegaNathan,ops[0]);
+//  cout << "Write 111" << endl;
+//  rw.WriteOperatorHuman(Comm111,"comm111_omega_nathan.op");
 //  cout << "call comm121st..." << endl;
 //  Comm121.comm121st(omegaNathan,ops[0]);
-  Comm122.comm121st(omegaNathan,ops[0]);
-  cout << "done. Now write operators" << endl;
+//  Comm122.comm122st(omegaNathan,ops[0]);
+//  cout << "done. Now write operators" << endl;
 
 //  rw.WriteOperatorHuman(Comm121,"comm121_omega_nathan.op");
-  rw.WriteOperatorHuman(Comm122,"comm122_omega_nathan.op");
+//  rw.WriteOperatorHuman(Comm122,"comm122_omega_nathan.op");
+  Operator OneComm(modelspace,2,0,0,2);
+  Operator TwoComm(modelspace,2,0,0,2);
+  Operator Nested122(modelspace,2,0,0,2);
+  Operator Nested222pp(modelspace,2,0,0,2);
+  Operator Nested222ph(modelspace,2,0,0,2);
+  OneComm.SetToCommutator(omegaNathan,ops[0]);
+  rw.WriteOperatorHuman(OneComm,"One_comm_omega_nathan.op");
+  Nested122.comm122st(omegaNathan,OneComm);
+  rw.WriteOperatorHuman(Nested122,"Nested122_omega_nathan.op");
+  Nested222pp.comm222_pp_hh_221st(omegaNathan,OneComm);
+  rw.WriteOperatorHuman(Nested222pp,"Nested222pp_omega_nathan.op");
+  Nested222ph.comm222_phst(omegaNathan,OneComm);
+  rw.WriteOperatorHuman(Nested222ph,"Nested222ph_omega_nathan.op");
+  TwoComm.SetToCommutator(omegaNathan,OneComm);
+  rw.WriteOperatorHuman(TwoComm,"Two_comm_omega_nathan.op");
 
-//  ops[0] = ops[0].BCH_Transform(omegaNathan);
-//  rw.WriteOperatorHuman(ops[0],"E2_full_omega_nathan.op");
+  ops[0] = ops[0].BCH_Transform(omegaNathan);
+  rw.WriteOperatorHuman(ops[0],"E2_full_omega_nathan.op");
+
  
 
 //  CommutatorTest(omegaNathan,Hbare);
