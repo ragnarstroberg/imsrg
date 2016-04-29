@@ -16,7 +16,9 @@
 using namespace boost::python;
 
   Orbit MSGetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
+  TwoBodyChannel MSGetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
 
+  int TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
 
 BOOST_PYTHON_MODULE(pyIMSRG)
 {
@@ -34,6 +36,13 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def_readwrite("cvq", &Orbit::cvq)
       .def_readwrite("index", &Orbit::index)
    ;
+
+   class_<TwoBodyChannel>("TwoBodyChannel",init<>())
+      .def("GetNumberKets",&TwoBodyChannel::GetNumberKets)
+      .def("GetLocalIndex",&TBCGetLocalIndex)
+      .def("GetKetIndex",&TwoBodyChannel::GetKetIndex)
+   ;
+
    class_<ModelSpace>("ModelSpace",init<>())
       .def(init<const ModelSpace&>())
       .def(init< int, const std::string&>())
@@ -48,6 +57,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetNumberOrbits", &ModelSpace::GetNumberOrbits)
       .def("GetNumberKets", &ModelSpace::GetNumberKets)
       .def("GetOrbit", &MSGetOrbit)
+      .def("GetTwoBodyChannelIndex", &ModelSpace::GetTwoBodyChannelIndex)
+      .def("GetTwoBodyChannel", &MSGetTwoBodyChannel)
    ;
 
 
@@ -66,7 +77,9 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def_readwrite("ZeroBody", &Operator::ZeroBody)
       .def_readwrite("OneBody", &Operator::OneBody)
       .def("GetOneBody", &Operator::GetOneBody)
+      .def("SetOneBody", &Operator::SetOneBody)
       .def("GetTwoBody", &Operator::GetTwoBody)
+      .def("SetTwoBody", &Operator::SetTwoBody)
       .def("GetTwoBodyDimension", &Operator::GetTwoBodyDimension)
       .def("ScaleOneBody", &Operator::ScaleOneBody)
       .def("ScaleTwoBody", &Operator::ScaleTwoBody)
