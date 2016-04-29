@@ -258,6 +258,7 @@ double Operator::GetTwoBody(int ch_bra, int ch_ket, int ibra, int iket)
 
 void Operator::WriteBinary(ofstream& ofs)
 {
+  double tstart = omp_get_wtime();
   ofs.write((char*)&rank_J,sizeof(rank_J));
   ofs.write((char*)&rank_T,sizeof(rank_T));
   ofs.write((char*)&parity,sizeof(parity));
@@ -273,11 +274,13 @@ void Operator::WriteBinary(ofstream& ofs)
     TwoBody.WriteBinary(ofs);
   if (particle_rank > 2)
     ThreeBody.WriteBinary(ofs);
+  profiler.timer["Write Bnary Op"] += omp_get_wtime() - tstart;
 }
 
 
 void Operator::ReadBinary(ifstream& ifs)
 {
+  double tstart = omp_get_wtime();
   ifs.read((char*)&rank_J,sizeof(rank_J));
   ifs.read((char*)&rank_T,sizeof(rank_T));
   ifs.read((char*)&parity,sizeof(parity));
@@ -294,6 +297,7 @@ void Operator::ReadBinary(ifstream& ifs)
     TwoBody.ReadBinary(ifs);
   if (particle_rank > 2)
     ThreeBody.ReadBinary(ifs);
+  profiler.timer["Read Bnary Op"] += omp_get_wtime() - tstart;
 }
 
 
@@ -2458,7 +2462,6 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
 
       for (int ibra = 0;ibra<nbras; ++ibra)
       {
-         if (ibra > 0 ) break;
          Ket & bra = tbc_bra.GetKet(ibra);
          int i = bra.p;
          int j = bra.q;
@@ -2480,13 +2483,21 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
             double cijkl = 0;
 
             for ( int a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+            {
               cijkl += X.OneBody(i,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,a,j,k,l);
+            }
             for ( int a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+            {
                cijkl += X.OneBody(j,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,a,k,l);
+            }
             for ( int a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+            {
                cijkl -= X.OneBody(a,k) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,a,l);
+            }
             for ( int a : X.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+            {
                cijkl -= X.OneBody(a,l) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,k,a);
+            }
 
 
             double prefactor = hatfactor * modelspace->phase(ji+jj+J2+Lambda) ;
@@ -2520,6 +2531,12 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
          }
       }
    }
+   int chbra = modelspace->GetTwoBodyChannelIndex(0,0,-1);
+   int chket = modelspace->GetTwoBodyChannelIndex(2,0,-1);
+   int ibra = modelspace->GetTwoBodyChannel(chbra).GetLocalIndex(0,0);
+   int iket = modelspace->GetTwoBodyChannel(chket).GetLocalIndex(2,2);
+   cout << "end of comm122st. TBME = " << TwoBody.GetTBME_J_norm(0,2,0,0,2,2) << "   "
+        << TwoBody.GetMatrix( chbra,chket )(ibra,iket) <<endl;
    profiler.timer["comm122st"] += omp_get_wtime() - tstart;
 }
 

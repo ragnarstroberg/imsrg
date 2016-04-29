@@ -230,11 +230,17 @@ map<string,vector<string>> ModelSpace::ValenceSpaces  {
 { "sd-shell"  ,        {"O16", "p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"}},
 { "psd-shell"  ,       {"He4", "p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"}},
 { "psdNR-shell"  ,     {"He10","p0p3","p0p1","n0d5","n0d3","n1s1"}}, // protons in p shell, neutrons in sd shell (NR is for neutron-rich)
+{ "psdPR-shell"  ,     {"O10","n0p3","n0p1","p0d5","p0d3","p1s1"}}, // neutrons in p shell, protnons in sd shell (PR is for proton-rich)
 { "fp-shell"  ,        {"Ca40","p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"}},
 { "sdfp-shell"  ,      {"O16", "p0d5","n0d5","p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1"}},
 { "sdfpNR-shell"  ,    {"O28", "p0d5","p0d3","p1s1","n0f7","n0f5","n1p3","n1p1"}}, // protons in sd shell, neutrons in fp shell, a la SDPFU from Nowacki/Poves (NR is for neutron-rich)
+{ "sdfpPR-shell"  ,    {"Ca28", "n0d5","n0d3","n1s1","p0f7","p0f5","p1p3","p1p1"}}, // neutrons in sd shell, protons in fp shell, (PR is for proton-rich)
 { "fpg9-shell"  ,      {"Ca40","p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1","p0g9","n0g9"}},
+{ "fpg9NR-shell"  ,    {"Ca40","p0f7","n0f7","p0f5","n0f5","p1p3","n1p3","p1p1","n1p1","n0g9"}}, // just add g9/2 for neutrons
+{ "fpgdsNR-shell"  ,   {"Ca60","p0f7","p0f5","p1p3","p1p1","n0g9","n0g7","n1d5","n1d3","n2s1"}}, // protons in the fp shell, neutrons in the gds shell
+//{ "fpg9NR-shell"  ,    {"Ca52","p0f7","p0f5","p1p3","p1p1","n0f5","n1p1","n0g9"}}, // protons in the fp shell, neutrons in upper fp + g9/2
 { "sd3f7p3-shell"  ,   {"Si28","p0d3","n0d3","p1s1","n1s1","p0f7","n0f7","p1p3","n1p3"}},
+{ "gds-shell" ,        {"Zr80","p0g9","n0g9","p0g7","n0g7","p1d5","n1d5","p1d3","n1d3","p2s1","n2s1"}}, // This is a big valence space, more than a few particles will be a serious shell model diagonalization
 };
 
 
@@ -352,28 +358,36 @@ ModelSpace::ModelSpace(int emax, string valence)
 // This is the most convenient interface
 void ModelSpace::Init(int emax, string reference, string valence)
 {
-  int Aref,Zref;
-  int Ac,Zc=-1;
+  int Aref,Zref,Ac,Zc;
   vector<index_t> valence_list, core_list;
   map<index_t,double> hole_list,core_map;
+
   GetAZfromString(reference,Aref,Zref);
   hole_list = GetOrbitsAZ(Aref,Zref);
 
-  auto itval = ValenceSpaces.find(valence);
-
-  if ( itval != ValenceSpaces.end() ) // we've got a valence space
+  if (valence == "0hw-shell")
   {
-     string core_string = itval->second[0];
-     GetAZfromString(core_string,Ac,Zc);
-     valence_list = String2Index(vector<string>(itval->second.begin()+1,itval->second.end()));
+    Get0hwSpace(Aref,Zref,core_list,valence_list);
   }
-  else  // no valence space. we've got a single-reference.
+  else
   {
-     GetAZfromString(valence,Ac,Zc);
+    auto itval = ValenceSpaces.find(valence);
+  
+    if ( itval != ValenceSpaces.end() ) // we've got a valence space
+    {
+       string core_string = itval->second[0];
+       GetAZfromString(core_string,Ac,Zc);
+       valence_list = String2Index(vector<string>(itval->second.begin()+1,itval->second.end()));
+    }
+    else  // no valence space. we've got a single-reference.
+    {
+       GetAZfromString(valence,Ac,Zc);
+    }
+  
+    core_map = GetOrbitsAZ(Ac,Zc);
+    for (auto& it_core : core_map) core_list.push_back(it_core.first);
   }
 
-  core_map = GetOrbitsAZ(Ac,Zc);
-  for (auto& it_core : core_map) core_list.push_back(it_core.first);
   target_mass = Aref;
   target_Z = Zref;
   Init(emax,hole_list,core_list,valence_list);
@@ -535,6 +549,41 @@ map<index_t,double> ModelSpace::GetOrbitsAZ(int A, int Z)
   return holesAZ;
 
 }
+
+
+/// Find the valence space of one single major oscillator shell each for protons and neutrons (not necessarily
+/// the same shell for both) which contains the naive shell-model ground state of the reference.
+/// For example, if we want to treat C20, with 6 protons and 14 neutrons, we take the 0p shell for protons
+/// and 1s0d shell for neutrons.
+void ModelSpace::Get0hwSpace(int Aref, int Zref, vector<index_t>& core_list, vector<index_t>& valence_list)
+{
+  int Nref = Aref-Zref;
+  int OSC_protons=0,OSC_neutrons=0;
+  while ( (OSC_protons +1)*(OSC_protons +2)*(OSC_protons +3)/3 <= Zref ) OSC_protons++;
+  while ( (OSC_neutrons+1)*(OSC_neutrons+2)*(OSC_neutrons+3)/3 <= Nref ) OSC_neutrons++;
+
+  int Zcore = (OSC_protons )*(OSC_protons +1)*(OSC_protons +2)/3;
+  int Ncore = (OSC_neutrons)*(OSC_neutrons+1)*(OSC_neutrons+2)/3;
+
+  for (auto& it_core : GetOrbitsAZ(Zcore+Ncore,Zcore)) core_list.push_back(it_core.first);
+
+  for (int L=OSC_protons; L>=0; L-=2)
+  {
+    for (int j2=2*L+1;j2>max(2*L-2,0);j2-=2)
+    {
+      valence_list.push_back( GetOrbitIndex( (OSC_protons-L)/2, L, j2, -1) );
+    }
+  }
+  for (int L=OSC_neutrons; L>=0; L-=2)
+  {
+    for (int j2=2*L+1;j2>max(2*L-2,0);j2-=2)
+    {
+      valence_list.push_back( GetOrbitIndex( (OSC_neutrons-L)/2, L, j2, 1) );
+    }
+  }
+
+}
+
 
 
 void ModelSpace::SetReference(vector<index_t> new_reference)
