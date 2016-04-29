@@ -453,7 +453,7 @@ void Generator::ConstructGenerator_ShellModel_Atan()
       {
          if (i==j) continue;
          double denominator = Get1bDenominator(i,j);
-         Eta->OneBody(i,j) += 0.5*atan(2*H->OneBody(i,j)/denominator);
+         Eta->OneBody(i,j) = 0.5*atan(2*H->OneBody(i,j)/denominator);
          Eta->OneBody(j,i) = - Eta->OneBody(i,j);
       }
    }
@@ -461,11 +461,11 @@ void Generator::ConstructGenerator_ShellModel_Atan()
 //   for ( auto& a : modelspace->hole_qspace)
    for ( auto& a : modelspace->core)
    {
-//      for ( auto& i : modelspace->particle_qspace)
-      for ( auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
+//      for ( auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
+      for ( auto& i : modelspace->qspace)
       {
          double denominator = Get1bDenominator(i,a);
-         Eta->OneBody(i,a) += 0.5*atan(2*H->OneBody(i,a)/denominator);
+         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
          Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
 //      for ( auto& i : modelspace->valence)
