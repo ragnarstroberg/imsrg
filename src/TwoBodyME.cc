@@ -105,21 +105,10 @@ void TwoBodyME::SetNonHermitian()
 /// This returns the matrix element times a factor \f$ \sqrt{(1+\delta_{ij})(1+\delta_{kl})} \f$
 double TwoBodyME::GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const
 {
-   TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
-   TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
-   int bra_ind = tbc_bra.GetLocalIndex(min(a,b),max(a,b));
-   int ket_ind = tbc_ket.GetLocalIndex(min(c,d),max(c,d));
-   if (bra_ind < 0 or ket_ind < 0 or bra_ind > tbc_bra.GetNumberKets() or ket_ind > tbc_ket.GetNumberKets() )
-     return 0;
-   Ket & bra = tbc_bra.GetKet(bra_ind);
-   Ket & ket = tbc_ket.GetKet(ket_ind);
-
-   double phase = 1;
-   if (a>b) phase *= bra.Phase(tbc_bra.J);
-   if (c>d) phase *= ket.Phase(tbc_ket.J);
-   if (a==b) phase *= SQRT2;
-   if (c==d) phase *= SQRT2;
-   return phase * GetMatrix(ch_bra,ch_ket)(bra_ind, ket_ind);
+  double norm = 1;
+   if (a==b) norm *= SQRT2;
+   if (c==d) norm *= SQRT2;
+   return norm * GetTBME_norm(ch_bra,ch_ket,a,b,c,d);
 }
 
 /// This returns the normalized matrix element 
@@ -137,6 +126,10 @@ double TwoBodyME::GetTBME_norm(int ch_bra, int ch_ket, int a, int b, int c, int 
    double phase = 1;
    if (a>b) phase *= bra.Phase(tbc_bra.J);
    if (c>d) phase *= ket.Phase(tbc_ket.J);
+   if (ch_bra > ch_ket)
+   {
+     return phase * modelspace->phase(tbc_bra.J-tbc_ket.J) * GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind);
+   }
    return phase * GetMatrix(ch_bra,ch_ket)(bra_ind, ket_ind);
 }
 
@@ -258,9 +251,10 @@ double TwoBodyME::GetTBME_J(int j_bra, int j_ket, int a, int b, int c, int d) co
    if ( j_bra + j_ket < rank_J) return 0;
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,parity_bra,Tz_bra);
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,parity_ket,Tz_ket);
-   if (ch_bra <= ch_ket)
-     return GetTBME(ch_bra,ch_ket,a,b,c,d);
-   return modelspace->phase(j_bra - j_ket) * GetTBME(ch_ket,ch_bra,c,d,a,b);
+   return GetTBME(ch_bra,ch_ket,a,b,c,d);
+//   if (ch_bra <= ch_ket)
+//    return GetTBME(ch_bra,ch_ket,a,b,c,d);
+//   return modelspace->phase(j_bra - j_ket) * GetTBME(ch_ket,ch_bra,c,d,a,b);
 }
 void TwoBodyME::SetTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, double tbme)
 {
@@ -299,9 +293,10 @@ double TwoBodyME::GetTBME_J_norm(int j_bra, int j_ket, int a, int b, int c, int 
    if ( j_bra + j_ket < rank_J) return 0;
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,parity_bra,Tz_bra);
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,parity_ket,Tz_ket);
-   if (ch_bra <= ch_ket)
-     return GetTBME_norm(ch_bra,ch_ket,a,b,c,d);
-   return modelspace->phase(j_bra - j_ket) * GetTBME_norm(ch_ket,ch_bra,c,d,a,b);
+   return GetTBME_norm(ch_bra,ch_ket,a,b,c,d);
+//   if (ch_bra <= ch_ket)
+//     return GetTBME_norm(ch_bra,ch_ket,a,b,c,d);
+//   return modelspace->phase(j_bra - j_ket) * GetTBME_norm(ch_ket,ch_bra,c,d,a,b);
 }
 
 // for backwards compatibility...
