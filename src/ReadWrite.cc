@@ -1485,8 +1485,8 @@ void ReadWrite::ReadOperator_Nathan( string filename1b, string filename2b, Opera
      goodstate = false;
      return;
   }
-  char header[500];
-  infile.getline(header,500);
+//  char header[500];
+//  infile.getline(header,500);
   while ( infile >> a >> b >> c >> d >> J >> me )
   {
     if (a>=norb or b>=norb) continue;
@@ -1501,6 +1501,58 @@ void ReadWrite::ReadOperator_Nathan( string filename1b, string filename2b, Opera
 }
 
 
+void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b, Operator& op)
+{
+  ifstream infile(filename1b);
+  if ( !infile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble opening 1b file  !!!   **" << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
+  index_t a,b,c,d,J1,J2;
+  double me;
+  ModelSpace* modelspace = op.GetModelSpace();
+  int herm = op.IsHermitian() ? 1 : -1;
+  index_t norb = op.GetModelSpace()->GetNumberOrbits();
+  while ( infile >> a >> b >> me  )
+  {
+    if (a>=norb or b>=norb) continue;
+    int flipphase = herm*modelspace->phase( (modelspace->GetOrbit(a).j2 - modelspace->GetOrbit(b).j2)/2);
+    op.OneBody(a,b) = me;
+    op.OneBody(b,a) = flipphase*me;
+  }
+  infile.close();
+  cout << "Done reading 1b file." << endl;
+
+  infile.open(filename2b);
+  if ( !infile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble opening 2b file  !!!   **" << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
+//  char header[500];
+//  infile.getline(header,500);
+  while ( infile >> a >> b >> c >> d >> J1 >> J2 >> me )
+  {
+    if (a>=norb or b>=norb) continue;
+    if (c>=norb or d>=norb) continue;
+    op.TwoBody.SetTBME_J(J1,J2,a,b,c,d,me);
+    if (a==0 and b==0 and c==0 and d==8 and J1==0 and J2==2)
+    {
+      cout << "From Nathans file, TBME = " << me << "  =>  " << op.TwoBody.GetTBME_J(0,2,0,0,8,0) << endl;
+    }
+  }
+  infile.close();
+  cout << "Done reading 2b file." << endl;
+
+
+}
 
 void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int Emax, int lmax)
 {
@@ -2293,7 +2345,7 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
       for (int j=jmin;j<norb;++j)
       {
          if (abs(op.OneBody(i,j)) > 0)
-            opfile << i << "\t" << j << "\t" << setprecision(10) << op.OneBody(i,j) << endl;
+            opfile << fixed << setw(3) << i << "\t" << fixed << setw(3) << j << "\t" << fixed << setw(15) << setprecision(10) << op.OneBody(i,j) << endl;
       }
    }
 
@@ -2318,10 +2370,10 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
 //           if (ket.p == ket.q) tbme *= sqrt(2); // For comparison with Nathan CHANGE THIS
            if ( abs(tbme) > 1e-7 )
            {
-             opfile << setw(4) << tbc_bra.J << " " << tbc_bra.parity << " " << tbc_bra.Tz  << "    "
-                    << setw(4) << tbc_ket.J << " " << tbc_ket.parity << " " << tbc_ket.Tz  << "    "
-                  << setw(4) << bra.p << " " << bra.q  << " " << ket.p << " " << ket.q  << "   "
-                  << setw(10) << setprecision(6) << tbme << endl;
+             opfile << setw(2) << tbc_bra.J << " " << setw(2) << tbc_bra.parity << " " << setw(3) << tbc_bra.Tz  << "    "
+                    << setw(2) << tbc_ket.J << " " << setw(2) << tbc_ket.parity << " "  << setw(3) << tbc_ket.Tz  << "    "
+                  << setw(3) << bra.p << " "  << setw(3) << bra.q  << " "  << setw(3) << ket.p << " "  << setw(3) << ket.q  << "   "
+                  << fixed << setw(15) << setprecision(10) << tbme << endl;
            }
         }
       }

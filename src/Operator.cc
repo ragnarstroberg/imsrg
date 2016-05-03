@@ -1076,13 +1076,22 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
 //        cout << "Assign tmp1" << endl;
         Operator tmp1 = Commutator(Omega,OpNested);
 //        cout << "tmp1 /=i" << endl;
-        tmp1 /= i;
+//        if (this->rank_J==0)
+        {
+         tmp1 /= i;
+        }
 //        cout << "OpNested = tmp1" << endl;
         OpNested = tmp1;
 //        cout << "OpOut += OpNested" << endl;
         OpOut += OpNested;
   
-        if (OpNested.Norm() < epsilon *(i+1))  break;
+        if (this->rank_J > 0)
+        {
+            cout << "Tensor BCH, i=" << i << "  Norm = " << OpNested.OneBodyNorm() << " "  << OpNested.TwoBodyNorm() << " " << OpNested.Norm() << endl;
+            if (i>=10) break;
+        }
+//        if (OpNested.Norm() < epsilon *(i+1))  break;
+        if (OpNested.Norm() < 1e-6 and this->rank_J==0)  break;
         if (i == warn_iter)  cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
         else if (i == max_iter)   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
      }
@@ -2307,6 +2316,8 @@ void Operator::comm111st( const Operator & X, const Operator& Y)
 //void Operator::comm121st( Operator& Y, Operator& Z) 
 void Operator::comm121st( const Operator& X, const Operator& Y) 
 {
+
+   double DEBUGZ06 = 0;
    double tstart = omp_get_wtime();
    Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
@@ -2329,62 +2340,54 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
              double occ_a = it_a.second;
              Orbit &oa = modelspace->GetOrbit(a);
              double ja = oa.j2/2.0;
-//               for (auto& b : modelspace->particles) // is this is slow, it can probably be sped up by looping over OneBodyChannels
-               for (auto& b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // is this is slow, it can probably be sped up by looping over OneBodyChannels
-               {
-                  Orbit &ob = modelspace->GetOrbit(b);
-//                  double jb = ob.j2/2.0;
-                  double nanb = occ_a * (1-ob.occ);
-//                  if (ob.j2 == oa.j2 and ob.l == oa.l and ob.tz2 == oa.tz2)
-//                  {
-                    int J1min = min(abs(ji-ja),abs(jj-ja));
-                    int J1max = max(ji,jj) + ja;
-                    for (int J1=J1min; J1<=J1max; ++J1)
+             for (auto& b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
+             {
+                Orbit &ob = modelspace->GetOrbit(b);
+                double nanb = occ_a * (1-ob.occ);
+                  int J1min = abs(ji-ja);
+                  int J1max = ji + ja;
+                  for (int J1=J1min; J1<=J1max; ++J1)
+                  {
+                    int phasefactor = modelspace->phase(jj+ja+J1+Lambda);
+                    int J2min = max(abs(Lambda - J1),abs(int(ja-jj)));
+                    int J2max = min(Lambda + J1,int(ja+jj));
+                    for (int J2=J2min; J2<=J2max; ++J2)
                     {
-                      int phasefactor = modelspace->phase(jj+ja+J1+Lambda);
-                      int J2min = max(abs(Lambda - J1),J1min);
-                      int J2max = min(Lambda + J1,J1max);
-                      for (int J2=J2min; J2<=J2max; ++J2)
-                      {
-                        double prefactor = nanb*phasefactor * sqrt((2*J1+1)*(2*J2+1)) * modelspace->GetSixJ(J1,J2,Lambda,jj,ji,ja);
-                        if (J1>=abs(ja-ji) and J1<=ja+ji and J2>=abs(ja-jj) and J2<=ja+jj )
-                          Zij +=  prefactor * ( X.OneBody(a,b) * Y.TwoBody.GetTBME_J(J1,J2,b,i,a,j) );
-                        if (J1>=abs(ja-jj) and J1<=ja+jj and J2>=abs(ja-ji) and J2<=ja+ji )
-                          Zij -= prefactor * X.OneBody(b,a) * Y.TwoBody.GetTBME_J(J1,J2,a,i,b,j)  ;
-                      }
+                      if ( ! ( J2>=abs(ja-jj) and J2<=ja+jj )) continue;
+                      double prefactor = nanb*phasefactor * sqrt((2*J1+1)*(2*J2+1)) * modelspace->GetSixJ(J1,J2,Lambda,jj,ji,ja);
+                      Zij +=  prefactor * ( X.OneBody(a,b) * Y.TwoBody.GetTBME_J(J1,J2,b,i,a,j) - X.OneBody(b,a) * Y.TwoBody.GetTBME_J(J1,J2,a,i,b,j ));
                     }
-//                  }
-               }
-               // Now, X is scalar two-body and Y is tensor one-body
-               for (auto& b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // is this is slow, it can probably be sped up by looping over OneBodyChannels
-               {
-
-                  Orbit &ob = modelspace->GetOrbit(b);
-                  double jb = ob.j2/2.0;
-                  if (abs(ob.occ-1) < 1e-6) continue;
-                  double nanb = occ_a * (1-ob.occ);
-//                  double nbna = (1-occ_a) * ob.occ;
-                  int J1min = max(abs(ji-jb),abs(jj-ja));
-                  int J1max = min(ji+jb,jj+ja);
-                  double zij = 0;
-                  for (int J1=J1min; J1<=J1max; ++J1)
-                  {
-                    zij -= modelspace->phase(ji+jb+J1) * (2*J1+1) * modelspace->GetSixJ(ja,jb,Lambda,ji,jj,J1) * X.TwoBody.GetTBME_J(J1,J1,b,i,a,j);
                   }
-
-                  J1min = max(abs(ji-ja),abs(jj-jb));
-                  J1max = min(ji+ja,jj+jb);
-                  for (int J1=J1min; J1<=J1max; ++J1)
-                  {
-                    zij += modelspace->phase(ji+jb+J1) * (2*J1+1) * modelspace->GetSixJ(jb,ja,Lambda,ji,jj,J1) * X.TwoBody.GetTBME_J(J1,J1,a,i,b,j) ;
-                  }
-
-                  Zij += nanb * Y.OneBody(a,b) * zij;
-               }
-               
              }
+             // Now, X is scalar two-body and Y is tensor one-body
+             for (auto& b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // is this is slow, it can probably be sped up by looping over OneBodyChannels
+             {
+
+                Orbit &ob = modelspace->GetOrbit(b);
+                double jb = ob.j2/2.0;
+                if (abs(ob.occ-1) < 1e-6) continue;
+                double nanb = occ_a * (1-ob.occ);
+                int J1min = max(abs(ji-jb),abs(jj-ja));
+                int J1max = min(ji+jb,jj+ja);
+                double zij = 0;
+                for (int J1=J1min; J1<=J1max; ++J1)
+                {
+                  zij -= modelspace->phase(ji+jb+J1) * (2*J1+1) * modelspace->GetSixJ(ja,jb,Lambda,ji,jj,J1) * X.TwoBody.GetTBME_J(J1,J1,b,i,a,j);
+                }
+
+                J1min = max(abs(ji-ja),abs(jj-jb));
+                J1max = min(ji+ja,jj+jb);
+                for (int J1=J1min; J1<=J1max; ++J1)
+                {
+                  zij += modelspace->phase(ji+jb+J1) * (2*J1+1) * modelspace->GetSixJ(jb,ja,Lambda,ji,jj,J1) * X.TwoBody.GetTBME_J(J1,J1,a,i,b,j) ;
+                }
+
+                Zij += nanb * Y.OneBody(a,b) * zij;
+             }
+             
           }
       }
+   }
    
    profiler.timer["comm121st"] += omp_get_wtime() - tstart;
 }
@@ -2499,12 +2502,10 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
          }
       }
    }
-   int chbra = modelspace->GetTwoBodyChannelIndex(0,0,-1);
-   int chket = modelspace->GetTwoBodyChannelIndex(2,0,-1);
-   int ibra = modelspace->GetTwoBodyChannel(chbra).GetLocalIndex(0,0);
-   int iket = modelspace->GetTwoBodyChannel(chket).GetLocalIndex(2,2);
-   cout << "end of comm122st. TBME = " << TwoBody.GetTBME_J_norm(0,2,0,0,2,2) << "   "
-        << TwoBody.GetMatrix( chbra,chket )(ibra,iket) <<endl;
+//   int chbra = modelspace->GetTwoBodyChannelIndex(0,0,-1);
+//   int chket = modelspace->GetTwoBodyChannelIndex(2,0,-1);
+//   int ibra = modelspace->GetTwoBodyChannel(chbra).GetLocalIndex(0,0);
+//   int iket = modelspace->GetTwoBodyChannel(chket).GetLocalIndex(2,2);
    profiler.timer["comm122st"] += omp_get_wtime() - tstart;
 }
 
@@ -2601,8 +2602,8 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
            for (auto& it_c : modelspace->holes)
            {
               index_t c = it_c.first;
-              double occ_c = it_c.second;
               Orbit &oc = modelspace->GetOrbit(c);
+              double occ_c = oc.occ;
               double jc = oc.j2/2.0;
               int j1min = abs(jc-ji);
               int j1max = jc+ji;
