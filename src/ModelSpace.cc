@@ -226,6 +226,7 @@ unordered_map<unsigned long int,double> ModelSpace::SixJList;
 unordered_map<unsigned long long int,double> ModelSpace::NineJList;
 unordered_map<unsigned long long int,double> ModelSpace::MoshList;
 map<string,vector<string>> ModelSpace::ValenceSpaces  {
+{ "s-shell"  ,         {"vacuum", "p0s1","n0s1"}},
 { "p-shell"  ,         {"He4", "p0p3","n0p3","p0p1","n0p1"}},
 { "sd-shell"  ,        {"O16", "p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"}},
 { "psd-shell"  ,       {"He4", "p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"}},
@@ -495,6 +496,7 @@ void ModelSpace::GetAZfromString(string str,int& A, int& Z) // TODO: accept diff
                         "Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe",
                         "Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf",
                         "Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb"};
+  if (str == "vacuum") str="n0";
   int i=0;
   while (! isdigit(str[i])) i++;
   string elem = str.substr(0,i);

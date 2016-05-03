@@ -708,8 +708,9 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
  {
    double hw = modelspace.GetHbarOmega();
    int A = modelspace.GetTargetMass();
-   double oscillator_b2 = HBARC*HBARC/M_NUCLEON/hw;
-   Operator HcmOp = TCM_Op(modelspace) + R2CM_Op(modelspace) * (0.5*A * hw / oscillator_b2);
+//   double oscillator_b2 = HBARC*HBARC/M_NUCLEON/hw;
+//   Operator HcmOp = TCM_Op(modelspace) + R2CM_Op(modelspace) * (0.5*A * hw / oscillator_b2);
+   Operator HcmOp = TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw*hw/HBARC/HBARC * R2CM_Op(modelspace) ;
    return HcmOp;
  }
 

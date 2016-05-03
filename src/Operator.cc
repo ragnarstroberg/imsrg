@@ -169,6 +169,17 @@ Operator Operator::operator+(const Operator& rhs) const
      return ( Operator(rhs) += *this );
 }
 
+Operator& Operator::operator+=(const double& rhs)
+{
+   ZeroBody += rhs;
+   return *this;
+}
+
+Operator Operator::operator+(const double& rhs) const
+{
+   return ( Operator(*this) += rhs );
+}
+
 // Subtract operators
 Operator& Operator::operator-=(const Operator& rhs)
 {
@@ -180,6 +191,17 @@ Operator& Operator::operator-=(const Operator& rhs)
 }
 
 Operator Operator::operator-(const Operator& rhs) const
+{
+   return ( Operator(*this) -= rhs );
+}
+
+Operator& Operator::operator-=(const double& rhs)
+{
+   ZeroBody -= rhs;
+   return *this;
+}
+
+Operator Operator::operator-(const double& rhs) const
 {
    return ( Operator(*this) -= rhs );
 }

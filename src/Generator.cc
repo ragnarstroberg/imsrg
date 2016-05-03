@@ -449,7 +449,9 @@ void Generator::ConstructGenerator_ShellModel_Atan()
    unsigned int norbits = modelspace->GetNumberOrbits();
    for ( auto& i : modelspace->valence)
    {
-      for (unsigned int j=0; j<norbits; ++j)
+      Orbit& oi = modelspace->GetOrbit(i);
+//      for (unsigned int j=0; j<norbits; ++j)
+      for (auto j : H->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}))
       {
          if (i==j) continue;
          double denominator = Get1bDenominator(i,j);
