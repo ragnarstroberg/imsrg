@@ -1491,8 +1491,10 @@ void ReadWrite::ReadOperator_Nathan( string filename1b, string filename2b, Opera
   {
     if (a>=norb or b>=norb) continue;
     if (c>=norb or d>=norb) continue;
-    if (a==b) me /= sqrt(2);
-    if (c==d) me /= sqrt(2);
+//    if (a==b) me /= sqrt(2);
+//    if (c==d) me /= sqrt(2);
+    if (a==b) me /= SQRT2;
+    if (c==d) me /= SQRT2;
     op.TwoBody.SetTBME_J(J,a,b,c,d,me);
   }
   infile.close();
@@ -1543,10 +1545,6 @@ void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b,
     if (a>=norb or b>=norb) continue;
     if (c>=norb or d>=norb) continue;
     op.TwoBody.SetTBME_J(J1,J2,a,b,c,d,me);
-    if (a==0 and b==0 and c==0 and d==8 and J1==0 and J2==2)
-    {
-      cout << "From Nathans file, TBME = " << me << "  =>  " << op.TwoBody.GetTBME_J(0,2,0,0,8,0) << endl;
-    }
   }
   infile.close();
   cout << "Done reading 2b file." << endl;
@@ -1832,7 +1830,7 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
        
                    for(int twoT = twoTMin; twoT <= twoTMax; twoT += 2)
                    {
-                    float V = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
+                    double V = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
                     if ((a==b and (Jab+tab)%2!=1) or (d==e and (JJab+ttab)%2!=1) )
                     {
                       if ( abs(V) > 1e-4 )  // There may be some numerical noise from using floats and 6Js at the level of 1e-6. Ignore that.
@@ -2345,7 +2343,7 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
       for (int j=jmin;j<norb;++j)
       {
          if (abs(op.OneBody(i,j)) > 0)
-            opfile << fixed << setw(3) << i << "\t" << fixed << setw(3) << j << "\t" << fixed << setw(15) << setprecision(10) << op.OneBody(i,j) << endl;
+            opfile << fixed << setw(3) << i << "\t" << fixed << setw(3) << j << "\t" << fixed << setw(18) << setprecision(12) << op.OneBody(i,j) << endl;
       }
    }
 
@@ -2373,7 +2371,7 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
              opfile << setw(2) << tbc_bra.J << " " << setw(2) << tbc_bra.parity << " " << setw(3) << tbc_bra.Tz  << "    "
                     << setw(2) << tbc_ket.J << " " << setw(2) << tbc_ket.parity << " "  << setw(3) << tbc_ket.Tz  << "    "
                   << setw(3) << bra.p << " "  << setw(3) << bra.q  << " "  << setw(3) << ket.p << " "  << setw(3) << ket.q  << "   "
-                  << fixed << setw(15) << setprecision(10) << tbme << endl;
+                  << fixed << setw(18) << setprecision(12) << tbme << endl;
            }
         }
       }

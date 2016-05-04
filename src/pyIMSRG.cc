@@ -18,6 +18,9 @@ using namespace boost::python;
   Orbit MSGetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
   TwoBodyChannel MSGetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
 
+  double TB_GetTBME_J(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J(j_bra,j_ket,a,b,c,d);};
+  double TB_GetTBME_J_norm(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J_norm(j_bra,j_ket,a,b,c,d);};
+
   int TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
 
 BOOST_PYTHON_MODULE(pyIMSRG)
@@ -76,6 +79,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def(self / double())
       .def_readwrite("ZeroBody", &Operator::ZeroBody)
       .def_readwrite("OneBody", &Operator::OneBody)
+      .def_readwrite("TwoBody", &Operator::TwoBody)
       .def("GetOneBody", &Operator::GetOneBody)
       .def("SetOneBody", &Operator::SetOneBody)
       .def("GetTwoBody", &Operator::GetTwoBody)
@@ -104,9 +108,27 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("BCH_Transform", &Operator::BCH_Transform)
 //      .def("EraseThreeBody", &Operator::EraseThreeBody)
       .def("Size", &Operator::Size)
+      .def("SetToCommutator", &Operator::SetToCommutator)
+      .def("comm110ss", &Operator::comm110ss)
+      .def("comm220ss", &Operator::comm220ss)
+      .def("comm111ss", &Operator::comm111ss)
+      .def("comm121ss", &Operator::comm121ss)
+      .def("comm221ss", &Operator::comm221ss)
+      .def("comm122ss", &Operator::comm122ss)
+      .def("comm222_pp_hh_221ss", &Operator::comm222_pp_hh_221ss)
+      .def("comm222_phss", &Operator::comm222_phss)
+      .def("comm111st", &Operator::comm111st)
+      .def("comm121st", &Operator::comm121st)
+      .def("comm122st", &Operator::comm122st)
+      .def("comm222_pp_hh_221st", &Operator::comm222_pp_hh_221st)
+      .def("comm222_phst", &Operator::comm222_phst)
    ;
 
 
+   class_<TwoBodyME>("TwoBodyME",init<>())
+      .def("GetTBME_J", TB_GetTBME_J)
+      .def("GetTBME_J_norm", TB_GetTBME_J_norm)
+   ;
 
    class_<ReadWrite>("ReadWrite",init<>())
       .def("ReadSettingsFile", &ReadWrite::ReadSettingsFile)
@@ -139,6 +161,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("WriteTwoBody_Oslo", &ReadWrite::WriteTwoBody_Oslo)
       .def("SetCoMCorr", &ReadWrite::SetCoMCorr)
       .def("ReadTwoBodyEngel", &ReadWrite::ReadTwoBodyEngel)
+      .def("ReadOperator_Nathan",&ReadWrite::ReadOperator_Nathan)
+      .def("ReadTensorOperator_Nathan",&ReadWrite::ReadTensorOperator_Nathan)
       .def_readwrite("InputParameters", &ReadWrite::InputParameters)
    ;
 
@@ -221,6 +245,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("NineJ",AngMom::NineJ);
    def("NormNineJ",AngMom::NormNineJ);
    def("Moshinsky",AngMom::Moshinsky);
+
 
 
 }

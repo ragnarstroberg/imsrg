@@ -257,7 +257,7 @@ void Operator::SetOneBody(int i, int j, double val)
 
 }
 
-void Operator::SetTwoBody(int J1, int p1, int T1, int J2, int p2, int T2, int i, int j, int k, int l, float v)
+void Operator::SetTwoBody(int J1, int p1, int T1, int J2, int p2, int T2, int i, int j, int k, int l, double v)
 {
   TwoBody.SetTBME( J1,  p1,  T1,  J2,  p2,  T2,  i,  j,  k,  l, v);
 }
@@ -1142,10 +1142,10 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
         if (this->rank_J > 0)
         {
             cout << "Tensor BCH, i=" << i << "  Norm = " << OpNested.OneBodyNorm() << " "  << OpNested.TwoBodyNorm() << " " << OpNested.Norm() << endl;
-            if (i>=10) break;
+//            if (i>=10 and OpNested.Norm() < 1e-6 ) break;
         }
-//        if (OpNested.Norm() < epsilon *(i+1))  break;
-        if (OpNested.Norm() < 1e-6 and this->rank_J==0)  break;
+        if (OpNested.Norm() < epsilon *(i+1))  break;
+//        if (OpNested.Norm() < 1e-6 and this->rank_J==0)  break;
         if (i == warn_iter)  cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
         else if (i == max_iter)   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
      }
@@ -2371,7 +2371,6 @@ void Operator::comm111st( const Operator & X, const Operator& Y)
 void Operator::comm121st( const Operator& X, const Operator& Y) 
 {
 
-   double DEBUGZ06 = 0;
    double tstart = omp_get_wtime();
    Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();

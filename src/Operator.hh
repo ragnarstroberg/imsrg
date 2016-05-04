@@ -87,7 +87,7 @@ class Operator
   int GetTwoBodyDimension(int ch_bra, int ch_ket){ return TwoBody.GetMatrix(ch_bra, ch_ket).n_cols;};
 //  double GetTwoBody(int ch_bra, int ch_ket, int i, int j){ return TwoBody.GetMatrix(ch_bra, ch_ket)(i,j);};
   double GetTwoBody(int ch_bra, int ch_ket, int i, int j);
-  void SetTwoBody(int J1, int p1, int T1, int J2, int p2, int T2, int i, int j, int k, int l, float v);
+  void SetTwoBody(int J1, int p1, int T1, int J2, int p2, int T2, int i, int j, int k, int l, double v);
 
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};
