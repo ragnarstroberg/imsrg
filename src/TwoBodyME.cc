@@ -67,6 +67,7 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 
 void TwoBodyME::Allocate()
 {
+  MatEl.clear();
   for (int ch_bra=0; ch_bra<nChannels;++ch_bra)
   {
      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);

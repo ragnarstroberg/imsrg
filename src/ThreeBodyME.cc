@@ -22,6 +22,8 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
 // Confusing nomenclature: J2 means 2 times the total J of the three body system
 void ThreeBodyME::Allocate()
 {
+  MatEl.clear();
+  OrbitIndex.clear();
   E3max = modelspace->GetE3max();
   cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
   int norbits = modelspace->GetNumberOrbits();
