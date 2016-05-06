@@ -28,6 +28,7 @@ int main(int argc, char** argv)
   string LECs = PAR.s("LECs");
   string scratch = PAR.s("scratch");
   string use_brueckner_bch = PAR.s("use_brueckner_bch");
+  string valence_file_format = PAR.s("valence_file_format");
 
   int eMax = PAR.i("emax");
   int E3max = PAR.i("e3max");
@@ -49,6 +50,7 @@ int main(int argc, char** argv)
   double domega = PAR.d("domega");
   double omega_norm_max = PAR.d("omega_norm_max"); 
   double denominator_delta = PAR.d("denominator_delta");
+  double BetaCM = PAR.d("BetaCM");
 
   vector<string> opnames = PAR.v("Operators");
 
@@ -131,6 +133,10 @@ int main(int argc, char** argv)
   }
 
   Hbare += Trel_Op(modelspace);
+  if (abs(BetaCM)>1e-3)
+  {
+    Hbare += BetaCM * HCM_Op(modelspace);
+  }
 
   HartreeFock hf(Hbare);
   hf.Solve();
@@ -140,6 +146,8 @@ int main(int argc, char** argv)
     Hbare = hf.GetNormalOrderedH();
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
+
+//  Hbare -= BetaCM * 1.5*hw;
 
   if (method != "HF")
   {
@@ -171,11 +179,14 @@ int main(int argc, char** argv)
       else if (opname.substr(0,4) == "HCM_") // GetHCM with a different frequency, ie HCM_24 for hw=24
       {
          double hw_HCM;
-         double hw_save = modelspace.GetHbarOmega();
+//         double hw_save = modelspace.GetHbarOmega();
          istringstream(opname.substr(4,opname.size())) >> hw_HCM;
-         modelspace.SetHbarOmega(hw_HCM);
-         ops.emplace_back( HCM_Op(modelspace) );
-         modelspace.SetHbarOmega(hw_save);
+//         modelspace.SetHbarOmega(hw_HCM);
+//         ops.emplace_back( HCM_Op(modelspace) );
+         int A = modelspace.GetTargetMass();
+         Operator hcm = TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw*hw/HBARC/HBARC*R2CM_Op(modelspace); 
+         ops.emplace_back( hcm );
+//         modelspace.SetHbarOmega(hw_save);
       }
       else if (opname.substr(0,4) == "Rp2Z")
       {
@@ -391,8 +402,16 @@ int main(int argc, char** argv)
   // interaction files to disk.
   if (modelspace.valence.size() > 0)
   {
-    rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
-    rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
+    if (valence_file_format == "antoine")
+    {
+      rw.WriteAntoine_int(imsrgsolver.GetH_s(),intfile+".ant");
+      rw.WriteAntoine_input(imsrgsolver.GetH_s(),intfile+".inp",modelspace.GetAref(),modelspace.GetZref());
+    }
+//    else
+//    {
+      rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
+      rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
+//    }
 
     if (method == "magnus")
     {
