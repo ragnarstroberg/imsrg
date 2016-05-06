@@ -42,6 +42,7 @@ class IMSRGSolver
   IMSRGProfiler profiler;
   int n_omega_written;
   int max_omega_written;
+  bool magnus_adaptive;
 
 
 
@@ -78,6 +79,7 @@ class IMSRGSolver
   void SetOmegaNormMax(double x){omega_norm_max = x;};
   void SetODETolerance(float x){ode_e_abs=x;ode_e_rel=x;};
   void SetEtaCriterion(float x){eta_criterion = x;};
+  void SetMagnusAdaptive(bool b){magnus_adaptive = b;};
 
   int GetSystemDimension();
   Operator& GetH_s(){return FlowingOps[0];};
