@@ -44,6 +44,7 @@ map<string,string> Parameters::string_par = {
   {"LECs",			"EM2.0_2.0"},
   {"scratch",			""},    // scratch directory for writing operators in binary format
   {"use_brueckner_bch",          "false"}, // switch to Brueckner version of BCH
+  {"valence_file_format",       "nushellx"}, // file format for valence space interaction
 };
 
 
@@ -56,6 +57,7 @@ map<string,double> Parameters::double_par = {
   {"omega_norm_max",	0.25},	 // norm of omega before we do the splitting
   {"ode_tolerance",	1e-6},	// error tolerance for the ode solver
   {"denominator_delta",	0},	// offset added to the denominator in the generator
+  {"BetaCM",0}, // Prefactor for Lawson-Glockner term
 
 };
 
