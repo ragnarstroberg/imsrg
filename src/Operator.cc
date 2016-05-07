@@ -296,7 +296,7 @@ void Operator::WriteBinary(ofstream& ofs)
     TwoBody.WriteBinary(ofs);
   if (particle_rank > 2)
     ThreeBody.WriteBinary(ofs);
-  profiler.timer["Write Bnary Op"] += omp_get_wtime() - tstart;
+  profiler.timer["Write Binary Op"] += omp_get_wtime() - tstart;
 }
 
 
@@ -319,7 +319,7 @@ void Operator::ReadBinary(ifstream& ifs)
     TwoBody.ReadBinary(ifs);
   if (particle_rank > 2)
     ThreeBody.ReadBinary(ifs);
-  profiler.timer["Read Bnary Op"] += omp_get_wtime() - tstart;
+  profiler.timer["Read Binary Op"] += omp_get_wtime() - tstart;
 }
 
 
@@ -1144,8 +1144,9 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
             cout << "Tensor BCH, i=" << i << "  Norm = " << OpNested.OneBodyNorm() << " "  << OpNested.TwoBodyNorm() << " " << OpNested.Norm() << endl;
 //            if (i>=10 and OpNested.Norm() < 1e-6 ) break;
         }
-        if (OpNested.Norm() < epsilon *(i+1))  break;
+        if (OpNested.Norm() < 1e-6 )  break;
 //        if (OpNested.Norm() < 1e-6 and this->rank_J==0)  break;
+//        if (OpNested.Norm() < epsilon *(i+1))  break;
         if (i == warn_iter)  cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
         else if (i == max_iter)   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
      }
@@ -1179,12 +1180,48 @@ Operator Operator::Brueckner_BCH_Transform( const Operator &Omega)
 //     - 1/24 [Y,[X,[X,Y]]]
 //     - 1/720 [Y,[Y,[Y,[Y,X]]]] - 1/720 [X,[X,[X,[X,Y]]]]
 //     + ...
-
 //*****************************************************************************************
 /// X.BCH_Product(Y) returns \f$Z\f$ such that \f$ e^{Z} = e^{X}e^{Y}\f$
 /// by employing the [Baker-Campbell-Hausdorff formula](http://en.wikipedia.org/wiki/Baker-Campbell-Hausdorff_formula)
 /// \f[ Z = X + Y + \frac{1}{2}[X,Y] + \frac{1}{12}([X,[X,Y]]+[Y,[Y,X]]) + \ldots \f]
 //*****************************************************************************************
+Operator Operator::BCH_Product(  Operator &Y)
+{
+   double tstart = omp_get_wtime();
+   Operator& X = *this;
+   double nx = X.Norm();
+   double ny = Y.Norm();
+//   if (nx < 1e-8) return Y;
+//   if (ny < 1e-8) return X;
+   vector<double> bernoulli = {1.0, -0.5, 1./6, 0.0, -1./30, 0.0 , 1./42, 0, -1./30};
+   vector<double> factorial = {1.0,  1.0,  2.0, 6.0,    24., 120., 720., 5040., 40320.};
+
+
+   Operator Z = X + Y;
+   Operator Nested = Y;
+   Nested.SetToCommutator(Y,X);
+   double nxy = Nested.Norm();
+   // We assume X is small, but just in case, we check if we should include the [X,[X,Y]] term.
+   if ( nxy*nx > 1e-6)
+   {
+     Z += (1./12) * Commutator(Nested,X);
+//     cout << "Operator::BCH_Product -- Included X^2 term. " << nx << " " << ny << " " << nxy << endl;
+   }
+   
+   int k = 1;
+   while( Nested.Norm() > 1e-6 and k<9)
+   {
+     if (k<2 or k%2==0)
+        Z += (bernoulli[k]/factorial[k]) * Nested;
+     Nested = Commutator(Y,Nested);
+     k++;
+   }
+
+   profiler.timer["BCH_Product"] += omp_get_wtime() - tstart;
+   return Z;
+}
+
+/*
 Operator Operator::BCH_Product(  Operator &Y)
 {
    double tstart = omp_get_wtime();
@@ -1212,6 +1249,7 @@ Operator Operator::BCH_Product(  Operator &Y)
    profiler.timer["BCH_Product"] += omp_get_wtime() - tstart;
    return Z;
 }
+*/
 
 /// Obtain the Frobenius norm of the operator, which here is 
 /// defined as 

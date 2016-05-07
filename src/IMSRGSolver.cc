@@ -8,21 +8,22 @@
 
 IMSRGSolver::~IMSRGSolver()
 {
-//   cout << "In IMSRGSolver destructor." << endl;
   CleanupScratch();
 }
 
 IMSRGSolver::IMSRGSolver()
     : rw(NULL),s(0),ds(0.1),ds_max(0.5),
-     norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile(""), n_omega_written(0),max_omega_written(50)
-    ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
+     norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),
+     flowfile(""), n_omega_written(0),max_omega_written(50),magnus_adaptive(true)
+     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {}
 
 // Constructor
 IMSRGSolver::IMSRGSolver( Operator &H_in)
    : modelspace(H_in.GetModelSpace()),rw(NULL), H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), 
     istep(0), s(0),ds(0.1),ds_max(0.5),
-    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),flowfile(""), n_omega_written(0),max_omega_written(50)
+    smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),
+    flowfile(""), n_omega_written(0),max_omega_written(50),magnus_adaptive(true)
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {
    Eta.Erase();
@@ -174,8 +175,10 @@ void IMSRGSolver::Solve_magnus_euler()
         norm_omega = 0;
       }
       // ds should never be more than 1, as this is over-rotating
-      ds = min( min( min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), omega_norm_max/norm_eta), ds_max); 
-      if (s+ds > smax) ds = smax-s;
+      if (magnus_adaptive)
+         ds = min( min( min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), omega_norm_max/norm_eta), ds_max); 
+      ds = min(ds,smax-s);
+//      if (s+ds > smax) ds = smax-s;
       s += ds;
       Eta *= ds; // Here's the Euler step.
 

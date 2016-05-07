@@ -205,6 +205,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetSystemDimension",&IMSRGSolver::GetSystemDimension)
       .def("GetOmega",&IMSRGSolver::GetOmega)
       .def("GetH_s",&IMSRGSolver::GetH_s,return_value_policy<reference_existing_object>())
+      .def("SetMagnusAdaptive",&IMSRGSolver::SetMagnusAdaptive)
       .def_readwrite("Eta", &IMSRGSolver::Eta)
    ;
 
