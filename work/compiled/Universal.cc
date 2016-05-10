@@ -147,7 +147,7 @@ int main(int argc, char** argv)
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
 
-//  Hbare -= BetaCM * 1.5*hw;
+  Hbare -= BetaCM * 1.5*hw;
 
   if (method != "HF")
   {
