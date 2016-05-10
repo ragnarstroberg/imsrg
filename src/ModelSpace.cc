@@ -488,6 +488,17 @@ vector<index_t> ModelSpace::String2Index( vector<string> vs )
 }
 
 
+string ModelSpace::Index2String( index_t ind)
+{
+  vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o'};
+  Orbit& oi = GetOrbit(ind);
+  char c[10];
+  char pn = oi.tz2 < 0 ? 'p' : 'n';
+  char lstr = l_list[oi.l];
+  sprintf(c, "%c%d%c%d",pn,oi.n,lstr,oi.j2);
+  return string(c) ;
+}
+
 
 void ModelSpace::GetAZfromString(string str,int& A, int& Z) // TODO: accept different formats, e.g. 22Na vs Na22
 {

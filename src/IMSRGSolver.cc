@@ -337,30 +337,34 @@ deque<Operator> abs(const deque<Operator>& OpIn)
 // Apply operation to each element of X and return the result
 // this is needed for ODE adaptive solver
 // USE THIS FOR BOOST VERSION < 1.56
-/*
+#ifdef OLD_BOOST
 namespace boost {namespace numeric {namespace odeint{
 template<>
-struct vector_space_reduce< Operator >
+struct vector_space_reduce< deque<Operator> >
 {
    template<class Op>
-   double operator()(const Operator& X, Op op, double init)
+   double operator()(const deque<Operator>& X, Op op, double init)
    {
-      init = op(init,X.ZeroBody);
-      for ( auto& v : X.OneBody )    init = op(init,v);
-      for ( auto& itmat : X.TwoBody.MatEl )
+      for (auto& x : X)
       {
-          for (auto& v : itmat.second )    init = op(init,v);
+        init = op(init,x.ZeroBody);
+        for ( auto& v : x.OneBody )    init = op(init,v);
+        for ( auto& itmat : x.TwoBody.MatEl )
+        {
+            for (auto& v : itmat.second )    init = op(init,v);
+        }
       }
       return init;
    }
 };
 }}}
-*/
+#endif
 
 // Apply operation to each element of X and return the result
 // this is needed for ODE adaptive solver
 // USE THIS FOR BOOST VERSION >= 1.56
 //struct vector_space_norm_inf< vector<Operator> >
+#ifndef OLD_BOOST
 namespace boost {namespace numeric {namespace odeint{
 template<>
 struct vector_space_norm_inf< deque<Operator> >
@@ -376,7 +380,7 @@ struct vector_space_norm_inf< deque<Operator> >
    }
 };
 }}}
-
+#endif
 
 void IMSRGSolver::Solve_ode()
 {
