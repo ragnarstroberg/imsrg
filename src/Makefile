@@ -38,6 +38,8 @@ endif
 ifeq ($(THEHOST),cronos)
  FLAGS += -DOLD_BOOST=1
  SOFLAGS += -DOLD_BOOST=1
+ ifneq ($(PYTHON),off)
+  ALL += pyIMSRG.so
 endif
 ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up nicely.
  LIBS += -llapack
