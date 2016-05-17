@@ -1100,7 +1100,6 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   {
     Operator Fermi(modelspace,0,1,0,2);
     Fermi.SetHermitian();
-    const double M_fermi = 1.0;
     int norbits = modelspace.GetNumberOrbits();
     for (int i=0; i<norbits; ++i)
     {
@@ -1109,12 +1108,18 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
       {
         Orbit& oj = modelspace.GetOrbit(j);
         if (oi.n!=oj.n or oi.tz2 == oj.tz2) continue;
-        Fermi.OneBody(i,j) = M_fermi;
+        Fermi.OneBody(i,j) = 1.0;
       }
     }
     return Fermi;
   }
 
+/// Note that there is a literature convention to include the 1/sqrt(Lambda) factor
+/// in the reduced matrix element rather than in the expression involving the sum
+/// over one-body densities (see footnote on pg 165 of Suhonen).
+/// I do not follow this convention, and instead produce the reduced matrix element
+///  \f[ \langle f \| \sigma \tau_{\pm} \| i \rangle \f]
+///
   Operator AllowedGamowTeller_Op(ModelSpace& modelspace)
   {
     Operator GT(modelspace,1,1,0,2);
@@ -1137,6 +1142,68 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
 
 
+ /// Pauli spin operator \f[ \langle f \| \sigma \| i \rangle \f]
+ Operator Sigma_Op(ModelSpace& modelspace)
+ {
+   Operator Sig(modelspace,1,0,0,2);
+   Sig.SetHermitian();
+   int norbits = modelspace.GetNumberOrbits();
+   for (int i=0; i<norbits; ++i)
+   {
+     Orbit& oi = modelspace.GetOrbit(i);
+      for (int j : Sig.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
+      {
+        Orbit& oj = modelspace.GetOrbit(j);
+        if (oi.n!=oj.n or oi.l != oj.l or oi.tz2==oj.tz2) continue;
+        double sixj = modelspace.GetSixJ(0.5,0.5,1.0,oj.j2/2.,oi.j2/2.,oi.l);
+        double M_sig = 2 * modelspace.phase(oi.l+oi.j2/2.0+1.5) * sqrt((oi.j2+1)*(oj.j2+1)) * sqrt(1.5) * sixj;
+        Sig.OneBody(i,j) = M_sig;
+      }
+   } 
+   return Sig;
+ }
+
+ /// Sigma operator acting on protons
+ Operator Sigma_p_Op(ModelSpace& modelspace)
+ {
+   Operator Sig(modelspace,1,0,0,2);
+   Sig.SetHermitian();
+   int norbits = modelspace.GetNumberOrbits();
+   for ( auto& i: modelspace.proton_orbits )
+   {
+     Orbit& oi = modelspace.GetOrbit(i);
+      for (int j : Sig.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
+      {
+        Orbit& oj = modelspace.GetOrbit(j);
+        if (oi.n!=oj.n or oi.l != oj.l or oi.tz2==oj.tz2) continue;
+        double sixj = modelspace.GetSixJ(0.5,0.5,1.0,oj.j2/2.,oi.j2/2.,oi.l);
+        double M_sig = 2 * modelspace.phase(oi.l+oi.j2/2.0+1.5) * sqrt((oi.j2+1)*(oj.j2+1)) * sqrt(1.5) * sixj;
+        Sig.OneBody(i,j) = M_sig;
+      }
+   } 
+   return Sig;
+ }
+
+ /// Sigma operator acting on neutrons
+ Operator Sigma_n_Op(ModelSpace& modelspace)
+ {
+   Operator Sig(modelspace,1,0,0,2);
+   Sig.SetHermitian();
+   int norbits = modelspace.GetNumberOrbits();
+   for ( auto& i: modelspace.neutron_orbits )
+   {
+     Orbit& oi = modelspace.GetOrbit(i);
+      for (int j : Sig.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
+      {
+        Orbit& oj = modelspace.GetOrbit(j);
+        if (oi.n!=oj.n or oi.l != oj.l or oi.tz2==oj.tz2) continue;
+        double sixj = modelspace.GetSixJ(0.5,0.5,1.0,oj.j2/2.,oi.j2/2.,oi.l);
+        double M_sig = 2 * modelspace.phase(oi.l+oi.j2/2.0+1.5) * sqrt((oi.j2+1)*(oj.j2+1)) * sqrt(1.5) * sixj;
+        Sig.OneBody(i,j) = M_sig;
+      }
+   } 
+   return Sig;
+ }
 
   void Reduce(Operator& X)
   {

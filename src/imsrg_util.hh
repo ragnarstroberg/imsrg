@@ -42,6 +42,9 @@ namespace imsrg_util
  Operator Isospin2_Op(ModelSpace& modelspace);
  Operator AllowedFermi_Op(ModelSpace& modelspace);
  Operator AllowedGamowTeller_Op(ModelSpace& modelspace);
+ Operator Sigma_Op(ModelSpace& modelspace);
+ Operator Sigma_p_Op(ModelSpace& modelspace);
+ Operator Sigma_n_Op(ModelSpace& modelspace);
 
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace); // This doesn't work
  double Get_Charge_Density(Operator& DM, double r);  // This doesn't work
