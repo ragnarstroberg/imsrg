@@ -23,6 +23,8 @@ using namespace boost::python;
 
   int TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
 
+  void ArmaMatPrint( arma::mat& self){ self.print();};
+
 BOOST_PYTHON_MODULE(pyIMSRG)
 {
 
@@ -62,6 +64,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetOrbit", &MSGetOrbit)
       .def("GetTwoBodyChannelIndex", &ModelSpace::GetTwoBodyChannelIndex)
       .def("GetTwoBodyChannel", &MSGetTwoBodyChannel)
+      .def("Index2String",&ModelSpace::Index2String)
    ;
 
 
@@ -77,6 +80,10 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def(self * double())
       .def(self /= double())
       .def(self / double())
+      .def(self += double())
+      .def(self + double())
+      .def(self -= double())
+      .def(self - double())
       .def_readwrite("ZeroBody", &Operator::ZeroBody)
       .def_readwrite("OneBody", &Operator::OneBody)
       .def_readwrite("TwoBody", &Operator::TwoBody)
@@ -124,6 +131,17 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("comm222_phst", &Operator::comm222_phst)
    ;
 
+   class_<arma::mat>("ArmaMat",init<>())
+      .def("Print",&ArmaMatPrint)
+      .def(self *= double())
+      .def(self * double())
+      .def(self /= double())
+      .def(self / double())
+      .def(self += double())
+      .def(self + double())
+      .def(self -= double())
+      .def(self - double())
+   ;
 
    class_<TwoBodyME>("TwoBodyME",init<>())
       .def("GetTBME_J", TB_GetTBME_J)
@@ -217,6 +235,10 @@ BOOST_PYTHON_MODULE(pyIMSRG)
        .def("PrintAll",&IMSRGProfiler::PrintAll)
        .def("PrintMemory",&IMSRGProfiler::PrintMemory)
    ;
+
+
+
+
 
    def("TCM_Op",           imsrg_util::TCM_Op);
    def("Trel_Op",           imsrg_util::Trel_Op);

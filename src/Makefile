@@ -22,7 +22,7 @@ endif
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
-THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; else echo other; fi)
+THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; else echo other; fi)
 
 ALL = libIMSRG.so
 LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
@@ -30,19 +30,23 @@ LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
 # FLAGS += -DOPENBLAS_NOUSEOMP=1
  SOFLAGS += -fuse-ld=bfd
-else
+endif
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  LIBS += -llapack
  PYTHONFLAGS = -I/opt/anaconda/include/python2.7 -L/opt/boost/1.58.0/lib -lboost_python #-lpython 
- ifeq ($(WITHHOARD),on)
-  LIBS += -L/opt/hoard/3.12/lib -lhoard
- endif
-else  # default options. assumes boost and python are set up nicely.
+endif
+ifeq ($(THEHOST),cronos)
+ FLAGS += -DOLD_BOOST=1
+ SOFLAGS += -DOLD_BOOST=1
+ ifneq ($(PYTHON),off)
+  ALL += pyIMSRG.so
+  endif
+endif
+ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up nicely.
  LIBS += -llapack
  ifneq ($(PYTHON),off)
- ALL += pyIMSRG.so
+  ALL += pyIMSRG.so
  endif
-endif
 endif
 
 all: $(ALL)
