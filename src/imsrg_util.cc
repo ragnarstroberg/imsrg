@@ -1108,7 +1108,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
       {
         Orbit& oj = modelspace.GetOrbit(j);
         if (oi.n!=oj.n or oi.tz2 == oj.tz2) continue;
-        Fermi.OneBody(i,j) = 1.0;
+        Fermi.OneBody(i,j) = sqrt(oi.j2+1.0);  // Reduced matrix element
       }
     }
     return Fermi;
