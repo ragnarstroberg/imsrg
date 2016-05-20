@@ -293,17 +293,30 @@ void Generator::ConstructGenerator_ShellModel()
    // no excitations out of the core
 
    Eta->Erase();
-   index_t norb = modelspace->GetNumberOrbits();
 
-   for (index_t i=0; i<norb; ++i)
+   for ( auto& a : VectorUnion(modelspace->core, modelspace->valence))
    {
-     for (index_t j=i;j<norb; ++j)
-     {
-         double denominator = Get1bDenominator(i,j);
-         Eta->OneBody(i,j) += H->OneBody(i,j)/denominator;
-         Eta->OneBody(j,i) = - Eta->OneBody(i,j);
-     }
+//      Orbit& oa = modelspace->GetOrbit(a);
+      for (auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
+      {
+         if (i==a) continue;
+         double denominator = Get1bDenominator(i,a);
+         Eta->OneBody(i,a) = H->OneBody(i,a)/denominator;
+         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+      }
    }
+
+
+//   index_t norb = modelspace->GetNumberOrbits();
+//   for (index_t i=0; i<norb; ++i)
+//   {
+//     for (index_t j=i;j<norb; ++j)
+//     {
+//         double denominator = Get1bDenominator(i,j);
+//         Eta->OneBody(i,j) += H->OneBody(i,j)/denominator;
+//         Eta->OneBody(j,i) = - Eta->OneBody(i,j);
+//     }
+//   }
 //   for ( auto& i : modelspace->particles )
 //   {
 ////      for ( auto& j : modelspace->holes )
@@ -446,40 +459,42 @@ void Generator::ConstructGenerator_ShellModel()
 void Generator::ConstructGenerator_ShellModel_Atan()
 {
    // One body piece -- make sure the valence one-body part is diagonal
-   unsigned int norbits = modelspace->GetNumberOrbits();
-   for ( auto& i : modelspace->valence)
+//   unsigned int norbits = modelspace->GetNumberOrbits();
+//   for ( auto& a : modelspace->valence)
+   for ( auto& a : VectorUnion(modelspace->core, modelspace->valence))
    {
-      Orbit& oi = modelspace->GetOrbit(i);
+//      Orbit& oa = modelspace->GetOrbit(a);
 //      for (unsigned int j=0; j<norbits; ++j)
-      for (auto j : H->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}))
+//      for (auto j : H->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}))
+      for (auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
       {
-         if (i==j) continue;
-         double denominator = Get1bDenominator(i,j);
+         if (i==a) continue;
+         double denominator = Get1bDenominator(i,a);
 //         Eta->OneBody(i,j) += 0.5*atan(2*H->OneBody(i,j)/denominator);
-         Eta->OneBody(i,j) = 0.5*atan(2*H->OneBody(i,j)/denominator);
-         Eta->OneBody(j,i) = - Eta->OneBody(i,j);
+         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
    }
    // Also make sure the core is decoupled
 //   for ( auto& a : modelspace->hole_qspace)
-   for ( auto& a : modelspace->core)
-   {
-//      for ( auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
-      for ( auto& i : modelspace->qspace)
-      {
-         double denominator = Get1bDenominator(i,a);
-//         Eta->OneBody(i,a) += 0.5*atan(2*H->OneBody(i,a)/denominator);
-         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
-         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
-      }
-//      for ( auto& i : modelspace->valence)
+//   for ( auto& a : modelspace->core)
+//   {
+////      for ( auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
+//      for ( auto& i : modelspace->qspace)
 //      {
 //         double denominator = Get1bDenominator(i,a);
-//         Eta->OneBody(i,a) += 0.5*atan(2*H->OneBody(i,a)/denominator);
+////         Eta->OneBody(i,a) += 0.5*atan(2*H->OneBody(i,a)/denominator);
+//         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
 //         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
 //      }
-
-   }
+////      for ( auto& i : modelspace->valence)
+////      {
+////         double denominator = Get1bDenominator(i,a);
+////         Eta->OneBody(i,a) += 0.5*atan(2*H->OneBody(i,a)/denominator);
+////         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+////      }
+//
+//   }
 
 
    // Two body piece -- eliminate ppvh and pqvv  
