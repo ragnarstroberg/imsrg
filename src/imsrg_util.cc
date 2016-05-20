@@ -932,7 +932,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     Orbit& oi = modelspace.GetOrbit(i);
     struct FBCIntegrandParameters params = {oi.n, oi.l, modelspace.GetHbarOmega()};
     F.params = &params;
-    int status = gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
+    //int status = gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
+    gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
     a_nu.OneBody(i,i) = M_PI*M_PI/R/R/R * R/nu/M_PI*(result);
     cout << "orbit,nu = " << i << "," << nu << "  => " << a_nu.OneBody(i,i) << "  from " << result << " (" << abserr << ")" << endl;
   }
@@ -1057,7 +1058,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
         if (j<i) continue;
         Orbit& oj = modelspace.GetOrbit(j);
         // multiply radial integral by b^L-1 = (hbar/mw)^L-1/2
-        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L-1) * b:;
+        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L-1) * bL;
         int kappa = ( modelspace.phase(oi.l+(oi.j2+1)/2) * (oi.j2+1) + modelspace.phase(oj.l+(oj.j2+1)/2) * (oj.j2+1) )/2;
         ML.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, L, oj.j2/2.0, 0.5,0, -0.5)
                         * (L - kappa) *(gl[(oi.tz2+1)/2]*(1+kappa/(L+1))-0.5*gs[(oi.tz2+1)/2] )  * r2int;
@@ -1169,7 +1170,6 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
  {
    Operator Sig(modelspace,1,0,0,2);
    Sig.SetHermitian();
-   int norbits = modelspace.GetNumberOrbits();
    for ( auto& i: modelspace.proton_orbits )
    {
      Orbit& oi = modelspace.GetOrbit(i);
@@ -1190,7 +1190,6 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
  {
    Operator Sig(modelspace,1,0,0,2);
    Sig.SetHermitian();
-   int norbits = modelspace.GetNumberOrbits();
    for ( auto& i: modelspace.neutron_orbits )
    {
      Orbit& oi = modelspace.GetOrbit(i);
