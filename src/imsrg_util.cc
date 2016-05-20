@@ -197,7 +197,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    for (int i=0; i<norb; ++i)
    {
       Orbit & oi = modelspace.GetOrbit(i);
-      for (int j : modelspace.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+      for (int j : TcmOp.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
          Orbit & oj = modelspace.GetOrbit(j);
          if (j<i) continue;
@@ -521,7 +521,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    for (unsigned int i=0; i<norb; ++i)
    {
       Orbit & oi = modelspace.GetOrbit(i);
-      for (auto j : modelspace.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      for (auto j : R2cmOp.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
       {
          if (j<i) continue;
          Orbit & oj = modelspace.GetOrbit(j);
@@ -1020,6 +1020,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   Operator ElectricMultipoleOp(ModelSpace& modelspace, int L)
   {
     Operator EL(modelspace, L,0,L%2,2);
+    double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*L); // b^L where b=sqrt(hbar/mw)
     for (int i : modelspace.proton_orbits)
     {
       Orbit& oi = modelspace.GetOrbit(i);
@@ -1027,8 +1028,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
       {
         if (j<i) continue;
         Orbit& oj = modelspace.GetOrbit(j);
-        // multiply radial integra by b^L = (hbar/mw)^L/2
-        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L) * pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*L) ;
+        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L) * bL ;
         EL.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, L, oj.j2/2.0, 0.5,0, -0.5) * r2int;
         EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
       }
@@ -1041,6 +1041,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   {
     double gl[2] = {1.,0.};
     double gs[2] = {5.586, -3.826};
+    double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*(L-1));
     Operator ML(modelspace, L,0,(L+1)%2,2);
     if (L<1)
     {
@@ -1055,8 +1056,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
       {
         if (j<i) continue;
         Orbit& oj = modelspace.GetOrbit(j);
-        // multiply radial integral by b^L = (hbar/mw)^L/2
-        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L-1) * pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*(L-1));
+        // multiply radial integral by b^L-1 = (hbar/mw)^L-1/2
+        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L-1) * b:;
         int kappa = ( modelspace.phase(oi.l+(oi.j2+1)/2) * (oi.j2+1) + modelspace.phase(oj.l+(oj.j2+1)/2) * (oj.j2+1) )/2;
         ML.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, L, oj.j2/2.0, 0.5,0, -0.5)
                         * (L - kappa) *(gl[(oi.tz2+1)/2]*(1+kappa/(L+1))-0.5*gs[(oi.tz2+1)/2] )  * r2int;

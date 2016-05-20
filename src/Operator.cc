@@ -1792,7 +1792,7 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
             double cijkl = 0;
 
 
-            for (int a : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+            for (int a : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
             {
                  int indx_aj = tbc.GetLocalIndex(min(a,j),max(a,j));
                  if (indx_aj < 0) continue;
@@ -1800,7 +1800,7 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
                  cijkl += pre_kl * pre_aj  * ( X1(i,a) * Y2(indx_aj,indx_kl) - Y1(i,a) * X2_kl(indx_aj) );
             }
 
-            for (int a : modelspace->OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+            for (int a : OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
             {
                  int indx_ia = tbc.GetLocalIndex(min(i,a),max(i,a));
                  if (indx_ia < 0) continue;
@@ -1808,7 +1808,7 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
                  cijkl += pre_kl * pre_ia * ( X1(j,a) * Y2(indx_ia,indx_kl)  - Y1(j,a) * X2_kl(indx_ia) );
              }
 
-            for (int a : modelspace->OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+            for (int a : OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
             {
                 int indx_al = tbc.GetLocalIndex(min(a,l),max(a,l));
                 if (indx_al < 0) continue;
@@ -1816,7 +1816,7 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
                 cijkl -= pre_ij * pre_al * ( X1(a,k) * Y2(indx_ij,indx_al) - Y1(a,k) * X2_ij(indx_al) );
             }
 
-            for (int a : modelspace->OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+            for (int a : OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
             {
                int indx_ka = tbc.GetLocalIndex(min(k,a),max(k,a));
                if (indx_ka < 0) continue;
