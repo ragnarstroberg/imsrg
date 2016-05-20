@@ -32,17 +32,10 @@ HartreeFock::HartreeFock(Operator& hbare)
      }
    }
    prev_energies = arma::vec(norbits,arma::fill::zeros);
-   vector<index_t> hvec;
    vector<double> occvec;
-   for (auto& h : modelspace->holes)
-   {
-     hvec.push_back(h);
-     Orbit& oh = modelspace->GetOrbit(h);
-     occvec.push_back(oh.occ);
-   }
-   holeorbs = arma::uvec(hvec);
+   for (auto& h : modelspace->holes) occvec.push_back(modelspace->GetOrbit(h).occ);
+   holeorbs = arma::uvec(modelspace->holes);
    hole_occ = arma::rowvec(occvec);
-//   holeorbs = arma::uvec(modelspace->holes);
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
    {
@@ -326,10 +319,8 @@ void HartreeFock::BuildMonopoleV3()
 //*********************************************************************
 void HartreeFock::UpdateDensityMatrix()
 {
-//  rho = C.cols(holeorbs) * (C.cols(holeorbs)).t();
   arma::mat tmp = C.cols(holeorbs);
   rho = (tmp.each_row() % hole_occ) * tmp.t();
-//  rho = (C.cols(holeorbs).each_row() % hole_occ) * (C.cols(holeorbs)).t();
 }
 
 
