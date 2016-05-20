@@ -34,10 +34,11 @@ HartreeFock::HartreeFock(Operator& hbare)
    prev_energies = arma::vec(norbits,arma::fill::zeros);
    vector<index_t> hvec;
    vector<double> occvec;
-   for (auto& it_h : modelspace->holes)
+   for (auto& h : modelspace->holes)
    {
-     hvec.push_back(it_h.first);
-     occvec.push_back(it_h.second);
+     hvec.push_back(h);
+     Orbit& oh = modelspace->GetOrbit(h);
+     occvec.push_back(oh.occ);
    }
    holeorbs = arma::uvec(hvec);
    hole_occ = arma::rowvec(occvec);

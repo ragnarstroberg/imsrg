@@ -34,7 +34,6 @@ class Generator
   void ConstructGenerator_Atan();
   void ConstructGenerator_ShellModel();
   void ConstructGenerator_ShellModel_Atan();
-//  void ConstructGenerator_ShellModel_Atan_Cut();
   void ConstructGenerator_HartreeFock();
   double Get1bDenominator(int i, int j);
   double Get2bDenominator(int ch, int ibra, int iket);

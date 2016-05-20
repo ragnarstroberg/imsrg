@@ -111,9 +111,9 @@ double HO_Radial_psi(int n, int l, double hw, double r)
  {
     Operator DM(modelspace,0,0,0,2);
 //    for (index_t a : modelspace.holes)
-    for (auto& it_a : modelspace.holes)
+    for (auto& a : modelspace.holes)
     {
-       index_t a = it_a.first;
+//       index_t a = it_a.first;
        DM.OneBody(a,a) = 1.0;
     }
     return DM;

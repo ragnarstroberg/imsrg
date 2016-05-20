@@ -353,7 +353,7 @@ int main(int argc, char** argv)
     {
       for (auto c : modelspace.core)
       {
-         if ( (modelspace.holes.find(c) == modelspace.holes.end()) or (abs(1-modelspace.holes[c])>1e-6))
+         if ( (find( modelspace.holes.begin(), modelspace.holes.end(), c) == modelspace.holes.end()) or (abs(1-modelspace.holes[c])>1e-6))
          {
            renormal_order = true;
            break;
