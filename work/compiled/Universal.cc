@@ -174,6 +174,9 @@ int main(int argc, char** argv)
       else if (opname == "Fermi")        ops.emplace_back( AllowedFermi_Op(modelspace) );
       else if (opname == "GamowTeller")  ops.emplace_back( AllowedGamowTeller_Op(modelspace) );
       else if (opname == "Iso2")         ops.emplace_back( Isospin2_Op(modelspace) );
+      else if (opname == "Sigma")        ops.emplace_back( Sigma_Op(modelspace) );
+      else if (opname == "Sigma_p")      ops.emplace_back( Sigma_p_Op(modelspace) );
+      else if (opname == "Sigma_n")      ops.emplace_back( Sigma_n_Op(modelspace) );
       else if (opname == "R2CM")         ops.emplace_back( R2CM_Op(modelspace) );
       else if (opname == "HCM")          ops.emplace_back( HCM_Op(modelspace) );
       else if (opname == "Rso")          ops.emplace_back( RpSpinOrbitCorrection(modelspace) );
