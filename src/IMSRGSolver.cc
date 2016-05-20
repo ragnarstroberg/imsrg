@@ -486,9 +486,9 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
        dxdt[1].comm221ss(Eta,x[0]);
        // keep only pp and hh parts of d chi/ ds
 //       for (auto& a : modelspace->holes)
-       for (auto& it_a : modelspace->holes)
+       for (auto& a : modelspace->holes)
        {
-         index_t a = it_a.first;
+//         index_t a = it_a.first;
          for (auto& i : modelspace->particles)
          {
            dxdt[1].OneBody(a,i) = 0;

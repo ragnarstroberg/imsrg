@@ -245,8 +245,8 @@ class ModelSpace
 
 
    // Data members
-//   vector<index_t> holes;           // in the reference Slater determinant
-   map<index_t,double> holes;           // in the reference Slater determinant
+   vector<index_t> holes;           // in the reference Slater determinant
+//   map<index_t,double> holes;           // in the reference Slater determinant
    vector<index_t> particles;       // above the reference Slater determinant
    vector<index_t> core;            // core for decoupling
    vector<index_t> valence;         // valence space for decoupling
