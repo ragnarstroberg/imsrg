@@ -22,11 +22,9 @@ class IMSRGSolver
   ModelSpace* modelspace;
   ReadWrite* rw;
   Operator* H_0; 
-//  vector<Operator> FlowingOps;
   deque<Operator> FlowingOps;
   Operator H_saved;
   Operator Eta;
-//  vector<Operator> Omega;
   deque<Operator> Omega;
   Generator generator;
   int istep;
