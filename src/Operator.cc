@@ -347,11 +347,10 @@ Operator Operator::DoNormalOrdering2()
 
    if (opNO.rank_J==0 and opNO.rank_T==0 and opNO.parity==0)
    {
-     for (auto& it_k : modelspace->holes) // loop over hole orbits
+     for (auto& k : modelspace->holes) // loop over hole orbits
      {
-        index_t k = it_k.first;
-        double occ_k = it_k.second;
-        opNO.ZeroBody += (modelspace->GetOrbit(k).j2+1) * occ_k * OneBody(k,k);
+        Orbit& ok = modelspace->GetOrbit(k);
+        opNO.ZeroBody += (ok.j2+1) * ok.occ * OneBody(k,k);
      }
    }
    cout << "OneBody contribution: " << opNO.ZeroBody << endl;
@@ -375,8 +374,6 @@ Operator Operator::DoNormalOrdering2()
         arma::vec diagonals = matrix.diag();
         auto hh = tbc_ket.GetKetIndex_hh();
         auto hocc = tbc_ket.Ket_occ_hh;
-//        opNO.ZeroBody +=  (hocc.t() * diagonals.elem(hh)) * (2*J_ket+1);
-//        opNO.ZeroBody += arma::sum( diagonals.elem(hh) ) * (2*J_ket+1);
         opNO.ZeroBody += arma::sum( hocc % diagonals.elem(hh) ) * (2*J_ket+1);
       }
 
@@ -391,19 +388,17 @@ Operator Operator::DoNormalOrdering2()
             if (b < bstart) continue;
             Orbit &ob = modelspace->GetOrbit(b);
             double jb = ob.j2/2.0;
-            for (auto& it_h : modelspace->holes)  // C++11 syntax
+            for (auto& h : modelspace->holes)  // C++11 syntax
             {
-              index_t h = it_h.first;
-              double occ_h = it_h.second;
+              Orbit &oh = modelspace->GetOrbit(h);
               if (opNO.rank_J==0)
               {
-                 opNO.OneBody(a,b) += (2*J_ket+1.0)/(2*ja+1) * occ_h * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+                 opNO.OneBody(a,b) += (2*J_ket+1.0)/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
               }
               else
               {
-                 Orbit &oh = modelspace->GetOrbit(h);
                  double jh = oh.j2/2.0;
-                 opNO.OneBody(a,b) += sqrt((2*J_bra+1.0)*(2*J_ket+1.0)) * occ_h *modelspace->phase(ja+jh+J_ket+opNO.rank_J)
+                 opNO.OneBody(a,b) += sqrt((2*J_bra+1.0)*(2*J_ket+1.0)) * oh.occ *modelspace->phase(ja+jh+J_ket+opNO.rank_J)
                                              * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
               }
            }
@@ -451,10 +446,8 @@ Operator Operator::DoNormalOrdering3()
             int l = ket.q;
             Orbit & ok = modelspace->GetOrbit(k);
             Orbit & ol = modelspace->GetOrbit(l);
-            for (auto& it_a : modelspace->holes)
+            for (auto& a : modelspace->holes)
             {
-               index_t a = it_a.first;
-               double occ_a = it_a.second;
                Orbit & oa = modelspace->GetOrbit(a);
                if ( (2*(oi.n+oj.n+oa.n)+oi.l+oj.l+oa.l)>E3max) continue;
                if ( (2*(ok.n+ol.n+oa.n)+ok.l+ol.l+oa.l)>E3max) continue;
@@ -462,7 +455,7 @@ Operator Operator::DoNormalOrdering3()
                int kmax2 = 2*tbc.J+oa.j2;
                for (int K2=kmin2; K2<=kmax2; K2+=2)
                {
-                  Gamma(ibra,iket) += (K2+1) * occ_a * ThreeBody.GetME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a); // This is unnormalized, but it should be normalized!!!!
+                  Gamma(ibra,iket) += (K2+1) * oa.occ * ThreeBody.GetME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a); // This is unnormalized, but it should be normalized!!!!
                }
             }
             Gamma(ibra,iket) /= (2*tbc.J+1)* sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
@@ -492,11 +485,10 @@ Operator Operator::UndoNormalOrdering()
 
    if (opNO.GetJRank()==0 and opNO.GetTRank()==0 and opNO.GetParity()==0)
    {
-     for (auto& it_k : modelspace->holes) // loop over hole orbits
+     for (auto& k : modelspace->holes) // loop over hole orbits
      {
-        index_t k = it_k.first;
-        double occ_k = it_k.second;
-        opNO.ZeroBody -= (modelspace->GetOrbit(k).j2+1) * occ_k * OneBody(k,k);
+        Orbit& ok = modelspace->GetOrbit(k);
+        opNO.ZeroBody -= (ok.j2+1) * ok.occ * OneBody(k,k);
      }
    }
 
@@ -520,7 +512,6 @@ Operator Operator::UndoNormalOrdering()
         auto hh = tbc_ket.GetKetIndex_hh();
         auto hocc = tbc_ket.Ket_occ_hh;
         opNO.ZeroBody +=  arma::sum( hocc % diagonals.elem(hh) ) * (2*J_ket+1);
-//        opNO.ZeroBody +=  hocc.t() * diagonals.elem(hh) * (2*J_ket+1);
       }
 
       // One body part
@@ -534,27 +525,22 @@ Operator Operator::UndoNormalOrdering()
             if (b < bstart) continue;
             Orbit &ob = modelspace->GetOrbit(b);
             double jb = ob.j2/2.0;
-            for (auto& it_h : modelspace->holes)  // C++11 syntax
+            for (auto& h : modelspace->holes)  // C++11 syntax
             {
-              index_t h = it_h.first;
-              double occ_h = it_h.second;
+              Orbit& oh = modelspace->GetOrbit(h);
+
               if (opNO.rank_J==0)
               {
-                 opNO.OneBody(a,b) -= (2*J_ket+1.0)/(2*ja+1) * occ_h * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+                 opNO.OneBody(a,b) -= (2*J_ket+1.0)/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
               }
               else
               {
-                 Orbit &oh = modelspace->GetOrbit(h);
                  double jh = oh.j2/2.0;
-                 opNO.OneBody(a,b) -= sqrt((2*J_bra+1.0)*(2*J_ket+1.0)) * occ_h * modelspace->phase(ja+jh+J_ket+opNO.rank_J)
+                 opNO.OneBody(a,b) -= sqrt((2*J_bra+1.0)*(2*J_ket+1.0)) * oh.occ * modelspace->phase(ja+jh+J_ket+opNO.rank_J)
                                              * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
               }
             }
 
-//            for (auto& h : modelspace->holes)  // C++11 syntax
-//            {
-//               opNO.OneBody(a,b) -= (2*J_ket+1.0)/(oa.j2+1)  * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
-//            }
          }
       }
    } // loop over channels
@@ -562,7 +548,6 @@ Operator Operator::UndoNormalOrdering()
    if (hermitian) opNO.Symmetrize();
    if (antihermitian) opNO.AntiSymmetrize();
 
-//   cout << "Zero-body piece is now " << opNO.ZeroBody << endl;
    return opNO;
 
 }
@@ -753,34 +738,28 @@ double Operator::GetMP2_Energy()
      index_t i = modelspace->particles[ii];
      double ei = OneBody(i,i);
      Orbit& oi = modelspace->GetOrbit(i);
-//     for (index_t a : modelspace->holes)
-     for (auto& it_a : modelspace->holes)
+     for (auto& a : modelspace->holes)
      {
-       index_t a = it_a.first;
-       double occ_a = it_a.second;
-       double ea = OneBody(a,a);
        Orbit& oa = modelspace->GetOrbit(a);
-       Emp2 += (oa.j2+1) * occ_a * OneBody(i,a)*OneBody(i,a)/(OneBody(a,a)-OneBody(i,i));
+       double ea = OneBody(a,a);
+       Emp2 += (oa.j2+1) * oa.occ * OneBody(i,a)*OneBody(i,a)/(OneBody(a,a)-OneBody(i,i));
        for (index_t j : modelspace->particles)
        {
          if (j<i) continue;
          double ej = OneBody(j,j);
          Orbit& oj = modelspace->GetOrbit(j);
-//         for ( index_t b: modelspace->holes)
-         for ( auto it_b: modelspace->holes)
+         for ( auto& b: modelspace->holes)
          {
-           index_t b = it_b.first;
-           double occ_b = it_b.second;
            if (b<a) continue;
-           double eb = OneBody(b,b);
            Orbit& ob = modelspace->GetOrbit(b);
+           double eb = OneBody(b,b);
            double denom = ea+eb-ei-ej;
            int Jmin = max(abs(oi.j2-oj.j2),abs(oa.j2-ob.j2))/2;
            int Jmax = min(oi.j2+oj.j2,oa.j2+ob.j2)/2;
            for (int J=Jmin; J<=Jmax; ++J)
            {
              double tbme = TwoBody.GetTBME_J_norm(J,a,b,i,j);
-             Emp2 += (2*J+1)* occ_a * occ_b * tbme*tbme/denom; // no factor 1/4 because of the restricted sum
+             Emp2 += (2*J+1)* oa.occ * ob.occ * tbme*tbme/denom; // no factor 1/4 because of the restricted sum
            }
          }
        }
@@ -1504,12 +1483,10 @@ void Operator::comm110ss( const Operator& X, const Operator& Y)
   if (X.IsAntiHermitian() and Y.IsAntiHermitian()) return ; // I think this is the case
 
    arma::mat xyyx = X.OneBody*Y.OneBody - Y.OneBody*X.OneBody;
-   for ( auto& it_a : modelspace->holes) 
+   for ( auto& a : modelspace->holes) 
    {
-      index_t a = it_a.first;
-      double occ_a = it_a.second;
-      Z.ZeroBody += (modelspace->GetOrbit(a).j2+1) * occ_a * xyyx(a,a);
-//      cout << a << ": " << occ_a << "   " << xyyx(a,a) << "  " << Z.ZeroBody << endl;
+      Orbit& oa = modelspace->GetOrbit(a);
+      Z.ZeroBody += (oa.j2+1) * oa.occ * xyyx(a,a);
    }
 }
 
@@ -1618,17 +1595,13 @@ void Operator::comm121ss( const Operator& X, const Operator& Y)
       for (auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
       {
           if (j<jmin) continue; // only calculate upper triangle
-//          for (auto& a : modelspace->holes)  // C++11 syntax
-          for (auto& it_a : modelspace->holes)  // C++11 syntax
+          for (auto& a : modelspace->holes)  // C++11 syntax
           {
-             index_t a = it_a.first;
-             double occ_a = it_a.second;
              Orbit &oa = modelspace->GetOrbit(a);
-//             for (auto& b : modelspace->particles)
              for (index_t b=0; b<norbits; ++b)
              {
                 Orbit &ob = modelspace->GetOrbit(b);
-                double nanb = occ_a * (1-ob.occ);
+                double nanb = oa.occ * (1-ob.occ);
                 if (abs(nanb)<1e-6) continue;
                 Z.OneBody(i,j) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
                 Z.OneBody(i,j) -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,j) ;
@@ -1737,13 +1710,11 @@ void Operator::comm221ss( const Operator& X, const Operator& Y)
             TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
             double Jfactor = (2*tbc.J+1.0);
             // Sum c over holes and include the nbar_a * nbar_b terms
-//            for (auto& c : modelspace->holes)
-            for (auto& it_c : modelspace->holes)
+            for (auto& c : modelspace->holes)
             {
-               index_t c = it_c.first;
-               double occ_c = it_c.second;
-               cijJ += Jfactor * occ_c     * Mpp.GetTBME(ch,c,i,c,j);
-               cijJ += Jfactor * (1-occ_c) * Mhh.GetTBME(ch,c,i,c,j);
+               Orbit& oc = modelspace->GetOrbit(c);
+               cijJ += Jfactor * oc.occ     * Mpp.GetTBME(ch,c,i,c,j);
+               cijJ += Jfactor * (1-oc.occ) * Mhh.GetTBME(ch,c,i,c,j);
             // Sum c over particles and include the n_a * n_b terms
             }
             for (auto& c : modelspace->particles)
@@ -1821,7 +1792,7 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
             double cijkl = 0;
 
 
-            for (int a : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+            for (int a : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
             {
                  int indx_aj = tbc.GetLocalIndex(min(a,j),max(a,j));
                  if (indx_aj < 0) continue;
@@ -1829,7 +1800,7 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
                  cijkl += pre_kl * pre_aj  * ( X1(i,a) * Y2(indx_aj,indx_kl) - Y1(i,a) * X2_kl(indx_aj) );
             }
 
-            for (int a : modelspace->OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+            for (int a : OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
             {
                  int indx_ia = tbc.GetLocalIndex(min(i,a),max(i,a));
                  if (indx_ia < 0) continue;
@@ -1837,7 +1808,7 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
                  cijkl += pre_kl * pre_ia * ( X1(j,a) * Y2(indx_ia,indx_kl)  - Y1(j,a) * X2_kl(indx_ia) );
              }
 
-            for (int a : modelspace->OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+            for (int a : OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
             {
                 int indx_al = tbc.GetLocalIndex(min(a,l),max(a,l));
                 if (indx_al < 0) continue;
@@ -1845,7 +1816,7 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
                 cijkl -= pre_ij * pre_al * ( X1(a,k) * Y2(indx_ij,indx_al) - Y1(a,k) * X2_ij(indx_al) );
             }
 
-            for (int a : modelspace->OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+            for (int a : OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
             {
                int indx_ka = tbc.GetLocalIndex(min(k,a),max(k,a));
                if (indx_ka < 0) continue;
@@ -2002,13 +1973,11 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
             TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
             double Jfactor = (2*tbc.J+1.0);
             // Sum c over holes and include the nbar_a * nbar_b terms
-//            for (auto& c : modelspace->holes)
-            for (auto& it_c : modelspace->holes)
+            for (auto& c : modelspace->holes)
             {
-               index_t c = it_c.first;
-               double occ_c = it_c.second;
-               cijJ += Jfactor * occ_c * Mpp.GetTBME(ch,c,i,c,j); 
-               cijJ += Jfactor * (1-occ_c) * Mff.GetTBME(ch,c,i,c,j);
+               Orbit& oc = modelspace->GetOrbit(c);
+               cijJ += Jfactor * oc.occ * Mpp.GetTBME(ch,c,i,c,j); 
+               cijJ += Jfactor * (1-oc.occ) * Mff.GetTBME(ch,c,i,c,j);
             // Sum c over particles and include the n_a * n_b terms
             }
             for (auto& c : modelspace->particles)
@@ -2424,17 +2393,14 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
           double jj = oj.j2/2.0;
           if (j<i) continue; // only calculate upper triangle
           double& Zij = Z.OneBody(i,j);
-//          for (auto& a : modelspace->holes)  // C++11 syntax
-          for (auto& it_a : modelspace->holes)  // C++11 syntax
+          for (auto& a : modelspace->holes)  // C++11 syntax
           {
-             index_t a = it_a.first;
-             double occ_a = it_a.second;
              Orbit &oa = modelspace->GetOrbit(a);
              double ja = oa.j2/2.0;
              for (auto& b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
              {
                 Orbit &ob = modelspace->GetOrbit(b);
-                double nanb = occ_a * (1-ob.occ);
+                double nanb = oa.occ * (1-ob.occ);
                   int J1min = abs(ji-ja);
                   int J1max = ji + ja;
                   for (int J1=J1min; J1<=J1max; ++J1)
@@ -2457,7 +2423,7 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
                 Orbit &ob = modelspace->GetOrbit(b);
                 double jb = ob.j2/2.0;
                 if (abs(ob.occ-1) < 1e-6) continue;
-                double nanb = occ_a * (1-ob.occ);
+                double nanb = oa.occ * (1-ob.occ);
                 int J1min = max(abs(ji-jb),abs(jj-ja));
                 int J1max = min(ji+jb,jj+ja);
                 double zij = 0;
@@ -2689,12 +2655,9 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
          double jj = oj.j2/2.0;
          double cijJ = 0;
          // Sum c over holes and include the nbar_a * nbar_b terms
-//           for (auto& c : modelspace->holes)
-           for (auto& it_c : modelspace->holes)
+           for (auto& c : modelspace->holes)
            {
-              index_t c = it_c.first;
               Orbit &oc = modelspace->GetOrbit(c);
-              double occ_c = oc.occ;
               double jc = oc.j2/2.0;
               int j1min = abs(jc-ji);
               int j1max = jc+ji;
@@ -2706,8 +2669,8 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
                {
                 double hatfactor = sqrt( (2*J1+1)*(2*J2+1) );
                 double sixj = modelspace->GetSixJ(J1, J2, Lambda, jj, ji, jc);
-                cijJ += hatfactor * sixj * modelspace->phase(jj + jc + J1 + Lambda) * occ_c * Mpp.GetTBME_J(J1,J2,c,i,c,j);
-                cijJ += hatfactor * sixj * modelspace->phase(jj + jc + J1 + Lambda) * (1-occ_c) * Mff.GetTBME_J(J1,J2,c,i,c,j);  // This is probably right???
+                cijJ += hatfactor * sixj * modelspace->phase(jj + jc + J1 + Lambda) * oc.occ * Mpp.GetTBME_J(J1,J2,c,i,c,j);
+                cijJ += hatfactor * sixj * modelspace->phase(jj + jc + J1 + Lambda) * (1-oc.occ) * Mff.GetTBME_J(J1,J2,c,i,c,j);  // This is probably right???
                }
               }
            // Sum c over particles and include the n_a * n_b terms

@@ -32,16 +32,10 @@ HartreeFock::HartreeFock(Operator& hbare)
      }
    }
    prev_energies = arma::vec(norbits,arma::fill::zeros);
-   vector<index_t> hvec;
    vector<double> occvec;
-   for (auto& it_h : modelspace->holes)
-   {
-     hvec.push_back(it_h.first);
-     occvec.push_back(it_h.second);
-   }
-   holeorbs = arma::uvec(hvec);
+   for (auto& h : modelspace->holes) occvec.push_back(modelspace->GetOrbit(h).occ);
+   holeorbs = arma::uvec(modelspace->holes);
    hole_occ = arma::rowvec(occvec);
-//   holeorbs = arma::uvec(modelspace->holes);
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
    {
@@ -118,7 +112,7 @@ void HartreeFock::CalcEHF()
    {
       Orbit& oi = modelspace->GetOrbit(i);
       int jfactor = oi.j2 +1;
-      for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}))
+      for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}))
       {
          e1hf += rho(i,j) * jfactor * KE(i,j);
          e2hf += rho(i,j) * jfactor * 0.5 * Vij(i,j);
@@ -153,7 +147,7 @@ void HartreeFock::PrintEHF()
 void HartreeFock::Diagonalize()
 {
    prev_energies = energies;
-   for ( auto& it : modelspace->OneBodyChannels )
+   for ( auto& it : Hbare.OneBodyChannels )
    {
       arma::uvec orbvec(it.second);
       arma::mat F_ch = F.submat(orbvec,orbvec);
@@ -238,7 +232,7 @@ void HartreeFock::BuildMonopoleV3()
   {
     Orbit& oi = modelspace->GetOrbit(i);
     int ei = 2*oi.n + oi.l;
-    for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
       if (j<i) continue;
       Orbit& oj = modelspace->GetOrbit(j);
@@ -249,7 +243,7 @@ void HartreeFock::BuildMonopoleV3()
       {
         Orbit& oa = modelspace->GetOrbit(a);
         int ea = 2*oa.n + oa.l;
-        for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+        for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
         {
           Orbit& ob = modelspace->GetOrbit(b);
           int eb = 2*ob.n + ob.l;
@@ -260,7 +254,7 @@ void HartreeFock::BuildMonopoleV3()
               Orbit& oc = modelspace->GetOrbit(c);
               int ec = 2*oc.n + oc.l;
               if ( ea+ec+ei > Hbare.E3max ) continue;
-              for (int d : modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
+              for (int d : Hbare.OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
               {
                 Orbit& od = modelspace->GetOrbit(d);
                 int ed = 2*od.n + od.l;
@@ -325,10 +319,8 @@ void HartreeFock::BuildMonopoleV3()
 //*********************************************************************
 void HartreeFock::UpdateDensityMatrix()
 {
-//  rho = C.cols(holeorbs) * (C.cols(holeorbs)).t();
   arma::mat tmp = C.cols(holeorbs);
   rho = (tmp.each_row() % hole_occ) * tmp.t();
-//  rho = (C.cols(holeorbs).each_row() % hole_occ) * (C.cols(holeorbs)).t();
 }
 
 
@@ -354,7 +346,7 @@ void HartreeFock::UpdateF()
    for (int i=0;i<norbits;i++)
    {
       Orbit& oi = modelspace->GetOrbit(i);
-      for (int j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+      for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
          if (j<i) continue;
          for (int a=0;a<norbits;++a)
@@ -364,7 +356,7 @@ void HartreeFock::UpdateF()
             int parity = (oi.l+oa.l)%2;
             int bra = modelspace->GetKetIndex(min(i,a),max(i,a));
             int local_bra = modelspace->MonopoleKets[Tz+1][parity][bra];
-            for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+            for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
             {
                int ket = modelspace->GetKetIndex(min(j,b),max(j,b));
                int local_ket = modelspace->MonopoleKets[Tz+1][parity][ket];
@@ -449,7 +441,7 @@ bool HartreeFock::CheckConvergence()
 //**********************************************************************
 void HartreeFock::ReorderCoefficients()
 {
-   for ( auto& it : modelspace->OneBodyChannels )
+   for ( auto& it : Hbare.OneBodyChannels )
    {
      arma::uvec orbvec(it.second);
      arma::vec E_ch = energies(orbvec);
@@ -617,7 +609,7 @@ Operator HartreeFock::GetNormalOrderedH()
             {
               Orbit & oa = modelspace->GetOrbit(a);
               if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
-              for (int b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+              for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
               {
                 Orbit & ob = modelspace->GetOrbit(b);
                 if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
@@ -668,7 +660,7 @@ Operator HartreeFock::GetOmega()
 {
    Operator Omega(*modelspace,0,0,0,1);
    Omega.SetAntiHermitian();
-   for ( auto& it : modelspace->OneBodyChannels )
+   for ( auto& it : Hbare.OneBodyChannels )
    {
       arma::uvec orbvec(it.second);
       arma::mat C_ch = C.submat(orbvec,orbvec);

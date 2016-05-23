@@ -152,7 +152,7 @@ void IMSRGSolver::Solve_magnus_euler()
 
    if (generator.GetType() == "shell-model-atan")
    {
-     generator.SetDenominatorCutoff(1.0);
+     generator.SetDenominatorCutoff(1.0); // do we need this?
    }
 
     // Write details of the flow
@@ -163,7 +163,6 @@ void IMSRGSolver::Solve_magnus_euler()
    {
 
       double norm_eta = Eta.Norm();
-//      double norm_omega = Omega.Norm();
       if (norm_eta < eta_criterion )
       {
         break;
@@ -485,10 +484,8 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
        dxdt[1].Erase();
        dxdt[1].comm221ss(Eta,x[0]);
        // keep only pp and hh parts of d chi/ ds
-//       for (auto& a : modelspace->holes)
-       for (auto& it_a : modelspace->holes)
+       for (auto& a : modelspace->holes)
        {
-         index_t a = it_a.first;
          for (auto& i : modelspace->particles)
          {
            dxdt[1].OneBody(a,i) = 0;
@@ -499,7 +496,6 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
        {
          dxdt[i] = Commutator(Eta,x[i]);
        }
-//       cout << "Made it out of the first iteration" << endl;
      }
 
    }

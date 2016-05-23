@@ -174,6 +174,7 @@ int main(int argc, char** argv)
       else if (opname == "M1")           ops.emplace_back( MagneticMultipoleOp(modelspace,1) );
       else if (opname == "Fermi")        ops.emplace_back( AllowedFermi_Op(modelspace) );
       else if (opname == "GamowTeller")  ops.emplace_back( AllowedGamowTeller_Op(modelspace) );
+      else if (opname == "Iso2")         ops.emplace_back( Isospin2_Op(modelspace) );
       else if (opname == "R2CM")         ops.emplace_back( R2CM_Op(modelspace) );
       else if (opname == "HCM")          ops.emplace_back( HCM_Op(modelspace) );
       else if (opname == "Rso")          ops.emplace_back( RpSpinOrbitCorrection(modelspace) );
@@ -353,7 +354,7 @@ int main(int argc, char** argv)
     {
       for (auto c : modelspace.core)
       {
-         if ( (modelspace.holes.find(c) == modelspace.holes.end()) or (abs(1-modelspace.holes[c])>1e-6))
+         if ( (find( modelspace.holes.begin(), modelspace.holes.end(), c) == modelspace.holes.end()) or (abs(1-modelspace.holes[c])>1e-6))
          {
            renormal_order = true;
            break;

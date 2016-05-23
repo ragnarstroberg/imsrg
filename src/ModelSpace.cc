@@ -457,9 +457,9 @@ void ModelSpace::Init(int emax, map<index_t,double> hole_list, vector<index_t> c
    }
    Aref = 0;
    Zref = 0;
-   for (auto& it_h : holes)
+   for (auto& h : holes)
    {
-     Orbit& oh = GetOrbit(it_h.first);
+     Orbit& oh = GetOrbit(h);
      Aref += (oh.j2+1)*oh.occ;
      if (oh.tz2 < 0) Zref += (oh.j2+1)*oh.occ;
    }
@@ -746,7 +746,7 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
    }
 
    if ( occ < OCC_CUT) particles.push_back(ind);
-   else  holes[ind] = occ;
+   else holes.push_back(ind);
    if (cvq == 0) core.push_back(ind);
    if (cvq == 1) valence.push_back(ind);
    if (cvq == 2) qspace.push_back(ind);
