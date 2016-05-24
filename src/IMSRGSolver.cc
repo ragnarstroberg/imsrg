@@ -196,7 +196,7 @@ void IMSRGSolver::Solve_magnus_euler()
 
       if (norm_eta<1.0 and generator.GetType() == "shell-model-atan")
       {
-        generator.SetDenominatorCutoff(0.0);
+        generator.SetDenominatorCutoff(1e-6);
       }
         
       generator.Update(&FlowingOps[0],&Eta);

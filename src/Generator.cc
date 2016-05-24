@@ -5,7 +5,7 @@
 using namespace imsrg_util;
 
 Generator::Generator()
-  : generator_type("white"), denominator_cutoff(0)  , denominator_delta(0), denominator_delta_index(-1)
+  : generator_type("white"), denominator_cutoff(1e-6)  , denominator_delta(0), denominator_delta_index(-1)
 {}
 
 
@@ -62,7 +62,8 @@ double Generator::Get1bDenominator(int i, int j)
      denominator += denominator_delta;
 
    if (abs(denominator)<denominator_cutoff)
-     denominator *= denominator_cutoff/(abs(denominator)+1e-6);
+     denominator = denominator_cutoff;
+//     denominator *= denominator_cutoff/(abs(denominator)+1e-6);
 
    return denominator;
 }
@@ -92,7 +93,8 @@ double Generator::Get2bDenominator(int ch, int ibra, int iket)
    denominator       += ( nj-nl ) * H->TwoBody.GetTBMEmonopole(j,l,j,l); // p'h'p'h'
 
    if (abs(denominator)<denominator_cutoff)
-     denominator *= denominator_cutoff/(abs(denominator)+1e-6);
+     denominator = denominator_cutoff;
+//     denominator *= denominator_cutoff/(abs(denominator)+1e-6);
    return denominator;
 }
 
