@@ -148,6 +148,7 @@ int main(int argc, char** argv)
     Hbare = Hbare.DoNormalOrdering();
 
   Hbare -= BetaCM * 1.5*hw;
+  cout << "Hbare 0b = " << Hbare.ZeroBody << endl;
 
   if (method != "HF")
   {
