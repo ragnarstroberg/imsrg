@@ -9,6 +9,100 @@ using namespace AngMom;
 namespace imsrg_util
 {
 
+
+ Operator OperatorFromString(ModelSpace& modelspace, string opname)
+ {
+           if (opname == "R2_p1")        return R2_1body_Op(modelspace,"proton") ;
+      else if (opname == "R2_p2")        return R2_2body_Op(modelspace,"proton") ;
+      else if (opname == "R2_n1")        return R2_1body_Op(modelspace,"neutron") ;
+      else if (opname == "R2_n2")        return R2_2body_Op(modelspace,"neutron") ;
+      else if (opname == "Rp2")          return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
+      else if (opname == "Rn2")          return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
+      else if (opname == "Rm2")          return Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
+      else if (opname == "E2")           return ElectricMultipoleOp(modelspace,2) ;
+      else if (opname == "M1")           return MagneticMultipoleOp(modelspace,1) ;
+      else if (opname == "Fermi")        return AllowedFermi_Op(modelspace) ;
+      else if (opname == "GamowTeller")  return AllowedGamowTeller_Op(modelspace) ;
+      else if (opname == "Iso2")         return Isospin2_Op(modelspace) ;
+      else if (opname == "R2CM")         return R2CM_Op(modelspace) ;
+      else if (opname == "HCM")          return HCM_Op(modelspace) ;
+      else if (opname == "Rso")          return RpSpinOrbitCorrection(modelspace) ;
+      else if (opname.substr(0,4) == "HCM_") // GetHCM with a different frequency, ie HCM_24 for hw=24
+      {
+         double hw_HCM;
+         istringstream(opname.substr(4,opname.size())) >> hw_HCM;
+         int A = modelspace.GetTargetMass();
+         return TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw_HCM*hw_HCM/HBARC/HBARC*R2CM_Op(modelspace); 
+      }
+      else if (opname.substr(0,4) == "Rp2Z") // Get point proton radius for specified Z, e.g. Rp2Z10 for neon
+      {
+        int Z_rp;
+        istringstream(opname.substr(4,opname.size())) >> Z_rp;
+        return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) ;
+      }
+      else if (opname.substr(0,4) == "Rn2Z") // Get point neutron radius for specified Z
+      {
+        int Z_rp;
+        istringstream(opname.substr(4,opname.size())) >> Z_rp;
+        return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) ;
+      }
+      else if (opname.substr(0,4) == "rhop") // point radius density at position r, e.g. rhop1.25
+      {
+        double rr;
+        istringstream(opname.substr(4,opname.size())) >> rr;
+        return ProtonDensityAtR(modelspace,rr);
+      }
+      else if (opname.substr(0,4) == "rhon") // point radius density at position r
+      {
+        double rr;
+        istringstream(opname.substr(4,opname.size())) >> rr;
+        NeutronDensityAtR(modelspace,rr);
+      }
+      else if (opname.substr(0,6) == "OneOcc") // Get occupation of specified orbit, e.g. OneOccp1p3
+      {
+         map<char,int> lvals = {{'s',0},{'p',1},{'d',2},{'f',3},{'g',4},{'h',5}};
+         char pn,lspec;
+         int n,l,j,t;
+         istringstream(opname.substr(6,1)) >> pn;
+         istringstream(opname.substr(7,1)) >> n;
+         istringstream(opname.substr(8,1)) >> lspec;
+         istringstream(opname.substr(9,opname.size())) >> j;
+         l = lvals[lspec];
+         t = pn == 'p' ? -1 : 1;
+         return NumberOp(modelspace,n,l,j,t) ;
+      }
+      else if (opname.substr(0,6) == "AllOcc") // Get occupation of orbit, summed over all values of radial quantum number n, e.g. AllOccpp3
+      {
+         map<char,int> lvals = {{'s',0},{'p',1},{'d',2},{'f',3},{'g',4},{'h',5}};
+         char pn,lspec;
+         int l,j,t;
+         istringstream(opname.substr(6,1)) >> pn;
+         istringstream(opname.substr(7,1)) >> lspec;
+         istringstream(opname.substr(8,opname.size())) >> j;
+         l = lvals[lspec];
+         t = pn == 'p' ? -1 : 1;
+         return NumberOpAlln(modelspace,l,j,t) ;
+      }
+      else if (opname.substr(0,9) == "protonFBC") // Fourier bessel coefficient of order nu
+      {
+         int nu;
+         istringstream(opname.substr(9,opname.size())) >> nu;
+         return FourierBesselCoeff( modelspace, nu, 8.0, modelspace.proton_orbits);
+      }
+      else if (opname.substr(0,10) == "neutronFBC") // Fourier bessel coefficient of order nu
+      {
+         int nu;
+         istringstream(opname.substr(10,opname.size())) >> nu;
+         return FourierBesselCoeff( modelspace, nu, 8.0, modelspace.neutron_orbits) ;
+      }
+      else //need to remove from the list
+      {
+         cout << "Unknown operator: " << opname << endl;
+      }
+      return Operator();
+ 
+ }
+
  Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2)
  {
    Operator NumOp = Operator(modelspace);
@@ -1249,7 +1343,21 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   }
 
 
-
+  Operator RadialOverlap(ModelSpace* modelspace)
+  {
+     Operator OVL(*modelspace,1,0,0,0);
+     index_t norb = modelspace->GetNumberOrbits();
+     for (index_t i=0; i<norb; ++i)
+     {
+       Orbit& oi = modelspace->GetOrbit(i);
+       for (index_t j=0; j<norb; ++j)
+       {
+         Orbit& oj = modelspace->GetOrbit(j);
+         OVL.OneBody(i,j) = RadialIntegral(oi.n, oi.l, oj.n, oj.l, 0 ); // This is not quite right. Only works for li+lj=even.
+       } 
+     }
+     return OVL;
+  }
 
 
   void CommutatorTest(Operator& X, Operator& Y)
