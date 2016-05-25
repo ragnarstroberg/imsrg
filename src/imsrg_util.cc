@@ -12,24 +12,25 @@ namespace imsrg_util
 
  Operator OperatorFromString(ModelSpace& modelspace, string opname)
  {
-           if (opname == "R2_p1")        return R2_1body_Op(modelspace,"proton") ;
-      else if (opname == "R2_p2")        return R2_2body_Op(modelspace,"proton") ;
-      else if (opname == "R2_n1")        return R2_1body_Op(modelspace,"neutron") ;
-      else if (opname == "R2_n2")        return R2_2body_Op(modelspace,"neutron") ;
-      else if (opname == "Rp2")          return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
-      else if (opname == "Rn2")          return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
-      else if (opname == "Rm2")          return Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
-      else if (opname == "E2")           return ElectricMultipoleOp(modelspace,2) ;
-      else if (opname == "M1")           return MagneticMultipoleOp(modelspace,1) ;
-      else if (opname == "Fermi")        return AllowedFermi_Op(modelspace) ;
-      else if (opname == "GamowTeller")  return AllowedGamowTeller_Op(modelspace) ;
-      else if (opname == "Iso2")         return Isospin2_Op(modelspace) ;
-      else if (opname == "R2CM")         return R2CM_Op(modelspace) ;
-      else if (opname == "HCM")          return HCM_Op(modelspace) ;
-      else if (opname == "Rso")          return RpSpinOrbitCorrection(modelspace) ;
+           if (opname == "R2_p1")         return R2_1body_Op(modelspace,"proton") ;
+      else if (opname == "R2_p2")         return R2_2body_Op(modelspace,"proton") ;
+      else if (opname == "R2_n1")         return R2_1body_Op(modelspace,"neutron") ;
+      else if (opname == "R2_n2")         return R2_2body_Op(modelspace,"neutron") ;
+      else if (opname == "Rp2")           return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
+      else if (opname == "Rn2")           return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
+      else if (opname == "Rm2")           return Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
+      else if (opname == "E2")            return ElectricMultipoleOp(modelspace,2) ;
+      else if (opname == "M1")            return MagneticMultipoleOp(modelspace,1) ;
+      else if (opname == "Fermi")         return AllowedFermi_Op(modelspace) ;
+      else if (opname == "GamowTeller")   return AllowedGamowTeller_Op(modelspace) ;
+      else if (opname == "Iso2")          return Isospin2_Op(modelspace) ;
+      else if (opname == "R2CM")          return R2CM_Op(modelspace) ;
+      else if (opname == "HCM")           return HCM_Op(modelspace) ;
+      else if (opname == "Rso")           return RpSpinOrbitCorrection(modelspace) ;
+      else if (opname == "RadialOverlap") return RadialOverlap(modelspace);
       else if (opname.substr(0,4) == "HCM_") // GetHCM with a different frequency, ie HCM_24 for hw=24
       {
-         double hw_HCM;
+         double hw_HCM; // frequency of trapping potential
          istringstream(opname.substr(4,opname.size())) >> hw_HCM;
          int A = modelspace.GetTargetMass();
          return TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw_HCM*hw_HCM/HBARC/HBARC*R2CM_Op(modelspace); 
@@ -1343,21 +1344,31 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   }
 
 
-  Operator RadialOverlap(ModelSpace* modelspace)
+  Operator RadialOverlap(ModelSpace& modelspace)
   {
-     Operator OVL(*modelspace,1,0,0,0);
-     index_t norb = modelspace->GetNumberOrbits();
+     Operator OVL(modelspace,0,1,0,1);
+     index_t norb = modelspace.GetNumberOrbits();
      for (index_t i=0; i<norb; ++i)
      {
-       Orbit& oi = modelspace->GetOrbit(i);
+       Orbit& oi = modelspace.GetOrbit(i);
        for (index_t j=0; j<norb; ++j)
        {
-         Orbit& oj = modelspace->GetOrbit(j);
+         Orbit& oj = modelspace.GetOrbit(j);
          OVL.OneBody(i,j) = RadialIntegral(oi.n, oi.l, oj.n, oj.l, 0 ); // This is not quite right. Only works for li+lj=even.
        } 
      }
      return OVL;
   }
+
+
+  map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax)
+  {
+    ModelSpace* modelspace = H.GetModelSpace();
+    map<index_t,double> hole_list;
+    cout << "GetSecondOrderOccupations : Not yet implemented" << endl;
+    return hole_list;
+  }
+
 
 
   void CommutatorTest(Operator& X, Operator& Y)

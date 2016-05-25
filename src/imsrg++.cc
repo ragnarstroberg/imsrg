@@ -38,6 +38,7 @@ int main(int argc, char** argv)
   string scratch = parameters.s("scratch");
   string use_brueckner_bch = parameters.s("use_brueckner_bch");
   string valence_file_format = parameters.s("valence_file_format");
+  string occ_file = parameters.s("occ_file");
 
   int eMax = parameters.i("emax");
   int E3max = parameters.i("e3max");
@@ -93,6 +94,10 @@ int main(int argc, char** argv)
   rw.SetLECs_preset(LECs);
   rw.SetScratchDir(scratch);
   ModelSpace modelspace = reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space);
+  if (occ_file != "none" and occ_file != "" )
+  {
+    modelspace.Init_occ_from_file(eMax,valence_space,occ_file);
+  }
 
   if (nsteps < 0)
     nsteps = modelspace.valence.size()>0 ? 2 : 1;

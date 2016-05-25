@@ -16,6 +16,7 @@
 namespace imsrg_util
 {
  Operator OperatorFromString(ModelSpace& modelspace, string str);
+ map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax);
 
  Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2);
  Operator NumberOpAlln(ModelSpace& modelspace, int l, int j2, int tz2);

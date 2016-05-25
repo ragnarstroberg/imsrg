@@ -359,12 +359,20 @@ ModelSpace::ModelSpace(int emax, string valence)
 // This is the most convenient interface
 void ModelSpace::Init(int emax, string reference, string valence)
 {
+  int Aref,Zref;
+  GetAZfromString(reference,Aref,Zref);
+  map<index_t,double> hole_list = GetOrbitsAZ(Aref,Zref);
+  Init(emax,hole_list,valence);
+}
+
+void ModelSpace::Init(int emax, map<index_t,double> hole_list, string valence)
+{
   int Aref,Zref,Ac,Zc;
   vector<index_t> valence_list, core_list;
-  map<index_t,double> hole_list,core_map;
+  map<index_t,double> core_map;
 
-  GetAZfromString(reference,Aref,Zref);
-  hole_list = GetOrbitsAZ(Aref,Zref);
+//  GetAZfromString(reference,Aref,Zref);
+//  hole_list = GetOrbitsAZ(Aref,Zref);
 
   if (valence == "0hw-shell")
   {
@@ -412,19 +420,61 @@ void ModelSpace::Init(int emax, vector<string> hole_list, vector<string> core_li
   Init(emax, hole_map, String2Index(core_list), String2Index(valence_list) );
 }
 
+
+void ModelSpace::Init_occ_from_file(int emax, string valence, string occ_file)
+{
+  index_t orb;
+  double occ;
+  map<index_t,double> hole_list;
+
+  ifstream infile(occ_file);
+  if (!infile.good())
+  {
+    cout << endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+    cout << "Trouble reading file: " << occ_file << endl;
+    cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl << endl;
+  }
+
+  while( infile >> orb >> occ )
+  {
+    if ( hole_list.find(orb) != hole_list.end() and  abs( hole_list[orb] -occ) > 1e-6)
+    {
+        cout << "Warning: in file " << occ_file << ", redefinition of occupation of orbit "
+             << orb << "  " << hole_list[orb] << " => " << occ << endl;
+    }
+    cout << "from occ file: " << endl;
+    if (occ>1e-6)
+    {
+      hole_list[orb] = occ;
+      cout << orb << " " << occ << endl;
+    }
+  }
+  // Make sure things are consistent
+  double occ_sum = 0;
+  for ( auto& h : hole_list)
+  {
+    Orbit& oh = GetOrbit(h.first);
+    occ_sum += (oh.j2+1)*h.second;
+  }
+  cout << "Sum of (2j_i+1)*occ_i = " << occ_sum << endl;
+  Init(emax,hole_list,valence);
+}
+
+
 // This is the Init which should inevitably be called
 void ModelSpace::Init(int emax, map<index_t,double> hole_list, vector<index_t> core_list, vector<index_t> valence_list)
 {
-   Orbits.clear();
-   particles.clear();
-   holes.clear();
-   core.clear();
-   valence.clear();
-   qspace.clear();
-   proton_orbits.clear();
-   neutron_orbits.clear();
-   OneBodyChannels.clear();
+   ClearVectors();
    emax = Emax;
+   cout << "core list: ";
+   for (auto& c : core_list) cout << c << " ";
+   cout << endl;
+   cout << "valence list: ";
+   for (auto& v : valence_list) cout << v << " ";
+   cout << endl;
+   cout << "hole list: ";
+   for (auto& h : hole_list) cout << h.first << " ( " << h.second << " ) ";
+   cout << endl;
 
    // Make sure no orbits are both core and valence
    for (auto& c : core_list)
@@ -794,6 +844,7 @@ void ModelSpace::SetupKets()
         Kets[index] = Ket(GetOrbit(p),GetOrbit(q));
      }
    }
+   cout << "looping over Kets.size" << endl;
   for (index_t index=0;index<Kets.size();++index)
   {
     Ket& ket = Kets[index];
@@ -863,6 +914,16 @@ void ModelSpace::ClearVectors()
    KetIndex_qv.clear();
    KetIndex_qq.clear();
    Ket_occ_hh.clear();
+   Ket_occ_ph.clear();
+   Ket_unocc_hh.clear();
+   Ket_unocc_ph.clear();
+   for (index_t Tz=0; Tz<3; ++Tz)
+   {
+     for (index_t parity=0;parity<2; ++parity)
+     {
+        MonopoleKets[Tz][parity].clear();
+     }
+   }
 
    Orbits.clear();
    Kets.clear();
