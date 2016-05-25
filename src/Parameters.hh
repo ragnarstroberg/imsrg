@@ -35,18 +35,19 @@ map<string,string> Parameters::string_par = {
   {"3bme",			"none"},
   {"core_generator",		"atan"},	// generator used for core part of 2-step decoupling
   {"valence_generator",		"shell-model-atan"},	// generator used for valence decoupling and 1-step (also single-ref)
-  {"flowfile",			"default"},
-  {"intfile",			"default"},
+  {"flowfile",			"default"},  // name of output flow file
+  {"intfile",			"default"},  // name of output interaction fille
   {"fmt2",			"me2j"},	 // can also be navratil or Navratil to read Petr's TBME format
   {"reference",			"default"},	// nucleus used for HF and normal ordering.
   {"valence_space",		"O16"},	// either valence space or nucleus for single reference
   {"basis",			"HF"},	 // use HF basis or oscillator basis. HF is better.
   {"method",			"magnus"},	// can be magnus or flow or a few other things
   {"denominator_delta_orbit",	"none"},	// pick specific orbit to apply the delta
-  {"LECs",			"EM2.0_2.0"},
+  {"LECs",			"EM2.0_2.0"}, // low energy constants for the interaction, only used with Johannes' hdf5 file format
   {"scratch",			""},    // scratch directory for writing operators in binary format
   {"use_brueckner_bch",          "false"}, // switch to Brueckner version of BCH
   {"valence_file_format",       "nushellx"}, // file format for valence space interaction
+  {"occ_file",			"none"}, // name of file containing orbit occupations
 };
 
 

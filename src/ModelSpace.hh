@@ -176,8 +176,10 @@ class ModelSpace
    // Methods
 
    void Init(int emax, string reference, string valence);
+   void Init(int emax, map<index_t,double> hole_list, string valence);
    void Init(int emax, map<index_t,double> hole_list, vector<index_t> core_list, vector<index_t> valence_list);
    void Init(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
+   void Init_occ_from_file(int emax, string valence, string occ_file);
 
 //   vector<index_t> GetOrbitsAZ(int A, int Z);
    map<index_t,double> GetOrbitsAZ(int A, int Z);
