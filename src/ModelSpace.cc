@@ -359,7 +359,7 @@ ModelSpace::ModelSpace(int emax, string valence)
 // This is the most convenient interface
 void ModelSpace::Init(int emax, string reference, string valence)
 {
-  int Aref,Zref;
+//  int Aref,Zref;
   GetAZfromString(reference,Aref,Zref);
   map<index_t,double> hole_list = GetOrbitsAZ(Aref,Zref);
   Init(emax,hole_list,valence);
@@ -367,12 +367,9 @@ void ModelSpace::Init(int emax, string reference, string valence)
 
 void ModelSpace::Init(int emax, map<index_t,double> hole_list, string valence)
 {
-  int Aref,Zref,Ac,Zc;
+  int Ac,Zc;
   vector<index_t> valence_list, core_list;
-  map<index_t,double> core_map;
-
-//  GetAZfromString(reference,Aref,Zref);
-//  hole_list = GetOrbitsAZ(Aref,Zref);
+//  map<index_t,double> core_map;
 
   if (valence == "0hw-shell")
   {
@@ -393,8 +390,9 @@ void ModelSpace::Init(int emax, map<index_t,double> hole_list, string valence)
        GetAZfromString(valence,Ac,Zc);
     }
   
-    core_map = GetOrbitsAZ(Ac,Zc);
-    for (auto& it_core : core_map) core_list.push_back(it_core.first);
+    //core_map = GetOrbitsAZ(Ac,Zc);
+    //for (auto& it_core : core_map) core_list.push_back(it_core.first);
+    for (auto& it_core : GetOrbitsAZ(Ac,Zc) ) core_list.push_back(it_core.first);
   }
 
   target_mass = Aref;
@@ -437,26 +435,16 @@ void ModelSpace::Init_occ_from_file(int emax, string valence, string occ_file)
 
   while( infile >> orb >> occ )
   {
-    if ( hole_list.find(orb) != hole_list.end() and  abs( hole_list[orb] -occ) > 1e-6)
+    if ( hole_list.find(orb) != hole_list.end() and  abs( hole_list[orb] -occ) > -1e-6) // the minus sign is for a test. Change it back.
     {
         cout << "Warning: in file " << occ_file << ", redefinition of occupation of orbit "
              << orb << "  " << hole_list[orb] << " => " << occ << endl;
     }
     cout << "from occ file: " << endl;
-    if (occ>1e-6)
-    {
-      hole_list[orb] = occ;
-      cout << orb << " " << occ << endl;
-    }
+    hole_list[orb] = occ;
+    cout << orb << " " << occ << endl;
   }
-  // Make sure things are consistent
-  double occ_sum = 0;
-  for ( auto& h : hole_list)
-  {
-    Orbit& oh = GetOrbit(h.first);
-    occ_sum += (oh.j2+1)*h.second;
-  }
-  cout << "Sum of (2j_i+1)*occ_i = " << occ_sum << endl;
+
   Init(emax,hole_list,valence);
 }
 
@@ -576,7 +564,6 @@ void ModelSpace::GetAZfromString(string str,int& A, int& Z) // TODO: accept diff
 
 // Fill A orbits with Z protons and A-Z neutrons
 // assuming a standard shell-model level ordering
-//vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)
 map<index_t,double> ModelSpace::GetOrbitsAZ(int A, int Z)
 {
   int zz = 0;
@@ -844,7 +831,6 @@ void ModelSpace::SetupKets()
         Kets[index] = Ket(GetOrbit(p),GetOrbit(q));
      }
    }
-   cout << "looping over Kets.size" << endl;
   for (index_t index=0;index<Kets.size();++index)
   {
     Ket& ket = Kets[index];
@@ -862,7 +848,8 @@ void ModelSpace::SetupKets()
     if (cvq_p+cvq_q==3)      KetIndex_qv.push_back(index); // 12
     if (cvq_p+cvq_q==4)      KetIndex_qq.push_back(index); // 22
     if (occp<OCC_CUT and occq<OCC_CUT) KetIndex_pp.push_back(index);
-    if (occp>OCC_CUT or occq>OCC_CUT)
+//    if (occp>OCC_CUT or occq>OCC_CUT)
+    if ( (occp>OCC_CUT) xor (occq>OCC_CUT) )
     {
        KetIndex_ph.push_back(index);
        Ket_occ_ph.push_back(occp*occq);
