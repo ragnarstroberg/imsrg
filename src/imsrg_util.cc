@@ -1363,7 +1363,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
   map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax)
   {
-    ModelSpace* modelspace = H.GetModelSpace();
+//    ModelSpace* modelspace = H.GetModelSpace();
     map<index_t,double> hole_list;
     cout << "GetSecondOrderOccupations : Not yet implemented" << endl;
     return hole_list;
