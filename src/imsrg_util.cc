@@ -28,6 +28,9 @@ namespace imsrg_util
       else if (opname == "HCM")           return HCM_Op(modelspace) ;
       else if (opname == "Rso")           return RpSpinOrbitCorrection(modelspace) ;
       else if (opname == "RadialOverlap") return RadialOverlap(modelspace);
+      else if (opname == "Sigma")         return Sigma_Op(modelspace);
+      else if (opname == "Sigma_p")         return Sigma_p_Op(modelspace);
+      else if (opname == "Sigma_n")         return Sigma_n_Op(modelspace);
       else if (opname.substr(0,4) == "HCM_") // GetHCM with a different frequency, ie HCM_24 for hw=24
       {
          double hw_HCM; // frequency of trapping potential
