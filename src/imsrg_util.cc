@@ -1160,8 +1160,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     for (int i=0; i<norbits; ++i)
     {
       Orbit& oi = modelspace.GetOrbit(i);
-      if (pn=="proton" and oi.tz2>0) continue
-      if (pn=="neutron" and oi.tz2<0) continue
+      if (pn=="proton" and oi.tz2>0) continue;
+      if (pn=="neutron" and oi.tz2<0) continue;
       for ( int j : ML.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
       {
         if (j<i) continue;
@@ -1267,8 +1267,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
    for (int i=0; i<norbits; ++i)
    {
      Orbit& oi = modelspace.GetOrbit(i);
-      if (pn=="proton" and oi.tz>0) continue;
-      if (pn=="neutron" and oi.tz<0) continue;
+      if (pn=="proton" and oi.tz2>0) continue;
+      if (pn=="neutron" and oi.tz2<0) continue;
       for (int j : Sig.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
       {
         Orbit& oj = modelspace.GetOrbit(j);
