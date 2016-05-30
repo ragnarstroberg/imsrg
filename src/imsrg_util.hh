@@ -25,6 +25,7 @@ namespace imsrg_util
  Operator E0Op(ModelSpace& modelspace);
  Operator ElectricMultipoleOp(ModelSpace& modelspace, int L);
  Operator MagneticMultipoleOp(ModelSpace& modelspace, int L);
+ Operator MagneticMultipoleOp_pn(ModelSpace& modelspace, int L, string pn);
  Operator Trel_Op(ModelSpace& modelspace);
  Operator TCM_Op(ModelSpace& modelspace);
  Operator HCM_Op(ModelSpace& modelspace);
@@ -46,8 +47,7 @@ namespace imsrg_util
  Operator AllowedFermi_Op(ModelSpace& modelspace);
  Operator AllowedGamowTeller_Op(ModelSpace& modelspace);
  Operator Sigma_Op(ModelSpace& modelspace);
- Operator Sigma_p_Op(ModelSpace& modelspace);
- Operator Sigma_n_Op(ModelSpace& modelspace);
+ Operator Sigma_Op_pn(ModelSpace& modelspace, string pn);
  Operator RadialOverlap(ModelSpace& modelspace);
 
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace); // This doesn't work

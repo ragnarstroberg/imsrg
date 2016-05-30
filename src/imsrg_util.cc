@@ -21,6 +21,8 @@ namespace imsrg_util
       else if (opname == "Rm2")           return Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "E2")            return ElectricMultipoleOp(modelspace,2) ;
       else if (opname == "M1")            return MagneticMultipoleOp(modelspace,1) ;
+      else if (opname == "M1p")           return MagneticMultipoleOp_pn(modelspace,1,"proton") ;
+      else if (opname == "M1n")           return MagneticMultipoleOp_pn(modelspace,1,"neutron") ;
       else if (opname == "Fermi")         return AllowedFermi_Op(modelspace) ;
       else if (opname == "GamowTeller")   return AllowedGamowTeller_Op(modelspace) ;
       else if (opname == "Iso2")          return Isospin2_Op(modelspace) ;
@@ -29,8 +31,8 @@ namespace imsrg_util
       else if (opname == "Rso")           return RpSpinOrbitCorrection(modelspace) ;
       else if (opname == "RadialOverlap") return RadialOverlap(modelspace);
       else if (opname == "Sigma")         return Sigma_Op(modelspace);
-      else if (opname == "Sigma_p")         return Sigma_p_Op(modelspace);
-      else if (opname == "Sigma_n")         return Sigma_n_Op(modelspace);
+      else if (opname == "Sigma_p")         return Sigma_Op_pn(modelspace,"proton");
+      else if (opname == "Sigma_n")         return Sigma_Op_pn(modelspace,"neutron");
       else if (opname.substr(0,4) == "HCM_") // GetHCM with a different frequency, ie HCM_24 for hw=24
       {
          double hw_HCM; // frequency of trapping potential
@@ -1138,6 +1140,13 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   /// Returns a reduced magnetic multipole operator with units \f$ \mu_{N}\f$ fm\f$ ^{\lambda-1} \f$
   Operator MagneticMultipoleOp(ModelSpace& modelspace, int L)
   {
+    return MagneticMultipoleOp_pn(modelspace,L,"both");
+  }
+
+  /// Returns a reduced magnetic multipole operator with units \f$ \mu_{N}\f$ fm\f$ ^{\lambda-1} \f$
+  /// This version allows for the selection of just proton or just neutron contributions, or both.
+  Operator MagneticMultipoleOp_pn(ModelSpace& modelspace, int L, string pn)
+  {
     double gl[2] = {1.,0.};
     double gs[2] = {5.586, -3.826};
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*(L-1));
@@ -1151,6 +1160,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     for (int i=0; i<norbits; ++i)
     {
       Orbit& oi = modelspace.GetOrbit(i);
+      if (pn=="proton" and oi.tz2>0) continue
+      if (pn=="neutron" and oi.tz2<0) continue
       for ( int j : ML.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
       {
         if (j<i) continue;
@@ -1165,7 +1176,6 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     }
     return ML;
   }
-
 
 /// Evaluate the radial integral \f[
 /// \tilde{\mathcal{R}}^{\lambda}_{ab} = \int_{0}^{\infty} dx \tilde{g}_{n_a\ell_a}(x)x^{\lambda+2}\tilde{g}_{n_b\ell_b}(x)
@@ -1245,52 +1255,20 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
  /// Pauli spin operator \f[ \langle f \| \sigma \| i \rangle \f]
  Operator Sigma_Op(ModelSpace& modelspace)
  {
+   return Sigma_Op_pn(modelspace,"both");
+ }
+
+ /// Pauli spin operator \f[ \langle f \| \sigma \| i \rangle \f]
+ Operator Sigma_Op_pn(ModelSpace& modelspace, string pn)
+ {
    Operator Sig(modelspace,1,0,0,2);
    Sig.SetHermitian();
    int norbits = modelspace.GetNumberOrbits();
    for (int i=0; i<norbits; ++i)
    {
      Orbit& oi = modelspace.GetOrbit(i);
-      for (int j : Sig.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
-      {
-        Orbit& oj = modelspace.GetOrbit(j);
-        if (oi.n!=oj.n or oi.l != oj.l or oi.tz2==oj.tz2) continue;
-        double sixj = modelspace.GetSixJ(0.5,0.5,1.0,oj.j2/2.,oi.j2/2.,oi.l);
-        double M_sig = 2 * modelspace.phase(oi.l+oi.j2/2.0+1.5) * sqrt((oi.j2+1)*(oj.j2+1)) * sqrt(1.5) * sixj;
-        Sig.OneBody(i,j) = M_sig;
-      }
-   } 
-   return Sig;
- }
-
- /// Sigma operator acting on protons
- Operator Sigma_p_Op(ModelSpace& modelspace)
- {
-   Operator Sig(modelspace,1,0,0,2);
-   Sig.SetHermitian();
-   for ( auto& i: modelspace.proton_orbits )
-   {
-     Orbit& oi = modelspace.GetOrbit(i);
-      for (int j : Sig.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
-      {
-        Orbit& oj = modelspace.GetOrbit(j);
-        if (oi.n!=oj.n or oi.l != oj.l or oi.tz2==oj.tz2) continue;
-        double sixj = modelspace.GetSixJ(0.5,0.5,1.0,oj.j2/2.,oi.j2/2.,oi.l);
-        double M_sig = 2 * modelspace.phase(oi.l+oi.j2/2.0+1.5) * sqrt((oi.j2+1)*(oj.j2+1)) * sqrt(1.5) * sixj;
-        Sig.OneBody(i,j) = M_sig;
-      }
-   } 
-   return Sig;
- }
-
- /// Sigma operator acting on neutrons
- Operator Sigma_n_Op(ModelSpace& modelspace)
- {
-   Operator Sig(modelspace,1,0,0,2);
-   Sig.SetHermitian();
-   for ( auto& i: modelspace.neutron_orbits )
-   {
-     Orbit& oi = modelspace.GetOrbit(i);
+      if (pn=="proton" and oi.tz>0) continue;
+      if (pn=="neutron" and oi.tz<0) continue;
       for (int j : Sig.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
       {
         Orbit& oj = modelspace.GetOrbit(j);
