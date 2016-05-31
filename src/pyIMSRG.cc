@@ -252,6 +252,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("AllowedGamowTeller_Op",             imsrg_util::AllowedGamowTeller_Op);
    def("ElectricMultipoleOp",             imsrg_util::ElectricMultipoleOp);
    def("MagneticMultipoleOp",             imsrg_util::MagneticMultipoleOp);
+   def("Sigma_Op", imsrg_util::Sigma_Op);
    def("Isospin2_Op",      imsrg_util::Isospin2_Op);
    def("HO_density",       imsrg_util::HO_density);
    def("GetOccupationsHF", imsrg_util::GetOccupationsHF);

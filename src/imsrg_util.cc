@@ -1118,6 +1118,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
 
   /// Returns a reduced electric multipole operator with units \f$ e\f$ fm\f$^{\lambda} \f$
+  /// See Suhonen eq. (6.23)
   Operator ElectricMultipoleOp(ModelSpace& modelspace, int L)
   {
     Operator EL(modelspace, L,0,L%2,2);
@@ -1125,12 +1126,14 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     for (int i : modelspace.proton_orbits)
     {
       Orbit& oi = modelspace.GetOrbit(i);
+      double ji = 0.5*oi.j2;
       for ( int j : EL.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
       {
         if (j<i) continue;
         Orbit& oj = modelspace.GetOrbit(j);
+        double jj = 0.5*oj.j2;
         double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L) * bL ;
-        EL.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, L, oj.j2/2.0, 0.5,0, -0.5) * r2int;
+        EL.OneBody(i,j) = modelspace.phase(jj+L-0.5) * sqrt( (2*ji+1)*(2*jj+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(ji,jj, L, 0.5, -0.5,0) * r2int;
         EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
       }
     }
@@ -1145,15 +1148,14 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
   /// Returns a reduced magnetic multipole operator with units \f$ \mu_{N}\f$ fm\f$ ^{\lambda-1} \f$
   /// This version allows for the selection of just proton or just neutron contributions, or both.
+  /// See Suhonen eq. (6.24)
   Operator MagneticMultipoleOp_pn(ModelSpace& modelspace, int L, string pn)
   {
-    double gl[2] = {1.,0.};
-    double gs[2] = {5.586, -3.826};
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*(L-1));
     Operator ML(modelspace, L,0,(L+1)%2,2);
     if (L<1)
     {
-      cout << "A magnetic monopole operator??? Setting it to zero." << endl;
+      cout << "A magnetic monopole operator??? Setting it to zero..." << endl;
       return ML;
     }
     int norbits = modelspace.GetNumberOrbits();
@@ -1162,15 +1164,19 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
       Orbit& oi = modelspace.GetOrbit(i);
       if (pn=="proton" and oi.tz2>0) continue;
       if (pn=="neutron" and oi.tz2<0) continue;
+      double gl = oi.tz2<0 ? 1.0 : 0.0;
+      double gs = oi.tz2<0 ? 5.586 : -3.826;
+      double ji = 0.5*oi.j2;
       for ( int j : ML.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
       {
         if (j<i) continue;
         Orbit& oj = modelspace.GetOrbit(j);
+        double jj = 0.5*oj.j2;
         // multiply radial integral by b^L-1 = (hbar/mw)^L-1/2
         double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L-1) * bL;
-        int kappa = ( modelspace.phase(oi.l+(oi.j2+1)/2) * (oi.j2+1) + modelspace.phase(oj.l+(oj.j2+1)/2) * (oj.j2+1) )/2;
-        ML.OneBody(i,j) = modelspace.phase((oi.j2+1)/2) * sqrt( (oi.j2+1)*(oj.j2+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(oi.j2/2.0, L, oj.j2/2.0, 0.5,0, -0.5)
-                        * (L - kappa) *(gl[(oi.tz2+1)/2]*(1+kappa/(L+1))-0.5*gs[(oi.tz2+1)/2] )  * r2int;
+        double kappa =  modelspace.phase(oi.l+ji+0.5) * (ji+0.5)  +  modelspace.phase(oj.l+jj+0.5) * (jj+0.5);
+        ML.OneBody(i,j) = modelspace.phase(jj+L-0.5) * sqrt( (2*ji+1)*(2*jj+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(ji, jj,L, 0.5,-0.5,0)
+                        * (L - kappa) *(gl*(1+kappa/(L+1.))-0.5*gs )  * r2int ;
         ML.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * ML.OneBody(i,j);
       }
     }
