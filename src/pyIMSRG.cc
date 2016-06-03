@@ -254,6 +254,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("MagneticMultipoleOp",             imsrg_util::MagneticMultipoleOp);
    def("Sigma_Op", imsrg_util::Sigma_Op);
    def("Isospin2_Op",      imsrg_util::Isospin2_Op);
+   def("LdotS_Op",         imsrg_util::LdotS_Op);
    def("HO_density",       imsrg_util::HO_density);
    def("GetOccupationsHF", imsrg_util::GetOccupationsHF);
    def("GetOccupations",   imsrg_util::GetOccupations);
@@ -262,6 +263,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("Calculate_p1p2_all",   imsrg_util::Calculate_p1p2_all);
    def("Single_Ref_1B_Density_Matrix", imsrg_util::Single_Ref_1B_Density_Matrix);
    def("Get_Charge_Density", imsrg_util::Get_Charge_Density);
+   def("Embed1BodyIn2Body",  imsrg_util::Embed1BodyIn2Body);
 
    def("CG",AngMom::CG);
    def("ThreeJ",AngMom::ThreeJ);

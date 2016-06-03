@@ -52,7 +52,8 @@ class HartreeFock
    Operator GetNormalOrderedH();  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
    Operator GetOmega();           ///< Return a generator of the Hartree Fock transformation
    Operator GetHbare(){return Hbare;}; ///< Getter function for Hbare
-   void PrintSPE(){ F.diag().print();}; ///< Print out the single-particle energies
+   void PrintSPE(); ///< Print out the single-particle energies
+//   void PrintSPE(){ F.diag().print();}; ///< Print out the single-particle energies
    void FreeVmon();               ///< Free up the memory used to store Vmon3.
 
 };

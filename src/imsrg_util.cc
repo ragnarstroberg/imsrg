@@ -816,7 +816,6 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
 
 
-
 /// Returns
 /// \f[ r^2 = \sum_{i} r_{i}^2 \f]
 ///
@@ -1348,12 +1347,100 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   }
 
 
+  Operator LdotS_Op(ModelSpace& modelspace)
+  {
+    Operator LdS(modelspace,0,0,0,2);
+    index_t norbits = modelspace.GetNumberOrbits();
+    for (index_t i=0;i<norbits;++i)
+    {
+      Orbit& oi = modelspace.GetOrbit(i);
+      double ji = 0.5*oi.j2;
+      int li = oi.l;
+      LdS.OneBody(i,i) = 0.5* (ji*(ji+1) -li*(li+1)-0.75);
+    }
+    return LdS;
+  }
+
+
   map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax)
   {
 //    ModelSpace* modelspace = H.GetModelSpace();
     map<index_t,double> hole_list;
     cout << "GetSecondOrderOccupations : Not yet implemented" << endl;
     return hole_list;
+  }
+
+
+  /// Embeds the one-body operator of op1 in the two-body part, using mass number A in the embedding.
+  /// Note that the embedded operator is added to the two-body part, rather than overwriting.
+  /// The one-body part is left as-is.
+  void Embed1BodyIn2Body(Operator& op1, int A)
+  {
+    if (A<2)
+    {
+      cout << "Embed1BodyIn2Body: A = " << A << ". You clearly didn't mean to do that..." << endl;
+      return;
+    }
+    ModelSpace* modelspace = op1.GetModelSpace();
+    int Lambda = op1.GetJRank();
+    for (auto& itmat : op1.TwoBody.MatEl)
+    {
+      index_t ch_bra = itmat.first[0];
+      index_t ch_ket = itmat.first[1];
+      arma::mat& TBME = itmat.second;
+
+      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+      index_t nbras = tbc_bra.GetNumberKets();
+      index_t nkets = tbc_ket.GetNumberKets();
+      int Jbra = tbc_bra.J;
+      int Jket = tbc_ket.J;
+      for (index_t ibra=0;ibra<nbras;++ibra)
+      {
+        Ket& bra = tbc_bra.GetKet(ibra);
+        index_t i = bra.p;
+        index_t j = bra.q;
+        for (index_t iket=0;iket<nkets;++iket)
+        {
+          Ket& ket = tbc_ket.GetKet(iket);
+          index_t k = ket.p;
+          index_t l = ket.q;
+          double embedded_tbme = GetEmbeddedTBME(op1,i,j,k,l,Jbra,Jket,Lambda) / (A-1.0);
+          TBME(ibra,iket) += embedded_tbme;
+        }
+      }
+    }
+  }
+
+  /// Returns a normalized TBME formed by embedding the one body part of op1 in a two body operator. Assumes A=2 in the formula.
+  /// For other values of A, divide by (A-1).
+  double GetEmbeddedTBME(Operator& op1, index_t i, index_t j, index_t k, index_t l, int Jbra,int Jket, int Lambda)
+  {
+    double embedded_tbme = 0;
+    ModelSpace* modelspace = op1.GetModelSpace();
+    double ji = modelspace->GetOrbit(i).j2 * 0.5;
+    double jj = modelspace->GetOrbit(j).j2 * 0.5;
+    double jk = modelspace->GetOrbit(k).j2 * 0.5;
+    double jl = modelspace->GetOrbit(l).j2 * 0.5;
+    arma::mat& OB = op1.OneBody;
+    if (Lambda==0) // scalar => no sixJs, tbmes are not reduced.
+    {
+       if (j==l)  embedded_tbme += OB(i,k);
+       if (i==k)  embedded_tbme += OB(j,l);
+       if (i==l)  embedded_tbme -= OB(j,k) * modelspace->phase(ji+jj-Jbra);
+       if (j==k)  embedded_tbme -= OB(i,l) * modelspace->phase(ji+jj-Jbra);
+    }
+    else // Tensor => slightly more complicated, tbmes are reduced.
+    {
+       if (j==l)  embedded_tbme += OB(i,k) * modelspace->phase(ji+jj+Jket) * SixJ(Jbra,Jket,Lambda,jk,ji,jj);
+       if (i==k)  embedded_tbme += OB(j,l) * modelspace->phase(jk+jl-Jbra) * SixJ(Jbra,Jket,Lambda,jl,jj,ji);
+       if (i==l)  embedded_tbme -= OB(j,k) * modelspace->phase(ji+jj+jk+jl)* SixJ(Jbra,Jket,Lambda,jl,ji,jj);
+       if (j==k)  embedded_tbme -= OB(i,l) * modelspace->phase(Jket-Jbra)  * SixJ(Jbra,Jket,Lambda,jk,jj,ji);
+       embedded_tbme *= sqrt((2*Jbra+1)*(2*Jket+1)) * modelspace->phase(Lambda);
+    }
+    if (i==j) embedded_tbme /=SQRT2;
+    if (k==l) embedded_tbme /=SQRT2;
+    return embedded_tbme;
   }
 
 
