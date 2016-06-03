@@ -673,7 +673,16 @@ Operator HartreeFock::GetOmega()
 }
 
 
+void HartreeFock::PrintSPE()
+{
+  for (int i=0;i<modelspace->GetNumberOrbits();++i)
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    cout << fixed << setw(3) << oi.n << " " << setw(3) << oi.l << " "
+         << setw(3) << oi.j2 << " " << setw(3) << oi.tz2 << "   " << setw(10) << F(i,i) << endl;
+  }
 
+}
 
 
 

@@ -25,6 +25,7 @@ namespace imsrg_util
  Operator E0Op(ModelSpace& modelspace);
  Operator ElectricMultipoleOp(ModelSpace& modelspace, int L);
  Operator MagneticMultipoleOp(ModelSpace& modelspace, int L);
+ Operator MagneticMultipoleOp_pn(ModelSpace& modelspace, int L, string pn);
  Operator Trel_Op(ModelSpace& modelspace);
  Operator TCM_Op(ModelSpace& modelspace);
  Operator HCM_Op(ModelSpace& modelspace);
@@ -46,9 +47,9 @@ namespace imsrg_util
  Operator AllowedFermi_Op(ModelSpace& modelspace);
  Operator AllowedGamowTeller_Op(ModelSpace& modelspace);
  Operator Sigma_Op(ModelSpace& modelspace);
- Operator Sigma_p_Op(ModelSpace& modelspace);
- Operator Sigma_n_Op(ModelSpace& modelspace);
+ Operator Sigma_Op_pn(ModelSpace& modelspace, string pn);
  Operator RadialOverlap(ModelSpace& modelspace);
+ Operator LdotS_Op(ModelSpace& modelspace);
 
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace); // This doesn't work
  double Get_Charge_Density(Operator& DM, double r);  // This doesn't work
@@ -64,6 +65,8 @@ namespace imsrg_util
  vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);
  vector<double> GetDensity(vector<double>& occ, vector<double>& R, vector<int>& orbits, ModelSpace& modelspace);
 
+ void Embed1BodyIn2Body(Operator& op1, int A);
+ double GetEmbeddedTBME(Operator& op1, index_t i, index_t j, index_t k, index_t l, int Jbra,int Jket, int Lambda);
 
  void CommutatorTest(Operator& X, Operator& Y);
  void Reduce(Operator&);
