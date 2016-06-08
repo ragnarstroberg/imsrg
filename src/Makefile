@@ -66,7 +66,7 @@ install:
 	done
 	@if [ -d $(INSTDIR)/bin ] ; then \
 	  echo linking $(PWD)/imsrg++  '=>' $(INSTRDIR)/bin/imsrg++;\
-	  ln -s $(PWD)/imsrg++ $(INSTDIR)/bin/imsrg++;\
+	  ln -sf $(PWD)/imsrg++ $(INSTDIR)/bin/imsrg++;\
 	fi
 	@printf "\n\nDone installing.\n\n"
 	@echo '*********************************************************************'
@@ -105,7 +105,7 @@ pyIMSRG.o: pyIMSRG.cc
 	$(CC) -c $^ -o $@ $(FLAGS) $(INCLUDE) $(LIBS) $(PYTHONFLAGS)
 
 imsrg++: imsrg++.cc libIMSRG.so Parameters.hh
-	$(CC) $(INCLUDE) $< -o $@ $(FLAGS) -lIMSRG $(LIBS)
+	$(CC) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
 
 clean:
 	rm -f *.o *.so boost_src/*.o
