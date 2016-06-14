@@ -264,6 +264,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("Single_Ref_1B_Density_Matrix", imsrg_util::Single_Ref_1B_Density_Matrix);
    def("Get_Charge_Density", imsrg_util::Get_Charge_Density);
    def("Embed1BodyIn2Body",  imsrg_util::Embed1BodyIn2Body);
+   def("RadialIntegral",     imsrg_util::RadialIntegral);
+   def("RadialIntegral_RpowK",     imsrg_util::RadialIntegral_RpowK);
 
    def("CG",AngMom::CG);
    def("ThreeJ",AngMom::ThreeJ);
