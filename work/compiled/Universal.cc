@@ -51,6 +51,7 @@ int main(int argc, char** argv)
   double omega_norm_max = PAR.d("omega_norm_max"); 
   double denominator_delta = PAR.d("denominator_delta");
   double BetaCM = PAR.d("BetaCM");
+  double eta_criterion = PAR.d("eta_criterion");
 
   vector<string> opnames = PAR.v("Operators");
 
@@ -309,6 +310,8 @@ int main(int argc, char** argv)
   imsrgsolver.SetdOmega(domega);
   imsrgsolver.SetOmegaNormMax(omega_norm_max);
   imsrgsolver.SetODETolerance(ode_tolerance);
+  imsrgsolver.SetEtaCriterion(eta_criterion);
+
   if (denominator_delta_orbit != "none")
     imsrgsolver.SetDenominatorDeltaOrbit(denominator_delta_orbit);
 
