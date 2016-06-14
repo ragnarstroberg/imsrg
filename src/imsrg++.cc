@@ -1,3 +1,11 @@
+//////////////////////////////////////////////////////////////////////////
+///  imsrg++ : Interface for performing standard IMSRG calculations.   ///
+///            Usage is imsrg++  option1=value1 option2=value2 ...     ///
+///            To get a list of options, type imsrg++ help             ///
+///                                                                    ///
+///                                             - Ragnar Stroberg 2016 ///
+//////////////////////////////////////////////////////////////////////////
+
 #include <stdlib.h>
 #include <iostream>
 #include <iomanip>
@@ -11,49 +19,50 @@ using namespace imsrg_util;
 int main(int argc, char** argv)
 {
   // Default parameters, and everything passed by command line args.
-  Parameters PAR(argc,argv);
+  Parameters parameters(argc,argv);
+  if (parameters.help_mode) return 0;
 
-  string inputtbme = PAR.s("2bme");
-  string input3bme = PAR.s("3bme");
-  string reference = PAR.s("reference");
-  string valence_space = PAR.s("valence_space");
-  string basis = PAR.s("basis");
-  string method = PAR.s("method");
-  string flowfile = PAR.s("flowfile");
-  string intfile = PAR.s("intfile");
-  string core_generator = PAR.s("core_generator");
-  string valence_generator = PAR.s("valence_generator");
-  string fmt2 = PAR.s("fmt2");
-  string denominator_delta_orbit = PAR.s("denominator_delta_orbit");
-  string LECs = PAR.s("LECs");
-  string scratch = PAR.s("scratch");
-  string use_brueckner_bch = PAR.s("use_brueckner_bch");
-  string valence_file_format = PAR.s("valence_file_format");
+  string inputtbme = parameters.s("2bme");
+  string input3bme = parameters.s("3bme");
+  string reference = parameters.s("reference");
+  string valence_space = parameters.s("valence_space");
+  string basis = parameters.s("basis");
+  string method = parameters.s("method");
+  string flowfile = parameters.s("flowfile");
+  string intfile = parameters.s("intfile");
+  string core_generator = parameters.s("core_generator");
+  string valence_generator = parameters.s("valence_generator");
+  string fmt2 = parameters.s("fmt2");
+  string denominator_delta_orbit = parameters.s("denominator_delta_orbit");
+  string LECs = parameters.s("LECs");
+  string scratch = parameters.s("scratch");
+  string use_brueckner_bch = parameters.s("use_brueckner_bch");
+  string valence_file_format = parameters.s("valence_file_format");
+  string occ_file = parameters.s("occ_file");
 
-  int eMax = PAR.i("emax");
-  int E3max = PAR.i("e3max");
-  int lmax3 = PAR.i("lmax3");
-  int targetMass = PAR.i("A");
-  int nsteps = PAR.i("nsteps");
-  int file2e1max = PAR.i("file2e1max");
-  int file2e2max = PAR.i("file2e2max");
-  int file2lmax = PAR.i("file2lmax");
-  int file3e1max = PAR.i("file3e1max");
-  int file3e2max = PAR.i("file3e2max");
-  int file3e3max = PAR.i("file3e3max");
+  int eMax = parameters.i("emax");
+  int E3max = parameters.i("e3max");
+  int lmax3 = parameters.i("lmax3");
+  int targetMass = parameters.i("A");
+  int nsteps = parameters.i("nsteps");
+  int file2e1max = parameters.i("file2e1max");
+  int file2e2max = parameters.i("file2e2max");
+  int file2lmax = parameters.i("file2lmax");
+  int file3e1max = parameters.i("file3e1max");
+  int file3e2max = parameters.i("file3e2max");
+  int file3e3max = parameters.i("file3e3max");
 
-  double hw = PAR.d("hw");
-  double smax = PAR.d("smax");
-  double ode_tolerance = PAR.d("ode_tolerance");
-  double ds_max = PAR.d("ds_max");
-  double ds_0 = PAR.d("ds_0");
-  double domega = PAR.d("domega");
-  double omega_norm_max = PAR.d("omega_norm_max"); 
-  double denominator_delta = PAR.d("denominator_delta");
-  double BetaCM = PAR.d("BetaCM");
-  double eta_criterion = PAR.d("eta_criterion");
+  double hw = parameters.d("hw");
+  double smax = parameters.d("smax");
+  double ode_tolerance = parameters.d("ode_tolerance");
+  double dsmax = parameters.d("dsmax");
+  double ds_0 = parameters.d("ds_0");
+  double domega = parameters.d("domega");
+  double omega_norm_max = parameters.d("omega_norm_max"); 
+  double denominator_delta = parameters.d("denominator_delta");
+  double BetaCM = parameters.d("BetaCM");
 
-  vector<string> opnames = PAR.v("Operators");
+  vector<string> opnames = parameters.v("Operators");
 
   vector<Operator> ops;
 
@@ -85,6 +94,10 @@ int main(int argc, char** argv)
   rw.SetLECs_preset(LECs);
   rw.SetScratchDir(scratch);
   ModelSpace modelspace = reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space);
+  if (occ_file != "none" and occ_file != "" )
+  {
+    modelspace.Init_occ_from_file(eMax,valence_space,occ_file);
+  }
 
   if (nsteps < 0)
     nsteps = modelspace.valence.size()>0 ? 2 : 1;
@@ -164,105 +177,8 @@ int main(int argc, char** argv)
   // Calculate all the desired operators
   for (auto& opname : opnames)
   {
-           if (opname == "R2_p1")        ops.emplace_back( R2_1body_Op(modelspace,"proton") );
-      else if (opname == "R2_p2")        ops.emplace_back( R2_2body_Op(modelspace,"proton") );
-      else if (opname == "R2_n1")        ops.emplace_back( R2_1body_Op(modelspace,"neutron") );
-      else if (opname == "R2_n2")        ops.emplace_back( R2_2body_Op(modelspace,"neutron") );
-      else if (opname == "Rp2")          ops.emplace_back( Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) );
-      else if (opname == "Rn2")          ops.emplace_back( Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) );
-      else if (opname == "Rm2")          ops.emplace_back( Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) );
-      else if (opname == "E2")           ops.emplace_back( ElectricMultipoleOp(modelspace,2) );
-      else if (opname == "M1")           ops.emplace_back( MagneticMultipoleOp(modelspace,1) );
-      else if (opname == "Fermi")        ops.emplace_back( AllowedFermi_Op(modelspace) );
-      else if (opname == "GamowTeller")  ops.emplace_back( AllowedGamowTeller_Op(modelspace) );
-      else if (opname == "Iso2")         ops.emplace_back( Isospin2_Op(modelspace) );
-      else if (opname == "Sigma")        ops.emplace_back( Sigma_Op(modelspace) );
-      else if (opname == "Sigma_p")      ops.emplace_back( Sigma_p_Op(modelspace) );
-      else if (opname == "Sigma_n")      ops.emplace_back( Sigma_n_Op(modelspace) );
-      else if (opname == "R2CM")         ops.emplace_back( R2CM_Op(modelspace) );
-      else if (opname == "HCM")          ops.emplace_back( HCM_Op(modelspace) );
-      else if (opname == "Rso")          ops.emplace_back( RpSpinOrbitCorrection(modelspace) );
-      else if (opname.substr(0,4) == "HCM_") // GetHCM with a different frequency, ie HCM_24 for hw=24
-      {
-         double hw_HCM;
-//         double hw_save = modelspace.GetHbarOmega();
-         istringstream(opname.substr(4,opname.size())) >> hw_HCM;
-//         modelspace.SetHbarOmega(hw_HCM);
-//         ops.emplace_back( HCM_Op(modelspace) );
-         int A = modelspace.GetTargetMass();
-         Operator hcm = TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw*hw/HBARC/HBARC*R2CM_Op(modelspace); 
-         ops.emplace_back( hcm );
-//         modelspace.SetHbarOmega(hw_save);
-      }
-      else if (opname.substr(0,4) == "Rp2Z")
-      {
-        int Z_rp;
-        istringstream(opname.substr(4,opname.size())) >> Z_rp;
-        ops.emplace_back( Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) );
-      }
-      else if (opname.substr(0,4) == "Rn2Z")
-      {
-        int Z_rp;
-        istringstream(opname.substr(4,opname.size())) >> Z_rp;
-        ops.emplace_back( Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) );
-      }
-      else if (opname.substr(0,4) == "rhop")
-      {
-        double rr;
-        istringstream(opname.substr(4,opname.size())) >> rr;
-        ops.emplace_back( ProtonDensityAtR(modelspace,rr));
-      }
-      else if (opname.substr(0,4) == "rhon")
-      {
-        double rr;
-        istringstream(opname.substr(4,opname.size())) >> rr;
-        ops.emplace_back( NeutronDensityAtR(modelspace,rr));
-      }
-      else if (opname.substr(0,6) == "OneOcc")
-      {
-         map<char,int> lvals = {{'s',0},{'p',1},{'d',2},{'f',3},{'g',4},{'h',5}};
-         char pn,lspec;
-         int n,l,j,t;
-         istringstream(opname.substr(6,1)) >> pn;
-         istringstream(opname.substr(7,1)) >> n;
-         istringstream(opname.substr(8,1)) >> lspec;
-         istringstream(opname.substr(9,opname.size())) >> j;
-         l = lvals[lspec];
-         t = pn == 'p' ? -1 : 1;
-         ops.emplace_back( NumberOp(modelspace,n,l,j,t) );
-      }
-      else if (opname.substr(0,6) == "AllOcc")
-      {
-         map<char,int> lvals = {{'s',0},{'p',1},{'d',2},{'f',3},{'g',4},{'h',5}};
-         char pn,lspec;
-         int l,j,t;
-         istringstream(opname.substr(6,1)) >> pn;
-         istringstream(opname.substr(7,1)) >> lspec;
-         istringstream(opname.substr(8,opname.size())) >> j;
-         l = lvals[lspec];
-         t = pn == 'p' ? -1 : 1;
-         ops.emplace_back( NumberOpAlln(modelspace,l,j,t) );
-      }
-      else if (opname.substr(0,9) == "protonFBC")
-      {
-         int nu;
-         istringstream(opname.substr(9,opname.size())) >> nu;
-         ops.emplace_back( FourierBesselCoeff( modelspace, nu, 8.0, modelspace.proton_orbits) );
-      }
-      else if (opname.substr(0,10) == "neutronFBC")
-      {
-         int nu;
-         istringstream(opname.substr(10,opname.size())) >> nu;
-         ops.emplace_back( FourierBesselCoeff( modelspace, nu, 8.0, modelspace.neutron_orbits) );
-      }
-      else //need to remove from the list
-      {
-         cout << "Unknown operator: " << opname << endl;
-      }
+    ops.emplace_back( imsrg_util::OperatorFromString(modelspace,opname) );
   }
-
-
-  
 
   for (auto& op : ops)
   {
@@ -283,9 +199,8 @@ int main(int argc, char** argv)
     cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << endl; 
     cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
   }
-  for (int i=0;i<ops.size();++i)
+  for (index_t i=0;i<ops.size();++i)
   {
-    Operator& op = ops[i];
     cout << opnames[i] << " = " << ops[i].ZeroBody << endl;
   }
   
@@ -309,12 +224,11 @@ int main(int argc, char** argv)
   imsrgsolver.SetSmax(smax);
   imsrgsolver.SetFlowFile(flowfile);
   imsrgsolver.SetDs(ds_0);
+  imsrgsolver.SetDsmax(dsmax);
   imsrgsolver.SetDenominatorDelta(denominator_delta);
   imsrgsolver.SetdOmega(domega);
   imsrgsolver.SetOmegaNormMax(omega_norm_max);
   imsrgsolver.SetODETolerance(ode_tolerance);
-  imsrgsolver.SetEtaCriterion(eta_criterion);
-
   if (denominator_delta_orbit != "none")
     imsrgsolver.SetDenominatorDeltaOrbit(denominator_delta_orbit);
 
@@ -350,7 +264,6 @@ int main(int argc, char** argv)
   // If we're doing targeted normal ordering 
   // we now re-normal order wrt to the core
   // and do any remaining flow.
-//  if (reference != "default"  and reference != valence_space)
   ModelSpace ms2(modelspace);
   bool renormal_order = false;
   if (modelspace.valence.size() > 0 )
@@ -368,7 +281,6 @@ int main(int argc, char** argv)
       }
     }
   }
-//  if ( modelspace.core != modelspace.holes )
   if ( renormal_order )
   {
 
@@ -410,22 +322,18 @@ int main(int argc, char** argv)
   // interaction files to disk.
   if (modelspace.valence.size() > 0)
   {
-    if (valence_file_format == "antoine")
+    if (valence_file_format == "antoine") // this is still being tested...
     {
       rw.WriteAntoine_int(imsrgsolver.GetH_s(),intfile+".ant");
       rw.WriteAntoine_input(imsrgsolver.GetH_s(),intfile+".inp",modelspace.GetAref(),modelspace.GetZref());
     }
-//    else
-//    {
-      rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
-      rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
-//    }
+    rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
+    rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
 
     if (method == "magnus")
     {
-       for (int i=0;i<ops.size();++i)
+       for (index_t i=0;i<ops.size();++i)
        {
-//          ops[i] = imsrgsolver.Transform(ops[i]);
           if ((ops[i].GetJRank()+ops[i].GetTRank()+ops[i].GetParity())<1)
           {
             rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
@@ -441,7 +349,7 @@ int main(int argc, char** argv)
   else // single ref. just print the zero body pieces out. (maybe check if its magnus?)
   {
     cout << "Core Energy = " << setprecision(6) << imsrgsolver.GetH_s().ZeroBody << endl;
-    for (int i=0;i<ops.size();++i)
+    for (index_t i=0;i<ops.size();++i)
     {
       Operator& op = ops[i];
       cout << opnames[i] << " = " << ops[i].ZeroBody << endl;
@@ -454,8 +362,6 @@ int main(int argc, char** argv)
       }
     }
   }
-
-
 
 
   Hbare.PrintTimes();

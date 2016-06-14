@@ -359,12 +359,17 @@ ModelSpace::ModelSpace(int emax, string valence)
 // This is the most convenient interface
 void ModelSpace::Init(int emax, string reference, string valence)
 {
-  int Aref,Zref,Ac,Zc;
-  vector<index_t> valence_list, core_list;
-  map<index_t,double> hole_list,core_map;
-
+//  int Aref,Zref;
   GetAZfromString(reference,Aref,Zref);
-  hole_list = GetOrbitsAZ(Aref,Zref);
+  map<index_t,double> hole_list = GetOrbitsAZ(Aref,Zref);
+  Init(emax,hole_list,valence);
+}
+
+void ModelSpace::Init(int emax, map<index_t,double> hole_list, string valence)
+{
+  int Ac,Zc;
+  vector<index_t> valence_list, core_list;
+//  map<index_t,double> core_map;
 
   if (valence == "0hw-shell")
   {
@@ -385,8 +390,9 @@ void ModelSpace::Init(int emax, string reference, string valence)
        GetAZfromString(valence,Ac,Zc);
     }
   
-    core_map = GetOrbitsAZ(Ac,Zc);
-    for (auto& it_core : core_map) core_list.push_back(it_core.first);
+    //core_map = GetOrbitsAZ(Ac,Zc);
+    //for (auto& it_core : core_map) core_list.push_back(it_core.first);
+    for (auto& it_core : GetOrbitsAZ(Ac,Zc) ) core_list.push_back(it_core.first);
   }
 
   target_mass = Aref;
@@ -412,19 +418,51 @@ void ModelSpace::Init(int emax, vector<string> hole_list, vector<string> core_li
   Init(emax, hole_map, String2Index(core_list), String2Index(valence_list) );
 }
 
+
+void ModelSpace::Init_occ_from_file(int emax, string valence, string occ_file)
+{
+  index_t orb;
+  double occ;
+  map<index_t,double> hole_list;
+
+  ifstream infile(occ_file);
+  if (!infile.good())
+  {
+    cout << endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+    cout << "Trouble reading file: " << occ_file << endl;
+    cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl << endl;
+  }
+
+  while( infile >> orb >> occ )
+  {
+    if ( hole_list.find(orb) != hole_list.end() and  abs( hole_list[orb] -occ) > -1e-6) // the minus sign is for a test. Change it back.
+    {
+        cout << "Warning: in file " << occ_file << ", redefinition of occupation of orbit "
+             << orb << "  " << hole_list[orb] << " => " << occ << endl;
+    }
+    cout << "from occ file: " << endl;
+    hole_list[orb] = occ;
+    cout << orb << " " << occ << endl;
+  }
+
+  Init(emax,hole_list,valence);
+}
+
+
 // This is the Init which should inevitably be called
 void ModelSpace::Init(int emax, map<index_t,double> hole_list, vector<index_t> core_list, vector<index_t> valence_list)
 {
-   Orbits.clear();
-   particles.clear();
-   holes.clear();
-   core.clear();
-   valence.clear();
-   qspace.clear();
-   proton_orbits.clear();
-   neutron_orbits.clear();
-   OneBodyChannels.clear();
+   ClearVectors();
    emax = Emax;
+   cout << "core list: ";
+   for (auto& c : core_list) cout << c << " ";
+   cout << endl;
+   cout << "valence list: ";
+   for (auto& v : valence_list) cout << v << " ";
+   cout << endl;
+   cout << "hole list: ";
+   for (auto& h : hole_list) cout << h.first << " ( " << h.second << " ) ";
+   cout << endl;
 
    // Make sure no orbits are both core and valence
    for (auto& c : core_list)
@@ -526,7 +564,6 @@ void ModelSpace::GetAZfromString(string str,int& A, int& Z) // TODO: accept diff
 
 // Fill A orbits with Z protons and A-Z neutrons
 // assuming a standard shell-model level ordering
-//vector<index_t> ModelSpace::GetOrbitsAZ(int A, int Z)
 map<index_t,double> ModelSpace::GetOrbitsAZ(int A, int Z)
 {
   int zz = 0;
@@ -811,7 +848,8 @@ void ModelSpace::SetupKets()
     if (cvq_p+cvq_q==3)      KetIndex_qv.push_back(index); // 12
     if (cvq_p+cvq_q==4)      KetIndex_qq.push_back(index); // 22
     if (occp<OCC_CUT and occq<OCC_CUT) KetIndex_pp.push_back(index);
-    if (occp>OCC_CUT or occq>OCC_CUT)
+//    if (occp>OCC_CUT or occq>OCC_CUT)
+    if ( (occp>OCC_CUT) xor (occq>OCC_CUT) )
     {
        KetIndex_ph.push_back(index);
        Ket_occ_ph.push_back(occp*occq);
@@ -863,6 +901,16 @@ void ModelSpace::ClearVectors()
    KetIndex_qv.clear();
    KetIndex_qq.clear();
    Ket_occ_hh.clear();
+   Ket_occ_ph.clear();
+   Ket_unocc_hh.clear();
+   Ket_unocc_ph.clear();
+   for (index_t Tz=0; Tz<3; ++Tz)
+   {
+     for (index_t parity=0;parity<2; ++parity)
+     {
+        MonopoleKets[Tz][parity].clear();
+     }
+   }
 
    Orbits.clear();
    Kets.clear();

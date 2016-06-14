@@ -27,8 +27,10 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
         if (generator_type == "wegner")           ConstructGenerator_Wegner(); // never tested, probably doesn't work.
    else if (generator_type == "white")            ConstructGenerator_White();
    else if (generator_type == "atan")             ConstructGenerator_Atan();
+   else if (generator_type == "imaginary-time")            ConstructGenerator_ImaginaryTime();
    else if (generator_type == "shell-model")      ConstructGenerator_ShellModel();
    else if (generator_type == "shell-model-atan") ConstructGenerator_ShellModel_Atan();
+   else if (generator_type == "shell-model-imaginary-time")            ConstructGenerator_ShellModel_ImaginaryTime();
    else if (generator_type == "hartree-fock")     ConstructGenerator_HartreeFock();
    else
    {
@@ -202,6 +204,42 @@ void Generator::ConstructGenerator_Atan()
 
 
 
+/// Imaginary time generator \f[ \eta = sgn(\Delta) h_{od} \]
+void Generator::ConstructGenerator_ImaginaryTime()
+{
+   // One body piece -- eliminate ph bits
+   for ( auto& a : modelspace->core)
+   {
+      for ( auto& i : VectorUnion(modelspace->valence,modelspace->qspace) )
+      {
+         double denominator = Get1bDenominator(i,a);
+         if (denominator==0) denominator = 1;
+         Eta->OneBody(i,a) += H->OneBody(i,a) *denominator/abs(denominator);
+         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+      }
+   }
+
+   // Two body piece -- eliminate pp'hh' bits
+   for (int ch=0;ch<Eta->nChannels;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
+      arma::mat& H2 = H->TwoBody.GetMatrix(ch);
+      for ( auto& iket : tbc.GetKetIndex_cc() )
+      {
+         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+            if (denominator==0) denominator = 1;
+            ETA2(ibra,iket) += H2(ibra,iket) * denominator / abs(denominator);
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+    }
+}
+
+
+
 void Generator::ConstructGenerator_ShellModel()
 {
    // One body piece -- make sure the valence one-body part is diagonal
@@ -305,6 +343,63 @@ void Generator::ConstructGenerator_ShellModel_Atan()
     }
 }
 
+
+
+
+
+/// Imaginary time generator for a valence space
+void Generator::ConstructGenerator_ShellModel_ImaginaryTime()
+{
+   // One body piece -- make sure the valence one-body part is diagonal
+   for ( auto& a : VectorUnion(modelspace->core, modelspace->valence))
+   {
+      for (auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
+      {
+         if (i==a) continue;
+         double denominator = Get1bDenominator(i,a);
+         if (denominator==0) denominator = 1;
+         Eta->OneBody(i,a) += H->OneBody(i,a) *denominator/abs(denominator);
+         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+      }
+   }
+
+
+   // Two body piece -- eliminate ppvh and pqvv  
+
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
+      arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
+
+      // Decouple the core
+      for ( auto& iket : VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
+      {
+         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+            if (denominator==0) denominator = 1;
+            ETA2(ibra,iket) = H2(ibra,iket) * denominator / abs(denominator);
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
+      }
+
+      // Decouple the valence space
+      for ( auto& iket : tbc.GetKetIndex_vv() )
+      {
+         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+            if (denominator==0) denominator = 1;
+            ETA2(ibra,iket) = H2(ibra,iket) * denominator / abs(denominator);
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+
+    }
+}
 
 
 
