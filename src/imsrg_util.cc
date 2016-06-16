@@ -1194,14 +1194,17 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 /// To obtain the radial integral for some other oscillator length, multiply by \f$ b^{\lambda} \f$.
 /// This implementation uses eq (6.41) from Suhonen.
 /// Note this is only valid for \f$ \ell_a+\ell_b+\lambda\f$ = even.
+/// If \f$ \ell_a+\ell_b+\lambda\f$ is odd, RadialIntegral_RpowK() is called.
   double RadialIntegral(int na, int la, int nb, int lb, int L)
   {
+    if ((la+lb+L)%2!=0) return RadialIntegral_RpowK(na,la,nb,lb,L);
     int tau_a = max((lb-la+L)/2,0);
     int tau_b = max((la-lb+L)/2,0);
     int sigma_min = max(max(na-tau_a,nb-tau_b),0);
     int sigma_max = min(na,nb);
   
-    double term1 = AngMom::phase(na+nb) * gsl_sf_fact(tau_a)*gsl_sf_fact(tau_b) * sqrt(gsl_sf_fact(na)*gsl_sf_fact(nb) / (gsl_sf_gamma(na+la+1.5)*gsl_sf_gamma(nb+lb+1.5) ) );
+    double term1 = AngMom::phase(na+nb) * gsl_sf_fact(tau_a)*gsl_sf_fact(tau_b) * sqrt(gsl_sf_fact(na)*gsl_sf_fact(nb)
+                   / (gsl_sf_gamma(na+la+1.5)*gsl_sf_gamma(nb+lb+1.5) ) );
     double term2 = 0;
     for (int sigma=sigma_min; sigma<=sigma_max; ++sigma)
     {
@@ -1213,7 +1216,48 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
 
 
+ double RadialIntegral_RpowK(int na, int la, int nb, int lb, int k)
+ {
+   double I = 0;
+   int pmin = (la+lb)/2;
+   int pmax = pmin + na + nb;
+   for (int p=pmin;p<=pmax;++p)
+   {
+      I += TalmiB(na,la,nb,lb,p) * TalmiI(p,k);
+   }
+   return I;
+ }
 
+/// General Talmi integral for a potential r**k
+/// 1/gamma(p+3/2) * 2*INT dr r**2 r**2p r**k exp(-r**2/b**2)
+/// This is valid for (2p+3+k) > 0. The Gamma function diverges for non-positive integers.
+ double TalmiI(int p, double k)
+ {
+   return gsl_sf_gamma(p+1.5+0.5*k) / gsl_sf_gamma(p+1.5);
+ }
+
+/// Calculate B coefficient for Talmi integral. Formula given in Brody and Moshinsky
+/// "Tables of Transformation Brackets for Nuclear Shell-Model Calculations"
+ double TalmiB(int na, int la, int nb, int lb, int p)
+ {
+   if ( (la+lb)%2>0 ) return 0;
+   
+   int q = (la+lb)/2;
+   double B1 = AngMom::phase(p-q) * gsl_sf_fact(2*p+1)/gsl_sf_fact(p)/pow(2,(na+nb))
+              * sqrt( gsl_sf_fact(na)*gsl_sf_fact(nb) * gsl_sf_fact(2*na+2*la+1) * gsl_sf_fact(2*nb+2*lb+1) )
+             / sqrt( gsl_sf_fact(na+la) * gsl_sf_fact(nb+lb) );
+   
+   double B2 = 0;
+   int kmin = max(0, p-q-nb);
+   int kmax = min(na, p-q);
+   for (int k=kmin;k<=kmax;++k)
+   {
+      B2  += gsl_sf_fact(la+k) * gsl_sf_fact(p-int((la-lb)/2)-k)
+             / ( gsl_sf_fact(k) * gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k) * gsl_sf_fact(2*p-la+lb-2*k+1) )
+              / ( gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
+   }
+   return B1 * B2;
+ }
 
   Operator AllowedFermi_Op(ModelSpace& modelspace)
   {
