@@ -235,11 +235,31 @@ int main(int argc, char** argv)
   if (nsteps > 1) // two-step decoupling, do core first
   {
     imsrgsolver.SetGenerator(core_generator);
+    if (core_generator.find("imaginary")!=string::npos)
+    {
+     if (ds_0>1e-2)
+     {
+       ds_0 = 1e-4;
+       dsmax = 1e-2;
+       imsrgsolver.SetDs(ds_0);
+       imsrgsolver.SetDsmax(dsmax);
+     }
+    }
     imsrgsolver.Solve();
     if (method == "magnus") smax *= 2;
   }
 
   imsrgsolver.SetGenerator(valence_generator);
+  if (valence_generator.find("imaginary")!=string::npos)
+  {
+   if (ds_0>1e-2)
+   {
+     ds_0 = 1e-4;
+     dsmax = 1e-2;
+     imsrgsolver.SetDs(ds_0);
+     imsrgsolver.SetDsmax(dsmax);
+   }
+  }
   imsrgsolver.SetSmax(smax);
   imsrgsolver.Solve();
 
@@ -359,6 +379,10 @@ int main(int argc, char** argv)
          int A = modelspace.GetTargetMass();
          cout << " IMSRG point proton radius = " << sqrt( op.ZeroBody ) << endl; 
          cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
+      }
+      if (op.GetJRank()>0) // if it's a tensor, you probably want the full operator
+      {
+        rw.WriteOperatorHuman(op,intfile+opnames[i]+".op");
       }
     }
   }

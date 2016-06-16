@@ -228,6 +228,7 @@ unordered_map<unsigned long long int,double> ModelSpace::MoshList;
 map<string,vector<string>> ModelSpace::ValenceSpaces  {
 { "s-shell"  ,         {"vacuum", "p0s1","n0s1"}},
 { "p-shell"  ,         {"He4", "p0p3","n0p3","p0p1","n0p1"}},
+{ "sp-shell"  ,        {"vacuum", "p0s1","n0s1","p0p3","n0p3","p0p1","n0p1"}},
 { "sd-shell"  ,        {"O16", "p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"}},
 { "psd-shell"  ,       {"He4", "p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p0d3","n0d3","p1s1","n1s1"}},
 { "psdNR-shell"  ,     {"He10","p0p3","p0p1","n0d5","n0d3","n1s1"}}, // protons in p shell, neutrons in sd shell (NR is for neutron-rich)
