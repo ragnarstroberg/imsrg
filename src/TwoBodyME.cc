@@ -1,5 +1,6 @@
 
 #include "TwoBodyME.hh"
+#include "AngMom.hh"
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
 #endif
@@ -523,6 +524,80 @@ double TwoBodyME::GetTBMEmonopole(Ket & bra, Ket & ket) const
 {
    return GetTBMEmonopole(bra.p,bra.q,ket.p,ket.q);
 }
+
+
+
+/// Take a matrix element expressed in relative/CM frame, and add it to the lab frame TBME.
+void TwoBodyME::AddToTBME_RelCM(int n_bra, int lam_bra, int N_bra, int LAM_bra, int L_bra, int S_bra, int J_bra, int T_bra, int Tz_bra,
+                                 int n_ket, int lam_ket, int N_ket, int LAM_ket, int L_ket, int S_ket, int J_ket, int T_ket, int Tz_ket, double Vrel, double Vcm)
+{
+  index_t ch_bra = modelspace->GetTwoBodyChannelIndex( J_bra, (lam_bra+LAM_bra)%2, Tz_bra);
+  index_t ch_ket = modelspace->GetTwoBodyChannelIndex( J_ket, (lam_ket+LAM_ket)%2, Tz_ket);
+
+  TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel( ch_bra );
+  TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel( ch_ket );
+
+  auto LabBras = GetLabFrameKets(n_bra,lam_bra,N_bra,LAM_bra,L_bra,S_bra,J_bra,T_bra,Tz_bra);
+  auto LabKets = GetLabFrameKets(n_ket,lam_ket,N_ket,LAM_ket,L_ket,S_ket,J_ket,T_ket,Tz_ket);
+
+  for (auto labbra : LabBras)
+  {
+    index_t ibra = tbc_bra.GetLocalIndex(labbra.first);
+    for (auto labket : LabKets)
+    {
+      index_t iket = tbc_ket.GetLocalIndex(labket.first);
+      if ( (N_bra==N_ket) and (LAM_bra==LAM_ket) )
+      {
+        AddToTBME(ch_bra, ch_ket, ibra, iket, labket.second*labbra.second*Vrel);
+      }
+      if ( (n_bra==n_ket) and (lam_bra==lam_ket) )
+      {
+        AddToTBME(ch_bra, ch_ket, ibra, iket, labket.second*labbra.second*Vcm);
+      }
+    }
+  }
+}
+
+
+/// For a given ket expressed in relative/CM coordinates, return the indices of all the lab frame kets with non-zero overlap, as well as the overlap
+vector<pair<int,double>> TwoBodyME::GetLabFrameKets(int n, int lam, int N, int LAM, int L, int S, int J, int T, int Tz)
+{
+  vector<pair<int,double>> LabKets;
+  int e12 = 2*(n+N)+lam+LAM;
+  for (int l1=0; l1<=e12;++l1)
+  {
+    for (int l2=abs(L-l1)+(lam+LAM+L)%2; l2<=min(e12-l1,l1+L); l2+=2) // triangle condition and parity
+    {
+      for (int twoj1=2*l1-1; twoj1<=2*l1+1; twoj1+=2)
+      {
+        for (int twoj2=2*l2-1; twoj2<=2*l2+1; twoj2+=2)
+        {
+          if ( abs(twoj1-twoj2)>2*J or (twoj1+twoj2)<2*J) continue; // triangle condition
+          double normninej = (twoj1+1)*(twoj2+1)*(2*L+1)*(2*S+1)*modelspace->GetNineJ(l1,0.5,twoj1*0.5, l2,0.5,twoj1*0.5, L, S, J);
+          for (int n1=0; n1<=(e12-l1-l2)/2; n1++)
+          {
+            int n2 = (e12-l1-l2)/2-n1;
+            double moshinsky = modelspace->GetMoshinsky( N, LAM, n, lam, n1, l1, n2, l2, L);
+            for (int twotz1=(Tz<1?-1:1); twotz1<=(Tz<0?-1:1); twotz1+=2)
+            {
+              int twotz2 = 2*Tz-twotz1;
+              double IsospinCG = AngMom::CG(0.5,0.5*twotz1,0.5,0.5*twotz2,T,Tz);
+              int ketindex = modelspace->GetKetIndex( modelspace->GetOrbitIndex(n1,l1,twoj1,twotz1), modelspace->GetOrbitIndex(n2,l2,twoj2,twotz2) );
+              double overlap = normninej*moshinsky*IsospinCG;
+              if ( abs(overlap)>1e-7 )
+              {
+                LabKets.push_back( make_pair(ketindex, overlap) );
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return LabKets;
+}
+
+
 
 void TwoBodyME::Erase()
 {

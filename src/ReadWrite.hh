@@ -54,6 +54,7 @@ class ReadWrite
    void WriteTwoBody_Oslo(string filename, Operator& Hbare);
    void ReadTwoBodyEngel(string filename, Operator& Op);
    void ReadTwoBodyEngel_from_stream(istream& infile, Operator& Op);
+   void ReadRelCMOpFromJavier( string statefile, string MEfile, Operator& Op);
    void SetLECs(double c1, double c3, double c4, double cD, double cE);
    array<double,5> GetLECs(){return LECs;};
    void SetLECs_preset(string);

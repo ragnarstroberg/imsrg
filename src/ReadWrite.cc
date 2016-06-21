@@ -2937,6 +2937,40 @@ void ReadWrite::ReadTwoBodyEngel_from_stream( istream& infile, Operator& Op)
 
 
 
+void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, Operator& Op)
+{
+  ifstream statefile(statefilename);
+  ifstream MEfile(MEfilename);
+
+
+  // First, read in the file which lists the state labelling.
+  struct state_t {  int e12; int n; int N; int J; int S; int L; int lam; int LAM; int T; int Tz; };
+  state_t tmp_state;            // temporary struct to read the data in.
+  vector<state_t> statelist(1); // initialize with an empty state, since Javier starts indexing at 1 (boo Fortan).
+  statefile.ignore(500,'\n');   // skip the first line
+  int index;
+  while( statefile >> index >> tmp_state.e12 >> tmp_state.n >> tmp_state.N >> tmp_state.J >> tmp_state.S >> tmp_state.L >> tmp_state.lam >> tmp_state.LAM >> tmp_state.T >> tmp_state.Tz )
+  {
+     statelist.push_back(tmp_state); // add it to the list
+  }
+  statefile.close();
+
+
+  // Second, read the file which contains the relative/cm matrix elements.
+  int bra_index, ket_index;
+  double MErel,MEcm;
+  for (int i=0;i<6;i++) MEfile.ignore(500,'\n'); // skip header info, since I don't do anything with it (for now).
+  while( MEfile >> bra_index >> ket_index >> MErel >> MEcm )
+  {
+    state_t& bra = statelist[bra_index];
+    state_t& ket = statelist[ket_index];
+    Op.TwoBody.AddToTBME_RelCM(bra.n, bra.lam, bra.N, bra.LAM, bra.L, bra.S, bra.J, bra.T, bra.Tz, 
+                               ket.n, ket.lam, ket.N, ket.LAM, ket.L, ket.S, ket.J, ket.T, ket.Tz, MErel, MEcm);
+  }
+
+}
+
+
 void ReadWrite::SetLECs(double c1, double c3, double c4, double cD, double cE)
 {
    LECs = {c1,c3,c4,cD,cE};
