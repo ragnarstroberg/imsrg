@@ -80,6 +80,7 @@ map<string,int> Parameters::int_par = {
 
 map<string,vector<string>> Parameters::vec_par = {
  {"Operators", {} },
+ {"SPWF",{} }, // single-particle wave functions in HF basis
 };
 
 

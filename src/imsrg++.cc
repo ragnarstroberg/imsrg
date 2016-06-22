@@ -65,6 +65,7 @@ int main(int argc, char** argv)
   vector<string> opnames = parameters.v("Operators");
 
   vector<Operator> ops;
+  vector<string> spwf = parameters.v("SPWF");
 
 
   // test 2bme file
@@ -159,6 +160,22 @@ int main(int argc, char** argv)
     Hbare = hf.GetNormalOrderedH();
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
+
+  int n_radial_points = 40;
+  double Rmax = 10.0;
+  vector<index_t> spwf_indices = modelspace.String2Index(spwf);
+  vector<double> R(n_radial_points);
+  vector<double> PSI(n_radial_points);
+  for ( index_t i=0; i< spwf.size(); ++i)
+  {
+    for (int rstep=0;rstep<n_radial_points;++rstep) R[rstep] = Rmax/n_radial_points * rstep;
+    hf.GetRadialWF(spwf_indices[i], R, PSI);
+    ofstream wf_file (intfile + "_spwf_" + spwf[i] + ".dat");
+    for ( index_t rstep=0; rstep<R.size(); ++rstep)  wf_file << fixed << setw(10) << setprecision(7) << R[rstep] << "   " << setw(10) << setprecision(7) << PSI[rstep] << endl;
+    cout << "About to close wf file" << endl;
+//    wf_file.close();
+  }
+  cout << "Done with SPWF" << endl;
 
   Hbare -= BetaCM * 1.5*hw;
   cout << "Hbare 0b = " << Hbare.ZeroBody << endl;

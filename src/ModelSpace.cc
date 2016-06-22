@@ -140,7 +140,7 @@ int TwoBodyChannel::GetLocalIndex(int p, int q) const
 } 
 
 // get pointer to ket using local index
-Ket & TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
+Ket & TwoBodyChannel::GetKet(int i) { return modelspace->GetKet(KetList[i]);}; 
 
 
 //bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
