@@ -194,11 +194,21 @@ void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme)
 }
 void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme)
 {
+   if (ch_bra>ch_ket)
+   {
+     swap(ch_bra,ch_ket);
+     swap(ibra,iket);
+     tbme *= modelspace->phase( modelspace->GetTwoBodyChannel(ch_bra).J - modelspace->GetTwoBodyChannel(ch_ket).J);
+   }
    GetMatrix(ch_bra,ch_ket)(ibra,iket) += tbme;
-   if (IsHermitian())
-      GetMatrix(ch_bra,ch_ket)(iket,ibra) += tbme;
-   else if(IsAntiHermitian())
-      GetMatrix(ch_bra,ch_ket)(iket,ibra) -= tbme;
+
+   if (ch_bra==ch_ket and ibra!=iket)
+   {
+     if (IsHermitian())
+       GetMatrix(ch_bra,ch_ket)(iket,ibra) += tbme;
+     else if(IsAntiHermitian())
+       GetMatrix(ch_bra,ch_ket)(iket,ibra) -= tbme;
+   }
 }
 
 double TwoBodyME::GetTBME(int j_bra, int p_bra, int t_bra, int j_ket, int p_ket, int t_ket, int a, int b, int c, int d) const
@@ -537,18 +547,49 @@ void TwoBodyME::AddToTBME_RelCM(int n_bra, int lam_bra, int N_bra, int LAM_bra, 
   TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel( ch_bra );
   TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel( ch_ket );
 
-  auto LabBras = GetLabFrameKets(n_bra,lam_bra,N_bra,LAM_bra,L_bra,S_bra,J_bra,T_bra,Tz_bra);
-  auto LabKets = GetLabFrameKets(n_ket,lam_ket,N_ket,LAM_ket,L_ket,S_ket,J_ket,T_ket,Tz_ket);
+  if ( MatEl.find({ min(ch_bra,ch_ket),max(ch_bra,ch_ket)}) == MatEl.end() )
+  {
+//    cout << "AAAHHH!!!! There appears to be a mismatch in the rank of the operator read in by AddToTBME_RelCM !!" << endl;
+ //   cout << "Couldn't find " << ch_bra << " " << ch_ket << endl;
+    return;
+  }
 
-  for (auto labbra : LabBras)
+  cout << "ch_bra = " << ch_bra << "  ch_ket = " << ch_ket << endl;
+
+  if (n_bra+lam_bra+N_bra+LAM_bra+n_ket+lam_ket+N_ket+LAM_ket==0)
+  {
+    cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl
+         << "HERE!!!" << endl  << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+  }
+
+//  for (auto& me : MatEl)
+//  {
+//    cout << me.first[0] << " " << me.first[1] << endl;
+//  }
+
+  cout << "BRAS:" << endl;
+  auto LabBras = GetLabFrameKets(n_bra,lam_bra,N_bra,LAM_bra,L_bra,S_bra,J_bra,T_bra,Tz_bra);
+  for (auto& labbra : LabBras) cout << labbra.first << " " << labbra.second << endl;
+  cout << "KETS:" << endl;
+  auto LabKets = GetLabFrameKets(n_ket,lam_ket,N_ket,LAM_ket,L_ket,S_ket,J_ket,T_ket,Tz_ket);
+  for (auto& labket : LabKets) cout << labket.first << " " << labket.second << endl;
+
+  for (auto& labbra : LabBras)
   {
     index_t ibra = tbc_bra.GetLocalIndex(labbra.first);
-    for (auto labket : LabKets)
+    for (auto& labket : LabKets)
     {
       index_t iket = tbc_ket.GetLocalIndex(labket.first);
+      cout << "ibra = " << ibra << " (from " << labbra.first << ")  iket = " << iket << " (from " << labket.first << ") " << ch_bra << "," << ch_ket << endl;
+      cout << " matrix size = " << MatEl.at({min(ch_bra,ch_ket),max(ch_bra,ch_ket)}).size() << endl;
       if ( (N_bra==N_ket) and (LAM_bra==LAM_ket) )
       {
         AddToTBME(ch_bra, ch_ket, ibra, iket, labket.second*labbra.second*Vrel);
+        if (n_bra+lam_bra+N_bra+LAM_bra+n_ket+lam_ket+N_ket+LAM_ket==0)
+        {
+          cout << "Adding to TBME " << ch_bra << " " << ch_ket << " " << ibra << " " << iket << " " << labket.second << " * " << labbra.second << " * " << Vrel
+               << "  ->  " << GetTBME(ch_bra,ch_ket,tbc_bra.GetKet(ibra),tbc_ket.GetKet(iket)) << endl;
+        }
       }
       if ( (n_bra==n_ket) and (lam_bra==lam_ket) )
       {
@@ -573,7 +614,11 @@ vector<pair<int,double>> TwoBodyME::GetLabFrameKets(int n, int lam, int N, int L
         for (int twoj2=2*l2-1; twoj2<=2*l2+1; twoj2+=2)
         {
           if ( abs(twoj1-twoj2)>2*J or (twoj1+twoj2)<2*J) continue; // triangle condition
-          double normninej = (twoj1+1)*(twoj2+1)*(2*L+1)*(2*S+1)*modelspace->GetNineJ(l1,0.5,twoj1*0.5, l2,0.5,twoj1*0.5, L, S, J);
+          double normninej = sqrt( (twoj1+1)*(twoj2+1)*(2*L+1)*(2*S+1) ) *modelspace->GetNineJ(l1,0.5,twoj1*0.5, l2,0.5,twoj1*0.5, L, S, J);
+//          cout << "{ " << l1 << " " << "1/2" << " " << twoj1 << "/2 " << "}" << endl; 
+//          cout << "{ " << l2 << " " << "1/2" << " " << twoj2 << "/2 " << "}" << endl; 
+//          cout << "{ " <<  L << "  " <<  S    << "   "<<   J  << "  }" << " = " << modelspace->GetNineJ(l1,0.5,twoj1*0.5, l2,0.5,twoj1*0.5, L, S, J)  << endl; 
+//          cout << "normninej = " << (twoj1+1) << " * " << (twoj2+1)<< " * " << (2*L+1) << " * " << (2*S+1) << " * --^  = " << normninej << endl;
           for (int n1=0; n1<=(e12-l1-l2)/2; n1++)
           {
             int n2 = (e12-l1-l2)/2-n1;
@@ -581,13 +626,24 @@ vector<pair<int,double>> TwoBodyME::GetLabFrameKets(int n, int lam, int N, int L
             for (int twotz1=(Tz<1?-1:1); twotz1<=(Tz<0?-1:1); twotz1+=2)
             {
               int twotz2 = 2*Tz-twotz1;
+//              double IsospinCG = AngMom::CG(0.5,0.5*twotz1,0.5,0.5*twotz2,T,Tz);
               double IsospinCG = AngMom::CG(0.5,0.5*twotz1,0.5,0.5*twotz2,T,Tz);
-              int ketindex = modelspace->GetKetIndex( modelspace->GetOrbitIndex(n1,l1,twoj1,twotz1), modelspace->GetOrbitIndex(n2,l2,twoj2,twotz2) );
+              index_t p = modelspace->GetOrbitIndex(n1,l1,twoj1,twotz1);
+              index_t q = modelspace->GetOrbitIndex(n2,l2,twoj2,twotz2);
               double overlap = normninej*moshinsky*IsospinCG;
-              if ( abs(overlap)>1e-7 )
+              if ( abs(overlap)<1e-7 ) continue;
+              int ketindex = modelspace->GetKetIndex( p, q );
+              if (p>q)
               {
-                LabKets.push_back( make_pair(ketindex, overlap) );
+                continue;
+                ketindex = modelspace->GetKetIndex( q , p );
+                overlap *= -modelspace->phase( (twoj1+twoj2)/2 + J + 1 + T );
+                cout << "swapped p and q" << endl;
               }
+              cout << " " << n1 << " " << l1 << " " << twoj1 << " " << twotz1 << " " << p << " ,  "
+                   << " " << n2 << " " << l2 << " " << twoj2 << " " << twotz2 << " " << q << " ,    L = "  << L << " S = " << S << " J = " << J  << "  =>  "
+                   << " " << ketindex << "  " << normninej << " * " << moshinsky << " * " << IsospinCG << " = " << overlap << endl;
+              LabKets.push_back( make_pair(ketindex, overlap) );
             }
           }
         }
