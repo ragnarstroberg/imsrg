@@ -67,7 +67,6 @@ int main(int argc, char** argv)
   vector<Operator> ops;
 
 
-
   // test 2bme file
   ifstream test(inputtbme);
   if( not test.good() )
