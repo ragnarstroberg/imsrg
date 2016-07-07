@@ -1,5 +1,6 @@
 #include "ReadWrite.hh"
 #include "ModelSpace.hh"
+#include "AngMom.hh"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -7,6 +8,7 @@
 #include <string>
 #include <chrono>
 #include <ctime>
+#include <unordered_map>
 
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -2934,7 +2936,265 @@ void ReadWrite::ReadTwoBodyEngel_from_stream( istream& infile, Operator& Op)
     Op.TwoBody.SetTBME_J(J,a,b,c,d,tbme);
   }
 }
+/*
+void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, Operator& Op)
+{
+  ifstream statefile(statefilename);
+  ifstream MEfile(MEfilename);
+  if (not MEfile.good() )
+  {
+    cout << "Trouble reading " << MEfilename << endl;
+  }
 
+
+  // First, read in the file which lists the state labelling.
+  struct state_t {  int e12; int n; int N; int J; int S; int L; int lam; int LAM; int T; int Tz; };
+  state_t tmp_state;            // temporary struct to read the data in.
+  vector<state_t> statelist(1); // initialize with an empty state, since Javier starts indexing at 1 (boo Fortan).
+  statefile.ignore(500,'\n');   // skip the first line
+  int index;
+  cout << "Read State File..." << endl;
+  while( statefile >> index >> tmp_state.e12 >> tmp_state.n >> tmp_state.N >> tmp_state.J >> tmp_state.S >> tmp_state.L >> tmp_state.lam >> tmp_state.LAM >> tmp_state.T >> tmp_state.Tz )
+  {
+     statelist.push_back(tmp_state); // add it to the list
+     cout << index << " " << tmp_state.e12 << " " << tmp_state.n << " " << tmp_state.N << " " << tmp_state.J << " " << tmp_state.S << " " << tmp_state.L << " " << tmp_state.lam << " " << tmp_state.LAM << " " << tmp_state.T << " " << tmp_state.Tz << endl;
+  }
+  statefile.close();
+
+
+  // Second, read the file which contains the relative/cm matrix elements.
+  int bra_index, ket_index;
+  double MErel,MEcm;
+  for (int i=0;i<6;i++) MEfile.ignore(500,'\n'); // skip header info, since I don't do anything with it (for now).
+  cout << "Read ME File..." << endl;
+  while( MEfile >> bra_index >> ket_index >> MErel >> MEcm )
+  {
+    state_t& bra = statelist[bra_index];
+    state_t& ket = statelist[ket_index];
+    cout << bra.n << " " <<  bra.lam << " " <<  bra.N << " " <<  bra.LAM << " " <<  bra.L << " " <<  bra.S << " " <<  bra.J << " " <<  bra.T << " " <<  bra.Tz << " " 
+         << ket.n << " " <<  ket.lam << " " <<  ket.N << " " <<  ket.LAM << " " <<  ket.L << " " <<  ket.S << " " <<  ket.J << " " <<  ket.T << " " <<  ket.Tz << " " 
+         << "(" << bra_index << "," << ket_index << ") " << MErel << " " <<  MEcm << endl;
+    Op.TwoBody.AddToTBME_RelCM(bra.n, bra.lam, bra.N, bra.LAM, bra.L, bra.S, bra.J, bra.T, bra.Tz, 
+                               ket.n, ket.lam, ket.N, ket.LAM, ket.L, ket.S, ket.J, ket.T, ket.Tz, MErel, MEcm);
+  }
+
+}
+*/
+
+
+struct javier_state_t {  int e12; int n; int N; int J; int S; int L; int lam; int LAM; int T; int Tz;
+                  javier_state_t(){};
+                  javier_state_t(int e12_in, int n_in, int N_in, int J_in, int S_in, int L_in, int lam_in, int LAM_in, int T_in, int Tz_in) :
+                    e12(e12_in), n(n_in), N(N_in), J(J_in), S(S_in), L(L_in), lam(lam_in), LAM(LAM_in), T(T_in), Tz(Tz_in) {};
+};
+
+// annoyingly have to provide this as well
+bool operator ==( const javier_state_t& st1, const javier_state_t& st2 )
+{
+  return (st1.e12==st2.e12 and st1.n==st2.n and st1.N==st2.N and st1.J==st2.J and st1.S==st2.S and st1.L==st2.L and st1.lam==st2.lam and st1.T==st2.T and st1.Tz==st2.Tz);
+}
+
+ostream& operator<< (ostream& stream, const javier_state_t& st)
+{
+  return stream << "e12=" << st.e12
+         << ", n=" << st.n
+         << ", N=" << st.N
+         << ", J=" << st.J
+         << ", S=" << st.S
+         << ", L=" << st.L
+         << ", lam=" << st.lam
+         << ", LAM=" << st.LAM
+         << ", T=" << st.T
+         << ", Tz=" << st.Tz;
+}
+
+namespace std{
+template<>
+struct hash<javier_state_t>
+{
+  size_t operator()(const javier_state_t& st) const
+  {
+    index_t key = ((index_t)st.e12  <<32)^ // can be 0...32 -> 5 bits
+                  ((index_t)st.n    <<28)^ // can be 0...16 -> 4 bits
+                  ((index_t)st.N    <<24)^ // can be 0...16 -> 4 bits
+                  ((index_t)st.J    <<19)^ // can be 0...32 -> 5 bits
+                  ((index_t)st.S    <<18)^ // can be 0,1    -> 1 bit
+                  ((index_t)st.L    <<13)^ // can be 0...32 -> 5 bits
+                  ((index_t)st.lam  << 8)^ // can be 0...32 -> 5 bits
+                  ((index_t)st.LAM  << 3)^ // can be 0...32 -> 5 bits
+                  ((index_t)st.T    << 2)^ // can be 0,1    -> 1 bit
+                  ((index_t)(st.Tz+1)  );  // can be 0,1,2  -> 2 bits
+     return key;
+  }
+};
+}
+
+void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, Operator& Op)
+{
+  ifstream statefile;
+  ifstream MEfile;
+  statefile.open(statefilename);
+  MEfile.open(MEfilename);
+  if (not MEfile.good() )
+  {
+    cout << "Trouble reading " << MEfilename << endl;
+  }
+
+  ModelSpace* modelspace = Op.GetModelSpace();
+
+  cout << "Reading " << statefilename << endl;
+  // First, read in the file which lists the state labelling.
+  javier_state_t tmp_state;            // temporary struct to read the data in.
+  vector<javier_state_t> statelist(1); // initialize with an empty state, since Javier starts indexing at 1 (boo Fortan).
+  unordered_map<javier_state_t,index_t> statemap; // initialize with an empty state, since Javier starts indexing at 1 (boo Fortan).
+  statefile.ignore(500,'\n');   // skip the first line
+  index_t index;
+  while( statefile >> index >> tmp_state.e12 >> tmp_state.n >> tmp_state.N >> tmp_state.J >> tmp_state.S >> tmp_state.L >> tmp_state.lam >> tmp_state.LAM >> tmp_state.T >> tmp_state.Tz )
+  {
+     tmp_state.Tz *=-1;
+     statelist.push_back(tmp_state); // add it to the list
+     statemap[tmp_state] = index; // add it to the map
+  }
+  statefile.close();
+
+
+  cout << "Reading " << MEfilename << endl;
+  // Second, read the file which contains the relative/cm matrix elements.
+  arma::sp_mat matrel(statelist.size(), statelist.size());
+  arma::sp_mat matcm(statelist.size(), statelist.size());
+  int bra_index, ket_index;
+  double MErel,MEcm;
+  for (int i=0;i<6;i++) MEfile.ignore(500,'\n'); // skip header info, since I don't do anything with it (for now).
+  cout << "Read ME File..." << endl;
+  while( MEfile >> bra_index >> ket_index >> MErel >> MEcm )
+  {
+    matrel(bra_index,ket_index) = MErel;
+    matcm(bra_index,ket_index) = MEcm;
+  }
+
+  cout << "Filling Op" << endl;
+  // Finally, loop over all the lab frame matrix elements, and fill them.
+  // This is the dumbest, most straightforward way I can think of doing it.
+  for ( auto& itmat : Op.TwoBody.MatEl )
+  {
+    index_t ch_bra = itmat.first[0];
+    index_t ch_ket = itmat.first[1];
+    TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+    TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+    int nkets_bra = tbc_bra.GetNumberKets();
+    int nkets_ket = tbc_ket.GetNumberKets();
+    int Jab = tbc_bra.J;
+    int Jcd = tbc_ket.J;
+    int Tzab = tbc_bra.Tz;
+    int Tzcd = tbc_ket.Tz;
+    for (int ibra=0; ibra<nkets_bra; ++ibra)
+    {
+      cout << "Getting Ket ibra=" << ibra << endl;
+      Ket& bra = tbc_bra.GetKet(ibra);
+      int na = bra.op->n;
+      int la = bra.op->l;
+      double ja = 0.5*bra.op->j2;
+      double ta = 0.5*bra.op->tz2;
+      int nb = bra.oq->n;
+      int lb = bra.oq->l;
+      double jb = 0.5*bra.oq->j2;
+      double tb = 0.5*bra.oq->tz2;
+      int Lab_min = max(abs(la-lb),Jab-1);
+      int Lab_max = min(la+lb,Jab+1);
+      int eab = 2*(na+nb)+la+lb;
+      cout << "eab =  " << eab << endl;
+      for (int iket=0;iket<nkets_ket; ++iket)
+      {
+        cout << "Getting Ket iket=" << iket << endl;
+        Ket& ket = tbc_ket.GetKet(iket);
+        int nc = ket.op->n;
+        int lc = ket.op->l;
+        double jc = 0.5*ket.op->j2;
+        double tc = 0.5*ket.op->tz2;
+        int nd = ket.oq->n;
+        int ld = ket.oq->l;
+        double jd = 0.5*ket.oq->j2;
+        double td = 0.5*ket.oq->tz2;
+        int Lcd_min = max(abs(lc-ld),Jcd-1);
+        int Lcd_max = min(lc+ld,Jcd+1);
+        int ecd = 2*(nc+nd)+lc+ld;
+        cout << " ecd = " << ecd << endl;
+        if (eab==0 and ecd==0 and Jab+Jcd==1 and Tzab==0 and Tzcd==0)
+        {
+          cout << "!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!" << endl;
+          cout << "!! " << Lab_min << "<= Lab <= " << Lab_max  << endl;
+          cout << "!! " << Lcd_min << "<= Lcd <= " << Lcd_max  << endl;
+          cout << "!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!" << endl;
+        }
+        for (int Lab=Lab_min; Lab<=Lab_max; ++Lab)
+        {
+          for (int Sab=max(0,abs(Lab-Jab)); Sab<=min(1,Lab+Jab); ++Sab)
+          {
+            double NormNineJab = sqrt((2*ja+1)*(2*jb+1)*(2*Lab+1)*(2*Sab+1)) * modelspace->GetNineJ(la,0.5,ja, lb,0.5,jb, Lab,Sab,Jab);
+            for (int Lcd=Lcd_min; Lcd<=Lcd_max; ++Lcd)
+            {
+              for (int Scd=max(0,abs(Lcd-Jcd)); Scd<=min(1,Lcd+Jcd); ++Scd)
+              {
+                double NormNineJcd = sqrt((2*jc+1)*(2*jd+1)*(2*Lcd+1)*(2*Scd+1)) * modelspace->GetNineJ(lc,0.5,jc, ld,0.5,jd, Lcd,Scd,Jcd);
+
+                // loop over rel/cm quantum numbers
+                for (int n_ab=0; 2*n_ab<=eab; ++n_ab)
+                {
+                  for (int N_ab=0; 2*(N_ab+n_ab)<=eab; ++N_ab)
+                  {
+                    for (int lam_ab=0; 2*(N_ab+n_ab)+lam_ab<=eab; ++lam_ab)
+                    {
+                      int LAM_ab = eab-2*(N_ab+n_ab)-lam_ab;
+                      if ((lam_ab + LAM_ab<Lab) or (abs(lam_ab-LAM_ab)>Lab)) continue;
+                      double mosh_ab = modelspace->GetMoshinsky( N_ab, LAM_ab, n_ab, lam_ab, na, la, nb, lb, Lab);
+                      int Tab = (lam_ab + Sab +1 )%2;
+                      if (abs(Tzab)>Tab) continue;
+
+                      for (int n_cd=0; 2*n_cd<=ecd; ++n_cd)
+                      {
+                        for (int N_cd=0; 2*(N_cd+n_cd)<=ecd; ++N_cd)
+                        {
+                          for (int lam_cd=0; 2*(N_cd+n_cd)+lam_cd<=ecd; ++lam_cd)
+                          {
+                            int LAM_cd = ecd-2*(N_cd+n_cd)-lam_cd;
+                            if ((lam_cd + LAM_cd<Lcd) or (abs(lam_cd-LAM_cd)>Lcd)) continue;
+                            double mosh_cd = modelspace->GetMoshinsky( N_cd, LAM_cd, n_cd, lam_cd, nc, lc, nd, ld, Lcd);
+                            int Tcd = (lam_cd + Scd + 1)%2;
+                            if (abs(Tzcd)>Tcd) continue;
+                            double IsospinClebsch_ab = AngMom::CG(0.5,ta,0.5,tb, Tab,Tzab);
+                            double IsospinClebsch_cd = AngMom::CG(0.5,tc,0.5,td, Tcd,Tzcd);
+                            double coeff = NormNineJab*NormNineJcd*mosh_ab*mosh_cd*IsospinClebsch_ab*IsospinClebsch_cd;
+                            size_t rel_index_bra = statemap[ javier_state_t(eab, n_ab, N_ab, Jab, Sab, Lab, lam_ab, LAM_ab, Tab, Tzab) ];
+                            size_t rel_index_ket = statemap[ javier_state_t(ecd, n_cd, N_cd, Jcd, Scd, Lcd, lam_cd, LAM_cd, Tcd, Tzcd) ];
+                            if (rel_index_bra<1) continue;
+                            if (rel_index_ket<1) continue;
+                            cout << "ab: " << javier_state_t(eab, n_ab, N_ab, Jab, Sab, Lab, lam_ab, LAM_ab, Tab, Tzab) << endl;
+                            cout << "cd: " << javier_state_t(ecd, n_cd, N_cd, Jcd, Scd, Lcd, lam_cd, LAM_cd, Tcd, Tzcd) << endl;
+                            cout << "ibra,iket = " << ibra << " , " << iket << "   rel_index_bra,rel_index_ket = " << rel_index_bra << " , " << rel_index_ket << endl;
+                            if ((N_ab==N_cd) and (LAM_ab==LAM_cd))
+                               itmat.second(ibra,iket) += coeff * matrel(rel_index_bra, rel_index_ket);
+                            if ((n_ab==n_cd) and (lam_ab==lam_cd))
+                               itmat.second(ibra,iket) += coeff * matcm( rel_index_bra, rel_index_ket);
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+
+              }
+            }
+          }
+        }
+        
+        if (eab==0 and ecd==0 and Jab+Jcd==1 and Tzab==0 and Tzcd==0) cout << "!!!!!!!!!!!!!!!!!! DONE !!!!!!!!!!!!!!!!!!!!" << endl;
+
+      }
+    }
+  }
+  cout << "Done!" << endl;
+
+}
 
 
 void ReadWrite::SetLECs(double c1, double c3, double c4, double cD, double cE)

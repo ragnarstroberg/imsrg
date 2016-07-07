@@ -20,7 +20,11 @@ namespace imsrg_util
       else if (opname == "Rn2")           return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rm2")           return Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "E2")            return ElectricMultipoleOp(modelspace,2) ;
+      else if (opname == "E4")            return ElectricMultipoleOp(modelspace,4) ;
+      else if (opname == "E6")            return ElectricMultipoleOp(modelspace,6) ;
       else if (opname == "M1")            return MagneticMultipoleOp(modelspace,1) ;
+      else if (opname == "M3")            return MagneticMultipoleOp(modelspace,3) ;
+      else if (opname == "M5")            return MagneticMultipoleOp(modelspace,5) ;
       else if (opname == "M1p")           return MagneticMultipoleOp_pn(modelspace,1,"proton") ;
       else if (opname == "M1n")           return MagneticMultipoleOp_pn(modelspace,1,"neutron") ;
       else if (opname == "Fermi")         return AllowedFermi_Op(modelspace) ;

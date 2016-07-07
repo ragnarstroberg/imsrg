@@ -55,6 +55,7 @@ class HartreeFock
    void PrintSPE(); ///< Print out the single-particle energies
 //   void PrintSPE(){ F.diag().print();}; ///< Print out the single-particle energies
    void FreeVmon();               ///< Free up the memory used to store Vmon3.
+   void GetRadialWF(index_t index, vector<double>& R, vector<double>& PSI); ///< Return the radial wave function of an orbit in the HF basis
 
 };
 
