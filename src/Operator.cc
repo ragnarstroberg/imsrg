@@ -3057,7 +3057,8 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    {
       ybras[counter] = iter.first[0];
       ykets[counter] = iter.first[1];
-      Z_bar[{iter.first[0],iter.first[1]}] = arma::mat(); // important to initialize this for parallelization
+      //Z_bar[{iter.first[0],iter.first[1]}] = arma::mat(); // important to initialize this for parallelization
+      Z_bar[iter.first] = arma::mat(); // important to initialize this for parallelization
       counter++;
    }
    profiler.timer["Allocate Z_bar_tensor"] += omp_get_wtime() - t_start;
