@@ -1,10 +1,12 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
-// Copyright (C)      2011 James Sanders
+// Copyright (C) 2008-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by James Sanders
 
 
 //! \addtogroup subview
@@ -83,6 +85,9 @@ class subview : public Base<eT, subview<eT> >
   inline static void schur_inplace(Mat<eT>& out, const subview& in);
   inline static void   div_inplace(Mat<eT>& out, const subview& in);
   
+  template<typename functor> inline void  for_each(functor F);
+  template<typename functor> inline void  for_each(functor F) const;
+  
   template<typename functor> inline void transform(functor F);
   template<typename functor> inline void     imbue(functor F);
   
@@ -153,6 +158,14 @@ class subview : public Base<eT, subview<eT> >
   
   template<typename T1> inline subview_each2< subview<eT>, 0, T1 > each_col(const Base<uword, T1>& indices);
   template<typename T1> inline subview_each2< subview<eT>, 1, T1 > each_row(const Base<uword, T1>& indices);
+  
+  #if defined(ARMA_USE_CXX11)
+  inline void each_col(const std::function< void(      Col<eT>&) >& F);
+  inline void each_col(const std::function< void(const Col<eT>&) >& F) const;
+  
+  inline void each_row(const std::function< void(      Row<eT>&) >& F);
+  inline void each_row(const std::function< void(const Row<eT>&) >& F) const;
+  #endif
   
   inline       diagview<eT> diag(const sword in_id = 0);
   inline const diagview<eT> diag(const sword in_id = 0) const;
@@ -229,6 +242,12 @@ class subview_col : public subview<eT>
   inline       subview_col<eT> tail(const uword N);
   inline const subview_col<eT> tail(const uword N) const;
   
+  inline arma_warn_unused eT min() const;
+  inline arma_warn_unused eT max() const;
+  
+  inline arma_warn_unused uword index_min() const;
+  inline arma_warn_unused uword index_max() const;
+  
   
   protected:
   
@@ -297,6 +316,9 @@ class subview_row : public subview<eT>
   
   inline       subview_row<eT> tail(const uword N);
   inline const subview_row<eT> tail(const uword N) const;
+  
+  inline arma_warn_unused uword index_min() const;
+  inline arma_warn_unused uword index_max() const;
   
   
   protected:

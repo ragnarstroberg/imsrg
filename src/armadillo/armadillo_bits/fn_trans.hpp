@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2012 Conrad Sanderson
-// Copyright (C) 2008-2012 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_trans
@@ -11,6 +13,7 @@
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const Op<T1, op_htrans>
 trans
@@ -28,6 +31,7 @@ trans
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const Op<T1, op_htrans>
 htrans
@@ -46,6 +50,7 @@ htrans
 
 //! two consecutive transpose operations cancel each other
 template<typename T1>
+arma_warn_unused
 arma_inline
 const T1&
 trans(const Op<T1, op_htrans>& X)
@@ -76,6 +81,7 @@ htrans(const Op<T1, op_htrans>& X)
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename
 enable_if2
@@ -98,6 +104,7 @@ trans
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename
 enable_if2
@@ -120,6 +127,7 @@ trans
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename
 enable_if2
@@ -142,6 +150,7 @@ htrans
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename
 enable_if2

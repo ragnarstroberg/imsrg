@@ -1,9 +1,12 @@
-// Copyright (C) 2015 Ryan Curtin
-// Copyright (C) 2015 Conrad Sanderson
+// Copyright (C) 2015-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Ryan Curtin
 
 
 //! \addtogroup fn_spsolve
@@ -28,11 +31,14 @@ spsolve_helper
   arma_extra_debug_sigprint();
   arma_ignore(junk);
   
+  typedef typename T1::pod_type   T;
   typedef typename T1::elem_type eT;
   
   const char sig = (solver != NULL) ? solver[0] : char(0);
   
   arma_debug_check( ((sig != 'l') && (sig != 's')), "spsolve(): unknown solver" );
+  
+  T rcond = T(0);
   
   bool status = false;
   
@@ -42,39 +48,53 @@ spsolve_helper
     
     arma_debug_check( ( (opts.pivot_thresh < double(0)) || (opts.pivot_thresh > double(1)) ), "spsolve(): pivot_thresh out of bounds" );
     
-    status = sp_auxlib::spsolve(out, A.get_ref(), B.get_ref(), opts);
+    if( (opts.equilibrate == false) && (opts.refine == superlu_opts::REF_NONE) )
+      {
+      status = sp_auxlib::spsolve_simple(out, A.get_ref(), B.get_ref(), opts);
+      }
+    else
+      {
+      status = sp_auxlib::spsolve_refine(out, rcond, A.get_ref(), B.get_ref(), opts);
+      }
     }
   else
   if(sig == 'l')  // brutal LAPACK solver
     {
-    arma_debug_warn( (settings.id != 0), "spsolve(): ignoring settings not applicable to LAPACK based solver" );
+    if(settings.id != 0)  { arma_debug_warn("spsolve(): ignoring settings not applicable to LAPACK based solver"); }
     
     Mat<eT> AA;
     
-    bool conversion_ok = true;
+    bool conversion_ok = false;
     
     try
       {
       Mat<eT> tmp(A.get_ref());  // conversion from sparse to dense can throw std::bad_alloc
       
       AA.steal_mem(tmp);
+      
+      conversion_ok = true;
       }
     catch(std::bad_alloc&)
       {
-      conversion_ok = false;
-      
-      arma_debug_warn(true, "spsolve(): not enough memory to use LAPACK based solver");
+      arma_debug_warn("spsolve(): not enough memory to use LAPACK based solver");
       }
     
     if(conversion_ok)
       {
       arma_debug_check( (AA.n_rows != AA.n_cols), "spsolve(): matrix A must be square sized" );
       
-      status = auxlib::solve(out, AA, B.get_ref(), true);
+      status = auxlib::solve_square_refine(out, rcond, AA, B.get_ref(), false);
       }
     }
   
-  if(status == false)  { out.reset(); }
+  
+  if(status == false)
+    {
+    if(rcond > T(0))  { arma_debug_warn("spsolve(): system seems singular (rcond: ", rcond, ")"); }
+    else              { arma_debug_warn("spsolve(): system seems singular");                      }
+    
+    out.reset();
+    }
   
   return status;
   }
@@ -99,17 +119,13 @@ spsolve
   
   const bool status = spsolve_helper(out, A.get_ref(), B.get_ref(), solver, settings);
   
-  if(status == false)
-    {
-    arma_debug_warn(true, "spsolve(): solution not found");
-    }
-  
   return status;
   }
 
 
 
 template<typename T1, typename T2>
+arma_warn_unused
 inline
 Mat<typename T1::elem_type>
 spsolve
@@ -132,7 +148,7 @@ spsolve
   
   if(status == false)
     {
-    arma_bad("spsolve(): solution not found");
+    arma_stop_runtime_error("spsolve(): solution not found");
     }
   
   return out;

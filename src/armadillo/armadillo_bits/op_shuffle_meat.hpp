@@ -1,10 +1,12 @@
-// Copyright (C) 2009-2015 Conrad Sanderson
-// Copyright (C) 2009-2015 NICTA (www.nicta.com.au)
-// Copyright (C) 2009-2010 Dimitrios Bouzas
+// Copyright (C) 2009-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Dimitrios Bouzas
 
 
 
@@ -27,7 +29,7 @@ op_shuffle::apply_direct(Mat<eT>& out, const Mat<eT>& X, const uword dim)
   
   // see op_sort_index_bones.hpp for the definition of arma_sort_index_packet
   // and the associated comparison functor
-  std::vector< arma_sort_index_packet<int,uword> > packet_vec(N);
+  std::vector< arma_sort_index_packet<int> > packet_vec(N);
   
   for(uword i=0; i<N; ++i)
     {
@@ -35,7 +37,7 @@ op_shuffle::apply_direct(Mat<eT>& out, const Mat<eT>& X, const uword dim)
     packet_vec[i].index = i;
     }
   
-  arma_sort_index_helper_ascend comparator;
+  arma_sort_index_helper_ascend<int> comparator;
   
   std::sort( packet_vec.begin(), packet_vec.end(), comparator );
   

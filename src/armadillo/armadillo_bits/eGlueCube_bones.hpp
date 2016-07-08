@@ -1,9 +1,11 @@
-// Copyright (C) 2010-2013 Conrad Sanderson
-// Copyright (C) 2010-2013 NICTA (www.nicta.com.au)
+// Copyright (C) 2010-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup eGlueCube
@@ -18,8 +20,8 @@ class eGlueCube : public BaseCube<typename T1::elem_type, eGlueCube<T1, T2, eglu
   typedef typename T1::elem_type                   elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   
-  static const bool prefer_at_accessor = (ProxyCube<T1>::prefer_at_accessor || ProxyCube<T2>::prefer_at_accessor);
-  static const bool has_subview        = (ProxyCube<T1>::has_subview        || ProxyCube<T2>::has_subview       );
+  static const bool use_at      = (ProxyCube<T1>::use_at      || ProxyCube<T2>::use_at     );
+  static const bool has_subview = (ProxyCube<T1>::has_subview || ProxyCube<T2>::has_subview);
   
   arma_aligned const ProxyCube<T1> P1;
   arma_aligned const ProxyCube<T2> P2;

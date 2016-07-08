@@ -1,10 +1,12 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2013-2015 Ryan Curtin
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Ryan Curtin
 
 
 
@@ -23,17 +25,23 @@
 //// Without BLAS, matrix multiplication will still work, but might be slower.
 #endif
 
+#if !defined(ARMA_USE_NEWARP)
+#define ARMA_USE_NEWARP
+//// Uncomment the above line to enable the built-in partial emulation of ARPACK.
+//// This is used for eigen decompositions of real (non-complex) sparse matrices, eg. eigs_sym(), svds() 
+#endif
+
 #if !defined(ARMA_USE_ARPACK)
 // #define ARMA_USE_ARPACK
 //// Uncomment the above line if you have ARPACK or a high-speed replacement for ARPACK.
-//// ARPACK is required for eigendecompositions of sparse matrices, eg. eigs_sym(), svds() 
+//// ARPACK is required for eigen decompositions of complex sparse matrices
 #endif
 
 #if !defined(ARMA_USE_SUPERLU)
 // #define ARMA_USE_SUPERLU
 //// Uncomment the above line if you have SuperLU.
 //// SuperLU is used for solving sparse linear systems via spsolve()
-//// Caveat: only SuperLU version 4.3 can be used!
+//// Caveat: only SuperLU version 5.2 can be used!
 #endif
 
 #if !defined(ARMA_SUPERLU_INCLUDE_DIR)
@@ -132,13 +140,13 @@
   #define ARMA_DEFAULT_OSTREAM std::cout
 #endif
 
+#if !defined(ARMA_PRINT_ERRORS)
 #define ARMA_PRINT_ERRORS
-//#define ARMA_PRINT_HDF5_ERRORS
+//// Comment out the above line if you don't want errors and warnings printed (eg. failed decompositions)
+#endif
 
-
-#if defined(ARMA_DONT_PRINT_ERRORS)
-  #undef ARMA_PRINT_ERRORS
-  #undef ARMA_PRINT_HDF5_ERRORS
+#if !defined(ARMA_PRINT_HDF5_ERRORS)
+// #define ARMA_PRINT_HDF5_ERRORS
 #endif
 
 #if defined(ARMA_DONT_USE_LAPACK)
@@ -147,6 +155,10 @@
 
 #if defined(ARMA_DONT_USE_BLAS)
   #undef ARMA_USE_BLAS
+#endif
+
+#if defined(ARMA_DONT_USE_NEWARP) || !defined(ARMA_USE_LAPACK)
+  #undef ARMA_USE_NEWARP
 #endif
 
 #if defined(ARMA_DONT_USE_ARPACK)
@@ -192,3 +204,19 @@
 #if defined(ARMA_DONT_USE_HDF5)
   #undef ARMA_USE_HDF5
 #endif
+
+#if defined(ARMA_DONT_PRINT_ERRORS)
+  #undef ARMA_PRINT_ERRORS
+#endif
+
+#if defined(ARMA_DONT_PRINT_HDF5_ERRORS)
+  #undef ARMA_PRINT_HDF5_ERRORS
+#endif
+
+
+// if Armadillo was installed on this system via CMake and ARMA_USE_WRAPPER is not defined,
+// ARMA_AUX_LIBS lists the libraries required by Armadillo on this system, and
+// ARMA_AUX_INCDIRS lists the include directories required by Armadillo on this system.
+// Do not use these unless you know what you are doing.
+#define ARMA_AUX_LIBS
+#define ARMA_AUX_INCDIRS

@@ -1,10 +1,12 @@
-// Copyright (C) 2010-2012 Conrad Sanderson
-// Copyright (C) 2010-2012 NICTA (www.nicta.com.au)
-// Copyright (C) 2011      Ryan Curtin
+// Copyright (C) 2010-2012 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Ryan Curtin
 
 
 //! \addtogroup op_trimat
@@ -59,7 +61,7 @@ op_trimat::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_trimat>& in)
   const unwrap<T1>   tmp(in.m);
   const Mat<eT>& A = tmp.M;
   
-  arma_debug_check( (A.is_square() == false), "trimatu()/trimatl(): given matrix must be square" );
+  arma_debug_check( (A.is_square() == false), "trimatu()/trimatl(): given matrix must be square sized" );
   
   const uword N     = A.n_rows;
   const bool  upper = (in.aux_uword_a == 0);
@@ -139,7 +141,7 @@ op_trimat::apply_htrans
   // triangular (respectively) and then set the rest to 0, so overwriting issues
   // aren't present.
   
-  arma_debug_check( (A.is_square() == false), "trimatu()/trimatl(): given matrix must be square" );
+  arma_debug_check( (A.is_square() == false), "trimatu()/trimatl(): given matrix must be square sized" );
   
   const uword N = A.n_rows;
   
@@ -198,7 +200,7 @@ op_trimat::apply_htrans
   arma_extra_debug_sigprint();
   arma_ignore(junk);
   
-  arma_debug_check( (A.is_square() == false), "trimatu()/trimatl(): given matrix must be square" );
+  arma_debug_check( (A.is_square() == false), "trimatu()/trimatl(): given matrix must be square sized" );
   
   const uword N = A.n_rows;
   

@@ -1,13 +1,19 @@
-// Copyright (C) 2012-2015 Conrad Sanderson
-// Copyright (C) 2012-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2012-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
+
+//! \addtogroup fn_hist
+//! @{
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 typename
 enable_if2
@@ -25,6 +31,7 @@ hist(const T1& A, const uword n_bins = 10)
 
 
 template<typename T1, typename T2>
+arma_warn_unused
 arma_inline
 typename
 enable_if2
@@ -42,6 +49,7 @@ hist(const T1& X, const T2& Y)
 
 
 template<typename T1, typename T2>
+arma_warn_unused
 arma_inline
 typename
 enable_if2
@@ -55,3 +63,6 @@ hist(const T1& X, const T2& Y, const uword dim)
   
   return mtGlue<uword,T1,T2,glue_hist>(X, Y, dim);
   }
+
+
+//! @}

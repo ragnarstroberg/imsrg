@@ -1,9 +1,11 @@
-// Copyright (C) 2013 Conrad Sanderson
-// Copyright (C) 2013 NICTA (www.nicta.com.au)
+// Copyright (C) 2013-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_fft2
@@ -16,6 +18,7 @@
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename
 enable_if2
@@ -44,6 +47,7 @@ fft2(const T1& A)
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename
 enable_if2
@@ -68,6 +72,7 @@ fft2(const T1& A, const uword n_rows, const uword n_cols)
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename
 enable_if2
@@ -96,6 +101,7 @@ ifft2(const T1& A)
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename
 enable_if2

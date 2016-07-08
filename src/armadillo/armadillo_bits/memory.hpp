@@ -1,9 +1,11 @@
-// Copyright (C) 2012-2014 Conrad Sanderson
-// Copyright (C) 2012-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2012-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup memory
@@ -14,14 +16,12 @@ class memory
   {
   public:
   
-                        arma_inline             static uword enlarge_to_mult_of_chunksize(const uword n_elem);
+  arma_inline static uword enlarge_to_mult_of_chunksize(const uword n_elem);
   
-  template<typename eT>      inline arma_malloc static eT*   acquire(const uword n_elem);
+  template<typename eT> inline arma_malloc static eT*         acquire(const uword n_elem);
+  template<typename eT> inline arma_malloc static eT* acquire_chunked(const uword n_elem);
   
-  template<typename eT>      inline arma_malloc static eT*   acquire_chunked(const uword n_elem);
-  
-  template<typename eT> arma_inline             static void  release(eT* mem);
-  
+  template<typename eT> arma_inline static void release(eT* mem);
   
   template<typename eT> arma_inline static bool      is_aligned(const eT*  mem);
   template<typename eT> arma_inline static void mark_as_aligned(      eT*& mem);
@@ -78,6 +78,7 @@ memory::acquire(const uword n_elem)
     }
   #elif defined(_MSC_VER)
     {
+    //out_memptr = (eT *) malloc(sizeof(eT)*n_elem);
     out_memptr = (eT *) _aligned_malloc( sizeof(eT)*n_elem, 16 );  // lives in malloc.h
     }
   #else
@@ -132,6 +133,7 @@ memory::release(eT* mem)
     }
   #elif defined(_MSC_VER)
     {
+    //free( (void *)(mem) );
     _aligned_free( (void *)(mem) );
     }
   #else

@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2014 Conrad Sanderson
-// Copyright (C) 2008-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup subview_field
@@ -35,8 +37,8 @@ subview_field<oT>::subview_field
   , aux_slice1(0)
   , n_rows(in_n_rows)
   , n_cols(in_n_cols)
-  , n_slices(1)
-  , n_elem(in_n_rows*in_n_cols)
+  , n_slices( (in_f.n_slices > 0) ? uword(1) : uword(0) )
+  , n_elem(in_n_rows*in_n_cols*n_slices)
   {
   arma_extra_debug_sigprint();
   }
@@ -78,7 +80,7 @@ subview_field<oT>::operator= (const field<oT>& x)
   
   subview_field<oT>& t = *this;
   
-  arma_debug_check( (t.n_rows != x.n_rows) || (t.n_cols != x.n_cols) || (t.n_slices != x.n_slices), "incompatible field dimensions");
+  arma_debug_check( (t.n_rows != x.n_rows) || (t.n_cols != x.n_cols) || (t.n_slices != x.n_slices), "incompatible field dimensions" );
   
   if(t.n_slices == 1)
     {
@@ -120,7 +122,7 @@ subview_field<oT>::operator= (const subview_field<oT>& x)
   
   subview_field<oT>& t = *this;
   
-  arma_debug_check( (t.n_rows != x.n_rows) || (t.n_cols != x.n_cols) || (t.n_slices != x.n_slices), "incompatible field dimensions");
+  arma_debug_check( (t.n_rows != x.n_rows) || (t.n_cols != x.n_cols) || (t.n_slices != x.n_slices), "incompatible field dimensions" );
   
   if(t.n_slices == 1)
     {
@@ -214,7 +216,7 @@ arma_inline
 oT&
 subview_field<oT>::operator()(const uword i)
   {
-  arma_debug_check( (i >= n_elem), "subview_field::operator(): index out of bounds");
+  arma_debug_check( (i >= n_elem), "subview_field::operator(): index out of bounds" );
   
   return operator[](i);
   }
@@ -226,7 +228,7 @@ arma_inline
 const oT&
 subview_field<oT>::operator()(const uword i) const
   {
-  arma_debug_check( (i >= n_elem), "subview_field::operator(): index out of bounds");
+  arma_debug_check( (i >= n_elem), "subview_field::operator(): index out of bounds" );
   
   return operator[](i);
   }
@@ -238,7 +240,7 @@ arma_inline
 oT&
 subview_field<oT>::operator()(const uword in_row, const uword in_col)
   {
-  arma_debug_check( ((in_row >= n_rows) || (in_col >= n_cols)), "subview_field::operator(): index out of bounds");
+  arma_debug_check( ((in_row >= n_rows) || (in_col >= n_cols) || (0 >= n_slices)), "subview_field::operator(): index out of bounds" );
   
   const uword index = (in_col + aux_col1)*f.n_rows + aux_row1 + in_row;
   
@@ -252,7 +254,7 @@ arma_inline
 const oT&
 subview_field<oT>::operator()(const uword in_row, const uword in_col) const
   {
-  arma_debug_check( ((in_row >= n_rows) || (in_col >= n_cols)), "subview_field::operator(): index out of bounds");
+  arma_debug_check( ((in_row >= n_rows) || (in_col >= n_cols) || (0 >= n_slices)), "subview_field::operator(): index out of bounds" );
   
   const uword index = (in_col + aux_col1)*f.n_rows + aux_row1 + in_row;
   
@@ -266,7 +268,7 @@ arma_inline
 oT&
 subview_field<oT>::operator()(const uword in_row, const uword in_col, const uword in_slice)
   {
-  arma_debug_check( ((in_row >= n_rows) || (in_col >= n_cols) || (in_slice >= n_slices)), "subview_field::operator(): index out of bounds");
+  arma_debug_check( ((in_row >= n_rows) || (in_col >= n_cols) || (in_slice >= n_slices)), "subview_field::operator(): index out of bounds" );
   
   const uword index = (in_slice + aux_slice1)*(f.n_rows*f.n_cols) + (in_col + aux_col1)*f.n_rows + aux_row1 + in_row;
   
@@ -280,7 +282,7 @@ arma_inline
 const oT&
 subview_field<oT>::operator()(const uword in_row, const uword in_col, const uword in_slice) const
   {
-  arma_debug_check( ((in_row >= n_rows) || (in_col >= n_cols) || (in_slice >= n_slices)), "subview_field::operator(): index out of bounds");
+  arma_debug_check( ((in_row >= n_rows) || (in_col >= n_cols) || (in_slice >= n_slices)), "subview_field::operator(): index out of bounds" );
   
   const uword index = (in_slice + aux_slice1)*(f.n_rows*f.n_cols) + (in_col + aux_col1)*f.n_rows + aux_row1 + in_row;
   
@@ -333,6 +335,16 @@ subview_field<oT>::at(const uword in_row, const uword in_col, const uword in_sli
   const uword index = (in_slice + aux_slice1)*(f.n_rows*f.n_cols) + (in_col + aux_col1)*f.n_rows + aux_row1 + in_row;
   
   return *(f.mem[index]);
+  }
+
+
+
+template<typename oT>
+arma_inline
+bool
+subview_field<oT>::is_empty() const
+  {
+  return (n_elem == 0);
   }
 
 
@@ -427,6 +439,98 @@ subview_field<oT>::print(std::ostream& user_stream, const std::string extra_text
 
 
 
+template<typename oT>
+template<typename functor>
+inline
+void
+subview_field<oT>::for_each(functor F)
+  {
+  arma_extra_debug_sigprint();
+  
+  subview_field<oT>& t = *this;
+  
+  if(t.n_slices == 1)
+    {
+    for(uword col=0; col < t.n_cols; ++col)
+    for(uword row=0; row < t.n_rows; ++row)
+      {
+      F( t.at(row,col) );
+      }
+    }
+  else
+    {
+    for(uword slice=0; slice < t.n_slices; ++slice)
+    for(uword col=0;   col   < t.n_cols;   ++col  )
+    for(uword row=0;   row   < t.n_rows;   ++row  )
+      {
+      F( t.at(row,col,slice) );
+      }
+    }
+  }
+
+
+
+template<typename oT>
+template<typename functor>
+inline
+void
+subview_field<oT>::for_each(functor F) const
+  {
+  arma_extra_debug_sigprint();
+  
+  const subview_field<oT>& t = *this;
+  
+  if(t.n_slices == 1)
+    {
+    for(uword col=0; col < t.n_cols; ++col)
+    for(uword row=0; row < t.n_rows; ++row)
+      {
+      F( t.at(row,col) );
+      }
+    }
+  else
+    {
+    for(uword slice=0; slice < t.n_slices; ++slice)
+    for(uword col=0;   col   < t.n_cols;   ++col  )
+    for(uword row=0;   row   < t.n_rows;   ++row  )
+      {
+      F( t.at(row,col,slice) );
+      }
+    }
+  }
+
+
+
+template<typename oT>
+inline
+void
+subview_field<oT>::fill(const oT& x)
+  {
+  arma_extra_debug_sigprint();
+  
+  subview_field<oT>& t = *this;
+  
+  if(t.n_slices == 1)
+    {
+    for(uword col=0; col < t.n_cols; ++col)
+    for(uword row=0; row < t.n_rows; ++row)
+      {
+      t.at(row,col) = x;
+      }
+    }
+  else
+    {
+    for(uword slice=0; slice < t.n_slices; ++slice)
+    for(uword col=0;   col   < t.n_cols;   ++col  )
+    for(uword row=0;   row   < t.n_rows;   ++row  )
+      {
+      t.at(row,col,slice) = x;
+      }
+    }
+  }
+
+
+
 //! X = Y.subfield(...)
 template<typename oT>
 inline
@@ -449,7 +553,7 @@ subview_field<oT>::extract(field<oT>& actual_out, const subview_field<oT>& in)
   
   out.set_size(n_rows, n_cols, n_slices);
   
-  arma_extra_debug_print(arma_boost::format("out.n_rows = %d   out.n_cols = %d   out.n_slices = %d    in.m.n_rows = %d  in.m.n_cols = %d  in.m.n_slices = %d") % out.n_rows % out.n_cols % out.n_slices % in.f.n_rows % in.f.n_cols % in.f.n_slices);
+  arma_extra_debug_print(arma_str::format("out.n_rows = %d   out.n_cols = %d   out.n_slices = %d    in.m.n_rows = %d  in.m.n_cols = %d  in.m.n_slices = %d") % out.n_rows % out.n_cols % out.n_slices % in.f.n_rows % in.f.n_cols % in.f.n_slices);
   
   if(n_slices == 1)
     {

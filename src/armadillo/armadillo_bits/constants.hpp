@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2012 Conrad Sanderson
-// Copyright (C) 2008-2012 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2012 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup constants
@@ -105,7 +107,7 @@ namespace priv
 
 
 //! various constants.
-//! Physical constants taken from NIST 2010 CODATA values, and some from WolframAlpha (values provided as of 2009-06-23)
+//! Physical constants taken from NIST 2014 CODATA values, and some from WolframAlpha (values provided as of 2009-06-23)
 //! http://physics.nist.gov/cuu/Constants
 //! http://www.wolframalpha.com
 //! See also http://en.wikipedia.org/wiki/Physical_constant
@@ -181,7 +183,7 @@ template<typename eT> const eT Datum<eT>::k         = eT(1.38064852e-23);
 template<typename eT> const eT Datum<eT>::k_evk     = eT(8.6173303e-5);
 template<typename eT> const eT Datum<eT>::a_0       = eT(0.52917721067e-10);
 template<typename eT> const eT Datum<eT>::mu_B      = eT(927.4009994e-26);
-template<typename eT> const eT Datum<eT>::Z_0       = eT(3.76730313461771e-2);
+template<typename eT> const eT Datum<eT>::Z_0       = eT(376.730313461771);
 template<typename eT> const eT Datum<eT>::G_0       = eT(7.7480917310e-5);
 template<typename eT> const eT Datum<eT>::k_e       = eT(8.9875517873681764e9);
 template<typename eT> const eT Datum<eT>::eps_0     = eT(8.85418781762039e-12);

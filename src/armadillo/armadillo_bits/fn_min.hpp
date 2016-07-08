@@ -1,22 +1,19 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_min
 //! @{
 
-//! \brief
-//! Delayed 'minimum values' operation.
-//! The dimension, along which the minima are found, is set via 'dim'.
-//! For dim = 0, the minimum value of each column is found (i.e. searches by traversing across rows).
-//! For dim = 1, the minimum value of each row is found (i.e. searches by traversing across columns).
-//! The default is dim = 0.
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const Op<T1, op_min>
 min
@@ -36,6 +33,7 @@ min
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const Op<T1, op_min>
 min
@@ -54,8 +52,8 @@ min
 
 
 template<typename T1>
-inline
 arma_warn_unused
+inline
 typename T1::elem_type
 min
   (
@@ -73,12 +71,9 @@ min
 
 
 
-//! \brief
-//! Immediate 'find minimum value' operation,
-//! invoked, for example, by: min(min(A))
 template<typename T1>
-inline
 arma_warn_unused
+inline
 typename T1::elem_type
 min(const Op<T1, op_min>& in)
   {
@@ -91,6 +86,7 @@ min(const Op<T1, op_min>& in)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const Op< Op<T1, op_min>, op_min>
 min(const Op<T1, op_min>& in, const uword dim)
@@ -103,8 +99,8 @@ min(const Op<T1, op_min>& in, const uword dim)
 
 
 template<typename T>
-arma_inline
 arma_warn_unused
+arma_inline
 const typename arma_scalar_only<T>::result &
 min(const T& x)
   {
@@ -115,6 +111,7 @@ min(const T& x)
 
 //! element-wise minimum
 template<typename T1, typename T2>
+arma_warn_unused
 arma_inline
 typename
 enable_if2
@@ -136,8 +133,42 @@ min
 
 
 template<typename T1>
-inline
 arma_warn_unused
+arma_inline
+const OpCube<T1, op_min>
+min
+  (
+  const BaseCube<typename T1::elem_type, T1>& X,
+  const uword dim = 0
+  )
+  {
+  arma_extra_debug_sigprint();
+  
+  return OpCube<T1, op_min>(X.get_ref(), dim, 0);
+  }
+
+
+
+template<typename T1, typename T2>
+arma_warn_unused
+arma_inline
+const GlueCube<T1, T2, glue_min>
+min
+  (
+  const BaseCube<typename T1::elem_type, T1>& X,
+  const BaseCube<typename T1::elem_type, T2>& Y
+  )
+  {
+  arma_extra_debug_sigprint();
+  
+  return GlueCube<T1, T2, glue_min>(X.get_ref(), Y.get_ref());
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
 typename
 enable_if2
   <
@@ -154,6 +185,7 @@ min(const T1& x)
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename
 enable_if2
@@ -171,8 +203,8 @@ min(const T1& X, const uword dim = 0)
 
 
 template<typename T1>
-inline
 arma_warn_unused
+inline
 typename T1::elem_type
 min(const SpOp<T1, spop_min>& X)
   {
@@ -185,6 +217,7 @@ min(const SpOp<T1, spop_min>& X)
 
 
 template<typename T1>
+arma_warn_unused
 inline
 const SpOp< SpOp<T1, spop_min>, spop_min>
 min(const SpOp<T1, spop_min>& in, const uword dim)
@@ -196,6 +229,7 @@ min(const SpOp<T1, spop_min>& in, const uword dim)
 
 
 
+arma_warn_unused
 inline
 uword
 min(const SizeMat& s)
@@ -205,6 +239,7 @@ min(const SizeMat& s)
 
 
 
+arma_warn_unused
 inline
 uword
 min(const SizeCube& s)

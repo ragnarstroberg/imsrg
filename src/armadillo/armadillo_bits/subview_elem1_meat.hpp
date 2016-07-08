@@ -1,9 +1,11 @@
-// Copyright (C) 2010-2015 Conrad Sanderson
-// Copyright (C) 2010-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2010-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup subview_elem1
@@ -225,7 +227,7 @@ subview_elem1<eT,T1>::inplace_op(const Base<eT,T2>& x)
   
   const bool is_alias = P.is_alias(m);
   
-  if( (is_alias == false) && (Proxy<T2>::prefer_at_accessor == false) )
+  if( (is_alias == false) && (Proxy<T2>::use_at == false) )
     {
     typename Proxy<T2>::ea_type X = P.get_ea();
     
@@ -259,7 +261,7 @@ subview_elem1<eT,T1>::inplace_op(const Base<eT,T2>& x)
     }
   else
     {
-    arma_extra_debug_print("subview_elem1::inplace_op(): aliasing or prefer_at_accessor detected");
+    arma_extra_debug_print("subview_elem1::inplace_op(): aliasing or use_at detected");
     
     const unwrap_check<typename Proxy<T2>::stored_type> tmp(P.Q, is_alias);
     const Mat<eT>& M = tmp.M;
@@ -708,7 +710,7 @@ subview_elem1<eT,T1>::extract(Mat<eT>& actual_out, const subview_elem1<eT,T1>& i
   
   const bool alias = (&actual_out == &m_local);
   
-  arma_extra_debug_warn(alias, "subview_elem1::extract(): aliasing detected");
+  if(alias)  { arma_extra_debug_print("subview_elem1::extract(): aliasing detected"); }
   
   Mat<eT>* tmp_out = alias ? new Mat<eT>() : 0;
   Mat<eT>& out     = alias ? *tmp_out      : actual_out;

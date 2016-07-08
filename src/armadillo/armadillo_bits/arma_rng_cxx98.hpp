@@ -1,9 +1,11 @@
-// Copyright (C) 2013-2014 Conrad Sanderson
-// Copyright (C) 2013-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2013-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup arma_rng_cxx98
@@ -138,18 +140,18 @@ arma_rng_cxx98::randi_fill(eT* mem, const uword N, const int a, const int b)
     {
     for(uword i=0; i<N; ++i)
       {
-      mem[i] = std::rand();
+      mem[i] = eT(std::rand());
       }
     }
   else
     {
-    const uword length = b - a + 1;
+    const uword length = uword(b - a + 1);
     
     const double scale = double(length) / double(randi_max_val());
     
     for(uword i=0; i<N; ++i)
       {
-      mem[i] = (std::min)( b, (int( double(randi_val()) * scale ) + a) );
+      mem[i] = eT((std::min)( b, (int( double(randi_val()) * scale ) + a) ));
       }
     }
   }
