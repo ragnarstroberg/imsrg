@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2013 Conrad Sanderson
-// Copyright (C) 2008-2013 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup wall_clock
@@ -33,7 +35,7 @@ wall_clock::tic()
   {
   arma_extra_debug_sigprint();
   
-  #if defined(ARMA_USE_CXX11) && !defined(ARMA_DONT_USE_CXX11_CHRONO)
+  #if defined(ARMA_USE_CXX11)
     {
     chrono_time1 = std::chrono::steady_clock::now();
     valid = true;
@@ -45,7 +47,7 @@ wall_clock::tic()
     }
   #else
     {
-    time1 = clock();
+    time1 = std::clock();
     valid = true;
     }
   #endif
@@ -61,7 +63,7 @@ wall_clock::toc()
   
   if(valid)
     {
-    #if defined(ARMA_USE_CXX11) && !defined(ARMA_DONT_USE_CXX11_CHRONO)
+    #if defined(ARMA_USE_CXX11)
       {
       const std::chrono::steady_clock::time_point chrono_time2 = std::chrono::steady_clock::now();
       
@@ -82,9 +84,9 @@ wall_clock::toc()
       }
     #else
       {
-      clock_t time2 = clock();
+      std::clock_t time2 = std::clock();
       
-      clock_t diff = time2 - time1;
+      std::clock_t diff = time2 - time1;
       
       return double(diff) / double(CLOCKS_PER_SEC);
       }

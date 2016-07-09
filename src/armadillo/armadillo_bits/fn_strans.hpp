@@ -1,9 +1,11 @@
-// Copyright (C) 2011-2012 Conrad Sanderson
-// Copyright (C) 2011-2012 NICTA (www.nicta.com.au)
+// Copyright (C) 2011-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_strans
@@ -12,6 +14,7 @@
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const Op<T1, op_strans>
 strans
@@ -33,6 +36,7 @@ strans
 // NOTE: for non-complex objects, deliberately returning op_htrans instead of op_strans,
 // NOTE: due to currently more optimisations available when using op_htrans, especially by glue_times
 template<typename T1>
+arma_warn_unused
 arma_inline
 const Op<T1, op_htrans>
 strans
@@ -53,6 +57,7 @@ strans
 
 //! two consecutive transpose operations cancel each other
 template<typename T1>
+arma_warn_unused
 arma_inline
 const T1&
 strans(const Op<T1, op_strans>& X)
@@ -70,6 +75,7 @@ strans(const Op<T1, op_strans>& X)
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename
 enable_if2

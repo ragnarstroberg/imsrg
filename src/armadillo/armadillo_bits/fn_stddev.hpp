@@ -1,9 +1,11 @@
-// Copyright (C) 2009-2012 Conrad Sanderson
-// Copyright (C) 2009-2012 NICTA (www.nicta.com.au)
+// Copyright (C) 2009-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_stddev
@@ -12,6 +14,7 @@
 
 
 template<typename T1>
+arma_warn_unused
 inline
 const mtOp<typename T1::pod_type, T1, op_stddev>
 stddev
@@ -33,6 +36,7 @@ stddev
 
 
 template<typename T1>
+arma_warn_unused
 inline
 const mtOp<typename T1::pod_type, T1, op_stddev>
 stddev
@@ -52,8 +56,8 @@ stddev
 
 
 template<typename T1>
-inline
 arma_warn_unused
+inline
 typename T1::pod_type
 stddev
   (
@@ -73,8 +77,8 @@ stddev
 
 
 template<typename T>
-arma_inline
 arma_warn_unused
+arma_inline
 const typename arma_scalar_only<T>::result
 stddev(const T&)
   {

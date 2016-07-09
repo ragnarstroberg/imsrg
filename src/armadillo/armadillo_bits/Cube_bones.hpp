@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup Cube
@@ -94,8 +96,8 @@ class Cube : public BaseCube< eT, Cube<eT> >
   inline const Cube& operator%=(const subview_cube<eT>& X);
   inline const Cube& operator/=(const subview_cube<eT>& X);
   
-  arma_inline       Mat<eT>& slice(const uword in_slice);
-  arma_inline const Mat<eT>& slice(const uword in_slice) const;
+  inline       Mat<eT>& slice(const uword in_slice);
+  inline const Mat<eT>& slice(const uword in_slice) const;
   
   arma_inline       subview_cube<eT> slices(const uword in_slice1, const uword in_slice2);
   arma_inline const subview_cube<eT> slices(const uword in_slice1, const uword in_slice2) const;
@@ -127,6 +129,12 @@ class Cube : public BaseCube< eT, Cube<eT> >
   inline            subview_cube<eT> tube(const span& row_span, const span& col_span);
   inline      const subview_cube<eT> tube(const span& row_span, const span& col_span) const;
   
+  inline            subview_cube<eT> head_slices(const uword N);
+  inline      const subview_cube<eT> head_slices(const uword N) const;
+  
+  inline            subview_cube<eT> tail_slices(const uword N);
+  inline      const subview_cube<eT> tail_slices(const uword N) const;
+  
   template<typename T1> arma_inline       subview_elem1<eT,T1> elem(const Base<uword,T1>& a);
   template<typename T1> arma_inline const subview_elem1<eT,T1> elem(const Base<uword,T1>& a) const;
   
@@ -139,8 +147,13 @@ class Cube : public BaseCube< eT, Cube<eT> >
   
   template<typename T1> inline       subview_cube_each2<eT, T1> each_slice(const Base<uword, T1>& indices);
   template<typename T1> inline const subview_cube_each2<eT, T1> each_slice(const Base<uword, T1>& indices) const;
-
-
+  
+  #if defined(ARMA_USE_CXX11)
+  inline const Cube& each_slice(const std::function< void(      Mat<eT>&) >& F);
+  inline const Cube& each_slice(const std::function< void(const Mat<eT>&) >& F) const;
+  #endif
+  
+  
   inline void shed_slice(const uword slice_num);
   
   inline void shed_slices(const uword in_slice1, const uword in_slice2);
@@ -263,13 +276,11 @@ class Cube : public BaseCube< eT, Cube<eT> >
   
   template<typename eT2> inline void copy_size(const Cube<eT2>& m);
   
+  template<typename functor> inline const Cube&  for_each(functor F);
+  template<typename functor> inline const Cube&  for_each(functor F) const;
   
-  template<typename functor>
-  inline const Cube& transform(functor F);
-  
-  template<typename functor>
-  inline const Cube& imbue(functor F);
-  
+  template<typename functor> inline const Cube& transform(functor F);
+  template<typename functor> inline const Cube&     imbue(functor F);
   
   inline const Cube& fill(const eT val);
   

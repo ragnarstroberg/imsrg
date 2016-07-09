@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup op_misc
@@ -29,7 +31,7 @@ op_real::apply( Mat<typename T1::pod_type>& out, const mtOp<typename T1::pod_typ
   
   T* out_mem = out.memptr();
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typedef typename Proxy<T1>::ea_type ea_type;
     
@@ -73,7 +75,7 @@ op_real::apply( Cube<typename T1::pod_type>& out, const mtOpCube<typename T1::po
   
   T* out_mem = out.memptr();
 
-  if(ProxyCube<T1>::prefer_at_accessor == false)
+  if(ProxyCube<T1>::use_at == false)
     {
     typedef typename ProxyCube<T1>::ea_type ea_type;
     
@@ -117,7 +119,7 @@ op_imag::apply( Mat<typename T1::pod_type>& out, const mtOp<typename T1::pod_typ
   
   T* out_mem = out.memptr();
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typedef typename Proxy<T1>::ea_type ea_type;
     
@@ -161,7 +163,7 @@ op_imag::apply( Cube<typename T1::pod_type>& out, const mtOpCube<typename T1::po
   
   T* out_mem = out.memptr();
 
-  if(ProxyCube<T1>::prefer_at_accessor == false)
+  if(ProxyCube<T1>::use_at == false)
     {
     typedef typename ProxyCube<T1>::ea_type ea_type;
     
@@ -205,7 +207,7 @@ op_abs::apply( Mat<typename T1::pod_type>& out, const mtOp<typename T1::pod_type
   
   T* out_mem = out.memptr();
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typedef typename Proxy<T1>::ea_type ea_type;
     
@@ -249,7 +251,7 @@ op_abs::apply( Cube<typename T1::pod_type>& out, const mtOpCube<typename T1::pod
   
   T* out_mem = out.memptr();
 
-  if(ProxyCube<T1>::prefer_at_accessor == false)
+  if(ProxyCube<T1>::use_at == false)
     {
     typedef typename ProxyCube<T1>::ea_type ea_type;
     
@@ -300,7 +302,7 @@ op_orth::apply( Mat<typename T1::elem_type>& out, const Op<T1, op_orth>& expr )
   
   V.reset();
   
-  if(status == false)  { out.reset(); arma_bad("orth(): svd failed"); return; }
+  if(status == false)  { out.reset(); arma_stop_runtime_error("orth(): svd failed"); return; }
   
   if(s.is_empty())  { out.reset(); return; }
   
@@ -351,7 +353,7 @@ op_null::apply( Mat<typename T1::elem_type>& out, const Op<T1, op_null>& expr )
   
   U.reset();
   
-  if(status == false)  { out.reset(); arma_bad("null(): svd failed"); return; }
+  if(status == false)  { out.reset(); arma_stop_runtime_error("null(): svd failed"); return; }
   
   if(s.is_empty())  { out.reset(); return; }
   

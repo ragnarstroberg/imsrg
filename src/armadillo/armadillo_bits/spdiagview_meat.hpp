@@ -1,9 +1,11 @@
-// Copyright (C) 2015 Conrad Sanderson
-// Copyright (C) 2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2015-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup spdiagview
@@ -180,7 +182,7 @@ spdiagview<eT>::operator= (const Base<eT,T1>& o)
     "spdiagview: given object has incompatible size"
     );
   
-  if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::prefer_at_accessor) )
+  if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::use_at) )
     {
     const unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
     const Mat<eT>& x = tmp.M;
@@ -229,7 +231,7 @@ spdiagview<eT>::operator+=(const Base<eT,T1>& o)
     "spdiagview: given object has incompatible size"
     );
   
-  if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::prefer_at_accessor) )
+  if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::use_at) )
     {
     const unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
     const Mat<eT>& x = tmp.M;
@@ -278,7 +280,7 @@ spdiagview<eT>::operator-=(const Base<eT,T1>& o)
     "spdiagview: given object has incompatible size"
     );
   
-  if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::prefer_at_accessor) )
+  if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::use_at) )
     {
     const unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
     const Mat<eT>& x = tmp.M;
@@ -327,7 +329,7 @@ spdiagview<eT>::operator%=(const Base<eT,T1>& o)
     "spdiagview: given object has incompatible size"
     );
   
-  if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::prefer_at_accessor) )
+  if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::use_at) )
     {
     const unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
     const Mat<eT>& x = tmp.M;
@@ -376,7 +378,7 @@ spdiagview<eT>::operator/=(const Base<eT,T1>& o)
     "spdiagview: given object has incompatible size"
     );
   
-  if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::prefer_at_accessor) )
+  if( (is_Mat<typename Proxy<T1>::stored_type>::value) || (Proxy<T1>::use_at) )
     {
     const unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
     const Mat<eT>& x = tmp.M;
@@ -426,7 +428,7 @@ spdiagview<eT>::operator= (const SpBase<eT,T1>& o)
     "spdiagview: given object has incompatible size"
     );
   
-  if( SpProxy<T1>::must_use_iterator || P.is_alias(d_m) )
+  if( SpProxy<T1>::use_iterator || P.is_alias(d_m) )
     {
     const SpMat<eT> tmp(P.Q);
     
@@ -480,7 +482,7 @@ spdiagview<eT>::operator+=(const SpBase<eT,T1>& o)
     "spdiagview: given object has incompatible size"
     );
   
-  if( SpProxy<T1>::must_use_iterator || P.is_alias(d_m) )
+  if( SpProxy<T1>::use_iterator || P.is_alias(d_m) )
     {
     const SpMat<eT> tmp(P.Q);
     
@@ -534,7 +536,7 @@ spdiagview<eT>::operator-=(const SpBase<eT,T1>& o)
     "spdiagview: given object has incompatible size"
     );
   
-  if( SpProxy<T1>::must_use_iterator || P.is_alias(d_m) )
+  if( SpProxy<T1>::use_iterator || P.is_alias(d_m) )
     {
     const SpMat<eT> tmp(P.Q);
     
@@ -588,7 +590,7 @@ spdiagview<eT>::operator%=(const SpBase<eT,T1>& o)
     "spdiagview: given object has incompatible size"
     );
   
-  if( SpProxy<T1>::must_use_iterator || P.is_alias(d_m) )
+  if( SpProxy<T1>::use_iterator || P.is_alias(d_m) )
     {
     const SpMat<eT> tmp(P.Q);
     
@@ -642,7 +644,7 @@ spdiagview<eT>::operator/=(const SpBase<eT,T1>& o)
     "spdiagview: given object has incompatible size"
     );
   
-  if( SpProxy<T1>::must_use_iterator || P.is_alias(d_m) )
+  if( SpProxy<T1>::use_iterator || P.is_alias(d_m) )
     {
     const SpMat<eT> tmp(P.Q);
     

@@ -1,9 +1,11 @@
-// Copyright (C) 2011-2015 Conrad Sanderson
-// Copyright (C) 2011-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2011-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup arrayops
@@ -175,27 +177,27 @@ class arrayops
   // scalar = op(array)
   
   template<typename eT>
-  arma_hot arma_pure inline static
+  arma_hot inline static
   eT
   accumulate(const eT* src, const uword n_elem);
   
   template<typename eT>
-  arma_hot arma_pure inline static
+  arma_hot inline static
   eT
   product(const eT* src, const uword n_elem);
   
   template<typename eT>
-  arma_hot arma_pure inline static
+  arma_hot inline static
   bool
   is_finite(const eT* src, const uword n_elem);
   
   template<typename eT>
-  arma_hot arma_pure inline static
+  arma_hot inline static
   bool
   has_inf(const eT* src, const uword n_elem);
   
   template<typename eT>
-  arma_hot arma_pure inline static
+  arma_hot inline static
   bool
   has_nan(const eT* src, const uword n_elem);
   };

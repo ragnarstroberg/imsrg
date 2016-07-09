@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2014 Conrad Sanderson
-// Copyright (C) 2008-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup traits
@@ -378,6 +380,32 @@ struct is_op_diagmat< Op<T1,op_diagmat> >
 
 template<typename T1>
 struct is_op_diagmat< const Op<T1,op_diagmat> >
+  { static const bool value = true; };
+
+
+template<typename T>
+struct is_op_strans
+  { static const bool value = false; };
+ 
+template<typename T1>
+struct is_op_strans< Op<T1,op_strans> >
+  { static const bool value = true; };
+
+template<typename T1>
+struct is_op_strans< const Op<T1,op_strans> >
+  { static const bool value = true; };
+
+
+template<typename T>
+struct is_op_htrans
+  { static const bool value = false; };
+ 
+template<typename T1>
+struct is_op_htrans< Op<T1,op_htrans> >
+  { static const bool value = true; };
+
+template<typename T1>
+struct is_op_htrans< const Op<T1,op_htrans> >
   { static const bool value = true; };
 
 

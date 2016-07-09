@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup arma_config
@@ -45,6 +47,13 @@ struct arma_config
     static const bool blas = true;
   #else
     static const bool blas = false;
+  #endif
+  
+  
+  #if defined(ARMA_USE_NEWARP)
+    static const bool newarp = true;
+  #else
+    static const bool newarp = false;
   #endif
   
   

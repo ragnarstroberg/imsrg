@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup Row
@@ -235,7 +237,7 @@ Row<eT>::operator=(const std::vector<eT>& x)
   Row<eT>::Row(Row<eT>&& X)
     : Mat<eT>(arma_vec_indicator(), 2)
     {
-    arma_extra_debug_sigprint(arma_boost::format("this = %x   X = %x") % this % &X);
+    arma_extra_debug_sigprint(arma_str::format("this = %x   X = %x") % this % &X);
     
     access::rw(Mat<eT>::n_rows) = 1;
     access::rw(Mat<eT>::n_cols) = X.n_cols;
@@ -275,7 +277,7 @@ Row<eT>::operator=(const std::vector<eT>& x)
   const Row<eT>&
   Row<eT>::operator=(Row<eT>&& X)
     {
-    arma_extra_debug_sigprint(arma_boost::format("this = %x   X = %x") % this % &X);
+    arma_extra_debug_sigprint(arma_str::format("this = %x   X = %x") % this % &X);
     
     (*this).steal_mem(X);
     

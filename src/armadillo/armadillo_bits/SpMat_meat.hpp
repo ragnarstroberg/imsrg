@@ -1,13 +1,18 @@
-// Copyright (C) 2011-2015 Ryan Curtin
-// Copyright (C) 2012-2015 Conrad Sanderson
-// Copyright (C) 2011 Matthew Amidon
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Ryan Curtin
+// Written by Matthew Amidon
+
 
 //! \addtogroup SpMat
 //! @{
+
 
 /**
  * Initialize a sparse matrix with size 0x0 (empty).
@@ -195,7 +200,7 @@ SpMat<eT>::SpMat(const SpMat<eT>& x)
     , col_ptrs(NULL)
     {
     arma_extra_debug_sigprint_this(this);
-    arma_extra_debug_sigprint(arma_boost::format("this = %x   in_mat = %x") % this % &in_mat);
+    arma_extra_debug_sigprint(arma_str::format("this = %x   in_mat = %x") % this % &in_mat);
     
     (*this).steal_mem(in_mat);
     }
@@ -207,7 +212,7 @@ SpMat<eT>::SpMat(const SpMat<eT>& x)
   const SpMat<eT>&
   SpMat<eT>::operator=(SpMat<eT>&& in_mat)
     {
-    arma_extra_debug_sigprint(arma_boost::format("this = %x   in_mat = %x") % this % &in_mat);
+    arma_extra_debug_sigprint(arma_str::format("this = %x   in_mat = %x") % this % &in_mat);
     
     (*this).steal_mem(in_mat);
     
@@ -1009,7 +1014,7 @@ SpMat<eT>::operator%=(const Base<eT, T1>& x)
 
   while(it != end())
     {
-    // prefer_at_accessor == false can't save us any work here
+    // use_at == false can't save us any work here
     if(((*it) * p.at(it.row(), it.col())) != eT(0))
       {
       ++new_n_nonzero;
@@ -1024,7 +1029,7 @@ SpMat<eT>::operator%=(const Base<eT, T1>& x)
   uword cur_pos = 0;
   while(c_it != end())
     {
-    // prefer_at_accessor == false can't save us any work here
+    // use_at == false can't save us any work here
     const eT val = (*c_it) * p.at(c_it.row(), c_it.col());
     if(val != eT(0))
       {
@@ -2176,8 +2181,8 @@ SpMat<eT>::diag(const sword in_id) const
   {
   arma_extra_debug_sigprint();
   
-  const uword row_offset = (in_id < 0) ? -in_id : 0;
-  const uword col_offset = (in_id > 0) ?  in_id : 0;
+  const uword row_offset = uword( (in_id < 0) ? -in_id : 0 );
+  const uword col_offset = uword( (in_id > 0) ?  in_id : 0 );
   
   arma_debug_check
     (
@@ -3233,7 +3238,7 @@ SpMat<eT>::reshape(const uword in_rows, const uword in_cols, const uword dim)
   {
   arma_extra_debug_sigprint();
   
-  arma_debug_check( (dim > 1), "SpMat::reshape(): paramter 'dim' must be 0 or 1" );
+  arma_debug_check( (dim > 1), "SpMat::reshape(): parameter 'dim' must be 0 or 1" );
   
   if(dim == 0)
     {
@@ -3673,11 +3678,11 @@ SpMat<eT>::save(const std::string name, const file_type type, const bool print_s
       break;
     
     default:
-      arma_warn(print_status, "SpMat::save(): unsupported file type");
+      if(print_status)  { arma_debug_warn("SpMat::save(): unsupported file type"); }
       save_okay = false;
     }
   
-  arma_warn( print_status && (save_okay == false), "SpMat::save(): couldn't write to ", name);
+  if(print_status && (save_okay == false))  { arma_debug_warn("SpMat::save(): couldn't write to ", name); }
   
   return save_okay;
   }
@@ -3713,11 +3718,11 @@ SpMat<eT>::save(std::ostream& os, const file_type type, const bool print_status)
       break;
     
     default:
-      arma_warn(print_status, "SpMat::save(): unsupported file type");
+      if(print_status)  { arma_debug_warn("SpMat::save(): unsupported file type"); }
       save_okay = false;
     }
   
-  arma_warn( print_status && (save_okay == false), "SpMat::save(): couldn't write to the given stream");
+  if(print_status && (save_okay == false))  { arma_debug_warn("SpMat::save(): couldn't write to the given stream"); }
   
   return save_okay;
   }
@@ -3758,19 +3763,19 @@ SpMat<eT>::load(const std::string name, const file_type type, const bool print_s
       break;
     
     default:
-      arma_warn(print_status, "SpMat::load(): unsupported file type");
+      if(print_status)  { arma_debug_warn("SpMat::load(): unsupported file type"); }
       load_okay = false;
     }
   
-  if(load_okay == false)
+  if(print_status && (load_okay == false))
     {
     if(err_msg.length() > 0)
       {
-      arma_warn(print_status, "SpMat::load(): ", err_msg, name);
+      arma_debug_warn("SpMat::load(): ", err_msg, name);
       }
     else
       {
-      arma_warn(print_status, "SpMat::load(): couldn't read ", name);
+      arma_debug_warn("SpMat::load(): couldn't read ", name);
       }
     }
   
@@ -3818,20 +3823,19 @@ SpMat<eT>::load(std::istream& is, const file_type type, const bool print_status)
       break;
     
     default:
-      arma_warn(print_status, "SpMat::load(): unsupported file type");
+      if(print_status)  { arma_debug_warn("SpMat::load(): unsupported file type"); }
       load_okay = false;
     }
   
-  
-  if(load_okay == false)
+  if(print_status && (load_okay == false))
     {
     if(err_msg.length() > 0)
       {
-      arma_warn(print_status, "SpMat::load(): ", err_msg, "the given stream");
+      arma_debug_warn("SpMat::load(): ", err_msg, "the given stream");
       }
     else
       {
-      arma_warn(print_status, "SpMat::load(): couldn't load from the given stream");
+      arma_debug_warn("SpMat::load(): couldn't load from the given stream");
       }
     }
   
@@ -4554,7 +4558,7 @@ SpMat<eT>::init_xform(const SpBase<eT,T1>& A, const Functor& func)
   arma_extra_debug_sigprint();
   
   // if possible, avoid doing a copy and instead apply func to the generated elements
-  if(SpProxy<T1>::Q_created_by_proxy)
+  if(SpProxy<T1>::Q_is_generated)
     {
     (*this) = A.get_ref();
     
@@ -4663,6 +4667,8 @@ inline
 typename SpMat<eT>::iterator
 SpMat<eT>::begin()
   {
+  arma_extra_debug_sigprint();
+  
   return iterator(*this);
   }
 
@@ -4673,6 +4679,8 @@ inline
 typename SpMat<eT>::const_iterator
 SpMat<eT>::begin() const
   {
+  arma_extra_debug_sigprint();
+  
   return const_iterator(*this);
   }
 

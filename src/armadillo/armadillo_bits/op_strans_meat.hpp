@@ -1,10 +1,12 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
-// Copyright (C) 2012 Ryan Curtin
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Ryan Curtin
 
 
 //! \addtogroup op_strans
@@ -238,7 +240,7 @@ op_strans::apply_proxy(Mat<typename T1::elem_type>& out, const T1& X)
     
     const bool is_alias = P.is_alias(out);
     
-    if( (resolves_to_vector<T1>::value == true) && (Proxy<T1>::prefer_at_accessor == false) )
+    if( (resolves_to_vector<T1>::value == true) && (Proxy<T1>::use_at == false) )
       {
       if(is_alias == false)
         {
@@ -606,7 +608,7 @@ op_strans2::apply_proxy(Mat<typename T1::elem_type>& out, const T1& X, const typ
     
     const bool is_alias = P.is_alias(out);
     
-    if( (resolves_to_vector<T1>::value == true) && (Proxy<T1>::prefer_at_accessor == false) )
+    if( (resolves_to_vector<T1>::value == true) && (Proxy<T1>::use_at == false) )
       {
       if(is_alias == false)
         {
@@ -722,6 +724,25 @@ op_strans2::apply_proxy(Mat<typename T1::elem_type>& out, const T1& X, const typ
         out.steal_mem(out2);
         }
       }
+    }
+  }
+
+
+
+template<typename eT>
+inline
+void
+op_strans_cube::apply_noalias(Cube<eT>& out, const Cube<eT>& X)
+  {
+  out.set_size(X.n_cols, X.n_rows, X.n_slices);
+  
+  for(uword s=0; s < X.n_slices; ++s)
+    {
+    Mat<eT> out_slice( out.slice_memptr(s), X.n_cols, X.n_rows, false, true );
+    
+    const Mat<eT> X_slice( const_cast<eT*>(X.slice_memptr(s)), X.n_rows, X.n_cols, false, true );
+    
+    op_strans::apply_mat_noalias(out_slice, X_slice);
     }
   }
 

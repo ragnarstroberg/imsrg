@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup op_norm
@@ -33,7 +35,7 @@ op_norm::vec_norm_1(const Proxy<T1>& P, const typename arma_not_cx<typename T1::
   
   T acc = T(0);
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typename Proxy<T1>::ea_type A = P.get_ea();
     
@@ -112,7 +114,7 @@ op_norm::vec_norm_1(const Proxy<T1>& P, const typename arma_cx_only<typename T1:
   
   T acc = T(0);
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typename Proxy<T1>::ea_type A = P.get_ea();
     
@@ -316,7 +318,7 @@ op_norm::vec_norm_2(const Proxy<T1>& P, const typename arma_not_cx<typename T1::
   
   T acc = T(0);
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typename Proxy<T1>::ea_type A = P.get_ea();
     
@@ -416,7 +418,7 @@ op_norm::vec_norm_2(const Proxy<T1>& P, const typename arma_cx_only<typename T1:
   
   T acc = T(0);
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typename Proxy<T1>::ea_type A = P.get_ea();
     
@@ -689,7 +691,7 @@ op_norm::vec_norm_k(const Proxy<T1>& P, const int k)
   
   T acc = T(0);
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typename Proxy<T1>::ea_type A = P.get_ea();
     
@@ -749,7 +751,7 @@ op_norm::vec_norm_max(const Proxy<T1>& P)
   
   T max_val = (N != 1) ? priv::most_neg<T>() : std::abs(P[0]);
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typename Proxy<T1>::ea_type A = P.get_ea();
     
@@ -815,7 +817,7 @@ op_norm::vec_norm_min(const Proxy<T1>& P)
   
   T min_val = (N != 1) ? priv::most_pos<T>() : std::abs(P[0]);
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typename Proxy<T1>::ea_type A = P.get_ea();
     
@@ -968,7 +970,7 @@ op_norm::mat_norm_2(const SpProxy<T1>& P, const typename arma_cx_only<typename T
   typedef typename T1::pod_type   T;
   
   arma_ignore(P);
-  arma_stop("norm(): unimplemented norm type for complex sparse matrices");
+  arma_stop_logic_error("norm(): unimplemented norm type for complex sparse matrices");
   
   return T(0);
   

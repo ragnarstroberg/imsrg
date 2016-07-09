@@ -1,11 +1,13 @@
-// Copyright (C) 2009-2015 Conrad Sanderson
-// Copyright (C) 2009-2015 NICTA (www.nicta.com.au)
-// Copyright (C) 2009-2010 Dimitrios Bouzas
-// Copyright (C) 2011 Stanislav Funiak
+// Copyright (C) 2009-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Dimitrios Bouzas
+// Written by Stanislav Funiak
 
 
 //! \addtogroup fn_rank
@@ -14,8 +16,8 @@
 
 
 template<typename T1>
-inline
 arma_warn_unused
+inline
 uword
 rank
   (
@@ -37,7 +39,7 @@ rank
   
   if(status == false)
     {
-    arma_bad("rank(): failed to converge");
+    arma_stop_runtime_error("rank(): svd failed");
     
     return uword(0);
     }

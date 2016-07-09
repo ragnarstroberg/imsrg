@@ -1,10 +1,12 @@
-// Copyright (C) 2010-2014 Conrad Sanderson
-// Copyright (C) 2010-2014 NICTA (www.nicta.com.au)
-// Copyright (C) 2010 Dimitrios Bouzas
+// Copyright (C) 2010-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Dimitrios Bouzas
 
 
 
@@ -35,7 +37,7 @@ op_find::helper
   uword* indices_mem = indices.memptr();
   uword  n_nz        = 0;
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typename Proxy<T1>::ea_type PA = A.get_ea();
     
@@ -93,7 +95,7 @@ op_find::helper
   uword* indices_mem = indices.memptr();
   uword  n_nz        = 0;
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typename Proxy<T1>::ea_type PA = A.get_ea();
     
@@ -116,7 +118,7 @@ op_find::helper
       else if(is_same_type<op_type, op_rel_gteq_post>::yes)  { not_zero_i = (tpi >= val); }
       else if(is_same_type<op_type, op_rel_eq       >::yes)  { not_zero_i = (tpi == val); }
       else if(is_same_type<op_type, op_rel_noteq    >::yes)  { not_zero_i = (tpi != val); }
-      else not_zero_i = false;
+      else { not_zero_i = false; }
       
            if(is_same_type<op_type, op_rel_lt_pre   >::yes)  { not_zero_j = (val <  tpj); }
       else if(is_same_type<op_type, op_rel_lt_post  >::yes)  { not_zero_j = (tpj <  val); }
@@ -128,7 +130,7 @@ op_find::helper
       else if(is_same_type<op_type, op_rel_gteq_post>::yes)  { not_zero_j = (tpj >= val); }
       else if(is_same_type<op_type, op_rel_eq       >::yes)  { not_zero_j = (tpj == val); }
       else if(is_same_type<op_type, op_rel_noteq    >::yes)  { not_zero_j = (tpj != val); }
-      else not_zero_j = false;
+      else { not_zero_j = false; }
       
       if(not_zero_i == true)  { indices_mem[n_nz] = i;  ++n_nz; }
       if(not_zero_j == true)  { indices_mem[n_nz] = j;  ++n_nz; }
@@ -150,7 +152,7 @@ op_find::helper
       else if(is_same_type<op_type, op_rel_gteq_post>::yes)  { not_zero = (tmp >= val); }
       else if(is_same_type<op_type, op_rel_eq       >::yes)  { not_zero = (tmp == val); }
       else if(is_same_type<op_type, op_rel_noteq    >::yes)  { not_zero = (tmp != val); }
-      else not_zero = false;
+      else { not_zero = false; }
       
       if(not_zero == true)  { indices_mem[n_nz] = i;  ++n_nz; }
       }
@@ -179,7 +181,7 @@ op_find::helper
       else if(is_same_type<op_type, op_rel_gteq_post>::yes)  { not_zero = (tmp >= val); }
       else if(is_same_type<op_type, op_rel_eq       >::yes)  { not_zero = (tmp == val); }
       else if(is_same_type<op_type, op_rel_noteq    >::yes)  { not_zero = (tmp != val); }
-      else not_zero = false;
+      else { not_zero = false; }
       
       if(not_zero == true)  { indices_mem[n_nz] = i;  ++n_nz; }
       
@@ -223,7 +225,7 @@ op_find::helper
   uword  n_nz        = 0;
   
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     for(uword i=0; i<n_elem; ++i)
       {
@@ -233,7 +235,7 @@ op_find::helper
       
            if(is_same_type<op_type, op_rel_eq   >::yes)  { not_zero = (tmp == val); }
       else if(is_same_type<op_type, op_rel_noteq>::yes)  { not_zero = (tmp != val); }
-      else not_zero = false;
+      else { not_zero = false; }
       
       if(not_zero == true) { indices_mem[n_nz] = i;  ++n_nz; }
       }
@@ -254,7 +256,7 @@ op_find::helper
       
            if(is_same_type<op_type, op_rel_eq   >::yes)  { not_zero = (tmp == val); }
       else if(is_same_type<op_type, op_rel_noteq>::yes)  { not_zero = (tmp != val); }
-      else not_zero = false;
+      else { not_zero = false; }
       
       if(not_zero == true) { indices_mem[n_nz] = i;  ++n_nz; }
       
@@ -320,7 +322,7 @@ op_find::helper
     else if(is_same_type<glue_type, glue_rel_noteq >::yes)  { not_zero = (tmp1 != tmp2); }
     else if(is_same_type<glue_type, glue_rel_and   >::yes)  { not_zero = (tmp1 && tmp2); }
     else if(is_same_type<glue_type, glue_rel_or    >::yes)  { not_zero = (tmp1 || tmp2); }
-    else not_zero = false;
+    else { not_zero = false; }
     
     if(not_zero == true)  { indices_mem[n_nz] = i;  ++n_nz; }
     }
@@ -366,7 +368,7 @@ op_find::helper
   uword  n_nz        = 0;
   
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     for(uword i=0; i<n_elem; ++i)
       {
@@ -374,7 +376,7 @@ op_find::helper
       
            if(is_same_type<glue_type, glue_rel_eq    >::yes)  { not_zero = (PA[i] == PB[i]); }
       else if(is_same_type<glue_type, glue_rel_noteq >::yes)  { not_zero = (PA[i] != PB[i]); }
-      else not_zero = false;
+      else { not_zero = false; }
       
       if(not_zero == true)  { indices_mem[n_nz] = i;  ++n_nz; }
       }
@@ -393,7 +395,7 @@ op_find::helper
       
            if(is_same_type<glue_type, glue_rel_eq    >::yes)  { not_zero = (A.at(row,col) == B.at(row,col)); }
       else if(is_same_type<glue_type, glue_rel_noteq >::yes)  { not_zero = (A.at(row,col) != B.at(row,col)); }
-      else not_zero = false;
+      else { not_zero = false; }
       
       if(not_zero == true)  { indices_mem[n_nz] = i;  ++n_nz; }
       
@@ -477,7 +479,7 @@ op_find_finite::apply(Mat<uword>& out, const mtOp<uword, T1, op_find_finite>& X)
   uword* indices_mem = indices.memptr();
   uword  count       = 0;
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     const typename Proxy<T1>::ea_type Pea = P.get_ea();
     
@@ -523,7 +525,7 @@ op_find_nonfinite::apply(Mat<uword>& out, const mtOp<uword, T1, op_find_nonfinit
   uword* indices_mem = indices.memptr();
   uword  count       = 0;
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     const typename Proxy<T1>::ea_type Pea = P.get_ea();
     

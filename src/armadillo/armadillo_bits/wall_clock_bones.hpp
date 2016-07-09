@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2013 Conrad Sanderson
-// Copyright (C) 2008-2013 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup wall_clock
@@ -26,13 +28,13 @@ class wall_clock
   
   bool valid;
   
-  #if defined(ARMA_USE_CXX11) && !defined(ARMA_DONT_USE_CXX11_CHRONO)
+  #if defined(ARMA_USE_CXX11)
     std::chrono::steady_clock::time_point chrono_time1;
   #elif defined(ARMA_HAVE_GETTIMEOFDAY)
     struct timeval posix_time1;
     struct timeval posix_time2;
   #else
-    clock_t time1;
+    std::clock_t time1;
   #endif
   };
 
