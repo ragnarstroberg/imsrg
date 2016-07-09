@@ -68,7 +68,6 @@ int main(int argc, char** argv)
   vector<string> spwf = parameters.v("SPWF");
 
 
-
   // test 2bme file
   ifstream test(inputtbme);
   if( not test.good() )
