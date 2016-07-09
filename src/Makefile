@@ -6,8 +6,10 @@ CC = g++
 #                        to be used if OpenBlas was compiled without the USE_OMP flat
 
 INCLUDE   = -I./armadillo
-FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  #-flto
-SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  #-flto
+#FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  -DARMA_DONT_USE_NEWARP=1#-flto
+#SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC -ffast-math  #-flto
+FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC  
+SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC  
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
 FLAGS    += $(WARNFLAGS)
 SOFLAGS  += $(WARNFLAGS)
@@ -38,6 +40,8 @@ endif
 ifeq ($(THEHOST),cronos)
  FLAGS += -DOLD_BOOST=1
  SOFLAGS += -DOLD_BOOST=1
+ INCLUDE += -I$(HOME)/include
+ LIBS += -L$(HOME)/lib
  ifneq ($(PYTHON),off)
   ALL += pyIMSRG.so
   endif
