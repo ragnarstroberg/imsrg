@@ -1,10 +1,12 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
-// Copyright (C) 2009-2010 Ian Cullinan
+// Copyright (C) 2008-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Ian Cullinan
 
 
 //! \addtogroup field
@@ -19,7 +21,7 @@ struct field_prealloc_n_elem
 
 
 
-//! A lightweight 2D container for arbitrary objects
+//! A lightweight 1D/2D/3D container for arbitrary objects
 //! (the objects must have a copy constructor)
 
 template<typename oT>
@@ -63,6 +65,17 @@ class field
   inline void  set_size(const uword n_rows_in, const uword n_cols_in, const uword n_slices_in);
   inline void  set_size(const SizeMat&  s);
   inline void  set_size(const SizeCube& s);
+  
+  #if defined(ARMA_USE_CXX11)
+  inline                  field(const std::initializer_list<oT>& list);
+  inline const field& operator=(const std::initializer_list<oT>& list);
+  
+  inline                  field(const std::initializer_list< std::initializer_list<oT> >& list);
+  inline const field& operator=(const std::initializer_list< std::initializer_list<oT> >& list);
+  
+  inline                  field(field&& X);
+  inline const field& operator=(field&& X);
+  #endif
   
   template<typename oT2>
   inline void copy_size(const field<oT2>& x);
@@ -144,7 +157,15 @@ class field
   inline void print(                           const std::string extra_text = "") const;
   inline void print(std::ostream& user_stream, const std::string extra_text = "") const;
   
-  inline void fill(const oT& x);
+  #if defined(ARMA_USE_CXX11)
+  inline const field& for_each(const std::function< void(      oT&) >& F);
+  inline const field& for_each(const std::function< void(const oT&) >& F) const;
+  #else
+  template<typename functor> inline const field& for_each(functor F);
+  template<typename functor> inline const field& for_each(functor F) const;
+  #endif
+  
+  inline const field& fill(const oT& x);
   
   inline void reset();
   inline void reset_objects();

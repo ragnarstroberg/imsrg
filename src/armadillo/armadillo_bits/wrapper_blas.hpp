@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 
@@ -169,7 +171,7 @@ namespace blas
         blas_int inc = 1;
         
         typedef float T;
-        return arma_fortran(arma_sdot)(&n, (const T*)x, &inc, (const T*)y, &inc);
+        return eT( arma_fortran(arma_sdot)(&n, (const T*)x, &inc, (const T*)y, &inc) );
         }
       #endif
       }
@@ -180,7 +182,7 @@ namespace blas
       blas_int inc = 1;
       
       typedef double T;
-      return arma_fortran(arma_ddot)(&n, (const T*)x, &inc, (const T*)y, &inc);
+      return eT( arma_fortran(arma_ddot)(&n, (const T*)x, &inc, (const T*)y, &inc) );
       }
     else
     if( (is_supported_complex_float<eT>::value) || (is_supported_complex_double<eT>::value) )

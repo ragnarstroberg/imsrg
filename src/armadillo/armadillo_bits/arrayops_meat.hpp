@@ -1,9 +1,11 @@
-// Copyright (C) 2011-2015 Conrad Sanderson
-// Copyright (C) 2011-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2011-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup arrayops
@@ -887,7 +889,6 @@ arrayops::inplace_div_base(eT* dest, const eT val, const uword n_elem)
 
 template<typename eT>
 arma_hot
-arma_pure
 inline
 eT
 arrayops::accumulate(const eT* src, const uword n_elem)
@@ -935,7 +936,6 @@ arrayops::accumulate(const eT* src, const uword n_elem)
 
 template<typename eT>
 arma_hot
-arma_pure
 inline
 eT
 arrayops::product(const eT* src, const uword n_elem)
@@ -963,7 +963,6 @@ arrayops::product(const eT* src, const uword n_elem)
 
 template<typename eT>
 arma_hot
-arma_pure
 inline
 bool
 arrayops::is_finite(const eT* src, const uword n_elem)
@@ -996,7 +995,6 @@ arrayops::is_finite(const eT* src, const uword n_elem)
 
 template<typename eT>
 arma_hot
-arma_pure
 inline
 bool
 arrayops::has_inf(const eT* src, const uword n_elem)
@@ -1023,7 +1021,6 @@ arrayops::has_inf(const eT* src, const uword n_elem)
 
 template<typename eT>
 arma_hot
-arma_pure
 inline
 bool
 arrayops::has_nan(const eT* src, const uword n_elem)

@@ -1,9 +1,11 @@
-// Copyright (C) 2009-2010 Conrad Sanderson
-// Copyright (C) 2009-2010 NICTA (www.nicta.com.au)
+// Copyright (C) 2009-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_trig
@@ -20,6 +22,7 @@
 // cos
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOp<T1, eop_cos>
 cos(const Base<typename T1::elem_type,T1>& A)
@@ -32,6 +35,7 @@ cos(const Base<typename T1::elem_type,T1>& A)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOpCube<T1, eop_cos>
 cos(const BaseCube<typename T1::elem_type,T1>& A)
@@ -47,6 +51,7 @@ cos(const BaseCube<typename T1::elem_type,T1>& A)
 // acos
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOp<T1, eop_acos>
 acos(const Base<typename T1::elem_type,T1>& A)
@@ -59,6 +64,7 @@ acos(const Base<typename T1::elem_type,T1>& A)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOpCube<T1, eop_acos>
 acos(const BaseCube<typename T1::elem_type,T1>& A)
@@ -74,6 +80,7 @@ acos(const BaseCube<typename T1::elem_type,T1>& A)
 // cosh
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOp<T1, eop_cosh>
 cosh(const Base<typename T1::elem_type,T1>& A)
@@ -86,6 +93,7 @@ cosh(const Base<typename T1::elem_type,T1>& A)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOpCube<T1, eop_cosh>
 cosh(const BaseCube<typename T1::elem_type,T1>& A)
@@ -101,6 +109,7 @@ cosh(const BaseCube<typename T1::elem_type,T1>& A)
 // acosh
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOp<T1, eop_acosh>
 acosh(const Base<typename T1::elem_type,T1>& A)
@@ -113,6 +122,7 @@ acosh(const Base<typename T1::elem_type,T1>& A)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOpCube<T1, eop_acosh>
 acosh(const BaseCube<typename T1::elem_type,T1>& A)
@@ -128,6 +138,7 @@ acosh(const BaseCube<typename T1::elem_type,T1>& A)
 // sin
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOp<T1, eop_sin>
 sin(const Base<typename T1::elem_type,T1>& A)
@@ -140,6 +151,7 @@ sin(const Base<typename T1::elem_type,T1>& A)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOpCube<T1, eop_sin>
 sin(const BaseCube<typename T1::elem_type,T1>& A)
@@ -155,6 +167,7 @@ sin(const BaseCube<typename T1::elem_type,T1>& A)
 // asin
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOp<T1, eop_asin>
 asin(const Base<typename T1::elem_type,T1>& A)
@@ -167,6 +180,7 @@ asin(const Base<typename T1::elem_type,T1>& A)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOpCube<T1, eop_asin>
 asin(const BaseCube<typename T1::elem_type,T1>& A)
@@ -182,6 +196,7 @@ asin(const BaseCube<typename T1::elem_type,T1>& A)
 // sinh
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOp<T1, eop_sinh>
 sinh(const Base<typename T1::elem_type,T1>& A)
@@ -194,6 +209,7 @@ sinh(const Base<typename T1::elem_type,T1>& A)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOpCube<T1, eop_sinh>
 sinh(const BaseCube<typename T1::elem_type,T1>& A)
@@ -209,6 +225,7 @@ sinh(const BaseCube<typename T1::elem_type,T1>& A)
 // asinh
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOp<T1, eop_asinh>
 asinh(const Base<typename T1::elem_type,T1>& A)
@@ -221,6 +238,7 @@ asinh(const Base<typename T1::elem_type,T1>& A)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOpCube<T1, eop_asinh>
 asinh(const BaseCube<typename T1::elem_type,T1>& A)
@@ -236,6 +254,7 @@ asinh(const BaseCube<typename T1::elem_type,T1>& A)
 // tan
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOp<T1, eop_tan>
 tan(const Base<typename T1::elem_type,T1>& A)
@@ -248,6 +267,7 @@ tan(const Base<typename T1::elem_type,T1>& A)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOpCube<T1, eop_tan>
 tan(const BaseCube<typename T1::elem_type,T1>& A)
@@ -263,6 +283,7 @@ tan(const BaseCube<typename T1::elem_type,T1>& A)
 // atan
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOp<T1, eop_atan>
 atan(const Base<typename T1::elem_type,T1>& A)
@@ -275,6 +296,7 @@ atan(const Base<typename T1::elem_type,T1>& A)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOpCube<T1, eop_atan>
 atan(const BaseCube<typename T1::elem_type,T1>& A)
@@ -290,6 +312,7 @@ atan(const BaseCube<typename T1::elem_type,T1>& A)
 // tanh
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOp<T1, eop_tanh>
 tanh(const Base<typename T1::elem_type,T1>& A)
@@ -302,6 +325,7 @@ tanh(const Base<typename T1::elem_type,T1>& A)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOpCube<T1, eop_tanh>
 tanh(const BaseCube<typename T1::elem_type,T1>& A)
@@ -317,6 +341,7 @@ tanh(const BaseCube<typename T1::elem_type,T1>& A)
 // atanh
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOp<T1, eop_atanh>
 atanh(const Base<typename T1::elem_type,T1>& A)
@@ -329,6 +354,7 @@ atanh(const Base<typename T1::elem_type,T1>& A)
 
 
 template<typename T1>
+arma_warn_unused
 arma_inline
 const eOpCube<T1, eop_atanh>
 atanh(const BaseCube<typename T1::elem_type,T1>& A)

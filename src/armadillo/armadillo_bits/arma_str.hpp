@@ -1,19 +1,21 @@
-// Copyright (C) 2008-2013 Conrad Sanderson
-// Copyright (C) 2008-2013 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2013 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
-//! \addtogroup arma_boost
+//! \addtogroup arma_str
 //! @{
 
 
-namespace arma_boost
+namespace arma_str
   {
   
-  #if defined(ARMA_HAVE_SNPRINTF)
+  #if ( defined(ARMA_USE_CXX11) || defined(ARMA_HAVE_SNPRINTF) )
     
     #define arma_snprintf std::snprintf
     

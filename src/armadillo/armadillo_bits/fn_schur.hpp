@@ -1,9 +1,11 @@
-// Copyright (C) 2015 Conrad Sanderson
-// Copyright (C) 2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2015-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_schur
@@ -32,7 +34,7 @@ schur
   if(status == false)
     {
     S.reset();
-    arma_bad("schur(): failed to converge", false);
+    arma_debug_warn("schur(): decomposition failed");
     }
   
   return status;
@@ -41,6 +43,7 @@ schur
 
 
 template<typename T1>
+arma_warn_unused
 inline
 Mat<typename T1::elem_type>
 schur
@@ -62,7 +65,7 @@ schur
   if(status == false)
     {
     S.reset();
-    arma_bad("schur(): failed to converge");
+    arma_stop_runtime_error("schur(): decomposition failed");
     }
   
   return S;
@@ -92,7 +95,7 @@ schur
     {
     U.reset();
     S.reset();
-    arma_bad("schur(): failed to converge", false);
+    arma_debug_warn("schur(): decomposition failed");
     }
   
   return status;

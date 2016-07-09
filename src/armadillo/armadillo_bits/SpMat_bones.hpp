@@ -1,16 +1,20 @@
-// Copyright (C) 2011-2014 Ryan Curtin
-// Copyright (C) 2012-2015 Conrad Sanderson
-// Copyright (C) 2011 Matthew Amidon
+// Copyright (C) 2008-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Ryan Curtin
+// Written by Matthew Amidon
+
 
 //! \addtogroup SpMat
 //! @{
 
-//! Sparse matrix class, with data stored in compressed sparse column (CSC) format
 
+//! Sparse matrix class, with data stored in compressed sparse column (CSC) format
 template<typename eT>
 class SpMat : public SpBase< eT, SpMat<eT> >
   {
@@ -410,7 +414,7 @@ class SpMat : public SpBase< eT, SpMat<eT> >
     inline iterator(SpMat& in_M, uword initial_pos = 0) : const_iterator(in_M, initial_pos) { }
     inline iterator(SpMat& in_M, uword in_row, uword in_col) : const_iterator(in_M, in_row, in_col) { }
     inline iterator(SpMat& in_M, uword in_row, uword in_col, uword in_pos) : const_iterator(in_M, in_row, in_col, in_pos) { }
-    inline iterator(const const_iterator& other) : const_iterator(other) { }
+    inline iterator(const iterator& other) : const_iterator(other) { }
     
     inline arma_hot SpValProxy<SpMat<eT> > operator*();
     

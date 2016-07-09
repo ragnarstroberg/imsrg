@@ -1,9 +1,11 @@
-// Copyright (C) 2010-2015 Conrad Sanderson
-// Copyright (C) 2010-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2010-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup eop_core
@@ -38,7 +40,7 @@ class eop_core
   
   // common
   
-  template<typename eT> arma_hot arma_pure arma_inline static eT process(const eT val, const eT k);
+  template<typename eT> arma_hot arma_inline static eT process(const eT val, const eT k);
   };
 
 
@@ -79,7 +81,11 @@ class eop_pow               : public eop_core<eop_pow>               {};
 class eop_floor             : public eop_core<eop_floor>             {};
 class eop_ceil              : public eop_core<eop_ceil>              {};
 class eop_round             : public eop_core<eop_round>             {};
+class eop_trunc             : public eop_core<eop_trunc>             {};
 class eop_sign              : public eop_core<eop_sign>              {};
+class eop_erf               : public eop_core<eop_erf>               {};
+class eop_erfc              : public eop_core<eop_erfc>              {};
+class eop_lgamma            : public eop_core<eop_lgamma>            {};
 
 
 

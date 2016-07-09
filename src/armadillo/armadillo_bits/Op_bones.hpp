@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup Op
@@ -48,6 +50,7 @@ class Op : public Base<typename T1::elem_type, Op<T1, op_type> >
     T1::is_row &&
       (
          is_same_type<op_type, op_sort_default>::yes
+      || is_same_type<op_type, op_shift_default>::yes
       || is_same_type<op_type, op_shuffle_default>::yes
       || is_same_type<op_type, op_cumsum_default>::yes
       || is_same_type<op_type, op_cumprod_default>::yes
@@ -83,6 +86,7 @@ class Op : public Base<typename T1::elem_type, Op<T1, op_type> >
     T1::is_col &&
       (
          is_same_type<op_type, op_sort_default>::yes
+      || is_same_type<op_type, op_shift_default>::yes
       || is_same_type<op_type, op_shuffle_default>::yes
       || is_same_type<op_type, op_cumsum_default>::yes
       || is_same_type<op_type, op_cumprod_default>::yes

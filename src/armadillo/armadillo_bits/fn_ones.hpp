@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_ones
@@ -11,6 +13,7 @@
 
 
 
+arma_warn_unused
 arma_inline
 const Gen<vec, gen_ones>
 ones(const uword n_elem)
@@ -23,6 +26,7 @@ ones(const uword n_elem)
 
 
 template<typename obj_type>
+arma_warn_unused
 arma_inline
 const Gen<obj_type, gen_ones>
 ones(const uword n_elem, const arma_empty_class junk1 = arma_empty_class(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk2 = 0)
@@ -43,6 +47,7 @@ ones(const uword n_elem, const arma_empty_class junk1 = arma_empty_class(), cons
 
 
 
+arma_warn_unused
 arma_inline
 const Gen<mat, gen_ones>
 ones(const uword n_rows, const uword n_cols)
@@ -54,6 +59,7 @@ ones(const uword n_rows, const uword n_cols)
 
 
 
+arma_warn_unused
 arma_inline
 const Gen<mat, gen_ones>
 ones(const SizeMat& s)
@@ -66,6 +72,7 @@ ones(const SizeMat& s)
 
 
 template<typename obj_type>
+arma_warn_unused
 inline
 const Gen<obj_type, gen_ones>
 ones(const uword n_rows, const uword n_cols, const typename arma_Mat_Col_Row_only<obj_type>::result* junk = 0)
@@ -89,6 +96,7 @@ ones(const uword n_rows, const uword n_cols, const typename arma_Mat_Col_Row_onl
 
 
 template<typename obj_type>
+arma_warn_unused
 inline
 const Gen<obj_type, gen_ones>
 ones(const SizeMat& s, const typename arma_Mat_Col_Row_only<obj_type>::result* junk = 0)
@@ -101,6 +109,7 @@ ones(const SizeMat& s, const typename arma_Mat_Col_Row_only<obj_type>::result* j
 
 
 
+arma_warn_unused
 arma_inline
 const GenCube<cube::elem_type, gen_ones>
 ones(const uword n_rows, const uword n_cols, const uword n_slices)
@@ -112,6 +121,7 @@ ones(const uword n_rows, const uword n_cols, const uword n_slices)
 
 
 
+arma_warn_unused
 arma_inline
 const GenCube<cube::elem_type, gen_ones>
 ones(const SizeCube& s)
@@ -124,6 +134,7 @@ ones(const SizeCube& s)
 
 
 template<typename cube_type>
+arma_warn_unused
 arma_inline
 const GenCube<typename cube_type::elem_type, gen_ones>
 ones(const uword n_rows, const uword n_cols, const uword n_slices, const typename arma_Cube_only<cube_type>::result* junk = 0)
@@ -137,6 +148,7 @@ ones(const uword n_rows, const uword n_cols, const uword n_slices, const typenam
 
 
 template<typename cube_type>
+arma_warn_unused
 arma_inline
 const GenCube<typename cube_type::elem_type, gen_ones>
 ones(const SizeCube& s, const typename arma_Cube_only<cube_type>::result* junk = 0)

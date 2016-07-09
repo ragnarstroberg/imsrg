@@ -2,12 +2,12 @@
 // (1) source code written by Conrad Sanderson, and
 // (2) a modified form of source code referred to as "kissfft.hh".
 // 
-// This compilation is Copyright (C) 2013 Conrad Sanderson
+// This compilation is Copyright (C) 2013 National ICT Australia (NICTA)
 // and is subject to the terms of the Mozilla Public License, v. 2.0.
 // 
 // The source code that is distinct and separate from "kissfft.hh"
-// is Copyright (C) 2013 Conrad Sanderson and is subject to the
-// terms of the Mozilla Public License, v. 2.0.
+// is Copyright (C) 2013 National ICT Australia (NICTA)
+// and is subject to the terms of the Mozilla Public License, v. 2.0.
 // 
 // If a copy of the MPL was not distributed with this file,
 // You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -41,6 +41,9 @@
 // ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 // OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+//! \addtogroup fft_engine
+//! @{
 
 
 template<typename cx_type, uword fixed_N, bool> struct store {};
@@ -201,7 +204,7 @@ class fft_engine : public store<cx_type, fixed_N, (fixed_N > 0)>
       
       tmp[3] = tmp[1] + tmp[2];
       
-      Y[m] = cx_type( (Y[0].real() - (0.5*tmp[3].real())), (Y[0].imag() - (0.5*tmp[3].imag())) );
+      Y[m] = cx_type( (Y[0].real() - (T(0.5)*tmp[3].real())), (Y[0].imag() - (T(0.5)*tmp[3].imag())) );
       
       Y[0] += tmp[3];
       
@@ -407,3 +410,6 @@ class fft_engine : public store<cx_type, fixed_N, (fixed_N > 0)>
 
 
   };
+
+
+//! @}

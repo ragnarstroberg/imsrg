@@ -1,9 +1,11 @@
-// Copyright (C) 2011-2014 Conrad Sanderson
-// Copyright (C) 2011-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2011-2014 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup op_symmat
@@ -23,7 +25,7 @@ op_symmat::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_symmat>& in)
   const unwrap<T1>   tmp(in.m);
   const Mat<eT>& A = tmp.M;
   
-  arma_debug_check( (A.is_square() == false), "symmatu()/symmatl(): given matrix must be square" );
+  arma_debug_check( (A.is_square() == false), "symmatu()/symmatl(): given matrix must be square sized" );
   
   const uword N     = A.n_rows;
   const bool  upper = (in.aux_uword_a == 0);
@@ -103,7 +105,7 @@ op_symmat_cx::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_symmat_cx>&
   const unwrap<T1>   tmp(in.m);
   const Mat<eT>& A = tmp.M;
   
-  arma_debug_check( (A.is_square() == false), "symmatu()/symmatl(): given matrix must be square" );
+  arma_debug_check( (A.is_square() == false), "symmatu()/symmatl(): given matrix must be square sized" );
   
   const uword N  = A.n_rows;
   

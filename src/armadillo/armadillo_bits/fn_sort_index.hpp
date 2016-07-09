@@ -1,9 +1,11 @@
-// Copyright (C) 2009-2015 Conrad Sanderson
-// Copyright (C) 2009-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2009-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_sort_index
@@ -14,6 +16,7 @@
 
 //! kept for compatibility with old code
 template<typename T1>
+arma_warn_unused
 inline
 const mtOp<uword,T1,op_sort_index>
 sort_index
@@ -33,6 +36,7 @@ sort_index
 
 //! kept for compatibility with old code
 template<typename T1>
+arma_warn_unused
 inline
 const mtOp<uword,T1,op_stable_sort_index>
 stable_sort_index
@@ -51,6 +55,7 @@ stable_sort_index
 
 
 template<typename T1, typename T2>
+arma_warn_unused
 inline
 typename
 enable_if2
@@ -76,6 +81,7 @@ sort_index
 
 
 template<typename T1, typename T2>
+arma_warn_unused
 inline
 typename
 enable_if2

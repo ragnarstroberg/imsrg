@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2014 Conrad Sanderson
-// Copyright (C) 2008-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup Base
@@ -14,8 +16,10 @@
 template<typename derived>
 struct Base_inv_yes
   {
-  arma_inline const Op<derived,op_inv> i(const bool  slow   = false) const;   //!< matrix inverse
-  arma_inline const Op<derived,op_inv> i(const char* method        ) const;   //!< matrix inverse
+  arma_inline const Op<derived,op_inv> i() const;   //!< matrix inverse
+  
+  arma_inline const Op<derived,op_inv> i(const bool ) const;   //!< kept only for compatibility with old user code
+  arma_inline const Op<derived,op_inv> i(const char*) const;   //!< kept only for compatibility with old user code
   };
 
 
@@ -117,6 +121,9 @@ struct Base
   
   inline elem_type min(uword& row_of_min_val, uword& col_of_min_val) const;
   inline elem_type max(uword& row_of_max_val, uword& col_of_max_val) const;
+  
+  inline arma_warn_unused uword index_min() const;
+  inline arma_warn_unused uword index_max() const;
   };
 
 

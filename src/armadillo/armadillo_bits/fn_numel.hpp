@@ -1,9 +1,11 @@
-// Copyright (C) 2013 Conrad Sanderson
-// Copyright (C) 2013 NICTA (www.nicta.com.au)
+// Copyright (C) 2013-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_numel
@@ -12,6 +14,7 @@
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename enable_if2< is_arma_type<T1>::value, uword >::result
 numel(const T1& X)
@@ -26,6 +29,7 @@ numel(const T1& X)
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename enable_if2< is_arma_cube_type<T1>::value, uword >::result
 numel(const T1& X)
@@ -40,6 +44,7 @@ numel(const T1& X)
 
 
 template<typename T1>
+arma_warn_unused
 inline
 typename enable_if2< is_arma_sparse_type<T1>::value, uword >::result
 numel(const T1& X)
@@ -54,6 +59,7 @@ numel(const T1& X)
 
 
 template<typename oT>
+arma_warn_unused
 inline
 uword
 numel(const field<oT>& X)
@@ -66,6 +72,7 @@ numel(const field<oT>& X)
 
 
 template<typename oT>
+arma_warn_unused
 inline
 uword
 numel(const subview_field<oT>& X)

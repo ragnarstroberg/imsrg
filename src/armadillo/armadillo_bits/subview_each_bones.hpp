@@ -1,8 +1,11 @@
-// Copyright (C) 2012-2015 Conrad Sanderson
+// Copyright (C) 2012-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup subview_each
@@ -17,14 +20,14 @@ class subview_each_common
   
   typedef typename parent::elem_type eT;
   
-  const parent& p;
+  const parent& P;
   
   inline void check_size(const Mat<typename parent::elem_type>& A) const;
   
   
   protected:
   
-  arma_inline subview_each_common(const parent& in_p);
+  arma_inline subview_each_common(const parent& in_P);
   
   arma_inline const Mat<typename parent::elem_type>& get_mat_ref_helper(const Mat    <typename parent::elem_type>& X) const;
   arma_inline const Mat<typename parent::elem_type>& get_mat_ref_helper(const subview<typename parent::elem_type>& X) const;
@@ -47,7 +50,7 @@ class subview_each1 : public subview_each_common<parent, mode>
   {
   protected:
   
-  arma_inline subview_each1(const parent& in_p);
+  arma_inline subview_each1(const parent& in_P);
   
   
   public:
@@ -77,7 +80,7 @@ class subview_each2 : public subview_each_common<parent, mode>
   {
   protected:
   
-  inline subview_each2(const parent& in_p, const Base<uword, TB>& in_indices);
+  inline subview_each2(const parent& in_P, const Base<uword, TB>& in_indices);
   
   
   public:

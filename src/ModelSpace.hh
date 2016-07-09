@@ -95,7 +95,7 @@ class TwoBodyChannel
    int GetLocalIndex(int ketindex) const { return KetMap[ketindex];}; // modelspace ket index => local ket index
    int GetLocalIndex(int p, int q) const ;
    int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
-   Ket& GetKet(int i) const ; // get pointer to ket using local index
+   Ket& GetKet(int i)  ; // get pointer to ket using local index
 
    arma::uvec KetIndex_pp ;
    arma::uvec KetIndex_hh ;

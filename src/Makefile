@@ -49,6 +49,14 @@ ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up 
  endif
 endif
 
+# The new version of Ubuntu puts the hdf5 libraries in a different location
+NEWHDF5LOC = $(shell if [ -d /usr/include/hdf5/serial ]; then echo yes; else echo no; fi)
+ifeq ($(NEWHDF5LOC),yes)
+  INCLUDE += -I/usr/include/hdf5/serial
+  NEWLIBS := $(filter-out -lhdf5,$(LIBS))
+  LIBS = $(NEWLIBS) -lhdf5_serial
+endif
+
 all: $(ALL)
 
 install:
@@ -60,6 +68,9 @@ install:
 	fi 
 	ln -sf $(PWD)/libIMSRG.so $(INSTDIR)/lib/libIMSRG.so
 	ln -sfT $(PWD)/armadillo $(INSTDIR)/include/armadillo
+	@if [ -f pyIMSRG.so ] ; then\
+	  ln -sf $(PWD)/pyIMSRG.so $(INSTDIR)/lib/pyIMSRG.so;\
+	fi
 	@for x in *.hh; do \
 	 echo linking $(PWD)/$$x  '=>'  $(INSTDIR)/include/$$x;\
 	 ln -sf $(PWD)/$$x $(INSTDIR)/include/$$x; \

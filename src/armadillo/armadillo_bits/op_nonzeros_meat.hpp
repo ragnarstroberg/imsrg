@@ -1,9 +1,11 @@
-// Copyright (C) 2015 Conrad Sanderson
-// Copyright (C) 2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2015-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 
@@ -29,7 +31,7 @@ op_nonzeros::apply_noalias(Mat<typename T1::elem_type>& out, const Proxy<T1>& P)
   
   uword N_nz = 0;
   
-  if(Proxy<T1>::prefer_at_accessor == false)
+  if(Proxy<T1>::use_at == false)
     {
     typename Proxy<T1>::ea_type Pea = P.get_ea();
     

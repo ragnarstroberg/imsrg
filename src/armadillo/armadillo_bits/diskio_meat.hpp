@@ -1,12 +1,14 @@
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2009-2010 Ian Cullinan
-// Copyright (C) 2012 Ryan Curtin
-// Copyright (C) 2013 Szabolcs Horvat
+// Copyright (C) 2008-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Ian Cullinan
+// Written by Ryan Curtin
+// Written by Szabolcs Horvat
 
 
 //! \addtogroup diskio
@@ -557,12 +559,15 @@ diskio::guess_file_type(std::istream& f)
   f.clear();
   const std::fstream::pos_type pos2 = f.tellg();
   
-  const uword N = ( (pos1 >= 0) && (pos2 >= 0) ) ? uword(pos2 - pos1) : 0;
+  const uword N = ( (pos1 >= 0) && (pos2 >= 0) && (pos2 > pos1) ) ? uword(pos2 - pos1) : 0;
   
   f.clear();
   f.seekg(pos1);
   
+  if(N == 0)  { return file_type_unknown; }
+  
   podarray<unsigned char> data(N);
+  data.zeros();
   
   unsigned char* ptr = data.memptr();
   
@@ -575,35 +580,20 @@ diskio::guess_file_type(std::istream& f)
   f.seekg(pos1);
   
   bool has_binary  = false;
-  bool has_comma   = false;
   bool has_bracket = false;
+  bool has_comma   = false;
   
   if(load_okay == true)
     {
-    uword i = 0;
-    uword j = (N >= 2) ? 1 : 0;
-    
-    for(; j<N; i+=2, j+=2)
+    for(uword i=0; i<N; ++i)
       {
-      const unsigned char val_i = ptr[i];
-      const unsigned char val_j = ptr[j];
+      const unsigned char val = ptr[i];
       
-      // the range checking can be made more elaborate
-      if( ((val_i <= 8) || (val_i >= 123)) || ((val_j <= 8) || (val_j >= 123)) )
-        {
-        has_binary = true;
-        break;
-        }
+      if( (val <=   8) || (val >= 123) )  { has_binary  = true; break; }  // the range checking can be made more elaborate
       
-      if( (val_i == ',') || (val_j == ',') )
-        {
-        has_comma = true;
-        }
+      if( (val == '(') || (val == ')') )  { has_bracket = true;        }
       
-      if( (val_i == '(') || (val_j == '(') || (val_i == ')') || (val_j == ')') )
-        {
-        has_bracket = true;
-        }
+      if( (val == ',')                 )  { has_comma   = true;        }
       }
     }
   else
@@ -626,51 +616,6 @@ diskio::guess_file_type(std::istream& f)
 
 
 
-inline
-char
-diskio::conv_to_hex_char(const u8 x)
-  {
-  char out;
-
-  switch(x)
-    {
-    case  0: out = '0'; break;
-    case  1: out = '1'; break;
-    case  2: out = '2'; break;
-    case  3: out = '3'; break;
-    case  4: out = '4'; break;
-    case  5: out = '5'; break;
-    case  6: out = '6'; break;
-    case  7: out = '7'; break;
-    case  8: out = '8'; break;
-    case  9: out = '9'; break;
-    case 10: out = 'a'; break;
-    case 11: out = 'b'; break;
-    case 12: out = 'c'; break;
-    case 13: out = 'd'; break;
-    case 14: out = 'e'; break;
-    case 15: out = 'f'; break;
-    default: out = '-'; break;
-    }
-
-  return out;  
-  }
-
-
-
-inline
-void
-diskio::conv_to_hex(char* out, const u8 x)
-  {
-  const u8 a = x / 16;
-  const u8 b = x - 16*a;
-
-  out[0] = conv_to_hex_char(a);
-  out[1] = conv_to_hex_char(b);
-  }
-
-
-
 //! Append a quasi-random string to the given filename.
 //! The rand() function is deliberately not used,
 //! as rand() has an internal state that changes
@@ -679,60 +624,20 @@ diskio::conv_to_hex(char* out, const u8 x)
 //! results should be reproducable and not affected 
 //! by saving data.
 inline
+arma_cold
 std::string
 diskio::gen_tmp_name(const std::string& x)
   {
-  const std::string* ptr_x     = &x;
-  const u8*          ptr_ptr_x = reinterpret_cast<const u8*>(&ptr_x);
+  union { uword val; void* ptr; } u;
   
-  const char* extra      = ".tmp_";
-  const uword extra_size = 5;
+  u.val = uword(0);
+  u.ptr = const_cast<std::string*>(&x);
   
-  const uword tmp_size   = 2*sizeof(u8*) + 2*2;
-        char  tmp[tmp_size];
+  std::stringstream ss;
   
-  uword char_count = 0;
+  ss << x << ".tmp_" << std::hex << std::noshowbase << (u.val) << (std::clock());
   
-  for(uword i=0; i<sizeof(u8*); ++i)
-    {
-    conv_to_hex(&tmp[char_count], ptr_ptr_x[i]);
-    char_count += 2;
-    }
-  
-  const uword x_size = static_cast<uword>(x.size());
-  u8 sum = 0;
-  
-  for(uword i=0; i<x_size; ++i)
-    {
-    sum = (sum + u8(x[i])) & 0xff;
-    }
-  
-  conv_to_hex(&tmp[char_count], sum);
-  char_count += 2;
-  
-  conv_to_hex(&tmp[char_count], u8(x_size));
-  
-  
-  std::string out;
-  out.resize(x_size + extra_size + tmp_size);
-  
-  
-  for(uword i=0; i<x_size; ++i)
-    {
-    out[i] = x[i];
-    }
-  
-  for(uword i=0; i<extra_size; ++i)
-    {
-    out[x_size + i] = extra[i];
-    }
-  
-  for(uword i=0; i<tmp_size; ++i)
-    {
-    out[x_size + extra_size + i] = tmp[i];
-    }
-  
-  return out;
+  return ss.str();
   }
 
 
@@ -743,6 +648,7 @@ diskio::gen_tmp_name(const std::string& x)
 //! (i)  overwriting files that are write protected,
 //! (ii) overwriting directories.
 inline
+arma_cold
 bool
 diskio::safe_rename(const std::string& old_name, const std::string& new_name)
   {
@@ -898,8 +804,8 @@ diskio::save_raw_ascii(const Mat<eT>& x, std::ostream& f)
   if( (is_float<eT>::value) || (is_double<eT>::value) )
     {
     f.setf(ios::scientific);
-    f.precision(12);
-    cell_width = 20;
+    f.precision(14);
+    cell_width = 22;
     }
   
   for(uword row=0; row < x.n_rows; ++row)
@@ -910,7 +816,7 @@ diskio::save_raw_ascii(const Mat<eT>& x, std::ostream& f)
       
       if( (is_float<eT>::value) || (is_double<eT>::value) )
         {
-        f.width(cell_width);
+        f.width(std::streamsize(cell_width));
         }
       
       arma_ostream::print_elem(f, x.at(row,col), false);
@@ -1024,8 +930,8 @@ diskio::save_arma_ascii(const Mat<eT>& x, std::ostream& f)
   if( (is_float<eT>::value) || (is_double<eT>::value) )
     {
     f.setf(ios::scientific);
-    f.precision(12);
-    cell_width = 20;
+    f.precision(14);
+    cell_width = 22;
     }
     
   for(uword row=0; row < x.n_rows; ++row)
@@ -1036,7 +942,7 @@ diskio::save_arma_ascii(const Mat<eT>& x, std::ostream& f)
       
       if( (is_float<eT>::value) || (is_double<eT>::value) )        
         {
-        f.width(cell_width);
+        f.width(std::streamsize(cell_width));
         }
       
       arma_ostream::print_elem(f, x.at(row,col), false);
@@ -1101,7 +1007,7 @@ diskio::save_csv_ascii(const Mat<eT>& x, std::ostream& f)
   if( (is_float<eT>::value) || (is_double<eT>::value) )
     {
     f.setf(ios::scientific);
-    f.precision(12);
+    f.precision(14);
     }
   
   uword x_n_rows = x.n_rows;
@@ -1344,7 +1250,7 @@ diskio::save_hdf5_binary(const Mat<eT>& x, const std::string& final_name)
     arma_ignore(x);
     arma_ignore(final_name);
     
-    arma_stop("Mat::save(): use of HDF5 needs to be enabled");
+    arma_stop_logic_error("Mat::save(): use of HDF5 needs to be enabled");
     
     return false;
     }
@@ -1550,10 +1456,10 @@ diskio::load_raw_binary(Mat<eT>& x, std::istream& f, std::string& err_msg)
   //f.seekg(0, ios::beg);
   f.seekg(pos1);
   
-  x.set_size(N / sizeof(eT), 1);
+  x.set_size(N / uword(sizeof(eT)), 1);
   
   f.clear();
-  f.read( reinterpret_cast<char *>(x.memptr()), std::streamsize(N) );
+  f.read( reinterpret_cast<char *>(x.memptr()), std::streamsize(x.n_elem * uword(sizeof(eT))) );
   
   return f.good();
   }
@@ -2222,7 +2128,7 @@ diskio::load_hdf5_binary(Mat<eT>& x, const std::string& name, std::string& err_m
     arma_ignore(name);
     arma_ignore(err_msg);
 
-    arma_stop("Mat::load(): use of HDF5 needs to be enabled");
+    arma_stop_logic_error("Mat::load(): use of HDF5 needs to be enabled");
 
     return false;
     }
@@ -2387,7 +2293,7 @@ diskio::save_coord_ascii(const SpMat<eT>& x, std::ostream& f)
     if( (is_float<eT>::value) || (is_double<eT>::value) )
       {
       f.setf(ios::scientific);
-      f.precision(12);
+      f.precision(14);
       }
     
     f << (*iter) << '\n';
@@ -2441,7 +2347,7 @@ diskio::save_coord_ascii(const SpMat< std::complex<T> >& x, std::ostream& f)
     if( (is_float<T>::value) || (is_double<T>::value) )
       {
       f.setf(ios::scientific);
-      f.precision(12);
+      f.precision(14);
       }
     
     const eT val = (*iter);
@@ -3239,8 +3145,8 @@ diskio::save_raw_ascii(const Cube<eT>& x, std::ostream& f)
   if( (is_float<eT>::value) || (is_double<eT>::value) )
     {
     f.setf(ios::scientific);
-    f.precision(12);
-    cell_width = 20;
+    f.precision(14);
+    cell_width = 22;
     }
   
   for(uword slice=0; slice < x.n_slices; ++slice)
@@ -3253,7 +3159,7 @@ diskio::save_raw_ascii(const Cube<eT>& x, std::ostream& f)
         
         if( (is_float<eT>::value) || (is_double<eT>::value) )
           {
-          f.width(cell_width);
+          f.width(std::streamsize(cell_width));
           }
         
         arma_ostream::print_elem(f, x.at(row,col,slice), false);
@@ -3368,8 +3274,8 @@ diskio::save_arma_ascii(const Cube<eT>& x, std::ostream& f)
   if( (is_float<eT>::value) || (is_double<eT>::value) )
     {
     f.setf(ios::scientific);
-    f.precision(12);
-    cell_width = 20;
+    f.precision(14);
+    cell_width = 22;
     }
     
   for(uword slice=0; slice < x.n_slices; ++slice)
@@ -3382,7 +3288,7 @@ diskio::save_arma_ascii(const Cube<eT>& x, std::ostream& f)
         
         if( (is_float<eT>::value) || (is_double<eT>::value) )        
           {
-          f.width(cell_width);
+          f.width(std::streamsize(cell_width));
           }
         
         arma_ostream::print_elem(f, x.at(row,col,slice), false);
@@ -3511,7 +3417,7 @@ diskio::save_hdf5_binary(const Cube<eT>& x, const std::string& final_name)
     arma_ignore(x);
     arma_ignore(final_name);
 
-    arma_stop("Cube::save(): use of HDF5 needs to be enabled");
+    arma_stop_logic_error("Cube::save(): use of HDF5 needs to be enabled");
 
     return false;
     }
@@ -3630,10 +3536,10 @@ diskio::load_raw_binary(Cube<eT>& x, std::istream& f, std::string& err_msg)
   //f.seekg(0, ios::beg);
   f.seekg(pos1);
   
-  x.set_size(N / sizeof(eT), 1, 1);
+  x.set_size(N / uword(sizeof(eT)), 1, 1);
   
   f.clear();
-  f.read( reinterpret_cast<char *>(x.memptr()), std::streamsize(N) );
+  f.read( reinterpret_cast<char *>(x.memptr()), std::streamsize(x.n_elem * uword(sizeof(eT))) );
   
   return f.good();
   }
@@ -3975,7 +3881,7 @@ diskio::load_hdf5_binary(Cube<eT>& x, const std::string& name, std::string& err_
     arma_ignore(name);
     arma_ignore(err_msg);
 
-    arma_stop("Cube::load(): use of HDF5 needs to be enabled");
+    arma_stop_logic_error("Cube::load(): use of HDF5 needs to be enabled");
 
     return false;
     }

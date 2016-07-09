@@ -1,9 +1,11 @@
-// Copyright (C) 2009-2014 Conrad Sanderson
-// Copyright (C) 2009-2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2009-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_chol
@@ -12,17 +14,16 @@
 
 
 template<typename T1>
+arma_warn_unused
 inline
-const Op<T1, op_chol>
+typename enable_if2< is_supported_blas_type<typename T1::elem_type>::value, const Op<T1, op_chol> >::result
 chol
   (
   const Base<typename T1::elem_type,T1>& X,
-  const char* layout = "upper",
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = 0
+  const char* layout = "upper"
   )
   {
   arma_extra_debug_sigprint();
-  arma_ignore(junk);
   
   const char sig = (layout != NULL) ? layout[0] : char(0);
   
@@ -35,28 +36,29 @@ chol
 
 template<typename T1>
 inline
-bool
+typename enable_if2< is_supported_blas_type<typename T1::elem_type>::value, bool >::result
 chol
   (
          Mat<typename T1::elem_type>&    out,
   const Base<typename T1::elem_type,T1>& X,
-  const char* layout = "upper",
-  const typename arma_blas_type_only<typename T1::elem_type>::result* junk = 0
+  const char* layout = "upper"
   )
   {
   arma_extra_debug_sigprint();
-  arma_ignore(junk);
   
-  try
+  const char sig = (layout != NULL) ? layout[0] : char(0);
+  
+  arma_debug_check( ((sig != 'u') && (sig != 'l')), "chol(): layout must be \"upper\" or \"lower\"" );
+  
+  const bool status = auxlib::chol(out, X.get_ref(), ((sig == 'u') ? 0 : 1));
+  
+  if(status == false)
     {
-    out = chol(X, layout);
-    }
-  catch(std::runtime_error&)
-    {
-    return false;
+    out.reset();
+    arma_debug_warn("chol(): decomposition failed");
     }
   
-  return true;
+  return status;
   }
 
 

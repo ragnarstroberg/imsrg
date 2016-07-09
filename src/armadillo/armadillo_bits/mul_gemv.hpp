@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup gemv
@@ -369,7 +371,7 @@ class gemv
         const blas_int  inc         = blas_int(1);
         const eT        local_beta  = (use_beta) ? beta : eT(0);
         
-        arma_extra_debug_print( arma_boost::format("blas::gemv(): trans_A = %c") % trans_A );
+        arma_extra_debug_print( arma_str::format("blas::gemv(): trans_A = %c") % trans_A );
         
         blas::gemv<eT>
           (

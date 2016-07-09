@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2015 Conrad Sanderson
-// Copyright (C) 2008-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2008-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_norm
@@ -68,7 +70,7 @@ norm
         break;
       
       default:
-        arma_stop("norm(): unsupported matrix norm type");
+        arma_stop_logic_error("norm(): unsupported matrix norm type");
         return T(0);
       }
     }
@@ -122,7 +124,7 @@ norm
       }
     else
       {
-      arma_stop("norm(): unsupported vector norm type");
+      arma_stop_logic_error("norm(): unsupported vector norm type");
       return T(0);
       }
     }
@@ -139,7 +141,7 @@ norm
       }
     else
       {
-      arma_stop("norm(): unsupported matrix norm type");
+      arma_stop_logic_error("norm(): unsupported matrix norm type");
       return T(0);
       }
     }
@@ -217,7 +219,7 @@ norm
         break;
       
       default:
-        arma_stop("norm(): unsupported or unimplemented norm type for sparse matrices");
+        arma_stop_logic_error("norm(): unsupported or unimplemented norm type for sparse matrices");
         return T(0);
       }
     }
@@ -289,7 +291,7 @@ norm
       }
     else
       {
-      arma_stop("norm(): unsupported vector norm type");
+      arma_stop_logic_error("norm(): unsupported vector norm type");
       return T(0);
       }
     }
@@ -306,7 +308,7 @@ norm
       }
     else
       {
-      arma_stop("norm(): unsupported matrix norm type");
+      arma_stop_logic_error("norm(): unsupported matrix norm type");
       return T(0);
       }
     }

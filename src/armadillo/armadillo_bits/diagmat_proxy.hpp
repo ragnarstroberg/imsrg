@@ -1,9 +1,11 @@
-// Copyright (C) 2008-2014 NICTA (www.nicta.com.au)
-// Copyright (C) 2008-2014 Conrad Sanderson
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup diagmat_proxy
@@ -24,15 +26,10 @@ class diagmat_proxy_default
     : P       ( X )
     , P_is_vec( (resolves_to_vector<T1>::value) || (P.get_n_rows() == 1) || (P.get_n_cols() == 1) )
     , P_is_col( T1::is_col || (P.get_n_cols() == 1) )
-    , n_elem  ( P_is_vec ? P.get_n_elem() : (std::min)(P.get_n_elem(), P.get_n_rows()) )
+    , n_rows  ( P_is_vec ? P.get_n_elem() : P.get_n_rows() )
+    , n_cols  ( P_is_vec ? P.get_n_elem() : P.get_n_cols() )
     {
     arma_extra_debug_sigprint();
-    
-    arma_debug_check
-      (
-      (P_is_vec == false) && (P.get_n_rows() != P.get_n_cols()),
-      "diagmat(): only vectors and square matrices are accepted"
-      );
     }
   
   
@@ -40,7 +37,7 @@ class diagmat_proxy_default
   elem_type
   operator[](const uword i) const
     {
-    if(Proxy<T1>::prefer_at_accessor == false)
+    if(Proxy<T1>::use_at == false)
       {
       return P_is_vec ? P[i] : P.at(i,i);
       }
@@ -64,7 +61,7 @@ class diagmat_proxy_default
     {
     if(row == col)
       {
-      if(Proxy<T1>::prefer_at_accessor == false)
+      if(Proxy<T1>::use_at == false)
         {
         return (P_is_vec) ? P[row] : P.at(row,row);
         }
@@ -92,7 +89,8 @@ class diagmat_proxy_default
   const Proxy<T1> P;
   const bool      P_is_vec;
   const bool      P_is_col;
-  const uword     n_elem;
+  const uword     n_rows;
+  const uword     n_cols;
   };
 
 
@@ -110,12 +108,6 @@ class diagmat_proxy_fixed
     : P(X)
     {
     arma_extra_debug_sigprint();
-    
-    arma_debug_check
-      (
-      (P_is_vec == false) && (T1::n_rows != T1::n_cols),
-      "diagmat(): only vectors and square matrices are accepted"
-      );
     }
   
   
@@ -146,7 +138,8 @@ class diagmat_proxy_fixed
   const T1& P;
   
   static const bool  P_is_vec = (T1::n_rows == 1) || (T1::n_cols == 1);
-  static const uword n_elem   = P_is_vec ? T1::n_elem : ( (T1::n_elem < T1::n_rows) ? T1::n_elem : T1::n_rows );
+  static const uword n_rows   = P_is_vec ? T1::n_elem : T1::n_rows;
+  static const uword n_cols   = P_is_vec ? T1::n_elem : T1::n_cols;
   };
 
 
@@ -185,15 +178,10 @@ class diagmat_proxy< Mat<eT> >
   diagmat_proxy(const Mat<eT>& X)
     : P       ( X )
     , P_is_vec( (X.n_rows == 1) || (X.n_cols == 1) )
-    , n_elem  ( P_is_vec ? X.n_elem : (std::min)(X.n_elem, X.n_rows) )
+    , n_rows  ( P_is_vec ? X.n_elem : X.n_rows )
+    , n_cols  ( P_is_vec ? X.n_elem : X.n_cols )
     {
     arma_extra_debug_sigprint();
-    
-    arma_debug_check
-      (
-      (P_is_vec == false) && (P.n_rows != P.n_cols),
-      "diagmat(): only vectors and square matrices are accepted"
-      );
     }
   
   arma_inline elem_type operator[] (const uword i)                    const { return P_is_vec ? P[i] : P.at(i,i);                                         }
@@ -203,7 +191,8 @@ class diagmat_proxy< Mat<eT> >
   
   const Mat<eT>& P;
   const bool     P_is_vec;
-  const uword    n_elem;
+  const uword    n_rows;
+  const uword    n_cols;
   };
 
 
@@ -220,7 +209,8 @@ class diagmat_proxy< Row<eT> >
   inline
   diagmat_proxy(const Row<eT>& X)
     : P(X)
-    , n_elem(X.n_elem)
+    , n_rows(X.n_elem)
+    , n_cols(X.n_elem)
     {
     arma_extra_debug_sigprint();
     }
@@ -233,7 +223,8 @@ class diagmat_proxy< Row<eT> >
   static const bool P_is_vec = true;
   
   const Row<eT>& P;
-  const uword    n_elem;
+  const uword    n_rows;
+  const uword    n_cols;
   };
 
 
@@ -250,7 +241,8 @@ class diagmat_proxy< Col<eT> >
   inline
   diagmat_proxy(const Col<eT>& X)
     : P(X)
-    , n_elem(X.n_elem)
+    , n_rows(X.n_elem)
+    , n_cols(X.n_elem)
     {
     arma_extra_debug_sigprint();
     }
@@ -263,7 +255,8 @@ class diagmat_proxy< Col<eT> >
   static const bool P_is_vec = true;
   
   const Col<eT>& P;
-  const uword    n_elem;
+  const uword    n_rows;
+  const uword    n_cols;
   };
 
 
@@ -280,7 +273,8 @@ class diagmat_proxy< subview_row<eT> >
   inline
   diagmat_proxy(const subview_row<eT>& X)
     : P(X)
-    , n_elem(X.n_elem)
+    , n_rows(X.n_elem)
+    , n_cols(X.n_elem)
     {
     arma_extra_debug_sigprint();
     }
@@ -293,7 +287,8 @@ class diagmat_proxy< subview_row<eT> >
   static const bool P_is_vec = true;
   
   const subview_row<eT>& P;
-  const uword            n_elem;
+  const uword            n_rows;
+  const uword            n_cols;
   };
 
 
@@ -310,7 +305,8 @@ class diagmat_proxy< subview_col<eT> >
   inline
   diagmat_proxy(const subview_col<eT>& X)
     : P(X)
-    , n_elem(X.n_elem)
+    , n_rows(X.n_elem)
+    , n_cols(X.n_elem)
     {
     arma_extra_debug_sigprint();
     }
@@ -323,7 +319,8 @@ class diagmat_proxy< subview_col<eT> >
   static const bool P_is_vec = true;
   
   const subview_col<eT>& P;
-  const uword            n_elem;
+  const uword            n_rows;
+  const uword            n_cols;
   };
 
 
@@ -346,15 +343,10 @@ class diagmat_proxy_check_default
   diagmat_proxy_check_default(const T1& X, const Mat<typename T1::elem_type>&)
     : P(X)
     , P_is_vec( (resolves_to_vector<T1>::value) || (P.n_rows == 1) || (P.n_cols == 1) )
-    , n_elem( P_is_vec ? P.n_elem : (std::min)(P.n_elem, P.n_rows) )
+    , n_rows( P_is_vec ? P.n_elem : P.n_rows )
+    , n_cols( P_is_vec ? P.n_elem : P.n_cols )
     {
     arma_extra_debug_sigprint();
-    
-    arma_debug_check
-      (
-      (P_is_vec == false) && (P.n_rows != P.n_cols),
-      "diagmat(): only vectors and square matrices are accepted"
-      );
     }
   
   arma_inline elem_type operator[] (const uword i)                    const { return P_is_vec ? P[i] : P.at(i,i);                                         }
@@ -362,7 +354,8 @@ class diagmat_proxy_check_default
   
   const Mat<elem_type> P;
   const bool           P_is_vec;
-  const uword          n_elem;
+  const uword          n_rows;
+  const uword          n_cols;
   };
 
 
@@ -381,12 +374,6 @@ class diagmat_proxy_check_fixed
     : P( const_cast<eT*>(X.memptr()), T1::n_rows, T1::n_cols, (&X == &out), false )
     {
     arma_extra_debug_sigprint();
-    
-    arma_debug_check
-      (
-      (P_is_vec == false) && (T1::n_rows != T1::n_cols),
-      "diagmat(): only vectors and square matrices are accepted"
-      );
     }
   
   
@@ -396,7 +383,8 @@ class diagmat_proxy_check_fixed
   const Mat<eT> P;  // TODO: why not just store X directly as T1& ?  test with fixed size vectors and matrices
   
   static const bool  P_is_vec = (T1::n_rows == 1) || (T1::n_cols == 1);
-  static const uword n_elem   = P_is_vec ? T1::n_elem : ( (T1::n_elem < T1::n_rows) ? T1::n_elem : T1::n_rows );
+  static const uword n_rows   = P_is_vec ? T1::n_elem : T1::n_rows;
+  static const uword n_cols   = P_is_vec ? T1::n_elem : T1::n_cols;
   };
 
 
@@ -437,15 +425,10 @@ class diagmat_proxy_check< Mat<eT> >
     : P_local ( (&X == &out) ? new Mat<eT>(X) : 0  )
     , P       ( (&X == &out) ? (*P_local)     : X  )
     , P_is_vec( (P.n_rows == 1) || (P.n_cols == 1) )
-    , n_elem  ( P_is_vec ? P.n_elem : (std::min)(P.n_elem, P.n_rows) )
+    , n_rows  ( P_is_vec ? P.n_elem : P.n_rows )
+    , n_cols  ( P_is_vec ? P.n_elem : P.n_cols )
     {
     arma_extra_debug_sigprint();
-    
-    arma_debug_check
-      (
-      (P_is_vec == false) && (P.n_rows != P.n_cols),
-      "diagmat(): only vectors and square matrices are accepted"
-      );
     }
   
   inline ~diagmat_proxy_check()
@@ -459,7 +442,8 @@ class diagmat_proxy_check< Mat<eT> >
   const Mat<eT>* P_local;
   const Mat<eT>& P;
   const bool     P_is_vec;
-  const uword    n_elem;
+  const uword    n_rows;
+  const uword    n_cols;
   };
 
 
@@ -476,7 +460,8 @@ class diagmat_proxy_check< Row<eT> >
   diagmat_proxy_check(const Row<eT>& X, const Mat<eT>& out)
     : P_local ( (&X == reinterpret_cast<const Row<eT>*>(&out)) ? new Row<eT>(X) : 0 )
     , P       ( (&X == reinterpret_cast<const Row<eT>*>(&out)) ? (*P_local)     : X )
-    , n_elem  (X.n_elem)
+    , n_rows  (X.n_elem)
+    , n_cols  (X.n_elem)
     {
     arma_extra_debug_sigprint();
     }
@@ -493,7 +478,8 @@ class diagmat_proxy_check< Row<eT> >
   
   const Row<eT>* P_local;
   const Row<eT>& P;
-  const uword    n_elem;
+  const uword    n_rows;
+  const uword    n_cols;
   };
 
 
@@ -510,7 +496,8 @@ class diagmat_proxy_check< Col<eT> >
   diagmat_proxy_check(const Col<eT>& X, const Mat<eT>& out)
     : P_local ( (&X == reinterpret_cast<const Col<eT>*>(&out)) ? new Col<eT>(X) : 0 )
     , P       ( (&X == reinterpret_cast<const Col<eT>*>(&out)) ? (*P_local)     : X )
-    , n_elem  (X.n_elem)
+    , n_rows  (X.n_elem)
+    , n_cols  (X.n_elem)
     {
     arma_extra_debug_sigprint();
     }
@@ -527,7 +514,8 @@ class diagmat_proxy_check< Col<eT> >
   
   const Col<eT>* P_local;
   const Col<eT>& P;
-  const uword    n_elem;
+  const uword    n_rows;
+  const uword    n_cols;
   };
 
 
@@ -543,7 +531,8 @@ class diagmat_proxy_check< subview_row<eT> >
   inline
   diagmat_proxy_check(const subview_row<eT>& X, const Mat<eT>&)
     : P       ( X )
-    , n_elem  ( X.n_elem )
+    , n_rows  ( X.n_elem )
+    , n_cols  ( X.n_elem )
     {
     arma_extra_debug_sigprint();
     }
@@ -554,7 +543,8 @@ class diagmat_proxy_check< subview_row<eT> >
   static const bool P_is_vec = true;
   
   const Row<eT> P;
-  const uword   n_elem;
+  const uword   n_rows;
+  const uword   n_cols;
   };
 
 
@@ -570,7 +560,8 @@ class diagmat_proxy_check< subview_col<eT> >
   inline
   diagmat_proxy_check(const subview_col<eT>& X, const Mat<eT>& out)
     : P     ( const_cast<eT*>(X.colptr(0)), X.n_rows, (&(X.m) == &out), false )
-    , n_elem( X.n_elem )
+    , n_rows( X.n_elem )
+    , n_cols( X.n_elem )
     {
     arma_extra_debug_sigprint();
     }
@@ -581,7 +572,8 @@ class diagmat_proxy_check< subview_col<eT> >
   static const bool P_is_vec = true;
   
   const Col<eT> P;
-  const uword   n_elem;
+  const uword   n_rows;
+  const uword   n_cols;
   };
 
 

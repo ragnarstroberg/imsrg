@@ -2842,15 +2842,12 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
       TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
       int J1 = tbc_bra.J;
       int J2 = tbc_ket.J;
-//      cout << "-- " << ch_bra << " " << ch_ket << endl;
-//      cout << "-- Jbra = " << tbc_bra.J << " T_bra = " << tbc_bra.Tz << "   Jket = " << tbc_ket.J << " T_ket = " << tbc_ket.Tz << endl;
       int nBras = tbc_bra.GetNumberKets();
       int nKets = tbc_ket.GetNumberKets();
       arma::mat& Zijkl = iter->second;
 
       for (int ibra=0; ibra<nBras; ++ibra)
       {
-//         cout << "ibra = " << ibra << endl;
          Ket & bra = tbc_bra.GetKet(ibra);
          int i = bra.p;
          int j = bra.q;
@@ -2858,11 +2855,9 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
          Orbit & oj = modelspace->GetOrbit(j);
          double ji = oi.j2/2.;
          double jj = oj.j2/2.;
-//         int ketmin = hermitian ? ibra : ibra+1;
          int ketmin = 0;
          for (int iket=ketmin; iket<nKets; ++iket)
          {
-//           cout << "iket = " << iket << endl;
             Ket & ket = tbc_ket.GetKet(iket);
             int k = ket.p;
             int l = ket.q;
@@ -2879,11 +2874,8 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
             int parity_ket_cc = (ok.l+oj.l)%2;
             int Tz_bra_cc = abs(oi.tz2+ol.tz2)/2;
             int Tz_ket_cc = abs(ok.tz2+oj.tz2)/2;
-//            int Tz_bra_cc = (oi.tz2+ol.tz2)/2;
-//            int Tz_ket_cc = (ok.tz2+oj.tz2)/2;
             int j3min = abs(int(ji-jl));
             int j3max = ji+jl;
-//            cout << "before J3 loop, ti = " << oi.tz2 << " tj = " << oj.tz2 << " tk = " << ok.tz2 << " tl = " << ol.tz2  << endl;
             for (int J3=j3min; J3<=j3max; ++J3)
             {
               int ch_bra_cc = modelspace->GetTwoBodyChannelIndex(J3,parity_bra_cc,Tz_bra_cc);
@@ -2902,16 +2894,12 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
                   double ninej = modelspace->GetNineJ(ji,jl,J3,jj,jk,J4,J1,J2,Lambda);
                   if (abs(ninej) < 1e-8) continue;
                   double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*J3+1)*(2*J4+1) );
-//                  cout << "before getting tbme  ch_bra_cc = " << ch_bra_cc << "  ch_ket_cc = " << ch_ket_cc << endl;
-//                  cout << "J3 = " << J3 << " parity =  " << parity_bra_cc << " Tz = " << Tz_bra_cc << "   "
-//                       << "J4 = " << J4 << " parity =  " << parity_ket_cc << " Tz = " << Tz_ket_cc << endl;
-//                  cout << "indx_il = " << indx_il << "  indx_kj = " << indx_kj << "  size of mtx = " << Zbar[{ch_bra_cc,ch_ket_cc}].n_cols << endl;
-                  double tbme = Zbar[{ch_bra_cc,ch_ket_cc}](indx_il,indx_kj);
-//                  cout << "after getting tbme" << endl;
+//                  double tbme = Zbar[{ch_bra_cc,ch_ket_cc}](indx_il,indx_kj);
+                  double tbme = (ch_bra_cc<=ch_ket_cc) ? Zbar[{ch_bra_cc,ch_ket_cc}](indx_il,indx_kj)
+                                                       : Zbar[{ch_ket_cc,ch_bra_cc}](indx_kj,indx_il) * modelspace->phase(J3-J4);
                   commij += hatfactor * modelspace->phase(jj+jl+J2+J4) * ninej * tbme ;
               }
             }
-//            cout << "after J3 loop" << endl;
 
             // Transform Z_jlki
             parity_bra_cc = (oj.l+ol.l)%2;
@@ -2939,13 +2927,15 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
                   double ninej = modelspace->GetNineJ(jj,jl,J3,ji,jk,J4,J1,J2,Lambda);
                   if (abs(ninej) < 1e-8) continue;
                   double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*J3+1)*(2*J4+1) );
-                  double tbme = Zbar[{ch_bra_cc,ch_ket_cc}](indx_jl,indx_ki);
+//                  double tbme = Zbar[{ch_bra_cc,ch_ket_cc}](indx_jl,indx_ki);
+                  double tbme = (ch_bra_cc<=ch_ket_cc)  ?  Zbar[{ch_bra_cc,ch_ket_cc}](indx_jl,indx_ki)
+                                                         : Zbar[{ch_ket_cc,ch_bra_cc}](indx_ki,indx_jl) * modelspace->phase(J3-J4);
                   commji += hatfactor * modelspace->phase(ji+jl+J2+J4) * ninej * tbme ;
               }
             }
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
-            Zijkl(ibra,iket) += (commij - modelspace->phase(ji+jj-J1)*commji) / norm;
+            Zijkl(ibra,iket) +=  (commij - modelspace->phase(ji+jj-J1)*commji) / norm;
          }
       }
    }
@@ -3057,7 +3047,9 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    {
       ybras[counter] = iter.first[0];
       ykets[counter] = iter.first[1];
-      Z_bar[{iter.first[0],iter.first[1]}] = arma::mat(); // important to initialize this for parallelization
+      //Z_bar[{iter.first[0],iter.first[1]}] = arma::mat(); // important to initialize this for parallelization
+      if (iter.first[0] > iter.first[1]) continue;
+      Z_bar[iter.first] = arma::mat(); // important to initialize this for parallelization
       counter++;
    }
    profiler.timer["Allocate Z_bar_tensor"] += omp_get_wtime() - t_start;
@@ -3069,14 +3061,20 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    {
       int ch_bra_cc = ybras[i];
       int ch_ket_cc = ykets[i];
-      int Jbra = modelspace->GetTwoBodyChannel_CC(ch_bra_cc).J;
-      int Jket = modelspace->GetTwoBodyChannel_CC(ch_ket_cc).J;
+      auto& tbc_bra_cc = modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
+      auto& tbc_ket_cc = modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
+//      int Jbra = modelspace->GetTwoBodyChannel_CC(ch_bra_cc).J;
+//      int Jket = modelspace->GetTwoBodyChannel_CC(ch_ket_cc).J;
+      int Jbra = tbc_bra_cc.J;
+      int Jket = tbc_ket_cc.J;
       int flipphase = modelspace->phase( Jbra - Jket ) * ( Z.IsHermitian() ? -1 : 1 );
       auto& XJ1 = Xt_bar_ph[ch_bra_cc];
       auto& XJ2 = Xt_bar_ph[ch_ket_cc];
       auto& YJ1J2 = Y_bar_ph[{ch_bra_cc,ch_ket_cc}]; // These two should be related...
       auto& YJ2J1 = Y_bar_ph[{ch_ket_cc,ch_bra_cc}];
-      
+
+//      arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
+
       Z_bar[{ch_bra_cc,ch_ket_cc}] = XJ1 * YJ1J2 -flipphase*(XJ2 * YJ2J1).t();
    }
    profiler.timer["Build Z_bar_tensor"] += omp_get_wtime() - t_start;

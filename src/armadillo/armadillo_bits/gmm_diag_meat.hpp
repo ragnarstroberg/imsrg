@@ -1,9 +1,15 @@
-// Copyright (C) 2014 Conrad Sanderson
-// Copyright (C) 2014 NICTA (www.nicta.com.au)
+// Copyright (C) 2014-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+
+
+//! \addtogroup gmm_diag
+//! @{
 
 
 namespace gmm_priv
@@ -73,8 +79,6 @@ gmm_diag<eT>::reset()
   {
   arma_extra_debug_sigprint();
   
-  mah_aux.reset();
-  
   init(0, 0);
   }
 
@@ -86,8 +90,6 @@ void
 gmm_diag<eT>::reset(const uword in_n_dims, const uword in_n_gaus)
   {
   arma_extra_debug_sigprint();
-  
-  mah_aux.reset();
   
   init(in_n_dims, in_n_gaus);
   }
@@ -112,7 +114,7 @@ gmm_diag<eT>::set_params(const Base<eT,T1>& in_means_expr, const Base<eT,T2>& in
   
   arma_debug_check
     (
-    (size(in_means) != size(in_dcovs)) || (in_hefts.n_cols != in_means.n_cols) || (in_hefts.n_rows != 1),
+    (arma::size(in_means) != arma::size(in_dcovs)) || (in_hefts.n_cols != in_means.n_cols) || (in_hefts.n_rows != 1),
     "gmm_diag::set_params(): given parameters have inconsistent and/or wrong sizes"
     );
   
@@ -199,9 +201,19 @@ gmm_diag<eT>::set_hefts(const Base<eT,T1>& in_hefts_expr)
   
   arma_debug_check( ((s < (eT(1) - Datum<eT>::eps)) || (s > (eT(1) + Datum<eT>::eps))), "gmm_diag::set_hefts(): sum of given hefts is not 1" );
   
-  access::rw(hefts) = in_hefts;
+  // make sure all hefts are positive and non-zero
   
-  log_hefts = log(hefts);  // TODO: possible issue when one of the hefts is zero
+  const eT* in_hefts_mem = in_hefts.memptr();
+        eT*    hefts_mem = access::rw(hefts).memptr();
+  
+  for(uword i=0; i < hefts.n_elem; ++i)
+    {
+    hefts_mem[i] = (std::max)( in_hefts_mem[i], std::numeric_limits<eT>::min() );
+    }
+  
+  access::rw(hefts) /= accu(hefts);
+  
+  log_hefts = log(hefts);
   }
 
 
@@ -274,8 +286,8 @@ gmm_diag<eT>::save(const std::string name) const
     Q.slice(0).row(0) = hefts;
     Q.slice(1).row(0).zeros();  // reserved for future use
     
-    Q.slice(0).submat(1, 0, size(means)) = means;
-    Q.slice(1).submat(1, 0, size(dcovs)) = dcovs;
+    Q.slice(0).submat(1, 0, arma::size(means)) = means;
+    Q.slice(1).submat(1, 0, arma::size(dcovs)) = dcovs;
     }
   
   const bool status = Q.save(name, arma_binary);
@@ -658,8 +670,8 @@ gmm_diag<eT>::learn
   const unwrap<T1>   tmp_X(data.get_ref());
   const Mat<eT>& X = tmp_X.M;
   
-  if(X.is_empty()          )  { arma_warn(true, "gmm_diag::learn(): given matrix is empty"             ); return false; }
-  if(X.is_finite() == false)  { arma_warn(true, "gmm_diag::learn(): given matrix has non-finite values"); return false; }
+  if(X.is_empty()          )  { arma_debug_warn("gmm_diag::learn(): given matrix is empty"             ); return false; }
+  if(X.is_finite() == false)  { arma_debug_warn("gmm_diag::learn(): given matrix has non-finite values"); return false; }
   
   if(N_gaus == 0)  { reset(); return true; }
   
@@ -688,14 +700,14 @@ gmm_diag<eT>::learn
   
   if(seed_mode == keep_existing)
     {
-    if(means.is_empty()        )  { arma_warn(true, "gmm_diag::learn(): no existing means"      ); return false; }
-    if(X.n_rows != means.n_rows)  { arma_warn(true, "gmm_diag::learn(): dimensionality mismatch"); return false; }
+    if(means.is_empty()        )  { arma_debug_warn("gmm_diag::learn(): no existing means"      ); return false; }
+    if(X.n_rows != means.n_rows)  { arma_debug_warn("gmm_diag::learn(): dimensionality mismatch"); return false; }
     
     // TODO: also check for number of vectors?
     }
   else
     {
-    if(X.n_cols < N_gaus)  { arma_warn(true, "gmm_diag::learn(): number of vectors is less than number of gaussians"); return false; }
+    if(X.n_cols < N_gaus)  { arma_debug_warn("gmm_diag::learn(): number of vectors is less than number of gaussians"); return false; }
     
     reset(X.n_rows, N_gaus);
     
@@ -714,12 +726,12 @@ gmm_diag<eT>::learn
     
     bool status = false;
     
-         if(dist_mode == eucl_dist)  { status = km_iterate<1>(X, km_iter, print_mode); }
-    else if(dist_mode == maha_dist)  { status = km_iterate<2>(X, km_iter, print_mode); }
+         if(dist_mode == eucl_dist)  { status = km_iterate<1>(X, km_iter, print_mode, "gmm_diag::learn(): k-means"); }
+    else if(dist_mode == maha_dist)  { status = km_iterate<2>(X, km_iter, print_mode, "gmm_diag::learn(): k-means"); }
     
     stream_state.restore(get_stream_err2());
     
-    if(status == false)  { arma_warn(true, "gmm_diag::learn(): k-means algorithm failed; not enough data, or too many gaussians requested"); init(orig); return false; }
+    if(status == false)  { arma_debug_warn("gmm_diag::learn(): k-means algorithm failed; not enough data, or too many gaussians requested"); init(orig); return false; }
     }
   
   
@@ -746,12 +758,89 @@ gmm_diag<eT>::learn
     
     stream_state.restore(get_stream_err2());
     
-    if(status == false)  { arma_warn(true, "gmm_diag::learn(): EM algorithm failed"); init(orig); return false; }
+    if(status == false)  { arma_debug_warn("gmm_diag::learn(): EM algorithm failed"); init(orig); return false; }
     }
   
   mah_aux.reset();
   
   init_constants();
+  
+  return true;
+  }
+
+
+
+template<typename eT>
+template<typename T1>
+inline
+bool
+gmm_diag<eT>::kmeans_wrapper
+  (
+        Mat<eT>&       user_means,
+  const Base<eT,T1>&   data,
+  const uword          N_gaus,
+  const gmm_seed_mode& seed_mode,
+  const uword          km_iter,
+  const bool           print_mode
+  )
+  {
+  arma_extra_debug_sigprint();
+  
+  const bool seed_mode_ok = \
+       (seed_mode == keep_existing)
+    || (seed_mode == static_subset)
+    || (seed_mode == static_spread)
+    || (seed_mode == random_subset)
+    || (seed_mode == random_spread);
+  
+  arma_debug_check( (seed_mode_ok == false), "kmeans(): unknown seed_mode" );
+  
+  const unwrap<T1>   tmp_X(data.get_ref());
+  const Mat<eT>& X = tmp_X.M;
+  
+  if(X.is_empty()          )  { arma_debug_warn("kmeans(): given matrix is empty"             ); return false; }
+  if(X.is_finite() == false)  { arma_debug_warn("kmeans(): given matrix has non-finite values"); return false; }
+  
+  if(N_gaus == 0)  { reset(); return true; }
+  
+  
+  // initial means
+  
+  if(seed_mode == keep_existing)
+    {
+    access::rw(means) = user_means;
+    
+    if(means.is_empty()        )  { arma_debug_warn("kmeans(): no existing means"      ); return false; }
+    if(X.n_rows != means.n_rows)  { arma_debug_warn("kmeans(): dimensionality mismatch"); return false; }
+    
+    // TODO: also check for number of vectors?
+    }
+  else
+    {
+    if(X.n_cols < N_gaus)  { arma_debug_warn("kmeans(): number of vectors is less than number of means"); return false; }
+    
+    access::rw(means).zeros(X.n_rows, N_gaus);
+    
+    if(print_mode)  { get_stream_err2() << "kmeans(): generating initial means\n"; }
+    
+    generate_initial_means<1>(X, seed_mode);
+    }
+  
+  
+  // k-means
+  
+  if(km_iter > 0)
+    {
+    const arma_ostream_state stream_state(get_stream_err2());
+    
+    bool status = false;
+    
+    status = km_iterate<1>(X, km_iter, print_mode, "kmeans()");
+    
+    stream_state.restore(get_stream_err2());
+    
+    if(status == false)  { arma_debug_warn("kmeans(): clustering failed; not enough data, or too many means requested"); return false; }
+    }
   
   return true;
   }
@@ -826,7 +915,14 @@ gmm_diag<eT>::init_constants()
     log_det_etc[i] = eT(-1) * ( tmp + eT(0.5) * logdet );
     }
   
-  log_hefts = log(hefts);  // TODO: possible issue when one of the hefts is zero
+  eT* hefts_mem = access::rw(hefts).memptr();
+  
+  for(uword i=0; i<N_gaus; ++i)
+    {
+    hefts_mem[i] = (std::max)( hefts_mem[i], std::numeric_limits<eT>::min() );
+    }
+  
+  log_hefts = log(hefts);
   }
 
 
@@ -1427,6 +1523,8 @@ inline
 void
 gmm_diag<eT>::generate_initial_means(const Mat<eT>& X, const gmm_seed_mode& seed_mode)
   {
+  arma_extra_debug_sigprint();
+  
   const uword N_dims = means.n_rows;
   const uword N_gaus = means.n_cols;
   
@@ -1482,7 +1580,7 @@ gmm_diag<eT>::generate_initial_means(const Mat<eT>& X, const gmm_seed_mode& seed
         
         if( (rs.mean() >= max_dist) && (ignore_i == false))
           {
-          max_dist = rs.mean(); best_i = i;
+          max_dist = eT(rs.mean()); best_i = i;
           }
         }
       
@@ -1503,6 +1601,8 @@ inline
 void
 gmm_diag<eT>::generate_initial_dcovs_and_hefts(const Mat<eT>& X, const eT var_floor)
   {
+  arma_extra_debug_sigprint();
+  
   const uword N_dims = means.n_rows;
   const uword N_gaus = means.n_cols;
   
@@ -1538,7 +1638,7 @@ gmm_diag<eT>::generate_initial_dcovs_and_hefts(const Mat<eT>& X, const eT var_fl
       access::rw(dcovs).col(g).ones();
       }
     
-    access::rw(hefts)(g) = (std::max)(eT(1), rs(g).count()) / eT(X.n_cols);
+    access::rw(hefts)(g) = (std::max)( (rs(g).count() / eT(X.n_cols)), std::numeric_limits<eT>::min() );
     }
   
   em_fix_params(var_floor);
@@ -1551,7 +1651,7 @@ template<typename eT>
 template<uword dist_id>
 inline
 bool
-gmm_diag<eT>::km_iterate(const Mat<eT>& X, const uword max_iter, const bool verbose)
+gmm_diag<eT>::km_iterate(const Mat<eT>& X, const uword max_iter, const bool verbose, const char* signature)
   {
   arma_extra_debug_sigprint();
   
@@ -1590,11 +1690,11 @@ gmm_diag<eT>::km_iterate(const Mat<eT>& X, const uword max_iter, const bool verb
     
     for(uword t=0; t < n_threads; ++t)  { t_running_means[t].set_size(N_gaus); }
     
-    vec tmp_mean(N_dims);
+    Col<eT> tmp_mean(N_dims);
     
     if(verbose)
       {
-      get_stream_err2() << "gmm_diag::learn(): k-means: n_threads: " << n_threads  << '\n';
+      get_stream_err2() << signature << ": n_threads: " << n_threads  << '\n';
       }
   #endif
   
@@ -1681,7 +1781,7 @@ gmm_diag<eT>::km_iterate(const Mat<eT>& X, const uword max_iter, const bool verb
     
     if(n_dead_means > 0)
       {
-      if(verbose)  { get_stream_err2() << "gmm_diag::learn(): k-means: recovering from dead means\n"; }
+      if(verbose)  { get_stream_err2() << signature << ": recovering from dead means\n"; }
       
       if(n_dead_means == 1)
         {
@@ -1732,7 +1832,7 @@ gmm_diag<eT>::km_iterate(const Mat<eT>& X, const uword max_iter, const bool verb
         
         if(n_resurrected_means != n_dead_means)
           {
-          if(verbose)  { get_stream_err2() << "gmm_diag::learn(): k-means: WARNING: did not resurrect all dead means\n"; }
+          if(verbose)  { get_stream_err2() << signature << ": WARNING: did not resurrect all dead means\n"; }
           }
         }
       }
@@ -1746,7 +1846,7 @@ gmm_diag<eT>::km_iterate(const Mat<eT>& X, const uword max_iter, const bool verb
     
     if(verbose)
       {
-      get_stream_err2() << "gmm_diag::learn(): k-means: iteration: ";
+      get_stream_err2() << signature << ": iteration: ";
       get_stream_err2().unsetf(ios::scientific);
       get_stream_err2().setf(ios::fixed);
       get_stream_err2().width(std::streamsize(4));
@@ -1983,7 +2083,7 @@ gmm_diag<eT>::em_update_params
     eT* acc_mean_mem = final_acc_means.colptr(g);
     eT* acc_dcov_mem = final_acc_dcovs.colptr(g);
     
-    const eT acc_norm_lhood = final_acc_norm_lhoods[g];
+    const eT acc_norm_lhood = (std::max)( final_acc_norm_lhoods[g], std::numeric_limits<eT>::min() );
     
     hefts_mem[g] = acc_norm_lhood / eT(X.n_cols);
     
@@ -2102,3 +2202,6 @@ gmm_diag<eT>::em_fix_params(const eT var_floor)
 
 
 }
+
+
+//! @}

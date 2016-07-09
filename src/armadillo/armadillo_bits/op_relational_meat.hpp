@@ -1,9 +1,11 @@
-// Copyright (C) 2009-2012 Conrad Sanderson
-// Copyright (C) 2009-2012 NICTA (www.nicta.com.au)
+// Copyright (C) 2009-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup op_relational
@@ -39,7 +41,7 @@
     \
     uword* out_mem = out.memptr();\
     \
-    if(Proxy<T1>::prefer_at_accessor == false)\
+    if(Proxy<T1>::use_at == false)\
       {\
             ea_type PA     = P.get_ea();\
       const uword   n_elem = out.n_elem;\
@@ -99,7 +101,7 @@
     \
     uword* out_mem = out.memptr();\
     \
-    if(Proxy<T1>::prefer_at_accessor == false)\
+    if(Proxy<T1>::use_at == false)\
       {\
             ea_type PA     = P.get_ea();\
       const uword   n_elem = out.n_elem;\
@@ -160,7 +162,7 @@
     \
     uword* out_mem = out.memptr();\
     \
-    if(ProxyCube<T1>::prefer_at_accessor == false)\
+    if(ProxyCube<T1>::use_at == false)\
       {\
             ea_type PA     = P.get_ea();\
       const uword   n_elem = out.n_elem;\
@@ -212,7 +214,7 @@
     \
     uword* out_mem = out.memptr();\
     \
-    if(ProxyCube<T1>::prefer_at_accessor == false)\
+    if(ProxyCube<T1>::use_at == false)\
       {\
             ea_type PA     = P.get_ea();\
       const uword   n_elem = out.n_elem;\

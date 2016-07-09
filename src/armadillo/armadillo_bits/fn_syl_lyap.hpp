@@ -1,9 +1,11 @@
-// Copyright (C) 2011-2012 Conrad Sanderson
-// Copyright (C) 2011-2012 NICTA (www.nicta.com.au)
+// Copyright (C) 2011-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup fn_syl_lyap
@@ -41,7 +43,7 @@ syl
   if(status == false)
     {
     out.reset();
-    arma_bad("syl(): equation appears to be singular", false);
+    arma_debug_warn("syl(): solution not found");
     }
   
   return status;
@@ -50,6 +52,7 @@ syl
 
 
 template<typename T1, typename T2, typename T3>
+arma_warn_unused
 inline
 Mat<typename T1::elem_type>
 syl
@@ -80,7 +83,7 @@ syl
   if(status == false)
     {
     out.reset();
-    arma_bad("syl(): equation appears to be singular");
+    arma_stop_runtime_error("syl(): solution not found");
     }
   
   return out;

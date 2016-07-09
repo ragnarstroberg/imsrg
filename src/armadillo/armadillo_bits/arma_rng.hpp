@@ -1,9 +1,11 @@
-// Copyright (C) 2013-2015 Conrad Sanderson
-// Copyright (C) 2013-2015 NICTA (www.nicta.com.au)
+// Copyright (C) 2013-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
 
 
 //! \addtogroup arma_rng
@@ -77,6 +79,7 @@ arma_rng::set_seed(const arma_rng::seed_type val)
 
 
 
+arma_cold
 inline
 void
 arma_rng::set_seed_random()

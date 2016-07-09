@@ -3,10 +3,15 @@
 #include "ModelSpace.hh"
 #include <iomanip>
 #include <utility> // for make_pair
+#include "gsl/gsl_sf_gamma.h" // for radial wave function
+#include "gsl/gsl_sf_laguerre.h" // for radial wave function
+#include <gsl/gsl_math.h> // for M_SQRTPI
 
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
 #endif
+#define HBARC 197.3269718 // hc in MeV * fm
+#define M_NUCLEON 938.9185 // average nucleon mass in MeV
 
 
 using namespace std;
@@ -680,6 +685,27 @@ void HartreeFock::PrintSPE()
     Orbit& oi = modelspace->GetOrbit(i);
     cout << fixed << setw(3) << oi.n << " " << setw(3) << oi.l << " "
          << setw(3) << oi.j2 << " " << setw(3) << oi.tz2 << "   " << setw(10) << F(i,i) << endl;
+  }
+
+}
+
+
+
+void HartreeFock::GetRadialWF(index_t index, vector<double>& R, vector<double>& PSI)
+{
+  double b = sqrt( (HBARC*HBARC) / (modelspace->GetHbarOmega() * M_NUCLEON) );
+  Orbit& orb = modelspace->GetOrbit(index);
+  for (size_t r=0;r<R.size(); ++r)
+  {
+   double x = R[r]/b;
+   double psi = 0;
+   for ( index_t j : Hbare.OneBodyChannels.at({orb.l,orb.j2,orb.tz2}) )
+   {
+     Orbit& oj = modelspace->GetOrbit(j);
+     double Norm = 2*sqrt( gsl_sf_fact(oj.n) * pow(2,oj.n+oj.l) / M_SQRTPI / gsl_sf_doublefact(2*oj.n+2*oj.l+1) * pow(b,-3.0) );
+     psi += C(index,j) * Norm * pow(x,oj.l) * exp(-x*x*0.5) * gsl_sf_laguerre_n(oj.n,oj.l+0.5,x*x);
+   }
+   PSI[r] = psi;
   }
 
 }

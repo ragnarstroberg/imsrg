@@ -1,9 +1,12 @@
-// Copyright (C) 2012 Ryan Curtin
-// Copyright (C) 2012-2015 Conrad Sanderson
+// Copyright (C) 2012-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Ryan Curtin
 
 
 //! \addtogroup spop_sum
@@ -41,7 +44,7 @@ spop_sum::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_sum>& in)
     {
     Row<eT> acc(p_n_cols, fill::zeros);
     
-    if(SpProxy<T1>::must_use_iterator)
+    if(SpProxy<T1>::use_iterator)
       {
       typename SpProxy<T1>::const_iterator_type it     = p.begin();
       typename SpProxy<T1>::const_iterator_type it_end = p.end();

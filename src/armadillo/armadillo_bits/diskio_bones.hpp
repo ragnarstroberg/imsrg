@@ -1,12 +1,14 @@
-// Copyright (C) 2008-2012 NICTA (www.nicta.com.au)
-// Copyright (C) 2008-2012 Conrad Sanderson
-// Copyright (C) 2009-2010 Ian Cullinan
-// Copyright (C) 2012 Ryan Curtin
-// Copyright (C) 2013 Szabolcs Horvat
+// Copyright (C) 2008-2015 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// -------------------------------------------------------------------
+// 
+// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Written by Ian Cullinan
+// Written by Ryan Curtin
+// Written by Szabolcs Horvat
 
 
 //! \addtogroup diskio
@@ -28,12 +30,9 @@ class diskio
   
   inline static file_type guess_file_type(std::istream& f);
   
-  inline static char conv_to_hex_char(const u8 x);
-  inline static void conv_to_hex(char* out, const u8 x);
+  inline arma_cold static std::string gen_tmp_name(const std::string& x);
   
-  inline static std::string gen_tmp_name(const std::string& x);
-  
-  inline static bool safe_rename(const std::string& old_name, const std::string& new_name);
+  inline arma_cold static bool safe_rename(const std::string& old_name, const std::string& new_name);
   
   template<typename eT> inline static bool convert_naninf(eT&              val, const std::string& token);
   template<typename  T> inline static bool convert_naninf(std::complex<T>& val, const std::string& token);

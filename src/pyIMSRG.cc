@@ -181,6 +181,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("ReadTwoBodyEngel", &ReadWrite::ReadTwoBodyEngel)
       .def("ReadOperator_Nathan",&ReadWrite::ReadOperator_Nathan)
       .def("ReadTensorOperator_Nathan",&ReadWrite::ReadTensorOperator_Nathan)
+      .def("ReadRelCMOpFromJavier",&ReadWrite::ReadRelCMOpFromJavier)
       .def_readwrite("InputParameters", &ReadWrite::InputParameters)
    ;
 
