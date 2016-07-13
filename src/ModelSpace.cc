@@ -823,14 +823,14 @@ int ModelSpace::GetTwoBodyChannelIndex(int j, int p, int t)
 
 void ModelSpace::SetupKets()
 {
-   int index = 0;
-
+//   nkets = norbits*(norbits+1)/2;
    Kets.resize(Index2(norbits-1,norbits-1)+1);
+//   Kets.resize(nkets);
    for (int p=0;p<norbits;p++)
    {
      for (int q=p;q<norbits;q++)
      {
-        index = Index2(p,q);
+        index_t index = Index2(p,q);
         Kets[index] = Ket(GetOrbit(p),GetOrbit(q));
      }
    }
@@ -870,8 +870,8 @@ void ModelSpace::SetupKets()
    SortedTwoBodyChannels_CC.resize(nTwoBodyChannels);
    for (int ch=0;ch<nTwoBodyChannels;++ch)
    {
-      TwoBodyChannels.push_back(move(TwoBodyChannel(ch,this)));
-      TwoBodyChannels_CC.push_back(move(TwoBodyChannel_CC(ch,this)));
+      TwoBodyChannels.emplace_back(TwoBodyChannel(ch,this));
+      TwoBodyChannels_CC.emplace_back(TwoBodyChannel_CC(ch,this));
       SortedTwoBodyChannels[ch] = ch;
       SortedTwoBodyChannels_CC[ch] = ch;
    }
