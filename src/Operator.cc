@@ -2161,38 +2161,45 @@ void Operator::AddInversePandyaTransformation(deque<arma::mat>& Zbar)
                int indx_il = tbc_cc.GetLocalIndex(min(i,l),max(i,l));
                int indx_kj = tbc_cc.GetLocalIndex(min(j,k),max(j,k));
                if (i>l) indx_il += tbc_cc.GetNumberKets();
-               if (i>l) cout << "AAAAHHHH i > l " << i << " > " << l << endl;
                if (k>j) indx_kj += tbc_cc.GetNumberKets();
 //               cout << "Zbar[" << ch_cc << "](" << indx_il << "," << indx_kj << ")   dim = " << Zbar[ch_cc].n_rows << "," << Zbar[ch_cc].n_cols << endl;
                double me1 = Zbar[ch_cc](indx_il,indx_kj);
                commij += (2*Jprime+1) * sixj * me1;
-
             }
 
-            // now loop over the cross coupled TBME's
-            parity_cc = (oi.l+ok.l)%2;
-            Tz_cc = abs(oi.tz2+ok.tz2)/2;
-            jmin = max(abs(int(jj-jl)),abs(int(jk-ji)));
-            jmax = min(int(jj+jl),int(jk+ji));
-            for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
+            if (k==l)
             {
-               double sixj = modelspace->GetSixJ(jj,ji,J,jk,jl,Jprime);
-               if (abs(sixj)<1e-8) continue;
-               int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
-               TwoBodyChannel_CC& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
-               int indx_jl = tbc_cc.GetLocalIndex(min(j,l),max(j,l));
-               int indx_ki = tbc_cc.GetLocalIndex(min(i,k),max(i,k));
-               if (j>l) indx_jl += tbc_cc.GetNumberKets();
-               if (k>i) indx_ki += tbc_cc.GetNumberKets();
-               int indx_ik = tbc_cc.GetLocalIndex(min(i,k),max(i,k));
-               if (k<i) cout << "AAAAHHHH k < i " << k << " < " << i << endl;
-               int indx_lj = (indx_jl + tbc_cc.GetNumberKets())%(2*tbc_cc.GetNumberKets());
-//               double me1 = Zbar[ch_cc](indx_jl,indx_ki);
-               // we always have i<=k so we should always flip Z_jlki = (-1)^{i+j+k+l} Z_iklj
-               double me1 = Zbar[ch_cc](indx_ik, indx_lj) ;//* modelspace->phase(ji+jj+jk+jl);
-//               double me1 = Zbar[ch_cc](indx_ki,indx_jl);
-               commji += (2*Jprime+1) *  sixj * me1;
-
+              commji = commij;
+            }
+            else if (i==j)
+            {
+              commji = modelspace->phase(ji+jj+jk+jl) * commij;
+            }
+            else
+            {
+              // now loop over the cross coupled TBME's
+              parity_cc = (oi.l+ok.l)%2;
+              Tz_cc = abs(oi.tz2+ok.tz2)/2;
+              jmin = max(abs(int(jj-jl)),abs(int(jk-ji)));
+              jmax = min(int(jj+jl),int(jk+ji));
+              for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
+              {
+                 double sixj = modelspace->GetSixJ(jj,ji,J,jk,jl,Jprime);
+                 if (abs(sixj)<1e-8) continue;
+                 int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
+                 TwoBodyChannel_CC& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
+                 int indx_jl = tbc_cc.GetLocalIndex(min(j,l),max(j,l));
+                 int indx_ki = tbc_cc.GetLocalIndex(min(i,k),max(i,k));
+                 if (j>l) indx_jl += tbc_cc.GetNumberKets();
+                 if (k>i) indx_ki += tbc_cc.GetNumberKets();
+                 int indx_ik = tbc_cc.GetLocalIndex(min(i,k),max(i,k));
+                 int indx_lj = (indx_jl + tbc_cc.GetNumberKets())%(2*tbc_cc.GetNumberKets());
+//                 double me1 = Zbar[ch_cc](indx_jl,indx_ki);
+                 // we always have i<=k so we should always flip Z_jlki = (-1)^{i+j+k+l} Z_iklj
+                 double me1 = Zbar[ch_cc](indx_ik, indx_lj) ;//* modelspace->phase(ji+jj+jk+jl);
+//                 double me1 = Zbar[ch_cc](indx_ki,indx_jl);
+                 commji += (2*Jprime+1) *  sixj * me1;
+              }
             }
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
