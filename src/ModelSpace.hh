@@ -303,6 +303,7 @@ class ModelSpace
    vector<Ket> Kets;
    vector<TwoBodyChannel> TwoBodyChannels;
    vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
+   bool moshinsky_has_been_precalculated;
 //   map<long int,double> SixJList;
 
    static unordered_map<unsigned long int,double> SixJList;

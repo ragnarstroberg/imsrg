@@ -287,7 +287,7 @@ int main(int argc, char** argv)
     if (ops.size()>0) cout << "transforming operators" << endl;
     for (size_t i=0;i<ops.size();++i)
     {
-      cout << opnames[i] << " " << flush;
+      cout << opnames[i] << " " << endl;
       ops[i] = imsrgsolver.Transform(ops[i]);
       cout << " (" << ops[i].ZeroBody << " ) " << endl; 
     }
