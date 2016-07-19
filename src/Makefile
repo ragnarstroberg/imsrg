@@ -38,6 +38,8 @@ endif
 ifeq ($(THEHOST),cronos)
  FLAGS += -DOLD_BOOST=1
  SOFLAGS += -DOLD_BOOST=1
+ INCLUDE += -I$(HOME)/include
+ LIBS += -L$(HOME)/lib
  ifneq ($(PYTHON),off)
   ALL += pyIMSRG.so
   endif
