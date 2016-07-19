@@ -3,7 +3,7 @@ CC = g++
 # Compiler flags:
 #  -DNO_ODE=1 compiles without boost/ode package used for flow equation solver
 #  -DOPENBLAS_NOUSEOMP=1 removes parallel blocks which take threads away from OPENBLAS
-#                        to be used if OpenBlas was compiled without the USE_OMP flat
+#                        to be used if OpenBlas was compiled without the USE_OMP flag
 
 INCLUDE   = -I./armadillo
 FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC  
@@ -14,8 +14,8 @@ SOFLAGS  += $(WARNFLAGS)
 INSTDIR = $(HOME)
 
 ifeq ($(DEBUG),on)
- FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -ffast-math  
- SOFLAGS   = -march=native -std=c++11 -fopenmp -fPIC -ffast-math  
+ FLAGS     = -march=native -std=c++11 -fopenmp -fPIC   
+ SOFLAGS   = -march=native -std=c++11 -fopenmp -fPIC   
  FLAGS += -g
  SOFLAGS += -g
 endif
