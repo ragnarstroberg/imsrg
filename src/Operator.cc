@@ -2226,18 +2226,11 @@ deque<arma::mat> Operator::InitializePandya(size_t nch, string orientation="norm
       int ch_cc = modelspace->SortedTwoBodyChannels_CC[ich];
       TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
       int nKets_cc = tbc_cc.GetNumberKets();
-//      arma::uvec kets_ph = arma::join_cols(tbc_cc.GetKetIndex_hh(), tbc_cc.GetKetIndex_ph() ); // Lets see if this works...
-//      int nph_kets = kets_ph.n_rows;
       int nph_kets = tbc_cc.GetKetIndex_hh().size() + tbc_cc.GetKetIndex_ph().size();
-//      if (nph_kets <1) continue;
       if (orientation=="normal")
-//         X[ch_cc] = arma::mat(2*nph_kets,   2*nKets_cc, arma::fill::zeros);
          X[ch_cc] = arma::mat(2*nph_kets,   nKets_cc, arma::fill::zeros);
       else if (orientation=="transpose")
          X[ch_cc] = arma::mat(nKets_cc, 2*nph_kets,   arma::fill::zeros);
-//         X[ch_cc] = arma::mat(2*nKets_cc, 2*nph_kets,   arma::fill::zeros);
-      else if (orientation=="transposeT")
-         X[ch_cc] = arma::mat(2*nKets_cc, 2*nph_kets,   arma::fill::zeros);
    }
    return X;
 }
@@ -2337,7 +2330,6 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
       if (Y_bar_ph[ch].size()<1 or Xt_bar_ph[ch].size()<1)
       {
         Z_bar[ch] = arma::zeros( Xt_bar_ph[ch].n_rows, Y_bar_ph[ch].n_cols*2);
-//        cout << "Z_bar[" << ch << "] all zeros   " << Z_bar[ch].n_rows << " x " << Z_bar[ch].n_cols << endl;
         continue;
       }
 
@@ -2361,35 +2353,22 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 //                                           [      |     ]   Flipping hp <-> ph and multiplying by the phase is equivalent to
 //                                           [  Yph | Y'hp]   having kets |kj> with k>j.
       int nry = Y_bar_ph[ch].n_rows;
-//      auto Yright = join_vert(Y_bar_ph[ch].rows(nry/2,nry-1), Y_bar_ph[ch].rows(0,nry/2-1))  % join_vert(PhaseMatY,PhaseMatY);
-//      Z_bar[ch] =  Xt_bar_ph[ch] * join_horiz(Y_bar_ph[ch],  Yright  );
       Z_bar[ch] =  Xt_bar_ph[ch] * join_horiz(Y_bar_ph[ch], join_vert(Y_bar_ph[ch].rows(nry/2,  nry-1)%PhaseMatY,
                                                                       Y_bar_ph[ch].rows(0,    nry/2-1)%PhaseMatY) );
-
 
 
 
       // If Z is hermitian, then XY is anti-hermitian, and so XY - YX = XY + (XY)^T
       if ( Z.IsHermitian() )
       {
-//           Z_bar.submat(0,0,nKets_cc-1,nKets_cc-1) += Z_bar.submat(0,0,nKets_cc-1,nKets_cc-1).t();
-//         Z_bar[ch].submat(0,0,nKets_cc-1,nKets_cc-1) += Z_bar[ch].submat(0,0,nKets_cc-1,nKets_cc-1).t();
          Z_bar[ch].cols(0,nKets_cc-1) += Z_bar[ch].cols(0,nKets_cc-1).t();
       }
       else
       {
-//         Z_bar.submat(0,0,nKets_cc-1,nKets_cc-1) -= Z_bar.submat(0,0,nKets_cc-1,nKets_cc-1).t();
-//         Z_bar[ch].submat(0,0,nKets_cc-1,nKets_cc-1) -= Z_bar[ch].submat(0,0,nKets_cc-1,nKets_cc-1).t();
          Z_bar[ch].cols(0,nKets_cc-1) -= Z_bar[ch].cols(0,nKets_cc-1).t();
       }
-//      Z_bar.submat(0,nKets_cc,nKets_cc-1,2*nKets_cc-1) += Z_bar.submat(0,nKets_cc,nKets_cc-1,2*nKets_cc-1).t()%PhaseMat;
-//      Z_bar[ch].submat(0,nKets_cc,nKets_cc-1,2*nKets_cc-1) += Z_bar[ch].submat(0,nKets_cc,nKets_cc-1,2*nKets_cc-1).t()%PhaseMat;
       Z_bar[ch].cols(nKets_cc,2*nKets_cc-1) += Z_bar[ch].cols(nKets_cc,2*nKets_cc-1).t()%PhaseMat;
 
-
-      // might as well overwrite the Y_bar memory, since we wont use it anymore.
-      // this doesn't seem to improve anything...
-//      Y_bar_ph[ch] = Z_bar;
 
    }
    profiler.timer["Build Z_bar"] += omp_get_wtime() - t_start;
@@ -2397,7 +2376,6 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    // Perform inverse Pandya transform on Z_bar to get Z
    t_start = omp_get_wtime();
    Z.AddInversePandyaTransformation(Z_bar);
-//   Z.AddInversePandyaTransformation(Y_bar_ph);
    profiler.timer["InversePandyaTransformation"] += omp_get_wtime() - t_start;
 
 }
