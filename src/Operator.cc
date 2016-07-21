@@ -2325,9 +2325,9 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    int hy = Y.IsHermitian() ? 1 : -1;
 
    int nch = modelspace->SortedTwoBodyChannels_CC.size();
-//   #ifndef OPENBLAS_NOUSEOMP
-//   #pragma omp parallel for schedule(dynamic,1)
-//   #endif
+   #ifndef OPENBLAS_NOUSEOMP
+   #pragma omp parallel for schedule(dynamic,1)
+   #endif
    for (int ich=0; ich<nch; ++ich )
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
@@ -3184,8 +3184,9 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    }
    profiler.timer["Allocate Z_bar_tensor"] += omp_get_wtime() - t_start;
    t_start = omp_get_wtime();
-
-//   #pragma omp parallel for schedule(dynamic,1)
+   #ifndef OPENBLAS_NOUSEOMP
+   #pragma omp parallel for schedule(dynamic,1)
+   #endif
    for(int i=0;i<counter;++i)
    {
       int ch_bra_cc = ybras[i];
