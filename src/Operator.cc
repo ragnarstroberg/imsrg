@@ -1704,6 +1704,7 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
    Operator& Z = *this;
    auto& X1 = X.OneBody;
    auto& Y1 = Y.OneBody;
+   int hZ = Z.IsHermitian() ? 1 : -1;
 
    int n_nonzero = modelspace->SortedTwoBodyChannels.size();
    #pragma omp parallel for schedule(dynamic,1)
@@ -1714,7 +1715,7 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
       auto& X2 = X.TwoBody.GetMatrix(ch,ch);
       auto& Y2 = Y.TwoBody.GetMatrix(ch,ch);
       auto& Z2 = Z.TwoBody.GetMatrix(ch,ch);
-
+      arma::mat W2(size(Z2),arma::fill::zeros); // temporary intermediate matrix
 
       int npq = tbc.GetNumberKets();
       for (int indx_ij = 0;indx_ij<npq; ++indx_ij)
@@ -1722,161 +1723,56 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
          Ket & bra = tbc.GetKet(indx_ij);
          int i = bra.p;
          int j = bra.q;
-         double pre_ij = i==j ? SQRT2 : 1;
          Orbit& oi = modelspace->GetOrbit(i);
          Orbit& oj = modelspace->GetOrbit(j);
          int flipphaseij = -modelspace->phase((oi.j2+oj.j2)/2-tbc.J);
-         arma::Row<double> X2_ij = X2.row(indx_ij); // trying this to better use the cache. not sure if it helps.
-         arma::Row<double> Y2_ij = Y2.row(indx_ij);
 
-         vector<index_t> ind1ia;
-         vector<index_t> ind2aj;
-//         vector<index_t> ind2ja;
-         vector<double> factoria;
+         // make lists of the indices we want, then do matrix multiplication.
+         // there may be a more efficient way to find these
+         vector<index_t> ind1_ia, ind1_ja,ind2_aj,ind2_ai;
+         vector<double> factor_ia,factor_ja;
          for (int a : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
          {
-            index_t ind2 = tbc.GetLocalIndex( min(a,j), max(a,j));
+            int ind2 = tbc.GetLocalIndex( min(a,j), max(a,j));
             if (ind2<0 or ind2>=tbc.GetNumberKets()) continue;
-            ind1ia.push_back(a);
-            ind2aj.push_back(ind2);
-            if (a>j)
-              factoria.push_back(flipphaseij);
-            else if (a==j)
-              factoria.push_back(SQRT2);
-            else
-              factoria.push_back(1);
+            ind1_ia.push_back(a);
+            ind2_aj.push_back(ind2);
+            factor_ia.push_back( a>j ? flipphaseij : (a==j ? SQRT2 : 1));
          }
-         arma::uvec u_ind1ia(ind1ia);
-         arma::uvec u_ind2aj(ind2aj);
-         arma::rowvec  v_factoria(factoria);
-//         cout << "about to multiply: (" << v_factoria.n_rows << " x " << v_factoria.n_cols << ") * ("
-//              << u_ind2aj.size() << " x " << Y2.n_cols << ")  -> " << Z2.n_cols << endl;
-//         cout << "sizes: X1 " << X.OneBody.n_rows << " x " << X.OneBody.n_cols << "  X2 " << X2.n_rows << " x " << X2.n_cols << " "
-//              << "Z2 " << Z2.n_rows << " x " << Z2.n_cols << endl;
-//         for (auto iii : u_ind1ia ) cout << iii << " ";
-//         cout << endl;
-//         for (auto iii : u_ind2aj ) cout << iii << " ";
-//         cout << endl;
-//         cout << "------------------------------" << endl;
-         arma::mat result1 =  (X.OneBody.submat(arma::uvec({i}), u_ind1ia)%v_factoria ) * Y2.rows(u_ind2aj);
-         arma::mat result2 = -(Y.OneBody.submat(arma::uvec({i}), u_ind1ia)%v_factoria ) * X2.rows(u_ind2aj);
-//         Z2.row(indx_ij) += (X.OneBody.submat(arma::uvec({i}), u_ind1ia)%v_factoria ) * Y2.rows(u_ind2aj)
-//                          - (Y.OneBody.submat(arma::uvec({i}), u_ind1ia)%v_factoria ) * X2.rows(u_ind2aj);
-//         Z2.row(indx_ij) += result1 + result2;
-//         if (Z2.n_cols < 6)
-//         {
-//           cout << "X1: " << endl << X.OneBody.submat(arma::uvec({i}), u_ind1ia) << endl;
-//           cout << "factors: " << endl << v_factoria << endl;
-//           cout << "Y2: " << endl << Y2.rows(u_ind2aj) << endl;
-//           cout << "u_ind2aj" << endl << u_ind2aj << endl;
-//           cout << "result1:" << endl << result1 << endl;
-//           cout << "result2:" << endl << result2 << endl;
-//         }
-//         cout << "Done" << endl;
-         int klmin = Z.IsNonHermitian() ? 0 : indx_ij;
-         for (int indx_kl=klmin;indx_kl<npq; ++indx_kl)
+         if (i!=j)
          {
-            Ket & ket = tbc.GetKet(indx_kl);
-            int k = ket.p;
-            int l = ket.q;
-            double pre_kl = k==l ? SQRT2 : 1;
-            Orbit& ok = modelspace->GetOrbit(k);
-            Orbit& ol = modelspace->GetOrbit(l);
-            int flipphasekl = -modelspace->phase((ok.j2+ol.j2)/2-tbc.J);
-            arma::vec X2_kl = X2.unsafe_col(indx_kl);
-            arma::vec Y2_kl = Y2.unsafe_col(indx_kl);
+           for (int a : OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+           {
+              int ind2 = tbc.GetLocalIndex( min(a,i), max(a,i));
+              if (ind2<0 or ind2>=tbc.GetNumberKets()) continue;
+              ind1_ja.push_back(a);
+              ind2_ai.push_back(ind2);
+              factor_ja.push_back( i>a ? flipphaseij : (i==a ? SQRT2 : 1));
+           }
 
-            double cijkl = 0;
-            double c1 = 0;
-            double c1a = 0;
-            double c1b = 0;
-            double c2 = 0;
-            double c3 = 0;
-            double c4 = 0;
-
-//            cout << "-------------" << endl;
-            for (int a : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-            {
-                 int indx_aj = tbc.GetLocalIndex(min(a,j),max(a,j));
-                 if (indx_aj < 0)
-                 {
-//                    cout << "indx_aj<0!!!!!!!!!!!!!!!" << endl;
-//                    cout << "i,j,a = " << i << "," << j << "," << a << "  ch = " << ch << " J,p,T = " << tbc.J << " " << tbc.parity << " " << tbc.Tz << endl;
-//                    for (int iiket=0;iiket<tbc.GetNumberKets();iiket++)
-//                    {
-//                      cout << "(" << tbc.GetKet(iiket).p << "," << tbc.GetKet(iiket).q  << ")  ";
-//                    }
-//                    cout << endl;
-                    continue;
-                 }
-//                 double pre_aj = a>j ? tbc.GetKet(indx_aj).Phase(tbc.J) : (a==j ? SQRT2 : 1);
-                 double pre_aj = a>j ? flipphaseij : (a==j ? SQRT2 : 1);
-//                 if (flipphase != tbc.GetKet(indx_aj).Phase(tbc.J)) cout << " AAAAAHHHHH!H!!!!" << endl;
-//                 cijkl += pre_kl * pre_aj  * ( X1(i,a) * Y2(indx_aj,indx_kl) - Y1(i,a) * X2_kl(indx_aj) );
-//                 c1 += pre_aj  * ( X1(i,a) * Y2(indx_aj,indx_kl) - Y1(i,a) * X2_kl(indx_aj) );
-//                 c1 += pre_aj  * ( X1(i,a) * Y2(indx_aj,indx_kl) - Y1(i,a) * X2(indx_aj,indx_kl) );
-                 c1a += pre_aj  * ( X1(i,a) * Y2(indx_aj,indx_kl) );
-                 c1b -= pre_aj  * ( Y1(i,a) * X2(indx_aj,indx_kl) );
-//                 if (Z2.n_cols < 6)
-//                 {
-//                    cout << "  indx_aj = " << indx_aj << "  " << scientific << pre_aj << " " << scientific << X1(i,a) << " " << scientific << Y2(indx_aj,indx_kl) << endl;
-//                 }
-            }
-             c1 = c1a+c1b;
-//            if (Z2.n_cols < 6)
-//            {
-//              cout << "( " << scientific << setw(15) << setprecision(10) << c1a << " " << scientific << setw(15) << setprecision(10) << c1b << " ) " << endl;
-//              cout << "[ "   << scientific << setw(15) << setprecision(10) << result1(indx_kl)
-//                   << " " << scientific << setw(15) << setprecision(10) << result2(indx_kl) << " ] " << endl;
-//            }
-
-            for (int a : OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
-            {
-                 int indx_ia = tbc.GetLocalIndex(min(i,a),max(i,a));
-                 if (indx_ia < 0) 
-                 {
-//                    cout << "indx_ia<0!!!!!!!!!!!!!!!" << endl;
-//                    cout << "i,j,a = " << i << "," << j << "," << a << "  ch = " << ch << " J,p,T = " << tbc.J << " " << tbc.parity << " " << tbc.Tz << endl;
-                    continue;
-                 }
-//                 double pre_ia = i>a ? tbc.GetKet(indx_ia).Phase(tbc.J) : (i==a ? SQRT2 : 1);
-                 double pre_ia = i>a ? flipphaseij : (i==a ? SQRT2 : 1);
-//                 cijkl += pre_kl * pre_ia * ( X1(j,a) * Y2(indx_ia,indx_kl)  - Y1(j,a) * X2_kl(indx_ia) );
-//                 if (flipphase != tbc.GetKet(indx_ia).Phase(tbc.J)) cout << " AAAAAHHHHH!H!!!!" << endl;
-//                 c2 += pre_ia * ( X1(j,a) * Y2(indx_ia,indx_kl)  - Y1(j,a) * X2_kl(indx_ia) );
-                 c2 += pre_ia * ( X1(j,a) * Y2(indx_ia,indx_kl)  - Y1(j,a) * X2(indx_ia,indx_kl) );
-             }
-//             if (i==j and abs(c1)>1e-7 or abs(c2)>1e-7)
-//             {
-//               cout << " i==j: " << fixed << setw(15) << setprecision(10) << c1 << " "
-//                                 << fixed << setw(15) << setprecision(10) << c2 << endl;
-//             }
-
-            for (int a : OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
-            {
-                int indx_al = tbc.GetLocalIndex(min(a,l),max(a,l));
-                if (indx_al < 0) continue;
-//                double pre_al = a>l ? tbc.GetKet(indx_al).Phase(tbc.J) : (a==l ? SQRT2 : 1);
-                double pre_al = a>l ? flipphasekl : (a==l ? SQRT2 : 1);
-//                cijkl -= pre_ij * pre_al * ( X1(a,k) * Y2(indx_ij,indx_al) - Y1(a,k) * X2_ij(indx_al) );
-                c3 -= pre_al * ( X1(a,k) * Y2(indx_ij,indx_al) - Y1(a,k) * X2_ij(indx_al) );
-            }
-
-            for (int a : OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
-            {
-               int indx_ka = tbc.GetLocalIndex(min(k,a),max(k,a));
-               if (indx_ka < 0) continue;
-//               double pre_ka = k>a ? tbc.GetKet(indx_ka).Phase(tbc.J) : (k==a ? SQRT2 : 1);
-               double pre_ka = k>a ? flipphasekl : (k==a ? SQRT2 : 1);
-//               cijkl -= pre_ij * pre_ka * ( X1(a,l) * Y2(indx_ij,indx_ka) - Y1(a,l) * X2_ij(indx_ka) );
-               c4 -=  pre_ka * ( X1(a,l) * Y2(indx_ij,indx_ka) - Y1(a,l) * X2_ij(indx_ka) );
-            }
-
-            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
-//            Z2(indx_ij,indx_kl) += cijkl / norm;
-            Z2(indx_ij,indx_kl) += ((c1+c2)*pre_kl + (c3+c4)*pre_ij) / norm;
          }
+
+         arma::uvec u_ind1_ia(ind1_ia);
+         arma::uvec u_ind1_ja(ind1_ja);
+         arma::uvec u_ind2_aj(ind2_aj);
+         arma::uvec u_ind2_ai(ind2_ai);
+         arma::vec  v_factor_ia(factor_ia);
+         arma::vec  v_factor_ja(factor_ja);
+         if (i==j)
+         {
+           v_factor_ia /= SQRT2;
+           v_factor_ja /= SQRT2;
+         }
+
+         // This is fairly obfuscated, but hopefully faster for bigger calculations
+         W2.col(indx_ij) = join_horiz(    Y2.cols(join_vert( u_ind2_aj,u_ind2_ai))  , X2.cols(join_vert(u_ind2_aj,u_ind2_ai) ) )
+                           * join_vert(  join_vert( X1.unsafe_col(i).rows(u_ind1_ia)%v_factor_ia, X1.unsafe_col(j).rows(u_ind1_ja)%v_factor_ja ),
+                                        -join_vert( Y1.unsafe_col(i).rows(u_ind1_ia)%v_factor_ia, Y1.unsafe_col(j).rows(u_ind1_ja)%v_factor_ja ));
+
+      if (i==j) W2.col(indx_ij) *= 2;
+
       }
+      Z2 -= W2 + hZ*W2.t();
    }
 
 }
