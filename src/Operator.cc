@@ -8,7 +8,7 @@
 #include <deque>
 
 #ifndef SQRT2
-  #define SQRT2 1.4142135623730950488
+  #define SQRT2 1.4142135623730950488L
 #endif
 
 using namespace std;
@@ -1725,8 +1725,54 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
          double pre_ij = i==j ? SQRT2 : 1;
          Orbit& oi = modelspace->GetOrbit(i);
          Orbit& oj = modelspace->GetOrbit(j);
+         int flipphaseij = -modelspace->phase((oi.j2+oj.j2)/2-tbc.J);
          arma::Row<double> X2_ij = X2.row(indx_ij); // trying this to better use the cache. not sure if it helps.
          arma::Row<double> Y2_ij = Y2.row(indx_ij);
+
+         vector<index_t> ind1ia;
+         vector<index_t> ind2aj;
+//         vector<index_t> ind2ja;
+         vector<double> factoria;
+         for (int a : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+         {
+            index_t ind2 = tbc.GetLocalIndex( min(a,j), max(a,j));
+            if (ind2<0 or ind2>=tbc.GetNumberKets()) continue;
+            ind1ia.push_back(a);
+            ind2aj.push_back(ind2);
+            if (a>j)
+              factoria.push_back(flipphaseij);
+            else if (a==j)
+              factoria.push_back(SQRT2);
+            else
+              factoria.push_back(1);
+         }
+         arma::uvec u_ind1ia(ind1ia);
+         arma::uvec u_ind2aj(ind2aj);
+         arma::rowvec  v_factoria(factoria);
+//         cout << "about to multiply: (" << v_factoria.n_rows << " x " << v_factoria.n_cols << ") * ("
+//              << u_ind2aj.size() << " x " << Y2.n_cols << ")  -> " << Z2.n_cols << endl;
+//         cout << "sizes: X1 " << X.OneBody.n_rows << " x " << X.OneBody.n_cols << "  X2 " << X2.n_rows << " x " << X2.n_cols << " "
+//              << "Z2 " << Z2.n_rows << " x " << Z2.n_cols << endl;
+//         for (auto iii : u_ind1ia ) cout << iii << " ";
+//         cout << endl;
+//         for (auto iii : u_ind2aj ) cout << iii << " ";
+//         cout << endl;
+//         cout << "------------------------------" << endl;
+         arma::mat result1 =  (X.OneBody.submat(arma::uvec({i}), u_ind1ia)%v_factoria ) * Y2.rows(u_ind2aj);
+         arma::mat result2 = -(Y.OneBody.submat(arma::uvec({i}), u_ind1ia)%v_factoria ) * X2.rows(u_ind2aj);
+//         Z2.row(indx_ij) += (X.OneBody.submat(arma::uvec({i}), u_ind1ia)%v_factoria ) * Y2.rows(u_ind2aj)
+//                          - (Y.OneBody.submat(arma::uvec({i}), u_ind1ia)%v_factoria ) * X2.rows(u_ind2aj);
+//         Z2.row(indx_ij) += result1 + result2;
+//         if (Z2.n_cols < 6)
+//         {
+//           cout << "X1: " << endl << X.OneBody.submat(arma::uvec({i}), u_ind1ia) << endl;
+//           cout << "factors: " << endl << v_factoria << endl;
+//           cout << "Y2: " << endl << Y2.rows(u_ind2aj) << endl;
+//           cout << "u_ind2aj" << endl << u_ind2aj << endl;
+//           cout << "result1:" << endl << result1 << endl;
+//           cout << "result2:" << endl << result2 << endl;
+//         }
+//         cout << "Done" << endl;
          int klmin = Z.IsNonHermitian() ? 0 : indx_ij;
          for (int indx_kl=klmin;indx_kl<npq; ++indx_kl)
          {
@@ -1736,46 +1782,99 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
             double pre_kl = k==l ? SQRT2 : 1;
             Orbit& ok = modelspace->GetOrbit(k);
             Orbit& ol = modelspace->GetOrbit(l);
+            int flipphasekl = -modelspace->phase((ok.j2+ol.j2)/2-tbc.J);
             arma::vec X2_kl = X2.unsafe_col(indx_kl);
             arma::vec Y2_kl = Y2.unsafe_col(indx_kl);
 
             double cijkl = 0;
+            double c1 = 0;
+            double c1a = 0;
+            double c1b = 0;
+            double c2 = 0;
+            double c3 = 0;
+            double c4 = 0;
 
-
+//            cout << "-------------" << endl;
             for (int a : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
             {
                  int indx_aj = tbc.GetLocalIndex(min(a,j),max(a,j));
-                 if (indx_aj < 0) continue;
-                 double pre_aj = a>j ? tbc.GetKet(indx_aj).Phase(tbc.J) : (a==j ? SQRT2 : 1);
-                 cijkl += pre_kl * pre_aj  * ( X1(i,a) * Y2(indx_aj,indx_kl) - Y1(i,a) * X2_kl(indx_aj) );
+                 if (indx_aj < 0)
+                 {
+//                    cout << "indx_aj<0!!!!!!!!!!!!!!!" << endl;
+//                    cout << "i,j,a = " << i << "," << j << "," << a << "  ch = " << ch << " J,p,T = " << tbc.J << " " << tbc.parity << " " << tbc.Tz << endl;
+//                    for (int iiket=0;iiket<tbc.GetNumberKets();iiket++)
+//                    {
+//                      cout << "(" << tbc.GetKet(iiket).p << "," << tbc.GetKet(iiket).q  << ")  ";
+//                    }
+//                    cout << endl;
+                    continue;
+                 }
+//                 double pre_aj = a>j ? tbc.GetKet(indx_aj).Phase(tbc.J) : (a==j ? SQRT2 : 1);
+                 double pre_aj = a>j ? flipphaseij : (a==j ? SQRT2 : 1);
+//                 if (flipphase != tbc.GetKet(indx_aj).Phase(tbc.J)) cout << " AAAAAHHHHH!H!!!!" << endl;
+//                 cijkl += pre_kl * pre_aj  * ( X1(i,a) * Y2(indx_aj,indx_kl) - Y1(i,a) * X2_kl(indx_aj) );
+//                 c1 += pre_aj  * ( X1(i,a) * Y2(indx_aj,indx_kl) - Y1(i,a) * X2_kl(indx_aj) );
+//                 c1 += pre_aj  * ( X1(i,a) * Y2(indx_aj,indx_kl) - Y1(i,a) * X2(indx_aj,indx_kl) );
+                 c1a += pre_aj  * ( X1(i,a) * Y2(indx_aj,indx_kl) );
+                 c1b -= pre_aj  * ( Y1(i,a) * X2(indx_aj,indx_kl) );
+//                 if (Z2.n_cols < 6)
+//                 {
+//                    cout << "  indx_aj = " << indx_aj << "  " << scientific << pre_aj << " " << scientific << X1(i,a) << " " << scientific << Y2(indx_aj,indx_kl) << endl;
+//                 }
             }
+             c1 = c1a+c1b;
+//            if (Z2.n_cols < 6)
+//            {
+//              cout << "( " << scientific << setw(15) << setprecision(10) << c1a << " " << scientific << setw(15) << setprecision(10) << c1b << " ) " << endl;
+//              cout << "[ "   << scientific << setw(15) << setprecision(10) << result1(indx_kl)
+//                   << " " << scientific << setw(15) << setprecision(10) << result2(indx_kl) << " ] " << endl;
+//            }
 
             for (int a : OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
             {
                  int indx_ia = tbc.GetLocalIndex(min(i,a),max(i,a));
-                 if (indx_ia < 0) continue;
-                 double pre_ia = i>a ? tbc.GetKet(indx_ia).Phase(tbc.J) : (i==a ? SQRT2 : 1);
-                 cijkl += pre_kl * pre_ia * ( X1(j,a) * Y2(indx_ia,indx_kl)  - Y1(j,a) * X2_kl(indx_ia) );
+                 if (indx_ia < 0) 
+                 {
+//                    cout << "indx_ia<0!!!!!!!!!!!!!!!" << endl;
+//                    cout << "i,j,a = " << i << "," << j << "," << a << "  ch = " << ch << " J,p,T = " << tbc.J << " " << tbc.parity << " " << tbc.Tz << endl;
+                    continue;
+                 }
+//                 double pre_ia = i>a ? tbc.GetKet(indx_ia).Phase(tbc.J) : (i==a ? SQRT2 : 1);
+                 double pre_ia = i>a ? flipphaseij : (i==a ? SQRT2 : 1);
+//                 cijkl += pre_kl * pre_ia * ( X1(j,a) * Y2(indx_ia,indx_kl)  - Y1(j,a) * X2_kl(indx_ia) );
+//                 if (flipphase != tbc.GetKet(indx_ia).Phase(tbc.J)) cout << " AAAAAHHHHH!H!!!!" << endl;
+//                 c2 += pre_ia * ( X1(j,a) * Y2(indx_ia,indx_kl)  - Y1(j,a) * X2_kl(indx_ia) );
+                 c2 += pre_ia * ( X1(j,a) * Y2(indx_ia,indx_kl)  - Y1(j,a) * X2(indx_ia,indx_kl) );
              }
+//             if (i==j and abs(c1)>1e-7 or abs(c2)>1e-7)
+//             {
+//               cout << " i==j: " << fixed << setw(15) << setprecision(10) << c1 << " "
+//                                 << fixed << setw(15) << setprecision(10) << c2 << endl;
+//             }
 
             for (int a : OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
             {
                 int indx_al = tbc.GetLocalIndex(min(a,l),max(a,l));
                 if (indx_al < 0) continue;
-                double pre_al = a>l ? tbc.GetKet(indx_al).Phase(tbc.J) : (a==l ? SQRT2 : 1);
-                cijkl -= pre_ij * pre_al * ( X1(a,k) * Y2(indx_ij,indx_al) - Y1(a,k) * X2_ij(indx_al) );
+//                double pre_al = a>l ? tbc.GetKet(indx_al).Phase(tbc.J) : (a==l ? SQRT2 : 1);
+                double pre_al = a>l ? flipphasekl : (a==l ? SQRT2 : 1);
+//                cijkl -= pre_ij * pre_al * ( X1(a,k) * Y2(indx_ij,indx_al) - Y1(a,k) * X2_ij(indx_al) );
+                c3 -= pre_al * ( X1(a,k) * Y2(indx_ij,indx_al) - Y1(a,k) * X2_ij(indx_al) );
             }
 
             for (int a : OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
             {
                int indx_ka = tbc.GetLocalIndex(min(k,a),max(k,a));
                if (indx_ka < 0) continue;
-               double pre_ka = k>a ? tbc.GetKet(indx_ka).Phase(tbc.J) : (k==a ? SQRT2 : 1);
-               cijkl -= pre_ij * pre_ka * ( X1(a,l) * Y2(indx_ij,indx_ka) - Y1(a,l) * X2_ij(indx_ka) );
+//               double pre_ka = k>a ? tbc.GetKet(indx_ka).Phase(tbc.J) : (k==a ? SQRT2 : 1);
+               double pre_ka = k>a ? flipphasekl : (k==a ? SQRT2 : 1);
+//               cijkl -= pre_ij * pre_ka * ( X1(a,l) * Y2(indx_ij,indx_ka) - Y1(a,l) * X2_ij(indx_ka) );
+               c4 -=  pre_ka * ( X1(a,l) * Y2(indx_ij,indx_ka) - Y1(a,l) * X2_ij(indx_ka) );
             }
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
-            Z2(indx_ij,indx_kl) += cijkl / norm;
+//            Z2(indx_ij,indx_kl) += cijkl / norm;
+            Z2(indx_ij,indx_kl) += ((c1+c2)*pre_kl + (c3+c4)*pre_ij) / norm;
          }
       }
    }
