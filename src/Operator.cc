@@ -2539,6 +2539,7 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
          Orbit& oj = modelspace->GetOrbit(j);
          double ji = oi.j2/2.0;
          double jj = oj.j2/2.0;
+//         int phaseij = -modelspace->phase( ji+jj-J1);
 //         for (int iket=ibra;iket<nkets; ++iket)
          for (int iket=0;iket<nkets; ++iket)
          {
@@ -2549,52 +2550,78 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
             Orbit& ol = modelspace->GetOrbit(l);
             double jk = ok.j2/2.0;
             double jl = ol.j2/2.0;
+//            int phasekl = -modelspace->phase( jk+jl-J2);
 
             double cijkl = 0;
-            // TODO: Check if i==j or k==l and don't do the loop if we don't need to.
+            double c1 = 0;
+            double c2 = 0;
+            double c3 = 0;
+            double c4 = 0;
 
             for ( int a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
             {
-              cijkl += X.OneBody(i,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,a,j,k,l);
+              c1 += X.OneBody(i,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,a,j,k,l);
             }
-            for ( int a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+            if (i==j)
             {
-               cijkl += X.OneBody(j,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,a,k,l);
+              c2 = c1; // there should be a phase here, but if the ket exists, it'd better be +1.
+            }
+            else
+            {
+              for ( int a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+              {
+                 c2 += X.OneBody(j,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,a,k,l);
+              }
             }
             for ( int a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
             {
-               cijkl -= X.OneBody(a,k) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,a,l);
+               c3 += X.OneBody(a,k) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,a,l);
             }
-            for ( int a : X.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+            if (k==l)
             {
-               cijkl -= X.OneBody(a,l) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,k,a);
+              c4 = c3 ;
+            }
+            else
+            {
+              for ( int a : X.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+              {
+                 c4 += X.OneBody(a,l) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,k,a);
+              }
             }
 
+            cijkl = c1 + c2 - c3 - c4;
+            c1=0;
+            c2=0;
+            c3=0;
+            c4=0;
+
+            // TODO: Check if i==j or k==l and don't do the loop if we don't need to.
 
             double prefactor = hatfactor * modelspace->phase(ji+jj+J2+Lambda) ;
             for ( int a : Y.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
             {
                double ja = modelspace->GetOrbit(a).j2*0.5;
-               cijkl -= prefactor *  modelspace->GetSixJ(J2,J1,Lambda,ji,ja,jj) * Y.OneBody(i,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,a,j,k,l) ;
+               c1 -= prefactor *  modelspace->GetSixJ(J2,J1,Lambda,ji,ja,jj) * Y.OneBody(i,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,a,j,k,l) ;
             }
+            prefactor = hatfactor * modelspace->phase(J1-J2+Lambda) ;
             for ( int a : Y.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
             {
                double ja = modelspace->GetOrbit(a).j2*0.5;
-               prefactor = hatfactor * modelspace->phase(ji+ja-J1+Lambda) ;
-               cijkl -= prefactor * modelspace->GetSixJ(J2,J1,Lambda,jj,ja,ji) * Y.OneBody(j,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,i,a,k,l);
+               c2 += prefactor * modelspace->GetSixJ(J2,J1,Lambda,jj,ja,ji) * Y.OneBody(j,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,a,i,k,l);
             }
+            prefactor = hatfactor * modelspace->phase(J1-J2+Lambda) ;
             for ( int a : Y.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
             {
                double ja = modelspace->GetOrbit(a).j2*0.5;
-               prefactor = hatfactor * modelspace->phase(ja+jl+J2+Lambda) ;
-               cijkl += prefactor * modelspace->GetSixJ(J1,J2,Lambda,jk,ja,jl) * Y.OneBody(a,k) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,a,l) ;
+               c3 -= prefactor * modelspace->GetSixJ(J1,J2,Lambda,jk,ja,jl) * Y.OneBody(a,k) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,l,a) ;
             }
             prefactor = hatfactor * modelspace->phase(jk+jl-J1+Lambda) ;
             for ( int a : Y.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
             {
                double ja = modelspace->GetOrbit(a).j2*0.5;
-               cijkl += prefactor * modelspace->GetSixJ(J1,J2,Lambda,jl,ja,jk) * Y.OneBody(a,l) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,k,a) ;
+               c4 += prefactor * modelspace->GetSixJ(J1,J2,Lambda,jl,ja,jk) * Y.OneBody(a,l) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,k,a) ;
             }
+            cijkl += c1+c2+c3+c4;
 
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
