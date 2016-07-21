@@ -2556,6 +2556,7 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
             double jl = ol.j2/2.0;
 
             double cijkl = 0;
+            // TODO: Check if i==j or k==l and don't do the loop if we don't need to.
 
             for ( int a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
             {
