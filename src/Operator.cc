@@ -2539,8 +2539,6 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
          Orbit& oj = modelspace->GetOrbit(j);
          double ji = oi.j2/2.0;
          double jj = oj.j2/2.0;
-//         int phaseij = -modelspace->phase( ji+jj-J1);
-//         for (int iket=ibra;iket<nkets; ++iket)
          for (int iket=0;iket<nkets; ++iket)
          {
             Ket & ket = tbc_ket.GetKet(iket);
@@ -2550,7 +2548,6 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
             Orbit& ol = modelspace->GetOrbit(l);
             double jk = ok.j2/2.0;
             double jl = ol.j2/2.0;
-//            int phasekl = -modelspace->phase( jk+jl-J2);
 
             double cijkl = 0;
             double c1 = 0;
@@ -2594,34 +2591,47 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
             c2=0;
             c3=0;
             c4=0;
+            int phase1 = modelspace->phase(ji+jj+J2+Lambda);
+            int phase2 = modelspace->phase(J1-J2+Lambda);
+            int phase3 = modelspace->phase(J1-J2+Lambda);
+            int phase4 = modelspace->phase(jk+jl-J1+Lambda);
 
-            // TODO: Check if i==j or k==l and don't do the loop if we don't need to.
 
-            double prefactor = hatfactor * modelspace->phase(ji+jj+J2+Lambda) ;
             for ( int a : Y.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
             {
                double ja = modelspace->GetOrbit(a).j2*0.5;
-               c1 -= prefactor *  modelspace->GetSixJ(J2,J1,Lambda,ji,ja,jj) * Y.OneBody(i,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,a,j,k,l) ;
+               c1 -=   modelspace->GetSixJ(J2,J1,Lambda,ji,ja,jj) * Y.OneBody(i,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,a,j,k,l) ;
             }
-            prefactor = hatfactor * modelspace->phase(J1-J2+Lambda) ;
-            for ( int a : Y.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+            if (i==j)
             {
-               double ja = modelspace->GetOrbit(a).j2*0.5;
-               c2 += prefactor * modelspace->GetSixJ(J2,J1,Lambda,jj,ja,ji) * Y.OneBody(j,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,a,i,k,l);
+              c2 = -c1;
             }
-            prefactor = hatfactor * modelspace->phase(J1-J2+Lambda) ;
+            else
+            {
+              for ( int a : Y.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+              {
+                 double ja = modelspace->GetOrbit(a).j2*0.5;
+                 c2 +=  modelspace->GetSixJ(J2,J1,Lambda,jj,ja,ji) * Y.OneBody(j,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,a,i,k,l);
+              }
+            }
             for ( int a : Y.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
             {
                double ja = modelspace->GetOrbit(a).j2*0.5;
-               c3 -= prefactor * modelspace->GetSixJ(J1,J2,Lambda,jk,ja,jl) * Y.OneBody(a,k) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,l,a) ;
+               c3 -=  modelspace->GetSixJ(J1,J2,Lambda,jk,ja,jl) * Y.OneBody(a,k) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,l,a) ;
             }
-            prefactor = hatfactor * modelspace->phase(jk+jl-J1+Lambda) ;
-            for ( int a : Y.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+            if (k==l)
             {
-               double ja = modelspace->GetOrbit(a).j2*0.5;
-               c4 += prefactor * modelspace->GetSixJ(J1,J2,Lambda,jl,ja,jk) * Y.OneBody(a,l) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,k,a) ;
+              c4 = -c3;
             }
-            cijkl += c1+c2+c3+c4;
+            else
+            {
+              for ( int a : Y.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+              {
+                 double ja = modelspace->GetOrbit(a).j2*0.5;
+                 c4 +=  modelspace->GetSixJ(J1,J2,Lambda,jl,ja,jk) * Y.OneBody(a,l) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,k,a) ;
+              }
+            }
+            cijkl += hatfactor*(phase1*c1+phase2*c2+phase3*c3+phase4*c4);
 
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
@@ -2919,19 +2929,13 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&
 {
     // Do the inverse Pandya transform
     // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
-//   for (int ch=0;ch<nChannels;++ch)
-//   int n_nonzeroChannels = modelspace->SortedTwoBodyChannels.size();
-//   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->SixJ_is_empty())
-//   for (int ich = 0; ich < n_nonzeroChannels; ++ich)
    Operator& Z = *this;
    int Lambda = Z.rank_J;
    vector<map<array<int,2>,arma::mat>::iterator> iteratorlist;
    for (map<array<int,2>,arma::mat>::iterator iter= Z.TwoBody.MatEl.begin(); iter!= Z.TwoBody.MatEl.end(); ++iter) iteratorlist.push_back(iter);
    int niter = iteratorlist.size();
    int hZ = Z.IsHermitian() ? 1 : -1;
-//   for (auto& iter : Z.TwoBody.MatEl)
    #pragma omp parallel for schedule(dynamic,1) if (not this->tensor_transform_first_pass)
-//   for (auto iter=Z.TwoBody.MatEl.begin(); iter<Z.TwoBody.MatEl.end(); ++iter)
    for (int i=0; i<niter; ++i)
    {
       auto iter = iteratorlist[i];
@@ -3273,54 +3277,34 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
       int ncx2 = XJ2.n_cols;
       int nry12 = YJ1J2.n_rows;
       auto& Zmat = Z_bar[{ch_bra_cc,ch_ket_cc}];
-      if (bras_ph.size()>0 and kets_ph.size()<=0  )
+      // this awkward if/else sequence is an attempt to avoid multiplying matrices full of zeros.
+      if (bras_ph.size()<=0 and kets_ph.size()<=0)
       {
-        Zmat =  XJ1  *
-                       join_horiz( YJ1J2 ,  join_vert(YJ1J2.rows(nry12/2,  nry12-1)%PhaseMatYJ1J2 ,
-                                   YJ1J2.rows(0,      nry12/2-1)%PhaseMatYJ1J2     )    ); 
+        Zmat = arma::mat(XJ1.n_rows , 2*XJ2.n_rows, arma::fill::zeros);
+      }
+      else if (bras_ph.size()>0 and kets_ph.size()<=0  )
+      {
+        Zmat =  XJ1  *  join_horiz( YJ1J2 , join_vert(YJ1J2.rows(nry12/2,  nry12-1)%PhaseMatYJ1J2 ,
+                                                      YJ1J2.rows(0,      nry12/2-1)%PhaseMatYJ1J2     )    ); 
       }
       else if (bras_ph.size()<=0 and kets_ph.size()>0)
       {
-        Zmat = -flipphaseY * YJ2J1.t()   *
-                                           hX*join_vert( XJ2,    join_horiz( XJ2.cols(ncx2/2,  ncx2-1)%PhaseMatXJ2 ,
-                                                                             XJ2.cols(0,     ncx2/2-1)%PhaseMatXJ2 ) ).t() ;
-      }
-      else if (bras_ph.size()<=0 and kets_ph.size()<=0)
-      {
-//        cout << " both ph are zero. size of XJ1 = " << XJ1.n_rows << " x " << XJ1.n_cols << "   size of XJ2 = " << XJ2.n_rows << " x " <<XJ2.n_cols << endl;
-        Zmat = arma::mat(XJ1.n_rows , 2*XJ2.n_rows, arma::fill::zeros);
+        Zmat = -flipphaseY * YJ2J1.t() * hX*join_vert( XJ2, join_horiz( XJ2.cols(ncx2/2,  ncx2-1)%PhaseMatXJ2 ,
+                                                                        XJ2.cols(0,     ncx2/2-1)%PhaseMatXJ2 ) ).t() ;
       }
       else
       {
-        Zmat = join_horiz( XJ1,  -flipphaseY * YJ2J1.t() )  *
-                                                              join_vert( join_horiz( YJ1J2 ,  join_vert( YJ1J2.rows(nry12/2,  nry12-1)%PhaseMatYJ1J2 ,
-                                                                                                         YJ1J2.rows(0,      nry12/2-1)%PhaseMatYJ1J2  )   ), 
-                                                                       hX*join_vert( XJ2,    join_horiz(   XJ2.cols(ncx2/2,    ncx2-1)%PhaseMatXJ2 ,
-                                                                                                           XJ2.cols(0,       ncx2/2-1)%PhaseMatXJ2    )   ).t() );
+        Zmat = join_horiz( XJ1,  -flipphaseY * YJ2J1.t() ) * join_vert( join_horiz( YJ1J2 ,  join_vert( YJ1J2.rows(nry12/2,  nry12-1)%PhaseMatYJ1J2 ,
+                                                                                                        YJ1J2.rows(0,      nry12/2-1)%PhaseMatYJ1J2  )   ), 
+                                                                      hX*join_vert( XJ2,    join_horiz(   XJ2.cols(ncx2/2,    ncx2-1)%PhaseMatXJ2 ,
+                                                                                                          XJ2.cols(0,       ncx2/2-1)%PhaseMatXJ2    )   ).t() );
       }
 
-//      Z_bar[{ch_bra_cc,ch_ket_cc}] = XJ1 * YJ1J2 -flipphase*( YJ2J1.t() * XJ2.t() );
-//      Z_bar[{ch_bra_cc,ch_ket_cc}] = XJ1 * YJ1J2 -flipphase*( YJ2J1.t() * XJ2.t() );
-
-//      arma::mat XJ2 = join_vert( Xt_bar_ph[ch_ket_cc], join_horiz( Xt_bar_ph[ch_ket_cc].cols(ncx2/2,ncx2-1)%PhaseMatJ2, Xt_bar_ph[ch_ket_cc].cols(0,ncx2/2-1)%PhaseMatJ2)  ).t();
-
-//      arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
-
-//      Z_bar[{ch_bra_cc,ch_ket_cc}] = XJ1 * YJ1J2 -flipphase*(XJ2 * YJ2J1).t();
-//      Z_bar[{ch_bra_cc,ch_ket_cc}] = join_horiz( XJ1, YJ2J1.t() ) * join_vert( YJ1J2 , -flipphase*XJ2.t() );
-//      Z_bar[{ch_bra_cc,ch_ket_cc}] = join_horiz( XJ1, flipphase*XJ2 ) * join_vert( YJ1J2 , YJ2J1 );
-//      Z_bar[{ch_bra_cc,ch_ket_cc}] = join_horiz( XJ1, YJ2J1.t() )  *   join_vert( YJ1J2 ,
-//                                                                                   XJ2.t() );
-//      Z_bar[{ch_bra_cc,ch_ket_cc}] =  XJ1 * YJ1J2;
-//      Z_bar[{ch_bra_cc,ch_ket_cc}] +=   YJ2J1 * XJ2 ;
-
-//      int nrowZ = Z_bar[{ch_bra_cc,ch_ket_cc}].n_rows;
-//      Z_bar[{ch_bra_cc,ch_ket_cc}].rows( nrowZ/2, nrowZ-1 ) *= 0;
    }
    profiler.timer["Build Z_bar_tensor"] += omp_get_wtime() - t_start;
 
    t_start = omp_get_wtime();
-   Z.AddInverseTensorPandyaTransformation(Z_bar);
+   Z.AddInverseTensorPandyaTransformation(Z_bar); // TODO: Do this one channel at a time
    profiler.timer["InverseTensorPandyaTransformation"] += omp_get_wtime() - t_start;
 
 }
