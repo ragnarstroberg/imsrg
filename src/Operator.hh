@@ -176,7 +176,9 @@ class Operator
   deque<arma::mat> InitializePandya(size_t nch, string orientation);
 //  void DoPandyaTransformation(deque<arma::mat>&, deque<arma::mat>&, string orientation) const ;
   void DoPandyaTransformation(deque<arma::mat>&, string orientation) const ;
+  void DoPandyaTransformation_SingleChannel(arma::mat& X, int ch_cc, string orientation) const ;
   void AddInversePandyaTransformation(deque<arma::mat>&);
+  void AddInversePandyaTransformation_SingleChannel(arma::mat& Z, int ch_cc);
 
 
   void comm110ss( const Operator& X, const Operator& Y) ; 
@@ -193,6 +195,7 @@ class Operator
 
 //  void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>&) const;
   void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&) const;
+  void DoTensorPandyaTransformation_SingleChannel(arma::mat& X, int ch_bra_cc, int ch_ket_cc) const;
   void AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&);
 
   void comm111st( const Operator& X, const Operator& Y) ;
