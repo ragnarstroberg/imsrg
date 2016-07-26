@@ -3716,10 +3716,10 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
 //   deque<arma::mat> X_bar_hp = InitializePandya( nChannels, "transpose");
 
    double t_start = omp_get_wtime();
-//   deque<arma::mat> Xt_bar_ph = InitializePandya( nChannels, "transpose");
+   deque<arma::mat> Xt_bar_ph = InitializePandya( nChannels, "transpose");
 //   map<array<int,2>,arma::mat> Y_bar_ph;
 //   X.DoPandyaTransformation(Xt_bar_ph, "transposeT" );
-//   X.DoPandyaTransformation(Xt_bar_ph, "transpose" );
+   X.DoPandyaTransformation(Xt_bar_ph, "transpose" );
 //   Y.DoTensorPandyaTransformation(Y_bar_ph );
    profiler.timer["DoTensorPandyaTransformation"] += omp_get_wtime() - t_start;
 
@@ -3758,6 +3758,8 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
 
    profiler.timer["Allocate Z_bar_tensor"] += omp_get_wtime() - t_start;
    t_start = omp_get_wtime();
+
+
    #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
    #endif
@@ -3772,6 +3774,13 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
       int nBras_cc = tbc_bra_cc.GetNumberKets();
       int nKets_cc = tbc_ket_cc.GetNumberKets();
 
+//      arma::mat XJ1;
+//      arma::mat XJ2;
+      arma::mat YJ1J2;
+      arma::mat YJ2J1;
+      auto& XJ1 = Xt_bar_ph[ch_bra_cc];
+      auto& XJ2 = Xt_bar_ph[ch_ket_cc];
+
       arma::uvec kets_ph = arma::join_cols( tbc_ket_cc.GetKetIndex_hh(), tbc_ket_cc.GetKetIndex_ph() );
       arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
       int nph_bras = bras_ph.size();
@@ -3785,22 +3794,23 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
 //      arma::mat YJ1J2(2*nph_bras, nKets_cc,   arma::fill::zeros);
 //      arma::mat YJ2J1(2*nph_kets, nBras_cc,   arma::fill::zeros);
 
-      if ( i==0 or ch_bra_cc != ybras[i-1])
-      {
-       XJ1.zeros(nBras_cc, 2*nph_bras);
-       X.DoPandyaTransformation_SingleChannel(XJ1,ch_bra_cc,"transpose");
-      }
+         // not thread safe
+//      if ( i==0 or ch_bra_cc != ybras[i-1])
+//      {
+//       XJ1.zeros(nBras_cc, 2*nph_bras);
+//       X.DoPandyaTransformation_SingleChannel(XJ1,ch_bra_cc,"transpose");
+//      }
 //      YJ1J2.zeros(2*nph_bras, nKets_cc);
       Y.DoTensorPandyaTransformation_SingleChannel(YJ1J2,ch_bra_cc,ch_ket_cc);
       if (ch_bra_cc==ch_ket_cc)
       {
-         XJ2 = XJ1;
+//         XJ2 = XJ1;
          YJ2J1 = YJ1J2;
       }
       else
       {
-         XJ2.zeros(nKets_cc, 2*nph_kets);
-         X.DoPandyaTransformation_SingleChannel(XJ2,ch_ket_cc,"transpose");
+//         XJ2.zeros(nKets_cc, 2*nph_kets);
+//         X.DoPandyaTransformation_SingleChannel(XJ2,ch_ket_cc,"transpose");
 //         YJ2J1.zeros(2*nph_kets, nBras_cc);
          Y.DoTensorPandyaTransformation_SingleChannel(YJ2J1,ch_ket_cc,ch_bra_cc);
       }
