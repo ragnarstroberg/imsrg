@@ -2367,13 +2367,14 @@ void Operator::AddInversePandyaTransformation_SingleChannel(arma::mat& Zbar, int
    int Tz_cc = tbc_cc.Tz;
    int nkets_cc = tbc_cc.GetNumberKets();
    int n_nonzeroChannels = modelspace->SortedTwoBodyChannels.size();
-   #pragma omp parallel for schedule(dynamic,1) if (not this->scalar_transform_first_pass)
+//   #pragma omp parallel for schedule(dynamic,1) if (not this->scalar_transform_first_pass)
    for (int ich = 0; ich < n_nonzeroChannels; ++ich)
    {
       int ch = modelspace->SortedTwoBodyChannels[ich];
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       int J = tbc.J;
       int nKets = tbc.GetNumberKets();
+      auto& Zmat = TwoBody.GetMatrix(ch,ch);
 
       for (int ibra=0; ibra<nKets; ++ibra)
       {
@@ -2434,7 +2435,8 @@ void Operator::AddInversePandyaTransformation_SingleChannel(arma::mat& Zbar, int
               }
             }
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
-            TwoBody.GetMatrix(ch,ch)(ibra,iket) += (commij - modelspace->phase(jk+jl-J ) * commji) / norm;
+            #pragma omp atomic
+            Zmat(ibra,iket) += (commij - modelspace->phase(jk+jl-J ) * commji) / norm;
          }
       }
    }
@@ -2684,14 +2686,14 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
    // Construct the intermediate matrix Z_bar
    t_start = omp_get_wtime();
-   deque<arma::mat> Z_bar (nChannels );
+//   deque<arma::mat> Z_bar (nChannels );
 
    int hy = Y.IsHermitian() ? 1 : -1;
 
    int nch = modelspace->SortedTwoBodyChannels_CC.size();
-//   #ifndef OPENBLAS_NOUSEOMP
-//   #pragma omp parallel for schedule(dynamic,1)
-//   #endif
+   #ifndef OPENBLAS_NOUSEOMP
+   #pragma omp parallel for schedule(dynamic,1)
+   #endif
    for (int ich=0; ich<nch; ++ich )
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
@@ -2707,7 +2709,7 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
       if (Y_bar_ph.size()<1 or Xt_bar_ph.size()<1)
       {
-        Z_bar[ch] = arma::zeros( Xt_bar_ph.n_rows, Y_bar_ph.n_cols*2);
+//        Z_bar[ch] = arma::zeros( Xt_bar_ph.n_rows, Y_bar_ph.n_cols*2);
         continue;
       }
 
@@ -2731,8 +2733,10 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 //                                           [      |     ]   Flipping hp <-> ph and multiplying by the phase is equivalent to
 //                                           [  Yph | Y'hp]   having kets |kj> with k>j.
       int nry = Y_bar_ph.n_rows;
-      Z_bar[ch] =  Xt_bar_ph * join_horiz(Y_bar_ph, join_vert(Y_bar_ph.rows(nry/2,  nry-1)%PhaseMatY,
-                                                                      Y_bar_ph.rows(0,    nry/2-1)%PhaseMatY) );
+      arma::mat Z_bar =  Xt_bar_ph * join_horiz(Y_bar_ph, join_vert(Y_bar_ph.rows(nry/2,  nry-1)%PhaseMatY,
+                                                                    Y_bar_ph.rows(0,    nry/2-1)%PhaseMatY) );
+//      Z_bar[ch] =  Xt_bar_ph * join_horiz(Y_bar_ph, join_vert(Y_bar_ph.rows(nry/2,  nry-1)%PhaseMatY,
+//                                                                      Y_bar_ph.rows(0,    nry/2-1)%PhaseMatY) );
 
 
 
@@ -2775,17 +2779,21 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
       // If Z is hermitian, then XY is anti-hermitian, and so XY - YX = XY + (XY)^T
       if ( Z.IsHermitian() )
       {
-         Z_bar[ch].cols(0,nKets_cc-1) += Z_bar[ch].cols(0,nKets_cc-1).t();
+         Z_bar.cols(0,nKets_cc-1) += Z_bar.cols(0,nKets_cc-1).t();
+//         Z_bar[ch].cols(0,nKets_cc-1) += Z_bar[ch].cols(0,nKets_cc-1).t();
       }
       else
       {
-         Z_bar[ch].cols(0,nKets_cc-1) -= Z_bar[ch].cols(0,nKets_cc-1).t();
+         Z_bar.cols(0,nKets_cc-1) -= Z_bar.cols(0,nKets_cc-1).t();
+//         Z_bar[ch].cols(0,nKets_cc-1) -= Z_bar[ch].cols(0,nKets_cc-1).t();
       }
-      Z_bar[ch].cols(nKets_cc,2*nKets_cc-1) += Z_bar[ch].cols(nKets_cc,2*nKets_cc-1).t()%PhaseMat;
+      Z_bar.cols(nKets_cc,2*nKets_cc-1) += Z_bar.cols(nKets_cc,2*nKets_cc-1).t()%PhaseMat;
+//      Z_bar[ch].cols(nKets_cc,2*nKets_cc-1) += Z_bar[ch].cols(nKets_cc,2*nKets_cc-1).t()%PhaseMat;
 
 //     cout << "ch = " << ch << " --> nKets_cc = " << nKets_cc << "  size of Z_bar = " << Z_bar[ch].n_rows << " x " << Z_bar[ch].n_cols << endl;
 //     Z_debug.AddInversePandyaTransformation_SingleChannel(Z_bar[ch],ch);
-     Z.AddInversePandyaTransformation_SingleChannel(Z_bar[ch],ch);
+//     Z.AddInversePandyaTransformation_SingleChannel(Z_bar[ch],ch);
+     Z.AddInversePandyaTransformation_SingleChannel(Z_bar,ch);
 
    }
 
