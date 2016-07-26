@@ -661,7 +661,7 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
       int fprecision = 9;
       auto& H_s = FlowingOps[0];
       f.setf(ios::fixed);
-      f << setw(5) << istep
+      f << fixed << setw(5) << istep
         << setw(10) << setprecision(3) << s
         << setw(fwidth) << setprecision(fprecision) << H_s.ZeroBody 
         << setw(fwidth) << setprecision(fprecision) << H_s.OneBodyNorm()
@@ -694,7 +694,7 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
       int fwidth = 16;
       int fprecision = 9;
       f.setf(ios::fixed);
-      f << setw(5) << "i"
+      f << fixed << setw(5) << "i"
         << setw(10) << setprecision(3) << "s"
         << setw(fwidth) << setprecision(fprecision) << "E0"
         << setw(fwidth) << setprecision(fprecision) << "||H_1||" 

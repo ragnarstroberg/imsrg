@@ -2,6 +2,8 @@
 #include "imsrg_util.hh"
 #include "AngMom.hh"
 #include <gsl/gsl_integration.h>
+#include <boost/math/special_functions/gamma.hpp>
+#include <boost/math/special_functions/factorials.hpp>
 
 using namespace AngMom;
 
@@ -1233,7 +1235,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 /// This is valid for (2p+3+k) > 0. The Gamma function diverges for non-positive integers.
  double TalmiI(int p, double k)
  {
-   return gsl_sf_gamma(p+1.5+0.5*k) / gsl_sf_gamma(p+1.5);
+//   return gsl_sf_gamma(p+1.5+0.5*k) / gsl_sf_gamma(p+1.5);
+   return boost::math::tgamma_ratio(p+1.5+0.5*k, p+1.5);
  }
 
 /// Calculate B coefficient for Talmi integral. Formula given in Brody and Moshinsky
@@ -1243,18 +1246,22 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
    if ( (la+lb)%2>0 ) return 0;
    
    int q = (la+lb)/2;
-   double B1 = AngMom::phase(p-q) * gsl_sf_fact(2*p+1)/gsl_sf_fact(p)/pow(2,(na+nb))
-              * sqrt( gsl_sf_fact(na)*gsl_sf_fact(nb) * gsl_sf_fact(2*na+2*la+1) * gsl_sf_fact(2*nb+2*lb+1) )
-             / sqrt( gsl_sf_fact(na+la) * gsl_sf_fact(nb+lb) );
+//   double B1 = AngMom::phase(p-q) * gsl_sf_fact(2*p+1)/gsl_sf_fact(p)/pow(2,(na+nb))
+   double B1 = AngMom::phase(p-q) * boost::math::tgamma_ratio(2*p+1, p) / pow(2,(na+nb))
+              * sqrt( boost::math::tgamma_ratio(na, na+la)*boost::math::tgamma_ratio(nb, nb+lb)
+                   * boost::math::factorial<double>(2*na+2*la+1) * boost::math::factorial<double>(2*nb+2*lb+1) );
    
    double B2 = 0;
    int kmin = max(0, p-q-nb);
    int kmax = min(na, p-q);
    for (int k=kmin;k<=kmax;++k)
    {
-      B2  += gsl_sf_fact(la+k) * gsl_sf_fact(p-int((la-lb)/2)-k)
-             / ( gsl_sf_fact(k) * gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k) * gsl_sf_fact(2*p-la+lb-2*k+1) )
-              / ( gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
+//      B2  += gsl_sf_fact(la+k) * gsl_sf_fact(p-int((la-lb)/2)-k)
+//             / ( gsl_sf_fact(k) * gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k) * gsl_sf_fact(2*p-la+lb-2*k+1) )
+//              / ( gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
+      B2  += boost::math::tgamma_ratio(la+k,k) * boost::math::tgamma_ratio(p-int((la-lb)/2)-k, 2*p-la+lb-2*k+1)
+             / (  boost::math::factorial<double>(2*la+2*k+1) * boost::math::factorial<double>(na-k)  
+                * boost::math::factorial<double>(nb - p + q + k) * boost::math::factorial<double>(p-q-k) );
    }
    return B1 * B2;
  }

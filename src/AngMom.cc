@@ -33,7 +33,6 @@ namespace AngMom
 
  double CG(double ja, double ma, double jb, double mb, double J, double M)
  {
-//    return phase(ja-jb+M) * sqrt(2*J+1) * gsl_sf_coupling_3j(int(2*ja),int(2*jb),int(2*J),int(2*ma),int(2*mb),int(2*-M));
     return phase(ja-jb+M) * sqrt(2*J+1) * ThreeJ(ja,jb,J,ma,mb,-M);
  }
 
@@ -108,12 +107,13 @@ double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int
           double mosh3 = phase(la+lb+lc) * pow(2.,(la+lb+lc+ld)/2.);
           mosh3 *= pow(sB,2*a+la+2*d+ld);
           mosh3 *= pow(cB,2*b+lb+2*c+lc);
-          mosh3 *= (2*la+1)/gsl_sf_fact(a)/gsl_sf_doublefact(2.*(a+la)+1);
-          mosh3 *= (2*lb+1)/gsl_sf_fact(b)/gsl_sf_doublefact(2.*(b+lb)+1);
-          mosh3 *= (2*lc+1)/gsl_sf_fact(c)/gsl_sf_doublefact(2.*(c+lc)+1);
-          mosh3 *= (2*ld+1)/gsl_sf_fact(d)/gsl_sf_doublefact(2.*(d+ld)+1);
           mosh3 *= NineJ(la,lb,l1,lc,ld,l2,L,l,lam);
           mosh3 *= cg_ab * cg_ac * cg_bd * cg_cd;
+          mosh3 *= (2*la+1)*(2*lb+1)*(2*lc+1)*(2*ld+1);
+          mosh3 /= ( gsl_sf_fact(a) * gsl_sf_doublefact(2.*(a+la)+1)
+                   * gsl_sf_fact(b) * gsl_sf_doublefact(2.*(b+lb)+1)
+                   * gsl_sf_fact(c) * gsl_sf_doublefact(2.*(c+lc)+1)
+                   * gsl_sf_fact(d) * gsl_sf_doublefact(2.*(d+ld)+1) );
           mosh2 += mosh3;
 
        }
