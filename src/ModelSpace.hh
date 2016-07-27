@@ -245,6 +245,8 @@ class ModelSpace
 
    void PreCalculateMoshinsky();
    void ClearVectors();
+   void CalculatePandyaLookup(int rank_J, int rank_T, int parity); // construct a lookup table for more efficient pandya transformation
+   map<array<int,2>,vector<array<int,2>>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
 
 
    // Data members
@@ -288,6 +290,7 @@ class ModelSpace
    vector<unsigned int> SortedTwoBodyChannels_CC;
 
    static map<string,vector<string>> ValenceSpaces;
+   map< array<int,3>, map< array<int,2>,vector<array<int,2>> > > PandyaLookup;
 
 
 // private:
