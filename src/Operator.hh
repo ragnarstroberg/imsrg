@@ -197,6 +197,7 @@ class Operator
   void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&) const;
   void DoTensorPandyaTransformation_SingleChannel(arma::mat& X, int ch_bra_cc, int ch_ket_cc) const;
   void AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&);
+  void AddInverseTensorPandyaTransformation_SingleChannel(arma::mat& Zbar, int ch_bra_cc, int ch_ket_cc);
 
   void comm111st( const Operator& X, const Operator& Y) ;
   void comm121st( const Operator& X, const Operator& Y) ;
