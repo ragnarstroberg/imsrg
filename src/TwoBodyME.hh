@@ -121,8 +121,8 @@ class TwoBodyME
   double GetTBMEmonopole_norm(int a, int b, int c, int d) const;
   double GetTBMEmonopole(Ket & bra, Ket & ket) const;
 
-  void   AddToTBME_RelCM(int n1, int l1, int n2, int l2, int L12, int S12, int J12, int T12, int Tz12, int n3, int l3, int n4, int l4, int L34, int S34, int J34, int T34, int Tz34, double Vrel, double Vcm);
-  vector<pair<int,double>> GetLabFrameKets(int n, int lam, int N, int LAM, int L, int S, int J, int T, int Tz);
+//  void   AddToTBME_RelCM(int n1, int l1, int n2, int l2, int L12, int S12, int J12, int T12, int Tz12, int n3, int l3, int n4, int l4, int L34, int S34, int J34, int T34, int Tz34, double Vrel, double Vcm);
+//  vector<pair<int,double>> GetLabFrameKets(int n, int lam, int N, int LAM, int L, int S, int J, int T, int Tz);
 
   void Erase();
   void Scale(double);
