@@ -240,7 +240,8 @@ class ModelSpace
    inline int phase(double x) {return phase(int(x));};
 
    inline int Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
-   inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
+//   inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
+   inline int Index2(int p, int q) const {return p*(2*norbits-1-p)/2 + q;};
 
    void PreCalculateMoshinsky();
    void ClearVectors();
@@ -302,6 +303,7 @@ class ModelSpace
    vector<Ket> Kets;
    vector<TwoBodyChannel> TwoBodyChannels;
    vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
+   bool moshinsky_has_been_precalculated;
 //   map<long int,double> SixJList;
 
    static unordered_map<unsigned long int,double> SixJList;

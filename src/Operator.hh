@@ -46,6 +46,7 @@ class Operator
 
   static double bch_transform_threshold;
   static double bch_product_threshold;
+  static bool scalar_transform_first_pass;
   static bool tensor_transform_first_pass;
   static bool use_brueckner_bch;
 

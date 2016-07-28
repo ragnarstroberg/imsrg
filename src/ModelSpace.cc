@@ -256,7 +256,7 @@ ModelSpace::~ModelSpace()
 
 ModelSpace::ModelSpace()
 :  Emax(0), E2max(0), E3max(0), Lmax2(0), Lmax3(0), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0),
-  hbar_omega(20), target_mass(16)
+  hbar_omega(20), target_mass(16), moshinsky_has_been_precalculated(false)
 {
   cout << "In default constructor" << endl;
 }
@@ -285,7 +285,8 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
    nTwoBodyChannels(ms.nTwoBodyChannels),
    Orbits(ms.Orbits), Kets(ms.Kets),
-   TwoBodyChannels(ms.TwoBodyChannels), TwoBodyChannels_CC(ms.TwoBodyChannels_CC)
+   TwoBodyChannels(ms.TwoBodyChannels), TwoBodyChannels_CC(ms.TwoBodyChannels_CC),
+   moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated)
 {
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
@@ -315,7 +316,8 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
    nTwoBodyChannels(ms.nTwoBodyChannels),
    Orbits(move(ms.Orbits)), Kets(move(ms.Kets)),
-   TwoBodyChannels(move(ms.TwoBodyChannels)), TwoBodyChannels_CC(move(ms.TwoBodyChannels_CC))
+   TwoBodyChannels(move(ms.TwoBodyChannels)), TwoBodyChannels_CC(move(ms.TwoBodyChannels_CC)),
+   moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated)
 {
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
@@ -327,27 +329,31 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 // orbit string representation is e.g. p0f7
 // Assumes that the core is hole states that aren't in the valence space.
 ModelSpace::ModelSpace(int emax, vector<string> hole_list, vector<string> valence_list)
-:  Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0), hbar_omega(20), target_mass(16)
+:  Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0), hbar_omega(20), target_mass(16),
+     moshinsky_has_been_precalculated(false)
 {
    Init(emax, hole_list, hole_list, valence_list); 
 }
 
 // If we don't want the reference to be the core
 ModelSpace::ModelSpace(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list)
-: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0), hbar_omega(20), target_mass(16)
+: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0), hbar_omega(20), target_mass(16),
+     moshinsky_has_been_precalculated(false)
 {
    Init(emax, hole_list, core_list, valence_list); 
 }
 
 // Most conventient interface
 ModelSpace::ModelSpace(int emax, string reference, string valence)
-: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20)
+: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20),
+     moshinsky_has_been_precalculated(false)
 {
   Init(emax,reference,valence);
 }
 
 ModelSpace::ModelSpace(int emax, string valence)
-: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20)
+: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0),hbar_omega(20),
+     moshinsky_has_been_precalculated(false)
 {
   auto itval = ValenceSpaces.find(valence);
   if ( itval != ValenceSpaces.end() ) // we've got a valence space
@@ -823,14 +829,14 @@ int ModelSpace::GetTwoBodyChannelIndex(int j, int p, int t)
 
 void ModelSpace::SetupKets()
 {
-   int index = 0;
-
+//   nkets = norbits*(norbits+1)/2;
    Kets.resize(Index2(norbits-1,norbits-1)+1);
+//   Kets.resize(nkets);
    for (int p=0;p<norbits;p++)
    {
      for (int q=p;q<norbits;q++)
      {
-        index = Index2(p,q);
+        index_t index = Index2(p,q);
         Kets[index] = Ket(GetOrbit(p),GetOrbit(q));
      }
    }
@@ -870,8 +876,8 @@ void ModelSpace::SetupKets()
    SortedTwoBodyChannels_CC.resize(nTwoBodyChannels);
    for (int ch=0;ch<nTwoBodyChannels;++ch)
    {
-      TwoBodyChannels.push_back(move(TwoBodyChannel(ch,this)));
-      TwoBodyChannels_CC.push_back(move(TwoBodyChannel_CC(ch,this)));
+      TwoBodyChannels.emplace_back(TwoBodyChannel(ch,this));
+      TwoBodyChannels_CC.emplace_back(TwoBodyChannel_CC(ch,this));
       SortedTwoBodyChannels[ch] = ch;
       SortedTwoBodyChannels_CC[ch] = ch;
    }
@@ -951,6 +957,7 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 void ModelSpace::PreCalculateMoshinsky()
 {
 //  if ( not MoshList.empty() ) return; // Already done calculated it...
+  if (moshinsky_has_been_precalculated) return;
   #pragma omp parallel for schedule(dynamic,1)
   for (int N=0; N<=E2max/2; ++N)
   {
@@ -998,6 +1005,7 @@ void ModelSpace::PreCalculateMoshinsky()
    #pragma omp critical
    MoshList.insert( local_MoshList.begin(), local_MoshList.end() );
   }
+  moshinsky_has_been_precalculated = true;
 }
 
 
