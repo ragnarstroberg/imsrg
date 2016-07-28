@@ -1160,6 +1160,8 @@ map<array<int,2>,vector<array<int,2>>>& ModelSpace::GetPandyaLookup(int rank_J, 
 }
 
 
+// Generate a lookup table of all the channels that depend on a given set of Pandya-transformed channels
+// this is used in the 222ph commutators to avoid calculating things that won't be used.
 void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
 {
    if (PandyaLookup.find({rank_J, rank_T, parity})!=PandyaLookup.end()) return; 
@@ -1175,6 +1177,7 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
      for (int ch_ket_cc = ch_bra_cc; ch_ket_cc<ntbc_cc; ++ch_ket_cc)
      {
        TwoBodyChannel_CC& tbc_ket_cc = TwoBodyChannels_CC[ch_ket_cc];
+       lookup[{ch_bra_cc,ch_ket_cc}] = vector<array<int,2>>();
        int twoJ_ket_cc = 2*tbc_ket_cc.J;
        for (int ch_bra=0; ch_bra<ntbc; ++ch_bra)
        {
