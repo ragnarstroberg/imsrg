@@ -670,7 +670,7 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << Omega.back().Norm()
         << setw(fwidth) << setprecision(fprecision) << Eta.OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << Eta.TwoBodyNorm()
-        << setw(7)      << setprecision(0)          << profiler.counter["N_Commutators"]
+        << setw(7)      << setprecision(0)          << profiler.counter["N_ScalarCommutators"] + profiler.counter["N_TensorCommutators"]
         << setw(fwidth) << setprecision(fprecision) << H_s.GetMP2_Energy()
         << setw(7)      << setprecision(0)          << profiler.counter["N_Operators"]
         << setprecision(fprecision)
