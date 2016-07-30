@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <sstream>
+#include "omp.h"
 
 
 using namespace std;
@@ -286,6 +287,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    nTwoBodyChannels(ms.nTwoBodyChannels),
    Orbits(ms.Orbits), Kets(ms.Kets),
    TwoBodyChannels(ms.TwoBodyChannels), TwoBodyChannels_CC(ms.TwoBodyChannels_CC),
+   PandyaLookup(ms.PandyaLookup),
    moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated)
 {
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
@@ -317,6 +319,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    nTwoBodyChannels(ms.nTwoBodyChannels),
    Orbits(move(ms.Orbits)), Kets(move(ms.Kets)),
    TwoBodyChannels(move(ms.TwoBodyChannels)), TwoBodyChannels_CC(move(ms.TwoBodyChannels_CC)),
+   PandyaLookup(ms.PandyaLookup),
    moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated)
 {
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
@@ -1152,7 +1155,8 @@ double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double 
 }
 
 
-map<array<int,2>,vector<array<int,2>>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
+//map<array<int,2>,vector<array<int,2>>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
+map<array<int,2>,array<vector<int>,2>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
 {
    CalculatePandyaLookup(rank_J,rank_T,parity);
    return PandyaLookup[{rank_J,rank_T,parity}];
@@ -1160,14 +1164,29 @@ map<array<int,2>,vector<array<int,2>>>& ModelSpace::GetPandyaLookup(int rank_J, 
 }
 
 
+// Generate a lookup table of all the channels that depend on a given set of Pandya-transformed channels
+// this is used in the 222ph commutators to avoid calculating things that won't be used.
 void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
 {
    if (PandyaLookup.find({rank_J, rank_T, parity})!=PandyaLookup.end()) return; 
-   PandyaLookup[{rank_J,rank_T,parity}] = map<array<int,2>,vector<array<int,2>>>();
+   cout << "CalculatePandyaLookup( " << rank_J << ", " << rank_T << ", " << parity << ") " << endl;
+   double t_start = omp_get_wtime();
+//   PandyaLookup[{rank_J,rank_T,parity}] = map<array<int,2>,vector<array<int,2>>>();
+   PandyaLookup[{rank_J,rank_T,parity}] = map<array<int,2>,array<vector<int>,2>>();
    auto& lookup = PandyaLookup[{rank_J,rank_T,parity}];
 
    int ntbc    = TwoBodyChannels.size();
    int ntbc_cc = TwoBodyChannels_CC.size();
+   for (int ch_bra_cc = 0; ch_bra_cc<ntbc_cc; ++ch_bra_cc)
+   {
+     for (int ch_ket_cc = ch_bra_cc; ch_ket_cc<ntbc_cc; ++ch_ket_cc)
+     {
+//       lookup[{ch_bra_cc,ch_ket_cc}] = vector<array<int,2>>();
+       lookup[{ch_bra_cc,ch_ket_cc}] = array<vector<int>,2>(); 
+     }
+   }
+
+   #pragma omp parallel for schedule(dynamic,1)
    for (int ch_bra_cc = 0; ch_bra_cc<ntbc_cc; ++ch_bra_cc)
    {
      TwoBodyChannel_CC& tbc_bra_cc = TwoBodyChannels_CC[ch_bra_cc];
@@ -1175,6 +1194,9 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
      for (int ch_ket_cc = ch_bra_cc; ch_ket_cc<ntbc_cc; ++ch_ket_cc)
      {
        TwoBodyChannel_CC& tbc_ket_cc = TwoBodyChannels_CC[ch_ket_cc];
+//       lookup[{ch_bra_cc,ch_ket_cc}] = vector<array<int,2>>();
+       vector<int>& bra_list = lookup[{ch_bra_cc,ch_ket_cc}][0];
+       vector<int>& ket_list = lookup[{ch_bra_cc,ch_ket_cc}][1];
        int twoJ_ket_cc = 2*tbc_ket_cc.J;
        for (int ch_bra=0; ch_bra<ntbc; ++ch_bra)
        {
@@ -1242,12 +1264,15 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
            }
            if (need_it)
            {
-             lookup[{ch_bra_cc,ch_ket_cc}].push_back({ch_bra,ch_ket});
+//             lookup[{ch_bra_cc,ch_ket_cc}].push_back({ch_bra,ch_ket});
+             bra_list.push_back(ch_bra);
+             ket_list.push_back(ch_ket);
            }
          }
        }
      }
    }
+   profiler.timer["CalculatePandyaLookup"] += omp_get_wtime() - t_start;
 }
 
 
