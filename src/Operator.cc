@@ -2588,7 +2588,7 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
    Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
    int Lambda = Z.GetJRank();
-   #pragma omp parallel for schedule(dynamic,1)// for starters, don't do it parallel
+   #pragma omp parallel for schedule(dynamic,1)
    for (int i=0;i<norbits;++i)
    {
       Orbit &oi = modelspace->GetOrbit(i);
@@ -2676,14 +2676,21 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
    Operator& Z = *this;
    int Lambda = Z.rank_J;
 
-    vector< array<int,2> > channels;
-    for ( auto& itmat : Z.TwoBody.MatEl ) channels.push_back( itmat.first );
-    int nmat = channels.size();
-   #pragma omp parallel for schedule(dynamic,1)
+    vector< int > bra_channels;
+    vector< int > ket_channels;
+//    vector< array<int,2> > channels;
+//    for ( auto& itmat : Z.TwoBody.MatEl ) channels.push_back( itmat.first );
+    for ( auto& itmat : Z.TwoBody.MatEl )
+    {
+      bra_channels.push_back( itmat.first[0] );
+      ket_channels.push_back( itmat.first[1] );
+    }
+    int nmat = bra_channels.size();
+   #pragma omp parallel for schedule(dynamic,1) if (not this->tensor_transform_first_pass)
     for (int ii=0; ii<nmat; ++ii)
     {
-     int ch_bra = channels[ii][0];
-     int ch_ket = channels[ii][1];
+     int ch_bra = bra_channels[ii];
+     int ch_ket = ket_channels[ii];
 
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
@@ -2751,6 +2758,8 @@ void Operator::comm122st( const Operator& X, const Operator& Y )
             }
 
             cijkl = c1 + c2 - c3 - c4;
+
+
             c1=0;
             c2=0;
             c3=0;

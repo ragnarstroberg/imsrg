@@ -1,5 +1,6 @@
 #include "ThreeBodyME.hh"
 #include "AngMom.hh"
+#include "omp.h"
 
 
 ThreeBodyME::~ThreeBodyME()
@@ -19,9 +20,163 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
 {}
 
 
+void ThreeBodyME::RemapOrbits()
+{
+  DarmstadtToInternal.clear();
+  InternalToDarmstadt.resize(modelspace->GetNumberOrbits());
+  for (int e=0; e<=modelspace->GetEmax(); ++e)
+  {
+    int lmin = e%2;
+    for (int l=lmin; l<=e; l+=2)
+    {
+      int n = (e-l)/2;
+      int twojMin = abs(2*l-1);
+      int twojMax = 2*l+1;
+      for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
+      {
+         DarmstadtToInternal.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
+         InternalToDarmstadt[ DarmstadtToInternal.back() ] = DarmstadtToInternal.size()-1;
+         InternalToDarmstadt[ DarmstadtToInternal.back()+1 ] = DarmstadtToInternal.size()-1;
+      }
+    }
+  }
+  for (auto i : DarmstadtToInternal) cout << i << " ";
+  cout << endl;
+  for (auto i : InternalToDarmstadt) cout << i << " ";
+  cout << endl;
+}
+
+
+
+
+
+
+
 // Confusing nomenclature: J2 means 2 times the total J of the three body system
 void ThreeBodyME::Allocate()
 {
+  RemapOrbits();
+  double t_start = omp_get_wtime();
+  MatEl.clear();
+  OrbitIndex.clear();
+  E3max = modelspace->GetE3max();
+  cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
+  int norbits = modelspace->GetNumberOrbits();
+  int nvectors = 0;
+  int lmax = 500*norbits; // maybe do something with this later...
+
+//  for (int a=0; a<norbits; a+=2)
+  for (int a=0; a<norbits/2; a++)
+  {
+   Orbit& oa = modelspace->GetOrbit(DarmstadtToInternal[a]);
+   int ea = 2*oa.n+oa.l;
+   if (ea>E3max) break;
+   vector<vector<vector<vector<vector<size_t>>>>> vecb;
+//   for (int b=0; b<=a; b+=2)
+   for (int b=0; b<=a; b++)
+   {
+     if (oa.l > lmax) break;
+//     Orbit& ob = modelspace->GetOrbit(b);
+     Orbit& ob = modelspace->GetOrbit(DarmstadtToInternal[b]);
+     int eb = 2*ob.n+ob.l;
+     if ((ea+eb)>E3max) break;
+
+     int Jab_min = abs(oa.j2-ob.j2)/2;
+     int Jab_max = (oa.j2+ob.j2)/2;
+     vector<vector<vector<vector<size_t>>>> vecc;
+//     for (int c=0; c<=b; c+=2)
+     for (int c=0; c<=b; c++)
+     {
+       if (ob.l > lmax) break;
+//       Orbit& oc = modelspace->GetOrbit(c);
+       Orbit& oc = modelspace->GetOrbit(DarmstadtToInternal[c]);
+       int ec = 2*oc.n+oc.l;
+       if ((ea+eb+ec)>E3max) break;
+       vector<vector<vector<size_t>>> vecd;
+//       for (int d=0; d<=a; d+=2)
+       for (int d=0; d<=a; d++)
+       {
+         if (oc.l > lmax) break;
+//         Orbit& od = modelspace->GetOrbit(d);
+         Orbit& od = modelspace->GetOrbit(DarmstadtToInternal[d]);
+         int ed = 2*od.n+od.l;
+         vector<vector<size_t>> vece;
+//         for (int e=0; e<= (d==a ? b : d); e+=2)
+         for (int e=0; e<= (d==a ? b : d); e++)
+         {
+           if (od.l > lmax) break;
+//           Orbit& oe = modelspace->GetOrbit(e);
+           Orbit& oe = modelspace->GetOrbit(DarmstadtToInternal[e]);
+           int ee = 2*oe.n+oe.l;
+           vector<size_t> vecf;
+//           for (int f=0; f<=((d==a and e==b) ? c : e); f+=2)
+           for (int f=0; f<=((d==a and e==b) ? c : e); f++)
+           {
+             if (oe.l > lmax) break;
+//             Orbit& of = modelspace->GetOrbit(f);
+             Orbit& of = modelspace->GetOrbit(DarmstadtToInternal[f]);
+             int ef = 2*of.n+of.l;
+             if ((ed+ee+ef)>E3max) break;
+             if ((oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 or of.l > lmax) 
+             {
+               vecf.push_back( -1 );
+               continue;
+             }
+             vecf.push_back( total_dimension );
+             int Jde_min = abs(od.j2-oe.j2)/2;
+             int Jde_max = (od.j2+oe.j2)/2;
+
+             for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
+             {
+              for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
+              {
+                int J2_min = max( abs(2*Jab-oc.j2), abs(2*Jde-of.j2));
+                int J2_max = min( 2*Jab+oc.j2, 2*Jde+of.j2);
+                for (int J2=J2_min; J2<=J2_max; J2+=2)
+                {
+//                  dim += 5; // 5 different isospin combinations
+                  total_dimension += 5; // 5 different isospin combinations
+                } //J2
+              } //Jde
+             } //Jab
+             ++nvectors;
+
+           } //f
+           vece.push_back( vecf );
+           ++nvectors;
+         } //e
+         vecd.push_back( vece );
+         ++nvectors;
+       } //d
+       vecc.push_back( vecd );
+       ++nvectors;
+     } //c
+     vecb.push_back( vecc );
+     ++nvectors;
+   } //b
+//   MatEl.push_back( vecb );
+   OrbitIndex.push_back( vecb);
+   ++nvectors;
+  } //a
+  MatEl.resize(total_dimension,0.0);
+  MatEl.shrink_to_fit();
+  cout << "Allocated " << total_dimension << " three body matrix elements (" <<  total_dimension * sizeof(ThreeBME_type)/1024./1024./1024. << " GB), "
+       << nvectors << " vectors (" << nvectors * sizeof(vector<size_t>)/1024./1024./1024. <<" GB)." << endl;
+
+  profiler.timer["ThreeBodyME::Allocate"] += omp_get_wtime() - t_start;
+}
+
+
+
+
+
+/*
+
+// Confusing nomenclature: J2 means 2 times the total J of the three body system
+void ThreeBodyME::Allocate()
+{
+  RemapOrbits();
+  double t_start = omp_get_wtime();
   MatEl.clear();
   OrbitIndex.clear();
   E3max = modelspace->GetE3max();
@@ -117,9 +272,10 @@ void ThreeBodyME::Allocate()
   cout << "Allocated " << total_dimension << " three body matrix elements (" <<  total_dimension * sizeof(ThreeBME_type)/1024./1024./1024. << " GB), "
        << nvectors << " vectors (" << nvectors * sizeof(vector<size_t>)/1024./1024./1024. <<" GB)." << endl;
 
+  profiler.timer["ThreeBodyME::Allocate"] += omp_get_wtime() - t_start;
 }
 
-
+*/
 
 
 //*******************************************************************
@@ -138,6 +294,7 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
    double tzd = modelspace->GetOrbit(d).tz2*0.5;
    double tze = modelspace->GetOrbit(e).tz2*0.5;
    double tzf = modelspace->GetOrbit(f).tz2*0.5;
+
 
    double Vpn=0;
    int Tmin = min( abs(tza+tzb+tzc), abs(tzd+tze+tzf) );
@@ -201,9 +358,13 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
 
    // Re-order so that a>=b>=c, d>=e>=f
    int a,b,c,d,e,f;
-   int abc_recoupling_case = SortOrbits(a_in,b_in,c_in,a,b,c);
-   int def_recoupling_case = SortOrbits(d_in,e_in,f_in,d,e,f);
+   int abc_recoupling_case = SortOrbits(InternalToDarmstadt[a_in],InternalToDarmstadt[b_in],InternalToDarmstadt[c_in],a,b,c);
+   int def_recoupling_case = SortOrbits(InternalToDarmstadt[d_in],InternalToDarmstadt[e_in],InternalToDarmstadt[f_in],d,e,f);
+//   int abc_recoupling_case = SortOrbits(a_in,b_in,c_in,a,b,c);
+//   int def_recoupling_case = SortOrbits(d_in,e_in,f_in,d,e,f);
 
+//   cout << "before: " << a_in << " " << b_in << " " << c_in << " " << d_in << " " << e_in << " " << f_in << endl;
+//   cout << " to Darmstadt: " << InternalToDarmstadt[a_in] << " " << InternalToDarmstadt[b_in] << " " << InternalToDarmstadt[c_in] << " " << InternalToDarmstadt[d_in] << " " << InternalToDarmstadt[e_in] << " " << InternalToDarmstadt[f_in] << endl;
    if (d>a or (d==a and e>b) or (d==a and e==b and f>c))
    {
       swap(a,d);
@@ -216,12 +377,19 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
 
 
 
-   Orbit& oa = modelspace->GetOrbit(a);
-   Orbit& ob = modelspace->GetOrbit(b);
-   Orbit& oc = modelspace->GetOrbit(c);
-   Orbit& od = modelspace->GetOrbit(d);
-   Orbit& oe = modelspace->GetOrbit(e);
-   Orbit& of = modelspace->GetOrbit(f);
+//   Orbit& oa = modelspace->GetOrbit(a);
+//   Orbit& ob = modelspace->GetOrbit(b);
+//   Orbit& oc = modelspace->GetOrbit(c);
+//   Orbit& od = modelspace->GetOrbit(d);
+//   Orbit& oe = modelspace->GetOrbit(e);
+//   Orbit& of = modelspace->GetOrbit(f);
+   Orbit& oa = modelspace->GetOrbit(DarmstadtToInternal[a]);
+   Orbit& ob = modelspace->GetOrbit(DarmstadtToInternal[b]);
+   Orbit& oc = modelspace->GetOrbit(DarmstadtToInternal[c]);
+   Orbit& od = modelspace->GetOrbit(DarmstadtToInternal[d]);
+   Orbit& oe = modelspace->GetOrbit(DarmstadtToInternal[e]);
+   Orbit& of = modelspace->GetOrbit(DarmstadtToInternal[f]);
+
    if (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l > E3max) return 0;
    if (2*(od.n+oe.n+of.n)+od.l+oe.l+of.l > E3max) return 0;
 
@@ -250,7 +418,11 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
 //   if (e/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).size()) cout << "AAAAH!  e = " << e << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).size() << endl;
 //   if (f/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).size()) cout << "AAAAH!  f = " << f << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).size() << endl;
 
-   auto& indx = OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).at(f/2);
+//   auto indx = OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).at(f/2);
+   auto indx = OrbitIndex.at(a).at(b).at(c).at(d).at(e).at(f);
+//   cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << endl;
+//   cout << "  " << InternalToDarmstadt[a] << " " << InternalToDarmstadt[b] << " " << InternalToDarmstadt[c] << " " << InternalToDarmstadt[d] << " " << InternalToDarmstadt[e] << " " << InternalToDarmstadt[f] << endl;
+//   auto indx = OrbitIndex.at(InternalToDarmstadt[a]).at(InternalToDarmstadt[b]).at(InternalToDarmstadt[c]).at(InternalToDarmstadt[d]).at(InternalToDarmstadt[e]).at(InternalToDarmstadt[f]);
    if (indx > MatEl.size()) cout << "AAAAHHH indx = " << indx << "  but MatEl.size() = " << MatEl.size() << endl;
    
 //   cout << "    accessing " << a << " " << b << " " << c << " " << d << " " << e << " " << f << " size = " << vj.size() << endl;
@@ -331,9 +503,9 @@ double ThreeBodyME::RecouplingCoefficient(int recoupling_case, double ja, double
 //*******************************************************************
 int ThreeBodyME::SortOrbits(int a_in, int b_in, int c_in, int& a, int& b, int& c)
 {
-   a_in -= a_in%2;
-   b_in -= b_in%2;
-   c_in -= c_in%2;
+//   a_in -= a_in%2;
+//   b_in -= b_in%2;
+//   c_in -= c_in%2;
    a=a_in;
    b=b_in;
    c=c_in;
