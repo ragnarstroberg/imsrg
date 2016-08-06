@@ -152,7 +152,9 @@ int main(int argc, char** argv)
     Hbare += BetaCM * HCM_Op(modelspace);
   }
 
+  cout << "Creating HF" << endl;
   HartreeFock hf(Hbare);
+  cout << "Solving" << endl;
   hf.Solve();
   cout << "EHF = " << hf.EHF << endl;
   

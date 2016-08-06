@@ -357,7 +357,7 @@ ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, i
 {
 
    // Re-order so that a>=b>=c, d>=e>=f
-   int a,b,c,d,e,f;
+   int a=0,b=0,c=0,d=0,e=0,f=0;
    int abc_recoupling_case = SortOrbits(InternalToDarmstadt[a_in],InternalToDarmstadt[b_in],InternalToDarmstadt[c_in],a,b,c);
    int def_recoupling_case = SortOrbits(InternalToDarmstadt[d_in],InternalToDarmstadt[e_in],InternalToDarmstadt[f_in],d,e,f);
 //   int abc_recoupling_case = SortOrbits(a_in,b_in,c_in,a,b,c);

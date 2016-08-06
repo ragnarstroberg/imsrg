@@ -8,17 +8,16 @@ CC = g++
 INCLUDE   = -I./armadillo
 FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC 
 SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC 
-WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
-FLAGS    += $(WARNFLAGS)
-SOFLAGS  += $(WARNFLAGS)
 INSTDIR = $(HOME)
 
 ifeq ($(DEBUG),on)
- FLAGS     = -march=native -std=c++11 -fopenmp -fPIC   
- SOFLAGS   = -march=native -std=c++11 -fopenmp -fPIC   
- FLAGS += -g
- SOFLAGS += -g
+ FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g 
+ SOFLAGS   = -march=native -std=c++11 -fopenmp -fPIC -g
 endif
+
+WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
+FLAGS    += $(WARNFLAGS)
+SOFLAGS  += $(WARNFLAGS)
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
