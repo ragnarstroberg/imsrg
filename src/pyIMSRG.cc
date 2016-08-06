@@ -267,6 +267,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    def("Embed1BodyIn2Body",  imsrg_util::Embed1BodyIn2Body);
    def("RadialIntegral",     imsrg_util::RadialIntegral);
    def("RadialIntegral_RpowK",     imsrg_util::RadialIntegral_RpowK);
+   def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
 
    def("CG",AngMom::CG);
    def("ThreeJ",AngMom::ThreeJ);

@@ -1500,6 +1500,40 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
 
 
+//  double FCcoefFunction(int n1, int l1, double hw1, int n2, int l2, double hw2, double r)
+  double FCcoefIntegrand(double r, void* params)
+  {
+    int n1     = ((double*) params)[0];
+    int l1     = ((double*) params)[1];
+    double hw1 = ((double*) params)[2];
+    int n2     = ((double*) params)[3];
+    int l2     = ((double*) params)[4];
+    double hw2 = ((double*) params)[5];
+    return r*r*HO_Radial_psi( n1,l1,hw1,r)*HO_Radial_psi( n2,l2,hw2,r);
+  }
+
+  double FrequencyConversionCoeff(int n1, int l1, double hw1, int n2, int l2, double hw2)
+  {
+    double parameters[6] = {(double)n1, (double)l1, hw1, (double)n2, (double)l2, hw2};
+    gsl_function F;
+    F.function = &FCcoefIntegrand;
+    F.params = &(parameters[0]);
+    double r0 = 0;
+    double epsabs = 1e-7;
+    double epsrel = 1e-7;
+    size_t limit = 1000; // is this a reasonable number?
+    gsl_integration_workspace * workspace = gsl_integration_workspace_alloc(limit);
+    double result = 0;
+    double abserr;
+
+    gsl_integration_qagiu(&F, r0, epsabs, epsrel, limit, workspace, &result, &abserr );
+
+    gsl_integration_workspace_free(workspace);
+    return result;
+
+  }
+
+
   void CommutatorTest(Operator& X, Operator& Y)
   {
     Operator Zscalar(X);
