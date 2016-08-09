@@ -3667,6 +3667,11 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
       double t_start2 = omp_get_wtime();
       int ch_bra_cc = ybras[i];
       int ch_ket_cc = ykets[i];
+      if ( pandya_lookup.find({ch_bra_cc,ch_ket_cc}) == pandya_lookup.end() )
+      {
+       profiler.timer["BuildZbarTensor_setup"] += omp_get_wtime() - t_start2;
+       continue;
+      }
       auto& plookup = pandya_lookup[{ch_bra_cc,ch_ket_cc}];
       if ( plookup[0].size()<1 )
       {
