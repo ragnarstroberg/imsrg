@@ -1,9 +1,8 @@
 #ifndef ThreeBodyME_h
 #define ThreeBodyME_h 1
 
-#include <fstream>
 #include "ModelSpace.hh"
-#include "IMSRGProfiler.hh"
+#include <fstream>
 
 //typedef double ThreeBME_type;
 typedef float ThreeBME_type;
@@ -25,18 +24,12 @@ class ThreeBodyME
   vector<vector<vector<vector<vector<vector<size_t>>>>>> OrbitIndex; //
   int E3max;
   size_t total_dimension;
-  IMSRGProfiler profiler;
-  vector<index_t> InternalToDarmstadt;
-  vector<index_t> DarmstadtToInternal;
-
-
   
   ~ThreeBodyME();
   ThreeBodyME();
   ThreeBodyME(ModelSpace*);
   ThreeBodyME(ModelSpace* ms, int e3max);
 
-  void RemapOrbits();
   void Allocate();
 
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};
