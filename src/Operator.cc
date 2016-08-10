@@ -2453,6 +2453,7 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    for (int ich=0; ich<nch; ++ich )
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
+      if ( pandya_lookup.find({ch,ch}) == pandya_lookup.end()) continue;
       if ( pandya_lookup[{ch,ch}][0].size()<1 ) continue;
       TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch);
       index_t nKets_cc = tbc_cc.GetNumberKets();
