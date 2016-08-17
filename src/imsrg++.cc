@@ -26,6 +26,7 @@ int main(int argc, char** argv)
   string input3bme = parameters.s("3bme");
   string reference = parameters.s("reference");
   string valence_space = parameters.s("valence_space");
+  string custom_valence_space = parameters.s("custom_valence_space");
   string basis = parameters.s("basis");
   string method = parameters.s("method");
   string flowfile = parameters.s("flowfile");
@@ -93,7 +94,23 @@ int main(int argc, char** argv)
   ReadWrite rw;
   rw.SetLECs_preset(LECs);
   rw.SetScratchDir(scratch);
-  ModelSpace modelspace = reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space);
+
+//  ModelSpace modelspace;
+
+  if (custom_valence_space!="") // if a custom space is defined, the input valence_space is just used as a name
+  {
+    if (valence_space=="") // if no name is given, then just name it "custom"
+    {
+      parameters.string_par["valence_space"] = "custom";
+      flowfile = parameters.DefaultFlowFile();
+      intfile = parameters.DefaultIntFile();
+    }
+    valence_space = custom_valence_space;
+  }
+
+
+  ModelSpace modelspace = ( reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space) );
+
   if (occ_file != "none" and occ_file != "" )
   {
     modelspace.Init_occ_from_file(eMax,valence_space,occ_file);

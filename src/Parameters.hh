@@ -39,7 +39,8 @@ map<string,string> Parameters::string_par = {
   {"intfile",			"default"},  // name of output interaction fille
   {"fmt2",			"me2j"},	 // can also be navratil or Navratil to read Petr's TBME format
   {"reference",			"default"},	// nucleus used for HF and normal ordering.
-  {"valence_space",		"O16"},	// either valence space or nucleus for single reference
+  {"valence_space",		""},	// either valence space or nucleus for single reference
+  {"custom_valence_space",      ""}, // if the provided valence spaces just aren't good enough for you
   {"basis",			"HF"},	 // use HF basis or oscillator basis. HF is better.
   {"method",			"magnus"},	// can be magnus or flow or a few other things
   {"denominator_delta_orbit",	"none"},	// pick specific orbit to apply the delta
