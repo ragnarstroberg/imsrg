@@ -115,11 +115,7 @@ int main(int argc, char** argv)
   Operator Hbare = Operator(modelspace,0,0,0,particle_rank);
   Hbare.SetHermitian();
 
-  if (use_brueckner_bch == "true" or use_brueckner_bch == "True")
-  {
-    Hbare.SetUseBruecknerBCH(true);
-    cout << "Using Brueckner flavor of BCH" << endl;
-  }
+
 
   cout << "Reading interactions..." << endl;
 
@@ -235,6 +231,18 @@ int main(int argc, char** argv)
   {
     omega_norm_max=500;
     method = "magnus";
+  }
+  if (method == "brueckner")
+  {
+    use_brueckner_bch = "true";
+    omega_norm_max=500;
+    method = "magnus";   
+  }
+
+  if (use_brueckner_bch == "true" or use_brueckner_bch == "True")
+  {
+    Hbare.SetUseBruecknerBCH(true);
+    cout << "Using Brueckner flavor of BCH" << endl;
   }
 
   imsrgsolver.SetMethod(method);
