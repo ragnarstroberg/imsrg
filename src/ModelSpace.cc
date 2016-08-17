@@ -381,29 +381,31 @@ void ModelSpace::Init(int emax, map<index_t,double> hole_list, string valence)
 {
   int Ac,Zc;
   vector<index_t> valence_list, core_list;
-//  map<index_t,double> core_map;
 
   if (valence == "0hw-shell")
   {
     Get0hwSpace(Aref,Zref,core_list,valence_list);
   }
-  else
+  else if ( valence.find(",")!=string::npos ) // interpet as a comma-separated list of core followed by valence orbits
+  {
+    ParseCommaSeparatedValenceSpace(valence,core_list,valence_list);
+  }
+  else // check if it's one of the pre-defined spaces
   {
     auto itval = ValenceSpaces.find(valence);
+    string core_string;
   
     if ( itval != ValenceSpaces.end() ) // we've got a valence space
     {
-       string core_string = itval->second[0];
-       GetAZfromString(core_string,Ac,Zc);
+       core_string = itval->second[0];
        valence_list = String2Index(vector<string>(itval->second.begin()+1,itval->second.end()));
     }
     else  // no valence space. we've got a single-reference.
     {
-       GetAZfromString(valence,Ac,Zc);
+       core_string = valence;
     }
   
-    //core_map = GetOrbitsAZ(Ac,Zc);
-    //for (auto& it_core : core_map) core_list.push_back(it_core.first);
+    GetAZfromString(core_string,Ac,Zc);
     for (auto& it_core : GetOrbitsAZ(Ac,Zc) ) core_list.push_back(it_core.first);
   }
 
@@ -644,6 +646,29 @@ void ModelSpace::Get0hwSpace(int Aref, int Zref, vector<index_t>& core_list, vec
     }
   }
 
+}
+
+
+// Parse a string containing a comma-separated list of core + valence orbits
+// eg, the usual sd shell would look like "O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1".
+// The number of ways to specify a model space is getting a bit out of hand...
+void ModelSpace::ParseCommaSeparatedValenceSpace(string valence, vector<index_t>& core_list, vector<index_t>& valence_list)
+{
+  istringstream ss(valence);
+  string orbit_string,core_string;
+  getline(ss, core_string, ',');
+
+  int Ac,Zc;
+  GetAZfromString(core_string,Ac,Zc);
+  for (auto& it_core : GetOrbitsAZ(Ac,Zc) )
+  {
+    core_list.push_back(it_core.first);
+  }
+
+  while(getline(ss, orbit_string, ','))
+  {
+    valence_list.push_back( String2Index({orbit_string})[0]);
+  }
 }
 
 
