@@ -11,6 +11,13 @@ ifeq ($(DEBUG),on)
  FLAGS += -g
 endif
 
+NEWHDF5LOC = $(shell if [ -d /usr/include/hdf5/serial ]; then echo yes; else echo no; fi)
+ifeq ($(NEWHDF5LOC),yes)
+  INCLUDE += -I/usr/include/hdf5/serial
+  NEWLIBS := $(filter-out -lhdf5,$(LIBS))
+  LIBS = $(NEWLIBS) -lhdf5_serial
+endif
+
 all: exe
 exe: SingleRef ValenceSpace
 
