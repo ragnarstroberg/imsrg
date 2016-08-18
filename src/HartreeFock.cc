@@ -382,11 +382,11 @@ void HartreeFock::UpdateF()
    if (Hbare.GetParticleRank()>=3) 
    {
 //      # pragma omp parallel for num_threads(2)  // Note that this is risky and not fully thread safe.
-      #pragma omp parallel for schedule(dynamic,1)
+//      #pragma omp parallel for schedule(dynamic,1)
       for (size_t ind=0;ind<Vmon3.size(); ++ind)
       {
         const array<int,6>& orb = Vmon3[ind].first;
-        double& v         = Vmon3[ind].second;
+//        auto& orb = Vmon3[ind].first;
         int a = orb[0];
         int c = orb[1];
         int i = orb[2];
@@ -394,8 +394,8 @@ void HartreeFock::UpdateF()
         int d = orb[4];
         int j = orb[5];
 
-        #pragma omp atomic
-        V3ij(i,j) += rho(a,b) * rho(c,d) * v ;
+        #pragma omp atomic update
+        V3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3[ind].second ;
       }
    }
 
