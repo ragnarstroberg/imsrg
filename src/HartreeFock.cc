@@ -6,6 +6,7 @@
 #include "gsl/gsl_sf_gamma.h" // for radial wave function
 #include "gsl/gsl_sf_laguerre.h" // for radial wave function
 #include <gsl/gsl_math.h> // for M_SQRTPI
+#include <omp.h>
 
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
@@ -277,13 +278,18 @@ void HartreeFock::BuildMonopoleV3()
     Vmon3.shrink_to_fit();
 
 
-   // the calculation takes longer, so parallelize this part
-   #pragma omp parallel for  schedule(dynamic,1)
+   // the calculation takes longer, so parallelize this part.
+   // For some reason, despite the use of atomic,
+   // using schedule(dynamic,1) changes the answer,
+   // which is a sign of thread-safety trouble.
+   #pragma omp parallel for // schedule(dynamic,1)
    for (size_t ind=0; ind<Vmon3.size(); ++ind)
    {
 
-      const array<int,6>& orb = Vmon3[ind].first;
-      double& v         = Vmon3[ind].second;
+//      const array<int,6>& orb = Vmon3[ind].first;
+      const array<int,6>& orb = Vmon3.at(ind).first;
+//      double& v         = Vmon3[ind].second;
+      double v=0;
       int a = orb[0];
       int c = orb[1];
       int i = orb[2];
@@ -309,7 +315,9 @@ void HartreeFock::BuildMonopoleV3()
            v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
         }
       }
-      v /= (j2i+1);
+      v /= (j2i+1.0);
+      #pragma omp atomic write
+      Vmon3[ind].second = v;
    }
    profiler.timer["HF_BuildMonopoleV3"] += omp_get_wtime() - start_time;
 }
@@ -378,11 +386,13 @@ void HartreeFock::UpdateF()
 
    if (Hbare.GetParticleRank()>=3) 
    {
-//      # pragma omp parallel for num_threads(2)  // Note that this is risky and not fully thread safe.
+      // it's just a one-body matrix, so we can store different copy for each thread.
+      vector<arma::mat> V3vec(omp_get_max_threads(),V3ij);
+      #pragma omp parallel for schedule(dynamic,1)
       for (size_t ind=0;ind<Vmon3.size(); ++ind)
       {
-        const array<int,6>& orb = Vmon3[ind].first;
-        double& v         = Vmon3[ind].second;
+        arma::mat& v3ij = V3vec[omp_get_thread_num()];
+        const array<int,6>& orb = Vmon3.at(ind).first;
         int a = orb[0];
         int c = orb[1];
         int i = orb[2];
@@ -390,8 +400,10 @@ void HartreeFock::UpdateF()
         int d = orb[4];
         int j = orb[5];
 
-        V3ij(i,j) += rho(a,b) * rho(c,d) * v ;
+        v3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3.at(ind).second ;
       }
+      for (auto& v : V3vec) V3ij += v;
+      V3vec.clear(); // free up the memory
    }
 
    Vij  = arma::symmatu(Vij);
@@ -587,8 +599,8 @@ Operator HartreeFock::GetNormalOrderedH()
       int J = tbc.J;
       int npq = tbc.GetNumberKets();
 
-      arma::mat D     = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
-      arma::mat V3NO  = arma::mat(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+      arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+      arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
 
       #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
       for (int i=0; i<npq; ++i)    

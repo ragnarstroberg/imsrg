@@ -19,7 +19,7 @@ ifeq ($(NEWHDF5LOC),yes)
 endif
 
 all: exe
-exe: SingleRef ValenceSpace
+exe: Universal
 
 %:	%.cc
 	$(CC) $(INCLUDE) $^ -o $@ $(FLAGS) $(LIBS)
