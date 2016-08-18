@@ -278,7 +278,7 @@ void HartreeFock::BuildMonopoleV3()
 
 
    // the calculation takes longer, so parallelize this part
-   #pragma omp parallel for  schedule(dynamic,1)
+   #pragma omp parallel for // schedule(dynamic,1)
    for (size_t ind=0; ind<Vmon3.size(); ++ind)
    {
 
