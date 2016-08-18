@@ -280,15 +280,13 @@ void HartreeFock::BuildMonopoleV3()
 
    // the calculation takes longer, so parallelize this part.
    // For some reason, despite the use of atomic,
-   // using schedule(dynamic,1) changes the answer,
-   // which is a sign of thread-safety trouble.
+   // using schedule(dynamic,1) changes the answer slightly.
+   // I assume this is just numerical noise.
    #pragma omp parallel for // schedule(dynamic,1)
    for (size_t ind=0; ind<Vmon3.size(); ++ind)
    {
 
-//      const array<int,6>& orb = Vmon3[ind].first;
       const array<int,6>& orb = Vmon3.at(ind).first;
-//      double& v         = Vmon3[ind].second;
       double v=0;
       int a = orb[0];
       int c = orb[1];
