@@ -6,6 +6,7 @@
 #include "gsl/gsl_sf_gamma.h" // for radial wave function
 #include "gsl/gsl_sf_laguerre.h" // for radial wave function
 #include <gsl/gsl_math.h> // for M_SQRTPI
+#include <omp.h>
 
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
@@ -277,12 +278,16 @@ void HartreeFock::BuildMonopoleV3()
     Vmon3.shrink_to_fit();
 
 
-   // the calculation takes longer, so parallelize this part
+   // the calculation takes longer, so parallelize this part.
+   // For some reason, despite the use of atomic,
+   // using schedule(dynamic,1) changes the answer,
+   // which is a sign of thread-safety trouble.
    #pragma omp parallel for // schedule(dynamic,1)
    for (size_t ind=0; ind<Vmon3.size(); ++ind)
    {
 
-      const array<int,6>& orb = Vmon3[ind].first;
+//      const array<int,6>& orb = Vmon3[ind].first;
+      const array<int,6>& orb = Vmon3.at(ind).first;
 //      double& v         = Vmon3[ind].second;
       double v=0;
       int a = orb[0];
@@ -381,12 +386,13 @@ void HartreeFock::UpdateF()
 
    if (Hbare.GetParticleRank()>=3) 
    {
-//      # pragma omp parallel for num_threads(2)  // Note that this is risky and not fully thread safe.
-//      #pragma omp parallel for schedule(dynamic,1)
+      // it's just a one-body matrix, so we can store different copy for each thread.
+      vector<arma::mat> V3vec(omp_get_max_threads(),V3ij);
+      #pragma omp parallel for schedule(dynamic,1)
       for (size_t ind=0;ind<Vmon3.size(); ++ind)
       {
-        const array<int,6>& orb = Vmon3[ind].first;
-//        auto& orb = Vmon3[ind].first;
+        arma::mat& v3ij = V3vec[omp_get_thread_num()];
+        const array<int,6>& orb = Vmon3.at(ind).first;
         int a = orb[0];
         int c = orb[1];
         int i = orb[2];
@@ -394,9 +400,10 @@ void HartreeFock::UpdateF()
         int d = orb[4];
         int j = orb[5];
 
-        #pragma omp atomic update
-        V3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3[ind].second ;
+        v3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3.at(ind).second ;
       }
+      for (auto& v : V3vec) V3ij += v;
+      V3vec.clear(); // free up the memory
    }
 
    Vij  = arma::symmatu(Vij);
