@@ -177,7 +177,7 @@ ThreeBME_type ThreeBodyME::GetME(int Jab_in, int Jde_in, int J2, int tab_in, int
 //   return AddToME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,0.0);
    auto elements =  AccessME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in);
    double me = 0;
-   for (auto el : elements) me += MatEl.at(el.first) * el.second;
+   for (auto elem : elements) me += MatEl.at(elem.first) * elem.second;
    return me;
 }
 
@@ -185,127 +185,23 @@ ThreeBME_type ThreeBodyME::GetME(int Jab_in, int Jde_in, int J2, int tab_in, int
 /// Set a three body matrix element. Since only a subset of orbit
 /// orderings are stored, we need to recouple if the input ordering
 /// is different.
+/// In order to set rather than just add to the matrix element,
+/// we need to get the current value and add the difference.
 //*******************************************************************
 void ThreeBodyME::SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, ThreeBME_type V)
 {
 //   AddToME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,V);
    auto elements = AccessME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in);
-   for (auto el : elements)  MatEl[el.first] += V*el.second;
+   double me = 0;
+   for (auto elem : elements) me += MatEl.at(elem.first) * elem.second;
+   for (auto elem : elements)  MatEl[elem.first] += (V-me)*elem.second;
 }
 
 //*******************************************************************
-/// Since setting and getting three body matrix elements requires
-/// almost identical code, they are combined into one function
-/// which adds \f$V_{in}\f$ to the matrix element and returns
-/// its value \f$V_{out}\f$. To access a matrix element, we set
-/// \f$V_{in}=0\f$. To set the matrix element, we simply
-/// disregard $\V_{out}\f$.
+/// Since the code for setting or getting matrix elements is almost
+/// identical, do all the work here to pull out a list of indices
+/// and coefficients which are needed for setting or getting.
 //*******************************************************************
-
-ThreeBME_type ThreeBodyME::AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, ThreeBME_type V_in)
-{
-
-   // Re-order so that a>=b>=c, d>=e>=f
-   int a,b,c,d,e,f;
-   int abc_recoupling_case = SortOrbits(a_in,b_in,c_in,a,b,c);
-   int def_recoupling_case = SortOrbits(d_in,e_in,f_in,d,e,f);
-
-   if (d>a or (d==a and e>b) or (d==a and e==b and f>c))
-   {
-      swap(a,d);
-      swap(b,e);
-      swap(c,f);
-      swap(Jab_in,Jde_in);
-      swap(tab_in,tde_in);
-      swap(abc_recoupling_case, def_recoupling_case);
-   }
-
-
-
-   Orbit& oa = modelspace->GetOrbit(a);
-   Orbit& ob = modelspace->GetOrbit(b);
-   Orbit& oc = modelspace->GetOrbit(c);
-   Orbit& od = modelspace->GetOrbit(d);
-   Orbit& oe = modelspace->GetOrbit(e);
-   Orbit& of = modelspace->GetOrbit(f);
-   if (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l > E3max) return 0;
-   if (2*(od.n+oe.n+of.n)+od.l+oe.l+of.l > E3max) return 0;
-
-   double ja = oa.j2*0.5;
-   double jb = ob.j2*0.5;
-   double jc = oc.j2*0.5;
-   double jd = od.j2*0.5;
-   double je = oe.j2*0.5;
-   double jf = of.j2*0.5;
-
-   int Jab_min = abs(ja-jb);
-   int Jde_min = abs(jd-je);
-   int Jab_max = (ja+jb);
-   int Jde_max = (jd+je);
-
-   int tab_min = T2==3 ? 1 : 0;
-   int tab_max = 1;
-   int tde_min = T2==3 ? 1 : 0;
-   int tde_max = 1;
-
-
-//   if (a/2 >= OrbitIndex.size()) cout << "AAAAH!  a = " << a << "  >= " << OrbitIndex.size()<< endl;
-//   if (b/2 >= OrbitIndex.at(a/2).size()) cout << "AAAAH!  b = " << b <<  "  >=  " <<  OrbitIndex.at(a/2).size() << endl;
-//   if (c/2 >= OrbitIndex.at(a/2).at(b/2).size()) cout << "AAAAH!  c = " << c << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).size() << endl;
-//   if (d/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).size()) cout << "AAAAH!  d = " << d << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).size() << endl;
-//   if (e/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).size()) cout << "AAAAH!  e = " << e << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).size() << endl;
-//   if (f/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).size()) cout << "AAAAH!  f = " << f << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).size() << endl;
-
-   auto& indx = OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).at(f/2);
-   if (indx > MatEl.size()) cout << "AAAAHHH indx = " << indx << "  but MatEl.size() = " << MatEl.size() << endl;
-   
-//   cout << "    accessing " << a << " " << b << " " << c << " " << d << " " << e << " " << f << " size = " << vj.size() << endl;
-//   cout << " size = " << vj.size() << endl;
-   // TODO: enforce good isospin by skipping cases with (Jab+Tab)%2==0 for identical orbits. This may or may not be a good idea...
-   double V_out = 0;
-   int J_index = 0;
-   for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
-   {
-     double Cj_abc = RecouplingCoefficient(abc_recoupling_case,ja,jb,jc,Jab_in,Jab,J2);
-     // Pick up a -1 for odd permutations
-     if (abc_recoupling_case>2) Cj_abc *= -1;
-
-     for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
-     {
-       double Cj_def = RecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
-       // Pick up a -1 for odd permutations
-       if (def_recoupling_case>2) Cj_def *= -1;
-
-       int J2_min = max( abs(2*Jab-oc.j2), abs(2*Jde-of.j2));
-       int J2_max = min( 2*Jab+oc.j2, 2*Jde+of.j2);
-       if (J2_min>J2_max) continue;
-       J_index += (J2-J2_min)/2*5;
-
-       if (J2>=J2_min and J2<=J2_max)
-       {
-         for (int tab=tab_min; tab<=tab_max; ++tab)
-         {
-           double Ct_abc = RecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
-           for (int tde=tde_min; tde<=tde_max; ++tde)
-           {
-             double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
-
-             int Tindex = 2*tab + tde + (T2-1)/2;
-
-             MatEl.at(indx + J_index + Tindex) += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
-             V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * MatEl.at(indx + J_index + Tindex);
-
-           }
-         }
-       }
-       J_index += (J2_max-J2+2)/2*5;
-     }
-   }
-   return V_out;
-}
-
-
-
 vector<pair<int,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in) const
 {
 
@@ -324,8 +220,6 @@ vector<pair<int,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_in, int J2, i
       swap(tab_in,tde_in);
       swap(abc_recoupling_case, def_recoupling_case);
    }
-
-
 
    Orbit& oa = modelspace->GetOrbit(a);
    Orbit& ob = modelspace->GetOrbit(b);
@@ -353,21 +247,9 @@ vector<pair<int,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_in, int J2, i
    int tde_min = T2==3 ? 1 : 0;
    int tde_max = 1;
 
-
-//   if (a/2 >= OrbitIndex.size()) cout << "AAAAH!  a = " << a << "  >= " << OrbitIndex.size()<< endl;
-//   if (b/2 >= OrbitIndex.at(a/2).size()) cout << "AAAAH!  b = " << b <<  "  >=  " <<  OrbitIndex.at(a/2).size() << endl;
-//   if (c/2 >= OrbitIndex.at(a/2).at(b/2).size()) cout << "AAAAH!  c = " << c << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).size() << endl;
-//   if (d/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).size()) cout << "AAAAH!  d = " << d << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).size() << endl;
-//   if (e/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).size()) cout << "AAAAH!  e = " << e << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).size() << endl;
-//   if (f/2 >= OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).size()) cout << "AAAAH!  f = " << f << "  >=  " <<  OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).size() << endl;
-
    auto& indx = OrbitIndex.at(a/2).at(b/2).at(c/2).at(d/2).at(e/2).at(f/2);
    if (indx > MatEl.size()) cout << "AAAAHHH indx = " << indx << "  but MatEl.size() = " << MatEl.size() << endl;
    
-//   cout << "    accessing " << a << " " << b << " " << c << " " << d << " " << e << " " << f << " size = " << vj.size() << endl;
-//   cout << " size = " << vj.size() << endl;
-   // TODO: enforce good isospin by skipping cases with (Jab+Tab)%2==0 for identical orbits. This may or may not be a good idea...
-   double V_out = 0;
    int J_index = 0;
    for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
    {
@@ -398,9 +280,6 @@ vector<pair<int,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_in, int J2, i
              int Tindex = 2*tab + tde + (T2-1)/2;
 
              elements.emplace_back( make_pair(indx + J_index + Tindex, Cj_abc * Cj_def * Ct_abc * Ct_def )) ;
-//             MatEl.at(indx + J_index + Tindex) += Cj_abc * Cj_def * Ct_abc * Ct_def * V_in;
-//             V_out += Cj_abc * Cj_def * Ct_abc * Ct_def * MatEl.at(indx + J_index + Tindex);
-
            }
          }
        }
