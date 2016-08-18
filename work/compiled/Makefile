@@ -12,7 +12,7 @@ ifeq ($(DEBUG),on)
 endif
 
 all: exe
-exe: SingleRef ValenceSpace
+exe: Universal
 
 %:	%.cc
 	$(CC) $(INCLUDE) $^ -o $@ $(FLAGS) $(LIBS)
