@@ -283,7 +283,8 @@ void HartreeFock::BuildMonopoleV3()
    {
 
       const array<int,6>& orb = Vmon3[ind].first;
-      double& v         = Vmon3[ind].second;
+//      double& v         = Vmon3[ind].second;
+      double v=0;
       int a = orb[0];
       int c = orb[1];
       int i = orb[2];
@@ -309,7 +310,9 @@ void HartreeFock::BuildMonopoleV3()
            v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
         }
       }
-      v /= (j2i+1);
+      v /= (j2i+1.0);
+      #pragma omp atomic write
+      Vmon3[ind].second = v;
    }
    profiler.timer["HF_BuildMonopoleV3"] += omp_get_wtime() - start_time;
 }
@@ -379,6 +382,7 @@ void HartreeFock::UpdateF()
    if (Hbare.GetParticleRank()>=3) 
    {
 //      # pragma omp parallel for num_threads(2)  // Note that this is risky and not fully thread safe.
+      #pragma omp parallel for schedule(dynamic,1)
       for (size_t ind=0;ind<Vmon3.size(); ++ind)
       {
         const array<int,6>& orb = Vmon3[ind].first;
@@ -390,6 +394,7 @@ void HartreeFock::UpdateF()
         int d = orb[4];
         int j = orb[5];
 
+        #pragma omp atomic
         V3ij(i,j) += rho(a,b) * rho(c,d) * v ;
       }
    }
