@@ -2453,6 +2453,7 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    for (int ich=0; ich<nch; ++ich )
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
+      if ( pandya_lookup.find({ch,ch}) == pandya_lookup.end()) continue;
       if ( pandya_lookup[{ch,ch}][0].size()<1 ) continue;
       TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch);
       index_t nKets_cc = tbc_cc.GetNumberKets();
@@ -3667,6 +3668,11 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
       double t_start2 = omp_get_wtime();
       int ch_bra_cc = ybras[i];
       int ch_ket_cc = ykets[i];
+      if ( pandya_lookup.find({ch_bra_cc,ch_ket_cc}) == pandya_lookup.end() )
+      {
+       profiler.timer["BuildZbarTensor_setup"] += omp_get_wtime() - t_start2;
+       continue;
+      }
       auto& plookup = pandya_lookup[{ch_bra_cc,ch_ket_cc}];
       if ( plookup[0].size()<1 )
       {

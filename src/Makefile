@@ -8,17 +8,16 @@ CC = g++
 INCLUDE   = -I./armadillo
 FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC 
 SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC 
-WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
-FLAGS    += $(WARNFLAGS)
-SOFLAGS  += $(WARNFLAGS)
 INSTDIR = $(HOME)
 
 ifeq ($(DEBUG),on)
- FLAGS     = -march=native -std=c++11 -fopenmp -fPIC   
- SOFLAGS   = -march=native -std=c++11 -fopenmp -fPIC   
- FLAGS += -g
- SOFLAGS += -g
+ FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g 
+ SOFLAGS   = -march=native -std=c++11 -fopenmp -fPIC -g
 endif
+
+WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
+FLAGS    += $(WARNFLAGS)
+SOFLAGS  += $(WARNFLAGS)
 
 PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 
@@ -61,7 +60,7 @@ endif
 
 all: $(ALL)
 
-install:
+install: splashscreen
 	@if [ ! -d $(INSTDIR)/lib ] ; then \
 	  mkdir $(INSTDIR)/lib; \
 	fi
@@ -122,3 +121,23 @@ imsrg++: imsrg++.cc libIMSRG.so Parameters.hh
 
 clean:
 	rm -f *.o *.so boost_src/*.o
+
+
+
+splashscreen:
+	@printf "                                                      ____                                     \n"   
+	@printf "             _________________           ____________/   /\                _________________   \n"   
+	@printf "           /____/_____/_____/|         /____/_____/ /___/  \             /____/_____/_____/|   \n"  
+	@printf "          /____/_____/__G_ /||        /____/_____/ /   /\   \           /____/_____/____ /||   \n"  
+	@printf "         /____/_____/__+__/|||       /____/_____/ / G /  \/  \         /____/_____/_____/|||   \n"  
+	@printf "        |     |     |     ||||      |     |     |/___/   /\   \       |     |     |     ||||   \n"  
+	@printf "        |  I  |  M  |     ||/|      |  I  |  M  /   /\  /  \/  \      |  I  |  M  |     ||/|   \n"  
+	@printf "        |_____|_____|_____|/||      |_____|____/ + /  \/   /\  /      |_____|_____|_____|/||   \n"  
+	@printf "        |     |     |     ||||      |     |   / __/   /\  /  \/       |     |     |     ||||   \n"  
+	@printf "        |  S  |  R  |     ||/|      |  S  |   \   \  /  \/   /        |  S  |  R  |  G  ||/|   \n"  
+	@printf "        |_____|_____|_____|/||      |_____|____\ __\/   /\  /         |_____|_____|_____|/||   \n"  
+	@printf "        |     |     |     ||||      |     |     \   \  /  \/          |     |     |     ||||   \n"  
+	@printf "        |     |  +  |     ||/       |     |  +  |\ __\/   /           |     |  +  |  +  ||/    \n"  
+	@printf "        |_____|_____|_____|/        |_____|_____|/\   \  /            |_____|_____|_____|/     \n"  
+	@printf "                                                   \___\/                                      \n"  
+	@printf "                                                                                               \n"  

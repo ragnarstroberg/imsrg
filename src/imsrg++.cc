@@ -1,10 +1,32 @@
-//////////////////////////////////////////////////////////////////////////
-///  imsrg++ : Interface for performing standard IMSRG calculations.   ///
-///            Usage is imsrg++  option1=value1 option2=value2 ...     ///
-///            To get a list of options, type imsrg++ help             ///
-///                                                                    ///
-///                                             - Ragnar Stroberg 2016 ///
-//////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///                                                                                               /// 
+///                                                  ____                                         ///
+///         _________________           ____________/   /\                _________________       ///
+///       /____/_____/_____/|         /____/_____/ /___/  \             /____/_____/_____/|       ///
+///      /____/_____/__G_ /||        /____/_____/ /   /\   \           /____/_____/____ /||       ///
+///     /____/_____/__+__/|||       /____/_____/ / G /  \/  \         /____/_____/_____/|||       ///
+///    |     |     |     ||||      |     |     |/___/   /\   \       |     |     |     ||||       ///
+///    |  I  |  M  |     ||/|      |  I  |  M  /   /\  /  \/  \      |  I  |  M  |     ||/|       ///
+///    |_____|_____|_____|/||      |_____|____/ + /  \/   /\  /      |_____|_____|_____|/||       ///        
+///    |     |     |     ||||      |     |   / __/   /\  /  \/       |     |     |     ||||       ///
+///    |  S  |  R  |     ||/|      |  S  |   \   \  /  \/   /        |  S  |  R  |  G  ||/|       ///
+///    |_____|_____|_____|/||      |_____|____\ __\/   /\  /         |_____|_____|_____|/||       ///
+///    |     |     |     ||||      |     |     \   \  /  \/          |     |     |     ||||       ///
+///    |     |  +  |     ||/       |     |  +  |\ __\/   /           |     |  +  |  +  ||/        ///
+///    |_____|_____|_____|/        |_____|_____|/\   \  /            |_____|_____|_____|/         ///       
+///                                               \___\/                                          ///        
+///                                                                                               ///        
+///                                                                                               ///
+///           imsrg++ : Interface for performing standard IMSRG calculations.                     ///
+///                     Usage is imsrg++  option1=value1 option2=value2 ...                       ///
+///                     To get a list of options, type imsrg++ help                               ///
+///                                                                                               ///
+///                                                      - Ragnar Stroberg 2016                   ///
+///                                                                                               ///
+///                                                                                               ///
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <stdlib.h>
 #include <iostream>
@@ -26,6 +48,7 @@ int main(int argc, char** argv)
   string input3bme = parameters.s("3bme");
   string reference = parameters.s("reference");
   string valence_space = parameters.s("valence_space");
+  string custom_valence_space = parameters.s("custom_valence_space");
   string basis = parameters.s("basis");
   string method = parameters.s("method");
   string flowfile = parameters.s("flowfile");
@@ -93,7 +116,23 @@ int main(int argc, char** argv)
   ReadWrite rw;
   rw.SetLECs_preset(LECs);
   rw.SetScratchDir(scratch);
-  ModelSpace modelspace = reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space);
+
+//  ModelSpace modelspace;
+
+  if (custom_valence_space!="") // if a custom space is defined, the input valence_space is just used as a name
+  {
+    if (valence_space=="") // if no name is given, then just name it "custom"
+    {
+      parameters.string_par["valence_space"] = "custom";
+      flowfile = parameters.DefaultFlowFile();
+      intfile = parameters.DefaultIntFile();
+    }
+    valence_space = custom_valence_space;
+  }
+
+
+  ModelSpace modelspace = ( reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space) );
+
   if (occ_file != "none" and occ_file != "" )
   {
     modelspace.Init_occ_from_file(eMax,valence_space,occ_file);
@@ -115,11 +154,7 @@ int main(int argc, char** argv)
   Operator Hbare = Operator(modelspace,0,0,0,particle_rank);
   Hbare.SetHermitian();
 
-  if (use_brueckner_bch == "true" or use_brueckner_bch == "True")
-  {
-    Hbare.SetUseBruecknerBCH(true);
-    cout << "Using Brueckner flavor of BCH" << endl;
-  }
+
 
   cout << "Reading interactions..." << endl;
 
@@ -152,7 +187,9 @@ int main(int argc, char** argv)
     Hbare += BetaCM * HCM_Op(modelspace);
   }
 
+  cout << "Creating HF" << endl;
   HartreeFock hf(Hbare);
+  cout << "Solving" << endl;
   hf.Solve();
   cout << "EHF = " << hf.EHF << endl;
   
@@ -233,6 +270,18 @@ int main(int argc, char** argv)
   {
     omega_norm_max=500;
     method = "magnus";
+  }
+  if (method == "brueckner")
+  {
+    use_brueckner_bch = "true";
+    omega_norm_max=500;
+    method = "magnus";   
+  }
+
+  if (use_brueckner_bch == "true" or use_brueckner_bch == "True")
+  {
+    Hbare.SetUseBruecknerBCH(true);
+    cout << "Using Brueckner flavor of BCH" << endl;
   }
 
   imsrgsolver.SetMethod(method);

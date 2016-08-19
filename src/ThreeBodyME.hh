@@ -1,9 +1,8 @@
 #ifndef ThreeBodyME_h
 #define ThreeBodyME_h 1
 
-#include <fstream>
 #include "ModelSpace.hh"
-#include "IMSRGProfiler.hh"
+#include <fstream>
 
 //typedef double ThreeBME_type;
 typedef float ThreeBME_type;
@@ -25,34 +24,31 @@ class ThreeBodyME
   vector<vector<vector<vector<vector<vector<size_t>>>>>> OrbitIndex; //
   int E3max;
   size_t total_dimension;
-  IMSRGProfiler profiler;
-  vector<index_t> InternalToDarmstadt;
-  vector<index_t> DarmstadtToInternal;
-
-
   
   ~ThreeBodyME();
   ThreeBodyME();
   ThreeBodyME(ModelSpace*);
   ThreeBodyME(ModelSpace* ms, int e3max);
 
-  void RemapOrbits();
   void Allocate();
 
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};
 
 //// Three body setter getters
+  vector<pair<int,double>> AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
   ThreeBME_type AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
   void   SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
-  ThreeBME_type GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
-  ThreeBME_type GetME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
+  ThreeBME_type GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
+//  ThreeBME_type GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
+//  ThreeBME_type GetME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
+  ThreeBME_type GetME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n) const;
 
 ///// Some other three body methods
 
-  int SortOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c);
-  double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J);
-  void SetE3max(int e){E3max = e;};
-  int GetE3max(){return E3max;};
+  int SortOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c) const;
+  double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const;
+  void SetE3max(int e) {E3max = e;};
+  int GetE3max()const {return E3max;};
 
   void Erase(); // set all three-body terms to zero
   void Deallocate();
