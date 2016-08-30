@@ -185,6 +185,8 @@ int main(int argc, char** argv)
     ref = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5"};
   else if (reference == "Si34")
     ref = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","n0d3","n1s1"};
+  else if (reference == "S32")
+    ref = {"p0s1","n0s1","p0p3","n0p3","p0p1","n0p1","p0d5","n0d5","p1s1","n1s1"};
   else if (reference == "C12")
     ref = {"p0s1","n0s1","p0p3","n0p3"};
   else if (reference == "Ca40")

@@ -188,6 +188,7 @@ class ModelSpace
    vector<index_t> String2Index( vector<string> vs );
    string Index2String(index_t ind);
    void Get0hwSpace(int Aref, int Zref, vector<index_t>& core_list, vector<index_t>& valence_list);
+   void ParseCommaSeparatedValenceSpace(string valence, vector<index_t>& core_list, vector<index_t>& valence_list);
 
    void SetupKets();
    void AddOrbit(Orbit orb);
