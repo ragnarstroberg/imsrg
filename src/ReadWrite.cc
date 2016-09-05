@@ -1004,6 +1004,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                        if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
                           and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max) )
                        {
+                         #pragma omp atomic
                          ++nkept;
                        }
 

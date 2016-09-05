@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <map>
 #include <armadillo>
+#include "IMSRGProfiler.hh"
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
 #endif
@@ -187,6 +188,7 @@ class ModelSpace
    vector<index_t> String2Index( vector<string> vs );
    string Index2String(index_t ind);
    void Get0hwSpace(int Aref, int Zref, vector<index_t>& core_list, vector<index_t>& valence_list);
+   void ParseCommaSeparatedValenceSpace(string valence, vector<index_t>& core_list, vector<index_t>& valence_list);
 
    void SetupKets();
    void AddOrbit(Orbit orb);
@@ -246,7 +248,8 @@ class ModelSpace
    void PreCalculateMoshinsky();
    void ClearVectors();
    void CalculatePandyaLookup(int rank_J, int rank_T, int parity); // construct a lookup table for more efficient pandya transformation
-   map<array<int,2>,vector<array<int,2>>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
+//   map<array<int,2>,vector<array<int,2>>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
+   map<array<int,2>,array<vector<int>,2>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
 
 
    // Data members
@@ -290,7 +293,7 @@ class ModelSpace
    vector<unsigned int> SortedTwoBodyChannels_CC;
 
    static map<string,vector<string>> ValenceSpaces;
-   map< array<int,3>, map< array<int,2>,vector<array<int,2>> > > PandyaLookup;
+//   map< array<int,3>, map< array<int,2>,vector<array<int,2>> > > PandyaLookup;
 
 
 // private:
@@ -306,7 +309,9 @@ class ModelSpace
    vector<Ket> Kets;
    vector<TwoBodyChannel> TwoBodyChannels;
    vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
+   map< array<int,3>, map< array<int,2>,array<vector<int>,2> > > PandyaLookup;
    bool moshinsky_has_been_precalculated;
+   IMSRGProfiler profiler;
 //   map<long int,double> SixJList;
 
    static unordered_map<unsigned long int,double> SixJList;

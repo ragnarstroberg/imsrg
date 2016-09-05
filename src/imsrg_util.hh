@@ -71,6 +71,8 @@ namespace imsrg_util
  void Embed1BodyIn2Body(Operator& op1, int A);
  double GetEmbeddedTBME(Operator& op1, index_t i, index_t j, index_t k, index_t l, int Jbra,int Jket, int Lambda);
 
+ double FrequencyConversionCoeff(int n1, int l1, double hw1, int n2, int l2, double hw2);
+
  void CommutatorTest(Operator& X, Operator& Y);
  void Reduce(Operator&);
  void UnReduce(Operator&);

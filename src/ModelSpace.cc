@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <sstream>
+#include "omp.h"
 
 
 using namespace std;
@@ -286,6 +287,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    nTwoBodyChannels(ms.nTwoBodyChannels),
    Orbits(ms.Orbits), Kets(ms.Kets),
    TwoBodyChannels(ms.TwoBodyChannels), TwoBodyChannels_CC(ms.TwoBodyChannels_CC),
+   PandyaLookup(ms.PandyaLookup),
    moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated)
 {
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
@@ -317,6 +319,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    nTwoBodyChannels(ms.nTwoBodyChannels),
    Orbits(move(ms.Orbits)), Kets(move(ms.Kets)),
    TwoBodyChannels(move(ms.TwoBodyChannels)), TwoBodyChannels_CC(move(ms.TwoBodyChannels_CC)),
+   PandyaLookup(ms.PandyaLookup),
    moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated)
 {
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
@@ -378,29 +381,31 @@ void ModelSpace::Init(int emax, map<index_t,double> hole_list, string valence)
 {
   int Ac,Zc;
   vector<index_t> valence_list, core_list;
-//  map<index_t,double> core_map;
 
   if (valence == "0hw-shell")
   {
     Get0hwSpace(Aref,Zref,core_list,valence_list);
   }
-  else
+  else if ( valence.find(",")!=string::npos ) // interpet as a comma-separated list of core followed by valence orbits
+  {
+    ParseCommaSeparatedValenceSpace(valence,core_list,valence_list);
+  }
+  else // check if it's one of the pre-defined spaces
   {
     auto itval = ValenceSpaces.find(valence);
+    string core_string;
   
     if ( itval != ValenceSpaces.end() ) // we've got a valence space
     {
-       string core_string = itval->second[0];
-       GetAZfromString(core_string,Ac,Zc);
+       core_string = itval->second[0];
        valence_list = String2Index(vector<string>(itval->second.begin()+1,itval->second.end()));
     }
     else  // no valence space. we've got a single-reference.
     {
-       GetAZfromString(valence,Ac,Zc);
+       core_string = valence;
     }
   
-    //core_map = GetOrbitsAZ(Ac,Zc);
-    //for (auto& it_core : core_map) core_list.push_back(it_core.first);
+    GetAZfromString(core_string,Ac,Zc);
     for (auto& it_core : GetOrbitsAZ(Ac,Zc) ) core_list.push_back(it_core.first);
   }
 
@@ -641,6 +646,29 @@ void ModelSpace::Get0hwSpace(int Aref, int Zref, vector<index_t>& core_list, vec
     }
   }
 
+}
+
+
+// Parse a string containing a comma-separated list of core + valence orbits
+// eg, the usual sd shell would look like "O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1".
+// The number of ways to specify a model space is getting a bit out of hand...
+void ModelSpace::ParseCommaSeparatedValenceSpace(string valence, vector<index_t>& core_list, vector<index_t>& valence_list)
+{
+  istringstream ss(valence);
+  string orbit_string,core_string;
+  getline(ss, core_string, ',');
+
+  int Ac,Zc;
+  GetAZfromString(core_string,Ac,Zc);
+  for (auto& it_core : GetOrbitsAZ(Ac,Zc) )
+  {
+    core_list.push_back(it_core.first);
+  }
+
+  while(getline(ss, orbit_string, ','))
+  {
+    valence_list.push_back( String2Index({orbit_string})[0]);
+  }
 }
 
 
@@ -1152,7 +1180,8 @@ double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double 
 }
 
 
-map<array<int,2>,vector<array<int,2>>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
+//map<array<int,2>,vector<array<int,2>>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
+map<array<int,2>,array<vector<int>,2>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
 {
    CalculatePandyaLookup(rank_J,rank_T,parity);
    return PandyaLookup[{rank_J,rank_T,parity}];
@@ -1165,11 +1194,24 @@ map<array<int,2>,vector<array<int,2>>>& ModelSpace::GetPandyaLookup(int rank_J, 
 void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
 {
    if (PandyaLookup.find({rank_J, rank_T, parity})!=PandyaLookup.end()) return; 
-   PandyaLookup[{rank_J,rank_T,parity}] = map<array<int,2>,vector<array<int,2>>>();
+   cout << "CalculatePandyaLookup( " << rank_J << ", " << rank_T << ", " << parity << ") " << endl;
+   double t_start = omp_get_wtime();
+//   PandyaLookup[{rank_J,rank_T,parity}] = map<array<int,2>,vector<array<int,2>>>();
+   PandyaLookup[{rank_J,rank_T,parity}] = map<array<int,2>,array<vector<int>,2>>();
    auto& lookup = PandyaLookup[{rank_J,rank_T,parity}];
 
    int ntbc    = TwoBodyChannels.size();
    int ntbc_cc = TwoBodyChannels_CC.size();
+   for (int ch_bra_cc = 0; ch_bra_cc<ntbc_cc; ++ch_bra_cc)
+   {
+     for (int ch_ket_cc = ch_bra_cc; ch_ket_cc<ntbc_cc; ++ch_ket_cc)
+     {
+//       lookup[{ch_bra_cc,ch_ket_cc}] = vector<array<int,2>>();
+       lookup[{ch_bra_cc,ch_ket_cc}] = array<vector<int>,2>(); 
+     }
+   }
+
+   #pragma omp parallel for schedule(dynamic,1)
    for (int ch_bra_cc = 0; ch_bra_cc<ntbc_cc; ++ch_bra_cc)
    {
      TwoBodyChannel_CC& tbc_bra_cc = TwoBodyChannels_CC[ch_bra_cc];
@@ -1177,7 +1219,9 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
      for (int ch_ket_cc = ch_bra_cc; ch_ket_cc<ntbc_cc; ++ch_ket_cc)
      {
        TwoBodyChannel_CC& tbc_ket_cc = TwoBodyChannels_CC[ch_ket_cc];
-       lookup[{ch_bra_cc,ch_ket_cc}] = vector<array<int,2>>();
+//       lookup[{ch_bra_cc,ch_ket_cc}] = vector<array<int,2>>();
+       vector<int>& bra_list = lookup[{ch_bra_cc,ch_ket_cc}][0];
+       vector<int>& ket_list = lookup[{ch_bra_cc,ch_ket_cc}][1];
        int twoJ_ket_cc = 2*tbc_ket_cc.J;
        for (int ch_bra=0; ch_bra<ntbc; ++ch_bra)
        {
@@ -1245,12 +1289,15 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
            }
            if (need_it)
            {
-             lookup[{ch_bra_cc,ch_ket_cc}].push_back({ch_bra,ch_ket});
+//             lookup[{ch_bra_cc,ch_ket_cc}].push_back({ch_bra,ch_ket});
+             bra_list.push_back(ch_bra);
+             ket_list.push_back(ch_ket);
            }
          }
        }
      }
    }
+   profiler.timer["CalculatePandyaLookup"] += omp_get_wtime() - t_start;
 }
 
 

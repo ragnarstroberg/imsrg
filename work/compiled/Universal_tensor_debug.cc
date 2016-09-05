@@ -99,9 +99,15 @@ int main(int argc, char** argv)
   Hbare.SetHermitian();
 
   Operator omegaNathan = Hbare;
+  Operator RandomTensor(modelspace,2,0,0,2);
   omegaNathan.SetAntiHermitian();
   cout << "Reading in Nathan's omega" << endl;
-  rw.ReadOperator_Nathan("omega_1b.dat","omega_2b_FULL.dat",omegaNathan);
+  rw.ReadOperator_Nathan("omega_1b.dat","omega_2b.dat",omegaNathan);
+//  rw.ReadOperator_Nathan("input/RANDOM_OMEGA_1b_eMax4.dat","input/RANDOM_OMEGA_2b_eMax4.dat",omegaNathan);
+//  rw.ReadTensorOperator_Nathan("input/RANDOM_TENSOR_1b_eMax2.dat","input/RANDOM_TENSOR_2b_eMax2.dat",RandomTensor);
+//  rw.ReadTensorOperator_Nathan("input/RANDOM_TENSOR_1b_eMax4.dat","input/RANDOM_TENSOR_2b_eMax4.dat",RandomTensor);
+//  rw.ReadTensorOperator_Nathan("input/RANDOM_1b_eMax4.dat","input/RANDOM_2b_eMax4.dat",RandomTensor);
+//  omegaNathan *= 0.01;
 
   cout << "Reading interactions..." << endl;
 
@@ -291,25 +297,85 @@ int main(int argc, char** argv)
 
 //  rw.WriteOperatorHuman(Comm121,"comm121_omega_nathan.op");
 //  rw.WriteOperatorHuman(Comm122,"comm122_omega_nathan.op");
+
+
+
   Operator OneComm(modelspace,2,0,0,2);
   Operator TwoComm(modelspace,2,0,0,2);
   Operator Nested122(modelspace,2,0,0,2);
   Operator Nested222pp(modelspace,2,0,0,2);
+  Operator Nested121(modelspace,2,0,0,2);
+  Operator Nested111(modelspace,2,0,0,2);
   Operator Nested222ph(modelspace,2,0,0,2);
+  cout << "One Comm" << endl;
+//  OneComm.SetToCommutator(omegaNathan,RandomTensor);
   OneComm.SetToCommutator(omegaNathan,ops[0]);
   rw.WriteOperatorHuman(OneComm,"One_comm_omega_nathan.op");
+  cout << "Nested122st" << endl;
   Nested122.comm122st(omegaNathan,OneComm);
   rw.WriteOperatorHuman(Nested122,"Nested122_omega_nathan.op");
+  cout << "Nested222_pp_hh_221st" << endl;
   Nested222pp.comm222_pp_hh_221st(omegaNathan,OneComm);
   rw.WriteOperatorHuman(Nested222pp,"Nested222pp_omega_nathan.op");
+  cout << "Nested222ph" << endl;
   Nested222ph.comm222_phst(omegaNathan,OneComm);
   rw.WriteOperatorHuman(Nested222ph,"Nested222ph_omega_nathan.op");
+  cout << "Nested121" << endl;
+  Nested121.comm121st(omegaNathan,OneComm);
+  rw.WriteOperatorHuman(Nested121,"Nested121_omega_nathan.op");
+  cout << "Nested111" << endl;
+  Nested111.comm111st(omegaNathan,OneComm);
+  rw.WriteOperatorHuman(Nested111,"Nested111_omega_nathan.op");
+  cout << "TwoComm" << endl;
   TwoComm.SetToCommutator(omegaNathan,OneComm);
   rw.WriteOperatorHuman(TwoComm,"Two_comm_omega_nathan.op");
-
+//  TwoComm /= 2;
+//  rw.WriteOperatorHuman(TwoComm,"Two_comm_divide2_omega_nathan.op");
   ops[0] = ops[0].BCH_Transform(omegaNathan);
   rw.WriteOperatorHuman(ops[0],"E2_full_omega_nathan.op");
 
+
+
+/*
+
+  Operator OneComm(modelspace,2,0,0,2);
+  Operator TwoComm(modelspace,2,0,0,2);
+  Operator Random122(modelspace,2,0,0,2);
+  Operator Random222pp(modelspace,2,0,0,2);
+  Operator Random121(modelspace,2,0,0,2);
+  Operator Random111(modelspace,2,0,0,2);
+  Operator Random222ph(modelspace,2,0,0,2);
+  cout << "One Comm" << endl;
+  OneComm.SetToCommutator(omegaNathan,RandomTensor);
+  rw.WriteOperatorHuman(OneComm,"One_comm_omega_nathan_e4.op");
+  cout << "Random122st" << endl;
+  Random122.comm122st(omegaNathan,RandomTensor);
+  rw.WriteOperatorHuman(Random122,"Random122_omega_nathan_e4.op");
+  cout << "Random222_pp_hh_221st" << endl;
+  Random222pp.comm222_pp_hh_221st(omegaNathan,RandomTensor);
+  rw.WriteOperatorHuman(Random222pp,"Random222pp_omega_nathan_e4.op");
+  cout << "Random222ph" << endl;
+  Random222ph.comm222_phst(omegaNathan,RandomTensor);
+  rw.WriteOperatorHuman(Random222ph,"Random222ph_omega_nathan_e4.op");
+  cout << "Random121" << endl;
+  Random121.comm121st(omegaNathan,RandomTensor);
+  rw.WriteOperatorHuman(Random121,"Random121_omega_nathan_e4.op");
+  cout << "Random111" << endl;
+  Random111.comm111st(omegaNathan,RandomTensor);
+  rw.WriteOperatorHuman(Random111,"Random111_omega_nathan_e4.op");
+  cout << "TwoComm" << endl;
+  TwoComm.SetToCommutator(omegaNathan,OneComm);
+  rw.WriteOperatorHuman(TwoComm,"Two_comm_omega_nathan_e4.op");
+
+  TwoComm = RandomTensor.BCH_Transform(omegaNathan);
+  rw.WriteOperatorHuman(TwoComm,"Random_decoupled_omega_nathan_e4.op");
+
+  Hbare = hf.GetNormalOrderedH();
+  Hbare = Hbare.BCH_Transform(omegaNathan);
+  rw.WriteOperatorHuman(Hbare, "H_decoupled_Nathan_e4.op");
+  ops[0] = ops[0].BCH_Transform(omegaNathan);
+  rw.WriteOperatorHuman(ops[0],"E2_full_omega_nathan_e4.op");
+*/
  
 
 //  CommutatorTest(omegaNathan,Hbare);
@@ -345,18 +411,18 @@ int main(int argc, char** argv)
   imsrgsolver.SetODETolerance(ode_tolerance);
 
 
-  Operator Comm1(modelspace,0,0,0,2);
-  Operator Comm2(modelspace,0,0,0,2);
-  Operator trel = Trel_Op(modelspace);
-  Operator eta(imsrgsolver.GetEta() );
-  imsrgsolver.GetGenerator().Update(&Hbare,&eta);
-  CommutatorTest(eta,Hbare);
-  cout << "Now with trel..." << endl;
-  CommutatorTest(trel,Hbare);
-  Comm1.comm222_phss(eta, Hbare);
-  Comm2.comm222_pp_hh_221ss(eta, Hbare);
-  rw.WriteOperatorHuman(Comm1,"comm222phss.op");
-  rw.WriteOperatorHuman(Comm2,"comm222pp_hh_221ss.op");
+//   Operator Comm1(modelspace,0,0,0,2);
+//   Operator Comm2(modelspace,0,0,0,2);
+//   Operator trel = Trel_Op(modelspace);
+//   Operator eta(imsrgsolver.GetEta() );
+//   imsrgsolver.GetGenerator().Update(&Hbare,&eta);
+//   CommutatorTest(eta,Hbare);
+//   cout << "Now with trel..." << endl;
+//   CommutatorTest(trel,Hbare);
+//   Comm1.comm222_phss(eta, Hbare);
+//   Comm2.comm222_pp_hh_221ss(eta, Hbare);
+//   rw.WriteOperatorHuman(Comm1,"comm222phss.op");
+//   rw.WriteOperatorHuman(Comm2,"comm222pp_hh_221ss.op");
 
   if (denominator_delta_orbit != "none")
     imsrgsolver.SetDenominatorDeltaOrbit(denominator_delta_orbit);
@@ -406,7 +472,7 @@ int main(int argc, char** argv)
     {
       for (auto c : modelspace.core)
       {
-         if ( (modelspace.holes.find(c) == modelspace.holes.end()) or (abs(1-modelspace.holes[c])>1e-6))
+         if ( (find(modelspace.holes.begin(),modelspace.holes.end(),c) == modelspace.holes.end()) or (abs(1-modelspace.holes[c])>1e-6))
          {
            renormal_order = true;
            break;

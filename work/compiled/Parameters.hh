@@ -20,12 +20,14 @@ class Parameters
   Parameters(){};
   Parameters(int, char**);
   void ParseCommandLineArgs(int, char**);
+  void PrintOptions();
   string s(string);
   double d(string);
   int i(string);
   vector<string> v(string);
   string DefaultFlowFile();
   string DefaultIntFile();
+  bool help_mode;
 };
 
 map<string,string> Parameters::string_par = {
@@ -33,24 +35,25 @@ map<string,string> Parameters::string_par = {
   {"3bme",			"none"},
   {"core_generator",		"atan"},	// generator used for core part of 2-step decoupling
   {"valence_generator",		"shell-model-atan"},	// generator used for valence decoupling and 1-step (also single-ref)
-  {"flowfile",			"default"},
-  {"intfile",			"default"},
+  {"flowfile",			"default"},  // name of output flow file
+  {"intfile",			"default"},  // name of output interaction fille
   {"fmt2",			"me2j"},	 // can also be navratil or Navratil to read Petr's TBME format
   {"reference",			"default"},	// nucleus used for HF and normal ordering.
   {"valence_space",		"O16"},	// either valence space or nucleus for single reference
   {"basis",			"HF"},	 // use HF basis or oscillator basis. HF is better.
   {"method",			"magnus"},	// can be magnus or flow or a few other things
   {"denominator_delta_orbit",	"none"},	// pick specific orbit to apply the delta
-  {"LECs",			"EM2.0_2.0"},
+  {"LECs",			"EM2.0_2.0"}, // low energy constants for the interaction, only used with Johannes' hdf5 file format
   {"scratch",			""},    // scratch directory for writing operators in binary format
   {"use_brueckner_bch",          "false"}, // switch to Brueckner version of BCH
   {"valence_file_format",       "nushellx"}, // file format for valence space interaction
+  {"occ_file",			"none"}, // name of file containing orbit occupations
 };
 
 
 map<string,double> Parameters::double_par = {
   {"hw",		20.0},
-  {"smax",		20.0},	// maximum s. If we reach this,	terminate even if we're not converged.
+  {"smax",		200.0},	// maximum s. If we reach this,	terminate even if we're not converged.
   {"dsmax",		0.5},	// maximum step size
   {"ds_0",		0.5},	// initial step size
   {"domega",		0.5},	// max for norm of eta * ds
@@ -83,6 +86,7 @@ map<string,vector<string>> Parameters::vec_par = {
 
 Parameters::Parameters(int argc, char** argv)
 {
+  help_mode = false;
   ParseCommandLineArgs(argc, argv);
 } 
 
@@ -91,6 +95,14 @@ void Parameters::ParseCommandLineArgs(int argc, char** argv)
   for (int iarg=1; iarg<argc; ++iarg)
   {
     string arg = argv[iarg];
+    if (arg=="help" or arg=="-help" or arg=="--help")
+    {
+       cout << "\nUsage:\n\timsrg++ option1=variable1 option2=variable2...\n" << endl;
+       cout << "At minimum, the 2bme file is required.\n" << endl;
+       PrintOptions();
+       help_mode = true;
+       return;
+    }
     size_t pos = arg.find("=");
     string var = arg.substr(0,pos);
     string val = arg.substr(pos+1);
@@ -163,6 +175,30 @@ string Parameters::DefaultIntFile()
   char strbuf[200];
   sprintf(strbuf, "output/%s_%s_%s_hw%.0f_e%d_A%d",string_par["method"].c_str(),string_par["reference"].c_str(),string_par["valence_space"].c_str(),double_par["hw"],int_par["emax"],int_par["A"]);
   return string(strbuf);
+}
+
+void Parameters::PrintOptions()
+{
+  cout << "Input parameters and default values: " << endl;
+  for (auto& strpar : string_par)
+  {
+    cout << "\t" << left << setw(30) << strpar.first << ":  " << strpar.second << endl;
+  }
+  for (auto& doublepar : double_par)
+  {
+    cout <<  "\t" << left << setw(30) <<doublepar.first << ":  " << doublepar.second << endl;
+  }
+  for (auto& intpar : int_par)
+  {
+    cout <<  "\t" << left << setw(30) <<intpar.first << ":  " << intpar.second << endl;
+  }
+  for (auto& vecpar : vec_par)
+  {
+    cout <<  "\t" << left << setw(30) << vecpar.first << ":  ";
+    for (auto& op : vecpar.second) cout << op << ",";
+    cout << endl;
+  }
+
 }
 
 
