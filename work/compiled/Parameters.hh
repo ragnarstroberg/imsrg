@@ -58,6 +58,7 @@ map<string,double> Parameters::double_par = {
   {"ode_tolerance",	1e-6},	// error tolerance for the ode solver
   {"denominator_delta",	0},	// offset added to the denominator in the generator
   {"BetaCM",0}, // Prefactor for Lawson-Glockner term
+  {"eta_criterion",1e-6}, // Termination criterion for ||eta|| in IMSRGSolver
 
 };
 
