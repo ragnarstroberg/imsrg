@@ -1934,12 +1934,12 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode
    intfile << "! e1max: " << modelspace->GetEmax() << "  e2max: " << modelspace->GetE2max() << "   e3max: " << modelspace->GetE3max() << "   hw: " << modelspace->GetHbarOmega();
    intfile << "   Aref: " << Aref << "  Zref: " << Zref << "  A_for_kinetic_energy: " << modelspace->GetTargetMass() << endl;
    intfile << "! Zero body term: " << op.ZeroBody << endl;
-   intfile << "! Index   n l j tz" << endl;
+   intfile << "! Index  n  l   j   tz" << endl;
 
    for ( auto& it : nushell2orb )
    {
       Orbit& oi = modelspace->GetOrbit(it.second);
-      intfile << "!  " << it.first << "   " << oi.n << " " << oi.l << " " << oi.j2 << "/2" << " " << oi.tz2 << "/2" << endl;
+      intfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2 << "/2" << " " << setw(2) << oi.tz2 << "/2" << endl;
    }
    intfile << "!" << endl;
    intfile << "-999  ";

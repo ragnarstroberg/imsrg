@@ -195,10 +195,7 @@ int main(int argc, char** argv)
     HNO = hf.GetNormalOrderedH();
   else if (basis == "oscillator")
     HNO = Hbare.DoNormalOrdering();
-//  if (basis == "HF" and method !="HF")
-//    Hbare = hf.GetNormalOrderedH();
-//  else if (basis == "oscillator")
-//    Hbare = Hbare.DoNormalOrdering();
+
 
   int n_radial_points = 40;
   double Rmax = 10.0;
@@ -218,21 +215,18 @@ int main(int argc, char** argv)
 
   HNO -= BetaCM * 1.5*hw;
   cout << "Hbare 0b = " << HNO.ZeroBody << endl;
-//  Hbare -= BetaCM * 1.5*hw;
-//  cout << "Hbare 0b = " << Hbare.ZeroBody << endl;
 
   if (method != "HF")
   {
     cout << "Perturbative estimates of gs energy:" << endl;
     double EMP2 = HNO.GetMP2_Energy();
-//    double EMP2 = Hbare.GetMP2_Energy();
     cout << "EMP2 = " << EMP2 << endl; 
     double EMP3 = HNO.GetMP3_Energy();
-//    double EMP3 = Hbare.GetMP3_Energy();
     cout << "EMP3 = " << EMP3 << endl; 
-//    cout << "To 3rd order, E = " << Hbare.ZeroBody+EMP2+EMP3 << endl;
     cout << "To 3rd order, E = " << HNO.ZeroBody+EMP2+EMP3 << endl;
   }
+
+
 
   // Calculate all the desired operators
   for (auto& opname : opnames)
@@ -246,7 +240,6 @@ int main(int argc, char** argv)
      op = op.DoNormalOrdering();
      if (method == "MP3")
      {
-//       double dop = op.MP1_Eval( Hbare );
        double dop = op.MP1_Eval( HNO );
        cout << "Operator 1st order correction  " << dop << "  ->  " << op.ZeroBody + dop << endl;
      }
@@ -267,13 +260,33 @@ int main(int argc, char** argv)
   
   if ( method == "HF" or method == "MP3")
   {
-//    Hbare.PrintTimes();
+    HNO.PrintTimes();
+    return 0;
+  }
+
+
+  if (method == "FCI")
+  {
+    rw.WriteNuShellX_int(HNO,intfile+".int");
+    rw.WriteNuShellX_sps(HNO,intfile+".sp");
+
+    for (index_t i=0;i<ops.size();++i)
+    {
+      if ((ops[i].GetJRank()+ops[i].GetTRank()+ops[i].GetParity())<1)
+      {
+        rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
+      }
+      else
+      {
+        rw.WriteTensorOneBody(intfile+opnames[i]+"_1b.op",ops[i],opnames[i]);
+        rw.WriteTensorTwoBody(intfile+opnames[i]+"_2b.op",ops[i],opnames[i]);
+      }
+    }
     HNO.PrintTimes();
     return 0;
   }
 
   IMSRGSolver imsrgsolver(HNO);
-//  IMSRGSolver imsrgsolver(Hbare);
   imsrgsolver.SetReadWrite(rw);
   bool brueckner_restart = false;
   
