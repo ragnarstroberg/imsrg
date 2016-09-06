@@ -195,6 +195,8 @@ int main(int argc, char** argv)
   else if (basis == "oscillator")
     Hbare = Hbare.DoNormalOrdering();
 
+
+
   int n_radial_points = 40;
   double Rmax = 10.0;
   vector<index_t> spwf_indices = modelspace.String2Index(spwf);
@@ -223,6 +225,8 @@ int main(int argc, char** argv)
     cout << "EMP3 = " << EMP3 << endl; 
     cout << "To 3rd order, E = " << Hbare.ZeroBody+EMP2+EMP3 << endl;
   }
+
+
 
   // Calculate all the desired operators
   for (auto& opname : opnames)
@@ -259,6 +263,29 @@ int main(int argc, char** argv)
     Hbare.PrintTimes();
     return 0;
   }
+
+
+  if (method == "FCI")
+  {
+    rw.WriteNuShellX_int(Hbare,intfile+".int");
+    rw.WriteNuShellX_sps(Hbare,intfile+".sp");
+
+    for (index_t i=0;i<ops.size();++i)
+    {
+      if ((ops[i].GetJRank()+ops[i].GetTRank()+ops[i].GetParity())<1)
+      {
+        rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
+      }
+      else
+      {
+        rw.WriteTensorOneBody(intfile+opnames[i]+"_1b.op",ops[i],opnames[i]);
+        rw.WriteTensorTwoBody(intfile+opnames[i]+"_2b.op",ops[i],opnames[i]);
+      }
+    }
+    Hbare.PrintTimes();
+    return 0;
+  }
+
 
   IMSRGSolver imsrgsolver(Hbare);
   imsrgsolver.SetReadWrite(rw);

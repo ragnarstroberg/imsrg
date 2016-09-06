@@ -390,6 +390,11 @@ void ModelSpace::Init(int emax, map<index_t,double> hole_list, string valence)
   {
     ParseCommaSeparatedValenceSpace(valence,core_list,valence_list);
   }
+  else if ( valence.find("FCI")!=string::npos ) // FCI space, so no core, all orbits are valence.
+  {
+    index_t num_orbits = (emax+1)*(emax+2);
+    for (index_t i=0;i<num_orbits;++i) valence_list.push_back( i );
+  }
   else // check if it's one of the pre-defined spaces
   {
     auto itval = ValenceSpaces.find(valence);
