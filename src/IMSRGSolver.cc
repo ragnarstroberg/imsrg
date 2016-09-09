@@ -667,7 +667,8 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << H_s.OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << H_s.TwoBodyNorm()
 //        << setw(fwidth) << setprecision(fprecision) << Omega.Norm()
-        << setw(fwidth) << setprecision(fprecision) << Omega.back().Norm()
+        << setw(fwidth) << setprecision(fprecision) << Omega.back().OneBodyNorm()
+        << setw(fwidth) << setprecision(fprecision) << Omega.back().TwoBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << Eta.OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << Eta.TwoBodyNorm()
         << setw(7)      << setprecision(0)          << profiler.counter["N_ScalarCommutators"] + profiler.counter["N_TensorCommutators"]
@@ -699,7 +700,8 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
         << setw(fwidth) << setprecision(fprecision) << "E0"
         << setw(fwidth) << setprecision(fprecision) << "||H_1||" 
         << setw(fwidth) << setprecision(fprecision) << "||H_2||" 
-        << setw(fwidth) << setprecision(fprecision) << "||Omega||" 
+        << setw(fwidth) << setprecision(fprecision) << "||Omega_1||" 
+        << setw(fwidth) << setprecision(fprecision) << "||Omega_2||" 
         << setw(fwidth) << setprecision(fprecision) << "||Eta_1||" 
         << setw(fwidth) << setprecision(fprecision) << "||Eta_2||" 
         << setw(7)      << setprecision(fprecision) << "Ncomm" 
