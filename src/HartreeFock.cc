@@ -574,6 +574,17 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
 }
 
 
+Operator HartreeFock::GetNormalOrderedH(arma::mat& Cin) 
+{
+  C=Cin;
+//  ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
+  UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
+  UpdateF();              // Update the Fock matrix
+  CalcEHF();
+  PrintEHF();
+
+  return GetNormalOrderedH();
+}
 /// Returns the normal-ordered Hamiltonian in the Hartree-Fock basis, neglecting the residual 3-body piece.
 /// \f[ E_0 = E_{HF} \f]
 /// \f[ f = C^{\dagger} F C \f]
@@ -648,7 +659,7 @@ Operator HartreeFock::GetNormalOrderedH()
      OUT  =    D.t() * (V2 + V3NO) * D;
    }
    
-   FreeVmon();
+//   FreeVmon();
 
    profiler.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;
    

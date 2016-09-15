@@ -774,3 +774,23 @@ void TwoBodyME::ReadBinary( ifstream& of )
 
 }
 
+
+
+// non-member operator overloads
+
+
+TwoBodyME operator+(const TwoBodyME& lhs, const TwoBodyME& rhs)
+{
+  TwoBodyME TBout(lhs);
+  TBout += rhs;
+  return TBout;
+}
+
+TwoBodyME operator-(const TwoBodyME& lhs, const TwoBodyME& rhs)
+{
+  TwoBodyME TBout(lhs);
+  TBout -= rhs;
+  return TBout;
+}
+
+

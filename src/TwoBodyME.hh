@@ -140,7 +140,8 @@ class TwoBodyME
 
 };
 
-
+TwoBodyME operator+(const TwoBodyME& lhs, const TwoBodyME& rhs);
+TwoBodyME operator-(const TwoBodyME& lhs, const TwoBodyME& rhs);
 
 
 #endif
