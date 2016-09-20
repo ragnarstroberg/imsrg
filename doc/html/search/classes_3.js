@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['ket',['Ket',['../classKet.html',1,'']]]
+  ['imsrgprofiler',['IMSRGProfiler',['../classIMSRGProfiler.html',1,'']]],
+  ['imsrgsolver',['IMSRGSolver',['../classIMSRGSolver.html',1,'']]]
 ];
