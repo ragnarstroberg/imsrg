@@ -1098,6 +1098,47 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
      double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
      for (int i=1; i<=max_iter; ++i)
      {
+        bool use_goose_tank_correction=false;
+        if (use_goose_tank_correction and i==3)
+        {
+//          TwoBody
+        }
+
+        Operator tmp1 = Commutator(Omega,OpNested);
+        tmp1 /= i;
+        OpNested = tmp1;
+        OpOut += OpNested;
+  
+        if (this->rank_J > 0)
+        {
+            cout << "Tensor BCH, i=" << i << "  Norm = " << setw(12) << setprecision(8) << fixed << OpNested.OneBodyNorm() << " " 
+                                                         << setw(12) << setprecision(8) << fixed << OpNested.TwoBodyNorm() << " "
+                                                         << setw(12) << setprecision(8) << fixed << OpNested.Norm() << endl;
+        }
+        if (OpNested.Norm() < epsilon *(i+1))  break;
+        if (i == warn_iter)  cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
+        else if (i == max_iter)   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
+     }
+   }
+   profiler.timer["BCH_Transform"] += omp_get_wtime() - t_start;
+   return OpOut;
+}
+
+/*
+Operator Operator::Standard_BCH_Transform( const Operator &Omega)
+{
+   double t_start = omp_get_wtime();
+   int max_iter = 40;
+   int warn_iter = 12;
+   double nx = Norm();
+   double ny = Omega.Norm();
+   Operator OpOut = *this;
+   if (nx>bch_transform_threshold)
+   {
+     Operator OpNested = *this;
+     double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
+     for (int i=1; i<=max_iter; ++i)
+     {
         Operator tmp1 = Commutator(Omega,OpNested);
          tmp1 /= i;
         OpNested = tmp1;
@@ -1118,6 +1159,11 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
    profiler.timer["BCH_Transform"] += omp_get_wtime() - t_start;
    return OpOut;
 }
+
+
+*/
+
+
 /// Variation of the BCH transformation procedure
 /// requested by a one Dr. T.D. Morris
 /// \f[ e^{\Omega_1 + \Omega_2} X e^{-\Omega_1 - \Omega_2}
@@ -1879,6 +1925,70 @@ void Operator::comm222_pp_hhss( const Operator& X, const Operator& Y )
 
 
 
+
+void Operator::ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, TwoBodyME& Mpp, TwoBodyME& Mhh) const
+{
+   int nch = modelspace->SortedTwoBodyChannels.size();
+//   Operator& Z = *this;
+   bool z_is_hermitian = X.IsHermitian() xor Y.IsHermitian();
+   bool z_is_antihermitian = (X.IsHermitian() == Y.IsHermitian()) and (X.IsAntiHermitian() == Y.IsAntiHermitian());
+   #ifndef OPENBLAS_NOUSEOMP
+   #pragma omp parallel for schedule(dynamic,1)
+   #endif
+   for (int ich=0; ich<nch; ++ich)
+   {
+      int ch = modelspace->SortedTwoBodyChannels[ich];
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+
+      auto& LHS = X.TwoBody.GetMatrix(ch,ch);
+      auto& RHS = Y.TwoBody.GetMatrix(ch,ch);
+//      auto& OUT = Z.TwoBody.GetMatrix(ch,ch);
+
+      auto& Matrixpp = Mpp.GetMatrix(ch,ch);
+      auto& Matrixhh = Mhh.GetMatrix(ch,ch);
+
+      auto& kets_pp = tbc.GetKetIndex_pp();
+      auto& kets_hh = tbc.GetKetIndex_hh();
+      auto& kets_ph = tbc.GetKetIndex_ph();
+      auto& nanb = tbc.Ket_occ_hh;
+      auto& nbarnbar_hh = tbc.Ket_unocc_hh;
+      auto& nbarnbar_ph = tbc.Ket_unocc_ph;
+      
+      Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
+      Matrixhh =  LHS.cols(kets_hh) * arma::diagmat(nanb) *  RHS.rows(kets_hh) ;
+      if (kets_hh.size()>0)
+        Matrixpp +=  LHS.cols(kets_hh) * arma::diagmat(nbarnbar_hh) *  RHS.rows(kets_hh); 
+      if (kets_ph.size()>0)
+        Matrixpp += LHS.cols(kets_ph) * arma::diagmat(nbarnbar_ph) *  RHS.rows(kets_ph) ;
+
+
+      if (z_is_hermitian)
+      {
+         Matrixpp +=  Matrixpp.t();
+         Matrixhh +=  Matrixhh.t();
+      }
+      else if (z_is_antihermitian) // i.e. LHS and RHS are both hermitian or ant-hermitian
+      {
+         Matrixpp -=  Matrixpp.t();
+         Matrixhh -=  Matrixhh.t();
+      }
+      else
+      {
+        Matrixpp -=  RHS.cols(kets_pp) * LHS.rows(kets_pp);
+        Matrixhh -=  RHS.cols(kets_hh) * arma::diagmat(nanb) *  LHS.rows(kets_hh) ;
+        Matrixpp -=  RHS.cols(kets_hh) * arma::diagmat(nbarnbar_hh) *  LHS.rows(kets_hh) ;
+        if (kets_ph.size()>0)
+          Matrixpp -=  RHS.cols(kets_ph) * arma::diagmat(nbarnbar_ph) *  LHS.rows(kets_ph) ;
+      }
+
+
+      // The two body part
+//      OUT += Matrixpp - Matrixhh;
+   } //for ch
+
+}
+
+
 /// Since comm222_pp_hhss() and comm221ss() both require the construction of 
 /// the intermediate matrices \f$\mathcal{M}_{pp} \f$ and \f$ \mathcal{M}_{hh} \f$, we can combine them and
 /// only calculate the intermediates once.
@@ -1893,6 +2003,8 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
    static TwoBodyME Mhh = Z.TwoBody;
 
    double t = omp_get_wtime();
+   ConstructScalarMpp_Mhh( X, Y, Mpp, Mhh);
+/*
    // Don't use omp, because the matrix multiplication is already
    // parallelized by armadillo.
    int nch = modelspace->SortedTwoBodyChannels.size();
@@ -1949,6 +2061,11 @@ void Operator::comm222_pp_hh_221ss( const Operator& X, const Operator& Y )
       // The two body part
       OUT += Matrixpp - Matrixhh;
    } //for ch
+*/
+//   Z.TwoBody += (Mpp - Mhh);
+   Z.TwoBody += Mpp;
+   Z.TwoBody -= Mhh;
+//   OUT += Matrixpp - Matrixhh;
    profiler.timer["pphh TwoBody bit"] += omp_get_wtime() - t;
 
    t = omp_get_wtime();
@@ -2190,21 +2307,6 @@ void Operator::AddInversePandyaTransformation_SingleChannel(arma::mat& Zbar, int
 
 //   profiler.timer["InversePandyaTransformation"] += omp_get_wtime() - t_start;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

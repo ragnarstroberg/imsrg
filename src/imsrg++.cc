@@ -1,14 +1,14 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 ///                                                  ____                                         ///
-///         _________________          _____________/   /\               _________________        ///
+///        _________________           _____________/   /\               _________________        ///
 ///       /____/_____/_____/|         /____/_____/ /___/  \             /____/_____/_____/|       ///
 ///      /____/_____/__G_ /||        /____/_____/|/   /\  /\           /____/_____/____ /||       ///
 ///     /____/_____/__+__/|||       /____/_____/|/ G /  \/  \         /____/_____/_____/|||       ///
 ///    |     |     |     ||||      |     |     |/___/   /\  /\       |     |     |     ||||       ///
 ///    |  I  |  M  |     ||/|      |  I  |  M  /   /\  /  \/  \      |  I  |  M  |     ||/|       ///
 ///    |_____|_____|_____|/||      |_____|____/ + /  \/   /\  /      |_____|_____|_____|/||       ///        
-///    |     |     |     ||||      |     |   / __/   /\  /  \/       |     |     |     ||||       ///
+///    |     |     |     ||||      |     |   /___/   /\  /  \/       |     |     |     ||||       ///
 ///    |  S  |  R  |     ||/|      |  S  |   \   \  /  \/   /        |  S  |  R  |  G  ||/|       ///
 ///    |_____|_____|_____|/||      |_____|____\ __\/   /\  /         |_____|_____|_____|/||       ///
 ///    |     |     |     ||||      |     |     \   \  /  \/          |     |     |     ||||       ///
@@ -190,11 +190,11 @@ int main(int argc, char** argv)
   hf.Solve();
   cout << "EHF = " << hf.EHF << endl;
   
+  Operator HNO;
   if (basis == "HF" and method !="HF")
-    Hbare = hf.GetNormalOrderedH();
+    HNO = hf.GetNormalOrderedH();
   else if (basis == "oscillator")
-    Hbare = Hbare.DoNormalOrdering();
-
+    HNO = Hbare.DoNormalOrdering();
 
 
   int n_radial_points = 40;
@@ -213,17 +213,17 @@ int main(int argc, char** argv)
   }
   cout << "Done with SPWF" << endl;
 
-  Hbare -= BetaCM * 1.5*hw;
-  cout << "Hbare 0b = " << Hbare.ZeroBody << endl;
+  HNO -= BetaCM * 1.5*hw;
+  cout << "Hbare 0b = " << HNO.ZeroBody << endl;
 
   if (method != "HF")
   {
     cout << "Perturbative estimates of gs energy:" << endl;
-    double EMP2 = Hbare.GetMP2_Energy();
+    double EMP2 = HNO.GetMP2_Energy();
     cout << "EMP2 = " << EMP2 << endl; 
-    double EMP3 = Hbare.GetMP3_Energy();
+    double EMP3 = HNO.GetMP3_Energy();
     cout << "EMP3 = " << EMP3 << endl; 
-    cout << "To 3rd order, E = " << Hbare.ZeroBody+EMP2+EMP3 << endl;
+    cout << "To 3rd order, E = " << HNO.ZeroBody+EMP2+EMP3 << endl;
   }
 
 
@@ -240,7 +240,7 @@ int main(int argc, char** argv)
      op = op.DoNormalOrdering();
      if (method == "MP3")
      {
-       double dop = op.MP1_Eval( Hbare );
+       double dop = op.MP1_Eval( HNO );
        cout << "Operator 1st order correction  " << dop << "  ->  " << op.ZeroBody + dop << endl;
      }
   }
@@ -260,15 +260,15 @@ int main(int argc, char** argv)
   
   if ( method == "HF" or method == "MP3")
   {
-    Hbare.PrintTimes();
+    HNO.PrintTimes();
     return 0;
   }
 
 
   if (method == "FCI")
   {
-    rw.WriteNuShellX_int(Hbare,intfile+".int");
-    rw.WriteNuShellX_sps(Hbare,intfile+".sp");
+    rw.WriteNuShellX_int(HNO,intfile+".int");
+    rw.WriteNuShellX_sps(HNO,intfile+".sp");
 
     for (index_t i=0;i<ops.size();++i)
     {
@@ -282,34 +282,37 @@ int main(int argc, char** argv)
         rw.WriteTensorTwoBody(intfile+opnames[i]+"_2b.op",ops[i],opnames[i]);
       }
     }
-    Hbare.PrintTimes();
+    HNO.PrintTimes();
     return 0;
   }
 
-
-  IMSRGSolver imsrgsolver(Hbare);
+  IMSRGSolver imsrgsolver(HNO);
   imsrgsolver.SetReadWrite(rw);
+  bool brueckner_restart = false;
   
   if (method == "NSmagnus") // "No split" magnus
   {
     omega_norm_max=500;
     method = "magnus";
   }
-  if (method == "brueckner")
+  if (method == "brueckner" or method == "brueckner2")
   {
+    if (method=="brueckner2") brueckner_restart=true;
     use_brueckner_bch = "true";
     omega_norm_max=500;
-    method = "magnus";   
+    method = "magnus";
   }
 
   if (use_brueckner_bch == "true" or use_brueckner_bch == "True")
   {
-    Hbare.SetUseBruecknerBCH(true);
+//    Hbare.SetUseBruecknerBCH(true);
+    HNO.SetUseBruecknerBCH(true);
     cout << "Using Brueckner flavor of BCH" << endl;
   }
 
   imsrgsolver.SetMethod(method);
-  imsrgsolver.SetHin(Hbare);
+//  imsrgsolver.SetHin(Hbare);
+  imsrgsolver.SetHin(HNO);
   imsrgsolver.SetSmax(smax);
   imsrgsolver.SetFlowFile(flowfile);
   imsrgsolver.SetDs(ds_0);
@@ -321,25 +324,8 @@ int main(int argc, char** argv)
   if (denominator_delta_orbit != "none")
     imsrgsolver.SetDenominatorDeltaOrbit(denominator_delta_orbit);
 
-  if (nsteps > 1) // two-step decoupling, do core first
-  {
-    imsrgsolver.SetGenerator(core_generator);
-    if (core_generator.find("imaginary")!=string::npos)
-    {
-     if (ds_0>1e-2)
-     {
-       ds_0 = 1e-4;
-       dsmax = 1e-2;
-       imsrgsolver.SetDs(ds_0);
-       imsrgsolver.SetDsmax(dsmax);
-     }
-    }
-    imsrgsolver.Solve();
-    if (method == "magnus") smax *= 2;
-  }
-
-  imsrgsolver.SetGenerator(valence_generator);
-  if (valence_generator.find("imaginary")!=string::npos)
+  imsrgsolver.SetGenerator(core_generator);
+  if (core_generator.find("imaginary")!=string::npos)
   {
    if (ds_0>1e-2)
    {
@@ -349,8 +335,37 @@ int main(int argc, char** argv)
      imsrgsolver.SetDsmax(dsmax);
    }
   }
-  imsrgsolver.SetSmax(smax);
   imsrgsolver.Solve();
+
+  if (brueckner_restart)
+  {
+     arma::mat newC = hf.C * arma::expmat( -imsrgsolver.GetOmega(0).OneBody  );
+//     if (input3bme != "none") Hbare.SetParticleRank(3);
+     HNO = hf.GetNormalOrderedH(newC);
+     imsrgsolver.SetHin(HNO);
+     imsrgsolver.s = 0;
+     imsrgsolver.Solve();
+  }
+
+  if (nsteps > 1) // two-step decoupling, do core first
+  {
+    if (method == "magnus") smax *= 2;
+
+    imsrgsolver.SetGenerator(valence_generator);
+    if (valence_generator.find("imaginary")!=string::npos)
+    {
+     if (ds_0>1e-2)
+     {
+       ds_0 = 1e-4;
+       dsmax = 1e-2;
+       imsrgsolver.SetDs(ds_0);
+       imsrgsolver.SetDsmax(dsmax);
+     }
+    }
+    imsrgsolver.SetSmax(smax);
+    imsrgsolver.Solve();
+  }
+
 
 
   // Transform all the operators
@@ -393,19 +408,24 @@ int main(int argc, char** argv)
   if ( renormal_order )
   {
 
-    Hbare = imsrgsolver.GetH_s();
+//    Hbare = imsrgsolver.GetH_s();
+    HNO = imsrgsolver.GetH_s();
 
     int nOmega = imsrgsolver.GetOmegaSize() + imsrgsolver.GetNOmegaWritten();
     cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << endl;
-    Hbare = Hbare.UndoNormalOrdering();
+//    Hbare = Hbare.UndoNormalOrdering();
+    HNO = HNO.UndoNormalOrdering();
 
     ms2.SetReference(ms2.core); // chage the reference determinant
-    Hbare.SetModelSpace(ms2);
+//    Hbare.SetModelSpace(ms2);
+    HNO.SetModelSpace(ms2);
 
     cout << "Doing NO wrt A=" << ms2.GetAref() << " Z=" << ms2.GetZref() << "  norbits = " << ms2.GetNumberOrbits() << endl;
-    Hbare = Hbare.DoNormalOrdering();
+//    Hbare = Hbare.DoNormalOrdering();
+    HNO = HNO.DoNormalOrdering();
 
-    imsrgsolver.SetHin(Hbare);
+//    imsrgsolver.SetHin(Hbare);
+    imsrgsolver.SetHin(HNO);
     imsrgsolver.SetEtaCriterion(1e-4);
     imsrgsolver.Solve();
     // Change operators to the new basis, then apply the rest of the transformation
