@@ -38,7 +38,8 @@ reference=O18
 #valence_space=O$A
 #valence_space=sd-shell
 #valence_space=O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1
-valence_space="customsd"
+#valence_space="customsd"
+valence_space="FCI"
 
 #valence_space=Ca40
 #valence_space=Si34
@@ -52,11 +53,12 @@ valence_space="customsd"
 #smax=200
 smax=2
 
-emax=4
+emax=2
 e3max=12
 #method=HF
 #method=MP3
-method=magnus
+#method=magnus
+method=FCI
 #method=flow
 #method=flow-omega
 omega_norm_max=0.25
@@ -68,8 +70,8 @@ Operators=
 Operators=E2
 #Operators=protonFBC1,protonFBC2,protonFBC3,protonFBC4,protonFBC5,protonFBC6,protonFBC7,protonFBC8,protonFBC9
 scratch=SCRATCH
-other_arguments="SPWF=p0s1,p0p3"
-other_arguments=${other_arguments}" custom_valence_space=O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1"
+other_arguments=""
+#other_arguments=${other_arguments}" custom_valence_space=O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1"
 #scratch=
 
 #OMP_NUM_THREADS=1
