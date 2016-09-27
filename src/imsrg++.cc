@@ -295,9 +295,14 @@ int main(int argc, char** argv)
     omega_norm_max=500;
     method = "magnus";
   }
-  if (method == "brueckner" or method == "brueckner2")
+  if (method.find("brueckner") != string::npos)
   {
     if (method=="brueckner2") brueckner_restart=true;
+    if (method=="brueckner1step")
+    { 
+       nsteps = 1;
+       core_generator = valence_generator;
+    }
     use_brueckner_bch = "true";
     omega_norm_max=500;
     method = "magnus";
