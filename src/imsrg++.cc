@@ -491,6 +491,7 @@ int main(int argc, char** argv)
       }
       if (op.GetJRank()>0) // if it's a tensor, you probably want the full operator
       {
+        cout << "Writing operator to " << intfile+opnames[i]+".op" << endl;
         rw.WriteOperatorHuman(op,intfile+opnames[i]+".op");
       }
     }
