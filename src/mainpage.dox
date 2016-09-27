@@ -1,11 +1,19 @@
 /*!
 \mainpage IMSRG++: an implementation of In-Medium Similarity Renormalization Group for nuclei, written in C++
 
-This should contain some background information
+The in-medium similarity renormalization group (IM-SRG) is an ab initio method for solving many-body quantum systems.
+It has been thus far predominantly used in nuclear physics. For a review, see H. Hergert et al, Physics Reports 216, 165 (2016) doi: 10.1016/j.phys rep.2015.12.007, and references therein.
+
+The main idea behind the IM-SRG is to obtain a unitary transformation \f$ U \f$ which transforms the Hamiltonian into a form which makes it easier to solve.
+This can either be by decoupling a single reference state from all other states, or by decoupling a valence space and diagonalizing within that space.
+We may parameterize the unitary transformation as the exponential of an anti-hermitian generator \f$ \Omega \f$ so that the transformed Hamiltonian is
 \f[
- H' = e^{\Omega}He^{-\Omega}
+ H' = UHU^{\dagger} = e^{\Omega}He^{-\Omega}
 \f]
 
+This code contains a number of classes which may be used in the various specific schemes for implementing the above transformation.
+A subset of these classes are exposed as python classes, enabling rapid development of implementation schemes.
+The code and its documentation are very much a work in progress, so if you have any questions, or if you discover any bugs, please contact Ragnar Stroberg at sstroberg <at> triumf.ca.
 
 
 

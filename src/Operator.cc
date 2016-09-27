@@ -774,10 +774,8 @@ double Operator::GetMP2_Energy()
 //*************************************************************
 /// Calculate the third order perturbation correction to energy
 /// \f[
-/// \begin{align}
 /// \frac{1}{8}\sum_{abijpq}\sum_J (2J+1)\frac{\Gamma_{abij}^J\Gamma_{ijpq}^J\Gamma_{pqab}^J}{(f_a+f_b-f_p-f_q)(f_a+f_b-f_i-f_j)}
 /// +\sum_{abcijk}\sum_J (2J+1) \frac{\Gamma_{abij}^J\Gamma_{cjkb}^J\Gamma_{ikac}^J}{(f_a+f_b-f_i-f_j)(f_a+f_c-f_i-f_k)}
-/// \end{align}
 /// \f]
 ///
 //*************************************************************
