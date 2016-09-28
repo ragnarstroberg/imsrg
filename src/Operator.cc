@@ -3768,17 +3768,20 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
       double t_start2 = omp_get_wtime();
       int ch_bra_cc = ybras[i];
       int ch_ket_cc = ykets[i];
-      if ( pandya_lookup.find({ch_bra_cc,ch_ket_cc}) == pandya_lookup.end() )
+      auto plookup = pandya_lookup.find({ch_bra_cc,ch_ket_cc});
+//      if ( pandya_lookup.find({ch_bra_cc,ch_ket_cc}) == pandya_lookup.end() )
+      if ( plookup == pandya_lookup.end() or plookup->second[0].size()<1 )
       {
        profiler.timer["BuildZbarTensor_setup"] += omp_get_wtime() - t_start2;
        continue;
       }
-      auto& plookup = pandya_lookup[{ch_bra_cc,ch_ket_cc}];
-      if ( plookup[0].size()<1 )
-      {
-       profiler.timer["BuildZbarTensor_setup"] += omp_get_wtime() - t_start2;
-       continue;
-      }
+//      auto& plookup = pandya_lookup.at({ch_bra_cc,ch_ket_cc});
+//      if ( plookup[0].size()<1 )
+//      if ( plookup->second[0].size()<1 )
+//      {
+//       profiler.timer["BuildZbarTensor_setup"] += omp_get_wtime() - t_start2;
+//       continue;
+//      }
       auto& tbc_bra_cc = modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
       auto& tbc_ket_cc = modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
       int Jbra = tbc_bra_cc.J;
@@ -3842,9 +3845,9 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
 //             k<=j     k>=j                hp  -ph    hp   ph                 k<=j       k<=j
 //      J1   [       |       ]       J1   [           |          ]         [hp        |ph        ]
 //     i<=j  [  Zbar | Zbar  ]  =   i<=j  [   Xbar    | -Ybar    ]   * J1  [   Ybar   |   Ybar'  ]
-//           [       |       ]            [           |          ]         [ph        |hp        ]             where Ybar'_phkj = Ybar_hpkj * (-1)^{p+h+k+j}*(-1)^{J1-J2}*hY
-//                                                                         [----------|----------]              and
-//                                                                     J2  [hp        |ph        ]                   Xbar'_phkj = Xbar_hpkj * (-1)^{p+h+k+j}*hX
+//           [       |       ]            [           |          ]         [ph        |hp        ]      where Ybar'_phkj = Ybar_hpkj * (-1)^{p+h+k+j}*(-1)^{J1-J2}*hY
+//                                                                         [----------|----------]       and
+//                                                                     J2  [hp        |ph        ]            Xbar'_phkj = Xbar_hpkj * (-1)^{p+h+k+j}*hX
 //                                                                         [   Xbar   |   Xbar'  ]
 //                                                                         [-ph       |-hp       ]
 //    
