@@ -27,19 +27,21 @@ BetaCM=0.0
 
 #for ((A=14;A<=28;A++)); do
 #for ((A=6;A<=6;A++)); do
-A=22
+A=14
 #for reference in He6 C20 N29 Ti44 ; do
 #for reference in vacuum ; do
-for reference in O22 ; do
+#for reference in O22 ; do
+reference=C14
 
 hw=24
-reference=O18
+#reference=O18
 #valence_space=C8
 #valence_space=O$A
 #valence_space=sd-shell
 #valence_space=O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1
 #valence_space="customsd"
-valence_space="FCI"
+#valence_space="FCI"
+valence_space=$reference
 
 #valence_space=Ca40
 #valence_space=Si34
@@ -57,8 +59,8 @@ emax=2
 e3max=12
 #method=HF
 #method=MP3
-#method=magnus
-method=FCI
+method=magnus
+#method=FCI
 #method=flow
 #method=flow-omega
 omega_norm_max=0.25
@@ -79,5 +81,5 @@ other_arguments=""
 $exe 2bme=${vnn} 3bme=${v3n} emax=${emax} e3max=${e3max} method=${method} valence_space=${valence_space} hw=${hw} smax=${smax} ${file3} omega_norm_max=${omega_norm_max} reference=${reference} Operators=${Operators} scratch=${scratch} A=${A} use_brueckner_bch=false $other_arguments
 
 
-done
+#done
 
