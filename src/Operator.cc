@@ -3765,14 +3765,14 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    #endif
    for(int i=0;i<counter;++i)
    {
-      double t_start2 = omp_get_wtime();
+//      double t_start2 = omp_get_wtime();
       int ch_bra_cc = ybras[i];
       int ch_ket_cc = ykets[i];
       auto plookup = pandya_lookup.find({ch_bra_cc,ch_ket_cc});
 //      if ( pandya_lookup.find({ch_bra_cc,ch_ket_cc}) == pandya_lookup.end() )
       if ( plookup == pandya_lookup.end() or plookup->second[0].size()<1 )
       {
-       profiler.timer["BuildZbarTensor_setup"] += omp_get_wtime() - t_start2;
+//       profiler.timer["BuildZbarTensor_setup"] += omp_get_wtime() - t_start2;
        continue;
       }
 //      auto& plookup = pandya_lookup.at({ch_bra_cc,ch_ket_cc});
@@ -3796,9 +3796,9 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
 
       arma::uvec kets_ph = arma::join_cols( tbc_ket_cc.GetKetIndex_hh(), tbc_ket_cc.GetKetIndex_ph() );
       arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
-      profiler.timer["BuildZbarTensor_setup"] += omp_get_wtime() - t_start2;
+//      profiler.timer["BuildZbarTensor_setup"] += omp_get_wtime() - t_start2;
 
-      t_start2 = omp_get_wtime();
+//      t_start2 = omp_get_wtime();
       Y.DoTensorPandyaTransformation_SingleChannel(YJ1J2,ch_bra_cc,ch_ket_cc);
       if (ch_bra_cc==ch_ket_cc)
       {
@@ -3809,9 +3809,9 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
       {
          Y.DoTensorPandyaTransformation_SingleChannel(YJ2J1,ch_ket_cc,ch_bra_cc);
       }
-      profiler.timer["DoTensorPandyaTransformation_SingleChannel"] += omp_get_wtime() - t_start2;
+//      profiler.timer["DoTensorPandyaTransformation_SingleChannel"] += omp_get_wtime() - t_start2;
 
-      t_start2 = omp_get_wtime();
+//      t_start2 = omp_get_wtime();
       int flipphaseY = hY * modelspace->phase( Jbra - Jket ) ;
       // construct a matrix of phases (-1)^{k+j+p+h} used below to generate X_phkj for k>j
       arma::mat PhaseMatXJ2( tbc_ket_cc.GetNumberKets(), kets_ph.size(), arma::fill::ones) ;
@@ -3837,7 +3837,7 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
       }
       PhaseMatYJ1J2 *= flipphaseY;
 
-      profiler.timer["MakePhaseMat"] += omp_get_wtime() - t_start2;
+//      profiler.timer["MakePhaseMat"] += omp_get_wtime() - t_start2;
 
 
 
@@ -3852,7 +3852,7 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
 //                                                                         [-ph       |-hp       ]
 //    
 //
-      t_start2 = omp_get_wtime();
+//      t_start2 = omp_get_wtime();
       int halfncx2 = XJ2.n_cols/2;
       int halfnry12 = YJ1J2.n_rows/2;
       auto& Zmat = Z_bar[{ch_bra_cc,ch_ket_cc}];
@@ -3865,7 +3865,7 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
                                                                       XJ2.head_cols(halfncx2)%PhaseMatXJ2     )   ).t() );
 
       Zmat = Mleft * Mright;
-      profiler.timer["Multiply_Mleft_Mright"] += omp_get_wtime() - t_start2;
+//      profiler.timer["Multiply_Mleft_Mright"] += omp_get_wtime() - t_start2;
 
 //      Z.AddInverseTensorPandyaTransformation_SingleChannel(Zmat,ch_bra_cc,ch_ket_cc); 
 //      cout << "PANDYA LOOKUP size = " << plookup.size() << endl;
