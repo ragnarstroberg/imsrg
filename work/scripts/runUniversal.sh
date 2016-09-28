@@ -8,7 +8,7 @@ exe=imsrg++
 #vnn=/itch/exch/BlockGen/me2j/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
 #v3n=/itch/exch/me3j/chi2b3b400cD-02cE0098_srg0800ho40C_eMax14_EMax14_hwHO020.me3j.gz
 
-#vnn=../../input/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
+vnn=input/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
 #v3n=../../input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax12_EMax12_hwHO020.me3j.gz
 vnn=input/chi2b_srg0200_eMax04_hwHO024.me2j
 v3n=none
@@ -70,7 +70,6 @@ Operators=
 #Operators=Rp2,Rm2,HCM,HCM_28
 #Operators=Rp2,rho0.0,rho0.2,rho0.5,rho1.0,rho1.2,rho1.5,rho2.0,rho2.5,rho3.0,rho3.5,rho4.5,rho6.0
 Operators=E2
-#Operators=protonFBC1,protonFBC2,protonFBC3,protonFBC4,protonFBC5,protonFBC6,protonFBC7,protonFBC8,protonFBC9
 scratch=SCRATCH
 other_arguments=""
 #other_arguments=${other_arguments}" custom_valence_space=O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1"
