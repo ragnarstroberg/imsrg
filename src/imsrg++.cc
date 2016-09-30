@@ -342,6 +342,20 @@ int main(int argc, char** argv)
   }
   imsrgsolver.Solve();
 
+  if (method == "magnus")
+  {
+    for (size_t i=0;i<ops.size();++i)
+    {
+      Operator tmp = imsrgsolver.Transform(ops[i]);
+//      rw.WriteOperatorHuman(tmp,intfile+opnames[i]+"_step1.op");
+    }
+    cout << endl;
+    // increase smax in case we need to do additional steps
+    smax *= 1.5;
+    imsrgsolver.SetSmax(smax);
+  }
+
+
   if (brueckner_restart)
   {
      arma::mat newC = hf.C * arma::expmat( -imsrgsolver.GetOmega(0).OneBody  );
@@ -382,6 +396,7 @@ int main(int argc, char** argv)
       cout << opnames[i] << " " << endl;
       ops[i] = imsrgsolver.Transform(ops[i]);
       cout << " (" << ops[i].ZeroBody << " ) " << endl; 
+//      rw.WriteOperatorHuman(ops[i],intfile+opnames[i]+"_step2.op");
     }
     cout << endl;
     // increase smax in case we need to do additional steps

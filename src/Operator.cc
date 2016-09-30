@@ -345,8 +345,8 @@ Operator Operator::DoNormalOrdering()
 Operator Operator::DoNormalOrdering2()
 {
    Operator opNO(*this);
-
-   if (opNO.rank_J==0 and opNO.rank_T==0 and opNO.parity==0)
+   bool scalar = (opNO.rank_J==0 and opNO.rank_T==0 and opNO.parity==0);
+   if (scalar)
    {
      for (auto& k : modelspace->holes) // loop over hole orbits
      {
@@ -368,14 +368,15 @@ Operator Operator::DoNormalOrdering2()
       TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
       int J_bra = tbc_bra.J;
       int J_ket = tbc_ket.J;
+      double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
 
       // Zero body part
-      if (opNO.rank_J==0 and opNO.rank_T==0 and opNO.parity==0)
+      if (scalar)
       {
         arma::vec diagonals = matrix.diag();
         auto hh = tbc_ket.GetKetIndex_hh();
         auto hocc = tbc_ket.Ket_occ_hh;
-        opNO.ZeroBody += arma::sum( hocc % diagonals.elem(hh) ) * (2*J_ket+1);
+        opNO.ZeroBody += arma::sum( hocc % diagonals.elem(hh) ) * hatfactor;
       }
 
       // One body part
@@ -394,12 +395,12 @@ Operator Operator::DoNormalOrdering2()
               Orbit &oh = modelspace->GetOrbit(h);
               if (opNO.rank_J==0)
               {
-                 opNO.OneBody(a,b) += (2*J_ket+1.0)/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+                 opNO.OneBody(a,b) += hatfactor /(2*ja+1.0) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
               }
               else
               {
-                 double jh = oh.j2/2.0;
-                 opNO.OneBody(a,b) += sqrt((2*J_bra+1.0)*(2*J_ket+1.0)) * oh.occ *modelspace->phase(ja+jh+J_ket+opNO.rank_J)
+                 double jh = oh.j2*0.5;
+                 opNO.OneBody(a,b) += hatfactor  * oh.occ *modelspace->phase(ja+jh+J_ket+opNO.rank_J)
                                              * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
               }
            }
@@ -505,6 +506,7 @@ Operator Operator::UndoNormalOrdering()
       TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
       int J_bra = tbc_bra.J;
       int J_ket = tbc_ket.J;
+      double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
 
       // Zero body part
       if (opNO.GetJRank()==0 and opNO.GetTRank()==0 and opNO.GetParity()==0)
@@ -512,32 +514,32 @@ Operator Operator::UndoNormalOrdering()
         arma::vec diagonals = matrix.diag();
         auto hh = tbc_ket.GetKetIndex_hh();
         auto hocc = tbc_ket.Ket_occ_hh;
-        opNO.ZeroBody +=  arma::sum( hocc % diagonals.elem(hh) ) * (2*J_ket+1);
+        opNO.ZeroBody +=  arma::sum( hocc % diagonals.elem(hh) ) *hatfactor;
       }
 
       // One body part
       for (index_t a=0;a<norbits;++a)
       {
          Orbit &oa = modelspace->GetOrbit(a);
-         double ja = oa.j2/2.0;
+         double ja = oa.j2*0.5;
          index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // OneBodyChannels should be moved to the operator, to accommodate tensors
+         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
          {
             if (b < bstart) continue;
             Orbit &ob = modelspace->GetOrbit(b);
-            double jb = ob.j2/2.0;
+            double jb = ob.j2*0.5;
             for (auto& h : modelspace->holes)  // C++11 syntax
             {
               Orbit& oh = modelspace->GetOrbit(h);
 
               if (opNO.rank_J==0)
               {
-                 opNO.OneBody(a,b) -= (2*J_ket+1.0)/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+                 opNO.OneBody(a,b) -= hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
               }
               else
               {
-                 double jh = oh.j2/2.0;
-                 opNO.OneBody(a,b) -= sqrt((2*J_bra+1.0)*(2*J_ket+1.0)) * oh.occ * modelspace->phase(ja+jh+J_ket+opNO.rank_J)
+                 double jh = oh.j2*0.5;
+                 opNO.OneBody(a,b) -= hatfactor * oh.occ * modelspace->phase(ja+jh+J_ket+opNO.rank_J)
                                              * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
               }
             }
@@ -3740,6 +3742,7 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
 
    vector<index_t> ybras;
    vector<index_t> ykets;
+//   cout << "start loop over TBC_CC" << endl;
    for (auto ich_bra : modelspace->SortedTwoBodyChannels_CC)
    {
      int n_rows = modelspace->GetTwoBodyChannel_CC(ich_bra).GetNumberKets();
@@ -3754,12 +3757,14 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
      }
    }
    int counter = ybras.size();
+  //cout << "Done allocating" << endl;
 
 
    profiler.timer["Allocate Z_bar_tensor"] += omp_get_wtime() - t_start;
 
    t_start = omp_get_wtime();
 
+//   cout << "Start parallel loop" << endl;
    #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
    #endif
@@ -3867,6 +3872,8 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
 
    }
    profiler.timer["Build Z_bar_tensor"] += omp_get_wtime() - t_start;
+
+//   cout << "Done with parallel loop" << endl;
 
    t_start = omp_get_wtime();
    Z.AddInverseTensorPandyaTransformation(Z_bar); // TODO: Do this one channel at a time <-- done did it, and it's sloooowwww.
