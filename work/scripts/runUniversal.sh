@@ -8,10 +8,12 @@ exe=imsrg++
 #vnn=/itch/exch/BlockGen/me2j/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
 #v3n=/itch/exch/me3j/chi2b3b400cD-02cE0098_srg0800ho40C_eMax14_EMax14_hwHO020.me3j.gz
 
-vnn=input/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
+#vnn=input/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
 #v3n=../../input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax12_EMax12_hwHO020.me3j.gz
-vnn=input/chi2b_srg0200_eMax04_hwHO024.me2j
+#vnn=input/chi2b_srg0200_eMax04_hwHO024.me2j
 v3n=none
+vnn=input/chi2b_srg0625_eMax14_lMax10_hwHO020.me2j.gz
+#v3n=input/chi2b3b400cD-02cE0098_srg0625ho40C_eMax14_EMax14_hwHO020.me3j.gz
 
 #vnn=/itch/exch/BlockGen/me2j/chi2b_srg0800_eMax12_lMax10_hwHO024.me2j.gz
 #v3n=/itch/exch/me3j/chi2b3b400cD-02cE0098_srg0800ho40C_eMax14_EMax14_hwHO024.me3j.gz
@@ -33,7 +35,7 @@ A=14
 #for reference in O22 ; do
 reference=C14
 
-hw=24
+hw=20
 #reference=O18
 #valence_space=C8
 #valence_space=O$A
@@ -41,7 +43,9 @@ hw=24
 #valence_space=O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1
 #valence_space="customsd"
 #valence_space="FCI"
-valence_space=$reference
+#valence_space=$reference
+#valence_space=p-shell
+valence_space=0hw-shell
 
 #valence_space=Ca40
 #valence_space=Si34
@@ -52,13 +56,14 @@ valence_space=$reference
 #reference=O$A
 #reference=He4
 #A=18
-#smax=200
-smax=2
+smax=200
+#smax=2
 
-emax=2
+emax=4
 e3max=12
 #method=HF
 #method=MP3
+#method=NSmagnus
 method=magnus
 #method=FCI
 #method=flow
