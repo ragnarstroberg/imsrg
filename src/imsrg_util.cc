@@ -804,12 +804,10 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
 
 /// Center of mass Hamiltonian
-/// \f[
-/// \begin{align}
+/// \f{eqnarray*}{
 /// H_{CM} &= T_{CM} + \frac{1}{2} Am\omega^2 R^2 \\
 ///        &= T_{CM} + \frac{1}{2b^2} AR^2 \hbar\omega
-/// \end{align}
-/// \f]
+/// \f}
  Operator HCM_Op(ModelSpace& modelspace)
  {
    double hw = modelspace.GetHbarOmega();

@@ -4,8 +4,8 @@ var searchData=
   ['calcehf',['CalcEHF',['../classHartreeFock.html#aef506c5c5bc0f317ceb9c71bdc44d62b',1,'HartreeFock']]],
   ['calculate_5fp1p2',['Calculate_p1p2',['../namespaceimsrg__util.html#a3aad21447b8e28d22597a79220ba805a',1,'imsrg_util']]],
   ['calculate_5fr1r2',['Calculate_r1r2',['../namespaceimsrg__util.html#aa5d72d0bd9c75beb54256188e9ccfcbe',1,'imsrg_util']]],
-  ['calculatekineticenergy',['CalculateKineticEnergy',['../classOperator.html#a701c64f8be794e89fd28a643b56d534a',1,'Operator']]],
   ['checkconvergence',['CheckConvergence',['../classHartreeFock.html#a35ab9c4f96e68b1c9acea1d1407ecc60',1,'HartreeFock']]],
+  ['checkmem',['CheckMem',['../classIMSRGProfiler.html#a3b2bc2c6fa62462e3e4d0ae897d7eb97',1,'IMSRGProfiler']]],
   ['comm110ss',['comm110ss',['../classOperator.html#a39adf2f2f225609606da088b59e3502a',1,'Operator']]],
   ['comm111ss',['comm111ss',['../classOperator.html#ae22e28ebda5b170f2cdc4d2d9462971a',1,'Operator']]],
   ['comm121ss',['comm121ss',['../classOperator.html#af80e0152e9dffb0194b8b26c5d75d815',1,'Operator']]],
@@ -17,7 +17,10 @@ var searchData=
   ['comm222_5fpp_5fhh_5f221ss',['comm222_pp_hh_221ss',['../classOperator.html#adf70943fb0ad3c36ea27c1c14dc7f6ec',1,'Operator']]],
   ['comm222_5fpp_5fhhss',['comm222_pp_hhss',['../classOperator.html#ae040aa05d6a84031c90ba2259cbb05ae',1,'Operator']]],
   ['commutator',['Commutator',['../classOperator.html#a88b0cafa371bca287379a0ce89627e2b',1,'Operator']]],
-  ['commutatorscalarscalar',['CommutatorScalarScalar',['../classOperator.html#a0754eb8313c2bfbeda2706978f690f54',1,'Operator']]],
-  ['commutatorscalartensor',['CommutatorScalarTensor',['../classOperator.html#aed3e3d390498aac92aaad6a75cd90b29',1,'Operator']]],
-  ['compareoperators',['CompareOperators',['../classReadWrite.html#a1275273dc4057c79a8e8c7d96b74f359',1,'ReadWrite']]]
+  ['commutatorscalarscalar',['CommutatorScalarScalar',['../classOperator.html#a93daa0fe076a64408773a65d66c6f14d',1,'Operator']]],
+  ['commutatorscalartensor',['CommutatorScalarTensor',['../classOperator.html#a07b286db306e5bb11c6d897bc3a199c8',1,'Operator']]],
+  ['compareoperators',['CompareOperators',['../classReadWrite.html#a1275273dc4057c79a8e8c7d96b74f359',1,'ReadWrite']]],
+  ['constructgenerator_5fimaginarytime',['ConstructGenerator_ImaginaryTime',['../classGenerator.html#a7186a187278d51eefbd031610364a6f9',1,'Generator']]],
+  ['convergence_5fediff',['convergence_ediff',['../classHartreeFock.html#af09702c2875d94fc4721cdefe0d7573d',1,'HartreeFock']]],
+  ['convergence_5fehf',['convergence_EHF',['../classHartreeFock.html#ab25913777db3556ece46af9bea495776',1,'HartreeFock']]]
 ];

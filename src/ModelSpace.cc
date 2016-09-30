@@ -636,18 +636,24 @@ void ModelSpace::Get0hwSpace(int Aref, int Zref, vector<index_t>& core_list, vec
 
   for (auto& it_core : GetOrbitsAZ(Zcore+Ncore,Zcore)) core_list.push_back(it_core.first);
 
-  for (int L=OSC_protons; L>=0; L-=2)
+  if (Zref>Zcore) // if we have a closed major HO shell of protons, then don't decouple any valence proton orbits
   {
-    for (int j2=2*L+1;j2>max(2*L-2,0);j2-=2)
+    for (int L=OSC_protons; L>=0; L-=2)
     {
-      valence_list.push_back( GetOrbitIndex( (OSC_protons-L)/2, L, j2, -1) );
+      for (int j2=2*L+1;j2>max(2*L-2,0);j2-=2)
+      {
+        valence_list.push_back( GetOrbitIndex( (OSC_protons-L)/2, L, j2, -1) );
+      }
     }
   }
-  for (int L=OSC_neutrons; L>=0; L-=2)
+  if (Nref>Ncore)  // likewise for neutrons
   {
-    for (int j2=2*L+1;j2>max(2*L-2,0);j2-=2)
+    for (int L=OSC_neutrons; L>=0; L-=2)
     {
-      valence_list.push_back( GetOrbitIndex( (OSC_neutrons-L)/2, L, j2, 1) );
+      for (int j2=2*L+1;j2>max(2*L-2,0);j2-=2)
+      {
+        valence_list.push_back( GetOrbitIndex( (OSC_neutrons-L)/2, L, j2, 1) );
+      }
     }
   }
 

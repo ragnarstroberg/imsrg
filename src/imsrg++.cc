@@ -295,9 +295,14 @@ int main(int argc, char** argv)
     omega_norm_max=500;
     method = "magnus";
   }
-  if (method == "brueckner" or method == "brueckner2")
+  if (method.find("brueckner") != string::npos)
   {
     if (method=="brueckner2") brueckner_restart=true;
+    if (method=="brueckner1step")
+    { 
+       nsteps = 1;
+       core_generator = valence_generator;
+    }
     use_brueckner_bch = "true";
     omega_norm_max=500;
     method = "magnus";
@@ -336,6 +341,20 @@ int main(int argc, char** argv)
    }
   }
   imsrgsolver.Solve();
+
+  if (method == "magnus")
+  {
+    for (size_t i=0;i<ops.size();++i)
+    {
+      Operator tmp = imsrgsolver.Transform(ops[i]);
+//      rw.WriteOperatorHuman(tmp,intfile+opnames[i]+"_step1.op");
+    }
+    cout << endl;
+    // increase smax in case we need to do additional steps
+    smax *= 1.5;
+    imsrgsolver.SetSmax(smax);
+  }
+
 
   if (brueckner_restart)
   {
@@ -377,6 +396,7 @@ int main(int argc, char** argv)
       cout << opnames[i] << " " << endl;
       ops[i] = imsrgsolver.Transform(ops[i]);
       cout << " (" << ops[i].ZeroBody << " ) " << endl; 
+//      rw.WriteOperatorHuman(ops[i],intfile+opnames[i]+"_step2.op");
     }
     cout << endl;
     // increase smax in case we need to do additional steps
@@ -491,6 +511,7 @@ int main(int argc, char** argv)
       }
       if (op.GetJRank()>0) // if it's a tensor, you probably want the full operator
       {
+        cout << "Writing operator to " << intfile+opnames[i]+".op" << endl;
         rw.WriteOperatorHuman(op,intfile+opnames[i]+".op");
       }
     }

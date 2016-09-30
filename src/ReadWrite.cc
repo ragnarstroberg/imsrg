@@ -1512,10 +1512,10 @@ void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b,
   if ( !infile.good() )
   {
      cerr << "************************************" << endl
-          << "**    Trouble opening 1b file  !!!   **" << endl
+          << "**    Trouble opening 1b file  " << filename1b <<  "  **" << endl
           << "************************************" << endl;
-     goodstate = false;
-     return;
+//     goodstate = false;
+//     return;
   }
   index_t a,b,c,d,J1,J2;
   double me;
@@ -1532,14 +1532,15 @@ void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b,
   infile.close();
   cout << "Done reading 1b file." << endl;
 
+  infile.clear(); // clear any errors from reading the 1b file
   infile.open(filename2b);
   if ( !infile.good() )
   {
      cerr << "************************************" << endl
-          << "**    Trouble opening 2b file  !!!   **" << endl
+          << "**    Trouble opening 2b file  " << filename2b << "  **" << endl
           << "************************************" << endl;
-     goodstate = false;
-     return;
+//     goodstate = false;
+//     return;
   }
 //  char header[500];
 //  infile.getline(header,500);
