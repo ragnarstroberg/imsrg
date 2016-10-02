@@ -1512,10 +1512,10 @@ void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b,
   if ( !infile.good() )
   {
      cerr << "************************************" << endl
-          << "**    Trouble opening 1b file  !!!   **" << endl
+          << "**    Trouble opening 1b file  " << filename1b <<  "  **" << endl
           << "************************************" << endl;
-     goodstate = false;
-     return;
+//     goodstate = false;
+//     return;
   }
   index_t a,b,c,d,J1,J2;
   double me;
@@ -1532,14 +1532,15 @@ void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b,
   infile.close();
   cout << "Done reading 1b file." << endl;
 
+  infile.clear(); // clear any errors from reading the 1b file
   infile.open(filename2b);
   if ( !infile.good() )
   {
      cerr << "************************************" << endl
-          << "**    Trouble opening 2b file  !!!   **" << endl
+          << "**    Trouble opening 2b file  " << filename2b << "  **" << endl
           << "************************************" << endl;
-     goodstate = false;
-     return;
+//     goodstate = false;
+//     return;
   }
 //  char header[500];
 //  infile.getline(header,500);
@@ -1934,12 +1935,12 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode
    intfile << "! e1max: " << modelspace->GetEmax() << "  e2max: " << modelspace->GetE2max() << "   e3max: " << modelspace->GetE3max() << "   hw: " << modelspace->GetHbarOmega();
    intfile << "   Aref: " << Aref << "  Zref: " << Zref << "  A_for_kinetic_energy: " << modelspace->GetTargetMass() << endl;
    intfile << "! Zero body term: " << op.ZeroBody << endl;
-   intfile << "! Index   n l j tz" << endl;
+   intfile << "! Index  n  l   j   tz" << endl;
 
    for ( auto& it : nushell2orb )
    {
       Orbit& oi = modelspace->GetOrbit(it.second);
-      intfile << "!  " << it.first << "   " << oi.n << " " << oi.l << " " << oi.j2 << "/2" << " " << oi.tz2 << "/2" << endl;
+      intfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2 << "/2" << " " << setw(2) << oi.tz2 << "/2" << endl;
    }
    intfile << "!" << endl;
    intfile << "-999  ";

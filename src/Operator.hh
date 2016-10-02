@@ -193,10 +193,11 @@ class Operator
 
 // scalar-tensor commutators
 
+  void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, TwoBodyME& Mpp, TwoBodyME& Mhh) const;
 //  void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>&) const;
-  void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&) const;
+  void DoTensorPandyaTransformation(map<array<index_t,2>,arma::mat>&) const;
   void DoTensorPandyaTransformation_SingleChannel(arma::mat& X, int ch_bra_cc, int ch_ket_cc) const;
-  void AddInverseTensorPandyaTransformation(map<array<int,2>,arma::mat>&);
+  void AddInverseTensorPandyaTransformation(const map<array<index_t,2>,arma::mat>&);
   void AddInverseTensorPandyaTransformation_SingleChannel(arma::mat& Zbar, int ch_bra_cc, int ch_ket_cc);
 
   void comm111st( const Operator& X, const Operator& Y) ;

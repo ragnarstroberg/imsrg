@@ -25,6 +25,8 @@ using namespace boost::python;
 
   void ArmaMatPrint( arma::mat& self){ self.print();};
 
+  Operator HFGetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
+
 BOOST_PYTHON_MODULE(pyIMSRG)
 {
 
@@ -193,7 +195,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("Solve",&HartreeFock::Solve)
       .def("TransformToHFBasis",&HartreeFock::TransformToHFBasis)
       .def("GetHbare",&HartreeFock::GetHbare)
-      .def("GetNormalOrderedH",&HartreeFock::GetNormalOrderedH)
+//      .def("GetNormalOrderedH",&HartreeFock::GetNormalOrderedH)
+      .def("GetNormalOrderedH",&HFGetNormalOrderedH)
       .def("GetOmega",&HartreeFock::GetOmega)
       .def("PrintSPE",&HartreeFock::PrintSPE)
       .def_readonly("EHF",&HartreeFock::EHF)
