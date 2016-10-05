@@ -1,8 +1,6 @@
 #!/bin/bash
 
 exe=imsrg++
-#exe=../compiled/Universal
-#exe="valgrind --track-origins=yes ../compiled/Universal"
 #exe="valgrind --track-origins=yes imsrg++"
 
 #vnn=/itch/exch/BlockGen/me2j/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
@@ -10,6 +8,7 @@ exe=imsrg++
 
 #vnn=input/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
 #v3n=../../input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax12_EMax12_hwHO020.me3j.gz
+vnn=input/chi2b_srg0625_eMax08_hwHO024.me2j.gz
 #vnn=input/chi2b_srg0200_eMax04_hwHO024.me2j
 v3n=none
 vnn=input/chi2b_srg0625_eMax14_lMax10_hwHO020.me2j.gz
@@ -56,6 +55,7 @@ valence_space=0hw-shell
 #reference=O$A
 #reference=He4
 #A=18
+#smax=200
 smax=200
 #smax=2
 
@@ -74,9 +74,11 @@ file3='file3e1max=12 file3e2max=28 file3e3max=12'
 Operators=
 #Operators=Rp2,Rm2,HCM,HCM_28
 #Operators=Rp2,rho0.0,rho0.2,rho0.5,rho1.0,rho1.2,rho1.5,rho2.0,rho2.5,rho3.0,rho3.5,rho4.5,rho6.0
+#Operators=protonFBC1,protonFBC2,protonFBC3,protonFBC4,protonFBC5,protonFBC6,protonFBC7,protonFBC8,protonFBC9
 Operators=E2
 scratch=SCRATCH
 other_arguments=""
+#other_arguments="SPWF=p0s1,p0p3"
 #other_arguments=${other_arguments}" custom_valence_space=O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1"
 #scratch=
 

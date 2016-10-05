@@ -3472,7 +3472,7 @@ void Operator::AddInverseTensorPandyaTransformation_SingleChannel(arma::mat& Zba
 
 
 
-void Operator::AddInverseTensorPandyaTransformation(map<array<index_t,2>,arma::mat>& Zbar)
+void Operator::AddInverseTensorPandyaTransformation(const map<array<index_t,2>, arma::mat>& Zbar)
 {
     // Do the inverse Pandya transform
     // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
@@ -3545,7 +3545,10 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<index_t,2>,arma::m
                   if (abs(ninej) < 1e-8) continue;
                   double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*J3+1)*(2*J4+1) );
                   double tbme = 0;
-                  auto& Zmat = Zbar[{min(ch_bra_cc,ch_ket_cc),max(ch_bra_cc,ch_ket_cc)}];
+                  index_t ch_lo = min(ch_bra_cc,ch_ket_cc);
+                  index_t ch_hi = max(ch_bra_cc,ch_ket_cc);
+//                  auto& Zmat = Zbar[{min(ch_bra_cc,ch_ket_cc),max(ch_bra_cc,ch_ket_cc)}];
+                  auto& Zmat = Zbar.at({ch_lo,ch_hi});
 
                   if (ch_bra_cc <= ch_ket_cc)
                   {
@@ -3596,7 +3599,8 @@ void Operator::AddInverseTensorPandyaTransformation(map<array<index_t,2>,arma::m
   
                     index_t ch_lo = min(ch_bra_cc,ch_ket_cc);
                     index_t ch_hi = max(ch_bra_cc,ch_ket_cc);
-                    auto& Zmat = Zbar[{ch_lo,ch_hi}];
+//                    auto& Zmat = Zbar[{ch_lo,ch_hi}];
+                    auto& Zmat = Zbar.at({ch_lo,ch_hi});
                     double tbme = 0;
                     if (ch_bra_cc <= ch_ket_cc)
                     {
