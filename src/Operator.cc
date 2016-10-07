@@ -2543,7 +2543,7 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    for (int ich=0;ich<nch;++ich)
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
-      if ( pandya_lookup[{ch,ch}][0].size()<1 ) continue;
+      if ( pandya_lookup.at({ch,ch})[0].size()<1 ) continue;
       index_t nKets_cc = modelspace->GetTwoBodyChannel_CC(ch).GetNumberKets();
       Z_bar[ch].zeros( nKets_cc, 2*nKets_cc );
    }
@@ -2556,7 +2556,7 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
       if ( pandya_lookup.find({ch,ch}) == pandya_lookup.end()) continue;
-      if ( pandya_lookup[{ch,ch}][0].size()<1 ) continue;
+      if ( pandya_lookup.at({ch,ch})[0].size()<1 ) continue;
       TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch);
       index_t nKets_cc = tbc_cc.GetNumberKets();
       int nph_kets = tbc_cc.GetKetIndex_hh().size() + tbc_cc.GetKetIndex_ph().size();
@@ -3753,7 +3753,7 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
      for (auto ich_ket : modelspace->SortedTwoBodyChannels_CC)
      {
        if (ich_bra>ich_ket) continue;
-       if (pandya_lookup[{(int)ich_bra,(int)ich_ket}][0].size()<1) continue;
+       if (pandya_lookup.at({(int)ich_bra,(int)ich_ket})[0].size()<1) continue;
          int n_cols = 2*modelspace->GetTwoBodyChannel_CC(ich_ket).GetNumberKets();
          ybras.push_back(ich_bra);
          ykets.push_back(ich_ket);
@@ -3768,7 +3768,6 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
 
    t_start = omp_get_wtime();
 
-//   cout << "Start parallel loop" << endl;
    #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
    #endif
@@ -3858,7 +3857,8 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
 //      t_start2 = omp_get_wtime();
       int halfncx2 = XJ2.n_cols/2;
       int halfnry12 = YJ1J2.n_rows/2;
-      auto& Zmat = Z_bar[{ch_bra_cc,ch_ket_cc}];
+//      auto& Zmat = Z_bar[{ch_bra_cc,ch_ket_cc}];
+      auto& Zmat = Z_bar.at({ch_bra_cc,ch_ket_cc});
 //      arma::mat Zmat ;
 
       arma::mat Mleft = join_horiz( XJ1,  -flipphaseY * YJ2J1.t() );
