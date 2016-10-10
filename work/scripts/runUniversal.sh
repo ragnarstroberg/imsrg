@@ -7,7 +7,7 @@ exe=imsrg++
 #v3n=/itch/exch/me3j/chi2b3b400cD-02cE0098_srg0800ho40C_eMax14_EMax14_hwHO020.me3j.gz
 
 #vnn=input/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
-#v3n=../../input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax12_EMax12_hwHO020.me3j.gz
+#v3n=input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax12_EMax12_hwHO020.me3j.gz
 #vnn=input/chi2b_srg0625_eMax08_hwHO024.me2j.gz
 #vnn=input/chi2b_srg0200_eMax04_hwHO024.me2j
 v3n=none
@@ -28,11 +28,10 @@ BetaCM=0.0
 #for ((A=14;A<=28;A++)); do
 #for ((A=6;A<=6;A++)); do
 A=6
-#for reference in He6 C20 N29 Ti44 ; do
 #for reference in vacuum ; do
 #for reference in O22 ; do
-reference=vacuum
-#reference=He6
+#reference=vacuum
+reference=He6
 
 hw=20
 #hw=24
@@ -43,10 +42,10 @@ vnn=input/chi2b_srg0625_eMax14_lMax10_hwHO0${hw}.me2j.gz
 #valence_space=sd-shell
 #valence_space=O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1
 #valence_space="customsd"
-valence_space=FCI
+#valence_space=FCI
 #valence_space=$reference
 #valence_space=p-shell
-#valence_space=0hw-shell
+valence_space=0hw-shell
 #valence_space=s-shell
 
 #valence_space=Ca40
@@ -59,7 +58,7 @@ valence_space=FCI
 #reference=He4
 #A=18
 #smax=200
-smax=200
+smax=500
 #smax=2
 
 emax=1
@@ -67,8 +66,8 @@ e3max=12
 #method=HF
 #method=MP3
 #method=NSmagnus
-#method=magnus
-method=FCI
+method=magnus
+#method=FCI
 #method=flow
 #method=flow-omega
 omega_norm_max=0.25

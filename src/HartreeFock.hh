@@ -35,6 +35,7 @@ class HartreeFock
    IMSRGProfiler profiler;  ///< Profiler for timing, etc.
    deque<double> convergence_ediff; ///< Save last few convergence checks for diagnostics
    deque<double> convergence_EHF; ///< Save last few convergence checks for diagnostics
+   bool freeze_occupations;
 
 // Methods
    HartreeFock(Operator&  hbare); ///< Constructor
@@ -43,6 +44,7 @@ class HartreeFock
    void Diagonalize();            ///< Diagonalize the Fock matrix
    void UpdateF();                ///< Update the Fock matrix with the new transformation coefficients C
    void UpdateDensityMatrix();    ///< Update the density matrix with the new coefficients C
+   void FillLowestOrbits();       ///< Get new occupations based on the current single-particle energies
    bool CheckConvergence();       ///< Compare the current energies with those from the previous iteration
    void Solve();                  ///< Diagonalize and UpdateF until convergence
    void CalcEHF();                ///< Evaluate the Hartree Fock energy
@@ -54,9 +56,10 @@ class HartreeFock
    Operator GetOmega();           ///< Return a generator of the Hartree Fock transformation
    Operator GetHbare(){return Hbare;}; ///< Getter function for Hbare
    void PrintSPE(); ///< Print out the single-particle energies
-//   void PrintSPE(){ F.diag().print();}; ///< Print out the single-particle energies
    void FreeVmon();               ///< Free up the memory used to store Vmon3.
    void GetRadialWF(index_t index, vector<double>& R, vector<double>& PSI); ///< Return the radial wave function of an orbit in the HF basis
+   void FreezeOccupations(){freeze_occupations = true;};
+   void UnFreezeOccupations(){freeze_occupations = false;};
 
 };
 

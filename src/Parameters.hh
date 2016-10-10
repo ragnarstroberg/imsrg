@@ -58,10 +58,11 @@ map<string,double> Parameters::double_par = {
   {"dsmax",		0.5},	// maximum step size
   {"ds_0",		0.5},	// initial step size
   {"domega",		0.5},	// max for norm of eta * ds
-  {"omega_norm_max",	0.25},	 // norm of omega before we do the splitting
+  {"omega_norm_max",	0.25},  // norm of omega before we do the splitting
   {"ode_tolerance",	1e-6},	// error tolerance for the ode solver
-  {"denominator_delta",	0},	// offset added to the denominator in the generator
-  {"BetaCM",0}, // Prefactor for Lawson-Glockner term
+  {"denominator_delta",	   0},	// offset added to the denominator in the generator
+  {"BetaCM",               0},  // Prefactor for Lawson-Glockner term
+  {"eta_criterion",     1e-6},  // Threshold on ||eta|| for convergence in the flow
 
 };
 
