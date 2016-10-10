@@ -1219,6 +1219,9 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
      {
 //       lookup[{ch_bra_cc,ch_ket_cc}] = vector<array<int,2>>();
        lookup[{ch_bra_cc,ch_ket_cc}] = array<vector<int>,2>(); 
+//       lookup[{ch_bra_cc,ch_ket_cc}] = { <vector<int>(), vector<int>() }; 
+       lookup.at({ch_bra_cc,ch_ket_cc})[0].reserve(ntbc_cc)  ; 
+       lookup.at({ch_bra_cc,ch_ket_cc})[1].reserve(ntbc_cc)  ; 
      }
    }
 
@@ -1307,10 +1310,12 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
            }
          }
        }
-       lookup.at({ch_bra_cc,ch_ket_cc}) = {bra_list, ket_list };
+       lookup.at({ch_bra_cc,ch_ket_cc})[0].assign( begin(bra_list),end(bra_list) );
+       lookup.at({ch_bra_cc,ch_ket_cc})[1].assign( begin(ket_list),end(ket_list) );
      }
    }
    profiler.timer["CalculatePandyaLookup"] += omp_get_wtime() - t_start;
+   cout << "done." << endl;
 }
 
 

@@ -3307,7 +3307,7 @@ void Operator::AddInverseTensorPandyaTransformation_SingleChannel(arma::mat& Zba
    int n_channels_kept = 0;
 //   cout << " [ " << ch_bra_cc << " , " << ch_ket_cc << " ] " << endl;
    Operator& Z = *this;
-   auto& pandya_lookup = modelspace->GetPandyaLookup(rank_J, rank_T, parity)[{ch_bra_cc,ch_ket_cc}];
+   const auto& pandya_lookup = modelspace->GetPandyaLookup(rank_J, rank_T, parity)[{ch_bra_cc,ch_ket_cc}];
    int Lambda = Z.rank_J;
    int hZ = Z.IsHermitian() ? 1 : -1;
    TwoBodyChannel_CC& tbc_bra_cc = modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
@@ -3548,7 +3548,7 @@ void Operator::AddInverseTensorPandyaTransformation(const map<array<index_t,2>, 
                   index_t ch_lo = min(ch_bra_cc,ch_ket_cc);
                   index_t ch_hi = max(ch_bra_cc,ch_ket_cc);
 //                  auto& Zmat = Zbar[{min(ch_bra_cc,ch_ket_cc),max(ch_bra_cc,ch_ket_cc)}];
-                  auto& Zmat = Zbar.at({ch_lo,ch_hi});
+                  const auto& Zmat = Zbar.at({ch_lo,ch_hi});
 
                   if (ch_bra_cc <= ch_ket_cc)
                   {
@@ -3600,7 +3600,7 @@ void Operator::AddInverseTensorPandyaTransformation(const map<array<index_t,2>, 
                     index_t ch_lo = min(ch_bra_cc,ch_ket_cc);
                     index_t ch_hi = max(ch_bra_cc,ch_ket_cc);
 //                    auto& Zmat = Zbar[{ch_lo,ch_hi}];
-                    auto& Zmat = Zbar.at({ch_lo,ch_hi});
+                    const auto& Zmat = Zbar.at({ch_lo,ch_hi});
                     double tbme = 0;
                     if (ch_bra_cc <= ch_ket_cc)
                     {
@@ -3741,7 +3741,8 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
 //   }
 
    t_start = omp_get_wtime();
-   auto& pandya_lookup = modelspace->GetPandyaLookup(rank_J, rank_T, parity);
+//   auto& pandya_lookup = modelspace->GetPandyaLookup(rank_J, rank_T, parity);
+   const auto& pandya_lookup = modelspace->GetPandyaLookup(rank_J, rank_T, parity);
    profiler.timer["PandyaLookup"] += omp_get_wtime() - t_start;
 
    vector<index_t> ybras;
@@ -3761,7 +3762,7 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
      }
    }
    int counter = ybras.size();
-  //cout << "Done allocating" << endl;
+//  cout << "Done allocating" << endl;
 
 
    profiler.timer["Allocate Z_bar_tensor"] += omp_get_wtime() - t_start;
