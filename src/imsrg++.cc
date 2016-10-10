@@ -81,6 +81,7 @@ int main(int argc, char** argv)
   double omega_norm_max = parameters.d("omega_norm_max"); 
   double denominator_delta = parameters.d("denominator_delta");
   double BetaCM = parameters.d("BetaCM");
+  double eta_criterion = parameters.d("eta_criterion");
 
   vector<string> opnames = parameters.v("Operators");
 
@@ -288,6 +289,7 @@ int main(int argc, char** argv)
 
   IMSRGSolver imsrgsolver(HNO);
   imsrgsolver.SetReadWrite(rw);
+  imsrgsolver.SetEtaCriterion(eta_criterion);
   bool brueckner_restart = false;
   
   if (method == "NSmagnus") // "No split" magnus

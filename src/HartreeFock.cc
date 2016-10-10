@@ -20,7 +20,7 @@ using namespace std;
 HartreeFock::HartreeFock(Operator& hbare)
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
     KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
-    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0)
+    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true)
 {
    int norbits = modelspace->GetNumberOrbits();
 
@@ -68,6 +68,7 @@ void HartreeFock::Solve()
    {
       Diagonalize();          // Diagonalize the Fock matrix
       ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
+      if (not freeze_occupations) FillLowestOrbits(); // if we don't freeze the occupations, then calculate the new ones.
       UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
       UpdateF();              // Update the Fock matrix
 
@@ -335,6 +336,51 @@ void HartreeFock::UpdateDensityMatrix()
 }
 
 
+
+//********************************************************************
+/// Get new occupation numbers by filling the orbits in order of their
+/// single-particle energies. The last proton/neutron orbit can have
+/// a fractional filling, corresponding to ensemble normal ordering.
+//********************************************************************
+void HartreeFock::FillLowestOrbits()
+{
+  // vector of indices such that they point to elements of F(i,i)
+  // in ascending order of energy
+  arma::uvec sorted_indices = arma::stable_sort_index( F.diag() );
+  int targetZ = modelspace->GetZref();
+  int targetN = modelspace->GetAref() - targetZ;
+  int placedZ = 0;
+  int placedN = 0;
+  vector<index_t> holeorbs_tmp; 
+  vector<double> hole_occ_tmp;
+
+  for (auto i : sorted_indices)
+  {
+
+    Orbit& oi = modelspace->GetOrbit(i);
+    if (oi.tz2 < 0 and (placedZ<targetZ))
+    {
+      holeorbs_tmp.push_back(i);
+      hole_occ_tmp.push_back( min(1.0,double(targetZ-placedZ)/(oi.j2+1) ) );
+      placedZ = min(placedZ+oi.j2+1,targetZ);
+    }
+    else if (oi.tz2 > 0 and (placedN<targetN))
+    {
+      holeorbs_tmp.push_back(i);
+      hole_occ_tmp.push_back( min(1.0,double(targetN-placedN)/(oi.j2+1) ) );
+      placedN = min(placedN+oi.j2+1,targetN);
+    }
+
+    if((placedZ >= targetZ) and (placedN >= targetN) ) break;
+  }
+
+  holeorbs = arma::uvec( holeorbs_tmp );
+  hole_occ = arma::rowvec( hole_occ );
+}
+
+
+
+
 //*********************************************************************
 ///  [See Suhonen eq 4.85]
 /// \f[ F_{ij} = t_{ij}  +  \frac{1}{2j_i+1}\sum_{ab} \rho_{ab} \bar{V}^{(2)}_{iajb}
@@ -596,6 +642,24 @@ Operator HartreeFock::GetNormalOrderedH()
 {
    double start_time = omp_get_wtime();
    cout << "Getting normal-ordered H in HF basis" << endl;
+
+   // First, check if we need to update the occupation numbers for the reference
+   if (not freeze_occupations)
+   {
+     bool changed_occupations = false;
+     map<index_t,double> hole_map;
+     for (index_t i=0;i<holeorbs.size();++i)  
+     {
+        hole_map[holeorbs[i]] = hole_occ[i];
+        if ( abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
+        {
+           changed_occupations = true;
+           cout << "After HF, occupation of orbit " << i << " has changed. Modelspace will be updated." << endl;
+        }
+     }
+     if (changed_occupations)  modelspace->SetReference( hole_map );
+   }
+
    Operator HNO = Operator(*modelspace,0,0,0,2);
    HNO.ZeroBody = EHF;
    HNO.OneBody = C.t() * F * C;
