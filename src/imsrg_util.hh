@@ -51,6 +51,8 @@ namespace imsrg_util
  Operator RadialOverlap(ModelSpace& modelspace);
  Operator LdotS_Op(ModelSpace& modelspace);
 
+ Operator EKKShift( Operator& Hin, int Nlower, int Nupper);
+
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace); // This doesn't work
  double Get_Charge_Density(Operator& DM, double r);  // This doesn't work
 
