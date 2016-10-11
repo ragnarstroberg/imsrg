@@ -6,14 +6,13 @@ exe=imsrg++
 #vnn=/itch/exch/BlockGen/me2j/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
 #v3n=/itch/exch/me3j/chi2b3b400cD-02cE0098_srg0800ho40C_eMax14_EMax14_hwHO020.me3j.gz
 
-vnn=input/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
-v3n=input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax12_EMax12_hwHO020.me3j.gz
+#vnn=input/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz
+#v3n=input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax12_EMax12_hwHO020.me3j.gz
 #vnn=input/chi2b_srg0625_eMax08_hwHO024.me2j.gz
 #vnn=input/chi2b_srg0200_eMax04_hwHO024.me2j
 v3n=none
 #vnn=input/chi2b_srg0625_eMax14_lMax10_hwHO020.me2j.gz
 #v3n=input/chi2b3b400cD-02cE0098_srg0625ho40C_eMax14_EMax14_hwHO020.me3j.gz
-
 #vnn=/itch/exch/BlockGen/me2j/chi2b_srg0800_eMax12_lMax10_hwHO024.me2j.gz
 #v3n=/itch/exch/me3j/chi2b3b400cD-02cE0098_srg0800ho40C_eMax14_EMax14_hwHO024.me3j.gz
 
@@ -28,25 +27,26 @@ BetaCM=0.0
 
 #for ((A=14;A<=28;A++)); do
 #for ((A=6;A<=6;A++)); do
-#A=14
-#for reference in He6 C20 N29 Ti44 ; do
+A=6
 #for reference in vacuum ; do
 #for reference in O22 ; do
-#reference=C14
-A=76
-reference=Ge76
+#reference=vacuum
+reference=He6
 
 hw=20
+#hw=24
+vnn=input/chi2b_srg0625_eMax14_lMax10_hwHO0${hw}.me2j.gz
 #reference=O18
 #valence_space=C8
 #valence_space=O$A
 #valence_space=sd-shell
 #valence_space=O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1
 #valence_space="customsd"
-#valence_space="FCI"
+#valence_space=FCI
 #valence_space=$reference
 #valence_space=p-shell
 valence_space=0hw-shell
+#valence_space=s-shell
 
 #valence_space=Ca40
 #valence_space=Si34
@@ -58,10 +58,10 @@ valence_space=0hw-shell
 #reference=He4
 #A=18
 #smax=200
-#smax=200
-smax=2
+smax=500
+#smax=2
 
-emax=4
+emax=1
 e3max=12
 #method=HF
 #method=MP3
@@ -77,7 +77,7 @@ Operators=
 #Operators=Rp2,Rm2,HCM,HCM_28
 #Operators=Rp2,rho0.0,rho0.2,rho0.5,rho1.0,rho1.2,rho1.5,rho2.0,rho2.5,rho3.0,rho3.5,rho4.5,rho6.0
 #Operators=protonFBC1,protonFBC2,protonFBC3,protonFBC4,protonFBC5,protonFBC6,protonFBC7,protonFBC8,protonFBC9
-#Operators=E2
+Operators=E2,M1,Rp2Z1
 scratch=SCRATCH
 other_arguments=""
 #other_arguments="SPWF=p0s1,p0p3"
