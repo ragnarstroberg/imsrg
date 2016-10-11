@@ -1415,6 +1415,40 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   }
 
 
+
+ Operator EKKShift( Operator& Hin, int Nlower, int Nupper)
+ {
+   ModelSpace* modelspace = Hin.GetModelSpace();
+   Operator EKKShift(*modelspace,0,0,0,2);
+   double elower = 0;
+   double eupper = 0;
+   vector<index_t> index_lower;
+   vector<index_t> index_upper;
+   for (int i=0; i<modelspace->GetNumberOrbits(); ++i)
+   {
+     Orbit& oi = modelspace->GetOrbit(i);
+     int N = 2*oi.n + oi.l;
+     if (N==Nlower)
+     {
+       elower += Hin.OneBody(i,i);
+       index_lower.push_back(i);
+     }
+     if (N==Nupper)
+     {
+       eupper += Hin.OneBody(i,i);
+       index_upper.push_back(i);
+     }
+   }
+   elower /= index_lower.size();
+   eupper /= index_upper.size();
+   double emid = 0.5 * (elower + eupper);
+   for ( auto i : index_lower ) EKKShift.OneBody(i,i) = emid - elower;
+   for ( auto i : index_upper ) EKKShift.OneBody(i,i) = emid - eupper;
+   cout << "In EKKShift, elower, eupper, emid = " << elower << " , " << eupper << " , " << emid << endl;
+   return EKKShift;
+ }
+
+
   map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax)
   {
 //    ModelSpace* modelspace = H.GetModelSpace();
