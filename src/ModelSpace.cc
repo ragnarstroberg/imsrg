@@ -967,6 +967,7 @@ void ModelSpace::ClearVectors()
    TwoBodyChannels_CC.clear();
    SortedTwoBodyChannels.clear();
    SortedTwoBodyChannels_CC.clear();
+   PandyaLookup.clear();
 }
 
 

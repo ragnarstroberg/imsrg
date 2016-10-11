@@ -346,12 +346,12 @@ int main(int argc, char** argv)
 
   if (method == "magnus")
   {
-    for (size_t i=0;i<ops.size();++i)
-    {
-      Operator tmp = imsrgsolver.Transform(ops[i]);
-//      rw.WriteOperatorHuman(tmp,intfile+opnames[i]+"_step1.op");
-    }
-    cout << endl;
+//    for (size_t i=0;i<ops.size();++i)
+//    {
+//      Operator tmp = imsrgsolver.Transform(ops[i]);
+////      rw.WriteOperatorHuman(tmp,intfile+opnames[i]+"_step1.op");
+//    }
+//    cout << endl;
     // increase smax in case we need to do additional steps
     smax *= 1.5;
     imsrgsolver.SetSmax(smax);
@@ -407,7 +407,7 @@ int main(int argc, char** argv)
   }
 
 
-  // If we're doing targeted normal ordering 
+  // If we're doing targeted/ensemble normal ordering 
   // we now re-normal order wrt to the core
   // and do any remaining flow.
   ModelSpace ms2(modelspace);
@@ -430,39 +430,34 @@ int main(int argc, char** argv)
   if ( renormal_order )
   {
 
-//    Hbare = imsrgsolver.GetH_s();
     HNO = imsrgsolver.GetH_s();
 
     int nOmega = imsrgsolver.GetOmegaSize() + imsrgsolver.GetNOmegaWritten();
     cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << endl;
-//    Hbare = Hbare.UndoNormalOrdering();
     HNO = HNO.UndoNormalOrdering();
 
-    ms2.SetReference(ms2.core); // chage the reference determinant
-//    Hbare.SetModelSpace(ms2);
+    ms2.SetReference(ms2.core); // change the reference
     HNO.SetModelSpace(ms2);
 
     cout << "Doing NO wrt A=" << ms2.GetAref() << " Z=" << ms2.GetZref() << "  norbits = " << ms2.GetNumberOrbits() << endl;
-//    Hbare = Hbare.DoNormalOrdering();
     HNO = HNO.DoNormalOrdering();
 
-//    imsrgsolver.SetHin(Hbare);
     imsrgsolver.SetHin(HNO);
-    imsrgsolver.SetEtaCriterion(1e-4);
+//    imsrgsolver.SetEtaCriterion(1e-4);
     imsrgsolver.Solve();
     // Change operators to the new basis, then apply the rest of the transformation
     cout << "Final transformation on the operators..." << endl;
     for (auto& op : ops)
     {
-      double ZeroBody_before = op.ZeroBody;
+//      double ZeroBody_before = op.ZeroBody;
       op = op.UndoNormalOrdering();
-      double ZeroBody_undo = op.ZeroBody;
+//      double ZeroBody_undo = op.ZeroBody;
       op.SetModelSpace(ms2);
       op = op.DoNormalOrdering();
-      double ZeroBody_mid = op.ZeroBody;
+//      double ZeroBody_mid = op.ZeroBody;
       // transform using the remaining omegas
       op = imsrgsolver.Transform_Partial(op,nOmega);
-      cout << ZeroBody_before << "   =>   " << ZeroBody_undo << "   =>   " << ZeroBody_mid<< "   =>   " << op.ZeroBody << endl;
+//      cout << ZeroBody_before << "   =>   " << ZeroBody_undo << "   =>   " << ZeroBody_mid<< "   =>   " << op.ZeroBody << endl;
     }
   }
 
