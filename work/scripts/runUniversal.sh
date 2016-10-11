@@ -61,7 +61,7 @@ valence_space=0hw-shell
 smax=500
 #smax=2
 
-emax=1
+emax=2
 e3max=12
 #method=HF
 #method=MP3
@@ -77,11 +77,12 @@ Operators=
 #Operators=Rp2,Rm2,HCM,HCM_28
 #Operators=Rp2,rho0.0,rho0.2,rho0.5,rho1.0,rho1.2,rho1.5,rho2.0,rho2.5,rho3.0,rho3.5,rho4.5,rho6.0
 #Operators=protonFBC1,protonFBC2,protonFBC3,protonFBC4,protonFBC5,protonFBC6,protonFBC7,protonFBC8,protonFBC9
-Operators=E2,M1,Rp2Z1
+Operators=E2,M1,Rp2Z2
 scratch=SCRATCH
 other_arguments=""
 #other_arguments="SPWF=p0s1,p0p3"
 #other_arguments=${other_arguments}" custom_valence_space=O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1"
+other_arguments="${other_arguments} eta_criterion=1e-6"
 #scratch=
 
 #OMP_NUM_THREADS=1
