@@ -141,6 +141,7 @@ int TwoBodyChannel::GetLocalIndex(int p, int q) const
 } 
 
 // get pointer to ket using local index
+const Ket & TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
 Ket & TwoBodyChannel::GetKet(int i) { return modelspace->GetKet(KetList[i]);}; 
 
 
@@ -156,15 +157,15 @@ bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
    return true;
 }
 
-arma::uvec& TwoBodyChannel::GetKetIndex_pp() { return KetIndex_pp;};
-arma::uvec& TwoBodyChannel::GetKetIndex_hh() { return KetIndex_hh;};
-arma::uvec& TwoBodyChannel::GetKetIndex_ph() { return KetIndex_ph;};
-arma::uvec& TwoBodyChannel::GetKetIndex_cc() { return KetIndex_cc;};
-arma::uvec& TwoBodyChannel::GetKetIndex_vc() { return KetIndex_vc;};
-arma::uvec& TwoBodyChannel::GetKetIndex_qc() { return KetIndex_qc;};
-arma::uvec& TwoBodyChannel::GetKetIndex_vv() { return KetIndex_vv;};
-arma::uvec& TwoBodyChannel::GetKetIndex_qv() { return KetIndex_qv;};
-arma::uvec& TwoBodyChannel::GetKetIndex_qq() { return KetIndex_qq;};
+const arma::uvec& TwoBodyChannel::GetKetIndex_pp() const { return KetIndex_pp;};
+const arma::uvec& TwoBodyChannel::GetKetIndex_hh() const { return KetIndex_hh;};
+const arma::uvec& TwoBodyChannel::GetKetIndex_ph() const { return KetIndex_ph;};
+const arma::uvec& TwoBodyChannel::GetKetIndex_cc() const { return KetIndex_cc;};
+const arma::uvec& TwoBodyChannel::GetKetIndex_vc() const { return KetIndex_vc;};
+const arma::uvec& TwoBodyChannel::GetKetIndex_qc() const { return KetIndex_qc;};
+const arma::uvec& TwoBodyChannel::GetKetIndex_vv() const { return KetIndex_vv;};
+const arma::uvec& TwoBodyChannel::GetKetIndex_qv() const { return KetIndex_qv;};
+const arma::uvec& TwoBodyChannel::GetKetIndex_qq() const { return KetIndex_qq;};
 
 
 
@@ -1254,12 +1255,12 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
            for (int ibra=0; ibra<tbc_bra.GetNumberKets(); ++ibra)
            {
              if (need_it) break;
-             Ket& bra = tbc_bra.GetKet(ibra);
+             const Ket& bra = tbc_bra.GetKet(ibra);
              Orbit& oi = *(bra.op);
              Orbit& oj = *(bra.oq);
              for (int iket=0; iket<tbc_ket.GetNumberKets(); ++iket)
              {
-               Ket& ket = tbc_ket.GetKet(iket);
+               const Ket& ket = tbc_ket.GetKet(iket);
                Orbit& ok = *(ket.op);
                Orbit& ol = *(ket.oq);
                int j3min = abs(oi.j2-ol.j2);

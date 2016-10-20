@@ -30,6 +30,7 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
    else if (generator_type == "imaginary-time")            ConstructGenerator_ImaginaryTime();
    else if (generator_type == "shell-model")      ConstructGenerator_ShellModel();
    else if (generator_type == "shell-model-atan") ConstructGenerator_ShellModel_Atan();
+   else if (generator_type == "shell-model-atan-npnh") ConstructGenerator_ShellModel_Atan_NpNh();
    else if (generator_type == "shell-model-imaginary-time")            ConstructGenerator_ShellModel_ImaginaryTime();
    else if (generator_type == "hartree-fock")     ConstructGenerator_HartreeFock();
    else
@@ -403,6 +404,62 @@ void Generator::ConstructGenerator_ShellModel_ImaginaryTime()
 
 
 
+void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
+{
+  ConstructGenerator_ShellModel_Atan();
+
+//  cout << "In ShellModel_Atat_NpNh, adding to Eta" << endl;
+  // decouple f_cc'
+  for ( auto& c : modelspace->core )
+  {
+   for ( auto& cprime : modelspace->core )
+   {
+     if (cprime<=c) continue;
+     double denominator = Get1bDenominator(c,cprime);
+     Eta->OneBody(c,cprime) = 0.5*atan(2*H->OneBody(c,cprime) / denominator );
+//     cout << "c,cprime = " << c << " " << cprime << "  etacc' = " << Eta->OneBody(c,cprime) << endl;
+     Eta->OneBody(cprime,c) = - Eta->OneBody(c,cprime);
+   }
+  }
+
+  int nchan = modelspace->GetNumberTwoBodyChannels();
+  for (int ch=0;ch<nchan;++ch)
+  {
+     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+//     cout << "ch = " << ch << "  vc size = " << tbc.GetKetIndex_vc().size() << "   qc size = " << tbc.GetKetIndex_qc().size() << endl;
+     arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
+     arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
+  // decouple Gamma_qcvc'
+     for (auto& iket : tbc.GetKetIndex_vc())
+     {
+       Ket& ket = tbc.GetKet(iket);
+       for (auto& ibra : tbc.GetKetIndex_qc())
+       {
+         Ket& bra = tbc.GetKet(ibra);
+//         cout << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << endl;
+         if ((ket.p==bra.p) or (ket.p==bra.q) or (ket.q==bra.p) or (ket.q==bra.q) ) continue;
+         double denominator = Get2bDenominator(ch,ibra,iket);
+         ETA2(ibra,iket) = 0.5*atan( 2*H2(ibra,iket) / denominator );
+         ETA2(iket,ibra) = -ETA2(ibra,iket);
+//         cout << "   qcvc': " << ket.p << " " << ket.q << " " << bra.p << " " << bra.q << "    " << ETA2(ibra,iket) << endl;
+       }
+     }
+  // decouple Gamma_pcc'c''
+     for (auto& iket : tbc.GetKetIndex_cc())
+     {
+       Ket& ket = tbc.GetKet(iket);
+       for (auto& ibra : VectorUnion( tbc.GetKetIndex_vc(), tbc.GetKetIndex_qc() )  )
+       {
+         Ket& bra = tbc.GetKet(ibra);
+         if ((ket.p==bra.p) or (ket.p==bra.q) or (ket.q==bra.p) or (ket.q==bra.q) ) continue;
+         double denominator = Get2bDenominator(ch,ibra,iket);
+         ETA2(ibra,iket) = 0.5*atan( 2*H2(ibra,iket) / denominator );
+         ETA2(iket,ibra) = -ETA2(ibra,iket);
+       }
+     }
+  }
+//  cout << "all done" << endl;
+}
 
 
 void Generator::ConstructGenerator_HartreeFock()

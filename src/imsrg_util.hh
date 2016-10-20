@@ -82,13 +82,13 @@ namespace imsrg_util
 
 // Templated functions need to be defined in the header file (or else explicitly declared in the .cc file).
  template <typename T>
- T VectorUnion(T& v1)
+ T VectorUnion(const T& v1)
  {
    return v1;
  }
  
  template <typename T, typename... Args>
- T VectorUnion(T& v1, T& v2, Args... args)
+ T VectorUnion(const T& v1, const T& v2, Args... args)
  {
    T vec(v1.size()+v2.size());
    copy(v1.begin(),v1.end(),vec.begin());

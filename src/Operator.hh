@@ -177,7 +177,7 @@ class Operator
 //  void DoPandyaTransformation(deque<arma::mat>&, deque<arma::mat>&, string orientation) const ;
   void DoPandyaTransformation(deque<arma::mat>&, string orientation) const ;
   void DoPandyaTransformation_SingleChannel(arma::mat& X, int ch_cc, string orientation) const ;
-  void AddInversePandyaTransformation(deque<arma::mat>&);
+  void AddInversePandyaTransformation(const deque<arma::mat>&);
   void AddInversePandyaTransformation_SingleChannel(arma::mat& Z, int ch_cc);
 
 

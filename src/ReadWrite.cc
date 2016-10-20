@@ -1880,7 +1880,10 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
 
 void ReadWrite::WriteNuShellX_op(Operator& op, string filename)
 {
-  WriteNuShellX_intfile(op,filename,"op");
+//  WriteNuShellX_intfile(op,filename,"op");
+  // with the new nutbar program, there is no need to
+  // perform the isospin averaging.
+  WriteNuShellX_intfile(op,filename,"int");
 }
 void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
 {
@@ -1899,9 +1902,9 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode
    intfile.open(filename, ofstream::out);
    ModelSpace * modelspace = op.GetModelSpace();
 
-   int wint = 4; // width for printing integers
-   int wdouble = 16; // width for printing doubles
-   int pdouble = 9; // precision for printing doubles
+   const int wint = 4; // width for printing integers
+   const int wdouble = 16; // width for printing doubles
+   const int pdouble = 9; // precision for printing doubles
 
    // valence protons are the intersection of valence orbits and protons orbits. Likewise for neutrons.
    vector<int> valence_protons(modelspace->valence.size());

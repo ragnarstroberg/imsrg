@@ -96,6 +96,7 @@ class TwoBodyChannel
    int GetLocalIndex(int ketindex) const { return KetMap[ketindex];}; // modelspace ket index => local ket index
    int GetLocalIndex(int p, int q) const ;
    int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
+   const Ket& GetKet(int i) const  ; // get pointer to ket using local index
    Ket& GetKet(int i)  ; // get pointer to ket using local index
 
    arma::uvec KetIndex_pp ;
@@ -115,15 +116,15 @@ class TwoBodyChannel
 
 
    arma::uvec GetKetIndexFromList(vector<index_t>& vec_in);
-   arma::uvec& GetKetIndex_pp();
-   arma::uvec& GetKetIndex_hh();
-   arma::uvec& GetKetIndex_ph();
-   arma::uvec& GetKetIndex_cc();
-   arma::uvec& GetKetIndex_vc();
-   arma::uvec& GetKetIndex_qc();
-   arma::uvec& GetKetIndex_vv();
-   arma::uvec& GetKetIndex_qv();
-   arma::uvec& GetKetIndex_qq();
+   const arma::uvec& GetKetIndex_pp() const;
+   const arma::uvec& GetKetIndex_hh() const;
+   const arma::uvec& GetKetIndex_ph() const;
+   const arma::uvec& GetKetIndex_cc() const;
+   const arma::uvec& GetKetIndex_vc() const;
+   const arma::uvec& GetKetIndex_qc() const;
+   const arma::uvec& GetKetIndex_vv() const;
+   const arma::uvec& GetKetIndex_qv() const;
+   const arma::uvec& GetKetIndex_qq() const;
 
 
 // private:

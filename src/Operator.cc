@@ -2314,7 +2314,7 @@ void Operator::AddInversePandyaTransformation_SingleChannel(arma::mat& Zbar, int
 
 
 
-void Operator::AddInversePandyaTransformation(deque<arma::mat>& Zbar)
+void Operator::AddInversePandyaTransformation(const deque<arma::mat>& Zbar)
 {
     // Do the inverse Pandya transform
     // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
@@ -2366,7 +2366,7 @@ void Operator::AddInversePandyaTransformation(deque<arma::mat>& Zbar)
                int nkets_cc = tbc_cc.GetNumberKets();
                int indx_il = tbc_cc.GetLocalIndex(min(i,l),max(i,l)) +(i>l?nkets_cc:0);
                int indx_kj = tbc_cc.GetLocalIndex(min(j,k),max(j,k)) +(k>j?nkets_cc:0);
-               double me1 = Zbar[ch_cc](indx_il,indx_kj);
+               double me1 = Zbar.at(ch_cc)(indx_il,indx_kj);
                commij += (2*Jprime+1) * sixj * me1;
 //               if (J==1 and i==0 and j==1 and k==0 and l==9)
 //               if ( ch==0 and ibra+iket==1)
@@ -2402,7 +2402,7 @@ void Operator::AddInversePandyaTransformation(deque<arma::mat>& Zbar)
                  int indx_ik = tbc_cc.GetLocalIndex(min(i,k),max(i,k)) +(i>k?nkets_cc:0);
                  int indx_lj = tbc_cc.GetLocalIndex(min(l,j),max(l,j)) +(l>j?nkets_cc:0);
                  // we always have i<=k so we should always flip Z_jlki = (-1)^{i+j+k+l} Z_iklj
-                 double me1 = Zbar[ch_cc](indx_ik, indx_lj) ;//* modelspace->phase(ji+jj+jk+jl);
+                 double me1 = Zbar.at(ch_cc)(indx_ik, indx_lj) ;//* modelspace->phase(ji+jj+jk+jl);
                  commji += (2*Jprime+1) *  sixj * me1;
 
 //                 if (J==1 and i==0 and j==1 and k==0 and l==9)
@@ -2536,28 +2536,32 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 //   profiler.timer["DoPandyaTransformation"] += omp_get_wtime() - t_start;
 
    // Construct the intermediate matrix Z_bar
-   auto& pandya_lookup = modelspace->GetPandyaLookup(rank_J, rank_T, parity);
+   const auto& pandya_lookup = modelspace->GetPandyaLookup(rank_J, rank_T, parity);
    int nch = modelspace->SortedTwoBodyChannels_CC.size();
    t_start = omp_get_wtime();
    deque<arma::mat> Z_bar (nChannels );
+   vector<bool> lookup_empty(nChannels,true);
    for (int ich=0;ich<nch;++ich)
    {
       int ch = modelspace->SortedTwoBodyChannels_CC[ich];
-      if ( pandya_lookup.at({ch,ch})[0].size()<1 ) continue;
+//      if ( pandya_lookup.at({ch,ch})[0].size()<1 ) continue;
       index_t nKets_cc = modelspace->GetTwoBodyChannel_CC(ch).GetNumberKets();
       Z_bar[ch].zeros( nKets_cc, 2*nKets_cc );
+      if ( pandya_lookup.at({ch,ch})[0].size()>0 ) lookup_empty[ich] = false;
+//      lookup_empty[ich] = false;
    }
 
 
    #ifndef OPENBLAS_NOUSEOMP
-   #pragma omp parallel for schedule(dynamic,1)
+//   #pragma omp parallel for schedule(dynamic,1)
    #endif
    for (int ich=0; ich<nch; ++ich )
    {
-      int ch = modelspace->SortedTwoBodyChannels_CC[ich];
-      if ( pandya_lookup.find({ch,ch}) == pandya_lookup.end()) continue;
-      if ( pandya_lookup.at({ch,ch})[0].size()<1 ) continue;
-      TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch);
+      if (lookup_empty.at(ich)) continue;
+      int ch = modelspace->SortedTwoBodyChannels_CC.at(ich);
+//      if ( pandya_lookup.find({ch,ch}) == pandya_lookup.end()) continue;
+//      if ( pandya_lookup.at({ch,ch})[0].size()<1 ) continue;
+      const TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch);
       index_t nKets_cc = tbc_cc.GetNumberKets();
       int nph_kets = tbc_cc.GetKetIndex_hh().size() + tbc_cc.GetKetIndex_ph().size();
 
@@ -2568,13 +2572,16 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
       Y.DoPandyaTransformation_SingleChannel(Y_bar_ph,ch,"normal");
       X.DoPandyaTransformation_SingleChannel(Xt_bar_ph,ch,"transpose");
+      auto& Zbar_ch = Z_bar.at(ch);
 
 //      auto& Xt_bar_ph = Xt_bar_ph_all[ch];
 //      auto& Y_bar_ph = Y_bar_ph_all[ch];
 
       if (Y_bar_ph.size()<1 or Xt_bar_ph.size()<1)
       {
-        Z_bar[ch] = arma::zeros( Xt_bar_ph.n_rows, Y_bar_ph.n_cols*2);
+//        Z_bar[ch] = arma::zeros( Xt_bar_ph.n_rows, Y_bar_ph.n_cols*2);
+        Zbar_ch = arma::zeros( Xt_bar_ph.n_rows, Y_bar_ph.n_cols*2);
+//        Zbar_ch.zeros();
         continue;
       }
 
@@ -2582,7 +2589,7 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
       arma::mat PhaseMat(nKets_cc, nKets_cc, arma::fill::ones );
       for (index_t iket=0;iket<nKets_cc;iket++)
       {
-         Ket& ket = tbc_cc.GetKet(iket);
+         const Ket& ket = tbc_cc.GetKet(iket);
          if ( modelspace->phase( (ket.op->j2 + ket.oq->j2)/2 ) > 0) continue;
          PhaseMat.col( iket ) *= -1;
          PhaseMat.row( iket ) *= -1;
@@ -2600,7 +2607,8 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 //      int halfnry = Y_bar_ph.n_rows/2;
 //      arma::mat Z_bar =  Xt_bar_ph * join_horiz(Y_bar_ph, join_vert(Y_bar_ph.tail_rows(halfnry)%PhaseMatY,
 //                                                                    Y_bar_ph.head_rows(halfnry)%PhaseMatY) );
-      Z_bar[ch] =  Xt_bar_ph * join_horiz(Y_bar_ph, join_vert( Y_bar_ph.tail_rows(nph_kets)%PhaseMatY,
+//      Z_bar[ch] =  Xt_bar_ph * join_horiz(Y_bar_ph, join_vert( Y_bar_ph.tail_rows(nph_kets)%PhaseMatY,
+      Zbar_ch =  Xt_bar_ph * join_horiz(Y_bar_ph, join_vert(   Y_bar_ph.tail_rows(nph_kets)%PhaseMatY,
                                                                Y_bar_ph.head_rows(nph_kets)%PhaseMatY) );
 
 
@@ -2609,15 +2617,18 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
       if ( Z.IsHermitian() )
       {
 //         Z_bar.cols(0,nKets_cc-1) += Z_bar.cols(0,nKets_cc-1).t();
-         Z_bar[ch].head_cols(nKets_cc) += Z_bar[ch].head_cols(nKets_cc).t();
+//         Z_bar[ch].head_cols(nKets_cc) += Z_bar[ch].head_cols(nKets_cc).t();
+         Zbar_ch.head_cols(nKets_cc) += Zbar_ch.head_cols(nKets_cc).t();
       }
       else
       {
 //         Z_bar.cols(0,nKets_cc-1) -= Z_bar.cols(0,nKets_cc-1).t();
-         Z_bar[ch].head_cols(nKets_cc) -= Z_bar[ch].head_cols(nKets_cc).t();
+//         Z_bar[ch].head_cols(nKets_cc) -= Z_bar[ch].head_cols(nKets_cc).t();
+         Zbar_ch.head_cols(nKets_cc) -= Zbar_ch.head_cols(nKets_cc).t();
       }
 //      Z_bar.cols(nKets_cc,2*nKets_cc-1) += Z_bar.cols(nKets_cc,2*nKets_cc-1).t()%PhaseMat;
-      Z_bar[ch].tail_cols(nKets_cc) += Z_bar[ch].tail_cols(nKets_cc).t()%PhaseMat;
+//      Z_bar[ch].tail_cols(nKets_cc) += Z_bar[ch].tail_cols(nKets_cc).t()%PhaseMat;
+      Zbar_ch.tail_cols(nKets_cc) += Zbar_ch.tail_cols(nKets_cc).t()%PhaseMat;
 
 //     cout << "ch = " << ch << " --> nKets_cc = " << nKets_cc << "  size of Z_bar = " << Z_bar[ch].n_rows << " x " << Z_bar[ch].n_cols << endl;
 //     Z_debug.AddInversePandyaTransformation_SingleChannel(Z_bar[ch],ch);
@@ -2637,6 +2648,7 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 //     cout << itch.second << endl << endl << Z.TwoBody.GetMatrix(itch.first) << endl << endl << endl << endl;
 //   }
 //   cout << "end of commutator: " << endl << Z.TwoBody.GetMatrix(0).submat(0,0,1,1) << endl << endl << Z_debug.TwoBody.GetMatrix(0).submat(0,0,1,1);
+//   cout << "done with ph commutator" << endl;
    scalar_transform_first_pass = false;
    profiler.timer["InversePandyaTransformation"] += omp_get_wtime() - t_start;
 
@@ -2966,12 +2978,12 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
     arma::mat& Matrixpp =  Mpp.GetMatrix(ch_bra,ch_ket);
     arma::mat& Matrixhh =  Mhh.GetMatrix(ch_bra,ch_ket);
    
-    arma::uvec& bras_pp = tbc_bra.GetKetIndex_pp();
-    arma::uvec& bras_hh = tbc_bra.GetKetIndex_hh();
-    arma::uvec& bras_ph = tbc_bra.GetKetIndex_ph();
-    arma::uvec& kets_pp = tbc_ket.GetKetIndex_pp();
-    arma::uvec& kets_hh = tbc_ket.GetKetIndex_hh();
-    arma::uvec& kets_ph = tbc_ket.GetKetIndex_ph();
+    const arma::uvec& bras_pp = tbc_bra.GetKetIndex_pp();
+    const arma::uvec& bras_hh = tbc_bra.GetKetIndex_hh();
+    const arma::uvec& bras_ph = tbc_bra.GetKetIndex_ph();
+    const arma::uvec& kets_pp = tbc_ket.GetKetIndex_pp();
+    const arma::uvec& kets_hh = tbc_ket.GetKetIndex_hh();
+    const arma::uvec& kets_ph = tbc_ket.GetKetIndex_ph();
 
     // the complicated-looking construct after the % signs just multiply the matrix elements by the proper occupation numbers (nanb, etc.)
 
