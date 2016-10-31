@@ -220,10 +220,12 @@ void Operator::SetUpOneBodyChannels()
   for ( int i=0; i<modelspace->GetNumberOrbits(); ++i )
   {
     Orbit& oi = modelspace->GetOrbit(i);
-    int lmin = max( oi.l - rank_J + (rank_J+parity)%2, (oi.l+parity)%2);
-    int lmax = min( oi.l + rank_J, modelspace->GetEmax() );
-    for (int l=lmin; l<=lmax; l+=2)
+    // The +-1 comes from the spin [LxS](J)
+    int lmin = max( oi.l - rank_J-1, 0);
+    int lmax = min( oi.l + rank_J+1, modelspace->GetEmax() );
+    for (int l=lmin; l<=lmax; l+=0)
     {
+      if ((l + oi.l + parity)%2>0) continue;
       int j2min = max(max(oi.j2 - 2*rank_J, 2*l-1),1);
       int j2max = min(oi.j2 + 2*rank_J, 2*l+1);
       for (int j2=j2min; j2<=j2max; j2+=2)
