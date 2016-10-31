@@ -25,8 +25,8 @@ void ThreeBodyME::Allocate()
   MatEl.clear();
   OrbitIndex.clear();
   E3max = modelspace->GetE3max();
-  cout << "Begin AllocateThreeBody() with E3max = " << E3max << endl;
   int norbits = modelspace->GetNumberOrbits();
+  cout << "Begin AllocateThreeBody() with E3max = " << E3max << " norbits = " << norbits << endl;
   int nvectors = 0;
   int lmax = 500*norbits; // maybe do something with this later...
 
@@ -190,11 +190,29 @@ ThreeBME_type ThreeBodyME::GetME(int Jab_in, int Jde_in, int J2, int tab_in, int
 //*******************************************************************
 void ThreeBodyME::SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in, ThreeBME_type V)
 {
-//   AddToME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in,V);
    auto elements = AccessME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in);
    double me = 0;
-   for (auto elem : elements) me += MatEl.at(elem.first) * elem.second;
-   for (auto elem : elements)  MatEl[elem.first] += (V-me)*elem.second;
+//   for (auto elem : elements) 
+//   {
+//    if (elem.first >= MatEl.size())
+//    {
+//      cout << "Ran into trouble in SetME.  elem.first = " << elem.first << "  indices = "
+//           << a_in << " " << b_in << " " << c_in << " " << d_in << " " << e_in << " " << f_in
+//           << "   J,T values = " << Jab_in << " " << Jde_in << " " << J2 << " " << tab_in << " " << tde_in << " " <<T2 << endl; 
+//      dump_flag = true;
+//    }
+//   }
+//   if (dump_flag)
+//   {
+//     cout << "size of elements = " << elements.size() << endl;
+//     for (auto elem : elements) 
+//     {
+//       cout << elem.first << " : " << elem.second << endl;
+//     }
+//   }
+
+   for (auto elem : elements)  me += MatEl.at(elem.first) * elem.second;
+   for (auto elem : elements)  MatEl.at(elem.first) += (V-me)*elem.second;
 }
 
 //*******************************************************************
@@ -202,10 +220,10 @@ void ThreeBodyME::SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, 
 /// identical, do all the work here to pull out a list of indices
 /// and coefficients which are needed for setting or getting.
 //*******************************************************************
-vector<pair<int,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in) const
+vector<pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in) const
 {
 
-   vector<pair<int,double>> elements;
+   vector<pair<size_t,double>> elements;
    // Re-order so that a>=b>=c, d>=e>=f
    int a,b,c,d,e,f;
    int abc_recoupling_case = SortOrbits(a_in,b_in,c_in,a,b,c);
@@ -254,12 +272,14 @@ vector<pair<int,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_in, int J2, i
    for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
    {
      double Cj_abc = RecouplingCoefficient(abc_recoupling_case,ja,jb,jc,Jab_in,Jab,J2);
+     if ( abs(Cj_abc)<1e-6 ) continue;
      // Pick up a -1 for odd permutations
      if (abc_recoupling_case>2) Cj_abc *= -1;
 
      for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
      {
        double Cj_def = RecouplingCoefficient(def_recoupling_case,jd,je,jf,Jde_in,Jde,J2);
+       if ( abs(Cj_def)<1e-6 ) continue;
        // Pick up a -1 for odd permutations
        if (def_recoupling_case>2) Cj_def *= -1;
 
