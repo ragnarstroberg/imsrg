@@ -58,7 +58,7 @@ class Ket  //  | pq >
    Ket(Orbit& op, Orbit& oq);
    // Methods
    int Phase(int J);
-   int delta_pq(){return dpq;};
+   int delta_pq() const {return dpq;};
 
    // Fields
    Orbit* op;
@@ -312,6 +312,8 @@ class ModelSpace
    vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
    map< array<int,3>, map< array<int,2>,array<vector<int>,2> > > PandyaLookup;
    bool moshinsky_has_been_precalculated;
+   bool scalar_transform_first_pass;
+   vector<bool> tensor_transform_first_pass;
    IMSRGProfiler profiler;
 //   map<long int,double> SixJList;
 

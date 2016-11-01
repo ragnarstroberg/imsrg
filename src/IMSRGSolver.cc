@@ -543,10 +543,10 @@ Operator IMSRGSolver::Transform(Operator&& OpIn)
 /// Returns \f$ e^{-Omega} \mathcal{O} e^{Omega} \f$
 Operator IMSRGSolver::InverseTransform(Operator& OpIn)
 {
-  if (OpIn.GetJRank()+OpIn.GetTRank()+OpIn.GetParity()>0)
-  {
-    OpIn.ResetTensorTransformFirstPass();
-  }
+//  if (OpIn.GetJRank()+OpIn.GetTRank()+OpIn.GetParity()>0)
+//  {
+//    OpIn.ResetTensorTransformFirstPass();
+//  }
   Operator OpOut = OpIn;
   for (auto omega=Omega.rbegin(); omega !=Omega.rend(); ++omega )
   {
