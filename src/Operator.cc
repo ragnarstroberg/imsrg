@@ -223,7 +223,7 @@ void Operator::SetUpOneBodyChannels()
     // The +-1 comes from the spin [LxS](J)
     int lmin = max( oi.l - rank_J-1, 0);
     int lmax = min( oi.l + rank_J+1, modelspace->GetEmax() );
-    for (int l=lmin; l<=lmax; l+=0)
+    for (int l=lmin; l<=lmax; l+=1)
     {
       if ((l + oi.l + parity)%2>0) continue;
       int j2min = max(max(oi.j2 - 2*rank_J, 2*l-1),1);
