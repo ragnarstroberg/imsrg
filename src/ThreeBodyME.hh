@@ -35,16 +35,15 @@ class ThreeBodyME
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};
 
 //// Three body setter getters
-  vector<pair<size_t,double>> AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
   ThreeBME_type AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
   void   SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
-  ThreeBME_type GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
-  ThreeBME_type GetME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n) const;
+  ThreeBME_type GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n);
+  ThreeBME_type GetME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n);
 
 ///// Some other three body methods
 
-  int SortOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c) const;
-  double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const;
+  int SortOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c);
+  double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J);
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};
 
