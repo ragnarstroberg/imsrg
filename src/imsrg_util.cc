@@ -675,7 +675,10 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 /// evaluated in the oscillator basis.
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z)
  {
-   return R2CM_Op(modelspace) + (A-2.0)/(A*Z)*R2_1body_Op(modelspace,"proton") - 2./(A*Z)*R2_2body_Op(modelspace,"proton");
+//   return R2CM_Op(modelspace) + (A-2.0)/(A*Z)*R2_1body_Op(modelspace,"proton") - 2./(A*Z)*R2_2body_Op(modelspace,"proton");
+   return R2CM_Op(modelspace) + (A-2.0)/(A*Z)*R2_1body_Op(modelspace,"proton")
+                                   - 2./(A*Z)*R2_2body_Op(modelspace,"proton")
+                                   + 1./Z * RpSpinOrbitCorrection(modelspace);
  }
 
  Operator Rn2_corrected_Op(ModelSpace& modelspace, int A, int Z)
