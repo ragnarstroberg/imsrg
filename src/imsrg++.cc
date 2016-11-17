@@ -261,12 +261,12 @@ int main(int argc, char** argv)
   
   if ( method == "HF" or method == "MP3")
   {
-    cout << "HF Single particle energies:" << endl;
-    hf.PrintSPE();
-    cout << endl;
     HNO.PrintTimes();
     return 0;
   }
+  cout << "HF Single particle energies:" << endl;
+  hf.PrintSPE();
+  cout << endl;
 
 
   if (method == "FCI")
