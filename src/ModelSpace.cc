@@ -975,6 +975,13 @@ void ModelSpace::ClearVectors()
 }
 
 
+void ModelSpace::ResetFirstPass()
+{
+  scalar_transform_first_pass = false;
+  for (size_t i=0;i<tensor_transform_first_pass.size();i++) tensor_transform_first_pass[i] = true;
+}
+
+
 double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3)
 {
 // { j1 j2 j3 }
