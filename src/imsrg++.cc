@@ -376,6 +376,7 @@ int main(int argc, char** argv)
     if (method == "magnus") smax *= 2;
 
     imsrgsolver.SetGenerator(valence_generator);
+    modelspace.ResetFirstPass();
     if (valence_generator.find("imaginary")!=string::npos)
     {
      if (ds_0>1e-2)
@@ -446,7 +447,7 @@ int main(int argc, char** argv)
     HNO = HNO.DoNormalOrdering();
 
     imsrgsolver.SetHin(HNO);
-//    imsrgsolver.SetEtaCriterion(1e-4);
+    imsrgsolver.SetEtaCriterion(1e-4);
     imsrgsolver.Solve();
     // Change operators to the new basis, then apply the rest of the transformation
     cout << "Final transformation on the operators..." << endl;
