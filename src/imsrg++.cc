@@ -477,6 +477,7 @@ int main(int argc, char** argv)
       rw.WriteAntoine_int(imsrgsolver.GetH_s(),intfile+".ant");
       rw.WriteAntoine_input(imsrgsolver.GetH_s(),intfile+".inp",modelspace.GetAref(),modelspace.GetZref());
     }
+    cout << "Writing files: " << intfile << endl;
     rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
     rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
 

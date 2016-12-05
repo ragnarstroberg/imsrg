@@ -2129,6 +2129,7 @@ void ReadWrite::ReadNuShellX_int(Operator& op, string filename)
 //  cout << op.OneBody << endl;
   int a,b,c,d,J,Tprime;
   double V;
+  vector<int> added_tprime; // list to keep track of whether we've added this T'=0,1 term already.
   while( intfile >> a >> b >> c >> d >> J >> Tprime >> V)
   {
     Orbit& oa = modelspace->GetOrbit(orbit_map[a]);
@@ -2139,8 +2140,25 @@ void ReadWrite::ReadNuShellX_int(Operator& op, string filename)
     {
        if ( (oa.j2 != ob.j2) or (oa.l != ob.l) or (oa.n != ob.n) ) V /= SQRT2; // pn TBMEs are unnormalized
        if ( (oc.j2 != od.j2) or (oc.l != od.l) or (oc.n != od.n) ) V /= SQRT2; // pn TBMEs are unnormalized
+       // if we haven't already added this one, then do it.
+       int asrt=min(a,b);
+       int bsrt=max(a,b);
+       int csrt=min(c,d);
+       int dsrt=max(c,d);
+       long tprimekey =  asrt*100000000 + bsrt*1000000 + csrt*10000 + dsrt*100 + J*10 + Tprime;
+       if ( csrt<asrt or ( csrt==asrt and dsrt<bsrt ) )
+          tprimekey =  csrt*100000000 + dsrt*1000000 + asrt*10000 + bsrt*100 + J*10 + Tprime;
+
+       if ( find(begin(added_tprime),end(added_tprime),tprimekey) == end(added_tprime))
+       {
+         op.TwoBody.AddToTBME_J(J,orbit_map[a],orbit_map[b],orbit_map[c],orbit_map[d],V);
+         added_tprime.push_back(tprimekey);
+       }
     }
-    op.TwoBody.SetTBME_J(J,orbit_map[a],orbit_map[b],orbit_map[c],orbit_map[d],V);
+    else
+    {
+      op.TwoBody.SetTBME_J(J,orbit_map[a],orbit_map[b],orbit_map[c],orbit_map[d],V);
+    }
   }
 
 }

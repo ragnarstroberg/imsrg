@@ -25,6 +25,8 @@ using namespace boost::python;
 
   void ArmaMatPrint( arma::mat& self){ self.print();};
 
+  void MS_SetRef(ModelSpace& self, string str){ self.SetReference( str);};
+
   Operator HFGetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
 
 BOOST_PYTHON_MODULE(pyIMSRG)
@@ -66,7 +68,10 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetOrbit", &MSGetOrbit)
       .def("GetTwoBodyChannelIndex", &ModelSpace::GetTwoBodyChannelIndex)
       .def("GetTwoBodyChannel", &MSGetTwoBodyChannel)
-      .def("Index2String",&ModelSpace::Index2String)
+      .def("Index2String", &ModelSpace::Index2String)
+      .def("ResetFirstPass", &ModelSpace::ResetFirstPass)
+      .def("SetReference", &MS_SetRef)
+      .def_readwrite("core", &ModelSpace::core)
    ;
 
 
@@ -228,6 +233,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetOmega",&IMSRGSolver::GetOmega)
       .def("GetH_s",&IMSRGSolver::GetH_s,return_value_policy<reference_existing_object>())
       .def("SetMagnusAdaptive",&IMSRGSolver::SetMagnusAdaptive)
+      .def("SetReadWrite", &IMSRGSolver::SetReadWrite)
       .def_readwrite("Eta", &IMSRGSolver::Eta)
    ;
 
