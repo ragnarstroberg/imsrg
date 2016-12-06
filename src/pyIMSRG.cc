@@ -71,6 +71,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("Index2String", &ModelSpace::Index2String)
       .def("ResetFirstPass", &ModelSpace::ResetFirstPass)
       .def("SetReference", &MS_SetRef)
+      .def("Init_occ_from_file", &ModelSpace::Init_occ_from_file)
       .def_readwrite("core", &ModelSpace::core)
    ;
 
