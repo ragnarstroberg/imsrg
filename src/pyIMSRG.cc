@@ -24,6 +24,7 @@ using namespace boost::python;
   int TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
 
   void ArmaMatPrint( arma::mat& self){ self.print();};
+  void OpSetOneBodyME( Operator& self, int i, int j, double v){self.OneBody(i,j) = v;};
 
   void MS_SetRef(ModelSpace& self, string str){ self.SetReference( str);};
 
@@ -136,6 +137,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("comm122st", &Operator::comm122st)
       .def("comm222_pp_hh_221st", &Operator::comm222_pp_hh_221st)
       .def("comm222_phst", &Operator::comm222_phst)
+      .def("SetOneBodyME", &OpSetOneBodyME)
    ;
 
    class_<arma::mat>("ArmaMat",init<>())
