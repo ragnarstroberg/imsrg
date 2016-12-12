@@ -2552,6 +2552,7 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
    #ifndef OPENBLAS_NOUSEOMP
 //   #pragma omp parallel for schedule(dynamic,1)
+   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->scalar_transform_first_pass)
    #endif
    for (int ich=0; ich<nch; ++ich )
    {
@@ -3207,97 +3208,102 @@ void Operator::DoTensorPandyaTransformation( map<array<index_t,2>,arma::mat>& Tw
 
 
 
-void Operator::DoTensorPandyaTransformation_SingleChannel( arma::mat& TwoBody_CC_ph, int ch_bra_cc, int ch_ket_cc) const
+// This happens inside an OMP loop, and so everything here needs to be thread safe
+//
+//void Operator::DoTensorPandyaTransformation_SingleChannel( arma::mat& TwoBody_CC_ph, int ch_bra_cc, int ch_ket_cc) const
+void Operator::DoTensorPandyaTransformation_SingleChannel( arma::mat& MatCC_ph, int ch_bra_cc, int ch_ket_cc) const
 {
    int Lambda = rank_J;
-   // loop over cross-coupled channels
 
-      TwoBodyChannel& tbc_bra_cc = modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
-      arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
-      int nph_bras = bras_ph.n_rows;
-      TwoBodyChannel& tbc_ket_cc = modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
-      int nKets_cc = tbc_ket_cc.GetNumberKets();
+   TwoBodyChannel& tbc_bra_cc = modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
+   arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
+   int nph_bras = bras_ph.n_rows;
 
-      TwoBody_CC_ph =  arma::mat(2*nph_bras,   nKets_cc, arma::fill::zeros);
+   TwoBodyChannel& tbc_ket_cc = modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
+   int nKets_cc = tbc_ket_cc.GetNumberKets();
 
-      int Jbra_cc = tbc_bra_cc.J;
-      int Jket_cc = tbc_ket_cc.J;
-      if ( (Jbra_cc+Jket_cc < rank_J) or abs(Jbra_cc-Jket_cc)>rank_J ) return;
-      if ( (tbc_bra_cc.parity + tbc_ket_cc.parity + parity)%2>0 ) return;
+   // The Pandya-transformed (formerly cross-coupled) particle-hole type matrix elements
+   // (this is the output of this method)
+   MatCC_ph =  arma::mat(2*nph_bras,   nKets_cc, arma::fill::zeros);
+
+   int Jbra_cc = tbc_bra_cc.J;
+   int Jket_cc = tbc_ket_cc.J;
+   if ( (Jbra_cc+Jket_cc < rank_J) or abs(Jbra_cc-Jket_cc)>rank_J ) return;
+   if ( (tbc_bra_cc.parity + tbc_ket_cc.parity + parity)%2>0 ) return;
 
 
-      arma::mat& MatCC_ph = TwoBody_CC_ph;
-      // loop over ph bras <ad| in this channel
-      for (int ibra=0; ibra<nph_bras; ++ibra)
+//   arma::mat& MatCC_ph = TwoBody_CC_ph;
+   // loop over ph bras <ad| in this channel
+   for (int ibra=0; ibra<nph_bras; ++ibra)
+   {
+      Ket & bra_cc = tbc_bra_cc.GetKet( bras_ph[ibra] );
+      int a = bra_cc.p;
+      int b = bra_cc.q;
+      Orbit & oa = modelspace->GetOrbit(a);
+      Orbit & ob = modelspace->GetOrbit(b);
+      double ja = oa.j2*0.5;
+      double jb = ob.j2*0.5;
+
+      // loop over kets |bc> in this channel
+      int iket_max =  nKets_cc ;
+      for (int iket_cc=0; iket_cc<iket_max; ++iket_cc)
       {
-         Ket & bra_cc = tbc_bra_cc.GetKet( bras_ph[ibra] );
-         int a = bra_cc.p;
-         int b = bra_cc.q;
-         Orbit & oa = modelspace->GetOrbit(a);
-         Orbit & ob = modelspace->GetOrbit(b);
-         double ja = oa.j2*0.5;
-         double jb = ob.j2*0.5;
+         Ket & ket_cc = tbc_ket_cc.GetKet(iket_cc%nKets_cc);
+         int c = iket_cc < nKets_cc ? ket_cc.p : ket_cc.q;
+         int d = iket_cc < nKets_cc ? ket_cc.q : ket_cc.p;
+         Orbit & oc = modelspace->GetOrbit(c);
+         Orbit & od = modelspace->GetOrbit(d);
+         double jc = oc.j2*0.5;
+         double jd = od.j2*0.5;
 
-         // loop over kets |bc> in this channel
-         int iket_max =  nKets_cc ;
-         for (int iket_cc=0; iket_cc<iket_max; ++iket_cc)
+
+         int j1min = abs(ja-jd);
+         int j1max = ja+jd;
+         double sm = 0;
+         for (int J1=j1min; J1<=j1max; ++J1)
          {
-            Ket & ket_cc = tbc_ket_cc.GetKet(iket_cc%nKets_cc);
-            int c = iket_cc < nKets_cc ? ket_cc.p : ket_cc.q;
-            int d = iket_cc < nKets_cc ? ket_cc.q : ket_cc.p;
-            Orbit & oc = modelspace->GetOrbit(c);
-            Orbit & od = modelspace->GetOrbit(d);
-            double jc = oc.j2*0.5;
-            double jd = od.j2*0.5;
+           int j2min = max(int(abs(jc-jb)),abs(J1-Lambda));
+           int j2max = min(int(jc+jb),J1+Lambda);
+           for (int J2=j2min; J2<=j2max; ++J2)
+           {
+             double ninej = modelspace->GetNineJ(ja,jd,J1,jb,jc,J2,Jbra_cc,Jket_cc,Lambda);
+             if (abs(ninej) < 1e-8) continue;
+             double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
+             double tbme = TwoBody.GetTBME_J(J1,J2,a,d,c,b);
+             sm -= hatfactor * modelspace->phase(jb+jd+Jket_cc+J2) * ninej * tbme ;
+           }
+         }
+         MatCC_ph(ibra,iket_cc) = sm;
 
+         // Exchange (a <-> b) to account for the (n_a - n_b) term
+         if (a==b)
+         {
+           MatCC_ph(ibra+nph_bras,iket_cc) = sm;
+         }
+         else
+         {
 
-            int j1min = abs(ja-jd);
-            int j1max = ja+jd;
-            double sm = 0;
-            for (int J1=j1min; J1<=j1max; ++J1)
-            {
-              int j2min = max(int(abs(jc-jb)),abs(J1-Lambda));
-              int j2max = min(int(jc+jb),J1+Lambda);
-              for (int J2=j2min; J2<=j2max; ++J2)
-              {
-                double ninej = modelspace->GetNineJ(ja,jd,J1,jb,jc,J2,Jbra_cc,Jket_cc,Lambda);
-                if (abs(ninej) < 1e-8) continue;
-                double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
-                double tbme = TwoBody.GetTBME_J(J1,J2,a,d,c,b);
-                sm -= hatfactor * modelspace->phase(jb+jd+Jket_cc+J2) * ninej * tbme ;
-              }
-            }
-            MatCC_ph(ibra,iket_cc) = sm;
-
-            // Exchange (a <-> b) to account for the (n_a - n_b) term
-            if (a==b)
-            {
-              MatCC_ph(ibra+nph_bras,iket_cc) = sm;
-            }
-            else
-            {
-
-              // Get Tz,parity and range of J for <bd || ca > coupling
-              j1min = abs(jb-jd);
-              j1max = jb+jd;
-              sm = 0;
-              for (int J1=j1min; J1<=j1max; ++J1)
-              {
-                int j2min = max(int(abs(jc-ja)),abs(J1-Lambda));
-                int j2max = min(int(jc+ja),J1+Lambda);
-                for (int J2=j2min; J2<=j2max; ++J2)
-                {
-                  double ninej = modelspace->GetNineJ(jb,jd,J1,ja,jc,J2,Jbra_cc,Jket_cc,Lambda);
-                  if (abs(ninej) < 1e-8) continue;
-                  double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
-                  double tbme = TwoBody.GetTBME_J(J1,J2,b,d,c,a);
-                  sm -= hatfactor * modelspace->phase(ja+jd+Jket_cc+J2) * ninej * tbme ;
-                }
-              }
-              MatCC_ph(ibra+nph_bras,iket_cc) = sm;
-            }
+           // Get Tz,parity and range of J for <bd || ca > coupling
+           j1min = abs(jb-jd);
+           j1max = jb+jd;
+           sm = 0;
+           for (int J1=j1min; J1<=j1max; ++J1)
+           {
+             int j2min = max(int(abs(jc-ja)),abs(J1-Lambda));
+             int j2max = min(int(jc+ja),J1+Lambda);
+             for (int J2=j2min; J2<=j2max; ++J2)
+             {
+               double ninej = modelspace->GetNineJ(jb,jd,J1,ja,jc,J2,Jbra_cc,Jket_cc,Lambda);
+               if (abs(ninej) < 1e-8) continue;
+               double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
+               double tbme = TwoBody.GetTBME_J(J1,J2,b,d,c,a);
+               sm -= hatfactor * modelspace->phase(ja+jd+Jket_cc+J2) * ninej * tbme ;
+             }
+           }
+           MatCC_ph(ibra+nph_bras,iket_cc) = sm;
          }
       }
+   }
 }
 
 
@@ -3779,7 +3785,7 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    t_start = omp_get_wtime();
 
    #ifndef OPENBLAS_NOUSEOMP
-   #pragma omp parallel for schedule(dynamic,1)
+   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->tensor_transform_first_pass.at(rank_J))
    #endif
    for(int i=0;i<counter;++i)
    {
