@@ -666,7 +666,7 @@ Operator HartreeFock::GetNormalOrderedH()
 
    int nchan = modelspace->GetNumberTwoBodyChannels();
    int norb = modelspace->GetNumberOrbits();
-   #pragma omp parallel for schedule(dynamic,1) // have not yet confirmed that this improves performance
+//   #pragma omp parallel for schedule(dynamic,1) // have not yet confirmed that this improves performance ... no sign of significant improvement
    for (int ch=0;ch<nchan;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -676,7 +676,7 @@ Operator HartreeFock::GetNormalOrderedH()
       arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
       arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
 
-//      #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
+      #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
       for (int i=0; i<npq; ++i)    
       {
          Ket & bra = tbc.GetKet(i);
