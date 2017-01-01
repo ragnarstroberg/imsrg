@@ -14,7 +14,7 @@
 from os import path,environ,mkdir,remove
 from subprocess import call,PIPE
 from time import time,sleep
-import from datetime import datetime
+from datetime import datetime
 
 ### Check to see what type of batch submission system we're dealing with
 BATCHSYS = 'NONE'
@@ -26,8 +26,8 @@ NTHREADS=12
 exe = '%s/bin/imsrg++'%(environ['HOME'])
 
 ### Flag to swith between submitting to the scheduler or running in the current shell
-#batch_mode=False
-batch_mode=True
+batch_mode=False
+#batch_mode=True
 
 mail_address = 'sstroberg@triumf.ca'
 
@@ -94,125 +94,30 @@ export OMP_NUM_THREADS=%d
 time srun %s
 """
 
-
-if not path.exists('slurm_log'): mkdir('slurm_log')
-
-#for Z in range(6,7):
-#for betaCM in [0,1,3]:
-for A in [8]:
-#for A in [74,76,78,80]:
- Z=4
-# ARGS['BetaCM'] = '%.1f'%betaCM
-# for etacrit in ['1e-6','1e-8']:
-#  ARGS['eta_criterion'] = etacrit
-# Z=32
-#  if (A-Z)<8 or (A-Z)>20: continue
-#for A in range(51,57):
-#for A in range(10,11):
-#  e = 12
-# for e in [4,6,8,10,12]:
-# for e in [8,10,12]:
- for e in [10]:
-# for e in [8]:
-# for e in [8,10]:
-# for e in [4]:
-  for hw in [12]:
-#  for hw in [16,24]:
-#  for hw in [12,16,20,24,28]:
-#  for hw in [24]:
-#   if e==8 and A==24: continue
-#   if  e==12 and hw==24: continue
-#  for hw in [12,16,20,24,28]
-# for e in [4,10,12]:
-#  for method in ['magnus','flow']:
-#   for reference in ['F%d'%(A)]:
-#   for reference in ['Ca40', 'V%d'%(A)]:
-#   for reference in ['Ca40', 'V%d'%(A)]:
-#   for reference in ['Ge%d'%(A),'Se%d'%(A)]:
-#   for reference in ['He%d'%(10)]:
-#   for reference in ['Ge%d'%(A),'Se%d'%(A)]:
-   for reference in ['%s%d'%(ELEM[Z],A)]:
-#   for reference in {10:['B10','He4','He8'],22:['Na22','O16'],46:['V46','Ca40']}[A]:
-#   for reference in ['He%d'%A,'Li%d'%A]:
-#   for reference in ['O22']:
-#  for method in ['flow']:
-#   for hw in [14,22]:
-#   for hw in [22]:
-     ARGS['reference'] = reference
-#     ARGS['valence_space'] = {10:'p-shell',22:'sd-shell',46:'fp-shell'}[A]
-#     ARGS['valence_space'] = 'psdNR-shell'
-#   ARGS['reference'] = 'O%d'%refmass
-#     ARGS['2bme'] = 'input/chi2bSAT_srg0000_eMax14_lMax10_hwHO0%d.me2j.gz'%(hw)
-#     ARGS['3bme'] = 'input/chi2b3bSAT_J7666_hwconv022_JT3Nfull73_srg0000ho40C_eMax14_EMax14_hwHO0%d.me3j.gz'%(hw)
-#     ARGS['LECs'] = 'SAT'
-     ARGS['2bme'] = 'input/chi2b_srg0625_eMax14_lMax10_hwHO0%d.me2j.gz'%(hw)
-     ARGS['3bme'] = 'input/me3j/chi2b3b400cD-02cE0098_hwconv036_srg0625ho40J_eMax14_EMax14_hwHO0%d.me3j.gz'%(hw)
-     ARGS['LECs'] = 'srg0625'
-#     ARGS['3bme'] = 'none'
-#     ARGS['LECs'] = 'NNonlysrg0625'
-#     ARGS['2bme'] = 'input/chi2b_srg0800_eMax14_lMax10_hwHO024.me2j.gz'
-#     ARGS['2bme'] = 'input/chi2b_srg0800_eMax14_lMax10_hwHO%03d.me2j.gz'%(hw)
-#     ARGS['3bme'] = 'input/chi2b3b400cD-02cE0098_srg0800ho40J_hwconv36_eMax14_EMax14_hwHO024.me3j.gz'
-#     ARGS['3bme'] = 'input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax14_EMax14_hwHO%03d.me3j.gz'%(hw)
-#     ARGS['3bme'] = 'input/me3j/chi2b3b400cD-02cE0098_srg0800ho40J_hwconv36_eMax14_EMax14_hwHO%03d.me3j.gz'%(hw)
-#     ARGS['LECs'] = 'srg0800'
-#     ARGS['2bme'] = '/work/hda21/hda219/input/chi2b_srg0625_eMax14_lMax10_hwHO%03d.me2j.gz'%(hw)
-#     ARGS['2bme'] = '/work/hda21/hda215/ME_share/vnn_hw%d.00_kvnn10_lambda1.80_mesh_kmax_7.0_100_pc_R15.00_N15.dat_to_me2j.gz'%(hw)
-#     ARGS['3bme'] = '/work/hda21/hda215/ME_share/jsTNF_Nmax_16_J12max_8_hbarOmega_%d.00_Fit_cutoff_2.00_nexp_4_c1_1.00_c3_1.00_c4_1.00_cD_1.00_cE_1.00_2pi_0.00_2pi1pi_0.00_2picont_0.00_rings_0.00_J3max_9_new_E3_16_e_14_ant_EM1.8_2.0.h5_to_me3j.gz'%(hw)
-#     ARGS['LECs'] = 'EM1.8_2.0'
-#     ARGS['3bme'] = 'none'
-#     ARGS['LECs'] = 'NNonlysrg0625'
-#     ARGS['3bme'] = 'input/me3j/chi2b3b400cD-02cE0098_srg0800ho40C_eMax14_EMax14_hwHO%03d.me3j.gz'%(hw)
-#     ARGS['LECs'] = 'srg0800ho40C'
-#     ARGS['3bme'] = 'input/chi2b3b_hwconv036_srg0800ho40J_eMax14_EMax14_hwHO024.me3j.gz'
-#     ARGS['LECs'] = '500srg0800'
-#     ARGS['3bme'] = 'input/me3j/chi2b3b_hwconv036_srg0800ho40J_eMax14_EMax14_hwHO%03d.me3j.gz'%(hw)
-#     ARGS['LECs'] = '500srg0800ho40J'
-#     ARGS['3bme'] = 'input/me3j/chi2b3b_hwconv036_srg0800ho40J_eMax14_EMax14_hwHO%03d.me3j.gz'%(hw)
-#     ARGS['LECs'] = '500srg0800ho40C'
-#     ARGS['3bme'] = 'input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax14_EMax14_hwHO024.me3j.gz'
-#     ARGS['2bme'] = 'input/chi2b_srg0800_eMax14_lMax10_hwHO%03d.me2j.gz'%(hw)
-#     ARGS['3bme'] = 'input/chi2b3b400cD-02cE0098_srg0800ho40J_hwconv36_eMax14_EMax14_hwHO%03d.me3j.gz'%(hw)
-#     ARGS['3bme'] = 'input/chi2b3b_hwconv036_srg0800ho40J_eMax14_EMax14_hwHO024.me3j.gz'
-#     ARGS['LECs'] = '500srg0800'
-#     ARGS['3bme'] = 'input/chi2b3b400cD-02cE0098_srg0800ho40C_eMax14_EMax14_hwHO%03d.me3j.gz'%(hw)
-#     ARGS['LECs'] = 'NFCsrg0800'
-#     ARGS['2bme'] = 'input/chi2b_srg0800_eMax14_lMax10_hwHO024.me2j.gz'
-#     ARGS['2bme'] = 'input/chi2b_srg0625_eMax14_lMax10_hwHO0%d.me2j.gz'%(hw)
-#     ARGS['3bme'] = 'input/jsTNF_Nmax_18_J12max_8_hbarOmega_28.00_Fit_cutoff_2.00_nexp_4_c1_1.00_c3_1.00_c4_1.00_cD_1.00_cE_1.00_2pi_0.00_2pi1pi_0.00_2picont_0.00_rings_0.00_J3max_9_id_1_new_ant_E3_14_e_14_new.h5'
-#     ARGS['LECs'] = 'PWA2.0_2.0'
-#     ARGS['LECs'] = 'EM2.0_2.0'
-
 ### Make a directory for the log files, if it doesn't already exist
 if not path.exists('imsrg_log'): mkdir('imsrg_log')
 
 ### Loop over multiple jobs to submit
-for Z in range(12,14):
- A=25
+for Z in range(10,11):
+ A=20
  for reference in ['%s%d'%(ELEM[Z],A)]:
   ARGS['reference'] = reference
-  for e in [2]:
+  print 'Z = ',Z
+  for e in [4]:
    for hw in [20]:
-     ARGS['2bme'] = '/itch/exch/me2j/chi2b_srg0625_eMax14_lMax10_hwHO0%d.me2j.gz'%(hw)
-     ARGS['3bme'] = '/itch/exch/me3j/new/chi2b3b400cD-02cE0098_hwconv036_srg0625ho40J_eMax14_EMax14_hwHO0%d.me3j.gz'%(hw)
+     ARGS['2bme'] = 'input/chi2b_srg0625_eMax14_lMax10_hwHO0%d.me2j.gz'%(hw)
+     ARGS['3bme'] = 'input/me3j/chi2b3b400cD-02cE0098_hwconv036_srg0625ho40J_eMax14_EMax14_hwHO0%d.me3j.gz'%(hw)
      ARGS['LECs'] = 'srg0625'
+#     ARGS['2bme'] = '/work/hda21/hda215/ME_share/vnn_hw%d.00_kvnn10_lambda1.80_mesh_kmax_7.0_100_pc_R15.00_N15.dat_to_me2j.gz'%(hw)
+#     ARGS['3bme'] = '/work/hda21/hda215/ME_share/jsTNF_Nmax_16_J12max_8_hbarOmega_%d.00_Fit_cutoff_2.00_nexp_4_c1_1.00_c3_1.00_c4_1.00_cD_1.00_cE_1.00_2pi_0.00_2pi1pi_0.00_2picont_0.00_rings_0.00_J3max_9_new_E3_16_e_14_ant_EM1.8_2.0.h5_to_me3j.gz'%(hw)
+#     ARGS['2bme'] = '/itch/exch/me2j/chi2b_srg0625_eMax14_lMax10_hwHO0%d.me2j.gz'%(hw)
+#     ARGS['3bme'] = '/itch/exch/me3j/new/chi2b3b400cD-02cE0098_hwconv036_srg0625ho40J_eMax14_EMax14_hwHO0%d.me3j.gz'%(hw)
+#     ARGS['LECs'] = 'srg0625'
      ARGS['hw'] = '%d'%hw
      ARGS['A'] = '%d'%A
 #     ARGS['valence_space'] = reference
      ARGS['valence_space'] = '0hw-shell'
-#     ARGS['valence_space'] = 'p-shell'
-#     ARGS['valence_space'] = 'sd-shell'
-#     ARGS['valence_space'] = 'sdfpNR-shell'
-#     ARGS['valence_space'] = 'psdNR-shell'
-#     ARGS['valence_space'] = 'fp-shell'
-#     ARGS['valence_space'] = 'fpg9NR-shell'
-#     ARGS['valence_space'] = 'fpgdsNR-shell'
-#     ARGS['valence_space'] = 'gds-shell'
 #     ARGS['valence_space'] = 'Cr%d'%A
-#     if A<30:
-#       ARGS['valence_space'] = 'sd-shell'
-#     else:
-#       ARGS['valence_space'] = 'sdfpNR-shell'
 #     ARGS['core_generator'] = 'imaginary-time'
 #     ARGS['valence_generator'] = 'shell-model-imaginary-time'
      ARGS['emax'] = '%d'%e
@@ -236,11 +141,6 @@ for Z in range(12,14):
 #     ARGS['core_generator'] = 'imaginary-time'
 #     ARGS['valence_generator'] = 'shell-model-imaginary-time'
      ARGS['emax'] = '%d'%e
-
-     ARGS['Operators'] = ''
-#     ARGS['Operators'] = 'Rp2,Rn2'
-#     ARGS['Operators'] = 'E2'
-#     ARGS['Operators'] = 'E2,M1,GamowTeller'
 
 
     ### Make an estimate of how much time to request. Only used for slurm at the moment.
