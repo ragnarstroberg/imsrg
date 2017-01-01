@@ -248,6 +248,7 @@ class ModelSpace
 
    void PreCalculateMoshinsky();
    void ClearVectors();
+   void ResetFirstPass();
    void CalculatePandyaLookup(int rank_J, int rank_T, int parity); // construct a lookup table for more efficient pandya transformation
 //   map<array<int,2>,vector<array<int,2>>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
    map<array<int,2>,array<vector<int>,2>>& GetPandyaLookup(int rank_J, int rank_T, int parity);

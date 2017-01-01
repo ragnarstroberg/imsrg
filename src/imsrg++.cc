@@ -261,12 +261,12 @@ int main(int argc, char** argv)
   
   if ( method == "HF" or method == "MP3")
   {
-    cout << "HF Single particle energies:" << endl;
-    hf.PrintSPE();
-    cout << endl;
     HNO.PrintTimes();
     return 0;
   }
+  cout << "HF Single particle energies:" << endl;
+  hf.PrintSPE();
+  cout << endl;
 
 
   if (method == "FCI")
@@ -376,6 +376,7 @@ int main(int argc, char** argv)
     if (method == "magnus") smax *= 2;
 
     imsrgsolver.SetGenerator(valence_generator);
+    modelspace.ResetFirstPass();
     if (valence_generator.find("imaginary")!=string::npos)
     {
      if (ds_0>1e-2)
@@ -476,6 +477,7 @@ int main(int argc, char** argv)
       rw.WriteAntoine_int(imsrgsolver.GetH_s(),intfile+".ant");
       rw.WriteAntoine_input(imsrgsolver.GetH_s(),intfile+".inp",modelspace.GetAref(),modelspace.GetZref());
     }
+    cout << "Writing files: " << intfile << endl;
     rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
     rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
 

@@ -24,6 +24,9 @@ using namespace boost::python;
   int TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
 
   void ArmaMatPrint( arma::mat& self){ self.print();};
+  void OpSetOneBodyME( Operator& self, int i, int j, double v){self.OneBody(i,j) = v;};
+
+  void MS_SetRef(ModelSpace& self, string str){ self.SetReference( str);};
 
   Operator HFGetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
 
@@ -66,7 +69,11 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetOrbit", &MSGetOrbit)
       .def("GetTwoBodyChannelIndex", &ModelSpace::GetTwoBodyChannelIndex)
       .def("GetTwoBodyChannel", &MSGetTwoBodyChannel)
-      .def("Index2String",&ModelSpace::Index2String)
+      .def("Index2String", &ModelSpace::Index2String)
+      .def("ResetFirstPass", &ModelSpace::ResetFirstPass)
+      .def("SetReference", &MS_SetRef)
+      .def("Init_occ_from_file", &ModelSpace::Init_occ_from_file)
+      .def_readwrite("core", &ModelSpace::core)
    ;
 
 
@@ -131,6 +138,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("comm122st", &Operator::comm122st)
       .def("comm222_pp_hh_221st", &Operator::comm222_pp_hh_221st)
       .def("comm222_phst", &Operator::comm222_phst)
+      .def("SetOneBodyME", &OpSetOneBodyME)
    ;
 
    class_<arma::mat>("ArmaMat",init<>())
@@ -228,6 +236,7 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("GetOmega",&IMSRGSolver::GetOmega)
       .def("GetH_s",&IMSRGSolver::GetH_s,return_value_policy<reference_existing_object>())
       .def("SetMagnusAdaptive",&IMSRGSolver::SetMagnusAdaptive)
+      .def("SetReadWrite", &IMSRGSolver::SetReadWrite)
       .def_readwrite("Eta", &IMSRGSolver::Eta)
    ;
 

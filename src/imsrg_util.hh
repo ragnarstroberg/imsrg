@@ -50,6 +50,7 @@ namespace imsrg_util
  Operator Sigma_Op_pn(ModelSpace& modelspace, string pn);
  Operator RadialOverlap(ModelSpace& modelspace);
  Operator LdotS_Op(ModelSpace& modelspace);
+ Operator L2rel_Op(ModelSpace& modelspace);
 
  Operator EKKShift( Operator& Hin, int Nlower, int Nupper);
 
