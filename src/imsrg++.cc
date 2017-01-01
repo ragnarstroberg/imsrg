@@ -446,7 +446,7 @@ int main(int argc, char** argv)
     HNO = HNO.DoNormalOrdering();
 
     imsrgsolver.SetHin(HNO);
-//    imsrgsolver.SetEtaCriterion(1e-4);
+    imsrgsolver.SetEtaCriterion(1e-4);
     imsrgsolver.Solve();
     // Change operators to the new basis, then apply the rest of the transformation
     cout << "Final transformation on the operators..." << endl;
