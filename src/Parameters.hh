@@ -62,6 +62,7 @@ map<string,double> Parameters::double_par = {
   {"ode_tolerance",	1e-6},	// error tolerance for the ode solver
   {"denominator_delta",	   0},	// offset added to the denominator in the generator
   {"BetaCM",               0},  // Prefactor for Lawson-Glockner term
+  {"hwBetaCM",            -1},  // Oscillator frequency used in the Lawson-Glockner term. Negative value means use the frequency of the basis
   {"eta_criterion",     1e-6},  // Threshold on ||eta|| for convergence in the flow
 
 };
