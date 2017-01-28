@@ -226,6 +226,21 @@ double HO_Radial_psi(int n, int l, double hw, double r)
     return DM;
  }
 
+
+ double Get_Charge_Density( Operator& DM, double r)
+ {
+   ModelSpace* modelspace = DM.GetModelSpace();
+   double hw = modelspace->GetHbarOmega();
+   double rho=0;
+   for (index_t i : modelspace->proton_orbits )
+   {
+      Orbit& oi = modelspace->GetOrbit(i);
+      rho += (oi.j2+1) * DM.OneBody(i,i) * HO_density(oi.n, oi.l, hw, r);
+   }
+   return rho;
+ }
+
+/*
  double Get_Charge_Density( Operator& DM, double r)
  {
    ModelSpace* modelspace = DM.GetModelSpace();
@@ -243,6 +258,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
    }
    return rho;
  }
+*/
 
 Operator KineticEnergy_Op(ModelSpace& modelspace)
 {
