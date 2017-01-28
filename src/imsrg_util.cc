@@ -53,6 +53,15 @@ namespace imsrg_util
         istringstream(opname.substr(4,opname.size())) >> Z_rp;
         return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) ;
       }
+      else if (opname.substr(0,5) == "Rp2AZ") // Get point proton radius for specified A and Z, e.g. Rp2AZ20_10 for neon
+      {
+        int A_rp;
+        int Z_rp;
+        size_t underscore = opname.find("_");
+        istringstream(opname.substr(5,underscore)) >> A_rp;
+        istringstream(opname.substr(underscore+1,opname.size())) >> Z_rp;
+        return Rp2_corrected_Op(modelspace,A_rp,Z_rp) ;
+      }
       else if (opname.substr(0,4) == "Rn2Z") // Get point neutron radius for specified Z
       {
         int Z_rp;

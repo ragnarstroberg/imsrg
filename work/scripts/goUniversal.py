@@ -14,7 +14,7 @@
 from os import path,environ,mkdir,remove
 from subprocess import call,PIPE
 from time import time,sleep
-import from datetime import datetime
+from datetime import datetime
 
 ### Check to see what type of batch submission system we're dealing with
 BATCHSYS = 'NONE'
@@ -26,8 +26,8 @@ NTHREADS=12
 exe = '%s/bin/imsrg++'%(environ['HOME'])
 
 ### Flag to swith between submitting to the scheduler or running in the current shell
-#batch_mode=False
-batch_mode=True
+batch_mode=False
+#batch_mode=True
 
 mail_address = 'sstroberg@triumf.ca'
 
@@ -47,7 +47,10 @@ ARGS['e3max'] = '14'
 #ARGS['lmax3'] = '10' # for comparing with Heiko
 ARGS['omega_norm_max'] = '0.25'
 ARGS['ode_tolerance'] = '1e-5'
-#ARGS['nsteps'] = '2'
+ARGS['file2e1max'] = '14 file2e2max=28 file2lmax=10'
+ARGS['file3e1max'] = '14 file3e2max=28 file3e3max=14'
+#ARGS['file2e1max'] = '14 file2e2max=28 file2lmax=14'
+#ARGS['file3e1max'] = '14 file3e2max=28 file3e3max=16'
 ARGS['file2e1max'] = '14 file2e2max=28 file2lmax=10'
 ARGS['file3e1max'] = '14 file3e2max=28 file3e3max=14'
 #ARGS['scratch'] = 'SCRATCH'
@@ -57,8 +60,6 @@ ARGS['method'] = 'magnus'
 #ARGS['method'] = 'brueckner'
 #ARGS['method'] = 'flow'
 #ARGS['method'] = 'HF'
-
-
 
 if BATCHSYS == 'PBS':
   FILECONTENT = """#!/bin/bash
@@ -85,38 +86,61 @@ elif BATCHSYS == 'SLURM':
 #SBATCH --output=imsrg_log/%s.%%j
 #SBATCH --time=%s
 #SBATCH --mail-user=%s
+>>>>>>> a6ba90dc483060f98ea299bf5939ce2276b9b41d
 #SBATCH --mail-type=END
 cd $SLURM_SUBMIT_DIR
 echo NTHREADS = %d
 export OMP_NUM_THREADS=%d
 time srun %s
-  """
+"""
 
 ### Make a directory for the log files, if it doesn't already exist
 if not path.exists('imsrg_log'): mkdir('imsrg_log')
 
 ### Loop over multiple jobs to submit
-for Z in range(12,14):
- A=25
+for Z in range(10,11):
+ A=20
  for reference in ['%s%d'%(ELEM[Z],A)]:
   ARGS['reference'] = reference
-  for e in [2]:
+  print 'Z = ',Z
+  for e in [4]:
    for hw in [20]:
-     ARGS['2bme'] = '/itch/exch/me2j/chi2b_srg0625_eMax14_lMax10_hwHO0%d.me2j.gz'%(hw)
-     ARGS['3bme'] = '/itch/exch/me3j/new/chi2b3b400cD-02cE0098_hwconv036_srg0625ho40J_eMax14_EMax14_hwHO0%d.me3j.gz'%(hw)
+     ARGS['2bme'] = 'input/chi2b_srg0625_eMax14_lMax10_hwHO0%d.me2j.gz'%(hw)
+     ARGS['3bme'] = 'input/me3j/chi2b3b400cD-02cE0098_hwconv036_srg0625ho40J_eMax14_EMax14_hwHO0%d.me3j.gz'%(hw)
      ARGS['LECs'] = 'srg0625'
+#     ARGS['2bme'] = '/work/hda21/hda215/ME_share/vnn_hw%d.00_kvnn10_lambda1.80_mesh_kmax_7.0_100_pc_R15.00_N15.dat_to_me2j.gz'%(hw)
+#     ARGS['3bme'] = '/work/hda21/hda215/ME_share/jsTNF_Nmax_16_J12max_8_hbarOmega_%d.00_Fit_cutoff_2.00_nexp_4_c1_1.00_c3_1.00_c4_1.00_cD_1.00_cE_1.00_2pi_0.00_2pi1pi_0.00_2picont_0.00_rings_0.00_J3max_9_new_E3_16_e_14_ant_EM1.8_2.0.h5_to_me3j.gz'%(hw)
+#     ARGS['2bme'] = '/itch/exch/me2j/chi2b_srg0625_eMax14_lMax10_hwHO0%d.me2j.gz'%(hw)
+#     ARGS['3bme'] = '/itch/exch/me3j/new/chi2b3b400cD-02cE0098_hwconv036_srg0625ho40J_eMax14_EMax14_hwHO0%d.me3j.gz'%(hw)
+#     ARGS['LECs'] = 'srg0625'
      ARGS['hw'] = '%d'%hw
      ARGS['A'] = '%d'%A
 #     ARGS['valence_space'] = reference
      ARGS['valence_space'] = '0hw-shell'
+#     ARGS['valence_space'] = 'Cr%d'%A
 #     ARGS['core_generator'] = 'imaginary-time'
 #     ARGS['valence_generator'] = 'shell-model-imaginary-time'
      ARGS['emax'] = '%d'%e
+#     ARGS['method'] = method
 
      ARGS['Operators'] = ''
+#     ARGS['Operators'] = 'Rp2'
 #     ARGS['Operators'] = 'Rp2,Rn2'
+#     ARGS['Operators'] = 'Rp2Z8,Rp2Z10'
+#     ARGS['Operators'] = 'Rp2Z16'
 #     ARGS['Operators'] = 'E2'
+#     ARGS['Operators'] = 'E2,M1'
 #     ARGS['Operators'] = 'E2,M1,GamowTeller'
+     ARGS['Operators'] = 'M1p,M1n,Sigma_p,Sigma_n'
+#     ARGS['Operators'] = 'Sigma_n'
+#     ARGS['Operators'] = 'E2,M1,Rp2Z10'
+#     ARGS['Operators'] = 'Rp2Z10'
+#     ARGS['Operators'] = 'rhop0.0,R2CM'
+#     ARGS['Operators'] = 'GamowTeller'
+
+#     ARGS['core_generator'] = 'imaginary-time'
+#     ARGS['valence_generator'] = 'shell-model-imaginary-time'
+     ARGS['emax'] = '%d'%e
 
 
     ### Make an estimate of how much time to request. Only used for slurm at the moment.
@@ -136,6 +160,13 @@ for Z in range(12,14):
      if 'BetaCM' in ARGS: jobname += '_' + ARGS['BetaCM']
      ARGS['flowfile'] = 'output/BCH_' + jobname + '.dat'
      ARGS['intfile']  = 'output/' + jobname
+     cmd = '%s %s'%(exe,' '.join(['%s=%s'%(x,ARGS[x]) for x in ARGS]) )
+     if batch_mode==True:
+       sfile = open(jobname,'w')
+       sfile.write(FILECONTENT%(NTHREADS,jobname,time_request,NTHREADS,NTHREADS,cmd))
+       sfile.close()
+       call(['sbatch', jobname])
+       remove(jobname) # delete the file
      cmd = ' '.join([exe] + ['%s=%s'%(x,ARGS[x]) for x in ARGS])
 
   ### Submit the job if we're running in batch mode, otherwise just run in the current shell
