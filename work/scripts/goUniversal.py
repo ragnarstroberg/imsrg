@@ -187,7 +187,7 @@ for Z in range(16,17):
        elif BATCHSYS == 'SLURM':
          sfile.write(FILECONTENT%(NTHREADS,jobname,time_request,mail_address,NTHREADS,NTHREADS,cmd))
          sfile.close()
-         call(['sbatch', jobname])
+         call(['sbatch', jobname+'.batch'])
        remove(jobname+'.batch') # delete the file
        sleep(0.1)
      else:
