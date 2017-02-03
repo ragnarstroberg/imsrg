@@ -116,6 +116,10 @@ for Z in range(16,17):
   print 'Z = ',Z
   for e in [2]:
    for hw in [13]:
+
+     ARGS['emax'] = '%d'%e
+     ARGS['e3max'] = '14'
+
      ARGS['2bme'] = 'input/chi2b_srg0625_eMax14_lMax10_hwHO0%d.me2j.gz'%(hw)
      ARGS['3bme'] = 'input/me3j/chi2b3b400cD-02cE0098_hwconv036_srg0625ho40J_eMax14_EMax14_hwHO0%d.me3j.gz'%(hw)
      ARGS['LECs'] = 'srg0625'
@@ -151,7 +155,6 @@ for Z in range(16,17):
 #     ARGS['Operators'] = 'M1p,M1n,Sigma_p,Sigma_n'
 #     ARGS['Operators'] = 'GamowTeller'
 
-     ARGS['emax'] = '%d'%e
 
 
     ### Make an estimate of how much time to request. Only used for slurm at the moment.
