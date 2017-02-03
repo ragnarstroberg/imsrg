@@ -2125,13 +2125,19 @@ void ReadWrite::ReadNuShellX_int(Operator& op, string filename)
     intfile >> dummy;
     op.OneBody(orb.second,orb.second) = dummy;
   }
-  for (int i=0;i<3;++i) intfile >> dummy; // A-dependence parameters
+
+  double acore_nushell, a0_nushell, exp_nushell;
+  intfile >> acore_nushell >> a0_nushell >> exp_nushell;
+  double scalefactor = pow( a0_nushell / modelspace->GetAref(), exp_nushell) ;
+//  for (int i=0;i<3;++i) intfile >> dummy; // A-dependence parameters
 //  cout << op.OneBody << endl;
   int a,b,c,d,J,Tprime;
   double V;
   vector<int> added_tprime; // list to keep track of whether we've added this T'=0,1 term already.
   while( intfile >> a >> b >> c >> d >> J >> Tprime >> V)
   {
+
+    V *= scalefactor;
     Orbit& oa = modelspace->GetOrbit(orbit_map[a]);
     Orbit& ob = modelspace->GetOrbit(orbit_map[b]);
     Orbit& oc = modelspace->GetOrbit(orbit_map[c]);

@@ -81,6 +81,7 @@ int main(int argc, char** argv)
   double omega_norm_max = parameters.d("omega_norm_max"); 
   double denominator_delta = parameters.d("denominator_delta");
   double BetaCM = parameters.d("BetaCM");
+  double hwBetaCM = parameters.d("hwBetaCM");
   double eta_criterion = parameters.d("eta_criterion");
 
   vector<string> opnames = parameters.v("Operators");
@@ -168,6 +169,8 @@ int main(int argc, char** argv)
       rw.ReadTBME_Oslo(inputtbme, Hbare);
     else if (fmt2 == "oakridge" )
       rw.ReadTBME_OakRidge(inputtbme, Hbare);
+    else if (fmt2 == "nushellx" )
+      rw.ReadNuShellX_int( Hbare, inputtbme );
      cout << "done reading 2N" << endl;
     }
   
@@ -179,10 +182,16 @@ int main(int argc, char** argv)
     }  
   }
 
-  Hbare += Trel_Op(modelspace);
+  if (fmt2 != "nushellx")
+    Hbare += Trel_Op(modelspace);
+
+  // Add a Lawson term. If hwBetaCM is specified, use that frequency
   if (abs(BetaCM)>1e-3)
   {
-    Hbare += BetaCM * HCM_Op(modelspace);
+    if (hwBetaCM < 0) hwBetaCM = modelspace.GetHbarOmega();
+    ostringstream hcm_opname;
+    hcm_opname << "HCM_" << hwBetaCM;
+    Hbare += BetaCM * imsrg_util::OperatorFromString( modelspace, hcm_opname.str());
   }
 
   cout << "Creating HF" << endl;
@@ -214,7 +223,7 @@ int main(int argc, char** argv)
   }
   cout << "Done with SPWF" << endl;
 
-  HNO -= BetaCM * 1.5*hw;
+  HNO -= BetaCM * 1.5*hwBetaCM;
   cout << "Hbare 0b = " << HNO.ZeroBody << endl;
 
   if (method != "HF")

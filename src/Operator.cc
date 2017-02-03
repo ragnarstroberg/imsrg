@@ -745,7 +745,8 @@ double Operator::GetMP2_Energy()
      {
        Orbit& oa = modelspace->GetOrbit(a);
        double ea = OneBody(a,a);
-       Emp2 += (oa.j2+1) * oa.occ * OneBody(i,a)*OneBody(i,a)/(OneBody(a,a)-OneBody(i,i));
+       if (abs(OneBody(i,a))>1e-6)
+         Emp2 += (oa.j2+1) * oa.occ * OneBody(i,a)*OneBody(i,a)/(OneBody(a,a)-OneBody(i,i));
        for (index_t j : modelspace->particles)
        {
          if (j<i) continue;
@@ -762,7 +763,8 @@ double Operator::GetMP2_Energy()
            for (int J=Jmin; J<=Jmax; ++J)
            {
              double tbme = TwoBody.GetTBME_J_norm(J,a,b,i,j);
-             Emp2 += (2*J+1)* oa.occ * ob.occ * tbme*tbme/denom; // no factor 1/4 because of the restricted sum
+             if (abs(tbme)>1e-6)
+              Emp2 += (2*J+1)* oa.occ * ob.occ * tbme*tbme/denom; // no factor 1/4 because of the restricted sum
            }
          }
        }

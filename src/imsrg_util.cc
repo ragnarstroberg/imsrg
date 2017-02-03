@@ -53,6 +53,15 @@ namespace imsrg_util
         istringstream(opname.substr(4,opname.size())) >> Z_rp;
         return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) ;
       }
+      else if (opname.substr(0,5) == "Rp2AZ") // Get point proton radius for specified A and Z, e.g. Rp2AZ20_10 for neon
+      {
+        int A_rp;
+        int Z_rp;
+        size_t underscore = opname.find("_");
+        istringstream(opname.substr(5,underscore)) >> A_rp;
+        istringstream(opname.substr(underscore+1,opname.size())) >> Z_rp;
+        return Rp2_corrected_Op(modelspace,A_rp,Z_rp) ;
+      }
       else if (opname.substr(0,4) == "Rn2Z") // Get point neutron radius for specified Z
       {
         int Z_rp;
@@ -226,6 +235,21 @@ double HO_Radial_psi(int n, int l, double hw, double r)
     return DM;
  }
 
+
+ double Get_Charge_Density( Operator& DM, double r)
+ {
+   ModelSpace* modelspace = DM.GetModelSpace();
+   double hw = modelspace->GetHbarOmega();
+   double rho=0;
+   for (index_t i : modelspace->proton_orbits )
+   {
+      Orbit& oi = modelspace->GetOrbit(i);
+      rho += (oi.j2+1) * DM.OneBody(i,i) * HO_density(oi.n, oi.l, hw, r);
+   }
+   return rho;
+ }
+
+/*
  double Get_Charge_Density( Operator& DM, double r)
  {
    ModelSpace* modelspace = DM.GetModelSpace();
@@ -243,6 +267,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
    }
    return rho;
  }
+*/
 
 Operator KineticEnergy_Op(ModelSpace& modelspace)
 {
