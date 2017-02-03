@@ -169,6 +169,8 @@ int main(int argc, char** argv)
       rw.ReadTBME_Oslo(inputtbme, Hbare);
     else if (fmt2 == "oakridge" )
       rw.ReadTBME_OakRidge(inputtbme, Hbare);
+    else if (fmt2 == "nushellx" )
+      rw.ReadNuShellX_int( Hbare, inputtbme );
      cout << "done reading 2N" << endl;
     }
   
@@ -180,7 +182,9 @@ int main(int argc, char** argv)
     }  
   }
 
-  Hbare += Trel_Op(modelspace);
+  if (fmt2 != "nushellx")
+    Hbare += Trel_Op(modelspace);
+
   // Add a Lawson term. If hwBetaCM is specified, use that frequency
   if (abs(BetaCM)>1e-3)
   {
