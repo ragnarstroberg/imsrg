@@ -2792,6 +2792,26 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
    int wint = 4; // width for printing integers
    int wdouble = 16; // width for printing doubles
    int pdouble = 9; // precision for printing doubles
+
+
+   // valence protons are the intersection of valence orbits and protons orbits. Likewise for neutrons.
+   vector<int> valence_protons(modelspace->valence.size());
+   vector<int> valence_neutrons(modelspace->valence.size());
+   auto it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->proton_orbits.begin(), modelspace->proton_orbits.end(),valence_protons.begin());
+   valence_protons.resize(it-valence_protons.begin());
+   it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->neutron_orbits.begin(), modelspace->neutron_orbits.end(),valence_neutrons.begin());
+   valence_neutrons.resize(it-valence_neutrons.begin());
+   // construct conversion maps from local orbit index to nushell index
+   map<int,int> orb2nushell;
+   map<int,int> nushell2orb;
+   int counter = 1;
+   // protons first
+   for ( auto i : valence_protons ) orb2nushell[i] = counter++;
+   // then neutrons
+   for ( auto i : valence_neutrons ) orb2nushell[i] = counter++;
+   for ( auto& it : orb2nushell) nushell2orb[it.second] = it.first;
+
+
    for (auto& i : modelspace->core)
    {
       Orbit& oi = modelspace->GetOrbit(i);
@@ -2810,37 +2830,47 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
    outfile << "!  Parity :  " << showpos << 1-2*Op.GetParity() << noshowpos << endl;
    outfile << "!  Zero body term:  " << Op.ZeroBody << endl;
    outfile << "!  index   n   l   2j   2tz " << endl;
-   // first do proton orbits
-   for (auto& i : modelspace->valence)
+
+   for ( auto& it : nushell2orb )
    {
-      Orbit& oi = modelspace->GetOrbit(i);
-      if (oi.tz2 > 0 ) continue;
-      int nushell_indx = i/2+1 -proton_core_orbits;
-      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2  << "   " << setw(wint) << oi.tz2 <<  endl;
-      ++nvalence_proton_orbits;
+      Orbit& oi = modelspace->GetOrbit(it.second);
+      outfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2 << "/2" << " " << setw(2) << oi.tz2 << "/2" << endl;
    }
-   // then do neutron orbits
-   for (auto& i : modelspace->valence)
-   {
-      Orbit& oi = modelspace->GetOrbit(i);
-      if (oi.tz2 < 0 ) continue;
-      int nushell_indx = i/2+1 + nvalence_proton_orbits -neutron_core_orbits;
-      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2 << "   " << setw(wint) << oi.tz2 << endl;
-   }
+
+
+//   // first do proton orbits
+//   for (auto& i : modelspace->valence)
+//   {
+//      Orbit& oi = modelspace->GetOrbit(i);
+//      if (oi.tz2 > 0 ) continue;
+//      int nushell_indx = i/2+1 -proton_core_orbits;
+//      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2  << "   " << setw(wint) << oi.tz2 <<  endl;
+//      ++nvalence_proton_orbits;
+//   }
+//   // then do neutron orbits
+//   for (auto& i : modelspace->valence)
+//   {
+//      Orbit& oi = modelspace->GetOrbit(i);
+//      if (oi.tz2 < 0 ) continue;
+//      int nushell_indx = i/2+1 + nvalence_proton_orbits -neutron_core_orbits;
+//      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2 << "   " << setw(wint) << oi.tz2 << endl;
+//   }
 
    outfile << "!" << endl << "!  a   b   < a || Op || b > " << endl;
 
    for ( auto a : modelspace->valence )
    {
      Orbit& oa = modelspace->GetOrbit(a);
-     int a_ind = a/2+1 + ( oa.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+//     int a_ind = a/2+1 + ( oa.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+      int a_ind = orb2nushell[a];
 //     for ( auto b : Op.OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
       for ( auto b : modelspace->valence )
      {
         Orbit& ob = modelspace->GetOrbit(b);
         double me = Op.OneBody(a,b);
         if ( abs(me) < 1e-7 ) continue;
-        int b_ind = b/2+1 + ( ob.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+//        int b_ind = b/2+1 + ( ob.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+        int b_ind = orb2nushell[b];
         outfile << setw(wint) << a_ind << " " << setw(wint) << b_ind << " " << fixed << setw(wdouble) << setprecision(pdouble) <<  me << endl;
      }
    }
@@ -2857,6 +2887,27 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
    int wint = 4; // width for printing integers
    int wdouble = 16; // width for printing doubles
    int pdouble = 9; // precision for printing doubles
+
+   // valence protons are the intersection of valence orbits and protons orbits. Likewise for neutrons.
+   vector<int> valence_protons(modelspace->valence.size());
+   vector<int> valence_neutrons(modelspace->valence.size());
+   auto it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->proton_orbits.begin(), modelspace->proton_orbits.end(),valence_protons.begin());
+   valence_protons.resize(it-valence_protons.begin());
+   it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->neutron_orbits.begin(), modelspace->neutron_orbits.end(),valence_neutrons.begin());
+   valence_neutrons.resize(it-valence_neutrons.begin());
+   // construct conversion maps from local orbit index to nushell index
+   map<int,int> orb2nushell;
+   map<int,int> nushell2orb;
+   int counter = 1;
+   // protons first
+   for ( auto i : valence_protons ) orb2nushell[i] = counter++;
+   // then neutrons
+   for ( auto i : valence_neutrons ) orb2nushell[i] = counter++;
+   for ( auto& it : orb2nushell) nushell2orb[it.second] = it.first;
+
+
+
+
    for (auto& i : modelspace->core)
    {
       Orbit& oi = modelspace->GetOrbit(i);
@@ -2875,23 +2926,32 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
    outfile << "!  Parity :  " << showpos << 1-2*Op.GetParity() << noshowpos << endl;
    outfile << "!  Zero body term:  " << Op.ZeroBody << endl;
    outfile << "!  index   n   l   2j   2tz " << endl;
-   // first do proton orbits
-   for (auto& i : modelspace->valence)
+
+
+   for ( auto& it : nushell2orb )
    {
-      Orbit& oi = modelspace->GetOrbit(i);
-      if (oi.tz2 > 0 ) continue;
-      int nushell_indx = i/2+1 -proton_core_orbits;
-      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2 << "   " << setw(wint) << oi.tz2 << endl;
-      ++nvalence_proton_orbits;
+      Orbit& oi = modelspace->GetOrbit(it.second);
+      outfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2 << "/2" << " " << setw(2) << oi.tz2 << "/2" << endl;
    }
-   // then do neutron orbits
-   for (auto& i : modelspace->valence)
-   {
-      Orbit& oi = modelspace->GetOrbit(i);
-      if (oi.tz2 < 0 ) continue;
-      int nushell_indx = i/2+1 + nvalence_proton_orbits -neutron_core_orbits;
-      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2 << "   " << setw(wint) << oi.tz2 << endl;
-   }
+
+
+//   // first do proton orbits
+//   for (auto& i : modelspace->valence)
+//   {
+//      Orbit& oi = modelspace->GetOrbit(i);
+//      if (oi.tz2 > 0 ) continue;
+//      int nushell_indx = i/2+1 -proton_core_orbits;
+//      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2 << "   " << setw(wint) << oi.tz2 << endl;
+//      ++nvalence_proton_orbits;
+//   }
+//   // then do neutron orbits
+//   for (auto& i : modelspace->valence)
+//   {
+//      Orbit& oi = modelspace->GetOrbit(i);
+//      if (oi.tz2 < 0 ) continue;
+//      int nushell_indx = i/2+1 + nvalence_proton_orbits -neutron_core_orbits;
+//      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2 << "   " << setw(wint) << oi.tz2 << endl;
+//   }
 
    outfile << "!  a    b    c    d     Jab  Jcd   <ab Jab || Op || cd Jcd>" << endl;
    for ( auto& itmat : Op.TwoBody.MatEl )
@@ -2905,20 +2965,24 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
      for (auto& ibra: tbc_bra.GetKetIndex_vv() )
      {
        Ket& bra = tbc_bra.GetKet(ibra);
-       Orbit& oa = modelspace->GetOrbit(bra.p);
-       Orbit& ob = modelspace->GetOrbit(bra.q);
-       int a_ind = oa.index/2+1 + ( oa.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
-       int b_ind = ob.index/2+1 + ( ob.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+//       Orbit& oa = modelspace->GetOrbit(bra.p);
+//       Orbit& ob = modelspace->GetOrbit(bra.q);
+//       int a_ind = oa.index/2+1 + ( oa.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+//       int b_ind = ob.index/2+1 + ( ob.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+       int a_ind = orb2nushell[bra.p];
+       int b_ind = orb2nushell[bra.q];
 //       for ( int iket=0; iket<nkets; ++iket)
        for (auto& iket: tbc_ket.GetKetIndex_vv() )
        {
          double me = matrix(ibra,iket);
          if (abs(me) < 1e-7) continue;
          Ket& ket = tbc_ket.GetKet(iket);
-         Orbit& oc = modelspace->GetOrbit(ket.p);
-         Orbit& od = modelspace->GetOrbit(ket.q);
-         int c_ind = oc.index/2+1 + ( oc.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
-         int d_ind = od.index/2+1 + ( od.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+//         Orbit& oc = modelspace->GetOrbit(ket.p);
+//         Orbit& od = modelspace->GetOrbit(ket.q);
+//         int c_ind = oc.index/2+1 + ( oc.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+//         int d_ind = od.index/2+1 + ( od.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
+         int c_ind = orb2nushell[ket.p];
+         int d_ind = orb2nushell[ket.q];
          outfile << setw(wint) << a_ind << " " << setw(wint) << b_ind << " " << setw(wint) << c_ind << " " << setw(wint) << d_ind << "   "
                  << setw(wint) << tbc_bra.J << " " << setw(wint) << tbc_ket.J << "   " << setw(wdouble) << setprecision(pdouble) << me << endl;
          
