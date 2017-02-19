@@ -2834,7 +2834,7 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
    for ( auto& it : nushell2orb )
    {
       Orbit& oi = modelspace->GetOrbit(it.second);
-      outfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2 << "/2" << " " << setw(2) << oi.tz2 << "/2" << endl;
+      outfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2 << " " << setw(2) << oi.tz2  << endl;
    }
 
 
@@ -2931,7 +2931,7 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
    for ( auto& it : nushell2orb )
    {
       Orbit& oi = modelspace->GetOrbit(it.second);
-      outfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2 << "/2" << " " << setw(2) << oi.tz2 << "/2" << endl;
+      outfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2  << " " << setw(2) << oi.tz2  << endl;
    }
 
 
