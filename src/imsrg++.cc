@@ -158,8 +158,13 @@ int main(int argc, char** argv)
 
   cout << "Reading interactions..." << endl;
 
+  int nthreads = omp_get_max_threads();
+  {
+   omp_set_num_threads(2);
+   omp_set_nested(1);
   #pragma omp parallel sections 
   {
+    omp_set_num_threads(max(1,nthreads-3));
     #pragma omp section
     {
       if (fmt2 == "me2j")
@@ -178,20 +183,22 @@ int main(int argc, char** argv)
 
       cout << "done reading 2N" << endl;
   
-//      if (fmt2 != "nushellx")
-//        Hbare += Trel_Op(modelspace);
+      if (fmt2 != "nushellx")
+        Hbare += Trel_Op(modelspace);
     }
   
     #pragma omp section
     if (Hbare.particle_rank >=3)
     {
+      omp_set_num_threads(1);
       rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
       cout << "done reading 3N" << endl;
     }  
   }
+  }
 
-  if (fmt2 != "nushellx")
-    Hbare += Trel_Op(modelspace);
+//  if (fmt2 != "nushellx")
+//    Hbare += Trel_Op(modelspace);
 
   // Add a Lawson term. If hwBetaCM is specified, use that frequency
   if (abs(BetaCM)>1e-3)
