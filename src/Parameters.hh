@@ -31,7 +31,7 @@ class Parameters
 };
 
 map<string,string> Parameters::string_par = {
-  {"2bme",			"/itch/exch/BlockGen/me2j/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz"},
+  {"2bme",			"none"},
   {"3bme",			"none"},
   {"core_generator",		"atan"},	// generator used for core part of 2-step decoupling
   {"valence_generator",		"shell-model-atan"},	// generator used for valence decoupling and 1-step (also single-ref)
