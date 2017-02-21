@@ -127,74 +127,178 @@ void ReadWrite::ReadTBME_Oslo( string filename, Operator& Hbare)
 }
 
 /// Read two-body matrix elements from an Oslo-formatted file, as obtained from Gaute Hagen
-void ReadWrite::ReadTBME_OakRidge( string filename, Operator& Hbare)
+void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hbare)
 {
-
-  ifstream infile;
-  char line[LINESIZE];
-  int Tz,Par,J2,a,b,c,d;
-  double fbuf[3];
-  double tbme;
-  int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
-  File2N = filename;
-  Aref = Hbare.GetModelSpace()->GetAref();
-  Zref = Hbare.GetModelSpace()->GetZref();
-//  cout << "norbits = " << norbits << endl;
-
-  vector<int> orbit_remap(norbits);
-  for (size_t i=0;i<orbit_remap.size();++i) orbit_remap[i] = i;
-  orbit_remap[8] = 10;
-  orbit_remap[9] = 11;
-  orbit_remap[10] = 8;
-  orbit_remap[11] = 9;
-  orbit_remap[14] = 16;
-  orbit_remap[15] = 17;
-  orbit_remap[16] = 18;
-  orbit_remap[17] = 19;
-  orbit_remap[18] = 14;
-  orbit_remap[19] = 15;
-
-  infile.open(filename);
-  if ( !infile.good() )
+  ModelSpace * modelspace = Hbare.GetModelSpace();
+  ifstream spfile(spname);
+  if (!spfile.good())
   {
      cerr << "************************************" << endl
-          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "**    Trouble reading file  !!!   **" << spname << endl
           << "************************************" << endl;
      goodstate = false;
      return;
   }
 
-  infile.getline(line,LINESIZE);
-
-//  while (!strstr(line,"<ab|V|cd>") && !infile.eof()) // Skip lines until we see the header
-//  {
-//     infile.getline(line,LINESIZE);
-//  }
-
-  // read the file one line at a time
-  while ( infile >> Tz >> Par >> J2 >> a >> b >> c >> d >> tbme >> fbuf[0] >> fbuf[1]  )
+  double hw_file,spe,dummy;
+  spfile >> hw_file;
+  int index,n,l,j2,tz2;
+  vector<index_t> orbit_remap;
+  while( spfile >> index >> n >> l >> j2 >> tz2 >> spe >> dummy)
   {
-     // if the matrix element is outside the model space, ignore it.
-     a--; b--; c--; d--; // Fortran -> C  ==> 1 -> 0
-     a=orbit_remap[a];
-     b=orbit_remap[b];
-     c=orbit_remap[c];
-     d=orbit_remap[d];
-     if (a>=norbits or b>=norbits or c>=norbits or d>=norbits) continue;
+    index_t orbit_index = modelspace->GetOrbitIndex(n,l,j2,tz2); // check which isospin convention is used
+    if ((index_t)index > orbit_remap.size() ) orbit_remap.resize(index,-1);
+//    cout << index << " " << n << " " << l << " " << j2 << " " << tz2 << " " << spe << endl;
+    orbit_remap[index-1] = orbit_index;
+  }
+//  cout << "done with spe" << endl;
 
-     double com_corr = fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  
+  spfile.close();
 
-// NORMALIZATION: Read in normalized, antisymmetrized TBME's
-
-     if (doCoM_corr)  tbme-=com_corr;
-
-//     cout << "read: " << a << " " << b << " " << c << " " << d << endl;
-     Hbare.TwoBody.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme ); // Don't do COM correction,
-
+  ifstream tbmefile(tbmename, ios::in | ios::binary );
+  if (!tbmefile.good())
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << tbmename << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
   }
 
-  return;
+  // read 7 integers and 3 doubles
+  while( tbmefile.good() )
+  {
+    int Tz,P,J2,aa,bb,cc,dd;
+    double g1;//,g2,g3; // not using g2,g3 right now
+    vector<int32_t> vint(7);
+    vector<double> vdouble(3);
+    tbmefile.read( reinterpret_cast<char*>(vint.data()), vint.size()*sizeof(int32_t) );
+    if (!tbmefile.good()) return;
+    tbmefile.read( reinterpret_cast<char*>(vdouble.data()), vdouble.size()*sizeof(int64_t) );
+    if (!tbmefile.good()) return;
+    Tz = vint[0];
+    P  = vint[1];
+    J2 = vint[2];
+    aa = vint[3];
+    bb = vint[4];
+    cc = vint[5];
+    dd = vint[6];
+
+    g1 = vdouble[0];
+//    g2 = vdouble[1];
+//    g3 = vdouble[2];
+
+
+//    double fnorm = 1.0;
+//    if (Tz != 0)
+//    {
+//      if (aa==bb) fnorm /= sqrt(2.);
+//      if (cc==dd) fnorm /= sqrt(2.);
+//    }
+    int a = orbit_remap[aa-1];
+    int b = orbit_remap[bb-1];
+    int c = orbit_remap[cc-1];
+    int d = orbit_remap[dd-1];
+//    double tbme = g1 * fnorm;
+    double tbme = g1;
+    if (a>modelspace->GetNumberOrbits()) continue;
+    if (b>modelspace->GetNumberOrbits()) continue;
+    if (c>modelspace->GetNumberOrbits()) continue;
+    if (d>modelspace->GetNumberOrbits()) continue;
+    Orbit& oa = modelspace->GetOrbit(a);
+    Orbit& ob = modelspace->GetOrbit(b);
+    Orbit& oc = modelspace->GetOrbit(c);
+    Orbit& od = modelspace->GetOrbit(d);
+//    if ( 2*oa.n+oa.l > modelspace->GetEmax() ) continue;
+//    if ( 2*ob.n+ob.l > modelspace->GetEmax() ) continue;
+//    if ( 2*oc.n+oc.l > modelspace->GetEmax() ) continue;
+//    if ( 2*od.n+od.l > modelspace->GetEmax() ) continue;
+    if ( 2*(oa.n+ob.n)+oa.l+ob.l > modelspace->GetE2max() ) continue;
+    if ( 2*(oc.n+od.n)+oc.l+od.l > modelspace->GetE2max() ) continue;
+
+//    cout << "emax=  " << modelspace->GetEmax() << endl;
+//    cout << "ea = " << 2*oa.n + oa.l << endl;
+//    cout << "eb = " << 2*ob.n + ob.l << endl;
+//    cout << "ec = " << 2*oc.n + oc.l << endl;
+//    cout << "ed = " << 2*od.n + od.l << endl;
+//    cout << J2 << " " << P << " " << Tz << " " << a << " " << b << " " << c << " " << d << " "
+//         << "  " << aa << " " << bb << " " << cc << " " << dd << "   " << tbme << endl;
+
+    Hbare.TwoBody.SetTBME(J2/2,P,Tz,a,b,c,d, tbme ); 
+//    cout << "set." << endl;
+  }
+
+
 }
+
+//void ReadWrite::ReadTBME_OakRidge( string filename, Operator& Hbare)
+//{
+//
+//  ifstream infile;
+//  char line[LINESIZE];
+//  int Tz,Par,J2,a,b,c,d;
+//  double fbuf[3];
+//  double tbme;
+//  int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
+//  File2N = filename;
+//  Aref = Hbare.GetModelSpace()->GetAref();
+//  Zref = Hbare.GetModelSpace()->GetZref();
+////  cout << "norbits = " << norbits << endl;
+//
+//  vector<int> orbit_remap(norbits);
+//  for (size_t i=0;i<orbit_remap.size();++i) orbit_remap[i] = i;
+//  orbit_remap[8] = 10;
+//  orbit_remap[9] = 11;
+//  orbit_remap[10] = 8;
+//  orbit_remap[11] = 9;
+//  orbit_remap[14] = 16;
+//  orbit_remap[15] = 17;
+//  orbit_remap[16] = 18;
+//  orbit_remap[17] = 19;
+//  orbit_remap[18] = 14;
+//  orbit_remap[19] = 15;
+//
+//  infile.open(filename);
+//  if ( !infile.good() )
+//  {
+//     cerr << "************************************" << endl
+//          << "**    Trouble reading file  !!!   **" << filename << endl
+//          << "************************************" << endl;
+//     goodstate = false;
+//     return;
+//  }
+//
+//  infile.getline(line,LINESIZE);
+//
+////  while (!strstr(line,"<ab|V|cd>") && !infile.eof()) // Skip lines until we see the header
+////  {
+////     infile.getline(line,LINESIZE);
+////  }
+//
+//  // read the file one line at a time
+//  while ( infile >> Tz >> Par >> J2 >> a >> b >> c >> d >> tbme >> fbuf[0] >> fbuf[1]  )
+//  {
+//     // if the matrix element is outside the model space, ignore it.
+//     a--; b--; c--; d--; // Fortran -> C  ==> 1 -> 0
+//     a=orbit_remap[a];
+//     b=orbit_remap[b];
+//     c=orbit_remap[c];
+//     d=orbit_remap[d];
+//     if (a>=norbits or b>=norbits or c>=norbits or d>=norbits) continue;
+//
+//     double com_corr = fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  
+//
+//// NORMALIZATION: Read in normalized, antisymmetrized TBME's
+//
+//     if (doCoM_corr)  tbme-=com_corr;
+//
+////     cout << "read: " << a << " " << b << " " << c << " " << d << endl;
+//     Hbare.TwoBody.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme ); // Don't do COM correction,
+//
+//  }
+//
+//  return;
+//}
 
 
 
@@ -861,11 +965,11 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   int nljmax = orbits_remap.size();
 
 
-
   // skip the first line
   char line[LINESIZE];
   infile.getline(line,LINESIZE);
 
+  omp_set_num_threads(min(2,omp_get_max_threads())); // it's not clear that this is actually helping...
 
   // begin giant nested loops
   int nread = 0;
@@ -968,19 +1072,25 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                 nread += blocksize;
 //                cout << "Done making block" << endl;
 
-                #pragma omp parallel for schedule(dynamic,1) num_threads(2)// parallelize in the J loop because they can't interfere with each other
-                for(int twoJC = twoJCMin; twoJC <= twoJCMax; twoJC += 2)
+//                for(int twoJC = twoJCMin; twoJC <= twoJCMax; twoJC += 2)
+                // note that the maximum number of threads is set at the beginning of the nested loops
+                double t_start_loop = omp_get_wtime();
+                #pragma omp parallel for schedule(dynamic,1) // parallelize in the J loop because they can't interfere with each other
+                for(int JTind = 0; JTind <= (twoJCMax-twoJCMin)+1; JTind++)
                 {
+                 int twoJC = twoJCMin + (JTind/2)*2;
+                 int twoT = 1+(JTind%2)*2;
                  for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
                  {
                   for(int ttab = 0; ttab <= 1; ttab++)
                   {
                    //summation bounds
-                   int twoTMin = 1; // twoTMin can just be used as 1
-                   int twoTMax = min( 2*tab +1, 2*ttab +1);
+                   if ( twoT > min( 2*tab+1, 2*ttab+1) ) continue;
+//                   int twoTMin = 1; // twoTMin can just be used as 1
+//                   int twoTMax = min( 2*tab +1, 2*ttab +1);
        
-                   for(int twoT = twoTMin; twoT <= twoTMax; twoT += 2)
-                   {
+//                   for(int twoT = twoTMin; twoT <= twoTMax; twoT += 2)
+//                   {
 ////                    double V;
 //                    float V = 0;
 //                    infile >> V;
@@ -989,12 +1099,6 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                     bool autozero = false;
                     if (oa.l>lmax3 or ob.l>lmax3 or oc.l>lmax3 or od.l>lmax3 or oe.l>lmax3 or of.l>lmax3) V=0;
 
-//                    if (a==20 and b==0 and c==0 and d==2 and e==2 and f==0)
-//                    {
-//                      cout << "Jab,JJab,J2 = " << Jab << "," << JJab << "," << twoJC
-//                           << "  tab,ttab,twoT = " << tab << "," << ttab << "," << twoT
-//                           << "  V = " << setprecision(7) << V << endl;
-//                    }
                     
 
                     if ( a==b and (tab+Jab)%2==0 ) autozero = true;
@@ -1023,25 +1127,20 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
 
                     if (autozero)
                     {
-//                       cout << " ( should be zero ) ";
                        if (abs(V) > 1e-6 and ea<=e1max and eb<=e1max and ec<=e1max)
                        {
                           cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << endl;
                           goodstate = false;
-//                          return;
                        }
                     }
- //                   cout << endl;
        
-                   }//twoT
+//                   }//twoT
                   }//ttab
                  }//tab
-//                 cout << " ------------------------" << endl;
-//                if (not infile.good() ) break;
                 }//twoJ
+                modelspace->profiler.timer["Read_3body_inner_loop"] += omp_get_wtime() - t_start_loop;
                 if (not goodstate or not infile.good()) return;
                }//JJab
-       
               }//Jab
 
             }
@@ -2785,10 +2884,10 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
 {
    ofstream outfile(filename);
    ModelSpace * modelspace = Op.GetModelSpace();
-   int nvalence_proton_orbits = 0;
-   int proton_core_orbits = 0;
-   int neutron_core_orbits = 0;
-   int Acore = 0;
+//   int nvalence_proton_orbits = 0;
+//   int proton_core_orbits = 0;
+//   int neutron_core_orbits = 0;
+ //  int Acore = 0;
    int wint = 4; // width for printing integers
    int wdouble = 16; // width for printing doubles
    int pdouble = 9; // precision for printing doubles
@@ -2812,16 +2911,16 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
    for ( auto& it : orb2nushell) nushell2orb[it.second] = it.first;
 
 
-   for (auto& i : modelspace->core)
-   {
-      Orbit& oi = modelspace->GetOrbit(i);
-      Acore += oi.j2 +1;
-      if (oi.tz2 < 0)
-      {
-         proton_core_orbits += 1;
-      }
-   }
-   neutron_core_orbits = modelspace->core.size() - proton_core_orbits;
+//   for (auto& i : modelspace->core)
+//   {
+//      Orbit& oi = modelspace->GetOrbit(i);
+//      Acore += oi.j2 +1;
+//      if (oi.tz2 < 0)
+//      {
+//         proton_core_orbits += 1;
+//      }
+//   }
+//   neutron_core_orbits = modelspace->core.size() - proton_core_orbits;
 
    outfile << fixed << setprecision(pdouble);
    outfile << "!  One-body matrix elements for tensor operator: " << opname << "   generated with IM-SRG" << endl;
@@ -2838,35 +2937,16 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
    }
 
 
-//   // first do proton orbits
-//   for (auto& i : modelspace->valence)
-//   {
-//      Orbit& oi = modelspace->GetOrbit(i);
-//      if (oi.tz2 > 0 ) continue;
-//      int nushell_indx = i/2+1 -proton_core_orbits;
-//      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2  << "   " << setw(wint) << oi.tz2 <<  endl;
-//      ++nvalence_proton_orbits;
-//   }
-//   // then do neutron orbits
-//   for (auto& i : modelspace->valence)
-//   {
-//      Orbit& oi = modelspace->GetOrbit(i);
-//      if (oi.tz2 < 0 ) continue;
-//      int nushell_indx = i/2+1 + nvalence_proton_orbits -neutron_core_orbits;
-//      outfile << "!     " << nushell_indx << "    " << oi.n << "   " << oi.l << "   " << oi.j2 << "   " << setw(wint) << oi.tz2 << endl;
-//   }
 
    outfile << "!" << endl << "!  a   b   < a || Op || b > " << endl;
 
    for ( auto a : modelspace->valence )
    {
-     Orbit& oa = modelspace->GetOrbit(a);
 //     int a_ind = a/2+1 + ( oa.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
       int a_ind = orb2nushell[a];
 //     for ( auto b : Op.OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
       for ( auto b : modelspace->valence )
      {
-        Orbit& ob = modelspace->GetOrbit(b);
         double me = Op.OneBody(a,b);
         if ( abs(me) < 1e-7 ) continue;
 //        int b_ind = b/2+1 + ( ob.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
@@ -2880,10 +2960,10 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
 {
    ofstream outfile(filename);
    ModelSpace * modelspace = Op.GetModelSpace();
-   int nvalence_proton_orbits = 0;
-   int proton_core_orbits = 0;
-   int neutron_core_orbits = 0;
-   int Acore = 0;
+//   int nvalence_proton_orbits = 0;
+//   int proton_core_orbits = 0;
+//   int neutron_core_orbits = 0;
+//   int Acore = 0;
    int wint = 4; // width for printing integers
    int wdouble = 16; // width for printing doubles
    int pdouble = 9; // precision for printing doubles
@@ -2908,16 +2988,16 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
 
 
 
-   for (auto& i : modelspace->core)
-   {
-      Orbit& oi = modelspace->GetOrbit(i);
-      Acore += oi.j2 +1;
-      if (oi.tz2 < 0)
-      {
-         proton_core_orbits += 1;
-      }
-   }
-   neutron_core_orbits = modelspace->core.size() - proton_core_orbits;
+//   for (auto& i : modelspace->core)
+//   {
+//      Orbit& oi = modelspace->GetOrbit(i);
+//      Acore += oi.j2 +1;
+//      if (oi.tz2 < 0)
+//      {
+//         proton_core_orbits += 1;
+//      }
+//   }
+//   neutron_core_orbits = modelspace->core.size() - proton_core_orbits;
 
    outfile << fixed << setprecision(pdouble);
    outfile << "!  Two-body matrix elements for tensor operator: " << opname << "   generated with IM-SRG" << endl;

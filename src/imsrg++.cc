@@ -92,7 +92,8 @@ int main(int argc, char** argv)
 
   // test 2bme file
   ifstream test(inputtbme);
-  if( not test.good() )
+//  if( not test.good() )
+  if( not test.good() and fmt2!="oakridge")
   {
     cout << "trouble reading " << inputtbme << " exiting. " << endl;
     return 1;
@@ -161,17 +162,24 @@ int main(int argc, char** argv)
   {
     #pragma omp section
     {
-    if (fmt2 == "me2j")
-      rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
-    else if (fmt2 == "navratil" or fmt2 == "Navratil")
-      rw.ReadBareTBME_Navratil(inputtbme, Hbare);
-    else if (fmt2 == "oslo" )
-      rw.ReadTBME_Oslo(inputtbme, Hbare);
-    else if (fmt2 == "oakridge" )
-      rw.ReadTBME_OakRidge(inputtbme, Hbare);
-    else if (fmt2 == "nushellx" )
-      rw.ReadNuShellX_int( Hbare, inputtbme );
-     cout << "done reading 2N" << endl;
+      if (fmt2 == "me2j")
+        rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
+      else if (fmt2 == "navratil" or fmt2 == "Navratil")
+        rw.ReadBareTBME_Navratil(inputtbme, Hbare);
+      else if (fmt2 == "oslo" )
+        rw.ReadTBME_Oslo(inputtbme, Hbare);
+      else if (fmt2 == "oakridge" )
+      { // input format should be: singleparticle.dat,vnn.dat
+        size_t comma_pos = inputtbme.find_first_of(",");
+        rw.ReadTBME_OakRidge( inputtbme.substr(0,comma_pos),  inputtbme.substr( comma_pos+1 ), Hbare);
+      }
+      else if (fmt2 == "nushellx" )
+        rw.ReadNuShellX_int( Hbare, inputtbme );
+
+      cout << "done reading 2N" << endl;
+  
+//      if (fmt2 != "nushellx")
+//        Hbare += Trel_Op(modelspace);
     }
   
     #pragma omp section
@@ -198,7 +206,7 @@ int main(int argc, char** argv)
   HartreeFock hf(Hbare);
   cout << "Solving" << endl;
   hf.Solve();
-  cout << "EHF = " << hf.EHF << endl;
+//  cout << "EHF = " << hf.EHF << endl;
   
   Operator HNO;
   if (basis == "HF" and method !="HF")

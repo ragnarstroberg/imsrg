@@ -975,9 +975,12 @@ void ModelSpace::ClearVectors()
 }
 
 
+// On the first pass through a commutator calculation, we use a single thread so that
+// we only calculate the sixJ's we need, but we don't have to worry about race conditions.
+// This resets the first pass flag.
 void ModelSpace::ResetFirstPass()
 {
-  scalar_transform_first_pass = false;
+  scalar_transform_first_pass = true;
   for (size_t i=0;i<tensor_transform_first_pass.size();i++) tensor_transform_first_pass[i] = true;
 }
 
@@ -987,7 +990,6 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 // { j1 j2 j3 }
 // { J1 J2 J3 }
 
-//   unsigned long long int key = 20000000000*j1 + 200000000*j2 + 2000000*j3 + 20000*J1 + 200*J2 + 2*J3;
    unsigned long int key = (((unsigned long int) (2*j1)) << 30) +
                            (((unsigned long int) (2*j2)) << 24) +
                            (((unsigned long int) (2*j3)) << 18) +
@@ -1005,14 +1007,17 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 
 
 
+
 void ModelSpace::PreCalculateMoshinsky()
 {
-//  if ( not MoshList.empty() ) return; // Already done calculated it...
   if (moshinsky_has_been_precalculated) return;
-  #pragma omp parallel for schedule(dynamic,1)
+  double t_start = omp_get_wtime();
+
+  // generating all the keys is fast, so we do this first without parallelization
+//  vector<unsigned long long int> KEYS;
+  vector<uint64_t> KEYS;
   for (int N=0; N<=E2max/2; ++N)
   {
-   unordered_map<unsigned long long int,double> local_MoshList;
    for (int n=0; n<=min(N,E2max/2-N); ++n)
    {
     for (int Lam=0; Lam<=E2max-2*N-2*n; ++Lam)
@@ -1034,18 +1039,26 @@ void ModelSpace::PreCalculateMoshinsky()
           if ( (l1+l2+lam+Lam)%2 >0 ) continue;
           if ( l2<abs(L-l1) or l2>L+l1 ) continue;
           // emax = 16, lmax = 32 -> good up to emax=32, which I'm nowhere near.
-          unsigned long long int key =   ((unsigned long long int) N   << 40)
-                                       + ((unsigned long long int) Lam << 34)
-                                       + ((unsigned long long int) n   << 30)
-                                       + ((unsigned long long int) lam << 26)
-                                       + ((unsigned long long int) n1  << 22)
-                                       + ((unsigned long long int) l1  << 16)
-                                       + ((unsigned long long int) n2  << 12)
-                                       + ((unsigned long long int) l2  << 6 )
-                                       +  L;
-
-          double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
-          local_MoshList[key] = mosh;
+//          unsigned long long int key =   ((unsigned long long int) N   << 40)
+//                                       + ((unsigned long long int) Lam << 34)
+//                                       + ((unsigned long long int) n   << 30)
+//                                       + ((unsigned long long int) lam << 26)
+//                                       + ((unsigned long long int) n1  << 22)
+//                                       + ((unsigned long long int) l1  << 16)
+//                                       + ((unsigned long long int) n2  << 12)
+//                                       + ((unsigned long long int) l2  << 6 )
+//                                       +  L;
+          uint64_t key =    ((uint64_t) N   << 40)
+                          + ((uint64_t) Lam << 34)
+                          + ((uint64_t) n   << 30)
+                          + ((uint64_t) lam << 26)
+                          + ((uint64_t) n1  << 22)
+                          + ((uint64_t) l1  << 16)
+                          + ((uint64_t) n2  << 12)
+                          + ((uint64_t) l2  << 6 )
+                          +  L;
+          KEYS.push_back(key);
+          MoshList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
          }
         }
        }
@@ -1053,10 +1066,29 @@ void ModelSpace::PreCalculateMoshinsky()
      }
     }
    }
-   #pragma omp critical
-   MoshList.insert( local_MoshList.begin(), local_MoshList.end() );
   }
+  // Now we calculate the Moshinsky brackets in parallel
+  vector<double> mosh_vals( KEYS.size() );
+  #pragma omp parallel for schedule(dynamic,1)
+  for (size_t i=0;i< KEYS.size(); ++i)
+  {
+//    unsigned long long int& key = KEYS[i];
+    uint64_t& key = KEYS[i];
+    int N   =  key >> 40;
+    int Lam = (key >> 34) & 0x3f;
+    int n   = (key >> 30) & 0xf;
+    int lam = (key >> 26) & 0xf;
+    int n1  = (key >> 22) & 0xf;
+    int l1  = (key >> 16) & 0x3f;
+    int n2  = (key >> 12) & 0xf;
+    int l2  = (key >> 6 ) & 0xf;
+    int L   =  key & 0x3f;
+    MoshList[key] = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
+  }
+
   moshinsky_has_been_precalculated = true;
+  cout << "done calculating moshinsky" << endl;
+  profiler.timer["PreCalculateMoshinsky"] += omp_get_wtime() - t_start;
 }
 
 
@@ -1105,21 +1137,12 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
                                        + ((unsigned long long int) l2  << 6 )
                                        +  L;
 
-//   unsigned long long int key =  1000000000000 * N
-//                                + 100000000000 * Lam
-//                                +   1000000000 * n
-//                                +    100000000 * lam
-//                                +      1000000 * n1
-//                                +       100000 * l1
-//                                +         1000 * n2
-//                                +          100 * l2
-//                                +                 L;
+
    auto it = MoshList.find(key);
    if ( it != MoshList.end() )  return it->second * phase_mosh;
 
    // if we didn't find it, we need to calculate it.
    double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
-//   cout << "Shouldn't be here..." << N << " " << Lam << " " <<  n << " " << lam << " " << n1 << " " << l1 << " " << n2 << " " << l2 << " " << L << endl;
 //   #pragma omp atomic
    MoshList[key] = mosh;
    return mosh * phase_mosh;
