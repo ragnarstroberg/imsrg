@@ -196,6 +196,7 @@ int main(int argc, char** argv)
     }  
   }
   }
+  omp_set_num_threads(nthreads);
 
 //  if (fmt2 != "nushellx")
 //    Hbare += Trel_Op(modelspace);
