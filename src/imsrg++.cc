@@ -158,15 +158,15 @@ int main(int argc, char** argv)
 
   cout << "Reading interactions..." << endl;
 
-  int nthreads = omp_get_max_threads();
-  {
-   omp_set_num_threads(2);
-   omp_set_nested(1);
-  #pragma omp parallel sections 
-  {
-    omp_set_num_threads(max(1,nthreads-3));
-    #pragma omp section
-    {
+//  int nthreads = omp_get_max_threads();
+//  {
+//   omp_set_num_threads(2);
+//   omp_set_nested(1);
+//  #pragma omp parallel sections 
+//  {
+//    omp_set_num_threads(max(1,nthreads-3));
+//    #pragma omp section
+//    {
       if (fmt2 == "me2j")
         rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
       else if (fmt2 == "navratil" or fmt2 == "Navratil")
@@ -185,18 +185,19 @@ int main(int argc, char** argv)
   
       if (fmt2 != "nushellx")
         Hbare += Trel_Op(modelspace);
-    }
+//    }
   
-    #pragma omp section
+//    #pragma omp section
     if (Hbare.particle_rank >=3)
     {
-      omp_set_num_threads(1);
+//      omp_set_num_threads(1);
       rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
       cout << "done reading 3N" << endl;
     }  
-  }
-  }
-  omp_set_num_threads(nthreads);
+//  }
+//  }
+//  omp_set_num_threads(nthreads);
+//  omp_set_nested(0);
 
 //  if (fmt2 != "nushellx")
 //    Hbare += Trel_Op(modelspace);

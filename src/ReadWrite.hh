@@ -26,6 +26,7 @@ class ReadWrite
    template<class T> void ReadBareTBME_Darmstadt_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int lmax);
    void Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max);
    template<class T>void Read_Darmstadt_3body_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int E3max);
+   void Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare, int E1max, int E2max, int E3max);
    void GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis );
    void Read3bodyHDF5( string filename, Operator& op);
    void Read3bodyHDF5_new( string filename, Operator& op);

@@ -77,7 +77,7 @@ void TwoBodyME::Allocate()
         TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
         if ( abs(tbc_bra.J-tbc_ket.J)>rank_J ) continue;
         if ( (tbc_bra.J+tbc_ket.J)<rank_J ) continue;
-        if ( abs(tbc_bra.Tz-tbc_ket.Tz)>rank_T ) continue;
+        if ( abs(tbc_bra.Tz-tbc_ket.Tz)!=rank_T ) continue; // we don't couple to T, so rank_T really means |delta Tz|
         if ( (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
         MatEl[{ch_bra,ch_ket}] =  arma::mat(tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros);
      }
