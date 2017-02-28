@@ -458,7 +458,7 @@ void ModelSpace::Init_occ_from_file(int emax, string valence, string occ_file)
 
   while( infile >> orb >> occ )
   {
-    if ( hole_list.find(orb) != hole_list.end() and  abs( hole_list[orb] -occ) > -1e-6) // the minus sign is for a test. Change it back.
+    if ( hole_list.find(orb) != hole_list.end() and  abs( hole_list[orb] -occ) > 1e-6) // the minus sign is for a test. Change it back.
     {
         cout << "Warning: in file " << occ_file << ", redefinition of occupation of orbit "
              << orb << "  " << hole_list[orb] << " => " << occ << endl;

@@ -1388,7 +1388,8 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare,
 //  int nmaxthreads = omp_get_max_threads();
 // No benefit from using more than a few threads, at least in emax=6 tests
 // This could probably stand some more optimization...
-  int nthreads = min(omp_get_max_threads(),4); 
+// Bad behavior if I make this more than 1... should be fixed in the future
+  int nthreads = min(omp_get_max_threads(),1); 
 //  omp_set_num_threads(nthreads);
   #pragma omp parallel num_threads(nthreads) reduction(+ : nkept)
   {
@@ -1525,7 +1526,12 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare,
 ////                    double V;
 //                    float V = 0;
 //                    infile >> V;
-                    float V = ThreeBME[nread + 5*(twoJC-twoJCMin)/2+2*tab+ttab+(twoT-1)/2];
+                    size_t index_ab = 5*(twoJC-twoJCMin)/2+2*tab+ttab+(twoT-1)/2;
+                    if (nread+index_ab >=ThreeBME.size())
+                    {
+                      cout << "OH NO!!! trying to access element " << nread << "+" << index_ab << " = " << nread+index_ab << "  which is >= "<< ThreeBME.size() << endl;
+                    }
+                    float V = ThreeBME[nread + index_ab ];
 //                    ++nread;
                     bool autozero = false;
                     if (oa.l>lmax3 or ob.l>lmax3 or oc.l>lmax3 or od.l>lmax3 or oe.l>lmax3 or of.l>lmax3) V=0;
