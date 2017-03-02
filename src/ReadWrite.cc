@@ -3185,20 +3185,31 @@ void ReadWrite::ReadTwoBody_Takayuki(string filename, Operator& Hbare)
      int N = 2*oi.n + oi.l;
      int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2 + 1;
      orbits_remap[nlj] = i;
+     cout << "orbits_remap  " << nlj << " => " << i << endl;
   }
 
 
+  string dummy;
   ifstream infile(filename);
+  getline( infile, dummy );
+  getline( infile, dummy );
+  cout << "dummy = " << dummy << endl;
   int a,b,c,d,tza,tzb,tzc,tzd,J;
-  double me;
-  while( infile >> tza >> a >> tzb >> b >> tzc >> c >> tzd >> d >> J >> me )
+  double me,pipj,rirj;
+  int norbits = modelspace->GetNumberOrbits();
+  while( infile >> tza >> a >> tzb >> b >> tzc >> c >> tzd >> d >> J >> me >> pipj >> rirj )
   {
     int aa = orbits_remap.at(a) + (tza+1)/2;
     int bb = orbits_remap.at(b) + (tzb+1)/2;
     int cc = orbits_remap.at(c) + (tzc+1)/2;
     int dd = orbits_remap.at(d) + (tzd+1)/2;
+    cout << "b => bb: " << b << " => " << orbits_remap.at(b) << endl;
+    if (aa>= norbits or bb>=norbits or cc>=norbits or dd>=norbits) continue;
     if ( (aa==bb or cc==dd) and (J%2)>0 ) continue;
     if (abs(me)<1e-6) continue;
+    cout << "J abcd me = " << J << " " << aa << " " << bb << " " << cc << " " << dd  << " " << me ;
+    cout << " " << a << " " << b << " " << c << " " << d ;
+    cout << " " << tza << " " << tzb << " " << tzc << " " << tzd << endl;
     Hbare.TwoBody.SetTBME_J(J,aa,bb,cc,dd,me);
   }
 }

@@ -280,6 +280,7 @@ void TwoBodyME::SetTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, doub
    Orbit& od = modelspace->GetOrbit(d);
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,(oa.l+ob.l)%2,(oa.tz2+ob.tz2)/2);
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,(oc.l+od.l)%2,(oc.tz2+od.tz2)/2);
+   cout << "  SetTBME_J:  " << a << " " << b << " " << c << " " << d << "   " << j_bra << "  " << ch_bra << " " << ch_ket << endl;
    SetTBME(ch_bra,ch_ket,a,b,c,d,tbme);
 }
 void TwoBodyME::AddToTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, double tbme)

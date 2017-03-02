@@ -178,6 +178,8 @@ int main(int argc, char** argv)
         size_t comma_pos = inputtbme.find_first_of(",");
         rw.ReadTBME_OakRidge( inputtbme.substr(0,comma_pos),  inputtbme.substr( comma_pos+1 ), Hbare);
       }
+      else if (fmt2 == "takayuki" )
+        rw.ReadTwoBody_Takayuki( inputtbme, Hbare);
       else if (fmt2 == "nushellx" )
         rw.ReadNuShellX_int( Hbare, inputtbme );
 
