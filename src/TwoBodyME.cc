@@ -144,9 +144,7 @@ void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, doub
    double phase = 1;
    if (a>b) phase *= tbc_bra.GetKet(bra_ind).Phase(tbc_bra.J);
    if (c>d) phase *= tbc_ket.GetKet(ket_ind).Phase(tbc_ket.J);
-//   cout << "abcd " << a << " " << b << " " << c << " " << d << "   JPT " << tbc_bra.J << " " << tbc_bra.parity << " " << tbc_bra.Tz << endl;
-//   Orbit& od = modelspace->GetOrbit(d);
-//   cout << "orbit d:  " << od.n << " " << od.l << " " << od.j2 << " " << od.tz2 << endl;
+   Orbit& od = modelspace->GetOrbit(d);
 //   cout << "ch_bra , ch_ket = " << ch_bra << " " << ch_ket << " bra/ket_ind  " << bra_ind << " " << ket_ind << "   dimensions " << GetMatrix(ch_bra,ch_ket).n_rows << endl;
    GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) = phase * tbme;
    if (ch_ket != ch_bra) return;
@@ -280,7 +278,6 @@ void TwoBodyME::SetTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, doub
    Orbit& od = modelspace->GetOrbit(d);
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,(oa.l+ob.l)%2,(oa.tz2+ob.tz2)/2);
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,(oc.l+od.l)%2,(oc.tz2+od.tz2)/2);
-   cout << "  SetTBME_J:  " << a << " " << b << " " << c << " " << d << "   " << j_bra << "  " << ch_bra << " " << ch_ket << endl;
    SetTBME(ch_bra,ch_ket,a,b,c,d,tbme);
 }
 void TwoBodyME::AddToTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, double tbme)
