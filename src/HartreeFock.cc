@@ -666,6 +666,7 @@ Operator HartreeFock::GetNormalOrderedH()
 
    int nchan = modelspace->GetNumberTwoBodyChannels();
    int norb = modelspace->GetNumberOrbits();
+//   #pragma omp parallel for schedule(dynamic,1) // have not yet confirmed that this improves performance ... no sign of significant improvement
    for (int ch=0;ch<nchan;++ch)
    {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);

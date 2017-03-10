@@ -81,6 +81,7 @@ int main(int argc, char** argv)
   double omega_norm_max = parameters.d("omega_norm_max"); 
   double denominator_delta = parameters.d("denominator_delta");
   double BetaCM = parameters.d("BetaCM");
+  double hwBetaCM = parameters.d("hwBetaCM");
   double eta_criterion = parameters.d("eta_criterion");
 
   vector<string> opnames = parameters.v("Operators");
@@ -91,7 +92,8 @@ int main(int argc, char** argv)
 
   // test 2bme file
   ifstream test(inputtbme);
-  if( not test.good() )
+//  if( not test.good() )
+  if( not test.good() and fmt2!="oakridge")
   {
     cout << "trouble reading " << inputtbme << " exiting. " << endl;
     return 1;
@@ -156,40 +158,64 @@ int main(int argc, char** argv)
 
   cout << "Reading interactions..." << endl;
 
-  #pragma omp parallel sections 
-  {
-    #pragma omp section
-    {
-    if (fmt2 == "me2j")
-      rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
-    else if (fmt2 == "navratil" or fmt2 == "Navratil")
-      rw.ReadBareTBME_Navratil(inputtbme, Hbare);
-    else if (fmt2 == "oslo" )
-      rw.ReadTBME_Oslo(inputtbme, Hbare);
-    else if (fmt2 == "oakridge" )
-      rw.ReadTBME_OakRidge(inputtbme, Hbare);
-     cout << "done reading 2N" << endl;
-    }
+//  int nthreads = omp_get_max_threads();
+//  {
+//   omp_set_num_threads(2);
+//   omp_set_nested(1);
+//  #pragma omp parallel sections 
+//  {
+//    omp_set_num_threads(max(1,nthreads-3));
+//    #pragma omp section
+//    {
+      if (fmt2 == "me2j")
+        rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
+      else if (fmt2 == "navratil" or fmt2 == "Navratil")
+        rw.ReadBareTBME_Navratil(inputtbme, Hbare);
+      else if (fmt2 == "oslo" )
+        rw.ReadTBME_Oslo(inputtbme, Hbare);
+      else if (fmt2 == "oakridge" )
+      { // input format should be: singleparticle.dat,vnn.dat
+        size_t comma_pos = inputtbme.find_first_of(",");
+        rw.ReadTBME_OakRidge( inputtbme.substr(0,comma_pos),  inputtbme.substr( comma_pos+1 ), Hbare);
+      }
+      else if (fmt2 == "nushellx" )
+        rw.ReadNuShellX_int( Hbare, inputtbme );
+
+      cout << "done reading 2N" << endl;
   
-    #pragma omp section
+      if (fmt2 != "nushellx")
+        Hbare += Trel_Op(modelspace);
+//    }
+  
+//    #pragma omp section
     if (Hbare.particle_rank >=3)
     {
+//      omp_set_num_threads(1);
       rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
       cout << "done reading 3N" << endl;
     }  
-  }
+//  }
+//  }
+//  omp_set_num_threads(nthreads);
+//  omp_set_nested(0);
 
-  Hbare += Trel_Op(modelspace);
+//  if (fmt2 != "nushellx")
+//    Hbare += Trel_Op(modelspace);
+
+  // Add a Lawson term. If hwBetaCM is specified, use that frequency
   if (abs(BetaCM)>1e-3)
   {
-    Hbare += BetaCM * HCM_Op(modelspace);
+    if (hwBetaCM < 0) hwBetaCM = modelspace.GetHbarOmega();
+    ostringstream hcm_opname;
+    hcm_opname << "HCM_" << hwBetaCM;
+    Hbare += BetaCM * imsrg_util::OperatorFromString( modelspace, hcm_opname.str());
   }
 
   cout << "Creating HF" << endl;
   HartreeFock hf(Hbare);
   cout << "Solving" << endl;
   hf.Solve();
-  cout << "EHF = " << hf.EHF << endl;
+//  cout << "EHF = " << hf.EHF << endl;
   
   Operator HNO;
   if (basis == "HF" and method !="HF")
@@ -214,7 +240,7 @@ int main(int argc, char** argv)
   }
   cout << "Done with SPWF" << endl;
 
-  HNO -= BetaCM * 1.5*hw;
+  HNO -= BetaCM * 1.5*hwBetaCM;
   cout << "Hbare 0b = " << HNO.ZeroBody << endl;
 
   if (method != "HF")

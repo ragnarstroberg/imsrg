@@ -17,7 +17,8 @@ class ReadWrite
    ReadWrite();
    void ReadSettingsFile(  string filename);
    void ReadTBME_Oslo( string filename, Operator& Hbare);
-   void ReadTBME_OakRidge( string filename, Operator& Hbare);
+//   void ReadTBME_OakRidge( string filename, Operator& Hbare);
+   void ReadTBME_OakRidge( string spname, string tbmename, Operator& Hbare);
    void ReadBareTBME_Jason( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil( string filename, Operator& Hbare);
    void ReadBareTBME_Navratil_from_stream( istream& infile, Operator& Hbare);
@@ -25,6 +26,7 @@ class ReadWrite
    template<class T> void ReadBareTBME_Darmstadt_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int lmax);
    void Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max);
    template<class T>void Read_Darmstadt_3body_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int E3max);
+   void Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare, int E1max, int E2max, int E3max);
    void GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis );
    void Read3bodyHDF5( string filename, Operator& op);
    void Read3bodyHDF5_new( string filename, Operator& op);

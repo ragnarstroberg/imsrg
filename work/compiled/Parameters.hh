@@ -39,7 +39,8 @@ map<string,string> Parameters::string_par = {
   {"intfile",			"default"},  // name of output interaction fille
   {"fmt2",			"me2j"},	 // can also be navratil or Navratil to read Petr's TBME format
   {"reference",			"default"},	// nucleus used for HF and normal ordering.
-  {"valence_space",		"O16"},	// either valence space or nucleus for single reference
+  {"valence_space",		""},	// either valence space or nucleus for single reference
+  {"custom_valence_space",      ""}, // if the provided valence spaces just aren't good enough for you
   {"basis",			"HF"},	 // use HF basis or oscillator basis. HF is better.
   {"method",			"magnus"},	// can be magnus or flow or a few other things
   {"denominator_delta_orbit",	"none"},	// pick specific orbit to apply the delta
@@ -57,11 +58,12 @@ map<string,double> Parameters::double_par = {
   {"dsmax",		0.5},	// maximum step size
   {"ds_0",		0.5},	// initial step size
   {"domega",		0.5},	// max for norm of eta * ds
-  {"omega_norm_max",	0.25},	 // norm of omega before we do the splitting
+  {"omega_norm_max",	0.25},  // norm of omega before we do the splitting
   {"ode_tolerance",	1e-6},	// error tolerance for the ode solver
-  {"denominator_delta",	0},	// offset added to the denominator in the generator
-  {"BetaCM",0}, // Prefactor for Lawson-Glockner term
-  {"eta_criterion",1e-6}, // Termination criterion for ||eta|| in IMSRGSolver
+  {"denominator_delta",	   0},	// offset added to the denominator in the generator
+  {"BetaCM",               0},  // Prefactor for Lawson-Glockner term
+  {"hwBetaCM",            -1},  // Oscillator frequency used in the Lawson-Glockner term. Negative value means use the frequency of the basis
+  {"eta_criterion",     1e-6},  // Threshold on ||eta|| for convergence in the flow
 
 };
 
@@ -81,6 +83,7 @@ map<string,int> Parameters::int_par = {
 
 map<string,vector<string>> Parameters::vec_par = {
  {"Operators", {} },
+ {"SPWF",{} }, // single-particle wave functions in HF basis
 };
 
 
