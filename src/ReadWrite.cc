@@ -877,7 +877,6 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
     int ea = 2*oa.n + oa.l;
     if (ea > E1max) break;
     if (ea > e1max) break;
-    if (ea > e3max) break;
 //    cout << setw(5) << setprecision(2) << nlj1*(nlj1+1.)/(nljmax*(nljmax+1))*100 << " % done" << '\r';
 //    cout.flush();
 
@@ -1005,7 +1004,6 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                        if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
                           and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max) )
                        {
-                         #pragma omp atomic
                          ++nkept;
                        }
 
@@ -1513,10 +1511,10 @@ void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b,
   if ( !infile.good() )
   {
      cerr << "************************************" << endl
-          << "**    Trouble opening 1b file  " << filename1b <<  "  **" << endl
+          << "**    Trouble opening 1b file  !!!   **" << endl
           << "************************************" << endl;
-//     goodstate = false;
-//     return;
+     goodstate = false;
+     return;
   }
   index_t a,b,c,d,J1,J2;
   double me;
@@ -1533,15 +1531,14 @@ void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b,
   infile.close();
   cout << "Done reading 1b file." << endl;
 
-  infile.clear(); // clear any errors from reading the 1b file
   infile.open(filename2b);
   if ( !infile.good() )
   {
      cerr << "************************************" << endl
-          << "**    Trouble opening 2b file  " << filename2b << "  **" << endl
+          << "**    Trouble opening 2b file  !!!   **" << endl
           << "************************************" << endl;
-//     goodstate = false;
-//     return;
+     goodstate = false;
+     return;
   }
 //  char header[500];
 //  infile.getline(header,500);
@@ -1881,10 +1878,7 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
 
 void ReadWrite::WriteNuShellX_op(Operator& op, string filename)
 {
-//  WriteNuShellX_intfile(op,filename,"op");
-  // with the new nutbar program, there is no need to
-  // perform the isospin averaging.
-  WriteNuShellX_intfile(op,filename,"int");
+  WriteNuShellX_intfile(op,filename,"op");
 }
 void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
 {
@@ -1903,9 +1897,9 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode
    intfile.open(filename, ofstream::out);
    ModelSpace * modelspace = op.GetModelSpace();
 
-   const int wint = 4; // width for printing integers
-   const int wdouble = 16; // width for printing doubles
-   const int pdouble = 9; // precision for printing doubles
+   int wint = 4; // width for printing integers
+   int wdouble = 12; // width for printing doubles
+   int pdouble = 6; // precision for printing doubles
 
    // valence protons are the intersection of valence orbits and protons orbits. Likewise for neutrons.
    vector<int> valence_protons(modelspace->valence.size());
@@ -1939,12 +1933,12 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode
    intfile << "! e1max: " << modelspace->GetEmax() << "  e2max: " << modelspace->GetE2max() << "   e3max: " << modelspace->GetE3max() << "   hw: " << modelspace->GetHbarOmega();
    intfile << "   Aref: " << Aref << "  Zref: " << Zref << "  A_for_kinetic_energy: " << modelspace->GetTargetMass() << endl;
    intfile << "! Zero body term: " << op.ZeroBody << endl;
-   intfile << "! Index  n  l   j   tz" << endl;
+   intfile << "! Index   n l j tz" << endl;
 
    for ( auto& it : nushell2orb )
    {
       Orbit& oi = modelspace->GetOrbit(it.second);
-      intfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2 << "/2" << " " << setw(2) << oi.tz2 << "/2" << endl;
+      intfile << "!  " << it.first << "   " << oi.n << " " << oi.l << " " << oi.j2 << "/2" << " " << oi.tz2 << "/2" << endl;
    }
    intfile << "!" << endl;
    intfile << "-999  ";
@@ -2129,7 +2123,6 @@ void ReadWrite::ReadNuShellX_int(Operator& op, string filename)
 //  cout << op.OneBody << endl;
   int a,b,c,d,J,Tprime;
   double V;
-  vector<int> added_tprime; // list to keep track of whether we've added this T'=0,1 term already.
   while( intfile >> a >> b >> c >> d >> J >> Tprime >> V)
   {
     Orbit& oa = modelspace->GetOrbit(orbit_map[a]);
@@ -2140,25 +2133,8 @@ void ReadWrite::ReadNuShellX_int(Operator& op, string filename)
     {
        if ( (oa.j2 != ob.j2) or (oa.l != ob.l) or (oa.n != ob.n) ) V /= SQRT2; // pn TBMEs are unnormalized
        if ( (oc.j2 != od.j2) or (oc.l != od.l) or (oc.n != od.n) ) V /= SQRT2; // pn TBMEs are unnormalized
-       // if we haven't already added this one, then do it.
-       int asrt=min(a,b);
-       int bsrt=max(a,b);
-       int csrt=min(c,d);
-       int dsrt=max(c,d);
-       long tprimekey =  asrt*100000000 + bsrt*1000000 + csrt*10000 + dsrt*100 + J*10 + Tprime;
-       if ( csrt<asrt or ( csrt==asrt and dsrt<bsrt ) )
-          tprimekey =  csrt*100000000 + dsrt*1000000 + asrt*10000 + bsrt*100 + J*10 + Tprime;
-
-       if ( find(begin(added_tprime),end(added_tprime),tprimekey) == end(added_tprime))
-       {
-         op.TwoBody.AddToTBME_J(J,orbit_map[a],orbit_map[b],orbit_map[c],orbit_map[d],V);
-         added_tprime.push_back(tprimekey);
-       }
     }
-    else
-    {
-      op.TwoBody.SetTBME_J(J,orbit_map[a],orbit_map[b],orbit_map[c],orbit_map[d],V);
-    }
+    op.TwoBody.SetTBME_J(J,orbit_map[a],orbit_map[b],orbit_map[c],orbit_map[d],V);
   }
 
 }
@@ -2784,8 +2760,8 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
    int neutron_core_orbits = 0;
    int Acore = 0;
    int wint = 4; // width for printing integers
-   int wdouble = 16; // width for printing doubles
-   int pdouble = 9; // precision for printing doubles
+   int wdouble = 12; // width for printing doubles
+   int pdouble = 6; // precision for printing doubles
    for (auto& i : modelspace->core)
    {
       Orbit& oi = modelspace->GetOrbit(i);
@@ -2835,7 +2811,7 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
         double me = Op.OneBody(a,b);
         if ( abs(me) < 1e-7 ) continue;
         int b_ind = b/2+1 + ( ob.tz2 <0 ? -proton_core_orbits : nvalence_proton_orbits - neutron_core_orbits);
-        outfile << setw(wint) << a_ind << " " << setw(wint) << b_ind << " " << fixed << setw(wdouble) << setprecision(pdouble) <<  me << endl;
+        outfile << setw(wint) << a_ind << " " << setw(wint) << b_ind << " " << setw(wdouble) << setprecision(pdouble) <<  me << endl;
      }
    }
 }
@@ -2849,8 +2825,8 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
    int neutron_core_orbits = 0;
    int Acore = 0;
    int wint = 4; // width for printing integers
-   int wdouble = 16; // width for printing doubles
-   int pdouble = 9; // precision for printing doubles
+   int wdouble = 12; // width for printing doubles
+   int pdouble = 6; // precision for printing doubles
    for (auto& i : modelspace->core)
    {
       Orbit& oi = modelspace->GetOrbit(i);
@@ -3075,7 +3051,7 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
   index_t index;
   while( statefile >> index >> tmp_state.e12 >> tmp_state.n >> tmp_state.N >> tmp_state.J >> tmp_state.S >> tmp_state.L >> tmp_state.lam >> tmp_state.LAM >> tmp_state.T >> tmp_state.Tz )
   {
-//     tmp_state.Tz *=-1;
+     tmp_state.Tz *=-1;
      statelist.push_back(tmp_state); // add it to the list
      statemap[tmp_state] = index; // add it to the map
   }
@@ -3093,9 +3069,7 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
   while( MEfile >> bra_index >> ket_index >> MErel >> MEcm )
   {
     matrel(bra_index,ket_index) = MErel;
-    matrel(ket_index,bra_index) = MErel;
-//    matcm(bra_index,ket_index) = MEcm;
-//    matcm(ket_index,bra_index) = MEcm;
+    matcm(bra_index,ket_index) = MEcm;
   }
 
   cout << "Filling Op" << endl;
@@ -3115,7 +3089,7 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
     int Tzcd = tbc_ket.Tz;
     for (int ibra=0; ibra<nkets_bra; ++ibra)
     {
-//      cout << "Getting Ket ibra=" << ibra << endl;
+      cout << "Getting Ket ibra=" << ibra << endl;
       Ket& bra = tbc_bra.GetKet(ibra);
       int na = bra.op->n;
       int la = bra.op->l;
@@ -3128,10 +3102,10 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
       int Lab_min = max(abs(la-lb),Jab-1);
       int Lab_max = min(la+lb,Jab+1);
       int eab = 2*(na+nb)+la+lb;
-//      cout << "eab =  " << eab << endl;
+      cout << "eab =  " << eab << endl;
       for (int iket=0;iket<nkets_ket; ++iket)
       {
-//        cout << "Getting Ket iket=" << iket << endl;
+        cout << "Getting Ket iket=" << iket << endl;
         Ket& ket = tbc_ket.GetKet(iket);
         int nc = ket.op->n;
         int lc = ket.op->l;
@@ -3144,14 +3118,14 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
         int Lcd_min = max(abs(lc-ld),Jcd-1);
         int Lcd_max = min(lc+ld,Jcd+1);
         int ecd = 2*(nc+nd)+lc+ld;
-//        cout << " ecd = " << ecd << endl;
-//        if (eab==0 and ecd==0 and Jab+Jcd==1 and Tzab==0 and Tzcd==0)
-//        {
-//          cout << "!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!" << endl;
-//          cout << "!! " << Lab_min << "<= Lab <= " << Lab_max  << endl;
-//          cout << "!! " << Lcd_min << "<= Lcd <= " << Lcd_max  << endl;
-//          cout << "!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!" << endl;
-//        }
+        cout << " ecd = " << ecd << endl;
+        if (eab==0 and ecd==0 and Jab+Jcd==1 and Tzab==0 and Tzcd==0)
+        {
+          cout << "!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!" << endl;
+          cout << "!! " << Lab_min << "<= Lab <= " << Lab_max  << endl;
+          cout << "!! " << Lcd_min << "<= Lcd <= " << Lcd_max  << endl;
+          cout << "!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!" << endl;
+        }
         for (int Lab=Lab_min; Lab<=Lab_max; ++Lab)
         {
           for (int Sab=max(0,abs(Lab-Jab)); Sab<=min(1,Lab+Jab); ++Sab)
@@ -3187,42 +3161,20 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
                             double mosh_cd = modelspace->GetMoshinsky( N_cd, LAM_cd, n_cd, lam_cd, nc, lc, nd, ld, Lcd);
                             int Tcd = (lam_cd + Scd + 1)%2;
                             if (abs(Tzcd)>Tcd) continue;
-//                            double IsospinClebsch_ab = AngMom::CG(0.5,ta,0.5,tb, Tab,Tzab);
-//                            double IsospinClebsch_cd = AngMom::CG(0.5,tc,0.5,td, Tcd,Tzcd);
-                            double IsospinClebsch_ab = AngMom::CG(0.5,-ta,0.5,-tb, Tab,-Tzab);
-                            double IsospinClebsch_cd = AngMom::CG(0.5,-tc,0.5,-td, Tcd,-Tzcd);
+                            double IsospinClebsch_ab = AngMom::CG(0.5,ta,0.5,tb, Tab,Tzab);
+                            double IsospinClebsch_cd = AngMom::CG(0.5,tc,0.5,td, Tcd,Tzcd);
                             double coeff = NormNineJab*NormNineJcd*mosh_ab*mosh_cd*IsospinClebsch_ab*IsospinClebsch_cd;
                             size_t rel_index_bra = statemap[ javier_state_t(eab, n_ab, N_ab, Jab, Sab, Lab, lam_ab, LAM_ab, Tab, Tzab) ];
                             size_t rel_index_ket = statemap[ javier_state_t(ecd, n_cd, N_cd, Jcd, Scd, Lcd, lam_cd, LAM_cd, Tcd, Tzcd) ];
                             if (rel_index_bra<1) continue;
                             if (rel_index_ket<1) continue;
-                            if (Tzab==0 and (bra.p/2)==(bra.q/2) ) coeff *= SQRT2; // account for the normalization in an isospin-coupled basis
-                            if (Tzcd==0 and (ket.p/2)==(ket.q/2) ) coeff *= SQRT2;
-//                            cout << "ab: " << javier_state_t(eab, n_ab, N_ab, Jab, Sab, Lab, lam_ab, LAM_ab, Tab, Tzab) << endl;
-//                            cout << "cd: " << javier_state_t(ecd, n_cd, N_cd, Jcd, Scd, Lcd, lam_cd, LAM_cd, Tcd, Tzcd) << endl;
-//                            cout << "ibra,iket = " << ibra << " , " << iket << "   rel_index_bra,rel_index_ket = " << rel_index_bra << " , " << rel_index_ket << endl;
+                            cout << "ab: " << javier_state_t(eab, n_ab, N_ab, Jab, Sab, Lab, lam_ab, LAM_ab, Tab, Tzab) << endl;
+                            cout << "cd: " << javier_state_t(ecd, n_cd, N_cd, Jcd, Scd, Lcd, lam_cd, LAM_cd, Tcd, Tzcd) << endl;
+                            cout << "ibra,iket = " << ibra << " , " << iket << "   rel_index_bra,rel_index_ket = " << rel_index_bra << " , " << rel_index_ket << endl;
                             if ((N_ab==N_cd) and (LAM_ab==LAM_cd))
                                itmat.second(ibra,iket) += coeff * matrel(rel_index_bra, rel_index_ket);
                             if ((n_ab==n_cd) and (lam_ab==lam_cd))
                                itmat.second(ibra,iket) += coeff * matcm( rel_index_bra, rel_index_ket);
-//                            if (( Jab+Jcd==1) and (eab+ecd==0) and Tzab==0 and Tzcd==0)
-//                            if (( Jab==1 and Jcd==1) and (eab==1 and ecd==1) and Tzab==0 and Tzcd==0 and (ja+jb==1) and (jc+jd==1) )
-//                            if (ket.p==4 and ket.q==5 and bra.p==2 and bra.q==2 and Jcd==0 and Jab==1 )
-//                            if (bra.p==4 and bra.q==5 and ket.p==2 and ket.q==3 and Jab==0 and Jcd==1 )
-                            if (bra.p==0 and bra.q==5 and ket.p==0 and ket.q==5 and Jab==0 and Jcd==1 )
-                            {
-                              cout << "||||  " << n_ab << " " << lam_ab << " " << N_ab << " "<< LAM_ab << " "
-                                               << n_cd << " " << lam_cd << " " << N_cd << " "<< LAM_cd << " "
-                                               << " L = " << Lab << " " << Lcd << "  "
-                                               << " S = " << Sab << " " << Scd << "  "
-                                               << "  T = " << Tab << " " << Tcd << "   "
-                                               << "lab frame: " << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << " " 
-                                               << "  coef breakdown: " << NormNineJab << " " << NormNineJcd << " " << mosh_ab << " " << mosh_cd << " " << IsospinClebsch_ab << " " << IsospinClebsch_cd
-                                               << " x < " << rel_index_bra << " | " << rel_index_ket << " > " 
-                                               << "  ->  " << coeff  << " x " << matrel(rel_index_bra, rel_index_ket) << " + " << matcm(rel_index_bra, rel_index_ket)
-                                               << "   = " << itmat.second(ibra,iket) << endl;
-                            }
-//                            itmat.second(iket,ibra) = itmat.second(ibra,iket);
                           }
                         }
                       }
@@ -3235,7 +3187,7 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
           }
         }
         
-//        if (eab==0 and ecd==0 and Jab+Jcd==1 and Tzab==0 and Tzcd==0) cout << "!!!!!!!!!!!!!!!!!! DONE !!!!!!!!!!!!!!!!!!!!" << endl;
+        if (eab==0 and ecd==0 and Jab+Jcd==1 and Tzab==0 and Tzcd==0) cout << "!!!!!!!!!!!!!!!!!! DONE !!!!!!!!!!!!!!!!!!!!" << endl;
 
       }
     }
