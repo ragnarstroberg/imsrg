@@ -1,11 +1,17 @@
-// Copyright (C) 2008-2016 National ICT Australia (NICTA)
+// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// Copyright 2008-2016 National ICT Australia (NICTA)
 // 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// -------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
 // 
-// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ------------------------------------------------------------------------
 
 
 //! \addtogroup op_misc
@@ -280,49 +286,42 @@ op_abs::apply( Cube<typename T1::pod_type>& out, const mtOpCube<typename T1::pod
 template<typename T1>
 inline
 void
-op_orth::apply( Mat<typename T1::elem_type>& out, const Op<T1, op_orth>& expr )
+op_arg::apply( Mat<typename T1::pod_type>& out, const mtOp<typename T1::pod_type, T1, op_arg>& X )
   {
   arma_extra_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
   
-  T tol = access::tmp_real(expr.aux);
+  const Proxy<T1> P(X.m);
   
-  arma_debug_check((tol < T(0)), "orth(): tolerance must be >= 0");
+  const uword n_rows = P.get_n_rows();
+  const uword n_cols = P.get_n_cols();
   
-  const unwrap<T1>   tmp(expr.m);
-  const Mat<eT>& X = tmp.M;
+  out.set_size(n_rows, n_cols);
   
-  Mat<eT> U;
-  Col< T> s;
-  Mat<eT> V;
+  T* out_mem = out.memptr();
   
-  const bool status = auxlib::svd_dc(U, s, V, X);
-  
-  V.reset();
-  
-  if(status == false)  { out.reset(); arma_stop_runtime_error("orth(): svd failed"); return; }
-  
-  if(s.is_empty())  { out.reset(); return; }
-  
-  const uword s_n_elem = s.n_elem;
-  const T*    s_mem    = s.memptr();
-  
-  // set tolerance to default if it hasn't been specified
-  if(tol == T(0))  { tol = (std::max)(X.n_rows, X.n_cols) * s_mem[0] * std::numeric_limits<T>::epsilon(); }
-  
-  uword count = 0;
-  
-  for(uword i=0; i < s_n_elem; ++i)  { count += (s_mem[i] > tol) ? uword(1) : uword(0); }
-  
-  if(count > 0)
+  if(Proxy<T1>::use_at == false)
     {
-    out = U.head_cols(count);  // out *= eT(-1);
+    typedef typename Proxy<T1>::ea_type ea_type;
+    
+    const uword   n_elem  = P.get_n_elem();
+          ea_type A       = P.get_ea();
+    
+    for(uword i=0; i < n_elem; ++i)
+      {
+      out_mem[i] = arma_arg<eT>::eval( A[i] );
+      }
     }
   else
     {
-    out.set_size(X.n_rows, 0);
+    for(uword col=0; col < n_cols; ++col)
+    for(uword row=0; row < n_rows; ++row)
+      {
+      *out_mem = arma_arg<eT>::eval( P.at(row,col) );
+      out_mem++;
+      }
     }
   }
 
@@ -331,57 +330,44 @@ op_orth::apply( Mat<typename T1::elem_type>& out, const Op<T1, op_orth>& expr )
 template<typename T1>
 inline
 void
-op_null::apply( Mat<typename T1::elem_type>& out, const Op<T1, op_null>& expr )
+op_arg::apply( Cube<typename T1::pod_type>& out, const mtOpCube<typename T1::pod_type, T1, op_arg>& X )
   {
   arma_extra_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   typedef typename T1::pod_type   T;
   
-  T tol = access::tmp_real(expr.aux);
+  const ProxyCube<T1> P(X.m);
   
-  arma_debug_check((tol < T(0)), "null(): tolerance must be >= 0");
+  const uword n_rows   = P.get_n_rows();
+  const uword n_cols   = P.get_n_cols();
+  const uword n_slices = P.get_n_slices();
   
-  const unwrap<T1>   tmp(expr.m);
-  const Mat<eT>& X = tmp.M;
+  out.set_size(n_rows, n_cols, n_slices);
   
-  Mat<eT> U;
-  Col< T> s;
-  Mat<eT> V;
-  
-  const bool status = auxlib::svd_dc(U, s, V, X);
-  
-  U.reset();
-  
-  if(status == false)  { out.reset(); arma_stop_runtime_error("null(): svd failed"); return; }
-  
-  if(s.is_empty())  { out.reset(); return; }
-  
-  const uword s_n_elem = s.n_elem;
-  const T*    s_mem    = s.memptr();
-  
-  // set tolerance to default if it hasn't been specified
-  if(tol == T(0))  { tol = (std::max)(X.n_rows, X.n_cols) * s_mem[0] * std::numeric_limits<T>::epsilon(); }
-  
-  uword count = 0;
-  
-  for(uword i=0; i < s_n_elem; ++i)  { count += (s_mem[i] > tol) ? uword(1) : uword(0); }
-  
-  if(count < X.n_cols)
+  T* out_mem = out.memptr();
+
+  if(ProxyCube<T1>::use_at == false)
     {
-    out = V.tail_cols(X.n_cols - count);
+    typedef typename ProxyCube<T1>::ea_type ea_type;
     
-    const uword out_n_elem = out.n_elem;
-          eT*   out_mem    = out.memptr();
+    const uword   n_elem  = P.get_n_elem();
+          ea_type A       = P.get_ea();
     
-    for(uword i=0; i<out_n_elem; ++i)
+    for(uword i=0; i < n_elem; ++i)
       {
-      if(std::abs(out_mem[i]) < std::numeric_limits<T>::epsilon())  { out_mem[i] = eT(0); }
+      out_mem[i] = arma_arg<eT>::eval( A[i] );
       }
     }
   else
     {
-    out.set_size(X.n_cols, 0);
+    for(uword slice=0; slice < n_slices; ++slice)
+    for(uword col=0;   col   < n_cols;   ++col  )
+    for(uword row=0;   row   < n_rows;   ++row  )
+      {
+      *out_mem = arma_arg<eT>::eval( P.at(row,col,slice) );
+      out_mem++;
+      }
     }
   }
 

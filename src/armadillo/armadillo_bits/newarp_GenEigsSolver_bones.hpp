@@ -1,11 +1,17 @@
-// Copyright (C) 2016 National ICT Australia (NICTA)
-//
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// -------------------------------------------------------------------
-//
-// Written by Yixuan Qiu
+// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// Copyright 2008-2016 National ICT Australia (NICTA)
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ------------------------------------------------------------------------
 
 
 namespace newarp
@@ -37,11 +43,15 @@ class GenEigsSolver
   Mat<eT>                 fac_H;     // H matrix in the Arnoldi factorisation
   Col<eT>                 fac_f;     // residual in the Arnoldi factorisation
   Mat< std::complex<eT> > ritz_vec;  // ritz vectors
+  Col< std::complex<eT> > ritz_est;  // last row of ritz_vec
   std::vector<bool>       ritz_conv; // indicator of the convergence of ritz values
-  const eT                prec;      // precision parameter used to test convergence
-                                     // prec = epsilon^(2/3)
-                                     // epsilon is the machine precision,
-                                     // e.g. ~= 1e-16 for the "double" type
+  const eT                eps;       // the machine precision
+                                     // e.g. ~= 1e-16 for double type
+  const eT                approx0;   // a number that is approximately zero
+                                     // approx0 = eps^(2/3)
+                                     // used to test the orthogonality of vectors,
+                                     // and in convergence test, tol*approx0 is
+                                     // the absolute tolerance
 
   // Arnoldi factorisation starting from step-k
   inline void factorise_from(uword from_k, uword to_m, const Col<eT>& fk);

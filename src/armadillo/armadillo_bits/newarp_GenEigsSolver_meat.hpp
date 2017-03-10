@@ -1,12 +1,17 @@
-// Copyright (C) 2016 National ICT Australia (NICTA)
-//
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// -------------------------------------------------------------------
-//
-// Written by Yixuan Qiu
-// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// Copyright 2008-2016 National ICT Australia (NICTA)
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ------------------------------------------------------------------------
 
 
 namespace newarp
@@ -35,7 +40,7 @@ GenEigsSolver<eT, SelectionRule, OpType>::factorise_from(uword from_k, uword to_
     // If beta = 0, then the next V is not full rank
     // We need to generate a new residual vector that is orthogonal
     // to the current V, which we call a restart
-    if(beta < prec)
+    if(beta < eps)
       {
       // Generate new random vector for fac_f
       blas_int idist = 2;
@@ -81,7 +86,7 @@ GenEigsSolver<eT, SelectionRule, OpType>::factorise_from(uword from_k, uword to_
     Col<eT> Vf = Vs.t() * fac_f;
     // If not, iteratively correct the residual
     uword count = 0;
-    while(count < 5 && abs(Vf).max() > prec * beta)
+    while(count < 5 && abs(Vf).max() > approx0 * beta)
       {
       // f <- f - V * Vf
       fac_f -= Vs * Vf;
@@ -114,7 +119,7 @@ GenEigsSolver<eT, SelectionRule, OpType>::restart(uword k)
 
   for(uword i = k; i < ncv; i++)
     {
-    if(cx_attrib::is_complex(ritz_val(i), prec) && cx_attrib::is_conj(ritz_val(i), ritz_val(i + 1), prec))
+    if(cx_attrib::is_complex(ritz_val(i), eps) && cx_attrib::is_conj(ritz_val(i), ritz_val(i + 1), eps))
       {
       // H - mu * I = Q1 * R1
       // H <- R1 * Q1 + mu * I = Q1' * H * Q1
@@ -180,8 +185,8 @@ GenEigsSolver<eT, SelectionRule, OpType>::num_converged(eT tol)
   const eT f_norm = arma::norm(fac_f);
   for(uword i = 0; i < nev; i++)
     {
-    eT thresh = tol * std::max(prec, std::abs(ritz_val(i)));
-    eT resid = std::abs(ritz_vec(ncv - 1, i)) * f_norm;
+    eT thresh = tol * std::max(approx0, std::abs(ritz_val(i)));
+    eT resid = std::abs(ritz_est(i)) * f_norm;
     ritz_conv[i] = (resid < thresh);
     }
 
@@ -199,14 +204,12 @@ GenEigsSolver<eT, SelectionRule, OpType>::nev_adjusted(uword nconv)
   
   uword nev_new = nev;
 
-  // Increase nev by one if ritz_val[nev - 1] and
-  // ritz_val[nev] are conjugate pairs
-  if(cx_attrib::is_complex(ritz_val(nev - 1), prec) && cx_attrib::is_conj(ritz_val(nev - 1), ritz_val(nev), prec))
+  for(uword i = nev; i < ncv; i++)
     {
-    nev_new = nev + 1;
+    if(std::abs(ritz_est(i)) < eps) { nev_new++; }
     }
   // Adjust nev_new again, according to dnaup2.f line 660~674 in ARPACK
-  nev_new = nev_new + std::min(nconv, (ncv - nev_new) / 2);
+  nev_new += std::min(nconv, (ncv - nev_new) / 2);
   if(nev_new == 1 && ncv >= 6)
     {
     nev_new = ncv / 2;
@@ -219,8 +222,9 @@ GenEigsSolver<eT, SelectionRule, OpType>::nev_adjusted(uword nconv)
 
   if(nev_new > ncv - 2) { nev_new = ncv - 2; }
 
-  // Examine conjugate pairs again
-  if(cx_attrib::is_complex(ritz_val(nev_new - 1), prec) && cx_attrib::is_conj(ritz_val(nev_new - 1), ritz_val(nev_new), prec))
+  // Increase nev by one if ritz_val[nev - 1] and
+  // ritz_val[nev] are conjugate pairs
+  if(cx_attrib::is_complex(ritz_val(nev_new - 1), eps) && cx_attrib::is_conj(ritz_val(nev_new - 1), ritz_val(nev_new), eps))
     {
     nev_new++;
     }
@@ -249,6 +253,7 @@ GenEigsSolver<eT, SelectionRule, OpType>::retrieve_ritzpair()
   for(uword i = 0; i < ncv; i++)
     {
     ritz_val(i) = evals(ind[i]);
+    ritz_est(i) = evecs(ncv - 1, ind[i]);
     }
   for(uword i = 0; i < nev; i++)
     {
@@ -299,7 +304,8 @@ GenEigsSolver<eT, SelectionRule, OpType>::GenEigsSolver(const OpType& op_, uword
   , ncv(ncv_ > dim_n ? dim_n : ncv_)
   , nmatop(0)
   , niter(0)
-  , prec(std::pow(std::numeric_limits<eT>::epsilon(), eT(2.0) / 3))
+  , eps(std::numeric_limits<eT>::epsilon())
+  , approx0(std::pow(eps, eT(2.0) / 3))
   {
   arma_extra_debug_sigprint();
   
@@ -322,6 +328,7 @@ GenEigsSolver<eT, SelectionRule, OpType>::init(eT* init_resid)
   fac_f.zeros(dim_n);
   ritz_val.zeros(ncv);
   ritz_vec.zeros(ncv, nev);
+  ritz_est.zeros(ncv);
   ritz_conv.assign(nev, false);
 
   nmatop = 0;
@@ -331,7 +338,7 @@ GenEigsSolver<eT, SelectionRule, OpType>::init(eT* init_resid)
   // The first column of fac_V
   Col<eT> v(fac_V.colptr(0), dim_n, false);
   eT rnorm = norm(r);
-  arma_debug_check( (rnorm < prec), "newarp::GenEigsSolver::init(): initial residual vector cannot be zero" );
+  arma_check( (rnorm < eps), "newarp::GenEigsSolver::init(): initial residual vector cannot be zero" );
   v = r / rnorm;
 
   Col<eT> w(dim_n);
@@ -400,19 +407,20 @@ GenEigsSolver<eT, SelectionRule, OpType>::eigenvalues()
   
   uword nconv = std::count(ritz_conv.begin(), ritz_conv.end(), true);
   Col< std::complex<eT> > res(nconv);
-
-  if(!nconv) { return res; }
-
-  uword j = 0;
-  for(uword i = 0; i < nev; i++)
+  
+  if(nconv > 0)
     {
-    if(ritz_conv[i])
+    uword j = 0;
+    for(uword i = 0; i < nev; i++)
       {
-      res(j) = ritz_val(i);
-      j++;
+      if(ritz_conv[i])
+        {
+        res(j) = ritz_val(i);
+        j++;
+        }
       }
     }
-
+  
   return res;
   }
 
@@ -428,22 +436,23 @@ GenEigsSolver<eT, SelectionRule, OpType>::eigenvectors(uword nvec)
   uword nconv = std::count(ritz_conv.begin(), ritz_conv.end(), true);
   nvec = std::min(nvec, nconv);
   Mat< std::complex<eT> > res(dim_n, nvec);
-
-  if(!nvec) { return res; }
-
-  Mat< std::complex<eT> > ritz_vec_conv(ncv, nvec);
-  uword j = 0;
-  for(uword i = 0; (i < nev) && (j < nvec); i++)
+  
+  if(nvec > 0)
     {
-    if(ritz_conv[i])
+    Mat< std::complex<eT> > ritz_vec_conv(ncv, nvec);
+    uword j = 0;
+    for(uword i = 0; (i < nev) && (j < nvec); i++)
       {
-      ritz_vec_conv.col(j) = ritz_vec.col(i);
-      j++;
+      if(ritz_conv[i])
+        {
+        ritz_vec_conv.col(j) = ritz_vec.col(i);
+        j++;
+        }
       }
+    
+    res = fac_V * ritz_vec_conv;
     }
-
-  res = fac_V * ritz_vec_conv;
-
+  
   return res;
   }
 

@@ -1,13 +1,17 @@
-// Copyright (C) 2011-2015 National ICT Australia (NICTA)
+// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// Copyright 2008-2016 National ICT Australia (NICTA)
 // 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// -------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
 // 
-// Written by Conrad Sanderson - http://conradsanderson.id.au
-// Written by Ryan Curtin
-// Written by Matthew Amidon
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ------------------------------------------------------------------------
 
 
 //! \addtogroup SpSubview
@@ -798,6 +802,74 @@ SpSubview<eT>::operator/=(const SpBase<eT, T1>& x)
     }
   
   return *this;
+  }
+
+
+
+template<typename eT>
+inline
+void
+SpSubview<eT>::replace(const eT old_val, const eT new_val)
+  {
+  arma_extra_debug_sigprint();
+  
+  if(old_val == eT(0))
+    {
+    arma_debug_warn("SpSubview::replace(): replacement not done, as old_val = 0");
+    return;
+    }
+  
+  const uword lstart_row = aux_row1;
+  const uword lend_row   = aux_row1 + n_rows;
+  
+  const uword lstart_col = aux_col1;
+  const uword lend_col   = aux_col1 + n_cols;
+  
+  const uword* m_row_indices = m.row_indices;
+        eT*    m_values      = access::rwp(m.values);
+  
+  if(arma_isnan(old_val))
+    {
+    for(uword c = lstart_col; c < lend_col; ++c)
+      {
+      const uword r_start = m.col_ptrs[c    ];
+      const uword r_end   = m.col_ptrs[c + 1];
+      
+      for(uword r = r_start; r < r_end; ++r)
+        {
+        const uword m_row_indices_r = m_row_indices[r];
+        
+        if( (m_row_indices_r >= lstart_row) && (m_row_indices_r < lend_row) )
+          {
+          eT& val = m_values[r];
+          
+          val = (arma_isnan(val)) ? new_val : val;
+          }
+        }
+      }
+    }
+  else
+    {
+    for(uword c = lstart_col; c < lend_col; ++c)
+      {
+      const uword r_start = m.col_ptrs[c    ];
+      const uword r_end   = m.col_ptrs[c + 1];
+      
+      for(uword r = r_start; r < r_end; ++r)
+        {
+        const uword m_row_indices_r = m_row_indices[r];
+        
+        if( (m_row_indices_r >= lstart_row) && (m_row_indices_r < lend_row) )
+          {
+          eT& val = m_values[r];
+          
+          val = (val == old_val) ? new_val : val;
+          }
+        }
+      }
+    }
+  
+  if(new_val == eT(0))  { access::rw(m).remove_zeros(); }
   }
 
 

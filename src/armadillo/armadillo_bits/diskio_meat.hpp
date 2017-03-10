@@ -1,14 +1,17 @@
-// Copyright (C) 2008-2015 National ICT Australia (NICTA)
+// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// Copyright 2008-2016 National ICT Australia (NICTA)
 // 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// -------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
 // 
-// Written by Conrad Sanderson - http://conradsanderson.id.au
-// Written by Ian Cullinan
-// Written by Ryan Curtin
-// Written by Szabolcs Horvat
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ------------------------------------------------------------------------
 
 
 //! \addtogroup diskio
@@ -652,22 +655,17 @@ arma_cold
 bool
 diskio::safe_rename(const std::string& old_name, const std::string& new_name)
   {
-  std::fstream f(new_name.c_str(), std::fstream::out | std::fstream::app);
+  const char* new_name_c_str = new_name.c_str();
+  
+  std::fstream f(new_name_c_str, std::fstream::out | std::fstream::app);
   f.put(' ');
   
-  bool save_okay = f.good();
-  f.close();
+  if(f.good()) { f.close(); } else { return false; }
   
-  if(save_okay == true)
-    {
-    std::remove(new_name.c_str());
-    
-    const int mv_result = std::rename(old_name.c_str(), new_name.c_str());
-    
-    save_okay = (mv_result == 0);
-    }
+  if(std::remove(                  new_name_c_str) != 0)  { return false; }
+  if(std::rename(old_name.c_str(), new_name_c_str) != 0)  { return false; }
   
-  return save_okay;
+  return true;
   }
 
 
@@ -1894,7 +1892,7 @@ diskio::load_pgm_binary(Mat<eT>& x, std::istream& f, std::string& err_msg)
     f >> f_maxval;
     f.get();
     
-    if( (f_maxval > 0) || (f_maxval <= 65535) )
+    if( (f_maxval > 0) && (f_maxval <= 65535) )
       {
       x.set_size(f_n_rows,f_n_cols);
       
@@ -1945,7 +1943,7 @@ diskio::load_pgm_binary(Mat<eT>& x, std::istream& f, std::string& err_msg)
     else
       {
       load_okay = false;
-      err_msg = "currently no code available to handle loading ";
+      err_msg = "functionality unimplemented to handle loading ";
       }
     
     if(f.good() == false)

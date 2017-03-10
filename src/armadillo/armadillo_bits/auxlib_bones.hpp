@@ -1,13 +1,17 @@
-// Copyright (C) 2008-2016 National ICT Australia (NICTA)
+// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// Copyright 2008-2016 National ICT Australia (NICTA)
 // 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// -------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
 // 
-// Written by Conrad Sanderson - http://conradsanderson.id.au
-// Written by James Sanders
-// Written by Eric Jon Sundstrom
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ------------------------------------------------------------------------
 
 
 //! \addtogroup auxlib
@@ -260,10 +264,10 @@ class auxlib
   // QZ decomposition
   
   template<typename T, typename T1, typename T2>
-  inline static bool qz(Mat<T>& A, Mat<T>& B, Mat<T>& vsl, Mat<T>& vsr, const Base<T,T1>& X_expr, const Base<T,T2>& Y_expr);
+  inline static bool qz(Mat<T>& A, Mat<T>& B, Mat<T>& vsl, Mat<T>& vsr, const Base<T,T1>& X_expr, const Base<T,T2>& Y_expr, const char mode);
   
   template<typename T, typename T1, typename T2>
-  inline static bool qz(Mat< std::complex<T> >& A, Mat< std::complex<T> >& B, Mat< std::complex<T> >& vsl, Mat< std::complex<T> >& vsr, const Base< std::complex<T>, T1 >& X_expr, const Base< std::complex<T>, T2 >& Y_expr);
+  inline static bool qz(Mat< std::complex<T> >& A, Mat< std::complex<T> >& B, Mat< std::complex<T> >& vsl, Mat< std::complex<T> >& vsr, const Base< std::complex<T>, T1 >& X_expr, const Base< std::complex<T>, T2 >& Y_expr, const char mode);
   
   
   // 
@@ -275,6 +279,24 @@ class auxlib
   template<typename T1>
   inline static typename T1::pod_type rcond(const Base<std::complex<typename T1::pod_type>,T1>& A_expr);
   };
+
+
+
+namespace qz_helper
+  {
+  template<typename T> inline blas_int select_lhp(const T* x_ptr, const T* y_ptr, const T* z_ptr);
+  template<typename T> inline blas_int select_rhp(const T* x_ptr, const T* y_ptr, const T* z_ptr);
+  template<typename T> inline blas_int select_iuc(const T* x_ptr, const T* y_ptr, const T* z_ptr);
+  template<typename T> inline blas_int select_ouc(const T* x_ptr, const T* y_ptr, const T* z_ptr);
+  
+  template<typename T> inline blas_int cx_select_lhp(const std::complex<T>* x_ptr, const std::complex<T>* y_ptr);
+  template<typename T> inline blas_int cx_select_rhp(const std::complex<T>* x_ptr, const std::complex<T>* y_ptr);
+  template<typename T> inline blas_int cx_select_iuc(const std::complex<T>* x_ptr, const std::complex<T>* y_ptr);
+  template<typename T> inline blas_int cx_select_ouc(const std::complex<T>* x_ptr, const std::complex<T>* y_ptr);
+  
+  template<typename T> inline void_ptr ptr_cast(blas_int (*function)(const T*, const T*, const T*));
+  template<typename T> inline void_ptr ptr_cast(blas_int (*function)(const std::complex<T>*, const std::complex<T>*));
+  }
 
 
 //! @}

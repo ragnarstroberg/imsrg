@@ -1,11 +1,17 @@
-// Copyright (C) 2016 National ICT Australia (NICTA)
-//
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// -------------------------------------------------------------------
-//
-// Written by Yixuan Qiu
+// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// Copyright 2008-2016 National ICT Australia (NICTA)
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ------------------------------------------------------------------------
 
 
 namespace newarp
@@ -21,6 +27,7 @@ DoubleShiftQR<eT>::compute_reflector(const eT& x1, const eT& x2, const eT& x3, u
   
   // In general case the reflector affects 3 rows
   ref_nr(ind) = 3;
+  eT x2x3 = eT(0);
   // If x3 is zero, decrease nr by 1
   if(std::abs(x3) < prec)
     {
@@ -34,13 +41,17 @@ DoubleShiftQR<eT>::compute_reflector(const eT& x1, const eT& x2, const eT& x3, u
       {
       ref_nr(ind) = 2;
       }
+    x2x3 = std::abs(x2);
+    }
+  else
+    {
+    x2x3 = arma_hypot(x2, x3);
     }
 
   // x1' = x1 - rho * ||x||
   // rho = -sign(x1), if x1 == 0, we choose rho = 1
-  eT tmp = x2 * x2 + x3 * x3;
-  eT x1_new = x1 - ((x1 <= 0) - (x1 > 0)) * std::sqrt(x1 * x1 + tmp);
-  eT x_norm = std::sqrt(x1_new * x1_new + tmp);
+  eT x1_new = x1 - ((x1 <= 0) - (x1 > 0)) * arma_hypot(x1, x2x3);
+  eT x_norm = arma_hypot(x1_new, x2x3);
   // Double check the norm of new x
   if(x_norm < prec)
     {
@@ -251,8 +262,8 @@ inline
 DoubleShiftQR<eT>::DoubleShiftQR(uword size)
   : n(size)
   , prec(std::numeric_limits<eT>::epsilon())
-  , eps_rel(std::pow(prec, eT(0.75)))
-  , eps_abs(std::min(std::pow(prec, eT(0.75)), n * prec))
+  , eps_rel(prec)
+  , eps_abs(prec)
   , computed(false)
   {
   arma_extra_debug_sigprint();
@@ -270,8 +281,8 @@ DoubleShiftQR<eT>::DoubleShiftQR(const Mat<eT>& mat_obj, eT s, eT t)
   , ref_u(3, n)
   , ref_nr(n)
   , prec(std::numeric_limits<eT>::epsilon())
-  , eps_rel(std::pow(prec, eT(0.75)))
-  , eps_abs(std::min(std::pow(prec, eT(0.75)), n * prec))
+  , eps_rel(prec)
+  , eps_abs(prec)
   , computed(false)
   {
   arma_extra_debug_sigprint();

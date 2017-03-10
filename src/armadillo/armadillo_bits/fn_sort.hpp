@@ -1,15 +1,22 @@
-// Copyright (C) 2008-2016 National ICT Australia (NICTA)
+// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// Copyright 2008-2016 National ICT Australia (NICTA)
 // 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// -------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
 // 
-// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ------------------------------------------------------------------------
 
 
 //! \addtogroup fn_sort
 //! @{
+
 
 
 template<typename T1>
@@ -23,21 +30,45 @@ enable_if2
   >::result
 sort
   (
-  const T1&   X,
-  const uword sort_type = 0
+  const T1& X
   )
   {
   arma_extra_debug_sigprint();
+  
+  return Op<T1, op_sort_default>(X, 0, 0);
+  }
+
+
+
+//! kept only for compatibility with old code
+template<typename T1>
+arma_deprecated
+inline
+typename
+enable_if2
+  <
+  (is_arma_type<T1>::value),
+  const Op<T1, op_sort_default>
+  >::result
+sort
+  (
+  const T1&   X,
+  const uword sort_type
+  )
+  {
+  arma_extra_debug_sigprint();
+  
+  // arma_debug_warn("sort(X,uword) is deprecated and will be removed; change to sort(X,sort_direction)");
   
   return Op<T1, op_sort_default>(X, sort_type, 0);
   }
 
 
 
-//! kept for compatibility with old code
+//! kept only for compatibility with old code
 template<typename T1>
-arma_warn_unused
-arma_inline
+arma_deprecated
+inline
 typename
 enable_if2
   <
@@ -53,6 +84,8 @@ sort
   {
   arma_extra_debug_sigprint();
   
+  // arma_debug_warn("sort(X,uword,uword) is deprecated and will be removed; change to sort(X,sort_direction,dim)");
+  
   return Op<T1, op_sort>(X, sort_type, dim);
   }
 
@@ -60,7 +93,7 @@ sort
 
 template<typename T1, typename T2>
 arma_warn_unused
-arma_inline
+inline
 typename
 enable_if2
   <
@@ -88,7 +121,7 @@ sort
 
 template<typename T1, typename T2>
 arma_warn_unused
-arma_inline
+inline
 typename
 enable_if2
   <

@@ -480,7 +480,7 @@ Operator Operator::DoNormalOrdering3()
 /// Convert to a basis normal ordered wrt the vacuum.
 /// This doesn't handle 3-body terms. In that case,
 /// the 2-body piece is unchanged.
-Operator Operator::UndoNormalOrdering()
+Operator Operator::UndoNormalOrdering() const
 {
    Operator opNO = *this;
 //   cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << endl;
@@ -1256,6 +1256,49 @@ double Operator::OneBodyNorm() const
 double Operator::TwoBodyNorm() const
 {
   return TwoBody.Norm();
+}
+
+
+double Operator::Trace(int Atrace, int Ztrace) const
+{
+  double t_start = omp_get_wtime();
+  int Ntrace = Atrace - Ztrace;
+  Operator OpVac = UndoNormalOrdering();
+  double trace = OpVac.ZeroBody;
+  int emax = modelspace->GetEmax();
+  double M = (emax+1)*(emax+2)*(emax+3)/3; // number of m-scheme orbits for the proton or neutron partitions
+  double norm_p = Ztrace / M;
+  double norm_n = Ntrace / M;
+  double norm_pp = Ztrace*(Ztrace-1) / (M *(M-1) ) ;
+  double norm_nn = Ntrace*(Ntrace-1) / (M *(M-1) ) ;
+  double norm_pn = norm_p * norm_n ;
+
+//  for (int i=0; i<modelspace->GetNumberOrbits(); ++i)
+  for (auto i : modelspace->proton_orbits)
+  {
+     Orbit& oi = modelspace->GetOrbit(i);
+     trace += OpVac.OneBody(i,i) * ( oi.j2 +1) * norm_p;
+  }
+  for (auto i : modelspace->proton_orbits)
+  {
+     Orbit& oi = modelspace->GetOrbit(i);
+      trace += OpVac.OneBody(i,i) * ( oi.j2 +1) * norm_n;
+  }
+
+  for ( int ch=0; ch<modelspace->GetNumberTwoBodyChannels(); ++ch )
+  {
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+    double trVijij = arma::trace( OpVac.TwoBody.GetMatrix(ch,ch) );
+    switch ( tbc.Tz )
+    {
+      case ( -1 ) :  trace += (tbc.J*2+1)* trVijij * norm_pp; break;
+      case (  0 ) :  trace += (tbc.J*2+1)* trVijij * norm_pn; break;
+      case (  1 ) :  trace += (tbc.J*2+1)* trVijij * norm_nn; break;
+      default: cout << "AAAHHH blew the switch statement. tbc.Tz = " << tbc.Tz << endl;
+    }
+  }
+  profiler.timer["Operator::Trace"] += omp_get_wtime() - t_start;
+  return trace;
 }
 
 void Operator::Symmetrize()

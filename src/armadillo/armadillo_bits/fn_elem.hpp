@@ -1,11 +1,17 @@
-// Copyright (C) 2008-2016 National ICT Australia (NICTA)
+// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// Copyright 2008-2016 National ICT Australia (NICTA)
 // 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// -------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
 // 
-// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ------------------------------------------------------------------------
 
 
 //! \addtogroup fn_elem
@@ -441,6 +447,94 @@ abs(const SpBase< std::complex<typename T1::pod_type>, T1>& X, const typename ar
 
 
 //
+// arg
+
+
+template<typename T1>
+arma_warn_unused
+arma_inline
+typename enable_if2< (is_arma_type<T1>::value && is_cx<typename T1::elem_type>::no), const eOp<T1, eop_arg> >::result
+arg(const T1& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  return eOp<T1, eop_arg>(X);
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+arma_inline
+const eOpCube<T1, eop_arg>
+arg(const BaseCube<typename T1::elem_type,T1>& X, const typename arma_not_cx<typename T1::elem_type>::result* junk = 0)
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_ignore(junk);
+  
+  return eOpCube<T1, eop_arg>(X.get_ref());
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+typename enable_if2< (is_arma_type<T1>::value && is_cx<typename T1::elem_type>::yes), const mtOp<typename T1::pod_type, T1, op_arg> >::result
+arg(const T1& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  return mtOp<typename T1::pod_type, T1, op_arg>(X);
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+const mtOpCube<typename T1::pod_type, T1, op_arg>
+arg(const BaseCube< std::complex<typename T1::pod_type>,T1>& X, const typename arma_cx_only<typename T1::elem_type>::result* junk = 0)
+  {
+  arma_extra_debug_sigprint();
+  
+  arma_ignore(junk);
+  
+  return mtOpCube<typename T1::pod_type, T1, op_arg>( X.get_ref() );
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+arma_inline
+const SpOp<T1, spop_arg>
+arg(const SpBase<typename T1::elem_type,T1>& X, const typename arma_not_cx<typename T1::elem_type>::result* junk = 0)
+  {
+  arma_extra_debug_sigprint();
+  arma_ignore(junk);
+  
+  return SpOp<T1, spop_arg>(X.get_ref());
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+arma_inline
+const mtSpOp<typename T1::pod_type, T1, spop_cx_arg>
+arg(const SpBase< std::complex<typename T1::pod_type>, T1>& X, const typename arma_cx_only<typename T1::elem_type>::result* junk = 0)
+  {
+  arma_extra_debug_sigprint();
+  arma_ignore(junk);
+  
+  return mtSpOp<typename T1::pod_type, T1, spop_cx_arg>(X.get_ref());
+  }
+
+
+
+//
 // square
 
 template<typename T1>
@@ -694,6 +788,19 @@ floor(const BaseCube<typename T1::elem_type,T1>& A)
 
 
 
+template<typename T1>
+arma_warn_unused
+arma_inline
+const SpOp<T1, spop_floor>
+floor(const SpBase<typename T1::elem_type,T1>& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  return SpOp<T1, spop_floor>(X.get_ref());
+  }
+
+
+
 //
 // ceil
 
@@ -719,6 +826,19 @@ ceil(const BaseCube<typename T1::elem_type,T1>& A)
   arma_extra_debug_sigprint();
   
   return eOpCube<T1, eop_ceil>(A.get_ref());
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+arma_inline
+const SpOp<T1, spop_ceil>
+ceil(const SpBase<typename T1::elem_type,T1>& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  return SpOp<T1, spop_ceil>(X.get_ref());
   }
 
 
@@ -752,6 +872,19 @@ round(const BaseCube<typename T1::elem_type,T1>& A)
 
 
 
+template<typename T1>
+arma_warn_unused
+arma_inline
+const SpOp<T1, spop_round>
+round(const SpBase<typename T1::elem_type,T1>& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  return SpOp<T1, spop_round>(X.get_ref());
+  }
+
+
+
 //
 // trunc
 
@@ -781,6 +914,19 @@ trunc(const BaseCube<typename T1::elem_type,T1>& A)
 
 
 
+template<typename T1>
+arma_warn_unused
+arma_inline
+const SpOp<T1, spop_trunc>
+trunc(const SpBase<typename T1::elem_type,T1>& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  return SpOp<T1, spop_trunc>(X.get_ref());
+  }
+
+
+
 //
 // sign
 
@@ -806,6 +952,19 @@ sign(const BaseCube<typename T1::elem_type,T1>& A)
   arma_extra_debug_sigprint();
   
   return eOpCube<T1, eop_sign>(A.get_ref());
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+arma_inline
+const SpOp<T1, spop_sign>
+sign(const SpBase<typename T1::elem_type,T1>& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  return SpOp<T1, spop_sign>(X.get_ref());
   }
 
 
