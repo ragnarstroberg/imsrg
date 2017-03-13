@@ -1,11 +1,17 @@
-// Copyright (C) 2008-2016 National ICT Australia (NICTA)
+// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// Copyright 2008-2016 National ICT Australia (NICTA)
 // 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// -------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
 // 
-// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ------------------------------------------------------------------------
 
 
 //! \addtogroup op_max
@@ -25,10 +31,10 @@ op_max::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_max>& in)
   const uword dim = in.aux_uword_a;
   arma_debug_check( (dim > 1), "max(): parameter 'dim' must be 0 or 1");
   
-  const unwrap<T1>   U(in.m);
+  const quasi_unwrap<T1> U(in.m);
   const Mat<eT>& X = U.M;
   
-  if(&out != &X)
+  if(U.is_alias(out) == false)
     {
     op_max::apply_noalias(out, X, dim);
     }

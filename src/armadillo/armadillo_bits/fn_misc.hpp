@@ -1,11 +1,17 @@
-// Copyright (C) 2008-2016 National ICT Australia (NICTA)
+// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// Copyright 2008-2016 National ICT Australia (NICTA)
 // 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// -------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
 // 
-// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ------------------------------------------------------------------------
 
 
 //! \addtogroup fn_misc
@@ -72,6 +78,11 @@ linspace
     x.set_size(1);
     
     x[0] = eT(end);
+    
+    // NOTE: returning "end" for num <= 1 is kept for compatibility with Matlab & Octave,
+    // NOTE: but for num = 0 this probably causes more problems than it helps
+    
+    // TODO: in version 8.0, return an empty vector when num = 0
     }
   
   return x;
@@ -343,68 +354,6 @@ swap(Cube<eT>& A, Cube<eT>& B)
   arma_extra_debug_sigprint();
   
   A.swap(B);
-  }
-
-
-
-template<typename T1>
-arma_warn_unused
-arma_inline
-const Op<T1, op_orth>
-orth(const Base<typename T1::elem_type, T1>& X, const typename T1::pod_type tol = 0.0, const typename arma_blas_type_only<typename T1::elem_type>::result* junk = 0)
-  {
-  arma_extra_debug_sigprint();
-  arma_ignore(junk);
-  
-  typedef typename T1::elem_type eT;
-  
-  return Op<T1, op_orth>(X.get_ref(), eT(tol));
-  }
-
-
-
-template<typename T1>
-inline
-bool
-orth(Mat<typename T1::elem_type>& out, const Base<typename T1::elem_type, T1>& X, const typename T1::pod_type tol = 0.0, const typename arma_blas_type_only<typename T1::elem_type>::result* junk = 0)
-  {
-  arma_extra_debug_sigprint();
-  arma_ignore(junk);
-  
-  try { out = orth(X,tol); } catch (std::runtime_error&) { return false; }
-  
-  return true;
-  }
-
-
-
-template<typename T1>
-arma_warn_unused
-arma_inline
-const Op<T1, op_null>
-null(const Base<typename T1::elem_type, T1>& X, const typename T1::pod_type tol = 0.0, const typename arma_blas_type_only<typename T1::elem_type>::result* junk = 0)
-  {
-  arma_extra_debug_sigprint();
-  arma_ignore(junk);
-  
-  typedef typename T1::elem_type eT;
-  
-  return Op<T1, op_null>(X.get_ref(), eT(tol));
-  }
-
-
-
-template<typename T1>
-inline
-bool
-null(Mat<typename T1::elem_type>& out, const Base<typename T1::elem_type, T1>& X, const typename T1::pod_type tol = 0.0, const typename arma_blas_type_only<typename T1::elem_type>::result* junk = 0)
-  {
-  arma_extra_debug_sigprint();
-  arma_ignore(junk);
-  
-  try { out = null(X,tol); } catch (std::runtime_error&) { return false; }
-  
-  return true;
   }
 
 

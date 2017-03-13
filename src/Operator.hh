@@ -133,7 +133,7 @@ class Operator
   Operator DoNormalOrdering(); ///< Calls DoNormalOrdering2() or DoNormalOrdering3(), depending on the rank of the operator.
   Operator DoNormalOrdering2(); ///< Returns the normal ordered two-body operator
   Operator DoNormalOrdering3(); ///< Returns the normal ordered three-body operator
-  Operator UndoNormalOrdering(); ///< Returns the operator normal-ordered wrt the vacuum
+  Operator UndoNormalOrdering() const; ///< Returns the operator normal-ordered wrt the vacuum
   Operator Truncate(ModelSpace& ms_new); ///< Returns the operator trunacted to the new model space
 
   void SetToCommutator(const Operator& X, const Operator& Y);
@@ -161,6 +161,8 @@ class Operator
   double Norm() const;
   double OneBodyNorm() const;
   double TwoBodyNorm() const;
+
+  double Trace(int Atrace, int Ztrace) const;
 
 
   void PrintOneBody() const {OneBody.print();};

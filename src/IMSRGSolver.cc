@@ -677,6 +677,7 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setprecision(fprecision)
         << setw(12) << setprecision(3) << profiler.GetTimes()["real"]
         << setw(12) << setprecision(3) << profiler.CheckMem()["RSS"]/1024. << " / " << skipws << profiler.MaxMemUsage()/1024. << fixed
+        << setw(12) << setprecision(3) << H_s.Trace( modelspace->GetAref(), modelspace->GetZref() )
         << endl;
    }
 

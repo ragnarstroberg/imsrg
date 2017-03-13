@@ -1,11 +1,17 @@
-// Copyright (C) 2008-2016 National ICT Australia (NICTA)
+// Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
+// Copyright 2008-2016 National ICT Australia (NICTA)
 // 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-// -------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
 // 
-// Written by Conrad Sanderson - http://conradsanderson.id.au
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ------------------------------------------------------------------------
 
 
 //! \addtogroup Cube
@@ -3245,6 +3251,20 @@ Cube<eT>::imbue(functor F)
 
 
 
+template<typename eT>
+inline
+const Cube<eT>&
+Cube<eT>::replace(const eT old_val, const eT new_val)
+  {
+  arma_extra_debug_sigprint();
+  
+  arrayops::replace(memptr(), n_elem, old_val, new_val);
+  
+  return *this;
+  }
+
+
+
 //! fill the cube with the specified value
 template<typename eT>
 inline
@@ -3507,6 +3527,8 @@ Cube<eT>::min(uword& index_of_min_val) const
     {
     arma_debug_check(true, "Cube::min(): object has no elements");
     
+    index_of_min_val = uword(0);
+    
     return Datum<eT>::nan;
     }
   
@@ -3526,6 +3548,8 @@ Cube<eT>::max(uword& index_of_max_val) const
     {
     arma_debug_check(true, "Cube::max(): object has no elements");
     
+    index_of_max_val = uword(0);
+    
     return Datum<eT>::nan;
     }
   
@@ -3544,6 +3568,10 @@ Cube<eT>::min(uword& row_of_min_val, uword& col_of_min_val, uword& slice_of_min_
   if(n_elem == 0)
     {
     arma_debug_check(true, "Cube::min(): object has no elements");
+    
+    row_of_min_val   = uword(0);
+    col_of_min_val   = uword(0);
+    slice_of_min_val = uword(0);
     
     return Datum<eT>::nan;
     }
@@ -3575,6 +3603,10 @@ Cube<eT>::max(uword& row_of_max_val, uword& col_of_max_val, uword& slice_of_max_
   if(n_elem == 0)
     {
     arma_debug_check(true, "Cube::max(): object has no elements");
+    
+    row_of_max_val   = uword(0);
+    col_of_max_val   = uword(0);
+    slice_of_max_val = uword(0);
     
     return Datum<eT>::nan;
     }

@@ -230,7 +230,9 @@ double HO_Radial_psi(int n, int l, double hw, double r)
     for (auto& a : modelspace.holes)
     {
 //       index_t a = it_a.first;
-       DM.OneBody(a,a) = 1.0;
+        Orbit& oa = modelspace.GetOrbit(a);
+//       DM.OneBody(a,a) = 1.0;
+       DM.OneBody(a,a) = oa.j2+1.0;
     }
     return DM;
  }
@@ -258,16 +260,33 @@ double HO_Radial_psi(int n, int l, double hw, double r)
    for (index_t i : modelspace->proton_orbits )
    {
       Orbit& oi = modelspace->GetOrbit(i);
-      for ( index_t j : DM.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
-      {
-        if (abs(DM.OneBody(i,j))<1e-7) continue;
-        Orbit& oj = modelspace->GetOrbit(j);
-        rho += DM.OneBody(i,j) * HO_Radial_psi(oi.n, oi.l, hw, r) * HO_Radial_psi(oj.n, oj.l, hw, r);
-      }
+      if (abs(DM.OneBody(i,i))<1e-7) continue;
+//      cout << i << " " << (oi.j2+1)*DM.OneBody(i,i) << endl;
+//      rho += (oi.j2+1) * DM.OneBody(i,i) * HO_density(oi.n, oi.l, hw, r);
+      rho += (1) * DM.OneBody(i,i) * HO_density(oi.n, oi.l, hw, r);
    }
    return rho;
  }
 */
+
+
+// double Get_Charge_Density( Operator& DM, double r)
+// {
+//   ModelSpace* modelspace = DM.GetModelSpace();
+//   double hw = modelspace->GetHbarOmega();
+//   double rho=0;
+//   for (index_t i : modelspace->proton_orbits )
+//   {
+//      Orbit& oi = modelspace->GetOrbit(i);
+//      for ( index_t j : DM.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
+//      {
+//        if (abs(DM.OneBody(i,j))<1e-7) continue;
+//        Orbit& oj = modelspace->GetOrbit(j);
+//        rho += DM.OneBody(i,j) * HO_Radial_psi(oi.n, oi.l, hw, r) * HO_Radial_psi(oj.n, oj.l, hw, r);
+//      }
+//   }
+//   return rho;
+// }
 
 Operator KineticEnergy_Op(ModelSpace& modelspace)
 {

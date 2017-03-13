@@ -480,7 +480,7 @@ Operator Operator::DoNormalOrdering3()
 /// Convert to a basis normal ordered wrt the vacuum.
 /// This doesn't handle 3-body terms. In that case,
 /// the 2-body piece is unchanged.
-Operator Operator::UndoNormalOrdering()
+Operator Operator::UndoNormalOrdering() const
 {
    Operator opNO = *this;
 //   cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << endl;
@@ -1178,6 +1178,7 @@ Operator Operator::Brueckner_BCH_Transform( const Operator &Omega)
    Operator Omega1 = Omega;
    Operator Omega2 = Omega;
    Omega1.SetParticleRank(1);
+   Omega1.EraseTwoBody();
    Omega2.EraseOneBody();
    Operator OpOut = this->Standard_BCH_Transform(Omega1);
    OpOut = OpOut.Standard_BCH_Transform(Omega2);
@@ -1256,6 +1257,49 @@ double Operator::OneBodyNorm() const
 double Operator::TwoBodyNorm() const
 {
   return TwoBody.Norm();
+}
+
+
+double Operator::Trace(int Atrace, int Ztrace) const
+{
+  double t_start = omp_get_wtime();
+  int Ntrace = Atrace - Ztrace;
+  Operator OpVac = UndoNormalOrdering();
+  double trace = OpVac.ZeroBody;
+  int emax = modelspace->GetEmax();
+  double M = (emax+1)*(emax+2)*(emax+3)/3; // number of m-scheme orbits for the proton or neutron partitions
+  double norm_p = Ztrace / M;
+  double norm_n = Ntrace / M;
+  double norm_pp = Ztrace*(Ztrace-1) / (M *(M-1) ) ;
+  double norm_nn = Ntrace*(Ntrace-1) / (M *(M-1) ) ;
+  double norm_pn = norm_p * norm_n ;
+
+//  for (int i=0; i<modelspace->GetNumberOrbits(); ++i)
+  for (auto i : modelspace->proton_orbits)
+  {
+     Orbit& oi = modelspace->GetOrbit(i);
+     trace += OpVac.OneBody(i,i) * ( oi.j2 +1) * norm_p;
+  }
+  for (auto i : modelspace->proton_orbits)
+  {
+     Orbit& oi = modelspace->GetOrbit(i);
+      trace += OpVac.OneBody(i,i) * ( oi.j2 +1) * norm_n;
+  }
+
+  for ( int ch=0; ch<modelspace->GetNumberTwoBodyChannels(); ++ch )
+  {
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+    double trVijij = arma::trace( OpVac.TwoBody.GetMatrix(ch,ch) );
+    switch ( tbc.Tz )
+    {
+      case ( -1 ) :  trace += (tbc.J*2+1)* trVijij * norm_pp; break;
+      case (  0 ) :  trace += (tbc.J*2+1)* trVijij * norm_pn; break;
+      case (  1 ) :  trace += (tbc.J*2+1)* trVijij * norm_nn; break;
+      default: cout << "AAAHHH blew the switch statement. tbc.Tz = " << tbc.Tz << endl;
+    }
+  }
+  profiler.timer["Operator::Trace"] += omp_get_wtime() - t_start;
+  return trace;
 }
 
 void Operator::Symmetrize()
@@ -1372,7 +1416,8 @@ void Operator::CommutatorScalarScalar( const Operator& X, const Operator& Y)
    if ( not Z.IsAntiHermitian() )
    {
       Z.comm110ss(X, Y);
-      Z.comm220ss(X, Y) ;
+      if (X.particle_rank>1 and Y.particle_rank>1)
+        Z.comm220ss(X, Y) ;
    }
 
    double t_start = omp_get_wtime();
@@ -1589,12 +1634,17 @@ void Operator::comm121ss( const Operator& X, const Operator& Y)
                 Orbit &ob = modelspace->GetOrbit(b);
                 double nanb = oa.occ * (1-ob.occ);
                 if (abs(nanb)<OCC_CUT) continue;
-                Z.OneBody(i,j) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
-                Z.OneBody(i,j) -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,j) ;
-
+                if (Y.particle_rank>1)
+                {
+                  Z.OneBody(i,j) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
+                  Z.OneBody(i,j) -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,j) ;
+                }
                 // comm211 part
-                Z.OneBody(i,j) -= (ob.j2+1) * nanb * Y.OneBody(a,b) * X.TwoBody.GetTBMEmonopole(b,i,a,j) ;
-                Z.OneBody(i,j) += (oa.j2+1) * nanb * Y.OneBody(b,a) * X.TwoBody.GetTBMEmonopole(a,i,b,j) ;
+                if (X.particle_rank>1)
+                {
+                  Z.OneBody(i,j) -= (ob.j2+1) * nanb * Y.OneBody(a,b) * X.TwoBody.GetTBMEmonopole(b,i,a,j) ;
+                  Z.OneBody(i,j) += (oa.j2+1) * nanb * Y.OneBody(b,a) * X.TwoBody.GetTBMEmonopole(a,i,b,j) ;
+                }
              }
           }
       }
@@ -1814,9 +1864,22 @@ void Operator::comm122ss( const Operator& X, const Operator& Y )
          }
 
          // This is fairly obfuscated, but hopefully faster for bigger calculations
-         W2.col(indx_ij) = join_horiz(    Y2.cols(join_vert( u_ind2_aj,u_ind2_ai))  , X2.cols(join_vert(u_ind2_aj,u_ind2_ai) ) )
-                           * join_vert(  join_vert( X1.unsafe_col(i).rows(u_ind1_ia)%v_factor_ia, X1.unsafe_col(j).rows(u_ind1_ja)%v_factor_ja ),
-                                        -join_vert( Y1.unsafe_col(i).rows(u_ind1_ia)%v_factor_ia, Y1.unsafe_col(j).rows(u_ind1_ja)%v_factor_ja ));
+         if (X.particle_rank>1 and Y.particle_rank>1)
+         {
+            W2.col(indx_ij) = join_horiz(    Y2.cols(join_vert( u_ind2_aj,u_ind2_ai))  , X2.cols(join_vert(u_ind2_aj,u_ind2_ai) ) )
+                             * join_vert(  join_vert( X1.unsafe_col(i).rows(u_ind1_ia)%v_factor_ia, X1.unsafe_col(j).rows(u_ind1_ja)%v_factor_ja ),
+                                          -join_vert( Y1.unsafe_col(i).rows(u_ind1_ia)%v_factor_ia, Y1.unsafe_col(j).rows(u_ind1_ja)%v_factor_ja ));
+         }
+         else if (X.particle_rank<2 and Y.particle_rank>1)
+         {
+            W2.col(indx_ij) =     Y2.cols(join_vert( u_ind2_aj,u_ind2_ai))    
+                             *   join_vert( X1.unsafe_col(i).rows(u_ind1_ia)%v_factor_ia, X1.unsafe_col(j).rows(u_ind1_ja)%v_factor_ja );
+         }
+         else if (X.particle_rank>1 and Y.particle_rank<2)
+         {
+            W2.col(indx_ij) =      -X2.cols(join_vert(u_ind2_aj,u_ind2_ai) ) 
+                                      *    join_vert( Y1.unsafe_col(i).rows(u_ind1_ia)%v_factor_ia, Y1.unsafe_col(j).rows(u_ind1_ja)%v_factor_ja );
+         }
 
       if (i==j) W2.col(indx_ij) *= 2;
 
