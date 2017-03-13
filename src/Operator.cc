@@ -1178,6 +1178,7 @@ Operator Operator::Brueckner_BCH_Transform( const Operator &Omega)
    Operator Omega1 = Omega;
    Operator Omega2 = Omega;
    Omega1.SetParticleRank(1);
+   Omega1.EraseTwoBody();
    Omega2.EraseOneBody();
    Operator OpOut = this->Standard_BCH_Transform(Omega1);
    OpOut = OpOut.Standard_BCH_Transform(Omega2);
@@ -1415,7 +1416,8 @@ void Operator::CommutatorScalarScalar( const Operator& X, const Operator& Y)
    if ( not Z.IsAntiHermitian() )
    {
       Z.comm110ss(X, Y);
-      Z.comm220ss(X, Y) ;
+      if (X.particle_rank>1 and Y.particle_rank>1)
+        Z.comm220ss(X, Y) ;
    }
 
    double t_start = omp_get_wtime();
