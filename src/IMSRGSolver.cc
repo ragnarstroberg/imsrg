@@ -664,8 +664,10 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
       f << fixed << setw(5) << istep
         << setw(10) << setprecision(3) << s
         << setw(fwidth) << setprecision(fprecision) << H_s.ZeroBody 
-        << setw(fwidth) << setprecision(fprecision) << H_s.OneBodyNorm()
-        << setw(fwidth) << setprecision(fprecision) << H_s.TwoBodyNorm()
+        << setw(fwidth) << setprecision(fprecision) << H_s.Norm()
+        << setw(fwidth) << setprecision(fprecision) << H_s.Trace( modelspace->GetAref(), modelspace->GetZref() )
+//        << setw(fwidth) << setprecision(fprecision) << H_s.OneBodyNorm()
+//        << setw(fwidth) << setprecision(fprecision) << H_s.TwoBodyNorm()
 //        << setw(fwidth) << setprecision(fprecision) << Omega.Norm()
         << setw(fwidth) << setprecision(fprecision) << Omega.back().OneBodyNorm()
         << setw(fwidth) << setprecision(fprecision) << Omega.back().TwoBodyNorm()
@@ -677,7 +679,6 @@ void IMSRGSolver::WriteFlowStatus(ostream& f)
         << setprecision(fprecision)
         << setw(12) << setprecision(3) << profiler.GetTimes()["real"]
         << setw(12) << setprecision(3) << profiler.CheckMem()["RSS"]/1024. << " / " << skipws << profiler.MaxMemUsage()/1024. << fixed
-        << setw(12) << setprecision(3) << H_s.Trace( modelspace->GetAref(), modelspace->GetZref() )
         << endl;
    }
 
@@ -699,8 +700,10 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
       f << fixed << setw(5) << "i"
         << setw(10) << setprecision(3) << "s"
         << setw(fwidth) << setprecision(fprecision) << "E0"
-        << setw(fwidth) << setprecision(fprecision) << "||H_1||" 
-        << setw(fwidth) << setprecision(fprecision) << "||H_2||" 
+//        << setw(fwidth) << setprecision(fprecision) << "||H_1||" 
+//        << setw(fwidth) << setprecision(fprecision) << "||H_2||" 
+        << setw(fwidth) << setprecision(fprecision) << "||H||" 
+        << setw(fwidth) << setprecision(fprecision) << "Trace(H)" 
         << setw(fwidth) << setprecision(fprecision) << "||Omega_1||" 
         << setw(fwidth) << setprecision(fprecision) << "||Omega_2||" 
         << setw(fwidth) << setprecision(fprecision) << "||Eta_1||" 
