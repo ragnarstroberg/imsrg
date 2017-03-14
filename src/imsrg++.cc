@@ -38,6 +38,9 @@ using namespace imsrg_util;
 int main(int argc, char** argv)
 {
   // Default parameters, and everything passed by command line args.
+#ifdef BUILDVERSION
+  cout << "######  imsrg++ build version: " << BUILDVERSION << endl;
+#endif
   Parameters parameters(argc,argv);
   if (parameters.help_mode) return 0;
 

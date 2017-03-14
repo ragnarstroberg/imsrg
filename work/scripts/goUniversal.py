@@ -12,6 +12,7 @@
 ######################################################################
 
 from os import path,environ,mkdir,remove
+from sys import argv
 from subprocess import call,PIPE
 from time import time,sleep
 from datetime import datetime
@@ -28,6 +29,7 @@ exe = '%s/bin/imsrg++'%(environ['HOME'])
 ### Flag to swith between submitting to the scheduler or running in the current shell
 batch_mode=False
 #batch_mode=True
+if 'terminal' in argv[1:]: batch_mode=False
 
 ### Don't forget to change this. I don't want emails about your calculations...
 mail_address = 'sstroberg@triumf.ca'

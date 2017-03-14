@@ -10,6 +10,9 @@ FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC
 SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC 
 INSTDIR = $(HOME)
 
+BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "%s_%s",$$2,$$3}' )
+FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
+
 ifeq ($(DEBUG),on)
  FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g 
  SOFLAGS   = -march=native -std=c++11 -fopenmp -fPIC -g
@@ -59,6 +62,7 @@ ifeq ($(NEWHDF5LOC),yes)
 endif
 
 all: $(ALL)
+	@echo Building with build version $(BUILDVERSION)
 
 install: splashscreen
 	@if [ ! -d $(INSTDIR)/lib ] ; then \

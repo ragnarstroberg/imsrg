@@ -703,7 +703,7 @@ void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
 //        << setw(fwidth) << setprecision(fprecision) << "||H_1||" 
 //        << setw(fwidth) << setprecision(fprecision) << "||H_2||" 
         << setw(fwidth) << setprecision(fprecision) << "||H||" 
-        << setw(fwidth) << setprecision(fprecision) << "Trace(H)" 
+        << setw(fwidth) << setprecision(fprecision) << "Tr(H)/Tr(1)" 
         << setw(fwidth) << setprecision(fprecision) << "||Omega_1||" 
         << setw(fwidth) << setprecision(fprecision) << "||Omega_2||" 
         << setw(fwidth) << setprecision(fprecision) << "||Eta_1||" 

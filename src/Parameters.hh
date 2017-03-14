@@ -95,6 +95,7 @@ Parameters::Parameters(int argc, char** argv)
 
 void Parameters::ParseCommandLineArgs(int argc, char** argv)
 {
+  cout << "====================  Parameters (defaults set in Parameters.hh) ===================" << endl;
   for (int iarg=1; iarg<argc; ++iarg)
   {
     string arg = argv[iarg];
@@ -147,6 +148,7 @@ void Parameters::ParseCommandLineArgs(int argc, char** argv)
   }
   if (string_par["flowfile"]=="default") string_par["flowfile"] = DefaultFlowFile();
   if (string_par["intfile"]=="default") string_par["intfile"] = DefaultIntFile();
+  cout << "====================================================================================" << endl;
 }
 
 string Parameters::s(string key)
