@@ -234,41 +234,41 @@ void HartreeFock::BuildMonopoleV3()
 {
    double start_time = omp_get_wtime();
   // First, allocate. This is fast so don't parallelize.
-  int norbits = modelspace->GetNumberOrbits();
-  for (int i=0; i<norbits; ++i)
+  size_t norbits = modelspace->GetNumberOrbits();
+  for (uint64_t i=0; i<norbits; ++i)
   {
     Orbit& oi = modelspace->GetOrbit(i);
     int ei = 2*oi.n + oi.l;
-    for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    for (uint64_t j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
       if (j<i) continue;
       Orbit& oj = modelspace->GetOrbit(j);
       int ej = 2*oj.n + oj.l;
 
 
-      for (int a=0; a<norbits; ++a)
+      for (uint64_t a=0; a<norbits; ++a)
       {
         Orbit& oa = modelspace->GetOrbit(a);
         int ea = 2*oa.n + oa.l;
-        for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+        for (uint64_t b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
         {
           Orbit& ob = modelspace->GetOrbit(b);
           int eb = 2*ob.n + ob.l;
-
      
-            for (int c=0; c<norbits; ++c)
+            for (uint64_t c=0; c<norbits; ++c)
             {
               Orbit& oc = modelspace->GetOrbit(c);
               int ec = 2*oc.n + oc.l;
               if ( ea+ec+ei > Hbare.E3max ) continue;
-              for (int d : Hbare.OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
+              for (uint64_t d : Hbare.OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
               {
                 Orbit& od = modelspace->GetOrbit(d);
                 int ed = 2*od.n + od.l;
  
                 if ( eb+ed+ej > Hbare.E3max ) continue;
                 if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
-                  array<int,6> key = {a,c,i,b,d,j};
+//                  array<int,6> key = {a,c,i,b,d,j};
+                  uint64_t key = a + (c<<8) + (i<<16) + (b<<24) + (d<<32) + (j<<40);
                   Vmon3.push_back( make_pair( key, 0.) );
               }
             }
@@ -283,18 +283,17 @@ void HartreeFock::BuildMonopoleV3()
    // For some reason, despite the use of atomic,
    // using schedule(dynamic,1) changes the answer slightly.
    // I assume this is just numerical noise.
-   #pragma omp parallel for // schedule(dynamic,1)
+   #pragma omp parallel for schedule(static,1) // schedule(dynamic,1)
    for (size_t ind=0; ind<Vmon3.size(); ++ind)
    {
-
-      const array<int,6>& orb = Vmon3.at(ind).first;
+      const uint64_t& orb = Vmon3.at(ind).first;
       double v=0;
-      int a = orb[0];
-      int c = orb[1];
-      int i = orb[2];
-      int b = orb[3];
-      int d = orb[4];
-      int j = orb[5];
+      int a = (orb    )&0xFF;
+      int c = (orb>>8 )&0xFF;
+      int i = (orb>>16)&0xFF;
+      int b = (orb>>24)&0xFF;
+      int d = (orb>>32)&0xFF;
+      int j = (orb>>40)&0xFF;
 
       int j2a = modelspace->GetOrbit(a).j2;
       int j2c = modelspace->GetOrbit(c).j2;
@@ -314,9 +313,8 @@ void HartreeFock::BuildMonopoleV3()
            v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
         }
       }
-      v /= (j2i+1.0);
-      #pragma omp atomic write
-      Vmon3[ind].second = v;
+//      #pragma omp atomic write
+      Vmon3.at(ind).second = v / (j2i+1.0);
    }
    profiler.timer["HF_BuildMonopoleV3"] += omp_get_wtime() - start_time;
 }
@@ -436,13 +434,14 @@ void HartreeFock::UpdateF()
       for (size_t ind=0;ind<Vmon3.size(); ++ind)
       {
         arma::mat& v3ij = V3vec[omp_get_thread_num()];
-        const array<int,6>& orb = Vmon3.at(ind).first;
-        int a = orb[0];
-        int c = orb[1];
-        int i = orb[2];
-        int b = orb[3];
-        int d = orb[4];
-        int j = orb[5];
+
+        const uint64_t& orb = Vmon3.at(ind).first;
+        int a = (orb    )&0xFF;
+        int c = (orb>>8 )&0xFF;
+        int i = (orb>>16)&0xFF;
+        int b = (orb>>24)&0xFF;
+        int d = (orb>>32)&0xFF;
+        int j = (orb>>40)&0xFF;
 
         v3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3.at(ind).second ;
       }
@@ -738,7 +737,8 @@ void HartreeFock::FreeVmon()
    // free up some memory
    array< array< arma::mat,2>,3>().swap(Vmon);
    array< array< arma::mat,2>,3>().swap(Vmon_exch);
-   vector< pair<const array<int,6>,double>>().swap( Vmon3 );
+//   vector< pair<const array<int,6>,double>>().swap( Vmon3 );
+   vector< pair<const uint64_t,double>>().swap( Vmon3 );
 }
 
 

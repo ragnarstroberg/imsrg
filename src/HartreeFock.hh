@@ -31,7 +31,7 @@ class HartreeFock
    double e2hf;             ///< Two-body contribution to EHF
    double e3hf;             ///< Three-body contribution to EHF
    int iterations;          ///< iterations used in Solve()
-   vector< pair<const array<int,6>,double>> Vmon3;
+   vector< pair<const uint64_t,double>> Vmon3;
    IMSRGProfiler profiler;  ///< Profiler for timing, etc.
    deque<double> convergence_ediff; ///< Save last few convergence checks for diagnostics
    deque<double> convergence_EHF; ///< Save last few convergence checks for diagnostics

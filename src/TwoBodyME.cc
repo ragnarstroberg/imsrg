@@ -144,8 +144,6 @@ void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, doub
    double phase = 1;
    if (a>b) phase *= tbc_bra.GetKet(bra_ind).Phase(tbc_bra.J);
    if (c>d) phase *= tbc_ket.GetKet(ket_ind).Phase(tbc_ket.J);
-   Orbit& od = modelspace->GetOrbit(d);
-//   cout << "ch_bra , ch_ket = " << ch_bra << " " << ch_ket << " bra/ket_ind  " << bra_ind << " " << ket_ind << "   dimensions " << GetMatrix(ch_bra,ch_ket).n_rows << endl;
    GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) = phase * tbme;
    if (ch_ket != ch_bra) return;
    if (hermitian) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = phase * tbme;

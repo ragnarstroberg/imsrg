@@ -19,7 +19,6 @@ class ThreeBodyME
 {
  public:
   ModelSpace * modelspace;
-//  vector<vector<vector<vector<vector<vector<vector<ThreeBME_type>>>>>>> MatEl; //
   vector<ThreeBME_type> MatEl;
   vector<vector<vector<vector<vector<vector<size_t>>>>>> OrbitIndex; //
   int E3max;
