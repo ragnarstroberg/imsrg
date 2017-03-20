@@ -1220,9 +1220,11 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   size_t nread = 0;
 //  int nkept = 0;
 
+  vector<size_t> nread_list;
 
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
   {
+    nread_list.push_back(nread);
     int a =  orbits_remap[nlj1];
     Orbit & oa = modelspace->GetOrbit(a);
     int ea = 2*oa.n + oa.l;
@@ -1338,7 +1340,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   for (size_t i=0;i<nread;++i) infile >> ThreeBME[i];
   modelspace->profiler.timer["Read_3BME"] += omp_get_wtime() - t_start;
   cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << endl;
-  Store_Darmstadt_3body( ThreeBME, Hbare, E1max, E2max, E3max);
+  Store_Darmstadt_3body( ThreeBME, nread_list, Hbare, E1max, E2max, E3max);
 //  cout << "Stored " << nkept << " floating point numbers (" << nkept * sizeof(float)/1024./1024./1024. << " GB)" << endl;
 
 }
@@ -1348,7 +1350,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
 /// Read me3j format three-body matrix elements. Pass in E1max, E2max, E3max for the file, so that it can be properly interpreted.
 /// The modelspace truncation doesn't need to coincide with the file truncation. For example, you could have an emax=10 modelspace
 /// and read from an emax=14 file, and the matrix elements with emax>10 would be ignored.
-void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare, int E1max, int E2max, int E3max)
+void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, vector<size_t>& nread_list, Operator& Hbare, int E1max, int E2max, int E3max)
 {
 
   double t_start = omp_get_wtime();
@@ -1382,34 +1384,20 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare,
 
 
   // begin giant nested loops
-//  size_t nread = 0;
   size_t nkept = 0;
-//  int nmaxthreads = omp_get_max_threads();
-// No benefit from using more than a few threads, at least in emax=6 tests
-// This could probably stand some more optimization...
-// Bad behavior if I make this more than 1... should be fixed in the future
-  int nthreads = min(omp_get_max_threads(),1); 
-//  omp_set_num_threads(nthreads);
-  #pragma omp parallel num_threads(nthreads) reduction(+ : nkept)
-  {
-    size_t nread=0;
+  #pragma omp parallel for schedule(dynamic,1) reduction(+ : nkept)
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
   {
-//   printf("nlj1=%d  threadnum=%d\n",nlj1,omp_get_thread_num());
-//   cout << "nlj1 = " << nlj1 << "  threadnum = " << omp_get_thread_num() << endl;
-//    if (nlj1==0) nread=0;
-//    int thread_num = omp_get_thread_num();
+    size_t nread = nread_list[nlj1];
     int a =  orbits_remap[nlj1];
     Orbit & oa = modelspace->GetOrbit(a);
     int ea = 2*oa.n + oa.l;
-    if (ea > E1max) break;
-    if (ea > e1max) break;
-    if (ea > e3max) break;
-//    if (ea > E1max) continue;
-//    if (ea > e1max) continue;
-//    if (ea > e3max) continue;
-//    cout << setw(5) << setprecision(2) << nlj1*(nlj1+1.)/(nljmax*(nljmax+1))*100 << " % done" << '\r';
-//    cout.flush();
+//    if (ea > E1max) break;
+//    if (ea > e1max) break;
+//    if (ea > e3max) break;
+    if (ea > E1max) continue;
+    if (ea > e1max) continue;
+    if (ea > e3max) continue;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
@@ -1495,20 +1483,9 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare,
                 // read all the ME for this range of J,T into block
                 if (twoJCMin>twoJCMax) continue;
                 size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*5;
-//                cout << "constructing block of size " << blocksize << "  =5* ((" << twoJCMax << " - " << twoJCMin << ")/2+1)" << endl;
-//                vector<float> block(blocksize,0);
-//                for (size_t iblock=0;iblock<blocksize;iblock++) infile >> block[iblock];
-//                nread += blocksize;
-//                cout << "Done making block" << endl;
 
-//                for(int twoJC = twoJCMin; twoJC <= twoJCMax; twoJC += 2)
-                // note that the maximum number of threads is set at the beginning of the nested loops
-//                #pragma omp parallel for schedule(dynamic,1) // parallelize in the J loop because they can't interfere with each other
-                #pragma omp for schedule(dynamic,1)
                 for(int JTind = 0; JTind <= (twoJCMax-twoJCMin)+1; JTind++)
                 {
-//                  if (JTind%nthreads != thread_num) continue;
-//                cout << "   Read 3body threadnum = " << omp_get_thread_num() << endl;
                  int twoJC = twoJCMin + (JTind/2)*2;
                  int twoT = 1+(JTind%2)*2;
                  for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
@@ -1520,11 +1497,6 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare,
 //                   int twoTMin = 1; // twoTMin can just be used as 1
 //                   int twoTMax = min( 2*tab +1, 2*ttab +1);
        
-//                   for(int twoT = twoTMin; twoT <= twoTMax; twoT += 2)
-//                   {
-////                    double V;
-//                    float V = 0;
-//                    infile >> V;
                     size_t index_ab = 5*(twoJC-twoJCMin)/2+2*tab+ttab+(twoT-1)/2;
                     if (nread+index_ab >=ThreeBME.size())
                     {
@@ -1550,8 +1522,6 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare,
 
                     if (not autozero and abs(V)>1e-5)
                     {
-//                       double V0 = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
-//                       V0 = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
                        if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
                           and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max) )
                        {
@@ -1574,12 +1544,10 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare,
                        }
                     }
        
-//                   }//twoT
                   }//ttab
                  }//tab
                 }//twoJ
                 nread += blocksize;
-//                if (not goodstate or not infile.good()) return;
                }//JJab
               }//Jab
 
@@ -1589,7 +1557,6 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare,
       }
     }
   }
-  } // omp block
   
 //  omp_set_num_threads(nmaxthreads);
 //  cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << endl;
