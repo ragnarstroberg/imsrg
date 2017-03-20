@@ -1380,32 +1380,20 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare,
 
 
 
-
-  // begin giant nested loops
-//  size_t nread = 0;
   size_t nkept = 0;
-//  int nmaxthreads = omp_get_max_threads();
 // No benefit from using more than a few threads, at least in emax=6 tests
 // This could probably stand some more optimization...
 // Bad behavior if I make this more than 1... should be fixed in the future
-//  {
-//  int nthreads = min(omp_get_max_threads(),1); 
   int nthreads = omp_get_max_threads(); 
   vector<unordered_map<size_t,double>> Local3N(nthreads);
   cout << "nthreads = " << nthreads << endl;
-//  omp_set_num_threads(nthreads);
-//  #pragma omp parallel num_threads(nthreads) reduction(+ : nkept)
   #pragma omp parallel reduction(+ : nkept)
   {
-  int thread_num = omp_get_thread_num();
+  size_t thread_num = omp_get_thread_num();
   size_t nread=0;
-//  #pragma omp parallel for schedule(static,1) reduction(+ : nkept)
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
   {
     
-//   printf("nlj1=%d  threadnum=%d\n",nlj1,omp_get_thread_num());
-//   cout << "nlj1 = " << nlj1 << "  threadnum = " << omp_get_thread_num() << endl;
-//    if (nlj1==0) nread=0;
     int a =  orbits_remap[nlj1];
     Orbit & oa = modelspace->GetOrbit(a);
     int ea = 2*oa.n + oa.l;
@@ -1415,8 +1403,6 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare,
     if (ea > E1max) continue;
     if (ea > e1max) continue;
     if (ea > e3max) continue;
-//    cout << setw(5) << setprecision(2) << nlj1*(nlj1+1.)/(nljmax*(nljmax+1))*100 << " % done" << '\r';
-//    cout.flush();
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
@@ -1502,99 +1488,81 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare,
                 // read all the ME for this range of J,T into block
                 if (twoJCMin>twoJCMax) continue;
                 size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*5;
-                if ( (nread/5)%(nthreads) == thread_num )
+                // Here's the parallel bit. Probably not the best load balancing.
+//                if ( (nread/5)%(nthreads) == thread_num )
                 {
-//                  printf(" nread:%lu  threadnum:%d\n",nread,thread_num);
-//                cout << "constructing block of size " << blocksize << "  =5* ((" << twoJCMax << " - " << twoJCMin << ")/2+1)" << endl;
-//                vector<float> block(blocksize,0);
-//                for (size_t iblock=0;iblock<blocksize;iblock++) infile >> block[iblock];
-//                nread += blocksize;
-//                cout << "Done making block" << endl;
 
-//                for(int twoJC = twoJCMin; twoJC <= twoJCMax; twoJC += 2)
-                // note that the maximum number of threads is set at the beginning of the nested loops
-//                #pragma omp parallel for schedule(dynamic,1) // parallelize in the J loop because they can't interfere with each other
-//                #pragma omp for schedule(dynamic,1)
-                for(int JTind = 0; JTind <= (twoJCMax-twoJCMin)+1; JTind++)
-                {
-//                  if (JTind%nthreads != thread_num) continue;
-//                cout << "   Read 3body threadnum = " << omp_get_thread_num() << endl;
-                 int twoJC = twoJCMin + (JTind/2)*2;
-                 int twoT = 1+(JTind%2)*2;
-                 for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
+                 for(int JTind = 0; JTind <= (twoJCMax-twoJCMin)+1; JTind++)
                  {
-                  for(int ttab = 0; ttab <= 1; ttab++)
+                  if ( JTind%nthreads != thread_num) continue;
+                  int twoJC = twoJCMin + (JTind/2)*2;
+                  int twoT = 1+(JTind%2)*2;
+                  for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
                   {
-                   //summation bounds
-                   if ( twoT > min( 2*tab+1, 2*ttab+1) ) continue;
-//                   int twoTMin = 1; // twoTMin can just be used as 1
-//                   int twoTMax = min( 2*tab +1, 2*ttab +1);
-       
-//                   for(int twoT = twoTMin; twoT <= twoTMax; twoT += 2)
-//                   {
-////                    double V;
-//                    float V = 0;
-//                    infile >> V;
-                    size_t index_ab = 5*(twoJC-twoJCMin)/2+2*tab+ttab+(twoT-1)/2;
-                    if (nread+index_ab >=ThreeBME.size())
-                    {
-                      cout << "OH NO!!! trying to access element " << nread << "+" << index_ab << " = " << nread+index_ab << "  which is >= "<< ThreeBME.size() << endl;
-                    }
-                    float V = ThreeBME[nread + index_ab ];
-//                    ++nread;
-                    bool autozero = false;
-                    if (oa.l>lmax3 or ob.l>lmax3 or oc.l>lmax3 or od.l>lmax3 or oe.l>lmax3 or of.l>lmax3) V=0;
-
-                    
-
-                    if ( a==b and (tab+Jab)%2==0 ) autozero = true;
-                    if ( d==e and (ttab+JJab)%2==0 ) autozero = true;
-                    if ( a==b and a==c and twoT==3 and oa.j2<3 ) autozero = true;
-                    if ( d==e and d==f and twoT==3 and od.j2<3 ) autozero = true;
-
-                       if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
-                          and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max) )
+                   for(int ttab = 0; ttab <= 1; ttab++)
+                   {
+                    //summation bounds
+                    if ( twoT > min( 2*tab+1, 2*ttab+1) ) continue;
+        
+ 
+                     size_t index_ab = 5*(twoJC-twoJCMin)/2+2*tab+ttab+(twoT-1)/2;
+                     if (nread+index_ab >=ThreeBME.size())
+                     {
+                       cout << "OH NO!!! trying to access element " << nread << "+" << index_ab << " = " << nread+index_ab
+                            << "  which is >= "<< ThreeBME.size() << endl;
+                     }
+                     float V = ThreeBME[nread + index_ab ]; // access matrix element from vector that was previously read from file
+                     bool autozero = false;
+                     if (oa.l>lmax3 or ob.l>lmax3 or oc.l>lmax3 or od.l>lmax3 or oe.l>lmax3 or of.l>lmax3) V=0;
+ 
+                     
+ 
+                     if ( a==b and (tab+Jab)%2==0 ) autozero = true;
+                     if ( d==e and (ttab+JJab)%2==0 ) autozero = true;
+                     if ( a==b and a==c and twoT==3 and oa.j2<3 ) autozero = true;
+                     if ( d==e and d==f and twoT==3 and od.j2<3 ) autozero = true;
+ 
+                     if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
+                        and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max) )
+                     {
+                       ++nkept;
+                     }
+ 
+//                     if ( abs(V)>1e-6)
+                     if (abs(V) > 1e-6 and ea<=e1max and eb<=e1max and ec<=e1max)
+                     {
+//                     if (not autozero and abs(V)>1e-5)
+                       if (not autozero)
                        {
-                         ++nkept;
+                          if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
+                             and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max) )
+                          {
+   //                        cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << endl;
+                           Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f,V);
+//                           vector<pair<size_t,double>> mes = Hbare.ThreeBody.AccessME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
+//                           for (auto& me : mes)
+//                           {
+//                             Local3N[thread_num][me.first] += V * me.second;
+//                           }
+                          }
                        }
-
-                    if (not autozero and abs(V)>1e-5)
-                    {
-//                       double V0 = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
-//                       V0 = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
-                       if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
-                          and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max) )
+                       else
                        {
-//                        cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << endl;
-//                        Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
-                        vector<pair<size_t,double>> mes = Hbare.ThreeBody.AccessME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
-                        for (auto& me : mes)
-                        {
-//                          printf("   threadnum:%d  indx:%lu  val:%f\n",thread_num,me.first,me.second);
-//                          printf("   threadnum:%d  size:%lu\n",thread_num,Local3N[thread_num].size());
-//                          printf("   threadnum:%d  before:%f\n",thread_num,Local3N[thread_num][me.first]);
-                          Local3N[thread_num][me.first] += V * me.second;
-//                          printf("   threadnum:%d  set %f\n",thread_num,Local3N[thread_num][me.first]);
-                        }
+  //                        if (abs(V) > 1e-6 and ea<=e1max and eb<=e1max and ec<=e1max)
+  //                        {
+                             cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << endl;
+                           cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << endl;
+                             goodstate = false;
+    //                      }
                        }
-                    }
-
-                    if (autozero)
-                    {
-                       if (abs(V) > 1e-6 and ea<=e1max and eb<=e1max and ec<=e1max)
-                       {
-                          cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << endl;
-                          goodstate = false;
-                       }
-                    }
-       
-//                   }//twoT
-                  }//ttab
-                 }//tab
-                }//twoJ
-                }
+                     }
+        
+                   }//ttab
+                  }//tab
+                 }//twoJ
+                 #pragma omp barrier
+                }// if threadnum...
                 nread += blocksize;
-//                if (not goodstate or not infile.good()) return;
                }//JJab
               }//Jab
 
@@ -1605,14 +1573,14 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare,
     }
   }
   } // omp block
-  cout << "Now accumulate" << endl;
-  for (int i=0; i<nthreads;++i)
-  {
-    for (auto& me : Local3N[i])
-    {
-      Hbare.ThreeBody.MatEl[me.first] += me.second;
-    }
-  }
+//  cout << "Now accumulate" << endl;
+//  for (int i=0; i<nthreads;++i)
+//  {
+//    for (auto& me : Local3N[i])
+//    {
+//      Hbare.ThreeBody.MatEl[me.first] += me.second;
+//    }
+//  }
   
 //  omp_set_num_threads(nmaxthreads);
 //  cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << endl;
