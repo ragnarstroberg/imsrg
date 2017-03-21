@@ -1527,11 +1527,11 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, vector<size_t>& 
                        {
 //                        cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << endl;
                         Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
-                        if ((c>=20 or f>=20) and abs(V)>0.5)
-                        {
-                          cout << "  abcdef: " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "   "
-                               << "Jab Jde: " << Jab << " " << JJab << "  V = " << V << endl;
-                        }
+//                        if ((c>=20 or f>=20) and abs(V)>0.5)
+//                        {
+//                          cout << "  abcdef: " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "   "
+//                               << "Jab Jde: " << Jab << " " << JJab << "  V = " << V << endl;
+//                        }
                        }
                     }
 

@@ -283,7 +283,7 @@ void HartreeFock::BuildMonopoleV3()
    // For some reason, despite the use of atomic,
    // using schedule(dynamic,1) changes the answer slightly.
    // I assume this is just numerical noise.
-   #pragma omp parallel for schedule(static,1) // schedule(dynamic,1)
+//   #pragma omp parallel for schedule(static,1) // schedule(dynamic,1)
    for (size_t ind=0; ind<Vmon3.size(); ++ind)
    {
       const uint64_t& orb = Vmon3.at(ind).first;
@@ -315,6 +315,13 @@ void HartreeFock::BuildMonopoleV3()
       }
 //      #pragma omp atomic write
       Vmon3.at(ind).second = v / (j2i+1.0);
+//      int ea = modelspace->GetOrbit(a).n * 2 + modelspace->GetOrbit(a).l;
+//      int ec = modelspace->GetOrbit(c).n * 2 + modelspace->GetOrbit(c).l;
+//      int ei = modelspace->GetOrbit(i).n * 2 + modelspace->GetOrbit(i).l;
+//      int eb = modelspace->GetOrbit(b).n * 2 + modelspace->GetOrbit(b).l;
+//      int ed = modelspace->GetOrbit(d).n * 2 + modelspace->GetOrbit(d).l;
+//      int ej = modelspace->GetOrbit(j).n * 2 + modelspace->GetOrbit(j).l;
+//      printf("%d %d %d %d %d %d   %d  %d   %f\n",a,c,i,b,d,j,ea+ec+ei,eb+ed+ej,Vmon3.at(ind).second);
    }
    profiler.timer["HF_BuildMonopoleV3"] += omp_get_wtime() - start_time;
 }
