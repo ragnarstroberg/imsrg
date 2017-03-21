@@ -93,15 +93,18 @@ int main(int argc, char** argv)
   vector<string> spwf = parameters.v("SPWF");
 
 
+  ifstream test;
   // test 2bme file
-  ifstream test(inputtbme);
-//  if( not test.good() )
-  if( not test.good() and fmt2!="oakridge")
+  if (inputtbme != "none")
   {
-    cout << "trouble reading " << inputtbme << " exiting. " << endl;
-    return 1;
+    test.open(inputtbme);
+    if( not test.good() and fmt2!="oakridge")
+    {
+      cout << "trouble reading " << inputtbme << " exiting. " << endl;
+      return 1;
+    }
+    test.close();
   }
-  test.close();
   // test 3bme file
   if (input3bme != "none")
   {
@@ -170,24 +173,26 @@ int main(int argc, char** argv)
 //    omp_set_num_threads(max(1,nthreads-3));
 //    #pragma omp section
 //    {
-      if (fmt2 == "me2j")
-        rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
-      else if (fmt2 == "navratil" or fmt2 == "Navratil")
-        rw.ReadBareTBME_Navratil(inputtbme, Hbare);
-      else if (fmt2 == "oslo" )
-        rw.ReadTBME_Oslo(inputtbme, Hbare);
-      else if (fmt2 == "oakridge" )
-      { // input format should be: singleparticle.dat,vnn.dat
-        size_t comma_pos = inputtbme.find_first_of(",");
-        rw.ReadTBME_OakRidge( inputtbme.substr(0,comma_pos),  inputtbme.substr( comma_pos+1 ), Hbare);
-      }
-      else if (fmt2 == "takayuki" )
-        rw.ReadTwoBody_Takayuki( inputtbme, Hbare);
-      else if (fmt2 == "nushellx" )
-        rw.ReadNuShellX_int( Hbare, inputtbme );
-
-      cout << "done reading 2N" << endl;
+      if (inputtbme != "none")
+      {
+        if (fmt2 == "me2j")
+          rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
+        else if (fmt2 == "navratil" or fmt2 == "Navratil")
+          rw.ReadBareTBME_Navratil(inputtbme, Hbare);
+        else if (fmt2 == "oslo" )
+          rw.ReadTBME_Oslo(inputtbme, Hbare);
+        else if (fmt2 == "oakridge" )
+        { // input format should be: singleparticle.dat,vnn.dat
+          size_t comma_pos = inputtbme.find_first_of(",");
+          rw.ReadTBME_OakRidge( inputtbme.substr(0,comma_pos),  inputtbme.substr( comma_pos+1 ), Hbare);
+        }
+        else if (fmt2 == "takayuki" )
+          rw.ReadTwoBody_Takayuki( inputtbme, Hbare);
+        else if (fmt2 == "nushellx" )
+          rw.ReadNuShellX_int( Hbare, inputtbme );
   
+        cout << "done reading 2N" << endl;
+      }
       if (fmt2 != "nushellx")
         Hbare += Trel_Op(modelspace);
 //    }

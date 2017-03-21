@@ -278,6 +278,7 @@ void HartreeFock::BuildMonopoleV3()
     }
     Vmon3.shrink_to_fit();
 
+   cout << "Vmon3 size = " << Vmon3.size() << endl;
 
    // the calculation takes longer, so parallelize this part.
    // For some reason, despite the use of atomic,
