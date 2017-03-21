@@ -1119,7 +1119,9 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
                                                          << setw(12) << setprecision(8) << fixed << OpNested.TwoBodyNorm() << " "
                                                          << setw(12) << setprecision(8) << fixed << OpNested.Norm() << endl;
         }
-        if (OpNested.Norm() < epsilon *(i+1))  break;
+        epsilon *= i+1;
+        if (OpNested.Norm() < epsilon)  break;
+//        if (OpNested.Norm() < epsilon *(i+1))  break;
         if (i == warn_iter)  cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
         else if (i == max_iter)   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
      }

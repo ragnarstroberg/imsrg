@@ -1385,7 +1385,7 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, vector<size_t>& 
 
   // begin giant nested loops
   size_t nkept = 0;
-  #pragma omp parallel for schedule(dynamic,1) reduction(+ : nkept)
+//  #pragma omp parallel for schedule(dynamic,1) reduction(+ : nkept)
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
   {
     size_t nread = nread_list[nlj1];
