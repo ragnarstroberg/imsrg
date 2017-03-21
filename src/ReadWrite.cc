@@ -1213,9 +1213,6 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   char line[LINESIZE];
   infile.getline(line,LINESIZE);
 
-//  cout << "In read3body nthreads = " << omp_get_num_threads() << endl;
-//  omp_set_num_threads(min(2,omp_get_max_threads())); // it's not clear that this is actually helping...
-
   // begin giant nested loops
   size_t nread = 0;
 //  int nkept = 0;
@@ -1224,20 +1221,19 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
 
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
   {
-    nread_list.push_back(nread);
+//    nread_list.push_back(nread);
     int a =  orbits_remap[nlj1];
     Orbit & oa = modelspace->GetOrbit(a);
     int ea = 2*oa.n + oa.l;
     if (ea > E1max) break;
     if (ea > e1max) break;
-//    cout << setw(5) << setprecision(2) << nlj1*(nlj1+1.)/(nljmax*(nljmax+1))*100 << " % done" << '\r';
-//    cout.flush();
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
       int b =  orbits_remap[nlj2];
       Orbit & ob = modelspace->GetOrbit(b);
       int eb = 2*ob.n + ob.l;
+      nread_list.push_back(nread);
       if ( (ea+eb) > E2max) break;
 
       for(int nlj3=0; nlj3<=nlj2; ++nlj3)
@@ -1314,15 +1310,9 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
                 // read all the ME for this range of J,T into block
                 if (twoJCMin>twoJCMax) continue;
                 size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*5;
-//                cout << "constructing block of size " << blocksize << "  =5* ((" << twoJCMax << " - " << twoJCMin << ")/2+1)" << endl;
-//                if (nread+blocksize > ThreeBME.size()) ThreeBME.resize(nread+blocksize+1024,0.);
-//                vector<float> block(blocksize,0);
-//                for (size_t iblock=0;iblock<blocksize;iblock++) infile >> ThreeBME[nread+iblock];
-//                cout << "Done making block" << endl;
                 nread += blocksize;
 
 
-//                modelspace->profiler.timer["Read_3body_inner_loop"] += omp_get_wtime() - t_start_loop;
                 if (not goodstate or not infile.good()) return;
                }//JJab
               }//Jab
@@ -1385,10 +1375,17 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, vector<size_t>& 
 
   // begin giant nested loops
   size_t nkept = 0;
-//  #pragma omp parallel for schedule(dynamic,1) reduction(+ : nkept)
-  for(int nlj1=0; nlj1<nljmax; ++nlj1)
+  // combine the first two loops into one to scale better with more threads
+  #pragma omp parallel for schedule(dynamic,1) reduction(+ : nkept)  // private(nread)
+  for (int index12=0; index12< nljmax*(nljmax+1)/2; ++index12)
   {
-    size_t nread = nread_list[nlj1];
+//  for(int nlj1=0; nlj1<nljmax; ++nlj1)
+//  {
+    int nlj1 = int( (sqrt(8*index12+1)-1)/2);
+    int nlj2 = index12 - nlj1*(nlj1+1)/2;
+//    if (nlj2==0) nread = nread_list[nlj1];
+//    size_t nread = nread_list[nlj1];
+    size_t nread = nread_list[index12];
     int a =  orbits_remap[nlj1];
     Orbit & oa = modelspace->GetOrbit(a);
     int ea = 2*oa.n + oa.l;
@@ -1399,13 +1396,13 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, vector<size_t>& 
     if (ea > e1max) continue;
     if (ea > e3max) continue;
 
-    for(int nlj2=0; nlj2<=nlj1; ++nlj2)
+//    for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
       int b =  orbits_remap[nlj2];
       Orbit & ob = modelspace->GetOrbit(b);
       int eb = 2*ob.n + ob.l;
-      if ( (ea+eb) > E2max) break;
-//      if ( (ea+eb) > E2max) continue;
+//      if ( (ea+eb) > E2max) break;
+      if ( (ea+eb) > E2max) continue;
 
       for(int nlj3=0; nlj3<=nlj2; ++nlj3)
       {
@@ -1503,11 +1500,9 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, vector<size_t>& 
                       cout << "OH NO!!! trying to access element " << nread << "+" << index_ab << " = " << nread+index_ab << "  which is >= "<< ThreeBME.size() << endl;
                     }
                     float V = ThreeBME[nread + index_ab ];
-//                    ++nread;
                     bool autozero = false;
                     if (oa.l>lmax3 or ob.l>lmax3 or oc.l>lmax3 or od.l>lmax3 or oe.l>lmax3 or of.l>lmax3) V=0;
 
-                    
 
                     if ( a==b and (tab+Jab)%2==0 ) autozero = true;
                     if ( d==e and (ttab+JJab)%2==0 ) autozero = true;
@@ -1520,28 +1515,19 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, vector<size_t>& 
                          ++nkept;
                        }
 
-                    if (not autozero and abs(V)>1e-5)
+                    if ( abs(V)>1e-6 )
                     {
-                       if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
-                          and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max) )
-                       {
-//                        cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << endl;
-                        Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
-//                        if ((c>=20 or f>=20) and abs(V)>0.5)
-//                        {
-//                          cout << "  abcdef: " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "   "
-//                               << "Jab Jde: " << Jab << " " << JJab << "  V = " << V << endl;
-//                        }
-                       }
-                    }
-
-                    if (autozero)
-                    {
-                       if (abs(V) > 1e-6 and ea<=e1max and eb<=e1max and ec<=e1max)
-                       {
-                          cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << endl;
-                          goodstate = false;
-                       }
+                      if (not autozero and ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
+                                       and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max))
+                      {
+//                          cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << endl;
+                          Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
+                      }
+                      else if (autozero)
+                      {
+                            cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << endl;
+                            goodstate = false;
+                      }
                     }
        
                   }//ttab
@@ -1558,8 +1544,6 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, vector<size_t>& 
     }
   }
   
-//  omp_set_num_threads(nmaxthreads);
-//  cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << endl;
   cout << "Stored " << nkept << " floating point numbers (" << nkept * sizeof(float)/1024./1024./1024. << " GB)" << endl;
 
   modelspace->profiler.timer["Store_3BME"] += omp_get_wtime() - t_start;
