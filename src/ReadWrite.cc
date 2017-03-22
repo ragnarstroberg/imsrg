@@ -1376,7 +1376,7 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, vector<size_t>& 
   // begin giant nested loops
   size_t nkept = 0;
   // combine the first two loops into one to scale better with more threads
-  #pragma omp parallel for schedule(dynamic,1) reduction(+ : nkept)  // private(nread)
+//  #pragma omp parallel for schedule(dynamic,1) reduction(+ : nkept)  
   for (int index12=0; index12< nljmax*(nljmax+1)/2; ++index12)
   {
 //  for(int nlj1=0; nlj1<nljmax; ++nlj1)
@@ -1397,7 +1397,7 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, vector<size_t>& 
     if (ea > e3max) continue;
 
 //    for(int nlj2=0; nlj2<=nlj1; ++nlj2)
-    {
+//    {
       int b =  orbits_remap[nlj2];
       Orbit & ob = modelspace->GetOrbit(b);
       int eb = 2*ob.n + ob.l;
@@ -1541,7 +1541,7 @@ void ReadWrite::Store_Darmstadt_3body( vector<float>& ThreeBME, vector<size_t>& 
           }
         }
       }
-    }
+  //  }
   }
   
   cout << "Stored " << nkept << " floating point numbers (" << nkept * sizeof(float)/1024./1024./1024. << " GB)" << endl;

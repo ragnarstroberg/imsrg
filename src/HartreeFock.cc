@@ -269,25 +269,21 @@ void HartreeFock::BuildMonopoleV3()
                 if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
 //                  array<int,6> key = {a,c,i,b,d,j};
                   uint64_t key = a + (c<<8) + (i<<16) + (b<<24) + (d<<32) + (j<<40);
-                  Vmon3.push_back( make_pair( key, 0.) );
+//                  Vmon3.push_back( make_pair( key, 0.) );
+                  Vmon3_keys.push_back( key );
               }
             }
           }
         }
       }
     }
-    Vmon3.shrink_to_fit();
 
-   cout << "Vmon3 size = " << Vmon3.size() << endl;
+   Vmon3.resize( Vmon3_keys.size(), 0. );
 
-   // the calculation takes longer, so parallelize this part.
-   // For some reason, despite the use of atomic,
-   // using schedule(dynamic,1) changes the answer slightly.
-   // I assume this is just numerical noise.
-//   #pragma omp parallel for schedule(static,1) // schedule(dynamic,1)
+   #pragma omp parallel for schedule(dynamic,1) 
    for (size_t ind=0; ind<Vmon3.size(); ++ind)
    {
-      const uint64_t& orb = Vmon3.at(ind).first;
+      uint64_t orb = Vmon3_keys[ind];
       double v=0;
       int a = (orb    )&0xFF;
       int c = (orb>>8 )&0xFF;
@@ -314,16 +310,10 @@ void HartreeFock::BuildMonopoleV3()
            v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
         }
       }
-//      #pragma omp atomic write
-      Vmon3.at(ind).second = v / (j2i+1.0);
-//      int ea = modelspace->GetOrbit(a).n * 2 + modelspace->GetOrbit(a).l;
-//      int ec = modelspace->GetOrbit(c).n * 2 + modelspace->GetOrbit(c).l;
-//      int ei = modelspace->GetOrbit(i).n * 2 + modelspace->GetOrbit(i).l;
-//      int eb = modelspace->GetOrbit(b).n * 2 + modelspace->GetOrbit(b).l;
-//      int ed = modelspace->GetOrbit(d).n * 2 + modelspace->GetOrbit(d).l;
-//      int ej = modelspace->GetOrbit(j).n * 2 + modelspace->GetOrbit(j).l;
-//      printf("%d %d %d %d %d %d   %d  %d   %f\n",a,c,i,b,d,j,ea+ec+ei,eb+ed+ej,Vmon3.at(ind).second);
+      Vmon3[ind] = v / (j2i+1.0);
    }
+
+
    profiler.timer["HF_BuildMonopoleV3"] += omp_get_wtime() - start_time;
 }
 
@@ -443,7 +433,8 @@ void HartreeFock::UpdateF()
       {
         arma::mat& v3ij = V3vec[omp_get_thread_num()];
 
-        const uint64_t& orb = Vmon3.at(ind).first;
+//        const uint64_t& orb = Vmon3.at(ind).first;
+        uint64_t orb = Vmon3_keys[ind];
         int a = (orb    )&0xFF;
         int c = (orb>>8 )&0xFF;
         int i = (orb>>16)&0xFF;
@@ -451,7 +442,8 @@ void HartreeFock::UpdateF()
         int d = (orb>>32)&0xFF;
         int j = (orb>>40)&0xFF;
 
-        v3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3.at(ind).second ;
+//        v3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3.at(ind).second ;
+        v3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3[ind] ;
       }
       for (auto& v : V3vec) V3ij += v;
       V3vec.clear(); // free up the memory
@@ -746,7 +738,9 @@ void HartreeFock::FreeVmon()
    array< array< arma::mat,2>,3>().swap(Vmon);
    array< array< arma::mat,2>,3>().swap(Vmon_exch);
 //   vector< pair<const array<int,6>,double>>().swap( Vmon3 );
-   vector< pair<const uint64_t,double>>().swap( Vmon3 );
+//   vector< pair<const uint64_t,double>>().swap( Vmon3 );
+   vector< double>().swap( Vmon3 );
+   vector< uint64_t>().swap( Vmon3_keys );
 }
 
 

@@ -192,8 +192,22 @@ void ThreeBodyME::SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, 
    auto elements = AccessME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in);
    double me = 0;
 
-   for (auto elem : elements)  me += MatEl.at(elem.first) * elem.second;
-   for (auto elem : elements)  MatEl.at(elem.first) += (V-me)*elem.second;
+//   for (auto elem : elements)  me += MatEl.at(elem.first) * elem.second;
+//   for (auto elem : elements)  MatEl.at(elem.first) += (V-me)*elem.second;
+   for (auto elem : elements)
+   {
+      double me_0;
+      size_t index = elem.first;
+      #pragma omp atomic read
+      me_0 = MatEl[index] ;
+      me += me_0 * elem.second;
+   }
+   for (auto elem : elements)
+   {
+     double dme = V-me*elem.second;
+     #pragma omp atomic update
+      MatEl[elem.first] += dme;
+   }
 }
 
 //*******************************************************************
