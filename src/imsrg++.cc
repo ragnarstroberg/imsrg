@@ -248,7 +248,7 @@ int main(int argc, char** argv)
     cout << "About to close wf file" << endl;
 //    wf_file.close();
   }
-  cout << "Done with SPWF" << endl;
+  if (spwf.size() > 0)   cout << "Done with SPWF" << endl;
 
   HNO -= BetaCM * 1.5*hwBetaCM;
   cout << "Hbare 0b = " << HNO.ZeroBody << endl;
@@ -307,11 +307,13 @@ int main(int argc, char** argv)
 
   if (method == "FCI")
   {
+    HNO = HNO.UndoNormalOrdering();
     rw.WriteNuShellX_int(HNO,intfile+".int");
     rw.WriteNuShellX_sps(HNO,intfile+".sp");
 
     for (index_t i=0;i<ops.size();++i)
     {
+      ops[i] = ops[i].UndoNormalOrdering();
       if ((ops[i].GetJRank()+ops[i].GetTRank()+ops[i].GetParity())<1)
       {
         rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
