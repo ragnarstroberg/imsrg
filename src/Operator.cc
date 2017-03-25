@@ -1282,7 +1282,7 @@ double Operator::Trace(int Atrace, int Ztrace) const
      Orbit& oi = modelspace->GetOrbit(i);
      trace += OpVac.OneBody(i,i) * ( oi.j2 +1) * norm_p;
   }
-  for (auto i : modelspace->proton_orbits)
+  for (auto i : modelspace->neutron_orbits)
   {
      Orbit& oi = modelspace->GetOrbit(i);
       trace += OpVac.OneBody(i,i) * ( oi.j2 +1) * norm_n;
