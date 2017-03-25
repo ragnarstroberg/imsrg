@@ -671,12 +671,18 @@ double TwoBodyME::Norm() const
    for ( auto& itmat : MatEl )
    {
       const arma::mat& matrix = itmat.second;
-      double n2 = arma::norm(matrix,"fro");
-      nrm += n2*n2;
+      int Jbra = modelspace->GetTwoBodyChannel( itmat.first[0] ).J;
+      int Jket = modelspace->GetTwoBodyChannel( itmat.first[1] ).J;
+      int degeneracy = (2*Jket+1) * (min(Jbra,Jket+rank_J) - max(-Jbra,Jket-rank_J)+1);
+//      int degeneracy = 1;//(2*Jket+1) * (min(Jbra,Jket+rank_J) - max(-Jbra,Jket-rank_J)+1);
+//      double n2 = arma::norm(matrix,"fro");
+      double n2 = arma::norm(matrix,"fro") * degeneracy;
+//      nrm += n2*n2;
       // If bra and ket are different channels, we only store
       // one ordering. For the norm, we then need a factor of 2.
-      if (itmat.first[0] != itmat.first[1])
-         nrm += n2*n2;
+      nrm += (itmat.first[0]==itmat.first[1]) ? n2*n2 : 2*n2*n2;
+//      if (itmat.first[0] != itmat.first[1])
+//         nrm += n2*n2;
    }
    return sqrt(nrm);
 }

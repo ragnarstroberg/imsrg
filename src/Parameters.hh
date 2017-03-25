@@ -49,6 +49,7 @@ map<string,string> Parameters::string_par = {
   {"use_brueckner_bch",          "false"}, // switch to Brueckner version of BCH
   {"valence_file_format",       "nushellx"}, // file format for valence space interaction
   {"occ_file",			"none"}, // name of file containing orbit occupations
+  {"goose_tank",		"false"}, // name of file containing orbit occupations
 };
 
 
