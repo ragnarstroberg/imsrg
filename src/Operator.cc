@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <deque>
+#include <gsl/gsl_math.h>
 
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488L
@@ -23,6 +24,7 @@ using namespace std;
 double  Operator::bch_transform_threshold = 1e-9;
 double  Operator::bch_product_threshold = 1e-4;
 bool Operator::use_brueckner_bch = false;
+bool Operator::use_goose_tank_correction = false;
 
 Operator& Operator::TempOp(size_t n)
 {
@@ -779,7 +781,7 @@ double Operator::GetMP2_Energy()
 /// Calculate the third order perturbation correction to energy
 /// \f[
 /// \frac{1}{8}\sum_{abijpq}\sum_J (2J+1)\frac{\Gamma_{abij}^J\Gamma_{ijpq}^J\Gamma_{pqab}^J}{(f_a+f_b-f_p-f_q)(f_a+f_b-f_i-f_j)}
-/// +\sum_{abcijk}\sum_J (2J+1) \frac{\Gamma_{abij}^J\Gamma_{cjkb}^J\Gamma_{ikac}^J}{(f_a+f_b-f_i-f_j)(f_a+f_c-f_i-f_k)}
+/// +\sum_{abcijk}\sum_J (2J+1)^2 \frac{\bar{\Gamma}_{a\bar{i}j\bar{b}}^J\bar{\Gamma}_{j\bar{b}k\bar{c}}^J\bar{\Gamma}_{k\bar{c}a\bar{i}}^J}{(f_a+f_b-f_i-f_j)(f_a+f_c-f_i-f_k)}
 /// \f]
 ///
 //*************************************************************
@@ -791,47 +793,7 @@ double Operator::GetMP3_Energy()
    // This can certainly be optimized, but I'll wait until this is the bottleneck.
    int nch = modelspace->GetNumberTwoBodyChannels();
 
-/*
-   // construct Pandya-transformed ph interaction
-   deque<arma::mat> V_bar_hp (InitializePandya( nChannels, "normal"));
-   deque<arma::mat> V_bar_ph (InitializePandya( nChannels, "normal"));
-   DoPandyaTransformation(V_bar_hp, V_bar_ph ,"normal");
-   // Allocate operator for product of ph interactions
-   deque<arma::mat> X_bar (nChannels );
-   int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
-   for (int ich=0; ich<n_nonzero; ++ich)
-   {
-      int ch_cc = modelspace->SortedTwoBodyChannels_CC[ich];
-      TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
-      int nKets_cc = tbc_cc.GetNumberKets();
-      arma::uvec& kets_ph = tbc_cc.GetKetIndex_ph();
-      
-
-
-   for (int ich=0;ich<nch;++ich)
-   {
-     auto& Xbarmat = X_bar[ich];
-     for ()
-     {
-       
-     }
-   }
-*/
-
-/*
-   int n_nonzero = modelspace->SortedTwoBodyChannels_CC.size();
-   for (int ich=0; ich<n_nonzero; ++ich)
-   {
-      int ch_cc = modelspace->SortedTwoBodyChannels_CC[ich];
-      TwoBodyChannel& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
-      int nKets_cc = tbc_cc.GetNumberKets();
-      arma::uvec& kets_ph = tbc_cc.GetKetIndex_ph();
-      int nph_kets = kets_ph.n_rows;
-      if (orientation=="normal")
-         X[ch_cc] = arma::mat(nph_kets,   2*nKets_cc, arma::fill::zeros);
-*/
-
-   #pragma omp parallel for reduction(+:Emp3)
+   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Emp3)
    for (int ich=0;ich<nch;++ich)
    {
      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ich);
@@ -876,60 +838,68 @@ double Operator::GetMP3_Energy()
    } // for ich
    cout << "done with pp and hh. E(3) = " << Emp3 << endl;
 
-/*
-   index_t nholes = modelspace->holes.size();
-   index_t norbits = modelspace->GetNumberOrbits();
 
-//   #pragma omp parallel for reduction(+:Emp3)
-   for (index_t aa=0;aa<nholes;aa++)
+
+
+//   index_t nholes = modelspace->holes.size();
+   index_t nparticles = modelspace->particles.size();
+//   #pragma omp parallel for schedule(dynamic,1)  reduction(+:Emp3)
+   for (index_t ii=0;ii<nparticles;ii++)
    {
-    auto a = modelspace->holes[aa];
-    double ja = 0.5*modelspace->GetOrbit(a).j2;
-    for (auto b : modelspace->holes)
-    {
-      double jb = 0.5*modelspace->GetOrbit(b).j2;
-      for (auto i : modelspace->particles)
+     auto i = modelspace->particles[ii];
+     double ji = 0.5*modelspace->GetOrbit(i).j2;
+     for (auto a : modelspace->holes)
+     {
+      double ja = 0.5*modelspace->GetOrbit(a).j2;
+      int J_min = abs(ja-ji);
+      int J_max = ja+ji;
+      for (int J_tot=J_min;J_tot<=J_max;++J_tot)
       {
-       double ji = 0.5*modelspace->GetOrbit(i).j2;
-       for(auto j : modelspace->particles)
+       double Jfactor = (2*J_tot + 1)*(2*J_tot + 1) ; // I don't yet understand why it's (2J+1)**2, but this is what came from Johannes.
+       for (auto b : modelspace->holes)
        {
+        double jb = 0.5*modelspace->GetOrbit(b).j2;
+        for(auto j : modelspace->particles)
+        {
          double jj = 0.5*modelspace->GetOrbit(j).j2;
-         // Now the ph term. Yuck. 
          double Delta_abij = OneBody(a,a) + OneBody(b,b) - OneBody(i,i) - OneBody(j,j);
          int J1min = max(abs(ja-jb),abs(ji-jj));
          int J1max = min(ja+jb,ji+jj);
-         for (auto c : modelspace->holes )
+         double tbme_abij = 0;
+         for (int J1=J1min;J1<=J1max;++J1)  //Pandya 1: <ai`| V |jb`>_Jtot
          {
+           tbme_abij -= modelspace->GetSixJ(ja,ji,J_tot,jj,jb,J1)  * (2*J1 + 1) *  TwoBody.GetTBME_J(J1,a,b,j,i);
+         }
+         for (auto c : modelspace->holes )
+          {
            double jc = 0.5*modelspace->GetOrbit(c).j2;
            for (auto k : modelspace->particles )
-           {
+            {
              double jk = 0.5*modelspace->GetOrbit(k).j2;
-             double Delta_cbik = OneBody(c,c) + OneBody(b,b) - OneBody(i,i) - OneBody(k,k);
-             int J2min = max(abs(jc-ji),abs(ja-jk));
-             int J2max = min(jc+ji,ja+jk);
-             int J3min = max(abs(jc-jb),abs(jk-jj))/2;
-             int J3max = min(jc+jb,jk+jj)/2;
-             for (int J1=J1min;J1<=J1max;++J1)
+             double Delta_acik = OneBody(a,a) + OneBody(c,c) - OneBody(i,i) - OneBody(k,k);
+             int J2min = max(abs(jc-jj),abs(jk-jb));
+             int J2max = min(jc+jj,jk+jb);
+             double tbme_cjkb = 0;
+             for (int J2=J2min;J2<=J2max;++J2) // Pandya 2:  <jb` | V | kc`>_Jtot
              {
-               double tbme_abij = (2*J1+1)*TwoBody.GetTBME_J(J1,a,b,i,j);
-               for (int J2=J2min;J2<=J2max;++J2)
-               {
-                 double tbme_cjak = (2*J2+1)*TwoBody.GetTBME_J(J2,c,j,a,k);
-                 for (int J3=J3min;J3<=J3max;++J3)
-                 {
-                   double tbme_ikcb = (2*J3+1)*TwoBody.GetTBME_J(J3,i,k,c,b);
-                   Emp3 -=  modelspace->GetNineJ(ji,jj,J1,jk,J2,ja,J3,jc,jb) * tbme_abij * tbme_cjak * tbme_ikcb / (Delta_abij * Delta_cbik);
-                 } // for J3
-               } // for J2
-             } // for J1
-           } // for k
-         } // for c
-       } // for j
-      } // for i
-     } // for b
-   } // for a
+               tbme_cjkb -= modelspace->GetSixJ(jj,jb,J_tot,jk,jc,J2) * (2*J2 + 1) *  TwoBody.GetTBME_J(J2,j,c,k,b);
+             }
+             int J3min = max(abs(ji-jk),abs(ja-jc));
+             int J3max = min(ji+jk,ja+jc);
+             double tbme_ikac = 0;
+             for (int J3=J3min;J3<=J3max;++J3) // Pandya 3:   <kc`| V | ai`>_Jtot
+             {
+               tbme_ikac -= modelspace->GetSixJ(jk,jc,J_tot,ja,ji,J3) * (2*J3 + 1) *  TwoBody.GetTBME_J(J3,k,i,a,c);
+             }
+             Emp3 +=  Jfactor * tbme_abij * tbme_cjkb * tbme_ikac / (Delta_abij * Delta_acik);
+            } // for k
+          } // for c
+        } // for j
+       } // for b
+      } // for J_tot
+     } // for a
+   } // for i
 
-*/
 
    profiler.timer["GetMP3_Energy"] += omp_get_wtime() - t_start;
    return Emp3;
@@ -1102,10 +1072,9 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
      double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
      for (int i=1; i<=max_iter; ++i)
      {
-        bool use_goose_tank_correction=false;
-        if (use_goose_tank_correction and i==3)
+        if (use_goose_tank_correction and i>=3)
         {
-//          TwoBody
+            OpNested.GooseTank(*this,Omega);
         }
 
         Operator tmp1 = Commutator(Omega,OpNested);
@@ -1251,7 +1220,19 @@ double Operator::Norm() const
 
 double Operator::OneBodyNorm() const
 {
-   return arma::norm(OneBody,"fro");
+   double nrm = 0;
+   for ( int p=0; p<modelspace->GetNumberOrbits(); ++p)
+   {
+     Orbit& op = modelspace->GetOrbit(p);
+     for ( auto q : OneBodyChannels.at({op.l, op.j2, op.tz2}) )
+     {
+       Orbit& oq = modelspace->GetOrbit(q);
+       int degeneracy_factor = (op.j2+1) * ( (min(oq.j2,op.j2+rank_J)-max(-oq.j2,op.j2-rank_J))/2+1 );
+       nrm += OneBody(p,q)*OneBody(p,q) * degeneracy_factor * degeneracy_factor;
+     }
+   }
+   return sqrt(nrm);
+//   return arma::norm(OneBody,"fro");
 }
 
 
@@ -1999,8 +1980,10 @@ void Operator::ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, TwoB
 {
    int nch = modelspace->SortedTwoBodyChannels.size();
 //   Operator& Z = *this;
-   bool z_is_hermitian = X.IsHermitian() xor Y.IsHermitian();
-   bool z_is_antihermitian = (X.IsHermitian() == Y.IsHermitian()) and (X.IsAntiHermitian() == Y.IsAntiHermitian());
+   bool z_is_hermitian = IsHermitian();
+   bool z_is_antihermitian = IsAntiHermitian();
+//   bool z_is_hermitian = X.IsHermitian() xor Y.IsHermitian();
+//   bool z_is_antihermitian = (X.IsHermitian() == Y.IsHermitian()) and (X.IsAntiHermitian() == Y.IsAntiHermitian());
    #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
    #endif
@@ -2723,7 +2706,188 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
 
 
+// No support for tensor goose tank yet.
+void Operator::GooseTank( const Operator& X, const Operator& Y)
+{
+  if (X.rank_J == 0 and Y.rank_J == 0)
+  {
+    goose_tank_ss(X,Y);
+  }
 
+}
+
+void Operator::goose_tank_ss( const Operator& X, const Operator& Y)
+{
+   double tstart = omp_get_wtime();
+   Operator& Z = *this;
+   TwoBodyME Mpp_G = Z.TwoBody;
+   TwoBodyME Mhh_G = Z.TwoBody;
+   TwoBodyME Mpp_D = Z.TwoBody;
+   TwoBodyME Mhh_D = Z.TwoBody;
+   Mpp_G.Erase();
+   Mhh_G.Erase();
+   Mpp_D.Erase();
+   Mhh_D.Erase();
+   int norbits = modelspace->GetNumberOrbits();
+
+   arma::mat G(norbits,norbits,arma::fill::zeros);
+   arma::mat D(norbits,norbits,arma::fill::zeros);
+
+
+   ConstructScalarMpp_Mhh_GooseTank( Y, Y, Mpp_G, Mhh_G);
+   ConstructScalarMpp_Mhh_GooseTank( X, Y, Mpp_D, Mhh_D);
+
+   int dflip = 1;
+   if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (Y.IsHermitian() and X.IsAntiHermitian()) ) dflip = -1;
+
+   // The one body part
+   #pragma omp parallel for schedule(dynamic,1)
+   for (int i=0;i<norbits;++i)
+   {
+      Orbit &oi = modelspace->GetOrbit(i);
+//      int jmin = Z.IsNonHermitian() ? 0 : i;   // think about this...
+      int jmin = 0;   // think about this...
+      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+      {
+         if (j<jmin) continue;
+         double GijJ = 0;
+         double DijJ = 0;
+         for (int ch=0;ch<nChannels;++ch)
+         {
+            TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+            double Jfactor = (2*tbc.J+1.0);
+            // Sum c over holes and include the nbar_a * nbar_b terms
+            for (auto& c : modelspace->holes)
+            {
+               Orbit& oc = modelspace->GetOrbit(c);
+               GijJ += Jfactor *    oc.occ  * Mpp_G.GetTBME(ch,c,i,c,j); 
+               GijJ -= Jfactor * (1-oc.occ) * Mhh_G.GetTBME(ch,c,i,c,j); 
+               DijJ += Jfactor *    oc.occ  * Mpp_D.GetTBME(ch,c,i,c,j); 
+               DijJ -= Jfactor * (1-oc.occ) * Mhh_D.GetTBME(ch,c,j,c,i) * dflip; 
+            }
+            // Sum c over particles and include the n_a * n_b terms
+            for (auto& c : modelspace->particles)
+            {
+               GijJ += Jfactor * Mhh_G.GetTBME(ch,c,i,c,j);
+               DijJ -= Jfactor * Mhh_D.GetTBME(ch,c,j,c,i) * dflip;
+            }
+         }
+         G(i,j) = GijJ /(oi.j2+1.0);
+         D(i,j) = DijJ /(oi.j2+1.0);
+      } // for j
+   }
+
+  
+ 
+   #pragma omp parallel for schedule(dynamic,1)
+   for (int ch=0;ch<nChannels;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      for (auto ibra : tbc.GetKetIndex_pp())
+      {
+        Ket& bra = tbc.GetKet(ibra);
+        int a = bra.p;
+        int b = bra.q;
+        Orbit& oa = modelspace->GetOrbit(a);
+        Orbit& ob = modelspace->GetOrbit(b);
+        int phaseab = modelspace->phase((oa.j2+ob.j2)/2-tbc.J);
+        for (auto iket : tbc.GetKetIndex_hh())
+        {
+           Ket& ket = tbc.GetKet(iket);
+           int i = ket.p;
+           int j = ket.q;
+           Orbit& oi = modelspace->GetOrbit(i);
+           Orbit& oj = modelspace->GetOrbit(j);
+           int phaseij = modelspace->phase((oi.j2+oj.j2)/2-tbc.J);
+           double xstarij = 0;
+           double xstarab = 0;
+           for ( auto k : modelspace->holes)
+           {
+             Orbit& ok = modelspace->GetOrbit(k);
+             xstarij += (ok.j2+1) *(    X.TwoBody.GetTBME(ch,a,b,k,j) * G(k,i) - Y.TwoBody.GetTBME(ch,a,b,k,j) * D(k,i)
+                            - phaseij*( X.TwoBody.GetTBME(ch,a,b,k,i) * G(k,j) - Y.TwoBody.GetTBME(ch,a,b,k,i) * D(k,j) ) );
+           }
+           for ( auto c : modelspace->particles)
+           {
+             Orbit& oc = modelspace->GetOrbit(c);
+             xstarab -= (oc.j2+1) *(     G(a,c) * X.TwoBody.GetTBME(ch,c,b,i,j)  - D(a,c) * Y.TwoBody.GetTBME(ch,c,b,i,j)
+                           - phaseab * ( G(b,c) * X.TwoBody.GetTBME(ch,c,a,i,j)  - D(b,c) * Y.TwoBody.GetTBME(ch,c,a,i,j) ) );
+           }
+           if (i==j) xstarij /= SQRT2;
+           if (a==b) xstarab /= SQRT2;
+           Z.TwoBody.AddToTBME(ch,ch,ibra,iket,(xstarij+xstarab)*0.25);
+        }
+      }
+   }
+
+   profiler.timer["GooseTank"] += omp_get_wtime() - tstart;
+
+}
+
+
+void Operator::ConstructScalarMpp_Mhh_GooseTank(const Operator& X, const Operator& Y, TwoBodyME& Mpp, TwoBodyME& Mhh) const
+{
+   int nch = modelspace->SortedTwoBodyChannels.size();
+//   Operator& Z = *this;
+//   bool z_is_hermitian = IsHermitian();
+//   bool z_is_antihermitian = IsAntiHermitian();
+//   bool z_is_hermitian = X.IsHermitian() xor Y.IsHermitian();
+//   bool z_is_antihermitian = (X.IsHermitian() == Y.IsHermitian()) and (X.IsAntiHermitian() == Y.IsAntiHermitian());
+   #ifndef OPENBLAS_NOUSEOMP
+   #pragma omp parallel for schedule(dynamic,1)
+   #endif
+   for (int ich=0; ich<nch; ++ich)
+   {
+      int ch = modelspace->SortedTwoBodyChannels[ich];
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+
+      auto& LHS = X.TwoBody.GetMatrix(ch,ch);
+      auto& RHS = Y.TwoBody.GetMatrix(ch,ch);
+//      auto& OUT = Z.TwoBody.GetMatrix(ch,ch);
+
+      auto& Matrixpp = Mpp.GetMatrix(ch,ch);
+      auto& Matrixhh = Mhh.GetMatrix(ch,ch);
+
+      auto& kets_pp = tbc.GetKetIndex_pp();
+      auto& kets_hh = tbc.GetKetIndex_hh();
+      auto& kets_ph = tbc.GetKetIndex_ph();
+      auto& nanb = tbc.Ket_occ_hh;
+      auto& nbarnbar_hh = tbc.Ket_unocc_hh;
+      auto& nbarnbar_ph = tbc.Ket_unocc_ph;
+      
+      Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
+      Matrixhh =  LHS.cols(kets_hh) * arma::diagmat(nanb) *  RHS.rows(kets_hh) ;
+      if (kets_hh.size()>0)
+        Matrixpp +=  LHS.cols(kets_hh) * arma::diagmat(nbarnbar_hh) *  RHS.rows(kets_hh); 
+      if (kets_ph.size()>0)
+        Matrixpp += LHS.cols(kets_ph) * arma::diagmat(nbarnbar_ph) *  RHS.rows(kets_ph) ;
+
+
+//      if (z_is_hermitian)
+//      {
+//         Matrixpp +=  Matrixpp.t();
+//         Matrixhh +=  Matrixhh.t();
+//      }
+//      else if (z_is_antihermitian) // i.e. LHS and RHS are both hermitian or ant-hermitian
+//      {
+//         Matrixpp -=  Matrixpp.t();
+//         Matrixhh -=  Matrixhh.t();
+//      }
+//      else
+//      {
+//        Matrixpp -=  RHS.cols(kets_pp) * LHS.rows(kets_pp);
+//        Matrixhh -=  RHS.cols(kets_hh) * arma::diagmat(nanb) *  LHS.rows(kets_hh) ;
+//        Matrixpp -=  RHS.cols(kets_hh) * arma::diagmat(nbarnbar_hh) *  LHS.rows(kets_hh) ;
+//        if (kets_ph.size()>0)
+//          Matrixpp -=  RHS.cols(kets_ph) * arma::diagmat(nbarnbar_ph) *  LHS.rows(kets_ph) ;
+//      }
+
+
+      // The two body part
+//      OUT += Matrixpp - Matrixhh;
+   } //for ch
+
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////

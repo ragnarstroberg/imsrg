@@ -47,6 +47,7 @@ class Operator
   static double bch_transform_threshold;
   static double bch_product_threshold;
   static bool use_brueckner_bch;
+  static bool use_goose_tank_correction;
 
 
 
@@ -172,6 +173,7 @@ class Operator
   static void Set_BCH_Transform_Threshold(double x){bch_transform_threshold=x;};
   static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
   static void SetUseBruecknerBCH(bool tf){use_brueckner_bch = tf;};
+  static void SetUseGooseTank(bool tf){use_goose_tank_correction = tf;};
 
   deque<arma::mat> InitializePandya(size_t nch, string orientation);
 //  void DoPandyaTransformation(deque<arma::mat>&, deque<arma::mat>&, string orientation) const ;
@@ -191,9 +193,13 @@ class Operator
   void comm222_phss( const Operator& X, const Operator& Y) ;
   void comm222_pp_hh_221ss( const Operator& X, const Operator& Y) ;
 
+  void GooseTank( const Operator& X, const Operator& Y);
+  void goose_tank_ss( const Operator& X, const Operator& Y);
+
 // scalar-tensor commutators
 
   void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, TwoBodyME& Mpp, TwoBodyME& Mhh) const;
+  void ConstructScalarMpp_Mhh_GooseTank(const Operator& X, const Operator& Y, TwoBodyME& Mpp, TwoBodyME& Mhh) const;
 //  void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>&) const;
   void DoTensorPandyaTransformation(map<array<index_t,2>,arma::mat>&) const;
   void DoTensorPandyaTransformation_SingleChannel(arma::mat& X, int ch_bra_cc, int ch_ket_cc) const;
