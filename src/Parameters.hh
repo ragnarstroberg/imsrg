@@ -38,6 +38,7 @@ map<string,string> Parameters::string_par = {
   {"flowfile",			"default"},  // name of output flow file
   {"intfile",			"default"},  // name of output interaction fille
   {"fmt2",			"me2j"},	 // can also be navratil or Navratil to read Petr's TBME format
+  {"fmt3",			"me3j"},	 // can also be navratil or Navratil to read Petr's TBME format
   {"reference",			"default"},	// nucleus used for HF and normal ordering.
   {"valence_space",		""},	// either valence space or nucleus for single reference
   {"custom_valence_space",      ""}, // if the provided valence spaces just aren't good enough for you

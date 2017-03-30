@@ -31,7 +31,6 @@ class HartreeFock
    double e2hf;             ///< Two-body contribution to EHF
    double e3hf;             ///< Three-body contribution to EHF
    int iterations;          ///< iterations used in Solve()
-//   vector< pair<const uint64_t,double>> Vmon3;
    vector<uint64_t> Vmon3_keys;
    vector< double> Vmon3;
    IMSRGProfiler profiler;  ///< Profiler for timing, etc.
@@ -62,6 +61,8 @@ class HartreeFock
    void GetRadialWF(index_t index, vector<double>& R, vector<double>& PSI); ///< Return the radial wave function of an orbit in the HF basis
    void FreezeOccupations(){freeze_occupations = true;};
    void UnFreezeOccupations(){freeze_occupations = false;};
+   uint64_t GetVmon3HashKey(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f);
+   void ParseVmon3HashKey(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f);
 
 };
 

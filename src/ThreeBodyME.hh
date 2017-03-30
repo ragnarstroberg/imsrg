@@ -3,6 +3,7 @@
 
 #include "ModelSpace.hh"
 #include <fstream>
+#include <unordered_map>
 
 //typedef double ThreeBME_type;
 typedef float ThreeBME_type;
@@ -20,15 +21,22 @@ class ThreeBodyME
  public:
   ModelSpace * modelspace;
   vector<ThreeBME_type> MatEl;
-  vector<vector<vector<vector<vector<vector<size_t>>>>>> OrbitIndex; //
+  unordered_map<size_t, size_t> OrbitIndexHash; //
   int E3max;
   size_t total_dimension;
+  const static int ABC;
+  const static int BCA;
+  const static int CAB;
+  const static int ACB;
+  const static int BAC;
+  const static int CBA;
   
   ~ThreeBodyME();
   ThreeBodyME();
   ThreeBodyME(ModelSpace*);
   ThreeBodyME(ModelSpace* ms, int e3max);
 
+  size_t KeyHash(int,int,int,int,int,int) const;
   void Allocate();
 
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};
@@ -43,7 +51,7 @@ class ThreeBodyME
 ///// Some other three body methods
 
   int SortOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c) const;
-  double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const;
+  inline double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const;
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};
 
