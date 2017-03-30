@@ -63,6 +63,7 @@ int main(int argc, char** argv)
   string use_brueckner_bch = parameters.s("use_brueckner_bch");
   string valence_file_format = parameters.s("valence_file_format");
   string occ_file = parameters.s("occ_file");
+  string goose_tank = parameters.s("goose_tank");
 
   int eMax = parameters.i("emax");
   int E3max = parameters.i("e3max");
@@ -163,6 +164,10 @@ int main(int argc, char** argv)
   Hbare.SetHermitian();
 
 
+  if ( goose_tank == "true" or goose_tank == "True")
+  {
+    Hbare.SetUseGooseTank(true);
+  }
 
   cout << "Reading interactions..." << endl;
 
