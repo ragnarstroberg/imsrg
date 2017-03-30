@@ -21,8 +21,8 @@ namespace AngMom
  }
  bool Triangle(double j1, double j2, double j3)
  {
-   if (j1+j2<j3) return false;
-   if (abs(j1-j2)>j3) return false;
+   if (round(2*(j1+j2))<round(2*j3)) return false;
+   if (abs(round(2*(j1-j2)))>round(2*j3)) return false;
    return true;
  }
 

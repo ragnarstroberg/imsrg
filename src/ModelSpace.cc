@@ -1000,7 +1000,7 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
    auto it = SixJList.find(key);
    if (it != SixJList.end() ) return it->second;
    double sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
-   printf(" Uh Oh, I shouldn't be here in GetSixJ(%.1f %.1f %.1f %.1f %.1f %.1f).  key =%lx   sixj=%f\n",j1,j2,j3,J1,J2,J3,key,sixj); 
+//   printf(" Uh Oh, I shouldn't be here in GetSixJ(%.1f %.1f %.1f %.1f %.1f %.1f).  key =%lx   sixj=%f\n",j1,j2,j3,J1,J2,J3,key,sixj); 
    #pragma omp critical
    {
      SixJList[key] = sixj;
