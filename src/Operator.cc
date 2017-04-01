@@ -1285,6 +1285,45 @@ double Operator::Trace(int Atrace, int Ztrace) const
   return trace;
 }
 
+
+void Operator::ScaleFermiDirac(Operator& H, double T, double Efermi)
+{
+  int norb = modelspace->GetNumberOrbits();
+  
+  for (int i=0; i<norb; ++i)
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    double ei = OneBody(i,i);
+    for (auto j : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}))
+    {
+      double ej = OneBody(j,j);
+      OneBody(i,j) *= 1./(1 + exp( (ei+ej-2*Efermi)/(2*T))  );
+    }
+  }
+  for (auto itmat : TwoBody.MatEl )
+  {
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel( itmat.first[0] );
+    for (int ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
+    {
+      Ket& bra = tbc.GetKet(ibra);
+      int i = bra.p;
+      int j = bra.q;
+      double ei = OneBody(i,i);
+      double ej = OneBody(j,j);
+      for (int iket=0; iket<tbc.GetNumberKets(); ++iket)
+      {
+        Ket& ket = tbc.GetKet(iket);
+        int k = ket.p;
+        int l = ket.q;
+        double ek = OneBody(k,k);
+        double el = OneBody(l,l);
+        itmat.second.row(ibra) *= 1./(1 + exp( (ei+ej+ek+el-4*Efermi)/(2*T))  );
+      }
+    }
+  }
+}
+
+
 void Operator::Symmetrize()
 {
    if (rank_J==0)
@@ -1305,6 +1344,8 @@ void Operator::Symmetrize()
    }
    TwoBody.Symmetrize();
 }
+
+
 
 void Operator::AntiSymmetrize()
 {

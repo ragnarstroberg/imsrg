@@ -80,6 +80,8 @@ namespace imsrg_util
  void Reduce(Operator&);
  void UnReduce(Operator&);
 
+ void SplitUp(Operator& OpIn, Operator& OpLow, Operator& OpHi, int ecut);
+
 
 // Templated functions need to be defined in the header file (or else explicitly declared in the .cc file).
  template <typename T>

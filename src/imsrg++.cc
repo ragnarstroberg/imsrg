@@ -333,6 +333,15 @@ int main(int argc, char** argv)
     return 0;
   }
 
+  Operator HlowT = HNO;
+  double Temp = hw;
+  double Efermi = 0;
+  Operator Eye = HNO;
+  Eye.Eye();
+  HlowT.ScaleFermiDirac(HNO, Temp, Efermi);  // 0 is roughly fermi surface? we can do beter...
+  Eye.ScaleFermiDirac(HNO, Temp, Efermi);  // 0 is roughly fermi surface? we can do beter...
+  cout << "Initial low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) <<"  with normalization  " << Eye.Trace( modelspace.GetAref(),modelspace.GetZref() ) << endl; 
+
   IMSRGSolver imsrgsolver(HNO);
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetEtaCriterion(eta_criterion);
@@ -389,6 +398,9 @@ int main(int argc, char** argv)
    }
   }
   imsrgsolver.Solve();
+
+  HlowT = imsrgsolver.Transform(HlowT);
+  cout << "After Solve, low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) << endl; 
 
   if (method == "magnus")
   {
