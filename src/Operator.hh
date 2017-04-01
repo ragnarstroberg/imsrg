@@ -165,6 +165,8 @@ class Operator
 
   double Trace(int Atrace, int Ztrace) const;
 
+  void ScaleFermiDirac(Operator& H, double T, double Efermi);
+
 
   void PrintOneBody() const {OneBody.print();};
   void PrintTwoBody(int ch) const {TwoBody.PrintMatrix(ch,ch);};

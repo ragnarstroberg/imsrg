@@ -36,7 +36,7 @@ class ThreeBodyME
   ThreeBodyME(ModelSpace*);
   ThreeBodyME(ModelSpace* ms, int e3max);
 
-  size_t KeyHash(int,int,int,int,int,int) const;
+  size_t KeyHash(size_t,size_t,size_t,size_t,size_t,size_t) const;
   void Allocate();
 
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};

@@ -1431,6 +1431,52 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   }
 
 
+  void SplitUp(Operator& OpIn, Operator& OpLow, Operator& OpHi, int ecut)
+  {
+    ModelSpace* modelspace = OpIn.GetModelSpace();
+    OpLow = OpIn;
+    int norbits = modelspace->GetNumberOrbits();
+    int ncut = 0;
+    for (int i=0; i<norbits; ++i)
+    {
+      Orbit& oi = modelspace->GetOrbit(i);
+      if ( (2*oi.n + oi.l) > ecut)
+      {
+         ncut = i;
+         break;
+      }
+    }
+
+    for (int i=ncut; i<norbits; ++i)
+    {
+      for (int j=0; j<norbits; ++j)
+      {
+         OpLow.OneBody(i,j) = 0;
+         OpLow.OneBody(j,i) = 0;
+      }
+    }
+
+    for (auto& itmat : OpLow.TwoBody.MatEl)
+    {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel( itmat.first[0] );
+      int nkets = tbc.GetNumberKets();
+      for (int ibra=0;ibra<nkets;++ibra)
+      {
+       Ket& bra = tbc.GetKet(ibra);
+       for (int iket=ibra;iket<nkets;++iket)
+       {
+         Ket& ket = tbc.GetKet(iket);
+         if ( bra.p>ncut or bra.q>ncut or ket.p>ncut or ket.q>ncut)
+         {
+           itmat.second(ibra,iket) = 0;
+         }
+       }
+      }
+    }
+    OpHi = OpIn - OpLow;
+  }
+
+
   Operator RadialOverlap(ModelSpace& modelspace)
   {
      Operator OVL(modelspace,0,1,0,1);

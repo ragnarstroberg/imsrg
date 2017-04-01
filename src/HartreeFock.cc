@@ -267,7 +267,7 @@ void HartreeFock::BuildMonopoleV3()
  
                 if ( eb+ed+ej > Hbare.E3max ) continue;
                 if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
-                  uint64_t key = GetVmon3HashKey(a,c,i,b,d,j);
+                  uint64_t key = Vmon3Hash(a,c,i,b,d,j);
                   Vmon3_keys.push_back( key );
               }
             }
@@ -283,7 +283,7 @@ void HartreeFock::BuildMonopoleV3()
    {
       double v=0;
       int a,b,c,d,i,j;
-      ParseVmon3HashKey( Vmon3_keys[ind], a,c,i,b,d,j);
+      Vmon3UnHash( Vmon3_keys[ind], a,c,i,b,d,j);
 
       int j2a = modelspace->GetOrbit(a).j2;
       int j2c = modelspace->GetOrbit(c).j2;
@@ -322,7 +322,7 @@ void HartreeFock::BuildMonopoleV3()
 /// Hashing function for rolling six orbit indices into a single long unsigned int.
 /// Each orbit gets 10 bits.
 //*********************************************************************
-uint64_t HartreeFock::GetVmon3HashKey(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f)
+uint64_t HartreeFock::Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f)
 {
   return a + (b<<10) + (c<<20) + (d<<30) + (e<<40) + (f<<50);
 }
@@ -331,14 +331,15 @@ uint64_t HartreeFock::GetVmon3HashKey(uint64_t a, uint64_t b, uint64_t c, uint64
 //*********************************************************************
 /// Take a hashed key and extract the six orbit indices that went into it.
 //*********************************************************************
-void HartreeFock::ParseVmon3HashKey(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f)
+//void HartreeFock::ParseVmon3HashKey(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f)
+void HartreeFock::Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f)
 {
-  a = (key    )&0xFF;
-  b = (key>>10)&0xFF;
-  c = (key>>20)&0xFF;
-  d = (key>>30)&0xFF;
-  e = (key>>40)&0xFF;
-  f = (key>>50)&0xFF;
+  a = (key    )&0x3FL;
+  b = (key>>10)&0x3FL;
+  c = (key>>20)&0x3FL;
+  d = (key>>30)&0x3FL;
+  e = (key>>40)&0x3FL;
+  f = (key>>50)&0x3FL;
 }
 
 //*********************************************************************
@@ -455,7 +456,7 @@ void HartreeFock::UpdateF()
       {
         arma::mat& v3ij = V3vec[omp_get_thread_num()];
         int a,b,c,d,i,j;
-        ParseVmon3HashKey(Vmon3_keys[ind], a,c,i,b,d,j);
+        Vmon3UnHash(Vmon3_keys[ind], a,c,i,b,d,j);
         v3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3[ind] ;
       }
       for (auto& v : V3vec) V3ij += v;
