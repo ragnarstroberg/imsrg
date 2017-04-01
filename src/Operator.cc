@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <deque>
 #include <gsl/gsl_math.h>
+#include <math.h>
 
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488L
@@ -841,9 +842,8 @@ double Operator::GetMP3_Energy()
 
 
 
-//   index_t nholes = modelspace->holes.size();
    index_t nparticles = modelspace->particles.size();
-//   #pragma omp parallel for schedule(dynamic,1)  reduction(+:Emp3)
+   #pragma omp parallel for schedule(dynamic,1)  reduction(+:Emp3)
    for (index_t ii=0;ii<nparticles;ii++)
    {
      auto i = modelspace->particles[ii];
@@ -866,9 +866,12 @@ double Operator::GetMP3_Energy()
          int J1min = max(abs(ja-jb),abs(ji-jj));
          int J1max = min(ja+jb,ji+jj);
          double tbme_abij = 0;
-         for (int J1=J1min;J1<=J1max;++J1)  //Pandya 1: <ai`| V |jb`>_Jtot
+         if ( AngMom::Triangle(jj,jb,J_tot) )
          {
-           tbme_abij -= modelspace->GetSixJ(ja,ji,J_tot,jj,jb,J1)  * (2*J1 + 1) *  TwoBody.GetTBME_J(J1,a,b,j,i);
+          for (int J1=J1min;J1<=J1max;++J1)  //Pandya 1: <ai`| V |jb`>_Jtot
+          {
+            tbme_abij -= modelspace->GetSixJ(ja,ji,J_tot,jj,jb,J1)  * (2*J1 + 1) *  TwoBody.GetTBME_J(J1,a,b,j,i);
+          }
          }
          for (auto c : modelspace->holes )
           {
@@ -876,13 +879,17 @@ double Operator::GetMP3_Energy()
            for (auto k : modelspace->particles )
             {
              double jk = 0.5*modelspace->GetOrbit(k).j2;
+             if ( not AngMom::Triangle(jc,jk,J_tot) ) continue;
              double Delta_acik = OneBody(a,a) + OneBody(c,c) - OneBody(i,i) - OneBody(k,k);
              int J2min = max(abs(jc-jj),abs(jk-jb));
              int J2max = min(jc+jj,jk+jb);
              double tbme_cjkb = 0;
-             for (int J2=J2min;J2<=J2max;++J2) // Pandya 2:  <jb` | V | kc`>_Jtot
+             if ( AngMom::Triangle(jj,jb,J_tot) )
              {
-               tbme_cjkb -= modelspace->GetSixJ(jj,jb,J_tot,jk,jc,J2) * (2*J2 + 1) *  TwoBody.GetTBME_J(J2,j,c,k,b);
+               for (int J2=J2min;J2<=J2max;++J2) // Pandya 2:  <jb` | V | kc`>_Jtot
+               {
+                 tbme_cjkb -= modelspace->GetSixJ(jj,jb,J_tot,jk,jc,J2) * (2*J2 + 1) *  TwoBody.GetTBME_J(J2,j,c,k,b);
+               }
              }
              int J3min = max(abs(ji-jk),abs(ja-jc));
              int J3max = min(ji+jk,ja+jc);
@@ -4177,6 +4184,7 @@ void Operator::comm222_phst( const Operator& X, const Operator& Y )
    modelspace->tensor_transform_first_pass.at( rank_J ) = false;
 
 }
+
 
 
 

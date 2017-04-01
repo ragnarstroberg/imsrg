@@ -56,6 +56,7 @@ int main(int argc, char** argv)
   string core_generator = parameters.s("core_generator");
   string valence_generator = parameters.s("valence_generator");
   string fmt2 = parameters.s("fmt2");
+  string fmt3 = parameters.s("fmt3");
   string denominator_delta_orbit = parameters.s("denominator_delta_orbit");
   string LECs = parameters.s("LECs");
   string scratch = parameters.s("scratch");
@@ -123,6 +124,7 @@ int main(int argc, char** argv)
   ReadWrite rw;
   rw.SetLECs_preset(LECs);
   rw.SetScratchDir(scratch);
+  rw.Set3NFormat( fmt3 );
 
 //  ModelSpace modelspace;
 

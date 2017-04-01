@@ -25,9 +25,10 @@ class ReadWrite
    void ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int E1max, int E2max, int lmax);
    template<class T> void ReadBareTBME_Darmstadt_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int lmax);
    void Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max);
+  size_t Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int E2max, int E3max, vector<int>& orbits_remap, vector<size_t>& nread_list);
    template<class T>void Read_Darmstadt_3body_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int E3max);
 //   void Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare, int E1max, int E2max, int E3max);
-   void Store_Darmstadt_3body( vector<float>& ThreeBME, vector<size_t>& nread_list, Operator& Hbare, int E1max, int E2max, int E3max);
+   void Store_Darmstadt_3body( const vector<float>& ThreeBME, const vector<size_t>& nread_list, const vector<int>& orbits_remap, Operator& Hbare, int E1max, int E2max, int E3max);
    void GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis );
    void Read3bodyHDF5( string filename, Operator& op);
    void Read3bodyHDF5_new( string filename, Operator& op);
@@ -69,6 +70,7 @@ class ReadWrite
    int GetZref(){return Zref;};
    void SetAref(int a){Aref = a;};
    void SetZref(int z){Zref = z;};
+   void Set3NFormat( string fmt ){format3N=fmt;};
 
    // Fields
 
@@ -81,6 +83,7 @@ class ReadWrite
    string scratch_dir;
    string File2N;
    string File3N;
+   string format3N;
    int Aref;
    int Zref;   
 
@@ -100,6 +103,7 @@ class VectorStream
 //  VectorStream& operator>>(double& x) { x = vec[i++]; return (VectorStream&)(*this);}
   bool good(){ return i<vec.size(); };
   void getline(char[], int) {}; // Don't do nuthin'.
+  void read(char* buf, size_t len) {memcpy((void*)buf, (const void*)&vec[i], len);}; // Totally untested... 
  private:
   vector<float>& vec;
 //  vector<double>& vec;

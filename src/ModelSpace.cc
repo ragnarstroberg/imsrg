@@ -1000,9 +1000,96 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
    auto it = SixJList.find(key);
    if (it != SixJList.end() ) return it->second;
    double sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
+//   printf(" Uh Oh, I shouldn't be here in GetSixJ(%.1f %.1f %.1f %.1f %.1f %.1f).  key =%lx   sixj=%f\n",j1,j2,j3,J1,J2,J3,key,sixj); 
    #pragma omp critical
-   SixJList[key] = sixj;
+   {
+     SixJList[key] = sixj;
+   }
    return sixj;
+}
+
+
+
+void ModelSpace::PreCalculateSixJ()
+{
+  cout << "Precalculating SixJ's" << endl;
+  double t_start = omp_get_wtime();
+  vector<uint64_t> KEYS;
+  for (int a=0; a<GetNumberOrbits(); a+=2)
+  {
+   Orbit& oa = GetOrbit(a);
+   double ja = oa.j2;
+   int ea = 2*oa.n + oa.l;
+   for (int b=0; b<=a; b+=2)
+   {
+    Orbit& ob = GetOrbit(b);
+    double jb = ob.j2;
+    int eb = 2*ob.n + ob.l;
+    for (int c=0; c<=b; c+=2)
+    {
+     Orbit& oc = GetOrbit(c);
+     double jc = oc.j2;
+     int ec = 2*oc.n + oc.l;
+     if (ea+eb+ec>E3max) continue;
+     int Jab_min = abs( ja - jb );
+     int Jab_max = ja+jb;
+     int Jabin_min = min( abs( jc - jb ), abs( jc - ja) );
+     int Jabin_max = max( jc+jb, jc+ja);
+
+     for (int Jab=Jab_min; Jab<=Jab_max; Jab+=2)
+     {
+      for (int Jab_in=Jabin_min; Jab_in<=Jabin_max; Jab_in+=2)
+      {
+       int J3_min = max( abs(Jab-jc), min(abs(Jab_in-ja),abs(Jab_in-jb)) );
+       int J3_max = min( (Jab+jc), max((Jab_in+ja),(Jab_in+jb)) );
+       for (int J3=J3_min; J3<=J3_max; J3+=2)
+       {
+       unsigned long int key = (((unsigned long int) (ja)) << 30) +
+                               (((unsigned long int) (jb)) << 24) +
+                               (((unsigned long int) (Jab)) << 18) +
+                               (((unsigned long int) (jc)) << 12) +
+                               (((unsigned long int) (J3)) <<  6) +
+                                ((unsigned long int) (Jab_in));
+         if ( SixJList.count(key) == 0 ) 
+         {
+           KEYS.push_back(key);
+           SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+         }
+         if (ja != jb)
+         {
+           key = (((unsigned long int) (jb)) << 30) +
+                 (((unsigned long int) (ja)) << 24) +
+                 (((unsigned long int) (Jab)) << 18) +
+                 (((unsigned long int) (jc)) << 12) +
+                 (((unsigned long int) (J3)) <<  6) +
+                  ((unsigned long int) (Jab_in));
+           if ( SixJList.count(key) == 0 ) 
+           {
+             KEYS.push_back(key);
+             SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+           }
+         }
+       }
+      }
+     }
+    }
+   }
+  }
+  #pragma omp parallel for schedule(dynamic,1)
+  for (size_t i=0;i< KEYS.size(); ++i)
+  {
+//    unsigned long long int& key = KEYS[i];
+    uint64_t& key = KEYS[i];
+    int j1 = (key >> 30) & 0x3F;
+    int j2 = (key >> 24) & 0x3F;
+    int j3 = (key >> 18) & 0x3F;
+    int J1 = (key >> 12) & 0x3F;
+    int J2 = (key >>  6) & 0x3F;
+    int J3 = (key      ) & 0x3F;
+    SixJList[key] = AngMom::SixJ(0.5*j1,0.5*j2,0.5*j3,0.5*J1,0.5*J2,0.5*J3);
+  }
+  cout << "done calculating sixJs (" << KEYS.size() << " of them)" << endl;
+  profiler.timer["PreCalculateSixJ"] += omp_get_wtime() - t_start;
 }
 
 
@@ -1068,7 +1155,7 @@ void ModelSpace::PreCalculateMoshinsky()
    }
   }
   // Now we calculate the Moshinsky brackets in parallel
-  vector<double> mosh_vals( KEYS.size() );
+//  vector<double> mosh_vals( KEYS.size() );
   #pragma omp parallel for schedule(dynamic,1)
   for (size_t i=0;i< KEYS.size(); ++i)
   {

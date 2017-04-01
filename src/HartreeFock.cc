@@ -123,7 +123,7 @@ void HartreeFock::CalcEHF()
       {
          e1hf += rho(i,j) * jfactor * KE(i,j);
          e2hf += rho(i,j) * jfactor * 0.5 * Vij(i,j);
-         e3hf += rho(i,j) * jfactor * (1./6*V3ij(i,j));
+         e3hf += rho(i,j) * jfactor * (1./6)*V3ij(i,j);
       }
    }
    EHF = e1hf + e2hf + e3hf;
@@ -267,9 +267,7 @@ void HartreeFock::BuildMonopoleV3()
  
                 if ( eb+ed+ej > Hbare.E3max ) continue;
                 if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
-//                  array<int,6> key = {a,c,i,b,d,j};
-                  uint64_t key = a + (c<<8) + (i<<16) + (b<<24) + (d<<32) + (j<<40);
-//                  Vmon3.push_back( make_pair( key, 0.) );
+                  uint64_t key = GetVmon3HashKey(a,c,i,b,d,j);
                   Vmon3_keys.push_back( key );
               }
             }
@@ -283,14 +281,9 @@ void HartreeFock::BuildMonopoleV3()
    #pragma omp parallel for schedule(dynamic,1) 
    for (size_t ind=0; ind<Vmon3.size(); ++ind)
    {
-      uint64_t orb = Vmon3_keys[ind];
       double v=0;
-      int a = (orb    )&0xFF;
-      int c = (orb>>8 )&0xFF;
-      int i = (orb>>16)&0xFF;
-      int b = (orb>>24)&0xFF;
-      int d = (orb>>32)&0xFF;
-      int j = (orb>>40)&0xFF;
+      int a,b,c,d,i,j;
+      ParseVmon3HashKey( Vmon3_keys[ind], a,c,i,b,d,j);
 
       int j2a = modelspace->GetOrbit(a).j2;
       int j2c = modelspace->GetOrbit(c).j2;
@@ -300,17 +293,19 @@ void HartreeFock::BuildMonopoleV3()
       int j2j = modelspace->GetOrbit(j).j2;
  
       int j2min = max( abs(j2a-j2c), abs(j2b-j2d) )/2;
-      int j2max = min (j2a+j2c, j2b+j2d)/2;
+      int j2max = min( j2a+j2c, j2b+j2d )/2;
       for (int j2=j2min; j2<=j2max; ++j2)
       {
         int Jmin = max( abs(2*j2-j2i), abs(2*j2-j2j) );
         int Jmax = 2*j2 + min(j2i, j2j);
-        for (int J=Jmin; J<=Jmax; J+=2)
+        for (int J2=Jmin; J2<=Jmax; J2+=2)
         {
-           v += Hbare.ThreeBody.GetME_pn(j2,j2,J,a,c,i,b,d,j) * (J+1);
+           v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
         }
       }
-      Vmon3[ind] = v / (j2i+1.0);
+      v /= j2i+1.0;
+      #pragma omp atomic write
+      Vmon3[ind] = v ;
    }
 
 
@@ -318,6 +313,28 @@ void HartreeFock::BuildMonopoleV3()
 }
 
 
+//*********************************************************************
+/// Hashing function for rolling six orbit indices into a single long unsigned int.
+/// Each orbit gets 10 bits.
+//*********************************************************************
+uint64_t HartreeFock::GetVmon3HashKey(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f)
+{
+  return a + (b<<10) + (c<<20) + (d<<30) + (e<<40) + (f<<50);
+}
+
+
+//*********************************************************************
+/// Take a hashed key and extract the six orbit indices that went into it.
+//*********************************************************************
+void HartreeFock::ParseVmon3HashKey(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f)
+{
+  a = (key    )&0xFF;
+  b = (key>>10)&0xFF;
+  c = (key>>20)&0xFF;
+  d = (key>>30)&0xFF;
+  e = (key>>40)&0xFF;
+  f = (key>>50)&0xFF;
+}
 
 //*********************************************************************
 /// one-body density matrix 
@@ -432,17 +449,8 @@ void HartreeFock::UpdateF()
       for (size_t ind=0;ind<Vmon3.size(); ++ind)
       {
         arma::mat& v3ij = V3vec[omp_get_thread_num()];
-
-//        const uint64_t& orb = Vmon3.at(ind).first;
-        uint64_t orb = Vmon3_keys[ind];
-        int a = (orb    )&0xFF;
-        int c = (orb>>8 )&0xFF;
-        int i = (orb>>16)&0xFF;
-        int b = (orb>>24)&0xFF;
-        int d = (orb>>32)&0xFF;
-        int j = (orb>>40)&0xFF;
-
-//        v3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3.at(ind).second ;
+        int a,b,c,d,i,j;
+        ParseVmon3HashKey(Vmon3_keys[ind], a,c,i,b,d,j);
         v3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3[ind] ;
       }
       for (auto& v : V3vec) V3ij += v;

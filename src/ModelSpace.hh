@@ -247,6 +247,7 @@ class ModelSpace
    inline int Index2(int p, int q) const {return p*(2*norbits-1-p)/2 + q;};
 
    void PreCalculateMoshinsky();
+   void PreCalculateSixJ();
    void ClearVectors();
    void ResetFirstPass();
    void CalculatePandyaLookup(int rank_J, int rank_T, int parity); // construct a lookup table for more efficient pandya transformation
