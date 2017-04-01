@@ -984,18 +984,66 @@ void ModelSpace::ResetFirstPass()
   for (size_t i=0;i<tensor_transform_first_pass.size();i++) tensor_transform_first_pass[i] = true;
 }
 
+uint64_t ModelSpace::SixJHash(double j1, double j2, double j3, double J1, double J2, double J3)
+{
+   return   (((uint64_t)(2*j1)) << 50)
+          + (((uint64_t)(2*j2)) << 40)
+          + (((uint64_t)(2*j3)) << 30)
+          + (((uint64_t)(2*J1)) << 20)
+          + (((uint64_t)(2*J2)) << 10)
+          +  ((uint64_t)(2*J3));
+
+}
+
+
+void ModelSpace::SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& j3, uint64_t& J1, uint64_t& J2, uint64_t& J3)
+{
+   j1 = (key >> 50) & 0x3FL;
+   j2 = (key >> 40) & 0x3FL;
+   j3 = (key >> 30) & 0x3FL;
+   J1 = (key >> 20) & 0x3FL;
+   J2 = (key >> 10) & 0x3FL;
+   J3 = (key      ) & 0x3FL;
+}
+
+uint64_t ModelSpace::MoshinskyHash(uint64_t N, uint64_t Lam, uint64_t n, uint64_t lam, uint64_t n1, uint64_t l1, uint64_t n2, uint64_t l2, uint64_t L)
+{
+   return   (N   << 54)
+          + (Lam << 47)
+          + (n   << 41)
+          + (lam << 34)
+          + (n1  << 28)
+          + (l1  << 21)
+          + (n2  << 15)
+          + (l2  << 8 )
+          +  L;
+}
+
+void ModelSpace::MoshinskyUnHash(uint64_t key,uint64_t& N,uint64_t& Lam,uint64_t& n,uint64_t& lam,uint64_t& n1,uint64_t& l1,uint64_t& n2,uint64_t& l2,uint64_t& L)
+{
+   N   = (key >> 54) & 0x3FL;
+   Lam = (key >> 47) & 0x3FL;
+   n   = (key >> 41) & 0x3FL;
+   lam = (key >> 34) & 0x3FL;
+   n1  = (key >> 28) & 0x3FL;
+   l1  = (key >> 21) & 0x3FL;
+   n2  = (key >> 15) & 0x3FL;
+   l2  = (key >> 8 ) & 0x3FL;
+   L   = (key      ) & 0x3FL;
+}
 
 double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3)
 {
 // { j1 j2 j3 }
 // { J1 J2 J3 }
+   uint64_t key = SixJHash(j1,j2,j3,J1,J2,J3);
 
-   unsigned long int key = (((unsigned long int) (2*j1)) << 30) +
-                           (((unsigned long int) (2*j2)) << 24) +
-                           (((unsigned long int) (2*j3)) << 18) +
-                           (((unsigned long int) (2*J1)) << 12) +
-                           (((unsigned long int) (2*J2)) <<  6) +
-                            ((unsigned long int) (2*J3));
+//   unsigned long int key = (((unsigned long int) (2*j1)) << 30) +
+//                           (((unsigned long int) (2*j2)) << 24) +
+//                           (((unsigned long int) (2*j3)) << 18) +
+//                           (((unsigned long int) (2*J1)) << 12) +
+//                           (((unsigned long int) (2*J2)) <<  6) +
+//                            ((unsigned long int) (2*J3));
 
    auto it = SixJList.find(key);
    if (it != SixJList.end() ) return it->second;
@@ -1044,12 +1092,13 @@ void ModelSpace::PreCalculateSixJ()
        int J3_max = min( (Jab+jc), max((Jab_in+ja),(Jab_in+jb)) );
        for (int J3=J3_min; J3<=J3_max; J3+=2)
        {
-       unsigned long int key = (((unsigned long int) (ja)) << 30) +
-                               (((unsigned long int) (jb)) << 24) +
-                               (((unsigned long int) (Jab)) << 18) +
-                               (((unsigned long int) (jc)) << 12) +
-                               (((unsigned long int) (J3)) <<  6) +
-                                ((unsigned long int) (Jab_in));
+         uint64_t key = SixJHash(ja,jb,Jab,jc,J3,Jab_in);
+//       unsigned long int key = (((unsigned long int) (ja)) << 30) +
+//                               (((unsigned long int) (jb)) << 24) +
+//                               (((unsigned long int) (Jab)) << 18) +
+//                               (((unsigned long int) (jc)) << 12) +
+//                               (((unsigned long int) (J3)) <<  6) +
+//                                ((unsigned long int) (Jab_in));
          if ( SixJList.count(key) == 0 ) 
          {
            KEYS.push_back(key);
@@ -1057,12 +1106,13 @@ void ModelSpace::PreCalculateSixJ()
          }
          if (ja != jb)
          {
-           key = (((unsigned long int) (jb)) << 30) +
-                 (((unsigned long int) (ja)) << 24) +
-                 (((unsigned long int) (Jab)) << 18) +
-                 (((unsigned long int) (jc)) << 12) +
-                 (((unsigned long int) (J3)) <<  6) +
-                  ((unsigned long int) (Jab_in));
+           key = SixJHash(jb,ja,Jab,jc,J3,Jab_in);
+//           key = (((unsigned long int) (jb)) << 30) +
+//                 (((unsigned long int) (ja)) << 24) +
+//                 (((unsigned long int) (Jab)) << 18) +
+//                 (((unsigned long int) (jc)) << 12) +
+//                 (((unsigned long int) (J3)) <<  6) +
+//                  ((unsigned long int) (Jab_in));
            if ( SixJList.count(key) == 0 ) 
            {
              KEYS.push_back(key);
@@ -1079,16 +1129,20 @@ void ModelSpace::PreCalculateSixJ()
   for (size_t i=0;i< KEYS.size(); ++i)
   {
 //    unsigned long long int& key = KEYS[i];
-    uint64_t& key = KEYS[i];
-    int j1 = (key >> 30) & 0x3F;
-    int j2 = (key >> 24) & 0x3F;
-    int j3 = (key >> 18) & 0x3F;
-    int J1 = (key >> 12) & 0x3F;
-    int J2 = (key >>  6) & 0x3F;
-    int J3 = (key      ) & 0x3F;
+    uint64_t j1,j2,j3,J1,J2,J3;
+    uint64_t key = KEYS[i];
+    SixJUnHash(key, j1,j2,j3,J1,J2,J3);
+//    int j1 = (key >> 30) & 0x3F;
+//    int j2 = (key >> 24) & 0x3F;
+//    int j3 = (key >> 18) & 0x3F;
+//    int J1 = (key >> 12) & 0x3F;
+//    int J2 = (key >>  6) & 0x3F;
+//    int J3 = (key      ) & 0x3F;
     SixJList[key] = AngMom::SixJ(0.5*j1,0.5*j2,0.5*j3,0.5*J1,0.5*J2,0.5*J3);
   }
   cout << "done calculating sixJs (" << KEYS.size() << " of them)" << endl;
+  cout << "Hash table has " << SixJList.bucket_count() << " buckets and a load factor " << SixJList.load_factor() 
+       << "  estimated storage ~ " << ((SixJList.bucket_count()+SixJList.size()) * (sizeof(size_t)+sizeof(void*))) / (1024.*1024.*1024.) << " GB" << endl;
   profiler.timer["PreCalculateSixJ"] += omp_get_wtime() - t_start;
 }
 
@@ -1135,15 +1189,16 @@ void ModelSpace::PreCalculateMoshinsky()
 //                                       + ((unsigned long long int) n2  << 12)
 //                                       + ((unsigned long long int) l2  << 6 )
 //                                       +  L;
-          uint64_t key =    ((uint64_t) N   << 40)
-                          + ((uint64_t) Lam << 34)
-                          + ((uint64_t) n   << 30)
-                          + ((uint64_t) lam << 26)
-                          + ((uint64_t) n1  << 22)
-                          + ((uint64_t) l1  << 16)
-                          + ((uint64_t) n2  << 12)
-                          + ((uint64_t) l2  << 6 )
-                          +  L;
+          uint64_t key = MoshinskyHash(N,Lam,n,lam,n1,l1,n2,l2,L);
+//          uint64_t key =    ((uint64_t) N   << 40)
+//                          + ((uint64_t) Lam << 34)
+//                          + ((uint64_t) n   << 30)
+//                          + ((uint64_t) lam << 26)
+//                          + ((uint64_t) n1  << 22)
+//                          + ((uint64_t) l1  << 16)
+//                          + ((uint64_t) n2  << 12)
+//                          + ((uint64_t) l2  << 6 )
+//                          +  L;
           KEYS.push_back(key);
           MoshList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
          }
@@ -1160,21 +1215,25 @@ void ModelSpace::PreCalculateMoshinsky()
   for (size_t i=0;i< KEYS.size(); ++i)
   {
 //    unsigned long long int& key = KEYS[i];
-    uint64_t& key = KEYS[i];
-    int N   =  key >> 40;
-    int Lam = (key >> 34) & 0x3f;
-    int n   = (key >> 30) & 0xf;
-    int lam = (key >> 26) & 0xf;
-    int n1  = (key >> 22) & 0xf;
-    int l1  = (key >> 16) & 0x3f;
-    int n2  = (key >> 12) & 0xf;
-    int l2  = (key >> 6 ) & 0xf;
-    int L   =  key & 0x3f;
+    uint64_t key = KEYS[i];
+    uint64_t N,Lam,n,lam,n1,l1,n2,l2,L;
+    MoshinskyUnHash(key,N,Lam,n,lam,n1,l1,n2,l2,L);
+//    int N   =  key >> 40;
+//    int Lam = (key >> 34) & 0x3f;
+//    int n   = (key >> 30) & 0xf;
+//    int lam = (key >> 26) & 0xf;
+//    int n1  = (key >> 22) & 0xf;
+//    int l1  = (key >> 16) & 0x3f;
+//    int n2  = (key >> 12) & 0xf;
+//    int l2  = (key >> 6 ) & 0xf;
+//    int L   =  key & 0x3f;
     MoshList[key] = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
   }
 
   moshinsky_has_been_precalculated = true;
   cout << "done calculating moshinsky" << endl;
+  cout << "Hash table has " << MoshList.bucket_count() << " buckets and a load factor " << MoshList.load_factor() 
+       << "  estimated storage ~ " << ((MoshList.bucket_count()+MoshList.size()) * (sizeof(size_t)+sizeof(void*))) / (1024.*1024.*1024.) << " GB" << endl;
   profiler.timer["PreCalculateMoshinsky"] += omp_get_wtime() - t_start;
 }
 
@@ -1214,15 +1273,16 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
    }
   }
 
-          unsigned long long int key =   ((unsigned long long int) N   << 40)
-                                       + ((unsigned long long int) Lam << 34)
-                                       + ((unsigned long long int) n   << 30)
-                                       + ((unsigned long long int) lam << 26)
-                                       + ((unsigned long long int) n1  << 22)
-                                       + ((unsigned long long int) l1  << 16)
-                                       + ((unsigned long long int) n2  << 12)
-                                       + ((unsigned long long int) l2  << 6 )
-                                       +  L;
+     uint64_t key = MoshinskyHash(N,Lam,n,lam,n1,l1,n2,l2,L);
+//          unsigned long long int key =   ((unsigned long long int) N   << 40)
+//                                       + ((unsigned long long int) Lam << 34)
+//                                       + ((unsigned long long int) n   << 30)
+//                                       + ((unsigned long long int) lam << 26)
+//                                       + ((unsigned long long int) n1  << 22)
+//                                       + ((unsigned long long int) l1  << 16)
+//                                       + ((unsigned long long int) n2  << 12)
+//                                       + ((unsigned long long int) l2  << 6 )
+//                                       +  L;
 
 
    auto it = MoshList.find(key);
@@ -1294,11 +1354,13 @@ double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double 
    }
 
    unsigned long long int key =   klist[0];
-   unsigned long long int factor = 100;
+//   unsigned long long int factor = 100;
+   unsigned long long int factor = 91;
    for (int i=1; i<9; ++i)
    {
       key += klist[i]*factor;
-      factor *=100;
+      factor *=91;
+//      factor *=100;
    }
    auto it = NineJList.find(key);
    if (it != NineJList.end() )

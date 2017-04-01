@@ -33,14 +33,14 @@ const int ThreeBodyME::CBA = 5;
 /// If we have good isospin, this means we're ok up to emax=43.
 // In the future, if this isn't sufficient, we could change
 // the key type to a bitset<128>, which would allow up to emax=1446.
-size_t ThreeBodyME::KeyHash(int a,int b,int c,int d,int e,int f) const
+size_t ThreeBodyME::KeyHash(size_t a,size_t b,size_t c,size_t d,size_t e,size_t f) const
 {
- return (   (size_t)(a/2)
-         + ((size_t)(b/2) << 10)
-         + ((size_t)(c/2) << 20)
-         + ((size_t)(d/2) << 30)
-         + ((size_t)(e/2) << 40)
-         + ((size_t)(f/2) << 50) );
+ return (   (a/2)
+         + ((d/2) << 10)
+         + ((b/2) << 20)
+         + ((e/2) << 30)
+         + ((c/2) << 40)
+         + ((f/2) << 50) );
 }
 
 /*
@@ -222,6 +222,8 @@ void ThreeBodyME::Allocate()
   } //a
   MatEl.resize(total_dimension,0.0);
   cout << "Allocated " << total_dimension << " three body matrix elements (" <<  total_dimension * sizeof(ThreeBME_type)/1024./1024./1024. << " GB), "
+       << endl << "  number of buckets in hash table: " << OrbitIndexHash.bucket_count() << "  and load factor = " << OrbitIndexHash.load_factor()
+       << "  estimated storage ~ " << ((OrbitIndexHash.bucket_count()+OrbitIndexHash.size()) * (sizeof(size_t)+sizeof(void*))) / (1024.*1024.*1024.) << " GB"
        << endl;
 
 }

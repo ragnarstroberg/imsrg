@@ -61,8 +61,8 @@ class HartreeFock
    void GetRadialWF(index_t index, vector<double>& R, vector<double>& PSI); ///< Return the radial wave function of an orbit in the HF basis
    void FreezeOccupations(){freeze_occupations = true;};
    void UnFreezeOccupations(){freeze_occupations = false;};
-   uint64_t GetVmon3HashKey(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f);
-   void ParseVmon3HashKey(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f);
+   uint64_t Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f);
+   void Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f);
 
 };
 
