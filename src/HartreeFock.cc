@@ -301,16 +301,11 @@ void HartreeFock::BuildMonopoleV3()
         for (int J2=Jmin; J2<=Jmax; J2+=2)
         {
            v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
-//           if (ind==3)
-//           {
-//             printf("<%d %d %d|V|%d %d %d>_(%d,%d) = %15.10f   v = %15.10f\n",a,c,i,b,d,j,j2,J2,Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j),v);
-//           }
         }
       }
       v /= j2i+1.0;
       #pragma omp atomic write
       Vmon3[ind] = v ;
-//      printf("Vmon3[%lu] = %10.6f\n",ind,v);
    }
 
 
