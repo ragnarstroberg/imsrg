@@ -1092,7 +1092,7 @@ void ModelSpace::PreCalculateSixJ()
        int J3_max = min( (Jab+jc), max((Jab_in+ja),(Jab_in+jb)) );
        for (int J3=J3_min; J3<=J3_max; J3+=2)
        {
-         uint64_t key = SixJHash(ja,jb,Jab,jc,J3,Jab_in);
+         uint64_t key = SixJHash(0.5*ja,0.5*jb,0.5*Jab,0.5*jc,0.5*J3,0.5*Jab_in);
 //       unsigned long int key = (((unsigned long int) (ja)) << 30) +
 //                               (((unsigned long int) (jb)) << 24) +
 //                               (((unsigned long int) (Jab)) << 18) +
@@ -1106,7 +1106,7 @@ void ModelSpace::PreCalculateSixJ()
          }
          if (ja != jb)
          {
-           key = SixJHash(jb,ja,Jab,jc,J3,Jab_in);
+           key = SixJHash(0.5*jb,0.5*ja,0.5*Jab,0.5*jc,0.5*J3,0.5*Jab_in);
 //           key = (((unsigned long int) (jb)) << 30) +
 //                 (((unsigned long int) (ja)) << 24) +
 //                 (((unsigned long int) (Jab)) << 18) +
