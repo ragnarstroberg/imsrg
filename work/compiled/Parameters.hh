@@ -31,13 +31,14 @@ class Parameters
 };
 
 map<string,string> Parameters::string_par = {
-  {"2bme",			"/itch/exch/BlockGen/me2j/chi2b_srg0800_eMax12_lMax10_hwHO020.me2j.gz"},
+  {"2bme",			"none"},
   {"3bme",			"none"},
   {"core_generator",		"atan"},	// generator used for core part of 2-step decoupling
   {"valence_generator",		"shell-model-atan"},	// generator used for valence decoupling and 1-step (also single-ref)
   {"flowfile",			"default"},  // name of output flow file
   {"intfile",			"default"},  // name of output interaction fille
   {"fmt2",			"me2j"},	 // can also be navratil or Navratil to read Petr's TBME format
+  {"fmt3",			"me3j"},	 // can also be navratil or Navratil to read Petr's TBME format
   {"reference",			"default"},	// nucleus used for HF and normal ordering.
   {"valence_space",		""},	// either valence space or nucleus for single reference
   {"custom_valence_space",      ""}, // if the provided valence spaces just aren't good enough for you
@@ -49,6 +50,7 @@ map<string,string> Parameters::string_par = {
   {"use_brueckner_bch",          "false"}, // switch to Brueckner version of BCH
   {"valence_file_format",       "nushellx"}, // file format for valence space interaction
   {"occ_file",			"none"}, // name of file containing orbit occupations
+  {"goose_tank",		"false"}, // name of file containing orbit occupations
 };
 
 
@@ -95,6 +97,7 @@ Parameters::Parameters(int argc, char** argv)
 
 void Parameters::ParseCommandLineArgs(int argc, char** argv)
 {
+  cout << "====================  Parameters (defaults set in Parameters.hh) ===================" << endl;
   for (int iarg=1; iarg<argc; ++iarg)
   {
     string arg = argv[iarg];
@@ -147,6 +150,7 @@ void Parameters::ParseCommandLineArgs(int argc, char** argv)
   }
   if (string_par["flowfile"]=="default") string_par["flowfile"] = DefaultFlowFile();
   if (string_par["intfile"]=="default") string_par["intfile"] = DefaultIntFile();
+  cout << "====================================================================================" << endl;
 }
 
 string Parameters::s(string key)
