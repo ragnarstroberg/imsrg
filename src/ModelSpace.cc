@@ -224,9 +224,9 @@ bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 
 // Static members
 
-unordered_map<unsigned long int,double> ModelSpace::SixJList;
-unordered_map<unsigned long long int,double> ModelSpace::NineJList;
-unordered_map<unsigned long long int,double> ModelSpace::MoshList;
+unordered_map<uint64_t,double> ModelSpace::SixJList;
+unordered_map<uint64_t,double> ModelSpace::NineJList;
+unordered_map<uint64_t,double> ModelSpace::MoshList;
 map<string,vector<string>> ModelSpace::ValenceSpaces  {
 { "s-shell"  ,         {"vacuum", "p0s1","n0s1"}},
 { "p-shell"  ,         {"He4", "p0p3","n0p3","p0p1","n0p1"}},

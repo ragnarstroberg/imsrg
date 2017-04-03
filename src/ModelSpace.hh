@@ -323,9 +323,9 @@ class ModelSpace
    IMSRGProfiler profiler;
 //   map<long int,double> SixJList;
 
-   static unordered_map<unsigned long int,double> SixJList;
-   static unordered_map<long long unsigned int,double> NineJList;
-   static unordered_map<long long unsigned int,double> MoshList;
+   static unordered_map<uint64_t,double> SixJList;
+   static unordered_map<uint64_t,double> NineJList;
+   static unordered_map<uint64_t,double> MoshList;
 
 };
 
