@@ -329,12 +329,12 @@ uint64_t HartreeFock::Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, 
 //void HartreeFock::ParseVmon3HashKey(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f)
 void HartreeFock::Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f)
 {
-  a = (key    )&0x3FL;
-  b = (key>>10)&0x3FL;
-  c = (key>>20)&0x3FL;
-  d = (key>>30)&0x3FL;
-  e = (key>>40)&0x3FL;
-  f = (key>>50)&0x3FL;
+  a = (key    )&0x3FFL;
+  b = (key>>10)&0x3FFL;
+  c = (key>>20)&0x3FFL;
+  d = (key>>30)&0x3FFL;
+  e = (key>>40)&0x3FFL;
+  f = (key>>50)&0x3FFL;
 }
 
 //*********************************************************************

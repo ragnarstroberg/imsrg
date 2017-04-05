@@ -998,12 +998,12 @@ uint64_t ModelSpace::SixJHash(double j1, double j2, double j3, double J1, double
 
 void ModelSpace::SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& j3, uint64_t& J1, uint64_t& J2, uint64_t& J3)
 {
-   j1 = (key >> 50) & 0x3FL;
-   j2 = (key >> 40) & 0x3FL;
-   j3 = (key >> 30) & 0x3FL;
-   J1 = (key >> 20) & 0x3FL;
-   J2 = (key >> 10) & 0x3FL;
-   J3 = (key      ) & 0x3FL;
+   j1 = (key >> 50) & 0x3FFL;
+   j2 = (key >> 40) & 0x3FFL;
+   j3 = (key >> 30) & 0x3FFL;
+   J1 = (key >> 20) & 0x3FFL;
+   J2 = (key >> 10) & 0x3FFL;
+   J3 = (key      ) & 0x3FFL;
 }
 
 uint64_t ModelSpace::MoshinskyHash(uint64_t N, uint64_t Lam, uint64_t n, uint64_t lam, uint64_t n1, uint64_t l1, uint64_t n2, uint64_t l2, uint64_t L)
@@ -1021,15 +1021,15 @@ uint64_t ModelSpace::MoshinskyHash(uint64_t N, uint64_t Lam, uint64_t n, uint64_
 
 void ModelSpace::MoshinskyUnHash(uint64_t key,uint64_t& N,uint64_t& Lam,uint64_t& n,uint64_t& lam,uint64_t& n1,uint64_t& l1,uint64_t& n2,uint64_t& l2,uint64_t& L)
 {
-   N   = (key >> 54) & 0x3FL;
+   N   = (key >> 54) & 0x7FL;
    Lam = (key >> 47) & 0x3FL;
-   n   = (key >> 41) & 0x3FL;
+   n   = (key >> 41) & 0x7FL;
    lam = (key >> 34) & 0x3FL;
-   n1  = (key >> 28) & 0x3FL;
+   n1  = (key >> 28) & 0x7FL;
    l1  = (key >> 21) & 0x3FL;
-   n2  = (key >> 15) & 0x3FL;
-   l2  = (key >> 8 ) & 0x3FL;
-   L   = (key      ) & 0x3FL;
+   n2  = (key >> 15) & 0xFFL;
+   l2  = (key >> 8 ) & 0x7FL;
+   L   = (key      ) & 0xFFL;
 }
 
 double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3)
