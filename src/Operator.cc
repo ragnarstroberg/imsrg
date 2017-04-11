@@ -843,6 +843,7 @@ double Operator::GetMP3_Energy()
 
 
    index_t nparticles = modelspace->particles.size();
+   modelspace->PreCalculateSixJ();
    #pragma omp parallel for schedule(dynamic,1)  reduction(+:Emp3)
    for (index_t ii=0;ii<nparticles;ii++)
    {
