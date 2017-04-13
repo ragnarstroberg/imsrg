@@ -1022,12 +1022,12 @@ uint64_t ModelSpace::MoshinskyHash(uint64_t N, uint64_t Lam, uint64_t n, uint64_
 void ModelSpace::MoshinskyUnHash(uint64_t key,uint64_t& N,uint64_t& Lam,uint64_t& n,uint64_t& lam,uint64_t& n1,uint64_t& l1,uint64_t& n2,uint64_t& l2,uint64_t& L)
 {
    N   = (key >> 54) & 0x7FL;
-   Lam = (key >> 47) & 0x3FL;
-   n   = (key >> 41) & 0x7FL;
-   lam = (key >> 34) & 0x3FL;
-   n1  = (key >> 28) & 0x7FL;
-   l1  = (key >> 21) & 0x3FL;
-   n2  = (key >> 15) & 0xFFL;
+   Lam = (key >> 47) & 0x7FL;
+   n   = (key >> 41) & 0x3FL;
+   lam = (key >> 34) & 0x7FL;
+   n1  = (key >> 28) & 0x3FL;
+   l1  = (key >> 21) & 0x7FL;
+   n2  = (key >> 15) & 0x3FL;
    l2  = (key >> 8 ) & 0x7FL;
    L   = (key      ) & 0xFFL;
 }
