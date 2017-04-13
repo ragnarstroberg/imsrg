@@ -317,6 +317,7 @@ class ModelSpace
    vector<TwoBodyChannel> TwoBodyChannels;
    vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
    map< array<int,3>, map< array<int,2>,array<vector<int>,2> > > PandyaLookup;
+   bool sixj_has_been_precalculated;
    bool moshinsky_has_been_precalculated;
    bool scalar_transform_first_pass;
    vector<bool> tensor_transform_first_pass;

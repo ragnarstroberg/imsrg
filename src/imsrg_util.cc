@@ -24,6 +24,7 @@ namespace imsrg_util
       else if (opname == "E2")            return ElectricMultipoleOp(modelspace,2) ;
       else if (opname == "E4")            return ElectricMultipoleOp(modelspace,4) ;
       else if (opname == "E6")            return ElectricMultipoleOp(modelspace,6) ;
+      else if (opname == "E2int")         return IntrinsicElectricMultipoleOp(modelspace,2) ;
       else if (opname == "M1")            return MagneticMultipoleOp(modelspace,1) ;
       else if (opname == "M3")            return MagneticMultipoleOp(modelspace,3) ;
       else if (opname == "M5")            return MagneticMultipoleOp(modelspace,5) ;
@@ -721,6 +722,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z)
  {
 //   return R2CM_Op(modelspace) + (A-2.0)/(A*Z)*R2_1body_Op(modelspace,"proton") - 2./(A*Z)*R2_2body_Op(modelspace,"proton");
+   if (Z==0) return 0.0*KineticEnergy_Op(modelspace);
    return R2CM_Op(modelspace) + (A-2.0)/(A*Z)*R2_1body_Op(modelspace,"proton")
                                    - 2./(A*Z)*R2_2body_Op(modelspace,"proton")
                                    + 1./Z * RpSpinOrbitCorrection(modelspace);
@@ -728,6 +730,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
  Operator Rn2_corrected_Op(ModelSpace& modelspace, int A, int Z)
  {
+   if (Z==A) return 0.0*KineticEnergy_Op(modelspace);
    return R2CM_Op(modelspace) + (A-2.0)/(A*(A-Z))*R2_1body_Op(modelspace,"neutron") - 2./(A*(A-Z))*R2_2body_Op(modelspace,"neutron");
  }
 
@@ -1233,6 +1236,116 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     }
     return ML;
   }
+
+
+
+  /// Returns a reduced electric multipole operator with units \f$ e\f$ fm\f$^{\lambda} \f$
+  /// See Suhonen eq. (6.23)
+  Operator IntrinsicElectricMultipoleOp(ModelSpace& modelspace, int L)
+  {
+    Operator EL(modelspace, L,0,L%2,2);
+    double bL = pow( HBARC*HBARC/(0.5*M_NUCLEON)/modelspace.GetHbarOmega(),0.5*L); // b^L where b=sqrt(hbar/mw)
+
+    int emax = modelspace.GetEmax();
+    int norb_rel = (2*emax+1)*(2*emax+2)/2;
+    arma::mat ME_rel(norb_rel, norb_rel);
+    for (int nrela=0; 2*nrela<2*emax; nrela+=1)
+    {
+     for (int lrela=0; lrela<2*emax-2*nrela; lrela+=1)
+     {
+       int ia = (2*nrela + lrela)*(2*nrela+lrela+1)/2 + lrela;
+       for (int lrelb=abs(lrela-L); lrelb<=lrela+L; lrelb+=2)
+       {
+         for (int nrelb=0; 2*nrelb<=2*emax-lrelb; nrelb+=1)
+         {
+           int ib = (2*nrelb + lrelb)*(2*nrelb+lrelb+1)/2 + lrelb;
+           double r2int = RadialIntegral(nrela,lrela,nrelb,lrelb,L) * bL ;
+           double angint = modelspace.phase(lrela) * sqrt( (2*lrela+1)*(2*lrelb+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(lrela, L, lrelb, 0,0,0);
+           ME_rel(ia,ib) = angint * r2int;
+           printf("< %d %d || E2 || %d %d > = %f   angular: %f \n",nrela,lrela,nrelb,lrelb,ME_rel(ia,ib), angint );
+         }
+       }
+     }
+    }
+
+
+
+    // Moshinsky transformation to lab frame bra and ket
+    // lab frame: < na la ja  nb lb jb  Jab || EL || nc lc jc  nd ld jd  Jcd>
+    for ( auto& itmat : EL.TwoBody.MatEl )
+    {
+      TwoBodyChannel& tbc_bra = modelspace.GetTwoBodyChannel(itmat.first[0]);
+      TwoBodyChannel& tbc_ket = modelspace.GetTwoBodyChannel(itmat.first[1]);
+      if (tbc_bra.Tz>=0) continue;
+      int Jab = tbc_bra.J;
+      int Jcd = tbc_ket.J;
+      for (int ibra=0; ibra<tbc_bra.GetNumberKets(); ++ibra)
+      {
+       Ket& bra = tbc_bra.GetKet(ibra);
+       int na = bra.op->n;
+       int la = bra.op->l;
+       double ja = bra.op->j2*0.5;
+       int nb = bra.oq->n;
+       int lb = bra.oq->l;
+       double jb = bra.oq->j2*0.5;
+       int rho_ab = 2*na+2*nb+la+lb;
+       for (int iket=0; iket<tbc_ket.GetNumberKets(); ++iket)
+       {
+        Ket& ket = tbc_bra.GetKet(ibra);
+        int nc = ket.op->n;
+        int lc = ket.op->l;
+        double jc = ket.op->j2*0.5;
+        int nd = ket.oq->n;
+        int ld = ket.oq->l;
+        double jd = ket.oq->j2*0.5;
+        int rho_cd = 2*nc+2*nd+lc+ld;
+
+        double labME = 0;
+        
+        for (int Lab=max(abs(la-lb),abs(Jab-1)); Lab<=min(la+lb,Jab+1); Lab+=1)
+        {
+         for (int Lcd=max(abs(lc-ld),abs(Jcd-1))+(Lab+L)%2; Lcd<=min(lc+ld,Jcd+1); Lcd+=2)
+         {
+          for (int S=max(abs(Jab-Lab),abs(Jcd-Lcd)); S<=min(1,min(Jab+Lab,Jcd+Lcd)); S+=1 )
+          {
+            double njab = AngMom::NormNineJ( la, 0.5, ja, lb, 0.5, jb, Lab, S, Jab);
+            double njcd = AngMom::NormNineJ( lc, 0.5, jc, ld, 0.5, jd, Lcd, S, Jcd);
+            if (abs(njab)<1e-8 or abs(njcd)<1e-8) continue;
+            for ( int nab=0; nab<=rho_ab; nab+=1)
+            {
+             for ( int lab=0; lab<=rho_ab-2*nab; lab+=1)
+             {
+              int iab = (2*nab + lab)*(2*nab+lab+1)/2 + lab;
+              for (int Lam=abs(lab-Lab); Lam<=min(lab+Lab,rho_ab-2*nab-lab); Lam+=2)
+              {
+               int N = rho_ab - 2*nab - lab - Lam;
+               double moshab = modelspace.GetMoshinsky( N, Lam, nab, lab, na,la,nb,lb,Lab);
+               if (abs(moshab)<1e-8) continue;
+               for ( int ncd=0; ncd<=rho_cd; ncd+=1)
+               {
+                for ( int lcd=abs(Lam-Lcd)+(Lcd+Lam)%2; lcd<=min(rho_cd-2*ncd,Lab+Lcd); lcd+=2)
+                {
+                 int icd = (2*ncd + lcd)*(2*ncd+lcd+1)/2 + lcd;
+                 double moshcd = modelspace.GetMoshinsky( N, Lam, ncd, lcd, nc,lc,nd,ld,Lcd);
+                 labME += njab * njcd * moshab * moshcd * ME_rel(iab,icd);
+                }
+               }
+              }
+             }
+            }
+          }
+         }
+        }
+        itmat.second(ibra,iket) = labME;
+       }
+      }
+    }
+    
+    cout << "done with intrinsic EL. one body = " <<  endl;
+    return EL;
+  }
+
+
 
 /// Evaluate the radial integral \f[
 /// \tilde{\mathcal{R}}^{\lambda}_{ab} = \int_{0}^{\infty} dx \tilde{g}_{n_a\ell_a}(x)x^{\lambda+2}\tilde{g}_{n_b\ell_b}(x)

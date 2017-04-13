@@ -295,7 +295,7 @@ int main(int argc, char** argv)
     int Z = modelspace.GetTargetZ();
     int A = modelspace.GetTargetMass();
     cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << endl; 
-    cout << " HF charge radius = " << sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
+    cout << " HF charge radius = " << ( abs(Rp2.ZeroBody)<1e-6 ? 0.0 : sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) ) << endl; 
   }
   for (index_t i=0;i<ops.size();++i)
   {
