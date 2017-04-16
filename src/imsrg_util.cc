@@ -960,7 +960,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
    double oscillator_b = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
 
    int nchan = modelspace.GetNumberTwoBodyChannels();
-//   modelspace.PreCalculateMoshinsky();
+   modelspace.PreCalculateMoshinsky();
    #pragma omp parallel for schedule(dynamic,1) 
    for (int ch=0; ch<nchan; ++ch)
    {
