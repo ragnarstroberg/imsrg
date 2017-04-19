@@ -35,6 +35,7 @@ namespace imsrg_util
       else if (opname == "Iso2")          return Isospin2_Op(modelspace) ;
       else if (opname == "R2CM")          return R2CM_Op(modelspace) ;
       else if (opname == "HCM")           return HCM_Op(modelspace) ;
+      else if (opname == "TCM")           return TCM_Op(modelspace) ;
       else if (opname == "Rso")           return RpSpinOrbitCorrection(modelspace) ;
       else if (opname == "RadialOverlap") return RadialOverlap(modelspace);
       else if (opname == "Sigma")         return Sigma_Op(modelspace);
@@ -47,6 +48,13 @@ namespace imsrg_util
          istringstream(opname.substr(4,opname.size())) >> hw_HCM;
          int A = modelspace.GetTargetMass();
          return TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw_HCM*hw_HCM/HBARC/HBARC*R2CM_Op(modelspace); 
+      }
+      else if (opname.substr(0,4) == "VCM_") // GetHCM with a different frequency, ie HCM_24 for hw=24
+      {
+         double hw_VCM; // frequency of trapping potential
+         istringstream(opname.substr(4,opname.size())) >> hw_VCM;
+         int A = modelspace.GetTargetMass();
+         return 0.5*A*M_NUCLEON*hw_VCM*hw_VCM/HBARC/HBARC*R2CM_Op(modelspace); 
       }
       else if (opname.substr(0,4) == "Rp2Z") // Get point proton radius for specified Z, e.g. Rp2Z10 for neon
       {
@@ -846,7 +854,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    } // Lab
 
    // normalize.
-   r1r2 *=  sqrt((1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
+   r1r2 *= 1.0 / sqrt((1.0+bra.delta_pq())*(1.0+ket.delta_pq()));
    return r1r2 ;
 
  }
@@ -866,6 +874,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 //   double oscillator_b2 = HBARC*HBARC/M_NUCLEON/hw;
 //   Operator HcmOp = TCM_Op(modelspace) + R2CM_Op(modelspace) * (0.5*A * hw / oscillator_b2);
    Operator HcmOp = TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw*hw/HBARC/HBARC * R2CM_Op(modelspace) ;
+   cout << "HcmOp: first 1b element = " << HcmOp.OneBody(0,0) << endl;
    return HcmOp;
  }
 
@@ -1631,6 +1640,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
    Operator OpOut(modelspace, 0,0,0,2);
 
    int nchan = modelspace.GetNumberTwoBodyChannels();
+   modelspace.PreCalculateMoshinsky();
    #pragma omp parallel for schedule(dynamic,1) 
    for (int ch=0; ch<nchan; ++ch)
    {

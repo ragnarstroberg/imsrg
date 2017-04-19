@@ -568,7 +568,7 @@ int main(int argc, char** argv)
          cout << " IMSRG point proton radius = " << sqrt( op.ZeroBody ) << endl; 
          cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
       }
-      if (op.GetJRank()>0) // if it's a tensor, you probably want the full operator
+      if (op.GetJRank()>-1) // if it's a tensor, you probably want the full operator
       {
         cout << "Writing operator to " << intfile+opnames[i]+".op" << endl;
         rw.WriteOperatorHuman(op,intfile+opnames[i]+".op");
