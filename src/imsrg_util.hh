@@ -8,10 +8,16 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_sf_laguerre.h>
 #include <gsl/gsl_sf_gamma.h>
+#include <gsl/gsl_sf_bessel.h>
 #include <vector>
 
 #define HBARC 197.3269718 // hc in MeV * fm
 #define M_NUCLEON 938.9185 // average nucleon mass in MeV
+#define PI 3.14159265359 // put in by CP for the BMEs
+
+#ifndef ISQRT2
+  #define ISQRT2 0.70710678118654752440L
+#endif
 
 namespace imsrg_util
 {
@@ -52,6 +58,20 @@ namespace imsrg_util
  Operator RadialOverlap(ModelSpace& modelspace);
  Operator LdotS_Op(ModelSpace& modelspace);
  Operator L2rel_Op(ModelSpace& modelspace);
+ Operator LCM_Op(ModelSpace& modelspace);
+
+////////////////// Double beta decay functions from Charlie Payne ///////////////
+ Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, string src); // put in by CP, it is still in development
+ double CPrbmeGen(ModelSpace& modelspace, double rho, double x, int n, int l, int np, int lp, int mm, double pp); // testing...
+ inline double cpNorm(int a, int b) {return a==b ? ISQRT2 : 1.0;}; // put in by CP, for anti-symmetrization normalization
+// SRS - the following three don't seem to be used.
+// double CPrbme(ModelSpace& modelspace, double x, int n, int l, int np); // put in by CP, function for M0nu_TBME_Op above
+// Operator CPchecker_Op(ModelSpace& modelspace); // put in by CP
+// Operator CharlieSdS_Op(ModelSpace& modelspace); // put in by CP
+// Operator RagnarSdS_Op(ModelSpace& modelspace); // put in by CP
+
+/////////////////////////////////////////////////////////////////////////////////
+
 
  Operator EKKShift( Operator& Hin, int Nlower, int Nupper);
 

@@ -1040,14 +1040,8 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 // { J1 J2 J3 }
    uint64_t key = SixJHash(j1,j2,j3,J1,J2,J3);
 
-//   unsigned long int key = (((unsigned long int) (2*j1)) << 30) +
-//                           (((unsigned long int) (2*j2)) << 24) +
-//                           (((unsigned long int) (2*j3)) << 18) +
-//                           (((unsigned long int) (2*J1)) << 12) +
-//                           (((unsigned long int) (2*J2)) <<  6) +
-//                            ((unsigned long int) (2*J3));
 
-   auto it = SixJList.find(key);
+   const auto it = SixJList.find(key);
    if (it != SixJList.end() ) return it->second;
    double sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
 //   printf(" Uh Oh, I shouldn't be here in GetSixJ(%.1f %.1f %.1f %.1f %.1f %.1f).  key =%lx   sixj=%f\n",j1,j2,j3,J1,J2,J3,key,sixj); 
@@ -1055,6 +1049,8 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
    {
      SixJList[key] = sixj;
    }
+   if (omp_get_num_threads()>1)
+      profiler.counter["N_CalcSixJ_in_Parallel_loop"] +=1;
    return sixj;
 }
 
@@ -1096,31 +1092,32 @@ void ModelSpace::PreCalculateSixJ()
        for (int J3=J3_min; J3<=J3_max; J3+=2)
        {
          uint64_t key = SixJHash(0.5*ja,0.5*jb,0.5*Jab,0.5*jc,0.5*J3,0.5*Jab_in);
-//       unsigned long int key = (((unsigned long int) (ja)) << 30) +
-//                               (((unsigned long int) (jb)) << 24) +
-//                               (((unsigned long int) (Jab)) << 18) +
-//                               (((unsigned long int) (jc)) << 12) +
-//                               (((unsigned long int) (J3)) <<  6) +
-//                                ((unsigned long int) (Jab_in));
          if ( SixJList.count(key) == 0 ) 
          {
            KEYS.push_back(key);
            SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
          }
-         if (ja != jb)
+         key = SixJHash(0.5*jb,0.5*ja,0.5*Jab,0.5*jc,0.5*J3,0.5*Jab_in);
+         if ( SixJList.count(key) == 0 ) 
          {
-           key = SixJHash(0.5*jb,0.5*ja,0.5*Jab,0.5*jc,0.5*J3,0.5*Jab_in);
-//           key = (((unsigned long int) (jb)) << 30) +
-//                 (((unsigned long int) (ja)) << 24) +
-//                 (((unsigned long int) (Jab)) << 18) +
-//                 (((unsigned long int) (jc)) << 12) +
-//                 (((unsigned long int) (J3)) <<  6) +
-//                  ((unsigned long int) (Jab_in));
-           if ( SixJList.count(key) == 0 ) 
-           {
-             KEYS.push_back(key);
-             SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
-           }
+           KEYS.push_back(key);
+           SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+         }
+
+       }
+       for (int Lambda=abs(Jab-Jab_in); Lambda<=(Jab+Jab_in); Lambda+=2)
+       {
+         uint64_t  key = SixJHash(0.5*jb,0.5*ja,0.5*Jab,0.5*jc,0.5*Lambda,0.5*Jab_in);
+         if ( SixJList.count(key) == 0 ) 
+         {
+           KEYS.push_back(key);
+           SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+         }
+         key = SixJHash(0.5*Jab,0.5*Lambda,0.5*Jab_in,0.5*jb,0.5*ja,0.5*jc);
+         if ( SixJList.count(key) == 0 ) 
+         {
+           KEYS.push_back(key);
+           SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
          }
        }
       }

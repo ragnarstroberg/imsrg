@@ -258,7 +258,7 @@ double TwoBodyME::GetTBME_J(int j_bra, int j_ket, int a, int b, int c, int d) co
    int Tz_bra = (oa.tz2+ob.tz2)/2;
    int Tz_ket = (oc.tz2+od.tz2)/2;
    if ( (parity+parity_bra+parity_ket)%2 > 0) return 0;
-   if ( abs(Tz_bra-Tz_ket)>rank_T) return 0;
+   if ( abs(Tz_bra-Tz_ket)!=rank_T) return 0;
    if ( abs(j_bra-j_ket) > rank_J) return 0;
    if ( j_bra + j_ket < rank_J) return 0;
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,parity_bra,Tz_bra);
@@ -300,7 +300,7 @@ double TwoBodyME::GetTBME_J_norm(int j_bra, int j_ket, int a, int b, int c, int 
    int Tz_bra = (oa.tz2+ob.tz2)/2;
    int Tz_ket = (oc.tz2+od.tz2)/2;
    if ( (parity+parity_bra+parity_ket)%2 > 0) return 0;
-   if ( abs(Tz_bra-Tz_ket)>rank_T) return 0;
+   if ( abs(Tz_bra-Tz_ket)!=rank_T) return 0;
    if ( abs(j_bra-j_ket) > rank_J) return 0;
    if ( j_bra + j_ket < rank_J) return 0;
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,parity_bra,Tz_bra);

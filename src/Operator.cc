@@ -403,7 +403,7 @@ Operator Operator::DoNormalOrdering2()
               else
               {
                  double jh = oh.j2*0.5;
-                 opNO.OneBody(a,b) += hatfactor  * oh.occ *modelspace->phase(ja+jh+J_ket+opNO.rank_J)
+                 opNO.OneBody(a,b) += hatfactor  * oh.occ *modelspace->phase(ja+jh-J_ket-opNO.rank_J)
                                              * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
               }
            }
@@ -542,7 +542,7 @@ Operator Operator::UndoNormalOrdering() const
               else
               {
                  double jh = oh.j2*0.5;
-                 opNO.OneBody(a,b) -= hatfactor * oh.occ * modelspace->phase(ja+jh+J_ket+opNO.rank_J)
+                 opNO.OneBody(a,b) -= hatfactor * oh.occ * modelspace->phase(ja+jh-J_ket-opNO.rank_J)
                                              * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
               }
             }
@@ -2982,7 +2982,8 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
    Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
    int Lambda = Z.GetJRank();
-   #pragma omp parallel for schedule(dynamic,1)
+   modelspace->PreCalculateSixJ();
+//   #pragma omp parallel for schedule(dynamic,1)
    for (int i=0;i<norbits;++i)
    {
       Orbit &oi = modelspace->GetOrbit(i);
@@ -3041,6 +3042,7 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
 
                 Zij += nanb * Y.OneBody(a,b) * zij;
              }
+
              
           }
       }
