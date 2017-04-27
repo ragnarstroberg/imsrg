@@ -2983,7 +2983,7 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
    int norbits = modelspace->GetNumberOrbits();
    int Lambda = Z.GetJRank();
    modelspace->PreCalculateSixJ();
-//   #pragma omp parallel for schedule(dynamic,1)
+   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->tensor_transform_first_pass.at(Z.rank_J))
    for (int i=0;i<norbits;++i)
    {
       Orbit &oi = modelspace->GetOrbit(i);
@@ -3294,7 +3294,7 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
       // The one body part takes some additional work
 
    int norbits = modelspace->GetNumberOrbits();
-   #pragma omp parallel for schedule(dynamic,1)
+   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->tensor_transform_first_pass.at(Z.rank_J))
    for (int i=0;i<norbits;++i)
    {
       Orbit &oi = modelspace->GetOrbit(i);
