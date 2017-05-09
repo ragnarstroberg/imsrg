@@ -5,6 +5,7 @@
 #include <cmath>
 #include <sstream>
 #include "omp.h"
+#include <stdlib.h> // for EXIT_FAILURE
 
 
 using namespace std;
@@ -1040,104 +1041,118 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 // { J1 J2 J3 }
    uint64_t key = SixJHash(j1,j2,j3,J1,J2,J3);
 
-
    const auto it = SixJList.find(key);
-   if (it != SixJList.end() ) return it->second;
-   double sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
-//   printf(" Uh Oh, I shouldn't be here in GetSixJ(%.1f %.1f %.1f %.1f %.1f %.1f).  key =%lx   sixj=%f\n",j1,j2,j3,J1,J2,J3,key,sixj); 
-   #pragma omp critical
+   double sixj=0.0;
+   if (it != SixJList.end() )
    {
-     SixJList[key] = sixj;
+     sixj = it->second;
    }
-   if (omp_get_num_threads()>1)
+   else
+   {
+    sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
+    if (omp_get_num_threads()<2)
+    {
+      #pragma omp critical
+      {
+        SixJList[key] = sixj;
+      }
+    }
+    else
+    {
+      printf("DANGER!!!!!!!  Updating SixJList inside a parellel loop breaks thread safety!\n");
+      printf(" I shouldn't be here in GetSixJ(%.1f %.1f %.1f %.1f %.1f %.1f).  key =%lx   sixj=%f\n",j1,j2,j3,J1,J2,J3,key,sixj); 
       profiler.counter["N_CalcSixJ_in_Parallel_loop"] +=1;
+      quick_exit(EXIT_FAILURE);
+    }
+   }
    return sixj;
 }
 
 
 
+/// Loop over all the 6j symbols that we expect to encounter, and 
+/// store them in a hash table.
+/// Calculate all symbols
+/// \f[ \begin{Bmatrix}  ja & jb & J1
+///                      jc & jd & J2 \end{Bmatrix}
+/// \f]
+/// and 
+/// \f[ \begin{Bmatrix}  J1 & J2 & J3
+///                      ja & jb & jc \end{Bmatrix}
+/// \f]
+/// where ja,jb,jc are half-integer and J1,J2,J3 are integer.
+/// ja,jb,jc run from 1/2 to emax+1/2, while jd runs higher
+/// since the 3N recoupling requires it to go up to e(emax+1/2).
+/// I haven't yet bothered using the symmetry properties of the
+/// 6j symbol.
+///
 void ModelSpace::PreCalculateSixJ()
 {
   if (sixj_has_been_precalculated) return;
   cout << "Precalculating SixJ's" << endl;
   double t_start = omp_get_wtime();
   vector<uint64_t> KEYS;
-  for (int a=0; a<GetNumberOrbits(); a+=2)
+  for (int j2a=1; j2a<=(2*Emax+1); j2a+=2)
   {
-   Orbit& oa = GetOrbit(a);
-   double ja = oa.j2;
-   int ea = 2*oa.n + oa.l;
-   for (int b=0; b<=a; b+=2)
+   for (int j2b=1; j2b<=(2*Emax+1); j2b+=2)
    {
-    Orbit& ob = GetOrbit(b);
-    double jb = ob.j2;
-    int eb = 2*ob.n + ob.l;
-    for (int c=0; c<=b; c+=2)
+    for (int j2c=1; j2c<=(2*Emax+1); j2c+=2)
     {
-     Orbit& oc = GetOrbit(c);
-     double jc = oc.j2;
-     int ec = 2*oc.n + oc.l;
-     if (ea+eb+ec>E3max) continue;
-     int Jab_min = abs( ja - jb );
-     int Jab_max = ja+jb;
-     int Jabin_min = min( abs( jc - jb ), abs( jc - ja) );
-     int Jabin_max = max( jc+jb, jc+ja);
-
-     for (int Jab=Jab_min; Jab<=Jab_max; Jab+=2)
+     // four half-integer j's,  two integer J's
+     for (int j2d=1; j2d<=3*(2*Emax+1); j2d+=2)
      {
-      for (int Jab_in=Jabin_min; Jab_in<=Jabin_max; Jab_in+=2)
+      // J1 couples a,b, and c,d;  J2 couples a,d and b,c
+      int J1_min = max( abs(j2a-j2b), abs(j2c-j2d) );
+      int J1_max = min( j2a+j2b, j2c+j2d );
+      int J2_min = max( abs(j2a-j2d), abs(j2b-j2c) );
+      int J2_max = min( j2a+j2d, j2b+j2c );
+      for (int J1=J1_min; J1<=J1_max; J1+=2)
       {
-       int J3_min = max( abs(Jab-jc), min(abs(Jab_in-ja),abs(Jab_in-jb)) );
-       int J3_max = min( (Jab+jc), max((Jab_in+ja),(Jab_in+jb)) );
+       for (int J2=J2_min; J2<=J2_max; J2+=2)
+       {
+         uint64_t key = SixJHash(0.5*j2a,0.5*j2b,0.5*J1,0.5*j2c,0.5*j2d,0.5*J2);
+         if ( SixJList.count(key) == 0 ) 
+         {
+           KEYS.push_back(key);
+           SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+         }
+       } // for J2
+      } // for J1
+     } // for j2d
+
+     // three half-integer j's, three integer J's
+     // J1 couples a,b, and c,d;  J2 couples a,d and b,c
+     int J1_min = abs(j2a-j2c) ;
+     int J1_max = j2a+j2c;
+     int J2_min = abs(j2b-j2c) ;
+     int J2_max = j2b+j2c;
+     for (int J1=J1_min; J1<=J1_max; J1+=2)
+     {
+      for (int J2=J2_min; J2<=J2_max; J2+=2)
+      {
+       int J3_min = max( abs(J1-J2), abs(j2a-j2b) );
+       int J3_max = min( J1+J2, j2a+j2b );
        for (int J3=J3_min; J3<=J3_max; J3+=2)
        {
-         uint64_t key = SixJHash(0.5*ja,0.5*jb,0.5*Jab,0.5*jc,0.5*J3,0.5*Jab_in);
+         uint64_t key = SixJHash(0.5*J1,0.5*J2,0.5*J3,0.5*j2a,0.5*j2b,0.5*j2c);
          if ( SixJList.count(key) == 0 ) 
          {
            KEYS.push_back(key);
            SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
          }
-         key = SixJHash(0.5*jb,0.5*ja,0.5*Jab,0.5*jc,0.5*J3,0.5*Jab_in);
-         if ( SixJList.count(key) == 0 ) 
-         {
-           KEYS.push_back(key);
-           SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
-         }
+       }// for J3
+      }// for J2
+     }// for J1
+    }// for j2c
+   }// for j2b
+  }// for j2a
 
-       }
-       for (int Lambda=abs(Jab-Jab_in); Lambda<=(Jab+Jab_in); Lambda+=2)
-       {
-         uint64_t  key = SixJHash(0.5*jb,0.5*ja,0.5*Jab,0.5*jc,0.5*Lambda,0.5*Jab_in);
-         if ( SixJList.count(key) == 0 ) 
-         {
-           KEYS.push_back(key);
-           SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
-         }
-         key = SixJHash(0.5*Jab,0.5*Lambda,0.5*Jab_in,0.5*jb,0.5*ja,0.5*jc);
-         if ( SixJList.count(key) == 0 ) 
-         {
-           KEYS.push_back(key);
-           SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
-         }
-       }
-      }
-     }
-    }
-   }
-  }
   #pragma omp parallel for schedule(dynamic,1)
   for (size_t i=0;i< KEYS.size(); ++i)
   {
-//    unsigned long long int& key = KEYS[i];
     uint64_t j1,j2,j3,J1,J2,J3;
     uint64_t key = KEYS[i];
     SixJUnHash(key, j1,j2,j3,J1,J2,J3);
-//    int j1 = (key >> 30) & 0x3F;
-//    int j2 = (key >> 24) & 0x3F;
-//    int j3 = (key >> 18) & 0x3F;
-//    int J1 = (key >> 12) & 0x3F;
-//    int J2 = (key >>  6) & 0x3F;
-//    int J3 = (key      ) & 0x3F;
     SixJList[key] = AngMom::SixJ(0.5*j1,0.5*j2,0.5*j3,0.5*J1,0.5*J2,0.5*J3);
   }
   sixj_has_been_precalculated = true;

@@ -30,6 +30,7 @@ namespace imsrg_util
  Operator RSquaredOp(ModelSpace& modelspace);
  Operator E0Op(ModelSpace& modelspace);
  Operator ElectricMultipoleOp(ModelSpace& modelspace, int L);
+ Operator NeutronElectricMultipoleOp(ModelSpace& modelspace, int L);
  Operator IntrinsicElectricMultipoleOp(ModelSpace& modelspace, int L);
  Operator MagneticMultipoleOp(ModelSpace& modelspace, int L);
  Operator MagneticMultipoleOp_pn(ModelSpace& modelspace, int L, string pn);

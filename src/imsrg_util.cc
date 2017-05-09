@@ -25,6 +25,7 @@ namespace imsrg_util
       else if (opname == "E4")            return ElectricMultipoleOp(modelspace,4) ;
       else if (opname == "E6")            return ElectricMultipoleOp(modelspace,6) ;
       else if (opname == "E2int")         return IntrinsicElectricMultipoleOp(modelspace,2) ;
+      else if (opname == "nE2")           return NeutronElectricMultipoleOp(modelspace,2) ;
       else if (opname == "M1")            return MagneticMultipoleOp(modelspace,1) ;
       else if (opname == "M3")            return MagneticMultipoleOp(modelspace,3) ;
       else if (opname == "M5")            return MagneticMultipoleOp(modelspace,5) ;
@@ -1202,6 +1203,29 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     Operator EL(modelspace, L,0,L%2,2);
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*L); // b^L where b=sqrt(hbar/mw)
     for (int i : modelspace.proton_orbits)
+    {
+      Orbit& oi = modelspace.GetOrbit(i);
+      double ji = 0.5*oi.j2;
+      for ( int j : EL.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      {
+        if (j<i) continue;
+        Orbit& oj = modelspace.GetOrbit(j);
+        double jj = 0.5*oj.j2;
+        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,L) * bL ;
+        EL.OneBody(i,j) = modelspace.phase(jj+L-0.5) * sqrt( (2*ji+1)*(2*jj+1)*(2*L+1)/4./3.1415926) * AngMom::ThreeJ(ji,jj, L, 0.5, -0.5,0) * r2int;
+        EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
+      }
+    }
+    return EL;
+  }
+
+  /// Returns a reduced electric multipole operator with units \f$ e\f$ fm\f$^{\lambda} \f$
+  /// See Suhonen eq. (6.23)
+  Operator NeutronElectricMultipoleOp(ModelSpace& modelspace, int L)
+  {
+    Operator EL(modelspace, L,0,L%2,2);
+    double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*L); // b^L where b=sqrt(hbar/mw)
+    for (int i : modelspace.neutron_orbits)
     {
       Orbit& oi = modelspace.GetOrbit(i);
       double ji = 0.5*oi.j2;
