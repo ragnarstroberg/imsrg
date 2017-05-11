@@ -6,6 +6,7 @@
 #include <sstream>
 #include "omp.h"
 #include <stdlib.h> // for EXIT_FAILURE
+#include "cstdlib" // for EXIT_FAILURE
 
 
 using namespace std;
