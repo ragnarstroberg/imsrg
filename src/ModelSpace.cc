@@ -5,8 +5,7 @@
 #include <cmath>
 #include <sstream>
 #include "omp.h"
-#include <stdlib.h> // for EXIT_FAILURE
-#include "cstdlib" // for EXIT_FAILURE
+#include <cstdlib> // for EXIT_FAILURE
 
 
 using namespace std;
@@ -1063,7 +1062,8 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
       printf("DANGER!!!!!!!  Updating SixJList inside a parellel loop breaks thread safety!\n");
       printf(" I shouldn't be here in GetSixJ(%.1f %.1f %.1f %.1f %.1f %.1f).  key =%lx   sixj=%f\n",j1,j2,j3,J1,J2,J3,key,sixj); 
       profiler.counter["N_CalcSixJ_in_Parallel_loop"] +=1;
-      quick_exit(EXIT_FAILURE);
+//      quick_exit(EXIT_FAILURE);
+      exit(EXIT_FAILURE);
     }
    }
    return sixj;
