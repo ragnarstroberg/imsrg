@@ -276,6 +276,7 @@ int main(int argc, char** argv)
   for (auto& opname : opnames)
   {
     ops.emplace_back( imsrg_util::OperatorFromString(modelspace,opname) );
+    cout << opname << ":" << endl << ops.back().OneBody << endl;
   }
 
   for (auto& op : ops)
@@ -287,6 +288,7 @@ int main(int argc, char** argv)
        double dop = op.MP1_Eval( HNO );
        cout << "Operator 1st order correction  " << dop << "  ->  " << op.ZeroBody + dop << endl;
      }
+     cout << endl << op.OneBody << endl;
   }
   auto itR2p = find(opnames.begin(),opnames.end(),"Rp2");
   if (itR2p != opnames.end())
