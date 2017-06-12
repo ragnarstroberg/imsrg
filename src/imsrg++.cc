@@ -234,7 +234,8 @@ int main(int argc, char** argv)
   hf.Solve();
 //  cout << "EHF = " << hf.EHF << endl;
   
-  Operator HNO;
+//  Operator HNO;
+  Operator& HNO = Hbare;
   if (basis == "HF" and method !="HF")
     HNO = hf.GetNormalOrderedH();
   else if (basis == "oscillator")
