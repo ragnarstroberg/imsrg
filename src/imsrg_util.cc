@@ -754,10 +754,8 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 /// evaluated in the oscillator basis.
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z)
  {
-//   return R2CM_Op(modelspace) + (A-2.0)/(A*Z)*R2_1body_Op(modelspace,"proton") - 2./(A*Z)*R2_2body_Op(modelspace,"proton");
    if (Z==0) return 0.0*KineticEnergy_Op(modelspace);
    return R2CM_Op(modelspace) + (A-2.0)/(A*Z)*R2_1body_Op(modelspace,"proton")
-//                                   - 2./(A*Z)*R2_2body_Op(modelspace,"proton")
                                    - 4./(A*Z)*R2_2body_Op(modelspace,"proton")
                                    + 1./Z * RpSpinOrbitCorrection(modelspace);
  }
@@ -767,7 +765,6 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    if (Z==A) return 0.0*KineticEnergy_Op(modelspace);
    return R2CM_Op(modelspace) + (A-2.0)/(A*(A-Z))*R2_1body_Op(modelspace,"neutron")
                                    - 4./(A*(A-Z))*R2_2body_Op(modelspace,"neutron");
-//                                   - 2./(A*(A-Z))*R2_2body_Op(modelspace,"neutron");
  }
 
  Operator Rm2_corrected_Op(ModelSpace& modelspace, int A, int Z)
@@ -778,7 +775,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
 
  // Evaluate <bra | r1*r2 | ket>, omitting the factor (hbar * omega) /(m * omega^2)
-/// Returns the normalized, anti-symmetrized, J-coupled, two-body matrix element of \f$ \frac{m\omega^2}{\hbar \omega} \vec{r}_1\cdot\vec{r}_2 \f$.
+/// Returns the normalized, anti-symmetrized, J-coupled, two-body matrix element of \f$  \vec{r}_1\cdot\vec{r}_2 \f$.
 /// Calculational details are similar to Calculate_p1p2().
  double Calculate_r1r2(ModelSpace& modelspace, Ket & bra, Ket & ket, int J)
  {

@@ -100,7 +100,7 @@ int main(int argc, char** argv)
   if (inputtbme != "none")
   {
     test.open(inputtbme);
-    if( not test.good() and fmt2!="oakridge")
+    if( not test.good() and fmt2!="oakridge_binary")
     {
       cout << "trouble reading " << inputtbme << " exiting. " << endl;
       return 1;
@@ -188,10 +188,14 @@ int main(int argc, char** argv)
           rw.ReadBareTBME_Navratil(inputtbme, Hbare);
         else if (fmt2 == "oslo" )
           rw.ReadTBME_Oslo(inputtbme, Hbare);
-        else if (fmt2 == "oakridge" )
+//        else if (fmt2 == "oakridge" )
+        else if (fmt2.find("oakridge") != string::npos )
         { // input format should be: singleparticle.dat,vnn.dat
           size_t comma_pos = inputtbme.find_first_of(",");
-          rw.ReadTBME_OakRidge( inputtbme.substr(0,comma_pos),  inputtbme.substr( comma_pos+1 ), Hbare);
+          if ( fmt2.find("bin") != string::npos )
+            rw.ReadTBME_OakRidge( inputtbme.substr(0,comma_pos),  inputtbme.substr( comma_pos+1 ), Hbare, "binary");
+          else
+            rw.ReadTBME_OakRidge( inputtbme.substr(0,comma_pos),  inputtbme.substr( comma_pos+1 ), Hbare, "ascii");
         }
         else if (fmt2 == "takayuki" )
           rw.ReadTwoBody_Takayuki( inputtbme, Hbare);

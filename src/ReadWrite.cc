@@ -127,7 +127,7 @@ void ReadWrite::ReadTBME_Oslo( string filename, Operator& Hbare)
 }
 
 /// Read two-body matrix elements from an Oslo-formatted file, as obtained from Gaute Hagen
-void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hbare)
+void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hbare, string tbme_format )
 {
   ModelSpace * modelspace = Hbare.GetModelSpace();
   ifstream spfile(spname);
@@ -139,6 +139,7 @@ void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hba
      goodstate = false;
      return;
   }
+  cout << "reading Oak Ridge " << tbme_format << " format" << endl;
 
   double hw_file,spe,dummy;
   spfile >> hw_file;
@@ -155,7 +156,16 @@ void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hba
 
   spfile.close();
 
-  ifstream tbmefile(tbmename, ios::in | ios::binary );
+  ifstream tbmefile;
+  if (tbme_format == "binary")
+  {
+    tbmefile = ifstream(tbmename, ios::in | ios::binary );
+  }
+  else
+  {
+    tbmefile = ifstream(tbmename );
+  }
+//  ifstream tbmefile(tbmename, ios::in | ios::binary );
   if (!tbmefile.good())
   {
      cerr << "************************************" << endl
@@ -172,10 +182,17 @@ void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hba
     double g1;//,g2,g3; // not using g2,g3 right now
     vector<int32_t> vint(7);
     vector<double> vdouble(3);
-    tbmefile.read( reinterpret_cast<char*>(vint.data()), vint.size()*sizeof(int32_t) );
-    if (!tbmefile.good()) return;
-    tbmefile.read( reinterpret_cast<char*>(vdouble.data()), vdouble.size()*sizeof(int64_t) );
-    if (!tbmefile.good()) return;
+    if (tbme_format == "binary")
+    {
+      tbmefile.read( reinterpret_cast<char*>(vint.data()), vint.size()*sizeof(int32_t) );
+      if (!tbmefile.good()) return;
+      tbmefile.read( reinterpret_cast<char*>(vdouble.data()), vdouble.size()*sizeof(int64_t) );
+      if (!tbmefile.good()) return;
+    }
+    else
+    {
+      tbmefile >> vint[0] >> vint[1] >> vint[2] >> vint[3] >> vint[4] >> vint[5] >> vint[6] >> vdouble[0] >> vdouble[1] >> vdouble[2];
+    }
     Tz = vint[0];
     P  = vint[1];
     J2 = vint[2];
@@ -201,105 +218,24 @@ void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hba
     int d = orbit_remap[dd-1];
 //    double tbme = g1 * fnorm;
     double tbme = g1;
-    if (a>modelspace->GetNumberOrbits()) continue;
-    if (b>modelspace->GetNumberOrbits()) continue;
-    if (c>modelspace->GetNumberOrbits()) continue;
-    if (d>modelspace->GetNumberOrbits()) continue;
+    if (a>=modelspace->GetNumberOrbits()) continue;
+    if (b>=modelspace->GetNumberOrbits()) continue;
+    if (c>=modelspace->GetNumberOrbits()) continue;
+    if (d>=modelspace->GetNumberOrbits()) continue;
     Orbit& oa = modelspace->GetOrbit(a);
     Orbit& ob = modelspace->GetOrbit(b);
     Orbit& oc = modelspace->GetOrbit(c);
     Orbit& od = modelspace->GetOrbit(d);
-//    if ( 2*oa.n+oa.l > modelspace->GetEmax() ) continue;
-//    if ( 2*ob.n+ob.l > modelspace->GetEmax() ) continue;
-//    if ( 2*oc.n+oc.l > modelspace->GetEmax() ) continue;
-//    if ( 2*od.n+od.l > modelspace->GetEmax() ) continue;
     if ( 2*(oa.n+ob.n)+oa.l+ob.l > modelspace->GetE2max() ) continue;
     if ( 2*(oc.n+od.n)+oc.l+od.l > modelspace->GetE2max() ) continue;
 
-//    cout << "emax=  " << modelspace->GetEmax() << endl;
-//    cout << "ea = " << 2*oa.n + oa.l << endl;
-//    cout << "eb = " << 2*ob.n + ob.l << endl;
-//    cout << "ec = " << 2*oc.n + oc.l << endl;
-//    cout << "ed = " << 2*od.n + od.l << endl;
-//    cout << J2 << " " << P << " " << Tz << " " << a << " " << b << " " << c << " " << d << " "
-//         << "  " << aa << " " << bb << " " << cc << " " << dd << "   " << tbme << endl;
+
 
     Hbare.TwoBody.SetTBME(J2/2,P,Tz,a,b,c,d, tbme ); 
-//    cout << "set." << endl;
   }
 
 
 }
-
-//void ReadWrite::ReadTBME_OakRidge( string filename, Operator& Hbare)
-//{
-//
-//  ifstream infile;
-//  char line[LINESIZE];
-//  int Tz,Par,J2,a,b,c,d;
-//  double fbuf[3];
-//  double tbme;
-//  int norbits = Hbare.GetModelSpace()->GetNumberOrbits();
-//  File2N = filename;
-//  Aref = Hbare.GetModelSpace()->GetAref();
-//  Zref = Hbare.GetModelSpace()->GetZref();
-////  cout << "norbits = " << norbits << endl;
-//
-//  vector<int> orbit_remap(norbits);
-//  for (size_t i=0;i<orbit_remap.size();++i) orbit_remap[i] = i;
-//  orbit_remap[8] = 10;
-//  orbit_remap[9] = 11;
-//  orbit_remap[10] = 8;
-//  orbit_remap[11] = 9;
-//  orbit_remap[14] = 16;
-//  orbit_remap[15] = 17;
-//  orbit_remap[16] = 18;
-//  orbit_remap[17] = 19;
-//  orbit_remap[18] = 14;
-//  orbit_remap[19] = 15;
-//
-//  infile.open(filename);
-//  if ( !infile.good() )
-//  {
-//     cerr << "************************************" << endl
-//          << "**    Trouble reading file  !!!   **" << filename << endl
-//          << "************************************" << endl;
-//     goodstate = false;
-//     return;
-//  }
-//
-//  infile.getline(line,LINESIZE);
-//
-////  while (!strstr(line,"<ab|V|cd>") && !infile.eof()) // Skip lines until we see the header
-////  {
-////     infile.getline(line,LINESIZE);
-////  }
-//
-//  // read the file one line at a time
-//  while ( infile >> Tz >> Par >> J2 >> a >> b >> c >> d >> tbme >> fbuf[0] >> fbuf[1]  )
-//  {
-//     // if the matrix element is outside the model space, ignore it.
-//     a--; b--; c--; d--; // Fortran -> C  ==> 1 -> 0
-//     a=orbit_remap[a];
-//     b=orbit_remap[b];
-//     c=orbit_remap[c];
-//     d=orbit_remap[d];
-//     if (a>=norbits or b>=norbits or c>=norbits or d>=norbits) continue;
-//
-//     double com_corr = fbuf[2] * Hbare.GetModelSpace()->GetHbarOmega() / Hbare.GetModelSpace()->GetTargetMass();  
-//
-//// NORMALIZATION: Read in normalized, antisymmetrized TBME's
-//
-//     if (doCoM_corr)  tbme-=com_corr;
-//
-////     cout << "read: " << a << " " << b << " " << c << " " << d << endl;
-//     Hbare.TwoBody.SetTBME(J2/2,Par,Tz,a,b,c,d, tbme ); // Don't do COM correction,
-//
-//  }
-//
-//  return;
-//}
-
 
 
 
