@@ -159,15 +159,18 @@ void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hba
 
   spfile.close();
 
-  ifstream tbmefile;
-  if (tbme_format == "binary")
-  {
-    tbmefile = ifstream(tbmename, ios::in | ios::binary );
-  }
-  else
-  {
-    tbmefile = ifstream(tbmename );
-  }
+  auto openmode = ios::in;
+  if (tbme_format=="binary") openmode |= ios::binary;
+  ifstream tbmefile(tbmename, openmode);
+//  ifstream tbmefile = (tbme_format=="binary") ? ifstream(tbmename, ios::in | ios::binary ) :  ifstream(tbmename );
+//  if (tbme_format == "binary")
+//  {
+//    tbmefile = ifstream(tbmename, ios::in | ios::binary );
+//  }
+//  else
+//  {
+//    tbmefile = ifstream(tbmename );
+//  }
 //  ifstream tbmefile(tbmename, ios::in | ios::binary );
   if (!tbmefile.good())
   {
