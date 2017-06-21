@@ -59,7 +59,7 @@ map<string,double> Parameters::double_par = {
   {"smax",		200.0},	// maximum s. If we reach this,	terminate even if we're not converged.
   {"dsmax",		0.5},	// maximum step size
   {"ds_0",		0.5},	// initial step size
-  {"domega",		0.5},	// max for norm of eta * ds
+  {"domega",		0.2},	// max for norm of eta * ds
   {"omega_norm_max",	0.25},  // norm of omega before we do the splitting
   {"ode_tolerance",	1e-6},	// error tolerance for the ode solver
   {"denominator_delta",	   0},	// offset added to the denominator in the generator
