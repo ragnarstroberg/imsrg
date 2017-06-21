@@ -301,15 +301,17 @@ int main(int argc, char** argv)
   {
     cout << opnames[i] << " = " << ops[i].ZeroBody << endl;
   }
+
+
+  cout << "HF Single particle energies:" << endl;
+  hf.PrintSPE();
+  cout << endl;
   
   if ( method == "HF" or method == "MP3")
   {
     HNO.PrintTimes();
     return 0;
   }
-  cout << "HF Single particle energies:" << endl;
-  hf.PrintSPE();
-  cout << endl;
 
 
   if (method == "FCI")
