@@ -141,6 +141,9 @@ void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hba
   }
   cout << "reading Oak Ridge " << tbme_format << " format" << endl;
 
+  File2N = tbmename;
+  Aref = Hbare.GetModelSpace()->GetAref();
+  Zref = Hbare.GetModelSpace()->GetZref();
   double hw_file,spe,dummy;
   spfile >> hw_file;
   int index,n,l,j2,tz2;
@@ -2031,6 +2034,127 @@ void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b,
 
 
 }
+
+
+void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
+{
+   cout << "Begin Read2bCurrent_Navratil" << endl;
+//  ifstream infile(filename);
+    ifstream infilegz(filename, ios_base::in | ios_base::binary);
+    boost::iostreams::filtering_istream infile;
+    infile.push(boost::iostreams::gzip_decompressor());
+    infile.push(infilegz);
+
+
+  if ( !infile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble opening file  !!!   **  " << filename<< endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
+  ModelSpace * modelspace = Op.GetModelSpace();
+  unordered_map<int,int> orbits_remap;
+  int norb = modelspace->GetNumberOrbits();
+  for (int i=0;i<norb;++i)
+  {
+     Orbit& oi = modelspace->GetOrbit(i);
+     if (oi.tz2 > 0 ) continue;
+     int N = 2*oi.n + oi.l;
+     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2;
+     orbits_remap[nlj] = i;
+  }
+
+  cout << "Done remapping orbits" << endl;
+
+  // locally-defined isospin clebsch gordan coefficent
+  // hopefully faster than calling AngMom::CG
+  auto isospinCG = [](int tz1, int tz2, int T12){
+    if (abs(tz1+tz2) > 2*T12) return 0.0;
+    if (tz1==tz2) return (double)T12;
+    if (T12==1) return 1/sqrt(2.0);
+    return tz1 / sqrt(2.0);
+  };
+
+  string strbuf;
+  int J_op,T_op,ain,bin,cin,din,a,b,c,d,j12,t12,j34,t34,tza,tzb;
+  double mat_el;
+
+  for (int i=0;i<5;++i) infile >> strbuf; // Five useless lines...
+  infile >> J_op >> T_op;
+  for (int i=0;i<8;++i) infile >> strbuf; // Another eight useless lines...
+
+  cout << "Start while loop" << endl;
+  while( infile >> ain >> bin >> cin >> din >> j12 >> j34 >> t12 >> t34 >> tza >> tzb >> mat_el)
+  {
+    if (cin>ain or (cin==ain and din>bin)) continue;
+    if ((ain==cin and bin==din) and (j34<j12 or (j34==j12 and t34<t12))) continue;
+   ain--; bin--;cin--;din--; // Fortran to C
+    if (    orbits_remap.find(ain)==orbits_remap.end() or orbits_remap.find(bin)==orbits_remap.end()
+         or orbits_remap.find(cin)==orbits_remap.end() or orbits_remap.find(din)==orbits_remap.end() ) continue;
+//   if (ain==0 and bin==0 and cin==0 and din==0 and j12==1 and j34==0)
+   if (true)
+   {
+    cout << "< " << ain << " " << bin << " " << j12 << " " << t12 << " ||| Op J=" << J_op << " T=" <<T_op << " ||| "
+                 << cin << " " << din << " " << j34 << " " << t34 << " > = " << mat_el << endl;
+   }
+    a = orbits_remap[ain];  // remapping gives proton index. neutron is a+1.
+    b = orbits_remap[bin];
+    c = orbits_remap[cin];
+    d = orbits_remap[din];
+//    cout << "    --> " << a << " " << b << " " << c << " " << d << endl;
+  //  mat_el = < a b j12 t12 ||| OP (J,T) ||| c d j34 t34>    (doubly-reduced)
+  //   (note that tza and tzb from the file are not meaningful here and should be ignored).
+  //   also note that Petr uses the particle-physics convention tz|p> = +1|p>
+  //   which is the opposite of what is used in this code.
+
+    for ( int tza : {-1,1} )
+    {
+     for ( int tzb : {-1,1} )
+     {
+      if (ain==bin and tzb<tza) continue;
+      if (abs(tza+tzb)>2*t12) continue;
+      double cg12 = isospinCG(tza,tzb,t12);
+      if (ain==bin and (tza!=tzb)) cg12 *= sqrt(2.0);
+      for ( int tzc : {-1,1} )
+      {
+       for ( int tzd : {-1,1} )
+       {
+        if (cin==din and tzd>tzc) continue;
+        if (abs(tzc+tzd)>2*t34) continue;
+        double Tz_op = (tza+tzb-tzc-tzd)/2;
+        if (abs(Tz_op)!=T_op) continue;
+        double cg34 = isospinCG(tzc,tzd,t34);
+        if (cin==din and (tzc!=tzd)) cg34 *= sqrt(2.0);
+        double WignerEckartCoeff = AngMom::CG(t34,(tzc+tzd)/2,T_op,Tz_op,t12,(tza+tzb)/2) / sqrt(2*t12+1.);
+        // Note that this strategy could come back to bite me if the file
+        // contains redundant information. There are safer but more memory-intensive ways to do this...
+//        if (ain==0 and bin==0 and cin==0 and din==0 and ((j12==1 and j34==0)or(j12==0 and j34==1)) )
+        if (true  )
+        {
+        cout << "tza,tzb,t12, tzc,tzd,t34, cg12,cg34,WE        : " << tza << " " << tzb << " " << t12 << ",   " << tzc << " " << tzd << " " << t34
+             << "   " << cg12 << " " << cg34 << " " << WignerEckartCoeff << " ( from " << AngMom::CG(t34,(tzc+tzd)/2,T_op,Tz_op,t12,(tza+tzb)/2) << " / " <<sqrt(2*t12+1.) << ") " << endl;
+        cout << "     cg12 is < 1/2 " << tza << "/2 1/2 " << tzb << "/2 | " << t12 << " " << (tza+tzb)/2 << " > " << endl;
+        cout << "     cg34 is < 1/2 " << tzc << "/2 1/2 " << tzd << "/2 | " << t34 << " " << (tzc+tzd)/2 << " > " << endl;
+        cout << "     W-E Clebsch is < " << t34 << " " << (tzc+tzd)/2 << "  " << T_op << " " << Tz_op << " | " << t12 << " " << (tza+tzb)/2 << " > " << endl;
+        cout << a+(1-tza)/2<<  "   " << b+(1-tzb)/2<<  "   " << c+(1-tzc)/2<<  "   " << d+(1-tzd)/2 << endl;
+        cout << "       Adding " << mat_el*cg12*cg34*WignerEckartCoeff
+             << " to " << Op.TwoBody.GetTBME_J_norm(j12, j34, a+(1-tza)/2, b+(1-tzb)/2, c+(1-tzc)/2, d+(1-tzd)/2  ) << endl;
+        }
+        Op.TwoBody.AddToTBME_J( j12, j34, a+(1-tza)/2, b+(1-tzb)/2, c+(1-tzc)/2, d+(1-tzd)/2, mat_el*cg12*cg34*WignerEckartCoeff);
+//        if (ain==0 and bin==0 and cin==0 and din==0 and j12==1 and j34==0)
+        if (ain==0 and bin==0 and cin==0 and din==0 and ((j12==1 and j34==0)or(j12==0 and j34==1)) )
+        {
+          cout << "Afterwards, it's " << Op.TwoBody.GetTBME_J_norm(j12, j34, a+(1-tza)/2, b+(1-tzb)/2, c+(1-tzc)/2, d+(1-tzd)/2  ) << endl;
+        }
+       }
+      }
+     }
+    }
+  }
+}
+
 
 void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int Emax, int lmax)
 {

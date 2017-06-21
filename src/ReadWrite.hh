@@ -35,6 +35,7 @@ class ReadWrite
    void Read3bodyHDF5_new( string filename, Operator& op);
    void ReadOperator_Nathan( string filename1b, string filename2b, Operator& op);
    void ReadTensorOperator_Nathan( string filename1b, string filename2b, Operator& op);
+   void Read2bCurrent_Navratil( string filename, Operator& Op);
    void Write_me2j( string filename, Operator& op, int emax, int e2max, int lmax);
    void Write_me3j( string filename, Operator& op, int E1max, int E2max, int E3max);
    void WriteTBME_Navratil( string filename, Operator& Hbare);

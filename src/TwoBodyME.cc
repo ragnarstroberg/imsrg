@@ -155,13 +155,26 @@ void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, do
 {
    TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
    TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
+//   cout << "Tzbra = " << tbc_bra.Tz << "   Tzket = " << tbc_ket.Tz << "  rank_T = " << rank_T << endl;
    int bra_ind = tbc_bra.GetLocalIndex(min(a,b),max(a,b));
    int ket_ind = tbc_ket.GetLocalIndex(min(c,d),max(c,d));
+//   cout << "bra_ind = " << bra_ind << " = local index of " << min(a,b) << " " << max(a,b) << " from channel " << ch_bra << endl;
+//   cout << "ket_ind = " << ket_ind << " = local index of " << min(c,d) << " " << max(c,d) << " from channel " << ch_ket << endl;
    double phase = 1;
    if (a>b) phase *= tbc_bra.GetKet(bra_ind).Phase(tbc_bra.J);
    if (c>d) phase *= tbc_ket.GetKet(ket_ind).Phase(tbc_ket.J);
+   if (ch_bra > ch_ket)
+   {
+    swap(ch_bra,ch_ket);
+//    swap(tbc_bra,tbc_ket);
+    swap(bra_ind,ket_ind);
+    phase *= modelspace->phase(tbc_bra.J-tbc_ket.J);
+   }
+//   cout << "Getting Matrix " << ch_bra << "," << ch_ket << "(" << bra_ind << "," << ket_ind
+//        << "), dimension = " << GetMatrix(ch_bra,ch_ket).n_rows << "x" << GetMatrix(ch_bra,ch_ket).n_cols << endl;
    GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) += phase * tbme;
-   if (ch_bra==ch_ket and ket_ind==bra_ind) return;
+//   if (ch_bra==ch_ket and ket_ind==bra_ind) return;
+   if (ch_ket != ch_bra) return;
    if (hermitian) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) += phase * tbme;
    if (antihermitian) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) -=  phase * tbme;
 }

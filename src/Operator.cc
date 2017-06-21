@@ -360,56 +360,65 @@ Operator Operator::DoNormalOrdering2()
    cout << "OneBody contribution: " << opNO.ZeroBody << endl;
 
    index_t norbits = modelspace->GetNumberOrbits();
-
-   for ( auto& itmat : TwoBody.MatEl )
+   if (TwoBody.Norm() > 1e-7)
    {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
-      auto& matrix = itmat.second;
-      
-      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-      int J_bra = tbc_bra.J;
-      int J_ket = tbc_ket.J;
-      double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
-
-      // Zero body part
-      if (scalar)
-      {
-        arma::vec diagonals = matrix.diag();
-        auto hh = tbc_ket.GetKetIndex_hh();
-        auto hocc = tbc_ket.Ket_occ_hh;
-        opNO.ZeroBody += arma::sum( hocc % diagonals.elem(hh) ) * hatfactor;
-      }
-
-      // One body part
-      for (index_t a=0;a<norbits;++a)
-      {
-         Orbit &oa = modelspace->GetOrbit(a);
-         double ja = oa.j2/2.0;
-         index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
-         {
-            if (b < bstart) continue;
-            Orbit &ob = modelspace->GetOrbit(b);
-            double jb = ob.j2/2.0;
-            for (auto& h : modelspace->holes)  // C++11 syntax
-            {
-              Orbit &oh = modelspace->GetOrbit(h);
-              if (opNO.rank_J==0)
+     for ( auto& itmat : TwoBody.MatEl )
+     {
+        int ch_bra = itmat.first[0];
+        int ch_ket = itmat.first[1];
+        auto& matrix = itmat.second;
+        
+        TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+        TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+        int J_bra = tbc_bra.J;
+        int J_ket = tbc_ket.J;
+        double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
+  
+        // Zero body part
+        if (scalar)
+        {
+          arma::vec diagonals = matrix.diag();
+          auto hh = tbc_ket.GetKetIndex_hh();
+          auto hocc = tbc_ket.Ket_occ_hh;
+          opNO.ZeroBody += arma::sum( hocc % diagonals.elem(hh) ) * hatfactor;
+        }
+  
+        // One body part
+        for (index_t a=0;a<norbits;++a)
+        {
+           Orbit &oa = modelspace->GetOrbit(a);
+           double ja = oa.j2/2.0;
+           index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
+           for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
+           {
+              if (b < bstart) continue;
+              Orbit &ob = modelspace->GetOrbit(b);
+              double jb = ob.j2/2.0;
+              for (auto& h : modelspace->holes)  // C++11 syntax
               {
-                 opNO.OneBody(a,b) += hatfactor /(2*ja+1.0) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
-              }
-              else
-              {
-                 double jh = oh.j2*0.5;
-                 opNO.OneBody(a,b) += hatfactor  * oh.occ *modelspace->phase(ja+jh-J_ket-opNO.rank_J)
-                                             * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
-              }
+                Orbit &oh = modelspace->GetOrbit(h);
+                if (opNO.rank_J==0)
+                {
+                   opNO.OneBody(a,b) += hatfactor /(2*ja+1.0) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+                }
+                else
+                {
+                   double jh = oh.j2*0.5;
+                   opNO.OneBody(a,b) += hatfactor  * oh.occ *modelspace->phase(ja+jh-J_ket-opNO.rank_J)
+                                               * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+                   if ( a>1 and b>1)
+                   {
+                     cout << "NO1b  a,b = " << a << ", " << b << "  h = " << h
+                          << "  prefactor: " << hatfactor  << " * " << oh.occ << " * " << modelspace->phase(ja+jh-J_ket-opNO.rank_J) << " * "<< modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) 
+                          << "  <ah J=" << J_bra << "|Op|bh J=" << J_ket << ">  =  " << TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h) << "  <a||op||b> = " << opNO.OneBody(a,b) << endl;
+                   }
+                }
+             }
            }
-         }
-      }
-   } // loop over channels
+        }
+     } // loop over channels
+     cout << "------------------------------------------" << endl;
+   }
 
    if (hermitian) opNO.Symmetrize();
    if (antihermitian) opNO.AntiSymmetrize();

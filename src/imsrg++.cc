@@ -90,6 +90,7 @@ int main(int argc, char** argv)
   double eta_criterion = parameters.d("eta_criterion");
 
   vector<string> opnames = parameters.v("Operators");
+  vector<string> opsfromfile = parameters.v("OperatorsFromFile");
 
   vector<Operator> ops;
   vector<string> spwf = parameters.v("SPWF");
@@ -281,7 +282,43 @@ int main(int argc, char** argv)
   for (auto& opname : opnames)
   {
     ops.emplace_back( imsrg_util::OperatorFromString(modelspace,opname) );
-//    cout << opname << ":" << endl << ops.back().OneBody << endl;
+  }
+
+
+  // the format should look like OpName;j_t_p_r;/path/to/file
+  for (auto& tag : opsfromfile)
+  {
+    istringstream ss(tag);
+    string opname,qnumbers,fname;
+    vector<int> qn(4);
+    
+    getline(ss,opname,';');
+    getline(ss,qnumbers,';');
+    getline(ss,fname,';');
+    ss.str(qnumbers);
+    ss.clear();
+    cout << " ss.str = " << ss.str() << endl;
+    for (int i=0;i<4;i++)
+    {
+      string tmp;
+      getline(ss,tmp,'_');
+      istringstream(tmp) >> qn[i];
+      cout << i << " [" << tmp << "] " << qn[i] << endl;
+    }
+//    ss >> j; ss.ignore();
+//    ss >> t; ss.ignore();
+//    ss >> p; ss.ignore();
+//    ss >> r;
+    int j,t,p,r;
+    j = qn[0];
+    t = qn[1];
+    p = qn[2];
+    r = qn[3];
+    cout << "Parsed tag. opname = " << opname << "  qnumbers = " << qnumbers << "  " << j << " " << t << " " << p << " " << r << "   file = " << fname << endl;
+    Operator op(modelspace,j,t,p,r);
+    rw.Read2bCurrent_Navratil( fname, op );
+    ops.push_back( op );
+    opnames.push_back( opname );
   }
 
   for (auto& op : ops)
@@ -575,7 +612,7 @@ int main(int argc, char** argv)
          cout << " IMSRG point proton radius = " << sqrt( op.ZeroBody ) << endl; 
          cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
       }
-      if (op.GetJRank()>0) // if it's a tensor, you probably want the full operator
+      if ((op.GetJRank()>0) or (op.GetTRank()>0)) // if it's a tensor, you probably want the full operator
       {
         cout << "Writing operator to " << intfile+opnames[i]+".op" << endl;
         rw.WriteOperatorHuman(op,intfile+opnames[i]+".op");
