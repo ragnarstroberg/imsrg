@@ -173,7 +173,7 @@ void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, do
 //   cout << "Getting Matrix " << ch_bra << "," << ch_ket << "(" << bra_ind << "," << ket_ind
 //        << "), dimension = " << GetMatrix(ch_bra,ch_ket).n_rows << "x" << GetMatrix(ch_bra,ch_ket).n_cols << endl;
    GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) += phase * tbme;
-//   if (ch_bra==ch_ket and ket_ind==bra_ind) return;
+   if (ch_bra==ch_ket and ket_ind==bra_ind) return;
    if (ch_ket != ch_bra) return;
    if (hermitian) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) += phase * tbme;
    if (antihermitian) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) -=  phase * tbme;
