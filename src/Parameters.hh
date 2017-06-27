@@ -51,6 +51,7 @@ map<string,string> Parameters::string_par = {
   {"valence_file_format",       "nushellx"}, // file format for valence space interaction
   {"occ_file",			"none"}, // name of file containing orbit occupations
   {"goose_tank",		"false"}, // name of file containing orbit occupations
+  {"write_omega",		"false"}, // name of file containing orbit occupations
 };
 
 
@@ -85,6 +86,7 @@ map<string,int> Parameters::int_par = {
 
 map<string,vector<string>> Parameters::vec_par = {
  {"Operators", {} },
+ {"OperatorsFromFile", {} },  // These will mostly be MECs for operators
  {"SPWF",{} }, // single-particle wave functions in HF basis
 };
 

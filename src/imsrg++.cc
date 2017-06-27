@@ -64,6 +64,7 @@ int main(int argc, char** argv)
   string valence_file_format = parameters.s("valence_file_format");
   string occ_file = parameters.s("occ_file");
   string goose_tank = parameters.s("goose_tank");
+  string write_omega = parameters.s("write_omega");
 
   int eMax = parameters.i("emax");
   int E3max = parameters.i("e3max");
@@ -90,6 +91,7 @@ int main(int argc, char** argv)
   double eta_criterion = parameters.d("eta_criterion");
 
   vector<string> opnames = parameters.v("Operators");
+  vector<string> opsfromfile = parameters.v("OperatorsFromFile");
 
   vector<Operator> ops;
   vector<string> spwf = parameters.v("SPWF");
@@ -281,8 +283,56 @@ int main(int argc, char** argv)
   for (auto& opname : opnames)
   {
     ops.emplace_back( imsrg_util::OperatorFromString(modelspace,opname) );
-//    cout << opname << ":" << endl << ops.back().OneBody << endl;
   }
+
+
+  // the format should look like OpName^j_t_p_r^/path/to/file
+  for (auto& tag : opsfromfile)
+  {
+    istringstream ss(tag);
+    string opname,qnumbers,fname;
+    vector<int> qn(4);
+    
+    getline(ss,opname,'^');
+    getline(ss,qnumbers,'^');
+    getline(ss,fname,'^');
+    ss.str(qnumbers);
+    ss.clear();
+//    cout << " ss.str = " << ss.str() << endl;
+    for (int i=0;i<4;i++)
+    {
+      string tmp;
+      getline(ss,tmp,'_');
+      istringstream(tmp) >> qn[i];
+//      cout << i << " [" << tmp << "] " << qn[i] << endl;
+    }
+//    ss >> j; ss.ignore();
+//    ss >> t; ss.ignore();
+//    ss >> p; ss.ignore();
+//    ss >> r;
+    int j,t,p,r;
+    j = qn[0];
+    t = qn[1];
+    p = qn[2];
+    r = qn[3];
+//    cout << "Parsed tag. opname = " << opname << "  qnumbers = " << qnumbers << "  " << j << " " << t << " " << p << " " << r << "   file = " << fname << endl;
+    Operator op(modelspace,j,t,p,r);
+    rw.Read2bCurrent_Navratil( fname, op );
+    ops.push_back( op );
+    opnames.push_back( opname );
+  }
+
+
+//  // This is only for testing and should be deleted
+//  if (opsfromfile.size()>1)
+//  {
+//    Operator ogt = imsrg_util::OperatorFromString( modelspace, "GamowTeller");
+//    imsrg_util::Embed1BodyIn2Body( ogt, modelspace.GetTargetMass());
+//    ogt.EraseOneBody();
+//    ops.push_back(ogt);
+//    opnames.push_back("GTembed");
+//  }
+
 
   for (auto& op : ops)
   {
@@ -517,17 +567,15 @@ int main(int argc, char** argv)
     imsrgsolver.Solve();
     // Change operators to the new basis, then apply the rest of the transformation
     cout << "Final transformation on the operators..." << endl;
+    int iop = 0;
     for (auto& op : ops)
     {
-//      double ZeroBody_before = op.ZeroBody;
+      cout << opnames[iop++] << endl;
       op = op.UndoNormalOrdering();
-//      double ZeroBody_undo = op.ZeroBody;
       op.SetModelSpace(ms2);
       op = op.DoNormalOrdering();
-//      double ZeroBody_mid = op.ZeroBody;
       // transform using the remaining omegas
       op = imsrgsolver.Transform_Partial(op,nOmega);
-//      cout << ZeroBody_before << "   =>   " << ZeroBody_undo << "   =>   " << ZeroBody_mid<< "   =>   " << op.ZeroBody << endl;
     }
   }
 
@@ -577,12 +625,20 @@ int main(int argc, char** argv)
          cout << " IMSRG point proton radius = " << sqrt( op.ZeroBody ) << endl; 
          cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << endl; 
       }
-      if (op.GetJRank()>0) // if it's a tensor, you probably want the full operator
+      if ((op.GetJRank()>0) or (op.GetTRank()>0)) // if it's a tensor, you probably want the full operator
       {
         cout << "Writing operator to " << intfile+opnames[i]+".op" << endl;
         rw.WriteOperatorHuman(op,intfile+opnames[i]+".op");
       }
     }
+  }
+
+
+  cout << "Made it here and write_omega is " << write_omega << endl;
+  if (write_omega == "true" or write_omega == "True")
+  {
+    cout << "writing Omega to " << intfile << "_omega.op" << endl;
+    rw.WriteOperatorHuman(imsrgsolver.Omega.back(),intfile+"_omega.op");
   }
 
 
