@@ -388,7 +388,7 @@ Operator Operator::DoNormalOrdering2()
         {
            Orbit &oa = modelspace->GetOrbit(a);
            double ja = oa.j2/2.0;
-           index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
+           index_t bstart = (IsNonHermitian() or ch_bra!=ch_ket )? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
            for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
            {
               if (b < bstart) continue;
@@ -404,24 +404,33 @@ Operator Operator::DoNormalOrdering2()
                 else
                 {
                    double jh = oh.j2*0.5;
-                   opNO.OneBody(a,b) += hatfactor  * oh.occ *modelspace->phase(ja+jh-J_ket-opNO.rank_J)
-                                               * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
-                   if ( a>1 and b>1)
+                   if ((ja+jh < J_bra) or (abs(ja-jh)>J_bra) or (jb+jh < J_ket) or (abs(jb-jh)>J_ket) ) continue;
+                   if ((oa.l + oh.l + tbc_bra.parity)%2 >0) continue;
+                   if ((ob.l + oh.l + tbc_ket.parity)%2 >0) continue;
+                   if ((oa.tz2 + oh.tz2) != tbc_bra.Tz*2) continue;
+                   if ((ob.tz2 + oh.tz2) != tbc_ket.Tz*2) continue;
+                   double ME = hatfactor  * oh.occ *modelspace->phase(ja+jh-J_ket-opNO.rank_J)
+                                   * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+                   if (a>b)
                    {
-                     cout << "NO1b  a,b = " << a << ", " << b << "  h = " << h
-                          << "  prefactor: " << hatfactor  << " * " << oh.occ << " * " << modelspace->phase(ja+jh-J_ket-opNO.rank_J) << " * "<< modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) 
-                          << "  <ah J=" << J_bra << "|Op|bh J=" << J_ket << ">  =  " << TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h) << "  <a||op||b> = " << opNO.OneBody(a,b) << endl;
+                     int herm = IsHermitian() ? 1 : -1;
+                     opNO.OneBody(b,a) += herm * modelspace->phase(ja-jb) * ME;
+                   }
+                   else
+                   {
+                     opNO.OneBody(a,b) += ME;
                    }
                 }
              }
            }
         }
      } // loop over channels
-     cout << "------------------------------------------" << endl;
+//     cout << "------------------------------------------" << endl;
    }
 
    if (hermitian) opNO.Symmetrize();
    if (antihermitian) opNO.AntiSymmetrize();
+
 
    return opNO;
 }
@@ -534,7 +543,8 @@ Operator Operator::UndoNormalOrdering() const
       {
          Orbit &oa = modelspace->GetOrbit(a);
          double ja = oa.j2*0.5;
-         index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
+//         index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
+           index_t bstart = (IsNonHermitian() or ch_bra!=ch_ket )? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
          for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
          {
             if (b < bstart) continue;
@@ -551,8 +561,24 @@ Operator Operator::UndoNormalOrdering() const
               else
               {
                  double jh = oh.j2*0.5;
-                 opNO.OneBody(a,b) -= hatfactor * oh.occ * modelspace->phase(ja+jh-J_ket-opNO.rank_J)
+                 if ((ja+jh < J_bra) or (abs(ja-jh)>J_bra) or (jb+jh < J_ket) or (abs(jb-jh)>J_ket) ) continue;
+
+                 if ((oa.l + oh.l + tbc_bra.parity)%2 >0) continue;
+                 if ((ob.l + oh.l + tbc_ket.parity)%2 >0) continue;
+                 if ((oa.tz2 + oh.tz2) != tbc_bra.Tz*2) continue;
+                 if ((ob.tz2 + oh.tz2) != tbc_ket.Tz*2) continue;
+                 double ME = hatfactor  * oh.occ *modelspace->phase(ja+jh-J_ket-opNO.rank_J)
                                              * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+                 if (a>b)
+                 {
+                   int herm = IsHermitian() ? 1 : -1;
+                   opNO.OneBody(b,a) -= herm * modelspace->phase(ja-jb) * ME;
+                 }
+                 else
+                 {
+                   opNO.OneBody(a,b) -= ME;
+                 }
+
               }
             }
 

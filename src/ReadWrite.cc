@@ -2038,7 +2038,7 @@ void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b,
 
 }
 
-
+/*
 void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
 {
    cout << "Begin Read2bCurrent_Navratil" << endl;
@@ -2091,13 +2091,15 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
   cout << "Start while loop" << endl;
   while( infile >> ain >> bin >> cin >> din >> j12 >> j34 >> t12 >> t34 >> tza >> tzb >> mat_el)
   {
-    if (cin>ain or (cin==ain and din>bin)) continue;
+    if (cin<ain or (cin==ain and din<bin)) continue;
     if ((ain==cin and bin==din) and (j34<j12 or (j34==j12 and t34<t12))) continue;
    ain--; bin--;cin--;din--; // Fortran to C
     if (    orbits_remap.find(ain)==orbits_remap.end() or orbits_remap.find(bin)==orbits_remap.end()
          or orbits_remap.find(cin)==orbits_remap.end() or orbits_remap.find(din)==orbits_remap.end() ) continue;
+//   if (true)
 //   if (ain==0 and bin==0 and cin==0 and din==0 and j12==1 and j34==0)
-   if (true)
+//   if (ain==1 and bin==1 and cin==1 and din==2 and j12==0 and j34==1)
+   if (ain==1 and bin==2 and cin==1 and din==2 and j12==1 and j34==1)
    {
     cout << "< " << ain << " " << bin << " " << j12 << " " << t12 << " ||| Op J=" << J_op << " T=" <<T_op << " ||| "
                  << cin << " " << din << " " << j34 << " " << t34 << " > = " << mat_el << endl;
@@ -2110,7 +2112,7 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
   //  mat_el = < a b j12 t12 ||| OP (J,T) ||| c d j34 t34>    (doubly-reduced)
   //   (note that tza and tzb from the file are not meaningful here and should be ignored).
   //   also note that Petr uses the particle-physics convention tz|p> = +1|p>
-  //   which is the opposite of what is used in this code.
+  //   which is the opposite of what is used elsewhere in this code.
 
     for ( int tza : {-1,1} )
     {
@@ -2130,11 +2132,18 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
         if (abs(Tz_op)!=T_op) continue;
         double cg34 = isospinCG(tzc,tzd,t34);
         if (cin==din and (tzc!=tzd)) cg34 *= sqrt(2.0);
+        if ( (ain==cin) and (bin==din) and (j12==j34))
+        {
+          if (tzc<tza or (tzc==tza and tzd<tzb) ) continue;
+        }
         double WignerEckartCoeff = AngMom::CG(t34,(tzc+tzd)/2,T_op,Tz_op,t12,(tza+tzb)/2) / sqrt(2*t12+1.);
+        if (Tz_op < 0) WignerEckartCoeff *= -1; // If tau is a tensor operator, there needs to a relative minus sign for t+ and t-
         // Note that this strategy could come back to bite me if the file
         // contains redundant information. There are safer but more memory-intensive ways to do this...
+//        if (true  )
 //        if (ain==0 and bin==0 and cin==0 and din==0 and ((j12==1 and j34==0)or(j12==0 and j34==1)) )
-        if (true  )
+//        if (ain==1 and bin==1 and cin==1 and din==2 and j12==0 and j34==1)
+        if (ain==1 and bin==2 and cin==1 and din==2 and j12==1 and j34==1)
         {
         cout << "tza,tzb,t12, tzc,tzd,t34, cg12,cg34,WE        : " << tza << " " << tzb << " " << t12 << ",   " << tzc << " " << tzd << " " << t34
              << "   " << cg12 << " " << cg34 << " " << WignerEckartCoeff << " ( from " << AngMom::CG(t34,(tzc+tzd)/2,T_op,Tz_op,t12,(tza+tzb)/2) << " / " <<sqrt(2*t12+1.) << ") " << endl;
@@ -2147,15 +2156,157 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
         }
         Op.TwoBody.AddToTBME_J( j12, j34, a+(1-tza)/2, b+(1-tzb)/2, c+(1-tzc)/2, d+(1-tzd)/2, mat_el*cg12*cg34*WignerEckartCoeff);
 //        if (ain==0 and bin==0 and cin==0 and din==0 and j12==1 and j34==0)
-        if (ain==0 and bin==0 and cin==0 and din==0 and ((j12==1 and j34==0)or(j12==0 and j34==1)) )
+//        if (ain==0 and bin==0 and cin==0 and din==0 and ((j12==1 and j34==0)or(j12==0 and j34==1)) )
+//        if (ain==1 and bin==1 and cin==1 and din==2 and j12==0 and j34==1)
+        if (ain==1 and bin==2 and cin==1 and din==2 and j12==1 and j34==1)
         {
           cout << "Afterwards, it's " << Op.TwoBody.GetTBME_J_norm(j12, j34, a+(1-tza)/2, b+(1-tzb)/2, c+(1-tzc)/2, d+(1-tzd)/2  ) << endl;
+          cout << "$$$$ <2 2 J0 || 2 5 J1> = " << Op.TwoBody.GetTBME_J_norm(0,1,2,2,2,5)
+               << "     <5 2 J1 || 2 2 J0> = " << Op.TwoBody.GetTBME_J_norm(1,0,5,2,2,2) << endl;
         }
        }
       }
      }
     }
   }
+}
+
+
+
+*/
+
+
+uint64_t Petr2BC_hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t jab, uint64_t jcd, uint64_t tab, uint64_t tcd )
+{
+  return    a + (b <<8 ) + (c << 16) + (d << 24) + (jab << 32) + (jcd << 40) + (tab << 48) + (tcd << 56); 
+}
+
+
+void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
+{
+    ifstream infilegz(filename, ios_base::in | ios_base::binary);
+    boost::iostreams::filtering_istream infile;
+    infile.push(boost::iostreams::gzip_decompressor());
+    infile.push(infilegz);
+
+
+  if ( !infile.good() )
+  {
+     cerr << "************************************" << endl
+          << "**    Trouble opening file  !!!   **  " << filename<< endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+  }
+  ModelSpace * modelspace = Op.GetModelSpace();
+  unordered_map<int,int> orbits_remap;
+  int norb = modelspace->GetNumberOrbits();
+  for (int i=0;i<norb;++i)
+  {
+     Orbit& oi = modelspace->GetOrbit(i);
+     if (oi.tz2 > 0 ) continue;
+     int N = 2*oi.n + oi.l;
+     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - abs(2*oi.l-1))/2;
+     orbits_remap[nlj] = i;
+  }
+
+
+  string strbuf;
+  int J_op,T_op,ain,bin,cin,din,a,b,c,d,j12,t12,j34,t34,tza,tzb;
+  double mat_el;
+
+  map<uint64_t, double> DoubleReducedME;
+
+  using namespace AngMom;
+
+  for (int i=0;i<5;++i) infile >> strbuf; // Five useless lines...
+  infile >> J_op >> T_op;
+  for (int i=0;i<8;++i) infile >> strbuf; // Another eight useless lines...
+
+  while( infile >> ain >> bin >> cin >> din >> j12 >> j34 >> t12 >> t34 >> tza >> tzb >> mat_el)
+  {
+    ain--; bin--;cin--;din--; // Fortran to C
+    if (    orbits_remap.find(ain)==orbits_remap.end() or orbits_remap.find(bin)==orbits_remap.end()
+         or orbits_remap.find(cin)==orbits_remap.end() or orbits_remap.find(din)==orbits_remap.end() ) continue;
+    a = orbits_remap[ain];  // remapping gives proton index. neutron is a+1.
+    b = orbits_remap[bin];
+    c = orbits_remap[cin];
+    d = orbits_remap[din];
+    if (a > b)
+    {
+      Orbit& oa = modelspace->GetOrbit(a);
+      Orbit& ob = modelspace->GetOrbit(b);
+      swap(a,b);
+      mat_el *= modelspace->phase( (oa.j2 + ob.j2)/2 - j12 - t12);
+    }
+    if (c > d)
+    {
+      Orbit& oc = modelspace->GetOrbit(c);
+      Orbit& od = modelspace->GetOrbit(d);
+      swap(c,d);
+      mat_el *= modelspace->phase( (oc.j2 + od.j2)/2 - j34 - t34);
+    }
+    
+    uint64_t hashkey = Petr2BC_hash(a,b,c,d,j12,j34,t12,t34);
+    DoubleReducedME[hashkey] = mat_el;
+  }
+
+  for ( auto& itmat : Op.TwoBody.MatEl )
+  {
+
+    int ch_bra = itmat.first[0];
+    int ch_ket = itmat.first[1];
+    auto& TBME = itmat.second;
+    TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+    TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+    int Jbra = tbc_bra.J;
+    int Jket = tbc_ket.J;
+    int Tzbra = -tbc_bra.Tz;
+    int Tzket = -tbc_ket.Tz;
+
+    int nbra = tbc_bra.GetNumberKets();
+    int nket = tbc_ket.GetNumberKets();
+
+    for (int ibra=0; ibra<nbra; ++ibra)
+    {
+      Ket& bra = tbc_bra.GetKet(ibra);
+      int a = bra.p;
+      int b = bra.q;
+      a -= a%2;
+      b -= b%2;
+      int tza = -bra.op->tz2;
+      int tzb = -bra.oq->tz2;
+      for (int iket=0; iket<nket; ++iket)
+      {
+        Ket& ket = tbc_ket.GetKet(iket);
+        int c = ket.p;
+        int d = ket.q;
+        c -= c%2;
+        d -= d%2;
+        int tzc = -ket.op->tz2;
+        int tzd = -ket.oq->tz2;
+        double tbme = 0;
+        for (int Tbra = abs(Tzbra); Tbra<=1; Tbra++)
+        {
+          if (a==b and ((Tbra+Jbra%2)<1)) continue;
+          double iso_clebsch_bra = CG(0.5,tza*0.5,0.5,tzb*0.5,Tbra,Tzbra);
+          if (a==b and Tzbra==0) iso_clebsch_bra *= sqrt(2);
+          for (int Tket = abs(Tzket); Tket<=1; Tket++)
+          {
+            double iso_clebsch_ket = CG(0.5,tzc*0.5,0.5,tzd*0.5,Tket,Tzket);
+            if (c==d and Tzket==0) iso_clebsch_ket *= sqrt(2);
+            double WignerEckart_factor = CG(Tket,Tzket,T_op,Tzbra-Tzket, Tbra,Tzbra) /sqrt(2*Tbra+1.) * (Tzbra-Tzket);
+            uint64_t hash_key = Petr2BC_hash(a,b,c,d,Jbra,Jket,Tbra,Tket);
+            tbme += DoubleReducedME[hash_key] * iso_clebsch_bra * iso_clebsch_ket * WignerEckart_factor;
+
+          }
+        }
+        TBME(ibra,iket) = tbme;
+      }
+    }
+
+  }
+
 }
 
 
