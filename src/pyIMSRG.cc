@@ -5,15 +5,20 @@
 #include "IMSRGSolver.hh"
 #include "imsrg_util.hh"
 #include "AngMom.hh"
+#include "IMSRG.hh"
 #include <string>
 
-#include <boost/python/module.hpp>
-#include <boost/python/def.hpp>
-#include <boost/python.hpp>
-#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+//#include <boost/python/module.hpp>
+//#include <boost/python/def.hpp>
+//#include <boost/python.hpp>
+//#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
+#include <pybind11/pybind11.h>
+#include <pybind11/operators.h>
 
-using namespace boost::python;
+namespace py = pybind11;
+
+//using namespace boost::python;
 
   Orbit MSGetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
   TwoBodyChannel MSGetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
@@ -30,14 +35,18 @@ using namespace boost::python;
 
   Operator HFGetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
 
-BOOST_PYTHON_MODULE(pyIMSRG)
+//BOOST_PYTHON_MODULE(pyIMSRG)
+PYBIND11_PLUGIN(pyIMSRG)
 {
+  py::module m("pyIMSRG", "python bindings for IMSRG code");
 
-   class_<vector<string> > ("vector_string")
-      .def (vector_indexing_suite< vector<string> >())
-   ;
+//   py::class<vector<string> > vector_string("vector_string")
+//      .def (vector_indexing_suite< vector<string> >())
+//   ;
 
-   class_<Orbit>("Orbit",init<>())
+//   class_<Orbit>("Orbit",init<>())
+   py::class_<Orbit>(m,"Orbit")
+      .def(py::init<>())
       .def_readwrite("n", &Orbit::n)
       .def_readwrite("l", &Orbit::l)
       .def_readwrite("j2", &Orbit::j2)
@@ -47,18 +56,22 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def_readwrite("index", &Orbit::index)
    ;
 
-   class_<TwoBodyChannel>("TwoBodyChannel",init<>())
+//   class_<TwoBodyChannel>("TwoBodyChannel",init<>())
+   py::class_<TwoBodyChannel>(m,"TwoBodyChannel")
+      .def(py::init<>())
       .def("GetNumberKets",&TwoBodyChannel::GetNumberKets)
       .def("GetLocalIndex",&TBCGetLocalIndex)
       .def("GetKetIndex",&TwoBodyChannel::GetKetIndex)
    ;
 
-   class_<ModelSpace>("ModelSpace",init<>())
-      .def(init<const ModelSpace&>())
-      .def(init< int, const std::string&>())
-      .def(init< int, const std::string&, const std::string&>())
-      .def(init< int,vector<string>,vector<string> >())
-      .def(init< int,vector<string>,vector<string>,vector<string> >())
+//   class_<ModelSpace>("ModelSpace",init<>())
+   py::class_<ModelSpace>(m,"ModelSpace")
+      .def(py::init<>())
+      .def(py::init<const ModelSpace&>())
+      .def(py::init< int, const std::string&>())
+      .def(py::init< int, const std::string&, const std::string&>())
+      .def(py::init< int,vector<string>,vector<string> >())
+      .def(py::init< int,vector<string>,vector<string>,vector<string> >())
       .def("SetHbarOmega", &ModelSpace::SetHbarOmega)
       .def("SetTargetMass", &ModelSpace::SetTargetMass)
       .def("SetE3max", &ModelSpace::SetE3max)
@@ -77,22 +90,24 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    ;
 
 
-   class_<Operator>("Operator",init<>())
-      .def(init< ModelSpace&>())
-      .def(init< ModelSpace&,int,int,int,int>())
-      .def(self += Operator())
-      .def(self + Operator())
-      .def(self -= Operator())
-      .def(self - Operator())
-      .def( - self)
-      .def(self *= double())
-      .def(self * double())
-      .def(self /= double())
-      .def(self / double())
-      .def(self += double())
-      .def(self + double())
-      .def(self -= double())
-      .def(self - double())
+//   class_<Operator>("Operator",init<>())
+   py::class_<Operator>(m,"Operator")
+      .def(py::init<>())
+      .def(py::init< ModelSpace&>())
+      .def(py::init< ModelSpace&,int,int,int,int>())
+      .def(py::self += py::self)
+      .def(py::self + py::self)
+      .def(py::self -= Operator())
+      .def(py::self - Operator())
+      .def( - py::self)
+      .def(py::self *= double())
+      .def(py::self * double())
+      .def(py::self /= double())
+      .def(py::self / double())
+      .def(py::self += double())
+      .def(py::self + double())
+      .def(py::self -= double())
+      .def(py::self - double())
       .def_readwrite("ZeroBody", &Operator::ZeroBody)
       .def_readwrite("OneBody", &Operator::OneBody)
       .def_readwrite("TwoBody", &Operator::TwoBody)
@@ -141,24 +156,30 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("SetOneBodyME", &OpSetOneBodyME)
    ;
 
-   class_<arma::mat>("ArmaMat",init<>())
+//   class_<arma::mat>("ArmaMat",init<>())
+   py::class_<arma::mat>(m,"ArmaMat")
+      .def(py::init<>())
       .def("Print",&ArmaMatPrint)
-      .def(self *= double())
-      .def(self * double())
-      .def(self /= double())
-      .def(self / double())
-      .def(self += double())
-      .def(self + double())
-      .def(self -= double())
-      .def(self - double())
+      .def(py::self *= double())
+      .def(py::self * double())
+      .def(py::self /= double())
+      .def(py::self / double())
+      .def(py::self += double())
+      .def(py::self + double())
+      .def(py::self -= double())
+      .def(py::self - double())
    ;
 
-   class_<TwoBodyME>("TwoBodyME",init<>())
+//   class_<TwoBodyME>("TwoBodyME",init<>())
+   py::class_<TwoBodyME>(m,"TwoBodyME")
+      .def(py::init<>())
       .def("GetTBME_J", TB_GetTBME_J)
       .def("GetTBME_J_norm", TB_GetTBME_J_norm)
    ;
 
-   class_<ReadWrite>("ReadWrite",init<>())
+//   class_<ReadWrite>("ReadWrite",init<>())
+   py::class_<ReadWrite>(m,"ReadWrite")
+      .def(py::init<>())
       .def("ReadSettingsFile", &ReadWrite::ReadSettingsFile)
       .def("ReadTBME_Oslo", &ReadWrite::ReadTBME_Oslo)
       .def("ReadBareTBME_Jason", &ReadWrite::ReadBareTBME_Jason)
@@ -199,11 +220,12 @@ BOOST_PYTHON_MODULE(pyIMSRG)
 
 
 
-   class_<HartreeFock>("HartreeFock",init<Operator&>())
+//   class_<HartreeFock>("HartreeFock",init<Operator&>())
+   py::class_<HartreeFock>(m,"HartreeFock")
+      .def(py::init<Operator&>())
       .def("Solve",&HartreeFock::Solve)
       .def("TransformToHFBasis",&HartreeFock::TransformToHFBasis)
       .def("GetHbare",&HartreeFock::GetHbare)
-//      .def("GetNormalOrderedH",&HartreeFock::GetNormalOrderedH)
       .def("GetNormalOrderedH",&HFGetNormalOrderedH)
       .def("GetOmega",&HartreeFock::GetOmega)
       .def("PrintSPE",&HartreeFock::PrintSPE)
@@ -213,7 +235,9 @@ BOOST_PYTHON_MODULE(pyIMSRG)
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
    Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
 
-   class_<IMSRGSolver>("IMSRGSolver",init<Operator&>())
+//   class_<IMSRGSolver>("IMSRGSolver",init<Operator&>())
+   py::class_<IMSRGSolver>(m,"IMSRGSolver")
+      .def(py::init<Operator&>())
       .def("Solve",&IMSRGSolver::Solve)
       .def("Transform",Transform_ref)
       .def("InverseTransform",&IMSRGSolver::InverseTransform)
@@ -234,7 +258,8 @@ BOOST_PYTHON_MODULE(pyIMSRG)
       .def("SetDenominatorDeltaOrbit",&IMSRGSolver::SetDenominatorDeltaOrbit)
       .def("GetSystemDimension",&IMSRGSolver::GetSystemDimension)
       .def("GetOmega",&IMSRGSolver::GetOmega)
-      .def("GetH_s",&IMSRGSolver::GetH_s,return_value_policy<reference_existing_object>())
+//      .def("GetH_s",&IMSRGSolver::GetH_s,return_value_policy<reference_existing_object>())
+      .def("GetH_s",&IMSRGSolver::GetH_s)
       .def("SetMagnusAdaptive",&IMSRGSolver::SetMagnusAdaptive)
       .def("SetReadWrite", &IMSRGSolver::SetReadWrite)
       .def_readwrite("Eta", &IMSRGSolver::Eta)
@@ -242,52 +267,55 @@ BOOST_PYTHON_MODULE(pyIMSRG)
 
 
 
-   class_<IMSRGProfiler>("IMSRGProfiler",init<>())
-       .def("PrintTimes",&IMSRGProfiler::PrintTimes)
-       .def("PrintCounters",&IMSRGProfiler::PrintCounters)
-       .def("PrintAll",&IMSRGProfiler::PrintAll)
-       .def("PrintMemory",&IMSRGProfiler::PrintMemory)
+//   class_<IMSRGProfiler>("IMSRGProfiler",init<>())
+   py::class_<IMSRGProfiler>(m,"IMSRGProfiler")
+      .def(py::init<>())
+      .def("PrintTimes",&IMSRGProfiler::PrintTimes)
+      .def("PrintCounters",&IMSRGProfiler::PrintCounters)
+      .def("PrintAll",&IMSRGProfiler::PrintAll)
+      .def("PrintMemory",&IMSRGProfiler::PrintMemory)
    ;
 
 
 
 
 
-   def("TCM_Op",           imsrg_util::TCM_Op);
-   def("Trel_Op",           imsrg_util::Trel_Op);
-   def("R2CM_Op",          imsrg_util::R2CM_Op);
-   def("HCM_Op",           imsrg_util::HCM_Op);
-   def("NumberOp",         imsrg_util::NumberOp);
-   def("RSquaredOp",       imsrg_util::RSquaredOp);
-   def("RpSpinOrbitCorrection", imsrg_util::RpSpinOrbitCorrection);
-   def("E0Op",             imsrg_util::E0Op);
-   def("AllowedFermi_Op",             imsrg_util::AllowedFermi_Op);
-   def("AllowedGamowTeller_Op",             imsrg_util::AllowedGamowTeller_Op);
-   def("ElectricMultipoleOp",             imsrg_util::ElectricMultipoleOp);
-   def("MagneticMultipoleOp",             imsrg_util::MagneticMultipoleOp);
-   def("Sigma_Op", imsrg_util::Sigma_Op);
-   def("Isospin2_Op",      imsrg_util::Isospin2_Op);
-   def("LdotS_Op",         imsrg_util::LdotS_Op);
-   def("HO_density",       imsrg_util::HO_density);
-   def("GetOccupationsHF", imsrg_util::GetOccupationsHF);
-   def("GetOccupations",   imsrg_util::GetOccupations);
-   def("GetDensity",       imsrg_util::GetDensity);
-   def("CommutatorTest",   imsrg_util::CommutatorTest);
-   def("Calculate_p1p2_all",   imsrg_util::Calculate_p1p2_all);
-   def("Single_Ref_1B_Density_Matrix", imsrg_util::Single_Ref_1B_Density_Matrix);
-   def("Get_Charge_Density", imsrg_util::Get_Charge_Density);
-   def("Embed1BodyIn2Body",  imsrg_util::Embed1BodyIn2Body);
-   def("RadialIntegral",     imsrg_util::RadialIntegral);
-   def("RadialIntegral_RpowK",     imsrg_util::RadialIntegral_RpowK);
-   def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
+   m.def("TCM_Op",           imsrg_util::TCM_Op);
+   m.def("Trel_Op",           imsrg_util::Trel_Op);
+   m.def("R2CM_Op",          imsrg_util::R2CM_Op);
+   m.def("HCM_Op",           imsrg_util::HCM_Op);
+   m.def("NumberOp",         imsrg_util::NumberOp);
+   m.def("RSquaredOp",       imsrg_util::RSquaredOp);
+   m.def("RpSpinOrbitCorrection", imsrg_util::RpSpinOrbitCorrection);
+   m.def("E0Op",             imsrg_util::E0Op);
+   m.def("AllowedFermi_Op",             imsrg_util::AllowedFermi_Op);
+   m.def("AllowedGamowTeller_Op",             imsrg_util::AllowedGamowTeller_Op);
+   m.def("ElectricMultipoleOp",             imsrg_util::ElectricMultipoleOp);
+   m.def("MagneticMultipoleOp",             imsrg_util::MagneticMultipoleOp);
+   m.def("Sigma_Op", imsrg_util::Sigma_Op);
+   m.def("Isospin2_Op",      imsrg_util::Isospin2_Op);
+   m.def("LdotS_Op",         imsrg_util::LdotS_Op);
+   m.def("HO_density",       imsrg_util::HO_density);
+   m.def("GetOccupationsHF", imsrg_util::GetOccupationsHF);
+   m.def("GetOccupations",   imsrg_util::GetOccupations);
+   m.def("GetDensity",       imsrg_util::GetDensity);
+   m.def("CommutatorTest",   imsrg_util::CommutatorTest);
+   m.def("Calculate_p1p2_all",   imsrg_util::Calculate_p1p2_all);
+   m.def("Single_Ref_1B_Density_Matrix", imsrg_util::Single_Ref_1B_Density_Matrix);
+   m.def("Get_Charge_Density", imsrg_util::Get_Charge_Density);
+   m.def("Embed1BodyIn2Body",  imsrg_util::Embed1BodyIn2Body);
+   m.def("RadialIntegral",     imsrg_util::RadialIntegral);
+   m.def("RadialIntegral_RpowK",     imsrg_util::RadialIntegral_RpowK);
+   m.def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
 
-   def("CG",AngMom::CG);
-   def("ThreeJ",AngMom::ThreeJ);
-   def("SixJ",AngMom::SixJ);
-   def("NineJ",AngMom::NineJ);
-   def("NormNineJ",AngMom::NormNineJ);
-   def("Moshinsky",AngMom::Moshinsky);
+   m.def("CG",AngMom::CG);
+   m.def("ThreeJ",AngMom::ThreeJ);
+   m.def("SixJ",AngMom::SixJ);
+   m.def("NineJ",AngMom::NineJ);
+   m.def("NormNineJ",AngMom::NormNineJ);
+   m.def("Moshinsky",AngMom::Moshinsky);
 
 
+  return m.ptr();
 
 }

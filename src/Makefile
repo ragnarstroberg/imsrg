@@ -25,7 +25,8 @@ WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
 FLAGS    += $(WARNFLAGS)
 SOFLAGS  += $(WARNFLAGS)
 
-PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
+#PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
+PYTHONFLAGS = -Ipybind11/include $(shell python-config --cflags --ldflags)
 
 THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; else echo other; fi)
 
