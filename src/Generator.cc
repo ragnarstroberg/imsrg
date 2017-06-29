@@ -33,6 +33,7 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
    else if (generator_type == "shell-model-atan-npnh") ConstructGenerator_ShellModel_Atan_NpNh();
    else if (generator_type == "shell-model-imaginary-time")            ConstructGenerator_ShellModel_ImaginaryTime();
    else if (generator_type == "hartree-fock")     ConstructGenerator_HartreeFock();
+   else if (generator_type == "1PA")     ConstructGenerator_1PA();
    else
    {
       cout << "Error. Unkown generator_type: " << generator_type << endl;
@@ -481,6 +482,33 @@ void Generator::ConstructGenerator_HartreeFock()
 
 
 
+// So far this is useless
+void Generator::ConstructGenerator_1PA()
+{
+  ConstructGenerator_Atan();
+  int nchan = modelspace->GetNumberTwoBodyChannels();
+  for (int ch=0;ch<nchan;++ch)
+  {
+    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+    arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
+    arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
+    // decouple Gamma_ppph'
+    for (auto& iket : tbc.GetKetIndex_ph())
+    {
+      Ket& ket = tbc.GetKet(iket);
+      if ((2*ket.oq->n + ket.oq->l)<3) continue;
+      for (auto& ibra : tbc.GetKetIndex_pp())
+      {
+        Ket& bra = tbc.GetKet(ibra);
+//        cout << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << endl;
+        if ((ket.p==bra.p) or (ket.p==bra.q) or (ket.q==bra.p) or (ket.q==bra.q) ) continue;
+        double denominator = Get2bDenominator(ch,ibra,iket);
+        ETA2(ibra,iket) = 0.5*atan( 2*H2(ibra,iket) / denominator );
+        ETA2(iket,ibra) = -ETA2(ibra,iket);
+      }
+    }
+  }
+}
 
 
 

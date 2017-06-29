@@ -38,6 +38,7 @@ class Generator
   void ConstructGenerator_ShellModel_ImaginaryTime();
   void ConstructGenerator_ShellModel_Atan_NpNh();
   void ConstructGenerator_HartreeFock();
+  void ConstructGenerator_1PA();
   double Get1bDenominator(int i, int j);
   double Get2bDenominator(int ch, int ibra, int iket);
 

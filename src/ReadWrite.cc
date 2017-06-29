@@ -2899,6 +2899,125 @@ void ReadWrite::ReadNuShellX_int(Operator& op, string filename)
 }
 
 
+void ReadWrite::ReadNuShellX_int_iso(Operator& op, string filename)
+{
+  ModelSpace* modelspace = op.GetModelSpace();
+  ifstream intfile(filename);
+  char line[500];
+  while(intfile.getline(line,500))
+  {
+    if (line[0] != '!') break;
+    string linestr(line);
+    if ( linestr.find("Index") != std::string::npos ) break;
+  }
+  map<index_t,index_t> orbit_map;
+  while(intfile.getline(line,500))
+  {
+    if (line[0] != '!') break;
+    char exclamation_point;
+    index_t indx;
+    int n,l,j2,tz2;
+    string j,tz;
+    string linestr(line);
+    if ( linestr.find("/") == std::string::npos ) break;
+    istringstream(line) >> exclamation_point >> indx >> n >> l >> j >> tz;
+    istringstream(j.substr(0,j.find("/")-j.front())) >> j2;
+    istringstream(tz.substr(0,j.find("/")-tz.front())) >> tz2;
+    orbit_map[indx] = modelspace->GetOrbitIndex(n,l,j2,-1);
+  }
+
+  double dummy;
+  intfile >> dummy; // read the -999 that doesn't mean anything
+//  cout << " Reading SPE line" << endl;
+  for (auto& orb : orbit_map )
+  {
+    intfile >> dummy;
+    op.OneBody(orb.second,orb.second) = dummy;
+    op.OneBody(orb.second+1,orb.second+1) = dummy;
+//    cout << orb.second << " " << dummy << endl;
+  }
+
+  double acore_nushell, a0_nushell, exp_nushell;
+  intfile >> acore_nushell >> a0_nushell >> exp_nushell;
+  double scalefactor = pow( a0_nushell / modelspace->GetAref(), exp_nushell) ;
+//  cout << "acore_nushell = " << acore_nushell << "   a0_nushell = " << a0_nushell << "  exp_nushell = " << exp_nushell << endl;
+//  for (int i=0;i<3;++i) intfile >> dummy; // A-dependence parameters
+//  cout << op.OneBody << endl;
+  uint64_t a,b,c,d,J,T;
+  double V;
+  map<uint64_t,double> IsoTBME;
+  while( intfile >> a >> b >> c >> d >> J >> T >> V)
+  {
+    V *= scalefactor;
+    uint64_t hashkey = ( ((uint64_t) J) + ((uint64_t)T<<10) + (a<<20) + (b<<30) + (c<<40) + (d<<50)  );
+//    cout << "setting " << a << " " << b << " " << c << " " << d << " " << J << " " << T << " ->  "<< hashkey << "   " << V << endl;
+    IsoTBME[hashkey] = V;
+  }
+
+  for ( auto& a_indx : orbit_map )
+  {
+   Orbit& oa = modelspace->GetOrbit(a_indx.second);
+   for ( auto& b_indx : orbit_map )
+   {
+    Orbit& ob = modelspace->GetOrbit(b_indx.second);
+    for ( auto& c_indx : orbit_map )
+    {
+     Orbit& oc = modelspace->GetOrbit(c_indx.second);
+     for ( auto& d_indx : orbit_map )
+     {
+      Orbit& od = modelspace->GetOrbit(d_indx.second);
+      int Jmin = max( abs(oa.j2-ob.j2), abs(oc.j2-od.j2) )/2;
+      int Jmax = min( oa.j2+ob.j2, oc.j2+od.j2 )/2;
+      for (int J=Jmin; J<=Jmax; ++J)
+      {
+        uint64_t hashT1 = ( J + (1L<<10) + (a_indx.first<<20) + (b_indx.first<<30) + (c_indx.first<<40) + (d_indx.first<<50) );
+        uint64_t hashT0 = ( J + (0L<<10) + (a_indx.first<<20) + (b_indx.first<<30) + (c_indx.first<<40) + (d_indx.first<<50) );
+        double V1 = IsoTBME[hashT1];
+        double V0 = IsoTBME[hashT0];
+//        cout << J << " " <<  a_indx.first   << " " <<    b_indx.first << " " <<    c_indx.first << " " <<    d_indx.first << "     " << hashT1 << ": " <<    V1 << "   " << hashT0 << "  " << V0 << endl;
+        double Vpp = V1;
+        double Vpnpn = (V1 + V0) * 0.5;
+        double Vpnnp = (V1 - V0) * 0.5;
+        double Vnppn = (V1 - V0) * 0.5;
+        double Vnpnp = (V1 + V0) * 0.5;
+
+        if ( abs(Vpp)>1e-6 )
+        {
+//        cout << "Vnn: " << J << " " <<  a_indx.second   << " " <<    b_indx.second << " " <<    c_indx.second << " " <<    d_indx.second << " " <<    Vpp << endl;
+        op.TwoBody.SetTBME_J(J, a_indx.second,   b_indx.second,   c_indx.second,   d_indx.second,   Vpp);
+//        cout << "Vpp: " << J << " " <<  a_indx.second+1 << " " <<    b_indx.second+1 << " " <<  c_indx.second+1 << " " <<  d_indx.second+1 << " " <<  Vpp<< endl;
+        op.TwoBody.SetTBME_J(J, a_indx.second+1, b_indx.second+1, c_indx.second+1, d_indx.second+1, Vpp);
+        }
+        if (abs(Vpnpn)>1e-6)
+        {
+//        cout << "Vpnpn: " << J << " " <<  a_indx.second+1 << " " <<    b_indx.second << " " <<    c_indx.second+1 << " " <<  d_indx.second << " " <<    Vpnpn<< endl;
+        op.TwoBody.SetTBME_J(J, a_indx.second+1, b_indx.second,   c_indx.second+1, d_indx.second,   Vpnpn);
+        }
+        if (abs(Vpnnp)>1e-6)
+        {
+//        cout << "Vpnnp: " << J << " " <<  a_indx.second+1 << " " <<    b_indx.second << " " <<    c_indx.second << " " <<    d_indx.second+1 << " " <<  Vpnnp<< endl;
+        op.TwoBody.SetTBME_J(J, a_indx.second+1, b_indx.second,   c_indx.second,   d_indx.second+1, Vpnnp);
+        }
+        if (abs(Vnppn)>1e-6)
+        {
+//        cout << "Vnppn: " << J << " " <<  a_indx.second   << " " <<    b_indx.second+1 << " " <<  c_indx.second+1 << " " <<  d_indx.second << " " <<    Vnppn<< endl;
+        op.TwoBody.SetTBME_J(J, a_indx.second,   b_indx.second+1, c_indx.second+1, d_indx.second,   Vnppn);
+        }
+        if (abs(Vnpnp)>1e-6)
+        {
+//        cout << "Vnpnp: " << J << " " <<  a_indx.second   << " " <<    b_indx.second+1 << " " <<  c_indx.second << " " <<    d_indx.second+1 << " " <<  Vnpnp<< endl;
+        op.TwoBody.SetTBME_J(J, a_indx.second,   b_indx.second+1, c_indx.second,   d_indx.second+1, Vnpnp);
+        }
+      }
+     }
+    }
+   }
+  }
+
+}
+
+
+
 
 /// This now appears to be working properly
 void ReadWrite::WriteAntoine_int(Operator& op, string filename)

@@ -1437,6 +1437,7 @@ void Operator::SetToCommutator( const Operator& X, const Operator& Y)
 //   profiler.counter["N_Commutators"] += 1;
    double t_start = omp_get_wtime();
    Operator& Z = *this;
+   modelspace->PreCalculateSixJ();
    int xrank = X.rank_J + X.rank_T + X.parity;
    int yrank = Y.rank_J + Y.rank_T + Y.parity;
    if (xrank==0)

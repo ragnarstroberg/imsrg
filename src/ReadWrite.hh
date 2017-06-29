@@ -43,6 +43,7 @@ class ReadWrite
    void WriteNuShellX_int( Operator& op, string filename);
    void WriteNuShellX_op( Operator& op, string filename);
    void ReadNuShellX_int( Operator& op, string filename);
+   void ReadNuShellX_int_iso( Operator& op, string filename);
    void ReadNuShellX_sp( ModelSpace& ms, string filename);
    void WriteNuShellX_intfile( Operator& op, string filename, string mode); 
    void WriteAntoine_int( Operator& op, string filename); 
