@@ -51,6 +51,7 @@ class ReadWrite
    void WriteOperator(Operator& op, string filename);
    void WriteOperatorHuman(Operator& op, string filename);
    void ReadOperator(Operator& op, string filename); 
+   void ReadOperatorHuman(Operator& op, string filename); 
    void CompareOperators(Operator& op1, Operator& op2, string filename);
    void ReadOneBody_Takayuki(string filename, Operator& Hbare);
    void ReadTwoBody_Takayuki(string filename, Operator& Hbare);

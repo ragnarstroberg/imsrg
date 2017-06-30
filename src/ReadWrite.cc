@@ -3394,6 +3394,70 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
    
 }
 
+/// Read an operator from a plain-text file
+void ReadWrite::ReadOperatorHuman(Operator &op, string filename)
+{
+   ifstream opfile;
+   opfile.open(filename);
+   if (not opfile.good() )
+   {
+     cerr << "************************************" << endl
+          << "**    Trouble reading file  !!!   **" << filename << endl
+          << "************************************" << endl;
+     goodstate = false;
+     return;
+   }
+
+   string tmpstring;
+   int i,j,k,l,Jbra,Jket,pbra,pket,Tzbra,Tzket;
+   double v;
+
+   opfile >> tmpstring;
+   if (tmpstring == "Hermitian")
+   {
+      op.SetHermitian();
+   }
+   else if (tmpstring == "Anti-Hermitian")
+   {
+      op.SetAntiHermitian();
+   }
+   else
+   {
+      op.SetNonHermitian();
+   }
+   int jrank,trank,parity;
+   opfile >> jrank >> trank >> parity;
+
+   opfile >> tmpstring >> v;
+   op.ZeroBody = v;
+
+   getline(opfile, tmpstring);
+   getline(opfile, tmpstring);
+   getline(opfile, tmpstring);
+   while (tmpstring[0] != '$')
+   {
+      stringstream ss(tmpstring);
+      ss >> i >> j >> v;
+      op.OneBody(i,j) = v;
+      if ( op.IsHermitian() )
+         op.OneBody(j,i) = v;
+      else if ( op.IsAntiHermitian() )
+         op.OneBody(j,i) = -v;
+      getline(opfile, tmpstring);
+   }
+
+//  while(opfile >> chbra >> chket >> i >> j >> v)
+  while(opfile >> Jbra >> pbra >> Tzbra >> Jket >> pket >> Tzket >> i >> j >> k >> l >> v)
+  {
+    op.TwoBody.SetTBME(Jbra,pbra,Tzbra,Jket,pket,Tzket,i,j,k,l,v);
+  }
+
+   opfile.close();
+   
+}
+
+
+
 
 /// Write an operator to a plain-text file
 void ReadWrite::CompareOperators(Operator& op1, Operator& op2, string filename)
