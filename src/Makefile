@@ -36,6 +36,10 @@ LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
 # FLAGS += -DOPENBLAS_NOUSEOMP=1
  SOFLAGS += -fuse-ld=bfd
+ PYTHONFLAGS := $(filter-out -ftz,$(PYTHONFLAGS))
+ PYTHONFLAGS := $(filter-out -fp-speculation=safe,$(PYTHONFLAGS))
+ PYTHONFLAGS := $(filter-out -fp-model,$(PYTHONFLAGS))
+ PYTHONFLAGS := $(filter-out source,$(PYTHONFLAGS))
 endif
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  LIBS += -llapack

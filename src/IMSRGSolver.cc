@@ -86,6 +86,17 @@ void IMSRGSolver::SetHin( Operator & H_in)
    }
 }
 
+
+
+void IMSRGSolver::SetOmega(size_t i, Operator& om)
+{
+ if ((i+1)> Omega.size())
+ {
+  Omega.resize(i+1);
+ }
+ Omega[i] = om;
+}
+
 void IMSRGSolver::Reset()
 {
    s=0;
