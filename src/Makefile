@@ -39,7 +39,8 @@ ifeq ($(THEHOST),jureca) # specific options for jureca cluster
 endif
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  LIBS += -llapack
- PYTHONFLAGS = -I/opt/anaconda/include/python2.7 -L/opt/boost/1.58.0/lib -lboost_python #-lpython 
+# PYTHONFLAGS = -I/opt/anaconda/include/python2.7 -L/opt/boost/1.58.0/lib -lboost_python #-lpython 
+  PYTHONFLAGS := -L/opt/anaconda/lib $(PYTHONFLAGS)
 endif
 ifeq ($(THEHOST),cronos)
  FLAGS += -DOLD_BOOST=1
