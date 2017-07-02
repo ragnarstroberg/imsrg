@@ -186,7 +186,9 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("ReadBareTBME_Navratil", &ReadWrite::ReadBareTBME_Navratil)
       .def("ReadBareTBME_Darmstadt", &ReadWrite::ReadBareTBME_Darmstadt)
       .def("Read_Darmstadt_3body", &ReadWrite::Read_Darmstadt_3body)
+#ifndef NO_HDF5
       .def("Read3bodyHDF5", &ReadWrite::Read3bodyHDF5)
+#endif
       .def("Write_me2j", &ReadWrite::Write_me2j)
       .def("Write_me3j", &ReadWrite::Write_me3j)
       .def("WriteTBME_Navratil", &ReadWrite::WriteTBME_Navratil)

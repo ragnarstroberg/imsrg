@@ -15,7 +15,9 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
+#ifndef NO_HDF5
 #include "H5Cpp.h"
+#endif
 
 #define LINESIZE 496
 //#define HEADERSIZE 500
@@ -28,7 +30,9 @@
 #endif
 
 using namespace std;
+#ifndef NO_HDF5
 using namespace H5;
+#endif
 
 ReadWrite::~ReadWrite()
 {
@@ -724,8 +728,12 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
   }
   else if (extension == ".h5")
   {
+#ifndef NO_HDF5
     Read3bodyHDF5_new( filename, Hbare );
-//    Read3bodyHDF5( filename, Hbare );
+#else
+    cout << "!!!!! ERROR: COMPILED WITH FLAG NO_HDF5 -> Can't read .h5 files !!!!!!!!!!!" << endl;
+    exit(EXIT_FAILURE);
+#endif
   }
   else
   {
@@ -1556,7 +1564,7 @@ void ReadWrite::Store_Darmstadt_3body( const vector<float>& ThreeBME, const vect
 
 
 
-
+#ifndef NO_HDF5
 /// Read three-body basis from HDF5 formatted file. This routine was ported to C++ from
 /// a C routine by Heiko Hergert, with as little modification as possible.
 void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis)
@@ -1623,8 +1631,9 @@ void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<ar
   delete[] dbuf;
 
 }
+#endif
 
-
+#ifndef NO_HDF5
 /// Read three-body matrix elements from HDF5 formatted file. This routine was ported to C++ from
 /// a C routine by Heiko Hergert, with as little modification as possible.
 void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
@@ -1803,12 +1812,13 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
   Write_me3j(filename + "_to_me3j", op, 2, 24, 12);
   cout << "done" << endl;
 }
+#endif
 
 
 
 
 
-
+#ifndef NO_HDF5
 // THIS ONE SEEMS TO WORK, SO FAR
 
 void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
@@ -1935,6 +1945,7 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
   delete[] value_buf;
 
 }
+#endif
 
 
 

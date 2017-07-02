@@ -30,9 +30,11 @@ class ReadWrite
    template<class T>void Read_Darmstadt_3body_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int E3max);
 //   void Store_Darmstadt_3body( vector<float>& ThreeBME, Operator& Hbare, int E1max, int E2max, int E3max);
    void Store_Darmstadt_3body( const vector<float>& ThreeBME, const vector<size_t>& nread_list, const vector<int>& orbits_remap, Operator& Hbare, int E1max, int E2max, int E3max);
+#ifndef NO_HDF5
    void GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis );
    void Read3bodyHDF5( string filename, Operator& op);
    void Read3bodyHDF5_new( string filename, Operator& op);
+#endif
    void ReadOperator_Nathan( string filename1b, string filename2b, Operator& op);
    void ReadTensorOperator_Nathan( string filename1b, string filename2b, Operator& op);
    void Read2bCurrent_Navratil( string filename, Operator& Op);
