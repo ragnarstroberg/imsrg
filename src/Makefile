@@ -11,7 +11,7 @@ FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC
 INSTDIR = $(HOME)
 
 BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "%s_%s",$$2,$$3}' )
-ifneq (,$(findstring BUILDVERSION, HEAD))
+ifneq (,$(findstring detached,$(BUILDVERSION)))
   BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "HEAD_%s",$$6}'  )
 endif
 
