@@ -132,10 +132,10 @@ libIMSRG.so: $(OBJ)
 python: pyIMSRG.so
 
 pyIMSRG.so: $(OBJ)  pyIMSRG.o
-	$(CC) $(FLAGS) $(INCLUDE) $(LIBS) -shared $(PYTHONFLAGS) $^ -o $@
+	$(CC) $^ $(FLAGS) $(INCLUDE) $(LIBS) -shared $(PYTHONFLAGS) -o $@ 
 
 pyIMSRG.o: pyIMSRG.cc
-	$(CC) -c  $(FLAGS) $(INCLUDE) $(LIBS) $(PYTHONFLAGS) $^ -o $@
+	$(CC) -c  $^ $(FLAGS) $(INCLUDE) $(LIBS) $(PYTHONFLAGS) -o $@ 
 
 imsrg++: imsrg++.cc libIMSRG.so Parameters.hh
 	$(CC) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
