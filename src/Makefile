@@ -20,7 +20,6 @@ ifeq ($(DEBUG),on)
 endif
 
 FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
-FLAGS += -DNO_HDF5   # By default, don't bother building with HDF5, since it's not used very often and can make building a pain
 
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
 FLAGS    += $(WARNFLAGS)
@@ -33,7 +32,12 @@ PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags --ldflags)
 THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; else echo other; fi)
 
 ALL = libIMSRG.so imsrg++
-LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
+LIBS = -lopenblas -lgsl -lz
+ifeq ($(HDF5),on)
+ LIBS += -lhdf5_cpp -lhdf5
+else
+ FLAGS += -DNO_HDF5   # By default, don't bother building with HDF5, since it's not used very often and can make building a pain
+endif
 
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
 # FLAGS += -DOPENBLAS_NOUSEOMP=1
@@ -64,12 +68,14 @@ ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up 
  endif
 endif
 
+ifeq ($(HDF5),on)
 # The new version of Ubuntu puts the hdf5 libraries in a different location
-NEWHDF5LOC = $(shell if [ -d /usr/include/hdf5/serial ]; then echo yes; else echo no; fi)
-ifeq ($(NEWHDF5LOC),yes)
-  INCLUDE += -I/usr/include/hdf5/serial
-  NEWLIBS := $(filter-out -lhdf5,$(LIBS))
-  LIBS = $(NEWLIBS) -lhdf5_serial
+ NEWHDF5LOC = $(shell if [ -d /usr/include/hdf5/serial ]; then echo yes; else echo no; fi)
+ ifeq ($(NEWHDF5LOC),yes)
+   INCLUDE += -I/usr/include/hdf5/serial
+   NEWLIBS := $(filter-out -lhdf5,$(LIBS))
+   LIBS = $(NEWLIBS) -lhdf5_serial
+ endif
 endif
 
 all: $(ALL)

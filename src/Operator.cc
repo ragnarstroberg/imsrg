@@ -3988,6 +3988,10 @@ void Operator::AddInverseTensorPandyaTransformation( const map<array<index_t,2>,
                 }
               }
             }
+//            if (J1==0 and J2==0 and i==0 and j==18 and k==1 and l==5 )
+//            {
+//              cout << "debug: adding term with commij = " << commij << "  and commji = " << commji << endl;
+//            }
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
             Zijkl(ibra,iket) +=  (commij - modelspace->phase(ji+jj-J1)*commji) / norm;
