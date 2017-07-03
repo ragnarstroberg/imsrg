@@ -1,32 +1,34 @@
 CC = g++
 
 # Compiler flags:
-#  -DNO_ODE=1 compiles without boost/ode package used for flow equation solver
+#  -DNO_ODE compiles without boost/ode package used for flow equation solver
+#  -DNO_HDF5 compiles without boost/ode package used for flow equation solver
 #  -DOPENBLAS_NOUSEOMP=1 removes parallel blocks which take threads away from OPENBLAS
 #                        to be used if OpenBlas was compiled without the USE_OMP flag
 
 INCLUDE   = -I./armadillo
 FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC 
-SOFLAGS   = -O3 -march=native -std=c++11 -fopenmp -fPIC 
 INSTDIR = $(HOME)
 
 BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "%s_%s",$$2,$$3}' )
 ifeq (HEAD,$(findstring BUILDVERSION, HEAD))
   BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "HEAD_%s",$$6}'  )
 endif
-FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
 
 ifeq ($(DEBUG),on)
  FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g 
- SOFLAGS   = -march=native -std=c++11 -fopenmp -fPIC -g
 endif
+
+FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
+FLAGS += -DNO_HDF5   # By default, don't bother building with HDF5, since it's not used very often and can make building a pain
 
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
 FLAGS    += $(WARNFLAGS)
-SOFLAGS  += $(WARNFLAGS)
+
+SOFLAGS = $(FLAGS)
 
 #PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
-PYTHONFLAGS = -Ipybind11/include $(shell python-config --cflags --ldflags)
+PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags --ldflags)
 
 THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; else echo other; fi)
 
@@ -43,7 +45,8 @@ ifeq ($(THEHOST),jureca) # specific options for jureca cluster
 endif
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  LIBS += -llapack
- PYTHONFLAGS = -I/opt/anaconda/include/python2.7 -L/opt/boost/1.58.0/lib -lboost_python #-lpython 
+# PYTHONFLAGS = -I/opt/anaconda/include/python2.7 -L/opt/boost/1.58.0/lib -lboost_python #-lpython 
+  PYTHONFLAGS := -L/opt/anaconda/lib $(PYTHONFLAGS)
 endif
 ifeq ($(THEHOST),cronos)
  FLAGS += -DOLD_BOOST=1
@@ -123,10 +126,10 @@ libIMSRG.so: $(OBJ)
 python: pyIMSRG.so
 
 pyIMSRG.so: $(OBJ)  pyIMSRG.o
-	$(CC) $^ -o $@ $(FLAGS) $(INCLUDE) $(LIBS) -shared $(PYTHONFLAGS)
+	$(CC) $(FLAGS) $(INCLUDE) $(LIBS) -shared $(PYTHONFLAGS) $^ -o $@
 
 pyIMSRG.o: pyIMSRG.cc
-	$(CC) -c $^ -o $@ $(FLAGS) $(INCLUDE) $(LIBS) $(PYTHONFLAGS)
+	$(CC) -c  $(FLAGS) $(INCLUDE) $(LIBS) $(PYTHONFLAGS) $^ -o $@
 
 imsrg++: imsrg++.cc libIMSRG.so Parameters.hh
 	$(CC) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
