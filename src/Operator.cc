@@ -1286,6 +1286,40 @@ double Operator::TwoBodyNorm() const
 }
 
 
+void Operator::MakeNormalized(){ ChangeNormalization( 1./SQRT2)  ;}
+void Operator::MakeUnNormalized(){ ChangeNormalization( SQRT2)  ;}
+void Operator::ChangeNormalization(double factor)
+{
+  for (auto& itmat : TwoBody.MatEl)
+  {
+    int ch_bra = itmat.first[0];
+    int ch_ket = itmat.first[1];
+    auto& TBME = itmat.second;
+    TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+    TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+    int nbras = tbc_bra.GetNumberKets();
+    int nkets = tbc_ket.GetNumberKets();
+    for (int ibra=0;ibra<nbras;ibra++)
+    {
+      Ket& bra = tbc_bra.GetKet(ibra);
+      if (bra.p == bra.q)
+      {
+        TBME.col(ibra) *= factor;
+      }
+    }
+    for (int iket=0;iket<nkets;iket++)
+    {
+      Ket& ket = tbc_ket.GetKet(iket);
+      if (ket.p == ket.q)
+      {
+        TBME.row(iket) *= factor;
+      }
+    }
+  }
+}
+
+
+
 double Operator::Trace(int Atrace, int Ztrace) const
 {
   double t_start = omp_get_wtime();
@@ -3283,6 +3317,7 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
    {
     int ch_bra = vch_bra[i];
     int ch_ket = vch_ket[i];
+    auto& Z2 = Z.TwoBody.GetMatrix(ch_bra,ch_ket);
 
     TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
     TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
@@ -3323,7 +3358,7 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
     Matrixpp = MLeft * MRight;
                                 
 
-    Z.TwoBody.GetMatrix(ch_bra,ch_ket) += Matrixpp - Matrixhh;
+    Z2 += Matrixpp - Matrixhh;
 
    }// for itmat
 

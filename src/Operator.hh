@@ -163,6 +163,10 @@ class Operator
   double OneBodyNorm() const;
   double TwoBodyNorm() const;
 
+  void MakeNormalized();
+  void MakeUnNormalized();
+  void ChangeNormalization(double factor);
+
   double Trace(int Atrace, int Ztrace) const;
 
   void ScaleFermiDirac(Operator& H, double T, double Efermi);
