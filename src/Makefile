@@ -28,12 +28,13 @@ FLAGS    += $(WARNFLAGS)
 SOFLAGS = $(FLAGS)
 
 #PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
-PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags --ldflags)
+PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags --ldflags) -Wl,--no-as-needed
 
 THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; else echo other; fi)
 
 ALL = libIMSRG.so imsrg++
 LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
+
 
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
 # FLAGS += -DOPENBLAS_NOUSEOMP=1
@@ -126,10 +127,10 @@ libIMSRG.so: $(OBJ)
 python: pyIMSRG.so
 
 pyIMSRG.so: $(OBJ)  pyIMSRG.o
-	$(CC) $(FLAGS) $(INCLUDE) $(LIBS) -shared $(PYTHONFLAGS) $^ -o $@
+	$(CC) $(FLAGS) $(INCLUDE) $(PYTHONFLAGS) $(LIBS) -shared  $^ -o $@
 
 pyIMSRG.o: pyIMSRG.cc
-	$(CC) -c  $(FLAGS) $(INCLUDE) $(LIBS) $(PYTHONFLAGS) $^ -o $@
+	$(CC) -c  $(FLAGS) $(INCLUDE) $(PYTHONFLAGS) $(LIBS)  $^ -o $@
 
 imsrg++: imsrg++.cc libIMSRG.so Parameters.hh
 	$(CC) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
