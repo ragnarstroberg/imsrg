@@ -117,6 +117,9 @@ class Operator
 
   void MakeReduced();
   void MakeNotReduced();
+  void ChangeNormalization(double coeff);
+  void MakeNormalized();
+  void MakeUnNormalized();
 
   void ScaleZeroBody(double x);
   void ScaleOneBody(double x);
