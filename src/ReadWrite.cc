@@ -356,7 +356,7 @@ void ReadWrite::WriteOneBody_Oslo( string filename, Operator& Op)
   outfile << " Mass number A of chosen nucleus (important for CoM corrections):          " << modelspace->GetTargetMass() << endl;
   outfile << " Oscillator length and energy: " << setw(12) << HBARC / sqrt( M_NUCLEON * modelspace->GetHbarOmega() )  << "  " << modelspace->GetHbarOmega() << endl;
   outfile << "  Min and max value of partial wave ang. mom           0           " << modelspace->GetEmax() << endl;
-  outfile << "  Max value of relative orb mom or cm orb mom,  l or L=            7" << endl;
+  outfile << "  Max value of relative orb mom or cm orb mom,  l or L=            " << modelspace->GetEmax() << endl;
   outfile << "  Max value of relative n:           "  << modelspace->GetEmax()/2 << endl;
   outfile << "  Max value of 2*n + l+ cm 2*N +L for large space:          " << modelspace->GetEmax() << endl;
   outfile << "  Max value of 2*n + l+ cm 2*N +L for model space:          " << modelspace->GetEmax() << endl;
@@ -372,7 +372,9 @@ void ReadWrite::WriteOneBody_Oslo( string filename, Operator& Op)
     double hw = modelspace->GetHbarOmega();
     double spe = Op.OneBody(i,i);
     char line[512];
-    sprintf(line,"Number: %3d %5d %5d %5d %5d %5d    %12e  %12e  %8s  %8s\n", i+1, oi.n, oi.l, oi.j2, oi.tz2, e, (e+1.5)*hw, spe, ph.c_str(), io.c_str());
+/// Switching order here to make EKK work with the MBPT code
+//    sprintf(line,"Number: %3d %5d %5d %5d %5d %5d    %13.6e  %13.6e  %8s  %8s\n", i+1, oi.n, oi.l, oi.j2, oi.tz2, e, (e+1.5)*hw, spe, ph.c_str(), io.c_str());
+    sprintf(line,"Number: %3d %5d %5d %5d %5d %5d    %13.6e  %13.6e  %8s  %8s\n", i+1, oi.n, oi.l, oi.j2, oi.tz2, e, spe, 0.0, ph.c_str(), io.c_str());
     outfile << line;
   }
 
