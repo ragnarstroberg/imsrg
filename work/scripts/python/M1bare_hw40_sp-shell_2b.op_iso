@@ -1,0 +1,24 @@
+!  Two-body matrix elements for tensor operator: M1   generated with IM-SRG
+!  Converted to isospin formalism with python script written by Ragnar Stroberg, so if this is wrong, blame him.
+!  Rank_J :  1
+!  Rank_T :  0
+!  Parity :  +1
+!  Zero body term:   0.000000
+!  index   n   l   2j
+!     1    0   0   1
+!     3    0   1   3
+!     2    0   1   1
+!
+!  a   b   c   d  Jab  Jcd  Tab  Tcd  Tzab  Tzcd  <ab Jab ||O|| cd Jcd>
+   1   1   1   1    0    1    1    0     0     0        -0.000069423
+   1   1   3   3    0    1    1    0     0     0         0.000044412
+   3   3   3   3    0    1    1    0     0     0         0.000034374
+   1   3   1   3    1    1    0    0     0     0         0.000041851
+   1   3   1   3    1    1    0    1     0     0         0.000041851
+   1   3   1   3    1    1    1    1     0     0         0.000041851
+   1   1   3   3    1    2    0    1     0     0         0.000069534
+   1   3   1   3    1    2    0    0     0     0         0.000002378
+   1   3   1   3    1    2    0    1     0     0         0.000002378
+   1   3   1   3    1    2    1    0     0     0         0.000002378
+   1   3   1   3    1    2    1    1     0     0         0.000002378
+   3   3   3   3    1    2    0    1     0     0        -0.000076631

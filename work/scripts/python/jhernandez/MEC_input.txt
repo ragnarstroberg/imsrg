@@ -1,0 +1,13 @@
+Nmax: 2
+jjmax: 4
+inputFile: AV18_hw040j16_pqnn801.ho 
+potential: AV18_EM
+hw: 40.0
+constants: 2
+NLO: 1
+DELTA: 0
+Lambda: 986.6
+NquadMomentum: 1000
+NquadPosition: 600
+Rmax[fm]: 20.0
+Pmax[MeV]: 8000.0
