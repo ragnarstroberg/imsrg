@@ -43,6 +43,7 @@ ifeq ($(THEHOST),jureca) # specific options for jureca cluster
  PYTHONFLAGS := $(filter-out -fp-speculation=safe,$(PYTHONFLAGS))
  PYTHONFLAGS := $(filter-out -fp-model,$(PYTHONFLAGS))
  PYTHONFLAGS := $(filter-out source,$(PYTHONFLAGS))
+ PYTHONFLAGS := $(filter-out -xHost,$(PYTHONFLAGS))
 endif
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  LIBS += -llapack
