@@ -1,10 +1,10 @@
-#include "ModelSpace.hh"
-#include "ReadWrite.hh"
-#include "Operator.hh"
-#include "HartreeFock.hh"
-#include "IMSRGSolver.hh"
-#include "imsrg_util.hh"
-#include "AngMom.hh"
+//#include "ModelSpace.hh"
+//#include "ReadWrite.hh"
+//#include "Operator.hh"
+//#include "HartreeFock.hh"
+//#include "IMSRGSolver.hh"
+//#include "imsrg_util.hh"
+//#include "AngMom.hh"
 #include "IMSRG.hh"
 #include <string>
 
@@ -15,13 +15,15 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
 //using namespace boost::python;
 
-  Orbit MSGetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
-  TwoBodyChannel MSGetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
+  Orbit MS_GetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
+  int MS_GetOrbitIndex_Str(ModelSpace& self, string s){ return self.GetOrbitIndex(s);};
+  TwoBodyChannel MS_GetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
 
   double TB_GetTBME_J(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J(j_bra,j_ket,a,b,c,d);};
   double TB_GetTBME_J_norm(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J_norm(j_bra,j_ket,a,b,c,d);};
@@ -33,7 +35,7 @@ namespace py = pybind11;
 
   void MS_SetRef(ModelSpace& self, string str){ self.SetReference( str);};
 
-  Operator HFGetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
+  Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
 
 //BOOST_PYTHON_MODULE(pyIMSRG)
 PYBIND11_PLUGIN(pyIMSRG)
@@ -79,13 +81,14 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("GetTargetMass", &ModelSpace::GetTargetMass)
       .def("GetNumberOrbits", &ModelSpace::GetNumberOrbits)
       .def("GetNumberKets", &ModelSpace::GetNumberKets)
-      .def("GetOrbit", &MSGetOrbit)
+      .def("GetOrbit", &MS_GetOrbit)
       .def("GetTwoBodyChannelIndex", &ModelSpace::GetTwoBodyChannelIndex)
-      .def("GetTwoBodyChannel", &MSGetTwoBodyChannel)
+      .def("GetTwoBodyChannel", &MS_GetTwoBodyChannel)
       .def("Index2String", &ModelSpace::Index2String)
       .def("ResetFirstPass", &ModelSpace::ResetFirstPass)
       .def("SetReference", &MS_SetRef)
       .def("Init_occ_from_file", &ModelSpace::Init_occ_from_file)
+      .def("GetOrbitIndex_fromString", &MS_GetOrbitIndex_Str)
       .def_readwrite("core", &ModelSpace::core)
    ;
 
@@ -132,6 +135,10 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("Set_BCH_Product_Threshold", &Operator::Set_BCH_Product_Threshold)
       .def("PrintOneBody", &Operator::PrintOneBody)
       .def("PrintTwoBody", &Operator::PrintTwoBody)
+      .def("MakeReduced", &Operator::MakeReduced)
+      .def("MakeNotReduced", &Operator::MakeNotReduced)
+      .def("MakeNormalized", &Operator::MakeNormalized)
+      .def("MakeUnNormalized", &Operator::MakeUnNormalized)
       .def("GetParticleRank", &Operator::GetParticleRank)
       .def("GetE3max", &Operator::GetE3max)
       .def("SetE3max", &Operator::SetE3max)
@@ -216,6 +223,7 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("ReadOperator_Nathan",&ReadWrite::ReadOperator_Nathan)
       .def("ReadTensorOperator_Nathan",&ReadWrite::ReadTensorOperator_Nathan)
       .def("ReadRelCMOpFromJavier",&ReadWrite::ReadRelCMOpFromJavier)
+      .def("Set3NFormat",&ReadWrite::Set3NFormat)
       .def_readwrite("InputParameters", &ReadWrite::InputParameters)
    ;
 
@@ -229,9 +237,10 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("Solve",&HartreeFock::Solve)
       .def("TransformToHFBasis",&HartreeFock::TransformToHFBasis)
       .def("GetHbare",&HartreeFock::GetHbare)
-      .def("GetNormalOrderedH",&HFGetNormalOrderedH)
+      .def("GetNormalOrderedH",&HF_GetNormalOrderedH)
       .def("GetOmega",&HartreeFock::GetOmega)
       .def("PrintSPE",&HartreeFock::PrintSPE)
+      .def("GetRadialWF_r",&HartreeFock::GetRadialWF_r)
       .def_readonly("EHF",&HartreeFock::EHF)
    ;
 

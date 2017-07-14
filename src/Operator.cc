@@ -739,6 +739,43 @@ void Operator::MakeNotReduced()
 }
 
 
+void Operator::MakeNormalized()
+{
+ ChangeNormalization( 1.0/SQRT2 );
+}
+
+void Operator::MakeUnNormalized()
+{
+ ChangeNormalization( SQRT2 );
+}
+
+// this routine then multiplies the TBME <ab|Op|cd> by coeff if a==b, and again if c==d
+void Operator::ChangeNormalization( double coeff )
+{
+  for (auto& it_mat : TwoBody.MatEl )
+  {
+    int ch_bra = it_mat.first[0];
+    int ch_ket = it_mat.first[1];
+    TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+    TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+    int nbras = tbc_bra.GetNumberKets();
+    int nkets = tbc_ket.GetNumberKets();
+    for (int ibra=0; ibra<nbras; ++ibra)
+    {
+      Ket& bra = tbc_bra.GetKet(ibra);
+      if ( bra.p == bra.q ) it_mat.second.row(ibra) *= coeff;
+    }
+    for (int iket=0; iket<nkets; ++iket)
+    {
+      Ket& ket = tbc_ket.GetKet(iket);
+      if ( ket.p == ket.q ) it_mat.second.col(iket) *= coeff;
+    }
+  }
+
+}
+
+
+
 void Operator::ScaleZeroBody(double x)
 {
    ZeroBody *= x;
