@@ -86,6 +86,7 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("ResetFirstPass", &ModelSpace::ResetFirstPass)
       .def("SetReference", &MS_SetRef)
       .def("Init_occ_from_file", &ModelSpace::Init_occ_from_file)
+//      .def("GetOrbitIndex", &ModelSpace::GetOrbitIndex)
       .def_readwrite("core", &ModelSpace::core)
    ;
 

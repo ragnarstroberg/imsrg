@@ -280,12 +280,13 @@ void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
   outfile << "  0.000000E+00" << endl;
   outfile << "Total number of twobody matx elements:         ";
   streampos CountLocation = outfile.tellp();
-  outfile << "0               78000        311032          78000" << endl;
+  outfile << "0                                                 " << endl;
 //467032          78000         311032          78000" << endl;
   outfile << "Matrix elements with the following legend, NOTE no hw/A for Hcom, pipj and rirj" << endl;
   outfile << "      Tz      Parity    J2        a        b        c        d     <ab|V|cd>    <ab|0|cd>    <ab|0|cd>    <ab|0|cd>" << endl;
 
   int linecounter = 0;
+  array<int,3> Tzcounter = {0,0,0};
   for ( auto& itmat : Op.TwoBody.MatEl )
   {
     int ch = itmat.first[0]; // assume ch_bra == ch_ket
@@ -304,12 +305,13 @@ void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
         double tbme = matrix(ibra,iket);
         outfile << setw(wint) << Tz << " " << setw(wint) <<parity << " " << setw(wint) <<J2 << " " << setw(wint) << bra.p << " " << setw(wint) <<bra.q << " " << setw(wint) <<ket.p << " " << setw(wint) <<ket.q <<  " " << setw(wdouble) << setprecision(dprec) <<tbme << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << endl;
         ++linecounter;
+        ++Tzcounter[Tz+1];
       }
     }
 
   }
   outfile.seekp( CountLocation );
-  outfile << linecounter ;
+  outfile << linecounter << "    " << Tzcounter[0] << "    " << Tzcounter[1] << "    " << Tzcounter[2];
 
   return;
 }
@@ -353,15 +355,17 @@ void ReadWrite::WriteOneBody_Oslo( string filename, Operator& Op)
   ModelSpace* modelspace = Op.GetModelSpace();
 
   outfile << "   ----> Oscillator parameters, Model space and single-particle data" << endl;
-  outfile << " Mass number A of chosen nucleus (important for CoM corrections):          " << modelspace->GetTargetMass() << endl;
-  outfile << " Oscillator length and energy: " << setw(12) << HBARC / sqrt( M_NUCLEON * modelspace->GetHbarOmega() )  << "  " << modelspace->GetHbarOmega() << endl;
-  outfile << "  Min and max value of partial wave ang. mom           0           " << modelspace->GetEmax() << endl;
-  outfile << "  Max value of relative orb mom or cm orb mom,  l or L=            " << modelspace->GetEmax() << endl;
-  outfile << "  Max value of relative n:           "  << modelspace->GetEmax()/2 << endl;
-  outfile << "  Max value of 2*n + l+ cm 2*N +L for large space:          " << modelspace->GetEmax() << endl;
-  outfile << "  Max value of 2*n + l+ cm 2*N +L for model space:          " << modelspace->GetEmax() << endl;
-  outfile << "  Total number of single-particle orbits          " << modelspace->GetNumberOrbits()  << endl;
-  outfile << " Legend:         n     l     2j   tz    2n+l  HO-energy     evalence     particle/hole  inside/outside" << endl;
+  outfile << "Mass number A of chosen nucleus (important for CoM corrections):          " << modelspace->GetTargetMass() << endl;
+  outfile << "Oscillator length and energy: " << setw(12) << setprecision(6) << scientific 
+          << HBARC / sqrt( M_NUCLEON * modelspace->GetHbarOmega() )
+          << "  " << setw(12) << setprecision(6) << scientific <<  modelspace->GetHbarOmega() << endl;
+  outfile << " Min and max value of partial wave ang. mom    0   " << modelspace->GetEmax() << endl;
+  outfile << " Max value of relative orb mom or cm orb mom,  l or L=  " << modelspace->GetEmax() << endl;
+  outfile << " Max value of relative n:  "  << modelspace->GetEmax()/2 << endl;
+  outfile << " Max value of 2*n + l+ cm 2*N +L for large space:  " << modelspace->GetEmax() << endl;
+  outfile << " Max value of 2*n + l+ cm 2*N +L for model space:  " << modelspace->GetEmax() << endl;
+  outfile << " Total number of single-particle orbits  " << modelspace->GetNumberOrbits()  << endl;
+  outfile << "Legend:         n     l     2j   tz    2n+l  HO-energy     evalence     particle/hole  inside/outside" << endl;
 
   for (int i=0;i<modelspace->GetNumberOrbits(); ++i)
   {
