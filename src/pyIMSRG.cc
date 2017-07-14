@@ -220,6 +220,7 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("ReadOperator_Nathan",&ReadWrite::ReadOperator_Nathan)
       .def("ReadTensorOperator_Nathan",&ReadWrite::ReadTensorOperator_Nathan)
       .def("ReadRelCMOpFromJavier",&ReadWrite::ReadRelCMOpFromJavier)
+      .def("Set3NFormat",&ReadWrite::Set3NFormat)
       .def_readwrite("InputParameters", &ReadWrite::InputParameters)
    ;
 
