@@ -790,11 +790,18 @@ void HartreeFock::PrintSPE()
 
 void HartreeFock::GetRadialWF(index_t index, vector<double>& R, vector<double>& PSI)
 {
+  PSI.resize(0);
+  for (double r : R)
+  {
+    PSI.push_back( GetRadialWF_r(index, r) );
+  }
+}
+
+double HartreeFock::GetRadialWF_r(index_t index, double R)
+{
   double b = sqrt( (HBARC*HBARC) / (modelspace->GetHbarOmega() * M_NUCLEON) );
   Orbit& orb = modelspace->GetOrbit(index);
-  for (size_t r=0;r<R.size(); ++r)
-  {
-   double x = R[r]/b;
+   double x = R/b;
    double psi = 0;
    for ( index_t j : Hbare.OneBodyChannels.at({orb.l,orb.j2,orb.tz2}) )
    {
@@ -802,9 +809,7 @@ void HartreeFock::GetRadialWF(index_t index, vector<double>& R, vector<double>& 
      double Norm = 2*sqrt( gsl_sf_fact(oj.n) * pow(2,oj.n+oj.l) / M_SQRTPI / gsl_sf_doublefact(2*oj.n+2*oj.l+1) * pow(b,-3.0) );
      psi += C(index,j) * Norm * pow(x,oj.l) * exp(-x*x*0.5) * gsl_sf_laguerre_n(oj.n,oj.l+0.5,x*x);
    }
-   PSI[r] = psi;
-  }
-
+   return psi;
 }
 
 
