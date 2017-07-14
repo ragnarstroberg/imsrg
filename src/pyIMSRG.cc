@@ -140,6 +140,9 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("MakeNormalized", &Operator::MakeNormalized)
       .def("MakeUnNormalized", &Operator::MakeUnNormalized)
       .def("GetParticleRank", &Operator::GetParticleRank)
+      .def("GetJRank", &Operator::GetJRank)
+      .def("GetTRank", &Operator::GetTRank)
+      .def("GetParity", &Operator::GetParity)
       .def("GetE3max", &Operator::GetE3max)
       .def("SetE3max", &Operator::SetE3max)
       .def("PrintTimes", &Operator::PrintTimes)
@@ -320,6 +323,7 @@ PYBIND11_PLUGIN(pyIMSRG)
    m.def("RadialIntegral",     imsrg_util::RadialIntegral);
    m.def("RadialIntegral_RpowK",     imsrg_util::RadialIntegral_RpowK);
    m.def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
+   m.def("OperatorFromString", imsrg_util::OperatorFromString);
 
    m.def("CG",AngMom::CG);
    m.def("ThreeJ",AngMom::ThreeJ);
