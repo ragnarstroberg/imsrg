@@ -30,10 +30,10 @@ SOFLAGS = $(FLAGS)
 #PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags --ldflags)
 
-THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; else echo other; fi)
+THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; else echo other; fi)
 
 ALL = libIMSRG.so imsrg++
-LIBS = -lopenblas -lgsl -lz -lhdf5_cpp -lhdf5
+LIBS = -lopenblas -lgsl -lz #-lhdf5_cpp -lhdf5
 
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
 # FLAGS += -DOPENBLAS_NOUSEOMP=1
@@ -64,6 +64,10 @@ ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up 
  endif
 endif
 
+ifeq ($(THEHOST),oak)
+  FLAGS += -DOLD_BOOST
+endif
+
 # The new version of Ubuntu puts the hdf5 libraries in a different location
 NEWHDF5LOC = $(shell if [ -d /usr/include/hdf5/serial ]; then echo yes; else echo no; fi)
 ifeq ($(NEWHDF5LOC),yes)
@@ -82,6 +86,9 @@ install: splashscreen
 	@if [ ! -d $(INSTDIR)/include ] ; then \
 	  mkdir $(INSTDIR)/include; \
 	fi 
+	@if [ ! -d $(INSTDIR)/bin ] ; then \
+	  mkdir $(INSTDIR)/bin; \
+	fi
 	ln -sf $(PWD)/libIMSRG.so $(INSTDIR)/lib/libIMSRG.so
 	ln -sfT $(PWD)/armadillo $(INSTDIR)/include/armadillo
 	@if [ -f pyIMSRG.so ] ; then\
