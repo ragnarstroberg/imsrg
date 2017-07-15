@@ -274,8 +274,8 @@ void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
   }
 
   outfile << "     ====> Interaction part" << endl;
-  outfile << "Nucleon-Nucleon interaction model: who knows?" << endl;
-  outfile << "Type of calculation: magical" << endl;
+  outfile << "Nucleon-Nucleon interaction model: n3lo" << endl;
+  outfile << "Type of calculation: vlowk" << endl;
   outfile << "Number and value of starting energies:   1" << endl;
   outfile << "  0.000000E+00" << endl;
   outfile << "Total number of twobody matx elements:         ";
