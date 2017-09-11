@@ -89,6 +89,7 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("SetReference", &MS_SetRef)
       .def("Init_occ_from_file", &ModelSpace::Init_occ_from_file)
       .def("GetOrbitIndex_fromString", &MS_GetOrbitIndex_Str)
+      .def("PreCalculateSixJ", &ModelSpace::PreCalculateSixJ)
       .def_readwrite("core", &ModelSpace::core)
    ;
 
@@ -245,6 +246,7 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("PrintSPE",&HartreeFock::PrintSPE)
       .def("GetRadialWF_r",&HartreeFock::GetRadialWF_r)
       .def_readonly("EHF",&HartreeFock::EHF)
+      .def_readonly("C",&HartreeFock::C)
    ;
 
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
