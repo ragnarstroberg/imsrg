@@ -102,7 +102,8 @@ int main(int argc, char** argv)
   if (inputtbme != "none")
   {
     test.open(inputtbme);
-    if( not test.good() and fmt2!="oakridge_binary")
+//    if( not test.good() and fmt2!="oakridge_binary")
+    if( not test.good() and  fmt2.find("oakridge")== string::npos)
     {
       cout << "trouble reading " << inputtbme << " exiting. " << endl;
       return 1;
