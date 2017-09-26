@@ -1495,7 +1495,8 @@ void Operator::SetToCommutator( const Operator& X, const Operator& Y)
    }
    else
    {
-      cout << "In Tensor-Tensor because X.rank_J = " << X.rank_J << "  and Y.rank_J = " << Y.rank_J << endl;
+      cout << "In Tensor-Tensor because X.rank_J = " << X.rank_J << "  X.rank_T = " << X.rank_T << "  X.parity = " << X.parity << "   ";
+      cout <<                        "  Y.rank_J = " << Y.rank_J << "  Y.rank_T = " << Y.rank_T << "  Y.parity = " << Y.parity << endl;
       cout << " Tensor-Tensor commutator not yet implemented." << endl;
    }
    profiler.timer["Commutator"] += omp_get_wtime() - t_start;
