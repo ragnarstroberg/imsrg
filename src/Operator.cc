@@ -3931,6 +3931,11 @@ void Operator::AddInverseTensorPandyaTransformation( const map<array<index_t,2>,
                       else     tbme = Zmat(indx_kj, indx_il+(i>l?0:nbras) ) * modelspace->phase( ji+jj+jk+jl) ; // Z_ilkj = Z_kjil * (phase)
                   }
                   commij += hatfactor * modelspace->phase(jj+jl+J2+J4) * ninej * tbme ;
+
+                  if (J1==0 and J2==0 and i==0 and j==18 and k==1 and l==5 and abs(tbme)>1e-7 and abs(ninej)>1e-7)
+                  {
+                    cout << "    " << J3 << " " << J4 << "  " << hatfactor << " "  << modelspace->phase(jj+jl+J2+J4) << " " << ninej << " " << tbme << " " << commij << endl;
+                  }
               }
             }
 
@@ -3988,14 +3993,14 @@ void Operator::AddInverseTensorPandyaTransformation( const map<array<index_t,2>,
                 }
               }
             }
-//            if (J1==0 and J2==0 and i==0 and j==18 and k==1 and l==5 )
-//            {
-//              cout << "debug: adding term with commij = " << commij << "  and commji = " << commji << endl;
-//            }
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
             Zijkl(ibra,iket) +=  (commij - modelspace->phase(ji+jj-J1)*commji) / norm;
             if (ch_bra==ch_ket) Zijkl(iket,ibra) = hZ * Zijkl(ibra,iket);
+            if (J1==0 and J2==0 and i==0 and j==18 and k==1 and l==5 )
+            {
+              cout << "debug: adding term with commij = " << commij << "  and commji = " << commji << " :   (" << ch_bra << ", " << ch_ket << ") " << ibra << " " << iket << "  norm = " << norm << " -> " << Zijkl(ibra,iket) << endl;
+            }
          }
       }
    }
