@@ -121,6 +121,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aad38c905e7e9f9e9757b5800e6910c61"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#aad38c905e7e9f9e9757b5800e6910c61">UpdateDensityMatrix</a> ()</td></tr>
 <tr class="memdesc:aad38c905e7e9f9e9757b5800e6910c61"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update the density matrix with the new coefficients C.  <a href="#aad38c905e7e9f9e9757b5800e6910c61">More...</a><br /></td></tr>
 <tr class="separator:aad38c905e7e9f9e9757b5800e6910c61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74c842cbf4e8caec72591c1205794f1f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#a74c842cbf4e8caec72591c1205794f1f">FillLowestOrbits</a> ()</td></tr>
+<tr class="memdesc:a74c842cbf4e8caec72591c1205794f1f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get new occupations based on the current single-particle energies.  <a href="#a74c842cbf4e8caec72591c1205794f1f">More...</a><br /></td></tr>
+<tr class="separator:a74c842cbf4e8caec72591c1205794f1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35ab9c4f96e68b1c9acea1d1407ecc60"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#a35ab9c4f96e68b1c9acea1d1407ecc60">CheckConvergence</a> ()</td></tr>
 <tr class="memdesc:a35ab9c4f96e68b1c9acea1d1407ecc60"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compare the current energies with those from the previous iteration.  <a href="#a35ab9c4f96e68b1c9acea1d1407ecc60">More...</a><br /></td></tr>
 <tr class="separator:a35ab9c4f96e68b1c9acea1d1407ecc60"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -142,6 +145,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a17bdb52033e2f62bba72ea86bc196b37"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#a17bdb52033e2f62bba72ea86bc196b37">GetNormalOrderedH</a> ()</td></tr>
 <tr class="memdesc:a17bdb52033e2f62bba72ea86bc196b37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the Hamiltonian in the HF basis at the normal-ordered 2body level.  <a href="#a17bdb52033e2f62bba72ea86bc196b37">More...</a><br /></td></tr>
 <tr class="separator:a17bdb52033e2f62bba72ea86bc196b37"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7da4e35f14128c1c0becf204e15a4e1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad7da4e35f14128c1c0becf204e15a4e1"></a>
+<a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#ad7da4e35f14128c1c0becf204e15a4e1">GetNormalOrderedH</a> (arma::mat &amp;Cin)</td></tr>
+<tr class="memdesc:ad7da4e35f14128c1c0becf204e15a4e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the Hamiltonian in the HF basis at the normal-ordered 2body level. <br /></td></tr>
+<tr class="separator:ad7da4e35f14128c1c0becf204e15a4e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a53011b381945ed5c61f50b209db5bf64"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#a53011b381945ed5c61f50b209db5bf64">GetOmega</a> ()</td></tr>
 <tr class="memdesc:a53011b381945ed5c61f50b209db5bf64"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a generator of the Hartree Fock transformation.  <a href="#a53011b381945ed5c61f50b209db5bf64">More...</a><br /></td></tr>
 <tr class="separator:a53011b381945ed5c61f50b209db5bf64"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -159,6 +166,22 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#a2bc07257af2fe0ca86e6a3f8c642c3c6">GetRadialWF</a> (index_t index, vector&lt; double &gt; &amp;R, vector&lt; double &gt; &amp;PSI)</td></tr>
 <tr class="memdesc:a2bc07257af2fe0ca86e6a3f8c642c3c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the radial wave function of an orbit in the HF basis. <br /></td></tr>
 <tr class="separator:a2bc07257af2fe0ca86e6a3f8c642c3c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29de897a332985f5b08bd0f08a466db3"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a29de897a332985f5b08bd0f08a466db3"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#a29de897a332985f5b08bd0f08a466db3">GetRadialWF_r</a> (index_t index, double R)</td></tr>
+<tr class="memdesc:a29de897a332985f5b08bd0f08a466db3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the radial wave function of an orbit in the HF basis. <br /></td></tr>
+<tr class="separator:a29de897a332985f5b08bd0f08a466db3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3fb9fc68d98aedc4cf1aae52da237339"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3fb9fc68d98aedc4cf1aae52da237339"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>FreezeOccupations</b> ()</td></tr>
+<tr class="separator:a3fb9fc68d98aedc4cf1aae52da237339"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab7aa734d2b1df54ddba236f279269fcc"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab7aa734d2b1df54ddba236f279269fcc"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UnFreezeOccupations</b> ()</td></tr>
+<tr class="separator:ab7aa734d2b1df54ddba236f279269fcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab863d5d020e15854d4d591ec0ce6a1a0"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#ab863d5d020e15854d4d591ec0ce6a1a0">Vmon3Hash</a> (uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f)</td></tr>
+<tr class="separator:ab863d5d020e15854d4d591ec0ce6a1a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af675589807ed0369ce3c9ef30d9d625b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af675589807ed0369ce3c9ef30d9d625b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#af675589807ed0369ce3c9ef30d9d625b">Vmon3UnHash</a> (uint64_t key, int &amp;a, int &amp;b, int &amp;c, int &amp;d, int &amp;e, int &amp;f)</td></tr>
+<tr class="memdesc:af675589807ed0369ce3c9ef30d9d625b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Take a hashed key and extract the six orbit indices that went into it. <br /></td></tr>
+<tr class="separator:af675589807ed0369ce3c9ef30d9d625b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -240,9 +263,12 @@ double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cl
 int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3">iterations</a></td></tr>
 <tr class="memdesc:a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">iterations used in <a class="el" href="classHartreeFock.html#a0666507747c17845ab4f74b97414703c" title="Diagonalize and UpdateF until convergence. ">Solve()</a> <br /></td></tr>
 <tr class="separator:a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa7e970505e9ab444d0cdb377b5f7c7b0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa7e970505e9ab444d0cdb377b5f7c7b0"></a>
-vector&lt; pair&lt; const array&lt; int, 6 &gt;, double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Vmon3</b></td></tr>
-<tr class="separator:aa7e970505e9ab444d0cdb377b5f7c7b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7afbe49ce366636559a0ff2ddf948c8a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7afbe49ce366636559a0ff2ddf948c8a"></a>
+vector&lt; uint64_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Vmon3_keys</b></td></tr>
+<tr class="separator:a7afbe49ce366636559a0ff2ddf948c8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4a8c2aec3f3c14bd40a91f51eb161ff"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa4a8c2aec3f3c14bd40a91f51eb161ff"></a>
+vector&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Vmon3</b></td></tr>
+<tr class="separator:aa4a8c2aec3f3c14bd40a91f51eb161ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0435b3f1485ddd1d8d91bbd84e008445"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0435b3f1485ddd1d8d91bbd84e008445"></a>
 <a class="el" href="classIMSRGProfiler.html">IMSRGProfiler</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#a0435b3f1485ddd1d8d91bbd84e008445">profiler</a></td></tr>
 <tr class="memdesc:a0435b3f1485ddd1d8d91bbd84e008445"><td class="mdescLeft">&#160;</td><td class="mdescRight">Profiler for timing, etc. <br /></td></tr>
@@ -255,6 +281,9 @@ deque&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a clas
 deque&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classHartreeFock.html#ab25913777db3556ece46af9bea495776">convergence_EHF</a></td></tr>
 <tr class="memdesc:ab25913777db3556ece46af9bea495776"><td class="mdescLeft">&#160;</td><td class="mdescRight">Save last few convergence checks for diagnostics. <br /></td></tr>
 <tr class="separator:ab25913777db3556ece46af9bea495776"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5dba3b4a2fd164c68daeb7a744ede3c6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5dba3b4a2fd164c68daeb7a744ede3c6"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>freeze_occupations</b></td></tr>
+<tr class="separator:a5dba3b4a2fd164c68daeb7a744ede3c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a3d6bac9b4403e4bc599a89ad0c9b6056"></a>
@@ -358,6 +387,24 @@ deque&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a clas
 
 <p>Diagonalize the Fock matrix. </p>
 <p>[See Suhonen eq. 4.85] Diagonalize the fock matrix \( &lt;a|F|b&gt; \) and put the eigenvectors in \(C(i,\alpha) = &lt;i|\alpha&gt; \) and eigenvalues in the vector energies. Save the last vector of energies to check for convergence. Submatrices corresponding to different channels are diagonalized independently. This guarantees that J,Tz, and \( \pi \) remain good. </p>
+
+</div>
+</div>
+<a class="anchor" id="a74c842cbf4e8caec72591c1205794f1f"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void HartreeFock::FillLowestOrbits </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get new occupations based on the current single-particle energies. </p>
+<p>Get new occupation numbers by filling the orbits in order of their single-particle energies. The last proton/neutron orbit can have a fractional filling, corresponding to ensemble normal ordering. </p>
 
 </div>
 </div>
@@ -558,6 +605,57 @@ deque&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a clas
 
 </div>
 </div>
+<a class="anchor" id="ab863d5d020e15854d4d591ec0ce6a1a0"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint64_t HartreeFock::Vmon3Hash </td>
+          <td>(</td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>a</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>b</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>c</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>d</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>e</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>f</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Hashing function for rolling six orbit indices into a single long unsigned int. Each orbit gets 10 bits. </p>
+
+</div>
+</div>
 <h2 class="groupheader">Member Data Documentation</h2>
 <a class="anchor" id="a415fc1fbbba3a6a84d47e31ed18323c9"></a>
 <div class="memitem">
@@ -581,7 +679,7 @@ deque&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><a clas
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 20 2016 12:14:48 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 2 2017 20:12:52 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

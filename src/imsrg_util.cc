@@ -749,7 +749,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 /// Returns
 /// \f[ 
 /// R_p^{2} = \frac{1}{Z} \sum_{p}\left(\vec{r}_{p}-\vec{R}_{CM}\right)^2 =
-/// R^2_{CM} + \frac{A-2}{AZ} \sum_{p}r_{p}^{2} - \frac{4}{AZ}\sum_{i<j}\vec{r}_i\cdot\vec{r}_j  \right)
+/// R^2_{CM} + \frac{A-2}{AZ} \sum_{p}r_{p}^{2} - \frac{4}{AZ}\sum_{i<j}\vec{r}_i\cdot\vec{r}_j  
 /// \f]
 /// evaluated in the oscillator basis.
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z)
@@ -891,7 +891,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
 
 /// Center of mass Hamiltonian
-/// \f{eqnarray*}{
+/// \f{align*}{
 /// H_{CM} &= T_{CM} + \frac{1}{2} Am\omega^2 R^2 \\
 ///        &= T_{CM} + \frac{1}{2b^2} AR^2 \hbar\omega
 /// \f}

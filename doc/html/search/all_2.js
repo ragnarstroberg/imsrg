@@ -4,6 +4,7 @@ var searchData=
   ['calcehf',['CalcEHF',['../classHartreeFock.html#aef506c5c5bc0f317ceb9c71bdc44d62b',1,'HartreeFock']]],
   ['calculate_5fp1p2',['Calculate_p1p2',['../namespaceimsrg__util.html#a3aad21447b8e28d22597a79220ba805a',1,'imsrg_util']]],
   ['calculate_5fr1r2',['Calculate_r1r2',['../namespaceimsrg__util.html#aa5d72d0bd9c75beb54256188e9ccfcbe',1,'imsrg_util']]],
+  ['calculate_5fr1xp2',['Calculate_r1xp2',['../namespaceimsrg__util.html#aa28f0db9ecf5d7a27908cda9fa579a31',1,'imsrg_util']]],
   ['checkconvergence',['CheckConvergence',['../classHartreeFock.html#a35ab9c4f96e68b1c9acea1d1407ecc60',1,'HartreeFock']]],
   ['checkmem',['CheckMem',['../classIMSRGProfiler.html#a3b2bc2c6fa62462e3e4d0ae897d7eb97',1,'IMSRGProfiler']]],
   ['comm110ss',['comm110ss',['../classOperator.html#a39adf2f2f225609606da088b59e3502a',1,'Operator']]],
@@ -22,5 +23,7 @@ var searchData=
   ['compareoperators',['CompareOperators',['../classReadWrite.html#a1275273dc4057c79a8e8c7d96b74f359',1,'ReadWrite']]],
   ['constructgenerator_5fimaginarytime',['ConstructGenerator_ImaginaryTime',['../classGenerator.html#a7186a187278d51eefbd031610364a6f9',1,'Generator']]],
   ['convergence_5fediff',['convergence_ediff',['../classHartreeFock.html#af09702c2875d94fc4721cdefe0d7573d',1,'HartreeFock']]],
-  ['convergence_5fehf',['convergence_EHF',['../classHartreeFock.html#ab25913777db3556ece46af9bea495776',1,'HartreeFock']]]
+  ['convergence_5fehf',['convergence_EHF',['../classHartreeFock.html#ab25913777db3556ece46af9bea495776',1,'HartreeFock']]],
+  ['count_5fdarmstadt_5f3body_5fto_5fread',['Count_Darmstadt_3body_to_read',['../classReadWrite.html#a61a1a2eeb9b94d6dbf754ca668639d5c',1,'ReadWrite']]],
+  ['cprbmegen',['CPrbmeGen',['../namespaceimsrg__util.html#a9e2f7d969020b57db388ecb464314ebb',1,'imsrg_util']]]
 ];
