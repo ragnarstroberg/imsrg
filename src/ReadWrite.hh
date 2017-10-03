@@ -61,6 +61,7 @@ class ReadWrite
    void WriteTwoBody_Takayuki(string filename, Operator& Hbare);
    void WriteTensorOneBody(string filename, Operator& H, string opname);
    void WriteTensorTwoBody(string filename, Operator& H, string opname);
+   void WriteOneBody_Simple(string filename, Operator& Hbare);
    void WriteOneBody_Oslo(string filename, Operator& Hbare);
    void WriteTwoBody_Oslo(string filename, Operator& Hbare);
    void ReadTwoBodyEngel(string filename, Operator& Op);

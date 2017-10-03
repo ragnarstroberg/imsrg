@@ -28,6 +28,9 @@
 #ifndef HBARC
    #define HBARC 197.3269718 // hc in MeV * fm
 #endif
+#ifndef M_NUCLEON
+   #define M_NUCLEON 938.9185
+#endif
 
 using namespace std;
 #ifndef NO_HDF5
@@ -269,8 +272,21 @@ void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
      goodstate = false;
      return;
   }
+
+  outfile << "     ====> Interaction part" << endl;
+  outfile << "Nucleon-Nucleon interaction model: n3lo" << endl;
+  outfile << "Type of calculation: vlowk" << endl;
+  outfile << "Number and value of starting energies:   1" << endl;
+  outfile << "  0.000000E+00" << endl;
+  outfile << "Total number of twobody matx elements:         ";
+  streampos CountLocation = outfile.tellp();
+  outfile << "0                                                 " << endl;
+//467032          78000         311032          78000" << endl;
+  outfile << "Matrix elements with the following legend, NOTE no hw/A for Hcom, pipj and rirj" << endl;
   outfile << "      Tz      Parity    J2        a        b        c        d     <ab|V|cd>    <ab|0|cd>    <ab|0|cd>    <ab|0|cd>" << endl;
 
+  int linecounter = 0;
+  array<int,3> Tzcounter = {0,0,0};
   for ( auto& itmat : Op.TwoBody.MatEl )
   {
     int ch = itmat.first[0]; // assume ch_bra == ch_ket
@@ -287,17 +303,22 @@ void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
       {
         Ket& ket = tbc.GetKet(iket);
         double tbme = matrix(ibra,iket);
-        outfile << setw(wint) << Tz << " " << setw(wint) <<parity << " " << setw(wint) <<J2 << " " << setw(wint) << bra.p << " " << setw(wint) <<bra.q << " " << setw(wint) <<ket.p << " " << setw(wint) <<ket.q <<  " " << setw(wdouble) << setprecision(dprec) <<tbme << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << endl;
+        outfile << setw(wint) << Tz << " " << setw(wint) <<parity << " " << setw(wint) <<J2 << " " << setw(wint) << bra.p+1 << " " << setw(wint) <<bra.q+1 << " " << setw(wint) <<ket.p+1 << " " << setw(wint) <<ket.q+1 <<  " " << setw(wdouble) << setprecision(dprec) <<tbme << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << endl;
+        ++linecounter;
+        ++Tzcounter[Tz+1];
       }
     }
 
   }
+  outfile.seekp( CountLocation );
+  outfile << linecounter << "    " << Tzcounter[0] << "    " << Tzcounter[1] << "    " << Tzcounter[2];
 
   return;
 }
 
 
-void ReadWrite::WriteOneBody_Oslo( string filename, Operator& Op)
+//void ReadWrite::WriteOneBody_Oslo( string filename, Operator& Op)
+void ReadWrite::WriteOneBody_Simple( string filename, Operator& Op)
 {
   ofstream outfile(filename);
   ModelSpace* modelspace = Op.GetModelSpace();
@@ -323,6 +344,42 @@ void ReadWrite::WriteOneBody_Oslo( string filename, Operator& Op)
     {
       outfile << setw(wint) << i << "   " << setw(wint) << j << "   " << setw(wdouble) << Op.OneBody(i,j) << endl;
     }
+  }
+
+}
+
+
+void ReadWrite::WriteOneBody_Oslo( string filename, Operator& Op)
+{
+  ofstream outfile(filename);
+  ModelSpace* modelspace = Op.GetModelSpace();
+
+  outfile << "   ----> Oscillator parameters, Model space and single-particle data" << endl;
+  outfile << "Mass number A of chosen nucleus (important for CoM corrections):          " << modelspace->GetTargetMass() << endl;
+  outfile << "Oscillator length and energy: " << setw(12) << setprecision(6) << scientific 
+          << HBARC / sqrt( M_NUCLEON * modelspace->GetHbarOmega() )
+          << "  " << setw(12) << setprecision(6) << scientific <<  modelspace->GetHbarOmega() << endl;
+  outfile << " Min and max value of partial wave ang. mom    0   " << modelspace->GetEmax() << endl;
+  outfile << " Max value of relative orb mom or cm orb mom,  l or L=  " << modelspace->GetEmax() << endl;
+  outfile << " Max value of relative n:  "  << modelspace->GetEmax()/2 << endl;
+  outfile << " Max value of 2*n + l+ cm 2*N +L for large space:  " << modelspace->GetEmax() << endl;
+  outfile << " Max value of 2*n + l+ cm 2*N +L for model space:  " << modelspace->GetEmax() << endl;
+  outfile << " Total number of single-particle orbits  " << modelspace->GetNumberOrbits()  << endl;
+  outfile << "Legend:         n     l     2j   tz    2n+l  HO-energy     evalence     particle/hole  inside/outside" << endl;
+
+  for (int i=0;i<modelspace->GetNumberOrbits(); ++i)
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    string ph = oi.cvq > 0 ? "particle" : "hole";
+    string io = oi.cvq == 1 ? "inside" : "outside";
+    int e = 2*oi.n+oi.l;
+//    double hw = modelspace->GetHbarOmega();
+    double spe = Op.OneBody(i,i);
+    char line[512];
+/// Switching order here to make EKK work with the MBPT code
+//    sprintf(line,"Number: %3d %5d %5d %5d %5d %5d    %13.6e  %13.6e  %8s  %8s\n", i+1, oi.n, oi.l, oi.j2, oi.tz2, e, (e+1.5)*hw, spe, ph.c_str(), io.c_str());
+    sprintf(line,"Number: %3d %5d %5d %5d %5d %5d    %13.6e  %13.6e  %8s  %8s\n", i+1, oi.n, oi.l, oi.j2, oi.tz2, e, spe, 0.0, ph.c_str(), io.c_str());
+    outfile << line;
   }
 
 }

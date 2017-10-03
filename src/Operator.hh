@@ -117,6 +117,9 @@ class Operator
 
   void MakeReduced();
   void MakeNotReduced();
+  void ChangeNormalization(double coeff);
+  void MakeNormalized();
+  void MakeUnNormalized();
 
   void ScaleZeroBody(double x);
   void ScaleOneBody(double x);
@@ -163,9 +166,6 @@ class Operator
   double OneBodyNorm() const;
   double TwoBodyNorm() const;
 
-  void MakeNormalized();
-  void MakeUnNormalized();
-  void ChangeNormalization(double factor);
 
   double Trace(int Atrace, int Ztrace) const;
 

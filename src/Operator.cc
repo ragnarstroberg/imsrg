@@ -739,6 +739,34 @@ void Operator::MakeNotReduced()
 }
 
 
+
+//// this routine then multiplies the TBME <ab|Op|cd> by coeff if a==b, and again if c==d
+//void Operator::ChangeNormalization( double coeff )
+//{
+//  for (auto& it_mat : TwoBody.MatEl )
+//  {
+//    int ch_bra = it_mat.first[0];
+//    int ch_ket = it_mat.first[1];
+//    TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+//    TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+//    int nbras = tbc_bra.GetNumberKets();
+//    int nkets = tbc_ket.GetNumberKets();
+//    for (int ibra=0; ibra<nbras; ++ibra)
+//    {
+//      Ket& bra = tbc_bra.GetKet(ibra);
+//      if ( bra.p == bra.q ) it_mat.second.row(ibra) *= coeff;
+//    }
+//    for (int iket=0; iket<nkets; ++iket)
+//    {
+//      Ket& ket = tbc_ket.GetKet(iket);
+//      if ( ket.p == ket.q ) it_mat.second.col(iket) *= coeff;
+//    }
+//  }
+//
+//}
+
+
+
 void Operator::ScaleZeroBody(double x)
 {
    ZeroBody *= x;
@@ -1492,7 +1520,8 @@ void Operator::SetToCommutator( const Operator& X, const Operator& Y)
    }
    else
    {
-      cout << "In Tensor-Tensor because X.rank_J = " << X.rank_J << "  and Y.rank_J = " << Y.rank_J << endl;
+      cout << "In Tensor-Tensor because X.rank_J = " << X.rank_J << "  X.rank_T = " << X.rank_T << "  X.parity = " << X.parity << "   ";
+      cout <<                        "  Y.rank_J = " << Y.rank_J << "  Y.rank_T = " << Y.rank_T << "  Y.parity = " << Y.parity << endl;
       cout << " Tensor-Tensor commutator not yet implemented." << endl;
    }
    profiler.timer["Commutator"] += omp_get_wtime() - t_start;

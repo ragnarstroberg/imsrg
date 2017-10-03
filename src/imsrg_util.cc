@@ -697,7 +697,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 //   Operator R2cmOp = Operator(modelspace);
    Operator R2cmOp = RSquaredOp(modelspace);
 
-   unsigned int norb = modelspace.GetNumberOrbits();
+//   unsigned int norb = modelspace.GetNumberOrbits();
 //   double oscillator_b2 = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
 //   for (unsigned int i=0; i<norb; ++i)
 //   {
