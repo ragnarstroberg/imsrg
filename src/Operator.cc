@@ -26,6 +26,7 @@ double  Operator::bch_transform_threshold = 1e-9;
 double  Operator::bch_product_threshold = 1e-4;
 bool Operator::use_brueckner_bch = false;
 bool Operator::use_goose_tank_correction = false;
+bool Operator::use_goose_tank_correction_titus = false;
 
 Operator& Operator::TempOp(size_t n)
 {
@@ -1136,6 +1137,7 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
    int warn_iter = 12;
    double nx = Norm();
    double ny = Omega.Norm();
+//   arma::mat occmat = 
    Operator OpOut = *this;
    if (nx>bch_transform_threshold)
    {
@@ -1147,6 +1149,7 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
         {
             OpNested.GooseTank(*this,Omega);
         }
+        
 
         Operator tmp1 = Commutator(Omega,OpNested);
         tmp1 /= i;
