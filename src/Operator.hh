@@ -48,6 +48,7 @@ class Operator
   static double bch_product_threshold;
   static bool use_brueckner_bch;
   static bool use_goose_tank_correction;
+  static bool use_goose_tank_correction_titus;
 
 
 
