@@ -8,17 +8,40 @@
 class DaggerOperator: public Operator
 {
  public:
-  
-  // commutator terms, these are just placeholders for now
-//  void comm110ss( const Operator& X, const Operator& Y) ; 
-//  void comm220ss( const Operator& X, const Operator& Y) ;
-//  void comm111ss( const Operator& X, const Operator& Y) ;
-//  void comm121ss( const Operator& X, const Operator& Y) ;
-//  void comm221ss( const Operator& X, const Operator& Y) ;
-//  void comm122ss( const Operator& X, const Operator& Y) ;
-//  void comm222_pp_hhss( const Operator& X, const Operator& Y) ;
-//  void comm222_phss( const Operator& X, const Operator& Y) ;
-//  void comm222_pp_hh_221ss( const Operator& X, const Operator& Y) ;
+
+
+
+
+  //Constructors
+ ~DaggerOperator(); // Explicitly define destructor/constructor in order
+  DaggerOperator(); // to maintain a counter of how many operators exist
+  DaggerOperator(ModelSpace&); ///< Construct a 2-body scalar operator
+  DaggerOperator(ModelSpace&, int Jrank, int Trank, int Parity, int part_rank);
+  DaggerOperator( const DaggerOperator& rhs); ///< Copy constructor
+  DaggerOperator( DaggerOperator&&);
+
+  //Assignment operator cannot be inherited.
+  DaggerOperator& operator=( const DaggerOperator& rhs);
+
+
+
+  friend DaggerOperator Commutator(const Operator& X, const DaggerOperator& Y) ;
+  void SetToCommutator( const Operator& X, const DaggerOperator& Y);
+  void CommutatorScalarDagger( const Operator& X, const DaggerOperator& Y);
+
+ 
+  // commutator terms, 211 means [two legs, one leg] => one leg
+  // sd means scalar-dagger
+  void comm211sd( const Operator& X, const DaggerOperator& Y) ; 
+  void comm231sd( const Operator& X, const DaggerOperator& Y) ;
+  void comm431sd( const Operator& X, const DaggerOperator& Y) ;
+  void comm413sd( const Operator& X, const DaggerOperator& Y) ; 
+  void comm233sd( const Operator& X, const DaggerOperator& Y) ; 
+  void comm433sd_pphh( const Operator& X, const DaggerOperator& Y) ; 
+  void comm433sd_ph( const Operator& X, const DaggerOperator& Y) ; 
+
+
+
 };
 
 #endif 
