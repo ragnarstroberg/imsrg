@@ -7,30 +7,46 @@
 //////////////////// DESTRUCTOR //////////////////////////////////////////
 DaggerOperator::~DaggerOperator()
 {
-  profiler.counter["N_Operators"] --;
+//  profiler.counter["N_Operators"] --;
 }
 
 /////////////////// CONSTRUCTORS /////////////////////////////////////////
 DaggerOperator::DaggerOperator() : Operator() 
-{}
+{
+  profiler.counter["N_DaggerOperators_base"] ++;
+}
 
 DaggerOperator::DaggerOperator(ModelSpace& ms) : Operator( ms) ///< Construct a 2-body scalar operator
-{}
+{
+
+  profiler.counter["N_DaggerOperators_ms"] ++;
+}
 
 DaggerOperator::DaggerOperator(ModelSpace& ms, int Jrank, int Trank, int Parity, int part_rank) : Operator(ms,  Jrank, Trank, Parity, part_rank)
-{}
+{
+
+  profiler.counter["N_DaggerOperators_msJTP"] ++;
+}
 
 DaggerOperator::DaggerOperator( const DaggerOperator& rhs) : Operator( rhs ) , Q_space_orbit(rhs.Q_space_orbit)///< Copy constructor
-{}
+{
+
+  profiler.counter["N_DaggerOperators_rhs"] ++;
+}
 
 DaggerOperator::DaggerOperator( DaggerOperator&& rhs) : Operator( rhs ), Q_space_orbit(rhs.Q_space_orbit)
-{}
+{
+
+  profiler.counter["N_DaggerOperators_rhs_rvalue"] ++;
+}
 
 
 DaggerOperator::DaggerOperator(ModelSpace& ms, index_t Q) : Operator( ms )
 { 
   SetQSpaceOrbit(Q);
   OneBody(Q,Q)= 1.0;
+  SetNonHermitian();
+  profiler.counter["N_DaggerOperators_msQ"] ++;
 }
 
 
@@ -83,15 +99,8 @@ DaggerOperator DaggerOperator::Standard_BCH_Transform( const Operator &Omega)
         OpNested = tmp1;
         OpOut += OpNested;
   
-        if (this->rank_J > 0)
-        {
-            cout << "Tensor BCH, i=" << i << "  Norm = " << setw(12) << setprecision(8) << fixed << OpNested.OneBodyNorm() << " " 
-                                                         << setw(12) << setprecision(8) << fixed << OpNested.TwoBodyNorm() << " "
-                                                         << setw(12) << setprecision(8) << fixed << OpNested.Norm() << endl;
-        }
         epsilon *= i+1;
         if (OpNested.Norm() < epsilon)  break;
-//        if (OpNested.Norm() < epsilon *(i+1))  break;
         if (i == warn_iter)  cout << "Warning: BCH_Transform not converged after " << warn_iter << " nested commutators" << endl;
         else if (i == max_iter)   cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << endl;
      }
@@ -109,11 +118,14 @@ DaggerOperator DaggerOperator::Standard_BCH_Transform( const Operator &Omega)
 //RECOGNIZE A DAGGER OPERATOR.
 DaggerOperator Commutator( const Operator& X, const DaggerOperator& Y)
 {
-  int jrank = max(X.rank_J,Y.rank_J);
-  int trank = max(X.rank_T,Y.rank_T);
-  int parity = (X.parity+Y.parity)%2;
-  int particlerank = max(X.particle_rank,Y.particle_rank);
-  DaggerOperator Z(*(Y.modelspace),jrank,trank,parity,particlerank);
+//  int jrank = max(X.rank_J,Y.rank_J);
+//  int trank = max(X.rank_T,Y.rank_T);
+//  int parity = (X.parity+Y.parity)%2;
+//  int particlerank = max(X.particle_rank,Y.particle_rank);
+  int Q = Y.GetQSpaceOrbit();
+  DaggerOperator Z(*(Y.modelspace),Q);
+//  DaggerOperator Z;
+//  DaggerOperator Z(*(Y.modelspace),jrank,trank,parity,particlerank);
   Z.SetToCommutator(X,Y);
   return Z;
 }
@@ -158,30 +170,12 @@ void DaggerOperator::CommutatorScalarDagger( const Operator& X, const DaggerOper
    else if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Z.SetHermitian();
    else Z.SetNonHermitian();
 
-   std::cout << "Before starting, Y1b is" << std::endl;
-   Y.OneBody.print();
-   std::cout << "and X1b is" << std::endl;
-   X.OneBody.print();
-
-   std::cout << "In CommutatorScalarDagger..." << std::endl;
 //   double t_start = omp_get_wtime();
    Z.comm211sd( X, Y ) ; 
-   std::cout << "   done with comm211sd" << std::endl;
-   Z.OneBody.print();
    Z.comm231sd( X, Y ) ;
-   std::cout << "   done with comm231sd" << std::endl;
-   Z.OneBody.print();
-//   comm431sd( X, Y ) ;
    Z.comm413_233sd( X, Y ) ; 
-   std::cout << "   done with comm413_233sd" << std::endl;
-   Z.OneBody.print();
-//   comm433sd_pphh( X, Y ) ; 
    Z.comm433sd_ph( X, Y ) ; 
-   std::cout << "   done with comm433sd" << std::endl;
-   Z.OneBody.print();
    Z.comm433_pp_hh_431sd( X, Y ) ; 
-   std::cout << "   done with comm433_pp_hh_431sd" << std::endl;
-   Z.OneBody.print();
 
 
 //   // NEED TO FIGURE OUT IF SYMMETRIZE IS A SANE THING TO DO WITH DAGGER OPERATORS
@@ -190,7 +184,7 @@ void DaggerOperator::CommutatorScalarDagger( const Operator& X, const DaggerOper
 //   else if (Z.IsAntiHermitian() )
 //      Z.AntiSymmetrize();
 
-   profiler.timer["CommutatorScalarScalar"] += omp_get_wtime() - t_css;
+   profiler.timer["CommutatorScalarDagger"] += omp_get_wtime() - t_css;
 
 }
 
@@ -645,7 +639,7 @@ void DaggerOperator::comm433_pp_hh_431sd( const Operator& X, const Operator& Y )
 
 //   int herm = Z.IsHermitian() ? 1 : -1;
    DaggerOperator& Z = *this;
-   int norbits = modelspace->GetNumberOrbits();
+//   int norbits = modelspace->GetNumberOrbits();
 
    static TwoBodyME Mpp = Z.TwoBody;
    static TwoBodyME Mhh = Z.TwoBody;
@@ -661,14 +655,20 @@ void DaggerOperator::comm433_pp_hh_431sd( const Operator& X, const Operator& Y )
 
    t = omp_get_wtime();
    // The one body part
+   int j = Z.GetQSpaceOrbit();
+   Orbit& oj = modelspace->GetOrbit(j);
+//   for (int i=0;i<norbits;++i)
+   auto ilist = Z.OneBodyChannels.at({oj.l,oj.j2,oj.tz2});
+   int ni = ilist.size();
    #pragma omp parallel for schedule(dynamic,1)
-   for (int i=0;i<norbits;++i)
+   for (int i_ind=0; i_ind<ni; ++i_ind)
    {
+      int i = ilist[i_ind];
       Orbit &oi = modelspace->GetOrbit(i);
-      int jmin = Z.IsNonHermitian() ? 0 : i;
-      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-      {
-         if (j<jmin) continue;
+//      int jmin = Z.IsNonHermitian() ? 0 : i;
+//      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//      {
+//         if (j<jmin) continue;
          double cijJ = 0;
          for (int ch=0;ch<nChannels;++ch)
          {
@@ -688,7 +688,7 @@ void DaggerOperator::comm433_pp_hh_431sd( const Operator& X, const Operator& Y )
             }
          }
          Z.OneBody(i,j) += cijJ /(oi.j2+1.0);
-      } // for j
+//      } // for j
    } // for i
    profiler.timer["pphh One Body bit"] += omp_get_wtime() - t;
 }

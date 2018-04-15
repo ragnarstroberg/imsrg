@@ -25,7 +25,7 @@ class DaggerOperator: public Operator
   //Assignment operator cannot be inherited.
   DaggerOperator& operator=( const DaggerOperator& rhs);
 
-  index_t GetQSpaceOrbit(){return Q_space_orbit;};
+  index_t GetQSpaceOrbit() const {return Q_space_orbit;};
   void SetQSpaceOrbit(index_t Q) {Q_space_orbit = Q;};
 
 
