@@ -1,25 +1,12 @@
-//#include "ModelSpace.hh"
-//#include "ReadWrite.hh"
-//#include "Operator.hh"
-//#include "HartreeFock.hh"
-//#include "IMSRGSolver.hh"
-//#include "imsrg_util.hh"
-//#include "AngMom.hh"
+
 #include "IMSRG.hh"
 #include <string>
-
-//#include <boost/python/module.hpp>
-//#include <boost/python/def.hpp>
-//#include <boost/python.hpp>
-//#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-//using namespace boost::python;
 
   Orbit MS_GetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
   int MS_GetOrbitIndex_Str(ModelSpace& self, string s){ return self.GetOrbitIndex(s);};
@@ -37,16 +24,10 @@ namespace py = pybind11;
 
   Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
 
-//BOOST_PYTHON_MODULE(pyIMSRG)
 PYBIND11_PLUGIN(pyIMSRG)
 {
   py::module m("pyIMSRG", "python bindings for IMSRG code");
 
-//   py::class<vector<string> > vector_string("vector_string")
-//      .def (vector_indexing_suite< vector<string> >())
-//   ;
-
-//   class_<Orbit>("Orbit",init<>())
    py::class_<Orbit>(m,"Orbit")
       .def(py::init<>())
       .def_readwrite("n", &Orbit::n)
@@ -58,7 +39,6 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def_readwrite("index", &Orbit::index)
    ;
 
-//   class_<TwoBodyChannel>("TwoBodyChannel",init<>())
    py::class_<TwoBodyChannel>(m,"TwoBodyChannel")
       .def(py::init<>())
       .def("GetNumberKets",&TwoBodyChannel::GetNumberKets)
@@ -66,7 +46,6 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("GetKetIndex",&TwoBodyChannel::GetKetIndex)
    ;
 
-//   class_<ModelSpace>("ModelSpace",init<>())
    py::class_<ModelSpace>(m,"ModelSpace")
       .def(py::init<>())
       .def(py::init<const ModelSpace&>())
@@ -94,7 +73,6 @@ PYBIND11_PLUGIN(pyIMSRG)
    ;
 
 
-//   class_<Operator>("Operator",init<>())
    py::class_<Operator>(m,"Operator")
       .def(py::init<>())
       .def(py::init< ModelSpace&>())
@@ -168,7 +146,15 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("SetOneBodyME", &OpSetOneBodyME)
    ;
 
-//   class_<arma::mat>("ArmaMat",init<>())
+   // Indicate a derived class by listing the base class
+   // as a template parameter
+   py::class_<DaggerOperator,Operator>(m,"DaggerOperator")
+      .def(py::init< ModelSpace&,int>())
+      .def("SetQSpaceOrbit", &DaggerOperator::SetQSpaceOrbit)
+      .def("GetQSpaceOrbit", &DaggerOperator::GetQSpaceOrbit)
+   ;
+
+
    py::class_<arma::mat>(m,"ArmaMat")
       .def(py::init<>())
       .def("Print",&ArmaMatPrint)
@@ -182,14 +168,12 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def(py::self - double())
    ;
 
-//   class_<TwoBodyME>("TwoBodyME",init<>())
    py::class_<TwoBodyME>(m,"TwoBodyME")
       .def(py::init<>())
       .def("GetTBME_J", TB_GetTBME_J)
       .def("GetTBME_J_norm", TB_GetTBME_J_norm)
    ;
 
-//   class_<ReadWrite>("ReadWrite",init<>())
    py::class_<ReadWrite>(m,"ReadWrite")
       .def(py::init<>())
       .def("ReadSettingsFile", &ReadWrite::ReadSettingsFile)
@@ -236,7 +220,6 @@ PYBIND11_PLUGIN(pyIMSRG)
 
 
 
-//   class_<HartreeFock>("HartreeFock",init<Operator&>())
    py::class_<HartreeFock>(m,"HartreeFock")
       .def(py::init<Operator&>())
       .def("Solve",&HartreeFock::Solve)
@@ -252,12 +235,13 @@ PYBIND11_PLUGIN(pyIMSRG)
 
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
    Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
+   DaggerOperator (IMSRGSolver::*TransformDag_ref)(DaggerOperator&) = &IMSRGSolver::Transform;
 
-//   class_<IMSRGSolver>("IMSRGSolver",init<Operator&>())
    py::class_<IMSRGSolver>(m,"IMSRGSolver")
       .def(py::init<Operator&>())
       .def("Solve",&IMSRGSolver::Solve)
       .def("Transform",Transform_ref)
+      .def("TransformDagger",TransformDag_ref)
       .def("InverseTransform",&IMSRGSolver::InverseTransform)
       .def("SetFlowFile",&IMSRGSolver::SetFlowFile)
       .def("SetMethod",&IMSRGSolver::SetMethod)
@@ -286,7 +270,6 @@ PYBIND11_PLUGIN(pyIMSRG)
 
 
 
-//   class_<IMSRGProfiler>("IMSRGProfiler",init<>())
    py::class_<IMSRGProfiler>(m,"IMSRGProfiler")
       .def(py::init<>())
       .def("PrintTimes",&IMSRGProfiler::PrintTimes)

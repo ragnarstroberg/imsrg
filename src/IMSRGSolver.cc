@@ -368,13 +368,11 @@ struct vector_space_reduce< deque<Operator> >
    }
 };
 }}}
-#endif
-
+#else
 // Apply operation to each element of X and return the result
 // this is needed for ODE adaptive solver
 // USE THIS FOR BOOST VERSION >= 1.56
 //struct vector_space_norm_inf< vector<Operator> >
-#ifndef OLD_BOOST
 namespace boost {namespace numeric {namespace odeint{
 template<>
 struct vector_space_norm_inf< deque<Operator> >
@@ -390,7 +388,7 @@ struct vector_space_norm_inf< deque<Operator> >
    }
 };
 }}}
-#endif
+#endif  // end ifdef OLD_BOOST
 
 void IMSRGSolver::Solve_ode()
 {
@@ -417,9 +415,7 @@ void IMSRGSolver::Solve_ode_adaptive()
    cout << "done writing header and status" << endl;
    using namespace boost::numeric::odeint;
    auto system = *this;
-//   typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
    typedef runge_kutta_dopri5< deque<Operator> , double , deque<Operator> ,double , vector_space_algebra > stepper;
-//   typedef adams_bashforth_moulton< 4, vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
    integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
@@ -428,8 +424,6 @@ void IMSRGSolver::Solve_ode_adaptive()
 }
 
 // Evaluate dx/dt for boost ode
-//void IMSRGSolver::operator()( const Operator& x, Operator& dxdt, const double t)
-//void IMSRGSolver::operator()( const vector<Operator>& x, vector<Operator>& dxdt, const double t)
 void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, const double t)
 {
    s = t;
@@ -458,7 +452,7 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
    {
 
      double norm_omega = Omega.back().Norm();
-     if (norm_omega > omega_norm_max) // This doesn't seem to works so well just yet...
+     if (norm_omega > omega_norm_max) // This doesn't seem to work so well just yet...
      {
        NewOmega();
        norm_omega = 0;
@@ -523,7 +517,6 @@ void IMSRGSolver::Solve_ode_magnus()
    WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
    namespace pl = std::placeholders;
-//   runge_kutta4<vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
    runge_kutta4<deque<Operator>, double, deque<Operator>, double, vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
@@ -534,19 +527,38 @@ void IMSRGSolver::Solve_ode_magnus()
 
 
 
-#endif
+#endif  // ifndef NO_ODE
+
+
+///// Returns \f$ e^{Omega} \mathcal{O} e^{-Omega} \f$
+//Operator IMSRGSolver::Transform(Operator& OpIn)
+//{
+//  return Transform_Partial(OpIn, 0);
+//}
+//
+//Operator IMSRGSolver::Transform(Operator&& OpIn)
+//{
+//  return Transform_Partial(OpIn, 0);
+//}
+
 
 
 /// Returns \f$ e^{Omega} \mathcal{O} e^{-Omega} \f$
-Operator IMSRGSolver::Transform(Operator& OpIn)
+template<class Op>
+Op IMSRGSolver::Transform(Op& OpIn)
 {
   return Transform_Partial(OpIn, 0);
 }
+template Operator IMSRGSolver::Transform(Operator&);
+template DaggerOperator IMSRGSolver::Transform(DaggerOperator&);
 
-Operator IMSRGSolver::Transform(Operator&& OpIn)
+template<class Op>
+Op IMSRGSolver::Transform(Op&& OpIn)
 {
   return Transform_Partial(OpIn, 0);
 }
+template Operator IMSRGSolver::Transform(Operator&&);
+template DaggerOperator IMSRGSolver::Transform(DaggerOperator&&);
 
 
 
@@ -554,10 +566,6 @@ Operator IMSRGSolver::Transform(Operator&& OpIn)
 /// Returns \f$ e^{-Omega} \mathcal{O} e^{Omega} \f$
 Operator IMSRGSolver::InverseTransform(Operator& OpIn)
 {
-//  if (OpIn.GetJRank()+OpIn.GetTRank()+OpIn.GetParity()>0)
-//  {
-//    OpIn.ResetTensorTransformFirstPass();
-//  }
   Operator OpOut = OpIn;
   for (auto omega=Omega.rbegin(); omega !=Omega.rend(); ++omega )
   {
@@ -567,43 +575,69 @@ Operator IMSRGSolver::InverseTransform(Operator& OpIn)
   return OpOut;
 }
 
+
+///// Returns \f$ e^{\Omega} \mathcal{O} e^{-\Omega} \f$
+///// for the \f$\Omega_i\f$s with index greater than or equal to n.
+//Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
+//{
+//  Operator OpOut = OpIn;
+//  if ((rw != NULL) and rw->GetScratchDir() != "")
+//  {
+//    Operator omega(OpIn);
+//    char tmp[512];
+//    for (int i=n;i<n_omega_written;i++)
+//    {
+//     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+//     string fname(tmp);
+//     ifstream ifs(fname,ios::binary);
+//     omega.ReadBinary(ifs);
+//     OpOut = OpOut.BCH_Transform( omega );
+//    }
+//  }
+//
+//  for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
+//  {
+//    OpOut = OpOut.BCH_Transform( Omega[i] );
+//  }
+//
+//  return OpOut;
+//}
+
+
+//Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
+//{
+//  Operator OpOut = OpIn;
+//  if ((rw != NULL) and rw->GetScratchDir() != "")
+//  {
+//    Operator omega(OpIn);
+//    char tmp[512];
+//    for (int i=n;i<n_omega_written;i++)
+//    {
+//     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+//     string fname(tmp);
+//     ifstream ifs(fname,ios::binary);
+//     omega.ReadBinary(ifs);
+//     OpOut = OpOut.BCH_Transform( omega );
+//    }
+//  }
+//
+//  for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
+//  {
+//    OpOut = OpOut.BCH_Transform( Omega[i] );
+//  }
+//  return OpOut;
+//}
+
+
+
+
+
 /// Returns \f$ e^{\Omega} \mathcal{O} e^{-\Omega} \f$
 /// for the \f$\Omega_i\f$s with index greater than or equal to n.
-Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
+template<class Op>
+Op IMSRGSolver::Transform_Partial(Op& OpIn, int n)
 {
-//  cout << "Begin Transform_Partial" << endl;
-  Operator OpOut = OpIn;
-  if ((rw != NULL) and rw->GetScratchDir() != "")
-  {
-    Operator omega(OpIn);
-    char tmp[512];
-    for (int i=n;i<n_omega_written;i++)
-    {
-     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
-     string fname(tmp);
-     ifstream ifs(fname,ios::binary);
-     omega.ReadBinary(ifs);
-//     if (OpIn.GetJRank()>0) cout << "step " << i << endl;
-     OpOut = OpOut.BCH_Transform( omega );
-//     if (OpIn.GetJRank()>0)cout << "done" << endl;
-    }
-  }
-
-  for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
-  {
-//     if (OpIn.GetJRank()>0) cout << "step " << i << endl;
-    OpOut = OpOut.BCH_Transform( Omega[i] );
-//     if (OpIn.GetJRank()>0)cout << "done" << endl;
-  }
-
-  return OpOut;
-}
-
-
-Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
-{
-//  cout << "Calling r-value version of Transform_Partial, n = " << n << endl;
-  Operator OpOut = OpIn;
+  Op OpOut = OpIn;
   if ((rw != NULL) and rw->GetScratchDir() != "")
   {
     Operator omega(OpIn);
@@ -622,8 +656,44 @@ Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
   {
     OpOut = OpOut.BCH_Transform( Omega[i] );
   }
+
   return OpOut;
 }
+//Operator IMSRGSolver::Transform_Partial(Operator&, int);
+template Operator IMSRGSolver::Transform_Partial(Operator&, int);
+template DaggerOperator IMSRGSolver::Transform_Partial(DaggerOperator&, int);
+
+// Need to check if this ever ends up being useful...
+template<class Op>
+Op IMSRGSolver::Transform_Partial(Op&& OpIn, int n)
+{
+  Op OpOut = OpIn;
+  if ((rw != NULL) and rw->GetScratchDir() != "")
+  {
+    Operator omega(OpIn);
+    char tmp[512];
+    for (int i=n;i<n_omega_written;i++)
+    {
+     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+     string fname(tmp);
+     ifstream ifs(fname,ios::binary);
+     omega.ReadBinary(ifs);
+     OpOut = OpOut.BCH_Transform( omega );
+    }
+  }
+
+  for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
+  {
+    OpOut = OpOut.BCH_Transform( Omega[i] );
+  }
+  return OpOut;
+}
+template Operator IMSRGSolver::Transform_Partial(Operator&&, int);
+template DaggerOperator IMSRGSolver::Transform_Partial(DaggerOperator&&, int);
+
+
+
+
 
 // count number of equations to be solved
 int IMSRGSolver::GetSystemDimension()

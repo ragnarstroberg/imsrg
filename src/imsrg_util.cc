@@ -21,13 +21,17 @@ namespace imsrg_util
       else if (opname == "Rp2")           return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rn2")           return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rm2")           return Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
+      else if (opname == "E1")            return ElectricMultipoleOp(modelspace,1) ;
       else if (opname == "E2")            return ElectricMultipoleOp(modelspace,2) ;
+      else if (opname == "E3")            return ElectricMultipoleOp(modelspace,3) ;
       else if (opname == "E4")            return ElectricMultipoleOp(modelspace,4) ;
       else if (opname == "E6")            return ElectricMultipoleOp(modelspace,6) ;
       else if (opname == "E2int")         return IntrinsicElectricMultipoleOp(modelspace,2) ;
       else if (opname == "nE2")           return NeutronElectricMultipoleOp(modelspace,2) ;
       else if (opname == "M1")            return MagneticMultipoleOp(modelspace,1) ;
+      else if (opname == "M2")            return MagneticMultipoleOp(modelspace,2) ;
       else if (opname == "M3")            return MagneticMultipoleOp(modelspace,3) ;
+      else if (opname == "M4")            return MagneticMultipoleOp(modelspace,4) ;
       else if (opname == "M5")            return MagneticMultipoleOp(modelspace,5) ;
       else if (opname == "M1p")           return MagneticMultipoleOp_pn(modelspace,1,"proton") ;
       else if (opname == "M1n")           return MagneticMultipoleOp_pn(modelspace,1,"neutron") ;

@@ -6,6 +6,7 @@
 #include <string>
 #include <deque>
 #include "Operator.hh"
+#include "DaggerOperator.hh"
 #include "Generator.hh"
 #include "IMSRGProfiler.hh"
 #include "ReadWrite.hh"
@@ -59,15 +60,19 @@ class IMSRGSolver
   void Solve_magnus_euler();
   void Solve_magnus_modified_euler();
 
-  Operator Transform(Operator& OpIn);
-  Operator Transform(Operator&& OpIn);
+//  Operator Transform(Operator& OpIn);
+//  Operator Transform(Operator&& OpIn);
+  template<class Op> Op Transform(Op& OpIn);
+  template<class Op> Op Transform(Op&& OpIn);
   Operator InverseTransform(Operator& OpIn);
   Operator GetOmega(int i){return Omega[i];};
   void SetOmega(size_t i, Operator& om);
   int GetOmegaSize(){return Omega.size();};
   int GetNOmegaWritten(){return n_omega_written;};
-  Operator Transform_Partial(Operator& OpIn, int n);
-  Operator Transform_Partial(Operator&& OpIn, int n);
+//  Operator Transform_Partial(Operator& OpIn, int n);
+//  Operator Transform_Partial(Operator&& OpIn, int n);
+  template<class Op> Op Transform_Partial(Op& OpIn, int n);
+  template<class Op> Op Transform_Partial(Op&& OpIn, int n);
 
   void SetFlowFile(string s);
   void SetDs(double d){ds = d;};

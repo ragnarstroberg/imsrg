@@ -48,6 +48,7 @@ class Operator
   static double bch_product_threshold;
   static bool use_brueckner_bch;
   static bool use_goose_tank_correction;
+  static bool use_goose_tank_correction_titus;
 
 
 
@@ -60,22 +61,22 @@ class Operator
   Operator( Operator&&);
 
   //Overloaded operators
-  Operator& operator=( const Operator& rhs);
-  Operator& operator+=( const Operator& rhs);
-  Operator operator+( const Operator& rhs) const;
-  Operator& operator+=( const double& rhs);
-  Operator operator+( const double& rhs) const;
-  Operator& operator-=( const Operator& rhs);
-  Operator operator-( const Operator& rhs) const;
-  Operator operator-( ) const;
-  Operator& operator-=( const double& rhs);
-  Operator operator-( const double& rhs) const;
-  Operator& operator*=( const double rhs);
-  Operator operator*( const double rhs) const;
-  Operator& operator/=( const double rhs);
-  Operator operator/( const double rhs) const;
+virtual  Operator& operator=( const Operator& rhs);
+virtual  Operator& operator+=( const Operator& rhs);
+virtual  Operator operator+( const Operator& rhs) const;
+virtual  Operator& operator+=( const double& rhs);
+virtual  Operator operator+( const double& rhs) const;
+virtual  Operator& operator-=( const Operator& rhs);
+virtual  Operator operator-( const Operator& rhs) const;
+virtual  Operator operator-( ) const;
+virtual  Operator& operator-=( const double& rhs);
+virtual  Operator operator-( const double& rhs) const;
+virtual  Operator& operator*=( const double rhs);
+virtual  Operator operator*( const double rhs) const;
+virtual  Operator& operator/=( const double rhs);
+virtual  Operator operator/( const double rhs) const;
 
-  Operator& operator=(Operator&& rhs);
+virtual  Operator& operator=(Operator&& rhs);
 
   //Methods
   Operator& TempOp(size_t n); ///< Static scratch space for calculations
