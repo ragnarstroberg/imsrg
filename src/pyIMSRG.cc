@@ -235,11 +235,13 @@ PYBIND11_PLUGIN(pyIMSRG)
 
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
    Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
+   DaggerOperator (IMSRGSolver::*TransformDag_ref)(DaggerOperator&) = &IMSRGSolver::Transform;
 
    py::class_<IMSRGSolver>(m,"IMSRGSolver")
       .def(py::init<Operator&>())
       .def("Solve",&IMSRGSolver::Solve)
       .def("Transform",Transform_ref)
+      .def("TransformDagger",TransformDag_ref)
       .def("InverseTransform",&IMSRGSolver::InverseTransform)
       .def("SetFlowFile",&IMSRGSolver::SetFlowFile)
       .def("SetMethod",&IMSRGSolver::SetMethod)

@@ -97,7 +97,8 @@ def main():
   ## have much of an effect, so let's just go with some defaults.
   if basis == 'IMSRG':
     imsrgsolver = IMSRGSolver(HNO)
-    imsrgsolver.SetSmax(500)
+#    imsrgsolver.SetSmax(500)
+    imsrgsolver.SetSmax(5)
     imsrgsolver.SetReadWrite(rw)
     imsrgsolver.SetEtaCriterion(1e-6)
     imsrgsolver.SetMethod('magnus')
@@ -105,7 +106,7 @@ def main():
     imsrgsolver.SetGenerator('atan')
     imsrgsolver.Solve()
     HNO = imsrgsolver.GetH_s()
-    dagT = imsrgsolver.Transform(dag)
+    dagT = imsrgsolver.TransformDagger(dag)
   dagT.PrintOneBody()
 
  

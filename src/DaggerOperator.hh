@@ -29,6 +29,12 @@ class DaggerOperator: public Operator
   void SetQSpaceOrbit(index_t Q) {Q_space_orbit = Q;};
 
 
+//  DaggerOperator BCH_Product(  Operator& )  ; 
+  DaggerOperator BCH_Transform( const Operator& ) ; 
+  DaggerOperator Standard_BCH_Transform( const Operator& ) ; 
+//  DaggerOperator Brueckner_BCH_Transform( const Operator& ) ;
+
+
 
   friend DaggerOperator Commutator(const Operator& X, const DaggerOperator& Y) ;
   void SetToCommutator( const Operator& X, const DaggerOperator& Y);
