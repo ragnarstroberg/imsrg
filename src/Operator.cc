@@ -26,6 +26,7 @@ double  Operator::bch_transform_threshold = 1e-9;
 double  Operator::bch_product_threshold = 1e-4;
 bool Operator::use_brueckner_bch = false;
 bool Operator::use_goose_tank_correction = false;
+bool Operator::use_goose_tank_correction_titus = false;
 
 Operator& Operator::TempOp(size_t n)
 {
@@ -739,40 +740,31 @@ void Operator::MakeNotReduced()
 }
 
 
-void Operator::MakeNormalized()
-{
- ChangeNormalization( 1.0/SQRT2 );
-}
 
-void Operator::MakeUnNormalized()
-{
- ChangeNormalization( SQRT2 );
-}
-
-// this routine then multiplies the TBME <ab|Op|cd> by coeff if a==b, and again if c==d
-void Operator::ChangeNormalization( double coeff )
-{
-  for (auto& it_mat : TwoBody.MatEl )
-  {
-    int ch_bra = it_mat.first[0];
-    int ch_ket = it_mat.first[1];
-    TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-    TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-    int nbras = tbc_bra.GetNumberKets();
-    int nkets = tbc_ket.GetNumberKets();
-    for (int ibra=0; ibra<nbras; ++ibra)
-    {
-      Ket& bra = tbc_bra.GetKet(ibra);
-      if ( bra.p == bra.q ) it_mat.second.row(ibra) *= coeff;
-    }
-    for (int iket=0; iket<nkets; ++iket)
-    {
-      Ket& ket = tbc_ket.GetKet(iket);
-      if ( ket.p == ket.q ) it_mat.second.col(iket) *= coeff;
-    }
-  }
-
-}
+//// this routine then multiplies the TBME <ab|Op|cd> by coeff if a==b, and again if c==d
+//void Operator::ChangeNormalization( double coeff )
+//{
+//  for (auto& it_mat : TwoBody.MatEl )
+//  {
+//    int ch_bra = it_mat.first[0];
+//    int ch_ket = it_mat.first[1];
+//    TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+//    TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+//    int nbras = tbc_bra.GetNumberKets();
+//    int nkets = tbc_ket.GetNumberKets();
+//    for (int ibra=0; ibra<nbras; ++ibra)
+//    {
+//      Ket& bra = tbc_bra.GetKet(ibra);
+//      if ( bra.p == bra.q ) it_mat.second.row(ibra) *= coeff;
+//    }
+//    for (int iket=0; iket<nkets; ++iket)
+//    {
+//      Ket& ket = tbc_ket.GetKet(iket);
+//      if ( ket.p == ket.q ) it_mat.second.col(iket) *= coeff;
+//    }
+//  }
+//
+//}
 
 
 
@@ -1145,6 +1137,7 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
    int warn_iter = 12;
    double nx = Norm();
    double ny = Omega.Norm();
+//   arma::mat occmat = 
    Operator OpOut = *this;
    if (nx>bch_transform_threshold)
    {
@@ -1156,6 +1149,7 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
         {
             OpNested.GooseTank(*this,Omega);
         }
+        
 
         Operator tmp1 = Commutator(Omega,OpNested);
         tmp1 /= i;
@@ -1321,6 +1315,40 @@ double Operator::TwoBodyNorm() const
 {
   return TwoBody.Norm();
 }
+
+
+void Operator::MakeNormalized(){ ChangeNormalization( 1./SQRT2)  ;}
+void Operator::MakeUnNormalized(){ ChangeNormalization( SQRT2)  ;}
+void Operator::ChangeNormalization(double factor)
+{
+  for (auto& itmat : TwoBody.MatEl)
+  {
+    int ch_bra = itmat.first[0];
+    int ch_ket = itmat.first[1];
+    auto& TBME = itmat.second;
+    TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+    TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+    int nbras = tbc_bra.GetNumberKets();
+    int nkets = tbc_ket.GetNumberKets();
+    for (int ibra=0;ibra<nbras;ibra++)
+    {
+      Ket& bra = tbc_bra.GetKet(ibra);
+      if (bra.p == bra.q)
+      {
+        TBME.col(ibra) *= factor;
+      }
+    }
+    for (int iket=0;iket<nkets;iket++)
+    {
+      Ket& ket = tbc_ket.GetKet(iket);
+      if (ket.p == ket.q)
+      {
+        TBME.row(iket) *= factor;
+      }
+    }
+  }
+}
+
 
 
 double Operator::Trace(int Atrace, int Ztrace) const
@@ -1495,7 +1523,8 @@ void Operator::SetToCommutator( const Operator& X, const Operator& Y)
    }
    else
    {
-      cout << "In Tensor-Tensor because X.rank_J = " << X.rank_J << "  and Y.rank_J = " << Y.rank_J << endl;
+      cout << "In Tensor-Tensor because X.rank_J = " << X.rank_J << "  X.rank_T = " << X.rank_T << "  X.parity = " << X.parity << "   ";
+      cout <<                        "  Y.rank_J = " << Y.rank_J << "  Y.rank_T = " << Y.rank_T << "  Y.parity = " << Y.parity << endl;
       cout << " Tensor-Tensor commutator not yet implemented." << endl;
    }
    profiler.timer["Commutator"] += omp_get_wtime() - t_start;
@@ -3320,6 +3349,7 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
    {
     int ch_bra = vch_bra[i];
     int ch_ket = vch_ket[i];
+    auto& Z2 = Z.TwoBody.GetMatrix(ch_bra,ch_ket);
 
     TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
     TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
@@ -3360,7 +3390,7 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
     Matrixpp = MLeft * MRight;
                                 
 
-    Z.TwoBody.GetMatrix(ch_bra,ch_ket) += Matrixpp - Matrixhh;
+    Z2 += Matrixpp - Matrixhh;
 
    }// for itmat
 
@@ -3933,6 +3963,11 @@ void Operator::AddInverseTensorPandyaTransformation( const map<array<index_t,2>,
                       else     tbme = Zmat(indx_kj, indx_il+(i>l?0:nbras) ) * modelspace->phase( ji+jj+jk+jl) ; // Z_ilkj = Z_kjil * (phase)
                   }
                   commij += hatfactor * modelspace->phase(jj+jl+J2+J4) * ninej * tbme ;
+
+                  if (J1==0 and J2==0 and i==0 and j==18 and k==1 and l==5 and abs(tbme)>1e-7 and abs(ninej)>1e-7)
+                  {
+                    cout << "    " << J3 << " " << J4 << "  " << hatfactor << " "  << modelspace->phase(jj+jl+J2+J4) << " " << ninej << " " << tbme << " " << commij << endl;
+                  }
               }
             }
 
@@ -3994,6 +4029,10 @@ void Operator::AddInverseTensorPandyaTransformation( const map<array<index_t,2>,
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
             Zijkl(ibra,iket) +=  (commij - modelspace->phase(ji+jj-J1)*commji) / norm;
             if (ch_bra==ch_ket) Zijkl(iket,ibra) = hZ * Zijkl(ibra,iket);
+            if (J1==0 and J2==0 and i==0 and j==18 and k==1 and l==5 )
+            {
+              cout << "debug: adding term with commij = " << commij << "  and commji = " << commji << " :   (" << ch_bra << ", " << ch_ket << ") " << ibra << " " << iket << "  norm = " << norm << " -> " << Zijkl(ibra,iket) << endl;
+            }
          }
       }
    }

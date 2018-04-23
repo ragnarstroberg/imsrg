@@ -274,8 +274,8 @@ void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
   }
 
   outfile << "     ====> Interaction part" << endl;
-  outfile << "Nucleon-Nucleon interaction model: who knows?" << endl;
-  outfile << "Type of calculation: magical" << endl;
+  outfile << "Nucleon-Nucleon interaction model: n3lo" << endl;
+  outfile << "Type of calculation: vlowk" << endl;
   outfile << "Number and value of starting energies:   1" << endl;
   outfile << "  0.000000E+00" << endl;
   outfile << "Total number of twobody matx elements:         ";
@@ -303,7 +303,7 @@ void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
       {
         Ket& ket = tbc.GetKet(iket);
         double tbme = matrix(ibra,iket);
-        outfile << setw(wint) << Tz << " " << setw(wint) <<parity << " " << setw(wint) <<J2 << " " << setw(wint) << bra.p << " " << setw(wint) <<bra.q << " " << setw(wint) <<ket.p << " " << setw(wint) <<ket.q <<  " " << setw(wdouble) << setprecision(dprec) <<tbme << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << endl;
+        outfile << setw(wint) << Tz << " " << setw(wint) <<parity << " " << setw(wint) <<J2 << " " << setw(wint) << bra.p+1 << " " << setw(wint) <<bra.q+1 << " " << setw(wint) <<ket.p+1 << " " << setw(wint) <<ket.q+1 <<  " " << setw(wdouble) << setprecision(dprec) <<tbme << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << endl;
         ++linecounter;
         ++Tzcounter[Tz+1];
       }
@@ -373,7 +373,7 @@ void ReadWrite::WriteOneBody_Oslo( string filename, Operator& Op)
     string ph = oi.cvq > 0 ? "particle" : "hole";
     string io = oi.cvq == 1 ? "inside" : "outside";
     int e = 2*oi.n+oi.l;
-    double hw = modelspace->GetHbarOmega();
+//    double hw = modelspace->GetHbarOmega();
     double spe = Op.OneBody(i,i);
     char line[512];
 /// Switching order here to make EKK work with the MBPT code

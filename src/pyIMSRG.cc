@@ -89,6 +89,7 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("SetReference", &MS_SetRef)
       .def("Init_occ_from_file", &ModelSpace::Init_occ_from_file)
       .def("GetOrbitIndex_fromString", &MS_GetOrbitIndex_Str)
+      .def("PreCalculateSixJ", &ModelSpace::PreCalculateSixJ)
       .def_readwrite("core", &ModelSpace::core)
    ;
 
@@ -140,11 +141,13 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("MakeNormalized", &Operator::MakeNormalized)
       .def("MakeUnNormalized", &Operator::MakeUnNormalized)
       .def("GetParticleRank", &Operator::GetParticleRank)
+      .def("GetJRank", &Operator::GetJRank)
+      .def("GetTRank", &Operator::GetTRank)
+      .def("GetParity", &Operator::GetParity)
       .def("GetE3max", &Operator::GetE3max)
       .def("SetE3max", &Operator::SetE3max)
       .def("PrintTimes", &Operator::PrintTimes)
       .def("BCH_Transform", &Operator::BCH_Transform)
-//      .def("EraseThreeBody", &Operator::EraseThreeBody)
       .def("Size", &Operator::Size)
       .def("SetToCommutator", &Operator::SetToCommutator)
       .def("comm110ss", &Operator::comm110ss)
@@ -160,6 +163,8 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("comm122st", &Operator::comm122st)
       .def("comm222_pp_hh_221st", &Operator::comm222_pp_hh_221st)
       .def("comm222_phst", &Operator::comm222_phst)
+      .def("MakeNormalized", &Operator::MakeNormalized)
+      .def("MakeUnNormalized", &Operator::MakeUnNormalized)
       .def("SetOneBodyME", &OpSetOneBodyME)
    ;
 
@@ -242,6 +247,7 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("PrintSPE",&HartreeFock::PrintSPE)
       .def("GetRadialWF_r",&HartreeFock::GetRadialWF_r)
       .def_readonly("EHF",&HartreeFock::EHF)
+      .def_readonly("C",&HartreeFock::C)
    ;
 
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
@@ -320,6 +326,7 @@ PYBIND11_PLUGIN(pyIMSRG)
    m.def("RadialIntegral",     imsrg_util::RadialIntegral);
    m.def("RadialIntegral_RpowK",     imsrg_util::RadialIntegral_RpowK);
    m.def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
+   m.def("OperatorFromString", imsrg_util::OperatorFromString);
 
    m.def("CG",AngMom::CG);
    m.def("ThreeJ",AngMom::ThreeJ);
