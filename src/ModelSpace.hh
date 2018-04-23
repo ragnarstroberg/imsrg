@@ -200,6 +200,7 @@ class ModelSpace
    Ket& GetKet(int i) const {return (Ket&) Kets[i];};
    Ket& GetKet(int p, int q) const {return (Ket&) Kets[Index2(p,q)];};
    int GetOrbitIndex(int n, int l, int j2, int tz2) const {return Index1(n,l,j2,tz2);};
+   int GetOrbitIndex(string);
    int GetKetIndex(int p, int q) const {return Index2(p,q);}; // convention is p<=q
    int GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
    int GetNumberOrbits() const {return norbits;};
@@ -237,7 +238,6 @@ class ModelSpace
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. Not ideal.
    bool SixJ_is_empty(){ return SixJList.empty(); };
 
-   int GetOrbitIndex(string);
    int GetTwoBodyChannelIndex(int j, int p, int t);
    inline int phase(int x) {return (x%2)==0 ? 1 : -1;};
    inline int phase(double x) {return phase(int(x));};

@@ -252,15 +252,21 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>GetParity</b> () const
 <tr class="memitem:a77eb97b1309a1c4e20101217903b9771"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a77eb97b1309a1c4e20101217903b9771"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetParticleRank</b> (int pr)</td></tr>
 <tr class="separator:a77eb97b1309a1c4e20101217903b9771"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a64093adebbc555b8cc0c092c15ad1386"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a64093adebbc555b8cc0c092c15ad1386"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetTensorTransformFirstPass</b> ()</td></tr>
-<tr class="separator:a64093adebbc555b8cc0c092c15ad1386"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad2ec2d4cf6d17b1b7b7afc86bc03c6ed"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad2ec2d4cf6d17b1b7b7afc86bc03c6ed"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>MakeReduced</b> ()</td></tr>
 <tr class="separator:ad2ec2d4cf6d17b1b7b7afc86bc03c6ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add4e26b5eb6534daed5cd40899456ed0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="add4e26b5eb6534daed5cd40899456ed0"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>MakeNotReduced</b> ()</td></tr>
 <tr class="separator:add4e26b5eb6534daed5cd40899456ed0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4a4ebafd34f06272c1b207d61a5cfd2d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a4a4ebafd34f06272c1b207d61a5cfd2d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ChangeNormalization</b> (double coeff)</td></tr>
+<tr class="separator:a4a4ebafd34f06272c1b207d61a5cfd2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a64c6b761468d1983610c5c9d26f84222"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a64c6b761468d1983610c5c9d26f84222"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>MakeNormalized</b> ()</td></tr>
+<tr class="separator:a64c6b761468d1983610c5c9d26f84222"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a93511274ce2cc52d0facb2a38fae91af"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a93511274ce2cc52d0facb2a38fae91af"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>MakeUnNormalized</b> ()</td></tr>
+<tr class="separator:a93511274ce2cc52d0facb2a38fae91af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a25803bc77344396f2dd0e75d2a020d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3a25803bc77344396f2dd0e75d2a020d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ScaleZeroBody</b> (double x)</td></tr>
 <tr class="separator:a3a25803bc77344396f2dd0e75d2a020d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -300,9 +306,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ReadBinary</b> (ifstr
 <tr class="memitem:a7fd029569796107c87ff17c5a7912480"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a7fd029569796107c87ff17c5a7912480">DoNormalOrdering3</a> ()</td></tr>
 <tr class="memdesc:a7fd029569796107c87ff17c5a7912480"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the normal ordered three-body operator.  <a href="#a7fd029569796107c87ff17c5a7912480">More...</a><br /></td></tr>
 <tr class="separator:a7fd029569796107c87ff17c5a7912480"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1932dcab2be6bb889320254cc81dd5f4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a1932dcab2be6bb889320254cc81dd5f4">UndoNormalOrdering</a> ()</td></tr>
-<tr class="memdesc:a1932dcab2be6bb889320254cc81dd5f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the operator normal-ordered wrt the vacuum.  <a href="#a1932dcab2be6bb889320254cc81dd5f4">More...</a><br /></td></tr>
-<tr class="separator:a1932dcab2be6bb889320254cc81dd5f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5fd8c62bf910df71736eb2b8bcf60ca5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a5fd8c62bf910df71736eb2b8bcf60ca5">UndoNormalOrdering</a> () const </td></tr>
+<tr class="memdesc:a5fd8c62bf910df71736eb2b8bcf60ca5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the operator normal-ordered wrt the vacuum.  <a href="#a5fd8c62bf910df71736eb2b8bcf60ca5">More...</a><br /></td></tr>
+<tr class="separator:a5fd8c62bf910df71736eb2b8bcf60ca5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac2eb154c97ceff6f86cd3d24ddb4da1f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOperator.html">Operator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ac2eb154c97ceff6f86cd3d24ddb4da1f">Truncate</a> (<a class="el" href="classModelSpace.html">ModelSpace</a> &amp;ms_new)</td></tr>
 <tr class="memdesc:ac2eb154c97ceff6f86cd3d24ddb4da1f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the operator trunacted to the new model space.  <a href="#ac2eb154c97ceff6f86cd3d24ddb4da1f">More...</a><br /></td></tr>
 <tr class="separator:ac2eb154c97ceff6f86cd3d24ddb4da1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -345,6 +351,12 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>OneBodyNorm</b> () 
 <tr class="memitem:af1c40bdef64ec9abd5d95e8328565a67"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af1c40bdef64ec9abd5d95e8328565a67"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>TwoBodyNorm</b> () const </td></tr>
 <tr class="separator:af1c40bdef64ec9abd5d95e8328565a67"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a349c80a3302de71eda14bae2e41e941e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a349c80a3302de71eda14bae2e41e941e"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>Trace</b> (int Atrace, int Ztrace) const </td></tr>
+<tr class="separator:a349c80a3302de71eda14bae2e41e941e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1dac4ba672e0c86f79320b28c210e9a5"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1dac4ba672e0c86f79320b28c210e9a5"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ScaleFermiDirac</b> (<a class="el" href="classOperator.html">Operator</a> &amp;H, double T, double Efermi)</td></tr>
+<tr class="separator:a1dac4ba672e0c86f79320b28c210e9a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ec5a8110337108ac31d3af7337e454b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5ec5a8110337108ac31d3af7337e454b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>PrintOneBody</b> () const </td></tr>
 <tr class="separator:a5ec5a8110337108ac31d3af7337e454b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -359,9 +371,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>DoPandyaTransformatio
 <tr class="separator:a90d693efa9c2a0c0a76d0c8f2fd424e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a40ea778ddd4c26666bdc15c463101d30"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a40ea778ddd4c26666bdc15c463101d30">DoPandyaTransformation_SingleChannel</a> (arma::mat &amp;X, int ch_cc, string orientation) const </td></tr>
 <tr class="separator:a40ea778ddd4c26666bdc15c463101d30"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a27e3d0a110aa1c48575a9b3960ff9c50"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a27e3d0a110aa1c48575a9b3960ff9c50"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>AddInversePandyaTransformation</b> (deque&lt; arma::mat &gt; &amp;)</td></tr>
-<tr class="separator:a27e3d0a110aa1c48575a9b3960ff9c50"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9208096420f56b1d302311b06a838535"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9208096420f56b1d302311b06a838535"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>AddInversePandyaTransformation</b> (const deque&lt; arma::mat &gt; &amp;)</td></tr>
+<tr class="separator:a9208096420f56b1d302311b06a838535"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43d04939bd982e2a4323044dfe24023a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a43d04939bd982e2a4323044dfe24023a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>AddInversePandyaTransformation_SingleChannel</b> (arma::mat &amp;Z, int ch_cc)</td></tr>
 <tr class="separator:a43d04939bd982e2a4323044dfe24023a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -383,14 +395,26 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>AddInversePandyaTrans
 <tr class="separator:a25b768c4ddceead49af1c7f69d5071ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adf70943fb0ad3c36ea27c1c14dc7f6ec"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#adf70943fb0ad3c36ea27c1c14dc7f6ec">comm222_pp_hh_221ss</a> (const <a class="el" href="classOperator.html">Operator</a> &amp;X, const <a class="el" href="classOperator.html">Operator</a> &amp;Y)</td></tr>
 <tr class="separator:adf70943fb0ad3c36ea27c1c14dc7f6ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a83aa05f43d1881ef41b26783c9eb23f0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#a83aa05f43d1881ef41b26783c9eb23f0">DoTensorPandyaTransformation</a> (map&lt; array&lt; int, 2 &gt;, arma::mat &gt; &amp;) const </td></tr>
-<tr class="separator:a83aa05f43d1881ef41b26783c9eb23f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acc46445807541d5e060116884930d086"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="acc46445807541d5e060116884930d086"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>GooseTank</b> (const <a class="el" href="classOperator.html">Operator</a> &amp;X, const <a class="el" href="classOperator.html">Operator</a> &amp;Y)</td></tr>
+<tr class="separator:acc46445807541d5e060116884930d086"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3bb83c85644485bd2f1a3c278a4f7e1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af3bb83c85644485bd2f1a3c278a4f7e1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>goose_tank_ss</b> (const <a class="el" href="classOperator.html">Operator</a> &amp;X, const <a class="el" href="classOperator.html">Operator</a> &amp;Y)</td></tr>
+<tr class="separator:af3bb83c85644485bd2f1a3c278a4f7e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48c289cef2f98a32300e7c167173869b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a48c289cef2f98a32300e7c167173869b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ConstructScalarMpp_Mhh</b> (const <a class="el" href="classOperator.html">Operator</a> &amp;X, const <a class="el" href="classOperator.html">Operator</a> &amp;Y, <a class="el" href="classTwoBodyME.html">TwoBodyME</a> &amp;Mpp, <a class="el" href="classTwoBodyME.html">TwoBodyME</a> &amp;Mhh) const </td></tr>
+<tr class="separator:a48c289cef2f98a32300e7c167173869b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf4d5bec171c405c7d6f0b17fbac4b7f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="adf4d5bec171c405c7d6f0b17fbac4b7f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ConstructScalarMpp_Mhh_GooseTank</b> (const <a class="el" href="classOperator.html">Operator</a> &amp;X, const <a class="el" href="classOperator.html">Operator</a> &amp;Y, <a class="el" href="classTwoBodyME.html">TwoBodyME</a> &amp;Mpp, <a class="el" href="classTwoBodyME.html">TwoBodyME</a> &amp;Mhh) const </td></tr>
+<tr class="separator:adf4d5bec171c405c7d6f0b17fbac4b7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7c6a9d515a2577985358b43cf6a365e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classOperator.html#ad7c6a9d515a2577985358b43cf6a365e">DoTensorPandyaTransformation</a> (map&lt; array&lt; index_t, 2 &gt;, arma::mat &gt; &amp;) const </td></tr>
+<tr class="separator:ad7c6a9d515a2577985358b43cf6a365e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac665c6e896f34819f21844b3ee94218c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac665c6e896f34819f21844b3ee94218c"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>DoTensorPandyaTransformation_SingleChannel</b> (arma::mat &amp;X, int ch_bra_cc, int ch_ket_cc) const </td></tr>
 <tr class="separator:ac665c6e896f34819f21844b3ee94218c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abbc466d8e8f57deb156d9475b680fd42"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abbc466d8e8f57deb156d9475b680fd42"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>AddInverseTensorPandyaTransformation</b> (map&lt; array&lt; int, 2 &gt;, arma::mat &gt; &amp;)</td></tr>
-<tr class="separator:abbc466d8e8f57deb156d9475b680fd42"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ef3dde3c991e9fbc4571b20e856e7d1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0ef3dde3c991e9fbc4571b20e856e7d1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>AddInverseTensorPandyaTransformation</b> (const map&lt; array&lt; index_t, 2 &gt;, arma::mat &gt; &amp;)</td></tr>
+<tr class="separator:a0ef3dde3c991e9fbc4571b20e856e7d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5d90f7e7e9e9bcfe814465ee7a271b60"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5d90f7e7e9e9bcfe814465ee7a271b60"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>AddInverseTensorPandyaTransformation_SingleChannel</b> (arma::mat &amp;Zbar, int ch_bra_cc, int ch_ket_cc)</td></tr>
 <tr class="separator:a5d90f7e7e9e9bcfe814465ee7a271b60"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -420,6 +444,9 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>Set_BCH_Produc
 <tr class="memitem:a574e27d0c3ddc107b51eafcb6bfd4b99"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a574e27d0c3ddc107b51eafcb6bfd4b99"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetUseBruecknerBCH</b> (bool tf)</td></tr>
 <tr class="separator:a574e27d0c3ddc107b51eafcb6bfd4b99"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a02668429f1779193801219a2b45e4776"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a02668429f1779193801219a2b45e4776"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetUseGooseTank</b> (bool tf)</td></tr>
+<tr class="separator:a02668429f1779193801219a2b45e4776"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -492,15 +519,12 @@ static double&#160;</td><td class="memItemRight" valign="bottom"><b>bch_transfor
 <tr class="memitem:ad4a2ba438f3286ef22cc06b61f745993"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad4a2ba438f3286ef22cc06b61f745993"></a>
 static double&#160;</td><td class="memItemRight" valign="bottom"><b>bch_product_threshold</b> = 1e-4</td></tr>
 <tr class="separator:ad4a2ba438f3286ef22cc06b61f745993"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0f4375a78d1a714eb1e13aad5ebf4508"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0f4375a78d1a714eb1e13aad5ebf4508"></a>
-static bool&#160;</td><td class="memItemRight" valign="bottom"><b>scalar_transform_first_pass</b> = true</td></tr>
-<tr class="separator:a0f4375a78d1a714eb1e13aad5ebf4508"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5e0d6cbbc5dc2bebae6f76fec38e6515"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5e0d6cbbc5dc2bebae6f76fec38e6515"></a>
-static bool&#160;</td><td class="memItemRight" valign="bottom"><b>tensor_transform_first_pass</b> = true</td></tr>
-<tr class="separator:a5e0d6cbbc5dc2bebae6f76fec38e6515"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a70e74e9e54e0f21a64c6ba8b1e476fdd"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a70e74e9e54e0f21a64c6ba8b1e476fdd"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>use_brueckner_bch</b> = false</td></tr>
 <tr class="separator:a70e74e9e54e0f21a64c6ba8b1e476fdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c7ae7a267c1c9d48655012a16c68b29"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3c7ae7a267c1c9d48655012a16c68b29"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>use_goose_tank_correction</b> = false</td></tr>
+<tr class="separator:a3c7ae7a267c1c9d48655012a16c68b29"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -821,7 +845,7 @@ Friends</h2></td></tr>
 <p> This is implemented by defining an intermediate matrix </p><p class="formulaDsp">
 \[ \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{i\bar{l}k\bar{j}} \equiv \sum_{ab}(n_a\bar{n}_b) \left[ \left( \bar{X}^{J3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right) -\left( \bar{X}^{J_3}_{i\bar{l}b\bar{a}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{b\bar{a}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}b\bar{a}}\bar{X}^{J_4}_{b\bar{a}k\bar{j}} \right)\right] \]
 </p>
-<p> The Pandya-transformed matrix elements are obtained with <a class="el" href="classOperator.html#a83aa05f43d1881ef41b26783c9eb23f0">DoTensorPandyaTransformation()</a>. The matrices \( \bar{X}^{J_3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} \) and \( \bar{\mathbb{Y}}^{J_4J_3\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_3}_{a\bar{b}k\bar{j}} \) are related by a Hermitian conjugation, which saves two matrix multiplications, provided we take into account the phase \( (-1)^{J_3-J_4} \) from conjugating the spherical tensor. The commutator is then given by </p><p class="formulaDsp">
+<p> The Pandya-transformed matrix elements are obtained with <a class="el" href="classOperator.html#ad7c6a9d515a2577985358b43cf6a365e">DoTensorPandyaTransformation()</a>. The matrices \( \bar{X}^{J_3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} \) and \( \bar{\mathbb{Y}}^{J_4J_3\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_3}_{a\bar{b}k\bar{j}} \) are related by a Hermitian conjugation, which saves two matrix multiplications, provided we take into account the phase \( (-1)^{J_3-J_4} \) from conjugating the spherical tensor. The commutator is then given by </p><p class="formulaDsp">
 \[ \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} = \sum_{J_3J_4} \hat{J_1}\hat{J_2}\hat{J_3}\hat{J_4} \left[ \left\{ \begin{array}{lll} j_i &amp; j_l &amp; J_3 \\ j_j &amp; j_k &amp; J_4 \\ J_1 &amp; J_2 &amp; \Lambda \\ \end{array} \right\} \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{i\bar{l}k\bar{j}} -(-1)^{j_i+j_j-J} \left\{ \begin{array}{lll} j_j &amp; j_l &amp; J_3 \\ j_i &amp; j_k &amp; J_4 \\ J_1 &amp; J_2 &amp; \Lambda \\ \end{array} \right\} \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{j\bar{l}k\bar{i}} \right] \]
 </p>
  
@@ -1019,14 +1043,14 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a83aa05f43d1881ef41b26783c9eb23f0"></a>
+<a class="anchor" id="ad7c6a9d515a2577985358b43cf6a365e"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">void Operator::DoTensorPandyaTransformation </td>
           <td>(</td>
-          <td class="paramtype">map&lt; array&lt; int, 2 &gt;, arma::mat &gt; &amp;&#160;</td>
+          <td class="paramtype">map&lt; array&lt; index_t, 2 &gt;, arma::mat &gt; &amp;&#160;</td>
           <td class="paramname"><em>TwoBody_CC_ph</em></td><td>)</td>
           <td> const</td>
         </tr>
@@ -1088,7 +1112,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Calculate the third order perturbation correction to energy </p><p class="formulaDsp">
-\[ \frac{1}{8}\sum_{abijpq}\sum_J (2J+1)\frac{\Gamma_{abij}^J\Gamma_{ijpq}^J\Gamma_{pqab}^J}{(f_a+f_b-f_p-f_q)(f_a+f_b-f_i-f_j)} +\sum_{abcijk}\sum_J (2J+1) \frac{\Gamma_{abij}^J\Gamma_{cjkb}^J\Gamma_{ikac}^J}{(f_a+f_b-f_i-f_j)(f_a+f_c-f_i-f_k)} \]
+\[ \frac{1}{8}\sum_{abijpq}\sum_J (2J+1)\frac{\Gamma_{abij}^J\Gamma_{ijpq}^J\Gamma_{pqab}^J}{(f_a+f_b-f_p-f_q)(f_a+f_b-f_i-f_j)} +\sum_{abcijk}\sum_J (2J+1)^2 \frac{\bar{\Gamma}_{a\bar{i}j\bar{b}}^J\bar{\Gamma}_{j\bar{b}k\bar{c}}^J\bar{\Gamma}_{k\bar{c}a\bar{i}}^J}{(f_a+f_b-f_i-f_j)(f_a+f_c-f_i-f_k)} \]
 </p>
  
 </div>
@@ -1172,7 +1196,7 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a1932dcab2be6bb889320254cc81dd5f4"></a>
+<a class="anchor" id="a5fd8c62bf910df71736eb2b8bcf60ca5"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -1180,7 +1204,7 @@ Friends</h2></td></tr>
           <td class="memname"><a class="el" href="classOperator.html">Operator</a> Operator::UndoNormalOrdering </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
-          <td></td>
+          <td> const</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1233,7 +1257,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 20 2016 12:14:48 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 2 2017 20:12:52 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

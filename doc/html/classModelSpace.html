@@ -303,15 +303,32 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>Index2</b> (int p, int
 <tr class="memitem:abc436144ee034558058227cac872ecb9"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abc436144ee034558058227cac872ecb9"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>PreCalculateMoshinsky</b> ()</td></tr>
 <tr class="separator:abc436144ee034558058227cac872ecb9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abd5c59215d553bd2db47120d2db4b2ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classModelSpace.html#abd5c59215d553bd2db47120d2db4b2ea">PreCalculateSixJ</a> ()</td></tr>
+<tr class="separator:abd5c59215d553bd2db47120d2db4b2ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a25aad2961ae99cdd528c4d71bb689d95"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a25aad2961ae99cdd528c4d71bb689d95"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearVectors</b> ()</td></tr>
 <tr class="separator:a25aad2961ae99cdd528c4d71bb689d95"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3354ef5c4dbcae5786759696ab500951"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3354ef5c4dbcae5786759696ab500951"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetFirstPass</b> ()</td></tr>
+<tr class="separator:a3354ef5c4dbcae5786759696ab500951"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe6a15d78c5a16e707a02e5d2341f1f0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abe6a15d78c5a16e707a02e5d2341f1f0"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>CalculatePandyaLookup</b> (int rank_J, int rank_T, int parity)</td></tr>
 <tr class="separator:abe6a15d78c5a16e707a02e5d2341f1f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2e75ef41cd7f02485a5ab5c340c27bef"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2e75ef41cd7f02485a5ab5c340c27bef"></a>
 map&lt; array&lt; int, 2 &gt;, array&lt; vector&lt; int &gt;, 2 &gt; &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>GetPandyaLookup</b> (int rank_J, int rank_T, int parity)</td></tr>
 <tr class="separator:a2e75ef41cd7f02485a5ab5c340c27bef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6727d45bfcee5a6aa9181da6802fc948"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6727d45bfcee5a6aa9181da6802fc948"></a>
+uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>SixJHash</b> (double j1, double j2, double j3, double J1, double J2, double J3)</td></tr>
+<tr class="separator:a6727d45bfcee5a6aa9181da6802fc948"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a074b15f27c3c302e5594ce1bc03d774a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a074b15f27c3c302e5594ce1bc03d774a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SixJUnHash</b> (uint64_t key, uint64_t &amp;j1, uint64_t &amp;j2, uint64_t &amp;j3, uint64_t &amp;J1, uint64_t &amp;J2, uint64_t &amp;J3)</td></tr>
+<tr class="separator:a074b15f27c3c302e5594ce1bc03d774a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5503bab63a0392cf5914fb897f623003"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5503bab63a0392cf5914fb897f623003"></a>
+uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>MoshinskyHash</b> (uint64_t N, uint64_t Lam, uint64_t n, uint64_t lam, uint64_t n1, uint64_t l1, uint64_t n2, uint64_t l2, uint64_t L)</td></tr>
+<tr class="separator:a5503bab63a0392cf5914fb897f623003"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b58b32f835092158b45b82101e4ad5a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3b58b32f835092158b45b82101e4ad5a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>MoshinskyUnHash</b> (uint64_t key, uint64_t &amp;N, uint64_t &amp;Lam, uint64_t &amp;n, uint64_t &amp;lam, uint64_t &amp;n1, uint64_t &amp;l1, uint64_t &amp;n2, uint64_t &amp;l2, uint64_t &amp;L)</td></tr>
+<tr class="separator:a3b58b32f835092158b45b82101e4ad5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -447,9 +464,18 @@ vector&lt; <a class="el" href="classTwoBodyChannel__CC.html">TwoBodyChannel_CC</
 <tr class="memitem:a386a977fced025398b2531f6ce5d7cc3"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a386a977fced025398b2531f6ce5d7cc3"></a>
 map&lt; array&lt; int, 3 &gt;, map&lt; array&lt; int, 2 &gt;, array&lt; vector&lt; int &gt;, 2 &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>PandyaLookup</b></td></tr>
 <tr class="separator:a386a977fced025398b2531f6ce5d7cc3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add8f51396475dd1c0035a1a9e6e6f452"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="add8f51396475dd1c0035a1a9e6e6f452"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>sixj_has_been_precalculated</b></td></tr>
+<tr class="separator:add8f51396475dd1c0035a1a9e6e6f452"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4efe26f443e19138189e8934c7eda80c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a4efe26f443e19138189e8934c7eda80c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>moshinsky_has_been_precalculated</b></td></tr>
 <tr class="separator:a4efe26f443e19138189e8934c7eda80c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab871d46ec0a635ed4816e99cbe5bb573"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab871d46ec0a635ed4816e99cbe5bb573"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>scalar_transform_first_pass</b></td></tr>
+<tr class="separator:ab871d46ec0a635ed4816e99cbe5bb573"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a755498ab59d59123108cd731dba6ba6f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a755498ab59d59123108cd731dba6ba6f"></a>
+vector&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>tensor_transform_first_pass</b></td></tr>
+<tr class="separator:a755498ab59d59123108cd731dba6ba6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9d5b193fe45f361371beb818bfe00fd3"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9d5b193fe45f361371beb818bfe00fd3"></a>
 <a class="el" href="classIMSRGProfiler.html">IMSRGProfiler</a>&#160;</td><td class="memItemRight" valign="bottom"><b>profiler</b></td></tr>
 <tr class="separator:a9d5b193fe45f361371beb818bfe00fd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -458,15 +484,15 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>moshinsky_has_been_pr
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:a049236b9745687355390da2ad8977052"><td class="memItemLeft" align="right" valign="top">static map&lt; string, vector&lt; string &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ValenceSpaces</b></td></tr>
 <tr class="separator:a049236b9745687355390da2ad8977052"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad9d8883d388c97409486e485a8ec3427"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad9d8883d388c97409486e485a8ec3427"></a>
-static unordered_map&lt; unsigned long int, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>SixJList</b></td></tr>
-<tr class="separator:ad9d8883d388c97409486e485a8ec3427"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52b74b8a95b04440b2e83003078d1d04"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a52b74b8a95b04440b2e83003078d1d04"></a>
-static unordered_map&lt; long long unsigned int, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>NineJList</b></td></tr>
-<tr class="separator:a52b74b8a95b04440b2e83003078d1d04"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af2277f24420fc09ac382216a1bf38121"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af2277f24420fc09ac382216a1bf38121"></a>
-static unordered_map&lt; long long unsigned int, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>MoshList</b></td></tr>
-<tr class="separator:af2277f24420fc09ac382216a1bf38121"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abae74bd7934af49d448a2791e3da9d07"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abae74bd7934af49d448a2791e3da9d07"></a>
+static unordered_map&lt; uint64_t, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>SixJList</b></td></tr>
+<tr class="separator:abae74bd7934af49d448a2791e3da9d07"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4dbd07433aa0f444ab9020049f31fb04"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a4dbd07433aa0f444ab9020049f31fb04"></a>
+static unordered_map&lt; uint64_t, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>NineJList</b></td></tr>
+<tr class="separator:a4dbd07433aa0f444ab9020049f31fb04"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ded2003f13765e8fba3afc2382f1e98"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5ded2003f13765e8fba3afc2382f1e98"></a>
+static unordered_map&lt; uint64_t, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>MoshList</b></td></tr>
+<tr class="separator:a5ded2003f13765e8fba3afc2382f1e98"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a0f4d1a532822a9c453b3bd3684b8231c"></a>
@@ -508,6 +534,28 @@ static unordered_map&lt; long long unsigned int, double &gt;&#160;</td><td class
 
 </div>
 </div>
+<a class="anchor" id="abd5c59215d553bd2db47120d2db4b2ea"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ModelSpace::PreCalculateSixJ </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Loop over all the 6j symbols that we expect to encounter, and store them in a hash table. Calculate all symbols </p><p class="formulaDsp">
+\[ \begin{Bmatrix} ja &amp; jb &amp; J1 jc &amp; jd &amp; J2 \end{Bmatrix} \]
+</p>
+<p> and </p><p class="formulaDsp">
+\[ \begin{Bmatrix} J1 &amp; J2 &amp; J3 ja &amp; jb &amp; jc \end{Bmatrix} \]
+</p>
+<p> where ja,jb,jc are half-integer and J1,J2,J3 are integer. ja,jb,jc run from 1/2 to emax+1/2, while jd runs higher since the 3N recoupling requires it to go up to e(emax+1/2). I haven't yet bothered using the symmetry properties of the 6j symbol. </p>
+
+</div>
+</div>
 <h2 class="groupheader">Member Data Documentation</h2>
 <a class="anchor" id="a049236b9745687355390da2ad8977052"></a>
 <div class="memitem">
@@ -536,7 +584,7 @@ static unordered_map&lt; long long unsigned int, double &gt;&#160;</td><td class
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 20 2016 12:14:48 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 2 2017 20:12:52 for IM-SRG++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

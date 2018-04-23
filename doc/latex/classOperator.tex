@@ -144,13 +144,19 @@ int {\bfseries Get\+Parity} () const \hypertarget{classOperator_a7b3d8e2ca9f0ba6
 void {\bfseries Set\+Particle\+Rank} (int pr)\hypertarget{classOperator_a77eb97b1309a1c4e20101217903b9771}{}\label{classOperator_a77eb97b1309a1c4e20101217903b9771}
 
 \item 
-void {\bfseries Reset\+Tensor\+Transform\+First\+Pass} ()\hypertarget{classOperator_a64093adebbc555b8cc0c092c15ad1386}{}\label{classOperator_a64093adebbc555b8cc0c092c15ad1386}
-
-\item 
 void {\bfseries Make\+Reduced} ()\hypertarget{classOperator_ad2ec2d4cf6d17b1b7b7afc86bc03c6ed}{}\label{classOperator_ad2ec2d4cf6d17b1b7b7afc86bc03c6ed}
 
 \item 
 void {\bfseries Make\+Not\+Reduced} ()\hypertarget{classOperator_add4e26b5eb6534daed5cd40899456ed0}{}\label{classOperator_add4e26b5eb6534daed5cd40899456ed0}
+
+\item 
+void {\bfseries Change\+Normalization} (double coeff)\hypertarget{classOperator_a4a4ebafd34f06272c1b207d61a5cfd2d}{}\label{classOperator_a4a4ebafd34f06272c1b207d61a5cfd2d}
+
+\item 
+void {\bfseries Make\+Normalized} ()\hypertarget{classOperator_a64c6b761468d1983610c5c9d26f84222}{}\label{classOperator_a64c6b761468d1983610c5c9d26f84222}
+
+\item 
+void {\bfseries Make\+Un\+Normalized} ()\hypertarget{classOperator_a93511274ce2cc52d0facb2a38fae91af}{}\label{classOperator_a93511274ce2cc52d0facb2a38fae91af}
 
 \item 
 void {\bfseries Scale\+Zero\+Body} (double x)\hypertarget{classOperator_a3a25803bc77344396f2dd0e75d2a020d}{}\label{classOperator_a3a25803bc77344396f2dd0e75d2a020d}
@@ -187,7 +193,7 @@ void {\bfseries Read\+Binary} (ifstream \&ifs)\hypertarget{classOperator_a40fdb2
 \begin{DoxyCompactList}\small\item\em Returns the normal ordered two-\/body operator. \end{DoxyCompactList}\item 
 \hyperlink{classOperator}{Operator} \hyperlink{classOperator_a7fd029569796107c87ff17c5a7912480}{Do\+Normal\+Ordering3} ()
 \begin{DoxyCompactList}\small\item\em Returns the normal ordered three-\/body operator. \end{DoxyCompactList}\item 
-\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a1932dcab2be6bb889320254cc81dd5f4}{Undo\+Normal\+Ordering} ()
+\hyperlink{classOperator}{Operator} \hyperlink{classOperator_a5fd8c62bf910df71736eb2b8bcf60ca5}{Undo\+Normal\+Ordering} () const 
 \begin{DoxyCompactList}\small\item\em Returns the operator normal-\/ordered wrt the vacuum. \end{DoxyCompactList}\item 
 \hyperlink{classOperator}{Operator} \hyperlink{classOperator_ac2eb154c97ceff6f86cd3d24ddb4da1f}{Truncate} (\hyperlink{classModelSpace}{Model\+Space} \&ms\+\_\+new)
 \begin{DoxyCompactList}\small\item\em Returns the operator trunacted to the new model space. \end{DoxyCompactList}\item 
@@ -229,6 +235,12 @@ double {\bfseries One\+Body\+Norm} () const \hypertarget{classOperator_a72dc7aea
 double {\bfseries Two\+Body\+Norm} () const \hypertarget{classOperator_af1c40bdef64ec9abd5d95e8328565a67}{}\label{classOperator_af1c40bdef64ec9abd5d95e8328565a67}
 
 \item 
+double {\bfseries Trace} (int Atrace, int Ztrace) const \hypertarget{classOperator_a349c80a3302de71eda14bae2e41e941e}{}\label{classOperator_a349c80a3302de71eda14bae2e41e941e}
+
+\item 
+void {\bfseries Scale\+Fermi\+Dirac} (\hyperlink{classOperator}{Operator} \&H, double T, double Efermi)\hypertarget{classOperator_a1dac4ba672e0c86f79320b28c210e9a5}{}\label{classOperator_a1dac4ba672e0c86f79320b28c210e9a5}
+
+\item 
 void {\bfseries Print\+One\+Body} () const \hypertarget{classOperator_a5ec5a8110337108ac31d3af7337e454b}{}\label{classOperator_a5ec5a8110337108ac31d3af7337e454b}
 
 \item 
@@ -243,7 +255,7 @@ void {\bfseries Do\+Pandya\+Transformation} (deque$<$ arma\+::mat $>$ \&, string
 \item 
 void \hyperlink{classOperator_a40ea778ddd4c26666bdc15c463101d30}{Do\+Pandya\+Transformation\+\_\+\+Single\+Channel} (arma\+::mat \&X, int ch\+\_\+cc, string orientation) const 
 \item 
-void {\bfseries Add\+Inverse\+Pandya\+Transformation} (deque$<$ arma\+::mat $>$ \&)\hypertarget{classOperator_a27e3d0a110aa1c48575a9b3960ff9c50}{}\label{classOperator_a27e3d0a110aa1c48575a9b3960ff9c50}
+void {\bfseries Add\+Inverse\+Pandya\+Transformation} (const deque$<$ arma\+::mat $>$ \&)\hypertarget{classOperator_a9208096420f56b1d302311b06a838535}{}\label{classOperator_a9208096420f56b1d302311b06a838535}
 
 \item 
 void {\bfseries Add\+Inverse\+Pandya\+Transformation\+\_\+\+Single\+Channel} (arma\+::mat \&Z, int ch\+\_\+cc)\hypertarget{classOperator_a43d04939bd982e2a4323044dfe24023a}{}\label{classOperator_a43d04939bd982e2a4323044dfe24023a}
@@ -267,12 +279,24 @@ void \hyperlink{classOperator_a25b768c4ddceead49af1c7f69d5071ea}{comm222\+\_\+ph
 \item 
 void \hyperlink{classOperator_adf70943fb0ad3c36ea27c1c14dc7f6ec}{comm222\+\_\+pp\+\_\+hh\+\_\+221ss} (const \hyperlink{classOperator}{Operator} \&X, const \hyperlink{classOperator}{Operator} \&Y)
 \item 
-void \hyperlink{classOperator_a83aa05f43d1881ef41b26783c9eb23f0}{Do\+Tensor\+Pandya\+Transformation} (map$<$ array$<$ int, 2 $>$, arma\+::mat $>$ \&) const 
+void {\bfseries Goose\+Tank} (const \hyperlink{classOperator}{Operator} \&X, const \hyperlink{classOperator}{Operator} \&Y)\hypertarget{classOperator_acc46445807541d5e060116884930d086}{}\label{classOperator_acc46445807541d5e060116884930d086}
+
+\item 
+void {\bfseries goose\+\_\+tank\+\_\+ss} (const \hyperlink{classOperator}{Operator} \&X, const \hyperlink{classOperator}{Operator} \&Y)\hypertarget{classOperator_af3bb83c85644485bd2f1a3c278a4f7e1}{}\label{classOperator_af3bb83c85644485bd2f1a3c278a4f7e1}
+
+\item 
+void {\bfseries Construct\+Scalar\+Mpp\+\_\+\+Mhh} (const \hyperlink{classOperator}{Operator} \&X, const \hyperlink{classOperator}{Operator} \&Y, \hyperlink{classTwoBodyME}{Two\+Body\+ME} \&Mpp, \hyperlink{classTwoBodyME}{Two\+Body\+ME} \&Mhh) const \hypertarget{classOperator_a48c289cef2f98a32300e7c167173869b}{}\label{classOperator_a48c289cef2f98a32300e7c167173869b}
+
+\item 
+void {\bfseries Construct\+Scalar\+Mpp\+\_\+\+Mhh\+\_\+\+Goose\+Tank} (const \hyperlink{classOperator}{Operator} \&X, const \hyperlink{classOperator}{Operator} \&Y, \hyperlink{classTwoBodyME}{Two\+Body\+ME} \&Mpp, \hyperlink{classTwoBodyME}{Two\+Body\+ME} \&Mhh) const \hypertarget{classOperator_adf4d5bec171c405c7d6f0b17fbac4b7f}{}\label{classOperator_adf4d5bec171c405c7d6f0b17fbac4b7f}
+
+\item 
+void \hyperlink{classOperator_ad7c6a9d515a2577985358b43cf6a365e}{Do\+Tensor\+Pandya\+Transformation} (map$<$ array$<$ index\+\_\+t, 2 $>$, arma\+::mat $>$ \&) const 
 \item 
 void {\bfseries Do\+Tensor\+Pandya\+Transformation\+\_\+\+Single\+Channel} (arma\+::mat \&X, int ch\+\_\+bra\+\_\+cc, int ch\+\_\+ket\+\_\+cc) const \hypertarget{classOperator_ac665c6e896f34819f21844b3ee94218c}{}\label{classOperator_ac665c6e896f34819f21844b3ee94218c}
 
 \item 
-void {\bfseries Add\+Inverse\+Tensor\+Pandya\+Transformation} (map$<$ array$<$ int, 2 $>$, arma\+::mat $>$ \&)\hypertarget{classOperator_abbc466d8e8f57deb156d9475b680fd42}{}\label{classOperator_abbc466d8e8f57deb156d9475b680fd42}
+void {\bfseries Add\+Inverse\+Tensor\+Pandya\+Transformation} (const map$<$ array$<$ index\+\_\+t, 2 $>$, arma\+::mat $>$ \&)\hypertarget{classOperator_a0ef3dde3c991e9fbc4571b20e856e7d1}{}\label{classOperator_a0ef3dde3c991e9fbc4571b20e856e7d1}
 
 \item 
 void {\bfseries Add\+Inverse\+Tensor\+Pandya\+Transformation\+\_\+\+Single\+Channel} (arma\+::mat \&Zbar, int ch\+\_\+bra\+\_\+cc, int ch\+\_\+ket\+\_\+cc)\hypertarget{classOperator_a5d90f7e7e9e9bcfe814465ee7a271b60}{}\label{classOperator_a5d90f7e7e9e9bcfe814465ee7a271b60}
@@ -302,6 +326,9 @@ static void {\bfseries Set\+\_\+\+B\+C\+H\+\_\+\+Product\+\_\+\+Threshold} (doub
 
 \item 
 static void {\bfseries Set\+Use\+Brueckner\+B\+CH} (bool tf)\hypertarget{classOperator_a574e27d0c3ddc107b51eafcb6bfd4b99}{}\label{classOperator_a574e27d0c3ddc107b51eafcb6bfd4b99}
+
+\item 
+static void {\bfseries Set\+Use\+Goose\+Tank} (bool tf)\hypertarget{classOperator_a02668429f1779193801219a2b45e4776}{}\label{classOperator_a02668429f1779193801219a2b45e4776}
 
 \end{DoxyCompactItemize}
 \subsection*{Public Attributes}
@@ -364,13 +391,10 @@ static double {\bfseries bch\+\_\+transform\+\_\+threshold} = 1e-\/9\hypertarget
 static double {\bfseries bch\+\_\+product\+\_\+threshold} = 1e-\/4\hypertarget{classOperator_ad4a2ba438f3286ef22cc06b61f745993}{}\label{classOperator_ad4a2ba438f3286ef22cc06b61f745993}
 
 \item 
-static bool {\bfseries scalar\+\_\+transform\+\_\+first\+\_\+pass} = true\hypertarget{classOperator_a0f4375a78d1a714eb1e13aad5ebf4508}{}\label{classOperator_a0f4375a78d1a714eb1e13aad5ebf4508}
-
-\item 
-static bool {\bfseries tensor\+\_\+transform\+\_\+first\+\_\+pass} = true\hypertarget{classOperator_a5e0d6cbbc5dc2bebae6f76fec38e6515}{}\label{classOperator_a5e0d6cbbc5dc2bebae6f76fec38e6515}
-
-\item 
 static bool {\bfseries use\+\_\+brueckner\+\_\+bch} = false\hypertarget{classOperator_a70e74e9e54e0f21a64c6ba8b1e476fdd}{}\label{classOperator_a70e74e9e54e0f21a64c6ba8b1e476fdd}
+
+\item 
+static bool {\bfseries use\+\_\+goose\+\_\+tank\+\_\+correction} = false\hypertarget{classOperator_a3c7ae7a267c1c9d48655012a16c68b29}{}\label{classOperator_a3c7ae7a267c1c9d48655012a16c68b29}
 
 \end{DoxyCompactItemize}
 \subsection*{Friends}
@@ -469,7 +493,7 @@ Calculates the part of $ [X_{(2)},Y_{(2)}]_{ijkl} $ which involves ph intermedia
 \item[{const {\bf Operator} \&}]{Y}
 \end{DoxyParamCaption}
 )}\hypertarget{classOperator_a85ffd47b8d0db4cdbb6ef4684adbedeb}{}\label{classOperator_a85ffd47b8d0db4cdbb6ef4684adbedeb}
-Calculates the part of $ [X_{(2)},\mathbb{Y}^{\Lambda}_{(2)}]_{ijkl} $ which involves ph intermediate states, here indicated by $ \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} $ \[ \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} = \sum_{abJ_3J_4}(n_a-n_b) \hat{J_1}\hat{J_2}\hat{J_3}\hat{J_4} \left[ \left\{ \begin{array}{lll} j_i & j_l & J_3 \\ j_j & j_k & J_4 \\ J_1 & J_2 & \Lambda \\ \end{array} \right\} \left( \bar{X}^{J3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right) -(-1)^{j_i+j_j-J_1} \left\{ \begin{array}{lll} j_j & j_l & J_3 \\ j_i & j_k & J_4 \\ J_1 & J_2 & \Lambda \\ \end{array} \right\} \left( \bar{X}^{J_3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right) \right] \] This is implemented by defining an intermediate matrix \[ \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{i\bar{l}k\bar{j}} \equiv \sum_{ab}(n_a\bar{n}_b) \left[ \left( \bar{X}^{J3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right) -\left( \bar{X}^{J_3}_{i\bar{l}b\bar{a}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{b\bar{a}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}b\bar{a}}\bar{X}^{J_4}_{b\bar{a}k\bar{j}} \right)\right] \] The Pandya-\/transformed matrix elements are obtained with \hyperlink{classOperator_a83aa05f43d1881ef41b26783c9eb23f0}{Do\+Tensor\+Pandya\+Transformation()}. The matrices $ \bar{X}^{J_3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} $ and $ \bar{\mathbb{Y}}^{J_4J_3\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_3}_{a\bar{b}k\bar{j}} $ are related by a Hermitian conjugation, which saves two matrix multiplications, provided we take into account the phase $ (-1)^{J_3-J_4} $ from conjugating the spherical tensor. The commutator is then given by \[ \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} = \sum_{J_3J_4} \hat{J_1}\hat{J_2}\hat{J_3}\hat{J_4} \left[ \left\{ \begin{array}{lll} j_i & j_l & J_3 \\ j_j & j_k & J_4 \\ J_1 & J_2 & \Lambda \\ \end{array} \right\} \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{i\bar{l}k\bar{j}} -(-1)^{j_i+j_j-J} \left\{ \begin{array}{lll} j_j & j_l & J_3 \\ j_i & j_k & J_4 \\ J_1 & J_2 & \Lambda \\ \end{array} \right\} \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{j\bar{l}k\bar{i}} \right] \] \index{Operator@{Operator}!comm222\+\_\+pp\+\_\+hh\+\_\+221ss@{comm222\+\_\+pp\+\_\+hh\+\_\+221ss}}
+Calculates the part of $ [X_{(2)},\mathbb{Y}^{\Lambda}_{(2)}]_{ijkl} $ which involves ph intermediate states, here indicated by $ \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} $ \[ \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} = \sum_{abJ_3J_4}(n_a-n_b) \hat{J_1}\hat{J_2}\hat{J_3}\hat{J_4} \left[ \left\{ \begin{array}{lll} j_i & j_l & J_3 \\ j_j & j_k & J_4 \\ J_1 & J_2 & \Lambda \\ \end{array} \right\} \left( \bar{X}^{J3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right) -(-1)^{j_i+j_j-J_1} \left\{ \begin{array}{lll} j_j & j_l & J_3 \\ j_i & j_k & J_4 \\ J_1 & J_2 & \Lambda \\ \end{array} \right\} \left( \bar{X}^{J_3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right) \right] \] This is implemented by defining an intermediate matrix \[ \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{i\bar{l}k\bar{j}} \equiv \sum_{ab}(n_a\bar{n}_b) \left[ \left( \bar{X}^{J3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_4}_{a\bar{b}k\bar{j}} \right) -\left( \bar{X}^{J_3}_{i\bar{l}b\bar{a}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{b\bar{a}k\bar{j}} - \bar{\mathbb{Y}}^{J_3J_4\Lambda}_{i\bar{l}b\bar{a}}\bar{X}^{J_4}_{b\bar{a}k\bar{j}} \right)\right] \] The Pandya-\/transformed matrix elements are obtained with \hyperlink{classOperator_ad7c6a9d515a2577985358b43cf6a365e}{Do\+Tensor\+Pandya\+Transformation()}. The matrices $ \bar{X}^{J_3}_{i\bar{l}a\bar{b}}\bar{\mathbb{Y}}^{J_3J_4\Lambda}_{a\bar{b}k\bar{j}} $ and $ \bar{\mathbb{Y}}^{J_4J_3\Lambda}_{i\bar{l}a\bar{b}}\bar{X}^{J_3}_{a\bar{b}k\bar{j}} $ are related by a Hermitian conjugation, which saves two matrix multiplications, provided we take into account the phase $ (-1)^{J_3-J_4} $ from conjugating the spherical tensor. The commutator is then given by \[ \mathbb{Z}^{J_1J_2\Lambda}_{ijkl} = \sum_{J_3J_4} \hat{J_1}\hat{J_2}\hat{J_3}\hat{J_4} \left[ \left\{ \begin{array}{lll} j_i & j_l & J_3 \\ j_j & j_k & J_4 \\ J_1 & J_2 & \Lambda \\ \end{array} \right\} \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{i\bar{l}k\bar{j}} -(-1)^{j_i+j_j-J} \left\{ \begin{array}{lll} j_j & j_l & J_3 \\ j_i & j_k & J_4 \\ J_1 & J_2 & \Lambda \\ \end{array} \right\} \bar{\mathbb{Z}}^{J_3J_4\Lambda}_{j\bar{l}k\bar{i}} \right] \] \index{Operator@{Operator}!comm222\+\_\+pp\+\_\+hh\+\_\+221ss@{comm222\+\_\+pp\+\_\+hh\+\_\+221ss}}
 \index{comm222\+\_\+pp\+\_\+hh\+\_\+221ss@{comm222\+\_\+pp\+\_\+hh\+\_\+221ss}!Operator@{Operator}}
 \subsubsection[{\texorpdfstring{comm222\+\_\+pp\+\_\+hh\+\_\+221ss(const Operator \&\+X, const Operator \&\+Y)}{comm222_pp_hh_221ss(const Operator &X, const Operator &Y)}}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\+::comm222\+\_\+pp\+\_\+hh\+\_\+221ss (
 \begin{DoxyParamCaption}
@@ -534,11 +558,11 @@ Normal ordering of a three body operator. Start by generating the normal ordered
 ) const}\hypertarget{classOperator_a40ea778ddd4c26666bdc15c463101d30}{}\label{classOperator_a40ea778ddd4c26666bdc15c463101d30}
 The scalar Pandya transformation is defined as \[ \bar{X}^{J}_{i\bar{j}k\bar{l}} = - \sum_{J'} (2J'+1) \left\{ \begin{array}{lll} j_i & j_j & J \\ j_k & j_l & J' \\ \end{array} \right\} X^{J}_{ilkj} \] where the overbar indicates time-\/reversed orbits. \index{Operator@{Operator}!Do\+Tensor\+Pandya\+Transformation@{Do\+Tensor\+Pandya\+Transformation}}
 \index{Do\+Tensor\+Pandya\+Transformation@{Do\+Tensor\+Pandya\+Transformation}!Operator@{Operator}}
-\subsubsection[{\texorpdfstring{Do\+Tensor\+Pandya\+Transformation(map$<$ array$<$ int, 2 $>$, arma\+::mat $>$ \&) const }{DoTensorPandyaTransformation(map< array< int, 2 >, arma::mat > &) const }}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\+::\+Do\+Tensor\+Pandya\+Transformation (
+\subsubsection[{\texorpdfstring{Do\+Tensor\+Pandya\+Transformation(map$<$ array$<$ index\+\_\+t, 2 $>$, arma\+::mat $>$ \&) const }{DoTensorPandyaTransformation(map< array< index_t, 2 >, arma::mat > &) const }}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\+::\+Do\+Tensor\+Pandya\+Transformation (
 \begin{DoxyParamCaption}
-\item[{map$<$ array$<$ int, 2 $>$, arma\+::mat $>$ \&}]{Two\+Body\+\_\+\+C\+C\+\_\+ph}
+\item[{map$<$ array$<$ index\+\_\+t, 2 $>$, arma\+::mat $>$ \&}]{Two\+Body\+\_\+\+C\+C\+\_\+ph}
 \end{DoxyParamCaption}
-) const}\hypertarget{classOperator_a83aa05f43d1881ef41b26783c9eb23f0}{}\label{classOperator_a83aa05f43d1881ef41b26783c9eb23f0}
+) const}\hypertarget{classOperator_ad7c6a9d515a2577985358b43cf6a365e}{}\label{classOperator_ad7c6a9d515a2577985358b43cf6a365e}
 The scalar Pandya transformation is defined as \[ \bar{X}^{J}_{i\bar{j}k\bar{l}} = - \sum_{J'} (2J'+1) \left\{ \begin{array}{lll} j_i & j_j & J \\ j_k & j_l & J' \\ \end{array} \right\} X^{J}_{ilkj} \] where the overbar indicates time-\/reversed orbits. This function is designed for use with \hyperlink{classOperator_a25b768c4ddceead49af1c7f69d5071ea}{comm222\+\_\+phss()} and so it takes in two arrays of matrices, one for hp terms and one for ph terms. \index{Operator@{Operator}!Erase\+One\+Body@{Erase\+One\+Body}}
 \index{Erase\+One\+Body@{Erase\+One\+Body}!Operator@{Operator}}
 \subsubsection[{\texorpdfstring{Erase\+One\+Body()}{EraseOneBody()}}]{\setlength{\rightskip}{0pt plus 5cm}void Operator\+::\+Erase\+One\+Body (
@@ -564,7 +588,7 @@ Calculate the second-\/order perturbation theory correction to the energy \[ E^{
 {}
 \end{DoxyParamCaption}
 )}\hypertarget{classOperator_ac12117e2c500dff8ab5d532573793290}{}\label{classOperator_ac12117e2c500dff8ab5d532573793290}
-Calculate the third order perturbation correction to energy \[ \frac{1}{8}\sum_{abijpq}\sum_J (2J+1)\frac{\Gamma_{abij}^J\Gamma_{ijpq}^J\Gamma_{pqab}^J}{(f_a+f_b-f_p-f_q)(f_a+f_b-f_i-f_j)} +\sum_{abcijk}\sum_J (2J+1) \frac{\Gamma_{abij}^J\Gamma_{cjkb}^J\Gamma_{ikac}^J}{(f_a+f_b-f_i-f_j)(f_a+f_c-f_i-f_k)} \] \index{Operator@{Operator}!M\+P1\+\_\+\+Eval@{M\+P1\+\_\+\+Eval}}
+Calculate the third order perturbation correction to energy \[ \frac{1}{8}\sum_{abijpq}\sum_J (2J+1)\frac{\Gamma_{abij}^J\Gamma_{ijpq}^J\Gamma_{pqab}^J}{(f_a+f_b-f_p-f_q)(f_a+f_b-f_i-f_j)} +\sum_{abcijk}\sum_J (2J+1)^2 \frac{\bar{\Gamma}_{a\bar{i}j\bar{b}}^J\bar{\Gamma}_{j\bar{b}k\bar{c}}^J\bar{\Gamma}_{k\bar{c}a\bar{i}}^J}{(f_a+f_b-f_i-f_j)(f_a+f_c-f_i-f_k)} \] \index{Operator@{Operator}!M\+P1\+\_\+\+Eval@{M\+P1\+\_\+\+Eval}}
 \index{M\+P1\+\_\+\+Eval@{M\+P1\+\_\+\+Eval}!Operator@{Operator}}
 \subsubsection[{\texorpdfstring{M\+P1\+\_\+\+Eval(\+Operator \&)}{MP1_Eval(Operator &)}}]{\setlength{\rightskip}{0pt plus 5cm}double Operator\+::\+M\+P1\+\_\+\+Eval (
 \begin{DoxyParamCaption}
@@ -598,11 +622,11 @@ Returns the operator trunacted to the new model space.
 
 Truncate an operator to a smaller emax A corresponding \hyperlink{classModelSpace}{Model\+Space} object must be created at the appropriate scope. That\textquotesingle{}s why the new operator is passed as a \index{Operator@{Operator}!Undo\+Normal\+Ordering@{Undo\+Normal\+Ordering}}
 \index{Undo\+Normal\+Ordering@{Undo\+Normal\+Ordering}!Operator@{Operator}}
-\subsubsection[{\texorpdfstring{Undo\+Normal\+Ordering()}{UndoNormalOrdering()}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Operator\+::\+Undo\+Normal\+Ordering (
+\subsubsection[{\texorpdfstring{Undo\+Normal\+Ordering() const }{UndoNormalOrdering() const }}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Operator\+::\+Undo\+Normal\+Ordering (
 \begin{DoxyParamCaption}
 {}
 \end{DoxyParamCaption}
-)}\hypertarget{classOperator_a1932dcab2be6bb889320254cc81dd5f4}{}\label{classOperator_a1932dcab2be6bb889320254cc81dd5f4}
+) const}\hypertarget{classOperator_a5fd8c62bf910df71736eb2b8bcf60ca5}{}\label{classOperator_a5fd8c62bf910df71736eb2b8bcf60ca5}
 
 
 Returns the operator normal-\/ordered wrt the vacuum. 

@@ -21,13 +21,17 @@ namespace imsrg_util
       else if (opname == "Rp2")           return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rn2")           return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rm2")           return Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
+      else if (opname == "E1")            return ElectricMultipoleOp(modelspace,1) ;
       else if (opname == "E2")            return ElectricMultipoleOp(modelspace,2) ;
+      else if (opname == "E3")            return ElectricMultipoleOp(modelspace,3) ;
       else if (opname == "E4")            return ElectricMultipoleOp(modelspace,4) ;
       else if (opname == "E6")            return ElectricMultipoleOp(modelspace,6) ;
       else if (opname == "E2int")         return IntrinsicElectricMultipoleOp(modelspace,2) ;
       else if (opname == "nE2")           return NeutronElectricMultipoleOp(modelspace,2) ;
       else if (opname == "M1")            return MagneticMultipoleOp(modelspace,1) ;
+      else if (opname == "M2")            return MagneticMultipoleOp(modelspace,2) ;
       else if (opname == "M3")            return MagneticMultipoleOp(modelspace,3) ;
+      else if (opname == "M4")            return MagneticMultipoleOp(modelspace,4) ;
       else if (opname == "M5")            return MagneticMultipoleOp(modelspace,5) ;
       else if (opname == "M1p")           return MagneticMultipoleOp_pn(modelspace,1,"proton") ;
       else if (opname == "M1n")           return MagneticMultipoleOp_pn(modelspace,1,"neutron") ;
@@ -697,7 +701,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 //   Operator R2cmOp = Operator(modelspace);
    Operator R2cmOp = RSquaredOp(modelspace);
 
-   unsigned int norb = modelspace.GetNumberOrbits();
+//   unsigned int norb = modelspace.GetNumberOrbits();
 //   double oscillator_b2 = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
 //   for (unsigned int i=0; i<norb; ++i)
 //   {
@@ -749,7 +753,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 /// Returns
 /// \f[ 
 /// R_p^{2} = \frac{1}{Z} \sum_{p}\left(\vec{r}_{p}-\vec{R}_{CM}\right)^2 =
-/// R^2_{CM} + \frac{A-2}{AZ} \sum_{p}r_{p}^{2} - \frac{4}{AZ}\sum_{i<j}\vec{r}_i\cdot\vec{r}_j  \right)
+/// R^2_{CM} + \frac{A-2}{AZ} \sum_{p}r_{p}^{2} - \frac{4}{AZ}\sum_{i<j}\vec{r}_i\cdot\vec{r}_j  
 /// \f]
 /// evaluated in the oscillator basis.
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z)
@@ -891,7 +895,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
 
 /// Center of mass Hamiltonian
-/// \f{eqnarray*}{
+/// \f{align*}{
 /// H_{CM} &= T_{CM} + \frac{1}{2} Am\omega^2 R^2 \\
 ///        &= T_{CM} + \frac{1}{2b^2} AR^2 \hbar\omega
 /// \f}
@@ -1887,7 +1891,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
       cout<<"which I do to stay consistent with previous naming conventions."<<endl;
       exit(1);
     }
-    double nodes[Nquad][2] = { {0.00771093190434205, 0.01978880917191989},
+//    double nodes[Nquad][2] = { {0.00771093190434205, 0.01978880917191989},
+    double nodes[187][2] = { {0.00771093190434205, 0.01978880917191989},
                                {0.04062903529180086, 0.04606592889118855},
                                {0.09985365551375681, 0.07238518879149865},
                                {0.1854021036766674, 0.09871291032827842},

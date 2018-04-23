@@ -1,25 +1,12 @@
-//#include "ModelSpace.hh"
-//#include "ReadWrite.hh"
-//#include "Operator.hh"
-//#include "HartreeFock.hh"
-//#include "IMSRGSolver.hh"
-//#include "imsrg_util.hh"
-//#include "AngMom.hh"
+
 #include "IMSRG.hh"
 #include <string>
-
-//#include <boost/python/module.hpp>
-//#include <boost/python/def.hpp>
-//#include <boost/python.hpp>
-//#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-//using namespace boost::python;
 
   Orbit MS_GetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
   int MS_GetOrbitIndex_Str(ModelSpace& self, string s){ return self.GetOrbitIndex(s);};
@@ -37,16 +24,10 @@ namespace py = pybind11;
 
   Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
 
-//BOOST_PYTHON_MODULE(pyIMSRG)
 PYBIND11_PLUGIN(pyIMSRG)
 {
   py::module m("pyIMSRG", "python bindings for IMSRG code");
 
-//   py::class<vector<string> > vector_string("vector_string")
-//      .def (vector_indexing_suite< vector<string> >())
-//   ;
-
-//   class_<Orbit>("Orbit",init<>())
    py::class_<Orbit>(m,"Orbit")
       .def(py::init<>())
       .def_readwrite("n", &Orbit::n)
@@ -58,7 +39,6 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def_readwrite("index", &Orbit::index)
    ;
 
-//   class_<TwoBodyChannel>("TwoBodyChannel",init<>())
    py::class_<TwoBodyChannel>(m,"TwoBodyChannel")
       .def(py::init<>())
       .def("GetNumberKets",&TwoBodyChannel::GetNumberKets)
@@ -66,7 +46,6 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("GetKetIndex",&TwoBodyChannel::GetKetIndex)
    ;
 
-//   class_<ModelSpace>("ModelSpace",init<>())
    py::class_<ModelSpace>(m,"ModelSpace")
       .def(py::init<>())
       .def(py::init<const ModelSpace&>())
@@ -89,11 +68,11 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("SetReference", &MS_SetRef)
       .def("Init_occ_from_file", &ModelSpace::Init_occ_from_file)
       .def("GetOrbitIndex_fromString", &MS_GetOrbitIndex_Str)
+      .def("PreCalculateSixJ", &ModelSpace::PreCalculateSixJ)
       .def_readwrite("core", &ModelSpace::core)
    ;
 
 
-//   class_<Operator>("Operator",init<>())
    py::class_<Operator>(m,"Operator")
       .def(py::init<>())
       .def(py::init< ModelSpace&>())
@@ -140,11 +119,13 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("MakeNormalized", &Operator::MakeNormalized)
       .def("MakeUnNormalized", &Operator::MakeUnNormalized)
       .def("GetParticleRank", &Operator::GetParticleRank)
+      .def("GetJRank", &Operator::GetJRank)
+      .def("GetTRank", &Operator::GetTRank)
+      .def("GetParity", &Operator::GetParity)
       .def("GetE3max", &Operator::GetE3max)
       .def("SetE3max", &Operator::SetE3max)
       .def("PrintTimes", &Operator::PrintTimes)
       .def("BCH_Transform", &Operator::BCH_Transform)
-//      .def("EraseThreeBody", &Operator::EraseThreeBody)
       .def("Size", &Operator::Size)
       .def("SetToCommutator", &Operator::SetToCommutator)
       .def("comm110ss", &Operator::comm110ss)
@@ -160,10 +141,20 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("comm122st", &Operator::comm122st)
       .def("comm222_pp_hh_221st", &Operator::comm222_pp_hh_221st)
       .def("comm222_phst", &Operator::comm222_phst)
+      .def("MakeNormalized", &Operator::MakeNormalized)
+      .def("MakeUnNormalized", &Operator::MakeUnNormalized)
       .def("SetOneBodyME", &OpSetOneBodyME)
    ;
 
-//   class_<arma::mat>("ArmaMat",init<>())
+   // Indicate a derived class by listing the base class
+   // as a template parameter
+   py::class_<DaggerOperator,Operator>(m,"DaggerOperator")
+      .def(py::init< ModelSpace&,int>())
+      .def("SetQSpaceOrbit", &DaggerOperator::SetQSpaceOrbit)
+      .def("GetQSpaceOrbit", &DaggerOperator::GetQSpaceOrbit)
+   ;
+
+
    py::class_<arma::mat>(m,"ArmaMat")
       .def(py::init<>())
       .def("Print",&ArmaMatPrint)
@@ -177,14 +168,12 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def(py::self - double())
    ;
 
-//   class_<TwoBodyME>("TwoBodyME",init<>())
    py::class_<TwoBodyME>(m,"TwoBodyME")
       .def(py::init<>())
       .def("GetTBME_J", TB_GetTBME_J)
       .def("GetTBME_J_norm", TB_GetTBME_J_norm)
    ;
 
-//   class_<ReadWrite>("ReadWrite",init<>())
    py::class_<ReadWrite>(m,"ReadWrite")
       .def(py::init<>())
       .def("ReadSettingsFile", &ReadWrite::ReadSettingsFile)
@@ -231,7 +220,6 @@ PYBIND11_PLUGIN(pyIMSRG)
 
 
 
-//   class_<HartreeFock>("HartreeFock",init<Operator&>())
    py::class_<HartreeFock>(m,"HartreeFock")
       .def(py::init<Operator&>())
       .def("Solve",&HartreeFock::Solve)
@@ -242,16 +230,18 @@ PYBIND11_PLUGIN(pyIMSRG)
       .def("PrintSPE",&HartreeFock::PrintSPE)
       .def("GetRadialWF_r",&HartreeFock::GetRadialWF_r)
       .def_readonly("EHF",&HartreeFock::EHF)
+      .def_readonly("C",&HartreeFock::C)
    ;
 
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
    Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
+   DaggerOperator (IMSRGSolver::*TransformDag_ref)(DaggerOperator&) = &IMSRGSolver::Transform;
 
-//   class_<IMSRGSolver>("IMSRGSolver",init<Operator&>())
    py::class_<IMSRGSolver>(m,"IMSRGSolver")
       .def(py::init<Operator&>())
       .def("Solve",&IMSRGSolver::Solve)
       .def("Transform",Transform_ref)
+      .def("TransformDagger",TransformDag_ref)
       .def("InverseTransform",&IMSRGSolver::InverseTransform)
       .def("SetFlowFile",&IMSRGSolver::SetFlowFile)
       .def("SetMethod",&IMSRGSolver::SetMethod)
@@ -280,7 +270,6 @@ PYBIND11_PLUGIN(pyIMSRG)
 
 
 
-//   class_<IMSRGProfiler>("IMSRGProfiler",init<>())
    py::class_<IMSRGProfiler>(m,"IMSRGProfiler")
       .def(py::init<>())
       .def("PrintTimes",&IMSRGProfiler::PrintTimes)
@@ -320,6 +309,7 @@ PYBIND11_PLUGIN(pyIMSRG)
    m.def("RadialIntegral",     imsrg_util::RadialIntegral);
    m.def("RadialIntegral_RpowK",     imsrg_util::RadialIntegral_RpowK);
    m.def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
+   m.def("OperatorFromString", imsrg_util::OperatorFromString);
 
    m.def("CG",AngMom::CG);
    m.def("ThreeJ",AngMom::ThreeJ);
