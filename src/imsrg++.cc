@@ -32,6 +32,7 @@
 #include <omp.h>
 #include "IMSRG.hh"
 #include "Parameters.hh"
+#include "SchematicPotentials.hh"
 
 using namespace imsrg_util;
 
@@ -99,7 +100,7 @@ int main(int argc, char** argv)
 
   ifstream test;
   // test 2bme file
-  if (inputtbme != "none")
+  if (inputtbme != "none" and (inputtbme.find("Schematic")==string::npos) )
   {
     test.open(inputtbme);
 //    if( not test.good() and fmt2!="oakridge_binary")
@@ -172,6 +173,21 @@ int main(int argc, char** argv)
     Hbare.SetUseGooseTank(true);
   }
 
+  if ( inputtbme.find("Schematic") != string::npos )
+  {
+    std::cout << "We've got a Schematic interaction" << std::endl;
+    if ( inputtbme.find("SDI") != string::npos )
+    {
+      double R0 = 1.25 * pow( modelspace.GetTargetMass(), 1./3 );
+      double V0 = -1.0; 
+      Hbare = SchematicPotentials::SurfaceDelta(modelspace, R0, V0);
+    }
+    else
+    {
+      std::cout << "Not sure what to do with inputtbme = " << inputtbme << ". This will cause some trouble..." << std::endl;
+    }
+  }
+
   cout << "Reading interactions..." << endl;
 
 //  int nthreads = omp_get_max_threads();
@@ -183,7 +199,7 @@ int main(int argc, char** argv)
 //    omp_set_num_threads(max(1,nthreads-3));
 //    #pragma omp section
 //    {
-      if (inputtbme != "none")
+      if (inputtbme != "none" and (inputtbme.find("Schematic") == string::npos) )
       {
         if (fmt2 == "me2j")
           rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
