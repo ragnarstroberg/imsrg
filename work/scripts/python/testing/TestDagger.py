@@ -11,7 +11,7 @@ from os import path
 
 
 ################################# Inputs go here ##################################
-emax = 2
+emax = 4
 E3max = 14
 hw = 20
 file2N = '../../input/chi2b_srg0625_eMax14_lMax10_hwHO020.me2j.gz'
@@ -19,8 +19,12 @@ file2N = '../../input/chi2b_srg0625_eMax14_lMax10_hwHO020.me2j.gz'
 file3N = 'none'
 
 
-reference = 'O16'  # The reference for the normal ordering
+#reference = 'Ca48'  # The reference for the normal ordering
+#core = 'Ca40'       # The core of the valence space. At the end, normal order wrt this
+#valence = 'fp-shell'
+reference = 'Si29'  # The reference for the normal ordering
 core = 'O16'       # The core of the valence space. At the end, normal order wrt this
+valence = 'sd-shell'
 basis = 'IMSRG'       # basis can be either 'oscillator' or 'HF' (for Hartree-Fock) or 'IMSRG'
 
 output_file_name = 'NormalOrdered_%s_%s_e%d_hw%d'%(reference,basis,emax,hw)
@@ -36,7 +40,7 @@ file3N_emax  = 12  #  Same deal for the 3N file
 file3N_e2max = 28  # 
 file3N_e3max = 12  #
 
-daggerorbit = "p0d5"
+daggerorbit = "n1d3"
 ###################################################################################
 ###################################################################################
 
@@ -54,11 +58,11 @@ def main():
   
 
   rw = ReadWrite()
-  modelspace = ModelSpace(emax,reference,reference)
+#  modelspace = ModelSpace(emax,reference,reference)
+  modelspace = ModelSpace(emax,reference,valence)
   modelspace.SetHbarOmega(hw)
   modelspace.SetE3max(E3max)
 
-  Q = modelspace.GetOrbitIndex_fromString(daggerorbit)
 
   particle_rank = 3
   if file3N == '' or file3N == 'none': particle_rank = 2
@@ -80,7 +84,6 @@ def main():
     rw.Read_Darmstadt_3body( file3N, Hbare, file3N_emax, file3N_e2max, file3N_e3max )
       
   
-  dag = DaggerOperator(modelspace,Q)
   Hbare += Trel_Op(modelspace)
 
   ## If we want an oscillator reference, just do the normal ordering.
@@ -93,12 +96,14 @@ def main():
     hf.Solve()
     HNO = hf.GetNormalOrderedH()
 
+  Q = modelspace.GetOrbitIndex_fromString(daggerorbit)
+  dag = DaggerOperator(modelspace,Q)
   ## There are lots of solver parameters you can tweak, but they really shouldn't
   ## have much of an effect, so let's just go with some defaults.
   if basis == 'IMSRG':
     imsrgsolver = IMSRGSolver(HNO)
 #    imsrgsolver.SetSmax(500)
-    imsrgsolver.SetSmax(5)
+    imsrgsolver.SetSmax(15)
     imsrgsolver.SetReadWrite(rw)
     imsrgsolver.SetEtaCriterion(1e-6)
     imsrgsolver.SetMethod('magnus')
@@ -107,7 +112,9 @@ def main():
     imsrgsolver.Solve()
     HNO = imsrgsolver.GetH_s()
     dagT = imsrgsolver.TransformDagger(dag)
-  dagT.PrintOneBody()
+#    dagT.PrintOneBody()
+    rw.WriteNuShellX_int(dagT,'dagt_'+daggerorbit+'_'+reference+'_'+valence+'_e%d'%emax+'.int')
+    print 'Norms: ',dagT.OneBodyNorm(), dagT.TwoBodyNorm()
 
  
 
@@ -115,17 +122,12 @@ def main():
   ## If the core of the eventual valence space is different from normal ordering reference
   ## then we should at this point switch to the core.
   if core != reference:
-    ms_core = modelspace(emax,core,core)
+    ms_core = ModelSpace(emax,core,core)
     HNO = HNO.UndoNormalOrdering()
     HNO.SetModelSpace(ms_core)
     HNO = HNO.DoNormalOrdering()
 
 
-
-
-
-  
-  print dag.GetQSpaceOrbit()
 
 
   HNO.PrintTimes()
