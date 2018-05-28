@@ -1891,7 +1891,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
       cout<<"which I do to stay consistent with previous naming conventions."<<endl;
       exit(1);
     }
-    double nodes[Nquad][2] = { {0.00771093190434205, 0.01978880917191989},
+//    double nodes[Nquad][2] = { {0.00771093190434205, 0.01978880917191989},
+    double nodes[187][2] = { {0.00771093190434205, 0.01978880917191989},
                                {0.04062903529180086, 0.04606592889118855},
                                {0.09985365551375681, 0.07238518879149865},
                                {0.1854021036766674, 0.09871291032827842},

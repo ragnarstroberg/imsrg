@@ -552,13 +552,13 @@ Op IMSRGSolver::Transform(Op& OpIn)
 template Operator IMSRGSolver::Transform(Operator&);
 template DaggerOperator IMSRGSolver::Transform(DaggerOperator&);
 
-template<class Op>
-Op IMSRGSolver::Transform(Op&& OpIn)
-{
-  return Transform_Partial(OpIn, 0);
-}
-template Operator IMSRGSolver::Transform(Operator&&);
-template DaggerOperator IMSRGSolver::Transform(DaggerOperator&&);
+//template<class Op>
+//Op IMSRGSolver::Transform(Op&& OpIn)
+//{
+//  return Transform_Partial(OpIn, 0);
+//}
+//template Operator IMSRGSolver::Transform(Operator&&);
+//template DaggerOperator IMSRGSolver::Transform(DaggerOperator&&);
 
 
 
@@ -663,33 +663,33 @@ Op IMSRGSolver::Transform_Partial(Op& OpIn, int n)
 template Operator IMSRGSolver::Transform_Partial(Operator&, int);
 template DaggerOperator IMSRGSolver::Transform_Partial(DaggerOperator&, int);
 
-// Need to check if this ever ends up being useful...
-template<class Op>
-Op IMSRGSolver::Transform_Partial(Op&& OpIn, int n)
-{
-  Op OpOut = OpIn;
-  if ((rw != NULL) and rw->GetScratchDir() != "")
-  {
-    Operator omega(OpIn);
-    char tmp[512];
-    for (int i=n;i<n_omega_written;i++)
-    {
-     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
-     string fname(tmp);
-     ifstream ifs(fname,ios::binary);
-     omega.ReadBinary(ifs);
-     OpOut = OpOut.BCH_Transform( omega );
-    }
-  }
-
-  for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
-  {
-    OpOut = OpOut.BCH_Transform( Omega[i] );
-  }
-  return OpOut;
-}
-template Operator IMSRGSolver::Transform_Partial(Operator&&, int);
-template DaggerOperator IMSRGSolver::Transform_Partial(DaggerOperator&&, int);
+//// Need to check if this ever ends up being useful...
+//template<class Op>
+//Op IMSRGSolver::Transform_Partial(Op&& OpIn, int n)
+//{
+//  Op OpOut = OpIn;
+//  if ((rw != NULL) and rw->GetScratchDir() != "")
+//  {
+//    Operator omega(OpIn);
+//    char tmp[512];
+//    for (int i=n;i<n_omega_written;i++)
+//    {
+//     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+//     string fname(tmp);
+//     ifstream ifs(fname,ios::binary);
+//     omega.ReadBinary(ifs);
+//     OpOut = OpOut.BCH_Transform( omega );
+//    }
+//  }
+//
+//  for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
+//  {
+//    OpOut = OpOut.BCH_Transform( Omega[i] );
+//  }
+//  return OpOut;
+//}
+//template Operator IMSRGSolver::Transform_Partial(Operator&&, int);
+//template DaggerOperator IMSRGSolver::Transform_Partial(DaggerOperator&&, int);
 
 
 

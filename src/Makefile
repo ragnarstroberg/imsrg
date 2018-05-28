@@ -29,7 +29,7 @@ SOFLAGS = $(FLAGS)
 #PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
 PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags --ldflags) -Wl,--no-as-needed
 
-THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; else echo other; fi)
+THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; else echo other; fi)
 
 ALL = libIMSRG.so imsrg++
 LIBS = -lopenblas -lgsl -lz
@@ -70,6 +70,10 @@ ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up 
  endif
 endif
 
+ifeq ($(THEHOST),oak)
+  FLAGS += -DOLD_BOOST
+endif
+
 ifeq ($(HDF5),on)
 # The new version of Ubuntu puts the hdf5 libraries in a different location
  NEWHDF5LOC = $(shell if [ -d /usr/include/hdf5/serial ]; then echo yes; else echo no; fi)
@@ -90,6 +94,9 @@ install: splashscreen
 	@if [ ! -d $(INSTDIR)/include ] ; then \
 	  mkdir $(INSTDIR)/include; \
 	fi 
+	@if [ ! -d $(INSTDIR)/bin ] ; then \
+	  mkdir $(INSTDIR)/bin; \
+	fi
 	ln -sf $(PWD)/libIMSRG.so $(INSTDIR)/lib/libIMSRG.so
 	ln -sfT $(PWD)/armadillo $(INSTDIR)/include/armadillo
 	@if [ -f pyIMSRG.so ] ; then\
