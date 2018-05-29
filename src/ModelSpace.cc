@@ -891,7 +891,10 @@ void ModelSpace::SetupKets()
     Ket& ket = Kets[index];
     int Tz = (ket.op->tz2 + ket.oq->tz2)/2;
     int parity = (ket.op->l + ket.oq->l)%2;
-    MonopoleKets[Tz+1][parity][index] = MonopoleKets[Tz+1][parity].size()-1;
+// It looks like this line had undefined behavior which apparently didn't cause problems previously...
+//    MonopoleKets[Tz+1][parity][index] = MonopoleKets[Tz+1][parity].size()-1;
+    index_t localindex = MonopoleKets[Tz+1][parity].size();
+    MonopoleKets[Tz+1][parity][index] = localindex;
     double occp = ket.op->occ;
     double occq = ket.oq->occ;
     int cvq_p = ket.op->cvq;

@@ -97,10 +97,14 @@ int main(int argc, char** argv)
   vector<Operator> ops;
   vector<string> spwf = parameters.v("SPWF");
 
+  if ( inputtbme.find("Schematic") != string::npos )
+  {
+    fmt2 = "schematic";
+  }
 
   ifstream test;
   // test 2bme file
-  if (inputtbme != "none" and (inputtbme.find("Schematic")==string::npos) )
+  if (inputtbme != "none" and fmt2!="schematic" )
   {
     test.open(inputtbme);
 //    if( not test.good() and fmt2!="oakridge_binary")
@@ -173,14 +177,25 @@ int main(int argc, char** argv)
     Hbare.SetUseGooseTank(true);
   }
 
-  if ( inputtbme.find("Schematic") != string::npos )
+
+  if ( fmt2=="schematic" )
   {
     std::cout << "We've got a Schematic interaction" << std::endl;
     if ( inputtbme.find("SDI") != string::npos )
     {
       double R0 = 1.25 * pow( modelspace.GetTargetMass(), 1./3 );
-      double V0 = -1.0; 
+      double V0 = 32*hw; 
       Hbare = SchematicPotentials::SurfaceDelta(modelspace, R0, V0);
+      int norbits = modelspace.GetNumberOrbits();
+//      double hw = modelspace.GetHbarOmega();
+      for (int a=0;a<norbits;++a)
+      {
+         Orbit & oa = modelspace.GetOrbit(a);
+         Hbare.OneBody(a,a) = hw * (2*oa.n + oa.l +3./2);
+      }
+      std::cout << "Surface delta interaction with R0 = " << R0 << "  and V0 = " << V0 << std::endl;
+      std::cout << "emax = " << modelspace.GetEmax() << "  hw = " << modelspace.GetHbarOmega() << std::endl;
+      std::cout << "particle rank = " << Hbare.particle_rank << std::endl;
     }
     else
     {
@@ -188,7 +203,6 @@ int main(int argc, char** argv)
     }
   }
 
-  cout << "Reading interactions..." << endl;
 
 //  int nthreads = omp_get_max_threads();
 //  {
@@ -199,8 +213,9 @@ int main(int argc, char** argv)
 //    omp_set_num_threads(max(1,nthreads-3));
 //    #pragma omp section
 //    {
-      if (inputtbme != "none" and (inputtbme.find("Schematic") == string::npos) )
+      if (inputtbme != "none" and fmt2 != "schematic" )
       {
+        cout << "Reading interactions..." << endl;
         if (fmt2 == "me2j")
           rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
         else if (fmt2 == "navratil" or fmt2 == "Navratil")
@@ -223,7 +238,7 @@ int main(int argc, char** argv)
   
         cout << "done reading 2N" << endl;
       }
-      if (fmt2 != "nushellx")
+      if (fmt2 != "nushellx" and fmt2!="schematic")
         Hbare += Trel_Op(modelspace);
 //    }
   
@@ -264,6 +279,10 @@ int main(int argc, char** argv)
   else if (basis == "oscillator")
     HNO = Hbare.DoNormalOrdering();
 
+//  if ( fmt2 == "schematic" )
+//  {
+//    HNO = Hbare;
+//  }
 
   int n_radial_points = 40;
   double Rmax = 10.0;
@@ -555,8 +574,8 @@ int main(int argc, char** argv)
     if (not renormal_order)
     {
       for (auto c : modelspace.core)
-      {
-         if ( (find( modelspace.holes.begin(), modelspace.holes.end(), c) == modelspace.holes.end()) or (abs(1-modelspace.holes[c])>1e-6))
+      { // renormal order if core orbit c is not a hole orbit (i.e. not in reference), or if c is only fractionally filled in the reference.
+         if ( (find( modelspace.holes.begin(), modelspace.holes.end(), c) == modelspace.holes.end()) or (abs(1-modelspace.Orbits[c].occ)>1e-6))
          {
            renormal_order = true;
            break;
