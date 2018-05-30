@@ -22,6 +22,7 @@ endif
 FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
 
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
+#WARNFLAGS += -Wextra
 FLAGS    += $(WARNFLAGS)
 
 SOFLAGS = $(FLAGS)
