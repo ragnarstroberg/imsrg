@@ -28,6 +28,7 @@ HartreeFock::HartreeFock(Operator& hbare)
    Vij           = arma::mat(norbits,norbits,arma::fill::zeros);
    V3ij          = arma::mat(norbits,norbits,arma::fill::zeros);
    F             = arma::mat(norbits,norbits);
+   std::cout << "loop over Tz" << std::endl;
    for (int Tz=-1;Tz<=1;++Tz)
    {
      for (int parity=0; parity<=1; ++parity)
@@ -39,15 +40,19 @@ HartreeFock::HartreeFock(Operator& hbare)
    }
    prev_energies = arma::vec(norbits,arma::fill::zeros);
    vector<double> occvec;
+   std::cout << "loop over holes" << std::endl;
    for (auto& h : modelspace->holes) occvec.push_back(modelspace->GetOrbit(h).occ);
    holeorbs = arma::uvec(modelspace->holes);
    hole_occ = arma::rowvec(occvec);
+   std::cout << "BuildMonopoleV" << std::endl;
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
    {
       BuildMonopoleV3();
    }
+   std::cout << "DensityMatrix" << std::endl;
    UpdateDensityMatrix();
+   std::cout << "UpdateF" << std::endl;
    UpdateF();
 
 }

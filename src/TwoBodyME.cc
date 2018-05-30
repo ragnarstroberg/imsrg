@@ -170,8 +170,6 @@ void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, do
     swap(bra_ind,ket_ind);
     phase *= modelspace->phase(tbc_bra.J-tbc_ket.J);
    }
-//   cout << "Getting Matrix " << ch_bra << "," << ch_ket << "(" << bra_ind << "," << ket_ind
-//        << "), dimension = " << GetMatrix(ch_bra,ch_ket).n_rows << "x" << GetMatrix(ch_bra,ch_ket).n_cols << endl;
    GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) += phase * tbme;
    if (ch_bra!=ch_ket or ket_ind==bra_ind) return;
 //   if (ch_ket != ch_bra) return;
@@ -509,7 +507,6 @@ double TwoBodyME::GetTBMEmonopole(int a, int b, int c, int d) const
    
    for (int J=jmin;J<=jmax;++J)
    {
-
       mon += (2*J+1) * GetTBME(J,parityab,Tzab,a,b,c,d);
    }
    mon /= (oa.j2 +1)*(ob.j2+1);
