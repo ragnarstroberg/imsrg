@@ -378,7 +378,8 @@ int main(int argc, char** argv)
 
 
   cout << "HF Single particle energies:" << endl;
-  hf.PrintSPE();
+//  hf.PrintSPE();
+  hf.PrintSPEandWF();
   cout << endl;
   
   if ( method == "HF" or method == "MP3")
