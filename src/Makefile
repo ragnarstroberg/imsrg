@@ -71,7 +71,8 @@ ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up 
 endif
 
 ifeq ($(THEHOST),oak)
-  FLAGS += -DOLD_BOOST
+#  FLAGS += -DOLD_BOOST
+  FLAGS += -DOPENBLAS_NOUSEOMP=1
 endif
 
 ifeq ($(HDF5),on)

@@ -1543,6 +1543,7 @@ void Operator::CommutatorScalarScalar( const Operator& X, const Operator& Y)
    Z.EraseOneBody();
    Z.EraseTwoBody();
 
+
    if ( (X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()) ) Z.SetAntiHermitian();
    else if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Z.SetHermitian();
    else Z.SetNonHermitian();
@@ -1554,15 +1555,16 @@ void Operator::CommutatorScalarScalar( const Operator& X, const Operator& Y)
         Z.comm220ss(X, Y) ;
    }
 
+
    double t_start = omp_get_wtime();
    Z.comm111ss(X, Y);
    profiler.timer["comm111ss"] += omp_get_wtime() - t_start;
 
-    t_start = omp_get_wtime();
+   t_start = omp_get_wtime();
    Z.comm121ss(X,Y);
    profiler.timer["comm121ss"] += omp_get_wtime() - t_start;
 
-    t_start = omp_get_wtime();
+   t_start = omp_get_wtime();
    Z.comm122ss(X,Y); 
    profiler.timer["comm122ss"] += omp_get_wtime() - t_start;
 
@@ -2433,7 +2435,7 @@ void Operator::AddInversePandyaTransformation_SingleChannel(arma::mat& Zbar, int
    int Tz_cc = tbc_cc.Tz;
    int nkets_cc = tbc_cc.GetNumberKets();
    int n_nonzeroChannels = modelspace->SortedTwoBodyChannels.size();
-//   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->scalar_transform_first_pass)
+   #pragma omp parallel for schedule(dynamic,1) if (not modelspace->scalar_transform_first_pass)
    for (int ich = 0; ich < n_nonzeroChannels; ++ich)
    {
       int ch = modelspace->SortedTwoBodyChannels[ich];
