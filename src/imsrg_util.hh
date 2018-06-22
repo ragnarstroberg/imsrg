@@ -5,6 +5,7 @@
 #include "Operator.hh"
 #include "HartreeFock.hh"
 #include "IMSRGSolver.hh"
+#include "DarkMatterNREFT.hh"
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_sf_laguerre.h>
 #include <gsl/gsl_sf_gamma.h>
@@ -21,6 +22,8 @@
 
 namespace imsrg_util
 {
+
+ vector<string> split_string(string s, string delimiter);
  Operator OperatorFromString(ModelSpace& modelspace, string str);
  map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax);
 
