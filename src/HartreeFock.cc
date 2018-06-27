@@ -134,11 +134,11 @@ void HartreeFock::CalcEHF()
 //**************************************************************************************
 void HartreeFock::PrintEHF()
 {
-   cout << fixed <<  setprecision(7);
-   cout << "e1hf = " << e1hf << endl;
-   cout << "e2hf = " << e2hf << endl;
-   cout << "e3hf = " << e3hf << endl;
-   cout << "EHF = "  << EHF  << endl;
+   std::cout << fixed <<  setprecision(7);
+   std::cout << "e1hf = " << std::setw(15) << e1hf << std::endl;
+   std::cout << "e2hf = " << std::setw(15) << e2hf << std::endl;
+   std::cout << "e3hf = " << std::setw(15) << e3hf << std::endl;
+   std::cout << "EHF  = "  << std::setw(15) << EHF  << std::endl;
 }
 
 //*********************************************************************
