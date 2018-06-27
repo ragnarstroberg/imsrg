@@ -10,6 +10,6 @@ This code also uses the Armadillo library, which is covered under the Mozilla Pu
 
 
 Credits:
-	* Most of this code was written by Ragnar Stroberg, who benefitted from the codes of Koshiroh Tsukiyama, Heiko Hergert, and Nathan Parzuchowski.
+	* Most of this code was written by Ragnar Stroberg, who benefitted greatly from the codes of Koshiroh Tsukiyama, Heiko Hergert, and Nathan Parzuchowski.
 	* Implementation of operators for neutrinoless double beta decay was done by Charlie Payne.
-	* Some tweaks to the 3rd order MBPT code wer contributed by Johannes Simonis.
+	* Some tweaks to the 3rd order MBPT code were contributed by Johannes Simonis.
