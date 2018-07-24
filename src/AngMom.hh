@@ -2,7 +2,7 @@
 #ifndef AngMom_hh
 #define AngMom_hh 1
 
-using namespace std;
+//using namespace std;
 
 //class AngMom
 namespace AngMom

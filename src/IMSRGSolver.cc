@@ -131,6 +131,8 @@ void IMSRGSolver::Solve()
 {
   if (s<1e-4)
    WriteFlowStatusHeader(cout);
+
+
   if (method == "magnus_euler" or method =="magnus")
     Solve_magnus_euler();
   else if (method == "magnus_modified_euler")
@@ -143,7 +145,6 @@ void IMSRGSolver::Solve()
     Solve_ode();
   else if (method == "restore_4th_order")
   {
-//    FlowingOps.push_back( Operator( *(FlowingOps[0].GetModelSpace()), 0,0,0,1));
     FlowingOps.emplace_back( Operator( *(FlowingOps[0].GetModelSpace()), 0,0,0,1));
     Solve_ode_adaptive();
   }

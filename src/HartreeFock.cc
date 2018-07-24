@@ -307,7 +307,8 @@ void HartreeFock::BuildMonopoleV3()
       #pragma omp atomic write
       Vmon3[ind] = v ;
    }
-
+   std::cout << "HartreeFock::BuildMonopoleV3  storing " << Vmon3.size() << " doubles for Vmon3 and "
+             << Vmon3_keys.size() << " uint64's for Vmon3_keys." << std::endl;
 
    profiler.timer["HF_BuildMonopoleV3"] += omp_get_wtime() - start_time;
 }

@@ -22,7 +22,7 @@ namespace AngMom
  bool Triangle(double j1, double j2, double j3)
  {
    if (round(2*(j1+j2))<round(2*j3)) return false;
-   if (abs(round(2*(j1-j2)))>round(2*j3)) return false;
+   if (std::abs(round(2*(j1-j2)))>round(2*j3)) return false;
    return true;
  }
 
@@ -82,7 +82,7 @@ double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int
    mosh1 *= sqrt( gsl_sf_doublefact(2*(n+ l)+1)  );
 
    double mosh2 = 0;
-   for (int la=0;la<=min(f1,F);++la)
+   for (int la=0;la<=std::min(f1,F);++la)
    {
     for (int lb=(la+l1)%2; lb<=l1+la; lb+=2)
     {
@@ -92,7 +92,7 @@ double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int
      {
       double cg_ac = CG(la,0,lc,0,L,0);
       if (cg_ac == 0) continue;
-      for (int ld=(lb+l)%2; ld<=min(lb+l,l2+lc); ld+=2)
+      for (int ld=(lb+l)%2; ld<=std::min(lb+l,l2+lc); ld+=2)
       {
        double cg_bd = CG(lb,0,ld,0,l,0);
        if (cg_bd == 0) continue;
