@@ -1,5 +1,4 @@
 CC = g++
-#CC = clang++
 
 # Compiler flags:
 #  -DNO_ODE compiles without boost/ode package used for flow equation solver
@@ -23,7 +22,6 @@ endif
 FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
 
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
-#WARNFLAGS += -Wextra
 FLAGS    += $(WARNFLAGS)
 
 SOFLAGS = $(FLAGS)
@@ -74,7 +72,12 @@ endif
 
 ifeq ($(THEHOST),oak)
 #  FLAGS += -DOLD_BOOST
-  FLAGS += -DOPENBLAS_NOUSEOMP
+#  FLAGS += -DOPENBLAS_NOUSEOMP=1
+  NEWLIBS := $(filter-out -lopenblas,$(LIBS))
+  LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+ ifneq ($(PYTHON),off)
+  ALL += pyIMSRG.so
+  endif
 endif
 
 ifeq ($(HDF5),on)
@@ -121,29 +124,26 @@ install: splashscreen
 
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\
-      boost_src/gzip.o boost_src/zlib.o  IMSRGProfiler.o 
+      IMSRGProfiler.o \
+      boost_src/gzip.o boost_src/zlib.o  
 
 mysrg: main.cc $(OBJ)
 	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 boost_src/gzip.o: boost_src/gzip.cpp
-	$(CC) -c $^ -o $@ $(INCLUDE) $(FLAGS) 
-#	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
+	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 boost_src/zlib.o: boost_src/zlib.cpp
-	$(CC) -c $^ -o $@ $(INCLUDE) $(FLAGS) 
-#	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
+	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 
 %.o: %.cc %.hh
-	$(CC) -c $*.cc -o $@ $(INCLUDE) $(FLAGS) 
-#	$(CC) -c $*.cc -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
+	$(CC) -c $*.cc -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 
 
 libIMSRG.so: $(OBJ)
-	$(CC) $^ -shared -o $@ $(SOFLAGS) $(LIBS)
-#	$(CC) $^ -shared -o $@ $(SOFLAGS)
+	$(CC) $^ -shared -o $@ $(SOFLAGS)
 
 python: pyIMSRG.so
 
