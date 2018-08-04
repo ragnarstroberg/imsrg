@@ -1,9 +1,11 @@
 
 #include "imsrg_util.hh"
 #include "AngMom.hh"
+//#include "DarkMatterNREFT.hh"
 #include <gsl/gsl_integration.h>
 #include <boost/math/special_functions/gamma.hpp>
 #include <boost/math/special_functions/factorials.hpp>
+#include <vector>
 
 using namespace AngMom;
 
@@ -11,9 +13,24 @@ using namespace AngMom;
 namespace imsrg_util
 {
 
-
- Operator OperatorFromString(ModelSpace& modelspace, string opname)
+ std::vector<string> split_string(string s, string delimiter)
  {
+  vector<string> out;
+   size_t last = 0;
+   size_t next = 0;
+   while ((next = s.find(delimiter, last)) != string::npos)
+   {
+     out.push_back( s.substr(last, next-last) );
+     last = next + 1;
+   }
+   out.push_back( s.substr(last) );
+   return out;
+ }
+
+ Operator OperatorFromString(ModelSpace& modelspace, string opname )
+ {
+      vector<string> opnamesplit = split_string( opname, "_" );  // split string on _ into a vector of string so that, e.g. "R2_p1"  =>  {"R2", "p1"}
+
            if (opname == "R2_p1")         return R2_1body_Op(modelspace,"proton") ;
       else if (opname == "R2_p2")         return R2_2body_Op(modelspace,"proton") ;
       else if (opname == "R2_n1")         return R2_1body_Op(modelspace,"neutron") ;
@@ -25,8 +42,9 @@ namespace imsrg_util
       else if (opname == "E2")            return ElectricMultipoleOp(modelspace,2) ;
       else if (opname == "E3")            return ElectricMultipoleOp(modelspace,3) ;
       else if (opname == "E4")            return ElectricMultipoleOp(modelspace,4) ;
+      else if (opname == "E5")            return ElectricMultipoleOp(modelspace,5) ;
       else if (opname == "E6")            return ElectricMultipoleOp(modelspace,6) ;
-      else if (opname == "E2int")         return IntrinsicElectricMultipoleOp(modelspace,2) ;
+      else if (opname == "E2int")         return IntrinsicElectricMultipoleOp(modelspace,2) ; // Untested
       else if (opname == "nE2")           return NeutronElectricMultipoleOp(modelspace,2) ;
       else if (opname == "M1")            return MagneticMultipoleOp(modelspace,1) ;
       else if (opname == "M2")            return MagneticMultipoleOp(modelspace,2) ;
@@ -39,113 +57,115 @@ namespace imsrg_util
       else if (opname == "GamowTeller")   return AllowedGamowTeller_Op(modelspace) ;
       else if (opname == "Iso2")          return Isospin2_Op(modelspace) ;
       else if (opname == "R2CM")          return R2CM_Op(modelspace) ;
-      else if (opname == "HCM")           return HCM_Op(modelspace) ;
       else if (opname == "TCM")           return TCM_Op(modelspace) ;
       else if (opname == "Rso")           return RpSpinOrbitCorrection(modelspace) ;
-      else if (opname == "RadialOverlap") return RadialOverlap(modelspace);
+      else if (opname == "RadialOverlap") return RadialOverlap(modelspace); // Untested...
       else if (opname == "Sigma")         return Sigma_Op(modelspace);
-      else if (opname == "Sigma_p")         return Sigma_Op_pn(modelspace,"proton");
-      else if (opname == "Sigma_n")         return Sigma_Op_pn(modelspace,"neutron");
-      else if (opname == "L2rel")         return L2rel_Op(modelspace);
-      else if (opname.substr(0,4) == "HCM_") // GetHCM with a different frequency, ie HCM_24 for hw=24
+      else if (opname == "Sigma_p")       return Sigma_Op_pn(modelspace,"proton");
+      else if (opname == "Sigma_n")       return Sigma_Op_pn(modelspace,"neutron");
+      else if (opname == "L2rel")         return L2rel_Op(modelspace); // Untested...
+      else if (opnamesplit[0] =="HCM")
       {
+         if ( opnamesplit.size() == 1 ) return HCM_Op(modelspace);
          double hw_HCM; // frequency of trapping potential
-         istringstream(opname.substr(4,opname.size())) >> hw_HCM;
+         istringstream( opnamesplit[1] ) >> hw_HCM;
          int A = modelspace.GetTargetMass();
-         return TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw_HCM*hw_HCM/HBARC/HBARC*R2CM_Op(modelspace); 
+         return TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw_HCM*hw_HCM/HBARC/HBARC*R2CM_Op(modelspace);
       }
-      else if (opname.substr(0,4) == "VCM_") // GetHCM with a different frequency, ie HCM_24 for hw=24
+      else if (opnamesplit[0] == "VCM") // GetHCM with a different frequency, ie HCM_24 for hw=24
       {
          double hw_VCM; // frequency of trapping potential
-         istringstream(opname.substr(4,opname.size())) >> hw_VCM;
+         istringstream(opnamesplit[1]) >> hw_VCM;
          int A = modelspace.GetTargetMass();
          return 0.5*A*M_NUCLEON*hw_VCM*hw_VCM/HBARC/HBARC*R2CM_Op(modelspace); 
       }
-      else if (opname.substr(0,4) == "Rp2Z") // Get point proton radius for specified Z, e.g. Rp2Z10 for neon
+      else if (opnamesplit[0] == "Rp2Z") // Get point proton radius for specified Z, e.g. Rp2Z_10 for neon
       {
         int Z_rp;
-        istringstream(opname.substr(4,opname.size())) >> Z_rp;
+        istringstream(opnamesplit[1]) >> Z_rp;
         return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) ;
       }
-      else if (opname.substr(0,5) == "Rp2AZ") // Get point proton radius for specified A and Z, e.g. Rp2AZ20_10 for neon
+      else if (opnamesplit[0] == "Rp2AZ") // Get point proton radius for specified A and Z, e.g. Rp2AZ_20_10 for neon
       {
         int A_rp;
         int Z_rp;
-        size_t underscore = opname.find("_");
-        istringstream(opname.substr(5,underscore)) >> A_rp;
-        istringstream(opname.substr(underscore+1,opname.size())) >> Z_rp;
+        istringstream(opnamesplit[1]) >> A_rp;
+        istringstream(opnamesplit[2]) >> Z_rp;
         return Rp2_corrected_Op(modelspace,A_rp,Z_rp) ;
       }
-      else if (opname.substr(0,4) == "Rn2Z") // Get point neutron radius for specified Z
+      else if (opnamesplit[0] == "Rn2Z") // Get point neutron radius for specified Z
       {
         int Z_rp;
-        istringstream(opname.substr(4,opname.size())) >> Z_rp;
+        istringstream(opnamesplit[1]) >> Z_rp;
         return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) ;
       }
-      else if (opname.substr(0,4) == "rhop") // point radius density at position r, e.g. rhop1.25
+      else if (opnamesplit[0] == "rhop") // point proton  density at position r, e.g. rhop_1.25
       {
         double rr;
-        istringstream(opname.substr(4,opname.size())) >> rr;
+        istringstream(opnamesplit[1]) >> rr;
         return ProtonDensityAtR(modelspace,rr);
       }
-      else if (opname.substr(0,4) == "rhon") // point radius density at position r
+      else if (opnamesplit[0] == "rhon") // point neutron density at position r
       {
         double rr;
-        istringstream(opname.substr(4,opname.size())) >> rr;
+        istringstream(opnamesplit[1]) >> rr;
         NeutronDensityAtR(modelspace,rr);
       }
-      else if (opname.substr(0,6) == "OneOcc") // Get occupation of specified orbit, e.g. OneOccp1p3
+      else if (opnamesplit[0] == "OneOcc") // Get occupation of specified orbit, e.g. OneOccp_1p3
       {
-         map<char,int> lvals = {{'s',0},{'p',1},{'d',2},{'f',3},{'g',4},{'h',5}};
-         char pn,lspec;
-         int n,l,j,t;
-         istringstream(opname.substr(6,1)) >> pn;
-         istringstream(opname.substr(7,1)) >> n;
-         istringstream(opname.substr(8,1)) >> lspec;
-         istringstream(opname.substr(9,opname.size())) >> j;
-         l = lvals[lspec];
-         t = pn == 'p' ? -1 : 1;
-         return NumberOp(modelspace,n,l,j,t) ;
+         index_t ind = modelspace.String2Index( {  opnamesplit[1] } )[0];
+         Orbit& oi = modelspace.GetOrbit(ind);
+         return NumberOp(modelspace,oi.n,oi.l,oi.j2,oi.tz2) ;
       }
-      else if (opname.substr(0,6) == "AllOcc") // Get occupation of orbit, summed over all values of radial quantum number n, e.g. AllOccpp3
+      else if (opnamesplit[0]== "AllOcc") // Get occupation of orbit, summed over all values of radial quantum number n, e.g. AllOccpp3
       {
-         map<char,int> lvals = {{'s',0},{'p',1},{'d',2},{'f',3},{'g',4},{'h',5}};
-         char pn,lspec;
-         int l,j,t;
-         istringstream(opname.substr(6,1)) >> pn;
-         istringstream(opname.substr(7,1)) >> lspec;
-         istringstream(opname.substr(8,opname.size())) >> j;
-         l = lvals[lspec];
-         t = pn == 'p' ? -1 : 1;
-         return NumberOpAlln(modelspace,l,j,t) ;
+         index_t ind = modelspace.String2Index( { "0"+ opnamesplit[1] } )[0];
+         Orbit& oi = modelspace.GetOrbit(ind);
+         return NumberOpAlln(modelspace,oi.l,oi.j2,oi.tz2) ;
       }
-      else if (opname.substr(0,9) == "protonFBC") // Fourier bessel coefficient of order nu
+      else if (opnamesplit[0] == "protonFBC") // Fourier bessel coefficient of order nu
       {
          int nu;
-         istringstream(opname.substr(9,opname.size())) >> nu;
+         istringstream(opnamesplit[1]) >> nu;
          return FourierBesselCoeff( modelspace, nu, 8.0, modelspace.proton_orbits);
       }
-      else if (opname.substr(0,10) == "neutronFBC") // Fourier bessel coefficient of order nu
+      else if (opnamesplit[0] == "neutronFBC") // Fourier bessel coefficient of order nu
       {
          int nu;
-         istringstream(opname.substr(10,opname.size())) >> nu;
+         istringstream(opnamesplit[1]) >> nu;
          return FourierBesselCoeff( modelspace, nu, 8.0, modelspace.neutron_orbits) ;
       }
-      else if (opname.substr(0,10) == "M0nu_TBME_") // 0\nu\beta\beta decay TBME, M0nu_TBME_${Nq}_${SRC} (CP)
+      else if (opnamesplit[0] == "M0nu" and opnamesplit[1] == "TBME") // 0\nu\beta\beta decay TBME, M0nu_TBME_${Nq}_${SRC} (CP)
       {
          int Nquad; // number of quadrature points
          string src; // chosen SRC parameters (none, Argonne, CD-Bonn, Miller/Spencer)
-         std::stringstream ssopnames(opname);
-         std::string segment;
-         vector<std::string> seglist;
-         while(std::getline(ssopnames,segment,'_'))
-         {
-           seglist.push_back(segment);
-         }
-         Nquad = std::stoi(seglist.at(2));
-         src = seglist.at(3);
+         istringstream(opnamesplit[2]) >> Nquad;
+         istringstream(opnamesplit[3]) >> src;
          return M0nu_TBME_Op(modelspace,Nquad,src);
       }
+//      else if (opnamesplit[0] == "DMNREFT") // point radius density at position r, e.g. rhop1.25
+//      {
+//        double q;
+//        int J;
+//        string dmopname = opnamesplit[1];
+//        istringstream(opnamesplit[2]) >> q;
+//        istringstream(opnamesplit[3]) >> J;
+//
+//        std::map<string, Operator (*)(ModelSpace&, int, double) > dmop = { {"M",       &DM_NREFT::M},
+//                                                                           {"Sigma",   &DM_NREFT::Sigma},
+//                                                                           {"Sigmap",  &DM_NREFT::Sigmap},
+//                                                                           {"Sigmapp", &DM_NREFT::Sigmapp},
+//                                                                           {"Delta",   &DM_NREFT::Delta},
+//                                                                           {"Deltap",  &DM_NREFT::Deltap},
+//                                                                           {"Phipp",   &DM_NREFT::Phipp},
+//                                                                           {"Phitp",   &DM_NREFT::Phitp},
+//                                                                           {"Omega",   &DM_NREFT::Omega},
+//                                                                         };
+//        if ( dmop.find(dmopname) != dmop.end() )
+//        {
+//        return dmop[dmopname](modelspace, J, q );
+//        }
+//      }
       else //need to remove from the list
       {
          cout << "Unknown operator: " << opname << endl;
