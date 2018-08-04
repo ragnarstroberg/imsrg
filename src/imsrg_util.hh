@@ -37,6 +37,7 @@ namespace imsrg_util
  Operator Trel_Op(ModelSpace& modelspace);
  Operator TCM_Op(ModelSpace& modelspace);
  Operator HCM_Op(ModelSpace& modelspace);
+ Operator Trel_Masscorrection_Op(ModelSpace& modelspace);
 
  Operator R2CM_Op(ModelSpace& modelspace);
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z);

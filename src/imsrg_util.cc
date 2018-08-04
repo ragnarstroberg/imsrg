@@ -7,6 +7,9 @@
 #include <boost/math/special_functions/factorials.hpp>
 #include <vector>
 
+#define M_PROTON 938.2720813
+#define M_NEUTRON 939.5654133
+
 using namespace AngMom;
 
 /// imsrg_util namespace. Used to define some helpful functions.
@@ -372,6 +375,8 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
  }
 
 
+
+
 /// Center of mass kinetic energy, including the hw/A factor
 /// \f[
 /// T = \frac{\hbar\omega}{A}\sum_{ij} t_{ij} a^{\dagger}_{i} a_{j} + \frac{\hbar\omega}{A}\frac{1}{4}\sum_{ijkl} t_{ijkl} a^{\dagger}_{i}a^{\dagger}_{j}a_{l}a_{k}
@@ -578,6 +583,56 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    return p1p2 ;
 
  }
+
+
+/// Correction to Trel due to the proton-neutron mass differences
+/// \f[
+/// T_{rel} = T - T_{CM}
+/// \f]
+///
+/// \f[
+/// \delta T = \sum_i \frac{p_i^2}{2m} \left( \frac{m-m_i}{m_i} \right)
+///\f]
+///
+/// \f[
+/// \delta T_{CM} = \left( \frac{Am}{Zm_p+Nm_n} \right) \frac{1}{2mA} P_{CM}^2
+///\f]
+ Operator Trel_Masscorrection_Op(ModelSpace& modelspace)
+ {
+   Operator dTrel( modelspace );
+   int norbits = modelspace.GetNumberOrbits();
+   double hw = modelspace.GetHbarOmega();
+   double m_avg = 0.5*(M_PROTON+M_NEUTRON);
+   int A = modelspace.GetTargetMass();
+   int Z = modelspace.GetTargetZ();
+   int N = A-Z;
+
+   for (int a=0;a<norbits;++a)
+   {
+      Orbit & oa = modelspace.GetOrbit(a);
+      double m_a = (oa.tz2 == -1) ? M_PROTON : M_NEUTRON ;
+      double correction = (m_avg-m_a)/m_a;
+      dTrel.OneBody(a,a) = correction * 0.5 * hw * (2*oa.n + oa.l +3./2); 
+      for ( int b : dTrel.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      {
+         if (b<=a) continue;
+         Orbit & ob = modelspace.GetOrbit(b);
+         if (oa.n == ob.n+1)
+            dTrel.OneBody(a,b) = correction * 0.5 * hw * sqrt( (oa.n)*(oa.n + oa.l +1./2));
+         else if (oa.n == ob.n-1)
+            dTrel.OneBody(a,b) = correction * 0.5 * hw * sqrt( (ob.n)*(ob.n + ob.l +1./2));
+         dTrel.OneBody(b,a) = dTrel.OneBody(a,b);
+      }
+   }
+
+   double CM_correction = A*m_avg / (Z*M_PROTON + N*M_NEUTRON) - 1;
+
+   dTrel -= CM_correction * TCM_Op(modelspace);
+   return dTrel;
+ }
+
+
+
 
 
 

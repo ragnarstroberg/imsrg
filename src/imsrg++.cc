@@ -65,6 +65,7 @@ int main(int argc, char** argv)
   string occ_file = parameters.s("occ_file");
   string goose_tank = parameters.s("goose_tank");
   string write_omega = parameters.s("write_omega");
+  string nucleon_mass_correction = parameters.s("nucleon_mass_correction");
 
   int eMax = parameters.i("emax");
   int E3max = parameters.i("e3max");
@@ -174,57 +175,47 @@ int main(int argc, char** argv)
 
   cout << "Reading interactions..." << endl;
 
-//  int nthreads = omp_get_max_threads();
-//  {
-//   omp_set_num_threads(2);
-//   omp_set_nested(1);
-//  #pragma omp parallel sections 
-//  {
-//    omp_set_num_threads(max(1,nthreads-3));
-//    #pragma omp section
-//    {
-      if (inputtbme != "none")
-      {
-        if (fmt2 == "me2j")
-          rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
-        else if (fmt2 == "navratil" or fmt2 == "Navratil")
-          rw.ReadBareTBME_Navratil(inputtbme, Hbare);
-        else if (fmt2 == "oslo" )
-          rw.ReadTBME_Oslo(inputtbme, Hbare);
-//        else if (fmt2 == "oakridge" )
-        else if (fmt2.find("oakridge") != string::npos )
-        { // input format should be: singleparticle.dat,vnn.dat
-          size_t comma_pos = inputtbme.find_first_of(",");
-          if ( fmt2.find("bin") != string::npos )
-            rw.ReadTBME_OakRidge( inputtbme.substr(0,comma_pos),  inputtbme.substr( comma_pos+1 ), Hbare, "binary");
-          else
-            rw.ReadTBME_OakRidge( inputtbme.substr(0,comma_pos),  inputtbme.substr( comma_pos+1 ), Hbare, "ascii");
-        }
-        else if (fmt2 == "takayuki" )
-          rw.ReadTwoBody_Takayuki( inputtbme, Hbare);
-        else if (fmt2 == "nushellx" )
-          rw.ReadNuShellX_int( Hbare, inputtbme );
-  
-        cout << "done reading 2N" << endl;
-      }
-      if (fmt2 != "nushellx")
-        Hbare += Trel_Op(modelspace);
-//    }
-  
-//    #pragma omp section
-    if (Hbare.particle_rank >=3)
-    {
-//      omp_set_num_threads(1);
-      rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
-      cout << "done reading 3N" << endl;
-    }  
-//  }
-//  }
-//  omp_set_num_threads(nthreads);
-//  omp_set_nested(0);
 
-//  if (fmt2 != "nushellx")
-//    Hbare += Trel_Op(modelspace);
+  if (inputtbme != "none")
+  {
+    if (fmt2 == "me2j")
+      rw.ReadBareTBME_Darmstadt(inputtbme, Hbare,file2e1max,file2e2max,file2lmax);
+    else if (fmt2 == "navratil" or fmt2 == "Navratil")
+      rw.ReadBareTBME_Navratil(inputtbme, Hbare);
+    else if (fmt2 == "oslo" )
+      rw.ReadTBME_Oslo(inputtbme, Hbare);
+    else if (fmt2.find("oakridge") != string::npos )
+    { // input format should be: singleparticle.dat,vnn.dat
+      size_t comma_pos = inputtbme.find_first_of(",");
+      if ( fmt2.find("bin") != string::npos )
+        rw.ReadTBME_OakRidge( inputtbme.substr(0,comma_pos),  inputtbme.substr( comma_pos+1 ), Hbare, "binary");
+      else
+        rw.ReadTBME_OakRidge( inputtbme.substr(0,comma_pos),  inputtbme.substr( comma_pos+1 ), Hbare, "ascii");
+    }
+    else if (fmt2 == "takayuki" )
+      rw.ReadTwoBody_Takayuki( inputtbme, Hbare);
+    else if (fmt2 == "nushellx" )
+      rw.ReadNuShellX_int( Hbare, inputtbme );
+  
+    cout << "done reading 2N" << endl;
+  }
+
+  if (fmt2 != "nushellx")  // Don't need to add kinetic energy if we read a shell model interaction
+  {
+    Hbare += Trel_Op(modelspace);
+  }
+
+  if ( nucleon_mass_correction == "true" or nucleon_mass_correction == "True" )  
+  {  // correction to kinetic energy because M_proton != M_neutron
+    Hbare += Trel_Masscorrection_Op(modelspace);
+  }
+  
+  if (Hbare.particle_rank >=3)
+  {
+    rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
+    cout << "done reading 3N" << endl;
+  }  
+
 
   // Add a Lawson term. If hwBetaCM is specified, use that frequency
   if (abs(BetaCM)>1e-3)
@@ -635,7 +626,7 @@ int main(int argc, char** argv)
   }
 
 
-  cout << "Made it here and write_omega is " << write_omega << endl;
+//  cout << "Made it here and write_omega is " << write_omega << endl;
   if (write_omega == "true" or write_omega == "True")
   {
     cout << "writing Omega to " << intfile << "_omega.op" << endl;
