@@ -1137,24 +1137,37 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
    int warn_iter = 12;
    double nx = Norm();
    double ny = Omega.Norm();
-//   arma::mat occmat = 
    Operator OpOut = *this;
+   double factorial_denom = 1.0;
+   Operator goosetank_chi;  // auxiliary one-body operator used to recover 4th-order quadruples.
+   if (use_goose_tank_correction)
+   {
+     goosetank_chi = *this;
+     goosetank_chi.SetParticleRank(1);
+     goosetank_chi.Erase();
+   }
    if (nx>bch_transform_threshold)
    {
      Operator OpNested = *this;
      double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
      for (int i=1; i<=max_iter; ++i)
      {
-        if (use_goose_tank_correction and i>=3)
+
+        if (use_goose_tank_correction  )
         {
-            OpNested.GooseTank(*this,Omega);
+          auto chi_last = goosetank_chi.OneBody;
+          goosetank_chi.GooseTankUpdate( Omega, OpNested);
+//          OpNested.OneBody += goosetank_chi.OneBody;  // add the chi from the previous step to OpNested.
+          OpNested.OneBody += chi_last;  // add the chi from the previous step to OpNested.
         }
         
 
-        Operator tmp1 = Commutator(Omega,OpNested);
-        tmp1 /= i;
-        OpNested = tmp1;
-        OpOut += OpNested;
+        OpNested = Commutator(Omega,OpNested); // the ith nested commutator
+//        Operator tmp1 = Commutator(Omega,OpNested); // the ith nested commutator
+        factorial_denom /= i;
+//        tmp1 /= i;
+//        OpNested = tmp1;
+        OpOut += factorial_denom * OpNested;
   
         if (this->rank_J > 0)
         {
@@ -1172,6 +1185,39 @@ Operator Operator::Standard_BCH_Transform( const Operator &Omega)
    profiler.timer["BCH_Transform"] += omp_get_wtime() - t_start;
    return OpOut;
 }
+
+
+//  Update the auxiliary one-body operator chi, using Omega and the ith nested commutator
+//  This has not been tested for tensor commutators, but it *should* work.
+//  Of course, there's not as clean a motivation in terms of perturbation theory for the tensors...
+// 
+void Operator::GooseTankUpdate( const Operator& Omega, const Operator& OpNested)
+{
+   double t_start = omp_get_wtime();
+   auto& goosetank_chi = *this;
+   goosetank_chi.EraseOneBody();
+   if (this->rank_J==0 )
+   {
+     goosetank_chi.comm221ss( Omega, OpNested );  // update chi.
+   }
+   else
+   {
+     goosetank_chi.comm222_pp_hh_221st( Omega, OpNested );  // update chi.
+   }
+   goosetank_chi.Symmetrize(); // the commutator call only does half the matrix, so we symmetrize
+   int norbits = modelspace->GetNumberOrbits();
+   for (int i=0;i<norbits;++i)  // enforce n_in_j + nbar_i nbar_j
+   {
+     Orbit &oi = modelspace->GetOrbit(i);
+     for (int j=0;j<norbits;++j)
+     {
+      Orbit &oj = modelspace->GetOrbit(j);
+      goosetank_chi.OneBody(i,j) *=  oi.occ*oj.occ + (1.0-oi.occ)*(1.0-oj.occ) ;
+      }
+   }
+   profiler.timer["GooseTankUpdate"] += omp_get_wtime() - t_start;
+}
+
 
 /*
 Operator Operator::Standard_BCH_Transform( const Operator &Omega)
@@ -1254,9 +1300,26 @@ Operator Operator::BCH_Product(  Operator &Y)
    vector<double> factorial = {1.0,  1.0,  2.0, 6.0,    24.,  120.,   720., 5040.,  40320.};
 
 
+   Operator goosetank_chi;  // auxiliary one-body operator used to recover 4th-order quadruples.
+
+
+
+
+
    Operator Z = X + Y;
+//   if (use_goose_tank_correction) return Z; // Not sure why this is here
    Operator Nested = Y;
    Nested.SetToCommutator(Y,X);
+
+   if (use_goose_tank_correction)
+   {
+     goosetank_chi = *this;
+     goosetank_chi.SetParticleRank(1);
+     goosetank_chi.Erase();
+     goosetank_chi.GooseTankUpdate( Y, Nested);
+   }
+
+
    double nxy = Nested.Norm();
    // We assume X is small, but just in case, we check if we should include the [X,[X,Y]] term.
    if ( nxy*nx > bch_product_threshold)
@@ -1270,6 +1333,14 @@ Operator Operator::BCH_Product(  Operator &Y)
    {
      if (k<2 or k%2==0)
         Z += (bernoulli[k]/factorial[k]) * Nested;
+
+     if (use_goose_tank_correction  and k<2 ) // for the sake of speed, only apply goose tank for first nested commutator here.
+     {
+          auto chi_last = goosetank_chi.OneBody;
+          goosetank_chi.GooseTankUpdate( Y, Nested);
+          Nested.OneBody += chi_last;  // add the chi from the previous step to OpNested.
+     }
+
      Nested = Commutator(Y,Nested);
      k++;
    }
@@ -1819,11 +1890,12 @@ void Operator::comm121ss( const Operator& X, const Operator& Y)
 void Operator::comm221ss( const Operator& X, const Operator& Y) 
 {
 
+   double t_start = omp_get_wtime();
    Operator& Z = *this;
    int norbits = modelspace->GetNumberOrbits();
 
-   static TwoBodyME Mpp = Z.TwoBody;
-   static TwoBodyME Mhh = Z.TwoBody;
+   static TwoBodyME Mpp = Y.TwoBody;
+   static TwoBodyME Mhh = Y.TwoBody;
 
    // Don't use omp, because the matrix multiplication is already
    // parallelized by armadillo.
@@ -1909,6 +1981,7 @@ void Operator::comm221ss( const Operator& X, const Operator& Y)
       } // for j
    }
 
+   profiler.timer["comm221ss"] += omp_get_wtime() - t_start;
 
 }
 
@@ -2857,188 +2930,11 @@ void Operator::comm222_phss( const Operator& X, const Operator& Y )
 
 
 
-// No support for tensor goose tank yet.
-void Operator::GooseTank( const Operator& X, const Operator& Y)
-{
-  if (X.rank_J == 0 and Y.rank_J == 0)
-  {
-    goose_tank_ss(X,Y);
-  }
-
-}
-
-void Operator::goose_tank_ss( const Operator& X, const Operator& Y)
-{
-   double tstart = omp_get_wtime();
-   Operator& Z = *this;
-   TwoBodyME Mpp_G = Z.TwoBody;
-   TwoBodyME Mhh_G = Z.TwoBody;
-   TwoBodyME Mpp_D = Z.TwoBody;
-   TwoBodyME Mhh_D = Z.TwoBody;
-   Mpp_G.Erase();
-   Mhh_G.Erase();
-   Mpp_D.Erase();
-   Mhh_D.Erase();
-   int norbits = modelspace->GetNumberOrbits();
-
-   arma::mat G(norbits,norbits,arma::fill::zeros);
-   arma::mat D(norbits,norbits,arma::fill::zeros);
 
 
-   ConstructScalarMpp_Mhh_GooseTank( Y, Y, Mpp_G, Mhh_G);
-   ConstructScalarMpp_Mhh_GooseTank( X, Y, Mpp_D, Mhh_D);
-
-   int dflip = 1;
-   if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (Y.IsHermitian() and X.IsAntiHermitian()) ) dflip = -1;
-
-   // The one body part
-   #pragma omp parallel for schedule(dynamic,1)
-   for (int i=0;i<norbits;++i)
-   {
-      Orbit &oi = modelspace->GetOrbit(i);
-//      int jmin = Z.IsNonHermitian() ? 0 : i;   // think about this...
-      int jmin = 0;   // think about this...
-      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-      {
-         if (j<jmin) continue;
-         double GijJ = 0;
-         double DijJ = 0;
-         for (int ch=0;ch<nChannels;++ch)
-         {
-            TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-            double Jfactor = (2*tbc.J+1.0);
-            // Sum c over holes and include the nbar_a * nbar_b terms
-            for (auto& c : modelspace->holes)
-            {
-               Orbit& oc = modelspace->GetOrbit(c);
-               GijJ += Jfactor *    oc.occ  * Mpp_G.GetTBME(ch,c,i,c,j); 
-               GijJ -= Jfactor * (1-oc.occ) * Mhh_G.GetTBME(ch,c,i,c,j); 
-               DijJ += Jfactor *    oc.occ  * Mpp_D.GetTBME(ch,c,i,c,j); 
-               DijJ -= Jfactor * (1-oc.occ) * Mhh_D.GetTBME(ch,c,j,c,i) * dflip; 
-            }
-            // Sum c over particles and include the n_a * n_b terms
-            for (auto& c : modelspace->particles)
-            {
-               GijJ += Jfactor * Mhh_G.GetTBME(ch,c,i,c,j);
-               DijJ -= Jfactor * Mhh_D.GetTBME(ch,c,j,c,i) * dflip;
-            }
-         }
-         G(i,j) = GijJ /(oi.j2+1.0);
-         D(i,j) = DijJ /(oi.j2+1.0);
-      } // for j
-   }
-
-  
- 
-   #pragma omp parallel for schedule(dynamic,1)
-   for (int ch=0;ch<nChannels;++ch)
-   {
-      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      for (auto ibra : tbc.GetKetIndex_pp())
-      {
-        Ket& bra = tbc.GetKet(ibra);
-        int a = bra.p;
-        int b = bra.q;
-        Orbit& oa = modelspace->GetOrbit(a);
-        Orbit& ob = modelspace->GetOrbit(b);
-        int phaseab = modelspace->phase((oa.j2+ob.j2)/2-tbc.J);
-        for (auto iket : tbc.GetKetIndex_hh())
-        {
-           Ket& ket = tbc.GetKet(iket);
-           int i = ket.p;
-           int j = ket.q;
-           Orbit& oi = modelspace->GetOrbit(i);
-           Orbit& oj = modelspace->GetOrbit(j);
-           int phaseij = modelspace->phase((oi.j2+oj.j2)/2-tbc.J);
-           double xstarij = 0;
-           double xstarab = 0;
-           for ( auto k : modelspace->holes)
-           {
-             Orbit& ok = modelspace->GetOrbit(k);
-             xstarij += (ok.j2+1) *(    X.TwoBody.GetTBME(ch,a,b,k,j) * G(k,i) - Y.TwoBody.GetTBME(ch,a,b,k,j) * D(k,i)
-                            - phaseij*( X.TwoBody.GetTBME(ch,a,b,k,i) * G(k,j) - Y.TwoBody.GetTBME(ch,a,b,k,i) * D(k,j) ) );
-           }
-           for ( auto c : modelspace->particles)
-           {
-             Orbit& oc = modelspace->GetOrbit(c);
-             xstarab -= (oc.j2+1) *(     G(a,c) * X.TwoBody.GetTBME(ch,c,b,i,j)  - D(a,c) * Y.TwoBody.GetTBME(ch,c,b,i,j)
-                           - phaseab * ( G(b,c) * X.TwoBody.GetTBME(ch,c,a,i,j)  - D(b,c) * Y.TwoBody.GetTBME(ch,c,a,i,j) ) );
-           }
-           if (i==j) xstarij /= SQRT2;
-           if (a==b) xstarab /= SQRT2;
-           Z.TwoBody.AddToTBME(ch,ch,ibra,iket,(xstarij+xstarab)*0.25);
-        }
-      }
-   }
-
-   profiler.timer["GooseTank"] += omp_get_wtime() - tstart;
-
-}
 
 
-void Operator::ConstructScalarMpp_Mhh_GooseTank(const Operator& X, const Operator& Y, TwoBodyME& Mpp, TwoBodyME& Mhh) const
-{
-   int nch = modelspace->SortedTwoBodyChannels.size();
-//   Operator& Z = *this;
-//   bool z_is_hermitian = IsHermitian();
-//   bool z_is_antihermitian = IsAntiHermitian();
-//   bool z_is_hermitian = X.IsHermitian() xor Y.IsHermitian();
-//   bool z_is_antihermitian = (X.IsHermitian() == Y.IsHermitian()) and (X.IsAntiHermitian() == Y.IsAntiHermitian());
-   #ifndef OPENBLAS_NOUSEOMP
-   #pragma omp parallel for schedule(dynamic,1)
-   #endif
-   for (int ich=0; ich<nch; ++ich)
-   {
-      int ch = modelspace->SortedTwoBodyChannels[ich];
-      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
 
-      auto& LHS = X.TwoBody.GetMatrix(ch,ch);
-      auto& RHS = Y.TwoBody.GetMatrix(ch,ch);
-//      auto& OUT = Z.TwoBody.GetMatrix(ch,ch);
-
-      auto& Matrixpp = Mpp.GetMatrix(ch,ch);
-      auto& Matrixhh = Mhh.GetMatrix(ch,ch);
-
-      auto& kets_pp = tbc.GetKetIndex_pp();
-      auto& kets_hh = tbc.GetKetIndex_hh();
-      auto& kets_ph = tbc.GetKetIndex_ph();
-      auto& nanb = tbc.Ket_occ_hh;
-      auto& nbarnbar_hh = tbc.Ket_unocc_hh;
-      auto& nbarnbar_ph = tbc.Ket_unocc_ph;
-      
-      Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
-      Matrixhh =  LHS.cols(kets_hh) * arma::diagmat(nanb) *  RHS.rows(kets_hh) ;
-      if (kets_hh.size()>0)
-        Matrixpp +=  LHS.cols(kets_hh) * arma::diagmat(nbarnbar_hh) *  RHS.rows(kets_hh); 
-      if (kets_ph.size()>0)
-        Matrixpp += LHS.cols(kets_ph) * arma::diagmat(nbarnbar_ph) *  RHS.rows(kets_ph) ;
-
-
-//      if (z_is_hermitian)
-//      {
-//         Matrixpp +=  Matrixpp.t();
-//         Matrixhh +=  Matrixhh.t();
-//      }
-//      else if (z_is_antihermitian) // i.e. LHS and RHS are both hermitian or ant-hermitian
-//      {
-//         Matrixpp -=  Matrixpp.t();
-//         Matrixhh -=  Matrixhh.t();
-//      }
-//      else
-//      {
-//        Matrixpp -=  RHS.cols(kets_pp) * LHS.rows(kets_pp);
-//        Matrixhh -=  RHS.cols(kets_hh) * arma::diagmat(nanb) *  LHS.rows(kets_hh) ;
-//        Matrixpp -=  RHS.cols(kets_hh) * arma::diagmat(nbarnbar_hh) *  LHS.rows(kets_hh) ;
-//        if (kets_ph.size()>0)
-//          Matrixpp -=  RHS.cols(kets_ph) * arma::diagmat(nbarnbar_ph) *  LHS.rows(kets_ph) ;
-//      }
-
-
-      // The two body part
-//      OUT += Matrixpp - Matrixhh;
-   } //for ch
-
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -3329,9 +3225,9 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
    Operator& Z = *this;
    int Lambda = Z.GetJRank();
 
-   TwoBodyME Mpp = Z.TwoBody;
-   TwoBodyME Mhh = Z.TwoBody;
-   TwoBodyME Mff = Z.TwoBody;
+   TwoBodyME Mpp = Y.TwoBody;
+   TwoBodyME Mhh = Y.TwoBody;
+   TwoBodyME Mff = Y.TwoBody;
 
    vector<int> vch_bra;
    vector<int> vch_ket;
@@ -3349,7 +3245,7 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
    {
     int ch_bra = vch_bra[i];
     int ch_ket = vch_ket[i];
-    auto& Z2 = Z.TwoBody.GetMatrix(ch_bra,ch_ket);
+//    auto& Z2 = Z.TwoBody.GetMatrix(ch_bra,ch_ket);
 
     TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
     TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
@@ -3390,7 +3286,11 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
     Matrixpp = MLeft * MRight;
                                 
 
-    Z2 += Matrixpp - Matrixhh;
+    if (Z.GetParticleRank()>1)
+    {
+      Z.TwoBody.GetMatrix(ch_bra,ch_ket) += Matrixpp - Matrixhh;
+    }
+//    Z2 += Matrixpp - Matrixhh;
 
    }// for itmat
 

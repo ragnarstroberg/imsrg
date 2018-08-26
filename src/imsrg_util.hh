@@ -14,6 +14,8 @@
 #define HBARC 197.3269718 // hc in MeV * fm
 #define M_NUCLEON 938.9185 // average nucleon mass in MeV
 #define PI 3.14159265359 // put in by CP for the BMEs
+#define M_PROTON  938.2720813
+#define M_NEUTRON 939.5654133
 
 #ifndef ISQRT2
   #define ISQRT2 0.70710678118654752440L
@@ -61,6 +63,7 @@ namespace imsrg_util
  Operator LdotS_Op(ModelSpace& modelspace);
  Operator L2rel_Op(ModelSpace& modelspace);
  Operator LCM_Op(ModelSpace& modelspace);
+ Operator QdotQ_Op(ModelSpace& modelspace);
 
 ////////////////// Double beta decay functions from Charlie Payne ///////////////
  Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, string src); // put in by CP, it is still in development
