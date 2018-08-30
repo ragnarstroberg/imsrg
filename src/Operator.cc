@@ -1300,7 +1300,7 @@ Operator Operator::BCH_Product(  Operator &Y)
    vector<double> factorial = {1.0,  1.0,  2.0, 6.0,    24.,  120.,   720., 5040.,  40320.};
 
 
-   Operator goosetank_chi;  // auxiliary one-body operator used to recover 4th-order quadruples.
+//   Operator goosetank_chi;  // auxiliary one-body operator used to recover 4th-order quadruples.
 
 
 
@@ -1311,13 +1311,13 @@ Operator Operator::BCH_Product(  Operator &Y)
    Operator Nested = Y;
    Nested.SetToCommutator(Y,X);
 
-   if (use_goose_tank_correction)
-   {
-     goosetank_chi = *this;
-     goosetank_chi.SetParticleRank(1);
-     goosetank_chi.Erase();
-     goosetank_chi.GooseTankUpdate( Y, Nested);
-   }
+//   if (use_goose_tank_correction)
+//   {
+//     goosetank_chi = *this;
+//     goosetank_chi.SetParticleRank(1);
+//     goosetank_chi.Erase();
+//     goosetank_chi.GooseTankUpdate( Y, Nested);
+//   }
 
 
    double nxy = Nested.Norm();
@@ -1334,12 +1334,12 @@ Operator Operator::BCH_Product(  Operator &Y)
      if (k<2 or k%2==0)
         Z += (bernoulli[k]/factorial[k]) * Nested;
 
-     if (use_goose_tank_correction  and k<2 ) // for the sake of speed, only apply goose tank for first nested commutator here.
-     {
-          auto chi_last = goosetank_chi.OneBody;
-          goosetank_chi.GooseTankUpdate( Y, Nested);
-          Nested.OneBody += chi_last;  // add the chi from the previous step to OpNested.
-     }
+//     if (use_goose_tank_correction  and k<2 ) // for the sake of speed, only apply goose tank for first nested commutator here.
+//     {
+//          auto chi_last = goosetank_chi.OneBody;
+//          goosetank_chi.GooseTankUpdate( Y, Nested);
+//          Nested.OneBody += chi_last;  // add the chi from the previous step to OpNested.
+//     }
 
      Nested = Commutator(Y,Nested);
      k++;
