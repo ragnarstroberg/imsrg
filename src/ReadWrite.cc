@@ -3585,7 +3585,7 @@ void ReadWrite::CompareOperators(Operator& op1, Operator& op2, string filename)
           Ket& ket = tbc_bra.GetKet(iket);
            double tbme1 = it.second(ibra,iket);
            double tbme2 = op2.TwoBody.GetMatrix(chbra,chket)(ibra,iket);
-           if ( abs(tbme1) > 1e-7 or abs(tbme2>1e-7) )
+           if ( abs(tbme1) > 1e-7 or abs(tbme2)>1e-7 )
            {
              opfile << setw(4) << tbc_bra.J << " " << tbc_bra.parity << " " << tbc_bra.Tz  << "    "
                   << setw(4) << bra.p << " " << bra.q  << " " << ket.p << " " << ket.q  << "   "

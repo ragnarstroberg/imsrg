@@ -48,6 +48,7 @@ class Operator
   static double bch_product_threshold;
   static bool use_brueckner_bch;
   static bool use_goose_tank_correction;
+  static bool use_goose_tank_correction_titus;
 
 
 
@@ -199,8 +200,9 @@ class Operator
   void comm222_phss( const Operator& X, const Operator& Y) ;
   void comm222_pp_hh_221ss( const Operator& X, const Operator& Y) ;
 
-  void GooseTank( const Operator& X, const Operator& Y);
-  void goose_tank_ss( const Operator& X, const Operator& Y);
+//  void GooseTankUpdate( const Operator& Omega, Operator& Nested, Operator& chi);
+  void GooseTankUpdate( const Operator& Omega, const Operator& Nested);
+//  void goose_tank_ss( const Operator& X, const Operator& Y);
 
 // scalar-tensor commutators
 

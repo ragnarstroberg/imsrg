@@ -360,7 +360,7 @@ vector<pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_in, int J2
 
 
    auto indx = it_hash->second;
-   if (indx > MatEl.size()) cout << "AAAAHHH indx = " << indx << "  but MatEl.size() = " << MatEl.size() << endl;
+   if (indx > MatEl.size()) cout << "ThreeBodyME::AccessME() --  AAAAHHH indx = " << indx << "  but MatEl.size() = " << MatEl.size() << endl;
 
    int J_index = 0;
    for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
