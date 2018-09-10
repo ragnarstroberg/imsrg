@@ -84,7 +84,7 @@ class TwoBodyChannel
    int Tz;
 
    // Constructors
-   ~TwoBodyChannel();
+   virtual ~TwoBodyChannel();
    TwoBodyChannel();
    TwoBodyChannel(int j, int p, int t, ModelSpace* ms);
    TwoBodyChannel(int N, ModelSpace* ms);

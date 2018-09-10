@@ -479,7 +479,7 @@ void ModelSpace::Init_occ_from_file(int emax, string valence, string occ_file)
 void ModelSpace::Init(int emax, map<index_t,double> hole_list, vector<index_t> core_list, vector<index_t> valence_list)
 {
    ClearVectors();
-   emax = Emax;
+   Emax = emax;
    cout << "core list: ";
    for (auto& c : core_list) cout << c << " ";
    cout << endl;
@@ -891,7 +891,10 @@ void ModelSpace::SetupKets()
     Ket& ket = Kets[index];
     int Tz = (ket.op->tz2 + ket.oq->tz2)/2;
     int parity = (ket.op->l + ket.oq->l)%2;
-    MonopoleKets[Tz+1][parity][index] = MonopoleKets[Tz+1][parity].size()-1;
+//   The old way this was written led to undefined behavior, depending on when the structure was expanded.
+//    MonopoleKets[Tz+1][parity][index] = MonopoleKets[Tz+1][parity].size()-1;
+    index_t size = MonopoleKets[Tz+1][parity].size();
+    MonopoleKets[Tz+1][parity][index] = size;
     double occp = ket.op->occ;
     double occq = ket.oq->occ;
     int cvq_p = ket.op->cvq;
