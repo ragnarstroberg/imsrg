@@ -9,6 +9,7 @@
 #include <chrono>
 #include <ctime>
 #include <unordered_map>
+#include "omp.h"
 
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -39,7 +40,7 @@ using namespace H5;
 
 ReadWrite::~ReadWrite()
 {
-//  cout << "In ReadWrite destructor" << endl;
+//  std::cout << "In ReadWrite destructor" << std::endl;
 }
 
 ReadWrite::ReadWrite()
@@ -48,33 +49,33 @@ ReadWrite::ReadWrite()
 }
 
 // This is old and deprecated.
-void ReadWrite::ReadSettingsFile( string filename)
+void ReadWrite::ReadSettingsFile( std::string filename)
 {
    char line[LINESIZE];
-   string lstr;
-   ifstream fin;
+   std::string lstr;
+   std::ifstream fin;
    fin.open(filename);
    if (! fin.good() )
    {
-      cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
-      cout << "!!!!  Trouble reading Settings file " << filename << "!!!!!!" << endl;
-      cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+      std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+      std::cout << "!!!!  Trouble reading Settings file " << filename << "!!!!!!" << std::endl;
+      std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
       goodstate = false;
    }
-   cout << "Reading settings file " << filename << endl;
+   std::cout << "Reading settings file " << filename << std::endl;
    while (fin.getline(line,LINESIZE))
    {
-      lstr = string(line);
+      lstr = std::string(line);
       lstr = lstr.substr(0, lstr.find_first_of("#"));
       int colon = lstr.find_first_of(":");
-      string param = lstr.substr(0, colon);
+      std::string param = lstr.substr(0, colon);
       if ( param.size() <1) continue;
-      string value = lstr.substr(colon+1, lstr.length()-colon);
+      std::string value = lstr.substr(colon+1, lstr.length()-colon);
       value.erase(0,value.find_first_not_of(" \t\r\n"));
       value.erase(value.find_last_not_of(" \t\r\n")+1);
       if (value.size() < 1) continue;
       InputParameters[param] = value;
-      cout << "parameter: [" << param << "] = [" << value << "]" << endl;
+      std::cout << "parameter: [" << param << "] = [" << value << "]" << std::endl;
    }
 
 }
@@ -83,10 +84,10 @@ void ReadWrite::ReadSettingsFile( string filename)
 
 
 /// Read two-body matrix elements from an Oslo-formatted file
-void ReadWrite::ReadTBME_Oslo( string filename, Operator& Hbare)
+void ReadWrite::ReadTBME_Oslo( std::string filename, Operator& Hbare)
 {
 
-  ifstream infile;
+  std::ifstream infile;
   char line[LINESIZE];
   int Tz,Par,J2,a,b,c,d;
   double fbuf[3];
@@ -99,9 +100,9 @@ void ReadWrite::ReadTBME_Oslo( string filename, Operator& Hbare)
   infile.open(filename);
   if ( !infile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble reading file  !!!   **" << filename << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble reading file  !!!   **" << filename << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
@@ -134,19 +135,19 @@ void ReadWrite::ReadTBME_Oslo( string filename, Operator& Hbare)
 }
 
 /// Read two-body matrix elements from an Oslo-formatted file, as obtained from Gaute Hagen
-void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hbare, string tbme_format )
+void ReadWrite::ReadTBME_OakRidge( std::string spname, std::string tbmename, Operator& Hbare, std::string tbme_format )
 {
   ModelSpace * modelspace = Hbare.GetModelSpace();
-  ifstream spfile(spname);
+  std::ifstream spfile(spname);
   if (!spfile.good())
   {
-     cerr << "************************************" << endl
-          << "**    Trouble reading file  !!!   **" << spname << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble reading file  !!!   **" << spname << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
-  cout << "reading Oak Ridge " << tbme_format << " format" << endl;
+  std::cout << "reading Oak Ridge " << tbme_format << " format" << std::endl;
 
   File2N = tbmename;
   Aref = Hbare.GetModelSpace()->GetAref();
@@ -154,36 +155,36 @@ void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hba
   double hw_file,spe,dummy;
   spfile >> hw_file;
   int index,n,l,j2,tz2;
-  vector<index_t> orbit_remap;
+  std::vector<index_t> orbit_remap;
   while( spfile >> index >> n >> l >> j2 >> tz2 >> spe >> dummy)
   {
     index_t orbit_index = modelspace->GetOrbitIndex(n,l,j2,tz2); // check which isospin convention is used
     if ((index_t)index > orbit_remap.size() ) orbit_remap.resize(index,-1);
-//    cout << index << " " << n << " " << l << " " << j2 << " " << tz2 << " " << spe << endl;
+//    std::cout << index << " " << n << " " << l << " " << j2 << " " << tz2 << " " << spe << std::endl;
     orbit_remap[index-1] = orbit_index;
   }
-//  cout << "done with spe" << endl;
+//  std::cout << "done with spe" << std::endl;
 
   spfile.close();
 
-  auto openmode = ios::in;
-  if (tbme_format=="binary") openmode |= ios::binary;
-  ifstream tbmefile(tbmename, openmode);
-//  ifstream tbmefile = (tbme_format=="binary") ? ifstream(tbmename, ios::in | ios::binary ) :  ifstream(tbmename );
+  auto openmode = std::ios::in;
+  if (tbme_format=="binary") openmode |= std::ios::binary;
+  std::ifstream tbmefile(tbmename, openmode);
+//  std::ifstream tbmefile = (tbme_format=="binary") ? std::ifstream(tbmename, std::ios::in | std::ios::binary ) :  std::ifstream(tbmename );
 //  if (tbme_format == "binary")
 //  {
-//    tbmefile = ifstream(tbmename, ios::in | ios::binary );
+//    tbmefile = std::ifstream(tbmename, std::ios::in | std::ios::binary );
 //  }
 //  else
 //  {
-//    tbmefile = ifstream(tbmename );
+//    tbmefile = std::ifstream(tbmename );
 //  }
-//  ifstream tbmefile(tbmename, ios::in | ios::binary );
+//  std::ifstream tbmefile(tbmename, std::ios::in | std::ios::binary );
   if (!tbmefile.good())
   {
-     cerr << "************************************" << endl
-          << "**    Trouble reading file  !!!   **" << tbmename << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble reading file  !!!   **" << tbmename << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
@@ -193,8 +194,8 @@ void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hba
   {
     int Tz,P,J2,aa,bb,cc,dd;
     double g1;//,g2,g3; // not using g2,g3 right now
-    vector<int32_t> vint(7);
-    vector<double> vdouble(3);
+    std::vector<int32_t> vint(7);
+    std::vector<double> vdouble(3);
     if (tbme_format == "binary")
     {
       tbmefile.read( reinterpret_cast<char*>(vint.data()), vint.size()*sizeof(int32_t) );
@@ -253,10 +254,10 @@ void ReadWrite::ReadTBME_OakRidge( string spname, string tbmename, Operator& Hba
 
 
 /// Read two-body matrix elements from an Oslo-formatted file
-void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
+void ReadWrite::WriteTwoBody_Oslo( std::string filename, Operator& Op)
 {
 
-  ofstream outfile(filename);
+  std::ofstream outfile(filename);
   ModelSpace* modelspace = Op.GetModelSpace();
   int wint = 8;
   int wdouble = 12;
@@ -266,24 +267,24 @@ void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
 
   if ( !outfile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble writing file  !!!   **" << filename << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble writing file  !!!   **" << filename << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
 
-  outfile << "     ====> Interaction part" << endl;
-  outfile << "Nucleon-Nucleon interaction model: n3lo" << endl;
-  outfile << "Type of calculation: vlowk" << endl;
-  outfile << "Number and value of starting energies:   1" << endl;
-  outfile << "  0.000000E+00" << endl;
+  outfile << "     ====> Interaction part" << std::endl;
+  outfile << "Nucleon-Nucleon interaction model: n3lo" << std::endl;
+  outfile << "Type of calculation: vlowk" << std::endl;
+  outfile << "Number and value of starting energies:   1" << std::endl;
+  outfile << "  0.000000E+00" << std::endl;
   outfile << "Total number of twobody matx elements:         ";
-  streampos CountLocation = outfile.tellp();
-  outfile << "0                                                 " << endl;
-//467032          78000         311032          78000" << endl;
-  outfile << "Matrix elements with the following legend, NOTE no hw/A for Hcom, pipj and rirj" << endl;
-  outfile << "      Tz      Parity    J2        a        b        c        d     <ab|V|cd>    <ab|0|cd>    <ab|0|cd>    <ab|0|cd>" << endl;
+  std::streampos CountLocation = outfile.tellp();
+  outfile << "0                                                 " << std::endl;
+//467032          78000         311032          78000" << std::endl;
+  outfile << "Matrix elements with the following legend, NOTE no hw/A for Hcom, pipj and rirj" << std::endl;
+  outfile << "      Tz      Parity    J2        a        b        c        d     <ab|V|cd>    <ab|0|cd>    <ab|0|cd>    <ab|0|cd>" << std::endl;
 
   int linecounter = 0;
   array<int,3> Tzcounter = {0,0,0};
@@ -303,7 +304,7 @@ void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
       {
         Ket& ket = tbc.GetKet(iket);
         double tbme = matrix(ibra,iket);
-        outfile << setw(wint) << Tz << " " << setw(wint) <<parity << " " << setw(wint) <<J2 << " " << setw(wint) << bra.p+1 << " " << setw(wint) <<bra.q+1 << " " << setw(wint) <<ket.p+1 << " " << setw(wint) <<ket.q+1 <<  " " << setw(wdouble) << setprecision(dprec) <<tbme << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << endl;
+        outfile << setw(wint) << Tz << " " << setw(wint) <<parity << " " << setw(wint) <<J2 << " " << setw(wint) << bra.p+1 << " " << setw(wint) <<bra.q+1 << " " << setw(wint) <<ket.p+1 << " " << setw(wint) <<ket.q+1 <<  " " << setw(wdouble) << setprecision(dprec) <<tbme << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << " " << setw(wdouble) << setprecision(dprec)<< 0.0 << std::endl;
         ++linecounter;
         ++Tzcounter[Tz+1];
       }
@@ -317,10 +318,10 @@ void ReadWrite::WriteTwoBody_Oslo( string filename, Operator& Op)
 }
 
 
-//void ReadWrite::WriteOneBody_Oslo( string filename, Operator& Op)
-void ReadWrite::WriteOneBody_Simple( string filename, Operator& Op)
+//void ReadWrite::WriteOneBody_Oslo( std::string filename, Operator& Op)
+void ReadWrite::WriteOneBody_Simple( std::string filename, Operator& Op)
 {
-  ofstream outfile(filename);
+  std::ofstream outfile(filename);
   ModelSpace* modelspace = Op.GetModelSpace();
   int wint = 3;
   int wdouble = 10;
@@ -329,49 +330,49 @@ void ReadWrite::WriteOneBody_Simple( string filename, Operator& Op)
   outfile << setw(wint) << setprecision(dprec);
   if ( !outfile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble writing file  !!!   **" << filename << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble writing file  !!!   **" << filename << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
-  outfile << "  a     b      <a|V|b> " << endl;
+  outfile << "  a     b      <a|V|b> " << std::endl;
   int norb = modelspace->GetNumberOrbits();
   for ( int i=0;i<norb;++i)
   {
     Orbit& oi = modelspace->GetOrbit(i);
     for (int j : Op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
-      outfile << setw(wint) << i << "   " << setw(wint) << j << "   " << setw(wdouble) << Op.OneBody(i,j) << endl;
+      outfile << setw(wint) << i << "   " << setw(wint) << j << "   " << setw(wdouble) << Op.OneBody(i,j) << std::endl;
     }
   }
 
 }
 
 
-void ReadWrite::WriteOneBody_Oslo( string filename, Operator& Op)
+void ReadWrite::WriteOneBody_Oslo( std::string filename, Operator& Op)
 {
-  ofstream outfile(filename);
+  std::ofstream outfile(filename);
   ModelSpace* modelspace = Op.GetModelSpace();
 
-  outfile << "   ----> Oscillator parameters, Model space and single-particle data" << endl;
-  outfile << "Mass number A of chosen nucleus (important for CoM corrections):          " << modelspace->GetTargetMass() << endl;
+  outfile << "   ----> Oscillator parameters, Model space and single-particle data" << std::endl;
+  outfile << "Mass number A of chosen nucleus (important for CoM corrections):          " << modelspace->GetTargetMass() << std::endl;
   outfile << "Oscillator length and energy: " << setw(12) << setprecision(6) << scientific 
           << HBARC / sqrt( M_NUCLEON * modelspace->GetHbarOmega() )
-          << "  " << setw(12) << setprecision(6) << scientific <<  modelspace->GetHbarOmega() << endl;
-  outfile << " Min and max value of partial wave ang. mom    0   " << modelspace->GetEmax() << endl;
-  outfile << " Max value of relative orb mom or cm orb mom,  l or L=  " << modelspace->GetEmax() << endl;
-  outfile << " Max value of relative n:  "  << modelspace->GetEmax()/2 << endl;
-  outfile << " Max value of 2*n + l+ cm 2*N +L for large space:  " << modelspace->GetEmax() << endl;
-  outfile << " Max value of 2*n + l+ cm 2*N +L for model space:  " << modelspace->GetEmax() << endl;
-  outfile << " Total number of single-particle orbits  " << modelspace->GetNumberOrbits()  << endl;
-  outfile << "Legend:         n     l     2j   tz    2n+l  HO-energy     evalence     particle/hole  inside/outside" << endl;
+          << "  " << setw(12) << setprecision(6) << scientific <<  modelspace->GetHbarOmega() << std::endl;
+  outfile << " Min and max value of partial wave ang. mom    0   " << modelspace->GetEmax() << std::endl;
+  outfile << " Max value of relative orb mom or cm orb mom,  l or L=  " << modelspace->GetEmax() << std::endl;
+  outfile << " Max value of relative n:  "  << modelspace->GetEmax()/2 << std::endl;
+  outfile << " Max value of 2*n + l+ cm 2*N +L for large space:  " << modelspace->GetEmax() << std::endl;
+  outfile << " Max value of 2*n + l+ cm 2*N +L for model space:  " << modelspace->GetEmax() << std::endl;
+  outfile << " Total number of single-particle orbits  " << modelspace->GetNumberOrbits()  << std::endl;
+  outfile << "Legend:         n     l     2j   tz    2n+l  HO-energy     evalence     particle/hole  inside/outside" << std::endl;
 
   for (int i=0;i<modelspace->GetNumberOrbits(); ++i)
   {
     Orbit& oi = modelspace->GetOrbit(i);
-    string ph = oi.cvq > 0 ? "particle" : "hole";
-    string io = oi.cvq == 1 ? "inside" : "outside";
+    std::string ph = oi.cvq > 0 ? "particle" : "hole";
+    std::string io = oi.cvq == 1 ? "inside" : "outside";
     int e = 2*oi.n+oi.l;
 //    double hw = modelspace->GetHbarOmega();
     double spe = Op.OneBody(i,i);
@@ -384,10 +385,10 @@ void ReadWrite::WriteOneBody_Oslo( string filename, Operator& Op)
 
 }
 
-void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
+void ReadWrite::ReadBareTBME_Jason( std::string filename, Operator& Hbare)
 {
 
-  ifstream infile;
+  std::ifstream infile;
   char line[LINESIZE];
   int Tz2,Par,J2,a,b,c,d;
   int na,nb,nc,nd;
@@ -404,9 +405,9 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
   infile.open(filename);
   if ( !infile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble reading file  !!!   **" << filename << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble reading file  !!!   **" << filename << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
@@ -418,7 +419,7 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
   for (int i=0;i<6;++i ) // skip spe's at the top
   {
      infile.getline(line,LINESIZE);
-     cout << "skipping line: " << line << endl;
+     std::cout << "skipping line: " << line << std::endl;
   }
 
   // read the file one line at a time
@@ -449,14 +450,14 @@ void ReadWrite::ReadBareTBME_Jason( string filename, Operator& Hbare)
 /// no-core shell model code.
 /// These are given as normalized, JT coupled matix elements.
 /// Matrix elements corresponding to orbits outside the modelspace are ignored.
-void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
+void ReadWrite::ReadBareTBME_Navratil( std::string filename, Operator& Hbare)
 {
-  ifstream infile(filename);  
+  std::ifstream infile(filename);  
   if ( !infile.good() )
   {
-    cerr << "************************************" << endl
-         << "**    Trouble reading file  !!!   **" << filename << endl
-         << "************************************" << endl;
+    cerr << "************************************" << std::endl
+         << "**    Trouble reading file  !!!   **" << filename << std::endl
+         << "************************************" << std::endl;
     goodstate = false;
     return;
   }
@@ -467,7 +468,7 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
 
   if ( filename.substr( filename.find_last_of(".")) == ".gz")
   {
-    ifstream infile(filename, ios_base::in | ios_base::binary);
+    std::ifstream infile(filename, std::ios_base::in | std::ios_base::binary);
     boost::iostreams::filtering_istream zipstream;
     zipstream.push(boost::iostreams::gzip_decompressor());
     zipstream.push(infile);
@@ -475,12 +476,12 @@ void ReadWrite::ReadBareTBME_Navratil( string filename, Operator& Hbare)
   }
   else
   {
-    ifstream infile(filename);
+    std::ifstream infile(filename);
     ReadBareTBME_Navratil_from_stream(infile, Hbare);
   }
 }
 
-void ReadWrite::ReadBareTBME_Navratil_from_stream( istream& infile, Operator& Hbare)
+void ReadWrite::ReadBareTBME_Navratil_from_stream( std::istream& infile, Operator& Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
@@ -488,7 +489,7 @@ void ReadWrite::ReadBareTBME_Navratil_from_stream( istream& infile, Operator& Hb
   int norb = modelspace->GetNumberOrbits();
 //  int nljmax = norb/2;
 //  int herm = Hbare.IsHermitian() ? 1 : -1 ;
-  unordered_map<int,int> orbits_remap;
+  std::unordered_map<int,int> orbits_remap;
   for (int i=0;i<norb;++i)
   {
      Orbit& oi = modelspace->GetOrbit(i);
@@ -498,7 +499,7 @@ void ReadWrite::ReadBareTBME_Navratil_from_stream( istream& infile, Operator& Hb
      orbits_remap[nlj] = i;
   }
 
-//  ifstream infile;
+//  std::ifstream infile;
 //  infile.open(filename);
 
 
@@ -560,12 +561,12 @@ void ReadWrite::ReadBareTBME_Navratil_from_stream( istream& infile, Operator& Hb
 
 
 
-void ReadWrite::WriteTBME_Navratil( string filename, Operator& Hbare)
+void ReadWrite::WriteTBME_Navratil( std::string filename, Operator& Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
-  unordered_map<int,int> orbits_remap;
+  std::unordered_map<int,int> orbits_remap;
   for (int i=0;i<norb;++i)
   {
      Orbit& oi = modelspace->GetOrbit(i);
@@ -577,14 +578,14 @@ void ReadWrite::WriteTBME_Navratil( string filename, Operator& Hbare)
 //     orbits_remap[i+1] = nlj+1;
   }
 
-  ofstream outfile(filename);
+  std::ofstream outfile(filename);
 
   double hw = modelspace->GetHbarOmega();
   hw = Hbare.GetModelSpace()->GetHbarOmega();
   double srg_lambda = 0;
-  outfile << 0 << "    " << modelspace->GetEmax() << "    " << 2*modelspace->GetEmax() << "   " << hw << "     " << srg_lambda << endl;
+  outfile << 0 << "    " << modelspace->GetEmax() << "    " << 2*modelspace->GetEmax() << "   " << hw << "     " << srg_lambda << std::endl;
 
-  outfile << setiosflags(ios::fixed);
+  outfile << setiosflags(std::ios::fixed);
 
   double trel=0, h_ho_rel=0, vcoul=0;
 
@@ -639,7 +640,7 @@ void ReadWrite::WriteTBME_Navratil( string filename, Operator& Hbare)
                     << setw(10) << setprecision(6)
                     << vpp << " "
                     << setw(10) << setprecision(6)
-                    << vnn << endl;
+                    << vnn << std::endl;
             }
             if (abs(v00)>1e-7)
             {
@@ -655,7 +656,7 @@ void ReadWrite::WriteTBME_Navratil( string filename, Operator& Hbare)
                     << setw(10) << setprecision(6)
                     << 0.0 << " "
                     << setw(10) << setprecision(6)
-                    << 0.0 << endl;
+                    << 0.0 << std::endl;
             }
           }
         }
@@ -672,7 +673,7 @@ void ReadWrite::WriteTBME_Navratil( string filename, Operator& Hbare)
 
 
 /// Decide if the file is gzipped or ascii, create a stream, then call ReadBareTBME_Darmstadt_from_stream().
-void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int emax, int Emax, int lmax)
+void ReadWrite::ReadBareTBME_Darmstadt( std::string filename, Operator& Hbare, int emax, int Emax, int lmax)
 {
 
   File2N = filename;
@@ -680,7 +681,7 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
   Zref = Hbare.GetModelSpace()->GetZref();
   if ( filename.substr( filename.find_last_of(".")) == ".gz")
   {
-    ifstream infile(filename, ios_base::in | ios_base::binary);
+    std::ifstream infile(filename, std::ios_base::in | std::ios_base::binary);
     boost::iostreams::filtering_istream zipstream;
     zipstream.push(boost::iostreams::gzip_decompressor());
     zipstream.push(infile);
@@ -688,10 +689,10 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
   }
   else if (filename.substr( filename.find_last_of(".")) == ".bin")
   {
-    ifstream infile(filename, ios::binary);    
+    std::ifstream infile(filename, std::ios::binary);    
     if ( !infile.good() )
     {
-      cerr << "problem opening " << filename << ". Exiting." << endl;
+      cerr << "problem opening " << filename << ". Exiting." << std::endl;
       return ;
     }
 
@@ -707,18 +708,18 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
 //    infile.read((char*)&n_elem,sizeof(int));
     infile.read(header,HEADERSIZE);
     
-//    vector<double> v(n_elem);
+//    std::vector<double> v(n_elem);
 //    infile.read((char*)&v[0], n_elem*sizeof(double));
-    vector<float> v(n_elem);
+    std::vector<float> v(n_elem);
     infile.read((char*)&v[0], n_elem*sizeof(float));
     infile.close();
-    VectorStream vectorstream(v);
-    cout << "n_elem = " << n_elem << endl;
-    ReadBareTBME_Darmstadt_from_stream(vectorstream, Hbare,  emax, Emax, lmax);
+    VectorStream vecstream(v);
+    std::cout << "n_elem = " << n_elem << std::endl;
+    ReadBareTBME_Darmstadt_from_stream(vecstream, Hbare,  emax, Emax, lmax);
   }
   else
   {
-    ifstream infile(filename);
+    std::ifstream infile(filename);
     ReadBareTBME_Darmstadt_from_stream(infile, Hbare,  emax, Emax, lmax);
   }
 }
@@ -728,23 +729,23 @@ void ReadWrite::ReadBareTBME_Darmstadt( string filename, Operator& Hbare, int em
 /// .bin (me3j converted to binary, faster to read), .h5 (HDF5 format). Default is to assume .me3j.
 /// For the first three, the file is converted to a stream and sent to ReadDarmstadt_3body_from_stream().
 /// For the HDF5 format, a separate function is called: Read3bodyHDF5().
-void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1max, int E2max, int E3max)
+void ReadWrite::Read_Darmstadt_3body( std::string filename, Operator& Hbare, int E1max, int E2max, int E3max)
 {
 
   double start_time = omp_get_wtime();
-  string extension = filename.substr( filename.find_last_of("."));
+  std::string extension = filename.substr( filename.find_last_of("."));
   File3N = filename;
   Aref = Hbare.GetModelSpace()->GetAref();
   Zref = Hbare.GetModelSpace()->GetZref();
 
   if (extension == ".me3j")
   {
-    ifstream infile(filename);
+    std::ifstream infile(filename);
     Read_Darmstadt_3body_from_stream(infile, Hbare,  E1max, E2max, E3max);
   }
   else if ( extension == ".gz")
   {
-    ifstream infile(filename, ios_base::in | ios_base::binary);
+    std::ifstream infile(filename, std::ios_base::in | std::ios_base::binary);
     boost::iostreams::filtering_istream zipstream;
     zipstream.push(boost::iostreams::gzip_decompressor());
     zipstream.push(infile);
@@ -752,10 +753,10 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
   }
   else if (extension == ".bin")
   {
-    ifstream infile(filename, ios::binary);    
+    std::ifstream infile(filename, std::ios::binary);    
     if ( !infile.good() )
     {
-      cerr << "problem opening " << filename << ". Exiting." << endl;
+      cerr << "problem opening " << filename << ". Exiting." << std::endl;
       return ;
     }
     
@@ -774,28 +775,28 @@ void ReadWrite::Read_Darmstadt_3body( string filename, Operator& Hbare, int E1ma
 //    infile.read((char*)&n_elem,sizeof(int));
     infile.read(header,HEADERSIZE);
     
-//    vector<float> v(n_elem);
+//    std::vector<float> v(n_elem);
 //    infile.read((char*)&v[0], n_elem*sizeof(float));
-    vector<float> v(n_elem);
+    std::vector<float> v(n_elem);
     infile.read((char*)&v[0], n_elem*sizeof(float));
     infile.close();
-    VectorStream vectorstream(v);
-    cout << "n_elem = " << n_elem <<  endl;
-    Read_Darmstadt_3body_from_stream(vectorstream, Hbare,  E1max, E2max, E3max);
+    VectorStream vecstream(v);
+    std::cout << "n_elem = " << n_elem <<  std::endl;
+    Read_Darmstadt_3body_from_stream(vecstream, Hbare,  E1max, E2max, E3max);
   }
   else if (extension == ".h5")
   {
 #ifndef NO_HDF5
     Read3bodyHDF5_new( filename, Hbare );
 #else
-    cout << "!!!!! ERROR: COMPILED WITH FLAG NO_HDF5 -> Can't read .h5 files !!!!!!!!!!!" << endl;
+    std::cout << "!!!!! ERROR: COMPILED WITH FLAG NO_HDF5 -> Can't read .h5 files !!!!!!!!!!!" << std::endl;
     exit(EXIT_FAILURE);
 #endif
   }
   else
   {
-    cout << "assuming " << filename << " is of me3j format ... " << endl;
-    ifstream infile(filename);
+    std::cout << "assuming " << filename << " is of me3j format ... " << std::endl;
+    std::ifstream infile(filename);
     Read_Darmstadt_3body_from_stream(infile, Hbare,  E1max, E2max, E3max);
   }
 
@@ -819,15 +820,15 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 {
   if ( !infile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble reading file  !!!   **" << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble reading file  !!!   **" << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
-  vector<int> orbits_remap;
+  std::vector<int> orbits_remap;
 
   if (emax < 0)  emax = modelspace->Emax;
   if (lmax < 0)  lmax = emax;
@@ -899,8 +900,8 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
              if (a==b)  norm_factor /= SQRT2;
              if (c==d)  norm_factor /= SQRT2;
 
-//             cout << a << " " << b << " " << c << " " << d << "   " << J << "   "
-//                  << fixed << setprecision(7) << setw(11) << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp << endl;
+//             std::cout << a << " " << b << " " << c << " " << d << "   " << J << "   "
+//                  << fixed << setprecision(7) << setw(11) << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp << std::endl;
 
              if (norm_factor>0.9 or J%2==0)
              {
@@ -930,17 +931,17 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 //{
 //  if ( !infile.good() )
 //  {
-//     cerr << "************************************" << endl
-//          << "**    Trouble reading file  !!!   **" << endl
-//          << "************************************" << endl;
+//     cerr << "************************************" << std::endl
+//          << "**    Trouble reading file  !!!   **" << std::endl
+//          << "************************************" << std::endl;
 //     goodstate = false;
 //     return;
 //  }
 //  if (Hbare.particle_rank < 3)
 //  {
-//    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << endl;
-//    cerr << " Oops. Looks like we're trying to read 3body matrix elements to a " << Hbare.particle_rank << "-body operator. For shame..." << endl;
-//    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << endl;
+//    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << std::endl;
+//    cerr << " Oops. Looks like we're trying to read 3body matrix elements to a " << Hbare.particle_rank << "-body operator. For shame..." << std::endl;
+//    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << std::endl;
 //    goodstate = false;
 //    return;
 //  }
@@ -949,9 +950,9 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 //  int e2max = modelspace->GetE2max(); // not used yet
 //  int e3max = modelspace->GetE3max();
 //  int lmax3 = modelspace->GetLmax3();
-//  cout << "Reading 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << endl;
+//  std::cout << "Reading 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << std::endl;
 //
-//  vector<int> orbits_remap(0);
+//  std::vector<int> orbits_remap(0);
 //  int lmax = E1max; // haven't yet implemented the lmax truncation for 3body. Should be easy.
 //
 //  for (int e=0; e<=min(E1max,e1max); ++e)
@@ -975,7 +976,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 //  char line[LINESIZE];
 //  infile.getline(line,LINESIZE);
 //
-////  cout << "In read3body nthreads = " << omp_get_num_threads() << endl;
+////  std::cout << "In read3body nthreads = " << omp_get_num_threads() << std::endl;
 ////  omp_set_num_threads(min(2,omp_get_max_threads())); // it's not clear that this is actually helping...
 //
 //  // begin giant nested loops
@@ -989,8 +990,8 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 //    if (ea > E1max) break;
 //    if (ea > e1max) break;
 //    if (ea > e3max) break;
-////    cout << setw(5) << setprecision(2) << nlj1*(nlj1+1.)/(nljmax*(nljmax+1))*100 << " % done" << '\r';
-////    cout.flush();
+////    std::cout << setw(5) << setprecision(2) << nlj1*(nlj1+1.)/(nljmax*(nljmax+1))*100 << " % done" << '\r';
+////    std::cout.flush();
 //
 //    for(int nlj2=0; nlj2<=nlj1; ++nlj2)
 //    {
@@ -1073,11 +1074,11 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 //                // read all the ME for this range of J,T into block
 //                if (twoJCMin>twoJCMax) continue;
 //                size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*5;
-////                cout << "constructing block of size " << blocksize << "  =5* ((" << twoJCMax << " - " << twoJCMin << ")/2+1)" << endl;
-//                vector<float> block(blocksize,0);
+////                std::cout << "constructing block of size " << blocksize << "  =5* ((" << twoJCMax << " - " << twoJCMin << ")/2+1)" << std::endl;
+//                std::vector<float> block(blocksize,0);
 //                for (size_t iblock=0;iblock<blocksize;iblock++) infile >> block[iblock];
 //                nread += blocksize;
-////                cout << "Done making block" << endl;
+////                std::cout << "Done making block" << std::endl;
 //
 ////                for(int twoJC = twoJCMin; twoJC <= twoJCMax; twoJC += 2)
 //                // note that the maximum number of threads is set at the beginning of the nested loops
@@ -1085,7 +1086,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 ////                #pragma omp parallel for schedule(dynamic,1) // parallelize in the J loop because they can't interfere with each other
 //                for(int JTind = 0; JTind <= (twoJCMax-twoJCMin)+1; JTind++)
 //                {
-// //                cout << "   Read 3body threadnum = " << omp_get_thread_num() << endl;
+// //                std::cout << "   Read 3body threadnum = " << omp_get_thread_num() << std::endl;
 //                 int twoJC = twoJCMin + (JTind/2)*2;
 //                 int twoT = 1+(JTind%2)*2;
 //                 for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
@@ -1128,7 +1129,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 //                       if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
 //                          and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max) )
 //                       {
-////                        cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << endl;
+////                        std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << std::endl;
 //                        Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
 //                       }
 //                    }
@@ -1137,7 +1138,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 //                    {
 //                       if (abs(V) > 1e-6 and ea<=e1max and eb<=e1max and ec<=e1max)
 //                       {
-//                          cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << endl;
+//                          std::cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << std::endl;
 //                          goodstate = false;
 //                       }
 //                    }
@@ -1157,8 +1158,8 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 //      }
 //    }
 //  }
-//  cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << endl;
-//  cout << "Stored " << nkept << " floating point numbers (" << nkept * sizeof(float)/1024./1024./1024. << " GB)" << endl;
+//  std::cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << std::endl;
+//  std::cout << "Stored " << nkept << " floating point numbers (" << nkept * sizeof(float)/1024./1024./1024. << " GB)" << std::endl;
 //
 //}
 
@@ -1169,22 +1170,22 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 /// Read me3j format three-body matrix elements. Pass in E1max, E2max, E3max for the file, so that it can be properly interpreted.
 /// The modelspace truncation doesn't need to coincide with the file truncation. For example, you could have an emax=10 modelspace
 /// and read from an emax=14 file, and the matrix elements with emax>10 would be ignored.
-size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int E2max, int E3max, vector<int>& orbits_remap, vector<size_t>& nread_list)
+size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int E2max, int E3max, std::vector<int>& orbits_remap, std::vector<size_t>& nread_list)
 {
   double t_start = omp_get_wtime();
 //  if ( !infile.good() )
 //  {
-//     cerr << "************************************" << endl
-//          << "**    Trouble reading file  !!!   **" << endl
-//          << "************************************" << endl;
+//     cerr << "************************************" << std::endl
+//          << "**    Trouble reading file  !!!   **" << std::endl
+//          << "************************************" << std::endl;
 //     goodstate = false;
 //     return;
 //  }
 //  if (Hbare.particle_rank < 3)
 //  {
-//    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << endl;
-//    cerr << " Oops. Looks like we're trying to read 3body matrix elements to a " << Hbare.particle_rank << "-body operator. For shame..." << endl;
-//    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << endl;
+//    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << std::endl;
+//    cerr << " Oops. Looks like we're trying to read 3body matrix elements to a " << Hbare.particle_rank << "-body operator. For shame..." << std::endl;
+//    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << std::endl;
 //    goodstate = false;
 //    return;
 //  }
@@ -1193,9 +1194,9 @@ size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int
   int e2max = modelspace->GetE2max(); // not used yet
   int e3max = modelspace->GetE3max();
 //  int lmax3 = modelspace->GetLmax3();
-  cout << "Reading 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << endl;
+  std::cout << "Reading 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << std::endl;
 
-//  vector<int> orbits_remap(0);
+//  std::vector<int> orbits_remap(0);
   orbits_remap.clear();
 //  nread_list.clear();
   int lmax = E1max; // haven't yet implemented the lmax truncation for 3body. Should be easy.
@@ -1223,7 +1224,7 @@ size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int
   size_t nread = 0;
 //  int nkept = 0;
 
-//  vector<size_t> nread_list;
+//  std::vector<size_t> nread_list;
 
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
   {
@@ -1241,7 +1242,7 @@ size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int
       int eb = 2*ob.n + ob.l;
 //      if ( ((size_t) (nlj1)*(nlj1+1)/2 + nlj2) != nread_list.size())
 //      {
-//        cout << " woops, snafu in constructing nread_list.   nlj1 = " << nlj1 << " nlj2 = " << nlj2 << "  nread_list.size() = " << nread_list.size() << "   nread = " << nread << endl;
+//        std::cout << " woops, snafu in constructing nread_list.   nlj1 = " << nlj1 << " nlj2 = " << nlj2 << "  nread_list.size() = " << nread_list.size() << "   nread = " << nread << std::endl;
 //      }
 //      nread_list.push_back(nread);
       if ( (ea+eb) > E2max) break;
@@ -1345,29 +1346,29 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   double t_start = omp_get_wtime();
   if ( !infile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble reading file  !!!   **" << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble reading file  !!!   **" << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
   if (Hbare.particle_rank < 3)
   {
-    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << endl;
-    cerr << " Oops. Looks like we're trying to read 3body matrix elements to a " << Hbare.particle_rank << "-body operator. For shame..." << endl;
-    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << endl;
+    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << std::endl;
+    cerr << " Oops. Looks like we're trying to read 3body matrix elements to a " << Hbare.particle_rank << "-body operator. For shame..." << std::endl;
+    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << std::endl;
     goodstate = false;
     return;
   }
   ModelSpace * modelspace = Hbare.GetModelSpace();
-  vector<int> orbits_remap;
-  vector<size_t> nread_list;
+  std::vector<int> orbits_remap;
+  std::vector<size_t> nread_list;
   size_t nread = Count_Darmstadt_3body_to_read( Hbare, E1max, E2max, E3max, orbits_remap, nread_list);
 
 
 
 
-  vector<float> ThreeBME(nread,0.);
+  std::vector<float> ThreeBME(nread,0.);
 
 //  #define BUFFSIZE3N 1024*1000
   if (format3N == "me3j")
@@ -1397,7 +1398,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   }
 
   modelspace->profiler.timer["Read_3BME"] += omp_get_wtime() - t_start;
-  cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << endl;
+  std::cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << std::endl;
   Store_Darmstadt_3body( ThreeBME, nread_list, orbits_remap, Hbare, E1max, E2max, E3max);
 
 }
@@ -1407,7 +1408,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
 /// Read me3j format three-body matrix elements. Pass in E1max, E2max, E3max for the file, so that it can be properly interpreted.
 /// The modelspace truncation doesn't need to coincide with the file truncation. For example, you could have an emax=10 modelspace
 /// and read from an emax=14 file, and the matrix elements with emax>10 would be ignored.
-void ReadWrite::Store_Darmstadt_3body( const vector<float>& ThreeBME, const vector<size_t>& nread_list, const vector<int>& orbits_remap, Operator& Hbare, int E1max, int E2max, int E3max)
+void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const std::vector<size_t>& nread_list, const std::vector<int>& orbits_remap, Operator& Hbare, int E1max, int E2max, int E3max)
 {
 
   double t_start = omp_get_wtime();
@@ -1416,9 +1417,9 @@ void ReadWrite::Store_Darmstadt_3body( const vector<float>& ThreeBME, const vect
 //  int e2max = modelspace->GetE2max(); // not used yet
   int e3max = modelspace->GetE3max();
   int lmax3 = modelspace->GetLmax3();
-//  cout << "Reading 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << endl;
+//  std::cout << "Reading 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << std::endl;
 
-//  vector<int> orbits_remap(0);
+//  std::vector<int> orbits_remap(0);
 //  int lmax = E1max; // haven't yet implemented the lmax truncation for 3body. Should be easy.
 //
 //  for (int e=0; e<=min(E1max,e1max); ++e)
@@ -1438,7 +1439,7 @@ void ReadWrite::Store_Darmstadt_3body( const vector<float>& ThreeBME, const vect
   int nljmax = orbits_remap.size();
 
 
-  cout << "begin storing 3N matrix elements" << endl;
+  std::cout << "begin storing 3N matrix elements" << std::endl;
   // begin giant nested loops
   size_t nkept = 0;
   modelspace->PreCalculateSixJ(); // Get all the sixJ so we don't have to worry about threading issues
@@ -1562,7 +1563,7 @@ void ReadWrite::Store_Darmstadt_3body( const vector<float>& ThreeBME, const vect
                     size_t index_ab = 5*(twoJC-twoJCMin)/2+2*tab+ttab+(twoT-1)/2;
                     if (nread+index_ab >=ThreeBME.size())
                     {
-                      cout << "OH NO!!! trying to access element " << nread << "+" << index_ab << " = " << nread+index_ab << "  which is >= "<< ThreeBME.size() << endl;
+                      std::cout << "OH NO!!! trying to access element " << nread << "+" << index_ab << " = " << nread+index_ab << "  which is >= "<< ThreeBME.size() << std::endl;
                     }
                     float V;
                     V = ThreeBME[nread + index_ab ];
@@ -1583,15 +1584,15 @@ void ReadWrite::Store_Darmstadt_3body( const vector<float>& ThreeBME, const vect
                       {
                         if (not autozero )
                         {
-//                            cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << endl;
+//                            std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << std::endl;
                             Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
                         }
                         else if (autozero)
                         {
                             printf(" <--------- AAAHHHH!!!!!! Reading 3body file. <%d %d %d  %d %d |V| %d %d %d  %d %d>_(%d %d) should be zero but its %f.  nread = %lu index_ab = %lu\n",a,b,c,Jab,tab,d,e,f,JJab,ttab,twoJC,twoT,V,nread,index_ab);
-//                              cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << endl;
-//                            cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << endl;
-//                            cout << "nread = " << nread << "  index_ab = " << index_ab << endl;
+//                              std::cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << std::endl;
+//                            std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << std::endl;
+//                            std::cout << "nread = " << nread << "  index_ab = " << index_ab << std::endl;
                               goodstate = false;
                         }
                       }
@@ -1611,7 +1612,7 @@ void ReadWrite::Store_Darmstadt_3body( const vector<float>& ThreeBME, const vect
     } //nlj2
   } //nlj1
   
-  cout << "Stored " << nkept << " floating point numbers (" << nkept * sizeof(float)/1024./1024./1024. << " GB)" << endl;
+  std::cout << "Stored " << nkept << " floating point numbers (" << nkept * sizeof(float)/1024./1024./1024. << " GB)" << std::endl;
 
   modelspace->profiler.timer["Store_3BME"] += omp_get_wtime() - t_start;
 }
@@ -1624,7 +1625,7 @@ void ReadWrite::Store_Darmstadt_3body( const vector<float>& ThreeBME, const vect
 #ifndef NO_HDF5
 /// Read three-body basis from HDF5 formatted file. This routine was ported to C++ from
 /// a C routine by Heiko Hergert, with as little modification as possible.
-void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<array<int,5>>& Basis)
+void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, std::string filename, std::vector<array<int,5>>& Basis)
 {
   H5File file(filename, H5F_ACC_RDONLY);
   // The parameter alpha enumerates the different 3body states |abc> coupled to J12 and J (no isospin)
@@ -1636,7 +1637,7 @@ void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<ar
   int status = basis_dspace.getSimpleExtentDims(iDim,NULL);
   if (status != nDim)
   {
-     cerr << "Error: Failed to read dataset dimensions!" << endl;
+     cerr << "Error: Failed to read dataset dimensions!" << std::endl;
      return;
   }
   
@@ -1676,7 +1677,7 @@ void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<ar
     int o3 = modelspace->GetOrbitIndex(n3,l3,twoj3,-1);
     if (alpha != alphap)
     {
-      cerr << "Error. alpha != alphap " << endl;
+      cerr << "Error. alpha != alphap " << std::endl;
       return;
     }
 
@@ -1693,7 +1694,7 @@ void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, string filename, vector<ar
 #ifndef NO_HDF5
 /// Read three-body matrix elements from HDF5 formatted file. This routine was ported to C++ from
 /// a C routine by Heiko Hergert, with as little modification as possible.
-void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
+void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
 {
 
   const int SLABSIZE = 10000000;
@@ -1702,7 +1703,7 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
   Zref = op.GetModelSpace()->GetZref();
 
   ModelSpace* modelspace = op.GetModelSpace();
-  vector<array<int,5>> Basis;
+  std::vector<array<int,5>> Basis;
   GetHDF5Basis(modelspace, filename, Basis);
 
 
@@ -1715,14 +1716,14 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
   int label_nDim = label_dspace.getSimpleExtentNdims();
   if (label_nDim != 2)
   {
-    cerr << "Error. Expected label_nDim==2, but got << label_nDim." << endl;
+    cerr << "Error. Expected label_nDim==2, but got << label_nDim." << std::endl;
     return;
   }
   hsize_t label_maxDim[2];
   int label_status = label_dspace.getSimpleExtentDims(label_maxDim,NULL);
   if (label_status != label_nDim)
   {
-    cerr << "Error. failed to read dataset dimensions for label." << endl;
+    cerr << "Error. failed to read dataset dimensions for label." << std::endl;
     return;
   }
   
@@ -1743,14 +1744,14 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
   int value_nDim = value_dspace.getSimpleExtentNdims();
   if (value_nDim != 2)
   {
-    cerr << "Error. Expected value_nDim==2, but got << value_nDim." << endl;
+    cerr << "Error. Expected value_nDim==2, but got << value_nDim." << std::endl;
     return;
   }
   hsize_t value_maxDim[2];
   int value_status = value_dspace.getSimpleExtentDims(value_maxDim,NULL);
   if (value_status != value_nDim)
   {
-    cerr << "Error. failed to read dataset dimensions for value." << endl;
+    cerr << "Error. failed to read dataset dimensions for value." << std::endl;
     return;
   }
   
@@ -1846,11 +1847,11 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
        int parity_def = ( od.l+oe.l+of.l )%2;
        if (parity_abc != Pi or parity_def != Pi)
        {
-         cerr << "Error. Mismatching parity !  < "  << parity_abc << " " << parity_def << " " << Pi << "    " << endl;
+         cerr << "Error. Mismatching parity !  < "  << parity_abc << " " << parity_def << " " << Pi << "    " << std::endl;
        }
        if (J2 != twoJ or J2p != twoJ)
        {
-         cerr << "Error. Mismatching total J! " << J2 << " " << J2p << " " << twoJ << "   alphas = " << alpha << ", " << alphap << endl;
+         cerr << "Error. Mismatching total J! " << J2 << " " << J2p << " " << twoJ << "   alphas = " << alpha << ", " << alphap << std::endl;
        }
 
        me *= 0.5; // According to Heiko, this shouldn't be here. But comparing matrix elements with Petr's interaction suggests otherwise.
@@ -1865,9 +1866,9 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
   delete[] label_buf[0];
   delete[] label_buf;
   delete[] value_buf;
-  cout << "Writing me3j file..." << endl;
+  std::cout << "Writing me3j file..." << std::endl;
   Write_me3j(filename + "_to_me3j", op, 2, 24, 12);
-  cout << "done" << endl;
+  std::cout << "done" << std::endl;
 }
 #endif
 
@@ -1878,7 +1879,7 @@ void ReadWrite::Read3bodyHDF5( string filename,Operator& op )
 #ifndef NO_HDF5
 // THIS ONE SEEMS TO WORK, SO FAR
 
-void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
+void ReadWrite::Read3bodyHDF5_new( std::string filename,Operator& op )
 {
 
   ModelSpace* modelspace = op.GetModelSpace();
@@ -1900,7 +1901,7 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
 
 
   // Generate a 2d buffer in contiguous memory
-  //TODO: Do this with vectors so we don't have to worry about new and delete[]
+  //TODO: Do this with std::vectors so we don't have to worry about new and delete[]
   int** dbuf = new int*[iDim_basis[0]];
   dbuf[0] = new int[iDim_basis[0]*iDim_basis[1]];
   for (hsize_t i=1;i<iDim_basis[0];++i)
@@ -1979,12 +1980,12 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
        {
          if ( abs(summed_me)>1.0e-6  )
          {
-           cout << "AAHH!!  by J+T symmetry should be zero!" << endl;
+           std::cout << "AAHH!!  by J+T symmetry should be zero!" << std::endl;
          }
        }
        else
        {
-//        cout << "read <" << ap << " " << bp << " " << cp << " | V | " << a << " " << b << " " << c << "  (" << j12p << " " << j12 << " " << jtot << ")  ( " << T12 << " " << TT12 << " " << twoT << endl;
+//        std::cout << "read <" << ap << " " << bp << " " << cp << " | V | " << a << " " << b << " " << c << "  (" << j12p << " " << j12 << " " << jtot << ")  ( " << T12 << " " << TT12 << " " << twoT << std::endl;
         op.ThreeBody.SetME(j12p,j12,jtot,T12,TT12,twoT,ap,bp,cp,a,b,c, summed_me);
         if (a==ap and b==bp and c==cp and j12 != j12p) // we're only looping through alphap > alphaspp, while I'm set up to read in all J,T possibilities for a given set of orbits
         {
@@ -2007,14 +2008,14 @@ void ReadWrite::Read3bodyHDF5_new( string filename,Operator& op )
 
 
 
-void ReadWrite::ReadOperator_Nathan( string filename1b, string filename2b, Operator& op)
+void ReadWrite::ReadOperator_Nathan( std::string filename1b, std::string filename2b, Operator& op)
 {
-  ifstream infile(filename1b);
+  std::ifstream infile(filename1b);
   if ( !infile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble opening file  !!!   **" << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble opening file  !!!   **" << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
@@ -2033,9 +2034,9 @@ void ReadWrite::ReadOperator_Nathan( string filename1b, string filename2b, Opera
   infile.open(filename2b);
   if ( !infile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble opening file  !!!   **" << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble opening file  !!!   **" << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
@@ -2057,14 +2058,14 @@ void ReadWrite::ReadOperator_Nathan( string filename1b, string filename2b, Opera
 }
 
 
-void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b, Operator& op)
+void ReadWrite::ReadTensorOperator_Nathan( std::string filename1b, std::string filename2b, Operator& op)
 {
-  ifstream infile(filename1b);
+  std::ifstream infile(filename1b);
   if ( !infile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble opening 1b file  !!!   **" << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble opening 1b file  !!!   **" << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
@@ -2081,14 +2082,14 @@ void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b,
     op.OneBody(b,a) = flipphase*me;
   }
   infile.close();
-  cout << "Done reading 1b file." << endl;
+  std::cout << "Done reading 1b file." << std::endl;
 
   infile.open(filename2b);
   if ( !infile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble opening 2b file  !!!   **" << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble opening 2b file  !!!   **" << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
@@ -2101,17 +2102,17 @@ void ReadWrite::ReadTensorOperator_Nathan( string filename1b, string filename2b,
     op.TwoBody.SetTBME_J(J1,J2,a,b,c,d,me);
   }
   infile.close();
-  cout << "Done reading 2b file." << endl;
+  std::cout << "Done reading 2b file." << std::endl;
 
 
 }
 
 /*
-void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
+void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
 {
-   cout << "Begin Read2bCurrent_Navratil" << endl;
-//  ifstream infile(filename);
-    ifstream infilegz(filename, ios_base::in | ios_base::binary);
+   std::cout << "Begin Read2bCurrent_Navratil" << std::endl;
+//  std::ifstream infile(filename);
+    std::ifstream infilegz(filename, std::ios_base::in | std::ios_base::binary);
     boost::iostreams::filtering_istream infile;
     infile.push(boost::iostreams::gzip_decompressor());
     infile.push(infilegz);
@@ -2119,14 +2120,14 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
 
   if ( !infile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble opening file  !!!   **  " << filename<< endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble opening file  !!!   **  " << filename<< std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
   ModelSpace * modelspace = Op.GetModelSpace();
-  unordered_map<int,int> orbits_remap;
+  std::unordered_map<int,int> orbits_remap;
   int norb = modelspace->GetNumberOrbits();
   for (int i=0;i<norb;++i)
   {
@@ -2137,7 +2138,7 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
      orbits_remap[nlj] = i;
   }
 
-  cout << "Done remapping orbits" << endl;
+  std::cout << "Done remapping orbits" << std::endl;
 
   // locally-defined isospin clebsch gordan coefficent
   // hopefully faster than calling AngMom::CG
@@ -2148,7 +2149,7 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
     return tz1 / sqrt(2.0);
   };
 
-  string strbuf;
+  std::string strbuf;
   int J_op,T_op,ain,bin,cin,din,a,b,c,d,j12,t12,j34,t34,tza,tzb;
   double mat_el;
 
@@ -2156,7 +2157,7 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
   infile >> J_op >> T_op;
   for (int i=0;i<8;++i) infile >> strbuf; // Another eight useless lines...
 
-  cout << "Start while loop" << endl;
+  std::cout << "Start while loop" << std::endl;
   while( infile >> ain >> bin >> cin >> din >> j12 >> j34 >> t12 >> t34 >> tza >> tzb >> mat_el)
   {
     if (cin<ain or (cin==ain and din<bin)) continue;
@@ -2169,14 +2170,14 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
 //   if (ain==1 and bin==1 and cin==1 and din==2 and j12==0 and j34==1)
    if (ain==1 and bin==2 and cin==1 and din==2 and j12==1 and j34==1)
    {
-    cout << "< " << ain << " " << bin << " " << j12 << " " << t12 << " ||| Op J=" << J_op << " T=" <<T_op << " ||| "
-                 << cin << " " << din << " " << j34 << " " << t34 << " > = " << mat_el << endl;
+    std::cout << "< " << ain << " " << bin << " " << j12 << " " << t12 << " ||| Op J=" << J_op << " T=" <<T_op << " ||| "
+                 << cin << " " << din << " " << j34 << " " << t34 << " > = " << mat_el << std::endl;
    }
     a = orbits_remap[ain];  // remapping gives proton index. neutron is a+1.
     b = orbits_remap[bin];
     c = orbits_remap[cin];
     d = orbits_remap[din];
-//    cout << "    --> " << a << " " << b << " " << c << " " << d << endl;
+//    std::cout << "    --> " << a << " " << b << " " << c << " " << d << std::endl;
   //  mat_el = < a b j12 t12 ||| OP (J,T) ||| c d j34 t34>    (doubly-reduced)
   //   (note that tza and tzb from the file are not meaningful here and should be ignored).
   //   also note that Petr uses the particle-physics convention tz|p> = +1|p>
@@ -2213,14 +2214,14 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
 //        if (ain==1 and bin==1 and cin==1 and din==2 and j12==0 and j34==1)
         if (ain==1 and bin==2 and cin==1 and din==2 and j12==1 and j34==1)
         {
-        cout << "tza,tzb,t12, tzc,tzd,t34, cg12,cg34,WE        : " << tza << " " << tzb << " " << t12 << ",   " << tzc << " " << tzd << " " << t34
-             << "   " << cg12 << " " << cg34 << " " << WignerEckartCoeff << " ( from " << AngMom::CG(t34,(tzc+tzd)/2,T_op,Tz_op,t12,(tza+tzb)/2) << " / " <<sqrt(2*t12+1.) << ") " << endl;
-        cout << "     cg12 is < 1/2 " << tza << "/2 1/2 " << tzb << "/2 | " << t12 << " " << (tza+tzb)/2 << " > " << endl;
-        cout << "     cg34 is < 1/2 " << tzc << "/2 1/2 " << tzd << "/2 | " << t34 << " " << (tzc+tzd)/2 << " > " << endl;
-        cout << "     W-E Clebsch is < " << t34 << " " << (tzc+tzd)/2 << "  " << T_op << " " << Tz_op << " | " << t12 << " " << (tza+tzb)/2 << " > " << endl;
-        cout << a+(1-tza)/2<<  "   " << b+(1-tzb)/2<<  "   " << c+(1-tzc)/2<<  "   " << d+(1-tzd)/2 << endl;
-        cout << "       Adding " << mat_el*cg12*cg34*WignerEckartCoeff
-             << " to " << Op.TwoBody.GetTBME_J_norm(j12, j34, a+(1-tza)/2, b+(1-tzb)/2, c+(1-tzc)/2, d+(1-tzd)/2  ) << endl;
+        std::cout << "tza,tzb,t12, tzc,tzd,t34, cg12,cg34,WE        : " << tza << " " << tzb << " " << t12 << ",   " << tzc << " " << tzd << " " << t34
+             << "   " << cg12 << " " << cg34 << " " << WignerEckartCoeff << " ( from " << AngMom::CG(t34,(tzc+tzd)/2,T_op,Tz_op,t12,(tza+tzb)/2) << " / " <<sqrt(2*t12+1.) << ") " << std::endl;
+        std::cout << "     cg12 is < 1/2 " << tza << "/2 1/2 " << tzb << "/2 | " << t12 << " " << (tza+tzb)/2 << " > " << std::endl;
+        std::cout << "     cg34 is < 1/2 " << tzc << "/2 1/2 " << tzd << "/2 | " << t34 << " " << (tzc+tzd)/2 << " > " << std::endl;
+        std::cout << "     W-E Clebsch is < " << t34 << " " << (tzc+tzd)/2 << "  " << T_op << " " << Tz_op << " | " << t12 << " " << (tza+tzb)/2 << " > " << std::endl;
+        std::cout << a+(1-tza)/2<<  "   " << b+(1-tzb)/2<<  "   " << c+(1-tzc)/2<<  "   " << d+(1-tzd)/2 << std::endl;
+        std::cout << "       Adding " << mat_el*cg12*cg34*WignerEckartCoeff
+             << " to " << Op.TwoBody.GetTBME_J_norm(j12, j34, a+(1-tza)/2, b+(1-tzb)/2, c+(1-tzc)/2, d+(1-tzd)/2  ) << std::endl;
         }
         Op.TwoBody.AddToTBME_J( j12, j34, a+(1-tza)/2, b+(1-tzb)/2, c+(1-tzc)/2, d+(1-tzd)/2, mat_el*cg12*cg34*WignerEckartCoeff);
 //        if (ain==0 and bin==0 and cin==0 and din==0 and j12==1 and j34==0)
@@ -2228,9 +2229,9 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
 //        if (ain==1 and bin==1 and cin==1 and din==2 and j12==0 and j34==1)
         if (ain==1 and bin==2 and cin==1 and din==2 and j12==1 and j34==1)
         {
-          cout << "Afterwards, it's " << Op.TwoBody.GetTBME_J_norm(j12, j34, a+(1-tza)/2, b+(1-tzb)/2, c+(1-tzc)/2, d+(1-tzd)/2  ) << endl;
-          cout << "$$$$ <2 2 J0 || 2 5 J1> = " << Op.TwoBody.GetTBME_J_norm(0,1,2,2,2,5)
-               << "     <5 2 J1 || 2 2 J0> = " << Op.TwoBody.GetTBME_J_norm(1,0,5,2,2,2) << endl;
+          std::cout << "Afterwards, it's " << Op.TwoBody.GetTBME_J_norm(j12, j34, a+(1-tza)/2, b+(1-tzb)/2, c+(1-tzc)/2, d+(1-tzd)/2  ) << std::endl;
+          std::cout << "$$$$ <2 2 J0 || 2 5 J1> = " << Op.TwoBody.GetTBME_J_norm(0,1,2,2,2,5)
+               << "     <5 2 J1 || 2 2 J0> = " << Op.TwoBody.GetTBME_J_norm(1,0,5,2,2,2) << std::endl;
         }
        }
       }
@@ -2250,9 +2251,9 @@ uint64_t Petr2BC_hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t j
 }
 
 
-void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
+void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
 {
-    ifstream infilegz(filename, ios_base::in | ios_base::binary);
+    std::ifstream infilegz(filename, std::ios_base::in | std::ios_base::binary);
     boost::iostreams::filtering_istream infile;
     infile.push(boost::iostreams::gzip_decompressor());
     infile.push(infilegz);
@@ -2260,14 +2261,14 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
 
   if ( !infile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble opening file  !!!   **  " << filename<< endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble opening file  !!!   **  " << filename<< std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
   ModelSpace * modelspace = Op.GetModelSpace();
-  unordered_map<int,int> orbits_remap;
+  std::unordered_map<int,int> orbits_remap;
   int norb = modelspace->GetNumberOrbits();
   for (int i=0;i<norb;++i)
   {
@@ -2279,7 +2280,7 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
   }
 
 
-  string strbuf;
+  std::string strbuf;
   int J_op,T_op,ain,bin,cin,din,a,b,c,d,j12,t12,j34,t34,tza,tzb;
   double mat_el;
 
@@ -2378,19 +2379,19 @@ void ReadWrite::Read2bCurrent_Navratil( string filename, Operator& Op)
 }
 
 
-void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int Emax, int lmax)
+void ReadWrite::Write_me2j( std::string outfilename, Operator& Hbare, int emax, int Emax, int lmax)
 {
-  ofstream outfile(outfilename);
+  std::ofstream outfile(outfilename);
   if ( !outfile.good() )
   {
-     cerr << "************************************" << endl
-          << "**    Trouble opening file  !!!   **" << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble opening file  !!!   **" << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
   }
   ModelSpace * modelspace = Hbare.GetModelSpace();
-  vector<int> orbits_remap;
+  std::vector<int> orbits_remap;
 
   if (emax < 0)  emax = modelspace->GetEmax();
   if (lmax < 0)  lmax = emax;
@@ -2415,12 +2416,12 @@ void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int E
   float tbme_pp,tbme_nn,tbme_10,tbme_00;
   // skip the first line
   time_t time_now = chrono::system_clock::to_time_t(chrono::system_clock::now());
-//  outfile << "    generated by IMSRG code on " << ctime(&time_now)<< endl;
+//  outfile << "    generated by IMSRG code on " << ctime(&time_now)<< std::endl;
   outfile << "    generated by IMSRG code on " << ctime(&time_now);
   int icount = 0;
 
-  outfile << setiosflags(ios::fixed);
-  cout << "Writing file " << outfilename << "  emax =  " << emax << "  e2max = " << Emax << "  lmax = " << lmax << "  nljmax = " << nljmax << endl;
+  outfile << setiosflags(std::ios::fixed);
+  std::cout << "Writing file " << outfilename << "  emax =  " << emax << "  e2max = " << Emax << "  lmax = " << lmax << "  nljmax = " << nljmax << std::endl;
 
   for(int nlj1=0; nlj1<=nljmax; ++nlj1)
   {
@@ -2470,22 +2471,22 @@ void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int E
              outfile << setprecision(7) << setw(12) << tbme_00*norm_factor<< " "  ;
              if ((icount++)%10==9)
              {
-               outfile << endl;
+               outfile << std::endl;
              }
              outfile << setprecision(7) << setw(12) << tbme_nn<< " "  ;
              if ((icount++)%10==9)
              {
-               outfile << endl;
+               outfile << std::endl;
              }
              outfile << setprecision(7) << setw(12) << tbme_10*norm_factor << " "  ;
              if ((icount++)%10==9)
              {
-               outfile << endl;
+               outfile << std::endl;
              }
              outfile << setprecision(7) << setw(12) << tbme_pp << " "  ;
              if ((icount++)%10==9)
              {
-               outfile << endl;
+               outfile << std::endl;
              }
 
 
@@ -2494,7 +2495,7 @@ void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int E
       }
     }
   }
-  if (icount%10 !=9) outfile << endl;
+  if (icount%10 !=9) outfile << std::endl;
 
 }
 
@@ -2503,15 +2504,15 @@ void ReadWrite::Write_me2j( string outfilename, Operator& Hbare, int emax, int E
 
 
 
-void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2max, int E3max)
+void ReadWrite::Write_me3j( std::string ofilename, Operator& Hbare, int E1max, int E2max, int E3max)
 {
-  ofstream outfile(ofilename);
+  std::ofstream outfile(ofilename);
 
   if (Hbare.particle_rank < 3)
   {
-    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << endl;
-    cerr << " Oops. Looks like we're trying to write 3body matrix elements from a " << Hbare.particle_rank << "-body operator. For shame..." << endl;
-    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << endl;
+    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << std::endl;
+    cerr << " Oops. Looks like we're trying to write 3body matrix elements from a " << Hbare.particle_rank << "-body operator. For shame..." << std::endl;
+    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << std::endl;
     goodstate = false;
     return;
   }
@@ -2519,9 +2520,9 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
   int e1max = modelspace->GetEmax();
   int e2max = modelspace->GetE2max(); // not used yet
   int e3max = modelspace->GetE3max();
-  cout << "Writing 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << endl;
+  std::cout << "Writing 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << std::endl;
 
-  vector<int> orbits_remap(0);
+  std::vector<int> orbits_remap(0);
   int lmax = E1max; // haven't yet implemented the lmax truncation for 3body. Should be easy.
 
   for (int e=0; e<=min(E1max,e1max); ++e)
@@ -2541,8 +2542,8 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
   int nljmax = orbits_remap.size();
 
 
-  outfile << "(*** nsuite/me3b/v0.0.0 (Dec 22 2010) me3j-f2 ***)" << endl;
-  outfile << setiosflags(ios::fixed);
+  outfile << "(*** nsuite/me3b/v0.0.0 (Dec 22 2010) me3j-f2 ***)" << std::endl;
+  outfile << setiosflags(std::ios::fixed);
   // begin giant nested loops
   int icount = 0;
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
@@ -2636,8 +2637,8 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
 //                 ++useless_counter;
 //                 if (a<5 and b<5 and c<5 and d<5 and e<5 and f<5)
 //                 {
-//                 cout << "#" << useless_counter << "  " << a << "-" << b << "-" << c << "-" << "  " << d << "-" << e << "-" << f << "  "
-//                      << Jab << " " << JJab << " " << twoJC << endl;
+//                 std::cout << "#" << useless_counter << "  " << a << "-" << b << "-" << c << "-" << "  " << d << "-" << e << "-" << f << "  "
+//                      << Jab << " " << JJab << " " << twoJC << std::endl;
 //                 }
                  for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
                  {
@@ -2654,21 +2655,21 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
                     {
                       if ( abs(V) > 1e-4 )  // There may be some numerical noise from using floats and 6Js at the level of 1e-6. Ignore that.
                       {
-                         cout << "!!! Warning: <"
+                         std::cout << "!!! Warning: <"
                               << a << " " << b << " " << c << " || " << d << " " << e << " " << f << "> ("
                               << Jab << " " << JJab << " " << twoJC << ") , (" << tab << " " << ttab << " " << twoT
-                              <<") should be zero, but it's " << V << endl;
+                              <<") should be zero, but it's " << V << std::endl;
                       }
                       V = 0.0; // It should be zero, so set it to zero.
                     }
                     outfile << setprecision(7) << setw(12) << V << " "  ;
 //                    if ((icount++)%10==9)
-//                      outfile << endl;
+//                      outfile << std::endl;
                    }//twoT
                   }//ttab
                  }//tab
                  if (icount%10 == 5)
-                      outfile << endl;
+                      outfile << std::endl;
                  icount += 5;
 //                if (not infile.good() ) break;
                 }//twoJ
@@ -2683,7 +2684,7 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
       }
     }
   }
-  if (icount%10 !=9) outfile << endl;
+  if (icount%10 !=9) outfile << std::endl;
 
 }
 
@@ -2693,11 +2694,11 @@ void ReadWrite::Write_me3j( string ofilename, Operator& Hbare, int E1max, int E2
 
 
 
-void ReadWrite::WriteNuShellX_op(Operator& op, string filename)
+void ReadWrite::WriteNuShellX_op(Operator& op, std::string filename)
 {
   WriteNuShellX_intfile(op,filename,"op");
 }
-void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
+void ReadWrite::WriteNuShellX_int(Operator& op, std::string filename)
 {
   WriteNuShellX_intfile(op,filename,"int");
 }
@@ -2708,10 +2709,10 @@ void ReadWrite::WriteNuShellX_int(Operator& op, string filename)
 /// so that the pnpn interaction should be equal to the pnnp interaction.
 /// This is only approximately true for interactions generated with IMSRG,
 /// so some averaging is required.
-void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode)
+void ReadWrite::WriteNuShellX_intfile(Operator& op, std::string filename, std::string mode)
 {
-   ofstream intfile;
-   intfile.open(filename, ofstream::out);
+   std::ofstream intfile;
+   intfile.open(filename, std::ofstream::out);
    ModelSpace * modelspace = op.GetModelSpace();
 
    int wint = 4; // width for printing integers
@@ -2719,8 +2720,8 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode
    int pdouble = 6; // precision for printing doubles
 
    // valence protons are the intersection of valence orbits and protons orbits. Likewise for neutrons.
-   vector<int> valence_protons(modelspace->valence.size());
-   vector<int> valence_neutrons(modelspace->valence.size());
+   std::vector<int> valence_protons(modelspace->valence.size());
+   std::vector<int> valence_neutrons(modelspace->valence.size());
    auto it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->proton_orbits.begin(), modelspace->proton_orbits.end(),valence_protons.begin());
    valence_protons.resize(it-valence_protons.begin());
    it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->neutron_orbits.begin(), modelspace->neutron_orbits.end(),valence_neutrons.begin());
@@ -2744,31 +2745,31 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode
       Acore += oi.j2 + 1;
    }
 #ifdef BUILDVERSION
-   intfile << "! shell model effective interaction generated by IMSRG version " << BUILDVERSION << endl;
+   intfile << "! shell model effective interaction generated by IMSRG version " << BUILDVERSION << std::endl;
 #else
-   intfile << "! shell model effective interaction generated by IMSRG" << endl;
+   intfile << "! shell model effective interaction generated by IMSRG" << std::endl;
 #endif
 
-   intfile << "! input 2N: " << File2N.substr( File2N.find_last_of("/\\")+1 ) << endl;
-   intfile << "! input 3N: " << File3N.substr( File3N.find_last_of("/\\")+1 ) << endl;
+   intfile << "! input 2N: " << File2N.substr( File2N.find_last_of("/\\")+1 ) << std::endl;
+   intfile << "! input 3N: " << File3N.substr( File3N.find_last_of("/\\")+1 ) << std::endl;
    intfile << "! e1max: " << modelspace->GetEmax() << "  e2max: " << modelspace->GetE2max() << "   e3max: " << modelspace->GetE3max() << "   hw: " << modelspace->GetHbarOmega();
-   intfile << "   Aref: " << Aref << "  Zref: " << Zref << "  A_for_kinetic_energy: " << modelspace->GetTargetMass() << endl;
-   intfile << "! Zero body term: " << op.ZeroBody << endl;
-   intfile << "! Index   n l j tz" << endl;
+   intfile << "   Aref: " << Aref << "  Zref: " << Zref << "  A_for_kinetic_energy: " << modelspace->GetTargetMass() << std::endl;
+   intfile << "! Zero body term: " << op.ZeroBody << std::endl;
+   intfile << "! Index   n l j tz" << std::endl;
 
    for ( auto& it : nushell2orb )
    {
       Orbit& oi = modelspace->GetOrbit(it.second);
-      intfile << "!  " << it.first << "   " << oi.n << " " << oi.l << " " << oi.j2 << "/2" << " " << oi.tz2 << "/2" << endl;
+      intfile << "!  " << it.first << "   " << oi.n << " " << oi.l << " " << oi.j2 << "/2" << " " << oi.tz2 << "/2" << std::endl;
    }
-   intfile << "!" << endl;
+   intfile << "!" << std::endl;
    intfile << "-999  ";
    for ( auto& it : nushell2orb )
    {
       intfile << op.OneBody(it.second,it.second) << "  ";
    }
 
-   intfile << "  " << Acore << "  " << Acore+2 << "  0.00000 " << endl; // No mass dependence for now...
+   intfile << "  " << Acore << "  " << Acore+2 << "  0.00000 " << std::endl; // No mass dependence for now...
 
    int nchan = modelspace->GetNumberTwoBodyChannels();
    for (int ch=0;ch<nchan;++ch)
@@ -2839,8 +2840,8 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode
 
             intfile  << setw(wint) << a_ind << setw(wint) << b_ind << setw(wint) << c_ind << setw(wint) << d_ind << "    "
                      << setw(wint) << tbc.J << " " << setw(wint) << T     << "       "
-                     << setw(wdouble) << setiosflags(ios::fixed) << setprecision(pdouble) << tbme
-                     << endl;
+                     << setw(wdouble) << setiosflags(std::ios::fixed) << setprecision(pdouble) << tbme
+                     << std::endl;
          }
       }
    }
@@ -2852,15 +2853,15 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, string filename, string mode
 
 
 /// Write the valence model space to a NuShellX *.sp file.
-void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
+void ReadWrite::WriteNuShellX_sps(Operator& op, std::string filename)
 {
-   ofstream spfile;
-   spfile.open(filename, ofstream::out);
+   std::ofstream spfile;
+   spfile.open(filename, std::ofstream::out);
    ModelSpace * modelspace = op.GetModelSpace();
 
    // valence protons are the intersection of valence orbits and protons orbits. Likewise for neutrons.
-   vector<int> valence_protons(modelspace->valence.size());
-   vector<int> valence_neutrons(modelspace->valence.size());
+   std::vector<int> valence_protons(modelspace->valence.size());
+   std::vector<int> valence_neutrons(modelspace->valence.size());
    auto it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->proton_orbits.begin(), modelspace->proton_orbits.end(),valence_protons.begin());
    valence_protons.resize(it-valence_protons.begin());
    it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->neutron_orbits.begin(), modelspace->neutron_orbits.end(),valence_neutrons.begin());
@@ -2888,33 +2889,33 @@ void ReadWrite::WriteNuShellX_sps(Operator& op, string filename)
    }
 
    // Write to file. In NuShellX convention, radial QN n starts at 1
-   spfile << "! modelspace for IMSRG interaction" << endl;
-   spfile << "pn" << endl; // proton-neutron formalism
-   spfile << Acore << " " << Zcore << endl;
-   spfile << modelspace->valence.size() << endl;
-   spfile << "2 " << valence_protons.size() << " " << valence_neutrons.size() << endl;
+   spfile << "! modelspace for IMSRG interaction" << std::endl;
+   spfile << "pn" << std::endl; // proton-neutron formalism
+   spfile << Acore << " " << Zcore << std::endl;
+   spfile << modelspace->valence.size() << std::endl;
+   spfile << "2 " << valence_protons.size() << " " << valence_neutrons.size() << std::endl;
 
    for (auto& it : nushell2orb )
    {
      Orbit& oi = modelspace->GetOrbit(it.second);
-     spfile << it.first << " " << oi.n+1 << " " << oi.l << " " << oi.j2 << endl;
+     spfile << it.first << " " << oi.n+1 << " " << oi.l << " " << oi.j2 << std::endl;
    }
 
-   spfile << endl;
+   spfile << std::endl;
    spfile.close();
 
 }
 
 
-void ReadWrite::ReadNuShellX_int(Operator& op, string filename)
+void ReadWrite::ReadNuShellX_int(Operator& op, std::string filename)
 {
   ModelSpace* modelspace = op.GetModelSpace();
-  ifstream intfile(filename);
+  std::ifstream intfile(filename);
   char line[500];
   while(intfile.getline(line,500))
   {
     if (line[0] != '!') break;
-    string linestr(line);
+    std::string linestr(line);
     if ( linestr.find("Index") != std::string::npos ) break;
   }
   map<index_t,index_t> orbit_map;
@@ -2924,12 +2925,12 @@ void ReadWrite::ReadNuShellX_int(Operator& op, string filename)
     char exclamation_point;
     index_t indx;
     int n,l,j2,tz2;
-    string j,tz;
-    string linestr(line);
+    std::string j,tz;
+    std::string linestr(line);
     if ( linestr.find("/") == std::string::npos ) break;
-    istringstream(line) >> exclamation_point >> indx >> n >> l >> j >> tz;
-    istringstream(j.substr(0,j.find("/")-j.front())) >> j2;
-    istringstream(tz.substr(0,j.find("/")-tz.front())) >> tz2;
+    std::istringstream(line) >> exclamation_point >> indx >> n >> l >> j >> tz;
+    std::istringstream(j.substr(0,j.find("/")-j.front())) >> j2;
+    std::istringstream(tz.substr(0,j.find("/")-tz.front())) >> tz2;
     orbit_map[indx] = modelspace->GetOrbitIndex(n,l,j2,tz2);
   }
 
@@ -2945,7 +2946,7 @@ void ReadWrite::ReadNuShellX_int(Operator& op, string filename)
   intfile >> acore_nushell >> a0_nushell >> exp_nushell;
   double scalefactor = pow( a0_nushell / modelspace->GetAref(), exp_nushell) ;
 //  for (int i=0;i<3;++i) intfile >> dummy; // A-dependence parameters
-//  cout << op.OneBody << endl;
+//  std::cout << op.OneBody << std::endl;
   int a,b,c,d,J,Tprime;
   double V;
   while( intfile >> a >> b >> c >> d >> J >> Tprime >> V)
@@ -2967,15 +2968,15 @@ void ReadWrite::ReadNuShellX_int(Operator& op, string filename)
 }
 
 
-void ReadWrite::ReadNuShellX_int_iso(Operator& op, string filename)
+void ReadWrite::ReadNuShellX_int_iso(Operator& op, std::string filename)
 {
   ModelSpace* modelspace = op.GetModelSpace();
-  ifstream intfile(filename);
+  std::ifstream intfile(filename);
   char line[500];
   while(intfile.getline(line,500))
   {
     if (line[0] != '!') break;
-    string linestr(line);
+    std::string linestr(line);
     if ( linestr.find("Index") != std::string::npos ) break;
   }
   map<index_t,index_t> orbit_map;
@@ -2985,32 +2986,32 @@ void ReadWrite::ReadNuShellX_int_iso(Operator& op, string filename)
     char exclamation_point;
     index_t indx;
     int n,l,j2,tz2;
-    string j,tz;
-    string linestr(line);
+    std::string j,tz;
+    std::string linestr(line);
     if ( linestr.find("/") == std::string::npos ) break;
-    istringstream(line) >> exclamation_point >> indx >> n >> l >> j >> tz;
-    istringstream(j.substr(0,j.find("/")-j.front())) >> j2;
-    istringstream(tz.substr(0,j.find("/")-tz.front())) >> tz2;
+    std::istringstream(line) >> exclamation_point >> indx >> n >> l >> j >> tz;
+    std::istringstream(j.substr(0,j.find("/")-j.front())) >> j2;
+    std::istringstream(tz.substr(0,j.find("/")-tz.front())) >> tz2;
     orbit_map[indx] = modelspace->GetOrbitIndex(n,l,j2,-1);
   }
 
   double dummy;
   intfile >> dummy; // read the -999 that doesn't mean anything
-//  cout << " Reading SPE line" << endl;
+//  std::cout << " Reading SPE line" << std::endl;
   for (auto& orb : orbit_map )
   {
     intfile >> dummy;
     op.OneBody(orb.second,orb.second) = dummy;
     op.OneBody(orb.second+1,orb.second+1) = dummy;
-//    cout << orb.second << " " << dummy << endl;
+//    std::cout << orb.second << " " << dummy << std::endl;
   }
 
   double acore_nushell, a0_nushell, exp_nushell;
   intfile >> acore_nushell >> a0_nushell >> exp_nushell;
   double scalefactor = pow( a0_nushell / modelspace->GetAref(), exp_nushell) ;
-//  cout << "acore_nushell = " << acore_nushell << "   a0_nushell = " << a0_nushell << "  exp_nushell = " << exp_nushell << endl;
+//  std::cout << "acore_nushell = " << acore_nushell << "   a0_nushell = " << a0_nushell << "  exp_nushell = " << exp_nushell << std::endl;
 //  for (int i=0;i<3;++i) intfile >> dummy; // A-dependence parameters
-//  cout << op.OneBody << endl;
+//  std::cout << op.OneBody << std::endl;
   uint64_t a,b,c,d,J,T;
   double V;
   map<uint64_t,double> IsoTBME;
@@ -3018,7 +3019,7 @@ void ReadWrite::ReadNuShellX_int_iso(Operator& op, string filename)
   {
     V *= scalefactor;
     uint64_t hashkey = ( ((uint64_t) J) + ((uint64_t)T<<10) + (a<<20) + (b<<30) + (c<<40) + (d<<50)  );
-//    cout << "setting " << a << " " << b << " " << c << " " << d << " " << J << " " << T << " ->  "<< hashkey << "   " << V << endl;
+//    std::cout << "setting " << a << " " << b << " " << c << " " << d << " " << J << " " << T << " ->  "<< hashkey << "   " << V << std::endl;
     IsoTBME[hashkey] = V;
   }
 
@@ -3042,7 +3043,7 @@ void ReadWrite::ReadNuShellX_int_iso(Operator& op, string filename)
         uint64_t hashT0 = ( J + (0L<<10) + (a_indx.first<<20) + (b_indx.first<<30) + (c_indx.first<<40) + (d_indx.first<<50) );
         double V1 = IsoTBME[hashT1];
         double V0 = IsoTBME[hashT0];
-//        cout << J << " " <<  a_indx.first   << " " <<    b_indx.first << " " <<    c_indx.first << " " <<    d_indx.first << "     " << hashT1 << ": " <<    V1 << "   " << hashT0 << "  " << V0 << endl;
+//        std::cout << J << " " <<  a_indx.first   << " " <<    b_indx.first << " " <<    c_indx.first << " " <<    d_indx.first << "     " << hashT1 << ": " <<    V1 << "   " << hashT0 << "  " << V0 << std::endl;
         double Vpp = V1;
         double Vpnpn = (V1 + V0) * 0.5;
         double Vpnnp = (V1 - V0) * 0.5;
@@ -3051,29 +3052,29 @@ void ReadWrite::ReadNuShellX_int_iso(Operator& op, string filename)
 
         if ( abs(Vpp)>1e-6 )
         {
-//        cout << "Vnn: " << J << " " <<  a_indx.second   << " " <<    b_indx.second << " " <<    c_indx.second << " " <<    d_indx.second << " " <<    Vpp << endl;
+//        std::cout << "Vnn: " << J << " " <<  a_indx.second   << " " <<    b_indx.second << " " <<    c_indx.second << " " <<    d_indx.second << " " <<    Vpp << std::endl;
         op.TwoBody.SetTBME_J(J, a_indx.second,   b_indx.second,   c_indx.second,   d_indx.second,   Vpp);
-//        cout << "Vpp: " << J << " " <<  a_indx.second+1 << " " <<    b_indx.second+1 << " " <<  c_indx.second+1 << " " <<  d_indx.second+1 << " " <<  Vpp<< endl;
+//        std::cout << "Vpp: " << J << " " <<  a_indx.second+1 << " " <<    b_indx.second+1 << " " <<  c_indx.second+1 << " " <<  d_indx.second+1 << " " <<  Vpp<< std::endl;
         op.TwoBody.SetTBME_J(J, a_indx.second+1, b_indx.second+1, c_indx.second+1, d_indx.second+1, Vpp);
         }
         if (abs(Vpnpn)>1e-6)
         {
-//        cout << "Vpnpn: " << J << " " <<  a_indx.second+1 << " " <<    b_indx.second << " " <<    c_indx.second+1 << " " <<  d_indx.second << " " <<    Vpnpn<< endl;
+//        std::cout << "Vpnpn: " << J << " " <<  a_indx.second+1 << " " <<    b_indx.second << " " <<    c_indx.second+1 << " " <<  d_indx.second << " " <<    Vpnpn<< std::endl;
         op.TwoBody.SetTBME_J(J, a_indx.second+1, b_indx.second,   c_indx.second+1, d_indx.second,   Vpnpn);
         }
         if (abs(Vpnnp)>1e-6)
         {
-//        cout << "Vpnnp: " << J << " " <<  a_indx.second+1 << " " <<    b_indx.second << " " <<    c_indx.second << " " <<    d_indx.second+1 << " " <<  Vpnnp<< endl;
+//        std::cout << "Vpnnp: " << J << " " <<  a_indx.second+1 << " " <<    b_indx.second << " " <<    c_indx.second << " " <<    d_indx.second+1 << " " <<  Vpnnp<< std::endl;
         op.TwoBody.SetTBME_J(J, a_indx.second+1, b_indx.second,   c_indx.second,   d_indx.second+1, Vpnnp);
         }
         if (abs(Vnppn)>1e-6)
         {
-//        cout << "Vnppn: " << J << " " <<  a_indx.second   << " " <<    b_indx.second+1 << " " <<  c_indx.second+1 << " " <<  d_indx.second << " " <<    Vnppn<< endl;
+//        std::cout << "Vnppn: " << J << " " <<  a_indx.second   << " " <<    b_indx.second+1 << " " <<  c_indx.second+1 << " " <<  d_indx.second << " " <<    Vnppn<< std::endl;
         op.TwoBody.SetTBME_J(J, a_indx.second,   b_indx.second+1, c_indx.second+1, d_indx.second,   Vnppn);
         }
         if (abs(Vnpnp)>1e-6)
         {
-//        cout << "Vnpnp: " << J << " " <<  a_indx.second   << " " <<    b_indx.second+1 << " " <<  c_indx.second << " " <<    d_indx.second+1 << " " <<  Vnpnp<< endl;
+//        std::cout << "Vnpnp: " << J << " " <<  a_indx.second   << " " <<    b_indx.second+1 << " " <<  c_indx.second << " " <<    d_indx.second+1 << " " <<  Vnpnp<< std::endl;
         op.TwoBody.SetTBME_J(J, a_indx.second,   b_indx.second+1, c_indx.second,   d_indx.second+1, Vnpnp);
         }
       }
@@ -3088,20 +3089,20 @@ void ReadWrite::ReadNuShellX_int_iso(Operator& op, string filename)
 
 
 /// This now appears to be working properly
-void ReadWrite::WriteAntoine_int(Operator& op, string filename)
+void ReadWrite::WriteAntoine_int(Operator& op, std::string filename)
 {
-   ofstream intfile;
-   intfile.open(filename, ofstream::out);
+   std::ofstream intfile;
+   intfile.open(filename, std::ofstream::out);
    ModelSpace * modelspace = op.GetModelSpace();
    int nvalence_orbits = modelspace->valence.size();
    int Acore = modelspace->GetAref(); // Final interaction should have ref = core
    int Zcore = modelspace->GetAref(); // Final interaction should have ref = core
    int idens = 0; // no density dependence
-   string title = "IMSRG INTERACTION";
+   std::string title = "IMSRG INTERACTION";
 
-   vector<int> nlj_labels; // list of antoine-style nlj labels
+   std::vector<int> nlj_labels; // list of antoine-style nlj labels
    map<index_t,index_t> orbit_map; // map from index number to nlj index
-   vector<double> spe(nvalence_orbits,0.0); // one-body terms
+   std::vector<double> spe(nvalence_orbits,0.0); // one-body terms
    for (auto& v : modelspace->valence)
    {
      Orbit& ov = modelspace->GetOrbit(v);
@@ -3113,19 +3114,19 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
      spe[orbit_map[v]] = op.OneBody(v,v);
    }
 
-   intfile << title << endl;
+   intfile << title << std::endl;
    // 2 indicates pn treated separately
    intfile << "2 " << nvalence_orbits << " ";
    // write NLJ of the orbits
    for (auto& nlj : nlj_labels) intfile << nlj << " ";
-   intfile << endl;
+   intfile << std::endl;
    // write SPEs
    for (auto& s : spe) intfile << " " << s;
-   intfile << endl;
+   intfile << std::endl;
    for (auto& s : spe) intfile << " " << s;
-   intfile << endl;
+   intfile << std::endl;
    // No density dependence
-   intfile << idens << " " << Zcore << " " << Acore-Zcore << " " << 0.0 << " " << 0.0 << endl;
+   intfile << idens << " " << Zcore << " " << Acore-Zcore << " " << 0.0 << " " << 0.0 << std::endl;
 
    // Start loop over TBMEs
    for (auto a : modelspace->valence)
@@ -3151,7 +3152,7 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
            if (oc.tz2==od.tz2 and (d<c or (c==a and d<b))) continue;
            if ((oa.tz2+ob.tz2) != (oc.tz2+od.tz2) ) continue;
            if ( (oa.l+ob.l+oc.l+od.l)%2>0 ) continue;
-//           cout << a << " " << b << " " << c << " " << d << endl;
+//           std::cout << a << " " << b << " " << c << " " << d << std::endl;
            int nljd = nlj_labels[orbit_map[d]];
            int Tmin = abs(oa.tz2+ob.tz2) -1; // -1 means pn, 1 means pp or nn. T loop goes abs(Tmin) to Tmax
            int Tmax = 1; // always 1.
@@ -3159,13 +3160,13 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
            int Jmax = min(oa.j2+ob.j2,oc.j2+od.j2)/2;
            if (Jmin<=Jmax)
            {
-             intfile << setw(2) << Tmin << " " << setw(2) << Tmax << " " << nlja << " " << nljb << " " << nljc << " " << nljd << " " << setw(2) << Jmin << " " << setw(2) << Jmax << endl;
+             intfile << setw(2) << Tmin << " " << setw(2) << Tmax << " " << nlja << " " << nljb << " " << nljc << " " << nljd << " " << setw(2) << Jmin << " " << setw(2) << Jmax << std::endl;
              for (int J=Jmin;J<=Jmax;++J)
              {
-                intfile.setf(std::ios::fixed, std:: ios::floatfield );
+                intfile.setf(std::ios::fixed, std::ios::floatfield );
                 intfile << " " << setw(10) << setprecision(6) <<  op.TwoBody.GetTBME_J_norm(J, a, b, c, d);
              }
-             intfile << endl;
+             intfile << std::endl;
            }
          }
        }
@@ -3176,10 +3177,10 @@ void ReadWrite::WriteAntoine_int(Operator& op, string filename)
 
 
 /// Generate an input file for antoine, which may be edited afterwards if need be
-void ReadWrite::WriteAntoine_input(Operator& op, string filename,int A, int Z)
+void ReadWrite::WriteAntoine_input(Operator& op, std::string filename,int A, int Z)
 {
-   ofstream inputfile;
-   inputfile.open(filename, ofstream::out);
+   std::ofstream inputfile;
+   inputfile.open(filename, std::ofstream::out);
    ModelSpace * modelspace = op.GetModelSpace();
 //   int nvalence_orbits = modelspace->valence.size();
    int Acore = modelspace->GetAref(); // Final interaction should have ref = core
@@ -3187,11 +3188,11 @@ void ReadWrite::WriteAntoine_input(Operator& op, string filename,int A, int Z)
    int Aval = A-Acore;
    int Zval = Z-Zcore; 
    int MPRO = Aval%2; // M projection to use
-   vector<int> JVAL = {MPRO,MPRO+2,MPRO+4,MPRO+6}; // 2*J values to calculate
+   std::vector<int> JVAL = {MPRO,MPRO+2,MPRO+4,MPRO+6}; // 2*J values to calculate
    int N_for_each_J = 2; // number to calculate for each J. This could be different for each, if desired.
 
-   vector<int> proton_shells;
-   vector<int> neutron_shells;
+   std::vector<int> proton_shells;
+   std::vector<int> neutron_shells;
 
    for (auto& v : modelspace->valence)
    {
@@ -3207,82 +3208,82 @@ void ReadWrite::WriteAntoine_input(Operator& op, string filename,int A, int Z)
    int CAS = 4; // usual Lanczos calculation with random pivot
 //   int KTEXT = 1; // will there be a name given?
    int KTEXT = 0; // will there be a name given?
-   string TEXT = "IMSRG"; // name that goes somewhere?
+   std::string TEXT = "IMSRG"; // name that goes somewhere?
    int IPRI = 0; // printing option. IPRI=1 prints more stuff
 
-//   inputfile << CAS << " " << KTEXT << " " << IPRI << " " << TEXT << endl;
-   inputfile << CAS << " " << KTEXT << " " << IPRI << endl;
+//   inputfile << CAS << " " << KTEXT << " " << IPRI << " " << TEXT << std::endl;
+   inputfile << CAS << " " << KTEXT << " " << IPRI << std::endl;
    
-   int Fil1 = 50; // file where we write vectors
-   int NLEC1 = 0; // number of vectors read at the beginning
-   int NCAL = JVAL.size(); // number of vectors to treat. 0 means "all"
+   int Fil1 = 50; // file where we write std::vectors
+   int NLEC1 = 0; // number of std::vectors read at the beginning
+   int NCAL = JVAL.size(); // number of std::vectors to treat. 0 means "all"
    
-   inputfile  << Fil1 << " " << NLEC1 << " " << NCAL << endl;
+   inputfile  << Fil1 << " " << NLEC1 << " " << NCAL << std::endl;
 
    // do protons first
    inputfile << Zval << " " << proton_shells.size();
    for (auto& p : proton_shells ) inputfile << " " << p;
    for (size_t i=0;i<proton_shells.size();++i ) inputfile << " " << 0; // weight factors for orbits
-   inputfile << " " << 0 << endl; // SAUT = maximum weight factor for protons
+   inputfile << " " << 0 << std::endl; // SAUT = maximum weight factor for protons
 
    // do neutrons second
    inputfile << Aval-Zval << " " << proton_shells.size();
    for (auto& n : neutron_shells ) inputfile << " " << n;
    for (size_t i=0;i<neutron_shells.size();++i ) inputfile << " " << 0; // weight factors for orbits
-   inputfile << " " << 0 << endl; // SAUT = maximum weight factor for neutrons
+   inputfile << " " << 0 << std::endl; // SAUT = maximum weight factor for neutrons
 
    int PARI = ((Zval%2) * (proton_shells[0]%1000)/100 + ((Aval-Zval)%2) * (neutron_shells[0]%1000)/100 )%2; // parity. 0=+ , 1=-. make a reasonable guess.
    int JUMP = 0; // maximum weight factor for protons + neutrons
 
-   inputfile << " " << MPRO << " " << PARI << " " << JUMP << endl;
+   inputfile << " " << MPRO << " " << PARI << " " << JUMP << std::endl;
 
    int FLNUC = 90; // file number for hamiltonian file
    int COUL = 0; // 0 means no Coulomb. we'll do that ourselves, thank you.
-   inputfile << FLNUC << " " << COUL << endl;
+   inputfile << FLNUC << " " << COUL << std::endl;
 
    for (auto jv : JVAL) inputfile << jv << " ";
-   inputfile << endl;
+   inputfile << std::endl;
    for (size_t i=0;i<JVAL.size();++i) inputfile << N_for_each_J << " ";
-   inputfile << endl;
+   inputfile << std::endl;
 
    int NLOOP = 200; // maximum number of lanczos iterations
    double ZFIT = 0.0005;  // test of convergence
-   int ORTH = 0; // orthogonalize each state to all states in the vector. usual is 0=no
-   inputfile << NLOOP << " "<< ZFIT << " " << ORTH << endl;
+   int ORTH = 0; // orthogonalize each state to all states in the std::vector. usual is 0=no
+   inputfile << NLOOP << " "<< ZFIT << " " << ORTH << std::endl;
 
 }
 
 
 
 /// Write an operator to a plain-text file
-void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
+void ReadWrite::WriteOperatorHuman(Operator& op, std::string filename)
 {
-   ofstream opfile;
-   opfile.open(filename, ofstream::out);
+   std::ofstream opfile;
+   opfile.open(filename, std::ofstream::out);
    if (not opfile.good() )
    {
-     cout << "Trouble opening " << filename << ". Aborting WriteOperator." << endl;
+     std::cout << "Trouble opening " << filename << ". Aborting WriteOperator." << std::endl;
      return;
    }
    ModelSpace * modelspace = op.GetModelSpace();
 
    if (op.IsHermitian() )
    {
-      opfile << "Hermitian" << endl;
+      opfile << "Hermitian" << std::endl;
    }
    else if (op.IsAntiHermitian())
    {
-      opfile << "Anti-Hermitian" << endl;
+      opfile << "Anti-Hermitian" << std::endl;
    }
    else
    {
-      opfile << "Non-Hermitian" << endl;
+      opfile << "Non-Hermitian" << std::endl;
    }
-   opfile << op.GetJRank() << "  " << op.GetTRank() << "  " << op.GetParity() << endl;
+   opfile << op.GetJRank() << "  " << op.GetTRank() << "  " << op.GetParity() << std::endl;
 
-   opfile << "$ZeroBody:\t" << setprecision(10) << op.ZeroBody << endl;
+   opfile << "$ZeroBody:\t" << setprecision(10) << op.ZeroBody << std::endl;
 
-   opfile << "$OneBody:\t" << endl;
+   opfile << "$OneBody:\t" << std::endl;
 
    int norb = modelspace->GetNumberOrbits();
    for (int i=0;i<norb;++i)
@@ -3291,11 +3292,11 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
       for (int j=jmin;j<norb;++j)
       {
          if (abs(op.OneBody(i,j)) > 0)
-            opfile << fixed << setw(3) << i << "\t" << fixed << setw(3) << j << "\t" << fixed << setw(18) << setprecision(12) << op.OneBody(i,j) << endl;
+            opfile << fixed << setw(3) << i << "\t" << fixed << setw(3) << j << "\t" << fixed << setw(18) << setprecision(12) << op.OneBody(i,j) << std::endl;
       }
    }
 
-   opfile <<  "$TwoBody:\t"  << endl;
+   opfile <<  "$TwoBody:\t"  << std::endl;
 
    for ( auto& it : op.TwoBody.MatEl )
    {
@@ -3319,7 +3320,7 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
              opfile << setw(2) << tbc_bra.J << " " << setw(2) << tbc_bra.parity << " " << setw(3) << tbc_bra.Tz  << "    "
                     << setw(2) << tbc_ket.J << " " << setw(2) << tbc_ket.parity << " "  << setw(3) << tbc_ket.Tz  << "    "
                   << setw(3) << bra.p << " "  << setw(3) << bra.q  << " "  << setw(3) << ket.p << " "  << setw(3) << ket.q  << "   "
-                  << fixed << setw(18) << setprecision(12) << tbme << endl;
+                  << fixed << setw(18) << setprecision(12) << tbme << std::endl;
            }
         }
       }
@@ -3334,34 +3335,34 @@ void ReadWrite::WriteOperatorHuman(Operator& op, string filename)
 
 
 /// Write an operator to a plain-text file
-void ReadWrite::WriteOperator(Operator& op, string filename)
+void ReadWrite::WriteOperator(Operator& op, std::string filename)
 {
-   ofstream opfile;
-   opfile.open(filename, ofstream::out);
+   std::ofstream opfile;
+   opfile.open(filename, std::ofstream::out);
    if (not opfile.good() )
    {
-     cout << "Trouble opening " << filename << ". Aborting WriteOperator." << endl;
+     std::cout << "Trouble opening " << filename << ". Aborting WriteOperator." << std::endl;
      return;
    }
    ModelSpace * modelspace = op.GetModelSpace();
 
    if (op.IsHermitian() )
    {
-      opfile << "Hermitian" << endl;
+      opfile << "Hermitian" << std::endl;
    }
    else if (op.IsAntiHermitian())
    {
-      opfile << "Anti-Hermitian" << endl;
+      opfile << "Anti-Hermitian" << std::endl;
    }
    else
    {
-      opfile << "Non-Hermitian" << endl;
+      opfile << "Non-Hermitian" << std::endl;
    }
-   opfile << op.GetJRank() << "  " << op.GetTRank() << "  " << op.GetParity() << endl;
+   opfile << op.GetJRank() << "  " << op.GetTRank() << "  " << op.GetParity() << std::endl;
 
-   opfile << "$ZeroBody:\t" << setprecision(10) << op.ZeroBody << endl;
+   opfile << "$ZeroBody:\t" << setprecision(10) << op.ZeroBody << std::endl;
 
-   opfile << "$OneBody:\t" << endl;
+   opfile << "$OneBody:\t" << std::endl;
 
    int norb = modelspace->GetNumberOrbits();
    for (int i=0;i<norb;++i)
@@ -3370,11 +3371,11 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
       for (int j=jmin;j<norb;++j)
       {
          if (abs(op.OneBody(i,j)) > 0)
-            opfile << i << "\t" << j << "\t" << setprecision(10) << op.OneBody(i,j) << endl;
+            opfile << i << "\t" << j << "\t" << setprecision(10) << op.OneBody(i,j) << std::endl;
       }
    }
 
-   opfile <<  "$TwoBody:\t"  << endl;
+   opfile <<  "$TwoBody:\t"  << std::endl;
 
    for ( auto& it : op.TwoBody.MatEl )
    {
@@ -3391,7 +3392,7 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
            {
              opfile << setw(4) << chbra << " " << setw(4) << chket << "   "
                   << setw(4) << ibra  << " " << setw(4) << iket  << "   "
-                  << setw(10) << setprecision(6) << tbme << endl;
+                  << setw(10) << setprecision(6) << tbme << std::endl;
            }
         }
       }
@@ -3402,29 +3403,29 @@ void ReadWrite::WriteOperator(Operator& op, string filename)
 }
 
 /// Read an operator from a plain-text file
-void ReadWrite::ReadOperator(Operator &op, string filename)
+void ReadWrite::ReadOperator(Operator &op, std::string filename)
 {
-   ifstream opfile;
+   std::ifstream opfile;
    opfile.open(filename);
    if (not opfile.good() )
    {
-     cerr << "************************************" << endl
-          << "**    Trouble reading file  !!!   **" << filename << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble reading file  !!!   **" << filename << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
    }
 
-   string tmpstring;
+   std::string tmpstr;
    int i,j,chbra,chket;
    double v;
 
-   opfile >> tmpstring;
-   if (tmpstring == "Hermitian")
+   opfile >> tmpstr;
+   if (tmpstr == "Hermitian")
    {
       op.SetHermitian();
    }
-   else if (tmpstring == "Anti-Hermitian")
+   else if (tmpstr == "Anti-Hermitian")
    {
       op.SetAntiHermitian();
    }
@@ -3435,22 +3436,22 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
    int jrank,trank,parity;
    opfile >> jrank >> trank >> parity;
 
-   opfile >> tmpstring >> v;
+   opfile >> tmpstr >> v;
    op.ZeroBody = v;
 
-   getline(opfile, tmpstring);
-   getline(opfile, tmpstring);
-   getline(opfile, tmpstring);
-   while (tmpstring[0] != '$')
+   getline(opfile, tmpstr);
+   getline(opfile, tmpstr);
+   getline(opfile, tmpstr);
+   while (tmpstr[0] != '$')
    {
-      stringstream ss(tmpstring);
+      std::stringstream ss(tmpstr);
       ss >> i >> j >> v;
       op.OneBody(i,j) = v;
       if ( op.IsHermitian() )
          op.OneBody(j,i) = v;
       else if ( op.IsAntiHermitian() )
          op.OneBody(j,i) = -v;
-      getline(opfile, tmpstring);
+      getline(opfile, tmpstr);
    }
 
   while(opfile >> chbra >> chket >> i >> j >> v)
@@ -3463,29 +3464,29 @@ void ReadWrite::ReadOperator(Operator &op, string filename)
 }
 
 /// Read an operator from a plain-text file
-void ReadWrite::ReadOperatorHuman(Operator &op, string filename)
+void ReadWrite::ReadOperatorHuman(Operator &op, std::string filename)
 {
-   ifstream opfile;
+   std::ifstream opfile;
    opfile.open(filename);
    if (not opfile.good() )
    {
-     cerr << "************************************" << endl
-          << "**    Trouble reading file  !!!   **" << filename << endl
-          << "************************************" << endl;
+     cerr << "************************************" << std::endl
+          << "**    Trouble reading file  !!!   **" << filename << std::endl
+          << "************************************" << std::endl;
      goodstate = false;
      return;
    }
 
-   string tmpstring;
+   std::string tmpstr;
    int i,j,k,l,Jbra,Jket,pbra,pket,Tzbra,Tzket;
    double v;
 
-   opfile >> tmpstring;
-   if (tmpstring == "Hermitian")
+   opfile >> tmpstr;
+   if (tmpstr == "Hermitian")
    {
       op.SetHermitian();
    }
-   else if (tmpstring == "Anti-Hermitian")
+   else if (tmpstr == "Anti-Hermitian")
    {
       op.SetAntiHermitian();
    }
@@ -3496,22 +3497,22 @@ void ReadWrite::ReadOperatorHuman(Operator &op, string filename)
    int jrank,trank,parity;
    opfile >> jrank >> trank >> parity;
 
-   opfile >> tmpstring >> v;
+   opfile >> tmpstr >> v;
    op.ZeroBody = v;
 
-   getline(opfile, tmpstring);
-   getline(opfile, tmpstring);
-   getline(opfile, tmpstring);
-   while (tmpstring[0] != '$')
+   getline(opfile, tmpstr);
+   getline(opfile, tmpstr);
+   getline(opfile, tmpstr);
+   while (tmpstr[0] != '$')
    {
-      stringstream ss(tmpstring);
+      std::stringstream ss(tmpstr);
       ss >> i >> j >> v;
       op.OneBody(i,j) = v;
       if ( op.IsHermitian() )
          op.OneBody(j,i) = v;
       else if ( op.IsAntiHermitian() )
          op.OneBody(j,i) = -v;
-      getline(opfile, tmpstring);
+      getline(opfile, tmpstr);
    }
 
 //  while(opfile >> chbra >> chket >> i >> j >> v)
@@ -3528,34 +3529,34 @@ void ReadWrite::ReadOperatorHuman(Operator &op, string filename)
 
 
 /// Write an operator to a plain-text file
-void ReadWrite::CompareOperators(Operator& op1, Operator& op2, string filename)
+void ReadWrite::CompareOperators(Operator& op1, Operator& op2, std::string filename)
 {
-   ofstream opfile;
-   opfile.open(filename, ofstream::out);
+   std::ofstream opfile;
+   opfile.open(filename, std::ofstream::out);
    if (not opfile.good() )
    {
-     cout << "Trouble opening " << filename << ". Aborting WriteOperator." << endl;
+     std::cout << "Trouble opening " << filename << ". Aborting WriteOperator." << std::endl;
      return;
    }
    ModelSpace * modelspace = op1.GetModelSpace();
 
    if (op1.IsHermitian() )
    {
-      opfile << "Hermitian" << endl;
+      opfile << "Hermitian" << std::endl;
    }
    else if (op1.IsAntiHermitian())
    {
-      opfile << "Anti-Hermitian" << endl;
+      opfile << "Anti-Hermitian" << std::endl;
    }
    else
    {
-      opfile << "Non-Hermitian" << endl;
+      opfile << "Non-Hermitian" << std::endl;
    }
-   opfile << op1.GetJRank() << "  " << op1.GetTRank() << "  " << op1.GetParity() << endl;
+   opfile << op1.GetJRank() << "  " << op1.GetTRank() << "  " << op1.GetParity() << std::endl;
 
-   opfile << "$ZeroBody:\t" << setprecision(10) << op1.ZeroBody << "   " << op2.ZeroBody << endl;
+   opfile << "$ZeroBody:\t" << setprecision(10) << op1.ZeroBody << "   " << op2.ZeroBody << std::endl;
 
-   opfile << "$OneBody:\t" << endl;
+   opfile << "$OneBody:\t" << std::endl;
 
    int norb = modelspace->GetNumberOrbits();
    for (int i=0;i<norb;++i)
@@ -3564,11 +3565,11 @@ void ReadWrite::CompareOperators(Operator& op1, Operator& op2, string filename)
       for (int j=jmin;j<norb;++j)
       {
          if (abs(op1.OneBody(i,j)) > 0 or abs(op2.OneBody(i,j))>0 )
-            opfile << i << "\t" << j << "\t" << setprecision(10) << op1.OneBody(i,j) << "   " << op2.OneBody(i,j) << endl;
+            opfile << i << "\t" << j << "\t" << setprecision(10) << op1.OneBody(i,j) << "   " << op2.OneBody(i,j) << std::endl;
       }
    }
 
-   opfile <<  "$TwoBody:\t"  << endl;
+   opfile <<  "$TwoBody:\t"  << std::endl;
 
    for ( auto& it : op1.TwoBody.MatEl )
    {
@@ -3590,7 +3591,7 @@ void ReadWrite::CompareOperators(Operator& op1, Operator& op2, string filename)
              opfile << setw(4) << tbc_bra.J << " " << tbc_bra.parity << " " << tbc_bra.Tz  << "    "
                   << setw(4) << bra.p << " " << bra.q  << " " << ket.p << " " << ket.q  << "   "
                   << setw(10) << setprecision(6) << tbme1 << "  "
-                  << setw(10) << setprecision(6) << tbme2 << endl;
+                  << setw(10) << setprecision(6) << tbme2 << std::endl;
            }
         }
       }
@@ -3602,12 +3603,12 @@ void ReadWrite::CompareOperators(Operator& op1, Operator& op2, string filename)
 
 
 
-void ReadWrite::ReadOneBody_Takayuki(string filename, Operator& Hbare)
+void ReadWrite::ReadOneBody_Takayuki(std::string filename, Operator& Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
-  unordered_map<int,int> orbits_remap;
+  std::unordered_map<int,int> orbits_remap;
   for (int i=0;i<norb;++i)
   {
      Orbit& oi = modelspace->GetOrbit(i);
@@ -3618,7 +3619,7 @@ void ReadWrite::ReadOneBody_Takayuki(string filename, Operator& Hbare)
   }
 
 
-  ifstream infile(filename);
+  std::ifstream infile(filename);
   int a,b,tza,tzb;
   double me;
   while( infile >> tza >> a >> tzb >> b >> me )
@@ -3633,12 +3634,12 @@ void ReadWrite::ReadOneBody_Takayuki(string filename, Operator& Hbare)
   }
 }
 
-void ReadWrite::ReadTwoBody_Takayuki(string filename, Operator& Hbare)
+void ReadWrite::ReadTwoBody_Takayuki(std::string filename, Operator& Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
-  unordered_map<int,int> orbits_remap;
+  std::unordered_map<int,int> orbits_remap;
   for (int i=0;i<norb;++i)
   {
      Orbit& oi = modelspace->GetOrbit(i);
@@ -3649,8 +3650,8 @@ void ReadWrite::ReadTwoBody_Takayuki(string filename, Operator& Hbare)
   }
 
 
-  string dummy;
-  ifstream infile(filename);
+  std::string dummy;
+  std::ifstream infile(filename);
   getline( infile, dummy );
   getline( infile, dummy );
   int a,b,c,d,tza,tzb,tzc,tzd,J;
@@ -3672,12 +3673,12 @@ void ReadWrite::ReadTwoBody_Takayuki(string filename, Operator& Hbare)
 }
 
 
-void ReadWrite::WriteOneBody_Takayuki(string filename, Operator& Hbare)
+void ReadWrite::WriteOneBody_Takayuki(std::string filename, Operator& Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
-  unordered_map<int,int> orbits_remap;
+  std::unordered_map<int,int> orbits_remap;
   for (int i=0;i<norb;++i)
   {
      Orbit& oi = modelspace->GetOrbit(i);
@@ -3688,8 +3689,8 @@ void ReadWrite::WriteOneBody_Takayuki(string filename, Operator& Hbare)
      orbits_remap[i+1] = nlj;
   }
 
-  ofstream outfile(filename);
-  outfile << setiosflags(ios::fixed);
+  std::ofstream outfile(filename);
+  outfile << setiosflags(std::ios::fixed);
 
   for (int a=0; a<norb; ++a)
   {
@@ -3702,7 +3703,7 @@ void ReadWrite::WriteOneBody_Takayuki(string filename, Operator& Hbare)
       {
       outfile << setw(3) << oa.tz2 << " " << setw(3) << orbits_remap.at(a) << " "
               << setw(3) << ob.tz2 << " " << setw(3) << orbits_remap.at(b) << " " 
-              << setw(12) << setprecision(8) <<  me << endl;
+              << setw(12) << setprecision(8) <<  me << std::endl;
       }
     }
   }
@@ -3711,12 +3712,12 @@ void ReadWrite::WriteOneBody_Takayuki(string filename, Operator& Hbare)
 
 
 
-void ReadWrite::WriteTwoBody_Takayuki(string filename, Operator& Hbare)
+void ReadWrite::WriteTwoBody_Takayuki(std::string filename, Operator& Hbare)
 {
 
   ModelSpace * modelspace = Hbare.GetModelSpace();
   int norb = modelspace->GetNumberOrbits();
-  unordered_map<int,int> orbits_remap;
+  std::unordered_map<int,int> orbits_remap;
   for (int i=0;i<norb;++i)
   {
      Orbit& oi = modelspace->GetOrbit(i);
@@ -3728,8 +3729,8 @@ void ReadWrite::WriteTwoBody_Takayuki(string filename, Operator& Hbare)
      orbits_remap[i+1] = nlj;
   }
 
-  ofstream outfile(filename);
-  outfile << setiosflags(ios::fixed);
+  std::ofstream outfile(filename);
+  outfile << setiosflags(std::ios::fixed);
 
   for ( auto& itmat : Hbare.TwoBody.MatEl )
   {
@@ -3749,7 +3750,7 @@ void ReadWrite::WriteTwoBody_Takayuki(string filename, Operator& Hbare)
                 << setw(3) << bra.oq->tz2 << " " << setw(3) << orbits_remap.at(bra.q) << " "
                 << setw(3) << ket.op->tz2 << " " << setw(3) << orbits_remap.at(ket.p) << " "
                 << setw(3) << ket.oq->tz2 << " " << setw(3) << orbits_remap.at(ket.q) << " "
-                << setw(3) << J << setw(12) << setprecision(8) << tbme << endl;
+                << setw(3) << J << setw(12) << setprecision(8) << tbme << std::endl;
       }
     }
   }
@@ -3758,9 +3759,9 @@ void ReadWrite::WriteTwoBody_Takayuki(string filename, Operator& Hbare)
 }
 
 
-void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
+void ReadWrite::WriteTensorOneBody(std::string filename, Operator& Op, std::string opname)
 {
-   ofstream outfile(filename);
+   std::ofstream outfile(filename);
    ModelSpace * modelspace = Op.GetModelSpace();
    int wint = 4; // width for printing integers
 
@@ -3769,8 +3770,8 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
 
 
    // valence protons are the intersection of valence orbits and protons orbits. Likewise for neutrons.
-   vector<int> valence_protons(modelspace->valence.size());
-   vector<int> valence_neutrons(modelspace->valence.size());
+   std::vector<int> valence_protons(modelspace->valence.size());
+   std::vector<int> valence_neutrons(modelspace->valence.size());
    auto it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->proton_orbits.begin(), modelspace->proton_orbits.end(),valence_protons.begin());
    valence_protons.resize(it-valence_protons.begin());
    it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->neutron_orbits.begin(), modelspace->neutron_orbits.end(),valence_neutrons.begin());
@@ -3786,22 +3787,22 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
    for ( auto& it : orb2nushell) nushell2orb[it.second] = it.first;
 
    outfile << fixed << setprecision(pdouble);
-   outfile << "!  One-body matrix elements for tensor operator: " << opname << "   generated with IM-SRG" << endl;
-   outfile << "!  Rank_J :  " << Op.GetJRank() << endl;
-   outfile << "!  Rank_T :  " << Op.GetTRank() << endl;
-   outfile << "!  Parity :  " << showpos << 1-2*Op.GetParity() << noshowpos << endl;
-   outfile << "!  Zero body term:  " << Op.ZeroBody << endl;
-   outfile << "!  index   n   l   2j   2tz " << endl;
+   outfile << "!  One-body matrix elements for tensor operator: " << opname << "   generated with IM-SRG" << std::endl;
+   outfile << "!  Rank_J :  " << Op.GetJRank() << std::endl;
+   outfile << "!  Rank_T :  " << Op.GetTRank() << std::endl;
+   outfile << "!  Parity :  " << showpos << 1-2*Op.GetParity() << noshowpos << std::endl;
+   outfile << "!  Zero body term:  " << Op.ZeroBody << std::endl;
+   outfile << "!  index   n   l   2j   2tz " << std::endl;
 
    for ( auto& it : nushell2orb )
    {
       Orbit& oi = modelspace->GetOrbit(it.second);
-      outfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2 << " " << setw(2) << oi.tz2  << endl;
+      outfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2 << " " << setw(2) << oi.tz2  << std::endl;
    }
 
 
 
-   outfile << "!" << endl << "!  a   b   < a || Op || b > " << endl;
+   outfile << "!" << std::endl << "!  a   b   < a || Op || b > " << std::endl;
 
    for ( auto a : modelspace->valence )
    {
@@ -3811,14 +3812,14 @@ void ReadWrite::WriteTensorOneBody(string filename, Operator& Op, string opname)
         double me = Op.OneBody(a,b);
         if ( abs(me) < 1e-7 ) continue;
         int b_ind = orb2nushell[b];
-        outfile << setw(wint) << a_ind << " " << setw(wint) << b_ind << " " << fixed << setw(wdouble) << setprecision(pdouble) <<  me << endl;
+        outfile << setw(wint) << a_ind << " " << setw(wint) << b_ind << " " << fixed << setw(wdouble) << setprecision(pdouble) <<  me << std::endl;
      }
    }
 }
 
-void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
+void ReadWrite::WriteTensorTwoBody(std::string filename, Operator& Op, std::string opname)
 {
-   ofstream outfile(filename);
+   std::ofstream outfile(filename);
    ModelSpace * modelspace = Op.GetModelSpace();
    int wint = 4; // width for printing integers
 
@@ -3826,8 +3827,8 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
    int pdouble = 9; // precision for printing doubles
 
    // valence protons are the intersection of valence orbits and protons orbits. Likewise for neutrons.
-   vector<int> valence_protons(modelspace->valence.size());
-   vector<int> valence_neutrons(modelspace->valence.size());
+   std::vector<int> valence_protons(modelspace->valence.size());
+   std::vector<int> valence_neutrons(modelspace->valence.size());
    auto it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->proton_orbits.begin(), modelspace->proton_orbits.end(),valence_protons.begin());
    valence_protons.resize(it-valence_protons.begin());
    it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->neutron_orbits.begin(), modelspace->neutron_orbits.end(),valence_neutrons.begin());
@@ -3845,23 +3846,23 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
 
 
    outfile << fixed << setprecision(pdouble);
-   outfile << "!  Two-body matrix elements for tensor operator: " << opname << "   generated with IM-SRG" << endl;
-   outfile << "!  Rank_J :  " << Op.GetJRank() << endl;
-   outfile << "!  Rank_T :  " << Op.GetTRank() << endl;
-   outfile << "!  Parity :  " << showpos << 1-2*Op.GetParity() << noshowpos << endl;
-   outfile << "!  Zero body term:  " << Op.ZeroBody << endl;
-   outfile << "!  index   n   l   2j   2tz " << endl;
+   outfile << "!  Two-body matrix elements for tensor operator: " << opname << "   generated with IM-SRG" << std::endl;
+   outfile << "!  Rank_J :  " << Op.GetJRank() << std::endl;
+   outfile << "!  Rank_T :  " << Op.GetTRank() << std::endl;
+   outfile << "!  Parity :  " << showpos << 1-2*Op.GetParity() << noshowpos << std::endl;
+   outfile << "!  Zero body term:  " << Op.ZeroBody << std::endl;
+   outfile << "!  index   n   l   2j   2tz " << std::endl;
 
 
    for ( auto& it : nushell2orb )
    {
       Orbit& oi = modelspace->GetOrbit(it.second);
-      outfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2  << " " << setw(2) << oi.tz2  << endl;
+      outfile << "! " << setw(5) << it.first << "  " << oi.n << "  " << oi.l << " " << setw(2) << oi.j2  << " " << setw(2) << oi.tz2  << std::endl;
    }
 
 
 
-   outfile << "!  a    b    c    d     Jab  Jcd   <ab Jab || Op || cd Jcd>" << endl;
+   outfile << "!  a    b    c    d     Jab  Jcd   <ab Jab || Op || cd Jcd>" << std::endl;
    for ( auto& itmat : Op.TwoBody.MatEl )
    {
      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(itmat.first[0]);
@@ -3881,7 +3882,7 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
          int c_ind = orb2nushell[ket.p];
          int d_ind = orb2nushell[ket.q];
          outfile << setw(wint) << a_ind << " " << setw(wint) << b_ind << " " << setw(wint) << c_ind << " " << setw(wint) << d_ind << "   "
-                 << setw(wint) << tbc_bra.J << " " << setw(wint) << tbc_ket.J << "   " << setw(wdouble) << setprecision(pdouble) << me << endl;
+                 << setw(wint) << tbc_bra.J << " " << setw(wint) << tbc_ket.J << "   " << setw(wdouble) << setprecision(pdouble) << me << std::endl;
          
        }
      }
@@ -3891,11 +3892,11 @@ void ReadWrite::WriteTensorTwoBody(string filename, Operator& Op, string opname)
 }
 
 
-void ReadWrite::ReadTwoBodyEngel(string filename, Operator& Op)
+void ReadWrite::ReadTwoBodyEngel(std::string filename, Operator& Op)
 {
   if ( filename.substr( filename.find_last_of(".")) == ".gz")
   {
-    ifstream infile(filename, ios_base::in | ios_base::binary);
+    std::ifstream infile(filename, std::ios_base::in | std::ios_base::binary);
     boost::iostreams::filtering_istream zipstream;
     zipstream.push(boost::iostreams::gzip_decompressor());
     zipstream.push(infile);
@@ -3903,7 +3904,7 @@ void ReadWrite::ReadTwoBodyEngel(string filename, Operator& Op)
   }
   else
   {
-    ifstream infile(filename);
+    std::ifstream infile(filename);
     ReadTwoBodyEngel_from_stream(infile, Op);
   }
 }
@@ -3928,27 +3929,27 @@ void ReadWrite::ReadTwoBodyEngel_from_stream( istream& infile, Operator& Op)
   }
 }
 /*
-void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, Operator& Op)
+void ReadWrite::ReadRelCMOpFromJavier( std::string statefilename, std::string MEfilename, Operator& Op)
 {
-  ifstream statefile(statefilename);
-  ifstream MEfile(MEfilename);
+  std::ifstream statefile(statefilename);
+  std::ifstream MEfile(MEfilename);
   if (not MEfile.good() )
   {
-    cout << "Trouble reading " << MEfilename << endl;
+    std::cout << "Trouble reading " << MEfilename << std::endl;
   }
 
 
   // First, read in the file which lists the state labelling.
   struct state_t {  int e12; int n; int N; int J; int S; int L; int lam; int LAM; int T; int Tz; };
   state_t tmp_state;            // temporary struct to read the data in.
-  vector<state_t> statelist(1); // initialize with an empty state, since Javier starts indexing at 1 (boo Fortan).
+  std::vector<state_t> statelist(1); // initialize with an empty state, since Javier starts indexing at 1 (boo Fortan).
   statefile.ignore(500,'\n');   // skip the first line
   int index;
-  cout << "Read State File..." << endl;
+  std::cout << "Read State File..." << std::endl;
   while( statefile >> index >> tmp_state.e12 >> tmp_state.n >> tmp_state.N >> tmp_state.J >> tmp_state.S >> tmp_state.L >> tmp_state.lam >> tmp_state.LAM >> tmp_state.T >> tmp_state.Tz )
   {
      statelist.push_back(tmp_state); // add it to the list
-     cout << index << " " << tmp_state.e12 << " " << tmp_state.n << " " << tmp_state.N << " " << tmp_state.J << " " << tmp_state.S << " " << tmp_state.L << " " << tmp_state.lam << " " << tmp_state.LAM << " " << tmp_state.T << " " << tmp_state.Tz << endl;
+     std::cout << index << " " << tmp_state.e12 << " " << tmp_state.n << " " << tmp_state.N << " " << tmp_state.J << " " << tmp_state.S << " " << tmp_state.L << " " << tmp_state.lam << " " << tmp_state.LAM << " " << tmp_state.T << " " << tmp_state.Tz << std::endl;
   }
   statefile.close();
 
@@ -3957,14 +3958,14 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
   int bra_index, ket_index;
   double MErel,MEcm;
   for (int i=0;i<6;i++) MEfile.ignore(500,'\n'); // skip header info, since I don't do anything with it (for now).
-  cout << "Read ME File..." << endl;
+  std::cout << "Read ME File..." << std::endl;
   while( MEfile >> bra_index >> ket_index >> MErel >> MEcm )
   {
     state_t& bra = statelist[bra_index];
     state_t& ket = statelist[ket_index];
-    cout << bra.n << " " <<  bra.lam << " " <<  bra.N << " " <<  bra.LAM << " " <<  bra.L << " " <<  bra.S << " " <<  bra.J << " " <<  bra.T << " " <<  bra.Tz << " " 
+    std::cout << bra.n << " " <<  bra.lam << " " <<  bra.N << " " <<  bra.LAM << " " <<  bra.L << " " <<  bra.S << " " <<  bra.J << " " <<  bra.T << " " <<  bra.Tz << " " 
          << ket.n << " " <<  ket.lam << " " <<  ket.N << " " <<  ket.LAM << " " <<  ket.L << " " <<  ket.S << " " <<  ket.J << " " <<  ket.T << " " <<  ket.Tz << " " 
-         << "(" << bra_index << "," << ket_index << ") " << MErel << " " <<  MEcm << endl;
+         << "(" << bra_index << "," << ket_index << ") " << MErel << " " <<  MEcm << std::endl;
     Op.TwoBody.AddToTBME_RelCM(bra.n, bra.lam, bra.N, bra.LAM, bra.L, bra.S, bra.J, bra.T, bra.Tz, 
                                ket.n, ket.lam, ket.N, ket.LAM, ket.L, ket.S, ket.J, ket.T, ket.Tz, MErel, MEcm);
   }
@@ -4020,24 +4021,24 @@ struct hash<javier_state_t>
 };
 }
 
-void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, Operator& Op)
+void ReadWrite::ReadRelCMOpFromJavier( std::string statefilename, std::string MEfilename, Operator& Op)
 {
-  ifstream statefile;
-  ifstream MEfile;
+  std::ifstream statefile;
+  std::ifstream MEfile;
   statefile.open(statefilename);
   MEfile.open(MEfilename);
   if (not MEfile.good() )
   {
-    cout << "Trouble reading " << MEfilename << endl;
+    std::cout << "Trouble reading " << MEfilename << std::endl;
   }
 
   ModelSpace* modelspace = Op.GetModelSpace();
 
-  cout << "Reading " << statefilename << endl;
+  std::cout << "Reading " << statefilename << std::endl;
   // First, read in the file which lists the state labelling.
   javier_state_t tmp_state;            // temporary struct to read the data in.
-  vector<javier_state_t> statelist(1); // initialize with an empty state, since Javier starts indexing at 1 (boo Fortan).
-  unordered_map<javier_state_t,index_t> statemap; // initialize with an empty state, since Javier starts indexing at 1 (boo Fortan).
+  std::vector<javier_state_t> statelist(1); // initialize with an empty state, since Javier starts indexing at 1 (boo Fortan).
+  std::unordered_map<javier_state_t,index_t> statemap; // initialize with an empty state, since Javier starts indexing at 1 (boo Fortan).
   statefile.ignore(500,'\n');   // skip the first line
   index_t index;
   while( statefile >> index >> tmp_state.e12 >> tmp_state.n >> tmp_state.N >> tmp_state.J >> tmp_state.S >> tmp_state.L >> tmp_state.lam >> tmp_state.LAM >> tmp_state.T >> tmp_state.Tz )
@@ -4049,21 +4050,21 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
   statefile.close();
 
 
-  cout << "Reading " << MEfilename << endl;
+  std::cout << "Reading " << MEfilename << std::endl;
   // Second, read the file which contains the relative/cm matrix elements.
   arma::sp_mat matrel(statelist.size(), statelist.size());
   arma::sp_mat matcm(statelist.size(), statelist.size());
   int bra_index, ket_index;
   double MErel,MEcm;
   for (int i=0;i<6;i++) MEfile.ignore(500,'\n'); // skip header info, since I don't do anything with it (for now).
-  cout << "Read ME File..." << endl;
+  std::cout << "Read ME File..." << std::endl;
   while( MEfile >> bra_index >> ket_index >> MErel >> MEcm )
   {
     matrel(bra_index,ket_index) = MErel;
     matcm(bra_index,ket_index) = MEcm;
   }
 
-  cout << "Filling Op" << endl;
+  std::cout << "Filling Op" << std::endl;
   // Finally, loop over all the lab frame matrix elements, and fill them.
   // This is the dumbest, most straightforward way I can think of doing it.
   for ( auto& itmat : Op.TwoBody.MatEl )
@@ -4080,7 +4081,7 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
     int Tzcd = tbc_ket.Tz;
     for (int ibra=0; ibra<nkets_bra; ++ibra)
     {
-      cout << "Getting Ket ibra=" << ibra << endl;
+      std::cout << "Getting Ket ibra=" << ibra << std::endl;
       Ket& bra = tbc_bra.GetKet(ibra);
       int na = bra.op->n;
       int la = bra.op->l;
@@ -4093,10 +4094,10 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
       int Lab_min = max(abs(la-lb),Jab-1);
       int Lab_max = min(la+lb,Jab+1);
       int eab = 2*(na+nb)+la+lb;
-      cout << "eab =  " << eab << endl;
+      std::cout << "eab =  " << eab << std::endl;
       for (int iket=0;iket<nkets_ket; ++iket)
       {
-        cout << "Getting Ket iket=" << iket << endl;
+        std::cout << "Getting Ket iket=" << iket << std::endl;
         Ket& ket = tbc_ket.GetKet(iket);
         int nc = ket.op->n;
         int lc = ket.op->l;
@@ -4109,13 +4110,13 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
         int Lcd_min = max(abs(lc-ld),Jcd-1);
         int Lcd_max = min(lc+ld,Jcd+1);
         int ecd = 2*(nc+nd)+lc+ld;
-        cout << " ecd = " << ecd << endl;
+        std::cout << " ecd = " << ecd << std::endl;
         if (eab==0 and ecd==0 and Jab+Jcd==1 and Tzab==0 and Tzcd==0)
         {
-          cout << "!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!" << endl;
-          cout << "!! " << Lab_min << "<= Lab <= " << Lab_max  << endl;
-          cout << "!! " << Lcd_min << "<= Lcd <= " << Lcd_max  << endl;
-          cout << "!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!" << endl;
+          std::cout << "!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!" << std::endl;
+          std::cout << "!! " << Lab_min << "<= Lab <= " << Lab_max  << std::endl;
+          std::cout << "!! " << Lcd_min << "<= Lcd <= " << Lcd_max  << std::endl;
+          std::cout << "!!!!!!!!!!!!!!!!!! HERE !!!!!!!!!!!!!!!!!!!!" << std::endl;
         }
         for (int Lab=Lab_min; Lab<=Lab_max; ++Lab)
         {
@@ -4159,9 +4160,9 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
                             size_t rel_index_ket = statemap[ javier_state_t(ecd, n_cd, N_cd, Jcd, Scd, Lcd, lam_cd, LAM_cd, Tcd, Tzcd) ];
                             if (rel_index_bra<1) continue;
                             if (rel_index_ket<1) continue;
-                            cout << "ab: " << javier_state_t(eab, n_ab, N_ab, Jab, Sab, Lab, lam_ab, LAM_ab, Tab, Tzab) << endl;
-                            cout << "cd: " << javier_state_t(ecd, n_cd, N_cd, Jcd, Scd, Lcd, lam_cd, LAM_cd, Tcd, Tzcd) << endl;
-                            cout << "ibra,iket = " << ibra << " , " << iket << "   rel_index_bra,rel_index_ket = " << rel_index_bra << " , " << rel_index_ket << endl;
+                            std::cout << "ab: " << javier_state_t(eab, n_ab, N_ab, Jab, Sab, Lab, lam_ab, LAM_ab, Tab, Tzab) << std::endl;
+                            std::cout << "cd: " << javier_state_t(ecd, n_cd, N_cd, Jcd, Scd, Lcd, lam_cd, LAM_cd, Tcd, Tzcd) << std::endl;
+                            std::cout << "ibra,iket = " << ibra << " , " << iket << "   rel_index_bra,rel_index_ket = " << rel_index_bra << " , " << rel_index_ket << std::endl;
                             if ((N_ab==N_cd) and (LAM_ab==LAM_cd))
                                itmat.second(ibra,iket) += coeff * matrel(rel_index_bra, rel_index_ket);
                             if ((n_ab==n_cd) and (lam_ab==lam_cd))
@@ -4178,12 +4179,12 @@ void ReadWrite::ReadRelCMOpFromJavier( string statefilename, string MEfilename, 
           }
         }
         
-        if (eab==0 and ecd==0 and Jab+Jcd==1 and Tzab==0 and Tzcd==0) cout << "!!!!!!!!!!!!!!!!!! DONE !!!!!!!!!!!!!!!!!!!!" << endl;
+        if (eab==0 and ecd==0 and Jab+Jcd==1 and Tzab==0 and Tzcd==0) std::cout << "!!!!!!!!!!!!!!!!!! DONE !!!!!!!!!!!!!!!!!!!!" << std::endl;
 
       }
     }
   }
-  cout << "Done!" << endl;
+  std::cout << "Done!" << std::endl;
 
 }
 
@@ -4193,7 +4194,7 @@ void ReadWrite::SetLECs(double c1, double c3, double c4, double cD, double cE)
    LECs = {c1,c3,c4,cD,cE};
 }
 
-void ReadWrite::SetLECs_preset(string key)
+void ReadWrite::SetLECs_preset(std::string key)
 {
        if (key == "EM1.8_2.0")  LECs = {-0.81, -3.20, 5.40, 1.264, -0.120};
   else if (key == "EM2.0_2.0")  LECs = {-0.81, -3.20, 5.40, 1.271, -0.131};

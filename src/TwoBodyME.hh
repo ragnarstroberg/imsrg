@@ -5,6 +5,8 @@
 #include <memory>
 #include <fstream>
 #include "ModelSpace.hh"
+#include <map>
+#include <array>
 class TwoBodyME_ph;
 
 /// The two-body piece of the operator, stored in a vector of maps of of armadillo matrices.
@@ -32,7 +34,7 @@ class TwoBodyME
 {
  public:
   ModelSpace*  modelspace;
-  map<array<int,2>,arma::mat> MatEl;
+  std::map<std::array<int,2>,arma::mat> MatEl;
   int nChannels;
   bool hermitian;
   bool antihermitian;
@@ -61,7 +63,7 @@ class TwoBodyME
 
   arma::mat& GetMatrix(int chbra, int chket){return MatEl.at({chbra,chket});};
   arma::mat& GetMatrix(int ch){return GetMatrix(ch,ch);};
-  arma::mat& GetMatrix(array<int,2> a){return GetMatrix(a[0],a[1]);};
+  arma::mat& GetMatrix(std::array<int,2> a){return GetMatrix(a[0],a[1]);};
   const arma::mat& GetMatrix(int chbra, int chket)const {return  MatEl.at({chbra,chket});};
   const arma::mat& GetMatrix(int ch)const {return  GetMatrix(ch,ch);};
 
@@ -134,8 +136,8 @@ class TwoBodyME
   int Dimension();
   int size();
 
-  void WriteBinary(ofstream&);
-  void ReadBinary(ifstream&);
+  void WriteBinary(std::ofstream&);
+  void ReadBinary(std::ifstream&);
 
 
 };

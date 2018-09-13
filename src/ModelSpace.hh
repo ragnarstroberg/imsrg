@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <map>
+#include <array>
 #include <armadillo>
 #include "IMSRGProfiler.hh"
 #ifndef SQRT2
@@ -13,7 +14,7 @@
 #define OCC_CUT 1e-6
 
 
-using namespace std;
+//using namespace std;
 
 typedef unsigned long long int index_t;
 
@@ -115,7 +116,7 @@ class TwoBodyChannel
 
 
 
-   arma::uvec GetKetIndexFromList(vector<index_t>& vec_in);
+   arma::uvec GetKetIndexFromList(std::vector<index_t>& vec_in);
    const arma::uvec& GetKetIndex_pp() const;
    const arma::uvec& GetKetIndex_hh() const;
    const arma::uvec& GetKetIndex_ph() const;
@@ -131,8 +132,8 @@ class TwoBodyChannel
    //Fields
    ModelSpace * modelspace;
    int NumberKets;  // Number of pq configs that participate in this channel
-   vector<int> KetList; // eg [2, 4, 7, ...] Used for looping over all the kets in the channel
-   vector<int> KetMap;  // eg [ -1, -1, 0, -1, 1, -1, -1, 2 ...] Used for asking what is the local index of this ket. -1 means the ket doesn't participate in this channel
+   std::vector<int> KetList; // eg [2, 4, 7, ...] Used for looping over all the kets in the channel
+   std::vector<int> KetMap;  // eg [ -1, -1, 0, -1, 1, -1, -1, 2 ...] Used for asking what is the local index of this ket. -1 means the ket doesn't participate in this channel
    //Methods
    virtual bool CheckChannel_ket(Orbit* op, Orbit* oq) const;  // check if |pq> participates in this channel
    bool CheckChannel_ket(Ket &ket) const {return CheckChannel_ket(ket.op,ket.oq);};  // check if |pq> participates in this channel
@@ -166,10 +167,10 @@ class ModelSpace
    ModelSpace();
    ModelSpace(const ModelSpace&); // copy constructor
    ModelSpace( ModelSpace&&); // move constructor
-   ModelSpace(int emax, vector<string> hole_list, vector<string> valence_list);
-   ModelSpace(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
-   ModelSpace(int emax, string reference, string valence);
-   ModelSpace(int emax, string reference);
+   ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> valence_list);
+   ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list);
+   ModelSpace(int emax, std::string reference, std::string valence);
+   ModelSpace(int emax, std::string reference);
 
    // Overloaded operators
    ModelSpace operator=(const ModelSpace&); 
@@ -177,19 +178,19 @@ class ModelSpace
 
    // Methods
 
-   void Init(int emax, string reference, string valence);
-   void Init(int emax, map<index_t,double> hole_list, string valence);
-   void Init(int emax, map<index_t,double> hole_list, vector<index_t> core_list, vector<index_t> valence_list);
-   void Init(int emax, vector<string> hole_list, vector<string> core_list, vector<string> valence_list);
-   void Init_occ_from_file(int emax, string valence, string occ_file);
+   void Init(int emax, std::string reference, std::string valence);
+   void Init(int emax, std::map<index_t,double> hole_list, std::string valence);
+   void Init(int emax, std::map<index_t,double> hole_list, std::vector<index_t> core_list, std::vector<index_t> valence_list);
+   void Init(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list);
+   void Init_occ_from_file(int emax, std::string valence, std::string occ_file);
 
-//   vector<index_t> GetOrbitsAZ(int A, int Z);
-   map<index_t,double> GetOrbitsAZ(int A, int Z);
-   void GetAZfromString(string str, int& A, int& Z);
-   vector<index_t> String2Index( vector<string> vs );
-   string Index2String(index_t ind);
-   void Get0hwSpace(int Aref, int Zref, vector<index_t>& core_list, vector<index_t>& valence_list);
-   void ParseCommaSeparatedValenceSpace(string valence, vector<index_t>& core_list, vector<index_t>& valence_list);
+//   std::vector<index_t> GetOrbitsAZ(int A, int Z);
+   std::map<index_t,double> GetOrbitsAZ(int A, int Z);
+   void GetAZfromString(std::string str, int& A, int& Z);
+   std::vector<index_t> String2Index( std::vector<std::string> vs );
+   std::string Index2String(index_t ind);
+   void Get0hwSpace(int Aref, int Zref, std::vector<index_t>& core_list, std::vector<index_t>& valence_list);
+   void ParseCommaSeparatedValenceSpace(std::string valence, std::vector<index_t>& core_list, std::vector<index_t>& valence_list);
 
    void SetupKets();
    void AddOrbit(Orbit orb);
@@ -217,9 +218,9 @@ class ModelSpace
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
    inline int GetTwoBodyJmax() const {return TwoBodyJmax;};
    inline int GetThreeBodyJmax() const {return ThreeBodyJmax;};
-   void SetReference(vector<index_t>);
-   void SetReference(map<index_t,double>);
-   void SetReference(string);
+   void SetReference(std::vector<index_t>);
+   void SetReference(std::map<index_t,double>);
+   void SetReference(std::string);
 
    int GetEmax(){return Emax;};
    int GetE2max(){return E2max;};
@@ -237,7 +238,7 @@ class ModelSpace
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. Not ideal.
    bool SixJ_is_empty(){ return SixJList.empty(); };
 
-   int GetOrbitIndex(string);
+   int GetOrbitIndex(std::string);
    int GetTwoBodyChannelIndex(int j, int p, int t);
    inline int phase(int x) {return (x%2)==0 ? 1 : -1;};
    inline int phase(double x) {return phase(int(x));};
@@ -252,7 +253,7 @@ class ModelSpace
    void ResetFirstPass();
    void CalculatePandyaLookup(int rank_J, int rank_T, int parity); // construct a lookup table for more efficient pandya transformation
 //   map<array<int,2>,vector<array<int,2>>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
-   map<array<int,2>,array<vector<int>,2>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
+   std::map<std::array<int,2>,std::array<std::vector<int>,2>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
    uint64_t SixJHash(double j1, double j2, double j3, double J1, double J2, double J3);
    void SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& j3, uint64_t& J1, uint64_t& J2, uint64_t& J3);
    uint64_t MoshinskyHash(uint64_t N,uint64_t Lam,uint64_t n,uint64_t lam,uint64_t n1,uint64_t l1,uint64_t n2,uint64_t l2,uint64_t L);
@@ -260,31 +261,31 @@ class ModelSpace
 
 
    // Data members
-   vector<index_t> holes;           // in the reference Slater determinant
+   std::vector<index_t> holes;           // in the reference Slater determinant
 //   map<index_t,double> holes;           // in the reference Slater determinant
-   vector<index_t> particles;       // above the reference Slater determinant
-   vector<index_t> core;            // core for decoupling
-   vector<index_t> valence;         // valence space for decoupling
-   vector<index_t> qspace;          // above the valence space for decoupling
-   vector<index_t> proton_orbits;
-   vector<index_t> neutron_orbits;
+   std::vector<index_t> particles;       // above the reference Slater determinant
+   std::vector<index_t> core;            // core for decoupling
+   std::vector<index_t> valence;         // valence space for decoupling
+   std::vector<index_t> qspace;          // above the valence space for decoupling
+   std::vector<index_t> proton_orbits;
+   std::vector<index_t> neutron_orbits;
 
-   vector<index_t> KetIndex_pp; 
-   vector<index_t> KetIndex_ph;
-   vector<index_t> KetIndex_hh;
-   vector<index_t> KetIndex_cc; 
-   vector<index_t> KetIndex_vc;
-   vector<index_t> KetIndex_qc;
-   vector<index_t> KetIndex_vv;
-   vector<index_t> KetIndex_qv;
-   vector<index_t> KetIndex_qq;
-   vector<double> Ket_occ_hh;
-   vector<double> Ket_unocc_hh;
-   vector<double> Ket_occ_ph;
-   vector<double> Ket_unocc_ph;
+   std::vector<index_t> KetIndex_pp; 
+   std::vector<index_t> KetIndex_ph;
+   std::vector<index_t> KetIndex_hh;
+   std::vector<index_t> KetIndex_cc; 
+   std::vector<index_t> KetIndex_vc;
+   std::vector<index_t> KetIndex_qc;
+   std::vector<index_t> KetIndex_vv;
+   std::vector<index_t> KetIndex_qv;
+   std::vector<index_t> KetIndex_qq;
+   std::vector<double> Ket_occ_hh;
+   std::vector<double> Ket_unocc_hh;
+   std::vector<double> Ket_occ_ph;
+   std::vector<double> Ket_unocc_ph;
 
-//   array< array< vector<index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
-   array< array< unordered_map<index_t,index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
+//   array< array< std::vector<index_t>, 2>,3> MonopoleKets; //List of kets of a given Tz,parity
+   std::array< std::array< std::unordered_map<index_t,index_t>, 3>,3> MonopoleKets; //List of kets of a given Tz,parity
 
    int Emax;
    int E2max;
@@ -294,12 +295,12 @@ class ModelSpace
    int OneBodyJmax;
    int TwoBodyJmax;
    int ThreeBodyJmax;
-   map<array<int,3>,vector<index_t> > OneBodyChannels;
+   std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
 
-   vector<unsigned int> SortedTwoBodyChannels;
-   vector<unsigned int> SortedTwoBodyChannels_CC;
+   std::vector<unsigned int> SortedTwoBodyChannels;
+   std::vector<unsigned int> SortedTwoBodyChannels_CC;
 
-   static map<string,vector<string>> ValenceSpaces;
+   static std::map< std::string, std::vector<std::string> > ValenceSpaces;
 //   map< array<int,3>, map< array<int,2>,vector<array<int,2>> > > PandyaLookup;
 
 
@@ -312,21 +313,21 @@ class ModelSpace
    int Aref;
    int Zref;
    int nTwoBodyChannels;
-   vector<Orbit> Orbits;
-   vector<Ket> Kets;
-   vector<TwoBodyChannel> TwoBodyChannels;
-   vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
-   map< array<int,3>, map< array<int,2>,array<vector<int>,2> > > PandyaLookup;
+   std::vector<Orbit> Orbits;
+   std::vector<Ket> Kets;
+   std::vector<TwoBodyChannel> TwoBodyChannels;
+   std::vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
+   std::map< std::array<int,3>, std::map< std::array<int,2>,std::array<std::vector<int>,2> > > PandyaLookup;
    bool sixj_has_been_precalculated;
    bool moshinsky_has_been_precalculated;
    bool scalar_transform_first_pass;
-   vector<bool> tensor_transform_first_pass;
+   std::vector<bool> tensor_transform_first_pass;
    IMSRGProfiler profiler;
 //   map<long int,double> SixJList;
 
-   static unordered_map<uint64_t,double> SixJList;
-   static unordered_map<uint64_t,double> NineJList;
-   static unordered_map<uint64_t,double> MoshList;
+   static std::unordered_map<uint64_t,double> SixJList;
+   static std::unordered_map<uint64_t,double> NineJList;
+   static std::unordered_map<uint64_t,double> MoshList;
 
 };
 

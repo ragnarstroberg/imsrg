@@ -8,6 +8,7 @@
 #include <deque>
 #include <gsl/gsl_math.h>
 #include <math.h>
+#include "omp.h"
 
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488L

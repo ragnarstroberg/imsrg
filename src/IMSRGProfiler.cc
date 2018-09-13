@@ -1,12 +1,16 @@
 #include "IMSRGProfiler.hh"
 #include <sys/time.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/resource.h>
 #include <omp.h>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
 
 
-map<string, double> IMSRGProfiler::timer;
-map<string, int> IMSRGProfiler::counter;
+std::map<std::string, double> IMSRGProfiler::timer;
+std::map<std::string, int> IMSRGProfiler::counter;
 float IMSRGProfiler::start_time = -1;
 
 IMSRGProfiler::IMSRGProfiler()
@@ -19,16 +23,16 @@ IMSRGProfiler::IMSRGProfiler()
 }
 /// Check how much memory is being used.
 ///
-map<string,size_t> IMSRGProfiler::CheckMem()
+std::map<std::string,size_t> IMSRGProfiler::CheckMem()
 {
-  char cmdstring[100],outbuf[500],buf[100];
-  sprintf(cmdstring,"pmap -x %d | tail -1",getpid()); // TODO make this more portable. On OSX, use vmmap. no idea for Windows...
-  FILE* output = popen(cmdstring,"r");
-  map<string,size_t> s;
+  char commandstr[100],outbuf[500],buf[100];
+  sprintf(commandstr,"pstd::map -x %d | tail -1",getpid()); // TODO make this more portable. On OSX, use vmstd::map. no idea for Windows...
+  FILE* output = popen(commandstr,"r");
+  std::map<std::string,size_t> s;
   if (output==NULL or fgets(outbuf,500,output) == NULL)
-    cout << " <<< IMSRGProfiler::CheckMem():  Problem reading output of pmap (pid = " << getpid() << ")" << endl;
+    std::cout << " <<< IMSRGProfiler::CheckMem():  Problem reading output of pstd::map (pid = " << getpid() << ")" << std::endl;
   else
-    istringstream(outbuf) >> cmdstring >> buf >> s["Kbytes"] >> s["RSS"] >> s["DIRTY"];
+    std::istringstream(outbuf) >> commandstr >> buf >> s["Kbytes"] >> s["RSS"] >> s["DIRTY"];
   return s;
 }
 
@@ -39,11 +43,11 @@ size_t IMSRGProfiler::MaxMemUsage()
   return (size_t) ru.ru_maxrss;
 }
 
-map<string,float> IMSRGProfiler::GetTimes()
+std::map<std::string,float> IMSRGProfiler::GetTimes()
 {
   struct rusage ru;
   getrusage(RUSAGE_SELF,&ru);
-  map<string,float> times;
+  std::map<std::string,float> times;
   times["user"] = ru.ru_utime.tv_sec + 1e-6*ru.ru_utime.tv_usec;
   times["system"] = ru.ru_stime.tv_sec + 1e-6*ru.ru_stime.tv_usec;
   times["real"] = omp_get_wtime() - start_time;
@@ -54,39 +58,39 @@ void IMSRGProfiler::PrintTimes()
 {
    auto time_tot = GetTimes();
    
-   cout << "====================== TIMES (s) ====================" << endl;
-   cout.setf(ios::fixed);
+   std::cout << "====================== TIMES (s) ====================" << std::endl;
+   std::cout.setf(std::ios::fixed);
    for ( auto it : timer )
    {
      int nfill = (int) (20 * it.second / time_tot["real"]);
-     cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(5) << std::right << it.second;
-     cout << " (" << setw(4) << setprecision(1) << 100*it.second / time_tot["real"] << "%) |";
-     for (int ifill=0; ifill<nfill; ifill++) cout << "*";
-     for (int ifill=nfill; ifill<20; ifill++) cout << " ";
-     cout << "|";
-     cout  << endl;
+     std::cout << std::setw(40) << std::left << it.first + ":  " << std::setw(12) << std::setprecision(5) << std::right << it.second;
+     std::cout << " (" << std::setw(4) << std::setprecision(1) << 100*it.second / time_tot["real"] << "%) |";
+     for (int ifill=0; ifill<nfill; ifill++) std::cout << "*";
+     for (int ifill=nfill; ifill<20; ifill++) std::cout << " ";
+     std::cout << "|";
+     std::cout  << std::endl;
      
    }
 //   for (auto it : GetTimes())
    for (auto it : time_tot)
-     cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(5) << std::right << it.second  << endl;
+     std::cout << std::setw(40) << std::left << it.first + ":  " << std::setw(12) << std::setprecision(5) << std::right << it.second  << std::endl;
 }
 
 void IMSRGProfiler::PrintCounters()
 {
-   cout << "===================== COUNTERS =====================" << endl;
-   cout.setf(ios::fixed);
+   std::cout << "===================== COUNTERS =====================" << std::endl;
+   std::cout.setf(std::ios::fixed);
    for ( auto it : counter )
-     cout << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(0) << std::right << it.second  << endl;
+     std::cout << std::setw(40) << std::left << it.first + ":  " << std::setw(12) << std::setprecision(0) << std::right << it.second  << std::endl;
 }
 
 void IMSRGProfiler::PrintMemory()
 {
-   cout << "===================== MEMORY (MB) ==================" << endl;
+   std::cout << "===================== MEMORY (MB) ==================" << std::endl;
    for (auto it : CheckMem())
-     cout << fixed << setw(40) << std::left << it.first + ":  " << setw(12) << setprecision(3) << std::right << it.second/1024. << endl;
+     std::cout << std::fixed << std::setw(40) << std::left << it.first + ":  " << std::setw(12) << std::setprecision(3) << std::right << it.second/1024. << std::endl;
 
-   cout << fixed << setw(40) << std::left << "Max Used:  " << setw(12) << setprecision(3) << std::right << MaxMemUsage()/1024.  << endl;
+   std::cout << std::fixed << std::setw(40) << std::left << "Max Used:  " << std::setw(12) << std::setprecision(3) << std::right << MaxMemUsage()/1024.  << std::endl;
 }
 
 void IMSRGProfiler::PrintAll()

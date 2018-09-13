@@ -5,12 +5,14 @@
 #include "ModelSpace.hh"
 #include "Operator.hh"
 
+#include <string>
+
 
 class Generator
 {
  public:
 
-  string generator_type;
+  std::string generator_type;
   Operator * H;
   Operator * Eta;
   ModelSpace* modelspace;
@@ -19,14 +21,14 @@ class Generator
   int denominator_delta_index;
 
   Generator();
-  void SetType(string g){generator_type = g;};
-  string GetType(){return generator_type;};
+  void SetType(std::string g){generator_type = g;};
+  std::string GetType(){return generator_type;};
   void Update(Operator* H, Operator* Eta);
   void AddToEta(Operator* H, Operator* Eta);
   void SetDenominatorCutoff(double c){denominator_cutoff=c;};
   void SetDenominatorDelta(double d){denominator_delta=d;};
   void SetDenominatorDeltaIndex(int i){denominator_delta_index=i;};
-  void SetDenominatorDeltaOrbit(string orb);
+  void SetDenominatorDeltaOrbit(std::string orb);
 
 // private:
   void ConstructGenerator_Wegner();

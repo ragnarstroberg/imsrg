@@ -20,8 +20,8 @@ class ThreeBodyME
 {
  public:
   ModelSpace * modelspace;
-  vector<ThreeBME_type> MatEl;
-  unordered_map<size_t, size_t> OrbitIndexHash; //
+  std::vector<ThreeBME_type> MatEl;
+  std::unordered_map<size_t, size_t> OrbitIndexHash; //
   int E3max;
   size_t total_dimension;
   const static int ABC;
@@ -42,7 +42,7 @@ class ThreeBodyME
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};
 
 //// Three body setter getters
-  vector<pair<size_t,double>> AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
+  std::vector<std::pair<size_t,double>> AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
   ThreeBME_type AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
   void   SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
   ThreeBME_type GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
@@ -60,8 +60,8 @@ class ThreeBodyME
   size_t size(){return total_dimension * sizeof(ThreeBME_type);};
 
 
-  void WriteBinary(ofstream&);
-  void ReadBinary(ifstream&);
+  void WriteBinary(std::ofstream&);
+  void ReadBinary(std::ifstream&);
 
 };
 

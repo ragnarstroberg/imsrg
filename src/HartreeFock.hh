@@ -5,7 +5,8 @@
 #include "Operator.hh"
 #include "IMSRGProfiler.hh"
 #include <armadillo>
-#include <map>
+#include <vector>
+#include <array>
 #include <deque>
 
 class HartreeFock
@@ -19,8 +20,8 @@ class HartreeFock
    arma::mat Vij;           ///< 1 body piece of 2 body potential
    arma::mat V3ij;          ///< 1 body piece of 3 body potential
    arma::mat F;             ///< Fock matrix
-   array< array< arma::mat,2>,3> Vmon;          ///< Monopole 2-body interaction
-   array< array< arma::mat,2>,3> Vmon_exch;          ///< Monopole 2-body interaction
+   std::array< std::array< arma::mat,2>,3> Vmon;          ///< Monopole 2-body interaction
+   std::array< std::array< arma::mat,2>,3> Vmon_exch;          ///< Monopole 2-body interaction
    arma::uvec holeorbs;     ///< list of hole orbits for generating density matrix
    arma::rowvec hole_occ; /// occupations of hole orbits
    arma::vec energies;      ///< vector of single particle energies
@@ -31,11 +32,11 @@ class HartreeFock
    double e2hf;             ///< Two-body contribution to EHF
    double e3hf;             ///< Three-body contribution to EHF
    int iterations;          ///< iterations used in Solve()
-   vector<uint64_t> Vmon3_keys;
-   vector< double> Vmon3;
+   std::vector<uint64_t> Vmon3_keys;
+   std::vector< double> Vmon3;
    IMSRGProfiler profiler;  ///< Profiler for timing, etc.
-   deque<double> convergence_ediff; ///< Save last few convergence checks for diagnostics
-   deque<double> convergence_EHF; ///< Save last few convergence checks for diagnostics
+   std::deque<double> convergence_ediff; ///< Save last few convergence checks for diagnostics
+   std::deque<double> convergence_EHF; ///< Save last few convergence checks for diagnostics
    bool freeze_occupations;
 
 // Methods
@@ -58,7 +59,7 @@ class HartreeFock
    Operator GetHbare(){return Hbare;}; ///< Getter function for Hbare
    void PrintSPE(); ///< Print out the single-particle energies
    void FreeVmon();               ///< Free up the memory used to store Vmon3.
-   void GetRadialWF(index_t index, vector<double>& R, vector<double>& PSI); ///< Return the radial wave function of an orbit in the HF basis
+   void GetRadialWF(index_t index, std::vector<double>& R, std::vector<double>& PSI); ///< Return the radial wave function of an orbit in the HF basis
    double GetRadialWF_r(index_t index, double R); ///< Return the radial wave function of an orbit in the HF basis
    void FreezeOccupations(){freeze_occupations = true;};
    void UnFreezeOccupations(){freeze_occupations = false;};
