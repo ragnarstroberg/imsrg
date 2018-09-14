@@ -784,6 +784,7 @@ void Operator::ScaleTwoBody(double x)
    TwoBody.Scale(x);
 }
 
+// This is unused
 void Operator::Eye()
 {
    ZeroBody = 1;
