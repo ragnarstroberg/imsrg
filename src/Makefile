@@ -1,4 +1,5 @@
 CC = g++
+#CC = clang++
 
 # Compiler flags:
 #  -DNO_ODE compiles without boost/ode package used for flow equation solver
@@ -6,10 +7,21 @@ CC = g++
 #  -DOPENBLAS_NOUSEOMP=1 removes parallel blocks which take threads away from OPENBLAS
 #                        to be used if OpenBlas was compiled without the USE_OMP flag
 
+ALL = libIMSRG.so imsrg++
+INSTDIR = $(HOME)
 INCLUDE   = -I./armadillo
 FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC 
-INSTDIR = $(HOME)
+LIBS = -lopenblas -lgsl -lz
 
+# I assume we're running on linux
+OS = LINUX
+# But in case we're crazy enough to run on MacOS, might as well check...
+ifneq (,$(findstring arwin,$(shell uname))) 
+  OS = MACOS
+endif
+
+
+# Tag the build with the current version from git, so we know where all the awesome answers came from.
 BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "%s_%s",$$2,$$3}' )
 ifneq (,$(findstring detached,$(BUILDVERSION)))
   BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "HEAD_%s",$$6}'  )
@@ -21,23 +33,33 @@ endif
 
 FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
 
-WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations
+WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations -Wno-missing-braces
 FLAGS    += $(WARNFLAGS)
 
 SOFLAGS = $(FLAGS)
 
 #PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
-PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags --ldflags) -Wl,--no-as-needed
+PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags ) -Wl,--no-as-needed
+PYTHONLIBS = -I./pybind11/include $(shell python-config  --ldflags) 
 
 THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; else echo other; fi)
 
-ALL = libIMSRG.so imsrg++
-LIBS = -lopenblas -lgsl -lz
+
+
+ifeq ($(OS),MACOS)
+#  FLAGS     = -Xpreprocessor -fopenmp -O3 -march=native -std=c++11 -fPIC 
+  FLAGS     = -Xpreprocessor -fopenmp -O3  -std=c++11 -fPIC 
+  LIBS += -lomp
+  PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags | sed -e 's/-arch i386//')
+endif
+
+
 ifeq ($(HDF5),on)
  LIBS += -lhdf5_cpp -lhdf5
 else
  FLAGS += -DNO_HDF5   # By default, don't bother building with HDF5, since it's not used very often and can make building a pain
 endif
+
 
 
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
@@ -131,27 +153,31 @@ mysrg: main.cc $(OBJ)
 	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 boost_src/gzip.o: boost_src/gzip.cpp
-	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
+	$(CC) -c $^ -o $@ $(INCLUDE) $(FLAGS) 
+#	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 boost_src/zlib.o: boost_src/zlib.cpp
-	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
+	$(CC) -c $^ -o $@ $(INCLUDE) $(FLAGS) 
+#	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 
 %.o: %.cc %.hh
-	$(CC) -c $*.cc -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
+	$(CC) -c $*.cc -o $@ $(INCLUDE) $(FLAGS) 
+#	$(CC) -c $*.cc -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
 
 
 
 libIMSRG.so: $(OBJ)
-	$(CC) $^ -shared -o $@ $(SOFLAGS)
+	$(CC) $^ -shared -o $@ $(SOFLAGS) $(LIBS)
 
 python: pyIMSRG.so
 
 pyIMSRG.so: $(OBJ)  pyIMSRG.o
-	$(CC) $(FLAGS) $(INCLUDE) $(PYTHONFLAGS) $(LIBS) -shared  $^ -o $@
+	$(CC) $(FLAGS) $(INCLUDE) $(PYTHONFLAGS) $(PYTHONLIBS) $(LIBS) -shared  $^ -o $@
 
 pyIMSRG.o: pyIMSRG.cc
-	$(CC) -c  $(FLAGS) $(INCLUDE) $(PYTHONFLAGS) $(LIBS)  $^ -o $@
+	$(CC) -c  $(FLAGS) $(INCLUDE) $(PYTHONFLAGS)  $^ -o $@
+#	$(CC) -c  $(FLAGS) $(INCLUDE) $(PYTHONFLAGS) $(LIBS)  $^ -o $@
 
 imsrg++: imsrg++.cc libIMSRG.so Parameters.hh
 	$(CC) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)

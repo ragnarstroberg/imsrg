@@ -2,6 +2,8 @@
 #include "Generator.hh"
 #include "imsrg_util.hh" // for VectorUnion
 
+#include "omp.h"
+
 using namespace imsrg_util;
 
 Generator::Generator()

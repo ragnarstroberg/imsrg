@@ -1,3 +1,22 @@
+///////////////////////////////////////////////////////////////////////////////////
+//    ThreeBodyME.hh, part of  imsrg++
+//    Copyright (C) 2018  Ragnar Stroberg
+//
+//    This program is free software; you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation; either version 2 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License along
+//    with this program; if not, write to the Free Software Foundation, Inc.,
+//    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+///////////////////////////////////////////////////////////////////////////////////
+
 #ifndef ThreeBodyME_h
 #define ThreeBodyME_h 1
 
@@ -20,8 +39,8 @@ class ThreeBodyME
 {
  public:
   ModelSpace * modelspace;
-  vector<ThreeBME_type> MatEl;
-  unordered_map<size_t, size_t> OrbitIndexHash; //
+  std::vector<ThreeBME_type> MatEl;
+  std::unordered_map<size_t, size_t> OrbitIndexHash; //
   int E3max;
   size_t total_dimension;
   const static int ABC;
@@ -42,7 +61,7 @@ class ThreeBodyME
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};
 
 //// Three body setter getters
-  vector<pair<size_t,double>> AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
+  std::vector<std::pair<size_t,double>> AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
   ThreeBME_type AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
   void   SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
   ThreeBME_type GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
@@ -60,8 +79,8 @@ class ThreeBodyME
   size_t size(){return total_dimension * sizeof(ThreeBME_type);};
 
 
-  void WriteBinary(ofstream&);
-  void ReadBinary(ifstream&);
+  void WriteBinary(std::ofstream&);
+  void ReadBinary(std::ifstream&);
 
 };
 

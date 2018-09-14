@@ -33,9 +33,11 @@ namespace py = pybind11;
   Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
 
 //BOOST_PYTHON_MODULE(pyIMSRG)
-PYBIND11_PLUGIN(pyIMSRG)
+//PYBIND11_PLUGIN(pyIMSRG)
+PYBIND11_MODULE(pyIMSRG, m)
 {
-  py::module m("pyIMSRG", "python bindings for IMSRG code");
+//  py::module m("pyIMSRG", "python bindings for IMSRG code");
+  m.doc() = "python bindings for IMSRG code";
 
 //   py::class<vector<string> > vector_string("vector_string")
 //      .def (vector_indexing_suite< vector<string> >())
@@ -331,6 +333,6 @@ PYBIND11_PLUGIN(pyIMSRG)
    m.def("Moshinsky",AngMom::Moshinsky);
 
 
-  return m.ptr();
+//  return m.ptr();
 
 }

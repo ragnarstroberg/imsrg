@@ -1,3 +1,21 @@
+///////////////////////////////////////////////////////////////////////////////////
+//    Operator.hh, part of  imsrg++
+//    Copyright (C) 2018  Ragnar Stroberg
+//
+//    This program is free software; you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation; either version 2 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License along
+//    with this program; if not, write to the Free Software Foundation, Inc.,
+//    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+///////////////////////////////////////////////////////////////////////////////////
 
 #ifndef Operator_h
 #define Operator_h 1
@@ -7,12 +25,13 @@
 #include "ThreeBodyME.hh"
 #include "IMSRGProfiler.hh"
 #include <armadillo>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <deque>
 #include <map>
 
-using namespace std;
+//using namespace std;
 
 /// The Operator class provides a generic operator up to three-body, scalar or tensor.
 /// The class contains lots of methods and overloaded operators so that the resulting
@@ -41,7 +60,7 @@ class Operator
   int nChannels; ///< Number of two-body channels \f$ J,\pi,T_z \f$ associated with the model space
 
 
-  map<array<int,3>,vector<index_t> > OneBodyChannels;
+  std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
   IMSRGProfiler profiler;
 
   static double bch_transform_threshold;
@@ -130,8 +149,8 @@ class Operator
   void SetUpOneBodyChannels();
   size_t Size();
 
-  void WriteBinary(ofstream& ofs);
-  void ReadBinary(ifstream& ifs);
+  void WriteBinary(std::ofstream& ofs);
+  void ReadBinary(std::ifstream& ifs);
 
 
   // The actually interesting methods
@@ -153,8 +172,8 @@ class Operator
   Operator Standard_BCH_Transform( const Operator& ) ; 
   Operator Brueckner_BCH_Transform( const Operator& ) ; 
 
-  void CalculateKineticEnergy();
-  void Eye(); ///< set to identity operator
+  void CalculateKineticEnergy(); // Deprecated
+  void Eye(); ///< set to identity operator -- unused
 
   double GetMP2_Energy();
   double GetMP3_Energy();
@@ -182,11 +201,11 @@ class Operator
   static void SetUseBruecknerBCH(bool tf){use_brueckner_bch = tf;};
   static void SetUseGooseTank(bool tf){use_goose_tank_correction = tf;};
 
-  deque<arma::mat> InitializePandya(size_t nch, string orientation);
-//  void DoPandyaTransformation(deque<arma::mat>&, deque<arma::mat>&, string orientation) const ;
-  void DoPandyaTransformation(deque<arma::mat>&, string orientation) const ;
-  void DoPandyaTransformation_SingleChannel(arma::mat& X, int ch_cc, string orientation) const ;
-  void AddInversePandyaTransformation(const deque<arma::mat>&);
+  std::deque<arma::mat> InitializePandya(size_t nch, std::string orientation);
+//  void DoPandyaTransformation(std::deque<arma::mat>&, std::deque<arma::mat>&, std::string orientation) const ;
+  void DoPandyaTransformation(std::deque<arma::mat>&, std::string orientation) const ;
+  void DoPandyaTransformation_SingleChannel(arma::mat& X, int ch_cc, std::string orientation) const ;
+  void AddInversePandyaTransformation(const std::deque<arma::mat>&);
   void AddInversePandyaTransformation_SingleChannel(arma::mat& Z, int ch_cc);
 
 
@@ -208,10 +227,10 @@ class Operator
 
   void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, TwoBodyME& Mpp, TwoBodyME& Mhh) const;
   void ConstructScalarMpp_Mhh_GooseTank(const Operator& X, const Operator& Y, TwoBodyME& Mpp, TwoBodyME& Mhh) const;
-//  void DoTensorPandyaTransformation(map<array<int,2>,arma::mat>&, map<array<int,2>,arma::mat>&) const;
-  void DoTensorPandyaTransformation(map<array<index_t,2>,arma::mat>&) const;
+//  void DoTensorPandyaTransformation(std::map<std::array<int,2>,arma::mat>&, std::map<std::array<int,2>,arma::mat>&) const;
+  void DoTensorPandyaTransformation(std::map<std::array<index_t,2>,arma::mat>&) const;
   void DoTensorPandyaTransformation_SingleChannel(arma::mat& X, int ch_bra_cc, int ch_ket_cc) const;
-  void AddInverseTensorPandyaTransformation(const map<array<index_t,2>,arma::mat>&);
+  void AddInverseTensorPandyaTransformation(const std::map<std::array<index_t,2>,arma::mat>&);
   void AddInverseTensorPandyaTransformation_SingleChannel(arma::mat& Zbar, int ch_bra_cc, int ch_ket_cc);
 
   void comm111st( const Operator& X, const Operator& Y) ;

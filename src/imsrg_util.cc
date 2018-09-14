@@ -2,13 +2,14 @@
 #include "imsrg_util.hh"
 #include "AngMom.hh"
 //#include "DarkMatterNREFT.hh"
+#include "omp.h"
 #include <gsl/gsl_integration.h>
 #include <boost/math/special_functions/gamma.hpp>
 #include <boost/math/special_functions/factorials.hpp>
 #include <vector>
 
 
-using namespace AngMom;
+//using namespace AngMom;
 
 /// imsrg_util namespace. Used to define some helpful functions.
 namespace imsrg_util
@@ -515,11 +516,11 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
      {
        if ( abs(Lab-Sab)>J or Lab+Sab<J) continue;
 
-       double njab = NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
+       double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
        if (njab == 0) continue;
        int Scd = Sab;
        int Lcd = Lab;
-       double njcd = NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
+       double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
        if (njcd == 0) continue;
 
        // Next, transform to rel / com coordinates with Moshinsky tranformation
@@ -703,7 +704,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
           int lambda = JacobiBasis[iJac][5];
 
 //          int Asym = 1; // Fix this...
-          double ninej = NormNineJ(la,0.5,ja,lb,0.5,jb,L,S,J);
+          double ninej = AngMom::NormNineJ(la,0.5,ja,lb,0.5,jb,L,S,J);
           if (abs(ninej)<1e-6) continue;
           double mosh = modelspace->GetMoshinsky(N,Lambda,n,lambda,na,la,nb,lb,L);
           if (abs(mosh)<1e-6) continue;
@@ -894,11 +895,11 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
      {
        if ( abs(Lab-Sab)>J or Lab+Sab<J) continue;
 
-       double njab = NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
+       double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
        if (njab == 0) continue;
        int Scd = Sab;
        int Lcd = Lab;
-       double njcd = NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
+       double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
        if (njcd == 0) continue;
 
        // Next, transform to rel / com coordinates with Moshinsky tranformation
@@ -1916,11 +1917,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
      {
        if ( abs(Lab-Sab)>Jab or Lab+Sab<Jab) continue;
 
-       double njab = NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,Jab);
+       double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,Jab);
        if (njab == 0) continue;
        int Scd = Sab;
        int Lcd = Lab;
-       double njcd = NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,Jcd);
+       double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,Jcd);
        if (njcd == 0) continue;
 
        // Next, transform to rel / com coordinates with Moshinsky tranformation
@@ -2499,11 +2500,11 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
          {
            if ( abs(Lab-Sab)>J or Lab+Sab<J) continue;
     
-           double njab = NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
+           double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
            if (njab == 0) continue;
            int Scd = Sab;
            int Lcd = Lab;
-           double njcd = NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
+           double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
            if (njcd == 0) continue;
     
            // Next, transform to rel / com coordinates with Moshinsky tranformation
@@ -2664,10 +2665,10 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     }
     else // Tensor => slightly more complicated, tbmes are reduced.
     {
-       if (j==l)  embedded_tbme += OB(i,k) * modelspace->phase(ji+jj+Jket) * SixJ(Jbra,Jket,Lambda,jk,ji,jj);
-       if (i==k)  embedded_tbme += OB(j,l) * modelspace->phase(jk+jl-Jbra) * SixJ(Jbra,Jket,Lambda,jl,jj,ji);
-       if (j==k)  embedded_tbme -= OB(i,l) * modelspace->phase(ji+jj+jk+jl)* SixJ(Jbra,Jket,Lambda,jl,ji,jj);
-       if (i==l)  embedded_tbme -= OB(j,k) * modelspace->phase(Jket-Jbra)  * SixJ(Jbra,Jket,Lambda,jk,jj,ji);
+       if (j==l)  embedded_tbme += OB(i,k) * modelspace->phase(ji+jj+Jket) * AngMom::SixJ(Jbra,Jket,Lambda,jk,ji,jj);
+       if (i==k)  embedded_tbme += OB(j,l) * modelspace->phase(jk+jl-Jbra) * AngMom::SixJ(Jbra,Jket,Lambda,jl,jj,ji);
+       if (j==k)  embedded_tbme -= OB(i,l) * modelspace->phase(ji+jj+jk+jl)* AngMom::SixJ(Jbra,Jket,Lambda,jl,ji,jj);
+       if (i==l)  embedded_tbme -= OB(j,k) * modelspace->phase(Jket-Jbra)  * AngMom::SixJ(Jbra,Jket,Lambda,jk,jj,ji);
        embedded_tbme *= sqrt((2*Jbra+1)*(2*Jket+1)) * modelspace->phase(Lambda);
     }
     if (i==j) embedded_tbme /=SQRT2;
