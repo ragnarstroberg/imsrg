@@ -1,6 +1,6 @@
 # ragnar_imsrg
 In-Medium Similarity Renormalization Group software for nuclear structure calculations. Written in C++, with Python bindings.
-It is capapble of performing Hartree-Fock, single-reference IM-SRG, and valence-space IM-SRG calculations.
+It is capable of performing Hartree-Fock, single-reference IM-SRG, and valence-space IM-SRG calculations.
 If you don't know what these things are, you should check out
 http://link.aps.org/doi/10.1103/PhysRevLett.106.222502
 http://www.sciencedirect.com/science/article/pii/S0370157315005414
