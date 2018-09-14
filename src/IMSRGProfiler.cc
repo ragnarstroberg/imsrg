@@ -26,11 +26,11 @@ IMSRGProfiler::IMSRGProfiler()
 std::map<std::string,size_t> IMSRGProfiler::CheckMem()
 {
   char commandstr[100],outbuf[500],buf[100];
-  sprintf(commandstr,"pstd::map -x %d | tail -1",getpid()); // TODO make this more portable. On OSX, use vmstd::map. no idea for Windows...
+  sprintf(commandstr,"pmap -x %d | tail -1",getpid()); // TODO make this more portable. On OSX, use vmmap. no idea for Windows...
   FILE* output = popen(commandstr,"r");
   std::map<std::string,size_t> s;
   if (output==NULL or fgets(outbuf,500,output) == NULL)
-    std::cout << " <<< IMSRGProfiler::CheckMem():  Problem reading output of pstd::map (pid = " << getpid() << ")" << std::endl;
+    std::cout << " <<< IMSRGProfiler::CheckMem():  Problem reading output of pmap (pid = " << getpid() << ")" << std::endl;
   else
     std::istringstream(outbuf) >> commandstr >> buf >> s["Kbytes"] >> s["RSS"] >> s["DIRTY"];
   return s;
