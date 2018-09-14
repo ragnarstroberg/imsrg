@@ -1,4 +1,5 @@
 CC = g++
+#CC = clang++
 
 # Compiler flags:
 #  -DNO_ODE compiles without boost/ode package used for flow equation solver
