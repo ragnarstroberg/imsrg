@@ -126,7 +126,6 @@ install: splashscreen
 	  mkdir $(INSTDIR)/bin; \
 	fi
 	ln -sf $(PWD)/libIMSRG.so $(INSTDIR)/lib/libIMSRG.so
-	ln -sfT $(PWD)/armadillo $(INSTDIR)/include/armadillo
 	@if [ -f pyIMSRG.so ] ; then\
 	  ln -sf $(PWD)/pyIMSRG.so $(INSTDIR)/lib/pyIMSRG.so;\
 	fi
@@ -138,6 +137,7 @@ install: splashscreen
 	  echo linking $(PWD)/imsrg++  '=>' $(INSTRDIR)/bin/imsrg++;\
 	  ln -sf $(PWD)/imsrg++ $(INSTDIR)/bin/imsrg++;\
 	fi
+	ln -nsf $(PWD)/armadillo $(INSTDIR)/include/armadillo
 	@printf "\n\nDone installing.\n\n"
 	@echo '*********************************************************************'
 	@echo '* Make sure libIMSRG.so is in your LIBRARY_PATH and LD_LIBRARY_PATH *'
