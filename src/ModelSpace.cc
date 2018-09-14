@@ -8,6 +8,7 @@
 #include <sstream>
 #include "omp.h"
 #include <cstdlib> // for EXIT_FAILURE
+#include <inttypes.h> // for PRIx64
 
 
 //using namespace std;
@@ -847,7 +848,7 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
    if (tz2 < 0 ) proton_orbits.push_back(ind);
    if (tz2 > 0 ) neutron_orbits.push_back(ind);
 
-   OneBodyChannels[{{l, j2, tz2}}].push_back(ind);
+   OneBodyChannels[{l, j2, tz2}].push_back(ind);
 }
 
 
@@ -1065,7 +1066,7 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
     else
     {
       printf("DANGER!!!!!!!  Updating SixJList inside a parellel loop breaks thread safety!\n");
-      printf(" I shouldn't be here in GetSixJ(%.1f %.1f %.1f %.1f %.1f %.1f).  key =%llx   sixj=%f\n",j1,j2,j3,J1,J2,J3,key,sixj); 
+      printf(" I shouldn't be here in GetSixJ(%.1f %.1f %.1f %.1f %.1f %.1f).  key =%" PRIx64 "   sixj=%f\n",j1,j2,j3,J1,J2,J3,key,sixj); //PRIx64 is portable uint64_t format
       profiler.counter["N_CalcSixJ_in_Parallel_loop"] +=1;
 //      quick_exit(EXIT_FAILURE);
       exit(EXIT_FAILURE);
@@ -1334,8 +1335,8 @@ double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double 
    int K24 = 2*J24;
    int K = 2*J;
 
-   std::array<int,9> klist = {{k1,k2,K12,k3,k4,K34,K13,K24,K}};
-   std::array<double,9> jlist = {{j1,j2,J12,j3,j4,J34,J13,J24,J}};
+   std::array<int,9> klist = {k1,k2,K12,k3,k4,K34,K13,K24,K};
+   std::array<double,9> jlist = {j1,j2,J12,j3,j4,J34,J13,J24,J};
    int imin = std::min_element(klist.begin(),klist.end()) - klist.begin();
    switch (imin)
    {

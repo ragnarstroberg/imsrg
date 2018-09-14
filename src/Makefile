@@ -38,7 +38,7 @@ FLAGS    += $(WARNFLAGS)
 SOFLAGS = $(FLAGS)
 
 #PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
-PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags --ldflags) -Wl,--no-as-needed
+PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags ) -Wl,--no-as-needed
 PYTHONLIBS = -I./pybind11/include $(shell python-config  --ldflags) 
 
 THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; else echo other; fi)
