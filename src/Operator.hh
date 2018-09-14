@@ -98,7 +98,7 @@ class Operator
   Operator& operator=(Operator&& rhs);
 
   //Methods
-  Operator& TempOp(size_t n); ///< Static scratch space for calculations
+//  Operator& TempOp(size_t n); ///< Static scratch space for calculations
 
   // One body setter/getters
   double GetOneBody(int i,int j) {return OneBody(i,j);};
@@ -160,20 +160,20 @@ class Operator
   Operator UndoNormalOrdering() const; ///< Returns the operator normal-ordered wrt the vacuum
   Operator Truncate(ModelSpace& ms_new); ///< Returns the operator trunacted to the new model space
 
-  void SetToCommutator(const Operator& X, const Operator& Y);
-  void CommutatorScalarScalar( const Operator& X, const Operator& Y) ;
-  void CommutatorScalarTensor( const Operator& X, const Operator& Y) ;
-  friend Operator Commutator(const Operator& X, const Operator& Y) ; 
+//  void SetToCommutator(const Operator& X, const Operator& Y);
+//  void CommutatorScalarScalar( const Operator& X, const Operator& Y) ;
+//  void CommutatorScalarTensor( const Operator& X, const Operator& Y) ;
+//  friend Operator Commutator(const Operator& X, const Operator& Y) ; 
 //  friend Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) ;
 //  friend Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) ;
 
-  Operator BCH_Product(  Operator& )  ; 
-  Operator BCH_Transform( const Operator& ) ; 
-  Operator Standard_BCH_Transform( const Operator& ) ; 
-  Operator Brueckner_BCH_Transform( const Operator& ) ; 
+//  Operator BCH_Product(  Operator& )  ; 
+//  Operator BCH_Transform( const Operator& ) ; 
+//  Operator Standard_BCH_Transform( const Operator& ) ; 
+//  Operator Brueckner_BCH_Transform( const Operator& ) ; 
 
-  void CalculateKineticEnergy(); // Deprecated
-  void Eye(); ///< set to identity operator -- unused
+//  void CalculateKineticEnergy(); // Deprecated
+//  void Eye(); ///< set to identity operator -- unused
 
   double GetMP2_Energy();
   double GetMP3_Energy();
@@ -201,43 +201,42 @@ class Operator
   static void SetUseBruecknerBCH(bool tf){use_brueckner_bch = tf;};
   static void SetUseGooseTank(bool tf){use_goose_tank_correction = tf;};
 
-  std::deque<arma::mat> InitializePandya(size_t nch, std::string orientation);
-//  void DoPandyaTransformation(std::deque<arma::mat>&, std::deque<arma::mat>&, std::string orientation) const ;
-  void DoPandyaTransformation(std::deque<arma::mat>&, std::string orientation) const ;
-  void DoPandyaTransformation_SingleChannel(arma::mat& X, int ch_cc, std::string orientation) const ;
-  void AddInversePandyaTransformation(const std::deque<arma::mat>&);
-  void AddInversePandyaTransformation_SingleChannel(arma::mat& Z, int ch_cc);
+//  std::deque<arma::mat> InitializePandya(size_t nch, std::string orientation);
+//  void DoPandyaTransformation(std::deque<arma::mat>&, std::string orientation) const ;
+//  void DoPandyaTransformation_SingleChannel(arma::mat& X, int ch_cc, std::string orientation) const ;
+//  void AddInversePandyaTransformation(const std::deque<arma::mat>&);
+//  void AddInversePandyaTransformation_SingleChannel(arma::mat& Z, int ch_cc);
 
 
-  void comm110ss( const Operator& X, const Operator& Y) ; 
-  void comm220ss( const Operator& X, const Operator& Y) ;
-  void comm111ss( const Operator& X, const Operator& Y) ;
-  void comm121ss( const Operator& X, const Operator& Y) ;
-  void comm221ss( const Operator& X, const Operator& Y) ;
-  void comm122ss( const Operator& X, const Operator& Y) ;
-  void comm222_pp_hhss( const Operator& X, const Operator& Y) ;
-  void comm222_phss( const Operator& X, const Operator& Y) ;
-  void comm222_pp_hh_221ss( const Operator& X, const Operator& Y) ;
+//  void comm110ss( const Operator& X, const Operator& Y) ; 
+//  void comm220ss( const Operator& X, const Operator& Y) ;
+//  void comm111ss( const Operator& X, const Operator& Y) ;
+//  void comm121ss( const Operator& X, const Operator& Y) ;
+//  void comm221ss( const Operator& X, const Operator& Y) ;
+//  void comm122ss( const Operator& X, const Operator& Y) ;
+//  void comm222_pp_hhss( const Operator& X, const Operator& Y) ;
+//  void comm222_phss( const Operator& X, const Operator& Y) ;
+//  void comm222_pp_hh_221ss( const Operator& X, const Operator& Y) ;
 
-//  void GooseTankUpdate( const Operator& Omega, Operator& Nested, Operator& chi);
-  void GooseTankUpdate( const Operator& Omega, const Operator& Nested);
-//  void goose_tank_ss( const Operator& X, const Operator& Y);
-
-// scalar-tensor commutators
-
-  void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, TwoBodyME& Mpp, TwoBodyME& Mhh) const;
-  void ConstructScalarMpp_Mhh_GooseTank(const Operator& X, const Operator& Y, TwoBodyME& Mpp, TwoBodyME& Mhh) const;
-//  void DoTensorPandyaTransformation(std::map<std::array<int,2>,arma::mat>&, std::map<std::array<int,2>,arma::mat>&) const;
-  void DoTensorPandyaTransformation(std::map<std::array<index_t,2>,arma::mat>&) const;
-  void DoTensorPandyaTransformation_SingleChannel(arma::mat& X, int ch_bra_cc, int ch_ket_cc) const;
-  void AddInverseTensorPandyaTransformation(const std::map<std::array<index_t,2>,arma::mat>&);
-  void AddInverseTensorPandyaTransformation_SingleChannel(arma::mat& Zbar, int ch_bra_cc, int ch_ket_cc);
-
-  void comm111st( const Operator& X, const Operator& Y) ;
-  void comm121st( const Operator& X, const Operator& Y) ;
-  void comm122st( const Operator& X, const Operator& Y) ;
-  void comm222_pp_hh_221st( const Operator& X, const Operator& Y) ;
-  void comm222_phst( const Operator& X, const Operator& Y) ;
+////  void GooseTankUpdate( const Operator& Omega, Operator& Nested, Operator& chi);
+//  void GooseTankUpdate( const Operator& Omega, const Operator& Nested);
+////  void goose_tank_ss( const Operator& X, const Operator& Y);
+//
+//// scalar-tensor commutators
+//
+//  void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, TwoBodyME& Mpp, TwoBodyME& Mhh) const;
+//  void ConstructScalarMpp_Mhh_GooseTank(const Operator& X, const Operator& Y, TwoBodyME& Mpp, TwoBodyME& Mhh) const;
+////  void DoTensorPandyaTransformation(std::map<std::array<int,2>,arma::mat>&, std::map<std::array<int,2>,arma::mat>&) const;
+//  void DoTensorPandyaTransformation(std::map<std::array<index_t,2>,arma::mat>&) const;
+//  void DoTensorPandyaTransformation_SingleChannel(arma::mat& X, int ch_bra_cc, int ch_ket_cc) const;
+//  void AddInverseTensorPandyaTransformation(const std::map<std::array<index_t,2>,arma::mat>&);
+//  void AddInverseTensorPandyaTransformation_SingleChannel(arma::mat& Zbar, int ch_bra_cc, int ch_ket_cc);
+//
+//  void comm111st( const Operator& X, const Operator& Y) ;
+//  void comm121st( const Operator& X, const Operator& Y) ;
+//  void comm122st( const Operator& X, const Operator& Y) ;
+//  void comm222_pp_hh_221st( const Operator& X, const Operator& Y) ;
+//  void comm222_phst( const Operator& X, const Operator& Y) ;
 
 };
 

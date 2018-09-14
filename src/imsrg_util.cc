@@ -1,6 +1,7 @@
 
 #include "imsrg_util.hh"
 #include "AngMom.hh"
+#include "Commutator.hh"
 //#include "DarkMatterNREFT.hh"
 #include "omp.h"
 #include <gsl/gsl_integration.h>
@@ -2725,8 +2726,8 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << endl;
 //    X.comm111ss(Y,Zscalar);
 //    X.comm111st(Yred,Ztensor);
-    Zscalar.comm111ss(X,Y);
-    Ztensor.comm111st(X,Yred);
+    Commutator::comm111ss(X,Y,Zscalar);
+    Commutator::comm111st(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
@@ -2737,9 +2738,9 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Zscalar.Erase();
     Ztensor.Erase();
     cout << "121ss" << endl;
-    Zscalar.comm121ss(X,Y);
+    Commutator::comm121ss(X,Y,Zscalar);
     cout << "121st" << endl;
-    Ztensor.comm121st(X,Yred);
+    Commutator::comm121st(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
@@ -2749,8 +2750,8 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
-    Zscalar.comm122ss(X,Y);
-    Ztensor.comm122st(X,Yred);
+    Commutator::comm122ss(X,Y,Zscalar);
+    Commutator::comm122st(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
@@ -2760,8 +2761,8 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
-    Zscalar.comm222_pp_hh_221ss(X,Y);
-    Ztensor.comm222_pp_hh_221st(X,Yred);
+    Commutator::comm222_pp_hh_221ss(X,Y,Zscalar);
+    Commutator::comm222_pp_hh_221st(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
@@ -2771,10 +2772,10 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
-    X.comm222_phss(Y,Zscalar);
+    Commutator::comm222_phss(Y,Zscalar,X);
 //    Reduce(Y); // Not sure why I can't use Yred...
-    Zscalar.comm222_phss(X,Y);
-    Ztensor.comm222_phst(X,Yred);
+    Commutator::comm222_phss(X,Y,Zscalar);
+    Commutator::comm222_phst(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);

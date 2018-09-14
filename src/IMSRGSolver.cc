@@ -1,5 +1,7 @@
 
 #include "IMSRGSolver.hh"
+#include "Commutator.hh"
+#include "Operator.hh"
 #include <iomanip>
 
 #ifndef NO_ODE
@@ -194,16 +196,19 @@ void IMSRGSolver::Solve_magnus_euler()
       Eta *= ds; // Here's the Euler step.
 
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
-      Omega.back() = Eta.BCH_Product( Omega.back() ); 
+//      Omega.back() = Eta.BCH_Product( Omega.back() ); 
+      Omega.back() = Commutator::BCH_Product( Eta, Omega.back() ); 
 
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
       if ((Omega.size()+n_omega_written)<2)
       {
-        FlowingOps[0] = H_0->BCH_Transform( Omega.back() );
+//        FlowingOps[0] = H_0->BCH_Transform( Omega.back() );
+        FlowingOps[0] = Commutator::BCH_Transform( *H_0, Omega.back() );
       }
       else
       {
-        FlowingOps[0] = H_saved.BCH_Transform( Omega.back() );
+//        FlowingOps[0] = H_saved.BCH_Transform( Omega.back() );
+        FlowingOps[0] = Commutator::BCH_Transform( H_saved, Omega.back() );
       }
 
       if (norm_eta<1.0 and generator.GetType() == "shell-model-atan")
@@ -247,21 +252,24 @@ void IMSRGSolver::Solve_magnus_modified_euler()
       if (s+ds > smax) ds = smax-s;
       s += ds;
 
-      H_temp = FlowingOps[0] + ds * Commutator(Eta,FlowingOps[0]);
+      H_temp = FlowingOps[0] + ds * Commutator::Commutator(Eta,FlowingOps[0]);
       generator.AddToEta(&H_temp,&Eta);
 
       Eta *= ds*0.5; // Here's the modified Euler step.
 
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
-      Omega.back() = Eta.BCH_Product( Omega.back() ); 
+//      Omega.back() = Eta.BCH_Product( Omega.back() ); 
+      Omega.back() = Commutator::BCH_Product( Eta, Omega.back() ); 
 
       if ((Omega.size()+n_omega_written)<2)
       {
-        FlowingOps[0] = H_0->BCH_Transform( Omega.back() );
+//        FlowingOps[0] = H_0->BCH_Transform( Omega.back() );
+        FlowingOps[0] = Commutator::BCH_Transform( *H_0, Omega.back() );
       }
       else
       {
-        FlowingOps[0] = H_saved.BCH_Transform( Omega.back() );
+//        FlowingOps[0] = H_saved.BCH_Transform( Omega.back() );
+        FlowingOps[0] = Commutator::BCH_Transform( H_saved, Omega.back() );
       }
         
       generator.Update(&FlowingOps[0],&Eta);
@@ -280,10 +288,10 @@ void IMSRGSolver::Solve_magnus_modified_euler()
 // Implement element-wise division and abs and reduce for Operators.
 // This is required for adaptive steppers
 //vector<Operator> operator/ (const vector<Operator>& num, const vector<Operator>& denom)
-deque<Operator> operator/ (const deque<Operator>& num, const deque<Operator>& denom)
+std::deque<Operator> operator/ (const std::deque<Operator>& num, const std::deque<Operator>& denom)
 {
 //   vector<Operator> quotient = num;
-   deque<Operator> quotient = num;
+   std::deque<Operator> quotient = num;
    for ( size_t i=0;i<num.size();++i )
    {
      quotient[i].ZeroBody /= denom[i].ZeroBody;
@@ -294,7 +302,7 @@ deque<Operator> operator/ (const deque<Operator>& num, const deque<Operator>& de
 }
 
 //vector<Operator> operator* (const double a, const vector<Operator>& X)
-deque<Operator> operator* (const double a, const deque<Operator>& X)
+std::deque<Operator> operator* (const double a, const std::deque<Operator>& X)
 {
 //  vector<Operator> Y = X;
   deque<Operator> Y = X;
@@ -303,20 +311,20 @@ deque<Operator> operator* (const double a, const deque<Operator>& X)
 }
 
 //vector<Operator> operator+ ( const vector<Operator>& X, const vector<Operator>& Y)
-deque<Operator> operator+ ( const deque<Operator>& X, const deque<Operator>& Y)
+std::deque<Operator> operator+ ( const std::deque<Operator>& X, const std::deque<Operator>& Y)
 {
 //  vector<Operator> Z = X;
-  deque<Operator> Z = X;
+  std::deque<Operator> Z = X;
   for ( size_t i=0;i<Z.size();++i )  Z[i] += Y[i];
   return Z;
 }
 
 // Also need the dubious operation of adding a double to an operator.
 //vector<Operator> operator+ (const double a, const vector<Operator>& X)
-deque<Operator> operator+ (const double a, const deque<Operator>& X)
+std::deque<Operator> operator+ (const double a, const std::deque<Operator>& X)
 {
 //   vector<Operator> Y = X;
-   deque<Operator> Y = X;
+   std::deque<Operator> Y = X;
    for ( auto& y : Y )
    {
      y.ZeroBody += a;
@@ -332,13 +340,13 @@ deque<Operator> operator+ (const double a, const deque<Operator>& X)
 // Return the element-wise absolute value of an operator
 // this is needed for ODE adaptive solver
 //vector<Operator> abs(const vector<Operator>& OpIn)
-deque<Operator> abs(const deque<Operator>& OpIn)
+std::deque<Operator> abs(const std::deque<Operator>& OpIn)
 {
 //   vector<Operator> OpOut = OpIn;
-   deque<Operator> OpOut = OpIn;
+   std::deque<Operator> OpOut = OpIn;
    for (auto& opout : OpOut )
    {
-     opout.ZeroBody = abs(opout.ZeroBody);
+     opout.ZeroBody = std::abs(opout.ZeroBody);
      opout.OneBody = arma::abs(opout.OneBody);
      for ( auto& itmat : opout.TwoBody.MatEl )    itmat.second = arma::abs(itmat.second);
    }
@@ -351,10 +359,10 @@ deque<Operator> abs(const deque<Operator>& OpIn)
 #ifdef OLD_BOOST
 namespace boost {namespace numeric {namespace odeint{
 template<>
-struct vector_space_reduce< deque<Operator> >
+struct vector_space_reduce< std::deque<Operator> >
 {
    template<class Op>
-   double operator()(const deque<Operator>& X, Op op, double init)
+   double operator()(const std::deque<Operator>& X, Op op, double init)
    {
       for (auto& x : X)
       {
@@ -378,11 +386,11 @@ struct vector_space_reduce< deque<Operator> >
 #ifndef OLD_BOOST
 namespace boost {namespace numeric {namespace odeint{
 template<>
-struct vector_space_norm_inf< deque<Operator> >
+struct vector_space_norm_inf< std::deque<Operator> >
 {
    typedef double result_type;
 //   double operator()(const vector<Operator>& X)
-   double operator()(const deque<Operator>& X)
+   double operator()(const std::deque<Operator>& X)
    {
      double norm = 0;
      for ( auto& x : X )
@@ -401,7 +409,7 @@ void IMSRGSolver::Solve_ode()
    WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
 //   runge_kutta4< vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
-   runge_kutta4< deque<Operator>, double, deque<Operator>, double, vector_space_algebra> stepper;
+   runge_kutta4< std::deque<Operator>, double, std::deque<Operator>, double, vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
@@ -419,7 +427,7 @@ void IMSRGSolver::Solve_ode_adaptive()
    using namespace boost::numeric::odeint;
    auto system = *this;
 //   typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
-   typedef runge_kutta_dopri5< deque<Operator> , double , deque<Operator> ,double , vector_space_algebra > stepper;
+   typedef runge_kutta_dopri5< std::deque<Operator> , double , std::deque<Operator> ,double , vector_space_algebra > stepper;
 //   typedef adams_bashforth_moulton< 4, vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
@@ -431,7 +439,7 @@ void IMSRGSolver::Solve_ode_adaptive()
 // Evaluate dx/dt for boost ode
 //void IMSRGSolver::operator()( const Operator& x, Operator& dxdt, const double t)
 //void IMSRGSolver::operator()( const vector<Operator>& x, vector<Operator>& dxdt, const double t)
-void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, const double t)
+void IMSRGSolver::operator()( const std::deque<Operator>& x, std::deque<Operator>& dxdt, const double t)
 {
    s = t;
    if (ode_mode == "H")
@@ -451,7 +459,7 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
      {
        for (size_t i=0;i<x.size();++i)
        {
-         dxdt[i] = Commutator(Eta,x[i]);
+         dxdt[i] = Commutator::Commutator(Eta,x[i]);
        }
      }
    }
@@ -468,12 +476,14 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
      auto& Omega_s = x.back();
      Operator& H_s = FlowingOps[0];
      if ((Omega.size()+n_omega_written) > 1)
-       H_s = H_saved.BCH_Transform(Omega_s);
+       H_s = Commutator::BCH_Transform(H_saved, Omega_s);
+//       H_s = H_saved.BCH_Transform(Omega_s);
      else
-       H_s = H_0->BCH_Transform(Omega_s);
+       H_s = Commutator::BCH_Transform(*H_0, Omega_s);
+//       H_s = H_0->BCH_Transform(Omega_s);
      generator.Update(&H_s,&Eta);
      if (dxdt.size() < x.size()) dxdt.resize(x.size());
-     dxdt.back() = Eta - 0.5*Commutator(Omega_s,Eta);
+     dxdt.back() = Eta - 0.5*Commutator::Commutator(Omega_s,Eta);
    }
    else if (ode_mode == "Restored" )
    {
@@ -492,9 +502,10 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
      }
      else
      {
-       dxdt[0] = Commutator(Eta,x[0]+x[1]);
+       dxdt[0] = Commutator::Commutator(Eta,x[0]+x[1]);
        dxdt[1].Erase();
-       dxdt[1].comm221ss(Eta,x[0]);
+//       dxdt[1].comm221ss(Eta,x[0]);
+       Commutator::comm221ss(Eta,x[0],dxdt[1]);
        // keep only pp and hh parts of d chi/ ds
        for (auto& a : modelspace->holes)
        {
@@ -506,7 +517,7 @@ void IMSRGSolver::operator()( const deque<Operator>& x, deque<Operator>& dxdt, c
        }
        for (size_t i=2;i<x.size();++i)
        {
-         dxdt[i] = Commutator(Eta,x[i]);
+         dxdt[i] = Commutator::Commutator(Eta,x[i]);
        }
      }
 
@@ -563,7 +574,8 @@ Operator IMSRGSolver::InverseTransform(Operator& OpIn)
   for (auto omega=Omega.rbegin(); omega !=Omega.rend(); ++omega )
   {
     Operator negomega = -(*omega);
-    OpOut = OpOut.BCH_Transform( negomega );
+//    OpOut = OpOut.BCH_Transform( negomega );
+    OpOut = Commutator::BCH_Transform( OpOut, negomega );
   }
   return OpOut;
 }
@@ -585,7 +597,8 @@ Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
      ifstream ifs(fname,ios::binary);
      omega.ReadBinary(ifs);
 //     if (OpIn.GetJRank()>0) cout << "step " << i << endl;
-     OpOut = OpOut.BCH_Transform( omega );
+//     OpOut = OpOut.BCH_Transform( omega );
+     OpOut = Commutator::BCH_Transform( OpOut, omega );
 //     if (OpIn.GetJRank()>0)cout << "done" << endl;
     }
   }
@@ -593,7 +606,8 @@ Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
   for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
   {
 //     if (OpIn.GetJRank()>0) cout << "step " << i << endl;
-    OpOut = OpOut.BCH_Transform( Omega[i] );
+//    OpOut = OpOut.BCH_Transform( Omega[i] );
+    OpOut = Commutator::BCH_Transform( OpOut, Omega[i] );
 //     if (OpIn.GetJRank()>0)cout << "done" << endl;
   }
 
@@ -612,16 +626,18 @@ Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
     for (int i=n;i<n_omega_written;i++)
     {
      sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
-     string fname(tmp);
-     ifstream ifs(fname,ios::binary);
+     std::string fname(tmp);
+     std::ifstream ifs(fname,std::ios::binary);
      omega.ReadBinary(ifs);
-     OpOut = OpOut.BCH_Transform( omega );
+//     OpOut = OpOut.BCH_Transform( omega );
+     OpOut = Commutator::BCH_Transform( OpOut, omega );
     }
   }
 
   for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
   {
-    OpOut = OpOut.BCH_Transform( Omega[i] );
+//    OpOut = OpOut.BCH_Transform( Omega[i] );
+    OpOut = Commutator::BCH_Transform( OpOut, Omega[i] );
   }
   return OpOut;
 }

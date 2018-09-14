@@ -28,7 +28,7 @@
 #include "IMSRGProfiler.hh"
 #include "ReadWrite.hh"
 
-using namespace std;
+//using namespace std;
 
 
 class IMSRGSolver
@@ -127,10 +127,10 @@ class IMSRGSolver
            : imsrgsolver(solver), times(solver.times), E0(solver.E0),
               eta1(solver.eta1),eta2(solver.eta2) {};
      IMSRGSolver& imsrgsolver;
-     vector<double>& times;
-     vector<double>& E0;
-     vector<double>& eta1;
-     vector<double>& eta2;
+     std::vector<double>& times;
+     std::vector<double>& E0;
+     std::vector<double>& eta1;
+     std::vector<double>& eta2;
 //     void operator() (const vector<Operator>& x, double t)
      void operator() (const deque<Operator>& x, double t)
      {

@@ -1,5 +1,7 @@
 
 #include "Generator.hh"
+#include "Commutator.hh"
+#include "Operator.hh"
 #include "imsrg_util.hh" // for VectorUnion
 
 #include "omp.h"
@@ -132,7 +134,7 @@ void Generator::ConstructGenerator_Wegner()
       H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(), tbc.GetKetIndex_hh() ).zeros();
       H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(), tbc.GetKetIndex_pp() ).zeros();
    }
-   Eta->SetToCommutator(H_diag,*H);
+   *Eta = Commutator::Commutator(H_diag, *H);
 //   *Eta = Commutator(H_diag,*H);
 }
 
