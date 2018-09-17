@@ -173,6 +173,11 @@ namespace imsrg_util
 //        return dmop[dmopname](modelspace, J, q );
 //        }
 //      }
+      else if (opnamesplit[0] == "Dagger" or opnamesplit[0] == "DaggerHF" )
+      {
+        index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
+        return Dagger_Op( modelspace, Q);
+      }
       else //need to remove from the list
       {
          std::cout << "Unknown operator: " << opname << std::endl;
@@ -1875,6 +1880,21 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
    QdotQ_op.OneBody.zeros();
    return QdotQ_op;
  }
+
+
+
+
+ Operator Dagger_Op( ModelSpace& modelspace, index_t Q )
+ {
+   Operator dag(modelspace);
+   dag.SetNumberLegs(3);
+   dag.SetQSpaceOrbit(Q);
+   dag.OneBody(Q,Q)= 1.0;
+   dag.SetNonHermitian();
+   std::cout << "Making a dagger operator. I think Q = " << Q << std::endl;
+   return dag;
+ }
+
 
 
 

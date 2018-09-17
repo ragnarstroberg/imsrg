@@ -61,6 +61,8 @@ class Operator
   int nChannels; ///< Number of two-body channels \f$ J,\pi,T_z \f$ associated with the model space
 
 
+  index_t Q_space_orbit; // Orbit with the same quantum numbers as this dagger operator. -1 if it's not a dagger operator. 
+
   std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
   IMSRGProfiler profiler;
 
@@ -124,8 +126,11 @@ class Operator
   int GetJRank()const {return rank_J;};
   int GetTRank()const {return rank_T;};
   int GetParity()const {return parity;};
+  int GetNumberLegs()const {return legs;};
   void SetParticleRank(int pr) {particle_rank = pr;};
   void SetNumberLegs( int l) {legs = l;};
+  void SetQSpaceOrbit( index_t q ) {Q_space_orbit = q;};
+  index_t GetQSpaceOrbit( ) {return Q_space_orbit;};
 
   void MakeReduced();
   void MakeNotReduced();

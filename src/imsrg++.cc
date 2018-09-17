@@ -348,17 +348,23 @@ int main(int argc, char** argv)
 //  }
 
 
-  for (auto& op : ops)
+//  for (auto& op : ops)
+  for (size_t i=0;i<ops.size();++i)
   {
-     if (basis == "HF") op = hf.TransformToHFBasis(op);
-     op = op.DoNormalOrdering();
-     if (method == "MP3")
-     {
-       double dop = op.MP1_Eval( HNO );
-       std::cout << "Operator 1st order correction  " << dop << "  ->  " << op.ZeroBody + dop << std::endl;
-     }
-//     std::cout << std::endl << op.OneBody << std::endl;
+     // We don't transform a DaggerHF, because we want the a^dagger to already refer to the HF basis.
+    if ((basis == "HF") and (opnames[i].find("DaggerHF") == std::string::npos)  )
+    {
+      ops[i] = hf.TransformToHFBasis(ops[i]);
+    }
+    ops[i] = ops[i].DoNormalOrdering();
+    if (method == "MP3")
+    {
+      double dop = ops[i].MP1_Eval( HNO );
+      std::cout << "Operator 1st order correction  " << dop << "  ->  " << ops[i].ZeroBody + dop << std::endl;
+    }
   }
+
+
   auto itR2p = find(opnames.begin(),opnames.end(),"Rp2");
   if (itR2p != opnames.end())
   {
@@ -614,9 +620,13 @@ int main(int argc, char** argv)
     {
        for (index_t i=0;i<ops.size();++i)
        {
-          if ((ops[i].GetJRank()+ops[i].GetTRank()+ops[i].GetParity())<1)
+          if ( ((ops[i].GetJRank()+ops[i].GetTRank()+ops[i].GetParity())<1) and (ops[i].GetNumberLegs()%2==0) )
           {
             rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
+          }
+          else if ( ops[i].GetNumberLegs()%2==1) // odd number of legs -> this is a dagger operator
+          {
+            rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int"); // do this for now. later make a *.dag format.
           }
           else
           {

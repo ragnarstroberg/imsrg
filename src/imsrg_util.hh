@@ -84,6 +84,8 @@ namespace imsrg_util
  Operator LCM_Op(ModelSpace& modelspace);
  Operator QdotQ_Op(ModelSpace& modelspace);
 
+ Operator Dagger_Op( ModelSpace& modelspace, index_t Q );
+
 ////////////////// Double beta decay functions from Charlie Payne ///////////////
  Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, std::string src); // put in by CP, it is still in development
  double CPrbmeGen(ModelSpace& modelspace, double rho, double x, int n, int l, int np, int lp, int mm, double pp); // testing...

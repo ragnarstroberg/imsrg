@@ -63,10 +63,10 @@ Operator::Operator()
 Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) : 
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms),
-    rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank), legs(2*part_rank)
+    rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank), legs(2*part_rank),
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),  
-    nChannels(ms.GetNumberTwoBodyChannels()) 
+    nChannels(ms.GetNumberTwoBodyChannels()) , Q_space_orbit(-1)
 {
   SetUpOneBodyChannels();
   if (particle_rank >=3) ThreeBody.Allocate();
@@ -76,10 +76,10 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 Operator::Operator(ModelSpace& ms) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(&ms),  ThreeBody(&ms),
-    rank_J(0), rank_T(0), parity(0), particle_rank(2), legs(2*part_rank)
+    rank_J(0), rank_T(0), parity(0), particle_rank(2), legs(4),
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),  
-    nChannels(ms.GetNumberTwoBodyChannels())
+    nChannels(ms.GetNumberTwoBodyChannels()), Q_space_orbit(-1)
 {
   SetUpOneBodyChannels();
   profiler.counter["N_Operators"] ++;
@@ -91,7 +91,7 @@ Operator::Operator(const Operator& op)
   rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank), legs(op.legs),
   E2max(op.E2max), E3max(op.E3max), 
   hermitian(op.hermitian), antihermitian(op.antihermitian),
-  nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
+  nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels), Q_space_orbit(op.Q_space_orbit)
 {
   profiler.counter["N_Operators"] ++;
 }
@@ -102,7 +102,7 @@ Operator::Operator(Operator&& op)
   rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank), legs(op.legs), 
   E2max(op.E2max), E3max(op.E3max), 
   hermitian(op.hermitian), antihermitian(op.antihermitian),
-  nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
+  nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels), Q_space_orbit(op.Q_space_orbit)
 {
   profiler.counter["N_Operators"] ++;
 }
