@@ -52,7 +52,7 @@ Operator::~Operator()
 /////////////////// CONSTRUCTORS /////////////////////////////////////////
 Operator::Operator()
  :   modelspace(NULL), 
-    rank_J(0), rank_T(0), parity(0), particle_rank(2),
+    rank_J(0), rank_T(0), parity(0), particle_rank(2), legs(4), 
     hermitian(true), antihermitian(false), nChannels(0)
 {
   profiler.counter["N_Operators"] ++;
@@ -63,7 +63,7 @@ Operator::Operator()
 Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) : 
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms),
-    rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank),
+    rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank), legs(2*part_rank)
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),  
     nChannels(ms.GetNumberTwoBodyChannels()) 
@@ -76,7 +76,7 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 Operator::Operator(ModelSpace& ms) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
     TwoBody(&ms),  ThreeBody(&ms),
-    rank_J(0), rank_T(0), parity(0), particle_rank(2),
+    rank_J(0), rank_T(0), parity(0), particle_rank(2), legs(2*part_rank)
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),  
     nChannels(ms.GetNumberTwoBodyChannels())
@@ -88,7 +88,7 @@ Operator::Operator(ModelSpace& ms) :
 Operator::Operator(const Operator& op)
 : modelspace(op.modelspace),  ZeroBody(op.ZeroBody),
   OneBody(op.OneBody), TwoBody(op.TwoBody) ,ThreeBody(op.ThreeBody),
-  rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank),
+  rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank), legs(op.legs),
   E2max(op.E2max), E3max(op.E3max), 
   hermitian(op.hermitian), antihermitian(op.antihermitian),
   nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
@@ -99,7 +99,7 @@ Operator::Operator(const Operator& op)
 Operator::Operator(Operator&& op)
 : modelspace(op.modelspace), ZeroBody(op.ZeroBody),
   OneBody(std::move(op.OneBody)), TwoBody(std::move(op.TwoBody)) , ThreeBody(std::move(op.ThreeBody)),
-  rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank),
+  rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank), legs(op.legs), 
   E2max(op.E2max), E3max(op.E3max), 
   hermitian(op.hermitian), antihermitian(op.antihermitian),
   nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels)
@@ -291,6 +291,7 @@ void Operator::WriteBinary(std::ofstream& ofs)
   ofs.write((char*)&rank_T,sizeof(rank_T));
   ofs.write((char*)&parity,sizeof(parity));
   ofs.write((char*)&particle_rank,sizeof(particle_rank));
+  ofs.write((char*)&legs,sizeof(legs));
   ofs.write((char*)&E2max,sizeof(E2max));
   ofs.write((char*)&E3max,sizeof(E3max));
   ofs.write((char*)&hermitian,sizeof(hermitian));
@@ -298,9 +299,11 @@ void Operator::WriteBinary(std::ofstream& ofs)
   ofs.write((char*)&nChannels,sizeof(nChannels));
   ofs.write((char*)&ZeroBody,sizeof(ZeroBody));
   ofs.write((char*)OneBody.memptr(),OneBody.size()*sizeof(double));
-  if (particle_rank > 1)
+//  if (particle_rank > 1)
+  if (legs > 3)
     TwoBody.WriteBinary(ofs);
-  if (particle_rank > 2)
+//  if (particle_rank > 2)
+  if (legs > 5)
     ThreeBody.WriteBinary(ofs);
   profiler.timer["Write Binary Op"] += omp_get_wtime() - tstart;
 }
@@ -313,6 +316,7 @@ void Operator::ReadBinary(std::ifstream& ifs)
   ifs.read((char*)&rank_T,sizeof(rank_T));
   ifs.read((char*)&parity,sizeof(parity));
   ifs.read((char*)&particle_rank,sizeof(particle_rank));
+  ifs.read((char*)&legs,sizeof(legs));
   ifs.read((char*)&E2max,sizeof(E2max));
   ifs.read((char*)&E3max,sizeof(E3max));
   ifs.read((char*)&hermitian,sizeof(hermitian));
@@ -321,9 +325,11 @@ void Operator::ReadBinary(std::ifstream& ifs)
   SetUpOneBodyChannels();
   ifs.read((char*)&ZeroBody,sizeof(ZeroBody));
   ifs.read((char*)OneBody.memptr(),OneBody.size()*sizeof(double));
-  if (particle_rank > 1)
+//  if (particle_rank > 1)
+  if (legs > 3)
     TwoBody.ReadBinary(ifs);
-  if (particle_rank > 2)
+//  if (particle_rank > 2)
+  if (legs > 5)
     ThreeBody.ReadBinary(ifs);
   profiler.timer["Read Binary Op"] += omp_get_wtime() - tstart;
 }
@@ -336,7 +342,8 @@ void Operator::ReadBinary(std::ifstream& ifs)
 
 Operator Operator::DoNormalOrdering()
 {
-   if (particle_rank==3)
+//   if (particle_rank==3)
+   if (legs>5)
       return DoNormalOrdering3();
    else
       return DoNormalOrdering2();
@@ -652,7 +659,8 @@ void Operator::Erase()
   EraseZeroBody();
   EraseOneBody();
   TwoBody.Erase();
-  if (particle_rank >=3)
+//  if (particle_rank >=3)
+  if (legs >=6)
     ThreeBody.Erase();
 }
 
