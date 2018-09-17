@@ -5,6 +5,7 @@
 #include "imsrg_util.hh" // for VectorUnion
 
 #include "omp.h"
+#include <string>
 
 using namespace imsrg_util;
 
@@ -40,20 +41,20 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
    else if (generator_type == "1PA")     ConstructGenerator_1PA();
    else
    {
-      cout << "Error. Unkown generator_type: " << generator_type << endl;
+      std::cout << "Error. Unkown generator_type: " << generator_type << std::endl;
    }
    Eta->profiler.timer["UpdateEta"] += omp_get_wtime() - start_time;
 }
 
 
 // Old method used to test some things out. Not typically used.
-void Generator::SetDenominatorDeltaOrbit(string orb)
+void Generator::SetDenominatorDeltaOrbit(std::string orb)
 {
   if (orb == "all")
      SetDenominatorDeltaIndex(-12345);
   else
      SetDenominatorDeltaIndex( modelspace->GetOrbitIndex(orb) );
-  cout << "Setting denominator delta orbit " << orb << " => " << modelspace->GetOrbitIndex(orb) << endl;
+  std::cout << "Setting denominator delta orbit " << orb << " => " << modelspace->GetOrbitIndex(orb) << std::endl;
 }
 
 
@@ -413,7 +414,7 @@ void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
 {
   ConstructGenerator_ShellModel_Atan();
 
-//  cout << "In ShellModel_Atat_NpNh, adding to Eta" << endl;
+//  std::cout << "In ShellModel_Atat_NpNh, adding to Eta" << std::endl;
   // decouple f_cc'
   for ( auto& c : modelspace->core )
   {
@@ -422,7 +423,7 @@ void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
      if (cprime<=c) continue;
      double denominator = Get1bDenominator(c,cprime);
      Eta->OneBody(c,cprime) = 0.5*atan(2*H->OneBody(c,cprime) / denominator );
-//     cout << "c,cprime = " << c << " " << cprime << "  etacc' = " << Eta->OneBody(c,cprime) << endl;
+//     std::cout << "c,cprime = " << c << " " << cprime << "  etacc' = " << Eta->OneBody(c,cprime) << std::endl;
      Eta->OneBody(cprime,c) = - Eta->OneBody(c,cprime);
    }
   }
@@ -431,7 +432,7 @@ void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
   for (int ch=0;ch<nchan;++ch)
   {
      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-//     cout << "ch = " << ch << "  vc size = " << tbc.GetKetIndex_vc().size() << "   qc size = " << tbc.GetKetIndex_qc().size() << endl;
+//     std::cout << "ch = " << ch << "  vc size = " << tbc.GetKetIndex_vc().size() << "   qc size = " << tbc.GetKetIndex_qc().size() << std::endl;
      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
      arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
   // decouple Gamma_qcvc'
@@ -441,12 +442,12 @@ void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
        for (auto& ibra : tbc.GetKetIndex_qc())
        {
          Ket& bra = tbc.GetKet(ibra);
-//         cout << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << endl;
+//         std::cout << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << std::endl;
          if ((ket.p==bra.p) or (ket.p==bra.q) or (ket.q==bra.p) or (ket.q==bra.q) ) continue;
          double denominator = Get2bDenominator(ch,ibra,iket);
          ETA2(ibra,iket) = 0.5*atan( 2*H2(ibra,iket) / denominator );
          ETA2(iket,ibra) = -ETA2(ibra,iket);
-//         cout << "   qcvc': " << ket.p << " " << ket.q << " " << bra.p << " " << bra.q << "    " << ETA2(ibra,iket) << endl;
+//         std::cout << "   qcvc': " << ket.p << " " << ket.q << " " << bra.p << " " << bra.q << "    " << ETA2(ibra,iket) << std::endl;
        }
      }
   // decouple Gamma_pcc'c''
@@ -463,7 +464,7 @@ void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
        }
      }
   }
-//  cout << "all done" << endl;
+//  std::cout << "all done" << std::endl;
 }
 
 
@@ -504,7 +505,7 @@ void Generator::ConstructGenerator_1PA()
       for (auto& ibra : tbc.GetKetIndex_pp())
       {
         Ket& bra = tbc.GetKet(ibra);
-//        cout << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << endl;
+//        std::cout << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << std::endl;
         if ((ket.p==bra.p) or (ket.p==bra.q) or (ket.q==bra.p) or (ket.q==bra.q) ) continue;
         double denominator = Get2bDenominator(ch,ibra,iket);
         ETA2(ibra,iket) = 0.5*atan( 2*H2(ibra,iket) / denominator );

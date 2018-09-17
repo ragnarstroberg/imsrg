@@ -63,11 +63,11 @@ class Operator
   std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
   IMSRGProfiler profiler;
 
-  static double bch_transform_threshold;
-  static double bch_product_threshold;
-  static bool use_brueckner_bch;
-  static bool use_goose_tank_correction;
-  static bool use_goose_tank_correction_titus;
+//  static double bch_transform_threshold;
+//  static double bch_product_threshold;
+//  static bool use_brueckner_bch;
+//  static bool use_goose_tank_correction;
+//  static bool use_goose_tank_correction_titus;
 
 
 
@@ -113,7 +113,8 @@ class Operator
   int GetE3max(){return E3max;};
 
   // Other setter-getters
-  ModelSpace * GetModelSpace();
+//  ModelSpace * GetModelSpace();
+  ModelSpace * GetModelSpace() const;
   void SetModelSpace(ModelSpace &ms){modelspace = &ms;};
 
   void Erase(); ///< Set all matrix elements to zero.
@@ -196,10 +197,10 @@ class Operator
   void PrintTwoBody(int ch) const {TwoBody.PrintMatrix(ch,ch);};
 
 
-  static void Set_BCH_Transform_Threshold(double x){bch_transform_threshold=x;};
-  static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
-  static void SetUseBruecknerBCH(bool tf){use_brueckner_bch = tf;};
-  static void SetUseGooseTank(bool tf){use_goose_tank_correction = tf;};
+//  static void Set_BCH_Transform_Threshold(double x){bch_transform_threshold=x;};
+//  static void Set_BCH_Product_Threshold(double x){bch_product_threshold=x;};
+//  static void SetUseBruecknerBCH(bool tf){use_brueckner_bch = tf;};
+//  static void SetUseGooseTank(bool tf){use_goose_tank_correction = tf;};
 
 //  std::deque<arma::mat> InitializePandya(size_t nch, std::string orientation);
 //  void DoPandyaTransformation(std::deque<arma::mat>&, std::string orientation) const ;

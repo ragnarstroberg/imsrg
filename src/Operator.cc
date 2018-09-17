@@ -23,11 +23,11 @@
 //===================================================================================
 
 //double  Operator::bch_transform_threshold = 1e-6;
-double  Operator::bch_transform_threshold = 1e-9;
-double  Operator::bch_product_threshold = 1e-4;
-bool Operator::use_brueckner_bch = false;
-bool Operator::use_goose_tank_correction = false;
-bool Operator::use_goose_tank_correction_titus = false;
+//double  Operator::bch_transform_threshold = 1e-9;
+//double  Operator::bch_product_threshold = 1e-4;
+//bool Operator::use_brueckner_bch = false;
+//bool Operator::use_goose_tank_correction = false;
+//bool Operator::use_goose_tank_correction_titus = false;
 
 //Operator& Operator::TempOp(size_t n)
 //{
@@ -641,7 +641,7 @@ Operator Operator::Truncate(ModelSpace& ms_new)
 
 
 
-ModelSpace* Operator::GetModelSpace()
+ModelSpace* Operator::GetModelSpace() const
 {
    return modelspace;
 }

@@ -38,27 +38,27 @@ IMSRGSolver::IMSRGSolver( Operator &H_in)
 void IMSRGSolver::NewOmega()
 {
   H_saved = FlowingOps[0];
-  cout << "pushing back another Omega. Omega.size = " << Omega.size()
-       << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
-       << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
-       << endl;
+  std::cout << "pushing back another Omega. Omega.size = " << Omega.size()
+            << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
+            << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
+            << std::endl;
   if ((rw != NULL) and (rw->GetScratchDir() !=""))
   {
     
     char tmp[512];
     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), n_omega_written);
-    string fname(tmp);
-    ofstream ofs(fname, ios::binary);
+    std::string fname(tmp);
+    std::ofstream ofs(fname, std::ios::binary);
     Omega.back().WriteBinary(ofs);
     if (Omega.back().GetModelSpace() != Eta.GetModelSpace()) Omega.back() = Eta;
     n_omega_written++;
-    cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << endl;
+    std::cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << std::endl;
     if (n_omega_written > max_omega_written)
     {
-      cout << "n_omega_written > max_omega_written.  (" << n_omega_written << " > " << max_omega_written
-           << " ) deleting OMEGA files and calling terminate." << endl;
+      std::cout << "n_omega_written > max_omega_written.  (" << n_omega_written << " > " << max_omega_written
+                << " ) deleting OMEGA files and calling terminate." << std::endl;
       CleanupScratch();
-      terminate();
+      std::terminate();
     }
   }
   else
@@ -107,7 +107,7 @@ void IMSRGSolver::Reset()
    NewOmega();
 }
 
-void IMSRGSolver::SetGenerator(string gen)
+void IMSRGSolver::SetGenerator(std::string gen)
 {
   generator.SetType(gen);
   if (Omega.back().Norm() > 1e-6)
@@ -117,13 +117,13 @@ void IMSRGSolver::SetGenerator(string gen)
   }
 }
 
-void IMSRGSolver::SetFlowFile(string str)
+void IMSRGSolver::SetFlowFile(std::string str)
 {
    flowfile = str;
-   ofstream flowf;
+   std::ofstream flowf;
    if (flowfile != "")
    {
-      flowf.open(flowfile,ofstream::out);
+      flowf.open(flowfile,std::ofstream::out);
       flowf.close();
    }
 }
@@ -132,7 +132,7 @@ void IMSRGSolver::SetFlowFile(string str)
 void IMSRGSolver::Solve()
 {
   if (s<1e-4)
-   WriteFlowStatusHeader(cout);
+   WriteFlowStatusHeader(std::cout);
 
 
   if (method == "magnus_euler" or method =="magnus")
@@ -151,7 +151,7 @@ void IMSRGSolver::Solve()
     Solve_ode_adaptive();
   }
   else
-    cout << "IMSRGSolver: I don't know method " << method << endl;
+    std::cout << "IMSRGSolver: I don't know method " << method << std::endl;
 }
 
 void IMSRGSolver::UpdateEta()
@@ -171,7 +171,7 @@ void IMSRGSolver::Solve_magnus_euler()
 
     // Write details of the flow
    WriteFlowStatus(flowfile);
-   WriteFlowStatus(cout);
+   WriteFlowStatus(std::cout);
 
    for (istep=1;s<smax;++istep)
    {
@@ -189,8 +189,8 @@ void IMSRGSolver::Solve_magnus_euler()
       }
       // ds should never be more than 1, as this is over-rotating
       if (magnus_adaptive)
-         ds = min( min( min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), omega_norm_max/norm_eta), ds_max); 
-      ds = min(ds,smax-s);
+         ds = std::min( std::min( std::min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), omega_norm_max/norm_eta), ds_max); 
+      ds = std::min(ds,smax-s);
 //      if (s+ds > smax) ds = smax-s;
       s += ds;
       Eta *= ds; // Here's the Euler step.
@@ -220,7 +220,7 @@ void IMSRGSolver::Solve_magnus_euler()
 
       // Write details of the flow
       WriteFlowStatus(flowfile);
-      WriteFlowStatus(cout);
+      WriteFlowStatus(std::cout);
 //      profiler.PrintMemory();
 
    }
@@ -236,7 +236,7 @@ void IMSRGSolver::Solve_magnus_modified_euler()
    Operator H_temp;
     // Write details of the flow
    WriteFlowStatus(flowfile);
-   WriteFlowStatus(cout);
+   WriteFlowStatus(std::cout);
 
    for (istep=1;s<smax;++istep)
    {
@@ -248,7 +248,7 @@ void IMSRGSolver::Solve_magnus_modified_euler()
         norm_omega = 0;
       }
       // ds should never be more than 1, as this is over-rotating
-      ds = min(min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), ds_max); 
+      ds = std::min( std::min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), ds_max); 
       if (s+ds > smax) ds = smax-s;
       s += ds;
 
@@ -276,7 +276,7 @@ void IMSRGSolver::Solve_magnus_modified_euler()
 
       // Write details of the flow
       WriteFlowStatus(flowfile);
-      WriteFlowStatus(cout);
+      WriteFlowStatus(std::cout);
 
    }
 
@@ -305,7 +305,7 @@ std::deque<Operator> operator/ (const std::deque<Operator>& num, const std::dequ
 std::deque<Operator> operator* (const double a, const std::deque<Operator>& X)
 {
 //  vector<Operator> Y = X;
-  deque<Operator> Y = X;
+  std::deque<Operator> Y = X;
   for ( auto& y : Y )  y *= a;
   return Y;
 }
@@ -405,7 +405,7 @@ void IMSRGSolver::Solve_ode()
 {
 
    ode_mode = "H";
-   WriteFlowStatusHeader(cout);
+   WriteFlowStatusHeader(std::cout);
    WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
 //   runge_kutta4< vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
@@ -421,9 +421,9 @@ void IMSRGSolver::Solve_ode_adaptive()
 {
    ode_mode = "H";
    if (method == "restore_4th_order") ode_mode = "Restored";
-   WriteFlowStatusHeader(cout);
+   WriteFlowStatusHeader(std::cout);
    WriteFlowStatus(flowfile);
-   cout << "done writing header and status" << endl;
+   std::cout << "done writing header and status" << std::endl;
    using namespace boost::numeric::odeint;
    auto system = *this;
 //   typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
@@ -523,7 +523,7 @@ void IMSRGSolver::operator()( const std::deque<Operator>& x, std::deque<Operator
 
    }
    WriteFlowStatus(flowfile);
-   WriteFlowStatus(cout);
+   WriteFlowStatus(std::cout);
 }
 
 
@@ -531,12 +531,12 @@ void IMSRGSolver::operator()( const std::deque<Operator>& x, std::deque<Operator
 void IMSRGSolver::Solve_ode_magnus()
 {
    ode_mode = "Omega";
-   WriteFlowStatus(cout);
+   WriteFlowStatus(std::cout);
    WriteFlowStatus(flowfile);
    using namespace boost::numeric::odeint;
    namespace pl = std::placeholders;
 //   runge_kutta4<vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
-   runge_kutta4<deque<Operator>, double, deque<Operator>, double, vector_space_algebra> stepper;
+   runge_kutta4<std::deque<Operator>, double, std::deque<Operator>, double, vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_const(stepper, system, Omega, s, smax, ds, monitor);
@@ -593,8 +593,8 @@ Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
     for (int i=n;i<n_omega_written;i++)
     {
      sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
-     string fname(tmp);
-     ifstream ifs(fname,ios::binary);
+     std::string fname(tmp);
+     std::ifstream ifs(fname,std::ios::binary);
      omega.ReadBinary(ifs);
 //     if (OpIn.GetJRank()>0) cout << "step " << i << endl;
 //     OpOut = OpOut.BCH_Transform( omega );
@@ -603,7 +603,7 @@ Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
     }
   }
 
-  for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
+  for (size_t i=std::max(n-n_omega_written,0); i<Omega.size();++i)
   {
 //     if (OpIn.GetJRank()>0) cout << "step " << i << endl;
 //    OpOut = OpOut.BCH_Transform( Omega[i] );
@@ -634,7 +634,7 @@ Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
     }
   }
 
-  for (size_t i=max(n-n_omega_written,0); i<Omega.size();++i)
+  for (size_t i=std::max(n-n_omega_written,0); i<Omega.size();++i)
   {
 //    OpOut = OpOut.BCH_Transform( Omega[i] );
     OpOut = Commutator::BCH_Transform( OpOut, Omega[i] );
@@ -658,92 +658,92 @@ int IMSRGSolver::GetSystemDimension()
 void IMSRGSolver::CleanupScratch()
 {
   if (n_omega_written<=0) return;
-  cout << "Cleaning up files written to scratch space" << endl;
+  std::cout << "Cleaning up files written to scratch space" << std::endl;
   char tmp[512];
   for (int i=0;i<n_omega_written;i++)
   {
     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
-    string fname(tmp);
+    std::string fname(tmp);
     if ( remove(tmp) !=0 )
     {
-      cout << "Error when attempting to delete " << fname << endl;
+      std::cout << "Error when attempting to delete " << fname << std::endl;
     }
   }
 }
 
 
 
-void IMSRGSolver::WriteFlowStatus(string fname)
+void IMSRGSolver::WriteFlowStatus(std::string fname)
 {
    if (fname !="")
    {
-     ofstream ff(fname,ios::app);
+     std::ofstream ff(fname,std::ios::app);
      WriteFlowStatus(ff);
    }
 }
-void IMSRGSolver::WriteFlowStatus(ostream& f)
+void IMSRGSolver::WriteFlowStatus(std::ostream& f)
 {
    if ( f.good() )
    {
       int fwidth = 16;
       int fprecision = 9;
       auto& H_s = FlowingOps[0];
-      f.setf(ios::fixed);
-      f << fixed << setw(5) << istep
-        << setw(10) << setprecision(3) << s
-        << setw(fwidth) << setprecision(fprecision) << H_s.ZeroBody 
-        << setw(fwidth) << setprecision(fprecision) << H_s.Norm()
-        << setw(fwidth) << setprecision(fprecision) << H_s.Trace( modelspace->GetAref(), modelspace->GetZref() )
-//        << setw(fwidth) << setprecision(fprecision) << H_s.OneBodyNorm()
-//        << setw(fwidth) << setprecision(fprecision) << H_s.TwoBodyNorm()
-//        << setw(fwidth) << setprecision(fprecision) << Omega.Norm()
-        << setw(fwidth) << setprecision(fprecision) << Omega.back().OneBodyNorm()
-        << setw(fwidth) << setprecision(fprecision) << Omega.back().TwoBodyNorm()
-        << setw(fwidth) << setprecision(fprecision) << Eta.OneBodyNorm()
-        << setw(fwidth) << setprecision(fprecision) << Eta.TwoBodyNorm()
-        << setw(7)      << setprecision(0)          << profiler.counter["N_ScalarCommutators"] + profiler.counter["N_TensorCommutators"]
-        << setw(fwidth) << setprecision(fprecision) << H_s.GetMP2_Energy()
-        << setw(7)      << setprecision(0)          << profiler.counter["N_Operators"]
-        << setprecision(fprecision)
-        << setw(12) << setprecision(3) << profiler.GetTimes()["real"]
-        << setw(12) << setprecision(3) << profiler.CheckMem()["RSS"]/1024. << " / " << skipws << profiler.MaxMemUsage()/1024. << fixed
-        << endl;
+      f.setf(std::ios::fixed);
+      f << std::fixed << std::setw(5) << istep
+        << std::setw(10) << std::setprecision(3) << s
+        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.ZeroBody 
+        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.Norm()
+        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.Trace( modelspace->GetAref(), modelspace->GetZref() )
+//        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.OneBodyNorm()
+//        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.TwoBodyNorm()
+//        << std::setw(fwidth) << std::setprecision(fprecision) << Omega.Norm()
+        << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().OneBodyNorm()
+        << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().TwoBodyNorm()
+        << std::setw(fwidth) << std::setprecision(fprecision) << Eta.OneBodyNorm()
+        << std::setw(fwidth) << std::setprecision(fprecision) << Eta.TwoBodyNorm()
+        << std::setw(7)      << std::setprecision(0)          << profiler.counter["N_ScalarCommutators"] + profiler.counter["N_TensorCommutators"]
+        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.GetMP2_Energy()
+        << std::setw(7)      << std::setprecision(0)          << profiler.counter["N_Operators"]
+        << std::setprecision(fprecision)
+        << std::setw(12) << std::setprecision(3) << profiler.GetTimes()["real"]
+        << std::setw(12) << std::setprecision(3) << profiler.CheckMem()["RSS"]/1024. << " / " << std::skipws << profiler.MaxMemUsage()/1024. << std::fixed
+        << std::endl;
    }
 
 }
 
-void IMSRGSolver::WriteFlowStatusHeader(string fname)
+void IMSRGSolver::WriteFlowStatusHeader(std::string fname)
 {
-   ofstream ff;
-   if (fname !="") ff.open(fname,ios::app);
+   std::ofstream ff;
+   if (fname !="") ff.open(fname,std::ios::app);
    WriteFlowStatusHeader(ff);
 }
-void IMSRGSolver::WriteFlowStatusHeader(ostream& f)
+void IMSRGSolver::WriteFlowStatusHeader(std::ostream& f)
 {
    if ( f.good() )
    {
       int fwidth = 16;
       int fprecision = 9;
-      f.setf(ios::fixed);
-      f << fixed << setw(5) << "i"
-        << setw(10) << setprecision(3) << "s"
-        << setw(fwidth) << setprecision(fprecision) << "E0"
-//        << setw(fwidth) << setprecision(fprecision) << "||H_1||" 
-//        << setw(fwidth) << setprecision(fprecision) << "||H_2||" 
-        << setw(fwidth) << setprecision(fprecision) << "||H||" 
-        << setw(fwidth) << setprecision(fprecision) << "Tr(H)/Tr(1)" 
-        << setw(fwidth) << setprecision(fprecision) << "||Omega_1||" 
-        << setw(fwidth) << setprecision(fprecision) << "||Omega_2||" 
-        << setw(fwidth) << setprecision(fprecision) << "||Eta_1||" 
-        << setw(fwidth) << setprecision(fprecision) << "||Eta_2||" 
-        << setw(7)      << setprecision(fprecision) << "Ncomm" 
-        << setw(16)     << setprecision(fprecision) << "E(MP2)" 
-        << setw(7)      << setprecision(fprecision) << "N_Ops"
-        << setw(16) << setprecision(fprecision) << "Walltime (s)"
-        << setw(19) << setprecision(fprecision) << "Memory (MB)"
-        << endl;
+      f.setf(std::ios::fixed);
+      f << std::fixed << std::setw(5) << "i"
+        << std::setw(10) << std::setprecision(3) << "s"
+        << std::setw(fwidth) << std::setprecision(fprecision) << "E0"
+//        << std::setw(fwidth) << std::setprecision(fprecision) << "||H_1||" 
+//        << std::setw(fwidth) << std::setprecision(fprecision) << "||H_2||" 
+        << std::setw(fwidth) << std::setprecision(fprecision) << "||H||" 
+        << std::setw(fwidth) << std::setprecision(fprecision) << "Tr(H)/Tr(1)" 
+        << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_1||" 
+        << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_2||" 
+        << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_1||" 
+        << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_2||" 
+        << std::setw(7)      << std::setprecision(fprecision) << "Ncomm" 
+        << std::setw(16)     << std::setprecision(fprecision) << "E(MP2)" 
+        << std::setw(7)      << std::setprecision(fprecision) << "N_Ops"
+        << std::setw(16) << std::setprecision(fprecision) << "Walltime (s)"
+        << std::setw(19) << std::setprecision(fprecision) << "Memory (MB)"
+        << std::endl;
         for (int x=0;x<175;x++) f << "-";
-        f << endl;
+        f << std::endl;
    }
 
 }
