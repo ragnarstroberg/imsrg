@@ -29,6 +29,8 @@
 //bool Operator::use_goose_tank_correction = false;
 //bool Operator::use_goose_tank_correction_titus = false;
 
+//IMSRGProfiler Operator::profiler;
+
 //Operator& Operator::TempOp(size_t n)
 //{
 //  static deque<Operator> TempArray;
@@ -342,7 +344,8 @@ void Operator::ReadBinary(std::ifstream& ifs)
 
 Operator Operator::DoNormalOrdering()
 {
-//   if (particle_rank==3)
+   if (legs%2>0)
+      return DoNormalOrderingDagger();
    if (legs>5)
       return DoNormalOrdering3();
    else
@@ -506,11 +509,74 @@ Operator Operator::DoNormalOrdering3()
 }
 
 
+///  The normal ordering is slightly different if the operator is a
+///  dagger operator.
+///
+Operator Operator::DoNormalOrderingDagger()
+{
+  Operator opNO(*this);
+ 
+
+   index_t norbits = modelspace->GetNumberOrbits();
+
+   index_t Q = opNO.GetQSpaceOrbit();
+   Orbit &oQ = modelspace->GetOrbit(Q);
+   double jQ = oQ.j2*0.5;
+
+   for ( auto& itmat : TwoBody.MatEl )
+   {
+      int ch_bra = itmat.first[0];
+      int ch_ket = itmat.first[1];
+      auto& matrix = itmat.second;
+      
+      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+      int J_bra = tbc_bra.J;
+      int J_ket = tbc_ket.J;
+      double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
+
+      // One body part
+
+      for (index_t a=0;a<norbits;++a)
+      {
+         Orbit &oa = modelspace->GetOrbit(a);
+         double ja = oa.j2*0.5;
+            for (auto& h : modelspace->holes)  // C++11 syntax
+            {
+              Orbit& oh = modelspace->GetOrbit(h);
+
+              if (opNO.rank_J==0)
+              {
+                 opNO.OneBody(a,Q) += hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
+              }
+            }
+      }
+   } // loop over channels
+
+  return opNO;
+
+}
+
+
+
+
+Operator Operator::UndoNormalOrdering() const
+{
+  if (legs%2>0)
+    return UndoNormalOrderingDagger();
+  else if (legs < 5)
+    return UndoNormalOrdering2();
+  else
+  {
+    std::cout << "WARNING: calling Operator::UndoNormalOrdering on a 3-body operator. Not yet implemented." << std::endl;
+    return UndoNormalOrdering2();
+  }
+}
 
 /// Convert to a basis normal ordered wrt the vacuum.
 /// This doesn't handle 3-body terms. In that case,
 /// the 2-body piece is unchanged.
-Operator Operator::UndoNormalOrdering() const
+Operator Operator::UndoNormalOrdering2() const
 {
    Operator opNO = *this;
 //   std::cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << std::endl;
@@ -601,6 +667,54 @@ Operator Operator::UndoNormalOrdering() const
    return opNO;
 
 }
+
+
+Operator Operator::UndoNormalOrderingDagger() const
+{
+   Operator opNO(*this);
+
+   index_t norbits = modelspace->GetNumberOrbits();
+
+   index_t Q = opNO.GetQSpaceOrbit();
+   Orbit &oQ = modelspace->GetOrbit(Q);
+   double jQ = oQ.j2*0.5;
+
+   for ( auto& itmat : TwoBody.MatEl )
+   {
+      int ch_bra = itmat.first[0];
+      int ch_ket = itmat.first[1];
+      auto& matrix = itmat.second;
+      
+      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+      int J_bra = tbc_bra.J;
+      int J_ket = tbc_ket.J;
+      double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
+
+      // One body part
+
+      for (index_t a=0;a<norbits;++a)
+      {
+         Orbit &oa = modelspace->GetOrbit(a);
+         double ja = oa.j2*0.5;
+            for (auto& h : modelspace->holes)  // C++11 syntax
+            {
+              Orbit& oh = modelspace->GetOrbit(h);
+
+              if (opNO.rank_J==0)
+              {
+                 opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
+              }
+            }
+      }
+   } // loop over channels
+
+
+  return opNO;
+
+}
+
+
 
 //********************************************
 /// Truncate an operator to a smaller emax

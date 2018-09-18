@@ -252,7 +252,6 @@ int main(int argc, char** argv)
   HartreeFock hf(Hbare);
   std::cout << "Solving" << std::endl;
   hf.Solve();
-//  std::cout << "EHF = " << hf.EHF << std::endl;
   
 //  Operator HNO;
   Operator& HNO = Hbare;
@@ -262,6 +261,7 @@ int main(int argc, char** argv)
     HNO = Hbare.DoNormalOrdering();
 
 
+  // This is really too specific to be in here...
   int n_radial_points = 40;
   double Rmax = 10.0;
   std::vector<index_t> spwf_indices = modelspace.String2Index(spwf);
@@ -312,18 +312,13 @@ int main(int argc, char** argv)
     getline(ss,fname,'^');
     ss.str(qnumbers);
     ss.clear();
-//    std::cout << " ss.str = " << ss.str() << std::endl;
     for (int i=0;i<4;i++)
     {
       std::string tmp;
       getline(ss,tmp,'_');
       std::istringstream(tmp) >> qn[i];
-//      std::cout << i << " [" << tmp << "] " << qn[i] << std::endl;
     }
-//    ss >> j; ss.ignore();
-//    ss >> t; ss.ignore();
-//    ss >> p; ss.ignore();
-//    ss >> r;
+
     int j,t,p,r;
     j = qn[0];
     t = qn[1];
@@ -336,16 +331,6 @@ int main(int argc, char** argv)
     opnames.push_back( opname );
   }
 
-
-//  // This is only for testing and should be deleted
-//  if (opsfromfile.size()>1)
-//  {
-//    Operator ogt = imsrg_util::OperatorFromString( modelspace, "GamowTeller");
-//    imsrg_util::Embed1BodyIn2Body( ogt, modelspace.GetTargetMass());
-//    ogt.EraseOneBody();
-//    ops.push_back(ogt);
-//    opnames.push_back("GTembed");
-//  }
 
 
 //  for (auto& op : ops)

@@ -64,6 +64,7 @@ class Operator
   index_t Q_space_orbit; // Orbit with the same quantum numbers as this dagger operator. -1 if it's not a dagger operator. 
 
   std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
+//  static IMSRGProfiler profiler;
   IMSRGProfiler profiler;
 
 
@@ -153,7 +154,10 @@ class Operator
   Operator DoNormalOrdering(); ///< Calls DoNormalOrdering2() or DoNormalOrdering3(), depending on the rank of the operator.
   Operator DoNormalOrdering2(); ///< Returns the normal ordered two-body operator
   Operator DoNormalOrdering3(); ///< Returns the normal ordered three-body operator
+  Operator DoNormalOrderingDagger(); ///< Returns the normal ordered dagger operator
   Operator UndoNormalOrdering() const; ///< Returns the operator normal-ordered wrt the vacuum
+  Operator UndoNormalOrdering2() const; ///< Returns the operator normal-ordered wrt the vacuum
+  Operator UndoNormalOrderingDagger() const; ///< Returns the operator normal-ordered wrt the vacuum
   Operator Truncate(ModelSpace& ms_new); ///< Returns the operator trunacted to the new model space
 
 
