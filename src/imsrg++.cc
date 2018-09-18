@@ -612,6 +612,7 @@ int main(int argc, char** argv)
           else if ( ops[i].GetNumberLegs()%2==1) // odd number of legs -> this is a dagger operator
           {
             rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int"); // do this for now. later make a *.dag format.
+            rw.WriteDaggerOperator( ops[i], intfile+opnames[i]+".dag",opnames[i]);
           }
           else
           {

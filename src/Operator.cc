@@ -523,21 +523,23 @@ Operator Operator::DoNormalOrderingDagger()
    Orbit &oQ = modelspace->GetOrbit(Q);
    double jQ = oQ.j2*0.5;
 
+
    for ( auto& itmat : TwoBody.MatEl )
    {
       int ch_bra = itmat.first[0];
       int ch_ket = itmat.first[1];
-      auto& matrix = itmat.second;
+//      auto& matrix = itmat.second;
       
-      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-      int J_bra = tbc_bra.J;
-      int J_ket = tbc_ket.J;
-      double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
+      TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch_bra);
+//      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+//      int J_bra = tbc_bra.J;
+      int J = tbc.J;
+      double hatfactor = 2*J+1.0;
 
       // One body part
 
-      for (index_t a=0;a<norbits;++a)
+//      for (index_t a=0;a<norbits;++a)
+      for ( auto a : OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
       {
          Orbit &oa = modelspace->GetOrbit(a);
          double ja = oa.j2*0.5;
@@ -547,7 +549,7 @@ Operator Operator::DoNormalOrderingDagger()
 
               if (opNO.rank_J==0)
               {
-                 opNO.OneBody(a,Q) += hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
+                 opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
               }
             }
       }
@@ -683,17 +685,18 @@ Operator Operator::UndoNormalOrderingDagger() const
    {
       int ch_bra = itmat.first[0];
       int ch_ket = itmat.first[1];
-      auto& matrix = itmat.second;
+//      auto& matrix = itmat.second;
       
-      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-      int J_bra = tbc_bra.J;
-      int J_ket = tbc_ket.J;
-      double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
+      TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch_bra);
+//      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+//      int J_bra = tbc_bra.J;
+      int J = tbc.J;
+      double hatfactor = 2*J+1.0;
 
       // One body part
 
-      for (index_t a=0;a<norbits;++a)
+//      for (index_t a=0;a<norbits;++a)
+      for ( auto a : OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
       {
          Orbit &oa = modelspace->GetOrbit(a);
          double ja = oa.j2*0.5;
@@ -703,7 +706,7 @@ Operator Operator::UndoNormalOrderingDagger() const
 
               if (opNO.rank_J==0)
               {
-                 opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
+                 opNO.OneBody(a,Q) += hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
               }
             }
       }
