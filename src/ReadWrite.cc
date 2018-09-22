@@ -3915,24 +3915,33 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
    }
 
 
+   // Note that, for convenience, the evolution was carried out with the Lawson convention for the reduced matrix element, i.e.
+   //  < JM | Ojm | J'M' > =  CG( J',M', j,m,  J,M) * < J || Oj || J' >.
+   // Everything else we do with tensor operators uses the Edmonds convention which involves an additional factor (-1)^2j / sqrt( 2J+1)
+   // so we can restore that by multiplying what we have by -sqrt(2J+1).
+   double EdmondsConventionFactor = -sqrt(oQ.j2+1.);
+
    // first, we write out the a+ bits
    outfile << "!" << std::endl << "!!!!!!!!!!!!!!  a+  coefficients  !!!!!!!!!!!!!!!!!!" << std::endl;
    outfile << "!  a    < a || Op || 0 > " << std::endl;
    for ( auto a : modelspace->valence )
    {
       int a_ind = orb2nushell[a];
-      double me = Op.OneBody(a,Q);
+      double me = Op.OneBody(a,Q) * EdmondsConventionFactor;
       if ( std::abs(me) < 1e-7 ) continue;
       outfile << std::setw(wint) << a_ind << " " << std::fixed << std::setw(wdouble) << std::setprecision(pdouble) <<  me << std::endl;
    }
    
 
    // next, we write out the a+a+a bits
+   // we may as well normalize the bra, since that's what one should expect by default.
+   // ME_unnormalized = sqrt(1+delta_ab) ME_normalized
    outfile << "!" << std::endl << "!!!!!!!!!!!!!!  a+a+a  coefficients  !!!!!!!!!!!!!!!" << std::endl;
    outfile << "!  a    b    c     Jab     < ab Jab || Op || c >" << std::endl;
    for ( auto& itmat : Op.TwoBody.MatEl )
    {
      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
+     EdmondsConventionFactor = -sqrt(2*tbc.J+1);
      auto& matrix = itmat.second;
      for (auto& ibra: tbc.GetKetIndex_vv() )
      {
@@ -3943,8 +3952,9 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
        {
          Ket& ket = tbc.GetKet(iket);
          if (ket.q != Q) continue;
-         double me = matrix(ibra,iket);
+         double me = matrix(ibra,iket) * EdmondsConventionFactor;
          if (std::abs(me) < 1e-7) continue;
+         if (a_ind == b_ind) me /= SQRT2;  // We write out normalized matrix elements
          int c_ind = orb2nushell[ket.p];
          outfile << std::setw(wint) << a_ind << " " << std::setw(wint) << b_ind << " " << std::setw(wint) << c_ind << "   "
                  << std::setw(wint) << tbc.J << "   " << std::setw(wdouble) << std::setprecision(pdouble) << me << std::endl;
