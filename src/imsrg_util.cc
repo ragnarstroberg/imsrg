@@ -312,7 +312,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
    for (index_t i : modelspace->proton_orbits )
    {
       Orbit& oi = modelspace->GetOrbit(i);
-      if (abs(DM.OneBody(i,i))<1e-7) continue;
+      if (std::abs(DM.OneBody(i,i))<1e-7) continue;
 //      cout << i << " " << (oi.j2+1)*DM.OneBody(i,i) << endl;
 //      rho += (oi.j2+1) * DM.OneBody(i,i) * HO_density(oi.n, oi.l, hw, r);
       rho += (1) * DM.OneBody(i,i) * HO_density(oi.n, oi.l, hw, r);
@@ -332,7 +332,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
 //      Orbit& oi = modelspace->GetOrbit(i);
 //      for ( index_t j : DM.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
 //      {
-//        if (abs(DM.OneBody(i,j))<1e-7) continue;
+//        if (std::abs(DM.OneBody(i,j))<1e-7) continue;
 //        Orbit& oj = modelspace->GetOrbit(j);
 //        rho += DM.OneBody(i,j) * HO_Radial_psi(oi.n, oi.l, hw, r) * HO_Radial_psi(oj.n, oj.l, hw, r);
 //      }
@@ -437,7 +437,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
             if ( 2*(ok.n+ol.n)+ok.l+ol.l > E2max) continue;
 //            double p1p2 = Calculate_p1p2(modelspace,bra,ket,tbc.J) * hw/A;
             double p1p2 = Calculate_p1p2(modelspace,bra,ket,tbc.J) / A;
-            if (abs(p1p2)>1e-7)
+            if (std::abs(p1p2)>1e-7)
             {
               TcmOp.TwoBody.SetTBME(ch,ibra,iket,p1p2);
             }
@@ -502,7 +502,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    int fab = 2*na + 2*nb + la + lb;
    int fcd = 2*nc + 2*nd + lc + ld;
    // p1*p2 only connects kets with delta N = 0,1 ==> delta E = 0,2
-   if (abs(fab-fcd)>2 or abs(fab-fcd)%2 >0 ) return 0; 
+   if (std::abs(fab-fcd)>2 or std::abs(fab-fcd)%2 >0 ) return 0; 
 
    double sa,sb,sc,sd;
    sa=sb=sc=sd=0.5;
@@ -510,11 +510,11 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    double p1p2=0;
 
    // First, transform to LS coupling using 9j coefficients
-   for (int Lab=abs(la-lb); Lab<= la+lb; ++Lab)
+   for (int Lab=std::abs(la-lb); Lab<= la+lb; ++Lab)
    {
      for (int Sab=0; Sab<=1; ++Sab)
      {
-       if ( abs(Lab-Sab)>J or Lab+Sab<J) continue;
+       if ( std::abs(Lab-Sab)>J or Lab+Sab<J) continue;
 
        double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
        if (njab == 0) continue;
@@ -531,10 +531,10 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
            int Lam_cd = Lam_ab; // tcm and trel conserve lam and Lam, ie relative and com orbital angular momentum
            for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
            {
-              if (Lab<abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
+              if (Lab<std::abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
               // factor to account for antisymmetrization
 
-              int asymm_factor = (abs(bra.op->tz2+ket.op->tz2) + abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
+              int asymm_factor = (std::abs(bra.op->tz2+ket.op->tz2) + std::abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
               if ( asymm_factor ==0 ) continue;
 
               int lam_cd = lam_ab; // tcm and trel conserve lam and Lam
@@ -542,7 +542,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
               double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
 
-              if (abs(mosh_ab)<1e-8) continue;
+              if (std::abs(mosh_ab)<1e-8) continue;
 
               for (int N_cd=max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
               {
@@ -551,7 +551,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
                 if  (n_ab != n_cd and N_ab != N_cd) continue;
 
                 double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
-                if (abs(mosh_cd)<1e-8) continue;
+                if (std::abs(mosh_cd)<1e-8) continue;
 
                 double tcm = 0;
                 double trel = 0;
@@ -660,13 +660,13 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
       vector<array<int,6>> JacobiBasis;  // L,S,N,Lambda,n,lambda
       for (int L=max(J-1,0); L<=J+1; ++L)
       {
-       for ( int S=abs(J-L); S<=1; ++S)
+       for ( int S=std::abs(J-L); S<=1; ++S)
        {
         for ( int N=0; N<=emax_ket/2; ++N )
         {
          for ( int Lambda=0; Lambda<=(emax_ket-2*N); ++Lambda)
          {
-          for ( int lambda=abs(L-Lambda)+(L+parity)%2; lambda<=min(Lambda+L,emax_ket-2*N-Lambda); lambda+=2)
+          for ( int lambda=std::abs(L-Lambda)+(L+parity)%2; lambda<=min(Lambda+L,emax_ket-2*N-Lambda); lambda+=2)
           {
            for ( int n =0; n<=(emax_ket-2*N-Lambda-lambda)/2; ++n)
            {
@@ -705,9 +705,9 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
 //          int Asym = 1; // Fix this...
           double ninej = AngMom::NormNineJ(la,0.5,ja,lb,0.5,jb,L,S,J);
-          if (abs(ninej)<1e-6) continue;
+          if (std::abs(ninej)<1e-6) continue;
           double mosh = modelspace->GetMoshinsky(N,Lambda,n,lambda,na,la,nb,lb,L);
-          if (abs(mosh)<1e-6) continue;
+          if (std::abs(mosh)<1e-6) continue;
           Trans(iJac,iJJ) = ninej * mosh;
           n_nonzero += 1;
            
@@ -828,7 +828,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 /// Returns
 /// \f[ 
 /// R_p^{2} = \frac{1}{Z} \sum_{p}\left(\vec{r}_{p}-\vec{R}_{CM}\right)^2 =
-/// R^2_{CM} + \frac{A-2}{AZ} \sum_{p}r_{p}^{2} - \frac{4}{AZ}\sum_{i<j}\vec{r}_i\cdot\vec{r}_j  \right)
+/// R^2_{CM} + \frac{A-2}{AZ} \sum_{p}r_{p}^{2} - \frac{4}{AZ}\sum_{i<j}\vec{r}_i\cdot\vec{r}_j  
 /// \f]
 /// evaluated in the oscillator basis.
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z)
@@ -880,8 +880,8 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
    int fab = 2*na + 2*nb + la + lb;
    int fcd = 2*nc + 2*nd + lc + ld;
-   if (abs(fab-fcd)%2 >0) return 0; // p1*p2 only connects kets with delta N = 0,1
-   if (abs(fab-fcd)>2) return 0; // p1*p2 only connects kets with delta N = 0,1
+   if (std::abs(fab-fcd)%2 >0) return 0; // p1*p2 only connects kets with delta N = 0,1
+   if (std::abs(fab-fcd)>2) return 0; // p1*p2 only connects kets with delta N = 0,1
 
    double sa,sb,sc,sd;
    sa=sb=sc=sd=0.5;
@@ -889,11 +889,11 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    double r1r2=0;
 
    // First, transform to LS coupling using 9j coefficients
-   for (int Lab=abs(la-lb); Lab<= la+lb; ++Lab)
+   for (int Lab=std::abs(la-lb); Lab<= la+lb; ++Lab)
    {
      for (int Sab=0; Sab<=1; ++Sab)
      {
-       if ( abs(Lab-Sab)>J or Lab+Sab<J) continue;
+       if ( std::abs(Lab-Sab)>J or Lab+Sab<J) continue;
 
        double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
        if (njab == 0) continue;
@@ -910,10 +910,10 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
            int Lam_cd = Lam_ab; // tcm and trel conserve lam and Lam, ie relative and com orbital angular momentum
            for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
            {
-              if (Lab<abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
+              if (Lab<std::abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
               // factor to account for antisymmetrization
 
-              int asymm_factor = (abs(bra.op->tz2+ket.op->tz2) + abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
+              int asymm_factor = (std::abs(bra.op->tz2+ket.op->tz2) + std::abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
               if ( asymm_factor ==0 ) continue;
 
               int lam_cd = lam_ab; // tcm and trel conserve lam and Lam
@@ -921,7 +921,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
               double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
 
-              if (abs(mosh_ab)<1e-8) continue;
+              if (std::abs(mosh_ab)<1e-8) continue;
 
               for (int N_cd=max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
               {
@@ -930,7 +930,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
                 if  (n_ab != n_cd and N_ab != N_cd) continue;
 
                 double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
-                if (abs(mosh_cd)<1e-8) continue;
+                if (std::abs(mosh_cd)<1e-8) continue;
 
                 double r2cm = 0;
                 double r2rel = 0;
@@ -970,7 +970,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
 
 /// Center of mass Hamiltonian
-/// \f{eqnarray*}{
+/// \f{align*}{
 /// H_{CM} &= T_{CM} + \frac{1}{2} Am\omega^2 R^2 \\
 ///        &= T_{CM} + \frac{1}{2b^2} AR^2 \hbar\omega
 /// \f}
@@ -1195,12 +1195,12 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   gsl_integration_qawo_table * table = gsl_integration_qawo_table_alloc (omega, L, GSL_INTEG_SINE, n);
   gsl_integration_workspace * workspace = gsl_integration_workspace_alloc ( n );
 
-  const double epsabs = 1e-5; // absolute error
+  const double epsabs = 1e-5; // std::absolute error
   const double epsrel = 1e-5; // relative error
   const size_t limit = n; // maximum number of subintervals (maybe should be different?)
   const double start = 0.0; // lower limit on integration range
   double result;
-  double  abserr;
+  double abserr;
   gsl_function F;
   F.function = &FBCIntegrand;
 
@@ -1209,7 +1209,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     Orbit& oi = modelspace.GetOrbit(i);
     struct FBCIntegrandParameters params = {oi.n, oi.l, modelspace.GetHbarOmega()};
     F.params = &params;
-    //int status = gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
+    //int status = gsl_integration_qawo (&F, start, epsstd::abs, epsrel, limit, workspace, table, &result, &std::abserr);
     gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
     a_nu.OneBody(i,i) = M_PI*M_PI/R/R/R * R/nu/M_PI*(result);
     cout << "orbit,nu = " << i << "," << nu << "  => " << a_nu.OneBody(i,i) << "  from " << result << " (" << abserr << ")" << endl;
@@ -1230,7 +1230,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
      arma::mat& TB = T2.TwoBody.GetMatrix(ch);
      // pp,nn:  2<t2.t1> = 1/(2(1+delta_ab)) along diagonal
-     if (abs(tbc.Tz) == 1)
+     if (std::abs(tbc.Tz) == 1)
      {
         TB.diag().fill(0.5); // pp,nn TBME's
         for (int ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
@@ -1400,7 +1400,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
      for (int lrela=0; lrela<2*emax-2*nrela; lrela+=1)
      {
        int ia = (2*nrela + lrela)*(2*nrela+lrela+1)/2 + lrela;
-       for (int lrelb=abs(lrela-L); lrelb<=lrela+L; lrelb+=2)
+       for (int lrelb=std::abs(lrela-L); lrelb<=lrela+L; lrelb+=2)
        {
          for (int nrelb=0; 2*nrelb<=2*emax-lrelb; nrelb+=1)
          {
@@ -1448,28 +1448,28 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
         double labME = 0;
         
-        for (int Lab=max(abs(la-lb),abs(Jab-1)); Lab<=min(la+lb,Jab+1); Lab+=1)
+        for (int Lab=max(std::abs(la-lb),std::abs(Jab-1)); Lab<=min(la+lb,Jab+1); Lab+=1)
         {
-         for (int Lcd=max(abs(lc-ld),abs(Jcd-1))+(Lab+L)%2; Lcd<=min(lc+ld,Jcd+1); Lcd+=2)
+         for (int Lcd=max(std::abs(lc-ld),std::abs(Jcd-1))+(Lab+L)%2; Lcd<=min(lc+ld,Jcd+1); Lcd+=2)
          {
-          for (int S=max(abs(Jab-Lab),abs(Jcd-Lcd)); S<=min(1,min(Jab+Lab,Jcd+Lcd)); S+=1 )
+          for (int S=max(std::abs(Jab-Lab),std::abs(Jcd-Lcd)); S<=min(1,min(Jab+Lab,Jcd+Lcd)); S+=1 )
           {
             double njab = AngMom::NormNineJ( la, 0.5, ja, lb, 0.5, jb, Lab, S, Jab);
             double njcd = AngMom::NormNineJ( lc, 0.5, jc, ld, 0.5, jd, Lcd, S, Jcd);
-            if (abs(njab)<1e-8 or abs(njcd)<1e-8) continue;
+            if (std::abs(njab)<1e-8 or std::abs(njcd)<1e-8) continue;
             for ( int nab=0; nab<=rho_ab; nab+=1)
             {
              for ( int lab=0; lab<=rho_ab-2*nab; lab+=1)
              {
               int iab = (2*nab + lab)*(2*nab+lab+1)/2 + lab;
-              for (int Lam=abs(lab-Lab); Lam<=min(lab+Lab,rho_ab-2*nab-lab); Lam+=2)
+              for (int Lam=std::abs(lab-Lab); Lam<=min(lab+Lab,rho_ab-2*nab-lab); Lam+=2)
               {
                int N = rho_ab - 2*nab - lab - Lam;
                double moshab = modelspace.GetMoshinsky( N, Lam, nab, lab, na,la,nb,lb,Lab);
-               if (abs(moshab)<1e-8) continue;
+               if (std::abs(moshab)<1e-8) continue;
                for ( int ncd=0; ncd<=rho_cd; ncd+=1)
                {
-                for ( int lcd=abs(Lam-Lcd)+(Lcd+Lam)%2; lcd<=min(rho_cd-2*ncd,Lab+Lcd); lcd+=2)
+                for ( int lcd=std::abs(Lam-Lcd)+(Lcd+Lam)%2; lcd<=min(rho_cd-2*ncd,Lab+Lcd); lcd+=2)
                 {
                  int icd = (2*ncd + lcd)*(2*ncd+lcd+1)/2 + lcd;
                  double moshcd = modelspace.GetMoshinsky( N, Lam, ncd, lcd, nc,lc,nd,ld,Lcd);
@@ -1901,8 +1901,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
    int fab = 2*na + 2*nb + la + lb;
    int fcd = 2*nc + 2*nd + lc + ld;
-   if (abs(fab-fcd)%2 >0) return 0; // p1*p2 only connects kets with delta N = 0,1
-   if (abs(fab-fcd)>2) return 0; // p1*p2 only connects kets with delta N = 0,1
+   if (std::abs(fab-fcd)%2 >0) return 0; // p1*p2 only connects kets with delta N = 0,1
+   if (std::abs(fab-fcd)>2) return 0; // p1*p2 only connects kets with delta N = 0,1
 
 
    double sa,sb,sc,sd;
@@ -1911,11 +1911,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
    double r1xp2=0;
 
    // First, transform to LS coupling using 9j coefficients
-   for (int Lab=abs(la-lb); Lab<= la+lb; ++Lab)
+   for (int Lab=std::abs(la-lb); Lab<= la+lb; ++Lab)
    {
      for (int Sab=0; Sab<=1; ++Sab)
      {
-       if ( abs(Lab-Sab)>Jab or Lab+Sab<Jab) continue;
+       if ( std::abs(Lab-Sab)>Jab or Lab+Sab<Jab) continue;
 
        double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,Jab);
        if (njab == 0) continue;
@@ -1932,10 +1932,10 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
            int Lam_cd = Lam_ab; // Lcm and Lrel conserve lam and Lam, 
            for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
            {
-              if (Lab<abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
+              if (Lab<std::abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
               // factor to account for antisymmetrization
 
-              int asymm_factor = (abs(bra.op->tz2+ket.op->tz2) + abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
+              int asymm_factor = (std::abs(bra.op->tz2+ket.op->tz2) + std::abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
               if ( asymm_factor ==0 ) continue;
 
               int lam_cd = lam_ab; // Lcm and Lrel operators conserve lam and Lam
@@ -1943,7 +1943,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
               double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
 
-              if (abs(mosh_ab)<1e-8) continue;
+              if (std::abs(mosh_ab)<1e-8) continue;
 
 //              for (int N_cd=max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
                int N_cd = N_ab;
@@ -1953,7 +1953,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
                 if  (n_ab != n_cd ) continue;
 
                 double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
-                if (abs(mosh_cd)<1e-8) continue;
+                if (std::abs(mosh_cd)<1e-8) continue;
 
 //                double lcm = 0;
 //                double lrel = 0;
@@ -2308,7 +2308,7 @@ cout<<J<<" | "<<ia<<", "<<ib<<", "<<ic<<", "<<id<<" || "
             double sumBSdSas = 0; // ...anti-symmetric part
             for (int S=0; S<=1; S++) // sum over total spin...
             {
-              for (int L = abs(la-lb); L <= la+lb; L++) // ...and sum over angular momentum coupled to l_{a_f} and l_{b_f}, NOTE: get same result if used l_{a_i} and l_{b_i} (good)
+              for (int L = std::abs(la-lb); L <= la+lb; L++) // ...and sum over angular momentum coupled to l_{a_f} and l_{b_f}, NOTE: get same result if used l_{a_i} and l_{b_i} (good)
               {
                 double tempLS = (2*L + 1)*(2*S + 1); // just for efficiency, only used in the three lines below
                 double normab = sqrt(tempLS*(2*ja + 1)*(2*jb + 1)); // normalization factor for the 9j-symbol out front
@@ -2494,11 +2494,11 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     
        double L2rel=0;
     
-       for (int Lab=abs(la-lb); Lab<= la+lb; ++Lab)
+       for (int Lab=std::abs(la-lb); Lab<= la+lb; ++Lab)
        {
          for (int Sab=0; Sab<=1; ++Sab)
          {
-           if ( abs(Lab-Sab)>J or Lab+Sab<J) continue;
+           if ( std::abs(Lab-Sab)>J or Lab+Sab<J) continue;
     
            double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
            if (njab == 0) continue;
@@ -2515,10 +2515,10 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
                int Lam_cd = Lam_ab; // tcm and trel conserve lam and Lam, ie relative and com orbital angular momentum
                for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
                {
-                  if (Lab<abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
+                  if (Lab<std::abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
                   // factor to account for antisymmetrization
     
-                  int asymm_factor = (abs(bra.op->tz2+ket.op->tz2) + abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
+                  int asymm_factor = (std::abs(bra.op->tz2+ket.op->tz2) + std::abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
                   if ( asymm_factor ==0 ) continue;
     
                   int lam_cd = lam_ab; // tcm and trel conserve lam and Lam
@@ -2526,7 +2526,7 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     
                   double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
     
-                  if (abs(mosh_ab)<1e-8) continue;
+                  if (std::abs(mosh_ab)<1e-8) continue;
     
                   for (int N_cd=max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
                   {
@@ -2535,7 +2535,7 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
                     if  (n_ab != n_cd or N_ab != N_cd) continue;
     
                     double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
-                    if (abs(mosh_cd)<1e-8) continue;
+                    if (std::abs(mosh_cd)<1e-8) continue;
     
                     double prefactor = njab * njcd * mosh_ab * mosh_cd * asymm_factor;
                     L2rel += lam_ab*(lam_ab+1) * prefactor;

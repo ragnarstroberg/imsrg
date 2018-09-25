@@ -338,7 +338,7 @@ deque<Operator> abs(const deque<Operator>& OpIn)
    deque<Operator> OpOut = OpIn;
    for (auto& opout : OpOut )
    {
-     opout.ZeroBody = abs(opout.ZeroBody);
+     opout.ZeroBody = std::abs(opout.ZeroBody);
      opout.OneBody = arma::abs(opout.OneBody);
      for ( auto& itmat : opout.TwoBody.MatEl )    itmat.second = arma::abs(itmat.second);
    }

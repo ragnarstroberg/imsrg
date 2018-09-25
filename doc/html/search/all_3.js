@@ -6,5 +6,5 @@ var searchData=
   ['donormalordering2',['DoNormalOrdering2',['../classOperator.html#a652d989590422a2b26e662625b07254e',1,'Operator']]],
   ['donormalordering3',['DoNormalOrdering3',['../classOperator.html#a7fd029569796107c87ff17c5a7912480',1,'Operator']]],
   ['dopandyatransformation_5fsinglechannel',['DoPandyaTransformation_SingleChannel',['../classOperator.html#a40ea778ddd4c26666bdc15c463101d30',1,'Operator']]],
-  ['dotensorpandyatransformation',['DoTensorPandyaTransformation',['../classOperator.html#a83aa05f43d1881ef41b26783c9eb23f0',1,'Operator']]]
+  ['dotensorpandyatransformation',['DoTensorPandyaTransformation',['../classOperator.html#ad7c6a9d515a2577985358b43cf6a365e',1,'Operator']]]
 ];
