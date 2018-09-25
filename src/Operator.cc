@@ -930,8 +930,8 @@ double Operator::GetMP3_Energy()
         {
          double jj = 0.5*modelspace->GetOrbit(j).j2;
          double Delta_abij = OneBody(a,a) + OneBody(b,b) - OneBody(i,i) - OneBody(j,j);
-         int J1min = max(std::abs(ja-jb),std::abs(ji-jj));
-         int J1max = min(ja+jb,ji+jj);
+         int J1min = std::max(std::abs(ja-jb),std::abs(ji-jj));
+         int J1max = std::min(ja+jb,ji+jj);
          double tbme_abij = 0;
          if ( AngMom::Triangle(jj,jb,J_tot) )
          {
@@ -948,8 +948,8 @@ double Operator::GetMP3_Energy()
              double jk = 0.5*modelspace->GetOrbit(k).j2;
              if ( not AngMom::Triangle(jc,jk,J_tot) ) continue;
              double Delta_acik = OneBody(a,a) + OneBody(c,c) - OneBody(i,i) - OneBody(k,k);
-             int J2min = max(std::abs(jc-jj),std::abs(jk-jb));
-             int J2max = min(jc+jj,jk+jb);
+             int J2min = std::max(std::abs(jc-jj),std::abs(jk-jb));
+             int J2max = std::min(jc+jj,jk+jb);
              double tbme_cjkb = 0;
              if ( AngMom::Triangle(jj,jb,J_tot) )
              {
@@ -958,8 +958,8 @@ double Operator::GetMP3_Energy()
                  tbme_cjkb -= modelspace->GetSixJ(jj,jb,J_tot,jk,jc,J2) * (2*J2 + 1) *  TwoBody.GetTBME_J(J2,j,c,k,b);
                }
              }
-             int J3min = max(std::abs(ji-jk),std::abs(ja-jc));
-             int J3max = min(ji+jk,ja+jc);
+             int J3min = std::max(std::abs(ji-jk),std::abs(ja-jc));
+             int J3max = std::min(ji+jk,ja+jc);
              double tbme_ikac = 0;
              for (int J3=J3min;J3<=J3max;++J3) // Pandya 3:   <kc`| V | ai`>_Jtot
              {

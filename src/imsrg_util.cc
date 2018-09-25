@@ -544,7 +544,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
               if (std::abs(mosh_ab)<1e-8) continue;
 
-              for (int N_cd=max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
+              for (int N_cd=std::max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
               {
                 int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
                 if (n_cd < 0) continue;
@@ -658,7 +658,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
       int emax_ket = 2*ketlast.op->n + 2*ketlast.oq->n + ketlast.op->l + ketlast.oq->l;
 
       vector<array<int,6>> JacobiBasis;  // L,S,N,Lambda,n,lambda
-      for (int L=max(J-1,0); L<=J+1; ++L)
+      for (int L=std::max(J-1,0); L<=J+1; ++L)
       {
        for ( int S=std::abs(J-L); S<=1; ++S)
        {
@@ -666,7 +666,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
         {
          for ( int Lambda=0; Lambda<=(emax_ket-2*N); ++Lambda)
          {
-          for ( int lambda=std::abs(L-Lambda)+(L+parity)%2; lambda<=min(Lambda+L,emax_ket-2*N-Lambda); lambda+=2)
+          for ( int lambda=std::abs(L-Lambda)+(L+parity)%2; lambda<=std::min(Lambda+L,emax_ket-2*N-Lambda); lambda+=2)
           {
            for ( int n =0; n<=(emax_ket-2*N-Lambda-lambda)/2; ++n)
            {
@@ -923,7 +923,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
               if (std::abs(mosh_ab)<1e-8) continue;
 
-              for (int N_cd=max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
+              for (int N_cd=std::max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
               {
                 int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
                 if (n_cd < 0) continue;
@@ -1448,11 +1448,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
         double labME = 0;
         
-        for (int Lab=max(std::abs(la-lb),std::abs(Jab-1)); Lab<=min(la+lb,Jab+1); Lab+=1)
+        for (int Lab=std::max(std::abs(la-lb),std::abs(Jab-1)); Lab<=std::min(la+lb,Jab+1); Lab+=1)
         {
-         for (int Lcd=max(std::abs(lc-ld),std::abs(Jcd-1))+(Lab+L)%2; Lcd<=min(lc+ld,Jcd+1); Lcd+=2)
+         for (int Lcd=std::max(std::abs(lc-ld),std::abs(Jcd-1))+(Lab+L)%2; Lcd<=std::min(lc+ld,Jcd+1); Lcd+=2)
          {
-          for (int S=max(std::abs(Jab-Lab),std::abs(Jcd-Lcd)); S<=min(1,min(Jab+Lab,Jcd+Lcd)); S+=1 )
+          for (int S=std::max(std::abs(Jab-Lab),std::abs(Jcd-Lcd)); S<=std::min(1,std::min(Jab+Lab,Jcd+Lcd)); S+=1 )
           {
             double njab = AngMom::NormNineJ( la, 0.5, ja, lb, 0.5, jb, Lab, S, Jab);
             double njcd = AngMom::NormNineJ( lc, 0.5, jc, ld, 0.5, jd, Lcd, S, Jcd);
@@ -1462,14 +1462,14 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
              for ( int lab=0; lab<=rho_ab-2*nab; lab+=1)
              {
               int iab = (2*nab + lab)*(2*nab+lab+1)/2 + lab;
-              for (int Lam=std::abs(lab-Lab); Lam<=min(lab+Lab,rho_ab-2*nab-lab); Lam+=2)
+              for (int Lam=std::abs(lab-Lab); Lam<=std::min(lab+Lab,rho_ab-2*nab-lab); Lam+=2)
               {
                int N = rho_ab - 2*nab - lab - Lam;
                double moshab = modelspace.GetMoshinsky( N, Lam, nab, lab, na,la,nb,lb,Lab);
                if (std::abs(moshab)<1e-8) continue;
                for ( int ncd=0; ncd<=rho_cd; ncd+=1)
                {
-                for ( int lcd=std::abs(Lam-Lcd)+(Lcd+Lam)%2; lcd<=min(rho_cd-2*ncd,Lab+Lcd); lcd+=2)
+                for ( int lcd=std::abs(Lam-Lcd)+(Lcd+Lam)%2; lcd<=std::min(rho_cd-2*ncd,Lab+Lcd); lcd+=2)
                 {
                  int icd = (2*ncd + lcd)*(2*ncd+lcd+1)/2 + lcd;
                  double moshcd = modelspace.GetMoshinsky( N, Lam, ncd, lcd, nc,lc,nd,ld,Lcd);
@@ -1505,10 +1505,10 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   double RadialIntegral(int na, int la, int nb, int lb, int L)
   {
     if ((la+lb+L)%2!=0) return RadialIntegral_RpowK(na,la,nb,lb,L);
-    int tau_a = max((lb-la+L)/2,0);
-    int tau_b = max((la-lb+L)/2,0);
-    int sigma_min = max(max(na-tau_a,nb-tau_b),0);
-    int sigma_max = min(na,nb);
+    int tau_a = std::max((lb-la+L)/2,0);
+    int tau_b = std::max((la-lb+L)/2,0);
+    int sigma_min = std::max(std::max(na-tau_a,nb-tau_b),0);
+    int sigma_max = std::min(na,nb);
   
     double term1 = AngMom::phase(na+nb) * gsl_sf_fact(tau_a)*gsl_sf_fact(tau_b) * sqrt(gsl_sf_fact(na)*gsl_sf_fact(nb)
                    / (gsl_sf_gamma(na+la+1.5)*gsl_sf_gamma(nb+lb+1.5) ) );
@@ -1557,8 +1557,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
                    * boost::math::factorial<double>(2*na+2*la+1) * boost::math::factorial<double>(2*nb+2*lb+1) );
    
    double B2 = 0;
-   int kmin = max(0, p-q-nb);
-   int kmax = min(na, p-q);
+   int kmin = std::max(0, p-q-nb);
+   int kmax = std::min(na, p-q);
    for (int k=kmin;k<=kmax;++k)
    {
 //      B2  += gsl_sf_fact(la+k) * gsl_sf_fact(p-int((la-lb)/2)-k)
@@ -1945,7 +1945,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
               if (std::abs(mosh_ab)<1e-8) continue;
 
-//              for (int N_cd=max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
+//              for (int N_cd=std::max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
                int N_cd = N_ab;
               {
                 int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
@@ -2528,7 +2528,7 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     
                   if (std::abs(mosh_ab)<1e-8) continue;
     
-                  for (int N_cd=max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
+                  for (int N_cd=std::max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
                   {
                     int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
                     if (n_cd < 0) continue;

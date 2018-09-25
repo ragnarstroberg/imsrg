@@ -495,7 +495,7 @@ void ReadWrite::ReadBareTBME_Navratil_from_stream( std::istream& infile, Operato
      Orbit& oi = modelspace->GetOrbit(i);
      if (oi.tz2 > 0 ) continue;
      int N = 2*oi.n + oi.l;
-     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2;
+     int nlj = N*(N+1)/2 + std::max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2;
      orbits_remap[nlj] = i;
   }
 
@@ -572,7 +572,7 @@ void ReadWrite::WriteTBME_Navratil( std::string filename, Operator& Hbare)
      Orbit& oi = modelspace->GetOrbit(i);
      if (oi.tz2 > 0 ) continue;
      int N = 2*oi.n + oi.l;
-     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2;
+     int nlj = N*(N+1)/2 + std::max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2;
 //     orbits_remap[nlj] = i;
      orbits_remap[i]   = nlj+1;
 //     orbits_remap[i+1] = nlj+1;
@@ -606,8 +606,8 @@ void ReadWrite::WriteTBME_Navratil( std::string filename, Operator& Hbare)
           if ( (oa.l + ob.l + oc.l + od.l)%2 > 0) continue;
           int jcd_min = std::abs(oc.j2-od.j2)/2;
           int jcd_max = (oc.j2+od.j2)/2;
-          int jmin = max(jab_min,jcd_min);
-          int jmax = min(jab_max,jcd_max);
+          int jmin = std::max(jab_min,jcd_min);
+          int jmax = std::min(jab_max,jcd_max);
           for (int J=jmin; J<=jmax; ++J)
           {
 //            double vpp =  Hbare.TwoBody.Get_iso_TBME_from_pn(J, 1, -1, a, b, c, d);
@@ -883,8 +883,8 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
           int e4 = 2*o4.n + o4.l;
           if (e3+e4 > Emax) break;
           if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
-          int Jmin = max( std::abs(o1.j2 - o2.j2), std::abs(o3.j2 - o4.j2) )/2;
-          int Jmax = min (o1.j2 + o2.j2, o3.j2+o4.j2)/2;
+          int Jmin = std::max( std::abs(o1.j2 - o2.j2), std::abs(o3.j2 - o4.j2) )/2;
+          int Jmax = std::min (o1.j2 + o2.j2, o3.j2+o4.j2)/2;
           if (Jmin > Jmax) continue;
           for (int J=Jmin; J<=Jmax; ++J)
           {
@@ -1315,8 +1315,8 @@ size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int
                for(int JJab = JJabMin; JJab <= JJabMax; JJab++)
                {
                 //summation bounds for twoJC
-                int twoJCMin = max( std::abs(2*Jab - oc.j2), std::abs(2*JJab - of.j2));
-                int twoJCMax = min( 2*Jab + oc.j2 , 2*JJab + of.j2 );
+                int twoJCMin = std::max( std::abs(2*Jab - oc.j2), std::abs(2*JJab - of.j2));
+                int twoJCMax = std::min( 2*Jab + oc.j2 , 2*JJab + of.j2 );
        
                 // read all the ME for this range of J,T into block
                 if (twoJCMin>twoJCMax) continue;
@@ -1540,8 +1540,8 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                for(int JJab = JJabMin; JJab <= JJabMax; JJab++)
                {
                 //summation bounds for twoJC
-                int twoJCMin = max( std::abs(2*Jab - oc.j2), std::abs(2*JJab - of.j2));
-                int twoJCMax = min( 2*Jab + oc.j2 , 2*JJab + of.j2 );
+                int twoJCMin = std::max( std::abs(2*Jab - oc.j2), std::abs(2*JJab - of.j2));
+                int twoJCMax = std::min( 2*Jab + oc.j2 , 2*JJab + of.j2 );
        
                 // read all the ME for this range of J,T into block
                 if (twoJCMin>twoJCMax) continue;
@@ -2275,7 +2275,7 @@ void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
      Orbit& oi = modelspace->GetOrbit(i);
      if (oi.tz2 > 0 ) continue;
      int N = 2*oi.n + oi.l;
-     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2;
+     int nlj = N*(N+1)/2 + std::max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2;
      orbits_remap[nlj] = i;
   }
 
@@ -2451,8 +2451,8 @@ void ReadWrite::Write_me2j( std::string outfilename, Operator& Hbare, int emax, 
           int e4 = 2*o4.n + o4.l;
           if (e3+e4 > Emax) break;
           if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
-          int Jmin = max( std::abs(o1.j2 - o2.j2), std::abs(o3.j2 - o4.j2) )/2;
-          int Jmax = min (o1.j2 + o2.j2, o3.j2+o4.j2)/2;
+          int Jmin = std::max( std::abs(o1.j2 - o2.j2), std::abs(o3.j2 - o4.j2) )/2;
+          int Jmax = std::min (o1.j2 + o2.j2, o3.j2+o4.j2)/2;
           if (Jmin > Jmax) continue;
           for (int J=Jmin; J<=Jmax; ++J)
           {
@@ -2619,8 +2619,8 @@ void ReadWrite::Write_me3j( std::string ofilename, Operator& Hbare, int E1max, i
 
               int twoJCMaxupket = od.j2 + oe.j2 + of.j2;
 
-              int twoJCMindown = max(twoJCMindownbra, twoJCMindownket);
-              int twoJCMaxup = min(twoJCMaxupbra, twoJCMaxupket);
+              int twoJCMindown = std::max(twoJCMindownbra, twoJCMindownket);
+              int twoJCMaxup = std::min(twoJCMaxupbra, twoJCMaxupket);
               if (twoJCMindown > twoJCMaxup) continue;
 
               //inner loops
@@ -3035,8 +3035,8 @@ void ReadWrite::ReadNuShellX_int_iso(Operator& op, std::string filename)
      for ( auto& d_indx : orbit_map )
      {
       Orbit& od = modelspace->GetOrbit(d_indx.second);
-      int Jmin = max( std::abs(oa.j2-ob.j2), std::abs(oc.j2-od.j2) )/2;
-      int Jmax = min( oa.j2+ob.j2, oc.j2+od.j2 )/2;
+      int Jmin = std::max( std::abs(oa.j2-ob.j2), std::abs(oc.j2-od.j2) )/2;
+      int Jmax = std::min( oa.j2+ob.j2, oc.j2+od.j2 )/2;
       for (int J=Jmin; J<=Jmax; ++J)
       {
         uint64_t hashT1 = ( J + (1L<<10) + (a_indx.first<<20) + (b_indx.first<<30) + (c_indx.first<<40) + (d_indx.first<<50) );
@@ -3156,8 +3156,8 @@ void ReadWrite::WriteAntoine_int(Operator& op, std::string filename)
            int nljd = nlj_labels[orbit_map[d]];
            int Tmin = std::abs(oa.tz2+ob.tz2) -1; // -1 means pn, 1 means pp or nn. T loop goes std::abs(Tmin) to Tmax
            int Tmax = 1; // always 1.
-           int Jmin = max(std::abs(oa.j2-ob.j2),std::abs(oc.j2-od.j2))/2;
-           int Jmax = min(oa.j2+ob.j2,oc.j2+od.j2)/2;
+           int Jmin = std::max(std::abs(oa.j2-ob.j2),std::abs(oc.j2-od.j2))/2;
+           int Jmax = std::min(oa.j2+ob.j2,oc.j2+od.j2)/2;
            if (Jmin<=Jmax)
            {
              intfile << setw(2) << Tmin << " " << setw(2) << Tmax << " " << nlja << " " << nljb << " " << nljc << " " << nljd << " " << setw(2) << Jmin << " " << setw(2) << Jmax << std::endl;
@@ -3614,7 +3614,7 @@ void ReadWrite::ReadOneBody_Takayuki(std::string filename, Operator& Hbare)
      Orbit& oi = modelspace->GetOrbit(i);
      if (oi.tz2 > 0 ) continue;
      int N = 2*oi.n + oi.l;
-     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2 + 1;
+     int nlj = N*(N+1)/2 + std::max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2 + 1;
      orbits_remap[nlj] = i;
   }
 
@@ -3645,7 +3645,7 @@ void ReadWrite::ReadTwoBody_Takayuki(std::string filename, Operator& Hbare)
      Orbit& oi = modelspace->GetOrbit(i);
      if (oi.tz2 > 0 ) continue;
      int N = 2*oi.n + oi.l;
-     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2 + 1;
+     int nlj = N*(N+1)/2 + std::max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2 + 1;
      orbits_remap[nlj] = i;
   }
 
@@ -3684,7 +3684,7 @@ void ReadWrite::WriteOneBody_Takayuki(std::string filename, Operator& Hbare)
      Orbit& oi = modelspace->GetOrbit(i);
      if (oi.tz2 > 0 ) continue;
      int N = 2*oi.n + oi.l;
-     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2 + 1;
+     int nlj = N*(N+1)/2 + std::max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2 + 1;
      orbits_remap[i]   = nlj;
      orbits_remap[i+1] = nlj;
   }
@@ -3723,7 +3723,7 @@ void ReadWrite::WriteTwoBody_Takayuki(std::string filename, Operator& Hbare)
      Orbit& oi = modelspace->GetOrbit(i);
      if (oi.tz2 > 0 ) continue;
      int N = 2*oi.n + oi.l;
-     int nlj = N*(N+1)/2 + max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2 + 1;
+     int nlj = N*(N+1)/2 + std::max(oi.l-1,0) + (oi.j2 - std::abs(2*oi.l-1))/2 + 1;
 //     orbits_remap[nlj] = i;
      orbits_remap[i]   = nlj;
      orbits_remap[i+1] = nlj;
@@ -4091,8 +4091,8 @@ void ReadWrite::ReadRelCMOpFromJavier( std::string statefilename, std::string ME
       int lb = bra.oq->l;
       double jb = 0.5*bra.oq->j2;
       double tb = 0.5*bra.oq->tz2;
-      int Lab_min = max(std::abs(la-lb),Jab-1);
-      int Lab_max = min(la+lb,Jab+1);
+      int Lab_min = std::max(std::abs(la-lb),Jab-1);
+      int Lab_max = std::min(la+lb,Jab+1);
       int eab = 2*(na+nb)+la+lb;
       std::cout << "eab =  " << eab << std::endl;
       for (int iket=0;iket<nkets_ket; ++iket)
@@ -4107,8 +4107,8 @@ void ReadWrite::ReadRelCMOpFromJavier( std::string statefilename, std::string ME
         int ld = ket.oq->l;
         double jd = 0.5*ket.oq->j2;
         double td = 0.5*ket.oq->tz2;
-        int Lcd_min = max(std::abs(lc-ld),Jcd-1);
-        int Lcd_max = min(lc+ld,Jcd+1);
+        int Lcd_min = std::max(std::abs(lc-ld),Jcd-1);
+        int Lcd_max = std::min(lc+ld,Jcd+1);
         int ecd = 2*(nc+nd)+lc+ld;
         std::cout << " ecd = " << ecd << std::endl;
         if (eab==0 and ecd==0 and Jab+Jcd==1 and Tzab==0 and Tzcd==0)
@@ -4120,12 +4120,12 @@ void ReadWrite::ReadRelCMOpFromJavier( std::string statefilename, std::string ME
         }
         for (int Lab=Lab_min; Lab<=Lab_max; ++Lab)
         {
-          for (int Sab=max(0,std::abs(Lab-Jab)); Sab<=min(1,Lab+Jab); ++Sab)
+          for (int Sab=std::max(0,std::abs(Lab-Jab)); Sab<=std::min(1,Lab+Jab); ++Sab)
           {
             double NormNineJab = sqrt((2*ja+1)*(2*jb+1)*(2*Lab+1)*(2*Sab+1)) * modelspace->GetNineJ(la,0.5,ja, lb,0.5,jb, Lab,Sab,Jab);
             for (int Lcd=Lcd_min; Lcd<=Lcd_max; ++Lcd)
             {
-              for (int Scd=max(0,std::abs(Lcd-Jcd)); Scd<=min(1,Lcd+Jcd); ++Scd)
+              for (int Scd=std::max(0,std::abs(Lcd-Jcd)); Scd<=std::min(1,Lcd+Jcd); ++Scd)
               {
                 double NormNineJcd = sqrt((2*jc+1)*(2*jd+1)*(2*Lcd+1)*(2*Scd+1)) * modelspace->GetNineJ(lc,0.5,jc, ld,0.5,jd, Lcd,Scd,Jcd);
 
