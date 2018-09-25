@@ -406,7 +406,7 @@ Operator Operator::DoNormalOrdering2()
                 else
                 {
                    double jh = oh.j2*0.5;
-                   if ((ja+jh < J_bra) or (abs(ja-jh)>J_bra) or (jb+jh < J_ket) or (abs(jb-jh)>J_ket) ) continue;
+                   if ((ja+jh < J_bra) or (std::abs(ja-jh)>J_bra) or (jb+jh < J_ket) or (std::abs(jb-jh)>J_ket) ) continue;
                    if ((oa.l + oh.l + tbc_bra.parity)%2 >0) continue;
                    if ((ob.l + oh.l + tbc_ket.parity)%2 >0) continue;
                    if ((oa.tz2 + oh.tz2) != tbc_bra.Tz*2) continue;
@@ -476,7 +476,7 @@ Operator Operator::DoNormalOrdering3()
                Orbit & oa = modelspace->GetOrbit(a);
                if ( (2*(oi.n+oj.n+oa.n)+oi.l+oj.l+oa.l)>E3max) continue;
                if ( (2*(ok.n+ol.n+oa.n)+ok.l+ol.l+oa.l)>E3max) continue;
-               int kmin2 = abs(2*tbc.J-oa.j2);
+               int kmin2 = std::abs(2*tbc.J-oa.j2);
                int kmax2 = 2*tbc.J+oa.j2;
                for (int K2=kmin2; K2<=kmax2; K2+=2)
                {
@@ -563,7 +563,7 @@ Operator Operator::UndoNormalOrdering() const
               else
               {
                  double jh = oh.j2*0.5;
-                 if ((ja+jh < J_bra) or (abs(ja-jh)>J_bra) or (jb+jh < J_ket) or (abs(jb-jh)>J_ket) ) continue;
+                 if ((ja+jh < J_bra) or (std::abs(ja-jh)>J_bra) or (jb+jh < J_ket) or (std::abs(jb-jh)>J_ket) ) continue;
 
                  if ((oa.l + oh.l + tbc_bra.parity)%2 >0) continue;
                  if ((ob.l + oh.l + tbc_ket.parity)%2 >0) continue;
@@ -814,7 +814,7 @@ double Operator::GetMP2_Energy()
      {
        Orbit& oa = modelspace->GetOrbit(a);
        double ea = OneBody(a,a);
-       if (abs(OneBody(i,a))>1e-6)
+       if (std::abs(OneBody(i,a))>1e-6)
          Emp2 += (oa.j2+1) * oa.occ * OneBody(i,a)*OneBody(i,a)/(OneBody(a,a)-OneBody(i,i));
        for (index_t j : modelspace->particles)
        {
@@ -827,12 +827,12 @@ double Operator::GetMP2_Energy()
            Orbit& ob = modelspace->GetOrbit(b);
            double eb = OneBody(b,b);
            double denom = ea+eb-ei-ej;
-           int Jmin = max(abs(oi.j2-oj.j2),abs(oa.j2-ob.j2))/2;
+           int Jmin = max(std::abs(oi.j2-oj.j2),std::abs(oa.j2-ob.j2))/2;
            int Jmax = min(oi.j2+oj.j2,oa.j2+ob.j2)/2;
            for (int J=Jmin; J<=Jmax; ++J)
            {
              double tbme = TwoBody.GetTBME_J_norm(J,a,b,i,j);
-             if (abs(tbme)>1e-6)
+             if (std::abs(tbme)>1e-6)
               Emp2 += (2*J+1)* oa.occ * ob.occ * tbme*tbme/denom; // no factor 1/4 because of the restricted sum
            }
          }
@@ -918,7 +918,7 @@ double Operator::GetMP3_Energy()
      for (auto a : modelspace->holes)
      {
       double ja = 0.5*modelspace->GetOrbit(a).j2;
-      int J_min = abs(ja-ji);
+      int J_min = std::abs(ja-ji);
       int J_max = ja+ji;
       for (int J_tot=J_min;J_tot<=J_max;++J_tot)
       {
@@ -930,7 +930,7 @@ double Operator::GetMP3_Energy()
         {
          double jj = 0.5*modelspace->GetOrbit(j).j2;
          double Delta_abij = OneBody(a,a) + OneBody(b,b) - OneBody(i,i) - OneBody(j,j);
-         int J1min = max(abs(ja-jb),abs(ji-jj));
+         int J1min = max(std::abs(ja-jb),std::abs(ji-jj));
          int J1max = min(ja+jb,ji+jj);
          double tbme_abij = 0;
          if ( AngMom::Triangle(jj,jb,J_tot) )
@@ -948,7 +948,7 @@ double Operator::GetMP3_Energy()
              double jk = 0.5*modelspace->GetOrbit(k).j2;
              if ( not AngMom::Triangle(jc,jk,J_tot) ) continue;
              double Delta_acik = OneBody(a,a) + OneBody(c,c) - OneBody(i,i) - OneBody(k,k);
-             int J2min = max(abs(jc-jj),abs(jk-jb));
+             int J2min = max(std::abs(jc-jj),std::abs(jk-jb));
              int J2max = min(jc+jj,jk+jb);
              double tbme_cjkb = 0;
              if ( AngMom::Triangle(jj,jb,J_tot) )
@@ -958,7 +958,7 @@ double Operator::GetMP3_Energy()
                  tbme_cjkb -= modelspace->GetSixJ(jj,jb,J_tot,jk,jc,J2) * (2*J2 + 1) *  TwoBody.GetTBME_J(J2,j,c,k,b);
                }
              }
-             int J3min = max(abs(ji-jk),abs(ja-jc));
+             int J3min = max(std::abs(ji-jk),std::abs(ja-jc));
              int J3max = min(ji+jk,ja+jc);
              double tbme_ikac = 0;
              for (int J3=J3min;J3<=J3max;++J3) // Pandya 3:   <kc`| V | ai`>_Jtot
@@ -1015,7 +1015,7 @@ double Operator::GetMP3_Energy()
                  if (p==i and q==j) continue; 
                  double Delta_abpq = OneBody(a,a)+OneBody(b,b)-OneBody(p,p)-OneBody(q,q);
                  double Delta_apiq = OneBody(a,a)+OneBody(p,p)-OneBody(i,i)-OneBody(q,q);
-                 int Jmin =  max(abs(op.j2-oq.j2),max(abs(oi.j2-oj.j2),abs(oa.j2-ob.j2)))/2;
+                 int Jmin =  max(std::abs(op.j2-oq.j2),max(std::abs(oi.j2-oj.j2),std::abs(oa.j2-ob.j2)))/2;
                  int Jmax =  min(op.j2+oq.j2,min(oi.j2+oj.j2,oa.j2+ob.j2))/2;
                  for (int J=Jmin;J<=Jmax;++J)
                  {
@@ -1840,7 +1840,7 @@ void Operator::comm121ss( const Operator& X, const Operator& Y)
              {
                 Orbit &ob = modelspace->GetOrbit(b);
                 double nanb = oa.occ * (1-ob.occ);
-                if (abs(nanb)<OCC_CUT) continue;
+                if (std::abs(nanb)<OCC_CUT) continue;
                 if (Y.particle_rank>1)
                 {
                   Z.OneBody(i,j) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
@@ -2439,13 +2439,13 @@ void Operator::DoPandyaTransformation_SingleChannel(arma::mat& TwoBody_CC_ph, in
          double jd = od.j2*0.5;
 
 
-         int jmin = max(abs(ja-jd),abs(jc-jb));
+         int jmin = max(std::abs(ja-jd),std::abs(jc-jb));
          int jmax = min(ja+jd,jc+jb);
          double Xbar = 0;
          for (int J_std=jmin; J_std<=jmax; ++J_std)
          {
             double sixj = modelspace->GetSixJ(ja,jb,J_cc,jc,jd,J_std);
-            if (abs(sixj) < 1e-8) continue;
+            if (std::abs(sixj) < 1e-8) continue;
             double tbme = TwoBody.GetTBME_J(J_std,a,d,c,b);
             Xbar -= (2*J_std+1) * sixj * tbme ;
          }
@@ -2459,13 +2459,13 @@ void Operator::DoPandyaTransformation_SingleChannel(arma::mat& TwoBody_CC_ph, in
          }
 
          // Exchange (a <-> b) to account for the (n_a - n_b) term
-         jmin = max(abs(jb-jd),abs(jc-ja));
+         jmin = max(std::abs(jb-jd),std::abs(jc-ja));
          jmax = min(jb+jd,jc+ja);
          Xbar = 0;
          for (int J_std=jmin; J_std<=jmax; ++J_std)
          {
             double sixj = modelspace->GetSixJ(jb,ja,J_cc,jc,jd,J_std);
-            if (abs(sixj) < 1e-8) continue;
+            if (std::abs(sixj) < 1e-8) continue;
             double tbme = TwoBody.GetTBME_J(J_std,b,d,c,a);
             Xbar -= (2*J_std+1) * sixj * tbme ;
          }
@@ -2540,9 +2540,9 @@ void Operator::AddInversePandyaTransformation_SingleChannel(arma::mat& Zbar, int
             double commij = 0;
             double commji = 0;
 
-            int jmin = max(abs(int(ji-jl)),abs(int(jk-jj)));
+            int jmin = max(std::abs(int(ji-jl)),std::abs(int(jk-jj)));
             int jmax = min(int(ji+jl),int(jk+jj));
-            if ( ((oi.l+ol.l)%2==parity_cc)  and  (abs(oi.tz2+ol.tz2)==Tz_cc*2) and (Jcc>=jmin) and (Jcc<=jmax) )
+            if ( ((oi.l+ol.l)%2==parity_cc)  and  (std::abs(oi.tz2+ol.tz2)==Tz_cc*2) and (Jcc>=jmin) and (Jcc<=jmax) )
             {
                double sixj = modelspace->GetSixJ(ji,jj,J,jk,jl,Jcc);
                int indx_il = tbc_cc.GetLocalIndex(i,l) ;
@@ -2562,9 +2562,9 @@ void Operator::AddInversePandyaTransformation_SingleChannel(arma::mat& Zbar, int
             else
             {
               // now loop over the cross coupled TBME's
-              jmin = max(abs(int(jj-jl)),abs(int(jk-ji)));
+              jmin = max(std::abs(int(jj-jl)),std::abs(int(jk-ji)));
               jmax = min(int(jj+jl),int(jk+ji));
-              if ( (oi.l+ok.l)%2==parity_cc  and  abs(oi.tz2+ok.tz2)==Tz_cc*2 and Jcc>=jmin and Jcc<=jmax)
+              if ( (oi.l+ok.l)%2==parity_cc  and  std::abs(oi.tz2+ok.tz2)==Tz_cc*2 and Jcc>=jmin and Jcc<=jmax)
               {
                  double sixj = modelspace->GetSixJ(jj,ji,J,jk,jl,Jcc);
                  int indx_ik = tbc_cc.GetLocalIndex(i,k) ;
@@ -2629,13 +2629,13 @@ void Operator::AddInversePandyaTransformation(const deque<arma::mat>& Zbar)
             double commji = 0;
 
             int parity_cc = (oi.l+ol.l)%2;
-            int Tz_cc = abs(oi.tz2+ol.tz2)/2;
-            int jmin = max(abs(int(ji-jl)),abs(int(jk-jj)));
+            int Tz_cc = std::abs(oi.tz2+ol.tz2)/2;
+            int jmin = max(std::abs(int(ji-jl)),std::abs(int(jk-jj)));
             int jmax = min(int(ji+jl),int(jk+jj));
             for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
             {
                double sixj = modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
-               if (abs(sixj)<1e-8) continue;
+               if (std::abs(sixj)<1e-8) continue;
                int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
                TwoBodyChannel_CC& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
                int nkets_cc = tbc_cc.GetNumberKets();
@@ -2664,13 +2664,13 @@ void Operator::AddInversePandyaTransformation(const deque<arma::mat>& Zbar)
             {
               // now loop over the cross coupled TBME's
               parity_cc = (oi.l+ok.l)%2;
-              Tz_cc = abs(oi.tz2+ok.tz2)/2;
-              jmin = max(abs(int(jj-jl)),abs(int(jk-ji)));
+              Tz_cc = std::abs(oi.tz2+ok.tz2)/2;
+              jmin = max(std::abs(int(jj-jl)),std::abs(int(jk-ji)));
               jmax = min(int(jj+jl),int(jk+ji));
               for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
               {
                  double sixj = modelspace->GetSixJ(jj,ji,J,jk,jl,Jprime);
-                 if (abs(sixj)<1e-8) continue;
+                 if (std::abs(sixj)<1e-8) continue;
                  int ch_cc = modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
                  TwoBodyChannel_CC& tbc_cc = modelspace->GetTwoBodyChannel_CC(ch_cc);
                  int nkets_cc = tbc_cc.GetNumberKets();
@@ -3002,16 +3002,16 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
              {
                 Orbit &ob = modelspace->GetOrbit(b);
                 double nanb = oa.occ * (1-ob.occ);
-                  int J1min = abs(ji-ja);
+                  int J1min = std::abs(ji-ja);
                   int J1max = ji + ja;
                   for (int J1=J1min; J1<=J1max; ++J1)
                   {
                     int phasefactor = modelspace->phase(jj+ja+J1+Lambda);
-                    int J2min = max(abs(Lambda - J1),abs(int(ja-jj)));
+                    int J2min = max(std::abs(Lambda - J1),std::abs(int(ja-jj)));
                     int J2max = min(Lambda + J1,int(ja+jj));
                     for (int J2=J2min; J2<=J2max; ++J2)
                     {
-                      if ( ! ( J2>=abs(ja-jj) and J2<=ja+jj )) continue;
+                      if ( ! ( J2>=std::abs(ja-jj) and J2<=ja+jj )) continue;
                       double prefactor = nanb*phasefactor * sqrt((2*J1+1)*(2*J2+1)) * modelspace->GetSixJ(J1,J2,Lambda,jj,ji,ja);
                       Zij +=  prefactor * ( X.OneBody(a,b) * Y.TwoBody.GetTBME_J(J1,J2,b,i,a,j) - X.OneBody(b,a) * Y.TwoBody.GetTBME_J(J1,J2,a,i,b,j ));
                     }
@@ -3023,9 +3023,9 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
 
                 Orbit &ob = modelspace->GetOrbit(b);
                 double jb = 0.5*ob.j2;
-                if (abs(ob.occ-1) < OCC_CUT) continue;
+                if (std::abs(ob.occ-1) < OCC_CUT) continue;
                 double nanb = oa.occ * (1-ob.occ);
-                int J1min = max(abs(ji-jb),abs(jj-ja));
+                int J1min = max(std::abs(ji-jb),std::abs(jj-ja));
                 int J1max = min(ji+jb,jj+ja);
                 double zij = 0;
                 for (int J1=J1min; J1<=J1max; ++J1)
@@ -3033,7 +3033,7 @@ void Operator::comm121st( const Operator& X, const Operator& Y)
                   zij -= modelspace->phase(ji+jb+J1) * (2*J1+1) * modelspace->GetSixJ(ja,jb,Lambda,ji,jj,J1) * X.TwoBody.GetTBME_J(J1,J1,b,i,a,j);
                 }
 
-                J1min = max(abs(ji-ja),abs(jj-jb));
+                J1min = max(std::abs(ji-ja),std::abs(jj-jb));
                 J1max = min(ji+ja,jj+jb);
                 for (int J1=J1min; J1<=J1max; ++J1)
                 {
@@ -3315,11 +3315,11 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
            {
               Orbit &oc = modelspace->GetOrbit(c);
               double jc = oc.j2/2.0;
-              int j1min = abs(jc-ji);
+              int j1min = std::abs(jc-ji);
               int j1max = jc+ji;
               for (int J1=j1min; J1<=j1max; ++J1)
               {
-               int j2min = max(int(abs(jc-jj)),abs(Lambda-J1));
+               int j2min = max(int(std::abs(jc-jj)),std::abs(Lambda-J1));
                int j2max = min(int(jc+jj),J1+Lambda); 
                for (int J2=j2min; J2<=j2max; ++J2)
                {
@@ -3336,11 +3336,11 @@ void Operator::comm222_pp_hh_221st( const Operator& X, const Operator& Y )
            {
               Orbit &oc = modelspace->GetOrbit(c);
               double jc = oc.j2/2.0;
-              int j1min = abs(jc-ji);
+              int j1min = std::abs(jc-ji);
               int j1max = jc+ji;
               for (int J1=j1min; J1<=j1max; ++J1)
               {
-               int j2min = max(int(abs(jc-jj)),abs(Lambda-J1));
+               int j2min = max(int(std::abs(jc-jj)),std::abs(Lambda-J1));
                int j2max = min(int(jc+jj),J1+Lambda); 
                for (int J2=j2min; J2<=j2max; ++J2)
                {
@@ -3416,7 +3416,7 @@ void Operator::DoTensorPandyaTransformation( map<array<index_t,2>,arma::mat>& Tw
       {
         TwoBodyChannel& tbc_ket_cc = modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
         int Jket_cc = tbc_ket_cc.J;
-        if ( (Jbra_cc+Jket_cc < rank_J) or abs(Jbra_cc-Jket_cc)>rank_J ) continue;
+        if ( (Jbra_cc+Jket_cc < rank_J) or std::abs(Jbra_cc-Jket_cc)>rank_J ) continue;
         if ( (tbc_bra_cc.parity + tbc_ket_cc.parity + parity)%2>0 ) continue;
 
         index_t nKets_cc = tbc_ket_cc.GetNumberKets();
@@ -3447,17 +3447,17 @@ void Operator::DoTensorPandyaTransformation( map<array<index_t,2>,arma::mat>& Tw
               double jd = od.j2*0.5;
 
 
-              int j1min = abs(ja-jd);
+              int j1min = std::abs(ja-jd);
               int j1max = ja+jd;
               double sm = 0;
               for (int J1=j1min; J1<=j1max; ++J1)
               {
-                int j2min = max(int(abs(jc-jb)),abs(J1-Lambda));
+                int j2min = max(int(std::abs(jc-jb)),std::abs(J1-Lambda));
                 int j2max = min(int(jc+jb),J1+Lambda);
                 for (int J2=j2min; J2<=j2max; ++J2)
                 {
                   double ninej = modelspace->GetNineJ(ja,jd,J1,jb,jc,J2,Jbra_cc,Jket_cc,Lambda);
-                  if (abs(ninej) < 1e-8) continue;
+                  if (std::abs(ninej) < 1e-8) continue;
                   double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
                   double tbme = TwoBody.GetTBME_J(J1,J2,a,d,c,b);
                   sm -= hatfactor * modelspace->phase(jb+jd+Jket_cc+J2) * ninej * tbme ;
@@ -3468,17 +3468,17 @@ void Operator::DoTensorPandyaTransformation( map<array<index_t,2>,arma::mat>& Tw
 
               // Exchange (a <-> b) to account for the (n_a - n_b) term
               // Get Tz,parity and range of J for <bd || ca > coupling
-              j1min = abs(jb-jd);
+              j1min = std::abs(jb-jd);
               j1max = jb+jd;
               sm = 0;
               for (int J1=j1min; J1<=j1max; ++J1)
               {
-                int j2min = max(int(abs(jc-ja)),abs(J1-Lambda));
+                int j2min = max(int(std::abs(jc-ja)),std::abs(J1-Lambda));
                 int j2max = min(int(jc+ja),J1+Lambda);
                 for (int J2=j2min; J2<=j2max; ++J2)
                 {
                   double ninej = modelspace->GetNineJ(jb,jd,J1,ja,jc,J2,Jbra_cc,Jket_cc,Lambda);
-                  if (abs(ninej) < 1e-8) continue;
+                  if (std::abs(ninej) < 1e-8) continue;
                   double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
                   double tbme = TwoBody.GetTBME_J(J1,J2,b,d,c,a);
                   sm -= hatfactor * modelspace->phase(ja+jd+Jket_cc+J2) * ninej * tbme ;
@@ -3515,7 +3515,7 @@ void Operator::DoTensorPandyaTransformation_SingleChannel( arma::mat& MatCC_ph, 
 
    int Jbra_cc = tbc_bra_cc.J;
    int Jket_cc = tbc_ket_cc.J;
-   if ( (Jbra_cc+Jket_cc < rank_J) or abs(Jbra_cc-Jket_cc)>rank_J ) return;
+   if ( (Jbra_cc+Jket_cc < rank_J) or std::abs(Jbra_cc-Jket_cc)>rank_J ) return;
    if ( (tbc_bra_cc.parity + tbc_ket_cc.parity + parity)%2>0 ) return;
 
 
@@ -3544,17 +3544,17 @@ void Operator::DoTensorPandyaTransformation_SingleChannel( arma::mat& MatCC_ph, 
          double jd = od.j2*0.5;
 
 
-         int j1min = abs(ja-jd);
+         int j1min = std::abs(ja-jd);
          int j1max = ja+jd;
          double sm = 0;
          for (int J1=j1min; J1<=j1max; ++J1)
          {
-           int j2min = max(int(abs(jc-jb)),abs(J1-Lambda));
+           int j2min = max(int(std::abs(jc-jb)),std::abs(J1-Lambda));
            int j2max = min(int(jc+jb),J1+Lambda);
            for (int J2=j2min; J2<=j2max; ++J2)
            {
              double ninej = modelspace->GetNineJ(ja,jd,J1,jb,jc,J2,Jbra_cc,Jket_cc,Lambda);
-             if (abs(ninej) < 1e-8) continue;
+             if (std::abs(ninej) < 1e-8) continue;
              double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
              double tbme = TwoBody.GetTBME_J(J1,J2,a,d,c,b);
              sm -= hatfactor * modelspace->phase(jb+jd+Jket_cc+J2) * ninej * tbme ;
@@ -3571,17 +3571,17 @@ void Operator::DoTensorPandyaTransformation_SingleChannel( arma::mat& MatCC_ph, 
          {
 
            // Get Tz,parity and range of J for <bd || ca > coupling
-           j1min = abs(jb-jd);
+           j1min = std::abs(jb-jd);
            j1max = jb+jd;
            sm = 0;
            for (int J1=j1min; J1<=j1max; ++J1)
            {
-             int j2min = max(int(abs(jc-ja)),abs(J1-Lambda));
+             int j2min = max(int(std::abs(jc-ja)),std::abs(J1-Lambda));
              int j2max = min(int(jc+ja),J1+Lambda);
              for (int J2=j2min; J2<=j2max; ++J2)
              {
                double ninej = modelspace->GetNineJ(jb,jd,J1,ja,jc,J2,Jbra_cc,Jket_cc,Lambda);
-               if (abs(ninej) < 1e-8) continue;
+               if (std::abs(ninej) < 1e-8) continue;
                double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*Jbra_cc+1)*(2*Jket_cc+1) );
                double tbme = TwoBody.GetTBME_J(J1,J2,b,d,c,a);
                sm -= hatfactor * modelspace->phase(ja+jd+Jket_cc+J2) * ninej * tbme ;
@@ -3672,13 +3672,13 @@ void Operator::AddInverseTensorPandyaTransformation_SingleChannel(arma::mat& Zba
             double commji = 0;
 
             // Transform Z_ilkj
-            int j3min = abs(int(ji-jl));
+            int j3min = std::abs(int(ji-jl));
             int j3max = ji+jl;
-            int j4min = abs(int(jk-jj));
+            int j4min = std::abs(int(jk-jj));
             int j4max = int(jk+jj);
 
             if (   (oi.l+ol.l)%2==parity_bra_cc             and (ok.l+oj.l)%2==parity_ket_cc
-                      and abs(oi.tz2+ol.tz2)==2*Tz_bra_cc   and abs(ok.tz2+oj.tz2)==2*Tz_ket_cc
+                      and std::abs(oi.tz2+ol.tz2)==2*Tz_bra_cc   and std::abs(ok.tz2+oj.tz2)==2*Tz_ket_cc
                       and j3min<=J3 and J3<=j3max           and j4min<=J4 and J4<=j4max )
             {
                int indx_il = tbc_bra_cc.GetLocalIndex(min(i,l),max(i,l));
@@ -3694,7 +3694,7 @@ void Operator::AddInverseTensorPandyaTransformation_SingleChannel(arma::mat& Zba
             }
 
             if (  ch_bra_cc != ch_ket_cc  and (oi.l+ol.l)%2==parity_ket_cc        and (ok.l+oj.l)%2==parity_bra_cc
-                                            and abs(oi.tz2+ol.tz2)==2*Tz_ket_cc   and abs(ok.tz2+oj.tz2)==2*Tz_bra_cc
+                                            and std::abs(oi.tz2+ol.tz2)==2*Tz_ket_cc   and std::abs(ok.tz2+oj.tz2)==2*Tz_bra_cc
                                             and j3min<=J4 and J4<=j3max           and j4min<=J3 and J3<=j4max )
               {
                  int indx_kj = tbc_bra_cc.GetLocalIndex(min(j,k),max(j,k));
@@ -3717,12 +3717,12 @@ void Operator::AddInverseTensorPandyaTransformation_SingleChannel(arma::mat& Zba
             }
             else
             {
-              j3min = abs(int(jj-jl));
+              j3min = std::abs(int(jj-jl));
               j3max = jj+jl;
-              j4min = abs(int(jk-ji));
+              j4min = std::abs(int(jk-ji));
               j4max = int(jk+ji);
               if (   (oj.l+ol.l)%2==parity_bra_cc and (ok.l+oi.l)%2==parity_ket_cc
-                      and abs(oj.tz2+ol.tz2)==2*Tz_bra_cc and abs(ok.tz2+oi.tz2)==2*Tz_ket_cc
+                      and std::abs(oj.tz2+ol.tz2)==2*Tz_bra_cc and std::abs(ok.tz2+oi.tz2)==2*Tz_ket_cc
                       and J3>=j3min and J3<=j3max and J4>=j4min and J4<=j4max)
               {
                 // Transform Z_jlki
@@ -3736,7 +3736,7 @@ void Operator::AddInverseTensorPandyaTransformation_SingleChannel(arma::mat& Zba
                inner_loop = true;
               }
               if (ch_bra_cc!=ch_ket_cc and (oj.l+ol.l)%2==parity_ket_cc and (ok.l+oi.l)%2==parity_bra_cc
-                                       and abs(oj.tz2+ol.tz2)==2*Tz_ket_cc and abs(ok.tz2+oi.tz2)==2*Tz_bra_cc
+                                       and std::abs(oj.tz2+ol.tz2)==2*Tz_ket_cc and std::abs(ok.tz2+oi.tz2)==2*Tz_bra_cc
                                        and J4>=j3min and J4<=j3max and J3>=j4min and J3<=j4max)
               {
                 int indx_jl = tbc_ket_cc.GetLocalIndex(min(j,l),max(j,l));
@@ -3825,9 +3825,9 @@ void Operator::AddInverseTensorPandyaTransformation( const map<array<index_t,2>,
             // Transform Z_ilkj
             int parity_bra_cc = (oi.l+ol.l)%2;
             int parity_ket_cc = (ok.l+oj.l)%2;
-            int Tz_bra_cc = abs(oi.tz2+ol.tz2)/2;
-            int Tz_ket_cc = abs(ok.tz2+oj.tz2)/2;
-            int j3min = abs(int(ji-jl));
+            int Tz_bra_cc = std::abs(oi.tz2+ol.tz2)/2;
+            int Tz_ket_cc = std::abs(ok.tz2+oj.tz2)/2;
+            int j3min = std::abs(int(ji-jl));
             int j3max = ji+jl;
             for (int J3=j3min; J3<=j3max; ++J3)
             {
@@ -3835,7 +3835,7 @@ void Operator::AddInverseTensorPandyaTransformation( const map<array<index_t,2>,
               const TwoBodyChannel_CC& tbc_bra_cc = modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
               index_t nbras = tbc_bra_cc.GetNumberKets();
               index_t indx_il = tbc_bra_cc.GetLocalIndex(min(i,l),max(i,l));
-              int j4min = max(abs(int(jk-jj)),abs(J3-Lambda));
+              int j4min = max(std::abs(int(jk-jj)),std::abs(J3-Lambda));
               int j4max = min(int(jk+jj),J3+Lambda);
               for (int J4=j4min; J4<=j4max; ++J4)
               {
@@ -3845,7 +3845,7 @@ void Operator::AddInverseTensorPandyaTransformation( const map<array<index_t,2>,
                  index_t indx_kj = tbc_ket_cc.GetLocalIndex(min(j,k),max(j,k));
 
                   double ninej = modelspace->GetNineJ(ji,jl,J3,jj,jk,J4,J1,J2,Lambda);
-                  if (abs(ninej) < 1e-8) continue;
+                  if (std::abs(ninej) < 1e-8) continue;
                   double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*J3+1)*(2*J4+1) );
                   double tbme = 0;
                   index_t ch_lo = min(ch_bra_cc,ch_ket_cc);
@@ -3866,7 +3866,7 @@ void Operator::AddInverseTensorPandyaTransformation( const map<array<index_t,2>,
                   }
                   commij += hatfactor * modelspace->phase(jj+jl+J2+J4) * ninej * tbme ;
 
-//                  if (J1==0 and J2==0 and i==0 and j==18 and k==1 and l==5 and abs(tbme)>1e-7 and abs(ninej)>1e-7)
+//                  if (J1==0 and J2==0 and i==0 and j==18 and k==1 and l==5 and std::abs(tbme)>1e-7 and std::abs(ninej)>1e-7)
 //                  {
 //                    cout << "    " << J3 << " " << J4 << "  " << hatfactor << " "  << modelspace->phase(jj+jl+J2+J4) << " " << ninej << " " << tbme << " " << commij << endl;
 //                  }
@@ -3882,9 +3882,9 @@ void Operator::AddInverseTensorPandyaTransformation( const map<array<index_t,2>,
               // Transform Z_jlki
               parity_bra_cc = (oj.l+ol.l)%2;
               parity_ket_cc = (ok.l+oi.l)%2;
-              Tz_bra_cc = abs(oj.tz2+ol.tz2)/2;
-              Tz_ket_cc = abs(ok.tz2+oi.tz2)/2;
-              j3min = abs(int(jj-jl));
+              Tz_bra_cc = std::abs(oj.tz2+ol.tz2)/2;
+              Tz_ket_cc = std::abs(ok.tz2+oi.tz2)/2;
+              j3min = std::abs(int(jj-jl));
               j3max = jj+jl;
   
               for (int J3=j3min; J3<=j3max; ++J3)
@@ -3893,7 +3893,7 @@ void Operator::AddInverseTensorPandyaTransformation( const map<array<index_t,2>,
                 const TwoBodyChannel_CC& tbc_bra_cc = modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
                 int nbras = tbc_bra_cc.GetNumberKets();
                 int indx_jl = tbc_bra_cc.GetLocalIndex(min(j,l),max(j,l));
-                int j4min = max(abs(int(jk-ji)),abs(J3-Lambda));
+                int j4min = max(std::abs(int(jk-ji)),std::abs(J3-Lambda));
                 int j4max = min(int(jk+ji),J3+Lambda);
                 for (int J4=j4min; J4<=j4max; ++J4)
                 {
@@ -3902,7 +3902,7 @@ void Operator::AddInverseTensorPandyaTransformation( const map<array<index_t,2>,
                    int nkets = tbc_ket_cc.GetNumberKets();
                    int indx_ki = tbc_ket_cc.GetLocalIndex(min(k,i),max(k,i));
                     double ninej = modelspace->GetNineJ(jj,jl,J3,ji,jk,J4,J1,J2,Lambda);
-                    if (abs(ninej) < 1e-8) continue;
+                    if (std::abs(ninej) < 1e-8) continue;
                     double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*J3+1)*(2*J4+1) );
   
                     index_t ch_lo = min(ch_bra_cc,ch_ket_cc);

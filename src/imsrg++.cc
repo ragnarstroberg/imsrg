@@ -238,7 +238,7 @@ int main(int argc, char** argv)
 
 
   // Add a Lawson term. If hwBetaCM is specified, use that frequency
-  if (abs(BetaCM)>1e-3)
+  if (std::abs(BetaCM)>1e-3)
   {
     if (hwBetaCM < 0) hwBetaCM = modelspace.GetHbarOmega();
     ostringstream hcm_opname;
@@ -364,7 +364,7 @@ int main(int argc, char** argv)
     int Z = modelspace.GetTargetZ();
     int A = modelspace.GetTargetMass();
     cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << endl; 
-    cout << " HF charge radius = " << ( abs(Rp2.ZeroBody)<1e-6 ? 0.0 : sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) ) << endl; 
+    cout << " HF charge radius = " << ( std::abs(Rp2.ZeroBody)<1e-6 ? 0.0 : sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) ) << endl; 
   }
   for (index_t i=0;i<ops.size();++i)
   {
@@ -551,7 +551,7 @@ int main(int argc, char** argv)
     {
       for (auto c : modelspace.core)
       {
-         if ( (find( modelspace.holes.begin(), modelspace.holes.end(), c) == modelspace.holes.end()) or (abs(1-modelspace.GetOrbit(c).occ)>1e-6))
+         if ( (find( modelspace.holes.begin(), modelspace.holes.end(), c) == modelspace.holes.end()) or (std::abs(1-modelspace.GetOrbit(c).occ)>1e-6))
          {
            renormal_order = true;
            break;

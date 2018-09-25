@@ -157,7 +157,7 @@ bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
    if ((op->l + oq->l)%2 != parity) return false;
    if ((op->tz2 + oq->tz2) != 2*Tz) return false;
    if (op->j2 + oq->j2 < 2*J)       return false;
-   if (abs(op->j2 - oq->j2) > 2*J)  return false;
+   if (std::abs(op->j2 - oq->j2) > 2*J)  return false;
 
    return true;
 }
@@ -216,9 +216,9 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
 bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
    if ((op->l + oq->l)%2 != parity)    return false;
-   if (abs(op->tz2 + oq->tz2) != 2*Tz) return false;
+   if (std::abs(op->tz2 + oq->tz2) != 2*Tz) return false;
    if (op->j2 + oq->j2 < 2*J)          return false;
-   if (abs(op->j2 - oq->j2) > 2*J)     return false;
+   if (std::abs(op->j2 - oq->j2) > 2*J)     return false;
 
    return true;
 }
@@ -465,7 +465,7 @@ void ModelSpace::Init_occ_from_file(int emax, std::string valence, std::string o
 
   while( infile >> orb >> occ )
   {
-    if ( hole_list.find(orb) != hole_list.end() and  abs( hole_list[orb] -occ) > 1e-6) // the minus sign is for a test. Change it back.
+    if ( hole_list.find(orb) != hole_list.end() and  std::abs( hole_list[orb] -occ) > 1e-6) // the minus sign is for a test. Change it back.
     {
         std::cout << "Warning: in file " << occ_file << ", redefinition of occupation of orbit "
              << orb << "  " << hole_list[orb] << " => " << occ << std::endl;
@@ -603,7 +603,7 @@ std::map<index_t,double> ModelSpace::GetOrbitsAZ(int A, int Z)
   {
     for (int g=2*N+1;g>=-2*N;g-=4)
     {
-      int j2 = abs(g);
+      int j2 = std::abs(g);
       int l = g<0 ? (j2+1)/2 : (j2-1)/2;
       int n = (N-l)/2;
 
@@ -905,7 +905,7 @@ void ModelSpace::SetupKets()
     int cvq_q = ket.oq->cvq;
     if (cvq_p+cvq_q==0)      KetIndex_cc.push_back(index); // 00
     if (cvq_p+cvq_q==1)      KetIndex_vc.push_back(index); // 01
-    if (abs(cvq_p-cvq_q)==2) KetIndex_qc.push_back(index); // 02
+    if (std::abs(cvq_p-cvq_q)==2) KetIndex_qc.push_back(index); // 02
     if (cvq_p*cvq_q==1)      KetIndex_vv.push_back(index); // 11
     if (cvq_p+cvq_q==3)      KetIndex_qv.push_back(index); // 12
     if (cvq_p+cvq_q==4)      KetIndex_qq.push_back(index); // 22
@@ -1116,9 +1116,9 @@ void ModelSpace::PreCalculateSixJ()
      for (int j2d=1; j2d<=3*(2*Emax+1); j2d+=2)
      {
       // J1 couples a,b, and c,d;  J2 couples a,d and b,c
-      int J1_min = std::max( abs(j2a-j2b), std::abs(j2c-j2d) );
+      int J1_min = std::max( std::abs(j2a-j2b), std::abs(j2c-j2d) );
       int J1_max = std::min( j2a+j2b, j2c+j2d );
-      int J2_min = std::max( abs(j2a-j2d), abs(j2b-j2c) );
+      int J2_min = std::max( std::abs(j2a-j2d), std::abs(j2b-j2c) );
       int J2_max = std::min( j2a+j2d, j2b+j2c );
       for (int J1=J1_min; J1<=J1_max; J1+=2)
       {
@@ -1136,15 +1136,15 @@ void ModelSpace::PreCalculateSixJ()
 
      // three half-integer j's, three integer J's
      // J1 couples a,b, and c,d;  J2 couples a,d and b,c
-     int J1_min = abs(j2a-j2c) ;
+     int J1_min = std::abs(j2a-j2c) ;
      int J1_max = j2a+j2c;
-     int J2_min = abs(j2b-j2c) ;
+     int J2_min = std::abs(j2b-j2c) ;
      int J2_max = j2b+j2c;
      for (int J1=J1_min; J1<=J1_max; J1+=2)
      {
       for (int J2=J2_min; J2<=J2_max; J2+=2)
       {
-       int J3_min = std::max( abs(J1-J2), abs(j2a-j2b) );
+       int J3_min = std::max( std::abs(J1-J2), std::abs(j2a-j2b) );
        int J3_max = std::min( J1+J2, j2a+j2b );
        for (int J3=J3_min; J3<=J3_max; J3+=2)
        {
@@ -1197,7 +1197,7 @@ void ModelSpace::PreCalculateMoshinsky()
      for (int lam=0; lam<=lam_max; ++lam)
      {
       int e2 = 2*N+Lam + 2*n+lam;
-      for (int L=abs(Lam-lam); L<=Lam+lam; ++L)
+      for (int L=std::abs(Lam-lam); L<=Lam+lam; ++L)
       {
        for (int n1=0; n1<=N; ++n1)
        {
@@ -1208,7 +1208,7 @@ void ModelSpace::PreCalculateMoshinsky()
          {
           int l2 = e2-2*n1-2*n2-l1;
           if ( (l1+l2+lam+Lam)%2 >0 ) continue;
-          if ( l2<abs(L-l1) or l2>L+l1 ) continue;
+          if ( l2<std::abs(L-l1) or l2>L+l1 ) continue;
           // emax = 16, lmax = 32 -> good up to emax=32, which I'm nowhere near.
 //          unsigned long long int key =   ((unsigned long long int) N   << 40)
 //                                       + ((unsigned long long int) Lam << 34)
@@ -1458,9 +1458,9 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
          for (int ch_ket=ch_bra; ch_ket<ntbc; ++ch_ket)
          {
            TwoBodyChannel& tbc_ket = TwoBodyChannels[ch_ket];
-           if ( abs(tbc_bra.J-tbc_ket.J)>rank_J ) continue;
+           if ( std::abs(tbc_bra.J-tbc_ket.J)>rank_J ) continue;
            if ( (tbc_bra.J+tbc_ket.J)<rank_J ) continue;
-           if ( abs(tbc_bra.Tz-tbc_ket.Tz)>rank_T ) continue;
+           if ( std::abs(tbc_bra.Tz-tbc_ket.Tz)>rank_T ) continue;
            if ( (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
 
            bool need_it = false;
@@ -1475,38 +1475,38 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
                const Ket& ket = tbc_ket.GetKet(iket);
                Orbit& ok = *(ket.op);
                Orbit& ol = *(ket.oq);
-               int j3min = abs(oi.j2-ol.j2);
+               int j3min = std::abs(oi.j2-ol.j2);
                int j3max = oi.j2+ol.j2;
-               int j4min = abs(ok.j2-oj.j2);
+               int j4min = std::abs(ok.j2-oj.j2);
                int j4max = ok.j2+oj.j2;
                if (   (oi.l+ol.l)%2==tbc_bra_cc.parity         and (ok.l+oj.l)%2==tbc_ket_cc.parity
-                         and abs(oi.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and abs(ok.tz2+oj.tz2)==2*tbc_ket_cc.Tz
+                         and std::abs(oi.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and std::abs(ok.tz2+oj.tz2)==2*tbc_ket_cc.Tz
                          and j3min<=twoJ_bra_cc and twoJ_bra_cc<=j3max           and j4min<=twoJ_ket_cc and twoJ_ket_cc<=j4max )
                {
                  need_it=true;
                  break;
                }
                if (   (oi.l+ol.l)%2==tbc_ket_cc.parity         and (ok.l+oj.l)%2==tbc_bra_cc.parity
-                         and abs(oi.tz2+ol.tz2)==2*tbc_ket_cc.Tz   and abs(ok.tz2+oj.tz2)==2*tbc_bra_cc.Tz
+                         and std::abs(oi.tz2+ol.tz2)==2*tbc_ket_cc.Tz   and std::abs(ok.tz2+oj.tz2)==2*tbc_bra_cc.Tz
                          and j3min<=twoJ_ket_cc and twoJ_ket_cc<=j3max           and j4min<=twoJ_bra_cc and twoJ_bra_cc<=j4max )
                {
                  need_it=true;
                  break;
                }
 
-               j3min = abs(oj.j2-ol.j2);
+               j3min = std::abs(oj.j2-ol.j2);
                j3max = oj.j2+ol.j2;
-               j4min = abs(ok.j2-oi.j2);
+               j4min = std::abs(ok.j2-oi.j2);
                j4max = ok.j2+oi.j2;
                if (   (oj.l+ol.l)%2==tbc_bra_cc.parity         and (ok.l+oi.l)%2==tbc_ket_cc.parity
-                         and abs(oj.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and abs(ok.tz2+oi.tz2)==2*tbc_ket_cc.Tz
+                         and std::abs(oj.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and std::abs(ok.tz2+oi.tz2)==2*tbc_ket_cc.Tz
                          and j3min<=twoJ_bra_cc and twoJ_bra_cc<=j3max           and j4min<=twoJ_ket_cc and twoJ_ket_cc<=j4max )
                {
                  need_it=true;
                  break;
                }
                if (   (oj.l+ol.l)%2==tbc_ket_cc.parity         and (ok.l+oi.l)%2==tbc_bra_cc.parity
-                         and abs(oj.tz2+ol.tz2)==2*tbc_ket_cc.Tz   and abs(ok.tz2+oi.tz2)==2*tbc_bra_cc.Tz
+                         and std::abs(oj.tz2+ol.tz2)==2*tbc_ket_cc.Tz   and std::abs(ok.tz2+oi.tz2)==2*tbc_bra_cc.Tz
                          and j3min<=twoJ_ket_cc and twoJ_ket_cc<=j3max           and j4min<=twoJ_bra_cc and twoJ_bra_cc<=j4max )
                {
                  need_it=true;

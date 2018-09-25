@@ -69,7 +69,7 @@ void ThreeBodyME::Allocate()
      int eb = 2*ob.n+ob.l;
      if ((ea+eb)>E3max) break;
 
-     int Jab_min = abs(oa.j2-ob.j2)/2;
+     int Jab_min = std::abs(oa.j2-ob.j2)/2;
      int Jab_max = (oa.j2+ob.j2)/2;
      vector<vector<vector<vector<size_t>>>> vecc;
      for (int c=0; c<=b; c+=2)
@@ -103,15 +103,15 @@ void ThreeBodyME::Allocate()
                continue;
              }
              vecf.push_back( total_dimension );
-             int Jde_min = abs(od.j2-oe.j2)/2;
+             int Jde_min = std::abs(od.j2-oe.j2)/2;
              int Jde_max = (od.j2+oe.j2)/2;
 
              for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
              {
               for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
               {
-                int J2_min = max( abs(2*Jab-oc.j2), abs(2*Jde-of.j2));
-                int J2_max = min( 2*Jab+oc.j2, 2*Jde+of.j2);
+                int J2_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jde-of.j2));
+                int J2_max = std::min( 2*Jab+oc.j2, 2*Jde+of.j2);
                 for (int J2=J2_min; J2<=J2_max; J2+=2)
                 {
 //                  dim += 5; // 5 different isospin combinations
@@ -171,7 +171,7 @@ void ThreeBodyME::Allocate()
      int eb = 2*ob.n+ob.l;
      if ((ea+eb)>E3max) break;
 
-     int Jab_min = abs(oa.j2-ob.j2)/2;
+     int Jab_min = std::abs(oa.j2-ob.j2)/2;
      int Jab_max = (oa.j2+ob.j2)/2;
      for (int c=0; c<=b; c+=2)
      {
@@ -252,11 +252,11 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
 
    double Vpn=0;
    int Tmin = std::min( std::abs(tza+tzb+tzc), std::abs(tzd+tze+tzf) );
-   for (int tab=abs(tza+tzb); tab<=1; ++tab)
+   for (int tab=std::abs(tza+tzb); tab<=1; ++tab)
    {
       // CG calculates the Clebsch-Gordan coefficient
       double CG1 = AngMom::CG(0.5,tza, 0.5,tzb, tab, tza+tzb);
-      for (int tde=abs(tzd+tze); tde<=1; ++tde)
+      for (int tde=std::abs(tzd+tze); tde<=1; ++tde)
       {
          double CG2 = AngMom::CG(0.5,tzd, 0.5,tze, tde, tzd+tze);
          if (CG1*CG2==0) continue;
@@ -348,8 +348,8 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
    double je = oe.j2*0.5;
    double jf = of.j2*0.5;
 
-   int Jab_min = abs(ja-jb);
-   int Jde_min = abs(jd-je);
+   int Jab_min = std::abs(ja-jb);
+   int Jde_min = std::abs(jd-je);
    int Jab_max = (ja+jb);
    int Jde_max = (jd+je);
 
@@ -379,7 +379,7 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
        if (J2_min>J2_max) continue;
        J_index += (J2-J2_min)/2*5;
 
-       if (J2>=J2_min and J2<=J2_max and abs(Cj_abc*Cj_def)>1e-8)
+       if (J2>=J2_min and J2<=J2_max and std::abs(Cj_abc*Cj_def)>1e-8)
        {
          for (int tab=tab_min; tab<=tab_max; ++tab)
          {
@@ -387,7 +387,7 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
            for (int tde=tde_min; tde<=tde_max; ++tde)
            {
              double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
-             if (abs(Ct_abc*Ct_def)<1e-8) continue;
+             if (std::abs(Ct_abc*Ct_def)<1e-8) continue;
 
              int Tindex = 2*tab + tde + (T2-1)/2;
 
@@ -407,8 +407,8 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
 //*******************************************************************
 inline double ThreeBodyME::RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const
 {
-   if ( abs(int(ja-jb))>Jab  or int(ja+jb)<Jab) return 0;
-   if ( abs(int(jc-J/2.))>Jab  or int(jc+J/2.)<Jab) return 0;
+   if ( std::abs(int(ja-jb))>Jab  or int(ja+jb)<Jab) return 0;
+   if ( std::abs(int(jc-J/2.))>Jab  or int(jc+J/2.)<Jab) return 0;
    switch (recoupling_case)
    {
     case ABC: return Jab==Jab_in ? 1 : 0;
