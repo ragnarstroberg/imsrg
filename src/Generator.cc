@@ -70,9 +70,9 @@ double Generator::Get1bDenominator(int i, int j)
    if (denominator_delta_index==-12345 or i == denominator_delta_index or j==denominator_delta_index)
      denominator += denominator_delta;
 
-   if (abs(denominator)<denominator_cutoff)
+   if (std::abs(denominator)<denominator_cutoff)
      denominator = denominator_cutoff;
-//     denominator *= denominator_cutoff/(abs(denominator)+1e-6);
+//     denominator *= denominator_cutoff/(std::abs(denominator)+1e-6);
 
    return denominator;
 }
@@ -101,9 +101,9 @@ double Generator::Get2bDenominator(int ch, int ibra, int iket)
    denominator       += ( nj-nk ) * H->TwoBody.GetTBMEmonopole(j,k,j,k); // p'hp'h
    denominator       += ( nj-nl ) * H->TwoBody.GetTBMEmonopole(j,l,j,l); // p'h'p'h'
 
-   if (abs(denominator)<denominator_cutoff)
+   if (std::abs(denominator)<denominator_cutoff)
      denominator = denominator_cutoff;
-//     denominator *= denominator_cutoff/(abs(denominator)+1e-6);
+//     denominator *= denominator_cutoff/(std::abs(denominator)+1e-6);
    return denominator;
 }
 
@@ -221,7 +221,7 @@ void Generator::ConstructGenerator_ImaginaryTime()
       {
          double denominator = Get1bDenominator(i,a);
          if (denominator==0) denominator = 1;
-         Eta->OneBody(i,a) += H->OneBody(i,a) *denominator/abs(denominator);
+         Eta->OneBody(i,a) += H->OneBody(i,a) *denominator/std::abs(denominator);
          Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
    }
@@ -238,7 +238,7 @@ void Generator::ConstructGenerator_ImaginaryTime()
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
             if (denominator==0) denominator = 1;
-            ETA2(ibra,iket) += H2(ibra,iket) * denominator / abs(denominator);
+            ETA2(ibra,iket) += H2(ibra,iket) * denominator / std::abs(denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
@@ -365,7 +365,7 @@ void Generator::ConstructGenerator_ShellModel_ImaginaryTime()
          if (i==a) continue;
          double denominator = Get1bDenominator(i,a);
          if (denominator==0) denominator = 1;
-         Eta->OneBody(i,a) += H->OneBody(i,a) *denominator/abs(denominator);
+         Eta->OneBody(i,a) += H->OneBody(i,a) *denominator/std::abs(denominator);
          Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
    }
@@ -387,7 +387,7 @@ void Generator::ConstructGenerator_ShellModel_ImaginaryTime()
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
             if (denominator==0) denominator = 1;
-            ETA2(ibra,iket) = H2(ibra,iket) * denominator / abs(denominator);
+            ETA2(ibra,iket) = H2(ibra,iket) * denominator / std::abs(denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
 
@@ -400,7 +400,7 @@ void Generator::ConstructGenerator_ShellModel_ImaginaryTime()
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
             if (denominator==0) denominator = 1;
-            ETA2(ibra,iket) = H2(ibra,iket) * denominator / abs(denominator);
+            ETA2(ibra,iket) = H2(ibra,iket) * denominator / std::abs(denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
       }

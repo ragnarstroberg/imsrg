@@ -517,7 +517,7 @@ void ReadWrite::ReadBareTBME_Navratil_from_stream( std::istream& infile, Operato
       Hbare.TwoBody.SetTBME(J,parity,1,a+1,b+1,c+1,d+1,vnn);
     }
 
-    if (abs(vpn)>1e-6)
+    if (std::abs(vpn)>1e-6)
     {
       Hbare.TwoBody.Set_pn_TBME_from_iso(J,T,0,a,b,c,d,vpn);
     }
@@ -593,7 +593,7 @@ void ReadWrite::WriteTBME_Navratil( std::string filename, Operator& Hbare)
               vpp /= SQRT2;
               vnn /= SQRT2;
             }
-            if (abs(vpp)>1e-7 or std::abs(vnn)>1e-7 or std::abs(v10)>1e-7)
+            if (std::abs(vpp)>1e-7 or std::abs(vnn)>1e-7 or std::abs(v10)>1e-7)
             {
             outfile << std::setw(3) << orbits_remap.at(a) << " "
                     << std::setw(3) << orbits_remap.at(b) << " "
@@ -609,7 +609,7 @@ void ReadWrite::WriteTBME_Navratil( std::string filename, Operator& Hbare)
                     << std::setw(10) << std::setprecision(6)
                     << vnn << std::endl;
             }
-            if (abs(v00)>1e-7)
+            if (std::abs(v00)>1e-7)
             {
             outfile << std::setw(3) << orbits_remap.at(a) << " "
                     << std::setw(3) << orbits_remap.at(b) << " "
@@ -979,7 +979,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 //        int JabMin  = std::abs(oa.j2 - ob.j2)/2;
 //
 //        int twoJCMindownbra;
-//        if (abs(oa.j2 - ob.j2) >oc.j2)
+//        if (std::abs(oa.j2 - ob.j2) >oc.j2)
 //           twoJCMindownbra = std::abs(oa.j2 - ob.j2)-oc.j2;
 //        else if (oc.j2 < (oa.j2+ob.j2) )
 //           twoJCMindownbra = 1;
@@ -1103,7 +1103,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 //
 //                    if (autozero)
 //                    {
-//                       if (abs(V) > 1e-6 and ea<=e1max and eb<=e1max and ec<=e1max)
+//                       if (std::abs(V) > 1e-6 and ea<=e1max and eb<=e1max and ec<=e1max)
 //                       {
 //                          std::cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << std::endl;
 //                          goodstate = false;
@@ -1226,7 +1226,7 @@ size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int
         int JabMin  = std::abs(oa.j2 - ob.j2)/2;
 
         int twoJCMindownbra;
-        if (abs(oa.j2 - ob.j2) >oc.j2)
+        if (std::abs(oa.j2 - ob.j2) >oc.j2)
            twoJCMindownbra = std::abs(oa.j2 - ob.j2)-oc.j2;
         else if (oc.j2 < (oa.j2+ob.j2) )
            twoJCMindownbra = 1;
@@ -1451,7 +1451,7 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
         int JabMin  = std::abs(oa.j2 - ob.j2)/2;
 
         int twoJCMindownbra;
-        if (abs(oa.j2 - ob.j2) >oc.j2)
+        if (std::abs(oa.j2 - ob.j2) >oc.j2)
            twoJCMindownbra = std::abs(oa.j2 - ob.j2)-oc.j2;
         else if (oc.j2 < (oa.j2+ob.j2) )
            twoJCMindownbra = 1;
@@ -1733,23 +1733,23 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
   // Generate a 1d buffer in contiguous memory, also known as an array...
   double *value_buf = new double[value_curDim[0]];
 
-  // break the file into slabs for reading
-  int nSlabs = (int)((double)value_maxDim[0]/((double)SLABSIZE)) + 1;
+  // break the file into slstd::abs for reading
+  int nSlstd::abs = (int)((double)value_maxDim[0]/((double)SLABSIZE)) + 1;
 
   hsize_t stride[2] = {1,1};
   hsize_t count[2] = {1,1};
 
-  // loop through the slabs
-  for ( int n=0; n<nSlabs; ++n)
+  // loop through the slstd::abs
+  for ( int n=0; n<nSlstd::abs; ++n)
   {
     hsize_t start[2] = { n*value_curDim[0], 0};
     hsize_t label_block[2];
     hsize_t value_block[2];
-    if (n==nSlabs-1)
+    if (n==nSlstd::abs-1)
     {
-      label_block[0] = label_maxDim[0]-(nSlabs-1)*SLABSIZE;
+      label_block[0] = label_maxDim[0]-(nSlstd::abs-1)*SLABSIZE;
       label_block[1] = label_maxDim[1];
-      value_block[0] = value_maxDim[0]-(nSlabs-1)*SLABSIZE;
+      value_block[0] = value_maxDim[0]-(nSlstd::abs-1)*SLABSIZE;
       value_block[1] = value_maxDim[1];
 
       // Not clear exactly why this needs to be done.
@@ -1831,7 +1831,7 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
           op.ThreeBody.SetME(JJ12,J12,twoJ,TT12,T12,twoT,a,b,c,d,e,f, me);
 
     } //loop over matrix elements
-  } // loop over slabs
+  } // loop over slstd::abs
   delete[] label_buf[0];
   delete[] label_buf;
   delete[] value_buf;
@@ -2113,7 +2113,7 @@ void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
   // locally-defined isospin clebsch gordan coefficent
   // hopefully faster than calling AngMom::CG
   auto isospinCG = [](int tz1, int tz2, int T12){
-    if (abs(tz1+tz2) > 2*T12) return 0.0;
+    if (std::abs(tz1+tz2) > 2*T12) return 0.0;
     if (tz1==tz2) return (double)T12;
     if (T12==1) return 1/sqrt(2.0);
     return tz1 / sqrt(2.0);
@@ -2158,7 +2158,7 @@ void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
      for ( int tzb : {-1,1} )
      {
       if (ain==bin and tzb<tza) continue;
-      if (abs(tza+tzb)>2*t12) continue;
+      if (std::abs(tza+tzb)>2*t12) continue;
       double cg12 = isospinCG(tza,tzb,t12);
       if (ain==bin and (tza!=tzb)) cg12 *= sqrt(2.0);
       for ( int tzc : {-1,1} )
@@ -2166,9 +2166,9 @@ void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
        for ( int tzd : {-1,1} )
        {
         if (cin==din and tzd>tzc) continue;
-        if (abs(tzc+tzd)>2*t34) continue;
+        if (std::abs(tzc+tzd)>2*t34) continue;
         double Tz_op = (tza+tzb-tzc-tzd)/2;
-        if (abs(Tz_op)!=T_op) continue;
+        if (std::abs(Tz_op)!=T_op) continue;
         double cg34 = isospinCG(tzc,tzd,t34);
         if (cin==din and (tzc!=tzd)) cg34 *= sqrt(2.0);
         if ( (ain==cin) and (bin==din) and (j12==j34))
@@ -2543,7 +2543,7 @@ void ReadWrite::Write_me3j( std::string ofilename, Operator& Hbare, int E1max, i
         int JabMin  = std::abs(oa.j2 - ob.j2)/2;
 
         int twoJCMindownbra;
-        if (abs(oa.j2 - ob.j2) >oc.j2)
+        if (std::abs(oa.j2 - ob.j2) >oc.j2)
            twoJCMindownbra = std::abs(oa.j2 - ob.j2)-oc.j2;
         else if (oc.j2 < (oa.j2+ob.j2) )
            twoJCMindownbra = 1;
@@ -3027,22 +3027,22 @@ void ReadWrite::ReadNuShellX_int_iso(Operator& op, std::string filename)
 //        std::cout << "Vpp: " << J << " " <<  a_indx.second+1 << " " <<    b_indx.second+1 << " " <<  c_indx.second+1 << " " <<  d_indx.second+1 << " " <<  Vpp<< std::endl;
         op.TwoBody.SetTBME_J(J, a_indx.second+1, b_indx.second+1, c_indx.second+1, d_indx.second+1, Vpp);
         }
-        if (abs(Vpnpn)>1e-6)
+        if (std::abs(Vpnpn)>1e-6)
         {
 //        std::cout << "Vpnpn: " << J << " " <<  a_indx.second+1 << " " <<    b_indx.second << " " <<    c_indx.second+1 << " " <<  d_indx.second << " " <<    Vpnpn<< std::endl;
         op.TwoBody.SetTBME_J(J, a_indx.second+1, b_indx.second,   c_indx.second+1, d_indx.second,   Vpnpn);
         }
-        if (abs(Vpnnp)>1e-6)
+        if (std::abs(Vpnnp)>1e-6)
         {
 //        std::cout << "Vpnnp: " << J << " " <<  a_indx.second+1 << " " <<    b_indx.second << " " <<    c_indx.second << " " <<    d_indx.second+1 << " " <<  Vpnnp<< std::endl;
         op.TwoBody.SetTBME_J(J, a_indx.second+1, b_indx.second,   c_indx.second,   d_indx.second+1, Vpnnp);
         }
-        if (abs(Vnppn)>1e-6)
+        if (std::abs(Vnppn)>1e-6)
         {
 //        std::cout << "Vnppn: " << J << " " <<  a_indx.second   << " " <<    b_indx.second+1 << " " <<  c_indx.second+1 << " " <<  d_indx.second << " " <<    Vnppn<< std::endl;
         op.TwoBody.SetTBME_J(J, a_indx.second,   b_indx.second+1, c_indx.second+1, d_indx.second,   Vnppn);
         }
-        if (abs(Vnpnp)>1e-6)
+        if (std::abs(Vnpnp)>1e-6)
         {
 //        std::cout << "Vnpnp: " << J << " " <<  a_indx.second   << " " <<    b_indx.second+1 << " " <<  c_indx.second << " " <<    d_indx.second+1 << " " <<  Vnpnp<< std::endl;
         op.TwoBody.SetTBME_J(J, a_indx.second,   b_indx.second+1, c_indx.second,   d_indx.second+1, Vnpnp);
@@ -3264,8 +3264,8 @@ void ReadWrite::WriteOperatorHuman(Operator& op, std::string filename)
       int jmin = op.IsNonHermitian() ? 0 : i;
       for (int j=jmin;j<norb;++j)
       {
-         if (abs(op.OneBody(i,j)) > 0)
-            opfile << std::fixed << std::setw(3) << i << "\t" << std::fixed << std::setw(3) << j << "\t" << std::fixed << std::setw(18) << std::setprecision(12) << op.OneBody(i,j) << std::endl;
+         if (std::abs(op.OneBody(i,j)) > 0)
+            opfile << fixed << setw(3) << i << "\t" << fixed << setw(3) << j << "\t" << fixed << setw(18) << setprecision(12) << op.OneBody(i,j) << std::endl;
       }
    }
 
@@ -3343,8 +3343,8 @@ void ReadWrite::WriteOperator(Operator& op, std::string filename)
       int jmin = op.IsNonHermitian() ? 0 : i;
       for (int j=jmin;j<norb;++j)
       {
-         if (abs(op.OneBody(i,j)) > 0)
-            opfile << i << "\t" << j << "\t" << std::setprecision(10) << op.OneBody(i,j) << std::endl;
+         if (std::abs(op.OneBody(i,j)) > 0)
+            opfile << i << "\t" << j << "\t" << setprecision(10) << op.OneBody(i,j) << std::endl;
       }
    }
 
@@ -3537,8 +3537,8 @@ void ReadWrite::CompareOperators(Operator& op1, Operator& op2, std::string filen
       int jmin = op1.IsNonHermitian() ? 0 : i;
       for (int j=jmin;j<norb;++j)
       {
-         if (abs(op1.OneBody(i,j)) > 0 or std::abs(op2.OneBody(i,j))>0 )
-            opfile << i << "\t" << j << "\t" << std::setprecision(10) << op1.OneBody(i,j) << "   " << op2.OneBody(i,j) << std::endl;
+         if (std::abs(op1.OneBody(i,j)) > 0 or std::abs(op2.OneBody(i,j))>0 )
+            opfile << i << "\t" << j << "\t" << setprecision(10) << op1.OneBody(i,j) << "   " << op2.OneBody(i,j) << std::endl;
       }
    }
 
@@ -3640,7 +3640,7 @@ void ReadWrite::ReadTwoBody_Takayuki(std::string filename, Operator& Hbare)
     int cc = orbits_remap.at(c) + (tzc+1)/2;
     int dd = orbits_remap.at(d) + (tzd+1)/2;
     if ( (aa==bb or cc==dd) and (J%2)>0 ) continue;
-    if (abs(me)<1e-6) continue;
+    if (std::abs(me)<1e-6) continue;
     Hbare.TwoBody.SetTBME_J(J,aa,bb,cc,dd,me);
   }
 }
@@ -3672,7 +3672,7 @@ void ReadWrite::WriteOneBody_Takayuki(std::string filename, Operator& Hbare)
     {
       Orbit& ob = modelspace->GetOrbit(b);
       double me = Hbare.OneBody(a,b);
-      if (abs(me) > 1e-7)
+      if (std::abs(me) > 1e-7)
       {
       outfile << std::setw(3) << oa.tz2 << " " << std::setw(3) << orbits_remap.at(a) << " "
               << std::setw(3) << ob.tz2 << " " << std::setw(3) << orbits_remap.at(b) << " " 
@@ -3718,12 +3718,13 @@ void ReadWrite::WriteTwoBody_Takayuki(std::string filename, Operator& Hbare)
       {
         Ket& ket = tbc.GetKet(iket);
         double tbme = itmat.second(ibra,iket);
-        if (abs(tbme)<1e-8) continue;
-        outfile << std::setw(3) << bra.op->tz2 << " " << std::setw(3) << orbits_remap.at(bra.p) << " "
-                << std::setw(3) << bra.oq->tz2 << " " << std::setw(3) << orbits_remap.at(bra.q) << " "
-                << std::setw(3) << ket.op->tz2 << " " << std::setw(3) << orbits_remap.at(ket.p) << " "
-                << std::setw(3) << ket.oq->tz2 << " " << std::setw(3) << orbits_remap.at(ket.q) << " "
-                << std::setw(3) << J << std::setw(12) << std::setprecision(8) << tbme << std::endl;
+
+        if (std::abs(tbme)<1e-8) continue;
+        outfile << setw(3) << bra.op->tz2 << " " << setw(3) << orbits_remap.at(bra.p) << " "
+                << setw(3) << bra.oq->tz2 << " " << setw(3) << orbits_remap.at(bra.q) << " "
+                << setw(3) << ket.op->tz2 << " " << setw(3) << orbits_remap.at(ket.p) << " "
+                << setw(3) << ket.oq->tz2 << " " << setw(3) << orbits_remap.at(ket.q) << " "
+                << setw(3) << J << setw(12) << setprecision(8) << tbme << std::endl;
       }
     }
   }
@@ -3850,7 +3851,7 @@ void ReadWrite::WriteTensorTwoBody(std::string filename, Operator& Op, std::stri
        for (auto& iket: tbc_ket.GetKetIndex_vv() )
        {
          double me = matrix(ibra,iket);
-         if (abs(me) < 1e-7) continue;
+         if (std::abs(me) < 1e-7) continue;
          Ket& ket = tbc_ket.GetKet(iket);
          int c_ind = orb2nushell[ket.p];
          int d_ind = orb2nushell[ket.q];
@@ -4219,10 +4220,10 @@ void ReadWrite::ReadRelCMOpFromJavier( std::string statefilename, std::string ME
                     for (int lam_ab=0; 2*(N_ab+n_ab)+lam_ab<=eab; ++lam_ab)
                     {
                       int LAM_ab = eab-2*(N_ab+n_ab)-lam_ab;
-                      if ((lam_ab + LAM_ab<Lab) or (abs(lam_ab-LAM_ab)>Lab)) continue;
+                      if ((lam_ab + LAM_ab<Lab) or (std::abs(lam_ab-LAM_ab)>Lab)) continue;
                       double mosh_ab = modelspace->GetMoshinsky( N_ab, LAM_ab, n_ab, lam_ab, na, la, nb, lb, Lab);
                       int Tab = (lam_ab + Sab +1 )%2;
-                      if (abs(Tzab)>Tab) continue;
+                      if (std::abs(Tzab)>Tab) continue;
 
                       for (int n_cd=0; 2*n_cd<=ecd; ++n_cd)
                       {
@@ -4231,10 +4232,10 @@ void ReadWrite::ReadRelCMOpFromJavier( std::string statefilename, std::string ME
                           for (int lam_cd=0; 2*(N_cd+n_cd)+lam_cd<=ecd; ++lam_cd)
                           {
                             int LAM_cd = ecd-2*(N_cd+n_cd)-lam_cd;
-                            if ((lam_cd + LAM_cd<Lcd) or (abs(lam_cd-LAM_cd)>Lcd)) continue;
+                            if ((lam_cd + LAM_cd<Lcd) or (std::abs(lam_cd-LAM_cd)>Lcd)) continue;
                             double mosh_cd = modelspace->GetMoshinsky( N_cd, LAM_cd, n_cd, lam_cd, nc, lc, nd, ld, Lcd);
                             int Tcd = (lam_cd + Scd + 1)%2;
-                            if (abs(Tzcd)>Tcd) continue;
+                            if (std::abs(Tzcd)>Tcd) continue;
                             double IsospinClebsch_ab = AngMom::CG(0.5,ta,0.5,tb, Tab,Tzab);
                             double IsospinClebsch_cd = AngMom::CG(0.5,tc,0.5,td, Tcd,Tzcd);
                             double coeff = NormNineJab*NormNineJcd*mosh_ab*mosh_cd*IsospinClebsch_ab*IsospinClebsch_cd;

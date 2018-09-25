@@ -663,7 +663,7 @@ Operator HartreeFock::GetNormalOrderedH()
      for (index_t i=0;i<holeorbs.size();++i)  
      {
         hole_map[holeorbs[i]] = hole_occ[i];
-        if ( abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
+        if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
         {
            changed_occupations = true;
            std::cout << "After HF, occupation of orbit " << i << " has changed. Modelspace will be updated." << std::endl;
@@ -716,7 +716,7 @@ Operator HartreeFock::GetNormalOrderedH()
               {
                 Orbit & ob = modelspace->GetOrbit(b);
                 if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
-                int J3min = abs(2*J-oa.j2);
+                int J3min = std::abs(2*J-oa.j2);
                 int J3max = 2*J + oa.j2;
                 for (int J3=J3min; J3<=J3max; J3+=2)
                 {

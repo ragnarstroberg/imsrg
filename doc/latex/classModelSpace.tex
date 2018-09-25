@@ -203,13 +203,30 @@ int {\bfseries Index2} (int p, int q) const \hypertarget{classModelSpace_acb31fd
 void {\bfseries Pre\+Calculate\+Moshinsky} ()\hypertarget{classModelSpace_abc436144ee034558058227cac872ecb9}{}\label{classModelSpace_abc436144ee034558058227cac872ecb9}
 
 \item 
+void \hyperlink{classModelSpace_abd5c59215d553bd2db47120d2db4b2ea}{Pre\+Calculate\+SixJ} ()
+\item 
 void {\bfseries Clear\+Vectors} ()\hypertarget{classModelSpace_a25aad2961ae99cdd528c4d71bb689d95}{}\label{classModelSpace_a25aad2961ae99cdd528c4d71bb689d95}
+
+\item 
+void {\bfseries Reset\+First\+Pass} ()\hypertarget{classModelSpace_a3354ef5c4dbcae5786759696ab500951}{}\label{classModelSpace_a3354ef5c4dbcae5786759696ab500951}
 
 \item 
 void {\bfseries Calculate\+Pandya\+Lookup} (int rank\+\_\+J, int rank\+\_\+T, int parity)\hypertarget{classModelSpace_abe6a15d78c5a16e707a02e5d2341f1f0}{}\label{classModelSpace_abe6a15d78c5a16e707a02e5d2341f1f0}
 
 \item 
 map$<$ array$<$ int, 2 $>$, array$<$ vector$<$ int $>$, 2 $>$ $>$ \& {\bfseries Get\+Pandya\+Lookup} (int rank\+\_\+J, int rank\+\_\+T, int parity)\hypertarget{classModelSpace_a2e75ef41cd7f02485a5ab5c340c27bef}{}\label{classModelSpace_a2e75ef41cd7f02485a5ab5c340c27bef}
+
+\item 
+uint64\+\_\+t {\bfseries Six\+J\+Hash} (double j1, double j2, double j3, double J1, double J2, double J3)\hypertarget{classModelSpace_a6727d45bfcee5a6aa9181da6802fc948}{}\label{classModelSpace_a6727d45bfcee5a6aa9181da6802fc948}
+
+\item 
+void {\bfseries Six\+J\+Un\+Hash} (uint64\+\_\+t key, uint64\+\_\+t \&j1, uint64\+\_\+t \&j2, uint64\+\_\+t \&j3, uint64\+\_\+t \&J1, uint64\+\_\+t \&J2, uint64\+\_\+t \&J3)\hypertarget{classModelSpace_a074b15f27c3c302e5594ce1bc03d774a}{}\label{classModelSpace_a074b15f27c3c302e5594ce1bc03d774a}
+
+\item 
+uint64\+\_\+t {\bfseries Moshinsky\+Hash} (uint64\+\_\+t N, uint64\+\_\+t Lam, uint64\+\_\+t n, uint64\+\_\+t lam, uint64\+\_\+t n1, uint64\+\_\+t l1, uint64\+\_\+t n2, uint64\+\_\+t l2, uint64\+\_\+t L)\hypertarget{classModelSpace_a5503bab63a0392cf5914fb897f623003}{}\label{classModelSpace_a5503bab63a0392cf5914fb897f623003}
+
+\item 
+void {\bfseries Moshinsky\+Un\+Hash} (uint64\+\_\+t key, uint64\+\_\+t \&N, uint64\+\_\+t \&Lam, uint64\+\_\+t \&n, uint64\+\_\+t \&lam, uint64\+\_\+t \&n1, uint64\+\_\+t \&l1, uint64\+\_\+t \&n2, uint64\+\_\+t \&l2, uint64\+\_\+t \&L)\hypertarget{classModelSpace_a3b58b32f835092158b45b82101e4ad5a}{}\label{classModelSpace_a3b58b32f835092158b45b82101e4ad5a}
 
 \end{DoxyCompactItemize}
 \subsection*{Public Attributes}
@@ -347,7 +364,16 @@ vector$<$ \hyperlink{classTwoBodyChannel__CC}{Two\+Body\+Channel\+\_\+\+CC} $>$ 
 map$<$ array$<$ int, 3 $>$, map$<$ array$<$ int, 2 $>$, array$<$ vector$<$ int $>$, 2 $>$ $>$ $>$ {\bfseries Pandya\+Lookup}\hypertarget{classModelSpace_a386a977fced025398b2531f6ce5d7cc3}{}\label{classModelSpace_a386a977fced025398b2531f6ce5d7cc3}
 
 \item 
+bool {\bfseries sixj\+\_\+has\+\_\+been\+\_\+precalculated}\hypertarget{classModelSpace_add8f51396475dd1c0035a1a9e6e6f452}{}\label{classModelSpace_add8f51396475dd1c0035a1a9e6e6f452}
+
+\item 
 bool {\bfseries moshinsky\+\_\+has\+\_\+been\+\_\+precalculated}\hypertarget{classModelSpace_a4efe26f443e19138189e8934c7eda80c}{}\label{classModelSpace_a4efe26f443e19138189e8934c7eda80c}
+
+\item 
+bool {\bfseries scalar\+\_\+transform\+\_\+first\+\_\+pass}\hypertarget{classModelSpace_ab871d46ec0a635ed4816e99cbe5bb573}{}\label{classModelSpace_ab871d46ec0a635ed4816e99cbe5bb573}
+
+\item 
+vector$<$ bool $>$ {\bfseries tensor\+\_\+transform\+\_\+first\+\_\+pass}\hypertarget{classModelSpace_a755498ab59d59123108cd731dba6ba6f}{}\label{classModelSpace_a755498ab59d59123108cd731dba6ba6f}
 
 \item 
 \hyperlink{classIMSRGProfiler}{I\+M\+S\+R\+G\+Profiler} {\bfseries profiler}\hypertarget{classModelSpace_a9d5b193fe45f361371beb818bfe00fd3}{}\label{classModelSpace_a9d5b193fe45f361371beb818bfe00fd3}
@@ -358,13 +384,13 @@ bool {\bfseries moshinsky\+\_\+has\+\_\+been\+\_\+precalculated}\hypertarget{cla
 \item 
 static map$<$ string, vector$<$ string $>$ $>$ {\bfseries Valence\+Spaces}
 \item 
-static unordered\+\_\+map$<$ unsigned long int, double $>$ {\bfseries Six\+J\+List}\hypertarget{classModelSpace_ad9d8883d388c97409486e485a8ec3427}{}\label{classModelSpace_ad9d8883d388c97409486e485a8ec3427}
+static unordered\+\_\+map$<$ uint64\+\_\+t, double $>$ {\bfseries Six\+J\+List}\hypertarget{classModelSpace_abae74bd7934af49d448a2791e3da9d07}{}\label{classModelSpace_abae74bd7934af49d448a2791e3da9d07}
 
 \item 
-static unordered\+\_\+map$<$ long long unsigned int, double $>$ {\bfseries Nine\+J\+List}\hypertarget{classModelSpace_a52b74b8a95b04440b2e83003078d1d04}{}\label{classModelSpace_a52b74b8a95b04440b2e83003078d1d04}
+static unordered\+\_\+map$<$ uint64\+\_\+t, double $>$ {\bfseries Nine\+J\+List}\hypertarget{classModelSpace_a4dbd07433aa0f444ab9020049f31fb04}{}\label{classModelSpace_a4dbd07433aa0f444ab9020049f31fb04}
 
 \item 
-static unordered\+\_\+map$<$ long long unsigned int, double $>$ {\bfseries Mosh\+List}\hypertarget{classModelSpace_af2277f24420fc09ac382216a1bf38121}{}\label{classModelSpace_af2277f24420fc09ac382216a1bf38121}
+static unordered\+\_\+map$<$ uint64\+\_\+t, double $>$ {\bfseries Mosh\+List}\hypertarget{classModelSpace_a5ded2003f13765e8fba3afc2382f1e98}{}\label{classModelSpace_a5ded2003f13765e8fba3afc2382f1e98}
 
 \end{DoxyCompactItemize}
 
@@ -380,7 +406,14 @@ static unordered\+\_\+map$<$ long long unsigned int, double $>$ {\bfseries Mosh\
 \item[{vector$<$ index\+\_\+t $>$ \&}]{valence\+\_\+list}
 \end{DoxyParamCaption}
 )}\hypertarget{classModelSpace_a0f4d1a532822a9c453b3bd3684b8231c}{}\label{classModelSpace_a0f4d1a532822a9c453b3bd3684b8231c}
-Find the valence space of one single major oscillator shell each for protons and neutrons (not necessarily the same shell for both) which contains the naive shell-\/model ground state of the reference. For example, if we want to treat C20, with 6 protons and 14 neutrons, we take the 0p shell for protons and 1s0d shell for neutrons. 
+Find the valence space of one single major oscillator shell each for protons and neutrons (not necessarily the same shell for both) which contains the naive shell-\/model ground state of the reference. For example, if we want to treat C20, with 6 protons and 14 neutrons, we take the 0p shell for protons and 1s0d shell for neutrons. \index{Model\+Space@{Model\+Space}!Pre\+Calculate\+SixJ@{Pre\+Calculate\+SixJ}}
+\index{Pre\+Calculate\+SixJ@{Pre\+Calculate\+SixJ}!Model\+Space@{Model\+Space}}
+\subsubsection[{\texorpdfstring{Pre\+Calculate\+Six\+J()}{PreCalculateSixJ()}}]{\setlength{\rightskip}{0pt plus 5cm}void Model\+Space\+::\+Pre\+Calculate\+SixJ (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{classModelSpace_abd5c59215d553bd2db47120d2db4b2ea}{}\label{classModelSpace_abd5c59215d553bd2db47120d2db4b2ea}
+Loop over all the 6j symbols that we expect to encounter, and store them in a hash table. Calculate all symbols \[ \begin{Bmatrix} ja & jb & J1 jc & jd & J2 \end{Bmatrix} \] and \[ \begin{Bmatrix} J1 & J2 & J3 ja & jb & jc \end{Bmatrix} \] where ja,jb,jc are half-\/integer and J1,J2,J3 are integer. ja,jb,jc run from 1/2 to emax+1/2, while jd runs higher since the 3N recoupling requires it to go up to e(emax+1/2). I haven\textquotesingle{}t yet bothered using the symmetry properties of the 6j symbol. 
 
 \subsection{Member Data Documentation}
 \index{Model\+Space@{Model\+Space}!Valence\+Spaces@{Valence\+Spaces}}

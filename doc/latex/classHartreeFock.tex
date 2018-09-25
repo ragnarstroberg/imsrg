@@ -16,6 +16,8 @@ void \hyperlink{classHartreeFock_a84fe0eb16f6e5835c920bf8fa98c4442}{UpdateF} ()
 \begin{DoxyCompactList}\small\item\em Update the Fock matrix with the new transformation coefficients C. \end{DoxyCompactList}\item 
 void \hyperlink{classHartreeFock_aad38c905e7e9f9e9757b5800e6910c61}{Update\+Density\+Matrix} ()
 \begin{DoxyCompactList}\small\item\em Update the density matrix with the new coefficients C. \end{DoxyCompactList}\item 
+void \hyperlink{classHartreeFock_a74c842cbf4e8caec72591c1205794f1f}{Fill\+Lowest\+Orbits} ()
+\begin{DoxyCompactList}\small\item\em Get new occupations based on the current single-\/particle energies. \end{DoxyCompactList}\item 
 bool \hyperlink{classHartreeFock_a35ab9c4f96e68b1c9acea1d1407ecc60}{Check\+Convergence} ()
 \begin{DoxyCompactList}\small\item\em Compare the current energies with those from the previous iteration. \end{DoxyCompactList}\item 
 void \hyperlink{classHartreeFock_a0666507747c17845ab4f74b97414703c}{Solve} ()
@@ -30,6 +32,9 @@ void \hyperlink{classHartreeFock_a2eb6754f57250a03a2e1bd3e2aef4daf}{Reorder\+Coe
 \begin{DoxyCompactList}\small\item\em Transform an operator from oscillator basis to HF basis. \end{DoxyCompactList}\item 
 \hyperlink{classOperator}{Operator} \hyperlink{classHartreeFock_a17bdb52033e2f62bba72ea86bc196b37}{Get\+Normal\+OrderedH} ()
 \begin{DoxyCompactList}\small\item\em Return the Hamiltonian in the HF basis at the normal-\/ordered 2body level. \end{DoxyCompactList}\item 
+\hyperlink{classOperator}{Operator} \hyperlink{classHartreeFock_ad7da4e35f14128c1c0becf204e15a4e1}{Get\+Normal\+OrderedH} (arma\+::mat \&Cin)\hypertarget{classHartreeFock_ad7da4e35f14128c1c0becf204e15a4e1}{}\label{classHartreeFock_ad7da4e35f14128c1c0becf204e15a4e1}
+
+\begin{DoxyCompactList}\small\item\em Return the Hamiltonian in the HF basis at the normal-\/ordered 2body level. \end{DoxyCompactList}\item 
 \hyperlink{classOperator}{Operator} \hyperlink{classHartreeFock_a53011b381945ed5c61f50b209db5bf64}{Get\+Omega} ()
 \begin{DoxyCompactList}\small\item\em Return a generator of the Hartree Fock transformation. \end{DoxyCompactList}\item 
 \hyperlink{classOperator}{Operator} {\bfseries Get\+Hbare} ()\hypertarget{classHartreeFock_a7f2a07edc3ccaa0cf9bbc0faadfd9ddf}{}\label{classHartreeFock_a7f2a07edc3ccaa0cf9bbc0faadfd9ddf}
@@ -42,7 +47,21 @@ void \hyperlink{classHartreeFock_aef3c1b45c5418ead19f258774a301f83}{Free\+Vmon} 
 \begin{DoxyCompactList}\small\item\em Free up the memory used to store Vmon3. \end{DoxyCompactList}\item 
 void \hyperlink{classHartreeFock_a2bc07257af2fe0ca86e6a3f8c642c3c6}{Get\+Radial\+WF} (index\+\_\+t index, vector$<$ double $>$ \&R, vector$<$ double $>$ \&P\+SI)\hypertarget{classHartreeFock_a2bc07257af2fe0ca86e6a3f8c642c3c6}{}\label{classHartreeFock_a2bc07257af2fe0ca86e6a3f8c642c3c6}
 
-\begin{DoxyCompactList}\small\item\em Return the radial wave function of an orbit in the HF basis. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Return the radial wave function of an orbit in the HF basis. \end{DoxyCompactList}\item 
+double \hyperlink{classHartreeFock_a29de897a332985f5b08bd0f08a466db3}{Get\+Radial\+W\+F\+\_\+r} (index\+\_\+t index, double R)\hypertarget{classHartreeFock_a29de897a332985f5b08bd0f08a466db3}{}\label{classHartreeFock_a29de897a332985f5b08bd0f08a466db3}
+
+\begin{DoxyCompactList}\small\item\em Return the radial wave function of an orbit in the HF basis. \end{DoxyCompactList}\item 
+void {\bfseries Freeze\+Occupations} ()\hypertarget{classHartreeFock_a3fb9fc68d98aedc4cf1aae52da237339}{}\label{classHartreeFock_a3fb9fc68d98aedc4cf1aae52da237339}
+
+\item 
+void {\bfseries Un\+Freeze\+Occupations} ()\hypertarget{classHartreeFock_ab7aa734d2b1df54ddba236f279269fcc}{}\label{classHartreeFock_ab7aa734d2b1df54ddba236f279269fcc}
+
+\item 
+uint64\+\_\+t \hyperlink{classHartreeFock_ab863d5d020e15854d4d591ec0ce6a1a0}{Vmon3\+Hash} (uint64\+\_\+t a, uint64\+\_\+t b, uint64\+\_\+t c, uint64\+\_\+t d, uint64\+\_\+t e, uint64\+\_\+t f)
+\item 
+void \hyperlink{classHartreeFock_af675589807ed0369ce3c9ef30d9d625b}{Vmon3\+Un\+Hash} (uint64\+\_\+t key, int \&a, int \&b, int \&c, int \&d, int \&e, int \&f)\hypertarget{classHartreeFock_af675589807ed0369ce3c9ef30d9d625b}{}\label{classHartreeFock_af675589807ed0369ce3c9ef30d9d625b}
+
+\begin{DoxyCompactList}\small\item\em Take a hashed key and extract the six orbit indices that went into it. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \subsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
@@ -105,7 +124,10 @@ double \hyperlink{classHartreeFock_a89a37a2413483b1b484554c4a4f6755e}{e3hf}\hype
 int \hyperlink{classHartreeFock_a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3}{iterations}\hypertarget{classHartreeFock_a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3}{}\label{classHartreeFock_a7658fa0b1b05dfa7bf7b8aa7e5fd6bb3}
 
 \begin{DoxyCompactList}\small\item\em iterations used in \hyperlink{classHartreeFock_a0666507747c17845ab4f74b97414703c}{Solve()} \end{DoxyCompactList}\item 
-vector$<$ pair$<$ const array$<$ int, 6 $>$, double $>$ $>$ {\bfseries Vmon3}\hypertarget{classHartreeFock_aa7e970505e9ab444d0cdb377b5f7c7b0}{}\label{classHartreeFock_aa7e970505e9ab444d0cdb377b5f7c7b0}
+vector$<$ uint64\+\_\+t $>$ {\bfseries Vmon3\+\_\+keys}\hypertarget{classHartreeFock_a7afbe49ce366636559a0ff2ddf948c8a}{}\label{classHartreeFock_a7afbe49ce366636559a0ff2ddf948c8a}
+
+\item 
+vector$<$ double $>$ {\bfseries Vmon3}\hypertarget{classHartreeFock_aa4a8c2aec3f3c14bd40a91f51eb161ff}{}\label{classHartreeFock_aa4a8c2aec3f3c14bd40a91f51eb161ff}
 
 \item 
 \hyperlink{classIMSRGProfiler}{I\+M\+S\+R\+G\+Profiler} \hyperlink{classHartreeFock_a0435b3f1485ddd1d8d91bbd84e008445}{profiler}\hypertarget{classHartreeFock_a0435b3f1485ddd1d8d91bbd84e008445}{}\label{classHartreeFock_a0435b3f1485ddd1d8d91bbd84e008445}
@@ -116,7 +138,10 @@ deque$<$ double $>$ \hyperlink{classHartreeFock_af09702c2875d94fc4721cdefe0d7573
 \begin{DoxyCompactList}\small\item\em Save last few convergence checks for diagnostics. \end{DoxyCompactList}\item 
 deque$<$ double $>$ \hyperlink{classHartreeFock_ab25913777db3556ece46af9bea495776}{convergence\+\_\+\+E\+HF}\hypertarget{classHartreeFock_ab25913777db3556ece46af9bea495776}{}\label{classHartreeFock_ab25913777db3556ece46af9bea495776}
 
-\begin{DoxyCompactList}\small\item\em Save last few convergence checks for diagnostics. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Save last few convergence checks for diagnostics. \end{DoxyCompactList}\item 
+bool {\bfseries freeze\+\_\+occupations}\hypertarget{classHartreeFock_a5dba3b4a2fd164c68daeb7a744ede3c6}{}\label{classHartreeFock_a5dba3b4a2fd164c68daeb7a744ede3c6}
+
+\end{DoxyCompactItemize}
 
 
 \subsection{Member Function Documentation}
@@ -175,7 +200,18 @@ Check for convergence using difference in s.\+p. energies between iterations. Co
 
 Diagonalize the Fock matrix. 
 
-\mbox{[}See Suhonen eq. 4.\+85\mbox{]} Diagonalize the fock matrix $ <a|F|b> $ and put the eigenvectors in $C(i,\alpha) = <i|\alpha> $ and eigenvalues in the vector energies. Save the last vector of energies to check for convergence. Submatrices corresponding to different channels are diagonalized independently. This guarantees that J,Tz, and $ \pi $ remain good. \index{Hartree\+Fock@{Hartree\+Fock}!Get\+Normal\+OrderedH@{Get\+Normal\+OrderedH}}
+\mbox{[}See Suhonen eq. 4.\+85\mbox{]} Diagonalize the fock matrix $ <a|F|b> $ and put the eigenvectors in $C(i,\alpha) = <i|\alpha> $ and eigenvalues in the vector energies. Save the last vector of energies to check for convergence. Submatrices corresponding to different channels are diagonalized independently. This guarantees that J,Tz, and $ \pi $ remain good. \index{Hartree\+Fock@{Hartree\+Fock}!Fill\+Lowest\+Orbits@{Fill\+Lowest\+Orbits}}
+\index{Fill\+Lowest\+Orbits@{Fill\+Lowest\+Orbits}!Hartree\+Fock@{Hartree\+Fock}}
+\subsubsection[{\texorpdfstring{Fill\+Lowest\+Orbits()}{FillLowestOrbits()}}]{\setlength{\rightskip}{0pt plus 5cm}void Hartree\+Fock\+::\+Fill\+Lowest\+Orbits (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{classHartreeFock_a74c842cbf4e8caec72591c1205794f1f}{}\label{classHartreeFock_a74c842cbf4e8caec72591c1205794f1f}
+
+
+Get new occupations based on the current single-\/particle energies. 
+
+Get new occupation numbers by filling the orbits in order of their single-\/particle energies. The last proton/neutron orbit can have a fractional filling, corresponding to ensemble normal ordering. \index{Hartree\+Fock@{Hartree\+Fock}!Get\+Normal\+OrderedH@{Get\+Normal\+OrderedH}}
 \index{Get\+Normal\+OrderedH@{Get\+Normal\+OrderedH}!Hartree\+Fock@{Hartree\+Fock}}
 \subsubsection[{\texorpdfstring{Get\+Normal\+Ordered\+H()}{GetNormalOrderedH()}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Operator} Hartree\+Fock\+::\+Get\+Normal\+OrderedH (
 \begin{DoxyParamCaption}
@@ -281,7 +317,19 @@ Update the Fock matrix with the new transformation coefficients C.
 \item $\rho$ is the density matrix defined in \hyperlink{classHartreeFock_aad38c905e7e9f9e9757b5800e6910c61}{Update\+Density\+Matrix()}
 \item $ \bar{V}^{(2)} $ is the monopole component of the 2-\/body interaction defined in \hyperlink{classHartreeFock_a3d6bac9b4403e4bc599a89ad0c9b6056}{Build\+Monopole\+V()}.
 \item $ \bar{V}^{(3)} $ is the monopole component of the 3-\/body interaction devined in \hyperlink{classHartreeFock_a1c146af25a09f427cc626d877ec6e518}{Build\+Monopole\+V3()}. 
-\end{DoxyItemize}
+\end{DoxyItemize}\index{Hartree\+Fock@{Hartree\+Fock}!Vmon3\+Hash@{Vmon3\+Hash}}
+\index{Vmon3\+Hash@{Vmon3\+Hash}!Hartree\+Fock@{Hartree\+Fock}}
+\subsubsection[{\texorpdfstring{Vmon3\+Hash(uint64\+\_\+t a, uint64\+\_\+t b, uint64\+\_\+t c, uint64\+\_\+t d, uint64\+\_\+t e, uint64\+\_\+t f)}{Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f)}}]{\setlength{\rightskip}{0pt plus 5cm}uint64\+\_\+t Hartree\+Fock\+::\+Vmon3\+Hash (
+\begin{DoxyParamCaption}
+\item[{uint64\+\_\+t}]{a, }
+\item[{uint64\+\_\+t}]{b, }
+\item[{uint64\+\_\+t}]{c, }
+\item[{uint64\+\_\+t}]{d, }
+\item[{uint64\+\_\+t}]{e, }
+\item[{uint64\+\_\+t}]{f}
+\end{DoxyParamCaption}
+)}\hypertarget{classHartreeFock_ab863d5d020e15854d4d591ec0ce6a1a0}{}\label{classHartreeFock_ab863d5d020e15854d4d591ec0ce6a1a0}
+Hashing function for rolling six orbit indices into a single long unsigned int. Each orbit gets 10 bits. 
 
 \subsection{Member Data Documentation}
 \index{Hartree\+Fock@{Hartree\+Fock}!energies@{energies}}

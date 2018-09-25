@@ -837,7 +837,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 /// Returns
 /// \f[ 
 /// R_p^{2} = \frac{1}{Z} \sum_{p}\left(\vec{r}_{p}-\vec{R}_{CM}\right)^2 =
-/// R^2_{CM} + \frac{A-2}{AZ} \sum_{p}r_{p}^{2} - \frac{4}{AZ}\sum_{i<j}\vec{r}_i\cdot\vec{r}_j  \right)
+/// R^2_{CM} + \frac{A-2}{AZ} \sum_{p}r_{p}^{2} - \frac{4}{AZ}\sum_{i<j}\vec{r}_i\cdot\vec{r}_j  
 /// \f]
 /// evaluated in the oscillator basis.
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z)
@@ -979,7 +979,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
 
 /// Center of mass Hamiltonian
-/// \f{eqnarray*}{
+/// \f{align*}{
 /// H_{CM} &= T_{CM} + \frac{1}{2} Am\omega^2 R^2 \\
 ///        &= T_{CM} + \frac{1}{2b^2} AR^2 \hbar\omega
 /// \f}
@@ -1204,12 +1204,12 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
   gsl_integration_qawo_table * table = gsl_integration_qawo_table_alloc (omega, L, GSL_INTEG_SINE, n);
   gsl_integration_workspace * workspace = gsl_integration_workspace_alloc ( n );
 
-  const double epsabs = 1e-5; // absolute error
+  const double epsabs = 1e-5; // std::absolute error
   const double epsrel = 1e-5; // relative error
   const size_t limit = n; // maximum number of subintervals (maybe should be different?)
   const double start = 0.0; // lower limit on integration range
   double result;
-  double  abserr;
+  double abserr;
   gsl_function F;
   F.function = &FBCIntegrand;
 
@@ -1218,7 +1218,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
     Orbit& oi = modelspace.GetOrbit(i);
     struct FBCIntegrandParameters params = {oi.n, oi.l, modelspace.GetHbarOmega()};
     F.params = &params;
-    //int status = gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
+    //int status = gsl_integration_qawo (&F, start, epsstd::abs, epsrel, limit, workspace, table, &result, &std::abserr);
     gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
     a_nu.OneBody(i,i) = M_PI*M_PI/R/R/R * R/nu/M_PI*(result);
     std::cout << "orbit,nu = " << i << "," << nu << "  => " << a_nu.OneBody(i,i) << "  from " << result << " (" << abserr << ")" << std::endl;
@@ -1462,6 +1462,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
          for (int Lcd=std::max(std::abs(lc-ld),std::abs(Jcd-1))+(Lab+L)%2; Lcd<=std::min(lc+ld,Jcd+1); Lcd+=2)
          {
           for (int S=std::max(std::abs(Jab-Lab),std::abs(Jcd-Lcd)); S<=std::min(1,std::min(Jab+Lab,Jcd+Lcd)); S+=1 )
+
           {
             double njab = AngMom::NormNineJ( la, 0.5, ja, lb, 0.5, jb, Lab, S, Jab);
             double njcd = AngMom::NormNineJ( lc, 0.5, jc, ld, 0.5, jd, Lcd, S, Jcd);
