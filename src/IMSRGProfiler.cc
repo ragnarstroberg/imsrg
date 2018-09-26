@@ -11,7 +11,7 @@
 
 std::map<std::string, double> IMSRGProfiler::timer;
 std::map<std::string, int> IMSRGProfiler::counter;
-float IMSRGProfiler::start_time = -1;
+double IMSRGProfiler::start_time = -1;
 
 IMSRGProfiler::IMSRGProfiler()
 {

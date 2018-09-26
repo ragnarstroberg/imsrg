@@ -1,12 +1,16 @@
 
 #include "imsrg_util.hh"
 #include "AngMom.hh"
+#include "Commutator.hh"
 //#include "DarkMatterNREFT.hh"
 #include "omp.h"
 #include <gsl/gsl_integration.h>
 #include <boost/math/special_functions/gamma.hpp>
 #include <boost/math/special_functions/factorials.hpp>
 #include <vector>
+#include <string>
+#include <map>
+#include <array>
 
 
 //using namespace AngMom;
@@ -15,12 +19,12 @@
 namespace imsrg_util
 {
 
- std::vector<string> split_string(string s, string delimiter)
+ std::vector<std::string> split_string(std::string s, std::string delimiter)
  {
-  vector<string> out;
+  std::vector<std::string> out;
    size_t last = 0;
    size_t next = 0;
-   while ((next = s.find(delimiter, last)) != string::npos)
+   while ((next = s.find(delimiter, last)) != std::string::npos)
    {
      out.push_back( s.substr(last, next-last) );
      last = next + 1;
@@ -29,9 +33,9 @@ namespace imsrg_util
    return out;
  }
 
- Operator OperatorFromString(ModelSpace& modelspace, string opname )
+ Operator OperatorFromString(ModelSpace& modelspace, std::string opname )
  {
-      vector<string> opnamesplit = split_string( opname, "_" );  // split string on _ into a vector of string so that, e.g. "R2_p1"  =>  {"R2", "p1"}
+      std::vector<std::string> opnamesplit = split_string( opname, "_" );  // split std::string on _ into a vector of std::string so that, e.g. "R2_p1"  =>  {"R2", "p1"}
 
            if (opname == "R2_p1")         return R2_1body_Op(modelspace,"proton") ;
       else if (opname == "R2_p2")         return R2_2body_Op(modelspace,"proton") ;
@@ -71,47 +75,47 @@ namespace imsrg_util
       {
          if ( opnamesplit.size() == 1 ) return HCM_Op(modelspace);
          double hw_HCM; // frequency of trapping potential
-         istringstream( opnamesplit[1] ) >> hw_HCM;
+         std::istringstream( opnamesplit[1] ) >> hw_HCM;
          int A = modelspace.GetTargetMass();
          return TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw_HCM*hw_HCM/HBARC/HBARC*R2CM_Op(modelspace);
       }
       else if (opnamesplit[0] == "VCM") // GetHCM with a different frequency, ie HCM_24 for hw=24
       {
          double hw_VCM; // frequency of trapping potential
-         istringstream(opnamesplit[1]) >> hw_VCM;
+         std::istringstream(opnamesplit[1]) >> hw_VCM;
          int A = modelspace.GetTargetMass();
          return 0.5*A*M_NUCLEON*hw_VCM*hw_VCM/HBARC/HBARC*R2CM_Op(modelspace); 
       }
       else if (opnamesplit[0] == "Rp2Z") // Get point proton radius for specified Z, e.g. Rp2Z_10 for neon
       {
         int Z_rp;
-        istringstream(opnamesplit[1]) >> Z_rp;
+        std::istringstream(opnamesplit[1]) >> Z_rp;
         return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) ;
       }
       else if (opnamesplit[0] == "Rp2AZ") // Get point proton radius for specified A and Z, e.g. Rp2AZ_20_10 for neon
       {
         int A_rp;
         int Z_rp;
-        istringstream(opnamesplit[1]) >> A_rp;
-        istringstream(opnamesplit[2]) >> Z_rp;
+        std::istringstream(opnamesplit[1]) >> A_rp;
+        std::istringstream(opnamesplit[2]) >> Z_rp;
         return Rp2_corrected_Op(modelspace,A_rp,Z_rp) ;
       }
       else if (opnamesplit[0] == "Rn2Z") // Get point neutron radius for specified Z
       {
         int Z_rp;
-        istringstream(opnamesplit[1]) >> Z_rp;
+        std::istringstream(opnamesplit[1]) >> Z_rp;
         return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) ;
       }
       else if (opnamesplit[0] == "rhop") // point proton  density at position r, e.g. rhop_1.25
       {
         double rr;
-        istringstream(opnamesplit[1]) >> rr;
+        std::istringstream(opnamesplit[1]) >> rr;
         return ProtonDensityAtR(modelspace,rr);
       }
       else if (opnamesplit[0] == "rhon") // point neutron density at position r
       {
         double rr;
-        istringstream(opnamesplit[1]) >> rr;
+        std::istringstream(opnamesplit[1]) >> rr;
         NeutronDensityAtR(modelspace,rr);
       }
       else if (opnamesplit[0] == "OneOcc") // Get occupation of specified orbit, e.g. OneOccp_1p3
@@ -129,30 +133,30 @@ namespace imsrg_util
       else if (opnamesplit[0] == "protonFBC") // Fourier bessel coefficient of order nu
       {
          int nu;
-         istringstream(opnamesplit[1]) >> nu;
+         std::istringstream(opnamesplit[1]) >> nu;
          return FourierBesselCoeff( modelspace, nu, 8.0, modelspace.proton_orbits);
       }
       else if (opnamesplit[0] == "neutronFBC") // Fourier bessel coefficient of order nu
       {
          int nu;
-         istringstream(opnamesplit[1]) >> nu;
+         std::istringstream(opnamesplit[1]) >> nu;
          return FourierBesselCoeff( modelspace, nu, 8.0, modelspace.neutron_orbits) ;
       }
       else if (opnamesplit[0] == "M0nu" and opnamesplit[1] == "TBME") // 0\nu\beta\beta decay TBME, M0nu_TBME_${Nq}_${SRC} (CP)
       {
          int Nquad; // number of quadrature points
-         string src; // chosen SRC parameters (none, Argonne, CD-Bonn, Miller/Spencer)
-         istringstream(opnamesplit[2]) >> Nquad;
-         istringstream(opnamesplit[3]) >> src;
+         std::string src; // chosen SRC parameters (none, Argonne, CD-Bonn, Miller/Spencer)
+         std::istringstream(opnamesplit[2]) >> Nquad;
+         std::istringstream(opnamesplit[3]) >> src;
          return M0nu_TBME_Op(modelspace,Nquad,src);
       }
 //      else if (opnamesplit[0] == "DMNREFT") // point radius density at position r, e.g. rhop1.25
 //      {
 //        double q;
 //        int J;
-//        string dmopname = opnamesplit[1];
-//        istringstream(opnamesplit[2]) >> q;
-//        istringstream(opnamesplit[3]) >> J;
+//        std::string dmopname = opnamesplit[1];
+//        std::istringstream(opnamesplit[2]) >> q;
+//        std::istringstream(opnamesplit[3]) >> J;
 //
 //        std::map<string, Operator (*)(ModelSpace&, int, double) > dmop = { {"M",       &DM_NREFT::M},
 //                                                                           {"Sigma",   &DM_NREFT::Sigma},
@@ -169,9 +173,14 @@ namespace imsrg_util
 //        return dmop[dmopname](modelspace, J, q );
 //        }
 //      }
+      else if (opnamesplit[0] == "Dagger" or opnamesplit[0] == "DaggerHF" )
+      {
+        index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
+        return Dagger_Op( modelspace, Q);
+      }
       else //need to remove from the list
       {
-         cout << "Unknown operator: " << opname << endl;
+         std::cout << "Unknown operator: " << opname << std::endl;
       }
       return Operator();
  
@@ -219,11 +228,11 @@ double HO_Radial_psi(int n, int l, double hw, double r)
 }
 
  // Just do the HF transformation
- vector<double> GetOccupationsHF(HartreeFock& hf)
+ std::vector<double> GetOccupationsHF(HartreeFock& hf)
  {
     ModelSpace* modelspace = hf.Hbare.modelspace;
     int norb = modelspace->GetNumberOrbits();
-    vector<double> occupation(norb);
+    std::vector<double> occupation(norb);
 
     for (int i=0; i<norb; ++i)
     {
@@ -233,17 +242,17 @@ double HO_Radial_psi(int n, int l, double hw, double r)
       // Transform it to the normal-ordered HF basis
       Operator N_NO = hf.TransformToHFBasis(N_bare).DoNormalOrdering();
       occupation[i] = N_NO.ZeroBody;
-      cout << oi.n << " " << oi.l << " " << oi.j2 << "/2 " << occupation[i] << endl;
+      std::cout << oi.n << " " << oi.l << " " << oi.j2 << "/2 " << occupation[i] << std::endl;
     }
     return occupation;
  }
 
  // Do the full IMSRG transformation
- vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver)
+ std::vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver)
  {
     ModelSpace* modelspace = imsrgsolver.modelspace;
     int norb = modelspace->GetNumberOrbits();
-    vector<double> occupation(norb,0);
+    std::vector<double> occupation(norb,0);
 
     for (int i=0; i<norb; ++i)
     {
@@ -259,11 +268,11 @@ double HO_Radial_psi(int n, int l, double hw, double r)
     return occupation;
  }
 
- vector<double> GetDensity( vector<double>& occupation, vector<double>& R, vector<int>& orbits, ModelSpace& modelspace )
+ std::vector<double> GetDensity( std::vector<double>& occupation, std::vector<double>& R, std::vector<int>& orbits, ModelSpace& modelspace )
  {
      int nr_steps = R.size();
      double hw = modelspace.GetHbarOmega();
-     vector<double> dens(nr_steps,0);
+     std::vector<double> dens(nr_steps,0);
      for (int& i : orbits)
      {
        Orbit & oi = modelspace.GetOrbit(i);
@@ -313,7 +322,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       if (std::abs(DM.OneBody(i,i))<1e-7) continue;
-//      cout << i << " " << (oi.j2+1)*DM.OneBody(i,i) << endl;
+//      std::cout << i << " " << (oi.j2+1)*DM.OneBody(i,i) << std::endl;
 //      rho += (oi.j2+1) * DM.OneBody(i,i) * HO_density(oi.n, oi.l, hw, r);
       rho += (1) * DM.OneBody(i,i) * HO_density(oi.n, oi.l, hw, r);
    }
@@ -657,7 +666,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
       Ket& ketlast = tbc.GetKet( tbc.GetNumberKets()-1 );
       int emax_ket = 2*ketlast.op->n + 2*ketlast.oq->n + ketlast.op->l + ketlast.oq->l;
 
-      vector<array<int,6>> JacobiBasis;  // L,S,N,Lambda,n,lambda
+      std::vector<std::array<int,6>> JacobiBasis;  // L,S,N,Lambda,n,lambda
       for (int L=std::max(J-1,0); L<=J+1; ++L)
       {
        for ( int S=std::abs(J-L); S<=1; ++S)
@@ -750,7 +759,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
 
       MatJJ = Trans.t() * MatJacobi * Trans;
-      cout << "ch = " << ch << "   size of JJ basis = " << nkets_JJ << "  size of Jacobi Basis = " << nkets_Jacobi << "   nonzero matrix elements = " << n_nonzero << endl;
+      std::cout << "ch = " << ch << "   size of JJ basis = " << nkets_JJ << "  size of Jacobi Basis = " << nkets_Jacobi << "   nonzero matrix elements = " << n_nonzero << std::endl;
 
    }
  }
@@ -981,7 +990,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 //   double oscillator_b2 = HBARC*HBARC/M_NUCLEON/hw;
 //   Operator HcmOp = TCM_Op(modelspace) + R2CM_Op(modelspace) * (0.5*A * hw / oscillator_b2);
    Operator HcmOp = TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw*hw/HBARC/HBARC * R2CM_Op(modelspace) ;
-   cout << "HcmOp: first 1b element = " << HcmOp.OneBody(0,0) << endl;
+   std::cout << "HcmOp: first 1b element = " << HcmOp.OneBody(0,0) << std::endl;
    return HcmOp;
  }
 
@@ -1029,7 +1038,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
 /// \f[ 
 /// \hat{R}^{2}_{p1} = \sum_{i} e_{i}{r}_i^2
 /// \f]
- Operator R2_1body_Op(ModelSpace& modelspace,string option)
+ Operator R2_1body_Op(ModelSpace& modelspace,std::string option)
  {
    Operator r2(modelspace);
    double oscillator_b = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
@@ -1037,7 +1046,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
    auto orbitlist = modelspace.proton_orbits;
    if (option == "neutron") orbitlist = modelspace.neutron_orbits;
    else if (option == "matter")  orbitlist.insert(orbitlist.end(),modelspace.neutron_orbits.begin(),modelspace.neutron_orbits.end());
-   else if (option != "proton") cout << "!!! WARNING. BAD OPTION "  << option << " FOR imsrg_util::R2_p1_Op !!!" << endl;
+   else if (option != "proton") std::cout << "!!! WARNING. BAD OPTION "  << option << " FOR imsrg_util::R2_p1_Op !!!" << std::endl;
  
    for (unsigned int a : orbitlist )
    {
@@ -1071,7 +1080,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
 /// \hat{R}^{2}_{p2} = \sum_{i\neq j} e_{i}\vec{r}_i\cdot\vec{r}_j 
 /// \f]
 /// evaluated in the oscillator basis.
- Operator R2_2body_Op(ModelSpace& modelspace,string option)
+ Operator R2_2body_Op(ModelSpace& modelspace,std::string option)
  {
    Operator Rp2Op(modelspace,0,0,0,2);
 //   double oscillator_b = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
@@ -1093,7 +1102,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
          if (Tz==0 and (option=="proton" or option=="neutron")) prefactor = 0.5;
 //         if (option=="proton" and bra.op->tz2>0) continue;
 //         else if (option=="neutron" and bra.op->tz2<0) continue;
-         if (option!="matter" and option!="proton" and option!="neutron") cout << "!!! WARNING. BAD OPTION "  << option << " FOR imsrg_util::R2_p2_Op !!!" << endl;
+         if (option!="matter" and option!="proton" and option!="neutron") std::cout << "!!! WARNING. BAD OPTION "  << option << " FOR imsrg_util::R2_p2_Op !!!" << std::endl;
          for (int iket=ibra;iket<nkets;++iket)
          {
             Ket & ket = tbc.GetKet(iket);
@@ -1186,7 +1195,7 @@ double FBCIntegrand(double x, void *p)
   return x*HO_density(params->n, params->l, params->hw, x);
 }
 
-Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<index_t> index_list)
+Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list)
 {
   Operator a_nu(modelspace,0,0,0,2);
   double omega = nu * M_PI / R; // coefficient of sine function, i.e. sin(omega*x)
@@ -1212,7 +1221,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     //int status = gsl_integration_qawo (&F, start, epsstd::abs, epsrel, limit, workspace, table, &result, &std::abserr);
     gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
     a_nu.OneBody(i,i) = M_PI*M_PI/R/R/R * R/nu/M_PI*(result);
-    cout << "orbit,nu = " << i << "," << nu << "  => " << a_nu.OneBody(i,i) << "  from " << result << " (" << abserr << ")" << endl;
+    std::cout << "orbit,nu = " << i << "," << nu << "  => " << a_nu.OneBody(i,i) << "  from " << result << " (" << abserr << ")" << std::endl;
   }
   return a_nu;
 }
@@ -1349,13 +1358,13 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   /// Returns a reduced magnetic multipole operator with units \f$ \mu_{N}\f$ fm\f$ ^{\lambda-1} \f$
   /// This version allows for the selection of just proton or just neutron contributions, or both.
   /// See Suhonen eq. (6.24)
-  Operator MagneticMultipoleOp_pn(ModelSpace& modelspace, int L, string pn)
+  Operator MagneticMultipoleOp_pn(ModelSpace& modelspace, int L, std::string pn)
   {
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*(L-1));
     Operator ML(modelspace, L,0,(L+1)%2,2);
     if (L<1)
     {
-      cout << "A magnetic monopole operator??? Setting it to zero..." << endl;
+      std::cout << "A magnetic monopole operator??? Setting it to zero..." << std::endl;
       return ML;
     }
     int norbits = modelspace.GetNumberOrbits();
@@ -1487,7 +1496,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
       }
     }
     
-    cout << "done with intrinsic EL. one body = " <<  endl;
+    std::cout << "done with intrinsic EL. one body = " <<  std::endl;
     return EL;
   }
 
@@ -1624,7 +1633,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
  }
 
  /// Pauli spin operator \f[ \langle f \| \sigma \| i \rangle \f]
- Operator Sigma_Op_pn(ModelSpace& modelspace, string pn)
+ Operator Sigma_Op_pn(ModelSpace& modelspace, std::string pn)
  {
    Operator Sig(modelspace,1,0,0,2);
    Sig.SetHermitian();
@@ -1874,6 +1883,21 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
 
 
+
+ Operator Dagger_Op( ModelSpace& modelspace, index_t Q )
+ {
+   Operator dag(modelspace);
+   dag.SetNumberLegs(3);
+   dag.SetQSpaceOrbit(Q);
+   dag.OneBody(Q,Q)= 1.0;
+   dag.SetNonHermitian();
+   std::cout << "Making a dagger operator. I think Q = " << Q << std::endl;
+   return dag;
+ }
+
+
+
+
  // Evaluate <bra | r1*r2 | ket>, omitting the factor (hbar * omega) /(m * omega^2)
 /// Returns the normalized, anti-symmetrized, J-coupled, two-body matrix element of \f$ \frac{m\omega^2}{\hbar \omega} \vec{r}_1\cdot\vec{r}_2 \f$.
 /// Calculational details are similar to Calculate_p1p2().
@@ -1983,7 +2007,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 /// This is the M^{0\nu} TBME from Equation (1) of [PRC 87, 064315 (2013)]
 /// it was coded up by me, ie) Charlie Payne (CP)
 /// from my thesis, I employed Equations: 
-  Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, string src)
+  Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, std::string src)
   {
     // VVV~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~VVV
     // VVV~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~VVV
@@ -2011,9 +2035,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     // set the SRC parameters a,b,c in the Jastrow-type correlation function
     double aa,bb; // [MeV^2]
     double cc; // [Unitless]
-    string argstr = "Argonne";
-    string cdbstr = "CD-Bonn";
-    string masstr = "Miller-Spencer";
+    std::string argstr = "Argonne";
+    std::string cdbstr = "CD-Bonn";
+    std::string masstr = "Miller-Spencer";
     if (src == argstr)
     {
       aa = 1.59*HBARC*HBARC;
@@ -2039,8 +2063,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     // set the GLQ roots and weights
     if (Nquad != 187)
     {
-      cout<<"ERROR 187: please set Nquad to 187 by running the operator as M0nu_TBME_187_none"<<endl;
-      cout<<"which I do to stay consistent with previous naming conventions."<<endl;
+      std::cout<<"ERROR 187: please set Nquad to 187 by running the operator as M0nu_TBME_187_none"<<std::endl;
+      std::cout<<"which I do to stay consistent with previous naming conventions."<<std::endl;
       exit(1);
     }
     double nodes[187][2] = { {0.00771093190434205, 0.01978880917191989},
@@ -2287,7 +2311,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
           double jb = ob.j2/2.0;
           double jc = oc.j2/2.0;
           double jd = od.j2/2.0; // ...for convenience
-cout<<J<<" | "<<ia<<", "<<ib<<", "<<ic<<", "<<id<<" || "
+std::cout<<J<<" | "<<ia<<", "<<ib<<", "<<ic<<", "<<id<<" || "
 <<na<<", "<<nb<<", "<<nc<<", "<<nd<<" | "
 <<la<<", "<<lb<<", "<<lc<<", "<<ld<<" | "
 <<ja<<", "<<jb<<", "<<jc<<", "<<jd<<" |=|  ";
@@ -2398,7 +2422,7 @@ cout<<J<<" | "<<ia<<", "<<ib<<", "<<ic<<", "<<id<<" || "
           MF = tempnorm*tempfact*(sumglqF - temphase*sumglqFas); // see Equation () of my thesis, (F)
           MGT = tempnorm*tempfact*(sumglqGT - temphase*sumglqGTas); // see Equation () of my thesis, (GT)
           double Mtbme = MF + MGT; // see Equation () of my thesis
-cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
+std::cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<std::endl;
           M0nu_TBME.TwoBody.SetTBME(chbra,chket,ibra,iket,Mtbme); // set the two-body matrix elements (TBME) to M_ab
         } // end of for-loop over: iket
       } // end of for-loop over: ibra
@@ -2568,8 +2592,8 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
    Operator EKKShift(*modelspace,0,0,0,2);
    double elower = 0;
    double eupper = 0;
-   vector<index_t> index_lower;
-   vector<index_t> index_upper;
+   std::vector<index_t> index_lower;
+   std::vector<index_t> index_upper;
    for (int i=0; i<modelspace->GetNumberOrbits(); ++i)
    {
      Orbit& oi = modelspace->GetOrbit(i);
@@ -2590,16 +2614,16 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
    double emid = 0.5 * (elower + eupper);
    for ( auto i : index_lower ) EKKShift.OneBody(i,i) = emid - elower;
    for ( auto i : index_upper ) EKKShift.OneBody(i,i) = emid - eupper;
-   cout << "In EKKShift, elower, eupper, emid = " << elower << " , " << eupper << " , " << emid << endl;
+   std::cout << "In EKKShift, elower, eupper, emid = " << elower << " , " << eupper << " , " << emid << std::endl;
    return EKKShift;
  }
 
 
-  map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax)
+  std::map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax)
   {
 //    ModelSpace* modelspace = H.GetModelSpace();
-    map<index_t,double> hole_list;
-    cout << "GetSecondOrderOccupations : Not yet implemented" << endl;
+    std::map<index_t,double> hole_list;
+    std::cout << "GetSecondOrderOccupations : Not yet implemented" << std::endl;
     return hole_list;
   }
 
@@ -2611,7 +2635,7 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
   {
     if (A<2)
     {
-      cout << "Embed1BodyIn2Body: A = " << A << ". You clearly didn't mean to do that..." << endl;
+      std::cout << "Embed1BodyIn2Body: A = " << A << ". You clearly didn't mean to do that..." << std::endl;
       return;
     }
     ModelSpace* modelspace = op1.GetModelSpace();
@@ -2722,65 +2746,65 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Operator Yred = Y;
     Reduce(Yred);
 
-    cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << endl;
+    std::cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << std::endl;
 //    X.comm111ss(Y,Zscalar);
 //    X.comm111st(Yred,Ztensor);
-    Zscalar.comm111ss(X,Y);
-    Ztensor.comm111st(X,Yred);
+    Commutator::comm111ss(X,Y,Zscalar);
+    Commutator::comm111st(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm111 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm111 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm111 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm111 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
-    cout << "121ss" << endl;
-    Zscalar.comm121ss(X,Y);
-    cout << "121st" << endl;
-    Ztensor.comm121st(X,Yred);
+    std::cout << "121ss" << std::endl;
+    Commutator::comm121ss(X,Y,Zscalar);
+    std::cout << "121st" << std::endl;
+    Commutator::comm121st(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm121 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm121 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm121 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm121 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
-    Zscalar.comm122ss(X,Y);
-    Ztensor.comm122st(X,Yred);
+    Commutator::comm122ss(X,Y,Zscalar);
+    Commutator::comm122st(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm122 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm122 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm122 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm122 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
-    Zscalar.comm222_pp_hh_221ss(X,Y);
-    Ztensor.comm222_pp_hh_221st(X,Yred);
+    Commutator::comm222_pp_hh_221ss(X,Y,Zscalar);
+    Commutator::comm222_pp_hh_221st(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm222_pp_hh_221 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm222_pp_hh_221 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm222_pp_hh_221 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm222_pp_hh_221 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
-    X.comm222_phss(Y,Zscalar);
+    Commutator::comm222_phss(Y,Zscalar,X);
 //    Reduce(Y); // Not sure why I can't use Yred...
-    Zscalar.comm222_phss(X,Y);
-    Ztensor.comm222_phst(X,Yred);
+    Commutator::comm222_phss(X,Y,Zscalar);
+    Commutator::comm222_phst(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm222_ph norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm222_ph norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm222_ph diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm222_ph diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
 
   }
@@ -2798,7 +2822,7 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Operator Yred = Y;
     Reduce(Yred);
 
-    cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << endl;
+    std::cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << std::endl;
 //    X.comm111ss(Y,Zscalar);
 //    X.comm111st(Yred,Ztensor);
     Zscalar.comm111ss(X,Y);
@@ -2806,9 +2830,9 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm111 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm111 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm111 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm111 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
@@ -2817,9 +2841,9 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm121 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm121 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm121 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm121 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
@@ -2828,9 +2852,9 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm122 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm122 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm122 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm122 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
@@ -2839,9 +2863,9 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm222_pp_hh_221 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm222_pp_hh_221 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm222_pp_hh_221 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm222_pp_hh_221 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
@@ -2851,9 +2875,9 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm222_ph norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm222_ph norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm222_ph diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm222_ph diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
 
   }
