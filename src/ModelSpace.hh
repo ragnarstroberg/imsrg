@@ -222,7 +222,7 @@ class ModelSpace
    int GetOrbitIndex(int n, int l, int j2, int tz2) const {return Index1(n,l,j2,tz2);};
    int GetKetIndex(int p, int q) const {return Index2(p,q);}; // convention is p<=q
    int GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
-   int GetNumberOrbits() const {return norbits;};
+   size_t GetNumberOrbits() const {return norbits;};
    int GetNumberKets() const {return Kets.size();};
    void SetHbarOmega(double hw) {hbar_omega = hw;};
    void SetTargetMass(int A) {target_mass = A;};
@@ -232,7 +232,7 @@ class ModelSpace
    int GetTargetZ() const {return target_Z;};
    int GetAref() const {return Aref;};
    int GetZref() const {return Zref;};
-   int GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
+   size_t GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
    inline int GetTwoBodyJmax() const {return TwoBodyJmax;};

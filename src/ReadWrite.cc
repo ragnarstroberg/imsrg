@@ -3265,7 +3265,7 @@ void ReadWrite::WriteOperatorHuman(Operator& op, std::string filename)
       for (int j=jmin;j<norb;++j)
       {
          if (std::abs(op.OneBody(i,j)) > 0)
-            opfile << fixed << setw(3) << i << "\t" << fixed << setw(3) << j << "\t" << fixed << setw(18) << setprecision(12) << op.OneBody(i,j) << std::endl;
+            opfile << std::fixed << std::setw(3) << i << "\t" << std::fixed << std::setw(3) << j << "\t" << std::fixed << std::setw(18) << std::setprecision(12) << op.OneBody(i,j) << std::endl;
       }
    }
 
@@ -3344,7 +3344,7 @@ void ReadWrite::WriteOperator(Operator& op, std::string filename)
       for (int j=jmin;j<norb;++j)
       {
          if (std::abs(op.OneBody(i,j)) > 0)
-            opfile << i << "\t" << j << "\t" << setprecision(10) << op.OneBody(i,j) << std::endl;
+            opfile << i << "\t" << j << "\t" << std::setprecision(10) << op.OneBody(i,j) << std::endl;
       }
    }
 
@@ -3538,7 +3538,7 @@ void ReadWrite::CompareOperators(Operator& op1, Operator& op2, std::string filen
       for (int j=jmin;j<norb;++j)
       {
          if (std::abs(op1.OneBody(i,j)) > 0 or std::abs(op2.OneBody(i,j))>0 )
-            opfile << i << "\t" << j << "\t" << setprecision(10) << op1.OneBody(i,j) << "   " << op2.OneBody(i,j) << std::endl;
+            opfile << i << "\t" << j << "\t" << std::setprecision(10) << op1.OneBody(i,j) << "   " << op2.OneBody(i,j) << std::endl;
       }
    }
 
@@ -3720,11 +3720,11 @@ void ReadWrite::WriteTwoBody_Takayuki(std::string filename, Operator& Hbare)
         double tbme = itmat.second(ibra,iket);
 
         if (std::abs(tbme)<1e-8) continue;
-        outfile << setw(3) << bra.op->tz2 << " " << setw(3) << orbits_remap.at(bra.p) << " "
-                << setw(3) << bra.oq->tz2 << " " << setw(3) << orbits_remap.at(bra.q) << " "
-                << setw(3) << ket.op->tz2 << " " << setw(3) << orbits_remap.at(ket.p) << " "
-                << setw(3) << ket.oq->tz2 << " " << setw(3) << orbits_remap.at(ket.q) << " "
-                << setw(3) << J << setw(12) << setprecision(8) << tbme << std::endl;
+        outfile << std::setw(3) << bra.op->tz2 << " " << std::setw(3) << orbits_remap.at(bra.p) << " "
+                << std::setw(3) << bra.oq->tz2 << " " << std::setw(3) << orbits_remap.at(bra.q) << " "
+                << std::setw(3) << ket.op->tz2 << " " << std::setw(3) << orbits_remap.at(ket.p) << " "
+                << std::setw(3) << ket.oq->tz2 << " " << std::setw(3) << orbits_remap.at(ket.q) << " "
+                << std::setw(3) << J << std::setw(12) << std::setprecision(8) << tbme << std::endl;
       }
     }
   }
