@@ -1242,14 +1242,15 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
      if (std::abs(tbc.Tz) == 1)
      {
         TB.diag().fill(0.5); // pp,nn TBME's
-        for (int ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
-        {
-           Ket& bra = tbc.GetKet(ibra);
-           if (bra.p == bra.q)
-           {
-             TB(ibra,ibra) /= 2.;
-           }
-        }
+         // I managed to confuse myself.  t_{pp'pp'} should give 2 t1*t2. This gives reasonable results in nushellx.
+//        for (int ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
+//        {
+//           Ket& bra = tbc.GetKet(ibra);
+//           if (bra.p == bra.q)
+//           {
+//             TB(ibra,ibra) /= 2.;
+//           }
+//        }
      }
      else if (tbc.Tz == 0)
      {
