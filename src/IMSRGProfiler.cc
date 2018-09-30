@@ -11,7 +11,7 @@
 
 std::map<std::string, double> IMSRGProfiler::timer;
 std::map<std::string, int> IMSRGProfiler::counter;
-float IMSRGProfiler::start_time = -1;
+double IMSRGProfiler::start_time = -1;
 
 IMSRGProfiler::IMSRGProfiler()
 {
@@ -26,13 +26,17 @@ IMSRGProfiler::IMSRGProfiler()
 std::map<std::string,size_t> IMSRGProfiler::CheckMem()
 {
   char commandstr[100],outbuf[500],buf[100];
-  sprintf(commandstr,"pmap -x %d | tail -1",getpid()); // TODO make this more portable. On OSX, use vmmap. no idea for Windows...
-  FILE* output = popen(commandstr,"r");
   std::map<std::string,size_t> s;
+  sprintf(commandstr,"pmap -x %d | tail -1",getpid()); // TODO make this more portable. On OSX, use vmmap. no idea for Windows...
+#ifndef __APPLE__
+  FILE* output = popen(commandstr,"r");
   if (output==NULL or fgets(outbuf,500,output) == NULL)
     std::cout << " <<< IMSRGProfiler::CheckMem():  Problem reading output of pmap (pid = " << getpid() << ")" << std::endl;
   else
     std::istringstream(outbuf) >> commandstr >> buf >> s["Kbytes"] >> s["RSS"] >> s["DIRTY"];
+#else
+  s["Kbytes"]=0;s["RSS"]=0;s["DIRTY"]=0;
+#endif
   return s;
 }
 
