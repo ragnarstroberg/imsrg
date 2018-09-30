@@ -118,6 +118,8 @@ namespace imsrg_util
  std::vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);
  std::vector<double> GetDensity(std::vector<double>& occ, std::vector<double>& R, std::vector<int>& orbits, ModelSpace& modelspace);
 
+ void WriteSPWaveFunctions( std::vector<std::string>& sporbits, HartreeFock& hf, std::string intfile );
+
  void Embed1BodyIn2Body(Operator& op1, int A);
  double GetEmbeddedTBME(Operator& op1, index_t i, index_t j, index_t k, index_t l, int Jbra,int Jket, int Lambda);
 

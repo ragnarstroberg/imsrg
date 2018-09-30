@@ -284,6 +284,25 @@ double HO_Radial_psi(int n, int l, double hw, double r)
      return dens;
  }
 
+
+ void WriteSPWaveFunctions( std::vector<std::string>& spwf, HartreeFock& hf, std::string intfile )
+ {
+   int n_radial_points = 200;
+   double Rmax = 20.0;
+   std::vector<index_t> spwf_indices = hf.modelspace->String2Index(spwf);
+   std::vector<double> R(n_radial_points);
+   std::vector<double> PSI(n_radial_points);
+   for (int rstep=0;rstep<n_radial_points;++rstep)   R[rstep] = Rmax/n_radial_points * rstep;
+   for ( index_t i=0; i< spwf.size(); ++i)
+   {
+     hf.GetRadialWF(spwf_indices[i], R, PSI);
+     std::ofstream wf_file (intfile + "_spwf_" + spwf[i] + ".dat");
+     for ( index_t rstep=0; rstep<R.size(); ++rstep)  wf_file << std::fixed << std::setw(10) << std::setprecision(7) << R[rstep] << "   " << std::setw(10) << std::setprecision(7) << PSI[rstep] << std::endl;
+     wf_file.close();
+   }
+ }
+
+
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace)
  {
     Operator DM(modelspace,0,0,0,2);

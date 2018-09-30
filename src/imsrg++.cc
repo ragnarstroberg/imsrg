@@ -54,7 +54,7 @@
 #include "IMSRG.hh"
 #include "Parameters.hh"
 
-using namespace imsrg_util;
+//using namespace imsrg_util; // lets get rid of this
 
 int main(int argc, char** argv)
 {
@@ -87,6 +87,7 @@ int main(int argc, char** argv)
   std::string goose_tank = parameters.s("goose_tank");
   std::string write_omega = parameters.s("write_omega");
   std::string nucleon_mass_correction = parameters.s("nucleon_mass_correction");
+  std::string hunter_gatherer = parameters.s("hunter_gatherer");
 
   int eMax = parameters.i("emax");
   int E3max = parameters.i("e3max");
@@ -224,12 +225,12 @@ int main(int argc, char** argv)
 
   if (fmt2 != "nushellx")  // Don't need to add kinetic energy if we read a shell model interaction
   {
-    Hbare += Trel_Op(modelspace);
+    Hbare += imsrg_util::Trel_Op(modelspace);
   }
 
   if ( nucleon_mass_correction == "true" or nucleon_mass_correction == "True" )  
   {  // correction to kinetic energy because M_proton != M_neutron
-    Hbare += Trel_Masscorrection_Op(modelspace);
+    Hbare += imsrg_util::Trel_Masscorrection_Op(modelspace);
   }
   
   if (Hbare.particle_rank >=3)
@@ -262,21 +263,27 @@ int main(int argc, char** argv)
 
 
   // This is really too specific to be in here...
-  int n_radial_points = 40;
-  double Rmax = 10.0;
-  std::vector<index_t> spwf_indices = modelspace.String2Index(spwf);
-  std::vector<double> R(n_radial_points);
-  std::vector<double> PSI(n_radial_points);
-  for ( index_t i=0; i< spwf.size(); ++i)
+  if ( spwf.size() > 0 )
   {
-    for (int rstep=0;rstep<n_radial_points;++rstep) R[rstep] = Rmax/n_radial_points * rstep;
-    hf.GetRadialWF(spwf_indices[i], R, PSI);
-    std::ofstream wf_file (intfile + "_spwf_" + spwf[i] + ".dat");
-    for ( index_t rstep=0; rstep<R.size(); ++rstep)  wf_file << std::fixed << std::setw(10) << std::setprecision(7) << R[rstep] << "   " << std::setw(10) << std::setprecision(7) << PSI[rstep] << std::endl;
-    std::cout << "About to close wf file" << std::endl;
-//    wf_file.close();
+    imsrg_util::WriteSPWaveFunctions( spwf, hf, intfile);
   }
-  if (spwf.size() > 0)   std::cout << "Done with SPWF" << std::endl;
+//  int n_radial_points = 200;
+//  double Rmax = 20.0;
+//  std::vector<index_t> spwf_indices = hf.modelspace->String2Index(spwf);
+//  std::vector<double> R(n_radial_points);
+//  std::vector<double> PSI(n_radial_points);
+//  for (int rstep=0;rstep<n_radial_points;++rstep) R[rstep] = Rmax/n_radial_points * rstep;
+//
+//  for ( index_t i=0; i< spwf.size(); ++i)
+//  {
+//    hf.GetRadialWF(spwf_indices[i], R, PSI);
+//    std::ofstream wf_file (intfile + "_spwf_" + spwf[i] + ".dat");
+//    for ( index_t rstep=0; rstep<R.size(); ++rstep)  wf_file << std::fixed << std::setw(10) << std::setprecision(7) << R[rstep] << "   " << std::setw(10) << std::setprecision(7) << PSI[rstep] << std::endl;
+////    wf_file.close();
+//  }
+
+
+
 
   HNO -= BetaCM * 1.5*hwBetaCM;
   std::cout << "Hbare 0b = " << HNO.ZeroBody << std::endl;
@@ -285,18 +292,12 @@ int main(int argc, char** argv)
   {
     std::cout << "Perturbative estimates of gs energy:" << std::endl;
     double EMP2 = HNO.GetMP2_Energy();
-<<<<<<< HEAD
-    cout << "EMP2 = " << EMP2 << endl; 
+    std::cout << "EMP2 = " << EMP2 << std::endl; 
 //    double EMP3 = HNO.GetMP3_Energy();
     std::array<double,3> Emp_3 = HNO.GetMP3_Energy();
     double EMP3 = Emp_3[0]+Emp_3[1]+Emp_3[2];
     std::cout << "E3_pp = " << Emp_3[0] << "  E3_hh = " << Emp_3[1] << " E3_ph = " << Emp_3[2] << "   EMP3 = " << EMP3 << std::endl;
 //    cout << "EMP3 = " << EMP3 << endl; 
-=======
-    std::cout << "EMP2 = " << EMP2 << std::endl; 
-    double EMP3 = HNO.GetMP3_Energy();
-    std::cout << "EMP3 = " << EMP3 << std::endl; 
->>>>>>> bb5005fdfb80bc90b677a878b96eda87c26555a2
     std::cout << "To 3rd order, E = " << HNO.ZeroBody+EMP2+EMP3 << std::endl;
   }
 
@@ -421,10 +422,11 @@ int main(int argc, char** argv)
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetEtaCriterion(eta_criterion);
   bool brueckner_restart = false;
+  if (hunter_gatherer=="true") imsrgsolver.SetHunterGatherer( true);
   
   if (method == "NSmagnus") // "No split" magnus
   {
-    omega_norm_max=500;
+    omega_norm_max=50000;
     method = "magnus";
   }
   if (method.find("brueckner") != std::string::npos)
@@ -577,9 +579,10 @@ int main(int argc, char** argv)
     std::cout << "Doing NO wrt A=" << ms2.GetAref() << " Z=" << ms2.GetZref() << "  norbits = " << ms2.GetNumberOrbits() << std::endl;
     HNO = HNO.DoNormalOrdering();
 
+// More flowing is unnecessary, since things should stay decoupled.
     imsrgsolver.SetHin(HNO);
-    imsrgsolver.SetEtaCriterion(1e-4);
-    imsrgsolver.Solve();
+//    imsrgsolver.SetEtaCriterion(1e-4);
+//    imsrgsolver.Solve();
     // Change operators to the new basis, then apply the rest of the transformation
     std::cout << "Final transformation on the operators..." << std::endl;
     int iop = 0;
@@ -620,7 +623,7 @@ int main(int argc, char** argv)
           }
           else if ( ops[i].GetNumberLegs()%2==1) // odd number of legs -> this is a dagger operator
           {
-            rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int"); // do this for now. later make a *.dag format.
+//            rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int"); // do this for now. later make a *.dag format.
             rw.WriteDaggerOperator( ops[i], intfile+opnames[i]+".dag",opnames[i]);
           }
           else

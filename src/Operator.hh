@@ -162,6 +162,7 @@ class Operator
   Operator Truncate(ModelSpace& ms_new); ///< Returns the operator trunacted to the new model space
 
 
+  // In principle, these methods should probably be factorized out, but I don't know where to put them...
   double GetMP2_Energy();
 //  double GetMP3_Energy();
   std::array<double,3> GetMP3_Energy();
