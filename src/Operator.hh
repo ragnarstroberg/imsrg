@@ -28,6 +28,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <array>
 #include <deque>
 #include <map>
 
@@ -176,7 +177,8 @@ class Operator
   void Eye(); ///< set to identity operator -- unused
 
   double GetMP2_Energy();
-  double GetMP3_Energy();
+//  double GetMP3_Energy();
+  std::array<double,3> GetMP3_Energy();
   double MP1_Eval(Operator& );
 
   void PrintTimes(){profiler.PrintAll();};

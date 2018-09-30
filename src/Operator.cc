@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <deque>
+#include <array>
 #include <gsl/gsl_math.h>
 #include <math.h>
 #include "omp.h"
@@ -852,15 +853,20 @@ double Operator::GetMP2_Energy()
 /// \f]
 ///
 //*************************************************************
-double Operator::GetMP3_Energy()
+//double Operator::GetMP3_Energy()
+std::array<double,3> Operator::GetMP3_Energy()
 {
    // So far, the pp and hh parts seem to work. No such luck for the ph.
    double t_start = omp_get_wtime();
-   double Emp3 = 0;
+//   double Emp3 = 0;
+   double Epp = 0;
+   double Ehh = 0;
+   double Eph = 0;
    // This can certainly be optimized, but I'll wait until this is the bottleneck.
    int nch = modelspace->GetNumberTwoBodyChannels();
 
-   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Emp3)
+//   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Emp3)
+   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Epp,Ehh)
    for (int ich=0;ich<nch;++ich)
    {
      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ich);
@@ -887,7 +893,8 @@ double Operator::GetMP3_Energy()
            index_t c = ket_cd.p;
            index_t d = ket_cd.q;
            double Delta_cdij = OneBody(c,c) + OneBody(d,d) - OneBody(i,i) - OneBody(j,j);
-           Emp3 += (2*J+1)*Mat(iket_ab,iket_ij) * Mat(iket_ij,iket_cd) * Mat(iket_cd,iket_ab) / (Delta_abij * Delta_cdij);
+//           Emp3 += (2*J+1)*Mat(iket_ab,iket_ij) * Mat(iket_ij,iket_cd) * Mat(iket_cd,iket_ab) / (Delta_abij * Delta_cdij);
+           Ehh += (2*J+1)*Mat(iket_ab,iket_ij) * Mat(iket_ij,iket_cd) * Mat(iket_cd,iket_ab) / (Delta_abij * Delta_cdij);
          }
 
        // pp term
@@ -897,20 +904,22 @@ double Operator::GetMP3_Energy()
            index_t k = ket_kl.p;
            index_t l = ket_kl.q;
            double Delta_abkl = OneBody(a,a) + OneBody(b,b) - OneBody(k,k) - OneBody(l,l);
-           Emp3 += (2*J+1)*Mat(iket_ab,iket_ij)*Mat(iket_ij,iket_kl)*Mat(iket_kl,iket_ab) / (Delta_abij * Delta_abkl);
+//           Emp3 += (2*J+1)*Mat(iket_ab,iket_ij)*Mat(iket_ij,iket_kl)*Mat(iket_kl,iket_ab) / (Delta_abij * Delta_abkl);
+           Epp += (2*J+1)*Mat(iket_ab,iket_ij)*Mat(iket_ij,iket_kl)*Mat(iket_kl,iket_ab) / (Delta_abij * Delta_abkl);
          }
 
        } // for ij
      } // for ab
    } // for ich
-   cout << "done with pp and hh. E(3) = " << Emp3 << endl;
+//   cout << "done with pp and hh. E(3) = " << Emp3 << endl;
 
 
 
 
    index_t nparticles = modelspace->particles.size();
    modelspace->PreCalculateSixJ();
-   #pragma omp parallel for schedule(dynamic,1)  reduction(+:Emp3)
+//   #pragma omp parallel for schedule(dynamic,1)  reduction(+:Emp3)
+   #pragma omp parallel for schedule(dynamic,1)  reduction(+:Eph)
    for (index_t ii=0;ii<nparticles;ii++)
    {
      auto i = modelspace->particles[ii];
@@ -965,7 +974,8 @@ double Operator::GetMP3_Energy()
              {
                tbme_ikac -= modelspace->GetSixJ(jk,jc,J_tot,ja,ji,J3) * (2*J3 + 1) *  TwoBody.GetTBME_J(J3,k,i,a,c);
              }
-             Emp3 +=  Jfactor * tbme_abij * tbme_cjkb * tbme_ikac / (Delta_abij * Delta_acik);
+//             Emp3 +=  Jfactor * tbme_abij * tbme_cjkb * tbme_ikac / (Delta_abij * Delta_acik);
+             Eph +=  Jfactor * tbme_abij * tbme_cjkb * tbme_ikac / (Delta_abij * Delta_acik);
             } // for k
           } // for c
         } // for j
@@ -976,7 +986,8 @@ double Operator::GetMP3_Energy()
 
 
    profiler.timer["GetMP3_Energy"] += omp_get_wtime() - t_start;
-   return Emp3;
+//   return Emp3;
+   return {Epp,Ehh,Eph};
 }
 
 
