@@ -193,10 +193,10 @@ void ReadWrite::ReadTBME_OakRidge( std::string spname, std::string tbmename, Ope
 //      if (aa==bb) fnorm /= sqrt(2.);
 //      if (cc==dd) fnorm /= sqrt(2.);
 //    }
-    int a = orbit_remap[aa-1];
-    int b = orbit_remap[bb-1];
-    int c = orbit_remap[cc-1];
-    int d = orbit_remap[dd-1];
+    auto a = orbit_remap[aa-1];
+    auto b = orbit_remap[bb-1];
+    auto c = orbit_remap[cc-1];
+    auto d = orbit_remap[dd-1];
 //    double tbme = g1 * fnorm;
     double tbme = g1;
     if (a>=modelspace->GetNumberOrbits()) continue;
@@ -335,7 +335,7 @@ void ReadWrite::WriteOneBody_Oslo( std::string filename, Operator& Op)
   outfile << " Total number of single-particle orbits  " << modelspace->GetNumberOrbits()  << std::endl;
   outfile << "Legend:         n     l     2j   tz    2n+l  HO-energy     evalence     particle/hole  inside/outside" << std::endl;
 
-  for (int i=0;i<modelspace->GetNumberOrbits(); ++i)
+  for (size_t i=0;i<modelspace->GetNumberOrbits(); ++i)
   {
     Orbit& oi = modelspace->GetOrbit(i);
     std::string ph = oi.cvq > 0 ? "particle" : "hole";
@@ -343,11 +343,14 @@ void ReadWrite::WriteOneBody_Oslo( std::string filename, Operator& Op)
     int e = 2*oi.n+oi.l;
 //    double hw = modelspace->GetHbarOmega();
     double spe = Op.OneBody(i,i);
-    char line[512];
+//    char line[512];
 /// Switching order here to make EKK work with the MBPT code
 //    sprintf(line,"Number: %3d %5d %5d %5d %5d %5d    %13.6e  %13.6e  %8s  %8s\n", i+1, oi.n, oi.l, oi.j2, oi.tz2, e, (e+1.5)*hw, spe, ph.c_str(), io.c_str());
-    sprintf(line,"Number: %3d %5d %5d %5d %5d %5d    %13.6e  %13.6e  %8s  %8s\n", i+1, oi.n, oi.l, oi.j2, oi.tz2, e, spe, 0.0, ph.c_str(), io.c_str());
-    outfile << line;
+//    sprintf(line,"Number: %3d %5d %5d %5d %5d %5d    %13.6e  %13.6e  %8s  %8s\n", i+1, oi.n, oi.l, oi.j2, oi.tz2, e, spe, 0.0, ph.c_str(), io.c_str());
+    outfile << "Number: " << std::setw(3) << i+1    << " " << std::setw(5) << oi.n << " " << std::setw(5)  << oi.l << " " << std::setw(5) << oi.j2 << " "
+                          << std::setw(5) << oi.tz2 << " " << std::setw(5) << e << "    " << std::setw(13) << std::setprecision(6) << std::scientific << spe << "  "
+                          << std::setw(13) << std::setprecision(6) << std::scientific << 0.0 << "  " << std::setw(8) << ph.c_str() << "  " << std::setw(8) << io.c_str() << std::endl;
+//    outfile << line;
   }
 
 }
@@ -3898,7 +3901,7 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
    for ( auto& it : orb2nushell) nushell2orb[it.second] = it.first;
 
 
-   index_t Q = Op.GetQSpaceOrbit();
+   auto Q = Op.GetQSpaceOrbit();
    Orbit& oQ = modelspace->GetOrbit(Q);
 
    outfile << std::fixed << std::setprecision(pdouble);
@@ -3947,8 +3950,8 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
      for (auto& ibra: tbc.GetKetIndex_vv() )
      {
        Ket& bra = tbc.GetKet(ibra);
-       int a_ind = orb2nushell[bra.p];
-       int b_ind = orb2nushell[bra.q];
+       auto a_ind = orb2nushell[bra.p];
+       auto b_ind = orb2nushell[bra.q];
        for (auto& iket: tbc.GetKetIndex_vv() )
        {
          Ket& ket = tbc.GetKet(iket);
@@ -3956,7 +3959,7 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
          double me = matrix(ibra,iket) * EdmondsConventionFactor;
          if (std::abs(me) < 1e-7) continue;
          if (a_ind == b_ind) me /= SQRT2;  // We write out normalized matrix elements
-         int c_ind = orb2nushell[ket.p];
+         auto c_ind = orb2nushell[ket.p];
          outfile << std::setw(wint) << a_ind << " " << std::setw(wint) << b_ind << " " << std::setw(wint) << c_ind << "   "
                  << std::setw(wint) << tbc.J << "   " << std::setw(wdouble) << std::setprecision(pdouble) << me << std::endl;
          

@@ -226,6 +226,10 @@ int main(int argc, char** argv)
   if (fmt2 != "nushellx")  // Don't need to add kinetic energy if we read a shell model interaction
   {
     Hbare += imsrg_util::Trel_Op(modelspace);
+    if (Hbare.OneBody.has_nan())
+    {
+       std::cout << "  Looks like the Trel op is hosed from the get go." << std::endl;
+    }
   }
 
   if ( nucleon_mass_correction == "true" or nucleon_mass_correction == "True" )  

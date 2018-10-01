@@ -45,14 +45,18 @@ void IMSRGSolver::NewOmega()
   if ((rw != NULL) and (rw->GetScratchDir() !=""))
   {
     
-    char tmp[512];
-    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), n_omega_written);
-    std::string fname(tmp);
-    std::ofstream ofs(fname, std::ios::binary);
+//    char tmp[512];
+//    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), n_omega_written);
+//    std::string fname(tmp);
+//    std::ofstream ofs(fname, std::ios::binary);
+    std::ostringstream filename;
+    filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << n_omega_written;
+    std::ofstream ofs(filename.str(), std::ios::binary);
     Omega.back().WriteBinary(ofs);
     if (Omega.back().GetModelSpace() != Eta.GetModelSpace()) Omega.back() = Eta;
     n_omega_written++;
-    std::cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << std::endl;
+//    std::cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << std::endl;
+    std::cout << "Omega written to file " << filename.str() << "  written " << n_omega_written << " so far." << std::endl;
     if (n_omega_written > max_omega_written)
     {
       std::cout << "n_omega_written > max_omega_written.  (" << n_omega_written << " > " << max_omega_written
@@ -636,12 +640,14 @@ Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
   if ((rw != NULL) and rw->GetScratchDir() != "")
   {
     Operator omega(OpIn);
-    char tmp[512];
+//    char tmp[512];
     for (int i=n;i<n_omega_written;i++)
     {
-     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
-     std::string fname(tmp);
-     std::ifstream ifs(fname,std::ios::binary);
+ //    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+//     std::string fname(tmp);
+     std::ostringstream filename;
+     filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
+     std::ifstream ifs(filename.str(),std::ios::binary);
      omega.ReadBinary(ifs);
 //     if (OpIn.GetJRank()>0) cout << "step " << i << endl;
 //     OpOut = OpOut.BCH_Transform( omega );
@@ -669,12 +675,14 @@ Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
   if ((rw != NULL) and rw->GetScratchDir() != "")
   {
     Operator omega(OpIn);
-    char tmp[512];
+//    char tmp[512];
     for (int i=n;i<n_omega_written;i++)
     {
-     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
-     std::string fname(tmp);
-     std::ifstream ifs(fname,std::ios::binary);
+//     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+//     std::string fname(tmp);
+     std::ostringstream filename;
+     filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
+     std::ifstream ifs(filename.str(),std::ios::binary);
      omega.ReadBinary(ifs);
 //     OpOut = OpOut.BCH_Transform( omega );
      OpOut = Commutator::BCH_Transform( OpOut, omega );
@@ -706,14 +714,17 @@ void IMSRGSolver::CleanupScratch()
 {
   if (n_omega_written<=0) return;
   std::cout << "Cleaning up files written to scratch space" << std::endl;
-  char tmp[512];
+//  char tmp[512];
   for (int i=0;i<n_omega_written;i++)
   {
-    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
-    std::string fname(tmp);
-    if ( remove(tmp) !=0 )
+    std::ostringstream filename;
+    filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
+//    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+//    std::string fname(tmp);
+//    if ( remove(tmp) !=0 )
+    if ( remove(filename.str().c_str()) !=0 )
     {
-      std::cout << "Error when attempting to delete " << fname << std::endl;
+      std::cout << "Error when attempting to delete " << filename.str() << std::endl;
     }
   }
 }

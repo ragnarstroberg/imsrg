@@ -30,7 +30,7 @@
 //bool Operator::use_goose_tank_correction = false;
 //bool Operator::use_goose_tank_correction_titus = false;
 
-//IMSRGProfiler Operator::profiler;
+//IMSRGProfiler Operator::IMSRGProfiler::
 
 //Operator& Operator::TempOp(size_t n)
 //{
@@ -49,7 +49,7 @@
 //////////////////// DESTRUCTOR //////////////////////////////////////////
 Operator::~Operator()
 {
-  profiler.counter["N_Operators"] --;
+  IMSRGProfiler::counter["N_Operators"] --;
 }
 
 /////////////////// CONSTRUCTORS /////////////////////////////////////////
@@ -58,7 +58,7 @@ Operator::Operator()
     rank_J(0), rank_T(0), parity(0), particle_rank(2), legs(4), 
     hermitian(true), antihermitian(false), nChannels(0)
 {
-  profiler.counter["N_Operators"] ++;
+  IMSRGProfiler::counter["N_Operators"] ++;
 }
 
 
@@ -73,7 +73,7 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 {
   SetUpOneBodyChannels();
   if (particle_rank >=3) ThreeBody.Allocate();
-  profiler.counter["N_Operators"] ++;
+  IMSRGProfiler::counter["N_Operators"] ++;
 }
 
 Operator::Operator(ModelSpace& ms) :
@@ -85,7 +85,7 @@ Operator::Operator(ModelSpace& ms) :
     nChannels(ms.GetNumberTwoBodyChannels()), Q_space_orbit(-1)
 {
   SetUpOneBodyChannels();
-  profiler.counter["N_Operators"] ++;
+  IMSRGProfiler::counter["N_Operators"] ++;
 }
 
 Operator::Operator(const Operator& op)
@@ -96,7 +96,7 @@ Operator::Operator(const Operator& op)
   hermitian(op.hermitian), antihermitian(op.antihermitian),
   nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels), Q_space_orbit(op.Q_space_orbit)
 {
-  profiler.counter["N_Operators"] ++;
+  IMSRGProfiler::counter["N_Operators"] ++;
 }
 
 Operator::Operator(Operator&& op)
@@ -107,7 +107,7 @@ Operator::Operator(Operator&& op)
   hermitian(op.hermitian), antihermitian(op.antihermitian),
   nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels), Q_space_orbit(op.Q_space_orbit)
 {
-  profiler.counter["N_Operators"] ++;
+  IMSRGProfiler::counter["N_Operators"] ++;
 }
 
 
@@ -223,7 +223,7 @@ Operator Operator::operator-() const
 
 void Operator::SetUpOneBodyChannels()
 {
-  for ( int i=0; i<modelspace->GetNumberOrbits(); ++i )
+  for ( size_t i=0; i<modelspace->GetNumberOrbits(); ++i )
   {
     Orbit& oi = modelspace->GetOrbit(i);
     // The +-1 comes from the spin [LxS](J)
@@ -308,7 +308,7 @@ void Operator::WriteBinary(std::ofstream& ofs)
 //  if (particle_rank > 2)
   if (legs > 5)
     ThreeBody.WriteBinary(ofs);
-  profiler.timer["Write Binary Op"] += omp_get_wtime() - tstart;
+  IMSRGProfiler::timer["Write Binary Op"] += omp_get_wtime() - tstart;
 }
 
 
@@ -334,7 +334,7 @@ void Operator::ReadBinary(std::ifstream& ifs)
 //  if (particle_rank > 2)
   if (legs > 5)
     ThreeBody.ReadBinary(ifs);
-  profiler.timer["Read Binary Op"] += omp_get_wtime() - tstart;
+  IMSRGProfiler::timer["Read Binary Op"] += omp_get_wtime() - tstart;
 }
 
 
@@ -343,14 +343,14 @@ void Operator::ReadBinary(std::ifstream& ifs)
 
 ////////////////// MAIN INTERFACE METHODS //////////////////////////
 
-Operator Operator::DoNormalOrdering()
+Operator Operator::DoNormalOrdering() const
 {
    if (legs%2>0)
-      return DoNormalOrderingDagger();
+      return DoNormalOrderingDagger(+1);
    if (legs>5)
-      return DoNormalOrdering3();
+      return DoNormalOrdering3(+1);
    else
-      return DoNormalOrdering2();
+      return DoNormalOrdering2(+1);
 }
 
 //*************************************************************
@@ -358,7 +358,7 @@ Operator Operator::DoNormalOrdering()
 ///  set up for scalar or tensor operators, but
 ///  the tensor part hasn't been tested
 //*************************************************************
-Operator Operator::DoNormalOrdering2()
+Operator Operator::DoNormalOrdering2(int sign) const
 {
    Operator opNO(*this);
    bool scalar = (opNO.rank_J==0 and opNO.rank_T==0 and opNO.parity==0);
@@ -367,10 +367,10 @@ Operator Operator::DoNormalOrdering2()
      for (auto& k : modelspace->holes) // loop over hole orbits
      {
         Orbit& ok = modelspace->GetOrbit(k);
-        opNO.ZeroBody += (ok.j2+1) * ok.occ * OneBody(k,k);
+        opNO.ZeroBody += (ok.j2+1) * sign*ok.occ * OneBody(k,k);
      }
    }
-   std::cout << "OneBody contribution: " << opNO.ZeroBody << std::endl;
+//   std::cout << "OneBody contribution: " << opNO.ZeroBody << std::endl;
 
    index_t norbits = modelspace->GetNumberOrbits();
    if (TwoBody.Norm() > 1e-7)
@@ -393,6 +393,7 @@ Operator Operator::DoNormalOrdering2()
           arma::vec diagonals = matrix.diag();
           auto hh = tbc_ket.GetKetIndex_hh();
           auto hocc = tbc_ket.Ket_occ_hh;
+          // We have two occupations (na*nb), so if we're undoing the normal ordering the signs cancel out and we get no minus sign here.
           opNO.ZeroBody += arma::sum( hocc % diagonals.elem(hh) ) * hatfactor;
         }
   
@@ -412,7 +413,7 @@ Operator Operator::DoNormalOrdering2()
                 Orbit &oh = modelspace->GetOrbit(h);
                 if (opNO.rank_J==0)
                 {
-                   opNO.OneBody(a,b) += hatfactor /(2*ja+1.0) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+                   opNO.OneBody(a,b) += hatfactor /(2*ja+1.0) * sign*oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
                 }
                 else
                 {
@@ -422,7 +423,7 @@ Operator Operator::DoNormalOrdering2()
                    if ((ob.l + oh.l + tbc_ket.parity)%2 >0) continue;
                    if ((oa.tz2 + oh.tz2) != tbc_bra.Tz*2) continue;
                    if ((ob.tz2 + oh.tz2) != tbc_ket.Tz*2) continue;
-                   double ME = hatfactor  * oh.occ *modelspace->phase(ja+jh-J_ket-opNO.rank_J)
+                   double ME = hatfactor  * sign*oh.occ *modelspace->phase(ja+jh-J_ket-opNO.rank_J)
                                    * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
                    if (a>b)
                    {
@@ -459,7 +460,8 @@ Operator Operator::DoNormalOrdering2()
 ///   Right now, this is only set up for scalar operators, but I don't anticipate
 ///   handling 3body tensor operators in the near future.
 //*******************************************************************************
-Operator Operator::DoNormalOrdering3()
+//Operator Operator::DoNormalOrdering3()
+Operator Operator::DoNormalOrdering3(int sign) const
 {
    Operator opNO3 = Operator(*modelspace);
 //   #pragma omp parallel for
@@ -468,14 +470,14 @@ Operator Operator::DoNormalOrdering3()
       int ch = itmat.first[0]; // assume ch_bra = ch_ket for 3body...
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       arma::mat& Gamma = (arma::mat&) itmat.second;
-      for (int ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
+      for (size_t ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
       {
          Ket & bra = tbc.GetKet(ibra);
          int i = bra.p;
          int j = bra.q;
          Orbit & oi = modelspace->GetOrbit(i);
          Orbit & oj = modelspace->GetOrbit(j);
-         for (int iket=ibra; iket<tbc.GetNumberKets(); ++iket)
+         for (size_t iket=ibra; iket<tbc.GetNumberKets(); ++iket)
          {
             Ket & ket = tbc.GetKet(iket);
             int k = ket.p;
@@ -491,7 +493,7 @@ Operator Operator::DoNormalOrdering3()
                int kmax2 = 2*tbc.J+oa.j2;
                for (int K2=kmin2; K2<=kmax2; K2+=2)
                {
-                  Gamma(ibra,iket) += (K2+1) * oa.occ * ThreeBody.GetME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a); // This is unnormalized, but it should be normalized!!!!
+                  Gamma(ibra,iket) += (K2+1) * sign*oa.occ * ThreeBody.GetME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a); // This is unnormalized, but it should be normalized!!!!
                }
             }
             Gamma(ibra,iket) /= (2*tbc.J+1)* sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
@@ -499,12 +501,12 @@ Operator Operator::DoNormalOrdering3()
       }
    }
    opNO3.Symmetrize();
-   Operator opNO2 = opNO3.DoNormalOrdering2();
+   Operator opNO2 = opNO3.DoNormalOrdering2(sign);
    opNO2.ScaleZeroBody(1./3.);
    opNO2.ScaleOneBody(1./2.);
 
    // Also normal order the 1 and 2 body pieces
-   opNO2 += DoNormalOrdering2();
+   opNO2 += DoNormalOrdering2(sign);
    return opNO2;
 
 }
@@ -513,48 +515,40 @@ Operator Operator::DoNormalOrdering3()
 ///  The normal ordering is slightly different if the operator is a
 ///  dagger operator.
 ///
-Operator Operator::DoNormalOrderingDagger()
+Operator Operator::DoNormalOrderingDagger( int sign) const
 {
   Operator opNO(*this);
  
+  index_t Q = opNO.GetQSpaceOrbit();
+  Orbit& oQ = modelspace->GetOrbit(Q);
+//  double jQ = oQ.j2*0.5;
 
-   index_t norbits = modelspace->GetNumberOrbits();
+  for ( auto& itmat : TwoBody.MatEl )
+  {
+     int ch_bra = itmat.first[0];
+     int ch_ket = itmat.first[1];
+     
+     TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch_bra);
+     int J = tbc.J;
+     double hatfactor = 2*J+1.0;
 
-   index_t Q = opNO.GetQSpaceOrbit();
-   Orbit &oQ = modelspace->GetOrbit(Q);
-   double jQ = oQ.j2*0.5;
+     // One body part
 
+     for ( auto a : OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+     {
+        Orbit &oa = modelspace->GetOrbit(a);
+        double ja = oa.j2*0.5;
+        for (auto& h : modelspace->holes)  // C++11 syntax
+        {
+          Orbit& oh = modelspace->GetOrbit(h);
 
-   for ( auto& itmat : TwoBody.MatEl )
-   {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
-//      auto& matrix = itmat.second;
-      
-      TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch_bra);
-//      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-//      int J_bra = tbc_bra.J;
-      int J = tbc.J;
-      double hatfactor = 2*J+1.0;
-
-      // One body part
-
-//      for (index_t a=0;a<norbits;++a)
-      for ( auto a : OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
-      {
-         Orbit &oa = modelspace->GetOrbit(a);
-         double ja = oa.j2*0.5;
-            for (auto& h : modelspace->holes)  // C++11 syntax
-            {
-              Orbit& oh = modelspace->GetOrbit(h);
-
-              if (opNO.rank_J==0)
-              {
-                 opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
-              }
-            }
-      }
-   } // loop over channels
+          if (opNO.rank_J==0)
+          {
+             opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
+          }
+        }
+     }
+  } // loop over channels
 
   return opNO;
 
@@ -571,152 +565,154 @@ Operator Operator::UndoNormalOrdering() const
     return UndoNormalOrdering2();
   else
   {
-    std::cout << "WARNING: calling Operator::UndoNormalOrdering on a 3-body operator. Not yet implemented." << std::endl;
-    return UndoNormalOrdering2();
+    return UndoNormalOrdering3();
+//    std::cout << "WARNING: calling Operator::UndoNormalOrdering on a 3-body operator. Not yet implemented." << std::endl;
+//    return UndoNormalOrdering2();
   }
 }
 
 /// Convert to a basis normal ordered wrt the vacuum.
 /// This doesn't handle 3-body terms. In that case,
 /// the 2-body piece is unchanged.
-Operator Operator::UndoNormalOrdering2() const
-{
-   Operator opNO = *this;
-//   std::cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << std::endl;
-
-   if (opNO.GetJRank()==0 and opNO.GetTRank()==0 and opNO.GetParity()==0)
-   {
-     for (auto& k : modelspace->holes) // loop over hole orbits
-     {
-        Orbit& ok = modelspace->GetOrbit(k);
-        opNO.ZeroBody -= (ok.j2+1) * ok.occ * OneBody(k,k);
-     }
-   }
-
-   index_t norbits = modelspace->GetNumberOrbits();
-
-   for ( auto& itmat : TwoBody.MatEl )
-   {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
-      auto& matrix = itmat.second;
-      
-      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-      int J_bra = tbc_bra.J;
-      int J_ket = tbc_ket.J;
-      double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
-
-      // Zero body part
-      if (opNO.GetJRank()==0 and opNO.GetTRank()==0 and opNO.GetParity()==0)
-      {
-        arma::vec diagonals = matrix.diag();
-        auto hh = tbc_ket.GetKetIndex_hh();
-        auto hocc = tbc_ket.Ket_occ_hh;
-        opNO.ZeroBody +=  arma::sum( hocc % diagonals.elem(hh) ) *hatfactor;
-      }
-
-      // One body part
-      for (index_t a=0;a<norbits;++a)
-      {
-         Orbit &oa = modelspace->GetOrbit(a);
-         double ja = oa.j2*0.5;
-//         index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-           index_t bstart = (IsNonHermitian() or ch_bra!=ch_ket )? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
-         {
-            if (b < bstart) continue;
-            Orbit &ob = modelspace->GetOrbit(b);
-            double jb = ob.j2*0.5;
-            for (auto& h : modelspace->holes)  // C++11 syntax
-            {
-              Orbit& oh = modelspace->GetOrbit(h);
-
-              if (opNO.rank_J==0)
-              {
-                 opNO.OneBody(a,b) -= hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
-              }
-              else
-              {
-                 double jh = oh.j2*0.5;
-                 if ((ja+jh < J_bra) or (abs(ja-jh)>J_bra) or (jb+jh < J_ket) or (abs(jb-jh)>J_ket) ) continue;
-
-                 if ((oa.l + oh.l + tbc_bra.parity)%2 >0) continue;
-                 if ((ob.l + oh.l + tbc_ket.parity)%2 >0) continue;
-                 if ((oa.tz2 + oh.tz2) != tbc_bra.Tz*2) continue;
-                 if ((ob.tz2 + oh.tz2) != tbc_ket.Tz*2) continue;
-                 double ME = hatfactor  * oh.occ *modelspace->phase(ja+jh-J_ket-opNO.rank_J)
-                                             * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
-                 if (a>b)
-                 {
-                   int herm = IsHermitian() ? 1 : -1;
-                   opNO.OneBody(b,a) -= herm * modelspace->phase(ja-jb) * ME;
-                 }
-                 else
-                 {
-                   opNO.OneBody(a,b) -= ME;
-                 }
-
-              }
-            }
-
-         }
-      }
-   } // loop over channels
-
-   if (hermitian) opNO.Symmetrize();
-   if (antihermitian) opNO.AntiSymmetrize();
-
-   return opNO;
-
-}
-
-
-Operator Operator::UndoNormalOrderingDagger() const
-{
-   Operator opNO(*this);
-
-   index_t norbits = modelspace->GetNumberOrbits();
-
-   index_t Q = opNO.GetQSpaceOrbit();
-   Orbit &oQ = modelspace->GetOrbit(Q);
-   double jQ = oQ.j2*0.5;
-
-   for ( auto& itmat : TwoBody.MatEl )
-   {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
+//Operator Operator::UndoNormalOrdering2() const
+//{
+//   Operator opNO = *this;
+////   std::cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << std::endl;
+//
+//   if (opNO.GetJRank()==0 and opNO.GetTRank()==0 and opNO.GetParity()==0)
+//   {
+//     for (auto& k : modelspace->holes) // loop over hole orbits
+//     {
+//        Orbit& ok = modelspace->GetOrbit(k);
+//        opNO.ZeroBody -= (ok.j2+1) * ok.occ * OneBody(k,k);
+//     }
+//   }
+//
+//   index_t norbits = modelspace->GetNumberOrbits();
+//
+//   for ( auto& itmat : TwoBody.MatEl )
+//   {
+//      int ch_bra = itmat.first[0];
+//      int ch_ket = itmat.first[1];
 //      auto& matrix = itmat.second;
-      
-      TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch_bra);
+//      
+//      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
 //      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
 //      int J_bra = tbc_bra.J;
-      int J = tbc.J;
-      double hatfactor = 2*J+1.0;
-
-      // One body part
-
+//      int J_ket = tbc_ket.J;
+//      double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
+//
+//      // Zero body part
+//      if (opNO.GetJRank()==0 and opNO.GetTRank()==0 and opNO.GetParity()==0)
+//      {
+//        arma::vec diagonals = matrix.diag();
+//        auto hh = tbc_ket.GetKetIndex_hh();
+//        auto hocc = tbc_ket.Ket_occ_hh;
+//        opNO.ZeroBody +=  arma::sum( hocc % diagonals.elem(hh) ) *hatfactor;
+//      }
+//
+//
+//      // One body part
 //      for (index_t a=0;a<norbits;++a)
-      for ( auto a : OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
-      {
-         Orbit &oa = modelspace->GetOrbit(a);
-         double ja = oa.j2*0.5;
-            for (auto& h : modelspace->holes)  // C++11 syntax
-            {
-              Orbit& oh = modelspace->GetOrbit(h);
+//      {
+//         Orbit &oa = modelspace->GetOrbit(a);
+//         double ja = oa.j2*0.5;
+////         index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
+//           index_t bstart = (IsNonHermitian() or ch_bra!=ch_ket )? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
+//         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
+//         {
+//            if (b < bstart) continue;
+//            Orbit &ob = modelspace->GetOrbit(b);
+//            double jb = ob.j2*0.5;
+//            for (auto& h : modelspace->holes)  // C++11 syntax
+//            {
+//              Orbit& oh = modelspace->GetOrbit(h);
+//
+//              if (opNO.rank_J==0)
+//              {
+//                 opNO.OneBody(a,b) -= hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+//              }
+//              else
+//              {
+//                 double jh = oh.j2*0.5;
+//                 if ((ja+jh < J_bra) or (abs(ja-jh)>J_bra) or (jb+jh < J_ket) or (abs(jb-jh)>J_ket) ) continue;
+//
+//                 if ((oa.l + oh.l + tbc_bra.parity)%2 >0) continue;
+//                 if ((ob.l + oh.l + tbc_ket.parity)%2 >0) continue;
+//                 if ((oa.tz2 + oh.tz2) != tbc_bra.Tz*2) continue;
+//                 if ((ob.tz2 + oh.tz2) != tbc_ket.Tz*2) continue;
+//                 double ME = hatfactor  * oh.occ *modelspace->phase(ja+jh-J_ket-opNO.rank_J)
+//                                             * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
+//                 if (a>b)
+//                 {
+//                   int herm = IsHermitian() ? 1 : -1;
+//                   opNO.OneBody(b,a) -= herm * modelspace->phase(ja-jb) * ME;
+//                 }
+//                 else
+//                 {
+//                   opNO.OneBody(a,b) -= ME;
+//                 }
+//
+//              }
+//            }
+//
+//         }
+//      }
+//   } // loop over channels
+//
+//   if (hermitian) opNO.Symmetrize();
+//   if (antihermitian) opNO.AntiSymmetrize();
+//
+//   return opNO;
+//
+//}
 
-              if (opNO.rank_J==0)
-              {
-                 opNO.OneBody(a,Q) += hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
-              }
-            }
-      }
-   } // loop over channels
 
-
-  return opNO;
-
-}
+//Operator Operator::UndoNormalOrderingDagger() const
+//{
+//   Operator opNO(*this);
+//
+////   index_t norbits = modelspace->GetNumberOrbits();
+//
+//   index_t Q = opNO.GetQSpaceOrbit();
+//   Orbit &oQ = modelspace->GetOrbit(Q);
+////   double jQ = oQ.j2*0.5;
+//
+//   for ( auto& itmat : TwoBody.MatEl )
+//   {
+//      int ch_bra = itmat.first[0];
+//      int ch_ket = itmat.first[1];
+////      auto& matrix = itmat.second;
+//      
+//      TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch_bra);
+////      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
+////      int J_bra = tbc_bra.J;
+//      int J = tbc.J;
+//      double hatfactor = 2*J+1.0;
+//
+//      // One body part
+//
+////      for (index_t a=0;a<norbits;++a)
+//      for ( auto a : OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+//      {
+//         Orbit &oa = modelspace->GetOrbit(a);
+//         double ja = oa.j2*0.5;
+//            for (auto& h : modelspace->holes)  // C++11 syntax
+//            {
+//              Orbit& oh = modelspace->GetOrbit(h);
+//
+//              if (opNO.rank_J==0)
+//              {
+//                 opNO.OneBody(a,Q) += hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
+//              }
+//            }
+//      }
+//   } // loop over channels
+//
+//
+//  return opNO;
+//
+//}
 
 
 
@@ -825,10 +821,10 @@ void Operator::MakeReduced()
     std::cout << "Trying to reduce an operator with J rank = " << rank_J << ". Not good!!!" << std::endl;
     return;
   }
-  for ( int a=0;a<modelspace->GetNumberOrbits();++a )
+  for ( size_t a=0;a<modelspace->GetNumberOrbits();++a )
   {
     Orbit& oa = modelspace->GetOrbit(a);
-    for (int b : OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
+    for (size_t b : OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
     {
       if (b<a) continue;
       OneBody(a,b) *= sqrt(oa.j2+1);
@@ -849,10 +845,10 @@ void Operator::MakeNotReduced()
     std::cout << "Trying to un-reduce an operator with J rank = " << rank_J << ". Not good!!!" << std::endl;
     return;
   }
-  for ( int a=0;a<modelspace->GetNumberOrbits();++a )
+  for ( size_t a=0;a<modelspace->GetNumberOrbits();++a )
   {
     Orbit& oa = modelspace->GetOrbit(a);
-    for (int b : OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
+    for ( size_t b : OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
     {
       if (b<a) continue;
       OneBody(a,b) /= sqrt(oa.j2+1);
@@ -965,7 +961,7 @@ double Operator::GetMP2_Energy()
        }
      }
    }
-   profiler.timer["GetMP2_Energy"] += omp_get_wtime() - t_start;
+   IMSRGProfiler::timer["GetMP2_Energy"] += omp_get_wtime() - t_start;
    return Emp2;
 }
 
@@ -1110,7 +1106,7 @@ std::array<double,3> Operator::GetMP3_Energy()
    } // for i
 
 
-   profiler.timer["GetMP3_Energy"] += omp_get_wtime() - t_start;
+   IMSRGProfiler::timer["GetMP3_Energy"] += omp_get_wtime() - t_start;
 //   return Emp3;
    return {Epp,Ehh,Eph};
 }
@@ -1170,7 +1166,7 @@ double Operator::Norm() const
 double Operator::OneBodyNorm() const
 {
    double nrm = 0;
-   for ( int p=0; p<modelspace->GetNumberOrbits(); ++p)
+   for ( size_t p=0; p<modelspace->GetNumberOrbits(); ++p)
    {
      Orbit& op = modelspace->GetOrbit(p);
      for ( auto q : OneBodyChannels.at({op.l, op.j2, op.tz2}) )
@@ -1251,7 +1247,7 @@ double Operator::Trace(int Atrace, int Ztrace) const
       trace += OpVac.OneBody(i,i) * ( oi.j2 +1) * norm_n;
   }
 
-  for ( int ch=0; ch<modelspace->GetNumberTwoBodyChannels(); ++ch )
+  for ( size_t ch=0; ch<modelspace->GetNumberTwoBodyChannels(); ++ch )
   {
     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
     double trVijij = arma::trace( OpVac.TwoBody.GetMatrix(ch,ch) );
@@ -1263,7 +1259,7 @@ double Operator::Trace(int Atrace, int Ztrace) const
       default: std::cout << "AAAHHH blew the switch statement. tbc.Tz = " << tbc.Tz << std::endl;
     }
   }
-  profiler.timer["Operator::Trace"] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer["Operator::Trace"] += omp_get_wtime() - t_start;
   return trace;
 }
 
@@ -1285,14 +1281,14 @@ void Operator::ScaleFermiDirac(Operator& H, double T, double Efermi)
   for (auto itmat : TwoBody.MatEl )
   {
     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel( itmat.first[0] );
-    for (int ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
+    for (size_t ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
     {
       Ket& bra = tbc.GetKet(ibra);
       int i = bra.p;
       int j = bra.q;
       double ei = OneBody(i,i);
       double ej = OneBody(j,j);
-      for (int iket=0; iket<tbc.GetNumberKets(); ++iket)
+      for (size_t iket=0; iket<tbc.GetNumberKets(); ++iket)
       {
         Ket& ket = tbc.GetKet(iket);
         int k = ket.p;

@@ -62,9 +62,10 @@ class Operator
   int nChannels; ///< Number of two-body channels \f$ J,\pi,T_z \f$ associated with the model space
 
 
-  index_t Q_space_orbit; // Orbit with the same quantum numbers as this dagger operator. -1 if it's not a dagger operator. 
 
   std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
+  index_t Q_space_orbit; // Orbit with the same quantum numbers as this dagger operator. -1 if it's not a dagger operator. 
+
 //  static IMSRGProfiler profiler;
   IMSRGProfiler profiler;
 
@@ -152,13 +153,19 @@ class Operator
   void ReadBinary(std::ifstream& ifs);
 
 
-  Operator DoNormalOrdering(); ///< Calls DoNormalOrdering2() or DoNormalOrdering3(), depending on the rank of the operator.
-  Operator DoNormalOrdering2(); ///< Returns the normal ordered two-body operator
-  Operator DoNormalOrdering3(); ///< Returns the normal ordered three-body operator
-  Operator DoNormalOrderingDagger(); ///< Returns the normal ordered dagger operator
+  // Undoing normal ordering is equivalent to doing normal ordering with negative occupations.
+  // So the occupations na,nb etc are all multiplied by the sign passed to the methods.
+  Operator DoNormalOrdering() const; ///< Calls DoNormalOrdering2() or DoNormalOrdering3(), depending on the rank of the operator.
+  Operator DoNormalOrdering2(int sign=+1) const; ///< Returns the normal ordered two-body operator
+  Operator DoNormalOrdering3(int sign=+1) const; ///< Returns the normal ordered three-body operator
+  Operator DoNormalOrderingDagger(int sign=+1) const; ///< Returns the normal ordered dagger operator
   Operator UndoNormalOrdering() const; ///< Returns the operator normal-ordered wrt the vacuum
-  Operator UndoNormalOrdering2() const; ///< Returns the operator normal-ordered wrt the vacuum
-  Operator UndoNormalOrderingDagger() const; ///< Returns the operator normal-ordered wrt the vacuum
+//  Operator UndoNormalOrdering2() const; ///< Returns the operator normal-ordered wrt the vacuum
+  Operator UndoNormalOrdering2() const {return this->DoNormalOrdering2(-1);}; ///< Returns the operator normal-ordered wrt the vacuum
+  Operator UndoNormalOrdering3() const {return this->DoNormalOrdering3(-1);}; ///< Returns the operator normal-ordered wrt the vacuum
+//  Operator UndoNormalOrderingDagger() const; ///< Returns the operator normal-ordered wrt the vacuum
+  Operator UndoNormalOrderingDagger() const {return this->DoNormalOrderingDagger(-1);}; ///< Returns the operator normal-ordered wrt the vacuum
+
   Operator Truncate(ModelSpace& ms_new); ///< Returns the operator trunacted to the new model space
 
 
