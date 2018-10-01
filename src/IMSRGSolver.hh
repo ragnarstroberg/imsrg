@@ -60,6 +60,7 @@ class IMSRGSolver
   int n_omega_written;
   int max_omega_written;
   bool magnus_adaptive;
+  bool hunter_gatherer;
 
 
 
@@ -67,6 +68,7 @@ class IMSRGSolver
   IMSRGSolver();
   IMSRGSolver( Operator& H_in);
   void NewOmega();
+  void GatherOmega(); // hunter-gatherer mode of updating omega
   void SetHin( Operator& H_in);
   void SetReadWrite( ReadWrite& r){rw = &r;};
   void Reset();
@@ -97,7 +99,8 @@ class IMSRGSolver
   void SetOmegaNormMax(double x){omega_norm_max = x;};
   void SetODETolerance(float x){ode_e_abs=x;ode_e_rel=x;};
   void SetEtaCriterion(float x){eta_criterion = x;};
-  void SetMagnusAdaptive(bool b){magnus_adaptive = b;};
+  void SetMagnusAdaptive(bool b=true){magnus_adaptive = b;};
+  void SetHunterGatherer(bool b=true){hunter_gatherer = b;};
 
   int GetSystemDimension();
   Operator& GetH_s(){return FlowingOps[0];};

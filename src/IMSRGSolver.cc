@@ -16,7 +16,7 @@ IMSRGSolver::~IMSRGSolver()
 IMSRGSolver::IMSRGSolver()
     : rw(NULL),s(0),ds(0.1),ds_max(0.5),
      norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),
-     flowfile(""), n_omega_written(0),max_omega_written(50),magnus_adaptive(true)
+     flowfile(""), n_omega_written(0),max_omega_written(50),magnus_adaptive(true),hunter_gatherer(false)
      ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {}
 
@@ -25,7 +25,7 @@ IMSRGSolver::IMSRGSolver( Operator &H_in)
    : modelspace(H_in.GetModelSpace()),rw(NULL), H_0(&H_in), FlowingOps(1,H_in), Eta(H_in), 
     istep(0), s(0),ds(0.1),ds_max(0.5),
     smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),
-    flowfile(""), n_omega_written(0),max_omega_written(50),magnus_adaptive(true)
+    flowfile(""), n_omega_written(0),max_omega_written(50),magnus_adaptive(true),hunter_gatherer(false)
     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {
    Eta.Erase();
@@ -45,14 +45,18 @@ void IMSRGSolver::NewOmega()
   if ((rw != NULL) and (rw->GetScratchDir() !=""))
   {
     
-    char tmp[512];
-    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), n_omega_written);
-    std::string fname(tmp);
-    std::ofstream ofs(fname, std::ios::binary);
+//    char tmp[512];
+//    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), n_omega_written);
+//    std::string fname(tmp);
+//    std::ofstream ofs(fname, std::ios::binary);
+    std::ostringstream filename;
+    filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << n_omega_written;
+    std::ofstream ofs(filename.str(), std::ios::binary);
     Omega.back().WriteBinary(ofs);
     if (Omega.back().GetModelSpace() != Eta.GetModelSpace()) Omega.back() = Eta;
     n_omega_written++;
-    std::cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << std::endl;
+//    std::cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << std::endl;
+    std::cout << "Omega written to file " << filename.str() << "  written " << n_omega_written << " so far." << std::endl;
     if (n_omega_written > max_omega_written)
     {
       std::cout << "n_omega_written > max_omega_written.  (" << n_omega_written << " > " << max_omega_written
@@ -68,6 +72,45 @@ void IMSRGSolver::NewOmega()
   Omega.back().Erase();
 
 }
+
+
+// Use a hunter-gatherer approach to finding Omega.
+// We only store two Omega operators, the "hunter" and the "gatherer".
+// The hunter is updated by the generator eta with the BCH formula
+// exp[Omega_h(s+ds)] = exp[eta(s)]*exp[Omega_h(s)]
+// When the norm of the hunter gets to a threshold set by omega_norm_max,
+// we gather it, also using the BCH formula
+// exp[Omega_g] = exp[Omega_h] * exp[Omega_g].
+// We then clear out the hunter, and update H(s) according to the gathered Omega.
+// And we continue hunting, using H(s) = exp[Omega_g] H(0) exp[-Omega_g] as our starting point.
+// This is essentially a compromise between the "split" and "no split" approaches, combining
+// the advantages of both. As we hunt, we have a relatively small Omega, so we don't need to
+// evaluate as many nested commutators, but in the end we have just one Omega so that if
+// we want to transform some operator we don't need to do a bunch of transformations.
+void IMSRGSolver::GatherOmega()
+{
+  std::cout << "gathering Omega. "  << std::endl;
+  if (Omega.size()<2)
+  {
+    auto& last = Omega.back();
+    Omega.emplace_back( last );
+  }
+  // the last omega in the list is the hunter. the one just preceeding it is the gatherer.
+  auto& hunter = Omega.back();
+  auto& gatherer = Omega[ Omega.size()-2];
+  if ( hunter.Norm() > 1e-6 )
+  {
+    gatherer = Commutator::BCH_Product( hunter, gatherer);
+  }
+  hunter.Erase();
+  H_saved = *H_0;
+  for (size_t i=0; i<Omega.size()-1; i++)
+  {
+    H_saved = Commutator::BCH_Transform( H_saved, Omega[i] );
+  }
+}
+
+
 
 void IMSRGSolver::SetHin( Operator & H_in)
 {
@@ -159,6 +202,7 @@ void IMSRGSolver::UpdateEta()
    generator.Update(&FlowingOps[0],&Eta);
 }
 
+
 void IMSRGSolver::Solve_magnus_euler()
 {
    istep = 0;
@@ -184,7 +228,14 @@ void IMSRGSolver::Solve_magnus_euler()
       double norm_omega = Omega.back().Norm();
       if (norm_omega > omega_norm_max)
       {
-        NewOmega();
+        if (hunter_gatherer)
+        {
+          GatherOmega();
+        }
+        else
+        {
+          NewOmega();
+        }
         norm_omega = 0;
       }
       // ds should never be more than 1, as this is over-rotating
@@ -589,12 +640,14 @@ Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
   if ((rw != NULL) and rw->GetScratchDir() != "")
   {
     Operator omega(OpIn);
-    char tmp[512];
+//    char tmp[512];
     for (int i=n;i<n_omega_written;i++)
     {
-     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
-     std::string fname(tmp);
-     std::ifstream ifs(fname,std::ios::binary);
+ //    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+//     std::string fname(tmp);
+     std::ostringstream filename;
+     filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
+     std::ifstream ifs(filename.str(),std::ios::binary);
      omega.ReadBinary(ifs);
 //     if (OpIn.GetJRank()>0) cout << "step " << i << endl;
 //     OpOut = OpOut.BCH_Transform( omega );
@@ -622,12 +675,14 @@ Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
   if ((rw != NULL) and rw->GetScratchDir() != "")
   {
     Operator omega(OpIn);
-    char tmp[512];
+//    char tmp[512];
     for (int i=n;i<n_omega_written;i++)
     {
-     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
-     std::string fname(tmp);
-     std::ifstream ifs(fname,std::ios::binary);
+//     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+//     std::string fname(tmp);
+     std::ostringstream filename;
+     filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
+     std::ifstream ifs(filename.str(),std::ios::binary);
      omega.ReadBinary(ifs);
 //     OpOut = OpOut.BCH_Transform( omega );
      OpOut = Commutator::BCH_Transform( OpOut, omega );
@@ -659,14 +714,17 @@ void IMSRGSolver::CleanupScratch()
 {
   if (n_omega_written<=0) return;
   std::cout << "Cleaning up files written to scratch space" << std::endl;
-  char tmp[512];
+//  char tmp[512];
   for (int i=0;i<n_omega_written;i++)
   {
-    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
-    std::string fname(tmp);
-    if ( remove(tmp) !=0 )
+    std::ostringstream filename;
+    filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
+//    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
+//    std::string fname(tmp);
+//    if ( remove(tmp) !=0 )
+    if ( remove(filename.str().c_str()) !=0 )
     {
-      std::cout << "Error when attempting to delete " << fname << std::endl;
+      std::cout << "Error when attempting to delete " << filename.str() << std::endl;
     }
   }
 }

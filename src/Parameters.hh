@@ -74,6 +74,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"goose_tank",		"false"},	// do goose_tank correction to commutators
   {"write_omega",		"false"},	// write omega to disk
   {"nucleon_mass_correction",	"false"},	// include effect of proton-neutron mass splitting
+  {"hunter_gatherer",	        "false"},	// use hunter-gatherer approach to splitting omega
 };
 
 

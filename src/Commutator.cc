@@ -39,10 +39,10 @@ void SetUseGooseTank(bool tf)
 /// Returns \f$ Z = [X,Y] \f$
 Operator Commutator( const Operator& X, const Operator& Y)
 {
-  int jrank = std::max(X.rank_J,Y.rank_J);
-  int trank = std::max(X.rank_T,Y.rank_T);
-  int parity = (X.parity+Y.parity)%2;
-  int particlerank = std::max(X.particle_rank,Y.particle_rank);
+//  int jrank = std::max(X.rank_J,Y.rank_J);
+//  int trank = std::max(X.rank_T,Y.rank_T);
+//  int parity = (X.parity+Y.parity)%2;
+//  int particlerank = std::max(X.particle_rank,Y.particle_rank);
   int xrank = X.rank_J + X.rank_T + X.parity;
   int yrank = Y.rank_J + Y.rank_T + Y.parity;
   int xlegs = X.GetNumberLegs();
@@ -731,7 +731,7 @@ void comm122ss( const Operator& X, const Operator& Y, Operator& Z )
          std::vector<double> factor_ia,factor_ja;
          for (int a : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
          {
-            int ind2 = tbc.GetLocalIndex( std::min(a,j), std::max(a,j) );
+            size_t ind2 = tbc.GetLocalIndex( std::min(a,j), std::max(a,j) );
             if (ind2<0 or ind2>=tbc.GetNumberKets()) continue;
             ind1_ia.push_back(a);
             ind2_aj.push_back(ind2);
@@ -741,7 +741,7 @@ void comm122ss( const Operator& X, const Operator& Y, Operator& Z )
          {
            for (int a : Z.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
            {
-              int ind2 = tbc.GetLocalIndex( std::min(a,i), std::max(a,i) );
+              size_t ind2 = tbc.GetLocalIndex( std::min(a,i), std::max(a,i) );
               if (ind2<0 or ind2>=tbc.GetNumberKets()) continue;
               ind1_ja.push_back(a);
               ind2_ai.push_back(ind2);
@@ -1405,13 +1405,13 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
 
    // Construct the intermediate matrix Z_bar
    const auto& pandya_lookup = Z.modelspace->GetPandyaLookup(Z.GetJRank(), Z.GetTRank(), Z.GetParity());
-   int nch = Z.modelspace->SortedTwoBodyChannels_CC.size();
+   size_t nch = Z.modelspace->SortedTwoBodyChannels_CC.size();
    t_start = omp_get_wtime();
    std::deque<arma::mat> Z_bar ( Z.nChannels );
    std::vector<bool> lookup_empty(Z.nChannels,true);
-   for (int ich=0;ich<nch;++ich)
+   for (size_t ich=0;ich<nch;++ich)
    {
-      int ch = Z.modelspace->SortedTwoBodyChannels_CC[ich];
+      size_t ch = Z.modelspace->SortedTwoBodyChannels_CC[ich];
       index_t nKets_cc = Z.modelspace->GetTwoBodyChannel_CC(ch).GetNumberKets();
       Z_bar[ch].zeros( nKets_cc, 2*nKets_cc );
       if ( pandya_lookup.at({ch,ch})[0].size()>0 ) lookup_empty[ich] = false;
@@ -1422,13 +1422,13 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
 //   #pragma omp parallel for schedule(dynamic,1)
    #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar_transform_first_pass)
    #endif
-   for (int ich=0; ich<nch; ++ich )
+   for (size_t ich=0; ich<nch; ++ich )
    {
       if (lookup_empty.at(ich)) continue;
-      int ch = Z.modelspace->SortedTwoBodyChannels_CC.at(ich);
+      size_t ch = Z.modelspace->SortedTwoBodyChannels_CC.at(ich);
       const TwoBodyChannel& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch);
       index_t nKets_cc = tbc_cc.GetNumberKets();
-      int nph_kets = tbc_cc.GetKetIndex_hh().size() + tbc_cc.GetKetIndex_ph().size();
+      size_t nph_kets = tbc_cc.GetKetIndex_hh().size() + tbc_cc.GetKetIndex_ph().size();
 
       arma::mat Y_bar_ph;
       arma::mat Xt_bar_ph;
@@ -2152,7 +2152,8 @@ void DoTensorPandyaTransformation_SingleChannel( const Operator& Z, arma::mat& M
 
 // Take Pandya-transformed matrix Zbar for a single channel, invert the Pandya transformation and add the result to the current operator.
 //void Operator::AddInverseTensorPandyaTransformation_SingleChannel(arma::mat& Zbar, int ch_bra_cc, int ch_ket_cc)
-void AddInverseTensorPandyaTransformation_SingleChannel(Operator& Z, arma::mat& Zbar, int ch_bra_cc, int ch_ket_cc)
+//void AddInverseTensorPandyaTransformation_SingleChannel(Operator& Z, arma::mat& Zbar, int ch_bra_cc, int ch_ket_cc)
+void AddInverseTensorPandyaTransformation_SingleChannel(Operator& Z, arma::mat& Zbar, size_t ch_bra_cc, size_t ch_ket_cc)
 {
     // Do the inverse Pandya transform
    if (ch_bra_cc > ch_ket_cc)  // hopefully this won't happen
@@ -2161,7 +2162,7 @@ void AddInverseTensorPandyaTransformation_SingleChannel(Operator& Z, arma::mat& 
       std::cout << " Skipping this channel." << std::endl;
       return;
    }
-   int n_channels_kept = 0;
+//   int n_channels_kept = 0;
    const auto& pandya_lookup = Z.modelspace->GetPandyaLookup(Z.GetJRank(), Z.GetTRank(),Z.GetParity())[{ch_bra_cc,ch_ket_cc}];
    int Lambda = Z.rank_J;
    int hZ = Z.IsHermitian() ? 1 : -1;
@@ -2187,7 +2188,7 @@ void AddInverseTensorPandyaTransformation_SingleChannel(Operator& Z, arma::mat& 
       int nBras = tbc_bra.GetNumberKets();
       int nKets = tbc_ket.GetNumberKets();
       arma::mat& Zijkl = Z.TwoBody.GetMatrix(ch_bra,ch_ket);
-      bool inner_loop = false;
+//      bool inner_loop = false;
 
       double hatfactor = sqrt( (2*J1+1)*(2*J2+1)*(2*J3+1)*(2*J4+1) );
 
@@ -2233,7 +2234,7 @@ void AddInverseTensorPandyaTransformation_SingleChannel(Operator& Z, arma::mat& 
                if (i<=l) tbme = Zbar( indx_il ,indx_kj+(k>j?nkets_cc:0) );
                else      tbme = Zbar( indx_il ,indx_kj+(k>j?0:nkets_cc) ) * hZ * Z.modelspace->phase(J3-J4 + ji+jj+jk+jl);
                commij += hatfactor * Z.modelspace->phase(jj+jl+J2+J4) * ninej * tbme ;
-               inner_loop = true;
+//               inner_loop = true;
             }
 
             if (  (ch_bra_cc != ch_ket_cc)  and ((oi.l+ol.l)%2==parity_ket_cc)           and ((ok.l+oj.l)%2==parity_bra_cc)
@@ -2250,7 +2251,7 @@ void AddInverseTensorPandyaTransformation_SingleChannel(Operator& Z, arma::mat& 
                  else     tbme = Zbar(indx_kj, indx_il+(i>l?0:nkets_cc) ) * Z.modelspace->phase( ji+jj+jk+jl) ; // Z_ilkj = Z_kjil * (phase)
 
                  commij += hatfactor * Z.modelspace->phase(jj+jl+J2+J3) * ninej * tbme ;
-               inner_loop = true;
+//               inner_loop = true;
               }
 
 
@@ -2276,7 +2277,7 @@ void AddInverseTensorPandyaTransformation_SingleChannel(Operator& Z, arma::mat& 
                 if (j<=l) tbme = Zbar( indx_jl ,indx_ki+(k>i?nkets_cc:0) );
                 else      tbme = Zbar( indx_jl ,indx_ki+(k>i?0:nkets_cc) ) * hZ * Z.modelspace->phase(J3-J4 + ji+jj+jk+jl);
                 commji += hatfactor * Z.modelspace->phase(ji+jl+J2+J4) * ninej * tbme ;
-               inner_loop = true;
+//               inner_loop = true;
               }
               if ( (ch_bra_cc!=ch_ket_cc) and ((oj.l+ol.l)%2==parity_ket_cc) and ((ok.l+oi.l)%2==parity_bra_cc)
                                        and (std::abs(oj.tz2+ol.tz2)==2*Tz_ket_cc) and (std::abs(ok.tz2+oi.tz2)==2*Tz_bra_cc)
@@ -2290,7 +2291,7 @@ void AddInverseTensorPandyaTransformation_SingleChannel(Operator& Z, arma::mat& 
                 if(k<=i) tbme = Zbar(indx_ki, indx_jl+(j>l?nkets_cc:0) ) * hZ * Z.modelspace->phase(J3-J4); // Z_ilkj = Z_kjil * (phase)
                 else     tbme = Zbar(indx_ki, indx_jl+(j>l?0:nkets_cc) ) * Z.modelspace->phase( ji+jj+jk+jl) ; // Z_ilkj = Z_kjil * (phase)
                 commji += hatfactor * Z.modelspace->phase(ji+jl+J2+J3) * ninej * tbme ;
-               inner_loop = true;
+//               inner_loop = true;
               }
             }
 
@@ -2577,7 +2578,8 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
      for (auto ich_ket : Z.modelspace->SortedTwoBodyChannels_CC)
      {
        if (ich_bra>ich_ket) continue;
-       if (pandya_lookup.at({(int)ich_bra,(int)ich_ket})[0].size()<1) continue;
+//       if (pandya_lookup.at({(int)ich_bra,(int)ich_ket})[0].size()<1) continue;
+       if (pandya_lookup.at({ich_bra,ich_ket})[0].size()<1) continue;
          int n_cols = 2*Z.modelspace->GetTwoBodyChannel_CC(ich_ket).GetNumberKets();
          ybras.push_back(ich_bra);
          ykets.push_back(ich_ket);
@@ -2599,7 +2601,8 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
    {
       index_t ch_bra_cc = ybras[i];
       index_t ch_ket_cc = ykets[i];
-      const auto plookup = pandya_lookup.find({(int)ch_bra_cc,(int)ch_ket_cc});
+//      const auto plookup = pandya_lookup.find({(int)ch_bra_cc,(int)ch_ket_cc});
+      const auto plookup = pandya_lookup.find({ch_bra_cc,ch_ket_cc});
       if ( plookup == pandya_lookup.end() or plookup->second[0].size()<1 )
       {
        continue;
@@ -3215,13 +3218,13 @@ void comm433sd_ph( const Operator& X, const Operator& Y, Operator& Z)
 
    // Construct the intermediate matrix Z_bar
    const auto& pandya_lookup = Z.modelspace->GetPandyaLookup( Z.GetJRank(), Z.GetTRank(), Z.GetParity() );
-   int nch = Z.modelspace->SortedTwoBodyChannels_CC.size();
+   size_t nch = Z.modelspace->SortedTwoBodyChannels_CC.size();
    t_start = omp_get_wtime();
    std::deque<arma::mat> Z_bar (Z.nChannels );
    std::vector<bool> lookup_empty(Z.nChannels,true);
-   for (int ich=0;ich<nch;++ich)
+   for (size_t ich=0;ich<nch;++ich)
    {
-      int ch = Z.modelspace->SortedTwoBodyChannels_CC[ich];
+      size_t ch = Z.modelspace->SortedTwoBodyChannels_CC[ich];
       index_t nKets_cc = Z.modelspace->GetTwoBodyChannel_CC(ch).GetNumberKets();
       Z_bar[ch].zeros( nKets_cc, 2*nKets_cc );
       if ( pandya_lookup.at({ch,ch})[0].size()>0 ) lookup_empty[ich] = false;
@@ -3231,13 +3234,13 @@ void comm433sd_ph( const Operator& X, const Operator& Y, Operator& Z)
    #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar_transform_first_pass)
    #endif
-   for (int ich=0; ich<nch; ++ich )
+   for (size_t ich=0; ich<nch; ++ich )
    {
       if (lookup_empty.at(ich)) continue;
-      int ch = Z.modelspace->SortedTwoBodyChannels_CC.at(ich);
+      size_t ch = Z.modelspace->SortedTwoBodyChannels_CC.at(ich);
       const TwoBodyChannel& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch);
       index_t nKets_cc = tbc_cc.GetNumberKets();
-      int nph_kets = tbc_cc.GetKetIndex_hh().size() + tbc_cc.GetKetIndex_ph().size();
+      size_t nph_kets = tbc_cc.GetKetIndex_hh().size() + tbc_cc.GetKetIndex_ph().size();
 
       arma::mat Y_bar_ph;
       arma::mat Xt_bar_ph;

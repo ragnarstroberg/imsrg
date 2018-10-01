@@ -124,7 +124,7 @@ void Generator::ConstructGenerator_Wegner()
       }
    }
 
-   for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
+   for (size_t ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
    {  // Note, should also decouple the v and q spaces
       // This is wrong. The projection operator should be different.
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);

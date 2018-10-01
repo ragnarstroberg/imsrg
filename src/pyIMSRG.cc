@@ -280,6 +280,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetH_s",&IMSRGSolver::GetH_s)
       .def("SetMagnusAdaptive",&IMSRGSolver::SetMagnusAdaptive)
       .def("SetReadWrite", &IMSRGSolver::SetReadWrite)
+      .def("SetHunterGatherer", &IMSRGSolver::SetHunterGatherer)
       .def_readwrite("Eta", &IMSRGSolver::Eta)
    ;
 

@@ -781,7 +781,7 @@ Operator HartreeFock::GetOmega()
 
 void HartreeFock::PrintSPE()
 {
-  for (int i=0;i<modelspace->GetNumberOrbits();++i)
+  for (size_t i=0;i<modelspace->GetNumberOrbits();++i)
   {
     Orbit& oi = modelspace->GetOrbit(i);
     std::cout << std::fixed << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "

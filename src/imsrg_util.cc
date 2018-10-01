@@ -284,6 +284,25 @@ double HO_Radial_psi(int n, int l, double hw, double r)
      return dens;
  }
 
+
+ void WriteSPWaveFunctions( std::vector<std::string>& spwf, HartreeFock& hf, std::string intfile )
+ {
+   int n_radial_points = 200;
+   double Rmax = 20.0;
+   std::vector<index_t> spwf_indices = hf.modelspace->String2Index(spwf);
+   std::vector<double> R(n_radial_points);
+   std::vector<double> PSI(n_radial_points);
+   for (int rstep=0;rstep<n_radial_points;++rstep)   R[rstep] = Rmax/n_radial_points * rstep;
+   for ( index_t i=0; i< spwf.size(); ++i)
+   {
+     hf.GetRadialWF(spwf_indices[i], R, PSI);
+     std::ofstream wf_file (intfile + "_spwf_" + spwf[i] + ".dat");
+     for ( index_t rstep=0; rstep<R.size(); ++rstep)  wf_file << std::fixed << std::setw(10) << std::setprecision(7) << R[rstep] << "   " << std::setw(10) << std::setprecision(7) << PSI[rstep] << std::endl;
+     wf_file.close();
+   }
+ }
+
+
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace)
  {
     Operator DM(modelspace,0,0,0,2);
@@ -1242,23 +1261,24 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
      if (std::abs(tbc.Tz) == 1)
      {
         TB.diag().fill(0.5); // pp,nn TBME's
-        for (int ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
-        {
-           Ket& bra = tbc.GetKet(ibra);
-           if (bra.p == bra.q)
-           {
-             TB(ibra,ibra) /= 2.;
-           }
-        }
+         // I managed to confuse myself.  t_{pp'pp'} should give 2 t1*t2. This gives reasonable results in nushellx.
+//        for (int ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
+//        {
+//           Ket& bra = tbc.GetKet(ibra);
+//           if (bra.p == bra.q)
+//           {
+//             TB(ibra,ibra) /= 2.;
+//           }
+//        }
      }
      else if (tbc.Tz == 0)
      {
-        for (int ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
+        for (size_t ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
         {
            Ket& bra = tbc.GetKet(ibra);
            Orbit& oa = modelspace.GetOrbit(bra.p);
            Orbit& ob = modelspace.GetOrbit(bra.q);
-           for (int iket=ibra;iket<tbc.GetNumberKets(); ++iket)
+           for (size_t iket=ibra;iket<tbc.GetNumberKets(); ++iket)
            {
              Ket& ket = tbc.GetKet(iket);
              Orbit& oc = modelspace.GetOrbit(ket.p);
@@ -1434,7 +1454,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
       if (tbc_bra.Tz>=0) continue;
       int Jab = tbc_bra.J;
       int Jcd = tbc_ket.J;
-      for (int ibra=0; ibra<tbc_bra.GetNumberKets(); ++ibra)
+      for (size_t ibra=0; ibra<tbc_bra.GetNumberKets(); ++ibra)
       {
        Ket& bra = tbc_bra.GetKet(ibra);
        int na = bra.op->n;
@@ -1444,7 +1464,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
        int lb = bra.oq->l;
        double jb = bra.oq->j2*0.5;
        int rho_ab = 2*na+2*nb+la+lb;
-       for (int iket=0; iket<tbc_ket.GetNumberKets(); ++iket)
+       for (size_t iket=0; iket<tbc_ket.GetNumberKets(); ++iket)
        {
         Ket& ket = tbc_bra.GetKet(ibra);
         int nc = ket.op->n;
@@ -1637,13 +1657,13 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
  {
    Operator Sig(modelspace,1,0,0,2);
    Sig.SetHermitian();
-   int norbits = modelspace.GetNumberOrbits();
-   for (int i=0; i<norbits; ++i)
+   size_t norbits = modelspace.GetNumberOrbits();
+   for (size_t i=0; i<norbits; ++i)
    {
      Orbit& oi = modelspace.GetOrbit(i);
       if (pn=="proton" and oi.tz2>0) continue;
       if (pn=="neutron" and oi.tz2<0) continue;
-      for (int j : Sig.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
+      for (auto j : Sig.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
       {
         Orbit& oj = modelspace.GetOrbit(j);
         if ((oi.n!=oj.n) or (oi.l != oj.l) or (oi.tz2!=oj.tz2)) continue;
@@ -1658,11 +1678,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
   void Reduce(Operator& X)
   {
     ModelSpace* modelspace = X.GetModelSpace();
-    int norbits = modelspace->GetNumberOrbits();
-    for (int i=0; i<norbits; ++i)
+    size_t norbits = modelspace->GetNumberOrbits();
+    for (size_t i=0; i<norbits; ++i)
     {
       Orbit& oi = modelspace->GetOrbit(i);
-      for ( int j : X.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      for ( auto j : X.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
       {
          X.OneBody(i,j) *= sqrt(oi.j2+1.);
       }
@@ -1670,7 +1690,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
 
     for ( auto& itmat : X.TwoBody.MatEl )
     {
-      int ch_bra = itmat.first[0];
+      size_t ch_bra = itmat.first[0];
       int J = modelspace->GetTwoBodyChannel(ch_bra).J;
       itmat.second *= sqrt(2*J+1.);
     }
@@ -1679,11 +1699,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
   void UnReduce(Operator& X)
   {
     ModelSpace* modelspace = X.GetModelSpace();
-    int norbits = modelspace->GetNumberOrbits();
-    for (int i=0; i<norbits; ++i)
+    size_t norbits = modelspace->GetNumberOrbits();
+    for (size_t i=0; i<norbits; ++i)
     {
       Orbit& oi = modelspace->GetOrbit(i);
-      for ( int j : X.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      for ( auto j : X.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
       {
          X.OneBody(i,j) /= sqrt(oi.j2+1.);
       }
@@ -1691,7 +1711,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
 
     for ( auto& itmat : X.TwoBody.MatEl )
     {
-      int ch_bra = itmat.first[0];
+      size_t ch_bra = itmat.first[0];
       int J = modelspace->GetTwoBodyChannel(ch_bra).J;
       itmat.second /= sqrt(2*J+1.);
     }
@@ -1703,9 +1723,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
   {
     ModelSpace* modelspace = OpIn.GetModelSpace();
     OpLow = OpIn;
-    int norbits = modelspace->GetNumberOrbits();
-    int ncut = 0;
-    for (int i=0; i<norbits; ++i)
+    size_t norbits = modelspace->GetNumberOrbits();
+    size_t ncut = 0;
+    for (size_t i=0; i<norbits; ++i)
     {
       Orbit& oi = modelspace->GetOrbit(i);
       if ( (2*oi.n + oi.l) > ecut)
@@ -1715,9 +1735,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
       }
     }
 
-    for (int i=ncut; i<norbits; ++i)
+    for (size_t i=ncut; i<norbits; ++i)
     {
-      for (int j=0; j<norbits; ++j)
+      for (size_t j=0; j<norbits; ++j)
       {
          OpLow.OneBody(i,j) = 0;
          OpLow.OneBody(j,i) = 0;
@@ -1727,11 +1747,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
     for (auto& itmat : OpLow.TwoBody.MatEl)
     {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel( itmat.first[0] );
-      int nkets = tbc.GetNumberKets();
-      for (int ibra=0;ibra<nkets;++ibra)
+      size_t nkets = tbc.GetNumberKets();
+      for (size_t ibra=0;ibra<nkets;++ibra)
       {
        Ket& bra = tbc.GetKet(ibra);
-       for (int iket=ibra;iket<nkets;++iket)
+       for (size_t iket=ibra;iket<nkets;++iket)
        {
          Ket& ket = tbc.GetKet(iket);
          if ( bra.p>ncut or bra.q>ncut or ket.p>ncut or ket.q>ncut)
@@ -1818,9 +1838,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
    int nchan = modelspace.GetNumberTwoBodyChannels();
 
    // temporarily store <i||Q||j> in the one body part.
-   for (int i=0;i<modelspace.GetNumberOrbits();i++)
+   for (size_t i=0;i<modelspace.GetNumberOrbits();i++)
    {
-     for (int j=0;j<=i;j++)
+     for (size_t j=0;j<=i;j++)
      {
        Orbit & oi = modelspace.GetOrbit(i);
        Orbit & oj = modelspace.GetOrbit(j);
@@ -2594,7 +2614,7 @@ std::cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<std::endl;
    double eupper = 0;
    std::vector<index_t> index_lower;
    std::vector<index_t> index_upper;
-   for (int i=0; i<modelspace->GetNumberOrbits(); ++i)
+   for (size_t i=0; i<modelspace->GetNumberOrbits(); ++i)
    {
      Orbit& oi = modelspace->GetOrbit(i);
      int N = 2*oi.n + oi.l;
