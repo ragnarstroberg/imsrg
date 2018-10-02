@@ -101,8 +101,8 @@ class Operator
   // One body setter/getters
   double GetOneBody(int i,int j) {return OneBody(i,j);};
   void SetOneBody(int i, int j, double val) ;
-  int GetTwoBodyDimension(int ch_bra, int ch_ket){ return TwoBody.GetMatrix(ch_bra, ch_ket).n_cols;};
-  double GetTwoBody(int ch_bra, int ch_ket, int i, int j);
+  size_t GetTwoBodyDimension(size_t ch_bra, size_t ch_ket){ return TwoBody.GetMatrix(ch_bra, ch_ket).n_cols;};
+  double GetTwoBody(size_t ch_bra, size_t ch_ket, size_t i, size_t j);
   void SetTwoBody(int J1, int p1, int T1, int J2, int p2, int T2, int i, int j, int k, int l, double v);
 
   void SetE3max(int e){E3max = e;};

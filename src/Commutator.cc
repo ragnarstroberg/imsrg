@@ -2322,8 +2322,10 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
 {
     // Do the inverse Pandya transform
    int Lambda = Z.rank_J;
-   std::vector<std::map<std::array<int,2>,arma::mat>::iterator> iteratorlist;
-   for (std::map<std::array<int,2>,arma::mat>::iterator iter= Z.TwoBody.MatEl.begin(); iter!= Z.TwoBody.MatEl.end(); ++iter) iteratorlist.push_back(iter);
+//   std::vector<std::map<std::array<int,2>,arma::mat>::iterator> iteratorlist;
+   std::vector<std::map<std::array<size_t,2>,arma::mat>::iterator> iteratorlist;
+//   for (std::map<std::array<int,2>,arma::mat>::iterator iter= Z.TwoBody.MatEl.begin(); iter!= Z.TwoBody.MatEl.end(); ++iter) iteratorlist.push_back(iter);
+   for (auto iter= Z.TwoBody.MatEl.begin(); iter!= Z.TwoBody.MatEl.end(); ++iter) iteratorlist.push_back(iter);
    int niter = iteratorlist.size();
    int hZ = Z.IsHermitian() ? 1 : -1;
     // Only go parallel if we've previously calculated the SixJs/NineJs. Otherwise, it's not thread safe.

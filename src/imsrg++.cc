@@ -183,8 +183,36 @@ int main(int argc, char** argv)
   modelspace.SetE3max(E3max);
   if (lmax3>0)
      modelspace.SetLmax3(lmax3);
-  
-  std::cout << "Making the operator..." << std::endl;
+ 
+
+
+// For both dagger operators and single particle wave functions, it's convenient to 
+// just get every orbit in the valence space. So if SPWF="valence" ,  we append all valence orbits
+  if ( std::find( spwf.begin(), spwf.end(), "valence" ) != spwf.end() )
+  {
+    std::remove( spwf.begin(), spwf.end(), "valence" );
+    for ( auto v : modelspace.valence )
+    {
+      spwf.push_back( modelspace.Index2String(v) );
+    }
+  }
+
+  if ( std::find( opnames.begin(), opnames.end(), "DaggerHF_valence") != opnames.end() )
+  {
+    std::remove( opnames.begin(), opnames.end(), "DaggerHF_valence");
+    for ( auto v : modelspace.valence )
+    {
+      opnames.push_back( "DaggerHF_"+modelspace.Index2String(v) );
+    }
+    std::cout << "I found DaggerHF_valence, so I'm changing the opnames list to :" << std::endl;
+    for ( auto opn : opnames ) std::cout << opn << " ,  ";
+    std::cout << std::endl;
+  }
+
+
+
+ 
+//  std::cout << "Making the Hamilton..." << std::endl;
   int particle_rank = input3bme=="none" ? 2 : 3;
   Operator Hbare = Operator(modelspace,0,0,0,particle_rank);
   Hbare.SetHermitian();
@@ -266,26 +294,13 @@ int main(int argc, char** argv)
     HNO = Hbare.DoNormalOrdering();
 
 
-  // This is really too specific to be in here...
+
+
+
   if ( spwf.size() > 0 )
   {
     imsrg_util::WriteSPWaveFunctions( spwf, hf, intfile);
   }
-//  int n_radial_points = 200;
-//  double Rmax = 20.0;
-//  std::vector<index_t> spwf_indices = hf.modelspace->String2Index(spwf);
-//  std::vector<double> R(n_radial_points);
-//  std::vector<double> PSI(n_radial_points);
-//  for (int rstep=0;rstep<n_radial_points;++rstep) R[rstep] = Rmax/n_radial_points * rstep;
-//
-//  for ( index_t i=0; i< spwf.size(); ++i)
-//  {
-//    hf.GetRadialWF(spwf_indices[i], R, PSI);
-//    std::ofstream wf_file (intfile + "_spwf_" + spwf[i] + ".dat");
-//    for ( index_t rstep=0; rstep<R.size(); ++rstep)  wf_file << std::fixed << std::setw(10) << std::setprecision(7) << R[rstep] << "   " << std::setw(10) << std::setprecision(7) << PSI[rstep] << std::endl;
-////    wf_file.close();
-//  }
-
 
 
 

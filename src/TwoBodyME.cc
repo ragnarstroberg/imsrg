@@ -46,8 +46,8 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
  {
    for ( auto& itmat : MatEl )
    {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
+      auto ch_bra = itmat.first[0];
+      auto ch_ket = itmat.first[1];
       itmat.second += rhs.GetMatrix(ch_bra,ch_ket);
    }
    return *this;
@@ -57,8 +57,8 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
  {
    for ( auto& itmat : rhs.MatEl )
    {
-      int ch_bra = itmat.first[0];
-      int ch_ket = itmat.first[1];
+      auto ch_bra = itmat.first[0];
+      auto ch_ket = itmat.first[1];
       GetMatrix(ch_bra,ch_ket) -= itmat.second;
    }
    return *this;
@@ -69,10 +69,10 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 void TwoBodyME::Allocate()
 {
   MatEl.clear();
-  for (int ch_bra=0; ch_bra<nChannels;++ch_bra)
+  for (size_t ch_bra=0; ch_bra<nChannels;++ch_bra)
   {
      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-     for (int ch_ket=ch_bra; ch_ket<nChannels;++ch_ket)
+     for (size_t ch_ket=ch_bra; ch_ket<nChannels;++ch_ket)
      {
         TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
         if ( std::abs(tbc_bra.J-tbc_ket.J)>rank_J ) continue;

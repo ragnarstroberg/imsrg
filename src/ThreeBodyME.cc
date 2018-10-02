@@ -11,11 +11,11 @@ ThreeBodyME::ThreeBodyME()
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: modelspace(ms), E3max(ms->E3max), total_dimension(0)
+: modelspace(ms), E3max(ms->E3max), emax(ms->Emax), total_dimension(0)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
-: modelspace(ms),E3max(e3max), total_dimension(0)
+: modelspace(ms),E3max(e3max), emax(ms->Emax), total_dimension(0)
 {}
 
 // Define some constants for the various permutations of three indices
@@ -164,6 +164,7 @@ void ThreeBodyME::Allocate()
    Orbit& oa = modelspace->GetOrbit(a);
    int ea = 2*oa.n+oa.l;
    if (ea>E3max) break;
+   if (ea>emax) break;
    for (int b=0; b<=a; b+=2)
    {
      if (oa.l > lmax) break;
