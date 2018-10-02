@@ -1209,26 +1209,8 @@ void ModelSpace::PreCalculateMoshinsky()
           int l2 = e2-2*n1-2*n2-l1;
           if ( (l1+l2+lam+Lam)%2 >0 ) continue;
           if ( l2<std::abs(L-l1) or l2>L+l1 ) continue;
-          // emax = 16, lmax = 32 -> good up to emax=32, which I'm nowhere near.
-//          unsigned long long int key =   ((unsigned long long int) N   << 40)
-//                                       + ((unsigned long long int) Lam << 34)
-//                                       + ((unsigned long long int) n   << 30)
-//                                       + ((unsigned long long int) lam << 26)
-//                                       + ((unsigned long long int) n1  << 22)
-//                                       + ((unsigned long long int) l1  << 16)
-//                                       + ((unsigned long long int) n2  << 12)
-//                                       + ((unsigned long long int) l2  << 6 )
-//                                       +  L;
+
           uint64_t key = MoshinskyHash(N,Lam,n,lam,n1,l1,n2,l2,L);
-//          uint64_t key =    ((uint64_t) N   << 40)
-//                          + ((uint64_t) Lam << 34)
-//                          + ((uint64_t) n   << 30)
-//                          + ((uint64_t) lam << 26)
-//                          + ((uint64_t) n1  << 22)
-//                          + ((uint64_t) l1  << 16)
-//                          + ((uint64_t) n2  << 12)
-//                          + ((uint64_t) l2  << 6 )
-//                          +  L;
           KEYS.push_back(key);
           MoshList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
          }
@@ -1244,19 +1226,10 @@ void ModelSpace::PreCalculateMoshinsky()
   #pragma omp parallel for schedule(dynamic,1)
   for (size_t i=0;i< KEYS.size(); ++i)
   {
-//    unsigned long long int& key = KEYS[i];
     uint64_t key = KEYS[i];
     uint64_t N,Lam,n,lam,n1,l1,n2,l2,L;
     MoshinskyUnHash(key,N,Lam,n,lam,n1,l1,n2,l2,L);
-//    int N   =  key >> 40;
-//    int Lam = (key >> 34) & 0x3f;
-//    int n   = (key >> 30) & 0xf;
-//    int lam = (key >> 26) & 0xf;
-//    int n1  = (key >> 22) & 0xf;
-//    int l1  = (key >> 16) & 0x3f;
-//    int n2  = (key >> 12) & 0xf;
-//    int l2  = (key >> 6 ) & 0xf;
-//    int L   =  key & 0x3f;
+
     MoshList[key] = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
   }
 

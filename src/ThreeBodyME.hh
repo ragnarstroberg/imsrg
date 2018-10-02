@@ -41,8 +41,8 @@ class ThreeBodyME
   ModelSpace * modelspace;
   std::vector<ThreeBME_type> MatEl;
   std::unordered_map<size_t, size_t> OrbitIndexHash; //
-  int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
   int E3max;
+  int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
   size_t total_dimension;
   const static int ABC;
   const static int BCA;
