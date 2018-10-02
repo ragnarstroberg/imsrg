@@ -271,7 +271,7 @@ void Operator::SetTwoBody(int J1, int p1, int T1, int J2, int p2, int T2, int i,
   TwoBody.SetTBME( J1,  p1,  T1,  J2,  p2,  T2,  i,  j,  k,  l, v);
 }
 
-double Operator::GetTwoBody(int ch_bra, int ch_ket, int ibra, int iket)
+double Operator::GetTwoBody(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket)
 {
   if ( ch_bra <= ch_ket or IsNonHermitian() )
   {

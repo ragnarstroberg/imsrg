@@ -41,6 +41,7 @@ class ThreeBodyME
   ModelSpace * modelspace;
   std::vector<ThreeBME_type> MatEl;
   std::unordered_map<size_t, size_t> OrbitIndexHash; //
+  int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
   int E3max;
   size_t total_dimension;
   const static int ABC;
@@ -70,9 +71,11 @@ class ThreeBodyME
 ///// Some other three body methods
 
   int SortOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c) const;
-  inline double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const;
+  double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const;
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};
+  int Getemax(){return emax;};
+  void Setemax(int e){emax=  e;};
 
   void Erase(); // set all three-body terms to zero
   void Deallocate();

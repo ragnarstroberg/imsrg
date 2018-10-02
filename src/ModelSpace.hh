@@ -223,7 +223,7 @@ class ModelSpace
    size_t GetKetIndex(int p, int q) const {return Index2(p,q);}; // convention is p<=q
    size_t GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
    size_t GetNumberOrbits() const {return norbits;};
-   int GetNumberKets() const {return Kets.size();};
+   size_t GetNumberKets() const {return Kets.size();};
    void SetHbarOmega(double hw) {hbar_omega = hw;};
    void SetTargetMass(int A) {target_mass = A;};
    void SetTargetZ(int Z) {target_Z = Z;};
@@ -264,7 +264,7 @@ class ModelSpace
 
    size_t Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
 //   inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
-   size_t Index2(int p, int q) const {return p*(2*norbits-1-p)/2 + q;};
+   size_t Index2(size_t p, size_t q) const {return p*(2*norbits-1-p)/2 + q;};
 
    void PreCalculateMoshinsky();
    void PreCalculateSixJ();

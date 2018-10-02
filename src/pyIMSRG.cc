@@ -18,13 +18,13 @@ namespace py = pybind11;
 //using namespace boost::python;
 
   Orbit MS_GetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
-  int MS_GetOrbitIndex_Str(ModelSpace& self, std::string s){ return self.GetOrbitIndex(s);};
+  size_t MS_GetOrbitIndex_Str(ModelSpace& self, std::string s){ return self.GetOrbitIndex(s);};
   TwoBodyChannel MS_GetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
 
   double TB_GetTBME_J(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J(j_bra,j_ket,a,b,c,d);};
   double TB_GetTBME_J_norm(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J_norm(j_bra,j_ket,a,b,c,d);};
 
-  int TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
+  size_t TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
 
   void ArmaMatPrint( arma::mat& self){ self.print();};
   void OpSetOneBodyME( Operator& self, int i, int j, double v){self.OneBody(i,j) = v;};
@@ -245,6 +245,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetOmega",&HartreeFock::GetOmega)
       .def("PrintSPE",&HartreeFock::PrintSPE)
       .def("GetRadialWF_r",&HartreeFock::GetRadialWF_r)
+      .def("GetValence3B",&HartreeFock::GetValence3B)
       .def_readonly("EHF",&HartreeFock::EHF)
       .def_readonly("C",&HartreeFock::C)
    ;
@@ -293,6 +294,10 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("PrintCounters",&IMSRGProfiler::PrintCounters)
       .def("PrintAll",&IMSRGProfiler::PrintAll)
       .def("PrintMemory",&IMSRGProfiler::PrintMemory)
+   ;
+
+   py::class_<ThreeBodyME>(m,"ThreeBodyME")
+      .def(py::init<>())
    ;
 
 
