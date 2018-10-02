@@ -190,7 +190,7 @@ int main(int argc, char** argv)
 // just get every orbit in the valence space. So if SPWF="valence" ,  we append all valence orbits
   if ( std::find( spwf.begin(), spwf.end(), "valence" ) != spwf.end() )
   {
-    std::remove( spwf.begin(), spwf.end(), "valence" );
+    spwf.erase( std::remove( spwf.begin(), spwf.end(), "valence" ), std::end(spwf) );
     for ( auto v : modelspace.valence )
     {
       spwf.push_back( modelspace.Index2String(v) );
@@ -199,7 +199,7 @@ int main(int argc, char** argv)
 
   if ( std::find( opnames.begin(), opnames.end(), "DaggerHF_valence") != opnames.end() )
   {
-    std::remove( opnames.begin(), opnames.end(), "DaggerHF_valence");
+    opnames.erase( std::remove( opnames.begin(), opnames.end(), "DaggerHF_valence"), std::end(opnames) );
     for ( auto v : modelspace.valence )
     {
       opnames.push_back( "DaggerHF_"+modelspace.Index2String(v) );
