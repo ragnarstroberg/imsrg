@@ -88,7 +88,11 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Init_occ_from_file", &ModelSpace::Init_occ_from_file)
       .def("GetOrbitIndex_fromString", &MS_GetOrbitIndex_Str)
       .def("PreCalculateSixJ", &ModelSpace::PreCalculateSixJ)
+      .def_readwrite("holes",&ModelSpace::holes)
+      .def_readwrite("particles",&ModelSpace::particles)
       .def_readwrite("core", &ModelSpace::core)
+      .def_readwrite("valence",&ModelSpace::valence)
+      .def_readwrite("qspace",&ModelSpace::qspace)
    ;
 
 

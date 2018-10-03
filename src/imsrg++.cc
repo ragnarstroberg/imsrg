@@ -190,6 +190,7 @@ int main(int argc, char** argv)
 // just get every orbit in the valence space. So if SPWF="valence" ,  we append all valence orbits
   if ( std::find( spwf.begin(), spwf.end(), "valence" ) != spwf.end() )
   {
+    // this erase/remove idiom is needed because remove just shuffles things around rather than actually removing it.
     spwf.erase( std::remove( spwf.begin(), spwf.end(), "valence" ), std::end(spwf) );
     for ( auto v : modelspace.valence )
     {
@@ -212,7 +213,7 @@ int main(int argc, char** argv)
 
 
  
-//  std::cout << "Making the Hamilton..." << std::endl;
+//  std::cout << "Making the Hamiltonian..." << std::endl;
   int particle_rank = input3bme=="none" ? 2 : 3;
   Operator Hbare = Operator(modelspace,0,0,0,particle_rank);
   Hbare.SetHermitian();
