@@ -3945,23 +3945,30 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
    for ( auto& itmat : Op.TwoBody.MatEl )
    {
      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
-     EdmondsConventionFactor = -sqrt(2*tbc.J+1);
-     auto& matrix = itmat.second;
+     int Jab = tbc.J;
+     EdmondsConventionFactor = -sqrt(2*Jab+1.);
+//     auto& matrix = itmat.second;
      for (auto& ibra: tbc.GetKetIndex_vv() )
      {
        Ket& bra = tbc.GetKet(ibra);
-       auto a_ind = orb2nushell[bra.p];
-       auto b_ind = orb2nushell[bra.q];
-       for (auto& iket: tbc.GetKetIndex_vv() )
+       auto a = bra.p;
+       auto b = bra.q;
+       auto a_ind = orb2nushell[a];
+       auto b_ind = orb2nushell[b];
+       for ( auto c : modelspace->valence )
        {
-         Ket& ket = tbc.GetKet(iket);
-         if (ket.q != Q) continue;
-         double me = matrix(ibra,iket) * EdmondsConventionFactor;
+//       for (auto& iket: tbc.GetKetIndex_vv() )
+//       {
+//         Ket& ket = tbc.GetKet(iket);
+//         if (ket.q != Q) continue;
+//         double me = matrix(ibra,iket) * EdmondsConventionFactor;
+         double me = Op.TwoBody.GetTBME_J(Jab,Jab,a,b,c,Q) * EdmondsConventionFactor;
          if (std::abs(me) < 1e-7) continue;
          if (a_ind == b_ind) me /= SQRT2;  // We write out normalized matrix elements
-         auto c_ind = orb2nushell[ket.p];
+//         auto c_ind = orb2nushell[ket.p];
+         auto c_ind = orb2nushell[c];
          outfile << std::setw(wint) << a_ind << " " << std::setw(wint) << b_ind << " " << std::setw(wint) << c_ind << "   "
-                 << std::setw(wint) << tbc.J << "   " << std::setw(wdouble) << std::setprecision(pdouble) << me << std::endl;
+                 << std::setw(wint) << Jab << "   " << std::setw(wdouble) << std::setprecision(pdouble) << me << std::endl;
          
        }
      }

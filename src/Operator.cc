@@ -542,10 +542,17 @@ Operator Operator::DoNormalOrderingDagger( int sign) const
         {
           Orbit& oh = modelspace->GetOrbit(h);
 
-          if (opNO.rank_J==0)
-          {
+//          if (opNO.rank_J==0)
+//          {
              opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
-          }
+//             if (oa.n==1 and std::abs( TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q))>1e-5 )
+//	     {
+//	       std::cout << "    a = " << a << "  h = " << h << "   adding "
+//		         << "- " << hatfactor << " / " << 2*ja+1 << "  * " << sign*oh.occ << " * " << std::setw(12) << std::fixed << std::setprecision(7) << TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q)
+//			 << "  = " <<  std::setw(12) << std::fixed << std::setprecision(7) << -hatfactor/(2*ja+1) * sign*oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q)
+//			 << "   total = " << std::setw(12) << std::fixed << std::setprecision(7)   << opNO.OneBody(a,Q) << std::endl;
+//	     }
+//          }
         }
      }
   } // loop over channels
