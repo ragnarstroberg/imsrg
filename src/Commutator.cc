@@ -203,8 +203,9 @@ Operator CommutatorScalarDagger( const Operator& X, const Operator& Y)
    comm211sd( X, Y, Z ) ; 
    comm231sd( X, Y, Z ) ;
    comm413_233sd( X, Y, Z ) ; 
-   comm433sd_ph( X, Y, Z ) ; 
    comm433_pp_hh_431sd( X, Y, Z ) ; 
+//   comm433sd_ph( X, Y, Z ) ; 
+   comm433sd_ph_dumbway( X, Y, Z ) ; 
 
    X.profiler.timer["CommutatorScalarDagger"] += omp_get_wtime() - t_css;
    return Z;
@@ -1214,8 +1215,6 @@ void AddInversePandyaTransformation_SingleChannel( Operator& Z,  arma::mat& Zbar
 
 
 
-
-
 //void Operator::AddInversePandyaTransformation(const deque<arma::mat>& Zbar)
 void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator& Z)
 {
@@ -1296,7 +1295,7 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
                  int indx_ik = tbc_cc.GetLocalIndex(std::min(i,k),std::max(i,k)) +(i>k?nkets_cc:0);
                  int indx_lj = tbc_cc.GetLocalIndex(std::min(l,j),std::max(l,j)) +(l>j?nkets_cc:0);
                  // we always have i<=k so we should always flip Z_jlki = (-1)^{i+j+k+l} Z_iklj
-                 double me1 = Zbar.at(ch_cc)(indx_ik, indx_lj) ;//* modelspace->phase(ji+jj+jk+jl);
+                 double me1 = Zbar.at(ch_cc)(indx_ik, indx_lj) ;//* modelspace->phase(ji+jj+jk+jl);  << we also have -(-1)^(ji+jj-J)Pij), so the resulting phase -(-1)^(jk+jl-J) is included below
                  commji += (2*Jprime+1) *  sixj * me1;
 
               }
@@ -2720,7 +2719,8 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
 // Sum_ia X_ia Y_a^{lambda}
 // Adapted from
 //    void Operator::comm111ss( const Operator & X, const Operator& Y) 
-// This could be modified since we only need one column from Y to go to one column in Z.
+// This could be modified to be more efficent since we only need one column from Y to go to one column in Z.
+// But this is so far from being the bottleneck that it makes more sense to be clear.
 void comm211sd( const Operator& X, const Operator& Y, Operator& Z )
 {
    Z.OneBody += X.OneBody*Y.OneBody;
@@ -2736,8 +2736,9 @@ void comm211sd( const Operator& X, const Operator& Y, Operator& Z )
 //    \_\  |   ---    /_/
 //    a  (Y)         (X) b
 //
-// Sum_iab Sum_J X_ab Y_bia  hat(J)/hat(lambda)
-//
+// Sum_ab Sum_J (na n`b - n`a nb) X_ab Y_bia  hat(J)^2/hat(lambda)^2
+// or
+// Sum_ab Sum_J (2J+1)/(2lambda+1)  (na n`b) ( X_ab Y_bia - X_ba Y_aib )
 //
 // Adapted from
 //    void Operator::comm121ss( const Operator& X, const Operator& Y) 
@@ -2745,40 +2746,24 @@ void comm231sd( const Operator& X, const Operator& Y, Operator& Z)
 {
    if (Y.legs<3) return;
    index_t norbits = Z.modelspace->GetNumberOrbits();
-   index_t j = Z.GetQSpaceOrbit();
-   Orbit& oj = Z.modelspace->GetOrbit(j);
+   index_t Q = Z.GetQSpaceOrbit();
+   Orbit& oQ = Z.modelspace->GetOrbit(Q);
 //   for (index_t i=0;i<norbits;++i)
 //   #pragma omp parallel for 
-   for (auto i : Z.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+   for (auto i : Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
    {
-//      Orbit &oi = modelspace->GetOrbit(i);
-      // j is Q-space orbit
-//      index_t jmin = Z.IsNonHermitian() ? 0 : i;
-//      for (auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
-//      {
-//          if (j<jmin) continue; // only calculate upper triangle
           for (auto& a : Z.modelspace->holes)  // C++11 syntax
           {
              Orbit &oa = Z.modelspace->GetOrbit(a);
              for (index_t b=0; b<norbits; ++b)
              {
                 Orbit &ob = Z.modelspace->GetOrbit(b);
-                double nanb = oa.occ * (1-ob.occ);
+                double nanb = oa.occ * (1-ob.occ); // despite what the name suggests, nanb is n_a * (1-n_b).
                 if (std::abs(nanb)<OCC_CUT) continue;
-//                if (Y.legs>1)
-//                {
-                  Z.OneBody(i,j) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
-                  Z.OneBody(i,j) -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,j) ;
-//                }
-                // comm211 part
-//                if (X.particle_rank>1)
-//                {
-//                  Z.OneBody(i,j) -= (ob.j2+1) * nanb * Y.OneBody(a,b) * X.TwoBody.GetTBMEmonopole(b,i,a,j) ;
-//                  Z.OneBody(i,j) += (oa.j2+1) * nanb * Y.OneBody(b,a) * X.TwoBody.GetTBMEmonopole(a,i,b,j) ;
-//                }
+                  Z.OneBody(i,Q) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,Q) ;  // Is this still the right way to do this? Do we need to worry about normalization? (It looks ok).
+                  Z.OneBody(i,Q) -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,Q) ;  // GetTBMEmonopole returns unnormalized TBME summed over J times (2J+1)/((2ji+1)*(2jj+1))
              }
           }
-//      }
    }
 }
 
@@ -2794,17 +2779,20 @@ void comm231sd( const Operator& X, const Operator& Y, Operator& Z)
 //          \  \ |            | |/__/
 //           \_(X)            (Y)      
 //                                       
-//  Zij = sum 1/4 1/(2j_i +1)  sum_abcJ (2J+1)  (na nb n_c - n_a n_b nc) AJ_ciab BJ_abc
+//  Zi = sum 1/2 1/(2j_i +1)  sum_abcJ (2J+1)  (na nb n_c - n_a n_b nc) AJ_ciab BJ_abc
+//  note that in Hergert et al Phys. Rep. 621 165  this formula has an errant extra factor of 1/2
 //
 //  Adapted from
 //    void Operator::comm221ss( const Operator& X, const Operator& Y) 
+// THIS IS NOT USED
+/*
 void comm431sd( const Operator& X, const Operator& Y, Operator& Z)
 {
 
    int norbits = Z.modelspace->GetNumberOrbits();
 
    // I think the static call was an attempt to reduce memory fragmentation, but this should be tested more thoroughly.
-   static TwoBodyME Mpp = Z.TwoBody;
+   static TwoBodyME Mpp = Z.TwoBody;  // Working directly with the matrix, not the setter/getters. The matrix should store the normalized matrix element.
    static TwoBodyME Mhh = Z.TwoBody;
 //   TwoBodyME Mpp = Z.TwoBody;
 //   TwoBodyME Mhh = Z.TwoBody;
@@ -2834,70 +2822,42 @@ void comm431sd( const Operator& X, const Operator& Y, Operator& Z)
       auto& nbarnbar_ph = tbc.Ket_unocc_ph;
       
       Matrixpp =  LHS.cols(kets_pp) * RHS.rows(kets_pp);
+      // Fractional occupation of hole states means we need to do a bit more work.
       Matrixhh =  LHS.cols(kets_hh) * arma::diagmat(nanb) *  RHS.rows(kets_hh) ;
       if (kets_hh.size()>0)
         Matrixpp +=  LHS.cols(kets_hh) * arma::diagmat(nbarnbar_hh) *  RHS.rows(kets_hh); 
       if (kets_ph.size()>0)
         Matrixpp += LHS.cols(kets_ph) * arma::diagmat(nbarnbar_ph) *  RHS.rows(kets_ph) ;
 
-// Commented this out because it accounts for the AB + BA structure, which shouldn't be there              
-// for the dagger operator. -SRS 14/04/2018
-//      if (Z.IsHermitian())
-//      {
-//         Matrixpp +=  Matrixpp.t();
-//         Matrixhh +=  Matrixhh.t();
-//      }
-//      else if (Z.IsAntiHermitian()) // i.e. LHS and RHS are both hermitian or ant-hermitian
-//      {
-//         Matrixpp -=  Matrixpp.t();
-//         Matrixhh -=  Matrixhh.t();
-//      }
-//      else
-//      {
-//        Matrixpp -=  RHS.cols(kets_pp) * LHS.rows(kets_pp);
-//        Matrixhh -=  RHS.cols(kets_hh) * arma::diagmat(nanb) *  LHS.rows(kets_hh) ;
-//        Matrixpp -=  RHS.cols(kets_hh) * arma::diagmat(nbarnbar_hh) *  LHS.rows(kets_hh) ;
-//        if (kets_ph.size()>0)
-//          Matrixpp -=  RHS.cols(kets_ph) * arma::diagmat(nbarnbar_ph) *  LHS.rows(kets_ph) ;
-//      }
-
-
    } //for ch
 
-   index_t j = Z.GetQSpaceOrbit();
+   index_t Q = Z.GetQSpaceOrbit();
    #pragma omp parallel for schedule(dynamic,1)
    for (int i=0;i<norbits;++i)
    {
       Orbit &oi = Z.modelspace->GetOrbit(i);
-//      int jmin = Z.IsNonHermitian() ? 0 : i;
-//      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-//      {
-//         if (j<jmin) continue;
-         double cijJ = 0;
-         for (int ch=0;ch<Z.nChannels;++ch)
+      double ciQJ = 0;
+      for (int ch=0;ch<Z.nChannels;++ch)
+      {
+         TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
+         double Jfactor = (2*tbc.J+1.0);
+         // Sum c over holes and include the nbar_a * nbar_b terms
+         for (auto& c : Z.modelspace->holes)
          {
-            TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
-            double Jfactor = (2*tbc.J+1.0);
-            // Sum c over holes and include the nbar_a * nbar_b terms
-            for (auto& c : Z.modelspace->holes)
-            {
-               Orbit& oc = Z.modelspace->GetOrbit(c);
-               cijJ += Jfactor * oc.occ     * Mpp.GetTBME(ch,c,i,c,j);
-               cijJ += Jfactor * (1-oc.occ) * Mhh.GetTBME(ch,c,i,c,j);
-            // Sum c over particles and include the n_a * n_b terms
-            }
-            for (auto& c : Z.modelspace->particles)
-            {
-               cijJ += Jfactor * Mhh.GetTBME(ch,c,i,c,j);
-            }
+            Orbit& oc = Z.modelspace->GetOrbit(c);
+            ciQJ += Jfactor * oc.occ     * Mpp.GetTBME(ch,c,i,c,Q);
+            ciQJ += Jfactor * (1-oc.occ) * Mhh.GetTBME(ch,c,i,c,Q);
          }
-         Z.OneBody(i,j) += cijJ /(oi.j2+1.0);
-//      } // for j
+         // Sum c over particles and include the n_a * n_b terms
+         for (auto& c : Z.modelspace->particles)
+         {
+            ciQJ += Jfactor * Mhh.GetTBME(ch,c,i,c,Q);
+         }
+       }
+       Z.OneBody(i,Q) += ciQJ /(oi.j2+1.0); 
    }
-
-
 }
-
+*/
 
 
 
@@ -2918,10 +2878,8 @@ void comm431sd( const Operator& X, const Operator& Y, Operator& Z)
 //  void Operator::comm122ss( const Operator& X, const Operator& Y ) 
 void comm413_233sd( const Operator& X, const Operator& Y, Operator& Z) 
 {
-
    auto& X1 = X.OneBody;
    auto& Y1 = Y.OneBody;
-//   int hZ = Z.IsHermitian() ? 1 : -1;
 
    index_t Qorbit = Z.GetQSpaceOrbit();
    Orbit& oQ = Z.modelspace->GetOrbit(Qorbit);
@@ -2933,10 +2891,6 @@ void comm413_233sd( const Operator& X, const Operator& Y, Operator& Z)
    {
       int ch = Z.modelspace->SortedTwoBodyChannels[ich];
       TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
-//      auto& X2 = X.TwoBody.GetMatrix(ch,ch);
-//      auto& Y2 = Y.TwoBody.GetMatrix(ch,ch);
-//      auto& Z2 = Z.TwoBody.GetMatrix(ch,ch);
-//      arma::mat W2(size(Z2),arma::fill::zeros); // temporary intermediate matrix
 
       int npq = tbc.GetNumberKets();
       for (int indx_ij = 0;indx_ij<npq; ++indx_ij)
@@ -2946,32 +2900,45 @@ void comm413_233sd( const Operator& X, const Operator& Y, Operator& Z)
          int j = bra.q;
          Orbit& oi = Z.modelspace->GetOrbit(i);
          Orbit& oj = Z.modelspace->GetOrbit(j);
+         double norm_ij = (i==j) ? 1.0/SQRT2 : 1.0;
          for ( int k=0; k<norb; ++k )
          {
            Orbit& ok = Z.modelspace->GetOrbit(k);
            if (not tbc.CheckChannel_ket(&ok,&oQ)) continue;
+
+           double norm_kQ = (k==Qorbit) ? 1.0/SQRT2 : 1.0;
            double cijk = 0;
+
            for ( int a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
            {
-             cijk += X1(i,a) * Y.TwoBody.GetTBME_norm(ch,ch,a,j,k,Qorbit);
+//             cijk += X1(i,a) * Y.TwoBody.GetTBME_norm(ch,ch,a,j,k,Qorbit);
+             cijk += X1(i,a) * Y.TwoBody.GetTBME(ch,ch,a,j,k,Qorbit);
            }
            for ( int a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
            {
-             cijk += X1(j,a) * Y.TwoBody.GetTBME_norm(ch,ch,i,a,k,Qorbit);
+//             cijk += X1(j,a) * Y.TwoBody.GetTBME_norm(ch,ch,i,a,k,Qorbit);
+             cijk += X1(j,a) * Y.TwoBody.GetTBME(ch,ch,i,a,k,Qorbit);
            }
            for ( int a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
            {
-             cijk += X1(a,k) * Y.TwoBody.GetTBME_norm(ch,ch,i,j,a,Qorbit);
+//             cijk += X1(a,k) * Y.TwoBody.GetTBME_norm(ch,ch,i,j,a,Qorbit); // should this have a minus sign?
+//             cijk -= X1(a,k) * Y.TwoBody.GetTBME_norm(ch,ch,i,j,a,Qorbit); 
+             cijk -= X1(a,k) * Y.TwoBody.GetTBME(ch,ch,i,j,a,Qorbit); 
            }
+
            for ( int a : Y.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
            {
-             cijk += Y1(a,Qorbit) * X.TwoBody.GetTBME_norm(ch,ch,i,j,k,a);
+//             cijk += Y1(a,Qorbit) * X.TwoBody.GetTBME_norm(ch,ch,i,j,k,a);   // This determines the normalization for the (adagger adagger a) term.
+             cijk += Y1(a,Qorbit) * X.TwoBody.GetTBME(ch,ch,i,j,k,a);   // This determines the normalization for the (adagger adagger a) term.
            }
-           Z.TwoBody.SetTBME(ch,ch,i,j,k,Qorbit, cijk);
+
+//           Z.TwoBody.SetTBME(ch,ch,i,j,k,Qorbit, cijk);   // SetTBME  directly sets the matrix element, i.e. it assumes a normalized matrix element.
+
+           cijk *= (norm_ij * norm_kQ);  // We normalize like a scalar TBME so that the setter/getters make sense. We'll fix the wrong |kQ> normalization when writing to file.
+           Z.TwoBody.SetTBME(ch,ch,i,j,k,Qorbit, cijk);   // SetTBME  directly sets the matrix element, i.e. it assumes a normalized matrix element.
          }
       }
    }
-
 }
 
 
@@ -2992,6 +2959,8 @@ void comm413_233sd( const Operator& X, const Operator& Y, Operator& Z)
 //
 // Adapted from
 //    void Operator::comm222_pp_hhss( const Operator& X, const Operator& Y ) 
+// THIS IS NOT USED
+/*
 void comm433sd_pphh( const Operator& X, const Operator& Y, Operator& Z)  
 {
 
@@ -3035,32 +3004,12 @@ void comm433sd_pphh( const Operator& X, const Operator& Y, Operator& Z)
         Matrixpp += LHS.cols(kets_ph) * arma::diagmat(nbarnbar_ph) *  RHS.rows(kets_ph) ;
 
 
-//      if (Z.IsHermitian())
-//      {
-//         Matrixpp +=  Matrixpp.t();
-//         Matrixhh +=  Matrixhh.t();
-//      }
-//      else if (Z.IsAntiHermitian()) // i.e. LHS and RHS are both hermitian or ant-hermitian
-//      {
-//         Matrixpp -=  Matrixpp.t();
-//         Matrixhh -=  Matrixhh.t();
-//      }
-//      else
-//      {
-//        Matrixpp -=  RHS.cols(kets_pp) * LHS.rows(kets_pp);
-//        Matrixhh -=  RHS.cols(kets_hh) * arma::diagmat(nanb) *  LHS.rows(kets_hh) ;
-//        Matrixpp -=  RHS.cols(kets_hh) * arma::diagmat(nbarnbar_hh) *  LHS.rows(kets_hh) ;
-//        if (kets_ph.size()>0)
-//          Matrixpp -=  RHS.cols(kets_ph) * arma::diagmat(nbarnbar_ph) *  LHS.rows(kets_ph) ;
-//      }
-
-
       // The two body part
       OUT += Matrixpp - Matrixhh;
    } //for ch
    Z.profiler.timer["sd_pphh TwoBody bit"] += omp_get_wtime() - t;
 }
-
+*/
 
 
 
@@ -3071,11 +3020,6 @@ void comm433sd_pphh( const Operator& X, const Operator& Y, Operator& Z)
 void ConstructDaggerMpp_Mhh(const Operator& X, const Operator& Y, const Operator& Z, TwoBodyME& Mpp, TwoBodyME& Mhh)
 {
    int nch = Z.modelspace->SortedTwoBodyChannels.size();
-//   Operator& Z = *this;
-//   bool z_is_hermitian = IsHermitian();
-//   bool z_is_antihermitian = IsAntiHermitian();
-//   bool z_is_hermitian = X.IsHermitian() xor Y.IsHermitian();
-//   bool z_is_antihermitian = (X.IsHermitian() == Y.IsHermitian()) and (X.IsAntiHermitian() == Y.IsAntiHermitian());
    #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1)
    #endif
@@ -3086,7 +3030,6 @@ void ConstructDaggerMpp_Mhh(const Operator& X, const Operator& Y, const Operator
 
       auto& LHS = X.TwoBody.GetMatrix(ch,ch);
       auto& RHS = Y.TwoBody.GetMatrix(ch,ch);
-//      auto& OUT = Z.TwoBody.GetMatrix(ch,ch);
 
       auto& Matrixpp = Mpp.GetMatrix(ch,ch);
       auto& Matrixhh = Mhh.GetMatrix(ch,ch);
@@ -3106,28 +3049,6 @@ void ConstructDaggerMpp_Mhh(const Operator& X, const Operator& Y, const Operator
         Matrixpp += LHS.cols(kets_ph) * arma::diagmat(nbarnbar_ph) *  RHS.rows(kets_ph) ;
 
 
-//      if (z_is_hermitian)
-//      {
-//         Matrixpp +=  Matrixpp.t();
-//         Matrixhh +=  Matrixhh.t();
-//      }
-//      else if (z_is_antihermitian) // i.e. LHS and RHS are both hermitian or ant-hermitian
-//      {
-//         Matrixpp -=  Matrixpp.t();
-//         Matrixhh -=  Matrixhh.t();
-//      }
-//      else
-//      {
-//        Matrixpp -=  RHS.cols(kets_pp) * LHS.rows(kets_pp);
-//        Matrixhh -=  RHS.cols(kets_hh) * arma::diagmat(nanb) *  LHS.rows(kets_hh) ;
-//        Matrixpp -=  RHS.cols(kets_hh) * arma::diagmat(nbarnbar_hh) *  LHS.rows(kets_hh) ;
-//        if (kets_ph.size()>0)
-//          Matrixpp -=  RHS.cols(kets_ph) * arma::diagmat(nbarnbar_ph) *  LHS.rows(kets_ph) ;
-//      }
-
-
-      // The two body part
-//      OUT += Matrixpp - Matrixhh;
    } //for ch
 
 }
@@ -3154,45 +3075,40 @@ void comm433_pp_hh_431sd( const Operator& X, const Operator& Y, Operator& Z )
 
    Z.profiler.timer["pphh TwoBody bit"] += omp_get_wtime() - t;
 
+   // Now, the one body part
    t = omp_get_wtime();
-   // The one body part
-   int j = Z.GetQSpaceOrbit();
-   Orbit& oj = Z.modelspace->GetOrbit(j);
-//   for (int i=0;i<norbits;++i)
-   auto ilist = Z.OneBodyChannels.at({oj.l,oj.j2,oj.tz2});
+   int Q = Z.GetQSpaceOrbit();
+   Orbit& oQ = Z.modelspace->GetOrbit(Q);
+   auto ilist = Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2});
    int ni = ilist.size();
    #pragma omp parallel for schedule(dynamic,1)
    for (int i_ind=0; i_ind<ni; ++i_ind)
    {
       int i = ilist[i_ind];
       Orbit &oi = Z.modelspace->GetOrbit(i);
-//      int jmin = Z.IsNonHermitian() ? 0 : i;
-//      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-//      {
-//         if (j<jmin) continue;
-         double cijJ = 0;
-         for (int ch=0;ch<Z.nChannels;++ch)
+      double cijJ = 0;
+      for (int ch=0;ch<Z.nChannels;++ch)
+      {
+         TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
+         double Jfactor = (2*tbc.J+1.0);
+         // Sum c over holes and include the nbar_a * nbar_b terms
+         for (auto& c : Z.modelspace->holes)
          {
-            TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
-            double Jfactor = (2*tbc.J+1.0);
-            // Sum c over holes and include the nbar_a * nbar_b terms
-            for (auto& c : Z.modelspace->holes)
-            {
-               Orbit& oc = Z.modelspace->GetOrbit(c);
-               cijJ += Jfactor * oc.occ * Mpp.GetTBME(ch,c,i,c,j); 
-               cijJ += Jfactor * (1-oc.occ) * Mhh.GetTBME(ch,c,i,c,j); 
-            }
-            // Sum c over particles and include the n_a * n_b terms
-            for (auto& c : Z.modelspace->particles)
-            {
-               cijJ += Jfactor * Mhh.GetTBME(ch,c,i,c,j);
-            }
+            Orbit& oc = Z.modelspace->GetOrbit(c);
+            cijJ += Jfactor * oc.occ * Mpp.GetTBME(ch,c,i,c,Q);     // We use the GetTBME, which returns an unnormalized matrix element, as required.
+            cijJ += Jfactor * (1-oc.occ) * Mhh.GetTBME(ch,c,i,c,Q); 
          }
-         Z.OneBody(i,j) += cijJ /(oi.j2+1.0);
-//      } // for j
+         // Sum c over particles and include the n_a * n_b terms
+         for (auto& c : Z.modelspace->particles)
+         {
+            cijJ += Jfactor * Mhh.GetTBME(ch,c,i,c,Q);
+         }
+      }
+      Z.OneBody(i,Q) += cijJ /(oi.j2+1.0);   // The factor of 1/2 in the formula is absorbed by the fact that the mat-mult only sums a<=b.
    } // for i
    Z.profiler.timer["pphh One Body bit"] += omp_get_wtime() - t;
 }
+
 
 
 
@@ -3204,35 +3120,168 @@ void comm433_pp_hh_431sd( const Operator& X, const Operator& Y, Operator& Z )
 //   |     /\            |    /\     |
 //   |    (  )      __   |   (  )    |            
 //   |_(X)_\/            |    \/_(Y)_|            
-//   |                   |           |
+//   |                   |            
 //
 // For formula and details of implementation, see Operator::comm222_phss. The only change
 // made here to accommodate a dagger operator is to replace XY - YX  with -YX. This
 // ensures that we don't include contributions from the Qspace orbit to X.
 // Adapted from
 //    void Operator::comm222_phss( const Operator& X, const Operator& Y ) 
+void comm433sd_ph_dumbway( const Operator& X, const Operator& Y, Operator& Z)
+{
+/// Let's do this the slow, dumb, straightforward way
+
+   int norb = Z.modelspace->GetNumberOrbits();
+   int nch = Z.modelspace->SortedTwoBodyChannels.size();
+   index_t Q = Y.GetQSpaceOrbit();
+   Orbit& oQ = Z.modelspace->GetOrbit(Q);
+   double jQ = 0.5*oQ.j2;
+   auto kets_ph = Z.modelspace->KetIndex_ph;
+   for ( auto khh : Z.modelspace->KetIndex_hh )
+   {
+     kets_ph.push_back(khh);
+   }
+
+// don't parallelize. the calls to sixj's down there will cause trouble
+//   #ifndef OPENBLAS_NOUSEOMP
+//   #pragma omp parallel for schedule(dynamic,1)
+//   #endif
+   for (int ich=0; ich<nch; ++ich)
+   {
+      int ch = Z.modelspace->SortedTwoBodyChannels[ich];
+      TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
+      int J = tbc.J;
+      size_t nkets = tbc.GetNumberKets();
+      for (size_t ibra=0; ibra<nkets; ibra++)
+      {
+        auto& bra = tbc.GetKet(ibra);
+        std::vector<index_t> i_cases = { bra.p, bra.q };
+        std::vector<index_t> j_cases = { bra.q, bra.p };
+        std::vector<int> ijsign_cases = { +1, bra.Phase(J)};  // This accounts for the 1 - (-1)^(ji +jj-J) Pij  factor.
+        double norm_ij = (bra.p==bra.q) ? 1.0 / SQRT2 : 1.0;
+        for (int ijcase=0; ijcase<=1; ijcase++)
+        {
+          index_t i = i_cases[ijcase];
+          index_t j = j_cases[ijcase];
+          int ijsign = ijsign_cases[ijcase];
+          Orbit& oi = Z.modelspace->GetOrbit(i);
+          Orbit& oj = Z.modelspace->GetOrbit(j);
+          double ji = 0.5* oi.j2;
+          double jj = 0.5* oj.j2;
+          for ( size_t k=0; k<norb; k++)
+          {
+            Orbit& ok = Z.modelspace->GetOrbit(k);
+            if ( not tbc.CheckChannel_ket(&ok,&oQ) ) continue;
+            double zijk = 0.;
+            double norm_kQ = (k==Q) ? 1.0 / SQRT2 : 1.0;
+            double jk = 0.5* ok.j2;
+            for (auto& iketab : kets_ph )
+            {
+              auto& ketab = Z.modelspace->GetKet(iketab);
+              std::vector<index_t> ab_cases = { ketab.p, ketab.q };
+//              std::vector<index_t> b_cases = { ketab.q, ketab.p };
+//              std::vector<int> absign_cases = { +1, -1 };           // This accounts for the na-nb = na(1-nb) - (1-na)nb, which corresponds to just taking na(1-nb) and doing (1-Pab)
+              for (int abcase = 0; abcase<=1; abcase++)
+              {
+                index_t a  = ab_cases[abcase];
+                index_t b  = ab_cases[1-abcase];
+//                int absign = 1; //absign_cases[abcase];
+
+                Orbit& oa = Z.modelspace->GetOrbit(a);
+                Orbit& ob = Z.modelspace->GetOrbit(b);
+                double ja = 0.5*oa.j2;
+                double jb = 0.5*ob.j2;
+//                double nanb = oa.occ * (1-ob.occ);
+                double nanb = oa.occ - ob.occ;
+
+                // Jprime needs to satisfy triangle contitions with ji,jj  and ji,jQ  and ja,jb, or the sixj's will be zero.
+                int Jprime_min = std::max( std::max( std::abs(ji-jj), std::abs(jk-jQ) ), std::abs(ja-jb) );
+                int Jprime_max = std::min( std::min( ji+jj, jk+jQ), ja+jb );
+
+//                int JA_min = std::max( std::abs(ja-jb), std::min( std::abs(jk-jj), std::abs(jk-ji) )  );
+//                int JA_max = std::min( ja+jb, std::max( jk+jj, jk+ji ) );
+                int JA_min = std::max(  std::abs(ja-jj), std::abs(jk-jb)  );
+                int JA_max = std::min( ja+jj,  jk+jb );
+
+//                int JB_min = std::max( std::abs(ja-jb), std::min(std::abs(ji-jQ), std::abs(jj-jQ)  )  );
+//                int JB_max = std::min( ja+jb, std::max( ji+jQ,  jj+jQ) );
+                int JB_min = std::max(  std::abs(ja-jQ), std::abs(ji-jb)  );
+                int JB_max = std::min( ja+jQ,  ji+jb );
+                for (int Jprime=Jprime_min; Jprime<=Jprime_max; ++Jprime)
+                {
+                  double matelX = 0;
+                  double matelY = 0;
+                  double sixjprime =  Z.modelspace->GetSixJ(ji,jj,J,jk,jQ,Jprime);
+                  for (int JA = JA_min; JA<=JA_max; ++JA)
+                  {
+                    double sixjA = Z.modelspace->GetSixJ( ja, jb, Jprime, jk, jj, JA );
+                    matelX += (2*JA+1) * sixjA * X.TwoBody.GetTBME_J(JA,a,j,k,b);   // GetTBME_J returns an un-normalized matrix element
+                  }
+                  for (int JB = JB_min; JB<=JB_max; ++JB)
+                  {
+                    double sixjB = Z.modelspace->GetSixJ( ja, jb, Jprime, ji, jQ, JB );
+                    matelY += (2*JB+1) * sixjB * Y.TwoBody.GetTBME_J(JB,i,b,a,Q);   // GetTBME_J returns an un-normalized matrix element
+//                    if (a==Q) matelY /= SQRT2; // I'm not 100% sure of this.
+                  }
+
+//                  zijk -=  ijsign * absign * nanb * sixjprime * matelX * matelY;
+                  zijk -=  ijsign * nanb * (2*Jprime+1) * sixjprime * matelX * matelY;
+                }
+              } // loop over ab cases
+            }  // loop over ab kets
+            Z.TwoBody.AddToTBME_J(J,i,j,k,Q,  zijk * norm_ij*norm_kQ);   // AddToTBME_J assumes a normalized matrix element.
+          }  // loop over k 
+        } // loop over ij cases
+      } // for ibra
+   } // for ich
+
+
+}
+
+
+
+
+//*****************************************************************************************
+// [X^(4),Y^(3)]^(3)]  ph piece
+//                                             
+//   |           |       |           |           
+//   |      _(Y)_|       |_(X)_      |            
+//   |     /\            |    /\     |
+//   |    (  )      __   |   (  )    |            
+//   |_(X)_\/            |    \/_(Y)_|            
+//   |                   |            
+//
+// For formula and details of implementation, see Operator::comm222_phss. The only change
+// made here to accommodate a dagger operator is to replace XY - YX  with -YX. This
+// ensures that we don't include contributions from the Qspace orbit to X.
+// Adapted from
+//    void Operator::comm222_phss( const Operator& X, const Operator& Y ) 
+
+
 void comm433sd_ph( const Operator& X, const Operator& Y, Operator& Z)  
 {
 
-   int hy = Y.IsHermitian() ? 1 : -1;
    double t_start = omp_get_wtime();
 
+   int hx = X.IsHermitian() ? 1 : -1; // assuming X is either hermitian or not. I'm sure this will come back to bite me some day.
 
-   // Construct the intermediate matrix Z_bar
+   // Construct the intermediate matrix Z_bar and fill it with zeros.
    const auto& pandya_lookup = Z.modelspace->GetPandyaLookup( Z.GetJRank(), Z.GetTRank(), Z.GetParity() );
    size_t nch = Z.modelspace->SortedTwoBodyChannels_CC.size();
-   t_start = omp_get_wtime();
+   size_t norb = Z.modelspace->GetNumberOrbits();
    std::deque<arma::mat> Z_bar (Z.nChannels );
    std::vector<bool> lookup_empty(Z.nChannels,true);
    for (size_t ich=0;ich<nch;++ich)
    {
       size_t ch = Z.modelspace->SortedTwoBodyChannels_CC[ich];
       index_t nKets_cc = Z.modelspace->GetTwoBodyChannel_CC(ch).GetNumberKets();
-      Z_bar[ch].zeros( nKets_cc, 2*nKets_cc );
+//      Z_bar[ch].zeros( nKets_cc, 2*nKets_cc );
+      Z_bar[ch].zeros( norb, 2*nKets_cc );  // Z_iQ`kj`   we want both orderings if k and j, but Q is fixed.
       if ( pandya_lookup.at({ch,ch})[0].size()>0 ) lookup_empty[ich] = false;
    }
 
 
+   // loop over channels for Z_bar
    #ifndef OPENBLAS_NOUSEOMP
    #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar_transform_first_pass)
    #endif
@@ -3245,16 +3294,47 @@ void comm433sd_ph( const Operator& X, const Operator& Y, Operator& Z)
       size_t nph_kets = tbc_cc.GetKetIndex_hh().size() + tbc_cc.GetKetIndex_ph().size();
 
       arma::mat Y_bar_ph;
-      arma::mat Xt_bar_ph;
+      arma::mat X_bar_ph;
 
-      DoPandyaTransformation_SingleChannel(Y,Y_bar_ph,ch,"normal");
-      DoPandyaTransformation_SingleChannel(X,Xt_bar_ph,ch,"transpose");
-      auto& Zbar_ch = Z_bar.at(ch);
+//      DoPandyaTransformation_SingleChannel(Y,Y_bar_ph,ch,"normal");      // Generate  YbarJ'_ab`iQ`            for a<=b and a>b
+//      DoPandyaTransformation_SingleChannel(X,Xt_bar_ph,ch,"transpose");  // Generate XbarJ'_kj`ab` * (na-nb)   for a<=b and a>b
+      DoPandyaTransformation_SingleChannel_Dagger(Y,Y_bar_ph,ch);      // Generate  YbarJ'_iQ`ab` * (na-nb)      for a<=b and a>b
+      DoPandyaTransformation_SingleChannel(X,X_bar_ph,ch,"normal");  // Generate XbarJ'_ab`kj`                  for a<=b and a>b
+      auto& Zbar_ch = Z_bar.at(ch); // Marginally useful aliasing to avoid lookups...
+
+     // Zbar will be
+     // ZbarJ'_iQ`kj` = Sum_ab   (na-nb) <iQ`|YbarJ'|ab`> <ab`|XbarJ'|kj`>
+     // So then we can perform an inverse Pandya transform (which is really just another Pandya transform) to get
+     // ZJ_ijkQ = - Sum_J' (2J'+1) { ji  jj  J  }  ZbarJ'_iQ`kj`
+     //                            { jk  jQ  J' }
 
 
-      if (Y_bar_ph.size()<1 or Xt_bar_ph.size()<1)
+
+
+
+     // The shape of Xt_bar_ph is  ( rows, columns) = ( 2*nph_kets,  nKets_cc)  =>    [     Xbar    ]  |  ab`, element of nph_kets, which has ph` and hp`
+     //                                                                               [             ]  v
+     //                                                                                    -> 
+     //                                                                                    kj` is an element of kets_cc
+     //
+     // The shape of Y_bar_ph is   (rows, columns) = (norb, 2*nph_kets)         =>    [     Ybar    ]  | iQ`  runs over all orbits i, with Q fixed.
+     //                                                                               [             ]  v
+     //                                                                                    -> 
+     //                                                                                    ab` is an element of nph_kets, here we have ph` and hp`
+     //
+     // So we should multiply Ybar * Xbar to sum over ab` and get out Zbar      =>      [     Zbar    ]  |  iQ`
+     //                                                                                 [             ]  v
+     //                                                                                      -> 
+     //                                                                                      kj`
+     //
+     // Really, we need  <iQ`|Zbar|kj`> and <iQ`|Zbar|jk`> 
+
+
+
+      if (Y_bar_ph.size()<1 or X_bar_ph.size()<1)   // for an armadillo matrix, .size()  gives the total number of elements, i.e. n_rows * n_cols
       {
-        Zbar_ch = arma::zeros( Xt_bar_ph.n_rows, Y_bar_ph.n_cols*2);
+//        Zbar_ch = arma::zeros( Xt_bar_ph.n_rows, Y_bar_ph.n_cols*2);  // this needs to be changed.
+        Zbar_ch = arma::zeros( norb, 2*nKets_cc );  // This seems unnecessary since we initialized things earlier... try getting rid of it and see if things break.
         continue;
       }
 
@@ -3268,43 +3348,247 @@ void comm433sd_ph( const Operator& X, const Operator& Y, Operator& Z)
          PhaseMat.row( iket ) *= -1;
       }
       arma::uvec phkets = arma::join_cols(tbc_cc.GetKetIndex_hh(), tbc_cc.GetKetIndex_ph() );
-      auto PhaseMatY = PhaseMat.rows(phkets) * hy;
+      auto PhaseMatX = PhaseMat.rows(phkets) * hx;
 
 //                                           [      |     ]
-//     create full Y matrix from the half:   [  Yhp | Y'ph]   where the prime indicates multiplication by (-1)^(i+j+k+l) h_y
+//     create full Y matrix from the half:   [  Yhp | Y'ph]   where the prime indicates multiplication by (-1)^(i+j+k+l) h_x
 //                                           [      |     ]   Flipping hp <-> ph and multiplying by the phase is equivalent to
 //                                           [  Yph | Y'hp]   having kets |kj> with k>j.
-      Zbar_ch =  Xt_bar_ph * join_horiz(Y_bar_ph, join_vert(   Y_bar_ph.tail_rows(nph_kets)%PhaseMatY,
-                                                               Y_bar_ph.head_rows(nph_kets)%PhaseMatY) );
+      Zbar_ch =  Y_bar_ph * join_horiz(X_bar_ph, join_vert(   X_bar_ph.tail_rows(nph_kets)%PhaseMatX,
+                                                              X_bar_ph.head_rows(nph_kets)%PhaseMatX) );
 
 
-
-      // If Z is hermitian, then XY is anti-hermitian, and so XY - YX = XY + (XY)^T
-      // For the dagger operator, we're actually only interested in the -YX piece
-      // so the only change from the scalar-scalar case is += becomes = and -= becomes = -.
-      // I hope that works. -SRS 14/04/2018
-      if ( Z.IsHermitian() )
-      {
-         Zbar_ch.head_cols(nKets_cc) = Zbar_ch.head_cols(nKets_cc).t();
-      }
-      else
-      {
-         Zbar_ch.head_cols(nKets_cc) - -Zbar_ch.head_cols(nKets_cc).t();
-      }
-      Zbar_ch.tail_cols(nKets_cc) += Zbar_ch.tail_cols(nKets_cc).t()%PhaseMat;
+//      // If Z is hermitian, then XY is anti-hermitian, and so XY - YX = XY + (XY)^T
+//      // For the dagger operator, we're actually only interested in the -YX piece
+//      // so the only change from the scalar-scalar case is += becomes = and -= becomes = -.
+//      // I hope that works. -SRS 14/04/2018
+//      if ( Z.IsHermitian() )
+//      {
+//         Zbar_ch.head_cols(nKets_cc) = Zbar_ch.head_cols(nKets_cc).t();
+//      }
+//      else
+//      {
+//         Zbar_ch.head_cols(nKets_cc) - -Zbar_ch.head_cols(nKets_cc).t();
+//      }
+//      Zbar_ch.tail_cols(nKets_cc) += Zbar_ch.tail_cols(nKets_cc).t()%PhaseMat;
 
    }
 
-   Z.profiler.timer["Build Z_bar"] += omp_get_wtime() - t_start;
+   Z.profiler.timer["Build Z_bar_Dagger"] += omp_get_wtime() - t_start;
+   std::cout << "Done building Z_bar_dagger" << std::endl;
 
    // Perform inverse Pandya transform on Z_bar to get Z
    t_start = omp_get_wtime();
-   AddInversePandyaTransformation(Z_bar, Z);
+//   AddInversePandyaTransformation(Z_bar, Z);
+   AddInversePandyaTransformation_Dagger(Z_bar, Z);
 
-   Z.modelspace->scalar_transform_first_pass = false;
-   Z.profiler.timer["InversePandyaTransformation"] += omp_get_wtime() - t_start;
+//   Z.modelspace->scalar_transform_first_pass = false;
+   Z.profiler.timer["InversePandyaTransformation_Dagger"] += omp_get_wtime() - t_start;
 
 }
+
+
+
+
+
+
+//**************************************************************************
+// DAGGER VARIETY
+//
+//  X^J_iQ`ab` = - sum_J' { i Q J } (2J'+1) X^J'_ibaQ
+//                        { a b J'}
+/// A modification of the Pandya transform for the case of a dagger operator.
+/// We embed the dagger operator as a scalar with a ficticious fourth index Q,
+/// which is outside the Hilbert space. So our relevant transformation is
+/// \f[
+///  \bar{X}^{J}_{i\bar{Q}a\bar{b}} = - \sum_{J'} (2J'+1)
+///  \left\{ \begin{array}{lll}
+///  j_i  &  j_Q  &  J \\
+///  j_a  &  j_b  &  J' \\
+///  \end{array} \right\}
+///  X^{J}_{ibaQ}
+/// \f]
+/// where the overbar indicates time-reversed orbits.
+/// Since we use this for the commutator expression, the k and j orbits will be a and b,
+/// i.e. the orbits we sum over with a factor (na-nb). We include the (na-nb) factor
+/// in the output matrix.
+void DoPandyaTransformation_SingleChannel_Dagger(const Operator& Z, arma::mat& TwoBody_CC_ph, int ch_cc)
+{
+   TwoBodyChannel& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+   int nKets_cc = tbc_cc.GetNumberKets();
+   size_t norb = Z.modelspace->GetNumberOrbits();
+   arma::uvec kets_ph = arma::join_cols(tbc_cc.GetKetIndex_hh(), tbc_cc.GetKetIndex_ph() );
+   int nph_kets = kets_ph.n_rows;
+   int J_cc = tbc_cc.J;
+
+//   TwoBody_CC_ph.zeros( nKets_cc, 2*nph_kets);
+   TwoBody_CC_ph.zeros( norb, 2*nph_kets);   // factor 2 because we want both orderings ab and ba.
+
+   index_t Q = Z.GetQSpaceOrbit();
+   Orbit& oQ = Z.modelspace->GetOrbit(Q);
+   double jQ = oQ.j2*0.5;
+
+   // loop over cross-coupled ph kets |ab> in this channel
+   // (this is the side that gets summed over in the matrix multiplication)
+   for (int iket=0; iket<nph_kets; ++iket)
+   {
+      Ket & ket_cc = tbc_cc.GetKet( kets_ph[iket] );
+      int a = ket_cc.p;
+      int b = ket_cc.q;
+      Orbit & oa = Z.modelspace->GetOrbit(a);
+      Orbit & ob = Z.modelspace->GetOrbit(b);
+      double ja = oa.j2*0.5;
+      double jb = ob.j2*0.5;
+      double na_nb_factor = oa.occ - ob.occ;
+
+      // Here we make some lists so that we don't need to repeat code when switching (a,b) -> (b,a).
+      // Instead we can just iterate over the two cases.
+      std::vector<int> ab     = { a, b };
+      std::vector<double>jab  = { ja, jb };
+      std::vector<double>nanb = { (oa.occ-ob.occ),  (ob.occ-oa.occ) };
+
+      // loop over orbits i, and check if <iQ| is in the desired channel.
+      for (size_t i=0; i<norb; i++)
+      {
+         Orbit& oi = Z.modelspace->GetOrbit(i);
+         if (not tbc_cc.CheckChannel_ket( &oi, &oQ ) ) continue;  //  <iQ|  isn't in this channel, so move along. (Note, for this check, the ordering of i,Q doesn't matter).
+         size_t indx_iQ = i;   // since Q is fixed, we can label the bra <iQ| by the index i.
+         double ji = oi.j2*0.5;
+
+         // we loop over both orderings, a<b and a>b. Here, this is done by exchanging a<->b and taking a minus sign due to the (na-nb) factor.
+         for ( int ab_case=0; ab_case<=1; ab_case++)
+         {
+           size_t ab1 = ab[ab_case];
+           size_t ab2 = ab[1-ab_case];
+           double jab1  = jab[ab_case];
+           double jab2  = jab[1-ab_case];
+           size_t indx_ab = iket + ab_case*nph_kets;
+
+           int jmin = std::max( std::abs(jab1-jQ), std::abs(ji-jab2) );
+           int jmax = std::min( jab1+jQ, ji+jab2 );
+           double Xbar = 0;
+           for (int J_std=jmin; J_std<=jmax; ++J_std)
+           {
+              double sixj = Z.modelspace->GetSixJ(ji,jQ,J_cc,jab1,jab2,J_std);
+              if (std::abs(sixj) < 1e-8) continue;
+              double tbme = Z.TwoBody.GetTBME_J(J_std,i,ab2,ab1,Q);
+              Xbar -= (2*J_std+1) * sixj * tbme ;
+           }
+           TwoBody_CC_ph(indx_iQ, indx_ab) = Xbar * nanb[ab_case] ;
+         }
+      }
+   }
+}
+
+
+
+
+void AddInversePandyaTransformation_Dagger( const std::deque<arma::mat>& Zbar, Operator& Z )
+{
+    // Do the inverse Pandya transform
+   int n_nonzeroChannels = Z.modelspace->SortedTwoBodyChannels.size();
+   size_t norb = Z.modelspace->GetNumberOrbits();
+   size_t Q = Z.GetQSpaceOrbit();
+   Orbit& oQ = Z.modelspace->GetOrbit(Q);
+   double jQ = 0.5 * oQ.j2;
+
+    // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
+//   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar_transform_first_pass)
+   for (int ich = 0; ich < n_nonzeroChannels; ++ich)
+   {
+      size_t ch = Z.modelspace->SortedTwoBodyChannels[ich];
+      TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
+      int J = tbc.J;
+      size_t nKets = tbc.GetNumberKets();
+
+      // the bra is the <ij| part of Z_ijkQ
+      for (size_t ibra=0; ibra<nKets; ++ibra)
+      {
+         Ket & bra = tbc.GetKet(ibra);
+         size_t i = bra.p;
+         size_t j = bra.q;
+         Orbit & oi = Z.modelspace->GetOrbit(i);
+         Orbit & oj = Z.modelspace->GetOrbit(j);
+         double ji = oi.j2/2.;
+         double jj = oj.j2/2.;
+
+         // Two-element lists for use below, because we need to antisymmetrize with 1-Pij, including a phase factor (-1)^{ji+jj-J)
+         // The code would look like the exact same thing copy-pasted twice, with i and j exchanged in the second copy.
+         std::vector<size_t> ij   = { i, j };
+         std::vector<double> jij  = { ji, jj };
+         std::vector<Orbit>  oij  = { oi, oj };
+         std::vector<int> phaseij = { +1, bra.Phase(J) }; 
+
+
+         for (size_t k=0; k<norb; k++)
+         {
+            Orbit & ok = Z.modelspace->GetOrbit(k);
+            if ( not tbc.CheckChannel_ket(&ok, &oQ) ) continue; // if |kQ> doesn't live in this channel, move along.
+            size_t iket = tbc.GetLocalIndex( k, Q );
+            Ket & ket = tbc.GetKet( iket%nKets );   // if k and Q are in the wrong order, GetLocalIndex returns the index + nKets
+            int phase_kQ = (iket <nKets) ?  1 : ket.Phase(J);  // if k and Q are in the wrong order, we'll need a phase to flip them.
+            iket = iket%nKets;
+            double jk = ok.j2/2.;
+
+            double commij = 0;  // contribution of the 1 term 
+            double commji = 0;  // contribution of the -(-1)^{i+j-J)Pij term
+
+
+            for (int ij_case=0; ij_case<=1; ij_case++)
+            {
+              size_t ij1  =  ij[ij_case];  // in the first case, ij1 is i,   the second time around, ij1 is j.
+              double jij1 = jij[ij_case];
+              Orbit& oij1 = oij[ij_case];
+
+              size_t ij2  =  ij[1-ij_case];
+              double jij2 = jij[1-ij_case];
+              Orbit& oij2 = oij[1-ij_case];
+              int Pij = phaseij[ij_case];
+
+              commij = 0;
+              int parity_cc = (oij1.l+oQ.l)%2;
+              int Tz_cc = std::abs(oij1.tz2+oQ.tz2)/2;
+              int jmin = std::max(std::abs(int(jij1-jQ)),std::abs(int(jk-jij2)));
+              int jmax = std::min(int(jij1+jQ),int(jk+jij2));
+              for (int Jprime=jmin; Jprime<=jmax; ++Jprime)
+              {
+                 double sixj = Z.modelspace->GetSixJ(jij1,jij2,J,jk,jQ,Jprime);
+                 if (std::abs(sixj)<1e-8) continue;
+                 int ch_cc = Z.modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
+                 TwoBodyChannel_CC& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+                 int nkets_cc = tbc_cc.GetNumberKets();
+                 size_t indx_iQ = ij1;
+                 size_t indx_kj = tbc_cc.GetLocalIndex(std::min(ij2,k),std::max(ij2,k)) +(k>ij2?nkets_cc:0);
+                 double me1 = Zbar.at(ch_cc)(indx_iQ,indx_kj);
+                 commij += (2*Jprime+1) * sixj * me1  * Pij;
+              }
+
+//              double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;   // This follows the scalar TBME normalization
+//              Z.TwoBody.GetMatrix(ch,ch)(ibra,iket) -= phase_kQ * commij / norm;
+
+              // TODO  FIGURE OUT THE CONSISTENT WAY TO DEAL WITH NORMALIZATION IN THE CODE
+
+              double norm = bra.delta_pq()==1 ?  SQRT2 : 1.0;
+              if (k==Q) norm *= SQRT2;          // For internal consistency, we normalize as if this were a scalar TBME. We'll fix this when printing out to file.
+
+              Z.TwoBody.AddToTBME_J(J,i,j,k,Q,  -phase_kQ * commij / norm);   // AddToTBME_J assumes a normalized matrix element.
+            }
+
+         }
+      }
+   }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 

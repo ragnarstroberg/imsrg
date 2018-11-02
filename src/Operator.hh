@@ -133,7 +133,7 @@ class Operator
   void SetParticleRank(int pr) {particle_rank = pr;};
   void SetNumberLegs( int l) {legs = l;};
   void SetQSpaceOrbit( index_t q ) {Q_space_orbit = q;};
-  index_t GetQSpaceOrbit( ) {return Q_space_orbit;};
+  index_t GetQSpaceOrbit( ) const {return Q_space_orbit;};
 
   void MakeReduced();
   void MakeNotReduced();

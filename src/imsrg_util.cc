@@ -5,6 +5,7 @@
 //#include "DarkMatterNREFT.hh"
 #include "omp.h"
 #include <gsl/gsl_integration.h>
+#include <gsl/gsl_sf_bessel.h> // to use bessel functions
 #include <boost/math/special_functions/gamma.hpp>
 #include <boost/math/special_functions/factorials.hpp>
 #include <vector>
@@ -1206,44 +1207,106 @@ Operator E0Op(ModelSpace& modelspace)
    return e0;
 }
 
-struct FBCIntegrandParameters{int n; int l; double hw;};
 
-double FBCIntegrand(double x, void *p)
-{
-  struct FBCIntegrandParameters * params = (struct FBCIntegrandParameters *)p;
-  return x*HO_density(params->n, params->l, params->hw, x);
-}
 
+
+
+//Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R)
+// providing an index list allows us to select e.g. just protons or just neutrons
 Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list)
 {
   Operator a_nu(modelspace,0,0,0,2);
-  double omega = nu * M_PI / R; // coefficient of sine function, i.e. sin(omega*x)
-  double L = R; // range of integration
-  size_t n = 20; // number of bisections
-  gsl_integration_qawo_table * table = gsl_integration_qawo_table_alloc (omega, L, GSL_INTEG_SINE, n);
-  gsl_integration_workspace * workspace = gsl_integration_workspace_alloc ( n );
 
-  const double epsabs = 1e-5; // std::absolute error
-  const double epsrel = 1e-5; // relative error
-  const size_t limit = n; // maximum number of subintervals (maybe should be different?)
-  const double start = 0.0; // lower limit on integration range
-  double result;
-  double abserr;
-  gsl_function F;
-  F.function = &FBCIntegrand;
+  size_t npoints = 99;  // should be a multiple of 3 so we can use the Simpson 3/8 rule
+  std::vector<double> RGRID(npoints);
+  std::vector<double> BESSEL(npoints);
+  std::vector<double> PSI_p(npoints);
+  std::vector<double> INTEGRAND(npoints);
+  double dr = R / npoints;
+  double Q = nu*M_PI/R;
 
-  for (auto i : index_list )
+  for (size_t i=0; i<npoints; i++)
   {
-    Orbit& oi = modelspace.GetOrbit(i);
-    struct FBCIntegrandParameters params = {oi.n, oi.l, modelspace.GetHbarOmega()};
-    F.params = &params;
-    //int status = gsl_integration_qawo (&F, start, epsstd::abs, epsrel, limit, workspace, table, &result, &std::abserr);
-    gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
-    a_nu.OneBody(i,i) = M_PI*M_PI/R/R/R * R/nu/M_PI*(result);
-    std::cout << "orbit,nu = " << i << "," << nu << "  => " << a_nu.OneBody(i,i) << "  from " << result << " (" << abserr << ")" << std::endl;
+    RGRID[i] = i*dr;
+    BESSEL[i] =  gsl_sf_bessel_j0( Q * RGRID[i] );
   }
-  return a_nu;
+
+  double hw = modelspace.GetHbarOmega();
+
+  for ( auto p : index_list )  
+  {
+    Orbit& op = modelspace.GetOrbit(p);
+    for (size_t i=0; i<npoints; i++)
+    {
+      PSI_p[i] = HO_Radial_psi( op.n, op.l, hw, RGRID[i]);
+    }
+
+    // Use Simpson's rule to perform the integral
+    // int  dr  r^2  psi_p(r)  j0(nu *pi * r /R ) psi_q(r)
+//    size_t q = p;
+    for (auto q : a_nu.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+    {
+      if (q>p) continue;
+      Orbit& oq = modelspace.GetOrbit(q);
+      for (size_t i=0; i<npoints; i++)
+      {
+        INTEGRAND[i] = HO_Radial_psi( oq.n, oq.l, hw, RGRID[i] ) * RGRID[i]*RGRID[i] * BESSEL[i] * PSI_p[i];
+      }
+
+      double integral = INTEGRAND[0] + INTEGRAND[npoints-1];
+      for (size_t i=1; i<npoints; i+=3)
+      {
+        integral += 3*INTEGRAND[i] + 3*INTEGRAND[i+1] + 2*INTEGRAND[i+2];
+      }
+      integral *= 3./8 * dr;
+      integral *= Q*Q;
+
+      a_nu.OneBody(p,q) = integral;
+      a_nu.OneBody(q,p) = integral;
+    }
+  }
+
+  return a_nu; // There may need to be some additional normalization by pi or something...
 }
+
+//struct FBCIntegrandParameters{int n; int l; double hw;};
+//
+//double FBCIntegrand(double x, void *p)
+//{
+//  struct FBCIntegrandParameters * params = (struct FBCIntegrandParameters *)p;
+//  return x*HO_density(params->n, params->l, params->hw, x);
+//}
+//
+//Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list)
+//{
+//  Operator a_nu(modelspace,0,0,0,2);
+//  double omega = nu * M_PI / R; // coefficient of sine function, i.e. sin(omega*x)
+//  double L = R; // range of integration
+//  size_t n = 20; // number of bisections
+//  gsl_integration_qawo_table * table = gsl_integration_qawo_table_alloc (omega, L, GSL_INTEG_SINE, n);
+//  gsl_integration_workspace * workspace = gsl_integration_workspace_alloc ( n );
+//
+//  const double epsabs = 1e-5; // std::absolute error
+//  const double epsrel = 1e-5; // relative error
+//  const size_t limit = n; // maximum number of subintervals (maybe should be different?)
+//  const double start = 0.0; // lower limit on integration range
+//  double result;
+//  double abserr;
+//  gsl_function F;
+//  F.function = &FBCIntegrand;
+//
+//  for (auto i : index_list )
+//  {
+//    Orbit& oi = modelspace.GetOrbit(i);
+//    struct FBCIntegrandParameters params = {oi.n, oi.l, modelspace.GetHbarOmega()};
+//    F.params = &params;
+//    //int status = gsl_integration_qawo (&F, start, epsstd::abs, epsrel, limit, workspace, table, &result, &std::abserr);
+//    gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
+//    a_nu.OneBody(i,i) = M_PI*M_PI/R/R/R * R/nu/M_PI*(result);
+//    std::cout << "orbit,nu = " << i << "," << nu << "  => " << a_nu.OneBody(i,i) << "  from " << result << " (" << abserr << ")" << std::endl;
+//  }
+//  return a_nu;
+//}
 
 
 
@@ -1915,6 +1978,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
    std::cout << "Making a dagger operator. I think Q = " << Q << std::endl;
    return dag;
  }
+
+
 
 
 

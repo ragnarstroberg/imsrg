@@ -521,7 +521,6 @@ Operator Operator::DoNormalOrderingDagger( int sign) const
  
   index_t Q = opNO.GetQSpaceOrbit();
   Orbit& oQ = modelspace->GetOrbit(Q);
-//  double jQ = oQ.j2*0.5;
 
   for ( auto& itmat : TwoBody.MatEl )
   {
@@ -532,7 +531,7 @@ Operator Operator::DoNormalOrderingDagger( int sign) const
      int J = tbc.J;
      double hatfactor = 2*J+1.0;
 
-     // One body part
+     // a dagger part
 
      for ( auto a : OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
      {
@@ -541,11 +540,7 @@ Operator Operator::DoNormalOrderingDagger( int sign) const
         for (auto& h : modelspace->holes)  // C++11 syntax
         {
           Orbit& oh = modelspace->GetOrbit(h);
-
-          if (opNO.rank_J==0)
-          {
-             opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
-          }
+          opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);  // The GetTBME returns an unnormalized matrix element.
         }
      }
   } // loop over channels

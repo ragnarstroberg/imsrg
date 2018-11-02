@@ -38,7 +38,8 @@ namespace Commutator{
   std::deque<arma::mat> InitializePandya(Operator& Z, size_t nch, std::string orientation);
   void DoPandyaTransformation(const Operator& Z, std::deque<arma::mat>&, std::string orientation) ;
   void DoPandyaTransformation_SingleChannel(const Operator& Z, arma::mat& X, int ch_cc, std::string orientation) ;
-  void AddInversePandyaTransformation(Operator& Z, const std::deque<arma::mat>&);
+//  void AddInversePandyaTransformation(Operator& Z, const std::deque<arma::mat>&);
+  void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator& Z);   // Changed from the above declaration. Not sure how this was compiling...
   void AddInversePandyaTransformation_SingleChannel(Operator& Z, arma::mat& Zbar, int ch_cc);
 
 
@@ -82,9 +83,12 @@ namespace Commutator{
   void comm413_233sd( const Operator& X, const Operator& Y, Operator& Z) ; 
   void comm433sd_pphh( const Operator& X, const Operator& Y, Operator& Z) ; 
   void comm433sd_ph( const Operator& X, const Operator& Y, Operator& Z) ; 
+  void comm433sd_ph_dumbway( const Operator& X, const Operator& Y, Operator& Z) ; // Do it with loops, not matmult. Easier to check, but much slower.
 
   void comm433_pp_hh_431sd( const Operator& X, const Operator& Y, Operator& Z ) ; 
   void ConstructDaggerMpp_Mhh(const Operator& X, const Operator& Y, const Operator& Z, TwoBodyME& Mpp, TwoBodyME& Mhh);
+  void DoPandyaTransformation_SingleChannel_Dagger(const Operator& Z, arma::mat& X, int ch_cc) ;
+  void AddInversePandyaTransformation_Dagger(const std::deque<arma::mat>& Zbar, Operator& Z );
 
 
 

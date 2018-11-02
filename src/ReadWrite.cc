@@ -3956,9 +3956,11 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
        {
          Ket& ket = tbc.GetKet(iket);
          if (ket.q != Q) continue;
-         double me = matrix(ibra,iket) * EdmondsConventionFactor;
+//         double me = matrix(ibra,iket) * EdmondsConventionFactor;   // TODO look into this further. The value stored in the matrix is (I think) already normalized, and maybe over-normalized...
+         double me = Op.TwoBody.GetTBME(itmat.first[0],bra.p,bra.q,ket.p,ket.q) * EdmondsConventionFactor;   // TODO look into this further. The value stored in the matrix is (I think) already normalized, and maybe over-normalized...
          if (std::abs(me) < 1e-7) continue;
          if (a_ind == b_ind) me /= SQRT2;  // We write out normalized matrix elements
+//         if (ket.p == ket.q) me *= SQRT2;  // We write out normalized matrix elements
          auto c_ind = orb2nushell[ket.p];
          outfile << std::setw(wint) << a_ind << " " << std::setw(wint) << b_ind << " " << std::setw(wint) << c_ind << "   "
                  << std::setw(wint) << tbc.J << "   " << std::setw(wdouble) << std::setprecision(pdouble) << me << std::endl;
