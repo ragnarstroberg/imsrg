@@ -1545,7 +1545,6 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
          for (int Lcd=std::max(std::abs(lc-ld),std::abs(Jcd-1))+(Lab+L)%2; Lcd<=std::min(lc+ld,Jcd+1); Lcd+=2)
          {
           for (int S=std::max(std::abs(Jab-Lab),std::abs(Jcd-Lcd)); S<=std::min(1,std::min(Jab+Lab,Jcd+Lcd)); S+=1 )
-
           {
             double njab = AngMom::NormNineJ( la, 0.5, ja, lb, 0.5, jb, Lab, S, Jab);
             double njcd = AngMom::NormNineJ( lc, 0.5, jc, ld, 0.5, jd, Lcd, S, Jcd);

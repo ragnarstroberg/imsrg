@@ -3132,7 +3132,7 @@ void ReadWrite::WriteAntoine_int(Operator& op, std::string filename)
            int nljd = nlj_labels[orbit_map[d]];
            int Tmin = std::abs(oa.tz2+ob.tz2) -1; // -1 means pn, 1 means pp or nn. T loop goes std::abs(Tmin) to Tmax
            int Tmax = 1; // always 1.
-           int Jmin = std::max(abs(oa.j2-ob.j2),abs(oc.j2-od.j2))/2;
+           int Jmin = std::max(std::abs(oa.j2-ob.j2),std::abs(oc.j2-od.j2))/2;
            int Jmax = std::min(oa.j2+ob.j2,oc.j2+od.j2)/2;
            if (Jmin<=Jmax)
            {
@@ -3945,25 +3945,23 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
    for ( auto& itmat : Op.TwoBody.MatEl )
    {
      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
-     EdmondsConventionFactor = -sqrt(2*tbc.J+1);
-     auto& matrix = itmat.second;
+     int Jab = tbc.J;
+     EdmondsConventionFactor = -sqrt(2*Jab+1.);
      for (auto& ibra: tbc.GetKetIndex_vv() )
      {
        Ket& bra = tbc.GetKet(ibra);
-       auto a_ind = orb2nushell[bra.p];
-       auto b_ind = orb2nushell[bra.q];
-       for (auto& iket: tbc.GetKetIndex_vv() )
+       auto a = bra.p;
+       auto b = bra.q;
+       auto a_ind = orb2nushell[a];
+       auto b_ind = orb2nushell[b];
+       for ( auto c : modelspace->valence )
        {
-         Ket& ket = tbc.GetKet(iket);
-         if (ket.q != Q) continue;
-//         double me = matrix(ibra,iket) * EdmondsConventionFactor;   // TODO look into this further. The value stored in the matrix is (I think) already normalized, and maybe over-normalized...
-         double me = Op.TwoBody.GetTBME(itmat.first[0],bra.p,bra.q,ket.p,ket.q) * EdmondsConventionFactor;   // TODO look into this further. The value stored in the matrix is (I think) already normalized, and maybe over-normalized...
+         double me = Op.TwoBody.GetTBME_J(Jab,Jab,a,b,c,Q) * EdmondsConventionFactor;
          if (std::abs(me) < 1e-7) continue;
          if (a_ind == b_ind) me /= SQRT2;  // We write out normalized matrix elements
-//         if (ket.p == ket.q) me *= SQRT2;  // We write out normalized matrix elements
-         auto c_ind = orb2nushell[ket.p];
+         auto c_ind = orb2nushell[c];
          outfile << std::setw(wint) << a_ind << " " << std::setw(wint) << b_ind << " " << std::setw(wint) << c_ind << "   "
-                 << std::setw(wint) << tbc.J << "   " << std::setw(wdouble) << std::setprecision(pdouble) << me << std::endl;
+                 << std::setw(wint) << Jab << "   " << std::setw(wdouble) << std::setprecision(pdouble) << me << std::endl;
          
        }
      }
@@ -4179,7 +4177,7 @@ void ReadWrite::ReadRelCMOpFromJavier( std::string statefilename, std::string ME
       int lb = bra.oq->l;
       double jb = 0.5*bra.oq->j2;
       double tb = 0.5*bra.oq->tz2;
-      int Lab_min = std::max(abs(la-lb),Jab-1);
+      int Lab_min = std::max(std::abs(la-lb),Jab-1);
       int Lab_max = std::min(la+lb,Jab+1);
       int eab = 2*(na+nb)+la+lb;
       std::cout << "eab =  " << eab << std::endl;
@@ -4195,7 +4193,7 @@ void ReadWrite::ReadRelCMOpFromJavier( std::string statefilename, std::string ME
         int ld = ket.oq->l;
         double jd = 0.5*ket.oq->j2;
         double td = 0.5*ket.oq->tz2;
-        int Lcd_min = std::max(abs(lc-ld),Jcd-1);
+        int Lcd_min = std::max(std::abs(lc-ld),Jcd-1);
         int Lcd_max = std::min(lc+ld,Jcd+1);
         int ecd = 2*(nc+nd)+lc+ld;
         std::cout << " ecd = " << ecd << std::endl;
@@ -4208,12 +4206,12 @@ void ReadWrite::ReadRelCMOpFromJavier( std::string statefilename, std::string ME
         }
         for (int Lab=Lab_min; Lab<=Lab_max; ++Lab)
         {
-          for (int Sab=std::max(0,abs(Lab-Jab)); Sab<=std::min(1,Lab+Jab); ++Sab)
+          for (int Sab=std::max(0,std::abs(Lab-Jab)); Sab<=std::min(1,Lab+Jab); ++Sab)
           {
             double NormNineJab = sqrt((2*ja+1)*(2*jb+1)*(2*Lab+1)*(2*Sab+1)) * modelspace->GetNineJ(la,0.5,ja, lb,0.5,jb, Lab,Sab,Jab);
             for (int Lcd=Lcd_min; Lcd<=Lcd_max; ++Lcd)
             {
-              for (int Scd=std::max(0,abs(Lcd-Jcd)); Scd<=std::min(1,Lcd+Jcd); ++Scd)
+              for (int Scd=std::max(0,std::abs(Lcd-Jcd)); Scd<=std::min(1,Lcd+Jcd); ++Scd)
               {
                 double NormNineJcd = sqrt((2*jc+1)*(2*jd+1)*(2*Lcd+1)*(2*Scd+1)) * modelspace->GetNineJ(lc,0.5,jc, ld,0.5,jd, Lcd,Scd,Jcd);
 

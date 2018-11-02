@@ -584,7 +584,7 @@ int main(int argc, char** argv)
       }
     }
   }
-  if ( renormal_order and false) 
+  if ( renormal_order ) 
   {
 
     HNO = imsrgsolver.GetH_s();

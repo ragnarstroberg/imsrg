@@ -204,8 +204,8 @@ Operator CommutatorScalarDagger( const Operator& X, const Operator& Y)
    comm231sd( X, Y, Z ) ;
    comm413_233sd( X, Y, Z ) ; 
    comm433_pp_hh_431sd( X, Y, Z ) ; 
-//   comm433sd_ph( X, Y, Z ) ; 
-   comm433sd_ph_dumbway( X, Y, Z ) ; 
+   comm433sd_ph( X, Y, Z ) ; 
+//   comm433sd_ph_dumbway( X, Y, Z ) ; 
 
    X.profiler.timer["CommutatorScalarDagger"] += omp_get_wtime() - t_css;
    return Z;
@@ -3137,15 +3137,11 @@ void comm433sd_ph_dumbway( const Operator& X, const Operator& Y, Operator& Z)
    Orbit& oQ = Z.modelspace->GetOrbit(Q);
    double jQ = 0.5*oQ.j2;
    auto kets_ph = Z.modelspace->KetIndex_ph;
-   for ( auto khh : Z.modelspace->KetIndex_hh )
+   for ( auto khh : Z.modelspace->KetIndex_hh ) // ph kets needs to include hh list in case there are fractionally occupied states
    {
      kets_ph.push_back(khh);
    }
 
-// don't parallelize. the calls to sixj's down there will cause trouble
-//   #ifndef OPENBLAS_NOUSEOMP
-//   #pragma omp parallel for schedule(dynamic,1)
-//   #endif
    for (int ich=0; ich<nch; ++ich)
    {
       int ch = Z.modelspace->SortedTwoBodyChannels[ich];
@@ -3179,13 +3175,10 @@ void comm433sd_ph_dumbway( const Operator& X, const Operator& Y, Operator& Z)
             {
               auto& ketab = Z.modelspace->GetKet(iketab);
               std::vector<index_t> ab_cases = { ketab.p, ketab.q };
-//              std::vector<index_t> b_cases = { ketab.q, ketab.p };
-//              std::vector<int> absign_cases = { +1, -1 };           // This accounts for the na-nb = na(1-nb) - (1-na)nb, which corresponds to just taking na(1-nb) and doing (1-Pab)
               for (int abcase = 0; abcase<=1; abcase++)
               {
                 index_t a  = ab_cases[abcase];
                 index_t b  = ab_cases[1-abcase];
-//                int absign = 1; //absign_cases[abcase];
 
                 Orbit& oa = Z.modelspace->GetOrbit(a);
                 Orbit& ob = Z.modelspace->GetOrbit(b);
@@ -3197,16 +3190,22 @@ void comm433sd_ph_dumbway( const Operator& X, const Operator& Y, Operator& Z)
                 // Jprime needs to satisfy triangle contitions with ji,jj  and ji,jQ  and ja,jb, or the sixj's will be zero.
                 int Jprime_min = std::max( std::max( std::abs(ji-jj), std::abs(jk-jQ) ), std::abs(ja-jb) );
                 int Jprime_max = std::min( std::min( ji+jj, jk+jQ), ja+jb );
+                Jprime_min=0;
+                Jprime_max=10;
 
 //                int JA_min = std::max( std::abs(ja-jb), std::min( std::abs(jk-jj), std::abs(jk-ji) )  );
 //                int JA_max = std::min( ja+jb, std::max( jk+jj, jk+ji ) );
                 int JA_min = std::max(  std::abs(ja-jj), std::abs(jk-jb)  );
                 int JA_max = std::min( ja+jj,  jk+jb );
+                JA_min=0;
+                JA_max=10;
 
 //                int JB_min = std::max( std::abs(ja-jb), std::min(std::abs(ji-jQ), std::abs(jj-jQ)  )  );
 //                int JB_max = std::min( ja+jb, std::max( ji+jQ,  jj+jQ) );
                 int JB_min = std::max(  std::abs(ja-jQ), std::abs(ji-jb)  );
                 int JB_max = std::min( ja+jQ,  ji+jb );
+                JB_min=0;
+                JB_max=10;
                 for (int Jprime=Jprime_min; Jprime<=Jprime_max; ++Jprime)
                 {
                   double matelX = 0;
@@ -3511,6 +3510,7 @@ void AddInversePandyaTransformation_Dagger( const std::deque<arma::mat>& Zbar, O
          Orbit & oj = Z.modelspace->GetOrbit(j);
          double ji = oi.j2/2.;
          double jj = oj.j2/2.;
+         double norm_ij = (i==j) ? 1.0/SQRT2 : 1.0;
 
          // Two-element lists for use below, because we need to antisymmetrize with 1-Pij, including a phase factor (-1)^{ji+jj-J)
          // The code would look like the exact same thing copy-pasted twice, with i and j exchanged in the second copy.
@@ -3529,9 +3529,9 @@ void AddInversePandyaTransformation_Dagger( const std::deque<arma::mat>& Zbar, O
             int phase_kQ = (iket <nKets) ?  1 : ket.Phase(J);  // if k and Q are in the wrong order, we'll need a phase to flip them.
             iket = iket%nKets;
             double jk = ok.j2/2.;
+            double norm_kQ = (k==Q) ? 1.0/SQRT2  : 1.0;
 
             double commij = 0;  // contribution of the 1 term 
-            double commji = 0;  // contribution of the -(-1)^{i+j-J)Pij term
 
 
             for (int ij_case=0; ij_case<=1; ij_case++)
@@ -3545,7 +3545,6 @@ void AddInversePandyaTransformation_Dagger( const std::deque<arma::mat>& Zbar, O
               Orbit& oij2 = oij[1-ij_case];
               int Pij = phaseij[ij_case];
 
-              commij = 0;
               int parity_cc = (oij1.l+oQ.l)%2;
               int Tz_cc = std::abs(oij1.tz2+oQ.tz2)/2;
               int jmin = std::max(std::abs(int(jij1-jQ)),std::abs(int(jk-jij2)));
@@ -3560,19 +3559,11 @@ void AddInversePandyaTransformation_Dagger( const std::deque<arma::mat>& Zbar, O
                  size_t indx_iQ = ij1;
                  size_t indx_kj = tbc_cc.GetLocalIndex(std::min(ij2,k),std::max(ij2,k)) +(k>ij2?nkets_cc:0);
                  double me1 = Zbar.at(ch_cc)(indx_iQ,indx_kj);
-                 commij += (2*Jprime+1) * sixj * me1  * Pij;
+                 commij -= (2*Jprime+1) * sixj * me1  * Pij;
               }
 
-//              double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;   // This follows the scalar TBME normalization
-//              Z.TwoBody.GetMatrix(ch,ch)(ibra,iket) -= phase_kQ * commij / norm;
-
-              // TODO  FIGURE OUT THE CONSISTENT WAY TO DEAL WITH NORMALIZATION IN THE CODE
-
-              double norm = bra.delta_pq()==1 ?  SQRT2 : 1.0;
-              if (k==Q) norm *= SQRT2;          // For internal consistency, we normalize as if this were a scalar TBME. We'll fix this when printing out to file.
-
-              Z.TwoBody.AddToTBME_J(J,i,j,k,Q,  -phase_kQ * commij / norm);   // AddToTBME_J assumes a normalized matrix element.
             }
+            Z.TwoBody.AddToTBME_J(J,i,j,k,Q,  phase_kQ * commij * norm_ij * norm_kQ);   // AddToTBME_J assumes a normalized matrix element.
 
          }
       }
