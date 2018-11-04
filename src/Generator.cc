@@ -108,6 +108,37 @@ double Generator::Get2bDenominator(int ch, int ibra, int iket)
 }
 
 
+// Keep the Jdependence for the Gamma_ijij and Gamma_klkl terms, because it's
+// relatively unambiguous to work out
+double Generator::Get2bDenominator_Jdep(int ch, int ibra, int iket) 
+{
+   TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+   Ket & bra = tbc.GetKet(ibra);
+   Ket & ket = tbc.GetKet(iket);
+   int i = bra.p;
+   int j = bra.q;
+   int k = ket.p;
+   int l = ket.q;
+   double denominator = H->OneBody(i,i)+ H->OneBody(j,j) - H->OneBody(k,k) - H->OneBody(l,l);
+   if (denominator_delta_index == -12345) denominator += denominator_delta;
+   double ni = bra.op->occ;
+   double nj = bra.oq->occ;
+   double nk = ket.op->occ;
+   double nl = ket.oq->occ;
+
+   denominator       += ( 1-ni-nj ) * H->TwoBody.GetTBME(tbc.J,i,j,i,j); // pp'pp'
+   denominator       -= ( 1-nk-nl ) * H->TwoBody.GetTBME(tbc.J,k,l,k,l); // hh'hh'
+   denominator       += ( ni-nk ) * H->TwoBody.GetTBMEmonopole(i,k,i,k); // phph
+   denominator       += ( ni-nl ) * H->TwoBody.GetTBMEmonopole(i,l,i,l); // ph'ph'
+   denominator       += ( nj-nk ) * H->TwoBody.GetTBMEmonopole(j,k,j,k); // p'hp'h
+   denominator       += ( nj-nl ) * H->TwoBody.GetTBMEmonopole(j,l,j,l); // p'h'p'h'
+
+   if (std::abs(denominator)<denominator_cutoff)
+     denominator = denominator_cutoff;
+//     denominator *= denominator_cutoff/(std::abs(denominator)+1e-6);
+   return denominator;
+}
+
 
 // I haven't used this, so I don't know if it's right.
 void Generator::ConstructGenerator_Wegner()
@@ -202,6 +233,7 @@ void Generator::ConstructGenerator_Atan()
          for ( auto& ibra : VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
+//            double denominator = Get2bDenominator_Jdep(ch,ibra,iket);
             ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }

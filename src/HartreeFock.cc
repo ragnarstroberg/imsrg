@@ -820,6 +820,40 @@ double HartreeFock::GetRadialWF_r(index_t index, double R)
 
 
 
+double HartreeFock::GetHFPotential( size_t i, double r, double rprime)
+{
+  double Uhf = 0;
+    Orbit& oi = modelspace->GetOrbit(i);
+//  size_t norb = modelspace->GetNumberOrbits();
+//  for (size_t i=0; i<norb; i++)
+//  {
+    for (auto j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    {
+      for (auto k : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+      {
+        Uhf +=  (Vij(j,k) + 0.5*V3ij(j,k) )  * GetRadialWF_r(j,r) * GetRadialWF_r(k,rprime);
+      }
+    }
+//  }
+  return Uhf;
+}
+
+
+double HartreeFock::GetAverageHFPotential( double r, double rprime)
+{
+  double Uhf = 0;
+  size_t norb = modelspace->GetNumberOrbits();
+  for (size_t i=0; i<norb; i++)
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    if (oi.n == 0)
+    {
+      Uhf += GetHFPotential(i,r,rprime);
+    }
+  }
+  Uhf /= 2*(2*modelspace->GetEmax()+1); // 2 for protons/neutrons, and 2*emax+1 is number of different l,j combinations
+  return Uhf;
+}
 
 
 // Get the 3-body interaction in the Hartree-Fock basis.

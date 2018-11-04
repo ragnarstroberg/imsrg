@@ -168,6 +168,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("MakeNormalized", &Operator::MakeNormalized)
       .def("MakeUnNormalized", &Operator::MakeUnNormalized)
       .def("SetOneBodyME", &OpSetOneBodyME)
+      .def_readwrite("ThreeBody", &Operator::ThreeBody)
    ;
 
 //   class_<arma::mat>("ArmaMat",init<>())
@@ -189,6 +190,13 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def(py::init<>())
       .def("GetTBME_J", TB_GetTBME_J)
       .def("GetTBME_J_norm", TB_GetTBME_J_norm)
+   ;
+
+   py::class_<ThreeBodyME>(m,"ThreeBodyME")
+      .def(py::init<>())
+      .def("SetME", &ThreeBodyME::SetME)
+      .def("GetME", &ThreeBodyME::GetME)
+      .def("GetME_pn", &ThreeBodyME::GetME_pn)
    ;
 
 //   class_<ReadWrite>("ReadWrite",init<>())
@@ -249,6 +257,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetOmega",&HartreeFock::GetOmega)
       .def("PrintSPE",&HartreeFock::PrintSPE)
       .def("GetRadialWF_r",&HartreeFock::GetRadialWF_r)
+      .def("GetHFPotential",&HartreeFock::GetHFPotential)
+      .def("GetAverageHFPotential",&HartreeFock::GetAverageHFPotential)
       .def("GetValence3B",&HartreeFock::GetValence3B)
       .def_readonly("EHF",&HartreeFock::EHF)
       .def_readonly("C",&HartreeFock::C)
@@ -298,10 +308,6 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("PrintCounters",&IMSRGProfiler::PrintCounters)
       .def("PrintAll",&IMSRGProfiler::PrintAll)
       .def("PrintMemory",&IMSRGProfiler::PrintMemory)
-   ;
-
-   py::class_<ThreeBodyME>(m,"ThreeBodyME")
-      .def(py::init<>())
    ;
 
 

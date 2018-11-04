@@ -80,6 +80,8 @@ class HartreeFock
    void FreeVmon();               ///< Free up the memory used to store Vmon3.
    void GetRadialWF(index_t index, std::vector<double>& R, std::vector<double>& PSI); ///< Return the radial wave function of an orbit in the HF basis
    double GetRadialWF_r(index_t index, double R); ///< Return the radial wave function of an orbit in the HF basis
+   double GetHFPotential( size_t i, double r, double rprime);
+   double GetAverageHFPotential( double r, double rprime);
    void FreezeOccupations(){freeze_occupations = true;};
    void UnFreezeOccupations(){freeze_occupations = false;};
    uint64_t Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f);
