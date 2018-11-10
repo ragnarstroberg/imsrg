@@ -88,6 +88,10 @@ namespace imsrg_util
 
  Operator Density_sog( double R_i, double gamma, std::string pn );
 
+ Operator FirstOrderCorr_1b( const Operator& OpIn, const Operator& H );
+ Operator TDACorr_1b( const Operator& OpIn, const Operator& H );
+
+
 ////////////////// Double beta decay functions from Charlie Payne ///////////////
  Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, std::string src); // put in by CP, it is still in development
  double CPrbmeGen(ModelSpace& modelspace, double rho, double x, int n, int l, int np, int lp, int mm, double pp); // testing...

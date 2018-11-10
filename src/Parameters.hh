@@ -110,6 +110,7 @@ std::map<std::string,int> Parameters::int_par = {
 std::map<std::string,std::vector<std::string>> Parameters::vec_par = {
  {"Operators", {} },
  {"OperatorsFromFile", {} },  // These will mostly be MECs for operators
+ {"OperatorsPT1", {} },   // First order perturbative correction to (1b part of) operator.
  {"SPWF",{} }, // single-particle wave functions in HF basis
 };
 

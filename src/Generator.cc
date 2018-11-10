@@ -29,21 +29,22 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
    Eta = Eta_s;
    modelspace = H->GetModelSpace();
 
-        if (generator_type == "wegner")           ConstructGenerator_Wegner(); // never tested, probably doesn't work.
-   else if (generator_type == "white")            ConstructGenerator_White();
-   else if (generator_type == "atan")             ConstructGenerator_Atan();
-   else if (generator_type == "imaginary-time")            ConstructGenerator_ImaginaryTime();
-   else if (generator_type == "shell-model")      ConstructGenerator_ShellModel();
-   else if (generator_type == "shell-model-atan") ConstructGenerator_ShellModel_Atan();
-   else if (generator_type == "shell-model-atan-npnh") ConstructGenerator_ShellModel_Atan_NpNh();
-   else if (generator_type == "shell-model-imaginary-time")            ConstructGenerator_ShellModel_ImaginaryTime();
-   else if (generator_type == "hartree-fock")     ConstructGenerator_HartreeFock();
-   else if (generator_type == "1PA")     ConstructGenerator_1PA();
+        if (generator_type == "wegner")                       ConstructGenerator_Wegner(); // never tested, probably doesn't work.
+   else if (generator_type == "white")                        ConstructGenerator_White();
+   else if (generator_type == "atan")                         ConstructGenerator_Atan();
+   else if (generator_type == "imaginary-time")               ConstructGenerator_ImaginaryTime();
+   else if (generator_type == "shell-model")                  ConstructGenerator_ShellModel();
+   else if (generator_type == "shell-model-atan")             ConstructGenerator_ShellModel_Atan();
+   else if (generator_type == "shell-model-atan-npnh")        ConstructGenerator_ShellModel_Atan_NpNh();
+   else if (generator_type == "shell-model-imaginary-time")   ConstructGenerator_ShellModel_ImaginaryTime();
+   else if (generator_type == "hartree-fock")                 ConstructGenerator_HartreeFock();
+   else if (generator_type == "1PA")                          ConstructGenerator_1PA();
    else
    {
       std::cout << "Error. Unkown generator_type: " << generator_type << std::endl;
    }
    Eta->profiler.timer["UpdateEta"] += omp_get_wtime() - start_time;
+
 }
 
 

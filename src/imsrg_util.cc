@@ -1980,6 +1980,331 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
 
 
 
+/// Get the first-order perturbative correction to a one-body operator
+/// The function returns a one-body operator, i.e. the two-body part is not computed.
+/// Formula is 
+/// \f[
+///  \langle p \| O^{\lambda} \| q \rangle = \sum_{ia} (1+P_{ia}) (n_i \bar{n}_a) \sum_{J}(2J+1)
+/// \begin{Bmatrix}
+/// j_i & j_a & \lambda \\
+/// j_p & j_q & J
+/// \end{Bmatrix}  \langle i \| O^{\lambda} \| a \rangle \frac{ \tilde{\Gamma}^{J}_{paij}}{\Delta_{paiq}}
+/// /f]
+//
+//So what you get should look like this:
+//      p|                p|______
+//       |     ^~~~~X      |     ^
+//       |   a( )i     +   |   a( )i
+//       |_____v           |     v~~~~X
+//      q|                q|     
+//
+//
+ Operator FirstOrderCorr_1b( const Operator& OpIn, const Operator& H )
+ {
+   Operator OpOut = 0. * OpIn;
+   int Lambda = OpOut.GetJRank();
+   size_t norb = OpIn.modelspace->GetNumberOrbits();
+//   for ( size_t p=0; p<norb; p++)
+   for ( auto p : OpIn.modelspace->valence )
+   {
+     Orbit& op = OpIn.modelspace->GetOrbit(p);
+     double jp = 0.5 * op.j2;
+//     for ( size_t q=0; q<norb; q++ )
+//     for ( auto q : OpIn.modelspace->valence )
+     for ( auto q : OpIn.OneBodyChannels.at({op.l, op.j2, op.tz2}) )
+     {
+       if (  std::find(  OpIn.modelspace->valence.begin(), OpIn.modelspace->valence.end(), q )  == OpIn.modelspace->valence.end()  ) continue;
+       Orbit& oq = OpIn.modelspace->GetOrbit(q);
+       double jq = 0.5 * oq.j2;
+       double Opq = 0;
+       double Opq_alt = 0;
+//       if ( op.occ > 0.99 or oq.occ>0.99) continue;  // Maybe need to think more about this...
+//       if ( op.occ > 0.99 ) continue;  // Maybe need to think more about this...
+       for ( size_t i=0; i<norb; i++)
+       {
+         Orbit& oi = OpIn.modelspace->GetOrbit(i);
+         double ji = 0.5 * oi.j2;
+         double ni = oi.occ;
+         for ( auto a : OpIn.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+         {
+           Orbit& oa = OpIn.modelspace->GetOrbit(a);
+           double ja = 0.5 * oa.j2;
+           double na = oa.occ;
+//           double nanifactor = ni*(1-na)+(1-ni)*na;
+//           double nanifactor = ni*(1-na) - (1-ni)*na;
+           double nanifactor = ni-na;
+//           double ninabar = ni*(1-na);
+           double Oia = OpIn.OneBody(i,a);
+//           double Oai = OpIn.OneBody(a,i);
+           if (std::abs(nanifactor)<1e-6) continue;
+//           if (std::abs(ninabar)<1e-6) continue;
+           if (std::abs(Oia)<1e-6) continue;
+//           int Jmin = std::max( std::abs(jp-ja), std::abs(ji-jq) );
+//           int Jmax = std::min( jp+ja , ji+jq );
+           int Jmin = std::max(  std::max( std::abs(jp-ja), std::abs(ji-jq) ) ,   std::max( std::abs(jp-ji), std::abs(ja-jq) )  );
+           int Jmax = std::max(  std::min( jp+ja , ji+jq ) ,   std::min( jp+ji , ja+jq )  );
+           for (int J=Jmin; J<=Jmax; J++)
+           {
+             double sixj = OpIn.modelspace->GetSixJ( ji, ja, Lambda, jp, jq, J );
+//             double sixj_ia = OpIn.modelspace->GetSixJ( ji, ja, Lambda, jp, jq, J );
+//             double sixj_ai = OpIn.modelspace->GetSixJ( ja, ji, Lambda, jp, jq, J );
+//             if (std::abs(sixj)<1e-7) continue;
+             double Gamma_paiq = H.TwoBody.GetTBME_J(J,p,a,i,q);
+//             double Gamma_piaq = H.TwoBody.GetTBME_J(J,p,i,a,q);
+             double Delta_paiq = H.OneBody(p,p) + H.OneBody(a,a) - H.OneBody(i,i) - H.OneBody(q,q);
+//             double Delta_piaq = H.OneBody(p,p) + H.OneBody(i,i) - H.OneBody(a,a) - H.OneBody(q,q);
+             Opq += nanifactor * (2*J+1) * sixj * Oia * Gamma_paiq / Delta_paiq;
+//             double Opq_1 = -nanifactor * (2*J+1) * sixj * Oia * Gamma_paiq / Delta_paiq;
+//             double Opq_2 = -ninabar    * (2*J+1) * (sixj_ia * Oia * Gamma_paiq / Delta_paiq  -sixj_ai * Oai * Gamma_piaq / Delta_piaq )  ;
+//             Opq_alt += Opq_2;
+//             std::cout << "p q i a  J " << p << " " << q << " " << i << " " << a << "  " << J << "     "
+//                       << sixj_ia << " " << Oia << " " << na << " " << ni << "   " << Gamma_paiq << "    " << Delta_paiq << "    ->    "
+//                       << Opq_1 << " ,  " << Opq_2 << "    :  " << Opq  << "   ,   " << Opq_alt
+//                       << std::endl;
+           }           
+         }
+       }
+       OpOut.OneBody(p,q) = Opq;
+     }
+   }
+   std::cout << "All done" << std::endl;
+   std::cout << OpOut.OneBody << std::endl << std::endl;
+   return OpOut;
+ }
+
+
+
+ Operator RPA_resummed_1b( const Operator& OpIn, const Operator& H )
+ {
+
+ }
+
+
+// Return Pandya-transformed matrix elements. Input a list of bras <pq`| a list of kets |rs`> and an angular momentum Lambda (as well as the Hamiltonian H
+// and obtain  Gamma`_pq`rs`^Lambda = - sum_J  (2J+1)  { jp  jq  Lambda  }  Gamma_psrq^J
+//                                                     { jr  js  J       }
+//
+ arma::mat GetPH_transformed_Gamma( std::vector<size_t> bras, std::vector<size_t> kets, Operator& H, int Lambda )
+ {
+   arma::mat Mat_pandya( bras.size(), kets.size(), arma::fill::zeros);
+   for ( size_t ibra=0; ibra<bras.size(); ibra++)
+   {
+     Ket& bra = H.modelspace->GetKet( bras[ibra] );
+     size_t p = bra.p;
+     size_t q = bra.q;
+     double jp = 0.5 * bra.op->j2;
+     double jq = 0.5 * bra.oq->j2;
+     for ( size_t iket=0; iket<kets.size(); iket++)
+     {
+       Ket& ket = H.modelspace->GetKet( kets[iket] );
+       size_t r = ket.p;
+       size_t s = ket.q;
+       double jr = 0.5 * ket.op->j2;
+       double js = 0.5 * ket.oq->j2;
+
+       double matel = 0;
+       int Jmin = std::max( std::abs(jp-js) , std::abs(jq-jr) );
+       int Jmax = std::min( jp+js ,  jq+jr );
+       for (int J=Jmin; J<=Jmax; J++)
+       {
+         
+       }
+       
+     }
+
+ }
+
+
+
+
+// This is a silly way to do it...
+ Operator TDACorr_1b( const Operator& OpIn, const Operator& H )
+ {
+   Operator OpOut = 0. * OpIn;
+   int Lambda = OpOut.GetJRank();
+   size_t norb = OpIn.modelspace->GetNumberOrbits();
+
+   size_t p = 7;
+   size_t q = 7;
+   Orbit& op = OpIn.modelspace->GetOrbit(p);
+   Orbit& oq = OpIn.modelspace->GetOrbit(q);
+   double jp = 0.5 * op.j2;
+   double jq = 0.5 * oq.j2;
+
+   double fp = H.OneBody(p,p);
+   double fq = H.OneBody(q,q);
+
+   // We only act in one channel, since the Hamiltonian will conserve the quantum numbers.
+
+   TwoBodyChannel_CC& tbc_cc_ph = OpIn.modelspace->GetTwoBodyChannel_CC(  OpIn.modelspace->GetTwoBodyChannelIndex( OpIn.GetJRank(), OpIn.GetParity(), OpIn.GetTRank() )  );
+   auto kets_ph = tbc_cc_ph.GetKetIndex_ph();
+   
+   size_t nph_kets = kets_ph.size();
+   arma::vec Oph(nph_kets, arma::fill::zeros );
+   arma::vec Ohp(nph_kets, arma::fill::zeros );
+
+   // This is the vector we multiply from the left hand side to get the effective operator between states p and q.
+   arma::vec Gpqph(nph_kets, arma::fill::zeros );
+   arma::vec Gpqhp(nph_kets, arma::fill::zeros );
+
+   // phph etc, matrix elements of Hamiltonian in the proper channel
+   /// These are the diagrams which are iterated to generate all the various terms
+   arma::mat Ghphp(nph_kets, nph_kets, arma::fill::zeros);
+   arma::mat Gphph(nph_kets, nph_kets, arma::fill::zeros);
+   arma::mat Ghpph(nph_kets, nph_kets, arma::fill::zeros);
+   arma::mat Gphhp(nph_kets, nph_kets, arma::fill::zeros);
+
+   for (int iph=0; iph<nph_kets; iph++)
+   {
+     size_t iket = kets_ph[iph];
+     Ket& ketph = tbc_cc_ph.GetKet(iket);
+//     std::cout << iph << "   " << iket << "   " << ketph.p << " " << ketph.q << std::endl;
+     size_t i = ket.p;
+     size_t a = ket.q;
+     if ( ket.op->occ  <0.9 )  std::swap(i,a);
+     Orbit& oi = OpIn.modelspace->GetOrbit(i);
+     Orbit& oa = OpIn.modelspace->GetOrbit(a);
+     double ji = 0.5 * oi.j2;
+     double ja = 0.5 * oa.j2;
+     double fi = H.OneBody(i,i);
+     double fa = H.OneBody(a,a);
+
+     Oph( iph ) = OpIn.OneBody( a, i );
+     Ohp( iph ) = OpIn.OneBody( i, a );
+
+     // Now get Pandya-Transformed Gamma_pqia and Gamma_pqai
+     double G_pqia = 0;
+     double G_pqai = 0;
+     int Jmin = std::max(  std::abs(jp-ja) , std::abs(jq-ji) );
+     int Jmax = std::min( jp+ja , jq+ji );
+     for (int J=Jmin; J<=Jmax; J++)
+     {
+       double sixj = OpIn.modelspace->GetSixJ( jp,jq, Lambda, ji, ja, J );
+       double me = H.TwoBody.GetTMBE_J( J, p,a,i,q );
+       G_pqia -= (2*J+1) * sixj * me;
+     }
+     double delta_paiq = fp+fa-fi-fq;
+     G_pqia /= delta_paiq;
+
+     int Jmin = std::max(  std::abs(jp-ji) , std::abs(jq-ja) );
+     int Jmax = std::min( jp+ji , jq+ja );
+     for (int J=Jmin; J<=Jmax; J++)
+     {
+       double sixj = OpIn.modelspace->GetSixJ( jp,jq, Lambda, ja, ji, J );
+       double me = H.TwoBody.GetTMBE_J( J, p,i,a,q );
+       G_pqia -= (2*J+1) * sixj * me;
+     }
+     double delta_paiq = fp+fi-fa-fq;
+     G_pqai /= delta_piaq;
+
+     Gpqph( iph ) = - G_pqai;
+     Gpqhp( iph ) = - G_pqia;
+
+     // now we need to loop over iph_prime....
+     for ( int iiph=0; iiph<nph_kets; iiph++)
+     {
+       ibra = kets_ph[iiph];
+       Ket& bra_ph = tbc_cc_ph.GetKet(ibra);
+       size_t j = bra.p;
+       size_t b = bra.q;
+       if ( bra.op->occ  <0.9 )  std::swap(j,b);
+       Orbit& oj = OpIn.modelspace->GetOrbit(j);
+       Orbit& ob = OpIn.modelspace->GetOrbit(b);
+       double jj = 0.5 * oj.j2;
+       double jb = 0.5 * ob.j2;
+       double fj = H.OneBody(j,j);
+       double fb = H.OneBody(b,b);
+
+       // first, do the phph matrix. it couples < ai`| to | bj` >
+       // which means in the pp/hh basis we couple ab->J and ij->J
+       double g = 0;
+       int Jmin = std::max(  std::abs(ja-jb) , std::abs(ji-jj) );
+       int Jmax = std::min( ja+jb , ji+jj );
+       for (int J=Jmin; J<=Jmax; J++)
+       {
+         double sixj = OpIn.modelspace->GetSixJ( ja,ji, Lambda, jb, jj, J );
+         double me = H.TwoBody.GetTMBE_J( J, a,b,i,j );
+         g -= (2*J+1) * sixj * me;
+       }
+       double delta_pjbq = fp+fj-fb-fq;
+       G_phph(ibra,iket) = g/delta_pjbq;
+
+
+
+       
+       // next, do the hphp matrix. it couples < ia`| to | jb` >
+       // which means in the pp/hh basis we couple ab->J and ij->J
+       double g = 0;
+       int Jmin = std::max(  std::abs(ja-jb) , std::abs(ji-jj) );
+       int Jmax = std::min( ja+jb , ji+jj );
+       for (int J=Jmin; J<=Jmax; J++)
+       {
+         double sixj = OpIn.modelspace->GetSixJ( ja,ji, Lambda, jb, jj, J );
+         double me = H.TwoBody.GetTMBE_J( J, a,b,i,j );
+         g -= (2*J+1) * sixj * me;
+       }
+       double delta_pjbq = fp+fj-fb-fq;
+       G_phph(ibra,iket) = g/delta_pjbq;
+
+
+
+
+       // first, do the phph matrix. it couples < ai`| to | bj` >
+       // which means in the pp/hh basis we couple ab->J and ij->J
+       double g = 0;
+       int Jmin = std::max(  std::abs(ja-jb) , std::abs(ji-jj) );
+       int Jmax = std::min( ja+jb , ji+jj );
+       for (int J=Jmin; J<=Jmax; J++)
+       {
+         double sixj = OpIn.modelspace->GetSixJ( ja,ji, Lambda, jb, jj, J );
+         double me = H.TwoBody.GetTMBE_J( J, a,b,i,j );
+         g -= (2*J+1) * sixj * me;
+       }
+       double delta_pjbq = fp+fj-fb-fq;
+       G_phph(ibra,iket) = g/delta_pjbq;
+
+
+
+
+
+
+
+     }
+
+
+
+//     Gpqph( iph ) = - 
+   }
+
+  // std::vector<double> Oph;
+  // std::vector<double> Ohp;
+
+  // // Make the Oph and Ohp vectors
+  // for ( auto i : OpIn.modelspace->holes )
+  // {
+  //   for ( auto a : OpIn.modelspace->particles )
+  //   {
+  //     double oia = OpIn.OneBody(i,a);
+  //     double oai = OpIn.OneBody(a,i);
+  //     Oph.push_back( oia );
+  //     Ohp.push_back( oai );
+  //   }
+  // }
+  // arma::vec Vph( Oph );
+  // arma::vec Vhp( Ohp );
+
+
+   // Now build the ph-transformed Gamma ph and hp matrices
+   
+
+
+   return OpOut;
+ }
+
+
+
+
+
 
 
 

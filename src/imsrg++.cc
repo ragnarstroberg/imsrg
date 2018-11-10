@@ -115,6 +115,7 @@ int main(int argc, char** argv)
 
   std::vector<std::string> opnames = parameters.v("Operators");
   std::vector<std::string> opsfromfile = parameters.v("OperatorsFromFile");
+  std::vector<std::string> opnamesPT1 = parameters.v("OperatorsPT1");
 
   std::vector<Operator> ops;
   std::vector<std::string> spwf = parameters.v("SPWF");
@@ -327,6 +328,15 @@ int main(int argc, char** argv)
   for (auto& opname : opnames)
   {
     ops.emplace_back( imsrg_util::OperatorFromString(modelspace,opname) );
+  }
+  // Calculate first order perturbative correction to some operators, if that's what we asked for.
+  // Strictly speaking, it doesn't make much sense to do this and then proceed with the IMSRG calculation,
+  // but I'm not here to tell people what to do...
+  for (auto& opnamept1 : opnamesPT1 )
+  {
+    ops.emplace_back( imsrg_util::FirstOrderCorr_1b( imsrg_util::OperatorFromString(modelspace,opnamept1)   , HNO ) );
+    imsrg_util::TDACorr_1b(  imsrg_util::OperatorFromString(modelspace,opnamept1)   , HNO  );
+    opnames.push_back( opnamept1+"PT1" );
   }
 
 
