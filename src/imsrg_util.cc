@@ -2060,7 +2060,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
 
 
 
- Operator RPA_resummed_1b( const Operator& OpIn, const Operator& H )
+ Operator RPA_resummed_1b( const Operator& OpIn, const Operator& H, std::string mode )
  {
 
    // construct hp and ph kets,  as well as Oph and Ohp
@@ -2108,8 +2108,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
    arma::mat Mhphp = GetPH_transformed_Gamma( hp_kets, hp_kets, H, Lambda );
 
    // to get TDA, we just get rid of the off-diagonal blocks
-//   Mphhp *=0;
-//   Mphhp *=0;
+   if (mode=="TDA")
+   {
+     Mphhp *=0;
+     Mphhp *=0;
+   }
 
    // for the full M matrix  M = [ Mphph   Mphhp ]
    //                            [ Mhpph   Mhphp ]
