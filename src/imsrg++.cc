@@ -116,6 +116,7 @@ int main(int argc, char** argv)
   std::vector<std::string> opnames = parameters.v("Operators");
   std::vector<std::string> opsfromfile = parameters.v("OperatorsFromFile");
   std::vector<std::string> opnamesPT1 = parameters.v("OperatorsPT1");
+  std::vector<std::string> opnamesRPA = parameters.v("OperatorsRPA");
 
   std::vector<Operator> ops;
   std::vector<std::string> spwf = parameters.v("SPWF");
@@ -335,8 +336,14 @@ int main(int argc, char** argv)
   for (auto& opnamept1 : opnamesPT1 )
   {
     ops.emplace_back( imsrg_util::FirstOrderCorr_1b( imsrg_util::OperatorFromString(modelspace,opnamept1)   , HNO ) );
-    imsrg_util::TDACorr_1b(  imsrg_util::OperatorFromString(modelspace,opnamept1)   , HNO  );
+//    imsrg_util::TDACorr_1b(  imsrg_util::OperatorFromString(modelspace,opnamept1)   , HNO  );
     opnames.push_back( opnamept1+"PT1" );
+  }
+  for (auto& opnamerpa : opnamesRPA )
+  {
+    ops.emplace_back( imsrg_util::RPA_resummed_1b( imsrg_util::OperatorFromString(modelspace,opnamerpa)   , HNO ) );
+//    imsrg_util::TDACorr_1b(  imsrg_util::OperatorFromString(modelspace,opnamept1)   , HNO  );
+    opnames.push_back( opnamerpa+"RPA" );
   }
 
 

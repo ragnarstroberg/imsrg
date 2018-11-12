@@ -89,7 +89,8 @@ namespace imsrg_util
  Operator Density_sog( double R_i, double gamma, std::string pn );
 
  Operator FirstOrderCorr_1b( const Operator& OpIn, const Operator& H );
- Operator TDACorr_1b( const Operator& OpIn, const Operator& H );
+ Operator RPA_resummed_1b( const Operator& OpIn, const Operator& H );
+ arma::mat GetPH_transformed_Gamma( std::vector<std::pair<size_t,size_t>>& bras, std::vector<std::pair<size_t,size_t>>& kets, const Operator& H, int Lambda );
 
 
 ////////////////// Double beta decay functions from Charlie Payne ///////////////
