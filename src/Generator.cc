@@ -182,7 +182,7 @@ void Generator::ConstructGenerator_White()
       for ( auto& i : VectorUnion(modelspace->valence,modelspace->qspace) )
       {
          double denominator = Get1bDenominator(i,a);
-         Eta->OneBody(i,a) += H->OneBody(i,a)/denominator;
+         Eta->OneBody(i,a) = H->OneBody(i,a)/denominator;
          Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
    }
@@ -198,7 +198,7 @@ void Generator::ConstructGenerator_White()
          for ( auto& ibra : VectorUnion( tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
-            ETA2(ibra,iket) += H2(ibra,iket) / denominator;
+            ETA2(ibra,iket) = H2(ibra,iket) / denominator;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
