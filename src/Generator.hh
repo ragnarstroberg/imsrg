@@ -61,6 +61,7 @@ class Generator
   void ConstructGenerator_1PA();
   double Get1bDenominator(int i, int j);
   double Get2bDenominator(int ch, int ibra, int iket);
+  double Get2bDenominator_Jdep(int ch, int ibra, int iket);
 
 };
 
