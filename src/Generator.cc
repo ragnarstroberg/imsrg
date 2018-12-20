@@ -523,29 +523,71 @@ void Generator::ConstructGenerator_HartreeFock()
 // So far this is useless
 void Generator::ConstructGenerator_1PA()
 {
-  ConstructGenerator_Atan();
-  int nchan = modelspace->GetNumberTwoBodyChannels();
-  for (int ch=0;ch<nchan;++ch)
-  {
-    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-    arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
-    arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
-    // decouple Gamma_ppph'
-    for (auto& iket : tbc.GetKetIndex_ph())
-    {
-      Ket& ket = tbc.GetKet(iket);
-      if ((2*ket.oq->n + ket.oq->l)<3) continue;
-      for (auto& ibra : tbc.GetKetIndex_pp())
+
+   // One body piece -- make sure the valence one-body part is diagonal
+   for ( auto& a : VectorUnion(modelspace->core, modelspace->valence))
+   {
+      for (auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
       {
-        Ket& bra = tbc.GetKet(ibra);
-//        std::cout << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << std::endl;
-        if ((ket.p==bra.p) or (ket.p==bra.q) or (ket.q==bra.p) or (ket.q==bra.q) ) continue;
-        double denominator = Get2bDenominator(ch,ibra,iket);
-        ETA2(ibra,iket) = 0.5*atan( 2*H2(ibra,iket) / denominator );
-        ETA2(iket,ibra) = -ETA2(ibra,iket);
+         if (i==a) continue;
+         double denominator = Get1bDenominator(i,a);
+         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+      }
+   }
+
+
+   // Two body piece -- eliminate ppvh and pqvv  
+
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
+      arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
+
+      // Decouple the core
+      for ( auto& iket : VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
+      {
+         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
       }
     }
-  }
+
+
+
+
+
+
+
+//  ConstructGenerator_Atan();
+//  int nchan = modelspace->GetNumberTwoBodyChannels();
+//  for (int ch=0;ch<nchan;++ch)
+//  {
+//    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+//    arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
+//    arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
+//    // decouple Gamma_ppph'
+//    for (auto& iket : tbc.GetKetIndex_ph())
+//    {
+//      Ket& ket = tbc.GetKet(iket);
+//      if ((2*ket.oq->n + ket.oq->l)<3) continue;
+//      for (auto& ibra : tbc.GetKetIndex_pp())
+//      {
+//        Ket& bra = tbc.GetKet(ibra);
+////        std::cout << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << std::endl;
+//        if ((ket.p==bra.p) or (ket.p==bra.q) or (ket.q==bra.p) or (ket.q==bra.q) ) continue;
+//        double denominator = Get2bDenominator(ch,ibra,iket);
+//        ETA2(ibra,iket) = 0.5*atan( 2*H2(ibra,iket) / denominator );
+//        ETA2(iket,ibra) = -ETA2(ibra,iket);
+//      }
+//    }
+//  }
 }
 
 
