@@ -64,6 +64,7 @@ namespace imsrg_util
       else if (opname == "GamowTeller")   return AllowedGamowTeller_Op(modelspace) ;
       else if (opname == "Iso2")          return Isospin2_Op(modelspace) ;
       else if (opname == "R2CM")          return R2CM_Op(modelspace) ;
+      else if (opname == "Trel")          return Trel_Op(modelspace) ;
       else if (opname == "TCM")           return TCM_Op(modelspace) ;
       else if (opname == "Rso")           return RpSpinOrbitCorrection(modelspace) ;
       else if (opname == "RadialOverlap") return RadialOverlap(modelspace); // Untested...
