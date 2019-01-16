@@ -405,6 +405,53 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
  }
 
 
+// Not yet finished...
+// Leading relativistic correction to the kinetic energy
+// T = p^2/2m  - p^4/(8m^2c^2) + ...
+// We use p^4/(4m^2) = (p^2/2m)**2
+// and the fact that the nonrelativistic kinetic energy acts as a 'hopping operator'
+// so acting p^2/2m on a state |nl> returns a linear combination of |nl> |(n+1)l> and |(n-1)l>.
+// Specifically, we write this as (p^2/2m) |nl> = N0 |nl> + Np |(n+1)l> + Nm |(n-1)l>
+// Then we act again with p^2/2m to get the action of p^4/4m.
+Operator KineticEnergy_RelativisticCorr(ModelSpace& modelspace)
+{
+   Operator Trc(modelspace);
+   int norbits = modelspace.GetNumberOrbits();
+   double hw = modelspace.GetHbarOmega();
+   double coeff = 0.25*hw*hw;
+   for (int a=0;a<norbits;++a)
+   {
+      Orbit & oa = modelspace.GetOrbit(a);
+      // I have pulled off a global factor (1/2 hw)^2 above and called it coeff.
+      double N0 = 2*oa.n+oa.l+3./2;  // (p^2/2m) |nl> = N0 |nl>
+      double Nm = sqrt( (oa.n)*(oa.n+oa.l+1./2) );
+      double Np = sqrt( (oa.n+1)*(oa.n+oa.l+3./2) );
+      double Nplus1  = 2*(oa.n+1)+oa.l+3./2;   
+      double Nminus1 = 2*(oa.n-1)+oa.l+3./2;
+      double Npp = sqrt( (oa.n+2)*(oa.n+oa.l+5./2) );
+      double Nmm = sqrt( (oa.n-1)*(oa.n+oa.l-1./2) );
+
+      Trc.OneBody(a,a) =  N0*N0 + Np*Np + Nm*Nm ; 
+      // off-diagonal terms
+      for ( int b : Trc.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      {
+         if (b<=a) continue;
+         Orbit & ob = modelspace.GetOrbit(b);
+         if (ob.n == oa.n+1)
+            Trc.OneBody(a,b) = Np * (N0+Nplus1);
+         else if (ob.n == oa.n-1)
+            Trc.OneBody(a,b) = Nm * (N0+Nminus1); // This probably won't be used, unless a different orbit ordering gets implemented
+         else if (ob.n == oa.n+2)
+            Trc.OneBody(a,b) = Np*Npp;
+         else if (ob.n == oa.n-2)
+            Trc.OneBody(a,b) = Nm*Nmm;
+         // Make it hermitian:
+         Trc.OneBody(b,a) = Trc.OneBody(a,b);
+      }
+   }  // 
+   return -Trc*coeff /(2*M_NUCLEON);  // the minus sign is put in here
+}
+
 
 
 /// Center of mass kinetic energy, including the hw/A factor

@@ -88,6 +88,7 @@ int main(int argc, char** argv)
   std::string write_omega = parameters.s("write_omega");
   std::string nucleon_mass_correction = parameters.s("nucleon_mass_correction");
   std::string hunter_gatherer = parameters.s("hunter_gatherer");
+  std::string relativistic_correction = parameters.s("relativistic_correction");
 
   int eMax = parameters.i("emax");
   int E3max = parameters.i("e3max");
@@ -267,6 +268,10 @@ int main(int argc, char** argv)
   if ( nucleon_mass_correction == "true" or nucleon_mass_correction == "True" )  
   {  // correction to kinetic energy because M_proton != M_neutron
     Hbare += imsrg_util::Trel_Masscorrection_Op(modelspace);
+  }
+  if ( relativistic_correction == "true" or relativistic_correction == "True" )
+  {
+    Hbare += imsrg_util::KineticEnergy_RelativisticCorr(modelspace);
   }
   
   if (Hbare.particle_rank >=3)
