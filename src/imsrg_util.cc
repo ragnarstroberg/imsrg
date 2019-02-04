@@ -6,8 +6,11 @@
 #include "omp.h"
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_sf_bessel.h> // to use bessel functions
-#include <boost/math/special_functions/gamma.hpp>
-#include <boost/math/special_functions/factorials.hpp>
+//#include <boost/math/special_functions/gamma.hpp>
+//#include <boost/math/special_functions/factorials.hpp>
+#include <iostream>
+#include <iomanip>
+#include <math.h>
 #include <vector>
 #include <string>
 #include <map>
@@ -1651,7 +1654,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
     int sigma_max = std::min(na,nb);
   
     double term1 = AngMom::phase(na+nb) * gsl_sf_fact(tau_a)*gsl_sf_fact(tau_b) * sqrt(gsl_sf_fact(na)*gsl_sf_fact(nb)
-                   / (gsl_sf_gamma(na+la+1.5)*gsl_sf_gamma(nb+lb+1.5) ) );
+                   / (tgamma(na+la+1.5)*tgamma(nb+lb+1.5) ) );
+//    double term1 = AngMom::phase(na+nb) * gsl_sf_fact(tau_a)*gsl_sf_fact(tau_b) * sqrt(gsl_sf_fact(na)*gsl_sf_fact(nb)
+//                   / (gsl_sf_gamma(na+la+1.5)*gsl_sf_gamma(nb+lb+1.5) ) );
     double term2 = 0;
     for (int sigma=sigma_min; sigma<=sigma_max; ++sigma)
     {
@@ -1681,7 +1686,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
  double TalmiI(int p, double k)
  {
 //   return gsl_sf_gamma(p+1.5+0.5*k) / gsl_sf_gamma(p+1.5);
-   return boost::math::tgamma_ratio(p+1.5+0.5*k, p+1.5);
+//   return boost::math::tgamma_ratio(p+1.5+0.5*k, p+1.5);
+     return exp( lgamma(p+1.5+0.5*k)-lgamma(p+1.5) ); // Tested that this agrees with the boost version to better than 1 in 10^12. Also stable against overflow.
  }
 
 /// Calculate B coefficient for Talmi integral. Formula given in Brody and Moshinsky
@@ -1692,9 +1698,12 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
    
    int q = (la+lb)/2;
 //   double B1 = AngMom::phase(p-q) * gsl_sf_fact(2*p+1)/gsl_sf_fact(p)/pow(2,(na+nb))
-   double B1 = AngMom::phase(p-q) * boost::math::tgamma_ratio(2*p+1, p) / pow(2,(na+nb))
-              * sqrt( boost::math::tgamma_ratio(na, na+la)*boost::math::tgamma_ratio(nb, nb+lb)
-                   * boost::math::factorial<double>(2*na+2*la+1) * boost::math::factorial<double>(2*nb+2*lb+1) );
+//   double B1 = AngMom::phase(p-q) * boost::math::tgamma_ratio(2*p+1, p) / pow(2,(na+nb))
+//              * sqrt( boost::math::tgamma_ratio(na, na+la)*boost::math::tgamma_ratio(nb, nb+lb)
+//                   * boost::math::factorial<double>(2*na+2*la+1) * boost::math::factorial<double>(2*nb+2*lb+1) );
+   double B1 = AngMom::phase(p-q) * exp(lgamma(2*p+1)-lgamma(p)) / pow(2,(na+nb))
+              * sqrt( gsl_sf_fact(na)*gsl_sf_fact(nb)/gsl_sf_fact(na+la)/gsl_sf_fact(nb+lb) 
+                   * gsl_sf_fact(2*na+2*la+1) * gsl_sf_fact(2*nb+2*lb+1) );
    
    double B2 = 0;
    int kmin = std::max(0, p-q-nb);
@@ -1704,9 +1713,13 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
 //      B2  += gsl_sf_fact(la+k) * gsl_sf_fact(p-int((la-lb)/2)-k)
 //             / ( gsl_sf_fact(k) * gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k) * gsl_sf_fact(2*p-la+lb-2*k+1) )
 //              / ( gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
-      B2  += boost::math::tgamma_ratio(la+k,k) * boost::math::tgamma_ratio(p-int((la-lb)/2)-k, 2*p-la+lb-2*k+1)
-             / (  boost::math::factorial<double>(2*la+2*k+1) * boost::math::factorial<double>(na-k)  
-                * boost::math::factorial<double>(nb - p + q + k) * boost::math::factorial<double>(p-q-k) );
+
+//      B2  += boost::math::tgamma_ratio(la+k,k) * boost::math::tgamma_ratio(p-int((la-lb)/2)-k, 2*p-la+lb-2*k+1)
+//             / (  boost::math::factorial<double>(2*la+2*k+1) * boost::math::factorial<double>(na-k)  
+//                * boost::math::factorial<double>(nb - p + q + k) * boost::math::factorial<double>(p-q-k) );
+      B2  += exp(lgamma(la+k)-lgamma(k) +lgamma(p-int((la-lb)/2)-k) -lgamma(2*p-la+lb-2*k+1) )
+             / (  gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k)  
+                * gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
    }
    return B1 * B2;
  }
