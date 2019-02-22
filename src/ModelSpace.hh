@@ -256,6 +256,7 @@ class ModelSpace
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. Not ideal.
    bool SixJ_is_empty(){ return SixJList.empty(); };
+   double GetT3b(index_t a,index_t b, index_t c, int Jab, int J, int N1, int L1, int S1, int J1, int N2, int L2,int J2,int J12,int Ncm,int Lcm); // 15 index object. yikes.
 
    size_t GetOrbitIndex(std::string);
    size_t GetTwoBodyChannelIndex(int j, int p, int t);
@@ -349,6 +350,7 @@ class ModelSpace
    static std::unordered_map<uint64_t,double> SixJList;
    static std::unordered_map<uint64_t,double> NineJList;
    static std::unordered_map<uint64_t,double> MoshList;
+   static std::unordered_map<uint64_t,double> T3bList; // Tcoefficients for transforming Jacobi 3b to lab-frame 3b
 
 };
 
