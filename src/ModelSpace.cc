@@ -1393,7 +1393,7 @@ std::map<std::array<size_t,2>,std::array<std::vector<size_t>,2>>& ModelSpace::Ge
 void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
 {
    if (PandyaLookup.find({rank_J, rank_T, parity})!=PandyaLookup.end()) return; 
-   std::cout << "CalculatePandyaLookup( " << rank_J << ", " << rank_T << ", " << parity << ") " << std::endl;
+//   std::cout << "CalculatePandyaLookup( " << rank_J << ", " << rank_T << ", " << parity << ") " << std::endl;
    double t_start = omp_get_wtime();
 //   PandyaLookup[{rank_J,rank_T,parity}] = std::map<std::array<int,2>,std::vector<std::array<int,2>>>();
 //   PandyaLookup[{rank_J,rank_T,parity}] = std::map<std::array<int,2>,std::array<std::vector<int>,2>>();
@@ -1505,7 +1505,7 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
      }
    }
    profiler.timer["CalculatePandyaLookup"] += omp_get_wtime() - t_start;
-   std::cout << "done." << std::endl;
+//   std::cout << "done." << std::endl;
 }
 
 
