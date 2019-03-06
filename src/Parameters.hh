@@ -75,6 +75,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"write_omega",		"false"},	// write omega to disk
   {"nucleon_mass_correction",	"false"},	// include effect of proton-neutron mass splitting
   {"hunter_gatherer",	        "false"},	// use hunter-gatherer approach to splitting omega
+  {"relativistic_correction",   "false"},       // include the p^4 relativistic correction to the kinetic energy
 };
 
 

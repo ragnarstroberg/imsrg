@@ -6,8 +6,11 @@
 #include "omp.h"
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_sf_bessel.h> // to use bessel functions
-#include <boost/math/special_functions/gamma.hpp>
-#include <boost/math/special_functions/factorials.hpp>
+//#include <boost/math/special_functions/gamma.hpp>
+//#include <boost/math/special_functions/factorials.hpp>
+#include <iostream>
+#include <iomanip>
+#include <math.h>
 #include <vector>
 #include <string>
 #include <map>
@@ -64,6 +67,7 @@ namespace imsrg_util
       else if (opname == "GamowTeller")   return AllowedGamowTeller_Op(modelspace) ;
       else if (opname == "Iso2")          return Isospin2_Op(modelspace) ;
       else if (opname == "R2CM")          return R2CM_Op(modelspace) ;
+      else if (opname == "Trel")          return Trel_Op(modelspace) ;
       else if (opname == "TCM")           return TCM_Op(modelspace) ;
       else if (opname == "Rso")           return RpSpinOrbitCorrection(modelspace) ;
       else if (opname == "RadialOverlap") return RadialOverlap(modelspace); // Untested...
@@ -403,6 +407,53 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    return Trel;
  }
 
+
+// Not yet finished...
+// Leading relativistic correction to the kinetic energy
+// T = p^2/2m  - p^4/(8m^2c^2) + ...
+// We use p^4/(4m^2) = (p^2/2m)**2
+// and the fact that the nonrelativistic kinetic energy acts as a 'hopping operator'
+// so acting p^2/2m on a state |nl> returns a linear combination of |nl> |(n+1)l> and |(n-1)l>.
+// Specifically, we write this as (p^2/2m) |nl> = N0 |nl> + Np |(n+1)l> + Nm |(n-1)l>
+// Then we act again with p^2/2m to get the action of p^4/4m.
+Operator KineticEnergy_RelativisticCorr(ModelSpace& modelspace)
+{
+   Operator Trc(modelspace);
+   int norbits = modelspace.GetNumberOrbits();
+   double hw = modelspace.GetHbarOmega();
+   double coeff = 0.25*hw*hw;
+   for (int a=0;a<norbits;++a)
+   {
+      Orbit & oa = modelspace.GetOrbit(a);
+      // I have pulled off a global factor (1/2 hw)^2 above and called it coeff.
+      double N0 = 2*oa.n+oa.l+3./2;  // (p^2/2m) |nl> = N0 |nl>
+      double Nm = sqrt( (oa.n)*(oa.n+oa.l+1./2) );
+      double Np = sqrt( (oa.n+1)*(oa.n+oa.l+3./2) );
+      double Nplus1  = 2*(oa.n+1)+oa.l+3./2;   
+      double Nminus1 = 2*(oa.n-1)+oa.l+3./2;
+      double Npp = sqrt( (oa.n+2)*(oa.n+oa.l+5./2) );
+      double Nmm = sqrt( (oa.n-1)*(oa.n+oa.l-1./2) );
+
+      Trc.OneBody(a,a) =  N0*N0 + Np*Np + Nm*Nm ; 
+      // off-diagonal terms
+      for ( int b : Trc.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      {
+         if (b<=a) continue;
+         Orbit & ob = modelspace.GetOrbit(b);
+         if (ob.n == oa.n+1)
+            Trc.OneBody(a,b) = Np * (N0+Nplus1);
+         else if (ob.n == oa.n-1)
+            Trc.OneBody(a,b) = Nm * (N0+Nminus1); // This probably won't be used, unless a different orbit ordering gets implemented
+         else if (ob.n == oa.n+2)
+            Trc.OneBody(a,b) = Np*Npp;
+         else if (ob.n == oa.n-2)
+            Trc.OneBody(a,b) = Nm*Nmm;
+         // Make it hermitian:
+         Trc.OneBody(b,a) = Trc.OneBody(a,b);
+      }
+   }  // 
+   return -Trc*coeff /(2*M_NUCLEON);  // the minus sign is put in here
+}
 
 
 
@@ -1603,7 +1654,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
     int sigma_max = std::min(na,nb);
   
     double term1 = AngMom::phase(na+nb) * gsl_sf_fact(tau_a)*gsl_sf_fact(tau_b) * sqrt(gsl_sf_fact(na)*gsl_sf_fact(nb)
-                   / (gsl_sf_gamma(na+la+1.5)*gsl_sf_gamma(nb+lb+1.5) ) );
+                   / (tgamma(na+la+1.5)*tgamma(nb+lb+1.5) ) );
+//    double term1 = AngMom::phase(na+nb) * gsl_sf_fact(tau_a)*gsl_sf_fact(tau_b) * sqrt(gsl_sf_fact(na)*gsl_sf_fact(nb)
+//                   / (gsl_sf_gamma(na+la+1.5)*gsl_sf_gamma(nb+lb+1.5) ) );
     double term2 = 0;
     for (int sigma=sigma_min; sigma<=sigma_max; ++sigma)
     {
@@ -1633,7 +1686,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
  double TalmiI(int p, double k)
  {
 //   return gsl_sf_gamma(p+1.5+0.5*k) / gsl_sf_gamma(p+1.5);
-   return boost::math::tgamma_ratio(p+1.5+0.5*k, p+1.5);
+//   return boost::math::tgamma_ratio(p+1.5+0.5*k, p+1.5);
+     return exp( lgamma(p+1.5+0.5*k)-lgamma(p+1.5) ); // Tested that this agrees with the boost version to better than 1 in 10^12. Also stable against overflow.
  }
 
 /// Calculate B coefficient for Talmi integral. Formula given in Brody and Moshinsky
@@ -1644,9 +1698,12 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
    
    int q = (la+lb)/2;
 //   double B1 = AngMom::phase(p-q) * gsl_sf_fact(2*p+1)/gsl_sf_fact(p)/pow(2,(na+nb))
-   double B1 = AngMom::phase(p-q) * boost::math::tgamma_ratio(2*p+1, p) / pow(2,(na+nb))
-              * sqrt( boost::math::tgamma_ratio(na, na+la)*boost::math::tgamma_ratio(nb, nb+lb)
-                   * boost::math::factorial<double>(2*na+2*la+1) * boost::math::factorial<double>(2*nb+2*lb+1) );
+//   double B1 = AngMom::phase(p-q) * boost::math::tgamma_ratio(2*p+1, p) / pow(2,(na+nb))
+//              * sqrt( boost::math::tgamma_ratio(na, na+la)*boost::math::tgamma_ratio(nb, nb+lb)
+//                   * boost::math::factorial<double>(2*na+2*la+1) * boost::math::factorial<double>(2*nb+2*lb+1) );
+   double B1 = AngMom::phase(p-q) * exp(lgamma(2*p+1)-lgamma(p)) / pow(2,(na+nb))
+              * sqrt( gsl_sf_fact(na)*gsl_sf_fact(nb)/gsl_sf_fact(na+la)/gsl_sf_fact(nb+lb) 
+                   * gsl_sf_fact(2*na+2*la+1) * gsl_sf_fact(2*nb+2*lb+1) );
    
    double B2 = 0;
    int kmin = std::max(0, p-q-nb);
@@ -1656,9 +1713,13 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
 //      B2  += gsl_sf_fact(la+k) * gsl_sf_fact(p-int((la-lb)/2)-k)
 //             / ( gsl_sf_fact(k) * gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k) * gsl_sf_fact(2*p-la+lb-2*k+1) )
 //              / ( gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
-      B2  += boost::math::tgamma_ratio(la+k,k) * boost::math::tgamma_ratio(p-int((la-lb)/2)-k, 2*p-la+lb-2*k+1)
-             / (  boost::math::factorial<double>(2*la+2*k+1) * boost::math::factorial<double>(na-k)  
-                * boost::math::factorial<double>(nb - p + q + k) * boost::math::factorial<double>(p-q-k) );
+
+//      B2  += boost::math::tgamma_ratio(la+k,k) * boost::math::tgamma_ratio(p-int((la-lb)/2)-k, 2*p-la+lb-2*k+1)
+//             / (  boost::math::factorial<double>(2*la+2*k+1) * boost::math::factorial<double>(na-k)  
+//                * boost::math::factorial<double>(nb - p + q + k) * boost::math::factorial<double>(p-q-k) );
+      B2  += exp(lgamma(la+k)-lgamma(k) +lgamma(p-int((la-lb)/2)-k) -lgamma(2*p-la+lb-2*k+1) )
+             / (  gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k)  
+                * gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
    }
    return B1 * B2;
  }
