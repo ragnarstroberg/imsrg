@@ -55,8 +55,6 @@ void IMSRGSolver::NewOmega()
       filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << n_omega_written;
       std::ofstream ofs(filename.str(), std::ios::binary);
       Omega.back().WriteBinary(ofs);
-      if (Omega.back().GetModelSpace() != Eta.GetModelSpace()) Omega.back() = Eta;
-      n_omega_written++;
   //    std::cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << std::endl;
       std::cout << "Omega written to file " << filename.str() << "  written " << n_omega_written << " so far." << std::endl;
       if (n_omega_written > max_omega_written)
@@ -67,6 +65,8 @@ void IMSRGSolver::NewOmega()
         std::terminate();
       }
     }
+      if (Omega.back().GetModelSpace() != Eta.GetModelSpace()) Omega.back() = Eta;
+      n_omega_written++;
   }
   else
   {
