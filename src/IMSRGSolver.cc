@@ -49,20 +49,23 @@ void IMSRGSolver::NewOmega()
 //    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), n_omega_written);
 //    std::string fname(tmp);
 //    std::ofstream ofs(fname, std::ios::binary);
-    std::ostringstream filename;
-    filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << n_omega_written;
-    std::ofstream ofs(filename.str(), std::ios::binary);
-    Omega.back().WriteBinary(ofs);
-    if (Omega.back().GetModelSpace() != Eta.GetModelSpace()) Omega.back() = Eta;
-    n_omega_written++;
-//    std::cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << std::endl;
-    std::cout << "Omega written to file " << filename.str() << "  written " << n_omega_written << " so far." << std::endl;
-    if (n_omega_written > max_omega_written)
+    if ( rw->GetScratchDir().find("/dev/null") == std::string::npos ) 
     {
-      std::cout << "n_omega_written > max_omega_written.  (" << n_omega_written << " > " << max_omega_written
-                << " ) deleting OMEGA files and calling terminate." << std::endl;
-      CleanupScratch();
-      std::terminate();
+      std::ostringstream filename;
+      filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << n_omega_written;
+      std::ofstream ofs(filename.str(), std::ios::binary);
+      Omega.back().WriteBinary(ofs);
+      if (Omega.back().GetModelSpace() != Eta.GetModelSpace()) Omega.back() = Eta;
+      n_omega_written++;
+  //    std::cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << std::endl;
+      std::cout << "Omega written to file " << filename.str() << "  written " << n_omega_written << " so far." << std::endl;
+      if (n_omega_written > max_omega_written)
+      {
+        std::cout << "n_omega_written > max_omega_written.  (" << n_omega_written << " > " << max_omega_written
+                  << " ) deleting OMEGA files and calling terminate." << std::endl;
+        CleanupScratch();
+        std::terminate();
+      }
     }
   }
   else
@@ -206,6 +209,9 @@ void IMSRGSolver::UpdateEta()
 void IMSRGSolver::Solve_magnus_euler()
 {
    istep = 0;
+
+   if ( generator.GetType() == "rspace" ) { generator.modelspace = (Eta.modelspace); generator.SetRegulatorLength(800005.0); };
+
    generator.Update(&FlowingOps[0],&Eta);
 
    if (generator.GetType() == "shell-model-atan")
@@ -267,6 +273,7 @@ void IMSRGSolver::Solve_magnus_euler()
         generator.SetDenominatorCutoff(1e-6);
       }
         
+//      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
       generator.Update(&FlowingOps[0],&Eta);
 
       // Write details of the flow
@@ -713,6 +720,7 @@ int IMSRGSolver::GetSystemDimension()
 void IMSRGSolver::CleanupScratch()
 {
   if (n_omega_written<=0) return;
+  if ( rw->GetScratchDir().find("/dev/null") != std::string::npos ) return; // if we're writing to /dev/null, we'd better not try to erase things
   std::cout << "Cleaning up files written to scratch space" << std::endl;
 //  char tmp[512];
   for (int i=0;i<n_omega_written;i++)

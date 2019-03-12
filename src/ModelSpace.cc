@@ -470,6 +470,7 @@ void ModelSpace::Init_occ_from_file(int emax, std::string valence, std::string o
         std::cout << "Warning: in file " << occ_file << ", redefinition of occupation of orbit "
              << orb << "  " << hole_list[orb] << " => " << occ << std::endl;
     }
+
     std::cout << "from occ file: " << std::endl;
     hole_list[orb] = occ;
     std::cout << orb << " " << occ << std::endl;

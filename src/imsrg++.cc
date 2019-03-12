@@ -421,8 +421,8 @@ int main(int argc, char** argv)
   }
 
 
-  std::cout << "HF Single particle energies:" << std::endl;
-  hf.PrintSPE();
+  std::cout << "HF Single particle energies and wave functions:" << std::endl;
+  hf.PrintSPEandWF();
   std::cout << std::endl;
   
   if ( method == "HF" or method == "MP3")

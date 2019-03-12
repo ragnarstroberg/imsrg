@@ -3,9 +3,11 @@
 #include "Commutator.hh"
 #include "Operator.hh"
 #include "imsrg_util.hh" // for VectorUnion
+#include "AngMom.hh" // for TalmiB and Moshinsky
 
 #include "omp.h"
 #include <string>
+#include <gsl/gsl_sf_gamma.h> // for gsl_sf_gamma_inc_P  used in the RspaceRegulator
 
 using namespace imsrg_util;
 
@@ -40,6 +42,7 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
    else if (generator_type == "shell-model-imaginary-time")   ConstructGenerator_ShellModel_ImaginaryTime();
    else if (generator_type == "hartree-fock")                 ConstructGenerator_HartreeFock();
    else if (generator_type == "1PA")                          ConstructGenerator_1PA();
+   else if (generator_type == "rspace")                       ConstructGenerator_Rspace();
    else
    {
       std::cout << "Error. Unkown generator_type: " << generator_type << std::endl;
@@ -594,40 +597,216 @@ void Generator::ConstructGenerator_1PA()
       }
     }
 
-
-
-
-
-
-
-//  ConstructGenerator_Atan();
-//  int nchan = modelspace->GetNumberTwoBodyChannels();
-//  for (int ch=0;ch<nchan;++ch)
-//  {
-//    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-//    arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
-//    arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
-//    // decouple Gamma_ppph'
-//    for (auto& iket : tbc.GetKetIndex_ph())
-//    {
-//      Ket& ket = tbc.GetKet(iket);
-//      if ((2*ket.oq->n + ket.oq->l)<3) continue;
-//      for (auto& ibra : tbc.GetKetIndex_pp())
-//      {
-//        Ket& bra = tbc.GetKet(ibra);
-////        std::cout << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << std::endl;
-//        if ((ket.p==bra.p) or (ket.p==bra.q) or (ket.q==bra.p) or (ket.q==bra.q) ) continue;
-//        double denominator = Get2bDenominator(ch,ibra,iket);
-//        ETA2(ibra,iket) = 0.5*atan( 2*H2(ibra,iket) / denominator );
-//        ETA2(iket,ibra) = -ETA2(ibra,iket);
-//      }
-//    }
-//  }
 }
 
 
 
 
+
+
+
+
+
+// Weight each matrix element in eta by the matrix element of the regulator
+// which in the current implementation is a step function in R
+void Generator::ConstructGenerator_Rspace()
+{
+
+   // One body piece -- eliminate ph bits
+   for ( auto& a : modelspace->core)
+   {
+      for ( auto& i : VectorUnion(modelspace->valence,modelspace->qspace) )
+      {
+         double denominator = Get1bDenominator(i,a);
+         Eta->OneBody(i,a) =  RspaceRegulator.OneBody(i,a) * 0.5*atan(2*H->OneBody(i,a)/denominator);
+         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+      }
+   }
+
+   // Two body piece -- eliminate pp'hh' bits
+   for (int ch=0;ch<Eta->nChannels;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
+      arma::mat& H2 = H->TwoBody.GetMatrix(ch);
+      auto& R2 = RspaceRegulator.TwoBody.GetMatrix(ch);
+      for ( auto& iket : tbc.GetKetIndex_cc() )
+      {
+         for ( auto& ibra : VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+//            double denominator = Get2bDenominator_Jdep(ch,ibra,iket);
+            ETA2(ibra,iket) =  R2(ibra,iket)  *  0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+    }
+
+}
+
+
+
+
+
+
+
+
+void Generator::SetRegulatorLength(double r0)
+{
+
+//  std::cout << "setting Regulator length to " << r0 << std::endl;
+  regulator_length = r0;
+
+  RspaceRegulator = Operator(*modelspace);
+//  std::cout << "Succeeded in creating RspaceRegulator" << std::endl;
+  double oscillator_b_squared = HBARC*HBARC / M_NUCLEON / modelspace->GetHbarOmega();
+  double x0 = r0*r0/oscillator_b_squared; // express length in units of oscillator length: r0^2 = x0 * b^2
+  
+  // First, do the one-body part
+  int norb = modelspace->GetNumberOrbits();
+  for (int a=0; a<norb; a++)
+  {
+    Orbit& oa = modelspace->GetOrbit(a);
+    for ( int b : RspaceRegulator.OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
+    {
+      Orbit& ob = modelspace->GetOrbit(b);
+      double matel = 0;
+      for (int p=oa.l; p<= oa.n+ob.n+oa.l; p++)
+      {
+        double I_p = gsl_sf_gamma_inc_P(p+1.5,x0);  // Talmi integral for a step function Theta(r0 -r );
+        double B_p = AngMom::TalmiB(oa.n, oa.l, ob.n, ob.l, p);
+        matel += I_p * B_p;
+      }
+      RspaceRegulator.OneBody(a,b) = std::abs(matel);
+      RspaceRegulator.OneBody(b,a) = std::abs(matel);
+    }
+  }
+  // That wasn't so bad... Now for the Moshinsky fun.
+
+  std::cout << "Done with the 1b part." << std::endl;
+  std::cout << RspaceRegulator.OneBody << std::endl << std::endl;
+
+  double sa,sb,sc,sd;
+  sa=sb=sc=sd=0.5;
+
+  int nchan = modelspace->GetNumberTwoBodyChannels();
+//  modelspace.PreCalculateMoshinsky();
+//  #pragma omp parallel for schedule(dynamic,1)  // In order to make this parallel, need to precompute the Moshinsky brackets.
+  for (int ch=0; ch<nchan; ++ch)
+  {
+//     std::cout << "ch = " << ch << std::endl;
+     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+     int nkets = tbc.GetNumberKets();
+     int J = tbc.J;
+     for (int ibra=0;ibra<nkets;++ibra)
+     {
+        Ket & bra = tbc.GetKet(ibra);
+        Orbit & oa = modelspace->GetOrbit(bra.p);
+        Orbit & ob = modelspace->GetOrbit(bra.q);
+        int na = oa.n;
+        int nb = ob.n;
+        int la = oa.l;
+        int lb = ob.l;
+        double ja = oa.j2/2.0;
+        double jb = ob.j2/2.0;
+        int fab = 2*na + 2*nb + la + lb;
+//        if ( fab > E2max) continue;
+        for (int iket=ibra;iket<nkets;++iket)
+        {
+//           std::cout << "   ibra,iket = " << ibra << " " << iket << std::endl;
+           
+           Ket & ket = tbc.GetKet(iket);
+           Orbit & oc = modelspace->GetOrbit(ket.p);
+           Orbit & od = modelspace->GetOrbit(ket.q);
+           int nc = oc.n;
+           int nd = od.n;
+           int lc = oc.l;
+           int ld = od.l;
+           double jc = oc.j2/2.0;
+           double jd = od.j2/2.0;
+           int fcd = 2*nc + 2*nd + lc + ld;
+//           if ( fcd > E2max) continue;
+
+           double matel = 0;
+
+           // First, transform to LS coupling using 9j coefficients
+           for (int Lab=std::abs(la-lb); Lab<= la+lb; ++Lab)
+           {
+             for (int Sab=0; Sab<=1; ++Sab)
+             {
+               if ( std::abs(Lab-Sab)>J or Lab+Sab<J) continue;
+
+
+               double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
+               if (njab == 0) continue;
+               int Scd = Sab;
+               int Lcd = Lab;
+               double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
+               if (njcd == 0) continue;
+
+               // Next, transform to rel / com coordinates with Moshinsky tranformation
+               for (int N_ab=0; N_ab<=fab/2; ++N_ab)  // N_ab = CoM n for a,b
+               {
+                 for (int Lam_ab=0; Lam_ab<= fab-2*N_ab; ++Lam_ab) // Lam_ab = CoM l for a,b
+                 {
+                   int Lam_cd = Lam_ab; // the projector depends only on the relative distance r, so center of mass bit must be the same. 
+                   int N_cd = N_ab;
+                   for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
+                   {
+                      if (Lab<std::abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
+                      // factor to account for antisymmetrization
+        
+                      int asymm_factor = (std::abs(bra.op->tz2+ket.op->tz2) + std::abs(bra.op->tz2+ket.oq->tz2)*modelspace->phase( lam_ab + Sab ))/ 2;
+                      if ( asymm_factor ==0 ) continue;
+        
+                      int lam_cd = lam_ab; // conserve lam and Lam
+                      int n_ab = (fab - 2*N_ab-Lam_ab-lam_ab)/2; // n_ab is determined by energy conservation
+                      int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
+
+                      if (n_cd < 0) continue;
+                      if  (n_ab != n_cd and N_ab != N_cd) continue;
+        
+                      double mosh_ab = modelspace->GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
+        
+                      if (std::abs(mosh_ab)<1e-8) continue;
+        
+                      double mosh_cd = modelspace->GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
+                      if (std::abs(mosh_cd)<1e-8) continue;
+//                      std::cout << "n_ab, lam_ab = " << n_ab << " " << lam_ab << "    n_cd, lam_cd = " << n_cd << " " << lam_cd << std::endl;
+
+                      double me_rel = 0;
+                      for (int p=oa.l; p<= oa.n+ob.n+oa.l; p++)
+                      {
+                        double I_p = gsl_sf_gamma_inc_P(p+1.5,x0);  // Talmi integral for a step function Theta(r0 -r );
+                        double B_p = AngMom::TalmiB(oa.n, oa.l, ob.n, ob.l, p);
+                        me_rel += I_p * B_p;
+                      }
+
+
+//                      int i_equiv = modelspace->GetOrbitIndex( n_ab, lam_ab, 2*lam_ab+1, 1 );  // the matrix element is independent of spin/isospin, so just pick one.
+//                      int j_equiv = modelspace->GetOrbitIndex( n_cd, lam_cd, 2*lam_cd+1, 1 );  // the matrix element is independent of spin/isospin, so just pick one.
+        
+                      double prefactor = njab * njcd * mosh_ab * mosh_cd * asymm_factor;
+                      matel +=  me_rel * prefactor ; // don't need to do the whole Talmi integral dance. We already did that.
+//                      matel +=  RspaceRegulator.OneBody(i_equiv,j_equiv) * prefactor ; // don't need to do the whole Talmi integral dance. We already did that.
+        
+                   } // lam_ab
+                 } // Lam_ab
+               } // N_ab
+        
+             } // Sab
+           } // Lab
+
+           RspaceRegulator.TwoBody.SetTBME(ch, ibra, iket, std::abs(matel) );
+             
+        } // iket
+     } // ibra
+  } // ch
+  RspaceRegulator *= 1./r0*r0*4*3.14159;
+//  RspaceRegulator *= 100 * RspaceRegulator.Norm();
+//  std::cout << "Done with the 2b part. Norm is " << RspaceRegulator.OneBodyNorm() << "  " << RspaceRegulator.TwoBodyNorm() <<  std::endl;
+
+}
 
 
 
