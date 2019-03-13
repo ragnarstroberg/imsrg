@@ -132,6 +132,7 @@ double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int
 
 // Copied directly from Moshinsky & Brody 'Tables of Transformation Brackets for Nuclear Shell-Model Calculations' 1967
 // Still need to check these against the tabulated values
+
 double TalmiB(int n, int l, int nn, int ll, int p)
 {
   double B = 0;
@@ -142,11 +143,16 @@ double TalmiB(int n, int l, int nn, int ll, int p)
     B  +=   gsl_sf_fact(l+k)*gsl_sf_fact(p-(l-ll)/2-k) /
             ( gsl_sf_fact(k)*gsl_sf_fact(2*l+2*k+1)*gsl_sf_fact(n-k)*gsl_sf_fact(2*p-l+ll-2*k+1)*gsl_sf_fact(nn-p+(l+ll)/2+k)*gsl_sf_fact(p-(l+ll)/2-k)  ); 
   }
-  B *= phase(p-(l+ll)/2) * gsl_sf_fact(2*p+1)/(pow(2,n+nn)*gsl_sf_fact(p))
+  B *= phase(p-(l+ll)/2) * gsl_sf_fact(2*p+1) / ( pow(2,n+nn)*gsl_sf_fact(p) )
          * sqrt(gsl_sf_fact(n)*gsl_sf_fact(nn)*gsl_sf_fact(2*n+2*l+1)*gsl_sf_fact(2*nn+2*ll+1) / (gsl_sf_fact(n+l)*gsl_sf_fact(nn+ll))  );
 
   return B;
 }
+
+
+
+
+
 
 
 

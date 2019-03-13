@@ -126,15 +126,15 @@ int main(int argc, char** argv)
 
   std::ifstream test;
   // test 2bme file
-  if (inputtbme != "none")
+  if (inputtbme != "none" and fmt2.find("oakridge")==std::string::npos and fmt2 != "schematic" )
   {
     test.open(inputtbme);
-//    if( not test.good() and fmt2!="oakridge_binary")
-    if( not test.good() and  fmt2.find("oakridge")== std::string::npos)
-    {
+////    if( not test.good() and fmt2!="oakridge_binary")
+//    if( not test.good() and  fmt2.find("oakridge")== std::string::npos)
+//    {
       std::cout << "trouble reading " << inputtbme << " exiting. " << std::endl;
       return 1;
-    }
+//    }
     test.close();
   }
   // test 3bme file
@@ -252,6 +252,11 @@ int main(int argc, char** argv)
       rw.ReadTwoBody_Takayuki( inputtbme, Hbare);
     else if (fmt2 == "nushellx" )
       rw.ReadNuShellX_int( Hbare, inputtbme );
+    else if (fmt2 == "schematic" )
+    {
+      std::cout << "using schematic potential " << inputtbme << std::endl;
+      if ( inputtbme == "Minnesota") Hbare += imsrg_util::MinnesotaPotential( modelspace );
+    }
   
     std::cout << "done reading 2N" << std::endl;
   }
