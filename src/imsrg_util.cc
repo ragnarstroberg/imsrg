@@ -2983,7 +2983,6 @@ std::cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<std::endl;
    return Vminnesota;
  }
 
-
 // Minnesota potential of Thompson, Lemere and Tang,  Nuc. Phys.A 286 53 (1977)
 // I have modified the triplet channel strength by multiplying by 0.2.
 // Without this modification, it seems that the triplet channel does not have enough
@@ -2991,14 +2990,17 @@ std::cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<std::endl;
 // useful for finite nuclei.
 // This is mostly useful for benchmarking without needing large input files.
 //
-// On March 12 2019, I calculated O16 in a basis of hw=16 and emax=6.
+// On March 12 2019, I calculated O16 in a basis of hw=16 and emax=4, and 6.
+// I used IMSRG(2) with method=magnus  omega_norm_max=0.25, dsmax=0.5
 // Results:
-// e1hf = 132.7170792
-// e2hf = -138.2451400
-// e3hf = 0.0000000
-// EHF = -5.5280608
-// EIMSRG = -69.170313
-//
+//  emax = 4                         emax = 6
+//  e1hf = 177.4709518              e1hf = 132.7170792 
+//  e2hf = -102.1762390             e2hf = -138.2451400 
+//  e3hf = 0.0000000                e3hf = 0.0000000    
+//  EHF = 75.2947127                EHF  = -5.5280608   
+//  EIMSRG = -10.047908             EIMSRG = -69.170313  
+//  Rp2HF = 9.5591609               Rp2HF = 15.1991899
+//  Rp2IMSRG = 9.362856             Rp2IMSRG = 14.399832
 // 
  double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J )
  {
