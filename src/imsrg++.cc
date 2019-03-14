@@ -131,10 +131,11 @@ int main(int argc, char** argv)
     test.open(inputtbme);
 ////    if( not test.good() and fmt2!="oakridge_binary")
 //    if( not test.good() and  fmt2.find("oakridge")== std::string::npos)
-//    {
-      std::cout << "trouble reading " << inputtbme << " exiting. " << std::endl;
+    if( not test.good() )
+    {
+      std::cout << "trouble reading " << inputtbme << "  fmt2 = " << fmt2 << "   exiting. " << std::endl;
       return 1;
-//    }
+    }
     test.close();
   }
   // test 3bme file
