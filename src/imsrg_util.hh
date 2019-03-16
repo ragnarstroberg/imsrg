@@ -111,6 +111,10 @@ namespace imsrg_util
 
  Operator EKKShift( Operator& Hin, int Nlower, int Nupper);
 
+ Operator MinnesotaPotential( ModelSpace& modelspace );
+ double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J );
+
+
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace); // This doesn't work
  double Get_Charge_Density(Operator& DM, double r);  // This doesn't work
 

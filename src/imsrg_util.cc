@@ -1697,11 +1697,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
    if ( (la+lb)%2>0 ) return 0;
    
    int q = (la+lb)/2;
-//   double B1 = AngMom::phase(p-q) * gsl_sf_fact(2*p+1)/gsl_sf_fact(p)/pow(2,(na+nb))
-//   double B1 = AngMom::phase(p-q) * boost::math::tgamma_ratio(2*p+1, p) / pow(2,(na+nb))
-//              * sqrt( boost::math::tgamma_ratio(na, na+la)*boost::math::tgamma_ratio(nb, nb+lb)
-//                   * boost::math::factorial<double>(2*na+2*la+1) * boost::math::factorial<double>(2*nb+2*lb+1) );
-   double B1 = AngMom::phase(p-q) * exp(lgamma(2*p+1)-lgamma(p)) / pow(2,(na+nb))
+   double B1 = AngMom::phase(p-q) * exp(lgamma(2*p+2)-lgamma(p+1)) / pow(2,(na+nb))
               * sqrt( gsl_sf_fact(na)*gsl_sf_fact(nb)/gsl_sf_fact(na+la)/gsl_sf_fact(nb+lb) 
                    * gsl_sf_fact(2*na+2*la+1) * gsl_sf_fact(2*nb+2*lb+1) );
    
@@ -1710,14 +1706,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
    int kmax = std::min(na, p-q);
    for (int k=kmin;k<=kmax;++k)
    {
-//      B2  += gsl_sf_fact(la+k) * gsl_sf_fact(p-int((la-lb)/2)-k)
-//             / ( gsl_sf_fact(k) * gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k) * gsl_sf_fact(2*p-la+lb-2*k+1) )
-//              / ( gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
-
-//      B2  += boost::math::tgamma_ratio(la+k,k) * boost::math::tgamma_ratio(p-int((la-lb)/2)-k, 2*p-la+lb-2*k+1)
-//             / (  boost::math::factorial<double>(2*la+2*k+1) * boost::math::factorial<double>(na-k)  
-//                * boost::math::factorial<double>(nb - p + q + k) * boost::math::factorial<double>(p-q-k) );
-      B2  += exp(lgamma(la+k)-lgamma(k) +lgamma(p-int((la-lb)/2)-k) -lgamma(2*p-la+lb-2*k+1) )
+      B2  += exp(lgamma(la+k+1)-lgamma(k+1) +lgamma(p-(la-lb)/2-k+1) -lgamma(2*p-la+lb-2*k+2) )
              / (  gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k)  
                 * gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
    }
@@ -2964,6 +2953,178 @@ std::cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<std::endl;
   return OpOut;
 
  }
+
+
+
+ Operator MinnesotaPotential( ModelSpace& modelspace )
+ {
+   Operator Vminnesota(modelspace, 0,0,0,2);
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   modelspace.PreCalculateMoshinsky();
+//   #pragma omp parallel for schedule(dynamic,1) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+    TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+    int J = tbc.J;
+    int nkets = tbc.GetNumberKets();
+    for (int ibra=0;ibra<nkets;++ibra)
+    {
+     Ket& bra = tbc.GetKet(ibra);
+     for (int iket=ibra;iket<nkets;iket++)
+     {
+       Ket& ket = tbc.GetKet(iket);
+       double vminn = MinnesotaMatEl( modelspace, bra, ket, J);
+       Vminnesota.TwoBody.SetTBME(ch,ibra,iket,vminn);
+       Vminnesota.TwoBody.SetTBME(ch,iket,ibra,vminn);
+     }
+    }
+   }
+   return Vminnesota;
+ }
+
+// Minnesota potential of Thompson, Lemere and Tang,  Nuc. Phys.A 286 53 (1977)
+// I have modified the triplet channel strength by multiplying by 0.2.
+// Without this modification, it seems that the triplet channel does not have enough
+// repulsion to support against collapse, which makes the potential not terribly
+// useful for finite nuclei.
+// This is mostly useful for benchmarking without needing large input files.
+//
+// On March 12 2019, I calculated O16 in a basis of hw=16 and emax=4, 6, and 8.
+// I used IMSRG(2) with method=magnus  omega_norm_max=0.25, dsmax=0.5
+// Results:
+//  emax = 4                         emax = 6                  emax = 8
+//  e1hf = 177.4709518              e1hf = 132.7170792          e1hf = 111.4959623
+//  e2hf = -102.1762390             e2hf = -138.2451400         e2hf = -210.3298042
+//  e3hf = 0.0000000                e3hf = 0.0000000            e3hf = 0.0000000    
+//  EHF = 75.2947127                EHF  = -5.5280608           EHF = -98.8338419   
+//  EIMSRG = -10.047908             EIMSRG = -69.170313         EIMSRG =  -144.9899081
+//  Rp2HF = 9.5591609               Rp2HF = 15.1991899          Rp2HF =  20.8748671
+//  Rp2IMSRG = 9.362856             Rp2IMSRG = 14.399832        Rp2IMSRG = 21.353270
+// 
+ double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J )
+ {
+   double oscillator_b2 = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
+   double VR = 200 ;
+   double VT = -178. * 0.2; // scaled to make things not crazy for finite nuclei
+   double VS = -91.85 ;
+   double kR = 1.487 * oscillator_b2; // make things dimensionless
+   double kT = 0.639 * oscillator_b2;
+   double kS = 0.465 * oscillator_b2;
+
+   Orbit & oa = modelspace.GetOrbit(bra.p);
+   Orbit & ob = modelspace.GetOrbit(bra.q);
+   Orbit & oc = modelspace.GetOrbit(ket.p);
+   Orbit & od = modelspace.GetOrbit(ket.q);
+
+   int na = oa.n;
+   int nb = ob.n;
+   int nc = oc.n;
+   int nd = od.n;
+
+   int la = oa.l;
+   int lb = ob.l;
+   int lc = oc.l;
+   int ld = od.l;
+
+   double ja = oa.j2*0.5;
+   double jb = ob.j2*0.5;
+   double jc = oc.j2*0.5;
+   double jd = od.j2*0.5;
+
+   int fab = 2*na + 2*nb + la + lb;
+   int fcd = 2*nc + 2*nd + lc + ld;
+   if (std::abs(fab+fcd)%2 >0) return 0; // check parity conservation
+//   if (std::abs(fab-fcd)>2) return 0; // p1*p2 only connects kets with delta N = 0,1
+
+   double sa,sb,sc,sd;
+   sa=sb=sc=sd=0.5;
+
+   double Vminn=0;
+
+   // First, transform to LS coupling using 9j coefficients
+   for (int Lab=std::abs(la-lb); Lab<= la+lb; ++Lab)
+   {
+     for (int Sab=0; Sab<=1; ++Sab)
+     {
+//       double isospin_factor = 1.0;
+       if ( (oa.tz2 == ob.tz2) and Sab==1 ) continue;
+//       if ( oa.tz2 != ob.tz2) isospin_factor = 0.5 * (oa.tz2 * oc.tz2);  // <pn|V|pn> = 1/2 (V(T=1) + V(T=0)).  <pn|V|np> = -<pn|V|pn>
+       if ( std::abs(Lab-Sab)>J or Lab+Sab<J) continue;
+
+       double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
+       if (njab == 0) continue;
+       int Scd = Sab;
+       int Lcd = Lab;
+       double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
+       if (njcd == 0) continue;
+
+       // Next, transform to rel / com coordinates with Moshinsky tranformation
+       for (int N_ab=0; N_ab<=fab/2; ++N_ab)  // N_ab = CoM n for a,b
+       {
+         for (int Lam_ab=0; Lam_ab<= fab-2*N_ab; ++Lam_ab) // Lam_ab = CoM l for a,b
+         {
+           int Lam_cd = Lam_ab; // tcm and trel conserve lam and Lam, ie relative and com orbital angular momentum
+           for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
+           {
+              if (Lab<std::abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
+
+              // factor to account for antisymmetrization. I sure wish this were more transparent...
+              //  antisymmetrized matrix elements: V = <ab|V|cd> - <ab|V|dc>
+              //  here, we've gone to LS, coupling in CM/relative coordinates
+              //  so exchange gives us a phase factor and we have V = <ab|V|cd> + (-1)**(Lcd+Scd) <ab|V|dc>
+              //  case pp,nn -> 1 + (-1)**(L+S)
+              //  pnpn -> 1 + 0
+              //  pnnp -> 0 + (-1)**(L+S)
+              int asymm_factor = (std::abs(bra.op->tz2+ket.op->tz2) + std::abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
+              if ( asymm_factor ==0 ) continue;
+
+              int lam_cd = lam_ab; // V conserves lam and Lam
+              int n_ab = (fab - 2*N_ab-Lam_ab-lam_ab)/2; // n_ab is determined by energy conservation
+
+              double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
+
+              if (std::abs(mosh_ab)<1e-8) continue;
+
+              for (int N_cd=std::max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
+              {
+                int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
+                if (n_cd < 0) continue;
+                if  (n_ab != n_cd and N_ab != N_cd) continue;
+
+                double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
+                if (std::abs(mosh_cd)<1e-8) continue;
+
+                double vrel = 0;
+                int pmin = lam_ab;
+                int pmax = lam_ab + n_ab + n_cd;
+                for (int p=pmin; p<=pmax; p++)
+                {
+                   double Bp = TalmiB(n_ab,lam_ab,n_cd,lam_cd,p);  // It's probably inefficient doing this in the inner loop, but oh well...
+                   double Ip = VR / pow(1.0+kR, p+1.5);  // Talmi integral of a Gaussian
+                   if ( Sab==1 ) Ip += VT / pow(1.0+kT, p+1.5); // Triplet short-range potential
+                   else Ip += VS / pow(1.0+kS, p+1.5); // Singlet short-range potential
+                   vrel += Bp * Ip;
+                }
+                Vminn += vrel * njab * njcd * mosh_ab * mosh_cd * asymm_factor;
+
+
+              } // N_cd
+           } // lam_ab
+         } // Lam_ab
+       } // N_ab
+
+     } // Sab
+   } // Lab
+
+   return Vminn ;
+
+
+
+ }
+
+
+
 
 
 

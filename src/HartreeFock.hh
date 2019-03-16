@@ -77,6 +77,7 @@ class HartreeFock
    Operator GetOmega();           ///< Return a generator of the Hartree Fock transformation
    Operator GetHbare(){return Hbare;}; ///< Getter function for Hbare
    void PrintSPE(); ///< Print out the single-particle energies
+   void PrintSPEandWF(); ///< Print out the single-particle energies and wave functions
    void FreeVmon();               ///< Free up the memory used to store Vmon3.
    void GetRadialWF(index_t index, std::vector<double>& R, std::vector<double>& PSI); ///< Return the radial wave function of an orbit in the HF basis
    double GetRadialWF_r(index_t index, double R); ///< Return the radial wave function of an orbit in the HF basis
