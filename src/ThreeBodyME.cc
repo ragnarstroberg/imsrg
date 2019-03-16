@@ -255,7 +255,7 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
    int Tmin = std::min( std::abs(tza+tzb+tzc), std::abs(tzd+tze+tzf) );
    for (int tab=std::abs(tza+tzb); tab<=1; ++tab)
    {
-      // CG calculates the Clebsch-Gordan coefficient
+      // CG calculates the Clebsch-Gordan coefficient  TODO: There are only a few CG cases, and we can probably use a specific formula rather than the general one.
       double CG1 = AngMom::CG(0.5,tza, 0.5,tzb, tab, tza+tzb);
       for (int tde=std::abs(tzd+tze); tde<=1; ++tde)
       {
@@ -305,6 +305,44 @@ void ThreeBodyME::SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, 
    for (auto elem : elements)  me += MatEl.at(elem.first) * elem.second;
    for (auto elem : elements)  MatEl.at(elem.first) += (V-me)*elem.second;
 }
+
+
+void ThreeBodyME::AddToME(int Jab, int Jde, int J2, int tab, int tde, int T2, int a, int b, int c, int d, int e, int f, ThreeBME_type V)
+{
+   auto elements = AccessME(Jab,Jde,J2,tab,tde,T2,a,b,c,d,e,f);
+   for (auto elem : elements)  MatEl.at(elem.first) += V * elem.second;
+}
+
+void ThreeBodyME::AddToME_pn(int Jab, int Jde, int J2, int a, int b, int c, int d, int e, int f, ThreeBME_type Vpn) 
+{
+
+   double tza = modelspace->GetOrbit(a).tz2*0.5;
+   double tzb = modelspace->GetOrbit(b).tz2*0.5;
+   double tzc = modelspace->GetOrbit(c).tz2*0.5;
+   double tzd = modelspace->GetOrbit(d).tz2*0.5;
+   double tze = modelspace->GetOrbit(e).tz2*0.5;
+   double tzf = modelspace->GetOrbit(f).tz2*0.5;
+
+   int Tmin = std::min( std::abs(tza+tzb+tzc), std::abs(tzd+tze+tzf) );
+   for (int tab=std::abs(tza+tzb); tab<=1; ++tab)
+   {
+      // CG calculates the Clebsch-Gordan coefficient  TODO: There are only a few CG cases, and we can probably use a specific formula rather than the general one.
+      double CG1 = AngMom::CG(0.5,tza, 0.5,tzb, tab, tza+tzb);
+      for (int tde=std::abs(tzd+tze); tde<=1; ++tde)
+      {
+         double CG2 = AngMom::CG(0.5,tzd, 0.5,tze, tde, tzd+tze);
+         if (CG1*CG2==0) continue;
+         for (int T=Tmin; T<=3; ++T)
+         {
+           double CG3 = AngMom::CG(tab,tza+tzb, 0.5,tzc, T/2., tza+tzb+tzc);
+           double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, T/2., tzd+tze+tzf);
+           if (CG3*CG4==0) continue;
+           AddToME(Jab,Jde,J2,tab,tde,T,a,b,c,d,e,f, CG1*CG2*CG3*CG4*Vpn );
+         }
+      }
+   }
+}
+
 
 //*******************************************************************
 /// Since the code for setting or getting matrix elements is almost

@@ -1510,11 +1510,125 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
 
 
 
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+////////////   BEGIN SCALAR-SCALAR COMMUTATORS WITH 3-body ///////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 
 
+//  For the three-body operators, we often encounter formulas involving the J-coupled
+//  permutation operator P(ij/k)^{J1,J}, which is defined as
+//
+//  P(ij/k)^{J1,J} = 1 - sum_J2 sqrt{(2J1+1)(2J2+1)} (-1)^2(ji+jj+jk)   {ji jk J1} P_ik
+//                                                                      {jk J  J2}
+//
+//                     - sum_J2 sqrt{(2J1+1)(2J2+1)} (-1)^{jj+jk+J1+J2) {jk ji J1} P_jk
+//                                                                      {jk J  J2}
+//
 
+//*****************************************************************************************
+//
+//  i|  j|  k|   Uncoupled expression:  
+//   |   |~~~|      Z_ijjklmn  =  P(ij/k)P(lm/n) sum_a  (X_ijan * Y_aklm - Y_ijan * X_aklm)
+//   |   |a  |
+//   |~~~|   |   Coupled expression:
+//  l|  m|  n|     Z_{ijklmn}^{J1,J2,J}  = -P(ij/k)^{J1,J} P(lm/n)^{J2,J} (-1)^(jn+jk+J1+J2)
+//                       *(2J1+1)(2J2+1) * { jn ja J1 } ( X_{ijan}^{J1}-Y_{aklm}^{J2}  - YX)
+//                                         { jk  J J2 }
+//
+void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
+{
+  int emin = 0;
+  int emax = 4;
+  int norbs = Z.modelspace->GetNumberOrbits();
+  auto& Z3 = Z.ThreeBody;
+  auto& X2 = X.TwoBody;
+  auto& Y2 = Y.TwoBody;
+  for (int i=0;i<norbs; i++)
+  {
+   Orbit& oi = Z.modelspace->GetOrbit(i);
+   for (int j=0; j<norbs; j++)
+   {
+    Orbit& oj = Z.modelspace->GetOrbit(j);
+    int Jij_min = std::abs(oi.j2-oj.j2)/2;
+    int Jij_max = (oi.j2+oj.j2)/2;
+    for (int k=0; k<norbs; k++)
+    {
+     Orbit& ok = Z.modelspace->GetOrbit(k);
+     for (int l=0; l<norbs; k++)
+     {
+      Orbit& ol = Z.modelspace->GetOrbit(l);
+      for (int m=0; m<norbs; m++)
+      {
+       Orbit& om = Z.modelspace->GetOrbit(m);
+       int Jlm_min=std::abs(ol.j2-om.j2)/2;
+       int Jlm_max=(ol.j2+om.j2)/2;
+       for (int n=0; n<norbs; n++)
+       {
+        Orbit& on = Z.modelspace->GetOrbit(n);
+        // check isospin and parity
+        if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2>0 ) continue;
+        if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
+        for (int Jij=Jij_min; Jij<=Jij_max; Jij++)
+        {
+         for (int Jlm=Jlm_min; Jlm<=Jlm_max; Jlm++)
+         {
+          int phasefactor = Z.modelspace->phase( (on.j2+ok.j2)/2 + Jij+Jlm);
+          double hatfactor = sqrt( (2*Jij+1)*(2*Jlm+1) );
 
+          int twoJmin = std::max( std::abs( ok.j2-Jij*2), std::abs( on.j2-Jlm*2) );
+          int twoJmax = std::max( ok.j2+Jij*2 , on.j2+Jlm*2 );
+          for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ++)
+          {
+//            double zmatel = 0;
+           double z_direct = 0;
+           double z_ik = 0;
+           double z_jk = 0;
+           double z_ln = 0;
+           double z_mn = 0;
+           double z_ik_ln = 0;
+           double z_ik_mn = 0;
+           double z_jk_ln = 0;
+           double z_jk_mn = 0;
+           for (int a=0; a<norbs; a++)
+           {
+             Orbit& oa = Z.modelspace->GetOrbit(a);
+             double sixj_direct = Z.modelspace->GetSixJ(on.j2*0.5, oa.j2*0.5, Jij, ok.j2*0.5, twoJ*0.5, Jlm );
+//             zmatel += X2.GetTBME_J(Jij, i,j,a,m) * Y2.GetTBME_J(Jlm, a,k,l,m ) * sixj;
+             double zdirect += - X2.GetTBME_J(Jij, i,j,a,m) * Y2.GetTBME_J(Jlm, a,k,l,m ) * sixj_direct;
+             // now all the permutations. Gulp.
+             int Jik_min = std::max( std::abs( oi.j2-ok.j2 ), std::abs( oj.j2 -twoJ))/2;
+             int Jik_max = std::min( oi.j2+ok.j2  , oj.j2+twoJ )/2;
+             int Jjk_min = std::max( std::abs( oj.j2-ok.j2 ), std::abs( oi.j2 -twoJ))/2;
+             int Jjk_max = std::min( oj.j2+ok.j2  , oi.j2+twoJ )/2;
+             int Jln_min = std::max( std::abs( ol.j2-on.j2 ), std::abs( om.j2 -twoJ))/2;
+             int Jln_max = std::min( ol.j2+on.j2  , om.j2+twoJ )/2;
+             int Jmn_min = std::max( std::abs( om.j2-on.j2 ), std::abs( ol.j2 -twoJ))/2;
+             int Jmn_max = std::min( om.j2+on.j2  , ol.j2+twoJ )/2;
 
+             for (int Jik=Jik_min; Jik<=Jik_max; Jik++)
+             {
+              
+             }
+
+            }
+
+            Z3.AddToME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n, z_direct );
+            Z3.AddToME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n, z_ik );
+            Z3.AddToME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n, z_jk );
+
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
