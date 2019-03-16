@@ -61,8 +61,10 @@ void Generator::SetDenominatorDeltaOrbit(std::string orb)
   if (orb == "all")
      SetDenominatorDeltaIndex(-12345);
   else
+  {
      SetDenominatorDeltaIndex( modelspace->GetOrbitIndex(orb) );
-  std::cout << "Setting denominator delta orbit " << orb << " => " << modelspace->GetOrbitIndex(orb) << std::endl;
+     std::cout << "Setting denominator delta orbit " << orb << " => " << modelspace->GetOrbitIndex(orb) << std::endl;
+  }
 }
 
 
