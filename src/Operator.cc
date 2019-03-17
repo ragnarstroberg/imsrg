@@ -123,6 +123,7 @@ Operator& Operator::operator*=(const double rhs)
    ZeroBody *= rhs;
    OneBody *= rhs;
    TwoBody *= rhs;
+   if (particle_rank > 2)  ThreeBody *= rhs;
    return *this;
 }
 
@@ -165,6 +166,8 @@ Operator& Operator::operator+=(const Operator& rhs)
    OneBody  += rhs.OneBody;
    if (rhs.GetParticleRank() > 1)
      TwoBody  += rhs.TwoBody;
+   if (rhs.GetParticleRank() >2 )
+     ThreeBody += rhs.ThreeBody;
    return *this;
 }
 
@@ -194,6 +197,8 @@ Operator& Operator::operator-=(const Operator& rhs)
    OneBody -= rhs.OneBody;
    if (rhs.GetParticleRank() > 1)
      TwoBody -= rhs.TwoBody;
+   if (rhs.GetParticleRank() > 2)
+     ThreeBody -= rhs.ThreeBody;
    return *this;
 }
 
@@ -1182,6 +1187,11 @@ double Operator::TwoBodyNorm() const
   return TwoBody.Norm();
 }
 
+
+double Operator::ThreeBodyNorm() const
+{
+  return ThreeBody.Norm();
+}
 
 void Operator::MakeNormalized(){ ChangeNormalization( 1./SQRT2)  ;}
 void Operator::MakeUnNormalized(){ ChangeNormalization( SQRT2)  ;}

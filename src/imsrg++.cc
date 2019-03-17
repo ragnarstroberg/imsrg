@@ -89,6 +89,7 @@ int main(int argc, char** argv)
   std::string nucleon_mass_correction = parameters.s("nucleon_mass_correction");
   std::string hunter_gatherer = parameters.s("hunter_gatherer");
   std::string relativistic_correction = parameters.s("relativistic_correction");
+  std::string IMSRG3 = parameters.s("IMSRG3");
 
   int eMax = parameters.i("emax");
   int E3max = parameters.i("e3max");
@@ -309,6 +310,17 @@ int main(int argc, char** argv)
     HNO = Hbare.DoNormalOrdering();
 
 
+  if (IMSRG3=="true")
+  {
+    std::cout << "You have chosen IMSRG3. good luck..." << std::endl;
+    Operator H3(modelspace,0,0,0,3);
+    std::cout << "Constructed H3" << std::endl;
+    H3.ZeroBody = HNO.ZeroBody;
+    H3.OneBody = HNO.OneBody;
+    H3.TwoBody = HNO.TwoBody;
+    std::cout << "Replacing HNO" << std::endl;
+    Hbare = H3;
+  }
 
 
 
@@ -501,6 +513,11 @@ int main(int argc, char** argv)
     Commutator::SetUseBruecknerBCH(true);
     std::cout << "Using Brueckner flavor of BCH" << std::endl;
   }
+  if (IMSRG3 == "true")
+  {
+    Commutator::SetUseIMSRG3(true);
+    std::cout << "Using IMSRG(3) commutators. This will probably be slow..." << std::endl;
+  }
 
   imsrgsolver.SetMethod(method);
 //  imsrgsolver.SetHin(Hbare);
@@ -529,6 +546,11 @@ int main(int argc, char** argv)
   }
   imsrgsolver.Solve();
 
+  if (IMSRG3 == "true")
+  {
+    std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
+  }
+
 //  HlowT = imsrgsolver.Transform(HlowT);
 //  std::cout << "After Solve, low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) << std::endl; 
 
@@ -556,7 +578,7 @@ int main(int argc, char** argv)
      imsrgsolver.Solve();
   }
 
-  if (nsteps > 1) // two-step decoupling, do core first
+  if (nsteps > 1 and valence_space != reference) // two-step decoupling, do core first
   {
     if (method == "magnus") smax *= 2;
 
@@ -717,6 +739,7 @@ int main(int argc, char** argv)
   }
 
 
+    std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
   Hbare.PrintTimes();
  
   return 0;

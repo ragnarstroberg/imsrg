@@ -2,6 +2,7 @@
 #include "Commutator.hh"
 #include "Operator.hh"
 #include "TwoBodyME.hh"
+#include "ThreeBodyME.hh"
 #include "armadillo"
 #include <map>
 #include <deque>
@@ -17,6 +18,7 @@ namespace Commutator {
 
 bool use_goose_tank_correction = false;
 bool use_brueckner_bch = false;
+bool use_imsrg3 = false;
 double bch_transform_threshold = 1e-9;
 double bch_product_threshold = 1e-4;
 
@@ -33,6 +35,8 @@ void SetUseBruecknerBCH(bool tf)
 void SetUseGooseTank(bool tf)
 {use_goose_tank_correction = tf;}
 
+void SetUseIMSRG3(bool tf)
+{use_imsrg3 = tf;}
 
 
 //Operator Operator::Commutator( Operator& opright)
@@ -87,6 +91,7 @@ Operator Commutator( const Operator& X, const Operator& Y)
 /// Should be called through Commutator()
 Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) 
 {
+   std::cout << "Calling CommutatorScalarScalar..." << std::endl;
    X.profiler.counter["N_ScalarCommutators"] += 1;
    double t_css = omp_get_wtime();
    Operator Z( *(Y.GetModelSpace()), std::max(X.GetJRank(),Y.GetJRank()), std::max(X.GetTRank(),Y.GetTRank()), (X.GetParity()+Y.GetParity())%2, std::max(X.GetParticleRank(),Y.GetParticleRank()) );
@@ -128,6 +133,16 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //     Z.comm222_phss(X, Y);
      comm222_phss(X, Y, Z);
      X.profiler.timer["comm222_phss"] += omp_get_wtime() - t_start;
+   }
+
+   std::cout << "Made it here. About to check if use_imsrg3 is true" << std::endl;
+
+   if (use_imsrg3)
+   {
+     t_start = omp_get_wtime();
+     std::cout << "Begin comm223ss. particle rank of Z = " << Z.GetParticleRank() << std::endl;
+     comm223ss(X, Y, Z);
+     X.profiler.timer["comm223ss"] += omp_get_wtime() - t_start;
    }
 
 
@@ -279,6 +294,7 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
         else if (i == max_iter)   std::cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << std::endl;
      }
    }
+   std::cout << "Done with BCH_Transform, 3-body norm of OpOut = " << OpOut.ThreeBodyNorm() << std::endl;
    OpIn.profiler.timer["BCH_Transform"] += omp_get_wtime() - t_start;
    return OpOut;
 }
@@ -1541,83 +1557,170 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   int emin = 0;
   int emax = 4;
+  int e3maxcut = 4;
   int norbs = Z.modelspace->GetNumberOrbits();
   auto& Z3 = Z.ThreeBody;
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
+  std::cout << "Begin the loop. Norm of X2 and Y2 " << X2.Norm() << " " << Y2.Norm() << std::endl;
+  if ( std::abs( X2.Norm() * Y2.Norm() ) < 1e-6) return;
   for (int i=0;i<norbs; i++)
   {
    Orbit& oi = Z.modelspace->GetOrbit(i);
-   for (int j=0; j<norbs; j++)
+   for (int j=0; j<=i; j++)
    {
     Orbit& oj = Z.modelspace->GetOrbit(j);
     int Jij_min = std::abs(oi.j2-oj.j2)/2;
     int Jij_max = (oi.j2+oj.j2)/2;
-    for (int k=0; k<norbs; k++)
+    for (int k=0; k<=j; k++)
     {
      Orbit& ok = Z.modelspace->GetOrbit(k);
-     for (int l=0; l<norbs; k++)
+     if (  2*( oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l >e3maxcut ) continue;
+     for (int l=0; l<=i; l++)
      {
       Orbit& ol = Z.modelspace->GetOrbit(l);
-      for (int m=0; m<norbs; m++)
+      for (int m=0; m<=l; m++)
       {
+       if (l==i and m>j) continue;
        Orbit& om = Z.modelspace->GetOrbit(m);
        int Jlm_min=std::abs(ol.j2-om.j2)/2;
        int Jlm_max=(ol.j2+om.j2)/2;
-       for (int n=0; n<norbs; n++)
+       for (int n=0; n<=m; n++)
        {
+        if (l==i and m==j and n>k) continue;
         Orbit& on = Z.modelspace->GetOrbit(n);
         // check isospin and parity
         if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2>0 ) continue;
         if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
+        if (  2*( ol.n+om.n+on.n)+ol.l+om.l+on.l >e3maxcut ) continue;
+//        std::cout << "ijklmn = " << i << " " << j << " " << k << " "<< l << " " << m << " " << n << std::endl;
         for (int Jij=Jij_min; Jij<=Jij_max; Jij++)
         {
+         if (i==j and Jij%2>0) continue;
          for (int Jlm=Jlm_min; Jlm<=Jlm_max; Jlm++)
          {
+          if (l==m and Jlm%2>0) continue;
           int phasefactor = Z.modelspace->phase( (on.j2+ok.j2)/2 + Jij+Jlm);
           double hatfactor = sqrt( (2*Jij+1)*(2*Jlm+1) );
 
           int twoJmin = std::max( std::abs( ok.j2-Jij*2), std::abs( on.j2-Jlm*2) );
-          int twoJmax = std::max( ok.j2+Jij*2 , on.j2+Jlm*2 );
-          for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ++)
+          int twoJmax = std::min( ok.j2+Jij*2 , on.j2+Jlm*2 );
+          for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
           {
-//            double zmatel = 0;
-           double z_direct = 0;
-           double z_ik = 0;
-           double z_jk = 0;
-           double z_ln = 0;
-           double z_mn = 0;
-           double z_ik_ln = 0;
-           double z_ik_mn = 0;
-           double z_jk_ln = 0;
-           double z_jk_mn = 0;
-           for (int a=0; a<norbs; a++)
-           {
+           double zdirect = 0;
+
+//            std::cout << "    Jij Jlm twoJ = " << Jij << " " << Jlm << " " << twoJ << std::endl;
+            for (int a=0; a<norbs; a++)
+            {
              Orbit& oa = Z.modelspace->GetOrbit(a);
-             double sixj_direct = Z.modelspace->GetSixJ(on.j2*0.5, oa.j2*0.5, Jij, ok.j2*0.5, twoJ*0.5, Jlm );
-//             zmatel += X2.GetTBME_J(Jij, i,j,a,m) * Y2.GetTBME_J(Jlm, a,k,l,m ) * sixj;
-             double zdirect += - X2.GetTBME_J(Jij, i,j,a,m) * Y2.GetTBME_J(Jlm, a,k,l,m ) * sixj_direct;
-             // now all the permutations. Gulp.
-             int Jik_min = std::max( std::abs( oi.j2-ok.j2 ), std::abs( oj.j2 -twoJ))/2;
-             int Jik_max = std::min( oi.j2+ok.j2  , oj.j2+twoJ )/2;
-             int Jjk_min = std::max( std::abs( oj.j2-ok.j2 ), std::abs( oi.j2 -twoJ))/2;
-             int Jjk_max = std::min( oj.j2+ok.j2  , oi.j2+twoJ )/2;
-             int Jln_min = std::max( std::abs( ol.j2-on.j2 ), std::abs( om.j2 -twoJ))/2;
-             int Jln_max = std::min( ol.j2+on.j2  , om.j2+twoJ )/2;
-             int Jmn_min = std::max( std::abs( om.j2-on.j2 ), std::abs( ol.j2 -twoJ))/2;
-             int Jmn_max = std::min( om.j2+on.j2  , ol.j2+twoJ )/2;
-
-             for (int Jik=Jik_min; Jik<=Jik_max; Jik++)
-             {
-              
-             }
-
+             if ( (oi.l+oj.l+oa.l+on.l)%2>0) continue;
+             if ( (oa.l+ok.l+ol.l+om.l)%2>0) continue;
+             if ( oi.tz2+oj.tz2 != oa.tz2+on.tz2) continue;
+             if ( oa.tz2+ok.tz2 != ol.tz2+om.tz2) continue;
+             if ( (std::abs(oa.j2-on.j2) > Jij) or (oa.j2+on.j2 < Jij) ) continue;
+             if ( (std::abs(oa.j2-ok.j2) > Jlm) or (oa.j2+ok.j2 < Jlm) ) continue;
+             double sixj = Z.modelspace->GetSixJ(on.j2*0.5, oa.j2*0.5, Jij, ok.j2*0.5, twoJ*0.5, Jlm );
+             if (std::abs(sixj)<1e-6) continue;
+             zdirect += -sixj * phasefactor * hatfactor * ( X2.GetTBME_J(Jij, i,j,a,n) * Y2.GetTBME_J(Jlm, a,k,l,m )
+                                                         -  Y2.GetTBME_J(Jij, i,j,a,n) * X2.GetTBME_J(Jlm, a,k,l,m ) );
+//             std:: cout << "a = " << a << "   sixj phase, hat = " << sixj << " " << phasefactor << " " << hatfactor
+//                        << "   < " << oi.j2 << " " << oj.j2 << " " << Jij << " | " << oa.j2 << " " << on.j2 << "  ...  Jlm = " << Jlm 
+//                        << "    X2 Y2 = " << std::setprecision(7) << std::setw(12) << X2.GetTBME_J(Jij, i,j,a,n)  << " " <<  Y2.GetTBME_J(Jlm, a,k,l,m )
+//                        << "  Y2 X2 =  " <<  Y2.GetTBME_J(Jij, i,j,a,n)  << "  " <<  X2.GetTBME_J(Jlm, a,k,l,m )
+//                        << std::endl;
+//             if ( std::abs( X2.GetTBME_J(Jlm, a,k,l,m ) )>1e-6 or std::abs( X2.GetTBME_J(Jij, i,j,a,n) ) )
+//             {
+//               std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    " << zdirect  << std::endl;
+//             }
             }
 
-            Z3.AddToME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n, z_direct );
-            Z3.AddToME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n, z_ik );
-            Z3.AddToME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n, z_jk );
+//            std::cout << " ijklmn = " << i << " " << j << " " << k << " " << l << " " << m << " " << n << "   zdirect = " << zdirect << std::endl;
+            Z3.AddToME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n, zdirect );
+            // now all the permutations. Gulp.
 
+            int Jik_min = std::max( std::abs( oi.j2-ok.j2 ), std::abs( oj.j2 -twoJ))/2;
+            int Jik_max = std::min( oi.j2+ok.j2  , oj.j2+twoJ )/2;
+            int Jjk_min = std::max( std::abs( oj.j2-ok.j2 ), std::abs( oi.j2 -twoJ))/2;
+            int Jjk_max = std::min( oj.j2+ok.j2  , oi.j2+twoJ )/2;
+            int Jln_min = std::max( std::abs( ol.j2-on.j2 ), std::abs( om.j2 -twoJ))/2;
+            int Jln_max = std::min( ol.j2+on.j2  , om.j2+twoJ )/2;
+            int Jmn_min = std::max( std::abs( om.j2-on.j2 ), std::abs( ol.j2 -twoJ))/2;
+            int Jmn_max = std::min( om.j2+on.j2  , ol.j2+twoJ )/2;
+
+            std::vector<int> Jik_list;
+            std::vector<int> Jjk_list;
+            std::vector<int> Jln_list;
+            std::vector<int> Jmn_list;
+            std::vector<double> recouple_ikj;
+            std::vector<double> recouple_kji;
+            std::vector<double> recouple_lnm;
+            std::vector<double> recouple_nml;
+            // loop through the possible recouplings and J values, storing the recoupling coefficients
+            // because we need them for the double-recoupling case, like P_ik * P_ln.
+//            std::cout << "Single flipsizes permutations..." << std::endl;
+            for (int Jik=Jik_min; Jik<=Jik_max; Jik++)
+            {
+              if (i==k and Jik%2>0) continue;
+              Jik_list.push_back(Jik);   // ijk -> ikj  couple ik to Jik
+//              std::cout << "    recouple ikj" << std::endl;
+              recouple_ikj.push_back( Z3.RecouplingCoefficient( ThreeBodyME::ACB, oi.j2*0.5, oj.j2*0.5, ok.j2*0.5, Jij, Jik, twoJ) );
+              if (std::abs(recouple_ikj.back())<1e-6) continue;
+              Z3.AddToME_pn( Jik, Jlm, twoJ, i,k,j,l,m,n, -recouple_ikj.back() * zdirect );
+            }
+            for (int Jjk=Jjk_min; Jjk<=Jjk_max; Jjk++)
+            {
+              if (j==k and Jjk%2>0) continue;
+              Jjk_list.push_back(Jjk);  // ijk -> kji  couple kj to Jkj
+//              std::cout << "    recouple kji" << std::endl;
+              recouple_kji.push_back( Z3.RecouplingCoefficient( ThreeBodyME::CBA, oi.j2*0.5, oj.j2*0.5, ok.j2*0.5, Jij, Jjk, twoJ) );
+              if (std::abs(recouple_kji.back())<1e-6) continue;
+              Z3.AddToME_pn( Jjk, Jlm, twoJ, k,j,i,l,m,n, -recouple_kji.back() * zdirect );
+            }
+            for (int Jln=Jln_min; Jln<=Jln_max; Jln++)
+            {
+              if (l==n and Jln%2>0) continue;
+              Jln_list.push_back(Jln);  // lmn -> lnm  couple ln to Jln
+//              std::cout << "    recouple lnm" << std::endl;
+              recouple_lnm.push_back( Z3.RecouplingCoefficient( ThreeBodyME::ACB, ol.j2*0.5, om.j2*0.5, on.j2*0.5, Jlm, Jln, twoJ) );
+              Z3.AddToME_pn( Jij, Jln, twoJ, i,j,k,l,n,m, -recouple_lnm.back() * zdirect );
+            }
+            for (int Jmn=Jmn_min; Jmn<=Jmn_max; Jmn++)
+            {
+              if (m==n and Jmn%2>0) continue;
+              Jmn_list.push_back(Jmn);  // lmn -> nml  couple mn to Jmn
+//              std::cout << "    recouple nml" << std::endl;
+              recouple_nml.push_back( Z3.RecouplingCoefficient( ThreeBodyME::CBA, ol.j2*0.5, om.j2*0.5, on.j2*0.5, Jlm, Jmn, twoJ) );
+              Z3.AddToME_pn( Jij, Jmn, twoJ, i,j,k,n,m,l, -recouple_nml.back() * zdirect );
+            }
+
+//            std::cout << "Double flipsizes permutations..." << std::endl;
+            // don't forget about the double-swapsies...
+            for (size_t indx1=0;indx1<Jik_list.size();indx1++)
+            {
+              for (size_t indx2=0;indx2<Jln_list.size();indx2++)
+              {
+//                std::cout << "    recouple ikj,lnm : " << Jik_list[indx1] << " " << Jln_list[indx2] << std::endl;
+                Z3.AddToME_pn( Jik_list[indx1], Jln_list[indx2], twoJ, i,k,j,l,n,m, recouple_ikj[indx1]*recouple_lnm[indx2] * zdirect );
+              }
+              for (size_t indx2=0;indx2<Jmn_list.size();indx2++)
+              {
+//                std::cout << "    recouple ikj,nml" << std::endl;
+                Z3.AddToME_pn( Jik_list[indx1], Jmn_list[indx2], twoJ, i,k,j,n,m,l, recouple_ikj[indx1]*recouple_nml[indx2] * zdirect );
+              }
+            }
+            for (size_t indx1=0;indx1<Jjk_list.size();indx1++)
+            {
+              for (size_t indx2=0;indx2<Jln_list.size();indx2++)
+              {
+//                std::cout << "    recouple kji,lnm" << std::endl;
+                Z3.AddToME_pn( Jjk_list[indx1], Jln_list[indx2], twoJ, k,j,i,l,n,m, recouple_kji[indx1]*recouple_lnm[indx2] * zdirect );
+              }
+              for (size_t indx2=0;indx2<Jmn_list.size();indx2++)
+              {
+//                std::cout << "    recouple kji,nml" << std::endl;
+                Z3.AddToME_pn( Jjk_list[indx1], Jmn_list[indx2], twoJ, k,j,i,n,m,l, recouple_kji[indx1]*recouple_nml[indx2] * zdirect );
+              }
+            }
           }
          }
         }
@@ -1627,7 +1730,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
     }
    }
   }
-
+  std::cout << "Done with comm223ss. Norm of Z3 is " << Z.ThreeBodyNorm() << std::endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

@@ -44,6 +44,43 @@ size_t ThreeBodyME::KeyHash(size_t a,size_t b,size_t c,size_t d,size_t e,size_t 
 
 }
 
+
+ ThreeBodyME& ThreeBodyME::operator*=(const double rhs)
+ {
+   for ( auto& itmat : MatEl )
+   {
+      itmat *= rhs;
+   }
+   return *this;
+ }
+
+ ThreeBodyME& ThreeBodyME::operator+=(const ThreeBodyME& rhs)
+ {
+   for ( size_t i=0; i<MatEl.size();i++ )
+   {
+      MatEl[i] += rhs.MatEl[i];
+//      auto ch_bra = itmat.first[0];
+//      auto ch_ket = itmat.first[1];
+//      itmat.second += rhs.GetMatrix(ch_bra,ch_ket);
+   }
+   return *this;
+ }
+
+ ThreeBodyME& ThreeBodyME::operator-=(const ThreeBodyME& rhs)
+ {
+   for ( size_t i=0; i<MatEl.size();i++ )
+   {
+      MatEl[i] -= rhs.MatEl[i];
+//      auto ch_bra = itmat.first[0];
+//      auto ch_ket = itmat.first[1];
+//      GetMatrix(ch_bra,ch_ket) -= itmat.second;
+   }
+   return *this;
+ }
+
+
+
+
 /*
 // Confusing nomenclature: J2 means 2 times the total J of the three body system
 void ThreeBodyME::Allocate()
@@ -444,7 +481,7 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
 //*******************************************************************
 /// Coefficients for recoupling three body matrix elements
 //*******************************************************************
-inline double ThreeBodyME::RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const
+double ThreeBodyME::RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const
 {
    if ( std::abs(int(ja-jb))>Jab  or int(ja+jb)<Jab) return 0;
    if ( std::abs(int(jc-J/2.))>Jab  or int(jc+J/2.)<Jab) return 0;
@@ -489,6 +526,14 @@ int ThreeBodyME::SortOrbits(int a_in, int b_in, int c_in, int& a, int& b, int& c
    else               recoupling_case = (b_in==a) ? CAB : CBA;
 
    return recoupling_case;
+}
+
+
+double ThreeBodyME::Norm() const
+{
+  double norm = 0;
+  for (auto me : MatEl)  norm += me*me;
+  return norm;
 }
 
 

@@ -13,6 +13,7 @@ namespace Commutator{
 
   extern bool use_goose_tank_correction;
   extern bool use_brueckner_bch;
+  extern bool use_imsrg3;
   extern double bch_transform_threshold;
   extern double bch_product_threshold;
 
@@ -20,6 +21,7 @@ namespace Commutator{
   void Set_BCH_Product_Threshold(double x);
   void SetUseBruecknerBCH(bool tf);
   void SetUseGooseTank(bool tf);
+  void SetUseIMSRG3(bool tf);
 
 
   Operator Commutator(const Operator& X, const Operator& Y) ; 

@@ -56,6 +56,11 @@ class ThreeBodyME
   ThreeBodyME(ModelSpace*);
   ThreeBodyME(ModelSpace* ms, int e3max);
 
+
+  ThreeBodyME& operator*=(const double);
+  ThreeBodyME& operator+=(const ThreeBodyME&);
+  ThreeBodyME& operator-=(const ThreeBodyME&);
+
   size_t KeyHash(size_t,size_t,size_t,size_t,size_t,size_t) const;
   void Allocate();
 
@@ -77,6 +82,8 @@ class ThreeBodyME
   int GetE3max(){return E3max;};
   int Getemax(){return emax;};
   void Setemax(int e){emax=  e;};
+
+  double Norm() const;
 
   void Erase(); // set all three-body terms to zero
   void Deallocate();
