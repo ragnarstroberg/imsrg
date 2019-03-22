@@ -34,6 +34,7 @@ namespace AngMom
    double NineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double NormNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int lam);
+   double TalmiB(int n, int l, int nn, int ll, int p);
 };
 
 #endif

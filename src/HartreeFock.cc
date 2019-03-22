@@ -94,6 +94,7 @@ void HartreeFock::Solve()
       for (auto& x : convergence_EHF ) std::cout << x << " ";
       std::cout << std::endl;
    }
+   UpdateReference();
    PrintEHF();
 }
 
@@ -117,8 +118,9 @@ void HartreeFock::CalcEHF()
    e1hf = 0;
    e2hf = 0;
    e3hf = 0;
-   int norbits = modelspace->GetNumberOrbits();
-   for (int i=0;i<norbits;i++)
+//   int norbits = modelspace->GetNumberOrbits();
+//   for (int i=0;i<norbits;i++)
+   for (auto i : modelspace->all_orbits )
    {
       Orbit& oi = modelspace->GetOrbit(i);
       int jfactor = oi.j2 +1;
@@ -237,8 +239,9 @@ void HartreeFock::BuildMonopoleV3()
 {
    double start_time = omp_get_wtime();
   // First, allocate. This is fast so don't parallelize.
-  size_t norbits = modelspace->GetNumberOrbits();
-  for (uint64_t i=0; i<norbits; ++i)
+//  size_t norbits = modelspace->GetNumberOrbits();
+//  for (uint64_t i=0; i<norbits; ++i)
+  for ( auto i : modelspace->all_orbits)
   {
     Orbit& oi = modelspace->GetOrbit(i);
     int ei = 2*oi.n + oi.l;
@@ -249,7 +252,8 @@ void HartreeFock::BuildMonopoleV3()
       int ej = 2*oj.n + oj.l;
 
 
-      for (uint64_t a=0; a<norbits; ++a)
+//      for (uint64_t a=0; a<norbits; ++a)
+      for (auto a : modelspace->all_orbits)
       {
         Orbit& oa = modelspace->GetOrbit(a);
         int ea = 2*oa.n + oa.l;
@@ -258,7 +262,8 @@ void HartreeFock::BuildMonopoleV3()
           Orbit& ob = modelspace->GetOrbit(b);
           int eb = 2*ob.n + ob.l;
      
-            for (uint64_t c=0; c<norbits; ++c)
+//            for (uint64_t c=0; c<norbits; ++c)
+            for ( auto c : modelspace->all_orbits)
             {
               Orbit& oc = modelspace->GetOrbit(c);
               int ec = 2*oc.n + oc.l;
@@ -393,7 +398,7 @@ void HartreeFock::FillLowestOrbits()
   }
 
   holeorbs = arma::uvec( holeorbs_tmp );
-  hole_occ = arma::rowvec( hole_occ );
+  hole_occ = arma::rowvec( hole_occ_tmp );
 }
 
 
@@ -418,13 +423,15 @@ void HartreeFock::UpdateF()
 
 
    // This loop isn't thread safe for some reason. Regardless, parallelizing it makes it slower. 
-   for (int i=0;i<norbits;i++)
+//   for (int i=0;i<norbits;i++)
+   for (auto i : modelspace->all_orbits)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
          if (j<i) continue;
-         for (int a=0;a<norbits;++a)
+//         for (int a=0;a<norbits;++a)
+         for (auto a : modelspace->all_orbits)
          {
             Orbit& oa = modelspace->GetOrbit(a);
             int Tz = (oi.tz2+oa.tz2)/2;
@@ -631,6 +638,25 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
    return OpHF;
 }
 
+// If the lowest orbits are different from our previous guess, we should update the reference.
+void HartreeFock::UpdateReference()
+{
+
+  bool changed_occupations = false;
+  std::map<index_t,double> hole_map;
+  for (index_t i=0;i<holeorbs.size();++i)  
+  {
+     hole_map[holeorbs[i]] = hole_occ[i];
+     if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
+     {
+        changed_occupations = true;
+        std::cout << "After HF, occupation of orbit " << i << " has changed. Modelspace will be updated." << std::endl;
+     }
+  }
+  if (changed_occupations)  modelspace->SetReference( hole_map );
+
+}
+
 
 Operator HartreeFock::GetNormalOrderedH(arma::mat& Cin) 
 {
@@ -658,18 +684,20 @@ Operator HartreeFock::GetNormalOrderedH()
    // First, check if we need to update the occupation numbers for the reference
    if (not freeze_occupations)
    {
-     bool changed_occupations = false;
-     std::map<index_t,double> hole_map;
-     for (index_t i=0;i<holeorbs.size();++i)  
-     {
-        hole_map[holeorbs[i]] = hole_occ[i];
-        if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
-        {
-           changed_occupations = true;
-           std::cout << "After HF, occupation of orbit " << i << " has changed. Modelspace will be updated." << std::endl;
-        }
-     }
-     if (changed_occupations)  modelspace->SetReference( hole_map );
+     UpdateReference();
+//     bool changed_occupations = false;
+//     std::map<index_t,double> hole_map;
+//     std::cout << "Looking through holeorbs to see if we changed occupations" << std::endl;
+//     for (index_t i=0;i<holeorbs.size();++i)  
+//     {
+//        hole_map[holeorbs[i]] = hole_occ[i];
+//        if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
+//        {
+//           changed_occupations = true;
+//           std::cout << "After HF, occupation of orbit " << i << " has changed. Modelspace will be updated." << std::endl;
+//        }
+//     }
+//     if (changed_occupations)  modelspace->SetReference( hole_map );
    }
 
    Operator HNO = Operator(*modelspace,0,0,0,2);
@@ -677,7 +705,7 @@ Operator HartreeFock::GetNormalOrderedH()
    HNO.OneBody = C.t() * F * C;
 
    int nchan = modelspace->GetNumberTwoBodyChannels();
-   int norb = modelspace->GetNumberOrbits();
+//   int norb = modelspace->GetNumberOrbits();
 //   #pragma omp parallel for schedule(dynamic,1) // have not yet confirmed that this improves performance ... no sign of significant improvement
    for (int ch=0;ch<nchan;++ch)
    {
@@ -708,7 +736,8 @@ Operator HartreeFock::GetNormalOrderedH()
             // Now generate the NO2B part of the 3N interaction
             if (Hbare.GetParticleRank()<3) continue;
             if (i>j) continue;
-            for (int a=0; a<norb; ++a)
+//            for (int a=0; a<norb; ++a)
+            for ( auto a : modelspace->all_orbits )
             {
               Orbit & oa = modelspace->GetOrbit(a);
               if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
@@ -781,7 +810,8 @@ Operator HartreeFock::GetOmega()
 
 void HartreeFock::PrintSPE()
 {
-  for (int i=0;i<modelspace->GetNumberOrbits();++i)
+//  for (size_t i=0;i<modelspace->GetNumberOrbits();++i)
+  for ( auto i : modelspace->all_orbits )
   {
     Orbit& oi = modelspace->GetOrbit(i);
     std::cout << std::fixed << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
@@ -790,6 +820,24 @@ void HartreeFock::PrintSPE()
 
 }
 
+
+void HartreeFock::PrintSPEandWF()
+{
+  std::cout << std::fixed << std::setw(3) << "i" << ": " << std::setw(3) << "n" << " " << std::setw(3) << "l" << " "
+       << std::setw(3) << "2j" << " " << std::setw(3) << "2tz" << "   " << std::setw(12) << "SPE" << " " << std::setw(12) << "occ." << "   |   " << " overlaps" << std::endl;
+//  for (int i=0;i<modelspace->GetNumberOrbits();++i)
+  for ( auto i : modelspace->all_orbits )
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    std::cout << std::fixed << std::setw(3) << i << ": " << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
+         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F(i,i) << " " << std::setw(12) << oi.occ << "   | ";
+    for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    {
+      std::cout << std::setw(9) << C(i,j) << "  ";
+    }
+    std::cout << std::endl;
+  }
+}
 
 
 void HartreeFock::GetRadialWF(index_t index, std::vector<double>& R, std::vector<double>& PSI)
@@ -818,3 +866,167 @@ double HartreeFock::GetRadialWF_r(index_t index, double R)
 
 
 
+
+
+double HartreeFock::GetHFPotential( size_t i, double r, double rprime)
+{
+  double Uhf = 0;
+    Orbit& oi = modelspace->GetOrbit(i);
+//  size_t norb = modelspace->GetNumberOrbits();
+//  for (size_t i=0; i<norb; i++)
+//  {
+    for (auto j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    {
+      for (auto k : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+      {
+        Uhf +=  (Vij(j,k) + 0.5*V3ij(j,k) )  * GetRadialWF_r(j,r) * GetRadialWF_r(k,rprime);
+      }
+    }
+//  }
+  return Uhf;
+}
+
+
+double HartreeFock::GetAverageHFPotential( double r, double rprime)
+{
+  double Uhf = 0;
+  size_t norb = modelspace->GetNumberOrbits();
+  for (size_t i=0; i<norb; i++)
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    if (oi.n == 0)
+    {
+      Uhf += GetHFPotential(i,r,rprime);
+    }
+  }
+  Uhf /= 2*(2*modelspace->GetEmax()+1); // 2 for protons/neutrons, and 2*emax+1 is number of different l,j combinations
+  return Uhf;
+}
+
+
+// Get the 3-body interaction in the Hartree-Fock basis.
+// Note that because the ThreeBody structure stores things in isospin format
+// and because I haven't bothered to write a new structure, we get
+// a 3-body interaction with good isospin, even though the HF basis breaks isospin.
+// Hopefully this isn't much of an approximation, but it shouldn't be too bad
+// to make a new structure in the future.
+ThreeBodyME HartreeFock::GetValence3B( int emax, int E3max )
+{
+  double t_start = omp_get_wtime();
+  ThreeBodyME hf3bme(modelspace, E3max);
+  hf3bme.Setemax(emax);
+  hf3bme.Allocate();
+  // big loop over elements of hf3bme...
+  auto norbits = modelspace->GetNumberOrbits();
+  for (size_t a=0; a<norbits; a+=2)
+  {
+   Orbit& oa = modelspace->GetOrbit(a);
+   int ea = 2*oa.n + oa.l;
+   if ((ea > emax) or ea>E3max ) break;
+   for (size_t b=0; b<=a; b+=2)
+   {
+    Orbit& ob = modelspace->GetOrbit(b);
+    int eb = 2*ob.n + ob.l;
+    if ((ea+eb)>E3max) break;
+    int Jab_min = std::abs( oa.j2 - ob.j2 ) /2;
+    int Jab_max =         ( oa.j2 + ob.j2 ) /2;
+    int tab_min = std::abs( oa.tz2 + ob.tz2)/2;
+    int tab_max = 1;
+    for (size_t c=0; c<=b; c+=2)
+    {
+      Orbit& oc = modelspace->GetOrbit(c);
+      int ec = 2*oc.n + oc.l;
+      if ((ea+eb+ec)>E3max) break;
+      for (size_t d=0; d<=a; d+=2 )
+      {
+       Orbit& od = modelspace->GetOrbit(d);
+       for (size_t e=0; e<=d; e+=2 )
+       {
+        Orbit& oe = modelspace->GetOrbit(e);
+        int Jde_min = std::abs( od.j2 - oe.j2 ) /2;
+        int Jde_max =         ( od.j2 + oe.j2 ) /2;
+        int tde_min = std::abs( od.tz2 + oe.tz2)/2;
+        int tde_max = 1;
+        for (size_t f=0; f<=e; f+=2 )
+        {
+          Orbit& of = modelspace->GetOrbit(f);
+//          if ( (oa.tz2+ob.tz2+oc.tz2) != (od.tz2+oe.tz2+of.tz2) ) continue;
+          for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+          {
+           for (int Jde=Jde_min; Jde<=Jde_max; Jde++)
+           {
+            int J2_min = std::max( std::abs(Jab*2-oc.j2), std::abs(Jde*2-of.j2) );
+            int J2_max = std::min(         (Jab*2+oc.j2),         (Jde*2+of.j2) );
+            for (int J2=J2_min; J2<=J2_max; J2++)
+            {
+              for (int tab=tab_min; tab<=tab_max; tab++)
+              {
+               for (int tde=tde_min; tde<=tde_max; tde++)
+               {
+                int T2_min = 1;
+//                int T2_max = std::abs(oa.tz2+ob.tz2+oc.tz2);  // this will be either 1 or 3.
+                int T2_max = 3;  // this will be either 1 or 3.
+                for (int T2=T2_min; T2<=T2_max; T2++)
+                {
+                  double V = GetHF3bme( Jab, Jde, J2, tab, tde, T2, a, b, c, d, e, f );
+                  hf3bme.SetME(Jab, Jde, J2, tab, tde, T2, a, b, c, d, e, f, V);
+                } // for T2
+               } // for tde
+              } // for tab
+            }
+           } // for Jde
+          } // for Jab
+        } // for f
+       } // for e
+      } // for d
+    }// for c
+   } // for b
+  } // for a
+
+  IMSRGProfiler::timer["HartreeFock::GetValence3B"] += omp_get_wtime() - t_start;
+  return hf3bme;
+
+}
+
+
+
+// Get a single 3-body matrix element in the HartreeFock basis.
+// Because we're using good isospin, right now we just use the proton orbits.
+// In principle we could figure out a more clever way by averaging depending on the isospin value.
+double HartreeFock::GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f)
+{
+  double V_hf = 0.;
+  Orbit& oa = modelspace->GetOrbit(a);
+  Orbit& ob = modelspace->GetOrbit(b);
+  Orbit& oc = modelspace->GetOrbit(c);
+  Orbit& od = modelspace->GetOrbit(d);
+  Orbit& oe = modelspace->GetOrbit(e);
+  Orbit& of = modelspace->GetOrbit(f);
+
+  for (auto alpha : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+  {
+   if ( std::abs(C(alpha,a)) < 1e-8 ) continue;
+   for (auto beta : Hbare.OneBodyChannels.at({ob.l,ob.j2,ob.tz2}) )
+   {
+    if ( std::abs(C(beta,b)) < 1e-8 ) continue;
+    for (auto gamma : Hbare.OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
+    {
+     if ( std::abs(C(gamma,c)) < 1e-8 ) continue;
+     for (auto delta : Hbare.OneBodyChannels.at({od.l,od.j2,od.tz2}) )
+     {
+      if ( std::abs(C(delta,d)) < 1e-8 ) continue;
+      for (auto epsilon : Hbare.OneBodyChannels.at({oe.l,oe.j2,oe.tz2}) )
+      {
+       if ( std::abs(C(epsilon,e)) < 1e-8 ) continue;
+       for (auto phi : Hbare.OneBodyChannels.at({of.l,of.j2,of.tz2}) )
+       {
+         double V_ho = Hbare.ThreeBody.GetME( Jab,  Jde,  J2,  tab,  tde,  T2,  alpha,  beta,  gamma,  delta,  epsilon,  phi);
+         V_hf += V_ho * C(alpha,a) * C(beta,b) * C(gamma,c) * C(delta,d) * C(epsilon,e) * C(phi,f);
+       } // for phi
+      } // for epsilon
+     } // for delta
+    } // for gamma
+   } // for beta
+  } // for alpha
+  return V_hf;
+}

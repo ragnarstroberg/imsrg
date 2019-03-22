@@ -35,6 +35,7 @@
 #define PI 3.14159265359 // put in by CP for the BMEs
 #define M_PROTON  938.2720813
 #define M_NEUTRON 939.5654133
+#define M_ELECTRON 0.5109989461 // I take all my physical constants from Wikipedia.
 
 #ifndef ISQRT2
   #define ISQRT2 0.70710678118654752440L
@@ -42,8 +43,8 @@
 
 namespace imsrg_util
 {
- Operator OperatorFromString(ModelSpace& modelspace, string str);
- map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax);
+ Operator OperatorFromString(ModelSpace& modelspace, std::string str);
+ std::map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax);
 
  Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2);
  Operator NumberOpAlln(ModelSpace& modelspace, int l, int j2, int tz2);
@@ -54,38 +55,52 @@ namespace imsrg_util
  Operator NeutronElectricMultipoleOp(ModelSpace& modelspace, int L);
  Operator IntrinsicElectricMultipoleOp(ModelSpace& modelspace, int L);
  Operator MagneticMultipoleOp(ModelSpace& modelspace, int L);
- Operator MagneticMultipoleOp_pn(ModelSpace& modelspace, int L, string pn);
+ Operator MagneticMultipoleOp_pn(ModelSpace& modelspace, int L, std::string pn);
  Operator Trel_Op(ModelSpace& modelspace);
  Operator TCM_Op(ModelSpace& modelspace);
  Operator HCM_Op(ModelSpace& modelspace);
  Operator Trel_Masscorrection_Op(ModelSpace& modelspace);
+ Operator KineticEnergy_Op(ModelSpace& modelspace);
+ Operator KineticEnergy_RelativisticCorr(ModelSpace& modelspace);
 
  Operator R2CM_Op(ModelSpace& modelspace);
  Operator Rp2_corrected_Op(ModelSpace& modelspace, int A, int Z);
  Operator Rn2_corrected_Op(ModelSpace& modelspace, int A, int Z);
  Operator Rm2_corrected_Op(ModelSpace& modelspace, int A, int Z);
  Operator R2_p1_Op(ModelSpace& modelspace);
- Operator R2_1body_Op(ModelSpace& modelspace, string option);
+ Operator R2_1body_Op(ModelSpace& modelspace, std::string option);
  Operator R2_p2_Op(ModelSpace& modelspace);
- Operator R2_2body_Op(ModelSpace& modelspace, string option);
+ Operator R2_2body_Op(ModelSpace& modelspace, std::string option);
  Operator ProtonDensityAtR(ModelSpace& modelspace, double R);
  Operator NeutronDensityAtR(ModelSpace& modelspace, double R);
  Operator RpSpinOrbitCorrection(ModelSpace& modelspace);
- Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<index_t> index_list);
+ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list);
 
  Operator Isospin2_Op(ModelSpace& modelspace);
  Operator AllowedFermi_Op(ModelSpace& modelspace);
  Operator AllowedGamowTeller_Op(ModelSpace& modelspace);
  Operator Sigma_Op(ModelSpace& modelspace);
- Operator Sigma_Op_pn(ModelSpace& modelspace, string pn);
+ Operator Sigma_Op_pn(ModelSpace& modelspace, std::string pn);
  Operator RadialOverlap(ModelSpace& modelspace);
  Operator LdotS_Op(ModelSpace& modelspace);
  Operator L2rel_Op(ModelSpace& modelspace);
  Operator LCM_Op(ModelSpace& modelspace);
  Operator QdotQ_Op(ModelSpace& modelspace);
+ Operator VCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
+ Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
+
+ Operator Dagger_Op( ModelSpace& modelspace, index_t Q );
+
+ Operator Density_sog( double R_i, double gamma, std::string pn );
+
+ Operator FirstOrderCorr_1b( const Operator& OpIn, const Operator& H );
+// Operator RPA_resummed_1b( const Operator& OpIn, const Operator& H );
+ Operator RPA_resummed_1b( const Operator& OpIn, const Operator& H, std::string mode="RPA" );
+ arma::mat GetPH_transformed_Gamma( std::vector<std::pair<size_t,size_t>>& bras, std::vector<std::pair<size_t,size_t>>& kets, const Operator& H, int Lambda );
+
 
 ////////////////// Double beta decay functions from Charlie Payne ///////////////
- Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, string src); // put in by CP, it is still in development
+ Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, std::string src); // put in by CP, it is still in development
  double CPrbmeGen(ModelSpace& modelspace, double rho, double x, int n, int l, int np, int lp, int mm, double pp); // testing...
  inline double cpNorm(int a, int b) {return a==b ? ISQRT2 : 1.0;}; // put in by CP, for anti-symmetrization normalization
 // SRS - the following three don't seem to be used.
@@ -98,6 +113,10 @@ namespace imsrg_util
 
 
  Operator EKKShift( Operator& Hin, int Nlower, int Nupper);
+
+ Operator MinnesotaPotential( ModelSpace& modelspace );
+ double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J );
+
 
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace); // This doesn't work
  double Get_Charge_Density(Operator& DM, double r);  // This doesn't work
@@ -112,9 +131,11 @@ namespace imsrg_util
  double RadialIntegral_RpowK(int na, int la, int nb, int lb, int k);
  double TalmiI(int p, double k);
  double TalmiB(int na, int la, int nb, int lb, int p);
- vector<double> GetOccupationsHF(HartreeFock& hf);
- vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);
- vector<double> GetDensity(vector<double>& occ, vector<double>& R, vector<int>& orbits, ModelSpace& modelspace);
+ std::vector<double> GetOccupationsHF(HartreeFock& hf);
+ std::vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);
+ std::vector<double> GetDensity(std::vector<double>& occ, std::vector<double>& R, std::vector<int>& orbits, ModelSpace& modelspace);
+
+ void WriteSPWaveFunctions( std::vector<std::string>& sporbits, HartreeFock& hf, std::string intfile );
 
  void Embed1BodyIn2Body(Operator& op1, int A);
  double GetEmbeddedTBME(Operator& op1, index_t i, index_t j, index_t k, index_t l, int Jbra,int Jket, int Lambda);
@@ -139,8 +160,8 @@ namespace imsrg_util
  T VectorUnion(const T& v1, const T& v2, Args... args)
  {
    T vec(v1.size()+v2.size());
-   copy(v1.begin(),v1.end(),vec.begin());
-   copy(v2.begin(),v2.end(),vec.begin()+v1.size());
+   std::copy(v1.begin(),v1.end(),vec.begin());
+   std::copy(v2.begin(),v2.end(),vec.begin()+v1.size());
    return VectorUnion(vec, args...);
  }
 

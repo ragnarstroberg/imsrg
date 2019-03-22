@@ -83,8 +83,8 @@ class Ket  //  | pq >
    // Fields
    Orbit* op;
    Orbit* oq;
-   int p;
-   int q;
+   size_t p;
+   size_t q;
  private:
    // Fields
    int dpq;
@@ -107,15 +107,15 @@ class TwoBodyChannel
    virtual ~TwoBodyChannel();
    TwoBodyChannel();
    TwoBodyChannel(int j, int p, int t, ModelSpace* ms);
-   TwoBodyChannel(int N, ModelSpace* ms);
-   void Initialize(int N, ModelSpace* ms);
+   TwoBodyChannel(int ch, ModelSpace* ms);
+   void Initialize(int ch, ModelSpace* ms);
 
 
    //Methods
-   int GetNumberKets() const {return NumberKets;};
-   int GetLocalIndex(int ketindex) const { return KetMap[ketindex];}; // modelspace ket index => local ket index
-   int GetLocalIndex(int p, int q) const ;
-   int GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
+   size_t GetNumberKets() const {return NumberKets;};
+   size_t GetLocalIndex(int ketindex) const { return KetMap[ketindex];}; // modelspace ket index => local ket index
+   size_t GetLocalIndex(int p, int q) const ;
+   size_t GetKetIndex(int i) const { return KetList[i];}; // local ket index => modelspace ket index
    const Ket& GetKet(int i) const  ; // get pointer to ket using local index
    Ket& GetKet(int i)  ; // get pointer to ket using local index
 
@@ -202,6 +202,8 @@ class ModelSpace
    void Init(int emax, std::map<index_t,double> hole_list, std::vector<index_t> core_list, std::vector<index_t> valence_list);
    void Init(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list);
    void Init_occ_from_file(int emax, std::string valence, std::string occ_file);
+   void InitSingleSpecies( int emax, std::string reference, std::string valence); // Work with just one type of fermion
+//   void InitSingleSpecies(int emax, std::string reference, std::string valence); // Work with just one type of fermion
 
 //   std::vector<index_t> GetOrbitsAZ(int A, int Z);
    std::map<index_t,double> GetOrbitsAZ(int A, int Z);
@@ -219,11 +221,11 @@ class ModelSpace
 //   Orbit& GetOrbit(int i) const {return (Orbit&) Orbits[i];}; 
    Ket& GetKet(int i) const {return (Ket&) Kets[i];};
    Ket& GetKet(int p, int q) const {return (Ket&) Kets[Index2(p,q)];};
-   int GetOrbitIndex(int n, int l, int j2, int tz2) const {return Index1(n,l,j2,tz2);};
-   int GetKetIndex(int p, int q) const {return Index2(p,q);}; // convention is p<=q
-   int GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
-   int GetNumberOrbits() const {return norbits;};
-   int GetNumberKets() const {return Kets.size();};
+   size_t GetOrbitIndex(int n, int l, int j2, int tz2) const {return Index1(n,l,j2,tz2);};
+   size_t GetKetIndex(int p, int q) const {return Index2(p,q);}; // convention is p<=q
+   size_t GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
+   size_t GetNumberOrbits() const {return norbits;};
+   size_t GetNumberKets() const {return Kets.size();};
    void SetHbarOmega(double hw) {hbar_omega = hw;};
    void SetTargetMass(int A) {target_mass = A;};
    void SetTargetZ(int Z) {target_Z = Z;};
@@ -232,11 +234,11 @@ class ModelSpace
    int GetTargetZ() const {return target_Z;};
    int GetAref() const {return Aref;};
    int GetZref() const {return Zref;};
-   int GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
+   size_t GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
-   inline int GetTwoBodyJmax() const {return TwoBodyJmax;};
-   inline int GetThreeBodyJmax() const {return ThreeBodyJmax;};
+   int GetTwoBodyJmax() const {return TwoBodyJmax;};
+   int GetThreeBodyJmax() const {return ThreeBodyJmax;};
    void SetReference(std::vector<index_t>);
    void SetReference(std::map<index_t,double>);
    void SetReference(std::string);
@@ -256,15 +258,21 @@ class ModelSpace
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. Not ideal.
    bool SixJ_is_empty(){ return SixJList.empty(); };
+   double GetT3b(index_t a,index_t b, index_t c, int Jab, int J, int N1, int L1, int S1, int J1, int N2, int L2,int J2,int J12,int Ncm,int Lcm); // 15 index object. yikes.
 
-   int GetOrbitIndex(std::string);
-   int GetTwoBodyChannelIndex(int j, int p, int t);
-   inline int phase(int x) {return (x%2)==0 ? 1 : -1;};
-   inline int phase(double x) {return phase(int(x));};
+   size_t GetOrbitIndex(std::string);
+   size_t GetTwoBodyChannelIndex(int j, int p, int t);
+   void UnpackTwoBodyChannelIndex( size_t ch, int& j, int& p, int& tz);
+   int phase(int x) {return (x%2)==0 ? 1 : -1;};
+   int phase(double x) {return phase(int(x));};
 
-   inline int Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
+//   size_t Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
+   size_t Index1(int n, int l, int j2, int tz2) const ;
+//   size_t Index1(int n, int l, int j2, int tz2) const { size_t indx = (2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2; return (single_species ? indx/2 : indx) ;};
 //   inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
-   inline int Index2(int p, int q) const {return p*(2*norbits-1-p)/2 + q;};
+//   size_t Index2(size_t p, size_t q) const {return p*(2*norbits-1-p)/2 + q;};
+   size_t Index2(size_t p, size_t q) const ;
+//   size_t Index2(size_t p, size_t q) const {return p*(2*all_orbits.size()-1-p)/2 + q;};
 
    void PreCalculateMoshinsky();
    void PreCalculateSixJ();
@@ -272,7 +280,8 @@ class ModelSpace
    void ResetFirstPass();
    void CalculatePandyaLookup(int rank_J, int rank_T, int parity); // construct a lookup table for more efficient pandya transformation
 //   map<array<int,2>,vector<array<int,2>>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
-   std::map<std::array<int,2>,std::array<std::vector<int>,2>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
+//   std::map<std::array<int,2>,std::array<std::vector<int>,2>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
+   std::map<std::array<size_t,2>,std::array<std::vector<size_t>,2>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
    uint64_t SixJHash(double j1, double j2, double j3, double J1, double J2, double J3);
    void SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& j3, uint64_t& J1, uint64_t& J2, uint64_t& J3);
    uint64_t MoshinskyHash(uint64_t N,uint64_t Lam,uint64_t n,uint64_t lam,uint64_t n1,uint64_t l1,uint64_t n2,uint64_t l2,uint64_t L);
@@ -281,13 +290,13 @@ class ModelSpace
 
    // Data members
    std::vector<index_t> holes;           // in the reference Slater determinant
-//   map<index_t,double> holes;           // in the reference Slater determinant
    std::vector<index_t> particles;       // above the reference Slater determinant
    std::vector<index_t> core;            // core for decoupling
    std::vector<index_t> valence;         // valence space for decoupling
    std::vector<index_t> qspace;          // above the valence space for decoupling
    std::vector<index_t> proton_orbits;
    std::vector<index_t> neutron_orbits;
+   std::vector<index_t> all_orbits;
 
    std::vector<index_t> KetIndex_pp; 
    std::vector<index_t> KetIndex_ph;
@@ -336,17 +345,20 @@ class ModelSpace
    std::vector<Ket> Kets;
    std::vector<TwoBodyChannel> TwoBodyChannels;
    std::vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
-   std::map< std::array<int,3>, std::map< std::array<int,2>,std::array<std::vector<int>,2> > > PandyaLookup;
+   std::map< std::array<int,3>, std::map< std::array<size_t,2>,std::array<std::vector<size_t>,2> > > PandyaLookup;
+//   std::map< std::array<int,3>, std::map< std::array<int,2>,std::array<std::vector<int>,2> > > PandyaLookup;
    bool sixj_has_been_precalculated;
    bool moshinsky_has_been_precalculated;
    bool scalar_transform_first_pass;
    std::vector<bool> tensor_transform_first_pass;
+   bool single_species; // Is there only one kind of fermion?
    IMSRGProfiler profiler;
 //   map<long int,double> SixJList;
 
    static std::unordered_map<uint64_t,double> SixJList;
    static std::unordered_map<uint64_t,double> NineJList;
    static std::unordered_map<uint64_t,double> MoshList;
+   static std::unordered_map<uint64_t,double> T3bList; // Tcoefficients for transforming Jacobi 3b to lab-frame 3b
 
 };
 

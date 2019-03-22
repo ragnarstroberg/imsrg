@@ -52,8 +52,8 @@ class TwoBodyME
 {
  public:
   ModelSpace*  modelspace;
-  std::map<std::array<int,2>,arma::mat> MatEl;
-  int nChannels;
+  std::map<std::array<size_t,2>,arma::mat> MatEl;
+  size_t nChannels;
   bool hermitian;
   bool antihermitian;
   int rank_J;
@@ -79,11 +79,11 @@ class TwoBodyME
   void SetAntiHermitian();
   void SetNonHermitian();
 
-  arma::mat& GetMatrix(int chbra, int chket){return MatEl.at({chbra,chket});};
-  arma::mat& GetMatrix(int ch){return GetMatrix(ch,ch);};
-  arma::mat& GetMatrix(std::array<int,2> a){return GetMatrix(a[0],a[1]);};
-  const arma::mat& GetMatrix(int chbra, int chket)const {return  MatEl.at({chbra,chket});};
-  const arma::mat& GetMatrix(int ch)const {return  GetMatrix(ch,ch);};
+  arma::mat& GetMatrix(size_t chbra, size_t chket){return MatEl.at({chbra,chket});};
+  arma::mat& GetMatrix(size_t ch){return GetMatrix(ch,ch);};
+  arma::mat& GetMatrix(std::array<size_t,2> a){return GetMatrix(a[0],a[1]);};
+  const arma::mat& GetMatrix(size_t chbra, size_t chket)const {return  MatEl.at({chbra,chket});};
+  const arma::mat& GetMatrix(size_t ch)const {return  GetMatrix(ch,ch);};
 
  //TwoBody setter/getters
   double GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const;
@@ -150,7 +150,7 @@ class TwoBodyME
   void Symmetrize();
   void AntiSymmetrize();
   void Eye();
-  void PrintMatrix(int chbra,int chket) const { MatEl.at({chbra,chket}).print();};
+  void PrintMatrix(size_t chbra,size_t chket) const { MatEl.at({chbra,chket}).print();};
   int Dimension();
   int size();
 

@@ -38,6 +38,9 @@ class Generator
   double denominator_delta;
   int denominator_delta_index;
 
+  Operator RspaceRegulator;
+  double regulator_length;
+
   Generator();
   void SetType(std::string g){generator_type = g;};
   std::string GetType(){return generator_type;};
@@ -48,19 +51,26 @@ class Generator
   void SetDenominatorDeltaIndex(int i){denominator_delta_index=i;};
   void SetDenominatorDeltaOrbit(std::string orb);
 
+  void SetRegulatorLength(double r);
+
 // private:
   void ConstructGenerator_Wegner();
   void ConstructGenerator_White();
   void ConstructGenerator_Atan();
   void ConstructGenerator_ImaginaryTime();
+  void ConstructGenerator_QTransferAtan(int n);
   void ConstructGenerator_ShellModel();
   void ConstructGenerator_ShellModel_Atan();
   void ConstructGenerator_ShellModel_ImaginaryTime();
   void ConstructGenerator_ShellModel_Atan_NpNh();
   void ConstructGenerator_HartreeFock();
   void ConstructGenerator_1PA();
+  void ConstructGenerator_Rspace();
   double Get1bDenominator(int i, int j);
   double Get2bDenominator(int ch, int ibra, int iket);
+  double Get2bDenominator_Jdep(int ch, int ibra, int iket);
+
+  
 
 };
 

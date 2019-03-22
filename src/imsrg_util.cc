@@ -1,12 +1,20 @@
 
 #include "imsrg_util.hh"
 #include "AngMom.hh"
+#include "Commutator.hh"
 //#include "DarkMatterNREFT.hh"
 #include "omp.h"
 #include <gsl/gsl_integration.h>
-#include <boost/math/special_functions/gamma.hpp>
-#include <boost/math/special_functions/factorials.hpp>
+#include <gsl/gsl_sf_bessel.h> // to use bessel functions
+//#include <boost/math/special_functions/gamma.hpp>
+//#include <boost/math/special_functions/factorials.hpp>
+#include <iostream>
+#include <iomanip>
+#include <math.h>
 #include <vector>
+#include <string>
+#include <map>
+#include <array>
 
 
 //using namespace AngMom;
@@ -15,12 +23,12 @@
 namespace imsrg_util
 {
 
- std::vector<string> split_string(string s, string delimiter)
+ std::vector<std::string> split_string(std::string s, std::string delimiter)
  {
-  vector<string> out;
+  std::vector<std::string> out;
    size_t last = 0;
    size_t next = 0;
-   while ((next = s.find(delimiter, last)) != string::npos)
+   while ((next = s.find(delimiter, last)) != std::string::npos)
    {
      out.push_back( s.substr(last, next-last) );
      last = next + 1;
@@ -29,9 +37,9 @@ namespace imsrg_util
    return out;
  }
 
- Operator OperatorFromString(ModelSpace& modelspace, string opname )
+ Operator OperatorFromString(ModelSpace& modelspace, std::string opname )
  {
-      vector<string> opnamesplit = split_string( opname, "_" );  // split string on _ into a vector of string so that, e.g. "R2_p1"  =>  {"R2", "p1"}
+      std::vector<std::string> opnamesplit = split_string( opname, "_" );  // split std::string on _ into a vector of std::string so that, e.g. "R2_p1"  =>  {"R2", "p1"}
 
            if (opname == "R2_p1")         return R2_1body_Op(modelspace,"proton") ;
       else if (opname == "R2_p2")         return R2_2body_Op(modelspace,"proton") ;
@@ -59,6 +67,7 @@ namespace imsrg_util
       else if (opname == "GamowTeller")   return AllowedGamowTeller_Op(modelspace) ;
       else if (opname == "Iso2")          return Isospin2_Op(modelspace) ;
       else if (opname == "R2CM")          return R2CM_Op(modelspace) ;
+      else if (opname == "Trel")          return Trel_Op(modelspace) ;
       else if (opname == "TCM")           return TCM_Op(modelspace) ;
       else if (opname == "Rso")           return RpSpinOrbitCorrection(modelspace) ;
       else if (opname == "RadialOverlap") return RadialOverlap(modelspace); // Untested...
@@ -67,51 +76,53 @@ namespace imsrg_util
       else if (opname == "Sigma_n")       return Sigma_Op_pn(modelspace,"neutron");
       else if (opname == "L2rel")         return L2rel_Op(modelspace); // Untested...
       else if (opname == "QdotQ")         return QdotQ_Op(modelspace); // Untested...
+      else if (opname == "VCoul")         return VCoulomb_Op(modelspace); // Untested...
+      else if (opname == "VCentralCoul")         return VCentralCoulomb_Op(modelspace); // Untested...
       else if (opnamesplit[0] =="HCM")
       {
          if ( opnamesplit.size() == 1 ) return HCM_Op(modelspace);
          double hw_HCM; // frequency of trapping potential
-         istringstream( opnamesplit[1] ) >> hw_HCM;
+         std::istringstream( opnamesplit[1] ) >> hw_HCM;
          int A = modelspace.GetTargetMass();
          return TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw_HCM*hw_HCM/HBARC/HBARC*R2CM_Op(modelspace);
       }
       else if (opnamesplit[0] == "VCM") // GetHCM with a different frequency, ie HCM_24 for hw=24
       {
          double hw_VCM; // frequency of trapping potential
-         istringstream(opnamesplit[1]) >> hw_VCM;
+         std::istringstream(opnamesplit[1]) >> hw_VCM;
          int A = modelspace.GetTargetMass();
          return 0.5*A*M_NUCLEON*hw_VCM*hw_VCM/HBARC/HBARC*R2CM_Op(modelspace); 
       }
       else if (opnamesplit[0] == "Rp2Z") // Get point proton radius for specified Z, e.g. Rp2Z_10 for neon
       {
         int Z_rp;
-        istringstream(opnamesplit[1]) >> Z_rp;
+        std::istringstream(opnamesplit[1]) >> Z_rp;
         return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) ;
       }
       else if (opnamesplit[0] == "Rp2AZ") // Get point proton radius for specified A and Z, e.g. Rp2AZ_20_10 for neon
       {
         int A_rp;
         int Z_rp;
-        istringstream(opnamesplit[1]) >> A_rp;
-        istringstream(opnamesplit[2]) >> Z_rp;
+        std::istringstream(opnamesplit[1]) >> A_rp;
+        std::istringstream(opnamesplit[2]) >> Z_rp;
         return Rp2_corrected_Op(modelspace,A_rp,Z_rp) ;
       }
       else if (opnamesplit[0] == "Rn2Z") // Get point neutron radius for specified Z
       {
         int Z_rp;
-        istringstream(opnamesplit[1]) >> Z_rp;
+        std::istringstream(opnamesplit[1]) >> Z_rp;
         return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),Z_rp) ;
       }
       else if (opnamesplit[0] == "rhop") // point proton  density at position r, e.g. rhop_1.25
       {
         double rr;
-        istringstream(opnamesplit[1]) >> rr;
+        std::istringstream(opnamesplit[1]) >> rr;
         return ProtonDensityAtR(modelspace,rr);
       }
       else if (opnamesplit[0] == "rhon") // point neutron density at position r
       {
         double rr;
-        istringstream(opnamesplit[1]) >> rr;
+        std::istringstream(opnamesplit[1]) >> rr;
         NeutronDensityAtR(modelspace,rr);
       }
       else if (opnamesplit[0] == "OneOcc") // Get occupation of specified orbit, e.g. OneOccp_1p3
@@ -129,30 +140,30 @@ namespace imsrg_util
       else if (opnamesplit[0] == "protonFBC") // Fourier bessel coefficient of order nu
       {
          int nu;
-         istringstream(opnamesplit[1]) >> nu;
+         std::istringstream(opnamesplit[1]) >> nu;
          return FourierBesselCoeff( modelspace, nu, 8.0, modelspace.proton_orbits);
       }
       else if (opnamesplit[0] == "neutronFBC") // Fourier bessel coefficient of order nu
       {
          int nu;
-         istringstream(opnamesplit[1]) >> nu;
+         std::istringstream(opnamesplit[1]) >> nu;
          return FourierBesselCoeff( modelspace, nu, 8.0, modelspace.neutron_orbits) ;
       }
       else if (opnamesplit[0] == "M0nu" and opnamesplit[1] == "TBME") // 0\nu\beta\beta decay TBME, M0nu_TBME_${Nq}_${SRC} (CP)
       {
          int Nquad; // number of quadrature points
-         string src; // chosen SRC parameters (none, Argonne, CD-Bonn, Miller/Spencer)
-         istringstream(opnamesplit[2]) >> Nquad;
-         istringstream(opnamesplit[3]) >> src;
+         std::string src; // chosen SRC parameters (none, Argonne, CD-Bonn, Miller/Spencer)
+         std::istringstream(opnamesplit[2]) >> Nquad;
+         std::istringstream(opnamesplit[3]) >> src;
          return M0nu_TBME_Op(modelspace,Nquad,src);
       }
 //      else if (opnamesplit[0] == "DMNREFT") // point radius density at position r, e.g. rhop1.25
 //      {
 //        double q;
 //        int J;
-//        string dmopname = opnamesplit[1];
-//        istringstream(opnamesplit[2]) >> q;
-//        istringstream(opnamesplit[3]) >> J;
+//        std::string dmopname = opnamesplit[1];
+//        std::istringstream(opnamesplit[2]) >> q;
+//        std::istringstream(opnamesplit[3]) >> J;
 //
 //        std::map<string, Operator (*)(ModelSpace&, int, double) > dmop = { {"M",       &DM_NREFT::M},
 //                                                                           {"Sigma",   &DM_NREFT::Sigma},
@@ -169,9 +180,14 @@ namespace imsrg_util
 //        return dmop[dmopname](modelspace, J, q );
 //        }
 //      }
+      else if (opnamesplit[0] == "Dagger" or opnamesplit[0] == "DaggerHF" )
+      {
+        index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
+        return Dagger_Op( modelspace, Q);
+      }
       else //need to remove from the list
       {
-         cout << "Unknown operator: " << opname << endl;
+         std::cout << "Unknown operator: " << opname << std::endl;
       }
       return Operator();
  
@@ -219,11 +235,11 @@ double HO_Radial_psi(int n, int l, double hw, double r)
 }
 
  // Just do the HF transformation
- vector<double> GetOccupationsHF(HartreeFock& hf)
+ std::vector<double> GetOccupationsHF(HartreeFock& hf)
  {
     ModelSpace* modelspace = hf.Hbare.modelspace;
     int norb = modelspace->GetNumberOrbits();
-    vector<double> occupation(norb);
+    std::vector<double> occupation(norb);
 
     for (int i=0; i<norb; ++i)
     {
@@ -233,17 +249,17 @@ double HO_Radial_psi(int n, int l, double hw, double r)
       // Transform it to the normal-ordered HF basis
       Operator N_NO = hf.TransformToHFBasis(N_bare).DoNormalOrdering();
       occupation[i] = N_NO.ZeroBody;
-      cout << oi.n << " " << oi.l << " " << oi.j2 << "/2 " << occupation[i] << endl;
+      std::cout << oi.n << " " << oi.l << " " << oi.j2 << "/2 " << occupation[i] << std::endl;
     }
     return occupation;
  }
 
  // Do the full IMSRG transformation
- vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver)
+ std::vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver)
  {
     ModelSpace* modelspace = imsrgsolver.modelspace;
     int norb = modelspace->GetNumberOrbits();
-    vector<double> occupation(norb,0);
+    std::vector<double> occupation(norb,0);
 
     for (int i=0; i<norb; ++i)
     {
@@ -259,11 +275,11 @@ double HO_Radial_psi(int n, int l, double hw, double r)
     return occupation;
  }
 
- vector<double> GetDensity( vector<double>& occupation, vector<double>& R, vector<int>& orbits, ModelSpace& modelspace )
+ std::vector<double> GetDensity( std::vector<double>& occupation, std::vector<double>& R, std::vector<int>& orbits, ModelSpace& modelspace )
  {
      int nr_steps = R.size();
      double hw = modelspace.GetHbarOmega();
-     vector<double> dens(nr_steps,0);
+     std::vector<double> dens(nr_steps,0);
      for (int& i : orbits)
      {
        Orbit & oi = modelspace.GetOrbit(i);
@@ -274,6 +290,25 @@ double HO_Radial_psi(int n, int l, double hw, double r)
      }
      return dens;
  }
+
+
+ void WriteSPWaveFunctions( std::vector<std::string>& spwf, HartreeFock& hf, std::string intfile )
+ {
+   int n_radial_points = 200;
+   double Rmax = 20.0;
+   std::vector<index_t> spwf_indices = hf.modelspace->String2Index(spwf);
+   std::vector<double> R(n_radial_points);
+   std::vector<double> PSI(n_radial_points);
+   for (int rstep=0;rstep<n_radial_points;++rstep)   R[rstep] = Rmax/n_radial_points * rstep;
+   for ( index_t i=0; i< spwf.size(); ++i)
+   {
+     hf.GetRadialWF(spwf_indices[i], R, PSI);
+     std::ofstream wf_file (intfile + "_spwf_" + spwf[i] + ".dat");
+     for ( index_t rstep=0; rstep<R.size(); ++rstep)  wf_file << std::fixed << std::setw(10) << std::setprecision(7) << R[rstep] << "   " << std::setw(10) << std::setprecision(7) << PSI[rstep] << std::endl;
+     wf_file.close();
+   }
+ }
+
 
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace)
  {
@@ -313,7 +348,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
    {
       Orbit& oi = modelspace->GetOrbit(i);
       if (std::abs(DM.OneBody(i,i))<1e-7) continue;
-//      cout << i << " " << (oi.j2+1)*DM.OneBody(i,i) << endl;
+//      std::cout << i << " " << (oi.j2+1)*DM.OneBody(i,i) << std::endl;
 //      rho += (oi.j2+1) * DM.OneBody(i,i) * HO_density(oi.n, oi.l, hw, r);
       rho += (1) * DM.OneBody(i,i) * HO_density(oi.n, oi.l, hw, r);
    }
@@ -342,10 +377,11 @@ double HO_Radial_psi(int n, int l, double hw, double r)
 
 Operator KineticEnergy_Op(ModelSpace& modelspace)
 {
-   Operator T(modelspace);
-   int norbits = modelspace.GetNumberOrbits();
+   Operator T(modelspace,0,0,0,2);
+//   int norbits = modelspace.GetNumberOrbits();
    double hw = modelspace.GetHbarOmega();
-   for (int a=0;a<norbits;++a)
+//   for (int a=0;a<norbits;++a)
+   for ( auto a : modelspace.all_orbits )
    {
       Orbit & oa = modelspace.GetOrbit(a);
       T.OneBody(a,a) = 0.5 * hw * (2*oa.n + oa.l +3./2); 
@@ -360,6 +396,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
          T.OneBody(b,a) = T.OneBody(a,b);
       }
    }
+//   std::cout << "Done with kinetic energy op. One body part looks like" << std::endl << T.OneBody << std::endl << std::endl;
    return T;
 }
 
@@ -374,6 +411,53 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    return Trel;
  }
 
+
+// Not yet finished...
+// Leading relativistic correction to the kinetic energy
+// T = p^2/2m  - p^4/(8m^2c^2) + ...
+// We use p^4/(4m^2) = (p^2/2m)**2
+// and the fact that the nonrelativistic kinetic energy acts as a 'hopping operator'
+// so acting p^2/2m on a state |nl> returns a linear combination of |nl> |(n+1)l> and |(n-1)l>.
+// Specifically, we write this as (p^2/2m) |nl> = N0 |nl> + Np |(n+1)l> + Nm |(n-1)l>
+// Then we act again with p^2/2m to get the action of p^4/4m.
+Operator KineticEnergy_RelativisticCorr(ModelSpace& modelspace)
+{
+   Operator Trc(modelspace);
+   int norbits = modelspace.GetNumberOrbits();
+   double hw = modelspace.GetHbarOmega();
+   double coeff = 0.25*hw*hw;
+   for (int a=0;a<norbits;++a)
+   {
+      Orbit & oa = modelspace.GetOrbit(a);
+      // I have pulled off a global factor (1/2 hw)^2 above and called it coeff.
+      double N0 = 2*oa.n+oa.l+3./2;  // (p^2/2m) |nl> = N0 |nl>
+      double Nm = sqrt( (oa.n)*(oa.n+oa.l+1./2) );
+      double Np = sqrt( (oa.n+1)*(oa.n+oa.l+3./2) );
+      double Nplus1  = 2*(oa.n+1)+oa.l+3./2;   
+      double Nminus1 = 2*(oa.n-1)+oa.l+3./2;
+      double Npp = sqrt( (oa.n+2)*(oa.n+oa.l+5./2) );
+      double Nmm = sqrt( (oa.n-1)*(oa.n+oa.l-1./2) );
+
+      Trc.OneBody(a,a) =  N0*N0 + Np*Np + Nm*Nm ; 
+      // off-diagonal terms
+      for ( int b : Trc.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      {
+         if (b<=a) continue;
+         Orbit & ob = modelspace.GetOrbit(b);
+         if (ob.n == oa.n+1)
+            Trc.OneBody(a,b) = Np * (N0+Nplus1);
+         else if (ob.n == oa.n-1)
+            Trc.OneBody(a,b) = Nm * (N0+Nminus1); // This probably won't be used, unless a different orbit ordering gets implemented
+         else if (ob.n == oa.n+2)
+            Trc.OneBody(a,b) = Np*Npp;
+         else if (ob.n == oa.n-2)
+            Trc.OneBody(a,b) = Nm*Nmm;
+         // Make it hermitian:
+         Trc.OneBody(b,a) = Trc.OneBody(a,b);
+      }
+   }  // 
+   return -Trc*coeff /(2*M_NUCLEON);  // the minus sign is put in here
+}
 
 
 
@@ -657,7 +741,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
       Ket& ketlast = tbc.GetKet( tbc.GetNumberKets()-1 );
       int emax_ket = 2*ketlast.op->n + 2*ketlast.oq->n + ketlast.op->l + ketlast.oq->l;
 
-      vector<array<int,6>> JacobiBasis;  // L,S,N,Lambda,n,lambda
+      std::vector<std::array<int,6>> JacobiBasis;  // L,S,N,Lambda,n,lambda
       for (int L=std::max(J-1,0); L<=J+1; ++L)
       {
        for ( int S=std::abs(J-L); S<=1; ++S)
@@ -750,7 +834,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 
 
       MatJJ = Trans.t() * MatJacobi * Trans;
-      cout << "ch = " << ch << "   size of JJ basis = " << nkets_JJ << "  size of Jacobi Basis = " << nkets_Jacobi << "   nonzero matrix elements = " << n_nonzero << endl;
+      std::cout << "ch = " << ch << "   size of JJ basis = " << nkets_JJ << "  size of Jacobi Basis = " << nkets_Jacobi << "   nonzero matrix elements = " << n_nonzero << std::endl;
 
    }
  }
@@ -981,7 +1065,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
 //   double oscillator_b2 = HBARC*HBARC/M_NUCLEON/hw;
 //   Operator HcmOp = TCM_Op(modelspace) + R2CM_Op(modelspace) * (0.5*A * hw / oscillator_b2);
    Operator HcmOp = TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw*hw/HBARC/HBARC * R2CM_Op(modelspace) ;
-   cout << "HcmOp: first 1b element = " << HcmOp.OneBody(0,0) << endl;
+   std::cout << "HcmOp: first 1b element = " << HcmOp.OneBody(0,0) << std::endl;
    return HcmOp;
  }
 
@@ -1029,7 +1113,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
 /// \f[ 
 /// \hat{R}^{2}_{p1} = \sum_{i} e_{i}{r}_i^2
 /// \f]
- Operator R2_1body_Op(ModelSpace& modelspace,string option)
+ Operator R2_1body_Op(ModelSpace& modelspace,std::string option)
  {
    Operator r2(modelspace);
    double oscillator_b = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
@@ -1037,7 +1121,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
    auto orbitlist = modelspace.proton_orbits;
    if (option == "neutron") orbitlist = modelspace.neutron_orbits;
    else if (option == "matter")  orbitlist.insert(orbitlist.end(),modelspace.neutron_orbits.begin(),modelspace.neutron_orbits.end());
-   else if (option != "proton") cout << "!!! WARNING. BAD OPTION "  << option << " FOR imsrg_util::R2_p1_Op !!!" << endl;
+   else if (option != "proton") std::cout << "!!! WARNING. BAD OPTION "  << option << " FOR imsrg_util::R2_p1_Op !!!" << std::endl;
  
    for (unsigned int a : orbitlist )
    {
@@ -1071,7 +1155,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
 /// \hat{R}^{2}_{p2} = \sum_{i\neq j} e_{i}\vec{r}_i\cdot\vec{r}_j 
 /// \f]
 /// evaluated in the oscillator basis.
- Operator R2_2body_Op(ModelSpace& modelspace,string option)
+ Operator R2_2body_Op(ModelSpace& modelspace,std::string option)
  {
    Operator Rp2Op(modelspace,0,0,0,2);
 //   double oscillator_b = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
@@ -1093,7 +1177,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
          if (Tz==0 and (option=="proton" or option=="neutron")) prefactor = 0.5;
 //         if (option=="proton" and bra.op->tz2>0) continue;
 //         else if (option=="neutron" and bra.op->tz2<0) continue;
-         if (option!="matter" and option!="proton" and option!="neutron") cout << "!!! WARNING. BAD OPTION "  << option << " FOR imsrg_util::R2_p2_Op !!!" << endl;
+         if (option!="matter" and option!="proton" and option!="neutron") std::cout << "!!! WARNING. BAD OPTION "  << option << " FOR imsrg_util::R2_p2_Op !!!" << std::endl;
          for (int iket=ibra;iket<nkets;++iket)
          {
             Ket & ket = tbc.GetKet(iket);
@@ -1178,44 +1262,106 @@ Operator E0Op(ModelSpace& modelspace)
    return e0;
 }
 
-struct FBCIntegrandParameters{int n; int l; double hw;};
 
-double FBCIntegrand(double x, void *p)
-{
-  struct FBCIntegrandParameters * params = (struct FBCIntegrandParameters *)p;
-  return x*HO_density(params->n, params->l, params->hw, x);
-}
 
-Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<index_t> index_list)
+
+
+//Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R)
+// providing an index list allows us to select e.g. just protons or just neutrons
+Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list)
 {
   Operator a_nu(modelspace,0,0,0,2);
-  double omega = nu * M_PI / R; // coefficient of sine function, i.e. sin(omega*x)
-  double L = R; // range of integration
-  size_t n = 20; // number of bisections
-  gsl_integration_qawo_table * table = gsl_integration_qawo_table_alloc (omega, L, GSL_INTEG_SINE, n);
-  gsl_integration_workspace * workspace = gsl_integration_workspace_alloc ( n );
 
-  const double epsabs = 1e-5; // std::absolute error
-  const double epsrel = 1e-5; // relative error
-  const size_t limit = n; // maximum number of subintervals (maybe should be different?)
-  const double start = 0.0; // lower limit on integration range
-  double result;
-  double abserr;
-  gsl_function F;
-  F.function = &FBCIntegrand;
+  size_t npoints = 99;  // should be a multiple of 3 so we can use the Simpson 3/8 rule
+  std::vector<double> RGRID(npoints);
+  std::vector<double> BESSEL(npoints);
+  std::vector<double> PSI_p(npoints);
+  std::vector<double> INTEGRAND(npoints);
+  double dr = R / npoints;
+  double Q = nu*M_PI/R;
 
-  for (auto i : index_list )
+  for (size_t i=0; i<npoints; i++)
   {
-    Orbit& oi = modelspace.GetOrbit(i);
-    struct FBCIntegrandParameters params = {oi.n, oi.l, modelspace.GetHbarOmega()};
-    F.params = &params;
-    //int status = gsl_integration_qawo (&F, start, epsstd::abs, epsrel, limit, workspace, table, &result, &std::abserr);
-    gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
-    a_nu.OneBody(i,i) = M_PI*M_PI/R/R/R * R/nu/M_PI*(result);
-    cout << "orbit,nu = " << i << "," << nu << "  => " << a_nu.OneBody(i,i) << "  from " << result << " (" << abserr << ")" << endl;
+    RGRID[i] = i*dr;
+    BESSEL[i] =  gsl_sf_bessel_j0( Q * RGRID[i] );
   }
-  return a_nu;
+
+  double hw = modelspace.GetHbarOmega();
+
+  for ( auto p : index_list )  
+  {
+    Orbit& op = modelspace.GetOrbit(p);
+    for (size_t i=0; i<npoints; i++)
+    {
+      PSI_p[i] = HO_Radial_psi( op.n, op.l, hw, RGRID[i]);
+    }
+
+    // Use Simpson's rule to perform the integral
+    // int  dr  r^2  psi_p(r)  j0(nu *pi * r /R ) psi_q(r)
+//    size_t q = p;
+    for (auto q : a_nu.OneBodyChannels.at({op.l,op.j2,op.tz2}) )
+    {
+      if (q>p) continue;
+      Orbit& oq = modelspace.GetOrbit(q);
+      for (size_t i=0; i<npoints; i++)
+      {
+        INTEGRAND[i] = HO_Radial_psi( oq.n, oq.l, hw, RGRID[i] ) * RGRID[i]*RGRID[i] * BESSEL[i] * PSI_p[i];
+      }
+
+      double integral = INTEGRAND[0] + INTEGRAND[npoints-1];
+      for (size_t i=1; i<npoints; i+=3)
+      {
+        integral += 3*INTEGRAND[i] + 3*INTEGRAND[i+1] + 2*INTEGRAND[i+2];
+      }
+      integral *= 3./8 * dr;
+      integral *= Q*Q;
+
+      a_nu.OneBody(p,q) = integral;
+      a_nu.OneBody(q,p) = integral;
+    }
+  }
+
+  return a_nu; // There may need to be some additional normalization by pi or something...
 }
+
+//struct FBCIntegrandParameters{int n; int l; double hw;};
+//
+//double FBCIntegrand(double x, void *p)
+//{
+//  struct FBCIntegrandParameters * params = (struct FBCIntegrandParameters *)p;
+//  return x*HO_density(params->n, params->l, params->hw, x);
+//}
+//
+//Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list)
+//{
+//  Operator a_nu(modelspace,0,0,0,2);
+//  double omega = nu * M_PI / R; // coefficient of sine function, i.e. sin(omega*x)
+//  double L = R; // range of integration
+//  size_t n = 20; // number of bisections
+//  gsl_integration_qawo_table * table = gsl_integration_qawo_table_alloc (omega, L, GSL_INTEG_SINE, n);
+//  gsl_integration_workspace * workspace = gsl_integration_workspace_alloc ( n );
+//
+//  const double epsabs = 1e-5; // std::absolute error
+//  const double epsrel = 1e-5; // relative error
+//  const size_t limit = n; // maximum number of subintervals (maybe should be different?)
+//  const double start = 0.0; // lower limit on integration range
+//  double result;
+//  double abserr;
+//  gsl_function F;
+//  F.function = &FBCIntegrand;
+//
+//  for (auto i : index_list )
+//  {
+//    Orbit& oi = modelspace.GetOrbit(i);
+//    struct FBCIntegrandParameters params = {oi.n, oi.l, modelspace.GetHbarOmega()};
+//    F.params = &params;
+//    //int status = gsl_integration_qawo (&F, start, epsstd::abs, epsrel, limit, workspace, table, &result, &std::abserr);
+//    gsl_integration_qawo (&F, start, epsabs, epsrel, limit, workspace, table, &result, &abserr);
+//    a_nu.OneBody(i,i) = M_PI*M_PI/R/R/R * R/nu/M_PI*(result);
+//    std::cout << "orbit,nu = " << i << "," << nu << "  => " << a_nu.OneBody(i,i) << "  from " << result << " (" << abserr << ")" << std::endl;
+//  }
+//  return a_nu;
+//}
 
 
 
@@ -1233,23 +1379,24 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
      if (std::abs(tbc.Tz) == 1)
      {
         TB.diag().fill(0.5); // pp,nn TBME's
-        for (int ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
-        {
-           Ket& bra = tbc.GetKet(ibra);
-           if (bra.p == bra.q)
-           {
-             TB(ibra,ibra) /= 2.;
-           }
-        }
+         // I managed to confuse myself.  t_{pp'pp'} should give 2 t1*t2. This gives reasonable results in nushellx.
+//        for (int ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
+//        {
+//           Ket& bra = tbc.GetKet(ibra);
+//           if (bra.p == bra.q)
+//           {
+//             TB(ibra,ibra) /= 2.;
+//           }
+//        }
      }
      else if (tbc.Tz == 0)
      {
-        for (int ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
+        for (size_t ibra=0;ibra<tbc.GetNumberKets(); ++ibra)
         {
            Ket& bra = tbc.GetKet(ibra);
            Orbit& oa = modelspace.GetOrbit(bra.p);
            Orbit& ob = modelspace.GetOrbit(bra.q);
-           for (int iket=ibra;iket<tbc.GetNumberKets(); ++iket)
+           for (size_t iket=ibra;iket<tbc.GetNumberKets(); ++iket)
            {
              Ket& ket = tbc.GetKet(iket);
              Orbit& oc = modelspace.GetOrbit(ket.p);
@@ -1349,13 +1496,13 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   /// Returns a reduced magnetic multipole operator with units \f$ \mu_{N}\f$ fm\f$ ^{\lambda-1} \f$
   /// This version allows for the selection of just proton or just neutron contributions, or both.
   /// See Suhonen eq. (6.24)
-  Operator MagneticMultipoleOp_pn(ModelSpace& modelspace, int L, string pn)
+  Operator MagneticMultipoleOp_pn(ModelSpace& modelspace, int L, std::string pn)
   {
     double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*(L-1));
     Operator ML(modelspace, L,0,(L+1)%2,2);
     if (L<1)
     {
-      cout << "A magnetic monopole operator??? Setting it to zero..." << endl;
+      std::cout << "A magnetic monopole operator??? Setting it to zero..." << std::endl;
       return ML;
     }
     int norbits = modelspace.GetNumberOrbits();
@@ -1425,7 +1572,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
       if (tbc_bra.Tz>=0) continue;
       int Jab = tbc_bra.J;
       int Jcd = tbc_ket.J;
-      for (int ibra=0; ibra<tbc_bra.GetNumberKets(); ++ibra)
+      for (size_t ibra=0; ibra<tbc_bra.GetNumberKets(); ++ibra)
       {
        Ket& bra = tbc_bra.GetKet(ibra);
        int na = bra.op->n;
@@ -1435,7 +1582,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
        int lb = bra.oq->l;
        double jb = bra.oq->j2*0.5;
        int rho_ab = 2*na+2*nb+la+lb;
-       for (int iket=0; iket<tbc_ket.GetNumberKets(); ++iket)
+       for (size_t iket=0; iket<tbc_ket.GetNumberKets(); ++iket)
        {
         Ket& ket = tbc_bra.GetKet(ibra);
         int nc = ket.op->n;
@@ -1487,7 +1634,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
       }
     }
     
-    cout << "done with intrinsic EL. one body = " <<  endl;
+    std::cout << "done with intrinsic EL. one body = " <<  std::endl;
     return EL;
   }
 
@@ -1511,7 +1658,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     int sigma_max = std::min(na,nb);
   
     double term1 = AngMom::phase(na+nb) * gsl_sf_fact(tau_a)*gsl_sf_fact(tau_b) * sqrt(gsl_sf_fact(na)*gsl_sf_fact(nb)
-                   / (gsl_sf_gamma(na+la+1.5)*gsl_sf_gamma(nb+lb+1.5) ) );
+                   / (tgamma(na+la+1.5)*tgamma(nb+lb+1.5) ) );
+//    double term1 = AngMom::phase(na+nb) * gsl_sf_fact(tau_a)*gsl_sf_fact(tau_b) * sqrt(gsl_sf_fact(na)*gsl_sf_fact(nb)
+//                   / (gsl_sf_gamma(na+la+1.5)*gsl_sf_gamma(nb+lb+1.5) ) );
     double term2 = 0;
     for (int sigma=sigma_min; sigma<=sigma_max; ++sigma)
     {
@@ -1541,7 +1690,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
  double TalmiI(int p, double k)
  {
 //   return gsl_sf_gamma(p+1.5+0.5*k) / gsl_sf_gamma(p+1.5);
-   return boost::math::tgamma_ratio(p+1.5+0.5*k, p+1.5);
+//   return boost::math::tgamma_ratio(p+1.5+0.5*k, p+1.5);
+     return exp( lgamma(p+1.5+0.5*k)-lgamma(p+1.5) ); // Tested that this agrees with the boost version to better than 1 in 10^12. Also stable against overflow.
  }
 
 /// Calculate B coefficient for Talmi integral. Formula given in Brody and Moshinsky
@@ -1551,22 +1701,18 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
    if ( (la+lb)%2>0 ) return 0;
    
    int q = (la+lb)/2;
-//   double B1 = AngMom::phase(p-q) * gsl_sf_fact(2*p+1)/gsl_sf_fact(p)/pow(2,(na+nb))
-   double B1 = AngMom::phase(p-q) * boost::math::tgamma_ratio(2*p+1, p) / pow(2,(na+nb))
-              * sqrt( boost::math::tgamma_ratio(na, na+la)*boost::math::tgamma_ratio(nb, nb+lb)
-                   * boost::math::factorial<double>(2*na+2*la+1) * boost::math::factorial<double>(2*nb+2*lb+1) );
+   double B1 = AngMom::phase(p-q) * exp(lgamma(2*p+2)-lgamma(p+1)) / pow(2,(na+nb))
+              * sqrt( gsl_sf_fact(na)*gsl_sf_fact(nb)/gsl_sf_fact(na+la)/gsl_sf_fact(nb+lb) 
+                   * gsl_sf_fact(2*na+2*la+1) * gsl_sf_fact(2*nb+2*lb+1) );
    
    double B2 = 0;
    int kmin = std::max(0, p-q-nb);
    int kmax = std::min(na, p-q);
    for (int k=kmin;k<=kmax;++k)
    {
-//      B2  += gsl_sf_fact(la+k) * gsl_sf_fact(p-int((la-lb)/2)-k)
-//             / ( gsl_sf_fact(k) * gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k) * gsl_sf_fact(2*p-la+lb-2*k+1) )
-//              / ( gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
-      B2  += boost::math::tgamma_ratio(la+k,k) * boost::math::tgamma_ratio(p-int((la-lb)/2)-k, 2*p-la+lb-2*k+1)
-             / (  boost::math::factorial<double>(2*la+2*k+1) * boost::math::factorial<double>(na-k)  
-                * boost::math::factorial<double>(nb - p + q + k) * boost::math::factorial<double>(p-q-k) );
+      B2  += exp(lgamma(la+k+1)-lgamma(k+1) +lgamma(p-(la-lb)/2-k+1) -lgamma(2*p-la+lb-2*k+2) )
+             / (  gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k)  
+                * gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
    }
    return B1 * B2;
  }
@@ -1624,17 +1770,17 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
  }
 
  /// Pauli spin operator \f[ \langle f \| \sigma \| i \rangle \f]
- Operator Sigma_Op_pn(ModelSpace& modelspace, string pn)
+ Operator Sigma_Op_pn(ModelSpace& modelspace, std::string pn)
  {
    Operator Sig(modelspace,1,0,0,2);
    Sig.SetHermitian();
-   int norbits = modelspace.GetNumberOrbits();
-   for (int i=0; i<norbits; ++i)
+   size_t norbits = modelspace.GetNumberOrbits();
+   for (size_t i=0; i<norbits; ++i)
    {
      Orbit& oi = modelspace.GetOrbit(i);
       if (pn=="proton" and oi.tz2>0) continue;
       if (pn=="neutron" and oi.tz2<0) continue;
-      for (int j : Sig.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
+      for (auto j : Sig.OneBodyChannels[{oi.l,oi.j2,oi.tz2}] )
       {
         Orbit& oj = modelspace.GetOrbit(j);
         if ((oi.n!=oj.n) or (oi.l != oj.l) or (oi.tz2!=oj.tz2)) continue;
@@ -1649,11 +1795,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   void Reduce(Operator& X)
   {
     ModelSpace* modelspace = X.GetModelSpace();
-    int norbits = modelspace->GetNumberOrbits();
-    for (int i=0; i<norbits; ++i)
+    size_t norbits = modelspace->GetNumberOrbits();
+    for (size_t i=0; i<norbits; ++i)
     {
       Orbit& oi = modelspace->GetOrbit(i);
-      for ( int j : X.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      for ( auto j : X.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
       {
          X.OneBody(i,j) *= sqrt(oi.j2+1.);
       }
@@ -1661,7 +1807,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
     for ( auto& itmat : X.TwoBody.MatEl )
     {
-      int ch_bra = itmat.first[0];
+      size_t ch_bra = itmat.first[0];
       int J = modelspace->GetTwoBodyChannel(ch_bra).J;
       itmat.second *= sqrt(2*J+1.);
     }
@@ -1670,11 +1816,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   void UnReduce(Operator& X)
   {
     ModelSpace* modelspace = X.GetModelSpace();
-    int norbits = modelspace->GetNumberOrbits();
-    for (int i=0; i<norbits; ++i)
+    size_t norbits = modelspace->GetNumberOrbits();
+    for (size_t i=0; i<norbits; ++i)
     {
       Orbit& oi = modelspace->GetOrbit(i);
-      for ( int j : X.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      for ( auto j : X.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
       {
          X.OneBody(i,j) /= sqrt(oi.j2+1.);
       }
@@ -1682,7 +1828,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 
     for ( auto& itmat : X.TwoBody.MatEl )
     {
-      int ch_bra = itmat.first[0];
+      size_t ch_bra = itmat.first[0];
       int J = modelspace->GetTwoBodyChannel(ch_bra).J;
       itmat.second /= sqrt(2*J+1.);
     }
@@ -1694,9 +1840,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
   {
     ModelSpace* modelspace = OpIn.GetModelSpace();
     OpLow = OpIn;
-    int norbits = modelspace->GetNumberOrbits();
-    int ncut = 0;
-    for (int i=0; i<norbits; ++i)
+    size_t norbits = modelspace->GetNumberOrbits();
+    size_t ncut = 0;
+    for (size_t i=0; i<norbits; ++i)
     {
       Orbit& oi = modelspace->GetOrbit(i);
       if ( (2*oi.n + oi.l) > ecut)
@@ -1706,9 +1852,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
       }
     }
 
-    for (int i=ncut; i<norbits; ++i)
+    for (size_t i=ncut; i<norbits; ++i)
     {
-      for (int j=0; j<norbits; ++j)
+      for (size_t j=0; j<norbits; ++j)
       {
          OpLow.OneBody(i,j) = 0;
          OpLow.OneBody(j,i) = 0;
@@ -1718,11 +1864,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     for (auto& itmat : OpLow.TwoBody.MatEl)
     {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel( itmat.first[0] );
-      int nkets = tbc.GetNumberKets();
-      for (int ibra=0;ibra<nkets;++ibra)
+      size_t nkets = tbc.GetNumberKets();
+      for (size_t ibra=0;ibra<nkets;++ibra)
       {
        Ket& bra = tbc.GetKet(ibra);
-       for (int iket=ibra;iket<nkets;++iket)
+       for (size_t iket=ibra;iket<nkets;++iket)
        {
          Ket& ket = tbc.GetKet(iket);
          if ( bra.p>ncut or bra.q>ncut or ket.p>ncut or ket.q>ncut)
@@ -1804,25 +1950,52 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
  Operator QdotQ_Op(ModelSpace& modelspace)
  {
     
+//   // temporarily store <i||Q||j> in the one body part.
+//   Operator QdotQ_op = ElectricMultipoleOp(modelspace,2);
    Operator QdotQ_op(modelspace,0,0,0,2);
-   double b2 =  HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(); // b^2 = hbar/mw 
+   auto Qmat = ElectricMultipoleOp(modelspace,2).OneBody;
+//   double b2 =  HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(); // b^2 = hbar/mw 
    int nchan = modelspace.GetNumberTwoBodyChannels();
+//
+//   // temporarily store <i||Q||j> in the one body part.
+//   for (size_t i=0;i<modelspace.GetNumberOrbits();i++)
+//   {
+//     for (size_t j=0;j<=i;j++)
+//     {
+//       Orbit & oi = modelspace.GetOrbit(i);
+//       Orbit & oj = modelspace.GetOrbit(j);
+//       double ji = oi.j2*0.5;
+//       double jj = oj.j2*0.5;
+//       double r2_ij = RadialIntegral(oi.n,oi.l,oj.n,oj.l,2) * b2 ;
+//       double Qij = modelspace.phase(jj+2-0.5) * sqrt( (2*ji+1)*(2*jj+1)*(2*2+1)/4./3.1415926) * AngMom::ThreeJ(ji,jj, 2, 0.5, -0.5,0) * r2_ij;
+//       QdotQ_op.OneBody(i,j) = Qij;
+//       QdotQ_op.OneBody(j,i) = modelspace.phase( ji-jj ) * Qij;
+//     }
+//   }
 
-   // temporarily store <i||Q||j> in the one body part.
-   for (int i=0;i<modelspace.GetNumberOrbits();i++)
+   for (size_t i=0;i<modelspace.GetNumberOrbits();i++)
    {
-     for (int j=0;j<=i;j++)
+     Orbit & oi = modelspace.GetOrbit(i);
+     for (auto j : QdotQ_op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
      {
-       Orbit & oi = modelspace.GetOrbit(i);
        Orbit & oj = modelspace.GetOrbit(j);
-       double ji = oi.j2*0.5;
-       double jj = oj.j2*0.5;
-       double r2_ij = RadialIntegral(oi.n,oi.l,oj.n,oj.l,2) * b2 ;
-       double Qij = modelspace.phase(jj+2-0.5) * sqrt( (2*ji+1)*(2*jj+1)*(2*2+1)/4./3.1415926) * AngMom::ThreeJ(ji,jj, 2, 0.5, -0.5,0) * r2_ij;
+//       for (auto k : QdotQ_op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+       double Qij =0;
+       for (size_t k=0;k<modelspace.GetNumberOrbits();k++)
+       {
+         Orbit & ok = modelspace.GetOrbit(k);
+//         QdotQ_op.OneBody(i,j) += modelspace.phase( (oj.j2-oj.j2)/2 ) * Qmat(i,k) * Qmat(k,j) / sqrt(oi.j2+1);
+         Qij += modelspace.phase( (oj.j2-oj.j2)/2 ) * Qmat(i,k) * Qmat(k,j) / sqrt(oi.j2+1);
+         if (i==0)
+         {
+           std::cout << "i,j,k = " << i << " " << j << " " << k << "Qki = " << Qmat(i,k) << "  Qkj = " << Qmat(k,j) << "    Qij = " << Qij << std::endl;
+         }
+       }
        QdotQ_op.OneBody(i,j) = Qij;
-       QdotQ_op.OneBody(j,i) = modelspace.phase( ji-jj ) * Qij;
      }
    }
+
+   std::cout << QdotQ_op.OneBody << std::endl << std::endl; 
 
    for (int ch=0; ch<nchan; ++ch)
    {
@@ -1849,28 +2022,492 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
             Orbit & ok = modelspace.GetOrbit(k);
             Orbit & ol = modelspace.GetOrbit(l);
             double jk = ok.j2*0.5;
-            double jl = ol.j2*0.5;
+            double jl = ol.j2*0.5 ;
 
 //            double r2_il = RadialIntegral(oi.n,oi.l,ol.n,ol.l,2) * b2 ;
 //            double Qil = modelspace.phase(jl+2-0.5) * sqrt( (2*ji+1)*(2*jl+1)*(2*2+1)/4./3.1415926) * AngMom::ThreeJ(ji,jl, 2, 0.5, -0.5,0) * r2_il;
 //            double r2_jk = RadialIntegral(oj.n,oj.l,ok.n,ok.l,2) * b2 ;
 //            double Qjk = modelspace.phase(jk+2-0.5) * sqrt( (2*jj+1)*(2*jk+1)*(2*2+1)/4./3.1415926) * AngMom::ThreeJ(jj,jk, 2, 0.5, -0.5,0) * r2_jk;
-            double Qil = QdotQ_op.OneBody(i,l);
-            double Qjk = QdotQ_op.OneBody(j,k);
-            double Qik = QdotQ_op.OneBody(i,k);
-            double Qjl = QdotQ_op.OneBody(j,l);
+
+            double Qki = Qmat(k,i);
+            double Qli = Qmat(l,i);
+            double Qjk = Qmat(j,k);
+            double Qjl = Qmat(j,l);
+            double Qik = Qmat(i,k);
+            double Qil = Qmat(i,l);
+
+            // Formula just taken from Suhonen 8.55, 8.56
+            double QdQ = modelspace.phase( ji+jj+J)     * modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qki * Qjl
+                       - modelspace.phase( ji+jj+jk+jl) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qli * Qjk;
 
 //            double QdQ = Qil * Qjk * (2*J+1)/sqrt(5.0) * modelspace.phase( jk-jj ) * modelspace.GetSixJ(ji,jj,J,jk,jl,2.0);
-            double QdQ = 0.5 * Qil * Qjk * (2*J+1)/sqrt(5.0) * modelspace.phase( jk+jj ) * modelspace.GetSixJ(ji,jj,J,jk,jl,2.0)
-                       - 0.5 * Qik * Qjl * (2*J+1)/sqrt(5.0) * modelspace.phase( jl+jj ) * modelspace.GetSixJ(ji,jj,J,jl,jk,2.0);
+//            double QdQ = 0.5 * Qil * Qjk * (2*J+1)/sqrt(5.0) * modelspace.phase( jk+jj ) * modelspace.GetSixJ(ji,jj,J,jk,jl,2.0)
+//                       - 0.5 * Qik * Qjl * (2*J+1)/sqrt(5.0) * modelspace.phase( jl+jj ) * modelspace.GetSixJ(ji,jj,J,jl,jk,2.0);
+            if (i==j) QdQ /= sqrt(2.0);
+            if (k==l) QdQ /= sqrt(2.0);
             QdotQ_op.TwoBody.SetTBME(ch,ibra,iket,QdQ);
          }
       }
    }
-   // don't forget to get rid of the temporary one-body
-   QdotQ_op.OneBody.zeros();
    return QdotQ_op;
  }
+
+
+
+
+ Operator Dagger_Op( ModelSpace& modelspace, index_t Q )
+ {
+   Operator dag(modelspace);
+   dag.SetNumberLegs(3);
+   dag.SetQSpaceOrbit(Q);
+   dag.OneBody(Q,Q)= 1.0;
+   dag.SetNonHermitian();
+   std::cout << "Making a dagger operator. I think Q = " << Q << std::endl;
+   return dag;
+ }
+
+
+
+ Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax ) // default lmax=99999
+ {
+//   std::cout << "Making VCentralCoulomb_Op. lmax is " << lmax  << std::endl;
+   Operator VCoul(modelspace, 0,0,0,2);
+   double oscillator_b = sqrt(HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
+   double alpha_FS = 1.0 / 137.035999;
+  
+// First, the one-body piece <a|1/r|b>
+//   int norb = modelspace.GetNumberOrbits();
+//   for (int a=0; a<norb; a++)
+   for (auto a : modelspace.all_orbits)
+   {
+     Orbit& oa = modelspace.GetOrbit(a);
+     if (oa.tz2>0) continue; // protons only
+     if (oa.l>lmax) continue;
+     for (int b : VCoul.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+     {
+       Orbit& ob = modelspace.GetOrbit(b);
+       double rad_int =  RadialIntegral_RpowK(oa.n, oa.l, ob.n, ob.l, -1) ;  
+       VCoul.OneBody(a,b) = rad_int;
+       VCoul.OneBody(b,a) = rad_int;
+     }
+   }
+   VCoul.OneBody *= alpha_FS * HBARC / oscillator_b; // convert from oscillator units to fermi
+//   std::cout << "Oscillator b = " << oscillator_b << std::endl;
+//   std::cout << "One body part done. it looks like" << std::endl << VCoul.OneBody << std::endl;
+   return VCoul;
+ }
+
+
+
+
+ Operator VCoulomb_Op( ModelSpace& modelspace, int lmax ) //default lmax=99999
+ {
+   std::cout << "Making VCoulomb_Op" << std::endl;
+   double t_start = omp_get_wtime();
+   Operator VCoul(modelspace, 0,0,0,2);
+   double oscillator_b = sqrt(HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
+   double alpha_FS = 1.0 / 137.035999;
+  
+//// First, the one-body piece <a|1/r|b>
+//   int norb = modelspace.GetNumberOrbits();
+//   for (int a=0; a<norb; a++)
+//   {
+//     Orbit& oa = modelspace.GetOrbit(a);
+//     if (oa.tz2>0) continue; // protons only
+//     for (int b : VCoul.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+//     {
+//       Orbit& ob = modelspace.GetOrbit(b);
+//       double rad_int =  RadialIntegral_RpowK(oa.n, oa.l, ob.n, ob.l, -1) ;  
+//       VCoul.OneBody(a,b) = rad_int;
+//       VCoul.OneBody(b,a) = rad_int;
+//     }
+//   }
+//   VCoul.OneBody /= oscillator_b; // convert from oscillator units to fermi
+   int nmax = modelspace.GetEmax();
+   int lrelmax = 2*modelspace.GetEmax();
+   std::vector<double> RadialIntegrals( (nmax+1)*(nmax+1)*(lrelmax+1) );
+   for (int na=0;na<=nmax;na++)
+   {
+    for (int nb=0;nb<=na; nb++)
+    {
+      for (int l=0;l<=lrelmax ; l++)
+      {
+        size_t hash      = na*(nmax+1)*(lrelmax+1) + nb*(lrelmax+1) + l;   
+        size_t flip_hash = nb*(nmax+1)*(lrelmax+1) + na*(lrelmax+1) + l;   
+        double rint = RadialIntegral_RpowK(na, l, nb, l, -1);
+        RadialIntegrals[hash] = rint;
+        RadialIntegrals[flip_hash ] = rint;
+      }
+    }
+   }
+
+
+// Now the (antisymmetrized) two-body piece <ab| 1/r_rel |cd>
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   modelspace.PreCalculateMoshinsky();
+   double sa,sb,sc,sd;
+   sa=sb=sc=sd=0.5;
+   #pragma omp parallel for schedule(dynamic,1) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+      TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+      if (tbc.Tz >= 0) continue; // 2-body coulomb only acts in pp channel
+      int J = tbc.J;
+      int nkets = tbc.GetNumberKets();
+      for (int ibra=0;ibra<nkets;++ibra)
+      {
+         Ket & bra = tbc.GetKet(ibra);
+         Orbit & oa = modelspace.GetOrbit(bra.p);
+         Orbit & ob = modelspace.GetOrbit(bra.q);
+         int na = oa.n;
+         int nb = ob.n;
+         int la = oa.l;
+         int lb = ob.l;
+         double ja = oa.j2*0.5;
+         double jb = ob.j2*0.5;
+         int fab = 2*na + 2*nb + la + lb;
+         for (int iket=ibra;iket<nkets;++iket)
+         {
+            Ket & ket = tbc.GetKet(iket);
+
+            Orbit & oc = modelspace.GetOrbit(ket.p);
+            Orbit & od = modelspace.GetOrbit(ket.q);
+         
+            int nc = oc.n;
+            int nd = od.n;
+         
+            int lc = oc.l;
+            int ld = od.l;
+            if (la>lmax or lb>lmax or lc>lmax or ld>lmax) continue;
+         
+            double jc = oc.j2*0.5;
+            double jd = od.j2*0.5;
+            int fcd = 2*nc + 2*nd + lc + ld;
+            if (std::abs(fab-fcd)%2 >0) continue; //  parity conservation
+
+
+            double rinv=0;
+            // Transform to LS coupling using 9j coefficients
+            for (int Lab=std::abs(la-lb); Lab<= la+lb; ++Lab)
+            {
+              for (int Sab=0; Sab<=1; ++Sab)
+              {
+                if ( std::abs(Lab-Sab)>J or Lab+Sab<J) continue;
+         
+                double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
+                if (std::abs(njab) <1e-7) continue;
+                int Scd = Sab;
+                int Lcd = Lab;
+                double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
+                if (std::abs(njcd) <1e-7) continue;
+                // Next, transform to rel / com coordinates with Moshinsky tranformation
+                for (int N_ab=0; N_ab<=fab/2; ++N_ab)  // N_ab = CoM n for a,b
+                {
+                  for (int Lam_ab=0; Lam_ab<= fab-2*N_ab; ++Lam_ab) // Lam_ab = CoM l for a,b
+                  {
+                    int Lam_cd = Lam_ab; // 1/r conserves lam and Lam, ie relative and com orbital angular momentum
+                    for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
+                    {
+                       if (Lab<std::abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
+
+                       // factor to account for antisymmetrization
+                       int asymm_factor = (std::abs(bra.op->tz2+ket.op->tz2) + std::abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
+                       if ( asymm_factor ==0 ) continue;
+         
+                       int lam_cd = lam_ab; // tcm and trel conserve lam and Lam
+                       int n_ab = (fab - 2*N_ab-Lam_ab-lam_ab)/2; // n_ab is determined by energy conservation
+         
+                       double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
+                       if (std::abs(mosh_ab)<1e-8) continue;
+         
+                       int N_cd = N_ab;
+                       int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
+                       if (n_cd < 0) continue;
+//                       if  (n_ab != n_cd and N_ab != N_cd) continue;
+         
+                       double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
+                       if (std::abs(mosh_cd)<1e-8) continue;
+
+                       double prefactor = njab * njcd * mosh_ab * mosh_cd * asymm_factor;
+
+                       size_t hash      = n_ab*(nmax+1)*(lrelmax+1) + n_cd*(lrelmax+1) + lam_ab;   
+                       double rad_int =  RadialIntegrals[hash] ;  
+//                       double rad_int_lookup =  RadialIntegrals[hash] ;  
+//                       double rad_int =  RadialIntegral_RpowK(n_ab, lam_ab, n_cd, lam_cd, -1) ;  
+//                       if (std::abs( rad_int_lookup - rad_int)>1e-6)
+//                       {
+//                         std::cout << "discrepancy!!!  " << n_ab << " " << n_cd << " " << lam_ab << "    |   " << rad_int << "   " << rad_int_lookup << "   (maxvals) " << nmax << " " << lrelmax << std::endl;
+//                       }
+//                       size_t a_eff = modelspace.GetOrbitIndex(n_ab, lam_ab, 2*lam_ab+1, -1 );
+//                       size_t b_eff = modelspace.GetOrbitIndex(n_cd, lam_cd, 2*lam_cd+1, -1 );
+//                       std::cout << "a_eff, b_eff = " << a_eff << " " << b_eff
+//                                 << "   " << n_ab << " " << lam_ab << " " << 2*lam_ab+1 << "    " << fab << ","
+//                                 << "   " << n_cd << " " << lam_cd << " " << 2*lam_cd+1 << "    " << fcd
+//                                 << std::endl;
+//                       rinv += prefactor * VCoul.OneBody(a_eff, b_eff); 
+                       rinv += prefactor * rad_int; 
+    
+                    } // lam_ab
+                  } // Lam_ab
+                } // N_ab
+         
+              } // Sab
+            } // Lab
+
+            // In Moshinsky's convention, r_rel = (r1-r2)/sqrt(2).  We want 1/|r1-r2| = 1/sqrt(2) * 1/r_rel
+            rinv *=  1 / sqrt(2*(1.0+bra.delta_pq())*(1.0+ket.delta_pq())); // normalize and account for sqrt(2) Moshinsky convention
+            VCoul.TwoBody.SetTBME(ch,ibra,iket,rinv);
+            VCoul.TwoBody.SetTBME(ch,iket,ibra,rinv);
+                         
+         }
+      }
+   }
+//   VCoul.OneBody.zeros(); // We don't want the 1-body Coulomb (unless we're doing an atom...)
+   VCoul *= alpha_FS * HBARC / oscillator_b;  // convert to MeV.  V = e^2/r = alpha*hc / r
+
+   std::cout << "All done with VCoul." << std::endl;
+   VCoul.profiler.timer["VCoulomb_Op"] += omp_get_wtime() - t_start;
+   return VCoul ;
+
+ }
+
+
+
+/// Get the first-order perturbative correction to a one-body operator
+/// The function returns a one-body operator, i.e. the two-body part is not computed.
+/// Formula is 
+/// \f[
+///  \langle p \| O^{\lambda} \| q \rangle = \sum_{ia} (1+P_{ia}) (n_i \bar{n}_a) \sum_{J}(2J+1)
+/// \begin{Bmatrix}
+/// j_i & j_a & \lambda \\
+/// j_p & j_q & J
+/// \end{Bmatrix}  \langle i \| O^{\lambda} \| a \rangle \frac{ \tilde{\Gamma}^{J}_{paij}}{\Delta_{paiq}}
+/// /f]
+//
+//So what you get should look like this:
+//      p|                p|______
+//       |     ^~~~~X      |     ^
+//       |   a( )i     +   |   a( )i
+//       |_____v           |     v~~~~X
+//      q|                q|     
+//
+//
+ Operator FirstOrderCorr_1b( const Operator& OpIn, const Operator& H )
+ {
+
+//   Operator OpIn = OpInx;
+   Operator OpOut = 0. * OpIn;
+   int Lambda = OpOut.GetJRank();
+   size_t norb = OpIn.modelspace->GetNumberOrbits();
+
+//   arma::uvec holevec ( OpIn.modelspace->holes );
+//   arma::uvec particlevec ( OpIn.modelspace->particles );
+//   OpIn.OneBody.submat(holevec,holevec).zeros();
+//   OpIn.OneBody.submat(particlevec,particlevec).zeros();
+
+   for ( auto p : OpIn.modelspace->valence )
+   {
+     Orbit& op = OpIn.modelspace->GetOrbit(p);
+     double jp = 0.5 * op.j2;
+     for ( auto q : OpIn.OneBodyChannels.at({op.l, op.j2, op.tz2}) )
+     {
+       if (  std::find(  OpIn.modelspace->valence.begin(), OpIn.modelspace->valence.end(), q )  == OpIn.modelspace->valence.end()  ) continue;
+       Orbit& oq = OpIn.modelspace->GetOrbit(q);
+       double jq = 0.5 * oq.j2;
+       double Opq = 0;
+//       double Opq_alt = 0;
+       for ( size_t i=0; i<norb; i++)
+       {
+         Orbit& oi = OpIn.modelspace->GetOrbit(i);
+         double ji = 0.5 * oi.j2;
+         double ni = oi.occ;
+         for ( auto a : OpIn.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+         {
+           Orbit& oa = OpIn.modelspace->GetOrbit(a);
+           double ja = 0.5 * oa.j2;
+           double na = oa.occ;
+           double nanifactor = ni-na;
+           double Oia = OpIn.OneBody(i,a);
+           if (std::abs(nanifactor)<1e-6) continue;
+           if (std::abs(Oia)<1e-6) continue;
+//           std::cout << "Evaluating PT1.  proceeding with term a,i = " << a << " " << i << " : " << ja << " " << ji << "  Oia = " << Oia <<  std::endl;
+           int Jmin = std::max(  std::max( std::abs(jp-ja), std::abs(ji-jq) ) ,   std::max( std::abs(jp-ji), std::abs(ja-jq) )  );
+           int Jmax = std::max(  std::min( jp+ja , ji+jq ) ,   std::min( jp+ji , ja+jq )  );
+           for (int J=Jmin; J<=Jmax; J++)
+           {
+             double sixj = OpIn.modelspace->GetSixJ( ji, ja, Lambda, jp, jq, J );
+             double Gamma_paiq = H.TwoBody.GetTBME_J(J,p,a,i,q);
+             double Delta_paiq = H.OneBody(p,p) + H.OneBody(a,a) - H.OneBody(i,i) - H.OneBody(q,q);
+             Opq += nanifactor * (2*J+1) * sixj * Oia * Gamma_paiq / Delta_paiq;
+           }           
+         }
+       }
+       OpOut.OneBody(p,q) = Opq;
+//       std::cout << "Set Opq  with p,q = " << p << " " << q << "   to " << Opq << std::endl;
+     }
+   }
+   return OpOut;
+ }
+
+
+
+
+
+ Operator RPA_resummed_1b( const Operator& OpIn, const Operator& H, std::string mode )
+ {
+
+   // construct hp and ph kets,  as well as Oph and Ohp
+   int Lambda = OpIn.GetJRank();
+//   size_t ch_CC = OpIn.modelspace->GetTwoBodyChannelIndex( Lambda, OpIn.GetParity(), OpIn.GetTRank() );
+//   std::cout << "going for a channel with J,p,Tz = " << Lambda << " " << OpIn.GetParity() << " " << OpIn.GetTRank() << std::endl;
+//   TwoBodyChannel_CC& tbc_cc_ph = OpIn.modelspace->GetTwoBodyChannel_CC( ch_CC );
+//   auto ketindex_ph = tbc_cc_ph.GetKetIndex_ph();
+//   size_t nkets = ketindex_ph.size();
+
+   std::vector<std::pair<size_t,size_t>> ph_kets;
+   std::vector<std::pair<size_t,size_t>> hp_kets;
+
+   // maybe we try the dumb way
+   for ( auto h : OpIn.modelspace->holes )
+   {
+//     Orbit& oh = OpIn.modelspace->GetOrbit(h);
+//     for (auto p : OpIn.OneBodyChannels.at({oh.l,oh.j2,oh.tz2}) )
+     for (auto p : OpIn.modelspace->particles )
+     {
+       Orbit& op = OpIn.modelspace->GetOrbit(p);
+       if (op.occ>0.01) continue;
+//       Oph( ph_kets.size() ) = OpIn.OneBody(p,h);
+//       Ohp( hp_kets.size() ) = OpIn.OneBody(h,p);
+       ph_kets.push_back( std::make_pair(p,h) );
+       hp_kets.push_back( std::make_pair(h,p) );
+     }
+   }
+   size_t nkets = ph_kets.size();
+   arma::vec Oph( nkets, arma::fill::zeros );
+   arma::vec Ohp( nkets, arma::fill::zeros );
+   for (size_t i=0; i<nkets; i++)
+   {
+     auto p = ph_kets[i].first;
+     auto h = ph_kets[i].second;
+     Oph( i ) = OpIn.OneBody(p,h);
+     Ohp( i ) = OpIn.OneBody(h,p);
+   }
+
+   
+   // Next, construct the Mphph etc matrices
+   arma::mat Mphph = GetPH_transformed_Gamma( ph_kets, ph_kets, H, Lambda );
+   arma::mat Mphhp = GetPH_transformed_Gamma( ph_kets, hp_kets, H, Lambda );
+   arma::mat Mhpph = GetPH_transformed_Gamma( hp_kets, ph_kets, H, Lambda );
+   arma::mat Mhphp = GetPH_transformed_Gamma( hp_kets, hp_kets, H, Lambda );
+
+   // to get TDA, we just get rid of the off-diagonal blocks
+   if (mode=="TDA")
+   {
+     Mphhp *=0;
+     Mphhp *=0;
+   }
+
+   // for the full M matrix  M = [ Mphph   Mphhp ]
+   //                            [ Mhpph   Mhphp ]
+   arma::mat M = arma::join_vert( arma::join_horiz( Mphph, Mphhp) ,
+                                  arma::join_horiz( Mhpph, Mhphp) );
+
+   // make the base case denominator eq-ep for ket |pq>
+   arma::mat Delta(arma::size(M), arma::fill::ones );
+   for ( size_t i=0; i<nkets; i++)
+   {
+     size_t p = ph_kets[i].first;
+     size_t h = ph_kets[i].second;
+     double del_ph = H.OneBody(p,p) - H.OneBody(h,h);
+     Delta.col(i) *= -del_ph;
+     Delta.col(i+nkets) *= del_ph;
+   }
+
+   // combine Oph and Ohp into a single column vector
+   arma::vec Ovec = arma::join_vert(  Oph, Ohp );
+
+  // At this point, we can't get around the fact that the denominators depend on the initial and final state of the
+  // entire operator, as in < p | Oeff | q >, and we need to add ep-eq to the denominator. So for every p,q pair
+  // we need to do the matrix inversion and evaluation in 1st order PT.
+
+   Operator OpOut = OpIn;
+   OpOut.OneBody.zeros();
+
+   for ( auto v1 : OpIn.modelspace->valence )
+   {
+     for ( auto v2 : OpIn.modelspace->valence )
+     {
+
+      arma::mat del12 = arma::ones(arma::size(Delta)) * (H.OneBody(v1,v1) - H.OneBody(v2,v2)) ;
+      // do the fancy resummation of the series by matrix inversion
+      // Minv  =  (I-M)^-1  where I is the identity matrix. The slash here means element-wise division.
+       arma::mat Minv = arma::inv(  arma::eye(arma::size(M))  - M/( Delta+del12) );
+       arma::vec ORPA = Minv * Ovec;
+
+
+       // now we need to unpack ORPA into a matrix again.
+       Operator OpRPA = OpIn;
+       OpRPA.OneBody.zeros();
+       for ( size_t i=0; i<nkets; i++ )
+       {
+         size_t p = ph_kets[i].first;
+         size_t h = ph_kets[i].second;
+         OpRPA.OneBody(p,h) = ORPA(i);
+         OpRPA.OneBody(h,p) = ORPA(i+nkets);
+       }
+      // evaluate this in first order perturbation theory, and take the valence part that we're interested in
+       double op12 = FirstOrderCorr_1b( OpRPA, H).OneBody(v1,v2);
+       OpOut.OneBody(v1,v2) += op12;
+
+      }
+    }
+   return OpOut;
+
+ }
+
+
+
+
+// Return Pandya-transformed matrix elements. Input a list of bras <pq`| a list of kets |rs`> and an angular momentum Lambda (as well as the Hamiltonian H
+// and obtain  Gamma`_pq`rs`^Lambda = - sum_J  (2J+1)  { jp  jq  Lambda  }  Gamma_psrq^J
+//                                                     { jr  js  J       }
+//
+// arma::mat GetPH_transformed_Gamma( std::vector<size_t> bras, std::vector<size_t> kets, Operator& H, int Lambda )
+ arma::mat GetPH_transformed_Gamma( std::vector<std::pair<size_t,size_t>>& bras, std::vector<std::pair<size_t,size_t>>& kets, const Operator& H, int Lambda )
+ {
+   arma::mat Mat_pandya( bras.size(), kets.size(), arma::fill::zeros);
+   for ( size_t ibra=0; ibra<bras.size(); ibra++)
+   {
+     size_t p = bras[ibra].first;
+     size_t q = bras[ibra].second;
+     Orbit& op = H.modelspace->GetOrbit(p);
+     Orbit& oq = H.modelspace->GetOrbit(q);
+     double jp = 0.5 * op.j2;
+     double jq = 0.5 * oq.j2;
+     for ( size_t iket=0; iket<kets.size(); iket++)
+     {
+       size_t r = kets[iket].first;
+       size_t s = kets[iket].second;
+       Orbit& oR = H.modelspace->GetOrbit(r);
+       Orbit& os = H.modelspace->GetOrbit(s);
+       double jr = 0.5 * oR.j2;
+       double js = 0.5 * os.j2;
+
+       double matel = 0;
+       int Jmin = std::max( std::abs(jp-js) , std::abs(jq-jr) );
+       int Jmax = std::min( jp+js ,  jq+jr );
+       for (int J=Jmin; J<=Jmax; J++)
+       {
+         double sixj = H.modelspace->GetSixJ( jp, jq, Lambda, jr, js, J );
+         matel -= (2*J+1) * sixj * H.TwoBody.GetTBME_J(J,p,s,r,q);
+       }
+       Mat_pandya( ibra,iket ) = matel;
+     }
+   }
+   return Mat_pandya;
+ }
+
+
 
 
 
@@ -1983,7 +2620,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
 /// This is the M^{0\nu} TBME from Equation (1) of [PRC 87, 064315 (2013)]
 /// it was coded up by me, ie) Charlie Payne (CP)
 /// from my thesis, I employed Equations: 
-  Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, string src)
+  Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, std::string src)
   {
     // VVV~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~VVV
     // VVV~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~VVV
@@ -2011,9 +2648,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     // set the SRC parameters a,b,c in the Jastrow-type correlation function
     double aa,bb; // [MeV^2]
     double cc; // [Unitless]
-    string argstr = "Argonne";
-    string cdbstr = "CD-Bonn";
-    string masstr = "Miller-Spencer";
+    std::string argstr = "Argonne";
+    std::string cdbstr = "CD-Bonn";
+    std::string masstr = "Miller-Spencer";
     if (src == argstr)
     {
       aa = 1.59*HBARC*HBARC;
@@ -2039,8 +2676,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
     // set the GLQ roots and weights
     if (Nquad != 187)
     {
-      cout<<"ERROR 187: please set Nquad to 187 by running the operator as M0nu_TBME_187_none"<<endl;
-      cout<<"which I do to stay consistent with previous naming conventions."<<endl;
+      std::cout<<"ERROR 187: please set Nquad to 187 by running the operator as M0nu_TBME_187_none"<<std::endl;
+      std::cout<<"which I do to stay consistent with previous naming conventions."<<std::endl;
       exit(1);
     }
     double nodes[187][2] = { {0.00771093190434205, 0.01978880917191989},
@@ -2287,7 +2924,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, vector<ind
           double jb = ob.j2/2.0;
           double jc = oc.j2/2.0;
           double jd = od.j2/2.0; // ...for convenience
-cout<<J<<" | "<<ia<<", "<<ib<<", "<<ic<<", "<<id<<" || "
+std::cout<<J<<" | "<<ia<<", "<<ib<<", "<<ic<<", "<<id<<" || "
 <<na<<", "<<nb<<", "<<nc<<", "<<nd<<" | "
 <<la<<", "<<lb<<", "<<lc<<", "<<ld<<" | "
 <<ja<<", "<<jb<<", "<<jc<<", "<<jd<<" |=|  ";
@@ -2398,7 +3035,7 @@ cout<<J<<" | "<<ia<<", "<<ib<<", "<<ic<<", "<<id<<" || "
           MF = tempnorm*tempfact*(sumglqF - temphase*sumglqFas); // see Equation () of my thesis, (F)
           MGT = tempnorm*tempfact*(sumglqGT - temphase*sumglqGTas); // see Equation () of my thesis, (GT)
           double Mtbme = MF + MGT; // see Equation () of my thesis
-cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
+std::cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<std::endl;
           M0nu_TBME.TwoBody.SetTBME(chbra,chket,ibra,iket,Mtbme); // set the two-body matrix elements (TBME) to M_ab
         } // end of for-loop over: iket
       } // end of for-loop over: ibra
@@ -2562,15 +3199,187 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
 
 
 
+ Operator MinnesotaPotential( ModelSpace& modelspace )
+ {
+   Operator Vminnesota(modelspace, 0,0,0,2);
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   modelspace.PreCalculateMoshinsky();
+//   #pragma omp parallel for schedule(dynamic,1) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+    TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+    int J = tbc.J;
+    int nkets = tbc.GetNumberKets();
+    for (int ibra=0;ibra<nkets;++ibra)
+    {
+     Ket& bra = tbc.GetKet(ibra);
+     for (int iket=ibra;iket<nkets;iket++)
+     {
+       Ket& ket = tbc.GetKet(iket);
+       double vminn = MinnesotaMatEl( modelspace, bra, ket, J);
+       Vminnesota.TwoBody.SetTBME(ch,ibra,iket,vminn);
+       Vminnesota.TwoBody.SetTBME(ch,iket,ibra,vminn);
+     }
+    }
+   }
+   return Vminnesota;
+ }
+
+// Minnesota potential of Thompson, Lemere and Tang,  Nuc. Phys.A 286 53 (1977)
+// I have modified the triplet channel strength by multiplying by 0.2.
+// Without this modification, it seems that the triplet channel does not have enough
+// repulsion to support against collapse, which makes the potential not terribly
+// useful for finite nuclei.
+// This is mostly useful for benchmarking without needing large input files.
+//
+// On March 12 2019, I calculated O16 in a basis of hw=16 and emax=4, 6, and 8.
+// I used IMSRG(2) with method=magnus  omega_norm_max=0.25, dsmax=0.5
+// Results:
+//  emax = 4                         emax = 6                  emax = 8
+//  e1hf = 177.4709518              e1hf = 132.7170792          e1hf = 111.4959623
+//  e2hf = -102.1762390             e2hf = -138.2451400         e2hf = -210.3298042
+//  e3hf = 0.0000000                e3hf = 0.0000000            e3hf = 0.0000000    
+//  EHF = 75.2947127                EHF  = -5.5280608           EHF = -98.8338419   
+//  EIMSRG = -10.047908             EIMSRG = -69.170313         EIMSRG =  -144.9899081
+//  Rp2HF = 9.5591609               Rp2HF = 15.1991899          Rp2HF =  20.8748671
+//  Rp2IMSRG = 9.362856             Rp2IMSRG = 14.399832        Rp2IMSRG = 21.353270
+// 
+ double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J )
+ {
+   double oscillator_b2 = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
+   double VR = 200 ;
+   double VT = -178. * 0.2; // scaled to make things not crazy for finite nuclei
+   double VS = -91.85 ;
+   double kR = 1.487 * oscillator_b2; // make things dimensionless
+   double kT = 0.639 * oscillator_b2;
+   double kS = 0.465 * oscillator_b2;
+
+   Orbit & oa = modelspace.GetOrbit(bra.p);
+   Orbit & ob = modelspace.GetOrbit(bra.q);
+   Orbit & oc = modelspace.GetOrbit(ket.p);
+   Orbit & od = modelspace.GetOrbit(ket.q);
+
+   int na = oa.n;
+   int nb = ob.n;
+   int nc = oc.n;
+   int nd = od.n;
+
+   int la = oa.l;
+   int lb = ob.l;
+   int lc = oc.l;
+   int ld = od.l;
+
+   double ja = oa.j2*0.5;
+   double jb = ob.j2*0.5;
+   double jc = oc.j2*0.5;
+   double jd = od.j2*0.5;
+
+   int fab = 2*na + 2*nb + la + lb;
+   int fcd = 2*nc + 2*nd + lc + ld;
+   if (std::abs(fab+fcd)%2 >0) return 0; // check parity conservation
+//   if (std::abs(fab-fcd)>2) return 0; // p1*p2 only connects kets with delta N = 0,1
+
+   double sa,sb,sc,sd;
+   sa=sb=sc=sd=0.5;
+
+   double Vminn=0;
+
+   // First, transform to LS coupling using 9j coefficients
+   for (int Lab=std::abs(la-lb); Lab<= la+lb; ++Lab)
+   {
+     for (int Sab=0; Sab<=1; ++Sab)
+     {
+//       double isospin_factor = 1.0;
+       if ( (oa.tz2 == ob.tz2) and Sab==1 ) continue;
+//       if ( oa.tz2 != ob.tz2) isospin_factor = 0.5 * (oa.tz2 * oc.tz2);  // <pn|V|pn> = 1/2 (V(T=1) + V(T=0)).  <pn|V|np> = -<pn|V|pn>
+       if ( std::abs(Lab-Sab)>J or Lab+Sab<J) continue;
+
+       double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
+       if (njab == 0) continue;
+       int Scd = Sab;
+       int Lcd = Lab;
+       double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
+       if (njcd == 0) continue;
+
+       // Next, transform to rel / com coordinates with Moshinsky tranformation
+       for (int N_ab=0; N_ab<=fab/2; ++N_ab)  // N_ab = CoM n for a,b
+       {
+         for (int Lam_ab=0; Lam_ab<= fab-2*N_ab; ++Lam_ab) // Lam_ab = CoM l for a,b
+         {
+           int Lam_cd = Lam_ab; // tcm and trel conserve lam and Lam, ie relative and com orbital angular momentum
+           for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
+           {
+              if (Lab<std::abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
+
+              // factor to account for antisymmetrization. I sure wish this were more transparent...
+              //  antisymmetrized matrix elements: V = <ab|V|cd> - <ab|V|dc>
+              //  here, we've gone to LS, coupling in CM/relative coordinates
+              //  so exchange gives us a phase factor and we have V = <ab|V|cd> + (-1)**(Lcd+Scd) <ab|V|dc>
+              //  case pp,nn -> 1 + (-1)**(L+S)
+              //  pnpn -> 1 + 0
+              //  pnnp -> 0 + (-1)**(L+S)
+              int asymm_factor = (std::abs(bra.op->tz2+ket.op->tz2) + std::abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
+              if ( asymm_factor ==0 ) continue;
+
+              int lam_cd = lam_ab; // V conserves lam and Lam
+              int n_ab = (fab - 2*N_ab-Lam_ab-lam_ab)/2; // n_ab is determined by energy conservation
+
+              double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
+
+              if (std::abs(mosh_ab)<1e-8) continue;
+
+              for (int N_cd=std::max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
+              {
+                int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
+                if (n_cd < 0) continue;
+                if  (n_ab != n_cd and N_ab != N_cd) continue;
+
+                double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
+                if (std::abs(mosh_cd)<1e-8) continue;
+
+                double vrel = 0;
+                int pmin = lam_ab;
+                int pmax = lam_ab + n_ab + n_cd;
+                for (int p=pmin; p<=pmax; p++)
+                {
+                   double Bp = TalmiB(n_ab,lam_ab,n_cd,lam_cd,p);  // It's probably inefficient doing this in the inner loop, but oh well...
+                   double Ip = VR / pow(1.0+kR, p+1.5);  // Talmi integral of a Gaussian
+                   if ( Sab==1 ) Ip += VT / pow(1.0+kT, p+1.5); // Triplet short-range potential
+                   else Ip += VS / pow(1.0+kS, p+1.5); // Singlet short-range potential
+                   vrel += Bp * Ip;
+                }
+                Vminn += vrel * njab * njcd * mosh_ab * mosh_cd * asymm_factor;
+
+
+              } // N_cd
+           } // lam_ab
+         } // Lam_ab
+       } // N_ab
+
+     } // Sab
+   } // Lab
+
+   return Vminn ;
+
+
+
+ }
+
+
+
+
+
+
  Operator EKKShift( Operator& Hin, int Nlower, int Nupper)
  {
    ModelSpace* modelspace = Hin.GetModelSpace();
    Operator EKKShift(*modelspace,0,0,0,2);
    double elower = 0;
    double eupper = 0;
-   vector<index_t> index_lower;
-   vector<index_t> index_upper;
-   for (int i=0; i<modelspace->GetNumberOrbits(); ++i)
+   std::vector<index_t> index_lower;
+   std::vector<index_t> index_upper;
+   for (size_t i=0; i<modelspace->GetNumberOrbits(); ++i)
    {
      Orbit& oi = modelspace->GetOrbit(i);
      int N = 2*oi.n + oi.l;
@@ -2590,16 +3399,16 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
    double emid = 0.5 * (elower + eupper);
    for ( auto i : index_lower ) EKKShift.OneBody(i,i) = emid - elower;
    for ( auto i : index_upper ) EKKShift.OneBody(i,i) = emid - eupper;
-   cout << "In EKKShift, elower, eupper, emid = " << elower << " , " << eupper << " , " << emid << endl;
+   std::cout << "In EKKShift, elower, eupper, emid = " << elower << " , " << eupper << " , " << emid << std::endl;
    return EKKShift;
  }
 
 
-  map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax)
+  std::map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax)
   {
 //    ModelSpace* modelspace = H.GetModelSpace();
-    map<index_t,double> hole_list;
-    cout << "GetSecondOrderOccupations : Not yet implemented" << endl;
+    std::map<index_t,double> hole_list;
+    std::cout << "GetSecondOrderOccupations : Not yet implemented" << std::endl;
     return hole_list;
   }
 
@@ -2611,7 +3420,7 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
   {
     if (A<2)
     {
-      cout << "Embed1BodyIn2Body: A = " << A << ". You clearly didn't mean to do that..." << endl;
+      std::cout << "Embed1BodyIn2Body: A = " << A << ". You clearly didn't mean to do that..." << std::endl;
       return;
     }
     ModelSpace* modelspace = op1.GetModelSpace();
@@ -2722,65 +3531,65 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Operator Yred = Y;
     Reduce(Yred);
 
-    cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << endl;
+    std::cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << std::endl;
 //    X.comm111ss(Y,Zscalar);
 //    X.comm111st(Yred,Ztensor);
-    Zscalar.comm111ss(X,Y);
-    Ztensor.comm111st(X,Yred);
+    Commutator::comm111ss(X,Y,Zscalar);
+    Commutator::comm111st(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm111 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm111 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm111 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm111 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
-    cout << "121ss" << endl;
-    Zscalar.comm121ss(X,Y);
-    cout << "121st" << endl;
-    Ztensor.comm121st(X,Yred);
+    std::cout << "121ss" << std::endl;
+    Commutator::comm121ss(X,Y,Zscalar);
+    std::cout << "121st" << std::endl;
+    Commutator::comm121st(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm121 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm121 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm121 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm121 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
-    Zscalar.comm122ss(X,Y);
-    Ztensor.comm122st(X,Yred);
+    Commutator::comm122ss(X,Y,Zscalar);
+    Commutator::comm122st(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm122 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm122 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm122 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm122 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
-    Zscalar.comm222_pp_hh_221ss(X,Y);
-    Ztensor.comm222_pp_hh_221st(X,Yred);
+    Commutator::comm222_pp_hh_221ss(X,Y,Zscalar);
+    Commutator::comm222_pp_hh_221st(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm222_pp_hh_221 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm222_pp_hh_221 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm222_pp_hh_221 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm222_pp_hh_221 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
-    X.comm222_phss(Y,Zscalar);
+    Commutator::comm222_phss(Y,Zscalar,X);
 //    Reduce(Y); // Not sure why I can't use Yred...
-    Zscalar.comm222_phss(X,Y);
-    Ztensor.comm222_phst(X,Yred);
+    Commutator::comm222_phss(X,Y,Zscalar);
+    Commutator::comm222_phst(X,Yred,Ztensor);
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm222_ph norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm222_ph norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm222_ph diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm222_ph diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
 
   }
@@ -2798,7 +3607,7 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Operator Yred = Y;
     Reduce(Yred);
 
-    cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << endl;
+    std::cout << "operator norms: " << X.Norm() << "  " << Y.Norm() << std::endl;
 //    X.comm111ss(Y,Zscalar);
 //    X.comm111st(Yred,Ztensor);
     Zscalar.comm111ss(X,Y);
@@ -2806,9 +3615,9 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm111 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm111 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm111 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm111 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
@@ -2817,9 +3626,9 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm121 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm121 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm121 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm121 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
@@ -2828,9 +3637,9 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm122 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm122 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm122 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm122 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
@@ -2839,9 +3648,9 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm222_pp_hh_221 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm222_pp_hh_221 norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm222_pp_hh_221 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm222_pp_hh_221 diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
     Zscalar.Erase();
     Ztensor.Erase();
@@ -2851,9 +3660,9 @@ cout<<MF<<",  "<<MGT<<",  "<<Mtbme<<endl;
     Zscalar.Symmetrize();
     Ztensor.Symmetrize();
     UnReduce(Ztensor);
-    cout << "comm222_ph norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << endl;
+    std::cout << "comm222_ph norm = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << ",   " << Ztensor.OneBodyNorm() << " " << Ztensor.TwoBodyNorm() << std::endl;
     Zscalar -= Ztensor;
-    cout << "comm222_ph diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << endl;
+    std::cout << "comm222_ph diff = " << Zscalar.OneBodyNorm() << " " << Zscalar.TwoBodyNorm() << std::endl;
 
 
   }

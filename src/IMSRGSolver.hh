@@ -23,12 +23,13 @@
 #include <fstream>
 #include <string>
 #include <deque>
+#include <vector>
 #include "Operator.hh"
 #include "Generator.hh"
 #include "IMSRGProfiler.hh"
 #include "ReadWrite.hh"
 
-using namespace std;
+//using namespace std;
 
 
 class IMSRGSolver
@@ -40,10 +41,10 @@ class IMSRGSolver
   ModelSpace* modelspace;
   ReadWrite* rw;
   Operator* H_0; 
-  deque<Operator> FlowingOps;
+  std::deque<Operator> FlowingOps;
   Operator H_saved;
   Operator Eta;
-  deque<Operator> Omega;
+  std::deque<Operator> Omega;
   Generator generator;
   int istep;
   double s;
@@ -53,26 +54,30 @@ class IMSRGSolver
   double norm_domega;
   double omega_norm_max;
   double eta_criterion;
-  string method;
-  string flowfile;
+  std::string method;
+  std::string flowfile;
   IMSRGProfiler profiler;
   int n_omega_written;
   int max_omega_written;
   bool magnus_adaptive;
+  bool hunter_gatherer;
 
+  double Elast;
+  double cumulative_error;
 
 
   ~IMSRGSolver();
   IMSRGSolver();
   IMSRGSolver( Operator& H_in);
   void NewOmega();
+  void GatherOmega(); // hunter-gatherer mode of updating omega
   void SetHin( Operator& H_in);
   void SetReadWrite( ReadWrite& r){rw = &r;};
   void Reset();
   void AddOperator(Operator& Op){FlowingOps.push_back(Op);};
   void UpdateEta(); // Force eta to be calculated. For debugging.
 
-  void SetMethod(string m){method=m;};
+  void SetMethod(std::string m){method=m;};
   void Solve();
   void Solve_magnus_euler();
   void Solve_magnus_modified_euler();
@@ -87,16 +92,17 @@ class IMSRGSolver
   Operator Transform_Partial(Operator& OpIn, int n);
   Operator Transform_Partial(Operator&& OpIn, int n);
 
-  void SetFlowFile(string s);
+  void SetFlowFile(std::string s);
   void SetDs(double d){ds = d;};
   void SetDsmax(double d){ds_max = d;};
   void SetdOmega(double d){norm_domega = d;};
   void SetSmax(double d){smax = d;};
-  void SetGenerator(string g);
+  void SetGenerator(std::string g);
   void SetOmegaNormMax(double x){omega_norm_max = x;};
   void SetODETolerance(float x){ode_e_abs=x;ode_e_rel=x;};
   void SetEtaCriterion(float x){eta_criterion = x;};
-  void SetMagnusAdaptive(bool b){magnus_adaptive = b;};
+  void SetMagnusAdaptive(bool b=true){magnus_adaptive = b;};
+  void SetHunterGatherer(bool b=true){hunter_gatherer = b;};
 
   int GetSystemDimension();
   Operator& GetH_s(){return FlowingOps[0];};
@@ -106,17 +112,19 @@ class IMSRGSolver
   void UpdateOmega();
   void UpdateH();
 
-  void WriteFlowStatus(ostream&);
-  void WriteFlowStatusHeader(ostream&);
-  void WriteFlowStatus(string);
-  void WriteFlowStatusHeader(string);
+  void WriteFlowStatus(std::ostream&);
+  void WriteFlowStatusHeader(std::ostream&);
+  void WriteFlowStatus(std::string);
+  void WriteFlowStatusHeader(std::string);
 
   void SetDenominatorCutoff(double c){generator.SetDenominatorCutoff(c);};
   void SetDenominatorDelta(double d){generator.SetDenominatorDelta(d);};
   void SetDenominatorDeltaIndex(int i){generator.SetDenominatorDeltaIndex(i);};
-  void SetDenominatorDeltaOrbit(string o){generator.SetDenominatorDeltaOrbit(o);};
+  void SetDenominatorDeltaOrbit(std::string o){generator.SetDenominatorDeltaOrbit(o);};
 
   void CleanupScratch();
+
+  double EstimateStepError();
 
 
   // This is used to get flow info from odeint
@@ -127,12 +135,12 @@ class IMSRGSolver
            : imsrgsolver(solver), times(solver.times), E0(solver.E0),
               eta1(solver.eta1),eta2(solver.eta2) {};
      IMSRGSolver& imsrgsolver;
-     vector<double>& times;
-     vector<double>& E0;
-     vector<double>& eta1;
-     vector<double>& eta2;
+     std::vector<double>& times;
+     std::vector<double>& E0;
+     std::vector<double>& eta1;
+     std::vector<double>& eta2;
 //     void operator() (const vector<Operator>& x, double t)
-     void operator() (const deque<Operator>& x, double t)
+     void operator() (const std::deque<Operator>& x, double t)
      {
         times.push_back(t);
         E0.push_back(x.front().ZeroBody);
@@ -143,8 +151,8 @@ class IMSRGSolver
      {
         for (size_t i=0; i<times.size(); ++i)
         {
-           cout << times[i] << "  " << E0[i] << "  "
-                << eta1[i]  << "  " << eta2[i] << endl;
+           std::cout << times[i] << "  " << E0[i] << "  "
+                     << eta1[i]  << "  " << eta2[i] << std::endl;
         }
      }
   };
@@ -152,17 +160,17 @@ class IMSRGSolver
 
   ODE_Monitor ode_monitor;
 
-  vector<double> times;
-  vector<double> E0;
-  vector<double> eta1;
-  vector<double> eta2;
-  string ode_mode;
+  std::vector<double> times;
+  std::vector<double> E0;
+  std::vector<double> eta1;
+  std::vector<double> eta2;
+  std::string ode_mode;
   float ode_e_abs;
   float ode_e_rel;
 
 
 //  void operator()( const vector<Operator>& x, vector<Operator>& dxdt, const double t);
-  void operator()( const deque<Operator>& x, deque<Operator>& dxdt, const double t);
+  void operator()( const std::deque<Operator>& x, std::deque<Operator>& dxdt, const double t);
   void Solve_ode();
   void Solve_ode_adaptive();
   void Solve_ode_magnus();

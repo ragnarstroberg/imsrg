@@ -19,7 +19,10 @@
 
 #include <map>
 #include <string>
+#include <vector>
 #include <sstream>
+#include <iostream>
+#include <iomanip>
 
 double r2p = 0.770; // effective proton intrinsic charge radius squared
 double r2n = -0.1149; // effective neutron intrisic charge radius squared
@@ -30,25 +33,25 @@ double DF = 0.033; // Darwin-Foldy correction to the charge radius
 class Parameters
 {
  public:
-  static map<string,string> string_par;
-  static map<string,double> double_par;
-  static map<string,int> int_par;
-  static map<string,vector<string>> vec_par;
+  static std::map<std::string,std::string> string_par;
+  static std::map<std::string,double> double_par;
+  static std::map<std::string,int> int_par;
+  static std::map<std::string,std::vector<std::string>> vec_par;
 
   Parameters(){};
   Parameters(int, char**);
   void ParseCommandLineArgs(int, char**);
   void PrintOptions();
-  string s(string);
-  double d(string);
-  int i(string);
-  vector<string> v(string);
-  string DefaultFlowFile();
-  string DefaultIntFile();
+  std::string s(std::string);
+  double d(std::string);
+  int i(std::string);
+  std::vector<std::string> v(std::string);
+  std::string DefaultFlowFile();
+  std::string DefaultIntFile();
   bool help_mode;
 };
 
-map<string,string> Parameters::string_par = {
+std::map<std::string,std::string> Parameters::string_par = {
   {"2bme",			"none"},
   {"3bme",			"none"},
   {"core_generator",		"atan"},	// generator used for core part of 2-step decoupling
@@ -71,10 +74,14 @@ map<string,string> Parameters::string_par = {
   {"goose_tank",		"false"},	// do goose_tank correction to commutators
   {"write_omega",		"false"},	// write omega to disk
   {"nucleon_mass_correction",	"false"},	// include effect of proton-neutron mass splitting
+  {"hunter_gatherer",	        "false"},	// use hunter-gatherer approach to splitting omega
+  {"relativistic_correction",   "false"},       // include the p^4 relativistic correction to the kinetic energy
+  {"physical_system",           "nuclear"},     // treat nucleus or atom. For atom, switch units from MeV,fm to eV,nm.
+  {"freeze_occupations",        "false"},       // Should we freeze the occupations, or fill according to HF energy
 };
 
 
-map<string,double> Parameters::double_par = {
+std::map<std::string,double> Parameters::double_par = {
   {"hw",		20.0},
   {"smax",		200.0},	// maximum s. If we reach this,	terminate even if we're not converged.
   {"dsmax",		0.5},	// maximum step size
@@ -89,10 +96,11 @@ map<string,double> Parameters::double_par = {
 
 };
 
-map<string,int> Parameters::int_par = {
+std::map<std::string,int> Parameters::int_par = {
   {"A",	-1},	// Aeff for kinetic energy. -1 means take A of reference
   {"e3max",		12},	
   {"emax",		6},
+  {"lmax",              99999}, // lmax for the whole calculation
   {"lmax3",		-1}, // lmax for the 3body interaction
   {"nsteps",		-1},	// do the decoupling in 1 step or core-then-valence. -1 means default
   {"file2e1max",	12},
@@ -101,11 +109,15 @@ map<string,int> Parameters::int_par = {
   {"file3e1max",	12},
   {"file3e2max",	24},
   {"file3e3max",	12},
+  {"atomicZ",            -1}, // the Z of the nucleus for an atomic calculation. -1 means do a neutral atom
 };
 
-map<string,vector<string>> Parameters::vec_par = {
+std::map<std::string,std::vector<std::string>> Parameters::vec_par = {
  {"Operators", {} },
  {"OperatorsFromFile", {} },  // These will mostly be MECs for operators
+ {"OperatorsPT1", {} },   // First order perturbative correction to (1b part of) operator.
+ {"OperatorsRPA", {} },   // RPA resummed correction to (1b part of) operator.
+ {"OperatorsTDA", {} },   // TDA resummed correction to (1b part of) operator.
  {"SPWF",{} }, // single-particle wave functions in HF basis
 };
 
@@ -118,113 +130,113 @@ Parameters::Parameters(int argc, char** argv)
 
 void Parameters::ParseCommandLineArgs(int argc, char** argv)
 {
-  cout << "====================  Parameters (defaults set in Parameters.hh) ===================" << endl;
+  std::cout << "====================  Parameters (defaults set in Parameters.hh) ===================" << std::endl;
   for (int iarg=1; iarg<argc; ++iarg)
   {
-    string arg = argv[iarg];
+    std::string arg = argv[iarg];
     if (arg=="help" or arg=="-help" or arg=="--help")
     {
-       cout << "\nUsage:\n\timsrg++ option1=variable1 option2=variable2...\n" << endl;
-       cout << "At minimum, the 2bme file is required.\n" << endl;
+       std::cout << "\nUsage:\n\timsrg++ option1=variable1 option2=variable2...\n" << std::endl;
+       std::cout << "At minimum, the 2bme file is required.\n" << std::endl;
        PrintOptions();
        help_mode = true;
        return;
     }
     size_t pos = arg.find("=");
-    string var = arg.substr(0,pos);
-    string val = arg.substr(pos+1);
+    std::string var = arg.substr(0,pos);
+    std::string val = arg.substr(pos+1);
     if (string_par.find(var) != string_par.end() )
     {
       if (val.size() > 0)
-        istringstream(val) >> string_par[var];
-      cout << var << " => " << string_par[var] << endl;
+        std::istringstream(val) >> string_par[var];
+      std::cout << var << " => " << string_par[var] << std::endl;
     }
     else if (double_par.find(var) != double_par.end() )
     {
       if (val.size() > 0)
-        istringstream(val) >> double_par[var];
-      cout << var << " => " << double_par[var] << endl;
+        std::istringstream(val) >> double_par[var];
+      std::cout << var << " => " << double_par[var] << std::endl;
     }
     else if (int_par.find(var) != int_par.end() )
     {
       if (val.size() > 0)
-        istringstream(val) >> int_par[var];
-      cout << var << " => " << int_par[var] << endl;
+        std::istringstream(val) >> int_par[var];
+      std::cout << var << " => " << int_par[var] << std::endl;
     }
     else if (vec_par.find(var) != vec_par.end() )
     {
       if (val.size() > 0)
       {
-        istringstream ss(val);
-        string tmp;
+        std::istringstream ss(val);
+        std::string tmp;
         while( getline(ss,tmp,',')) vec_par[var].push_back(tmp);
       }
-      cout << var << " => ";
-      for (auto x : vec_par[var]) cout << x << ",";
-      cout << endl;
+      std::cout << var << " => ";
+      for (auto x : vec_par[var]) std::cout << x << ",";
+      std::cout << std::endl;
     }
     else
     {
-      cout << "Unkown parameter: " << var << " => " << val << endl;
+      std::cout << "Unkown parameter: " << var << " => " << val << std::endl;
     }
     
   }
   if (string_par["flowfile"]=="default") string_par["flowfile"] = DefaultFlowFile();
   if (string_par["intfile"]=="default") string_par["intfile"] = DefaultIntFile();
-  cout << "====================================================================================" << endl;
+  std::cout << "====================================================================================" << std::endl;
 }
 
-string Parameters::s(string key)
+std::string Parameters::s(std::string key)
 {
   return string_par[key];
 }
-double Parameters::d(string key)
+double Parameters::d(std::string key)
 {
   return double_par[key];
 }
-int Parameters::i(string key)
+int Parameters::i(std::string key)
 {
   return int_par[key];
 }
-vector<string> Parameters::v(string key)
+std::vector<std::string> Parameters::v(std::string key)
 {
   return vec_par[key];
 }
 
-string Parameters::DefaultFlowFile()
+std::string Parameters::DefaultFlowFile()
 {
   char strbuf[200];
   sprintf(strbuf, "output/BCH_%s_%s_%s_hw%.0f_e%d_A%d.dat",string_par["method"].c_str(),string_par["reference"].c_str(),string_par["valence_space"].c_str(),double_par["hw"],int_par["emax"],int_par["A"]);
-  return string(strbuf);
+  return std::string(strbuf);
 }
 
-string Parameters::DefaultIntFile()
+std::string Parameters::DefaultIntFile()
 {
   char strbuf[200];
   sprintf(strbuf, "output/%s_%s_%s_hw%.0f_e%d_A%d",string_par["method"].c_str(),string_par["reference"].c_str(),string_par["valence_space"].c_str(),double_par["hw"],int_par["emax"],int_par["A"]);
-  return string(strbuf);
+  return std::string(strbuf);
 }
 
 void Parameters::PrintOptions()
 {
-  cout << "Input parameters and default values: " << endl;
+  std::cout << "Input parameters and default values: " << std::endl;
   for (auto& strpar : string_par)
   {
-    cout << "\t" << left << setw(30) << strpar.first << ":  " << strpar.second << endl;
+    std::cout << "\t" << std::left << std::setw(30) << strpar.first << ":  " << strpar.second << std::endl;
   }
   for (auto& doublepar : double_par)
   {
-    cout <<  "\t" << left << setw(30) <<doublepar.first << ":  " << doublepar.second << endl;
+    std::cout <<  "\t" << std::left << std::setw(30) <<doublepar.first << ":  " << doublepar.second << std::endl;
   }
   for (auto& intpar : int_par)
   {
-    cout <<  "\t" << left << setw(30) <<intpar.first << ":  " << intpar.second << endl;
+    std::cout <<  "\t" << std::left << std::setw(30) <<intpar.first << ":  " << intpar.second << std::endl;
   }
   for (auto& vecpar : vec_par)
   {
-    cout <<  "\t" << left << setw(30) << vecpar.first << ":  ";
-    for (auto& op : vecpar.second) cout << op << ",";
-    cout << endl;
+    std::cout <<  "\t" << std::left << std::setw(30) << vecpar.first << ":  ";
+    for (auto& op : vecpar.second) std::cout << op << ",";
+    std::cout << std::endl;
   }
 
 }
