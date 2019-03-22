@@ -87,6 +87,8 @@ ifeq ($(THEHOST),cronos)
 endif
 ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up nicely.
  LIBS += -llapack
+ NEWLIBS := $(filter-out -lopenblas,$(LIBS))
+ LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
  ifneq ($(PYTHON),off)
   ALL += pyIMSRG.so
  endif
