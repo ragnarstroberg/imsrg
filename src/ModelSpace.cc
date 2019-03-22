@@ -1643,7 +1643,7 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
      }
    }
    profiler.timer["CalculatePandyaLookup"] += omp_get_wtime() - t_start;
-   std::cout << "done." << std::endl;
+//   std::cout << "done." << std::endl;
 }
 
 

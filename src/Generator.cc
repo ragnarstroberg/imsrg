@@ -35,13 +35,19 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
    else if (generator_type == "white")                        ConstructGenerator_White();
    else if (generator_type == "atan")                         ConstructGenerator_Atan();
    else if (generator_type == "imaginary-time")               ConstructGenerator_ImaginaryTime();
-   else if (generator_type == "qtransfer-atan")               ConstructGenerator_QTransferAtan();
+   else if (generator_type == "qtransfer-atan")               ConstructGenerator_QTransferAtan(1);
    else if (generator_type == "shell-model")                  ConstructGenerator_ShellModel();
    else if (generator_type == "shell-model-atan")             ConstructGenerator_ShellModel_Atan();
    else if (generator_type == "shell-model-atan-npnh")        ConstructGenerator_ShellModel_Atan_NpNh();
    else if (generator_type == "shell-model-imaginary-time")   ConstructGenerator_ShellModel_ImaginaryTime();
    else if (generator_type == "hartree-fock")                 ConstructGenerator_HartreeFock();
    else if (generator_type == "1PA")                          ConstructGenerator_1PA();
+   else if (generator_type.find("qtransfer-atan") != std::string::npos )
+   {
+     int n;
+     std::istringstream( generator_type.substr( generator_type.find("_")+1) ) >> n;
+     ConstructGenerator_QTransferAtan(n);
+   }
    else if (generator_type == "rspace")                       ConstructGenerator_Rspace();
    else
    {
@@ -58,8 +64,10 @@ void Generator::SetDenominatorDeltaOrbit(std::string orb)
   if (orb == "all")
      SetDenominatorDeltaIndex(-12345);
   else
+  {
      SetDenominatorDeltaIndex( modelspace->GetOrbitIndex(orb) );
-  std::cout << "Setting denominator delta orbit " << orb << " => " << modelspace->GetOrbitIndex(orb) << std::endl;
+     std::cout << "Setting denominator delta orbit " << orb << " => " << modelspace->GetOrbitIndex(orb) << std::endl;
+  }
 }
 
 
@@ -284,7 +292,7 @@ void Generator::ConstructGenerator_ImaginaryTime()
 
 
 
-void Generator::ConstructGenerator_QTransferAtan()
+void Generator::ConstructGenerator_QTransferAtan(int n)
 {
    // One body piece -- eliminate ph bits
    for ( auto& a : modelspace->core)
@@ -292,7 +300,7 @@ void Generator::ConstructGenerator_QTransferAtan()
       for ( auto& i : VectorUnion(modelspace->valence,modelspace->qspace) )
       {
          double denominator = Get1bDenominator(i,a);
-         Eta->OneBody(i,a) = sqrt(std::abs(denominator)*M_NUCLEON)/HBARC * 0.5*atan(2*H->OneBody(i,a)/denominator);
+         Eta->OneBody(i,a) = pow(std::abs(denominator)*M_NUCLEON/HBARC/HBARC, 0.5*n ) * 0.5*atan(2*H->OneBody(i,a)/denominator);
          Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
    }
@@ -309,7 +317,7 @@ void Generator::ConstructGenerator_QTransferAtan()
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
 //            double denominator = Get2bDenominator_Jdep(ch,ibra,iket);
-            ETA2(ibra,iket) = sqrt(std::abs(denominator)*M_NUCLEON)/HBARC * 0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(ibra,iket) = pow(std::abs(denominator)*M_NUCLEON/HBARC/HBARC, 0.5*n) * 0.5*atan(2*H2(ibra,iket) / denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
       }

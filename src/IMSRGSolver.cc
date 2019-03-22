@@ -3,6 +3,8 @@
 #include "Commutator.hh"
 #include "Operator.hh"
 #include <iomanip>
+#include <string>
+#include <sstream>
 
 #ifndef NO_ODE
 #include <boost/numeric/odeint.hpp>
@@ -219,6 +221,8 @@ void IMSRGSolver::Solve_magnus_euler()
      generator.SetDenominatorCutoff(1.0); // do we need this?
    }
 
+   Elast = H_0->ZeroBody;
+   cumulative_error = 0;
     // Write details of the flow
    WriteFlowStatus(flowfile);
    WriteFlowStatus(std::cout);
@@ -275,11 +279,13 @@ void IMSRGSolver::Solve_magnus_euler()
         
 //      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
       generator.Update(&FlowingOps[0],&Eta);
+      cumulative_error += EstimateStepError();
 
       // Write details of the flow
       WriteFlowStatus(flowfile);
       WriteFlowStatus(std::cout);
 //      profiler.PrintMemory();
+      Elast = FlowingOps[0].ZeroBody;
 
    }
 
@@ -339,6 +345,8 @@ void IMSRGSolver::Solve_magnus_modified_euler()
    }
 
 }
+
+
 
 
 #ifndef NO_ODE
@@ -737,6 +745,28 @@ void IMSRGSolver::CleanupScratch()
   }
 }
 
+double IMSRGSolver::EstimateStepError()
+{
+  double err = 0;
+  double Ecurrent = FlowingOps[0].ZeroBody;
+  std::string gtype = generator.generator_type;
+//  std::cout << "gtype = " << gtype << std::endl;
+  if (std::abs(s)>1e-9 and gtype.find("qtransfer") != std::string::npos )
+  {
+    int n;
+    std::istringstream( gtype.substr( gtype.find("_")+1) ) >> n;
+    double dEds = (Ecurrent-Elast);
+    double kF = 1.33;
+    double R = pow(s, 1.0/n);
+//    double suppression = std::min( (modelspace->GetTargetMass()-2.)/3.0, pow( (kF*R), 3) ); // Not sure if this is actually legit
+    double suppression = pow( (kF*R), 3);
+    err = std::abs(dEds) * suppression ;
+//    std::cout << std::endl << "Made it inside, suppression = " << suppression << "  dEds = " << dEds << " ->  "
+//              << Elast << " " << Ecurrent << "  err = " << err << std::endl;
+  }
+//  Elast = Ecurrent;
+  return err;
+}
 
 
 void IMSRGSolver::WriteFlowStatus(std::string fname)
@@ -756,10 +786,11 @@ void IMSRGSolver::WriteFlowStatus(std::ostream& f)
       auto& H_s = FlowingOps[0];
       f.setf(std::ios::fixed);
       f << std::fixed << std::setw(5) << istep
-        << std::setw(10) << std::setprecision(3) << s
+        << std::setw(12) << std::setprecision(5) << s
         << std::setw(fwidth) << std::setprecision(fprecision) << H_s.ZeroBody 
         << std::setw(fwidth) << std::setprecision(fprecision) << H_s.Norm()
-        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.Trace( modelspace->GetAref(), modelspace->GetZref() )
+//        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.Trace( modelspace->GetAref(), modelspace->GetZref() )
+        << std::setw(fwidth) << std::setprecision(fprecision) << cumulative_error 
 //        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.OneBodyNorm()
 //        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.TwoBodyNorm()
 //        << std::setw(fwidth) << std::setprecision(fprecision) << Omega.Norm()
@@ -792,12 +823,13 @@ void IMSRGSolver::WriteFlowStatusHeader(std::ostream& f)
       int fprecision = 9;
       f.setf(std::ios::fixed);
       f << std::fixed << std::setw(5) << "i"
-        << std::setw(10) << std::setprecision(3) << "s"
+        << std::setw(12) << std::setprecision(5) << "s"
         << std::setw(fwidth) << std::setprecision(fprecision) << "E0"
 //        << std::setw(fwidth) << std::setprecision(fprecision) << "||H_1||" 
 //        << std::setw(fwidth) << std::setprecision(fprecision) << "||H_2||" 
         << std::setw(fwidth) << std::setprecision(fprecision) << "||H||" 
-        << std::setw(fwidth) << std::setprecision(fprecision) << "Tr(H)/Tr(1)" 
+//        << std::setw(fwidth) << std::setprecision(fprecision) << "Tr(H)/Tr(1)" 
+        << std::setw(fwidth) << std::setprecision(fprecision) << " estim. err" 
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_1||" 
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_2||" 
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_1||" 
