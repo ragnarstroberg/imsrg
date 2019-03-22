@@ -66,6 +66,7 @@ class HartreeFock
    void UpdateF();                ///< Update the Fock matrix with the new transformation coefficients C
    void UpdateDensityMatrix();    ///< Update the density matrix with the new coefficients C
    void FillLowestOrbits();       ///< Get new occupations based on the current single-particle energies
+   void UpdateReference();        ///< If we got new occupations in FillLowestOrbits, then we should update the hole states in the reference.
    bool CheckConvergence();       ///< Compare the current energies with those from the previous iteration
    void Solve();                  ///< Diagonalize and UpdateF until convergence
    void CalcEHF();                ///< Evaluate the Hartree Fock energy

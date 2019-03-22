@@ -89,8 +89,11 @@ int main(int argc, char** argv)
   std::string nucleon_mass_correction = parameters.s("nucleon_mass_correction");
   std::string hunter_gatherer = parameters.s("hunter_gatherer");
   std::string relativistic_correction = parameters.s("relativistic_correction");
+  std::string physical_system = parameters.s("physical_system");
+  std::string freeze_occupations = parameters.s("freeze_occupations");
 
   int eMax = parameters.i("emax");
+  int lmax = parameters.i("lmax"); // so far I only use this with atomic systems.
   int E3max = parameters.i("e3max");
   int lmax3 = parameters.i("lmax3");
   int targetMass = parameters.i("A");
@@ -101,6 +104,7 @@ int main(int argc, char** argv)
   int file3e1max = parameters.i("file3e1max");
   int file3e2max = parameters.i("file3e2max");
   int file3e3max = parameters.i("file3e3max");
+  int atomicZ = parameters.i("atomicZ");
 
   double hw = parameters.d("hw");
   double smax = parameters.d("smax");
@@ -262,7 +266,25 @@ int main(int argc, char** argv)
     std::cout << "done reading 2N" << std::endl;
   }
 
-  if (fmt2 != "nushellx")  // Don't need to add kinetic energy if we read a shell model interaction
+  if (inputtbme == "none" and physical_system == "atomic")
+  {
+//    std::cout << "||||| Calling InitSingleSpecies( " <<eMax << ", " << reference << ", " << valence_space << "  ||||||| " << std::endl;
+//    std::cout << "*****************************************************************************************************" << std::endl;
+    modelspace.InitSingleSpecies(eMax, reference, valence_space);
+    Hbare = Operator(modelspace,0,0,0,particle_rank);
+    Hbare.SetHermitian();
+    int Z = (atomicZ>=0) ?  atomicZ : modelspace.GetTargetZ() ;
+    const double HARTREE = 27.21138602; // 1 Hartree in eV
+    Hbare -= Z*imsrg_util::VCentralCoulomb_Op(modelspace, lmax) * sqrt((M_ELECTRON*1e6)/M_NUCLEON ) ;
+//    std::cout << "After conversion, central coulomb 1-body looks like " << std::endl << Hbare.OneBody << std::endl << std::endl;
+    Hbare += imsrg_util::VCoulomb_Op(modelspace, lmax) * sqrt((M_ELECTRON*1e6)/M_NUCLEON ) ;  // convert oscillator length from fm with nucleon mass to nm with electon mass (in eV).
+//    std::cout << "done with VCoulomb_Op" << std::endl;
+    Hbare += imsrg_util::KineticEnergy_Op(modelspace); // Don't need to rescale this, because it's related to the oscillator frequency, which we input.
+//    std::cout << "done with KineticEnergy" << std::endl;
+    Hbare /= HARTREE; // Convert to Hartree
+  }
+
+  if (fmt2 != "nushellx" and physical_system != "atomic")  // Don't need to add kinetic energy if we read a shell model interaction
   {
     Hbare += imsrg_util::Trel_Op(modelspace);
     if (Hbare.OneBody.has_nan())
@@ -298,6 +320,7 @@ int main(int argc, char** argv)
 
   std::cout << "Creating HF" << std::endl;
   HartreeFock hf(Hbare);
+  if (freeze_occupations == "false" )  hf.UnFreezeOccupations();
   std::cout << "Solving" << std::endl;
   hf.Solve();
   

@@ -35,6 +35,7 @@
 #define PI 3.14159265359 // put in by CP for the BMEs
 #define M_PROTON  938.2720813
 #define M_NEUTRON 939.5654133
+#define M_ELECTRON 0.5109989461 // I take all my physical constants from Wikipedia.
 
 #ifndef ISQRT2
   #define ISQRT2 0.70710678118654752440L
@@ -85,6 +86,8 @@ namespace imsrg_util
  Operator L2rel_Op(ModelSpace& modelspace);
  Operator LCM_Op(ModelSpace& modelspace);
  Operator QdotQ_Op(ModelSpace& modelspace);
+ Operator VCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
+ Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
 
  Operator Dagger_Op( ModelSpace& modelspace, index_t Q );
 

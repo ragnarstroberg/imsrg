@@ -76,6 +76,8 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"nucleon_mass_correction",	"false"},	// include effect of proton-neutron mass splitting
   {"hunter_gatherer",	        "false"},	// use hunter-gatherer approach to splitting omega
   {"relativistic_correction",   "false"},       // include the p^4 relativistic correction to the kinetic energy
+  {"physical_system",           "nuclear"},     // treat nucleus or atom. For atom, switch units from MeV,fm to eV,nm.
+  {"freeze_occupations",        "false"},       // Should we freeze the occupations, or fill according to HF energy
 };
 
 
@@ -98,6 +100,7 @@ std::map<std::string,int> Parameters::int_par = {
   {"A",	-1},	// Aeff for kinetic energy. -1 means take A of reference
   {"e3max",		12},	
   {"emax",		6},
+  {"lmax",              99999}, // lmax for the whole calculation
   {"lmax3",		-1}, // lmax for the 3body interaction
   {"nsteps",		-1},	// do the decoupling in 1 step or core-then-valence. -1 means default
   {"file2e1max",	12},
@@ -106,6 +109,7 @@ std::map<std::string,int> Parameters::int_par = {
   {"file3e1max",	12},
   {"file3e2max",	24},
   {"file3e3max",	12},
+  {"atomicZ",            -1}, // the Z of the nucleus for an atomic calculation. -1 means do a neutral atom
 };
 
 std::map<std::string,std::vector<std::string>> Parameters::vec_par = {
