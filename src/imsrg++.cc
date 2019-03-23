@@ -555,6 +555,7 @@ int main(int argc, char** argv)
     if (method == "magnus") smax *= 2;
 
     imsrgsolver.SetGenerator(valence_generator);
+    std::cout << "Setting generator to " << valence_generator << std::endl;
     modelspace.ResetFirstPass();
     if (valence_generator.find("imaginary")!=std::string::npos)
     {
