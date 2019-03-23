@@ -89,6 +89,18 @@ namespace imsrg_util
  Operator VCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
  Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
 
+ namespace atomic_fs
+ {
+   Operator Darwin(ModelSpace& modelspace, int Z );
+   Operator RelativisticT(ModelSpace& modelspace );
+   Operator SpinOrbit( ModelSpace& modelspace );
+ }
+ namespace atomic_hfs
+ {
+   Operator hQ(ModelSpace& modelspace );
+   Operator hD(ModelSpace& modelspace );
+ }
+
  Operator Dagger_Op( ModelSpace& modelspace, index_t Q );
 
  Operator Density_sog( double R_i, double gamma, std::string pn );
