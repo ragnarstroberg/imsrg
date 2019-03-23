@@ -483,6 +483,8 @@ int main(int argc, char** argv)
 //  std::cout << "Initial low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) <<"  with normalization  " << Eye.Trace( modelspace.GetAref(),modelspace.GetZref() ) << std::endl; 
 
   IMSRGSolver imsrgsolver(HNO);
+  std::cout << "Just created imsrgsolver. HNO has " << HNO.ThreeBody.MatEl.size() << " 3bmes. Eta has " << imsrgsolver.Eta.ThreeBody.MatEl.size() << std::endl;
+  std::cout << "   particle ranks: " << HNO.GetParticleRank() << "  " << imsrgsolver.Eta.GetParticleRank() << std::endl;
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetEtaCriterion(eta_criterion);
   bool brueckner_restart = false;

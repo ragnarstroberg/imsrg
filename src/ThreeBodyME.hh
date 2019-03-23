@@ -43,6 +43,7 @@ class ThreeBodyME
   std::unordered_map<size_t, size_t> OrbitIndexHash; //
   int E3max;
   int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
+  int herm; // +1 for hermitian, -1 for anti-hermitian
   size_t total_dimension;
   const static int ABC;
   const static int BCA;
@@ -55,6 +56,8 @@ class ThreeBodyME
   ThreeBodyME();
   ThreeBodyME(ModelSpace*);
   ThreeBodyME(ModelSpace* ms, int e3max);
+//  ThreeBodyME(ThreeBodyME tbme);
+  ThreeBodyME(const ThreeBodyME& tbme);
 
 
   ThreeBodyME& operator*=(const double);
@@ -69,9 +72,10 @@ class ThreeBodyME
 //// Three body setter getters
   std::vector<std::pair<size_t,double>> AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
   void AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
-  void AddToME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
   void   SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
   ThreeBME_type GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
+  void AddToME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
+  void   SetME_pn(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
   ThreeBME_type GetME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n) const;
 
 ///// Some other three body methods
@@ -82,6 +86,8 @@ class ThreeBodyME
   int GetE3max(){return E3max;};
   int Getemax(){return emax;};
   void Setemax(int e){emax=  e;};
+  void SetHermitian(){herm = +1;};
+  void SetAntiHermitian(){herm = -1;};
 
   double Norm() const;
 

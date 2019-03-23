@@ -799,6 +799,7 @@ void Operator::SetHermitian()
   hermitian = true;
   antihermitian = false;
   TwoBody.SetHermitian();
+  ThreeBody.SetHermitian();
 }
 
 void Operator::SetAntiHermitian()
@@ -806,6 +807,7 @@ void Operator::SetAntiHermitian()
   hermitian = false;
   antihermitian = true;
   TwoBody.SetAntiHermitian();
+  ThreeBody.SetAntiHermitian();
 }
 
 void Operator::SetNonHermitian()

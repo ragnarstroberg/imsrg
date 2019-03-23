@@ -55,7 +55,19 @@ namespace Commutator{
   void comm222_phss( const Operator& X, const Operator& Y, Operator& Z) ;
   void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z) ;
 
-  void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ;
+// IMSRG(3) commutators. Still a work in progress...
+  void comm330ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm331ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm231ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+
+  void comm132ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm232ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm332ss( const Operator& X, const Operator& Y, Operator& Z ) ; // not implemented. not tested.
+  
+  void comm133ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm233ss( const Operator& X, const Operator& Y, Operator& Z ) ; // not implemented. not tested.
+  void comm333ss( const Operator& X, const Operator& Y, Operator& Z ) ; // not implemented. not tested.
 
   Operator GooseTankUpdate( const Operator& Omega, const Operator& Nested);
 

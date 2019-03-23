@@ -6,17 +6,26 @@ ThreeBodyME::~ThreeBodyME()
 {}
 
 ThreeBodyME::ThreeBodyME()
-: modelspace(NULL),E3max(0),total_dimension(0)
+: modelspace(NULL),E3max(0),herm(1),total_dimension(0)
 {
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: modelspace(ms), E3max(ms->E3max), emax(ms->Emax), total_dimension(0)
+: modelspace(ms), E3max(ms->E3max), emax(ms->Emax), herm(1), total_dimension(0)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
-: modelspace(ms),E3max(e3max), emax(ms->Emax), total_dimension(0)
+: modelspace(ms),E3max(e3max), emax(ms->Emax), herm(1), total_dimension(0)
 {}
+
+ThreeBodyME::ThreeBodyME(const ThreeBodyME& tbme)
+: modelspace(tbme.modelspace),E3max(tbme.E3max), emax(tbme.emax), herm(1), MatEl( tbme.MatEl ), OrbitIndexHash( tbme.OrbitIndexHash ) 
+{}
+
+//ThreeBodyME::ThreeBodyME(ThreeBodyME tbme)
+//: modelspace(tbme.modelspace),E3max(tbme.E3max), emax(tbme.emax), herm(1), MatEl( tbme.MatEl ), OrbitIndexHash( tbme.OrbitIndexHash ) 
+//{}
+
 
 // Define some constants for the various permutations of three indices
 // for use in RecouplingCoefficient and SortOrbits
@@ -394,15 +403,17 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
    int a,b,c,d,e,f;
    int abc_recoupling_case = SortOrbits(a_in,b_in,c_in,a,b,c);
    int def_recoupling_case = SortOrbits(d_in,e_in,f_in,d,e,f);
+   int herm_flip = +1;
 
    if (d>a or (d==a and e>b) or (d==a and e==b and f>c))
    {
-	   std::swap(a,d);
-      	   std::swap(b,e);
-      	   std::swap(c,f);
-      	   std::swap(Jab_in,Jde_in);
-      	   std::swap(tab_in,tde_in);
-      	   std::swap(abc_recoupling_case, def_recoupling_case);
+	std::swap(a,d);
+      	std::swap(b,e);
+      	std::swap(c,f);
+      	std::swap(Jab_in,Jde_in);
+      	std::swap(tab_in,tde_in);
+      	std::swap(abc_recoupling_case, def_recoupling_case);
+        herm_flip *= herm;
    }
 
    auto it_hash = OrbitIndexHash.find(KeyHash(a,b,c,d,e,f));
@@ -467,7 +478,7 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
 
              int Tindex = 2*tab + tde + (T2-1)/2;
 
-             elements.emplace_back( std::make_pair(indx + J_index + Tindex, Cj_abc * Cj_def * Ct_abc * Ct_def )) ;
+             elements.emplace_back( std::make_pair(indx + J_index + Tindex, Cj_abc * Cj_def * Ct_abc * Ct_def *herm_flip )) ;
            }
          }
        }
@@ -539,7 +550,8 @@ double ThreeBodyME::Norm() const
 
 void ThreeBodyME::Erase()
 {
-   MatEl.clear();
+//   MatEl.clear();
+   MatEl.assign( MatEl.size(), 0. );
 }
 
 /// Free up the memory used for the matrix elements
