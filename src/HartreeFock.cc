@@ -471,6 +471,7 @@ void HartreeFock::UpdateF()
 
    Vij  = arma::symmatu(Vij);
    V3ij = arma::symmatu(V3ij);
+//   std::cout << "Updating F.  " << std::endl << "KE: " << std::endl << KE << std::endl << std::endl << "Vij" << std::endl << Vij << std::endl;
 
    F = KE + Vij + 0.5*V3ij;
 
@@ -650,7 +651,7 @@ void HartreeFock::UpdateReference()
      if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
      {
         changed_occupations = true;
-        std::cout << "After HF, occupation of orbit " << i << " has changed. Modelspace will be updated." << std::endl;
+        std::cout << "After HF, occupation of orbit " << holeorbs[i] << " has changed. Modelspace will be updated." << std::endl;
      }
   }
   if (changed_occupations)  modelspace->SetReference( hole_map );

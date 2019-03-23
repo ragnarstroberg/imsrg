@@ -249,10 +249,12 @@ class ModelSpace
    int GetE2max(){return E2max;};
    int GetE3max(){return E3max;};
    int GetLmax2(){return Lmax2;};
+   int GetLmax(){return Lmax;};
    int GetLmax3(){return Lmax3;};
    void SetEmax(int e){Emax=e;};
    void SetE2max(int e){E2max=e;};
    void SetE3max(int e){E3max=e;};
+   void SetLmax(int l){Lmax=l;};
    void SetLmax2(int l){Lmax2=l;};
    void SetLmax3(int l){Lmax3=l;};
 
@@ -321,6 +323,7 @@ class ModelSpace
    int Emax;
    int E2max;
    int E3max;
+   int Lmax;
    int Lmax2;
    int Lmax3;
    int OneBodyJmax;

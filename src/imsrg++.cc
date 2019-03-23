@@ -270,6 +270,7 @@ int main(int argc, char** argv)
   {
 //    std::cout << "||||| Calling InitSingleSpecies( " <<eMax << ", " << reference << ", " << valence_space << "  ||||||| " << std::endl;
 //    std::cout << "*****************************************************************************************************" << std::endl;
+    modelspace.SetLmax(lmax);
     modelspace.InitSingleSpecies(eMax, reference, valence_space);
     Hbare = Operator(modelspace,0,0,0,particle_rank);
     Hbare.SetHermitian();

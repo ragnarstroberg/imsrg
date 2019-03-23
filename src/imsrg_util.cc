@@ -2124,8 +2124,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
 //   }
 //   VCoul.OneBody /= oscillator_b; // convert from oscillator units to fermi
    int nmax = modelspace.GetEmax();
-   int lrelmax = 2*modelspace.GetEmax();
+   int lrelmax = 2*modelspace.GetLmax();
    std::vector<double> RadialIntegrals( (nmax+1)*(nmax+1)*(lrelmax+1) );
+ #pragma omp parallel for schedule(dynamic,1) // not sure this is even necessary...
    for (int na=0;na<=nmax;na++)
    {
     for (int nb=0;nb<=na; nb++)
@@ -2141,10 +2142,12 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
     }
    }
 
+   std::cout << "now the big loop... lrelmax = " << lrelmax << "  size of RadInt = " << RadialIntegrals.size()  << std::endl;
 
 // Now the (antisymmetrized) two-body piece <ab| 1/r_rel |cd>
    int nchan = modelspace.GetNumberTwoBodyChannels();
    modelspace.PreCalculateMoshinsky();
+   std::cout << "Done Precalculating Moshinsky." << std::endl;
    double sa,sb,sc,sd;
    sa=sb=sc=sd=0.5;
    #pragma omp parallel for schedule(dynamic,1) 
@@ -2166,6 +2169,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
          double ja = oa.j2*0.5;
          double jb = ob.j2*0.5;
          int fab = 2*na + 2*nb + la + lb;
+
          for (int iket=ibra;iket<nkets;++iket)
          {
             Ket & ket = tbc.GetKet(iket);
@@ -2256,6 +2260,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
 
             // In Moshinsky's convention, r_rel = (r1-r2)/sqrt(2).  We want 1/|r1-r2| = 1/sqrt(2) * 1/r_rel
             rinv *=  1 / sqrt(2*(1.0+bra.delta_pq())*(1.0+ket.delta_pq())); // normalize and account for sqrt(2) Moshinsky convention
+//            std::cout << "setting " << ch << " " << ibra << " " << iket << "  " << rinv << std::endl;
             VCoul.TwoBody.SetTBME(ch,ibra,iket,rinv);
             VCoul.TwoBody.SetTBME(ch,iket,ibra,rinv);
                          
