@@ -62,6 +62,8 @@ class IMSRGSolver
   bool magnus_adaptive;
   bool hunter_gatherer;
 
+  double Elast;
+  double cumulative_error;
 
 
   ~IMSRGSolver();
@@ -121,6 +123,8 @@ class IMSRGSolver
   void SetDenominatorDeltaOrbit(std::string o){generator.SetDenominatorDeltaOrbit(o);};
 
   void CleanupScratch();
+
+  double EstimateStepError();
 
 
   // This is used to get flow info from odeint
