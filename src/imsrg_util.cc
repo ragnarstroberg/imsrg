@@ -16,7 +16,7 @@
 #include <map>
 #include <array>
 
-
+#define LOG2 log(2.0)
 //using namespace AngMom;
 
 /// imsrg_util namespace. Used to define some helpful functions.
@@ -1680,6 +1680,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
    for (int p=pmin;p<=pmax;++p)
    {
       I += TalmiB(na,la,nb,lb,p) * TalmiI(p,k);
+//      I += AngMom::TalmiB(na,la,nb,lb,p) * TalmiI(p,k);
    }
    return I;
  }
@@ -1701,20 +1702,37 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
    if ( (la+lb)%2>0 ) return 0;
    
    int q = (la+lb)/2;
-   double B1 = AngMom::phase(p-q) * exp(lgamma(2*p+2)-lgamma(p+1)) / pow(2,(na+nb))
-              * sqrt( gsl_sf_fact(na)*gsl_sf_fact(nb)/gsl_sf_fact(na+la)/gsl_sf_fact(nb+lb) 
-                   * gsl_sf_fact(2*na+2*la+1) * gsl_sf_fact(2*nb+2*lb+1) );
+
+   if ( std::max(na+la+p, nb+lb+p) < 10 )
+   {
+     return AngMom::TalmiB( na, la, nb, lb, p);
+   }
+//   double B1 = AngMom::phase(p-q) * exp(lgamma(2*p+2)-lgamma(p+1)) / pow(2,(na+nb))
+//               *  exp(0.5*(lgamma(na+1)+lgamma(nb+1)-lgamma(na+la+1)-lgamma(nb+lb+1) 
+//   double B1 = AngMom::phase(p-q) * exp(lgamma(2*p+2)-lgamma(p+1) +0.5*(  lgamma(na+1)+lgamma(nb+1)-lgamma(na+la+1)-lgamma(nb+lb+1) + lgamma(2*na+2*la+2) + lgamma(2*nb+2*lb+2)) - (na+nb)*log(2)   ) ;
+   double logB1 = (lgamma(2*p+2)-lgamma(p+1) +0.5*(  lgamma(na+1)+lgamma(nb+1)-lgamma(na+la+1)-lgamma(nb+lb+1) + lgamma(2*na+2*la+2) + lgamma(2*nb+2*lb+2)) - (na+nb)*LOG2   ) ;
+//               *  exp(0.5*(lgamma(na+1)+lgamma(nb+1)-lgamma(na+la+1)-lgamma(nb+lb+1) 
+//                     + lgamma(2*na+2*la+2) + lgamma(2*nb+2*lb+2)) );
+//               * sqrt(  exp(lgamma(na+1)) * exp(lgamma(nb+1)) / exp(lgamma(na+la+1))/ exp(lgamma(nb+lb+1))
+//                     * exp(lgamma(2*na+2*la+2)) * exp(lgamma(2*nb+2*lb+2)) );
+//              * sqrt( gsl_sf_fact(na)*gsl_sf_fact(nb)/gsl_sf_fact(na+la)/gsl_sf_fact(nb+lb) 
+//                   * gsl_sf_fact(2*na+2*la+1) * gsl_sf_fact(2*nb+2*lb+1) );
    
    double B2 = 0;
    int kmin = std::max(0, p-q-nb);
    int kmax = std::min(na, p-q);
    for (int k=kmin;k<=kmax;++k)
    {
-      B2  += exp(lgamma(la+k+1)-lgamma(k+1) +lgamma(p-(la-lb)/2-k+1) -lgamma(2*p-la+lb-2*k+2) )
-             / (  gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k)  
-                * gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
+//      B2  += exp(lgamma(la+k+1)-lgamma(k+1) +lgamma(p-(la-lb)/2-k+1) -lgamma(2*p-la+lb-2*k+2) )
+//             / (  gsl_sf_fact(2*la+2*k+1) * gsl_sf_fact(na-k)  
+//                * gsl_sf_fact(nb - p + q + k) * gsl_sf_fact(p-q-k) );
+      B2  += exp(logB1+lgamma(la+k+1)-lgamma(k+1) +lgamma(p-(la-lb)/2-k+1) -lgamma(2*p-la+lb-2*k+2) 
+                - lgamma(2*la+2*k+2) -lgamma(na-k+1)  
+                - lgamma(nb - p + q + k+1) - lgamma(p-q-k+1) );
    }
-   return B1 * B2;
+   
+   return AngMom::phase(p-q) *  B2;
+//   return  B1 * B2;
  }
 
   Operator AllowedFermi_Op(ModelSpace& modelspace)
@@ -2085,6 +2103,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
      if (oa.l>lmax) continue;
      for (int b : VCoul.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
      {
+       if (b<a) continue;
        Orbit& ob = modelspace.GetOrbit(b);
        double rad_int =  RadialIntegral_RpowK(oa.n, oa.l, ob.n, ob.l, -1) ;  
        VCoul.OneBody(a,b) = rad_int;
@@ -2124,8 +2143,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
 //   }
 //   VCoul.OneBody /= oscillator_b; // convert from oscillator units to fermi
    int nmax = modelspace.GetEmax();
-   int lrelmax = 2*modelspace.GetEmax();
-   std::vector<double> RadialIntegrals( (nmax+1)*(nmax+1)*(lrelmax+1) );
+//   int lrelmax = 2*modelspace.GetLmax();
+   int lrelmax = modelspace.GetEmax();
+//   std::vector<double> RadialIntegrals( (nmax+1)*(nmax+1)*(lrelmax+1) );
+   std::unordered_map<size_t,double> RadialIntegrals;
+// #pragma omp parallel for schedule(dynamic,1) // not sure this is even necessary...
    for (int na=0;na<=nmax;na++)
    {
     for (int nb=0;nb<=na; nb++)
@@ -2141,13 +2163,15 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
     }
    }
 
+   std::cout << "now the big loop... lrelmax = " << lrelmax << "  size of RadInt = " << RadialIntegrals.size()  << std::endl;
 
 // Now the (antisymmetrized) two-body piece <ab| 1/r_rel |cd>
    int nchan = modelspace.GetNumberTwoBodyChannels();
    modelspace.PreCalculateMoshinsky();
+   std::cout << "Done Precalculating Moshinsky." << std::endl;
    double sa,sb,sc,sd;
    sa=sb=sc=sd=0.5;
-   #pragma omp parallel for schedule(dynamic,1) 
+   #pragma omp parallel for schedule(dynamic,1)  // It would appear that something's not thread-safe in this routine...
    for (int ch=0; ch<nchan; ++ch)
    {
       TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
@@ -2163,9 +2187,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
          int nb = ob.n;
          int la = oa.l;
          int lb = ob.l;
+//         std::cout << "ibra = " << ibra << "  a,b   la,lb = " << bra.p << " " << bra.q << "    " << la << " " <<lb << std::endl;
          double ja = oa.j2*0.5;
          double jb = ob.j2*0.5;
          int fab = 2*na + 2*nb + la + lb;
+
          for (int iket=ibra;iket<nkets;++iket)
          {
             Ket & ket = tbc.GetKet(iket);
@@ -2219,6 +2245,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
          
                        double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
                        if (std::abs(mosh_ab)<1e-8) continue;
+//                       std::cout << "I asked for moshab: <" << N_ab << " " << Lam_ab << " " << n_ab << " " << lam_ab << " | " << na << " " << la << " " << nb << " " << lb << " >_" << Lab << std::endl;
          
                        int N_cd = N_ab;
                        int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
@@ -2231,7 +2258,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
                        double prefactor = njab * njcd * mosh_ab * mosh_cd * asymm_factor;
 
                        size_t hash      = n_ab*(nmax+1)*(lrelmax+1) + n_cd*(lrelmax+1) + lam_ab;   
-                       double rad_int =  RadialIntegrals[hash] ;  
+                       if ( RadialIntegrals.find(hash) == RadialIntegrals.end() )
+                       {
+                         std::cout << "AAAHHH!!!  trying to access radial integral for " << n_ab << " " << n_cd << " " << lam_ab << "    and it's not there!!!!" << std::endl;
+                       }
+                       double rad_int =  RadialIntegrals.at(hash) ;  
 //                       double rad_int_lookup =  RadialIntegrals[hash] ;  
 //                       double rad_int =  RadialIntegral_RpowK(n_ab, lam_ab, n_cd, lam_cd, -1) ;  
 //                       if (std::abs( rad_int_lookup - rad_int)>1e-6)
@@ -2256,6 +2287,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
 
             // In Moshinsky's convention, r_rel = (r1-r2)/sqrt(2).  We want 1/|r1-r2| = 1/sqrt(2) * 1/r_rel
             rinv *=  1 / sqrt(2*(1.0+bra.delta_pq())*(1.0+ket.delta_pq())); // normalize and account for sqrt(2) Moshinsky convention
+//            std::cout << "setting " << ch << " " << ibra << " " << iket << "  " << rinv << std::endl;
             VCoul.TwoBody.SetTBME(ch,ibra,iket,rinv);
             VCoul.TwoBody.SetTBME(ch,iket,ibra,rinv);
                          
