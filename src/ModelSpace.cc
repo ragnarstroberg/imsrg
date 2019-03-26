@@ -1407,6 +1407,7 @@ void ModelSpace::PreCalculateMoshinsky()
 {
   if (moshinsky_has_been_precalculated) return;
   double t_start = omp_get_wtime();
+  std::cout <<"Calculating moshinsky with Lmax = " << Lmax << std::endl;
 
   // generating all the keys is fast, so we do this first without parallelization
 //  std::vector<unsigned long long int> KEYS;
@@ -1418,12 +1419,14 @@ void ModelSpace::PreCalculateMoshinsky()
     int Lam_max = std::min( E2max-2*n-2*n, 2*Lmax ); // Here Lmax is the max L of the s.p. basis
     for (int Lam=0; Lam<=E2max-2*N-2*n; ++Lam)
     {
-     int lam_max = std::min( 2*Lmax, (N==n ? std::min(Lam,E2max-2*N-2*n-Lam) : E2max-2*N-2*n-Lam)) ; // Here Lmax is the max L of the s.p. basis
+//     int lam_max = std::min( 2*Lmax, (N==n ? std::min(Lam,E2max-2*N-2*n-Lam) : E2max-2*N-2*n-Lam)) ; // Here Lmax is the max L of the s.p. basis
+     int lam_max = N==n ? std::min(Lam,E2max-2*N-2*n-Lam) : E2max-2*N-2*n-Lam ; 
      for (int lam=0; lam<=lam_max; ++lam)
      {
       int e2 = 2*N+Lam + 2*n+lam;
       for (int L=std::abs(Lam-lam); L<=Lam+lam; ++L)
       {
+       if (L>2*Lmax) continue;
        for (int n1=0; n1<=N; ++n1)
        {
         for (int n2=0; n2<=std::min(n1,e2/2-n1); ++n2)
@@ -1434,6 +1437,9 @@ void ModelSpace::PreCalculateMoshinsky()
           int l2 = e2-2*n1-2*n2-l1;
           if ( (l1+l2+lam+Lam)%2 >0 ) continue;
           if ( l2<std::abs(L-l1) or l2>L+l1 ) continue;
+//          if (l1>Lmax or l2>Lmax) continue;
+          if ( (l1>Lmax and l2>Lmax) and (lam>Lmax or Lam>Lmax)) continue;
+          if ( (l1>Lmax or l2>Lmax) and (lam>Lmax and Lam>Lmax)) continue;
 
           uint64_t key = MoshinskyHash(N,Lam,n,lam,n1,l1,n2,l2,L);
           KEYS.push_back(key);
@@ -1461,7 +1467,7 @@ void ModelSpace::PreCalculateMoshinsky()
   moshinsky_has_been_precalculated = true;
   std::cout << "done calculating moshinsky" << std::endl;
   std::cout << "Hash table has " << MoshList.bucket_count() << " buckets and a load factor " << MoshList.load_factor() 
-       << "  estimated storage ~ " << ((MoshList.bucket_count()+MoshList.size()) * (sizeof(size_t)+sizeof(void*))) / (1024.*1024.*1024.) << " GB" << std::endl;
+            << "  estimated storage ~ " << ((MoshList.bucket_count()+MoshList.size()) * (sizeof(size_t)+sizeof(void*))) / (1024.*1024.*1024.) << " GB" << std::endl;
   profiler.timer["PreCalculateMoshinsky"] += omp_get_wtime() - t_start;
 }
 
@@ -1469,7 +1475,7 @@ void ModelSpace::PreCalculateMoshinsky()
 
 double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L)
 {
-   int phase_mosh = 1;
+  int phase_mosh = 1;
   int switches = 10;
 
   while (switches > 0)
@@ -1490,6 +1496,7 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
       ++switches;
    }
 
+//   if (l1>Lam or (l1==Lam and n1>N) or (l1==Lam and n1==N and l2>lam) or (l1==Lam and n1==N and l2==lam and n2>n) )
    if (n1>N or (n1==N and l1>Lam) or (n1==N and l1==Lam and n2>n) or (n1==N and l1==Lam and n2==n and l2>lam) )
    {
       std::swap(n1,N);
@@ -1501,20 +1508,15 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
    }
   }
 
-     uint64_t key = MoshinskyHash(N,Lam,n,lam,n1,l1,n2,l2,L);
-//          unsigned long long int key =   ((unsigned long long int) N   << 40)
-//                                       + ((unsigned long long int) Lam << 34)
-//                                       + ((unsigned long long int) n   << 30)
-//                                       + ((unsigned long long int) lam << 26)
-//                                       + ((unsigned long long int) n1  << 22)
-//                                       + ((unsigned long long int) l1  << 16)
-//                                       + ((unsigned long long int) n2  << 12)
-//                                       + ((unsigned long long int) l2  << 6 )
-//                                       +  L;
+   uint64_t key = MoshinskyHash(N,Lam,n,lam,n1,l1,n2,l2,L);
 
 
    auto it = MoshList.find(key);
    if ( it != MoshList.end() )  return it->second * phase_mosh;
+   if (omp_get_num_threads()>1)
+   {
+     std::cout << "TROUBLE IN MOSHINSKY LAND!!!!!    <" << N << " " << Lam << " " << n << " " << lam << " | " << n1 << " " << l1 << " " << n2 << " " << l2 << ">_" << L  << std::endl;
+   }
 
    // if we didn't find it, we need to calculate it.
    double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);

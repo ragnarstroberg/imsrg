@@ -220,7 +220,11 @@ int main(int argc, char** argv)
   }
 
 
-
+  if (physical_system == "atomic")
+  {
+    modelspace.SetLmax(lmax);
+    modelspace.InitSingleSpecies(eMax, reference, valence_space);
+  }
  
 //  std::cout << "Making the Hamiltonian..." << std::endl;
   int particle_rank = input3bme=="none" ? 2 : 3;
@@ -270,10 +274,10 @@ int main(int argc, char** argv)
   {
 //    std::cout << "||||| Calling InitSingleSpecies( " <<eMax << ", " << reference << ", " << valence_space << "  ||||||| " << std::endl;
 //    std::cout << "*****************************************************************************************************" << std::endl;
-    modelspace.SetLmax(lmax);
-    modelspace.InitSingleSpecies(eMax, reference, valence_space);
-    Hbare = Operator(modelspace,0,0,0,particle_rank);
-    Hbare.SetHermitian();
+//    modelspace.SetLmax(lmax);
+//    modelspace.InitSingleSpecies(eMax, reference, valence_space);
+//    Hbare = Operator(modelspace,0,0,0,particle_rank);
+//    Hbare.SetHermitian();
     int Z = (atomicZ>=0) ?  atomicZ : modelspace.GetTargetZ() ;
     const double HARTREE = 27.21138602; // 1 Hartree in eV
     Hbare -= Z*imsrg_util::VCentralCoulomb_Op(modelspace, lmax) * sqrt((M_ELECTRON*1e6)/M_NUCLEON ) ;
