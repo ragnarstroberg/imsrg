@@ -412,14 +412,25 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
  }
 
 
-// Not yet finished...
 // Leading relativistic correction to the kinetic energy
-// T = p^2/2m  - p^4/(8m^2c^2) + ...
-// We use p^4/(4m^2) = (p^2/2m)**2
+// T = p^2/2m  - p^4/(8m^3c^2) + ...
+// We use p^4/(4m^2) = (p^2/2m)^2
 // and the fact that the nonrelativistic kinetic energy acts as a 'hopping operator'
 // so acting p^2/2m on a state |nl> returns a linear combination of |nl> |(n+1)l> and |(n-1)l>.
 // Specifically, we write this as (p^2/2m) |nl> = N0 |nl> + Np |(n+1)l> + Nm |(n-1)l>
+// where N0 = (2n+l+3/2)hw/2,   Np = sqrt((n+1)(n+l+3/2))hw/2,   Nm = sqrt(n(n+l+1/2))hw/2.
 // Then we act again with p^2/2m to get the action of p^4/4m.
+// p^4/(4m^2) |n> = Npp|n+2> + (Np0+N0p)|n+1> + (N00 + Npm + Nmp)|n> + (Nm0+N0m)|n-1> + Nmm |n-2>
+// where
+// Np0 = sqrt[ (n+1)(n+l+3/2) ] (2n+l+3/2)             (hw/2)^2
+// N0p = (2n+l+7/2) sqrt[ (n+1)(n+l+3/2) ]             (hw/2)^2
+// N00 = (2n+2+3/2) (2n+l+3/2)                         (hw/2)^2
+// Nm0 = sqrt[ n(n+l+1/2) ]  (2n+l+3/2)                (hw/2)^2
+// N0m = (2n+l-1/2) sqrt[ n(n+l+1/2) ]                 (hw/2)^2
+// Npp = sqrt[ (n+2)(n+l+5/2)] sqrt[ (n+1)(n+l+3/2) ]  (hw/2)^2
+// Npm = sqrt[ n(n+l+1/2)]      sqrt[ n(n+l+1/2) ]     (hw/2)^2
+// Nmp = sqrt[ (n+1)(n+l+3/2)]  sqrt[ (n+1)(n+l+3/2) ] (hw/2)^2
+// Nmm = sqrt[ (n-1)(n+l-1/2) ] sqrt[ n(n+l+1/2) ]     (hw/2)^2
 Operator KineticEnergy_RelativisticCorr(ModelSpace& modelspace)
 {
    Operator Trc(modelspace);
@@ -429,31 +440,31 @@ Operator KineticEnergy_RelativisticCorr(ModelSpace& modelspace)
    for (int a=0;a<norbits;++a)
    {
       Orbit & oa = modelspace.GetOrbit(a);
+      int na = oa.n;
+      int la = oa.l;
       // I have pulled off a global factor (1/2 hw)^2 above and called it coeff.
-      double N0 = 2*oa.n+oa.l+3./2;  // (p^2/2m) |nl> = N0 |nl>
-      double Nm = sqrt( (oa.n)*(oa.n+oa.l+1./2) );
-      double Np = sqrt( (oa.n+1)*(oa.n+oa.l+3./2) );
-      double Nplus1  = 2*(oa.n+1)+oa.l+3./2;   
-      double Nminus1 = 2*(oa.n-1)+oa.l+3./2;
-      double Npp = sqrt( (oa.n+2)*(oa.n+oa.l+5./2) );
-      double Nmm = sqrt( (oa.n-1)*(oa.n+oa.l-1./2) );
+      double Npp = sqrt( (na+2)*(na+la+2.5) ) * sqrt( (na+1)*(na+la+1.5) ) ;
+      double Np0 = sqrt( (na+1)*(na+la+1.5) ) * (2*na+la+1.2) ;
+      double N0p = (2*na+la+3.5) * sqrt((na+1)*(na+la+1.5)) ;
+      double N00 = (2*na+la+1.5) * (2*na*la+1.5) ;
+      double Nmp = sqrt( (na+1)*(na+la+1.5) ) * sqrt( (na+1)*(na+la+1.5) ) ;
+      double Npm = na<1 ? 0 : sqrt( na*(na+la+0.5) ) * sqrt( na*(na+la+0.5) ) ;
+//      double Nm0 = sqrt( na*(na+la+0.5)) * (2*na+la+1.5) ;
+//      double N0m = na<1 ? 0 : (2*na+la-0.5) * sqrt( na*(na+la+0.5)) ;
+//      double Nmm = na<2 ? 0 : sqrt( (na-1)*(na+la-0.5) ) * sqrt( na*(na+la+0.5) );
 
-      Trc.OneBody(a,a) =  N0*N0 + Np*Np + Nm*Nm ; 
+      Trc.OneBody(a,a) =  N00 + Npm + Nmp ; 
       // off-diagonal terms
       for ( int b : Trc.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
       {
-         if (b<=a) continue;
          Orbit & ob = modelspace.GetOrbit(b);
+         if ( ob.n<=oa.n or ob.n>oa.n+2 ) continue;
          if (ob.n == oa.n+1)
-            Trc.OneBody(a,b) = Np * (N0+Nplus1);
-         else if (ob.n == oa.n-1)
-            Trc.OneBody(a,b) = Nm * (N0+Nminus1); // This probably won't be used, unless a different orbit ordering gets implemented
+            Trc.OneBody(b,a) = Np0 + N0p;
          else if (ob.n == oa.n+2)
-            Trc.OneBody(a,b) = Np*Npp;
-         else if (ob.n == oa.n-2)
-            Trc.OneBody(a,b) = Nm*Nmm;
+            Trc.OneBody(b,a) = Npp;
          // Make it hermitian:
-         Trc.OneBody(b,a) = Trc.OneBody(a,b);
+         Trc.OneBody(a,b) = Trc.OneBody(b,a);
       }
    }  // 
    return -Trc*coeff /(2*M_NUCLEON);  // the minus sign is put in here
@@ -489,7 +500,7 @@ Operator KineticEnergy_RelativisticCorr(ModelSpace& modelspace)
       for (int j : TcmOp.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
          Orbit & oj = modelspace.GetOrbit(j);
-         if (j<i) continue;
+         if (oj.n<oi.n) continue;
          double tij = 0;
          if (oi.n == oj.n) tij = 0.5*(2*oi.n+oi.l + 1.5) * hw/A;
          else if (oi.n == oj.n-1) tij = 0.5*sqrt(oj.n*(oj.n+oj.l + 0.5)) * hw/A;
@@ -2303,6 +2314,151 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
 
  }
 
+
+
+ namespace atomic_fs
+ { // operators related to fine structure
+  
+   Operator Darwin(ModelSpace& modelspace, int Z )
+   {
+     double alpha_FS = 1.0 / 137.035999;
+     double constants = M_PI * Z * alpha_FS * HBARC*HBARC*HBARC / (2*M_ELECTRON*M_ELECTRON*1e6*1e6) ; // convert to eV. M_PI is 3.1415... not the pion mass
+     Operator Hdarwin( modelspace,0,0,0,2);
+     for (auto a : modelspace.all_orbits )
+     {
+       Orbit& oa = modelspace.GetOrbit(a);
+       double wf0_a = imsrg_util::HO_Radial_psi(oa.n, oa.l, modelspace.GetHbarOmega(), 0.0);
+       if ( oa.l!=0) continue;  // no spin-orbit in s-wave
+       for ( auto b : Hdarwin.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+       {
+         Orbit& ob = modelspace.GetOrbit(b);
+         double wf0_b = imsrg_util::HO_Radial_psi(ob.n, ob.l, modelspace.GetHbarOmega(), 0.0);
+         Hdarwin.OneBody(a,b) = constants * wf0_a * wf0_b;
+         Hdarwin.OneBody(b,a) = Hdarwin.OneBody(a,b);
+       }
+     }
+     return Hdarwin;
+   }
+
+   Operator RelativisticT(ModelSpace& modelspace )
+   {
+     Operator Hrel = imsrg_util::KineticEnergy_RelativisticCorr(modelspace) * 1e6*M_NUCLEON/(M_ELECTRON); // change to electron mass, as use eV rather than MeV.
+     return Hrel;
+   }
+
+   Operator SpinOrbit( ModelSpace& modelspace, int Z )
+   {
+     Operator Hso( modelspace, 0,0,0,2);
+     double oscillator_b = sqrt(HBARC*HBARC/(1e6*M_ELECTRON)/modelspace.GetHbarOmega()); // convert electron mass to eV
+     double oscillator_b3 = pow(oscillator_b,3);
+     double alpha_FS = 1.0 / 137.035999;
+     double gspin = 2.002319; // electron spin g factor
+     double constants = Z*alpha_FS * HBARC*HBARC * gspin / (M_ELECTRON*M_ELECTRON*1e6*1e6) / 32;  // it's 1/8, but we use 4 * LdotS, so 1/32.
+     for (auto a : modelspace.all_orbits )
+     {
+       Orbit& oa = modelspace.GetOrbit(a);
+       if ( oa.l==0) continue;  // no spin-orbit in s-wave
+       int four_ldots = oa.j2*(oa.j2+2) - 4*oa.l*(oa.l+1) -3 ;
+       for ( auto b : Hso.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+       {
+         Orbit& ob = modelspace.GetOrbit(b);
+         double r3inv = imsrg_util::RadialIntegral_RpowK(oa.n, oa.l, ob.n, ob.l, -3);
+         Hso.OneBody(a,b) = constants * four_ldots * r3inv  / oscillator_b3;
+         Hso.OneBody(b,a) = Hso.OneBody(a,b);
+       }
+     }
+     return Hso;
+   }
+
+
+ }// namespace atomic_fs
+
+
+ namespace atomic_hfs
+ { // operators related to hyperfine structure
+
+   Operator hQ(ModelSpace& modelspace )
+   {
+     Operator Hq( modelspace,0,0,0,2);
+     return Hq;
+   }
+
+   // The magnetic dipole term consists of three contributions:
+   // The orbit term, the tensor term, and the contact term
+   // Hd = -0.5*alpha(hbarc)^3/(m_ec^2 m_pc^2) g_nuc I * [ r^-3 L  +1/2 g_s r^-3 ( 3(\vec{s}*\hat{r})\hat{r} - \vec{s} ) + 4pi/3 gs delta(r) \vec{s} )
+   // we rewrite the tensor bit as
+   //                                 3(s*r)r-s = -sqrt{2pi}[s^(2) x Y^(2)]^(1) 
+   Operator hD(ModelSpace& modelspace )
+   {
+     Operator Hd( modelspace,1,0,0,2);  // J rank is 1, even parity.
+
+     double oscillator_b = sqrt(HBARC*HBARC/(1e6*M_ELECTRON)/modelspace.GetHbarOmega()); // convert electron mass to eV
+     double oscillator_b3 = pow(oscillator_b,3);
+     double alpha_FS = 1.0 / 137.035999;
+     double gspin = 2.002319; // electron spin g factor
+     double constants = - 0.5*alpha_FS *HBARC*HBARC*HBARC/(M_ELECTRON*M_NUCLEON*1e12);  // convert both masses to eV
+     for ( auto a : modelspace.all_orbits )
+     {
+       Orbit& oa = modelspace.GetOrbit(a);
+       for (auto b : modelspace.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+       {
+         Orbit& ob = modelspace.GetOrbit(b);
+         if (oa.l==0 and ob.l==0)
+         {
+           double wf0_a = imsrg_util::HO_Radial_psi(oa.n, oa.l, modelspace.GetHbarOmega(), 0.0);
+           double wf0_b = imsrg_util::HO_Radial_psi(ob.n, ob.l, modelspace.GetHbarOmega(), 0.0);
+           // the reduced matrix element of s is <1/2|| s || 1/2> = sqrt(3/2)
+           Hd.OneBody(a,b) = 4*M_PI/3 * gspin * sqrt(3./2) * wf0_a * wf0_b ;
+           Hd.OneBody(b,a) = Hd.OneBody(a,b);
+         }
+         else
+         {
+           double r3inv = imsrg_util::RadialIntegral_RpowK(oa.n, oa.l, ob.n, ob.l, -3) / oscillator_b3;
+           double L = oa.l!=ob.l ? 0 : sqrt((oa.j2+1.0)/(oa.j2*(oa.j2+2))) * (oa.j2*(oa.j2+2.)/4 +oa.l*(oa.l+1) -3./4);
+           double T = modelspace.phase(oa.l) * 3*sqrt(5)*sqrt((oa.j2+1)*(ob.j2+1)*(2*oa.l+1)*(2*ob.l+1)) * AngMom::ThreeJ(oa.l,2,ob.l,0,0,0) * AngMom::NineJ(oa.l,0.5,0.5*oa.j2, ob.l,0.5,0.5*ob.j2, 2,1,1);
+           Hd.OneBody(a,b) = constants * r3inv *( L - gspin/2 * T );
+           Hd.OneBody(b,a) = Hd.OneBody(a,b);
+         }
+        
+       }
+
+     }
+
+
+     return Hd;
+   }
+
+
+
+   // Kinetic energy T = T_el + T_nuc =  1/2m sum_i (p_i)^2 + 1/2M_nuc ( sum_i p_i )^2  =  (1/2m + 1/2M_n) sum_i (p_i)^2 + 1/2M_nuc sum_ij (p_i * p_j)
+   // The first correction, the 1/2M_n one-body part is responsible for what is called the "Normal Mass Shift", while the second correction
+   // which goes like p_i * p_j (* means a vector dot product here), is responsible for the "Specific Mass Shift".
+   Operator NormalMassShift( ModelSpace& modelspace, int A )
+   {
+     Operator Hnms = (M_ELECTRON/A/M_NUCLEON) * imsrg_util::KineticEnergy_Op( modelspace ) ;  // kinetic energy is in units of hw, so no change needed
+     if (A!=modelspace.GetTargetMass()) Hnms *= (modelspace.GetTargetMass()/double(A));
+     return Hnms;
+   }
+
+   
+   Operator SpecificMassShift( ModelSpace& modelspace, int A )
+   {
+     Operator Hsms = imsrg_util::TCM_Op( modelspace ) ;  // TCM_Op returns a 1-body piece, plus the 1-body part pi*pj/mA. We don't want the 1-body part.
+     Hsms.OneBody.zeros(); // The specific shift is just the two-body part.
+     if (A!=modelspace.GetTargetMass()) Hsms *= (modelspace.GetTargetMass()/double(A));
+     return Hsms;
+   }
+
+   // Maybe we want it all in one operator
+   Operator CombinedMassShift( ModelSpace& modelspace, int A )
+   {
+     Operator Hcms = imsrg_util::TCM_Op( modelspace ) ; 
+     if (A!=modelspace.GetTargetMass()) Hcms *= (modelspace.GetTargetMass()/double(A));
+     return Hcms;
+   }
+
+
+ }// namespace atomic_hfs
 
 
 /// Get the first-order perturbative correction to a one-body operator

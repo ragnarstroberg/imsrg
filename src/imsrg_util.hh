@@ -93,12 +93,15 @@ namespace imsrg_util
  {
    Operator Darwin(ModelSpace& modelspace, int Z );
    Operator RelativisticT(ModelSpace& modelspace );
-   Operator SpinOrbit( ModelSpace& modelspace );
+   Operator SpinOrbit( ModelSpace& modelspace, int Z );
  }
  namespace atomic_hfs
  {
    Operator hQ(ModelSpace& modelspace );
    Operator hD(ModelSpace& modelspace );
+   Operator NormalMassShift( ModelSpace& modelspace, int A );
+   Operator SpecificMassShift( ModelSpace& modelspace, int A );
+   Operator CombinedMassShift( ModelSpace& modelspace, int A );
  }
 
  Operator Dagger_Op( ModelSpace& modelspace, index_t Q );
