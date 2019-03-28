@@ -81,6 +81,7 @@ class IMSRGSolver
   void Solve();
   void Solve_magnus_euler();
   void Solve_magnus_modified_euler();
+  void Solve_flow_RK4();
 
   Operator Transform(Operator& OpIn);
   Operator Transform(Operator&& OpIn);
