@@ -75,6 +75,7 @@ class IMSRGSolver
   void SetReadWrite( ReadWrite& r){rw = &r;};
   void Reset();
   void AddOperator(Operator& Op){FlowingOps.push_back(Op);};
+  Operator GetOperator(size_t i){return FlowingOps.at(i);};
   void UpdateEta(); // Force eta to be calculated. For debugging.
 
   void SetMethod(std::string m){method=m;};

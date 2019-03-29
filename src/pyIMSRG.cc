@@ -368,6 +368,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("NormNineJ",AngMom::NormNineJ);
    m.def("Moshinsky",AngMom::Moshinsky);
    m.def("TalmiB",AngMom::TalmiB);
+   m.def("TalmiI",imsrg_util::TalmiI);
 
 
 //  return m.ptr();

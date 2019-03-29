@@ -25,9 +25,6 @@
 #include "HartreeFock.hh"
 #include "IMSRGSolver.hh"
 #include <gsl/gsl_math.h>
-#include <gsl/gsl_sf_laguerre.h>
-#include <gsl/gsl_sf_gamma.h>
-#include <gsl/gsl_sf_bessel.h>
 #include <vector>
 
 #define HBARC 197.3269718 // hc in MeV * fm
@@ -144,8 +141,10 @@ namespace imsrg_util
  double HO_Radial_psi(int n, int l, double hw, double r);
  double RadialIntegral(int na, int la, int nb, int lb, int L);
  double RadialIntegral_RpowK(int na, int la, int nb, int lb, int k);
- double TalmiI(int p, double k);
- double TalmiB(int na, int la, int nb, int lb, int p);
+ long double TalmiI(int p, double k);
+ long double TalmiB(int na, int la, int nb, int lb, int p);
+ long double TalmiB_SingleTerm(int na, int la, int nb, int lb, int p, int K);
+ long double TalmiB_SingleTermPair(int na, int la, int nb, int lb, int p, int K, int nu);
  std::vector<double> GetOccupationsHF(HartreeFock& hf);
  std::vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);
  std::vector<double> GetDensity(std::vector<double>& occ, std::vector<double>& R, std::vector<int>& orbits, ModelSpace& modelspace);

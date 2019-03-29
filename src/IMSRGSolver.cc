@@ -378,55 +378,53 @@ void IMSRGSolver::Solve_flow_RK4()
         break;
       }
 
-//      double norm_omega = Omega.back().Norm();
-//      if (norm_omega > omega_norm_max)
-//      {
-//        if (hunter_gatherer)
-//        {
-//          GatherOmega();
-//        }
-//        else
-//        {
-//          NewOmega();
-//        }
-//        norm_omega = 0;
-//      }
-      // ds should never be more than 1, as this is over-rotating
-//      if (magnus_adaptive)
-//         ds = std::min( std::min( std::min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), omega_norm_max/norm_eta), ds_max); 
       ds = std::min(ds_max,smax-s);
-//      if (s+ds > smax) ds = smax-s;
       s += ds;
 
+      int nops = FlowingOps.size();
+      std::vector<Operator> K1(nops);
+      std::vector<Operator> K2(nops);
+      std::vector<Operator> K3(nops);
+      std::vector<Operator> K4(nops);
+      std::vector<Operator> Ktmp(nops);
+
       Operator& Hs = FlowingOps[0];
-      Operator K1 = Commutator::Commutator( Eta, Hs );
-      Operator Htmp = Hs + 0.5*ds*K1;
-      generator.Update(&Htmp,&Eta);
-      Operator K2 = Commutator::Commutator( Eta, Hs+Htmp );
-      Htmp = Hs + 0.5*ds*K2;
-      generator.Update(&Htmp,&Eta);
-      Operator K3 = Commutator::Commutator( Eta, Hs+Htmp );
-      Htmp = Hs + 1.0*ds*K3;
-      generator.Update(&Htmp,&Eta);
-      Operator K4 = Commutator::Commutator( Eta, Hs+Htmp );
-      Hs += ds/6.0 * ( K1 + 2*K2 + 2*K3 + K4);
-//      Eta *= ds; // Here's the Euler step.
+      for ( int i=0;i<nops; i++ )
+      {
+        K1[i] =  Commutator::Commutator( Eta, FlowingOps[i] ) ;
+        Ktmp[i] = FlowingOps[i] + 0.5*ds*K1[i];
+      }
+//      Operator K1 = Commutator::Commutator( Eta, Hs );
+//      Operator Htmp = Hs + 0.5*ds*K1[0];
+//      generator.Update(&Htmp,&Eta);
+      generator.Update(&Ktmp[0],&Eta);
+      for (int i=0; i<nops; i++ )
+      {
+        K2[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+        Ktmp[i] = FlowingOps[i] + 0.5*ds*K2[i];
+      }
+//      Operator K2 = Commutator::Commutator( Eta, Hs+Htmp );
+//      Htmp = Hs + 0.5*ds*K2;
+//      generator.Update(&Htmp,&Eta);
+      generator.Update(&Ktmp[0],&Eta);
+      for (int i=0; i<nops; i++ )
+      {
+        K3[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+        Ktmp[i] = FlowingOps[i] + 1.0*ds*K2[i];
+      }
+//      Operator K3 = Commutator::Commutator( Eta, Hs+Htmp );
+//      Htmp = Hs + 1.0*ds*K3;
+//      generator.Update(&Htmp,&Eta);
+      generator.Update(&Ktmp[0],&Eta);
+      for (int i=0; i<nops; i++ )
+      {
+        K4[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+//        Ktmp[i] = FlowingOps[i] + 1.0*ds*K2[i];
+        FlowingOps[i] += ds/6.0 * ( K1[i] + 2*K2[i] + 2*K3[i] + K4[i] );
+      }
+//      Operator K4 = Commutator::Commutator( Eta, Hs+Htmp );
+//      Hs += ds/6.0 * ( K1 + 2*K2 + 2*K3 + K4);
 
-      // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
-//      Omega.back() = Eta.BCH_Product( Omega.back() ); 
-//      Omega.back() = Commutator::BCH_Product( Eta, Omega.back() ); 
-
-      // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
-//      if ((Omega.size()+n_omega_written)<2)
-//      {
-//        FlowingOps[0] = H_0->BCH_Transform( Omega.back() );
-//        FlowingOps[0] = Commutator::BCH_Transform( *H_0, Omega.back() );
-//      }
-//      else
-//      {
-////        FlowingOps[0] = H_saved.BCH_Transform( Omega.back() );
-//        FlowingOps[0] = Commutator::BCH_Transform( H_saved, Omega.back() );
-//      }
 
       if (norm_eta<1.0 and generator.GetType() == "shell-model-atan")
       {

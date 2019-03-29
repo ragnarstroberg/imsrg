@@ -544,6 +544,11 @@ int main(int argc, char** argv)
   if (denominator_delta_orbit != "none")
     imsrgsolver.SetDenominatorDeltaOrbit(denominator_delta_orbit);
 
+  if (method == "flow" or method == "flow_RK4" )
+  {
+    for (auto& op : ops )  imsrgsolver.AddOperator( op );
+  }
+
   imsrgsolver.SetGenerator(core_generator);
   if (core_generator.find("imaginary")!=std::string::npos)
   {
@@ -621,6 +626,13 @@ int main(int argc, char** argv)
     // increase smax in case we need to do additional steps
     smax *= 1.5;
     imsrgsolver.SetSmax(smax);
+  }
+  if (method == "flow" or method == "flow_RK4" )
+  {
+    for (size_t i=0;i<ops.size();++i)
+    {
+      ops[i] = imsrgsolver.GetOperator(i+1);  // the zero-th operator is the Hamiltonian
+    }
   }
 
 
