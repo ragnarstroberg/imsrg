@@ -25,9 +25,6 @@
 #include "HartreeFock.hh"
 #include "IMSRGSolver.hh"
 #include <gsl/gsl_math.h>
-#include <gsl/gsl_sf_laguerre.h>
-#include <gsl/gsl_sf_gamma.h>
-#include <gsl/gsl_sf_bessel.h>
 #include <vector>
 
 #define HBARC 197.3269718 // hc in MeV * fm
@@ -35,6 +32,7 @@
 #define PI 3.14159265359 // put in by CP for the BMEs
 #define M_PROTON  938.2720813
 #define M_NEUTRON 939.5654133
+#define M_ELECTRON 0.5109989461 // I take all my physical constants from Wikipedia.
 
 #ifndef ISQRT2
   #define ISQRT2 0.70710678118654752440L
@@ -85,6 +83,23 @@ namespace imsrg_util
  Operator L2rel_Op(ModelSpace& modelspace);
  Operator LCM_Op(ModelSpace& modelspace);
  Operator QdotQ_Op(ModelSpace& modelspace);
+ Operator VCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
+ Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
+
+ namespace atomic_fs
+ {
+   Operator Darwin(ModelSpace& modelspace, int Z );
+   Operator RelativisticT(ModelSpace& modelspace );
+   Operator SpinOrbit( ModelSpace& modelspace, int Z );
+ }
+ namespace atomic_hfs
+ {
+   Operator hQ(ModelSpace& modelspace );
+   Operator hD(ModelSpace& modelspace );
+   Operator NormalMassShift( ModelSpace& modelspace, int A );
+   Operator SpecificMassShift( ModelSpace& modelspace, int A );
+   Operator CombinedMassShift( ModelSpace& modelspace, int A );
+ }
 
  Operator Dagger_Op( ModelSpace& modelspace, index_t Q );
 
@@ -126,8 +141,10 @@ namespace imsrg_util
  double HO_Radial_psi(int n, int l, double hw, double r);
  double RadialIntegral(int na, int la, int nb, int lb, int L);
  double RadialIntegral_RpowK(int na, int la, int nb, int lb, int k);
- double TalmiI(int p, double k);
- double TalmiB(int na, int la, int nb, int lb, int p);
+ long double TalmiI(int p, double k);
+ long double TalmiB(int na, int la, int nb, int lb, int p);
+ long double TalmiB_SingleTerm(int na, int la, int nb, int lb, int p, int K);
+ long double TalmiB_SingleTermPair(int na, int la, int nb, int lb, int p, int K, int nu);
  std::vector<double> GetOccupationsHF(HartreeFock& hf);
  std::vector<double> GetOccupations(HartreeFock& hf, IMSRGSolver& imsrgsolver);
  std::vector<double> GetDensity(std::vector<double>& occ, std::vector<double>& R, std::vector<int>& orbits, ModelSpace& modelspace);

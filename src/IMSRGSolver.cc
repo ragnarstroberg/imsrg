@@ -193,6 +193,8 @@ void IMSRGSolver::Solve()
     Solve_ode_magnus();
   else if (method == "flow_euler")
     Solve_ode();
+  else if (method == "flow_RK4")
+    Solve_flow_RK4();
   else if (method == "restore_4th_order")
   {
     FlowingOps.emplace_back( Operator( *(FlowingOps[0].GetModelSpace()), 0,0,0,1));
@@ -349,6 +351,104 @@ void IMSRGSolver::Solve_magnus_modified_euler()
 
 }
 
+
+// Solve with fixed-step 4th-order Runge-Kutta
+void IMSRGSolver::Solve_flow_RK4()
+{
+   istep = 0;
+
+   if ( generator.GetType() == "rspace" ) { generator.modelspace = (Eta.modelspace); generator.SetRegulatorLength(800005.0); };
+
+   generator.Update(&FlowingOps[0],&Eta);
+
+   if (generator.GetType() == "shell-model-atan")
+   {
+     generator.SetDenominatorCutoff(1.0); // do we need this?
+   }
+
+   Elast = H_0->ZeroBody;
+   cumulative_error = 0;
+    // Write details of the flow
+   WriteFlowStatus(flowfile);
+   WriteFlowStatus(std::cout);
+
+   for (istep=1;s<smax;++istep)
+   {
+
+      double norm_eta = Eta.Norm();
+      if (norm_eta < eta_criterion )
+      {
+        break;
+      }
+
+      ds = std::min(ds_max,smax-s);
+      s += ds;
+
+      int nops = FlowingOps.size();
+      std::vector<Operator> K1(nops);
+      std::vector<Operator> K2(nops);
+      std::vector<Operator> K3(nops);
+      std::vector<Operator> K4(nops);
+      std::vector<Operator> Ktmp(nops);
+
+      Operator& Hs = FlowingOps[0];
+      for ( int i=0;i<nops; i++ )
+      {
+        K1[i] =  Commutator::Commutator( Eta, FlowingOps[i] ) ;
+        Ktmp[i] = FlowingOps[i] + 0.5*ds*K1[i];
+      }
+//      Operator K1 = Commutator::Commutator( Eta, Hs );
+//      Operator Htmp = Hs + 0.5*ds*K1[0];
+//      generator.Update(&Htmp,&Eta);
+      generator.Update(&Ktmp[0],&Eta);
+      for (int i=0; i<nops; i++ )
+      {
+        K2[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+        Ktmp[i] = FlowingOps[i] + 0.5*ds*K2[i];
+      }
+//      Operator K2 = Commutator::Commutator( Eta, Hs+Htmp );
+//      Htmp = Hs + 0.5*ds*K2;
+//      generator.Update(&Htmp,&Eta);
+      generator.Update(&Ktmp[0],&Eta);
+      for (int i=0; i<nops; i++ )
+      {
+        K3[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+        Ktmp[i] = FlowingOps[i] + 1.0*ds*K2[i];
+      }
+//      Operator K3 = Commutator::Commutator( Eta, Hs+Htmp );
+//      Htmp = Hs + 1.0*ds*K3;
+//      generator.Update(&Htmp,&Eta);
+      generator.Update(&Ktmp[0],&Eta);
+      for (int i=0; i<nops; i++ )
+      {
+        K4[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+//        Ktmp[i] = FlowingOps[i] + 1.0*ds*K2[i];
+        FlowingOps[i] += ds/6.0 * ( K1[i] + 2*K2[i] + 2*K3[i] + K4[i] );
+      }
+//      Operator K4 = Commutator::Commutator( Eta, Hs+Htmp );
+//      Hs += ds/6.0 * ( K1 + 2*K2 + 2*K3 + K4);
+
+
+      if (norm_eta<1.0 and generator.GetType() == "shell-model-atan")
+      {
+        generator.SetDenominatorCutoff(1e-6);
+      }
+        
+//      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
+      generator.Update(&FlowingOps[0],&Eta);
+      cumulative_error += EstimateStepError();
+
+      // Write details of the flow
+      WriteFlowStatus(flowfile);
+      WriteFlowStatus(std::cout);
+//      profiler.PrintMemory();
+      Elast = FlowingOps[0].ZeroBody;
+
+   }
+
+ 
+
+}
 
 
 

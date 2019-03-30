@@ -107,8 +107,8 @@ class TwoBodyChannel
    virtual ~TwoBodyChannel();
    TwoBodyChannel();
    TwoBodyChannel(int j, int p, int t, ModelSpace* ms);
-   TwoBodyChannel(int N, ModelSpace* ms);
-   void Initialize(int N, ModelSpace* ms);
+   TwoBodyChannel(int ch, ModelSpace* ms);
+   void Initialize(int ch, ModelSpace* ms);
 
 
    //Methods
@@ -197,11 +197,15 @@ class ModelSpace
 
    // Methods
 
+   void SetUpOrbits( );
+
    void Init(int emax, std::string reference, std::string valence);
    void Init(int emax, std::map<index_t,double> hole_list, std::string valence);
    void Init(int emax, std::map<index_t,double> hole_list, std::vector<index_t> core_list, std::vector<index_t> valence_list);
    void Init(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list);
    void Init_occ_from_file(int emax, std::string valence, std::string occ_file);
+   void InitSingleSpecies( int emax, std::string reference, std::string valence); // Work with just one type of fermion
+//   void InitSingleSpecies(int emax, std::string reference, std::string valence); // Work with just one type of fermion
 
 //   std::vector<index_t> GetOrbitsAZ(int A, int Z);
    std::map<index_t,double> GetOrbitsAZ(int A, int Z);
@@ -245,10 +249,12 @@ class ModelSpace
    int GetE2max(){return E2max;};
    int GetE3max(){return E3max;};
    int GetLmax2(){return Lmax2;};
+   int GetLmax(){return Lmax;};
    int GetLmax3(){return Lmax3;};
    void SetEmax(int e){Emax=e;};
    void SetE2max(int e){E2max=e;};
    void SetE3max(int e){E3max=e;};
+   void SetLmax(int l){Lmax=l;};
    void SetLmax2(int l){Lmax2=l;};
    void SetLmax3(int l){Lmax3=l;};
 
@@ -260,12 +266,18 @@ class ModelSpace
 
    size_t GetOrbitIndex(std::string);
    size_t GetTwoBodyChannelIndex(int j, int p, int t);
+   void UnpackTwoBodyChannelIndex( size_t ch, int& j, int& p, int& tz);
    int phase(int x) {return (x%2)==0 ? 1 : -1;};
    int phase(double x) {return phase(int(x));};
 
-   size_t Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
+//   size_t Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
+   size_t Index1(int n, int l, int j2, int tz2) const ;
+   size_t Index1_hash(int n, int l, int j2, int tz2) const ;
+//   size_t Index1(int n, int l, int j2, int tz2) const { size_t indx = (2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2; return (single_species ? indx/2 : indx) ;};
 //   inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
-   size_t Index2(size_t p, size_t q) const {return p*(2*norbits-1-p)/2 + q;};
+//   size_t Index2(size_t p, size_t q) const {return p*(2*norbits-1-p)/2 + q;};
+   size_t Index2(size_t p, size_t q) const ;
+//   size_t Index2(size_t p, size_t q) const {return p*(2*all_orbits.size()-1-p)/2 + q;};
 
    void PreCalculateMoshinsky();
    void PreCalculateSixJ();
@@ -283,13 +295,13 @@ class ModelSpace
 
    // Data members
    std::vector<index_t> holes;           // in the reference Slater determinant
-//   map<index_t,double> holes;           // in the reference Slater determinant
    std::vector<index_t> particles;       // above the reference Slater determinant
    std::vector<index_t> core;            // core for decoupling
    std::vector<index_t> valence;         // valence space for decoupling
    std::vector<index_t> qspace;          // above the valence space for decoupling
    std::vector<index_t> proton_orbits;
    std::vector<index_t> neutron_orbits;
+   std::vector<index_t> all_orbits;
 
    std::vector<index_t> KetIndex_pp; 
    std::vector<index_t> KetIndex_ph;
@@ -311,6 +323,7 @@ class ModelSpace
    int Emax;
    int E2max;
    int E3max;
+   int Lmax;
    int Lmax2;
    int Lmax3;
    int OneBodyJmax;
@@ -339,11 +352,14 @@ class ModelSpace
    std::vector<TwoBodyChannel> TwoBodyChannels;
    std::vector<TwoBodyChannel_CC> TwoBodyChannels_CC;
    std::map< std::array<int,3>, std::map< std::array<size_t,2>,std::array<std::vector<size_t>,2> > > PandyaLookup;
+   std::unordered_map<size_t,index_t> OrbitLookup;
+
 //   std::map< std::array<int,3>, std::map< std::array<int,2>,std::array<std::vector<int>,2> > > PandyaLookup;
    bool sixj_has_been_precalculated;
    bool moshinsky_has_been_precalculated;
    bool scalar_transform_first_pass;
    std::vector<bool> tensor_transform_first_pass;
+   bool single_species; // Is there only one kind of fermion?
    IMSRGProfiler profiler;
 //   map<long int,double> SixJList;
 

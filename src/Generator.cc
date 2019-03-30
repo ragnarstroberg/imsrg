@@ -619,13 +619,16 @@ void Generator::ConstructGenerator_HartreeFock()
 {
    Eta->SetParticleRank(1);
    // One body piece -- eliminate ph bits
-   unsigned int norbits = modelspace->GetNumberOrbits();
-   for (unsigned int i=0;i<norbits;++i)
+//   unsigned int norbits = modelspace->GetNumberOrbits();
+//   for (unsigned int i=0;i<norbits;++i)
+   for (auto i : modelspace->all_orbits)
    {
-      for (unsigned int j=0; j<i; ++j)
+//      for (unsigned int j=0; j<i; ++j)
+      for (auto j : modelspace->all_orbits)
       {
+         if (j>i) continue;
          double denominator = Get1bDenominator(i,j);
-         Eta->OneBody(i,j) += H->OneBody(i,j)/denominator;
+         Eta->OneBody(i,j) = H->OneBody(i,j)/denominator;
          Eta->OneBody(j,i) = - Eta->OneBody(i,j);
       }
    } 
@@ -739,8 +742,9 @@ void Generator::SetRegulatorLength(double r0)
   double x0 = r0*r0/oscillator_b_squared; // express length in units of oscillator length: r0^2 = x0 * b^2
   
   // First, do the one-body part
-  int norb = modelspace->GetNumberOrbits();
-  for (int a=0; a<norb; a++)
+//  int norb = modelspace->GetNumberOrbits();
+//  for (int a=0; a<norb; a++)
+  for (auto a : modelspace->all_orbits )
   {
     Orbit& oa = modelspace->GetOrbit(a);
     for ( int b : RspaceRegulator.OneBodyChannels.at({oa.l, oa.j2, oa.tz2}) )
