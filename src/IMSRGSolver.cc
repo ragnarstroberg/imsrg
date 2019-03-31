@@ -262,7 +262,7 @@ void IMSRGSolver::Solve_magnus_euler()
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
 //      Omega.back() = Eta.BCH_Product( Omega.back() ); 
       Omega.back() = Commutator::BCH_Product( Eta, Omega.back() ); 
-      std::cout << "Norm Eta 3body = " << Eta.ThreeBodyNorm() << "   Norm Omega 3body " << Omega.back().ThreeBodyNorm() << std::endl;
+//      std::cout << "Norm Eta 3body = " << Eta.ThreeBodyNorm() << "   Norm Omega 3body " << Omega.back().ThreeBodyNorm() << std::endl;
 
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
       if ((Omega.size()+n_omega_written)<2)
@@ -283,7 +283,7 @@ void IMSRGSolver::Solve_magnus_euler()
         
 //      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
       generator.Update(&FlowingOps[0],&Eta);
-      std::cout << "Updated Eta. ThreeBody nomr of FlowingOps[0] = " << FlowingOps[0].ThreeBodyNorm() << "  and Eta = " << Eta.ThreeBodyNorm() << std::endl;
+//      std::cout << "Updated Eta. ThreeBody nomr of FlowingOps[0] = " << FlowingOps[0].ThreeBodyNorm() << "  and Eta = " << Eta.ThreeBodyNorm() << std::endl;
       cumulative_error += EstimateStepError();
 
       // Write details of the flow

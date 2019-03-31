@@ -261,7 +261,7 @@ void Generator::ConstructGenerator_Atan()
     // Three body piece
     int E3cut = 4;
     double t_start = omp_get_wtime();
-    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << std::endl;
+//    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << std::endl;
     if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
     {
      std::cout << "looping in generator 3-body part " << std::endl;

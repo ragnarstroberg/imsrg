@@ -178,10 +178,19 @@ int main(int argc, char** argv)
 
   ModelSpace modelspace = ( reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space) );
 
+  modelspace.SetLmax(lmax);
+
+
+  if (physical_system == "atomic")
+  {
+    modelspace.InitSingleSpecies(eMax, reference, valence_space);
+  }
+
   if (occ_file != "none" and occ_file != "" )
   {
     modelspace.Init_occ_from_file(eMax,valence_space,occ_file);
   }
+
 
   if (nsteps < 0)
     nsteps = modelspace.valence.size()>0 ? 2 : 1;
@@ -221,11 +230,6 @@ int main(int argc, char** argv)
   }
 
 
-  if (physical_system == "atomic")
-  {
-    modelspace.SetLmax(lmax);
-    modelspace.InitSingleSpecies(eMax, reference, valence_space);
-  }
  
 //  std::cout << "Making the Hamiltonian..." << std::endl;
   int particle_rank = input3bme=="none" ? 2 : 3;
@@ -338,7 +342,7 @@ int main(int argc, char** argv)
     HNO = Hbare.DoNormalOrdering();
 
 
-  if (IMSRG3=="true")
+  if (IMSRG3 == "true")
   {
     std::cout << "You have chosen IMSRG3. good luck..." << std::endl;
     Operator H3(modelspace,0,0,0,3);
@@ -511,8 +515,8 @@ int main(int argc, char** argv)
 //  std::cout << "Initial low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) <<"  with normalization  " << Eye.Trace( modelspace.GetAref(),modelspace.GetZref() ) << std::endl; 
 
   IMSRGSolver imsrgsolver(HNO);
-  std::cout << "Just created imsrgsolver. HNO has " << HNO.ThreeBody.MatEl.size() << " 3bmes. Eta has " << imsrgsolver.Eta.ThreeBody.MatEl.size() << std::endl;
-  std::cout << "   particle ranks: " << HNO.GetParticleRank() << "  " << imsrgsolver.Eta.GetParticleRank() << std::endl;
+//  std::cout << "Just created imsrgsolver. HNO has " << HNO.ThreeBody.MatEl.size() << " 3bmes. Eta has " << imsrgsolver.Eta.ThreeBody.MatEl.size() << std::endl;
+//  std::cout << "   particle ranks: " << HNO.GetParticleRank() << "  " << imsrgsolver.Eta.GetParticleRank() << std::endl;
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetEtaCriterion(eta_criterion);
   bool brueckner_restart = false;
@@ -781,7 +785,10 @@ int main(int argc, char** argv)
   }
 
 
+  if (IMSRG3 == "true")
+  {
     std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
+  }
   Hbare.PrintTimes();
  
   return 0;

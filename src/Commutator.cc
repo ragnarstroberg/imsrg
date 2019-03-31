@@ -91,7 +91,7 @@ Operator Commutator( const Operator& X, const Operator& Y)
 /// Should be called through Commutator()
 Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) 
 {
-   std::cout << "Calling CommutatorScalarScalar..." << std::endl;
+//   std::cout << "Calling CommutatorScalarScalar..." << std::endl;
    X.profiler.counter["N_ScalarCommutators"] += 1;
    double t_css = omp_get_wtime();
    Operator Z( *(Y.GetModelSpace()), std::max(X.GetJRank(),Y.GetJRank()), std::max(X.GetTRank(),Y.GetTRank()), (X.GetParity()+Y.GetParity())%2, std::max(X.GetParticleRank(),Y.GetParticleRank()) );
@@ -131,7 +131,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
      X.profiler.timer["comm222_phss"] += omp_get_wtime() - t_start;
    }
 
-   std::cout << "Made it here. About to check if use_imsrg3 is true" << std::endl;
+//   std::cout << "Made it here. About to check if use_imsrg3 is true" << std::endl;
 
    if (use_imsrg3)
    {
@@ -316,7 +316,7 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
         else if (i == max_iter)   std::cout << "Warning: BCH_Transform didn't coverge after "<< max_iter << " nested commutators" << std::endl;
      }
    }
-   std::cout << "Done with BCH_Transform, 3-body norm of OpOut = " << OpOut.ThreeBodyNorm() << std::endl;
+//   std::cout << "Done with BCH_Transform, 3-body norm of OpOut = " << OpOut.ThreeBodyNorm() << std::endl;
    OpIn.profiler.timer["BCH_Transform"] += omp_get_wtime() - t_start;
    return OpOut;
 }
