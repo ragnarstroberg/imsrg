@@ -67,6 +67,8 @@ namespace imsrg_util
       else if (opname == "M5")            return MagneticMultipoleOp(modelspace,5) ;
       else if (opname == "M1p")           return MagneticMultipoleOp_pn(modelspace,1,"proton") ;
       else if (opname == "M1n")           return MagneticMultipoleOp_pn(modelspace,1,"neutron") ;
+      else if (opname == "M1S")           return MagneticMultipoleOp_pn(modelspace,1,"spin") ;
+      else if (opname == "M1L")           return MagneticMultipoleOp_pn(modelspace,1,"orbit") ;
       else if (opname == "Fermi")         return AllowedFermi_Op(modelspace) ;
       else if (opname == "GamowTeller")   return AllowedGamowTeller_Op(modelspace) ;
       else if (opname == "Iso2")          return Isospin2_Op(modelspace) ;
@@ -1522,6 +1524,10 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
       std::cout << "A magnetic monopole operator??? Setting it to zero..." << std::endl;
       return ML;
     }
+    bool spin = true;
+    bool orbit = true;
+    if ( pn.find("spin") != std::string::npos ) orbit = false;
+    if ( pn.find("orbit") != std::string::npos ) spin = false;
     int norbits = modelspace.GetNumberOrbits();
     for (int i=0; i<norbits; ++i)
     {
@@ -1530,6 +1536,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
       if (pn=="neutron" and oi.tz2<0) continue;
       double gl = oi.tz2<0 ? 1.0 : 0.0;
       double gs = oi.tz2<0 ? 5.586 : -3.826;
+      if (not spin) gs = 0;
+      if (not orbit) gl = 0;
       double ji = 0.5*oi.j2;
       for ( int j : ML.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
       {
