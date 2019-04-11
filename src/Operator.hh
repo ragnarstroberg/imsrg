@@ -181,6 +181,7 @@ class Operator
   double Norm() const;
   double OneBodyNorm() const;
   double TwoBodyNorm() const;
+  double ThreeBodyNorm() const;
 
 
   double Trace(int Atrace, int Ztrace) const;

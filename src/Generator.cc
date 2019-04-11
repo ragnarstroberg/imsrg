@@ -120,6 +120,12 @@ double Generator::Get2bDenominator(int ch, int ibra, int iket)
    return denominator;
 }
 
+double Generator::Get3bDenominator( int i, int j, int k, int l, int m, int n )
+{
+  auto h1 = H->OneBody;
+  double denominator = h1(i,i) + h1(j,j) + h1(k,k) - h1(l,l) - h1(m,m) - h1(n,n);
+  return denominator;
+}
 
 // Keep the Jdependence for the Gamma_ijij and Gamma_klkl terms, because it's
 // relatively unambiguous to work out
@@ -252,6 +258,68 @@ void Generator::ConstructGenerator_Atan()
          }
       }
     }
+    // Three body piece
+    int E3cut = 4;
+    double t_start = omp_get_wtime();
+//    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << std::endl;
+    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
+    {
+     std::cout << "looping in generator 3-body part " << std::endl;
+    for (auto a : modelspace->core )
+    {
+     Orbit& oa = modelspace->GetOrbit(a);
+     for (auto b : modelspace->core )
+     {
+      Orbit& ob = modelspace->GetOrbit(b);
+      int Jab_min = std::abs(oa.j2-ob.j2)/2;
+      int Jab_max = (oa.j2+ob.j2)/2;
+      for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+      {
+       for (auto c : modelspace->core )
+       {
+        Orbit& oc = modelspace->GetOrbit(c);
+        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
+
+        for ( auto i : VectorUnion(modelspace->valence,modelspace->qspace) )
+        {
+         Orbit& oi = modelspace->GetOrbit(i);
+         for ( auto j : VectorUnion(modelspace->valence,modelspace->qspace) )
+         {
+          Orbit& oj = modelspace->GetOrbit(j);
+          int Jij_min = std::abs(oi.j2-oj.j2)/2;
+          int Jij_max = (oi.j2+oj.j2)/2;
+          for (int Jij=Jij_min; Jij<=Jij_max; Jij++)
+          {
+           for ( auto k : VectorUnion(modelspace->valence,modelspace->qspace) )
+           {
+            Orbit& ok = modelspace->GetOrbit(k);
+            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > 2*E3cut ) continue;
+            if ( (oa.l+ob.l+oc.l+oi.l+oj.l+ok.l)%2>0 ) continue;
+            if ( (oa.tz2+ob.tz2+oc.tz2) != (oi.tz2+oj.tz2+ok.tz2) ) continue;
+            double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
+
+            int twoJ_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jij-ok.j2) );
+            int twoJ_max = std::min( 2*Jab+oc.j2, 2*Jij+ok.j2 );
+            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ++)
+            {
+              double ME_od = H->ThreeBody.GetME_pn( Jab, Jij, twoJ, a,b,c,i,j,k);
+              double eta = 0.5*atan(2*ME_od / denominator);
+//              if (std::abs(eta)>1e-6)
+//              {
+//                std::cout << "Nonzero eta !  <" << a << " " << b << " " << c << " | " << i << " " << j << " " << k << " >  = " << eta << std::endl;
+//              }
+              Eta->ThreeBody.AddToME_pn( Jab, Jij, twoJ, a,b,c,i,j,k,  eta);
+            }
+           }
+          }
+         }
+        }
+       }
+      } 
+     } 
+    }
+    }
+    H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
 }
 
 

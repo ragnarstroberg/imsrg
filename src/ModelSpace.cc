@@ -1465,7 +1465,7 @@ void ModelSpace::PreCalculateMoshinsky()
   }
 
   moshinsky_has_been_precalculated = true;
-  std::cout << "done calculating moshinsky" << std::endl;
+  std::cout << "done calculating moshinsky (" << KEYS.size() << " elements)" << std::endl;
   std::cout << "Hash table has " << MoshList.bucket_count() << " buckets and a load factor " << MoshList.load_factor() 
             << "  estimated storage ~ " << ((MoshList.bucket_count()+MoshList.size()) * (sizeof(size_t)+sizeof(void*))) / (1024.*1024.*1024.) << " GB" << std::endl;
   profiler.timer["PreCalculateMoshinsky"] += omp_get_wtime() - t_start;

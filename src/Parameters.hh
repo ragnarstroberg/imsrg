@@ -76,6 +76,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"nucleon_mass_correction",	"false"},	// include effect of proton-neutron mass splitting
   {"hunter_gatherer",	        "false"},	// use hunter-gatherer approach to splitting omega
   {"relativistic_correction",   "false"},       // include the p^4 relativistic correction to the kinetic energy
+  {"IMSRG3",                    "false"},       // include 3-body terms in commutators. this is under construction still...
   {"physical_system",           "nuclear"},     // treat nucleus or atom. For atom, switch units from MeV,fm to eV,nm.
   {"freeze_occupations",        "false"},       // Should we freeze the occupations, or fill according to HF energy
 };

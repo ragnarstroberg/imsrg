@@ -89,6 +89,7 @@ int main(int argc, char** argv)
   std::string nucleon_mass_correction = parameters.s("nucleon_mass_correction");
   std::string hunter_gatherer = parameters.s("hunter_gatherer");
   std::string relativistic_correction = parameters.s("relativistic_correction");
+  std::string IMSRG3 = parameters.s("IMSRG3");
   std::string physical_system = parameters.s("physical_system");
   std::string freeze_occupations = parameters.s("freeze_occupations");
 
@@ -177,10 +178,19 @@ int main(int argc, char** argv)
 
   ModelSpace modelspace = ( reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space) );
 
+  modelspace.SetLmax(lmax);
+
+
+  if (physical_system == "atomic")
+  {
+    modelspace.InitSingleSpecies(eMax, reference, valence_space);
+  }
+
   if (occ_file != "none" and occ_file != "" )
   {
     modelspace.Init_occ_from_file(eMax,valence_space,occ_file);
   }
+
 
   if (nsteps < 0)
     nsteps = modelspace.valence.size()>0 ? 2 : 1;
@@ -220,11 +230,6 @@ int main(int argc, char** argv)
   }
 
 
-  if (physical_system == "atomic")
-  {
-    modelspace.SetLmax(lmax);
-    modelspace.InitSingleSpecies(eMax, reference, valence_space);
-  }
  
 //  std::cout << "Making the Hamiltonian..." << std::endl;
   int particle_rank = input3bme=="none" ? 2 : 3;
@@ -337,6 +342,17 @@ int main(int argc, char** argv)
     HNO = Hbare.DoNormalOrdering();
 
 
+  if (IMSRG3 == "true")
+  {
+    std::cout << "You have chosen IMSRG3. good luck..." << std::endl;
+    Operator H3(modelspace,0,0,0,3);
+    std::cout << "Constructed H3" << std::endl;
+    H3.ZeroBody = HNO.ZeroBody;
+    H3.OneBody = HNO.OneBody;
+    H3.TwoBody = HNO.TwoBody;
+    std::cout << "Replacing HNO" << std::endl;
+    Hbare = H3;
+  }
 
 
 
@@ -499,6 +515,8 @@ int main(int argc, char** argv)
 //  std::cout << "Initial low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) <<"  with normalization  " << Eye.Trace( modelspace.GetAref(),modelspace.GetZref() ) << std::endl; 
 
   IMSRGSolver imsrgsolver(HNO);
+//  std::cout << "Just created imsrgsolver. HNO has " << HNO.ThreeBody.MatEl.size() << " 3bmes. Eta has " << imsrgsolver.Eta.ThreeBody.MatEl.size() << std::endl;
+//  std::cout << "   particle ranks: " << HNO.GetParticleRank() << "  " << imsrgsolver.Eta.GetParticleRank() << std::endl;
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetEtaCriterion(eta_criterion);
   bool brueckner_restart = false;
@@ -529,6 +547,11 @@ int main(int argc, char** argv)
     Commutator::SetUseBruecknerBCH(true);
     std::cout << "Using Brueckner flavor of BCH" << std::endl;
   }
+  if (IMSRG3 == "true")
+  {
+    Commutator::SetUseIMSRG3(true);
+    std::cout << "Using IMSRG(3) commutators. This will probably be slow..." << std::endl;
+  }
 
   imsrgsolver.SetMethod(method);
 //  imsrgsolver.SetHin(Hbare);
@@ -544,6 +567,11 @@ int main(int argc, char** argv)
   if (denominator_delta_orbit != "none")
     imsrgsolver.SetDenominatorDeltaOrbit(denominator_delta_orbit);
 
+  if (method == "flow" or method == "flow_RK4" )
+  {
+    for (auto& op : ops )  imsrgsolver.AddOperator( op );
+  }
+
   imsrgsolver.SetGenerator(core_generator);
   if (core_generator.find("imaginary")!=std::string::npos)
   {
@@ -556,6 +584,11 @@ int main(int argc, char** argv)
    }
   }
   imsrgsolver.Solve();
+
+  if (IMSRG3 == "true")
+  {
+    std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
+  }
 
 //  HlowT = imsrgsolver.Transform(HlowT);
 //  std::cout << "After Solve, low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) << std::endl; 
@@ -584,7 +617,7 @@ int main(int argc, char** argv)
      imsrgsolver.Solve();
   }
 
-  if (nsteps > 1) // two-step decoupling, do core first
+  if (nsteps > 1 and valence_space != reference) // two-step decoupling, do core first
   {
     if (method == "magnus") smax *= 2;
 
@@ -621,6 +654,13 @@ int main(int argc, char** argv)
     // increase smax in case we need to do additional steps
     smax *= 1.5;
     imsrgsolver.SetSmax(smax);
+  }
+  if (method == "flow" or method == "flow_RK4" )
+  {
+    for (size_t i=0;i<ops.size();++i)
+    {
+      ops[i] = imsrgsolver.GetOperator(i+1);  // the zero-th operator is the Hamiltonian
+    }
   }
 
 
@@ -745,6 +785,10 @@ int main(int argc, char** argv)
   }
 
 
+  if (IMSRG3 == "true")
+  {
+    std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
+  }
   Hbare.PrintTimes();
  
   return 0;

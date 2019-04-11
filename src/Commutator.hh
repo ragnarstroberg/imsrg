@@ -13,6 +13,7 @@ namespace Commutator{
 
   extern bool use_goose_tank_correction;
   extern bool use_brueckner_bch;
+  extern bool use_imsrg3;
   extern double bch_transform_threshold;
   extern double bch_product_threshold;
 
@@ -20,6 +21,7 @@ namespace Commutator{
   void Set_BCH_Product_Threshold(double x);
   void SetUseBruecknerBCH(bool tf);
   void SetUseGooseTank(bool tf);
+  void SetUseIMSRG3(bool tf);
 
 
   Operator Commutator(const Operator& X, const Operator& Y) ; 
@@ -52,6 +54,20 @@ namespace Commutator{
   void comm222_pp_hhss( const Operator& X, const Operator& Y, Operator& Z) ;
   void comm222_phss( const Operator& X, const Operator& Y, Operator& Z) ;
   void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z) ;
+
+// IMSRG(3) commutators. Still a work in progress...
+  void comm330ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm331ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm231ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+
+  void comm132ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm232ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm332ss( const Operator& X, const Operator& Y, Operator& Z ) ; // not implemented. not tested.
+  
+  void comm133ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm233ss( const Operator& X, const Operator& Y, Operator& Z ) ; // not implemented. not tested.
+  void comm333ss( const Operator& X, const Operator& Y, Operator& Z ) ; // not implemented. not tested.
 
   Operator GooseTankUpdate( const Operator& Omega, const Operator& Nested);
 

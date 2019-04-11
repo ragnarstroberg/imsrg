@@ -6,17 +6,26 @@ ThreeBodyME::~ThreeBodyME()
 {}
 
 ThreeBodyME::ThreeBodyME()
-: modelspace(NULL),E3max(0),total_dimension(0)
+: modelspace(NULL),E3max(0),herm(1),total_dimension(0)
 {
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: modelspace(ms), E3max(ms->E3max), emax(ms->Emax), total_dimension(0)
+: modelspace(ms), E3max(ms->E3max), emax(ms->Emax), herm(1), total_dimension(0)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
-: modelspace(ms),E3max(e3max), emax(ms->Emax), total_dimension(0)
+: modelspace(ms),E3max(e3max), emax(ms->Emax), herm(1), total_dimension(0)
 {}
+
+ThreeBodyME::ThreeBodyME(const ThreeBodyME& tbme)
+: modelspace(tbme.modelspace),E3max(tbme.E3max), emax(tbme.emax), herm(1), MatEl( tbme.MatEl ), OrbitIndexHash( tbme.OrbitIndexHash ) 
+{}
+
+//ThreeBodyME::ThreeBodyME(ThreeBodyME tbme)
+//: modelspace(tbme.modelspace),E3max(tbme.E3max), emax(tbme.emax), herm(1), MatEl( tbme.MatEl ), OrbitIndexHash( tbme.OrbitIndexHash ) 
+//{}
+
 
 // Define some constants for the various permutations of three indices
 // for use in RecouplingCoefficient and SortOrbits
@@ -43,6 +52,43 @@ size_t ThreeBodyME::KeyHash(size_t a,size_t b,size_t c,size_t d,size_t e,size_t 
          + ((f/2) << 50) );
 
 }
+
+
+ ThreeBodyME& ThreeBodyME::operator*=(const double rhs)
+ {
+   for ( auto& itmat : MatEl )
+   {
+      itmat *= rhs;
+   }
+   return *this;
+ }
+
+ ThreeBodyME& ThreeBodyME::operator+=(const ThreeBodyME& rhs)
+ {
+   for ( size_t i=0; i<MatEl.size();i++ )
+   {
+      MatEl[i] += rhs.MatEl[i];
+//      auto ch_bra = itmat.first[0];
+//      auto ch_ket = itmat.first[1];
+//      itmat.second += rhs.GetMatrix(ch_bra,ch_ket);
+   }
+   return *this;
+ }
+
+ ThreeBodyME& ThreeBodyME::operator-=(const ThreeBodyME& rhs)
+ {
+   for ( size_t i=0; i<MatEl.size();i++ )
+   {
+      MatEl[i] -= rhs.MatEl[i];
+//      auto ch_bra = itmat.first[0];
+//      auto ch_ket = itmat.first[1];
+//      GetMatrix(ch_bra,ch_ket) -= itmat.second;
+   }
+   return *this;
+ }
+
+
+
 
 /*
 // Confusing nomenclature: J2 means 2 times the total J of the three body system
@@ -255,7 +301,7 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
    int Tmin = std::min( std::abs(tza+tzb+tzc), std::abs(tzd+tze+tzf) );
    for (int tab=std::abs(tza+tzb); tab<=1; ++tab)
    {
-      // CG calculates the Clebsch-Gordan coefficient
+      // CG calculates the Clebsch-Gordan coefficient  TODO: There are only a few CG cases, and we can probably use a specific formula rather than the general one.
       double CG1 = AngMom::CG(0.5,tza, 0.5,tzb, tab, tza+tzb);
       for (int tde=std::abs(tzd+tze); tde<=1; ++tde)
       {
@@ -306,6 +352,44 @@ void ThreeBodyME::SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, 
    for (auto elem : elements)  MatEl.at(elem.first) += (V-me)*elem.second;
 }
 
+
+void ThreeBodyME::AddToME(int Jab, int Jde, int J2, int tab, int tde, int T2, int a, int b, int c, int d, int e, int f, ThreeBME_type V)
+{
+   auto elements = AccessME(Jab,Jde,J2,tab,tde,T2,a,b,c,d,e,f);
+   for (auto elem : elements)  MatEl.at(elem.first) += V * elem.second;
+}
+
+void ThreeBodyME::AddToME_pn(int Jab, int Jde, int J2, int a, int b, int c, int d, int e, int f, ThreeBME_type Vpn) 
+{
+
+   double tza = modelspace->GetOrbit(a).tz2*0.5;
+   double tzb = modelspace->GetOrbit(b).tz2*0.5;
+   double tzc = modelspace->GetOrbit(c).tz2*0.5;
+   double tzd = modelspace->GetOrbit(d).tz2*0.5;
+   double tze = modelspace->GetOrbit(e).tz2*0.5;
+   double tzf = modelspace->GetOrbit(f).tz2*0.5;
+
+   int Tmin = std::min( std::abs(tza+tzb+tzc), std::abs(tzd+tze+tzf) );
+   for (int tab=std::abs(tza+tzb); tab<=1; ++tab)
+   {
+      // CG calculates the Clebsch-Gordan coefficient  TODO: There are only a few CG cases, and we can probably use a specific formula rather than the general one.
+      double CG1 = AngMom::CG(0.5,tza, 0.5,tzb, tab, tza+tzb);
+      for (int tde=std::abs(tzd+tze); tde<=1; ++tde)
+      {
+         double CG2 = AngMom::CG(0.5,tzd, 0.5,tze, tde, tzd+tze);
+         if (CG1*CG2==0) continue;
+         for (int T=Tmin; T<=3; ++T)
+         {
+           double CG3 = AngMom::CG(tab,tza+tzb, 0.5,tzc, T/2., tza+tzb+tzc);
+           double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, T/2., tzd+tze+tzf);
+           if (CG3*CG4==0) continue;
+           AddToME(Jab,Jde,J2,tab,tde,T,a,b,c,d,e,f, CG1*CG2*CG3*CG4*Vpn );
+         }
+      }
+   }
+}
+
+
 //*******************************************************************
 /// Since the code for setting or getting matrix elements is almost
 /// identical, do all the work here to pull out a list of indices
@@ -319,15 +403,17 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
    int a,b,c,d,e,f;
    int abc_recoupling_case = SortOrbits(a_in,b_in,c_in,a,b,c);
    int def_recoupling_case = SortOrbits(d_in,e_in,f_in,d,e,f);
+   int herm_flip = +1;
 
    if (d>a or (d==a and e>b) or (d==a and e==b and f>c))
    {
-	   std::swap(a,d);
-      	   std::swap(b,e);
-      	   std::swap(c,f);
-      	   std::swap(Jab_in,Jde_in);
-      	   std::swap(tab_in,tde_in);
-      	   std::swap(abc_recoupling_case, def_recoupling_case);
+	std::swap(a,d);
+      	std::swap(b,e);
+      	std::swap(c,f);
+      	std::swap(Jab_in,Jde_in);
+      	std::swap(tab_in,tde_in);
+      	std::swap(abc_recoupling_case, def_recoupling_case);
+        herm_flip *= herm;
    }
 
    auto it_hash = OrbitIndexHash.find(KeyHash(a,b,c,d,e,f));
@@ -392,7 +478,7 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
 
              int Tindex = 2*tab + tde + (T2-1)/2;
 
-             elements.emplace_back( std::make_pair(indx + J_index + Tindex, Cj_abc * Cj_def * Ct_abc * Ct_def )) ;
+             elements.emplace_back( std::make_pair(indx + J_index + Tindex, Cj_abc * Cj_def * Ct_abc * Ct_def *herm_flip )) ;
            }
          }
        }
@@ -406,7 +492,7 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
 //*******************************************************************
 /// Coefficients for recoupling three body matrix elements
 //*******************************************************************
-inline double ThreeBodyME::RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const
+double ThreeBodyME::RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const
 {
    if ( std::abs(int(ja-jb))>Jab  or int(ja+jb)<Jab) return 0;
    if ( std::abs(int(jc-J/2.))>Jab  or int(jc+J/2.)<Jab) return 0;
@@ -454,9 +540,18 @@ int ThreeBodyME::SortOrbits(int a_in, int b_in, int c_in, int& a, int& b, int& c
 }
 
 
+double ThreeBodyME::Norm() const
+{
+  double norm = 0;
+  for (auto me : MatEl)  norm += me*me;
+  return norm;
+}
+
+
 void ThreeBodyME::Erase()
 {
-   MatEl.clear();
+//   MatEl.clear();
+   MatEl.assign( MatEl.size(), 0. );
 }
 
 /// Free up the memory used for the matrix elements

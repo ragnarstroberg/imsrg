@@ -360,6 +360,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("RadialIntegral_RpowK",     imsrg_util::RadialIntegral_RpowK);
    m.def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
    m.def("OperatorFromString", imsrg_util::OperatorFromString);
+   m.def("HO_Radial_psi",  imsrg_util::HO_Radial_psi);
 
    m.def("CG",AngMom::CG);
    m.def("ThreeJ",AngMom::ThreeJ);
@@ -368,6 +369,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("NormNineJ",AngMom::NormNineJ);
    m.def("Moshinsky",AngMom::Moshinsky);
    m.def("TalmiB",AngMom::TalmiB);
+   m.def("TalmiI",imsrg_util::TalmiI);
 
 
 //  return m.ptr();
