@@ -68,6 +68,12 @@ namespace Commutator{
   void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
   void comm233ss( const Operator& X, const Operator& Y, Operator& Z ) ; // not implemented. not tested.
   void comm333ss( const Operator& X, const Operator& Y, Operator& Z ) ; // not implemented. not tested.
+  double comm333_ppp_hhh_ss_inner_loop( Orbit& oi, Orbit& oj, int Jij, Orbit& ok,   // helper function
+                                        Orbit& ol, Orbit& om, int Jlm, Orbit& on,
+                                        Orbit& oa, Orbit& ob, int Jab, Orbit& oc, int twoJ, const Operator& X, const Operator& Y );
+  double comm333_pph_hhp_ss_inner_loop( Orbit& oi, Orbit& oj, int Jij, Orbit& ok,  // helper function
+                                        Orbit& ol, Orbit& om, int Jlm, Orbit& on,
+                                        Orbit& oa, Orbit& ob, int Jab, Orbit& oc, int twoJ, const Operator& X, const Operator& Y );
 
   Operator GooseTankUpdate( const Operator& Omega, const Operator& Nested);
 
