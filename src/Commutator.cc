@@ -2008,6 +2008,98 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
 
 
+
+
+//*****************************************************************************************
+//
+// i|  j|      
+//  |   |           Uncoupled expression:
+//  |~~~X~~~~~*        Z_ijkl = 1/6 sum_abcd (nanbncn`d -n`an`bn`cnd)(X_ijdabc Y_abckld - Y_ijdabc Xabckld)
+//  |   |     /\                + 1/4 (1-Pij)(1-Pkl) sum_{abcd} nanbn`cn`d ( X_abicdk Y_cdjabl - Y_abicdk X_cdjabl )
+// a|  b|   c(  )d
+//  |   |     \/ 
+//  |~~~Y~~~~~*      Coupled expression:
+//  |   |              Z_{ijkl}^{J} = 1/6 sum_abcd (nanbncn`d-n`an`bn`cnd) 1/(2J+1) sum_J1J' (2J'+1)(X_{ijdabc}^{J J1 J'} Y_{abckld}^{J1 J J'} - X<->Y )
+// k|  l|                             + 1/4  (1-Pij^J)(1-Pkl^J) sum_{abcd} nanbn`cn`d sum_{J1 J2 J' J"} (2J'+1)(2J"+1)  (-1)^{2J+J2+J'+J"+2j-i-k}
+//                                      { p  q  J }
+//                                    * { J1 J" s } ( X_{abicdk}^{J1 J2 J'} Y_{cdjabl}^{J2 J1 J"} - X<->Y )
+//                                      { J' J2 r }
+//                                                                                      
+//
+// TODO: Still need to do the ugly part. It's probably a good idea to split this up into two routines
+//
+void comm332ss( const Operator& X, const Operator& Y, Operator& Z )
+{
+  auto& X3 = X.ThreeBody;
+  auto& Y3 = Y.ThreeBody;
+  auto& Z2 = Z.TwoBody;
+  
+  int nch = Z.modelspace->GetNumberTwoBodyChannels();
+  for (int ch=0; ch<nch; ch++)
+  {
+    TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
+    int J = tbc.J;
+    int nkets = tbc.GetNumberKets();
+    for (int ibra=0; ibra<nkets; ibra++)
+    {
+      Ket& bra = tbc.GetKet(ibra);
+      int i = bra.p;
+      int j = bra.q;
+      for (int iket=0; iket<nkets; iket++) // TODO: Probably only need to do half of this
+      {
+        Ket& ket = tbc.GetKet(iket);
+        int k = ket.p;
+        int l = ket.q;
+
+        double matel = 0;
+        // Now the loops on the right hand side
+        for (int ch_ab=0; ch_ab<nch; ch_ab++)
+        {
+          TwoBodyChannel& tbc_ab = Z.modelspace->GetTwoBodyChannel(ch_ab);
+          int J1 = tbc_ab.J;
+          if ( std::abs(tbc_ab.Tz-tbc.Tz)>1) continue;
+//          for ( auto& ket_ab : tbc.GetKetIndex_hh() )
+          for ( int iket_ab=0; iket_ab<nkets; iket_ab++ ) // TODO: check if there are missing factors of 2 for taking a<=b
+          {
+            Ket& ket_ab = tbc_ab.GetKet(iket_ab);
+            int a = ket_ab.p;
+            int b = ket_ab.q;
+            double na = ket_ab.op->occ;
+            double nb = ket_ab.oq->occ;
+            // We need to worry about a and b being fractionally filled.
+            auto& clist = (1-na)*(1-nb) < 1e-7 ? Z.modelspace->holes : Z.modelspace->all_orbits;
+            for ( auto c : clist )
+            {
+              Orbit& oc = Z.modelspace->GetOrbit(c);
+              double nc = oc.occ;
+              auto& dlist = (1-na)*(1-nb)*(1-nc) < 1e-7 ? Z.modelspace->particles : Z.modelspace->all_orbits;
+              for ( auto d : dlist ) 
+              {
+                Orbit& od = Z.modelspace->GetOrbit(d);
+                double nd = od.occ;
+                if ( (oc.l+od.l+tbc.parity + tbc_ab.parity)%2>0) continue;
+                if ( (oc.tz2 + tbc_ab.Tz)!=(od.tz2 + tbc.Tz) ) continue;
+                int twoJmin = std::max( std::abs(2*J-od.j2), std::abs(2*J1-oc.j2) );
+                int twoJmax = std::min( 2*J+od.j2, 2*J1+oc.j2);
+                for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ++)
+                {
+                  matel += 1./6*(twoJ+1)* (na*nb*nc*(1-nd) - (1-na)*(1-nb)*(1-nc)*nd )
+                            *( X3.GetME_pn(J,J1,twoJ, i,j,d,a,b,c) * Y3.GetME_pn(J1, J, twoJ, a,b,c,k,l,d)
+                             - Y3.GetME_pn(J,J1,twoJ, i,j,d,a,b,c) * X3.GetME_pn(J1, J, twoJ, a,b,c,k,l,d) );
+                }
+              }
+            }
+          }
+        }
+        matel /= 2*J+1 * sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
+        Z2.GetMatrix(ch)(ibra,iket) += matel;
+      }
+    }
+  }
+
+}
+
+
 //*****************************************************************************************
 //
 // i|  j|  k|       Uncoupled expression:
@@ -2310,6 +2402,34 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   }
   std::cout << "Done with comm223ss. Norm of Z3 is " << Z.ThreeBodyNorm() << std::endl;
 }
+
+
+
+
+
+//*****************************************************************************************
+//
+//  |    |    |
+// i|   j|   k| 
+//  |~~~~X~~~~| 
+// a|   b|   c| 
+//  |~~~~Y~~~~| 
+// l|   m|   n| 
+//  |    |    |
+//
+//
+//
+void comm333ss( const Operator& X, const Operator& Y, Operator& Z )
+{
+   auto& X3 = X.ThreeBody;
+   auto& Y3 = Y.ThreeBody;
+   auto& Z3 = Z.ThreeBody;
+
+
+}
+
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////

@@ -62,7 +62,7 @@ namespace Commutator{
 
   void comm132ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
   void comm232ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
-  void comm332ss( const Operator& X, const Operator& Y, Operator& Z ) ; // not implemented. not tested.
+  void comm332ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented the easier part. not tested.
   
   void comm133ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
   void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.

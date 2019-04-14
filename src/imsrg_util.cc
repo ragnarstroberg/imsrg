@@ -3,7 +3,7 @@
 #include "AngMom.hh"
 #include "Commutator.hh"
 #include "GaussLaguerre.hh"
-//#include "DarkMatterNREFT.hh"
+#include "DarkMatterNREFT.hh"
 #include "omp.h"
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_sf_bessel.h> // to use bessel functions
@@ -165,29 +165,30 @@ namespace imsrg_util
          std::istringstream(opnamesplit[3]) >> src;
          return M0nu_TBME_Op(modelspace,Nquad,src);
       }
-//      else if (opnamesplit[0] == "DMNREFT") // point radius density at position r, e.g. rhop1.25
-//      {
-//        double q;
-//        int J;
-//        std::string dmopname = opnamesplit[1];
-//        std::istringstream(opnamesplit[2]) >> q;
-//        std::istringstream(opnamesplit[3]) >> J;
-//
-//        std::map<string, Operator (*)(ModelSpace&, int, double) > dmop = { {"M",       &DM_NREFT::M},
-//                                                                           {"Sigma",   &DM_NREFT::Sigma},
-//                                                                           {"Sigmap",  &DM_NREFT::Sigmap},
-//                                                                           {"Sigmapp", &DM_NREFT::Sigmapp},
-//                                                                           {"Delta",   &DM_NREFT::Delta},
-//                                                                           {"Deltap",  &DM_NREFT::Deltap},
-//                                                                           {"Phipp",   &DM_NREFT::Phipp},
-//                                                                           {"Phitp",   &DM_NREFT::Phitp},
-//                                                                           {"Omega",   &DM_NREFT::Omega},
-//                                                                         };
-//        if ( dmop.find(dmopname) != dmop.end() )
-//        {
-//        return dmop[dmopname](modelspace, J, q );
-//        }
-//      }
+      else if (opnamesplit[0] == "DMNREFT") // point radius density at position r, e.g. rhop1.25
+      {
+        double q;
+        int J;
+        std::string dmopname = opnamesplit[1];
+        std::istringstream(opnamesplit[2]) >> q;
+        std::istringstream(opnamesplit[3]) >> J;
+
+        std::map<std::string, Operator (*)(ModelSpace&, int, double) > dmop = {
+              {"M",       &DM_NREFT::M},
+              {"Sigma",   &DM_NREFT::Sigma},
+              {"Sigmap",  &DM_NREFT::Sigmap},
+              {"Sigmapp", &DM_NREFT::Sigmapp},
+              {"Delta",   &DM_NREFT::Delta},
+              {"Deltap",  &DM_NREFT::Deltap},
+              {"Phipp",   &DM_NREFT::Phipp},
+              {"Phitp",   &DM_NREFT::Phitp},
+              {"Omega",   &DM_NREFT::Omega},
+             };
+        if ( dmop.find(dmopname) != dmop.end() )
+        {
+        return dmop[dmopname](modelspace, J, q );
+        }
+      }
       else if (opnamesplit[0] == "Dagger" or opnamesplit[0] == "DaggerHF" )
       {
         index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
