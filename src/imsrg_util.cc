@@ -3,7 +3,7 @@
 #include "AngMom.hh"
 #include "Commutator.hh"
 #include "GaussLaguerre.hh"
-//#include "DarkMatterNREFT.hh"
+#include "DarkMatterNREFT.hh"
 #include "omp.h"
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_sf_bessel.h> // to use bessel functions
@@ -67,6 +67,8 @@ namespace imsrg_util
       else if (opname == "M5")            return MagneticMultipoleOp(modelspace,5) ;
       else if (opname == "M1p")           return MagneticMultipoleOp_pn(modelspace,1,"proton") ;
       else if (opname == "M1n")           return MagneticMultipoleOp_pn(modelspace,1,"neutron") ;
+      else if (opname == "M1S")           return MagneticMultipoleOp_pn(modelspace,1,"spin") ;
+      else if (opname == "M1L")           return MagneticMultipoleOp_pn(modelspace,1,"orbit") ;
       else if (opname == "Fermi")         return AllowedFermi_Op(modelspace) ;
       else if (opname == "GamowTeller")   return AllowedGamowTeller_Op(modelspace) ;
       else if (opname == "Iso2")          return Isospin2_Op(modelspace) ;
@@ -171,29 +173,30 @@ namespace imsrg_util
          std::istringstream(opnamesplit[3]) >> src;
          return M0nu_TBME_Op(modelspace,Nquad,src);
       }
-//      else if (opnamesplit[0] == "DMNREFT") // point radius density at position r, e.g. rhop1.25
-//      {
-//        double q;
-//        int J;
-//        std::string dmopname = opnamesplit[1];
-//        std::istringstream(opnamesplit[2]) >> q;
-//        std::istringstream(opnamesplit[3]) >> J;
-//
-//        std::map<string, Operator (*)(ModelSpace&, int, double) > dmop = { {"M",       &DM_NREFT::M},
-//                                                                           {"Sigma",   &DM_NREFT::Sigma},
-//                                                                           {"Sigmap",  &DM_NREFT::Sigmap},
-//                                                                           {"Sigmapp", &DM_NREFT::Sigmapp},
-//                                                                           {"Delta",   &DM_NREFT::Delta},
-//                                                                           {"Deltap",  &DM_NREFT::Deltap},
-//                                                                           {"Phipp",   &DM_NREFT::Phipp},
-//                                                                           {"Phitp",   &DM_NREFT::Phitp},
-//                                                                           {"Omega",   &DM_NREFT::Omega},
-//                                                                         };
-//        if ( dmop.find(dmopname) != dmop.end() )
-//        {
-//        return dmop[dmopname](modelspace, J, q );
-//        }
-//      }
+      else if (opnamesplit[0] == "DMNREFT") // point radius density at position r, e.g. rhop1.25
+      {
+        double q;
+        int J;
+        std::string dmopname = opnamesplit[1];
+        std::istringstream(opnamesplit[2]) >> q;
+        std::istringstream(opnamesplit[3]) >> J;
+
+        std::map<std::string, Operator (*)(ModelSpace&, int, double) > dmop = {
+              {"M",       &DM_NREFT::M},
+              {"Sigma",   &DM_NREFT::Sigma},
+              {"Sigmap",  &DM_NREFT::Sigmap},
+              {"Sigmapp", &DM_NREFT::Sigmapp},
+              {"Delta",   &DM_NREFT::Delta},
+              {"Deltap",  &DM_NREFT::Deltap},
+              {"Phipp",   &DM_NREFT::Phipp},
+              {"Phitp",   &DM_NREFT::Phitp},
+              {"Omega",   &DM_NREFT::Omega},
+             };
+        if ( dmop.find(dmopname) != dmop.end() )
+        {
+        return dmop[dmopname](modelspace, J, q );
+        }
+      }
       else if (opnamesplit[0] == "Dagger" or opnamesplit[0] == "DaggerHF" )
       {
         index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
@@ -1530,6 +1533,10 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
       std::cout << "A magnetic monopole operator??? Setting it to zero..." << std::endl;
       return ML;
     }
+    bool spin = true;
+    bool orbit = true;
+    if ( pn.find("spin") != std::string::npos ) orbit = false;
+    if ( pn.find("orbit") != std::string::npos ) spin = false;
     int norbits = modelspace.GetNumberOrbits();
     for (int i=0; i<norbits; ++i)
     {
@@ -1538,6 +1545,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
       if (pn=="neutron" and oi.tz2<0) continue;
       double gl = oi.tz2<0 ? 1.0 : 0.0;
       double gs = oi.tz2<0 ? 5.586 : -3.826;
+      if (not spin) gs = 0;
+      if (not orbit) gl = 0;
       double ji = 0.5*oi.j2;
       for ( int j : ML.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
       {
