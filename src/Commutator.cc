@@ -2409,6 +2409,94 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
 
 
+//*****************************************************************************************
+//
+//  |     |    |     Uncoupled expression:
+// i|    j|   k|       C_ijklmn = 1/2 sum_{ab} (n`an`b - nanb) P(ij/k) X_{ijab} Y_{abjlmn} - P(lm/n) Y_{ijkabn} X_{ablm}
+//  |~~X~~|    |                   +  sum_{ab} (n`anb -nan`b) P(ij/k)P(lm/n) Y_{ijalmb} X_{bkan}
+// a|    b|    | 
+//  |~~~~~Y~~~~|     Coupled expression:
+// l|    m|   n|     C_{ijklmn}^{J1,J2,J} = 1/2 sum_{ab} (n`an`b - nanb) ( P(ij/k)^{J1,J} X_{ijab}^{J1} Y_{abjlmn}^{J1,J2,J} 
+//  |     |    |                                                         - P(lm/n)^{J2,J} Y_{ijkabn}^{J1,J2,J} X_{ablm}^{J2} )
+//  |     |    |                             + P^{J1,J}(ij/k)P^{J2,j}_{lm/n) sum_{ab} (n`anb -nan`b)  P(ij/k)^{J1,J} P(lm/n)^{J2,J}
+//                                             * sum_{J',J"} (2J'+1)(2J"+1) (-1)^{2J+k-n+J1-J2}
+//                                             { J   J2  n  }
+//                                           * { J1  J'  a  } * Y_{ijalmb}^{J1,J2,J'} X_{bkan}^{J"}                                  
+//                                             { k   b   J" }                              
+//
+void comm233ss( const Operator& X, const Operator& Y, Operator& Z )
+{
+
+  auto& X2 = X.TwoBody;
+  auto& Y2 = X.TwoBody;
+  auto& X3 = Y.ThreeBody;
+  auto& Y3 = Y.ThreeBody;
+  auto& Z3 = Z.ThreeBody;
+
+  int nch = Z.modelspace->GetNumberTwoBodyChannels();
+  for (int ch_ij=0; ch_ij<nch; ch_ij++)
+  {
+    TwoBodyChannel& tbc_ij = Z.modelspace->GetTwoBodyChannel(ch_ij);
+    int Jij = tbc_ij.J;
+    int nkets_ij = tbc_ij.GetNumberKets();
+    for (auto k : Z.modelspace->all_orbits)
+    {
+      Orbit& ok = Z.modelspace->GetOrbit(k);
+      for (int ch_lm=0; ch_lm<nch; ch_lm++)
+      {
+        TwoBodyChannel& tbc_lm = Z.modelspace->GetTwoBodyChannel(ch_lm);
+        int nkets_lm = tbc_lm.GetNumberKets();
+        int Jlm = tbc_lm.J;
+        for (auto n : Z.modelspace->all_orbits)
+        {
+          Orbit& on = Z.modelspace->GetOrbit(n);
+          for (int iket_ij=0; iket_ij<=nkets_ij; iket_ij++)
+          {
+            Ket& ket_ij = tbc_ij.GetKet(iket_ij);
+            int i = ket_ij.p;
+            int j = ket_ij.q;
+            for (int iket_lm=0; iket_lm<=nkets_lm; iket_lm++)
+            {
+              Ket& ket_lm = tbc_lm.GetKet(iket_lm);
+              int l = ket_lm.p;
+              int m = ket_lm.q;
+
+              double cijklmn = 0;
+              int twoJ_min = std::max( std::abs(Jij*2-ok.j2), std::abs(Jlm*2-on.j2) );
+              int twoJ_max = std::min( Jij*2+ok.j2, Jlm*2+on.j2 );
+              for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+              {
+                for ( int iket_ab=0; iket_ab<=nkets_ij; iket_ab++) // TODO: worry about the fact that we only have a<=b here
+                {
+                  Ket& ket_ab = tbc_ij.GetKet(iket_ab); // TODO: do the permutations
+                  int a = ket_ab.p;
+                  int b = ket_ab.q;
+                  double na = ket_ab.op->occ;
+                  double nb = ket_ab.oq->occ;
+                  cijklmn += (1-na-nb) * (X2.GetTBME(ch_ij,ket_ij,ket_ab) * Y3.GetME_pn(Jij,Jlm, twoJ, a,b,j,l,m,n)  
+                                        - Y2.GetTBME(ch_ij,ket_ij,ket_ab) * X3.GetME_pn(Jij,Jlm, twoJ, a,b,j,l,m,n)) ;
+                }
+                for ( int iket_ab=0; iket_ab<=nkets_lm; iket_ab++)
+                {
+                  Ket& ket_ab = tbc_lm.GetKet(iket_ab);
+                  int a = ket_ab.p;
+                  int b = ket_ab.q;
+                  double na = ket_ab.op->occ;
+                  double nb = ket_ab.oq->occ;
+                  cijklmn +=  (1-na-nb) * ( X2.GetTBME(ch_lm,ket_ab,ket_lm) * Y3.GetME_pn(Jij,Jlm, twoJ, i,j,i,a,b,n  )
+                                          - Y2.GetTBME(ch_lm,ket_ab,ket_lm) * X3.GetME_pn(Jij,Jlm, twoJ, i,j,i,a,b,n  ) );
+                }
+              } // TODO: do the ugly particle-hole piece
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+}
+
 
 
 //*****************************************************************************************
