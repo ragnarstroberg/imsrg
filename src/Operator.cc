@@ -228,9 +228,11 @@ Operator Operator::operator-() const
 
 void Operator::SetUpOneBodyChannels()
 {
-  for ( size_t i=0; i<modelspace->GetNumberOrbits(); ++i )
+//  for ( size_t i=0; i<modelspace->GetNumberOrbits(); ++i )
+  for ( auto i : modelspace->all_orbits )
   {
     Orbit& oi = modelspace->GetOrbit(i);
+    if ( OneBodyChannels.find( {oi.l,oi.j2,oi.tz2} ) == OneBodyChannels.end() ) OneBodyChannels[{oi.l,oi.j2,oi.tz2}] = {};
     // The +-1 comes from the spin [LxS](J)
     int lmin = std::max( oi.l - rank_J-1, 0);
     int lmax = std::min( oi.l + rank_J+1, modelspace->GetEmax() );
@@ -245,6 +247,7 @@ void Operator::SetUpOneBodyChannels()
         int tz2max = std::min( oi.tz2 + 2*rank_T, 1);
         for (int tz2=tz2min; tz2<=tz2max; tz2+=2)
         {
+          if (std::abs(tz2) != std::abs(oi.tz2 - 2*rank_T)) continue;
           OneBodyChannels[ {l, j2, tz2} ].push_back(i);
         }
       }

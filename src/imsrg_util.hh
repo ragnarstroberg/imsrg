@@ -86,6 +86,8 @@ namespace imsrg_util
  Operator VCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
  Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
 
+ Operator AxialCharge_Op( ModelSpace& modelspace );
+
  namespace atomic_fs
  {
    Operator Darwin(ModelSpace& modelspace, int Z );
@@ -110,6 +112,7 @@ namespace imsrg_util
  Operator RPA_resummed_1b( const Operator& OpIn, const Operator& H, std::string mode="RPA" );
  arma::mat GetPH_transformed_Gamma( std::vector<std::pair<size_t,size_t>>& bras, std::vector<std::pair<size_t,size_t>>& kets, const Operator& H, int Lambda );
 
+ Operator M0nu_contact_Op(ModelSpace& modelspace, double R0 );
 
 ////////////////// Double beta decay functions from Charlie Payne ///////////////
  Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, std::string src); // put in by CP, it is still in development
@@ -141,6 +144,7 @@ namespace imsrg_util
  double HO_Radial_psi(int n, int l, double hw, double r);
  double RadialIntegral(int na, int la, int nb, int lb, int L);
  double RadialIntegral_RpowK(int na, int la, int nb, int lb, int k);
+ double RadialIntegral_Gauss( int na, int la, int nb, int lb, double sigma );
  long double TalmiI(int p, double k);
  long double TalmiB(int na, int la, int nb, int lb, int p);
  long double TalmiB_SingleTerm(int na, int la, int nb, int lb, int p, int K);
