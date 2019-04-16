@@ -64,6 +64,7 @@ HartreeFock::HartreeFock(Operator& hbare)
 //*********************************************************************
 void HartreeFock::Solve()
 {
+   double t_start = omp_get_wtime();
    iterations = 0; // counter so we don't go on forever
    int maxiter = 1000;
 
@@ -96,6 +97,7 @@ void HartreeFock::Solve()
    }
    UpdateReference();
    PrintEHF();
+   profiler.timer["HF_Solve"] += omp_get_wtime() - t_start;
 }
 
 
