@@ -901,6 +901,7 @@ void IMSRGSolver::WriteFlowStatus(std::ostream& f)
         << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().TwoBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Eta.OneBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Eta.TwoBodyNorm()
+        << std::setw(fwidth) << std::setprecision(fprecision) << Eta.ThreeBodyNorm()
         << std::setw(7)      << std::setprecision(0)          << profiler.counter["N_ScalarCommutators"] + profiler.counter["N_TensorCommutators"]
         << std::setw(fwidth) << std::setprecision(fprecision) << H_s.GetMP2_Energy()
         << std::setw(7)      << std::setprecision(0)          << profiler.counter["N_Operators"]
@@ -937,6 +938,7 @@ void IMSRGSolver::WriteFlowStatusHeader(std::ostream& f)
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_2||" 
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_1||" 
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_2||" 
+        << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_3||" 
         << std::setw(7)      << std::setprecision(fprecision) << "Ncomm" 
         << std::setw(16)     << std::setprecision(fprecision) << "E(MP2)" 
         << std::setw(7)      << std::setprecision(fprecision) << "N_Ops"

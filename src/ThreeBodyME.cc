@@ -290,6 +290,9 @@ void ThreeBodyME::Allocate()
 ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b, int c, int d, int e, int f) const
 {
 
+//   std::cout << "here." << std::endl;
+   if (a==b and a==c and modelspace->GetOrbit(a).j2<3) return 0;
+   if (d==e and d==f and modelspace->GetOrbit(d).j2<3) return 0;
    double tza = modelspace->GetOrbit(a).tz2*0.5;
    double tzb = modelspace->GetOrbit(b).tz2*0.5;
    double tzc = modelspace->GetOrbit(c).tz2*0.5;

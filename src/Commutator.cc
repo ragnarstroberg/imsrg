@@ -137,53 +137,66 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
    {
      if (X.GetParticleRank()>2 and Y.GetParticleRank()>2)
      {
+       std::cout << " comm330 " << std::endl;
        t_start = omp_get_wtime();
        comm330ss(X, Y, Z);
        X.profiler.timer["comm330ss"] += omp_get_wtime() - t_start;
-       t_start = omp_get_wtime();
-       comm331ss(X, Y, Z);
-       X.profiler.timer["comm331ss"] += omp_get_wtime() - t_start;
+
+//       std::cout << " comm331 " << std::endl;
+//       t_start = omp_get_wtime();
+//       comm331ss(X, Y, Z);
+//       X.profiler.timer["comm331ss"] += omp_get_wtime() - t_start;
      }
 
-     t_start = omp_get_wtime();
-     comm231ss(X, Y, Z);
-     X.profiler.timer["comm231ss"] += omp_get_wtime() - t_start;
+//     std::cout << " comm231 " << std::endl;
+//     t_start = omp_get_wtime();
+//     comm231ss(X, Y, Z);
+//     X.profiler.timer["comm231ss"] += omp_get_wtime() - t_start;
 
-     t_start = omp_get_wtime();
-     comm132ss(X, Y, Z);
-     X.profiler.timer["comm132ss"] += omp_get_wtime() - t_start;
+//     std::cout << " comm132 " << std::endl;
+//     t_start = omp_get_wtime();
+//     comm132ss(X, Y, Z);
+//     X.profiler.timer["comm132ss"] += omp_get_wtime() - t_start;
 
-     t_start = omp_get_wtime();
-     comm232ss(X, Y, Z);
-     X.profiler.timer["comm232ss"] += omp_get_wtime() - t_start;
+//     std::cout << " comm232 " << std::endl;
+//     t_start = omp_get_wtime();
+//     comm232ss(X, Y, Z);
+//     X.profiler.timer["comm232ss"] += omp_get_wtime() - t_start;
 
+     std::cout << " comm133 " << std::endl;
      t_start = omp_get_wtime();
      comm133ss(X, Y, Z);
      X.profiler.timer["comm133ss"] += omp_get_wtime() - t_start;
 
+     std::cout << " comm223 " << std::endl;
      t_start = omp_get_wtime();
      comm223ss(X, Y, Z);
      X.profiler.timer["comm223ss"] += omp_get_wtime() - t_start;
 
-     t_start = omp_get_wtime();
-     comm233_pp_hhss(X, Y, Z);
-     X.profiler.timer["comm223_pp_hhss"] += omp_get_wtime() - t_start;
+//     std::cout << " comm233_pp_hh " << std::endl;
+//     t_start = omp_get_wtime();
+//     comm233_pp_hhss(X, Y, Z);
+//     X.profiler.timer["comm223_pp_hhss"] += omp_get_wtime() - t_start;
+//
+//     std::cout << " comm233_ph " << std::endl;
+//     t_start = omp_get_wtime();
+//     comm233_phss(X, Y, Z);
+//     X.profiler.timer["comm223_phss"] += omp_get_wtime() - t_start;
+//
+//     std::cout << " comm332_ppph_hhhp " << std::endl;
+//     t_start = omp_get_wtime();
+//     comm332_ppph_hhhpss(X, Y, Z);
+//     X.profiler.timer["comm332_ppph_hhhpss"] += omp_get_wtime() - t_start;
+//
+//     std::cout << " comm332_pphh " << std::endl;
+//     t_start = omp_get_wtime();
+//     comm332_pphhss(X, Y, Z);
+//     X.profiler.timer["comm332_pphhss"] += omp_get_wtime() - t_start;
 
-     t_start = omp_get_wtime();
-     comm233_phss(X, Y, Z);
-     X.profiler.timer["comm223_phss"] += omp_get_wtime() - t_start;
-
-     t_start = omp_get_wtime();
-     comm332_ppph_hhhpss(X, Y, Z);
-     X.profiler.timer["comm332_ppph_hhhpss"] += omp_get_wtime() - t_start;
-
-     t_start = omp_get_wtime();
-     comm332_pphhss(X, Y, Z);
-     X.profiler.timer["comm332_pphhss"] += omp_get_wtime() - t_start;
-
-     t_start = omp_get_wtime();
-     comm333ss(X, Y, Z);
-     X.profiler.timer["comm333_ppp_hhh_ss"] += omp_get_wtime() - t_start;
+//     std::cout << " comm333 " << std::endl;
+//     t_start = omp_get_wtime();
+//     comm333ss(X, Y, Z);
+//     X.profiler.timer["comm333ss"] += omp_get_wtime() - t_start;
    }
 
 
@@ -290,6 +303,7 @@ Operator BCH_Transform(  const Operator& OpIn, const Operator& Omega)
 /// with all commutators truncated at the two-body level.
 Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
 {
+//   std::cout << "!!! " << __func__ << " !!! " << std::endl;
    double t_start = omp_get_wtime();
    int max_iter = 40;
    int warn_iter = 12;
@@ -412,6 +426,7 @@ Operator Brueckner_BCH_Transform( const Operator& OpIn, const Operator& Omega)
 //*****************************************************************************************
 Operator BCH_Product(  Operator& X, Operator& Y)
 {
+//   std::cout << "!!! " << __func__ << " !!! " << std::endl;
    double tstart = omp_get_wtime();
    double nx = X.Norm();
    std::vector<double> bernoulli = {1.0, -0.5, 1./6, 0.0, -1./30,  0.0 ,  1./42,     0,  -1./30};
@@ -419,6 +434,9 @@ Operator BCH_Product(  Operator& X, Operator& Y)
 
 
    Operator Z = X + Y;
+
+//return Z; // TODO: Get rid of this!!!
+
 //   if (use_goose_tank_correction) return Z; // Not sure why this is here
 //   Operator Nested = Y;
 //   Nested.SetToCommutator(Y,X)
@@ -2076,10 +2094,11 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
         for (int ch_ab=0; ch_ab<nch; ch_ab++)
         {
           TwoBodyChannel& tbc_ab = Z.modelspace->GetTwoBodyChannel(ch_ab);
+          int nkets_ab = tbc_ab.GetNumberKets();
           int J1 = tbc_ab.J;
           if ( std::abs(tbc_ab.Tz-tbc.Tz)>1) continue;
 //          for ( auto& ket_ab : tbc.GetKetIndex_hh() )
-          for ( int iket_ab=0; iket_ab<nkets; iket_ab++ ) // TODO: check if there are missing factors of 2 for taking a<=b
+          for ( int iket_ab=0; iket_ab<nkets_ab; iket_ab++ ) // TODO: check if there are missing factors of 2 for taking a<=b
           {
             Ket& ket_ab = tbc_ab.GetKet(iket_ab);
             int a = ket_ab.p;
@@ -2116,7 +2135,6 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
       }
     }
   }
-
 }
 
 
@@ -2255,7 +2273,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 {
-  std::cout << "start comm133" << std::endl;
+//  std::cout << "start comm133" << std::endl;
   int E3cut = 7;
   int e3maxcut = 6;
   auto& X3 = X.ThreeBody;
@@ -2263,6 +2281,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Z3 = Z.ThreeBody;
   auto& X1 = X.OneBody;
   auto& Y1 = Y.OneBody;
+//  std::cout << "Y1 =" << std::endl << Y1 << std::endl;
   int norbs = Z.modelspace->GetNumberOrbits();
   if (X3.Norm()<1e-6 and Y3.Norm()<1e-6 ) return;
   for (int i=0;i<norbs; i++)
@@ -2340,6 +2359,13 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
             }
   
             Z3.AddToME_pn(Jij, Jlm, twoJ, i,j,k,l,m,n, zsum );
+//            if ( std::abs( X3.GetME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n ) )>1e-6)
+//            {
+//            std::cout << "In " << __func__ << "  ijklmn Jij,Jlm,twoJ = " << i << " " << j << " " << k << " " << l << " " << m << " " << n << " " << Jij << " " << Jlm << " " << twoJ << "  X3, Y3, Z3 = "
+//                      << X3.GetME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n ) << "   "
+//                      << Y3.GetME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n ) << "   "
+//                      << Z3.GetME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n ) << "   zsum = " << zsum << "    denominator? = " << (Y1(i,i)+Y1(j,j)+Y1(k,k)-Y1(l,l)-Y1(m,m)-Y1(n,n) ) << std::endl;
+//            }
           }          
          }
         }
@@ -2372,7 +2398,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Z3 = Z.ThreeBody;
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
-  std::cout << "Begin the loop. Norm of X2 and Y2 " << X2.Norm() << " " << Y2.Norm() << std::endl;
+//  std::cout << "Begin the loop. Norm of X2 and Y2 " << X2.Norm() << " " << Y2.Norm() << std::endl;
   if ( std::abs( X2.Norm() * Y2.Norm() ) < 1e-6) return;
   for (int i=0;i<norbs; i++)
   {
@@ -2564,6 +2590,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
+  std::cout << "   -> Begin com233_pp_hh" << std::endl;
+  std::cout << "     particle ranks X,Y,Z: " << X.GetParticleRank() << "   " << Y.GetParticleRank() << "  " << Z.GetParticleRank() << std::endl;
   auto& X2 = X.TwoBody;
   auto& Y2 = X.TwoBody;
   auto& X3 = Y.ThreeBody;
@@ -2587,26 +2615,28 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
         for (auto n : Z.modelspace->all_orbits)
         {
           Orbit& on = Z.modelspace->GetOrbit(n);
-          for (int iket_ij=0; iket_ij<=nkets_ij; iket_ij++)
+          for (int iket_ij=0; iket_ij<nkets_ij; iket_ij++)
           {
             Ket& ket_ij = tbc_ij.GetKet(iket_ij);
             int i = ket_ij.p;
             int j = ket_ij.q;
             Orbit& oi = Z.modelspace->GetOrbit(i);
             Orbit& oj = Z.modelspace->GetOrbit(j);
+            if (i==j and i==k and oi.j2<3 ) continue; // Can't overfill the orbit
 
             int Jjk_min = std::abs( oj.j2 - ok.j2 )/2;
             int Jjk_max =         ( oj.j2 + ok.j2 )/2;
             int Jik_min = std::abs( oi.j2 - ok.j2 )/2;
             int Jik_max =         ( oi.j2 + ok.j2 )/2;
      
-            for (int iket_lm=0; iket_lm<=nkets_lm; iket_lm++)
+            for (int iket_lm=0; iket_lm<nkets_lm; iket_lm++)
             {
               Ket& ket_lm = tbc_lm.GetKet(iket_lm);
               int l = ket_lm.p;
               int m = ket_lm.q;
               Orbit& ol = Z.modelspace->GetOrbit(l);
               Orbit& om = Z.modelspace->GetOrbit(m);
+              if (l==m and l==n and ol.j2<3 ) continue;
               int Jln_min = std::abs( om.j2 - on.j2 )/2;
               int Jln_max =         ( om.j2 + on.j2 )/2;
               int Jmn_min = std::abs( ol.j2 - on.j2 )/2;
@@ -2614,15 +2644,20 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 
               int twoJ_min = std::max( std::abs(Jij*2-ok.j2), std::abs(Jlm*2-on.j2) );
               int twoJ_max = std::min( Jij*2+ok.j2, Jlm*2+on.j2 );
+//              std::cout << "twoJ_min,max = " << twoJ_min << " " << twoJ_max << std::endl;
               for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
               {
+//                std::cout << "ijklmn = " << i << " " << j << " " << k << " " << l << " " << m << " " << n << "   Jij,Jlm = " << Jij << " " << Jlm << "   twoJ = " << twoJ << std::endl;
+//                std::cout << " ji, jj, jk = " << oi.j2 << " " << oj.j2 << " " << ok.j2  << "  li,lj,lk = " << oi.l << " " << oj.l << " " << ok.l;
+//                std::cout << " jl, jm, jn = " << ol.j2 << " " << om.j2 << " " << on.j2  << "  ll,lm,ln = " << ol.l << " " << om.l << " " << on.l << std::endl;
                 double zijklmn = 0;
 
-                for ( int iket_ab=0; iket_ab<=nkets_ij; iket_ab++) // TODO: worry about the fact that we only have a<=b here
+                for ( int iket_ab=0; iket_ab<nkets_ij; iket_ab++) // TODO: worry about the fact that we only have a<=b here
                 {
                   Ket& ket_ab = tbc_ij.GetKet(iket_ab);
                   int a = ket_ab.p;
                   int b = ket_ab.q;
+//                  std::cout << " 1. a,b = " << a << " " << b << std::endl;
                   double na = ket_ab.op->occ;
                   double nb = ket_ab.oq->occ;
                   zijklmn += (1-na-nb) * (X2.GetTBME(ch_ij,ket_ij,ket_ab) * Y3.GetME_pn(Jij,Jlm, twoJ, a,b,k,l,m,n)  
@@ -2637,11 +2672,12 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                   auto& tbc_kj = Z.modelspace->GetTwoBodyChannel(ch_kj);
                   int nkets_kj = tbc_kj.GetNumberKets();
 //                  Ket& ket_kj = tbc_kj.GetKet( tbc_kj.GetLocalIndex(k,j) );
-                  for ( int iket_ab=0; iket_ab<=nkets_kj; iket_ab++) // TODO: worry about the fact that we only have a<=b here
+                  for ( int iket_ab=0; iket_ab<nkets_kj; iket_ab++) // TODO: worry about the fact that we only have a<=b here
                   {
                     Ket& ket_ab = tbc_kj.GetKet(iket_ab); 
                     int a = ket_ab.p;
                     int b = ket_ab.q;
+//                    std::cout << " 2. a,b = " << a << " " << b << std::endl;
                     double na = ket_ab.op->occ;
                     double nb = ket_ab.oq->occ;
                     zijklmn -= Pik * (1-na-nb) * (X2.GetTBME_J(Jjk,k,j,a,b) * Y3.GetME_pn(Jjk,Jlm, twoJ, a,b,i,l,m,n)  
@@ -2656,11 +2692,12 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                   auto& tbc_ik = Z.modelspace->GetTwoBodyChannel(ch_ik);
                   int nkets_ik = tbc_ik.GetNumberKets();
 //                  Ket& ket_ik = tbc_ik.GetKet( tbc_ik.GetLocalIndex(i,k) );
-                  for ( int iket_ab=0; iket_ab<=nkets_ik; iket_ab++) // TODO: worry about the fact that we only have a<=b here
+                  for ( int iket_ab=0; iket_ab<nkets_ik; iket_ab++) // TODO: worry about the fact that we only have a<=b here
                   {
                     Ket& ket_ab = tbc_ik.GetKet(iket_ab); 
                     int a = ket_ab.p;
                     int b = ket_ab.q;
+//                    std::cout << " 3. a,b = " << a << " " << b << std::endl;
                     double na = ket_ab.op->occ;
                     double nb = ket_ab.oq->occ;
                     zijklmn -= Pjk * (1-na-nb) * (X2.GetTBME_J(Jik,i,k,a,b) * Y3.GetME_pn(Jik,Jlm, twoJ, a,b,j,l,m,n)  
@@ -2668,11 +2705,12 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                   }
                 }
                 
-                for ( int iket_ab=0; iket_ab<=nkets_lm; iket_ab++)
+                for ( int iket_ab=0; iket_ab<nkets_lm; iket_ab++)
                 {
                   Ket& ket_ab = tbc_lm.GetKet(iket_ab);
                   int a = ket_ab.p;
                   int b = ket_ab.q;
+//                    std::cout << " 4. a,b = " << a << " " << b << std::endl;
                   double na = ket_ab.op->occ;
                   double nb = ket_ab.oq->occ;
                   zijklmn +=  (1-na-nb) * ( X2.GetTBME(ch_lm,ket_ab,ket_lm) * Y3.GetME_pn(Jij,Jlm, twoJ, i,j,k,a,b,n  )
@@ -2686,17 +2724,25 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                   auto& tbc_mn = Z.modelspace->GetTwoBodyChannel(ch_mn);
                   int nkets_mn = tbc_mn.GetNumberKets();
 //                  Ket& ket_kj = tbc_kj.GetKet( tbc_kj.GetLocalIndex(k,j) );
-                  for ( int iket_ab=0; iket_ab<=nkets_mn; iket_ab++) // TODO: worry about the fact that we only have a<=b here
+                  for ( int iket_ab=0; iket_ab<nkets_mn; iket_ab++) // TODO: worry about the fact that we only have a<=b here
                   {
                     Ket& ket_ab = tbc_mn.GetKet(iket_ab); 
                     int a = ket_ab.p;
                     int b = ket_ab.q;
+//                    std::cout << " 5. a,b = " << a << " " << b << std::endl;
+//                    std::cout << "  X2:  " << X2.GetTBME_J(Jmn,a,b,n,m) << std::endl;
+//                    std::cout << "  Y2:  " << Y2.GetTBME_J(Jmn,a,b,n,m) << std::endl;
+//                    std::cout << "  X3:  " << X3.GetME_pn(Jij,Jmn,twoJ,i,j,k,a,b,l) << std::endl;
+//                    std::cout << "  Y3:  " << Y3.GetME_pn(Jij,Jmn,twoJ,i,j,k,a,b,l) << std::endl;
                     double na = ket_ab.op->occ;
                     double nb = ket_ab.oq->occ;
                     zijklmn -= Pln * (1-na-nb) * (X2.GetTBME_J(Jmn,a,b,n,m) * Y3.GetME_pn(Jij,Jmn, twoJ, i,j,k,a,b,l)  
                                                 - Y2.GetTBME_J(Jmn,a,b,n,m) * X3.GetME_pn(Jij,Jmn, twoJ, i,j,k,a,b,l)) ;
+//                    std::cout << "ok 5." << std::endl;
                   }
+//                  std::cout << "done with iket_ab loop in 5. " << std::endl;
                 }
+//                std::cout << "Begin loop over Jln" << std::endl;
                 // Permute m and n
                 for (int Jln=Jln_min; Jln<=Jln_max; Jln++)
                 {
@@ -2705,18 +2751,26 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                   auto& tbc_ln = Z.modelspace->GetTwoBodyChannel(ch_ln);
                   int nkets_ln = tbc_ln.GetNumberKets();
 //                  Ket& ket_ik = tbc_ik.GetKet( tbc_ik.GetLocalIndex(i,k) );
-                  for ( int lnet_ab=0; lnet_ab<=nkets_ln; lnet_ab++) // TODO: worry about the fact that we only have a<=b here
+                  for ( int iket_ab=0; iket_ab<nkets_ln; iket_ab++) // TODO: worry about the fact that we only have a<=b here
                   {
-                    Ket& ket_ab = tbc_ln.GetKet(lnet_ab); 
+                    Ket& ket_ab = tbc_ln.GetKet(iket_ab); 
                     int a = ket_ab.p;
                     int b = ket_ab.q;
+//                    std::cout << " 6. a,b = " << a << " " << b << std::endl;
+//                    std::cout << "  X2:  " << X2.GetTBME_J(Jln,a,b,l,n) << std::endl;
+//                    std::cout << "  Y2:  " << Y2.GetTBME_J(Jln,a,b,l,n) << std::endl;
+//                    std::cout << "  X3:  " << X3.GetME_pn(Jij,Jln,twoJ,i,j,k,a,b,m) << std::endl;
+//                    std::cout << "  Y3:  " << Y3.GetME_pn(Jij,Jln,twoJ,i,j,k,a,b,m) << std::endl;
                     double na = ket_ab.op->occ;
                     double nb = ket_ab.oq->occ;
                     zijklmn -= Pmn * (1-na-nb) * (X2.GetTBME_J(Jln,a,b,l,n) * Y3.GetME_pn(Jij,Jln, twoJ, i,j,k,a,b,m)  
                                                 - Y2.GetTBME_J(Jln,a,b,l,n) * X3.GetME_pn(Jij,Jln, twoJ, i,j,k,a,b,m)) ;
+//                    std::cout << "ok 6." << std::endl;
                   }
                 }
+//                std::cout << "Adding " << zijklmn << std::endl;
                 Z3.AddToME_pn(Jij, Jlm, twoJ, i,j,k,l,m,n,  zijklmn );
+//                std::cout << "...added." << std::endl;
               } 
             }
           }
@@ -2725,7 +2779,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
     }
 
   }
-
+//  std::cout << "done. " << __func__  << std::endl;
 }
 
 
@@ -2772,7 +2826,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
         for (auto n : Z.modelspace->all_orbits)
         {
           Orbit& on = Z.modelspace->GetOrbit(n);
-          for (int iket_ij=0; iket_ij<=nkets_ij; iket_ij++)
+          for (int iket_ij=0; iket_ij<nkets_ij; iket_ij++)
           {
             Ket& ket_ij = tbc_ij.GetKet(iket_ij);
             int i = ket_ij.p;
@@ -2785,7 +2839,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
             int Jik_min = std::abs( oi.j2 - ok.j2 )/2;
             int Jik_max =         ( oi.j2 + ok.j2 )/2;
      
-            for (int iket_lm=0; iket_lm<=nkets_lm; iket_lm++)
+            for (int iket_lm=0; iket_lm<nkets_lm; iket_lm++)
             {
               Ket& ket_lm = tbc_lm.GetKet(iket_lm);
               int l = ket_lm.p;
