@@ -298,9 +298,9 @@ void HartreeFock::BuildMonopoleV3()
       int j2a = modelspace->GetOrbit(a).j2;
       int j2c = modelspace->GetOrbit(c).j2;
       int j2i = modelspace->GetOrbit(i).j2;
-      int j2b = modelspace->GetOrbit(b).j2;
-      int j2d = modelspace->GetOrbit(d).j2;
-      int j2j = modelspace->GetOrbit(j).j2;
+      int j2b = modelspace->GetOrbit(b).j2;  // this seems unnecessary
+      int j2d = modelspace->GetOrbit(d).j2;  // this seems unnecessary
+      int j2j = modelspace->GetOrbit(j).j2;  // this seems unnecessary
  
       int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
       int j2max = std::min( j2a+j2c, j2b+j2d )/2;
@@ -748,6 +748,7 @@ Operator HartreeFock::GetNormalOrderedH()
               {
                 Orbit & ob = modelspace->GetOrbit(b);
                 if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
+                if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
                 int J3min = std::abs(2*J-oa.j2);
                 int J3max = 2*J + oa.j2;
                 for (int J3=J3min; J3<=J3max; J3+=2)

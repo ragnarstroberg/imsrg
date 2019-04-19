@@ -240,7 +240,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("ReadRelCMOpFromJavier",&ReadWrite::ReadRelCMOpFromJavier)
       .def("Set3NFormat",&ReadWrite::Set3NFormat)
       .def("WriteDaggerOperator",&ReadWrite::WriteDaggerOperator)
-      .def_readwrite("InputParameters", &ReadWrite::InputParameters)
+//      .def_readwrite("InputParameters", &ReadWrite::InputParameters)  // deprecated
    ;
 
 

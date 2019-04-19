@@ -4293,3 +4293,170 @@ void ReadWrite::SetLECs_preset(std::string key)
 
 
 
+
+
+
+
+void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name, std::string eig_name, std::string v3int_name )
+{
+  ///
+  /// first, read the poi file
+  /// this file contains the dimensions of the AS and NAS matrices
+  //////////////////////////////
+  std::ifstream poi_file(poi_name,std::ios::binary);
+  std::ifstream eig_file(eig_name,std::ios::binary);
+  std::ifstream v3int_file(v3int_name,std::ios::binary);
+
+  if ( not poi_file.good() )
+  {
+    std::cout << "ERROR:  " << __func__ << "  trouble reading file " << poi_name << ".  Exiting." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  if ( not eig_file.good() )
+  {
+    std::cout << "ERROR:  " << __func__ << "  trouble reading file " << eig_name << ".  Exiting." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  if ( not v3int_file.good() )
+  {
+    std::cout << "ERROR:  " << __func__ << "  trouble reading file " << v3int_name << ".  Exiting." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+//  JacobiBasis jacobi_basis(Nmax,J2min,J2max,T2min,T2max);
+  std::cout << "Reading poi file and egv file" << std::endl;
+
+  size_t icount = 0;
+  for (int t2=jacobi3bme.twoTmin; t2<=jacobi3bme.twoTmax; t2+=2)
+  {
+    for (int j2=jacobi3bme.twoJmin; j2<=jacobi3bme.twoJmax; j2+=2)
+    {
+      for (int parity=0;parity<=1;parity++)
+      {
+        int Nmin=parity%2;
+
+        uint32_t delimiter; // This is machine-dependent. This seems to work on the local cluster, but there are no guarantees elsewhere. Fortran's fault, not mine...
+        uint32_t nucleonsin,protonsin,neutronsin,twoJin,twoTin,Nmaxin;
+        int32_t pin;
+        double hwin;
+        v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+        v3int_file.read((char*)&hwin,       sizeof(hwin));
+        v3int_file.read((char*)&nucleonsin, sizeof(nucleonsin));
+        v3int_file.read((char*)&protonsin,  sizeof(protonsin));
+        v3int_file.read((char*)&neutronsin, sizeof(neutronsin));
+        v3int_file.read((char*)&twoJin,       sizeof(twoJin));
+        v3int_file.read((char*)&twoTin,       sizeof(twoTin));
+        v3int_file.read((char*)&pin,        sizeof(pin));
+        v3int_file.read((char*)&Nmaxin,     sizeof(Nmaxin));
+        v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+
+        if ( t2!=twoTin or j2!=twoJin or (1-2*parity)!=pin or jacobi3bme.Nmax!=Nmaxin )
+        {
+          std::cout << "ERROR: in " << __func__ << "  misread header info in " << v3int_name << "  "
+                    << " T: " << t2 << "," << twoTin << "   J: " << j2 << "," << twoJin <<  "  " 
+                    << " p: " << 1-2*parity << "," << pin  << "   Nmin:" << Nmin << ", Nmax:" << Nmaxin << "   "
+                    << "hw: " << hwin <<  ".   exiting... " << std::endl;
+          exit(EXIT_FAILURE);
+        }
+
+
+
+        for (int N=Nmin; N<=jacobi3bme.Nmax; N+=2)  // N=2n+l, so for a given parity N is either even or odd 
+        {
+          // first, read dimensions from the poi file.
+          uint32_t dimAS,dimNAS;
+          uint32_t cfp_ptr;
+          poi_file.read((char*)&delimiter, sizeof(delimiter));
+          poi_file.read((char*)&dimAS,     sizeof(dimAS));
+          poi_file.read((char*)&cfp_ptr,   sizeof(cfp_ptr));
+          poi_file.read((char*)&dimNAS,    sizeof(dimNAS));
+          poi_file.read((char*)&delimiter, sizeof(delimiter));
+
+          jacobi3bme.SetDimensionAS(t2,j2,parity,N, dimAS);
+          jacobi3bme.SetDimensionNAS(t2,j2,parity,N, dimNAS);
+//          SetCFPpointer(t2,j2,parity,N, cfp_ptr-1); // Convert from Fortran to C indexing
+
+          // next, read CFPs from the eig file
+          size_t hash = jacobi3bme.HashTJN(t2,j2,N);
+          jacobi3bme.cfp_start_loc[hash] = icount;
+          icount += dimAS * dimNAS;
+          jacobi3bme.cfpvec.resize(icount); // make sure the vector is big enough
+
+          for (int iAS=0; iAS<dimAS; iAS++)
+          {
+            uint32_t delimiter;
+            eig_file.read((char*)&delimiter,  sizeof(delimiter));
+            if ( delimiter/8 != dimNAS )
+            {
+               std::cout << "TROUBLE!!!!  rec. length = " << delimiter/8 << " , but I want " << dimNAS << std::endl;
+            }
+//            double sumsqr = 0;
+            for (int iNAS=0; iNAS<dimNAS; iNAS++)
+            {
+                double cfp;
+                eig_file.read((char*)&cfp,      sizeof(cfp)); // we can probably eventually read multiple values at once if this becomes a bottleneck...
+                jacobi3bme.AccessCFP(t2,j2,parity,N,iAS,iNAS) = cfp;
+//                sumsqr += cfp*cfp;
+            }
+            eig_file.read((char*)&delimiter,  sizeof(delimiter));
+//            std::cout << "    sumsqr = " << sumsqr << std::endl;
+          }
+
+        }
+
+
+        /// now read in the matrix jacobi matrix elements from the v3int file
+        for (int Nbra=Nmin; Nbra<=jacobi3bme.Nmax; Nbra+=2 )
+        {
+          size_t dim_braAS = jacobi3bme.GetDimensionAS(t2,j2,parity,Nbra);
+          for (size_t ibra=0; ibra<dim_braAS; ibra++)
+          {
+            for (int Nket=Nmin; Nket<=jacobi3bme.Nmax; Nket+=2)
+            {
+              size_t dim_ketAS = jacobi3bme.GetDimensionAS(t2,j2,parity,Nbra);
+              for (size_t iket=0; iket<dim_ketAS; iket++)
+              {
+                if (Nket<Nbra or (Nket==Nbra and iket<ibra) ) continue; 
+//                indexA++;
+                double matel;
+
+                v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+                v3int_file.read((char*)&matel,      sizeof(matel));
+                v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+
+
+                jacobi3bme.SetMatElAS(ibra,iket,Nbra,Nket,t2,j2,parity, matel);
+                jacobi3bme.SetMatElAS(iket,ibra,Nket,Nbra,t2,j2,parity, matel); // for now, let's store the hermitian conjugate
+
+              }
+            }
+          }
+        }
+
+
+      }
+    }
+  }
+  poi_file.close();
+  eig_file.close();
+  v3int_file.close();
+
+
+  std::cout << "successfully read " << jacobi3bme.cfpvec.size() << " cfp's from file" << std::endl;
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -20,6 +20,11 @@
 #ifndef AngMom_hh
 #define AngMom_hh 1
 
+#include <cmath>
+
+#define MOSH_BETA_1 M_PI_4   // Moshinksy beta parameter for mass ratio 1:1
+#define MOSH_BETA_2 atan(sqrt(2)) // Moshinsky beta parameter for a mass ratio 2:1
+
 //using namespace std;
 
 //class AngMom
@@ -33,8 +38,10 @@ namespace AngMom
    double SixJ(double j1, double j2, double j3, double J1, double J2,double J3);
    double NineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double NormNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
-   double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int lam);
+   double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int lam, double B=MOSH_BETA_1);
    double TalmiB(int n, int l, int nn, int ll, int p);
+//   double Tcoeff( LabKet& labket, int Jab, int twoJ, jacobi1_state& jac1, jacobi2_state& jac2, int twoJ12, int Ncm, int Lcm);
+   double Tcoeff( int na, int la, int j2a, int nb, int lb, int j2b, int nc, int lc, int j2c, int Jab, int twoJ, int N1, int L1, int S1, int J1, int N2, int L2, int twoJ2, int twoJ12, int Ncm, int Lcm);
 };
 
 #endif

@@ -6,6 +6,7 @@
 #include <iostream>
 
 
+
 namespace AngMom
 {
 
@@ -59,7 +60,7 @@ namespace AngMom
 //  Their phase convention differs from Moshinsky's by a factor (-1)**(L+l+lam).
 //  I correct for this in order to stick to Moshinsky's phase convention.
 //
-double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int lam)
+double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int lam, double B)
 {
    // check energy conservation
    int f1 = 2*n1 + l1;
@@ -70,7 +71,8 @@ double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int
 
    // cos(2 beta) = (m2w2 - m1w1)/(m2w2 + m1w1)
    // for m1=m2 and w1=w2, take beta = pi/4
-   double B = M_PI_4;
+//   double B = M_PI_4;
+//   double B = M_PI_4;
    double cB = cos(B);
    double sB = sin(B);
 
@@ -170,6 +172,95 @@ double TalmiB(int n, int l, int nn, int ll, int p)
 
   return B;
 }
+
+
+
+
+
+//  double Tcoeff( LabKet& labket, int Jab, int twoJ, jacobi1_state& jac1, jacobi2_state& jac2, int twoJ12, int Ncm, int Lcm)
+  double Tcoeff( int na, int la, int j2a, int nb, int lb, int j2b, int nc, int lc, int j2c, int Jab, int twoJ, int N1, int L1, int S1, int J1, int N2, int L2, int twoJ2, int twoJ12, int Ncm, int Lcm)
+  {
+//    int na = labket.p.n;
+//    int la = labket.p.l;
+//    double ja = 0.5*labket.p.j2;
+    double ja = 0.5*j2a;
+    double sa = 0.5;
+//    int nb = labket.q.n;
+//    int lb = labket.q.l;
+//    double jb = 0.5*labket.q.j2;
+    double jb = 0.5*j2b;
+    double sb = 0.5;
+//    int nc = labket.r.n;
+//    int lc = labket.r.l;
+//    double jc = 0.5*labket.r.j2;
+    double jc = 0.5*j2c;
+    double sc = 0.5;
+//
+//    int N1 = jac1.n;
+//    int L1 = jac1.l;
+//    int S1 = jac1.s;
+//    int J1 = jac1.j;
+//    int N2 = jac2.n;
+//    int L2 = jac2.l;
+    double S2 = 0.5; 
+//    int twoJ2 = jac2.j2;
+
+    // Limits
+    int Lab_min = std::max( std::abs(la-lb), std::abs(Jab-S1) );
+    int Lab_max = std::min( la+lb , Jab+S1 );
+
+
+    double tcoeff=0.;
+    for (int Lab=Lab_min; Lab<=Lab_max; Lab++)
+    {
+      double ninejab = (Lab+1) * NineJ(la, lb, Lab, sa, sb, S1, ja, jb, Jab );
+      int L12_min = std::max(twoJ12-S1-1, std::abs(L1-L2) );
+      int L12_max = std::min((twoJ12+S1+1), L1+L2 );
+      for (int L12=L12_min; L12<=L12_max; L12+=2)
+      {
+
+        int L_min = std::max( std::abs(Lcm-L12), std::abs(Lab-lc) );
+        int L_max = std::min( Lcm+L12, Lab+lc );
+        for (int L=L_min; L<=L_max; L++)
+        {
+          double t12=0;
+          int twoS12_min = std::max( std::abs( 2*S1-1 ), std::max( std::abs(twoJ-2*L ), std::abs(2*L12-twoJ12) ) );
+          int twoS12_max = std::min(2*S1 + 1 , std::min( twoJ+2*L, 2*L12+twoJ12) );
+          for (int twoS12=twoS12_min; twoS12<=twoS12_max; twoS12+=2)  // use twice S12, to make it an integer
+          {
+            t12 += (twoS12+1) * NineJ(L1,L2,L12,S1,S2,0.5*twoS12,J1,0.5*twoJ2,0.5*twoJ12)
+                              * NineJ(Lab,lc,L12,S1,sc,0.5*twoS12,Jab,jc,0.5*twoJ)
+                              * SixJ(Lcm, L12,L,0.5*twoS12,0.5*twoJ,0.5*twoJ12) * phase( lc + Lab + L + L1 + (twoJ + twoS12)/2 );
+          }
+
+          double tmosh=0;
+          int Lambda_min = std::max( std::abs(Lcm-L2), std::abs(L1-L));
+          int Lambda_max = std::min( Lcm+L2, L1+L );
+          for (int Lambda=Lambda_min; Lambda<=Lambda_max; Lambda++)
+          {
+            double sixjLambda = SixJ(Lcm,L2,Lambda,L1,L,L12);
+            int curlyL_min = std::max( std::abs(lc-Lambda), std::abs(L1-Lab) );
+            int curlyL_max = std::min( lc+Lambda, L1+Lab );
+            for (int curlyL=curlyL_min; curlyL<=curlyL_max; curlyL+=2)
+            {
+              int curlyN = ((Ncm+nc) + (Lcm +lc-curlyL)/2);
+              // increment moshinsky loop bit
+              tmosh += sixjLambda * SixJ(lc,curlyL,Lambda,L1,L,Lab) * phase( Lambda)
+                       * Moshinsky( curlyN,curlyL,  N1,L1,      nb,lb,     na,la,     Lab,  MOSH_BETA_1)
+                       * Moshinsky(    Ncm,Lcm,     N2,L2,  curlyN,curlyL, nc,lc,  Lambda,  MOSH_BETA_2);
+
+            }
+          }
+          // combine 12-loop and moshinsky loop bits;
+          tcoeff += (2*L12+1) * (2*L+1)  * ninejab * t12 * tmosh;
+        }
+      }
+    }
+ 
+  // multiply by all the j-hat symbols.   
+    double jhats = sqrt( (2*ja+1)*(2*jb+1)*(2*jc+1)*(2*Jab+1)*(twoJ+1)*(2*J1+1)*(twoJ2+1)*(2*S1+1) );
+    return tcoeff * jhats;
+  }
 
 
 
