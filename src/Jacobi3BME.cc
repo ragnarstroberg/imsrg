@@ -114,44 +114,44 @@ size_t Jacobi3BME::HashTJNN( int twoT, int twoJ, int Nbra, int Nket)
 
 // Setter / Getters for the jacobi matrix elements
 // Access an antisymmetrized matrix element
-double Jacobi3BME::GetMatElAS(size_t ibra, size_t iket, int Nbra, int Nket, int T2, int J2, int p)
+double Jacobi3BME::GetMatElAS(size_t ibra, size_t iket, int Nbra, int Nket, int twoT, int twoJ, int p)
 {
-   size_t dimket = GetDimensionAS(T2,J2,p,Nket); 
-   size_t start_loc = GetStartLocAS(T2,J2,Nbra,Nket);
+   size_t dimket = GetDimensionAS(twoT,twoJ,p,Nket); 
+   size_t start_loc = GetStartLocAS(twoT,twoJ,Nbra,Nket);
    return meAS.at( start_loc + ibra*dimket + iket );
 }
 
 // Access an antisymmetrized matrix element
-void Jacobi3BME::SetMatElAS(size_t ibra, size_t iket, int Nbra, int Nket, int T2, int J2, int p, double matel)
+void Jacobi3BME::SetMatElAS(size_t ibra, size_t iket, int Nbra, int Nket, int twoT, int twoJ, int p, double matel)
 {
-   size_t dimket = GetDimensionAS(T2,J2,p,Nket); 
-   size_t start_loc = GetStartLocAS(T2,J2,Nbra,Nket);
+   size_t dimket = GetDimensionAS(twoT,twoJ,p,Nket); 
+   size_t start_loc = GetStartLocAS(twoT,twoJ,Nbra,Nket);
    meAS.at( start_loc + ibra*dimket + iket ) = matel;
 }
 
 
-double Jacobi3BME::GetMatElNAS(size_t ibra, size_t iket, int Nbra, int Nket, int T2, int J2, int p)
+double Jacobi3BME::GetMatElNAS(size_t ibra, size_t iket, int Nbra, int Nket, int twoT, int twoJ, int p)
 {
-   auto hash = HashTJNN(T2,J2,Nbra,Nket);
-   size_t dimket = GetDimensionNAS(T2,J2,p,Nket); 
-   size_t start_loc = GetStartLocNAS(T2,J2,Nbra,Nket);
+   auto hash = HashTJNN(twoT,twoJ,Nbra,Nket);
+   size_t dimket = GetDimensionNAS(twoT,twoJ,p,Nket); 
+   size_t start_loc = GetStartLocNAS(twoT,twoJ,Nbra,Nket);
    return meNAS.at( start_loc + ibra*dimket + iket );
 }
 
-void Jacobi3BME::SetMatElNAS(size_t ibra, size_t iket, int Nbra, int Nket, int T2, int J2, int p, double matel)
+void Jacobi3BME::SetMatElNAS(size_t ibra, size_t iket, int Nbra, int Nket, int twoT, int twoJ, int p, double matel)
 {
-   auto hash = HashTJNN(T2,J2,Nbra,Nket);
-   size_t dimket = GetDimensionNAS(T2,J2,p,Nket); 
-   size_t start_loc = GetStartLocNAS(T2,J2,Nbra,Nket);
+   auto hash = HashTJNN(twoT,twoJ,Nbra,Nket);
+   size_t dimket = GetDimensionNAS(twoT,twoJ,p,Nket); 
+   size_t start_loc = GetStartLocNAS(twoT,twoJ,Nbra,Nket);
    meNAS.at( start_loc + ibra*dimket + iket ) = matel;
 }
 
 
 
 
-void Jacobi3BME::GetJacobiStates( int T2, int J2, int parity, int E12, int iNAS, jacobi1_state& jac1, jacobi2_state& jac2)
+void Jacobi3BME::GetJacobiStates( int twoT, int twoJ, int parity, int E12, int iNAS, jacobi1_state& jac1, jacobi2_state& jac2)
 {
-  size_t hash = HashTJN(T2,J2,E12);
+  size_t hash = HashTJN(twoT,twoJ,E12);
   auto& index_1_2 = NAS_jacobi_states.at(hash).at(iNAS);  // for each T,J,p,N block, this maps the NAS index to a pair of jacobi states (actually, to their index)
   jac1 = jacobi_1.at(index_1_2[0]);
   jac2 = jacobi_2.at(index_1_2[1]);
@@ -173,19 +173,19 @@ void Jacobi3BME::ComputeNAS_MatrixElements( )
 {
   std::cout << std::endl << " Computing NAS matrix elements " << std::endl << std::endl;
   // T2,J2,parity are conserved by V
-  for (int T2=twoTmin; T2<=twoTmax; T2+=2)
+  for (int twoT=twoTmin; twoT<=twoTmax; twoT+=2)
   {
-    for (int J2=twoJmin; J2<=twoJmax; J2+=2)
+    for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
     {
       for (int parity=0; parity<=1; parity++)
       {
-        std::cout << "TJP = " << T2 << " " << J2 << " " << parity << std::endl;
+        std::cout << "TJP = " << twoT << " " << twoJ << " " << parity << std::endl;
 
         for (int Nbra=parity; Nbra<=Nmax; Nbra+=2)  
         {
-          size_t dim_braAS = GetDimensionAS(T2,J2,parity,Nbra);
-          size_t dim_braNAS = GetDimensionNAS(T2,J2,parity,Nbra);
-          size_t cfp_begin_bra = GetCFPStartLocation(T2,J2,Nbra) ;
+          size_t dim_braAS = GetDimensionAS(twoT,twoJ,parity,Nbra);
+          size_t dim_braNAS = GetDimensionNAS(twoT,twoJ,parity,Nbra);
+          size_t cfp_begin_bra = GetCFPStartLocation(twoT,twoJ,Nbra) ;
           if (dim_braAS==0) continue;
           arma::mat cfp_bra( &(cfpvec[cfp_begin_bra]), dim_braNAS, dim_braAS, /*copy_aux_mem*/ true);
 
@@ -193,15 +193,15 @@ void Jacobi3BME::ComputeNAS_MatrixElements( )
           {
             std::cout << "   Nbra,Nket = " << Nbra << " " << Nket << std::endl;
             // build matrix for AS jacobi MEs, CFPs, and  (as the output) NAS jacobi MEs
-            size_t dim_ketAS = GetDimensionAS(T2,J2,parity,Nket);
+            size_t dim_ketAS = GetDimensionAS(twoT,twoJ,parity,Nket);
             if (dim_ketAS==0) continue;
          
-            size_t dim_ketNAS = GetDimensionNAS(T2,J2,parity,Nket);
-            size_t cfp_begin_ket = GetCFPStartLocation(T2,J2,Nket) ;
+            size_t dim_ketNAS = GetDimensionNAS(twoT,twoJ,parity,Nket);
+            size_t cfp_begin_ket = GetCFPStartLocation(twoT,twoJ,Nket) ;
             arma::mat cfp_ket( &(cfpvec[cfp_begin_ket]), dim_ketNAS, dim_ketAS, /*copy_aux_mem*/ true);
  
-            size_t startAS = GetStartLocAS(T2, J2, Nbra, Nket);
-            size_t startNAS = GetStartLocNAS(T2, J2, Nbra, Nket);
+            size_t startAS = GetStartLocAS(twoT, twoJ, Nbra, Nket);
+            size_t startNAS = GetStartLocNAS(twoT, twoJ, Nbra, Nket);
            // signature is mat(ptr_aux_mem, n_rows, n_cols, copy_aux_mem=true, strict=false)
            // and rows=ket, cols=bra
             arma::mat ASmat( &meAS[startAS], dim_ketAS, dim_braAS, /*copy_aux_mem*/false);
