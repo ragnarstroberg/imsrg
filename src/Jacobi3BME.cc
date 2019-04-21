@@ -311,6 +311,17 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 // This is just a convenience wrapper interface so that we don't have to pass so damn many parameters to Tcoeff
 double Jacobi3BME::Tcoeff_wrapper( Ket3& ket, int Jab, int twoJ, jacobi1_state& jac1, jacobi2_state& jac2, int twoJ12, int Ncm, int Lcm)
 {

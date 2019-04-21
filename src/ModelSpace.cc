@@ -987,7 +987,7 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
    if (tz2 > 0 ) neutron_orbits.push_back(ind);
    all_orbits.push_back(ind);
 
-   OneBodyChannels[{l, j2, tz2}].push_back(ind);
+   OneBodyChannels[{l, j2, tz2}].push_back(ind); // (Evidently, we mean one-body channels for an operator with the same symmetries as the Hamiltonian).
 }
 
 

@@ -66,7 +66,6 @@ class Jacobi3BME
   double GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jcd, int twoJ, int Tab, int Tcd, int twoT);
 
 
-
   double Tcoeff_wrapper( Ket3& ket, int Jab, int twoJ, jacobi1_state& jac1, jacobi2_state& jac2, int twoJ12, int Ncm, int Lcm);
 };
 

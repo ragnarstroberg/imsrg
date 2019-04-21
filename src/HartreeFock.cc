@@ -230,14 +230,10 @@ void HartreeFock::BuildMonopoleV()
 
 
 
-//*********************************************************************
-/// Construct an unnormalized three-body monopole interaction
-/// \f[ \langle iab | \bar{V}^{(3)} | jcd \rangle =
-///     \sum\limits_{J,J_{12}}\sum_{Tt_{12}}(2J+1)(2T+1) 
-///       \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle
-/// \f]
-//*********************************************************************
-void HartreeFock::BuildMonopoleV3()
+/// Set up the keys for the 3-body monopole terms
+/// We do this separately because it's fast (so it doesn't need to be parallel)
+/// and because it's the same whether we use lab frame 3N or jacobi 3N.
+void HartreeFock::SetUpMonopoleV3Keys()
 {
    double start_time = omp_get_wtime();
   // First, allocate. This is fast so don't parallelize.
@@ -252,7 +248,6 @@ void HartreeFock::BuildMonopoleV3()
       if (j<i) continue;
       Orbit& oj = modelspace->GetOrbit(j);
       int ej = 2*oj.n + oj.l;
-
 
 //      for (uint64_t a=0; a<norbits; ++a)
       for (auto a : modelspace->all_orbits)
@@ -286,6 +281,70 @@ void HartreeFock::BuildMonopoleV3()
       }
     }
 
+   profiler.timer[std::string(__func__)] += omp_get_wtime() - start_time;
+
+}
+
+
+//*********************************************************************
+/// Construct an unnormalized three-body monopole interaction
+/// \f[ \langle iab | \bar{V}^{(3)} | jcd \rangle =
+///     \sum\limits_{J,J_{12}}\sum_{Tt_{12}}(2J+1)(2T+1) 
+///       \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle
+/// \f]
+//*********************************************************************
+void HartreeFock::BuildMonopoleV3()
+{
+
+   SetUpMonopoleV3Keys();
+   double start_time = omp_get_wtime();
+/*
+  // First, allocate. This is fast so don't parallelize.
+//  size_t norbits = modelspace->GetNumberOrbits();
+//  for (uint64_t i=0; i<norbits; ++i)
+  for ( auto i : modelspace->all_orbits)
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    int ei = 2*oi.n + oi.l;
+    for (uint64_t j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    {
+      if (j<i) continue;
+      Orbit& oj = modelspace->GetOrbit(j);
+      int ej = 2*oj.n + oj.l;
+
+//      for (uint64_t a=0; a<norbits; ++a)
+      for (auto a : modelspace->all_orbits)
+      {
+        Orbit& oa = modelspace->GetOrbit(a);
+        int ea = 2*oa.n + oa.l;
+        for (uint64_t b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+        {
+          Orbit& ob = modelspace->GetOrbit(b);
+          int eb = 2*ob.n + ob.l;
+     
+//            for (uint64_t c=0; c<norbits; ++c)
+            for ( auto c : modelspace->all_orbits)
+            {
+              Orbit& oc = modelspace->GetOrbit(c);
+              int ec = 2*oc.n + oc.l;
+              if ( ea+ec+ei > Hbare.E3max ) continue;
+              for (uint64_t d : Hbare.OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
+              {
+                Orbit& od = modelspace->GetOrbit(d);
+                int ed = 2*od.n + od.l;
+ 
+                if ( eb+ed+ej > Hbare.E3max ) continue;
+                if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
+                  uint64_t key = Vmon3Hash(a,c,i,b,d,j);
+                  Vmon3_keys.push_back( key );
+              }
+            }
+          }
+        }
+      }
+    }
+*/
+   
    Vmon3.resize( Vmon3_keys.size(), 0. );
 
    #pragma omp parallel for schedule(dynamic,1) 
@@ -302,6 +361,8 @@ void HartreeFock::BuildMonopoleV3()
       int j2d = modelspace->GetOrbit(d).j2;  // this seems unnecessary
       int j2j = modelspace->GetOrbit(j).j2;  // this seems unnecessary
  
+      // TODO: We can probably use some permutation symmetries to avoid recomputing things
+      // at the very least, we can treat the permutation of the first two indices
       int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
       int j2max = std::min( j2a+j2c, j2b+j2d )/2;
       for (int j2=j2min; j2<=j2max; ++j2)
@@ -320,8 +381,187 @@ void HartreeFock::BuildMonopoleV3()
    std::cout << "HartreeFock::BuildMonopoleV3  storing " << Vmon3.size() << " doubles for Vmon3 and "
              << Vmon3_keys.size() << " uint64's for Vmon3_keys." << std::endl;
 
-   profiler.timer["HF_BuildMonopoleV3"] += omp_get_wtime() - start_time;
+//   profiler.timer["HF_BuildMonopoleV3"] += omp_get_wtime() - start_time;
+   profiler.timer[std::string(__func__)] += omp_get_wtime() - start_time;
 }
+
+
+
+//*********************************************************************
+/// Construct the V3 monopole matrix elements directly from the jacobi matrix elements.
+/// So far this is completely untested and certainly wrong.
+//*********************************************************************
+void HartreeFock::BuildMonopoleV3Jacobi()
+{
+   SetUpMonopoleV3Keys();
+   double start_time = omp_get_wtime();
+   Vmon3.resize( Vmon3_keys.size(), 0. );
+
+   for ( auto& obc_a : Hbare.OneBodyChannels )
+   {
+     uint64_t a0 = obc_a.second[0];
+     int j2a = obc_a.first[1];
+     for ( auto& obc_b : Hbare.OneBodyChannels )
+     {
+       uint64_t b0 = obc_b.second[0];
+       int j2b = obc_b.first[1];
+       int Jab_min = std::abs( j2a-j2b )/2;
+       int Jab_max = ( j2a+j2b )/2;
+       for ( auto& obc_c : Hbare.OneBodyChannels )
+       {
+         uint64_t c0 = obc_c.second[0];
+         int j2c = obc_c.first[1];
+
+         // Now we compute the relevalt T coefficients
+         // These are only a small subset, and we discard them after use
+         // so that the storage doesn't kill us. 
+         // The T coefficents int this sub-block can be labeled by: na,nb,nc, Jab, twoJ, E12, alpha, Ncm, Lcm
+         std::unordered_map<size_t,double> Ttable;
+         // We'll need one loop to allocate (not thread-safe), one loop to compute the Tcoefficients (can be parallel), and one to compute V3mon (also parallel).
+         // first, allocate
+         for ( int Jab=Jab_min; Jab<=Jab_max; Jab++)
+         {
+           int twoJ_min = std::abs(2*Jab-j2c);
+           int twoJ_max = (2*Jab-j2c);
+           for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+           {
+            for (auto a : obc_a.second )
+            {
+             Orbit& oa = modelspace->GetOrbit(a);
+             for (auto b : obc_b.second )
+             {
+              Orbit& ob = modelspace->GetOrbit(b);
+              for (auto c : obc_c.second )
+              {
+               Orbit& oc = modelspace->GetOrbit(c);
+               int Eabc = 2*(oa.n+ob.n+oc.n)+(oa.l+ob.l+oc.l);
+               int Lcm_max = std::min(oa.l+ob.l+oc.l, Eabc);
+               for (int Lcm=0; Lcm<=Lcm_max; Lcm++)
+               {
+                for ( int Ncm=0; 2*Ncm<=Eabc-Lcm; Ncm++)
+                {
+                  int E12 = Eabc - 2*Ncm - Lcm;
+                  // TODO: Here's the tricky bit because of the isospin
+                  int twoT = 1;
+                  int alpha_dim = jacobi3bme->GetDimensionNAS( twoT, twoJ, E12%2, E12 );
+                  for ( int alpha=0; alpha<alpha_dim; alpha++)
+                  {
+                    auto key = Vmon3JacobiHash(oa.n,ob.n,oc.n,Jab,twoJ,E12,alpha,Ncm,Lcm);
+                    Ttable[ key ] = 0; // make sure there's somewhere to put the value when we calculate it.
+                  } // for alpha
+                } // for Ncm
+               } // for Lcm
+              } // for c
+             } // for b
+            } // for a
+           } // for twoJ
+         } // for Jab
+         // Now the heavy lifting of computing the T coefficients
+         // make a vector of keys so we can loop it in parallel
+         std::vector<size_t> keyvector;
+         keyvector.reserve( Ttable.size() );
+         for ( auto& iter : Ttable ) keyvector.push_back(iter.first);
+// parallelize here...
+//         #pragma omp parallel for schedule(dynamic, 1)
+         for (size_t ikey=0; ikey<keyvector.size(); ikey++)
+         {
+           auto key = keyvector[ikey];
+           uint64_t na,nb,nc,Jab,twoJ,E12,alpha,Ncm,Lcm;
+           Vmon3JacobiUnHash(key, na,nb,nc,Jab,twoJ,E12,alpha,Ncm,Lcm);
+           jacobi1_state jac1;
+           jacobi2_state jac2;
+           int twoT = 1; // TODO: This is nonsense. Fix it.
+           jacobi3bme->GetJacobiStates( twoT, twoJ, E12%2, E12, alpha, jac1, jac2);
+           Orbit& oa = modelspace->GetOrbit( modelspace->GetOrbitIndex(na,obc_a.first[0],obc_a.first[1],obc_a.first[2]) );
+           Orbit& ob = modelspace->GetOrbit( modelspace->GetOrbitIndex(nb,obc_b.first[0],obc_b.first[1],obc_b.first[2]) );
+           Orbit& oc = modelspace->GetOrbit( modelspace->GetOrbitIndex(nc,obc_c.first[0],obc_c.first[1],obc_c.first[2]) );
+           Ket3 ket3(oa,ob,oc);
+           double Tcoef = jacobi3bme->Tcoeff_wrapper( ket3, Jab, twoJ, jac1, jac2, twoJ, Ncm, Lcm);
+           Ttable[key] = Tcoef;
+         }// for ikey
+         // and now that we have all the relevant T coefficients computed, let's get all the 3-body monopole terms
+         // we can again parallelize here
+         size_t asize = obc_a.second.size();
+//         for ( auto a : obc_a.second )
+//         #pragma omp parallel for schedule(dynamic,1)
+         for ( size_t ia=0; ia<asize; ia++)  // do it this way because omp doesn't play nice with range-based for loops
+         {
+           auto a = obc_a.second[ia];
+           Orbit& oa = modelspace->GetOrbit(a);
+           for (auto b : obc_b.second )
+           {
+             Orbit& ob = modelspace->GetOrbit(b);
+             for (auto c : obc_c.second )
+             {
+               Orbit& oc = modelspace->GetOrbit(c);
+               int Eabc = 2*(oa.n+ob.n+oc.n) + (oa.l+ob.l+oc.l);
+               for (auto d : obc_a.second )
+               {
+                 Orbit& od = modelspace->GetOrbit(d);
+                 for (auto e : obc_b.second )
+                 {
+                   Orbit& oe = modelspace->GetOrbit(e);
+                   for (auto f : obc_c.second )
+                   {
+                     if ( f < c ) continue;
+                     Orbit& of = modelspace->GetOrbit(f);
+                     int Edef = 2*(od.n+oe.n+of.n) + (od.l+oe.l+of.l);
+                     double vmon3 = 0;
+                     for ( int Jab=Jab_min; Jab<=Jab_max; Jab++ )
+                     {
+                       int twoJ_min = std::abs(2*Jab-j2c);
+                       int twoJ_max = (2*Jab-j2c);
+                       for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+                       {
+                         for ( int Ncm=0; 2*Ncm<=std::min(Eabc,Edef); Ncm++)
+                         {
+                           for (int Lcm=0; Lcm<=std::min(Eabc,Edef)-2*Ncm; Lcm+=2)
+                           {
+                             int E12_abc = Eabc - 2*Ncm - Lcm;
+                             int E12_def = Edef - 2*Ncm - Lcm;
+                             if ( (E12_abc + Eabc +Lcm)%2 >0) continue; // check parity
+                             int twoT = 1;
+                             size_t alpha_dim_abc = jacobi3bme->GetDimensionNAS( twoT, twoJ, E12_abc%2, E12_abc );
+                             size_t alpha_dim_def = jacobi3bme->GetDimensionNAS( twoT, twoJ, E12_def%2, E12_def );
+                             for ( int alpha_abc=0; alpha_abc<alpha_dim_abc; alpha_abc++)
+                             {
+                               auto key_abc = Vmon3JacobiHash(oa.n, ob.n, oc.n, Jab, twoJ,  E12_abc, alpha_abc, Ncm, Lcm);
+                               double T_abc = Ttable[key_abc];
+                               for ( int alpha_def=0; alpha_def<alpha_dim_def; alpha_def++)
+                               {
+                                 auto key_def = Vmon3JacobiHash(od.n, oe.n, of.n, Jab, twoJ,  E12_def, alpha_def, Ncm, Lcm);
+                                 double T_def = Ttable[key_def];
+                                 double me_jacobi_NAS = jacobi3bme->GetMatElNAS( alpha_abc, alpha_def, E12_abc, E12_def, twoJ, twoT, E12_abc%2);
+                                 vmon3 += (twoJ+1) * T_abc * me_jacobi_NAS * T_def;
+                               }
+                             }
+                           }
+                         }
+                       }
+                     }
+                     // Probably should think of a more clever way to do the lookup here
+                     auto key = Vmon3Hash(a,b,c,d,e,f);
+                     auto ptr = std::find(Vmon3_keys.begin(),Vmon3_keys.end(),key) ;
+                     Vmon3[ ptr- Vmon3_keys.begin() ] = vmon3;
+                   }
+                 }
+               }               
+             }
+           }
+         }
+       }// for obc_c
+     }// for obc_b
+   }// for obc_a
+
+   profiler.timer[std::string(__func__)] += omp_get_wtime() - start_time;
+}
+
+
+
+
+
+
+
 
 
 //*********************************************************************
@@ -340,13 +580,46 @@ uint64_t HartreeFock::Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, 
 //void HartreeFock::ParseVmon3HashKey(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f)
 void HartreeFock::Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f)
 {
-  a = (key    )&0x3FFL;
+  a = (key    )&0x3FFL; // The L means long, and 0x3FF is 1's in the lowest 10 bits.
   b = (key>>10)&0x3FFL;
   c = (key>>20)&0x3FFL;
   d = (key>>30)&0x3FFL;
   e = (key>>40)&0x3FFL;
   f = (key>>50)&0x3FFL;
 }
+
+
+
+
+//*********************************************************************
+/// Hashing function for rolling nine indices into a single long unsigned int.
+/// Each n value get 5 bits, which means they should be less than 32 (emax=64, probably ok for the near future)
+/// Jab gets 6 bits, twoJ gets 7 bits, Lcm gets 7 bits, Ncm gets 6 bits, E12 gets 7 bits
+/// leaving 16 bits for alpha, which is hopefully (?) enough.
+//*********************************************************************
+uint64_t HartreeFock::Vmon3JacobiHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t E12, uint64_t alpha, uint64_t Ncm, uint64_t Lcm)
+{
+   return (  alpha + (na<<16) + (nb<<21) + (nc<<26) + (Jab<<31) + ((twoJ/2)<<37) + (E12<<44) + (Ncm<<51) + (Lcm<<57) );
+}
+
+//*********************************************************************
+/// Take a hashed key and extract the six orbit indices that went into it.
+//*********************************************************************
+void HartreeFock::Vmon3JacobiUnHash(uint64_t key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& E12, uint64_t& alpha, uint64_t& Ncm, uint64_t& Lcm)
+{
+   alpha = (key    )&0xFFFF; // 16 bits
+   na    = (key>>16)&0x1F;   // 5 bits
+   nb    = (key>>21)&0x1F;   // 5 bits
+   nc    = (key>>26)&0x1F;   // 5 bits
+   Jab   = (key>>31)&0x3F;   // 6 bits
+   twoJ  = (key>>37)&0x7F;   // 7 bits
+   E12   = (key>>44)&0x7F;   // 7 bits
+   Ncm   = (key>>51)&0x3F;   // 6 bits
+   Lcm   = (key>>57)&0x7F;   // 7 bits
+}
+
+
+
 
 //*********************************************************************
 /// one-body density matrix 

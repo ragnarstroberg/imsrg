@@ -4334,36 +4334,10 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
       for (int parity=0;parity<=1;parity++)
       {
         int Nmin=parity%2;
-
-        uint32_t delimiter; // This is machine-dependent. This seems to work on the local cluster, but there are no guarantees elsewhere. Fortran's fault, not mine...
-        uint32_t nucleonsin,protonsin,neutronsin,twoJin,twoTin,Nmaxin;
-        int32_t pin;
-        double hwin;
-        v3int_file.read((char*)&delimiter,  sizeof(delimiter));
-        v3int_file.read((char*)&hwin,       sizeof(hwin));
-        v3int_file.read((char*)&nucleonsin, sizeof(nucleonsin));
-        v3int_file.read((char*)&protonsin,  sizeof(protonsin));
-        v3int_file.read((char*)&neutronsin, sizeof(neutronsin));
-        v3int_file.read((char*)&twoJin,       sizeof(twoJin));
-        v3int_file.read((char*)&twoTin,       sizeof(twoTin));
-        v3int_file.read((char*)&pin,        sizeof(pin));
-        v3int_file.read((char*)&Nmaxin,     sizeof(Nmaxin));
-        v3int_file.read((char*)&delimiter,  sizeof(delimiter));
-
-        if ( t2!=twoTin or j2!=twoJin or (1-2*parity)!=pin or jacobi3bme.Nmax!=Nmaxin )
-        {
-          std::cout << "ERROR: in " << __func__ << "  misread header info in " << v3int_name << "  "
-                    << " T: " << t2 << "," << twoTin << "   J: " << j2 << "," << twoJin <<  "  " 
-                    << " p: " << 1-2*parity << "," << pin  << "   Nmin:" << Nmin << ", Nmax:" << Nmaxin << "   "
-                    << "hw: " << hwin <<  ".   exiting... " << std::endl;
-          exit(EXIT_FAILURE);
-        }
-
-
-
         for (int N=Nmin; N<=jacobi3bme.Nmax; N+=2)  // N=2n+l, so for a given parity N is either even or odd 
         {
           // first, read dimensions from the poi file.
+          uint32_t delimiter; // This is machine-dependent. This seems to work on the local cluster, but there are no guarantees elsewhere. Fortran's fault, not mine...
           uint32_t dimAS,dimNAS;
           uint32_t cfp_ptr;
           poi_file.read((char*)&delimiter, sizeof(delimiter));
@@ -4400,12 +4374,49 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
             }
             eig_file.read((char*)&delimiter,  sizeof(delimiter));
 //            std::cout << "    sumsqr = " << sumsqr << std::endl;
-          }
+          } // for iAS
+        } // for N
+      } // for parity
+    } // for j2
+  } // for t2
 
+  // need to do this here because now we know the relevant dimensions
+  jacobi3bme.Allocate();
+
+  /// now read in the matrix jacobi matrix elements from the v3int file
+
+  for (int t2=jacobi3bme.twoTmin; t2<=jacobi3bme.twoTmax; t2+=2)
+  {
+    for (int j2=jacobi3bme.twoJmin; j2<=jacobi3bme.twoJmax; j2+=2)
+    {
+      for (int parity=0;parity<=1;parity++)
+      {
+        int Nmin=parity%2;
+
+        uint32_t delimiter; // This is machine-dependent. This seems to work on the local cluster, but there are no guarantees elsewhere. Fortran's fault, not mine...
+        uint32_t nucleonsin,protonsin,neutronsin,twoJin,twoTin,Nmaxin;
+        int32_t pin;
+        double hwin;
+        v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+        v3int_file.read((char*)&hwin,       sizeof(hwin));
+        v3int_file.read((char*)&nucleonsin, sizeof(nucleonsin));
+        v3int_file.read((char*)&protonsin,  sizeof(protonsin));
+        v3int_file.read((char*)&neutronsin, sizeof(neutronsin));
+        v3int_file.read((char*)&twoJin,       sizeof(twoJin));
+        v3int_file.read((char*)&twoTin,       sizeof(twoTin));
+        v3int_file.read((char*)&pin,        sizeof(pin));
+        v3int_file.read((char*)&Nmaxin,     sizeof(Nmaxin));
+        v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+
+        if ( t2!=twoTin or j2!=twoJin or (1-2*parity)!=pin or jacobi3bme.Nmax!=Nmaxin )
+        {
+          std::cout << "ERROR: in " << __func__ << "  misread header info in " << v3int_name << "  "
+                    << " T: " << t2 << "," << twoTin << "   J: " << j2 << "," << twoJin <<  "  " 
+                    << " p: " << 1-2*parity << "," << pin  << "   Nmin:" << Nmin << ", Nmax:" << Nmaxin << "   "
+                    << "hw: " << hwin <<  ".   exiting... " << std::endl;
+          exit(EXIT_FAILURE);
         }
 
-
-        /// now read in the matrix jacobi matrix elements from the v3int file
         for (int Nbra=Nmin; Nbra<=jacobi3bme.Nmax; Nbra+=2 )
         {
           size_t dim_braAS = jacobi3bme.GetDimensionAS(t2,j2,parity,Nbra);
@@ -4428,15 +4439,13 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
                 jacobi3bme.SetMatElAS(ibra,iket,Nbra,Nket,t2,j2,parity, matel);
                 jacobi3bme.SetMatElAS(iket,ibra,Nket,Nbra,t2,j2,parity, matel); // for now, let's store the hermitian conjugate
 
-              }
-            }
-          }
-        }
-
-
-      }
-    }
-  }
+              } // for iket
+            } // for Nket
+          } // for ibra
+        } // for Nbra
+      } // for parity
+    } // for j2
+  } // for t2
   poi_file.close();
   eig_file.close();
   v3int_file.close();
