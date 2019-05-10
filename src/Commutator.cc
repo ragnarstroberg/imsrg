@@ -14,6 +14,7 @@
 
 
 
+/// Commutator expressions for second-quantized operators
 namespace Commutator {
 
 bool use_goose_tank_correction = false;

@@ -23,7 +23,8 @@
 #include <cmath>
 
 #define MOSH_BETA_1 M_PI_4   // Moshinksy beta parameter for mass ratio 1:1
-#define MOSH_BETA_2 atan(sqrt(2)) // Moshinsky beta parameter for a mass ratio 2:1
+#define MOSH_BETA_2 atan(sqrt(2)) // Moshinsky beta parameter for  mass ratio m1/m2 = 2
+#define MOSH_BETA_half atan(sqrt(0.5)) // Moshinsky beta parameter for mass ration m1/m2 = 0.5
 
 //using namespace std;
 
@@ -42,6 +43,7 @@ namespace AngMom
    double TalmiB(int n, int l, int nn, int ll, int p);
 //   double Tcoeff( LabKet& labket, int Jab, int twoJ, jacobi1_state& jac1, jacobi2_state& jac2, int twoJ12, int Ncm, int Lcm);
    double Tcoeff( int na, int la, int j2a, int nb, int lb, int j2b, int nc, int lc, int j2c, int Jab, int twoJ, int N1, int L1, int S1, int J1, int N2, int L2, int twoJ2, int twoJ12, int Ncm, int Lcm);
+   double Tcoeff_bruteforce( int na, int la, int j2a, int nb, int lb, int j2b, int nc, int lc, int j2c, int Jab, int twoJ, int N1, int L1, int S1, int J1, int N2, int L2, int twoJ2, int twoJ12, int Ncm, int Lcm);
 };
 
 #endif
