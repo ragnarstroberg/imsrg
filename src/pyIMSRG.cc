@@ -234,8 +234,11 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetHFPotential",&HartreeFock::GetHFPotential)
       .def("GetAverageHFPotential",&HartreeFock::GetAverageHFPotential)
       .def("GetValence3B",&HartreeFock::GetValence3B)
+      .def("FreeVmon",&HartreeFock::FreeVmon)
       .def_readonly("EHF",&HartreeFock::EHF)
       .def_readonly("C",&HartreeFock::C)
+      .def_readwrite("Vmon3_keys",&HartreeFock::Vmon3_keys)
+      .def_readwrite("Vmon3",&HartreeFock::Vmon3)
    ;
 
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
@@ -296,6 +299,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("ComputeNAS_MatrixElements",&Jacobi3BME::ComputeNAS_MatrixElements)
       .def("GetLabMatEl",&Jacobi3BME::GetLabMatEl)
       .def("TestReadTcoeffNavratil",&Jacobi3BME::TestReadTcoeffNavratil)
+      .def("GetV3mon_all",&Jacobi3BME::GetV3mon_all)
    ;
 
 

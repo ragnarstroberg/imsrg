@@ -4349,12 +4349,12 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
           poi_file.read((char*)&dimNAS,    sizeof(dimNAS));
           poi_file.read((char*)&delimiter, sizeof(delimiter));
 
-          std::cout << "About to set dimensions" << std::endl;
+//          std::cout << "About to set dimensions" << std::endl;
           jacobi3bme.SetDimensionAS(t2,j2,parity,N, dimAS);
-          std::cout << " now NAS..." << std::endl;
+//          std::cout << " now NAS..." << std::endl;
           jacobi3bme.SetDimensionNAS(t2,j2,parity,N, dimNAS);
 //          SetCFPpointer(t2,j2,parity,N, cfp_ptr-1); // Convert from Fortran to C indexing
-          std::cout << " done" << std::endl;
+//          std::cout << " done" << std::endl;
 
           // next, read CFPs from the eig file
           size_t hash = jacobi3bme.HashTJN(t2,j2,N);
@@ -4364,7 +4364,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
 
           for (int iAS=0; iAS<dimAS; iAS++)
           {
-            std::cout << "      iAS = " << iAS << std::endl;
+//            std::cout << "      iAS = " << iAS << std::endl;
             uint32_t delimiter;
             eig_file.read((char*)&delimiter,  sizeof(delimiter));
             if ( delimiter/8 != dimNAS )
@@ -4390,7 +4390,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
   }
   jacobi3bme.Allocate();
 
-        std::cout << "   reading in v3int file" << std::endl;
+//        std::cout << "   reading in v3int file" << std::endl;
   for (int t2=jacobi3bme.twoTmin; t2<=jacobi3bme.twoTmax; t2+=2)
   {
     for (int j2=jacobi3bme.twoJmin; j2<=jacobi3bme.twoJmax; j2+=2)
@@ -4434,7 +4434,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
               size_t dim_ketAS = jacobi3bme.GetDimensionAS(t2,j2,parity,Nket);
               for (size_t iket=0; iket<dim_ketAS; iket++)
               {
-                std::cout << "Nbra,Nket, ibra,iket = " << Nbra << " " << Nket << "    " << ibra << " " << iket << std::endl;
+//                std::cout << "Nbra,Nket, ibra,iket = " << Nbra << " " << Nket << "    " << ibra << " " << iket << std::endl;
                 if (Nket<Nbra or (Nket==Nbra and iket<ibra) ) continue; 
 //                indexA++;
                 double matel;
@@ -4443,7 +4443,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
                 v3int_file.read((char*)&matel,      sizeof(matel));
                 v3int_file.read((char*)&delimiter,  sizeof(delimiter));
 
-                std::cout << "read a matrix element " << matel << std::endl;
+//                std::cout << "read a matrix element " << matel << std::endl;
 
                 jacobi3bme.SetMatElAS(ibra,iket,Nbra,Nket,t2,j2,parity, matel);
                 jacobi3bme.SetMatElAS(iket,ibra,Nket,Nbra,t2,j2,parity, matel); // for now, let's store the hermitian conjugate

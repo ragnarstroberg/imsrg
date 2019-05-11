@@ -468,7 +468,7 @@ void HartreeFock::UpdateF()
         v3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3[ind] ;
       }
       for (auto& v : V3vec) V3ij += v;
-      V3vec.clear(); // free up the memory
+      V3vec.clear(); // free up the memory (is this at all necessary, since it goes out of scope?)
    }
 
    Vij  = arma::symmatu(Vij);

@@ -2,6 +2,7 @@
 #define Jacobi3BME_hh 1
 
 #include "ModelSpace.hh"
+#include "HartreeFock.hh"
 #include <vector>
 #include <array>
 
@@ -69,21 +70,28 @@ class Jacobi3BME
 
 //  double& ElementAS(size_t ibra,size_t iket, int Nbra, int Nket, int twoJ,int twoT, int p);
 //  double& ElementNAS(size_t ibra,size_t iket, int Nbra, int Nket, int twoJ,int twoT, int p); 
-  void SetMatElAS( size_t ibra,size_t iket, int Nbra, int Nket, int twoJ,int twoT, int p, double me);
-  void SetMatElNAS( size_t ibra,size_t iket, int Nbra, int Nket, int twoJ,int twoT, int p, double me);
-  double GetMatElAS( size_t ibra,size_t iket, int Nbra, int Nket, int twoJ,int twoT, int p);
-  double GetMatElNAS( size_t ibra,size_t iket, int Nbra, int Nket, int twoJ,int twoT, int p);
+  void SetMatElAS( size_t ibra,size_t iket, int Nbra, int Nket, int twoT,int twoJ, int p, double me);
+  void SetMatElNAS( size_t ibra,size_t iket, int Nbra, int Nket, int twoT,int twoJ, int p, double me);
+  double GetMatElAS( size_t ibra,size_t iket, int Nbra, int Nket, int twoT,int twoJ, int p);
+  double GetMatElNAS( size_t ibra,size_t iket, int Nbra, int Nket, int twoT,int twoJ, int p);
   size_t GetStartLocAS(int twoT, int twoJ, int N1, int N2) { return start_locAS.at( HashTJNN(twoT,twoJ,N1,N2) ); };
   size_t GetStartLocNAS(int twoT, int twoJ, int N1, int N2) { return start_locNAS.at( HashTJNN(twoT,twoJ,N1,N2) ); };
   void ComputeNAS_MatrixElements( );
   double GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jcd, int twoJ, int Tab, int Tcd, int twoT);
 
+//  double GetV3mon( size_t a, size_t b, size_t c, size_t d, size_t e, size_t f ); //< Get a single 3-body monopole term, for use in a Hartree-Fock calculation
+
+  std::string TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm );
+//  void TcoeffUnHash(std::string& key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& jac1, uint64_t& jac2, uint64_t& twoJ12, uint64_t& Lcm );
+  void TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ, int& jac1, int& jac2, int& twoJ12, int& Lcm );
+//  void GetV3mon_all( std::vector<uint64_t>& keys, std::vector<double>& v3mon, ModelSpace& modelspace ); //< Get all the monopoles in one go, which should be more efficient
+  void GetV3mon_all( HartreeFock& hf ); //< Get all the monopoles in one go, which should be more efficient
 
   double Tcoeff_wrapper( Ket3& ket, int Jab, int twoJ, jacobi1_state& jac1, jacobi2_state& jac2, int twoJ12, int Ncm, int Lcm);
 
-  void ReadTcoeffNavratil( std::string fname, std::vector<double>& tcoeff, std::vector<labstate_nav>& labst, std::vector<relativestate_nav>& relst, std::vector<bookkeeping_nav>& bookkeeping );
+  void ReadTcoeffNavratil( std::string fname, std::vector<double>& tcoeff, std::vector<labstate_nav>& labst, std::vector<relativestate_nav>& relst, std::vector<bookkeeping_nav>& bookkeeping ); //< for unit testing
 
-  void TestReadTcoeffNavratil( std::string fname );
+  void TestReadTcoeffNavratil( std::string fname ); //< for unit testing
 
 
 };

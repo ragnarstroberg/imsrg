@@ -1,8 +1,12 @@
 
 #include "Jacobi3BME.hh"
 #include "AngMom.hh"
+#include "HartreeFock.hh" // needed for V3monHash and V3monUnHash
+#include "IMSRGProfiler.hh"
 #include <istream>
+#include <sstream>
 #include <iomanip>
+#include <omp.h>
 
 
 
@@ -406,6 +410,305 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
 
   return 6 * me_lab;
 }
+
+
+/*
+// It's not clear that this will ever be useful.
+double Jacobi3BME::GetV3mon( size_t a, size_t b, size_t c, size_t d, size_t e, size_t f )
+{
+
+
+}
+
+*/
+
+// na,nb,and nc all should be <= emax/2, Jab will be <= 2*emax+1, twoJ will be <=6*emax+3, but only odd, Lcm will be <=3*emax, jac2 <= ~Nmax*Nmax,    jac1<= ~Nmax*Nmax*Nmax 
+//  J lies in the range |Jab-jc| <= J <= Jab+jc,  so it has a span of no more than 2*emax+1.
+// na + 10*nb + 100*nc fits in 10 bits (1023).  Jab fits in 6 bits (63).  twoJ/2 fits in 7 bits (127).  Lcm fits in 7 bits (127). jac2 fits in 12 bits (4095). jac1 fits in 18 bits (262143)
+// This totals up to 10+6+7+7+7+12+18 = 67, which is too many.   For now, we will just use a string.
+//uint64_t Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm )
+std::string Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm )
+{
+  std::ostringstream oss;
+  oss << na << " " << nb << " " << nc << " " << Jab << " " << twoJ << " " << jac1 << " " << jac2 << " " << twoJ12 << " " << Lcm;
+  return oss.str();
+}
+
+//void Jacobi3BME::TcoeffUnHash(uint64_t key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& jac1, uint64_t& jac2, uint64_t& twoJ12, uint64_t& Lcm )
+void Jacobi3BME::TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ, int& jac1, int& jac2, int& twoJ12, int& Lcm )
+{
+  std::istringstream iss(key);
+  iss >> na >> nb >> nc >> Jab >> twoJ >> jac1 >> jac2 >> twoJ12 >> Lcm;
+}
+
+
+//void Jacobi3BME::GetV3mon_all( std::vector<uint64_t>& keys, std::vector<double>& v3mon, ModelSpace& modelspace )
+void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
+{
+  double t_start = omp_get_wtime();
+  // The keys are already computed elsewhere and are passed in as input
+  std::cout << "Begin " << __func__ << std::endl;
+  hf.Vmon3.resize( hf.Vmon3_keys.size(), 0.);
+//  v3mon.resize( keys.size(), 0.);
+  for (auto& obc_a : hf.modelspace->OneBodyChannels )
+  {
+    int la = obc_a.first[0];
+    int j2a = obc_a.first[1];
+    int tz2a = obc_a.first[2];
+    for (auto& obc_b : hf.modelspace->OneBodyChannels )
+    {
+      int lb = obc_b.first[0];
+      int j2b = obc_b.first[1];
+      int tz2b = obc_b.first[2];
+      int Jab_min = std::abs(j2a-j2b)/2;
+      int Jab_max = (j2a+j2b)/2;
+      int Tzab = (tz2a+tz2b)/2;
+      int Tab_min = std::abs(Tzab);
+       // possibilities  (tz2a,tz2b,Tab)=>CG :  (1,1,1)=>1 ,  (1,-1,1)=>sqrt(2), (-1,1,1)=>sqrt(2),  (1,-1,0)=>sqrt(2) , (-1,1,0)=>-sqrt(2)
+      std::array<double,2> isospin2_Clebsch = {tz2a*sqrt(0.5), 0.5*(tz2a+tz2b) + std::abs(tz2a-tz2b)/2*sqrt(0.5) };
+      for (auto& obc_c : hf.modelspace->OneBodyChannels )
+      {
+        int lc = obc_c.first[0];
+        int j2c = obc_c.first[1];
+        int tz2c = obc_c.first[2];
+        std::cout << "OneBody Channels: (" << la << " " << j2a << " " << tz2a << ") , (" << lb << " " << j2b << " " << tz2b << ") , (" << lc << " " << j2c << " " << tz2c << ")" << std::endl;
+        int twoTz = tz2a + tz2b + tz2c;
+        int twoT_min = std::abs( twoTz ); // this will either be 1 or 3
+        // index by  2*Tab + T/2 ->             { (0,1), (0,3), (1,1), (1,3) }
+        std::array<double,4> isospin3_Clebsch = {   1.0,   0.0,  AngMom::CG(1,Tzab,0.5,0.5*tz2c, 0.5, 0.5*twoTz),  AngMom::CG(1,Tzab,0.5,0.5*tz2c, 1.5,0.5*twoTz) };
+        // possibilities (Tab,Tzab, 2tc, 2tzc| 2T)=>CG :  (0,0, 1,1|1)=>1 ,  (0,0, 1,-1|1)=>1,     (1,1, 1,1| 3,3)=>1,  (1,-1,1,-1|3,-3)=>1,   (1,0, 1,1|3,1)
+        // compute all the relevant T coefficients.  The coefficients have the following indices:
+        //  na, nb, nc, Jab, J, jacobi1, jacobi2, J12, Lcm   (Ncm can be inferred from energy conservation?)
+//        std::unordered_map<uint64_t,double> T3bList;  // we will put things into a hash table.
+        std::unordered_map<std::string,double> T3bList;  // we will put things into a hash table.
+
+        double t_internal = omp_get_wtime();
+        // First, generate all the keys that we'll need, but don't compute the T coefficients
+        std::cout << "  generate all the keys..." << std::endl;
+        for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+        {
+          int twoJ_min = std::abs(2*Jab-j2c);
+          int twoJ_max = 2*Jab+j2c;
+          for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+          {
+            for (auto a : obc_a.second) // run over the list of orbit indices in channel obc_a
+            {
+             Orbit& oa = hf.modelspace->GetOrbit( a );
+             for (auto b : obc_b.second)
+             {
+              Orbit& ob = hf.modelspace->GetOrbit( b );
+              for (auto c : obc_c.second)
+              {
+                Orbit& oc = hf.modelspace->GetOrbit( c );
+                int Eabc = 2*(oa.n+ob.n+oc.n) + oa.l+ob.l+oc.l;
+
+                for (int jac1=0; jac1<jacobi_1.size(); jac1++)
+                {
+                 int N1 = jacobi_1[jac1].n;
+                 int L1 = jacobi_1[jac1].l;
+                 int J1 = jacobi_1[jac1].j;
+                 for (int jac2=0; jac2<jacobi_2.size(); jac2++)
+                 {
+                   int N2 = jacobi_2[jac2].n;
+                   int L2 = jacobi_2[jac2].l;
+                   int twoJ2 = jacobi_2[jac2].j2;
+                   if ( (2*(N1+N2)+L1+L2) > Eabc ) continue;
+                   int twoJ12_min = std::abs(2*J1-twoJ2);
+                   int twoJ12_max = 2*J1+twoJ2;
+                   for (int twoJ12=twoJ12_min; twoJ12<=twoJ12_max; twoJ12+=2)
+                   {
+                    for (int Lcm=(L1+L2+Eabc)%2; Lcm<=(Eabc-2*(N1+N2)-L1-L2); Lcm++)
+                    {
+                      if ( (std::abs(2*Lcm - twoJ12)>twoJ) or (2*Lcm+twoJ12)<twoJ ) continue; // check triangle condition for J12,Lcm J
+                      auto hash_key = TcoeffHash(oa.n,ob.n,oc.n,Jab,twoJ,jac1,jac2,twoJ12,Lcm);
+                      T3bList[hash_key] = 0;
+                    }// for Lcm
+                   } // for twoJ12
+                 } // for jac2
+               } // for jac1
+              } // for c
+             } // for b
+            } // for a
+          } // for twoJ
+        } // for Jab
+
+        IMSRGProfiler::timer[std::string(__func__)+"_GenerateKeys"] += omp_get_wtime() - t_internal;
+        t_internal = omp_get_wtime();
+
+        std::cout << "done. Now compute the T coefficients" << std::endl;
+
+        // Next, we compute all the T coefficients. We'll probably want to do this in parallel.
+        // In the current construction, all threads loop through the entire set of elements, but
+        // they only stop to compute when it's their turn.
+        #pragma omp parallel
+        {
+          size_t cnt = 0;
+          int ithread = omp_get_thread_num();
+          int nthreads = omp_get_num_threads();
+          for(auto element = T3bList.begin(); element !=T3bList.end(); ++element, cnt++)
+          {
+            if(cnt%nthreads != ithread) continue; // Check if this thread should compute this element
+            auto hash_key = element->first;
+            int na,nb,nc,Jab,twoJ,jac1,jac2,twoJ12,Lcm;
+            TcoeffUnHash(hash_key, na,nb,nc,Jab,twoJ,jac1,jac2,twoJ12,Lcm);
+            auto& jacobi1 = jacobi_1[jac1];
+            auto& jacobi2 = jacobi_2[jac2];
+            int Ncm = (2*(na+nb+nc)+la+lb+lc - 2*(jacobi1.n+jacobi2.n) - jacobi1.l - jacobi2.l - Lcm)/2;
+            if (Ncm<0) continue;
+            double tcoef = AngMom::Tcoeff( na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
+            element->second = tcoef;
+          }
+        }
+
+        IMSRGProfiler::timer[std::string(__func__)+"_ComputeToeff"] += omp_get_wtime() - t_internal;
+        t_internal = omp_get_wtime();
+
+        std::cout << "done. Find the relevant monopole keys and store them in imonlist" << std::endl;
+        std::vector<size_t> imonlist;
+//        for (size_t imon=0; imon<v3mon.size(); imon++)
+        for (size_t imon=0; imon<hf.Vmon3_keys.size(); imon++)
+        {
+          auto key = hf.Vmon3_keys[imon];
+          int a,b,c,d,e,f;
+          hf.Vmon3UnHash( key, a, b, c, d, e, f);  // static method so we coud call it without a class instance if we wanted...
+          if ( std::find( obc_a.second.begin(), obc_a.second.end(), a ) == obc_a.second.end() ) continue;
+          if ( std::find( obc_b.second.begin(), obc_b.second.end(), b ) == obc_b.second.end() ) continue;
+          if ( std::find( obc_c.second.begin(), obc_c.second.end(), c ) == obc_c.second.end() ) continue;
+          imonlist.push_back(imon);
+          
+        }
+
+        IMSRGProfiler::timer[std::string(__func__)+"_FindMonKeys"] += omp_get_wtime() - t_internal;
+        t_internal = omp_get_wtime();
+
+        std::cout << "done.  Now the loop over imon... Size of imonlist is " << imonlist.size() << std::endl;
+        // And at last, we compute all the monopole terms for this combination of one-body channels
+        // This can also be done in parallel
+//        for (size_t imon=0; imon<v3mon.size(); imon++)
+//        #pragma omp parallel for schedule(dynamic,1)
+        #pragma omp parallel for schedule(dynamic,1)
+        for (size_t ilist=0; ilist<imonlist.size(); ilist++)
+        {
+          size_t imon = imonlist[ilist];
+          auto key = hf.Vmon3_keys[imon];
+          int a,b,c,d,e,f;
+          hf.Vmon3UnHash( key, a, b, c, d, e, f);  // static method so we coud call it without a class instance if we wanted...
+          // Check if the given key corresponds to the set of one-body channels we're currently working on.
+          // For now we trust that we've only been given keys where d is in the same channel as a,  e goes with b and f goes with c.
+//          if ( std::find( obc_a.second.begin(), obc_a.second.end(), a ) == obc_a.second.end() ) continue;
+//          if ( std::find( obc_b.second.begin(), obc_b.second.end(), b ) == obc_b.second.end() ) continue;
+//          if ( std::find( obc_c.second.begin(), obc_c.second.end(), c ) == obc_c.second.end() ) continue;
+          // V3mon(a,b,c,d,e,f) = 1/(2ja+1) * sum_{Jab,J} (2J+1) <abc Jab,J| V |def Jab,J>
+          //                    = 1/(2ja+1) * sum_{Jab,J} (2J+1) sum_{jac1,jac2,J12,jac1',jac2',J12',Ncm,Lcm}  Tcoef(abc,Jab,J;jac1,jac2,J12,Ncm,Lcm) * Tcoef(def,Jab,J;jac1',jac2',J12',Ncm,Lcm)
+          //                                                                                 sum_{T12,T12',T}  * CG(ta,tb,T12)*CG(tc,T12,T) * CG(td,te,T12')*CG(df,T12',T)   <- Here T means isospin
+          //                                                                                                   * < jac1,jac2,J12,T12 | V | jac1',jac2',J12',T12' >
+          Orbit& oa = hf.modelspace->GetOrbit(a);
+          Orbit& ob = hf.modelspace->GetOrbit(b);
+          Orbit& oc = hf.modelspace->GetOrbit(c);
+          Orbit& od = hf.modelspace->GetOrbit(d);
+          Orbit& oe = hf.modelspace->GetOrbit(e);
+          Orbit& of = hf.modelspace->GetOrbit(f);
+          int Eabc = 2*(oa.n+ob.n+oc.n) + oa.l+ob.l+oc.l;
+          int Edef = 2*(od.n+oe.n+of.n) + od.l+oe.l+of.l;
+          int parity = Eabc%2;
+          double v_monopole = 0;
+          for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+          {
+           int twoJ_min = std::abs(2*Jab-j2c);
+           int twoJ_max = 2*Jab+j2c;
+           for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+           {
+             for (int Tab=Tab_min; Tab<=1; Tab++)
+             {
+              double isoClebsch_ab = isospin2_Clebsch[Tab];
+              for (int Tde=Tab_min; Tde<=1; Tde++)
+              {
+                double isoClebsch_de = isospin2_Clebsch[Tde];
+                for (int twoT=twoT_min; twoT<=std::min(2*Tab+1,2*Tde+1); twoT+=2)
+                {
+                  double isoClebsch_c = isospin3_Clebsch[2*Tab + twoT/2];
+                  double isoClebsch_f = isospin3_Clebsch[2*Tde + twoT/2];
+                  if (std::abs(isoClebsch_c)<1e-6 or std::abs(isoClebsch_f)<1e-6) continue;
+                  double v_sumJT = 0;
+                  for (int Ecm=0; Ecm<=std::min(Eabc,Edef); Ecm++)
+                  {
+                   int E12abc = Eabc-Ecm;
+                   int E12def = Edef-Ecm;
+                   auto hashTJN_abc = HashTJN(twoT,twoJ,E12abc);
+                   auto hashTJN_def = HashTJN(twoT,twoJ,E12def);
+                   size_t dimNAS_abc = GetDimensionNAS( twoT, twoJ, parity, E12abc ); 
+                   size_t dimNAS_def = GetDimensionNAS( twoT, twoJ, parity, E12def ); 
+//                   std::cout << "   dimensions: " << dimNAS_abc << " , " << dimNAS_def << std::endl;
+                   for (size_t iNAS_abc = 0; iNAS_abc<dimNAS_abc; iNAS_abc++)
+                   {
+                     auto& index_1_2_abc = NAS_jacobi_states.at(hashTJN_abc).at(iNAS_abc);
+                     auto indx_jac1_abc = index_1_2_abc[0];
+                     auto indx_jac2_abc = index_1_2_abc[1];
+                     jacobi1_state& jac1_abc = jacobi_1.at(indx_jac1_abc);
+                     jacobi2_state& jac2_abc = jacobi_2.at(indx_jac2_abc);
+//                     GetJacobiStates( twoT, twoJ, parity, E12abc, iNAS_abc, jac1_abc, jac2_abc);
+                     if (jac1_abc.t != Tab) continue;
+
+                     for (size_t iNAS_def = 0; iNAS_def<dimNAS_def; iNAS_def++)
+                     {
+                       auto& index_1_2_def = NAS_jacobi_states.at(hashTJN_def).at(iNAS_def);
+                       auto indx_jac1_def = index_1_2_def[0];
+                       auto indx_jac2_def = index_1_2_def[1];
+                       jacobi1_state& jac1_def = jacobi_1.at(indx_jac1_def);
+                       jacobi2_state& jac2_def = jacobi_2.at(indx_jac2_def);
+
+//                       GetJacobiStates( twoT, twoJ, parity, E12def, iNAS_def, jac1_def, jac2_def);
+                       if (jac1_def.t != Tde) continue;
+                       int twoJ12_min = std::max( std::abs(2*jac1_abc.j-jac2_abc.j2), std::abs(2*jac1_def.j-jac2_def.j2) );
+                       int twoJ12_max = std::min( 2*jac1_abc.j+jac2_abc.j2, 2*jac1_def.j+jac2_def.j2 );
+                       for (int twoJ12=twoJ12_min; twoJ12<=twoJ12_max; twoJ12+=2)
+                       {
+                         for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
+                         {
+                           if ( std::abs(twoJ12-2*Lcm)>twoJ or (twoJ12+2*Lcm)<twoJ ) continue;
+//                           std::cout << "        Lcm,twoJ12,twoJ = " << Lcm << " " << twoJ12 << " " << twoJ << std::endl; 
+                           auto THash_abc = TcoeffHash(oa.n,ob.n,oc.n,Jab,twoJ,indx_jac1_abc,indx_jac2_abc,twoJ12,Lcm );
+                           auto THash_def = TcoeffHash(od.n,oe.n,of.n,Jab,twoJ,indx_jac1_def,indx_jac2_def,twoJ12,Lcm );
+                           double Tcoef_abc = T3bList[THash_abc];
+                           double Tcoef_def = T3bList[THash_def];
+                           if ( std::abs(Tcoef_abc*Tcoef_def)>1e-6)
+                           {
+                             std::cout << "        Tcoefs = " << Tcoef_abc << " " << Tcoef_def << std::endl;
+                             std::cout << "       accesing " << iNAS_abc << " " << iNAS_def << " " << E12abc << " " << E12def << " " << twoT << " " << twoJ << " " << parity << std::endl;
+                             std::cout << "       Tab,Tde,twoT = " << Tab << " " << Tde << " " << twoT << "   isospin clebsch's " << isoClebsch_ab << " " << isoClebsch_c << "   " << isoClebsch_de << " " << isoClebsch_f << std::endl;
+                             double v_NAS = GetMatElNAS( iNAS_abc, iNAS_def,  E12abc,  E12def, twoT, twoJ,  parity);
+                             v_sumJT += 6 * Tcoef_abc * Tcoef_def * v_NAS;
+                             std::cout << "         v_sumJT = " << v_sumJT << std::endl;
+                           }
+                         }
+                       } // for twoJ12
+                     } // for iNAS_def
+                  } // for iNAS_abc
+                 } // for Ecm
+                 v_monopole += (twoJ+1) * isoClebsch_ab * isoClebsch_c * isoClebsch_de * isoClebsch_f * v_sumJT;
+                } // for twoT
+              } // for Tde
+             } // for Tab
+           } // for twoJ
+          } // for Jab
+          v_monopole /= j2a+1.;
+//          v3mon[imon] = v_monopole; // put that bad boy into the output vector
+          hf.Vmon3[imon] = v_monopole; // put that bad boy into the output vector
+          std::cout << "abcdef = " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
+          std::cout << "SETTING " << imon << " -> " << v_monopole << std::endl << std::endl;
+        } // for imon
+//        std::cout << "done " << std::endl;
+
+        IMSRGProfiler::timer[std::string(__func__)+"_iMonLoop"] += omp_get_wtime() - t_internal;
+      } // for obc_c
+    } // for obc_b
+  } // for obc_a
+
+  // all done!
+
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+}
+
 
 
 
