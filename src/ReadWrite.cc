@@ -4299,6 +4299,7 @@ void ReadWrite::SetLECs_preset(std::string key)
 
 void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name, std::string eig_name, std::string v3int_name )
 {
+  double t_start = omp_get_wtime();
   ///
   /// first, read the poi file
   /// this file contains the dimensions of the AS and NAS matrices
@@ -4333,12 +4334,12 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
       for (int parity=0;parity<=1;parity++)
       {
         int Nmin=parity%2;
-        std::cout << "t,j,p = " << t2 << " " << j2 << " " << parity << std::endl;
+//        std::cout << "t,j,p = " << t2 << " " << j2 << " " << parity << std::endl;
 
 
         for (int N=Nmin; N<=jacobi3bme.Nmax; N+=2)  // N=2n+l, so for a given parity N is either even or odd 
         {
-          std::cout << "    N = " << N << std::endl;
+//          std::cout << "    N = " << N << std::endl;
           // first, read dimensions from the poi file.
           uint32_t delimiter; // This is machine-dependent. This seems to work on the local cluster, but there are no guarantees elsewhere. Fortran's fault, not mine...
           uint32_t dimAS,dimNAS;
@@ -4464,6 +4465,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
 
   std::cout << "successfully read " << jacobi3bme.cfpvec.size() << " cfp's from file" << std::endl;
 
+  IMSRGProfiler::timer[std::string(__func__)] += omp_get_wtime() - t_start;
 
 }
 

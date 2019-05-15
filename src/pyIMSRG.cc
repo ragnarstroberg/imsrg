@@ -174,6 +174,13 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetME", &ThreeBodyME::SetME)
       .def("GetME", &ThreeBodyME::GetME)
       .def("GetME_pn", &ThreeBodyME::GetME_pn)
+      .def("RecouplingCoefficient",&ThreeBodyME::RecouplingCoefficient)
+      .def_readonly_static("ABC",&ThreeBodyME::ABC)
+      .def_readonly_static("BCA",&ThreeBodyME::BCA)
+      .def_readonly_static("CAB",&ThreeBodyME::CAB)
+      .def_readonly_static("ACB",&ThreeBodyME::ACB)
+      .def_readonly_static("CBA",&ThreeBodyME::CBA)
+      .def_readonly_static("BAC",&ThreeBodyME::BAC)
    ;
 
    py::class_<ReadWrite>(m,"ReadWrite")
