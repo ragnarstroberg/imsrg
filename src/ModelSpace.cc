@@ -709,6 +709,11 @@ void ModelSpace::SetReference(std::map<index_t,double> new_reference)
 {
   std::vector<index_t> c = core;
   std::vector<index_t> v = valence;
+  if (valence.size()<1) // If we have no valece space, assume it's a single ref and core should equal the reference.
+  {
+    c.resize(0);
+    for ( auto iter : new_reference )  c.push_back(iter.first);
+  }
   ClearVectors();
   Init(Emax, new_reference,c,v);
 }
