@@ -234,6 +234,20 @@ void Jacobi3BME::CalculateJacobiLabels()
 
 // just need to multiply the AS matrix elements by the CFPs
 // CFPs are stored as <AS|cfp|NAS> in row-major order, or
+// They're stored in an array as [  <AS1|cfp|NAS1> , <AS1|cfp|NAS2> , <AS1|cfp|NAS3> ... ]
+// As a matrix, this is interpreted as
+// CFP= [ <a1|n1>  <a2|n1> ... ] 
+//      | <a1|n2>  <a2|n2> ... |
+//      [ <a1|n3>  <a2|n3> ... ]
+// So to get the NAS matrix, we should do
+//  [ n11  n21  n31 ]    [ <a1|n1>  <a2|n1> ...]    [ a11  a21  a31 ]   [ <a1|n1>  <a1|n2>  <a1|n3> ]
+//  | n12  n22  n32 | =  | <a1|n2>  <a2|n2> ...|  * | a12  a22  a32 | * | <a2|n1>  <a2|n2>  <a2|n3> |
+//  [ n13  n23  n33 ]    [ <a1|n3>  <a2|n3> ...]    [ a13  a23  a33 ]   [ <a3|n1>  <a3|n2>  <a3|n3> ]
+//
+//
+//
+// NAS = CFP * AS * CFP.T
+// So I may have this backward...
 // conversely, as <NAS|cfp|AS> in column-major order (I think?) so NAS=row,AS=col
 // the AS matrix elements are stored as
 // <bra|V|ket> in row-major order
@@ -277,7 +291,10 @@ void Jacobi3BME::ComputeNAS_MatrixElements( )
            // signature is mat(ptr_aux_mem, n_rows, n_cols, copy_aux_mem=true, strict=false)
            // and rows=ket, cols=bra
             arma::mat ASmat( &meAS[startAS], dim_ketAS, dim_braAS, /*copy_aux_mem*/false);
-            arma::mat NASmat = cfp_ket * ASmat * cfp_bra.t();
+
+//            arma::mat NASmat = cfp_ket * ASmat * cfp_bra.t();
+            arma::mat NASmat = cfp_bra * ASmat * cfp_ket.t();
+
 //            std::cout << "ASmat: " << std::endl << ASmat << std::endl << std::endl;
 //            std::cout << "NASmat = " << std::endl << NASmat << std::endl << std::endl;
 
@@ -1055,7 +1072,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 
         IMSRGProfiler::timer[std::string(__func__)+"_GenerateKeys"] += omp_get_wtime() - t_internal;
         t_internal = omp_get_wtime();
-        std::cout << "There are " << T3bList.size() << " Tcoefficients to compute in this channel" << std::endl;
+        std::cout << std::endl << "There are " << T3bList.size() << " Tcoefficients to compute in this channel" << std::endl;
 
 //        std::cout << "done. Now compute the T coefficients" << std::endl;
 
@@ -1080,7 +1097,15 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
             int Ncm = (2*(na+nb+nc)+la+lb+lc - 2*(jacobi1.n+jacobi2.n) - jacobi1.l - jacobi2.l - Lcm)/2;
             if (Ncm<0) continue;
             double tcoef = AngMom::Tcoeff( na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
-            if (std::abs(tcoef)<1e-9) tzero++;
+            if (std::abs(tcoef)<1e-9)
+            {
+             tzero++;
+//             std::cout << "Got zero for ( " << na << " " << la << " " << j2a << ", " << nb << " " << lb << " " << j2b << ", " << nc << " " << lc << " " << j2c << " ; " << Jab
+//                       << "  |  " << jacobi1.n << " " << jacobi1.l << " " << jacobi1.s << " " << jacobi1.j << " ,  "
+//                       << jacobi2.n << " " << jacobi2.l << " " << jacobi2.j2 << " ; "
+//                       << twoJ12 << " " << Ncm << " " << Lcm << " ) " << std::endl;
+            }
+
 //            double tcoef = AngMom::Tcoeff_bruteforce( na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
             element->second = tcoef;
           }
@@ -1282,6 +1307,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
                        // As a reminder, armadillo stores matrices   [ M11  M12  M13 ]
                        // in column-major order, as in               | M21  M22  M23 |
                        //                                            [ M31  M32  M33 ]
+                       // Element access is M(i,j) -> row=i, column=j so that you get Mij as shown above.
                        //
                        //  [ Tdef_1  Tdef_2 ... ]  *  [ <def|V|abc>  ... ]  *  [ Tabc_1 ]
                        //                             [   ...   ...  ... ]     [ Tabc_2 ]
@@ -1289,7 +1315,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 
                        arma::vec Tabc(dimNAS_abc, arma::fill::zeros);
                        arma::rowvec Tdef(dimNAS_def, arma::fill::zeros);
-                       arma::mat matelNAS( &meNAS[startloc], dimNAS_def, dimNAS_abc, false );
+                       arma::mat matelNAS( &meNAS[startloc], dimNAS_def, dimNAS_abc, false ); // specify def=rows, abc=columns
 //                       std::cout << "Getting matrix beginning at " << startloc << "  ( should it be " << otherstartloc << " ? ) " <<  std::endl;
                        if (verbose) std::cout << "Getting matrix beginning at " << startloc << "   size of vector = " << meNAS.size() <<  std::endl;
                        for (size_t iNAS_abc = 0; iNAS_abc<dimNAS_abc; iNAS_abc++)
@@ -1317,10 +1343,10 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
                    } // for Lcm
                   } // for Ecm
                   // v_sumJT is equal to <abc Jab Tab JT | V | def Jde Tde JT>  (and Jde=Jab)
-                  Ket3 bra = Ket3(oa,ob,oc);
-                  Ket3 ket = Ket3(od,oe,of);
-                  Ket3 bra_flip = Ket3(ob,oa,oc);
-                  Ket3 ket_flip = Ket3(oe,od,of);
+//                  Ket3 bra = Ket3(oa,ob,oc);
+//                  Ket3 ket = Ket3(od,oe,of);
+//                  Ket3 bra_flip = Ket3(ob,oa,oc);
+//                  Ket3 ket_flip = Ket3(oe,od,of);
                   if (verbose) std::cout << "Assigning" << std::endl;
 //                  double vcheck_JT =  GetLabMatEl( bra, ket, Jab, Jab, twoJ, Tab, Tde, twoT);
 //                  double vcheck_JT_flip =  GetLabMatEl( bra_flip, ket_flip, Jab, Jab, twoJ, Tab, Tde, twoT);

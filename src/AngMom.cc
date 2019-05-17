@@ -346,6 +346,7 @@ double TalmiB(int n, int l, int nn, int ll, int p)
     for (int Lab=Lab_min; Lab<=Lab_max; Lab++)
     {
       double ninejab = (2*Lab+1) * NineJ(la, lb, Lab, sa, sb, S1, ja, jb, Jab ); 
+//      std::cout << "   Lab , ninej = " << Lab << " " << ninejab << std::endl;
       if (std::abs(ninejab)<1e-8) continue; // <- This may not help very much
       int L12_min = std::max((twoJ12-2*S1-1)/2, std::abs(L1-L2) );
       int L12_max = std::min((twoJ12+2*S1+1)/2, L1+L2 );
@@ -354,6 +355,7 @@ double TalmiB(int n, int l, int nn, int ll, int p)
 
         int L_min = std::max( std::abs(Lcm-L12), std::abs(Lab-lc) );
         int L_max = std::min( Lcm+L12, Lab+lc );
+//        std::cout << "   L12, L_min,L_max = " << L12 << " " << L_min << " " << L_max << std::endl;
         for (int L=L_min; L<=L_max; L++)
         {
           double t12=0;
@@ -366,6 +368,7 @@ double TalmiB(int n, int l, int nn, int ll, int p)
                               * SixJ(Lcm, L12,L,0.5*twoS12,0.5*twoJ,0.5*twoJ12) * phase( lc + Lab + L + L1 + (twoJ + twoS12)/2 );
           }
           if (std::abs(t12)<1e-9) continue;
+//          std::cout << "   Lab,L12,L = " << Lab << " " << L12 << " " << L << "   t12 = " << t12 << std::endl;
 
           double tmosh=0;
           int Lambda_min = std::max( std::abs(Lcm-L2), std::abs(L1-L));
@@ -373,6 +376,7 @@ double TalmiB(int n, int l, int nn, int ll, int p)
           for (int Lambda=Lambda_min; Lambda<=Lambda_max; Lambda++)
           {
             double sixjLambda = (2*Lambda+1) * SixJ(Lcm,L2,Lambda,L1,L,L12);
+            if ( std::abs(sixjLambda)<1e-9) continue;
             
             int curlyL_min = std::max( std::abs(lc-Lambda), std::abs(L1-Lab) );
             int curlyL_max = std::min( lc+Lambda, L1+Lab );
@@ -383,6 +387,7 @@ double TalmiB(int n, int l, int nn, int ll, int p)
               if ( (la+lb+L1+curlyL)%2>0 ) continue;
               if ( 2*curlyN+curlyL +2*nc+lc != 2*Ncm+Lcm + 2*N2+L2) continue;
               double sixjCurly =  SixJ(lc,curlyL,Lambda,L1,L,Lab) ;  // I think the 2*curlyL+1 in eq (10) in the Roth paper isn't supposed to be there
+              if (std::abs( sixjCurly)<1e-9) continue;
               // increment moshinsky loop bit
               int moshphase1 = AngMom::phase( curlyL+L1+Lab + 0*(curlyL+L1 - lb-la)/2 );  // converting phase conventions
               int moshphase2 = AngMom::phase( Lcm+L2+Lambda + 0*(Lcm+L2 - curlyL-lc)/2 ); // converting phase conventions (comment at the beginning of the function)
@@ -392,6 +397,7 @@ double TalmiB(int n, int l, int nn, int ll, int p)
 
             }
           }
+//          std::cout << "     tmosh = " << tmosh << std::endl;
           // combine 12-loop and moshinsky loop bits;
           tcoeff += (2*L12+1) * (2*L+1)  * ninejab * t12 * tmosh;
         }
