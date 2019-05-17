@@ -287,6 +287,7 @@ void HartreeFock::BuildMonopoleV3()
     }
 
    Vmon3.resize( Vmon3_keys.size(), 0. );
+   profiler.timer["HF_BuildMonopoleV3_allocate"] += omp_get_wtime() - start_time;
 
    #pragma omp parallel for schedule(dynamic,1) 
    for (size_t ind=0; ind<Vmon3.size(); ++ind)

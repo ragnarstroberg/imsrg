@@ -58,9 +58,31 @@ namespace AngMom
    return sqrt( (2*J12+1)*(2*J34+1)*(2*J13+1)*(2*J24+1) ) * NineJ(j1,j2,J12,j3,j4,J34,J13,J24,J);
  }
 
+ /// 12j symbol of the first kind, Varshalovich pg 362 eq (6).
+ /// Accepts twice the j value for each entry
+ // TODO: It might help to take advantage of the simplification if one of the arguments is zero
+ double TwelveJ_1_ints(int a1, int a2, int a3, int a4, int b12, int b23, int b34, int b41, int c1, int c2, int c3, int c4)
+ {
+   int S = (a1+a2+a3+a4+b12+b23+b34+b41+c1+c2+c3+c4);
+   int twoXmin  = std::max( std::abs(a1-c1), std::max( std::abs(a2-c2), std::max( std::abs(a3-c3), std::abs(a4-c4)) ) );
+   int twoXmax  = std::min( a1+c1, std::min( a2+c2, std::min( a3+c3, a4+c4 ) ) );
+   double twelvej = 0.;
+   for (int twoX=twoXmin; twoX<=twoXmax; twoX+=2)
+   {
+     double sixj1 = gsl_sf_coupling_6j(a1,a2,b12,c2,c1,twoX);
+     double sixj2 = gsl_sf_coupling_6j(a2,a3,b23,c3,c2,twoX);
+     double sixj3 = gsl_sf_coupling_6j(a3,a4,b34,c4,c3,twoX);
+     double sixj4 = gsl_sf_coupling_6j(a4,a1,b41,c1,c4,twoX);
+     twelvej += (twoX+1) * AngMom::phase( (S-twoX)/2 ) * sixj1 * sixj2 * sixj3 * sixj4;
+   }
+   return twelvej;
+ }
 
-
-
+ /// 12j symbol of the first kind. Accepts the integer or half-integr value of each entry (i.e. not twice the value)
+ double TwelveJ_1(double a1, double a2, double a3, double a4, double b12, double b23, double b34, double b41, double c1, double c2, double c3, double c4)
+ {
+   return AngMom::TwelveJ_1_ints( a1*2, a2*2, a3*2, a4*2, b12*2, b23*2, b34*2, b41*2, c1*2, c2*2, c3*2, c4*2);
+ }
 
 ///  Talmi-Moshinsky Bracket, using the algorthm of Buck et al. Nuc. Phys. A 600 (1996) 387-402
 ///  Their phase convention differs from Moshinsky's by a factor \f$(-1)^{L+l+\Lambda}\f$.
@@ -323,7 +345,8 @@ double TalmiB(int n, int l, int nn, int ll, int p)
     double tcoeff=0.;
     for (int Lab=Lab_min; Lab<=Lab_max; Lab++)
     {
-      double ninejab = (2*Lab+1) * NineJ(la, lb, Lab, sa, sb, S1, ja, jb, Jab );
+      double ninejab = (2*Lab+1) * NineJ(la, lb, Lab, sa, sb, S1, ja, jb, Jab ); 
+      if (std::abs(ninejab)<1e-8) continue; // <- This may not help very much
       int L12_min = std::max((twoJ12-2*S1-1)/2, std::abs(L1-L2) );
       int L12_max = std::min((twoJ12+2*S1+1)/2, L1+L2 );
       for (int L12=L12_min; L12<=L12_max; L12+=1)

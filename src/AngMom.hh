@@ -39,6 +39,8 @@ namespace AngMom
    double SixJ(double j1, double j2, double j3, double J1, double J2,double J3);
    double NineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double NormNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
+   double TwelveJ_1_ints(int a1, int a2, int a3, int a4, int b12, int b23, int b34, int b41, int c1, int c2, int c3, int c4);
+   double TwelveJ_1(double a1, double a2, double a3, double a4, double b12, double b23, double b34, double b41, double c1, double c2, double c3, double c4);
    double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int lam, double B=MOSH_BETA_1);
    double TalmiB(int n, int l, int nn, int ll, int p);
 //   double Tcoeff( LabKet& labket, int Jab, int twoJ, jacobi1_state& jac1, jacobi2_state& jac2, int twoJ12, int Ncm, int Lcm);
