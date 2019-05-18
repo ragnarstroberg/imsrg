@@ -460,7 +460,7 @@ int main(int argc, char** argv)
     imsrgsolver.SetDenominatorDeltaOrbit(denominator_delta_orbit);
 
   imsrgsolver.SetGenerator(core_generator);
-  if (core_generator.find("imaginary")!=string::npos)
+  if (core_generator.find("imaginary")!=string::npos or core_generator.find("wegner")!=string::npos )
   {
    if (ds_0>1e-2)
    {
@@ -505,7 +505,7 @@ int main(int argc, char** argv)
 
     imsrgsolver.SetGenerator(valence_generator);
     modelspace.ResetFirstPass();
-    if (valence_generator.find("imaginary")!=string::npos)
+    if (valence_generator.find("imaginary")!=string::npos or valence_generator.find("wegner")!=string::npos)
     {
      if (ds_0>1e-2)
      {
