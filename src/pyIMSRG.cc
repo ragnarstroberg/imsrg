@@ -367,12 +367,19 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("CG",AngMom::CG);
    m.def("ThreeJ",AngMom::ThreeJ);
    m.def("SixJ",AngMom::SixJ);
+   m.def("SixJ_int",AngMom::SixJ_int);
    m.def("NineJ",AngMom::NineJ);
+   m.def("NineJ_int",AngMom::NineJ_int);
+   m.def("FancyNineJ",AngMom::FancyNineJ);
+   m.def("FancyTwelveJ",AngMom::FancyTwelveJ);
+   m.def("TwelveJ_1_ints",AngMom::TwelveJ_1_ints);
    m.def("NormNineJ",AngMom::NormNineJ);
    m.def("Moshinsky",AngMom::Moshinsky);
    m.def("TalmiB",AngMom::TalmiB);
    m.def("TalmiI",imsrg_util::TalmiI);
    m.def("Tcoeff",AngMom::Tcoeff);
+   m.def("Tcoeff_fancy",AngMom::Tcoeff_fancy);
+   m.def("Tcoeff_reorder",AngMom::Tcoeff_reorder);
 
 
 //  return m.ptr();
