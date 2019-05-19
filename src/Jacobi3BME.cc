@@ -450,14 +450,31 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
 //        std::cout << "Getting dimensions for J12 = " << twoJ12 << "/2" << "   twoJmax = " << twoJmax << std::endl;
         int NASdim_bra = GetDimensionNAS( twoT, twoJ12, parity12_bra, E12_bra ); 
         int NASdim_ket = GetDimensionNAS( twoT, twoJ12, parity12_ket, E12_ket ); 
+
+        size_t ASdim_bra = GetDimensionAS( twoT, twoJ12, parity12_bra, E12_bra ); 
+        size_t ASdim_ket = GetDimensionAS( twoT, twoJ12, parity12_ket, E12_ket ); 
+        if (ASdim_bra==0 or ASdim_ket==0) continue;
+
+        size_t cfp_begin_bra = GetCFPStartLocation(twoT,twoJ12,E12_bra);
+        size_t cfp_begin_ket = GetCFPStartLocation(twoT,twoJ12,E12_ket);
+        size_t startlocAS = GetStartLocAS( twoT, twoJ12, E12_bra, E12_ket);
+
+        arma::mat matelAS( &meAS[startlocAS], ASdim_bra, ASdim_ket, false ); 
+        
+        arma::mat cfp_bra( &(cfpvec[cfp_begin_bra]), NASdim_bra, ASdim_bra, /*copy_aux_mem*/ true);
+        arma::mat cfp_ket( &(cfpvec[cfp_begin_ket]), NASdim_ket, ASdim_ket, /*copy_aux_mem*/ true);
+
+
 //        std::cout << " ^^^TJP E12 = " << twoT << " " << twoJ12 << " " << parity12_bra << " " << E12_bra << "," << E12_ket << "  Ncm,Lcm = " << Ncm << " " << Lcm << std::endl;
 //        std::cout << "dimensions: " << NASdim_bra << " " << NASdim_ket << std::endl;
 //           size_t dimbra = jacobi_basis.GetDimensionNAS(T,J,parity12_bra,E12_bra); 
 //           std::cout << "dimbra = " <<  dimbra << std::endl;
 
 //  compute the Tcoefficients that we'll need here
-        std::vector<double> Tcoeff_bra(NASdim_bra);
-        std::vector<double> Tcoeff_ket(NASdim_ket);
+//        std::vector<double> Tcoeff_bra(NASdim_bra);
+//        std::vector<double> Tcoeff_ket(NASdim_ket);
+        arma::rowvec Tcoeff_bra(NASdim_bra, arma::fill::zeros);
+        arma::vec Tcoeff_ket(NASdim_ket, arma::fill::zeros);
 //        std::cout << "start loop over ibraNAS. NASdim_bra = " << NASdim_bra << std::endl;
         for (int ibraNAS=0; ibraNAS<NASdim_bra; ibraNAS++)
         {
@@ -468,7 +485,8 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
           if (jac1_bra.t != Tab ) continue;
 //          std::cout << " ibraNAS = " << ibraNAS << ": | " << jac1_bra.n << " " << jac1_bra.l << " " << jac1_bra.s << " " << jac1_bra.j << " " << jac1_bra.t << " > x | "
 //                                     << jac2_bra.n << " " << jac2_bra.l << " " << jac2_bra.j2 << " > " << std::endl;
-          Tcoeff_bra.at(ibraNAS) = Tcoeff_wrapper( bra, Jab, twoJ, jac1_bra, jac2_bra, twoJ12, Ncm, Lcm) ;
+//          Tcoeff_bra.at(ibraNAS) = Tcoeff_wrapper( bra, Jab, twoJ, jac1_bra, jac2_bra, twoJ12, Ncm, Lcm) ;
+          Tcoeff_bra[ibraNAS] = Tcoeff_wrapper( bra, Jab, twoJ, jac1_bra, jac2_bra, twoJ12, Ncm, Lcm) ;
         }
 //        std::cout << "start loop over iketNAS. NASdim_ket = " << NASdim_ket << std::endl;
         for (int iketNAS=0; iketNAS<NASdim_ket; iketNAS++)
@@ -480,56 +498,55 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
           if (jac1_ket.t != Tde ) continue;
 //          std::cout << " iketNAS = " << iketNAS << ": | " << jac1_ket.n << " " << jac1_ket.l << " " << jac1_ket.s << " " << jac1_ket.j << " " << jac1_ket.t << " > x | "
 //                                     << jac2_ket.n << " " << jac2_ket.l << " " << jac2_ket.j2 << " > " << std::endl;
-          Tcoeff_ket.at(iketNAS) = Tcoeff_wrapper( ket, Jde, twoJ, jac1_ket, jac2_ket, twoJ12, Ncm, Lcm) ;
+//          Tcoeff_ket.at(iketNAS) = Tcoeff_wrapper( ket, Jde, twoJ, jac1_ket, jac2_ket, twoJ12, Ncm, Lcm) ;
+          Tcoeff_ket[iketNAS] = Tcoeff_wrapper( ket, Jde, twoJ, jac1_ket, jac2_ket, twoJ12, Ncm, Lcm) ;
         }
 
 
-//        std::cout << "    Tcoef_bra: ";
-//        for (auto tc : Tcoeff_bra ) std::cout << tc << " ";
-//        std::cout << std::endl;
-//        std::cout << "    Tcoef_ket: ";
-//        for (auto tc : Tcoeff_ket ) std::cout << tc << " ";
-//        std::cout << std::endl;
-        for (int ibraNAS=0; ibraNAS<NASdim_bra; ibraNAS++)
-        {
-          if (std::abs(Tcoeff_bra[ibraNAS])<1e-9) continue;
-          jacobi1_state jac1_bra,jac1_ket;
-          jacobi2_state jac2_bra,jac2_ket;
 
-//          std::cout << "about to get jac1_bra and jac2_bra" << std::endl;
-          GetJacobiStates( twoT, twoJ12, parity12_bra, E12_bra, ibraNAS, jac1_bra, jac2_bra);
-//          std::cout << "checking isospin bra: " << jac1_bra.t << " " << Tab << std::endl;
-          if ( jac1_bra.t != Tab ) continue;
-//          double Tcoeff_bra = Tcoeff_wrapper( bra, Jab, twoJ, jac1_bra, jac2_bra, twoJ12, Ncm, Lcm);
-//          if (std::abs(Tcoeff_bra)<1e-9) continue;
+        arma::mat result =  Tcoeff_bra * cfp_bra * matelAS * cfp_ket.t() * Tcoeff_ket;
+        me_lab += result[0];
 
-          for (int iketNAS=0; iketNAS<NASdim_ket; iketNAS++)
-          {
-           if (std::abs(Tcoeff_ket[iketNAS])<1e-9) continue;
-//           std::cout << "  ibraNAS,iketNAS = " << ibraNAS << " " << iketNAS << std::endl;
-           GetJacobiStates( twoT, twoJ12, parity12_ket, E12_ket, iketNAS, jac1_ket, jac2_ket);
-//           std::cout << "     checking isospin ket: " << jac1_ket.t << " " << Tde << std::endl;
-           if ( jac1_ket.t != Tde ) continue;
-//           double Tcoeff_ket = Tcoeff_wrapper( ket, Jde, twoJ, jac1_ket, jac2_ket, twoJ12, Ncm, Lcm);
-
-//           std::cout << "    ** finding the NAS matrix element. T = " << T << "   J = " << J12 << "  p = " << parity12_bra << std::endl;
-
-//           double meNAS = ElementNAS( ibraNAS, iketNAS, E12_bra, E12_ket, twoT, twoJ12, parity12_bra );
-           double meNAS = GetMatElNAS( ibraNAS, iketNAS, E12_bra, E12_ket, twoT, twoJ12, parity12_bra );
-
-//           me_lab +=  Tcoeff_bra * meNAS * Tcoeff_ket  ;
-           me_lab +=  Tcoeff_bra[ibraNAS] * meNAS * Tcoeff_ket[iketNAS]  ;
-//           std::cout << "Ecm,Lcm,twoJ12 = " << Ecm << " " << Lcm << " " << twoJ12 << "  Tab,Tde,twoT = " << Tab << " " << Tde << " " << twoT << std::endl;
-//           std::cout << "jac1_bra " << jac1_bra.n << " " << jac1_bra.l << " " << jac1_bra.s << " " << jac1_bra.j << " " << jac1_bra.t << "  "
-//                     << "jac2_bra " << jac2_bra.n << " " << jac2_bra.l << " " << jac2_bra.j2 <<  "  "
-//                     << "jac1_ket " << jac1_ket.n << " " << jac1_ket.l << " " << jac1_ket.s << " " << jac1_ket.j << " " << jac1_ket.t << "  "
-//                     << "jac2_bra " << jac2_bra.n << " " << jac2_bra.l << " " << jac2_bra.j2  << std::endl;
-//           std::cout << " " << ibraNAS << " , " << iketNAS << ":  (( " << Tcoeff_bra[ibraNAS] << "  " << meNAS << "  " << Tcoeff_ket[iketNAS] << " ))  "
-//                     << Tcoeff_bra[ibraNAS] * meNAS * Tcoeff_ket[iketNAS] <<  "  => sum_ME = " << me_lab << std::endl;
-//           std::cout << "    < N1=" << jac1_bra.n << " L1=" << jac1_bra.l << " S1=" << jac1_bra.s << " J1=" << jac1_bra.j << " T1=" <<jac1_bra.t << ",  N2=" << jac2_bra.n << " L2=" << jac2_bra.l << " T=" << twoT << " J12=" << twoJ12 << " | ..." << std::endl;
-
-          }// for ibraNAS
-        } // for iketNAS
+//        for (int ibraNAS=0; ibraNAS<NASdim_bra; ibraNAS++)
+//        {
+//          if (std::abs(Tcoeff_bra[ibraNAS])<1e-9) continue;
+//          jacobi1_state jac1_bra,jac1_ket;
+//          jacobi2_state jac2_bra,jac2_ket;
+//
+////          std::cout << "about to get jac1_bra and jac2_bra" << std::endl;
+//          GetJacobiStates( twoT, twoJ12, parity12_bra, E12_bra, ibraNAS, jac1_bra, jac2_bra);
+////          std::cout << "checking isospin bra: " << jac1_bra.t << " " << Tab << std::endl;
+//          if ( jac1_bra.t != Tab ) continue;
+////          double Tcoeff_bra = Tcoeff_wrapper( bra, Jab, twoJ, jac1_bra, jac2_bra, twoJ12, Ncm, Lcm);
+////          if (std::abs(Tcoeff_bra)<1e-9) continue;
+//
+//          for (int iketNAS=0; iketNAS<NASdim_ket; iketNAS++)
+//          {
+//           if (std::abs(Tcoeff_ket[iketNAS])<1e-9) continue;
+////           std::cout << "  ibraNAS,iketNAS = " << ibraNAS << " " << iketNAS << std::endl;
+//           GetJacobiStates( twoT, twoJ12, parity12_ket, E12_ket, iketNAS, jac1_ket, jac2_ket);
+////           std::cout << "     checking isospin ket: " << jac1_ket.t << " " << Tde << std::endl;
+//           if ( jac1_ket.t != Tde ) continue;
+////           double Tcoeff_ket = Tcoeff_wrapper( ket, Jde, twoJ, jac1_ket, jac2_ket, twoJ12, Ncm, Lcm);
+//
+////           std::cout << "    ** finding the NAS matrix element. T = " << T << "   J = " << J12 << "  p = " << parity12_bra << std::endl;
+//
+////           double meNAS = ElementNAS( ibraNAS, iketNAS, E12_bra, E12_ket, twoT, twoJ12, parity12_bra );
+//           double meNAS = GetMatElNAS( ibraNAS, iketNAS, E12_bra, E12_ket, twoT, twoJ12, parity12_bra );
+//
+////           me_lab +=  Tcoeff_bra * meNAS * Tcoeff_ket  ;
+//           me_lab +=  Tcoeff_bra[ibraNAS] * meNAS * Tcoeff_ket[iketNAS]  ;
+////           std::cout << "Ecm,Lcm,twoJ12 = " << Ecm << " " << Lcm << " " << twoJ12 << "  Tab,Tde,twoT = " << Tab << " " << Tde << " " << twoT << std::endl;
+////           std::cout << "jac1_bra " << jac1_bra.n << " " << jac1_bra.l << " " << jac1_bra.s << " " << jac1_bra.j << " " << jac1_bra.t << "  "
+////                     << "jac2_bra " << jac2_bra.n << " " << jac2_bra.l << " " << jac2_bra.j2 <<  "  "
+////                     << "jac1_ket " << jac1_ket.n << " " << jac1_ket.l << " " << jac1_ket.s << " " << jac1_ket.j << " " << jac1_ket.t << "  "
+////                     << "jac2_bra " << jac2_bra.n << " " << jac2_bra.l << " " << jac2_bra.j2  << std::endl;
+////           std::cout << " " << ibraNAS << " , " << iketNAS << ":  (( " << Tcoeff_bra[ibraNAS] << "  " << meNAS << "  " << Tcoeff_ket[iketNAS] << " ))  "
+////                     << Tcoeff_bra[ibraNAS] * meNAS * Tcoeff_ket[iketNAS] <<  "  => sum_ME = " << me_lab << std::endl;
+////           std::cout << "    < N1=" << jac1_bra.n << " L1=" << jac1_bra.l << " S1=" << jac1_bra.s << " J1=" << jac1_bra.j << " T1=" <<jac1_bra.t << ",  N2=" << jac2_bra.n << " L2=" << jac2_bra.l << " T=" << twoT << " J12=" << twoJ12 << " | ..." << std::endl;
+//
+//          }// for ibraNAS
+//        } // for iketNAS
       } // for J12
     } // for Lcm
   } // for Ecm
@@ -733,7 +750,9 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
      // they only stop to compute when it's their turn.
      // TODO: A lot of these end up being zero. Figure out what's going wrong.
      int tzero=0;
-     #pragma omp parallel  reduction(+ : tzero )
+     double time_zero=0;
+     double time_nonzero=0;
+     #pragma omp parallel  reduction(+ : tzero, time_zero, time_nonzero )
      {
        size_t cnt = 0;
        int ithread = omp_get_thread_num();
@@ -742,6 +761,7 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
        {
          if(cnt%nthreads != ithread) continue; // Check if this thread should compute this element
          auto hash_key = element->first;
+         double localtime = omp_get_wtime();
          int na,nb,nc,Jab,twoJ,jac1,jac2,twoJ12,Lcm;
          TcoeffUnHash(hash_key, na,nb,nc,Jab,twoJ,jac1,jac2,twoJ12,Lcm);
          auto& jacobi1 = jacobi_1[jac1];
@@ -754,10 +774,15 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
          if (std::abs(tcoef)<1e-9)
          {
           tzero++;
+          time_zero += omp_get_wtime() - localtime;
 //          std::cout << "Got zero for ( " << na << " " << la << " " << j2a << ", " << nb << " " << lb << " " << j2b << ", " << nc << " " << lc << " " << j2c << " ; " << Jab << " " << twoJ
 //                    << "  |  " << jacobi1.n << " " << jacobi1.l << " " << jacobi1.s << " " << jacobi1.j << " ,  "
 //                    << jacobi2.n << " " << jacobi2.l << " " << jacobi2.j2 << " ; "
 //                    << twoJ12 << " " << Ncm << " " << Lcm << " ) " << std::endl;
+         }
+         else
+         {
+          time_nonzero += omp_get_wtime() - localtime;
          }
 
 //         double tcoef = AngMom::Tcoeff_bruteforce( na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
@@ -766,7 +791,8 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
      }
 
      IMSRGProfiler::timer[std::string(__func__)+"_ComputeToeff"] += omp_get_wtime() - t_internal;
-     std::cout << "computed a zero T coefficient " << tzero << " times" << std::endl;
+     std::cout << "computed a zero T coefficient " << tzero << " times" << " and it took " << time_zero << "  out of  " << time_zero+time_nonzero << " seconds to do it." << std::endl;
+     IMSRGProfiler::timer[std::string(__func__)+"_CalculateZero"] += time_zero;
 
 
 }
