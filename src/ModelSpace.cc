@@ -1303,6 +1303,7 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
     {
 //      printf("DANGER!!!!!!!  Updating SixJList inside a parellel loop breaks thread safety!\n");
 //      printf(" I shouldn't be here in GetSixJ(%.1f %.1f %.1f %.1f %.1f %.1f).  key =%" PRIx64 "   sixj=%f\n",j1,j2,j3,J1,J2,J3,key,sixj); //PRIx64 is portable uint64_t format
+
       std::cout << "DANGER!!!!!!!  Updating SixJList inside a parellel loop breaks thread safety!" << std::endl;
       std::cout << "  I shouldn't be here in GetSixJ("
                 << std::setprecision(1) << std::fixed << j1 << " " << std::setprecision(1) << std::fixed << j2 << " "
@@ -1312,6 +1313,7 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
       profiler.counter["N_CalcSixJ_in_Parallel_loop"] +=1;
 //      quick_exit(EXIT_FAILURE);
       exit(EXIT_FAILURE);
+
     }
    }
    return sixj;
@@ -1396,6 +1398,8 @@ void ModelSpace::PreCalculateSixJ()
    }// for j2b
   }// for j2a
 
+
+
   #pragma omp parallel for schedule(dynamic,1)
   for (size_t i=0;i< KEYS.size(); ++i)
   {
@@ -1411,6 +1415,99 @@ void ModelSpace::PreCalculateSixJ()
   profiler.timer["PreCalculateSixJ"] += omp_get_wtime() - t_start;
 }
 
+
+
+
+void ModelSpace::PreCalculateAdditionalSixJ()
+{
+
+  double t_start = omp_get_wtime();
+  std::vector<uint64_t> KEYS;
+
+  // three half-integer j's, three integer J's
+  //    { J1 J2 J3 }
+  //    { ja jb jc }
+  for (int j2a=1; j2a<=(2*E3max+2); j2a+=2)
+  {
+   for (int j2b=1; j2b<=(2*E3max+2); j2b+=2)
+   {
+    for (int j2c=1; j2c<=(2*E3max+2); j2c+=2)
+    {
+     // J3 couples J1,J2, and ja,jb;  jc couples ja,J2 and J1,jb
+     int J1_min = 0 ;
+     int J1_max = j2a+j2c;
+     for (int J1=0; J1<=2*E3max; J1+=2)
+     {
+      int J2_min = std::abs(j2a-j2c) ;
+      int J2_max = j2a+j2c;
+      for (int J2=J2_min; J2<=J2_max; J2+=2)
+      {
+       int J3_min = std::max( std::abs(J1-J2), std::abs(j2a-j2b) );
+       int J3_max = std::min( J1+J2, j2a+j2b );
+       for (int J3=J3_min; J3<=J3_max; J3+=2)
+       {
+         uint64_t key = SixJHash(0.5*J1,0.5*J2,0.5*J3,0.5*j2a,0.5*j2b,0.5*j2c);
+         if ( SixJList.count(key) == 0 ) 
+         {
+           KEYS.push_back(key);
+           SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+         }
+       }// for J3
+      }// for J2
+     }// for J1
+    }// for j2c
+   }// for j2b
+  }// for j2a
+
+
+  // All integer J's
+  int Lmax = E3max; // These won't be used unless we're doing the T coefficients
+  for (int L1=0; L1<=Lmax; L1++)
+  {
+   for (int L2=0; L2<=Lmax; L2++)
+   {
+    for (int L3=0; L3<=Lmax; L3++)
+    {
+     if ( (std::abs(L1-L2)>L3) or (L1+L2)<L3 ) continue;
+     for (int L4=0; L4<=Lmax; L4++)
+     {
+      for (int L5=0; L5<=Lmax; L5++)
+      {
+       if ( (std::abs(L4-L5)>L3) or (L4+L5)<L3 ) continue;
+       for (int L6=0; L6<=Lmax; L6++)
+       {
+         if ( (std::abs(L1-L5)>L6) or (L1+L5)<L6 ) continue;
+         if ( (std::abs(L2-L4)>L6) or (L2+L4)<L6 ) continue;
+         uint64_t key = SixJHash(L1,L2,L3,L4,L5,L6);
+         if ( SixJList.count(key) == 0 ) 
+         {
+           KEYS.push_back(key);
+           SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+         }
+       }
+      }
+     }
+    }
+   }
+  }
+
+
+  #pragma omp parallel for schedule(dynamic,1)
+  for (size_t i=0;i< KEYS.size(); ++i)
+  {
+    uint64_t j1,j2,j3,J1,J2,J3;
+    uint64_t key = KEYS[i];
+    SixJUnHash(key, j1,j2,j3,J1,J2,J3);
+    SixJList[key] = AngMom::SixJ(0.5*j1,0.5*j2,0.5*j3,0.5*J1,0.5*J2,0.5*J3);
+  }
+  sixj_has_been_precalculated = true;
+  std::cout << "done calculating additional sixJs (" << KEYS.size() << " of them)" << std::endl;
+  std::cout << "Hash table has " << SixJList.bucket_count() << " buckets and a load factor " << SixJList.load_factor() 
+       << "  estimated storage ~ " << ((SixJList.bucket_count()+SixJList.size()) * (sizeof(size_t)+sizeof(void*))) / (1024.*1024.*1024.) << " GB" << std::endl;
+  profiler.timer[__func__] += omp_get_wtime() - t_start;
+
+
+}
 
 
 
@@ -1532,7 +1629,10 @@ double ModelSpace::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
    // if we didn't find it, we need to calculate it.
    double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L);
 //   #pragma omp atomic
-   MoshList[key] = mosh;
+   if ( omp_get_num_threads()<2 )
+   {
+     MoshList[key] = mosh;
+   }
    return mosh * phase_mosh;
 
 }

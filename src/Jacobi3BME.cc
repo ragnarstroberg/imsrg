@@ -612,7 +612,9 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
      Orbit& of = hf.modelspace->GetOrbit(f);
      if ( oc.l != lc or oc.j2 != j2c ) continue;
 
-     if ( oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b)
+//     if ( oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b)
+     if (  (oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b) or
+           (oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a) )
      {
        imon_dir.push_back(imon);
        if (a<d or (a==d and b<e) or (a==d and b==e and c<=f) ) // Choose a specific ordering which we will compute. Then get the others by symmetry.
@@ -621,10 +623,10 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
            imonlist.push_back(imon);
        }
      }
-     if ( oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a)
-     {
-       imon_exch.push_back(imon);
-     }
+//     if ( oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a)
+//     {
+//       imon_exch.push_back(imon);
+//     }
    }
    indices.resize( imonlist.size() );
 
@@ -658,14 +660,19 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
      {
        if ( hf.Vmon3_keys[imon1] == key_isoflip) indices[index][1] = imon1;
        if ( hf.Vmon3_keys[imon1] == key_defabc)  indices[index][2] = imon1;
+//       if ( hf.Vmon3_keys[imon1] == key_defabc_isoflip)  indices[index][3] = imon1;
        if ( hf.Vmon3_keys[imon1] == key_defabc)  indices[index][3] = imon1;
-     }
-     for (auto imon2 : imon_exch )
-     {
-       if ( hf.Vmon3_keys[imon2] == key_bacedf) indices[index][4] = imon2;
-       if ( hf.Vmon3_keys[imon2] == key_edfbac) indices[index][5] = imon2;
-       if ( hf.Vmon3_keys[imon2] == key_bacedf_isoflip) indices[index][6] = imon2;
-       if ( hf.Vmon3_keys[imon2] == key_edfbac_isoflip) indices[index][7] = imon2;
+//     }
+//     for (auto imon2 : imon_exch )
+//     {
+//       if ( hf.Vmon3_keys[imon2] == key_bacedf) indices[index][4] = imon2;
+//       if ( hf.Vmon3_keys[imon2] == key_edfbac) indices[index][5] = imon2;
+//       if ( hf.Vmon3_keys[imon2] == key_bacedf_isoflip) indices[index][6] = imon2;
+//       if ( hf.Vmon3_keys[imon2] == key_edfbac_isoflip) indices[index][7] = imon2;
+       if ( hf.Vmon3_keys[imon1] == key_bacedf) indices[index][4] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_edfbac) indices[index][5] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_bacedf_isoflip) indices[index][6] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_edfbac_isoflip) indices[index][7] = imon1;
      }
      
    }
@@ -769,8 +776,9 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
          if ( (na==nb and la==lb and j2a==j2b) and (jacobi1.t + Jab)%2<1 ) continue;
          int Ncm = (2*(na+nb+nc)+la+lb+lc - 2*(jacobi1.n+jacobi2.n) - jacobi1.l - jacobi2.l - Lcm)/2;
 //         if (Ncm<0) continue;
-//         double tcoef = AngMom::Tcoeff( na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
-         double tcoef = AngMom::Tcoeff_reorder( na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
+         double tcoef = AngMom::Tcoeff( na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
+//         double tcoef = AngMom::Tcoeff_reorder( na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
+//         double tcoef = ComputeTcoeff(hf, na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
          if (std::abs(tcoef)<1e-9)
          {
           tzero++;
@@ -805,6 +813,8 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
   double t_start = omp_get_wtime();
   // The keys are already computed elsewhere and are passed in as input
   std::cout << "Begin " << __func__ << std::endl;
+  hf.modelspace->PreCalculateMoshinsky();
+  hf.modelspace->PreCalculateAdditionalSixJ();
   hf.Vmon3.resize( hf.Vmon3_keys.size(), 0.);
   struct ljChannel{ int l; int j2; bool operator==(const ljChannel& rhs){return (rhs.l==l and rhs.j2==j2); };};
   std::vector<ljChannel> ljchannels;
@@ -1696,6 +1706,133 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
 
 }
 
+
+
+  double Jacobi3BME::ComputeTcoeff( HartreeFock& hf, int na, int la, int j2a, int nb, int lb, int j2b, int nc, int lc, int j2c, int Jab, int twoJ, int N1, int L1, int S1, int J1, int N2, int L2, int twoJ2, int twoJ12, int Ncm, int Lcm)
+  {
+    double ja = 0.5*j2a;
+    double sa = 0.5;
+    double jb = 0.5*j2b;
+    double sb = 0.5;
+    double jc = 0.5*j2c;
+    double sc = 0.5;
+//
+    double S2 = 0.5; 
+//    std::cout << std::endl << " " << __func__ << " ( " << na << " " << la << " " << j2a << "  " << nb << " " << lb << " " << j2b << "  " << nc << " " << lc << " " << j2c
+//              << "   " << Jab << " " << twoJ << "  " << N1 << " " << L1 << " " << S1 << "   " << N2 << " " << L2 << "  " << twoJ2 << " " << twoJ12 << "  " << Ncm << " " << Lcm << " ) " << std::endl;
+
+    // Limits
+    int Lab_min = std::max( std::abs(la-lb), std::abs(Jab-S1) );
+    int Lab_max = std::min( la+lb , Jab+S1 );
+    int L12_min = std::abs(L1-L2);
+    int L12_max = L1+L2;
+    int twoS12_min = std::abs(2*S1-1);
+    int twoS12_max = 2*S1+1;
+    if ( Lab_max<Lab_min or L12_max<L12_min or twoS12_max<twoS12_min ) return 0.0;
+//    std::cout << "   Lab min/max = " << Lab_min << " " << Lab_max << std::endl;
+
+    std::vector<double> ninej_ab(Lab_max-Lab_min+1, 0.);
+    for (int Lab=Lab_min; Lab<=Lab_max; Lab++)
+    {
+      ninej_ab[Lab-Lab_min] = AngMom::phase(Lab) * (2*Lab+1) * AngMom::NineJ(la, lb, Lab, sa, sb, S1, ja, jb, Jab ); 
+    }
+    std::vector<double> ninej_12(2*(L12_max-L12_min+1),0);
+    for (int L12=L12_min; L12<=L12_max; L12++)
+    {
+      for (int twoS12=twoS12_min; twoS12<=twoS12_max; twoS12+=2)
+      {
+        ninej_12[ 2*(L12-L12_min)+twoS12/2] = AngMom::phase((twoS12+twoJ)/2)*(2*L12+1)*(twoS12+1) * AngMom::NineJ(L1,L2,L12,S1,S2,0.5*twoS12,J1,0.5*twoJ2,0.5*twoJ12);
+      }
+    }
+//    std::cout << " done with precompute step " << std::endl;
+
+    double tcoeff=0.;
+    for (int Lab=Lab_min; Lab<=Lab_max; Lab++)
+    {
+//      double ninejab = (2*Lab+1) * NineJ(la, lb, Lab, sa, sb, S1, ja, jb, Jab ); 
+//      std::cout << "   Lab , ninej = " << Lab << " " << ninejab << std::endl;
+      double ninejab = ninej_ab[Lab-Lab_min];
+      if (std::abs(ninejab)<1e-8) continue; 
+
+      // Moshinsky's are expensive, so let's do them in the outer loop (maybe even more outer than this??)
+      int curlyL_min =  std::abs(L1-Lab) ;
+      int curlyL_max =  L1+Lab ;
+      if ( (curlyL_min + L1 + la + lb)%2>0 ) curlyL_min++; // parity for the first Moshinsky bracket
+      if ( (curlyL_min + lc + Lcm + L2)%2>0 ) continue; // parity for the second Moshinsky bracket
+      for (int curlyL=curlyL_min; curlyL<=curlyL_max; curlyL+=2)
+      {
+        int curlyN = na+nb-N1  +(la+lb-L1-curlyL)/2;
+        if (curlyN<0) continue;
+//        if ( (la+lb+L1+curlyL)%2>0 ) continue; 
+        if ( 2*curlyN+curlyL +2*nc+lc != 2*Ncm+Lcm + 2*N2+L2) continue; // energy conservation in second Moshinsky bracket
+        int mosh1phase = AngMom::phase( curlyL+L1+Lab + 0*(curlyL+L1 - lb-la)/2 );
+        double mosh1 = mosh1phase  * AngMom::Moshinsky( curlyN,curlyL,  N1,L1,      na,la,     nb,lb,     Lab,  1.0);
+//        double mosh1 = mosh1phase  * hf.modelspace->GetMoshinsky( curlyN,curlyL,  N1,L1,      na,la,     nb,lb,     Lab); // we've cached the d=1 brackets
+        if (std::abs(mosh1)<1e-9) continue;
+
+        int Lambda_min = std::max( std::abs(Lcm-L2), std::abs(curlyL-lc) );
+        int Lambda_max = std::min( Lcm+L2, curlyL+lc );
+        for (int Lambda=Lambda_min; Lambda<=Lambda_max; Lambda++) 
+        {
+          int moshphase2 = AngMom::phase( Lcm+L2+Lambda + 0*(Lcm+L2 - curlyL-lc)/2 ); // converting phase conventions (comment at the beginning of the function)
+          double mosh2 = moshphase2 * (2*Lambda+1) * AngMom::Moshinsky(    Ncm,Lcm,     N2,L2,  curlyN,curlyL, nc,lc,  Lambda,  2.0);
+          if (std::abs(mosh2)<1e-9) continue;
+
+          // This inner loop is all just summing over sixj's and a ninej, and can probably be re-expressed with some fancy recoupling
+          double sum_L = 0;
+          int L_min = std::max( std::abs(Lambda-L1), std::abs(Lab-lc) );
+          int L_max = std::min( Lambda+L1, Lab+lc );
+          for (int L=L_min; L<=L_max; L++)
+          {
+//            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * AngMom::SixJ( lc, curlyL, Lambda, L1,L,Lab);
+            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * hf.modelspace->GetSixJ( lc, curlyL, Lambda, L1,L,Lab);
+            if (std::abs(sixj1)<1e-9) continue;
+
+            double sum_12 = 0;
+            for (int twoS12=twoS12_min; twoS12<=twoS12_max; twoS12+=2)
+            {
+              if ( std::abs(2*L-twoS12)>twoJ or 2*L+twoS12<twoJ ) continue; // triangle condition for ninejL
+              double ninejL =  AngMom::NineJ( Lab, lc, L,
+                                              S1,  sc, 0.5*twoS12,
+                                              Jab, jc, 0.5*twoJ);
+              if ( std::abs(ninejL)<1e-9) continue;
+              for (int L12=L12_min; L12<=L12_max; L12++)
+              {
+                if ( std::abs(Lcm-L12)>L or (Lcm+L12)<L ) continue;
+//                if ( std::abs(twoS12-twoJ)>2*L or (twoS12+twoJ)<2*L ) continue;
+                double ninej12 = ninej_12[2*(L12-L12_min)+twoS12/2];
+                if (std::abs(ninej12)<1e-9) continue;
+                // Don't bother with triangle checks here, because the sixj functions already do that
+//                double sixj2 = AngMom::SixJ( Lcm,L12,L,0.5*twoS12,0.5*twoJ,0.5*twoJ12);
+                double sixj2 = hf.modelspace->GetSixJ( Lcm,L12,L,0.5*twoS12,0.5*twoJ,0.5*twoJ12);
+//                double sixj3 = AngMom::SixJ( Lcm,L2,Lambda,L1,L,L12);
+                double sixj3 = hf.modelspace->GetSixJ( Lcm,L2,Lambda,L1,L,L12);
+
+                sum_12 += ninejL * ninej12 * sixj2 * sixj3;
+              } // for L12
+            } // for twoS12
+            sum_L += sixj1 * sum_12;
+          } // for L
+          tcoeff += ninejab * mosh1 * mosh2 * sum_L;
+        } // for Lambda
+      } // for curlyL
+    } // for Lab
+
+  // multiply by all the j-hat symbols.   
+  // accounting for all the hat factors: 
+  //  We also have (2S12+1)(2L12+1) included in ninej12,  (2L+1) included in sixj1,  (2Lab+1) included in ninejab, (2Lambda+1) included in mosh2, and (2curlyL+1) included in mosh1
+    // hat factors:  sqrt( (2*ja+1)*(2*jb+1)*(2*jc+1)*(2*Jab+1)*(twoJ12+1)*(2*J1+1)*(twoJ2+1)*(2*S1+1) ) *   (2*Lab+1) * (twoS12+1) (2*L12+1) * (2*L+1) * (2*Lambda+1) 
+    //                                                 global                                                (ninejab) * (    ninej12       ) * (sixj1)   (   mosh2  )
+    // phases:    ( L12 + S12 + Lcm + J + L1 + L2 - L12 + Lcm + L2 + L1 + L  + curlyL + lc - Lambda + lc + Lab - L + lc + L1 + curlyL + L )
+    // reduces to (       S12       + J                                               + lc - Lambda      + Lab - L      + L1              )
+    //            (L1 + lc) * ( S12+J ) * (Lab) * (Lambda +L)
+    //              global     ninej12   ninejab     sixj1
+    //
+    // phase( lc + Lab + L + L1 + (twoJ + twoS12)/2 ) * phase( Lambda)
+    double jhats = sqrt( (2*ja+1)*(2*jb+1)*(2*jc+1)*(2*Jab+1)*(twoJ12+1)*(2*J1+1)*(twoJ2+1)*(2*S1+1) ) ;
+    int globalphase = AngMom::phase(L1+lc);
+    return tcoeff * jhats * globalphase;
+  }
 
 
 

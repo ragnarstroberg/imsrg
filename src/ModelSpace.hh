@@ -294,6 +294,7 @@ class ModelSpace
 
    void PreCalculateMoshinsky();
    void PreCalculateSixJ();
+   void PreCalculateAdditionalSixJ();
    void ClearVectors();
    void ResetFirstPass();
    void CalculatePandyaLookup(int rank_J, int rank_T, int parity); // construct a lookup table for more efficient pandya transformation
