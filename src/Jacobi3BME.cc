@@ -826,8 +826,9 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         if (verbose) std::cout << "done.  Now the loop over imon... Size of imonlist is " << imon_indices.size() << std::endl;
 
         int tcoeff_counter = 0;
+        int nonzero_vmon = 0;
 
-        #pragma omp parallel for schedule(dynamic,1) reduction(+ : tcoeff_counter)
+        #pragma omp parallel for schedule(dynamic,1) reduction(+ : tcoeff_counter,nonzero_vmon)
         for (size_t ilist=0; ilist<imon_indices.size(); ilist++)
         {
           size_t imon = imon_indices[ilist][0];
@@ -848,7 +849,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
           Orbit& of = hf.modelspace->GetOrbit(f);
           int Eabc = 2*(oa.n+ob.n+oc.n) + oa.l+ob.l+oc.l;
           int Edef = 2*(od.n+oe.n+of.n) + od.l+oe.l+of.l;
-          if (Eabc>Nmax or Edef>Nmax) continue;
+//          if (Eabc>Nmax or Edef>Nmax) continue;
           int parity = Eabc%2;
 
           int Tzab = (oa.tz2+ob.tz2)/2;
@@ -967,6 +968,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
           } // for Jab
 
           v_monopole /= j2c+1.;
+          if ( std::abs( v_monopole)>1e-8 ) nonzero_vmon++;
          // There are some symmetries we can exploit here to avoid redundant calculations
           for ( auto& imon_sym : imon_indices[ilist] )
           {
@@ -977,6 +979,8 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         n_mon += imon_indices.size();
 //        std::cout << "done " << std::endl;
         std::cout << "Looked up a Tcoefficient " << tcoeff_counter << "  times " << std::endl;
+        std::cout << "Found " << nonzero_vmon << "  nonzero monopoles" << "  out of " << imon_indices.size() << " terms" << std::endl;
+        std::cout << " and it took " << omp_get_wtime() - t_internal << "  seconds" << std::endl;
         if (tcoeff_counter < 1  and T3bList.size()>0)
         {
           std::cout << "@@@@@@@@@@@@  channel = (" << la << " " << j2a << " , " << lb << " " << j2b << " , " << lc << " " << j2c << std::endl;
