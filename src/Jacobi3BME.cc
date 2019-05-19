@@ -612,9 +612,9 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
      Orbit& of = hf.modelspace->GetOrbit(f);
      if ( oc.l != lc or oc.j2 != j2c ) continue;
 
-//     if ( oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b)
-     if (  (oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b) or
-           (oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a) )
+     if ( oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b)
+//     if (  (oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b) or
+//           (oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a) )
      {
        imon_dir.push_back(imon);
        if (a<d or (a==d and b<e) or (a==d and b==e and c<=f) ) // Choose a specific ordering which we will compute. Then get the others by symmetry.
@@ -623,10 +623,10 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
            imonlist.push_back(imon);
        }
      }
-//     if ( oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a)
-//     {
-//       imon_exch.push_back(imon);
-//     }
+     if ( oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a)
+     {
+       imon_exch.push_back(imon);
+     }
    }
    indices.resize( imonlist.size() );
 
@@ -662,17 +662,17 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
        if ( hf.Vmon3_keys[imon1] == key_defabc)  indices[index][2] = imon1;
 //       if ( hf.Vmon3_keys[imon1] == key_defabc_isoflip)  indices[index][3] = imon1;
        if ( hf.Vmon3_keys[imon1] == key_defabc)  indices[index][3] = imon1;
-//     }
-//     for (auto imon2 : imon_exch )
-//     {
-//       if ( hf.Vmon3_keys[imon2] == key_bacedf) indices[index][4] = imon2;
-//       if ( hf.Vmon3_keys[imon2] == key_edfbac) indices[index][5] = imon2;
-//       if ( hf.Vmon3_keys[imon2] == key_bacedf_isoflip) indices[index][6] = imon2;
-//       if ( hf.Vmon3_keys[imon2] == key_edfbac_isoflip) indices[index][7] = imon2;
-       if ( hf.Vmon3_keys[imon1] == key_bacedf) indices[index][4] = imon1;
-       if ( hf.Vmon3_keys[imon1] == key_edfbac) indices[index][5] = imon1;
-       if ( hf.Vmon3_keys[imon1] == key_bacedf_isoflip) indices[index][6] = imon1;
-       if ( hf.Vmon3_keys[imon1] == key_edfbac_isoflip) indices[index][7] = imon1;
+     }
+     for (auto imon2 : imon_exch )
+     {
+       if ( hf.Vmon3_keys[imon2] == key_bacedf) indices[index][4] = imon2;
+       if ( hf.Vmon3_keys[imon2] == key_edfbac) indices[index][5] = imon2;
+       if ( hf.Vmon3_keys[imon2] == key_bacedf_isoflip) indices[index][6] = imon2;
+       if ( hf.Vmon3_keys[imon2] == key_edfbac_isoflip) indices[index][7] = imon2;
+//       if ( hf.Vmon3_keys[imon1] == key_bacedf) indices[index][4] = imon1;
+//       if ( hf.Vmon3_keys[imon1] == key_edfbac) indices[index][5] = imon1;
+//       if ( hf.Vmon3_keys[imon1] == key_bacedf_isoflip) indices[index][6] = imon1;
+//       if ( hf.Vmon3_keys[imon1] == key_edfbac_isoflip) indices[index][7] = imon1;
      }
      
    }
@@ -814,7 +814,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
   // The keys are already computed elsewhere and are passed in as input
   std::cout << "Begin " << __func__ << std::endl;
   hf.modelspace->PreCalculateMoshinsky();
-  hf.modelspace->PreCalculateAdditionalSixJ();
+//  hf.modelspace->PreCalculateAdditionalSixJ();
   hf.Vmon3.resize( hf.Vmon3_keys.size(), 0.);
   struct ljChannel{ int l; int j2; bool operator==(const ljChannel& rhs){return (rhs.l==l and rhs.j2==j2); };};
   std::vector<ljChannel> ljchannels;

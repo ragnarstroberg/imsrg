@@ -5,9 +5,6 @@
 #include <gsl/gsl_sf_coupling.h>
 #include <iostream>
 
-#include "IMSRGProfiler.hh"
-#include <omp.h>
-
 
 /// Namespace for angular momentum coupling functions
 namespace AngMom
@@ -46,13 +43,8 @@ namespace AngMom
  /// Wigner 6j symbol
  double SixJ(double j1, double j2, double j3, double J1, double J2,double J3)
  {
-////   return gsl_sf_coupling_6j(int(2*j1),int(2*j2),int(2*j3),int(2*J1),int(2*J2),int(2*J3));
-//   return SixJ_int(int(2*j1),int(2*j2),int(2*j3),int(2*J1),int(2*J2),int(2*J3));
-
-   double tstart = omp_get_wtime();
-   double sj = SixJ_int(int(2*j1),int(2*j2),int(2*j3),int(2*J1),int(2*J2),int(2*J3));
-   IMSRGProfiler::timer[__func__] += omp_get_wtime() - tstart;
-   return sj;
+//   return gsl_sf_coupling_6j(int(2*j1),int(2*j2),int(2*j3),int(2*J1),int(2*J2),int(2*J3));
+   return SixJ_int(int(2*j1),int(2*j2),int(2*j3),int(2*J1),int(2*J2),int(2*J3));
  }
 
  double SixJ_int(int twoj1, int twoj2, int twoj3, int twoJ1, int twoJ2, int twoJ3)
@@ -63,11 +55,7 @@ namespace AngMom
  /// Wigner 9j symbol
  double NineJ(double j1,double j2, double J12, double j3, double j4, double J34, double J13, double J24, double J)
  {
-//   return gsl_sf_coupling_9j(int(2*j1),int(2*j2),int(2*J12),int(2*j3),int(2*j4),int(2*J34),int(2*J13),int(2*J24),int(2*J));
-   double tstart = omp_get_wtime();
-   double nj = gsl_sf_coupling_9j(j1,j2,J12,j3,j4,J34,J13,J24,J);
-   IMSRGProfiler::timer[__func__] += omp_get_wtime() - tstart;
-   return nj;
+   return gsl_sf_coupling_9j(int(2*j1),int(2*j2),int(2*J12),int(2*j3),int(2*j4),int(2*J34),int(2*J13),int(2*J24),int(2*J));
  }
 
 
@@ -183,7 +171,6 @@ namespace AngMom
 //double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int lam, double B)
 double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int lam, double d)
 {
-   double tstart = omp_get_wtime();
    // check energy conservation
    int f1 = 2*n1 + l1;
    int f2 = 2*n2 + l2;
@@ -256,8 +243,6 @@ double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int
     }
    }
    int extraphase = phase(l+L+lam); // See note at the top about switching phase conventions
-
-   IMSRGProfiler::timer[__func__] += omp_get_wtime() - tstart;
    return extraphase * mosh1 * mosh2;
 
 }
