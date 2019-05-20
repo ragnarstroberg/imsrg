@@ -816,6 +816,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 //  hf.modelspace->PreCalculateMoshinsky();
   PreComputeMoshinsky();
   PreComputeSixJ();
+  PreComputeNineJ();
 //  hf.modelspace->PreCalculateAdditionalSixJ();
   hf.Vmon3.resize( hf.Vmon3_keys.size(), 0.);
   struct ljChannel{ int l; int j2; bool operator==(const ljChannel& rhs){return (rhs.l==l and rhs.j2==j2); };};
@@ -852,7 +853,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         IMSRGProfiler::timer[std::string(__func__)+"_FindMonKeys"] += omp_get_wtime() - t_internal;
         t_internal = omp_get_wtime();
 
-        if (imon_indices.size()<0) continue;
+        if (imon_indices.size()<1) continue;
 
         std::unordered_map<std::string,double> T3bList;  // we will put things into a hash table.
         GetRelevantTcoeffs(la, j2a, lb, j2b, lc, j2c, hf, T3bList); 
@@ -1726,35 +1727,18 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
     // Limits
     int Lab_min = std::max( std::abs(la-lb), std::abs(Jab-S1) );
     int Lab_max = std::min( la+lb , Jab+S1 );
-    int L12_min = std::abs(L1-L2);
-    int L12_max = L1+L2;
     int twoS12_min = std::abs(2*S1-1);
     int twoS12_max = 2*S1+1;
-    if ( Lab_max<Lab_min or L12_max<L12_min or twoS12_max<twoS12_min ) return 0.0;
+    if ( Lab_max<Lab_min or  twoS12_max<twoS12_min ) return 0.0;
 //    std::cout << "   Lab min/max = " << Lab_min << " " << Lab_max << std::endl;
 
-    std::vector<double> ninej_ab(Lab_max-Lab_min+1, 0.);
-    for (int Lab=Lab_min; Lab<=Lab_max; Lab++)
-    {
-      ninej_ab[Lab-Lab_min] = AngMom::phase(Lab) * (2*Lab+1) * AngMom::NineJ(la, lb, Lab, sa, sb, S1, ja, jb, Jab ); 
-    }
-    std::vector<double> ninej_12(2*(L12_max-L12_min+1),0);
-    for (int L12=L12_min; L12<=L12_max; L12++)
-    {
-      for (int twoS12=twoS12_min; twoS12<=twoS12_max; twoS12+=2)
-      {
-//        ninej_12[ 2*(L12-L12_min)+twoS12/2] = AngMom::phase((twoS12+twoJ)/2)*(2*L12+1)*(twoS12+1) * AngMom::NineJ(L1,L2,L12,S1,S2,0.5*twoS12,J1,0.5*twoJ2,0.5*twoJ12);
-        ninej_12[ 2*(L12-L12_min)+twoS12/2] = AngMom::phase((twoS12+twoJ)/2)*(2*L12+1)*(twoS12+1) * AngMom::NineJ(L2,L12,L1,S2,0.5*twoS12,S1,0.5*twoJ2,0.5*twoJ12,J1);
-      }
-    }
-//    std::cout << " done with precompute step " << std::endl;
+
 
     double tcoeff=0.;
     for (int Lab=Lab_min; Lab<=Lab_max; Lab++)
     {
-//      double ninejab = (2*Lab+1) * NineJ(la, lb, Lab, sa, sb, S1, ja, jb, Jab ); 
-//      std::cout << "   Lab , ninej = " << Lab << " " << ninejab << std::endl;
-      double ninejab = ninej_ab[Lab-Lab_min];
+//      double ninejab_right = AngMom::phase(Lab) * (2*Lab+1) * AngMom::NineJ(la, lb, Lab, sa, sb, S1, ja, jb, Jab ); 
+      double ninejab = AngMom::phase(Lab) * (2*Lab+1) * GetNineJ(2*la, 2*lb, 2*Lab, 1, 1, 2*S1, j2a, j2b, 2*Jab ); 
       if (std::abs(ninejab)<1e-8) continue; 
 
       // Moshinsky's are expensive, so let's do them in the outer loop (maybe even more outer than this??)
@@ -1766,7 +1750,6 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
       {
         int curlyN = na+nb-N1  +(la+lb-L1-curlyL)/2;
         if (curlyN<0) continue;
-//        if ( (la+lb+L1+curlyL)%2>0 ) continue; 
         if ( 2*curlyN+curlyL +2*nc+lc != 2*Ncm+Lcm + 2*N2+L2) continue; // energy conservation in second Moshinsky bracket
         int mosh1phase = AngMom::phase( curlyL+L1+Lab + 0*(curlyL+L1 - lb-la)/2 );
 //        double mosh1 = mosh1phase  * AngMom::Moshinsky( curlyN,curlyL,  N1,L1,      na,la,     nb,lb,     Lab,  1.0);
@@ -1778,6 +1761,7 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
         int Lambda_max = std::min( Lcm+L2, curlyL+lc );
         for (int Lambda=Lambda_min; Lambda<=Lambda_max; Lambda++) 
         {
+          // It will speed things up a bit to precompute these
           int moshphase2 = AngMom::phase( Lcm+L2+Lambda + 0*(Lcm+L2 - curlyL-lc)/2 ); // converting phase conventions (comment at the beginning of the function)
           double mosh2 = moshphase2 * (2*Lambda+1) * AngMom::Moshinsky(    Ncm,Lcm,     N2,L2,  curlyN,curlyL, nc,lc,  Lambda,  2.0);
           if (std::abs(mosh2)<1e-9) continue;
@@ -1791,10 +1775,12 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
 
           int L_min = std::max( std::abs(Lambda-L1), std::abs(Lab-lc) );
           int L_max = std::min( Lambda+L1, Lab+lc );
-          for (int L=L_min; L<=L_max; L++)
+
+
+
+          for (int L=std::max(std::abs(Lambda-L1),L_min); L<=std::min(L_max,Lambda+L1); L++)
           {
 //            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * AngMom::SixJ( lc, curlyL, Lambda, L1,L,Lab);
-//            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * hf.modelspace->GetSixJ( lc, curlyL, Lambda, L1,L,Lab);
             double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * GetSixJ( 2*lc, 2*curlyL, 2*Lambda, 2*L1,2*L,2*Lab);
             if (std::abs(sixj1)<1e-9) continue;
 
@@ -1802,23 +1788,28 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
             for (int twoS12=twoS12_min; twoS12<=twoS12_max; twoS12+=2)
             {
               if ( std::abs(2*L-twoS12)>twoJ or 2*L+twoS12<twoJ ) continue; // triangle condition for ninejL
-              double ninejL =  AngMom::NineJ( Lab, lc, L,
-                                              S1,  sc, 0.5*twoS12,
-                                              Jab, jc, 0.5*twoJ);
+              double ninejL =  GetNineJ( 2*lc, 2*L, 2*Lab,
+                                         1, twoS12, 2*S1,
+                                         j2c, twoJ, 2*Jab);
+//              double ninejL =  AngMom::NineJ( Lab, lc, L,
+//                                              S1,  sc, 0.5*twoS12,
+//                                              Jab, jc, 0.5*twoJ);
 
               if ( std::abs(ninejL)<1e-9) continue;
+              int L12_min = std::max( std::abs(L1-L2), std::max( std::abs(twoS12-twoJ12)/2, std::abs(Lcm-L)) ) ;
+              int L12_max = std::min( L1+L2, std::min( (twoS12+twoJ12)/2, Lcm+L));
               for (int L12=L12_min; L12<=L12_max; L12++)
               {
                 if ( std::abs(Lcm-L12)>L or (Lcm+L12)<L ) continue;
-//                if ( std::abs(twoS12-twoJ)>2*L or (twoS12+twoJ)<2*L ) continue;
-                double ninej12 = ninej_12[2*(L12-L12_min)+twoS12/2];
+                if ( std::abs(twoS12-twoJ)>2*L or (twoS12+twoJ)<2*L ) continue;
+                double ninej12 = AngMom::phase((twoS12+twoJ)/2)*(2*L12+1)*(twoS12+1)
+                                              * GetNineJ(2*L2,  2*L12,  2*L1,
+                                                         1,     twoS12, 2*S1,
+                                                         twoJ2, twoJ12, 2*J1);
                 if (std::abs(ninej12)<1e-9) continue;
-                // Don't bother with triangle checks here, because the sixj functions already do that
 //                double sixj2 = AngMom::SixJ( Lcm,L12,L,0.5*twoS12,0.5*twoJ,0.5*twoJ12);
-//                double sixj2 = hf.modelspace->GetSixJ( Lcm,L12,L,0.5*twoS12,0.5*twoJ,0.5*twoJ12);
-                double sixj2 = GetSixJ( 2*Lcm,2*L12,2*L,twoS12,twoJ,twoJ12);
+                double sixj2 = GetSixJ( 2*Lcm,2*L12,2*L, twoS12,twoJ,twoJ12);
 //                double sixj3 = AngMom::SixJ( Lcm,L2,Lambda,L1,L,L12);
-//                double sixj3 = hf.modelspace->GetSixJ( Lcm,L2,Lambda,L1,L,L12);
                 double sixj3 = GetSixJ( 2*Lcm,2*L2,2*Lambda,2*L1,2*L,2*L12);
 
                 sum_12 += ninejL * ninej12 * sixj2 * sixj3;
@@ -1910,6 +1901,13 @@ void Jacobi3BME::MoshinskyUnHash(uint64_t key,uint64_t& N,uint64_t& Lam,uint64_t
    d = 2-(key%2);
 }
 
+size_t Jacobi3BME::NineJHash( int twol1, int twol2, int twol3, int twos1, int twos2, int twos3, int twoj1, int twoj2, int twoj3)
+{
+//  return 6*(twoj3-twol3+3*twos3-2) + (twoj2-twol2+3*twos2-2) + (twoj1-twol1+3*twos1-2)/2;
+  return 48*( (twol1/2*(Lmax_nj+1))*(twol1/2*(Lmax_nj+1)) + twol2/2*(Lmax_nj+1) + twol3)
+       + 6*(twoj3-twol3+2*twos3) + (twoj2-twol2+3*twos2-2) + (twoj1-twol1+3*twos1-2)/2;
+}
+
 
 double Jacobi3BME::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
 {
@@ -1936,11 +1934,11 @@ double Jacobi3BME::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
     else
     {
       std::cout << "DANGER!!!!!!!  Updating SixJList inside a parellel loop breaks thread safety!" << std::endl;
-//      std::cout << "  I shouldn't be here in GetSixJ("
-//                << std::setprecision(1) << std::fixed << j1 << " " << std::setprecision(1) << std::fixed << j2 << " "
-//                << std::setprecision(1) << std::fixed << j3 << " " << std::setprecision(1) << std::fixed << J1 << " "
-//                << std::setprecision(1) << std::fixed << J2 << " " << std::setprecision(1) << std::fixed << J3 << "). key = "
-//                << std::hex << key << "   sixj = " << std::dec << sixj << std::endl;
+      std::cout << "  I shouldn't be here in GetSixJ("
+                << std::setprecision(1) << std::fixed << j1 << " " << std::setprecision(1) << std::fixed << j2 << " "
+                << std::setprecision(1) << std::fixed << j3 << " " << std::setprecision(1) << std::fixed << J1 << " "
+                << std::setprecision(1) << std::fixed << J2 << " " << std::setprecision(1) << std::fixed << J3 << "). key = "
+                << std::hex << key << "   sixj = " << std::dec << sixj << std::endl;
       IMSRGProfiler::counter["N_CalcSixJ_in_Parallel_loop"] +=1;
       exit(EXIT_FAILURE);
     }
@@ -2004,6 +2002,14 @@ double Jacobi3BME::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
 }
 
 
+double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int twos2, int twos3, int twoj1, int twoj2, int twoj3)
+{
+//  std::cout << " GetNineJ: " << twol1 << " " << twol2 << " " << twol3 << " "
+//                             << twos1 << " " << twos2 << " " << twos3 << " "
+//                             << twoj1 << " " << twoj2 << " " << twoj3 << std::endl;
+//  std::cout << " NineJHash = " << NineJHash( twol1, twol2, twol3, twos1, twos2, twos3, twoj1, twoj2, twoj3) << std::endl;
+  return NineJList.at( NineJHash( twol1, twol2, twol3, twos1, twos2, twos3, twoj1, twoj2, twoj3) );
+}
 
 
 
@@ -2079,10 +2085,72 @@ double Jacobi3BME::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1,
     IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   }
 
-
+  // All the relevant 9js have the structure
+  // { l1 l2 l3 }  
+  // { s1 s2 s3 }  <- s1=1/2,  s2=1/2,3/2,  s3=0,1
+  // { j1 j2 j3 }
+  //
   void Jacobi3BME::PreComputeNineJ()
   {
+    double t_start = omp_get_wtime();
+    Lmax_nj = std::max(Nmax,E3max);
+    std::cout <<"Calculating NineJ with Lmax = " << Lmax_nj << std::endl;
+//    NineJList.resize(48*Lmax_nj*Lmax_nj*Lmax_nj);
+    NineJList.resize( NineJHash( 2*Lmax_nj, 2*Lmax_nj, 2*Lmax_nj, 1, 3, 2, 2*Lmax_nj+1, 2*Lmax_nj+3, 2*Lmax_nj+2) +1  );
 
+    #pragma omp parallel for schedule(dynamic,1)
+    for ( int l1=0; l1<=Lmax_nj; l1++)
+    {
+     int twoj1_min=std::max(2*l1-1,1);
+     int twoj1_max=2*l1+1;
+     for (int l2=0; l2<=Lmax_nj; l2++)
+     {
+      int l3min= std::abs(l1-l2);
+      int l3max = std::min(l1+l2,Lmax_nj);
+      for (int l3=l3min; l3<=l3max; l3++)
+      {
+       for (int twos2=1; twos2<=3; twos2+=2)
+       {
+        int twoj2_min=std::max(1,2*l2-twos2);
+        int twoj2_max=2*l2+twos2;
+        int s3_min = std::abs(twos2-1)/2;
+        int s3_max = 1;
+        for (int s3=s3_min; s3<=s3_max; s3++)
+        {
+         for (int twoj1=twoj1_min; twoj1<=twoj1_max; twoj1+=2)
+         {
+          for (int twoj2=twoj2_min; twoj2<=twoj2_max; twoj2+=2)
+          {
+           int j3min = std::max( std::abs(l3-s3), std::abs(twoj1-twoj2)/2);
+           int j3max = std::min( l3+s3, (twoj1+twoj2)/2 );
+           for (int j3=j3min; j3<=j3max; j3++)
+           {
+             size_t hash = NineJHash(2*l1,2*l2,2*l3, 1, twos2, 2*s3, twoj1, twoj2, 2*j3);
+             if (hash > NineJList.size() )
+             {
+               std::cout << __func__ << " Computing:: hash = " << hash << "  which is > " << NineJList.size()
+                         << "   :  " << l1 << " " << l2 << " " << l3
+                         << "  "     << 1  << " " << twos2 << " " << s3
+                         << "  "     << twoj1 << " "<< twoj2 << " " << j3 << std::endl;
+//               std::cout << "      " << 6*(2*j3-2*l3+3*2*s3-2)
+//               std::cout << "      " << 6*(2*j3-2*l3+2*2*s3)
+//                         << "   " << (twoj2-2*l2+3*twos2-2)
+//                         << "   " << (twoj1-2*l1+3*1-2)/2 << std::endl;
+
+//  return 6*(twoj3-twol3+3*twos3-2) + (twoj2-twol2+3*twos2-2) + (twoj1-twol1+3*twos1-2)/2;
+             }
+             NineJList[hash] = AngMom::NineJ( l1,l2,l3, 0.5,0.5*twos2,s3, 0.5*twoj1, 0.5*twoj2, j3);
+//             std::cout << "     -> Ninej = " << NineJList[hash] << std::endl;
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+    std::cout << "done calculating ninej (" << NineJList.size() << " elements)" << std::endl;
+    IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   }
 
 

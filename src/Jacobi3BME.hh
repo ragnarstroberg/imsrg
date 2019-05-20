@@ -27,6 +27,8 @@ class Jacobi3BME
   int E2max;
   int E3max; // e1+e2+e3 <= E3max
 
+  int Lmax_nj; // max L value in the precomputed NineJ symbols
+
   std::vector<jacobi1_state> jacobi_1; // quantum numbers of the relative wf of the first 2 particles
   std::vector<jacobi2_state> jacobi_2; // quantum number of the second jacobi coordinate, 3rd -> cm of other 2
 
@@ -108,8 +110,8 @@ class Jacobi3BME
   void PreComputeMoshinsky();
   uint64_t SixJHash(int j1, int j2, int j3, int J4, int J5, int J6);
   void SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& j3, uint64_t& J1, uint64_t& J2, uint64_t& J3);
-  uint64_t NineJHash(int j1, int j2, int j3, int j4, int j5, int j6, int j7, int j8, int j9);
-  uint64_t NineJUnHash(size_t key, int j1, int j2, int j3, int j4, int j5, int j6, int j7, int j8, int j9);
+  size_t NineJHash(int j1, int j2, int j3, int j4, int j5, int j6, int j7, int j8, int j9);
+  void NineJUnHash(size_t key, int j1, int j2, int j3, int j4, int j5, int j6, int j7, int j8, int j9);
 //  uint64_t MoshinskyHash(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int Lam, int d );
   uint64_t MoshinskyHash(uint64_t N, uint64_t Lam, uint64_t n, uint64_t lam, uint64_t n1, uint64_t l1, uint64_t n2, uint64_t l2, uint64_t L, uint64_t d);
   void MoshinskyUnHash(uint64_t key,uint64_t& N,uint64_t& Lam,uint64_t& n,uint64_t& lam,uint64_t& n1,uint64_t& l1,uint64_t& n2,uint64_t& l2,uint64_t& L,uint64_t& d);
