@@ -1923,7 +1923,7 @@ double Jacobi3BME::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
    }
    else
    {
-    sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
+    sixj = AngMom::SixJ(0.5*j1,0.5*j2,0.5*j3,0.5*J1,0.5*J2,0.5*J3);
     if (omp_get_num_threads()<2)
     {
       #pragma omp critical
@@ -2027,9 +2027,10 @@ double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int two
     std::cout << "Precalculating SixJ's" << std::endl;
     std::vector<uint64_t> KEYS;
     // first, we do the all-integer ones
-    for (int j1=0; j1<=(3*emax+1); j1+=2)
+//    for (int j1=0; j1<=(3*emax+1); j1+=2)
+    for (int j1=0; j1<=(6*emax+6); j1+=2)
     {
-     for (int j2=0; j2<=(3*emax+1); j2+=2)
+     for (int j2=0; j2<=(6*emax+6); j2+=2)
      {
       for (int j3=std::abs(j1-j2); j3<=(j1+j2); j3+=2)
       {
@@ -2050,6 +2051,9 @@ double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int two
        } // for J4
 
        // Now we do the half-integer bottom row
+       //       double sixj2 = GetSixJ( 2*Lcm,2*L12,2*L, twoS12,twoJ,twoJ12); twoJ <= 6emax+3, twoJ12<=Jmax, L could be up to 6emax+6
+       // { j1  j2 j3  }
+       // { S12 J  J12 }
        for (int S12=1; S12<=3; S12+=2)
        {
         for (int J=std::abs(S12-j3); J<=(S12+j3); J+=2)
