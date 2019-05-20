@@ -904,31 +904,62 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
           int Jab_step = (a==b or d==e)? 2 : 1;
 
 // start new attempt here
-          int twoJ_min = std::max(1, j2c-j2a-j2b);
-          int twoJ_max = j2a+j2b+j2c;
 
-          for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
-          {
-           for (int twoT=twoT_min; twoT<=3; twoT+=2)
-           {
-            for (int Ecm=0; Ecm<=std::min(Eabc,Edef); Ecm++)
-             {
-               int E12abc = Eabc-Ecm;
-               int E12def = Edef-Ecm;
-               if (E12abc > Nmax  or E12def>Nmax) continue;
-               auto hashTJN_abc = HashTJN(twoT,twoJ12,E12abc);
-               auto hashTJN_def = HashTJN(twoT,twoJ12,E12def);
+//          int twoJ_min = std::max(1, j2c-j2a-j2b);
+//          int twoJ_max = j2a+j2b+j2c;
+//
+//          for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+//          {
+//           int Jab_min = std::abs(twoJ-j2c)/2;
+//           int Jab_max = (twoJ+j2c)/2;
+//           int Jab_step = (a==b or d==e)? 2 : 1;
+//           for (int twoT=twoT_min; twoT<=3; twoT+=2)
+//           {
+//            for (int Ecm=0; Ecm<=std::min(Eabc,Edef); Ecm++)
+//             {
+//               int E12abc = Eabc-Ecm;
+//               int E12def = Edef-Ecm;
+//               if (E12abc > Nmax  or E12def>Nmax) continue;
+//               auto hashTJN_abc = HashTJN(twoT,twoJ12,E12abc);
+//               auto hashTJN_def = HashTJN(twoT,twoJ12,E12def);
+//
+//               size_t dimNAS_abc = GetDimensionNAS( twoT, twoJ12, parity, E12abc ); 
+//               size_t dimNAS_def = GetDimensionNAS( twoT, twoJ12, parity, E12def ); 
+//               if (dimNAS_abc==0 or dimNAS_def==0) continue;
+//
+//               size_t dimAS_abc = GetDimensionAS( twoT, twoJ12, parity, E12abc ); 
+//               size_t dimAS_def = GetDimensionAS( twoT, twoJ12, parity, E12def ); 
+//               if (dimAS_abc==0 or dimAS_def==0) continue;
+//
+//               size_t startloc   = GetStartLocNAS(twoT, twoJ12, E12abc, E12def) ;
+//               size_t startlocAS = GetStartLocAS( twoT, twoJ12, E12abc, E12def);
+//
+//               size_t cfp_begin_abc = GetCFPStartLocation(twoT,twoJ12,E12abc);
+//               size_t cfp_begin_def = GetCFPStartLocation(twoT,twoJ12,E12def);
+//
+//               arma::mat matelAS( &meAS[startlocAS], dimAS_abc, dimAS_def, false ); 
+//               
+//               arma::mat cfp_abc( &(cfpvec[cfp_begin_abc]), dimNAS_abc, dimAS_abc, /*copy_aux_mem*/ true);
+//               arma::mat cfp_def( &(cfpvec[cfp_begin_def]), dimNAS_def, dimAS_def, /*copy_aux_mem*/ true);
+//
+//
+//               int numJTab_channels = (Jab_max-Jab_min)/Jab_step ;
+//               int numJTde_channels = 1;
+//               arma::mat Tabc(numJTab_channels, dimNAS_abc, arma::fill::zeros);  // signature n_rows, n_cols. We multiply from the left, so dimNAS_abc = n_cols.
+//               arma::mat Tdef(dimNAS_def, numJTde_channels, arma::fill::zeros);  // here, we multiply from the right, so dimNAS_def = n_rows.
+//
+//               for (int Tab=Tab_min; Tab<=1; Tab++)
+//               {
+//                double isoClebsch_ab = isospin2_Clebsch[Tab];
+//                double isoClebsch_c = isospin3_Clebsch[2*Tab + twoT/2];
+//
+//                for (int Tde=Tab_min; Tde<=1; Tde++)
+//                {
+//                  double isoClebsch_de = isospin2_Clebsch[Tde];
+//                  double isoClebsch_f = isospin3_Clebsch[2*Tde + twoT/2];
+//                  if (std::abs(isoClebsch_c)<1e-6 or std::abs(isoClebsch_f)<1e-6) continue;
 
-               size_t dimNAS_abc = GetDimensionNAS( twoT, twoJ12, parity, E12abc ); 
-               size_t dimNAS_def = GetDimensionNAS( twoT, twoJ12, parity, E12def ); 
-               if (dimNAS_abc==0 or dimNAS_def==0) continue;
 
-               for (int Tab=Tab_min; Tab<=1; Tab++)
-               {
-                double isoClebsch_ab = isospin2_Clebsch[Tab];
-                for (int Tde=Tab_min; Tde<=1; Tde++)
-                {
-                  double isoClebsch_f = isospin3_Clebsch[2*Tde + twoT/2];
 
 
           for (int Jab=Jab_min; Jab<=Jab_max; Jab+=Jab_step)
