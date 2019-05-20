@@ -607,14 +607,12 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
      Orbit& oa = hf.modelspace->GetOrbit(a);
      Orbit& ob = hf.modelspace->GetOrbit(b);
      Orbit& oc = hf.modelspace->GetOrbit(c);
-     Orbit& od = hf.modelspace->GetOrbit(d);
-     Orbit& oe = hf.modelspace->GetOrbit(e);
-     Orbit& of = hf.modelspace->GetOrbit(f);
+//     Orbit& od = hf.modelspace->GetOrbit(d);
+//     Orbit& oe = hf.modelspace->GetOrbit(e);
+//     Orbit& of = hf.modelspace->GetOrbit(f);
      if ( oc.l != lc or oc.j2 != j2c ) continue;
 
      if ( oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b)
-//     if (  (oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b) or
-//           (oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a) )
      {
        imon_dir.push_back(imon);
        if (a<d or (a==d and b<e) or (a==d and b==e and c<=f) ) // Choose a specific ordering which we will compute. Then get the others by symmetry.
@@ -623,9 +621,10 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
            imonlist.push_back(imon);
        }
      }
-     if ( oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a)
+     else if ( oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a)
      {
-       imon_exch.push_back(imon);
+//       imon_exch.push_back(imon);
+       imon_dir.push_back(imon);
      }
    }
    indices.resize( imonlist.size() );
@@ -662,17 +661,18 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
        if ( hf.Vmon3_keys[imon1] == key_defabc)  indices[index][2] = imon1;
 //       if ( hf.Vmon3_keys[imon1] == key_defabc_isoflip)  indices[index][3] = imon1;
        if ( hf.Vmon3_keys[imon1] == key_defabc)  indices[index][3] = imon1;
-     }
-     for (auto imon2 : imon_exch )
-     {
-       if ( hf.Vmon3_keys[imon2] == key_bacedf) indices[index][4] = imon2;
-       if ( hf.Vmon3_keys[imon2] == key_edfbac) indices[index][5] = imon2;
-       if ( hf.Vmon3_keys[imon2] == key_bacedf_isoflip) indices[index][6] = imon2;
-       if ( hf.Vmon3_keys[imon2] == key_edfbac_isoflip) indices[index][7] = imon2;
-//       if ( hf.Vmon3_keys[imon1] == key_bacedf) indices[index][4] = imon1;
-//       if ( hf.Vmon3_keys[imon1] == key_edfbac) indices[index][5] = imon1;
-//       if ( hf.Vmon3_keys[imon1] == key_bacedf_isoflip) indices[index][6] = imon1;
-//       if ( hf.Vmon3_keys[imon1] == key_edfbac_isoflip) indices[index][7] = imon1;
+//     }
+////     for (auto imon2 : imon_exch )
+//     for (auto imon2 : imon_dir )
+//     {
+//       if ( hf.Vmon3_keys[imon2] == key_bacedf) indices[index][4] = imon2;
+//       if ( hf.Vmon3_keys[imon2] == key_edfbac) indices[index][5] = imon2;
+//       if ( hf.Vmon3_keys[imon2] == key_bacedf_isoflip) indices[index][6] = imon2;
+//       if ( hf.Vmon3_keys[imon2] == key_edfbac_isoflip) indices[index][7] = imon2;
+       if ( hf.Vmon3_keys[imon1] == key_bacedf) indices[index][4] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_edfbac) indices[index][5] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_bacedf_isoflip) indices[index][6] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_edfbac_isoflip) indices[index][7] = imon1;
      }
      
    }
@@ -776,9 +776,9 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
          if ( (na==nb and la==lb and j2a==j2b) and (jacobi1.t + Jab)%2<1 ) continue;
          int Ncm = (2*(na+nb+nc)+la+lb+lc - 2*(jacobi1.n+jacobi2.n) - jacobi1.l - jacobi2.l - Lcm)/2;
 //         if (Ncm<0) continue;
-         double tcoef = AngMom::Tcoeff( na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
+//         double tcoef = AngMom::Tcoeff( na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
 //         double tcoef = AngMom::Tcoeff_reorder( na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
-//         double tcoef = ComputeTcoeff(hf, na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
+         double tcoef = ComputeTcoeff(hf, na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jacobi1.n, jacobi1.l, jacobi1.s, jacobi1.j, jacobi2.n, jacobi2.l, jacobi2.j2, twoJ12, Ncm, Lcm);
          if (std::abs(tcoef)<1e-9)
          {
           tzero++;
@@ -813,7 +813,9 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
   double t_start = omp_get_wtime();
   // The keys are already computed elsewhere and are passed in as input
   std::cout << "Begin " << __func__ << std::endl;
-  hf.modelspace->PreCalculateMoshinsky();
+//  hf.modelspace->PreCalculateMoshinsky();
+  PreComputeMoshinsky();
+  PreComputeSixJ();
 //  hf.modelspace->PreCalculateAdditionalSixJ();
   hf.Vmon3.resize( hf.Vmon3_keys.size(), 0.);
   struct ljChannel{ int l; int j2; bool operator==(const ljChannel& rhs){return (rhs.l==l and rhs.j2==j2); };};
@@ -1741,7 +1743,8 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
     {
       for (int twoS12=twoS12_min; twoS12<=twoS12_max; twoS12+=2)
       {
-        ninej_12[ 2*(L12-L12_min)+twoS12/2] = AngMom::phase((twoS12+twoJ)/2)*(2*L12+1)*(twoS12+1) * AngMom::NineJ(L1,L2,L12,S1,S2,0.5*twoS12,J1,0.5*twoJ2,0.5*twoJ12);
+//        ninej_12[ 2*(L12-L12_min)+twoS12/2] = AngMom::phase((twoS12+twoJ)/2)*(2*L12+1)*(twoS12+1) * AngMom::NineJ(L1,L2,L12,S1,S2,0.5*twoS12,J1,0.5*twoJ2,0.5*twoJ12);
+        ninej_12[ 2*(L12-L12_min)+twoS12/2] = AngMom::phase((twoS12+twoJ)/2)*(2*L12+1)*(twoS12+1) * AngMom::NineJ(L2,L12,L1,S2,0.5*twoS12,S1,0.5*twoJ2,0.5*twoJ12,J1);
       }
     }
 //    std::cout << " done with precompute step " << std::endl;
@@ -1766,8 +1769,9 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
 //        if ( (la+lb+L1+curlyL)%2>0 ) continue; 
         if ( 2*curlyN+curlyL +2*nc+lc != 2*Ncm+Lcm + 2*N2+L2) continue; // energy conservation in second Moshinsky bracket
         int mosh1phase = AngMom::phase( curlyL+L1+Lab + 0*(curlyL+L1 - lb-la)/2 );
-        double mosh1 = mosh1phase  * AngMom::Moshinsky( curlyN,curlyL,  N1,L1,      na,la,     nb,lb,     Lab,  1.0);
+//        double mosh1 = mosh1phase  * AngMom::Moshinsky( curlyN,curlyL,  N1,L1,      na,la,     nb,lb,     Lab,  1.0);
 //        double mosh1 = mosh1phase  * hf.modelspace->GetMoshinsky( curlyN,curlyL,  N1,L1,      na,la,     nb,lb,     Lab); // we've cached the d=1 brackets
+        double mosh1 = mosh1phase  * GetMoshinsky( curlyN,curlyL,  N1,L1,      na,la,     nb,lb,     Lab, 1); // we've cached the d=1 brackets
         if (std::abs(mosh1)<1e-9) continue;
 
         int Lambda_min = std::max( std::abs(Lcm-L2), std::abs(curlyL-lc) );
@@ -1780,12 +1784,18 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
 
           // This inner loop is all just summing over sixj's and a ninej, and can probably be re-expressed with some fancy recoupling
           double sum_L = 0;
+
+//   Maybe try inserting the 12j stuff here instead of doin the loops
+//          int phase_L = AngMom::phase( lc + Lab + (twoS12+twoJ+1-twoJ2)/2 + S1 + Jab);
+//          double sixjL = 0
+
           int L_min = std::max( std::abs(Lambda-L1), std::abs(Lab-lc) );
           int L_max = std::min( Lambda+L1, Lab+lc );
           for (int L=L_min; L<=L_max; L++)
           {
 //            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * AngMom::SixJ( lc, curlyL, Lambda, L1,L,Lab);
-            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * hf.modelspace->GetSixJ( lc, curlyL, Lambda, L1,L,Lab);
+//            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * hf.modelspace->GetSixJ( lc, curlyL, Lambda, L1,L,Lab);
+            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * GetSixJ( 2*lc, 2*curlyL, 2*Lambda, 2*L1,2*L,2*Lab);
             if (std::abs(sixj1)<1e-9) continue;
 
             double sum_12 = 0;
@@ -1795,6 +1805,7 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
               double ninejL =  AngMom::NineJ( Lab, lc, L,
                                               S1,  sc, 0.5*twoS12,
                                               Jab, jc, 0.5*twoJ);
+
               if ( std::abs(ninejL)<1e-9) continue;
               for (int L12=L12_min; L12<=L12_max; L12++)
               {
@@ -1804,9 +1815,11 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
                 if (std::abs(ninej12)<1e-9) continue;
                 // Don't bother with triangle checks here, because the sixj functions already do that
 //                double sixj2 = AngMom::SixJ( Lcm,L12,L,0.5*twoS12,0.5*twoJ,0.5*twoJ12);
-                double sixj2 = hf.modelspace->GetSixJ( Lcm,L12,L,0.5*twoS12,0.5*twoJ,0.5*twoJ12);
+//                double sixj2 = hf.modelspace->GetSixJ( Lcm,L12,L,0.5*twoS12,0.5*twoJ,0.5*twoJ12);
+                double sixj2 = GetSixJ( 2*Lcm,2*L12,2*L,twoS12,twoJ,twoJ12);
 //                double sixj3 = AngMom::SixJ( Lcm,L2,Lambda,L1,L,L12);
-                double sixj3 = hf.modelspace->GetSixJ( Lcm,L2,Lambda,L1,L,L12);
+//                double sixj3 = hf.modelspace->GetSixJ( Lcm,L2,Lambda,L1,L,L12);
+                double sixj3 = GetSixJ( 2*Lcm,2*L2,2*Lambda,2*L1,2*L,2*L12);
 
                 sum_12 += ninejL * ninej12 * sixj2 * sixj3;
               } // for L12
@@ -1840,4 +1853,318 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
 
 
 
+
+
+
+
+
+
+
+
+uint64_t Jacobi3BME::SixJHash(int j1, int j2, int j3, int J1, int J2, int J3)
+{
+   return   (((uint64_t)(j1)) << 50)
+          + (((uint64_t)(j2)) << 40)
+          + (((uint64_t)(j3)) << 30)
+          + (((uint64_t)(J1)) << 20)
+          + (((uint64_t)(J2)) << 10)
+          +  ((uint64_t)(J3));
+}
+
+void Jacobi3BME::SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& j3, uint64_t& J1, uint64_t& J2, uint64_t& J3)
+{
+   j1 = (key >> 50) & 0x3FFL;
+   j2 = (key >> 40) & 0x3FFL;
+   j3 = (key >> 30) & 0x3FFL;
+   J1 = (key >> 20) & 0x3FFL;
+   J2 = (key >> 10) & 0x3FFL;
+   J3 = (key      ) & 0x3FFL;
+}
+
+uint64_t Jacobi3BME::MoshinskyHash(uint64_t N, uint64_t Lam, uint64_t n, uint64_t lam, uint64_t n1, uint64_t l1, uint64_t n2, uint64_t l2, uint64_t L, uint64_t d)
+{
+   return   (N   << 54)
+          + (Lam << 47)
+          + (n   << 41)
+          + (lam << 34)
+          + (n1  << 28)
+          + (l1  << 21)
+          + (n2  << 15)
+          + (l2  << 8 )
+          + (L   << 1 )
+          + (d%2);
+}
+
+void Jacobi3BME::MoshinskyUnHash(uint64_t key,uint64_t& N,uint64_t& Lam,uint64_t& n,uint64_t& lam,uint64_t& n1,uint64_t& l1,uint64_t& n2,uint64_t& l2,uint64_t& L,uint64_t& d)
+{
+   N   = (key >> 54) & 0x3FL;
+   Lam = (key >> 47) & 0x7FL;
+   n   = (key >> 41) & 0x3FL;
+   lam = (key >> 34) & 0x7FL;
+   n1  = (key >> 28) & 0x3FL;
+   l1  = (key >> 21) & 0x7FL;
+   n2  = (key >> 15) & 0x3FL;
+   l2  = (key >> 8 ) & 0x7FL;
+//   L   = (key >> 1 ) & 0xFFL;
+   L   = (key >> 1 ) & 0x7FL;
+   d = 2-(key%2);
+}
+
+
+double Jacobi3BME::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
+{
+// { j1 j2 j3 }
+// { J1 J2 J3 }
+   uint64_t key = SixJHash(j1,j2,j3,J1,J2,J3);
+
+   const auto it = SixJList.find(key);
+   double sixj=0.0;
+   if (it != SixJList.end() )
+   {
+     sixj = it->second;
+   }
+   else
+   {
+    sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
+    if (omp_get_num_threads()<2)
+    {
+      #pragma omp critical
+      {
+        SixJList[key] = sixj;
+      }
+    }
+    else
+    {
+      std::cout << "DANGER!!!!!!!  Updating SixJList inside a parellel loop breaks thread safety!" << std::endl;
+//      std::cout << "  I shouldn't be here in GetSixJ("
+//                << std::setprecision(1) << std::fixed << j1 << " " << std::setprecision(1) << std::fixed << j2 << " "
+//                << std::setprecision(1) << std::fixed << j3 << " " << std::setprecision(1) << std::fixed << J1 << " "
+//                << std::setprecision(1) << std::fixed << J2 << " " << std::setprecision(1) << std::fixed << J3 << "). key = "
+//                << std::hex << key << "   sixj = " << std::dec << sixj << std::endl;
+      IMSRGProfiler::counter["N_CalcSixJ_in_Parallel_loop"] +=1;
+      exit(EXIT_FAILURE);
+    }
+   }
+   return sixj;
+}
+
+double Jacobi3BME::GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L, int d)
+{
+  int phase_mosh = 1;
+  int switches = 10;
+//  std::cout << "Enter GetMoshinsky " << N << " " << Lam << " " << n << " " << lam << " " << n1 << " " << l1 << " " << n2 << " " << l2 << " " << L << " " << d << std::endl;
+
+  while (switches > 0)
+  {
+   switches = 0;
+   if (n2>n1 or (n2==n1 and l2>l1))
+   {
+      std::swap(n1,n2);
+      std::swap(l1,l2);
+      phase_mosh *= AngMom::phase(Lam+L);
+      ++switches;
+   }
+   if (n>N or (n==N and lam>Lam))
+   {
+      std::swap(n,N);
+      std::swap(lam,Lam);
+      phase_mosh *= AngMom::phase(l1 +L);
+      ++switches;
+   }
+
+//   if (l1>Lam or (l1==Lam and n1>N) or (l1==Lam and n1==N and l2>lam) or (l1==Lam and n1==N and l2==lam and n2>n) )
+   if (n1>N or (n1==N and l1>Lam) or (n1==N and l1==Lam and n2>n) or (n1==N and l1==Lam and n2==n and l2>lam) )
+   {
+      std::swap(n1,N);
+      std::swap(l1,Lam);
+      std::swap(n2,n);
+      std::swap(l2,lam);
+      ++switches;
+//      phase_mosh *= phase(l2+lam); // This phase is given in Moshinsky and Brody, but with the current algorithm, it appears not to be required.
+   }
+  }
+
+//   std::cout << "    after swapping, " <<  N << " " << Lam << " " << n << " " << lam << " " << n1 << " " << l1 << " " << n2 << " " << l2 << " " << L << " " << d << std::endl;
+   uint64_t key = MoshinskyHash(N,Lam,n,lam,n1,l1,n2,l2,L,d);
+
+   auto it = MoshinskyList.find(key);
+
+   if ( it != MoshinskyList.end() )  return it->second * phase_mosh;
+   if (omp_get_num_threads()>1)
+   {
+     std::cout << "TROUBLE IN MOSHINSKY LAND!!!!!    <" << N << " " << Lam << " " << n << " " << lam << " | " << n1 << " " << l1 << " " << n2 << " " << l2 << ">_" << L  << " " << d << std::endl;
+   }
+
+   // if we didn't find it, we need to calculate it.
+   double mosh = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L,d);
+//   #pragma omp atomic
+   MoshinskyList[key] = mosh;
+   return mosh * phase_mosh;
+
+}
+
+
+
+
+
+
+
+
+//  This is structured in essentially the same way as the analogous function in ModelSpace
+//  We need { j1 j2 j3 }  for sixj1 : ( lc, curlyL, Lambda, L1,L,Lab) -- all integer,  0 < j < 3*max(lc)
+//          { J4 J5 J6 }      sixj2 : ( Lcm, L12, L, S12, J, J12 )    -- top row integer, bottom row half-integer
+//                            sixj3 : ( Lcm, L2, Lambda, L1,L,L12 )   -- all integer, with the same restrictions as sixj1
+//
+  void Jacobi3BME::PreComputeSixJ()
+  {
+    double t_start = omp_get_wtime();
+    std::cout << "Precalculating SixJ's" << std::endl;
+    std::vector<uint64_t> KEYS;
+    // first, we do the all-integer ones
+    for (int j1=0; j1<=(3*emax+1); j1+=2)
+    {
+     for (int j2=0; j2<=(3*emax+1); j2+=2)
+     {
+      for (int j3=std::abs(j1-j2); j3<=(j1+j2); j3+=2)
+      {
+       for (int J4=0; J4<=3*(2*emax+1); J4+=2)
+       {
+        for (int J5=std::abs(j3-J4); J5<=(j3+J4); J5+=2)
+        {
+         for (int J6=std::max(std::abs(j1-J5),std::abs(j2-J4)); J6<=std::min(j1+J5,j2+J4); J6+=2)
+         {
+           uint64_t key = Jacobi3BME::SixJHash(j1,j2,j3,J4,J5,J6);
+           if ( SixJList.count(key) == 0 ) 
+           {
+             KEYS.push_back(key);
+             SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+           }
+         } // for J6
+        } // for J5
+       } // for J4
+
+       // Now we do the half-integer bottom row
+       for (int S12=1; S12<=3; S12+=2)
+       {
+        for (int J=std::abs(S12-j3); J<=(S12+j3); J+=2)
+        {
+         for (int J12=std::max(std::abs(j1-J),std::abs(j2-S12)); J12<=std::min((j1+J),(j2+S12)); J12+=2)
+         {
+           uint64_t key = Jacobi3BME::SixJHash(j1,j2,j3,S12,J,J12);
+           if ( SixJList.count(key) == 0 ) 
+           {
+             KEYS.push_back(key);
+             SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+           }
+         } // for J12
+        } // for J
+       } // for S12
+      } // for j3
+     } // for j2
+    } // for j1
+    
+    // now we actually compute them all.
+    #pragma omp parallel for schedule(dynamic,1)
+    for (size_t i=0;i< KEYS.size(); ++i)
+    {
+      uint64_t j1,j2,j3,J1,J2,J3;
+      uint64_t key = KEYS[i];
+      SixJUnHash(key, j1,j2,j3,J1,J2,J3);
+      SixJList[key] = AngMom::SixJ(0.5*j1,0.5*j2,0.5*j3,0.5*J1,0.5*J2,0.5*J3);
+    }
+//    sixj_has_been_precalculated = true;
+    std::cout << "done calculating sixJs (" << KEYS.size() << " of them)" << std::endl;
+    std::cout << "Hash table has " << SixJList.bucket_count() << " buckets and a load factor " << SixJList.load_factor() 
+         << "  estimated storage ~ " << ((SixJList.bucket_count()+SixJList.size()) * (sizeof(size_t)+sizeof(void*))) / (1024.*1024.*1024.) << " GB" << std::endl;
+    IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  }
+
+
+  void Jacobi3BME::PreComputeNineJ()
+  {
+
+  }
+
+
+//        double mosh1 = mosh1phase  * hf.modelspace->GetMoshinsky( curlyN,curlyL,  N1,L1,      na,la,     nb,lb,     Lab); // we've cached the d=1 brackets
+//          double mosh2 = moshphase2 * (2*Lambda+1) * AngMom::Moshinsky(    Ncm,Lcm,     N2,L2,  curlyN,curlyL, nc,lc,  Lambda,  2.0);
+  // Two kinds of Moshinsky bracket to be computed
+  // mosh1 = << curlyN,curlyL, N1,L1 |  na,la, nb,lb; Lab >>_1
+  // mosh2 = << Ncm,Lcm,  N2,L2  |  curlyN,curlyL, nc,lc; Lambda >>_2
+  // The first one has E12 <= E2max;
+  // The second one has a more complicated restriction. Ecurly <=  Eab - E1, and E1+E2<= Nmax, and Ecm+Nmax <= E3max
+  // so Ecm + E2 <= E3max ?
+  void Jacobi3BME::PreComputeMoshinsky()
+  {
+    double t_start = omp_get_wtime();
+    std::cout <<"Calculating moshinsky with Lmax = " << emax << std::endl;
+    int Lmax = emax;
+  
+    // generating all the keys is fast, so we do this first without parallelization
+  //  std::vector<unsigned long long int> KEYS;
+    std::vector<uint64_t> KEYS;
+    for (int N=0; N<=E2max/2; ++N)
+    {
+     for (int n=0; n<=std::min(N,E3max/2-N); ++n)
+     {
+//      std::cout << "N,n = " << N << " " << n << "   n is limited to " << std::min(N,E3max/2-N) << std::endl;
+      int Lam_max = std::min( E2max-2*n-2*n, 2*Lmax ); // Here Lmax is the max L of the s.p. basis
+      for (int Lam=0; Lam<=E2max-2*N-2*n; ++Lam)
+      {
+       int lam_max = N==n ? std::min(Lam,E2max-2*N-2*n-Lam) : E2max-2*N-2*n-Lam ; 
+       for (int lam=0; lam<=lam_max; ++lam)
+       {
+        int e2 = 2*N+Lam + 2*n+lam;
+        for (int L=std::abs(Lam-lam); L<=Lam+lam; ++L)
+        {
+         if (L>3*Lmax) continue;
+         for (int n1=0; n1<=N; ++n1)
+         {
+          for (int n2=0; n2<=std::min(n1,e2/2-n1); ++n2)
+          {
+           int l1max = n1==N? std::min(Lam,e2-2*n1-2*n2) : e2-2*n1-2*n2;
+           for (int l1=0; l1<=l1max; ++l1 )
+           {
+            int l2 = e2-2*n1-2*n2-l1;
+            if ( (l1+l2+lam+Lam)%2 >0 ) continue; // parity conservation
+            if ( l2<std::abs(L-l1) or l2>L+l1 ) continue; // triangle
+  //          if (l1>Lmax or l2>Lmax) continue;
+            if ( (l1>Lmax and l2>Lmax) and (lam>Lmax or Lam>Lmax)) continue; // maybe we don't want this?
+            if ( (l1>Lmax or l2>Lmax) and (lam>Lmax and Lam>Lmax)) continue;
+  
+//            std::cout << "::: " << N << " " << Lam << " " << n << " " << lam << " " << n1 << " " << l1 << " " << n2 << " " << l2 << " " << L << std::endl;
+
+            uint64_t key = MoshinskyHash(N,Lam,n,lam,n1,l1,n2,l2,L,1);
+            KEYS.push_back(key);
+            MoshinskyList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+
+//            key = MoshinskyHash(N,Lam,n,lam,n1,l1,n2,l2,L,2);
+//            KEYS.push_back(key);
+//            MoshinskyList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+    // Now we calculate the Moshinsky brackets in parallel
+  //  std::vector<double> mosh_vals( KEYS.size() );
+    #pragma omp parallel for schedule(dynamic,1)
+    for (size_t i=0;i< KEYS.size(); ++i)
+    {
+      uint64_t key = KEYS[i];
+      uint64_t N,Lam,n,lam,n1,l1,n2,l2,L,d;
+      MoshinskyUnHash(key,N,Lam,n,lam,n1,l1,n2,l2,L,d);
+  
+      MoshinskyList[key] = AngMom::Moshinsky(N,Lam,n,lam,n1,l1,n2,l2,L,d);
+    }
+  
+//    moshinsky_has_been_precalculated = true;
+    std::cout << "done calculating moshinsky (" << KEYS.size() << " elements)" << std::endl;
+    std::cout << "Hash table has " << MoshinskyList.bucket_count() << " buckets and a load factor " << MoshinskyList.load_factor() 
+              << "  estimated storage ~ " << ((MoshinskyList.bucket_count()+MoshinskyList.size()) * (sizeof(size_t)+sizeof(void*))) / (1024.*1024.*1024.) << " GB" << std::endl;
+    IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  }
 
