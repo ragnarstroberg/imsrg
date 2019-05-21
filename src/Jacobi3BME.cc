@@ -874,6 +874,9 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         {
           size_t imon = imon_indices[ilist][0];
 
+//          if (imon==13) verbose = true;
+//          else verbose = false;
+
           auto key = hf.Vmon3_keys[imon];
 //          if (verbose) std::cout << " imon,imon_ab,imon_de,imon_abde = " << imon << " " << imon_ab << " " << imon_de << " " << imon_abde << std::endl;
           int a,b,c,d,e,f;
@@ -891,7 +894,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
           int Eabc = 2*(oa.n+ob.n+oc.n) + oa.l+ob.l+oc.l;
           int Edef = 2*(od.n+oe.n+of.n) + od.l+oe.l+of.l;
 //          if (Eabc>Nmax or Edef>Nmax) continue;
-          int parity = Eabc%2;
+//          int parity = Eabc%2;
 
           int Tzab = (oa.tz2+ob.tz2)/2;
           int Tab_min = std::abs(Tzab);
@@ -900,180 +903,299 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
           int twoT_min = std::abs( twoTz ); // this will either be 1 or 3
           std::array<double,2> isospin2_Clebsch = {oa.tz2*sqrt(0.5), Tzab + std::abs(oa.tz2-ob.tz2)/2*sqrt(0.5) };
           std::array<double,4> isospin3_Clebsch = {   1.0,   0.0,  AngMom::CG(1,Tzab,0.5,0.5*oc.tz2, 0.5, 0.5*twoTz),  AngMom::CG(1,Tzab,0.5,0.5*oc.tz2, 1.5,0.5*twoTz) };
+
           double v_monopole = 0;
-          int Jab_step = (a==b or d==e)? 2 : 1;
+
+          if (verbose) std::cout << std::endl << "======================" << std::endl <<  "abcdef : " << a << " " << b << " " << c << " " << d << " "<< e << " "<< f << std::endl;
 
 // start new attempt here
 
-//          int twoJ_min = std::max(1, j2c-j2a-j2b);
-//          int twoJ_max = j2a+j2b+j2c;
-//
-//          for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
-//          {
-//           int Jab_min = std::abs(twoJ-j2c)/2;
-//           int Jab_max = (twoJ+j2c)/2;
-//           int Jab_step = (a==b or d==e)? 2 : 1;
-//           for (int twoT=twoT_min; twoT<=3; twoT+=2)
-//           {
-//            for (int Ecm=0; Ecm<=std::min(Eabc,Edef); Ecm++)
-//             {
-//               int E12abc = Eabc-Ecm;
-//               int E12def = Edef-Ecm;
-//               if (E12abc > Nmax  or E12def>Nmax) continue;
-//               auto hashTJN_abc = HashTJN(twoT,twoJ12,E12abc);
-//               auto hashTJN_def = HashTJN(twoT,twoJ12,E12def);
-//
-//               size_t dimNAS_abc = GetDimensionNAS( twoT, twoJ12, parity, E12abc ); 
-//               size_t dimNAS_def = GetDimensionNAS( twoT, twoJ12, parity, E12def ); 
-//               if (dimNAS_abc==0 or dimNAS_def==0) continue;
-//
-//               size_t dimAS_abc = GetDimensionAS( twoT, twoJ12, parity, E12abc ); 
-//               size_t dimAS_def = GetDimensionAS( twoT, twoJ12, parity, E12def ); 
-//               if (dimAS_abc==0 or dimAS_def==0) continue;
-//
-//               size_t startloc   = GetStartLocNAS(twoT, twoJ12, E12abc, E12def) ;
-//               size_t startlocAS = GetStartLocAS( twoT, twoJ12, E12abc, E12def);
-//
-//               size_t cfp_begin_abc = GetCFPStartLocation(twoT,twoJ12,E12abc);
-//               size_t cfp_begin_def = GetCFPStartLocation(twoT,twoJ12,E12def);
-//
-//               arma::mat matelAS( &meAS[startlocAS], dimAS_abc, dimAS_def, false ); 
-//               
-//               arma::mat cfp_abc( &(cfpvec[cfp_begin_abc]), dimNAS_abc, dimAS_abc, /*copy_aux_mem*/ true);
-//               arma::mat cfp_def( &(cfpvec[cfp_begin_def]), dimNAS_def, dimAS_def, /*copy_aux_mem*/ true);
-//
-//
-//               int numJTab_channels = (Jab_max-Jab_min)/Jab_step ;
-//               int numJTde_channels = 1;
-//               arma::mat Tabc(numJTab_channels, dimNAS_abc, arma::fill::zeros);  // signature n_rows, n_cols. We multiply from the left, so dimNAS_abc = n_cols.
-//               arma::mat Tdef(dimNAS_def, numJTde_channels, arma::fill::zeros);  // here, we multiply from the right, so dimNAS_def = n_rows.
-//
-//               for (int Tab=Tab_min; Tab<=1; Tab++)
-//               {
-//                double isoClebsch_ab = isospin2_Clebsch[Tab];
-//                double isoClebsch_c = isospin3_Clebsch[2*Tab + twoT/2];
-//
-//                for (int Tde=Tab_min; Tde<=1; Tde++)
-//                {
-//                  double isoClebsch_de = isospin2_Clebsch[Tde];
-//                  double isoClebsch_f = isospin3_Clebsch[2*Tde + twoT/2];
-//                  if (std::abs(isoClebsch_c)<1e-6 or std::abs(isoClebsch_f)<1e-6) continue;
+          int twoJ_min = std::max(1, j2c-j2a-j2b);
+          int twoJ_max = j2a+j2b+j2c;
 
-
-
-
-          for (int Jab=Jab_min; Jab<=Jab_max; Jab+=Jab_step)
+          for (int twoT=twoT_min; twoT<=3; twoT+=2)
           {
-           if ( (a==b and a==c and j2a<3) or (d==e and d==f and od.j2<3) ) continue; // can't fit 3 identical particles in a j=1/2 orbit
-           int twoJ_min = std::abs(2*Jab-j2c);
-           int twoJ_max = 2*Jab+j2c;
-           for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+           for (int Ecm=0; Ecm<=std::min(Eabc,Edef); Ecm++)
            {
+            int E12abc = Eabc-Ecm;
+            int E12def = Edef-Ecm;
+            int parity = E12abc%2;
+            if (E12abc > Nmax  or E12def>Nmax) continue;
+            for (int twoJ12=1; twoJ12<=2*(Nmax-Ecm)+3; twoJ12+=2)
+            {
 
-             for (int Tab=Tab_min; Tab<=1; Tab++)
-             {
-//              int ab_swap_phase = - AngMom::phase( (j2a+j2b)/2 - Jab + 1 - Tab); // don't forget that minus sign out in front...
-              double isoClebsch_ab = isospin2_Clebsch[Tab];
-              for (int Tde=Tab_min; Tde<=1; Tde++)
+              auto hashTJN_abc = HashTJN(twoT,twoJ12,E12abc);
+              auto hashTJN_def = HashTJN(twoT,twoJ12,E12def);
+  
+              size_t dimNAS_abc = GetDimensionNAS( twoT, twoJ12, parity, E12abc ); 
+              size_t dimNAS_def = GetDimensionNAS( twoT, twoJ12, parity, E12def ); 
+              if (dimNAS_abc==0 or dimNAS_def==0) continue;
+  
+              size_t dimAS_abc = GetDimensionAS( twoT, twoJ12, parity, E12abc ); 
+              size_t dimAS_def = GetDimensionAS( twoT, twoJ12, parity, E12def ); 
+              if (dimAS_abc==0 or dimAS_def==0) continue;
+  
+              size_t startloc   = GetStartLocNAS(twoT, twoJ12, E12abc, E12def) ;
+              size_t startlocAS = GetStartLocAS( twoT, twoJ12, E12abc, E12def);
+  
+              size_t cfp_begin_abc = GetCFPStartLocation(twoT,twoJ12,E12abc);
+              size_t cfp_begin_def = GetCFPStartLocation(twoT,twoJ12,E12def);
+
+
+              auto& jacobi_indices_abc = NAS_jacobi_states.at(hashTJN_abc);
+              auto& jacobi_indices_def = NAS_jacobi_states.at(hashTJN_def);
+  
+              arma::mat matelAS( &meAS[startlocAS], dimAS_abc, dimAS_def, false ); 
+              
+              arma::mat cfp_abc( &(cfpvec[cfp_begin_abc]), dimNAS_abc, dimAS_abc, /*copy_aux_mem*/ false);
+              arma::mat cfp_def( &(cfpvec[cfp_begin_def]), dimNAS_def, dimAS_def, /*copy_aux_mem*/ false);
+  
+              arma::mat matelNAS = cfp_abc * matelAS * cfp_def.t(); // Compute the non-antisymmetrized matrix elements 
+
+//              arma::rowvec Tabc(dimNAS_abc, arma::fill::zeros);
+//              arma::vec    Tdef(dimNAS_def, arma::fill::zeros);
+
+              for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
               {
-                double isoClebsch_de = isospin2_Clebsch[Tde];
-                for (int twoT=twoT_min; twoT<=std::min(2*Tab+1,2*Tde+1); twoT+=2)
+                int twoJ_min = std::abs(twoJ12-2*Lcm);
+                int twoJ_max = twoJ12+2*Lcm;
+
+                if (verbose) std::cout << "Lcm, twoJ12, twoJ_min,twoJ_max " << Lcm << " " << twoJ12 << " "  << twoJ_min << " " << twoJ_max << std::endl;
+                for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
                 {
-//                  int de_swap_phase = - AngMom::phase( (j2a+j2b)/2 - Jab + 1 - Tde); // don't forget that minus sign out in front...
-                  double isoClebsch_c = isospin3_Clebsch[2*Tab + twoT/2];
-                  double isoClebsch_f = isospin3_Clebsch[2*Tde + twoT/2];
+                  int Jab_min = std::max( std::abs(j2a-j2b), std::abs(twoJ-j2c) )/2;
+                  int Jab_max = std::min( j2a+j2b, twoJ+j2c)/2;
+//                  int Jab_step = (a==b or d==e)? 2 : 1;
+                  int Jab_step = 1;
+//                  int rows = ((Jab_max-Jab_min)/Jab_step+1) * (2-Tab_min);
+//                  int rows = ((Jab_max-Jab_min)/Jab_step+1) * 2;
 
-                  if (std::abs(isoClebsch_c)<1e-6 or std::abs(isoClebsch_f)<1e-6) continue;
-                  double v_sumJT = 0;
-                  for (int Ecm=0; Ecm<=std::min(Eabc,Edef); Ecm++)
+//                  arma::mat Tabc( rows, dimNAS_abc, arma::fill::zeros );
+//                  arma::mat Tdef( dimNAS_abc, rows, arma::fill::zeros );
+
+                  if (verbose) std::cout << "Jabmin,Jabmax,Jabstep = " << Jab_min << " " << Jab_max << " " << Jab_step << std::endl;
+                  for (int Jab=Jab_min; Jab<=Jab_max; Jab+=Jab_step)
                   {
-                   int E12abc = Eabc-Ecm;
-                   int E12def = Edef-Ecm;
-                   if (E12abc > Nmax  or E12def>Nmax) continue;
-                   for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
-                   {
-                     int twoJ12_min = std::abs(twoJ-2*Lcm);
-                     int twoJ12_max = std::min( twoJ+2*Lcm, twoJmax);
-                     for (int twoJ12=twoJ12_min; twoJ12<=twoJ12_max; twoJ12+=2)
-                     {
-                       if (verbose)   std::cout << "twoJ,Lcm,twoJ12,twoJmax = " << twoJ << " " << Lcm << " " << twoJ12 << " " << twoJmax << std::endl;
-                       if (verbose)   std::cout << "twoT,Tab,Tde = " << twoT << " " << Tab << " " << Tde << std::endl;
-                       if (verbose)   std::cout << "Ecm,E12abc,E12def " << Ecm << " " << E12abc << " " << E12def  << std::endl;
-                       auto hashTJN_abc = HashTJN(twoT,twoJ12,E12abc);
-                       auto hashTJN_def = HashTJN(twoT,twoJ12,E12def);
+                    if (verbose) std::cout << "Jab = " << Jab << "  Tab min = " << Tab_min << std::endl;
 
-                       size_t dimNAS_abc = GetDimensionNAS( twoT, twoJ12, parity, E12abc ); 
-                       size_t dimNAS_def = GetDimensionNAS( twoT, twoJ12, parity, E12def ); 
-                       if (dimNAS_abc==0 or dimNAS_def==0) continue;
+                    int rows = (2-Tab_min);
+                    arma::mat Tabc( rows, dimNAS_abc, arma::fill::zeros );
+                    arma::mat Tdef( dimNAS_def, rows, arma::fill::zeros );
+                    arma::mat isospin_mat( rows, rows, arma::fill::zeros );
+//                    for (int Tab=Tab_min; Tab<=1; Tab++) isospin_mat(Tab-Tab_min, Tab-Tab_min) = isospin2_Clebsch[Tab] * isospin3_Clebsch[2*Tab + twoT/2];
 
-                       size_t dimAS_abc = GetDimensionAS( twoT, twoJ12, parity, E12abc ); 
-                       size_t dimAS_def = GetDimensionAS( twoT, twoJ12, parity, E12def ); 
-                       if (dimAS_abc==0 or dimAS_def==0) continue;
+                    bool nonzero_abc = false;
+                    bool nonzero_def = false;
+                    for (size_t iNAS_abc = 0; iNAS_abc<dimNAS_abc; iNAS_abc++)
+                    {
+                      auto& index_1_2_abc = jacobi_indices_abc[iNAS_abc];
+                      int Tab = jacobi_1[index_1_2_abc[0]].t;
+                      if (oa.n==ob.n and la==lb and j2a==j2b and (Tab+Jab)%2<1) continue;
+                      if (Tab<Tab_min) continue;
+                      int rowT =  Tab-Tab_min;
+                      auto tcoeff_hash = TcoeffHash(oa.n,ob.n,oc.n,Jab,twoJ,index_1_2_abc[0],index_1_2_abc[1],twoJ12,Lcm );
+//                      if ( T3bList.find(tcoeff_hash) == T3bList.end() )
+//                      {
+//                        std::cout << "AAAAHAHAH tried to find non-existent T coefficient " << a << " " << b << " " << c << "   " << Jab << " " << twoJ << "  | " << index_1_2_abc[0] << " " << index_1_2_abc[0] << "  " << twoJ12 << "    " << Lcm << std::endl;
+//                        continue;
+//                      }
+//                      Tabc(rowT,iNAS_abc) = T3bList[ tcoeff_hash] ;
+                      Tabc(rowT,iNAS_abc) = T3bList.at(tcoeff_hash) ;
+//                      Tabc(rowT,iNAS_abc) = T3bList[ TcoeffHash(oa.n,ob.n,oc.n,Jab,twoJ,index_1_2_abc[0],index_1_2_abc[1],twoJ12,Lcm )] ;
+                      if (verbose) std::cout << "   Tabc[" << rowT << "," << iNAS_abc << "]  = " << T3bList[ TcoeffHash(oa.n,ob.n,oc.n,Jab,twoJ,index_1_2_abc[0],index_1_2_abc[1],twoJ12,Lcm )]
+                                               << std::endl;
+                      tcoeff_counter++;
+                      nonzero_abc = true;
+                    }
+                    for (size_t iNAS_def = 0; iNAS_def<dimNAS_def; iNAS_def++)
+                    {
+                      auto& index_1_2_def = jacobi_indices_def[iNAS_def];
+                      int Tde = jacobi_1[index_1_2_def[0]].t;
+                      if (od.n==oe.n and la==lb and j2a==j2b and (Tde+Jab)%2<1) continue;
+                      if (Tde<Tab_min) continue;
+                      int rowT =  Tde-Tab_min;
+                      auto tcoeff_hash = TcoeffHash(od.n,oe.n,of.n,Jab,twoJ,index_1_2_def[0],index_1_2_def[1],twoJ12,Lcm );
+//                      if (T3bList.find(tcoeff_hash) == T3bList.end() ) continue;
+                      if (verbose) std::cout << " Jab,Tde = " << Jab << " " << Tde << "  colJT = " << rowT << " iNAS_def = " << iNAS_def << "  dimNAS_def = " << dimNAS_def << std::endl;
+//                      Tdef(iNAS_def,rowT) = T3bList[ tcoeff_hash ] ;//* (twoJ+1)  ;
+                      Tdef(iNAS_def,rowT) = T3bList.at(tcoeff_hash) ;//* (twoJ+1)  ;
+                      if (verbose) std::cout << "   Tdef[" << iNAS_def << "," << rowT << "]  = " << T3bList[ TcoeffHash(od.n,oe.n,of.n,Jab,twoJ,index_1_2_def[0],index_1_2_def[1],twoJ12,Lcm )]
+                                             <<  std::endl;
+                      tcoeff_counter++;
+                      nonzero_def = true;
+                    }
+                    if ( not (nonzero_abc and nonzero_def) ) continue;
 
-                       // As a reminder, armadillo stores matrices   [ M11  M12  M13 ]
-                       // in column-major order, as in               | M21  M22  M23 |
-                       //                                            [ M31  M32  M33 ]
-                       // Element access is M(i,j) -> row=i, column=j so that you get Mij as shown above.
-                       //
-                       //  [ Tdef_1  Tdef_2 ... ]  *  [ <def|V|abc>  ... ]  *  [ Tabc_1 ]
-                       //                             [   ...   ...  ... ]     [ Tabc_2 ]
-                       //                             [   ...   ...  ... ]     [  ...   ]
+                    for (int Tab=Tab_min; Tab<=1; Tab++)
+                    {
+                      Tabc.row(Tab-Tab_min) *= isospin2_Clebsch[Tab] * isospin3_Clebsch[2*Tab + twoT/2];
+                      Tdef.col(Tab-Tab_min) *= isospin2_Clebsch[Tab] * isospin3_Clebsch[2*Tab + twoT/2];
+                    }
 
-                       arma::rowvec Tabc(dimNAS_abc, arma::fill::zeros);
-                       arma::vec Tdef(dimNAS_def, arma::fill::zeros);
+                  if (verbose) std::cout << "  twoT, Ecm, twoJ12, Lcm, twoJ: " << twoT << " " << Ecm << " " << twoJ12 << "  " << Lcm << " " << twoJ << std::endl;
+//                  arma::mat result = isospin_mat * Tabc * matelNAS * Tdef * isospin_mat;
+                  arma::mat result =  Tabc * matelNAS * Tdef ;
+                  if (verbose) std::cout << "matrices:" << std::endl << std::endl << Tabc << std::endl << std::endl << matelNAS << std::endl << std::endl << Tdef << std::endl << std::endl;
+                  if (verbose) std::cout << "isospin matrix : " << std::endl << isospin_mat << std::endl;
+                  if (verbose) std::cout << std::endl << "intermediate: " << std::endl << (matelNAS * Tdef) << std::endl << std::endl;
+                  if (verbose) std::cout << "accumulate : " << arma::accu(result ) << std::endl;
+                  v_monopole += 6* (twoJ+1) * arma::accu( result ) ;
+                  if (verbose) std::cout << " result, vmonopole = " << std::endl << result << std::endl  << v_monopole << std::endl;
+                  } // for Jab
+                } // for twoJ
 
 
-                       for (size_t iNAS_abc = 0; iNAS_abc<dimNAS_abc; iNAS_abc++)
-                       {
-                         auto& index_1_2_abc = NAS_jacobi_states.at(hashTJN_abc).at(iNAS_abc);
-                         if ( jacobi_1.at(index_1_2_abc[0]).t != Tab ) continue;
-                         tcoeff_counter++;
-                         Tabc[iNAS_abc] = T3bList[ TcoeffHash(oa.n,ob.n,oc.n,Jab,twoJ,index_1_2_abc[0],index_1_2_abc[1],twoJ12,Lcm )];
-                       }
-                       for (size_t iNAS_def = 0; iNAS_def<dimNAS_def; iNAS_def++)
-                       {
-                         auto& index_1_2_def = NAS_jacobi_states.at(hashTJN_def).at(iNAS_def);
-                         if ( jacobi_1.at(index_1_2_def[0]).t != Tde ) continue;
-                         tcoeff_counter++;
-                         Tdef[iNAS_def] = T3bList[ TcoeffHash(od.n,oe.n,of.n,Jab,twoJ,index_1_2_def[0],index_1_2_def[1],twoJ12,Lcm )];
-                       }
 
-                       size_t startloc   = GetStartLocNAS(twoT, twoJ12, E12abc, E12def) ;
-                       size_t startlocAS = GetStartLocAS( twoT, twoJ12, E12abc, E12def);
+              } // for Lcm
 
-                       size_t cfp_begin_abc = GetCFPStartLocation(twoT,twoJ12,E12abc);
-                       size_t cfp_begin_def = GetCFPStartLocation(twoT,twoJ12,E12def);
+            } // for twoJ12
+           } // for Ecm
+          } // for twoT
 
-                       arma::mat matelAS( &meAS[startlocAS], dimAS_abc, dimAS_def, false ); 
-                       
-                       arma::mat cfp_abc( &(cfpvec[cfp_begin_abc]), dimNAS_abc, dimAS_abc, /*copy_aux_mem*/ true);
-                       arma::mat cfp_def( &(cfpvec[cfp_begin_def]), dimNAS_def, dimAS_def, /*copy_aux_mem*/ true);
-
-                       if (verbose) std::cout << "Doing the mat mult" << std::endl;
-                       arma::mat result = Tabc * cfp_abc * matelAS * cfp_def.t() * Tdef;
-
-                       v_sumJT += result[0];
-                       
-                     } // for twoJ12
-                   } // for Lcm
-                  } // for Ecm
-                  // v_sumJT is equal to <abc Jab Tab JT | V | def Jde Tde JT>  (and Jde=Jab)
-                  if (verbose) std::cout << "Assigning" << std::endl;
-                  double vterm = 6 * (twoJ+1) * isoClebsch_ab * isoClebsch_c * isoClebsch_de * isoClebsch_f * v_sumJT;
-                  v_monopole += vterm;
-                } // for twoT
-              } // for Tde
-             } // for Tab
-           } // for twoJ
-          } // for Jab
-
-          v_monopole /= j2c+1.;
+          v_monopole *= 1./(j2c+1.);
+          if (verbose) std::cout << "multiplying 6/2jc+1 : " << v_monopole << std::endl;
           if ( std::abs( v_monopole)>1e-8 ) nonzero_vmon++;
          // There are some symmetries we can exploit here to avoid redundant calculations
           for ( auto& imon_sym : imon_indices[ilist] )
           {
               hf.Vmon3[imon_sym] = v_monopole;
           }
+
+
+  
+
+
+
+//          int Jab_step = (a==b or d==e)? 2 : 1;
+//
+//          for (int Jab=Jab_min; Jab<=Jab_max; Jab+=Jab_step)
+//          {
+//           if ( (a==b and a==c and j2a<3) or (d==e and d==f and od.j2<3) ) continue; // can't fit 3 identical particles in a j=1/2 orbit
+//           int twoJ_min = std::abs(2*Jab-j2c);
+//           int twoJ_max = 2*Jab+j2c;
+//           for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+//           {
+//
+//             for (int Tab=Tab_min; Tab<=1; Tab++)
+//             {
+////              int ab_swap_phase = - AngMom::phase( (j2a+j2b)/2 - Jab + 1 - Tab); // don't forget that minus sign out in front...
+//              double isoClebsch_ab = isospin2_Clebsch[Tab];
+//              for (int Tde=Tab_min; Tde<=1; Tde++)
+//              {
+//                double isoClebsch_de = isospin2_Clebsch[Tde];
+//                for (int twoT=twoT_min; twoT<=std::min(2*Tab+1,2*Tde+1); twoT+=2)
+//                {
+////                  int de_swap_phase = - AngMom::phase( (j2a+j2b)/2 - Jab + 1 - Tde); // don't forget that minus sign out in front...
+//                  double isoClebsch_c = isospin3_Clebsch[2*Tab + twoT/2];
+//                  double isoClebsch_f = isospin3_Clebsch[2*Tde + twoT/2];
+//
+//                  if (std::abs(isoClebsch_c)<1e-6 or std::abs(isoClebsch_f)<1e-6) continue;
+//                  double v_sumJT = 0;
+//                  for (int Ecm=0; Ecm<=std::min(Eabc,Edef); Ecm++)
+//                  {
+//                   int E12abc = Eabc-Ecm;
+//                   int parity = E12abc%2;
+//                   int E12def = Edef-Ecm;
+//                   if (E12abc > Nmax  or E12def>Nmax) continue;
+//                   for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
+//                   {
+//                     int twoJ12_min = std::abs(twoJ-2*Lcm);
+//                     int twoJ12_max = std::min( twoJ+2*Lcm, twoJmax);
+//                     for (int twoJ12=twoJ12_min; twoJ12<=twoJ12_max; twoJ12+=2)
+//                     {
+//                       if (verbose)   std::cout << "Jab,twoJ,Lcm,twoJ12,twoJmax = " << Jab << " " << twoJ << " " << Lcm << " " << twoJ12 << " " << twoJmax << std::endl;
+//                       if (verbose)   std::cout << "twoT,Tab,Tde = " << twoT << " " << Tab << " " << Tde << std::endl;
+//                       if (verbose)   std::cout << "Ecm,E12abc,E12def " << Ecm << " " << E12abc << " " << E12def  << std::endl;
+//                       auto hashTJN_abc = HashTJN(twoT,twoJ12,E12abc);
+//                       auto hashTJN_def = HashTJN(twoT,twoJ12,E12def);
+//
+//                       size_t dimNAS_abc = GetDimensionNAS( twoT, twoJ12, parity, E12abc ); 
+//                       size_t dimNAS_def = GetDimensionNAS( twoT, twoJ12, parity, E12def ); 
+//                       if (dimNAS_abc==0 or dimNAS_def==0) continue;
+//
+//                       size_t dimAS_abc = GetDimensionAS( twoT, twoJ12, parity, E12abc ); 
+//                       size_t dimAS_def = GetDimensionAS( twoT, twoJ12, parity, E12def ); 
+//                       if (dimAS_abc==0 or dimAS_def==0) continue;
+//
+//                       // As a reminder, armadillo stores matrices   [ M11  M12  M13 ]
+//                       // in column-major order, as in               | M21  M22  M23 |
+//                       //                                            [ M31  M32  M33 ]
+//                       // Element access is M(i,j) -> row=i, column=j so that you get Mij as shown above.
+//                       //
+//                       //  [ Tdef_1  Tdef_2 ... ]  *  [ <def|V|abc>  ... ]  *  [ Tabc_1 ]
+//                       //                             [   ...   ...  ... ]     [ Tabc_2 ]
+//                       //                             [   ...   ...  ... ]     [  ...   ]
+//
+//                       arma::rowvec Tabc(dimNAS_abc, arma::fill::zeros);
+//                       arma::vec Tdef(dimNAS_def, arma::fill::zeros);
+//
+//
+//                       for (size_t iNAS_abc = 0; iNAS_abc<dimNAS_abc; iNAS_abc++)
+//                       {
+//                         auto& index_1_2_abc = NAS_jacobi_states.at(hashTJN_abc).at(iNAS_abc);
+//                         if ( jacobi_1.at(index_1_2_abc[0]).t != Tab ) continue;
+//                         tcoeff_counter++;
+//                         Tabc[iNAS_abc] = T3bList[ TcoeffHash(oa.n,ob.n,oc.n,Jab,twoJ,index_1_2_abc[0],index_1_2_abc[1],twoJ12,Lcm )];
+//                       }
+//                       for (size_t iNAS_def = 0; iNAS_def<dimNAS_def; iNAS_def++)
+//                       {
+//                         auto& index_1_2_def = NAS_jacobi_states.at(hashTJN_def).at(iNAS_def);
+//                         if ( jacobi_1.at(index_1_2_def[0]).t != Tde ) continue;
+//                         tcoeff_counter++;
+//                         Tdef[iNAS_def] = T3bList[ TcoeffHash(od.n,oe.n,of.n,Jab,twoJ,index_1_2_def[0],index_1_2_def[1],twoJ12,Lcm )];
+//                       }
+//
+//                       size_t startloc   = GetStartLocNAS(twoT, twoJ12, E12abc, E12def) ;
+//                       size_t startlocAS = GetStartLocAS( twoT, twoJ12, E12abc, E12def);
+//
+//                       size_t cfp_begin_abc = GetCFPStartLocation(twoT,twoJ12,E12abc);
+//                       size_t cfp_begin_def = GetCFPStartLocation(twoT,twoJ12,E12def);
+//
+//                       arma::mat matelAS( &meAS[startlocAS], dimAS_abc, dimAS_def, false ); 
+//                       
+////                       arma::mat cfp_abc( &(cfpvec[cfp_begin_abc]), dimNAS_abc, dimAS_abc, /*copy_aux_mem*/ true);
+////                       arma::mat cfp_def( &(cfpvec[cfp_begin_def]), dimNAS_def, dimAS_def, /*copy_aux_mem*/ true);
+//                       arma::mat cfp_abc( &(cfpvec[cfp_begin_abc]), dimNAS_abc, dimAS_abc, /*copy_aux_mem*/ false);
+//                       arma::mat cfp_def( &(cfpvec[cfp_begin_def]), dimNAS_def, dimAS_def, /*copy_aux_mem*/ false);
+//
+//                       if (verbose) std::cout << "Doing the mat mult" << std::endl;
+//                       if (verbose)
+//                       {
+//                          std::cout << "Tabc: " << std::endl << Tabc << std::endl << std::endl
+//                                    << "matelNAS: " << std::endl << ( cfp_abc * matelAS * cfp_def.t() ) << std::endl << std::endl
+//                                    << "Tdef: " << std::endl << Tdef << std::endl << std::endl;
+//                       }
+//                       arma::mat result = Tabc * cfp_abc * matelAS * cfp_def.t() * Tdef;
+//
+//                       v_sumJT += result[0];
+//                       if (verbose)
+//                       {
+//                         std::cout << " result, v_sumJT : " << result[0] << " " << v_sumJT << std::endl;
+//                       }
+//                       
+//                     } // for twoJ12
+//                   } // for Lcm
+//                  } // for Ecm
+//                  // v_sumJT is equal to <abc Jab Tab JT | V | def Jde Tde JT>  (and Jde=Jab)
+//                  double vterm = 6 * (twoJ+1) * isoClebsch_ab * isoClebsch_c * isoClebsch_de * isoClebsch_f * v_sumJT;
+//                  v_monopole += vterm;
+//                  if (verbose) std::cout << "Multiplying by isoClebsch: " << 6 << " " << twoJ+1 << " " << isoClebsch_ab << " " << isoClebsch_c << " " << isoClebsch_de << " " << isoClebsch_f << "  " << vterm << "  ->  " << v_monopole << std::endl << std::endl;
+//                } // for twoT
+//              } // for Tde
+//             } // for Tab
+//           } // for twoJ
+//          } // for Jab
+//
+//          v_monopole /= j2c+1.;
+//          if (verbose) std::cout << "After dividing by j2c+1 " << v_monopole << std::endl << std::endl << std::endl;
+//          if ( std::abs( v_monopole)>1e-8 ) nonzero_vmon++;
+//         // There are some symmetries we can exploit here to avoid redundant calculations
+//          for ( auto& imon_sym : imon_indices[ilist] )
+//          {
+//              hf.Vmon3[imon_sym] = v_monopole;
+//          }
+
+
 
         } // for imon
         n_mon += imon_indices.size();
