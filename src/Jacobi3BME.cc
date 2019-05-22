@@ -688,8 +688,8 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
 {
     double t_internal = omp_get_wtime();
     bool verbose = false;
-    if (la==0 and lc==0 and lb==1 and j2b==3) verbose = true;
-    std::cout << "la, ..." << la << " " << j2a << " " << lb << " " << j2b << " " << lc << " " << j2c <<  "     " << verbose << std::endl;
+//    if (la==0 and lc==0 and lb==1 and j2b==3) verbose = true;
+//    std::cout << "la, ..." << la << " " << j2a << " " << lb << " " << j2b << " " << lc << " " << j2c <<  "     " << verbose << std::endl;
     std::set<int> na_list, nb_list,nc_list; // a std::set is a sorted unique list of items
     for (auto& orb : hf.modelspace->Orbits )
     {
@@ -704,8 +704,11 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
     int Jab_min = std::abs(j2a-j2b)/2;
     int Jab_max = (j2a+j2b)/2;
 
+    if (verbose) std::cout <<"Jab_min,Jab_max = " << Jab_min << " " << Jab_max << std::endl;
+
      for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
      {
+       if (verbose) std::cout << " Jab = " << Jab << std::endl;
        int twoJ_min = std::abs(2*Jab-j2c);
        int twoJ_max = 2*Jab+j2c;
        for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
@@ -727,7 +730,7 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
              if (E12 > Nmax) continue;
              int parity = E12%2;
 
-             int twoJ12_min = std::max(1,twoJ-Ecm);
+             int twoJ12_min = std::max(1,twoJ-2*Ecm);
              int twoJ12_max = std::min( twoJ+2*Ecm, twoJmax);
              for (int twoJ12=twoJ12_min; twoJ12<=twoJ12_max; twoJ12+=2)
              {
@@ -739,7 +742,7 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
               for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
               {
                 tcoeff_count += 2*dimNAS_T1 + dimNAS_T3 ; //  [T=1/2,Tab=0], [T=1/2,Tab=1],  [T=3/2,Tab=1]
-                if (verbose) std::cout << "Jab, na,nb,nc" << Jab << " " << na << " " << nb << " " << nc << "   Ecm,twoJ12,Lcm " << Ecm << " " << twoJ12 << " " << Lcm << "   incremented to " << tcoeff_count << std::endl;
+                if (verbose) std::cout << "na,nb,nc  " <<  na << " " << nb << " " << nc << "   Jab,twoJ,twoJ12,E12,Lcm " << Jab << " " << twoJ  << " " << twoJ12 << " " << E12 <<  " " << Lcm << "   incremented to " << tcoeff_count << std::endl;
               }// for Lcm
              } // for twoJ12
             }// for Ecm
@@ -748,6 +751,9 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
          } // for na
        } // for twoJ
      } // for Jab
+
+     IMSRGProfiler::timer[std::string(__func__)+"_GenerateKeys"] += omp_get_wtime() - t_internal;
+     t_internal = omp_get_wtime();
 
     if (verbose) std::cout << "Resizing TcoeffList to " << tcoeff_count << std::endl;
     TcoeffList.assign(tcoeff_count,0.0);
@@ -777,6 +783,7 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
          size_t start_point = element->second;
          size_t offset = 0;
          if (verbose) std::cout << " ~ na,nb,nc " << na << " " << nb << " " << nc << "     Jab,twoJ,twoJ12: " << Jab << " " << twoJ << " " << twoJ12 << "   E12: " << E12 << std::endl;
+         if (verbose) std::cout << "hash: " << element->first << "  ->  " << element->second << std::endl;
  
 
          int Eabc = 2*(na+nb+nc)+la+lb+lc;
@@ -796,6 +803,7 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
 
          for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
          {
+           if ( std::abs(twoJ-twoJ12)>2*Lcm or (twoJ+twoJ12)<2*Lcm) continue;
            int Ncm = (Ecm-Lcm)/2;
            offset = (Lcm-Ecm%2)/2 * (2*dimNAS_T1 + dimNAS_T3 );
 
@@ -836,6 +844,7 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
          }
        }
      } 
+     IMSRGProfiler::timer[std::string(__func__)+"_ComputeToeff"] += omp_get_wtime() - t_internal;
 
 }
 
@@ -1034,7 +1043,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         t_internal = omp_get_wtime();
 
 
-        bool verbose = true;
+        bool verbose = false;
         if (verbose) std::cout << "done.  Now the loop over imon... Size of imonlist is " << imon_indices.size() << std::endl;
 
         int tcoeff_counter = 0;
@@ -1045,8 +1054,8 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         {
           size_t imon = imon_indices[ilist][0];
 
-          if (imon==3) verbose = true;
-          else verbose = false;
+//          if (imon==3) verbose = true;
+//          else verbose = false;
 
           auto key = hf.Vmon3_keys[imon];
 //          if (verbose) std::cout << " imon,imon_ab,imon_de,imon_abde = " << imon << " " << imon_ab << " " << imon_de << " " << imon_abde << std::endl;
@@ -1143,15 +1152,15 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
                 int twoJ_min = std::abs(twoJ12-2*Lcm);
                 int twoJ_max = twoJ12+2*Lcm;
 
-                if (verbose) std::cout << "Lcm, twoJ12, twoJ_min,twoJ_max " << Lcm << " " << twoJ12 << " "  << twoJ_min << " " << twoJ_max << std::endl;
                 for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
                 {
                   int Jab_min = std::max( std::abs(j2a-j2b), std::abs(twoJ-j2c) )/2;
                   int Jab_max = std::min( j2a+j2b, twoJ+j2c)/2;
                   int Jab_step = 1;
+                  if (verbose) std::cout << "Lcm, twoJ12, twoJ, twoT " << Lcm << " " << twoJ12 << " "  << twoJ << " " << twoT << "   E12abc, E12def " << E12abc << " " << E12def << std::endl;
 
 
-                  if (verbose) std::cout << "Jabmin,Jabmax,Jabstep = " << Jab_min << " " << Jab_max << " " << Jab_step << std::endl;
+//                  if (verbose) std::cout << "Jabmin,Jabmax,Jabstep = " << Jab_min << " " << Jab_max << " " << Jab_step << std::endl;
                   for (int Jab=Jab_min; Jab<=Jab_max; Jab+=Jab_step)
                   {
                     if (verbose) std::cout << "Jab = " << Jab << "  Tab min = " << Tab_min << std::endl;
@@ -1160,8 +1169,11 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
                     auto tcoeff_hash_abc = TcoeffHash(na,nb,nc,Jab,twoJ,twoJ12,E12abc);
                     auto tcoeff_hash_def = TcoeffHash(nd,ne,nf,Jab,twoJ,twoJ12,E12def);
 
+
                     size_t tcoeff_start_abc = TcoeffLookup[ tcoeff_hash_abc ];
                     size_t tcoeff_start_def = TcoeffLookup[ tcoeff_hash_def ];
+
+                    if (verbose) std::cout << "hashabc : " << tcoeff_hash_abc << "   ->  " << tcoeff_start_abc << "         hashdef : " << tcoeff_hash_def << "    ->  " << tcoeff_start_def << std::endl;
 
                     size_t offset_abc = (Lcm-Ecm%2)/2 * (2*dimNAS_abc_T1 + dimNAS_abc_T3) + (twoT/2) * 2 * dimNAS_abc_T1;
                     size_t offset_def = (Lcm-Ecm%2)/2 * (2*dimNAS_def_T1 + dimNAS_def_T3) + (twoT/2) * 2 * dimNAS_def_T1;
@@ -1193,14 +1205,15 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 
 //                    bool nonzero_abc = false;
 //                    bool nonzero_def = false;
-                    for (size_t iNAS_abc = 0; iNAS_abc<dimNAS_abc; iNAS_abc++)
-                    {
-                      auto& index_1_2_abc = jacobi_indices_abc[iNAS_abc];
-                      auto& jac1= jacobi_1[index_1_2_abc[0]];
-                      auto& jac2= jacobi_2[index_1_2_abc[1]];
+//                    for (size_t iNAS_abc = 0; iNAS_abc<dimNAS_abc; iNAS_abc++)
+//                    {
+//                      auto& index_1_2_abc = jacobi_indices_abc[iNAS_abc];
+//                      auto& jac1= jacobi_1[index_1_2_abc[0]];
+//                      auto& jac2= jacobi_2[index_1_2_abc[1]];
+//                      int Ncm = (Ecm-Lcm)/2;
 //                      int Tab = jacobi_1[index_1_2_abc[0]].t;
-                        double tc = ComputeTcoeff( hf, na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jac1.n, jac1.l, jac1.s, jac1.j, jac2.n, jac2.l, jac2.j2, twoJ12, Ecm-Lcm, Lcm);
-                        if (verbose) std::cout << "iNAS_abc = " << iNAS_abc << "  (Tab = " << jac1.t << " )   tcoef = " << tc << std::endl;
+//                        double tc = ComputeTcoeff( hf, na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jac1.n, jac1.l, jac1.s, jac1.j, jac2.n, jac2.l, jac2.j2, twoJ12, Ncm, Lcm);
+//                        if (verbose) std::cout << "iNAS_abc = " << iNAS_abc << "  (Tab = " << jac1.t << ", Ncm,Lcm= " << Ncm << " " << Lcm << " )   tcoef = " << tc << std::endl;
 //                      if (oa.n==ob.n and la==lb and j2a==j2b and (Tab+Jab)%2<1) continue;
 //                      if (Tab<Tab_min) continue;
 //                      int rowT =  Tab-Tab_min;
@@ -1210,7 +1223,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 //                                               << std::endl;
 //                      tcoeff_counter++;
 //                      nonzero_abc = true;
-                    }
+//                    }
 //                    for (size_t iNAS_def = 0; iNAS_def<dimNAS_def; iNAS_def++)
 //                    {
 //                      auto& index_1_2_def = jacobi_indices_def[iNAS_def];
@@ -1749,7 +1762,7 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
     if ( Lab_max<Lab_min or  twoS12_max<twoS12_min ) return 0.0;
 //    std::cout << "   Lab min/max = " << Lab_min << " " << Lab_max << std::endl;
 
-
+    if ( std::abs(twoJ-twoJ12)>2*Lcm or (twoJ+twoJ12)<Lcm) return 0.0;
 
     double tcoeff=0.;
     for (int Lab=Lab_min; Lab<=Lab_max; Lab++)
@@ -1794,11 +1807,11 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
           int L_min = std::max( std::abs(Lambda-L1), std::abs(Lab-lc) );
           int L_max = std::min( Lambda+L1, Lab+lc );
 
-
-
           for (int L=std::max(std::abs(Lambda-L1),L_min); L<=std::min(L_max,Lambda+L1); L++)
           {
 //            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * AngMom::SixJ( lc, curlyL, Lambda, L1,L,Lab);
+            // { lc curlyL Lambda } Triangles: (lc,curlyL,Lambda), (L1,L,Lambda), (lc,L,Lab), (L1,curlyL,Lab)
+            // { L1   L     Lab   }
             double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * GetSixJ( 2*lc, 2*curlyL, 2*Lambda, 2*L1,2*L,2*Lab);
             if (std::abs(sixj1)<1e-9) continue;
 
@@ -1826,6 +1839,8 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
                                                          twoJ2, twoJ12, 2*J1);
                 if (std::abs(ninej12)<1e-9) continue;
 //                double sixj2 = AngMom::SixJ( Lcm,L12,L,0.5*twoS12,0.5*twoJ,0.5*twoJ12);
+                // { Lcm  L12  L   }  Triangles : (Lcm,L12,L),  (S12,J,L),  (Lcm,J,J12),  (S12,L12,J12)
+                // { S12  J    J12 }
                 double sixj2 = GetSixJ( 2*Lcm,2*L12,2*L, twoS12,twoJ,twoJ12);
 //                double sixj3 = AngMom::SixJ( Lcm,L2,Lambda,L1,L,L12);
                 double sixj3 = GetSixJ( 2*Lcm,2*L2,2*Lambda,2*L1,2*L,2*L12);
@@ -1934,6 +1949,7 @@ double Jacobi3BME::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
 {
 // { j1 j2 j3 }
 // { J1 J2 J3 }
+//   std::cout << " in " << __func__ << "  " << j1 << " " << j2 << " "<< j3 << "    " << J1 << " " << J2 << " " << J3 << std::endl;
    uint64_t key = SixJHash(j1,j2,j3,J1,J2,J3);
 
    const auto it = SixJList.find(key);
@@ -1945,7 +1961,8 @@ double Jacobi3BME::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
    else
    {
     sixj = AngMom::SixJ(0.5*j1,0.5*j2,0.5*j3,0.5*J1,0.5*J2,0.5*J3);
-    if (omp_get_num_threads()<2)
+//    if (omp_get_num_threads()<2)
+    if (omp_get_num_threads()<0)
     {
       #pragma omp critical
       {
