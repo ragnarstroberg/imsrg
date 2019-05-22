@@ -46,8 +46,12 @@ class Jacobi3BME
   std::vector<double> cfpvec;      // the cfp's (coefficients of fractional parentage), i.e. the overlaps of the AS and NAS basis states
   std::vector<size_t> cfp_start_loc;  // starting element for a given T,J,p
 
+  std::vector<double> TcoeffList;
+  std::unordered_map<std::string,size_t> TcoeffLookup;
+
   std::unordered_map<uint64_t,double> SixJList;
-  std::unordered_map<uint64_t,double> MoshinskyList;
+  std::unordered_map<uint64_t,double> Moshinsky1List;
+  std::unordered_map<uint64_t,double> Moshinsky2List;
 //  std::unordered_map<uint64_t,double> NineJList;
   std::vector<double> NineJList;
 
@@ -88,9 +92,11 @@ class Jacobi3BME
 
 //  double GetV3mon( size_t a, size_t b, size_t c, size_t d, size_t e, size_t f ); //< Get a single 3-body monopole term, for use in a Hartree-Fock calculation
 
-  std::string TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm );
+  std::string TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 );
+  void TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 );
+//  std::string TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm );
+//  void TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ, int& jac1, int& jac2, int& twoJ12, int& Lcm );
 //  void TcoeffUnHash(std::string& key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& jac1, uint64_t& jac2, uint64_t& twoJ12, uint64_t& Lcm );
-  void TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ, int& jac1, int& jac2, int& twoJ12, int& Lcm );
 //  void GetV3mon_all( std::vector<uint64_t>& keys, std::vector<double>& v3mon, ModelSpace& modelspace ); //< Get all the monopoles in one go, which should be more efficient
   void GetV3mon_all( HartreeFock& hf ); //< Get all the monopoles in one go, which should be more efficient
 
@@ -101,22 +107,26 @@ class Jacobi3BME
   void TestReadTcoeffNavratil( std::string fname ); //< for unit testing
 
   void GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf, std::vector<std::array<size_t,8>>& indices ); // helper function to clean things up a bit
-  void GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf,   std::unordered_map<std::string,double>& T3bList); // another helper function  
+//  void GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf,   std::unordered_map<std::string,double>& T3bList); // another helper function  
+  void GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf); // another helper function  
 
   double ComputeTcoeff( HartreeFock& hf, int na, int la, int j2a, int nb, int lb, int j2b, int nc, int lc, int j2c, int Jab, int twoJ, int N1, int L1, int S1, int J1, int N2, int L2, int twoJ2, int twoJ12, int Ncm, int Lcm);
 
   void PreComputeSixJ();
   void PreComputeNineJ();
-  void PreComputeMoshinsky();
+//  void PreComputeMoshinsky();
+  void PreComputeMoshinsky1();
+  void PreComputeMoshinsky2();
   uint64_t SixJHash(int j1, int j2, int j3, int J4, int J5, int J6);
   void SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& j3, uint64_t& J1, uint64_t& J2, uint64_t& J3);
   size_t NineJHash(int j1, int j2, int j3, int j4, int j5, int j6, int j7, int j8, int j9);
   void NineJUnHash(size_t key, int j1, int j2, int j3, int j4, int j5, int j6, int j7, int j8, int j9);
 //  uint64_t MoshinskyHash(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int Lam, int d );
-  uint64_t MoshinskyHash(uint64_t N, uint64_t Lam, uint64_t n, uint64_t lam, uint64_t n1, uint64_t l1, uint64_t n2, uint64_t l2, uint64_t L, uint64_t d);
-  void MoshinskyUnHash(uint64_t key,uint64_t& N,uint64_t& Lam,uint64_t& n,uint64_t& lam,uint64_t& n1,uint64_t& l1,uint64_t& n2,uint64_t& l2,uint64_t& L,uint64_t& d);
+  uint64_t MoshinskyHash(uint64_t N, uint64_t Lam, uint64_t n, uint64_t lam, uint64_t n1, uint64_t l1, uint64_t n2, uint64_t l2, uint64_t L);
+  void MoshinskyUnHash(uint64_t key,uint64_t& N,uint64_t& Lam,uint64_t& n,uint64_t& lam,uint64_t& n1,uint64_t& l1,uint64_t& n2,uint64_t& l2,uint64_t& L);
   double GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3);
-  double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L, int d);
+  double GetMoshinsky1( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L);
+  double GetMoshinsky2( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L);
   double GetNineJ( int j1, int j2, int j3, int j4, int j5, int j6, int j7, int j8, int j9);
 
 };
