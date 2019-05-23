@@ -6,6 +6,8 @@
 #include <vector>
 #include <array>
 
+class HartreeFock; // forward declaration
+
 struct jacobi1_state{ int n; int l; int s; int j; int t; };
 struct jacobi2_state{ int n; int l; int j2; };
 

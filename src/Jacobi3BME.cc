@@ -594,6 +594,101 @@ void Jacobi3BME::TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& 
 }
 
 
+
+// Find all the entries in HartreeFock::Vmon3 that we need to compute for a specific set of one-body channels (la,j2a, ...)
+// We want to get all the free ones we can from symmetry (aside from swapping the third index, e.g. abc -> cab. I haven't mustered the gumption for that yet).
+// This is a bit awkward because the Vmon3 and Vmon3_keys are just vectors of doubles and uint64_t, respectively.
+// The strategy is to loop through Vmon_keys, and pick out all the ones that belong to this one-body channel, or to the one with ab->ba, de->ed.
+// We store these in the std::set "need_to_compute". We then loop through those and figure out which ones are related by symmetry.
+// We put a set of 8 indices into the structure "indices", where we explicitly compute entry [0], and get the others for free.
+// We then add all 8 to the std::set "will_be_computed" and continue looping. One the next iteration, if the entry from "need_to_compute" is already in "will_be_computed"
+// we skip it. Since a std::set is a container of unique entries, we avoid computing the same thing twice.
+void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf, std::vector<std::array<size_t,8>>& indices )
+{
+  std::set<size_t> need_to_compute;
+  std::set<size_t> will_be_computed;
+
+  bool verbose = false;
+
+  if (verbose) std::cout << "---------------------------------------------------" << std::endl;
+  if (verbose) std::cout << "lj channel : " << la << " " << j2a << " " << lb << " " << j2b << " " << lc << " " << j2c << std::endl;
+
+
+  for (size_t imon=0; imon<hf.Vmon3_keys.size(); imon++)
+  {
+     auto key = hf.Vmon3_keys[imon];
+     int a,b,c,d,e,f;
+     hf.Vmon3UnHash( key, a, b, c, d, e, f);  // static method so we could call it without a class instance if we wanted...
+     Orbit& oa = hf.modelspace->GetOrbit(a);
+     Orbit& ob = hf.modelspace->GetOrbit(b);
+     Orbit& oc = hf.modelspace->GetOrbit(c);
+     if ( oc.l != lc or oc.j2 != j2c ) continue;
+     if ( (oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b) or (oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a) )    need_to_compute.insert(imon);
+  }
+
+  for ( size_t imon : need_to_compute )
+  {
+     if ( will_be_computed.find( imon ) != will_be_computed.end() ) continue; // we've already got this one...
+     auto key = hf.Vmon3_keys[imon];
+     int a,b,c,d,e,f;
+     hf.Vmon3UnHash( key, a, b, c, d, e, f);  // static method so we could call it without a class instance if we wanted...
+     Orbit& oa = hf.modelspace->GetOrbit(a);
+     Orbit& ob = hf.modelspace->GetOrbit(b);
+     Orbit& oc = hf.modelspace->GetOrbit(c);
+     Orbit& od = hf.modelspace->GetOrbit(d);
+     Orbit& oe = hf.modelspace->GetOrbit(e);
+     Orbit& of = hf.modelspace->GetOrbit(f);
+     if ( not (oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b) ) continue; // we'd like our [0] entry to be the direct term, not the flipped one.
+     int aa = hf.modelspace->GetOrbitIndex( oa.n, oa.l, oa.j2, -oa.tz2 );
+     int bb = hf.modelspace->GetOrbitIndex( ob.n, ob.l, ob.j2, -ob.tz2 );
+     int cc = hf.modelspace->GetOrbitIndex( oc.n, oc.l, oc.j2, -oc.tz2 );
+     int dd = hf.modelspace->GetOrbitIndex( od.n, od.l, od.j2, -od.tz2 );
+     int ee = hf.modelspace->GetOrbitIndex( oe.n, oe.l, oe.j2, -oe.tz2 );
+     int ff = hf.modelspace->GetOrbitIndex( of.n, of.l, of.j2, -of.tz2 );
+     auto key_bacedf = hf.Vmon3Hash(b,a,c,e,d,f);
+     auto key_defabc = hf.Vmon3Hash(d,e,f,a,b,c);
+     auto key_edfbac = hf.Vmon3Hash(e,d,f,b,a,c);
+     auto key_isoflip = hf.Vmon3Hash(aa,bb,cc,dd,ee,ff);
+     auto key_bacedf_isoflip = hf.Vmon3Hash(bb,aa,cc,ee,dd,ff);
+     auto key_defabc_isoflip = hf.Vmon3Hash(dd,ee,ff,aa,bb,cc);
+     auto key_edfbac_isoflip = hf.Vmon3Hash(ee,dd,ff,bb,aa,cc);
+     std::array<size_t,8> compute_these;
+     for (int i=0;i<8;i++) compute_these[i] = imon;
+     for ( auto imon1 : need_to_compute )
+     {
+       if ( hf.Vmon3_keys[imon1] == key_isoflip)         compute_these[1] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_defabc)          compute_these[2] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_defabc_isoflip)  compute_these[3] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_bacedf)          compute_these[4] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_edfbac)          compute_these[5] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_bacedf_isoflip)  compute_these[6] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_edfbac_isoflip)  compute_these[7] = imon1;
+     }
+     for (int i=0;i<8;i++) will_be_computed.insert( compute_these[i] );
+     indices.push_back( compute_these );
+  }
+
+  if (verbose)
+  {
+    std::cout << "need_to_compute" << std::endl;
+    for (auto i : need_to_compute ) std::cout << i << " ";
+    std::cout << std::endl << std::endl << "will_compute" << std::endl;
+    for (auto i : will_be_computed ) std::cout << i << " ";
+    std::cout << std::endl << std::endl << "indices" << std::endl;
+    for (auto& ilist : indices)
+    {
+     std::cout << "( ";
+      for (int i=0;i<8;i++) std::cout << ilist[i] << " ";
+     std::cout << "  ) " << std::endl;
+    }
+  }
+
+}
+
+
+
+/*
+
 // Go through the Vmon3_keys from HartreeFock and find all the ones that live in the channel defined by la,j2a,lb,j2b,lc,j2c
 // Then, because several of them are related by symmetry, we put 8 indices into each entry, each of which should have the same
 // value for the 3-body monopole. That way, we compute one of them and set all 8.
@@ -607,36 +702,69 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
      // Check if the given key corresponds to the set of one-body channels we're currently working on.
      auto key = hf.Vmon3_keys[imon];
      int a,b,c,d,e,f;
-     hf.Vmon3UnHash( key, a, b, c, d, e, f);  // static method so we coud call it without a class instance if we wanted...
+     hf.Vmon3UnHash( key, a, b, c, d, e, f);  // static method so we could call it without a class instance if we wanted...
      Orbit& oa = hf.modelspace->GetOrbit(a);
      Orbit& ob = hf.modelspace->GetOrbit(b);
      Orbit& oc = hf.modelspace->GetOrbit(c);
-//     Orbit& od = hf.modelspace->GetOrbit(d);
-//     Orbit& oe = hf.modelspace->GetOrbit(e);
-//     Orbit& of = hf.modelspace->GetOrbit(f);
+
+     Orbit& od = hf.modelspace->GetOrbit(d);
+     Orbit& oe = hf.modelspace->GetOrbit(e);
+     Orbit& of = hf.modelspace->GetOrbit(f);
      if ( oc.l != lc or oc.j2 != j2c ) continue;
+
+//     if ( oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b)
+//     {
+//       imon_dir.push_back(imon);
+//       if (a<d or (a==d and b<e) or (a==d and b==e and c<=f) ) // Choose a specific ordering which we will compute. Then get the others by symmetry.
+//       {
+////         if ( a<=b and d<=e and (oa.tz2+ob.tz2+oc.tz2)<0 )
+//         if ( (oa.tz2+ob.tz2+oc.tz2)<0 )
+//           imonlist.push_back(imon);
+//       }
+//     }
+//     else if ( oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a)
+//     {
+////       imon_exch.push_back(imon);
+//       imon_dir.push_back(imon);
+//     }
+//   }
 
      if ( oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b)
      {
+
        imon_dir.push_back(imon);
-       if (a<d or (a==d and b<e) or (a==d and b==e and c<=f) ) // Choose a specific ordering which we will compute. Then get the others by symmetry.
+
+       if ( (oa.tz2+ob.tz2+oc.tz2)<0 )
        {
-         if ( a<=b and d<=e and (oa.tz2+ob.tz2+oc.tz2)<0 )
-           imonlist.push_back(imon);
+         if (la==lb and j2a==j2b and oa.n > ob.n ) continue;
+//         if (oa.tz2 > ob.tz2 ) continue;
+//         if ((oa.n > od.n)  ) continue;
+//         if ((oa.n > od.n) or (oa.n==od.n and (ob.n+oc.n)>(oe.n+of.n)) ) continue;
+//         if (a<d or (a==d and b<e) or (a==d and b==e and c<=f) )  imonlist.push_back(imon);
+         imonlist.push_back(imon);
        }
+//       if (a<d or (a==d and b<e) or (a==d and b==e and c<=f) ) // Choose a specific ordering which we will compute. Then get the others by symmetry.
+//       {
+////         if ( a<=b and d<=e and (oa.tz2+ob.tz2+oc.tz2)<0 )
+//         if ( (oa.tz2+ob.tz2+oc.tz2)<0 )
+//           imonlist.push_back(imon);
+//       }
      }
      else if ( oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a)
      {
 //       imon_exch.push_back(imon);
        imon_dir.push_back(imon);
+//       imonlist.push_back(imon);
      }
    }
+
    indices.resize( imonlist.size() );
 
    for ( size_t index=0; index<imonlist.size(); index++)
    {
      size_t imon = imonlist[index];
      for (int i=0;i<8;i++) indices[index][i] = imon;
+
      auto key = hf.Vmon3_keys[imon];
      int a,b,c,d,e,f;
      hf.Vmon3UnHash( key, a, b, c, d, e, f);  
@@ -663,8 +791,9 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
      {
        if ( hf.Vmon3_keys[imon1] == key_isoflip) indices[index][1] = imon1;
        if ( hf.Vmon3_keys[imon1] == key_defabc)  indices[index][2] = imon1;
-//       if ( hf.Vmon3_keys[imon1] == key_defabc_isoflip)  indices[index][3] = imon1;
-       if ( hf.Vmon3_keys[imon1] == key_defabc)  indices[index][3] = imon1;
+       if ( hf.Vmon3_keys[imon1] == key_defabc_isoflip)  indices[index][3] = imon1;
+////       if ( hf.Vmon3_keys[imon1] == key_defabc_isoflip)  indices[index][3] = imon1;
+//       if ( hf.Vmon3_keys[imon1] == key_defabc)  indices[index][3] = imon1;
 //     }
 ////     for (auto imon2 : imon_exch )
 //     for (auto imon2 : imon_dir )
@@ -681,14 +810,16 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
      
    }
 }
-
+*/
 
 
 void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf)   
 {
     double t_internal = omp_get_wtime();
     bool verbose = false;
+//    std::cout << " IN " << __func__ << std::endl;
 //    if (la==0 and lc==0 and lb==1 and j2b==3) verbose = true;
+//    if ((la==0 and lb==1 and lc==0 and j2b==3) or (la==1 and lb==0 and lc==0 and j2a==3)) verbose = true;
 //    std::cout << "la, ..." << la << " " << j2a << " " << lb << " " << j2b << " " << lc << " " << j2c <<  "     " << verbose << std::endl;
     std::set<int> na_list, nb_list,nc_list; // a std::set is a sorted unique list of items
     for (auto& orb : hf.modelspace->Orbits )
@@ -719,9 +850,11 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
           for ( auto nb : nb_list )
           {
            auto b = hf.modelspace->GetOrbitIndex( nb, lb, j2b, 1);
-           if (a>b) continue;
+//           if (a>b) continue;
            for (auto nc : nc_list )
            {
+//    if (a==1 and b==2 and lc==0 and nc==0) verbose = true;
+//    else verbose = false;
             int Eabc = 2*(na+nb+nc) + la+lb+lc;
 
             for (int Ecm=0; Ecm<=Eabc; Ecm++)
@@ -989,7 +1122,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 {
   double t_start = omp_get_wtime();
   // The keys are already computed elsewhere and are passed in as input
-  std::cout << "Begin " << __func__ << std::endl;
+//  std::cout << "Begin " << __func__ << std::endl;
 //  hf.modelspace->PreCalculateMoshinsky();
   PreComputeMoshinsky1();
   PreComputeMoshinsky2();
@@ -997,44 +1130,79 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
   PreComputeNineJ();
 //  hf.modelspace->PreCalculateAdditionalSixJ();
   hf.Vmon3.resize( hf.Vmon3_keys.size(), 0.);
-  struct ljChannel{ int l; int j2; bool operator==(const ljChannel& rhs){return (rhs.l==l and rhs.j2==j2); };};
-  std::vector<ljChannel> ljchannels;
+  struct ljChannel{
+     int l; int j2;
+     bool operator == (const ljChannel& rhs){return (rhs.l==l and rhs.j2==j2); };
+     bool operator <  (const ljChannel& rhs) const {return (l<rhs.l or (l==rhs.l and j2>rhs.j2) ) ;};
+  };
 
+//  std::vector<ljChannel> ljchannels;
+  std::set<ljChannel> ljchannels;
+
+//  auto& onebodychan = hf.modelspace->OneBodyChannels;
+//  typedef obc_type std::map<std::array<int,3>,std::vector<index_t> >;
+//  for ( auto& obc : std::sort ( std::begin(onebodychan), std::end(onebodychan), [](obc_type& a, obc_type& b){return std::min_element(a.second}  )
   for ( auto& obc : hf.modelspace->OneBodyChannels )
   {
     ljChannel ljchan = {obc.first[0], obc.first[1] };
-    if ( std::find( ljchannels.begin(), ljchannels.end(), ljchan ) == ljchannels.end() ) ljchannels.push_back( ljchan) ;
+    
+    ljchannels.insert( ljchan );
+//    if ( std::find( ljchannels.begin(), ljchannels.end(), ljchan ) == ljchannels.end() ) ljchannels.push_back( ljchan) ;
   }
 
   int n_mon = 0;
   size_t num_lj = ljchannels.size();
-  for ( size_t ilj_a=0; ilj_a<num_lj; ilj_a++ )
+//  for ( size_t ilj_a=0; ilj_a<num_lj; ilj_a++ )
+  for ( auto& ljchan_a : ljchannels )
   {
-    int la = ljchannels[ilj_a].l;
-    int j2a = ljchannels[ilj_a].j2;
-    for ( size_t ilj_b=ilj_a; ilj_b<num_lj; ilj_b++ ) 
+    int la = ljchan_a.l;
+    int j2a = ljchan_a.j2;
+//    int la = ljchannels[ilj_a].l;
+//    int j2a = ljchannels[ilj_a].j2;
+//    for ( size_t ilj_b=ilj_a; ilj_b<num_lj; ilj_b++ ) 
+    for ( auto& ljchan_b : ljchannels )
     {
-      int lb = ljchannels[ilj_b].l;
-      int j2b = ljchannels[ilj_b].j2;
+      if (ljchan_b < ljchan_a ) continue;
+      int lb = ljchan_b.l;
+      int j2b = ljchan_b.j2;
+//      int lb = ljchannels[ilj_b].l;
+//      int j2b = ljchannels[ilj_b].j2;
       int Jab_min = std::abs(j2a-j2b)/2;
       int Jab_max = (j2a+j2b)/2;
-      for ( size_t ilj_c=0; ilj_c<num_lj; ilj_c++ ) // TODO: possibly also change lower limit from 0 to ilj_b, although this becomes more complicated, due to recoupling
+//      for ( size_t ilj_c=0; ilj_c<num_lj; ilj_c++ ) // TODO: possibly also change lower limit from 0 to ilj_b, although this becomes more complicated, due to recoupling
+      for ( auto& ljchan_c : ljchannels )
       {
-        int lc = ljchannels[ilj_c].l;
-        int j2c = ljchannels[ilj_c].j2;
+        int lc = ljchan_c.l;
+        int j2c = ljchan_c.j2;
+//        int lc = ljchannels[ilj_c].l;
+//        int j2c = ljchannels[ilj_c].j2;
 
         double t_internal = omp_get_wtime();
 
+//        bool verbose = true;
+        bool verbose = false;
+        if (verbose) std::cout << "************************ lj channel: "  << la << " " << j2a << "  " << lb << " " << j2b << "  " << lc << " " << j2c << std::endl;
+
         std::vector<std::array<size_t,8>> imon_indices;
         GetMonopoleIndices(la, j2a, lb, j2b, lc, j2c, hf, imon_indices );
-        
+
         IMSRGProfiler::timer[std::string(__func__)+"_FindMonKeys"] += omp_get_wtime() - t_internal;
         t_internal = omp_get_wtime();
+
+        if (verbose) std::cout << "done.  Now the loop over imon... Size of imonlist is " << imon_indices.size() << std::endl;
+//        for (size_t i=0; i<imon_indices.size(); i++)
+//        {
+//          std::cout << i << " : ";
+//          for (int k=0;k<8;k++) std::cout << imon_indices[i][k] << " ";
+//          std::cout << std::endl;
+//        }
+        
 
         if (imon_indices.size()<1) continue;
 
 //        std::unordered_map<std::string,double> T3bList;  // we will put things into a hash table.
 //        GetRelevantTcoeffs(la, j2a, lb, j2b, lc, j2c, hf, T3bList); 
+//        GetRelevantTcoeffs(la, j2a, lb, j2b, lc, j2c, hf); 
         GetRelevantTcoeffs(la, j2a, lb, j2b, lc, j2c, hf); 
 
 //        std::unordered_map<std::string,bool> T3b_usedList;
@@ -1043,8 +1211,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         t_internal = omp_get_wtime();
 
 
-        bool verbose = false;
-        if (verbose) std::cout << "done.  Now the loop over imon... Size of imonlist is " << imon_indices.size() << std::endl;
+
 
         int tcoeff_counter = 0;
         int nonzero_vmon = 0;
@@ -1054,8 +1221,10 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         {
           size_t imon = imon_indices[ilist][0];
 
-//          if (imon==3) verbose = true;
+//          std::cout << ")))))))))))))))))))   imon = " << imon << std::endl;
+//          if (imon==3 or imon==44) verbose = true;
 //          else verbose = false;
+//          std::cout << "verbose is " << verbose << std::endl;
 
           auto key = hf.Vmon3_keys[imon];
 //          if (verbose) std::cout << " imon,imon_ab,imon_de,imon_abde = " << imon << " " << imon_ab << " " << imon_de << " " << imon_abde << std::endl;
@@ -1085,14 +1254,15 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
           int Tzab = (oa.tz2+ob.tz2)/2;
           int Tab_min = std::abs(Tzab);
           int twoTz = oa.tz2 + ob.tz2 + oc.tz2;
-          if (twoTz>0) continue;
+//          if (twoTz>0) continue;
           int twoT_min = std::abs( twoTz ); // this will either be 1 or 3
-          std::array<double,2> isospin2_Clebsch = {oa.tz2*sqrt(0.5), Tzab + std::abs(oa.tz2-ob.tz2)/2*sqrt(0.5) };
-          std::array<double,4> isospin3_Clebsch = {   1.0,   0.0,  AngMom::CG(1,Tzab,0.5,0.5*oc.tz2, 0.5, 0.5*twoTz),  AngMom::CG(1,Tzab,0.5,0.5*oc.tz2, 1.5,0.5*twoTz) };
+//          std::array<double,2> isospin2_Clebsch = {oa.tz2*sqrt(0.5), Tzab + std::abs(oa.tz2-ob.tz2)/2*sqrt(0.5) };
+//          std::array<double,4> isospin3_Clebsch = {   1.0,   0.0,  AngMom::CG(1,Tzab,0.5,0.5*oc.tz2, 0.5, 0.5*twoTz),  AngMom::CG(1,Tzab,0.5,0.5*oc.tz2, 1.5,0.5*twoTz) };
 
           double v_monopole = 0;
 
-          if (verbose) std::cout << std::endl << "======================" << std::endl <<  "abcdef : " << a << " " << b << " " << c << " " << d << " "<< e << " "<< f << std::endl;
+          if (verbose) std::cout << std::endl << "===== imon = " << imon << " ==============" << std::endl <<  "abcdef : " << a << " " << b << " " << c << " " << d << " "<< e << " "<< f << std::endl;
+          if (verbose) std::cout << "      (" << oa.n << " " <<  oa.l << " " << oa.j2 << " )  ( " << ob.n << " " << ob.l << " " << ob.j2 << " )  ( " << oc.n << " " << oc.l << " " << oc.j2 << std::endl; 
 
 // start new attempt here
 
@@ -1214,6 +1384,9 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 //                      int Tab = jacobi_1[index_1_2_abc[0]].t;
 //                        double tc = ComputeTcoeff( hf, na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jac1.n, jac1.l, jac1.s, jac1.j, jac2.n, jac2.l, jac2.j2, twoJ12, Ncm, Lcm);
 //                        if (verbose) std::cout << "iNAS_abc = " << iNAS_abc << "  (Tab = " << jac1.t << ", Ncm,Lcm= " << Ncm << " " << Lcm << " )   tcoef = " << tc << std::endl;
+//                        if (verbose) std::cout << "   called T( " << na << " " << la << " " << j2a << " " << nb << " " << lb << " " << j2b << " " << nc << " "<< lc << " " << j2c
+//                                                                  << " ; " << Jab << " " << twoJ << " |  " << jac1.n << " "<< jac1.l << " " << jac1.s << " "<< jac1.j << ", "
+//                                                                  << jac2.n << " " << jac2.l << " " << jac2.j2 << " ; " << twoJ12 << " ,  " << Ncm << " " << Lcm << " ) " << std::endl;
 //                      if (oa.n==ob.n and la==lb and j2a==j2b and (Tab+Jab)%2<1) continue;
 //                      if (Tab<Tab_min) continue;
 //                      int rowT =  Tab-Tab_min;

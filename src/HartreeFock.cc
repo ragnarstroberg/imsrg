@@ -55,6 +55,44 @@ HartreeFock::HartreeFock(Operator& hbare)
 
 }
 
+HartreeFock::HartreeFock(Operator& hbare, Jacobi3BME& jacobi3bme )
+  : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
+    KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
+    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true)
+{
+   int norbits = modelspace->GetNumberOrbits();
+
+   C             = arma::mat(norbits,norbits,arma::fill::eye);
+   Vij           = arma::mat(norbits,norbits,arma::fill::zeros);
+   V3ij          = arma::mat(norbits,norbits,arma::fill::zeros);
+   F             = arma::mat(norbits,norbits);
+   for (int Tz=-1;Tz<=1;++Tz)
+   {
+     for (int parity=0; parity<=1; ++parity)
+     {
+       int nKetsMon = modelspace->MonopoleKets[Tz+1][parity].size();
+       Vmon[Tz+1][parity] = arma::mat(nKetsMon,nKetsMon);
+       Vmon_exch[Tz+1][parity] = arma::mat(nKetsMon,nKetsMon);
+     }
+   }
+   prev_energies = arma::vec(norbits,arma::fill::zeros);
+   std::vector<double> occvec;
+   for (auto& h : modelspace->holes) occvec.push_back(modelspace->GetOrbit(h).occ);
+   holeorbs = arma::uvec(modelspace->holes);
+   hole_occ = arma::rowvec(occvec);
+   BuildMonopoleV();
+
+   if (hbare.GetParticleRank()>2)
+   {
+      bool use_jacobi_3bme = true;
+      BuildMonopoleV3(use_jacobi_3bme);
+      jacobi3bme.GetV3mon_all( *this );
+   }
+
+   UpdateDensityMatrix();
+   UpdateF();
+
+}
 
 //*********************************************************************
 /// Diagonalize and update the Fock matrix until convergence.
@@ -237,7 +275,8 @@ void HartreeFock::BuildMonopoleV()
 ///       \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle
 /// \f]
 //*********************************************************************
-void HartreeFock::BuildMonopoleV3()
+//void HartreeFock::BuildMonopoleV3()
+void HartreeFock::BuildMonopoleV3(bool use_jacobi_3bme)
 {
    double start_time = omp_get_wtime();
   // First, allocate. This is fast so don't parallelize.
@@ -289,34 +328,37 @@ void HartreeFock::BuildMonopoleV3()
    Vmon3.resize( Vmon3_keys.size(), 0. );
    profiler.timer["HF_BuildMonopoleV3_allocate"] += omp_get_wtime() - start_time;
 
-   #pragma omp parallel for schedule(dynamic,1) 
-   for (size_t ind=0; ind<Vmon3.size(); ++ind)
+   if (not use_jacobi_3bme)
    {
-      double v=0;
-      int a,b,c,d,i,j;
-      Vmon3UnHash( Vmon3_keys[ind], a,c,i,b,d,j);
+    #pragma omp parallel for schedule(dynamic,1) 
+    for (size_t ind=0; ind<Vmon3.size(); ++ind)
+    {
+       double v=0;
+       int a,b,c,d,i,j;
+       Vmon3UnHash( Vmon3_keys[ind], a,c,i,b,d,j);
 
-      int j2a = modelspace->GetOrbit(a).j2;
-      int j2c = modelspace->GetOrbit(c).j2;
-      int j2i = modelspace->GetOrbit(i).j2;
-      int j2b = modelspace->GetOrbit(b).j2;  // this seems unnecessary
-      int j2d = modelspace->GetOrbit(d).j2;  // this seems unnecessary
-      int j2j = modelspace->GetOrbit(j).j2;  // this seems unnecessary
+       int j2a = modelspace->GetOrbit(a).j2;
+       int j2c = modelspace->GetOrbit(c).j2;
+       int j2i = modelspace->GetOrbit(i).j2;
+       int j2b = modelspace->GetOrbit(b).j2;  // this seems unnecessary
+       int j2d = modelspace->GetOrbit(d).j2;  // this seems unnecessary
+       int j2j = modelspace->GetOrbit(j).j2;  // this seems unnecessary
  
-      int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
-      int j2max = std::min( j2a+j2c, j2b+j2d )/2;
-      for (int j2=j2min; j2<=j2max; ++j2)
-      {
-        int Jmin = std::max( std::abs(2*j2-j2i), std::abs(2*j2-j2j) );
-        int Jmax = 2*j2 + std::min(j2i, j2j);
-        for (int J2=Jmin; J2<=Jmax; J2+=2)
-        {
-           v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
-        }
-      }
-      v /= j2i+1.0;
-      #pragma omp atomic write
-      Vmon3[ind] = v ;
+       int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
+       int j2max = std::min( j2a+j2c, j2b+j2d )/2;
+       for (int j2=j2min; j2<=j2max; ++j2)
+       {
+         int Jmin = std::max( std::abs(2*j2-j2i), std::abs(2*j2-j2j) );
+         int Jmax = 2*j2 + std::min(j2i, j2j);
+         for (int J2=Jmin; J2<=Jmax; J2+=2)
+         {
+            v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
+         }
+       }
+       v /= j2i+1.0;
+       #pragma omp atomic write
+       Vmon3[ind] = v ;
+    }
    }
    std::cout << "HartreeFock::BuildMonopoleV3  storing " << Vmon3.size() << " doubles for Vmon3 and "
              << Vmon3_keys.size() << " uint64's for Vmon3_keys." << std::endl;

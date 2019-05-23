@@ -231,6 +231,7 @@ PYBIND11_MODULE(pyIMSRG, m)
 
    py::class_<HartreeFock>(m,"HartreeFock")
       .def(py::init<Operator&>())
+      .def(py::init<Operator&,Jacobi3BME&>())
       .def("Solve",&HartreeFock::Solve)
       .def("TransformToHFBasis",&HartreeFock::TransformToHFBasis)
       .def("GetHbare",&HartreeFock::GetHbare)

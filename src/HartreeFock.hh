@@ -23,10 +23,13 @@
 #include "ModelSpace.hh"
 #include "Operator.hh"
 #include "IMSRGProfiler.hh"
+#include "Jacobi3BME.hh"
 #include <armadillo>
 #include <vector>
 #include <array>
 #include <deque>
+
+class Jacobi3BME; // forward declaration
 
 class HartreeFock
 {
@@ -59,9 +62,11 @@ class HartreeFock
    bool freeze_occupations;
 
 // Methods
-   HartreeFock(Operator&  hbare); ///< Constructor
+   HartreeFock(Operator&  hbare); ///< Standard Constructor
+   HartreeFock(Operator&  hbare, Jacobi3BME& jacobi3bme); ///< Constructor using jacobi 3-body matrix elements
    void BuildMonopoleV();         ///< Only the monopole part of V is needed, so construct it.
-   void BuildMonopoleV3();        ///< Only the monopole part of V3 is needed.
+   void BuildMonopoleV3(bool use_jacobi_3bme=false);        ///< Only the monopole part of V3 is needed.
+//   void BuildMonopoleV3();        ///< Only the monopole part of V3 is needed.
    void Diagonalize();            ///< Diagonalize the Fock matrix
    void UpdateF();                ///< Update the Fock matrix with the new transformation coefficients C
    void UpdateDensityMatrix();    ///< Update the density matrix with the new coefficients C
