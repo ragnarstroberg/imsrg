@@ -79,6 +79,7 @@ class HartreeFock
    void ReorderCoefficients();    ///< Reorder the coefficients in C to eliminate phases etc.
    Operator TransformToHFBasis( Operator& OpIn); ///< Transform an operator from oscillator basis to HF basis
    Operator GetNormalOrderedH();  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
+   Operator GetNormalOrderedH(Jacobi3BME& jacobi3bme);  ///< Use the jacobi 3-body matrix elements to obtain the Hamiltonian in the HF basis at the NO2B level.
    Operator GetNormalOrderedH(arma::mat& Cin);  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
    Operator GetOmega();           ///< Return a generator of the Hartree Fock transformation
    Operator GetHbare(){return Hbare;}; ///< Getter function for Hbare
