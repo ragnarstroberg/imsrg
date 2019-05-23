@@ -3968,13 +3968,80 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
 
    }
 
-
-
-
 }
 
 
+// This is a new file type, so let's give it a header!
+void ReadWrite::WriteVmon3( HartreeFock& hf, std::string filename, std::string comments="" )
+{
+  std::ofstream outfile(filename);
 
+  size_t nentries = hf.Vmon3.size();
+  // write header info
+  outfile << "## " << comments << std::endl;
+  outfile << "## emax  e2max  e3max        hw  N_entries : " << std::endl << "## " << std::setw(4) << hf.modelspace->GetEmax() << "   " << std::setw(4) << hf.modelspace->GetE2max() << "    "
+          << std::setw(4) << hf.modelspace->GetE3max() << " " << std::setw(8) << std::setprecision(3) <<std::fixed << hf.modelspace->GetHbarOmega() << "   " << nentries << std::endl;
+
+  for (size_t i=0; i<nentries; i++)
+  {
+    auto& key = hf.Vmon3_keys[i];
+    int a,b,c,d,e,f;
+    hf.Vmon3UnHash(key, a,b,c,d,e,f);
+    outfile << std::fixed << std::setw(3) << a << " "  << std::setw(3) << b << " "  << std::setw(3) << c << " "  << std::setw(3) << d << " "  << std::setw(3) << e << " "  << std::setw(3) << f
+            << "\t" << std::fixed << std::setprecision(7) << std::setw(14) << hf.Vmon3[i] << std::endl;
+  }
+  outfile.close();
+
+}
+
+void ReadWrite::ReadVmon3( HartreeFock& hf, std::string filename )
+{
+  std::ifstream infile(filename);
+  std::string filler;
+  std::getline( infile, filler ); // skip the first comment line
+  std::getline( infile, filler ); // skip the second comment line
+  int emax,e2max,e3max,nentries;
+  int emax_hf = hf.modelspace->GetEmax();
+  int e2max_hf = hf.modelspace->GetE2max();
+  int e3max_hf = hf.modelspace->GetE3max();
+  double hw_hf = hf.modelspace->GetHbarOmega();
+  double hw;
+  infile >> filler >> emax >> e2max >> e3max >> hw >> nentries;
+
+  if ( std::abs( hw-hw_hf) > 1e-2)
+  {
+    std::cout << __func__ << " TROUBLE. hw mismatch!!! " << hw << " != " << hw_hf << std::endl;
+    exit(EXIT_FAILURE); // Not sure if we should die or just warn. For now, we die.
+  }
+
+  hf.Vmon3.resize(0);
+  hf.Vmon3_keys.resize(0);
+  hf.Vmon3.reserve(nentries);
+  hf.Vmon3_keys.reserve(nentries);
+
+  for (size_t i=0; i<nentries; i++)
+  {
+    int a,b,c,d,e,f;
+    double vmon;
+    infile >> a >> b >> c >> d >> e >> f >> vmon;
+    Orbit& oa = hf.modelspace->GetOrbit(a);
+    Orbit& ob = hf.modelspace->GetOrbit(b);
+    Orbit& oc = hf.modelspace->GetOrbit(c);
+    Orbit& od = hf.modelspace->GetOrbit(d);
+    Orbit& oe = hf.modelspace->GetOrbit(e);
+    Orbit& of = hf.modelspace->GetOrbit(f);
+    if ( (2*oa.n+oa.l > emax_hf) or (2*ob.n+ob.l > emax_hf) or (2*oc.n+oc.l > emax_hf)
+        or (2*od.n+od.l > emax_hf) or (2*oe.n+oe.l > emax_hf) or (2*of.n+of.l > emax_hf) ) continue;
+    if ( ((2*(oa.n+ob.n)+oa.l+ob.l) > e2max_hf) or ((2*(oa.n+oc.n)+oa.l+oc.l) > e2max_hf) or ((2*(ob.n+oc.n)+ob.l+oc.l) > e2max_hf) ) continue;
+    if ( ((2*(od.n+oe.n)+od.l+oe.l) > e2max_hf) or ((2*(od.n+of.n)+od.l+of.l) > e2max_hf) or ((2*(oe.n+of.n)+oe.l+of.l) > e2max_hf) ) continue;
+    if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l)>e3max_hf or (2*(od.n+oe.n+of.n)+od.l+oe.l+of.l)>e3max_hf) continue;
+    auto key = hf.Vmon3Hash(a,b,c,d,e,f);
+    hf.Vmon3_keys.push_back(key);
+    hf.Vmon3.push_back(vmon);
+  }
+  
+  infile.close();
+}
 
 
 

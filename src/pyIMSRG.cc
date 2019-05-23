@@ -223,6 +223,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Set3NFormat",&ReadWrite::Set3NFormat)
       .def("WriteDaggerOperator",&ReadWrite::WriteDaggerOperator)
       .def("ReadJacobi3NFiles",&ReadWrite::ReadJacobi3NFiles)
+      .def("ReadVmon3",&ReadWrite::ReadVmon3)
+      .def("WriteVmon3",&ReadWrite::WriteVmon3)
    ;
 
 

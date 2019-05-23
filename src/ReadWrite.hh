@@ -30,7 +30,7 @@
 #include "ModelSpace.hh"
 #include "Operator.hh"
 #include "Jacobi3BME.hh"
-
+#include "HartreeFock.hh"
 
 class ReadWrite
 {
@@ -75,6 +75,8 @@ class ReadWrite
    void WriteTensorTwoBody(std::string filename, Operator& H, std::string opname);
    void WriteDaggerOperator( Operator& op, std::string filename, std::string opname="");
 
+   void WriteVmon3( HartreeFock& hf, std::string filename, std::string comments );
+   void ReadVmon3(  HartreeFock& hf, std::string filename );
 
    void ReadBareTBME_Jason( std::string filename, Operator& Hbare);
    void ReadTensorOperator_Nathan( std::string filename1b, std::string filename2b, Operator& op);
