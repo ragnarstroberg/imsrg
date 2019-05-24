@@ -3968,13 +3968,80 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
 
    }
 
-
-
-
 }
 
 
+// This is a new file type, so let's give it a header!
+void ReadWrite::WriteVmon3( HartreeFock& hf, std::string filename, std::string comments="" )
+{
+  std::ofstream outfile(filename);
 
+  size_t nentries = hf.Vmon3.size();
+  // write header info
+  outfile << "## " << comments << std::endl;
+  outfile << "## emax  e2max  e3max        hw  N_entries : " << std::endl << "## " << std::setw(4) << hf.modelspace->GetEmax() << "   " << std::setw(4) << hf.modelspace->GetE2max() << "    "
+          << std::setw(4) << hf.modelspace->GetE3max() << " " << std::setw(8) << std::setprecision(3) <<std::fixed << hf.modelspace->GetHbarOmega() << "   " << nentries << std::endl;
+
+  for (size_t i=0; i<nentries; i++)
+  {
+    auto& key = hf.Vmon3_keys[i];
+    int a,b,c,d,e,f;
+    hf.Vmon3UnHash(key, a,b,c,d,e,f);
+    outfile << std::fixed << std::setw(3) << a << " "  << std::setw(3) << b << " "  << std::setw(3) << c << " "  << std::setw(3) << d << " "  << std::setw(3) << e << " "  << std::setw(3) << f
+            << "\t" << std::fixed << std::setprecision(7) << std::setw(14) << hf.Vmon3[i] << std::endl;
+  }
+  outfile.close();
+
+}
+
+void ReadWrite::ReadVmon3( HartreeFock& hf, std::string filename )
+{
+  std::ifstream infile(filename);
+  std::string filler;
+  std::getline( infile, filler ); // skip the first comment line
+  std::getline( infile, filler ); // skip the second comment line
+  int emax,e2max,e3max,nentries;
+  int emax_hf = hf.modelspace->GetEmax();
+  int e2max_hf = hf.modelspace->GetE2max();
+  int e3max_hf = hf.modelspace->GetE3max();
+  double hw_hf = hf.modelspace->GetHbarOmega();
+  double hw;
+  infile >> filler >> emax >> e2max >> e3max >> hw >> nentries;
+
+  if ( std::abs( hw-hw_hf) > 1e-2)
+  {
+    std::cout << __func__ << " TROUBLE. hw mismatch!!! " << hw << " != " << hw_hf << std::endl;
+    exit(EXIT_FAILURE); // Not sure if we should die or just warn. For now, we die.
+  }
+
+  hf.Vmon3.resize(0);
+  hf.Vmon3_keys.resize(0);
+  hf.Vmon3.reserve(nentries);
+  hf.Vmon3_keys.reserve(nentries);
+
+  for (size_t i=0; i<nentries; i++)
+  {
+    int a,b,c,d,e,f;
+    double vmon;
+    infile >> a >> b >> c >> d >> e >> f >> vmon;
+    Orbit& oa = hf.modelspace->GetOrbit(a);
+    Orbit& ob = hf.modelspace->GetOrbit(b);
+    Orbit& oc = hf.modelspace->GetOrbit(c);
+    Orbit& od = hf.modelspace->GetOrbit(d);
+    Orbit& oe = hf.modelspace->GetOrbit(e);
+    Orbit& of = hf.modelspace->GetOrbit(f);
+    if ( (2*oa.n+oa.l > emax_hf) or (2*ob.n+ob.l > emax_hf) or (2*oc.n+oc.l > emax_hf)
+        or (2*od.n+od.l > emax_hf) or (2*oe.n+oe.l > emax_hf) or (2*of.n+of.l > emax_hf) ) continue;
+    if ( ((2*(oa.n+ob.n)+oa.l+ob.l) > e2max_hf) or ((2*(oa.n+oc.n)+oa.l+oc.l) > e2max_hf) or ((2*(ob.n+oc.n)+ob.l+oc.l) > e2max_hf) ) continue;
+    if ( ((2*(od.n+oe.n)+od.l+oe.l) > e2max_hf) or ((2*(od.n+of.n)+od.l+of.l) > e2max_hf) or ((2*(oe.n+of.n)+oe.l+of.l) > e2max_hf) ) continue;
+    if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l)>e3max_hf or (2*(od.n+oe.n+of.n)+od.l+oe.l+of.l)>e3max_hf) continue;
+    auto key = hf.Vmon3Hash(a,b,c,d,e,f);
+    hf.Vmon3_keys.push_back(key);
+    hf.Vmon3.push_back(vmon);
+  }
+  
+  infile.close();
+}
 
 
 
@@ -4289,6 +4356,195 @@ void ReadWrite::SetLECs_preset(std::string key)
   else if (key == "PWA2.0_2.0") LECs = {-0.76, -4.78, 3.96,-3.007, -0.686};
   else if (key == "N2LOSAT")    LECs = {-1.12152120, -3.92500586, 3.76568716, 0.861680589, -0.03957471}; // For testing purposes only. (This uses the wrong regulator).
 }
+
+
+
+
+
+
+
+
+void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name, std::string eig_name, std::string v3int_name )
+{
+  double t_start = omp_get_wtime();
+  ///
+  /// first, read the poi file
+  /// this file contains the dimensions of the AS and NAS matrices
+  //////////////////////////////
+  std::ifstream poi_file(poi_name,std::ios::binary);
+  std::ifstream eig_file(eig_name,std::ios::binary);
+  std::ifstream v3int_file(v3int_name,std::ios::binary);
+
+  if ( not poi_file.good() )
+  {
+    std::cout << "ERROR:  " << __func__ << "  trouble reading file " << poi_name << ".  Exiting." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  if ( not eig_file.good() )
+  {
+    std::cout << "ERROR:  " << __func__ << "  trouble reading file " << eig_name << ".  Exiting." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  if ( not v3int_file.good() )
+  {
+    std::cout << "ERROR:  " << __func__ << "  trouble reading file " << v3int_name << ".  Exiting." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  std::cout << "Reading poi file and egv file" << std::endl;
+
+  size_t icount = 0;
+  for (int t2=jacobi3bme.twoTmin; t2<=jacobi3bme.twoTmax; t2+=2)
+  {
+    for (int j2=jacobi3bme.twoJmin; j2<=jacobi3bme.twoJmax; j2+=2)
+    {
+      for (int parity=0;parity<=1;parity++)
+      {
+        int Nmin=parity%2;
+//        std::cout << "t,j,p = " << t2 << " " << j2 << " " << parity << std::endl;
+
+
+        for (int N=Nmin; N<=jacobi3bme.Nmax; N+=2)  // N=2n+l, so for a given parity N is either even or odd 
+        {
+//          std::cout << "    N = " << N << std::endl;
+          // first, read dimensions from the poi file.
+          uint32_t delimiter; // This is machine-dependent. This seems to work on the local cluster, but there are no guarantees elsewhere. Fortran's fault, not mine...
+          uint32_t dimAS,dimNAS;
+          uint32_t cfp_ptr;
+          poi_file.read((char*)&delimiter, sizeof(delimiter));
+          poi_file.read((char*)&dimAS,     sizeof(dimAS));
+          poi_file.read((char*)&cfp_ptr,   sizeof(cfp_ptr));
+          poi_file.read((char*)&dimNAS,    sizeof(dimNAS));
+          poi_file.read((char*)&delimiter, sizeof(delimiter));
+
+//          std::cout << "About to set dimensions" << std::endl;
+          jacobi3bme.SetDimensionAS(t2,j2,parity,N, dimAS);
+//          std::cout << " now NAS..." << std::endl;
+          jacobi3bme.SetDimensionNAS(t2,j2,parity,N, dimNAS);
+//          SetCFPpointer(t2,j2,parity,N, cfp_ptr-1); // Convert from Fortran to C indexing
+//          std::cout << " done" << std::endl;
+
+          // next, read CFPs from the eig file
+          size_t hash = jacobi3bme.HashTJN(t2,j2,N);
+          jacobi3bme.cfp_start_loc[hash] = icount;
+          icount += dimAS * dimNAS;
+          jacobi3bme.cfpvec.resize(icount); // make sure the vector is big enough
+
+          for (int iAS=0; iAS<dimAS; iAS++)
+          {
+//            std::cout << "      iAS = " << iAS << std::endl;
+            uint32_t delimiter;
+            eig_file.read((char*)&delimiter,  sizeof(delimiter));
+            if ( delimiter/8 != dimNAS )
+            {
+               std::cout << "TROUBLE!!!!  rec. length = " << delimiter/8 << " , but I want " << dimNAS << std::endl;
+            }
+//            double sumsqr = 0;
+            for (int iNAS=0; iNAS<dimNAS; iNAS++)
+            {
+                double cfp;
+                eig_file.read((char*)&cfp,      sizeof(cfp)); // we can probably eventually read multiple values at once if this becomes a bottleneck...
+                jacobi3bme.AccessCFP(t2,j2,parity,N,iAS,iNAS) = cfp;
+//                sumsqr += cfp*cfp;
+            }
+            eig_file.read((char*)&delimiter,  sizeof(delimiter));
+//            std::cout << "    sumsqr = " << sumsqr << std::endl;
+          }
+
+        }
+
+      }
+    }
+  }
+  jacobi3bme.Allocate();
+
+//        std::cout << "   reading in v3int file" << std::endl;
+  for (int t2=jacobi3bme.twoTmin; t2<=jacobi3bme.twoTmax; t2+=2)
+  {
+    for (int j2=jacobi3bme.twoJmin; j2<=jacobi3bme.twoJmax; j2+=2)
+    {
+      for (int parity=0;parity<=1;parity++)
+      {
+        int Nmin=parity%2;
+        if (Nmin > jacobi3bme.Nmax) continue;
+        uint32_t delimiter;
+        uint32_t nucleonsin,protonsin,neutronsin,twoJin,twoTin,Nmaxin;
+        int32_t pin;
+        double hwin;
+        v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+        v3int_file.read((char*)&hwin,       sizeof(hwin));
+        v3int_file.read((char*)&nucleonsin, sizeof(nucleonsin));
+        v3int_file.read((char*)&protonsin,  sizeof(protonsin));
+        v3int_file.read((char*)&neutronsin, sizeof(neutronsin));
+        v3int_file.read((char*)&twoJin,       sizeof(twoJin));
+        v3int_file.read((char*)&twoTin,       sizeof(twoTin));
+        v3int_file.read((char*)&pin,        sizeof(pin));
+        v3int_file.read((char*)&Nmaxin,     sizeof(Nmaxin));
+        v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+
+        if ( t2!=twoTin or j2!=twoJin or (1-2*parity)!=pin or jacobi3bme.Nmax!=Nmaxin )
+        {
+          std::cout << "ERROR: in " << __func__ << "  misread header info in " << v3int_name << "  "
+                    << " T: " << t2 << "," << twoTin << "   J: " << j2 << "," << twoJin <<  "  " 
+                    << " p: " << 1-2*parity << "," << pin  << "   Nmin:" << Nmin << ", Nmax:" << Nmaxin << "   "
+                    << "hw: " << hwin <<  ".   exiting... " << std::endl;
+          exit(EXIT_FAILURE);
+        }
+
+        /// now read in the matrix jacobi matrix elements from the v3int file
+        for (int Nbra=Nmin; Nbra<=jacobi3bme.Nmax; Nbra+=2 )
+        {
+          size_t dim_braAS = jacobi3bme.GetDimensionAS(t2,j2,parity,Nbra);
+          for (size_t ibra=0; ibra<dim_braAS; ibra++)
+          {
+            for (int Nket=Nmin; Nket<=jacobi3bme.Nmax; Nket+=2)
+            {
+              size_t dim_ketAS = jacobi3bme.GetDimensionAS(t2,j2,parity,Nket);
+              for (size_t iket=0; iket<dim_ketAS; iket++)
+              {
+//                std::cout << "Nbra,Nket, ibra,iket = " << Nbra << " " << Nket << "    " << ibra << " " << iket << std::endl;
+                if (Nket<Nbra or (Nket==Nbra and iket<ibra) ) continue; 
+//                indexA++;
+                double matel;
+
+                v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+                v3int_file.read((char*)&matel,      sizeof(matel));
+                v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+
+//                std::cout << "read a matrix element " << matel << std::endl;
+
+                jacobi3bme.SetMatElAS(ibra,iket,Nbra,Nket,t2,j2,parity, matel);
+                jacobi3bme.SetMatElAS(iket,ibra,Nket,Nbra,t2,j2,parity, matel); // for now, let's store the hermitian conjugate
+
+              }
+            }
+          }
+        }
+
+
+      }
+    }
+  }
+  poi_file.close();
+  eig_file.close();
+  v3int_file.close();
+
+
+  std::cout << "successfully read " << jacobi3bme.cfpvec.size() << " cfp's from file" << std::endl;
+
+  IMSRGProfiler::timer[std::string(__func__)] += omp_get_wtime() - t_start;
+
+}
+
+
+
+
+
+
+
+
+
+
 
 
 

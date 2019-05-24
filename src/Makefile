@@ -149,6 +149,7 @@ install: splashscreen
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\
       IMSRGProfiler.o Commutator.o \
+      DarkMatterNREFT.o Jacobi3BME.o \
       boost_src/gzip.o boost_src/zlib.o  
 
 mysrg: main.cc $(OBJ)

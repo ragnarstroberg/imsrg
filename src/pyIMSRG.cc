@@ -4,18 +4,12 @@
 #include <string>
 #include <vector>
 
-//#include <boost/python/module.hpp>
-//#include <boost/python/def.hpp>
-//#include <boost/python.hpp>
-//#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
-
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-//using namespace boost::python;
 
   Orbit MS_GetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
   size_t MS_GetOrbitIndex_Str(ModelSpace& self, std::string s){ return self.GetOrbitIndex(s);};
@@ -31,20 +25,14 @@ namespace py = pybind11;
 
   void MS_SetRef(ModelSpace& self, std::string str){ self.SetReference( str);};
 
-  Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
+//  Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
 
 //BOOST_PYTHON_MODULE(pyIMSRG)
 //PYBIND11_PLUGIN(pyIMSRG)
 PYBIND11_MODULE(pyIMSRG, m)
 {
-//  py::module m("pyIMSRG", "python bindings for IMSRG code");
   m.doc() = "python bindings for IMSRG code";
 
-//   py::class<vector<string> > vector_string("vector_string")
-//      .def (vector_indexing_suite< vector<string> >())
-//   ;
-
-//   class_<Orbit>("Orbit",init<>())
    py::class_<Orbit>(m,"Orbit")
       .def(py::init<>())
       .def_readwrite("n", &Orbit::n)
@@ -56,7 +44,6 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def_readwrite("index", &Orbit::index)
    ;
 
-//   class_<TwoBodyChannel>("TwoBodyChannel",init<>())
    py::class_<TwoBodyChannel>(m,"TwoBodyChannel")
       .def(py::init<>())
       .def("GetNumberKets",&TwoBodyChannel::GetNumberKets)
@@ -64,7 +51,18 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetKetIndex",&TwoBodyChannel::GetKetIndex)
    ;
 
-//   class_<ModelSpace>("ModelSpace",init<>())
+   py::class_<Ket>(m,"Ket")
+      .def(py::init<Orbit&,Orbit&>())
+      .def_readwrite("p",&Ket::p)
+      .def_readwrite("q",&Ket::q)
+   ;
+   py::class_<Ket3>(m,"Ket3")
+      .def(py::init<Orbit&,Orbit&,Orbit&>())
+      .def_readwrite("p",&Ket3::p)
+      .def_readwrite("q",&Ket3::q)
+      .def_readwrite("r",&Ket3::r)
+   ;
+
    py::class_<ModelSpace>(m,"ModelSpace")
       .def(py::init<>())
       .def(py::init<const ModelSpace&>())
@@ -96,7 +94,6 @@ PYBIND11_MODULE(pyIMSRG, m)
    ;
 
 
-//   class_<Operator>("Operator",init<>())
    py::class_<Operator>(m,"Operator")
       .def(py::init<>())
       .def(py::init< ModelSpace&>())
@@ -127,15 +124,12 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("DoNormalOrdering", &Operator::DoNormalOrdering)
       .def("UndoNormalOrdering", &Operator::UndoNormalOrdering)
       .def("SetModelSpace", &Operator::SetModelSpace)
-//      .def("CalculateKineticEnergy", &Operator::CalculateKineticEnergy)
       .def("Norm", &Operator::Norm)
       .def("OneBodyNorm", &Operator::OneBodyNorm)
       .def("TwoBodyNorm", &Operator::TwoBodyNorm)
       .def("SetHermitian", &Operator::SetHermitian)
       .def("SetAntiHermitian", &Operator::SetAntiHermitian)
       .def("SetNonHermitian", &Operator::SetNonHermitian)
-//      .def("Set_BCH_Transform_Threshold", &Operator::Set_BCH_Transform_Threshold)
-//      .def("Set_BCH_Product_Threshold", &Operator::Set_BCH_Product_Threshold)
       .def("PrintOneBody", &Operator::PrintOneBody)
       .def("PrintTwoBody", &Operator::PrintTwoBody)
       .def("MakeReduced", &Operator::MakeReduced)
@@ -149,29 +143,13 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetE3max", &Operator::GetE3max)
       .def("SetE3max", &Operator::SetE3max)
       .def("PrintTimes", &Operator::PrintTimes)
-//      .def("BCH_Transform", &Operator::BCH_Transform)
       .def("Size", &Operator::Size)
-//      .def("SetToCommutator", &Operator::SetToCommutator)
-//      .def("comm110ss", &Operator::comm110ss)
-//      .def("comm220ss", &Operator::comm220ss)
-//      .def("comm111ss", &Operator::comm111ss)
-//      .def("comm121ss", &Operator::comm121ss)
-//      .def("comm221ss", &Operator::comm221ss)
-//      .def("comm122ss", &Operator::comm122ss)
-//      .def("comm222_pp_hh_221ss", &Operator::comm222_pp_hh_221ss)
-//      .def("comm222_phss", &Operator::comm222_phss)
-//      .def("comm111st", &Operator::comm111st)
-//      .def("comm121st", &Operator::comm121st)
-//      .def("comm122st", &Operator::comm122st)
-//      .def("comm222_pp_hh_221st", &Operator::comm222_pp_hh_221st)
-//      .def("comm222_phst", &Operator::comm222_phst)
       .def("MakeNormalized", &Operator::MakeNormalized)
       .def("MakeUnNormalized", &Operator::MakeUnNormalized)
       .def("SetOneBodyME", &OpSetOneBodyME)
       .def_readwrite("ThreeBody", &Operator::ThreeBody)
    ;
 
-//   class_<arma::mat>("ArmaMat",init<>())
    py::class_<arma::mat>(m,"ArmaMat")
       .def(py::init<>())
       .def("Print",&ArmaMatPrint)
@@ -185,7 +163,6 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def(py::self - double())
    ;
 
-//   class_<TwoBodyME>("TwoBodyME",init<>())
    py::class_<TwoBodyME>(m,"TwoBodyME")
       .def(py::init<>())
       .def("GetTBME_J", TB_GetTBME_J)
@@ -197,12 +174,17 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetME", &ThreeBodyME::SetME)
       .def("GetME", &ThreeBodyME::GetME)
       .def("GetME_pn", &ThreeBodyME::GetME_pn)
+      .def("RecouplingCoefficient",&ThreeBodyME::RecouplingCoefficient)
+      .def_readonly_static("ABC",&ThreeBodyME::ABC)
+      .def_readonly_static("BCA",&ThreeBodyME::BCA)
+      .def_readonly_static("CAB",&ThreeBodyME::CAB)
+      .def_readonly_static("ACB",&ThreeBodyME::ACB)
+      .def_readonly_static("CBA",&ThreeBodyME::CBA)
+      .def_readonly_static("BAC",&ThreeBodyME::BAC)
    ;
 
-//   class_<ReadWrite>("ReadWrite",init<>())
    py::class_<ReadWrite>(m,"ReadWrite")
       .def(py::init<>())
-//      .def("ReadSettingsFile", &ReadWrite::ReadSettingsFile)
       .def("ReadTBME_Oslo", &ReadWrite::ReadTBME_Oslo)
       .def("ReadBareTBME_Jason", &ReadWrite::ReadBareTBME_Jason)
       .def("ReadBareTBME_Navratil", &ReadWrite::ReadBareTBME_Navratil)
@@ -240,34 +222,44 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("ReadRelCMOpFromJavier",&ReadWrite::ReadRelCMOpFromJavier)
       .def("Set3NFormat",&ReadWrite::Set3NFormat)
       .def("WriteDaggerOperator",&ReadWrite::WriteDaggerOperator)
-      .def_readwrite("InputParameters", &ReadWrite::InputParameters)
+      .def("ReadJacobi3NFiles",&ReadWrite::ReadJacobi3NFiles)
+      .def("ReadVmon3",&ReadWrite::ReadVmon3)
+      .def("WriteVmon3",&ReadWrite::WriteVmon3)
    ;
 
 
 
 
+//      .def("GetNormalOrderedH",&HF_GetNormalOrderedH)
 
-//   class_<HartreeFock>("HartreeFock",init<Operator&>())
    py::class_<HartreeFock>(m,"HartreeFock")
       .def(py::init<Operator&>())
+      .def(py::init<Operator&,bool>())
+      .def(py::init<Operator&,Jacobi3BME&>())
       .def("Solve",&HartreeFock::Solve)
       .def("TransformToHFBasis",&HartreeFock::TransformToHFBasis)
       .def("GetHbare",&HartreeFock::GetHbare)
-      .def("GetNormalOrderedH",&HF_GetNormalOrderedH)
       .def("GetOmega",&HartreeFock::GetOmega)
+      .def("GetNormalOrderedH", (Operator (HartreeFock::*)()) &HartreeFock::GetNormalOrderedH) // This function is overloaded, so we cast to a function pointer ??
+      .def("GetNormalOrderedH_jacobi",&HartreeFock::GetNormalOrderedH_jacobi)
       .def("PrintSPE",&HartreeFock::PrintSPE)
       .def("GetRadialWF_r",&HartreeFock::GetRadialWF_r)
       .def("GetHFPotential",&HartreeFock::GetHFPotential)
       .def("GetAverageHFPotential",&HartreeFock::GetAverageHFPotential)
       .def("GetValence3B",&HartreeFock::GetValence3B)
+      .def("FreeVmon",&HartreeFock::FreeVmon)
+      .def_static("Vmon3Hash",&HartreeFock::Vmon3Hash)
+ // Modifying arguments which were passed by reference causes trouble in python, so instead we bind a lambda function and return a tuple
+      .def_static("Vmon3UnHash", [](uint64_t key) { int a,b,c,d,e,f; HartreeFock::Vmon3UnHash(key,a,b,c,d,e,f); return std::make_tuple(a,b,c,d,e,f);}  )
       .def_readonly("EHF",&HartreeFock::EHF)
       .def_readonly("C",&HartreeFock::C)
+      .def_readwrite("Vmon3_keys",&HartreeFock::Vmon3_keys)
+      .def_readwrite("Vmon3",&HartreeFock::Vmon3)
    ;
 
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
    Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
 
-//   class_<IMSRGSolver>("IMSRGSolver",init<Operator&>())
    py::class_<IMSRGSolver>(m,"IMSRGSolver")
       .def(py::init<Operator&>())
       .def("Solve",&IMSRGSolver::Solve)
@@ -301,7 +293,6 @@ PYBIND11_MODULE(pyIMSRG, m)
 
 
 
-//   class_<IMSRGProfiler>("IMSRGProfiler",init<>())
    py::class_<IMSRGProfiler>(m,"IMSRGProfiler")
       .def(py::init<>())
       .def("PrintTimes",&IMSRGProfiler::PrintTimes)
@@ -309,6 +300,24 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("PrintAll",&IMSRGProfiler::PrintAll)
       .def("PrintMemory",&IMSRGProfiler::PrintMemory)
    ;
+
+
+   py::class_<Jacobi3BME>(m,"Jacobi3BME")
+      .def(py::init<>())
+      .def(py::init<int,int,int,int,int>())
+      .def("GetDimensionAS",&Jacobi3BME::GetDimensionAS)
+      .def("GetDimensionNAS",&Jacobi3BME::GetDimensionNAS)
+      .def("GetMatElAS",&Jacobi3BME::GetMatElAS)
+      .def("GetMatElNAS",&Jacobi3BME::GetMatElNAS)
+      .def("SetEmax",&Jacobi3BME::SetEmax)
+      .def("SetE2max",&Jacobi3BME::SetE2max)
+      .def("SetE3max",&Jacobi3BME::SetE3max)
+      .def("ComputeNAS_MatrixElements",&Jacobi3BME::ComputeNAS_MatrixElements)
+      .def("GetLabMatEl",&Jacobi3BME::GetLabMatEl)
+      .def("TestReadTcoeffNavratil",&Jacobi3BME::TestReadTcoeffNavratil)
+      .def("GetV3mon_all",&Jacobi3BME::GetV3mon_all)
+   ;
+
 
 
    py::module Commutator = m.def_submodule("Commutator", "Commutator namespace");
@@ -361,15 +370,23 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
    m.def("OperatorFromString", imsrg_util::OperatorFromString);
    m.def("HO_Radial_psi",  imsrg_util::HO_Radial_psi);
-
+   m.def("MinnesotaPotential", imsrg_util::MinnesotaPotential);
    m.def("CG",AngMom::CG);
    m.def("ThreeJ",AngMom::ThreeJ);
    m.def("SixJ",AngMom::SixJ);
+   m.def("SixJ_int",AngMom::SixJ_int);
    m.def("NineJ",AngMom::NineJ);
+   m.def("NineJ_int",AngMom::NineJ_int);
+   m.def("FancyNineJ",AngMom::FancyNineJ);
+   m.def("FancyTwelveJ",AngMom::FancyTwelveJ);
+   m.def("TwelveJ_1_ints",AngMom::TwelveJ_1_ints);
    m.def("NormNineJ",AngMom::NormNineJ);
    m.def("Moshinsky",AngMom::Moshinsky);
    m.def("TalmiB",AngMom::TalmiB);
    m.def("TalmiI",imsrg_util::TalmiI);
+   m.def("Tcoeff",AngMom::Tcoeff);
+   m.def("Tcoeff_fancy",AngMom::Tcoeff_fancy);
+   m.def("Tcoeff_reorder",AngMom::Tcoeff_reorder);
 
 
 //  return m.ptr();

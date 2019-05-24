@@ -55,24 +55,37 @@ namespace Commutator{
   void comm222_phss( const Operator& X, const Operator& Y, Operator& Z) ;
   void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z) ;
 
-// IMSRG(3) commutators. Still a work in progress...
-  void comm330ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
-  void comm331ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
-  void comm231ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
-
-  void comm132ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
-  void comm232ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
-  void comm332ss( const Operator& X, const Operator& Y, Operator& Z ) ; // not implemented. not tested.
-  
-  void comm133ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
-  void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
-  void comm233ss( const Operator& X, const Operator& Y, Operator& Z ) ; // not implemented. not tested.
-  void comm333ss( const Operator& X, const Operator& Y, Operator& Z ) ; // not implemented. not tested.
-
-  Operator GooseTankUpdate( const Operator& Omega, const Operator& Nested);
 
   void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, const Operator& Z, TwoBodyME& Mpp, TwoBodyME& Mhh);
 //  void ConstructScalarMpp_Mhh_GooseTank(const Operator& X, const Operator& Y, Operator& Z, TwoBodyME& Mpp, TwoBodyME& Mhh) ;
+
+
+// IMSRG(3) commutators. Still a work in progress...
+  void comm330ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+  void comm331ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+  void comm231ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+
+  void comm132ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+  void comm232ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+  void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
+  void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z ) ;      // implemented. not tested.
+  
+  void comm133ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+  void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+  void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z ) ;     // implemented. not tested.
+  void comm233_phss( const Operator& X, const Operator& Y, Operator& Z ) ;        // implemented. not tested.
+  void comm333ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+
+  double comm333_ppp_hhh_ss_inner_loop( Orbit& oi, Orbit& oj, int Jij, Orbit& ok,   // helper function
+                                        Orbit& ol, Orbit& om, int Jlm, Orbit& on,
+                                        Orbit& oa, Orbit& ob, int Jab, Orbit& oc, int twoJ, const Operator& X, const Operator& Y );
+  double comm333_pph_hhp_ss_inner_loop( Orbit& oi, Orbit& oj, int Jij, Orbit& ok,  // helper function
+                                        Orbit& ol, Orbit& om, int Jlm, Orbit& on,
+                                        Orbit& oa, Orbit& ob, int Jab, Orbit& oc, int twoJ, const Operator& X, const Operator& Y );
+
+
+  Operator GooseTankUpdate( const Operator& Omega, const Operator& Nested);
+
 
 
 // scalar-tensor commutators

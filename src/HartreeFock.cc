@@ -12,7 +12,7 @@
 #include <omp.h>
 
 #ifndef SQRT2
-  #define SQRT2 1.4142135623730950488
+  #define SQRT2 1.4142135623730950488L // This many decimal points seems a bit excessive...
 #endif
 #define HBARC 197.3269718 // hc in MeV * fm
 #define M_NUCLEON 938.9185 // average nucleon mass in MeV
@@ -20,7 +20,8 @@
 
 //using namespace std;
 
-HartreeFock::HartreeFock(Operator& hbare)
+//HartreeFock::HartreeFock(Operator& hbare)
+HartreeFock::HartreeFock(Operator& hbare, bool vmon3_from_file)
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
     KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
     tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true)
@@ -48,13 +49,52 @@ HartreeFock::HartreeFock(Operator& hbare)
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
    {
-      BuildMonopoleV3();
+//      BuildMonopoleV3();
+      BuildMonopoleV3(vmon3_from_file);
    }
    UpdateDensityMatrix();
    UpdateF();
 
 }
 
+HartreeFock::HartreeFock(Operator& hbare, Jacobi3BME& jacobi3bme )
+  : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
+    KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
+    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true)
+{
+   int norbits = modelspace->GetNumberOrbits();
+
+   C             = arma::mat(norbits,norbits,arma::fill::eye);
+   Vij           = arma::mat(norbits,norbits,arma::fill::zeros);
+   V3ij          = arma::mat(norbits,norbits,arma::fill::zeros);
+   F             = arma::mat(norbits,norbits);
+   for (int Tz=-1;Tz<=1;++Tz)
+   {
+     for (int parity=0; parity<=1; ++parity)
+     {
+       int nKetsMon = modelspace->MonopoleKets[Tz+1][parity].size();
+       Vmon[Tz+1][parity] = arma::mat(nKetsMon,nKetsMon);
+       Vmon_exch[Tz+1][parity] = arma::mat(nKetsMon,nKetsMon);
+     }
+   }
+   prev_energies = arma::vec(norbits,arma::fill::zeros);
+   std::vector<double> occvec;
+   for (auto& h : modelspace->holes) occvec.push_back(modelspace->GetOrbit(h).occ);
+   holeorbs = arma::uvec(modelspace->holes);
+   hole_occ = arma::rowvec(occvec);
+   BuildMonopoleV();
+
+   if (hbare.GetParticleRank()>2)
+   {
+      bool use_jacobi_3bme = true;
+      BuildMonopoleV3(use_jacobi_3bme);
+      jacobi3bme.GetV3mon_all( *this );
+   }
+
+   UpdateDensityMatrix();
+   UpdateF();
+
+}
 
 //*********************************************************************
 /// Diagonalize and update the Fock matrix until convergence.
@@ -64,6 +104,7 @@ HartreeFock::HartreeFock(Operator& hbare)
 //*********************************************************************
 void HartreeFock::Solve()
 {
+   double t_start = omp_get_wtime();
    iterations = 0; // counter so we don't go on forever
    int maxiter = 1000;
 
@@ -96,6 +137,7 @@ void HartreeFock::Solve()
    }
    UpdateReference();
    PrintEHF();
+   profiler.timer["HF_Solve"] += omp_get_wtime() - t_start;
 }
 
 
@@ -235,7 +277,8 @@ void HartreeFock::BuildMonopoleV()
 ///       \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle
 /// \f]
 //*********************************************************************
-void HartreeFock::BuildMonopoleV3()
+//void HartreeFock::BuildMonopoleV3()
+void HartreeFock::BuildMonopoleV3(bool use_jacobi_3bme)
 {
    double start_time = omp_get_wtime();
   // First, allocate. This is fast so don't parallelize.
@@ -285,35 +328,40 @@ void HartreeFock::BuildMonopoleV3()
     }
 
    Vmon3.resize( Vmon3_keys.size(), 0. );
+   profiler.timer["HF_BuildMonopoleV3_allocate"] += omp_get_wtime() - start_time;
 
-   #pragma omp parallel for schedule(dynamic,1) 
-   for (size_t ind=0; ind<Vmon3.size(); ++ind)
+   if (not use_jacobi_3bme)
    {
-      double v=0;
-      int a,b,c,d,i,j;
-      Vmon3UnHash( Vmon3_keys[ind], a,c,i,b,d,j);
+    modelspace->PreCalculateSixJ();
+    #pragma omp parallel for schedule(dynamic,1) 
+    for (size_t ind=0; ind<Vmon3.size(); ++ind)
+    {
+       double v=0;
+       int a,b,c,d,i,j;
+       Vmon3UnHash( Vmon3_keys[ind], a,c,i,b,d,j);
 
-      int j2a = modelspace->GetOrbit(a).j2;
-      int j2c = modelspace->GetOrbit(c).j2;
-      int j2i = modelspace->GetOrbit(i).j2;
-      int j2b = modelspace->GetOrbit(b).j2;
-      int j2d = modelspace->GetOrbit(d).j2;
-      int j2j = modelspace->GetOrbit(j).j2;
+       int j2a = modelspace->GetOrbit(a).j2;
+       int j2c = modelspace->GetOrbit(c).j2;
+       int j2i = modelspace->GetOrbit(i).j2;
+       int j2b = modelspace->GetOrbit(b).j2;  // this seems unnecessary
+       int j2d = modelspace->GetOrbit(d).j2;  // this seems unnecessary
+       int j2j = modelspace->GetOrbit(j).j2;  // this seems unnecessary
  
-      int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
-      int j2max = std::min( j2a+j2c, j2b+j2d )/2;
-      for (int j2=j2min; j2<=j2max; ++j2)
-      {
-        int Jmin = std::max( std::abs(2*j2-j2i), std::abs(2*j2-j2j) );
-        int Jmax = 2*j2 + std::min(j2i, j2j);
-        for (int J2=Jmin; J2<=Jmax; J2+=2)
-        {
-           v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
-        }
-      }
-      v /= j2i+1.0;
-      #pragma omp atomic write
-      Vmon3[ind] = v ;
+       int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
+       int j2max = std::min( j2a+j2c, j2b+j2d )/2;
+       for (int j2=j2min; j2<=j2max; ++j2)
+       {
+         int Jmin = std::max( std::abs(2*j2-j2i), std::abs(2*j2-j2j) );
+         int Jmax = 2*j2 + std::min(j2i, j2j);
+         for (int J2=Jmin; J2<=Jmax; J2+=2)
+         {
+            v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
+         }
+       }
+       v /= j2i+1.0;
+       #pragma omp atomic write
+       Vmon3[ind] = v ;
+    }
    }
    std::cout << "HartreeFock::BuildMonopoleV3  storing " << Vmon3.size() << " doubles for Vmon3 and "
              << Vmon3_keys.size() << " uint64's for Vmon3_keys." << std::endl;
@@ -466,7 +514,7 @@ void HartreeFock::UpdateF()
         v3ij(i,j) += rho(a,b) * rho(c,d) * Vmon3[ind] ;
       }
       for (auto& v : V3vec) V3ij += v;
-      V3vec.clear(); // free up the memory
+      V3vec.clear(); // free up the memory (is this at all necessary, since it goes out of scope?)
    }
 
    Vij  = arma::symmatu(Vij);
@@ -686,19 +734,6 @@ Operator HartreeFock::GetNormalOrderedH()
    if (not freeze_occupations)
    {
      UpdateReference();
-//     bool changed_occupations = false;
-//     std::map<index_t,double> hole_map;
-//     std::cout << "Looking through holeorbs to see if we changed occupations" << std::endl;
-//     for (index_t i=0;i<holeorbs.size();++i)  
-//     {
-//        hole_map[holeorbs[i]] = hole_occ[i];
-//        if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
-//        {
-//           changed_occupations = true;
-//           std::cout << "After HF, occupation of orbit " << i << " has changed. Modelspace will be updated." << std::endl;
-//        }
-//     }
-//     if (changed_occupations)  modelspace->SetReference( hole_map );
    }
 
    Operator HNO = Operator(*modelspace,0,0,0,2);
@@ -717,13 +752,17 @@ Operator HartreeFock::GetNormalOrderedH()
       arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
       arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
 
+//      if (ch==1) std::cout << " J = " << J << std::endl;
       #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
       for (int i=0; i<npq; ++i)    
       {
+//        if (ch==1) std::cout << "i = " << i << std::endl;
          Ket & bra = tbc.GetKet(i);
+//         if (ch==1) std::cout << "  pq = " << bra.p << " " << bra.q << std::endl;
          int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
          for (int j=0; j<npq; ++j)
          {
+//           if (ch==1) std::cout << "   j= " <<j << std::endl;
             Ket & ket = tbc.GetKet(j); 
             int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
             D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
@@ -746,11 +785,14 @@ Operator HartreeFock::GetNormalOrderedH()
               {
                 Orbit & ob = modelspace->GetOrbit(b);
                 if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
+                if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
                 int J3min = std::abs(2*J-oa.j2);
                 int J3max = 2*J + oa.j2;
                 for (int J3=J3min; J3<=J3max; J3+=2)
                 {
                   V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
+//                  if(ch==1) std::cout << " J3 = " << J3 << " abcdef " << bra.p << " " << bra.q << " " << a << " " << ket.p << " " << ket.q << " " << b << "    rho  " << rho(a,b)
+//                                      << " * " << J3+1 << " * " <<  Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b) << "   -> " << V3NO(i,j) << std::endl;
                 }
               }
             }
@@ -764,6 +806,11 @@ Operator HartreeFock::GetNormalOrderedH()
      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
+//     if (ch>-1)
+//     {
+//      std::cout << "OUT[" << ch << "] " << std::endl << OUT << std::endl;
+//      std::cout << "V3NO: " << std::endl << V3NO << std::endl;
+//     }
    }
    
 //   FreeVmon();
@@ -773,6 +820,113 @@ Operator HartreeFock::GetNormalOrderedH()
    return HNO;
 
 }
+
+
+
+Operator HartreeFock::GetNormalOrderedH_jacobi(Jacobi3BME& jacobi3bme) 
+{
+   double start_time = omp_get_wtime();
+   std::cout << "Getting normal-ordered H in HF basis, using Jacobi 3-body matrix elements" << std::endl;
+
+   // First, check if we need to update the occupation numbers for the reference
+   if (not freeze_occupations)
+   {
+     UpdateReference();
+   }
+
+   Operator HNO = Operator(*modelspace,0,0,0,2);
+   HNO.ZeroBody = EHF;
+   HNO.OneBody = C.t() * F * C;
+
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+//   int norb = modelspace->GetNumberOrbits();
+//   #pragma omp parallel for schedule(dynamic,1) // have not yet confirmed that this improves performance ... no sign of significant improvement
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      int J = tbc.J;
+      int npq = tbc.GetNumberKets();
+
+      arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+      arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+
+// Let's hold off on parallelizing for now...
+      #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
+      for (int i=0; i<npq; ++i)    
+      {
+         Ket & bra = tbc.GetKet(i);
+         int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
+         for (int j=0; j<npq; ++j)
+         {
+            Ket & ket = tbc.GetKet(j); 
+            int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
+            D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
+            if (bra.p!=bra.q)
+            {
+               D(i,j) += C(bra.q,ket.p) * C(bra.p,ket.q) * bra.Phase(J);
+            }
+            if (bra.p==bra.q)    D(i,j) *= SQRT2;
+            if (ket.p==ket.q)    D(i,j) /= SQRT2;
+
+            // Now generate the NO2B part of the 3N interaction
+//            if (Hbare.GetParticleRank()<3) continue;
+//            if (i>j) continue;
+////            for (int a=0; a<norb; ++a)
+//            for ( auto a : modelspace->all_orbits )
+//            {
+//              Orbit & oa = modelspace->GetOrbit(a);
+//              if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
+//              for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+//              {
+//                Orbit & ob = modelspace->GetOrbit(b);
+//                if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
+//                if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
+//                int J3min = std::abs(2*J-oa.j2);
+//                int J3max = 2*J + oa.j2;
+//                for (int J3=J3min; J3<=J3max; J3+=2)
+//                {
+//                  V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
+//                }
+//              }
+//            }
+//            V3NO(i,j) /= (2*J+1);
+//            if (bra.p==bra.q)  V3NO(i,j) /= SQRT2; 
+//            if (ket.p==ket.q)  V3NO(i,j) /= SQRT2; 
+//            V3NO(j,i) = V3NO(i,j);
+         }
+      }
+     // Now we get the normal ordered part of the 3-body from the jacobi basis
+     jacobi3bme.GetNO2b_single_channel( *this, ch, V3NO );
+
+     auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
+     auto& OUT =  HNO.TwoBody.GetMatrix(ch);
+     OUT  =    D.t() * (V2 + V3NO) * D;
+//     if (ch>-1)
+//     {
+//     std::cout << "OUT[" << ch << "] " << std::endl << OUT << std::endl;
+//     std::cout << "V3NO: " << std::endl << V3NO << std::endl;
+//     }
+   }
+   
+//   FreeVmon();
+
+   profiler.timer[__func__] += omp_get_wtime() - start_time;
+   
+   return HNO;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 void HartreeFock::FreeVmon()

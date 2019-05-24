@@ -61,6 +61,17 @@ int Ket::Phase(int J)
 //************************************************************************
 //************************************************************************
 //************************************************************************
+Ket3::Ket3()
+{}
+
+Ket3::Ket3(Orbit& op_in, Orbit& oq_in, Orbit& oR_in)
+: op(&op_in), oq(&oq_in), oR(&oR_in), p(op_in.index), q(oq_in.index), r(oR_in.index)
+{
+}
+
+//************************************************************************
+//************************************************************************
+//************************************************************************
 
 TwoBodyChannel::~TwoBodyChannel()
 {
@@ -937,6 +948,7 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
      ind = Orbits.size();
      Orbits.emplace_back( Orbit(n,l,j2,tz2,occ,cvq,ind ) );
      OrbitLookup[hash] = ind;
+   OneBodyChannels[{l, j2, tz2}].push_back(ind);
    }
    else  // we already have that one, but we'll replace it with the new info.
    {
@@ -976,7 +988,7 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
    if (tz2 > 0 ) neutron_orbits.push_back(ind);
    all_orbits.push_back(ind);
 
-   OneBodyChannels[{l, j2, tz2}].push_back(ind);
+//   OneBodyChannels[{l, j2, tz2}].push_back(ind);
 }
 
 

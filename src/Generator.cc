@@ -261,7 +261,7 @@ void Generator::ConstructGenerator_Atan()
     // Three body piece
     int E3cut = 4;
     double t_start = omp_get_wtime();
-//    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << std::endl;
+//    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << "   Norms: " << Eta->ThreeBodyNorm() << "  " << H->ThreeBodyNorm()  << std::endl;
     if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
     {
      std::cout << "looping in generator 3-body part " << std::endl;
@@ -304,9 +304,10 @@ void Generator::ConstructGenerator_Atan()
             {
               double ME_od = H->ThreeBody.GetME_pn( Jab, Jij, twoJ, a,b,c,i,j,k);
               double eta = 0.5*atan(2*ME_od / denominator);
+//              double eta = (ME_od / denominator);
 //              if (std::abs(eta)>1e-6)
 //              {
-//                std::cout << "Nonzero eta !  <" << a << " " << b << " " << c << " | " << i << " " << j << " " << k << " >  = " << eta << std::endl;
+//                std::cout << "Nonzero eta !  <" << a << " " << b << " " << c << ", " << Jab << " | " << i << " " << j << " " << k << ", " << Jij << " > _ " << twoJ << "  => " << ME_od << " / " << denominator << " = " << eta << std::endl;
 //              }
               Eta->ThreeBody.AddToME_pn( Jab, Jij, twoJ, a,b,c,i,j,k,  eta);
             }

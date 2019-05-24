@@ -77,7 +77,7 @@ class Ket  //  | pq >
    Ket();
    Ket(Orbit& op, Orbit& oq);
    // Methods
-   int Phase(int J);
+   int Phase(int J); // returns -(-1)^{jp+jq-J) , so that |qp,J> = Phase(J)|pq,J>
    int delta_pq() const {return dpq;};
 
    // Fields
@@ -92,6 +92,19 @@ class Ket  //  | pq >
 
 };
 
+
+struct Ket3 // | p q r >
+{
+  Ket3();
+  Ket3(Orbit& op, Orbit& oq, Orbit& oR);
+  size_t p;
+  size_t q;
+  size_t r;
+  Orbit* op;
+  Orbit* oq;
+  Orbit* oR; // unfortunate that this convention collides with the "or" keyword.
+
+};
 
 
 

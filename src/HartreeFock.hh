@@ -23,10 +23,13 @@
 #include "ModelSpace.hh"
 #include "Operator.hh"
 #include "IMSRGProfiler.hh"
+#include "Jacobi3BME.hh"
 #include <armadillo>
 #include <vector>
 #include <array>
 #include <deque>
+
+class Jacobi3BME; // forward declaration
 
 class HartreeFock
 {
@@ -59,9 +62,12 @@ class HartreeFock
    bool freeze_occupations;
 
 // Methods
-   HartreeFock(Operator&  hbare); ///< Constructor
+//   HartreeFock(Operator&  hbare); ///< Standard Constructor
+   HartreeFock(Operator&  hbare, bool vmon3_from_file=false); ///< Standard Constructor. If the optional argument vmon3_from_file is true, we don't calculate Vmon3, and expect to read it from file
+   HartreeFock(Operator&  hbare, Jacobi3BME& jacobi3bme); ///< Constructor using jacobi 3-body matrix elements
    void BuildMonopoleV();         ///< Only the monopole part of V is needed, so construct it.
-   void BuildMonopoleV3();        ///< Only the monopole part of V3 is needed.
+   void BuildMonopoleV3(bool use_jacobi_3bme=false);        ///< Only the monopole part of V3 is needed.
+//   void BuildMonopoleV3();        ///< Only the monopole part of V3 is needed.
    void Diagonalize();            ///< Diagonalize the Fock matrix
    void UpdateF();                ///< Update the Fock matrix with the new transformation coefficients C
    void UpdateDensityMatrix();    ///< Update the density matrix with the new coefficients C
@@ -74,6 +80,7 @@ class HartreeFock
    void ReorderCoefficients();    ///< Reorder the coefficients in C to eliminate phases etc.
    Operator TransformToHFBasis( Operator& OpIn); ///< Transform an operator from oscillator basis to HF basis
    Operator GetNormalOrderedH();  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
+   Operator GetNormalOrderedH_jacobi(Jacobi3BME& jacobi3bme);  ///< Use the jacobi 3-body matrix elements to obtain the Hamiltonian in the HF basis at the NO2B level.
    Operator GetNormalOrderedH(arma::mat& Cin);  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
    Operator GetOmega();           ///< Return a generator of the Hartree Fock transformation
    Operator GetHbare(){return Hbare;}; ///< Getter function for Hbare
@@ -86,8 +93,8 @@ class HartreeFock
    double GetAverageHFPotential( double r, double rprime);
    void FreezeOccupations(){freeze_occupations = true;};
    void UnFreezeOccupations(){freeze_occupations = false;};
-   uint64_t Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f);
-   void Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f);
+   static uint64_t Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f);
+   static void Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f);
    ThreeBodyME GetValence3B( int emax, int E3max );
    double GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
 
