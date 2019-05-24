@@ -20,7 +20,8 @@
 
 //using namespace std;
 
-HartreeFock::HartreeFock(Operator& hbare)
+//HartreeFock::HartreeFock(Operator& hbare)
+HartreeFock::HartreeFock(Operator& hbare, bool vmon3_from_file)
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
     KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
     tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true)
@@ -48,7 +49,8 @@ HartreeFock::HartreeFock(Operator& hbare)
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
    {
-      BuildMonopoleV3();
+//      BuildMonopoleV3();
+      BuildMonopoleV3(vmon3_from_file);
    }
    UpdateDensityMatrix();
    UpdateF();
@@ -330,6 +332,7 @@ void HartreeFock::BuildMonopoleV3(bool use_jacobi_3bme)
 
    if (not use_jacobi_3bme)
    {
+    modelspace->PreCalculateSixJ();
     #pragma omp parallel for schedule(dynamic,1) 
     for (size_t ind=0; ind<Vmon3.size(); ++ind)
     {
@@ -749,13 +752,17 @@ Operator HartreeFock::GetNormalOrderedH()
       arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
       arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
 
+//      if (ch==1) std::cout << " J = " << J << std::endl;
       #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
       for (int i=0; i<npq; ++i)    
       {
+//        if (ch==1) std::cout << "i = " << i << std::endl;
          Ket & bra = tbc.GetKet(i);
+//         if (ch==1) std::cout << "  pq = " << bra.p << " " << bra.q << std::endl;
          int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
          for (int j=0; j<npq; ++j)
          {
+//           if (ch==1) std::cout << "   j= " <<j << std::endl;
             Ket & ket = tbc.GetKet(j); 
             int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
             D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
@@ -784,6 +791,8 @@ Operator HartreeFock::GetNormalOrderedH()
                 for (int J3=J3min; J3<=J3max; J3+=2)
                 {
                   V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
+//                  if(ch==1) std::cout << " J3 = " << J3 << " abcdef " << bra.p << " " << bra.q << " " << a << " " << ket.p << " " << ket.q << " " << b << "    rho  " << rho(a,b)
+//                                      << " * " << J3+1 << " * " <<  Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b) << "   -> " << V3NO(i,j) << std::endl;
                 }
               }
             }
@@ -797,6 +806,11 @@ Operator HartreeFock::GetNormalOrderedH()
      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
+//     if (ch>-1)
+//     {
+//      std::cout << "OUT[" << ch << "] " << std::endl << OUT << std::endl;
+//      std::cout << "V3NO: " << std::endl << V3NO << std::endl;
+//     }
    }
    
 //   FreeVmon();
@@ -809,7 +823,7 @@ Operator HartreeFock::GetNormalOrderedH()
 
 
 
-Operator HartreeFock::GetNormalOrderedH(Jacobi3BME& jacobi3bme) 
+Operator HartreeFock::GetNormalOrderedH_jacobi(Jacobi3BME& jacobi3bme) 
 {
    double start_time = omp_get_wtime();
    std::cout << "Getting normal-ordered H in HF basis, using Jacobi 3-body matrix elements" << std::endl;
@@ -837,7 +851,7 @@ Operator HartreeFock::GetNormalOrderedH(Jacobi3BME& jacobi3bme)
       arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
 
 // Let's hold off on parallelizing for now...
-//      #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
+      #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
       for (int i=0; i<npq; ++i)    
       {
          Ket & bra = tbc.GetKet(i);
@@ -887,11 +901,16 @@ Operator HartreeFock::GetNormalOrderedH(Jacobi3BME& jacobi3bme)
      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
+//     if (ch>-1)
+//     {
+//     std::cout << "OUT[" << ch << "] " << std::endl << OUT << std::endl;
+//     std::cout << "V3NO: " << std::endl << V3NO << std::endl;
+//     }
    }
    
 //   FreeVmon();
 
-   profiler.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;
+   profiler.timer[__func__] += omp_get_wtime() - start_time;
    
    return HNO;
 

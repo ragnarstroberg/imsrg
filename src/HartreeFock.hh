@@ -62,7 +62,8 @@ class HartreeFock
    bool freeze_occupations;
 
 // Methods
-   HartreeFock(Operator&  hbare); ///< Standard Constructor
+//   HartreeFock(Operator&  hbare); ///< Standard Constructor
+   HartreeFock(Operator&  hbare, bool vmon3_from_file=false); ///< Standard Constructor. If the optional argument vmon3_from_file is true, we don't calculate Vmon3, and expect to read it from file
    HartreeFock(Operator&  hbare, Jacobi3BME& jacobi3bme); ///< Constructor using jacobi 3-body matrix elements
    void BuildMonopoleV();         ///< Only the monopole part of V is needed, so construct it.
    void BuildMonopoleV3(bool use_jacobi_3bme=false);        ///< Only the monopole part of V3 is needed.
@@ -79,7 +80,7 @@ class HartreeFock
    void ReorderCoefficients();    ///< Reorder the coefficients in C to eliminate phases etc.
    Operator TransformToHFBasis( Operator& OpIn); ///< Transform an operator from oscillator basis to HF basis
    Operator GetNormalOrderedH();  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
-   Operator GetNormalOrderedH(Jacobi3BME& jacobi3bme);  ///< Use the jacobi 3-body matrix elements to obtain the Hamiltonian in the HF basis at the NO2B level.
+   Operator GetNormalOrderedH_jacobi(Jacobi3BME& jacobi3bme);  ///< Use the jacobi 3-body matrix elements to obtain the Hamiltonian in the HF basis at the NO2B level.
    Operator GetNormalOrderedH(arma::mat& Cin);  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
    Operator GetOmega();           ///< Return a generator of the Hartree Fock transformation
    Operator GetHbare(){return Hbare;}; ///< Getter function for Hbare

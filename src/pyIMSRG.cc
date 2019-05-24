@@ -25,7 +25,7 @@ namespace py = pybind11;
 
   void MS_SetRef(ModelSpace& self, std::string str){ self.SetReference( str);};
 
-  Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
+//  Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
 
 //BOOST_PYTHON_MODULE(pyIMSRG)
 //PYBIND11_PLUGIN(pyIMSRG)
@@ -230,15 +230,18 @@ PYBIND11_MODULE(pyIMSRG, m)
 
 
 
+//      .def("GetNormalOrderedH",&HF_GetNormalOrderedH)
 
    py::class_<HartreeFock>(m,"HartreeFock")
       .def(py::init<Operator&>())
+      .def(py::init<Operator&,bool>())
       .def(py::init<Operator&,Jacobi3BME&>())
       .def("Solve",&HartreeFock::Solve)
       .def("TransformToHFBasis",&HartreeFock::TransformToHFBasis)
       .def("GetHbare",&HartreeFock::GetHbare)
-      .def("GetNormalOrderedH",&HF_GetNormalOrderedH)
       .def("GetOmega",&HartreeFock::GetOmega)
+      .def("GetNormalOrderedH", (Operator (HartreeFock::*)()) &HartreeFock::GetNormalOrderedH) // This function is overloaded, so we cast to a function pointer ??
+      .def("GetNormalOrderedH_jacobi",&HartreeFock::GetNormalOrderedH_jacobi)
       .def("PrintSPE",&HartreeFock::PrintSPE)
       .def("GetRadialWF_r",&HartreeFock::GetRadialWF_r)
       .def("GetHFPotential",&HartreeFock::GetHFPotential)
@@ -367,6 +370,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
    m.def("OperatorFromString", imsrg_util::OperatorFromString);
    m.def("HO_Radial_psi",  imsrg_util::HO_Radial_psi);
+   m.def("MinnesotaPotential", imsrg_util::MinnesotaPotential);
    m.def("CG",AngMom::CG);
    m.def("ThreeJ",AngMom::ThreeJ);
    m.def("SixJ",AngMom::SixJ);
