@@ -851,7 +851,7 @@ Operator HartreeFock::GetNormalOrderedH_jacobi(Jacobi3BME& jacobi3bme)
       arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
 
 // Let's hold off on parallelizing for now...
-      #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
+//      #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
       for (int i=0; i<npq; ++i)    
       {
          Ket & bra = tbc.GetKet(i);
