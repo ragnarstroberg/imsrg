@@ -96,8 +96,8 @@ endif
 
 ifeq ($(THEHOST),mox)  # default options. assumes boost and python are set up nicely.
 # LIBS += -llapack
-# NEWLIBS := $(filter-out -lopenblas,$(LIBS))
-# LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+ NEWLIBS := $(filter-out -lopenblas,$(LIBS))
+ LIBS = $(NEWLIBS) -lmkl_def -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
  ifneq ($(PYTHON),off)
   ALL += pyIMSRG.so
  endif
