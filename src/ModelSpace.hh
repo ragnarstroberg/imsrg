@@ -257,6 +257,8 @@ class ModelSpace
    void SetReference(std::vector<index_t>);
    void SetReference(std::map<index_t,double>);
    void SetReference(std::string);
+   std::vector<index_t>& GetOneBodyChannel( int l, int j2, int tz2 );
+   std::vector<index_t>& GetOneBodyChannel( index_t a );
 
    int GetEmax(){return Emax;};
    int GetE2max(){return E2max;};
