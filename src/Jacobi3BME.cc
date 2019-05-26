@@ -1091,6 +1091,9 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         int nonzero_vmon = 0;
 
 //        #pragma omp parallel for schedule(dynamic,1) reduction(+ : tcoeff_counter,nonzero_vmon)
+#ifndef OPENBLAS_NOUSEOMP
+        #pragma omp parallel for schedule(dynamic,1)
+#endif
         for (size_t ilist=0; ilist<imon_indices.size(); ilist++)
         {
           size_t imon = imon_indices[ilist][0];
