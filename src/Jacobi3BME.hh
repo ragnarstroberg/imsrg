@@ -5,6 +5,7 @@
 #include "HartreeFock.hh"
 #include <vector>
 #include <array>
+#include <unordered_set>
 
 class HartreeFock; // forward declaration
 
@@ -110,7 +111,9 @@ class Jacobi3BME
 
   void TestReadTcoeffNavratil( std::string fname ); //< for unit testing
 
-  void GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf, std::vector<std::array<size_t,8>>& indices ); // helper function to clean things up a bit
+//  void GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf, std::vector<std::array<size_t,8>>& indices ); // helper function to clean things up a bit
+//  void GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf, std::vector<std::unordered_set<size_t>>& indices ); // helper function to clean things up a bit
+  void GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf, std::vector<std::vector<size_t>>& indices ); // helper function to clean things up a bit
 //  void GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf,   std::unordered_map<std::string,double>& T3bList); // another helper function  
   void GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf); // another helper function  
 

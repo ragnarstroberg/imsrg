@@ -40,7 +40,7 @@ class IMSRGProfiler
  public:
   // timer and counter are declaired as static so that there's only one copy of each of them
   static std::map<std::string, double> timer; ///< For keeping timing information for various method calls
-  static std::map<std::string, int> counter;
+  static std::map<std::string, long int> counter;
   static double start_time;
 
   IMSRGProfiler();
