@@ -10,7 +10,7 @@
 
 
 std::map<std::string, double> IMSRGProfiler::timer;
-std::map<std::string, int> IMSRGProfiler::counter;
+std::map<std::string, long int> IMSRGProfiler::counter;
 double IMSRGProfiler::start_time = -1;
 
 IMSRGProfiler::IMSRGProfiler()
