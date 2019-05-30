@@ -961,6 +961,7 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
 //    if (a==1 and b==2 and lc==0 and nc==0) verbose = true;
 //    else verbose = false;
             int Eabc = 2*(na+nb+nc) + la+lb+lc;
+            if (Eabc>E3max) continue;
 
             for (int Ecm=0; Ecm<=Eabc; Ecm++)
             {
