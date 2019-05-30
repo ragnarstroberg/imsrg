@@ -49,8 +49,10 @@ class Jacobi3BME
   std::vector<double> cfpvec;      // the cfp's (coefficients of fractional parentage), i.e. the overlaps of the AS and NAS basis states
   std::vector<size_t> cfp_start_loc;  // starting element for a given T,J,p
 
+  struct array7_hash {size_t operator() (const std::array<unsigned short,7>& key) const; }; 
   std::vector<double> TcoeffList;
-  std::unordered_map<std::string,size_t> TcoeffLookup;
+//  std::unordered_map<std::string,size_t> TcoeffLookup;
+  std::unordered_map<std::array<unsigned short,7>,size_t,array7_hash> TcoeffLookup;
 
   std::unordered_map<uint64_t,double> SixJList;
   std::unordered_map<uint64_t,double> Moshinsky1List;
@@ -95,8 +97,10 @@ class Jacobi3BME
 
 //  double GetV3mon( size_t a, size_t b, size_t c, size_t d, size_t e, size_t f ); //< Get a single 3-body monopole term, for use in a Hartree-Fock calculation
 
-  std::string TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 );
-  void TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 );
+//  std::string TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 );
+//  void TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 );
+  std::array<unsigned short,7> TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 );
+  void TcoeffUnHash(std::array<unsigned short,7>& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 );
 //  std::string TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm );
 //  void TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ, int& jac1, int& jac2, int& twoJ12, int& Lcm );
 //  void TcoeffUnHash(std::string& key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& jac1, uint64_t& jac2, uint64_t& twoJ12, uint64_t& Lcm );

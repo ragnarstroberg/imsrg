@@ -465,7 +465,7 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
         arma::mat cfp_ket( &(cfpvec[cfp_begin_ket]), NASdim_ket, ASdim_ket, /*copy_aux_mem*/ true);
 
 
-//        std::cout << " ^^^TJP E12 = " << twoT << " " << twoJ12 << " " << parity12_bra << " " << E12_bra << "," << E12_ket << "  Ncm,Lcm = " << Ncm << " " << Lcm << std::endl;
+//        std::cout << " ^^^T J12 P E12 = " << twoT << " " << twoJ12 << " " << parity12_bra << " " << E12_bra << "," << E12_ket << "  Ncm,Lcm = " << Ncm << " " << Lcm << std::endl;
 //        std::cout << "dimensions: " << NASdim_bra << " " << NASdim_ket << std::endl;
 //           size_t dimbra = jacobi_basis.GetDimensionNAS(T,J,parity12_bra,E12_bra); 
 //           std::cout << "dimbra = " <<  dimbra << std::endl;
@@ -503,9 +503,18 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
         }
 
 
-
         arma::mat result =  Tcoeff_bra * cfp_bra * matelAS * cfp_ket.t() * Tcoeff_ket;
         me_lab += result[0];
+
+
+//        std::cout << "matrices:" << std::endl;
+//        std::cout << "T bra " << std::endl << Tcoeff_bra << std::endl;
+//        std::cout << "mNAS*6: " << std::endl << ( cfp_bra * matelAS * cfp_ket.t() )*6 << std::endl;
+////        std::cout << "mAS: " << std::endl << ( matelAS ) << std::endl;
+//        std::cout << "T ket " << std::endl << Tcoeff_ket << std::endl;
+//        std::cout << "mNAS * Tket " << std::endl << ( cfp_bra * matelAS * cfp_ket.t() )*Tcoeff_ket  *6 << std::endl;
+//        std::cout << "result " << result[0]  << " *6 = " << result[0]*6 << "  me_lab " << me_lab << "   *6= " << me_lab*6 << std::endl;
+
 
 //        for (int ibraNAS=0; ibraNAS<NASdim_bra; ibraNAS++)
 //        {
@@ -570,28 +579,56 @@ double Jacobi3BME::GetV3mon( size_t a, size_t b, size_t c, size_t d, size_t e, s
 
 */
 
+
+//struct array7_hash {
+// size_t operator() (const std::array<unsigned short,7>& key) const
+// {
+// This is for hashing 7 numbers into an unordered_map
+size_t Jacobi3BME::array7_hash::operator() (const std::array<unsigned short,7>& key) const
+ {
+   return  ( ((unsigned long) key[0])       )
+          +( ((unsigned long) key[1]) <<  8 )
+          +( ((unsigned long) key[2]) << 16 )
+          +( ((unsigned long) key[3]) << 24 )
+          +( ((unsigned long) key[4]) << 32 )
+          +( ((unsigned long) key[5]) << 40 )
+          +( ((unsigned long) key[5]) << 48 );
+ }
+
+
 // na,nb,and nc all should be <= emax/2, Jab will be <= 2*emax+1, twoJ will be <=6*emax+3, but only odd, Lcm will be <=3*emax, jac2 <= ~Nmax*Nmax,    jac1<= ~Nmax*Nmax*Nmax 
 //  J lies in the range |Jab-jc| <= J <= Jab+jc,  so it has a span of no more than 2*emax+1.
 // na + 10*nb + 100*nc fits in 10 bits (1023).  Jab fits in 6 bits (63).  twoJ/2 fits in 7 bits (127).  Lcm fits in 7 bits (127). jac2 fits in 12 bits (4095). jac1 fits in 18 bits (262143)
 // This totals up to 10+6+7+7+7+12+18 = 67, which is too many.   For now, we will just use a string.
 //uint64_t Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm )
 //std::string Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm )
-std::string Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 )
+std::array<unsigned short,7> Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 )
 {
-  std::ostringstream oss;
-//  oss << na << " " << nb << " " << nc << " " << Jab << " " << twoJ << " " << jac1 << " " << jac2 << " " << twoJ12 << " " << Lcm;
-  oss << na << " " << nb << " " << nc << " " << Jab << " " << twoJ << " " <<  " " << twoJ12 << " " << E12;
-  return oss.str();
+  return {na,nb,nc,Jab,twoJ,twoJ12,E12};
 }
+
+void Jacobi3BME::TcoeffUnHash(std::array<unsigned short,7>& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 )
+{
+  na=key[0]; nb=key[1]; nc=key[2]; Jab=key[3]; twoJ=key[4]; twoJ12=key[5]; E12=key[6];
+}
+
+
+//std::string Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 )
+//{
+//  std::ostringstream oss;
+////  oss << na << " " << nb << " " << nc << " " << Jab << " " << twoJ << " " << jac1 << " " << jac2 << " " << twoJ12 << " " << Lcm;
+//  oss << na << " " << nb << " " << nc << " " << Jab << " " << twoJ << " " <<  " " << twoJ12 << " " << E12;
+//  return oss.str();
+//}
 
 //void Jacobi3BME::TcoeffUnHash(uint64_t key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& jac1, uint64_t& jac2, uint64_t& twoJ12, uint64_t& Lcm )
 //void Jacobi3BME::TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ, int& jac1, int& jac2, int& twoJ12, int& Lcm )
-void Jacobi3BME::TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 )
-{
-  std::istringstream iss(key);
-//  iss >> na >> nb >> nc >> Jab >> twoJ >> jac1 >> jac2 >> twoJ12 >> Lcm;
-  iss >> na >> nb >> nc >> Jab >> twoJ >> twoJ12 >> E12;
-}
+//void Jacobi3BME::TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 )
+//{
+//  std::istringstream iss(key);
+////  iss >> na >> nb >> nc >> Jab >> twoJ >> jac1 >> jac2 >> twoJ12 >> Lcm;
+//  iss >> na >> nb >> nc >> Jab >> twoJ >> twoJ12 >> E12;
+//}
 
 
 
@@ -985,7 +1022,7 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
          size_t start_point = element->second;
          size_t offset = 0;
          if (verbose) std::cout << " ~ na,nb,nc " << na << " " << nb << " " << nc << "     Jab,twoJ,twoJ12: " << Jab << " " << twoJ << " " << twoJ12 << "   E12: " << E12 << std::endl;
-         if (verbose) std::cout << "hash: " << element->first << "  ->  " << element->second << std::endl;
+//         if (verbose) std::cout << "hash: " << element->first << "  ->  " << element->second << std::endl;
  
 
          int Eabc = 2*(na+nb+nc)+la+lb+lc;
@@ -1292,7 +1329,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
                     size_t tcoeff_start_abc = TcoeffLookup[ tcoeff_hash_abc ];
                     size_t tcoeff_start_def = TcoeffLookup[ tcoeff_hash_def ];
 
-                    if (verbose) std::cout << "hashabc : " << tcoeff_hash_abc << "   ->  " << tcoeff_start_abc << "         hashdef : " << tcoeff_hash_def << "    ->  " << tcoeff_start_def << std::endl;
+//                    if (verbose) std::cout << "hashabc : " << tcoeff_hash_abc << "   ->  " << tcoeff_start_abc << "         hashdef : " << tcoeff_hash_def << "    ->  " << tcoeff_start_def << std::endl;
 
                     size_t offset_abc = (Lcm-Ecm%2)/2 * (2*dimNAS_abc_T1 + dimNAS_abc_T3) + (twoT/2) * 2 * dimNAS_abc_T1;
                     size_t offset_def = (Lcm-Ecm%2)/2 * (2*dimNAS_def_T1 + dimNAS_def_T3) + (twoT/2) * 2 * dimNAS_def_T1;
@@ -1445,6 +1482,8 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 
 
 
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 // FOR REFERENCE, HERE's WHAT THE HF CODE IS DOING
 // WE WANT TO PROVIDE THE MATRIX V3NO FOR A SINGLE 2-BODY CHANNEL
@@ -1513,8 +1552,10 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
 
   double t_internal = omp_get_wtime();
 
-  std::unordered_map<std::string,arma::mat> TcoeffTable;
-  std::unordered_map<std::string,bool> TcoeffSkip;
+  std::unordered_map<std::array<unsigned short,7>,arma::mat,array7_hash> TcoeffTable;
+  std::unordered_map<std::array<unsigned short,7>,bool,array7_hash> TcoeffSkip;
+//  std::unordered_map<std::string,arma::mat> TcoeffTable;
+//  std::unordered_map<std::string,bool> TcoeffSkip;
 
   // We twice pass through the list of T coefficients that we'll need for this calculation
   // On the first pass, which is single-threaded, we allocate the structure
@@ -1561,13 +1602,16 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
                int rows = 2-(twoT/2); // T=1/2 -> Tab=0,1   T=3/2 -> Tab=1.
                auto& jacobi_indices = NAS_jacobi_states.at(hashTJN);
 //               for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
-               for (int Lcm=std::max(Ecm%2,std::abs(twoJ-twoJ12)/2); Lcm<=std::min(Ecm,(twoJ+twoJ12)/2); Lcm+=2)
+//               for (int Lcm=std::max(Ecm%2,std::abs(twoJ-twoJ12)/2); Lcm<=std::min(Ecm,(twoJ+twoJ12)/2); Lcm+=2)
+               for (int Lcm=Ecm%2; Lcm<=std::min(Ecm,(twoJ+twoJ12)/2); Lcm+=2)
                {
 //                 if ( std::abs(twoJ-twoJ12)>2*Lcm or (twoJ+twoJ12)<2*Lcm) continue;
+                 if ( std::abs(twoJ-twoJ12)>2*Lcm ) continue;
                  int Ncm=(Ecm-Lcm)/2;
-                 std::ostringstream oss;
-                 oss << ibra << " " << c << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
-                 std::string tcoeff_hash = oss.str();
+//                 std::ostringstream oss;
+//                 oss << ibra << " " << c << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
+//                 std::string tcoeff_hash = oss.str();
+                 std::array<unsigned short,7> tcoeff_hash = {ibra,c,twoJ,Ecm,twoJ12,twoT,Lcm};
 
                  if (loop_pass==0) // first pass, not parallel, just make space
                  {
@@ -1599,11 +1643,16 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
   IMSRGProfiler::timer[std::string(__func__)+"_computeT"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
-//  #pragma omp parallel for schedule(dynamic,1)
+
+  long int mat_mult_AS = 0;
+  double LcmLoopTime = 0;
+  double J12LoopTime = 0;
+
+  #pragma omp parallel for schedule(dynamic,1) reduction(+:mat_mult_AS,LcmLoopTime,J12LoopTime)
   for (int ibra=0; ibra<nkets; ibra++)
   {
     Ket& bra = tbc.GetKet(ibra);
-//    if(ch==1) std::cout << "ibra = " << ibra << "  pq = " << bra.p << " " << bra.q << std::endl;
+//    if(ch==12) std::cout << "ibra = " << ibra << "  pq = " << bra.p << " " << bra.q << std::endl;
     int a = bra.p;
     int b = bra.q;
     Orbit& oa = hf.modelspace->GetOrbit(a);
@@ -1614,7 +1663,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
     for (int iket=0; iket<=ibra; iket++ )
     {
       Ket& ket = tbc.GetKet(iket);
-//      if(ch==1)std::cout << " iket = " << iket << std::endl;
+//      if(ch==12)std::cout << " iket = " << iket << std::endl;
       int d = ket.p;
       int e = ket.q;
       Orbit& od = hf.modelspace->GetOrbit(d);
@@ -1625,7 +1674,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
 //     for (auto c : hf.modelspace->holes )
      for (auto c : occupied_orbits )
      {
-//      std::cout << "  c = " << c << std::endl;
+//      if (ch==12) std::cout << "  c = " << c << std::endl;
       Orbit& oc = hf.modelspace->GetOrbit(c);
       int twoJ_min = std::abs( 2*Jab - oc.j2 );
       int twoJ_max = (2*Jab+oc.j2);
@@ -1636,7 +1685,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
       int Eabc = 2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l;
       if (Eabc>E3max) continue;
 
-//     if (ch==1)
+//     if (ch==12)
 //     {
 //       std::cout << " Looping over f states :  ";
 //       for (auto h : hf.modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) ) std::cout << h << " ";
@@ -1645,7 +1694,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
        for (auto f : hf.modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
        {
 //         std::cout << "   f = " << f << std::endl;
-//         if (ch==1) std::cout << " Jab, bra,ket  abcdef  " << Jab << " " << ibra << " " << iket << "  " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
+//         if (ch==12 and ibra==0 and iket==0) std::cout << " Jab, bra,ket  abcdef  " << Jab << " " << ibra << " " << iket << "  " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
          if ( std::abs( hf.rho(c,f)) <1e-8) continue;
          Orbit& of = hf.modelspace->GetOrbit(f);
          if ( 2*(od.n+of.n)+od.l+of.l > E2max  ) continue;
@@ -1656,17 +1705,10 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
          double v_no2b_cf = 0;
 
          // Inner loops over jacobi stuff
-         for (int Ecm=0; Ecm<=std::min(Eabc,Edef); Ecm++)
-         {
-           int E12abc = Eabc - Ecm;
-           int E12def = Edef - Ecm;
-           if (E12abc>Nmax or E12def>Nmax) continue;
-           int parity = E12abc%2;
-           for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
-           {
-            double vsum_J = 0;
-            int twoJ12_min = std::max( 1, (twoJ - 2*Ecm) ); // maybe take a second look at these limits...
-            int twoJ12_max = std::min( twoJmax, twoJ +2*Ecm);
+
+//           for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+//           {
+//            double vsum_J = 0;
             for ( int twoT=twoT_min; twoT<=3; twoT+=2)
             {
                 int rows = 2-(twoT/2); // T=1/2 -> Tab=0,1   T=3/2 -> Tab=1.
@@ -1674,12 +1716,28 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
                 arma::mat isospin_mat_abc( rows, rows, arma::fill::eye );
                 arma::mat isospin_mat_def( rows, rows, arma::fill::eye );
 
+         for (int Ecm=0; Ecm<=std::min(Eabc,Edef); Ecm++)
+         {
+           int E12abc = Eabc - Ecm;
+           int E12def = Edef - Ecm;
+           if (E12abc>Nmax or E12def>Nmax) continue;
+           int parity = E12abc%2;
+
+//            int twoJ12_min = std::max( 1, (twoJ - 2*Ecm) ); // maybe take a second look at these limits...
+            int twoJ12_min = std::max( 1, (twoJ_min - 2*Ecm) ); // maybe take a second look at these limits...
+            int twoJ12_max = std::min( twoJmax, twoJ_max +2*Ecm);
+//            if ( ch==12 and ibra==0 and iket==0 and twoJ==3 and twoT==1 and c==1 and f==1)
+//            {
+//             std::cout << "Ecm = " << Ecm << "   twoJ12_min/max = " << twoJ12_min << " " << twoJ12_max << std::endl;
+//            }
+
                 for (int Tab=twoT/2; Tab<=1; Tab++)
                 {   // because c and f are in the same one-body channel,  Tzab = Tzde, although Tab need not be Tde, and tza need not be tzd, etc.
                   isospin_mat_abc(Tab-twoT/2,Tab-twoT/2) = AngMom::CG(0.5,0.5*oa.tz2,0.5,0.5*ob.tz2, Tab, Tzab) * AngMom::CG(Tab,Tzab,0.5,0.5*oc.tz2, 0.5*twoT, 0.5*twoTz) ;
                   isospin_mat_def(Tab-twoT/2,Tab-twoT/2) = AngMom::CG(0.5,0.5*od.tz2,0.5,0.5*oe.tz2, Tab, Tzab) * AngMom::CG(Tab,Tzab,0.5,0.5*oc.tz2, 0.5*twoT, 0.5*twoTz) ;
                 }
 
+              double t_J12_loop = omp_get_wtime();;
               for (int twoJ12=twoJ12_min; twoJ12<=twoJ12_max; twoJ12+=2)
               {
                 
@@ -1706,54 +1764,85 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
     
                 arma::mat matelAS( &meAS[startlocAS], dimAS_abc, dimAS_def, false ); 
                 
-                arma::mat cfp_abc( &(cfpvec[cfp_begin_abc]), dimNAS_abc, dimAS_abc, /*copy_aux_mem*/ false);
-                arma::mat cfp_def( &(cfpvec[cfp_begin_def]), dimNAS_def, dimAS_def, /*copy_aux_mem*/ false);
+                arma::mat cfp_abc( &(cfpvec[cfp_begin_abc]), dimNAS_abc, dimAS_abc,  false);
+                arma::mat cfp_def( &(cfpvec[cfp_begin_def]), dimNAS_def, dimAS_def,  false);
     
+                mat_mult_AS++;
                 arma::mat matelNAS = 6 * cfp_abc * matelAS * cfp_def.t(); // Compute the non-antisymmetrized matrix elements 
- 
 
- 
-                for (int Lcm=std::max(Ecm%2,std::abs(twoJ-twoJ12)/2); Lcm<=std::min(Ecm,(twoJ+twoJ12)/2); Lcm+=2)
+
+//            if ( ch==12 and ibra==0 and iket==0 and twoJ==3 and twoT==1 and c==1 and f==1)
+//            {
+//              std::cout << "Lcm will run from " << std::max(Ecm%2,std::abs(twoJ-twoJ12)/2) << "  to " << std::min(Ecm,(twoJ+twoJ12)/2) << "  in steps of 2" << std::endl;
+//            }
+//
+           for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+           {
+            double vsum_J = 0;
+
+                double t_LCM_loop = omp_get_wtime(); 
+//                for (int Lcm=std::max(Ecm%2,std::abs(twoJ-twoJ12)/2); Lcm<=std::min(Ecm,(twoJ+twoJ12)/2); Lcm+=2)
+                for (int Lcm=Ecm%2; Lcm<=std::min(Ecm,(twoJ+twoJ12)/2); Lcm+=2)
                 {
+                  if (2*Lcm < std::abs(twoJ-twoJ12)) continue;
+//                  if (ch==6) std::cout << "Ecm = " << Ecm << "  Lcm  = " << Lcm << "  J,J12 " << twoJ << " " << twoJ12 << "   dimAS,dimNAS " << dimAS_abc << " " << dimAS_def << ", " << dimNAS_abc << " " << dimNAS_def << std::endl;
                   int Ncm=(Ecm-Lcm)/2;
                   int rows = 2-(twoT/2); // T=1/2 -> Tab=0,1   T=3/2 -> Tab=1.
 //                  arma::mat Tabc( dimNAS_abc, rows, arma::fill::zeros ); 
 //                  arma::mat Tdef( dimNAS_def, rows, arma::fill::zeros );
 
-                  std::ostringstream oss_abc, oss_def;
-                  oss_abc << ibra << " " << c << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
-                  oss_def << iket << " " << f << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
-                  std::string t_hash_abc = oss_abc.str();
-                  std::string t_hash_def = oss_def.str();
-                  if (  TcoeffSkip[t_hash_abc] or TcoeffSkip[t_hash_def]) continue;  // it's not clear that this will help much
+//                  std::ostringstream oss_abc, oss_def;
+//                  oss_abc << ibra << " " << c << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
+//                  oss_def << iket << " " << f << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
+//                  std::string t_hash_abc = oss_abc.str();
+//                  std::string t_hash_def = oss_def.str();
+                  std::array<unsigned short,7> t_hash_abc = {ibra,c,twoJ,Ecm,twoJ12,twoT,Lcm};
+                  std::array<unsigned short,7> t_hash_def = {iket,f,twoJ,Ecm,twoJ12,twoT,Lcm};
+                  if (  TcoeffSkip[t_hash_abc] or TcoeffSkip[t_hash_def]) continue;  // looks like this maybe helps a little
 
                   arma::mat& Tabc = TcoeffTable[ t_hash_abc ];
                   arma::mat& Tdef = TcoeffTable[ t_hash_def ];
 
+//                  if (ch==6) std::cout << "t_hash_abc = " << t_hash_abc << "    ,  t_hash_def = " << t_hash_def << std::endl;
+//                  if (ch==6) std::cout << "About to multiply. dim Tabc " << Tabc.n_rows << "x" << Tabc.n_cols << "   Tdef " << Tdef.n_rows << "x" << Tdef.n_cols << std::endl;
                   
                   arma::mat result =  isospin_mat_abc * Tabc.t() * matelNAS * Tdef * isospin_mat_def  ;
-//                  if(ch==1) std::cout << "J,Ecm,T,Lcm = " << twoJ << " " << Ecm << " " << twoT << " " << Lcm << "     matrices: "
-//                                      << std::endl << Tabc.t() << std::endl << matelNAS << std::endl << Tdef << std::endl << result << std::endl << " isospin mats" << std::endl << isospin_mat_abc << std::endl << isospin_mat_def <<std::endl << std::endl;
+//                  if (ch==6) std::cout << "Im ok. result = " << result[0] << std::endl;
+
+                  vsum_J += arma::accu( result ) ;
+
+//                  if(ch==12 and ibra==0 and iket==0 and twoJ==3 and twoT==1 and c==1 and f==1) std::cout << "J,J12,Ecm,E12abc,E12def,T,Lcm = " << twoJ << " " << twoJ12  << " " << Ecm << " " << E12abc << " " << E12def << " " << twoT << " " << Lcm 
+//                                     << "     matrices: "
+//                                      << std::endl << Tabc.t() << std::endl << matelNAS << std::endl << Tdef << std::endl << result << std::endl
+//                                      << " isospin mats" << std::endl << isospin_mat_abc << std::endl << isospin_mat_def <<std::endl
+//                                      << " mNAS * Tdef " << std::endl << matelNAS * Tdef << std::endl
+//                                      << " result : " << std::endl << result << std::endl << "  vsum_J = " << vsum_J << std::endl << std::endl;
                   
 //                  std::cout << "     bra,ket: " << t_hash_abc << " | " << t_hash_def << "   :  " << arma::accu( result ) << std::endl;
 //                  if (  arma::norm( result, "fro") < 1e-7 )
 //                  {
 //                     std::cout << Tabc << std::endl << Tdef << std::endl;
 //                  }
-                  vsum_J += arma::accu( result ) ;
 
                 } // for Lcm
+                LcmLoopTime += omp_get_wtime() - t_LCM_loop;
 
-              } // for twoJ12
-             } // for twoT
-            
             v_no2b_cf +=  vsum_J * (twoJ+1);
            } // for twoJ
+              } // for twoJ12
+              J12LoopTime += omp_get_wtime() - t_J12_loop;
           } // for Ecm
-//          if(ch==1) std::cout << "  v_no2b_cd +=" << vsum_J  << " * " << twoJ+1 << "  -> " << v_no2b_cf << std::endl;
+//            if(ch==12 and ibra==0 and iket==0 and twoJ==3 and twoT==1) std::cout << "  intermediate +=" << vsum_J  
+//                                              << "  ibra,iket,twoJ,twoT,c,f = " << ibra << " " << iket << " "  << twoJ << " " << twoT << " " << c << " " << f  << std::endl;
+             } // for twoT
+            
+//            v_no2b_cf +=  vsum_J * (twoJ+1);
+//            if(ch==12 and ibra==0 and iket==0) std::cout << "  v_no2b_cf +=" << vsum_J  << " * " << twoJ+1 << "  -> " << v_no2b_cf
+//                                              << "  ibra,iket,twoJ,c,f = " << ibra << " " << iket << " "  << twoJ << " " << c << " " << f  << std::endl;
+//           } // for twoJ
 //         V3NO(ibra,iket) += v_no2b_cf * hf.rho(c,f); 
          V3NO(ibra,iket) += v_no2b_cf * hf.rho(c,f); 
-//         if(ch==1) std::cout << "   V3NO += " << v_no2b_cf << " * " << hf.rho(c,f) << "  ->  " << V3NO(ibra,iket) << std::endl;
+//         if(ch==12 and ibra==0 and iket==0) std::cout << "   V3NO += v_no2b_cf (" << v_no2b_cf << ") * rho (" << hf.rho(c,f) << ")  -> V3NO " << V3NO(ibra,iket) << std::endl;
        } // for f
      } // for c
      if (bra.p==bra.q) V3NO(ibra,iket) /= SQRT2;
@@ -1761,12 +1850,19 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
      V3NO(iket,ibra) = V3NO(ibra,iket);
     } // for iket
   } // for ibra
+
+
+
+
   V3NO /= 2*Jab+1;
-  std::cout << "Done with NO2B loop" << std::endl;
+//  std::cout << "Done with NO2B loop" << std::endl;
 
 
   IMSRGProfiler::timer[std::string(__func__)+"_computeNO2B"] += omp_get_wtime() - t_internal;
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+  IMSRGProfiler::counter[std::string(__func__)+"matmultAS"] += mat_mult_AS;
+  IMSRGProfiler::timer[std::string(__func__)+"LcmLoop"] += LcmLoopTime;
+  IMSRGProfiler::timer[std::string(__func__)+"J12Loop"] += J12LoopTime;
 }
 
 
