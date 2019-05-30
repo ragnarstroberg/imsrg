@@ -1453,6 +1453,20 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 }
 
 
+// This is for hashing 6 numbers into an unordered_map
+struct array7_hash {
+ size_t operator() (const std::array<unsigned short,7>& key) const
+ {
+   return  ( ((unsigned long) key[0])       )
+          +( ((unsigned long) key[1]) <<  8 )
+          +( ((unsigned long) key[2]) << 16 )
+          +( ((unsigned long) key[3]) << 24 )
+          +( ((unsigned long) key[4]) << 32 )
+          +( ((unsigned long) key[5]) << 40 )
+          +( ((unsigned long) key[5]) << 48 );
+ }
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // FOR REFERENCE, HERE's WHAT THE HF CODE IS DOING
@@ -1522,8 +1536,10 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
 
   double t_internal = omp_get_wtime();
 
-  std::unordered_map<std::string,arma::mat> TcoeffTable;
-  std::unordered_map<std::string,bool> TcoeffSkip;
+  std::unordered_map<std::array<unsigned short,7>,arma::mat,array7_hash> TcoeffTable;
+  std::unordered_map<std::array<unsigned short,7>,bool,array7_hash> TcoeffSkip;
+//  std::unordered_map<std::string,arma::mat> TcoeffTable;
+//  std::unordered_map<std::string,bool> TcoeffSkip;
 
   // We twice pass through the list of T coefficients that we'll need for this calculation
   // On the first pass, which is single-threaded, we allocate the structure
@@ -1576,9 +1592,10 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
 //                 if ( std::abs(twoJ-twoJ12)>2*Lcm or (twoJ+twoJ12)<2*Lcm) continue;
                  if ( std::abs(twoJ-twoJ12)>2*Lcm ) continue;
                  int Ncm=(Ecm-Lcm)/2;
-                 std::ostringstream oss;
-                 oss << ibra << " " << c << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
-                 std::string tcoeff_hash = oss.str();
+//                 std::ostringstream oss;
+//                 oss << ibra << " " << c << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
+//                 std::string tcoeff_hash = oss.str();
+                 std::array<unsigned short,7> tcoeff_hash = {ibra,c,twoJ,Ecm,twoJ12,twoT,Lcm};
 
                  if (loop_pass==0) // first pass, not parallel, just make space
                  {
@@ -1758,11 +1775,13 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
 //                  arma::mat Tabc( dimNAS_abc, rows, arma::fill::zeros ); 
 //                  arma::mat Tdef( dimNAS_def, rows, arma::fill::zeros );
 
-                  std::ostringstream oss_abc, oss_def;
-                  oss_abc << ibra << " " << c << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
-                  oss_def << iket << " " << f << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
-                  std::string t_hash_abc = oss_abc.str();
-                  std::string t_hash_def = oss_def.str();
+//                  std::ostringstream oss_abc, oss_def;
+//                  oss_abc << ibra << " " << c << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
+//                  oss_def << iket << " " << f << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
+//                  std::string t_hash_abc = oss_abc.str();
+//                  std::string t_hash_def = oss_def.str();
+                  std::array<unsigned short,7> t_hash_abc = {ibra,c,twoJ,Ecm,twoJ12,twoT,Lcm};
+                  std::array<unsigned short,7> t_hash_def = {iket,f,twoJ,Ecm,twoJ12,twoT,Lcm};
                   if (  TcoeffSkip[t_hash_abc] or TcoeffSkip[t_hash_def]) continue;  // it's not clear that this will help much
 
                   arma::mat& Tabc = TcoeffTable[ t_hash_abc ];
