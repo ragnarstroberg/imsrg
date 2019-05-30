@@ -579,28 +579,56 @@ double Jacobi3BME::GetV3mon( size_t a, size_t b, size_t c, size_t d, size_t e, s
 
 */
 
+
+//struct array7_hash {
+// size_t operator() (const std::array<unsigned short,7>& key) const
+// {
+// This is for hashing 7 numbers into an unordered_map
+size_t Jacobi3BME::array7_hash::operator() (const std::array<unsigned short,7>& key) const
+ {
+   return  ( ((unsigned long) key[0])       )
+          +( ((unsigned long) key[1]) <<  8 )
+          +( ((unsigned long) key[2]) << 16 )
+          +( ((unsigned long) key[3]) << 24 )
+          +( ((unsigned long) key[4]) << 32 )
+          +( ((unsigned long) key[5]) << 40 )
+          +( ((unsigned long) key[5]) << 48 );
+ }
+
+
 // na,nb,and nc all should be <= emax/2, Jab will be <= 2*emax+1, twoJ will be <=6*emax+3, but only odd, Lcm will be <=3*emax, jac2 <= ~Nmax*Nmax,    jac1<= ~Nmax*Nmax*Nmax 
 //  J lies in the range |Jab-jc| <= J <= Jab+jc,  so it has a span of no more than 2*emax+1.
 // na + 10*nb + 100*nc fits in 10 bits (1023).  Jab fits in 6 bits (63).  twoJ/2 fits in 7 bits (127).  Lcm fits in 7 bits (127). jac2 fits in 12 bits (4095). jac1 fits in 18 bits (262143)
 // This totals up to 10+6+7+7+7+12+18 = 67, which is too many.   For now, we will just use a string.
 //uint64_t Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm )
 //std::string Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm )
-std::string Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 )
+std::array<unsigned short,7> Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 )
 {
-  std::ostringstream oss;
-//  oss << na << " " << nb << " " << nc << " " << Jab << " " << twoJ << " " << jac1 << " " << jac2 << " " << twoJ12 << " " << Lcm;
-  oss << na << " " << nb << " " << nc << " " << Jab << " " << twoJ << " " <<  " " << twoJ12 << " " << E12;
-  return oss.str();
+  return {na,nb,nc,Jab,twoJ,twoJ12,E12};
 }
+
+void Jacobi3BME::TcoeffUnHash(std::array<unsigned short,7>& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 )
+{
+  na=key[0]; nb=key[1]; nc=key[2]; Jab=key[3]; twoJ=key[4]; twoJ12=key[5]; E12=key[6];
+}
+
+
+//std::string Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 )
+//{
+//  std::ostringstream oss;
+////  oss << na << " " << nb << " " << nc << " " << Jab << " " << twoJ << " " << jac1 << " " << jac2 << " " << twoJ12 << " " << Lcm;
+//  oss << na << " " << nb << " " << nc << " " << Jab << " " << twoJ << " " <<  " " << twoJ12 << " " << E12;
+//  return oss.str();
+//}
 
 //void Jacobi3BME::TcoeffUnHash(uint64_t key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& jac1, uint64_t& jac2, uint64_t& twoJ12, uint64_t& Lcm )
 //void Jacobi3BME::TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ, int& jac1, int& jac2, int& twoJ12, int& Lcm )
-void Jacobi3BME::TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 )
-{
-  std::istringstream iss(key);
-//  iss >> na >> nb >> nc >> Jab >> twoJ >> jac1 >> jac2 >> twoJ12 >> Lcm;
-  iss >> na >> nb >> nc >> Jab >> twoJ >> twoJ12 >> E12;
-}
+//void Jacobi3BME::TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 )
+//{
+//  std::istringstream iss(key);
+////  iss >> na >> nb >> nc >> Jab >> twoJ >> jac1 >> jac2 >> twoJ12 >> Lcm;
+//  iss >> na >> nb >> nc >> Jab >> twoJ >> twoJ12 >> E12;
+//}
 
 
 
@@ -994,7 +1022,7 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
          size_t start_point = element->second;
          size_t offset = 0;
          if (verbose) std::cout << " ~ na,nb,nc " << na << " " << nb << " " << nc << "     Jab,twoJ,twoJ12: " << Jab << " " << twoJ << " " << twoJ12 << "   E12: " << E12 << std::endl;
-         if (verbose) std::cout << "hash: " << element->first << "  ->  " << element->second << std::endl;
+//         if (verbose) std::cout << "hash: " << element->first << "  ->  " << element->second << std::endl;
  
 
          int Eabc = 2*(na+nb+nc)+la+lb+lc;
@@ -1302,7 +1330,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
                     size_t tcoeff_start_abc = TcoeffLookup[ tcoeff_hash_abc ];
                     size_t tcoeff_start_def = TcoeffLookup[ tcoeff_hash_def ];
 
-                    if (verbose) std::cout << "hashabc : " << tcoeff_hash_abc << "   ->  " << tcoeff_start_abc << "         hashdef : " << tcoeff_hash_def << "    ->  " << tcoeff_start_def << std::endl;
+//                    if (verbose) std::cout << "hashabc : " << tcoeff_hash_abc << "   ->  " << tcoeff_start_abc << "         hashdef : " << tcoeff_hash_def << "    ->  " << tcoeff_start_def << std::endl;
 
                     size_t offset_abc = (Lcm-Ecm%2)/2 * (2*dimNAS_abc_T1 + dimNAS_abc_T3) + (twoT/2) * 2 * dimNAS_abc_T1;
                     size_t offset_def = (Lcm-Ecm%2)/2 * (2*dimNAS_def_T1 + dimNAS_def_T3) + (twoT/2) * 2 * dimNAS_def_T1;
@@ -1453,19 +1481,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 }
 
 
-// This is for hashing 6 numbers into an unordered_map
-struct array7_hash {
- size_t operator() (const std::array<unsigned short,7>& key) const
- {
-   return  ( ((unsigned long) key[0])       )
-          +( ((unsigned long) key[1]) <<  8 )
-          +( ((unsigned long) key[2]) << 16 )
-          +( ((unsigned long) key[3]) << 24 )
-          +( ((unsigned long) key[4]) << 32 )
-          +( ((unsigned long) key[5]) << 40 )
-          +( ((unsigned long) key[5]) << 48 );
- }
-};
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -1782,7 +1798,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
 //                  std::string t_hash_def = oss_def.str();
                   std::array<unsigned short,7> t_hash_abc = {ibra,c,twoJ,Ecm,twoJ12,twoT,Lcm};
                   std::array<unsigned short,7> t_hash_def = {iket,f,twoJ,Ecm,twoJ12,twoT,Lcm};
-                  if (  TcoeffSkip[t_hash_abc] or TcoeffSkip[t_hash_def]) continue;  // it's not clear that this will help much
+                  if (  TcoeffSkip[t_hash_abc] or TcoeffSkip[t_hash_def]) continue;  // looks like this maybe helps a little
 
                   arma::mat& Tabc = TcoeffTable[ t_hash_abc ];
                   arma::mat& Tdef = TcoeffTable[ t_hash_def ];
