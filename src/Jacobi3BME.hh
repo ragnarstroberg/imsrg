@@ -6,6 +6,7 @@
 #include <vector>
 #include <array>
 #include <unordered_set>
+#include <armadillo>
 
 class HartreeFock; // forward declaration
 
@@ -49,10 +50,15 @@ class Jacobi3BME
   std::vector<double> cfpvec;      // the cfp's (coefficients of fractional parentage), i.e. the overlaps of the AS and NAS basis states
   std::vector<size_t> cfp_start_loc;  // starting element for a given T,J,p
 
+  struct array5_hash {size_t operator() (const std::array<unsigned short,5>& key) const; }; 
   struct array7_hash {size_t operator() (const std::array<unsigned short,7>& key) const; }; 
+  struct array8_hash {size_t operator() (const std::array<unsigned short,8>& key) const; }; 
   std::vector<double> TcoeffList;
 //  std::unordered_map<std::string,size_t> TcoeffLookup;
-  std::unordered_map<std::array<unsigned short,7>,size_t,array7_hash> TcoeffLookup;
+//  std::unordered_map<std::array<unsigned short,7>,size_t,array7_hash> TcoeffLookup;
+//  std::unordered_map<std::array<unsigned short,8>,size_t,array8_hash> TcoeffLookup;
+//  std::unordered_map<std::array<unsigned short,5>,size_t,array5_hash> TcoeffLookup;
+  std::unordered_map<std::array<unsigned short,5>,arma::mat,array5_hash> TcoeffLookup;
 
   std::unordered_map<uint64_t,double> SixJList;
   std::unordered_map<uint64_t,double> Moshinsky1List;
@@ -99,8 +105,10 @@ class Jacobi3BME
 
 //  std::string TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 );
 //  void TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 );
-  std::array<unsigned short,7> TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 );
-  void TcoeffUnHash(std::array<unsigned short,7>& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 );
+//  std::array<unsigned short,7> TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc,  uint64_t twoJ,  uint64_t twoJ12, uint64_t E12, uint64_t Lcm );
+  std::array<unsigned short,8> TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc,  uint64_t twoJ,  uint64_t twoJ12, uint64_t twoT, uint64_t E12, uint64_t Lcm );
+  void TcoeffUnHash(std::array<unsigned short,8>& key, int& na, int& nb, int& nc,  int& twoJ,  int& twoJ12, int& twoT, int& E12, int& Lcm );
+//  void TcoeffUnHash(std::array<unsigned short,7>& key, int& na, int& nb, int& nc,  int& twoJ,  int& twoJ12, int& E12, int& Lcm );
 //  std::string TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm );
 //  void TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ, int& jac1, int& jac2, int& twoJ12, int& Lcm );
 //  void TcoeffUnHash(std::string& key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& jac1, uint64_t& jac2, uint64_t& twoJ12, uint64_t& Lcm );
@@ -119,7 +127,9 @@ class Jacobi3BME
 //  void GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf, std::vector<std::unordered_set<size_t>>& indices ); // helper function to clean things up a bit
   void GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf, std::vector<std::vector<size_t>>& indices ); // helper function to clean things up a bit
 //  void GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf,   std::unordered_map<std::string,double>& T3bList); // another helper function  
-  void GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf); // another helper function  
+//  void GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf); // another helper function  
+//  void GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, int j2c, std::vector<std::array<unsigned short, 7>>& lab_kets); // another helper function  
+  void GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, int j2c, std::vector<std::vector<std::array<unsigned short, 7>>>& lab_kets); // another helper function  
 
 //  double ComputeTcoeff( HartreeFock& hf, int na, int la, int j2a, int nb, int lb, int j2b, int nc, int lc, int j2c, int Jab, int twoJ, int N1, int L1, int S1, int J1, int N2, int L2, int twoJ2, int twoJ12, int Ncm, int Lcm);
   double ComputeTcoeff( int na, int la, int j2a, int nb, int lb, int j2b, int nc, int lc, int j2c, int Jab, int twoJ, int N1, int L1, int S1, int J1, int N2, int L2, int twoJ2, int twoJ12, int Ncm, int Lcm);
