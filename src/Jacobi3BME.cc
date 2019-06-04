@@ -1371,14 +1371,15 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         t_internal = omp_get_wtime();
         if (verbose) std::cout << "created and filled lab_ket_lookup and lab_kets  size =" << lab_kets.size() << std::endl;
 
+        #pragma omp paralell for schedule(dyanamic,1) collapse(3)
         for (int Ecm=0; Ecm<=E3max; Ecm++ )
         {
-         for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
-         {
           for (int twoT=1; twoT<=3; twoT+=2)
           {
            for (int twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
            {
+         for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
+         {
             if ( (j2a+j2b+j2c+2*Lcm) < twoJ12 ) continue;
             for (int E12abc=0; E12abc<=std::min(Nmax,E3max-Ecm); E12abc++)
             {
