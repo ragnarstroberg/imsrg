@@ -1371,7 +1371,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         t_internal = omp_get_wtime();
         if (verbose) std::cout << "created and filled lab_ket_lookup and lab_kets  size =" << lab_kets.size() << std::endl;
 
-        #pragma omp paralell for schedule(dyanamic,1) collapse(3)
+        #pragma omp parallel for schedule(dynamic,1) collapse(3)
         for (int Ecm=0; Ecm<=E3max; Ecm++ )
         {
          for (int twoT=1; twoT<=3; twoT+=2)
@@ -1401,6 +1401,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
                 std::cout << "E12abc,twoT,twoJ12,Ecm,Lcm " << E12abc << " " << twoT << " " << twoJ12 << " " << Ecm << " " << Lcm << "  lookup Tabc " << std::endl << TcoeffLookup[ {E12abc,twoT,twoJ12,Ecm,Lcm} ] << std::endl << "cfp_abc:" << std::endl << cfp_abc << std::endl << std::endl;
               }
               arma::mat Tabc = 6 * TcoeffLookup[ {E12abc,twoT,twoJ12,Ecm,Lcm} ] * cfp_abc ;
+              if (arma::norm(Tabc,"fro")<1e-8) continue;
 //              if (verbose)
 //              {
 //                std::cout << "( " << la << " " << j2a << ", " << lb << " " << j2b << ", " << lc << " " << j2c << " ) Lab states abc:  "; 
