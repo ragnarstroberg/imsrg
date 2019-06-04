@@ -1371,6 +1371,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         t_internal = omp_get_wtime();
         if (verbose) std::cout << "created and filled lab_ket_lookup and lab_kets  size =" << lab_kets.size() << std::endl;
 
+        #pragma omp parallel for schedule(dynamic,1)
         for (int Ecm=0; Ecm<=E3max; Ecm++ )
         {
          for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
@@ -1438,7 +1439,9 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 //              Tabc = Tabc.t() * 6 * cfp_abc;
 //              std::cout << "done multiplying Tabc with cfp_abc" << std::endl;
 
-              for (int E12def=parity; E12def<=std::min(Nmax,E3max-Ecm); E12def+=2)
+              // TODO: Probably only need to to half of this because of Hermiticity
+//              for (int E12def=parity; E12def<=std::min(Nmax,E3max-Ecm); E12def+=2)
+              for (int E12def=E12abc; E12def<=std::min(Nmax,E3max-Ecm); E12def+=2)
               {
                 if ( (E12def + Ecm + la+lb+lc)%2>0) continue;
                 auto hashTJN_def = HashTJN(twoT,twoJ12,E12def);
@@ -1499,6 +1502,16 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
          } // for Lcm
         } // for Ecm
 //        std::cout << "out of Ecm loop" << std::endl;
+
+        for (int Eabc=0;Eabc<=E3max;Eabc++)
+        {
+         for (int Edef=0; Edef<Eabc; Edef++)
+         {
+//           std::cout << "Eabc,Edef " << Eabc << " " << Edef << std::endl;
+//           std::cout << lab_mats(Eabc,Edef) << std::endl << std::endl << lab_mats(Edef,Eabc) << std::endl;
+           lab_mats(Eabc,Edef) = lab_mats(Edef,Eabc).t() ;
+         }
+        }
 
         IMSRGProfiler::timer[std::string(__func__)+"matmult_loop"] += omp_get_wtime() - t_internal;
         t_internal = omp_get_wtime();
