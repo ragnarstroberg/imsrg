@@ -1371,7 +1371,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         t_internal = omp_get_wtime();
         if (verbose) std::cout << "created and filled lab_ket_lookup and lab_kets  size =" << lab_kets.size() << std::endl;
 
-        #pragma omp parallel for schedule(dynamic,1)
+        #pragma omp parallel for schedule(dynamic,1) // oops, not thread safe
         for (int Ecm=0; Ecm<=E3max; Ecm++ )
         {
          for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
@@ -1482,8 +1482,12 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 
                 size_t startlocAS = GetStartLocAS( twoT, twoJ12, E12abc, E12def);
                 arma::mat matelAS( &meAS[startlocAS], dimAS_abc, dimAS_def, false ); 
-//                lab_mat += Tabc * matelAS * cfp_def.t() * Tdef.t(); // TODO this appears to be the slow bit. I'm probably multiplying lots of zeros...
-                lab_mats(Eabc,Edef) += Tabc * matelAS * cfp_def.t() * Tdef.t(); // TODO this appears to be the slow bit. I'm probably multiplying lots of zeros...
+//                lab_mats(Eabc,Edef) += Tabc * matelAS * cfp_def.t() * Tdef.t(); // TODO this appears to be the slow bit. I'm probably multiplying lots of zeros...
+                arma::mat local_copy = Tabc * matelAS * cfp_def.t() * Tdef.t(); // TODO this appears to be the slow bit. I'm probably multiplying lots of zeros...
+                #pragma omp critical
+                {
+                lab_mats(Eabc,Edef) += local_copy; // TODO this appears to be the slow bit. I'm probably multiplying lots of zeros...
+                }
 
                 if (verbose )
                 {
