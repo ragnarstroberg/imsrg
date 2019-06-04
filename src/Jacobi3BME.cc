@@ -1374,12 +1374,12 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         #pragma omp paralell for schedule(dyanamic,1) collapse(3)
         for (int Ecm=0; Ecm<=E3max; Ecm++ )
         {
-          for (int twoT=1; twoT<=3; twoT+=2)
-          {
-           for (int twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
-           {
-         for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
+         for (int twoT=1; twoT<=3; twoT+=2)
          {
+          for (int twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
+          {
+           for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
+           {
             if ( (j2a+j2b+j2c+2*Lcm) < twoJ12 ) continue;
             for (int E12abc=0; E12abc<=std::min(Nmax,E3max-Ecm); E12abc++)
             {
@@ -1439,7 +1439,9 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 //              Tabc = Tabc.t() * 6 * cfp_abc;
 //              std::cout << "done multiplying Tabc with cfp_abc" << std::endl;
 
-              for (int E12def=parity; E12def<=std::min(Nmax,E3max-Ecm); E12def+=2)
+              // TODO: Probably only need to to half of this because of Hermiticity
+//              for (int E12def=parity; E12def<=std::min(Nmax,E3max-Ecm); E12def+=2)
+              for (int E12def=E12abc; E12def<=std::min(Nmax,E3max-Ecm); E12def+=2)
               {
                 if ( (E12def + Ecm + la+lb+lc)%2>0) continue;
                 auto hashTJN_def = HashTJN(twoT,twoJ12,E12def);
@@ -1480,8 +1482,12 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 
                 size_t startlocAS = GetStartLocAS( twoT, twoJ12, E12abc, E12def);
                 arma::mat matelAS( &meAS[startlocAS], dimAS_abc, dimAS_def, false ); 
-//                lab_mat += Tabc * matelAS * cfp_def.t() * Tdef.t(); // TODO this appears to be the slow bit. I'm probably multiplying lots of zeros...
-                lab_mats(Eabc,Edef) += Tabc * matelAS * cfp_def.t() * Tdef.t(); // TODO this appears to be the slow bit. I'm probably multiplying lots of zeros...
+//                lab_mats(Eabc,Edef) += Tabc * matelAS * cfp_def.t() * Tdef.t(); // TODO this appears to be the slow bit. I'm probably multiplying lots of zeros...
+                arma::mat local_copy = Tabc * matelAS * cfp_def.t() * Tdef.t(); // TODO this appears to be the slow bit. I'm probably multiplying lots of zeros...
+                #pragma omp critical
+                {
+                  lab_mats(Eabc,Edef) += local_copy; // the add bit should be fast, so hopefully the blocking isn't too bad
+                }
 
                 if (verbose )
                 {
@@ -1495,11 +1501,20 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 
               } // for E12def
             } // for E12abc
-           } // for twoJ12
-          } // for twoT
-         } // for Lcm
+           } // for Lcm
+          } // for twoJ12
+         } // for twoT
         } // for Ecm
 //        std::cout << "out of Ecm loop" << std::endl;
+
+        // now fill out the lower-diagonal blocks of the matrix (or "field" of matrices)
+        for (int Eabc=0;Eabc<=E3max;Eabc++)
+        {
+         for (int Edef=0; Edef<Eabc; Edef++)
+         {
+           lab_mats(Eabc,Edef) = lab_mats(Edef,Eabc).t() ;
+         }
+        }
 
         IMSRGProfiler::timer[std::string(__func__)+"matmult_loop"] += omp_get_wtime() - t_internal;
         t_internal = omp_get_wtime();
