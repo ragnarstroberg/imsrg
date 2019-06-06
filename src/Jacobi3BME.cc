@@ -2756,12 +2756,16 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
       if (std::abs(ninejab)<1e-8) continue; 
 
       // Moshinsky's are expensive, so let's do them in the outer loop (maybe even more outer than this??)
-      int curlyL_min =  std::abs(L1-Lab) ;
-      int curlyL_max =  L1+Lab ;
+      int curlyL_min =  std::max( std::abs(L1-Lab), std::abs(Jab-J1) ) ;
+      int curlyL_max =  std::min( L1+Lab,  Jab+J1) ;
+//      int curlyL_min =  std::abs(L1-Lab) ;
+//      int curlyL_max =  L1+Lab ;
       if ( (curlyL_min + L1 + la + lb)%2>0 ) curlyL_min++; // parity for the first Moshinsky bracket
       if ( (curlyL_min + lc + Lcm + L2)%2>0 ) continue; // parity for the second Moshinsky bracket
       for (int curlyL=curlyL_min; curlyL<=curlyL_max; curlyL+=2)
       {
+//          if ( std::abs(curlyL-J1)>Jab   ) continue;
+//          if ( (curlyL+J1)<Jab  ) continue;
         int curlyN = na+nb-N1  +(la+lb-L1-curlyL)/2;
         if (curlyN<0) continue;
         if ( 2*curlyN+curlyL +2*nc+lc != 2*Ncm+Lcm + 2*N2+L2) continue; // energy conservation in second Moshinsky bracket
@@ -2782,8 +2786,8 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
           if (std::abs(mosh2)<1e-9) continue;
 
           // first, check some triangle conditions that will kill the 12j. TODO These should really be incorporated in the summation ranges...
-          if ( std::abs(curlyL-J1)>Jab  or std::abs(Lambda-curlyL)>lc or std::abs(Lcm-Lambda)>L2 ) continue;
-          if ( (curlyL+J1)<Jab or (Lambda+curlyL)<lc or (Lcm+Lambda)<L2 ) continue;
+//          if ( std::abs(curlyL-J1)>Jab  or std::abs(Lambda-curlyL)>lc or std::abs(Lcm-Lambda)>L2 ) continue;
+//          if ( (curlyL+J1)<Jab or (Lambda+curlyL)<lc or (Lcm+Lambda)<L2 ) continue;
           double sum_L = 0;
 
 //   Maybe try inserting the 12j stuff here instead of doin the loops
@@ -2794,19 +2798,15 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
           // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) { J      jc  Jab } { jc      sc   lc } { sc    J2   L2 } { J2  J1  J12 }
           // { J1  curlyL Lambda   Lcm    }                    {curlyL  J1  x   } { Lambda curlyL x } { Lcm Lambda x  } { J   Lcm  x  }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+          // We rewrite the 6js in a way that better matches what we precompute
           // { J     jc     sc     J2     }
-          // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) {J1 curlyL   Jab } { curlyL Lambda  lc } { Lcm  Lambda  L2 } { Lcm J12 J2 }
-          // { J1  curlyL Lambda   Lcm    }                    {jc J        x   } { sc     jc       x } { sc   J2      x  } { J1  x   J  }
+          // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) {J1 curlyL   Jab } { curlyL Lambda  lc } { Lcm  Lambda  L2 } { Lcm J12 J  }
+          // { J1  curlyL Lambda   Lcm    }                    {jc J        x   } { sc     jc       x } { sc   J2      x  } { J1  x   J2 }
           //
-          // { J2  J1  J12 }  =>  { Lcm  J12  J  }
-          // { J   Lcm  x  }      { J1   x    J2 }
           // 
-    // { Lcm  J12  J2 }
-    // { J1   x    J  }
           double twelvej = 0;
-          int twox_min = std::max( { std::abs(2*curlyL-j2c),  std::abs(twoJ-2*J1), std::abs(2*Lambda-1), std::abs(2*Lcm-twoJ2), std::abs(2*Lcm-twoJ2)   });
-          int twox_max = std::min( { (2*curlyL+j2c),  (twoJ+2*J1), (2*Lambda+1),  (2*Lcm+twoJ2), (twoJ+2*J1)   });
+          int twox_min = std::max( { std::abs(2*curlyL-j2c),  std::abs(twoJ-2*J1), std::abs(2*Lambda-1), std::abs(2*Lcm-twoJ2)   });
+          int twox_max = std::min( { (2*curlyL+j2c),  (twoJ+2*J1), (2*Lambda+1),  (2*Lcm+twoJ2)   });
           //                           sixj1,sixj2    sixj1,sixj4   sixj2,sixj3     sixj3,sixj4            
           for (int twox = twox_min; twox<=twox_max; twox +=2)
           {
