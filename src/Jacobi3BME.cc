@@ -2793,21 +2793,28 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
           // { J     jc     sc     J2     }
           // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) { J      jc  Jab } { jc      sc   lc } { sc    J2   L2 } { J2  J1  J12 }
           // { J1  curlyL Lambda   Lcm    }                    {curlyL  J1  x   } { Lambda curlyL x } { Lcm Lambda x  } { J   Lcm  x  }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+          // { J     jc     sc     J2     }
+          // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) {J1 curlyL   Jab } { curlyL Lambda  lc } { Lcm  Lambda  L2 } { Lcm J12 J2 }
+          // { J1  curlyL Lambda   Lcm    }                    {jc J        x   } { sc     jc       x } { sc   J2      x  } { J1  x   J  }
           //
+          // { J2  J1  J12 }  =>  { Lcm  J12  J  }
+          // { J   Lcm  x  }      { J1   x    J2 }
+          // 
+    // { Lcm  J12  J2 }
+    // { J1   x    J  }
           double twelvej = 0;
           int twox_min = std::max( { std::abs(2*curlyL-j2c),  std::abs(twoJ-2*J1), std::abs(2*Lambda-1), std::abs(2*Lcm-twoJ2), std::abs(2*Lcm-twoJ2)   });
-          int twox_max = std::min( { (2*curlyL+j2c),  std::abs(twoJ+2*J1), std::abs(2*Lambda+1), std::abs(2*Lcm+twoJ2), std::abs(2*Lcm+twoJ2)   });
+          int twox_max = std::min( { (2*curlyL+j2c),  (twoJ+2*J1), (2*Lambda+1),  (2*Lcm+twoJ2), (twoJ+2*J1)   });
+          //                           sixj1,sixj2    sixj1,sixj4   sixj2,sixj3     sixj3,sixj4            
           for (int twox = twox_min; twox<=twox_max; twox +=2)
           {
             twelvej += (twox+1) * AngMom::phase( (twoJ+j2c+1+twoJ2+2*Jab+2*lc+2*L2+twoJ12+2*J1+2*curlyL+2*Lambda+2*Lcm -twox )/2 ) 
-//                                                   * AngMom::SixJ_int( twoJ, j2c, 2*Jab, 2*curlyL, 2*J1,      twox)
-                                                   * GetSixJ( 2*curlyL, 2*J1, 2*Jab, twoJ, j2c,      twox)
-//                                                   * AngMom::SixJ_int( j2c,  1  , 2*lc,  2*Lambda,  2*curlyL, twox)
-                                                   * GetSixJ( 2*Lambda, 2*curlyL  , 2*lc,  j2c,  1, twox)
-//                                                   * AngMom::SixJ_int( 1, twoJ2 , 2*L2,  2*Lcm,     2*Lambda, twox)
+                                                   * GetSixJ( 2*J1, 2*curlyL,  2*Jab, j2c, twoJ,  twox)
+                                                   * GetSixJ( 2*curlyL , 2*Lambda,  2*lc, 1, j2c,  twox)
                                                    * GetSixJ( 2*Lcm, 2*Lambda , 2*L2,  1,     twoJ2, twox)
-                                                   * AngMom::SixJ_int( twoJ2, 2*J1 , twoJ12,  twoJ,    2*Lcm, twox);
-//                                                   * GetSixJ( twoJ2, 2*J1 , twoJ12,  twoJ,    2*Lcm, twox); // This one will miss every time
+                                                   * GetSixJ( 2*Lcm, twoJ12, twoJ,   2*J1, twox,  twoJ2); 
           }
 
           sum_L = AngMom::phase( Lcm + (1-twoJ2)/2 + S1 + curlyL + Jab + lc + Lab + Lambda  )  *  AngMom::SixJ_int( 2*J1,2*curlyL,2*Jab, 2*Lab, 2*S1, 2*L1) * twelvej;
@@ -2981,17 +2988,17 @@ double Jacobi3BME::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
         SixJList[key] = sixj;
       }
     }
-//    else
-//    {
-//      std::cout << "DANGER!!!!!!!  Updating SixJList inside a parellel loop breaks thread safety!" << std::endl;
-//      std::cout << "  I shouldn't be here in GetSixJ("
-//                << std::setprecision(1) << std::fixed << j1 << " " << std::setprecision(1) << std::fixed << j2 << " "
-//                << std::setprecision(1) << std::fixed << j3 << " " << std::setprecision(1) << std::fixed << J1 << " "
-//                << std::setprecision(1) << std::fixed << J2 << " " << std::setprecision(1) << std::fixed << J3 << "). key = "
-//                << std::hex << key << "   sixj = " << std::dec << sixj << std::endl;
+    else
+    {
+      std::cout << "DANGER!!!!!!!  Updating SixJList inside a parellel loop breaks thread safety!" << std::endl;
+      std::cout << "  I shouldn't be here in GetSixJ("
+                << std::setprecision(1) << std::fixed << j1 << " " << std::setprecision(1) << std::fixed << j2 << " "
+                << std::setprecision(1) << std::fixed << j3 << " " << std::setprecision(1) << std::fixed << J1 << " "
+                << std::setprecision(1) << std::fixed << J2 << " " << std::setprecision(1) << std::fixed << J3 << "). key = "
+                << std::hex << key << "   sixj = " << std::dec << sixj << std::endl;
       IMSRGProfiler::counter["N_CalcSixJ_in_Parallel_loop"] +=1;
 //      exit(EXIT_FAILURE);
-//    }
+    }
    }
    return sixj;
 }
@@ -3138,8 +3145,8 @@ double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int two
 
         // replaced by
           // { J     jc     sc     J2     }
-          // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) { J      jc  Jab } { jc      sc   lc } { sc    J2   L2 } { J2  J1  J12 }
-          // { J1  curlyL Lambda   Lcm    }                    {curlyL  J1  x   } { Lambda curlyL x } { Lcm Lambda x  } { J   Lcm  x  }
+          // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) {curlyL J1   Jab } { Lambda curlyL lc } { Lcm  Lambda  L2 } { J2  J1  J12 }
+          // { J1  curlyL Lambda   Lcm    }                    {J      jc   x   } { jc     sc      x } { sc   J2      x  } { J   Lcm  x  }
 //       if ((j1+j2)>2*E3max) continue;
 //       for (int S12=1; S12<=3; S12+=2)
        for (int S12=1; S12<=twoJmax; S12+=2)
@@ -3160,6 +3167,37 @@ double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int two
       } // for j3
      } // for j2
     } // for j1
+
+    // one last form that doesn't fit with the others
+    // { Lcm  J12  J2 }
+    // { J1   x    J  }
+   // { J2  J1  J12 }  =>  { Lcm  J12  J  }
+   // { J   Lcm  x  }      { J1   x    J2 }
+    for (int twoLcm=0; twoLcm<=(6*emax+1); twoLcm+=2)  // 2 * Lcm can go up to 6emax
+    {
+     for (int twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
+     {
+      for (int twoJ=std::abs(twoLcm-twoJ12); twoJ<=(twoLcm+twoJ12); twoJ+=2)
+      {
+        for (int twoJ1=0; twoJ1<=2*(Nmax+1); twoJ1+=2)
+        {
+         for (int twox=std::abs(twoJ-twoJ1); twox<=(twoJ+twoJ1); twox+=2)
+         {
+          for (int twoJ2=std::max( std::abs(twoLcm-twox), std::abs(twoJ1-twoJ12)); twoJ2<=std::max( (twoLcm+twox), (twoJ1+twoJ12) ); twoJ2+=2)
+          {
+           uint64_t key = Jacobi3BME::SixJHash(twoLcm,twoJ12,twoJ,twoJ1,twox,twoJ2);
+           if ( SixJList.count(key) == 0 ) 
+           {
+             KEYS.push_back(key);
+             SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+           }
+           
+          }
+         }
+        }
+      }
+     }
+    }
     
     // now we actually compute them all.
     #pragma omp parallel for schedule(dynamic,1)
