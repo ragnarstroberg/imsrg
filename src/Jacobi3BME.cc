@@ -2781,7 +2781,9 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
 //          double mosh2 = moshphase2 * (2*Lambda+1) * AngMom::Moshinsky(    Ncm,Lcm,     N2,L2,  curlyN,curlyL, nc,lc,  Lambda,  2.0);
           if (std::abs(mosh2)<1e-9) continue;
 
-          // This inner loop is all just summing over sixj's and a ninej, and can probably be re-expressed with some fancy recoupling
+          // first, check some triangle conditions that will kill the 12j. TODO These should really be incorporated in the summation ranges...
+          if ( std::abs(curlyL-J1)>Jab  or std::abs(Lambda-curlyL)>lc or std::abs(Lcm-Lambda)>L2 ) continue;
+          if ( (curlyL+J1)<Jab or (Lambda+curlyL)<lc or (Lcm+Lambda)<L2 ) continue;
           double sum_L = 0;
 
 //   Maybe try inserting the 12j stuff here instead of doin the loops
@@ -2792,68 +2794,72 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
           // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) { J      jc  Jab } { jc      sc   lc } { sc    J2   L2 } { J2  J1  J12 }
           // { J1  curlyL Lambda   Lcm    }                    {curlyL  J1  x   } { Lambda curlyL x } { Lcm Lambda x  } { J   Lcm  x  }
           //
-//          double twelvej = 0;
-//          int twox_min = std::max( { std::abs(2*curlyL-j2c),  std::abs(twoJ-2*J1), std::abs(2*Lambda-1), std::abs(2*Lcm-twoJ2), std::abs(2*Lcm-twoJ2)   });
-//          int twox_max = std::min( { (2*curlyL+j2c),  std::abs(twoJ+2*J1), std::abs(2*Lambda+1), std::abs(2*Lcm+twoJ2), std::abs(2*Lcm+twoJ2)   });
-//          for (int twox = twox_min; twox<=twox_max; twox +=2)
-//          {
-//            twelvej += (twox+1) * AngMom::phase( (twoJ+j2c+1+twoJ2+2*Jab+2*lc+2*L2+twoJ12+2*J1+2*curlyL+2*Lambda+2*Lcm -twox )/2 ) 
-//                                                   * AngMom::SixJ_int( twoJ, j2c, 2*Jab, 2*curlyL, 2*J1,      twox)
-//                                                   * AngMom::SixJ_int( j2c,  1  , 2*lc,  2*Lambda,  2*curlyL, twox)
-//                                                   * AngMom::SixJ_int( 1, twoJ2 , 2*L2,  2*Lcm,     2*Lambda, twox)
-//                                                   * AngMom::SixJ_int( twoJ2, 2*J1 , twoJ12,  twoJ,    2*Lcm, twox);
-//          }
-//
-//          sum_L = AngMom::phase( Lcm + (1-twoJ2)/2 + S1 + curlyL + Jab + lc + Lab + Lambda  )  *  AngMom::SixJ_int( 2*J1,2*curlyL,2*Jab, 2*Lab, 2*S1, 2*L1) * twelvej;
-
-
-
-          int L_min = std::max( std::abs(Lambda-L1), std::abs(Lab-lc) );
-          int L_max = std::min( Lambda+L1, Lab+lc );
-
-          for (int L=std::max(std::abs(Lambda-L1),L_min); L<=std::min(L_max,Lambda+L1); L++)
+          double twelvej = 0;
+          int twox_min = std::max( { std::abs(2*curlyL-j2c),  std::abs(twoJ-2*J1), std::abs(2*Lambda-1), std::abs(2*Lcm-twoJ2), std::abs(2*Lcm-twoJ2)   });
+          int twox_max = std::min( { (2*curlyL+j2c),  std::abs(twoJ+2*J1), std::abs(2*Lambda+1), std::abs(2*Lcm+twoJ2), std::abs(2*Lcm+twoJ2)   });
+          for (int twox = twox_min; twox<=twox_max; twox +=2)
           {
-//            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * AngMom::SixJ( lc, curlyL, Lambda, L1,L,Lab);
-            // { lc curlyL Lambda } Triangles: (lc,curlyL,Lambda), (L1,L,Lambda), (lc,L,Lab), (L1,curlyL,Lab)
-            // { L1   L     Lab   }
-            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * GetSixJ( 2*lc, 2*curlyL, 2*Lambda, 2*L1,2*L,2*Lab);
-            if (std::abs(sixj1)<1e-9) continue;
+            twelvej += (twox+1) * AngMom::phase( (twoJ+j2c+1+twoJ2+2*Jab+2*lc+2*L2+twoJ12+2*J1+2*curlyL+2*Lambda+2*Lcm -twox )/2 ) 
+//                                                   * AngMom::SixJ_int( twoJ, j2c, 2*Jab, 2*curlyL, 2*J1,      twox)
+                                                   * GetSixJ( 2*curlyL, 2*J1, 2*Jab, twoJ, j2c,      twox)
+//                                                   * AngMom::SixJ_int( j2c,  1  , 2*lc,  2*Lambda,  2*curlyL, twox)
+                                                   * GetSixJ( 2*Lambda, 2*curlyL  , 2*lc,  j2c,  1, twox)
+//                                                   * AngMom::SixJ_int( 1, twoJ2 , 2*L2,  2*Lcm,     2*Lambda, twox)
+                                                   * GetSixJ( 2*Lcm, 2*Lambda , 2*L2,  1,     twoJ2, twox)
+                                                   * AngMom::SixJ_int( twoJ2, 2*J1 , twoJ12,  twoJ,    2*Lcm, twox);
+//                                                   * GetSixJ( twoJ2, 2*J1 , twoJ12,  twoJ,    2*Lcm, twox); // This one will miss every time
+          }
 
-            double sum_12 = 0;
-            for (int twoS12=twoS12_min; twoS12<=twoS12_max; twoS12+=2)
-            {
-              if ( std::abs(2*L-twoS12)>twoJ or 2*L+twoS12<twoJ ) continue; // triangle condition for ninejL
-              double ninejL =  GetNineJ( 2*lc, 2*L, 2*Lab,
-                                         1, twoS12, 2*S1,
-                                         j2c, twoJ, 2*Jab);
-//              double ninejL =  AngMom::NineJ( Lab, lc, L,
-//                                              S1,  sc, 0.5*twoS12,
-//                                              Jab, jc, 0.5*twoJ);
+          sum_L = AngMom::phase( Lcm + (1-twoJ2)/2 + S1 + curlyL + Jab + lc + Lab + Lambda  )  *  AngMom::SixJ_int( 2*J1,2*curlyL,2*Jab, 2*Lab, 2*S1, 2*L1) * twelvej;
 
-              if ( std::abs(ninejL)<1e-9) continue;
-              int L12_min = std::max( std::abs(L1-L2), std::max( std::abs(twoS12-twoJ12)/2, std::abs(Lcm-L)) ) ;
-              int L12_max = std::min( L1+L2, std::min( (twoS12+twoJ12)/2, Lcm+L));
-              for (int L12=L12_min; L12<=L12_max; L12++)
-              {
-                if ( std::abs(Lcm-L12)>L or (Lcm+L12)<L ) continue;
-                if ( std::abs(twoS12-twoJ)>2*L or (twoS12+twoJ)<2*L ) continue;
-                double ninej12 = AngMom::phase((twoS12+twoJ)/2)*(2*L12+1)*(twoS12+1)
-                                              * GetNineJ(2*L2,  2*L12,  2*L1,
-                                                         1,     twoS12, 2*S1,
-                                                         twoJ2, twoJ12, 2*J1);
-                if (std::abs(ninej12)<1e-9) continue;
-//                double sixj2 = AngMom::SixJ( Lcm,L12,L,0.5*twoS12,0.5*twoJ,0.5*twoJ12);
-                // { Lcm  L12  L   }  Triangles : (Lcm,L12,L),  (S12,J,L),  (Lcm,J,J12),  (S12,L12,J12)
-                // { S12  J    J12 }
-                double sixj2 = GetSixJ( 2*Lcm,2*L12,2*L, twoS12,twoJ,twoJ12);
-//                double sixj3 = AngMom::SixJ( Lcm,L2,Lambda,L1,L,L12);
-                double sixj3 = GetSixJ( 2*Lcm,2*L2,2*Lambda,2*L1,2*L,2*L12);
 
-                sum_12 += ninejL * ninej12 * sixj2 * sixj3;
-              } // for L12
-            } // for twoS12
-            sum_L += sixj1 * sum_12;
-          } // for L
+
+//          int L_min = std::max( std::abs(Lambda-L1), std::abs(Lab-lc) );
+//          int L_max = std::min( Lambda+L1, Lab+lc );
+//
+//          for (int L=std::max(std::abs(Lambda-L1),L_min); L<=std::min(L_max,Lambda+L1); L++)
+//          {
+////            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * AngMom::SixJ( lc, curlyL, Lambda, L1,L,Lab);
+//            // { lc curlyL Lambda } Triangles: (lc,curlyL,Lambda), (L1,L,Lambda), (lc,L,Lab), (L1,curlyL,Lab)
+//            // { L1   L     Lab   }
+//            double sixj1 =  AngMom::phase(L+Lambda) * (2*L+1) * GetSixJ( 2*lc, 2*curlyL, 2*Lambda, 2*L1,2*L,2*Lab);
+//            if (std::abs(sixj1)<1e-9) continue;
+//
+//            double sum_12 = 0;
+//            for (int twoS12=twoS12_min; twoS12<=twoS12_max; twoS12+=2)
+//            {
+//              if ( std::abs(2*L-twoS12)>twoJ or 2*L+twoS12<twoJ ) continue; // triangle condition for ninejL
+//              double ninejL =  GetNineJ( 2*lc, 2*L, 2*Lab,
+//                                         1, twoS12, 2*S1,
+//                                         j2c, twoJ, 2*Jab);
+////              double ninejL =  AngMom::NineJ( Lab, lc, L,
+////                                              S1,  sc, 0.5*twoS12,
+////                                              Jab, jc, 0.5*twoJ);
+//
+//              if ( std::abs(ninejL)<1e-9) continue;
+//              int L12_min = std::max( std::abs(L1-L2), std::max( std::abs(twoS12-twoJ12)/2, std::abs(Lcm-L)) ) ;
+//              int L12_max = std::min( L1+L2, std::min( (twoS12+twoJ12)/2, Lcm+L));
+//              for (int L12=L12_min; L12<=L12_max; L12++)
+//              {
+//                if ( std::abs(Lcm-L12)>L or (Lcm+L12)<L ) continue;
+//                if ( std::abs(twoS12-twoJ)>2*L or (twoS12+twoJ)<2*L ) continue;
+//                double ninej12 = AngMom::phase((twoS12+twoJ)/2)*(2*L12+1)*(twoS12+1)
+//                                              * GetNineJ(2*L2,  2*L12,  2*L1,
+//                                                         1,     twoS12, 2*S1,
+//                                                         twoJ2, twoJ12, 2*J1);
+//                if (std::abs(ninej12)<1e-9) continue;
+////                double sixj2 = AngMom::SixJ( Lcm,L12,L,0.5*twoS12,0.5*twoJ,0.5*twoJ12);
+//                // { Lcm  L12  L   }  Triangles : (Lcm,L12,L),  (S12,J,L),  (Lcm,J,J12),  (S12,L12,J12)
+//                // { S12  J    J12 }
+//                double sixj2 = GetSixJ( 2*Lcm,2*L12,2*L, twoS12,twoJ,twoJ12);
+////                double sixj3 = AngMom::SixJ( Lcm,L2,Lambda,L1,L,L12);
+//                double sixj3 = GetSixJ( 2*Lcm,2*L2,2*Lambda,2*L1,2*L,2*L12);
+//
+//                sum_12 += ninejL * ninej12 * sixj2 * sixj3;
+//              } // for L12
+//            } // for twoS12
+//            sum_L += sixj1 * sum_12;
+//          } // for L
 
 
           tcoeff += ninejab * mosh1 * mosh2 * sum_L;
@@ -2983,7 +2989,7 @@ double Jacobi3BME::GetSixJ(int j1, int j2, int j3, int J1, int J2, int J3)
 //                << std::setprecision(1) << std::fixed << j3 << " " << std::setprecision(1) << std::fixed << J1 << " "
 //                << std::setprecision(1) << std::fixed << J2 << " " << std::setprecision(1) << std::fixed << J3 << "). key = "
 //                << std::hex << key << "   sixj = " << std::dec << sixj << std::endl;
-//      IMSRGProfiler::counter["N_CalcSixJ_in_Parallel_loop"] +=1;
+      IMSRGProfiler::counter["N_CalcSixJ_in_Parallel_loop"] +=1;
 //      exit(EXIT_FAILURE);
 //    }
    }
@@ -3129,8 +3135,14 @@ double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int two
        //       double sixj2 = GetSixJ( 2*Lcm,2*L12,2*L, twoS12,twoJ,twoJ12); twoJ <= 6emax+3, twoJ12<=Jmax, L could be up to 6emax+6
        // { j1  j2 j3  }
        // { S12 J  J12 }
-       if ((j1+j2)>2*E3max) continue;
-       for (int S12=1; S12<=3; S12+=2)
+
+        // replaced by
+          // { J     jc     sc     J2     }
+          // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) { J      jc  Jab } { jc      sc   lc } { sc    J2   L2 } { J2  J1  J12 }
+          // { J1  curlyL Lambda   Lcm    }                    {curlyL  J1  x   } { Lambda curlyL x } { Lcm Lambda x  } { J   Lcm  x  }
+//       if ((j1+j2)>2*E3max) continue;
+//       for (int S12=1; S12<=3; S12+=2)
+       for (int S12=1; S12<=twoJmax; S12+=2)
        {
         for (int J=std::abs(S12-j3); J<=(S12+j3); J+=2)
         {
