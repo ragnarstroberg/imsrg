@@ -566,52 +566,91 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
 
 
 
-
-
-/*
-// It's not clear that this will ever be useful.
-double Jacobi3BME::GetV3mon( size_t a, size_t b, size_t c, size_t d, size_t e, size_t f )
+// These could probably be written in a much more concise, but totally incomprehensible templated/variadic function
+std::array<unsigned short,5> Jacobi3BME::MakeUshort5( const std::array<int,5>& arr)
 {
-
-
+  return {  static_cast<unsigned short>(arr[0]), 
+            static_cast<unsigned short>(arr[1]), 
+            static_cast<unsigned short>(arr[2]), 
+            static_cast<unsigned short>(arr[3]), 
+            static_cast<unsigned short>(arr[4])  }; 
 }
 
-*/
+std::array<unsigned short,6> Jacobi3BME::MakeUshort6( const std::array<int,6>& arr)
+{
+  return {  static_cast<unsigned short>(arr[0]), 
+            static_cast<unsigned short>(arr[1]), 
+            static_cast<unsigned short>(arr[2]), 
+            static_cast<unsigned short>(arr[3]), 
+            static_cast<unsigned short>(arr[4]), 
+            static_cast<unsigned short>(arr[5])  }; 
+}
+
+std::array<unsigned short,7> Jacobi3BME::MakeUshort7( const std::array<int,7>& arr)
+{
+  return {  static_cast<unsigned short>(arr[0]), 
+            static_cast<unsigned short>(arr[1]), 
+            static_cast<unsigned short>(arr[2]), 
+            static_cast<unsigned short>(arr[3]), 
+            static_cast<unsigned short>(arr[4]), 
+            static_cast<unsigned short>(arr[5]), 
+            static_cast<unsigned short>(arr[6])  }; 
+}
+
+std::array<unsigned short,8> Jacobi3BME::MakeUshort8( const std::array<int,8>& arr)
+{
+  return {  static_cast<unsigned short>(arr[0]), 
+            static_cast<unsigned short>(arr[1]), 
+            static_cast<unsigned short>(arr[2]), 
+            static_cast<unsigned short>(arr[3]), 
+            static_cast<unsigned short>(arr[4]), 
+            static_cast<unsigned short>(arr[5]), 
+            static_cast<unsigned short>(arr[6]), 
+            static_cast<unsigned short>(arr[7])  }; 
+}
+
+
 
 size_t Jacobi3BME::array5_hash::operator() (const std::array<unsigned short,5>& key) const
  {
-   return  ( ((unsigned long) key[0])       )
-          +( ((unsigned long) key[1]) <<  8 )
-          +( ((unsigned long) key[2]) << 16 )
-          +( ((unsigned long) key[3]) << 24 )
-          +( ((unsigned long) key[4]) << 32 );
+   return  ( static_cast<unsigned long>(key[0])       )
+          +( static_cast<unsigned long>(key[1]) <<  8 )
+          +( static_cast<unsigned long>(key[2]) << 16 )
+          +( static_cast<unsigned long>(key[3]) << 24 )
+          +( static_cast<unsigned long>(key[4]) << 32 );
  }
 
-//struct array7_hash {
-// size_t operator() (const std::array<unsigned short,7>& key) const
-// {
-// This is for hashing 7 numbers into an unordered_map
+size_t Jacobi3BME::array6_hash::operator() (const std::array<unsigned short,6>& key) const
+ {
+   return  ( static_cast<unsigned long>(key[0])       )
+          +( static_cast<unsigned long>(key[1]) <<  8 )
+          +( static_cast<unsigned long>(key[2]) << 16 )
+          +( static_cast<unsigned long>(key[3]) << 24 )
+          +( static_cast<unsigned long>(key[4]) << 32 )
+          +( static_cast<unsigned long>(key[5]) << 40 );
+ }
+
 size_t Jacobi3BME::array7_hash::operator() (const std::array<unsigned short,7>& key) const
  {
-   return  ( ((unsigned long) key[0])       )
-          +( ((unsigned long) key[1]) <<  8 )
-          +( ((unsigned long) key[2]) << 16 )
-          +( ((unsigned long) key[3]) << 24 )
-          +( ((unsigned long) key[4]) << 32 )
-          +( ((unsigned long) key[5]) << 40 )
-          +( ((unsigned long) key[6]) << 48 );
+   return  ( static_cast<unsigned long>(key[0])       )
+          +( static_cast<unsigned long>(key[1]) <<  8 )
+          +( static_cast<unsigned long>(key[2]) << 16 )
+          +( static_cast<unsigned long>(key[3]) << 24 )
+          +( static_cast<unsigned long>(key[4]) << 32 )
+          +( static_cast<unsigned long>(key[5]) << 40 )
+          +( static_cast<unsigned long>(key[6]) << 48 );
  }
 
 size_t Jacobi3BME::array8_hash::operator() (const std::array<unsigned short,8>& key) const
  {
-   return  ( ((unsigned long) key[0])       )
-          +( ((unsigned long) key[1]) <<  8 )
-          +( ((unsigned long) key[2]) << 16 )
-          +( ((unsigned long) key[3]) << 24 )
-          +( ((unsigned long) key[4]) << 32 )
-          +( ((unsigned long) key[5]) << 40 )
-          +( ((unsigned long) key[6]) << 48 )
-          +( ((unsigned long) key[7]) << 56 );
+   return  ( static_cast<unsigned long>(key[0])       )
+          +( static_cast<unsigned long>(key[1]) <<  8 )
+          +( static_cast<unsigned long>(key[2]) << 16 )
+          +( static_cast<unsigned long>(key[3]) << 24 )
+          +( static_cast<unsigned long>(key[4]) << 32 )
+          +( static_cast<unsigned long>(key[5]) << 40 )
+          +( static_cast<unsigned long>(key[6]) << 48 )
+          +( static_cast<unsigned long>(key[7]) << 56 );
  }
 
 
@@ -624,7 +663,8 @@ size_t Jacobi3BME::array8_hash::operator() (const std::array<unsigned short,8>& 
 //std::string Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm )
 //std::array<unsigned short,7> Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 )
 //std::array<unsigned short,7> Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12, uint64_t Lcm )
-std::array<unsigned short,8> Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t twoJ,  uint64_t twoJ12, uint64_t twoT, uint64_t E12, uint64_t Lcm )
+//std::array<unsigned short,8> Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t twoJ,  uint64_t twoJ12, uint64_t twoT, uint64_t E12, uint64_t Lcm )
+std::array<unsigned short,8> Jacobi3BME::TcoeffHash(unsigned short na, unsigned short nb, unsigned short nc, unsigned short twoJ,  unsigned short twoJ12, unsigned short twoT, unsigned short E12, unsigned short Lcm )
 {
 //  return {na,nb,nc,Jab,twoJ,twoJ12,E12};
 //  return {na,nb,nc,twoJ,twoJ12,E12,Lcm};
@@ -637,6 +677,10 @@ void Jacobi3BME::TcoeffUnHash(std::array<unsigned short,8>& key, int& na, int& n
 {
   na=key[0]; nb=key[1]; nc=key[2]; twoJ=key[3]; twoJ12=key[4]; twoT=key[5]; E12=key[6]; Lcm=key[7];
 }
+
+
+
+
 
 
 //std::string Jacobi3BME::TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 )
@@ -829,31 +873,34 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
   for (int nth_pass=0; nth_pass<=1; nth_pass++) // take two passes, one to allocate, one to calculate, with the calculate pass in parallel
   {
    #pragma omp parallel for schedule(dynamic,1) collapse(4) if (nth_pass==1)
-   for (int E12=0; E12<=Nmax; E12++)
+   for (unsigned short E12=0; E12<=Nmax; E12++)
    {
-    for (int twoT=1; twoT<=3; twoT+=2)
+    for (unsigned short twoT=1; twoT<=3; twoT+=2)
     {
-     for (int twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
+     for (unsigned short twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
      {
-       for (int Ecm=0; Ecm<=E3max; Ecm++)
+       for (unsigned short Ecm=0; Ecm<=E3max; Ecm++)
        {
         int Eabc = E12+Ecm;
         if ( (Ecm+E12+Eabc)%2>0 ) continue;
         if ( Eabc > E3max ) continue;
         size_t dim_lab = lab_kets[Eabc].size();
-        for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
+        for (unsigned short Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
         {
          int Ncm = (Ecm-Lcm)/2;
          int parity = E12%2;
          size_t dimNAS = GetDimensionNAS(twoT,twoJ12, parity, E12 );
          size_t dimAS = GetDimensionAS(twoT,twoJ12, parity, E12 );
+         std::array<unsigned short,5> T_key = {E12,twoT,twoJ12,Ecm,Lcm};
          if (nth_pass==0) // first pass through, not in parallel so we can allocate the structure
          {
-            TcoeffLookup[ {E12,twoT,twoJ12,Ecm,Lcm} ] = arma::mat( dim_lab, dimNAS, arma::fill::zeros );
+//            TcoeffLookup[ {E12,twoT,twoJ12,Ecm,Lcm} ] = arma::mat( dim_lab, dimNAS, arma::fill::zeros );
+            TcoeffLookup[ T_key ] = arma::mat( dim_lab, dimNAS, arma::fill::zeros );
          }
          else // this is inside the parallel block. No more allocation, just calculation and assignment
          {
-           auto& TcoeffMat = TcoeffLookup[ {E12,twoT,twoJ12,Ecm,Lcm} ];
+//           auto& TcoeffMat = TcoeffLookup[ {E12,twoT,twoJ12,Ecm,Lcm} ];
+           auto& TcoeffMat = TcoeffLookup[ T_key ];
            if (dimAS<1 or dimNAS<1) continue;
 
            for (size_t iNAS=0; iNAS<dimNAS; iNAS++)
@@ -1340,8 +1387,11 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
                     if (la==lb and la==lc and j2a==j2b and j2a==j2c and na==nb and na==nc and ( twoJ==3*j2a or twoT>j2a) ) continue;
 //                    lab_ket_lookup[{na,nb,nc,Jab,Tab,twoJ,twoT}] = lab_kets.size();
 //                    lab_kets.push_back( {na,nb,nc,Jab,Tab,twoJ,twoT} );
-                    lab_ket_lookup[{na,nb,nc,Jab,Tab,twoJ,twoT}] = lab_kets[Eabc].size();
-                    lab_kets[Eabc].push_back( {na,nb,nc,Jab,Tab,twoJ,twoT} );
+                    auto key = MakeUshort7({na,nb,nc,Jab,Tab,twoJ,twoT});
+                    lab_ket_lookup[key] = lab_kets[Eabc].size();
+                    lab_kets[Eabc].push_back( key );
+//                    lab_ket_lookup[{na,nb,nc,Jab,Tab,twoJ,twoT}] = lab_kets[Eabc].size();
+//                    lab_kets[Eabc].push_back( {na,nb,nc,Jab,Tab,twoJ,twoT} );
                   }
                 }
                }
@@ -1396,11 +1446,12 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
               int Eabc = E12abc + Ecm;
 //              arma::mat Tabc( dimNAS_abc, dim_lab, arma::fill::zeros );
 
+              auto Tkey_abc = MakeUshort5({E12abc,twoT,twoJ12,Ecm,Lcm});
               if (verbose)
               {
-                std::cout << "E12abc,twoT,twoJ12,Ecm,Lcm " << E12abc << " " << twoT << " " << twoJ12 << " " << Ecm << " " << Lcm << "  lookup Tabc " << std::endl << TcoeffLookup[ {E12abc,twoT,twoJ12,Ecm,Lcm} ] << std::endl << "cfp_abc:" << std::endl << cfp_abc << std::endl << std::endl;
+                std::cout << "E12abc,twoT,twoJ12,Ecm,Lcm " << E12abc << " " << twoT << " " << twoJ12 << " " << Ecm << " " << Lcm << "  lookup Tabc " << std::endl << TcoeffLookup[ Tkey_abc ] << std::endl << "cfp_abc:" << std::endl << cfp_abc << std::endl << std::endl;
               }
-              arma::mat Tabc = 6 * TcoeffLookup[ {E12abc,twoT,twoJ12,Ecm,Lcm} ] * cfp_abc ;
+              arma::mat Tabc = 6 * TcoeffLookup[ Tkey_abc ] * cfp_abc ;
               if (arma::norm(Tabc,"fro")<1e-8) continue;
 //              if (verbose)
 //              {
@@ -1453,7 +1504,8 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
                 auto& jacobi_indices_def = NAS_jacobi_states.at(hashTJN_def);
                 arma::mat cfp_def( &(cfpvec[cfp_begin_def]), dimNAS_def, dimAS_def, /*copy_aux_mem*/ false);
               //  arma::mat Tdef( dimNAS_def, dim_lab, arma::fill::zeros );
-                arma::mat& Tdef = TcoeffLookup[ {E12def,twoT,twoJ12,Ecm,Lcm} ] ;
+                auto Tkey_def = MakeUshort5({E12def,twoT,twoJ12,Ecm,Lcm}); 
+                arma::mat& Tdef = TcoeffLookup[ Tkey_def ] ;
                 int Edef = E12def + Ecm;
 //                nonzero_t = 0;
 //                for (size_t ilab=0; ilab<dim_lab; ilab++)
@@ -1572,8 +1624,8 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
                 {
                   if ( ( (same_ab and same_ac) or (same_de and same_df) ) and  ( twoJ==3*oa.j2 or twoT>oa.j2)  ) continue;
                  if (verbose) std::cout << "twoT,Tab,Tde,Jab,twoJ " << twoT << " " << Tab << " " << Tde << " "<< Jab << " " << twoJ << std::endl;
-                  size_t iket_abc = lab_ket_lookup[{oa.n,ob.n,oc.n,Jab,Tab,twoJ,twoT}];
-                  size_t iket_def = lab_ket_lookup[{od.n,oe.n,of.n,Jab,Tde,twoJ,twoT}];
+                  size_t iket_abc = lab_ket_lookup[MakeUshort7({oa.n,ob.n,oc.n,Jab,Tab,twoJ,twoT})];
+                  size_t iket_def = lab_ket_lookup[MakeUshort7({od.n,oe.n,of.n,Jab,Tde,twoJ,twoT})];
 //                   if (verbose) std::cout << "iket_abc, iket_def = " << iket_abc << " " << iket_def << " dimensions of lab_mat " << lab_mat.n_rows << "x" << lab_mat.n_cols << std::endl;
 //                  v3mon += (twoJ+1) * iso_clebsch_abc  * lab_mat(iket_abc,iket_def) * iso_clebsch_def ;
                   v3mon += (twoJ+1) * iso_clebsch_abc  * lab_mats(Eabc,Edef)(iket_abc,iket_def) * iso_clebsch_def ;
@@ -1921,7 +1973,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 //                      int rowT =  Tde-Tab_min;
 //                      auto tcoeff_hash = TcoeffHash(od.n,oe.n,of.n,Jab,twoJ,index_1_2_def[0],index_1_2_def[1],twoJ12,Lcm );
 //                      if (verbose) std::cout << " Jab,Tde = " << Jab << " " << Tde << "  colJT = " << rowT << " iNAS_def = " << iNAS_def << "  dimNAS_def = " << dimNAS_def << std::endl;
-//                      Tdef(iNAS_def,rowT) = T3bList.at(tcoeff_hash) ;//* (twoJ+1)  ;
+//                      Tdef(iNAS_def,rowT) = T3bList.at(tcoeff_hash) ;
 //                      if (verbose) std::cout << "   Tdef[" << iNAS_def << "," << rowT << "]  = " << T3bList[ TcoeffHash(od.n,oe.n,of.n,Jab,twoJ,index_1_2_def[0],index_1_2_def[1],twoJ12,Lcm )]
 //                                             <<  std::endl;
 //                      tcoeff_counter++;
@@ -2103,7 +2155,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
      Orbit& oa = hf.modelspace->GetOrbit(a);
      Orbit& ob = hf.modelspace->GetOrbit(b);
      if ( 2*(oa.n+ob.n)+oa.l+ob.l > E2max  ) continue;
-     for (auto c : occupied_orbits )
+     for (int c : occupied_orbits )
      {
        Orbit& oc = hf.modelspace->GetOrbit(c);
       // loop over   twoJ,   Ecm,  twoJ12,  twoT,   Lcm
@@ -2143,7 +2195,8 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
 //                 std::ostringstream oss;
 //                 oss << ibra << " " << c << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
 //                 std::string tcoeff_hash = oss.str();
-                 std::array<unsigned short,7> tcoeff_hash = {ibra,c,twoJ,Ecm,twoJ12,twoT,Lcm};
+//                 std::array<unsigned short,7> tcoeff_hash = {ibra,c,twoJ,Ecm,twoJ12,twoT,Lcm};
+                 auto tcoeff_hash = MakeUshort7({ibra,c,twoJ,Ecm,twoJ12,twoT,Lcm});
 
                  if (loop_pass==0) // first pass, not parallel, just make space
                  {
@@ -2204,7 +2257,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
 
 
 //     for (auto c : hf.modelspace->holes )
-     for (auto c : occupied_orbits )
+     for (int c : occupied_orbits )
      {
 //      if (ch==12) std::cout << "  c = " << c << std::endl;
       Orbit& oc = hf.modelspace->GetOrbit(c);
@@ -2223,7 +2276,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
 //       for (auto h : hf.modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) ) std::cout << h << " ";
 //       std::cout << std::endl;
 //     }
-       for (auto f : hf.modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
+       for (int f : hf.modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
        {
 //         std::cout << "   f = " << f << std::endl;
 //         if (ch==12 and ibra==0 and iket==0) std::cout << " Jab, bra,ket  abcdef  " << Jab << " " << ibra << " " << iket << "  " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
@@ -2328,8 +2381,8 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
 //                  oss_def << iket << " " << f << " " << twoJ << " " << Ecm << " " << twoJ12 << " " << twoT << " " << Lcm;
 //                  std::string t_hash_abc = oss_abc.str();
 //                  std::string t_hash_def = oss_def.str();
-                  std::array<unsigned short,7> t_hash_abc = {ibra,c,twoJ,Ecm,twoJ12,twoT,Lcm};
-                  std::array<unsigned short,7> t_hash_def = {iket,f,twoJ,Ecm,twoJ12,twoT,Lcm};
+                  auto t_hash_abc = MakeUshort7({ibra,c,twoJ,Ecm,twoJ12,twoT,Lcm});
+                  auto t_hash_def = MakeUshort7({iket,f,twoJ,Ecm,twoJ12,twoT,Lcm});
                   if (  TcoeffSkip[t_hash_abc] or TcoeffSkip[t_hash_def]) continue;  // looks like this maybe helps a little
 
                   arma::mat& Tabc = TcoeffTable[ t_hash_abc ];
@@ -2735,6 +2788,26 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
 //          int phase_L = AngMom::phase( lc + Lab + (twoS12+twoJ+1-twoJ2)/2 + S1 + Jab);
 //          double sixjL = 0
 
+          // { J     jc     sc     J2     }
+          // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) { J      jc  Jab } { jc      sc   lc } { sc    J2   L2 } { J2  J1  J12 }
+          // { J1  curlyL Lambda   Lcm    }                    {curlyL  J1  x   } { Lambda curlyL x } { Lcm Lambda x  } { J   Lcm  x  }
+          //
+//          double twelvej = 0;
+//          int twox_min = std::max( { std::abs(2*curlyL-j2c),  std::abs(twoJ-2*J1), std::abs(2*Lambda-1), std::abs(2*Lcm-twoJ2), std::abs(2*Lcm-twoJ2)   });
+//          int twox_max = std::min( { (2*curlyL+j2c),  std::abs(twoJ+2*J1), std::abs(2*Lambda+1), std::abs(2*Lcm+twoJ2), std::abs(2*Lcm+twoJ2)   });
+//          for (int twox = twox_min; twox<=twox_max; twox +=2)
+//          {
+//            twelvej += (twox+1) * AngMom::phase( (twoJ+j2c+1+twoJ2+2*Jab+2*lc+2*L2+twoJ12+2*J1+2*curlyL+2*Lambda+2*Lcm -twox )/2 ) 
+//                                                   * AngMom::SixJ_int( twoJ, j2c, 2*Jab, 2*curlyL, 2*J1,      twox)
+//                                                   * AngMom::SixJ_int( j2c,  1  , 2*lc,  2*Lambda,  2*curlyL, twox)
+//                                                   * AngMom::SixJ_int( 1, twoJ2 , 2*L2,  2*Lcm,     2*Lambda, twox)
+//                                                   * AngMom::SixJ_int( twoJ2, 2*J1 , twoJ12,  twoJ,    2*Lcm, twox);
+//          }
+//
+//          sum_L = AngMom::phase( Lcm + (1-twoJ2)/2 + S1 + curlyL + Jab + lc + Lab + Lambda  )  *  AngMom::SixJ_int( 2*J1,2*curlyL,2*Jab, 2*Lab, 2*S1, 2*L1) * twelvej;
+
+
+
           int L_min = std::max( std::abs(Lambda-L1), std::abs(Lab-lc) );
           int L_max = std::min( Lambda+L1, Lab+lc );
 
@@ -2781,6 +2854,8 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
             } // for twoS12
             sum_L += sixj1 * sum_12;
           } // for L
+
+
           tcoeff += ninejab * mosh1 * mosh2 * sum_L;
         } // for Lambda
       } // for curlyL

@@ -50,10 +50,17 @@ class Jacobi3BME
   std::vector<double> cfpvec;      // the cfp's (coefficients of fractional parentage), i.e. the overlaps of the AS and NAS basis states
   std::vector<size_t> cfp_start_loc;  // starting element for a given T,J,p
 
+
+  std::array<unsigned short,5> MakeUshort5( const std::array<int,5>& arr);
+  std::array<unsigned short,6> MakeUshort6( const std::array<int,6>& arr);
+  std::array<unsigned short,7> MakeUshort7( const std::array<int,7>& arr);
+  std::array<unsigned short,8> MakeUshort8( const std::array<int,8>& arr);
+
   struct array5_hash {size_t operator() (const std::array<unsigned short,5>& key) const; }; 
+  struct array6_hash {size_t operator() (const std::array<unsigned short,6>& key) const; }; 
   struct array7_hash {size_t operator() (const std::array<unsigned short,7>& key) const; }; 
   struct array8_hash {size_t operator() (const std::array<unsigned short,8>& key) const; }; 
-  std::vector<double> TcoeffList;
+  std::vector<double> TcoeffList; // This may be obsolete
 //  std::unordered_map<std::string,size_t> TcoeffLookup;
 //  std::unordered_map<std::array<unsigned short,7>,size_t,array7_hash> TcoeffLookup;
 //  std::unordered_map<std::array<unsigned short,8>,size_t,array8_hash> TcoeffLookup;
@@ -103,10 +110,13 @@ class Jacobi3BME
 
 //  double GetV3mon( size_t a, size_t b, size_t c, size_t d, size_t e, size_t f ); //< Get a single 3-body monopole term, for use in a Hartree-Fock calculation
 
+
+
 //  std::string TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ,  uint64_t twoJ12, uint64_t E12 );
 //  void TcoeffUnHash(std::string& key, int& na, int& nb, int& nc, int& Jab, int& twoJ,  int& twoJ12, int& E12 );
 //  std::array<unsigned short,7> TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc,  uint64_t twoJ,  uint64_t twoJ12, uint64_t E12, uint64_t Lcm );
-  std::array<unsigned short,8> TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc,  uint64_t twoJ,  uint64_t twoJ12, uint64_t twoT, uint64_t E12, uint64_t Lcm );
+//  std::array<unsigned short,8> TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc,  uint64_t twoJ,  uint64_t twoJ12, uint64_t twoT, uint64_t E12, uint64_t Lcm );
+  std::array<unsigned short,8> TcoeffHash(unsigned short na, unsigned short nb, unsigned short nc,  unsigned short twoJ,  unsigned short twoJ12, unsigned short twoT, unsigned short E12, unsigned short Lcm );
   void TcoeffUnHash(std::array<unsigned short,8>& key, int& na, int& nb, int& nc,  int& twoJ,  int& twoJ12, int& twoT, int& E12, int& Lcm );
 //  void TcoeffUnHash(std::array<unsigned short,7>& key, int& na, int& nb, int& nc,  int& twoJ,  int& twoJ12, int& E12, int& Lcm );
 //  std::string TcoeffHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t jac1, uint64_t jac2, uint64_t twoJ12, uint64_t Lcm );
