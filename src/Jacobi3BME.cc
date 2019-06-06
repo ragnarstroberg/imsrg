@@ -3134,6 +3134,7 @@ double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int two
         {
          for (int J6=std::max(std::abs(j1-J5),std::abs(j2-J4)); J6<=std::min(j1+J5,j2+J4); J6+=2)
          {
+           if (J6>2) continue;
            if ( (j1 + J6)>2*std::max(E3max,Nmax)) continue;
            uint64_t key = Jacobi3BME::SixJHash(j1,j2,j3,J4,J5,J6);
            if ( SixJList.count(key) == 0 ) 
