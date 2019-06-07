@@ -1403,11 +1403,14 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 //        size_t dim_lab = lab_kets.size();
 //        arma::mat lab_mat(dim_lab, dim_lab, arma::fill::zeros);
         arma::field<arma::mat> lab_mats(E3max+1,E3max+1);
-        for (size_t E12abc=0; E12abc<=E3max; E12abc++)
+//        for (size_t E12abc=0; E12abc<=E3max; E12abc++)
+        for (size_t Eabc=0; Eabc<=E3max; Eabc++)
         {
-          for (size_t E12def=0; E12def<=E3max; E12def++)
+//          for (size_t E12def=0; E12def<=E3max; E12def++)
+          for (size_t Edef=0; Edef<=E3max; Edef++)
           {
-            lab_mats(E12abc,E12def).zeros( lab_kets[E12abc].size(), lab_kets[E12def].size() );
+//            lab_mats(E12abc,E12def).zeros( lab_kets[E12abc].size(), lab_kets[E12def].size() );
+            lab_mats(Eabc,Edef).zeros( lab_kets[Eabc].size(), lab_kets[Edef].size() );
           }
         }
 
@@ -1433,7 +1436,9 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
             if ( (j2a+j2b+j2c+2*Lcm) < twoJ12 ) continue;
             for (int E12abc=0; E12abc<=std::min(Nmax,E3max-Ecm); E12abc++)
             {
-              if ( (E12abc + Ecm + la+lb+lc)%2>0) continue;
+              int Eabc = E12abc + Ecm;
+//              if (Eabc>E3max) continue;
+              if ( (E12abc + Ecm + Eabc)%2>0) continue;
               if (verbose) std::cout << "Ecm,Lcm,twoT,twoJ12,E12abc = " << Ecm << " " << Lcm << " " << twoT << " " << twoJ12 << " " << E12abc << std::endl;
               int parity=E12abc%2;
               auto hashTJN_abc = HashTJN(twoT,twoJ12,E12abc);
@@ -1443,7 +1448,6 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
               size_t cfp_begin_abc = GetCFPStartLocation(twoT,twoJ12,E12abc);
               auto& jacobi_indices_abc = NAS_jacobi_states.at(hashTJN_abc);
               arma::mat cfp_abc( &(cfpvec[cfp_begin_abc]), dimNAS_abc, dimAS_abc, /*copy_aux_mem*/ false);
-              int Eabc = E12abc + Ecm;
 //              arma::mat Tabc( dimNAS_abc, dim_lab, arma::fill::zeros );
 
               auto Tkey_abc = MakeUshort5({E12abc,twoT,twoJ12,Ecm,Lcm});
@@ -1491,11 +1495,12 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 //              Tabc = Tabc.t() * 6 * cfp_abc;
 //              std::cout << "done multiplying Tabc with cfp_abc" << std::endl;
 
-              // TODO: Probably only need to to half of this because of Hermiticity
 //              for (int E12def=parity; E12def<=std::min(Nmax,E3max-Ecm); E12def+=2)
               for (int E12def=E12abc; E12def<=std::min(Nmax,E3max-Ecm); E12def+=2)
               {
-                if ( (E12def + Ecm + la+lb+lc)%2>0) continue;
+                int Edef = E12def + Ecm;
+//                if (Edef > E3max) continue;
+                if ( (E12def + Ecm + Edef)%2>0) continue;
                 auto hashTJN_def = HashTJN(twoT,twoJ12,E12def);
                 size_t dimNAS_def = GetDimensionNAS( twoT, twoJ12, parity, E12def ); 
                 size_t dimAS_def = GetDimensionAS( twoT, twoJ12, parity, E12def ); 
@@ -1506,7 +1511,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
               //  arma::mat Tdef( dimNAS_def, dim_lab, arma::fill::zeros );
                 auto Tkey_def = MakeUshort5({E12def,twoT,twoJ12,Ecm,Lcm}); 
                 arma::mat& Tdef = TcoeffLookup[ Tkey_def ] ;
-                int Edef = E12def + Ecm;
+//                std::cout << "Eabc,Edef = " << Eabc << " " << Edef << "    size of labmats = " << lab_mats.n_rows << " x " << lab_mats.n_cols << std::endl;
 //                nonzero_t = 0;
 //                for (size_t ilab=0; ilab<dim_lab; ilab++)
 //                {
@@ -1593,6 +1598,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
           bool same_df = ( (od.n==of.n) and (od.l==of.l) and (od.j2==of.j2) );
           int Eabc = 2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l;
           int Edef = 2*(od.n+oe.n+of.n)+od.l+oe.l+of.l;
+          if (Eabc>E3max or Edef>E3max) continue;
 
           int Tzab = (oa.tz2 + ob.tz2)/2;
           int Tzde = (od.tz2 + oe.tz2)/2;
@@ -2805,19 +2811,22 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
           // { J1  curlyL Lambda   Lcm    }                    {jc J        x   } { sc     jc       x } { sc   J2      x  } { J1  x   J2 }
           //
           // 
-          double twelvej = 0;
-          int twox_min = std::max( { std::abs(2*curlyL-j2c),  std::abs(twoJ-2*J1), std::abs(2*Lambda-1), std::abs(2*Lcm-twoJ2)   });
-          int twox_max = std::min( { (2*curlyL+j2c),  (twoJ+2*J1), (2*Lambda+1),  (2*Lcm+twoJ2)   });
-          //                           sixj1,sixj2    sixj1,sixj4   sixj2,sixj3     sixj3,sixj4            
-          for (int twox = twox_min; twox<=twox_max; twox +=2)
-          {
-            twelvej += (twox+1) * AngMom::phase( (twoJ+j2c+1+twoJ2+2*Jab+2*lc+2*L2+twoJ12+2*J1+2*curlyL+2*Lambda+2*Lcm -twox )/2 ) 
-                                                   * GetSixJ( 2*J1, 2*curlyL,  2*Jab, j2c, twoJ,  twox)
-                                                   * GetSixJ( 2*curlyL , 2*Lambda,  2*lc, 1, j2c,  twox)
-                                                   * GetSixJ( 2*Lcm, 2*Lambda , 2*L2,  1,     twoJ2, twox)
-                                                   * GetSixJ( 2*Lcm, twoJ12, twoJ,   2*J1, twox,  twoJ2); 
-//                                                   * AngMom::SixJ_int( 2*Lcm, twoJ12, twoJ,   2*J1, twox,  twoJ2); 
-          }
+          double twelvej = ComputeTwelveJ( twoJ, j2c, 1, twoJ2,
+                                            2*Jab, 2*lc, 2*L2, twoJ12,
+                                           2*J1, 2*curlyL, 2*Lambda, 2*Lcm );
+//          double twelvej = 0;
+//          int twox_min = std::max( { std::abs(2*curlyL-j2c),  std::abs(twoJ-2*J1), std::abs(2*Lambda-1), std::abs(2*Lcm-twoJ2)   });
+//          int twox_max = std::min( { (2*curlyL+j2c),  (twoJ+2*J1), (2*Lambda+1),  (2*Lcm+twoJ2)   });
+//          //                           sixj1,sixj2    sixj1,sixj4   sixj2,sixj3     sixj3,sixj4            
+//          for (int twox = twox_min; twox<=twox_max; twox +=2)
+//          {
+//            twelvej += (twox+1) * AngMom::phase( (twoJ+j2c+1+twoJ2+2*Jab+2*lc+2*L2+twoJ12+2*J1+2*curlyL+2*Lambda+2*Lcm -twox )/2 ) 
+//                                                   * GetSixJ( 2*J1, 2*curlyL,  2*Jab, j2c, twoJ,  twox)
+//                                                   * GetSixJ( 2*curlyL , 2*Lambda,  2*lc, 1, j2c,  twox)
+//                                                   * GetSixJ( 2*Lcm, 2*Lambda , 2*L2,  1,     twoJ2, twox)
+//                                                   * GetSixJ( 2*Lcm, twoJ12, twoJ,   2*J1, twox,  twoJ2); 
+////                                                   * AngMom::SixJ_int( 2*Lcm, twoJ12, twoJ,   2*J1, twox,  twoJ2); 
+//          }
 
 //          sum_L = AngMom::phase( Lcm + (1-twoJ2)/2 + S1 + curlyL + Jab + lc + Lab + Lambda  )  *  AngMom::SixJ_int( 2*J1,2*curlyL,2*Jab, 2*Lab, 2*S1, 2*L1) * twelvej;
           sum_L = AngMom::phase( Lcm + (1-twoJ2)/2 + S1 + curlyL + Jab + lc + Lab + Lambda  )  *  GetSixJ( 2*Jab,2*J1,2*curlyL, 2*L1, 2*Lab, 2*S1) * twelvej;
@@ -2898,11 +2907,38 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
 
 
 
+          // { J     jc     sc     J2     }
+          // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) {J1 curlyL   Jab } { curlyL Lambda  lc } { Lcm  Lambda  L2 } { Lcm J12 J  }
+          // { J1  curlyL Lambda   Lcm    }                    {jc J        x   } { sc     jc       x } { sc   J2      x  } { J1  x   J2 }
 
+//  { a1   a2   a3    a4    }
+//  {   b12  b23   b34  b41 }  = sum_x (-1)^(S-x)  { c1  c2  b12 } { c2  c3  b23 } { c4 c3 b34 } { c4 b41 a1 }
+//  { c1   c2   c3   c4     }                      { a2  a1  x   } { a3  a2  x   } { a3 a4 x   } { c1 x   a4 }
+double Jacobi3BME::ComputeTwelveJ(int a1, int a2, int a3, int a4, int b12, int b23, int b34, int b41, int c1, int c2, int c3, int c4)
+{
+  double twelvej = 0;
+  if (c4==0) // this check doesn't seem to do all that much
+  {
+    if ( (b41!=a1) or (c3!=b34) ) return 0;
+    if ( std::abs(c1-c2)>b12 or (c1+c2)<b12 or std::abs(a2-b41)>b12 or (a2+b41)<b12 or std::abs(c1-b41)>a4 or (c1+b41)<a4 or std::abs(c2-a2)>a4 or (c2+a2)<a4 ) return 0;
+    twelvej = AngMom::phase( (b12+b23+b34+b41-a2-c2)/2 ) * GetSixJ( c1,c2, b12, a2,b41,a4) * GetSixJ(c2,b34,b23,a3,a2,a4) /  sqrt( (b41+1.)*(b34+1) );
+    return twelvej;
+  }
 
+  int x_min = std::max( { std::abs(c1-a1),  std::abs(c2-a2), std::abs(c3-a3), std::abs(c4-a4)   });
+  int x_max = std::min( { a1+c1, a2+c2, a3+c3, a4+c4   });
+  int S = a1+a2+a3+a4 + b12+b23+b34+b41 + c1+c2+c3+c4;
+  for (int x = x_min; x<=x_max; x +=2)
+  {
+    twelvej += (x+1) * AngMom::phase( (S+x )/2 ) 
+                                           * GetSixJ( c1,c2,b12, a2,a1,x)
+                                           * GetSixJ( c2,c3,b23, a3,a2,x)
+                                           * GetSixJ( c4,c3,b34, a3,a4,x)
+                                           * GetSixJ( c4,b41,a1, c1,x,a4); 
+  }
+  return twelvej;
 
-
-
+}
 
 
 
