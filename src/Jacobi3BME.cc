@@ -717,6 +717,7 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
   std::set<size_t> need_to_compute;
   std::set<size_t> will_be_computed;
 
+  // TODO This is becoming a bottleneck. Figure out why.
   bool verbose = false;
 
   if (verbose) std::cout << "---------------------------------------------------" << std::endl;
@@ -731,6 +732,7 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
      Orbit& oa = hf.modelspace->GetOrbit(a);
      Orbit& ob = hf.modelspace->GetOrbit(b);
      Orbit& oc = hf.modelspace->GetOrbit(c);
+     if ( 2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l > E3max) continue;
 
      if (  (oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b and oc.l==lc and oc.j2==j2c)
         or (oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a and oc.l==lc and oc.j2==j2c)
@@ -2238,6 +2240,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
   long int mat_mult_AS = 0;
   double LcmLoopTime = 0;
   double J12LoopTime = 0;
+  // TODO: It may be more effective to make a matrix of 3-body matrix elements (organized into the appropriate J,pi,T,Eabc,Edef blocks), compute those, and then get the NO2B piece
 
   #pragma omp parallel for schedule(dynamic,1) reduction(+:mat_mult_AS,LcmLoopTime,J12LoopTime)
   for (int ibra=0; ibra<nkets; ibra++)
