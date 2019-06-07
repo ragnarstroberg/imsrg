@@ -28,6 +28,11 @@ namespace AngMom
    return true;
  }
 
+ bool Triangle_int( int twoj1, int twoj2, int twoj3 )
+ {
+  return ((twoj1+twoj2)>=twoj3 and std::abs(twoj1-twoj2)<=twoj3 and (twoj1+twoj2+twoj3)%2==0 );
+ }
+
  /// Wigner 3j symbol
  double ThreeJ(double j1, double j2, double j3, double m1, double m2, double m3)
  {
@@ -47,6 +52,7 @@ namespace AngMom
    return SixJ_int(int(2*j1),int(2*j2),int(2*j3),int(2*J1),int(2*J2),int(2*J3));
  }
 
+ // This eventually runs into overflows because of the factorials used. Damn.
  double SixJ_int(int twoj1, int twoj2, int twoj3, int twoJ1, int twoJ2, int twoJ3)
  {
    return gsl_sf_coupling_6j(twoj1,twoj2,twoj3,twoJ1,twoJ2,twoJ3);
@@ -69,6 +75,17 @@ namespace AngMom
  {
    return sqrt( (2*J12+1)*(2*J34+1)*(2*J13+1)*(2*J24+1) ) * NineJ(j1,j2,J12,j3,j4,J34,J13,J24,J);
  }
+
+
+/*
+ double SixJ_handrolled( int twoja, int twojb, int twojc, int twojd, int twoje, int twojf)
+ {
+   if ( not ( Triangle_int(twoja,twojb,twojc) and Triangle_int(twojd,twoje,twojc) and Triangle_int(twoja,twoje,twojf) and Triangle_int(twojb,twojd,twojf))) return 0.0;
+
+   
+
+ }
+*/
 
 // double General3nJ_FirstKind( std::vector<int>& jvals )
  double General3nJ_FirstKind( std::vector<int>& a, std::vector<int>& b, std::vector<int>& c )

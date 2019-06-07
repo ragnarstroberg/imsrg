@@ -51,11 +51,15 @@ class Jacobi3BME
   std::vector<size_t> cfp_start_loc;  // starting element for a given T,J,p
 
 
+  std::array<unsigned short,3> MakeUshort5( const std::array<int,3>& arr);
+  std::array<unsigned short,4> MakeUshort5( const std::array<int,4>& arr);
   std::array<unsigned short,5> MakeUshort5( const std::array<int,5>& arr);
   std::array<unsigned short,6> MakeUshort6( const std::array<int,6>& arr);
   std::array<unsigned short,7> MakeUshort7( const std::array<int,7>& arr);
   std::array<unsigned short,8> MakeUshort8( const std::array<int,8>& arr);
 
+  struct array3_hash {size_t operator() (const std::array<unsigned short,3>& key) const; }; 
+  struct array4_hash {size_t operator() (const std::array<unsigned short,4>& key) const; }; 
   struct array5_hash {size_t operator() (const std::array<unsigned short,5>& key) const; }; 
   struct array6_hash {size_t operator() (const std::array<unsigned short,6>& key) const; }; 
   struct array7_hash {size_t operator() (const std::array<unsigned short,7>& key) const; }; 
