@@ -724,6 +724,11 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
   if (verbose) std::cout << "lj channel : " << la << " " << j2a << " " << lb << " " << j2b << " " << lc << " " << j2c << std::endl;
 
 
+  double t_internal = omp_get_wtime();
+
+//  std::unordered_map<std::array<unsigned short,6>,size_t,array6_hash> imon_lookup;
+  std::unordered_map<size_t,size_t> imon_lookup;
+
   for (size_t imon=0; imon<hf.Vmon3_keys.size(); imon++)
   {
      auto key = hf.Vmon3_keys[imon];
@@ -740,11 +745,17 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
         or (oa.l==lc and oa.j2==j2c and ob.l==la and ob.j2==j2a and oc.l==lb and oc.j2==j2b)
         or (oa.l==lb and oa.j2==j2b and ob.l==lc and ob.j2==j2c and oc.l==la and oc.j2==j2a)
         or (oa.l==lc and oa.j2==j2c and ob.l==lb and ob.j2==j2b and oc.l==la and oc.j2==j2a)
-        )  need_to_compute.insert(imon);
-     
-//     if ( oc.l != lc or oc.j2 != j2c ) continue;
-//     if ( (oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b) or (oa.l==lb and oa.j2==j2b and ob.l==la and ob.j2==j2a) )    need_to_compute.insert(imon);
+        )
+       {
+          need_to_compute.insert(imon);
+//          imon_lookup[ MakeUshort6({a,b,c,d,e,f})] = imon;
+          imon_lookup[key] = imon;
+       }
   }
+
+  IMSRGProfiler::timer[std::string(__func__)+"_firstloop"] += omp_get_wtime() - t_internal;
+  t_internal = omp_get_wtime();
+//  std::cout << "size of Vmon_keys = " << hf.Vmon3_keys.size() << "   size of need_to_compute = " << need_to_compute.size() << std::endl;
 
   for ( size_t imon : need_to_compute )
   {
@@ -759,17 +770,13 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
      Orbit& oe = hf.modelspace->GetOrbit(e);
      Orbit& of = hf.modelspace->GetOrbit(f);
      if ( not (oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b) ) continue; // we'd like our [0] entry to be the direct term, not the flipped one.
-//     int aa = hf.modelspace->GetOrbitIndex( oa.n, oa.l, oa.j2, -oa.tz2 );
-//     int bb = hf.modelspace->GetOrbitIndex( ob.n, ob.l, ob.j2, -ob.tz2 );
-//     int cc = hf.modelspace->GetOrbitIndex( oc.n, oc.l, oc.j2, -oc.tz2 );
-//     int dd = hf.modelspace->GetOrbitIndex( od.n, od.l, od.j2, -od.tz2 );
-//     int ee = hf.modelspace->GetOrbitIndex( oe.n, oe.l, oe.j2, -oe.tz2 );
-//     int ff = hf.modelspace->GetOrbitIndex( of.n, of.l, of.j2, -of.tz2 );
-     std::set<std::array<int,6>> permuted_indices = { {a,b,c,d,e,f}, {b,a,c,e,d,f}, {c,a,b,f,d,e}, {a,c,b,d,f,e}, {c,b,a,f,e,d}, {b,c,a,e,f,d} };
+     if ( (oa.tz2 + ob.tz2 + oc.tz2)>0 ) continue;
+
+     std::set<std::array<int,6>> permuted_indices = { {a,b,c,d,e,f}, {b,a,c,e,d,f}, {c,a,b,f,d,e}, {a,c,b,d,f,e}, {c,b,a,f,e,d}, {b,c,a,e,f,d}}; 
+//     std::set<std::array<int,6>> permuted_indices = { {a,b,c,d,e,f}, {b,a,c,e,d,f}, {c,a,b,f,d,e}, {a,c,b,d,f,e}, {c,b,a,f,e,d}, {b,c,a,e,f,d}, 
+//                                                      {d,e,f,a,b,c}, {e,d,f,b,a,c}, {f,d,e,c,a,b}, {d,f,e,a,c,b}, {f,e,d,c,b,a}, {e,f,d,b,c,a} };
      std::set<std::array<int,6>> more_permutations;
-     for (auto& p : permuted_indices) more_permutations.insert({p[3],p[4],p[5],p[0],p[1],p[2]}); //Hermitian conjucation  <abc|V|def> = <def|V|abc>
-     for (auto& p : more_permutations) permuted_indices.insert(p); // add them to the list
-     more_permutations.clear();
+//     more_permutations.clear();
      for (auto& p : permuted_indices)
      {
        std::array<int,6> isoflip; // Because we have isospin symmetry, we can flip the tz of all the nucleons and the matrix element is the same
@@ -781,67 +788,45 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
        more_permutations.insert(isoflip);
      }
      for (auto& p : more_permutations) permuted_indices.insert(p); // add them to the list
+
+     more_permutations.clear();
+     for (auto& p : permuted_indices) more_permutations.insert({p[3],p[4],p[5],p[0],p[1],p[2]}); //Hermitian conjucation  <abc|V|def> = <def|V|abc>
+     for (auto& p : more_permutations) permuted_indices.insert(p); // add them to the list
+
      
      std::set<uint64_t> permuted_keys;
      for (auto& p : permuted_indices )  permuted_keys.insert( hf.Vmon3Hash(p[0],p[1],p[2],p[3],p[4],p[5] ) ); // get the corresponding key for each permutation
 
-//     std::set<size_t> compute_these;
-//     std::unordered_set<size_t> compute_these;
      std::vector<size_t> compute_these;
-//     compute_these.insert(imon); 
+
+
      compute_these.push_back(imon); 
-//     std::cout << "  compute_these begins as ";
-//     for (auto x : compute_these ) std::cout << x << " ";
-//     std::cout << std::endl;
-     for ( auto imon1 : need_to_compute )
+
+     for ( auto& k : permuted_keys )
      {
-       if (imon1==imon) continue;
-       for (auto& k : permuted_keys )
-       {
-//        if ( hf.Vmon3_keys[imon1] == k )  compute_these.insert(imon1);
-        if ( hf.Vmon3_keys[imon1] == k )  compute_these.push_back(imon1);
-       }
+       if (k==key) continue;
+       auto imon_iter = imon_lookup.find(k);
+       if (imon_iter != imon_lookup.end())  compute_these.push_back(  imon_iter->second );
      }
+
+//     for ( auto imon1 : need_to_compute )
+//     {
+//       if (imon1==imon) continue;
+//       for (auto& k : permuted_keys )
+//       {
+//        if ( hf.Vmon3_keys[imon1] == k )  compute_these.push_back(imon1);
+//       }
+//     }
+
+
+
+
      for ( auto& index : compute_these ) will_be_computed.insert(index);
      indices.push_back( compute_these );
 
-
-
-//     auto key_bacedf = hf.Vmon3Hash(b,a,c,e,d,f);
-//     auto key_defabc = hf.Vmon3Hash(d,e,f,a,b,c);
-//     auto key_edfbac = hf.Vmon3Hash(e,d,f,b,a,c);
-//     auto key_isoflip = hf.Vmon3Hash(aa,bb,cc,dd,ee,ff);
-//     auto key_bacedf_isoflip = hf.Vmon3Hash(bb,aa,cc,ee,dd,ff);
-//     auto key_defabc_isoflip = hf.Vmon3Hash(dd,ee,ff,aa,bb,cc);
-//     auto key_edfbac_isoflip = hf.Vmon3Hash(ee,dd,ff,bb,aa,cc);
-//     std::array<size_t,8> compute_these;
-//     for (int i=0;i<8;i++) compute_these[i] = imon;
-//     for ( auto imon1 : need_to_compute )
-//     {
-//       if ( hf.Vmon3_keys[imon1] == key_isoflip)         compute_these[1] = imon1;
-//       if ( hf.Vmon3_keys[imon1] == key_defabc)          compute_these[2] = imon1;
-//       if ( hf.Vmon3_keys[imon1] == key_defabc_isoflip)  compute_these[3] = imon1;
-//       if ( hf.Vmon3_keys[imon1] == key_bacedf)          compute_these[4] = imon1;
-//       if ( hf.Vmon3_keys[imon1] == key_edfbac)          compute_these[5] = imon1;
-//       if ( hf.Vmon3_keys[imon1] == key_bacedf_isoflip)  compute_these[6] = imon1;
-//       if ( hf.Vmon3_keys[imon1] == key_edfbac_isoflip)  compute_these[7] = imon1;
-//     }
-//     for (int i=0;i<8;i++) will_be_computed.insert( compute_these[i] );
-//     indices.push_back( compute_these );
-
-//    std::cout << "permuted indices: " << std::endl;
-//    for (auto prm : permuted_indices )
-//    {
-//     std::cout << "( ";
-//     for (auto p : prm ) std::cout << p << " ";
-//     std::cout << " )" << std::endl;
-//    }
-//    std::cout << "compute these: " <<std::endl;
-//    for (auto cmp : compute_these) std::cout << cmp << " ";
-//    std::cout << std::endl;
-
-
   } // for imon in need_to_compute
+
+  IMSRGProfiler::timer[std::string(__func__)+"_secondloop"] += omp_get_wtime() - t_internal;
 
   if (verbose)
   {
@@ -854,7 +839,6 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
     for (auto& ilist : indices)
     {
      std::cout << "( ";
-//      for (int i=0;i<8;i++) std::cout << ilist[i] << " ";
       for (auto index : ilist) std::cout << index << " ";
      std::cout << "  ) " << std::endl;
     }
