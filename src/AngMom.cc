@@ -77,6 +77,8 @@ namespace AngMom
  }
 
 
+// According to [Johannson & Forssen SIAM J. Sci. Comp. 38 A376 (2016)] if at least one of the J values entering the 6j is larger than 20
+// then the accuracy of the gsl implementation is dubious.
 /*
  double SixJ_handrolled( int twoja, int twojb, int twojc, int twojd, int twoje, int twojf)
  {

@@ -24,7 +24,7 @@
 HartreeFock::HartreeFock(Operator& hbare, bool vmon3_from_file)
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
     KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
-    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true)
+    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true), use_jacobi_3bme(vmon3_from_file)
 {
    int norbits = modelspace->GetNumberOrbits();
 
@@ -50,7 +50,8 @@ HartreeFock::HartreeFock(Operator& hbare, bool vmon3_from_file)
    if (hbare.GetParticleRank()>2)
    {
 //      BuildMonopoleV3();
-      BuildMonopoleV3(vmon3_from_file);
+//      BuildMonopoleV3(vmon3_from_file);
+      BuildMonopoleV3();
    }
    UpdateDensityMatrix();
    UpdateF();
@@ -60,7 +61,7 @@ HartreeFock::HartreeFock(Operator& hbare, bool vmon3_from_file)
 HartreeFock::HartreeFock(Operator& hbare, Jacobi3BME& jacobi3bme )
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
     KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
-    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true)
+    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true), use_jacobi_3bme(true)
 {
    int norbits = modelspace->GetNumberOrbits();
 
@@ -84,10 +85,11 @@ HartreeFock::HartreeFock(Operator& hbare, Jacobi3BME& jacobi3bme )
    hole_occ = arma::rowvec(occvec);
    BuildMonopoleV();
 
-   if (hbare.GetParticleRank()>2)
+//   if (hbare.GetParticleRank()>2)
    {
-      bool use_jacobi_3bme = true;
-      BuildMonopoleV3(use_jacobi_3bme);
+//      use_jacobi_3bme = true;
+//      BuildMonopoleV3(use_jacobi_3bme);
+      BuildMonopoleV3();
       jacobi3bme.GetV3mon_all( *this );
    }
 
@@ -277,8 +279,8 @@ void HartreeFock::BuildMonopoleV()
 ///       \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle
 /// \f]
 //*********************************************************************
-//void HartreeFock::BuildMonopoleV3()
-void HartreeFock::BuildMonopoleV3(bool use_jacobi_3bme)
+//void HartreeFock::BuildMonopoleV3(bool use_jacobi_3bme)
+void HartreeFock::BuildMonopoleV3()
 {
    double start_time = omp_get_wtime();
   // First, allocate. This is fast so don't parallelize.
@@ -501,7 +503,7 @@ void HartreeFock::UpdateF()
       Vij.col(i) /= (oi.j2+1);
    }
 
-   if (Hbare.GetParticleRank()>=3) 
+   if (Hbare.GetParticleRank()>=3 or use_jacobi_3bme) 
    {
       // it's just a one-body matrix, so we can store different copy for each thread.
       std::vector<arma::mat> V3vec(omp_get_max_threads(),V3ij);

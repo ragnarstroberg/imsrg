@@ -2119,7 +2119,9 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
     if ( arma::norm(hf.rho.row(irow),"fro")>1e-8) occupied_orbits.insert(irow);
   }
 
+  // 3-body states that will contribute to the NO2B matrix elements in this channel. Tab is not conserved by V, so it doesn't go with the sub-block labels
   struct ket3b { int a; int b; int c; int Tab};
+
   // hash table (twoJ twoT Eabc) -> {vector of lab-frame 3b kets in that channel}
   std::unordered_map<std::array<unsigned short,3>,std::vector<ket3b>,array3_hash> local_3b_kets;
   // hash table (a,b,c,Tab,twoJ,twoT) -> index in the matrix where it lives (need to infer Eabc from a,b,c)
@@ -2127,13 +2129,14 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
   // structure for the lab-frame 3b matrix elements. (twoJ twoT parity) -> field (Eabc,Edef) -> matrix of 3-body matrix elements
   std::unordered_map<std::array<unsigned short 3>, arma::field<arma::mat>, array3_hash> V3Full;
 
+  // Go through all the kets in this 2-body channel and figure out which 3-body states we'll need.
   for (int iket=0; iket<nkets; iket++)
   {
     Ket& ket = tbc.GetKet(iket);
     int Tzab = (ket.op->tz2 + ket.oq->tz2)/2;
     int Tab_min = std::abs( Tzab );
     int Tab_max = 1;
-    for ( int c : occupied_orbits )
+    for ( int c : occupied_orbits ) // occupied orbits -> oscillator orbits which end up with a non-zero occupation in the HF reference
     {
       Orbit& oc = hf.modelspace->GetOrbit(c);
       int Eabc = 2*(ket.op->n+ket.oq->n+oc.n)+ket.op->l+ket.oq->l+oc.l ;
@@ -2151,12 +2154,14 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
         for (int Tab=Tab_min; Tab<=Tab_max; Tab++)
         {
          if ( (twoT-2*Tab)>1 ) continue;
-         auto& channel_vec = local_3b_kets[ {twoJ,twoT,Eabc}];
-         ket_3b_lookup[ {a,b,c,Tab,twoJ,twoT} ] = channel_vec.size();
-         channel_vec.push_back( {a,b,c,Tab});
+         auto& channel_vec = local_3b_kets[ {twoJ,twoT,Eabc}];  // find the J,T,E channel this 3b state belongs to
+         ket_3b_lookup[ {a,b,c,Tab,twoJ,twoT} ] = channel_vec.size();  // this tells us where in the matrix this 3b state will live
+         channel_vec.push_back( {a,b,c,Tab}); // add the 3b state to the vector of 3b states in this J,T,E channel
          if ( V3Full.find( {twoJ,twoT,parity} ) == F3Full.end())
          {
-           V3Full[{twoJ,twoT,parity}] = arma::field<arma::mat>(E3max,E3max);
+           // Allocate the arma::field of matrices for this J,T,p channel.
+           // We only use ether the even or the odd Eabc, but since we don't allocate the others I don't expect this to be much of an issue.
+           V3Full[{twoJ,twoT,parity}] = arma::field<arma::mat>(E3max,E3max); 
          }
         }
        }
@@ -2165,6 +2170,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
     
   }
 
+  // Allocate the <abc,Tab|def,Tde> matrices that live in the (Eabc,Edef) fields that live in the JTp hash table...Yikes.
   for ( auto& iter : V3Full )
   {
     int twoJ = iter.first[0];  int twoT = iter.first[1]; int parity = iter.first[2];
@@ -2179,7 +2185,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
     }
   }
 
-  // Now, we just need those T coefficients. It should be a matrix for every J T Eabc,  and every J12 T12 E12, Lcm
+  // Now, we just need those T coefficients. We need a matrix for every lab frame (J T Eabc),  and every jacobi+CM (J12 T12 E12, Lcm)
 
   std::unordered_map<std::array<unsigned short,7>, arma::mat, array7_hash> Tcoeffs;
 
@@ -2514,8 +2520,8 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
   IMSRGProfiler::timer[std::string(__func__)+"LcmLoop"] += LcmLoopTime;
   IMSRGProfiler::timer[std::string(__func__)+"J12Loop"] += J12LoopTime;
 }
-
 */
+
 
 
 

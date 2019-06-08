@@ -60,14 +60,15 @@ class HartreeFock
    std::deque<double> convergence_ediff; ///< Save last few convergence checks for diagnostics
    std::deque<double> convergence_EHF; ///< Save last few convergence checks for diagnostics
    bool freeze_occupations;
+   bool use_jacobi_3bme;
 
 // Methods
 //   HartreeFock(Operator&  hbare); ///< Standard Constructor
    HartreeFock(Operator&  hbare, bool vmon3_from_file=false); ///< Standard Constructor. If the optional argument vmon3_from_file is true, we don't calculate Vmon3, and expect to read it from file
    HartreeFock(Operator&  hbare, Jacobi3BME& jacobi3bme); ///< Constructor using jacobi 3-body matrix elements
    void BuildMonopoleV();         ///< Only the monopole part of V is needed, so construct it.
-   void BuildMonopoleV3(bool use_jacobi_3bme=false);        ///< Only the monopole part of V3 is needed.
-//   void BuildMonopoleV3();        ///< Only the monopole part of V3 is needed.
+//   void BuildMonopoleV3(bool use_jacobi_3bme=false);        ///< Only the monopole part of V3 is needed.
+   void BuildMonopoleV3();        ///< Only the monopole part of V3 is needed.
    void Diagonalize();            ///< Diagonalize the Fock matrix
    void UpdateF();                ///< Update the Fock matrix with the new transformation coefficients C
    void UpdateDensityMatrix();    ///< Update the density matrix with the new coefficients C
