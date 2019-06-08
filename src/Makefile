@@ -42,7 +42,7 @@ SOFLAGS = $(FLAGS)
 PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags ) -Wl,--no-as-needed
 PYTHONLIBS = -I./pybind11/include $(shell python-config  --ldflags) 
 
-THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; else echo other; fi)
+THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; elif [ `hostname|grep mox` ]; then echo mox;  else echo other; fi)
 
 
 
@@ -87,6 +87,17 @@ ifeq ($(THEHOST),cronos)
 endif
 ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up nicely.
  LIBS += -llapack
+ NEWLIBS := $(filter-out -lopenblas,$(LIBS))
+ LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+ ifneq ($(PYTHON),off)
+  ALL += pyIMSRG.so
+ endif
+endif
+
+ifeq ($(THEHOST),mox)  # default options. assumes boost and python are set up nicely.
+# LIBS += -llapack
+ NEWLIBS := $(filter-out -lopenblas,$(LIBS))
+ LIBS = $(NEWLIBS) -lmkl_def -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
  ifneq ($(PYTHON),off)
   ALL += pyIMSRG.so
  endif

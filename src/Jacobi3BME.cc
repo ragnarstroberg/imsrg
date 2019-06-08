@@ -1768,9 +1768,8 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         int tcoeff_counter = 0;
         int nonzero_vmon = 0;
 
-//        #pragma omp parallel for schedule(dynamic,1) reduction(+ : tcoeff_counter,nonzero_vmon)
 #ifndef OPENBLAS_NOUSEOMP
-        #pragma omp parallel for schedule(dynamic,1)
+        #pragma omp parallel for schedule(dynamic,1) reduction(+ : tcoeff_counter,nonzero_vmon)
 #endif
         for (size_t ilist=0; ilist<imon_indices.size(); ilist++)
         {
@@ -1978,7 +1977,8 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
                     {
 //                      Tabc.row(Tab) *= isospin2_Clebsch[Tab] * isospin3_Clebsch[2*Tab + twoT/2];
 //                      Tdef.row(Tab) *= isospin2_Clebsch[Tab] * isospin3_Clebsch[2*Tab + twoT/2];
-                      isospin_mat.row(Tab-twoT/2) *= AngMom::CG(0.5,0.5*oa.tz2,0.5,0.5*ob.tz2, Tab, Tzab) * AngMom::CG(Tab,Tzab,0.5,0.5*oc.tz2, 0.5*twoT, 0.5*twoTz) ;
+//                      isospin_mat.row(Tab-twoT/2) *= AngMom::CG(0.5,0.5*oa.tz2,0.5,0.5*ob.tz2, Tab, Tzab) * AngMom::CG(Tab,Tzab,0.5,0.5*oc.tz2, 0.5*twoT, 0.5*twoTz) ;
+                      isospin_mat(Tab-twoT/2,Tab-twoT/2) = AngMom::CG(0.5,0.5*oa.tz2,0.5,0.5*ob.tz2, Tab, Tzab) * AngMom::CG(Tab,Tzab,0.5,0.5*oc.tz2, 0.5*twoT, 0.5*twoTz) ;
 //                      isospin_mat.row(Tab-twoT/2) *= isospin2_Clebsch[Tab] * isospin3_Clebsch[2*Tab + twoT/2];
 //                      if (verbose) std::cout << "Tab = " << Tab << "  multiplying row " << Tab-twoT/2 << " by " << isospin2_Clebsch[Tab] << " * " << isospin3_Clebsch[2*Tab + twoT/2] << std::endl;
                       if (verbose) std::cout << "Tab = " << Tab << "  multiplying row " << Tab-twoT/2 << " by " <<  AngMom::CG(0.5,0.5*oa.tz2,0.5,0.5*ob.tz2, Tab, Tzab) << " * " << AngMom::CG(Tab,Tzab,0.5,0.5*oc.tz2, 0.5*twoT, 0.5*twoTz) << std::endl;
