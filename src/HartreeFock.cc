@@ -793,12 +793,12 @@ Operator HartreeFock::GetNormalOrderedH()
                 for (int J3=J3min; J3<=J3max; J3+=2)
                 {
                   V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
-//                  if(ch==12) std::cout << " J3 = " << J3 << " abcdef " << bra.p << " " << bra.q << " " << a << " " << ket.p << " " << ket.q << " " << b << "    rho  " << rho(a,b)
-//                                      << " * " << J3+1 << " * " <<  Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b)
-//                                      << "( = " << (J3+1)*Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b)
-//                                      << " ,  T=1: " << Hbare.ThreeBody.GetME(J,J,J3,1,1,1,bra.p,bra.q,a,ket.p,ket.q,b)
-//                                      << " ,  T=3: " << Hbare.ThreeBody.GetME(J,J,J3,1,1,3,bra.p,bra.q,a,ket.p,ket.q,b)
-//                                      << ")    -> " << V3NO(i,j) << std::endl;
+                  if(ch==1) std::cout << " J3 = " << J3 << " abcdef " << bra.p << " " << bra.q << " " << a << " " << ket.p << " " << ket.q << " " << b << "    rho  " << rho(a,b)
+                                      << " * " << J3+1 << " * " <<  Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b)
+                                      << "( = " << (J3+1)*Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b)
+                                      << " ,  T=1: " << Hbare.ThreeBody.GetME(J,J,J3,1,1,1,bra.p,bra.q,a,ket.p,ket.q,b)
+                                      << " ,  T=3: " << Hbare.ThreeBody.GetME(J,J,J3,1,1,3,bra.p,bra.q,a,ket.p,ket.q,b)
+                                      << ")    -> " << V3NO(i,j) << std::endl;
                 }
               }
             }
@@ -812,11 +812,11 @@ Operator HartreeFock::GetNormalOrderedH()
      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
-//     if (ch==12)
-//     {
-//      std::cout << "OUT[" << ch << "] " << std::endl << OUT << std::endl;
-//      std::cout << "V3NO: " << std::endl << V3NO << std::endl;
-//     }
+     if (ch==1)
+     {
+      std::cout << "OUT[" << ch << "] " << std::endl << OUT << std::endl;
+      std::cout << "V3NO: " << std::endl << V3NO << std::endl;
+     }
    }
    
 //   FreeVmon();
@@ -907,11 +907,11 @@ Operator HartreeFock::GetNormalOrderedH_jacobi(Jacobi3BME& jacobi3bme)
      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
-//     if (ch==12)
-//     {
-//     std::cout << "OUT[" << ch << "] " << std::endl << OUT << std::endl;
-//     std::cout << "V3NO: " << std::endl << V3NO << std::endl;
-//     }
+     if (ch==1)
+     {
+     std::cout << "OUT[" << ch << "] " << std::endl << OUT << std::endl;
+     std::cout << "V3NO: " << std::endl << V3NO << std::endl;
+     }
    }
    
 //   FreeVmon();

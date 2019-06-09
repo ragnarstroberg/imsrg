@@ -51,8 +51,8 @@ class Jacobi3BME
   std::vector<size_t> cfp_start_loc;  // starting element for a given T,J,p
 
 
-  std::array<unsigned short,3> MakeUshort5( const std::array<int,3>& arr);
-  std::array<unsigned short,4> MakeUshort5( const std::array<int,4>& arr);
+  std::array<unsigned short,3> MakeUshort3( const std::array<int,3>& arr);
+  std::array<unsigned short,4> MakeUshort4( const std::array<int,4>& arr);
   std::array<unsigned short,5> MakeUshort5( const std::array<int,5>& arr);
   std::array<unsigned short,6> MakeUshort6( const std::array<int,6>& arr);
   std::array<unsigned short,7> MakeUshort7( const std::array<int,7>& arr);
