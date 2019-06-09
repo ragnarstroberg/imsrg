@@ -5,6 +5,7 @@
 #include "IMSRGProfiler.hh"
 #include <istream>
 #include <set>
+#include <unordered_set>
 #include <sstream>
 #include <iomanip>
 #include <omp.h>
@@ -745,8 +746,10 @@ void Jacobi3BME::TcoeffUnHash(std::array<unsigned short,8>& key, int& na, int& n
 //void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf, std::vector<std::unordered_set<size_t>>& indices )
 void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, int j2c, HartreeFock& hf, std::vector<std::vector<size_t>>& indices )
 {
-  std::set<size_t> need_to_compute;
-  std::set<size_t> will_be_computed;
+  std::unordered_set<size_t> need_to_compute;
+  std::unordered_set<size_t> will_be_computed;
+//  std::set<size_t> need_to_compute;
+//  std::set<size_t> will_be_computed;
 
   bool verbose = false;
 
@@ -759,8 +762,15 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
 //  std::unordered_map<std::array<unsigned short,6>,size_t,array6_hash> imon_lookup;
   std::unordered_map<size_t,size_t> imon_lookup;
 
+  // this parenthesis is just so that the need_to_compute_this_thread structure goes out of scope
+  {
+  int nthreads = omp_get_max_threads();
+//  std::vector<std::set<size_t>> need_to_compute_this_thread(nthreads);
+  std::vector<std::unordered_set<size_t>> need_to_compute_this_thread(nthreads);
+  #pragma omp parallel for
   for (size_t imon=0; imon<hf.Vmon3_keys.size(); imon++)
   {
+     int ithread = omp_get_thread_num();
      auto key = hf.Vmon3_keys[imon];
      int a,b,c,d,e,f;
      hf.Vmon3UnHash( key, a, b, c, d, e, f);  // static method so we could call it without a class instance if we wanted...
@@ -777,10 +787,25 @@ void Jacobi3BME::GetMonopoleIndices( int la, int j2a, int lb, int j2b, int lc, i
         or (oa.l==lc and oa.j2==j2c and ob.l==lb and ob.j2==j2b and oc.l==la and oc.j2==j2a)
         )
        {
-          need_to_compute.insert(imon);
-//          imon_lookup[ MakeUshort6({a,b,c,d,e,f})] = imon;
-          imon_lookup[key] = imon;
+//          need_to_compute.insert(imon);
+//          imon_lookup[key] = imon;
+          need_to_compute_this_thread[ithread].insert(imon);
        }
+  }
+
+  // Now join them all together
+  for ( auto& need : need_to_compute_this_thread )
+  {
+    for (size_t imon : need )
+    {
+      need_to_compute.insert(imon);
+    }
+  }
+  }
+
+  for (size_t imon : need_to_compute )
+  {
+      imon_lookup[hf.Vmon3_keys[imon]] = imon;
   }
 
   IMSRGProfiler::timer[std::string(__func__)+"_firstloop"] += omp_get_wtime() - t_internal;
@@ -1400,20 +1425,14 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
               for ( int Tab=0; Tab<=1; Tab++ )
               {
                if (la==lb and j2a==j2b and na==nb and (Tab+Jab)%2==0 ) continue;
-//               if (la==lb and j2a==j2b and na==nb and (Jab>=j2a) ) continue;
                for ( int twoT=1; twoT<=2*Tab+1; twoT+=2 )
                {
-//                 if (la==lb and la==lc and j2a==j2b and j2a==j2c and na==nb and na==nc and j2a==1 and twoT>1 ) continue;
                  for ( int twoJ=std::abs(2*Jab-j2c); twoJ<=(2*Jab+j2c); twoJ+=2)
                  {
                     if (la==lb and la==lc and j2a==j2b and j2a==j2c and na==nb and na==nc and ( twoJ==3*j2a or twoT>j2a) ) continue;
-//                    lab_ket_lookup[{na,nb,nc,Jab,Tab,twoJ,twoT}] = lab_kets.size();
-//                    lab_kets.push_back( {na,nb,nc,Jab,Tab,twoJ,twoT} );
                     auto key = MakeUshort7({na,nb,nc,Jab,Tab,twoJ,twoT});
                     lab_ket_lookup[key] = lab_kets[Eabc].size();
                     lab_kets[Eabc].push_back( key );
-//                    lab_ket_lookup[{na,nb,nc,Jab,Tab,twoJ,twoT}] = lab_kets[Eabc].size();
-//                    lab_kets[Eabc].push_back( {na,nb,nc,Jab,Tab,twoJ,twoT} );
                   }
                 }
                }
@@ -1422,16 +1441,11 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
           }
         }
         if (verbose) std::cout << "done with that." << std::endl;
-//        size_t dim_lab = lab_kets.size();
-//        arma::mat lab_mat(dim_lab, dim_lab, arma::fill::zeros);
         arma::field<arma::mat> lab_mats(E3max+1,E3max+1);
-//        for (size_t E12abc=0; E12abc<=E3max; E12abc++)
         for (size_t Eabc=0; Eabc<=E3max; Eabc++)
         {
-//          for (size_t E12def=0; E12def<=E3max; E12def++)
           for (size_t Edef=0; Edef<=E3max; Edef++)
           {
-//            lab_mats(E12abc,E12def).zeros( lab_kets[E12abc].size(), lab_kets[E12def].size() );
             lab_mats(Eabc,Edef).zeros( lab_kets[Eabc].size(), lab_kets[Edef].size() );
           }
         }
@@ -1459,105 +1473,27 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
             for (int E12abc=0; E12abc<=std::min(Nmax,E3max-Ecm); E12abc++)
             {
               int Eabc = E12abc + Ecm;
-//              if (Eabc>E3max) continue;
               if ( (E12abc + Ecm + Eabc)%2>0) continue;
               if (verbose) std::cout << "Ecm,Lcm,twoT,twoJ12,E12abc = " << Ecm << " " << Lcm << " " << twoT << " " << twoJ12 << " " << E12abc << std::endl;
               int parity=E12abc%2;
-//              auto hashTJN_abc = HashTJN(twoT,twoJ12,E12abc);
               size_t dimNAS_abc = GetDimensionNAS( twoT, twoJ12, parity, E12abc ); 
               size_t dimAS_abc = GetDimensionAS( twoT, twoJ12, parity, E12abc ); 
               if (dimNAS_abc==0 or dimAS_abc==0) continue;
-//              size_t cfp_begin_abc = GetCFPStartLocation(twoT,twoJ12,E12abc);
-//              auto& jacobi_indices_abc = NAS_jacobi_states.at(hashTJN_abc);
-//              arma::mat cfp_abc( &(cfpvec[cfp_begin_abc]), dimNAS_abc, dimAS_abc, /*copy_aux_mem*/ false);
-//              arma::mat Tabc( dimNAS_abc, dim_lab, arma::fill::zeros );
 
               auto Tkey_abc = MakeUshort5({E12abc,twoT,twoJ12,Ecm,Lcm});
-//              if (verbose)
-//              {
-//                std::cout << "E12abc,twoT,twoJ12,Ecm,Lcm " << E12abc << " " << twoT << " " << twoJ12 << " " << Ecm << " " << Lcm << "  lookup Tabc " << std::endl << TcoeffLookup[ Tkey_abc ] << std::endl << "cfp_abc:" << std::endl << cfp_abc << std::endl << std::endl;
-//              }
-//              arma::mat Tabc = 6 * TcoeffLookup[ Tkey_abc ] * cfp_abc ;
               arma::mat& Tabc = TcoeffLookup[ Tkey_abc ] ;
               if (arma::norm(Tabc,"fro")<1e-8) continue;
-//              if (verbose)
-//              {
-//                std::cout << "( " << la << " " << j2a << ", " << lb << " " << j2b << ", " << lc << " " << j2c << " ) Lab states abc:  "; 
-//                for (auto ket_abc : lab_kets)  std::cout << "| " << ket_abc[0] << "," << ket_abc[1] << "," << ket_abc[2] << " " << ket_abc[3] << "," << ket_abc[4] << " " << ket_abc[5] << "," << ket_abc[6] << " > ";
-//                std::cout << std::endl;
-//              }
-//              int nonzero_t = 0;
-//              for (size_t ilab=0; ilab<dim_lab; ilab++)
-//              {
-//                auto& ket_abc = lab_kets[ilab];
-//                if ( ket_abc[6] != twoT) continue;
-//                int na=ket_abc[0], nb=ket_abc[1], nc=ket_abc[2], Jab=ket_abc[3], twoJ=ket_abc[5]; 
-//                
-//                int Eabc = 2*(ket_abc[0]+ket_abc[1]+ket_abc[2]) + la+lb+lc;
-//                if (E12abc+Ecm != Eabc) continue;
-//                if ( std::abs( twoJ12-twoJ)>2*Lcm or (twoJ12+twoJ)<Lcm) continue;
-////                size_t tcoeff_start_abc = TcoeffLookup[ {na,nb,nc,twoJ,twoJ12,E12abc,Lcm} ];
-//                auto tstart_ptr = TcoeffLookup.find( {na,nb,nc,twoJ,twoJ12,twoT,E12abc,Lcm} );
-//                if ( tstart_ptr == TcoeffLookup.end() ) continue;
-//                size_t tcoeff_start_abc = tstart_ptr->second;
-////                size_t tcoeff_start_abc = TcoeffLookup[ {na,nb,nc,twoJ,twoJ12,twoT,E12abc,Lcm} ];
-////                size_t Tabc_location = tcoeff_start_abc + ((twoT-1)/2* (Jab_max-Jab_min) + (Jab-Jab_min)  ) * dimNAS_abc;
-//                size_t Tabc_location = tcoeff_start_abc + (Jab-Jab_min) * dimNAS_abc;
-////                size_t Tabc_location = tcoeff_start_abc + (twoT-1)/2* (Jab-Jab_min) * dimNAS_abc;
-//                if (verbose)
-//                {
-//                  std::cout << "ilab=" << ilab << " na,nb,nc,Jab,Tab,twoJ,twoT  " << na << " " << nb << " " << nc << "    " << Jab << " " << ket_abc[4] << " " << twoJ << " " << ket_abc[6] << std::endl;
-//                  std::cout << "Tabc_location = " << tcoeff_start_abc << " + " << (twoT-1)/2 << " * (" << Jab << " - " << Jab_min << ") * " << dimNAS_abc << " = " << Tabc_location << std::endl;
-//                }
-//                Tabc.col(ilab) = arma::mat(&TcoeffList[Tabc_location], dimNAS_abc,1, true); // true means copy from the aux_mem
-//                nonzero_t ++;
-//              }
-//              if (verbose) std::cout << "ab loop" << std::endl << "Tabc: " << std::endl << Tabc << std::endl << std::endl << "cfp_abc:" << std::endl << cfp_abc << std::endl << std::endl;
-//              if (nonzero_t<1)  continue;
-//              std::cout << "done filling Tabc" << std::endl;
-//              Tabc = Tabc.t() * 6 * cfp_abc;
-//              std::cout << "done multiplying Tabc with cfp_abc" << std::endl;
 
-//              for (int E12def=parity; E12def<=std::min(Nmax,E3max-Ecm); E12def+=2)
+
               for (int E12def=E12abc; E12def<=std::min(Nmax,E3max-Ecm); E12def+=2)
               {
                 int Edef = E12def + Ecm;
-//                if (Edef > E3max) continue;
                 if ( (E12def + Ecm + Edef)%2>0) continue;
-//                auto hashTJN_def = HashTJN(twoT,twoJ12,E12def);
                 size_t dimNAS_def = GetDimensionNAS( twoT, twoJ12, parity, E12def ); 
                 size_t dimAS_def = GetDimensionAS( twoT, twoJ12, parity, E12def ); 
                 if (dimNAS_def==0 or dimAS_def==0) continue;
-//                size_t cfp_begin_def = GetCFPStartLocation(twoT,twoJ12,E12def);
-//                auto& jacobi_indices_def = NAS_jacobi_states.at(hashTJN_def);
-//                arma::mat cfp_def( &(cfpvec[cfp_begin_def]), dimNAS_def, dimAS_def, /*copy_aux_mem*/ false);
-              //  arma::mat Tdef( dimNAS_def, dim_lab, arma::fill::zeros );
                 auto Tkey_def = MakeUshort5({E12def,twoT,twoJ12,Ecm,Lcm}); 
                 arma::mat& Tdef = TcoeffLookup[ Tkey_def ] ;
-//                std::cout << "Eabc,Edef = " << Eabc << " " << Edef << "    size of labmats = " << lab_mats.n_rows << " x " << lab_mats.n_cols << std::endl;
-//                nonzero_t = 0;
-//                for (size_t ilab=0; ilab<dim_lab; ilab++)
-//                {
-//                  auto& ket_def = lab_kets[ilab];
-//                  if ( ket_def[6] != twoT) continue;
-//                  int nd=ket_def[0], ne=ket_def[1], nf=ket_def[2], Jab=ket_def[3], twoJ=ket_def[5]; 
-//                  int Edef = 2*(ket_def[0]+ket_def[1]+ket_def[2]) + la+lb+lc;
-//                  if (E12def+Ecm != Edef) continue;
-//                  if ( std::abs( twoJ12-twoJ)>2*Lcm or (twoJ12+twoJ)<Lcm) continue;
-////                  size_t tcoeff_start_def = TcoeffLookup[ {nd,ne,nf,twoJ,twoJ12,E12def,Lcm} ];
-//
-//                auto tstart_ptr = TcoeffLookup.find( {nd,ne,nf,twoJ,twoJ12,twoT,E12def,Lcm} );
-//                if ( tstart_ptr == TcoeffLookup.end() ) continue;
-//                size_t tcoeff_start_def = tstart_ptr->second;
-////                  size_t tcoeff_start_def = TcoeffLookup[ {nd,ne,nf,twoJ,twoJ12,twoT,E12def,Lcm} ];
-////                  size_t Tdef_location = tcoeff_start_def + (twoT-1)/2 * (Jab-Jab_min) * dimNAS_def;
-////                  size_t Tdef_location = tcoeff_start_def + ((twoT-1)/2* (Jab_max-Jab_min) + (Jab-Jab_min)  ) * dimNAS_def;
-//                  size_t Tdef_location = tcoeff_start_def +  (Jab-Jab_min) * dimNAS_def;
-//                 
-//                  Tdef.col(ilab) = arma::mat(&TcoeffList[Tdef_location], dimNAS_def,1, true); // true means copy from the aux_mem. This may cause an extra unneccessary copy
-//                  nonzero_t++;
-//                }
-//                if (nonzero_t<1) continue; 
 
                 if (verbose) std::cout << " E12def,E12abc, twoJ12,twoT,Lcm,Ecm = " << E12def << " " << E12abc << " " << twoJ12 << " " << twoT << " " << Lcm << " " << Ecm << std::endl;
 
