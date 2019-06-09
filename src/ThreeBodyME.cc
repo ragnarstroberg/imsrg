@@ -316,8 +316,8 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
 //         for (int T=Tmin; T<=3; ++T)
          for (int T=Tmin; T<=3; T+=2)
          {
-           double CG3 = AngMom::CG(tab,tza+tzb, 0.5,tzc, T/2., tza+tzb+tzc);
-           double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, T/2., tzd+tze+tzf);
+           double CG3 = AngMom::CG(tab,tza+tzb, 0.5,tzc, 0.5*T, tza+tzb+tzc);
+           double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, 0.5*T, tzd+tze+tzf);
 //           std::cout << " T = " << T << "  CG: " << CG3 << " " << CG4 << std::endl;
            if (CG3*CG4==0) continue;
            Vpn += CG1*CG2*CG3*CG4*GetME(Jab_in,Jde_in,J2,tab,tde,T,a,b,c,d,e,f);
