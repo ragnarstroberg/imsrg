@@ -1901,8 +1901,8 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
           size_t dimNAS_abc = GetDimensionNAS( twoT, twoJ12, E12abc%2, E12abc ); 
           size_t dimAS_abc = GetDimensionAS( twoT, twoJ12, E12abc%2, E12abc ); 
           if (dimNAS_abc==0 or dimAS_abc==0) continue;
-          size_t cfp_begin_abc = GetCFPStartLocation(twoT,twoJ12,E12abc);
-          arma::mat cfp_abc( &(cfpvec[cfp_begin_abc]), dimNAS_abc, dimAS_abc, false); // false refers to copy_aux_mem
+//          size_t cfp_begin_abc = GetCFPStartLocation(twoT,twoJ12,E12abc);
+//          arma::mat cfp_abc( &(cfpvec[cfp_begin_abc]), dimNAS_abc, dimAS_abc, false); // false refers to copy_aux_mem
 
          
 //          for (int E12def=E12abc%2; E12def<=std::min(Nmax,E3max-Ecm); E12def+=2 ) // we can probably make use of some hermiticity here
@@ -1911,16 +1911,16 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
             size_t dimNAS_def = GetDimensionNAS( twoT, twoJ12, E12def%2, E12def ); 
             size_t dimAS_def = GetDimensionAS( twoT, twoJ12, E12def%2, E12def ); 
             if (dimNAS_def==0 or dimAS_def==0) continue;
-            size_t cfp_begin_def = GetCFPStartLocation(twoT,twoJ12,E12def);
-            arma::mat cfp_def( &(cfpvec[cfp_begin_def]), dimNAS_def, dimAS_def, false); // false refers to copy_aux_mem
+//            size_t cfp_begin_def = GetCFPStartLocation(twoT,twoJ12,E12def);
+//            arma::mat cfp_def( &(cfpvec[cfp_begin_def]), dimNAS_def, dimAS_def, false); // false refers to copy_aux_mem
 
             size_t startlocAS = GetStartLocAS( twoT, twoJ12, E12abc, E12def);
             arma::mat matelAS( &meAS[startlocAS], dimAS_abc, dimAS_def, false ); 
 //            arma::mat local_copy = Tabc * matelAS * cfp_def.t() * Tdef.t(); 
 
-            if (verbose) std::cout << "matelNAS = cfp * matelAS * cfp" << std::endl;
-            if (verbose) std::cout << "matelAS = " << std::endl << matelAS << std::endl;
-            arma::mat matelNAS = 6*cfp_abc * matelAS * cfp_def.t();
+//            if (verbose) std::cout << "matelNAS = cfp * matelAS * cfp" << std::endl;
+//            if (verbose) std::cout << "matelAS = " << std::endl << matelAS << std::endl;
+//            arma::mat matelNAS = 6*cfp_abc * matelAS * cfp_def.t();
             if (verbose) std::cout << "...done" << std::endl;
 
             // Now we loop over the lab-frame matrix elements and update them with the contribution from this jacobi channel
@@ -1945,10 +1945,10 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
 //                if (verbose) std::cout << " ...done" << std::endl;
 
 //                if (verbose and twoJ==1 and twoJ12==1 and Ecm==0 and E12abc==1 and E12def==1 and twoT==3 and Lcm==0)
-                if (verbose and twoJ==3 and Eabc==1 and Edef==1 and twoT==3 )
-                {
-                  std::cout << "  matmult abc: Tabc " << std::endl << Tcoeffs[ MakeUshort6({twoJ,twoT,Eabc, twoJ12,E12abc,Lcm}) ] << std::endl << "matelNAS " << std::endl << matelNAS << std::endl;
-                }
+//                if (verbose and twoJ==3 and Eabc==1 and Edef==1 and twoT==3 )
+//                {
+//                  std::cout << "  matmult abc: Tabc " << std::endl << Tcoeffs[ MakeUshort6({twoJ,twoT,Eabc, twoJ12,E12abc,Lcm}) ] << std::endl << "matelNAS " << std::endl << matelNAS << std::endl;
+//                }
 
 //                for (int Edef=Eabc; Edef<=E3max; Edef+=2)
 //                {
@@ -1993,6 +1993,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
   // and finally, we compute the NO2B part.
 
    if (verbose) std::cout << "Start loop over nkets, computing the NO2B part "<< std::endl;
+   #pragma omp parallel for schedule(dynamic,1)
    for (int i=0; i<nkets; ++i)    
    {
       Ket & bra = tbc.GetKet(i);
@@ -2034,17 +2035,27 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
                   double iso_clebsch_abc =  AngMom::CG(0.5,0.5*bra.op->tz2,0.5,0.5*bra.oq->tz2,Tab,Tzab)
                                           * AngMom::CG(Tab,Tzab,0.5,0.5*oc.tz2,0.5*twoT,Tzab+0.5*oc.tz2);
                   if (std::abs(iso_clebsch_abc)<1e-9) continue;
-                  size_t iabc = ket_3b_lookup[MakeUshort6({a,b,c,Tab,twoJ,twoT})];
+                  auto lab_abc_key = MakeUshort6({a,b,c,Tab,twoJ,twoT});
+//                  if ( ket_3b_lookup.find(lab_abc_key) == ket_3b_lookup.end() )  std::cout << "TROUBLE!!! abc ..." << a << " " << b << " " << c << " " << Tab << " " << twoJ << " " << twoT << std::endl;
+                  size_t iabc = ket_3b_lookup.at(lab_abc_key);
+//                  size_t iabc = ket_3b_lookup[MakeUshort6({a,b,c,Tab,twoJ,twoT})];
                   for ( int Tde=Tab_min; Tde<=Tab_max; Tde++)
                   {
                     double iso_clebsch_def =  AngMom::CG(0.5,0.5*ket.op->tz2,0.5,0.5*ket.oq->tz2,Tde,Tzab)
                                             * AngMom::CG(Tde,Tzab,0.5,0.5*of.tz2,0.5*twoT,Tzab+0.5*oc.tz2);
-                    size_t idef = ket_3b_lookup[MakeUshort6({d,e,f,Tde,twoJ,twoT})];
                     if (std::abs(iso_clebsch_def)<1e-9) continue;
-                    v3_pn += iso_clebsch_abc * iso_clebsch_def *  V3Full[MakeUshort3({twoJ,twoT,Eabc%2})](Eabc,Edef)(iabc,idef);
+                    auto lab_def_key = MakeUshort6({d,e,f,Tde,twoJ,twoT});
+//                    if ( ket_3b_lookup.find(lab_def_key) == ket_3b_lookup.end() )  std::cout << "TROUBLE!!! def ..." << d << " " << e << " " << f << " " << Tde << " " << twoJ << " " << twoT << std::endl;
+                    size_t idef = ket_3b_lookup.at(lab_def_key);
+//                    size_t idef = ket_3b_lookup[MakeUshort6({d,e,f,Tde,twoJ,twoT})];
+                    auto V3key = MakeUshort3({twoJ,twoT,Eabc%2});
+//                    if ( V3Full.find(V3key) == V3Full.end() ) std::cout << "TROUBLE!!! LOOKING FOR " << twoJ << " " << twoT << " " << Eabc%2 << "   and came up empty" << std::endl;
+                    v3_pn += iso_clebsch_abc * iso_clebsch_def *  V3Full.at(V3key)(Eabc,Edef)(iabc,idef);
+//                    v3_pn += iso_clebsch_abc * iso_clebsch_def *  V3Full[MakeUshort3({twoJ,twoT,Eabc%2})](Eabc,Edef)(iabc,idef);
                     if (verbose ) std::cout << "J, T, Tab, Tde = " << twoJ << " " << twoT << " " << Tab << " " << Tde << " clebsch " << iso_clebsch_abc << " " << iso_clebsch_def
                                            << "  abcdef = " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "   "
-                              << V3Full[MakeUshort3({twoJ,twoT,Eabc%2})](Eabc,Edef)(iabc,idef) << "   -> v3pn = " << v3_pn << std::endl;
+                              << V3Full[V3key](Eabc,Edef)(iabc,idef) << "   -> v3pn = " << v3_pn << std::endl;
+//                              << V3Full[MakeUshort3({twoJ,twoT,Eabc%2})](Eabc,Edef)(iabc,idef) << "   -> v3pn = " << v3_pn << std::endl;
                   }
                 }
 //                if (verbose) std::cout << "T = " << twoT << "  J = " << twoJ <<  "   abcdef = " << a << " " << b << " " << c << " " << d << " " << e << " " << f
@@ -3123,6 +3134,27 @@ double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int two
 // Limit on Lambda : Triangle.
 // Limit on L2 : must be <= Nmax
 // Limit on L : 3 * lmax.
+//
+//   GetSixJ( 2*Jab,2*J1,2*curlyL, 2*L1, 2*Lab, 2*S1)
+//
+//           double twelvej = ComputeTwelveJ( twoJ, j2c, 1, twoJ2,
+//                                            2*Jab, 2*lc, 2*L2, twoJ12,
+//                                           2*J1, 2*curlyL, 2*Lambda, 2*Lcm );
+//
+//     twelvej += (x+1) * AngMom::phase( (S+x )/2 ) 
+//                                           * GetSixJ( c1,c2,b12, a2,a1,x)
+//                                           * GetSixJ( c2,c3,b23, a3,a2,x)
+//                                           * GetSixJ( c4,c3,b34, a3,a4,x)
+//                                           * GetSixJ( c4,b41,a1, c1,x,a4);
+//  The 6J coefficients that we need for the Tcoefficients are:
+//   1: { J1  curlyL  Jab }   2: { curlyL Lambda lc }   3: { Lcm Lambda L2 } 4: { Lcm J12 J }  5: { Jab  J1  curlyL }
+//      { jc  J       x   }      { 1/2    jc     x  }      { 1/2   J2   x  }    { J1  x  J2 }     { L1   Lab  S1    }
+//
+//  Limits J1 <= Nmax
+//         Lcm <= E3max
+//         Jab <= min(2emax+1,E3max+1)
+//
+//
   void Jacobi3BME::PreComputeSixJ()
   {
     double t_start = omp_get_wtime();
@@ -3134,7 +3166,7 @@ double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int two
 //    std::cout << "limit on j1+J6 = " << 2*std::max(E3max,Nmax) << std::endl;
     // first, we do the all-integer ones
 //    for (int j1=0; j1<=(6*emax+1); j1+=2)  // 2 * Lcm can go up to 6emax. Wait, no. It can only to up to 2*E3max
-    for (int j1=0; j1<=(2*E3max); j1+=2)  // 2 * Lcm can go up to 6emax. Wait, no. It can only to up to 2*E3max
+    for (int j1=0; j1<=std::max(2*E3max,4*emax+2); j1+=2)  // 2 * Lcm can go up to 6emax. Wait, no. It can only to up to 2*E3max
     {
 //     for (int j2=0; j2<=(6*emax+1); j2+=2)
      for (int j2=0; j2<=std::max({4*emax,2*Nmax+1,2*E3max}); j2+=2)
