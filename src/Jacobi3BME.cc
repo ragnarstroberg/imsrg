@@ -1753,11 +1753,12 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
          ket_3b_lookup[ MakeUshort6({a,b,c,Tab,twoJ,twoT}) ] = channel_vec.size();  // this tells us where in the matrix this 3b state will live
          channel_vec.push_back( {a,b,c,Tab}); // add the 3b state to the vector of 3b states in this J,T,E channel
 //         std::cout << "Added state |" << a << " " << b << " " << c << " " << Tab << ">  to channel  ( " << twoJ << " " << twoT << " " << Eabc << " ) " << std::endl;
-         if ( V3Full.find( {twoJ,twoT,parity} ) == V3Full.end())
+         auto V3key = MakeUshort3({twoJ,twoT,parity});
+         if ( V3Full.find( V3key ) == V3Full.end())
          {
            // Allocate the arma::field of matrices for this J,T,p channel.
            // We only use ether the even or the odd Eabc, but since we don't allocate the others I don't expect this to be much of an issue.
-           V3Full[MakeUshort3({twoJ,twoT,parity})] = arma::field<arma::mat>(E3max+1,E3max+1); 
+           V3Full[V3key] = arma::field<arma::mat>(E3max+1,E3max+1); 
          }
         }
        }
@@ -2006,7 +2007,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
         int e = ket.q;
         int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
 //        for ( auto a : modelspace->all_orbits )
-        for ( auto c : occupied_orbits )
+        for ( int c : occupied_orbits )
         {
           Orbit & oc = hf.modelspace->GetOrbit(c);
           int Eabc = 2*oc.n+oc.l+e2bra;
