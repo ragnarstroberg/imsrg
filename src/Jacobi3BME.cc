@@ -2753,7 +2753,6 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
     double sb = 0.5;
     double jc = 0.5*j2c;
     double sc = 0.5;
-//
     double S2 = 0.5; 
 //    std::cout << std::endl << " " << __func__ << " ( " << na << " " << la << " " << j2a << "  " << nb << " " << lb << " " << j2b << "  " << nc << " " << lc << " " << j2c
 //              << "   " << Jab << " " << twoJ << "  " << N1 << " " << L1 << " " << S1 << "   " << N2 << " " << L2 << "  " << twoJ2 << " " << twoJ12 << "  " << Ncm << " " << Lcm << " ) " << std::endl;
@@ -2800,7 +2799,7 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
         int Lambda_max = std::min( Lcm+L2, curlyL+lc );
         for (int Lambda=Lambda_min; Lambda<=Lambda_max; Lambda++) 
         {
-          if (Lambda>E3max) continue; // this is tentative...
+//          if (Lambda>E3max) continue; // this is tentative...
           // It will speed things up a bit to precompute these
           int moshphase2 = AngMom::phase( Lcm+L2+Lambda + 0*(Lcm+L2 - curlyL-lc)/2 ); // converting phase conventions (comment at the beginning of the function)
           double mosh2 = moshphase2 * (2*Lambda+1) * GetMoshinsky2(    Ncm,Lcm,     N2,L2,  curlyN,curlyL, nc,lc,  Lambda);
@@ -2836,8 +2835,8 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
               or ( j2c > (2*curlyL+twoJ2+2*Lcm)) or ( (2*curlyL)>(j2c+twoJ2+2*Lcm)) or (twoJ2>(j2c+2*curlyL+2*Lcm)) or ((2*Lcm)>(j2c+2*curlyL+twoJ2)) ) continue;
 
 
-//          double twelvej = GetTwelveJ( twoJ, j2c, 1, twoJ2,
-          double twelvej = ComputeTwelveJ( twoJ, j2c, 1, twoJ2,
+//          double twelvej = ComputeTwelveJ( twoJ, j2c, 1, twoJ2,
+          double twelvej = GetTwelveJ( twoJ, j2c, 1, twoJ2,
                                             2*Jab, 2*lc, 2*L2, twoJ12,
                                            2*J1, 2*curlyL, 2*Lambda, 2*Lcm );
 //          IMSRGProfiler::timer["ComputeTwelveJ"] += omp_get_wtime() - tstart;
@@ -2942,6 +2941,11 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
 //  { a1   a2   a3    a4    }
 //  {   b12  b23   b34  b41 }  = sum_x (-1)^(S-x)  { c1  c2  b12 } { c2  c3  b23 } { c4 c3 b34 } { c4 b41 a1 }
 //  { c1   c2   c3   c4     }                      { a2  a1  x   } { a3  a2  x   } { a3 a4 x   } { c1 x   a4 }
+//
+
+//  { a1   a2   a3    a4    }
+//  {   b12  b23   b34  b41 }  = sum_x (-1)^(S-x)  { c1  b12 c2  } { c2  b23 c3  } { c4 b34 c3 } { c4 b41 a1 }
+//  { c1   c2   c3   c4     }                      { a2  x   a1  } { a3  x   a2  } { a3 x   a4 } { c1 x   a4 }
 double Jacobi3BME::ComputeTwelveJ(int a1, int a2, int a3, int a4, int b12, int b23, int b34, int b41, int c1, int c2, int c3, int c4)
 {
   double twelvej = 0;
@@ -2950,13 +2954,13 @@ double Jacobi3BME::ComputeTwelveJ(int a1, int a2, int a3, int a4, int b12, int b
 //  if (   (a1>(a3+c1+c3)) or (a3>(a1+c1+c3)) or (c1>(a1+a3+c3)) or (c3>(a1+a3+c1))
 //      or (a2>(a4+c2+c4)) or (a4>(a2+c2+c4)) or (c2>(a2+a4+c4)) or (c4>(a2+a4+c2)) ) return 0.0;
 
-  if (c4==0) // this check doesn't seem to do all that much
-  {
-    if ( (b41!=a1) or (c3!=b34) ) return 0;
-    if ( std::abs(c1-c2)>b12 or (c1+c2)<b12 or std::abs(a2-b41)>b12 or (a2+b41)<b12 or std::abs(c1-b41)>a4 or (c1+b41)<a4 or std::abs(c2-a2)>a4 or (c2+a2)<a4 ) return 0;
-    twelvej = AngMom::phase( (b12+b23+b34+b41-a2-c2)/2 ) * GetSixJ( c1,c2, b12, a2,b41,a4) * GetSixJ(c2,b34,b23,a3,a2,a4) /  sqrt( (b41+1.)*(b34+1) );
-    return twelvej;
-  }
+//  if (c4==0) // this check doesn't seem to do all that much
+//  {
+//    if ( (b41!=a1) or (c3!=b34) ) return 0;
+//    if ( std::abs(c1-c2)>b12 or (c1+c2)<b12 or std::abs(a2-b41)>b12 or (a2+b41)<b12 or std::abs(c1-b41)>a4 or (c1+b41)<a4 or std::abs(c2-a2)>a4 or (c2+a2)<a4 ) return 0;
+//    twelvej = AngMom::phase( (b12+b23+b34+b41-a2-c2)/2 ) * GetSixJ( c1,c2, b12, a2,b41,a4) * GetSixJ(c2,b34,b23,a3,a2,a4) /  sqrt( (b41+1.)*(b34+1) );
+//    return twelvej;
+//  }
 
   int x_min = std::max( { std::abs(c1-a1),  std::abs(c2-a2), std::abs(c3-a3), std::abs(c4-a4)   });
   int x_max = std::min( { a1+c1, a2+c2, a3+c3, a4+c4   });
@@ -2964,14 +2968,17 @@ double Jacobi3BME::ComputeTwelveJ(int a1, int a2, int a3, int a4, int b12, int b
 //  std::cout << "      x range " << x_min << " " << x_max << std::endl;
   for (int x = x_min; x<=x_max; x +=2)
   {
-//    std::cout << "     sixJs  ( " << c1 << " " << c2 << " " << b12 << "  " << a2 << " " << a1 << " " << x << " ) "
-//                     << "     ( " << c2 << " " << c3 << " " << b23 << "  " << a3 << " " << a2 << " " << x << " ) "
-//                     << "     ( " << c4 << " " << c3 << " " << b34 << "  " << a3 << " " << a4 << " " << x << " ) "
+//    std::cout << "     sixJs  ( " << c1  << " " << b12 << " " << c2<< "  " << a2 << " " << x<< " " << a1  << " ) "
+//                     << "     ( " << c2  << " " << b23 << " " << c3<< "  " << a3 << " " << x<< " " << a2  << " ) "
+//                     << "     ( " << c4  << " " << b34 << " " << c3<< "  " << a3 << " " << x<< " " << a4  << " ) "
 //                     << "     ( " << c4 << " " << b41 << " " << a1 << "  " << c1 << " " << x << " " << a4 << " ) "
 //                     << std::endl;
-    double sixj1 = GetSixJ( c1,c2,b12, a2,a1,x);
-    double sixj2 = GetSixJ( c2,c3,b23, a3,a2,x);
-    double sixj3 = GetSixJ( c4,c3,b34, a3,a4,x);
+//    double sixj1 = GetSixJ( c1,c2,b12, a2,a1,x);
+//    double sixj2 = GetSixJ( c2,c3,b23, a3,a2,x);
+//    double sixj3 = GetSixJ( c4,c3,b34, a3,a4,x);
+    double sixj1 = GetSixJ( c1,b12,c2, a2,x,a1);
+    double sixj2 = GetSixJ( c2,b23,c3, a3,x,a2);
+    double sixj3 = GetSixJ( c4,b34,c3, a3,x,a4);
     double sixj4 = GetSixJ( c4,b41,a1, c1,x,a4);
     twelvej += (x+1) * AngMom::phase( (S+x )/2 ) * sixj1 * sixj2 * sixj3 * sixj4;
 //    twelvej += (x+1) * AngMom::phase( (S+x )/2 ) 
@@ -3235,9 +3242,17 @@ double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int two
 //   1: { J1  curlyL  Jab }   2: { curlyL Lambda lc }   3: { Lcm Lambda L2 } 4: { Lcm J12 J }  5: { Jab  J1  curlyL }
 //      { jc  J       x   }      { 1/2    jc     x  }      { 1/2   J2   x  }    { J1  x  J2 }     { L1   Lab  S1    }
 //
+// Different ordering
+//   1: { J1 Jab curlyL }   2: { curlyL lc Lambda }   3: { Lcm  L2 Lambda } 4: { Lcm  J12  J }  5: { Jab  J1  curlyL }
+//      { jc x   J      }      { 1/2    x  jc     }      { 1/2  x    J2   }    { J1   x   J2 }     { L1   Lab  S1    }
+//
 //  Limits J1 <= Nmax
 //         Lcm <= E3max
 //         Jab <= min(2emax+1,E3max+1)
+//         Lambda is x+- 1/2, and 
+//
+// { Jab J1 curlyL }
+// { L1  Lab  S1   }
 //
 //
   void Jacobi3BME::PreComputeSixJ()
@@ -3245,111 +3260,208 @@ double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int two
     double t_start = omp_get_wtime();
     std::cout << "Precalculating SixJ's" << std::endl;
     std::vector<uint64_t> KEYS;
-//    std::cout << "j1 goes up to " << (2*E3max) << std::endl;
-//    std::cout << "j2 goes up to " <<  std::max({4*emax,2*Nmax+1,2*E3max}) << std::endl;
-//    std::cout << "J4 goes up to " << (2*Nmax+1) << std::endl;
+//    std::cout << "j1 goes up to " << (2*E2max)+2 << std::endl;
+//    std::cout << "j2 goes up to " <<  2*Nmax+2 << std::endl;
+//    std::cout << "J4 goes up to " << 2*Nmax << std::endl;
 //    std::cout << "limit on j1+J6 = " << 2*std::max(E3max,Nmax) << std::endl;
-    // first, we do the all-integer ones
-//    for (int j1=0; j1<=(6*emax+1); j1+=2)  // 2 * Lcm can go up to 6emax. Wait, no. It can only to up to 2*E3max
-    for (int j1=0; j1<=std::max(2*E3max,4*emax+2); j1+=2)  // 2 * Lcm can go up to 6emax. Wait, no. It can only to up to 2*E3max
+//
+//  
+// { Jab J1 curlyL }
+// { L1  Lab  S1   }
+    for (int twoJab=0; twoJab<=2*E2max+2; twoJab+=2)
     {
-//     for (int j2=0; j2<=(6*emax+1); j2+=2)
-     for (int j2=0; j2<=std::max({4*emax,2*Nmax+3,2*E3max}); j2+=2)
+     for (int twoJ1=0; twoJ1<=2*Nmax+2; twoJ1+=2)
      {
-      for (int j3=std::abs(j1-j2); j3<=(j1+j2); j3+=2)
+      for (int twocurlyL=std::abs(twoJab-twoJ1); twocurlyL<=(twoJab+twoJ1); twocurlyL+=2)
       {
-//       for (int J4=0; J4<=3*(2*emax+1); J4+=2)
-       for (int J4=0; J4<=(2*Nmax+1); J4+=2)
+       for (int twoL1=0; twoL1<=2*Nmax; twoL1+=2)
        {
-        for (int J5=std::abs(j3-J4); J5<=(j3+J4); J5+=2)
+        for (int twoS1=0; twoS1<=2; twoS1+=2)
         {
-         for (int J6=std::max(std::abs(j1-J5),std::abs(j2-J4)); J6<=std::min(j1+J5,j2+J4); J6+=2)
+         for (int twoLab=std::abs(twoJab-twoS1); twoLab<=twoJab+twoS1; twoLab+=2)
          {
-           if (J6>2) continue;
-//           if ( (j1 + J6)>2*std::max(E3max,Nmax)) continue;   // why this???
-           uint64_t key = Jacobi3BME::SixJHash(j1,j2,j3,J4,J5,J6);
+          // maybe apply some other constraints here? Tetragons?
+           uint64_t key = Jacobi3BME::SixJHash(twoJab,twoJ1,twocurlyL,twoL1,twoLab,twoS1);
            if ( SixJList.count(key) == 0 ) 
            {
              KEYS.push_back(key);
              SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
            }
-         } // for J6
-        } // for J5
-       } // for J4
+         }
+        }
+       }
+      }
+     }
+    }
 
-       // Now we do the half-integer bottom row
-       //       double sixj2 = GetSixJ( 2*Lcm,2*L12,2*L, twoS12,twoJ,twoJ12); twoJ <= 6emax+3, twoJ12<=Jmax, L could be up to 6emax+6
-       // { j1  j2 j3  }
-       // { S12 J  J12 }
-
-        // replaced by
-          // { J     jc     sc     J2     }
-          // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) {curlyL J1   Jab } { Lambda curlyL lc } { Lcm  Lambda  L2 } { J2  J1  J12 }
-          // { J1  curlyL Lambda   Lcm    }                    {J      jc   x   } { jc     sc      x } { sc   J2      x  } { J   Lcm  x  }
-//       if ((j1+j2)>2*E3max) continue;
-//       for (int S12=1; S12<=3; S12+=2)
-       for (int S12=1; S12<=std::max(twoJmax,2*emax+1); S12+=2)
+// 
+//        double mosh1 = mosh1phase  * GetMoshinsky1( curlyN,curlyL,  N1,L1,      na,la,     nb,lb,     Lab); // we've cached the d=1 brackets
+//          double mosh2 = moshphase2 * (2*Lambda+1) * GetMoshinsky2(    Ncm,Lcm,     N2,L2,  curlyN,curlyL, nc,lc,  Lambda);
+//  mosh1 limits curlyL to E2max
+//
+//   1: { J1 Jab curlyL }   2: { curlyL lc Lambda }   3: { Lcm  L2 Lambda }  
+//      { jc x   J      }      { 1/2    x  jc     }      { 1/2  x    J2   }  
+    for (int twol1=0; twol1<=std::max({2*Nmax+2, 2*E2max, 2*E3max}); twol1+=2)
+    {
+     for (int twol2=0; twol2<=std::max({2*E2max+2,2*emax,2*Nmax}); twol2+=2)
+     {
+      for (int twol3=std::abs(twol1-twol2); twol3<=twol1+twol2; twol3+=2)
+      {
+       for (int twoj1=1; twoj1<=2*emax+1; twoj1+=2)
        {
-        for (int J=std::abs(S12-j3); J<=(S12+j3); J+=2)
+        if (twoj1 + twol2 > 2*E3max+3) continue;
+        for (int twoj2=std::abs(twoj1-twol3); twoj2<=twoj1+twol3; twoj2+=2)
         {
-         for (int J12=std::max(std::abs(j1-J),std::abs(j2-S12)); J12<=std::min((j1+J),(j2+S12)); J12+=2)
+         for (int twoj3=std::max(std::abs(twol1-twoj2),std::abs(twol2-twoj1)); twoj3<=std::min(twol1+twoj2,twol2+twoj1); twoj3+=2)
          {
-           uint64_t key = Jacobi3BME::SixJHash(j1,j2,j3,S12,J,J12);
+          // check some tetragons
+           uint64_t key = Jacobi3BME::SixJHash(twol1,twol2,twol3,twoj1,twoj2,twoj3);
            if ( SixJList.count(key) == 0 ) 
            {
              KEYS.push_back(key);
              SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
            }
-         } // for J12
-        } // for J
-       } // for S12
-      } // for j3
-     } // for j2
-    } // for j1
+         }
+        }
+       }
+      }
+     }
+    }
 
-    // one last form that doesn't fit with the others
-    // { Lcm  J12  J2 }
-    // { J1   x    J  }
-   // { J2  J1  J12 }  =>  { Lcm  J12  J  }
-   // { J   Lcm  x  }      { J1   x    J2 }
-//          int twox_min = std::max( { std::abs(2*curlyL-j2c),  std::abs(twoJ-2*J1), std::abs(2*Lambda-1), std::abs(2*Lcm-twoJ2)   });
-//          int twox_max = std::min( { (2*curlyL+j2c),  (twoJ+2*J1), (2*Lambda+1),  (2*Lcm+twoJ2)   });
-//   x = Lambda += 1/2;  Triangle( Lambda,Lcm,L2), Triangle(Lambda,curlyL,lc),  Triangle(L2,J2,1),   so Lambda + Lcm <= L2 <= J2+1    so x <= Lambda+1 <= Lcm + L2 + 1 <= Lcm + J2 + 2
-//  Triangle( x,sc,Lambda) 
+// third type of 6j { Lcm  J12  J }
+//                  { J1   x   J2 }
 
-
-     for (int twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
+   for (int twoLcm=0; twoLcm<=2*E3max; twoLcm+=2)
+   {
+    for (int twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
+    {
+     for (int twoJ=std::abs(twoLcm-twoJ12); twoJ<=std::min(twoLcm+twoJ12,2*E3max+3); twoJ+=2)
      {
-//      for (int twoJ=std::abs(twoLcm-twoJ12); twoJ<=(twoLcm+twoJ12); twoJ+=2)
-      for (int twoJ=1; twoJ<=(2*E3max+3); twoJ+=2)
+      for (int twoJ1=0; twoJ1<=2*Nmax+2; twoJ1+=2)
       {
-//      for (int twoLcm=0; twoLcm<=(6*emax+1); twoLcm+=2)  // 2 * Lcm can go up to 6emax
-//      for (int twoLcm=std::abs(twoJ-twoJ12); twoLcm<=std::min(twoJ+twoJ12,6*emax); twoLcm+=2)  // 2 * Lcm can go up to 6emax
-      for (int twoLcm=std::abs(twoJ-twoJ12); twoLcm<=std::min({twoJ+twoJ12,2*E3max,6*emax,2*E3max+3-twoJ12}); twoLcm+=2)  // 2 * Lcm can go up to 6emax
-      {
-        for (int twoJ1=0; twoJ1<=2*(Nmax+1); twoJ1+=2)
+       for (int twox=std::abs(twoJ1-twoJ); twox<=twoJ1+twoJ; twox+=2)
+       {
+        for (int twoJ2=std::max(std::abs(twoJ12-twoJ1),std::abs(twoLcm-twox)); twoJ2<=std::min({twoJ12+twoJ1,twoLcm+twox,2*Nmax+3-twoJ1}); twoJ2+=2)
         {
-         for (int twox=std::abs(twoJ-twoJ1); twox<=(twoJ+twoJ1); twox+=2)
-         {
-//          for (int twoJ2=std::max({ std::abs(twoLcm-twox), std::abs(twoJ1-twoJ12), twox-twoLcm-2  } ); twoJ2<=std::min( { (twoLcm+twox), (twoJ1+twoJ12), 2*Nmax+3-twoJ1 } ); twoJ2+=2)
-          for (int twoJ2=std::max({ std::abs(twoLcm-twox), std::abs(twoJ1-twoJ12)  } ); twoJ2<=std::min( { (twoLcm+twox), (twoJ1+twoJ12), 2*Nmax+3-twoJ1 } ); twoJ2+=2)
-          {
-//           if ( twoJ2 < twox - twoLcm - 2 ) continue;
-//           if ( (twoJ1+twoJ2) > 2*Nmax+3) continue;
-           if ( (twoJ1+twoJ2+twoLcm) > 2*(E3max+3) ) continue;
+         // more checking ?
            uint64_t key = Jacobi3BME::SixJHash(twoLcm,twoJ12,twoJ,twoJ1,twox,twoJ2);
            if ( SixJList.count(key) == 0 ) 
            {
              KEYS.push_back(key);
              SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
            }
-           
-          }
-         }
         }
+       }
       }
      }
     }
+   }
+
+/////////////////////////////////////////
+//    // first, we do the all-integer ones
+////    for (int j1=0; j1<=(6*emax+1); j1+=2)  // 2 * Lcm can go up to 6emax. Wait, no. It can only to up to 2*E3max
+//    for (int j1=0; j1<=std::max(2*E3max,4*emax+2); j1+=2)  // 2 * Lcm can go up to 6emax. Wait, no. It can only to up to 2*E3max
+//    {
+////     for (int j2=0; j2<=(6*emax+1); j2+=2)
+////     for (int j2=0; j2<=std::max({4*emax,2*Nmax+3,2*E3max+2}); j2+=2)
+////                                   Jab       L2,J1      J12      J1
+//     for (int j2=0; j2<=std::max({4*emax+2, 2*E3max+2-j1, twoJmax, 2*Nmax+2}); j2+=2)
+//     {
+//      for (int j3=std::abs(j1-j2); j3<=(j1+j2); j3+=2)
+//      {
+////       for (int J4=0; J4<=3*(2*emax+1); J4+=2)
+//       for (int J4=0; J4<=(2*Nmax+0); J4+=2)
+//       {
+//        for (int J5=std::abs(j3-J4); J5<=(j3+J4); J5+=2)
+//        {
+//         for (int J6=std::max(std::abs(j1-J5),std::abs(j2-J4)); J6<=std::min(j1+J5,j2+J4); J6+=2)
+//         {
+//           if (J6>2) continue;
+////           if ( (j1 + J6)>2*std::max(E3max,Nmax)) continue;   // why this???
+//           uint64_t key = Jacobi3BME::SixJHash(j1,j2,j3,J4,J5,J6);
+//           if ( SixJList.count(key) == 0 ) 
+//           {
+//             KEYS.push_back(key);
+//             SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+//           }
+//         } // for J6
+//        } // for J5
+//       } // for J4
+//
+//       // Now we do the half-integer bottom row
+//       //       double sixj2 = GetSixJ( 2*Lcm,2*L12,2*L, twoS12,twoJ,twoJ12); twoJ <= 6emax+3, twoJ12<=Jmax, L could be up to 6emax+6
+//       // { j1  j2 j3  }
+//       // { S12 J  J12 }
+//
+//        // replaced by
+//          // { J     jc     sc     J2     }
+//          // {   Jab    lc      L2   J12  } = sum_x (-1)^(S-x) {curlyL J1   Jab } { Lambda curlyL lc } { Lcm  Lambda  L2 } { J2  J1  J12 }
+//          // { J1  curlyL Lambda   Lcm    }                    {J      jc   x   } { jc     sc      x } { sc   J2      x  } { J   Lcm  x  }
+////       if ((j1+j2)>2*E3max) continue;
+////       for (int S12=1; S12<=3; S12+=2)
+//// 
+//       for (int S12=1; S12<=std::max(twoJmax,2*emax+1); S12+=2)
+//       {
+//        for (int J=std::abs(S12-j3); J<=(S12+j3); J+=2)
+//        {
+//         for (int J12=std::max(std::abs(j1-J),std::abs(j2-S12)); J12<=std::min((j1+J),(j2+S12)); J12+=2)
+//         {
+//           uint64_t key = Jacobi3BME::SixJHash(j1,j2,j3,S12,J,J12);
+//           if ( SixJList.count(key) == 0 ) 
+//           {
+//             KEYS.push_back(key);
+//             SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+//           }
+//         } // for J12
+//        } // for J
+//       } // for S12
+//      } // for j3
+//     } // for j2
+//    } // for j1
+//
+//    // one last form that doesn't fit with the others
+//    // { Lcm  J12  J2 }
+//    // { J1   x    J  }
+//   // { J2  J1  J12 }  =>  { Lcm  J12  J  }
+//   // { J   Lcm  x  }      { J1   x    J2 }
+////          int twox_min = std::max( { std::abs(2*curlyL-j2c),  std::abs(twoJ-2*J1), std::abs(2*Lambda-1), std::abs(2*Lcm-twoJ2)   });
+////          int twox_max = std::min( { (2*curlyL+j2c),  (twoJ+2*J1), (2*Lambda+1),  (2*Lcm+twoJ2)   });
+////   x = Lambda += 1/2;  Triangle( Lambda,Lcm,L2), Triangle(Lambda,curlyL,lc),  Triangle(L2,J2,1),   so Lambda + Lcm <= L2 <= J2+1    so x <= Lambda+1 <= Lcm + L2 + 1 <= Lcm + J2 + 2
+////  Triangle( x,sc,Lambda) 
+//
+//
+//     for (int twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
+//     {
+////      for (int twoJ=std::abs(twoLcm-twoJ12); twoJ<=(twoLcm+twoJ12); twoJ+=2)
+//      for (int twoJ=1; twoJ<=(2*E3max+3); twoJ+=2)
+//      {
+////      for (int twoLcm=0; twoLcm<=(6*emax+1); twoLcm+=2)  // 2 * Lcm can go up to 6emax
+////      for (int twoLcm=std::abs(twoJ-twoJ12); twoLcm<=std::min(twoJ+twoJ12,6*emax); twoLcm+=2)  // 2 * Lcm can go up to 6emax
+//      for (int twoLcm=std::abs(twoJ-twoJ12); twoLcm<=std::min({twoJ+twoJ12,2*E3max,6*emax,2*E3max+3-twoJ12}); twoLcm+=2)  // 2 * Lcm can go up to 6emax
+//      {
+//        for (int twoJ1=0; twoJ1<=2*(Nmax+1); twoJ1+=2)
+//        {
+//         for (int twox=std::abs(twoJ-twoJ1); twox<=(twoJ+twoJ1); twox+=2)
+//         {
+////          for (int twoJ2=std::max({ std::abs(twoLcm-twox), std::abs(twoJ1-twoJ12), twox-twoLcm-2  } ); twoJ2<=std::min( { (twoLcm+twox), (twoJ1+twoJ12), 2*Nmax+3-twoJ1 } ); twoJ2+=2)
+//          for (int twoJ2=std::max({ std::abs(twoLcm-twox), std::abs(twoJ1-twoJ12)  } ); twoJ2<=std::min( { (twoLcm+twox), (twoJ1+twoJ12), 2*Nmax+3-twoJ1 } ); twoJ2+=2)
+//          {
+////           if ( twoJ2 < twox - twoLcm - 2 ) continue;
+////           if ( (twoJ1+twoJ2) > 2*Nmax+3) continue;
+//           if ( (twoJ1+twoJ2+twoLcm) > 2*(E3max+3) ) continue;
+//           uint64_t key = Jacobi3BME::SixJHash(twoLcm,twoJ12,twoJ,twoJ1,twox,twoJ2);
+//           if ( SixJList.count(key) == 0 ) 
+//           {
+//             KEYS.push_back(key);
+//             SixJList[key] = 0.; // Make sure eveything's in there to avoid a rehash in the parallel loop
+//           }
+//           
+//          }
+//         }
+//        }
+//      }
+//     }
+//    }
     
     // now we actually compute them all.
     #pragma omp parallel for schedule(dynamic,1)
@@ -3484,6 +3596,8 @@ double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int two
               if (twoLambda>(twoJ+twoJ1+1)) continue;
               for (int twocurlyL=std::max( std::abs(twoJab-twoJ1),std::abs(twoLambda-twolc)); twocurlyL<=std::min( twoJab+twoJ1, twoLambda+twolc); twocurlyL+=2)
               {
+               if (twocurlyL>2*E2max) continue; // energy conservation in moshinsky bracket
+               if (twocurlyL+twoJ1>2*E2max+2) continue; // energy conservation in moshinsky bracket
                if (twojc>(twocurlyL+twoJ2+twoLcm)) continue;
                if (twocurlyL>(twojc+twoJ2+twoLcm)) continue;
                if (twoJ2>(twojc+twocurlyL+twoLcm)) continue;
@@ -3522,7 +3636,7 @@ double Jacobi3BME::GetNineJ( int twol1, int twol2, int twol3, int twos1, int two
 //                                            << b12 << " " << b23 << " " << b34 << " " << b41 << " "
 //                                            << c1  << " " << c2  << " " << c3  << " " << c4  << std::endl;
       TwelveJList[key] = ComputeTwelveJ(a1,a2,1,a4,b12,b23,b34,b41,c1,c2,c3,c4);
-//      std::cout << "got " << TwelveJList[key] << std::endl;
+//      std::cout << "got " << std::fixed << std::setprecision(6) << TwelveJList[key] << std::endl;
     }
     
     std::cout << "Done with loops in " << __func__ << "  size of keylist is " << keylist.size() << std::endl;
