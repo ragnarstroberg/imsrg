@@ -1367,7 +1367,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
   PreComputeMoshinsky2();
   PreComputeSixJ();
   PreComputeNineJ();
-  PreComputeTwelveJ();
+//  PreComputeTwelveJ();
   hf.Vmon3.resize( hf.Vmon3_keys.size(), 0.);
   struct ljChannel{
      int l; int j2;
@@ -2835,8 +2835,8 @@ void Jacobi3BME::TestReadTcoeffNavratil(std::string fname )
               or ( j2c > (2*curlyL+twoJ2+2*Lcm)) or ( (2*curlyL)>(j2c+twoJ2+2*Lcm)) or (twoJ2>(j2c+2*curlyL+2*Lcm)) or ((2*Lcm)>(j2c+2*curlyL+twoJ2)) ) continue;
 
 
-//          double twelvej = ComputeTwelveJ( twoJ, j2c, 1, twoJ2,
-          double twelvej = GetTwelveJ( twoJ, j2c, 1, twoJ2,
+//          double twelvej = GetTwelveJ( twoJ, j2c, 1, twoJ2,
+          double twelvej = ComputeTwelveJ( twoJ, j2c, 1, twoJ2,
                                             2*Jab, 2*lc, 2*L2, twoJ12,
                                            2*J1, 2*curlyL, 2*Lambda, 2*Lcm );
 //          IMSRGProfiler::timer["ComputeTwelveJ"] += omp_get_wtime() - tstart;
