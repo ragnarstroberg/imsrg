@@ -4000,13 +4000,17 @@ void ReadWrite::ReadVmon3( HartreeFock& hf, std::string filename )
   std::string filler;
   std::getline( infile, filler ); // skip the first comment line
   std::getline( infile, filler ); // skip the second comment line
-  int emax,e2max,e3max,nentries;
-  int emax_hf = hf.modelspace->GetEmax();
-  int e2max_hf = hf.modelspace->GetE2max();
-  int e3max_hf = hf.modelspace->GetE3max();
+  unsigned int emax,e2max,e3max,nentries;
+  unsigned int emax_hf = hf.modelspace->GetEmax();
+  unsigned int e2max_hf = hf.modelspace->GetE2max();
+  unsigned int e3max_hf = hf.modelspace->GetE3max();
+  int norb = hf.modelspace->GetNumberOrbits();
   double hw_hf = hf.modelspace->GetHbarOmega();
   double hw;
   infile >> filler >> emax >> e2max >> e3max >> hw >> nentries;
+
+  std::cout << "reading Vmon3 from file. File: emax = " << emax << "  E2max = " << e2max << " E3max = " << e3max << std::endl;
+  std::cout << "putting into HF object which has emax = " << emax_hf << "  E2max " << e2max_hf << "  E3max " << e3max_hf << std::endl;
 
   if ( std::abs( hw-hw_hf) > 1e-2)
   {
@@ -4019,28 +4023,41 @@ void ReadWrite::ReadVmon3( HartreeFock& hf, std::string filename )
   hf.Vmon3.reserve(nentries);
   hf.Vmon3_keys.reserve(nentries);
 
+//  std::cout << "before reading. Vmon3 size is " << hf.Vmon3.size() << std::endl;
+
   for (size_t i=0; i<nentries; i++)
   {
-    int a,b,c,d,e,f;
+//    int a,b,c,d,e,f;
+    uint64_t a,b,c,d,e,f;
     double vmon;
     infile >> a >> b >> c >> d >> e >> f >> vmon;
+    if (a>=norb or b>=norb or c>=norb or d>=norb or e>=norb or f>=norb) continue;
     Orbit& oa = hf.modelspace->GetOrbit(a);
     Orbit& ob = hf.modelspace->GetOrbit(b);
     Orbit& oc = hf.modelspace->GetOrbit(c);
     Orbit& od = hf.modelspace->GetOrbit(d);
     Orbit& oe = hf.modelspace->GetOrbit(e);
     Orbit& of = hf.modelspace->GetOrbit(f);
-    if ( (2*oa.n+oa.l > emax_hf) or (2*ob.n+ob.l > emax_hf) or (2*oc.n+oc.l > emax_hf)
-        or (2*od.n+od.l > emax_hf) or (2*oe.n+oe.l > emax_hf) or (2*of.n+of.l > emax_hf) ) continue;
-    if ( ((2*(oa.n+ob.n)+oa.l+ob.l) > e2max_hf) or ((2*(oa.n+oc.n)+oa.l+oc.l) > e2max_hf) or ((2*(ob.n+oc.n)+ob.l+oc.l) > e2max_hf) ) continue;
-    if ( ((2*(od.n+oe.n)+od.l+oe.l) > e2max_hf) or ((2*(od.n+of.n)+od.l+of.l) > e2max_hf) or ((2*(oe.n+of.n)+oe.l+of.l) > e2max_hf) ) continue;
-    if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l)>e3max_hf or (2*(od.n+oe.n+of.n)+od.l+oe.l+of.l)>e3max_hf) continue;
+    int ea= 2*oa.n + oa.l;
+    int eb= 2*ob.n + ob.l;
+    int ec= 2*oc.n + oc.l;
+    int ed= 2*od.n + od.l;
+    int ee= 2*oe.n + oe.l;
+    int ef= 2*of.n + of.l;
+    if ( (ea > emax_hf) or (eb > emax_hf) or (ec > emax_hf) or (ed > emax_hf) or (ee > emax_hf) or (ef > emax_hf) ) continue;
+    if ( ((ea+eb) > e2max_hf) or ((ea+ec) > e2max_hf) or ((eb+ec) > e2max_hf) ) continue;
+    if ( ((ed+ee) > e2max_hf) or ((ed+ef) > e2max_hf) or ((ee+ef) > e2max_hf) ) continue;
+    if ( (ea+eb+ec)>e3max_hf or (ed+ee+ef)>e3max_hf) continue;
     auto key = hf.Vmon3Hash(a,b,c,d,e,f);
+//    if (hf.Vmon3.size()<4) std::cout << " Vmon3[ " << hf.Vmon3.size() << " ]  set to " << vmon << "   key is " << key
+//                                     << "  orbits " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
     hf.Vmon3_keys.push_back(key);
     hf.Vmon3.push_back(vmon);
+//    std::cout << "did that work?  " << hf.Vmon3_keys[0] << std::endl;
   }
   
   infile.close();
+//  std::cout << "all done reading" << std::endl;
 }
 
 

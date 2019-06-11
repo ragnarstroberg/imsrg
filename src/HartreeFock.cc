@@ -107,6 +107,9 @@ HartreeFock::HartreeFock(Operator& hbare, Jacobi3BME& jacobi3bme )
 void HartreeFock::Solve()
 {
    double t_start = omp_get_wtime();
+
+//   UpdateDensityMatrix();
+//   UpdateF();
    iterations = 0; // counter so we don't go on forever
    int maxiter = 1000;
 
@@ -471,7 +474,6 @@ void HartreeFock::UpdateF()
    Vij.zeros();
    V3ij.zeros();
 
-
    // This loop isn't thread safe for some reason. Regardless, parallelizing it makes it slower. 
 //   for (int i=0;i<norbits;i++)
    for (auto i : modelspace->all_orbits)
@@ -521,7 +523,7 @@ void HartreeFock::UpdateF()
 
    Vij  = arma::symmatu(Vij);
    V3ij = arma::symmatu(V3ij);
-//   std::cout << "Updating F.  " << std::endl << "KE: " << std::endl << KE << std::endl << std::endl << "Vij" << std::endl << Vij << std::endl;
+//   std::cout << "Updating F.  " << std::endl << "KE: " << std::endl << KE << std::endl << std::endl << "Vij" << std::endl << Vij << std::endl << " V3ij" << std::endl << V3ij << std::endl;
 
    F = KE + Vij + 0.5*V3ij;
 
