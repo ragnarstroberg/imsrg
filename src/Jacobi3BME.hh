@@ -57,6 +57,7 @@ class Jacobi3BME
   std::array<unsigned short,6> MakeUshort6( const std::array<int,6>& arr);
   std::array<unsigned short,7> MakeUshort7( const std::array<int,7>& arr);
   std::array<unsigned short,8> MakeUshort8( const std::array<int,8>& arr);
+  std::array<unsigned short,11> MakeUshort11( const std::array<int,11>& arr);
 
   struct array3_hash {size_t operator() (const std::array<unsigned short,3>& key) const; }; 
   struct array4_hash {size_t operator() (const std::array<unsigned short,4>& key) const; }; 
@@ -64,6 +65,7 @@ class Jacobi3BME
   struct array6_hash {size_t operator() (const std::array<unsigned short,6>& key) const; }; 
   struct array7_hash {size_t operator() (const std::array<unsigned short,7>& key) const; }; 
   struct array8_hash {size_t operator() (const std::array<unsigned short,8>& key) const; }; 
+  struct array11_hash {size_t operator() (const std::array<unsigned short,11>& key) const; }; 
   std::vector<double> TcoeffList; // This may be obsolete
 //  std::unordered_map<std::string,size_t> TcoeffLookup;
 //  std::unordered_map<std::array<unsigned short,7>,size_t,array7_hash> TcoeffLookup;
@@ -74,6 +76,7 @@ class Jacobi3BME
   std::unordered_map<uint64_t,double> SixJList;
   std::unordered_map<uint64_t,double> Moshinsky1List;
   std::unordered_map<uint64_t,double> Moshinsky2List;
+  std::unordered_map<std::array<unsigned short,11>, double, array11_hash> TwelveJList;
 //  std::unordered_map<uint64_t,double> NineJList;
   std::vector<double> NineJList;
 
@@ -152,6 +155,7 @@ class Jacobi3BME
 
   void PreComputeSixJ();
   void PreComputeNineJ();
+  void PreComputeTwelveJ();
 //  void PreComputeMoshinsky();
   void PreComputeMoshinsky1();
   void PreComputeMoshinsky2();
@@ -166,6 +170,7 @@ class Jacobi3BME
   double GetMoshinsky1( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L);
   double GetMoshinsky2( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L);
   double GetNineJ( int j1, int j2, int j3, int j4, int j5, int j6, int j7, int j8, int j9);
+  double GetTwelveJ( int a1, int a2, int a3, int a4, int b12, int b23, int b34, int b41, int c1, int c2, int c3, int c4 );
 
 };
 
