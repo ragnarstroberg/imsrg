@@ -114,18 +114,25 @@ void HartreeFock::Solve()
 //   UpdateF();
    iterations = 0; // counter so we don't go on forever
    int maxiter = 1000;
-   double conv_factor = 0.0;
+//   double conv_factor = 0.0;
 
    for (iterations=0; iterations<maxiter; ++iterations)
    {
       Diagonalize();          // Diagonalize the Fock matrix
       ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
       if (not freeze_occupations) FillLowestOrbits(); // if we don't freeze the occupations, then calculate the new ones.
-      UpdateDensityMatrix(conv_factor);  // Update the 1 body density matrix, used in UpdateF()
+//      UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
+//      UpdateDensityMatrix(conv_factor);  // Update the 1 body density matrix, used in UpdateF()
+      if (iterations>10 and arma::norm( DIIS_error_mats.back(), "fro")<0.1  )
+        UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
+      else
+        UpdateDensityMatrix_DIIS();  // Update the 1 body density matrix, used in UpdateF()
+
       UpdateF();              // Update the Fock matrix
 
       if ( CheckConvergence() ) break;
-      if (iterations>=50) conv_factor=0.1 + 0.0001*iterations; // if we've made 50 iteration and still no convergence, try adding a convergence factor in case we're stuck in an oscillation
+      std::cout << "EHF = " << EHF << std::endl;
+//      if (iterations>=50) conv_factor=0.1 + 0.0001*iterations; // if we've made 50 iteration and still no convergence, try adding a convergence factor in case we're stuck in an oscillation
    }
    CalcEHF();
 
@@ -410,17 +417,88 @@ void HartreeFock::Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int&
 /// the core (i.e. below the fermi surface)
 //*********************************************************************
 //void HartreeFock::UpdateDensityMatrix()
-void HartreeFock::UpdateDensityMatrix(double conv_factor)
+void HartreeFock::UpdateDensityMatrix()
 {
-  if (std::abs(conv_factor)>1e-4) std::cout << "Update rho with convergence factor " << conv_factor << std::endl;
+//  if (std::abs(conv_factor)>1e-4) std::cout << "Update rho with convergence factor " << conv_factor << std::endl;
   arma::mat tmp = C.cols(holeorbs);
-//  rho = (tmp.each_row() % hole_occ) * tmp.t();
+  rho = (tmp.each_row() % hole_occ) * tmp.t();
 //  double conv_factor = 0.1;
-  arma::mat next = ( tmp.each_row() % hole_occ) * tmp.t();
-  rho = (1.0-conv_factor) * next + conv_factor * rho;
+//  arma::mat next = ( tmp.each_row() % hole_occ) * tmp.t();
+//  rho = (1.0-conv_factor) * next + conv_factor * rho;
 //  std::cout << "TRACE OF RHO = " << arma::trace(rho) << std::endl;
 }
 
+
+
+// DIIS: Direct Inversion in the Iterative Subspace
+// an approach for accelerating the convergence of the HF iterations
+void HartreeFock::UpdateDensityMatrix_DIIS()
+{
+  std::cout << "in " << __func__ << std::endl;
+
+  // If we're at the solution, the Fock matrix F and rho will commute
+  arma::mat error_mat = F * rho - rho * F;
+
+  std::cout << "error_mat norm = " << arma::norm(error_mat, "fro") << std::endl;
+
+  // save this error matrix in a list (or a deque)
+  size_t nsave = DIIS_error_mats.size();
+  if (nsave>4) DIIS_error_mats.pop_front();
+  DIIS_error_mats.push_back(error_mat);
+
+  // Compute the new density matrix rho from the C matrix which diagonalizes F
+  arma::mat tmp = C.cols(holeorbs);
+  rho = (tmp.each_row() % hole_occ) * tmp.t();
+
+  // save this rho in the list of rhos
+  if (DIIS_density_mats.size()>4)  DIIS_density_mats.pop_front(); 
+  DIIS_density_mats.push_back( rho );
+
+  // Now construct the B matrix which is inverted to find the combination of
+  // previous density matrices which will minimize the error
+
+//  std::cout << "  nsave = " << nsave << std::endl;
+  if (nsave<4) return;
+
+  arma::mat Bij( nsave+1, nsave+1 );
+  Bij.row(nsave).ones();
+  Bij.col(nsave).ones();
+  Bij(nsave,nsave) = 0;
+
+  for (size_t i=0; i<nsave; i++)
+  {
+   for (size_t j=0; j<nsave; j++)
+   {
+//    Bij(i,j) = arma::trace( DIIS_error_mats[i] * DIIS_error_mats[j].t() );
+    Bij(i,j) = arma::norm( DIIS_error_mats[i] * DIIS_error_mats[j].t(), "fro" );
+   }
+  }
+  arma::vec rhs(nsave+1, arma::fill::zeros);
+  rhs(nsave) = 1;
+  // Now invert that bad boy.
+  std::cout << "Bij is" << std::endl << Bij << std::endl;
+//  auto cvec = arma::solve( Bij, rhs, arma::solve_opts::likely_sympd );
+  arma::vec cvec = arma::solve( Bij, rhs );
+//  cvec /= arma::accu(cvec);
+  cvec = arma::abs(cvec);
+  cvec /= arma::accu(cvec.head_rows(nsave));
+
+  std::cout << "cvec is " << std::endl << cvec << "   accu =  " << arma::accu(cvec) << std::endl;
+
+  rho.zeros();
+  for (size_t i=0; i<nsave; i++)   rho += cvec(i) * DIIS_density_mats[i];
+
+//  std::cout << __func__ << "  trace of rho is " << arma::trace(rho) << std::endl;
+
+//  std::cout << "all of the rhos are " << std::endl;
+
+//  for (size_t i=0; i<DIIS_density_mats.size(); i++)
+//  {
+//    std::cout << i << std::endl << DIIS_density_mats[i] << std::endl;
+//  }
+
+  
+}
 
 
 //********************************************************************
