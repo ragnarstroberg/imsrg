@@ -24,14 +24,15 @@
 HartreeFock::HartreeFock(Operator& hbare, bool vmon3_from_file)
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
     KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
-    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true), use_jacobi_3bme(vmon3_from_file)
+    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(false), use_jacobi_3bme(vmon3_from_file)
 {
    int norbits = modelspace->GetNumberOrbits();
 
    C             = arma::mat(norbits,norbits,arma::fill::eye);
    Vij           = arma::mat(norbits,norbits,arma::fill::zeros);
    V3ij          = arma::mat(norbits,norbits,arma::fill::zeros);
-   F             = arma::mat(norbits,norbits);
+   F             = arma::mat(norbits,norbits,arma::fill::zeros);
+   rho           = arma::mat(norbits,norbits,arma::fill::zeros);
    for (int Tz=-1;Tz<=1;++Tz)
    {
      for (int parity=0; parity<=1; ++parity)
@@ -44,6 +45,7 @@ HartreeFock::HartreeFock(Operator& hbare, bool vmon3_from_file)
    prev_energies = arma::vec(norbits,arma::fill::zeros);
    std::vector<double> occvec;
    for (auto& h : modelspace->holes) occvec.push_back(modelspace->GetOrbit(h).occ);
+   for (auto& h : modelspace->holes) rho(h,h) = modelspace->GetOrbit(h).occ;
    holeorbs = arma::uvec(modelspace->holes);
    hole_occ = arma::rowvec(occvec);
    BuildMonopoleV();
@@ -61,7 +63,7 @@ HartreeFock::HartreeFock(Operator& hbare, bool vmon3_from_file)
 HartreeFock::HartreeFock(Operator& hbare, Jacobi3BME& jacobi3bme )
   : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
     KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
-    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true), use_jacobi_3bme(true)
+    tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(false), use_jacobi_3bme(true)
 {
    int norbits = modelspace->GetNumberOrbits();
 
@@ -112,16 +114,18 @@ void HartreeFock::Solve()
 //   UpdateF();
    iterations = 0; // counter so we don't go on forever
    int maxiter = 1000;
+   double conv_factor = 0.0;
 
    for (iterations=0; iterations<maxiter; ++iterations)
    {
       Diagonalize();          // Diagonalize the Fock matrix
       ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
       if (not freeze_occupations) FillLowestOrbits(); // if we don't freeze the occupations, then calculate the new ones.
-      UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
+      UpdateDensityMatrix(conv_factor);  // Update the 1 body density matrix, used in UpdateF()
       UpdateF();              // Update the Fock matrix
 
       if ( CheckConvergence() ) break;
+      if (iterations>=50) conv_factor=0.1 + 0.0001*iterations; // if we've made 50 iteration and still no convergence, try adding a convergence factor in case we're stuck in an oscillation
    }
    CalcEHF();
 
@@ -405,10 +409,16 @@ void HartreeFock::Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int&
 /// where \f$n_{\beta} \f$ ensures that beta runs over HF orbits in
 /// the core (i.e. below the fermi surface)
 //*********************************************************************
-void HartreeFock::UpdateDensityMatrix()
+//void HartreeFock::UpdateDensityMatrix()
+void HartreeFock::UpdateDensityMatrix(double conv_factor)
 {
+  if (std::abs(conv_factor)>1e-4) std::cout << "Update rho with convergence factor " << conv_factor << std::endl;
   arma::mat tmp = C.cols(holeorbs);
-  rho = (tmp.each_row() % hole_occ) * tmp.t();
+//  rho = (tmp.each_row() % hole_occ) * tmp.t();
+//  double conv_factor = 0.1;
+  arma::mat next = ( tmp.each_row() % hole_occ) * tmp.t();
+  rho = (1.0-conv_factor) * next + conv_factor * rho;
+//  std::cout << "TRACE OF RHO = " << arma::trace(rho) << std::endl;
 }
 
 

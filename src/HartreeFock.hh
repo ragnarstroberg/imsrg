@@ -71,7 +71,8 @@ class HartreeFock
    void BuildMonopoleV3();        ///< Only the monopole part of V3 is needed.
    void Diagonalize();            ///< Diagonalize the Fock matrix
    void UpdateF();                ///< Update the Fock matrix with the new transformation coefficients C
-   void UpdateDensityMatrix();    ///< Update the density matrix with the new coefficients C
+//   void UpdateDensityMatrix();    ///< Update the density matrix with the new coefficients C
+   void UpdateDensityMatrix(double conv_factor=0.0);    ///< Update the density matrix with the new coefficients C
    void FillLowestOrbits();       ///< Get new occupations based on the current single-particle energies
    void UpdateReference();        ///< If we got new occupations in FillLowestOrbits, then we should update the hole states in the reference.
    bool CheckConvergence();       ///< Compare the current energies with those from the previous iteration
