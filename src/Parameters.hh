@@ -111,6 +111,7 @@ std::map<std::string,int> Parameters::int_par = {
   {"file3e2max",	24},
   {"file3e3max",	12},
   {"atomicZ",            -1}, // the Z of the nucleus for an atomic calculation. -1 means do a neutral atom
+  {"E3maxNO2b",         -1}, // The E3max we use when obtaining the NO2b part of the 3b force
 };
 
 std::map<std::string,std::vector<std::string>> Parameters::vec_par = {

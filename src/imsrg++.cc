@@ -106,6 +106,7 @@ int main(int argc, char** argv)
   int file3e2max = parameters.i("file3e2max");
   int file3e3max = parameters.i("file3e3max");
   int atomicZ = parameters.i("atomicZ");
+  int E3maxNO2b = parameters.i("E3maxNO2b");
 
   double hw = parameters.d("hw");
   double smax = parameters.d("smax");
@@ -336,6 +337,12 @@ int main(int argc, char** argv)
   
 //  Operator HNO;
   Operator& HNO = Hbare;
+  if ( E3maxNO2b > 0 )
+  {
+    std::cout << "Before getting the NO2b part of the 3N, changing E3max to " << E3maxNO2b << std::endl;
+    Hbare.SetE3max(E3maxNO2b);
+    modelspace.SetE3max(E3maxNO2b);
+  }
   if (basis == "HF" and method !="HF")
     HNO = hf.GetNormalOrderedH();
   else if (basis == "oscillator")

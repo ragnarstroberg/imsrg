@@ -72,7 +72,7 @@ void Jacobi3BME::Allocate()
           }
           if ( NAS_jacobi_states.at(hashtjn).size() != dim_braNAS )
           {
-            std::cout << "TROUBLE. I don't understand how the NAS basis states are constructed. Dim = " << NAS_jacobi_states.at(hashtjn).size() << "  should be  " <<  dim_braNAS << std::endl;
+            std::cout << "TROUBLE. I don't understand how the NAS basis states are constructed. Dim = " << NAS_jacobi_states.at(hashtjn).size() << "  should be  " <<  dim_braNAS <<  "    TJN =  " << t <<  " " << j << " " << Nbra << std::endl;
           }
 
           // now allocate   start_locAS,  start_locNAS,  meAS,  meNAS
@@ -445,7 +445,7 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
 //      int twoJ12_min = std::max(twoJmin, std::abs( twoJ - 2*Lcm ));
 //      int twoJ12_max = std::min(twoJmax, twoJ + 2*Lcm) ;
 
-      std::cout << "Ecm,Lcm,Ncm = " << Ecm << " " << Lcm << " " << Ncm << "   twoJ12 runs from " << twoJ12_min << " to " << twoJ12_max << std::endl;
+//      std::cout << "Ecm,Lcm,Ncm = " << Ecm << " " << Lcm << " " << Ncm << "   twoJ12 runs from " << twoJ12_min << " to " << twoJ12_max << std::endl;
       for (int twoJ12=twoJ12_min; twoJ12<=twoJ12_max; twoJ12+=2) // the interaction conserves J12, parity, and T12=twoT
       {
 //        std::cout << "Getting dimensions for J12 = " << twoJ12 << "/2" << "   twoJmax = " << twoJmax << std::endl;
@@ -466,15 +466,15 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
         arma::mat cfp_ket( &(cfpvec[cfp_begin_ket]), NASdim_ket, ASdim_ket, /*copy_aux_mem*/ true);
 
 
-        std::cout << " ^^^T J12 P E12 = " << twoT << " " << twoJ12 << " " << parity12_bra << " " << E12_bra << "," << E12_ket << "  Ncm,Lcm = " << Ncm << " " << Lcm << std::endl;
-        std::cout << "dimensions: " << NASdim_bra << " " << NASdim_ket << std::endl;
+//        std::cout << " ^^^T J12 P E12 = " << twoT << " " << twoJ12 << " " << parity12_bra << " " << E12_bra << "," << E12_ket << "  Ncm,Lcm = " << Ncm << " " << Lcm << std::endl;
+//        std::cout << "dimensions: " << NASdim_bra << " " << NASdim_ket << std::endl;
 
 //  compute the Tcoefficients that we'll need here
 //        std::vector<double> Tcoeff_bra(NASdim_bra);
 //        std::vector<double> Tcoeff_ket(NASdim_ket);
         arma::rowvec Tcoeff_bra(NASdim_bra, arma::fill::zeros);
         arma::vec Tcoeff_ket(NASdim_ket, arma::fill::zeros);
-        std::cout << "start loop over ibraNAS. NASdim_bra = " << NASdim_bra << std::endl;
+//        std::cout << "start loop over ibraNAS. NASdim_bra = " << NASdim_bra << std::endl;
         for (int ibraNAS=0; ibraNAS<NASdim_bra; ibraNAS++)
         {
           jacobi1_state jac1_bra;
@@ -482,8 +482,8 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
 //          std::cout << "GetJacobi bra state" << std::endl;
           GetJacobiStates( twoT, twoJ12, parity12_bra, E12_bra, ibraNAS, jac1_bra, jac2_bra);
           if (jac1_bra.t != Tab ) continue;
-          std::cout << " ibraNAS = " << ibraNAS << ": | " << jac1_bra.n << " " << jac1_bra.l << " " << jac1_bra.s << " " << jac1_bra.j << " " << jac1_bra.t << " > x | "
-                                     << jac2_bra.n << " " << jac2_bra.l << " " << jac2_bra.j2 << " > " << std::endl;
+//          std::cout << " ibraNAS = " << ibraNAS << ": | " << jac1_bra.n << " " << jac1_bra.l << " " << jac1_bra.s << " " << jac1_bra.j << " " << jac1_bra.t << " > x | "
+//                                     << jac2_bra.n << " " << jac2_bra.l << " " << jac2_bra.j2 << " > " << std::endl;
 //          Tcoeff_bra.at(ibraNAS) = Tcoeff_wrapper( bra, Jab, twoJ, jac1_bra, jac2_bra, twoJ12, Ncm, Lcm) ;
           Tcoeff_bra[ibraNAS] = Tcoeff_wrapper( bra, Jab, twoJ, jac1_bra, jac2_bra, twoJ12, Ncm, Lcm) ;
         }
@@ -506,13 +506,13 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
         me_lab += result[0];
 
 
-        std::cout << "matrices:" << std::endl;
-        std::cout << "T bra " << std::endl << Tcoeff_bra << std::endl;
-        std::cout << "mAS : " << std::endl << matelAS << std::endl;
-        std::cout << "mNAS*6: " << std::endl << ( cfp_bra * matelAS * cfp_ket.t() )*6 << std::endl;
+//        std::cout << "matrices:" << std::endl;
+//        std::cout << "T bra " << std::endl << Tcoeff_bra << std::endl;
+//        std::cout << "mAS : " << std::endl << matelAS << std::endl;
+//        std::cout << "mNAS*6: " << std::endl << ( cfp_bra * matelAS * cfp_ket.t() )*6 << std::endl;
 //        std::cout << "mAS: " << std::endl << ( matelAS ) << std::endl;
-        std::cout << "T ket " << std::endl << Tcoeff_ket << std::endl;
-        std::cout << "mNAS * Tket " << std::endl << ( cfp_bra * matelAS * cfp_ket.t() )*Tcoeff_ket  *6 << std::endl;
+//        std::cout << "T ket " << std::endl << Tcoeff_ket << std::endl;
+//        std::cout << "mNAS * Tket " << std::endl << ( cfp_bra * matelAS * cfp_ket.t() )*Tcoeff_ket  *6 << std::endl;
         std::cout << "result " << result[0]  << " *6 = " << result[0]*6 << "  me_lab " << me_lab << "   *6= " << me_lab*6 << std::endl;
 
 
@@ -1377,12 +1377,15 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 
   std::set<ljChannel> ljchannels;
 
+
   for ( auto& obc : hf.modelspace->OneBodyChannels )
   {
     ljChannel ljchan = {obc.first[0], obc.first[1] };
     
     ljchannels.insert( ljchan );
   }
+
+//  ljchannels.insert( {5,11} ); // TODO: DELETE THIS!!!
 
   int n_mon = 0;
   size_t num_lj = ljchannels.size();
@@ -1909,14 +1912,20 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
 
   int Eabc_min = std::max( Jab-1, 0); // for Jab > 1, we can't do it with  Eabc=0, so don't bother worrying about that
 
+
    if (verbose) std::cout << std::endl << "===============================================" << std::endl
                           << "start loops doing the mat mults. Eabc_min = " << Eabc_min << "based on Jab = " << Jab << std::endl;
+
   // Next we do the mat mult to perform the transformation
 //   for (int Ecm=Eabc_min; Ecm<=E3max; Ecm++)
+//   # pragma omp parallel for collapse(2) schedule(dynamic,1) 
    for (int Ecm=0; Ecm<=E3max; Ecm++)
    {
+//    for (int Lcm_step=0; Lcm_step<=E3max; Lcm_step+=2)
     for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
     {
+//      int Lcm = Lcm_step + Ecm%2;
+//      if (Lcm>Ecm) continue;
       if (verbose) std::cout << " Ecm,Lcm = " << Ecm << " " << Lcm << std::endl;
       int Ncm = (Ecm-Lcm)/2;
 //      if (verbose) std::cout << "J12 range " << std::max(1,2*Jab-2*emax-1) << " to " << std::min(2*Jab+2*emax+1,twoJmax) << "  from Jab=" << Jab << " emax = " << emax << "  twoJmax = " << twoJmax << std::endl;
@@ -1962,6 +1971,7 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
             int twoJ_max = std::min( twoJ12+2*Lcm, 2*Jab+2*emax+1 );
             if (verbose) std::cout << "running twoJ from " << twoJ_min << " to " << twoJ_max << "  based on Jab = " << Jab << " J12 = " << twoJ12 << " emax= " << emax << "  Lcm = " << Lcm << std::endl;
             int lab_parity = (E12abc+Ecm)%2;
+//           # pragma omp parallel for schedule(dynamic,1)
             for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
             {
               auto& V3field = V3Full[MakeUshort3({twoJ,twoT,lab_parity})];

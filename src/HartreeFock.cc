@@ -434,7 +434,7 @@ void HartreeFock::UpdateDensityMatrix()
 // an approach for accelerating the convergence of the HF iterations
 void HartreeFock::UpdateDensityMatrix_DIIS()
 {
-  std::cout << "in " << __func__ << std::endl;
+//  std::cout << "in " << __func__ << std::endl;
 
   // If we're at the solution, the Fock matrix F and rho will commute
   arma::mat error_mat = F * rho - rho * F;
@@ -476,14 +476,14 @@ void HartreeFock::UpdateDensityMatrix_DIIS()
   arma::vec rhs(nsave+1, arma::fill::zeros);
   rhs(nsave) = 1;
   // Now invert that bad boy.
-  std::cout << "Bij is" << std::endl << Bij << std::endl;
+//  std::cout << "Bij is" << std::endl << Bij << std::endl;
 //  auto cvec = arma::solve( Bij, rhs, arma::solve_opts::likely_sympd );
   arma::vec cvec = arma::solve( Bij, rhs );
 //  cvec /= arma::accu(cvec);
   cvec = arma::abs(cvec);
   cvec /= arma::accu(cvec.head_rows(nsave));
 
-  std::cout << "cvec is " << std::endl << cvec << "   accu =  " << arma::accu(cvec) << std::endl;
+//  std::cout << "cvec is " << std::endl << cvec << "   accu =  " << arma::accu(cvec) << std::endl;
 
   rho.zeros();
   for (size_t i=0; i<nsave; i++)   rho += cvec(i) * DIIS_density_mats[i];
@@ -902,6 +902,8 @@ Operator HartreeFock::GetNormalOrderedH()
       }
 
      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
+     std::cout << "Norm of V3NO = " << arma::norm(V3NO,"fro") << "  norm of V2 = " << arma::norm(V2,"fro")<< std::endl;
+     std::cout << "Trace of V3NO = " << arma::trace(V3NO) << "  trace of V2 = " << arma::trace(V2)<< std::endl;
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
 //     if (ch==2)
@@ -997,6 +999,9 @@ Operator HartreeFock::GetNormalOrderedH_jacobi(Jacobi3BME& jacobi3bme)
      jacobi3bme.GetNO2b_single_channel( *this, ch, V3NO );
 
      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
+
+     std::cout << "Norm of V3NO = " << arma::norm(V3NO,"fro") << "  norm of V2 = " << arma::norm(V2,"fro")<< std::endl;
+     std::cout << "Trace of V3NO = " << arma::trace(V3NO) << "  trace of V2 = " << arma::trace(V2)<< std::endl;
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
 //     if (ch==2)
@@ -1014,6 +1019,140 @@ Operator HartreeFock::GetNormalOrderedH_jacobi(Jacobi3BME& jacobi3bme)
 
 }
 
+
+Operator HartreeFock::GetNormalOrderedH_monopole3N() 
+{
+   double start_time = omp_get_wtime();
+   std::cout << "Getting normal-ordered H in HF basis" << std::endl;
+
+   // First, check if we need to update the occupation numbers for the reference
+   if (not freeze_occupations)
+   {
+     UpdateReference();
+   }
+
+   Operator HNO = Operator(*modelspace,0,0,0,2);
+   HNO.ZeroBody = EHF;
+   HNO.OneBody = C.t() * F * C;
+
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+//   int norb = modelspace->GetNumberOrbits();
+//   #pragma omp parallel for schedule(dynamic,1) // have not yet confirmed that this improves performance ... no sign of significant improvement
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      int J = tbc.J;
+      int npq = tbc.GetNumberKets();
+
+      arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+      arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+
+//      if (ch==12) std::cout << " J = " << J << std::endl;
+//      #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
+      for (int i=0; i<npq; ++i)    
+      {
+//        if (ch==12) std::cout << "i = " << i << std::endl;
+         Ket & bra = tbc.GetKet(i);
+//         if (ch==12) std::cout << "  pq = " << bra.p << " " << bra.q << std::endl;
+         int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
+         for (int j=0; j<npq; ++j)
+         {
+//           if (ch==12) std::cout << "   j= " <<j << std::endl;
+            Ket & ket = tbc.GetKet(j); 
+            int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
+            D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
+            if (bra.p!=bra.q)
+            {
+               D(i,j) += C(bra.q,ket.p) * C(bra.p,ket.q) * bra.Phase(J);
+            }
+            if (bra.p==bra.q)    D(i,j) *= SQRT2;
+            if (ket.p==ket.q)    D(i,j) /= SQRT2;
+
+            // Now generate the NO2B part of the 3N interaction
+            if (Hbare.GetParticleRank()<3) continue;
+            if (i>j) continue;
+
+
+            } //for j
+           } //for i
+//            #pragma omp parallel for schedule(dynamic,1)
+            for (size_t ind=0;ind<Vmon3.size(); ++ind)
+            {
+//              arma::mat& v3ij = V3vec[omp_get_thread_num()];
+//              int a,b,c,d,i,j;
+              int a,b,c,d,e,f;
+              Vmon3UnHash(Vmon3_keys[ind], a,b,c,d,e,f);
+              Orbit& oa = modelspace->GetOrbit(a);
+              Orbit& ob = modelspace->GetOrbit(b);
+              Orbit& oc = modelspace->GetOrbit(c);
+              Orbit& od = modelspace->GetOrbit(d);
+              Orbit& oe = modelspace->GetOrbit(e);
+//              Orbit& oc = modelspace->GetOrbit(c);
+//              Orbit& od = modelspace->GetOrbit(d);
+              if (a>b or d>e) continue;
+              int Jmin = std::abs(oa.j2-ob.j2);
+              int Jmax = (oa.j2+ob.j2);
+              int sumJ=0;
+              int dJ = (a==b or c==d) ? 2 : 1;
+              for (int J=Jmin; J<=Jmax; J+=dJ) sumJ+=(2*J+1);
+              double norm = (a==b) ? 1./SQRT2 : 1; // I'm not actually sure if we need the normalization factor
+              if (c==d) norm /= SQRT2;
+              if (tbc.CheckChannel_ket(&oa,&ob) and tbc.CheckChannel_ket(&od,&oe) )
+              {
+                int i = tbc.GetLocalIndex(a,b);
+                int j = tbc.GetLocalIndex(d,e);
+//                std::cout << "abc def  "<< a << " " << b << " " << c << "   " << d << " " << e << " "<< f << "   channel jpt: " << tbc.J << " " << tbc.parity << " " << tbc.Tz << std::endl;
+//                std::cout << "i,j = " << i << " " << j << "  dim = " << V3NO.n_rows << " " << V3NO.n_cols << std::endl;
+                V3NO(i,j) += norm *  (oc.j2+1) / sumJ *rho(c,f) * Vmon3[ind] ;
+              }
+              
+            }
+
+
+////            for (int a=0; a<norb; ++a)
+//            for ( auto a : modelspace->all_orbits )
+//            {
+//              Orbit & oa = modelspace->GetOrbit(a);
+//              if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
+//              for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+//              {
+//                Orbit & ob = modelspace->GetOrbit(b);
+//                if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
+//                if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
+//                int J3min = std::abs(2*J-oa.j2);
+//                int J3max = 2*J + oa.j2;
+//                for (int J3=J3min; J3<=J3max; J3+=2)
+//                {
+//                  V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
+//                }
+//              }
+//            }
+//            V3NO(i,j) /= (2*J+1);
+//            if (bra.p==bra.q)  V3NO(i,j) /= SQRT2; 
+//            if (ket.p==ket.q)  V3NO(i,j) /= SQRT2; 
+//            V3NO(j,i) = V3NO(i,j);
+//         }
+//      }
+
+     auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
+     std::cout << "Norm of V3NO = " << arma::norm(V3NO,"fro") << "  norm of V2 = " << arma::norm(V2,"fro")<< std::endl;
+     std::cout << "Trace of V3NO = " << arma::trace(V3NO) << "  trace of V2 = " << arma::trace(V2)<< std::endl;
+     auto& OUT =  HNO.TwoBody.GetMatrix(ch);
+     OUT  =    D.t() * (V2 + V3NO) * D;
+//     if (ch==2)
+//     {
+//      std::cout << "OUT[" << ch << "] " << std::endl << OUT << std::endl;
+//      std::cout << "V3NO: " << std::endl << V3NO << std::endl;
+//     }
+   }
+   
+//   FreeVmon();
+
+   profiler.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;
+   
+   return HNO;
+
+}
 
 
 

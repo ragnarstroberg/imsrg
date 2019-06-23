@@ -4434,6 +4434,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
           poi_file.read((char*)&dimNAS,    sizeof(dimNAS));
           poi_file.read((char*)&delimiter, sizeof(delimiter));
 
+//          std::cout << "READ poi.  tjN =  " << t2 << " " << j2 << " " << N << "    dimAS, dimNAS = " << dimAS << " " << dimNAS << std::endl;
 //          std::cout << "About to set dimensions" << std::endl;
           jacobi3bme.SetDimensionAS(t2,j2,parity,N, dimAS);
 //          std::cout << " now NAS..." << std::endl;
@@ -4476,6 +4477,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
   jacobi3bme.Allocate();
 
 //        std::cout << "   reading in v3int file" << std::endl;
+  size_t total_read = 0;         
   for (int t2=jacobi3bme.twoTmin; t2<=jacobi3bme.twoTmax; t2+=2)
   {
     for (int j2=jacobi3bme.twoJmin; j2<=jacobi3bme.twoJmax; j2+=2)
@@ -4489,6 +4491,10 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
         int32_t pin;
         double hwin;
         v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+        if ( delimiter != sizeof(hwin)+sizeof(pin)+6*sizeof(nucleonsin))
+        {
+         std::cout << "ERROR: in " << __func__ << "  I must be lost. delimiter is " << delimiter << " and I was expecting " << sizeof(hwin)+sizeof(pin)+6*sizeof(nucleonsin) << std::endl;
+        }
         v3int_file.read((char*)&hwin,       sizeof(hwin));
         v3int_file.read((char*)&nucleonsin, sizeof(nucleonsin));
         v3int_file.read((char*)&protonsin,  sizeof(protonsin));
@@ -4499,15 +4505,30 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
         v3int_file.read((char*)&Nmaxin,     sizeof(Nmaxin));
         v3int_file.read((char*)&delimiter,  sizeof(delimiter));
 
+
+        total_read += 10;
+
+//        std::cout << "tjp: " << t2 << " " << j2 << " "<< parity << "   ->  " << hwin << " " << nucleonsin << " " << protonsin
+//                  << " " << neutronsin << " " << twoJin << " " << twoTin << " " << pin << " " << Nmaxin <<  "   delimiter: " << delimiter << std::endl;
+
         if ( t2!=twoTin or j2!=twoJin or (1-2*parity)!=pin or jacobi3bme.Nmax!=Nmaxin )
         {
           std::cout << "ERROR: in " << __func__ << "  misread header info in " << v3int_name << "  "
                     << " T: " << t2 << "," << twoTin << "   J: " << j2 << "," << twoJin <<  "  " 
                     << " p: " << 1-2*parity << "," << pin  << "   Nmin:" << Nmin << ", Nmax:" << Nmaxin << "   "
-                    << "hw: " << hwin <<  ".   exiting... " << std::endl;
+                    << "hw: " << hwin  << "  as uint32: " << (uint32_t)hwin << "   delimiter: " << delimiter << "  total read = " << total_read 
+                    << " ( " << total_read * sizeof(delimiter) / (1024*1024) << " MB)" 
+                    << ".   exiting... " << std::endl;
           exit(EXIT_FAILURE);
         }
 
+//        if (j2==35 and parity==1)
+//        {
+//        v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+//          std::cout << "PEEKING HEAD, the next delimiter is  " << delimiter << std::endl;
+//        }
+
+        size_t elements_read=0;
         /// now read in the matrix jacobi matrix elements from the v3int file
         for (int Nbra=Nmin; Nbra<=jacobi3bme.Nmax; Nbra+=2 )
         {
@@ -4519,15 +4540,54 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
               size_t dim_ketAS = jacobi3bme.GetDimensionAS(t2,j2,parity,Nket);
               for (size_t iket=0; iket<dim_ketAS; iket++)
               {
-//                std::cout << "Nbra,Nket, ibra,iket = " << Nbra << " " << Nket << "    " << ibra << " " << iket << std::endl;
+//                if (j2==35 and parity==1 and Nbra>16) continue;
+//                if (j2>=33 and Nbra>16) continue;
+//                if (j2>33 and parity==1) std::cout << "Nbra,Nket, ibra,iket = " << Nbra << " " << Nket << "    " << ibra << " " << iket << std::endl;
                 if (Nket<Nbra or (Nket==Nbra and iket<ibra) ) continue; 
 //                indexA++;
                 double matel;
 
+                size_t position = v3int_file.tellg();
                 v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+                if (delimiter != sizeof(matel) )
+                {
+                  std::cout << "skipping channel with jt NN = " << j2 << " " << t2 << " " << Nbra << " " << Nket << std::endl;
+                  v3int_file.seekg(position);
+                  ibra = dim_braAS+1; // this is janky...
+                  break;
+                }
+//                if (delimiter != sizeof(matel) )
+//                {
+//                 std::cout << "TROUBLE. reading matel, first delimiter is " << delimiter << "   mylocation is " << v3int_file.tellg()
+//                           << "  total read + 3elements_read = " << total_read  << " + 3* " << elements_read << " = " << total_read +3*elements_read  << std::endl;
+//                  if (delimiter == 36)
+//                  {
+//                   double hwin;
+//                       v3int_file.read((char*)&hwin, sizeof(hwin));
+//                       std::cout << hwin << "   ";
+//                   uint32_t tmp;
+//                   for (int i=0;i<8; i++)
+//                   {
+//                       v3int_file.read((char*)&tmp, sizeof(tmp));
+//                       std::cout << tmp << "   ";
+//                   }
+//                   std::cout << std::endl;
+//                  }
+//                }
                 v3int_file.read((char*)&matel,      sizeof(matel));
                 v3int_file.read((char*)&delimiter,  sizeof(delimiter));
 
+                if (delimiter != sizeof(matel) )
+                {
+                  std::cout << "ERROR: in " << __func__ << "  while reading matel, delimiter is " << delimiter << "  and I was expecting " << sizeof(matel)
+                            << "  matel is " << matel << "  as int: " << (uint32_t)matel << "   I would have stored this one in Nbra = " << Nbra
+                            << "  Nket = " << Nket << "  ibra = " << ibra << "  iket = " << iket << "tjp" << t2 << " " << j2 << " " << parity
+                            << "   I expect dim_braAS = " << dim_braAS << "   and dim_ketAS = " << dim_ketAS 
+                           << std::endl;
+                }
+ 
+
+                elements_read++;
 //                std::cout << "read a matrix element " << matel << std::endl;
 
                 jacobi3bme.SetMatElAS(ibra,iket,Nbra,Nket,t2,j2,parity, matel);
@@ -4537,7 +4597,8 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
             }
           }
         }
-
+        total_read += 3*elements_read;
+//        std::cout << "   read " << elements_read << "  elements " << std::endl;
 
       }
     }
