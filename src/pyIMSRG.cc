@@ -237,6 +237,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("ReadJacobi3NFiles",&ReadWrite::ReadJacobi3NFiles)
       .def("ReadVmon3",&ReadWrite::ReadVmon3)
       .def("WriteVmon3",&ReadWrite::WriteVmon3)
+      .def("WriteJacobiNO2b",&ReadWrite::WriteJacobiNO2b)
+      .def("ReadJacobiNO2b",&ReadWrite::ReadJacobiNO2b)
    ;
 
 
@@ -332,6 +334,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetLabMatEl",&Jacobi3BME::GetLabMatEl)
       .def("TestReadTcoeffNavratil",&Jacobi3BME::TestReadTcoeffNavratil)
       .def("GetV3mon_all",&Jacobi3BME::GetV3mon_all)
+      .def("GetNO2b_all",&Jacobi3BME::GetNO2b_all)
    ;
 
 

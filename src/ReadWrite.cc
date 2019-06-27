@@ -4617,7 +4617,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
 
 
 
-void ReadWrite::WriteJacobiNO2B( Jacobi3BME& jacobi3bme, ModelSpace& modelspace, std::string filename, std::string comments )
+void ReadWrite::WriteJacobiNO2b( Jacobi3BME& jacobi3bme, ModelSpace& modelspace, std::string filename, std::string comments )
 {
 
   std::ofstream fileout(filename);
@@ -4635,7 +4635,7 @@ void ReadWrite::WriteJacobiNO2B( Jacobi3BME& jacobi3bme, ModelSpace& modelspace,
 }
 
 
-void ReadWrite::ReadJacobiNO2B( Jacobi3BME& jacobi3bme, std::string filename )
+void ReadWrite::ReadJacobiNO2b( Jacobi3BME& jacobi3bme, std::string filename )
 {
 
   std::ifstream filein(filename);

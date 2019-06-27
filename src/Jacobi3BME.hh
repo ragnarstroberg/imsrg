@@ -133,7 +133,7 @@ class Jacobi3BME
 //  void TcoeffUnHash(std::string& key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& jac1, uint64_t& jac2, uint64_t& twoJ12, uint64_t& Lcm );
 //  void GetV3mon_all( std::vector<uint64_t>& keys, std::vector<double>& v3mon, ModelSpace& modelspace ); //< Get all the monopoles in one go, which should be more efficient
   void GetV3mon_all( HartreeFock& hf ); //< Get all the monopoles in one go, which should be more efficient
-  void GetNO2B_all( ModelSpace& ms, int lmax );
+  void GetNO2b_all( ModelSpace& ms, int lmax );
 
   void GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3NO );
 

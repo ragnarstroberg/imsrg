@@ -1679,7 +1679,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 
 
 
-void Jacobi3BME::GetNO2B_all( ModelSpace& ms, int lmax )
+void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
 {
 
   struct ket3b { int a; int b; int c; int Tab;};
