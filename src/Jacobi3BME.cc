@@ -1692,7 +1692,11 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
 {
 
   struct ket3b { int a; int b; int c; int Tab;};
-  bool verbose = false;
+  bool verbose = true;
+  PreComputeMoshinsky1();
+  PreComputeMoshinsky2();
+  PreComputeSixJ();
+  PreComputeNineJ();
 
   // Make a list of orbits that could be in rho
   std::set<int> occupied_orbits; // really just potentially occupied orbits
@@ -1738,6 +1742,7 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
       }
     }
   }
+  std::cout << "Resizing matelNO2b to have " << n_elements << " elements" << std::endl;
   matelNO2b.resize(n_elements,0.0);
 
   // Loop over 2-body channels
@@ -1840,19 +1845,19 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
         if(nth_pass==1 and count%nthreads != ithread) continue; // Check if this thread should compute this element
         int twoJ=element->first[0], twoT=element->first[1], Eabc=element->first[2];
         size_t dim_abc = element->second.size();
-        if (verbose) std::cout << "||labket channel JTE " << twoJ << " " << twoT << " " << Eabc << "  dimension " << dim_abc << std::endl;
+//        if (verbose) std::cout << "||labket channel JTE " << twoJ << " " << twoT << " " << Eabc << "  dimension " << dim_abc << std::endl;
         for (int E12=0; E12<=std::min(Nmax,Eabc); E12++)
         {
           int Ecm = Eabc-E12;
           for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
           {
-            if (verbose) std::cout << "..E12,Ecm,Lcm = " << E12 << " " << Ecm << " " << Lcm << std::endl;
+//            if (verbose) std::cout << "..E12,Ecm,Lcm = " << E12 << " " << Ecm << " " << Lcm << std::endl;
             int Ncm = (Ecm-Lcm)/2;
             int twoJ12_min = std::abs(twoJ-2*Lcm);
             int twoJ12_max = std::min(twoJ+2*Lcm,twoJmax);
             for (int twoJ12=twoJ12_min; twoJ12<=twoJ12_max; twoJ12+=2)
             {
-              if (verbose) std::cout << "checking dimensions for " << twoT << " " << twoJ12 << " " << E12%2 << " " << E12 << std::endl;
+//              if (verbose) std::cout << "checking dimensions for " << twoT << " " << twoJ12 << " " << E12%2 << " " << E12 << std::endl;
               size_t dimAS = GetDimensionAS( twoT, twoJ12, E12%2, E12 );
               size_t dimNAS = GetDimensionNAS( twoT, twoJ12, E12%2, E12 );
               if (dimNAS<1) continue;
@@ -1867,27 +1872,35 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
               {
 //                auto& TcoeffMat = Tcoeffs[ MakeUshort6({twoJ,twoT,Eabc, twoJ12,E12,Lcm}) ];
                 arma::mat T_mat_tmp( dim_abc, dimNAS, arma::fill::zeros);
+                if (verbose) std::cout << "start loop dimNAS = " << dimNAS << "  dim_abc = " << dim_abc << std::endl;
                 for (size_t iNAS=0; iNAS<dimNAS; iNAS++)
                 {
                   jacobi1_state jac1;
                   jacobi2_state jac2;
                   GetJacobiStates( twoT, twoJ12, E12%2, E12, iNAS, jac1, jac2);
+                  if (verbose) std::cout << "iNAS = " << iNAS << std::endl;
                   for (size_t iabc=0; iabc<dim_abc; iabc++)
                   {
+                    if (verbose) std::cout << "iabc = " << iabc << std::endl;
                     auto& ket_abc = element->second[iabc];
                     Orbit& oa = ms.GetOrbit(ket_abc.a);
                     Orbit& ob = ms.GetOrbit(ket_abc.b);
                     Orbit& oc = ms.GetOrbit(ket_abc.c);
                     if ( ket_abc.Tab != jac1.t ) continue;
                     if ( 2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l > E3max) continue;
+                    if (verbose) std::cout << "calling ComputeTcoeff" << std::endl;
                     double tcoeff = ComputeTcoeff( oa.n, oa.l, oa.j2, ob.n, ob.l, ob.j2, oc.n, oc.l, oc.j2, Jab, twoJ, jac1.n, jac1.l, jac1.s, jac1.j, jac2.n, jac2.l, jac2.j2, twoJ12, Ncm, Lcm);
 //                    TcoeffMat(iabc,iNAS) = tcoeff;
+                  if (verbose) std::cout << "assigning to " << iabc << " , " << iNAS << std::endl;
                     T_mat_tmp(iabc,iNAS) = tcoeff;
                   }
                 }
+                if (verbose) std::cout << "finished loop" << std::endl;
                //TODO CFPs here 
                 size_t cfp_begin = GetCFPStartLocation(twoT,twoJ12,E12);
+                std::cout << "assigning cfp_mat" << std::endl;
                 arma::mat cfp_mat( &(cfpvec[cfp_begin]), dimNAS, dimAS, false); // false refers to copy_aux_mem
+                std::cout << "assigning Tcoeffs[ ] " << std::endl;
                 Tcoeffs[ MakeUshort6({twoJ,twoT,Eabc, twoJ12,E12,Lcm}) ] = sqrt(6) * T_mat_tmp * cfp_mat;
               }
             }
@@ -1898,6 +1911,7 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
     IMSRGProfiler::timer[std::string(__func__)+"_Tcoeffs_"+std::to_string(nth_pass)] += omp_get_wtime() - t_internal;
     t_internal = omp_get_wtime();
     }
+    if (verbose) std::cout << "Done computing Tcoefficients" << std::endl;
 
     int Eabc_min = std::max( Jab-1, 0); // for Jab > 1, we can't do it with  Eabc=0, so don't bother worrying about that
     
@@ -1909,16 +1923,16 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
     {
      for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
      {
-       if (verbose) std::cout << " Ecm,Lcm = " << Ecm << " " << Lcm << std::endl;
+//       if (verbose) std::cout << " Ecm,Lcm = " << Ecm << " " << Lcm << std::endl;
        int Ncm = (Ecm-Lcm)/2;
-       if (verbose) std::cout << "J12 range " << std::max(1,2*Jab-2*emax-1-2*Lcm) << " to " << std::min(2*Jab+2*emax+1+2*Lcm,twoJmax) << "  from Jab=" << Jab << " emax = " << emax << "  twoJmax = " << twoJmax << "  and Lcm = " << Lcm << std::endl;
+//       if (verbose) std::cout << "J12 range " << std::max(1,2*Jab-2*emax-1-2*Lcm) << " to " << std::min(2*Jab+2*emax+1+2*Lcm,twoJmax) << "  from Jab=" << Jab << " emax = " << emax << "  twoJmax = " << twoJmax << "  and Lcm = " << Lcm << std::endl;
        for (int twoJ12=std::max(1,2*Jab-2*emax-1-2*Lcm); twoJ12<=std::min(2*Jab+2*emax+1+2*Lcm,twoJmax); twoJ12+=2)
        {
         for (int twoT=1; twoT<=3; twoT+=2)
         {
          for (int E12abc=0; E12abc<=std::min(Nmax,E3max-Ecm); E12abc++)
          {
-           if (verbose) std::cout << "~~  Ecm,Lcm,J12,T,E12abc  " << Ecm << " " << Lcm << " " << twoJ12 << " " << twoT << " " << E12abc << std::endl;
+//           if (verbose) std::cout << "~~  Ecm,Lcm,J12,T,E12abc  " << Ecm << " " << Lcm << " " << twoJ12 << " " << twoT << " " << E12abc << std::endl;
            size_t dimNAS_abc = GetDimensionNAS( twoT, twoJ12, E12abc%2, E12abc ); 
            size_t dimAS_abc = GetDimensionAS( twoT, twoJ12, E12abc%2, E12abc ); 
            if (dimNAS_abc==0 or dimAS_abc==0) continue;
@@ -1931,12 +1945,12 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
              size_t startlocAS = GetStartLocAS( twoT, twoJ12, E12abc, E12def);
              arma::mat matelAS( &meAS[startlocAS], dimAS_abc, dimAS_def, false ); 
    
-             if (verbose) std::cout << "...done" << std::endl;
+//             if (verbose) std::cout << "...done" << std::endl;
    
              // Now we loop over the lab-frame matrix elements and update them with the contribution from this jacobi channel
              int twoJ_min = std::max( std::abs(twoJ12-2*Lcm), 2*Jab-2*emax-1);
              int twoJ_max = std::min( twoJ12+2*Lcm, 2*Jab+2*emax+1 );
-             if (verbose) std::cout << "running twoJ from " << twoJ_min << " to " << twoJ_max << "  based on Jab = " << Jab << " J12 = " << twoJ12 << " emax= " << emax << "  Lcm = " << Lcm << std::endl;
+//             if (verbose) std::cout << "running twoJ from " << twoJ_min << " to " << twoJ_max << "  based on Jab = " << Jab << " J12 = " << twoJ12 << " emax= " << emax << "  Lcm = " << Lcm << std::endl;
              int lab_parity = (E12abc+Ecm)%2;
              for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
              {
@@ -1950,12 +1964,12 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
                    size_t dim_def = local_3b_kets[ MakeUshort3({twoJ,twoT,Edef})].size();
                    if (dim_def<1) continue;
                    arma::mat local_lab_mat = matelAS_abc * Tcoeffs[ MakeUshort6({twoJ,twoT,Edef, twoJ12,E12def,Lcm}) ].t();
-                 if (verbose and twoJ==3 and Eabc==1 and Edef==1 and twoT==3)
-                  {
-                    std::cout << " local_lab_mat.  matelNAS_abc = " << std::endl << matelAS_abc << std::endl << "Tdef = " << std::endl
-                                         << Tcoeffs[ MakeUshort6({twoJ,twoT,Edef, twoJ12,E12def,Lcm}) ] << std::endl << "local_lab_mat = " << std::endl
-                                         << local_lab_mat << std::endl;
-                  }
+//                 if (verbose and twoJ==3 and Eabc==1 and Edef==1 and twoT==3)
+//                  {
+//                    std::cout << " local_lab_mat.  matelNAS_abc = " << std::endl << matelAS_abc << std::endl << "Tdef = " << std::endl
+//                                         << Tcoeffs[ MakeUshort6({twoJ,twoT,Edef, twoJ12,E12def,Lcm}) ] << std::endl << "local_lab_mat = " << std::endl
+//                                         << local_lab_mat << std::endl;
+//                  }
 //                   #pragma omp critical
 //                   {
                      V3field(Eabc,Edef) += local_lab_mat;
@@ -1975,11 +1989,13 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
 
 
   // Store it in the vector.
-
+  // This appears to be very inefficient
+  if (verbose) std::cout << "Now storing the vector" << std::endl;
   size_t istart = ch_begin.at(ch);
   size_t offset = 0;
   for (int ibra=0; ibra<nkets; ibra++)
   {
+    if (verbose) std::cout << "ibra =  "<< ibra << std::endl;
     Ket& bra = tbc.GetKet(ibra);
     int Ebra = 2*(bra.op->n+bra.oq->n) + bra.op->l + bra.oq->l;
     int p = bra.p;
@@ -1987,6 +2003,7 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
     if (Ebra > E3max) continue;
     for (int iket=ibra; iket<nkets; iket++)
     {
+      if (verbose) std::cout << "  iket = " << iket << std::endl;
       Ket& ket = tbc.GetKet(iket);
       int r = ket.p;
       int s = ket.q;
@@ -1996,6 +2013,7 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
       {
         int a = ab.first;
         int b = ab.second;
+        std::cout << "a,b = " << a << " " << b << std::endl;
         Orbit& oa = ms.GetOrbit(a);
         Orbit& ob = ms.GetOrbit(b);
         int Epqa = Ebra + 2*oa.n+oa.l;
@@ -2008,10 +2026,11 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
         int twoJ_max = 2*Jab + oa.j2;
         for (int Tpq=Tab_min; Tpq<=Tab_max; Tpq++)
         {
-         double isoClebsch_pq = AngMom::CG(0.5,0.5*bra.op->tz2, 0.5,bra.oq->tz2, Tpq, Tzab);
-         for (int Trs=Tab_min; Trs<=Tab_max; Tpq++)
+         double isoClebsch_pq = AngMom::CG(0.5,0.5*bra.op->tz2, 0.5,0.5*bra.oq->tz2, Tpq, Tzab);
+         std::cout << "< " << 1 << " " << bra.op->tz2 << " " << 1 << " " << bra.oq->tz2 << " | " << Tpq << " " << Tzab << " > " << isoClebsch_pq << std::endl;
+         for (int Trs=Tab_min; Trs<=Tab_max; Trs++)
          {
-          double isoClebsch_rs = AngMom::CG(0.5,0.5*ket.op->tz2, 0.5,ket.oq->tz2, Trs, Tzab);
+          double isoClebsch_rs = AngMom::CG(0.5,0.5*ket.op->tz2, 0.5,0.5*ket.oq->tz2, Trs, Tzab);
           for (int twoT=std::abs(Tzab*2+oa.tz2); twoT<=std::min(Tpq,Trs)+1; twoT+=2)
           {
            double isoClebschTpq = AngMom::CG(Tpq,Tzab, 0.5,0.5*oa.tz2, 0.5*twoT, Tzab+0.5*oa.tz2);
@@ -2025,6 +2044,7 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
              auto V3key = MakeUshort3({twoJ,twoT,Epqa%2});
              double me3b = V3Full.at(V3key)(Epqa,Ersb)(ipqa,irsb);
              me_no2b += (twoJ+1) * isoClebsch_pq * isoClebsch_rs * isoClebschTpq * isoClebschTrs * me3b;
+             std::cout << " me_no2b: " << isoClebsch_pq << " " << isoClebsch_rs << " " << isoClebschTpq << " " << isoClebschTrs << "  " << me3b << "   ->  " << me_no2b << std::endl;
            }
           }
          }
@@ -2034,6 +2054,7 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
       }
     }
   }
+  if (verbose)std::cout << "Done." << std::endl;
 
   } // for ch
   // all done.

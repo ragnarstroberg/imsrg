@@ -4641,9 +4641,11 @@ void ReadWrite::WriteJacobiNO2b( Jacobi3BME& jacobi3bme, ModelSpace& modelspace,
 
   for (size_t i=0; i<jacobi3bme.matelNO2b.size(); i++)
   {
-    fileout << std::fixed << std::setw(12) << std::scientific << jacobi3bme.matelNO2b[i];
+    fileout << std::fixed << std::setw(14) << std::setprecision(6) << std::scientific << jacobi3bme.matelNO2b[i];
     if (i%10==9) fileout << std::endl;
+    else fileout << " ";
   }
+  if ( (jacobi3bme.matelNO2b.size()-1)%10 !=9 ) fileout << std::endl;
 
 }
 
