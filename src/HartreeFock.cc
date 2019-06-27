@@ -1101,53 +1101,20 @@ Operator HartreeFock::GetNormalOrderedH_monopole3N()
               {
                 int i = tbc.GetLocalIndex(a,b);
                 int j = tbc.GetLocalIndex(d,e);
-//                std::cout << "abc def  "<< a << " " << b << " " << c << "   " << d << " " << e << " "<< f << "   channel jpt: " << tbc.J << " " << tbc.parity << " " << tbc.Tz << std::endl;
-//                std::cout << "i,j = " << i << " " << j << "  dim = " << V3NO.n_rows << " " << V3NO.n_cols << std::endl;
                 V3NO(i,j) += norm *  (oc.j2+1) / sumJ *rho(c,f) * Vmon3[ind] ;
               }
               
             }
 
 
-////            for (int a=0; a<norb; ++a)
-//            for ( auto a : modelspace->all_orbits )
-//            {
-//              Orbit & oa = modelspace->GetOrbit(a);
-//              if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
-//              for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
-//              {
-//                Orbit & ob = modelspace->GetOrbit(b);
-//                if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
-//                if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
-//                int J3min = std::abs(2*J-oa.j2);
-//                int J3max = 2*J + oa.j2;
-//                for (int J3=J3min; J3<=J3max; J3+=2)
-//                {
-//                  V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
-//                }
-//              }
-//            }
-//            V3NO(i,j) /= (2*J+1);
-//            if (bra.p==bra.q)  V3NO(i,j) /= SQRT2; 
-//            if (ket.p==ket.q)  V3NO(i,j) /= SQRT2; 
-//            V3NO(j,i) = V3NO(i,j);
-//         }
-//      }
-
      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
      std::cout << "Norm of V3NO = " << arma::norm(V3NO,"fro") << "  norm of V2 = " << arma::norm(V2,"fro")<< std::endl;
      std::cout << "Trace of V3NO = " << arma::trace(V3NO) << "  trace of V2 = " << arma::trace(V2)<< std::endl;
      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
      OUT  =    D.t() * (V2 + V3NO) * D;
-//     if (ch==2)
-//     {
-//      std::cout << "OUT[" << ch << "] " << std::endl << OUT << std::endl;
-//      std::cout << "V3NO: " << std::endl << V3NO << std::endl;
-//     }
+
    }
    
-//   FreeVmon();
-
    profiler.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;
    
    return HNO;
@@ -1159,6 +1126,117 @@ Operator HartreeFock::GetNormalOrderedH_monopole3N()
 
 
 
+Operator HartreeFock::GetNormalOrderedH_NO2b_from_file( Jacobi3BME& jacobi3bme)
+{
+
+
+   double start_time = omp_get_wtime();
+   std::cout << "Getting normal-ordered H in HF basis, using Jacobi 3-body matrix elements" << std::endl;
+
+   // First, check if we need to update the occupation numbers for the reference
+   if (not freeze_occupations)
+   {
+     UpdateReference();
+   }
+
+   Operator HNO = Operator(*modelspace,0,0,0,2);
+   HNO.ZeroBody = EHF;
+   HNO.OneBody = C.t() * F * C;
+
+
+  // We should probably check here to make sure rho_pairs is actually compatible with rho...
+  std::vector<std::pair<int,int>> rho_pairs;
+  for ( auto& a : modelspace->all_orbits )
+  {
+    Orbit& oa = modelspace->GetOrbit(a);
+    if (oa.l>jacobi3bme.lmax_NO2b) continue;
+    for ( auto b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+    {
+      rho_pairs.push_back( std::make_pair(a,b) );
+    }
+  }
+
+
+
+      size_t n_elements = 0; // for looping through jacobi3bme.matelNO2b
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      int J = tbc.J;
+      int npq = tbc.GetNumberKets();
+
+      arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
+      arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+
+      for (int i=0; i<npq; ++i)    
+      {
+         Ket & bra = tbc.GetKet(i);
+         int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
+         for (int j=0; j<npq; ++j)
+         {
+            Ket & ket = tbc.GetKet(j); 
+            int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
+            D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
+            if (bra.p!=bra.q)
+            {
+               D(i,j) += C(bra.q,ket.p) * C(bra.p,ket.q) * bra.Phase(J);
+            }
+            if (bra.p==bra.q)    D(i,j) *= SQRT2;
+            if (ket.p==ket.q)    D(i,j) /= SQRT2;
+
+         }
+      }
+
+
+     for (int i=0; i<npq; i++)
+     {
+       Ket& bra = tbc.GetKet(i);
+       int Ebra = 2*(bra.op->n+bra.oq->n) + bra.op->l + bra.oq->l;
+       if (Ebra > jacobi3bme.E3max) continue;
+       for (int j=i; j<npq; j++)
+       {
+         Ket& ket = tbc.GetKet(j);
+         int Eket = 2*(ket.op->n+ket.oq->n) + ket.op->l + ket.oq->l;
+         if (Eket>jacobi3bme.E3max) continue;
+         double meNO2b = 0;
+         for (auto& ab : rho_pairs )
+         {
+           int a = ab.first;
+           int b = ab.second;
+           Orbit& oa = modelspace->GetOrbit(a);
+           Orbit& ob = modelspace->GetOrbit(b);
+           if ( 2*oa.n+oa.l + Ebra > jacobi3bme.E3max) continue;
+           if ( 2*ob.n+ob.l + Eket > jacobi3bme.E3max) continue;
+           V3NO(i,j) += jacobi3bme.matelNO2b.at(n_elements) * rho(a,b);
+           n_elements++;
+         }
+         V3NO(i,j) /= (2*J+1);
+         if (bra.p==bra.q)  V3NO(i,j) /= SQRT2; 
+         if (ket.p==ket.q)  V3NO(i,j) /= SQRT2; 
+         V3NO(j,i) = V3NO(i,j);
+       }
+     }
+
+     std::cout << "Norm of V3NO = " << arma::norm(V3NO,"fro") << "  norm of V2 = " << arma::norm(V2,"fro")<< std::endl;
+     std::cout << "Trace of V3NO = " << arma::trace(V3NO) << "  trace of V2 = " << arma::trace(V2)<< std::endl;
+     auto& OUT =  HNO.TwoBody.GetMatrix(ch);
+     OUT  =    D.t() * (V2 + V3NO) * D;
+
+   }
+   
+//   FreeVmon();
+
+   profiler.timer[__func__] += omp_get_wtime() - start_time;
+   
+   return HNO;
+
+
+
+
+
+}
 
 
 

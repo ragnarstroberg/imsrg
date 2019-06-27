@@ -17,7 +17,7 @@ Jacobi3BME::Jacobi3BME()
 {}
 
 Jacobi3BME::Jacobi3BME( int nmax, int twojmin, int twojmax, int twotmin, int twotmax )
- : Nmax(nmax), twoJmin(twojmin), twoJmax(twojmax), twoTmin(twotmin), twoTmax(twotmax), twoJmax_cut(twojmax)
+ : Nmax(nmax), twoJmin(twojmin), twoJmax(twojmax), twoTmin(twotmin), twoTmax(twotmax), twoJmax_cut(twojmax), lmax_NO2b(1000)
 {
 ///  Allocate   // Don't call allocate upon construction because we need to read the relevant dimensions from file
   size_t hashmax_tjn = HashTJN(twotmax,twojmax,nmax);
@@ -1688,7 +1688,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
 
 
 
-void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
+void Jacobi3BME::GetNO2b_all( ModelSpace& ms )
 {
 
   struct ket3b { int a; int b; int c; int Tab;};
@@ -1704,7 +1704,7 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms, int lmax )
   for ( auto& a : ms.all_orbits )
   {
     Orbit& oa = ms.GetOrbit(a);
-    if (oa.l>lmax) continue;
+    if (oa.l>lmax_NO2b) continue;
     occupied_orbits.insert(a);
     for ( auto b : ms.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
     {

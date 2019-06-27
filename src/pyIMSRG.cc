@@ -257,6 +257,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetNormalOrderedH", (Operator (HartreeFock::*)()) &HartreeFock::GetNormalOrderedH) // This function is overloaded, so we cast to a function pointer ??
       .def("GetNormalOrderedH_jacobi",&HartreeFock::GetNormalOrderedH_jacobi)
       .def("GetNormalOrderedH_monopole3N",&HartreeFock::GetNormalOrderedH_monopole3N)
+      .def("GetNormalOrderedH_NO2b_from_file",&HartreeFock::GetNormalOrderedH_NO2b_from_file)
       .def("PrintSPE",&HartreeFock::PrintSPE)
       .def("PrintSPEandWF",&HartreeFock::PrintSPEandWF)
       .def("GetRadialWF_r",&HartreeFock::GetRadialWF_r)

@@ -4637,7 +4637,7 @@ void ReadWrite::WriteJacobiNO2b( Jacobi3BME& jacobi3bme, ModelSpace& modelspace,
   fileout << "#   " << comments << std::endl;
   fileout << "#   emax   E2max   E3max   lmax   hw   Nmax   J12max   n_elements" << std::endl;
   fileout << "#  " << modelspace.GetEmax() << " " << modelspace.GetE2max() << " " << modelspace.GetE3max() << " "
-               << 0 << " " << modelspace.GetHbarOmega() << " " << jacobi3bme.Nmax << " " << jacobi3bme.twoJmax  << "   " << jacobi3bme.matelNO2b.size() << std::endl;
+               << jacobi3bme.lmax_NO2b << " " << modelspace.GetHbarOmega() << " " << jacobi3bme.Nmax << " " << jacobi3bme.twoJmax  << "   " << jacobi3bme.matelNO2b.size() << std::endl;
 
   for (size_t i=0; i<jacobi3bme.matelNO2b.size(); i++)
   {

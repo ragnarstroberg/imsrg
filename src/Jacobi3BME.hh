@@ -33,6 +33,8 @@ class Jacobi3BME
   int E2max;
   int E3max; // e1+e2+e3 <= E3max
 
+  int lmax_NO2b; // max l value of third orbit when computing terms needed for NO2b
+
   int Lmax_nj; // max L value in the precomputed NineJ symbols
 
   std::vector<jacobi1_state> jacobi_1; // quantum numbers of the relative wf of the first 2 particles
@@ -100,6 +102,7 @@ class Jacobi3BME
   void SetEmax(int e)   {emax=e;};
   void SetE2max(int e2) {E2max=e2;};
   void SetE3max(int e3) {E3max=e3;};
+  void SetLmaxNO2b(int l) {lmax_NO2b=l;};
 
 //  void SetJmaxFile( int j) {twoJmax_FILE=j;};
   void SetJmaxCut( int j) {twoJmax_cut=j;};
@@ -138,7 +141,7 @@ class Jacobi3BME
 //  void TcoeffUnHash(std::string& key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& jac1, uint64_t& jac2, uint64_t& twoJ12, uint64_t& Lcm );
 //  void GetV3mon_all( std::vector<uint64_t>& keys, std::vector<double>& v3mon, ModelSpace& modelspace ); //< Get all the monopoles in one go, which should be more efficient
   void GetV3mon_all( HartreeFock& hf ); //< Get all the monopoles in one go, which should be more efficient
-  void GetNO2b_all( ModelSpace& ms, int lmax );
+  void GetNO2b_all( ModelSpace& ms );
 
   void GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3NO );
 

@@ -89,6 +89,7 @@ class HartreeFock
    Operator GetNormalOrderedH_jacobi(Jacobi3BME& jacobi3bme);  ///< Use the jacobi 3-body matrix elements to obtain the Hamiltonian in the HF basis at the NO2B level.
    Operator GetNormalOrderedH(arma::mat& Cin);  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
    Operator GetNormalOrderedH_monopole3N();  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
+   Operator GetNormalOrderedH_NO2b_from_file( Jacobi3BME& jacobi3bme);
    Operator GetOmega();           ///< Return a generator of the Hartree Fock transformation
    Operator GetHbare(){return Hbare;}; ///< Getter function for Hbare
    void PrintSPE(); ///< Print out the single-particle energies
