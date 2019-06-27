@@ -52,6 +52,8 @@ class Jacobi3BME
   std::vector<double> cfpvec;      // the cfp's (coefficients of fractional parentage), i.e. the overlaps of the AS and NAS basis states
   std::vector<size_t> cfp_start_loc;  // starting element for a given T,J,p
 
+  std::vector<double> matelNO2b;   // vector to store all the matrix elements needed to evaluate the NO2b part of the 3N
+
 
   std::array<unsigned short,3> MakeUshort3( const std::array<int,3>& arr);
   std::array<unsigned short,4> MakeUshort4( const std::array<int,4>& arr);
@@ -136,6 +138,7 @@ class Jacobi3BME
 //  void TcoeffUnHash(std::string& key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& jac1, uint64_t& jac2, uint64_t& twoJ12, uint64_t& Lcm );
 //  void GetV3mon_all( std::vector<uint64_t>& keys, std::vector<double>& v3mon, ModelSpace& modelspace ); //< Get all the monopoles in one go, which should be more efficient
   void GetV3mon_all( HartreeFock& hf ); //< Get all the monopoles in one go, which should be more efficient
+  void GetNO2b_all( ModelSpace& ms, int lmax );
 
   void GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3NO );
 

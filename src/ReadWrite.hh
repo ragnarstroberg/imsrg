@@ -104,6 +104,8 @@ class ReadWrite
    void Set3NFormat( std::string fmt ){format3N=fmt;};
 
    void ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name, std::string eig_name, std::string v3int_name );
+   void WriteJacobiNO2b( Jacobi3BME& jacobi3bme, ModelSpace& modelspace, std::string filename, std::string comments );
+   void ReadJacobiNO2b( Jacobi3BME& jacobi3bme, std::string filename );
 
    // Fields
 
