@@ -4617,9 +4617,51 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
 
 
 
+void ReadWrite::WriteJacobiNO2B( Jacobi3BME& jacobi3bme, ModelSpace& modelspace, std::string filename, std::string comments )
+{
+
+  std::ofstream fileout(filename);
+  fileout << "#   " << comments << std::endl;
+  fileout << "#   emax   E2max   E3max   lmax   hw   Nmax   J12max   n_elements" << std::endl;
+  fileout << "#  " << modelspace.GetEmax() << " " << modelspace.GetE2max() << " " << modelspace.GetE3max() << " "
+               << 0 << " " << modelspace.GetHbarOmega() << " " << jacobi3bme.Nmax << " " << jacobi3bme.twoJmax  << "   " << jacobi3bme.matelNO2b.size() << std::endl;
+
+  for (size_t i=0; i<jacobi3bme.matelNO2b.size(); i++)
+  {
+    fileout << std::fixed << std::setw(12) << std::scientific << jacobi3bme.matelNO2b[i];
+    if (i%10==9) fileout << std::endl;
+  }
+
+}
 
 
+void ReadWrite::ReadJacobiNO2B( Jacobi3BME& jacobi3bme, std::string filename )
+{
 
+  std::ifstream filein(filename);
+
+  char buffer[1024];
+  int emax_file, E2max_file, E3max_file, lmax_file, hw_file, Nmax_file, J12max_file, n_elements;
+  filein.getline( buffer, 1024 ); // read first comment line
+  filein.getline( buffer, 1024 ); // read second comment line
+  filein >> buffer >> emax_file >> E2max_file >> E3max_file >> lmax_file >> hw_file >> Nmax_file >> J12max_file >> n_elements;
+
+  // In principle, I probably should do some sanity checks with the header info...
+  // Also, we should like to be able to read a big file into a smaller object.
+
+  jacobi3bme.matelNO2b.resize(n_elements,0.0);
+
+  size_t iread = 0;
+  while( filein.good() and iread<n_elements )
+  {
+    double me;
+    filein >> me;
+    jacobi3bme.matelNO2b.at(iread) = me;
+    iread++;
+  }
+
+
+}
 
 
 
