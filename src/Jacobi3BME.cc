@@ -17,7 +17,7 @@ Jacobi3BME::Jacobi3BME()
 {}
 
 Jacobi3BME::Jacobi3BME( int nmax, int twojmin, int twojmax, int twotmin, int twotmax )
- : Nmax(nmax), twoJmin(twojmin), twoJmax(twojmax), twoTmin(twotmin), twoTmax(twotmax)
+ : Nmax(nmax), twoJmin(twojmin), twoJmax(twojmax), twoTmin(twotmin), twoTmax(twotmax), twoJmax_cut(twojmax)
 {
 ///  Allocate   // Don't call allocate upon construction because we need to read the relevant dimensions from file
   size_t hashmax_tjn = HashTJN(twotmax,twojmax,nmax);
@@ -414,6 +414,10 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
   if (bra.p==bra.q and bra.p==bra.r and bra.op->j2<3 and twoT>1) return 0;
   if (ket.p==ket.q and ket.p==ket.r and ket.op->j2<3 and twoT>1) return 0;
 
+  int na=bra.op->n, nb=bra.oq->n, nc=bra.oR->n,  nd=ket.op->n, ne=ket.oq->n, nf=ket.oR->n;
+  int j2a=bra.op->j2, j2b=bra.oq->j2, j2c=bra.oR->j2,  j2d=ket.op->j2, j2e=ket.oq->j2, j2f=ket.oR->j2;
+  int la=bra.op->l, lb=bra.oq->l, lc=bra.oR->l,  ld=ket.op->l, le=ket.oq->l, lf=ket.oR->l;
+
   int Ebra = 2*(bra.op->n+bra.oq->n+bra.oR->n ) + (bra.op->l+bra.oq->l+bra.oR->l);
   int Eket = 2*(ket.op->n+ket.oq->n+ket.oR->n ) + (ket.op->l+ket.oq->l+ket.oR->l);
 
@@ -441,7 +445,8 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
 //      int twoJ12_max =  twoJ + 2*Lcm ;
       int twoJ12_min = std::max(twoJmin-Lcm, std::abs( twoJ - 2*Lcm ));
 //      int twoJ12_max = std::min(twoJmax+Lcm, twoJ + 2*Lcm) ;
-      int twoJ12_max = std::min(twoJmax, twoJ + 2*Lcm) ;
+//      int twoJ12_max = std::min(twoJmax, twoJ + 2*Lcm) ;
+      int twoJ12_max = std::min(twoJmax_cut, twoJ + 2*Lcm) ;
 //      int twoJ12_min = std::max(twoJmin, std::abs( twoJ - 2*Lcm ));
 //      int twoJ12_max = std::min(twoJmax, twoJ + 2*Lcm) ;
 
@@ -486,6 +491,7 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
 //                                     << jac2_bra.n << " " << jac2_bra.l << " " << jac2_bra.j2 << " > " << std::endl;
 //          Tcoeff_bra.at(ibraNAS) = Tcoeff_wrapper( bra, Jab, twoJ, jac1_bra, jac2_bra, twoJ12, Ncm, Lcm) ;
           Tcoeff_bra[ibraNAS] = Tcoeff_wrapper( bra, Jab, twoJ, jac1_bra, jac2_bra, twoJ12, Ncm, Lcm) ;
+//          Tcoeff_bra[ibraNAS] = ComputeTcoeff( na, la, j2a, nb, lb, j2b, nc, lc, j2c, Jab, twoJ, jac1_bra.n, jac1_bra.l, jac1_bra.s, jac1_bra.j, jac2_bra.n, jac2_bra.l, jac2_bra.j2, twoJ12, Ncm, Lcm);
         }
 //        std::cout << "start loop over iketNAS. NASdim_ket = " << NASdim_ket << std::endl;
         for (int iketNAS=0; iketNAS<NASdim_ket; iketNAS++)
@@ -499,6 +505,7 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
 //                                     << jac2_ket.n << " " << jac2_ket.l << " " << jac2_ket.j2 << " > " << std::endl;
 //          Tcoeff_ket.at(iketNAS) = Tcoeff_wrapper( ket, Jde, twoJ, jac1_ket, jac2_ket, twoJ12, Ncm, Lcm) ;
           Tcoeff_ket[iketNAS] = Tcoeff_wrapper( ket, Jde, twoJ, jac1_ket, jac2_ket, twoJ12, Ncm, Lcm) ;
+//          Tcoeff_ket[iketNAS] = ComputeTcoeff( nd, ld, j2d, ne, le, j2e, nf, lf, j2f, Jde, twoJ, jac1_ket.n, jac1_ket.l, jac1_ket.s, jac1_ket.j, jac2_ket.n, jac2_ket.l, jac2_ket.j2, twoJ12, Ncm, Lcm);
         }
 
 
@@ -513,7 +520,7 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
 //        std::cout << "mAS: " << std::endl << ( matelAS ) << std::endl;
 //        std::cout << "T ket " << std::endl << Tcoeff_ket << std::endl;
 //        std::cout << "mNAS * Tket " << std::endl << ( cfp_bra * matelAS * cfp_ket.t() )*Tcoeff_ket  *6 << std::endl;
-        std::cout << "result " << result[0]  << " *6 = " << result[0]*6 << "  me_lab " << me_lab << "   *6= " << me_lab*6 << std::endl;
+//        std::cout << "result " << result[0]  << " *6 = " << result[0]*6 << "  me_lab " << me_lab << "   *6= " << me_lab*6 << std::endl;
 
 
 //        for (int ibraNAS=0; ibraNAS<NASdim_bra; ibraNAS++)
@@ -951,7 +958,8 @@ void Jacobi3BME::GetRelevantTcoeffs( int la, int j2a, int lb, int j2b, int lc, i
    {
     for (unsigned short twoT=1; twoT<=3; twoT+=2)
     {
-     for (unsigned short twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
+//     for (unsigned short twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
+     for (unsigned short twoJ12=1; twoJ12<=twoJmax_cut; twoJ12+=2)
      {
        for (unsigned short Ecm=0; Ecm<=E3max; Ecm++)
        {
@@ -1502,7 +1510,8 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         {
          for (int twoT=1; twoT<=3; twoT+=2)
          {
-          for (int twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
+//          for (int twoJ12=1; twoJ12<=twoJmax; twoJ12+=2)
+          for (int twoJ12=1; twoJ12<=twoJmax_cut; twoJ12+=2)
           {
            for (int Lcm=Ecm%2; Lcm<=Ecm; Lcm+=2)
            {
@@ -1778,7 +1787,8 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
       int twoT_min = std::abs(twoTz);
       int twoT_max = 3;
       int twoJ_min = std::abs( oc.j2 - 2*Jab );
-      int twoJ_max = oc.j2 + 2*Jab;
+//      int twoJ_max = oc.j2 + 2*Jab;
+      int twoJ_max = std::min( oc.j2 + 2*Jab, twoJmax_cut);
       for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
       {
        for (int twoT=twoT_min; twoT<=twoT_max; twoT+=2)
@@ -1856,7 +1866,8 @@ void Jacobi3BME::GetNO2b_single_channel( HartreeFock& hf, int ch, arma::mat& V3N
           if (verbose) std::cout << "..E12,Ecm,Lcm = " << E12 << " " << Ecm << " " << Lcm << std::endl;
           int Ncm = (Ecm-Lcm)/2;
           int twoJ12_min = std::abs(twoJ-2*Lcm);
-          int twoJ12_max = std::min(twoJ+2*Lcm,twoJmax);
+//          int twoJ12_max = std::min(twoJ+2*Lcm,twoJmax);
+          int twoJ12_max = std::min(twoJ+2*Lcm,twoJmax_cut);
           for (int twoJ12=twoJ12_min; twoJ12<=twoJ12_max; twoJ12+=2)
           {
             if (verbose) std::cout << "checking dimensions for " << twoT << " " << twoJ12 << " " << E12%2 << " " << E12 << std::endl;

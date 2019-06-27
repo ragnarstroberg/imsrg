@@ -26,6 +26,8 @@ class Jacobi3BME
   int twoJmax;
   int twoTmin;
   int twoTmax;
+//  int twoJmax_FILE;
+  int twoJmax_cut;
 
   int emax;  // cuts on lab frame basis, 2n+l <= emax
   int E2max;
@@ -96,6 +98,9 @@ class Jacobi3BME
   void SetEmax(int e)   {emax=e;};
   void SetE2max(int e2) {E2max=e2;};
   void SetE3max(int e3) {E3max=e3;};
+
+//  void SetJmaxFile( int j) {twoJmax_FILE=j;};
+  void SetJmaxCut( int j) {twoJmax_cut=j;};
 
   void GetJacobiStates( int twoT, int twoJ, int parity, int E12, int iNAS, jacobi1_state& jac1, jacobi2_state& jac2);
   void CalculateJacobiLabels();
