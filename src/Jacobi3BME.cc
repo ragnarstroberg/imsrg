@@ -1692,7 +1692,7 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms )
 {
 
   struct ket3b { int a; int b; int c; int Tab;};
-  bool verbose = true;
+  bool verbose = false;
   PreComputeMoshinsky1();
   PreComputeMoshinsky2();
   PreComputeSixJ();
@@ -1898,9 +1898,9 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms )
                 if (verbose) std::cout << "finished loop" << std::endl;
                //TODO CFPs here 
                 size_t cfp_begin = GetCFPStartLocation(twoT,twoJ12,E12);
-                std::cout << "assigning cfp_mat" << std::endl;
+                if (verbose) std::cout << "assigning cfp_mat" << std::endl;
                 arma::mat cfp_mat( &(cfpvec[cfp_begin]), dimNAS, dimAS, false); // false refers to copy_aux_mem
-                std::cout << "assigning Tcoeffs[ ] " << std::endl;
+                if (verbose) std::cout << "assigning Tcoeffs[ ] " << std::endl;
                 Tcoeffs[ MakeUshort6({twoJ,twoT,Eabc, twoJ12,E12,Lcm}) ] = sqrt(6) * T_mat_tmp * cfp_mat;
               }
             }
@@ -2013,7 +2013,7 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms )
       {
         int a = ab.first;
         int b = ab.second;
-        std::cout << "a,b = " << a << " " << b << std::endl;
+        if (verbose) std::cout << "a,b = " << a << " " << b << std::endl;
         Orbit& oa = ms.GetOrbit(a);
         Orbit& ob = ms.GetOrbit(b);
         int Epqa = Ebra + 2*oa.n+oa.l;
@@ -2027,7 +2027,6 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms )
         for (int Tpq=Tab_min; Tpq<=Tab_max; Tpq++)
         {
          double isoClebsch_pq = AngMom::CG(0.5,0.5*bra.op->tz2, 0.5,0.5*bra.oq->tz2, Tpq, Tzab);
-         std::cout << "< " << 1 << " " << bra.op->tz2 << " " << 1 << " " << bra.oq->tz2 << " | " << Tpq << " " << Tzab << " > " << isoClebsch_pq << std::endl;
          for (int Trs=Tab_min; Trs<=Tab_max; Trs++)
          {
           double isoClebsch_rs = AngMom::CG(0.5,0.5*ket.op->tz2, 0.5,0.5*ket.oq->tz2, Trs, Tzab);
@@ -2044,7 +2043,6 @@ void Jacobi3BME::GetNO2b_all( ModelSpace& ms )
              auto V3key = MakeUshort3({twoJ,twoT,Epqa%2});
              double me3b = V3Full.at(V3key)(Epqa,Ersb)(ipqa,irsb);
              me_no2b += (twoJ+1) * isoClebsch_pq * isoClebsch_rs * isoClebschTpq * isoClebschTrs * me3b;
-             std::cout << " me_no2b: " << isoClebsch_pq << " " << isoClebsch_rs << " " << isoClebschTpq << " " << isoClebschTrs << "  " << me3b << "   ->  " << me_no2b << std::endl;
            }
           }
          }
