@@ -4299,6 +4299,7 @@ void ReadWrite::SetLECs_preset(std::string key)
 
 void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name, std::string eig_name, std::string v3int_name )
 {
+  double t_start = omp_get_wtime();
   ///
   /// first, read the poi file
   /// this file contains the dimensions of the AS and NAS matrices
@@ -4323,7 +4324,6 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
     exit(EXIT_FAILURE);
   }
 
-//  JacobiBasis jacobi_basis(Nmax,J2min,J2max,T2min,T2max);
   std::cout << "Reading poi file and egv file" << std::endl;
 
   size_t icount = 0;
@@ -4334,8 +4334,10 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
       for (int parity=0;parity<=1;parity++)
       {
         int Nmin=parity%2;
+
         for (int N=Nmin; N<=jacobi3bme.Nmax; N+=2)  // N=2n+l, so for a given parity N is either even or odd 
         {
+//          std::cout << "    N = " << N << std::endl;
           // first, read dimensions from the poi file.
           uint32_t delimiter; // This is machine-dependent. This seems to work on the local cluster, but there are no guarantees elsewhere. Fortran's fault, not mine...
           uint32_t dimAS,dimNAS;
@@ -4346,9 +4348,12 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
           poi_file.read((char*)&dimNAS,    sizeof(dimNAS));
           poi_file.read((char*)&delimiter, sizeof(delimiter));
 
+//          std::cout << "About to set dimensions" << std::endl;
           jacobi3bme.SetDimensionAS(t2,j2,parity,N, dimAS);
+//          std::cout << " now NAS..." << std::endl;
           jacobi3bme.SetDimensionNAS(t2,j2,parity,N, dimNAS);
 //          SetCFPpointer(t2,j2,parity,N, cfp_ptr-1); // Convert from Fortran to C indexing
+//          std::cout << " done" << std::endl;
 
           // next, read CFPs from the eig file
           size_t hash = jacobi3bme.HashTJN(t2,j2,N);
@@ -4358,6 +4363,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
 
           for (int iAS=0; iAS<dimAS; iAS++)
           {
+//            std::cout << "      iAS = " << iAS << std::endl;
             uint32_t delimiter;
             eig_file.read((char*)&delimiter,  sizeof(delimiter));
             if ( delimiter/8 != dimNAS )
@@ -4384,7 +4390,6 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
   jacobi3bme.Allocate();
 
   /// now read in the matrix jacobi matrix elements from the v3int file
-
   for (int t2=jacobi3bme.twoTmin; t2<=jacobi3bme.twoTmax; t2+=2)
   {
     for (int j2=jacobi3bme.twoJmin; j2<=jacobi3bme.twoJmax; j2+=2)
@@ -4392,8 +4397,8 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
       for (int parity=0;parity<=1;parity++)
       {
         int Nmin=parity%2;
-
-        uint32_t delimiter; // This is machine-dependent. This seems to work on the local cluster, but there are no guarantees elsewhere. Fortran's fault, not mine...
+        if (Nmin > jacobi3bme.Nmax) continue;
+        uint32_t delimiter;
         uint32_t nucleonsin,protonsin,neutronsin,twoJin,twoTin,Nmaxin;
         int32_t pin;
         double hwin;
@@ -4424,9 +4429,10 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
           {
             for (int Nket=Nmin; Nket<=jacobi3bme.Nmax; Nket+=2)
             {
-              size_t dim_ketAS = jacobi3bme.GetDimensionAS(t2,j2,parity,Nbra);
+              size_t dim_ketAS = jacobi3bme.GetDimensionAS(t2,j2,parity,Nket);
               for (size_t iket=0; iket<dim_ketAS; iket++)
               {
+//                std::cout << "Nbra,Nket, ibra,iket = " << Nbra << " " << Nket << "    " << ibra << " " << iket << std::endl;
                 if (Nket<Nbra or (Nket==Nbra and iket<ibra) ) continue; 
 //                indexA++;
                 double matel;
@@ -4435,6 +4441,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
                 v3int_file.read((char*)&matel,      sizeof(matel));
                 v3int_file.read((char*)&delimiter,  sizeof(delimiter));
 
+//                std::cout << "read a matrix element " << matel << std::endl;
 
                 jacobi3bme.SetMatElAS(ibra,iket,Nbra,Nket,t2,j2,parity, matel);
                 jacobi3bme.SetMatElAS(iket,ibra,Nket,Nbra,t2,j2,parity, matel); // for now, let's store the hermitian conjugate
@@ -4453,6 +4460,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
 
   std::cout << "successfully read " << jacobi3bme.cfpvec.size() << " cfp's from file" << std::endl;
 
+  IMSRGProfiler::timer[std::string(__func__)] += omp_get_wtime() - t_start;
 
 }
 

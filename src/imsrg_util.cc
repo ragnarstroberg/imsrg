@@ -132,7 +132,7 @@ namespace imsrg_util
       {
         double rr;
         std::istringstream(opnamesplit[1]) >> rr;
-        NeutronDensityAtR(modelspace,rr);
+        return NeutronDensityAtR(modelspace,rr); // whoops... I'd forgotten the "return". Thanks Johannes...
       }
       else if (opnamesplit[0] == "OneOcc") // Get occupation of specified orbit, e.g. OneOccp_1p3
       {

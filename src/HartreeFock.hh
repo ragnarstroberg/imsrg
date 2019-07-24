@@ -18,7 +18,8 @@
 ///////////////////////////////////////////////////////////////////////////////////
 
 #ifndef HartreeFock_h
-#define HartreeFock_h
+#define HartreeFock_h 1
+
 
 #include "ModelSpace.hh"
 #include "Operator.hh"
@@ -28,6 +29,8 @@
 #include <vector>
 #include <array>
 #include <deque>
+
+class Jacobi3BME; // Forward declaration
 
 class HartreeFock
 {
@@ -92,10 +95,10 @@ class HartreeFock
    double GetAverageHFPotential( double r, double rprime);
    void FreezeOccupations(){freeze_occupations = true;};
    void UnFreezeOccupations(){freeze_occupations = false;};
-   uint64_t Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f);
-   void Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f);
    uint64_t Vmon3JacobiHash(uint64_t na, uint64_t nb, uint64_t nc, uint64_t Jab, uint64_t twoJ, uint64_t E12, uint64_t alpha, uint64_t Ncm, uint64_t Lcm);
    void Vmon3JacobiUnHash(uint64_t key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& E12, uint64_t& alpha, uint64_t& Ncm, uint64_t& Lcm);
+   static uint64_t Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f);
+   static void Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f);
    ThreeBodyME GetValence3B( int emax, int E3max );
    double GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
 
