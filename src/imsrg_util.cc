@@ -2991,6 +2991,12 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
  // to be g_nuNN ~ C1 = [mN Ctilde / 4pi]^2 C1tilde, where C1tilde ~2, and Ctilde ~ -0.4/ fpi^2 where fpi is the pion decay constant
  // so g_nuNN ~ [ -0.4 mN/(4pi fpi^2)]^2 * 2 ~ 2 e-5   (as far as I can figure...)
  // That's a small number, so I just take g = 1 here so we're doing the calculation on numbers of order 1.
+ // After discussing with Javier Menendez, the correct thing to do is to compute the dimensionless quantity
+ // (r0 A^1/3) / mpi^2  * delta_R(r)
+ // Since g_nuNN is order fpi^2, the combination mpi^2 * g_nuNN is a dimensionless number of order 1
+ // The usual neutrino exchange matrix element has units of MeV (or fm^-1), but is multiplied by the nuclear radius R=1.2 A^1/3
+ // to make it dimensionless (and typically of order 1). This nuclear radius factor is compensated in the phase space factor.
+ // So in the end, if the expectation value of R/mpi^2 * delta_R(r) is of order 1, it is non-negligible.
  Operator M0nu_contact_Op(ModelSpace& modelspace, double R0 )
  {
    double t_start = omp_get_wtime();
@@ -2999,8 +3005,14 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
    std::cout << "oscillator b = " << oscillator_b << std::endl;
    // In Moshinsky's convention, r_rel = (r1-r2)/sqrt(2).  We want ( |r1-r2|^2 / R0^2 )  =  ( 2 r_rel^2 / R0^2 ) => 2 sigma^2 = R0^2/2
    double sigma = R0/2 / oscillator_b ;
-   // we want things in units of MeV^-2 in the end
-   double normalization = 1.0 / pow( sqrt(M_PI * R0/HBARC), 3 );
+//   // we want things in units of MeV^-2 in the end
+//   double normalization = 1.0 / pow( sqrt(M_PI * R0/HBARC), 3 );
+   double normalization = 1.0 / pow( sqrt(M_PI) * R0, 3 ); // this has units fm^-3 NOTE: Here M_PI is 3.1415, not the pion mass
+   int A = modelspace.GetTargetMass(); // The mass of the thing we will be calculating
+   double nuclear_radius = 1.2 * pow( A, 1./3);  // empirical estimate for nuclear radius, has units of fm
+   double mpi = 134.0; // pion mass, or whatever..
+   double mpi2 = mpi*mpi / (HBARC*HBARC); // pion mass squared, in units of fm^-2, (a.k.a inverse compton wavelength squared)
+   normalization *= nuclear_radius / mpi2; // now the normalization is dimensionless
 
    // Making the units work out. In the future, this all should be done consistently with the interaction
    double fpi = 92.2; // pion decay constant in MeV
