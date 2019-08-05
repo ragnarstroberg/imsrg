@@ -338,6 +338,13 @@ int main(int argc, char** argv)
   Operator& HNO = Hbare;
   if (basis == "HF" and method !="HF")
     HNO = hf.GetNormalOrderedH();
+  else if (basis == "naturalorbitals")
+  {
+    hf.PrintSPEandWF();
+    std::cout << "Now switching to natural orbitals" << std::endl;
+    hf.SwitchToNaturalOrbitals();
+    HNO = hf.GetNormalOrderedH();
+  }
   else if (basis == "oscillator")
     HNO = Hbare.DoNormalOrdering();
 
