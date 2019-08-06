@@ -1393,6 +1393,7 @@ void HartreeFock::GetSecondOrderRho()
                 }
                }
               }
+              if ( std::abs(gammapp_1*gammapp_2)<1e-6) continue;
 
               if (std::abs(occfactorhh)>1e-6)
               {
@@ -1597,13 +1598,33 @@ void HartreeFock::SwitchToNaturalOrbitals()
            break;
          }
       }
+      std::cout << "After diagonalization, eigenvalues and eigenvectors:" << std::endl << E_ch <<  std::endl << std::endl << C_ch << std::endl << std::endl;
       // Update the full overlap matrix C and energy vector
 //      energies(orbvec) = E_ch;
       // The eigenvalues are the occupation numbers
 
+      // Now we need to organize things so that they make sense, with things as close to the identity as possible
+      for (size_t irow=0; irow<C_ch.n_rows; irow++)
+      {
+        for (size_t icol=irow+1; icol<C_ch.n_cols; icol++)
+        {
+          if ( std::abs(C_ch(irow,icol)) > std::abs(C_ch(irow,irow)) )
+          {
+             C_ch.swap_cols(irow,icol);
+          }
+        }
+        if ( C_ch(irow,irow)<0 ) C_ch.row(irow) *=-1;
+      }
+
+      std::cout << "After resuffling, the eigenvectors are:" << std::endl << C_ch << std::endl << std::endl;
+
+      std::cout << "Unitarity check: " << std::endl << C_ch * C_ch.t() << std::endl;
+
       C.submat(orbvec,orbvec) = C_ch;
    }
-   ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
+//   ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
+
+
    UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
    UpdateF();              // Update the Fock matrix
    CalcEHF();

@@ -2987,41 +2987,53 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
  // V(r) = -2 g_nuNN(R) delta_R(r)
  // where delta_R is a Gaussian regulated delta function
  // delta_R(r) = 1/ (sqrt(pi)R)^3 * exp(-r^2/R^2)
- // for cutoff R. The low energy constant g_nuNN is estimated by Cirigliano et al
- // to be g_nuNN ~ C1 = [mN Ctilde / 4pi]^2 C1tilde, where C1tilde ~2, and Ctilde ~ -0.4/ fpi^2 where fpi is the pion decay constant
- // so g_nuNN ~ [ -0.4 mN/(4pi fpi^2)]^2 * 2 ~ 2 e-5   (as far as I can figure...)
- // That's a small number, so I just take g = 1 here so we're doing the calculation on numbers of order 1.
+ // for cutoff R.  This delta is normalized to 1 when integrated over x,y,x.
+ // So in spherical coordinates, the angular integration picks up a factor 4pi and the radial integration comes with r^2dr.
+ //  The low energy constant g_nuNN is estimated by Cirigliano et al to be order fpi^-2
+ //  where fpi is the pion decay constant. To make things dimensionless, we should 
  // After discussing with Javier Menendez, the correct thing to do is to compute the dimensionless quantity
  // (r0 A^1/3) / mpi^2  * delta_R(r)
- // Since g_nuNN is order fpi^2, the combination mpi^2 * g_nuNN is a dimensionless number of order 1
+ // Since g_nuNN is order fpi^-2, the combination fpi^2 * g_nuNN is a dimensionless number of order 1
  // The usual neutrino exchange matrix element has units of MeV (or fm^-1), but is multiplied by the nuclear radius R=1.2 A^1/3
  // to make it dimensionless (and typically of order 1). This nuclear radius factor is compensated in the phase space factor.
- // So in the end, if the expectation value of R/mpi^2 * delta_R(r) is of order 1, it is non-negligible.
+ // So in the end, if the expectation value of R/fpi^2 * delta_R(r) is of order 1, it is non-negligible compared to the neutrino exchange operator.
  Operator M0nu_contact_Op(ModelSpace& modelspace, double R0 )
  {
    double t_start = omp_get_wtime();
    Operator M0nuCT(modelspace, 0,2,0,2);
    double oscillator_b = sqrt(HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
-   std::cout << "oscillator b = " << oscillator_b << std::endl;
-   // In Moshinsky's convention, r_rel = (r1-r2)/sqrt(2).  We want ( |r1-r2|^2 / R0^2 )  =  ( 2 r_rel^2 / R0^2 ) => 2 sigma^2 = R0^2/2
-   double sigma = R0/2 / oscillator_b ;
-//   // we want things in units of MeV^-2 in the end
+//   std::cout << "oscillator b = " << oscillator_b << std::endl;
+
+   // In Moshinsky's convention, r_rel = (r1-r2)/sqrt(2).  We want ( |r1-r2|^2 / R0^2 )  =  ( 2 r_rel^2 / R0^2 ) => 2 sigma^2 = R0^2/2 => sigma = R0/2
+   double sigma = R0/2 / oscillator_b ;  // we work in units of the oscillator length b
 //   double normalization = 1.0 / pow( sqrt(M_PI * R0/HBARC), 3 );
-   double normalization = 1.0 / pow( sqrt(M_PI) * R0, 3 ); // this has units fm^-3 NOTE: Here M_PI is 3.1415, not the pion mass
+   double normalization =4*3.1415926 *  pow( sqrt(3.1415926) * R0, -3 ); // this has units fm^-3. The 4pi comes from integration over angles
    int A = modelspace.GetTargetMass(); // The mass of the thing we will be calculating
    double nuclear_radius = 1.2 * pow( A, 1./3);  // empirical estimate for nuclear radius, has units of fm
-   double mpi = 134.0; // pion mass, or whatever..
-   double mpi2 = mpi*mpi / (HBARC*HBARC); // pion mass squared, in units of fm^-2, (a.k.a inverse compton wavelength squared)
-   normalization *= nuclear_radius / mpi2; // now the normalization is dimensionless
+//   double mpi = 134.0; // pion mass, or whatever..
+//   double mpi2 = mpi*mpi / (HBARC*HBARC); // pion mass squared, in units of fm^-2, (a.k.a inverse compton wavelength squared)
+//   normalization *= nuclear_radius / mpi2; // now the normalization is dimensionless
+   //
+   double fpi = 92.2; // pion decay constant in MeV
+   normalization *= nuclear_radius * HBARC*HBARC / (fpi*fpi); // now the normalization is dimensionless
 
    // Making the units work out. In the future, this all should be done consistently with the interaction
-   double fpi = 92.2; // pion decay constant in MeV
-   double Ctilde = -0.4 / (fpi*fpi);
-   double C1tilde = 2.0;  // from fitting LO scattering at R0=0.5  (see Cirigliano et al. PRL 120 202001 )
-   double C1 = pow(M_NUCLEON*Ctilde/4/M_PI, 2) * C1tilde;
-//   double g_nuNN = C1;
+//   double Ctilde = -0.4 / (fpi*fpi);
+//   double C1tilde = 2.0;  // from fitting LO scattering at R0=0.5  (see Cirigliano et al. PRL 120 202001 )
+//   double C1 = pow(M_NUCLEON*Ctilde/4/M_PI, 2) * C1tilde;
+////   double g_nuNN = C1;
    double g_nuNN = 1;
    normalization *= -2*g_nuNN;
+
+   //std::cout << "Constructing normalization from " << pow( sqrt(3.14159) * R0, -3 ) << " * " << nuclear_radius << " * " << HBARC*HBARC/(fpi*fpi) << " * -2  = " << normalization << std::endl;
+
+//   std::vector<double> rgrid;
+//   for (double r=0; r<10.1; r+=0.1) rgrid.push_back(r);
+
+//   std::vector<double> rgrid = { 0.10000 ,0.20000 ,0.30000 ,0.40000 ,0.50000 ,0.60000 ,
+//                                 0.70000 ,0.80000 ,0.90000 ,1.00000 ,1.50000 ,2.00000 ,
+//                                 2.50000 ,3.00000 ,3.50000 ,4.00000 ,4.50000 ,5.00000 ,
+//                                 5.50000 ,6.00000 ,6.50000 , 7.00000 ,7.50000 ,8.00000 };
 
 
    modelspace.PreCalculateMoshinsky();
@@ -3077,6 +3089,10 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
             if (std::abs(fab-fcd)%2 >0) continue; //  parity conservation
 
             double mcont=0;
+//            bool verbose = false;
+//            if (J==0 and la==3 and lb==3 and lc==3 and ld==3 and na+nb+nc+nd==0 and oa.j2==7 and ob.j2==7 and oc.j2==7 and od.j2==7) verbose = true;
+//            if (verbose) std::cout << "osc_b, R0, sigma = " << oscillator_b << " " << R0 << " " << sigma << "  nuc Radius, norm = " << nuclear_radius << " " << normalization  << std::endl;
+//            std::vector<double> psirel( rgrid.size(), 0);
             // Transform to LS coupling using 9j coefficients
             for (int Lab=std::abs(la-lb); Lab<= la+lb; ++Lab)
             {
@@ -3090,6 +3106,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
                 int Lcd = Lab;
                 double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
                 if (std::abs(njcd) <1e-7) continue;
+//                if (verbose) std::cout << "L S = " << Lab << " " << Sab << "   norm nine-j = " << njab << " , " << njcd << std::endl;
                 // Next, transform to rel / com coordinates with Moshinsky tranformation
                 for (int N_ab=0; N_ab<=fab/2; ++N_ab)  // N_ab = CoM n for a,b
                 {
@@ -3125,6 +3142,20 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
                        double rad_int =  RadialIntegral_Gauss( n_ab,lam_ab, n_cd,lam_cd, sigma) ;  
  
                        mcont += prefactor * rad_int; 
+//                       if (verbose) std::cout << "   Nab Lamab nab lamab = " << N_ab << " " << Lam_ab << " " << n_ab << " " << lam_ab
+//                                              << "  Ncd Lamcd ncd lamcd = " << N_cd << " " << Lam_cd << " " << n_cd << " " << lam_cd
+//                                              << " mosh_ab , mosh_cd = " << mosh_ab << " " << mosh_cd << "  asymm_factor = " << asymm_factor
+//                                              << " rad_int = " << rad_int << "   mcont = " << mcont << std::endl;
+//
+//                      if (verbose)
+//                      {
+//                        for ( size_t i=0; i<rgrid.size(); i++ )
+//                        {
+//                          psirel[i] += prefactor * pow(2,-1.5)* HO_density(n_ab, lam_ab, modelspace.GetHbarOmega(), rgrid[i] /sqrt(2) );
+//                          
+//                        }
+//                      }
+
     
                     } // lam_ab
                   } // Lam_ab
@@ -3132,8 +3163,16 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
          
               } // Sab
             } // Lab
+//            if (verbose)
+//            {
+//              for (size_t i=0; i<rgrid.size(); i++)
+//              {
+//                std::cout << rgrid[i] << "   " << psirel[i] << std::endl;
+//              }
+//            }
 
-            mcont *=  normalization / sqrt((1.0+bra.delta_pq())*(1.0+ket.delta_pq())); // normalize and account for sqrt(2) Moshinsky convention
+            mcont *=  normalization / sqrt((1.0+bra.delta_pq())*(1.0+ket.delta_pq())); // normalize 
+//            if (verbose) std::cout << " with normalization " << normalization << " , setting matrix element to " << mcont << std::endl;
             M0nuCT.TwoBody.SetTBME(chbra,chket,ibra,iket,mcont);
                          
          }
