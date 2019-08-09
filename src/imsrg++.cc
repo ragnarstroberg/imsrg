@@ -92,6 +92,7 @@ int main(int argc, char** argv)
   std::string IMSRG3 = parameters.s("IMSRG3");
   std::string physical_system = parameters.s("physical_system");
   std::string freeze_occupations = parameters.s("freeze_occupations");
+  bool use_NAT_occupations = (parameters.s("use_NAT_occupations")=="true") ? true : false;
 
   int eMax = parameters.i("emax");
   int lmax = parameters.i("lmax"); // so far I only use this with atomic systems.
@@ -328,25 +329,50 @@ int main(int argc, char** argv)
     Hbare += BetaCM * imsrg_util::OperatorFromString( modelspace, hcm_opname.str());
   }
 
+
   std::cout << "Creating HF" << std::endl;
-  HartreeFock hf(Hbare);
+//  HartreeFock hf(Hbare);
+  HFMBPT hf(Hbare); // HFMBPT inherits from HartreeFock, so no harm done here.
+
   if (freeze_occupations == "false" )  hf.UnFreezeOccupations();
   std::cout << "Solving" << std::endl;
+//  if (basis=="HF")
   hf.Solve();
   
 //  Operator HNO;
   Operator& HNO = Hbare;
   if (basis == "HF" and method !="HF")
-    HNO = hf.GetNormalOrderedH();
-  else if (basis == "naturalorbitals")
   {
-    hf.PrintSPEandWF();
-    std::cout << "Now switching to natural orbitals" << std::endl;
-    hf.SwitchToNaturalOrbitals();
     HNO = hf.GetNormalOrderedH();
   }
+  else if (basis == "NAT") // we want to use the natural orbital basis
+  {
+    hf.UseNATOccupations( use_NAT_occupations );
+
+// This calls GetDensityMatrix(), which computes the 1b density matrix up to MBPT2
+// using the NO2B Hamiltonian in the HF basis, obtained with GetNormalOrderedH().
+// Then it calls DiagonalizeRho() which diagonalizes the density matrix, yielding the natural orbital basis.
+    hf.GetNaturalOrbitals(); 
+    HNO = hf.GetNormalOrderedHNAT();
+
+    // For now, even if we use the NAT occupations, we switch back to naive occupations after the normal ordering
+    // This should be investigated in more detail.
+    if (use_NAT_occupations) 
+    {
+      hf.FillLowestOrbits();
+      std::cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
+      HNO = HNO.UndoNormalOrdering();
+      hf.UpdateReference();
+      modelspace.SetReference(modelspace.core); // change the reference
+      std::cout << "Doing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
+      HNO = HNO.DoNormalOrdering();
+    }
+
+  }
   else if (basis == "oscillator")
+  {
     HNO = Hbare.DoNormalOrdering();
+  }
 
 
   if (IMSRG3 == "true")
@@ -454,6 +480,10 @@ int main(int argc, char** argv)
     {
       ops[i] = hf.TransformToHFBasis(ops[i]);
     }
+    else if ((basis == "NAT") and (opnames[i].find("DaggerHF") == std::string::npos)  )
+    {
+      ops[i] = hf.TransformHOToNATBasis(ops[i]);
+    }
     ops[i] = ops[i].DoNormalOrdering();
     if (method == "MP3")
     {
@@ -478,9 +508,12 @@ int main(int argc, char** argv)
   }
 
 
-  std::cout << "HF Single particle energies and wave functions:" << std::endl;
-  hf.PrintSPEandWF();
-  std::cout << std::endl;
+  if (basis=="HF" or basis=="NAT")
+  {
+    std::cout << basis << " Single particle energies and wave functions:" << std::endl;
+    hf.PrintSPEandWF();
+    std::cout << std::endl;
+  }
   
   if ( method == "HF" or method == "MP3")
   {
@@ -677,6 +710,7 @@ int main(int argc, char** argv)
   ModelSpace ms2(modelspace);
   bool renormal_order = false;
   if (modelspace.valence.size() > 0 )
+//  if (modelspace.valence.size() > 0 or basis=="NAT")
   {
     renormal_order = modelspace.holes.size() != modelspace.core.size();
     if (not renormal_order)

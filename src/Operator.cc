@@ -248,12 +248,13 @@ void Operator::SetUpOneBodyChannels()
         for (int tz2=tz2min; tz2<=tz2max; tz2+=2)
         {
           if (std::abs(tz2) != std::abs(oi.tz2 - 2*rank_T)) continue;
-          OneBodyChannels[ {l, j2, tz2} ].push_back(i);
+          OneBodyChannels[ {l, j2, tz2} ].insert(i);
+//          OneBodyChannels[ {l, j2, tz2} ].push_back(i);
         }
       }
     }
   }
-  for (auto& it: OneBodyChannels)  it.second.shrink_to_fit();
+//  for (auto& it: OneBodyChannels)  it.second.shrink_to_fit();
 }
 
 
@@ -932,10 +933,14 @@ double Operator::GetMP2_Energy()
    double t_start = omp_get_wtime();
    double Emp2 = 0;
    int nparticles = modelspace->particles.size();
+   std::vector<index_t> particles_vec(modelspace->particles.begin(),modelspace->particles.end()); // convert set to vector for OMP looping
+//   for ( auto& i : modelspace->particles)
    #pragma omp parallel for reduction(+:Emp2)
    for ( int ii=0;ii<nparticles;++ii)
    {
-     index_t i = modelspace->particles[ii];
+//     std::cout << " i = " << i << std::endl;
+//     index_t i = modelspace->particles[ii];
+     index_t i = particles_vec[ii];
      double ei = OneBody(i,i);
      Orbit& oi = modelspace->GetOrbit(i);
      for (auto& a : modelspace->holes)
@@ -962,6 +967,7 @@ double Operator::GetMP2_Energy()
              double tbme = TwoBody.GetTBME_J_norm(J,a,b,i,j);
              if (std::abs(tbme)>1e-6)
               Emp2 += (2*J+1)* oa.occ * ob.occ * tbme*tbme/denom; // no factor 1/4 because of the restricted sum
+//              std::cout << "abij J = " << a << " " << b << " " << i << " " << j << "    " << J << "   na nb" << oa.occ << " " << ob.occ << "  tbme,denom " << tbme << " " << denom << std::endl;
            }
          }
        }
@@ -1046,10 +1052,12 @@ std::array<double,3> Operator::GetMP3_Energy()
    index_t nparticles = modelspace->particles.size();
    modelspace->PreCalculateSixJ();
 //   #pragma omp parallel for schedule(dynamic,1)  reduction(+:Emp3)
+   std::vector<index_t> particles_vec( modelspace->particles.begin(), modelspace->particles.end()); // convert set to verctor for OMP iteration
    #pragma omp parallel for schedule(dynamic,1)  reduction(+:Eph)
    for (index_t ii=0;ii<nparticles;ii++)
    {
-     auto i = modelspace->particles[ii];
+//     auto i = modelspace->particles[ii];
+     auto i = particles_vec[ii];
      double ji = 0.5*modelspace->GetOrbit(i).j2;
      for (auto a : modelspace->holes)
      {

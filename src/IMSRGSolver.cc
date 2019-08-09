@@ -576,13 +576,14 @@ void IMSRGSolver::Solve_ode()
    ode_mode = "H";
    WriteFlowStatusHeader(std::cout);
    WriteFlowStatus(flowfile);
-   using namespace boost::numeric::odeint;
+//   using namespace boost::numeric::odeint;
+   namespace odeint = boost::numeric::odeint;
 //   runge_kutta4< vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
-   runge_kutta4< std::deque<Operator>, double, std::deque<Operator>, double, vector_space_algebra> stepper;
+   odeint::runge_kutta4< std::deque<Operator>, double, std::deque<Operator>, double, odeint::vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
-   integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
+   odeint::integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
    monitor.report();
 }
 
@@ -593,14 +594,15 @@ void IMSRGSolver::Solve_ode_adaptive()
    WriteFlowStatusHeader(std::cout);
    WriteFlowStatus(flowfile);
    std::cout << "done writing header and status" << std::endl;
-   using namespace boost::numeric::odeint;
+//   using namespace boost::numeric::odeint;
+   namespace odeint = boost::numeric::odeint;
    auto system = *this;
 //   typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
-   typedef runge_kutta_dopri5< std::deque<Operator> , double , std::deque<Operator> ,double , vector_space_algebra > stepper;
+   typedef odeint::runge_kutta_dopri5< std::deque<Operator> , double , std::deque<Operator> ,double , odeint::vector_space_algebra > stepper;
 //   typedef adams_bashforth_moulton< 4, vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
-   integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
+   odeint::integrate_adaptive(odeint::make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
    monitor.report();
 
 }
@@ -702,14 +704,15 @@ void IMSRGSolver::Solve_ode_magnus()
    ode_mode = "Omega";
    WriteFlowStatus(std::cout);
    WriteFlowStatus(flowfile);
-   using namespace boost::numeric::odeint;
+//   using namespace boost::numeric::odeint;
+   namespace odeint = boost::numeric::odeint;
    namespace pl = std::placeholders;
 //   runge_kutta4<vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
-   runge_kutta4<std::deque<Operator>, double, std::deque<Operator>, double, vector_space_algebra> stepper;
+   odeint::runge_kutta4<std::deque<Operator>, double, std::deque<Operator>, double, odeint::vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_const(stepper, system, Omega, s, smax, ds, monitor);
-   integrate_const(stepper, system, Omega, s, smax, ds, monitor);
+   odeint::integrate_const(stepper, system, Omega, s, smax, ds, monitor);
    monitor.report();
 }
 

@@ -25,12 +25,13 @@
 #include <unordered_map>
 #include <map>
 #include <array>
+#include <set>
 #include <armadillo>
 #include "IMSRGProfiler.hh"
 #ifndef SQRT2
   #define SQRT2 1.4142135623730950488
 #endif
-#define OCC_CUT 1e-6
+//#define OCC_CUT 1e-6
 
 
 //using namespace std;
@@ -204,6 +205,8 @@ class ModelSpace
    ModelSpace(int emax, std::string reference, std::string valence);
    ModelSpace(int emax, std::string reference);
 
+   static double OCC_CUT;
+
    // Overloaded operators
    ModelSpace operator=(const ModelSpace&); 
    ModelSpace operator=(ModelSpace&&); 
@@ -214,7 +217,8 @@ class ModelSpace
 
    void Init(int emax, std::string reference, std::string valence);
    void Init(int emax, std::map<index_t,double> hole_list, std::string valence);
-   void Init(int emax, std::map<index_t,double> hole_list, std::vector<index_t> core_list, std::vector<index_t> valence_list);
+   void Init(int emax, std::map<index_t,double> hole_list, std::vector<index_t> core_list, std::vector<index_t> valence_list);// keep this for backward-compatibility
+   void Init(int emax, std::map<index_t,double> hole_list, std::set<index_t> core_list, std::set<index_t> valence_list);
    void Init(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list);
    void Init_occ_from_file(int emax, std::string valence, std::string occ_file);
    void InitSingleSpecies( int emax, std::string reference, std::string valence); // Work with just one type of fermion
@@ -225,8 +229,10 @@ class ModelSpace
    void GetAZfromString(std::string str, int& A, int& Z);
    std::vector<index_t> String2Index( std::vector<std::string> vs );
    std::string Index2String(index_t ind);
-   void Get0hwSpace(int Aref, int Zref, std::vector<index_t>& core_list, std::vector<index_t>& valence_list);
-   void ParseCommaSeparatedValenceSpace(std::string valence, std::vector<index_t>& core_list, std::vector<index_t>& valence_list);
+   void Get0hwSpace(int Aref, int Zref, std::set<index_t>& core_list, std::set<index_t>& valence_list);
+//   void Get0hwSpace(int Aref, int Zref, std::vector<index_t>& core_list, std::vector<index_t>& valence_list);
+   void ParseCommaSeparatedValenceSpace(std::string valence, std::set<index_t>& core_list, std::set<index_t>& valence_list);
+//   void ParseCommaSeparatedValenceSpace(std::string valence, std::vector<index_t>& core_list, std::vector<index_t>& valence_list);
 
    void SetupKets();
    void AddOrbit(Orbit orb);
@@ -254,7 +260,8 @@ class ModelSpace
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
    int GetTwoBodyJmax() const {return TwoBodyJmax;};
    int GetThreeBodyJmax() const {return ThreeBodyJmax;};
-   void SetReference(std::vector<index_t>);
+   void SetReference(std::vector<index_t>); // For backwards compatibility
+   void SetReference(std::set<index_t>);
    void SetReference(std::map<index_t,double>);
    void SetReference(std::string);
 
@@ -307,14 +314,23 @@ class ModelSpace
 
 
    // Data members
-   std::vector<index_t> holes;           // in the reference Slater determinant
-   std::vector<index_t> particles;       // above the reference Slater determinant
-   std::vector<index_t> core;            // core for decoupling
-   std::vector<index_t> valence;         // valence space for decoupling
-   std::vector<index_t> qspace;          // above the valence space for decoupling
-   std::vector<index_t> proton_orbits;
-   std::vector<index_t> neutron_orbits;
-   std::vector<index_t> all_orbits;
+   std::set<index_t> holes;           // in the reference Slater determinant
+   std::set<index_t> particles;       // above the reference Slater determinant
+   std::set<index_t> core;            // core for decoupling
+   std::set<index_t> valence;         // valence space for decoupling
+   std::set<index_t> qspace;          // above the valence space for decoupling
+   std::set<index_t> proton_orbits;
+   std::set<index_t> neutron_orbits;
+   std::set<index_t> all_orbits;
+
+//   std::vector<index_t> holes;           // in the reference Slater determinant
+//   std::vector<index_t> particles;       // above the reference Slater determinant
+//   std::vector<index_t> core;            // core for decoupling
+//   std::vector<index_t> valence;         // valence space for decoupling
+//   std::vector<index_t> qspace;          // above the valence space for decoupling
+//   std::vector<index_t> proton_orbits;
+//   std::vector<index_t> neutron_orbits;
+//   std::vector<index_t> all_orbits;
 
    std::vector<index_t> KetIndex_pp; 
    std::vector<index_t> KetIndex_ph;
@@ -342,7 +358,8 @@ class ModelSpace
    int OneBodyJmax;
    int TwoBodyJmax;
    int ThreeBodyJmax;
-   std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
+   std::map<std::array<int,3>,std::set<index_t> > OneBodyChannels;
+//   std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
 
    std::vector<unsigned int> SortedTwoBodyChannels;
    std::vector<unsigned int> SortedTwoBodyChannels_CC;
