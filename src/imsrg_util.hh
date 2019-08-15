@@ -71,7 +71,8 @@ namespace imsrg_util
  Operator ProtonDensityAtR(ModelSpace& modelspace, double R);
  Operator NeutronDensityAtR(ModelSpace& modelspace, double R);
  Operator RpSpinOrbitCorrection(ModelSpace& modelspace);
- Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list);
+ //Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list);
+ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<index_t> index_list);
 
  Operator Isospin2_Op(ModelSpace& modelspace);
  Operator AllowedFermi_Op(ModelSpace& modelspace);
@@ -181,6 +182,14 @@ namespace imsrg_util
    std::copy(v1.begin(),v1.end(),vec.begin());
    std::copy(v2.begin(),v2.end(),vec.begin()+v1.size());
    return VectorUnion(vec, args...);
+ }
+
+ template <typename T, typename... Args>
+ std::set<T> VectorUnion(const std::set<T>& s1, const std::set<T>& s2, Args... args)
+ {
+   std::set<T> s3 = s1;
+   s3.insert(s2.begin(),s2.end());
+   return VectorUnion( s3, args...);
  }
 
 }

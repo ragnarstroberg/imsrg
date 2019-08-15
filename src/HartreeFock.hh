@@ -102,8 +102,10 @@ class HartreeFock
    ThreeBodyME GetValence3B( int emax, int E3max );
    double GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
 
+/*
    void GetSecondOrderRho();
    void SwitchToNaturalOrbitals();
+*/
 
 };
 

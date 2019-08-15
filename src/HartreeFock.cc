@@ -43,7 +43,8 @@ HartreeFock::HartreeFock(Operator& hbare)
    prev_energies = arma::vec(norbits,arma::fill::zeros);
    std::vector<double> occvec;
    for (auto& h : modelspace->holes) occvec.push_back(modelspace->GetOrbit(h).occ);
-   holeorbs = arma::uvec(modelspace->holes);
+//   holeorbs = arma::uvec(modelspace->holes);
+   holeorbs = arma::uvec( std::vector<index_t>(modelspace->holes.begin(),modelspace->holes.end()));
    hole_occ = arma::rowvec(occvec);
    BuildMonopoleV();
    if (hbare.GetParticleRank()>2)
@@ -163,7 +164,8 @@ void HartreeFock::Diagonalize()
    prev_energies = energies;
    for ( auto& it : Hbare.OneBodyChannels )
    {
-      arma::uvec orbvec(it.second);
+//      arma::uvec orbvec(it.second);
+      arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end()) ); // convert std::set to std::vector, and convert that to arma::uvec...
       arma::mat F_ch = F.submat(orbvec,orbvec);
       arma::mat C_ch;
       arma::vec E_ch;
@@ -400,17 +402,20 @@ void HartreeFock::BuildMonopoleV3Jacobi()
 
    for ( auto& obc_a : Hbare.OneBodyChannels )
    {
-     uint64_t a0 = obc_a.second[0];
+     uint64_t a0 = *(obc_a.second.begin()); // access the first element in the set
+//     uint64_t a0 = obc_a.second[0];
      int j2a = obc_a.first[1];
      for ( auto& obc_b : Hbare.OneBodyChannels )
      {
-       uint64_t b0 = obc_b.second[0];
+//       uint64_t b0 = obc_b.second[0];
+       uint64_t b0 = *(obc_b.second.begin());// access the first element in the set
        int j2b = obc_b.first[1];
        int Jab_min = std::abs( j2a-j2b )/2;
        int Jab_max = ( j2a+j2b )/2;
        for ( auto& obc_c : Hbare.OneBodyChannels )
        {
-         uint64_t c0 = obc_c.second[0];
+         uint64_t c0 = *(obc_c.second.begin());// access the first element in the set
+//         uint64_t c0 = obc_c.second[0];
          int j2c = obc_c.first[1];
 
          // Now we compute the relevalt T coefficients
@@ -485,9 +490,10 @@ void HartreeFock::BuildMonopoleV3Jacobi()
          size_t asize = obc_a.second.size();
 //         for ( auto a : obc_a.second )
 //         #pragma omp parallel for schedule(dynamic,1)
-         for ( size_t ia=0; ia<asize; ia++)  // do it this way because omp doesn't play nice with range-based for loops
+//         for ( size_t ia=0; ia<asize; ia++)  // do it this way because omp doesn't play nice with range-based for loops
+         for ( auto a : obc_a.second )
          {
-           auto a = obc_a.second[ia];
+//           auto a = obc_a.second[ia];
            Orbit& oa = modelspace->GetOrbit(a);
            for (auto b : obc_b.second )
            {
@@ -800,7 +806,8 @@ void HartreeFock::ReorderCoefficients()
 {
    for ( auto& it : Hbare.OneBodyChannels )
    {
-     arma::uvec orbvec(it.second);
+//     arma::uvec orbvec(it.second);
+     arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end())); // convert from std::set to std::vector, and then to arma::uvec
      arma::vec E_ch = energies(orbvec);
      int nswaps = 10; // keep track of the number of swaps we had to do, iterate until nswaps==0
      // first, make the orbits with the same l,j,tz energy ordered
@@ -924,12 +931,14 @@ void HartreeFock::UpdateReference()
   for (index_t i=0;i<holeorbs.size();++i)  
   {
      hole_map[holeorbs[i]] = hole_occ[i];
+//     std::cout << "i = " << i << " hole_occ = " << hole_occ << "  diff = " << std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) << std::endl;
      if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
      {
         changed_occupations = true;
         std::cout << "After HF, occupation of orbit " << holeorbs[i] << " has changed. Modelspace will be updated." << std::endl;
      }
   }
+//  std::cout << "Before calling SetReference, A,Z = " << modelspace->GetAref() << " " << modelspace->GetZref() << std::endl;
   if (changed_occupations)  modelspace->SetReference( hole_map );
 
 }
@@ -1075,7 +1084,8 @@ Operator HartreeFock::GetOmega()
    Omega.SetAntiHermitian();
    for ( auto& it : Hbare.OneBodyChannels )
    {
-      arma::uvec orbvec(it.second);
+//      arma::uvec orbvec(it.second);
+      arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end()));
       arma::mat C_ch = C.submat(orbvec,orbvec);
       arma::cx_mat eigvect;
       arma::cx_vec eigval;
@@ -1308,329 +1318,5 @@ double HartreeFock::GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T
   } // for alpha
   return V_hf;
 }
-
-
-//  Modifying slightly the notation used in Tichai et al
-//  rho = rho00 + rho11 + rho20 + rho02,  where e.g. rho02 = <psi_0 | a+a | psi_2>
-//  and psi_2 is the second-order correction to the wave function.
-//  Since rho is real, we have <p|rho02|q> = <q|rho20|p>.
-//  rho20 = rho20_pp + rho20_hh
-//  rho11 = rho11_pp + rho11_hh
-//  In the following, we use the standard chemsitry notation a,b,c for particles, i,j,k for holes
-//
-//  <i|rho20_pp|a> =  1/2 sum_bcj nj*(1-nb)*(1-nc)  <ij|H|bc><bc|H|aj> / [(ei-ea)(ei+ej-eb-ec)]
-//  <i|rho20_hh|a> = -1/2 sum_bjk nj*nk*(1-nb)      <ib|H|jk><jk|H|ab> / [(ei-ea)(ej+ek-ea-eb)]
-//
-//  <i|rho11_pp|j> = -1/2 sum_abk nk*(1-na)*(1-nb)  <ik|H|ab><ab|H|jk> / [(ei+ek-ea-eb)(ej+ek-ea-eb)]
-//  <a|rho11_hh|b> =  1/2 sum_cij ni*nj*(1-nc)      <ac|H|ij><ij|H|bc> / [(ei+ej-ea-ec)(ei+ej-eb-ec)]
-//
-// After doing the J coupling, this is:
-//
-// <i|rho20_pp|a> =  1/2 sum_bcjJ nj(1-nb)(1-nc) (2J+1)/(2ji+1) <ijJ|H|bcJ><bcJ|H|ajJ> / [(ei-ea)(ei+ej-eb-ec)]
-// <i|rho20_hh|a> = -1/2 sum_bjkJ nj(1-nb)*nk    (2J+1)/(2ji+1) <ibJ|H|jkJ><jkJ|H|abJ> / [(ei-ea)(ej+ek-ea-eb)]
-//
-//  <i|rho11_pp|j> = -1/2 sum_abkJ nk*(1-na)*(1-nb) (2J+1)/(2ji+1) <ikJ|H|abJ><abJ|H|jkJ> / [(ei+ek-ea-eb)(ej+ek-ea-eb)]
-//  <a|rho11_hh|b> =  1/2 sum_cijJ ni*nj*(1-nc)     (2J+1)/(2ja+1) <acJ|H|ijJ><ijJ|H|bcJ> / [(ei+ej-ea-ec)(ei+ej-eb-ec)]
-//
-void HartreeFock::GetSecondOrderRho()
-{
-  arma::mat rho_2nd = arma::mat( arma::size(rho), arma::fill::zeros);  // second order correction to rho
- 
-//  auto& H1 = Hbare.OneBody; 
-  auto& H1 = F; 
-  auto& H2 = Hbare.TwoBody; 
-  for (auto i : modelspace->holes )
-  {
-    Orbit& oi = modelspace->GetOrbit(i);
-    for (auto a : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2})) // nominally, just particles, but we want to deal with fractionally-filled orbits as well
-    {
-      if (a==i) continue;
-      Orbit& oa = modelspace->GetOrbit(a);
-      if ( (oi.occ * (1-oa.occ))<1e-6) continue;
-      double rho_ia =0;
-      for (auto b : modelspace->all_orbits)
-      {
-       Orbit& ob = modelspace->GetOrbit(b);
-         for (auto j : modelspace->holes)
-         {
-           Orbit& oj = modelspace->GetOrbit(j);
-           for (auto c : modelspace->all_orbits) // since we're running over all orbits, we can let c stand in for k in the rho20_hh formula
-           {
-             Orbit& oc = modelspace->GetOrbit(c);
-             double occfactorpp = (1-ob.occ)*(1-oc.occ)*oj.occ;
-             double occfactorhh = (1-ob.occ)*(oc.occ)*oj.occ;
-             if ( (std::abs(occfactorpp)<1e-6) and (std::abs(occfactorhh)<1e-6)) continue;
-             double denominatorpp = ( H1(i,i)-H1(a,a) ) * (H1(i,i)+H1(j,j)-H1(b,b)-H1(c,c));
-             double denominatorhh = ( H1(i,i)-H1(a,a) ) * (H1(j,j)+H1(c,c)-H1(a,a)-H1(b,b)); // here c means k in the initial formulas
-//             std::cout << "rho02, ia = " << i << " " << a << "  denominators pp,hh: " << denominatorpp << " " << denominatorhh << std::endl;
-//             if (std::abs(denominatorhh)<1e-5) std::cout << "     i,a  j,c,a,b  " << i << " " << a << " ,  " << j << " " << c << " " << a << " " << b
-//                                                         << "   energies: " << H1(i,i) << " " << H1(a,a) << " " << H1(j,j) << " " << H1(c,c) << " " << H1(a,a) << " " << H1(b,b) << std::endl;
-             int J_min = std::max( std::abs( ob.j2-oc.j2),std::abs(oi.j2-oj.j2)  )/2;
-             int J_max = std::min( ob.j2+oc.j2,  oi.j2+oj.j2 )/2;
-             for (int J=J_min; J<=J_max; J++)
-             {
-              double Jfactor = (2*J+1)/(oi.j2+1);
-              double gammapp_1 = 0;
-              double gammapp_2 = 0;
-              double gammahh_1 = 0;
-              double gammahh_2 = 0;
-              // convert the 2bmes from HO to HF basis
-
-              if (std::abs(occfactorpp)>1e-6)
-              {
-               for ( auto j_HO : modelspace->OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
-               {
-                for ( auto b_HO : modelspace->OneBodyChannels.at({ob.l,ob.j2,ob.tz2}) )
-                {
-                 for (auto c_HO : modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
-                 {
-                  for ( auto i_HO : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-                  {
-                    gammapp_1 += C(i_HO,i)*C(j_HO,j)*C(b_HO,b)*C(c_HO,c) * H2.GetTBME_J(J,i_HO,j_HO,b_HO,c_HO);
-                    gammapp_2 += C(i_HO,a)*C(j_HO,j)*C(b_HO,b)*C(c_HO,c) * H2.GetTBME_J(J,b_HO,c_HO,i_HO,j_HO);
-                  }
-                 }
-                }
-               }
-              }
-              if ( std::abs(gammapp_1*gammapp_2)<1e-6) continue;
-
-              if (std::abs(occfactorhh)>1e-6)
-              {
-               for ( auto j_HO : modelspace->OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
-               {
-                for ( auto k_HO : modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
-                {
-                 for (auto b_HO : modelspace->OneBodyChannels.at({ob.l,ob.j2,ob.tz2}) )
-                 {
-                  for ( auto i_HO : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-                  {
-                    gammahh_1 += C(i_HO,i)*C(b_HO,b)*C(j_HO,j)*C(k_HO,c) * H2.GetTBME_J(J,i_HO,b_HO,j_HO,k_HO);
-                    gammahh_2 += C(j_HO,j)*C(k_HO,c)*C(i_HO,a)*C(b_HO,b) * H2.GetTBME_J(J,j_HO,k_HO,i_HO,b_HO);
-                  }
-                 }
-                }
-               }
-              }
-              rho_ia += 0.5 * occfactorpp * Jfactor * gammapp_1*gammapp_2 / denominatorpp;
-              rho_ia -= 0.5 * occfactorhh * Jfactor * gammahh_1*gammahh_2 / denominatorhh;
-              std::cout << "    " << occfactorhh << " " << Jfactor << " " << gammahh_1 << " " << gammahh_2 << " " << denominatorhh
-                        << "    " <<  0.5 * occfactorhh * Jfactor * gammahh_1*gammahh_2 / denominatorhh << "    " << rho_ia << std::endl;
-            }// for J
-          }// for c
-        }// for j
-      }// for b
-      rho_2nd(i,a) += rho_ia;
-      rho_2nd(a,i) += rho_ia; // add the <2nd|rho|0th> part
-    }// for a
-    std::cout << "  ========================================================" << std::endl;
-  }// for i
-
-  std::cout << "rho02" << std::endl << rho_2nd << std::endl << std::endl;
-
-  // Next, on to the <1st|rho|1st> terms
-
-
-//  <i|rho11_pp|j> = -1/2 sum_abkJ nk*(1-na)*(1-nb) (2J+1)/(2ji+1) <ikJ|H|abJ><abJ|H|jkJ> / [(ei+ek-ea-eb)(ej+ek-ea-eb)]
-  for (auto i : modelspace->holes ) // since a and b loop over all orbits, we can do the i,j bit at the same time...
-  {
-    Orbit& oi = modelspace->GetOrbit(i);
-    for (auto j : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) // nominally, just particles, but we want to deal with fractionally-filled orbits as well
-    {
-      if (j<=i) continue;
-      Orbit& oj = modelspace->GetOrbit(j);
-      if ( (oi.occ * oj.occ)<1e-6) continue;
-      double rho_ij =0;
-      for (auto a : modelspace->all_orbits)
-      {
-       Orbit& oa = modelspace->GetOrbit(a);
-       for (auto b : modelspace->all_orbits)
-       {
-         Orbit& ob = modelspace->GetOrbit(b);
-         for (auto k : modelspace->holes)
-         {
-           Orbit& ok = modelspace->GetOrbit(k);
-           double occfactorpp = oi.occ*oj.occ * ok.occ * (1-oa.occ) * (1-ob.occ);
-           if ( std::abs(occfactorpp)<1e-6) continue;
-           double denominatorpp = ( H1(i,i)+H1(k,k)-H1(a,a)-H1(b,b) ) * (H1(j,j)+H1(k,k)-H1(a,a)-H1(b,b));
-//           std::cout << "rho11, ij = " << i << " " << j << "  denominators pp: " << denominatorpp << std::endl;
-           int J_min = std::max( std::abs( oi.j2-ok.j2),std::abs(oa.j2-ob.j2)  )/2;
-           int J_max = std::min( oi.j2+ok.j2,  oa.j2+ob.j2 )/2;
-           for (int J=J_min; J<=J_max; J++)
-           {
-             double Jfactor = (2*J+1)/(oi.j2+1);
-             double gammapp_1 = 0;
-             double gammapp_2 = 0;
-             // convert the 2bmes from HO to HF basis
-             for ( auto k_HO : modelspace->OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
-             {
-              for ( auto a_HO : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
-              {
-               for (auto b_HO : modelspace->OneBodyChannels.at({ob.l,ob.j2,ob.tz2}) )
-               {
-                for ( auto i_HO : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-                {
-                  gammapp_1 += C(i_HO,i)*C(k_HO,k)*C(a_HO,a)*C(b_HO,b) * H2.GetTBME_J(J,i_HO,k_HO,a_HO,b_HO);
-                  gammapp_2 += C(i_HO,j)*C(k_HO,k)*C(a_HO,a)*C(b_HO,b) * H2.GetTBME_J(J,a_HO,b_HO,i_HO,k_HO);
-                }
-               }
-              }
-             }
-             rho_ij -= 0.5 * occfactorpp * Jfactor * gammapp_1 * gammapp_2 / denominatorpp;
-           } // for J
-         } // for k
-       } // for b
-      }// for a
-      
-      rho_2nd(i,j) += rho_ij;
-      rho_2nd(j,i) += rho_ij;
-    }// for j
-  }// for i
-
-  std::cout << "with rho11pp" << std::endl << rho_2nd << std::endl << std::endl;
-
-//  <a|rho11_hh|b> =  1/2 sum_cijJ ni*nj*(1-nc)     (2J+1)/(2ja+1) <acJ|H|ijJ><ijJ|H|bcJ> / [(ei+ej-ea-ec)(ei+ej-eb-ec)]
-  for (auto a : modelspace->all_orbits ) // since a and b loop over all orbits, we can do the i,j bit at the same time...
-  {
-    Orbit& oa = modelspace->GetOrbit(a);
-    for (auto b : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // nominally, just particles, but we want to deal with fractionally-filled orbits as well
-    {
-      if (b<=a) continue;
-      Orbit& ob = modelspace->GetOrbit(b);
-      if ( (1-oa.occ) * (1-ob.occ)<1e-6) continue;
-      double rho_ab =0;
-      for (auto i : modelspace->holes)
-      {
-       Orbit& oi = modelspace->GetOrbit(i);
-       for (auto j : modelspace->holes)
-       {
-         Orbit& oj = modelspace->GetOrbit(j);
-         for (auto c : modelspace->all_orbits)
-         {
-           Orbit& oc = modelspace->GetOrbit(c);
-           double occfactorhh = oi.occ * oj.occ * (1-oa.occ) * (1-ob.occ) * (1-oc.occ) ;
-           if ( std::abs(occfactorhh)<1e-6) continue;
-           double denominatorhh = ( H1(i,i)+H1(j,j)-H1(a,a)-H1(c,c) ) * (H1(i,i)+H1(j,j)-H1(b,b)-H1(c,c));
-//           std::cout << "rho11, ab = " << a << " " << b << "  denominators hh: " << denominatorhh << std::endl;
-           int J_min = std::max( std::abs( oa.j2-oc.j2),std::abs(oi.j2-oj.j2)  )/2;
-           int J_max = std::min( oa.j2+oc.j2,  oi.j2+oj.j2 )/2;
-           for (int J=J_min; J<=J_max; J++)
-           {
-             double Jfactor = (2*J+1)/(oi.j2+1);
-             double gammahh_1 = 0;
-             double gammahh_2 = 0;
-             // convert the 2bmes from HO to HF basis
-             for ( auto i_HO : modelspace->OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-             {
-              for ( auto j_HO : modelspace->OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
-              {
-               for ( auto a_HO : modelspace->OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
-               {
-                for ( auto c_HO : modelspace->OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
-                {
-                  gammahh_1 += C(a_HO,a)*C(c_HO,c)*C(i_HO,i)*C(j_HO,j) * H2.GetTBME_J(J,a_HO,c_HO,i_HO,j_HO);
-                  gammahh_2 += C(i_HO,i)*C(j_HO,j)*C(a_HO,b)*C(c_HO,c) * H2.GetTBME_J(J,i_HO,j_HO,a_HO,c_HO); // note the sneakiness using C(a_HO,b)...
-                }
-               }
-              }
-             }
-             rho_ab += 0.5 * occfactorhh * Jfactor * gammahh_1 * gammahh_2 / denominatorhh;
-           } // for J
-         } // for c
-       } // for j
-      }// for i
-      
-      rho_2nd(a,b) += rho_ab;
-      rho_2nd(b,a) += rho_ab;
-    }// for b
-  }// for a
-
-
-//  std::cout << "with rho11hh" << std::endl << rho_2nd << std::endl << std::endl;
-  // Now, we convert the density matrix correction to the HO basis
-  // Remember, the C matrix is constructed so that C |HF> = |HO>
-
-  std::cout << "Before converting, rho_2nd is" << std::endl << rho_2nd << std::endl << std::endl;
-  std::cout << "trace of rho_2nd is" << arma::trace(rho_2nd) << std::endl;
-
-  rho_2nd = C * rho_2nd * C.t();
-
-  // Add it to the density matrix obtained in the HF calculation
-  rho += rho_2nd;
-
-  std::cout << "After converting, rho_2nd is" << std::endl << rho_2nd << std::endl << std::endl;
-  std::cout << "trace of rho_2nd is" << arma::trace(rho_2nd) << std::endl;
-
-}
-
-// Include second-order MBPT corrections to the one-body density matrix rho
-// and diagonalize rho. Then apply this transformation to the C matrix obtained
-// in the Hartree-Fock iterations. This new C matrix then maps oscillator orbits
-// to (approximately) natural orbits.
-void HartreeFock::SwitchToNaturalOrbitals()
-{
-  double t_start = omp_get_wtime();
-  // Compute the 2nd order MBPT correction to the 1b density matrix, and add it to the HF density matrix
-  GetSecondOrderRho();
-
-  std::cout << "Done computing second order rho." << std::endl;
-
-  // Next, we diagonalize the updated density matrix.
-  // I use the routine for diagonalizing the Fock matrix, just copied/pasted and edited.
-   for ( auto& it : Hbare.OneBodyChannels )
-   {
-      arma::uvec orbvec(it.second);
-      arma::mat rho_ch = rho.submat(orbvec,orbvec);
-      arma::mat C_ch;
-      arma::vec E_ch;
-      bool success = false;
-      int diag_tries = 0;
-      std::cout << "Diagonalizing channel " << it.first[0] << " " << it.first[1] << " " << it.first[2]  << std::endl << "rho_ch is " << std::endl << rho_ch << std::endl;
-      while ( not success)
-      {
-         success = arma::eig_sym(E_ch, C_ch, rho_ch);
-         ++diag_tries;
-         if (diag_tries > 5)
-         {
-           std::cout << __func__ << "  Failed to diagonalize the submatrix " 
-                << " on iteration # " << iterations << ". The submatrix looks like:" << std::endl;
-           rho_ch.print();
-           break;
-         }
-      }
-      std::cout << "After diagonalization, eigenvalues and eigenvectors:" << std::endl << E_ch <<  std::endl << std::endl << C_ch << std::endl << std::endl;
-      // Update the full overlap matrix C and energy vector
-//      energies(orbvec) = E_ch;
-      // The eigenvalues are the occupation numbers
-
-      // Now we need to organize things so that they make sense, with things as close to the identity as possible
-      for (size_t irow=0; irow<C_ch.n_rows; irow++)
-      {
-        for (size_t icol=irow+1; icol<C_ch.n_cols; icol++)
-        {
-          if ( std::abs(C_ch(irow,icol)) > std::abs(C_ch(irow,irow)) )
-          {
-             C_ch.swap_cols(irow,icol);
-          }
-        }
-        if ( C_ch(irow,irow)<0 ) C_ch.row(irow) *=-1;
-      }
-
-      std::cout << "After resuffling, the eigenvectors are:" << std::endl << C_ch << std::endl << std::endl;
-
-      std::cout << "Unitarity check: " << std::endl << C_ch * C_ch.t() << std::endl;
-
-      C.submat(orbvec,orbvec) = C_ch;
-   }
-//   ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
-
-
-   UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
-   UpdateF();              // Update the Fock matrix
-   CalcEHF();
-   Hbare.profiler.timer[__func__] += t_start - omp_get_wtime();
-}
-
-
 
 

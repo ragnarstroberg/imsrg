@@ -1593,15 +1593,15 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
 
 
 #ifndef NO_HDF5
-using namespace H5;
+//using namespace H5;
 /// Read three-body basis from HDF5 formatted file. This routine was ported to C++ from
 /// a C routine by Heiko Hergert, with as little modification as possible.
 void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, std::string filename, std::vector<array<int,5>>& Basis)
 {
-  H5File file(filename, H5F_ACC_RDONLY);
+  H5::H5File file(filename, H5F_ACC_RDONLY);
   // The parameter alpha enumerates the different 3body states |abc> coupled to J12 and J (no isospin)
-  DataSet basis = file.openDataSet("alphas");
-  DataSpace basis_dspace = basis.getSpace();
+  H5::DataSet basis = file.openDataSet("alphas");
+  H5::DataSpace basis_dspace = basis.getSpace();
 
   int nDim = basis_dspace.getSimpleExtentNdims();
   hsize_t iDim[6];
@@ -1663,7 +1663,7 @@ void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, std::string filename, std:
 #endif
 
 #ifndef NO_HDF5
-using namespace H5;
+//using namespace H5;
 /// Read three-body matrix elements from HDF5 formatted file. This routine was ported to C++ from
 /// a C routine by Heiko Hergert, with as little modification as possible.
 void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
@@ -1676,14 +1676,14 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
 
   ModelSpace* modelspace = op.GetModelSpace();
   std::vector<array<int,5>> Basis;
-  GetHDF5Basis(modelspace, filename, Basis);
+  H5::GetHDF5Basis(modelspace, filename, Basis);
 
 
-  H5File file(filename, H5F_ACC_RDONLY);
-  DataSet label = file.openDataSet("vtnf_labels");
-  DataSpace label_dspace = label.getSpace();
-  DataSet value = file.openDataSet("vtnf");
-  DataSpace value_dspace = value.getSpace();
+  H5::H5File file(filename, H5F_ACC_RDONLY);
+  H5::DataSet label = file.openDataSet("vtnf_labels");
+  H5::DataSpace label_dspace = label.getSpace();
+  H5::DataSet value = file.openDataSet("vtnf");
+  H5::DataSpace value_dspace = value.getSpace();
 
   int label_nDim = label_dspace.getSimpleExtentNdims();
   if (label_nDim != 2)
@@ -1703,7 +1703,7 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
   label_curDim[0] = std::min(SLABSIZE, int(label_maxDim[0]));
   label_curDim[1] = 7 ;
   
-  DataSpace label_buf_dspace(2,label_curDim);
+  H5::DataSpace label_buf_dspace(2,label_curDim);
 
   // Generate a 2d buffer in contiguous memory
   int **label_buf = new int*[label_curDim[0]];
@@ -1731,7 +1731,7 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
   value_curDim[0] = std::min(SLABSIZE, int(value_maxDim[0]));
   value_curDim[1] = 1 ;
 
-  DataSpace value_buf_dspace(1,value_curDim);
+  H5::DataSpace value_buf_dspace(1,value_curDim);
   
   // Generate a 1d buffer in contiguous memory, also known as an array...
   double *value_buf = new double[value_curDim[0]];
@@ -1849,7 +1849,7 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
 
 
 #ifndef NO_HDF5
-using namespace H5;
+//using namespace H5;
 // THIS ONE SEEMS TO WORK, SO FAR
 
 void ReadWrite::Read3bodyHDF5_new( std::string filename,Operator& op )
@@ -1865,10 +1865,10 @@ void ReadWrite::Read3bodyHDF5_new( std::string filename,Operator& op )
   int t12_list[5]  = {0,1,0,1,1};
   int twoT_list[5] = {1,1,1,1,3};
 
-  H5File file(filename, H5F_ACC_RDONLY);
+  H5::H5File file(filename, H5F_ACC_RDONLY);
 
-  DataSet basis = file.openDataSet("alphas");
-  DataSpace basis_dspace = basis.getSpace();
+  H5::DataSet basis = file.openDataSet("alphas");
+  H5::DataSpace basis_dspace = basis.getSpace();
   hsize_t iDim_basis[6];
   basis_dspace.getSimpleExtentDims(iDim_basis,NULL);
 
@@ -1885,8 +1885,8 @@ void ReadWrite::Read3bodyHDF5_new( std::string filename,Operator& op )
   basis.read(&dbuf[0][0], PredType::NATIVE_INT);
 
 
-  DataSet value = file.openDataSet("vtnf");
-  DataSpace value_dspace = value.getSpace();
+  H5::DataSet value = file.openDataSet("vtnf");
+  H5::DataSpace value_dspace = value.getSpace();
   hsize_t value_maxDim[2];
   value_dspace.getSimpleExtentDims(value_maxDim,NULL);
 
@@ -2259,7 +2259,7 @@ void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
 
   std::map<uint64_t, double> DoubleReducedME;
 
-  using namespace AngMom;
+//  using namespace AngMom;
 
   for (int i=0;i<5;++i) infile >> strbuf; // Five useless lines...
   infile >> J_op >> T_op;
@@ -2331,13 +2331,13 @@ void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
         for (int Tbra = std::abs(Tzbra); Tbra<=1; Tbra++)
         {
           if (a==b and ((Tbra+Jbra%2)<1)) continue;
-          double iso_clebsch_bra = CG(0.5,tza*0.5,0.5,tzb*0.5,Tbra,Tzbra);
+          double iso_clebsch_bra = AngMom::CG(0.5,tza*0.5,0.5,tzb*0.5,Tbra,Tzbra);
           if (a==b and Tzbra==0) iso_clebsch_bra *= sqrt(2);
           for (int Tket = std::abs(Tzket); Tket<=1; Tket++)
           {
-            double iso_clebsch_ket = CG(0.5,tzc*0.5,0.5,tzd*0.5,Tket,Tzket);
+            double iso_clebsch_ket = AngMom::CG(0.5,tzc*0.5,0.5,tzd*0.5,Tket,Tzket);
             if (c==d and Tzket==0) iso_clebsch_ket *= sqrt(2);
-            double WignerEckart_factor = CG(Tket,Tzket,T_op,Tzbra-Tzket, Tbra,Tzbra) /sqrt(2*Tbra+1.) * (Tzbra-Tzket);
+            double WignerEckart_factor = AngMom::CG(Tket,Tzket,T_op,Tzbra-Tzket, Tbra,Tzbra) /sqrt(2*Tbra+1.) * (Tzbra-Tzket);
             uint64_t hash_key = Petr2BC_hash(a,b,c,d,Jbra,Jket,Tbra,Tket);
             tbme += DoubleReducedME[hash_key] * iso_clebsch_bra * iso_clebsch_ket * WignerEckart_factor;
 

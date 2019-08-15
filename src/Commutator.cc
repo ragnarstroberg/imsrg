@@ -600,7 +600,8 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
    for (index_t indexi=0;indexi<norbits;++indexi)
 //   for (index_t i=0;i<norbits;++i)
    {
-      auto i = Z.modelspace->all_orbits[indexi];
+//      auto i = Z.modelspace->all_orbits[indexi];
+      auto i = indexi;
       Orbit &oi = Z.modelspace->GetOrbit(i);
       index_t jmin = Z.IsNonHermitian() ? 0 : i;
       for (auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
@@ -617,7 +618,7 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
                {
                   Orbit &ob = Z.modelspace->GetOrbit(b);
                   double nanb = oa.occ * (1-ob.occ);
-                  if (std::abs(nanb)<OCC_CUT) continue;
+                  if (std::abs(nanb)<ModelSpace::OCC_CUT) continue;
                   Z.OneBody(i,j) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
                   Z.OneBody(i,j) -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,j) ;
                 }
@@ -631,7 +632,7 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
                   // comm211 part
                   Orbit &ob = Z.modelspace->GetOrbit(b);
                   double nanb = oa.occ * (1-ob.occ);
-                  if (std::abs(nanb)<OCC_CUT) continue;
+                  if (std::abs(nanb)<ModelSpace::OCC_CUT) continue;
                   Z.OneBody(i,j) -= (ob.j2+1) * nanb * Y.OneBody(a,b) * X.TwoBody.GetTBMEmonopole(b,i,a,j) ;
                   Z.OneBody(i,j) += (oa.j2+1) * nanb * Y.OneBody(b,a) * X.TwoBody.GetTBMEmonopole(a,i,b,j) ;
                 }
@@ -737,11 +738,13 @@ void comm221ss( const Operator& X, const Operator& Y, Operator& Z)
 
 //   int norbits = Z.modelspace->GetNumberOrbits();
    int norbits = Z.modelspace->all_orbits.size();
+   std::vector<index_t> allorb_vec( Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
    #pragma omp parallel for schedule(dynamic,1)
 //   for (int i=0;i<norbits;++i)
    for (int indexi=0;indexi<norbits;++indexi)
    {
-      auto i = Z.modelspace->all_orbits[indexi];
+//      auto i = Z.modelspace->all_orbits[indexi];
+      auto i = allorb_vec[indexi];
       Orbit &oi = Z.modelspace->GetOrbit(i);
       int jmin = Z.IsNonHermitian() ? 0 : i;
       for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
@@ -1073,11 +1076,13 @@ void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z )
 //   int norbits = Z.modelspace->GetNumberOrbits();
    int norbits = Z.modelspace->all_orbits.size();
    // The one body part
+   std::vector<index_t> allorb_vec( Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
    #pragma omp parallel for schedule(dynamic,1)
 //   for (int i=0;i<norbits;++i)
    for (int indexi=0;indexi<norbits;++indexi)
    {
-      auto i = Z.modelspace->all_orbits[indexi];
+//      auto i = Z.modelspace->all_orbits[indexi];
+      auto i = allorb_vec[indexi];
       Orbit &oi = Z.modelspace->GetOrbit(i);
       int jmin = Z.IsNonHermitian() ? 0 : i;
       for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
@@ -1649,11 +1654,13 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y3 = Y.ThreeBody;
   std::cout << "Norm X3 " << X3.Norm() << "  Norm Y3 " << Y3.Norm() << std::endl;
   if (X3.Norm()<1e-6 or Y3.Norm()<1e-6 ) return;
+  std::vector<index_t> holevec( Z.modelspace->holes.begin(), Z.modelspace->holes.end());
   #pragma omp parallel for schedule(dynamic,1) reduction(+ : z0)
 //  for ( auto a : Z.modelspace->holes )
   for ( size_t indxa=0; indxa<Z.modelspace->holes.size(); indxa++ )
   {
-   auto a = Z.modelspace->holes[indxa];
+//   auto a = Z.modelspace->holes[indxa];
+   auto a = holevec[indxa];
    Orbit& oa = Z.modelspace->GetOrbit(a);
    for( auto b : Z.modelspace->holes )
    {
@@ -3297,11 +3304,13 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
    int norbits = Z.modelspace->all_orbits.size();
    int Lambda = Z.GetJRank();
    Z.modelspace->PreCalculateSixJ();
+   std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(), Z.modelspace->all_orbits.end());
    #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.rank_J))
    for (int indexi=0;indexi<norbits;++indexi)
 //   for (int i=0;i<norbits;++i)
    {
-      auto i = Z.modelspace->all_orbits[indexi];
+//      auto i = Z.modelspace->all_orbits[indexi];
+      auto i = allorb_vec[indexi];
       Orbit &oi = Z.modelspace->GetOrbit(i);
       double ji = 0.5*oi.j2;
       for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
@@ -3339,7 +3348,7 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
 
                 Orbit &ob = Z.modelspace->GetOrbit(b);
                 double jb = 0.5*ob.j2;
-                if (std::abs(ob.occ-1) < OCC_CUT) continue;
+                if (std::abs(ob.occ-1) < ModelSpace::OCC_CUT) continue;
                 double nanb = oa.occ * (1-ob.occ);
                 int J1min = std::max(std::abs(ji-jb),std::abs(jj-ja));
                 int J1max = std::min(ji+jb,jj+ja);
@@ -3611,11 +3620,13 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
 
 //   int norbits = Z.modelspace->GetNumberOrbits();
    int norbits = Z.modelspace->all_orbits.size();
+   std::vector<index_t> allorb_vec(Z.modelspace->all_orbits.begin(),Z.modelspace->all_orbits.end());
    #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.rank_J))
    for (int indexi=0;indexi<norbits;++indexi)
 //   for (int i=0;i<norbits;++i)
    {
-      auto i = Z.modelspace->all_orbits[indexi];
+//      auto i = Z.modelspace->all_orbits[indexi];
+      auto i = allorb_vec[indexi];
       Orbit &oi = Z.modelspace->GetOrbit(i);
       double ji = oi.j2/2.0;
       for (int j : Z.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
@@ -4519,7 +4530,7 @@ void comm231sd( const Operator& X, const Operator& Y, Operator& Z)
              {
                 Orbit &ob = Z.modelspace->GetOrbit(b);
                 double nanb = oa.occ * (1-ob.occ); // despite what the name suggests, nanb is n_a * (1-n_b).
-                if (std::abs(nanb)<OCC_CUT) continue;
+                if (std::abs(nanb)<ModelSpace::OCC_CUT) continue;
                   Z.OneBody(i,Q) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,Q) ;  // Is this still the right way to do this? Do we need to worry about normalization? (It looks ok).
                   Z.OneBody(i,Q) -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,Q) ;  // GetTBMEmonopole returns unnormalized TBME summed over J times (2J+1)/((2ji+1)*(2jj+1))
              }
@@ -4840,7 +4851,8 @@ void comm433_pp_hh_431sd( const Operator& X, const Operator& Y, Operator& Z )
    t = omp_get_wtime();
    int Q = Z.GetQSpaceOrbit();
    Orbit& oQ = Z.modelspace->GetOrbit(Q);
-   auto ilist = Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2});
+//   auto ilist = Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2});
+   std::vector<index_t> ilist(Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}).begin(), Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}).end());
    int ni = ilist.size();
    #pragma omp parallel for schedule(dynamic,1)
    for (int i_ind=0; i_ind<ni; ++i_ind)

@@ -79,6 +79,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"IMSRG3",                    "false"},       // include 3-body terms in commutators. this is under construction still...
   {"physical_system",           "nuclear"},     // treat nucleus or atom. For atom, switch units from MeV,fm to eV,nm.
   {"freeze_occupations",        "false"},       // Should we freeze the occupations, or fill according to HF energy
+  {"use_NAT_occupations",       "false"},       // When using natural orbitals, should we use the corresponding occupations?
 };
 
 

@@ -30,6 +30,7 @@
 #include <vector>
 #include <array>
 #include <deque>
+#include <set>
 #include <map>
 
 //using namespace std;
@@ -63,7 +64,8 @@ class Operator
 
 
 
-  std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
+  std::map<std::array<int,3>,std::set<index_t> > OneBodyChannels;  // a set makes more sense for this, because it only contains unique entries
+//  std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
   index_t Q_space_orbit; // Orbit with the same quantum numbers as this dagger operator. -1 if it's not a dagger operator. 
 
 //  static IMSRGProfiler profiler;

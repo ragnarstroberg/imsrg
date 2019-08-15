@@ -11,6 +11,7 @@
 #include <cstdlib> // for EXIT_FAILURE
 //#include <inttypes.h> // for PRIx64  // This made some compilers angry
 
+double ModelSpace::OCC_CUT = 1e-6;
 
 //using namespace std;
 
@@ -454,7 +455,8 @@ void ModelSpace::Init(int emax, std::string reference, std::string valence)
 void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::string valence)
 {
   int Ac,Zc;
-  std::vector<index_t> valence_list, core_list;
+//  std::vector<index_t> valence_list, core_list;
+  std::set<index_t> valence_list, core_list;
 
   if (valence == "0hw-shell")
   {
@@ -467,7 +469,8 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::string 
   else if ( valence.find("FCI")!=std::string::npos ) // FCI space, so no core, all orbits are valence.
   {
     index_t num_orbits = (emax+1)*(emax+2);
-    for (index_t i=0;i<num_orbits;++i) valence_list.push_back( i );
+    for (index_t i=0;i<num_orbits;++i) valence_list.insert( i );
+//    for (index_t i=0;i<num_orbits;++i) valence_list.push_back( i );
   }
   else // check if it's one of the pre-defined spaces
   {
@@ -477,7 +480,9 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::string 
     if ( itval != ValenceSpaces.end() ) // we've got a valence space
     {
        core_str = itval->second[0];
-       valence_list = String2Index(std::vector<std::string>(itval->second.begin()+1,itval->second.end()));
+       std::vector<index_t> vvec = String2Index(std::vector<std::string>(itval->second.begin()+1,itval->second.end()));
+       for (auto v : vvec ) valence_list.insert(v);
+//       valence_list = String2Index(std::vector<std::string>(itval->second.begin()+1,itval->second.end()));
     }
     else  // no valence space. we've got a single-reference.
     {
@@ -485,7 +490,8 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::string 
     }
   
     GetAZfromString(core_str,Ac,Zc);
-    for (auto& it_core : GetOrbitsAZ(Ac,Zc) ) core_list.push_back(it_core.first);
+    for (auto& it_core : GetOrbitsAZ(Ac,Zc) ) core_list.insert(it_core.first);
+//    for (auto& it_core : GetOrbitsAZ(Ac,Zc) ) core_list.push_back(it_core.first);
   }
 
   target_mass = Aref;
@@ -528,7 +534,7 @@ void ModelSpace::Init_occ_from_file(int emax, std::string valence, std::string o
 
   while( infile >> orb >> occ )
   {
-    if ( hole_list.find(orb) != hole_list.end() and  std::abs( hole_list[orb] -occ) > 1e-6) // the minus sign is for a test. Change it back.
+    if ( hole_list.find(orb) != hole_list.end() and  std::abs( hole_list[orb] -occ) > 1e-6) 
     {
         std::cout << "Warning: in file " << occ_file << ", redefinition of occupation of orbit "
              << orb << "  " << hole_list[orb] << " => " << occ << std::endl;
@@ -542,9 +548,16 @@ void ModelSpace::Init_occ_from_file(int emax, std::string valence, std::string o
   Init(emax,hole_list,valence);
 }
 
-
-// This is the Init which should inevitably be called
+// An attempt at backward compatibility
 void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::vector<index_t> core_list, std::vector<index_t> valence_list)
+{
+  std::set<index_t> clist(core_list.begin(),core_list.end());
+  std::set<index_t> vlist(valence_list.begin(),valence_list.end());
+  Init(emax,hole_list,clist,vlist);
+}
+// This is the Init which should inevitably be called
+//void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::vector<index_t> core_list, std::vector<index_t> valence_list)
+void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::set<index_t> core_list, std::set<index_t> valence_list)
 {
    ClearVectors();
    Emax = emax;
@@ -599,14 +612,27 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::vector<
    norbits = all_orbits.size();
 //   Orbits.resize(norbits);
 //   std::cout << "Orbit[0] has index " << Orbits[0].index << std::endl;
-   Aref = 0;
-   Zref = 0;
+//   Aref = 0;
+//   Zref = 0;
+   double atmp=0;
+   double ztmp=0;
    for (auto& h : holes)
    {
      Orbit& oh = GetOrbit(h);
-     Aref += (oh.j2+1)*oh.occ;
-     if (oh.tz2 < 0) Zref += (oh.j2+1)*oh.occ;
+//     Aref += (oh.j2+1.)*oh.occ;
+     atmp += (oh.j2+1.)*oh.occ;
+//     if (oh.tz2 < 0) Zref += (oh.j2+1.)*oh.occ;
+     if (oh.tz2 < 0) ztmp += (oh.j2+1.)*oh.occ;
    }
+   Aref = round(atmp);
+   Zref = round(ztmp);
+   if (std::abs(Aref-atmp)>1e-5 or std::abs(Zref-ztmp)>1e-5)
+//   if (fmod(atmp,1)>1e-5 or fmod(ztmp,1)>1e-5)
+   {
+     std::cout << std::endl << "!!!! WARNING  " << __func__ << " recomputed A,Z and got " << atmp << " " << ztmp << std::endl;
+   }
+   Aref = round(atmp);
+   Zref = round(ztmp);
 //   std::cout << "Before calling SetupKets, all_orbits looks like this." << std::endl;
 //   for ( auto orb : all_orbits ) std::cout << orb << " ";
 //   std::cout << std::endl;
@@ -734,9 +760,11 @@ std::map<index_t,double> ModelSpace::GetOrbitsAZ(int A, int Z)
 
 /// Find the valence space of one single major oscillator shell each for protons and neutrons (not necessarily
 /// the same shell for both) which contains the naive shell-model ground state of the reference.
+/// Here, the naive shell model ordering is harmonic oscillator shells split by a spin orbit.
 /// For example, if we want to treat C20, with 6 protons and 14 neutrons, we take the 0p shell for protons
 /// and 1s0d shell for neutrons.
-void ModelSpace::Get0hwSpace(int Aref, int Zref, std::vector<index_t>& core_list, std::vector<index_t>& valence_list)
+//void ModelSpace::Get0hwSpace(int Aref, int Zref, std::vector<index_t>& core_list, std::vector<index_t>& valence_list)
+void ModelSpace::Get0hwSpace(int Aref, int Zref, std::set<index_t>& core_list, std::set<index_t>& valence_list)
 {
   int Nref = Aref-Zref;
   int OSC_protons=0,OSC_neutrons=0;
@@ -746,7 +774,8 @@ void ModelSpace::Get0hwSpace(int Aref, int Zref, std::vector<index_t>& core_list
   int Zcore = (OSC_protons )*(OSC_protons +1)*(OSC_protons +2)/3;
   int Ncore = (OSC_neutrons)*(OSC_neutrons+1)*(OSC_neutrons+2)/3;
 
-  for (auto& it_core : GetOrbitsAZ(Zcore+Ncore,Zcore)) core_list.push_back(it_core.first);
+//  for (auto& it_core : GetOrbitsAZ(Zcore+Ncore,Zcore)) core_list.push_back(it_core.first);
+  for (auto& it_core : GetOrbitsAZ(Zcore+Ncore,Zcore)) core_list.insert(it_core.first);
 
   if (Zref>Zcore) // if we have a closed major HO shell of protons, then don't decouple any valence proton orbits
   {
@@ -754,7 +783,8 @@ void ModelSpace::Get0hwSpace(int Aref, int Zref, std::vector<index_t>& core_list
     {
       for (int j2=2*L+1;j2>std::max(2*L-2,0);j2-=2)
       {
-        valence_list.push_back( GetOrbitIndex( (OSC_protons-L)/2, L, j2, -1) );
+//        valence_list.push_back( GetOrbitIndex( (OSC_protons-L)/2, L, j2, -1) );
+        valence_list.insert( GetOrbitIndex( (OSC_protons-L)/2, L, j2, -1) );
       }
     }
   }
@@ -764,7 +794,8 @@ void ModelSpace::Get0hwSpace(int Aref, int Zref, std::vector<index_t>& core_list
     {
       for (int j2=2*L+1;j2>std::max(2*L-2,0);j2-=2)
       {
-        valence_list.push_back( GetOrbitIndex( (OSC_neutrons-L)/2, L, j2, 1) );
+//        valence_list.push_back( GetOrbitIndex( (OSC_neutrons-L)/2, L, j2, 1) );
+        valence_list.insert( GetOrbitIndex( (OSC_neutrons-L)/2, L, j2, 1) );
       }
     }
   }
@@ -775,7 +806,8 @@ void ModelSpace::Get0hwSpace(int Aref, int Zref, std::vector<index_t>& core_list
 // Parse a std::string containing a comma-separated list of core + valence orbits
 // eg, the usual sd shell would look like "O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1".
 // The number of ways to specify a model space is getting a bit out of hand...
-void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::vector<index_t>& core_list, std::vector<index_t>& valence_list)
+//void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::vector<index_t>& core_list, std::vector<index_t>& valence_list)
+void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::set<index_t>& core_list, std::set<index_t>& valence_list)
 {
   std::istringstream ss(valence);
   std::string orbit_str,core_str;
@@ -785,22 +817,31 @@ void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::vecto
   GetAZfromString(core_str,Ac,Zc);
   for (auto& it_core : GetOrbitsAZ(Ac,Zc) )
   {
-    core_list.push_back(it_core.first);
+    core_list.insert(it_core.first);
+//    core_list.push_back(it_core.first);
   }
 
   while(getline(ss, orbit_str, ','))
   {
-    valence_list.push_back( String2Index({orbit_str})[0]);
+    valence_list.insert( String2Index({orbit_str})[0]);
+//    valence_list.push_back( String2Index({orbit_str})[0]);
   }
 }
 
-
-
+// For backwards compatibility
 void ModelSpace::SetReference(std::vector<index_t> new_reference)
 {
+  std::set<index_t> ref( new_reference.begin(),new_reference.end());
+  SetReference( ref );
+}
+
+void ModelSpace::SetReference(std::set<index_t> new_reference)
+{
 //  std::cout << "I'm in this SetReference" << std::endl;
-  std::vector<index_t> c = core;
-  std::vector<index_t> v = valence;
+//  std::vector<index_t> c = core;
+//  std::vector<index_t> v = valence;
+  std::set<index_t> c = core;
+  std::set<index_t> v = valence;
   std::map<index_t,double> h;
   for (auto r : new_reference) h[r] = 1.0;
   ClearVectors();
@@ -809,12 +850,16 @@ void ModelSpace::SetReference(std::vector<index_t> new_reference)
 
 void ModelSpace::SetReference(std::map<index_t,double> new_reference)
 {
-  std::vector<index_t> c = core;
-  std::vector<index_t> v = valence;
+//  std::vector<index_t> c = core;
+//  std::vector<index_t> v = valence;
+  std::set<index_t> c = core;
+  std::set<index_t> v = valence;
   if (valence.size()<1) // If we have no valece space, assume it's a single ref and core should equal the reference.
   {
-    c.resize(0);
-    for ( auto iter : new_reference )  c.push_back(iter.first);
+    c.clear();
+    for ( auto iter : new_reference )  c.insert(iter.first);
+//    c.resize(0);
+//    for ( auto iter : new_reference )  c.push_back(iter.first);
   }
   ClearVectors();
   Init(Emax, new_reference,c,v);
@@ -822,8 +867,10 @@ void ModelSpace::SetReference(std::map<index_t,double> new_reference)
 
 void ModelSpace::SetReference(std::string new_reference)
 {
-  std::vector<index_t> c = core;
-  std::vector<index_t> v = valence;
+//  std::vector<index_t> c = core;
+//  std::vector<index_t> v = valence;
+  std::set<index_t> c = core;
+  std::set<index_t> v = valence;
   ClearVectors();
   GetAZfromString(new_reference,Aref,Zref);
   std::map<index_t,double> h = GetOrbitsAZ(Aref,Zref);
@@ -958,12 +1005,16 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
 //     std::cout << "Orbits[" << ind << "]  now points to an orbit who's ind is " << Orbits[ind].index << std::endl;
 
      // Since we probably sorted into lists last time we added it, we need to remove the index ind from
-     // the lists so we can sort it properaly according to the new cvq info.
+     // the lists so we can sort it properly according to the new cvq info.
 //..     for ( auto& vec : {particles,holes,core,valence,qspace,proton_orbits,neutron_orbits,all_orbits}  )
-     for ( auto vec : {&particles,&holes,&core,&valence,&qspace,&proton_orbits,&neutron_orbits,&all_orbits}  )
-     {
-       vec->erase( std::remove( vec->begin(), vec->end(), ind ), vec->end() );
-     }
+
+// now that we use a set for these, we don't need to worry about this.
+//     for ( auto vec : {&particles,&holes,&core,&valence,&qspace,&proton_orbits,&neutron_orbits,&all_orbits}  )
+//     {
+//       vec->erase( std::remove( vec->begin(), vec->end(), ind ), vec->end() );
+//     }
+
+
    }
 
 //   Orbit& o = Orbits[ind];
@@ -978,16 +1029,29 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
       if (single_species) nTwoBodyChannels = 2*(TwoBodyJmax+1);
    }
 
-   if ( occ < OCC_CUT) particles.push_back(ind);
-   else holes.push_back(ind);
-   if (cvq == 0) core.push_back(ind);
-   if (cvq == 1) valence.push_back(ind);
-   if (cvq == 2) qspace.push_back(ind);
-   if (tz2 < 0 ) proton_orbits.push_back(ind);
-   if (tz2 > 0 ) neutron_orbits.push_back(ind);
-   all_orbits.push_back(ind);
+   for ( auto orbitlist : {&particles,&holes,&core,&valence,&qspace,&proton_orbits,&neutron_orbits,&all_orbits}  ) orbitlist->erase(ind); // 
 
-   OneBodyChannels[{l, j2, tz2}].push_back(ind); // (Evidently, we mean one-body channels for an operator with the same symmetries as the Hamiltonian).
+   if ( occ < OCC_CUT) particles.insert(ind);
+   else holes.insert(ind);
+   if (cvq == 0) core.insert(ind);
+   if (cvq == 1) valence.insert(ind);
+   if (cvq == 2) qspace.insert(ind);
+   if (tz2 < 0 ) proton_orbits.insert(ind);
+   if (tz2 > 0 ) neutron_orbits.insert(ind);
+   all_orbits.insert(ind);
+
+
+//   if ( occ < OCC_CUT) particles.push_back(ind);
+//   else holes.push_back(ind);
+//   if (cvq == 0) core.push_back(ind);
+//   if (cvq == 1) valence.push_back(ind);
+//   if (cvq == 2) qspace.push_back(ind);
+//   if (tz2 < 0 ) proton_orbits.push_back(ind);
+//   if (tz2 > 0 ) neutron_orbits.push_back(ind);
+//   all_orbits.push_back(ind);
+
+//   OneBodyChannels[{l, j2, tz2}].push_back(ind); // (Evidently, we mean one-body channels for an operator with the same symmetries as the Hamiltonian).
+   OneBodyChannels[{l, j2, tz2}].insert(ind); // (Evidently, we mean one-body channels for an operator with the same symmetries as the Hamiltonian).
 }
 
 
