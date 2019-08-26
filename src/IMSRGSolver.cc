@@ -391,7 +391,7 @@ void IMSRGSolver::Solve_flow_RK4()
       std::vector<Operator> K4(nops);
       std::vector<Operator> Ktmp(nops);
 
-      Operator& Hs = FlowingOps[0];
+//      Operator& Hs = FlowingOps[0];   // this is not used explicitly
       for ( int i=0;i<nops; i++ )
       {
         K1[i] =  Commutator::Commutator( Eta, FlowingOps[i] ) ;

@@ -102,6 +102,7 @@ void UnitTest::TestCommutators()
 
 void UnitTest::TestCommutators3()
 {
+  std::cout << " random_seed = " << random_seed << std::endl;
   arma::arma_rng::set_seed( random_seed );
   modelspace->PreCalculateSixJ();
   Operator X = RandomOp(*modelspace, 0, 0, 0, 3, -1);
@@ -195,12 +196,12 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
   Orbit& od = Op.modelspace->GetOrbit(d);
   Orbit& oe = Op.modelspace->GetOrbit(e);
   Orbit& of = Op.modelspace->GetOrbit(f);
-  if (a==b and ma==mb) return 0;
-  if (a==c and ma==mc) return 0;
-  if (b==c and mb==mc) return 0;
-  if (d==e and md==me) return 0;
+//  if (a==b and ma==mb) return 0;
+//  if (a==c and ma==mc) return 0;
+//  if (b==c and mb==mc) return 0;
+//  if (d==e and md==me) return 0;
 //  if (d==f and md==mf) return 0;
-  if (e==f and me==mf) return 0;
+//  if (e==f and me==mf) return 0;
 
 //  if (a==b and a==c and oa.j2<2) return 0;
 //  if (d==e and d==f and od.j2<2) return 0;
@@ -1032,13 +1033,19 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
          {
           for (int mb=-ob.j2; mb<=ob.j2; mb+=2)
           {
+           if (a==b and ma==mb) continue;
            for (int mc=-oc.j2; mc<=oc.j2; mc+=2)
            {
+             if (a==c and ma==mc) continue;
+             if (b==c and mb==mc) continue;
              for (int md=-od.j2; md<=od.j2; md+=2)
              {
               for (int me=-oe.j2; me<=oe.j2; me+=2)
               {
                 int mf = ma+mb+mc - me-md;
+//                if (d==e and md==me) continue;
+//                if (d==f and md==mf) continue;
+//                if (e==f and me==mf) continue;
                 int Mab = (ma+mb)/2;
                 int Mde = (md+me)/2;
                 int twoM = ma+mb+mc;
@@ -1048,6 +1055,13 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
                 double cg3 = AngMom::CG(0.5*od.j2,0.5*md, 0.5*oe.j2,0.5*me,   Jde, Mde);
                 double cg4 = AngMom::CG(Jde,Mde ,         0.5*of.j2,0.5*mf,   0.5*twoJ, 0.5*twoM);
                 xabcdef += cg1*cg2*cg3*cg4* GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, d,md, e,me, f,mf );
+                double xabcfed = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, f,mf, e,me, d,md );
+                double xabcdfe = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, d,md, f,mf, e,me );
+                double xabcedf = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, e,me, d,md, f,mf );
+                double xabcefd = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, e,me, f,mf, d,md );
+                double xabcfde = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, f,mf, d,md, e,me );
+                double x_plain = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, d,md, e,me, f,mf );
+                std::cout << "ANTISYMMETRY CHECK: " << x_plain << "  fed: " << xabcfed << "  dfe: " << xabcdfe << "  edf: " << xabcedf << "  efd: " << xabcefd << "  fde: " << xabcfde << std::endl;
               }
               }}}}// for ma ... md
            std::cout << "  Jde = " << Jde << "  xabcdef = " << xabcdef << std::endl;
