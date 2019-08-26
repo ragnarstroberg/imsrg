@@ -4,6 +4,7 @@
 #include "Operator.hh"
 #include "imsrg_util.hh" // for VectorUnion
 #include "AngMom.hh" // for TalmiB and Moshinsky
+#include "PhysicalConstants.hh" // for HBARC and M_NUCLEON
 
 #include "omp.h"
 #include <string>
@@ -363,6 +364,8 @@ void Generator::ConstructGenerator_ImaginaryTime()
 
 void Generator::ConstructGenerator_QTransferAtan(int n)
 {
+   using PhysConst::M_NUCLEON;
+   using PhysConst::HBARC;
    // One body piece -- eliminate ph bits
    for ( auto& a : modelspace->core)
    {
@@ -733,7 +736,8 @@ void Generator::ConstructGenerator_Rspace()
 
 void Generator::SetRegulatorLength(double r0)
 {
-
+  using PhysConst::M_NUCLEON;
+  using PhysConst::HBARC;
 //  std::cout << "setting Regulator length to " << r0 << std::endl;
   regulator_length = r0;
 

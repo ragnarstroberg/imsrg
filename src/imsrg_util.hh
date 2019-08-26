@@ -24,22 +24,39 @@
 #include "Operator.hh"
 #include "HartreeFock.hh"
 #include "IMSRGSolver.hh"
+#include "PhysicalConstants.hh"
 #include <gsl/gsl_math.h>
 #include <vector>
 
-#define HBARC 197.3269718 // hc in MeV * fm
-#define M_NUCLEON 938.9185 // average nucleon mass in MeV
-#define PI 3.14159265359 // put in by CP for the BMEs
-#define M_PROTON  938.2720813
-#define M_NEUTRON 939.5654133
-#define M_ELECTRON 0.5109989461 // I take all my physical constants from Wikipedia.
-
-#ifndef ISQRT2
-  #define ISQRT2 0.70710678118654752440L
-#endif
+//#define HBARC 197.3269718 // hc in MeV * fm
+//#define M_NUCLEON 938.9185 // average nucleon mass in MeV
+//#define PI 3.14159265359 // put in by CP for the BMEs
+//#define M_PROTON  938.2720813
+//#define M_NEUTRON 939.5654133
+//#define M_ELECTRON 0.5109989461 // I take all my physical constants from Wikipedia.
+//
+//#ifndef ISQRT2
+//  #define ISQRT2 0.70710678118654752440L
+//#endif
 
 namespace imsrg_util
 {
+ using PhysConst::HBARC;
+ using PhysConst::M_PROTON;
+ using PhysConst::M_NEUTRON;
+ using PhysConst::M_NUCLEON;
+ using PhysConst::M_ELECTRON;
+ using PhysConst::PROTON_SPIN_G;
+ using PhysConst::NEUTRON_SPIN_G;
+ using PhysConst::ELECTRON_SPIN_G;
+ using PhysConst::F_PI;
+ using PhysConst::ALPHA_FS;
+ using PhysConst::PI;
+ using PhysConst::SQRT2;
+ using PhysConst::SQRTPI;
+ using PhysConst::INVSQRT2;
+ using PhysConst::LOG2;
+
  Operator OperatorFromString(ModelSpace& modelspace, std::string str);
  std::map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax);
 
@@ -118,7 +135,8 @@ namespace imsrg_util
 ////////////////// Double beta decay functions from Charlie Payne ///////////////
  Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, std::string src); // put in by CP, it is still in development
  double CPrbmeGen(ModelSpace& modelspace, double rho, double x, int n, int l, int np, int lp, int mm, double pp); // testing...
- inline double cpNorm(int a, int b) {return a==b ? ISQRT2 : 1.0;}; // put in by CP, for anti-symmetrization normalization
+// inline double cpNorm(int a, int b) {return a==b ? ISQRT2 : 1.0;}; // put in by CP, for anti-symmetrization normalization
+ inline double cpNorm(int a, int b) {return a==b ? INVSQRT2 : 1.0;}; // put in by CP, for anti-symmetrization normalization
 // SRS - the following three don't seem to be used.
 // double CPrbme(ModelSpace& modelspace, double x, int n, int l, int np); // put in by CP, function for M0nu_TBME_Op above
 // Operator CPchecker_Op(ModelSpace& modelspace); // put in by CP

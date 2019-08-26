@@ -2,6 +2,7 @@
 #include "Operator.hh"
 #include "AngMom.hh"
 #include "IMSRGProfiler.hh"
+#include "PhysicalConstants.hh" // for SQRT2
 #include <cmath>
 #include <iostream>
 #include <iomanip>
@@ -11,9 +12,9 @@
 #include <math.h>
 #include "omp.h"
 
-#ifndef SQRT2
-  #define SQRT2 1.4142135623730950488L
-#endif
+//#ifndef SQRT2
+//  #define SQRT2 1.4142135623730950488L
+//#endif
 
 //using namespace std;
 
@@ -1206,8 +1207,10 @@ double Operator::ThreeBodyNorm() const
   return ThreeBody.Norm();
 }
 
-void Operator::MakeNormalized(){ ChangeNormalization( 1./SQRT2)  ;}
-void Operator::MakeUnNormalized(){ ChangeNormalization( SQRT2)  ;}
+//void Operator::MakeNormalized(){ ChangeNormalization( 1./SQRT2)  ;}
+//void Operator::MakeUnNormalized(){ ChangeNormalization( SQRT2)  ;}
+void Operator::MakeNormalized(){   ChangeNormalization( PhysConst::INVSQRT2)  ;}
+void Operator::MakeUnNormalized(){ ChangeNormalization( PhysConst::SQRT2)  ;}
 void Operator::ChangeNormalization(double factor)
 {
   for (auto& itmat : TwoBody.MatEl)

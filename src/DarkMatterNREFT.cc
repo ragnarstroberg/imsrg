@@ -1,19 +1,22 @@
 
 
 #include "DarkMatterNREFT.hh"
+#include "PhysicalConstants.hh"
 #include <gsl/gsl_sf_gamma.h>  // for gsl_sf_gamma,  gsl_sf_fact, gsl_sf_doublefact
 #include <gsl/gsl_sf_hyperg.h> // for gsl_sf_hyperg_1F1
 #include <gsl/gsl_sf_coupling.h> // for gsl_sf_coupling_3j, gsl_sf_coupling_6j
 
-#ifndef HBARC
- #define HBARC 197.3269718 // hc in MeV * fm
-#endif
-#ifndef M_NUCLEON
- #define M_NUCLEON 938.9185 // average nucleon mass in MeV
-#endif
+//#ifndef HBARC
+// #define HBARC 197.3269718 // hc in MeV * fm
+//#endif
+//#ifndef M_NUCLEON
+// #define M_NUCLEON 938.9185 // average nucleon mass in MeV
+//#endif
 
 namespace DM_NREFT
 {
+  using PhysConst::HBARC;
+  using PhysConst::M_NUCLEON;
 
 // From Daniel Gazda's fortran implementation:
 //

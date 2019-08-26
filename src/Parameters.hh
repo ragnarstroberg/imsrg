@@ -24,6 +24,7 @@
 #include <iostream>
 #include <iomanip>
 
+// Is this a reasonable place to have this?
 double r2p = 0.770; // effective proton intrinsic charge radius squared
 double r2n = -0.1149; // effective neutron intrisic charge radius squared
 double DF = 0.033; // Darwin-Foldy correction to the charge radius
@@ -124,6 +125,7 @@ std::map<std::string,std::vector<std::string>> Parameters::vec_par = {
 };
 
 
+// The constructor
 Parameters::Parameters(int argc, char** argv)
 {
   help_mode = false;

@@ -34,6 +34,10 @@ class Jacobi3BME; // Forward declaration
 
 class HartreeFock
 {
+// using PhysConst::HBARC;
+// using PhysConst::M_NUCLEON;
+// using PhysConst::SQRT2;
+
  public:
    Operator& Hbare;         ///< Input bare Hamiltonian
    ModelSpace * modelspace; ///< Model Space of the Hamiltonian

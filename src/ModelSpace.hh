@@ -28,9 +28,9 @@
 #include <set>
 #include <armadillo>
 #include "IMSRGProfiler.hh"
-#ifndef SQRT2
-  #define SQRT2 1.4142135623730950488
-#endif
+//#ifndef SQRT2
+//  #define SQRT2 1.4142135623730950488
+//#endif
 //#define OCC_CUT 1e-6
 
 
@@ -191,7 +191,6 @@ class TwoBodyChannel_CC : public TwoBodyChannel
 
 class ModelSpace
 {
-
  public:
 
 

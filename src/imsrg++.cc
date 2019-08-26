@@ -52,9 +52,9 @@
 #include <string>
 #include <omp.h>
 #include "IMSRG.hh"
-#include "Parameters.hh"
+#include "Parameters.hh" 
+#include "PhysicalConstants.hh"
 
-//using namespace imsrg_util; // lets get rid of this
 
 int main(int argc, char** argv)
 {
@@ -62,6 +62,7 @@ int main(int argc, char** argv)
 #ifdef BUILDVERSION
   std::cout << "######  imsrg++ build version: " << BUILDVERSION << std::endl;
 #endif
+
   Parameters parameters(argc,argv);
   if (parameters.help_mode) return 0;
 
@@ -284,15 +285,17 @@ int main(int argc, char** argv)
 //    modelspace.InitSingleSpecies(eMax, reference, valence_space);
 //    Hbare = Operator(modelspace,0,0,0,particle_rank);
 //    Hbare.SetHermitian();
+    using PhysConst::M_ELECTRON;
+    using PhysConst::M_NUCLEON;
     int Z = (atomicZ>=0) ?  atomicZ : modelspace.GetTargetZ() ;
-    const double HARTREE = 27.21138602; // 1 Hartree in eV
+//    const double HARTREE = 27.21138602; // 1 Hartree in eV
     Hbare -= Z*imsrg_util::VCentralCoulomb_Op(modelspace, lmax) * sqrt((M_ELECTRON*1e6)/M_NUCLEON ) ;
 //    std::cout << "After conversion, central coulomb 1-body looks like " << std::endl << Hbare.OneBody << std::endl << std::endl;
     Hbare += imsrg_util::VCoulomb_Op(modelspace, lmax) * sqrt((M_ELECTRON*1e6)/M_NUCLEON ) ;  // convert oscillator length from fm with nucleon mass to nm with electon mass (in eV).
 //    std::cout << "done with VCoulomb_Op" << std::endl;
     Hbare += imsrg_util::KineticEnergy_Op(modelspace); // Don't need to rescale this, because it's related to the oscillator frequency, which we input.
 //    std::cout << "done with KineticEnergy" << std::endl;
-    Hbare /= HARTREE; // Convert to Hartree
+    Hbare /= PhysConst::HARTREE; // Convert to Hartree
   }
 
   if (fmt2 != "nushellx" and physical_system != "atomic")  // Don't need to add kinetic energy if we read a shell model interaction
@@ -545,18 +548,8 @@ int main(int argc, char** argv)
     return 0;
   }
 
-//  Operator HlowT = HNO;
-//  double Temp = hw;
-//  double Efermi = 0;
-//  Operator Eye = HNO;
-//  Eye.Eye();
-//  HlowT.ScaleFermiDirac(HNO, Temp, Efermi);  // 0 is roughly fermi surface? we can do beter...
-//  Eye.ScaleFermiDirac(HNO, Temp, Efermi);  // 0 is roughly fermi surface? we can do beter...
-//  std::cout << "Initial low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) <<"  with normalization  " << Eye.Trace( modelspace.GetAref(),modelspace.GetZref() ) << std::endl; 
 
   IMSRGSolver imsrgsolver(HNO);
-//  std::cout << "Just created imsrgsolver. HNO has " << HNO.ThreeBody.MatEl.size() << " 3bmes. Eta has " << imsrgsolver.Eta.ThreeBody.MatEl.size() << std::endl;
-//  std::cout << "   particle ranks: " << HNO.GetParticleRank() << "  " << imsrgsolver.Eta.GetParticleRank() << std::endl;
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetEtaCriterion(eta_criterion);
   bool brueckner_restart = false;
@@ -623,6 +616,7 @@ int main(int argc, char** argv)
      imsrgsolver.SetDsmax(dsmax);
    }
   }
+
   imsrgsolver.Solve();
 
   if (IMSRG3 == "true")
@@ -633,18 +627,18 @@ int main(int argc, char** argv)
 //  HlowT = imsrgsolver.Transform(HlowT);
 //  std::cout << "After Solve, low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) << std::endl; 
 
-  if (method == "magnus")
-  {
-//    for (size_t i=0;i<ops.size();++i)
-//    {
-//      Operator tmp = imsrgsolver.Transform(ops[i]);
-////      rw.WriteOperatorHuman(tmp,intfile+opnames[i]+"_step1.op");
-//    }
-//    std::cout << std::endl;
-    // increase smax in case we need to do additional steps
-    smax *= 1.5;
-    imsrgsolver.SetSmax(smax);
-  }
+//  if (method == "magnus")
+//  {
+////    for (size_t i=0;i<ops.size();++i)
+////    {
+////      Operator tmp = imsrgsolver.Transform(ops[i]);
+//////      rw.WriteOperatorHuman(tmp,intfile+opnames[i]+"_step1.op");
+////    }
+////    std::cout << std::endl;
+//    // increase smax in case we need to do additional steps
+//    smax *= 1.5;
+//    imsrgsolver.SetSmax(smax);
+//  }
 
 
   if (brueckner_restart)

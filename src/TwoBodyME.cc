@@ -1,9 +1,10 @@
 
 #include "TwoBodyME.hh"
 #include "AngMom.hh"
-#ifndef SQRT2
-  #define SQRT2 1.4142135623730950488
-#endif
+#include "PhysicalConstants.hh" // for SQRT2
+//#ifndef SQRT2
+//  #define SQRT2 1.4142135623730950488
+//#endif
 
 // destructor defined for debugging purposes
 TwoBodyME::~TwoBodyME()
@@ -108,8 +109,8 @@ void TwoBodyME::SetNonHermitian()
 double TwoBodyME::GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) const
 {
   double norm = 1;
-   if (a==b) norm *= SQRT2;
-   if (c==d) norm *= SQRT2;
+   if (a==b) norm *= PhysConst::SQRT2;
+   if (c==d) norm *= PhysConst::SQRT2;
    return norm * GetTBME_norm(ch_bra,ch_ket,a,b,c,d);
 }
 
@@ -459,8 +460,8 @@ void TwoBodyME::Set_pn_TBME_from_iso(int j, int T, int tz, int a, int b, int c, 
    int parity = (modelspace->GetOrbit(a).l + modelspace->GetOrbit(b).l)%2;
    int isospin_phase = 2*T-1;
    tbme *= 0.5;
-   if (a==b) tbme *= SQRT2;
-   if (c==d) tbme *= SQRT2;
+   if (a==b) tbme *= PhysConst::SQRT2;
+   if (c==d) tbme *= PhysConst::SQRT2;
    AddToTBME(j,parity,tz,a,b+1,c  ,d+1,tbme);
    if (c!=d)
      AddToTBME(j,parity,tz,a,b+1,c+1,d  ,tbme*isospin_phase);
@@ -482,8 +483,8 @@ double TwoBodyME::Get_iso_TBME_from_pn(int j, int T, int tz, int a, int b, int c
    int isospin_phase = 2*T-1;
    double tbme = GetTBME(j,parity,tz,a,b+1,c,d+1) + GetTBME(j,parity,tz,a+1,b,c+1,d) + isospin_phase * ( GetTBME(j,parity,tz,a,b+1,c+1,d) + GetTBME(j,parity,tz,a+1,b,c,d+1) );
    tbme *= 0.5;
-   if (a==b) tbme /= SQRT2;
-   if (c==d) tbme /= SQRT2;
+   if (a==b) tbme /= PhysConst::SQRT2;
+   if (c==d) tbme /= PhysConst::SQRT2;
    return tbme;
 }
 

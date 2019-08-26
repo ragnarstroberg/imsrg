@@ -1,6 +1,7 @@
 
 #include "HartreeFock.hh"
 #include "ModelSpace.hh"
+#include "PhysicalConstants.hh"
 #include <iomanip>
 #include <vector>
 #include <array>
@@ -8,14 +9,14 @@
 #include <utility> // for make_pair
 #include "gsl/gsl_sf_gamma.h" // for radial wave function
 #include "gsl/gsl_sf_laguerre.h" // for radial wave function
-#include <gsl/gsl_math.h> // for M_SQRTPI
+//#include <gsl/gsl_math.h> // for M_SQRTPI
 #include <omp.h>
 
-#ifndef SQRT2
-  #define SQRT2 1.4142135623730950488
-#endif
-#define HBARC 197.3269718 // hc in MeV * fm
-#define M_NUCLEON 938.9185 // average nucleon mass in MeV
+//#ifndef SQRT2
+//  #define SQRT2 1.4142135623730950488
+//#endif
+//#define HBARC 197.3269718 // hc in MeV * fm
+//#define M_NUCLEON 938.9185 // average nucleon mass in MeV
 
 
 //using namespace std;
@@ -887,8 +888,8 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
             {
                Dket(i,j) += C(ket_ho.q, ket_hf.p) * C(ket_ho.p, ket_hf.q) * ket_ho.Phase(tbc_ket.J);
             }
-            if (ket_ho.p==ket_ho.q)    Dket(i,j) *= SQRT2;
-            if (ket_hf.p==ket_hf.q)    Dket(i,j) /= SQRT2;
+            if (ket_ho.p==ket_ho.q)    Dket(i,j) *= PhysConst::SQRT2;
+            if (ket_hf.p==ket_hf.q)    Dket(i,j) /= PhysConst::SQRT2;
          }
       }
       if (ch_bra == ch_ket)
@@ -908,8 +909,8 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
               {
                  Dbra(i,j) += C(bra_ho.q, bra_hf.p) * C(bra_ho.p, bra_hf.q) * bra_ho.Phase(tbc_bra.J);
               }
-              if (bra_ho.p==bra_ho.q)    Dbra(i,j) *= SQRT2;
-              if (bra_hf.p==bra_hf.q)    Dbra(i,j) /= SQRT2;
+              if (bra_ho.p==bra_ho.q)    Dbra(i,j) *= PhysConst::SQRT2;
+              if (bra_hf.p==bra_hf.q)    Dbra(i,j) /= PhysConst::SQRT2;
            }
         }
       }
@@ -1016,8 +1017,8 @@ Operator HartreeFock::GetNormalOrderedH()
             {
                D(i,j) += C(bra.q,ket.p) * C(bra.p,ket.q) * bra.Phase(J);
             }
-            if (bra.p==bra.q)    D(i,j) *= SQRT2;
-            if (ket.p==ket.q)    D(i,j) /= SQRT2;
+            if (bra.p==bra.q)    D(i,j) *= PhysConst::SQRT2;
+            if (ket.p==ket.q)    D(i,j) /= PhysConst::SQRT2;
 
             // Now generate the NO2B part of the 3N interaction
             if (Hbare.GetParticleRank()<3) continue;
@@ -1041,8 +1042,8 @@ Operator HartreeFock::GetNormalOrderedH()
               }
             }
             V3NO(i,j) /= (2*J+1);
-            if (bra.p==bra.q)  V3NO(i,j) /= SQRT2; 
-            if (ket.p==ket.q)  V3NO(i,j) /= SQRT2; 
+            if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2; 
+            if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2; 
             V3NO(j,i) = V3NO(i,j);
          }
       }
@@ -1139,6 +1140,9 @@ void HartreeFock::GetRadialWF(index_t index, std::vector<double>& R, std::vector
 
 double HartreeFock::GetRadialWF_r(index_t index, double R)
 {
+  using PhysConst::M_NUCLEON;
+  using PhysConst::HBARC;
+  using PhysConst::SQRTPI;
   double b = sqrt( (HBARC*HBARC) / (modelspace->GetHbarOmega() * M_NUCLEON) );
   Orbit& orb = modelspace->GetOrbit(index);
    double x = R/b;
@@ -1146,7 +1150,8 @@ double HartreeFock::GetRadialWF_r(index_t index, double R)
    for ( index_t j : Hbare.OneBodyChannels.at({orb.l,orb.j2,orb.tz2}) )
    {
      Orbit& oj = modelspace->GetOrbit(j);
-     double Norm = 2*sqrt( gsl_sf_fact(oj.n) * pow(2,oj.n+oj.l) / M_SQRTPI / gsl_sf_doublefact(2*oj.n+2*oj.l+1) * pow(b,-3.0) );
+//     double Norm = 2*sqrt( gsl_sf_fact(oj.n) * pow(2,oj.n+oj.l) / M_SQRTPI / gsl_sf_doublefact(2*oj.n+2*oj.l+1) * pow(b,-3.0) );
+     double Norm = 2*sqrt( gsl_sf_fact(oj.n) * pow(2,oj.n+oj.l) / SQRTPI / gsl_sf_doublefact(2*oj.n+2*oj.l+1) * pow(b,-3.0) );
      psi += C(index,j) * Norm * pow(x,oj.l) * exp(-x*x*0.5) * gsl_sf_laguerre_n(oj.n,oj.l+0.5,x*x);
    }
    return psi;

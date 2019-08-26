@@ -1,6 +1,7 @@
 #include "ReadWrite.hh"
 #include "ModelSpace.hh"
 #include "AngMom.hh"
+#include "PhysicalConstants.hh"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -26,15 +27,16 @@
 #define LINESIZE 496
 //#define HEADERSIZE 500
 #define HEADERSIZE 255
-#ifndef SQRT2
-  #define SQRT2 1.4142135623730950488
-#endif
-#ifndef HBARC
-   #define HBARC 197.3269718 // hc in MeV * fm
-#endif
-#ifndef M_NUCLEON
-   #define M_NUCLEON 938.9185
-#endif
+
+//#ifndef SQRT2
+//  #define SQRT2 1.4142135623730950488
+//#endif
+//#ifndef HBARC
+//   #define HBARC 197.3269718 // hc in MeV * fm
+//#endif
+//#ifndef M_NUCLEON
+//   #define M_NUCLEON 938.9185
+//#endif
 
 //using namespace std;
 
@@ -325,7 +327,7 @@ void ReadWrite::WriteOneBody_Oslo( std::string filename, Operator& Op)
   outfile << "   ----> Oscillator parameters, Model space and single-particle data" << std::endl;
   outfile << "Mass number A of chosen nucleus (important for CoM corrections):          " << modelspace->GetTargetMass() << std::endl;
   outfile << "Oscillator length and energy: " << std::setw(12) << std::setprecision(6) << std::scientific 
-          << HBARC / sqrt( M_NUCLEON * modelspace->GetHbarOmega() )
+          << PhysConst::HBARC / sqrt( PhysConst::M_NUCLEON * modelspace->GetHbarOmega() )
           << "  " << std::setw(12) << std::setprecision(6) << std::scientific <<  modelspace->GetHbarOmega() << std::endl;
   outfile << " Min and max value of partial wave ang. mom    0   " << modelspace->GetEmax() << std::endl;
   outfile << " Max value of relative orb mom or cm orb mom,  l or L=  " << modelspace->GetEmax() << std::endl;
@@ -588,13 +590,13 @@ void ReadWrite::WriteTBME_Navratil( std::string filename, Operator& Hbare)
             double v00 =  Hbare.TwoBody.Get_iso_TBME_from_pn(J, 0,  0, a, b, c, d);
             if (a==b)
             {
-              vpp /= SQRT2;
-              vnn /= SQRT2;
+              vpp /= PhysConst::SQRT2;
+              vnn /= PhysConst::SQRT2;
             }
             if (c==d)
             {
-              vpp /= SQRT2;
-              vnn /= SQRT2;
+              vpp /= PhysConst::SQRT2;
+              vnn /= PhysConst::SQRT2;
             }
             if (std::abs(vpp)>1e-7 or std::abs(vnn)>1e-7 or std::abs(v10)>1e-7)
             {
@@ -867,8 +869,8 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 
              // Normalization. The TBMEs are read in un-normalized.
              double norm_factor = 1;
-             if (a==b)  norm_factor /= SQRT2;
-             if (c==d)  norm_factor /= SQRT2;
+             if (a==b)  norm_factor /= PhysConst::SQRT2;
+             if (c==d)  norm_factor /= PhysConst::SQRT2;
 
 //             std::cout << a << " " << b << " " << c << " " << d << "   " << J << "   "
 //                  << std::fixed << std::setprecision(7) << std::setw(11) << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp << std::endl;
@@ -1791,7 +1793,7 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
        if (alpha<alphap) continue;
 
        double me   = value_buf[i];
-       me *= HBARC;
+       me *= PhysConst::HBARC;
 //       if (alpha != alphap) me *=0.5;
 
        int a    = Basis[alpha][0];
@@ -1944,7 +1946,7 @@ void ReadWrite::Read3bodyHDF5_new( std::string filename,Operator& op )
        float *me = value_buf[i+k_iso];
        float summed_me = 0;
        for (int ii=0;ii<5;++ii) summed_me += LECs[ii] * me[ii] ;
-       summed_me *= HBARC;
+       summed_me *= PhysConst::HBARC;
        // Phase due to different conventions for HO wave functions.
        // Now obsolete -- Feb 2016
 //       summed_me *= modelspace->phase(dbuf[alphasp][1]+dbuf[alphasp][4]+dbuf[alphasp][7]+dbuf[alphaspp][1]+dbuf[alphaspp][4]+dbuf[alphaspp][7]);
@@ -2021,8 +2023,8 @@ void ReadWrite::ReadOperator_Nathan( std::string filename1b, std::string filenam
     if (c>=norb or d>=norb) continue;
 //    if (a==b) me /= sqrt(2);
 //    if (c==d) me /= sqrt(2);
-    if (a==b) me /= SQRT2;
-    if (c==d) me /= SQRT2;
+    if (a==b) me /= PhysConst::SQRT2;
+    if (c==d) me /= PhysConst::SQRT2;
     op.TwoBody.SetTBME_J(J,a,b,c,d,me);
   }
   infile.close();
@@ -2431,8 +2433,8 @@ void ReadWrite::Write_me2j( std::string outfilename, Operator& Hbare, int emax, 
           {
              // me2j format is unnormalized
              double norm_factor = 1;
-             if (a==b)  norm_factor *= SQRT2;
-             if (c==d)  norm_factor *= SQRT2;
+             if (a==b)  norm_factor *= PhysConst::SQRT2;
+             if (c==d)  norm_factor *= PhysConst::SQRT2;
 
              // Matrix elements are written in the file with (T,Tz) = (0,0) (1,1) (1,0) (1,-1)
              tbme_pp = Hbare.TwoBody.GetTBME(J,parity,-1,a,b,c,d);        // unnormalized
@@ -2789,8 +2791,8 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, std::string filename, std::s
             if ( std::abs(tbme) < 1e-6) continue;
             if (T==0)
             {
-               if ( oa.j2 != ob.j2 or oa.l != ob.l or oa.n != ob.n ) tbme *= SQRT2; // pn TBMEs are unnormalized
-               if ( oc.j2 != od.j2 or oc.l != od.l or oc.n != od.n ) tbme *= SQRT2; // pn TBMEs are unnormalized
+               if ( oa.j2 != ob.j2 or oa.l != ob.l or oa.n != ob.n ) tbme *= PhysConst::SQRT2; // pn TBMEs are unnormalized
+               if ( oc.j2 != od.j2 or oc.l != od.l or oc.n != od.n ) tbme *= PhysConst::SQRT2; // pn TBMEs are unnormalized
                T = (tbc.J+1)%2;
             }
             // in NuShellX, the proton orbits must come first. This can be achieved by
@@ -2932,8 +2934,8 @@ void ReadWrite::ReadNuShellX_int(Operator& op, std::string filename)
     Orbit& od = modelspace->GetOrbit(orbit_map[d]);
     if (oa.tz2 != ob.tz2)
     {
-       if ( (oa.j2 != ob.j2) or (oa.l != ob.l) or (oa.n != ob.n) ) V /= SQRT2; // pn TBMEs are unnormalized
-       if ( (oc.j2 != od.j2) or (oc.l != od.l) or (oc.n != od.n) ) V /= SQRT2; // pn TBMEs are unnormalized
+       if ( (oa.j2 != ob.j2) or (oa.l != ob.l) or (oa.n != ob.n) ) V /= PhysConst::SQRT2; // pn TBMEs are unnormalized
+       if ( (oc.j2 != od.j2) or (oc.l != od.l) or (oc.n != od.n) ) V /= PhysConst::SQRT2; // pn TBMEs are unnormalized
     }
     op.TwoBody.SetTBME_J(J,orbit_map[a],orbit_map[b],orbit_map[c],orbit_map[d],V);
   }
@@ -3958,7 +3960,7 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
        {
          double me = Op.TwoBody.GetTBME_J(Jab,Jab,a,b,c,Q) * EdmondsConventionFactor;
          if (std::abs(me) < 1e-7) continue;
-         if (a_ind == b_ind) me /= SQRT2;  // We write out normalized matrix elements
+         if (a_ind == b_ind) me /= PhysConst::SQRT2;  // We write out normalized matrix elements
          auto c_ind = orb2nushell[c];
          outfile << std::setw(wint) << a_ind << " " << std::setw(wint) << b_ind << " " << std::setw(wint) << c_ind << "   "
                  << std::setw(wint) << Jab << "   " << std::setw(wdouble) << std::setprecision(pdouble) << me << std::endl;

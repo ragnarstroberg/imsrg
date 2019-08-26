@@ -4,6 +4,7 @@
 #include "TwoBodyME.hh"
 #include "ThreeBodyME.hh"
 #include "armadillo"
+#include "PhysicalConstants.hh" // for SQRT2
 #include <map>
 #include <deque>
 #include <array>
@@ -834,7 +835,7 @@ void comm122ss( const Operator& X, const Operator& Y, Operator& Z )
             if (ind2<0 or ind2>=tbc.GetNumberKets()) continue;
             ind1_ia.push_back(a);
             ind2_aj.push_back(ind2);
-            factor_ia.push_back( a>j ? flipphaseij : (a==j ? SQRT2 : 1));
+            factor_ia.push_back( a>j ? flipphaseij : (a==j ? PhysConst::SQRT2 : 1));
          }
          if (i!=j)
          {
@@ -844,7 +845,7 @@ void comm122ss( const Operator& X, const Operator& Y, Operator& Z )
               if (ind2<0 or ind2>=tbc.GetNumberKets()) continue;
               ind1_ja.push_back(a);
               ind2_ai.push_back(ind2);
-              factor_ja.push_back( i>a ? flipphaseij : (i==a ? SQRT2 : 1));
+              factor_ja.push_back( i>a ? flipphaseij : (i==a ? PhysConst::SQRT2 : 1));
            }
 
          }
@@ -857,8 +858,8 @@ void comm122ss( const Operator& X, const Operator& Y, Operator& Z )
          arma::vec  v_factor_ja(factor_ja);
          if (i==j)
          {
-           v_factor_ia /= SQRT2;
-           v_factor_ja /= SQRT2;
+           v_factor_ia /= PhysConst::SQRT2;
+           v_factor_ja /= PhysConst::SQRT2;
          }
 
          // This is fairly obfuscated, but hopefully faster for bigger calculations
@@ -1318,7 +1319,7 @@ void AddInversePandyaTransformation_SingleChannel( Operator& Z,  arma::mat& Zbar
 
               }
             }
-            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
+            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : PhysConst::SQRT2;
             #pragma omp atomic
             Zmat(ibra,iket) -= (commij - Z.modelspace->phase(jk+jl-J ) * commji) / norm;
          }
@@ -1415,7 +1416,7 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
               }
             }
 
-            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
+            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : PhysConst::SQRT2;
             Z.TwoBody.GetMatrix(ch,ch)(ibra,iket) -= (commij - Z.modelspace->phase(jk+jl-J ) * commji) / norm;
          }
       }
@@ -3526,7 +3527,7 @@ void comm122st( const Operator& X, const Operator& Y , Operator& Z)
             cijkl += hatfactor*(phase1*c1+phase2*c2+phase3*c3+phase4*c4);
 
 
-            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
+            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : PhysConst::SQRT2;
             Z2(ibra,iket) += cijkl /norm;
          }
       }
@@ -4065,7 +4066,7 @@ void AddInverseTensorPandyaTransformation_SingleChannel(Operator& Z, arma::mat& 
             }
 
 
-            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
+            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : PhysConst::SQRT2;
             #pragma omp atomic
             Zijkl(ibra,iket) +=  (commij - Z.modelspace->phase(ji+jj-J1)*commji) / norm;
             if (ch_bra==ch_ket) 
@@ -4236,7 +4237,7 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
               }
             }
 
-            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : SQRT2;
+            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : PhysConst::SQRT2;
             Zijkl(ibra,iket) +=  (commij - Z.modelspace->phase(ji+jj-J1)*commji) / norm;
             if (ch_bra==ch_ket) Zijkl(iket,ibra) = hZ * Zijkl(ibra,iket);
          }
@@ -4671,14 +4672,14 @@ void comm413_233sd( const Operator& X, const Operator& Y, Operator& Z)
          int j = bra.q;
          Orbit& oi = Z.modelspace->GetOrbit(i);
          Orbit& oj = Z.modelspace->GetOrbit(j);
-         double norm_ij = (i==j) ? 1.0/SQRT2 : 1.0;
+         double norm_ij = (i==j) ? PhysConst::INVSQRT2 : 1.0;
 //         for ( int k=0; k<norb; ++k )
          for ( auto k : Z.modelspace->all_orbits )
          {
            Orbit& ok = Z.modelspace->GetOrbit(k);
            if (not tbc.CheckChannel_ket(&ok,&oQ)) continue;
 
-           double norm_kQ = (k==Qorbit) ? 1.0/SQRT2 : 1.0;
+           double norm_kQ = (k==Qorbit) ? PhysConst::INVSQRT2 : 1.0;
            double cijk = 0;
 
            for ( int a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
@@ -4923,7 +4924,7 @@ void comm433sd_ph_dumbway( const Operator& X, const Operator& Y, Operator& Z)
         std::vector<index_t> i_cases = { bra.p, bra.q };
         std::vector<index_t> j_cases = { bra.q, bra.p };
         std::vector<int> ijsign_cases = { +1, bra.Phase(J)};  // This accounts for the 1 - (-1)^(ji +jj-J) Pij  factor.
-        double norm_ij = (bra.p==bra.q) ? 1.0 / SQRT2 : 1.0;
+        double norm_ij = (bra.p==bra.q) ? PhysConst::INVSQRT2 : 1.0;
         for (int ijcase=0; ijcase<=1; ijcase++)
         {
           index_t i = i_cases[ijcase];
@@ -4939,7 +4940,7 @@ void comm433sd_ph_dumbway( const Operator& X, const Operator& Y, Operator& Z)
             Orbit& ok = Z.modelspace->GetOrbit(k);
             if ( not tbc.CheckChannel_ket(&ok,&oQ) ) continue;
             double zijk = 0.;
-            double norm_kQ = (k==Q) ? 1.0 / SQRT2 : 1.0;
+            double norm_kQ = (k==Q) ? PhysConst::INVSQRT2 : 1.0;
             double jk = 0.5* ok.j2;
 
 
@@ -5265,7 +5266,7 @@ void AddInversePandyaTransformation_Dagger( const std::deque<arma::mat>& Zbar, O
           Orbit & oj = Z.modelspace->GetOrbit(j);
           double ji = oi.j2/2.;
           double jj = oj.j2/2.;
-          double norm_ij = (i==j) ? 1.0/SQRT2 : 1.0;
+          double norm_ij = (i==j) ? PhysConst::INVSQRT2 : 1.0;
 
 
           for (size_t k=0; k<norb; k++)
@@ -5274,7 +5275,7 @@ void AddInversePandyaTransformation_Dagger( const std::deque<arma::mat>& Zbar, O
             if ( not tbc.CheckChannel_ket(&ok, &oQ) ) continue; // if |kQ> doesn't live in this channel, move along.
 
             double jk = ok.j2/2.;
-            double norm_kQ = (k==Q) ? 1.0/SQRT2  : 1.0;
+            double norm_kQ = (k==Q) ? PhysConst::INVSQRT2  : 1.0;
 
             double commijk = 0;  // contribution of the 1 term 
 

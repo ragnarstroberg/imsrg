@@ -1,6 +1,7 @@
 #include <iomanip>
 #include "HFMBPT.hh"
 #include "HartreeFock.hh"
+#include "PhysicalConstants.hh"
 
 HFMBPT::~HFMBPT()
 {}
@@ -187,8 +188,8 @@ Operator HFMBPT::TransformHFToNATBasis( Operator& OpHF)
           Dket(i,j) += C_HF2NAT(ket_hf.q, ket_nat.p) * C_HF2NAT(ket_hf.p, ket_nat.q) *
             ket_hf.Phase(tbc_ket.J);
         }
-        if (ket_hf.p==ket_hf.q)    Dket(i,j) *= SQRT2;
-        if (ket_nat.p==ket_nat.q)    Dket(i,j) /= SQRT2;
+        if (ket_hf.p==ket_hf.q)    Dket(i,j) *= PhysConst::SQRT2;
+        if (ket_nat.p==ket_nat.q)  Dket(i,j) /= PhysConst::SQRT2;
       }
     }
     if (ch_bra == ch_ket) {
@@ -208,8 +209,8 @@ Operator HFMBPT::TransformHFToNATBasis( Operator& OpHF)
             Dbra(i,j) += C_HF2NAT(bra_hf.q, bra_nat.p) * C_HF2NAT(bra_hf.p, bra_nat.q)
               * bra_hf.Phase(tbc_bra.J);
           }
-          if (bra_hf.p==bra_hf.q)    Dbra(i,j) *= SQRT2;
-          if (bra_nat.p==bra_nat.q)    Dbra(i,j) /= SQRT2;
+          if (bra_hf.p==bra_hf.q)    Dbra(i,j) *= PhysConst::SQRT2;
+          if (bra_nat.p==bra_nat.q)  Dbra(i,j) /= PhysConst::SQRT2;
         }
       }
     }
@@ -252,8 +253,8 @@ Operator HFMBPT::TransformHOToNATBasis( Operator& OpHO)
             ket_ho.Phase(tbc_ket.J);
 
         }
-        if (ket_ho.p==ket_ho.q)    Dket(i,j) *= SQRT2;
-        if (ket_nat.p==ket_nat.q)    Dket(i,j) /= SQRT2;
+        if (ket_ho.p==ket_ho.q)    Dket(i,j) *= PhysConst::SQRT2;
+        if (ket_nat.p==ket_nat.q)  Dket(i,j) /= PhysConst::SQRT2;
       }
     }
     if (ch_bra == ch_ket) {
@@ -273,8 +274,8 @@ Operator HFMBPT::TransformHOToNATBasis( Operator& OpHO)
             Dbra(i,j) += C_HO2NAT(bra_ho.q,bra_nat.p) * C_HO2NAT(bra_ho.p,bra_nat.q) *
               bra_ho.Phase(tbc_bra.J);
           }
-          if (bra_ho.p==bra_ho.q)    Dbra(i,j) *= SQRT2;
-          if (bra_nat.p==bra_nat.q)    Dbra(i,j) /= SQRT2;
+          if (bra_ho.p==bra_ho.q)    Dbra(i,j) *= PhysConst::SQRT2;
+          if (bra_nat.p==bra_nat.q)  Dbra(i,j) /= PhysConst::SQRT2;
         }
       }
     }
@@ -343,8 +344,8 @@ Operator HFMBPT::GetNormalOrderedHNAT()
         {
           D(i,j) += C_HO2NAT(bra.q,ket.p) * C_HO2NAT(bra.p,ket.q) * bra.Phase(J);
         }
-        if (bra.p==bra.q)    D(i,j) *= SQRT2;
-        if (ket.p==ket.q)    D(i,j) /= SQRT2;
+        if (bra.p==bra.q)    D(i,j) *= PhysConst::SQRT2;
+        if (ket.p==ket.q)    D(i,j) /= PhysConst::SQRT2;
 
         // Now generate the NO2B part of the 3N interaction
         if (Hbare.GetParticleRank()<3) continue;
@@ -366,8 +367,8 @@ Operator HFMBPT::GetNormalOrderedHNAT()
           }
         }
         V3NO(i,j) /= (2*J+1);
-        if (bra.p==bra.q)  V3NO(i,j) /= SQRT2;
-        if (ket.p==ket.q)  V3NO(i,j) /= SQRT2;
+        if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2;
+        if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2;
         V3NO(j,i) = V3NO(i,j);
       }
     }
