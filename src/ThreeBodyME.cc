@@ -376,11 +376,11 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
        {
          for (int tab=tab_min; tab<=tab_max; ++tab)
          {
-           if (a==b and (tab+Jab)%2==0 ) continue; // added recently. test.
+//           if (a==b and (tab+Jab)%2==0 ) continue; // added recently. test.
            double Ct_abc = RecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
            for (int tde=tde_min; tde<=tde_max; ++tde)
            {
-             if (d==e and (tde+Jde)%2==0 ) continue; // added recently. test.
+//             if (d==e and (tde+Jde)%2==0 ) continue; // added recently. test.
              double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
              if (std::abs(Ct_abc*Ct_def)<1e-8) continue;
 
