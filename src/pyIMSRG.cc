@@ -334,6 +334,15 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm222_phst", &Commutator::comm222_phst);
 
 
+   py::class_<UnitTest>(m,"UnitTest")
+//      .def(py::init<>())
+      .def(py::init< ModelSpace&>())
+      .def("SetRandomSeed",&UnitTest::SetRandomSeed)
+      .def("TestCommutators",&UnitTest::TestCommutators)
+      .def("TestCommutators3",&UnitTest::TestCommutators3)
+   ;
+
+
 
    m.def("TCM_Op",           imsrg_util::TCM_Op);
    m.def("Trel_Op",           imsrg_util::Trel_Op);

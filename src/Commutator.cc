@@ -584,7 +584,7 @@ void comm111ss( const Operator & X, const Operator& Y, Operator& Z)
 //
 //                     (note: I think this should actually be)
 //                                                = sum_ab (n_a nbar_b) sum_J (2J+1)/(2j_i+1)
-//                                                      * y_ab xbiag - yba x_aibj
+//                                                      * y_ab xbiaj - yba x_aibj
 //
 // -- AGREES WITH NATHAN'S RESULTS 
 /// Returns \f$ [X_{(1)},Y_{(2)}] - [Y_{(1)},X_{(2)}] \f$, where
@@ -1640,37 +1640,37 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
 //*****************************************************************************************
 //
 //    ~~~~~~~~~~~~~~~~        Uncoupled expression: 
-//   /\      /\      /\         Z_0 = sum_abcdef (nanbnc n`dn`en`f) (X_abcdef Y_defabc - Y_abcdef X_defabc)
+//   /\      /\      /\         Z_0 = 1/36 sum_abcdef (nanbnc n`dn`en`f) (X_abcdef Y_defabc - Y_abcdef X_defabc)
 // a(  )d  b(  )e  c(  )f
 //   \/      \/      \/      Coupled expression:
-//    ~~~~~~~~~~~~~~~~        Z_0 = sum_abcdef sum_J1,J2,J  (nanbnc n`dn`en`f)  (2J+1)
+//    ~~~~~~~~~~~~~~~~        Z_0 = 1/36 sum_abcdef sum_J1,J2,J  (nanbnc n`dn`en`f)  (2J+1)
 //                                    (X^{J1J2J}_abcdef Y^{J1J2J}_defabc - Y^{J1J2J}_abcdef X^{J1J2J}_defabc)
 //
 void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   std::cout << "start comm330" << std::endl;
-  int E3cut = 7;
+  int E3cut = 999;
   double z0 = 0;
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   std::cout << "Norm X3 " << X3.Norm() << "  Norm Y3 " << Y3.Norm() << std::endl;
   if (X3.Norm()<1e-6 or Y3.Norm()<1e-6 ) return;
   std::vector<index_t> holevec( Z.modelspace->holes.begin(), Z.modelspace->holes.end());
-  #pragma omp parallel for schedule(dynamic,1) reduction(+ : z0)
-//  for ( auto a : Z.modelspace->holes )
-  for ( size_t indxa=0; indxa<Z.modelspace->holes.size(); indxa++ )
+//  #pragma omp parallel for schedule(dynamic,1) reduction(+ : z0)
+//  for ( size_t indxa=0; indxa<Z.modelspace->holes.size(); indxa++ )
+  for ( auto a : Z.modelspace->holes )
   {
 //   auto a = Z.modelspace->holes[indxa];
-   auto a = holevec[indxa];
+//   auto a = holevec[indxa];
    Orbit& oa = Z.modelspace->GetOrbit(a);
    for( auto b : Z.modelspace->holes )
    {
     Orbit& ob = Z.modelspace->GetOrbit(b);
     int Jab_min = std::abs(oa.j2-ob.j2)/2;
-    int Jab_max = std::abs(oa.j2+ob.j2)/2;
-    for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
-    {
-     if (a==b and Jab%2>0) continue;
+    int Jab_max = (oa.j2+ob.j2)/2;
+//    for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+//    {
+//     if (a==b and Jab%2>0) continue;
      for ( auto c : Z.modelspace->holes )
      {
       Orbit& oc = Z.modelspace->GetOrbit(c);
@@ -1681,31 +1681,59 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
        {
         Orbit& oe = Z.modelspace->GetOrbit(e);
         int Jde_min = std::abs(od.j2-oe.j2)/2;
-        int Jde_max = std::abs(od.j2+oe.j2)/2;
-        for ( int Jde=Jde_min; Jde<=Jde_max; Jde++)
-        {
-         if (d==e and Jde%2>0) continue;
+        int Jde_max = (od.j2+oe.j2)/2;
+//        for ( int Jde=Jde_min; Jde<=Jde_max; Jde++)
+//        {
+//         if (d==e and Jde%2>0) continue;
          for ( auto f : Z.modelspace->particles )
          {
           Orbit& of = Z.modelspace->GetOrbit(f);
-//          std::cout << "abcdef = " << a << " " << b << " " << c << " " << d << " " << e << " " << f
-//                    << "   " << Jab << " " << Jde << "  " << "  " << 2*(od.n+oe.n+of.n)+od.l+oe.l+of.l  << std::endl;
-          if ( ( 2*(od.n+oe.n+of.n)+od.l+oe.l+of.l) > E3cut ) continue;
+
           if ( (oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 ) continue;
           if ( (oa.tz2+ob.tz2+oc.tz2) != (od.tz2+oe.tz2+of.tz2) ) continue;
+          if ( ( 2*(od.n+oe.n+of.n)+od.l+oe.l+of.l) > E3cut ) continue;
+
+          double dz = 0;
+
+    for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+    {
+     if (a==b and Jab%2>0) continue;
+        for ( int Jde=Jde_min; Jde<=Jde_max; Jde++)
+        {
+         if (d==e and Jde%2>0) continue;
+
+//          std::cout << "abcdef = " << a << " " << b << " " << c << " " << d << " " << e << " " << f
+//                    << "   " << Jab << " " << Jde << "  " << "  " << 2*(od.n+oe.n+of.n)+od.l+oe.l+of.l  << std::endl;
           int twoJmin = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jde-of.j2) );
           int twoJmax = std::min( 2*Jab+oc.j2, 2*Jde+of.j2 );
           for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
           {
-            z0 += (twoJ+1) * ( X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
-                             - Y3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * X3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c) );
+//            z0 += (twoJ+1) * ( X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
+            dz += (1./36)*(twoJ+1) * ( X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
+                                     - Y3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * X3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c) );
 //	    std::cout << "  " <<  X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) << "  " << Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
 //	              << "  " <<  Y3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) << "  " << X3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c) << std::endl;
+            if (a==0 and b==0 and c==3 and d==2 and e==5 and f==2)
+            {
+              std::cout << "     Jab,Jde,twoJ = " << Jab << " " << Jde << " " << twoJ << "  dz = " << dz
+                        << " (local dz = " << (2./36)*(twoJ+1) * ( X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c) )
+                          << ")  Xabcdef = " << X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f)
+                          << "  Yabcdef = " << Y3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f)
+                          << "  Xdefabc = " << X3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
+                          << "  Ydefabc = " << Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
+//                        << "  Jab limits " << Jab_min << " " << Jab_max 
+//                        << "  Jde limits " << Jde_min << " " << Jde_max 
+                        << std::endl;
+            }
 
 
           }
          }
         }
+
+            z0 += dz; /// we can change this back after debugging...
+            std::cout << " @@DEBUG: abcdef " << a << " " << b << " " << c << " " << d << " " << e << " " << f
+                      << "    dz = " << dz << "   z0 " << z0 << std::endl;
        }
       }
      }
