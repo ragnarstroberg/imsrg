@@ -34,3 +34,4 @@
 #include "Jacobi3BME.hh"
 #include "DarkMatterNREFT.hh"
 #include "HFMBPT.hh"
+#include "UnitTest.hh"

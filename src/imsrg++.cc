@@ -774,7 +774,7 @@ int main(int argc, char** argv)
     rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
     rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
 
-    if (method == "magnus")
+    if (method == "magnus" or method=="flow_RK4")
     {
        for (index_t i=0;i<ops.size();++i)
        {
