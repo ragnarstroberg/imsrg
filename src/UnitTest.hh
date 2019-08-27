@@ -25,6 +25,7 @@ class UnitTest
   double GetMschemeMatrixElement_2b( const Operator& Op, int a, int ma, int b, int mb, int c, int mc, int d, int md );
   double GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, int b, int mb, int c, int mc, int d, int md, int e, int me, int f, int mf );
 
+  void Test3BodyAntisymmetry();
 
   // test strategy: Fill two random operators, calculate a specific commutator term
   // using the J-coupled expression, and in m-scheme (where the formula is simpler)

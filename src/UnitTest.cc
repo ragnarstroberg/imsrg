@@ -66,6 +66,62 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
 
 
 
+void UnitTest::Test3BodyAntisymmetry()
+{
+
+  arma::arma_rng::set_seed( random_seed );
+  Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, 1);
+
+  int a=0,b=0,c=3,d=2,e=2,f=5;
+  Orbit& oa = Y.modelspace->GetOrbit(a);
+  Orbit& ob = Y.modelspace->GetOrbit(b);
+  Orbit& oc = Y.modelspace->GetOrbit(c);
+  Orbit& od = Y.modelspace->GetOrbit(d);
+  Orbit& oe = Y.modelspace->GetOrbit(e);
+  Orbit& of = Y.modelspace->GetOrbit(f);
+  for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
+  {
+  for (int mb=-ob.j2; mb<=ob.j2; mb+=2)
+  {
+  for (int mc=-oc.j2; mc<=oc.j2; mc+=2)
+  {
+  for (int md=-od.j2; md<=od.j2; md+=2)
+  {
+  for (int me=-oe.j2; me<=oe.j2; me+=2)
+  {
+   int mf=ma+mb+mc-md-me;
+   if ( std::abs(mf)>of.j2 ) continue;
+  double yabcdef = GetMschemeMatrixElement_3b(Y, a,ma, b,mb ,c,mc, d,md, e,me, f,mf);
+  double ybcadef = GetMschemeMatrixElement_3b(Y, b,mb, c,mc, a,ma, d,md, e,me, f,mf);
+  double ycabdef = GetMschemeMatrixElement_3b(Y, c,mc, a,ma, b,mb, d,md, e,me, f,mf);
+
+  double yacbdef = GetMschemeMatrixElement_3b(Y, a,ma, c,mc, b,mb, d,md, e,me, f,mf);
+  double ybacdef = GetMschemeMatrixElement_3b(Y, b,mb, a,ma, c,mc, d,md, e,me, f,mf);
+  double ycbadef = GetMschemeMatrixElement_3b(Y, c,mc, b,mb, a,ma, d,md, e,me, f,mf);
+
+  std::cout << " mvals: " << ma << " " << mb << " " << mc << " " << md << " " << me << " " << mf << std::endl;
+  std::cout << "ANTISYMMETRY:  abc: " << yabcdef << " bca: " << ybcadef << " cab: " << ycabdef
+            << "    acb: " << yacbdef << " bac: " << ybacdef << " cba: " << ycbadef << std::endl;
+
+  }
+  }
+  }
+  }
+  }
+
+
+//  for (int a : Y.modelspace->all_orbits )
+//  {
+//    for (int b : Y.modelspace->all_orbits )
+//    {
+//      for (int c : Y.modelspace->all_orbits )
+//      {
+//      }
+//    }
+//  }
+
+
+}
 
 
 

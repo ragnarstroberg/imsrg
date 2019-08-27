@@ -340,6 +340,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetRandomSeed",&UnitTest::SetRandomSeed)
       .def("TestCommutators",&UnitTest::TestCommutators)
       .def("TestCommutators3",&UnitTest::TestCommutators3)
+      .def("Test3BodyAntisymmetry",&UnitTest::Test3BodyAntisymmetry)
    ;
 
 
