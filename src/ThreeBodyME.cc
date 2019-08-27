@@ -386,7 +386,7 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
 
              int Tindex = 2*tab + tde + (T2-1)/2;
 
-             elements.emplace_back( std::make_pair(indx + J_index + Tindex, Cj_abc * Cj_def * Ct_abc * Ct_def *herm_flip )) ;
+             elements.emplace_back( std::make_pair(indx + J_index + Tindex, Cj_abc * Cj_def * Ct_abc * Ct_def * herm_flip )) ;
            }
          }
        }
@@ -398,7 +398,10 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
 
 
 //*******************************************************************
-/// Coefficients for recoupling three body matrix elements
+/// Coefficients for recoupling three body matrix elements.
+/// Note that this does not include the -1 factor for an odd
+/// permutation of fermionic operators. That is handled in ThreeBodyME::AccessME.
+/// Here, we just only with the angular momentum / isospin recoupling factors
 //*******************************************************************
 double ThreeBodyME::RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const
 {

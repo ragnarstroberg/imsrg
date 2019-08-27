@@ -234,11 +234,12 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
         double clebsch_def = AngMom::CG( Jde, Mde, 0.5*of.j2, 0.5*mf,  0.5*twoJ, 0.5*twoM );
         if (std::abs(clebsch_abc)<1e-6 or std::abs(clebsch_def)<1e-6) continue; // avoid the look up, with possible 6js...
 //        if ((a==0 and b==0 and c==3 and d==2 and e==5 and f==2) or (d==0 and e==0 and f==3 and a==2 and b==5 and c==2)) 
-//        {
-//        std::cout << "        Jab Jde twoJ " << Jab << " " << Jde << " " << twoJ
-//                  << " clebsch: " << clebsch_ab << " " << clebsch_de << " " << clebsch_abc << " " << clebsch_def
-//                  << "   matel_J " << Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f) << std::endl;
-//        }
+        if ((a==0 and b==0 and c==3 and d==2 and e==2 and f==5) ) 
+        {
+        std::cout << "        Jab Jde twoJ " << Jab << " " << Jde << " " << twoJ
+                  << " clebsch: " << clebsch_ab << " " << clebsch_de << " " << clebsch_abc << " " << clebsch_def
+                  << "   matel_J " << Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f) << std::endl;
+        }
         matel += clebsch_ab * clebsch_abc * clebsch_de * clebsch_def * Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f);
 //        if (a==0 and b==0 and c==3 and d==2 and e==5 and f==2) std::cout << "    003252: Jab,Jde,J " << Jab << " " << Jde << " " << twoJ << "   -> " << Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f) << " -> " << matel << std::endl;
 //        if (a==0 and b==0 and c==3 and d==2 and e==2 and f==5) std::cout << "    003225: Jab,Jde,J " << Jab << " " << Jde << " " << twoJ << "   -> " << Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f) << " -> " << matel << std::endl;
@@ -1022,7 +1023,8 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
         if ( (oa.tz2+ob.tz2+oc.tz2) !=(od.tz2+oe.tz2+of.tz2) ) continue;
          double dz=0;
 
-        if (a==0 and b==0 and c==3 and d==2 and e==5 and f==2)
+//        if (a==0 and b==0 and c==3 and d==2 and e==5 and f==2)
+        if (a==0 and b==0 and c==3 and d==2 and e==2 and f==5)
         {
          int Jab = 0;
          int twoJ = 3;
@@ -1043,6 +1045,7 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
               for (int me=-oe.j2; me<=oe.j2; me+=2)
               {
                 int mf = ma+mb+mc - me-md;
+                if ( std::abs(mf)>of.j2) continue;
 //                if (d==e and md==me) continue;
 //                if (d==f and md==mf) continue;
 //                if (e==f and me==mf) continue;
@@ -1061,7 +1064,9 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
                 double xabcefd = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, e,me, f,mf, d,md );
                 double xabcfde = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, f,mf, d,md, e,me );
                 double x_plain = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, d,md, e,me, f,mf );
-                std::cout << "ANTISYMMETRY CHECK: " << x_plain << "  fed: " << xabcfed << "  dfe: " << xabcdfe << "  edf: " << xabcedf << "  efd: " << xabcefd << "  fde: " << xabcfde << std::endl;
+                std::cout << "m values: " << ma << " " << mb << " " << mc << "   " << md << " " <<me << " " << mf << std::endl;
+                std::cout << "ANTISYMMETRY CHECK:  def :" << x_plain << "  efd: " << xabcefd  << "  fde: " << xabcfde
+                          << "  fed: " << xabcfed << "  dfe: " << xabcdfe << "  edf: " << xabcedf  << std::endl;
               }
               }}}}// for ma ... md
            std::cout << "  Jde = " << Jde << "  xabcdef = " << xabcdef << std::endl;
