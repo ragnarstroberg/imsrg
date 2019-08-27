@@ -184,7 +184,6 @@ void ThreeBodyME::Allocate()
 ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b, int c, int d, int e, int f) const
 {
 
-//   std::cout << "here." << std::endl;
    if (a==b and a==c and modelspace->GetOrbit(a).j2<3) return 0;
    if (d==e and d==f and modelspace->GetOrbit(d).j2<3) return 0;
    if (a==b and Jab_in%2>0) return 0;
@@ -197,9 +196,7 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
    double tzf = modelspace->GetOrbit(f).tz2*0.5;
 
    double Vpn=0;
-//   int Tmin = std::min( std::abs(tza+tzb+tzc), std::abs(tzd+tze+tzf) );
    int Tmin = std::max( std::abs(tza+tzb+tzc), std::abs(tzd+tze+tzf) )*2;
-//   std::cout << " Tmin = " << Tmin << std::endl;
    for (int tab=std::abs(tza+tzb); tab<=1; ++tab)
    {
       // CG calculates the Clebsch-Gordan coefficient  TODO: There are only a few CG cases, and we can probably use a specific formula rather than the general one.
@@ -207,17 +204,13 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
       for (int tde=std::abs(tzd+tze); tde<=1; ++tde)
       {
          double CG2 = AngMom::CG(0.5,tzd, 0.5,tze, tde, tzd+tze);
-//         std::cout << "   tab,tde = " << tab << " " << tde << "  CG: " << CG1 << " " << CG2 << std::endl;
          if (CG1*CG2==0) continue;
-//         for (int T=Tmin; T<=3; ++T)
          for (int T=Tmin; T<=3; T+=2)
          {
            double CG3 = AngMom::CG(tab,tza+tzb, 0.5,tzc, T/2., tza+tzb+tzc);
            double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, T/2., tzd+tze+tzf);
-//           std::cout << " T = " << T << "  CG: " << CG3 << " " << CG4 << std::endl;
            if (CG3*CG4==0) continue;
            Vpn += CG1*CG2*CG3*CG4*GetME(Jab_in,Jde_in,J2,tab,tde,T,a,b,c,d,e,f);
-//           std::cout << __func__ << "  " << tab << " " << tde << " " << T << "   " << CG1 << " " << CG2 << " " << CG3 << " " << CG4 << " " << GetME(Jab_in,Jde_in,J2,tab,tde,T,a,b,c,d,e,f) << "  =>  " << Vpn << std::endl;
 
          }
       }

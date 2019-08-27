@@ -234,8 +234,9 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
         double clebsch_def = AngMom::CG( Jde, Mde, 0.5*of.j2, 0.5*mf,  0.5*twoJ, 0.5*twoM );
         if (std::abs(clebsch_abc)<1e-6 or std::abs(clebsch_def)<1e-6) continue; // avoid the look up, with possible 6js...
 //        if ((a==0 and b==0 and c==3 and d==2 and e==5 and f==2) or (d==0 and e==0 and f==3 and a==2 and b==5 and c==2)) 
-        if ((a==0 and b==0 and c==3 and d==2 and e==2 and f==5) ) 
+        if ((a==0 and b==0 and c==3 and d==2 and e==2 and f==5 and Jde==1) ) 
         {
+        std::cout << "m vals: " << ma << " " << mb << " " << mc << "  " << md << " " << me << " " << mf << std::endl;
         std::cout << "        Jab Jde twoJ " << Jab << " " << Jde << " " << twoJ
                   << " clebsch: " << clebsch_ab << " " << clebsch_de << " " << clebsch_abc << " " << clebsch_def
                   << "   matel_J " << Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f) << std::endl;
