@@ -344,6 +344,14 @@ PYBIND11_MODULE(pyIMSRG, m)
    ;
 
 
+  py::class_<SymmMatrix<double>>(m,"SymmMatrix")
+     .def(py::init<size_t>())
+     .def(py::init<size_t,int>())
+     .def("Access",&SymmMatrix<double>::Access)
+     .def("Put",&SymmMatrix<double>::Put)
+     .def("FullMatrix",&SymmMatrix<double>::FullMatrix)
+  ;
+
 
    m.def("TCM_Op",           imsrg_util::TCM_Op);
    m.def("Trel_Op",           imsrg_util::Trel_Op);

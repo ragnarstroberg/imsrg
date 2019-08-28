@@ -42,6 +42,8 @@ const int ThreeBodyME::CBA = 5;
 /// If we have good isospin, this means we're ok up to emax=43.
 // In the future, if this isn't sufficient, we could change
 // the key type to a bitset<128>, which would allow up to emax=1446.
+// I'm guessing I chose the weird ordering because the matrix elements are stored
+// such that a>=b>=c  and d>=e>=f, but I don't immediately see why there should be a benefit from this.
 size_t ThreeBodyME::KeyHash(size_t a,size_t b,size_t c,size_t d,size_t e,size_t f) const
 {
  return (   (a/2)
@@ -52,6 +54,19 @@ size_t ThreeBodyME::KeyHash(size_t a,size_t b,size_t c,size_t d,size_t e,size_t 
          + ((f/2) << 50) );
 
 }
+
+void ThreeBodyME::KeyUnhash(size_t& key, size_t& a, size_t& b, size_t& c, size_t& d, size_t& e, size_t& f) const
+{
+  size_t Lowest_10_bits = 0x3FF;
+  a = 2* ((key >>  0) & Lowest_10_bits);
+  d = 2* ((key >> 10) & Lowest_10_bits);
+  b = 2* ((key >> 20) & Lowest_10_bits);
+  e = 2* ((key >> 30) & Lowest_10_bits);
+  c = 2* ((key >> 40) & Lowest_10_bits);
+  f = 2* ((key >> 50) & Lowest_10_bits);
+
+}
+
 
 
  ThreeBodyME& ThreeBodyME::operator*=(const double rhs)
@@ -184,6 +199,7 @@ void ThreeBodyME::Allocate()
 ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b, int c, int d, int e, int f) const
 {
 
+//   std::cout << "ENTER " << __func__ << std::endl;
    if (a==b and a==c and modelspace->GetOrbit(a).j2<3) return 0;
    if (d==e and d==f and modelspace->GetOrbit(d).j2<3) return 0;
    if (a==b and Jab_in%2>0) return 0;
@@ -194,6 +210,9 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
    double tzd = modelspace->GetOrbit(d).tz2*0.5;
    double tze = modelspace->GetOrbit(e).tz2*0.5;
    double tzf = modelspace->GetOrbit(f).tz2*0.5;
+
+//   std::cout << "  Jab_in Jde_in J2 a b c d e f: " << Jab_in << " " << Jde_in << " " << J2 << " " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
+//   std::cout << "  tz vals: " << tza << " " << tzb << " " << tzc << " " << tzd << " " << tze << " " << tzf << std::endl;
 
    double Vpn=0;
    int Tmin = std::max( std::abs(tza+tzb+tzc), std::abs(tzd+tze+tzf) )*2;
@@ -211,6 +230,8 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
            double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, T/2., tzd+tze+tzf);
            if (CG3*CG4==0) continue;
            Vpn += CG1*CG2*CG3*CG4*GetME(Jab_in,Jde_in,J2,tab,tde,T,a,b,c,d,e,f);
+//           std::cout << "   tab,tde,T: " << tab << " " << tde << " " << T << "  clebsch: " << CG1 << " " << CG2 << " " << CG3 << " " << CG4
+//                     << "  Vpn = " << Vpn << std::endl;
 
          }
       }
@@ -231,10 +252,16 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
 //*******************************************************************
 ThreeBME_type ThreeBodyME::GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in) const
 {
+//   std::cout << "     ENTER " << __func__ << std::endl;
+//   std::cout << "       Jab_in Jde_in J2 tab_in tde_in T2 a b c d e f: " << Jab_in << " " << Jde_in << " " << J2
+//             << "  " << tab_in << " " << tde_in << " " << T2
+//             << "  " << a_in << " " << b_in << " " << c_in << " " << d_in << " " << e_in << " " << f_in << std::endl;
+   if ((a_in/2==b_in/2) and (Jab_in+tab_in)%2==0) return 0; // Make sure this is ok
+   if ((d_in/2==e_in/2) and (Jde_in+tde_in)%2==0) return 0; // Make sure this is ok
    auto elements =  AccessME(Jab_in,Jde_in,J2,tab_in,tde_in,T2,a_in,b_in,c_in,d_in,e_in,f_in);
    double me = 0;
    for (auto elem : elements) me += MatEl.at(elem.first) * elem.second;
-//   for (auto elem : elements) std::cout << "  first: " << MatEl.at(elem.first) << "   second: " << elem.second << std::endl;
+//   for (auto elem : elements) std::cout << "       first: " << MatEl.at(elem.first) << "   second: " << elem.second << std::endl;
    return me;
 }
 
@@ -369,15 +396,21 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
        {
          for (int tab=tab_min; tab<=tab_max; ++tab)
          {
-//           if (a==b and (tab+Jab)%2==0 ) continue; // added recently. test.
+           if (a==b and (tab+Jab)%2==0 ) continue; // added recently. test.
            double Ct_abc = RecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
            for (int tde=tde_min; tde<=tde_max; ++tde)
            {
-//             if (d==e and (tde+Jde)%2==0 ) continue; // added recently. test.
+             if (d==e and (tde+Jde)%2==0 ) continue; // added recently. test.
              double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
              if (std::abs(Ct_abc*Ct_def)<1e-8) continue;
 
              int Tindex = 2*tab + tde + (T2-1)/2;
+
+//             std::cout << "            " << __func__ << " adding Jab,Jde,J2 = " << Jab << " " << Jde << " " << J2
+//                       << "  tab,tde,T2 " << tab << " " << tde << " " << T2 << "  recoupling case " << abc_recoupling_case << " " << def_recoupling_case
+//                        << "  with coeffs "
+//                       << Cj_abc << " " << Cj_def << " " << Ct_abc << " " << Ct_def << " , herm " << herm_flip << std::endl;
+//  std::cout << "      indx ,J_index, Tindex  " << indx << " " << J_index << " " << Tindex  << "-> " << indx + J_index + Tindex << std::endl;
 
              elements.emplace_back( std::make_pair(indx + J_index + Tindex, Cj_abc * Cj_def * Ct_abc * Ct_def * herm_flip )) ;
            }

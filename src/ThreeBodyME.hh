@@ -65,6 +65,7 @@ class ThreeBodyME
   ThreeBodyME& operator-=(const ThreeBodyME&);
 
   size_t KeyHash(size_t,size_t,size_t,size_t,size_t,size_t) const;
+  void KeyUnhash(size_t& key, size_t& a, size_t& b, size_t& c, size_t& d, size_t& e, size_t& f) const;
   void Allocate();
 
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};

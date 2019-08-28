@@ -66,7 +66,12 @@ Ket3::Ket3()
 {}
 
 Ket3::Ket3(Orbit& op_in, Orbit& oq_in, Orbit& oR_in)
-: op(&op_in), oq(&oq_in), oR(&oR_in), p(op_in.index), q(oq_in.index), r(oR_in.index)
+: op(&op_in), oq(&oq_in), oR(&oR_in), p(op_in.index), q(oq_in.index), r(oR_in.index), Jpq(0)
+{
+}
+
+Ket3::Ket3(Orbit& op_in, Orbit& oq_in, Orbit& oR_in, int jpq)
+: op(&op_in), oq(&oq_in), oR(&oR_in), p(op_in.index), q(oq_in.index), r(oR_in.index), Jpq(jpq)
 {
 }
 

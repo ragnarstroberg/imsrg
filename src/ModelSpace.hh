@@ -98,9 +98,11 @@ struct Ket3 // | p q r >
 {
   Ket3();
   Ket3(Orbit& op, Orbit& oq, Orbit& oR);
+  Ket3(Orbit& op, Orbit& oq, Orbit& oR,int Jpq);
   size_t p;
   size_t q;
   size_t r;
+  int Jpq;
   Orbit* op;
   Orbit* oq;
   Orbit* oR; // unfortunate that this convention collides with the "or" keyword.
