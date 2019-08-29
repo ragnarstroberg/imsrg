@@ -15,239 +15,65 @@ double ModelSpace::OCC_CUT = 1e-6;
 
 //using namespace std;
 
-Orbit::~Orbit()
-{
-//  std::cout << "In Orbit destructor" << std::endl;
-}
+//Orbit::~Orbit()
+//{
+////  std::cout << "In Orbit destructor" << std::endl;
+//}
 
-Orbit::Orbit()
-: n(-1), l(-1), j2(-1), tz2(-1),occ(-1),cvq(-1),index(-1)
-//: n(-1), l(-1), j2(-1), tz2(-1),ph(-1),io(-1),index(-1)
-{}
+//Orbit::Orbit()
+//: n(-1), l(-1), j2(-1), tz2(-1),occ(-1),cvq(-1),index(-1)
+////: n(-1), l(-1), j2(-1), tz2(-1),ph(-1),io(-1),index(-1)
+//{}
 
-Orbit::Orbit(int n, int l, int j2, int tz2, double occ, int cvq, int index)
-: n(n), l(l), j2(j2), tz2(tz2),occ(occ),cvq(cvq),index(index)
-//: n(n), l(l), j2(j2), tz2(tz2),ph(ph),io(io),index(index)
-{}
+//Orbit::Orbit(int n, int l, int j2, int tz2, double occ, int cvq, int index)
+//: n(n), l(l), j2(j2), tz2(tz2),occ(occ),cvq(cvq),index(index)
+////: n(n), l(l), j2(j2), tz2(tz2),ph(ph),io(io),index(index)
+//{}
 
-Orbit::Orbit(const Orbit& orb)
-: n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),occ(orb.occ),cvq(orb.cvq),index(orb.index)
-//: n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),ph(orb.ph),io(orb.io),index(orb.index)
-{}
+//Orbit::Orbit(const Orbit& orb)
+//: n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),occ(orb.occ),cvq(orb.cvq),index(orb.index)
+////: n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),ph(orb.ph),io(orb.io),index(orb.index)
+//{}
 
 
 //************************************************************************
 //************************************************************************
 //************************************************************************
-Ket::~Ket()
-{
-//  std::cout << "In Ket destructor" << std::endl;
-}
 
-Ket::Ket()
-{}
+//Ket::Ket()
+//{}
 
-Ket::Ket(Orbit& op_in, Orbit& oq_in)
-: op(&op_in), oq(&oq_in), p(op_in.index), q(oq_in.index)
-{
-   phase_prefactor = ((op->j2+oq->j2)/2 + 1) % 2==0 ? 1 : -1;
-   dpq = p==q ? 1 : 0;
-}
+//Ket::Ket(Orbit& op_in, Orbit& oq_in)
+//: op(&op_in), oq(&oq_in), p(op_in.index), q(oq_in.index)
+//{
+//   phase_prefactor = ((op->j2+oq->j2)/2 + 1) % 2==0 ? 1 : -1;
+//   dpq = p==q ? 1 : 0;
+//}
 
-int Ket::Phase(int J)
-{
-   return phase_prefactor * (J%2==0 ? 1 : -1);
-}
+//int Ket::Phase(int J)
+//{
+//   return phase_prefactor * (J%2==0 ? 1 : -1);
+//}
 
 //************************************************************************
 //************************************************************************
 //************************************************************************
-Ket3::Ket3()
-{}
+//Ket3::Ket3()
+//{}
 
-Ket3::Ket3(Orbit& op_in, Orbit& oq_in, Orbit& oR_in)
-: op(&op_in), oq(&oq_in), oR(&oR_in), p(op_in.index), q(oq_in.index), r(oR_in.index), Jpq(0)
-{
-}
+//Ket3::Ket3(Orbit& op_in, Orbit& oq_in, Orbit& oR_in)
+//: op(&op_in), oq(&oq_in), oR(&oR_in), p(op_in.index), q(oq_in.index), r(oR_in.index), Jpq(0)
+//{
+//}
 
-Ket3::Ket3(Orbit& op_in, Orbit& oq_in, Orbit& oR_in, int jpq)
-: op(&op_in), oq(&oq_in), oR(&oR_in), p(op_in.index), q(oq_in.index), r(oR_in.index), Jpq(jpq)
-{
-}
-
-//************************************************************************
-//************************************************************************
-//************************************************************************
-
-TwoBodyChannel::~TwoBodyChannel()
-{
-//  std::cout << "In TwoBodyChannel destructor" << std::endl;
-}
-
-TwoBodyChannel::TwoBodyChannel()
-{}
-
-TwoBodyChannel::TwoBodyChannel(int j, int p, int t, ModelSpace *ms)
-{
-  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
-}
-
-TwoBodyChannel::TwoBodyChannel(int ch, ModelSpace *ms)
-{
-   Initialize(ch,ms);
-}
-
-void TwoBodyChannel::Initialize(int ch, ModelSpace *ms)
-{
-   modelspace = ms;
-   modelspace->UnpackTwoBodyChannelIndex(ch,  J,parity,Tz);
-   int tbjmax = modelspace->TwoBodyJmax;
-
-   NumberKets = 0;
-   int nk = modelspace->GetNumberKets();
-   KetMap.resize(nk,-1); // set all values to -1
-   for (int i=0;i<nk;i++)
-   {
-      Ket &ket = modelspace->GetKet(i);
-//      std::cout << "ch = " << ch << "   checking ket " << i << " -> " << ket.p << " , " << ket.q << std::endl;
-      if ( CheckChannel_ket(ket) )
-      {
-//         std::cout << "       yes " << std::endl;
-         KetMap[i] = NumberKets;
-         KetList.push_back(i);
-         NumberKets++;
-      }
-   }
-   KetIndex_pp = GetKetIndexFromList(modelspace->KetIndex_pp);
-   KetIndex_hh = GetKetIndexFromList(modelspace->KetIndex_hh);
-   KetIndex_ph = GetKetIndexFromList(modelspace->KetIndex_ph);
-   KetIndex_cc = GetKetIndexFromList(modelspace->KetIndex_cc);
-   KetIndex_vc = GetKetIndexFromList(modelspace->KetIndex_vc);
-   KetIndex_qc = GetKetIndexFromList(modelspace->KetIndex_qc);
-   KetIndex_vv = GetKetIndexFromList(modelspace->KetIndex_vv);
-   KetIndex_qv = GetKetIndexFromList(modelspace->KetIndex_qv);
-   KetIndex_qq = GetKetIndexFromList(modelspace->KetIndex_qq);
-   std::vector<double> occvec;
-   std::vector<double> unoccvec;
-   for (index_t i=0;i<modelspace->KetIndex_hh.size();++i)
-   {
-      if (CheckChannel_ket(modelspace->GetKet(modelspace->KetIndex_hh[i])))
-      {
-        occvec.push_back( modelspace->Ket_occ_hh[i]);
-        unoccvec.push_back( modelspace->Ket_unocc_hh[i]);
-      }
-   }
-   Ket_occ_hh = arma::vec(occvec);
-   Ket_unocc_hh = arma::vec(unoccvec);
-   occvec.clear();
-   unoccvec.clear();
-   for (index_t i=0;i<modelspace->KetIndex_ph.size();++i)
-   {
-      if (CheckChannel_ket(modelspace->GetKet(modelspace->KetIndex_ph[i])))
-      {
-        occvec.push_back( modelspace->Ket_occ_ph[i]);
-        unoccvec.push_back( modelspace->Ket_unocc_ph[i]);
-      }
-   }
-   Ket_occ_ph = arma::vec(occvec);
-   Ket_unocc_ph = arma::vec(unoccvec);
-}
-
-
-//int TwoBodyChannel::GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];}; 
-size_t TwoBodyChannel::GetLocalIndex(int p, int q) const
-{
- if (p<=q)
-   return KetMap[modelspace->GetKetIndex(p,q)];
- else
-   return KetMap[modelspace->GetKetIndex(q,p)] + NumberKets;
-} 
-
-// get pointer to ket using local index
-const Ket & TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
-Ket & TwoBodyChannel::GetKet(int i) { return modelspace->GetKet(KetList[i]);}; 
-
-
-//bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
-bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
-{
-   if ((op->index==oq->index) and (J%2 != 0)) return false; // Pauli principle
-   if ((op->l + oq->l)%2 != parity) return false;
-   if ((op->tz2 + oq->tz2) != 2*Tz) return false;
-   if (op->j2 + oq->j2 < 2*J)       return false;
-   if (std::abs(op->j2 - oq->j2) > 2*J)  return false;
-
-   return true;
-}
-
-const arma::uvec& TwoBodyChannel::GetKetIndex_pp() const { return KetIndex_pp;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_hh() const { return KetIndex_hh;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_ph() const { return KetIndex_ph;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_cc() const { return KetIndex_cc;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_vc() const { return KetIndex_vc;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_qc() const { return KetIndex_qc;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_vv() const { return KetIndex_vv;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_qv() const { return KetIndex_qv;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_qq() const { return KetIndex_qq;};
-
-
-
-arma::uvec TwoBodyChannel::GetKetIndexFromList(std::vector<index_t>& vec_in)
-{
-   std::vector<index_t> index_list (std::min(vec_in.size(),KetList.size()));
-   auto it = set_intersection(KetList.begin(),KetList.end(),vec_in.begin(),vec_in.end(),index_list.begin());
-   index_list.resize(it-index_list.begin());
-   for (auto& x : index_list)
-   {
-     x = KetMap[x];
-   }
-   return arma::uvec(index_list);
-}
+//Ket3::Ket3(Orbit& op_in, Orbit& oq_in, Orbit& oR_in, int jpq)
+//: op(&op_in), oq(&oq_in), oR(&oR_in), p(op_in.index), q(oq_in.index), r(oR_in.index), Jpq(jpq)
+//{
+//}
 
 //************************************************************************
 //************************************************************************
 //************************************************************************
-
-TwoBodyChannel_CC::~TwoBodyChannel_CC()
-{
-//   std::cout << "In TwoBodyChannel_CC destructor" << std::endl;
-}
-
-TwoBodyChannel_CC::TwoBodyChannel_CC()
-{}
-
-TwoBodyChannel_CC::TwoBodyChannel_CC(int j, int p, int t, ModelSpace *ms)
-{
-  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
-}
-
-TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
-{
-   Initialize(N,ms);
-}
-
-// Check if orbits pq participate in this cross-coupled two-body channel
-// Difference from regular channels:
-// no Pauli rule, <pp||nn> is allowed. But |Tz| is still conserved,
-// i.e. <pp||pn> is not allowed. So we use |Tz| rather than Tz,
-// and don't use Tz=-1.
-bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
-{
-   if ((op->l + oq->l)%2 != parity)    return false;
-   if (op->j2 + oq->j2 < 2*J)          return false;
-   if (std::abs(op->j2 - oq->j2) > 2*J)     return false;
-//   if (modelspace->single_species)
-//   {
-//     if (std::abs(op->tz2 + oq->tz2) != 2*std::abs(Tz)) return false;
-//   }
-//   else
-   if (not modelspace->single_species)
-   {
-     if (std::abs(op->tz2 + oq->tz2) != 2*Tz) return false;
-   }
-
-   return true;
-}
 
 
 //************************************************************************
@@ -281,10 +107,10 @@ std::map< std::string, std::vector<std::string> > ModelSpace::ValenceSpaces  {
 
 
 
-ModelSpace::~ModelSpace()
-{
-//  std::cout << "In ModelSpace destructor. emax = " << Emax << std::endl;
-}
+//ModelSpace::~ModelSpace()
+//{
+////  std::cout << "In ModelSpace destructor. emax = " << Emax << std::endl;
+//}
 
 ModelSpace::ModelSpace()
 :  Emax(0), E2max(0), E3max(0), Lmax(0), Lmax2(0), Lmax3(0), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), norbits(0),
@@ -642,6 +468,7 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::set<ind
 //   for ( auto orb : all_orbits ) std::cout << orb << " ";
 //   std::cout << std::endl;
    SetupKets();
+   Setup3bKets();
 }
 
 
@@ -1110,14 +937,6 @@ void ModelSpace::UnpackTwoBodyChannelIndex( size_t ch, int& j, int& p, int& tz)
 size_t ModelSpace::Index1(int n, int l, int j2, int tz2) const 
 {
   return OrbitLookup.at( Index1_hash( n,l,j2,tz2) );
-//  if ( single_species )
-//  {
-//    return ((2*n+l)*(2*n+l+3) + 1-j2 )/2 ;
-//  }
-//  else
-//  {
-//    return (2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;
-//  }
 }
 
 
@@ -1151,26 +970,16 @@ size_t ModelSpace::Index2(size_t p, size_t q) const
 
 void ModelSpace::SetupKets()
 {
-//   std::cout << "Calling SetupKets" << std::endl;
-//   nkets = norbits*(norbits+1)/2;
-//   Kets.resize(Index2(norbits-1,norbits-1)+1); 
    Kets.resize(Index2(all_orbits.size()-1,all_orbits.size()-1)+1);
-//   Kets.resize(nkets);
-//   for (int p=0;p<norbits;p++)
    for (auto p : all_orbits )
    {
-//     for (int q=p;q<norbits;q++)
      for (auto q : all_orbits )
      {
         if (q<p) continue;
         index_t index = Index2(p,q);
         Kets[index] = Ket(GetOrbit(p),GetOrbit(q));
-//        std::cout << "p,q,index = " << p << " " << q << " " << index << "   " << Kets[index].p << " " << Kets[index].q << std::endl;
      }
    }
-//   std::cout << "Done looping over p and q, the first time" << std::endl;
-//  for (index_t index=0;index<Kets.size();++index)
-//  {
     for (auto p : all_orbits)
     {
     for (auto q : all_orbits)
@@ -1180,10 +989,8 @@ void ModelSpace::SetupKets()
     Ket& ket = Kets[index];
     int Tz = (ket.op->tz2 + ket.oq->tz2)/2;
     int parity = (ket.op->l + ket.oq->l)%2;
-//    if (single_species and Tz>=0) continue;
 //   The old way this was written led to undefined behavior, depending on when the structure was expanded.
 //    MonopoleKets[Tz+1][parity][index] = MonopoleKets[Tz+1][parity].size()-1;
-//    std::cout << "index = " << index << "  p,q = " << ket.p << " " << ket.q << std::endl;
     index_t size = MonopoleKets[Tz+1][parity].size();
     MonopoleKets[Tz+1][parity][index] = size;
     double occp = ket.op->occ;
@@ -1197,7 +1004,6 @@ void ModelSpace::SetupKets()
     if (cvq_p+cvq_q==3)      KetIndex_qv.push_back(index); // 12
     if (cvq_p+cvq_q==4)      KetIndex_qq.push_back(index); // 22
     if (occp<OCC_CUT and occq<OCC_CUT) KetIndex_pp.push_back(index);
-//    if (occp>OCC_CUT or occq>OCC_CUT)
     if ( (occp>OCC_CUT) xor (occq>OCC_CUT) )
     {
        KetIndex_ph.push_back(index);
@@ -1212,7 +1018,6 @@ void ModelSpace::SetupKets()
     }
    }
    }
-//   std::cout << "done with index loop. nTwoBodyChannels = " << nTwoBodyChannels << std::endl;
 
    SortedTwoBodyChannels.resize(nTwoBodyChannels);
    SortedTwoBodyChannels_CC.resize(nTwoBodyChannels);
@@ -1223,26 +1028,111 @@ void ModelSpace::SetupKets()
       SortedTwoBodyChannels[ch] = ch;
       SortedTwoBodyChannels_CC[ch] = ch;
    }
-//   std::cout << "done with loop on nTwoBodyChannels" << std::endl;
-   // Sort the two body channels in descending order of matrix dimension and discard the size-0 ones.
    // Hopefully this can help with load balancing.
    sort(SortedTwoBodyChannels.begin(),SortedTwoBodyChannels.end(),[this](int i, int j){ return TwoBodyChannels[i].GetNumberKets() > TwoBodyChannels[j].GetNumberKets(); }  );
    sort(SortedTwoBodyChannels_CC.begin(),SortedTwoBodyChannels_CC.end(),[this](int i, int j){ return TwoBodyChannels_CC[i].GetNumberKets() > TwoBodyChannels_CC[j].GetNumberKets(); }  );
-//   std::cout << "Done with sort" << std::endl;
-//   std::cout << "First pass, NumberKets = " << std::endl;
-//   for ( auto tbc : TwoBodyChannels ) std::cout << tbc.GetNumberKets() << " ";
-//   std::cout << std::endl;
    while (  TwoBodyChannels[ SortedTwoBodyChannels.back() ].GetNumberKets() <1 ) SortedTwoBodyChannels.pop_back();
-//   std::cout << "done with first pop_back()" << std::endl;
-//   std::cout << "SortedTwoBodyChannels_CC looks like this" << std::endl;
-//   for ( auto ch_cc : SortedTwoBodyChannels_CC ) std::cout << ch_cc << "  " ;
-//   std::cout << std::endl;
-//   std::cout << "Size of TwoBodyChannels_CC = " << TwoBodyChannels_CC.size() << std::endl;
-//   std::cout << "NumberKets = " << std::endl;
-//   for ( auto tbc_cc : TwoBodyChannels_CC ) std::cout << tbc_cc.GetNumberKets() << " ";
-//   std::cout << std::endl;
    while (  TwoBodyChannels_CC[ SortedTwoBodyChannels_CC.back() ].GetNumberKets() <1 ) SortedTwoBodyChannels_CC.pop_back();
-//   std::cout << "Done with SetupKets." << std::endl;
+}
+
+
+
+/// We keep things relatively simple (?) for now.
+/// Just make a vector of all the possible 3b kets
+void ModelSpace::Setup3bKets()
+{
+//  std::cout << "IN " << __func__ << std::endl;
+  Kets3.resize(0);
+  // I'm using a set here because it only stores unique
+  // elements, so we don't need to worry about that
+  // in the loop.
+  std::set<std::array<int,3>> channels_found;
+
+  for ( auto p : all_orbits )
+  {
+    Orbit& op = GetOrbit(p);
+    for ( auto q : all_orbits )
+    {
+      if (q>p) continue;
+      Orbit& oq = GetOrbit(q);
+      int Jpq_min = std::abs(op.j2-oq.j2)/2;
+      int Jpq_max = (op.j2+oq.j2)/2;
+      for ( auto r : all_orbits )
+      {
+        if (r>q) continue;
+        Orbit& oR = GetOrbit(r);
+//        int parity = (op.l+oq.l+oR.l)%2;
+//        int twoTz = op.tz2+oq.tz2+oR.tz2;
+        for (int Jpq=Jpq_min; Jpq<=Jpq_max; Jpq++)
+        {
+          Kets3.push_back( Ket3(op,oq,oR,Jpq) );
+          Ket3IndexLookup[ Ket3IndexHash(p,q,r,Jpq)] = Kets3.size()-1; // for reverse lookup
+//          int twoJ_min = std::abs( 2*Jpq - oR.j2 );
+//          int twoJ_max = 2*Jpq + oR.j2;
+//          for (int twoJ=twoJ_min; twoJ_max; twoJ+=2) channels_found.insert({twoJ,parity,twoTz});
+        }
+        
+      }
+    }
+  }
+//  std::cout << "Done with loop over orbits. size of Kets3 = " << Kets3.size() << std::endl;
+
+  int twoJ_min=1;
+  int twoJ_max= 6*Emax + 3;
+  for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+  {
+   for (int parity=0; parity<=1; parity++)
+   {
+    for (int twoTz=-3; twoTz<=3; twoTz+=2)
+    {
+      channels_found.insert({twoJ,parity,twoTz});
+    }
+   }
+  }
+//  std::cout << "done with loop over channels found" << std::endl;
+  // Now we store all the 3-body channels
+  for ( auto JPT : channels_found )
+  {
+//    std::cout << "JPT " << JPT[0] << " " << JPT[1] << " " << JPT[2] << std::endl;
+    ThreeBodyChannels.push_back( ThreeBodyChannel( JPT[0],JPT[1],JPT[2], this )  );
+//    std::cout << "pushed it back." << std::endl;
+    ThreeBodyChannelLookup[ ThreeBodyChannelHash( JPT[0],JPT[1],JPT[2]) ] = ThreeBodyChannels.size()-1;
+//    std::cout << "3Bchan: " << ThreeBodyChannels.size() << " "  << JPT[0] << " " << JPT[1] << " " << JPT[2] << "   hash " << ThreeBodyChannelHash( JPT[0],JPT[1],JPT[2]) << std::endl;
+  }
+  nThreeBodyChannels = ThreeBodyChannels.size();
+
+  
+
+}
+
+
+// Turn p,q,r,Jpq into a single index
+// For now at least, we are storing p>=q>=r
+size_t ModelSpace::Ket3IndexHash(size_t p, size_t q, size_t r, size_t Jpq)
+{
+  size_t hash = ( p << 24 )
+              + ( q << 16 ) 
+              + ( r << 8 ) 
+              + Jpq;
+  return hash;
+}
+
+
+
+size_t ModelSpace::GetThreeBodyChannelIndex(int twoJ, int parity, int twoTz )
+{
+//  std::cout << "IN " << __func__ << std::endl;
+//  std::cout << "  with Jpt = " << twoJ << " " << parity << " " << twoTz << std::endl;
+//  std::cout << " the hash is " << ThreeBodyChannelHash( twoJ , parity, twoTz) << std::endl;
+//  std::cout << "I would have thought it was " << (  4*(twoJ-1) + twoTz+3 + parity) << std::endl;
+//  std::cout << " An that should point to " <<ThreeBodyChannelLookup.at( ThreeBodyChannelHash( twoJ, parity, twoTz)) << std::endl;
+   return ThreeBodyChannelLookup.at( ThreeBodyChannelHash( twoJ, parity, twoTz)) ;
+}
+
+size_t ModelSpace::ThreeBodyChannelHash( int twoJ, int parity, int twoTz)
+{
+  size_t hash = (4*(twoJ-1) + (twoTz+3) + parity);
+  return hash;
 }
 
 

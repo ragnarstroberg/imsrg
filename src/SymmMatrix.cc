@@ -43,17 +43,13 @@ SymmMatrix<T>::SymmMatrix( arma::mat mtx )
 
 
 
-template <typename T>
-T SymmMatrix<T>::operator()(size_t i, size_t j)
-{
-  return Access(i,j);
-}
 
 template <typename T>
-T SymmMatrix<T>::Access(size_t i, size_t j) const
+T SymmMatrix<T>::Get(size_t i, size_t j) const
 {
   if (i>=dimension or j>=dimension)
   {
+    std::cout << "i,j = " << i << " " << j << "  dimension = " << dimension << std::endl;
     throw std::domain_error( "Trouble in SymmMatrix" );
   }
   if (i>=j)
@@ -134,6 +130,97 @@ arma::Mat<T> SymmMatrix<T>::FullMatrix() const
      if (herm>0) full_mat(i,i) = matrix_data[ Index2to1(i,i) ];
    }
    return full_mat;
+}
+
+template <typename T>
+void SymmMatrix<T>::zeros()
+{
+  matrix_data.assign( matrix_data.size(), 0.);
+}
+
+template <typename T>
+double SymmMatrix<T>::Norm()
+{
+  double norm = 0;
+  for ( auto v : matrix_data ) norm += v*v;
+  return sqrt(norm);
+}
+
+
+
+template <typename T>
+T SymmMatrix<T>::operator()(size_t i, size_t j)
+{
+  return Get(i,j);
+}
+
+template <typename T>
+SymmMatrix<T>& SymmMatrix<T>::operator=( const SymmMatrix<T>& rhs)
+{
+  dimension = rhs.dimension;
+  herm = rhs.herm;
+  matrix_data = rhs.matrix_data;
+  return *this;
+}
+
+//template <typename T>
+//SymmMatrix<T>& SymmMatrix<T>::operator=( const SymmMatrix<T> rhs)
+//{
+//  dimension = rhs.dimension;
+//  herm = rhs.herm;
+//  matrix_data = rhs.matrix_data;
+//  return *this;
+//}
+
+template <typename T>
+SymmMatrix<T>& SymmMatrix<T>::operator*=( double rhs)
+{
+  for ( auto& v : matrix_data) v*= rhs;
+  return *this;
+}
+
+template <typename T>
+SymmMatrix<T> SymmMatrix<T>::operator*( double rhs)
+{
+  SymmMatrix<T> lhs (*this);
+  lhs *= rhs;
+  return lhs;
+}
+
+template <typename T>
+SymmMatrix<T>& SymmMatrix<T>::operator+=( const SymmMatrix<T>& rhs)
+{
+  for (size_t i=0;i<matrix_data.size(); i++)
+  {
+    matrix_data[i] += rhs.matrix_data[i];
+  }
+  return *this;
+}
+
+template <typename T>
+SymmMatrix<T> SymmMatrix<T>::operator+( const SymmMatrix<T>& rhs)
+{
+  SymmMatrix<T> lhs (*this);
+  lhs += rhs;
+  return lhs;
+}
+
+template <typename T>
+SymmMatrix<T>& SymmMatrix<T>::operator-=( const SymmMatrix<T>& rhs)
+{
+  for (size_t i=0;i<matrix_data.size(); i++)
+  {
+    matrix_data[i] -= rhs.matrix_data[i];
+  }
+  return *this;
+}
+
+template <typename T>
+SymmMatrix<T> SymmMatrix<T>::operator-( const SymmMatrix<T>& rhs)
+{
+  SymmMatrix<T> lhs (*this);
+  lhs -= rhs;
+  return lhs;
 }
 
 

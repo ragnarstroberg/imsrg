@@ -25,16 +25,17 @@ class SymmMatrix
   T operator()(size_t a, size_t b); // element access
   T operator()(size_t a, size_t b) const; // maybe want this?
 
-  SymmMatrix<T>& operator=( SymmMatrix<T> rhs);
-  SymmMatrix<T>& operator+=( SymmMatrix<T> rhs);
-  SymmMatrix<T> operator+( SymmMatrix<T> rhs);
-  SymmMatrix<T>& operator-=( SymmMatrix<T> rhs);
-  SymmMatrix<T> operator-( SymmMatrix<T> rhs);
+  SymmMatrix<T>& operator=( const SymmMatrix<T>& rhs);
+//  SymmMatrix<T>& operator=( const SymmMatrix<T> rhs);
+  SymmMatrix<T>& operator+=( const SymmMatrix<T>& rhs);
+  SymmMatrix<T> operator+( const SymmMatrix<T>& rhs);
+  SymmMatrix<T>& operator-=( const SymmMatrix<T>& rhs);
+  SymmMatrix<T> operator-( const SymmMatrix<T>& rhs);
   SymmMatrix<T>& operator*=( double rhs);
   SymmMatrix<T> operator*( double rhs);
 
-  size_t Size() const {return dimension;};
-  T Access(size_t a, size_t b) const;
+  size_t size() const {return dimension;};
+  T Get(size_t a, size_t b) const;
   void Put(size_t i, size_t j, T val);
 
   arma::Mat<T> FullMatrix() const;
@@ -44,6 +45,8 @@ class SymmMatrix
   bool IsSymmetric() const ;
   bool IsAntisymmetric() const;
 
+  void zeros();
+  double Norm();
 
 
   size_t Index2to1(size_t i, size_t j) const; // roll 2 indices into 1

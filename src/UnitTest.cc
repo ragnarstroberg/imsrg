@@ -48,114 +48,114 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
  // places for matrix elements that are zero by symmetry, we need
  // to actually loop through and make sure we don't give a finite value
  // to something that should be zero.
-  if ( particle_rank > 2 )
-  {
-    std::default_random_engine generator(random_seed);
-    double mean = 0;
-    double stddev = 1;
-    std::normal_distribution<double> distribution(mean,stddev);
-
-    for ( auto& iter : Rando.ThreeBody.OrbitIndexHash )
-    {
-      size_t a,b,c,d,e,f;
-      size_t key = iter.first;
-      size_t lookup_abcdef = iter.second;
-      Rando.ThreeBody.KeyUnhash(key,a,b,c,d,e,f);
-
-      size_t key_check = Rando.ThreeBody.KeyHash(a,b,c,d,e,f);
-      // while we're unit testing, we may as well make sure the hash works in both directions
-      if (key_check != key )
-      {
-       std::cout << "WARNING!!!!!!!!   key_check != key : " << key_check << " != " << key << std::endl;
-      }
-
-      Orbit& oa = Rando.modelspace->GetOrbit(a);
-      Orbit& ob = Rando.modelspace->GetOrbit(b);
-      Orbit& oc = Rando.modelspace->GetOrbit(c);
-      Orbit& od = Rando.modelspace->GetOrbit(d);
-      Orbit& oe = Rando.modelspace->GetOrbit(e);
-      Orbit& of = Rando.modelspace->GetOrbit(f);
-
-      int Jab_min = std::abs(oa.j2-ob.j2)/2;
-      int Jab_max = (oa.j2+ob.j2)/2;
-      int Jde_min = std::abs(od.j2-oe.j2)/2;
-      int Jde_max = (od.j2+oe.j2)/2;
-      int J_index=0;
-
-      for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
-      {
-       for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
-       {
-         int J2_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jde-of.j2));
-         int J2_max = std::min( 2*Jab+oc.j2, 2*Jde+of.j2);
-         for (int J2=J2_min; J2<=J2_max; J2+=2)
-         {
-//           J_index += (J2-J2_min)/2*5;
-           for (int tab=0; tab<=1; tab++)
-           {
-             for (int tde=0; tde<=1; tde++)
-             {
-               for (int twoT=1; twoT<=std::min(2*tab+1,2*tde+1); twoT+=2)
-               {
-//                 int Tindex = 2*tab + tde + (twoT-1)/2;
-                 int Tindex =   (J2-J2_min)/2*5 +  2*tab + tde + (twoT-1)/2;
-                 size_t location = lookup_abcdef + J_index + Tindex;
-
-                 if ( ( a==b and (tab+Jab)%2==0 )
-                   or ( d==e and (tde+Jde)%2==0 )
-                   or ( a==b and a==c and twoT==3 and oa.j2<3 )
-                   or ( d==e and d==f and twoT==3 and od.j2<3 ))
-                 {
-                    Rando.ThreeBody.MatEl[location] = 0.0; // zero by symmetry 
-//                    if (a==4 and b==4 and c==0 and d==4 and e==4 and f==0)
-//                    {
-//                       std::cout << "SKIPPING Jab,Jde,J2, tab,tde,twoT  " << Jab << " " << Jde << " " << J2 << "   " << tab << " " << tde << " " << twoT
-//                                 << " (location = " << location  << ")   to " << Rando.ThreeBody.MatEl[location] << std::endl;
-//                    }
-//                       std::cout << " skip.... location = " << lookup_abcdef << " + " << J_index << " + " << Tindex << " = " << location
-//                                 << " abcdef  " << a << " " << b << " " << c << " " << d << " " << e << " " << f
-//                                 << "  key is " << key   << "   element 874 is " << Rando.ThreeBody.MatEl[874] << std::endl;
-                 }
-                 else
-                 {
-                    Rando.ThreeBody.MatEl[location] = distribution(generator); // make it a random number
-                       if (a==d and b==e and c==f) // if we're storing the hermitian conjugate, make sure they're compatible
-                       {
-                         if ( Jab>Jde or ( Jab==Jde and tab>tde ) )
-                         {
-//                            std::cout << "match. location = " << location << "  abcdef = " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
-//                            std::cout << " before ... element 874 is " << Rando.ThreeBody.MatEl[874] << std::endl;
-                            double me_flip = Rando.ThreeBody.GetME(Jde, Jab, J2, tde, tab, twoT, d,e,f,a,b,c);
-                            Rando.ThreeBody.MatEl[location] = hermitian * me_flip;
-//                       std::cout << "  after ... element 874 is " << Rando.ThreeBody.MatEl[874] << std::endl;
-                         }
-                         
-                       }
-//                    if (a==4 and b==4 and c==0 and d==4 and e==4 and f==0)
-//                    {
-//                       std::cout << "SETTING Jab,Jde,J2, tab,tde,twoT  " << Jab << " " << Jde << " " << J2 << "   " << tab << " " << tde << " " << twoT
-//                                 << " (location = " << lookup_abcdef << " + " << J_index << " + " << Tindex << " = " << location  << ")   to " << Rando.ThreeBody.MatEl[location] << std::endl;
-//                    }
-//                       std::cout << " set ... element 874 is " << Rando.ThreeBody.MatEl[874] << std::endl;
-                 }
-               } //T2
-             } // tde
-           } // tab
-         } //J2
-       J_index += (J2_max-J2_min+2)/2*5;
-
-       } //Jde
-      } //Jab
-      
-    }
-
-
-//    for ( size_t i=0; i<Rando.ThreeBody.MatEl.size(); i++)
+//  if ( particle_rank > 2 )
+//  {
+//    std::default_random_engine generator(random_seed);
+//    double mean = 0;
+//    double stddev = 1;
+//    std::normal_distribution<double> distribution(mean,stddev);
+//
+//    for ( auto& iter : Rando.ThreeBody.OrbitIndexHash )
 //    {
-//      Rando.ThreeBody.MatEl[i] = distribution(generator);
+//      size_t a,b,c,d,e,f;
+//      size_t key = iter.first;
+//      size_t lookup_abcdef = iter.second;
+//      Rando.ThreeBody.KeyUnhash(key,a,b,c,d,e,f);
+//
+//      size_t key_check = Rando.ThreeBody.KeyHash(a,b,c,d,e,f);
+//      // while we're unit testing, we may as well make sure the hash works in both directions
+//      if (key_check != key )
+//      {
+//       std::cout << "WARNING!!!!!!!!   key_check != key : " << key_check << " != " << key << std::endl;
+//      }
+//
+//      Orbit& oa = Rando.modelspace->GetOrbit(a);
+//      Orbit& ob = Rando.modelspace->GetOrbit(b);
+//      Orbit& oc = Rando.modelspace->GetOrbit(c);
+//      Orbit& od = Rando.modelspace->GetOrbit(d);
+//      Orbit& oe = Rando.modelspace->GetOrbit(e);
+//      Orbit& of = Rando.modelspace->GetOrbit(f);
+//
+//      int Jab_min = std::abs(oa.j2-ob.j2)/2;
+//      int Jab_max = (oa.j2+ob.j2)/2;
+//      int Jde_min = std::abs(od.j2-oe.j2)/2;
+//      int Jde_max = (od.j2+oe.j2)/2;
+//      int J_index=0;
+//
+//      for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
+//      {
+//       for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
+//       {
+//         int J2_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jde-of.j2));
+//         int J2_max = std::min( 2*Jab+oc.j2, 2*Jde+of.j2);
+//         for (int J2=J2_min; J2<=J2_max; J2+=2)
+//         {
+////           J_index += (J2-J2_min)/2*5;
+//           for (int tab=0; tab<=1; tab++)
+//           {
+//             for (int tde=0; tde<=1; tde++)
+//             {
+//               for (int twoT=1; twoT<=std::min(2*tab+1,2*tde+1); twoT+=2)
+//               {
+////                 int Tindex = 2*tab + tde + (twoT-1)/2;
+//                 int Tindex =   (J2-J2_min)/2*5 +  2*tab + tde + (twoT-1)/2;
+//                 size_t location = lookup_abcdef + J_index + Tindex;
+//
+//                 if ( ( a==b and (tab+Jab)%2==0 )
+//                   or ( d==e and (tde+Jde)%2==0 )
+//                   or ( a==b and a==c and twoT==3 and oa.j2<3 )
+//                   or ( d==e and d==f and twoT==3 and od.j2<3 ))
+//                 {
+//                    Rando.ThreeBody.MatEl[location] = 0.0; // zero by symmetry 
+////                    if (a==4 and b==4 and c==0 and d==4 and e==4 and f==0)
+////                    {
+////                       std::cout << "SKIPPING Jab,Jde,J2, tab,tde,twoT  " << Jab << " " << Jde << " " << J2 << "   " << tab << " " << tde << " " << twoT
+////                                 << " (location = " << location  << ")   to " << Rando.ThreeBody.MatEl[location] << std::endl;
+////                    }
+////                       std::cout << " skip.... location = " << lookup_abcdef << " + " << J_index << " + " << Tindex << " = " << location
+////                                 << " abcdef  " << a << " " << b << " " << c << " " << d << " " << e << " " << f
+////                                 << "  key is " << key   << "   element 874 is " << Rando.ThreeBody.MatEl[874] << std::endl;
+//                 }
+//                 else
+//                 {
+//                    Rando.ThreeBody.MatEl[location] = distribution(generator); // make it a random number
+//                       if (a==d and b==e and c==f) // if we're storing the hermitian conjugate, make sure they're compatible
+//                       {
+//                         if ( Jab>Jde or ( Jab==Jde and tab>tde ) )
+//                         {
+////                            std::cout << "match. location = " << location << "  abcdef = " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
+////                            std::cout << " before ... element 874 is " << Rando.ThreeBody.MatEl[874] << std::endl;
+//                            double me_flip = Rando.ThreeBody.GetME(Jde, Jab, J2, tde, tab, twoT, d,e,f,a,b,c);
+//                            Rando.ThreeBody.MatEl[location] = hermitian * me_flip;
+////                       std::cout << "  after ... element 874 is " << Rando.ThreeBody.MatEl[874] << std::endl;
+//                         }
+//                         
+//                       }
+////                    if (a==4 and b==4 and c==0 and d==4 and e==4 and f==0)
+////                    {
+////                       std::cout << "SETTING Jab,Jde,J2, tab,tde,twoT  " << Jab << " " << Jde << " " << J2 << "   " << tab << " " << tde << " " << twoT
+////                                 << " (location = " << lookup_abcdef << " + " << J_index << " + " << Tindex << " = " << location  << ")   to " << Rando.ThreeBody.MatEl[location] << std::endl;
+////                    }
+////                       std::cout << " set ... element 874 is " << Rando.ThreeBody.MatEl[874] << std::endl;
+//                 }
+//               } //T2
+//             } // tde
+//           } // tab
+//         } //J2
+//       J_index += (J2_max-J2_min+2)/2*5;
+//
+//       } //Jde
+//      } //Jab
+//      
 //    }
-
-  }
+//
+//
+////    for ( size_t i=0; i<Rando.ThreeBody.MatEl.size(); i++)
+////    {
+////      Rando.ThreeBody.MatEl[i] = distribution(generator);
+////    }
+//
+//  }
 
 
   std::cout << "In  " << __func__  << "  norm of 1b : " << Rando.OneBodyNorm();

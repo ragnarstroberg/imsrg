@@ -796,7 +796,8 @@ void Operator::EraseTwoBody()
 
 void Operator::EraseThreeBody()
 {
-  ThreeBody = ThreeBodyME();
+  ThreeBody.Erase();
+//  ThreeBody = ThreeBodyME();
 }
 
 void Operator::SetHermitian()
