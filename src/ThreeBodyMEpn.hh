@@ -17,6 +17,15 @@ class ThreeBodyMEpn
   std::map< std::array<size_t,2>, SymmMatrix<ME_type>> MatEl;
 
 
+//  std::unordered_map<size_t, size_t> OrbitIndexHash; // TODO: reorganize so that we store the pn matrix elements, rather than isospin
+  int E3max;
+  int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
+  int herm; // +1 for hermitian, -1 for anti-hermitian
+  size_t total_dimension;
+
+
+
+
   void AddToME_pn_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel);
   void AddToME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
   void SetME_pn_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel);
@@ -39,11 +48,7 @@ class ThreeBodyMEpn
   int PermutationPhase( int recoupling_case ) const;
   double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int twoJ) const;
 
-  std::unordered_map<size_t, size_t> OrbitIndexHash; // TODO: reorganize so that we store the pn matrix elements, rather than isospin
-  int E3max;
-  int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
-  int herm; // +1 for hermitian, -1 for anti-hermitian
-  size_t total_dimension;
+
   const static int ABC;
   const static int BCA;
   const static int CAB;

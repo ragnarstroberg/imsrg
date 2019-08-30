@@ -102,6 +102,9 @@ struct Ket3 // | p q r >
 
   Ket3(Orbit& op_in, Orbit& oq_in, Orbit& oR_in, int jpq)
        : op(&op_in), oq(&oq_in), oR(&oR_in), p(op_in.index), q(oq_in.index), r(oR_in.index), Jpq(jpq) {};
+
+  bool operator==(Ket3& rhs) { return (p==rhs.p and q==rhs.q and r==rhs.r and Jpq==rhs.Jpq);};
+  bool operator!=(Ket3& rhs) { return not( (*this)== rhs ) ;};
 };
 
 

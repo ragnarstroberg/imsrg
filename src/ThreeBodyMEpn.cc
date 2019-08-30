@@ -5,10 +5,11 @@
 
 
 
-ThreeBodyMEpn::ThreeBodyMEpn(){}
+ThreeBodyMEpn::ThreeBodyMEpn()
+: herm(1) {}
 
 ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms)
- : modelspace(ms)
+ : modelspace(ms), herm(1)
 {}
 
 ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms, int e3max)
@@ -108,18 +109,30 @@ void ThreeBodyMEpn::AddToME_pn(  int Jab, int Jde, int twoJ, int a, int b, int c
 //  if ( Jab==1 and Jde==1 and twoJ==3 and a==5 and b==1 and c==0 and d==5 and e==1 and f==0) std::cout << "IN " << __func__ << "  adding " << me_add << std::endl;
 //  if ( Jab==1 and Jde==1 and twoJ==3 ) std::cout << "IN " << __func__ << " " << a << " " << b<< " " << c << " " << d << " " << e << " " << f << "  adding " << me_add << std::endl;
   double me_out = 0;
-  double symmetry_factor = 2;
-  if (Jab==Jde and a==d and b==e and c==f) symmetry_factor = 1;
+//  double symmetry_factor = 2;
+//  double symmetry_factor = 1;
+//  if ( ibra[0]==iket[0] ) symmetry_factor = (1 + herm);
+  double symmetry_factor = (ibra[0] == iket[0] and Jab==Jde) ? 0.5 : 1;
+//  herm = +1;
+////  if (Jab==Jde and a==d and b==e and c==f) symmetry_factor = 1;
   for ( int i=0; i<ibra.size(); i++)
   {
     for (int j=0; j<iket.size(); j++)
     {
+//     symmetry_factor = (ibra[i] == iket[j]) ? 1 + herm : 1;
+//     double symmetry_factor2 = (ibra[i] == iket[j]) ? 0.5 : 1;
+     double symmetry_factor2 =  1;
 //      if ( iket[j] > ibra[i] and std::find( ibra.begin(), ibra.end(), iket[j]) != ibra.end() ) continue;
+     if ( ibra[i] == iket[j] ) symmetry_factor2 = 2;
 //if ( Jab==1 and Jde==1 and twoJ==3 )      std::cout << " call AddToME_pn_ch ( " << ch_bra << ", " << ch_ket << ", " << ibra[i] << " " << iket[j] << std::endl;
-     std::cout << " call AddToME_pn_ch ( " << ch_bra << ", " << ch_ket << ", " << ibra[i] << " " << iket[j] << "   recouple : " << recouple_bra[i] << " " << recouple_ket[j] << std::endl;
-       AddToME_pn_ch( ch_bra, ch_ket, ibra[i], iket[j], recouple_bra[i] * recouple_ket[j] * me_add * symmetry_factor );
+     std::cout << " call AddToME_pn_ch (  ij= " << i << " " << j << "   " << ch_bra << ", " << ch_ket << ", " << ibra[i] << " " << iket[j] << "   recouple : " << recouple_bra[i] << " " << recouple_ket[j] << "  symmetry = " << symmetry_factor << " " << symmetry_factor2 << std::endl;
+       AddToME_pn_ch( ch_bra, ch_ket, ibra[i], iket[j], recouple_bra[i] * recouple_ket[j] * me_add * symmetry_factor * symmetry_factor2   );
+//       if ( iket[j] == ibra[i])
+//       AddToME_pn_ch( ch_ket, ch_bra, iket[j], ibra[i], recouple_ket[j] * recouple_bra[i] * me_add * herm );
+//       AddToME_pn_ch( ch_ket, ch_bra, iket[j], ibra[i], recouple_ket[j] * recouple_bra[i] * me_add * herm * symmetry );
     }
   }
+
 //  std::cout << "Done." << std::endl;
 }
 
@@ -341,6 +354,10 @@ size_t ThreeBodyMEpn::GetKetIndex_withRecoupling( int twoJ, int Jab_in, size_t a
   double ja = oa.j2*0.5;
   double jb = ob.j2*0.5;
   double jc = oc.j2*0.5;
+  if (recoupling_case==ABC or recoupling_case==BAC)
+  {
+    Jab_min = Jab_max = Jab_in;
+  }
 
   // Loop over possible values of Jab with the new ordering of a,b,c and
   // fill a vector of the index of where each of those |a,b,c,Jab> states lives
