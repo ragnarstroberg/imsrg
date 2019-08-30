@@ -87,7 +87,6 @@ void ThreeBodyMEpn::SetME_pn_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_
 
 void ThreeBodyMEpn::AddToME_pn(  int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, ThreeBodyMEpn::ME_type me_add )
 {
-//  std::cout << "IN " << __func__ << std::endl;
 
   std::vector<double>  recouple_bra, recouple_ket;
   std::vector<size_t>  ibra, iket;
@@ -95,9 +94,21 @@ void ThreeBodyMEpn::AddToME_pn(  int Jab, int Jde, int twoJ, int a, int b, int c
 //  std::cout << "Do the recoupling" << std::endl;
   size_t ch_bra = GetKetIndex_withRecoupling( twoJ, Jab, a,b,c, ibra, recouple_bra );
   size_t ch_ket = GetKetIndex_withRecoupling( twoJ, Jde, d,e,f, iket, recouple_ket );
+
+//  std::cout << "IN " << __func__ << "  ch: " << ch_bra << " " << ch_ket << "   abcdef " << a << " " << b << " " << c << " " << d << " "<< e << " " << f << std::endl;
   if ( ch_bra != ch_ket) return ;
   ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch_bra);
 //  std::cout << "channel " << ch_bra << " corresponds to " << Tbc.twoJ << " " << Tbc.parity << " " << Tbc.twoTz << std::endl;
+
+
+  double overlap_bra_ket_in = 0;
+  for ( int i=0; i<ibra.size(); i++)
+  {
+    for (int j=0; j<iket.size(); j++)
+    {
+      if (ibra[i] == iket[j])  overlap_bra_ket_in += recouple_bra[i] * recouple_ket[j] ;
+    }
+  }
 
 //  std::cout << "looping" << std::endl;
 //  std::cout << " just looking over ibra and iket real quck..." << std::endl;
@@ -108,11 +119,18 @@ void ThreeBodyMEpn::AddToME_pn(  int Jab, int Jde, int twoJ, int a, int b, int c
 //  std::cout << std::endl;
 //  if ( Jab==1 and Jde==1 and twoJ==3 and a==5 and b==1 and c==0 and d==5 and e==1 and f==0) std::cout << "IN " << __func__ << "  adding " << me_add << std::endl;
 //  if ( Jab==1 and Jde==1 and twoJ==3 ) std::cout << "IN " << __func__ << " " << a << " " << b<< " " << c << " " << d << " " << e << " " << f << "  adding " << me_add << std::endl;
+//  std::cout << "IN " << __func__ << " " << a << " " << b<< " " << c << " " << d << " " << e << " " << f << "  adding " << me_add << std::endl;
   double me_out = 0;
 //  double symmetry_factor = 2;
 //  double symmetry_factor = 1;
 //  if ( ibra[0]==iket[0] ) symmetry_factor = (1 + herm);
   double symmetry_factor = (ibra[0] == iket[0] and Jab==Jde) ? 0.5 : 1;
+  double normalization_denom = 1 + herm * overlap_bra_ket_in * overlap_bra_ket_in;
+//  std::cout << " normalization_denom = " << normalization_denom << std::endl;
+  if ( std::abs(normalization_denom) < 1e-8 ) return;
+  symmetry_factor = 1.0 / normalization_denom;
+
+//  std::cout << "sizes : " << ibra.size() << "  " << iket.size() << std::endl;
 //  herm = +1;
 ////  if (Jab==Jde and a==d and b==e and c==f) symmetry_factor = 1;
   for ( int i=0; i<ibra.size(); i++)
@@ -121,11 +139,11 @@ void ThreeBodyMEpn::AddToME_pn(  int Jab, int Jde, int twoJ, int a, int b, int c
     {
 //     symmetry_factor = (ibra[i] == iket[j]) ? 1 + herm : 1;
 //     double symmetry_factor2 = (ibra[i] == iket[j]) ? 0.5 : 1;
-     double symmetry_factor2 =  1;
+     double symmetry_factor2 = ( ibra[i] == iket[j]) ? 1+herm : 1;
 //      if ( iket[j] > ibra[i] and std::find( ibra.begin(), ibra.end(), iket[j]) != ibra.end() ) continue;
-     if ( ibra[i] == iket[j] ) symmetry_factor2 = 2;
+//     if ( ibra[i] == iket[j] ) symmetry_factor2 +=herm;
 //if ( Jab==1 and Jde==1 and twoJ==3 )      std::cout << " call AddToME_pn_ch ( " << ch_bra << ", " << ch_ket << ", " << ibra[i] << " " << iket[j] << std::endl;
-     std::cout << " call AddToME_pn_ch (  ij= " << i << " " << j << "   " << ch_bra << ", " << ch_ket << ", " << ibra[i] << " " << iket[j] << "   recouple : " << recouple_bra[i] << " " << recouple_ket[j] << "  symmetry = " << symmetry_factor << " " << symmetry_factor2 << std::endl;
+//     std::cout << " call AddToME_pn_ch (  ij= " << i << " " << j << "   " << ch_bra << ", " << ch_ket << ", " << ibra[i] << " " << iket[j] << "   recouple : " << recouple_bra[i] << " " << recouple_ket[j] << "  symmetry = " << symmetry_factor << " " << symmetry_factor2 << std::endl;
        AddToME_pn_ch( ch_bra, ch_ket, ibra[i], iket[j], recouple_bra[i] * recouple_ket[j] * me_add * symmetry_factor * symmetry_factor2   );
 //       if ( iket[j] == ibra[i])
 //       AddToME_pn_ch( ch_ket, ch_bra, iket[j], ibra[i], recouple_ket[j] * recouple_bra[i] * me_add * herm );
@@ -143,7 +161,7 @@ void ThreeBodyMEpn::AddToME_pn(  int Jab, int Jde, int twoJ, int a, int b, int c
 void ThreeBodyMEpn::SetME_pn(  int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f, ThreeBodyMEpn::ME_type me_set )
 {
   double me_previous = GetME_pn( Jab_in, Jde_in, twoJ, a,b,c,d,e,f);
-  std::cout << "IN " << __func__ << "  me_set = " << me_set << "  me_previous = " << me_previous << std::endl;
+//  std::cout << "IN " << __func__ << "  me_set = " << me_set << "  me_previous = " << me_previous << std::endl;
   AddToME_pn( Jab_in, Jde_in, twoJ, a,b,c,d,e,f,  me_set-me_previous );
 }
 
@@ -198,13 +216,15 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn(int Jab, int Jde, int twoJ, int a
 //
 void ThreeBodyMEpn::SetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ThreeBodyMEpn::ME_type V) 
 {
+  if (i==j and (Jab_in+tab_in)%2==0) return;
+  if (l==m and (Jde_in+tde_in)%2==0) return;
   double me_current = GetME( Jab_in, Jde_in, J2, tab_in, tde_in, twoT, i,j,k,l,m,n);
   double me_shift = V - me_current;
   AddToME(Jab_in,Jde_in,J2, tab_in,tde_in,twoT, i,j,k,l,m,n, me_shift);
 //  if (i==4 and j==0 and k==0 and l==4 and m==0 and n==0 and Jab_in==0 and Jde_in==0 and J2==1)
   {
-    std::cout << "IN " << __func__ << " and tab,tde,twoT=  " << tab_in << " " << tde_in << " " << twoT << "     V = " << V << "  me_current was " << me_current
-              << "  now Get is " <<  GetME( Jab_in, Jde_in, J2, tab_in, tde_in, twoT, i,j,k,l,m,n) << std::endl;
+//    std::cout << "IN " << __func__ << " and tab,tde,twoT=  " << tab_in << " " << tde_in << " " << twoT << "     V = " << V << "  me_current was " << me_current
+//              << "  now Get is " <<  GetME( Jab_in, Jde_in, J2, tab_in, tde_in, twoT, i,j,k,l,m,n) << std::endl;
   }
 }
 
@@ -224,6 +244,9 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
 //    std::cout << "IN " << __func__ << " and tab,tde,twoT=  " << tab_in << " " << tde_in << " " << twoT << "     V = " << V << std::endl;
 //  }
 
+  if (i==j and (Jab_in + tab_in)%2==0) return;
+  if (l==m and (Jde_in + tde_in)%2==0) return;
+
   for (int tz2i : {-1,1} )
   {
     for (int tz2j : {-1,1} )
@@ -239,6 +262,7 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
           for (int tz2m : {-1,1} )
           {
             int tz2n = tz2i + tz2j + tz2k - tz2l - tz2m;
+            if (std::abs(tz2n) != 1) continue;
             double clebsch_lm = AngMom::CG(0.5,0.5*tz2l, 0.5,0.5*tz2m, tde_in, 0.5*(tz2l+tz2m) );
             if ( std::abs(clebsch_lm)<1e-7) continue;
             double clebsch_lmn = AngMom::CG(tde_in, 0.5*(tz2l+tz2m), 0.5, 0.5*tz2n, 0.5*twoT, 0.5*(tz2l+tz2m+tz2n) );
@@ -249,6 +273,12 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
             size_t lpn = 2*(l/2) + (tz2l+1)/2;
             size_t mpn = 2*(m/2) + (tz2m+1)/2;
             size_t npn = 2*(n/2) + (tz2n+1)/2;
+            if (i==j and jpn>ipn) continue;
+            if (i==k and kpn>ipn) continue;
+            if (j==k and kpn>jpn) continue;
+            if (l==m and mpn>lpn) continue;
+            if (l==n and npn>lpn) continue;
+            if (m==n and npn>mpn) continue;
 //            if (jpn>ipn or kpn>jpn or kpn>ipn or mpn>lpn or npn>mpn or npn>lpn or lpn>ipn) continue;
 //            if (ipn==lpn and jpn==mpn and kpn==npn and Jde_in > Jab_in) continue;
 
@@ -256,10 +286,11 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
 //  if (ipn==5 and jpn==1 and kpn==0 and lpn==5 and mpn==1 and npn==0 and Jab_in==1 and Jde_in==1 and J2==3)
 //  if (i==4 and j==0 and k==0 and l==4 and m==0 and n==0 and Jab_in==0 and Jde_in==0 and J2==1)
   {
-//    std::cout << "Before callcing AddToME_pn, the matrix element is " << GetME_pn(1,1,3,5,1,0,5,1,0) << std::endl;
-    std::cout << "ijklmn_pn : " << ipn << " " << jpn << " " << kpn << " " << lpn << " " << mpn << " " << npn << std::endl;
-    std::cout << " Before calling AddToME_pn, the matrix element is " << GetME_pn(Jab_in,Jde_in,J2,ipn,jpn,kpn,lpn,mpn,npn) << std::endl;
-    std::cout << " clebsch:  " << clebsch_ij << " " << clebsch_ijk << " " << clebsch_lm << " " << clebsch_lmn << "    V = " << V << std::endl;
+//    std::cout << "Before calling AddToME_pn, the matrix element is " << GetME_pn(1,1,3,5,1,0,5,1,0) << std::endl;
+//    std::cout << "ijklmn_iso : " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
+//    std::cout << "ijklmn_pn : " << ipn << " " << jpn << " " << kpn << " " << lpn << " " << mpn << " " << npn << std::endl;
+//    std::cout << " Before calling AddToME_pn, the matrix element is " << GetME_pn(Jab_in,Jde_in,J2,ipn,jpn,kpn,lpn,mpn,npn) << std::endl;
+//    std::cout << " clebsch:  " << clebsch_ij << " " << clebsch_ijk << " " << clebsch_lm << " " << clebsch_lmn << "    V = " << V << std::endl;
   }
             AddToME_pn( Jab_in, Jde_in, J2, ipn,jpn,kpn,lpn,mpn,npn,  clebsch_ij * clebsch_ijk * clebsch_lm * clebsch_lmn * V);
 //            AddToME_pn( Jab_in, Jde_in, J2, ipn,jpn,kpn,lpn,mpn,npn,  clebsch_ij * clebsch_ijk * clebsch_lm * clebsch_lmn * me_shift);
@@ -269,7 +300,7 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
   {
 //            std::cout << " Called AddToME_pn   " << Jab_in << " " << Jde_in << " " << J2 << " " << ipn << " " << jpn << " " << kpn << " " << lpn << " " << mpn << " " << npn << "   with clebsch  "<< clebsch_ij << " " << clebsch_ijk << " " << clebsch_lm << " " << clebsch_lmn << "     V = " << V << std::endl;
 //            std::cout << "Afterwards, <510|V|510> (1,1,3) = " << GetME_pn(1,1,3,5,1,0,5,1,0) << std::endl;
-    std::cout << " Afterwards, the matrix element is " << GetME_pn(Jab_in,Jde_in,J2,ipn,jpn,kpn,lpn,mpn,npn) << std::endl;
+//    std::cout << " Afterwards, the matrix element is " << GetME_pn(Jab_in,Jde_in,J2,ipn,jpn,kpn,lpn,mpn,npn) << std::endl;
   }
           }
         }
@@ -283,8 +314,11 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
 ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n ) 
 {
 
-  ThreeBodyMEpn::ME_type mepn = 0;
+//  std::cout << std::endl << " **** IN " << __func__ << "  J,t, ijklmn " << Jab_in << " " << Jde_in << " " << J2 << "  " << tab_in << " " << tde_in << " " << twoT << "   " << i << " " << j << " " << k << " " << l << " " << m << " "<< n << std::endl;
+  ThreeBodyMEpn::ME_type me_iso = 0;
   int twoTz = twoT; // it should be independent of Tz, so we just pick one
+  if (i==j and (Jab_in+tab_in)%2==0) return 0;
+  if (l==m and (Jde_in+tde_in)%2==0) return 0;
   for (int tz2i : {-1,1} )
   {
     for (int tz2j : {-1,1} )
@@ -300,10 +334,10 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME(  int Jab_in, int Jde_in, int J2, in
         {
           for (int tz2m : {-1,1} )
           {
-            double clebsch_lm = AngMom::CG(0.5,0.5*tz2l, 0.5,0.5*tz2m, tde_in, 0.5*(tz2l+tz2m) );
-            if ( std::abs(clebsch_lm)<1e-7) continue;
             int tz2n = twoTz - tz2l - tz2m;
             if (std::abs(tz2n)!=1) continue;
+            double clebsch_lm = AngMom::CG(0.5,0.5*tz2l, 0.5,0.5*tz2m, tde_in, 0.5*(tz2l+tz2m) );
+            if ( std::abs(clebsch_lm)<1e-7) continue;
             double clebsch_lmn = AngMom::CG(tde_in, 0.5*(tz2l+tz2m), 0.5, 0.5*tz2n, 0.5*twoT, 0.5*twoTz );
             if ( std::abs(clebsch_lmn)<1e-7) continue;
             size_t ipn = 2*(i/2) + (tz2i+1)/2;
@@ -312,13 +346,16 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME(  int Jab_in, int Jde_in, int J2, in
             size_t lpn = 2*(l/2) + (tz2l+1)/2;
             size_t mpn = 2*(m/2) + (tz2m+1)/2;
             size_t npn = 2*(n/2) + (tz2n+1)/2;
-            mepn += GetME_pn( Jab_in, Jde_in, J2, ipn,jpn,kpn,lpn,mpn,npn) * clebsch_ij * clebsch_ijk * clebsch_lm * clebsch_lmn ;
+            double me_pn = GetME_pn( Jab_in, Jde_in, J2, ipn,jpn,kpn,lpn,mpn,npn);
+            me_iso += me_pn  * clebsch_ij * clebsch_ijk * clebsch_lm * clebsch_lmn ;
+//            std::cout << " ** IN " << __func__ << "   ijklmn_pn: " << ipn << " " << jpn << " " << kpn << " " << lpn << " " << mpn << " " << npn
+//                      << "   clebsch: " << clebsch_ij << " " << clebsch_ijk << " " << clebsch_lm << " " << clebsch_lmn << "  mp_pn = " << me_pn << "  me_iso = " << me_iso << std::endl;
           }
         }
       }
     }
   }
-  return mepn;
+  return me_iso;
 }
 
 
@@ -354,10 +391,10 @@ size_t ThreeBodyMEpn::GetKetIndex_withRecoupling( int twoJ, int Jab_in, size_t a
   double ja = oa.j2*0.5;
   double jb = ob.j2*0.5;
   double jc = oc.j2*0.5;
-  if (recoupling_case==ABC or recoupling_case==BAC)
-  {
-    Jab_min = Jab_max = Jab_in;
-  }
+//  if (recoupling_case==ABC or recoupling_case==BAC)
+//  {
+//    Jab_min = Jab_max = Jab_in;
+//  }
 
   // Loop over possible values of Jab with the new ordering of a,b,c and
   // fill a vector of the index of where each of those |a,b,c,Jab> states lives
