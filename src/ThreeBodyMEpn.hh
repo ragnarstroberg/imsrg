@@ -36,6 +36,7 @@ class ThreeBodyMEpn
 
   int SortOrbits(int a_in, int b_in, int c_in, int& a, int& b, int& c) const;
 
+  int PermutationPhase( int recoupling_case ) const;
   double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int twoJ) const;
 
   std::unordered_map<size_t, size_t> OrbitIndexHash; // TODO: reorganize so that we store the pn matrix elements, rather than isospin
