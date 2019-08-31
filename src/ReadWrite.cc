@@ -1556,7 +1556,7 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                       {
                         if (not autozero )
                         {
-//                            std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << std::endl;
+                            std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << std::endl;
 //                            if (a==4 and b==0 and c==0 and d==4 and e==0 and f==0)
 //                            {
 //                               std::cout << std::endl << __func__ << "  setting Jab,Jde,J " << Jab << " " <<JJab << " " << twoJC << "  tab tde T  " << tab << " " << ttab << " " << twoT << "    V = " << V << std::endl;

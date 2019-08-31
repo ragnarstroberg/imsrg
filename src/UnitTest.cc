@@ -179,7 +179,7 @@ void UnitTest::Test3BodyAntisymmetry()
 //  int a=0,b=0,c=3,d=2,e=2,f=5;
 //  int a=0,b=0,c=5,d=2,e=2,f=3;
 //  int a=4,b=4,c=0,d=4,e=4,f=0;
-  int a=5,b=0,c=0,d=0,e=0,f=5;
+  int a=5,b=0,c=0,d=5,e=0,f=0;
 //  int a=5,b=4,c=0,d=5,e=4,f=0;
 
   Orbit& oa = Y.modelspace->GetOrbit(a);
