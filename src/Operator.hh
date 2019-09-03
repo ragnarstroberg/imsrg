@@ -48,8 +48,8 @@ class Operator
   double ZeroBody; ///< The zero body piece of the operator.
   arma::mat OneBody; ///< The one body piece of the operator, stored in a single NxN armadillo matrix, where N is the number of single-particle orbits.
   TwoBodyME TwoBody; ///< The two body piece of the operator.
-//  ThreeBodyME ThreeBody; ///< The three body piece of the operator.
-  ThreeBodyMEpn ThreeBody; ///< The three body piece of the operator.
+  ThreeBodyME ThreeBody; ///< The three body piece of the operator.
+//  ThreeBodyMEpn ThreeBody; ///< The three body piece of the operator.
 
   int rank_J; ///< Spherical tensor rank of the operator
   int rank_T; ///< Isotensor rank of the operator

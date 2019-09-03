@@ -1373,7 +1373,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   std::cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << std::endl;
   Store_Darmstadt_3body( ThreeBME, nread_list, orbits_remap, Hbare, E1max, E2max, E3max);
 
-  Hbare.ThreeBody.TransformToPN();
+//  Hbare.ThreeBody.TransformToPN();
 
 }
 
