@@ -1061,10 +1061,13 @@ void ModelSpace::Setup3bKets()
       {
         if (r>q) continue;
         Orbit& oR = GetOrbit(r);
+        if ( ( 2*(op.n+oq.n+oR.n)+op.l+oq.l+oR.l) > E3max ) continue;
 //        int parity = (op.l+oq.l+oR.l)%2;
 //        int twoTz = op.tz2+oq.tz2+oR.tz2;
         for (int Jpq=Jpq_min; Jpq<=Jpq_max; Jpq++)
         {
+          if (p==q and Jpq%2>0) continue;
+          if (p==q and p==r and  std::abs(op.tz2+oq.tz2+oR.tz2)==3 and op.j2==1) continue;
           Kets3.push_back( Ket3(op,oq,oR,Jpq) );
           Ket3IndexLookup[ Ket3IndexHash(p,q,r,Jpq)] = Kets3.size()-1; // for reverse lookup
 //          int twoJ_min = std::abs( 2*Jpq - oR.j2 );
@@ -1078,7 +1081,7 @@ void ModelSpace::Setup3bKets()
 //  std::cout << "Done with loop over orbits. size of Kets3 = " << Kets3.size() << std::endl;
 
   int twoJ_min=1;
-  int twoJ_max= 6*Emax + 3;
+  int twoJ_max= 6*Emax + 1; // 2 * (3*(Emax+1/2)-1)
   for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
   {
    for (int parity=0; parity<=1; parity++)
@@ -1121,12 +1124,15 @@ size_t ModelSpace::Ket3IndexHash(size_t p, size_t q, size_t r, size_t Jpq)
 
 size_t ModelSpace::GetThreeBodyChannelIndex(int twoJ, int parity, int twoTz )
 {
+  auto iter = ThreeBodyChannelLookup.find( ThreeBodyChannelHash( twoJ, parity, twoTz));
+  if ( iter == ThreeBodyChannelLookup.end() ) return -1;
+  return iter->second;
 //  std::cout << "IN " << __func__ << std::endl;
 //  std::cout << "  with Jpt = " << twoJ << " " << parity << " " << twoTz << std::endl;
 //  std::cout << " the hash is " << ThreeBodyChannelHash( twoJ , parity, twoTz) << std::endl;
 //  std::cout << "I would have thought it was " << (  4*(twoJ-1) + twoTz+3 + parity) << std::endl;
 //  std::cout << " An that should point to " <<ThreeBodyChannelLookup.at( ThreeBodyChannelHash( twoJ, parity, twoTz)) << std::endl;
-   return ThreeBodyChannelLookup.at( ThreeBodyChannelHash( twoJ, parity, twoTz)) ;
+//   return ThreeBodyChannelLookup.at( ThreeBodyChannelHash( twoJ, parity, twoTz)) ;
 }
 
 size_t ModelSpace::ThreeBodyChannelHash( int twoJ, int parity, int twoTz)

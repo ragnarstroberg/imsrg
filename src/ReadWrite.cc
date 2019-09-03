@@ -1373,6 +1373,8 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   std::cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << std::endl;
   Store_Darmstadt_3body( ThreeBME, nread_list, orbits_remap, Hbare, E1max, E2max, E3max);
 
+  Hbare.ThreeBody.TransformToPN();
+
 }
 
 
@@ -1519,10 +1521,12 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                 if (twoJCMin>twoJCMax) continue;
                 size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*5;
 
+//                 std::array<double,5> isospin_5plet = {0,0,0,0,0};
                 for(int JTind = 0; JTind <= (twoJCMax-twoJCMin)+1; JTind++)
                 {
                  int twoJC = twoJCMin + (JTind/2)*2;
                  int twoT = 1+(JTind%2)*2;
+//                 if (twoT==1) isospin_5plet = {0,0,0,0,0};
                  for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
                  {
                   for(int ttab = 0; ttab <= 1; ttab++)
@@ -1556,12 +1560,19 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                       {
                         if (not autozero )
                         {
-                            std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << std::endl;
+//                            std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << std::endl;
 //                            if (a==4 and b==0 and c==0 and d==4 and e==0 and f==0)
 //                            {
 //                               std::cout << std::endl << __func__ << "  setting Jab,Jde,J " << Jab << " " <<JJab << " " << twoJC << "  tab tde T  " << tab << " " << ttab << " " << twoT << "    V = " << V << std::endl;
 //                            }
+                               if ( a==2 and b==4 and c==4 and d==2 and e==0 and f==0 and tab==1 and ttab==1 and twoT==3 and JJab==1 and twoJC==3)
+                               {
+//                                 std::cout << "t t T = " << tab << " " << ttab << " " << twoT << "   V = " << V << std::endl;
+                                 std::cout << "found one Jab = " << Jab << "   V = " << V << std::endl;
+                               }
                             Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
+                         //     isospin_5plet[ 2*tab+ttab+(twoT-1)/2 ] = V;
+//                              std::cout << "5plet index " << 2*tab +ttab + (twoT-1)/2 << "  with " << tab << " " << ttab << " " << twoT << std::endl;
                         }
                         else if (autozero)
                         {
@@ -1576,6 +1587,12 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
        
                   }//ttab
                  }//tab
+//                 std::cout << "Calling SetME_isospin5" << std::endl;
+//                 if (twoT==3)
+//                 {
+//                   std::cout << "---------- ReadWrite  call SetME_isospin5, Jab Jde twoJ = " << Jab << " " << JJab << " " << twoJC << " -----------" << std::endl;
+//                   Hbare.ThreeBody.SetME_isospin5(Jab,JJab,twoJC,a,b,c,d,e,f,isospin_5plet);
+//                 }
                 }//twoJ
                 nread += blocksize;
                }//JJab

@@ -57,13 +57,13 @@ size_t ThreeBodyME::KeyHash(size_t a,size_t b,size_t c,size_t d,size_t e,size_t 
 
 void ThreeBodyME::KeyUnhash(size_t& key, size_t& a, size_t& b, size_t& c, size_t& d, size_t& e, size_t& f) const
 {
-  size_t Lowest_10_bits = 0x3FF;
-  a = 2* ((key >>  0) & Lowest_10_bits);
-  d = 2* ((key >> 10) & Lowest_10_bits);
-  b = 2* ((key >> 20) & Lowest_10_bits);
-  e = 2* ((key >> 30) & Lowest_10_bits);
-  c = 2* ((key >> 40) & Lowest_10_bits);
-  f = 2* ((key >> 50) & Lowest_10_bits);
+  size_t Lowest_ten_bits = 0x3FF;
+  a = 2* ((key >>  0) & Lowest_ten_bits);
+  d = 2* ((key >> 10) & Lowest_ten_bits);
+  b = 2* ((key >> 20) & Lowest_ten_bits);
+  e = 2* ((key >> 30) & Lowest_ten_bits);
+  c = 2* ((key >> 40) & Lowest_ten_bits);
+  f = 2* ((key >> 50) & Lowest_ten_bits);
 
 }
 
@@ -396,21 +396,26 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
        {
          for (int tab=tab_min; tab<=tab_max; ++tab)
          {
-           if (a==b and (tab+Jab)%2==0 ) continue; // added recently. test.
+//           if (a==b and (tab+Jab)%2==0 ) continue; // added recently. test.  this breaks things
            double Ct_abc = RecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
            for (int tde=tde_min; tde<=tde_max; ++tde)
            {
-             if (d==e and (tde+Jde)%2==0 ) continue; // added recently. test.
+//             if (d==e and (tde+Jde)%2==0 ) continue; // added recently. test.  this breaks things
              double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
              if (std::abs(Ct_abc*Ct_def)<1e-8) continue;
 
              int Tindex = 2*tab + tde + (T2-1)/2;
 
+//             if ( a==4 and b==4 and c==2 and d==2 and e==0 and f==0 and J2==3 and T2==3)
+////             if ( a_in==4 and b_in==4 and c_in==2 and d_in==2 and e_in==0 and f_in==0 and J2==3 and T2==3)
+//             {
 //             std::cout << "            " << __func__ << " adding Jab,Jde,J2 = " << Jab << " " << Jde << " " << J2
 //                       << "  tab,tde,T2 " << tab << " " << tde << " " << T2 << "  recoupling case " << abc_recoupling_case << " " << def_recoupling_case
 //                        << "  with coeffs "
 //                       << Cj_abc << " " << Cj_def << " " << Ct_abc << " " << Ct_def << " , herm " << herm_flip << std::endl;
-//  std::cout << "      indx ,J_index, Tindex  " << indx << " " << J_index << " " << Tindex  << "-> " << indx + J_index + Tindex << std::endl;
+//              std::cout << "   the MatEl is " << MatEl.at( indx+ J_index + Tindex) << std::endl;
+////  std::cout << "      indx ,J_index, Tindex  " << indx << " " << J_index << " " << Tindex  << "-> " << indx + J_index + Tindex << std::endl;
+//             }
 
              elements.emplace_back( std::make_pair(indx + J_index + Tindex, Cj_abc * Cj_def * Ct_abc * Ct_def * herm_flip )) ;
            }
