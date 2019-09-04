@@ -1565,11 +1565,11 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
 //                            {
 //                               std::cout << std::endl << __func__ << "  setting Jab,Jde,J " << Jab << " " <<JJab << " " << twoJC << "  tab tde T  " << tab << " " << ttab << " " << twoT << "    V = " << V << std::endl;
 //                            }
-                               if ( a==2 and b==4 and c==4 and d==2 and e==0 and f==0 and tab==1 and ttab==1 and twoT==3 and JJab==1 and twoJC==3)
-                               {
-//                                 std::cout << "t t T = " << tab << " " << ttab << " " << twoT << "   V = " << V << std::endl;
-                                 std::cout << "found one Jab = " << Jab << "   V = " << V << std::endl;
-                               }
+//                               if ( a==2 and b==4 and c==4 and d==2 and e==0 and f==0 and tab==1 and ttab==1 and twoT==3 and JJab==1 and twoJC==3)
+//                               {
+////                                 std::cout << "t t T = " << tab << " " << ttab << " " << twoT << "   V = " << V << std::endl;
+//                                 std::cout << "found one Jab = " << Jab << "   V = " << V << std::endl;
+//                               }
                             Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
                          //     isospin_5plet[ 2*tab+ttab+(twoT-1)/2 ] = V;
 //                              std::cout << "5plet index " << 2*tab +ttab + (twoT-1)/2 << "  with " << tab << " " << ttab << " " << twoT << std::endl;

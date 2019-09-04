@@ -381,6 +381,7 @@ void HartreeFock::BuildMonopoleV3()
       v /= j2i+1.0;
       #pragma omp atomic write
       Vmon3[ind] = v ;
+//      std::cout << " MONOPOLE: " << a << " " << c << " " << i << " " << b << " " << d << " " << j << "  " << v << std::endl;
    }
    std::cout << "HartreeFock::BuildMonopoleV3  storing " << Vmon3.size() << " doubles for Vmon3 and "
              << Vmon3_keys.size() << " uint64's for Vmon3_keys." << std::endl;

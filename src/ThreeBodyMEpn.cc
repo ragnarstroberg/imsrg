@@ -1,5 +1,6 @@
 
 #include "ThreeBodyMEpn.hh"
+#include "IMSRGProfiler.hh"
 #include "AngMom.hh"
 #include <set>
 #include <tuple>
@@ -114,6 +115,7 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
 /// be more convenient to call.
 ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket) const
 {
+//  IMSRGProfiler::counter[__func__] ++;
 //  std::cout << "IN " << __func__ << std::endl;
 //  std::cout << "ch_bra ,ch_ket " << ch_bra << " " << ch_ket << std::endl;
 //  std::cout << std::endl << MatEl.at({ch_bra,ch_ket}).FullMatrix() <<std::endl << std::endl;
@@ -287,6 +289,7 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN(int Jab, int Jde, int twoJ, in
   if ( ch_bra != ch_ket) return 0;
 
 //  std::cout << "Start loop" << std::endl;
+//  std::cout << "size of bra,ket lists: " << ibra.size() << " " << iket.size() << std::endl;
 
   double me_out = 0;
   for ( int i=0; i<ibra.size(); i++)
@@ -481,130 +484,43 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_PN(  int Jab_in, int Jde_in, int J2,
 
 
 
-/*
-void ThreeBodyMEpn::SetME_isospin5(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, std::array<double,5>& isospin_5plet)
-{
-   // The 5plet stores (t,t,T) = (0,0,1), (0,1,1), (1,0,1), (1,1,1), (1,1,3)
-  std::array<double,5> tab = {0,0,1,1,1};
-  std::array<double,5> tde = {0,1,0,1,1};
-  std::array<double,5> twoT  = {1,1,1,1,3};
-
-//  std::cout << "ENTER" << __func__ <<  " with " << Jab_in << " " << Jde_in << " " << J2 << " " << i << " " << j << " " << k << " " << l << " " << m << " " << n << " ";
-//  for (int i=0;i<5;i++) std::cout << " " << isospin_5plet[i];
-//  std::cout  << std::endl;
- 
-  for (int tz2i : {-1,1} )
-  {
-   for (int tz2j : {-1,1} )
-   {
-    int tzab = (tz2i+tz2j)/2;
-    for (int tz2k : {-1,1} )
-    {
-     int twoTz = tz2i + tz2j + tz2k;
-     for (int tz2l : {-1,1} )
-     {
-      for (int tz2m : {-1,1} )
-      {
-       int tzde = (tz2l+tz2m)/2;
-       for (int tz2n : {-1,1} )
-       {
-          if ( (tz2l+tz2m+tz2n) != twoTz ) continue;
-            size_t ipn = 2*(i/2) + (tz2i+1)/2;
-            size_t jpn = 2*(j/2) + (tz2j+1)/2;
-            size_t kpn = 2*(k/2) + (tz2k+1)/2;
-            size_t lpn = 2*(l/2) + (tz2l+1)/2;
-            size_t mpn = 2*(m/2) + (tz2m+1)/2;
-            size_t npn = 2*(n/2) + (tz2n+1)/2;
-            double me_pn = 0;
-            for (size_t index=0; index<5; index++)
-            {
-              if (std::abs(isospin_5plet[index])<1e-8) continue;
-              if (std::abs(twoTz)>twoT[index]) continue;
-              if (std::abs(tzab)>tab[index]) continue;
-              if (std::abs(tzde)>tde[index]) continue;
-//              std::cout << "( " << 0.5 << " " << 0.5*tz2i << " " << 0.5 << " " << 0.5*tz2j << " "<< tab[index] << " " << tzab << std::endl;
-//              std::cout << "( " << 0.5 << " " << 0.5*tz2l << " " << 0.5 << " " << 0.5*tz2m << " "<< tde[index] << " " << tzde << std::endl;
-//              std::cout << "( " << tzab << " " << tab[index] << " " << 0.5 << " " << 0.5*tz2k << " "<< twoT[index] << " " << 0.5*twoTz << std::endl;
-//              std::cout << "( " << tzde << " " << tde[index] << " " << 0.5 << " " << 0.5*tz2n << " "<< twoT[index] << " " << 0.5*twoTz << std::endl;
-              me_pn += AngMom::CG( 0.5,0.5*tz2i, 0.5,0.5*tz2j,  tab[index], tzab) * 
-                       AngMom::CG( 0.5,0.5*tz2l, 0.5,0.5*tz2m,  tde[index], 0.5*(tz2l+tz2m)) *
-                       AngMom::CG( tab[index],tzab,  0.5,0.5*tz2k, 0.5*twoT[index], 0.5*twoTz) *
-                       AngMom::CG( tde[index],tzde,  0.5,0.5*tz2n, 0.5*twoT[index], 0.5*twoTz) * isospin_5plet[index] ;
-
-            if (i==2 and j==2 and k==2 and l==2 and m==0 and n==0 and J2==3)
-            {
-            std::cout << "   adding " <<  Jab_in << " " << Jde_in << " " << J2 << "   " << ipn << " " << jpn << " " << kpn << " " << lpn << " " << mpn << " " << npn
-                      << "  =  " <<  AngMom::CG( 0.5,0.5*tz2i, 0.5,0.5*tz2j,  tab[index], tzab)
-                      << " * " << AngMom::CG( 0.5,0.5*tz2l, 0.5,0.5*tz2m,  tde[index], 0.5*(tz2l+tz2m))
-                      << " * " << AngMom::CG( tab[index],tzab,  0.5,0.5*tz2k, 0.5*twoT[index], 0.5*twoTz)
-                      << " * " << AngMom::CG( tde[index],tzde,  0.5,0.5*tz2n, 0.5*twoT[index], 0.5*twoTz)
-                      << "   *   " << isospin_5plet[index]
-                      <<  "   =>  " << me_pn << std::endl;
-            }
-
-
-            }
-
-            SetME_pn( Jab_in, Jde_in, J2, ipn,jpn,kpn,lpn,mpn,npn, me_pn);
-
-            if (i==2 and j==2 and k==2 and l==2 and m==0 and n==0 and J2==3)
-            {
-              std::cout << "   setting " <<  Jab_in << " " << Jde_in << " " << J2 << "   " << ipn << " " << jpn << " " << kpn << " " << lpn << " " << mpn << " " << npn
-                        <<  "   =  " << me_pn << std::endl;
-              std::cout << " Target ME: " << GetME_pn( 0,1,3,  3,2,2, 2,1,0) << std::endl;
-            }
-
-       }
-      }
-     }
-    }
-   }
-  }
-
-}
-
-*/
-
-
 
 void ThreeBodyMEpn::TransformToPN()
 {
   std::cout << " " << __func__ << "   changing storage from isospin to proton/neutron" << std::endl;
   Allocate_PN();
-  for ( auto& iter : MatEl )
+
+  std::vector< std::array<size_t,2>> channel_vec;
+  for ( auto& iter : MatEl ) channel_vec.push_back(iter.first);
+  size_t nch = channel_vec.size();
+  
+//  for ( auto& iter : MatEl )
+  #pragma omp parallel for schedule(dynamic,1)
+  for (size_t ich=0; ich<nch; ich++)
   {
-    size_t ch_bra = iter.first[0];
-    size_t ch_ket = iter.first[1]; // ch_bra and ch_ket are presumably the same...
-//    std::cout << "ch_bra " << ch_bra << std::endl;
+    size_t ch_bra = channel_vec[ich][0];
+    size_t ch_ket = channel_vec[ich][1];
+//    size_t ch_bra = iter.first[0];
+//    size_t ch_ket = iter.first[1]; // ch_bra and ch_ket are presumably the same...
 
     ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch_bra);
-//    std::cout << "This channel has " << Tbc.twoJ << " " << Tbc.parity << " " << Tbc.twoTz << std::endl;
     int twoJ = Tbc.twoJ;
     size_t nkets = Tbc.GetNumber3bKets();
     for (size_t ibra=0; ibra<nkets; ibra++)
     {
-//      std::cout << " ibra " << ibra << std::endl;
       Ket3& bra = Tbc.GetKet(ibra);
       for (size_t iket=0; iket<=ibra; iket++)
       {
-//        std::cout << "  iket " << iket << std::endl;
         Ket3& ket = Tbc.GetKet(iket);
-//        std::cout << "   calling GetME_pn  " << twoJ << " " << bra.Jpq << " " << ket.Jpq << " " << bra.p << " " << bra.q << " " << bra.r
-//                  << " " << ket.p << " " << ket.q << " " << ket.r << std::endl;
         double me_pn = isospin3BME.GetME_pn( bra.Jpq, ket.Jpq,twoJ,  bra.p, bra.q, bra.r, ket.p, ket.q, ket.r );
-//        std::cout << "   read out me_pn = " << me_pn << std::endl;
         SetME_pn_PN_ch( ch_bra, ch_ket, ibra, iket, me_pn);
-//        std::cout << "    done setting. set value is " << GetME_pn_PN( bra.Jpq, ket.Jpq, twoJ, bra.p, bra.q, bra.r, ket.p, ket.q, ket.r) << std::endl;
       }
     }
-//    std::cout << std::endl;
-//    Print( ch_bra, ch_ket);
   }
   // hopefully free up memory?
   std::vector<ThreeBME_type>().swap( isospin3BME.MatEl );
   std::unordered_map<size_t, size_t>().swap( isospin3BME.OrbitIndexHash );
   PN_mode = true;
-//  std::cout << "Done" << std::endl;
 }
 
 
@@ -640,10 +556,14 @@ size_t ThreeBodyMEpn::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a
 
   if (  ( a_in==b_in and (Jab_in%2)>0 ) 
 //     or ( a_in==b_in and a_in==c_in and oa.j2<3)
-     or ( a_in==b_in and (Jab_in>oa.j2-1) )
+     or ( a_in==b_in and (Jab_in > (modelspace->GetOrbit(a_in).j2-1)) )
      or ( a_in==b_in and a_in==c_in and ( twoJ > (3*oa.j2-3)) )
      or ( twoJ==(oa.j2+ob.j2+oc.j2) and (a==b or b==c) ) )
   {
+//    std::cout << "Setting Jab_max to Jab_min-1 because  "
+//              << ( a_in==b_in and (Jab_in%2)>0 ) << " " << ( a_in==b_in and (Jab_in>oa.j2-1) ) << " "
+//              << ( a_in==b_in and a_in==c_in and ( twoJ > (3*oa.j2-3))) << " " << ( twoJ==(oa.j2+ob.j2+oc.j2) and (a==b or b==c) )
+//              << "   Jab_in = " << Jab_in << " 2*ja =" << oa.j2 <<   std::endl;
     Jab_max = Jab_min-1;
   }
 

@@ -1,4 +1,5 @@
 #include "ThreeBodyME.hh"
+#include "IMSRGProfiler.hh"
 #include "AngMom.hh"
 
 
@@ -200,6 +201,7 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
 {
 
 //   std::cout << "ENTER " << __func__ << std::endl;
+//  IMSRGProfiler::counter[__func__] ++;
    if (a==b and a==c and modelspace->GetOrbit(a).j2<3) return 0;
    if (d==e and d==f and modelspace->GetOrbit(d).j2<3) return 0;
    if (a==b and Jab_in%2>0) return 0;
