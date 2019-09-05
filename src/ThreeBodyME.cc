@@ -19,11 +19,11 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
 {}
 
 ThreeBodyME::ThreeBodyME(const ThreeBodyME& tbme)
-: modelspace(tbme.modelspace),E3max(tbme.E3max), emax(tbme.emax), herm(1), MatEl( tbme.MatEl ), OrbitIndexHash( tbme.OrbitIndexHash ) 
+: modelspace(tbme.modelspace),E3max(tbme.E3max), emax(tbme.emax), herm(1), MatEl( tbme.MatEl ), OrbitIndexHash( tbme.OrbitIndexHash )
 {}
 
 //ThreeBodyME::ThreeBodyME(ThreeBodyME tbme)
-//: modelspace(tbme.modelspace),E3max(tbme.E3max), emax(tbme.emax), herm(1), MatEl( tbme.MatEl ), OrbitIndexHash( tbme.OrbitIndexHash ) 
+//: modelspace(tbme.modelspace),E3max(tbme.E3max), emax(tbme.emax), herm(1), MatEl( tbme.MatEl ), OrbitIndexHash( tbme.OrbitIndexHash )
 //{}
 
 
@@ -151,7 +151,7 @@ void ThreeBodyME::Allocate()
              Orbit& of = modelspace->GetOrbit(f);
              int ef = 2*of.n+of.l;
              if ((ed+ee+ef)>E3max) break;
-             if ((oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 or of.l > lmax) 
+             if ((oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 or of.l > lmax)
              {
                continue;
              }
@@ -285,7 +285,7 @@ void ThreeBodyME::AddToME(int Jab, int Jde, int J2, int tab, int tde, int T2, in
    for (auto elem : elements)  MatEl.at(elem.first) += V * elem.second;
 }
 
-void ThreeBodyME::AddToME_pn(int Jab, int Jde, int J2, int a, int b, int c, int d, int e, int f, ThreeBME_type Vpn) 
+void ThreeBodyME::AddToME_pn(int Jab, int Jde, int J2, int a, int b, int c, int d, int e, int f, ThreeBME_type Vpn)
 {
 
    double tza = modelspace->GetOrbit(a).tz2*0.5;
@@ -396,11 +396,11 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
        {
          for (int tab=tab_min; tab<=tab_max; ++tab)
          {
-           if (a==b and (tab+Jab)%2==0 ) continue; // added recently. test.
+           //if (a==b and (tab+Jab)%2==0 ) continue; // added recently. test.
            double Ct_abc = RecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,T2);
            for (int tde=tde_min; tde<=tde_max; ++tde)
            {
-             if (d==e and (tde+Jde)%2==0 ) continue; // added recently. test.
+             //if (d==e and (tde+Jde)%2==0 ) continue; // added recently. test.
              double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
              if (std::abs(Ct_abc*Ct_def)<1e-8) continue;
 
@@ -495,7 +495,7 @@ void ThreeBodyME::Erase()
 void ThreeBodyME::Deallocate()
 {
    std::vector<ThreeBME_type>().swap(MatEl);
-   OrbitIndexHash.clear(); 
+   OrbitIndexHash.clear();
 }
 
 

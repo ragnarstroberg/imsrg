@@ -7,15 +7,15 @@
 ///     /____/_____/__+__/|||       /____/_____/|/ G /  \/  \         /____/_____/_____/|||       ///
 ///    |     |     |     ||||      |     |     |/___/   /\  /\       |     |     |     ||||       ///
 ///    |  I  |  M  |     ||/|      |  I  |  M  /   /\  /  \/  \      |  I  |  M  |     ||/|       ///
-///    |_____|_____|_____|/||      |_____|____/ + /  \/   /\  /      |_____|_____|_____|/||       ///        
+///    |_____|_____|_____|/||      |_____|____/ + /  \/   /\  /      |_____|_____|_____|/||       ///
 ///    |     |     |     ||||      |     |   /___/   /\  /  \/       |     |     |     ||||       ///
 ///    |  S  |  R  |     ||/|      |  S  |   \   \  /  \/   /        |  S  |  R  |  G  ||/|       ///
 ///    |_____|_____|_____|/||      |_____|____\ __\/   /\  /         |_____|_____|_____|/||       ///
 ///    |     |     |     ||||      |     |     \   \  /  \/          |     |     |     ||||       ///
 ///    |     |  +  |     ||/       |     |  +  |\ __\/   /           |     |  +  |  +  ||/        ///
-///    |_____|_____|_____|/        |_____|_____|/\   \  /            |_____|_____|_____|/         ///       
-///                                               \___\/                                          ///        
-///                                                                                               ///        
+///    |_____|_____|_____|/        |_____|_____|/\   \  /            |_____|_____|_____|/         ///
+///                                               \___\/                                          ///
+///                                                                                               ///
 ///           imsrg++ : Interface for performing standard IMSRG calculations.                     ///
 ///                     Usage is imsrg++  option1=value1 option2=value2 ...                       ///
 ///                     To get a list of options, type imsrg++ help                               ///
@@ -52,7 +52,7 @@
 #include <string>
 #include <omp.h>
 #include "IMSRG.hh"
-#include "Parameters.hh" 
+#include "Parameters.hh"
 #include "PhysicalConstants.hh"
 
 
@@ -115,7 +115,7 @@ int main(int argc, char** argv)
   double dsmax = parameters.d("dsmax");
   double ds_0 = parameters.d("ds_0");
   double domega = parameters.d("domega");
-  double omega_norm_max = parameters.d("omega_norm_max"); 
+  double omega_norm_max = parameters.d("omega_norm_max");
   double denominator_delta = parameters.d("denominator_delta");
   double BetaCM = parameters.d("BetaCM");
   double hwBetaCM = parameters.d("hwBetaCM");
@@ -204,10 +204,10 @@ int main(int argc, char** argv)
   modelspace.SetE3max(E3max);
   if (lmax3>0)
      modelspace.SetLmax3(lmax3);
- 
 
 
-// For both dagger operators and single particle wave functions, it's convenient to 
+
+// For both dagger operators and single particle wave functions, it's convenient to
 // just get every orbit in the valence space. So if SPWF="valence" ,  we append all valence orbits
   if ( std::find( spwf.begin(), spwf.end(), "valence" ) != spwf.end() )
   {
@@ -232,7 +232,7 @@ int main(int argc, char** argv)
   }
 
 
- 
+
 //  std::cout << "Making the Hamiltonian..." << std::endl;
   int particle_rank = input3bme=="none" ? 2 : 3;
   Operator Hbare = Operator(modelspace,0,0,0,particle_rank);
@@ -273,7 +273,7 @@ int main(int argc, char** argv)
       std::cout << "using schematic potential " << inputtbme << std::endl;
       if ( inputtbme == "Minnesota") Hbare += imsrg_util::MinnesotaPotential( modelspace );
     }
-  
+
     std::cout << "done reading 2N" << std::endl;
   }
 
@@ -307,7 +307,7 @@ int main(int argc, char** argv)
     }
   }
 
-  if ( nucleon_mass_correction == "true" or nucleon_mass_correction == "True" )  
+  if ( nucleon_mass_correction == "true" or nucleon_mass_correction == "True" )
   {  // correction to kinetic energy because M_proton != M_neutron
     Hbare += imsrg_util::Trel_Masscorrection_Op(modelspace);
   }
@@ -315,12 +315,12 @@ int main(int argc, char** argv)
   {
     Hbare += imsrg_util::KineticEnergy_RelativisticCorr(modelspace);
   }
-  
+
   if (Hbare.particle_rank >=3)
   {
     rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
     std::cout << "done reading 3N" << std::endl;
-  }  
+  }
 
 
   // Add a Lawson term. If hwBetaCM is specified, use that frequency
@@ -341,7 +341,7 @@ int main(int argc, char** argv)
   std::cout << "Solving" << std::endl;
 //  if (basis=="HF")
   hf.Solve();
-  
+
 //  Operator HNO;
   Operator& HNO = Hbare;
   if (basis == "HF" and method !="HF")
@@ -355,12 +355,12 @@ int main(int argc, char** argv)
 // This calls GetDensityMatrix(), which computes the 1b density matrix up to MBPT2
 // using the NO2B Hamiltonian in the HF basis, obtained with GetNormalOrderedH().
 // Then it calls DiagonalizeRho() which diagonalizes the density matrix, yielding the natural orbital basis.
-    hf.GetNaturalOrbitals(); 
+    hf.GetNaturalOrbitals();
     HNO = hf.GetNormalOrderedHNAT();
 
     // For now, even if we use the NAT occupations, we switch back to naive occupations after the normal ordering
     // This should be investigated in more detail.
-    if (use_NAT_occupations) 
+    if (use_NAT_occupations)
     {
       hf.FillLowestOrbits();
       std::cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
@@ -406,12 +406,12 @@ int main(int argc, char** argv)
   {
     std::cout << "Perturbative estimates of gs energy:" << std::endl;
     double EMP2 = HNO.GetMP2_Energy();
-    std::cout << "EMP2 = " << EMP2 << std::endl; 
+    std::cout << "EMP2 = " << EMP2 << std::endl;
 //    double EMP3 = HNO.GetMP3_Energy();
     std::array<double,3> Emp_3 = HNO.GetMP3_Energy();
     double EMP3 = Emp_3[0]+Emp_3[1]+Emp_3[2];
     std::cout << "E3_pp = " << Emp_3[0] << "  E3_hh = " << Emp_3[1] << " E3_ph = " << Emp_3[2] << "   EMP3 = " << EMP3 << std::endl;
-//    cout << "EMP3 = " << EMP3 << endl; 
+//    cout << "EMP3 = " << EMP3 << endl;
     std::cout << "To 3rd order, E = " << HNO.ZeroBody+EMP2+EMP3 << std::endl;
   }
 
@@ -448,7 +448,7 @@ int main(int argc, char** argv)
     std::istringstream ss(tag);
     std::string opname,qnumbers,fname;
     std::vector<int> qn(4);
-    
+
     getline(ss,opname,'^');
     getline(ss,qnumbers,'^');
     getline(ss,fname,'^');
@@ -502,8 +502,8 @@ int main(int argc, char** argv)
     Operator& Rp2 = ops[itR2p-opnames.begin()];
     int Z = modelspace.GetTargetZ();
     int A = modelspace.GetTargetMass();
-    std::cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << std::endl; 
-    std::cout << " HF charge radius = " << ( abs(Rp2.ZeroBody)<1e-6 ? 0.0 : sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) ) << std::endl; 
+    std::cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << std::endl;
+    std::cout << " HF charge radius = " << ( abs(Rp2.ZeroBody)<1e-6 ? 0.0 : sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DF) ) << std::endl;
   }
   for (index_t i=0;i<ops.size();++i)
   {
@@ -517,7 +517,7 @@ int main(int argc, char** argv)
     hf.PrintSPEandWF();
     std::cout << std::endl;
   }
-  
+
   if ( method == "HF" or method == "MP3")
   {
     HNO.PrintTimes();
@@ -552,9 +552,10 @@ int main(int argc, char** argv)
   IMSRGSolver imsrgsolver(HNO);
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetEtaCriterion(eta_criterion);
+  imsrgsolver.max_omega_written = 500;
   bool brueckner_restart = false;
   if (hunter_gatherer=="true") imsrgsolver.SetHunterGatherer( true);
-  
+
   if (method == "NSmagnus") // "No split" magnus
   {
     omega_norm_max=50000;
@@ -564,7 +565,7 @@ int main(int argc, char** argv)
   {
     if (method=="brueckner2") brueckner_restart=true;
     if (method=="brueckner1step")
-    { 
+    {
        nsteps = 1;
        core_generator = valence_generator;
     }
@@ -625,7 +626,7 @@ int main(int argc, char** argv)
   }
 
 //  HlowT = imsrgsolver.Transform(HlowT);
-//  std::cout << "After Solve, low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) << std::endl; 
+//  std::cout << "After Solve, low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) << std::endl;
 
 //  if (method == "magnus")
 //  {
@@ -681,7 +682,7 @@ int main(int argc, char** argv)
     {
       std::cout << opnames[i] << " " << std::endl;
       ops[i] = imsrgsolver.Transform(ops[i]);
-      std::cout << " (" << ops[i].ZeroBody << " ) " << std::endl; 
+      std::cout << " (" << ops[i].ZeroBody << " ) " << std::endl;
 //      rw.WriteOperatorHuman(ops[i],intfile+opnames[i]+"_step2.op");
     }
     std::cout << std::endl;
@@ -698,7 +699,7 @@ int main(int argc, char** argv)
   }
 
 
-  // If we're doing targeted/ensemble normal ordering 
+  // If we're doing targeted/ensemble normal ordering
   // we now re-normal order wrt to the core
   // and do any remaining flow.
   ModelSpace ms2(modelspace);
@@ -719,7 +720,7 @@ int main(int argc, char** argv)
       }
     }
   }
-  if ( renormal_order ) 
+  if ( renormal_order )
   {
 
     HNO = imsrgsolver.GetH_s();
@@ -800,8 +801,8 @@ int main(int argc, char** argv)
       {
          int Z = modelspace.GetTargetZ();
          int A = modelspace.GetTargetMass();
-         std::cout << " IMSRG point proton radius = " << sqrt( op.ZeroBody ) << std::endl; 
-         std::cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << std::endl; 
+         std::cout << " IMSRG point proton radius = " << sqrt( op.ZeroBody ) << std::endl;
+         std::cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + r2p + r2n*(A-Z)/Z + DF) << std::endl;
       }
       if ((op.GetJRank()>0) or (op.GetTRank()>0)) // if it's a tensor, you probably want the full operator
       {
@@ -825,7 +826,7 @@ int main(int argc, char** argv)
     std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
   }
   Hbare.PrintTimes();
- 
+
   return 0;
 }
 
