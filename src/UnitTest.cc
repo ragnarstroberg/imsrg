@@ -48,13 +48,29 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
  // places for matrix elements that are zero by symmetry, we need
  // to actually loop through and make sure we don't give a finite value
  // to something that should be zero.
-//  if ( particle_rank > 2 )
-//  {
-//    std::default_random_engine generator(random_seed);
-//    double mean = 0;
-//    double stddev = 1;
-//    std::normal_distribution<double> distribution(mean,stddev);
-//
+  if ( particle_rank > 2 )
+  {
+    Rando.ThreeBody.SwitchToPN_and_discard();
+    std::default_random_engine generator(random_seed);
+    double mean = 0;
+    double stddev = 1;
+    std::normal_distribution<double> distribution(mean,stddev);
+
+    size_t nch = modelspace.GetNumberThreeBodyChannels();
+    for (size_t ch=0; ch<nch; ch++)
+    {
+      ThreeBodyChannel& Tbc = modelspace.GetThreeBodyChannel(ch);
+      size_t nkets = Tbc.GetNumberKets();
+      for (size_t ibra=0; ibra<nkets; ibra++)
+      {
+        for (size_t iket=0; iket<=ibra; iket++)
+        {
+          double random_me = distribution(generator);
+          Rando.ThreeBody.SetME_pn_PN_ch( ch,ch, ibra,iket, random_me );
+        }
+      }
+    }
+
 //    for ( auto& iter : Rando.ThreeBody.OrbitIndexHash )
 //    {
 //      size_t a,b,c,d,e,f;
@@ -155,7 +171,7 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
 ////      Rando.ThreeBody.MatEl[i] = distribution(generator);
 ////    }
 //
-//  }
+  }
 
 
   std::cout << "In  " << __func__  << "  norm of 1b : " << Rando.OneBodyNorm();
@@ -168,11 +184,12 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
 
 
 
-void UnitTest::Test3BodyAntisymmetry()
+//void UnitTest::Test3BodyAntisymmetry()
+void UnitTest::Test3BodyAntisymmetry(Operator& Y)
 {
 
   arma::arma_rng::set_seed( random_seed );
-  Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, 1);
+//  Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, 1);
 
 
 
@@ -194,14 +211,14 @@ void UnitTest::Test3BodyAntisymmetry()
   double yJ0_cbadef = Y.ThreeBody.GetME_pn(0,0,1,c,b,a,d,e,f);
   double yJ1_cbadef = Y.ThreeBody.GetME_pn(1,0,1,c,b,a,d,e,f);
 
-  std::cout << "yJ0_abcdef = " << yJ0_abcdef << std::endl;
-  std::cout << "yJ1_abcdef = " << yJ1_abcdef << std::endl;
-  std::cout << "yJ0_cbadef = " << yJ0_cbadef << std::endl;
-  std::cout << "    should be - " << AngMom::phase(oa.j2+ob.j2+oc.j2) << " * 1 * 1 * " << AngMom::SixJ(0.5,0.5,0,0.5,0.5,0) << " * " << yJ0_abcdef
-            << " = " << -AngMom::phase(oa.j2+ob.j2+oc.j2) * AngMom::SixJ(0.5,0.5,0,0.5,0.5,0) * yJ0_abcdef << std::endl;
-  std::cout << "yJ1_cbadef = " << yJ1_cbadef << std::endl;
-  std::cout << "    should be - " << AngMom::phase(oa.j2+ob.j2+oc.j2) << " * sqrt(3) * 1 * " << AngMom::SixJ(0.5,0.5,1,0.5,0.5,0) << " * " << yJ0_abcdef
-            << " = " << -AngMom::phase(oa.j2+ob.j2+oc.j2) * sqrt(3) * AngMom::SixJ(0.5,0.5,1,0.5,0.5,0) * yJ0_abcdef << std::endl;
+//  std::cout << "yJ0_abcdef = " << yJ0_abcdef << std::endl;
+//  std::cout << "yJ1_abcdef = " << yJ1_abcdef << std::endl;
+//  std::cout << "yJ0_cbadef = " << yJ0_cbadef << std::endl;
+//  std::cout << "    should be - " << AngMom::phase(oa.j2+ob.j2+oc.j2) << " * 1 * 1 * " << AngMom::SixJ(0.5,0.5,0,0.5,0.5,0) << " * " << yJ0_abcdef
+//            << " = " << -AngMom::phase(oa.j2+ob.j2+oc.j2) * AngMom::SixJ(0.5,0.5,0,0.5,0.5,0) * yJ0_abcdef << std::endl;
+//  std::cout << "yJ1_cbadef = " << yJ1_cbadef << std::endl;
+//  std::cout << "    should be - " << AngMom::phase(oa.j2+ob.j2+oc.j2) << " * sqrt(3) * 1 * " << AngMom::SixJ(0.5,0.5,1,0.5,0.5,0) << " * " << yJ0_abcdef
+//            << " = " << -AngMom::phase(oa.j2+ob.j2+oc.j2) * sqrt(3) * AngMom::SixJ(0.5,0.5,1,0.5,0.5,0) * yJ0_abcdef << std::endl;
 
 //  return;
 
@@ -223,22 +240,22 @@ void UnitTest::Test3BodyAntisymmetry()
   std::cout << std::endl << "@abc" << std::endl;
   double yabcdef = GetMschemeMatrixElement_3b(Y, a,ma, b,mb ,c,mc, d,md, e,me, f,mf);
   if (std::abs(yabcdef)<1e-8) continue;
-//  std::cout << "@bca" << std::endl;
-//  double ybcadef = GetMschemeMatrixElement_3b(Y, b,mb, c,mc, a,ma, d,md, e,me, f,mf);
-//  std::cout << "@cab" << std::endl;
-//  double ycabdef = GetMschemeMatrixElement_3b(Y, c,mc, a,ma, b,mb, d,md, e,me, f,mf);
-//
-//  std::cout << "@acb" << std::endl;
-//  double yacbdef = GetMschemeMatrixElement_3b(Y, a,ma, c,mc, b,mb, d,md, e,me, f,mf);
-//  std::cout << "@bac" << std::endl;
-//  double ybacdef = GetMschemeMatrixElement_3b(Y, b,mb, a,ma, c,mc, d,md, e,me, f,mf);
+  std::cout << "@bca" << std::endl;
+  double ybcadef = GetMschemeMatrixElement_3b(Y, b,mb, c,mc, a,ma, d,md, e,me, f,mf);
+  std::cout << "@cab" << std::endl;
+  double ycabdef = GetMschemeMatrixElement_3b(Y, c,mc, a,ma, b,mb, d,md, e,me, f,mf);
+
+  std::cout << "@acb" << std::endl;
+  double yacbdef = GetMschemeMatrixElement_3b(Y, a,ma, c,mc, b,mb, d,md, e,me, f,mf);
+  std::cout << "@bac" << std::endl;
+  double ybacdef = GetMschemeMatrixElement_3b(Y, b,mb, a,ma, c,mc, d,md, e,me, f,mf);
   std::cout << std::endl << "@cba" << std::endl;
   double ycbadef = GetMschemeMatrixElement_3b(Y, c,mc, b,mb, a,ma, d,md, e,me, f,mf);
 
   std::cout << " @@mvals: " << ma << " " << mb << " " << mc << " " << md << " " << me << " " << mf << std::endl;
-//  std::cout << "ANTISYMMETRY:  abc: " << yabcdef << " bca: " << ybcadef << " cab: " << ycabdef
-//            << "    acb: " << yacbdef << " bac: " << ybacdef << " cba: " << ycbadef << std::endl;
-  std::cout << "ANTISYMMETRY:  abc: " << yabcdef  << " cba: " << ycbadef << std::endl;
+  std::cout << "ANTISYMMETRY:  abc: " << yabcdef << " bca: " << ybcadef << " cab: " << ycabdef
+            << "    acb: " << yacbdef << " bac: " << ybacdef << " cba: " << ycbadef << std::endl;
+//  std::cout << "ANTISYMMETRY:  abc: " << yabcdef  << " cba: " << ycbadef << std::endl;
   return;
 
   }
@@ -412,12 +429,17 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
   int Jde_min = std::max( std::abs(Mde), std::abs( od.j2-oe.j2) / 2);
   int Jde_max =  (od.j2+oe.j2 ) / 2;
 
+  if (a==b) Jab_max = std::min( Jab_max,  oa.j2-1);
+  if (d==e) Jde_max = std::min( Jde_max,  od.j2-1);
+
   for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
   {
+    if (a==b and (Jab%2)>0 ) continue;
     double clebsch_ab = AngMom::CG(0.5*oa.j2, 0.5*ma,  0.5*ob.j2, 0.5*mb,  Jab, Mab );
     if ( std::abs(clebsch_ab)<1e-6 ) continue;
     for (int Jde=Jde_min; Jde<=Jde_max; Jde++)
     {
+      if (d==e and (Jde%2)>0 ) continue;
       double clebsch_de = AngMom::CG(0.5*od.j2, 0.5*md,  0.5*oe.j2, 0.5*me,  Jde, Mde );
       if ( std::abs(clebsch_de)<1e-6 ) continue;
       int twoJ_min = std::max( {std::abs(twoM), std::abs(2*Jab-oc.j2),  std::abs(2*Jde-of.j2) } );
@@ -437,12 +459,12 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
 //        if ((a==0 and b==0 and c==3 and d==2 and e==2 and f==5 ) or  (a==0 and b==3 and c==0 and d==2 and e==2 and f==5 ) or (a==3 and b==0 and c==0 and d==2 and e==2 and f==5 )) 
 //        if ((a==0 and b==0 and c==5 and d==0 and e==0 and f==5 ) or  (a==0 and b==5 and c==0 and d==0 and e==0 and f==5 ) or (a==5 and b==0 and c==0 and d==0 and e==0 and f==5 )) 
 //        {
-//        std::cout << "$abc: " << a << " " << b << " " << c << " def: " << d << " " << e << " " << f << std::endl;
-//        std::cout << "$m vals: " << ma << " " << mb << " " << mc << "  " << md << " " << me << " " << mf << std::endl;
-//        std::cout << "        Jab Jde twoJ " << Jab << " " << Jde << " " << twoJ
-//                  << " clebsch: " << clebsch_ab << " " << clebsch_de << " " << clebsch_abc << " " << clebsch_def
-//                  << "   matel_J " << meJ 
-//                  << "  matel = " << matel << std::endl;
+        std::cout << "$abc: " << a << " " << b << " " << c << " def: " << d << " " << e << " " << f << std::endl;
+        std::cout << "$m vals: " << ma << " " << mb << " " << mc << "  " << md << " " << me << " " << mf << std::endl;
+        std::cout << "        Jab Jde twoJ " << Jab << " " << Jde << " " << twoJ
+                  << " clebsch: " << clebsch_ab << " " << clebsch_de << " " << clebsch_abc << " " << clebsch_def
+                  << "   matel_J " << meJ 
+                  << "  matel = " << matel << std::endl;
 //        }
 //        if (a==0 and b==0 and c==3 and d==2 and e==5 and f==2) std::cout << "    003252: Jab,Jde,J " << Jab << " " << Jde << " " << twoJ << "   -> " << Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f) << " -> " << matel << std::endl;
 //        if (a==0 and b==0 and c==3 and d==2 and e==2 and f==5) std::cout << "    003225: Jab,Jde,J " << Jab << " " << Jde << " " << twoJ << "   -> " << Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f) << " -> " << matel << std::endl;

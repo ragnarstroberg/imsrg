@@ -16,7 +16,11 @@ class ThreeBodyMEpn
 
  public:
   ModelSpace * modelspace;
-  std::map< std::array<size_t,2>, SymmMatrix<ME_type>> MatEl;
+  // this way of storing things is evidently too slow...
+//  std::map< std::array<size_t,2>, SymmMatrix<ME_type>> MatEl;
+  std::vector<ME_type> matrix_data;
+  std::vector<size_t> ch_start;
+  std::vector<size_t> ch_dim;
   ThreeBodyME isospin3BME; // store the matrix elements in isospin format. This makes reading in from file more straightforward
   bool PN_mode; // if pn_mode = false, then leave things stored in the isospin structure, if pn_mode=true, store the pn matrix elements.
 
@@ -69,7 +73,8 @@ class ThreeBodyMEpn
 //  void SetME_isospin5(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, std::array<double,5>& isospin_5plet) ;
 
   void TransformToPN();
-  void TransformToIsospin();
+  void SwitchToPN_and_discard();
+  void TransformToIsospin(); // not implemented yet
 
 //  size_t GetKetIndex_withRecoupling( int twoJ, int Jab, size_t a, size_t b, size_t c, std::vector<size_t>& ibra, std::vector<double>& recouple) const ;
   size_t GetKetIndex_withRecoupling( int Jab, int twoJ, size_t a, size_t b, size_t c, std::vector<size_t>& ibra, std::vector<double>& recouple) const ;

@@ -94,6 +94,7 @@ int main(int argc, char** argv)
   std::string physical_system = parameters.s("physical_system");
   std::string freeze_occupations = parameters.s("freeze_occupations");
   bool use_NAT_occupations = (parameters.s("use_NAT_occupations")=="true") ? true : false;
+  bool store_3bme_pn = (parameters.s("store_3bme_pn")=="true");
 
   int eMax = parameters.i("emax");
   int lmax = parameters.i("lmax"); // so far I only use this with atomic systems.
@@ -321,6 +322,11 @@ int main(int argc, char** argv)
     rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
     std::cout << "done reading 3N" << std::endl;
   }  
+
+  if (store_3bme_pn)
+  {
+    Hbare.ThreeBody.TransformToPN();
+  }
 
 
   // Add a Lawson term. If hwBetaCM is specified, use that frequency

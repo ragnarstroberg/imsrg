@@ -25,7 +25,8 @@ ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms, int e3max)
 
 
 ThreeBodyMEpn::ThreeBodyMEpn(const ThreeBodyMEpn& tbme)
- : modelspace(tbme.modelspace), MatEl(tbme.MatEl), isospin3BME(tbme.isospin3BME), emax(tbme.emax), E3max(tbme.E3max),
+ : modelspace(tbme.modelspace), matrix_data(tbme.matrix_data), isospin3BME(tbme.isospin3BME), emax(tbme.emax), E3max(tbme.E3max),
+// : modelspace(tbme.modelspace), MatEl(tbme.MatEl), isospin3BME(tbme.isospin3BME), emax(tbme.emax), E3max(tbme.E3max),
    herm(tbme.herm), PN_mode(tbme.PN_mode)
 {
 //  Allocate();
@@ -50,6 +51,26 @@ void ThreeBodyMEpn::Allocate_PN()
 {
   total_dimension = 0;
   size_t nch = modelspace->GetNumberThreeBodyChannels();
+//  for (auto Tbc : modelspace->ThreeBodyChannels )
+  for (size_t ch=0; ch<nch; ch++)
+  {
+    ch_start.push_back(total_dimension);
+    ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel( ch );
+    size_t nkets = Tbc.GetNumber3bKets(); // Number of kets in this 3body J,p,Tz channel
+    ch_dim.push_back( nkets );
+    total_dimension += nkets * (nkets+1)/2;
+  }
+  matrix_data.resize(total_dimension,0.0);
+  std::cout << "DONE ALLOCATING, size of matrix_data is " << matrix_data.size() << std::endl;
+}
+
+
+/*
+// This will need to be more elaborate if we want to use tensor 3-body.
+void ThreeBodyMEpn::Allocate_PN()
+{
+  total_dimension = 0;
+  size_t nch = modelspace->GetNumberThreeBodyChannels();
   for (size_t ch=0; ch<nch; ch++)
 //  for (auto Tbc : modelspace->ThreeBodyChannels )
   {
@@ -59,7 +80,7 @@ void ThreeBodyMEpn::Allocate_PN()
     total_dimension += channel_dim * (channel_dim+1)/2;
   }
 }
-
+*/
 
 
 /// interface methods. When calling these, the user shouldn't need to care whether
@@ -115,57 +136,85 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
 /// be more convenient to call.
 ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket) const
 {
-//  IMSRGProfiler::counter[__func__] ++;
-//  std::cout << "IN " << __func__ << std::endl;
-//  std::cout << "ch_bra ,ch_ket " << ch_bra << " " << ch_ket << std::endl;
-//  std::cout << std::endl << MatEl.at({ch_bra,ch_ket}).FullMatrix() <<std::endl << std::endl;
-//  return  MatEl[{ch_bra,ch_ket}].Get(ibra,iket) ;
-  auto matrix = MatEl.at({ch_bra,ch_ket});
-  size_t dim = matrix.size();
-  if (ibra>=dim or iket>=dim)
+  int h = (ibra>iket) ? 1 : herm;
+  size_t i = std::max(ibra,iket);
+  size_t j = std::min(ibra,iket);
+  if (i>ch_dim[ch_bra] or ch_bra!=ch_ket)
   {
-//    return 0;
     std::ostringstream oss;
     oss << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket;
-//    throw std::domain_error( "GetME_pn_ch, ibra or iket > dim");
     throw std::domain_error( oss.str() );
   }
-  return  matrix.Get(ibra,iket) ;
+  // ch_start points to where the matrix for this channel starts, and the rest
+  // folds two indices into one, assuming we only store the half-triangular matrix.
+  size_t index = ch_start[ch_bra] +   (2*ch_dim[ch_bra] - j - 1)*j/2 + i ;
+  if (index>=matrix_data.size())
+  {
+    std::ostringstream oss;
+    oss << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket << "  index= " << index << " > matrix_data.size() = " << matrix_data.size() ;
+    throw std::domain_error( oss.str() );
+  }
+  return matrix_data.at(index) * h;
+
 }
+
 
 // We have this here in case we want to set a matrix element, but we store it in a different
 // coupling order. In that case, we need to add to multiple matrix elements with the appropriate
 // recoupling coefficients included (see below).
 void ThreeBodyMEpn::AddToME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel)
 {
-//  std::cout << "IN " << __func__ << std::endl;
-//  if (ch_bra == 12 and ch_ket==12 and ibra==6 and iket==6)  std::cout << "IN " << __func__ << "  adding " << matel << std::endl;
-  auto& symm = MatEl.at({ch_bra,ch_ket});
-  size_t dim = symm.size();
-  if (ibra>=dim or iket>=dim)
+
+  int h = (ibra>iket) ? 1 : herm;
+  size_t i = std::max(ibra,iket);
+  size_t j = std::min(ibra,iket);
+  if (i>ch_dim[ch_bra] or ch_bra!=ch_ket)
   {
-//    return;
-    std::cout << "ibra,iket matel " << ibra << " " << iket << " " << matel << std::endl;
-    throw std::domain_error( "AddToME_pn_ch, ibra or iket > dim");
+    std::ostringstream oss;
+    oss << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket;
+    throw std::domain_error( oss.str() );
   }
-//  std::cout << "about to Get ibra,iket = " << ibra << " " << iket << "  dim = " << symm.size() << std::endl;
-  auto val = symm.Get(ibra,iket);
-  symm.Put(ibra,iket, val + matel);
+
+  size_t index = ch_start[ch_bra] +   (2*ch_dim[ch_bra] - j - 1)*j/2 + i ;
+  if (index>=matrix_data.size())
+  {
+    std::ostringstream oss;
+    oss << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket << "  index= " << index << " > matrix_data.size() = " << matrix_data.size() ;
+    throw std::domain_error( oss.str() );
+  }
+  matrix_data.at(index) += h * matel;
+//  matrix_data[index] += h * matel;
+
 }
+
 
 void ThreeBodyMEpn::SetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel)
 {
-//  std::cout << "IN " << __func__ << std::endl;
-  auto& matrix = MatEl.at({ch_bra,ch_ket});
-  size_t dim = matrix.size();
-  if ( ibra>=dim or iket>=dim)
+  int h = (ibra>iket) ? 1 : herm;
+  size_t i = std::max(ibra,iket);
+  size_t j = std::min(ibra,iket);
+  if (i>ch_dim[ch_bra] or ch_bra!=ch_ket)
   {
-//    return;
-    throw std::domain_error( "SetME_pn_ch, ibra or iket > dim");
+    std::ostringstream oss;
+    oss << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket;
+    throw std::domain_error( oss.str() );
   }
-  MatEl.at({ch_bra,ch_ket}).Put(ibra,iket, matel);
-}
+  // if ch_bra isn't ch_ket, we're hosed...
+  // ch_start points to where the matrix for this channel starts, and the rest
+  // folds two indices into one, assuming we only store the half-triangular matrix.
+  size_t index = ch_start[ch_bra] +   (2*ch_dim[ch_bra] - j - 1)*j/2 + i ;
+  if (index>=matrix_data.size())
+  {
+    std::ostringstream oss;
+    oss << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket << "  index= " << index << " > matrix_data.size() = " << matrix_data.size()
+        << "ch_start = " << ch_start[ch_bra];
+    throw std::domain_error( oss.str() );
+  }
 
+//  matrix_data[index] = matel * h;
+  matrix_data.at(index) = matel * h;
+
+}
 
 
 
@@ -181,9 +230,6 @@ void ThreeBodyMEpn::AddToME_pn_PN(  int Jab, int Jde, int twoJ, int a, int b, in
   if (a==b and Jab%2>0) return;
   if (d==e and Jde%2>0) return;
 
-//  std::cout << "Do the recoupling" << std::endl;
-//  size_t ch_bra = GetKetIndex_withRecoupling( twoJ, Jab, a,b,c, ibra, recouple_bra );
-//  size_t ch_ket = GetKetIndex_withRecoupling( twoJ, Jde, d,e,f, iket, recouple_ket );
   size_t ch_bra = GetKetIndex_withRecoupling( Jab, twoJ, a,b,c, ibra, recouple_bra );
   size_t ch_ket = GetKetIndex_withRecoupling( Jde, twoJ, d,e,f, iket, recouple_ket );
 
@@ -191,7 +237,6 @@ void ThreeBodyMEpn::AddToME_pn_PN(  int Jab, int Jde, int twoJ, int a, int b, in
 //  std::cout << "IN " << __func__ << "  ch: " << ch_bra << " " << ch_ket << "   abcdef " << a << " " << b << " " << c << " " << d << " "<< e << " " << f << "    Jab Jde twoJ = " << Jab << " " << Jde << " " << twoJ << std::endl;
   if ( ch_bra != ch_ket) return ;
   ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch_bra);
-//  std::cout << "channel " << ch_bra << " corresponds to " << Tbc.twoJ << " " << Tbc.parity << " " << Tbc.twoTz << std::endl;
 
 
   double overlap_bra_ket_in = 0;
@@ -203,25 +248,19 @@ void ThreeBodyMEpn::AddToME_pn_PN(  int Jab, int Jde, int twoJ, int a, int b, in
     }
   }
 
-//  std::cout << "looping" << std::endl;
-//  std::cout << " just looking over ibra and iket real quck..." << std::endl;
-//  std::cout << "sizes: " << ibra.size() << " " << iket.size() << std::endl;
-//  for ( auto i : ibra ) std::cout << i << " ";
-//  std::cout << std::endl;
-//  for ( auto i : iket ) std::cout << i << " ";
-//  std::cout << std::endl;
-//  if ( Jab==1 and Jde==1 and twoJ==3 and a==5 and b==1 and c==0 and d==5 and e==1 and f==0) std::cout << "IN " << __func__ << "  adding " << me_add << std::endl;
-//  if ( Jab==1 and Jde==1 and twoJ==3 ) std::cout << "IN " << __func__ << " " << a << " " << b<< " " << c << " " << d << " " << e << " " << f << "  adding " << me_add << std::endl;
+
 //  std::cout << "IN " << __func__ << " " << a << " " << b<< " " << c << " " << d << " " << e << " " << f << "  adding " << me_add << std::endl;
   double me_out = 0;
 //  double symmetry_factor = 2;
 //  double symmetry_factor = 1;
 //  if ( ibra[0]==iket[0] ) symmetry_factor = (1 + herm);
-  double symmetry_factor = (ibra[0] == iket[0] and Jab==Jde) ? 0.5 : 1;
-  double normalization_denom = 1 + herm * overlap_bra_ket_in * overlap_bra_ket_in;
+//  double symmetry_factor = (ibra[0] == iket[0] and Jab==Jde) ? 0.5 : 1;
+//  double normalization_denom = 1 + herm * overlap_bra_ket_in * overlap_bra_ket_in;
+  double normalization = 1 + herm * overlap_bra_ket_in * overlap_bra_ket_in;
 //  std::cout << " normalization_denom = " << normalization_denom << std::endl;
-  if ( std::abs(normalization_denom) < 1e-8 ) return;
-  symmetry_factor = 1.0 / normalization_denom;
+//  if ( std::abs(normalization_denom) < 1e-8 ) return;
+  if ( std::abs(normalization) < 1e-8 ) return;
+//  symmetry_factor = 1.0 / normalization_denom;
 
 //  std::cout << "sizes : " << ibra.size() << "  " << iket.size() << std::endl;
 //  herm = +1;
@@ -232,12 +271,12 @@ void ThreeBodyMEpn::AddToME_pn_PN(  int Jab, int Jde, int twoJ, int a, int b, in
     {
 //     symmetry_factor = (ibra[i] == iket[j]) ? 1 + herm : 1;
 //     double symmetry_factor2 = (ibra[i] == iket[j]) ? 0.5 : 1;
-     double symmetry_factor2 = ( ibra[i] == iket[j]) ? 1+herm : 1;
+     double symmetry_factor = ( ibra[i] == iket[j]) ? 1+herm : 1;
 //      if ( iket[j] > ibra[i] and std::find( ibra.begin(), ibra.end(), iket[j]) != ibra.end() ) continue;
 //     if ( ibra[i] == iket[j] ) symmetry_factor2 +=herm;
 //if ( Jab==1 and Jde==1 and twoJ==3 )      std::cout << " call AddToME_pn_ch ( " << ch_bra << ", " << ch_ket << ", " << ibra[i] << " " << iket[j] << std::endl;
 //     std::cout << " call AddToME_pn_ch (  ij= " << i << " " << j << "   " << ch_bra << ", " << ch_ket << ", " << ibra[i] << " " << iket[j] << "   recouple : " << recouple_bra[i] << " " << recouple_ket[j] << "  symmetry = " << symmetry_factor << " " << symmetry_factor2 << std::endl;
-       AddToME_pn_PN_ch( ch_bra, ch_ket, ibra[i], iket[j], recouple_bra[i] * recouple_ket[j] * me_add * symmetry_factor * symmetry_factor2   );
+       AddToME_pn_PN_ch( ch_bra, ch_ket, ibra[i], iket[j], recouple_bra[i] * recouple_ket[j] * me_add * symmetry_factor * symmetry_factor/normalization   );
 //       if ( iket[j] == ibra[i])
 //       AddToME_pn_ch( ch_ket, ch_bra, iket[j], ibra[i], recouple_ket[j] * recouple_bra[i] * me_add * herm );
 //       AddToME_pn_ch( ch_ket, ch_bra, iket[j], ibra[i], recouple_ket[j] * recouple_bra[i] * me_add * herm * symmetry );
@@ -257,19 +296,6 @@ void ThreeBodyMEpn::SetME_pn_PN(  int Jab_in, int Jde_in, int twoJ, int a, int b
 //  std::cout << "IN " << __func__ << "  me_set = " << me_set << "  me_previous = " << me_previous << std::endl;
   AddToME_pn_PN( Jab_in, Jde_in, twoJ, a,b,c,d,e,f,  me_set-me_previous );
 }
-
-
-
-//// Let's not implement this until we actually need it...
-////
-//ME_type ThreeBodyMEpn::GetME_pn(size_t ch_bra, size_t ch_ket, Ket3& bra, Ket3& ket) const
-//{
-//  ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
-//  ThreeBodyChannel& Tbc_ket = modelspace->GetThreeBodyChannel(ch_ket);
-//  size_t ibra = Tbc_bra.GetLocalIndex( bra );
-//  size_t iket = Tbc_bra.GetLocalIndex( ket );
-//  return GetME_pn( chbra, chket, ibra, iket );
-//}
 
 
 
@@ -425,10 +451,6 @@ void ThreeBodyMEpn::AddToME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int
     SetME_pn(std::get<0>(elem), std::get<1>(elem), std::get<2>(elem), std::get<3>(elem), std::get<4>(elem),
              std::get<5>(elem), std::get<6>(elem), std::get<7>(elem), std::get<8>(elem), std::get<9>(elem) );
 
-//    std::cout << std::get<0>(elem) << " " << std::get<1>(elem) << " " <<  std::get<2>(elem) << " " << std::get<3>(elem) << " " << std::get<4>(elem)
-//              << " "  << std::get<5>(elem) << " " << std::get<6>(elem) << " " <<  std::get<7>(elem) << " " << std::get<8>(elem) << " " << std::get<9>(elem)
-//              << std::endl;
-//    std::cout << " offending term: " << GetME_pn(1,1,3,3,1,0,3,1,0) << std::endl;
   }
 
 }
@@ -471,8 +493,6 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_PN(  int Jab_in, int Jde_in, int J2,
             size_t npn = 2*(n/2) + (tz2n+1)/2;
             double me_pn = GetME_pn( Jab_in, Jde_in, J2, ipn,jpn,kpn,lpn,mpn,npn);
             me_iso += me_pn  * clebsch_ij * clebsch_ijk * clebsch_lm * clebsch_lmn ;
-//            std::cout << " ** IN " << __func__ << "   ijklmn_pn: " << ipn << " " << jpn << " " << kpn << " " << lpn << " " << mpn << " " << npn << "   Js " << Jab_in << " " << Jde_in << " " << J2
-//                      << "   clebsch: " << clebsch_ij << " " << clebsch_ijk << " " << clebsch_lm << " " << clebsch_lmn << "  mp_pn = " << me_pn << "  me_iso = " << me_iso << std::endl;
           }
         }
       }
@@ -485,6 +505,67 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_PN(  int Jab_in, int Jde_in, int J2,
 
 
 
+//*****************************************************************************
+// We were storing the matrix elements in isospin format.
+// Switch to proton-neutron format. This will take a little while, but accessing
+// matrix elements will be faster once it's done. So this will potentially be
+// useful when doing IMSRG(3) calculations.
+// In the future, we can maybe implement some cuts here so that we only
+// transform matrix elements that will be used later, or impose some E3max-type cuts.
+//*****************************************************************************
+void ThreeBodyMEpn::TransformToPN()
+{
+  double t_start = omp_get_wtime();
+  std::cout << " " << __func__ << "   changing storage from isospin to proton/neutron" << std::endl;
+  Allocate_PN();
+
+  size_t nch = modelspace->GetNumberThreeBodyChannels();
+
+  #pragma omp parallel for schedule(dynamic,1)
+  for (size_t ch=0; ch<nch; ch++)
+  {
+
+    ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch);
+    int twoJ = Tbc.twoJ;
+    size_t nkets = Tbc.GetNumber3bKets();
+    for (size_t ibra=0; ibra<nkets; ibra++)
+    {
+      Ket3& bra = Tbc.GetKet(ibra);
+      for (size_t iket=0; iket<=ibra; iket++)
+      {
+        Ket3& ket = Tbc.GetKet(iket);
+        double me_pn = isospin3BME.GetME_pn( bra.Jpq, ket.Jpq,twoJ,  bra.p, bra.q, bra.r, ket.p, ket.q, ket.r );
+        SetME_pn_PN_ch( ch, ch, ibra, iket, me_pn);
+      }
+    }
+  }
+  // hopefully free up memory?
+  std::vector<ThreeBME_type>().swap( isospin3BME.MatEl );
+  std::unordered_map<size_t, size_t>().swap( isospin3BME.OrbitIndexHash );
+  PN_mode = true;
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+
+//*****************************************************************************
+// This is the one to call if we haven't read in any matrix elements and
+// we just want to switch, but don't need to transform from isospin.
+//*****************************************************************************
+void ThreeBodyMEpn::SwitchToPN_and_discard()
+{
+  double t_start = omp_get_wtime();
+  std::cout << " " << __func__ << "   changing storage from isospin to proton/neutron" << std::endl;
+  Allocate_PN();
+
+  // hopefully free up memory?
+  std::vector<ThreeBME_type>().swap( isospin3BME.MatEl );
+  std::unordered_map<size_t, size_t>().swap( isospin3BME.OrbitIndexHash );
+  PN_mode = true;
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+}
+
+/*
 void ThreeBodyMEpn::TransformToPN()
 {
   std::cout << " " << __func__ << "   changing storage from isospin to proton/neutron" << std::endl;
@@ -522,7 +603,7 @@ void ThreeBodyMEpn::TransformToPN()
   std::unordered_map<size_t, size_t>().swap( isospin3BME.OrbitIndexHash );
   PN_mode = true;
 }
-
+*/
 
 
 
@@ -692,22 +773,25 @@ int ThreeBodyMEpn::SortOrbits(int a_in, int b_in, int c_in, int& a, int& b, int&
 size_t ThreeBodyMEpn::size()
 {
   size_t nelem = 0;
-  for (auto iter : MatEl ) nelem += iter.second.size();
+//  for (auto iter : MatEl ) nelem += iter.second.size();
+  for (auto& d : ch_dim ) nelem += d*d; 
   return nelem;
 
 }
 
 void ThreeBodyMEpn::Erase()
 {
-  for (auto iter : MatEl ) iter.second.zeros();
+//  for (auto iter : MatEl ) iter.second.zeros();
+  matrix_data.assign( matrix_data.size(), 0.0);
 }
 
 
 double ThreeBodyMEpn::Norm() const
 {
   double norm = 0;
-  for ( auto iter : MatEl ) norm += iter.second.Norm();
-  return norm;
+//  for ( auto iter : MatEl ) norm += iter.second.Norm();
+  for ( auto& v : matrix_data) norm += v*v;
+  return sqrt(norm);
 }
 
 
@@ -722,16 +806,30 @@ void ThreeBodyMEpn::Print(size_t ch_bra, size_t ch_ket)
     std:: cout << "(" << ket.p << "," << ket.q << "," << ket.r << ";" << ket.Jpq << ")  ";
   }
   std::cout << std::endl;
-  std::cout << MatEl.at({ch_bra,ch_ket}).FullMatrix() << std::endl << std::endl;
+  size_t nkets = Tbc_bra.GetNumberKets();
+  for (size_t ibra=0; ibra<nkets; ibra++)
+  {
+    for (size_t iket=0; iket<=ibra; iket++)
+    {
+      size_t index = ch_start[ch_bra] + (2*ch_dim[ch_bra] - iket - 1)*iket/2 + ibra  ;
+      std::cout << matrix_data[index] << " ";
+      if (iket==ibra) std::cout << std::endl;
+    }
+  }
+//  std::cout << MatEl.at({ch_bra,ch_ket}).FullMatrix() << std::endl << std::endl;
 }
 
 
 void ThreeBodyMEpn::PrintAll()
 {
-  for (auto& iter : MatEl )
+//  for (auto& iter : MatEl )
+//  {
+//    if ( iter.second.size() > 0 )
+//    Print( iter.first[0], iter.first[1] );
+//  }
+  for ( size_t ch=0; ch<modelspace->GetNumberThreeBodyChannels(); ch++ )
   {
-    if ( iter.second.size() > 0 )
-    Print( iter.first[0], iter.first[1] );
+    Print( ch,ch );
   }
 }
 
@@ -739,19 +837,22 @@ void ThreeBodyMEpn::PrintAll()
 
 ThreeBodyMEpn& ThreeBodyMEpn::operator*=(const double rhs)
 {
-  for (auto iter : MatEl ) iter.second *= rhs;
+//  for (auto iter : MatEl ) iter.second *= rhs;
+  for ( auto& me : matrix_data ) me *= rhs;
   return *this;
 }
 
 ThreeBodyMEpn& ThreeBodyMEpn::operator+=(const ThreeBodyMEpn& rhs)
 {
-  for (auto iter : MatEl ) iter.second += rhs.MatEl.at(iter.first);
+//  for (auto iter : MatEl ) iter.second += rhs.MatEl.at(iter.first);
+  for (size_t i=0;i<matrix_data.size();i++ ) matrix_data[i] += rhs.matrix_data[i];
   return *this;
 }
 
 ThreeBodyMEpn& ThreeBodyMEpn::operator-=(const ThreeBodyMEpn& rhs)
 {
-  for (auto iter : MatEl ) iter.second -= rhs.MatEl.at(iter.first);
+//  for (auto iter : MatEl ) iter.second -= rhs.MatEl.at(iter.first);
+  for (size_t i=0;i<matrix_data.size();i++ ) matrix_data[i] -= rhs.matrix_data[i];
   return *this;
 }
 

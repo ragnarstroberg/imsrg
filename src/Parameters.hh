@@ -81,6 +81,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"physical_system",           "nuclear"},     // treat nucleus or atom. For atom, switch units from MeV,fm to eV,nm.
   {"freeze_occupations",        "false"},       // Should we freeze the occupations, or fill according to HF energy
   {"use_NAT_occupations",       "false"},       // When using natural orbitals, should we use the corresponding occupations?
+  {"store_3bme_pn",             "false"},       // should the 3-body matrix elements be stored in proton-neutron formalism? Default is isospin.
 };
 
 
