@@ -1788,30 +1788,32 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
                 int Jcd_max = ( oc.j2+od.j2)/2;
                 for (int Jcd=Jcd_min; Jcd<=Jcd_max; Jcd++)
                 {
-                  for (auto e : Z.modelspace->particles)
+//                  for (auto e : Z.modelspace->particles)
+                  for (auto e : Z.modelspace->all_orbits)
                   {
                     Orbit& oe = Z.modelspace->GetOrbit(e);
                     int twoJ_min = std::max( std::abs(oi.j2-2*Jab), std::abs(oe.j2-2*Jcd) );
                     int twoJ_max = std::min( oi.j2+2*Jab, oe.j2+2*Jcd );
-                    for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ++)
+                    for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
                     {
-                      double prefactor = 0.25 * (twoJ+1)*(oi.j2+1) * oa.occ*ob.occ*(1-oc.occ)*(1-od.occ)*(1-oe.occ);
+                      double prefactor = 0.25 * (twoJ+1)/(oi.j2+1) * oa.occ*ob.occ*(1-oc.occ)*(1-od.occ)*(1-oe.occ);
                       zij += prefactor * X3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * Y3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j);
                       zij -= prefactor * Y3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * X3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j);
                     }
                   }
-                  for (auto e : Z.modelspace->holes) // same thing, just different occupation number factors.
-                  {
-                    Orbit& oe = Z.modelspace->GetOrbit(e);
-                    int twoJ_min = std::max( std::abs(oi.j2-2*Jcd), std::abs(oe.j2-2*Jab) );
-                    int twoJ_max = std::min( oi.j2+2*Jcd, oe.j2+2*Jab );
-                    for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ++)
-                    {
-                      double prefactor = 0.25 * (twoJ+1)*(oi.j2+1) * oa.occ*ob.occ*oe.occ*(1-oc.occ)*(1-od.occ);
-                      zij += prefactor * X3.GetME_pn( Jcd, Jab, twoJ, c,d,i,a,b,e) * Y3.GetME_pn( Jab, Jcd, twoJ, a,b,e,c,d,j);
-                      zij -= prefactor * Y3.GetME_pn( Jcd, Jab, twoJ, c,d,i,a,b,e) * X3.GetME_pn( Jab, Jcd, twoJ, a,b,e,c,d,j);
-                    }
-                  }// for e
+ // It's temporarily unclear why this is being done...  but removing it gives what looks like the right answer...
+//                  for (auto e : Z.modelspace->holes) // same thing, just different occupation number factors.
+//                  {
+//                    Orbit& oe = Z.modelspace->GetOrbit(e);
+//                    int twoJ_min = std::max( std::abs(oi.j2-2*Jcd), std::abs(oe.j2-2*Jab) );
+//                    int twoJ_max = std::min( oi.j2+2*Jcd, oe.j2+2*Jab );
+//                    for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+//                    {
+//                      double prefactor = 0.25 * (twoJ+1)/(oi.j2+1) * oa.occ*ob.occ*oe.occ*(1-oc.occ)*(1-od.occ);
+//                      zij += prefactor * X3.GetME_pn( Jcd, Jab, twoJ, c,d,i,a,b,e) * Y3.GetME_pn( Jab, Jcd, twoJ, a,b,e,c,d,j);
+//                      zij -= prefactor * Y3.GetME_pn( Jcd, Jab, twoJ, c,d,i,a,b,e) * X3.GetME_pn( Jab, Jcd, twoJ, a,b,e,c,d,j);
+//                    }
+//                  }// for e
                 }// for Jcd
               }// for d
             }// for c
@@ -1821,6 +1823,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
       Z1(i,j) += zij;
     }// for j
   }// for i
+  std::cout << "...done" << std::endl;
 
 }
 

@@ -324,7 +324,8 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 
   bool all_good = true;
 
-  all_good &= Test_comm330ss( X, Y );
+//  all_good &= Test_comm330ss( X, Y );
+  all_good &= Test_comm331ss( X, Y );
 
   if ( all_good )
   {
@@ -1305,8 +1306,108 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
 
 
 
+/// M-Scheme Formula:
+//
+// Z_ij = 1/4 sum_abcde (nanb n`c n`dn`e) (X_abicde Y_cdeabj - Y_abicde X_cdeabj)
+//
+bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y )
+{
 
+  Operator Z_J( Y );
+  Z_J.Erase();
 
+  Commutator::comm331ss( X, Y, Z_J);
+
+  if ( Z_J.IsHermitian() )
+     Z_J.Symmetrize();
+  else if (Z_J.IsAntiHermitian() )
+     Z_J.AntiSymmetrize( );
+
+  std::cout << __func__ <<  "   Done with J-scheme commutator. Begin m-scheme version..." << std::endl;
+
+  double summed_error =  0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  for ( auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    for ( auto j : Z_J.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    {
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      int mj = mi;
+      double Zm_ij = 0;
+      for ( auto a : X.modelspace->all_orbits )
+      {
+        Orbit& oa = X.modelspace->GetOrbit(a);
+        double na = oa.occ;
+        for ( auto b : X.modelspace->all_orbits )
+        {
+          Orbit& ob = X.modelspace->GetOrbit(b);
+          double nb = ob.occ;
+          for ( auto c : X.modelspace->all_orbits )
+          {
+            Orbit& oc = X.modelspace->GetOrbit(c);
+            double nc = oc.occ;
+            for ( auto d : X.modelspace->all_orbits )
+            {
+              Orbit& od = X.modelspace->GetOrbit(d);
+              double nd = od.occ;
+              for ( auto e : X.modelspace->all_orbits )
+              {
+                Orbit& oe = X.modelspace->GetOrbit(e);
+                double ne = oe.occ;
+                for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
+                {
+                 for (int mb=-ob.j2; mb<=ob.j2; mb+=2)
+                 {
+                  for (int mc=-oc.j2; mc<=oc.j2; mc+=2)
+                  {
+                   for (int md=-od.j2; md<=od.j2; md+=2)
+                   {
+                    for (int me=-oe.j2; me<=oe.j2; me+=2)
+                    {
+                      // save a little time...
+                      if ( (ma+mb+mi) != (mc+md+me) ) continue;
+// Z_ij = 1/4 sum_abcde (nanb n`c n`dn`e) (X_abicde Y_cdeabj - Y_abicde X_cdeabj)
+                      double xabicde = GetMschemeMatrixElement_3b( X, a,ma, b,mb, i,mi, c,mc, d,md, e,me );
+                      double ycdeabj = GetMschemeMatrixElement_3b( Y, c,mc, d,md, e,me, a,ma, b,mb, j,mj );
+                      double xcdeabj = GetMschemeMatrixElement_3b( X, c,mc, d,md, e,me, a,ma, b,mb, j,mj );
+                      double yabicde = GetMschemeMatrixElement_3b( Y, a,ma, b,mb, i,mi, c,mc, d,md, e,me );
+                      Zm_ij += 1./4 * na*nb*(1-nc)*(1-nd)*(1-ne) * ( xabicde * ycdeabj - yabicde * xcdeabj );
+                    }// for me
+                   }// for md
+                  }// for mc
+                 }// for mb
+                }// for ma
+              }// for e
+            } // for d
+          } // for c
+        } // for b
+      }// for a
+
+      double ZJ_ij = Z_J.OneBody(i,j);
+      double err = Zm_ij - ZJ_ij;
+      if (std::abs(err)>1e-6)
+      {
+        std::cout << "Trouble in " << __func__ << "  i,j = " << i << " " << j 
+                  << "   zij = " << Zm_ij << "   ZJ_iij = " << ZJ_ij << "   err = " << err << std::endl; 
+      }
+      summed_error += err*err;
+      sum_m += Zm_ij*Zm_ij;
+      sum_J += ZJ_ij*ZJ_ij;
+
+    }// for j
+  }// for i
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+}
 
 
 

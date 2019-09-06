@@ -136,6 +136,7 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
 /// be more convenient to call.
 ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket) const
 {
+//  std::cout << "IN " << __func__ << std::endl;
   int h = (ibra>=iket) ? 1 : herm;
   size_t i = std::max(ibra,iket);
   size_t j = std::min(ibra,iket);
@@ -313,6 +314,7 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN(int Jab, int Jde, int twoJ, in
   size_t ch_bra = GetKetIndex_withRecoupling( Jab, twoJ, a,b,c, ibra, recouple_bra );
   size_t ch_ket = GetKetIndex_withRecoupling( Jde, twoJ, d,e,f, iket, recouple_ket );
   if ( ch_bra != ch_ket) return 0;
+  //TODO: Should we also throw an exception if twoJ is even?
 
 //  std::cout << "Start loop" << std::endl;
 //  std::cout << "size of bra,ket lists: " << ibra.size() << " " << iket.size() << std::endl;

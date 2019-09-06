@@ -49,6 +49,7 @@ class UnitTest
 
 
   bool Test_comm330ss( const Operator& X, const Operator& Y );
+  bool Test_comm331ss( const Operator& X, const Operator& Y );
   bool Test_comm223ss( const Operator& X, const Operator& Y );
 
 
