@@ -311,15 +311,16 @@ void UnitTest::TestCommutators()
 }
 
 
-void UnitTest::TestCommutators3()
+//void UnitTest::TestCommutators3()
+void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 {
-  std::cout << " random_seed = " << random_seed << std::endl;
-  arma::arma_rng::set_seed( random_seed );
-  modelspace->PreCalculateSixJ();
-  Operator X = RandomOp(*modelspace, 0, 0, 0, 3, -1);
-  random_seed ++;
-  Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, +1);
-  random_seed --;
+//  std::cout << " random_seed = " << random_seed << std::endl;
+//  arma::arma_rng::set_seed( random_seed );
+//  modelspace->PreCalculateSixJ();
+//  Operator X = RandomOp(*modelspace, 0, 0, 0, 3, -1);
+//  random_seed ++;
+//  Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, +1);
+//  random_seed --;
 
   bool all_good = true;
 
@@ -459,12 +460,12 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
 //        if ((a==0 and b==0 and c==3 and d==2 and e==2 and f==5 ) or  (a==0 and b==3 and c==0 and d==2 and e==2 and f==5 ) or (a==3 and b==0 and c==0 and d==2 and e==2 and f==5 )) 
 //        if ((a==0 and b==0 and c==5 and d==0 and e==0 and f==5 ) or  (a==0 and b==5 and c==0 and d==0 and e==0 and f==5 ) or (a==5 and b==0 and c==0 and d==0 and e==0 and f==5 )) 
 //        {
-        std::cout << "$abc: " << a << " " << b << " " << c << " def: " << d << " " << e << " " << f << std::endl;
-        std::cout << "$m vals: " << ma << " " << mb << " " << mc << "  " << md << " " << me << " " << mf << std::endl;
-        std::cout << "        Jab Jde twoJ " << Jab << " " << Jde << " " << twoJ
-                  << " clebsch: " << clebsch_ab << " " << clebsch_de << " " << clebsch_abc << " " << clebsch_def
-                  << "   matel_J " << meJ 
-                  << "  matel = " << matel << std::endl;
+//        std::cout << "$abc: " << a << " " << b << " " << c << " def: " << d << " " << e << " " << f << std::endl;
+//        std::cout << "$m vals: " << ma << " " << mb << " " << mc << "  " << md << " " << me << " " << mf << std::endl;
+//        std::cout << "        Jab Jde twoJ " << Jab << " " << Jde << " " << twoJ
+//                  << " clebsch: " << clebsch_ab << " " << clebsch_de << " " << clebsch_abc << " " << clebsch_def
+//                  << "   matel_J " << meJ 
+//                  << "  matel = " << matel << std::endl;
 //        }
 //        if (a==0 and b==0 and c==3 and d==2 and e==5 and f==2) std::cout << "    003252: Jab,Jde,J " << Jab << " " << Jde << " " << twoJ << "   -> " << Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f) << " -> " << matel << std::endl;
 //        if (a==0 and b==0 and c==3 and d==2 and e==2 and f==5) std::cout << "    003225: Jab,Jde,J " << Jab << " " << Jde << " " << twoJ << "   -> " << Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f) << " -> " << matel << std::endl;
@@ -1211,10 +1212,10 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
      Z_J.AntiSymmetrize();
 
   double Z0_m = 0;
-//  int norbits = X.modelspace->GetNumberOrbits();
-//  #pragma omp parallel for schedule(dynamic,1) reduction(+:Z0_m)
-//  for (int a=0; a<norbits; a++ )
-  for (auto a : X.modelspace->all_orbits )
+  int norbits = X.modelspace->GetNumberOrbits();
+  #pragma omp parallel for schedule(dynamic,1) reduction(+:Z0_m)
+  for (int a=0; a<norbits; a++ )
+//  for (auto a : X.modelspace->all_orbits )
   {
    Orbit& oa = X.modelspace->GetOrbit(a);
    double na = oa.occ;
@@ -1248,80 +1249,6 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
         if ( (oa.tz2+ob.tz2+oc.tz2) !=(od.tz2+oe.tz2+of.tz2) ) continue;
          double dz=0;
 
-//        if (a==0 and b==0 and c==3 and d==2 and e==5 and f==2)
-        if (a==0 and b==0 and c==3 and d==2 and e==2 and f==5)
-        {
-         int Jab = 0;
-         int twoJ = 3;
-         for (int Jde=1; Jde<=2; Jde++)
-         {
-         double xabcdef = 0;
-         for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
-         {
-          for (int mb=-ob.j2; mb<=ob.j2; mb+=2)
-          {
-           if (a==b and ma==mb) continue;
-           for (int mc=-oc.j2; mc<=oc.j2; mc+=2)
-           {
-             if (a==c and ma==mc) continue;
-             if (b==c and mb==mc) continue;
-             for (int md=-od.j2; md<=od.j2; md+=2)
-             {
-              for (int me=-oe.j2; me<=oe.j2; me+=2)
-              {
-                int mf = ma+mb+mc - me-md;
-                if ( std::abs(mf)>of.j2) continue;
-//                if (d==e and md==me) continue;
-//                if (d==f and md==mf) continue;
-//                if (e==f and me==mf) continue;
-                int Mab = (ma+mb)/2;
-                int Mde = (md+me)/2;
-                int twoM = ma+mb+mc;
-                if (twoM != twoJ) continue;
-                double cg1 = AngMom::CG(0.5*oa.j2,0.5*ma, 0.5*ob.j2,0.5*mb,   Jab, Mab);
-                double cg2 = AngMom::CG(Jab,Mab,          0.5*oc.j2,0.5*mc,   0.5*twoJ, 0.5*twoM);
-                double cg3 = AngMom::CG(0.5*od.j2,0.5*md, 0.5*oe.j2,0.5*me,   Jde, Mde);
-                double cg4 = AngMom::CG(Jde,Mde ,         0.5*of.j2,0.5*mf,   0.5*twoJ, 0.5*twoM);
-                xabcdef += cg1*cg2*cg3*cg4* GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, d,md, e,me, f,mf );
-                double xabcfed = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, f,mf, e,me, d,md );
-                double xabcdfe = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, d,md, f,mf, e,me );
-                double xabcedf = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, e,me, d,md, f,mf );
-                double xabcefd = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, e,me, f,mf, d,md );
-                double xabcfde = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, f,mf, d,md, e,me );
-                double x_plain = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, d,md, e,me, f,mf );
-                std::cout << "m values: " << ma << " " << mb << " " << mc << "   " << md << " " <<me << " " << mf << std::endl;
-                std::cout << "ANTISYMMETRY CHECK:  def :" << x_plain << "  efd: " << xabcefd  << "  fde: " << xabcfde
-                          << "  fed: " << xabcfed << "  dfe: " << xabcdfe << "  edf: " << xabcedf  << std::endl;
-              }
-              }}}}// for ma ... md
-           std::cout << "  Jde = " << Jde << "  xabcdef = " << xabcdef << std::endl;
-           std::cout << "  should be " << X.ThreeBody.GetME_pn(Jab,Jde,twoJ,a,b,c,d,e,f) << std::endl;
-            }
-
-        for (int Jde=1; Jde<=2; Jde++)
-        {
-        double xdede = 0;
-        for (int ma=-od.j2; ma<=od.j2; ma+=2)
-         {
-          for (int mb=-oe.j2; mb<=oe.j2; mb+=2)
-          {
-             for (int md=-od.j2; md<=od.j2; md+=2)
-             {
-                int me = ma+mb - md;
-                int Mab = (ma+mb)/2;
-                if (Mab != Jde) continue;
-                double cg1 = AngMom::CG(0.5*od.j2,0.5*ma, 0.5*oe.j2,0.5*mb, Jde, Mab);
-                double cg2 = AngMom::CG(0.5*od.j2,0.5*md, 0.5*oe.j2,0.5*me, Jde, Mab);
-                xdede += cg1 * cg2 * GetMschemeMatrixElement_2b( Y, d,ma, e,mb, d,md, e,me);
-             }
-           }
-          }
-          std::cout << "trying 2b.  Jde = " << Jde << "  xdede = " << xdede << std::endl << "   should be " << Y.TwoBody.GetTBME_J(Jde,d,e,d,e) << std::endl;
-          }
-
-
-         }
-
 
          for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
          {
@@ -1351,21 +1278,8 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
                 double Xdefabc = GetMschemeMatrixElement_3b( X, d,md, e,me, f,mf, a,ma, b,mb, c,mc );
                 double Ydefabc = GetMschemeMatrixElement_3b( Y, d,md, e,me, f,mf, a,ma, b,mb, c,mc );
 
-//                dz += (1./36) * na*nb*nc*(1-nd)*(1-ne)*(1-nf) * (Xabcdef * Ydefabc - Yabcdef * Xdefabc );
-                dz += (2./36) * na*nb*nc*(1-nd)*(1-ne)*(1-nf) * (Xabcdef * Ydefabc  );
-//                Z0_m += (1./36) * na*nb*nc*(1-nd)*(1-ne)*(1-nf) * (Xabcdef * Ydefabc - Yabcdef * Xdefabc );
-//                std::cout << "abcdef" << a << " " << b << " " << c << " " << d << " " << e << " " << f
-//                          << " Xabcdef Xdefabc  Yabcdef  Ydefabc   " << Xabcdef << " " << Xdefabc << " " << Yabcdef << " " << Ydefabc
-//                          << "   Z0_m = " << Z0_m << std::endl;
-
-//            if (a==0 and b==0 and c==3 and d==2 and e==2 and f==5)
-            if (a==0 and b==0 and c==3 and d==2 and e==5 and f==2)
-            {
-//              std::cout << "     ma mb mc md me mf = " << ma << " " << mb << " " << mc << " " << md << " " << me << " " << mf << "   dz = " << dz << std::endl;
-              std::cout << "     ma mb mc md me mf = " << ma << " " << mb << " " << mc << " " << md << " " << me << " " << mf << std::endl;
-                std::cout << " X,Y X', Y' " << Xabcdef << " " << Yabcdef << " " << Xdefabc << " " << Ydefabc
-                          << " this dz = " << (2./36.)*   Xabcdef * Ydefabc << "  summed dz = " << dz << std::endl;
-            }
+                dz += (1./36) * na*nb*nc*(1-nd)*(1-ne)*(1-nf) * (Xabcdef * Ydefabc - Yabcdef * Xdefabc );
+//                dz += (2./36) * na*nb*nc*(1-nd)*(1-ne)*(1-nf) * (Xabcdef * Ydefabc  );
 
               }// for me
              }// for md
@@ -1373,23 +1287,12 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
           }// for mb
          }// for ma
          Z0_m += dz;
-         std::cout << " xxDEBUG: abcdef " << a << " " << b << " " << c << " " << d << " " << e << " " << f
-                   << "    dz = " << dz << "   z0 " << Z0_m << std::endl;
        }// for f
       }// for e
      }// for d
     }// for c
    }// for b
   }// for a
-  std::cout << "By the way, hermitian? X: " << X.IsHermitian() << "   Y: " << Y.IsHermitian()
-            << "  anti?  X: " << X.IsAntiHermitian() << "  Y: " << Y.IsAntiHermitian() << std::endl;
-  std::cout << " 3body: X  " << X.ThreeBody.herm << "   Y  " << Y.ThreeBody.herm << std::endl;
-
-  std::cout << "prove it X...  " << X.ThreeBody.GetME_pn(0,2,3,0,0,3,2,5,2)  << "   " << X.ThreeBody.GetME_pn(2,0,3,2,2,5,0,0,3) << std::endl;
-  std::cout << "prove it Y...  " << Y.ThreeBody.GetME_pn(0,2,3,0,0,3,2,5,2)  << "   " << Y.ThreeBody.GetME_pn(2,0,3,2,5,2,0,0,3) << std::endl;
-  std::cout << "Norms : " << X.ThreeBodyNorm() << "   " << Y.ThreeBodyNorm() << std::endl;
-
-  std::cout << "hm...: " << X.ThreeBody.GetME_pn(1,2,3, 0,0,3,2,2,5 ) << "    " << Y.ThreeBody.GetME_pn(1,2,3, 0,0,3,2,2,5 ) << std::endl;
 
   double summed_error =  Z0_m - Z_J.ZeroBody;
   bool passed = std::abs( summed_error ) <1e-6 ;

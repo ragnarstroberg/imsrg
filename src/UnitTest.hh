@@ -32,7 +32,8 @@ class UnitTest
   // using the J-coupled expression, and in m-scheme (where the formula is simpler)
   // and make sure that they give the same answer
   void TestCommutators();
-  void TestCommutators3();
+//  void TestCommutators3();
+  void TestCommutators3(Operator& X, Operator& Y);
   bool Test_comm110ss( const Operator& X, const Operator& Y );
   bool Test_comm220ss( const Operator& X, const Operator& Y );
   bool Test_comm111ss( const Operator& X, const Operator& Y );

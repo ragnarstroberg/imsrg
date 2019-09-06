@@ -1713,18 +1713,18 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
                                      - Y3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * X3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c) );
 //	    std::cout << "  " <<  X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) << "  " << Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
 //	              << "  " <<  Y3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) << "  " << X3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c) << std::endl;
-            if (a==0 and b==0 and c==3 and d==2 and e==5 and f==2)
-            {
-              std::cout << "     Jab,Jde,twoJ = " << Jab << " " << Jde << " " << twoJ << "  dz = " << dz
-                        << " (local dz = " << (2./36)*(twoJ+1) * ( X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c) )
-                          << ")  Xabcdef = " << X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f)
-                          << "  Yabcdef = " << Y3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f)
-                          << "  Xdefabc = " << X3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
-                          << "  Ydefabc = " << Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
-//                        << "  Jab limits " << Jab_min << " " << Jab_max 
-//                        << "  Jde limits " << Jde_min << " " << Jde_max 
-                        << std::endl;
-            }
+//            if (a==0 and b==0 and c==3 and d==2 and e==5 and f==2)
+//            {
+//              std::cout << "     Jab,Jde,twoJ = " << Jab << " " << Jde << " " << twoJ << "  dz = " << dz
+//                        << " (local dz = " << (2./36)*(twoJ+1) * ( X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c) )
+//                          << ")  Xabcdef = " << X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f)
+//                          << "  Yabcdef = " << Y3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f)
+//                          << "  Xdefabc = " << X3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
+//                          << "  Ydefabc = " << Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
+////                        << "  Jab limits " << Jab_min << " " << Jab_max 
+////                        << "  Jde limits " << Jde_min << " " << Jde_max 
+//                        << std::endl;
+//            }
 
 
           }
@@ -1732,8 +1732,8 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
         }
 
             z0 += dz; /// we can change this back after debugging...
-            std::cout << " @@DEBUG: abcdef " << a << " " << b << " " << c << " " << d << " " << e << " " << f
-                      << "    dz = " << dz << "   z0 " << z0 << std::endl;
+//            std::cout << " @@DEBUG: abcdef " << a << " " << b << " " << c << " " << d << " " << e << " " << f
+//                      << "    dz = " << dz << "   z0 " << z0 << std::endl;
        }
       }
      }

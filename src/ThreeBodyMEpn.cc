@@ -136,7 +136,7 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
 /// be more convenient to call.
 ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket) const
 {
-  int h = (ibra>iket) ? 1 : herm;
+  int h = (ibra>=iket) ? 1 : herm;
   size_t i = std::max(ibra,iket);
   size_t j = std::min(ibra,iket);
   if (i>ch_dim[ch_bra] or ch_bra!=ch_ket)
