@@ -27,6 +27,7 @@ class UnitTest
 
 //  void Test3BodyAntisymmetry();
   void Test3BodyAntisymmetry(Operator& Y);
+  void Test3BodyHermiticity(Operator& Y);
 
   // test strategy: Fill two random operators, calculate a specific commutator term
   // using the J-coupled expression, and in m-scheme (where the formula is simpler)
@@ -50,6 +51,10 @@ class UnitTest
 
   bool Test_comm330ss( const Operator& X, const Operator& Y );
   bool Test_comm331ss( const Operator& X, const Operator& Y );
+  bool Test_comm231ss( const Operator& X, const Operator& Y );
+
+  bool Test_comm132ss( const Operator& X, const Operator& Y );
+
   bool Test_comm223ss( const Operator& X, const Operator& Y );
 
 

@@ -137,6 +137,7 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
 ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket) const
 {
 //  std::cout << "IN " << __func__ << std::endl;
+  if (ibra==iket and herm==-1) return 0;
   int h = (ibra>=iket) ? 1 : herm;
   size_t i = std::max(ibra,iket);
   size_t j = std::min(ibra,iket);
@@ -155,6 +156,7 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ke
     oss << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket << "  index= " << index << " > matrix_data.size() = " << matrix_data.size() ;
     throw std::domain_error( oss.str() );
   }
+//  std::cout << "ibra,iket = " << ibra << " " << iket << "   i,j = " << i << " " << j << "   h = " << h << "   matel = " << matrix_data.at(index) << std::endl;
   return matrix_data.at(index) * h;
 
 }
@@ -166,6 +168,7 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ke
 void ThreeBodyMEpn::AddToME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel)
 {
 
+  if (ibra==iket and herm==-1) return;
   int h = (ibra>iket) ? 1 : herm;
   size_t i = std::max(ibra,iket);
   size_t j = std::min(ibra,iket);
@@ -191,6 +194,7 @@ void ThreeBodyMEpn::AddToME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, 
 
 void ThreeBodyMEpn::SetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel)
 {
+  if (ibra==iket and herm==-1) return;
   int h = (ibra>iket) ? 1 : herm;
   size_t i = std::max(ibra,iket);
   size_t j = std::min(ibra,iket);
@@ -463,7 +467,7 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_PN(  int Jab_in, int Jde_in, int J2,
 
 //  std::cout << std::endl << " **** IN " << __func__ << "  J,t, ijklmn " << Jab_in << " " << Jde_in << " " << J2 << "  " << tab_in << " " << tde_in << " " << twoT << "   " << i << " " << j << " " << k << " " << l << " " << m << " "<< n << std::endl;
   ThreeBodyMEpn::ME_type me_iso = 0;
-  int twoTz = -twoT; // it should be independent of Tz, so we just pick one
+  int twoTz =  twoT; // it should be independent of Tz, so we just pick one
   if (i==j and (Jab_in+tab_in)%2==0) return 0;
   if (l==m and (Jde_in+tde_in)%2==0) return 0;
   for (int tz2i : {-1,1} )

@@ -1668,78 +1668,51 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
     Orbit& ob = Z.modelspace->GetOrbit(b);
     int Jab_min = std::abs(oa.j2-ob.j2)/2;
     int Jab_max = (oa.j2+ob.j2)/2;
-//    for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
-//    {
-//     if (a==b and Jab%2>0) continue;
-     for ( auto c : Z.modelspace->holes )
-     {
-      Orbit& oc = Z.modelspace->GetOrbit(c);
-      for ( auto d : Z.modelspace->particles )
-      {
-       Orbit& od = Z.modelspace->GetOrbit(d);
-       for ( auto e : Z.modelspace->particles )
-       {
-        Orbit& oe = Z.modelspace->GetOrbit(e);
-        int Jde_min = std::abs(od.j2-oe.j2)/2;
-        int Jde_max = (od.j2+oe.j2)/2;
-//        for ( int Jde=Jde_min; Jde<=Jde_max; Jde++)
-//        {
-//         if (d==e and Jde%2>0) continue;
-         for ( auto f : Z.modelspace->particles )
-         {
-          Orbit& of = Z.modelspace->GetOrbit(f);
-
-          if ( (oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 ) continue;
-          if ( (oa.tz2+ob.tz2+oc.tz2) != (od.tz2+oe.tz2+of.tz2) ) continue;
-          if ( ( 2*(od.n+oe.n+of.n)+od.l+oe.l+of.l) > E3cut ) continue;
-
-          double dz = 0;
-
-    for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+    for ( auto c : Z.modelspace->holes )
     {
-     if (a==b and Jab%2>0) continue;
-        for ( int Jde=Jde_min; Jde<=Jde_max; Jde++)
-        {
-         if (d==e and Jde%2>0) continue;
+     Orbit& oc = Z.modelspace->GetOrbit(c);
+     for ( auto d : Z.modelspace->particles )
+     {
+      Orbit& od = Z.modelspace->GetOrbit(d);
+      for ( auto e : Z.modelspace->particles )
+      {
+       Orbit& oe = Z.modelspace->GetOrbit(e);
+       int Jde_min = std::abs(od.j2-oe.j2)/2;
+       int Jde_max = (od.j2+oe.j2)/2;
+       for ( auto f : Z.modelspace->particles )
+       {
+        Orbit& of = Z.modelspace->GetOrbit(f);
 
-//          std::cout << "abcdef = " << a << " " << b << " " << c << " " << d << " " << e << " " << f
-//                    << "   " << Jab << " " << Jde << "  " << "  " << 2*(od.n+oe.n+of.n)+od.l+oe.l+of.l  << std::endl;
+        if ( (oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 ) continue;
+        if ( (oa.tz2+ob.tz2+oc.tz2) != (od.tz2+oe.tz2+of.tz2) ) continue;
+        if ( ( 2*(od.n+oe.n+of.n)+od.l+oe.l+of.l) > E3cut ) continue;
+
+//        double dz = 0;
+
+        for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+        {
+         if (a==b and Jab%2>0) continue;
+         for ( int Jde=Jde_min; Jde<=Jde_max; Jde++)
+         {
+          if (d==e and Jde%2>0) continue;
+
           int twoJmin = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jde-of.j2) );
           int twoJmax = std::min( 2*Jab+oc.j2, 2*Jde+of.j2 );
           for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
           {
 //            z0 += (twoJ+1) * ( X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
-            dz += (1./36)*(twoJ+1) * ( X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
+            z0 += (1./36)*(twoJ+1) * ( X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
                                      - Y3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * X3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c) );
-//	    std::cout << "  " <<  X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) << "  " << Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
-//	              << "  " <<  Y3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) << "  " << X3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c) << std::endl;
-//            if (a==0 and b==0 and c==3 and d==2 and e==5 and f==2)
-//            {
-//              std::cout << "     Jab,Jde,twoJ = " << Jab << " " << Jde << " " << twoJ << "  dz = " << dz
-//                        << " (local dz = " << (2./36)*(twoJ+1) * ( X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f) * Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c) )
-//                          << ")  Xabcdef = " << X3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f)
-//                          << "  Yabcdef = " << Y3.GetME_pn( Jab, Jde, twoJ, a,b,c,d,e,f)
-//                          << "  Xdefabc = " << X3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
-//                          << "  Ydefabc = " << Y3.GetME_pn( Jde, Jab, twoJ, d,e,f,a,b,c)
-////                        << "  Jab limits " << Jab_min << " " << Jab_max 
-////                        << "  Jde limits " << Jde_min << " " << Jde_max 
-//                        << std::endl;
-//            }
-
-
-          }
-         }
-        }
-
-            z0 += dz; /// we can change this back after debugging...
-//            std::cout << " @@DEBUG: abcdef " << a << " " << b << " " << c << " " << d << " " << e << " " << f
-//                      << "    dz = " << dz << "   z0 " << z0 << std::endl;
-       }
-      }
-     }
-    }
-   }
-  }
+          }// for twoJ
+         }// for Jde
+        }// for Jab
+//     z0 += dz; /// we can change this back after debugging...
+       }// for f
+      }// for e
+     }// for d
+    }// for c
+   }// for b
+  }// for a
   std::cout << "Adding " << z0 << "  to Zero Body" << std::endl;
   Z.ZeroBody += z0;
 }
@@ -1837,8 +1810,11 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
 //   *~~~~~~~[Y]~~~~~*        Z_ij = 1/4sum_abcd sum_J1J  (nanb n`c n`d)  (2J+1)/(2ji+1)
 //                   |j               (X^{J}_abcd Y^{J1J1J}_cdiabj - Y^{J1J1J}_abicdj X^{J}_cdab)
 //
+//                              We only sum a<=b and c<=d, so we do not explicitly include the factor 1/4,
+//                              except for the a==b, or c==d case, where the is no double counting.
 void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
 {
+  std::cout << "ENTER " << __func__ << std::endl;
   auto& X2 = X.TwoBody;
   auto& X3 = X.ThreeBody;
   auto& Y2 = Y.TwoBody;
@@ -1862,22 +1838,31 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
           Ket& bra = tbc.GetKet(ibra);
           int a = bra.p;
           int b = bra.q;
+          double na = bra.op->occ;
+          double nb = bra.oq->occ;
           for ( auto iket : tbc.KetIndex_pp )
           {
             Ket& ket = tbc.GetKet(iket);
             int c = ket.p;
             int d = ket.q;
+            double nc = ket.op->occ;
+            double nd = ket.oq->occ;
             double Xabcd = X2.GetTBME(ch,bra,ket);
             double Yabcd = Y2.GetTBME(ch,bra,ket);
             double Xcdab = X2.GetTBME(ch,ket,bra);
             double Ycdab = Y2.GetTBME(ch,ket,bra);
-            double occfactor = (bra.op->occ)*(bra.oq->occ)*(1-ket.op->occ)*(1-ket.oq->occ);
+            double prefactor = na*nb*(1-nc)*(1-nd);
+            if (a==b) prefactor /= 2;
+            if (c==d) prefactor /= 2;
+//            double occfactor = (bra.op->occ)*(bra.oq->occ)*(1-ket.op->occ)*(1-ket.oq->occ);
             int twoJ_min = std::abs( 2*J - oi.j2);
             int twoJ_max = 2*J + oi.j2;
-            for (int twoJ=twoJ_min; twoJ<=twoJ_max; ++twoJ)
+            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
             {
-              zij += occfactor* (twoJ+1)* ( Xabcd * Y3.GetME_pn(twoJ,J,J,c,d,i,a,b,j) - Y3.GetME_pn(twoJ,J,J,a,b,i,c,d,j) * Xcdab
-                                           -Yabcd * X3.GetME_pn(twoJ,J,J,c,d,i,a,b,j) + X3.GetME_pn(twoJ,J,J,a,b,i,c,d,j) * Ycdab );
+//              zij += occfactor* (twoJ+1)* ( Xabcd * Y3.GetME_pn(twoJ,J,J,c,d,i,a,b,j) - Y3.GetME_pn(twoJ,J,J,a,b,i,c,d,j) * Xcdab
+//                                           -Yabcd * X3.GetME_pn(twoJ,J,J,c,d,i,a,b,j) + X3.GetME_pn(twoJ,J,J,a,b,i,c,d,j) * Ycdab );
+              zij += prefactor* (twoJ+1)* ( Xabcd * Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j) - Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j) * Xcdab
+                                           -Yabcd * X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j) + X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j) * Ycdab );
             }
           }
         }
@@ -1885,6 +1870,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
       Z1(i,j) += zij / (oi.j2+1.0);
     }// for j
   }// for i
+  std::cout << "DONE" << std::endl;
 
 }
 
@@ -1903,7 +1889,8 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
 // k|  l|                                          
 //                           
 //                              
-//                  
+//                 NB when we call Symmetrize, we copy the upper triangle <ibra|iket> with ibra<=iket onto the lower triangle.
+//                 Of course, calling AddToTBME updates both according to the symmetry, so we don't need to worry so much... 
 //
 void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
 {
@@ -1914,8 +1901,8 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Z2 = Z.TwoBody;
   
   int norb = Z.modelspace->GetNumberOrbits();
-  int nch = Z.modelspace->GetNumberTwoBodyChannels();
-  for (int ch=0; ch<nch; ch++)
+  size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
+  for (size_t ch=0; ch<nch; ch++)
   {
     auto& tbc = Z.modelspace->GetTwoBodyChannel(ch);
     int J = tbc.J;
@@ -1925,9 +1912,8 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
       Ket& bra = tbc.GetKet(ibra);
       int i = bra.p;
       int j = bra.q;
-      Orbit& oi = Z.modelspace->GetOrbit(i);
-//      Orbit& oj = Z.modelspace->GetOrbit(j);
-      for (int iket=0;iket<nkets;iket++ ) // |kl> states
+//      for (int iket=0;iket<=ibra;iket++ ) // |kl> states
+      for (int iket=ibra;iket<nkets;iket++ ) // |kl> states
       {
         Ket& ket = tbc.GetKet(iket);
         int k = ket.p;
@@ -1936,24 +1922,35 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
         for (int a=0;a<norb;a++)
         {
           Orbit& oa = Z.modelspace->GetOrbit(a);
-          for ( auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+          for ( auto b : Z.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
           {
             Orbit& ob = Z.modelspace->GetOrbit(b);
             double occfactor = oa.occ - ob.occ;
             if (std::abs(occfactor)<1e-6) continue;
-            int twoJ_min = std::abs( oi.j2 - 2*J );
-            int twoJ_max = oi.j2 + 2*J;
-            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ++)
+            int twoJ_min = std::abs( oa.j2 - 2*J );
+            int twoJ_max = oa.j2 + 2*J;
+            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
             {
-              zijkl += occfactor * (twoJ+1)/(2*J+1) * ( X1(a,b) * Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) - Y1(a,b) * X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) );
+//              zijkl += occfactor * (twoJ+1.)/(2*J+1) * ( X1(a,b) * Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) - Y1(a,b) * X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) );
+//              zijkl += occfactor * (twoJ+1.)/(2*J+1) * ( X1(a,b) * Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a)  );
+              zijkl += occfactor * (twoJ+1.)/(2*J+1) * (  - Y1(a,b) * X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) );
+              if ( i==0 and j==0 and k==0 and l==10 and std::abs(occfactor)>1e-6)
+              {
+                std::cout << __func__ << " a,b, = " << a << " " << b << "  Jij = " << J << "  twoJ = " << twoJ
+                          << " Xab = " << X1(a,b) << "  Yijbkla = " << Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a)
+                          << " Yab = " << Y1(a,b) << "  Xijbkla = " << X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a)
+                          << "   zijkl = " << zijkl << std::endl;
+              }
             }
           }
         }
         // normalize the tbme
-        zijkl /= sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
-        Z2.AddToTBME(ch, ch, bra,ket, zijkl );
+        zijkl /= sqrt((1.+bra.delta_pq())*(1.+ket.delta_pq()));
+//        Z2.AddToTBME(ch, ch, bra, ket, zijkl );
+        Z2.AddToTBME(ch, ch, ibra, iket, zijkl );
       }
     }
+//    std::cout << "Z2 is " << std::endl << Z2.MatEl.at({ch,ch}) << std::endl;
   }
 
 }
