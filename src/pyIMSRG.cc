@@ -361,6 +361,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("RandomOp",&UnitTest::RandomOp)
       .def("TestCommutators",&UnitTest::TestCommutators)
       .def("TestCommutators3",&UnitTest::TestCommutators3)
+      .def("TestDaggerCommutators",&UnitTest::TestDaggerCommutators)
       .def("Test3BodyAntisymmetry",&UnitTest::Test3BodyAntisymmetry)
       .def("Test3BodyHermiticity",&UnitTest::Test3BodyHermiticity)
    ;

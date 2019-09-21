@@ -4502,6 +4502,9 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+///  In the below formulas, the number in parentheses indicates the number of external legs of a diagram, rather
+///  than the usual particle rank. In this notation, a one-body operator has 2 external legs and so would be indicated
+///  with a (2). The (1) then means a single creation/annihilation operator, and (3) means two creators and one annihilator.
 
 
 
@@ -4667,8 +4670,8 @@ void comm431sd( const Operator& X, const Operator& Y, Operator& Z)
 //
 //     |   |  /       |  | /             \ /         \ |  (Y)
 //    (X)  | /   __   | (Y)              (X)    __    \| / 
-//      \  |/         | /        and     /  \         (X)
-//       (Y)         (X)                /   (Y)        | 
+//      \  |/         | /        and     / \          (X)
+//       (Y)         (X)                /  (Y)         | 
 //
 //  ZJ_ijkQ = sum_a  X_ia YJ_ajkQ  + X_ja YJ_iakQ + X_ak YJ_ijaQ + XJ_ijka Y_aQ
 //
@@ -4736,7 +4739,8 @@ void comm413_233sd( const Operator& X, const Operator& Y, Operator& Z)
 //           Z.TwoBody.SetTBME(ch,ch,i,j,k,Qorbit, cijk);   // SetTBME  directly sets the matrix element, i.e. it assumes a normalized matrix element.
 
            cijk *= (norm_ij * norm_kQ);  // We normalize like a scalar TBME so that the setter/getters make sense. We'll fix the wrong |kQ> normalization when writing to file.
-           Z.TwoBody.SetTBME(ch,ch,i,j,k,Qorbit, cijk);   // SetTBME  directly sets the matrix element, i.e. it assumes a normalized matrix element.
+//           Z.TwoBody.SetTBME(ch,ch,i,j,k,Qorbit, cijk);   // SetTBME  directly sets the matrix element, i.e. it assumes a normalized matrix element.
+           Z.TwoBody.AddToTBME(ch,ch,i,j,k,Qorbit, cijk);   // SetTBME  directly sets the matrix element, i.e. it assumes a normalized matrix element.
          }
       }
    }

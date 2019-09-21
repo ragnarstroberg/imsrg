@@ -183,6 +183,59 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
 }
 
 
+// Generate a random dagger operator, i.e. one that changes particle number by +1
+// for use in testing the dagger commutator routines.
+Operator UnitTest::RandomDaggerOp(ModelSpace& modelspace, index_t Q)
+{
+   Operator dag(modelspace);
+   dag.SetNumberLegs(3);
+   dag.SetQSpaceOrbit(Q);
+   dag.SetNonHermitian();
+
+   std::default_random_engine generator(random_seed);
+   double mean = 0;
+   double stddev = 1;
+   std::normal_distribution<double> distribution(mean,stddev);
+
+   // Only orbits with the same l,j,tz quantum numbers as the Q orbit
+   // can be non-zero, so we fill a single column of the one-body matrix.
+   Orbit& oQ = modelspace.GetOrbit(Q);
+   for (auto i : dag.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+   {
+     double random_me = distribution(generator);
+     dag.OneBody(i,Q)= random_me;
+   }
+
+   size_t nch = modelspace.GetNumberTwoBodyChannels();
+   for (size_t ch=0; ch<nch; ch++)
+   {
+     TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+     size_t nkets = tbc.GetNumberKets();
+     for (size_t ibra=0; ibra<nkets; ibra++)
+     {
+       Ket& bra = tbc.GetKet(ibra);
+       for ( auto k : modelspace.all_orbits )
+       {
+         Orbit& ok = modelspace.GetOrbit(k);
+         // check whether |kQ> lives in this channel
+         if ( not tbc.CheckChannel_ket( &ok, &oQ) ) continue;
+         
+         double random_me = distribution(generator);
+         dag.TwoBody.SetTBME(ch,ch,bra.p,bra.q,k,Q, random_me);
+       }
+     }
+     std::cout << "ch = " << ch << "  matrix looks like " << std::endl << dag.TwoBody.GetMatrix(ch,ch) << std::endl << std::endl;
+   }
+
+   return dag;
+}
+
+
+
+
+
+
+
 void UnitTest::Test3BodyHermiticity(Operator& Y)
 {
 
@@ -354,6 +407,38 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 
 
 
+
+
+void UnitTest::TestDaggerCommutators(index_t Q)
+{
+  arma::arma_rng::set_seed( random_seed );
+  Operator X = RandomOp(*modelspace, 0, 0, 0, 2, -1);
+  Operator Y = RandomDaggerOp(*modelspace, Q);
+
+  bool all_good = true;
+
+  all_good &= Test_comm211sd( X, Y );
+  all_good &= Test_comm231sd( X, Y );
+  all_good &= Test_comm431sd( X, Y );
+  all_good &= Test_comm413sd( X, Y );
+  all_good &= Test_comm233sd( X, Y );
+  all_good &= Test_comm433_pp_hh_sd( X, Y );
+  all_good &= Test_comm433sd_ph( X, Y );
+
+  if ( all_good )
+  {
+    std::cout << " Done with " << __func__ << " and all is well" << std::endl;
+  }
+  else
+  {
+    std::cout << " Done with " << __func__ << " and at least one test failed" << std::endl;
+  }
+
+}
+
+
+
+
 double UnitTest::GetMschemeMatrixElement_1b( const Operator& Op, int a, int ma, int b, int mb )
 {
   double matel = 0;
@@ -496,6 +581,25 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
   return matel;
 
 }
+
+
+
+
+// The following two routines implicitly assume that we've chosen the apropriate projection quantum numbers.
+// This may or may not be the most straightforward way to do things.
+double UnitTest::GetMschemeMatrixElement_1leg( const Operator& Op, int a, int ma )
+{
+  
+  return GetMschemeMatrixElement_1b( Op, a, ma, Op.GetQSpaceOrbit(), ma) ;
+}
+
+
+double UnitTest::GetMschemeMatrixElement_3leg( const Operator& Op, int a, int ma, int b, int mb, int c, int mc )
+{
+  return GetMschemeMatrixElement_2b( Op, a,ma, b,mb, c,mc, Op.GetQSpaceOrbit(), ma+mb-mc);
+}
+
+
 
 
 
@@ -775,7 +879,7 @@ bool UnitTest::Test_comm121ss( const Operator& X, const Operator& Y)
 //
 // Zij = 1/2 sum_abc [ na*nb*(1-nc) +(1-na)*(1-nb)*nc ] * (Xciab * Yabcj - Yciab * Xabcj)
 //
-// THIS ONE DOESN'T WORK YET!!!!
+// THIS ONE DOESN'T WORK YET!!!!  (OK, it works now. All is well...)
 //
 bool UnitTest::Test_comm221ss( const Operator& X, const Operator& Y )
 {
@@ -1666,3 +1770,650 @@ bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y )
 }
 
 
+
+//***************************************************************
+//// Now we move on to the scalar-dagger commutator expressions.
+//***************************************************************
+
+
+/// M-Scheme Formula:
+//
+//  Z_i = sum_a X_ia Y_a
+//
+bool UnitTest::Test_comm211sd( const Operator& X, const Operator& Y )
+{
+
+  Operator Z_J( Y );
+  Z_J.SetNonHermitian();
+  Z_J.Erase();
+
+
+  Commutator::comm211sd( X, Y, Z_J);
+
+//  std::cout << "X one body : " << std::endl << X.OneBody << std::endl;
+//  std::cout << "Y one body : " << std::endl << Y.OneBody << std::endl;
+
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  size_t Q = Z_J.GetQSpaceOrbit();
+  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
+
+
+  for (auto i : Z_J.modelspace->all_orbits )
+  {
+    Orbit& oi = Z_J.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    double Zm_i = 0;
+    for (auto a : X.modelspace->all_orbits)
+    {
+     Orbit& oa = X.modelspace->GetOrbit(a);
+     for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
+     {
+       double Xia = GetMschemeMatrixElement_1b( X, i, mi, a, ma );
+       double Ya = GetMschemeMatrixElement_1leg( Y, a, ma );
+
+       Zm_i += Xia * Ya ;
+     }
+    }
+    double ZJ_i = Z_J.OneBody(i,Q);
+    double err = Zm_i - ZJ_i;
+    if (std::abs(err)>1e-6)
+    {
+      std::cout << "Trouble in " << __func__ << "  i = " << i <<  "   Zm_i = " << Zm_i
+                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
+    }
+    summed_error += err*err;
+    sum_m += Zm_i*Zm_i;
+    sum_J += ZJ_i*ZJ_i;
+  }
+
+
+
+
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+}
+
+
+
+/// M-Scheme Formula:
+//
+//  Z_i = sum_ab (na-nb)X_ab Y_bia
+//
+bool UnitTest::Test_comm231sd( const Operator& X, const Operator& Y )
+{
+
+  Operator Z_J( Y );
+  Z_J.SetNonHermitian();
+  Z_J.Erase();
+
+
+  Commutator::comm231sd( X, Y, Z_J);
+
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  size_t Q = Z_J.GetQSpaceOrbit();
+  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
+
+
+
+  for (auto i : Z_J.modelspace->all_orbits )
+  {
+    Orbit& oi = Z_J.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    double Zm_i = 0;
+    for (auto a : X.modelspace->all_orbits)
+    {
+     Orbit& oa = X.modelspace->GetOrbit(a);
+     double na = oa.occ;
+     for (auto b : X.modelspace->all_orbits)
+     {
+       Orbit& ob = X.modelspace->GetOrbit(b);
+       double nb = ob.occ;
+       for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
+       {
+         for (int mb=-ob.j2; mb<=ob.j2;mb+=2)
+         {
+           double Xab = GetMschemeMatrixElement_1b( X, a, ma, b,mb );
+           double Ybia = GetMschemeMatrixElement_3leg( Y, b,mb, i,mi, a,ma );
+
+           Zm_i += (na-nb) * Xab * Ybia ;
+         }
+       }
+     }
+    }
+    double ZJ_i = Z_J.OneBody(i,Q);
+    double err = Zm_i - ZJ_i;
+    if (std::abs(err)>1e-6)
+    {
+      std::cout << "Trouble in " << __func__ << "  i = " << i <<  "   Zm_i = " << Zm_i
+                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
+    }
+    summed_error += err*err;
+    sum_m += Zm_i*Zm_i;
+    sum_J += ZJ_i*ZJ_i;
+  }
+
+
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+}
+
+
+
+
+/// M-Scheme Formula:
+//
+//  Z_i = 1/2 sum_abc (na nb`nc`-na`nb nc) X_aibc Y_bca
+//
+bool UnitTest::Test_comm431sd( const Operator& X, const Operator& Y )
+{
+
+  Operator Z_J( Y );
+  Z_J.SetNonHermitian();
+  Z_J.Erase();
+
+
+  Commutator::comm433_pp_hh_431sd( X, Y, Z_J);
+
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  size_t Q = Z_J.GetQSpaceOrbit();
+  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
+
+
+  for (auto i : Z_J.modelspace->all_orbits )
+  {
+    Orbit& oi = Z_J.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    double Zm_i = 0;
+    for (auto a : X.modelspace->all_orbits)
+    {
+     Orbit& oa = X.modelspace->GetOrbit(a);
+     double na = oa.occ;
+     for (auto b : X.modelspace->all_orbits)
+     {
+       Orbit& ob = X.modelspace->GetOrbit(b);
+       double nb = ob.occ;
+       for (auto c : X.modelspace->all_orbits)
+       {
+         Orbit& oc = X.modelspace->GetOrbit(c);
+         double nc = oc.occ;
+         for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
+         {
+           for (int mb=-ob.j2; mb<=ob.j2;mb+=2)
+           {
+             for (int mc=-oc.j2; mc<=oc.j2;mc+=2)
+             {
+               double Xaibc = GetMschemeMatrixElement_2b( X, a, ma, i,mi, b,mb, c,mc );
+               double Ybca = GetMschemeMatrixElement_3leg( Y, b,mb, c,mc, a,ma );
+
+               Zm_i += 1./2 * ( na*(1-nb)*(1-nc) + (1-na)*nb*nc ) * Xaibc * Ybca ;
+             }
+           }
+         }
+       }
+     }
+    }
+    double ZJ_i = Z_J.OneBody(i,Q);
+    double err = Zm_i - ZJ_i;
+    if (std::abs(err)>1e-6)
+    {
+      std::cout << "Trouble in " << __func__ << "  i = " << i <<  "   Zm_i = " << Zm_i
+                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
+    }
+    summed_error += err*err;
+    sum_m += Zm_i*Zm_i;
+    sum_J += ZJ_i*ZJ_i;
+  }
+
+
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+}
+
+
+
+
+
+/// M-Scheme Formula:
+//
+//
+// 413:
+// Zijk = sum_a Xijka*Ya
+//
+bool UnitTest::Test_comm413sd( const Operator& Xin, const Operator& Y )
+{
+
+  Operator Z_J( Y );
+  Z_J.Erase();
+
+  Operator X = Xin;
+  X.EraseOneBody(); // we do this so that the 233 term does not contribute.
+
+  Commutator::comm413_233sd( X, Y, Z_J);
+
+  size_t Q = Z_J.GetQSpaceOrbit();
+  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
+
+  int mQ = oQ.j2;
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  for (auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    for (auto j : X.modelspace->all_orbits )
+    {
+      if (j<i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits )
+      {
+        Orbit& ok = X.modelspace->GetOrbit(k);
+        if (k<i) continue;
+//          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue;
+//          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue;
+
+          for (int mj=-oj.j2; mj<=oj.j2; mj+=2)
+          {
+           for (int mk=-ok.j2; mk<=ok.j2; mk+=2)
+           {
+             if ( (mi+mj)!=(mk+mQ) ) continue;
+//             if ( std::abs(mk)>ol.j2 ) continue;
+//             int ml = mi + mj - mk;
+
+             double Zm_ijk = 0;
+             for (auto a : X.modelspace->all_orbits )
+             {
+              Orbit& oa = X.modelspace->GetOrbit(a);
+              double na = oa.occ;
+
+//                if ( (oi.l+oj.l+oa.l+ob.l)%2>0) continue;
+//                if ( (oi.tz2+oj.tz2) != (oa.tz2+ob.tz2) ) continue;
+
+                for (int ma=-oa.j2; ma<=oa.j2; ma+=2 )
+                {
+                  if (ma != mQ) continue;
+
+                  double Xijka =  GetMschemeMatrixElement_2b( X, i,mi, j,mj, k,mk, a,ma ) ;
+                  double Ya = GetMschemeMatrixElement_1leg(Y, a,ma) ;
+
+                  Zm_ijk += Xijka * Ya; // 413 term
+
+                }// for ma
+             }// for a
+
+
+             double ZJ_ijk = GetMschemeMatrixElement_3leg( Z_J, i,mi, j,mj, k,mk ) ;
+             double err = Zm_ijk - ZJ_ijk;
+             if (std::abs(err)>1e-6)
+             {
+               std::cout << "Trouble in " << __func__ << "  i,j,k = " << i << " " << j << " " << k 
+                         << "  mvals " << mi << " " << mj << " " << mk
+                         << "   Zm_ijk = " << Zm_ijk << "   ZJ_ijk = " << ZJ_ijk << "   err = " << err << std::endl; 
+             }
+             summed_error += err*err;
+             sum_m += Zm_ijk*Zm_ijk;
+             sum_J += ZJ_ijk*ZJ_ijk;
+
+           }// for mk
+          }// for mj
+      }// for k
+    }// for j
+  }// for i
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+}
+
+
+/// M-Scheme Formula:
+//
+// 233:
+// Zijk =  sum_a ( Xia*Yajk + Xja*Yjak - Yija * Xak )
+//
+bool UnitTest::Test_comm233sd( const Operator& X, const Operator& Yin )
+{
+
+  Operator Y = Yin;
+
+  Operator Z_J( Y );
+  Z_J.Erase();
+
+  Y.EraseOneBody(); // we do this so the 413 term does not contribute
+
+  Commutator::comm413_233sd( X, Y, Z_J);
+
+//  if ( Z_J.IsHermitian() )
+//     Z_J.Symmetrize();
+//  else if (Z_J.IsAntiHermitian() )
+//     Z_J.AntiSymmetrize();
+
+  size_t Q = Z_J.GetQSpaceOrbit();
+  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
+
+  int mQ = oQ.j2;
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  for (auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    for (auto j : X.modelspace->all_orbits )
+    {
+      if (j<i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits )
+      {
+        Orbit& ok = X.modelspace->GetOrbit(k);
+        if (k<i) continue;
+//          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue;
+//          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue;
+
+          for (int mj=-oj.j2; mj<=oj.j2; mj+=2)
+          {
+           for (int mk=-ok.j2; mk<=ok.j2; mk+=2)
+           {
+             if ( (mi+mj)!=(mk+mQ) ) continue;
+//             if ( std::abs(mk)>ol.j2 ) continue;
+//             int ml = mi + mj - mk;
+
+             double Zm_ijk = 0;
+             for (auto a : X.modelspace->all_orbits )
+             {
+              Orbit& oa = X.modelspace->GetOrbit(a);
+              double na = oa.occ;
+
+//                if ( (oi.l+oj.l+oa.l+ob.l)%2>0) continue;
+//                if ( (oi.tz2+oj.tz2) != (oa.tz2+ob.tz2) ) continue;
+
+                for (int ma=-oa.j2; ma<=oa.j2; ma+=2 )
+                {
+                  double Xia = GetMschemeMatrixElement_1b(X, i,mi, a,ma);
+                  double Xja = GetMschemeMatrixElement_1b(X, j,mj, a,ma);
+                  double Xak = GetMschemeMatrixElement_1b(X, a,ma, k,mk);
+
+                  double Yajk = GetMschemeMatrixElement_3leg(Y, a,ma, j,mj, k,mk);
+                  double Yiak = GetMschemeMatrixElement_3leg(Y, i,mi, a,ma, k,mk);
+                  double Yija = GetMschemeMatrixElement_3leg(Y, i,mi, j,mj, a,ma);
+
+                  Zm_ijk += Xia*Yajk + Xja*Yiak - Yija*Xak; // 223 term
+
+
+                }// for ma
+             }// for a
+
+
+             double ZJ_ijk = GetMschemeMatrixElement_3leg( Z_J, i,mi, j,mj, k,mk ) ;
+             double err = Zm_ijk - ZJ_ijk;
+             if (std::abs(err)>1e-6)
+             {
+               std::cout << "Trouble in " << __func__ << "  i,j,k = " << i << " " << j << " " << k 
+                         << "  mvals " << mi << " " << mj << " " << mk
+                         << "   Zm_ijk = " << Zm_ijk << "   ZJ_ijk = " << ZJ_ijk << "   err = " << err << std::endl; 
+             }
+             summed_error += err*err;
+             sum_m += Zm_ijk*Zm_ijk;
+             sum_J += ZJ_ijk*ZJ_ijk;
+
+           }// for mk
+          }// for mj
+      }// for k
+    }// for j
+  }// for i
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+}
+
+
+
+
+/// M-Scheme Formula:
+//
+// 433 pp/hh:
+// Zijk =  1/2 sum_ab (nanb - na`nb`)  Xijab*Yabk 
+//
+bool UnitTest::Test_comm433_pp_hh_sd( const Operator& X, const Operator& Yin )
+{
+
+  Operator Y = Yin;
+
+  Operator Z_J( Y );
+  Z_J.Erase();
+
+  Commutator::comm433_pp_hh_431sd( X, Y, Z_J);
+
+  size_t Q = Z_J.GetQSpaceOrbit();
+  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
+
+  int mQ = oQ.j2;
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  for (auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    for (auto j : X.modelspace->all_orbits )
+    {
+      if (j<i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits )
+      {
+        Orbit& ok = X.modelspace->GetOrbit(k);
+        if (k<i) continue;
+//          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue;
+//          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue;
+
+          for (int mj=-oj.j2; mj<=oj.j2; mj+=2)
+          {
+           for (int mk=-ok.j2; mk<=ok.j2; mk+=2)
+           {
+             if ( (mi+mj)!=(mk+mQ) ) continue;
+//             if ( std::abs(mk)>ol.j2 ) continue;
+//             int ml = mi + mj - mk;
+
+             double Zm_ijk = 0;
+             for (auto a : X.modelspace->all_orbits )
+             {
+              Orbit& oa = X.modelspace->GetOrbit(a);
+              double na = oa.occ;
+              for (auto b : X.modelspace->all_orbits )
+              {
+               Orbit& ob = X.modelspace->GetOrbit(b);
+               double nb = ob.occ;
+
+//                if ( (oi.l+oj.l+oa.l+ob.l)%2>0) continue;
+//                if ( (oi.tz2+oj.tz2) != (oa.tz2+ob.tz2) ) continue;
+
+                for (int ma=-oa.j2; ma<=oa.j2; ma+=2 )
+                {
+                  for (int mb=-ob.j2; mb<=ob.j2; mb+=2 )
+                  {
+                    double Xijab = GetMschemeMatrixElement_2b(X, i,mi, j,mj, a,ma, b,mb);
+                    double Yabk = GetMschemeMatrixElement_3leg(Y, a,ma, b,mb, k,mk);
+
+                    Zm_ijk += 1./2 * ((1-na)*(1-nb) - na*nb) * Xijab * Yabk ;
+
+                  }// for mb
+                }// for ma
+              }// for b
+             }// for a
+
+
+             double ZJ_ijk = GetMschemeMatrixElement_3leg( Z_J, i,mi, j,mj, k,mk ) ;
+             double err = Zm_ijk - ZJ_ijk;
+             if (std::abs(err)>1e-6)
+             {
+               std::cout << "Trouble in " << __func__ << "  i,j,k = " << i << " " << j << " " << k 
+                         << "  mvals " << mi << " " << mj << " " << mk
+                         << "   Zm_ijk = " << Zm_ijk << "   ZJ_ijk = " << ZJ_ijk << "   err = " << err << std::endl; 
+             }
+             summed_error += err*err;
+             sum_m += Zm_ijk*Zm_ijk;
+             sum_J += ZJ_ijk*ZJ_ijk;
+
+           }// for mk
+          }// for mj
+      }// for k
+    }// for j
+  }// for i
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+}
+
+
+
+
+/// M-Scheme Formula:
+//
+// 433 pp/hh:
+// Zijk =  sum_ab (na - nb)  Xiakb Ybja
+//
+bool UnitTest::Test_comm433sd_ph( const Operator& X, const Operator& Yin )
+{
+
+  Operator Y = Yin;
+
+  Operator Z_J( Y );
+  Z_J.Erase();
+
+  Commutator::comm433sd_ph( X, Y, Z_J);
+
+  size_t Q = Z_J.GetQSpaceOrbit();
+  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
+
+  int mQ = oQ.j2;
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  for (auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    for (auto j : X.modelspace->all_orbits )
+    {
+      if (j<i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits )
+      {
+        Orbit& ok = X.modelspace->GetOrbit(k);
+        if (k<i) continue;
+//          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue;
+//          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue;
+
+          for (int mj=-oj.j2; mj<=oj.j2; mj+=2)
+          {
+           for (int mk=-ok.j2; mk<=ok.j2; mk+=2)
+           {
+             if ( (mi+mj)!=(mk+mQ) ) continue;
+//             if ( std::abs(mk)>ol.j2 ) continue;
+//             int ml = mi + mj - mk;
+
+             double Zm_ijk = 0;
+             for (auto a : X.modelspace->all_orbits )
+             {
+              Orbit& oa = X.modelspace->GetOrbit(a);
+              double na = oa.occ;
+              for (auto b : X.modelspace->all_orbits )
+              {
+               Orbit& ob = X.modelspace->GetOrbit(b);
+               double nb = ob.occ;
+
+//                if ( (oi.l+oj.l+oa.l+ob.l)%2>0) continue;
+//                if ( (oi.tz2+oj.tz2) != (oa.tz2+ob.tz2) ) continue;
+
+                for (int ma=-oa.j2; ma<=oa.j2; ma+=2 )
+                {
+                  for (int mb=-ob.j2; mb<=ob.j2; mb+=2 )
+                  {
+                    double Xiakb = GetMschemeMatrixElement_2b(X, i,mi, a,ma, k,mk, b,mb);
+                    double Ybja = GetMschemeMatrixElement_3leg(Y, b,mb, j,mj, a,ma);
+                    double Xjakb = GetMschemeMatrixElement_2b(X, j,mj, a,ma, k,mk, b,mb);
+                    double Ybia = GetMschemeMatrixElement_3leg(Y, b,mb, i,mi, a,ma);
+
+                    Zm_ijk += (na-nb) * ( Xiakb * Ybja  -  Xjakb * Ybia ) ;
+
+                  }// for mb
+                }// for ma
+              }// for b
+             }// for a
+
+
+             double ZJ_ijk = GetMschemeMatrixElement_3leg( Z_J, i,mi, j,mj, k,mk ) ;
+             double err = Zm_ijk - ZJ_ijk;
+             if (std::abs(err)>1e-6)
+             {
+               std::cout << "Trouble in " << __func__ << "  i,j,k = " << i << " " << j << " " << k 
+                         << "  mvals " << mi << " " << mj << " " << mk
+                         << "   Zm_ijk = " << Zm_ijk << "   ZJ_ijk = " << ZJ_ijk << "   err = " << err << std::endl; 
+             }
+             summed_error += err*err;
+             sum_m += Zm_ijk*Zm_ijk;
+             sum_J += ZJ_ijk*ZJ_ijk;
+
+           }// for mk
+          }// for mj
+      }// for k
+    }// for j
+  }// for i
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+}
