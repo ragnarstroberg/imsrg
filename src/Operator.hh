@@ -104,24 +104,24 @@ class Operator
 
   // One body setter/getters
   double GetOneBody(int i,int j) {return OneBody(i,j);};
-  void SetOneBody(int i, int j, double val) ;
+  void   SetOneBody(int i, int j, double val) ;
   size_t GetTwoBodyDimension(size_t ch_bra, size_t ch_ket){ return TwoBody.GetMatrix(ch_bra, ch_ket).n_cols;};
   double GetTwoBody(size_t ch_bra, size_t ch_ket, size_t i, size_t j);
-  void SetTwoBody(int J1, int p1, int T1, int J2, int p2, int T2, int i, int j, int k, int l, double v);
+  void   SetTwoBody(int J1, int p1, int T1, int J2, int p2, int T2, int i, int j, int k, int l, double v);
 
   void SetE3max(int e){E3max = e;};
-  int GetE3max(){return E3max;};
+  int  GetE3max(){return E3max;};
 
   // Other setter-getters
 //  ModelSpace * GetModelSpace();
   ModelSpace * GetModelSpace() const;  // making this const isn't strictly kosher, but hopefully we shouldn't be in the business of tweaking the modelspace...
   void SetModelSpace(ModelSpace &ms){modelspace = &ms;};
 
-  void Erase(); ///< Set all matrix elements to zero.
-  void EraseZeroBody(){ZeroBody = 0;}; ///< set zero-body term to zero
-  void EraseOneBody(); ///< set all one-body terms to zero
-  void EraseTwoBody(); ///< set all two-body terms to zero
-  void EraseThreeBody(); ///< set all two-body terms to zero
+  virtual void Erase(); ///< Set all matrix elements to zero.
+  virtual void EraseZeroBody(){ZeroBody = 0;}; ///< set zero-body term to zero
+  virtual void EraseOneBody(); ///< set all one-body terms to zero
+  virtual void EraseTwoBody(); ///< set all two-body terms to zero
+  virtual void EraseThreeBody(); ///< set all two-body terms to zero
 
   void SetHermitian() ;
   void SetAntiHermitian() ;

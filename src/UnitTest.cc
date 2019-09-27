@@ -185,6 +185,54 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
 
 // Generate a random dagger operator, i.e. one that changes particle number by +1
 // for use in testing the dagger commutator routines.
+DaggerOperator UnitTest::RandomDaggerOp(ModelSpace& modelspace, index_t Q)
+{
+   DaggerOperator dag(modelspace,Q);
+//   dag.SetNumberLegs(3);
+//   dag.SetQSpaceOrbit(Q);
+//   dag.SetNonHermitian();
+
+   std::default_random_engine generator(random_seed);
+   double mean = 0;
+   double stddev = 1;
+   std::normal_distribution<double> distribution(mean,stddev);
+
+   // Only orbits with the same l,j,tz quantum numbers as the Q orbit
+   // can be non-zero, so we fill a single column of the one-body matrix.
+   Orbit& oQ = modelspace.GetOrbit(Q);
+   for (auto i : dag.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+   {
+     double random_me = distribution(generator);
+     dag.OneBody(i,Q)= random_me;
+   }
+
+   size_t nch = modelspace.GetNumberTwoBodyChannels();
+   for (size_t ch=0; ch<nch; ch++)
+   {
+     TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+     size_t nkets = tbc.GetNumberKets();
+     for (size_t ibra=0; ibra<nkets; ibra++)
+     {
+       Ket& bra = tbc.GetKet(ibra);
+       for ( auto k : modelspace.all_orbits )
+       {
+         Orbit& ok = modelspace.GetOrbit(k);
+         // check whether |kQ> lives in this channel
+         if ( (ok.tz2+oQ.tz2 != 2*tbc.Tz) or ((ok.l+oQ.l)%2 != tbc.parity) or ( (ok.j2+oQ.j2)<2*tbc.J ) or ( std::abs(ok.j2-oQ.j2)>2*tbc.J) ) continue;
+//         if ( not tbc.CheckChannel_ket( &ok, &oQ) ) continue;
+         
+         double random_me = distribution(generator);
+//         dag.TwoBody.SetTBME(ch,ch,bra.p,bra.q,k,Q, random_me);
+         dag.ThreeLeg.SetME(ch,bra.p,bra.q,k, random_me);
+       }
+     }
+     std::cout << "ch = " << ch << "  matrix looks like " << std::endl << dag.ThreeLeg.GetMatrix(ch) << std::endl << std::endl;
+   }
+
+   return dag;
+}
+
+/*
 Operator UnitTest::RandomDaggerOp(ModelSpace& modelspace, index_t Q)
 {
    Operator dag(modelspace);
@@ -230,9 +278,7 @@ Operator UnitTest::RandomDaggerOp(ModelSpace& modelspace, index_t Q)
    return dag;
 }
 
-
-
-
+*/
 
 
 
@@ -413,7 +459,7 @@ void UnitTest::TestDaggerCommutators(index_t Q)
 {
   arma::arma_rng::set_seed( random_seed );
   Operator X = RandomOp(*modelspace, 0, 0, 0, 2, -1);
-  Operator Y = RandomDaggerOp(*modelspace, Q);
+  DaggerOperator Y = RandomDaggerOp(*modelspace, Q);
 
   bool all_good = true;
 
@@ -587,16 +633,60 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
 
 // The following two routines implicitly assume that we've chosen the apropriate projection quantum numbers.
 // This may or may not be the most straightforward way to do things.
-double UnitTest::GetMschemeMatrixElement_1leg( const Operator& Op, int a, int ma )
+double UnitTest::GetMschemeMatrixElement_1leg( const DaggerOperator& Op, int a, int ma )
 {
   
   return GetMschemeMatrixElement_1b( Op, a, ma, Op.GetQSpaceOrbit(), ma) ;
 }
 
 
-double UnitTest::GetMschemeMatrixElement_3leg( const Operator& Op, int a, int ma, int b, int mb, int c, int mc )
+double UnitTest::GetMschemeMatrixElement_3leg( const DaggerOperator& Op, int a, int ma, int b, int mb, int c, int mc )
 {
-  return GetMschemeMatrixElement_2b( Op, a,ma, b,mb, c,mc, Op.GetQSpaceOrbit(), ma+mb-mc);
+
+  double matel = 0;
+  int Jop = Op.GetJRank();
+  int Q = Op.GetQSpaceOrbit();
+  Orbit& oa = Op.modelspace->GetOrbit(a);
+  Orbit& ob = Op.modelspace->GetOrbit(b);
+  Orbit& oc = Op.modelspace->GetOrbit(c);
+  Orbit& oQ = Op.modelspace->GetOrbit(Q);
+  int mQ = ma+mb-mc;
+  if (mQ > oQ.j2) return 0;
+  if (a==b and ma==mb) return 0;
+//  if (c==d and mc==md) return 0;
+  if ( Jop == 0) // scalar operator
+  {
+    if ( (ma+mb) == (mc+mQ) )
+    {
+      int Jmin = std::max(  std::abs( oa.j2-ob.j2) , std::abs(oc.j2-oQ.j2)  ) / 2;
+      int Jmax = std::min( oa.j2+ob.j2  ,  oc.j2+oQ.j2 ) / 2;
+      int M = (ma+mb)/2;
+      for (int J=Jmin; J<=Jmax; J++)
+      {
+        // We take the un-normalized TBME (the one with the tilde) so we don't
+        // need to worry about normalization factors.
+        double clebsch_ab = AngMom::CG( 0.5*oa.j2, 0.5*ma, 0.5*ob.j2, 0.5*mb,  J, M );
+        double clebsch_cd = AngMom::CG( 0.5*oc.j2, 0.5*mc, 0.5*oQ.j2, 0.5*mQ,  J, M );
+
+        matel += clebsch_ab * clebsch_cd * Op.ThreeLeg.GetME_J(J,a,b,c);
+
+
+//        if (a==0 and b==8 and c==0)
+//        {
+//
+//         std::cout << "*******  JM=" << J << " " << M << "  clebsch = " << clebsch_ab << " " << clebsch_cd <<  " * " << Op.ThreeLeg.GetME_J(J,a,b,c) << "  ->  " << clebsch_ab * clebsch_cd * Op.ThreeLeg.GetME_J(J,a,b,c) << "   matel = " << matel << std::endl;
+//        }
+      }
+    }
+  }
+  else
+  {
+    std::cout << " WARNING!!! " << __func__ << "   not yet implemented for tensor operator " << std::endl;
+    exit(0);
+  }
+
+  return matel;
+
 }
 
 
@@ -1780,10 +1870,10 @@ bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y )
 //
 //  Z_i = sum_a X_ia Y_a
 //
-bool UnitTest::Test_comm211sd( const Operator& X, const Operator& Y )
+bool UnitTest::Test_comm211sd( const Operator& X, const DaggerOperator& Y )
 {
 
-  Operator Z_J( Y );
+  DaggerOperator Z_J( Y );
   Z_J.SetNonHermitian();
   Z_J.Erase();
 
@@ -1848,10 +1938,10 @@ bool UnitTest::Test_comm211sd( const Operator& X, const Operator& Y )
 //
 //  Z_i = sum_ab (na-nb)X_ab Y_bia
 //
-bool UnitTest::Test_comm231sd( const Operator& X, const Operator& Y )
+bool UnitTest::Test_comm231sd( const Operator& X, const DaggerOperator& Y )
 {
 
-  Operator Z_J( Y );
+  DaggerOperator Z_J( Y );
   Z_J.SetNonHermitian();
   Z_J.Erase();
 
@@ -1922,10 +2012,10 @@ bool UnitTest::Test_comm231sd( const Operator& X, const Operator& Y )
 //
 //  Z_i = 1/2 sum_abc (na nb`nc`-na`nb nc) X_aibc Y_bca
 //
-bool UnitTest::Test_comm431sd( const Operator& X, const Operator& Y )
+bool UnitTest::Test_comm431sd( const Operator& X, const DaggerOperator& Y )
 {
 
-  Operator Z_J( Y );
+  DaggerOperator Z_J( Y );
   Z_J.SetNonHermitian();
   Z_J.Erase();
 
@@ -2006,10 +2096,10 @@ bool UnitTest::Test_comm431sd( const Operator& X, const Operator& Y )
 // 413:
 // Zijk = sum_a Xijka*Ya
 //
-bool UnitTest::Test_comm413sd( const Operator& Xin, const Operator& Y )
+bool UnitTest::Test_comm413sd( const Operator& Xin, const DaggerOperator& Y )
 {
 
-  Operator Z_J( Y );
+  DaggerOperator Z_J( Y );
   Z_J.Erase();
 
   Operator X = Xin;
@@ -2066,6 +2156,10 @@ bool UnitTest::Test_comm413sd( const Operator& Xin, const Operator& Y )
                   double Ya = GetMschemeMatrixElement_1leg(Y, a,ma) ;
 
                   Zm_ijk += Xijka * Ya; // 413 term
+//                  if (i==0 and j==8 and k==0)
+//                  {
+//                    std::cout << "  #### a = " << a << "  m vals " << mi << " " << mj << " " << mk << " " << ma << "  " << mQ << "   Xijka , Ya = " << Xijka << " " << Ya << "   Zm_ijk = " << Zm_ijk << std::endl;
+//                  }
 
                 }// for ma
              }// for a
@@ -2076,7 +2170,7 @@ bool UnitTest::Test_comm413sd( const Operator& Xin, const Operator& Y )
              if (std::abs(err)>1e-6)
              {
                std::cout << "Trouble in " << __func__ << "  i,j,k = " << i << " " << j << " " << k 
-                         << "  mvals " << mi << " " << mj << " " << mk
+                         << "  mvals " << mi << " " << mj << " " << mk << "   " << mQ
                          << "   Zm_ijk = " << Zm_ijk << "   ZJ_ijk = " << ZJ_ijk << "   err = " << err << std::endl; 
              }
              summed_error += err*err;
@@ -2091,7 +2185,7 @@ bool UnitTest::Test_comm413sd( const Operator& Xin, const Operator& Y )
 
   bool passed = std::abs( summed_error ) <1e-6 ;
   std::string passfail = passed ? "PASS " : "FAIL";
-  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  if ( Z_J.ThreeLegNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
   std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
             << "    summed error = " << summed_error << "  => " << passfail << std::endl;
   return passed;
@@ -2104,12 +2198,12 @@ bool UnitTest::Test_comm413sd( const Operator& Xin, const Operator& Y )
 // 233:
 // Zijk =  sum_a ( Xia*Yajk + Xja*Yjak - Yija * Xak )
 //
-bool UnitTest::Test_comm233sd( const Operator& X, const Operator& Yin )
+bool UnitTest::Test_comm233sd( const Operator& X, const DaggerOperator& Yin )
 {
 
-  Operator Y = Yin;
+  DaggerOperator Y = Yin;
 
-  Operator Z_J( Y );
+  DaggerOperator Z_J( Y );
   Z_J.Erase();
 
   Y.EraseOneBody(); // we do this so the 413 term does not contribute
@@ -2199,7 +2293,7 @@ bool UnitTest::Test_comm233sd( const Operator& X, const Operator& Yin )
 
   bool passed = std::abs( summed_error ) <1e-6 ;
   std::string passfail = passed ? "PASS " : "FAIL";
-  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  if ( Z_J.ThreeLegNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
   std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
             << "    summed error = " << summed_error << "  => " << passfail << std::endl;
   return passed;
@@ -2214,12 +2308,12 @@ bool UnitTest::Test_comm233sd( const Operator& X, const Operator& Yin )
 // 433 pp/hh:
 // Zijk =  1/2 sum_ab (nanb - na`nb`)  Xijab*Yabk 
 //
-bool UnitTest::Test_comm433_pp_hh_sd( const Operator& X, const Operator& Yin )
+bool UnitTest::Test_comm433_pp_hh_sd( const Operator& X, const DaggerOperator& Yin )
 {
 
-  Operator Y = Yin;
+  DaggerOperator Y = Yin;
 
-  Operator Z_J( Y );
+  DaggerOperator Z_J( Y );
   Z_J.Erase();
 
   Commutator::comm433_pp_hh_431sd( X, Y, Z_J);
@@ -2304,7 +2398,7 @@ bool UnitTest::Test_comm433_pp_hh_sd( const Operator& X, const Operator& Yin )
 
   bool passed = std::abs( summed_error ) <1e-6 ;
   std::string passfail = passed ? "PASS " : "FAIL";
-  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  if ( Z_J.ThreeLegNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
   std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
             << "    summed error = " << summed_error << "  => " << passfail << std::endl;
   return passed;
@@ -2319,15 +2413,16 @@ bool UnitTest::Test_comm433_pp_hh_sd( const Operator& X, const Operator& Yin )
 // 433 pp/hh:
 // Zijk =  sum_ab (na - nb)  Xiakb Ybja
 //
-bool UnitTest::Test_comm433sd_ph( const Operator& X, const Operator& Yin )
+bool UnitTest::Test_comm433sd_ph( const Operator& X, const DaggerOperator& Yin )
 {
 
-  Operator Y = Yin;
+  DaggerOperator Y = Yin;
 
-  Operator Z_J( Y );
+  DaggerOperator Z_J( Y );
   Z_J.Erase();
 
-  Commutator::comm433sd_ph( X, Y, Z_J);
+//  Commutator::comm433sd_ph( X, Y, Z_J);
+  Commutator::comm433sd_ph_dumbway( X, Y, Z_J);
 
   size_t Q = Z_J.GetQSpaceOrbit();
   Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
@@ -2411,7 +2506,7 @@ bool UnitTest::Test_comm433sd_ph( const Operator& X, const Operator& Yin )
 
   bool passed = std::abs( summed_error ) <1e-6 ;
   std::string passfail = passed ? "PASS " : "FAIL";
-  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  if ( Z_J.ThreeLegNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
   std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
             << "    summed error = " << summed_error << "  => " << passfail << std::endl;
   return passed;
