@@ -22,6 +22,7 @@
 
 #include "ModelSpace.hh"
 #include "Operator.hh"
+//#include "DaggerOperator.hh"
 #include "HartreeFock.hh"
 #include "IMSRGSolver.hh"
 #include "PhysicalConstants.hh"
@@ -58,6 +59,7 @@ namespace imsrg_util
  using PhysConst::LOG2;
 
  Operator OperatorFromString(ModelSpace& modelspace, std::string str);
+// DaggerOperator DaggerOperatorFromString(ModelSpace& modelspace, std::string str);
  std::map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax);
 
  Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2);

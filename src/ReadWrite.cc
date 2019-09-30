@@ -3896,6 +3896,7 @@ void ReadWrite::WriteTensorTwoBody(std::string filename, Operator& Op, std::stri
 
 
 
+//void ReadWrite::WriteDaggerOperator( DaggerOperator& Op, std::string filename, std::string opname)
 void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::string opname)
 {
 
@@ -3979,7 +3980,8 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
        auto b_ind = orb2nushell[b];
        for ( auto c : modelspace->valence )
        {
-         double me = Op.TwoBody.GetTBME_J(Jab,Jab,a,b,c,Q) * EdmondsConventionFactor;
+//         double me = Op.TwoBody.GetTBME_J(Jab,Jab,a,b,c,Q) * EdmondsConventionFactor;
+         double me = Op.ThreeLeg.GetME_J(Jab,a,b,c) * EdmondsConventionFactor;
          if (std::abs(me) < 1e-7) continue;
          if (a_ind == b_ind) me /= PhysConst::SQRT2;  // We write out normalized matrix elements
          auto c_ind = orb2nushell[c];
