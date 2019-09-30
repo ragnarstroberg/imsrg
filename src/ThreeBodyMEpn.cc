@@ -65,23 +65,6 @@ void ThreeBodyMEpn::Allocate_PN()
 }
 
 
-/*
-// This will need to be more elaborate if we want to use tensor 3-body.
-void ThreeBodyMEpn::Allocate_PN()
-{
-  total_dimension = 0;
-  size_t nch = modelspace->GetNumberThreeBodyChannels();
-  for (size_t ch=0; ch<nch; ch++)
-//  for (auto Tbc : modelspace->ThreeBodyChannels )
-  {
-    ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel( ch );
-    size_t channel_dim = Tbc.GetNumber3bKets(); // Number of kets in this 3body J,p,Tz channel
-    MatEl[{ch,ch}] = SymmMatrix<ME_type>( channel_dim );
-    total_dimension += channel_dim * (channel_dim+1)/2;
-  }
-}
-*/
-
 
 /// interface methods. When calling these, the user shouldn't need to care whether
 /// we're storing the matrix elements in isospin or PN formalism.

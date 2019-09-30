@@ -3,7 +3,6 @@
 
 #include "ModelSpace.hh"
 #include "ThreeBodyME.hh"
-#include "SymmMatrix.hh"
 #include <vector>
 #include <map>
 #include <unordered_map>
@@ -16,8 +15,6 @@ class ThreeBodyMEpn
 
  public:
   ModelSpace * modelspace;
-  // this way of storing things is evidently too slow...
-//  std::map< std::array<size_t,2>, SymmMatrix<ME_type>> MatEl;
   std::vector<ME_type> matrix_data;
   std::vector<size_t> ch_start;
   std::vector<size_t> ch_dim;
