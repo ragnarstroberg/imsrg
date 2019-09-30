@@ -2906,6 +2906,10 @@ void ReadWrite::ReadNuShellX_int(Operator& op, std::string filename)
     std::istringstream(tz.substr(0,j.find("/")-tz.front())) >> tz2;
     orbit_map[indx] = modelspace->GetOrbitIndex(n,l,j2,tz2);
   }
+  if (not intfile.good())
+  {
+    std::cout << "TROUBLE in " << __func__ << "  couldn't read file " << filename << std::endl;
+  }
 
   double dummy;
   intfile >> dummy; // read the -999 that doesn't mean anything
@@ -2992,7 +2996,7 @@ void ReadWrite::ReadNuShellX_int_iso(Operator& op, std::string filename)
   {
     V *= scalefactor;
     uint64_t hashkey = ( ((uint64_t) J) + ((uint64_t)T<<10) + (a<<20) + (b<<30) + (c<<40) + (d<<50)  );
-//    std::cout << "setting " << a << " " << b << " " << c << " " << d << " " << J << " " << T << " ->  "<< hashkey << "   " << V << std::endl;
+    std::cout << "setting " << a << " " << b << " " << c << " " << d << " " << J << " " << T << " ->  "<< hashkey << "   " << V << std::endl;
     IsoTBME[hashkey] = V;
   }
 
@@ -3020,8 +3024,23 @@ void ReadWrite::ReadNuShellX_int_iso(Operator& op, std::string filename)
         double Vpp = V1;
         double Vpnpn = (V1 + V0) * 0.5;
         double Vpnnp = (V1 - V0) * 0.5;
-        double Vnppn = (V1 - V0) * 0.5;
-        double Vnpnp = (V1 + V0) * 0.5;
+//        double Vnppn = (V1 - V0) * 0.5;
+//        double Vnpnp = (V1 + V0) * 0.5;
+
+	// This is just a test. Not sure if it works...
+        if ( (oa.j2==ob.j2) and (oa.l==ob.l) and (oa.n==ob.n) )
+        {
+	  Vpnpn *= sqrt(2);
+	  Vpnnp *= sqrt(2);
+	}
+	if ( (oc.j2==od.j2) and (oc.l==od.l) and (oc.n==od.n) )
+        {
+	  Vpnpn *= sqrt(2);
+	  Vpnnp *= sqrt(2);
+	}
+
+	double Vnpnp = Vpnpn;
+	double Vnppn = Vpnnp;
 
         if ( std::abs(Vpp)>1e-6 )
         {

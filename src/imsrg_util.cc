@@ -2147,7 +2147,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
    modelspace.PreCalculateMoshinsky();
    double sa,sb,sc,sd;
    sa=sb=sc=sd=0.5;
-   #pragma omp parallel for schedule(dynamic,1) 
+//   #pragma omp parallel for schedule(dynamic,1) 
    for (int ch=0; ch<nchan; ++ch)
    {
       TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
@@ -2256,6 +2256,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vecto
 
             // In Moshinsky's convention, r_rel = (r1-r2)/sqrt(2).  We want 1/|r1-r2| = 1/sqrt(2) * 1/r_rel
             rinv *=  1 / sqrt(2*(1.0+bra.delta_pq())*(1.0+ket.delta_pq())); // normalize and account for sqrt(2) Moshinsky convention
+//	    std::cout << "setting " << ch << "  " << ibra << " " << iket << "  " << rinv << std::endl;
             VCoul.TwoBody.SetTBME(ch,ibra,iket,rinv);
             VCoul.TwoBody.SetTBME(ch,iket,ibra,rinv);
                          
