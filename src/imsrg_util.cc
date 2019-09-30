@@ -131,11 +131,7 @@ namespace imsrg_util
       {
         double rr;
         std::istringstream(opnamesplit[1]) >> rr;
-<<<<<<< HEAD
-        return NeutronDensityAtR(modelspace,rr);
-=======
         return NeutronDensityAtR(modelspace,rr); // whoops... I'd forgotten the "return". Thanks Johannes...
->>>>>>> 2832f0edd52ab571d932eb3d0b0f2214177276e5
       }
       else if (opnamesplit[0] == "OneOcc") // Get occupation of specified orbit, e.g. OneOccp_1p3
       {
@@ -2443,11 +2439,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
             // In Moshinsky's convention, r_rel = (r1-r2)/sqrt(2).  We want 1/|r1-r2| = 1/sqrt(2) * 1/r_rel
             rinv *=  1 / sqrt(2*(1.0+bra.delta_pq())*(1.0+ket.delta_pq())); // normalize and account for sqrt(2) Moshinsky convention
-<<<<<<< HEAD
-//	    std::cout << "setting " << ch << "  " << ibra << " " << iket << "  " << rinv << std::endl;
-=======
 //            std::cout << "setting " << ch << " " << ibra << " " << iket << "  " << rinv << std::endl;
->>>>>>> 2832f0edd52ab571d932eb3d0b0f2214177276e5
             VCoul.TwoBody.SetTBME(ch,ibra,iket,rinv);
             VCoul.TwoBody.SetTBME(ch,iket,ibra,rinv);
                          
