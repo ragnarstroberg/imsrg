@@ -149,7 +149,7 @@ OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       IMSRGProfiler.o Commutator.o HFMBPT.o\
       DarkMatterNREFT.o Jacobi3BME.o UnitTest.o \
       TwoBodyChannel.o ThreeBodyChannel.o \
-      ThreeBodyMEpn.o DaggerOperator.o\
+      ThreeBodyMEpn.o ThreeLegME.o\
       boost_src/gzip.o boost_src/zlib.o  
 
 mysrg: main.cc $(OBJ)

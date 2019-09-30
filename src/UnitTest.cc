@@ -185,12 +185,14 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
 
 // Generate a random dagger operator, i.e. one that changes particle number by +1
 // for use in testing the dagger commutator routines.
-DaggerOperator UnitTest::RandomDaggerOp(ModelSpace& modelspace, index_t Q)
+//DaggerOperator UnitTest::RandomDaggerOp(ModelSpace& modelspace, index_t Q)
+Operator UnitTest::RandomDaggerOp(ModelSpace& modelspace, index_t Q)
 {
-   DaggerOperator dag(modelspace,Q);
-//   dag.SetNumberLegs(3);
-//   dag.SetQSpaceOrbit(Q);
-//   dag.SetNonHermitian();
+//   Operator dag(modelspace,Q);
+   Operator dag(modelspace);
+   dag.SetNumberLegs(3);
+   dag.SetQSpaceOrbit(Q);
+   dag.SetNonHermitian();
 
    std::default_random_engine generator(random_seed);
    double mean = 0;
@@ -394,6 +396,7 @@ void UnitTest::Test3BodyAntisymmetry(Operator& Y)
 
 void UnitTest::TestCommutators()
 {
+  double t_start = omp_get_wtime();
   arma::arma_rng::set_seed( random_seed );
   Operator X = RandomOp(*modelspace, 0, 0, 0, 2, -1);
   Operator Y = RandomOp(*modelspace, 0, 0, 0, 2, +1);
@@ -420,12 +423,14 @@ void UnitTest::TestCommutators()
     std::cout << " Done with " << __func__ << " and at least one test failed" << std::endl;
   }
 
+  X.profiler.timer[__func__] += omp_get_wtime() - t_start;
 }
 
 
 //void UnitTest::TestCommutators3()
 void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 {
+  double t_start = omp_get_wtime();
 //  std::cout << " random_seed = " << random_seed << std::endl;
 //  arma::arma_rng::set_seed( random_seed );
 //  modelspace->PreCalculateSixJ();
@@ -449,6 +454,7 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
   {
     std::cout << " Done with " << __func__ << " and at least one test failed" << std::endl;
   }
+  X.profiler.timer[__func__] += omp_get_wtime() - t_start;
 }
 
 
@@ -457,9 +463,10 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 
 void UnitTest::TestDaggerCommutators(index_t Q)
 {
+  double t_start = omp_get_wtime();
   arma::arma_rng::set_seed( random_seed );
   Operator X = RandomOp(*modelspace, 0, 0, 0, 2, -1);
-  DaggerOperator Y = RandomDaggerOp(*modelspace, Q);
+  Operator Y = RandomDaggerOp(*modelspace, Q);
 
   bool all_good = true;
 
@@ -479,7 +486,7 @@ void UnitTest::TestDaggerCommutators(index_t Q)
   {
     std::cout << " Done with " << __func__ << " and at least one test failed" << std::endl;
   }
-
+  X.profiler.timer[__func__] += omp_get_wtime() - t_start;
 }
 
 
@@ -633,14 +640,14 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
 
 // The following two routines implicitly assume that we've chosen the apropriate projection quantum numbers.
 // This may or may not be the most straightforward way to do things.
-double UnitTest::GetMschemeMatrixElement_1leg( const DaggerOperator& Op, int a, int ma )
+double UnitTest::GetMschemeMatrixElement_1leg( const Operator& Op, int a, int ma )
 {
   
   return GetMschemeMatrixElement_1b( Op, a, ma, Op.GetQSpaceOrbit(), ma) ;
 }
 
 
-double UnitTest::GetMschemeMatrixElement_3leg( const DaggerOperator& Op, int a, int ma, int b, int mb, int c, int mc )
+double UnitTest::GetMschemeMatrixElement_3leg( const Operator& Op, int a, int ma, int b, int mb, int c, int mc )
 {
 
   double matel = 0;
@@ -1870,10 +1877,10 @@ bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y )
 //
 //  Z_i = sum_a X_ia Y_a
 //
-bool UnitTest::Test_comm211sd( const Operator& X, const DaggerOperator& Y )
+bool UnitTest::Test_comm211sd( const Operator& X, const Operator& Y )
 {
 
-  DaggerOperator Z_J( Y );
+  Operator Z_J( Y );
   Z_J.SetNonHermitian();
   Z_J.Erase();
 
@@ -1938,10 +1945,10 @@ bool UnitTest::Test_comm211sd( const Operator& X, const DaggerOperator& Y )
 //
 //  Z_i = sum_ab (na-nb)X_ab Y_bia
 //
-bool UnitTest::Test_comm231sd( const Operator& X, const DaggerOperator& Y )
+bool UnitTest::Test_comm231sd( const Operator& X, const Operator& Y )
 {
 
-  DaggerOperator Z_J( Y );
+  Operator Z_J( Y );
   Z_J.SetNonHermitian();
   Z_J.Erase();
 
@@ -2012,10 +2019,10 @@ bool UnitTest::Test_comm231sd( const Operator& X, const DaggerOperator& Y )
 //
 //  Z_i = 1/2 sum_abc (na nb`nc`-na`nb nc) X_aibc Y_bca
 //
-bool UnitTest::Test_comm431sd( const Operator& X, const DaggerOperator& Y )
+bool UnitTest::Test_comm431sd( const Operator& X, const Operator& Y )
 {
 
-  DaggerOperator Z_J( Y );
+  Operator Z_J( Y );
   Z_J.SetNonHermitian();
   Z_J.Erase();
 
@@ -2096,10 +2103,10 @@ bool UnitTest::Test_comm431sd( const Operator& X, const DaggerOperator& Y )
 // 413:
 // Zijk = sum_a Xijka*Ya
 //
-bool UnitTest::Test_comm413sd( const Operator& Xin, const DaggerOperator& Y )
+bool UnitTest::Test_comm413sd( const Operator& Xin, const Operator& Y )
 {
 
-  DaggerOperator Z_J( Y );
+  Operator Z_J( Y );
   Z_J.Erase();
 
   Operator X = Xin;
@@ -2198,12 +2205,12 @@ bool UnitTest::Test_comm413sd( const Operator& Xin, const DaggerOperator& Y )
 // 233:
 // Zijk =  sum_a ( Xia*Yajk + Xja*Yjak - Yija * Xak )
 //
-bool UnitTest::Test_comm233sd( const Operator& X, const DaggerOperator& Yin )
+bool UnitTest::Test_comm233sd( const Operator& X, const Operator& Yin )
 {
 
-  DaggerOperator Y = Yin;
+  Operator Y = Yin;
 
-  DaggerOperator Z_J( Y );
+  Operator Z_J( Y );
   Z_J.Erase();
 
   Y.EraseOneBody(); // we do this so the 413 term does not contribute
@@ -2308,12 +2315,12 @@ bool UnitTest::Test_comm233sd( const Operator& X, const DaggerOperator& Yin )
 // 433 pp/hh:
 // Zijk =  1/2 sum_ab (nanb - na`nb`)  Xijab*Yabk 
 //
-bool UnitTest::Test_comm433_pp_hh_sd( const Operator& X, const DaggerOperator& Yin )
+bool UnitTest::Test_comm433_pp_hh_sd( const Operator& X, const Operator& Yin )
 {
 
-  DaggerOperator Y = Yin;
+  Operator Y = Yin;
 
-  DaggerOperator Z_J( Y );
+  Operator Z_J( Y );
   Z_J.Erase();
 
   Commutator::comm433_pp_hh_431sd( X, Y, Z_J);
@@ -2413,12 +2420,12 @@ bool UnitTest::Test_comm433_pp_hh_sd( const Operator& X, const DaggerOperator& Y
 // 433 pp/hh:
 // Zijk =  sum_ab (na - nb)  Xiakb Ybja
 //
-bool UnitTest::Test_comm433sd_ph( const Operator& X, const DaggerOperator& Yin )
+bool UnitTest::Test_comm433sd_ph( const Operator& X, const Operator& Yin )
 {
 
-  DaggerOperator Y = Yin;
+  Operator Y = Yin;
 
-  DaggerOperator Z_J( Y );
+  Operator Z_J( Y );
   Z_J.Erase();
 
   Commutator::comm433sd_ph( X, Y, Z_J);

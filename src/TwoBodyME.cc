@@ -85,6 +85,11 @@ void TwoBodyME::Allocate()
   }
 }
 
+void TwoBodyME::Deallocate()
+{
+  MatEl.clear();
+}
+
 void TwoBodyME::SetHermitian()
 {
   hermitian = true;

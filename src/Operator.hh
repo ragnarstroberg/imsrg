@@ -24,6 +24,7 @@
 #include "TwoBodyME.hh"
 #include "ThreeBodyME.hh"
 #include "ThreeBodyMEpn.hh"
+#include "ThreeLegME.hh"
 #include "IMSRGProfiler.hh"
 #include <armadillo>
 #include <fstream>
@@ -50,6 +51,7 @@ class Operator
   TwoBodyME TwoBody; ///< The two body piece of the operator.
 //  ThreeBodyME ThreeBody; ///< The three body piece of the operator.
   ThreeBodyMEpn ThreeBody; ///< The three body piece of the operator.
+  ThreeLegME ThreeLeg;  ///< Three-legged operators, used if this is a particle-number-changing operator, i.e. if legs is odd
 
   int rank_J; ///< Spherical tensor rank of the operator
   int rank_T; ///< Isotensor rank of the operator
@@ -117,11 +119,12 @@ class Operator
   ModelSpace * GetModelSpace() const;  // making this const isn't strictly kosher, but hopefully we shouldn't be in the business of tweaking the modelspace...
   void SetModelSpace(ModelSpace &ms){modelspace = &ms;};
 
-  virtual void Erase(); ///< Set all matrix elements to zero.
-  virtual void EraseZeroBody(){ZeroBody = 0;}; ///< set zero-body term to zero
-  virtual void EraseOneBody(); ///< set all one-body terms to zero
-  virtual void EraseTwoBody(); ///< set all two-body terms to zero
-  virtual void EraseThreeBody(); ///< set all two-body terms to zero
+  void Erase(); ///< Set all matrix elements to zero.
+  void EraseZeroBody(){ZeroBody = 0;}; ///< set zero-body term to zero
+  void EraseOneBody(); ///< set all one-body terms to zero
+  void EraseTwoBody(); ///< set all two-body terms to zero
+  void EraseThreeBody(); ///< set all two-body terms to zero
+  void EraseThreeLeg();
 
   void SetHermitian() ;
   void SetAntiHermitian() ;
@@ -135,7 +138,8 @@ class Operator
   int GetParity()const {return parity;};
   int GetNumberLegs()const {return legs;};
   void SetParticleRank(int pr) {particle_rank = pr;};
-  void SetNumberLegs( int l) {legs = l;};
+//  void SetNumberLegs( int l) {legs = l;};
+  void SetNumberLegs( int l);
   void SetQSpaceOrbit( index_t q ) {Q_space_orbit = q;};
   index_t GetQSpaceOrbit( ) const {return Q_space_orbit;};
 
@@ -186,6 +190,7 @@ class Operator
   double OneBodyNorm() const;
   double TwoBodyNorm() const;
   double ThreeBodyNorm() const;
+  double ThreeLegNorm() const;
 
 
   double Trace(int Atrace, int Ztrace) const;
