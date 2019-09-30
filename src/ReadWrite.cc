@@ -3966,9 +3966,10 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
    // ME_unnormalized = sqrt(1+delta_ab) ME_normalized
    outfile << "!" << std::endl << "!!!!!!!!!!!!!!  a+a+a  coefficients  !!!!!!!!!!!!!!!" << std::endl;
    outfile << "!  a    b    c     Jab     < ab Jab || Op || c >" << std::endl;
-   for ( auto& itmat : Op.TwoBody.MatEl )
+//   for ( auto& itmat : Op.TwoBody.MatEl )
+   for ( auto& itmat : Op.ThreeLeg.MatEl )
    {
-     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
+     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first);
      int Jab = tbc.J;
      EdmondsConventionFactor = -sqrt(2*Jab+1.);
      for (auto& ibra: tbc.GetKetIndex_vv() )
