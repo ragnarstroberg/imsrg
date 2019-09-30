@@ -2,6 +2,7 @@
 #include "Operator.hh"
 #include "AngMom.hh"
 #include "IMSRGProfiler.hh"
+#include "PhysicalConstants.hh" // for SQRT2
 #include <cmath>
 #include <iostream>
 #include <iomanip>
@@ -11,9 +12,9 @@
 #include <math.h>
 #include "omp.h"
 
-#ifndef SQRT2
-  #define SQRT2 1.4142135623730950488L
-#endif
+//#ifndef SQRT2
+//  #define SQRT2 1.4142135623730950488L
+//#endif
 
 //using namespace std;
 
@@ -123,6 +124,7 @@ Operator& Operator::operator*=(const double rhs)
    ZeroBody *= rhs;
    OneBody *= rhs;
    TwoBody *= rhs;
+   if (particle_rank > 2)  ThreeBody *= rhs;
    return *this;
 }
 
@@ -165,6 +167,8 @@ Operator& Operator::operator+=(const Operator& rhs)
    OneBody  += rhs.OneBody;
    if (rhs.GetParticleRank() > 1)
      TwoBody  += rhs.TwoBody;
+   if (rhs.GetParticleRank() >2 )
+     ThreeBody += rhs.ThreeBody;
    return *this;
 }
 
@@ -194,6 +198,8 @@ Operator& Operator::operator-=(const Operator& rhs)
    OneBody -= rhs.OneBody;
    if (rhs.GetParticleRank() > 1)
      TwoBody -= rhs.TwoBody;
+   if (rhs.GetParticleRank() > 2)
+     ThreeBody -= rhs.ThreeBody;
    return *this;
 }
 
@@ -223,9 +229,11 @@ Operator Operator::operator-() const
 
 void Operator::SetUpOneBodyChannels()
 {
-  for ( size_t i=0; i<modelspace->GetNumberOrbits(); ++i )
+//  for ( size_t i=0; i<modelspace->GetNumberOrbits(); ++i )
+  for ( auto i : modelspace->all_orbits )
   {
     Orbit& oi = modelspace->GetOrbit(i);
+    if ( OneBodyChannels.find( {oi.l,oi.j2,oi.tz2} ) == OneBodyChannels.end() ) OneBodyChannels[{oi.l,oi.j2,oi.tz2}] = {};
     // The +-1 comes from the spin [LxS](J)
     int lmin = std::max( oi.l - rank_J-1, 0);
     int lmax = std::min( oi.l + rank_J+1, modelspace->GetEmax() );
@@ -240,12 +248,14 @@ void Operator::SetUpOneBodyChannels()
         int tz2max = std::min( oi.tz2 + 2*rank_T, 1);
         for (int tz2=tz2min; tz2<=tz2max; tz2+=2)
         {
-          OneBodyChannels[ {l, j2, tz2} ].push_back(i);
+          if (std::abs(tz2) != std::abs(oi.tz2 - 2*rank_T)) continue;
+          OneBodyChannels[ {l, j2, tz2} ].insert(i);
+//          OneBodyChannels[ {l, j2, tz2} ].push_back(i);
         }
       }
     }
   }
-  for (auto& it: OneBodyChannels)  it.second.shrink_to_fit();
+//  for (auto& it: OneBodyChannels)  it.second.shrink_to_fit();
 }
 
 
@@ -786,7 +796,8 @@ void Operator::EraseTwoBody()
 
 void Operator::EraseThreeBody()
 {
-  ThreeBody = ThreeBodyME();
+  ThreeBody.Erase();
+//  ThreeBody = ThreeBodyME();
 }
 
 void Operator::SetHermitian()
@@ -794,6 +805,7 @@ void Operator::SetHermitian()
   hermitian = true;
   antihermitian = false;
   TwoBody.SetHermitian();
+  ThreeBody.SetHermitian();
 }
 
 void Operator::SetAntiHermitian()
@@ -801,6 +813,7 @@ void Operator::SetAntiHermitian()
   hermitian = false;
   antihermitian = true;
   TwoBody.SetAntiHermitian();
+  ThreeBody.SetAntiHermitian();
 }
 
 void Operator::SetNonHermitian()
@@ -922,10 +935,14 @@ double Operator::GetMP2_Energy()
    double t_start = omp_get_wtime();
    double Emp2 = 0;
    int nparticles = modelspace->particles.size();
+   std::vector<index_t> particles_vec(modelspace->particles.begin(),modelspace->particles.end()); // convert set to vector for OMP looping
+//   for ( auto& i : modelspace->particles)
    #pragma omp parallel for reduction(+:Emp2)
    for ( int ii=0;ii<nparticles;++ii)
    {
-     index_t i = modelspace->particles[ii];
+//     std::cout << " i = " << i << std::endl;
+//     index_t i = modelspace->particles[ii];
+     index_t i = particles_vec[ii];
      double ei = OneBody(i,i);
      Orbit& oi = modelspace->GetOrbit(i);
      for (auto& a : modelspace->holes)
@@ -952,6 +969,7 @@ double Operator::GetMP2_Energy()
              double tbme = TwoBody.GetTBME_J_norm(J,a,b,i,j);
              if (std::abs(tbme)>1e-6)
               Emp2 += (2*J+1)* oa.occ * ob.occ * tbme*tbme/denom; // no factor 1/4 because of the restricted sum
+//              std::cout << "abij J = " << a << " " << b << " " << i << " " << j << "    " << J << "   na nb" << oa.occ << " " << ob.occ << "  tbme,denom " << tbme << " " << denom << std::endl;
            }
          }
        }
@@ -1036,10 +1054,12 @@ std::array<double,3> Operator::GetMP3_Energy()
    index_t nparticles = modelspace->particles.size();
    modelspace->PreCalculateSixJ();
 //   #pragma omp parallel for schedule(dynamic,1)  reduction(+:Emp3)
+   std::vector<index_t> particles_vec( modelspace->particles.begin(), modelspace->particles.end()); // convert set to verctor for OMP iteration
    #pragma omp parallel for schedule(dynamic,1)  reduction(+:Eph)
    for (index_t ii=0;ii<nparticles;ii++)
    {
-     auto i = modelspace->particles[ii];
+//     auto i = modelspace->particles[ii];
+     auto i = particles_vec[ii];
      double ji = 0.5*modelspace->GetOrbit(i).j2;
      for (auto a : modelspace->holes)
      {
@@ -1183,8 +1203,15 @@ double Operator::TwoBodyNorm() const
 }
 
 
-void Operator::MakeNormalized(){ ChangeNormalization( 1./SQRT2)  ;}
-void Operator::MakeUnNormalized(){ ChangeNormalization( SQRT2)  ;}
+double Operator::ThreeBodyNorm() const
+{
+  return ThreeBody.Norm();
+}
+
+//void Operator::MakeNormalized(){ ChangeNormalization( 1./SQRT2)  ;}
+//void Operator::MakeUnNormalized(){ ChangeNormalization( SQRT2)  ;}
+void Operator::MakeNormalized(){   ChangeNormalization( PhysConst::INVSQRT2)  ;}
+void Operator::MakeUnNormalized(){ ChangeNormalization( PhysConst::SQRT2)  ;}
 void Operator::ChangeNormalization(double factor)
 {
   for (auto& itmat : TwoBody.MatEl)

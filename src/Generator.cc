@@ -4,12 +4,13 @@
 #include "Operator.hh"
 #include "imsrg_util.hh" // for VectorUnion
 #include "AngMom.hh" // for TalmiB and Moshinsky
+#include "PhysicalConstants.hh" // for HBARC and M_NUCLEON
 
 #include "omp.h"
 #include <string>
 #include <gsl/gsl_sf_gamma.h> // for gsl_sf_gamma_inc_P  used in the RspaceRegulator
 
-using namespace imsrg_util;
+//using namespace imsrg_util;
 
 Generator::Generator()
   : generator_type("white"), denominator_cutoff(1e-6)  , denominator_delta(0), denominator_delta_index(-1)
@@ -120,6 +121,12 @@ double Generator::Get2bDenominator(int ch, int ibra, int iket)
    return denominator;
 }
 
+double Generator::Get3bDenominator( int i, int j, int k, int l, int m, int n )
+{
+  auto h1 = H->OneBody;
+  double denominator = h1(i,i) + h1(j,j) + h1(k,k) - h1(l,l) - h1(m,m) - h1(n,n);
+  return denominator;
+}
 
 // Keep the Jdependence for the Gamma_ijij and Gamma_klkl terms, because it's
 // relatively unambiguous to work out
@@ -191,7 +198,7 @@ void Generator::ConstructGenerator_White()
    // One body piece -- eliminate ph bits
    for ( auto& a : modelspace->core)
    {
-      for ( auto& i : VectorUnion(modelspace->valence,modelspace->qspace) )
+      for ( auto& i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
       {
          double denominator = Get1bDenominator(i,a);
          Eta->OneBody(i,a) = H->OneBody(i,a)/denominator;
@@ -207,7 +214,7 @@ void Generator::ConstructGenerator_White()
       arma::mat& H2 = H->TwoBody.GetMatrix(ch);
       for ( auto& iket : tbc.GetKetIndex_cc() )
       {
-         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
@@ -227,7 +234,7 @@ void Generator::ConstructGenerator_Atan()
    // One body piece -- eliminate ph bits
    for ( auto& a : modelspace->core)
    {
-      for ( auto& i : VectorUnion(modelspace->valence,modelspace->qspace) )
+      for ( auto& i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
       {
          double denominator = Get1bDenominator(i,a);
          Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
@@ -243,7 +250,7 @@ void Generator::ConstructGenerator_Atan()
       arma::mat& H2 = H->TwoBody.GetMatrix(ch);
       for ( auto& iket : tbc.GetKetIndex_cc() )
       {
-         for ( auto& ibra : VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+         for ( auto& ibra : imsrg_util::VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
 //            double denominator = Get2bDenominator_Jdep(ch,ibra,iket);
@@ -252,6 +259,69 @@ void Generator::ConstructGenerator_Atan()
          }
       }
     }
+    // Three body piece
+    int E3cut = 4;
+    double t_start = omp_get_wtime();
+//    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << "   Norms: " << Eta->ThreeBodyNorm() << "  " << H->ThreeBodyNorm()  << std::endl;
+    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
+    {
+     std::cout << "looping in generator 3-body part " << std::endl;
+    for (auto a : modelspace->core )
+    {
+     Orbit& oa = modelspace->GetOrbit(a);
+     for (auto b : modelspace->core )
+     {
+      Orbit& ob = modelspace->GetOrbit(b);
+      int Jab_min = std::abs(oa.j2-ob.j2)/2;
+      int Jab_max = (oa.j2+ob.j2)/2;
+      for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+      {
+       for (auto c : modelspace->core )
+       {
+        Orbit& oc = modelspace->GetOrbit(c);
+        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
+
+        for ( auto i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
+        {
+         Orbit& oi = modelspace->GetOrbit(i);
+         for ( auto j : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
+         {
+          Orbit& oj = modelspace->GetOrbit(j);
+          int Jij_min = std::abs(oi.j2-oj.j2)/2;
+          int Jij_max = (oi.j2+oj.j2)/2;
+          for (int Jij=Jij_min; Jij<=Jij_max; Jij++)
+          {
+           for ( auto k : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
+           {
+            Orbit& ok = modelspace->GetOrbit(k);
+            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > 2*E3cut ) continue;
+            if ( (oa.l+ob.l+oc.l+oi.l+oj.l+ok.l)%2>0 ) continue;
+            if ( (oa.tz2+ob.tz2+oc.tz2) != (oi.tz2+oj.tz2+ok.tz2) ) continue;
+            double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
+
+            int twoJ_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jij-ok.j2) );
+            int twoJ_max = std::min( 2*Jab+oc.j2, 2*Jij+ok.j2 );
+            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ++)
+            {
+              double ME_od = H->ThreeBody.GetME_pn( Jab, Jij, twoJ, a,b,c,i,j,k);
+              double eta = 0.5*atan(2*ME_od / denominator);
+//              double eta = (ME_od / denominator);
+//              if (std::abs(eta)>1e-6)
+//              {
+//                std::cout << "Nonzero eta !  <" << a << " " << b << " " << c << ", " << Jab << " | " << i << " " << j << " " << k << ", " << Jij << " > _ " << twoJ << "  => " << ME_od << " / " << denominator << " = " << eta << std::endl;
+//              }
+              Eta->ThreeBody.AddToME_pn( Jab, Jij, twoJ, a,b,c,i,j,k,  eta);
+            }
+           }
+          }
+         }
+        }
+       }
+      } 
+     } 
+    }
+    }
+    H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
 }
 
 
@@ -262,7 +332,7 @@ void Generator::ConstructGenerator_ImaginaryTime()
    // One body piece -- eliminate ph bits
    for ( auto& a : modelspace->core)
    {
-      for ( auto& i : VectorUnion(modelspace->valence,modelspace->qspace) )
+      for ( auto& i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
       {
          double denominator = Get1bDenominator(i,a);
          if (denominator==0) denominator = 1;
@@ -279,7 +349,7 @@ void Generator::ConstructGenerator_ImaginaryTime()
       arma::mat& H2 = H->TwoBody.GetMatrix(ch);
       for ( auto& iket : tbc.GetKetIndex_cc() )
       {
-         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
             if (denominator==0) denominator = 1;
@@ -294,10 +364,12 @@ void Generator::ConstructGenerator_ImaginaryTime()
 
 void Generator::ConstructGenerator_QTransferAtan(int n)
 {
+   using PhysConst::M_NUCLEON;
+   using PhysConst::HBARC;
    // One body piece -- eliminate ph bits
    for ( auto& a : modelspace->core)
    {
-      for ( auto& i : VectorUnion(modelspace->valence,modelspace->qspace) )
+      for ( auto& i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
       {
          double denominator = Get1bDenominator(i,a);
          Eta->OneBody(i,a) = pow(std::abs(denominator)*M_NUCLEON/HBARC/HBARC, 0.5*n ) * 0.5*atan(2*H->OneBody(i,a)/denominator);
@@ -313,7 +385,7 @@ void Generator::ConstructGenerator_QTransferAtan(int n)
       arma::mat& H2 = H->TwoBody.GetMatrix(ch);
       for ( auto& iket : tbc.GetKetIndex_cc() )
       {
-         for ( auto& ibra : VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+         for ( auto& ibra : imsrg_util::VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
 //            double denominator = Get2bDenominator_Jdep(ch,ibra,iket);
@@ -329,9 +401,9 @@ void Generator::ConstructGenerator_QTransferAtan(int n)
 void Generator::ConstructGenerator_ShellModel()
 {
    // One body piece -- make sure the valence one-body part is diagonal
-   for ( auto& a : VectorUnion(modelspace->core, modelspace->valence))
+   for ( auto& a : imsrg_util::VectorUnion(modelspace->core, modelspace->valence))
    {
-      for (auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
+      for (auto& i : imsrg_util::VectorUnion( modelspace->valence, modelspace->qspace ) )
       {
          if (i==a) continue;
          double denominator = Get1bDenominator(i,a);
@@ -351,9 +423,9 @@ void Generator::ConstructGenerator_ShellModel()
       arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
 
       // Decouple the core
-      for ( auto& iket : VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
+      for ( auto& iket : imsrg_util::VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
       {
-         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
@@ -365,7 +437,7 @@ void Generator::ConstructGenerator_ShellModel()
       // Decouple the valence space
       for ( auto& iket : tbc.GetKetIndex_vv() )
       {
-         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = H2(ibra,iket) / denominator;
@@ -382,9 +454,9 @@ void Generator::ConstructGenerator_ShellModel()
 void Generator::ConstructGenerator_ShellModel_Atan()
 {
    // One body piece -- make sure the valence one-body part is diagonal
-   for ( auto& a : VectorUnion(modelspace->core, modelspace->valence))
+   for ( auto& a : imsrg_util::VectorUnion(modelspace->core, modelspace->valence))
    {
-      for (auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
+      for (auto& i : imsrg_util::VectorUnion( modelspace->valence, modelspace->qspace ) )
       {
          if (i==a) continue;
          double denominator = Get1bDenominator(i,a);
@@ -404,9 +476,9 @@ void Generator::ConstructGenerator_ShellModel_Atan()
       arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
 
       // Decouple the core
-      for ( auto& iket : VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
+      for ( auto& iket : imsrg_util::VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
       {
-         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
@@ -418,7 +490,7 @@ void Generator::ConstructGenerator_ShellModel_Atan()
       // Decouple the valence space
       for ( auto& iket : tbc.GetKetIndex_vv() )
       {
-         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator) ;
@@ -437,9 +509,9 @@ void Generator::ConstructGenerator_ShellModel_Atan()
 void Generator::ConstructGenerator_ShellModel_ImaginaryTime()
 {
    // One body piece -- make sure the valence one-body part is diagonal
-   for ( auto& a : VectorUnion(modelspace->core, modelspace->valence))
+   for ( auto& a : imsrg_util::VectorUnion(modelspace->core, modelspace->valence))
    {
-      for (auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
+      for (auto& i : imsrg_util::VectorUnion( modelspace->valence, modelspace->qspace ) )
       {
          if (i==a) continue;
          double denominator = Get1bDenominator(i,a);
@@ -460,9 +532,9 @@ void Generator::ConstructGenerator_ShellModel_ImaginaryTime()
       arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
 
       // Decouple the core
-      for ( auto& iket : VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
+      for ( auto& iket : imsrg_util::VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
       {
-         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
             if (denominator==0) denominator = 1;
@@ -475,7 +547,7 @@ void Generator::ConstructGenerator_ShellModel_ImaginaryTime()
       // Decouple the valence space
       for ( auto& iket : tbc.GetKetIndex_vv() )
       {
-         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
             if (denominator==0) denominator = 1;
@@ -533,7 +605,7 @@ void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
      for (auto& iket : tbc.GetKetIndex_cc())
      {
        Ket& ket = tbc.GetKet(iket);
-       for (auto& ibra : VectorUnion( tbc.GetKetIndex_vc(), tbc.GetKetIndex_qc() )  )
+       for (auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_vc(), tbc.GetKetIndex_qc() )  )
        {
          Ket& bra = tbc.GetKet(ibra);
          if ((ket.p==bra.p) or (ket.p==bra.q) or (ket.q==bra.p) or (ket.q==bra.q) ) continue;
@@ -574,9 +646,9 @@ void Generator::ConstructGenerator_1PA()
 {
 
    // One body piece -- make sure the valence one-body part is diagonal
-   for ( auto& a : VectorUnion(modelspace->core, modelspace->valence))
+   for ( auto& a : imsrg_util::VectorUnion(modelspace->core, modelspace->valence))
    {
-      for (auto& i : VectorUnion( modelspace->valence, modelspace->qspace ) )
+      for (auto& i : imsrg_util::VectorUnion( modelspace->valence, modelspace->qspace ) )
       {
          if (i==a) continue;
          double denominator = Get1bDenominator(i,a);
@@ -596,9 +668,9 @@ void Generator::ConstructGenerator_1PA()
       arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
 
       // Decouple the core
-      for ( auto& iket : VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
+      for ( auto& iket : imsrg_util::VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
       {
-         for ( auto& ibra : VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
@@ -626,7 +698,7 @@ void Generator::ConstructGenerator_Rspace()
    // One body piece -- eliminate ph bits
    for ( auto& a : modelspace->core)
    {
-      for ( auto& i : VectorUnion(modelspace->valence,modelspace->qspace) )
+      for ( auto& i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
       {
          double denominator = Get1bDenominator(i,a);
          Eta->OneBody(i,a) =  RspaceRegulator.OneBody(i,a) * 0.5*atan(2*H->OneBody(i,a)/denominator);
@@ -643,7 +715,7 @@ void Generator::ConstructGenerator_Rspace()
       auto& R2 = RspaceRegulator.TwoBody.GetMatrix(ch);
       for ( auto& iket : tbc.GetKetIndex_cc() )
       {
-         for ( auto& ibra : VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+         for ( auto& ibra : imsrg_util::VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
 //            double denominator = Get2bDenominator_Jdep(ch,ibra,iket);
@@ -664,7 +736,8 @@ void Generator::ConstructGenerator_Rspace()
 
 void Generator::SetRegulatorLength(double r0)
 {
-
+  using PhysConst::M_NUCLEON;
+  using PhysConst::HBARC;
 //  std::cout << "setting Regulator length to " << r0 << std::endl;
   regulator_length = r0;
 

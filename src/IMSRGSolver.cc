@@ -193,6 +193,8 @@ void IMSRGSolver::Solve()
     Solve_ode_magnus();
   else if (method == "flow_euler")
     Solve_ode();
+  else if (method == "flow_RK4")
+    Solve_flow_RK4();
   else if (method == "restore_4th_order")
   {
     FlowingOps.emplace_back( Operator( *(FlowingOps[0].GetModelSpace()), 0,0,0,1));
@@ -227,6 +229,7 @@ void IMSRGSolver::Solve_magnus_euler()
    WriteFlowStatus(flowfile);
    WriteFlowStatus(std::cout);
 
+
    for (istep=1;s<smax;++istep)
    {
 
@@ -259,6 +262,7 @@ void IMSRGSolver::Solve_magnus_euler()
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
 //      Omega.back() = Eta.BCH_Product( Omega.back() ); 
       Omega.back() = Commutator::BCH_Product( Eta, Omega.back() ); 
+//      std::cout << "Norm Eta 3body = " << Eta.ThreeBodyNorm() << "   Norm Omega 3body " << Omega.back().ThreeBodyNorm() << std::endl;
 
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
       if ((Omega.size()+n_omega_written)<2)
@@ -279,6 +283,7 @@ void IMSRGSolver::Solve_magnus_euler()
         
 //      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
       generator.Update(&FlowingOps[0],&Eta);
+//      std::cout << "Updated Eta. ThreeBody nomr of FlowingOps[0] = " << FlowingOps[0].ThreeBodyNorm() << "  and Eta = " << Eta.ThreeBodyNorm() << std::endl;
       cumulative_error += EstimateStepError();
 
       // Write details of the flow
@@ -346,6 +351,104 @@ void IMSRGSolver::Solve_magnus_modified_euler()
 
 }
 
+
+// Solve with fixed-step 4th-order Runge-Kutta
+void IMSRGSolver::Solve_flow_RK4()
+{
+   istep = 0;
+
+   if ( generator.GetType() == "rspace" ) { generator.modelspace = (Eta.modelspace); generator.SetRegulatorLength(800005.0); };
+
+   generator.Update(&FlowingOps[0],&Eta);
+
+   if (generator.GetType() == "shell-model-atan")
+   {
+     generator.SetDenominatorCutoff(1.0); // do we need this?
+   }
+
+   Elast = H_0->ZeroBody;
+   cumulative_error = 0;
+    // Write details of the flow
+   WriteFlowStatus(flowfile);
+   WriteFlowStatus(std::cout);
+
+   for (istep=1;s<smax;++istep)
+   {
+
+      double norm_eta = Eta.Norm();
+      if (norm_eta < eta_criterion )
+      {
+        break;
+      }
+
+      ds = std::min(ds_max,smax-s);
+      s += ds;
+
+      int nops = FlowingOps.size();
+      std::vector<Operator> K1(nops);
+      std::vector<Operator> K2(nops);
+      std::vector<Operator> K3(nops);
+      std::vector<Operator> K4(nops);
+      std::vector<Operator> Ktmp(nops);
+
+//      Operator& Hs = FlowingOps[0];   // this is not used explicitly
+      for ( int i=0;i<nops; i++ )
+      {
+        K1[i] =  Commutator::Commutator( Eta, FlowingOps[i] ) ;
+        Ktmp[i] = FlowingOps[i] + 0.5*ds*K1[i];
+      }
+//      Operator K1 = Commutator::Commutator( Eta, Hs );
+//      Operator Htmp = Hs + 0.5*ds*K1[0];
+//      generator.Update(&Htmp,&Eta);
+      generator.Update(&Ktmp[0],&Eta);
+      for (int i=0; i<nops; i++ )
+      {
+        K2[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+        Ktmp[i] = FlowingOps[i] + 0.5*ds*K2[i];
+      }
+//      Operator K2 = Commutator::Commutator( Eta, Hs+Htmp );
+//      Htmp = Hs + 0.5*ds*K2;
+//      generator.Update(&Htmp,&Eta);
+      generator.Update(&Ktmp[0],&Eta);
+      for (int i=0; i<nops; i++ )
+      {
+        K3[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+        Ktmp[i] = FlowingOps[i] + 1.0*ds*K2[i];
+      }
+//      Operator K3 = Commutator::Commutator( Eta, Hs+Htmp );
+//      Htmp = Hs + 1.0*ds*K3;
+//      generator.Update(&Htmp,&Eta);
+      generator.Update(&Ktmp[0],&Eta);
+      for (int i=0; i<nops; i++ )
+      {
+        K4[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+//        Ktmp[i] = FlowingOps[i] + 1.0*ds*K2[i];
+        FlowingOps[i] += ds/6.0 * ( K1[i] + 2*K2[i] + 2*K3[i] + K4[i] );
+      }
+//      Operator K4 = Commutator::Commutator( Eta, Hs+Htmp );
+//      Hs += ds/6.0 * ( K1 + 2*K2 + 2*K3 + K4);
+
+
+      if (norm_eta<1.0 and generator.GetType() == "shell-model-atan")
+      {
+        generator.SetDenominatorCutoff(1e-6);
+      }
+        
+//      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
+      generator.Update(&FlowingOps[0],&Eta);
+      cumulative_error += EstimateStepError();
+
+      // Write details of the flow
+      WriteFlowStatus(flowfile);
+      WriteFlowStatus(std::cout);
+//      profiler.PrintMemory();
+      Elast = FlowingOps[0].ZeroBody;
+
+   }
+
+ 
+
+}
 
 
 
@@ -473,13 +576,14 @@ void IMSRGSolver::Solve_ode()
    ode_mode = "H";
    WriteFlowStatusHeader(std::cout);
    WriteFlowStatus(flowfile);
-   using namespace boost::numeric::odeint;
+//   using namespace boost::numeric::odeint;
+   namespace odeint = boost::numeric::odeint;
 //   runge_kutta4< vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
-   runge_kutta4< std::deque<Operator>, double, std::deque<Operator>, double, vector_space_algebra> stepper;
+   odeint::runge_kutta4< std::deque<Operator>, double, std::deque<Operator>, double, odeint::vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
-   integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
+   odeint::integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
    monitor.report();
 }
 
@@ -490,14 +594,15 @@ void IMSRGSolver::Solve_ode_adaptive()
    WriteFlowStatusHeader(std::cout);
    WriteFlowStatus(flowfile);
    std::cout << "done writing header and status" << std::endl;
-   using namespace boost::numeric::odeint;
+//   using namespace boost::numeric::odeint;
+   namespace odeint = boost::numeric::odeint;
    auto system = *this;
 //   typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
-   typedef runge_kutta_dopri5< std::deque<Operator> , double , std::deque<Operator> ,double , vector_space_algebra > stepper;
+   typedef odeint::runge_kutta_dopri5< std::deque<Operator> , double , std::deque<Operator> ,double , odeint::vector_space_algebra > stepper;
 //   typedef adams_bashforth_moulton< 4, vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
-   integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
+   odeint::integrate_adaptive(odeint::make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
    monitor.report();
 
 }
@@ -599,14 +704,15 @@ void IMSRGSolver::Solve_ode_magnus()
    ode_mode = "Omega";
    WriteFlowStatus(std::cout);
    WriteFlowStatus(flowfile);
-   using namespace boost::numeric::odeint;
+//   using namespace boost::numeric::odeint;
+   namespace odeint = boost::numeric::odeint;
    namespace pl = std::placeholders;
 //   runge_kutta4<vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
-   runge_kutta4<std::deque<Operator>, double, std::deque<Operator>, double, vector_space_algebra> stepper;
+   odeint::runge_kutta4<std::deque<Operator>, double, std::deque<Operator>, double, odeint::vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_const(stepper, system, Omega, s, smax, ds, monitor);
-   integrate_const(stepper, system, Omega, s, smax, ds, monitor);
+   odeint::integrate_const(stepper, system, Omega, s, smax, ds, monitor);
    monitor.report();
 }
 
@@ -798,6 +904,7 @@ void IMSRGSolver::WriteFlowStatus(std::ostream& f)
         << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().TwoBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Eta.OneBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Eta.TwoBodyNorm()
+        << std::setw(fwidth) << std::setprecision(fprecision) << Eta.ThreeBodyNorm()
         << std::setw(7)      << std::setprecision(0)          << profiler.counter["N_ScalarCommutators"] + profiler.counter["N_TensorCommutators"]
         << std::setw(fwidth) << std::setprecision(fprecision) << H_s.GetMP2_Energy()
         << std::setw(7)      << std::setprecision(0)          << profiler.counter["N_Operators"]
@@ -834,6 +941,7 @@ void IMSRGSolver::WriteFlowStatusHeader(std::ostream& f)
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_2||" 
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_1||" 
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_2||" 
+        << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_3||" 
         << std::setw(7)      << std::setprecision(fprecision) << "Ncomm" 
         << std::setw(16)     << std::setprecision(fprecision) << "E(MP2)" 
         << std::setw(7)      << std::setprecision(fprecision) << "N_Ops"

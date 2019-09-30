@@ -1,6 +1,7 @@
 #include "ReadWrite.hh"
 #include "ModelSpace.hh"
 #include "AngMom.hh"
+#include "PhysicalConstants.hh"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -26,15 +27,16 @@
 #define LINESIZE 496
 //#define HEADERSIZE 500
 #define HEADERSIZE 255
-#ifndef SQRT2
-  #define SQRT2 1.4142135623730950488
-#endif
-#ifndef HBARC
-   #define HBARC 197.3269718 // hc in MeV * fm
-#endif
-#ifndef M_NUCLEON
-   #define M_NUCLEON 938.9185
-#endif
+
+//#ifndef SQRT2
+//  #define SQRT2 1.4142135623730950488
+//#endif
+//#ifndef HBARC
+//   #define HBARC 197.3269718 // hc in MeV * fm
+//#endif
+//#ifndef M_NUCLEON
+//   #define M_NUCLEON 938.9185
+//#endif
 
 //using namespace std;
 
@@ -325,7 +327,7 @@ void ReadWrite::WriteOneBody_Oslo( std::string filename, Operator& Op)
   outfile << "   ----> Oscillator parameters, Model space and single-particle data" << std::endl;
   outfile << "Mass number A of chosen nucleus (important for CoM corrections):          " << modelspace->GetTargetMass() << std::endl;
   outfile << "Oscillator length and energy: " << std::setw(12) << std::setprecision(6) << std::scientific 
-          << HBARC / sqrt( M_NUCLEON * modelspace->GetHbarOmega() )
+          << PhysConst::HBARC / sqrt( PhysConst::M_NUCLEON * modelspace->GetHbarOmega() )
           << "  " << std::setw(12) << std::setprecision(6) << std::scientific <<  modelspace->GetHbarOmega() << std::endl;
   outfile << " Min and max value of partial wave ang. mom    0   " << modelspace->GetEmax() << std::endl;
   outfile << " Max value of relative orb mom or cm orb mom,  l or L=  " << modelspace->GetEmax() << std::endl;
@@ -588,13 +590,13 @@ void ReadWrite::WriteTBME_Navratil( std::string filename, Operator& Hbare)
             double v00 =  Hbare.TwoBody.Get_iso_TBME_from_pn(J, 0,  0, a, b, c, d);
             if (a==b)
             {
-              vpp /= SQRT2;
-              vnn /= SQRT2;
+              vpp /= PhysConst::SQRT2;
+              vnn /= PhysConst::SQRT2;
             }
             if (c==d)
             {
-              vpp /= SQRT2;
-              vnn /= SQRT2;
+              vpp /= PhysConst::SQRT2;
+              vnn /= PhysConst::SQRT2;
             }
             if (std::abs(vpp)>1e-7 or std::abs(vnn)>1e-7 or std::abs(v10)>1e-7)
             {
@@ -867,8 +869,8 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 
              // Normalization. The TBMEs are read in un-normalized.
              double norm_factor = 1;
-             if (a==b)  norm_factor /= SQRT2;
-             if (c==d)  norm_factor /= SQRT2;
+             if (a==b)  norm_factor /= PhysConst::SQRT2;
+             if (c==d)  norm_factor /= PhysConst::SQRT2;
 
 //             std::cout << a << " " << b << " " << c << " " << d << "   " << J << "   "
 //                  << std::fixed << std::setprecision(7) << std::setw(11) << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp << std::endl;
@@ -1371,6 +1373,8 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   std::cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << std::endl;
   Store_Darmstadt_3body( ThreeBME, nread_list, orbits_remap, Hbare, E1max, E2max, E3max);
 
+//  Hbare.ThreeBody.TransformToPN();
+
 }
 
 
@@ -1517,10 +1521,12 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                 if (twoJCMin>twoJCMax) continue;
                 size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*5;
 
+//                 std::array<double,5> isospin_5plet = {0,0,0,0,0};
                 for(int JTind = 0; JTind <= (twoJCMax-twoJCMin)+1; JTind++)
                 {
                  int twoJC = twoJCMin + (JTind/2)*2;
                  int twoT = 1+(JTind%2)*2;
+//                 if (twoT==1) isospin_5plet = {0,0,0,0,0};
                  for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
                  {
                   for(int ttab = 0; ttab <= 1; ttab++)
@@ -1555,7 +1561,18 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                         if (not autozero )
                         {
 //                            std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << std::endl;
+//                            if (a==4 and b==0 and c==0 and d==4 and e==0 and f==0)
+//                            {
+//                               std::cout << std::endl << __func__ << "  setting Jab,Jde,J " << Jab << " " <<JJab << " " << twoJC << "  tab tde T  " << tab << " " << ttab << " " << twoT << "    V = " << V << std::endl;
+//                            }
+//                               if ( a==2 and b==4 and c==4 and d==2 and e==0 and f==0 and tab==1 and ttab==1 and twoT==3 and JJab==1 and twoJC==3)
+//                               {
+////                                 std::cout << "t t T = " << tab << " " << ttab << " " << twoT << "   V = " << V << std::endl;
+//                                 std::cout << "found one Jab = " << Jab << "   V = " << V << std::endl;
+//                               }
                             Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
+                         //     isospin_5plet[ 2*tab+ttab+(twoT-1)/2 ] = V;
+//                              std::cout << "5plet index " << 2*tab +ttab + (twoT-1)/2 << "  with " << tab << " " << ttab << " " << twoT << std::endl;
                         }
                         else if (autozero)
                         {
@@ -1570,6 +1587,12 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
        
                   }//ttab
                  }//tab
+//                 std::cout << "Calling SetME_isospin5" << std::endl;
+//                 if (twoT==3)
+//                 {
+//                   std::cout << "---------- ReadWrite  call SetME_isospin5, Jab Jde twoJ = " << Jab << " " << JJab << " " << twoJC << " -----------" << std::endl;
+//                   Hbare.ThreeBody.SetME_isospin5(Jab,JJab,twoJC,a,b,c,d,e,f,isospin_5plet);
+//                 }
                 }//twoJ
                 nread += blocksize;
                }//JJab
@@ -1593,15 +1616,15 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
 
 
 #ifndef NO_HDF5
-using namespace H5;
+//using namespace H5;
 /// Read three-body basis from HDF5 formatted file. This routine was ported to C++ from
 /// a C routine by Heiko Hergert, with as little modification as possible.
 void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, std::string filename, std::vector<array<int,5>>& Basis)
 {
-  H5File file(filename, H5F_ACC_RDONLY);
+  H5::H5File file(filename, H5F_ACC_RDONLY);
   // The parameter alpha enumerates the different 3body states |abc> coupled to J12 and J (no isospin)
-  DataSet basis = file.openDataSet("alphas");
-  DataSpace basis_dspace = basis.getSpace();
+  H5::DataSet basis = file.openDataSet("alphas");
+  H5::DataSpace basis_dspace = basis.getSpace();
 
   int nDim = basis_dspace.getSimpleExtentNdims();
   hsize_t iDim[6];
@@ -1663,7 +1686,7 @@ void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, std::string filename, std:
 #endif
 
 #ifndef NO_HDF5
-using namespace H5;
+//using namespace H5;
 /// Read three-body matrix elements from HDF5 formatted file. This routine was ported to C++ from
 /// a C routine by Heiko Hergert, with as little modification as possible.
 void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
@@ -1676,14 +1699,14 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
 
   ModelSpace* modelspace = op.GetModelSpace();
   std::vector<array<int,5>> Basis;
-  GetHDF5Basis(modelspace, filename, Basis);
+  H5::GetHDF5Basis(modelspace, filename, Basis);
 
 
-  H5File file(filename, H5F_ACC_RDONLY);
-  DataSet label = file.openDataSet("vtnf_labels");
-  DataSpace label_dspace = label.getSpace();
-  DataSet value = file.openDataSet("vtnf");
-  DataSpace value_dspace = value.getSpace();
+  H5::H5File file(filename, H5F_ACC_RDONLY);
+  H5::DataSet label = file.openDataSet("vtnf_labels");
+  H5::DataSpace label_dspace = label.getSpace();
+  H5::DataSet value = file.openDataSet("vtnf");
+  H5::DataSpace value_dspace = value.getSpace();
 
   int label_nDim = label_dspace.getSimpleExtentNdims();
   if (label_nDim != 2)
@@ -1703,7 +1726,7 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
   label_curDim[0] = std::min(SLABSIZE, int(label_maxDim[0]));
   label_curDim[1] = 7 ;
   
-  DataSpace label_buf_dspace(2,label_curDim);
+  H5::DataSpace label_buf_dspace(2,label_curDim);
 
   // Generate a 2d buffer in contiguous memory
   int **label_buf = new int*[label_curDim[0]];
@@ -1731,7 +1754,7 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
   value_curDim[0] = std::min(SLABSIZE, int(value_maxDim[0]));
   value_curDim[1] = 1 ;
 
-  DataSpace value_buf_dspace(1,value_curDim);
+  H5::DataSpace value_buf_dspace(1,value_curDim);
   
   // Generate a 1d buffer in contiguous memory, also known as an array...
   double *value_buf = new double[value_curDim[0]];
@@ -1791,7 +1814,7 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
        if (alpha<alphap) continue;
 
        double me   = value_buf[i];
-       me *= HBARC;
+       me *= PhysConst::HBARC;
 //       if (alpha != alphap) me *=0.5;
 
        int a    = Basis[alpha][0];
@@ -1849,7 +1872,7 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
 
 
 #ifndef NO_HDF5
-using namespace H5;
+//using namespace H5;
 // THIS ONE SEEMS TO WORK, SO FAR
 
 void ReadWrite::Read3bodyHDF5_new( std::string filename,Operator& op )
@@ -1865,10 +1888,10 @@ void ReadWrite::Read3bodyHDF5_new( std::string filename,Operator& op )
   int t12_list[5]  = {0,1,0,1,1};
   int twoT_list[5] = {1,1,1,1,3};
 
-  H5File file(filename, H5F_ACC_RDONLY);
+  H5::H5File file(filename, H5F_ACC_RDONLY);
 
-  DataSet basis = file.openDataSet("alphas");
-  DataSpace basis_dspace = basis.getSpace();
+  H5::DataSet basis = file.openDataSet("alphas");
+  H5::DataSpace basis_dspace = basis.getSpace();
   hsize_t iDim_basis[6];
   basis_dspace.getSimpleExtentDims(iDim_basis,NULL);
 
@@ -1885,8 +1908,8 @@ void ReadWrite::Read3bodyHDF5_new( std::string filename,Operator& op )
   basis.read(&dbuf[0][0], PredType::NATIVE_INT);
 
 
-  DataSet value = file.openDataSet("vtnf");
-  DataSpace value_dspace = value.getSpace();
+  H5::DataSet value = file.openDataSet("vtnf");
+  H5::DataSpace value_dspace = value.getSpace();
   hsize_t value_maxDim[2];
   value_dspace.getSimpleExtentDims(value_maxDim,NULL);
 
@@ -1944,7 +1967,7 @@ void ReadWrite::Read3bodyHDF5_new( std::string filename,Operator& op )
        float *me = value_buf[i+k_iso];
        float summed_me = 0;
        for (int ii=0;ii<5;++ii) summed_me += LECs[ii] * me[ii] ;
-       summed_me *= HBARC;
+       summed_me *= PhysConst::HBARC;
        // Phase due to different conventions for HO wave functions.
        // Now obsolete -- Feb 2016
 //       summed_me *= modelspace->phase(dbuf[alphasp][1]+dbuf[alphasp][4]+dbuf[alphasp][7]+dbuf[alphaspp][1]+dbuf[alphaspp][4]+dbuf[alphaspp][7]);
@@ -2021,8 +2044,8 @@ void ReadWrite::ReadOperator_Nathan( std::string filename1b, std::string filenam
     if (c>=norb or d>=norb) continue;
 //    if (a==b) me /= sqrt(2);
 //    if (c==d) me /= sqrt(2);
-    if (a==b) me /= SQRT2;
-    if (c==d) me /= SQRT2;
+    if (a==b) me /= PhysConst::SQRT2;
+    if (c==d) me /= PhysConst::SQRT2;
     op.TwoBody.SetTBME_J(J,a,b,c,d,me);
   }
   infile.close();
@@ -2259,7 +2282,7 @@ void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
 
   std::map<uint64_t, double> DoubleReducedME;
 
-  using namespace AngMom;
+//  using namespace AngMom;
 
   for (int i=0;i<5;++i) infile >> strbuf; // Five useless lines...
   infile >> J_op >> T_op;
@@ -2331,13 +2354,13 @@ void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
         for (int Tbra = std::abs(Tzbra); Tbra<=1; Tbra++)
         {
           if (a==b and ((Tbra+Jbra%2)<1)) continue;
-          double iso_clebsch_bra = CG(0.5,tza*0.5,0.5,tzb*0.5,Tbra,Tzbra);
+          double iso_clebsch_bra = AngMom::CG(0.5,tza*0.5,0.5,tzb*0.5,Tbra,Tzbra);
           if (a==b and Tzbra==0) iso_clebsch_bra *= sqrt(2);
           for (int Tket = std::abs(Tzket); Tket<=1; Tket++)
           {
-            double iso_clebsch_ket = CG(0.5,tzc*0.5,0.5,tzd*0.5,Tket,Tzket);
+            double iso_clebsch_ket = AngMom::CG(0.5,tzc*0.5,0.5,tzd*0.5,Tket,Tzket);
             if (c==d and Tzket==0) iso_clebsch_ket *= sqrt(2);
-            double WignerEckart_factor = CG(Tket,Tzket,T_op,Tzbra-Tzket, Tbra,Tzbra) /sqrt(2*Tbra+1.) * (Tzbra-Tzket);
+            double WignerEckart_factor = AngMom::CG(Tket,Tzket,T_op,Tzbra-Tzket, Tbra,Tzbra) /sqrt(2*Tbra+1.) * (Tzbra-Tzket);
             uint64_t hash_key = Petr2BC_hash(a,b,c,d,Jbra,Jket,Tbra,Tket);
             tbme += DoubleReducedME[hash_key] * iso_clebsch_bra * iso_clebsch_ket * WignerEckart_factor;
 
@@ -2431,8 +2454,8 @@ void ReadWrite::Write_me2j( std::string outfilename, Operator& Hbare, int emax, 
           {
              // me2j format is unnormalized
              double norm_factor = 1;
-             if (a==b)  norm_factor *= SQRT2;
-             if (c==d)  norm_factor *= SQRT2;
+             if (a==b)  norm_factor *= PhysConst::SQRT2;
+             if (c==d)  norm_factor *= PhysConst::SQRT2;
 
              // Matrix elements are written in the file with (T,Tz) = (0,0) (1,1) (1,0) (1,-1)
              tbme_pp = Hbare.TwoBody.GetTBME(J,parity,-1,a,b,c,d);        // unnormalized
@@ -2789,8 +2812,8 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, std::string filename, std::s
             if ( std::abs(tbme) < 1e-6) continue;
             if (T==0)
             {
-               if ( oa.j2 != ob.j2 or oa.l != ob.l or oa.n != ob.n ) tbme *= SQRT2; // pn TBMEs are unnormalized
-               if ( oc.j2 != od.j2 or oc.l != od.l or oc.n != od.n ) tbme *= SQRT2; // pn TBMEs are unnormalized
+               if ( oa.j2 != ob.j2 or oa.l != ob.l or oa.n != ob.n ) tbme *= PhysConst::SQRT2; // pn TBMEs are unnormalized
+               if ( oc.j2 != od.j2 or oc.l != od.l or oc.n != od.n ) tbme *= PhysConst::SQRT2; // pn TBMEs are unnormalized
                T = (tbc.J+1)%2;
             }
             // in NuShellX, the proton orbits must come first. This can be achieved by
@@ -2936,8 +2959,8 @@ void ReadWrite::ReadNuShellX_int(Operator& op, std::string filename)
     Orbit& od = modelspace->GetOrbit(orbit_map[d]);
     if (oa.tz2 != ob.tz2)
     {
-       if ( (oa.j2 != ob.j2) or (oa.l != ob.l) or (oa.n != ob.n) ) V /= SQRT2; // pn TBMEs are unnormalized
-       if ( (oc.j2 != od.j2) or (oc.l != od.l) or (oc.n != od.n) ) V /= SQRT2; // pn TBMEs are unnormalized
+       if ( (oa.j2 != ob.j2) or (oa.l != ob.l) or (oa.n != ob.n) ) V /= PhysConst::SQRT2; // pn TBMEs are unnormalized
+       if ( (oc.j2 != od.j2) or (oc.l != od.l) or (oc.n != od.n) ) V /= PhysConst::SQRT2; // pn TBMEs are unnormalized
     }
     op.TwoBody.SetTBME_J(J,orbit_map[a],orbit_map[b],orbit_map[c],orbit_map[d],V);
   }
@@ -3977,7 +4000,7 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
        {
          double me = Op.TwoBody.GetTBME_J(Jab,Jab,a,b,c,Q) * EdmondsConventionFactor;
          if (std::abs(me) < 1e-7) continue;
-         if (a_ind == b_ind) me /= SQRT2;  // We write out normalized matrix elements
+         if (a_ind == b_ind) me /= PhysConst::SQRT2;  // We write out normalized matrix elements
          auto c_ind = orb2nushell[c];
          outfile << std::setw(wint) << a_ind << " " << std::setw(wint) << b_ind << " " << std::setw(wint) << c_ind << "   "
                  << std::setw(wint) << Jab << "   " << std::setw(wdouble) << std::setprecision(pdouble) << me << std::endl;
@@ -4308,6 +4331,190 @@ void ReadWrite::SetLECs_preset(std::string key)
   else if (key == "PWA2.0_2.0") LECs = {-0.76, -4.78, 3.96,-3.007, -0.686};
   else if (key == "N2LOSAT")    LECs = {-1.12152120, -3.92500586, 3.76568716, 0.861680589, -0.03957471}; // For testing purposes only. (This uses the wrong regulator).
 }
+
+
+
+
+
+
+
+
+void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name, std::string eig_name, std::string v3int_name )
+{
+  double t_start = omp_get_wtime();
+  ///
+  /// first, read the poi file
+  /// this file contains the dimensions of the AS and NAS matrices
+  //////////////////////////////
+  std::ifstream poi_file(poi_name,std::ios::binary);
+  std::ifstream eig_file(eig_name,std::ios::binary);
+  std::ifstream v3int_file(v3int_name,std::ios::binary);
+
+  if ( not poi_file.good() )
+  {
+    std::cout << "ERROR:  " << __func__ << "  trouble reading file " << poi_name << ".  Exiting." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  if ( not eig_file.good() )
+  {
+    std::cout << "ERROR:  " << __func__ << "  trouble reading file " << eig_name << ".  Exiting." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  if ( not v3int_file.good() )
+  {
+    std::cout << "ERROR:  " << __func__ << "  trouble reading file " << v3int_name << ".  Exiting." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  std::cout << "Reading poi file and egv file" << std::endl;
+
+  size_t icount = 0;
+  for (int t2=jacobi3bme.twoTmin; t2<=jacobi3bme.twoTmax; t2+=2)
+  {
+    for (int j2=jacobi3bme.twoJmin; j2<=jacobi3bme.twoJmax; j2+=2)
+    {
+      for (int parity=0;parity<=1;parity++)
+      {
+        int Nmin=parity%2;
+
+        for (int N=Nmin; N<=jacobi3bme.Nmax; N+=2)  // N=2n+l, so for a given parity N is either even or odd 
+        {
+//          std::cout << "    N = " << N << std::endl;
+          // first, read dimensions from the poi file.
+          uint32_t delimiter; // This is machine-dependent. This seems to work on the local cluster, but there are no guarantees elsewhere. Fortran's fault, not mine...
+          uint32_t dimAS,dimNAS;
+          uint32_t cfp_ptr;
+          poi_file.read((char*)&delimiter, sizeof(delimiter));
+          poi_file.read((char*)&dimAS,     sizeof(dimAS));
+          poi_file.read((char*)&cfp_ptr,   sizeof(cfp_ptr));
+          poi_file.read((char*)&dimNAS,    sizeof(dimNAS));
+          poi_file.read((char*)&delimiter, sizeof(delimiter));
+
+//          std::cout << "About to set dimensions" << std::endl;
+          jacobi3bme.SetDimensionAS(t2,j2,parity,N, dimAS);
+//          std::cout << " now NAS..." << std::endl;
+          jacobi3bme.SetDimensionNAS(t2,j2,parity,N, dimNAS);
+//          SetCFPpointer(t2,j2,parity,N, cfp_ptr-1); // Convert from Fortran to C indexing
+//          std::cout << " done" << std::endl;
+
+          // next, read CFPs from the eig file
+          size_t hash = jacobi3bme.HashTJN(t2,j2,N);
+          jacobi3bme.cfp_start_loc[hash] = icount;
+          icount += dimAS * dimNAS;
+          jacobi3bme.cfpvec.resize(icount); // make sure the vector is big enough
+
+          for (int iAS=0; iAS<dimAS; iAS++)
+          {
+//            std::cout << "      iAS = " << iAS << std::endl;
+            uint32_t delimiter;
+            eig_file.read((char*)&delimiter,  sizeof(delimiter));
+            if ( delimiter/8 != dimNAS )
+            {
+               std::cout << "TROUBLE!!!!  rec. length = " << delimiter/8 << " , but I want " << dimNAS << std::endl;
+            }
+//            double sumsqr = 0;
+            for (int iNAS=0; iNAS<dimNAS; iNAS++)
+            {
+                double cfp;
+                eig_file.read((char*)&cfp,      sizeof(cfp)); // we can probably eventually read multiple values at once if this becomes a bottleneck...
+                jacobi3bme.AccessCFP(t2,j2,parity,N,iAS,iNAS) = cfp;
+//                sumsqr += cfp*cfp;
+            }
+            eig_file.read((char*)&delimiter,  sizeof(delimiter));
+//            std::cout << "    sumsqr = " << sumsqr << std::endl;
+          } // for iAS
+        } // for N
+      } // for parity
+    } // for j2
+  } // for t2
+
+  // need to do this here because now we know the relevant dimensions
+  jacobi3bme.Allocate();
+
+  /// now read in the matrix jacobi matrix elements from the v3int file
+  for (int t2=jacobi3bme.twoTmin; t2<=jacobi3bme.twoTmax; t2+=2)
+  {
+    for (int j2=jacobi3bme.twoJmin; j2<=jacobi3bme.twoJmax; j2+=2)
+    {
+      for (int parity=0;parity<=1;parity++)
+      {
+        int Nmin=parity%2;
+        if (Nmin > jacobi3bme.Nmax) continue;
+        uint32_t delimiter;
+        uint32_t nucleonsin,protonsin,neutronsin,twoJin,twoTin,Nmaxin;
+        int32_t pin;
+        double hwin;
+        v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+        v3int_file.read((char*)&hwin,       sizeof(hwin));
+        v3int_file.read((char*)&nucleonsin, sizeof(nucleonsin));
+        v3int_file.read((char*)&protonsin,  sizeof(protonsin));
+        v3int_file.read((char*)&neutronsin, sizeof(neutronsin));
+        v3int_file.read((char*)&twoJin,       sizeof(twoJin));
+        v3int_file.read((char*)&twoTin,       sizeof(twoTin));
+        v3int_file.read((char*)&pin,        sizeof(pin));
+        v3int_file.read((char*)&Nmaxin,     sizeof(Nmaxin));
+        v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+
+        if ( t2!=twoTin or j2!=twoJin or (1-2*parity)!=pin or jacobi3bme.Nmax!=Nmaxin )
+        {
+          std::cout << "ERROR: in " << __func__ << "  misread header info in " << v3int_name << "  "
+                    << " T: " << t2 << "," << twoTin << "   J: " << j2 << "," << twoJin <<  "  " 
+                    << " p: " << 1-2*parity << "," << pin  << "   Nmin:" << Nmin << ", Nmax:" << Nmaxin << "   "
+                    << "hw: " << hwin <<  ".   exiting... " << std::endl;
+          exit(EXIT_FAILURE);
+        }
+
+        for (int Nbra=Nmin; Nbra<=jacobi3bme.Nmax; Nbra+=2 )
+        {
+          size_t dim_braAS = jacobi3bme.GetDimensionAS(t2,j2,parity,Nbra);
+          for (size_t ibra=0; ibra<dim_braAS; ibra++)
+          {
+            for (int Nket=Nmin; Nket<=jacobi3bme.Nmax; Nket+=2)
+            {
+              size_t dim_ketAS = jacobi3bme.GetDimensionAS(t2,j2,parity,Nket);
+              for (size_t iket=0; iket<dim_ketAS; iket++)
+              {
+//                std::cout << "Nbra,Nket, ibra,iket = " << Nbra << " " << Nket << "    " << ibra << " " << iket << std::endl;
+                if (Nket<Nbra or (Nket==Nbra and iket<ibra) ) continue; 
+//                indexA++;
+                double matel;
+
+                v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+                v3int_file.read((char*)&matel,      sizeof(matel));
+                v3int_file.read((char*)&delimiter,  sizeof(delimiter));
+
+//                std::cout << "read a matrix element " << matel << std::endl;
+
+                jacobi3bme.SetMatElAS(ibra,iket,Nbra,Nket,t2,j2,parity, matel);
+                jacobi3bme.SetMatElAS(iket,ibra,Nket,Nbra,t2,j2,parity, matel); // for now, let's store the hermitian conjugate
+
+              } // for iket
+            } // for Nket
+          } // for ibra
+        } // for Nbra
+      } // for parity
+    } // for j2
+  } // for t2
+  poi_file.close();
+  eig_file.close();
+  v3int_file.close();
+
+
+  std::cout << "successfully read " << jacobi3bme.cfpvec.size() << " cfp's from file" << std::endl;
+
+  IMSRGProfiler::timer[std::string(__func__)] += omp_get_wtime() - t_start;
+
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
