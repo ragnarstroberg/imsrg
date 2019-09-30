@@ -226,7 +226,7 @@ DaggerOperator UnitTest::RandomDaggerOp(ModelSpace& modelspace, index_t Q)
          dag.ThreeLeg.SetME(ch,bra.p,bra.q,k, random_me);
        }
      }
-     std::cout << "ch = " << ch << "  matrix looks like " << std::endl << dag.ThreeLeg.GetMatrix(ch) << std::endl << std::endl;
+//     std::cout << "ch = " << ch << "  matrix looks like " << std::endl << dag.ThreeLeg.GetMatrix(ch) << std::endl << std::endl;
    }
 
    return dag;
@@ -671,7 +671,7 @@ double UnitTest::GetMschemeMatrixElement_3leg( const DaggerOperator& Op, int a, 
         matel += clebsch_ab * clebsch_cd * Op.ThreeLeg.GetME_J(J,a,b,c);
 
 
-//        if (a==0 and b==8 and c==0)
+//        if (a==0 and b==1 and c==1)
 //        {
 //
 //         std::cout << "*******  JM=" << J << " " << M << "  clebsch = " << clebsch_ab << " " << clebsch_cd <<  " * " << Op.ThreeLeg.GetME_J(J,a,b,c) << "  ->  " << clebsch_ab * clebsch_cd * Op.ThreeLeg.GetME_J(J,a,b,c) << "   matel = " << matel << std::endl;
@@ -2421,8 +2421,8 @@ bool UnitTest::Test_comm433sd_ph( const Operator& X, const DaggerOperator& Yin )
   DaggerOperator Z_J( Y );
   Z_J.Erase();
 
-//  Commutator::comm433sd_ph( X, Y, Z_J);
-  Commutator::comm433sd_ph_dumbway( X, Y, Z_J);
+  Commutator::comm433sd_ph( X, Y, Z_J);
+//  Commutator::comm433sd_ph_dumbway( X, Y, Z_J);
 
   size_t Q = Z_J.GetQSpaceOrbit();
   Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
@@ -2448,6 +2448,9 @@ bool UnitTest::Test_comm433sd_ph( const Operator& X, const DaggerOperator& Yin )
 //          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue;
 //          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue;
 
+
+//          if (not (i==0 and j==1 and k==1) ) continue;
+
           for (int mj=-oj.j2; mj<=oj.j2; mj+=2)
           {
            for (int mk=-ok.j2; mk<=ok.j2; mk+=2)
@@ -2466,6 +2469,8 @@ bool UnitTest::Test_comm433sd_ph( const Operator& X, const DaggerOperator& Yin )
                Orbit& ob = X.modelspace->GetOrbit(b);
                double nb = ob.occ;
 
+//                  if ( not (a==0 and b==10) or (a==10 and b==0) ) continue;
+//                  if ( not ((a==1 and b==8) or (a==8 and b==1)) ) continue;
 //                if ( (oi.l+oj.l+oa.l+ob.l)%2>0) continue;
 //                if ( (oi.tz2+oj.tz2) != (oa.tz2+ob.tz2) ) continue;
 
@@ -2479,6 +2484,14 @@ bool UnitTest::Test_comm433sd_ph( const Operator& X, const DaggerOperator& Yin )
                     double Ybia = GetMschemeMatrixElement_3leg(Y, b,mb, i,mi, a,ma);
 
                     Zm_ijk += (na-nb) * ( Xiakb * Ybja  -  Xjakb * Ybia ) ;
+//                    if (i==0 and j==1 and k==1 and mi==1 and mj==-1 and mk==-1 and ( (a==0 and b==10) or (b==0 and a==10) ) )
+//                    if (i==0 and j==1 and k==1 and mi==1 and mj==-1 and mk==-1 and std::abs(na-nb)>0 )
+//                    if (i==0 and j==1 and k==1 and mi==1 and mj==-1 and mk==-1 and ( (a==1 and b==8) or (b==1 and a==8) ) )
+//                    {
+//                      std::cout << "  a,b " << a << " " << b << "   ma,mb " << ma << " " << mb << "   na nb  " << na << " " << nb
+//                                << "  Xiakb Ybja " << Xiakb << " " << Ybja << "   Xjakb Ybia " << Xjakb << " " << Ybia << "  => Zm_ijk = " << Zm_ijk << std::endl;
+//                    }
+//                    Zm_ijk -= (na-nb) * (     Xjakb * Ybia ) ;
 
                   }// for mb
                 }// for ma

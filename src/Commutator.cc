@@ -4675,10 +4675,10 @@ void comm413_233sd( const Operator& X, const DaggerOperator& Y, DaggerOperator& 
            {
 //             cijk += Y1(a,Qorbit) * X.TwoBody.GetTBME_norm(ch,ch,i,j,k,a);   // This determines the normalization for the (adagger adagger a) term.
              cijk +=  X.TwoBody.GetTBME(ch,ch,i,j,k,a) * Y1(a,Qorbit) ;   // This determines the normalization for the (adagger adagger a) term.
-             if (i==0 and j==8 and k==0)
-             {
-                std::cout << "   " << __func__ << "  a = " << a << "  Xijka, Ya = " << X.TwoBody.GetTBME(ch,ch,i,j,k,a) << " , " << Y1(a,Qorbit) << "  cijk = " << cijk << std::endl;
-             }
+//             if (i==0 and j==8 and k==0)
+//             {
+//                std::cout << "   " << __func__ << "  a = " << a << "  Xijka, Ya = " << X.TwoBody.GetTBME(ch,ch,i,j,k,a) << " , " << Y1(a,Qorbit) << "  cijk = " << cijk << std::endl;
+//             }
 
            }
 
@@ -4814,6 +4814,9 @@ void comm433_pp_hh_431sd( const Operator& X, const DaggerOperator& Y, DaggerOper
 //
 //  Straightfoward and very slow implementation, only used for unit testing the
 //  faster mat-mult implementation.  The two implementations agree as of Nov 2, 2018 - SRS 
+//  Benchmarked against the m-scheme version in UnitTest.cc, and it agrees (although
+//  some changes were required compared to the impoementation tested in Nov 2018).
+//  So this again agrees with the more efficient way, and with the m-scheme verion as of Sep 30 2019 - SRS
 void comm433sd_ph_dumbway( const Operator& X, const DaggerOperator& Y, DaggerOperator& Z)
 {
 
@@ -4841,16 +4844,7 @@ void comm433sd_ph_dumbway( const Operator& X, const DaggerOperator& Y, DaggerOpe
         std::vector<index_t> j_cases = { bra.q, bra.p };
         std::vector<int> ijsign_cases = { +1, bra.Phase(J)};  // This accounts for the 1 - (-1)^(ji +jj-J) Pij  factor.
         double norm_ij = (bra.p==bra.q) ? PhysConst::INVSQRT2 : 1.0;
-        for (int ijcase=0; ijcase<=1; ijcase++)
-        {
-          index_t i = i_cases[ijcase];
-          index_t j = j_cases[ijcase];
-          int ijsign = ijsign_cases[ijcase];
-          Orbit& oi = Z.modelspace->GetOrbit(i);
-          Orbit& oj = Z.modelspace->GetOrbit(j);
-          double ji = 0.5* oi.j2;
-          double jj = 0.5* oj.j2;
-//          for ( size_t k=0; k<norb; k++)
+
           for ( auto k : Z.modelspace->all_orbits )
           {
             Orbit& ok = Z.modelspace->GetOrbit(k);
@@ -4860,6 +4854,21 @@ void comm433sd_ph_dumbway( const Operator& X, const DaggerOperator& Y, DaggerOpe
 //            double norm_kQ = (k==Q) ? PhysConst::INVSQRT2 : 1.0;
             double norm_kQ =  1.0;
             double jk = 0.5* ok.j2;
+
+
+        for (int ijcase=0; ijcase<=1; ijcase++)
+        {
+//         if (ijcase==1) continue;
+          index_t i = i_cases[ijcase];
+          index_t j = j_cases[ijcase];
+//          std::cout << "~~~~ i,j = " << i << " " << j << std::endl;
+          int ijsign = ijsign_cases[ijcase];
+          Orbit& oi = Z.modelspace->GetOrbit(i);
+          Orbit& oj = Z.modelspace->GetOrbit(j);
+          double ji = 0.5* oi.j2;
+          double jj = 0.5* oj.j2;
+//          for ( size_t k=0; k<norb; k++)
+
 
 
             int Jprime_min = std::max(  std::abs(ji-jQ), std::abs(jj-jk) );
@@ -4874,6 +4883,7 @@ void comm433sd_ph_dumbway( const Operator& X, const DaggerOperator& Y, DaggerOpe
               for (auto& iketab : kets_ph )
               {
                 auto& ketab = Z.modelspace->GetKet(iketab);
+                  if (  (ketab.op->j2+ketab.oq->j2)<2*Jprime  or  std::abs(ketab.op->j2-ketab.oq->j2)>2*Jprime ) continue;
                 std::vector<index_t> ab_cases = { ketab.p, ketab.q };
                 for (int abcase = 0; abcase<=1; abcase++)
                 {
@@ -4885,6 +4895,11 @@ void comm433sd_ph_dumbway( const Operator& X, const DaggerOperator& Y, DaggerOpe
                   double ja = 0.5*oa.j2;
                   double jb = 0.5*ob.j2;
                   double nanb = oa.occ - ob.occ;
+
+//                  if ( not (a==0 and b==10) or (a==10 and b==0) ) continue;
+//                  if ( not ((a==1 and b==8) or (a==8 and b==1)) ) continue;
+
+                  // we can probably also check triangle for (a,b,Jprime)
 
 
                   int JA_min = std::max(  std::abs(ja-jj), std::abs(jk-jb)  );
@@ -4906,17 +4921,33 @@ void comm433sd_ph_dumbway( const Operator& X, const DaggerOperator& Y, DaggerOpe
                     matelY -= (2*JB+1) * sixjB * Y.ThreeLeg.GetME_J(JB,i,b,a);   // GetTBME_J returns an un-normalized matrix element
                   }
                   XYprod += nanb * matelX * matelY;
+//                  if ( ( (i==0 and j==1) or (i==1 and j==0)) and k==1  and std::abs(nanb)>0)
+//                  if ( ( (i==0 and j==1) or (i==1 and j==0)) and k==1 and ((a==0 and b==10) or (b==0 and a==10)) )
+//                  if ( ( (i==0 and j==1) or (i==1 and j==0)) and k==1 and ((a==1 and b==8) or (b==1 and a==8)) )
+//                  {
+//                    std::cout << "   J = " << J << "  a,b = " << a << " " << b << "  Jprime = " << Jprime << "  nanb " << nanb 
+//                              << "  Xbar_abkj Ybar_iQab " << matelX << " " << matelY << " => XYprod = " << XYprod << std::endl;
+//                  }
                 }
               } // loop over ab cases
                zijk -= ijsign * (2*Jprime+1) * sixjprime * XYprod;
+//                  if (( (i==0 and j==1) or (i==1 and j==0)) and k==1)
+//                  {
+//                    std::cout << "i,j = " << i << " " << j << " ijsign(J=" << J << ") = " << ijsign << "  2Jprime+1 " << 2*Jprime+1 << "  sixjprime " << sixjprime << "  XYprod " << XYprod << "  => zijk " << zijk
+//                               <<  std::endl;
+//                  }
             }  // loop over ab kets
  
+//                  if (( (i==0 and j==1) or (i==1 and j==0)) and k==1)
+//                  {
+//                    std::cout << " zijk = " << zijk <<  " norm_ij norm_kQ = " << norm_ij << " " << norm_kQ << "    before setting, the ME is " << Z.ThreeLeg.GetME_J(J,i,j,k) << std::endl << std::endl;
+//                  }
 
+        } // loop over ij cases
 
 //            Z.TwoBody.AddToTBME_J(J,i,j,k,Q,  zijk * norm_ij*norm_kQ);   // AddToTBME_J assumes a normalized matrix element.
-            Z.ThreeLeg.AddToME_J(J,i,j,k,  zijk * norm_ij*norm_kQ);   // AddToTBME_J assumes a normalized matrix element.
+            Z.ThreeLeg.AddToME_J(J,bra.p,bra.q,k,  zijk * norm_ij*norm_kQ);   // AddToTBME_J assumes a normalized matrix element.
           }  // loop over k 
-        } // loop over ij cases
       } // for ibra
    } // for ich
 
@@ -4960,7 +4991,7 @@ void comm433sd_ph( const Operator& X, const DaggerOperator& Y, DaggerOperator& Z
    {
       size_t ch = Z.modelspace->SortedTwoBodyChannels_CC[ich];
       index_t nKets_cc = Z.modelspace->GetTwoBodyChannel_CC(ch).GetNumberKets();
-      Z_bar[ch].zeros( norb, 2*nKets_cc );  // Z_iQ`kj`   we want both orderings if k and j, but Q is fixed.
+      Z_bar[ch].zeros( norb, 2*nKets_cc );  // Z_iQ`kj`   we want both orderings of k and j, but Q is fixed.
       if ( pandya_lookup.at({ch,ch})[0].size()>0 ) lookup_empty[ich] = false;
    }
 
@@ -5144,7 +5175,7 @@ void DoPandyaTransformation_SingleChannel_Dagger(const DaggerOperator& Z, arma::
 
 
 
-// Same idea as the scalar commutator version, with enough modifications to make it no wrong (I hope).
+// Same idea as the scalar commutator version, with enough modifications to make it not wrong (I hope).
 // One big difference is that the Pandya-transformed operator Zbar has its bra indices numbered
 // by orbit index rather than ket index, because it's   <iQ|Zbar|kj>  and Q is fixed.
 // Otherwise, it should look pretty similar.
@@ -5176,32 +5207,32 @@ void AddInversePandyaTransformation_Dagger( const std::deque<arma::mat>& Zbar, D
         std::vector<size_t> ij_switcheroo = {bra.p , bra.q};
         std::vector<int> phaseij = { +1, bra.Phase(J) }; 
 
+        double norm_ij = (bra.p==bra.q) ? PhysConst::INVSQRT2 : 1.0;
 
-        for (int ij_case=0; ij_case<=1; ij_case++)
+        for (size_t k=0; k<norb; k++)
         {
-          size_t i = ij_switcheroo[ij_case];
-          size_t j = ij_switcheroo[1-ij_case];
-          int Pij = phaseij[ij_case];
+          Orbit & ok = Z.modelspace->GetOrbit(k);
+//          if ( not tbc.CheckChannel_ket(&ok, &oQ) ) continue; // if |kQ> doesn't live in this channel, move along.
+          if ( ( (ok.tz2+oQ.tz2)!=2*tbc.Tz) or ( (ok.l+oQ.l)%2!=tbc.parity) or ( (ok.j2+oQ.j2)<2*tbc.J) or ( std::abs(ok.j2-oQ.j2)>2*tbc.J) ) continue; // if |kQ> doesn't live in this channel, move along.
 
-          Orbit & oi = Z.modelspace->GetOrbit(i);
-          Orbit & oj = Z.modelspace->GetOrbit(j);
-          double ji = oi.j2/2.;
-          double jj = oj.j2/2.;
-          double norm_ij = (i==j) ? PhysConst::INVSQRT2 : 1.0;
+          double jk = ok.j2/2.;
+//          double norm_kQ = (k==Q) ? PhysConst::INVSQRT2  : 1.0;
+          double norm_kQ = 1.0;
 
+          double commijk = 0;  // collect the sum in commijk 
 
-          for (size_t k=0; k<norb; k++)
+          for (int ij_case=0; ij_case<=1; ij_case++) // loop over the two cases corresponding to 1-Pij (with the appropriate phase on the exchange term)
           {
-            Orbit & ok = Z.modelspace->GetOrbit(k);
-//            if ( not tbc.CheckChannel_ket(&ok, &oQ) ) continue; // if |kQ> doesn't live in this channel, move along.
-            if ( ( (ok.tz2+oQ.tz2)!=2*tbc.Tz) or ( (ok.l+oQ.l)%2!=tbc.parity) or ( (ok.j2+oQ.j2)<2*tbc.J) or ( std::abs(ok.j2-oQ.j2)>2*tbc.J) ) continue; // if |kQ> doesn't live in this channel, move along.
+            size_t i = ij_switcheroo[ij_case];
+            size_t j = ij_switcheroo[1-ij_case];
+            int Pij = phaseij[ij_case];
 
-            double jk = ok.j2/2.;
-//            double norm_kQ = (k==Q) ? PhysConst::INVSQRT2  : 1.0;
-            double norm_kQ = 1.0;
+            Orbit & oi = Z.modelspace->GetOrbit(i);
+            Orbit & oj = Z.modelspace->GetOrbit(j);
+            double ji = oi.j2/2.;
+            double jj = oj.j2/2.;
 
-            double commijk = 0;  // contribution of the 1 term 
-
+            // now loop over the Jprime entering in the Pandya transformation
             int parity_cc = (oi.l+oQ.l)%2;
             int Tz_cc = std::abs(oi.tz2+oQ.tz2)/2;
             int Jmin = std::max(std::abs(int(ji-jQ)),std::abs(int(jk-jj)));
@@ -5216,15 +5247,15 @@ void AddInversePandyaTransformation_Dagger( const std::deque<arma::mat>& Zbar, D
               size_t indx_iQ = i;
               size_t indx_kj = tbc_cc.GetLocalIndex(std::min(j,k),std::max(j,k)) +(k>j?nkets_cc:0);
               double me1 = Zbar.at(ch_cc)(indx_iQ,indx_kj);
-              commijk -= (2*Jprime+1) * sixj * me1  * Pij;
+              commijk -= (2*Jprime+1.) * sixj * me1  * Pij;
             }
 
-            commijk *= norm_ij * norm_kQ;
-
+          } // for ij_case
+          commijk *= norm_ij * norm_kQ;
 //            Z.TwoBody.AddToTBME_J(J,i,j,k,Q,  commijk );   // AddToTBME_J assumes a normalized matrix element.
-            Z.ThreeLeg.AddToME_J(J,i,j,k,  commijk );   // AddToTBME_J assumes a normalized matrix element.
-          }
-        } // for ij_case
+//            Z.ThreeLeg.AddToME_J(J,i,j,k,  commijk );   // AddToTBME_J assumes a normalized matrix element.
+          Z.ThreeLeg.AddToME_J(J,bra.p,bra.q,k,  commijk );   // AddToTBME_J assumes a normalized matrix element.
+        } // for k
       } // for ibra, which is <ij|
    } // for ich, which is J etc
 }
