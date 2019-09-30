@@ -118,7 +118,6 @@ std::map<std::string,int> Parameters::int_par = {
 
 std::map<std::string,std::vector<std::string>> Parameters::vec_par = {
  {"Operators", {} },    // Operators to transform
- {"DaggerOperators", {} },  // Particle number changing operators to transform
  {"OperatorsFromFile", {} },  // These will mostly be MECs for operators
  {"OperatorsPT1", {} },   // First order perturbative correction to (1b part of) operator.
  {"OperatorsRPA", {} },   // RPA resummed correction to (1b part of) operator.
