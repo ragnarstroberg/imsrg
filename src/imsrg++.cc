@@ -49,6 +49,8 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
+#include <stdio.h>
 #include <string>
 #include <omp.h>
 #include "IMSRG.hh"
@@ -164,6 +166,29 @@ int main(int argc, char** argv)
   rw.SetLECs_preset(LECs);
   rw.SetScratchDir(scratch);
   rw.Set3NFormat( fmt3 );
+
+  // Test whether the scratch directory exists and we can write to it.
+  // This is necessary because otherwise you get garbage for transformed operators and it's
+  // not obvious what went wrong.
+  if ( method=="magnus" and  scratch != "" and scratch!= "/dev/null" and scratch != "/dev/null/")
+  {
+    std::string testfilename = scratch + "/_this_is_a_test_delete_me";
+    std::ofstream testout(testfilename);
+    testout << "PASSED" << std::endl;
+    testout.close();
+    std::remove( testfilename.c_str() );
+    if ( not testout.good() )
+    {
+      std::cout << "WARNING in " << __FILE__ <<  " failed test write to scratch directory " << scratch;
+      if (opnames.size()>0 )
+      {
+      std::cout << "   dying now. " << std::endl;
+      exit(0);
+      }
+      else std::cout << std::endl;
+    }
+  }
+
 
 //  ModelSpace modelspace;
 
