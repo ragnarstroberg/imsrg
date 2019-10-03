@@ -90,10 +90,10 @@ struct Ket3 // | p q r >
   size_t p;
   size_t q;
   size_t r;
-  int Jpq;
   Orbit* op;
   Orbit* oq;
   Orbit* oR; // unfortunate that this convention collides with the "or" keyword.
+  int Jpq;
 
   // Methods
   Ket3(){};

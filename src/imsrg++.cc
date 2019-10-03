@@ -183,9 +183,19 @@ int main(int argc, char** argv)
       if (opnames.size()>0 )
       {
       std::cout << "   dying now. " << std::endl;
-      exit(0);
+      exit(EXIT_FAILURE);
       }
       else std::cout << std::endl;
+    }
+  }
+  if ( (method=="magnus") and (scratch=="/dev/null" or scratch=="/dev/null/") )
+  {
+    if ( opnames.size() > 0 )
+    {
+      std::cout << "WARNING!!! using Magnus with scratch = " << scratch << " but you're also trying to transform some operators: ";
+      for (auto opn : opnames ) std::cout << opn << " ";
+      std::cout << "   dying now." << std::endl;
+      exit(EXIT_FAILURE);
     }
   }
 

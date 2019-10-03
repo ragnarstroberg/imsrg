@@ -20,7 +20,7 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
 {}
 
 ThreeBodyME::ThreeBodyME(const ThreeBodyME& tbme)
-: modelspace(tbme.modelspace),E3max(tbme.E3max), emax(tbme.emax), herm(1), MatEl( tbme.MatEl ), OrbitIndexHash( tbme.OrbitIndexHash ) 
+: modelspace(tbme.modelspace), MatEl( tbme.MatEl ), OrbitIndexHash( tbme.OrbitIndexHash ),  E3max(tbme.E3max), emax(tbme.emax), herm(tbme.herm)
 {}
 
 //ThreeBodyME::ThreeBodyME(ThreeBodyME tbme)

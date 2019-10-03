@@ -70,7 +70,7 @@ Operator Commutator( const Operator& X, const Operator& Y)
       if ( (xlegs%2==1) and (ylegs%2==1) )
       {
         std::cout << "TROUBLE!!!! Called commutator with two Dagger operators. This isn't implemented. Dying..." << std::endl;
-        std::abort;
+	std::exit(EXIT_FAILURE);
       }
       if (yrank==0)
       {
@@ -2320,7 +2320,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 {
 //  std::cout << "start comm133" << std::endl;
-  int E3cut = 7;
+//  int E3cut = 7;
   int e3maxcut = 6;
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
@@ -2437,8 +2437,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 {
-  int emin = 0;
-  int emax = 4;
+//  int emin = 0;
+//  int emax = 4;
   int e3maxcut = 6;
   int norbs = Z.modelspace->GetNumberOrbits();
   auto& Z3 = Z.ThreeBody;
@@ -2664,8 +2664,8 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
           for (int iket_ij=0; iket_ij<nkets_ij; iket_ij++)
           {
             Ket& ket_ij = tbc_ij.GetKet(iket_ij);
-            int i = ket_ij.p;
-            int j = ket_ij.q;
+            index_t i = ket_ij.p;
+            index_t j = ket_ij.q;
             Orbit& oi = Z.modelspace->GetOrbit(i);
             Orbit& oj = Z.modelspace->GetOrbit(j);
             if (i==j and i==k and oi.j2<3 ) continue; // Can't overfill the orbit
@@ -2678,8 +2678,8 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
             for (int iket_lm=0; iket_lm<nkets_lm; iket_lm++)
             {
               Ket& ket_lm = tbc_lm.GetKet(iket_lm);
-              int l = ket_lm.p;
-              int m = ket_lm.q;
+              index_t l = ket_lm.p;
+              index_t m = ket_lm.q;
               Orbit& ol = Z.modelspace->GetOrbit(l);
               Orbit& om = Z.modelspace->GetOrbit(m);
               if (l==m and l==n and ol.j2<3 ) continue;
@@ -3121,8 +3121,8 @@ void comm333ss( const Operator& X, const Operator& Y, Operator& Z )
                    {
                      Ket& ket_ab = tbc_ab.GetKet(iket_ab);
 
-                     int a = ket_ab.p;
-                     int b = ket_ab.q;
+//                     int a = ket_ab.p;
+//                     int b = ket_ab.q;
                      Orbit& oa = *(ket_ab.op);
                      Orbit& ob = *(ket_ab.oq);
                      double na = oa.occ;
@@ -3351,17 +3351,17 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
       auto i = allorb_vec[indexi];
       Orbit &oi = Z.modelspace->GetOrbit(i);
       double ji = 0.5*oi.j2;
-      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
+      for (auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
       {
           Orbit &oj = Z.modelspace->GetOrbit(j);
           double jj = 0.5*oj.j2;
           if (j<i) continue; // only calculate upper triangle
           double& Zij = Z.OneBody(i,j);
-          for (auto& a : Z.modelspace->holes)  // C++11 syntax
+          for (auto a : Z.modelspace->holes)  // C++11 syntax
           {
              Orbit &oa = Z.modelspace->GetOrbit(a);
              double ja = 0.5*oa.j2;
-             for (auto& b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
+             for (auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
              {
                 Orbit &ob = Z.modelspace->GetOrbit(b);
                 double nanb = oa.occ * (1-ob.occ);
@@ -3667,7 +3667,7 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
       auto i = allorb_vec[indexi];
       Orbit &oi = Z.modelspace->GetOrbit(i);
       double ji = oi.j2/2.0;
-      for (int j : Z.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      for (auto j : Z.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
       {
          if (j<i) continue;
          Orbit &oj = Z.modelspace->GetOrbit(j);
@@ -4825,7 +4825,7 @@ void comm433_pp_hh_431sd( const Operator& X, const Operator& Y, Operator& Z )
 void comm433sd_ph_dumbway( const Operator& X, const Operator& Y, Operator& Z)
 {
 
-   double t = omp_get_wtime();
+   double t_start = omp_get_wtime();
 //   int norb = Z.modelspace->GetNumberOrbits();
    int nch = Z.modelspace->SortedTwoBodyChannels.size();
    index_t Q = Y.GetQSpaceOrbit();
@@ -4956,7 +4956,7 @@ void comm433sd_ph_dumbway( const Operator& X, const Operator& Y, Operator& Z)
           }  // loop over k 
       } // for ibra
    } // for ich
-
+   Z.profiler.timer[__func__] += omp_get_wtime() - t_start;
 
 }
 
@@ -5115,7 +5115,7 @@ void comm433sd_ph( const Operator& X, const Operator& Y, Operator& Z)
 void DoPandyaTransformation_SingleChannel_Dagger(const Operator& Z, arma::mat& TwoBody_CC_ph, int ch_cc)
 {
    TwoBodyChannel& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
-   int nKets_cc = tbc_cc.GetNumberKets();
+//   int nKets_cc = tbc_cc.GetNumberKets();
    size_t norb = Z.modelspace->GetNumberOrbits();
    arma::uvec kets_ph = arma::join_cols(tbc_cc.GetKetIndex_hh(), tbc_cc.GetKetIndex_ph() );
    int nph_kets = kets_ph.n_rows;

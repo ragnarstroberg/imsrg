@@ -122,8 +122,22 @@ ModelSpace::ModelSpace()
 }
 
 
+
+
+
+
 ModelSpace::ModelSpace(const ModelSpace& ms)
  :
+   Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax(ms.Lmax), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
+   OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
+   norbits(ms.norbits), hbar_omega(ms.hbar_omega),
+   target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
+   Orbits(ms.Orbits), Kets(ms.Kets), Kets3(ms.Kets3),
+   OneBodyChannels(ms.OneBodyChannels), nTwoBodyChannels(ms.nTwoBodyChannels),
+   TwoBodyChannels(ms.TwoBodyChannels), TwoBodyChannels_CC(ms.TwoBodyChannels_CC),
+   nThreeBodyChannels(ms.nThreeBodyChannels), ThreeBodyChannels(ms.ThreeBodyChannels),
+   Ket3IndexLookup(ms.Ket3IndexLookup), ThreeBodyChannelLookup(ms.ThreeBodyChannelLookup),
+   PandyaLookup(ms.PandyaLookup), OrbitLookup(ms.OrbitLookup),
    holes( ms.holes), particles( ms.particles),
    core(ms.core), valence(ms.valence), qspace( ms.qspace), 
    proton_orbits( ms.proton_orbits),neutron_orbits( ms.neutron_orbits), all_orbits(ms.all_orbits),
@@ -136,18 +150,8 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    KetIndex_qq( ms.KetIndex_qq),
    Ket_occ_hh( ms.Ket_occ_hh),
    Ket_unocc_hh( ms.Ket_unocc_hh),
-   Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax(ms.Lmax), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
-   OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
-   OneBodyChannels(ms.OneBodyChannels),
    SortedTwoBodyChannels(ms.SortedTwoBodyChannels),
    SortedTwoBodyChannels_CC(ms.SortedTwoBodyChannels_CC),
-   norbits(ms.norbits), hbar_omega(ms.hbar_omega),
-   target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
-   nTwoBodyChannels(ms.nTwoBodyChannels),
-   Orbits(ms.Orbits), Kets(ms.Kets),
-   TwoBodyChannels(ms.TwoBodyChannels), TwoBodyChannels_CC(ms.TwoBodyChannels_CC),
-   OrbitLookup(ms.OrbitLookup),
-   PandyaLookup(ms.PandyaLookup),
    sixj_has_been_precalculated(ms.sixj_has_been_precalculated),
    moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated),
    scalar_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(ms.single_species)
@@ -158,11 +162,19 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
 
 ModelSpace::ModelSpace(ModelSpace&& ms)
  :
+   Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax(ms.Lmax), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
+   OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
+   norbits(ms.norbits), hbar_omega(ms.hbar_omega),
+   target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
+   Orbits(std::move(ms.Orbits)), Kets(std::move(ms.Kets)),
+   OneBodyChannels(std::move(ms.OneBodyChannels)), nTwoBodyChannels(std::move(ms.nTwoBodyChannels)),
+   TwoBodyChannels(std::move(ms.TwoBodyChannels)), TwoBodyChannels_CC(std::move(ms.TwoBodyChannels_CC)),
+   nThreeBodyChannels(std::move(ms.nThreeBodyChannels)), ThreeBodyChannels(std::move(ms.ThreeBodyChannels)),
+   Ket3IndexLookup(std::move(ms.Ket3IndexLookup)), ThreeBodyChannelLookup(std::move(ThreeBodyChannelLookup)),
+   PandyaLookup(std::move(ms.PandyaLookup)), OrbitLookup(ms.OrbitLookup),
    holes( std::move(ms.holes)), particles( std::move(ms.particles)),
    core(std::move(ms.core)), valence(std::move(ms.valence)),  qspace( std::move(ms.qspace)),  
-   proton_orbits( std::move(ms.proton_orbits)),
-   neutron_orbits( std::move(ms.neutron_orbits)),
-   all_orbits( std::move(ms.all_orbits)),
+   proton_orbits( std::move(ms.proton_orbits)), neutron_orbits( std::move(ms.neutron_orbits)), all_orbits( std::move(ms.all_orbits)),
    KetIndex_pp( std::move(ms.KetIndex_pp)), KetIndex_ph( std::move(ms.KetIndex_ph)), KetIndex_hh( std::move(ms.KetIndex_hh)),
    KetIndex_cc( ms.KetIndex_cc),
    KetIndex_vc( ms.KetIndex_vc),
@@ -172,18 +184,8 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    KetIndex_qq( ms.KetIndex_qq),
    Ket_occ_hh( ms.Ket_occ_hh),
    Ket_unocc_hh( ms.Ket_unocc_hh),
-   Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax(ms.Lmax), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
-   OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax),
-   OneBodyChannels(std::move(ms.OneBodyChannels)),
    SortedTwoBodyChannels(std::move(ms.SortedTwoBodyChannels)),
    SortedTwoBodyChannels_CC(std::move(ms.SortedTwoBodyChannels_CC)),
-   norbits(ms.norbits), hbar_omega(ms.hbar_omega),
-   target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
-   nTwoBodyChannels(ms.nTwoBodyChannels),
-   Orbits(std::move(ms.Orbits)), Kets(std::move(ms.Kets)),
-   TwoBodyChannels(std::move(ms.TwoBodyChannels)), TwoBodyChannels_CC(std::move(ms.TwoBodyChannels_CC)),
-   OrbitLookup(ms.OrbitLookup),
-   PandyaLookup(ms.PandyaLookup),
    sixj_has_been_precalculated(ms.sixj_has_been_precalculated),
    moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated),
    scalar_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(ms.single_species)
@@ -1397,7 +1399,7 @@ void ModelSpace::PreCalculateMoshinsky()
   {
    for (int n=0; n<=std::min(N,E2max/2-N); ++n)
    {
-    int Lam_max = std::min( E2max-2*n-2*n, 2*Lmax ); // Here Lmax is the max L of the s.p. basis
+//    int Lam_max = std::min( E2max-2*n-2*n, 2*Lmax ); // Here Lmax is the max L of the s.p. basis
     for (int Lam=0; Lam<=E2max-2*N-2*n; ++Lam)
     {
 //     int lam_max = std::min( 2*Lmax, (N==n ? std::min(Lam,E2max-2*N-2*n-Lam) : E2max-2*N-2*n-Lam)) ; // Here Lmax is the max L of the s.p. basis

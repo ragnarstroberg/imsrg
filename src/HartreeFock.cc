@@ -404,19 +404,19 @@ void HartreeFock::BuildMonopoleV3Jacobi()
 
    for ( auto& obc_a : Hbare.OneBodyChannels )
    {
-     uint64_t a0 = *(obc_a.second.begin()); // access the first element in the set
+//     uint64_t a0 = *(obc_a.second.begin()); // access the first element in the set
 //     uint64_t a0 = obc_a.second[0];
      int j2a = obc_a.first[1];
      for ( auto& obc_b : Hbare.OneBodyChannels )
      {
 //       uint64_t b0 = obc_b.second[0];
-       uint64_t b0 = *(obc_b.second.begin());// access the first element in the set
+//       uint64_t b0 = *(obc_b.second.begin());// access the first element in the set
        int j2b = obc_b.first[1];
        int Jab_min = std::abs( j2a-j2b )/2;
        int Jab_max = ( j2a+j2b )/2;
        for ( auto& obc_c : Hbare.OneBodyChannels )
        {
-         uint64_t c0 = *(obc_c.second.begin());// access the first element in the set
+//         uint64_t c0 = *(obc_c.second.begin());// access the first element in the set
 //         uint64_t c0 = obc_c.second[0];
          int j2c = obc_c.first[1];
 
@@ -489,7 +489,7 @@ void HartreeFock::BuildMonopoleV3Jacobi()
          }// for ikey
          // and now that we have all the relevant T coefficients computed, let's get all the 3-body monopole terms
          // we can again parallelize here
-         size_t asize = obc_a.second.size();
+//         size_t asize = obc_a.second.size();
 //         for ( auto a : obc_a.second )
 //         #pragma omp parallel for schedule(dynamic,1)
 //         for ( size_t ia=0; ia<asize; ia++)  // do it this way because omp doesn't play nice with range-based for loops
@@ -532,11 +532,11 @@ void HartreeFock::BuildMonopoleV3Jacobi()
                              int twoT = 1;
                              size_t alpha_dim_abc = jacobi3bme->GetDimensionNAS( twoT, twoJ, E12_abc%2, E12_abc );
                              size_t alpha_dim_def = jacobi3bme->GetDimensionNAS( twoT, twoJ, E12_def%2, E12_def );
-                             for ( int alpha_abc=0; alpha_abc<alpha_dim_abc; alpha_abc++)
+                             for ( size_t alpha_abc=0; alpha_abc<alpha_dim_abc; alpha_abc++)
                              {
                                auto key_abc = Vmon3JacobiHash(oa.n, ob.n, oc.n, Jab, twoJ,  E12_abc, alpha_abc, Ncm, Lcm);
                                double T_abc = Ttable[key_abc];
-                               for ( int alpha_def=0; alpha_def<alpha_dim_def; alpha_def++)
+                               for ( size_t alpha_def=0; alpha_def<alpha_dim_def; alpha_def++)
                                {
                                  auto key_def = Vmon3JacobiHash(od.n, oe.n, of.n, Jab, twoJ,  E12_def, alpha_def, Ncm, Lcm);
                                  double T_def = Ttable[key_def];
@@ -701,7 +701,7 @@ void HartreeFock::FillLowestOrbits()
 void HartreeFock::UpdateF()
 {
    double start_time = omp_get_wtime();
-   int norbits = modelspace->GetNumberOrbits();
+//   int norbits = modelspace->GetNumberOrbits();
    Vij.zeros();
    V3ij.zeros();
 
@@ -711,7 +711,7 @@ void HartreeFock::UpdateF()
    for (auto i : modelspace->all_orbits)
    {
       Orbit& oi = modelspace->GetOrbit(i);
-      for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+      for (auto j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
          if (j<i) continue;
 //         for (int a=0;a<norbits;++a)
@@ -722,7 +722,7 @@ void HartreeFock::UpdateF()
             int parity = (oi.l+oa.l)%2;
             int bra = modelspace->GetKetIndex(std::min(i,a),std::max(i,a));
             int local_bra = modelspace->MonopoleKets[Tz+1][parity][bra];
-            for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+            for (auto b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
             {
                int ket = modelspace->GetKetIndex(std::min(j,b),std::max(j,b));
                int local_ket = modelspace->MonopoleKets[Tz+1][parity][ket];

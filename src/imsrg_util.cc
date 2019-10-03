@@ -417,7 +417,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    {
       Orbit & oa = modelspace.GetOrbit(a);
       T.OneBody(a,a) = 0.5 * hw * (2*oa.n + oa.l +3./2); 
-      for ( int b : T.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      for ( auto b : T.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
       {
          if (b<=a) continue;
          Orbit & ob = modelspace.GetOrbit(b);
@@ -2160,7 +2160,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
      for (auto j : QdotQ_op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
      {
        if (i>j) continue;
-       Orbit & oj = modelspace.GetOrbit(j);
+//       Orbit & oj = modelspace.GetOrbit(j);
 //       for (auto k : QdotQ_op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
        double Qij =0;
 //       for (size_t k=0;k<modelspace.GetNumberOrbits();k++)
@@ -2266,7 +2266,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
      Orbit& oa = modelspace.GetOrbit(a);
      if (oa.tz2>0) continue; // protons only
      if (oa.l>lmax) continue;
-     for (int b : VCoul.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+     for (auto b : VCoul.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
      {
        if (b<a) continue;
        Orbit& ob = modelspace.GetOrbit(b);

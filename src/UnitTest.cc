@@ -320,10 +320,10 @@ void UnitTest::Test3BodyAntisymmetry(Operator& Y)
   Orbit& oe = Y.modelspace->GetOrbit(e);
   Orbit& of = Y.modelspace->GetOrbit(f);
 
-  double yJ0_abcdef = Y.ThreeBody.GetME_pn(0,0,1,a,b,c,d,e,f);
-  double yJ1_abcdef = Y.ThreeBody.GetME_pn(1,0,1,a,b,c,d,e,f);
-  double yJ0_cbadef = Y.ThreeBody.GetME_pn(0,0,1,c,b,a,d,e,f);
-  double yJ1_cbadef = Y.ThreeBody.GetME_pn(1,0,1,c,b,a,d,e,f);
+//  double yJ0_abcdef = Y.ThreeBody.GetME_pn(0,0,1,a,b,c,d,e,f);
+//  double yJ1_abcdef = Y.ThreeBody.GetME_pn(1,0,1,a,b,c,d,e,f);
+//  double yJ0_cbadef = Y.ThreeBody.GetME_pn(0,0,1,c,b,a,d,e,f);
+//  double yJ1_cbadef = Y.ThreeBody.GetME_pn(1,0,1,c,b,a,d,e,f);
 
 //  std::cout << "yJ0_abcdef = " << yJ0_abcdef << std::endl;
 //  std::cout << "yJ1_abcdef = " << yJ1_abcdef << std::endl;
@@ -1430,9 +1430,9 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
      Z_J.AntiSymmetrize();
 
   double Z0_m = 0;
-  int norbits = X.modelspace->GetNumberOrbits();
+  size_t norbits = X.modelspace->GetNumberOrbits();
   #pragma omp parallel for schedule(dynamic,1) reduction(+:Z0_m)
-  for (int a=0; a<norbits; a++ )
+  for (size_t a=0; a<norbits; a++ )
 //  for (auto a : X.modelspace->all_orbits )
   {
    Orbit& oa = X.modelspace->GetOrbit(a);
@@ -1553,7 +1553,7 @@ bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y )
     int mi = oi.j2;
     for ( auto j : Z_J.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
-      Orbit& oj = X.modelspace->GetOrbit(j);
+//      Orbit& oj = X.modelspace->GetOrbit(j);
       int mj = mi;
       double Zm_ij = 0;
       size_t norb = X.modelspace->GetNumberOrbits();
@@ -1659,7 +1659,7 @@ bool UnitTest::Test_comm231ss( const Operator& X, const Operator& Y )
     int mi = oi.j2;
     for ( auto j : Z_J.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
-      Orbit& oj = X.modelspace->GetOrbit(j);
+//      Orbit& oj = X.modelspace->GetOrbit(j);
       int mj = mi;
       double Zm_ij = 0;
 
@@ -1896,7 +1896,7 @@ bool UnitTest::Test_comm211sd( const Operator& X, const Operator& Y )
   double sum_J = 0;
 
   size_t Q = Z_J.GetQSpaceOrbit();
-  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
+//  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
 
 
   for (auto i : Z_J.modelspace->all_orbits )
@@ -1961,7 +1961,7 @@ bool UnitTest::Test_comm231sd( const Operator& X, const Operator& Y )
   double sum_J = 0;
 
   size_t Q = Z_J.GetQSpaceOrbit();
-  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
+//  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
 
 
 
@@ -2035,7 +2035,7 @@ bool UnitTest::Test_comm431sd( const Operator& X, const Operator& Y )
   double sum_J = 0;
 
   size_t Q = Z_J.GetQSpaceOrbit();
-  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
+//  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
 
 
   for (auto i : Z_J.modelspace->all_orbits )
@@ -2150,7 +2150,7 @@ bool UnitTest::Test_comm413sd( const Operator& Xin, const Operator& Y )
              for (auto a : X.modelspace->all_orbits )
              {
               Orbit& oa = X.modelspace->GetOrbit(a);
-              double na = oa.occ;
+//              double na = oa.occ;
 
 //                if ( (oi.l+oj.l+oa.l+ob.l)%2>0) continue;
 //                if ( (oi.tz2+oj.tz2) != (oa.tz2+ob.tz2) ) continue;
@@ -2258,7 +2258,7 @@ bool UnitTest::Test_comm233sd( const Operator& X, const Operator& Yin )
              for (auto a : X.modelspace->all_orbits )
              {
               Orbit& oa = X.modelspace->GetOrbit(a);
-              double na = oa.occ;
+//              double na = oa.occ;
 
 //                if ( (oi.l+oj.l+oa.l+ob.l)%2>0) continue;
 //                if ( (oi.tz2+oj.tz2) != (oa.tz2+ob.tz2) ) continue;

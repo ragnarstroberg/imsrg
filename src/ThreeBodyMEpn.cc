@@ -9,25 +9,25 @@
 
 
 ThreeBodyMEpn::ThreeBodyMEpn()
-: herm(1), PN_mode(false) {}
+: PN_mode(false) , herm(1)  {}
 
 ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms)
- : modelspace(ms), isospin3BME(ms), herm(1), PN_mode(false)
+ : modelspace(ms), isospin3BME(ms), PN_mode(false), herm(1)
 {
 //  Allocate();
 }
 
 ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms, int e3max)
-: modelspace(ms), isospin3BME(ms,e3max), E3max(e3max), PN_mode(false)
+:  modelspace(ms), isospin3BME(ms,e3max), PN_mode(false), E3max(e3max)
 {
 //  Allocate();
 }
 
 
 ThreeBodyMEpn::ThreeBodyMEpn(const ThreeBodyMEpn& tbme)
- : modelspace(tbme.modelspace), matrix_data(tbme.matrix_data), isospin3BME(tbme.isospin3BME), emax(tbme.emax), E3max(tbme.E3max),
+ : modelspace(tbme.modelspace), matrix_data(tbme.matrix_data), isospin3BME(tbme.isospin3BME), PN_mode(tbme.PN_mode), E3max(tbme.E3max), emax(tbme.emax),
 // : modelspace(tbme.modelspace), MatEl(tbme.MatEl), isospin3BME(tbme.isospin3BME), emax(tbme.emax), E3max(tbme.E3max),
-   herm(tbme.herm), PN_mode(tbme.PN_mode)
+   herm(tbme.herm)
 {
 //  Allocate();
 }
@@ -224,13 +224,13 @@ void ThreeBodyMEpn::AddToME_pn_PN(  int Jab, int Jde, int twoJ, int a, int b, in
   if ( ibra.size()<1 or iket.size()<1) return;
 //  std::cout << "IN " << __func__ << "  ch: " << ch_bra << " " << ch_ket << "   abcdef " << a << " " << b << " " << c << " " << d << " "<< e << " " << f << "    Jab Jde twoJ = " << Jab << " " << Jde << " " << twoJ << std::endl;
   if ( ch_bra != ch_ket) return ;
-  ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch_bra);
+//  ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch_bra);
 
 
   double overlap_bra_ket_in = 0;
-  for ( int i=0; i<ibra.size(); i++)
+  for ( size_t i=0; i<ibra.size(); i++)
   {
-    for (int j=0; j<iket.size(); j++)
+    for (size_t j=0; j<iket.size(); j++)
     {
       if (ibra[i] == iket[j])  overlap_bra_ket_in += recouple_bra[i] * recouple_ket[j] ;
     }
@@ -238,7 +238,7 @@ void ThreeBodyMEpn::AddToME_pn_PN(  int Jab, int Jde, int twoJ, int a, int b, in
 
 
 //  std::cout << "IN " << __func__ << " " << a << " " << b<< " " << c << " " << d << " " << e << " " << f << "  adding " << me_add << std::endl;
-  double me_out = 0;
+//  double me_out = 0;
 //  double symmetry_factor = 2;
 //  double symmetry_factor = 1;
 //  if ( ibra[0]==iket[0] ) symmetry_factor = (1 + herm);
@@ -253,9 +253,9 @@ void ThreeBodyMEpn::AddToME_pn_PN(  int Jab, int Jde, int twoJ, int a, int b, in
 //  std::cout << "sizes : " << ibra.size() << "  " << iket.size() << std::endl;
 //  herm = +1;
 ////  if (Jab==Jde and a==d and b==e and c==f) symmetry_factor = 1;
-  for ( int i=0; i<ibra.size(); i++)
+  for ( size_t i=0; i<ibra.size(); i++)
   {
-    for (int j=0; j<iket.size(); j++)
+    for (size_t j=0; j<iket.size(); j++)
     {
 //     symmetry_factor = (ibra[i] == iket[j]) ? 1 + herm : 1;
 //     double symmetry_factor2 = (ibra[i] == iket[j]) ? 0.5 : 1;
@@ -307,9 +307,9 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN(int Jab, int Jde, int twoJ, in
 //  std::cout << "size of bra,ket lists: " << ibra.size() << " " << iket.size() << std::endl;
 
   double me_out = 0;
-  for ( int i=0; i<ibra.size(); i++)
+  for ( size_t i=0; i<ibra.size(); i++)
   {
-    for (int j=0; j<iket.size(); j++)
+    for (size_t j=0; j<iket.size(); j++)
     {
 //       std::cout << "i,j" << i << " " << j << "  ibra iket " << ibra[i] << " " << iket[j] << "  recouple  " << recouple_bra[i] << " " << recouple_ket[j] << std::endl;
 //      if ( std::abs(recouple_bra[i])<1e-8 or std::abs(recouple_ket[j])<1e-8) continue;

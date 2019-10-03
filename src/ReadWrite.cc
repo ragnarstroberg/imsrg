@@ -4406,7 +4406,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
           icount += dimAS * dimNAS;
           jacobi3bme.cfpvec.resize(icount); // make sure the vector is big enough
 
-          for (int iAS=0; iAS<dimAS; iAS++)
+          for (uint32_t iAS=0; iAS<dimAS; iAS++)
           {
 //            std::cout << "      iAS = " << iAS << std::endl;
             uint32_t delimiter;
@@ -4416,7 +4416,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
                std::cout << "TROUBLE!!!!  rec. length = " << delimiter/8 << " , but I want " << dimNAS << std::endl;
             }
 //            double sumsqr = 0;
-            for (int iNAS=0; iNAS<dimNAS; iNAS++)
+            for (uint32_t iNAS=0; iNAS<dimNAS; iNAS++)
             {
                 double cfp;
                 eig_file.read((char*)&cfp,      sizeof(cfp)); // we can probably eventually read multiple values at once if this becomes a bottleneck...
@@ -4458,7 +4458,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
         v3int_file.read((char*)&Nmaxin,     sizeof(Nmaxin));
         v3int_file.read((char*)&delimiter,  sizeof(delimiter));
 
-        if ( t2!=twoTin or j2!=twoJin or (1-2*parity)!=pin or jacobi3bme.Nmax!=Nmaxin )
+        if ( (t2!=int(twoTin)) or (j2!=int(twoJin)) or ((1-2*parity)!=pin) or (jacobi3bme.Nmax!=int(Nmaxin)) )
         {
           std::cout << "ERROR: in " << __func__ << "  misread header info in " << v3int_name << "  "
                     << " T: " << t2 << "," << twoTin << "   J: " << j2 << "," << twoJin <<  "  " 
