@@ -756,16 +756,17 @@ Operator IMSRGSolver::InverseTransform(Operator& OpIn)
 /// for the \f$\Omega_i\f$s with index greater than or equal to n.
 Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
 {
-//  cout << "Begin Transform_Partial" << endl;
+//  std::cout << "Begin " << __func__ << std::endl;
   Operator OpOut = OpIn;
   if ((rw != NULL) and rw->GetScratchDir() != "")
   {
-    Operator omega(OpIn);
 //    char tmp[512];
     for (int i=n;i<n_omega_written;i++)
     {
  //    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
 //     std::string fname(tmp);
+//    Operator omega(OpIn);
+     Operator omega(Eta);
      std::ostringstream filename;
      filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
      std::ifstream ifs(filename.str(),std::ios::binary);
@@ -795,12 +796,13 @@ Operator IMSRGSolver::Transform_Partial(Operator&& OpIn, int n)
   Operator OpOut = OpIn;
   if ((rw != NULL) and rw->GetScratchDir() != "")
   {
-    Operator omega(OpIn);
 //    char tmp[512];
     for (int i=n;i<n_omega_written;i++)
     {
 //     sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), i);
 //     std::string fname(tmp);
+//     Operator omega(OpIn);
+     Operator omega(Eta);
      std::ostringstream filename;
      filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
      std::ifstream ifs(filename.str(),std::ios::binary);

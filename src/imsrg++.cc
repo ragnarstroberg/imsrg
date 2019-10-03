@@ -637,7 +637,7 @@ int main(int argc, char** argv)
   }
 
   imsrgsolver.SetGenerator(core_generator);
-  if (core_generator.find("imaginary")!=std::string::npos)
+  if (core_generator.find("imaginary")!=std::string::npos or core_generator.find("wegner")!=std::string::npos )
   {
    if (ds_0>1e-2)
    {
@@ -689,7 +689,7 @@ int main(int argc, char** argv)
     imsrgsolver.SetGenerator(valence_generator);
     std::cout << "Setting generator to " << valence_generator << std::endl;
     modelspace.ResetFirstPass();
-    if (valence_generator.find("imaginary")!=std::string::npos)
+    if (valence_generator.find("imaginary")!=std::string::npos or valence_generator.find("wegner")!=std::string::npos)
     {
      if (ds_0>1e-2)
      {

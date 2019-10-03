@@ -33,6 +33,7 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
    modelspace = H->GetModelSpace();
 
         if (generator_type == "wegner")                       ConstructGenerator_Wegner(); // never tested, probably doesn't work.
+   else if (generator_type == "shell-model-wegner")           ConstructGenerator_ShellModel_Wegner(); // never tested, probably doesn't work.
    else if (generator_type == "white")                        ConstructGenerator_White();
    else if (generator_type == "atan")                         ConstructGenerator_Atan();
    else if (generator_type == "imaginary-time")               ConstructGenerator_ImaginaryTime();
@@ -160,35 +161,73 @@ double Generator::Get2bDenominator_Jdep(int ch, int ibra, int iket)
 }
 
 
-// I haven't used this, so I don't know if it's right.
+//// I haven't used this, so I don't know if it's right.
+//void Generator::ConstructGenerator_Wegner()
+//{
+//   Operator H_diag = *H;
+//   H_diag.ZeroBody = 0;
+//   for (auto& a : modelspace->holes)
+//   {
+////      index_t a = it_a.first;
+//      for (auto& b : modelspace->valence)
+//      {
+//         H_diag.OneBody(a,b) =0;
+//         H_diag.OneBody(b,a) =0;
+//      }
+//   }
+//
+//   for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
+//   {  // Note, should also decouple the v and q spaces
+//      // This is wrong. The projection operator should be different.
+//      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+//      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(), tbc.GetKetIndex_ph() ).zeros();
+//      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(), tbc.GetKetIndex_ph() ).zeros();
+//      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_ph(), tbc.GetKetIndex_pp() ).zeros();
+//      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_ph(), tbc.GetKetIndex_hh() ).zeros();
+//      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(), tbc.GetKetIndex_hh() ).zeros();
+//      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(), tbc.GetKetIndex_pp() ).zeros();
+//   }
+//   Eta->SetToCommutator(H_diag,*H);
+////   *Eta = Commutator(H_diag,*H);
+//}
+
+
+
+
 void Generator::ConstructGenerator_Wegner()
 {
-   Operator H_diag = *H;
-   H_diag.ZeroBody = 0;
-   for (auto& a : modelspace->holes)
+   Operator H_od = 0 * (*H);
+   // One body piece -- eliminate ph bits
+   for ( auto& a : modelspace->core)
    {
-//      index_t a = it_a.first;
-      for (auto& b : modelspace->valence)
+      for ( auto& i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
       {
-         H_diag.OneBody(a,b) =0;
-         H_diag.OneBody(b,a) =0;
+         H_od.OneBody(i,a) = H->OneBody(i,a);
+         H_od.OneBody(a,i) = H_od.OneBody(i,a);
       }
    }
 
-   for (size_t ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
-   {  // Note, should also decouple the v and q spaces
-      // This is wrong. The projection operator should be different.
+   // Two body piece -- eliminate pp'hh' bits
+   for (int ch=0;ch<H_od.nChannels;++ch)
+   {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(), tbc.GetKetIndex_ph() ).zeros();
-      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(), tbc.GetKetIndex_ph() ).zeros();
-      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_ph(), tbc.GetKetIndex_pp() ).zeros();
-      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_ph(), tbc.GetKetIndex_hh() ).zeros();
-      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(), tbc.GetKetIndex_hh() ).zeros();
-      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(), tbc.GetKetIndex_pp() ).zeros();
-   }
-   *Eta = Commutator::Commutator(H_diag, *H);
-//   *Eta = Commutator(H_diag,*H);
+      arma::mat& HOD2 =  H_od.TwoBody.GetMatrix(ch);
+      arma::mat& H2   =    H->TwoBody.GetMatrix(ch);
+      for ( auto& iket : tbc.GetKetIndex_cc() )
+      {
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+         {
+            HOD2(ibra,iket) = H2(ibra,iket) ;
+            HOD2(iket,ibra) = HOD2(ibra,iket) ; 
+         }
+      }
+    }
+   *Eta = Commutator::Commutator(*H,H_od);
 }
+
+
+
+
 
 
 
@@ -501,6 +540,57 @@ void Generator::ConstructGenerator_ShellModel_Atan()
     }
 }
 
+
+
+
+void Generator::ConstructGenerator_ShellModel_Wegner()
+{
+   Operator H_od = 0 * (*H);
+   // One body piece -- make sure the valence one-body part is diagonal
+   for ( auto& a : imsrg_util::VectorUnion(modelspace->core, modelspace->valence))
+   {
+      for (auto& i : imsrg_util::VectorUnion( modelspace->valence, modelspace->qspace ) )
+      {
+         if (i==a) continue;
+         H_od.OneBody(i,a) = H->OneBody(i,a);
+         H_od.OneBody(a,i) = H_od.OneBody(i,a);
+      }
+   }
+
+
+   // Two body piece -- eliminate ppvh and pqvv  
+
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      arma::mat& HOD2 =  H_od.TwoBody.GetMatrix(ch);
+      arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
+
+      // Decouple the core
+      for ( auto& iket : imsrg_util::VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
+      {
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
+         {
+            HOD2(ibra,iket) = H2(ibra,iket) ;
+            HOD2(iket,ibra) = HOD2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
+      }
+
+      // Decouple the valence space
+      for ( auto& iket : tbc.GetKetIndex_vv() )
+      {
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
+         {
+            HOD2(ibra,iket) = H2(ibra,iket) ;
+            HOD2(iket,ibra) = HOD2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+
+    }
+    *Eta = Commutator::Commutator(*H,H_od);
+}
 
 
 

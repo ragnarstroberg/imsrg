@@ -67,6 +67,11 @@ Operator Commutator( const Operator& X, const Operator& Y)
       {
         return -CommutatorScalarDagger(Y,X);
       }
+      if ( (xlegs%2==1) and (ylegs%2==1) )
+      {
+        std::cout << "TROUBLE!!!! Called commutator with two Dagger operators. This isn't implemented. Dying..." << std::endl;
+        std::abort;
+      }
       if (yrank==0)
       {
          return CommutatorScalarScalar(X,Y); // [S,S]
@@ -263,6 +268,7 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
 /// Should be called through Commutator()
 Operator CommutatorScalarDagger( const Operator& X, const Operator& Y) 
 {
+//   std::cout << "Call " << __func__ << std::endl;
    X.profiler.counter["N_DaggerCommutators"] += 1;
    double t_css = omp_get_wtime();
    Operator Z = Y;
@@ -281,6 +287,7 @@ Operator CommutatorScalarDagger( const Operator& X, const Operator& Y)
    comm433sd_ph( X, Y, Z ) ; 
 
    X.profiler.timer["CommutatorScalarDagger"] += omp_get_wtime() - t_css;
+//   std::cout << __func__ <<  " done." << std::endl;
    return Z;
 
 }
