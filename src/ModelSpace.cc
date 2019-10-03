@@ -325,8 +325,11 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::string 
 //    for (auto& it_core : GetOrbitsAZ(Ac,Zc) ) core_list.push_back(it_core.first);
   }
 
-  target_mass = Aref;
-  target_Z = Zref;
+  // This should be done in Init, but it doesn't hurt to do it here as well, I think.
+  SetTargetMass(Aref);
+  SetTargetZ(Zref);
+//  target_mass = Aref;
+//  target_Z = Zref;
   Init(emax,hole_list,core_list,valence_list);
   
 }
@@ -467,6 +470,8 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::set<ind
 //   std::cout << "Before calling SetupKets, all_orbits looks like this." << std::endl;
 //   for ( auto orb : all_orbits ) std::cout << orb << " ";
 //   std::cout << std::endl;
+   SetTargetMass(Aref);
+   SetTargetZ(Zref);
    SetupKets();
    Setup3bKets();
 }
