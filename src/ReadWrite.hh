@@ -22,29 +22,31 @@
 #define BOOST_IOSTREAMS_NO_LIB 1
 
 #include <map>
+#include <vector>
+#include <array>
 #include <string>
+#include <fstream>
+#include <iostream>
+#include "ModelSpace.hh"
 #include "Operator.hh"
-
-//using namespace std;
+//#include "DaggerOperator.hh"
+#include "Jacobi3BME.hh"
 
 
 class ReadWrite
 {
+
  public:
    ~ReadWrite();
    ReadWrite();
-   void ReadSettingsFile(  std::string filename);
    void ReadTBME_Oslo( std::string filename, Operator& Hbare);
-//   void ReadTBME_OakRidge( std::string filename, Operator& Hbare);
-//   void ReadTBME_OakRidge( std::string spname, std::string tbmename, Operator& Hbare);
    void ReadTBME_OakRidge( std::string spname, std::string tbmename, Operator& Hbare, std::string format);
-   void ReadBareTBME_Jason( std::string filename, Operator& Hbare);
    void ReadBareTBME_Navratil( std::string filename, Operator& Hbare);
    void ReadBareTBME_Navratil_from_stream( std::istream& infile, Operator& Hbare);
    void ReadBareTBME_Darmstadt( std::string filename, Operator& Hbare, int E1max, int E2max, int lmax);
    template<class T> void ReadBareTBME_Darmstadt_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int lmax);
    void Read_Darmstadt_3body( std::string filename, Operator& Hbare, int E1max, int E2max, int E3max);
-  size_t Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int E2max, int E3max, std::vector<int>& orbits_remap, std::vector<size_t>& nread_list);
+   size_t Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int E2max, int E3max, std::vector<int>& orbits_remap, std::vector<size_t>& nread_list);
    template<class T>void Read_Darmstadt_3body_from_stream( T & infile, Operator& Hbare, int E1max, int E2max, int E3max);
 //   void Store_Darmstadt_3body( std::vector<float>& ThreeBME, Operator& Hbare, int E1max, int E2max, int E3max);
    void Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const std::vector<size_t>& nread_list, const std::vector<int>& orbits_remap, Operator& Hbare, int E1max, int E2max, int E3max);
@@ -53,8 +55,6 @@ class ReadWrite
    void Read3bodyHDF5( std::string filename, Operator& op);
    void Read3bodyHDF5_new( std::string filename, Operator& op);
 #endif
-   void ReadOperator_Nathan( std::string filename1b, std::string filename2b, Operator& op);
-   void ReadTensorOperator_Nathan( std::string filename1b, std::string filename2b, Operator& op);
    void Read2bCurrent_Navratil( std::string filename, Operator& Op);
    void Write_me2j( std::string filename, Operator& op, int emax, int e2max, int lmax);
    void Write_me3j( std::string filename, Operator& op, int E1max, int E2max, int E3max);
@@ -73,12 +73,18 @@ class ReadWrite
    void ReadOperator(Operator& op, std::string filename); 
    void ReadOperatorHuman(Operator& op, std::string filename); 
    void CompareOperators(Operator& op1, Operator& op2, std::string filename);
+   void WriteTensorOneBody(std::string filename, Operator& H, std::string opname);
+   void WriteTensorTwoBody(std::string filename, Operator& H, std::string opname);
+   void WriteDaggerOperator( Operator& op, std::string filename, std::string opname="");
+
+
+   void ReadBareTBME_Jason( std::string filename, Operator& Hbare);
+   void ReadTensorOperator_Nathan( std::string filename1b, std::string filename2b, Operator& op);
+   void ReadOperator_Nathan( std::string filename1b, std::string filename2b, Operator& op);
    void ReadOneBody_Takayuki(std::string filename, Operator& Hbare);
    void ReadTwoBody_Takayuki(std::string filename, Operator& Hbare);
    void WriteOneBody_Takayuki(std::string filename, Operator& Hbare);
    void WriteTwoBody_Takayuki(std::string filename, Operator& Hbare);
-   void WriteTensorOneBody(std::string filename, Operator& H, std::string opname);
-   void WriteTensorTwoBody(std::string filename, Operator& H, std::string opname);
    void WriteOneBody_Simple(std::string filename, Operator& Hbare);
    void WriteOneBody_Oslo(std::string filename, Operator& Hbare);
    void WriteTwoBody_Oslo(std::string filename, Operator& Hbare);
@@ -97,9 +103,11 @@ class ReadWrite
    void SetZref(int z){Zref = z;};
    void Set3NFormat( std::string fmt ){format3N=fmt;};
 
+   void ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name, std::string eig_name, std::string v3int_name );
+
    // Fields
 
-   std::map<std::string,std::string> InputParameters;
+//   std::map<std::string,std::string> InputParameters; // I believe this is very very deprecated
 
    bool InGoodState(){return goodstate;};
    bool doCoM_corr;
