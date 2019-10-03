@@ -409,6 +409,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
    m.def("OperatorFromString", imsrg_util::OperatorFromString);
    m.def("HO_Radial_psi",  imsrg_util::HO_Radial_psi);
+   m.def("MBPT2_SpectroscopicFactor",  imsrg_util::MBPT2_SpectroscopicFactor);
    m.def("CG",AngMom::CG);
    m.def("ThreeJ",AngMom::ThreeJ);
    m.def("SixJ",AngMom::SixJ);

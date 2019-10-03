@@ -42,21 +42,21 @@
 
 namespace imsrg_util
 {
- using PhysConst::HBARC;
- using PhysConst::M_PROTON;
- using PhysConst::M_NEUTRON;
- using PhysConst::M_NUCLEON;
- using PhysConst::M_ELECTRON;
- using PhysConst::PROTON_SPIN_G;
- using PhysConst::NEUTRON_SPIN_G;
- using PhysConst::ELECTRON_SPIN_G;
- using PhysConst::F_PI;
- using PhysConst::ALPHA_FS;
- using PhysConst::PI;
- using PhysConst::SQRT2;
- using PhysConst::SQRTPI;
+// using PhysConst::HBARC;
+// using PhysConst::M_PROTON;
+// using PhysConst::M_NEUTRON;
+// using PhysConst::M_NUCLEON;
+// using PhysConst::M_ELECTRON;
+// using PhysConst::PROTON_SPIN_G;
+// using PhysConst::NEUTRON_SPIN_G;
+// using PhysConst::ELECTRON_SPIN_G;
+// using PhysConst::F_PI;
+// using PhysConst::ALPHA_FS;
+// using PhysConst::PI;
+// using PhysConst::SQRT2;
+// using PhysConst::SQRTPI;
  using PhysConst::INVSQRT2;
- using PhysConst::LOG2;
+// using PhysConst::LOG2;
 
  Operator OperatorFromString(ModelSpace& modelspace, std::string str);
 // DaggerOperator DaggerOperatorFromString(ModelSpace& modelspace, std::string str);
@@ -107,6 +107,8 @@ namespace imsrg_util
  Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
 
  Operator AxialCharge_Op( ModelSpace& modelspace );
+
+ double MBPT2_SpectroscopicFactor( Operator H, index_t p);
 
  namespace atomic_fs
  {
