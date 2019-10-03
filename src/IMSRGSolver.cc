@@ -391,7 +391,7 @@ void IMSRGSolver::Solve_flow_RK4()
       std::vector<Operator> K4(nops);
       std::vector<Operator> Ktmp(nops);
 
-      Operator& Hs = FlowingOps[0];
+//      Operator& Hs = FlowingOps[0];   // this is not used explicitly
       for ( int i=0;i<nops; i++ )
       {
         K1[i] =  Commutator::Commutator( Eta, FlowingOps[i] ) ;
@@ -576,13 +576,14 @@ void IMSRGSolver::Solve_ode()
    ode_mode = "H";
    WriteFlowStatusHeader(std::cout);
    WriteFlowStatus(flowfile);
-   using namespace boost::numeric::odeint;
+//   using namespace boost::numeric::odeint;
+   namespace odeint = boost::numeric::odeint;
 //   runge_kutta4< vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
-   runge_kutta4< std::deque<Operator>, double, std::deque<Operator>, double, vector_space_algebra> stepper;
+   odeint::runge_kutta4< std::deque<Operator>, double, std::deque<Operator>, double, odeint::vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
-   integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
+   odeint::integrate_const(stepper, system, FlowingOps, s, smax, ds, monitor);
    monitor.report();
 }
 
@@ -593,14 +594,15 @@ void IMSRGSolver::Solve_ode_adaptive()
    WriteFlowStatusHeader(std::cout);
    WriteFlowStatus(flowfile);
    std::cout << "done writing header and status" << std::endl;
-   using namespace boost::numeric::odeint;
+//   using namespace boost::numeric::odeint;
+   namespace odeint = boost::numeric::odeint;
    auto system = *this;
 //   typedef runge_kutta_dopri5< vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
-   typedef runge_kutta_dopri5< std::deque<Operator> , double , std::deque<Operator> ,double , vector_space_algebra > stepper;
+   typedef odeint::runge_kutta_dopri5< std::deque<Operator> , double , std::deque<Operator> ,double , odeint::vector_space_algebra > stepper;
 //   typedef adams_bashforth_moulton< 4, vector<Operator> , double , vector<Operator> ,double , vector_space_algebra > stepper;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
-   integrate_adaptive(make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
+   odeint::integrate_adaptive(odeint::make_controlled<stepper>(ode_e_abs,ode_e_rel), system, FlowingOps, s, smax, ds, monitor);
    monitor.report();
 
 }
@@ -702,14 +704,15 @@ void IMSRGSolver::Solve_ode_magnus()
    ode_mode = "Omega";
    WriteFlowStatus(std::cout);
    WriteFlowStatus(flowfile);
-   using namespace boost::numeric::odeint;
+//   using namespace boost::numeric::odeint;
+   namespace odeint = boost::numeric::odeint;
    namespace pl = std::placeholders;
 //   runge_kutta4<vector<Operator>, double, vector<Operator>, double, vector_space_algebra> stepper;
-   runge_kutta4<std::deque<Operator>, double, std::deque<Operator>, double, vector_space_algebra> stepper;
+   odeint::runge_kutta4<std::deque<Operator>, double, std::deque<Operator>, double, odeint::vector_space_algebra> stepper;
    auto system = *this;
    auto monitor = ode_monitor;
 //   size_t steps = integrate_const(stepper, system, Omega, s, smax, ds, monitor);
-   integrate_const(stepper, system, Omega, s, smax, ds, monitor);
+   odeint::integrate_const(stepper, system, Omega, s, smax, ds, monitor);
    monitor.report();
 }
 
@@ -901,6 +904,7 @@ void IMSRGSolver::WriteFlowStatus(std::ostream& f)
         << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().TwoBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Eta.OneBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Eta.TwoBodyNorm()
+        << std::setw(fwidth) << std::setprecision(fprecision) << Eta.ThreeBodyNorm()
         << std::setw(7)      << std::setprecision(0)          << profiler.counter["N_ScalarCommutators"] + profiler.counter["N_TensorCommutators"]
         << std::setw(fwidth) << std::setprecision(fprecision) << H_s.GetMP2_Energy()
         << std::setw(7)      << std::setprecision(0)          << profiler.counter["N_Operators"]
@@ -937,6 +941,7 @@ void IMSRGSolver::WriteFlowStatusHeader(std::ostream& f)
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_2||" 
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_1||" 
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_2||" 
+        << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_3||" 
         << std::setw(7)      << std::setprecision(fprecision) << "Ncomm" 
         << std::setw(16)     << std::setprecision(fprecision) << "E(MP2)" 
         << std::setw(7)      << std::setprecision(fprecision) << "N_Ops"

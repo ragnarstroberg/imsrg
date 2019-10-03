@@ -49,12 +49,14 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
+#include <stdio.h>
 #include <string>
 #include <omp.h>
 #include "IMSRG.hh"
-#include "Parameters.hh"
+#include "Parameters.hh" 
+#include "PhysicalConstants.hh"
 
-//using namespace imsrg_util; // lets get rid of this
 
 int main(int argc, char** argv)
 {
@@ -62,6 +64,7 @@ int main(int argc, char** argv)
 #ifdef BUILDVERSION
   std::cout << "######  imsrg++ build version: " << BUILDVERSION << std::endl;
 #endif
+
   Parameters parameters(argc,argv);
   if (parameters.help_mode) return 0;
 
@@ -92,6 +95,8 @@ int main(int argc, char** argv)
   std::string IMSRG3 = parameters.s("IMSRG3");
   std::string physical_system = parameters.s("physical_system");
   std::string freeze_occupations = parameters.s("freeze_occupations");
+  bool use_NAT_occupations = (parameters.s("use_NAT_occupations")=="true") ? true : false;
+  bool store_3bme_pn = (parameters.s("store_3bme_pn")=="true");
 
   int eMax = parameters.i("emax");
   int lmax = parameters.i("lmax"); // so far I only use this with atomic systems.
@@ -161,6 +166,29 @@ int main(int argc, char** argv)
   rw.SetLECs_preset(LECs);
   rw.SetScratchDir(scratch);
   rw.Set3NFormat( fmt3 );
+
+  // Test whether the scratch directory exists and we can write to it.
+  // This is necessary because otherwise you get garbage for transformed operators and it's
+  // not obvious what went wrong.
+  if ( method=="magnus" and  scratch != "" and scratch!= "/dev/null" and scratch != "/dev/null/")
+  {
+    std::string testfilename = scratch + "/_this_is_a_test_delete_me";
+    std::ofstream testout(testfilename);
+    testout << "PASSED" << std::endl;
+    testout.close();
+    std::remove( testfilename.c_str() );
+    if ( not testout.good() )
+    {
+      std::cout << "WARNING in " << __FILE__ <<  " failed test write to scratch directory " << scratch;
+      if (opnames.size()>0 )
+      {
+      std::cout << "   dying now. " << std::endl;
+      exit(0);
+      }
+      else std::cout << std::endl;
+    }
+  }
+
 
 //  ModelSpace modelspace;
 
@@ -283,15 +311,17 @@ int main(int argc, char** argv)
 //    modelspace.InitSingleSpecies(eMax, reference, valence_space);
 //    Hbare = Operator(modelspace,0,0,0,particle_rank);
 //    Hbare.SetHermitian();
+    using PhysConst::M_ELECTRON;
+    using PhysConst::M_NUCLEON;
     int Z = (atomicZ>=0) ?  atomicZ : modelspace.GetTargetZ() ;
-    const double HARTREE = 27.21138602; // 1 Hartree in eV
+//    const double HARTREE = 27.21138602; // 1 Hartree in eV
     Hbare -= Z*imsrg_util::VCentralCoulomb_Op(modelspace, lmax) * sqrt((M_ELECTRON*1e6)/M_NUCLEON ) ;
 //    std::cout << "After conversion, central coulomb 1-body looks like " << std::endl << Hbare.OneBody << std::endl << std::endl;
     Hbare += imsrg_util::VCoulomb_Op(modelspace, lmax) * sqrt((M_ELECTRON*1e6)/M_NUCLEON ) ;  // convert oscillator length from fm with nucleon mass to nm with electon mass (in eV).
 //    std::cout << "done with VCoulomb_Op" << std::endl;
     Hbare += imsrg_util::KineticEnergy_Op(modelspace); // Don't need to rescale this, because it's related to the oscillator frequency, which we input.
 //    std::cout << "done with KineticEnergy" << std::endl;
-    Hbare /= HARTREE; // Convert to Hartree
+    Hbare /= PhysConst::HARTREE; // Convert to Hartree
   }
 
   if (fmt2 != "nushellx" and physical_system != "atomic")  // Don't need to add kinetic energy if we read a shell model interaction
@@ -318,6 +348,11 @@ int main(int argc, char** argv)
     std::cout << "done reading 3N" << std::endl;
   }  
 
+  if (store_3bme_pn)
+  {
+    Hbare.ThreeBody.TransformToPN();
+  }
+
 
   // Add a Lawson term. If hwBetaCM is specified, use that frequency
   if (std::abs(BetaCM)>1e-3)
@@ -328,18 +363,50 @@ int main(int argc, char** argv)
     Hbare += BetaCM * imsrg_util::OperatorFromString( modelspace, hcm_opname.str());
   }
 
+
   std::cout << "Creating HF" << std::endl;
-  HartreeFock hf(Hbare);
+//  HartreeFock hf(Hbare);
+  HFMBPT hf(Hbare); // HFMBPT inherits from HartreeFock, so no harm done here.
+
   if (freeze_occupations == "false" )  hf.UnFreezeOccupations();
   std::cout << "Solving" << std::endl;
+//  if (basis=="HF")
   hf.Solve();
   
 //  Operator HNO;
   Operator& HNO = Hbare;
   if (basis == "HF" and method !="HF")
+  {
     HNO = hf.GetNormalOrderedH();
+  }
+  else if (basis == "NAT") // we want to use the natural orbital basis
+  {
+    hf.UseNATOccupations( use_NAT_occupations );
+
+// This calls GetDensityMatrix(), which computes the 1b density matrix up to MBPT2
+// using the NO2B Hamiltonian in the HF basis, obtained with GetNormalOrderedH().
+// Then it calls DiagonalizeRho() which diagonalizes the density matrix, yielding the natural orbital basis.
+    hf.GetNaturalOrbitals(); 
+    HNO = hf.GetNormalOrderedHNAT();
+
+    // For now, even if we use the NAT occupations, we switch back to naive occupations after the normal ordering
+    // This should be investigated in more detail.
+    if (use_NAT_occupations) 
+    {
+      hf.FillLowestOrbits();
+      std::cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
+      HNO = HNO.UndoNormalOrdering();
+      hf.UpdateReference();
+      modelspace.SetReference(modelspace.core); // change the reference
+      std::cout << "Doing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
+      HNO = HNO.DoNormalOrdering();
+    }
+
+  }
   else if (basis == "oscillator")
+  {
     HNO = Hbare.DoNormalOrdering();
+  }
 
 
   if (IMSRG3 == "true")
@@ -447,6 +514,10 @@ int main(int argc, char** argv)
     {
       ops[i] = hf.TransformToHFBasis(ops[i]);
     }
+    else if ((basis == "NAT") and (opnames[i].find("DaggerHF") == std::string::npos)  )
+    {
+      ops[i] = hf.TransformHOToNATBasis(ops[i]);
+    }
     ops[i] = ops[i].DoNormalOrdering();
     if (method == "MP3")
     {
@@ -471,9 +542,12 @@ int main(int argc, char** argv)
   }
 
 
-  std::cout << "HF Single particle energies and wave functions:" << std::endl;
-  hf.PrintSPEandWF();
-  std::cout << std::endl;
+  if (basis=="HF" or basis=="NAT")
+  {
+    std::cout << basis << " Single particle energies and wave functions:" << std::endl;
+    hf.PrintSPEandWF();
+    std::cout << std::endl;
+  }
   
   if ( method == "HF" or method == "MP3")
   {
@@ -505,18 +579,8 @@ int main(int argc, char** argv)
     return 0;
   }
 
-//  Operator HlowT = HNO;
-//  double Temp = hw;
-//  double Efermi = 0;
-//  Operator Eye = HNO;
-//  Eye.Eye();
-//  HlowT.ScaleFermiDirac(HNO, Temp, Efermi);  // 0 is roughly fermi surface? we can do beter...
-//  Eye.ScaleFermiDirac(HNO, Temp, Efermi);  // 0 is roughly fermi surface? we can do beter...
-//  std::cout << "Initial low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) <<"  with normalization  " << Eye.Trace( modelspace.GetAref(),modelspace.GetZref() ) << std::endl; 
 
   IMSRGSolver imsrgsolver(HNO);
-//  std::cout << "Just created imsrgsolver. HNO has " << HNO.ThreeBody.MatEl.size() << " 3bmes. Eta has " << imsrgsolver.Eta.ThreeBody.MatEl.size() << std::endl;
-//  std::cout << "   particle ranks: " << HNO.GetParticleRank() << "  " << imsrgsolver.Eta.GetParticleRank() << std::endl;
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetEtaCriterion(eta_criterion);
   bool brueckner_restart = false;
@@ -583,6 +647,7 @@ int main(int argc, char** argv)
      imsrgsolver.SetDsmax(dsmax);
    }
   }
+
   imsrgsolver.Solve();
 
   if (IMSRG3 == "true")
@@ -593,18 +658,18 @@ int main(int argc, char** argv)
 //  HlowT = imsrgsolver.Transform(HlowT);
 //  std::cout << "After Solve, low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) << std::endl; 
 
-  if (method == "magnus")
-  {
-//    for (size_t i=0;i<ops.size();++i)
-//    {
-//      Operator tmp = imsrgsolver.Transform(ops[i]);
-////      rw.WriteOperatorHuman(tmp,intfile+opnames[i]+"_step1.op");
-//    }
-//    std::cout << std::endl;
-    // increase smax in case we need to do additional steps
-    smax *= 1.5;
-    imsrgsolver.SetSmax(smax);
-  }
+//  if (method == "magnus")
+//  {
+////    for (size_t i=0;i<ops.size();++i)
+////    {
+////      Operator tmp = imsrgsolver.Transform(ops[i]);
+//////      rw.WriteOperatorHuman(tmp,intfile+opnames[i]+"_step1.op");
+////    }
+////    std::cout << std::endl;
+//    // increase smax in case we need to do additional steps
+//    smax *= 1.5;
+//    imsrgsolver.SetSmax(smax);
+//  }
 
 
   if (brueckner_restart)
@@ -622,6 +687,7 @@ int main(int argc, char** argv)
     if (method == "magnus") smax *= 2;
 
     imsrgsolver.SetGenerator(valence_generator);
+    std::cout << "Setting generator to " << valence_generator << std::endl;
     modelspace.ResetFirstPass();
     if (valence_generator.find("imaginary")!=std::string::npos)
     {
@@ -670,6 +736,7 @@ int main(int argc, char** argv)
   ModelSpace ms2(modelspace);
   bool renormal_order = false;
   if (modelspace.valence.size() > 0 )
+//  if (modelspace.valence.size() > 0 or basis=="NAT")
   {
     renormal_order = modelspace.holes.size() != modelspace.core.size();
     if (not renormal_order)
@@ -733,7 +800,7 @@ int main(int argc, char** argv)
     rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
     rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
 
-    if (method == "magnus")
+    if (method == "magnus" or method=="flow_RK4")
     {
        for (index_t i=0;i<ops.size();++i)
        {

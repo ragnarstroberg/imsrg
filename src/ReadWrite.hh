@@ -29,10 +29,13 @@
 #include <iostream>
 #include "ModelSpace.hh"
 #include "Operator.hh"
+//#include "DaggerOperator.hh"
+#include "Jacobi3BME.hh"
 
 
 class ReadWrite
 {
+
  public:
    ~ReadWrite();
    ReadWrite();
@@ -100,9 +103,11 @@ class ReadWrite
    void SetZref(int z){Zref = z;};
    void Set3NFormat( std::string fmt ){format3N=fmt;};
 
+   void ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name, std::string eig_name, std::string v3int_name );
+
    // Fields
 
-   std::map<std::string,std::string> InputParameters;
+//   std::map<std::string,std::string> InputParameters; // I believe this is very very deprecated
 
    bool InGoodState(){return goodstate;};
    bool doCoM_corr;

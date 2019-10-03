@@ -31,7 +31,8 @@ std::map<std::string,size_t> IMSRGProfiler::CheckMem()
 //  sprintf(commandstr,"pmap -x %d | tail -1",getpid()); // TODO make this more portable. On OSX, use vmmap. no idea for Windows...
   std::ostringstream commandstr;
   commandstr << "pmap -x " << getpid() << " | tail -1";
-#ifndef __APPLE__
+//#ifndef __APPLE__
+#if defined(CHECKMEM) && ! defined(__APPLE__)
 //  FILE* output = popen(commandstr,"r");
   FILE* output = popen(commandstr.str().c_str(),"r");
   if (output==NULL or fgets(outbuf,500,output) == NULL)

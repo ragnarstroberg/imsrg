@@ -22,25 +22,44 @@
 
 #include "ModelSpace.hh"
 #include "Operator.hh"
+//#include "DaggerOperator.hh"
 #include "HartreeFock.hh"
 #include "IMSRGSolver.hh"
+#include "PhysicalConstants.hh"
 #include <gsl/gsl_math.h>
 #include <vector>
 
-#define HBARC 197.3269718 // hc in MeV * fm
-#define M_NUCLEON 938.9185 // average nucleon mass in MeV
-#define PI 3.14159265359 // put in by CP for the BMEs
-#define M_PROTON  938.2720813
-#define M_NEUTRON 939.5654133
-#define M_ELECTRON 0.5109989461 // I take all my physical constants from Wikipedia.
-
-#ifndef ISQRT2
-  #define ISQRT2 0.70710678118654752440L
-#endif
+//#define HBARC 197.3269718 // hc in MeV * fm
+//#define M_NUCLEON 938.9185 // average nucleon mass in MeV
+//#define PI 3.14159265359 // put in by CP for the BMEs
+//#define M_PROTON  938.2720813
+//#define M_NEUTRON 939.5654133
+//#define M_ELECTRON 0.5109989461 // I take all my physical constants from Wikipedia.
+//
+//#ifndef ISQRT2
+//  #define ISQRT2 0.70710678118654752440L
+//#endif
 
 namespace imsrg_util
 {
+// using PhysConst::HBARC;
+// using PhysConst::M_PROTON;
+// using PhysConst::M_NEUTRON;
+// using PhysConst::M_NUCLEON;
+// using PhysConst::M_ELECTRON;
+// using PhysConst::PROTON_SPIN_G;
+// using PhysConst::NEUTRON_SPIN_G;
+// using PhysConst::ELECTRON_SPIN_G;
+// using PhysConst::F_PI;
+// using PhysConst::ALPHA_FS;
+// using PhysConst::PI;
+// using PhysConst::SQRT2;
+// using PhysConst::SQRTPI;
+ using PhysConst::INVSQRT2;
+// using PhysConst::LOG2;
+
  Operator OperatorFromString(ModelSpace& modelspace, std::string str);
+// DaggerOperator DaggerOperatorFromString(ModelSpace& modelspace, std::string str);
  std::map<index_t,double> GetSecondOrderOccupations(Operator& H, int emax);
 
  Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2);
@@ -71,7 +90,8 @@ namespace imsrg_util
  Operator ProtonDensityAtR(ModelSpace& modelspace, double R);
  Operator NeutronDensityAtR(ModelSpace& modelspace, double R);
  Operator RpSpinOrbitCorrection(ModelSpace& modelspace);
- Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list);
+ //Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list);
+ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<index_t> index_list);
 
  Operator Isospin2_Op(ModelSpace& modelspace);
  Operator AllowedFermi_Op(ModelSpace& modelspace);
@@ -85,6 +105,10 @@ namespace imsrg_util
  Operator QdotQ_Op(ModelSpace& modelspace);
  Operator VCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
  Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
+
+ Operator AxialCharge_Op( ModelSpace& modelspace );
+
+ double MBPT2_SpectroscopicFactor( Operator H, index_t p);
 
  namespace atomic_fs
  {
@@ -110,11 +134,13 @@ namespace imsrg_util
  Operator RPA_resummed_1b( const Operator& OpIn, const Operator& H, std::string mode="RPA" );
  arma::mat GetPH_transformed_Gamma( std::vector<std::pair<size_t,size_t>>& bras, std::vector<std::pair<size_t,size_t>>& kets, const Operator& H, int Lambda );
 
+ Operator M0nu_contact_Op(ModelSpace& modelspace, double R0 );
 
 ////////////////// Double beta decay functions from Charlie Payne ///////////////
  Operator M0nu_TBME_Op(ModelSpace& modelspace, int Nquad, std::string src); // put in by CP, it is still in development
  double CPrbmeGen(ModelSpace& modelspace, double rho, double x, int n, int l, int np, int lp, int mm, double pp); // testing...
- inline double cpNorm(int a, int b) {return a==b ? ISQRT2 : 1.0;}; // put in by CP, for anti-symmetrization normalization
+// inline double cpNorm(int a, int b) {return a==b ? ISQRT2 : 1.0;}; // put in by CP, for anti-symmetrization normalization
+ inline double cpNorm(int a, int b) {return a==b ? INVSQRT2 : 1.0;}; // put in by CP, for anti-symmetrization normalization
 // SRS - the following three don't seem to be used.
 // double CPrbme(ModelSpace& modelspace, double x, int n, int l, int np); // put in by CP, function for M0nu_TBME_Op above
 // Operator CPchecker_Op(ModelSpace& modelspace); // put in by CP
@@ -141,6 +167,7 @@ namespace imsrg_util
  double HO_Radial_psi(int n, int l, double hw, double r);
  double RadialIntegral(int na, int la, int nb, int lb, int L);
  double RadialIntegral_RpowK(int na, int la, int nb, int lb, int k);
+ double RadialIntegral_Gauss( int na, int la, int nb, int lb, double sigma );
  long double TalmiI(int p, double k);
  long double TalmiB(int na, int la, int nb, int lb, int p);
  long double TalmiB_SingleTerm(int na, int la, int nb, int lb, int p, int K);
@@ -177,6 +204,14 @@ namespace imsrg_util
    std::copy(v1.begin(),v1.end(),vec.begin());
    std::copy(v2.begin(),v2.end(),vec.begin()+v1.size());
    return VectorUnion(vec, args...);
+ }
+
+ template <typename T, typename... Args>
+ std::set<T> VectorUnion(const std::set<T>& s1, const std::set<T>& s2, Args... args)
+ {
+   std::set<T> s3 = s1;
+   s3.insert(s2.begin(),s2.end());
+   return VectorUnion( s3, args...);
  }
 
 }
