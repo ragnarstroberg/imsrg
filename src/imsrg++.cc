@@ -808,8 +808,9 @@ int main(int argc, char** argv)
       rw.WriteAntoine_input(imsrgsolver.GetH_s(),intfile+".inp",modelspace.GetAref(),modelspace.GetZref());
     }
     std::cout << "Writing files: " << intfile << std::endl;
-    rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
-    rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
+    //rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
+    //rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
+    rw.WriteTokyo(imsrgsolver.GetH_s(),intfile+".snt", "");
 
     if (method == "magnus" or method=="flow_RK4")
     {
@@ -817,7 +818,8 @@ int main(int argc, char** argv)
        {
           if ( ((ops[i].GetJRank()+ops[i].GetTRank()+ops[i].GetParity())<1) and (ops[i].GetNumberLegs()%2==0) )
           {
-            rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
+            //rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
+            rw.WriteTokyo(ops[i],intfile+opnames[i]+".snt", "op");
           }
           else if ( ops[i].GetNumberLegs()%2==1) // odd number of legs -> this is a dagger operator
           {
@@ -826,8 +828,9 @@ int main(int argc, char** argv)
           }
           else
           {
-            rw.WriteTensorOneBody(intfile+opnames[i]+"_1b.op",ops[i],opnames[i]);
-            rw.WriteTensorTwoBody(intfile+opnames[i]+"_2b.op",ops[i],opnames[i]);
+            //rw.WriteTensorOneBody(intfile+opnames[i]+"_1b.op",ops[i],opnames[i]);
+            //rw.WriteTensorTwoBody(intfile+opnames[i]+"_2b.op",ops[i],opnames[i]);
+            rw.WriteTensorTokyo(intfile+opnames[i]+"_2b.snt",ops[i]);
           }
        }
     }

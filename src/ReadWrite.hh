@@ -65,13 +65,13 @@ class ReadWrite
    void ReadNuShellX_int( Operator& op, std::string filename);
    void ReadNuShellX_int_iso( Operator& op, std::string filename);
    void ReadNuShellX_sp( ModelSpace& ms, std::string filename);
-   void WriteNuShellX_intfile( Operator& op, std::string filename, std::string mode); 
-   void WriteAntoine_int( Operator& op, std::string filename); 
-   void WriteAntoine_input( Operator& op, std::string filename, int A, int Z); 
+   void WriteNuShellX_intfile( Operator& op, std::string filename, std::string mode);
+   void WriteAntoine_int( Operator& op, std::string filename);
+   void WriteAntoine_input( Operator& op, std::string filename, int A, int Z);
    void WriteOperator(Operator& op, std::string filename);
    void WriteOperatorHuman(Operator& op, std::string filename);
-   void ReadOperator(Operator& op, std::string filename); 
-   void ReadOperatorHuman(Operator& op, std::string filename); 
+   void ReadOperator(Operator& op, std::string filename);
+   void ReadOperatorHuman(Operator& op, std::string filename);
    void CompareOperators(Operator& op1, Operator& op2, std::string filename);
    void WriteTensorOneBody(std::string filename, Operator& H, std::string opname);
    void WriteTensorTwoBody(std::string filename, Operator& H, std::string opname);
@@ -105,6 +105,14 @@ class ReadWrite
 
    void ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name, std::string eig_name, std::string v3int_name );
 
+   // added by T.Miyagi
+   void ReadTokyo(std::string, Operator&, std::string);
+   void ReadTokyo(std::string, Operator&);
+   void WriteTokyo(Operator&, std::string, std::string);
+   void WriteTokyoFull(Operator&, std::string); // only for Hamiltonian
+   void WriteTensorTokyo(std::string, Operator&);
+   void skip_comments(std::ifstream&);
+
    // Fields
 
 //   std::map<std::string,std::string> InputParameters; // I believe this is very very deprecated
@@ -118,7 +126,7 @@ class ReadWrite
    std::string File3N;
    std::string format3N;
    int Aref;
-   int Zref;   
+   int Zref;
 
 
 };
@@ -127,7 +135,7 @@ class ReadWrite
 
 /// Wrapper class so we can treat a std::vector of floats like a stream, using the extraction operator >>.
 /// This is used for the binary version of ReadWrite::Read_Darmstadt_3body_from_stream().
-class VectorStream 
+class VectorStream
 {
  public:
   VectorStream(std::vector<float>& v) : vec(v), i(0) {};
@@ -136,7 +144,7 @@ class VectorStream
 //  VectorStream& operator>>(double& x) { x = vec[i++]; return (VectorStream&)(*this);}
   bool good(){ return i<vec.size(); };
   void getline(char[], int) {}; // Don't do nuthin'.
-  void read(char* buf, size_t len) {memcpy((void*)buf, (const void*)&vec[i], len);}; // Totally untested... 
+  void read(char* buf, size_t len) {memcpy((void*)buf, (const void*)&vec[i], len);}; // Totally untested...
  private:
   std::vector<float>& vec;
 //  std::vector<double>& vec;
