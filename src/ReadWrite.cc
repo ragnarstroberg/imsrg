@@ -1373,6 +1373,8 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   std::cout << "Read in " << nread << " floating point numbers (" << nread * sizeof(float)/1024./1024./1024. << " GB)" << std::endl;
   Store_Darmstadt_3body( ThreeBME, nread_list, orbits_remap, Hbare, E1max, E2max, E3max);
 
+//  Hbare.ThreeBody.TransformToPN();
+
 }
 
 
@@ -1519,10 +1521,12 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                 if (twoJCMin>twoJCMax) continue;
                 size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*5;
 
+//                 std::array<double,5> isospin_5plet = {0,0,0,0,0};
                 for(int JTind = 0; JTind <= (twoJCMax-twoJCMin)+1; JTind++)
                 {
                  int twoJC = twoJCMin + (JTind/2)*2;
                  int twoT = 1+(JTind%2)*2;
+//                 if (twoT==1) isospin_5plet = {0,0,0,0,0};
                  for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
                  {
                   for(int ttab = 0; ttab <= 1; ttab++)
@@ -1561,7 +1565,14 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
 //                            {
 //                               std::cout << std::endl << __func__ << "  setting Jab,Jde,J " << Jab << " " <<JJab << " " << twoJC << "  tab tde T  " << tab << " " << ttab << " " << twoT << "    V = " << V << std::endl;
 //                            }
+//                               if ( a==2 and b==4 and c==4 and d==2 and e==0 and f==0 and tab==1 and ttab==1 and twoT==3 and JJab==1 and twoJC==3)
+//                               {
+////                                 std::cout << "t t T = " << tab << " " << ttab << " " << twoT << "   V = " << V << std::endl;
+//                                 std::cout << "found one Jab = " << Jab << "   V = " << V << std::endl;
+//                               }
                             Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
+                         //     isospin_5plet[ 2*tab+ttab+(twoT-1)/2 ] = V;
+//                              std::cout << "5plet index " << 2*tab +ttab + (twoT-1)/2 << "  with " << tab << " " << ttab << " " << twoT << std::endl;
                         }
                         else if (autozero)
                         {
@@ -1576,6 +1587,12 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
 
                   }//ttab
                  }//tab
+//                 std::cout << "Calling SetME_isospin5" << std::endl;
+//                 if (twoT==3)
+//                 {
+//                   std::cout << "---------- ReadWrite  call SetME_isospin5, Jab Jde twoJ = " << Jab << " " << JJab << " " << twoJC << " -----------" << std::endl;
+//                   Hbare.ThreeBody.SetME_isospin5(Jab,JJab,twoJC,a,b,c,d,e,f,isospin_5plet);
+//                 }
                 }//twoJ
                 nread += blocksize;
                }//JJab
@@ -2912,6 +2929,10 @@ void ReadWrite::ReadNuShellX_int(Operator& op, std::string filename)
     std::istringstream(tz.substr(0,j.find("/")-tz.front())) >> tz2;
     orbit_map[indx] = modelspace->GetOrbitIndex(n,l,j2,tz2);
   }
+  if (not intfile.good())
+  {
+    std::cout << "TROUBLE in " << __func__ << "  couldn't read file " << filename << std::endl;
+  }
 
   double dummy;
   intfile >> dummy; // read the -999 that doesn't mean anything
@@ -2998,7 +3019,7 @@ void ReadWrite::ReadNuShellX_int_iso(Operator& op, std::string filename)
   {
     V *= scalefactor;
     uint64_t hashkey = ( ((uint64_t) J) + ((uint64_t)T<<10) + (a<<20) + (b<<30) + (c<<40) + (d<<50)  );
-//    std::cout << "setting " << a << " " << b << " " << c << " " << d << " " << J << " " << T << " ->  "<< hashkey << "   " << V << std::endl;
+    std::cout << "setting " << a << " " << b << " " << c << " " << d << " " << J << " " << T << " ->  "<< hashkey << "   " << V << std::endl;
     IsoTBME[hashkey] = V;
   }
 
@@ -3026,8 +3047,23 @@ void ReadWrite::ReadNuShellX_int_iso(Operator& op, std::string filename)
         double Vpp = V1;
         double Vpnpn = (V1 + V0) * 0.5;
         double Vpnnp = (V1 - V0) * 0.5;
-        double Vnppn = (V1 - V0) * 0.5;
-        double Vnpnp = (V1 + V0) * 0.5;
+//        double Vnppn = (V1 - V0) * 0.5;
+//        double Vnpnp = (V1 + V0) * 0.5;
+
+	// This is just a test. Not sure if it works...
+        if ( (oa.j2==ob.j2) and (oa.l==ob.l) and (oa.n==ob.n) )
+        {
+	  Vpnpn *= sqrt(2);
+	  Vpnnp *= sqrt(2);
+	}
+	if ( (oc.j2==od.j2) and (oc.l==od.l) and (oc.n==od.n) )
+        {
+	  Vpnpn *= sqrt(2);
+	  Vpnnp *= sqrt(2);
+	}
+
+	double Vnpnp = Vpnpn;
+	double Vnppn = Vpnnp;
 
         if ( std::abs(Vpp)>1e-6 )
         {
@@ -3879,6 +3915,7 @@ void ReadWrite::WriteTensorTwoBody(std::string filename, Operator& Op, std::stri
 
 
 
+//void ReadWrite::WriteDaggerOperator( DaggerOperator& Op, std::string filename, std::string opname)
 void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::string opname)
 {
 
@@ -3948,9 +3985,10 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
    // ME_unnormalized = sqrt(1+delta_ab) ME_normalized
    outfile << "!" << std::endl << "!!!!!!!!!!!!!!  a+a+a  coefficients  !!!!!!!!!!!!!!!" << std::endl;
    outfile << "!  a    b    c     Jab     < ab Jab || Op || c >" << std::endl;
-   for ( auto& itmat : Op.TwoBody.MatEl )
+//   for ( auto& itmat : Op.TwoBody.MatEl )
+   for ( auto& itmat : Op.ThreeLeg.MatEl )
    {
-     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first[0]);
+     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(itmat.first);
      int Jab = tbc.J;
      EdmondsConventionFactor = -sqrt(2*Jab+1.);
      for (auto& ibra: tbc.GetKetIndex_vv() )
@@ -3962,7 +4000,8 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
        auto b_ind = orb2nushell[b];
        for ( auto c : modelspace->valence )
        {
-         double me = Op.TwoBody.GetTBME_J(Jab,Jab,a,b,c,Q) * EdmondsConventionFactor;
+//         double me = Op.TwoBody.GetTBME_J(Jab,Jab,a,b,c,Q) * EdmondsConventionFactor;
+         double me = Op.ThreeLeg.GetME_J(Jab,a,b,c) * EdmondsConventionFactor;
          if (std::abs(me) < 1e-7) continue;
          if (a_ind == b_ind) me /= PhysConst::SQRT2;  // We write out normalized matrix elements
          auto c_ind = orb2nushell[c];
@@ -4367,7 +4406,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
           icount += dimAS * dimNAS;
           jacobi3bme.cfpvec.resize(icount); // make sure the vector is big enough
 
-          for (int iAS=0; iAS<dimAS; iAS++)
+          for (uint32_t iAS=0; iAS<dimAS; iAS++)
           {
 //            std::cout << "      iAS = " << iAS << std::endl;
             uint32_t delimiter;
@@ -4377,7 +4416,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
                std::cout << "TROUBLE!!!!  rec. length = " << delimiter/8 << " , but I want " << dimNAS << std::endl;
             }
 //            double sumsqr = 0;
-            for (int iNAS=0; iNAS<dimNAS; iNAS++)
+            for (uint32_t iNAS=0; iNAS<dimNAS; iNAS++)
             {
                 double cfp;
                 eig_file.read((char*)&cfp,      sizeof(cfp)); // we can probably eventually read multiple values at once if this becomes a bottleneck...
@@ -4419,7 +4458,7 @@ void ReadWrite::ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name,
         v3int_file.read((char*)&Nmaxin,     sizeof(Nmaxin));
         v3int_file.read((char*)&delimiter,  sizeof(delimiter));
 
-        if ( t2!=twoTin or j2!=twoJin or (1-2*parity)!=pin or jacobi3bme.Nmax!=Nmaxin )
+        if ( (t2!=int(twoTin)) or (j2!=int(twoJin)) or ((1-2*parity)!=pin) or (jacobi3bme.Nmax!=int(Nmaxin)) )
         {
           std::cout << "ERROR: in " << __func__ << "  misread header info in " << v3int_name << "  "
                     << " T: " << t2 << "," << twoTin << "   J: " << j2 << "," << twoJin <<  "  "

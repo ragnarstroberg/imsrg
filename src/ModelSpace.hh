@@ -90,18 +90,18 @@ struct Ket3 // | p q r >
   size_t p;
   size_t q;
   size_t r;
-  int Jpq;
   Orbit* op;
   Orbit* oq;
   Orbit* oR; // unfortunate that this convention collides with the "or" keyword.
+  int Jpq;
 
   // Methods
   Ket3(){};
   Ket3(Orbit& op_in, Orbit& oq_in, Orbit& oR_in)
-     : op(&op_in), oq(&oq_in), oR(&oR_in), p(op_in.index), q(oq_in.index), r(oR_in.index), Jpq(0) {};
+     : p(op_in.index), q(oq_in.index), r(oR_in.index), op(&op_in), oq(&oq_in), oR(&oR_in), Jpq(0) {};
 
   Ket3(Orbit& op_in, Orbit& oq_in, Orbit& oR_in, int jpq)
-       : op(&op_in), oq(&oq_in), oR(&oR_in), p(op_in.index), q(oq_in.index), r(oR_in.index), Jpq(jpq) {};
+       : p(op_in.index), q(oq_in.index), r(oR_in.index), op(&op_in), oq(&oq_in), oR(&oR_in), Jpq(jpq) {};
 
   bool operator==(Ket3& rhs) { return (p==rhs.p and q==rhs.q and r==rhs.r and Jpq==rhs.Jpq);};
   bool operator!=(Ket3& rhs) { return not( (*this)== rhs ) ;};
@@ -216,6 +216,9 @@ struct ThreeBodyChannel
 
    size_t GetLocalIndex( int p, int q, int r, int Jpq );
    bool CheckChannel_ket( Ket3& ket3);
+
+   Ket3& GetKet(size_t iket) ;
+   size_t GetNumberKets();
 
 
 
@@ -373,10 +376,11 @@ class ModelSpace
    Orbit& GetOrbit(int i) {return (Orbit&) Orbits[i];}; 
    Ket& GetKet(int i) const {return (Ket&) Kets[i];};
    Ket& GetKet(int p, int q) const {return (Ket&) Kets[Index2(p,q)];};
+   Ket3& GetKet3(int i) const {return (Ket3&) Kets3[i];};
    size_t GetOrbitIndex(int n, int l, int j2, int tz2) const {return Index1(n,l,j2,tz2);};
    size_t GetKetIndex(int p, int q) const {return Index2(p,q);}; // convention is p<=q
    size_t GetKetIndex(Ket * ket) const {return Index2(ket->p,ket->q);}; // convention is p<=q
-   size_t GetKet3Index(int p, int q, int r, int Jpq){return Ket3IndexLookup[Ket3IndexHash(p,q,r,Jpq)];};
+   size_t GetKet3Index(int p, int q, int r, int Jpq){return Ket3IndexLookup.at(Ket3IndexHash(p,q,r,Jpq));};
    size_t Ket3IndexHash(size_t p, size_t q, size_t r, size_t Jpq);
    size_t ThreeBodyChannelHash( int twoJ, int parity, int twoTz);
 

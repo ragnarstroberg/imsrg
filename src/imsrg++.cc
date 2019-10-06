@@ -49,6 +49,8 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
+#include <stdio.h>
 #include <string>
 #include <omp.h>
 #include "IMSRG.hh"
@@ -94,6 +96,7 @@ int main(int argc, char** argv)
   std::string physical_system = parameters.s("physical_system");
   std::string freeze_occupations = parameters.s("freeze_occupations");
   bool use_NAT_occupations = (parameters.s("use_NAT_occupations")=="true") ? true : false;
+  bool store_3bme_pn = (parameters.s("store_3bme_pn")=="true");
 
   int eMax = parameters.i("emax");
   int lmax = parameters.i("lmax"); // so far I only use this with atomic systems.
@@ -163,6 +166,39 @@ int main(int argc, char** argv)
   rw.SetLECs_preset(LECs);
   rw.SetScratchDir(scratch);
   rw.Set3NFormat( fmt3 );
+
+  // Test whether the scratch directory exists and we can write to it.
+  // This is necessary because otherwise you get garbage for transformed operators and it's
+  // not obvious what went wrong.
+  if ( method=="magnus" and  scratch != "" and scratch!= "/dev/null" and scratch != "/dev/null/")
+  {
+    std::string testfilename = scratch + "/_this_is_a_test_delete_me";
+    std::ofstream testout(testfilename);
+    testout << "PASSED" << std::endl;
+    testout.close();
+    std::remove( testfilename.c_str() );
+    if ( not testout.good() )
+    {
+      std::cout << "WARNING in " << __FILE__ <<  " failed test write to scratch directory " << scratch;
+      if (opnames.size()>0 )
+      {
+      std::cout << "   dying now. " << std::endl;
+      exit(EXIT_FAILURE);
+      }
+      else std::cout << std::endl;
+    }
+  }
+  if ( (method=="magnus") and (scratch=="/dev/null" or scratch=="/dev/null/") )
+  {
+    if ( opnames.size() > 0 )
+    {
+      std::cout << "WARNING!!! using Magnus with scratch = " << scratch << " but you're also trying to transform some operators: ";
+      for (auto opn : opnames ) std::cout << opn << " ";
+      std::cout << "   dying now." << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
 
 //  ModelSpace modelspace;
 
@@ -320,6 +356,11 @@ int main(int argc, char** argv)
   {
     rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
     std::cout << "done reading 3N" << std::endl;
+  }
+
+  if (store_3bme_pn)
+  {
+    Hbare.ThreeBody.TransformToPN();
   }
 
 
@@ -607,7 +648,7 @@ int main(int argc, char** argv)
   }
 
   imsrgsolver.SetGenerator(core_generator);
-  if (core_generator.find("imaginary")!=std::string::npos)
+  if (core_generator.find("imaginary")!=std::string::npos or core_generator.find("wegner")!=std::string::npos )
   {
    if (ds_0>1e-2)
    {
@@ -657,8 +698,9 @@ int main(int argc, char** argv)
     if (method == "magnus") smax *= 2;
 
     imsrgsolver.SetGenerator(valence_generator);
+    std::cout << "Setting generator to " << valence_generator << std::endl;
     modelspace.ResetFirstPass();
-    if (valence_generator.find("imaginary")!=std::string::npos)
+    if (valence_generator.find("imaginary")!=std::string::npos or valence_generator.find("wegner")!=std::string::npos)
     {
      if (ds_0>1e-2)
      {

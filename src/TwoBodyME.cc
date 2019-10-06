@@ -85,6 +85,11 @@ void TwoBodyME::Allocate()
   }
 }
 
+void TwoBodyME::Deallocate()
+{
+  MatEl.clear();
+}
+
 void TwoBodyME::SetHermitian()
 {
   hermitian = true;
@@ -702,6 +707,8 @@ double TwoBodyME::Norm() const
 }
 
 
+// arma::symmatu reflects the upper triangle to the lower triangle
+// the upper triangle are the elements Mat(ibra,iket) with ibra<=iket
 void TwoBodyME::Symmetrize()
 {
   if (rank_J>0 or rank_T>0 or parity>0) return;
@@ -712,6 +719,8 @@ void TwoBodyME::Symmetrize()
   }
 }
 
+// arma::trimatu takes the upper triangle of a matrix
+// we then set the lower triangle to the negtive of the upper triangle
 void TwoBodyME::AntiSymmetrize()
 {
   if (rank_J>0) return;

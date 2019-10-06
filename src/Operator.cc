@@ -66,7 +66,7 @@ Operator::Operator()
 // Create a zero-valued operator in a given model space
 Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) : 
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
-    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms),
+    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms), ThreeLeg(&ms),
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank), legs(2*part_rank),
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),  
@@ -79,7 +79,7 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 
 Operator::Operator(ModelSpace& ms) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
-    TwoBody(&ms),  ThreeBody(&ms),
+    TwoBody(&ms),  ThreeBody(&ms), ThreeLeg(&ms),
     rank_J(0), rank_T(0), parity(0), particle_rank(2), legs(4),
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),  
@@ -91,7 +91,7 @@ Operator::Operator(ModelSpace& ms) :
 
 Operator::Operator(const Operator& op)
 : modelspace(op.modelspace),  ZeroBody(op.ZeroBody),
-  OneBody(op.OneBody), TwoBody(op.TwoBody) ,ThreeBody(op.ThreeBody),
+  OneBody(op.OneBody), TwoBody(op.TwoBody) ,ThreeBody(op.ThreeBody), ThreeLeg(op.ThreeLeg),
   rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank), legs(op.legs),
   E2max(op.E2max), E3max(op.E3max), 
   hermitian(op.hermitian), antihermitian(op.antihermitian),
@@ -102,7 +102,7 @@ Operator::Operator(const Operator& op)
 
 Operator::Operator(Operator&& op)
 : modelspace(op.modelspace), ZeroBody(op.ZeroBody),
-  OneBody(std::move(op.OneBody)), TwoBody(std::move(op.TwoBody)) , ThreeBody(std::move(op.ThreeBody)),
+  OneBody(std::move(op.OneBody)), TwoBody(std::move(op.TwoBody)) , ThreeBody(std::move(op.ThreeBody)), ThreeLeg(std::move(op.ThreeLeg)),
   rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank), legs(op.legs), 
   E2max(op.E2max), E3max(op.E3max), 
   hermitian(op.hermitian), antihermitian(op.antihermitian),
@@ -124,6 +124,7 @@ Operator& Operator::operator*=(const double rhs)
    ZeroBody *= rhs;
    OneBody *= rhs;
    TwoBody *= rhs;
+   ThreeLeg *= rhs;
    if (particle_rank > 2)  ThreeBody *= rhs;
    return *this;
 }
@@ -169,6 +170,8 @@ Operator& Operator::operator+=(const Operator& rhs)
      TwoBody  += rhs.TwoBody;
    if (rhs.GetParticleRank() >2 )
      ThreeBody += rhs.ThreeBody;
+   if (rhs.GetNumberLegs()%2==1)
+     ThreeLeg += rhs.ThreeLeg;
    return *this;
 }
 
@@ -200,6 +203,8 @@ Operator& Operator::operator-=(const Operator& rhs)
      TwoBody -= rhs.TwoBody;
    if (rhs.GetParticleRank() > 2)
      ThreeBody -= rhs.ThreeBody;
+   if (rhs.GetNumberLegs()%2==1)
+     ThreeLeg -= rhs.ThreeLeg;
    return *this;
 }
 
@@ -532,10 +537,10 @@ Operator Operator::DoNormalOrderingDagger( int sign) const
   index_t Q = opNO.GetQSpaceOrbit();
   Orbit& oQ = modelspace->GetOrbit(Q);
 
-  for ( auto& itmat : TwoBody.MatEl )
+  for ( auto& itmat : ThreeLeg.MatEl )
   {
-     int ch_bra = itmat.first[0];
-     int ch_ket = itmat.first[1];
+     int ch_bra = itmat.first;
+//     int ch_ket = itmat.first[1];
      
      TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch_bra);
      int J = tbc.J;
@@ -550,7 +555,9 @@ Operator Operator::DoNormalOrderingDagger( int sign) const
         for (auto& h : modelspace->holes)  // C++11 syntax
         {
           Orbit& oh = modelspace->GetOrbit(h);
-          opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);  // The GetTBME returns an unnormalized matrix element.
+          // TODO: Confirm that this should be a minus sign rather than plus
+          opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * ThreeLeg.GetME(ch_bra,h,a,h);  // The GetTBME returns an unnormalized matrix element.
+//          opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);  // The GetTBME returns an unnormalized matrix element.
 
         }
      }
@@ -782,6 +789,8 @@ void Operator::Erase()
 //  if (particle_rank >=3)
   if (legs >=6)
     ThreeBody.Erase();
+  if ( (legs%2)>0 )
+    ThreeLeg.Erase();
 }
 
 void Operator::EraseOneBody()
@@ -798,6 +807,11 @@ void Operator::EraseThreeBody()
 {
   ThreeBody.Erase();
 //  ThreeBody = ThreeBodyME();
+}
+
+void Operator::EraseThreeLeg()
+{
+  ThreeLeg.Erase();
 }
 
 void Operator::SetHermitian()
@@ -822,6 +836,29 @@ void Operator::SetNonHermitian()
   antihermitian = false;
   TwoBody.SetNonHermitian();
 }
+
+
+
+void Operator::SetNumberLegs( int l)
+{
+  int old_legs = legs;
+  legs = l;
+  if ( l == old_legs ) return;
+  if (legs%2==0)
+  {
+    TwoBody.Allocate();
+    ThreeLeg.Deallocate();
+    if (legs>5) ThreeBody.Allocate();
+  } 
+  else
+  {
+    TwoBody.Deallocate();
+    ThreeLeg.Allocate();
+  }
+
+
+}
+
 
 void Operator::MakeReduced()
 {
@@ -1208,6 +1245,16 @@ double Operator::ThreeBodyNorm() const
   return ThreeBody.Norm();
 }
 
+
+double Operator::ThreeLegNorm() const
+{
+  return ThreeLeg.Norm();
+}
+
+
+
+
+
 //void Operator::MakeNormalized(){ ChangeNormalization( 1./SQRT2)  ;}
 //void Operator::MakeUnNormalized(){ ChangeNormalization( SQRT2)  ;}
 void Operator::MakeNormalized(){   ChangeNormalization( PhysConst::INVSQRT2)  ;}
@@ -1375,8 +1422,6 @@ void Operator::AntiSymmetrize()
    }
    TwoBody.AntiSymmetrize();
 }
-
-
 
 
 

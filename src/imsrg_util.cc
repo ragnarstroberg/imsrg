@@ -24,7 +24,21 @@
 /// imsrg_util namespace. Used to define some helpful functions.
 namespace imsrg_util
 {
-
+ using PhysConst::HBARC;
+ using PhysConst::M_PROTON;
+ using PhysConst::M_NEUTRON;
+ using PhysConst::M_NUCLEON;
+ using PhysConst::M_ELECTRON;
+ using PhysConst::PROTON_SPIN_G;
+ using PhysConst::NEUTRON_SPIN_G;
+ using PhysConst::ELECTRON_SPIN_G;
+ using PhysConst::F_PI;
+ using PhysConst::ALPHA_FS;
+ using PhysConst::PI;
+ using PhysConst::SQRT2;
+ using PhysConst::SQRTPI;
+ using PhysConst::INVSQRT2;
+ using PhysConst::LOG2;
 
  std::vector<std::string> split_string(std::string s, std::string delimiter)
  {
@@ -208,6 +222,8 @@ namespace imsrg_util
       return Operator();
  
  }
+
+
 
  Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2)
  {
@@ -401,7 +417,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    {
       Orbit & oa = modelspace.GetOrbit(a);
       T.OneBody(a,a) = 0.5 * hw * (2*oa.n + oa.l +3./2); 
-      for ( int b : T.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      for ( auto b : T.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
       {
          if (b<=a) continue;
          Orbit & ob = modelspace.GetOrbit(b);
@@ -2144,7 +2160,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
      for (auto j : QdotQ_op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
      {
        if (i>j) continue;
-       Orbit & oj = modelspace.GetOrbit(j);
+//       Orbit & oj = modelspace.GetOrbit(j);
 //       for (auto k : QdotQ_op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
        double Qij =0;
 //       for (size_t k=0;k<modelspace.GetNumberOrbits();k++)
@@ -2250,7 +2266,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
      Orbit& oa = modelspace.GetOrbit(a);
      if (oa.tz2>0) continue; // protons only
      if (oa.l>lmax) continue;
-     for (int b : VCoul.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+     for (auto b : VCoul.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
      {
        if (b<a) continue;
        Orbit& ob = modelspace.GetOrbit(b);
@@ -2323,7 +2339,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    std::cout << "Done Precalculating Moshinsky." << std::endl;
    double sa,sb,sc,sd;
    sa=sb=sc=sd=0.5;
-   #pragma omp parallel for schedule(dynamic,1)  // It would appear that something's not thread-safe in this routine...
+//   #pragma omp parallel for schedule(dynamic,1)  // It would appear that something's not thread-safe in this routine...
    for (int ch=0; ch<nchan; ++ch)
    {
       TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
@@ -2491,8 +2507,78 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
 
 
+ // Second-order estimate of the spectroscopic factor
+ // for removal of a nuleon in orbit p.
+ //                          o               o
+ //             o  /~~~/\    p\             p|
+ //   o         p\/|  (  )     \/|~~~/\      |~~~/\
+ //  p|    +     /\|a b\/i  +  /\|a b\/i  +  |i a\/j
+ //   |        p/  ~~~~~     p/   ~~~~      p|~~~~
+ // __|__    __/_____      __/______       __|_____
+ //
+ // The formula that I derived, and have not checked exhaustively, is
+ // < A | adagger | A-1> = 1 + 1/2 sum_abi |V_piab|^2 * ( 1/(ep+ei-ea-eb)+1/(ep))/(2ep+ei-ea-eb)
+ //                          - 1/2 sum_aij |V_apij|^2 * 1/( ep*(ei+ej-ea-eb) )
+ //
+ //          when doing the j coupled version, the Vpiab term gets a 2J+1/2ji+1  and the Vapij gets 2J+1/2ja+1
+ //          The spectroscopic factor is then the reduced matrix element squared which gives
+ //          SF = 2jp+1 |amplitude|^2
+ //
+ double MBPT2_SpectroscopicFactor( Operator H, index_t p)
+ {
+   Orbit& op = H.modelspace->GetOrbit(p);
+   double amplitude = op.occ; // leading order amplitude
+   double ep = H.OneBody(p,p);
+   double ef = 0;
+   std::cout << "SPEs: " << std::endl;
+   for (auto p : H.modelspace->all_orbits) std::cout << p << " :  " << H.OneBody(p,p) << std::endl;
 
+   for (auto a : H.modelspace->particles )
+   {
+     Orbit& oa = H.modelspace->GetOrbit(a);
+     double ea = H.OneBody(a,a);
+     for (auto i : H.modelspace->holes )
+     {
+       Orbit& oi = H.modelspace->GetOrbit(i);
+       double ei = H.OneBody(i,i);
+       for (auto b : H.modelspace->particles )
+       {
+         Orbit& ob = H.modelspace->GetOrbit(b);
+         double eb = H.OneBody(b,b);
+         int Jmin = std::max( std::abs(oa.j2-ob.j2), std::abs(oi.j2-op.j2) ) /2;
+         int Jmax = std::min( oa.j2+ob.j2 ,  oi.j2+op.j2 )/2;
+         double Jterm = 0;
+         for (int J=Jmin; J<=Jmax; J++)
+         {
+           // GetTBME_J returns an unnormalized matrix element, which is what I want.
+           double Vpiab = H.TwoBody.GetTBME_J(J,p,i,a,b);
+           Jterm += 0.5 * (2*J+1.)/(oi.j2+1) * Vpiab*Vpiab * ( 1.0/(ep+ei-ea-eb-ef) + 1.0/ep)/(2*ep+ei-ea-eb);
+           amplitude += 0.5 * (2*J+1.)/(oi.j2+1) * Vpiab*Vpiab * ( 1.0/(2*ep+ei-ea-eb-ef) + 1.0/ep)/(ep+ei-ea-eb);
+         }
+         std::cout << "i,a,b, " << i << " " << a << " " <<b << " spes  " << ei << " " << ea << " " << eb << "  denominator  " << ( 1.0/(2*ep+ei-ea-eb-ef) + 1.0/ep)/(ep+ei-ea-eb) << "  contribution  " << Jterm << std::endl;
+       }
+       for (auto j : H.modelspace->holes )
+       {
+         Orbit& oj = H.modelspace->GetOrbit(j);
+         double ej = H.OneBody(j,j);
+         int Jmin = std::max( std::abs(oa.j2-op.j2), std::abs(oi.j2-oj.j2) ) /2;
+         int Jmax = std::min( oa.j2+op.j2 ,  oi.j2+oj.j2 )/2;
+         double Jterm = 0;
+         for (int J=Jmin; J<=Jmax; J++)
+         {
+           double Vpaij = H.TwoBody.GetTBME_J(J,p,a,i,j);
+           Jterm -= 0.5 * (2*J+1.)/(oa.j2+1) * Vpaij*Vpaij * 1.0/((ep-ef)*(ei+ej-ea-ef));
+           amplitude -= 0.5 * (2*J+1.)/(oa.j2+1) * Vpaij*Vpaij * 1.0/((ep-ef)*(ei+ej-ea-ef));
+         }
+         std::cout << "i,j,a " << i << " " << j << " " << a << " spes  " << ei << " " << ej << " " << ea << "  denominator  " << 1.0/((ep-ef)*(ei+ej-ea-ef)) << "   contribution  " << Jterm << std::endl;
+       }
+     }	 
+   }
+   std::cout << "Amplitude is " << amplitude << std::endl;
+   double SF = (op.j2+1.0) * amplitude * amplitude;
+   return SF;
 
+ }
 
 
  namespace atomic_fs

@@ -140,6 +140,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetJRank", &Operator::GetJRank)
       .def("GetTRank", &Operator::GetTRank)
       .def("GetParity", &Operator::GetParity)
+      .def("GetNumberLegs", &Operator::GetNumberLegs)
       .def("GetE3max", &Operator::GetE3max)
       .def("SetE3max", &Operator::SetE3max)
       .def("PrintTimes", &Operator::PrintTimes)
@@ -190,6 +191,11 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetME_pn", &ThreeBodyMEpn::SetME_pn)
       .def("GetME_pn", &ThreeBodyMEpn::GetME_pn)
       .def("RecouplingCoefficient",&ThreeBodyMEpn::RecouplingCoefficient)
+      .def("TransformToPN",&ThreeBodyMEpn::TransformToPN)
+      .def("SwitchToPN_and_discard",&ThreeBodyMEpn::SwitchToPN_and_discard)
+      .def("Print",&ThreeBodyMEpn::Print)
+      .def("PrintAll",&ThreeBodyMEpn::PrintAll)
+      .def("Erase",&ThreeBodyMEpn::Erase)
       .def_readonly_static("ABC",&ThreeBodyMEpn::ABC)
       .def_readonly_static("BCA",&ThreeBodyMEpn::BCA)
       .def_readonly_static("CAB",&ThreeBodyMEpn::CAB)
@@ -215,6 +221,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("WriteNuShellX_int", &ReadWrite::WriteNuShellX_int)
       .def("WriteNuShellX_op", &ReadWrite::WriteNuShellX_op)
       .def("ReadNuShellX_int", &ReadWrite::ReadNuShellX_int)
+      .def("ReadNuShellX_int_iso", &ReadWrite::ReadNuShellX_int_iso)
       .def("WriteAntoine_int", &ReadWrite::WriteAntoine_int)
       .def("WriteAntoine_input", &ReadWrite::WriteAntoine_input)
       .def("WriteOperator", &ReadWrite::WriteOperator)
@@ -297,6 +304,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetMagnusAdaptive",&IMSRGSolver::SetMagnusAdaptive)
       .def("SetReadWrite", &IMSRGSolver::SetReadWrite)
       .def("SetHunterGatherer", &IMSRGSolver::SetHunterGatherer)
+      .def("AddOperator", &IMSRGSolver::AddOperator)
+      .def("GetOperator", &IMSRGSolver::GetOperator)
       .def_readwrite("Eta", &IMSRGSolver::Eta)
    ;
 
@@ -353,19 +362,22 @@ PYBIND11_MODULE(pyIMSRG, m)
 //      .def(py::init<>())
       .def(py::init< ModelSpace&>())
       .def("SetRandomSeed",&UnitTest::SetRandomSeed)
+      .def("RandomOp",&UnitTest::RandomOp)
       .def("TestCommutators",&UnitTest::TestCommutators)
       .def("TestCommutators3",&UnitTest::TestCommutators3)
+      .def("TestDaggerCommutators",&UnitTest::TestDaggerCommutators)
       .def("Test3BodyAntisymmetry",&UnitTest::Test3BodyAntisymmetry)
+      .def("Test3BodyHermiticity",&UnitTest::Test3BodyHermiticity)
    ;
 
 
-  py::class_<SymmMatrix<double>>(m,"SymmMatrix")
-     .def(py::init<size_t>())
-     .def(py::init<size_t,int>())
-     .def("Get",&SymmMatrix<double>::Get)
-     .def("Put",&SymmMatrix<double>::Put)
-     .def("FullMatrix",&SymmMatrix<double>::FullMatrix)
-  ;
+//  py::class_<SymmMatrix<double>>(m,"SymmMatrix")
+//     .def(py::init<size_t>())
+//     .def(py::init<size_t,int>())
+//     .def("Get",&SymmMatrix<double>::Get)
+//     .def("Put",&SymmMatrix<double>::Put)
+//     .def("FullMatrix",&SymmMatrix<double>::FullMatrix)
+//  ;
 
 
    m.def("TCM_Op",           imsrg_util::TCM_Op);
@@ -397,6 +409,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
    m.def("OperatorFromString", imsrg_util::OperatorFromString);
    m.def("HO_Radial_psi",  imsrg_util::HO_Radial_psi);
+   m.def("MBPT2_SpectroscopicFactor",  imsrg_util::MBPT2_SpectroscopicFactor);
    m.def("CG",AngMom::CG);
    m.def("ThreeJ",AngMom::ThreeJ);
    m.def("SixJ",AngMom::SixJ);
