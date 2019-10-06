@@ -23,6 +23,7 @@
 #include "ModelSpace.hh"
 #include "TwoBodyME.hh"
 #include "ThreeBodyME.hh"
+#include "ThreeBodyMENO2B.hh"
 #include "Operator.hh"
 #include "HartreeFock.hh"
 #include "Commutator.hh"
