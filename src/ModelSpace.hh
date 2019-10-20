@@ -234,6 +234,8 @@ class ModelSpace
  public:
 
    static double OCC_CUT;
+   static int NOT_AN_ORBIT;
+   static Orbit NULL_ORBIT;
 
    // Data members
 
@@ -246,6 +248,7 @@ class ModelSpace
    int OneBodyJmax; // maximum J for a single orbit
    int TwoBodyJmax; // maximum J for a 2-body state
    int ThreeBodyJmax; // maximum J for a 3-body state (not used)?
+   int EmaxUnocc; // Separate emax cut for orbits with l,j,tz that aren't present in the HF reference
 
    int norbits;       // number of single-particle orbits (not counting the degenerate m-projections)
    double hbar_omega; // oscillator frequency in MeV
@@ -291,6 +294,9 @@ class ModelSpace
 //   std::vector<index_t> proton_orbits;
 //   std::vector<index_t> neutron_orbits;
 //   std::vector<index_t> all_orbits;
+
+//   std::set<std::array<int,3>> hole_quantum_numbers; // For checking if an orbit could mix with the hole orbits
+   std::set<std::array<int,2>> hole_quantum_numbers; // For checking if an orbit could mix with the hole orbits
 
    std::vector<index_t> KetIndex_pp; 
    std::vector<index_t> KetIndex_ph;
@@ -373,7 +379,8 @@ class ModelSpace
    void AddOrbit(Orbit orb);
    void AddOrbit(int n, int l, int j2, int tz2, double occ, int io);
    // Setter/Getters
-   Orbit& GetOrbit(int i) {return (Orbit&) Orbits[i];}; 
+//   Orbit& GetOrbit(int i) {return (Orbit&) Orbits[i];}; 
+   Orbit& GetOrbit(int i); 
    Ket& GetKet(int i) const {return (Ket&) Kets[i];};
    Ket& GetKet(int p, int q) const {return (Ket&) Kets[Index2(p,q)];};
    Ket3& GetKet3(int i) const {return (Ket3&) Kets3[i];};
@@ -383,6 +390,8 @@ class ModelSpace
    size_t GetKet3Index(int p, int q, int r, int Jpq){return Ket3IndexLookup.at(Ket3IndexHash(p,q,r,Jpq));};
    size_t Ket3IndexHash(size_t p, size_t q, size_t r, size_t Jpq);
    size_t ThreeBodyChannelHash( int twoJ, int parity, int twoTz);
+
+   void SetEmaxUnocc(int e);
 
    size_t GetNumberOrbits() const {return norbits;};
    size_t GetNumberKets() const {return Kets.size();};

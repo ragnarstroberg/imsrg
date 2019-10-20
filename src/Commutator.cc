@@ -1818,7 +1818,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
 //   \ /      \ /    |       Coupled expression:
 //   *~~~~~~~[Y]~~~~~*        Z_ij = 1/4sum_abcd sum_J1J  (nanb n`c n`d)  (2J+1)/(2ji+1)
 //                   |j               (X^{J}_abcd Y^{J1J1J}_cdiabj - Y^{J1J1J}_abicdj X^{J}_cdab)
-//
+//                   |
 //                              We only sum a<=b and c<=d, so we do not explicitly include the factor 1/4,
 //                              except for the a==b, or c==d case, where the is no double counting.
 void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
@@ -3027,7 +3027,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 
 
 //*****************************************************************************************
-//
+//                               TODO: CHECK the pph/phh term and see if there's an overall minus sign missing
 //  |    |    |     Uncoupled expression:
 // i|   j|   k|       C_ijklmn = 1/6 sum_{abc} (nanbnc + n`an`bn`c) ( X_{ijkabc} Y_{abcklm} - Y_{ijkabc} X_{abcklm}
 //  *~~~[X]~~~*                   + 1/2 P(ij/k)P(lm/n) sum_{abc} (nanbn`c -na`n`bnc) ( X_{ijcabn} Y_{abklmc} - Y_{ijcabn} X_{abklmc} ) 
@@ -3036,7 +3036,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 // l|   m|   n|     C_{ijklmn}^{J1,J2,J} = 1/6 sum_{abc} sum_{J'} (nanbnc + n`an`bn`c) ( X_{ijkabc}^{J1,J',J} Y_{abcklm}^{J',J2,J} - X<->Y )
 //  |    |    |                             +1/2 P^{J1,J}(ij/k)P^{J2,j}_{lm/n) sum_{abc} (nanbn`c-n`an`bnc) sum_{J',J",J3} (2J'+1)(2J"+1)
 //                                             { k   J1  J  }
-//                                           * { J3  J'  n  } * ( X_{ijcabn}^{J1,J3,J'} Y_{abklmc}^{J3,J2,J"} - X<->Y )                                   
+//                                           * { J3  J'  n  } * ( X_{ijcabn}^{J1,J3,J'} Y_{abklmc}^{J3,J2,J"} - X<->Y )     
 //                                             { J"  c   J2 }                              
 //
 void comm333ss( const Operator& X, const Operator& Y, Operator& Z )
