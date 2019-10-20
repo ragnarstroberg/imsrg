@@ -54,6 +54,7 @@ HartreeFock::HartreeFock(Operator& hbare)
    }
    UpdateDensityMatrix();
    UpdateF();
+   std::cout << "Vij" << std::endl << Vij << std::endl;
 
 }
 
