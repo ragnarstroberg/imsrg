@@ -732,6 +732,10 @@ void HartreeFock::UpdateF()
                   Vij(i,j) += rho(a,b)*Vmon_exch[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|jb>
                else
                   Vij(i,j) += rho(a,b)*Vmon[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|bj>
+               if (i==0 and j==0)
+               {
+                 std::cout << "i,j = " << i << " " << j << "  a,b =  " << a << " " << b << "  Vij = " << Vij(i,j) << std::endl;
+               }
            }
          }
       }

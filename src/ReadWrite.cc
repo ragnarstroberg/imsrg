@@ -875,8 +875,8 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 //          int Jmin = std::max( std::abs(o1.j2 - o2.j2), std::abs(o3.j2 - o4.j2) )/2;
 //          int Jmax = std::min(o1.j2 + o2.j2, o3.j2+o4.j2)/2;
           if (Jmin > Jmax) continue;
-//          std::cout << "....... " << nreads << "   " << nlj1 << " " << nlj2 << " " << nlj3 << " " << nlj4
-//                    << "   " << o1.l << " " << o2.l << " " << o3.l << " " << o4.l << "   Jmin,Jmax " << Jmin << " " << Jmax << std::endl;
+          std::cout << "....... " << nreads << "   " << nlj1 << " " << nlj2 << " " << nlj3 << " " << nlj4
+                    << "   " << o1.l << " " << o2.l << " " << o3.l << " " << o4.l << "   Jmin,Jmax " << Jmin << " " << Jmax << std::endl;
           for (int J=Jmin; J<=Jmax; ++J)
           {
 
@@ -893,8 +893,8 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
              if (a==b)  norm_factor /= PhysConst::SQRT2;
              if (c==d)  norm_factor /= PhysConst::SQRT2;
 
-//             std::cout << a << " " << b << " " << c << " " << d << "   " << J << "   "
-//                  << std::fixed << std::setprecision(7) << std::setw(11) << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp << std::endl;
+             std::cout << a << " " << b << " " << c << " " << d << "   " << J << "   "
+                  << std::fixed << std::setprecision(7) << std::setw(11) << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp << std::endl;
 //             std::cout << __func__ << "  made it here abcd = " << a << " " << b << " " << c << " " << d << " setting tbme. (norb = " << norb << ")  " << o1.n << " " << o1.l << " " << o1.j2 << std::endl;
 
              if (norm_factor>0.9 or J%2==0)
