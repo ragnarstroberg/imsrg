@@ -393,7 +393,8 @@ void HartreeFock::FillLowestOrbits()
   }
 
   holeorbs = arma::uvec( holeorbs_tmp );
-  hole_occ = arma::rowvec( hole_occ );
+  hole_occ = arma::rowvec( hole_occ_tmp );
+//  hole_occ = arma::rowvec( hole_occ );
 }
 
 
@@ -544,6 +545,9 @@ void HartreeFock::ReorderCoefficients()
 }
 
 
+
+
+
 //**************************************************************************
 /// Takes in an operator expressed in the basis of the original Hamiltonian,
 /// and returns that operator in the Hartree-Fock basis.
@@ -632,6 +636,26 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
 }
 
 
+// If the lowest orbits are different from our previous guess, we should update the reference.
+void HartreeFock::UpdateReference()
+{
+
+  bool changed_occupations = false;
+  std::map<index_t,double> hole_map;
+  for (index_t i=0;i<holeorbs.size();++i)  
+  {
+     hole_map[holeorbs[i]] = hole_occ[i];
+     if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
+     {
+        changed_occupations = true;
+        std::cout << "After HF, occupation of orbit " << holeorbs[i] << " has changed. Modelspace will be updated." << std::endl;
+     }
+  }
+  if (changed_occupations)  modelspace->SetReference( hole_map );
+
+}
+
+
 Operator HartreeFock::GetNormalOrderedH(arma::mat& Cin) 
 {
   C=Cin;
@@ -716,6 +740,7 @@ Operator HartreeFock::GetNormalOrderedH()
               {
                 Orbit & ob = modelspace->GetOrbit(b);
                 if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
+                if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
                 int J3min = std::abs(2*J-oa.j2);
                 int J3max = 2*J + oa.j2;
                 for (int J3=J3min; J3<=J3max; J3+=2)
@@ -788,6 +813,23 @@ void HartreeFock::PrintSPE()
          << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(10) << F(i,i) << std::endl;
   }
 
+}
+
+void HartreeFock::PrintSPEandWF()
+{
+  std::cout << std::fixed << std::setw(3) << "i" << ": " << std::setw(3) << "n" << " " << std::setw(3) << "l" << " "
+       << std::setw(3) << "2j" << " " << std::setw(3) << "2tz" << "   " << std::setw(12) << "SPE" << " " << std::setw(12) << "occ." << "   |   " << " overlaps" << std::endl;
+  for (int i=0;i<modelspace->GetNumberOrbits();++i)
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    std::cout << std::fixed << std::setw(3) << i << ": " << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
+         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F(i,i) << " " << std::setw(12) << oi.occ << "   | ";
+    for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    {
+      std::cout << std::setw(9) << C(i,j) << "  ";
+    }
+    std::cout << std::endl;
+  }
 }
 
 
