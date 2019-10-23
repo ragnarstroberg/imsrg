@@ -70,6 +70,7 @@ int main(int argc, char** argv)
 
   std::string inputtbme = parameters.s("2bme");
   std::string input3bme = parameters.s("3bme");
+  std::string input3bme_type = parameters.s("3bme_type");
   std::string reference = parameters.s("reference");
   std::string valence_space = parameters.s("valence_space");
   std::string custom_valence_space = parameters.s("custom_valence_space");
@@ -354,8 +355,15 @@ int main(int argc, char** argv)
 
   if (Hbare.particle_rank >=3)
   {
-    rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
-    std::cout << "done reading 3N" << std::endl;
+    if(input3bme_type == "full"){
+      rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
+      std::cout << "done reading 3N" << std::endl;
+    }
+    if(input3bme_type == "no2b"){
+      Hbare.ThreeBodyNO2B.Set(modelspace&, file3e1max, file3e2max, file3e3max, file3e1max, input3bme);
+      Hbare.ThreeBodyNO2B.ReadFile();
+      std::cout << "done reading 3N" << std::endl;
+    }
   }
 
   if (store_3bme_pn)

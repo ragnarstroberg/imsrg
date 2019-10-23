@@ -112,13 +112,98 @@ ThreeBodyMENO2B::ThreeBodyMENO2B()
   E2max_file(0), E3max_file(0), Lmax_file(0), threebodyspace()
 {}
 
-ThreeBodyMENO2B::ThreeBodyMENO2B(ModelSpace & ms,
+ThreeBodyMENO2B::ThreeBodyMENO2B(const ThreeBodyMENO2B& tbme)
+  : modelspace(tbme.modelspace), threebodyspace(tbme.threebodyspace),
+  MatEl( tbme.MatEl ), iOrbits( tbme.iOrbits ),  nlj2idx(tbme.nlj2idx),
+  nljz2idx(tbme.nljz2idx), cgs(tbme.cgs),
+  Emax(tbme.Emax), E2max(tbme.E2max), E3max(tbme.E3max), Lmax(tbme.Lmax),
+  Emax_file(tbme.Emax_file), E2max_file(tbme.E2max_file),
+  E3max_file(tbme.E3max_file), Lmax_file(tbme.Lmax_file),
+  initialized(tbme.initialized)
+{}
+
+ThreeBodyMENO2B& ThreeBodyMENO2B::operator*=(const double rhs)
+{
+  for ( auto& itmat : MatEl )
+  {
+    for ( auto& it : itmat.second )
+    {
+      it *= rhs;
+    }
+  }
+  return *this;
+}
+
+ThreeBodyMENO2B& ThreeBodyMENO2B::operator+=(const ThreeBodyMENO2B& rhs)
+{
+  for ( auto& itmat : rhs.MatEl )
+  {
+    auto ch = itmat.first;
+    for ( size_t i=0; i<itmat.second.size(); i++)
+    {
+      MatEl[ch][i] += itmat.second[i];
+    }
+  }
+  return *this;
+}
+
+ThreeBodyMENO2B& ThreeBodyMENO2B::operator-=(const ThreeBodyMENO2B& rhs)
+{
+  for ( auto& itmat : rhs.MatEl )
+  {
+    auto ch = itmat.first;
+    for ( size_t i=0; i<itmat.second.size(); i++)
+    {
+      MatEl[ch][i] -= itmat.second[i];
+    }
+  }
+  return *this;
+}
+
+//ThreeBodyMENO2B::ThreeBodyMENO2B(ModelSpace & ms,
+//    int emax_file, int e2max_file, int e3max_file, int lmax_file,
+//    std::string filename)
+//  : modelspace(&ms), Emax_file(emax_file), E2max_file(e2max_file),
+//  E3max_file(e3max_file), Lmax_file(lmax_file),
+//  FileName(filename)
+//{
+//  initialized = true;
+//  int idx = 0;
+//  for (int e=0; e<=std::max(modelspace->GetEmax(),Emax_file); ++e) {
+//    int lmin = e%2;
+//    for (int l=lmin; l<=std::min(e,std::max(modelspace->GetLmax(),lmax_file)); l+=2) {
+//      int n = (e-l)/2;
+//      int twojMin = std::abs(2*l-1);
+//      int twojMax = 2*l+1;
+//      for (int twoj=twojMin; twoj<=twojMax; twoj+=2) {
+//        OrbitIsospin orb(idx,n,l,twoj);
+//        iOrbits.push_back(orb);
+//        nlj2idx[{n,l,twoj}]=idx;
+//        idx += 1;
+//      }
+//    }
+//  }
+//
+//  threebodyspace = ThreeBodySpaceNO2B(this);
+//  for (int ch=0; ch<threebodyspace.NChannels; ch++){
+//    ThreeBodyChannelNO2B ch_no2b=threebodyspace.ThreeBodyChannels[ch];
+//    size_t n = ch_no2b.Ndim;
+//    std::vector<ThreeBME_type> vch(n*(n+1)/2, 0.0);
+//    MatEl[ch] = vch;
+//  }
+//
+//}
+
+void ThreeBodyMENO2B::Allocate(ModelSpace & ms,
     int emax_file, int e2max_file, int e3max_file, int lmax_file,
     std::string filename)
-  : modelspace(&ms), Emax_file(emax_file), E2max_file(e2max_file),
-  E3max_file(e3max_file), Lmax_file(lmax_file),
-  FileName(filename)
 {
+  modelspace = &ms;
+  Emax_file = emax_file;
+  E2max_file = e2max_file;
+  E3max_file = e3max_file;
+  Lmax_file = lmax_file;
+  FileName = filename;
   initialized = true;
   int idx = 0;
   for (int e=0; e<=std::max(modelspace->GetEmax(),Emax_file); ++e) {
@@ -135,7 +220,6 @@ ThreeBodyMENO2B::ThreeBodyMENO2B(ModelSpace & ms,
       }
     }
   }
-
   threebodyspace = ThreeBodySpaceNO2B(this);
   for (int ch=0; ch<threebodyspace.NChannels; ch++){
     ThreeBodyChannelNO2B ch_no2b=threebodyspace.ThreeBodyChannels[ch];
@@ -143,7 +227,6 @@ ThreeBodyMENO2B::ThreeBodyMENO2B(ModelSpace & ms,
     std::vector<ThreeBME_type> vch(n*(n+1)/2, 0.0);
     MatEl[ch] = vch;
   }
-
 }
 
 void ThreeBodyMENO2B::SetThBME(int a, int b, int c, int Tab,

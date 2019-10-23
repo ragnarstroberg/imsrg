@@ -23,6 +23,7 @@
 #include "ModelSpace.hh"
 #include "TwoBodyME.hh"
 #include "ThreeBodyME.hh"
+#include "ThreeBodyMENO2B.hh"
 #include "ThreeBodyMEpn.hh"
 #include "ThreeLegME.hh"
 #include "IMSRGProfiler.hh"

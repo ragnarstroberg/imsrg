@@ -71,7 +71,14 @@ class ThreeBodyMENO2B
 
     ~ThreeBodyMENO2B();
     ThreeBodyMENO2B();
-    ThreeBodyMENO2B(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file, std::string filename);
+    //ThreeBodyMENO2B(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file, std::string filename);
+
+    ThreeBodyMENO2B(const ThreeBodyMENO2B& tbme);
+    ThreeBodyMENO2B& operator*=(const double);
+    ThreeBodyMENO2B& operator+=(const ThreeBodyMENO2B&);
+    ThreeBodyMENO2B& operator-=(const ThreeBodyMENO2B&);
+
+    void Allocate(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file, std::string filename);
     size_t idx1d(size_t bra, size_t ket) { return std::max(bra,ket) * (std::max(bra,ket)-1)/2 + std::min(bra,ket);};
     void SetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3, ThreeBME_type V);
     ThreeBME_type GetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3);
