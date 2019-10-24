@@ -54,6 +54,8 @@ HartreeFock::HartreeFock(Operator& hbare)
    }
    UpdateDensityMatrix();
    UpdateF();
+   CalcEHF();
+   PrintEHF();
 
 }
 

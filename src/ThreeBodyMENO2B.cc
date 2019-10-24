@@ -20,7 +20,7 @@ ThreeBodyChannelNO2B::~ThreeBodyChannelNO2B()
 {}
 
 ThreeBodyChannelNO2B::ThreeBodyChannelNO2B()
-  : J2(-1), P2(-1), J1(-1), P1(-1), T3(-1), Ndim(-1), thr(NULL)
+  : J2(-1), P2(-1), J1(-1), P1(-1), T3(-1), Ndim(-1)
 {}
 
 ThreeBodyChannelNO2B::ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T3, ThreeBodyMENO2B* thr)
@@ -35,11 +35,11 @@ ThreeBodyChannelNO2B::ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T
     if(oa.e > emax) continue;
     for (int ib=ia; ib < thr->iOrbits.size(); ib++){
       OrbitIsospin ob = thr->iOrbits[ib];
+      if(ob.e > emax) continue;
+      if(oa.e + ob.e > e2max) continue;
       if(std::abs(oa.j-ob.j)*2 > J2) continue;
       if(        (oa.j+ob.j)*2 < J2) continue;
       if((oa.l+ob.l)%2 != P2) continue;
-      if(ob.e > emax) continue;
-      if(oa.e + ob.e > e2max) continue;
       for (int ic=0; ic < thr->iOrbits.size(); ic++){
         OrbitIsospin oc = thr->iOrbits[ic];
         if(oc.j != J1) continue;
@@ -52,16 +52,32 @@ ThreeBodyChannelNO2B::ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T
           if( std::abs(2*T2-1) > T3 ) continue;
           if(         (2*T2+1) < T3 ) continue;
           if((J2+T2)%2 == 0 and ia == ib) continue;
-          int ph = 1 - 2*( (oa.j + ob.j)/2 - J2 - T2)%2;
-          abct2n[{ia,ib,ic,T2}] = Ndim;
-          abct2n[{ib,ia,ic,T2}] = Ndim;
-          iphase[{ia,ib,ic,T2}] = 1;
-          iphase[{ib,ia,ic,T2}] = ph;
+          int ph = 1 - 2*(((oa.j + ob.j)/2 + J2 + T2)%2);
+          int key_ab = Hash_abct(ia, ib, ic, T2);
+          int key_ba = Hash_abct(ib, ia, ic, T2);
+          abct2n[key_ab] = Ndim;
+          abct2n[key_ba] = Ndim;
+          iphase[key_ab] = 1;
+          iphase[key_ba] = ph;
           Ndim += 1;
         }
       }
     }
   }
+}
+
+int ThreeBodyChannelNO2B::Hash_abct(int a, int b, int c, int Tab)
+{
+  return ( a + (b<<10) + (c<<20) + (Tab<<30) );
+}
+
+void ThreeBodyChannelNO2B::UnHash_abct(int key, int & a, int & b, int & c, int & Tab)
+{
+  int Lowest_ten_bits = 0x3FF;
+  a = ( (key>> 0) & Lowest_ten_bits);
+  b = ( (key>>10) & Lowest_ten_bits);
+  c = ( (key>>20) & Lowest_ten_bits);
+  Tab = ( (key>>30) & Lowest_ten_bits);
 }
 
 ThreeBodySpaceNO2B::~ThreeBodySpaceNO2B()
@@ -79,7 +95,6 @@ ThreeBodySpaceNO2B::ThreeBodySpaceNO2B(ThreeBodyMENO2B* thr)
   int e3max = std::max(thr->E3max, thr->E3max_file);
   int J2max = std::min(2*lmax+1, e2max+1);
   int cnt = 0;
-  std::cout << emax << " " << e2max << " " << e3max << std::endl;
   for (int J2=0; J2<=J2max; ++J2){
     for (int P2: {0,1}){
 
@@ -88,14 +103,14 @@ ThreeBodySpaceNO2B::ThreeBodySpaceNO2B(ThreeBodyMENO2B* thr)
           for (int T3 : {1,3}){
             ThreeBodyChannelNO2B channel(J2, P2, J1, P1, T3, thr);
             if(channel.Ndim < 1) continue;
-            std::cout <<
-              "   J2 = " << std::setw(4) << J2 <<
-              ",  P2 = " << std::setw(4) << P2 <<
-              ",  J1 = " << std::setw(4) << J1 <<
-              ",  P1 = " << std::setw(4) << P1 <<
-              ",  T3 = " << std::setw(4) << T3 <<
-              ",  Ndim = " << std::setw(10) << channel.Ndim <<
-              std::endl;
+            //std::cout <<
+            //  "   J2 = " << std::setw(4) << J2 <<
+            //  ",  P2 = " << std::setw(4) << P2 <<
+            //  ",  J1 = " << std::setw(4) << J1 <<
+            //  ",  P1 = " << std::setw(4) << P1 <<
+            //  ",  T3 = " << std::setw(4) << T3 <<
+            //  ",  Ndim = " << std::setw(10) << channel.Ndim <<
+            //  std::endl;
             ThreeBodyChannels.push_back(channel);
             idcs2ch[{J2,P2,J1,P1,T3}] = cnt;
             cnt += 1;
@@ -112,7 +127,7 @@ ThreeBodyMENO2B::~ThreeBodyMENO2B()
 
 ThreeBodyMENO2B::ThreeBodyMENO2B()
   : Emax(0), E2max(0), E3max(0), Lmax(0),
-  Emax_file(0), E2max_file(0), E3max_file(0), Lmax_file(0)//, threebodyspace()
+  Emax_file(0), E2max_file(0), E3max_file(0), Lmax_file(0)
 {}
 
 ThreeBodyMENO2B::ThreeBodyMENO2B(const ThreeBodyMENO2B& tbme)
@@ -172,7 +187,7 @@ void ThreeBodyMENO2B::Allocate(ModelSpace & ms,
   Emax = modelspace->GetEmax();
   E2max = modelspace->GetE2max();
   E3max = modelspace->GetE3max();
-  Lmax = modelspace->GetLmax();
+  Lmax = std::min(modelspace->GetLmax(), Emax);
   Emax_file = emax_file;
   E2max_file = e2max_file;
   E3max_file = e3max_file;
@@ -224,9 +239,13 @@ void ThreeBodyMENO2B::SetThBME(int a, int b, int c, int Tab,
 
   int ch = threebodyspace.idcs2ch[{J2,P2,J1,P1,T3}];
   ThreeBodyChannelNO2B ch_no2b = threebodyspace.ThreeBodyChannels[ch];
-  size_t bra = ch_no2b.abct2n[{a,b,c,Tab}];
-  size_t ket = ch_no2b.abct2n[{d,e,f,Tde}];
-  int ph = ch_no2b.iphase[{a,b,c,Tab}] * ch_no2b.iphase[{d,e,f,Tde}];
+  int ibra = ch_no2b.Hash_abct(a,b,c,Tab);
+  int iket = ch_no2b.Hash_abct(d,e,f,Tde);
+  if(ch_no2b.iphase.find(ibra) == ch_no2b.iphase.end()) return;
+  if(ch_no2b.iphase.find(iket) == ch_no2b.iphase.end()) return;
+  int ph = ch_no2b.iphase[ibra] * ch_no2b.iphase[iket];
+  int bra = ch_no2b.abct2n[ibra];
+  int ket = ch_no2b.abct2n[iket];
   auto& Vch = MatEl[ch];
   Vch[idx1d(bra,ket)] = V * ph;
 }
@@ -252,9 +271,13 @@ ThreeBME_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int Tab,
 
   int ch = threebodyspace.idcs2ch[{J2,P2,J1,P1,T3}];
   ThreeBodyChannelNO2B ch_no2b = threebodyspace.ThreeBodyChannels[ch];
-  size_t bra = ch_no2b.abct2n[{a,b,c,Tab}];
-  size_t ket = ch_no2b.abct2n[{d,e,f,Tde}];
-  int ph = ch_no2b.iphase[{a,b,c,Tab}] * ch_no2b.iphase[{d,e,f,Tde}];
+  int ibra = ch_no2b.Hash_abct(a,b,c,Tab);
+  int iket = ch_no2b.Hash_abct(d,e,f,Tde);
+  if(ch_no2b.iphase.find(ibra) == ch_no2b.iphase.end()) return 0.0;
+  if(ch_no2b.iphase.find(iket) == ch_no2b.iphase.end()) return 0.0;
+  int ph = ch_no2b.iphase[ibra] * ch_no2b.iphase[iket];
+  int bra = ch_no2b.abct2n[ibra];
+  int ket = ch_no2b.abct2n[iket];
   auto& Vch = MatEl[ch];
   return Vch[idx1d(bra,ket)] * ph;
 }
@@ -327,6 +350,7 @@ void ThreeBodyMENO2B::ReadFile()
     infile.read((char*)&v[0], n_elem*sizeof(float));
     VectorStream vecstream(v);
     ReadStream(vecstream, n_elem);
+    return;
   }
   if(FileName.find(".me3j") != std::string::npos){
     std::ifstream infile(FileName);
@@ -362,8 +386,6 @@ long long unsigned int ThreeBodyMENO2B::CountME()
         if(e2 + e3 > E2max_file) continue;
         if(e1 + e3 > E2max_file) continue;
         if(e1 + e2 + e3 > E3max_file) continue;
-
-        int P = 1 - 2*( l1+l2+l3 )%2;
 
         for (int i4=0; i4 < iOrbits.size(); i4++) {
           OrbitIsospin o4 = iOrbits[i4];
@@ -414,13 +436,14 @@ long long unsigned int ThreeBodyMENO2B::CountME()
   template<class T>
 void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
 {
-  int buffer_size = 1000;
+  int buffer_size = 10000000;
   int counter = 0;
   long long unsigned int total_counter = 0;
   int Emax = modelspace->GetEmax();
   int E2max = modelspace->GetE2max();
   int E3max = modelspace->GetE3max();
   std::vector<ThreeBME_type> v(buffer_size,0.0);
+
   for (int i1=0; i1 < iOrbits.size(); i1++) {
     OrbitIsospin o1 = iOrbits[i1];
     int j1 = o1.j;
@@ -443,8 +466,6 @@ void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
         if(e2 + e3 > E2max_file) continue;
         if(e1 + e3 > E2max_file) continue;
         if(e1 + e2 + e3 > E3max_file) continue;
-
-        int P = 1 - 2*( l1+l2+l3 )%2;
 
         for (int i4=0; i4 < iOrbits.size(); i4++) {
           OrbitIsospin o4 = iOrbits[i4];
@@ -471,7 +492,6 @@ void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
               if(e5 + e6 > E2max_file) continue;
               if(e4 + e5 + e6 > E3max_file) continue;
               if( (l1+l2+l3)%2 != (l4+l5+l6)%2 ) continue;
-
               for (int J = std::max( std::abs(j1-j2), std::abs(j4-j5) )/2;
                   J <= std::min( j1+j2, j4+j5 )/2; J++) {
                 for (int T12: {0,1}){
@@ -489,12 +509,6 @@ void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
                       }
                       counter += 1;
                       total_counter += 1;
-                      //std::cout <<
-                      //  std::setw(4) << i1 << std::setw(4) << i2 << std::setw(4) << i3 << std::setw(4) << T12 <<
-                      //  std::setw(4) << i4 << std::setw(4) << i5 << std::setw(4) << i6 << std::setw(4) << T45 <<
-                      //  std::setw(4) << J << std::setw(4) << T3 << std::setw(16) << counter <<
-                      //  std::setw(12) << std::setprecision(6) << v[counter-1] << std::endl;
-                      //std::cout << Emax << " " << E2max << " " << E3max << std::endl;
 
                       if( e1 > Emax) continue;
                       if( e2 > Emax) continue;
@@ -534,6 +548,11 @@ void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
                             std::setw(12) << std::setprecision(6) << v[counter-1] << std::endl;
                         }
                       }
+                      //std::cout <<
+                      //  std::setw(4) << i1 << std::setw(4) << i2 << std::setw(4) << i3 << std::setw(4) << T12 <<
+                      //  std::setw(4) << i4 << std::setw(4) << i5 << std::setw(4) << i6 << std::setw(4) << T45 <<
+                      //  std::setw(4) << J << std::setw(4) << T3 << std::setw(16) << counter <<
+                      //  std::setw(12) << std::setprecision(6) << v[counter-1] << std::endl;
                       SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, v[counter-1]);
 
                     }

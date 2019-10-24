@@ -5,6 +5,7 @@
 #include <array>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include "ModelSpace.hh"
 
 typedef float ThreeBME_type;
@@ -28,11 +29,14 @@ class ThreeBodyChannelNO2B
     int P1;
     int T3;
     int Ndim;
-    std::map<std::array<int,4>, int> abct2n;
-    std::map<std::array<int,4>, int> iphase;
+    std::unordered_map<int, int> abct2n;
+    std::unordered_map<int, int> iphase;
+
     ThreeBodyChannelNO2B();
     ThreeBodyChannelNO2B(int, int, int, int, int, ThreeBodyMENO2B*);
     ~ThreeBodyChannelNO2B();
+    int Hash_abct(int, int, int, int);
+    void UnHash_abct(int, int&, int&, int&, int&);
 };
 
 
@@ -79,7 +83,7 @@ class ThreeBodyMENO2B
     ThreeBodyMENO2B& operator-=(const ThreeBodyMENO2B&);
 
     void Allocate(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file, std::string filename);
-    size_t idx1d(size_t bra, size_t ket) { return std::max(bra,ket) * (std::max(bra,ket)-1)/2 + std::min(bra,ket);};
+    size_t idx1d(size_t bra, size_t ket) { return std::max(bra+1,ket+1) * (std::max(bra+1,ket+1)-1)/2 + std::min(bra+1,ket+1)-1;};
     void SetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3, ThreeBME_type V);
     ThreeBME_type GetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3);
     ThreeBME_type GetThBME(int a, int b, int c, int d, int e, int f, int J2);
