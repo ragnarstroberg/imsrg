@@ -360,7 +360,7 @@ int main(int argc, char** argv)
       std::cout << "done reading 3N" << std::endl;
     }
     if(input3bme_type == "no2b"){
-      Hbare.ThreeBodyNO2B.Set(modelspace&, file3e1max, file3e2max, file3e3max, file3e1max, input3bme);
+      Hbare.ThreeBodyNO2B.Allocate(modelspace, file3e1max, file3e2max, file3e3max, file3e1max, input3bme);
       Hbare.ThreeBodyNO2B.ReadFile();
       std::cout << "done reading 3N" << std::endl;
     }
