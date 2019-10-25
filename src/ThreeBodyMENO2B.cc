@@ -105,14 +105,14 @@ ThreeBodySpaceNO2B::ThreeBodySpaceNO2B(ThreeBodyMENO2B* thr)
           for (int T3 : {1,3}){
             ThreeBodyChannelNO2B channel(J2, P2, J1, P1, T3, thr);
             if(channel.Ndim < 1) continue;
-            std::cout <<
-              "   J2 = " << std::setw(4) << J2 <<
-              ",  P2 = " << std::setw(4) << P2 <<
-              ",  J1 = " << std::setw(4) << J1 <<
-              ",  P1 = " << std::setw(4) << P1 <<
-              ",  T3 = " << std::setw(4) << T3 <<
-              ",  Ndim = " << std::setw(10) << channel.Ndim <<
-              std::endl;
+            //std::cout <<
+            //  "   J2 = " << std::setw(4) << J2 <<
+            //  ",  P2 = " << std::setw(4) << P2 <<
+            //  ",  J1 = " << std::setw(4) << J1 <<
+            //  ",  P1 = " << std::setw(4) << P1 <<
+            //  ",  T3 = " << std::setw(4) << T3 <<
+            //  ",  Ndim = " << std::setw(10) << channel.Ndim <<
+            //  std::endl;
             ThreeBodyChannels.push_back(channel);
             int key = Hash_Channel(J2,P2,J1,P1,T3);
             int j2, p2, j1, p1, t3;
@@ -364,9 +364,12 @@ void ThreeBodyMENO2B::ReadFile()
     std::ifstream infile(FileName, std::ios::binary);
     infile.seekg(0, infile.end);
     size_t n_elem = infile.tellg();
-    n_elem /= sizeof(float);
+    infile.seekg(0, infile.beg);
+    n_elem -= infile.tellg();
+    n_elem /= sizeof(ThreeBME_type);
     std::vector<float> v(n_elem);
-    infile.read((char*)&v[0], n_elem*sizeof(float));
+    infile.read((char*)&v[0], n_elem*sizeof(ThreeBME_type));
+    //for (int i = 0; i<50; i++){ std::cout<<v[i]<<std::endl;}
     VectorStream vecstream(v);
     ReadStream(vecstream, n_elem);
     return;
