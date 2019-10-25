@@ -54,8 +54,6 @@ HartreeFock::HartreeFock(Operator& hbare)
    }
    UpdateDensityMatrix();
    UpdateF();
-   CalcEHF();
-   PrintEHF();
 
 }
 
@@ -355,7 +353,7 @@ void HartreeFock::BuildMonopoleV3()
 
    if(Hbare.ThreeBodyNO2B.initialized)
    {
-//#pragma omp parallel for schedule(dynamic,1)
+#pragma omp parallel for schedule(dynamic,1)
      for (size_t ind=0; ind<Vmon3.size(); ++ind)
      {
        double v=0;
@@ -378,8 +376,7 @@ void HartreeFock::BuildMonopoleV3()
          v += Hbare.ThreeBodyNO2B.GetThBME(a,c,i,b,d,j,j2);
        }
        v /= j2i+1.0;
-       //std::cout << " MONOPOLE: " << a << " " << c << " " << i << " " << b << " " << d << " " << j << "  " << v << std::endl;
-//#pragma omp atomic write
+#pragma omp atomic write
        Vmon3[ind] = v ;
      }
    }
@@ -1030,63 +1027,121 @@ Operator HartreeFock::GetNormalOrderedH()
    int nchan = modelspace->GetNumberTwoBodyChannels();
 //   int norb = modelspace->GetNumberOrbits();
 //   #pragma omp parallel for schedule(dynamic,1) // have not yet confirmed that this improves performance ... no sign of significant improvement
-   for (int ch=0;ch<nchan;++ch)
-   {
-      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      int J = tbc.J;
-      int npq = tbc.GetNumberKets();
+   if(Hbare.ThreeBodyNO2B.initialized){
+     for (int ch=0;ch<nchan;++ch)
+     {
+       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+       int J = tbc.J;
+       int npq = tbc.GetNumberKets();
 
-      arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
-      arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+       arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+       arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
 
-      #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
-      for (int i=0; i<npq; ++i)
-      {
+#pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
+       for (int i=0; i<npq; ++i)
+       {
          Ket & bra = tbc.GetKet(i);
          int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
          for (int j=0; j<npq; ++j)
          {
-            Ket & ket = tbc.GetKet(j);
-            int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
-            D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
-            if (bra.p!=bra.q)
-            {
-               D(i,j) += C(bra.q,ket.p) * C(bra.p,ket.q) * bra.Phase(J);
-            }
-            if (bra.p==bra.q)    D(i,j) *= PhysConst::SQRT2;
-            if (ket.p==ket.q)    D(i,j) /= PhysConst::SQRT2;
+           Ket & ket = tbc.GetKet(j);
+           int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
+           D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
+           if (bra.p!=bra.q)
+           {
+             D(i,j) += C(bra.q,ket.p) * C(bra.p,ket.q) * bra.Phase(J);
+           }
+           if (bra.p==bra.q)    D(i,j) *= PhysConst::SQRT2;
+           if (ket.p==ket.q)    D(i,j) /= PhysConst::SQRT2;
 
-            // Now generate the NO2B part of the 3N interaction
-            if (Hbare.GetParticleRank()<3) continue;
-            if (i>j) continue;
-//            for (int a=0; a<norb; ++a)
-            for ( auto a : modelspace->all_orbits )
-            {
-              Orbit & oa = modelspace->GetOrbit(a);
-              if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
-              for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
-              {
-                Orbit & ob = modelspace->GetOrbit(b);
-                if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
-                if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
-                int J3min = std::abs(2*J-oa.j2);
-                int J3max = 2*J + oa.j2;
-                for (int J3=J3min; J3<=J3max; J3+=2)
-                {
-                  V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
-                }
-              }
-            }
-            V3NO(i,j) /= (2*J+1);
-            if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2;
-            if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2;
-            V3NO(j,i) = V3NO(i,j);
+           // Now generate the NO2B part of the 3N interaction
+           if (Hbare.GetParticleRank()<3) continue;
+           if (i>j) continue;
+           //            for (int a=0; a<norb; ++a)
+           for ( auto a : modelspace->all_orbits )
+           {
+             Orbit & oa = modelspace->GetOrbit(a);
+             if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
+             for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+             {
+               Orbit & ob = modelspace->GetOrbit(b);
+               if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
+               if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
+               V3NO(i,j) += rho(a,b) * Hbare.ThreeBodyNO2B.GetThBME(bra.p, bra.q, a, ket.p, ket.q, b, J);
+             }
+           }
+           V3NO(i,j) /= (2*J+1);
+           if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2;
+           if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2;
+           V3NO(j,i) = V3NO(i,j);
          }
-      }
+       }
 
-     auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
-     auto& OUT =  HNO.TwoBody.GetMatrix(ch);
-     OUT  =    D.t() * (V2 + V3NO) * D;
+       auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
+       auto& OUT =  HNO.TwoBody.GetMatrix(ch);
+       OUT  =    D.t() * (V2 + V3NO) * D;
+     }
+   }
+
+   else{
+     for (int ch=0;ch<nchan;++ch)
+     {
+       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+       int J = tbc.J;
+       int npq = tbc.GetNumberKets();
+
+       arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+       arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+
+#pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
+       for (int i=0; i<npq; ++i)
+       {
+         Ket & bra = tbc.GetKet(i);
+         int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
+         for (int j=0; j<npq; ++j)
+         {
+           Ket & ket = tbc.GetKet(j);
+           int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
+           D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
+           if (bra.p!=bra.q)
+           {
+             D(i,j) += C(bra.q,ket.p) * C(bra.p,ket.q) * bra.Phase(J);
+           }
+           if (bra.p==bra.q)    D(i,j) *= PhysConst::SQRT2;
+           if (ket.p==ket.q)    D(i,j) /= PhysConst::SQRT2;
+
+           // Now generate the NO2B part of the 3N interaction
+           if (Hbare.GetParticleRank()<3) continue;
+           if (i>j) continue;
+           //            for (int a=0; a<norb; ++a)
+           for ( auto a : modelspace->all_orbits )
+           {
+             Orbit & oa = modelspace->GetOrbit(a);
+             if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
+             for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+             {
+               Orbit & ob = modelspace->GetOrbit(b);
+               if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
+               if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
+               int J3min = std::abs(2*J-oa.j2);
+               int J3max = 2*J + oa.j2;
+               for (int J3=J3min; J3<=J3max; J3+=2)
+               {
+                 V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
+               }
+             }
+           }
+           V3NO(i,j) /= (2*J+1);
+           if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2;
+           if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2;
+           V3NO(j,i) = V3NO(i,j);
+         }
+       }
+
+       auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
+       auto& OUT =  HNO.TwoBody.GetMatrix(ch);
+       OUT  =    D.t() * (V2 + V3NO) * D;
+     }
    }
 
 //   FreeVmon();

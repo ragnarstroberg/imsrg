@@ -37,8 +37,8 @@ ThreeBodyChannelNO2B::ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T
       OrbitIsospin ob = thr->iOrbits[ib];
       if(ob.e > emax) continue;
       if(oa.e + ob.e > e2max) continue;
-      if(std::abs(oa.j-ob.j)*2 > J2) continue;
-      if(        (oa.j+ob.j)*2 < J2) continue;
+      if(std::abs(oa.j-ob.j) > 2*J2) continue;
+      if(        (oa.j+ob.j) < 2*J2) continue;
       if((oa.l+ob.l)%2 != P2) continue;
       for (int ic=0; ic < thr->iOrbits.size(); ic++){
         OrbitIsospin oc = thr->iOrbits[ic];
@@ -112,7 +112,19 @@ ThreeBodySpaceNO2B::ThreeBodySpaceNO2B(ThreeBodyMENO2B* thr)
             //  ",  Ndim = " << std::setw(10) << channel.Ndim <<
             //  std::endl;
             ThreeBodyChannels.push_back(channel);
-            idcs2ch[{J2,P2,J1,P1,T3}] = cnt;
+            int key = Hash_Channel(J2,P2,J1,P1,T3);
+            int j2, p2, j1, p1, t3;
+            UnHash_Channel(key,j2,p2,j1,p1,t3);
+            if(J2 != j2 or P2 != p2 or J1 != j1 or P1 != p1 or T3 != t3){
+            std::cout <<
+              "   j2 = " << std::setw(4) << j2 <<
+              ",  p2 = " << std::setw(4) << p2 <<
+              ",  j1 = " << std::setw(4) << j1 <<
+              ",  p1 = " << std::setw(4) << p1 <<
+              ",  t3 = " << std::setw(4) << t3 <<
+              std::endl;
+            }
+            idcs2ch[GetChannelIndex(J2,P2,J1,P1,T3)] = cnt;
             cnt += 1;
           }
         }
@@ -121,6 +133,21 @@ ThreeBodySpaceNO2B::ThreeBodySpaceNO2B(ThreeBodyMENO2B* thr)
   }
   NChannels = ThreeBodyChannels.size();
 }
+
+int ThreeBodySpaceNO2B::Hash_Channel(int J2, int P2, int J1, int P1, int T3)
+{
+  return ( J2 + (J1<<8) + (P2<<16) + (P1<<17) + (T3<<18) );
+}
+
+void ThreeBodySpaceNO2B::UnHash_Channel(int key, int& J2, int& P2, int& J1, int& P1, int& T3)
+{
+  J2 = ( (key>> 0) & 255 );
+  J1 = ( (key>> 8) & 255 );
+  P2 = ( (key>>16) & 1 );
+  P1 = ( (key>>17) & 1 );
+  T3 = ( (key>>18) & 255 );
+}
+
 
 ThreeBodyMENO2B::~ThreeBodyMENO2B()
 {}
@@ -133,7 +160,6 @@ ThreeBodyMENO2B::ThreeBodyMENO2B()
 ThreeBodyMENO2B::ThreeBodyMENO2B(const ThreeBodyMENO2B& tbme)
   : modelspace(tbme.modelspace), threebodyspace(tbme.threebodyspace),
   MatEl( tbme.MatEl ), iOrbits( tbme.iOrbits ),  nlj2idx(tbme.nlj2idx),
-  nljz2idx(tbme.nljz2idx), cgs(tbme.cgs),
   Emax(tbme.Emax), E2max(tbme.E2max),
   E3max(tbme.E3max), Lmax(tbme.Lmax),
   Emax_file(tbme.Emax_file), E2max_file(tbme.E2max_file),
@@ -221,12 +247,12 @@ void ThreeBodyMENO2B::Allocate(ModelSpace & ms,
 void ThreeBodyMENO2B::SetThBME(int a, int b, int c, int Tab,
     int d, int e, int f, int Tde, int J2, int T3, ThreeBME_type V)
 {
-  OrbitIsospin oa = iOrbits[a];
-  OrbitIsospin ob = iOrbits[b];
-  OrbitIsospin oc = iOrbits[c];
-  OrbitIsospin od = iOrbits[d];
-  OrbitIsospin oe = iOrbits[e];
-  OrbitIsospin of = iOrbits[f];
+  OrbitIsospin & oa = iOrbits[a];
+  OrbitIsospin & ob = iOrbits[b];
+  OrbitIsospin & oc = iOrbits[c];
+  OrbitIsospin & od = iOrbits[d];
+  OrbitIsospin & oe = iOrbits[e];
+  OrbitIsospin & of = iOrbits[f];
 
   int P1 = oc.l%2;
   if(P1 != of.l%2) return;
@@ -237,10 +263,10 @@ void ThreeBodyMENO2B::SetThBME(int a, int b, int c, int Tab,
   int P2 = (oa.l + ob.l)%2;
   if(P2 != (od.l + oe.l)%2) return;
 
-  int ch = threebodyspace.idcs2ch[{J2,P2,J1,P1,T3}];
+  int ch = threebodyspace.idcs2ch[threebodyspace.GetChannelIndex(J2,P2,J1,P1,T3)];
   ThreeBodyChannelNO2B ch_no2b = threebodyspace.ThreeBodyChannels[ch];
-  int ibra = ch_no2b.Hash_abct(a,b,c,Tab);
-  int iket = ch_no2b.Hash_abct(d,e,f,Tde);
+  int ibra = ch_no2b.GetIndex(a,b,c,Tab);
+  int iket = ch_no2b.GetIndex(d,e,f,Tde);
   if(ch_no2b.iphase.find(ibra) == ch_no2b.iphase.end()) return;
   if(ch_no2b.iphase.find(iket) == ch_no2b.iphase.end()) return;
   int ph = ch_no2b.iphase[ibra] * ch_no2b.iphase[iket];
@@ -253,12 +279,12 @@ void ThreeBodyMENO2B::SetThBME(int a, int b, int c, int Tab,
 ThreeBME_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int Tab,
     int d, int e, int f, int Tde, int J2, int T3)
 {
-  OrbitIsospin oa = iOrbits[a];
-  OrbitIsospin ob = iOrbits[b];
-  OrbitIsospin oc = iOrbits[c];
-  OrbitIsospin od = iOrbits[d];
-  OrbitIsospin oe = iOrbits[e];
-  OrbitIsospin of = iOrbits[f];
+  OrbitIsospin & oa = iOrbits[a];
+  OrbitIsospin & ob = iOrbits[b];
+  OrbitIsospin & oc = iOrbits[c];
+  OrbitIsospin & od = iOrbits[d];
+  OrbitIsospin & oe = iOrbits[e];
+  OrbitIsospin & of = iOrbits[f];
 
   int P1 = oc.l%2;
   if(P1 != of.l%2) return 0.0;
@@ -269,10 +295,10 @@ ThreeBME_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int Tab,
   int P2 = (oa.l + ob.l)%2;
   if(P2 != (od.l + oe.l)%2) return 0.0;
 
-  int ch = threebodyspace.idcs2ch[{J2,P2,J1,P1,T3}];
+  int ch = threebodyspace.idcs2ch[threebodyspace.GetChannelIndex(J2,P2,J1,P1,T3)];
   ThreeBodyChannelNO2B ch_no2b = threebodyspace.ThreeBodyChannels[ch];
-  int ibra = ch_no2b.Hash_abct(a,b,c,Tab);
-  int iket = ch_no2b.Hash_abct(d,e,f,Tde);
+  int ibra = ch_no2b.GetIndex(a,b,c,Tab);
+  int iket = ch_no2b.GetIndex(d,e,f,Tde);
   if(ch_no2b.iphase.find(ibra) == ch_no2b.iphase.end()) return 0.0;
   if(ch_no2b.iphase.find(iket) == ch_no2b.iphase.end()) return 0.0;
   int ph = ch_no2b.iphase[ibra] * ch_no2b.iphase[iket];
@@ -449,6 +475,7 @@ void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
     int j1 = o1.j;
     int l1 = o1.l;
     int e1 = o1.e;
+    if(e1 > Emax) continue;
     if(e1 > Emax_file) continue;
     for (int i2=0; i2 <= i1; i2++) {
       OrbitIsospin o2 = iOrbits[i2];

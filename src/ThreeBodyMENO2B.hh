@@ -35,6 +35,8 @@ class ThreeBodyChannelNO2B
     ThreeBodyChannelNO2B();
     ThreeBodyChannelNO2B(int, int, int, int, int, ThreeBodyMENO2B*);
     ~ThreeBodyChannelNO2B();
+    int GetIndex(int a, int b, int c, int Tab) {return Hash_abct(a, b, c, Tab);};
+  private:
     int Hash_abct(int, int, int, int);
     void UnHash_abct(int, int&, int&, int&, int&);
 };
@@ -44,11 +46,15 @@ class ThreeBodySpaceNO2B
 {
   public:
     std::vector<ThreeBodyChannelNO2B> ThreeBodyChannels;
-    std::map<std::array<int,5>, int> idcs2ch;
+    std::unordered_map<int, int> idcs2ch;
     int NChannels;
     ThreeBodySpaceNO2B();
     ThreeBodySpaceNO2B(ThreeBodyMENO2B*);
     ~ThreeBodySpaceNO2B();
+    int GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T) {return Hash_Channel(Jab, Pab, Jc, Pc, T);};
+  private:
+    int Hash_Channel(int, int, int, int, int);
+    void UnHash_Channel(int, int&, int&, int&, int&, int&);
 };
 
 
@@ -60,8 +66,6 @@ class ThreeBodyMENO2B
     std::map<int, std::vector<ThreeBME_type>> MatEl;
     std::vector<OrbitIsospin> iOrbits;
     std::map<std::array<int,3>, int> nlj2idx;
-    std::map<std::array<int,4>, int> nljz2idx;
-    std::map<std::array<int,6>, double> cgs;
     int Emax;
     int E2max;
     int E3max;
