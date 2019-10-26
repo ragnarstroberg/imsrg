@@ -1005,19 +1005,6 @@ Operator HartreeFock::GetNormalOrderedH()
    if (not freeze_occupations)
    {
      UpdateReference();
-//     bool changed_occupations = false;
-//     std::map<index_t,double> hole_map;
-//     std::cout << "Looking through holeorbs to see if we changed occupations" << std::endl;
-//     for (index_t i=0;i<holeorbs.size();++i)
-//     {
-//        hole_map[holeorbs[i]] = hole_occ[i];
-//        if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
-//        {
-//           changed_occupations = true;
-//           std::cout << "After HF, occupation of orbit " << i << " has changed. Modelspace will be updated." << std::endl;
-//        }
-//     }
-//     if (changed_occupations)  modelspace->SetReference( hole_map );
    }
 
    Operator HNO = Operator(*modelspace,0,0,0,2);
