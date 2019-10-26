@@ -54,7 +54,6 @@ HartreeFock::HartreeFock(Operator& hbare)
    }
    UpdateDensityMatrix();
    UpdateF();
-   std::cout << "Vij" << std::endl << Vij << std::endl;
 
 }
 
@@ -382,7 +381,6 @@ void HartreeFock::BuildMonopoleV3()
       v /= j2i+1.0;
       #pragma omp atomic write
       Vmon3[ind] = v ;
-//      std::cout << " MONOPOLE: " << a << " " << c << " " << i << " " << b << " " << d << " " << j << "  " << v << std::endl;
    }
    std::cout << "HartreeFock::BuildMonopoleV3  storing " << Vmon3.size() << " doubles for Vmon3 and "
              << Vmon3_keys.size() << " uint64's for Vmon3_keys." << std::endl;
@@ -732,10 +730,6 @@ void HartreeFock::UpdateF()
                   Vij(i,j) += rho(a,b)*Vmon_exch[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|jb>
                else
                   Vij(i,j) += rho(a,b)*Vmon[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|bj>
-               if (i==0 and j==0)
-               {
-                 std::cout << "i,j = " << i << " " << j << "  a,b =  " << a << " " << b << "  Vij = " << Vij(i,j) << std::endl;
-               }
            }
          }
       }
@@ -760,7 +754,6 @@ void HartreeFock::UpdateF()
 
    Vij  = arma::symmatu(Vij);
    V3ij = arma::symmatu(V3ij);
-//   std::cout << "Updating F.  " << std::endl << "KE: " << std::endl << KE << std::endl << std::endl << "Vij" << std::endl << Vij << std::endl;
 
    F = KE + Vij + 0.5*V3ij;
 
@@ -938,7 +931,6 @@ void HartreeFock::UpdateReference()
   for (index_t i=0;i<holeorbs.size();++i)  
   {
      hole_map[holeorbs[i]] = hole_occ[i];
-//     std::cout << "i = " << i << " hole_occ = " << hole_occ << "  diff = " << std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) << std::endl;
      if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
      {
         changed_occupations = true;
@@ -978,19 +970,6 @@ Operator HartreeFock::GetNormalOrderedH()
    if (not freeze_occupations)
    {
      UpdateReference();
-//     bool changed_occupations = false;
-//     std::map<index_t,double> hole_map;
-//     std::cout << "Looking through holeorbs to see if we changed occupations" << std::endl;
-//     for (index_t i=0;i<holeorbs.size();++i)  
-//     {
-//        hole_map[holeorbs[i]] = hole_occ[i];
-//        if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
-//        {
-//           changed_occupations = true;
-//           std::cout << "After HF, occupation of orbit " << i << " has changed. Modelspace will be updated." << std::endl;
-//        }
-//     }
-//     if (changed_occupations)  modelspace->SetReference( hole_map );
    }
 
    Operator HNO = Operator(*modelspace,0,0,0,2);

@@ -436,7 +436,6 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::set<ind
 //               << std::endl;
 //   }
 //   std::cout << std::endl;
-   std::cout << __func__ << "  begin loop over orbits" << std::endl;
 
    for (int N=0; N<=Emax; ++N)
    {
@@ -455,7 +454,7 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::set<ind
 //                      << "  " << (hole_quantum_numbers.find({l,j2,tz})==hole_quantum_numbers.end())
 //                      << std::endl;
 //            if ( ((2*n+l)>EmaxUnocc) and (hole_quantum_numbers.find({l,j2,tz})==hole_quantum_numbers.end()) ) continue;
-            std::cout << "n,l,j,tz " << n << " " << l << " " << j2 << " " << tz << std::endl;
+//            std::cout << "n,l,j,tz " << n << " " << l << " " << j2 << " " << tz << std::endl;
             if ( ((2*n+l)>EmaxUnocc) and (hole_quantum_numbers.find({l,j2})==hole_quantum_numbers.end()) ) continue;
             double occ = 0;
             int cvq = 2;
@@ -470,7 +469,6 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::set<ind
      }
    }
    norbits = all_orbits.size();
-   std::cout << "done with that loop" << std::endl;
 //   Orbits.resize(norbits);
 //   std::cout << "Orbit[0] has index " << Orbits[0].index << std::endl;
 //   Aref = 0;
@@ -499,10 +497,8 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::set<ind
 //   std::cout << std::endl;
    SetTargetMass(Aref);
    SetTargetZ(Zref);
-   std::cout << "Set up Kets " << std::endl;
    SetupKets();
    Setup3bKets();
-   std::cout << "done setting up kets" << std::endl;
 }
 
 
@@ -1012,7 +1008,6 @@ size_t ModelSpace::Index2(size_t p, size_t q) const
 
 void ModelSpace::SetupKets()
 {
-   std::cout << __func__ << " BEGIN " << std::endl;
    Kets.resize(Index2(all_orbits.size()-1,all_orbits.size()-1)+1);
    for (auto p : all_orbits )
    {
@@ -1027,7 +1022,6 @@ void ModelSpace::SetupKets()
     {
     for (auto q : all_orbits)
     {
-      std::cout << "p,q " << p << " " << q << std::endl;
      if (q<p) continue;
     index_t index = Index2(p,q);
     Ket& ket = Kets[index];
@@ -1062,27 +1056,21 @@ void ModelSpace::SetupKets()
     }
    }
    }
-   std::cout << "done with pq loop" << std::endl;
 
    SortedTwoBodyChannels.resize(nTwoBodyChannels);
    SortedTwoBodyChannels_CC.resize(nTwoBodyChannels);
    for (int ch=0;ch<nTwoBodyChannels;++ch)
    {
-      std::cout << "ch = " << ch << std::endl;
       TwoBodyChannels.emplace_back(TwoBodyChannel(ch,this));
-      std::cout << "cc stuff" << std::endl;
       TwoBodyChannels_CC.emplace_back(TwoBodyChannel_CC(ch,this));
-      std::cout << "sorted stuff" << std::endl;
       SortedTwoBodyChannels[ch] = ch;
       SortedTwoBodyChannels_CC[ch] = ch;
    }
-   std::cout << "done with loop over two body channels " << std::endl;
    // Hopefully this can help with load balancing.
    sort(SortedTwoBodyChannels.begin(),SortedTwoBodyChannels.end(),[this](int i, int j){ return TwoBodyChannels[i].GetNumberKets() > TwoBodyChannels[j].GetNumberKets(); }  );
    sort(SortedTwoBodyChannels_CC.begin(),SortedTwoBodyChannels_CC.end(),[this](int i, int j){ return TwoBodyChannels_CC[i].GetNumberKets() > TwoBodyChannels_CC[j].GetNumberKets(); }  );
    while (  TwoBodyChannels[ SortedTwoBodyChannels.back() ].GetNumberKets() <1 ) SortedTwoBodyChannels.pop_back();
    while (  TwoBodyChannels_CC[ SortedTwoBodyChannels_CC.back() ].GetNumberKets() <1 ) SortedTwoBodyChannels_CC.pop_back();
-   std::cout << "Done with sorted two body channels " << std::endl;
 }
 
 
@@ -1091,7 +1079,6 @@ void ModelSpace::SetupKets()
 /// Just make a vector of all the possible 3b kets
 void ModelSpace::Setup3bKets()
 {
-  std::cout << "IN " << __func__ << std::endl;
   Kets3.resize(0);
   // I'm using a set here because it only stores unique
   // elements, so we don't need to worry about that
@@ -1208,20 +1195,28 @@ void ModelSpace::SetEmaxUnocc(int e)
 
   hole_quantum_numbers.clear();
   std::map<index_t,double> holemap;
+  int max_l = -1;
   for (auto h : holes )
   {
     Orbit& oh = GetOrbit(h);
     holemap[h] = oh.occ;
 //    hole_quantum_numbers.insert( { oh.l, oh.j2, oh.tz2} );
-    hole_quantum_numbers.insert( { oh.l, oh.j2} );
+//    hole_quantum_numbers.insert( { oh.l, oh.j2} );
+    max_l = std::max(max_l, oh.l);
   }
 
-  std::cout << "hole quantum numbers: " << std::endl;
-  for (auto& hqn : hole_quantum_numbers )
+  for (int l=0; l<=std::min(Emax,max_l+2); l++)
   {
-//    std::cout << hqn[0] << " " << hqn[1] << " " << hqn[2] << std::endl;
-    std::cout << hqn[0] << " " << hqn[1]  << std::endl;
+    hole_quantum_numbers.insert( {l,2*l+1});
+    if (l>0) hole_quantum_numbers.insert( {l,2*l-1} );
   }
+
+//  std::cout << "hole quantum numbers: " << std::endl;
+//  for (auto& hqn : hole_quantum_numbers )
+//  {
+//    std::cout << hqn[0] << " " << hqn[1] << " " << hqn[2] << std::endl;
+//    std::cout << hqn[0] << " " << hqn[1]  << std::endl;
+//  }
 
 //  for ( auto h : holes ) holemap[h] = GetOrbit(h).occ;
 //  Init(Emax, holemap,c,v);

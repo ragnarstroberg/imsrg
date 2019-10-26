@@ -820,8 +820,6 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
       {
          orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
          Orbit& oi = modelspace->GetOrbit( orbits_remap.back() );
-//         std::cout << " nlj: " << orbits_remap.size()-1 << "  n,l,j " << n << " " << l << " " << twoj
-//                   << "  => " << orbits_remap.back() << "  " << oi.n << " " << oi.l << " " << oi.j2 << std::endl;
          energy_vals.push_back( 2*n+l);
          l_vals.push_back(l);
          j_vals.push_back(twoj);
@@ -852,7 +850,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
       Orbit & o2 = modelspace->GetOrbit(b);
       int e2 = 2*o2.n + o2.l;
 //      if (e1+e2 > Emax) break;
-      if ( (energy_vals[nlj1] + energy_vals[nlj2]) > modelspace->Emax) break;
+      if ( (energy_vals[nlj1] + energy_vals[nlj2]) > Emax) break;
       int parity = (o1.l + o2.l) % 2;
 
       for(int nlj3=0; nlj3<=nlj1; ++nlj3)
@@ -867,7 +865,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
           Orbit & o4 = modelspace->GetOrbit(d);
           int e4 = 2*o4.n + o4.l;
 //          if (e3+e4 > Emax) break;
-          if ( (energy_vals[nlj3] + energy_vals[nlj4]) > modelspace->Emax) break;
+          if ( (energy_vals[nlj3] + energy_vals[nlj4]) > Emax) break;
 //          if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
           if ( (l_vals[nlj1]+l_vals[nlj2]+l_vals[nlj3]+l_vals[nlj4])%2 != 0) continue;
           int Jmin = std::max( std::abs(j_vals[nlj1] - j_vals[nlj2]), std::abs(j_vals[nlj3] - j_vals[nlj4]) )/2;
@@ -875,8 +873,6 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 //          int Jmin = std::max( std::abs(o1.j2 - o2.j2), std::abs(o3.j2 - o4.j2) )/2;
 //          int Jmax = std::min(o1.j2 + o2.j2, o3.j2+o4.j2)/2;
           if (Jmin > Jmax) continue;
-          std::cout << "....... " << nreads << "   " << nlj1 << " " << nlj2 << " " << nlj3 << " " << nlj4
-                    << "   " << o1.l << " " << o2.l << " " << o3.l << " " << o4.l << "   Jmin,Jmax " << Jmin << " " << Jmax << std::endl;
           for (int J=Jmin; J<=Jmax; ++J)
           {
 
@@ -893,9 +889,6 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
              if (a==b)  norm_factor /= PhysConst::SQRT2;
              if (c==d)  norm_factor /= PhysConst::SQRT2;
 
-             std::cout << a << " " << b << " " << c << " " << d << "   " << J << "   "
-                  << std::fixed << std::setprecision(7) << std::setw(11) << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp << std::endl;
-//             std::cout << __func__ << "  made it here abcd = " << a << " " << b << " " << c << " " << d << " setting tbme. (norb = " << norb << ")  " << o1.n << " " << o1.l << " " << o1.j2 << std::endl;
 
              if (norm_factor>0.9 or J%2==0)
              {
@@ -906,16 +899,6 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
              if (norm_factor>0.9 or J%2!=0)
              { 
                 Hbare.TwoBody.Set_pn_TBME_from_iso(J,0,0,a,b,c,d,tbme_00*norm_factor);
-//                if (a==14 and b==0 and c==14 and d==0)
-//                {
-//                   std::cout << nreads << "  setting <14,0|V|14,0> J=" << J << " to " << tbme_00*norm_factor
-//                             << " nlj indices " << nlj1 << " " << nlj2 << " " << nlj3 << " " << nlj4 << std::endl;
-//                }
-//                if (a==10 and b==0 and c==10 and d==0)
-//                {
-//                   std::cout << nreads << "  setting <10,0|V|10,0> J=" << J << " to " << tbme_00*norm_factor
-//                             << " nlj indices " << nlj1 << " " << nlj2 << " " << nlj3 << " " << nlj4 << std::endl;
-//                }
              }
 
           }
