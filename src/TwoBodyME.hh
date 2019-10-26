@@ -72,6 +72,7 @@ class TwoBodyME
 
 //  void Copy(const TwoBodyME&);
   void Allocate();
+  void Deallocate();
   bool IsHermitian(){return hermitian;};
   bool IsAntiHermitian(){return antihermitian;};
   bool IsNonHermitian(){return not (hermitian or antihermitian);};

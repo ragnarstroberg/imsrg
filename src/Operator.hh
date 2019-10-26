@@ -23,6 +23,9 @@
 #include "ModelSpace.hh"
 #include "TwoBodyME.hh"
 #include "ThreeBodyME.hh"
+#include "ThreeBodyMENO2B.hh"
+#include "ThreeBodyMEpn.hh"
+#include "ThreeLegME.hh"
 #include "IMSRGProfiler.hh"
 #include <armadillo>
 #include <fstream>
@@ -30,6 +33,7 @@
 #include <vector>
 #include <array>
 #include <deque>
+#include <set>
 #include <map>
 
 //using namespace std;
@@ -46,7 +50,10 @@ class Operator
   double ZeroBody; ///< The zero body piece of the operator.
   arma::mat OneBody; ///< The one body piece of the operator, stored in a single NxN armadillo matrix, where N is the number of single-particle orbits.
   TwoBodyME TwoBody; ///< The two body piece of the operator.
-  ThreeBodyME ThreeBody; ///< The three body piece of the operator.
+//  ThreeBodyME ThreeBody; ///< The three body piece of the operator.
+  ThreeBodyMENO2B ThreeBodyNO2B; ///< The three body piece of the operator.
+  ThreeBodyMEpn ThreeBody; ///< The three body piece of the operator.
+  ThreeLegME ThreeLeg;  ///< Three-legged operators, used if this is a particle-number-changing operator, i.e. if legs is odd
 
   int rank_J; ///< Spherical tensor rank of the operator
   int rank_T; ///< Isotensor rank of the operator
@@ -63,8 +70,9 @@ class Operator
 
 
 
-  std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
-  index_t Q_space_orbit; // Orbit with the same quantum numbers as this dagger operator. -1 if it's not a dagger operator. 
+  std::map<std::array<int,3>,std::set<index_t> > OneBodyChannels;  // a set makes more sense for this, because it only contains unique entries
+//  std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
+  index_t Q_space_orbit; // Orbit with the same quantum numbers as this dagger operator. -1 if it's not a dagger operator.
 
 //  static IMSRGProfiler profiler;
   IMSRGProfiler profiler;
@@ -100,13 +108,13 @@ class Operator
 
   // One body setter/getters
   double GetOneBody(int i,int j) {return OneBody(i,j);};
-  void SetOneBody(int i, int j, double val) ;
+  void   SetOneBody(int i, int j, double val) ;
   size_t GetTwoBodyDimension(size_t ch_bra, size_t ch_ket){ return TwoBody.GetMatrix(ch_bra, ch_ket).n_cols;};
   double GetTwoBody(size_t ch_bra, size_t ch_ket, size_t i, size_t j);
-  void SetTwoBody(int J1, int p1, int T1, int J2, int p2, int T2, int i, int j, int k, int l, double v);
+  void   SetTwoBody(int J1, int p1, int T1, int J2, int p2, int T2, int i, int j, int k, int l, double v);
 
   void SetE3max(int e){E3max = e;};
-  int GetE3max(){return E3max;};
+  int  GetE3max(){return E3max;};
 
   // Other setter-getters
 //  ModelSpace * GetModelSpace();
@@ -118,6 +126,7 @@ class Operator
   void EraseOneBody(); ///< set all one-body terms to zero
   void EraseTwoBody(); ///< set all two-body terms to zero
   void EraseThreeBody(); ///< set all two-body terms to zero
+  void EraseThreeLeg();
 
   void SetHermitian() ;
   void SetAntiHermitian() ;
@@ -131,7 +140,8 @@ class Operator
   int GetParity()const {return parity;};
   int GetNumberLegs()const {return legs;};
   void SetParticleRank(int pr) {particle_rank = pr;};
-  void SetNumberLegs( int l) {legs = l;};
+//  void SetNumberLegs( int l) {legs = l;};
+  void SetNumberLegs( int l);
   void SetQSpaceOrbit( index_t q ) {Q_space_orbit = q;};
   index_t GetQSpaceOrbit( ) const {return Q_space_orbit;};
 
@@ -182,6 +192,7 @@ class Operator
   double OneBodyNorm() const;
   double TwoBodyNorm() const;
   double ThreeBodyNorm() const;
+  double ThreeLegNorm() const;
 
 
   double Trace(int Atrace, int Ztrace) const;

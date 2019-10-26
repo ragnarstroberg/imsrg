@@ -10,13 +10,14 @@ CC = g++
 ALL = libIMSRG.so imsrg++
 INSTDIR = $(HOME)
 INCLUDE   = -I./armadillo
-FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC 
-LIBS = -lopenblas -lgsl -lz
+FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC
+#LIBS = -lopenblas -lgsl -lz
+LIBS = -lblas -lgsl -lz
 
 # I assume we're running on linux
 OS = LINUX
 # But in case we're crazy enough to run on MacOS, might as well check...
-ifneq (,$(findstring arwin,$(shell uname))) 
+ifneq (,$(findstring arwin,$(shell uname)))
   OS = MACOS
 endif
 
@@ -28,7 +29,7 @@ ifneq (,$(findstring detached,$(BUILDVERSION)))
 endif
 
 ifeq ($(DEBUG),on)
- FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g 
+ FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g
 endif
 
 FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
@@ -38,17 +39,17 @@ FLAGS    += $(WARNFLAGS)
 
 SOFLAGS = $(FLAGS)
 
-#PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython 
+#PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython
 PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags ) -Wl,--no-as-needed
-PYTHONLIBS = -I./pybind11/include $(shell python-config  --ldflags) 
+PYTHONLIBS = -I./pybind11/include $(shell python-config  --ldflags)
 
 THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; elif [ `hostname|grep cedar` ]; then echo cedar; else echo other; fi)
 
 
 
 ifeq ($(OS),MACOS)
-#  FLAGS     = -Xpreprocessor -fopenmp -O3 -march=native -std=c++11 -fPIC 
-  FLAGS     = -Xpreprocessor -fopenmp -O3  -std=c++11 -fPIC 
+#  FLAGS     = -Xpreprocessor -fopenmp -O3 -march=native -std=c++11 -fPIC
+  FLAGS     = -Xpreprocessor -fopenmp -O3  -std=c++11 -fPIC
   LIBS += -lomp
   PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags | sed -e 's/-arch i386//')
 endif
@@ -73,7 +74,7 @@ ifeq ($(THEHOST),jureca) # specific options for jureca cluster
 endif
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  LIBS += -llapack
-# PYTHONFLAGS = -I/opt/anaconda/include/python2.7 -L/opt/boost/1.58.0/lib -lboost_python #-lpython 
+# PYTHONFLAGS = -I/opt/anaconda/include/python2.7 -L/opt/boost/1.58.0/lib -lboost_python #-lpython
   PYTHONFLAGS := -L/opt/anaconda/lib $(PYTHONFLAGS)
 endif
 ifeq ($(THEHOST),cronos)
@@ -131,7 +132,7 @@ install: splashscreen
 	fi
 	@if [ ! -d $(INSTDIR)/include ] ; then \
 	  mkdir $(INSTDIR)/include; \
-	fi 
+	fi
 	@if [ ! -d $(INSTDIR)/bin ] ; then \
 	  mkdir $(INSTDIR)/bin; \
 	fi
@@ -152,30 +153,34 @@ install: splashscreen
 	@echo '*********************************************************************'
 	@echo '* Make sure libIMSRG.so is in your LIBRARY_PATH and LD_LIBRARY_PATH *'
 	@echo '*********************************************************************'
-	 
+
 
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\
-      IMSRGProfiler.o Commutator.o \
-      DarkMatterNREFT.o Jacobi3BME.o \
-      boost_src/gzip.o boost_src/zlib.o  
+      IMSRGProfiler.o Commutator.o HFMBPT.o\
+      DarkMatterNREFT.o Jacobi3BME.o UnitTest.o \
+      TwoBodyChannel.o ThreeBodyChannel.o \
+      ThreeBodyMEpn.o ThreeLegME.o ThreeBodyMENO2B.o \
+      boost_src/gzip.o boost_src/zlib.o
 
 mysrg: main.cc $(OBJ)
-	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
+	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS)
 
 boost_src/gzip.o: boost_src/gzip.cpp
-	$(CC) -c $^ -o $@ $(INCLUDE) $(FLAGS) 
-#	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
+	$(CC) -c $^ -o $@ $(INCLUDE) $(FLAGS)
+#	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS)
 
 boost_src/zlib.o: boost_src/zlib.cpp
-	$(CC) -c $^ -o $@ $(INCLUDE) $(FLAGS) 
-#	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
+	$(CC) -c $^ -o $@ $(INCLUDE) $(FLAGS)
+#	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS)
 
 
 %.o: %.cc %.hh
-	$(CC) -c $*.cc -o $@ $(INCLUDE) $(FLAGS) 
-#	$(CC) -c $*.cc -o $@ $(INCLUDE) $(LIBS) $(FLAGS) 
+	$(CC) -c $*.cc -o $@ $(INCLUDE) $(FLAGS)
+#	$(CC) -c $*.cc -o $@ $(INCLUDE) $(LIBS) $(FLAGS)
 
+%.o: %.cc
+	$(CC) -c $*.cc -o $@ $(INCLUDE) $(FLAGS)
 
 
 libIMSRG.so: $(OBJ)
@@ -199,19 +204,19 @@ clean:
 
 
 splashscreen:
-	@printf "                                                      ____                                     \n"   
-	@printf "             _________________          _____________/   /\               _________________    \n"   
-	@printf "           /____/_____/_____/|         /____/_____/ /___/  \             /____/_____/_____/|   \n"  
-	@printf "          /____/_____/__G_ /||        /____/_____/|/   /\  /\           /____/_____/____ /||   \n"  
-	@printf "         /____/_____/__+__/|||       /____/_____/|/ G /  \/  \         /____/_____/_____/|||   \n"  
-	@printf "        |     |     |     ||||      |     |     |/___/   /\  /\       |     |     |     ||||   \n"  
-	@printf "        |  I  |  M  |     ||/|      |  I  |  M  /   /\  /  \/  \      |  I  |  M  |     ||/|   \n"  
-	@printf "        |_____|_____|_____|/||      |_____|____/ + /  \/   /\  /      |_____|_____|_____|/||   \n"  
-	@printf "        |     |     |     ||||      |     |   / __/   /\  /  \/       |     |     |     ||||   \n"  
-	@printf "        |  S  |  R  |     ||/|      |  S  |   \   \  /  \/   /        |  S  |  R  |  G  ||/|   \n"  
-	@printf "        |_____|_____|_____|/||      |_____|____\ __\/   /\  /         |_____|_____|_____|/||   \n"  
-	@printf "        |     |     |     ||||      |     |     \   \  /  \/          |     |     |     ||||   \n"  
-	@printf "        |     |  +  |     ||/       |     |  +  |\ __\/   /           |     |  +  |  +  ||/    \n"  
-	@printf "        |_____|_____|_____|/        |_____|_____|/\   \  /            |_____|_____|_____|/     \n"  
-	@printf "                                                   \___\/                                      \n"  
-	@printf "                                                                                               \n"  
+	@printf "                                                      ____                                     \n"
+	@printf "             _________________          _____________/   /\               _________________    \n"
+	@printf "           /____/_____/_____/|         /____/_____/ /___/  \             /____/_____/_____/|   \n"
+	@printf "          /____/_____/__G_ /||        /____/_____/|/   /\  /\           /____/_____/____ /||   \n"
+	@printf "         /____/_____/__+__/|||       /____/_____/|/ G /  \/  \         /____/_____/_____/|||   \n"
+	@printf "        |     |     |     ||||      |     |     |/___/   /\  /\       |     |     |     ||||   \n"
+	@printf "        |  I  |  M  |     ||/|      |  I  |  M  /   /\  /  \/  \      |  I  |  M  |     ||/|   \n"
+	@printf "        |_____|_____|_____|/||      |_____|____/ + /  \/   /\  /      |_____|_____|_____|/||   \n"
+	@printf "        |     |     |     ||||      |     |   / __/   /\  /  \/       |     |     |     ||||   \n"
+	@printf "        |  S  |  R  |     ||/|      |  S  |   \   \  /  \/   /        |  S  |  R  |  G  ||/|   \n"
+	@printf "        |_____|_____|_____|/||      |_____|____\ __\/   /\  /         |_____|_____|_____|/||   \n"
+	@printf "        |     |     |     ||||      |     |     \   \  /  \/          |     |     |     ||||   \n"
+	@printf "        |     |  +  |     ||/       |     |  +  |\ __\/   /           |     |  +  |  +  ||/    \n"
+	@printf "        |_____|_____|_____|/        |_____|_____|/\   \  /            |_____|_____|_____|/     \n"
+	@printf "                                                   \___\/                                      \n"
+	@printf "                                                                                               \n"

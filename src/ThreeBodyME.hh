@@ -40,7 +40,7 @@ class ThreeBodyME
  public:
   ModelSpace * modelspace;
   std::vector<ThreeBME_type> MatEl;
-  std::unordered_map<size_t, size_t> OrbitIndexHash; //
+  std::unordered_map<size_t, size_t> OrbitIndexHash; // TODO: reorganize so that we store the pn matrix elements, rather than isospin
   int E3max;
   int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
   int herm; // +1 for hermitian, -1 for anti-hermitian
@@ -65,6 +65,7 @@ class ThreeBodyME
   ThreeBodyME& operator-=(const ThreeBodyME&);
 
   size_t KeyHash(size_t,size_t,size_t,size_t,size_t,size_t) const;
+  void KeyUnhash(size_t& key, size_t& a, size_t& b, size_t& c, size_t& d, size_t& e, size_t& f) const;
   void Allocate();
 
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};

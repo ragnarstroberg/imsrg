@@ -24,6 +24,7 @@
 #include <iostream>
 #include <iomanip>
 
+// Is this a reasonable place to have this?
 double r2p = 0.770; // effective proton intrinsic charge radius squared
 double r2n = -0.1149; // effective neutron intrisic charge radius squared
 double DF = 0.033; // Darwin-Foldy correction to the charge radius
@@ -54,6 +55,7 @@ class Parameters
 std::map<std::string,std::string> Parameters::string_par = {
   {"2bme",			"none"},
   {"3bme",			"none"},
+  {"3bme_type",			"full"},
   {"core_generator",		"atan"},	// generator used for core part of 2-step decoupling
   {"valence_generator",		"shell-model-atan"},	// generator used for valence decoupling and 1-step (also single-ref)
   {"flowfile",			"default"},	// name of output flow file
@@ -79,6 +81,8 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"IMSRG3",                    "false"},       // include 3-body terms in commutators. this is under construction still...
   {"physical_system",           "nuclear"},     // treat nucleus or atom. For atom, switch units from MeV,fm to eV,nm.
   {"freeze_occupations",        "false"},       // Should we freeze the occupations, or fill according to HF energy
+  {"use_NAT_occupations",       "false"},       // When using natural orbitals, should we use the corresponding occupations?
+  {"store_3bme_pn",             "false"},       // should the 3-body matrix elements be stored in proton-neutron formalism? Default is isospin.
 };
 
 
@@ -99,7 +103,7 @@ std::map<std::string,double> Parameters::double_par = {
 
 std::map<std::string,int> Parameters::int_par = {
   {"A",	-1},	// Aeff for kinetic energy. -1 means take A of reference
-  {"e3max",		12},	
+  {"e3max",		12},
   {"emax",		6},
   {"lmax",              99999}, // lmax for the whole calculation
   {"lmax3",		-1}, // lmax for the 3body interaction
@@ -114,7 +118,7 @@ std::map<std::string,int> Parameters::int_par = {
 };
 
 std::map<std::string,std::vector<std::string>> Parameters::vec_par = {
- {"Operators", {} },
+ {"Operators", {} },    // Operators to transform
  {"OperatorsFromFile", {} },  // These will mostly be MECs for operators
  {"OperatorsPT1", {} },   // First order perturbative correction to (1b part of) operator.
  {"OperatorsRPA", {} },   // RPA resummed correction to (1b part of) operator.
@@ -123,11 +127,12 @@ std::map<std::string,std::vector<std::string>> Parameters::vec_par = {
 };
 
 
+// The constructor
 Parameters::Parameters(int argc, char** argv)
 {
   help_mode = false;
   ParseCommandLineArgs(argc, argv);
-} 
+}
 
 void Parameters::ParseCommandLineArgs(int argc, char** argv)
 {
@@ -180,7 +185,7 @@ void Parameters::ParseCommandLineArgs(int argc, char** argv)
     {
       std::cout << "Unkown parameter: " << var << " => " << val << std::endl;
     }
-    
+
   }
   if (string_par["flowfile"]=="default") string_par["flowfile"] = DefaultFlowFile();
   if (string_par["intfile"]=="default") string_par["intfile"] = DefaultIntFile();
