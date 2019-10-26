@@ -647,7 +647,6 @@ void ReadWrite::WriteTBME_Navratil( std::string filename, Operator& Hbare)
 /// Decide if the file is gzipped or ascii, create a stream, then call ReadBareTBME_Darmstadt_from_stream().
 void ReadWrite::ReadBareTBME_Darmstadt( std::string filename, Operator& Hbare, int emax, int Emax, int lmax)
 {
-
   File2N = filename;
   Aref = Hbare.GetModelSpace()->GetAref();
   Zref = Hbare.GetModelSpace()->GetZref();
@@ -802,6 +801,10 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
   int norb = modelspace->GetNumberOrbits();
   std::vector<int> orbits_remap;
 
+  std::vector<int> energy_vals;
+  std::vector<int> l_vals;
+  std::vector<int> j_vals;
+
   if (emax < 0)  emax = modelspace->Emax;
   if (lmax < 0)  lmax = emax;
 
@@ -816,10 +819,16 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
       for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
       {
          orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
+         Orbit& oi = modelspace->GetOrbit( orbits_remap.back() );
+         energy_vals.push_back( 2*n+l);
+         l_vals.push_back(l);
+         j_vals.push_back(twoj);
       }
     }
   }
   int nljmax = orbits_remap.size()-1;
+
+  int nreads = 0;
 
 //  double tbme_pp,tbme_nn,tbme_10,tbme_00;
   float tbme_pp,tbme_nn,tbme_10,tbme_00;
@@ -832,14 +841,16 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
     int a =  orbits_remap[nlj1];
     Orbit & o1 = modelspace->GetOrbit(a);
     int e1 = 2*o1.n + o1.l;
-    if (e1 > modelspace->Emax) break;
+//    if (e1 > modelspace->Emax) break;
+    if (energy_vals[nlj1] > modelspace->Emax) break;
 
     for(int nlj2=0; nlj2<=nlj1; ++nlj2)
     {
       int b =  orbits_remap[nlj2];
       Orbit & o2 = modelspace->GetOrbit(b);
       int e2 = 2*o2.n + o2.l;
-      if (e1+e2 > Emax) break;
+//      if (e1+e2 > Emax) break;
+      if ( (energy_vals[nlj1] + energy_vals[nlj2]) > Emax) break;
       int parity = (o1.l + o2.l) % 2;
 
       for(int nlj3=0; nlj3<=nlj1; ++nlj3)
@@ -853,10 +864,14 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
           int d =  orbits_remap[nlj4];
           Orbit & o4 = modelspace->GetOrbit(d);
           int e4 = 2*o4.n + o4.l;
-          if (e3+e4 > Emax) break;
-          if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
-          int Jmin = std::max( std::abs(o1.j2 - o2.j2), std::abs(o3.j2 - o4.j2) )/2;
-          int Jmax = std::min(o1.j2 + o2.j2, o3.j2+o4.j2)/2;
+//          if (e3+e4 > Emax) break;
+          if ( (energy_vals[nlj3] + energy_vals[nlj4]) > Emax) break;
+//          if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
+          if ( (l_vals[nlj1]+l_vals[nlj2]+l_vals[nlj3]+l_vals[nlj4])%2 != 0) continue;
+          int Jmin = std::max( std::abs(j_vals[nlj1] - j_vals[nlj2]), std::abs(j_vals[nlj3] - j_vals[nlj4]) )/2;
+          int Jmax = std::min( j_vals[nlj1] + j_vals[nlj2], j_vals[nlj3] + j_vals[nlj4] )/2;
+//          int Jmin = std::max( std::abs(o1.j2 - o2.j2), std::abs(o3.j2 - o4.j2) )/2;
+//          int Jmax = std::min(o1.j2 + o2.j2, o3.j2+o4.j2)/2;
           if (Jmin > Jmax) continue;
           for (int J=Jmin; J<=Jmax; ++J)
           {
@@ -865,6 +880,8 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
              // Matrix elements are written in the file with (T,Tz) = (0,0) (1,1) (1,0) (1,-1)
              infile >> tbme_00 >> tbme_nn >> tbme_10 >> tbme_pp;
 
+             nreads++;
+
              if (a>=norb or b>=norb or c>=norb or d>=norb) continue;
 
              // Normalization. The TBMEs are read in un-normalized.
@@ -872,8 +889,6 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
              if (a==b)  norm_factor /= PhysConst::SQRT2;
              if (c==d)  norm_factor /= PhysConst::SQRT2;
 
-//             std::cout << a << " " << b << " " << c << " " << d << "   " << J << "   "
-//                  << std::fixed << std::setprecision(7) << std::setw(11) << tbme_00 << " " << tbme_nn << " " << tbme_10 << " " << tbme_pp << std::endl;
 
              if (norm_factor>0.9 or J%2==0)
              {

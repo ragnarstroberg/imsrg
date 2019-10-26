@@ -407,12 +407,11 @@ void HartreeFock::BuildMonopoleV3()
          for (int J2=Jmin; J2<=Jmax; J2+=2)
          {
            v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
-         }
-       }
-       v /= j2i+1.0;
-#pragma omp atomic write
-       Vmon3[ind] = v ;
-       //      std::cout << " MONOPOLE: " << a << " " << c << " " << i << " " << b << " " << d << " " << j << "  " << v << std::endl;
+        }
+      }
+      v /= j2i+1.0;
+      #pragma omp atomic write
+      Vmon3[ind] = v ;
      }
    }
    std::cout << "HartreeFock::BuildMonopoleV3  storing " << Vmon3.size() << " doubles for Vmon3 and "
@@ -787,7 +786,6 @@ void HartreeFock::UpdateF()
 
    Vij  = arma::symmatu(Vij);
    V3ij = arma::symmatu(V3ij);
-//   std::cout << "Updating F.  " << std::endl << "KE: " << std::endl << KE << std::endl << std::endl << "Vij" << std::endl << Vij << std::endl;
 
    F = KE + Vij + 0.5*V3ij;
 
@@ -965,7 +963,6 @@ void HartreeFock::UpdateReference()
   for (index_t i=0;i<holeorbs.size();++i)
   {
      hole_map[holeorbs[i]] = hole_occ[i];
-//     std::cout << "i = " << i << " hole_occ = " << hole_occ << "  diff = " << std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) << std::endl;
      if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
      {
         changed_occupations = true;
