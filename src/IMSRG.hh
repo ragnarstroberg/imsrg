@@ -6,8 +6,7 @@
 //    it under the terms of the GNU General Public License as published by
 //    the Free Software Foundation; either version 2 of the License, or
 //    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
+// //    This program is distributed in the hope that it will be useful,
 //    but WITHOUT ANY WARRANTY; without even the implied warranty of
 //    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //    GNU General Public License for more details.
@@ -23,6 +22,7 @@
 #include "ModelSpace.hh"
 #include "TwoBodyME.hh"
 #include "ThreeBodyME.hh"
+#include "ThreeBodyMENO2B.hh"
 #include "Operator.hh"
 #include "HartreeFock.hh"
 #include "Commutator.hh"

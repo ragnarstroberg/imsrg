@@ -22,7 +22,7 @@
 //using namespace std;
 
 HartreeFock::HartreeFock(Operator& hbare)
-  : Hbare(hbare), modelspace(hbare.GetModelSpace()), 
+  : Hbare(hbare), modelspace(hbare.GetModelSpace()),
     KE(Hbare.OneBody), energies(Hbare.OneBody.diag()),
     tolerance(1e-8), convergence_ediff(7,0), convergence_EHF(7,0), freeze_occupations(true)
 {
@@ -105,7 +105,7 @@ void HartreeFock::Solve()
 
 //*********************************************************************
 /// Calculate the HF energy.
-/// \f{eqnarray*} E_{HF} &=& \sum_{\alpha} t_{\alpha\alpha} 
+/// \f{eqnarray*} E_{HF} &=& \sum_{\alpha} t_{\alpha\alpha}
 ///                    + \frac{1}{2}\sum_{\alpha\beta} V_{\alpha\beta\alpha\beta}
 ///                    + \frac{1}{6}\sum_{\alpha\beta\gamma} V_{\alpha\beta\gamma\alpha\beta\gamma} \\
 ///    &=& \sum_{ij} (2j_i+1) \rho_{ij} ( t_{ij} +\frac{1}{2}\tilde{V}^{(2)}_{ij} + \frac{1}{6}\tilde{V}^{(3)}_{ij} )
@@ -158,7 +158,7 @@ void HartreeFock::PrintEHF()
 /// Save the last vector of energies to check
 /// for convergence.
 /// Submatrices corresponding to different channels are diagonalized independently.
-/// This guarantees that J,Tz, and \f$ \pi \f$ remain good. 
+/// This guarantees that J,Tz, and \f$ \pi \f$ remain good.
 //*********************************************************************
 void HartreeFock::Diagonalize()
 {
@@ -178,7 +178,7 @@ void HartreeFock::Diagonalize()
          ++diag_tries;
          if (diag_tries > 5)
          {
-           std::cout << "Hartree-Fock: Failed to diagonalize the submatrix " 
+           std::cout << "Hartree-Fock: Failed to diagonalize the submatrix "
                 << " on iteration # " << iterations << ". The submatrix looks like:" << std::endl;
            F_ch.print();
            break;
@@ -194,9 +194,9 @@ void HartreeFock::Diagonalize()
 
 //*********************************************************************
 /// Construct an unnormalized two-body monopole interaction
-/// \f[ \langle ab | \bar{V}^{(2)} | cd \rangle 
+/// \f[ \langle ab | \bar{V}^{(2)} | cd \rangle
 ///   = \sqrt{(1+\delta_{ab})(1+\delta_{cd})} \sum_{J} (2J+1) \langle ab | V^{(2)} | cd \rangle_{J} \f]
-/// This method utilizes the operator method  TwoBodyME::GetTBMEmonopole() 
+/// This method utilizes the operator method  TwoBodyME::GetTBMEmonopole()
 ///
 //*********************************************************************
 void HartreeFock::BuildMonopoleV()
@@ -261,7 +261,7 @@ void HartreeFock::SetUpMonopoleV3Keys()
         {
           Orbit& ob = modelspace->GetOrbit(b);
           int eb = 2*ob.n + ob.l;
-     
+
 //            for (uint64_t c=0; c<norbits; ++c)
             for ( auto c : modelspace->all_orbits)
             {
@@ -272,7 +272,7 @@ void HartreeFock::SetUpMonopoleV3Keys()
               {
                 Orbit& od = modelspace->GetOrbit(d);
                 int ed = 2*od.n + od.l;
- 
+
                 if ( eb+ed+ej > Hbare.E3max ) continue;
                 if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
                   uint64_t key = Vmon3Hash(a,c,i,b,d,j);
@@ -292,7 +292,7 @@ void HartreeFock::SetUpMonopoleV3Keys()
 //*********************************************************************
 /// Construct an unnormalized three-body monopole interaction
 /// \f[ \langle iab | \bar{V}^{(3)} | jcd \rangle =
-///     \sum\limits_{J,J_{12}}\sum_{Tt_{12}}(2J+1)(2T+1) 
+///     \sum\limits_{J,J_{12}}\sum_{Tt_{12}}(2J+1)(2T+1)
 ///       \langle (ia)J_{12}t_{12};b JT| V^{(3)} | (jc)J_{12}t_{12}; d JT\rangle
 /// \f]
 //*********************************************************************
@@ -324,7 +324,7 @@ void HartreeFock::BuildMonopoleV3()
         {
           Orbit& ob = modelspace->GetOrbit(b);
           int eb = 2*ob.n + ob.l;
-     
+
 //            for (uint64_t c=0; c<norbits; ++c)
             for ( auto c : modelspace->all_orbits)
             {
@@ -335,7 +335,7 @@ void HartreeFock::BuildMonopoleV3()
               {
                 Orbit& od = modelspace->GetOrbit(d);
                 int ed = 2*od.n + od.l;
- 
+
                 if ( eb+ed+ej > Hbare.E3max ) continue;
                 if ( (oi.l+oa.l+ob.l+oj.l+oc.l+od.l)%2 >0) continue;
                   uint64_t key = Vmon3Hash(a,c,i,b,d,j);
@@ -347,40 +347,72 @@ void HartreeFock::BuildMonopoleV3()
       }
     }
 */
-   
+
    Vmon3.resize( Vmon3_keys.size(), 0. );
    profiler.timer["HF_BuildMonopoleV3_allocate"] += omp_get_wtime() - start_time;
 
-   #pragma omp parallel for schedule(dynamic,1) 
-   for (size_t ind=0; ind<Vmon3.size(); ++ind)
+   if(Hbare.ThreeBodyNO2B.initialized)
    {
-      double v=0;
-      int a,b,c,d,i,j;
-      Vmon3UnHash( Vmon3_keys[ind], a,c,i,b,d,j);
+#pragma omp parallel for schedule(dynamic,1)
+     for (size_t ind=0; ind<Vmon3.size(); ++ind)
+     {
+       double v=0;
+       int a,b,c,d,i,j;
+       Vmon3UnHash( Vmon3_keys[ind], a,c,i,b,d,j);
 
-      int j2a = modelspace->GetOrbit(a).j2;
-      int j2c = modelspace->GetOrbit(c).j2;
-      int j2i = modelspace->GetOrbit(i).j2;
-      int j2b = modelspace->GetOrbit(b).j2;  // this seems unnecessary
-      int j2d = modelspace->GetOrbit(d).j2;  // this seems unnecessary
-      int j2j = modelspace->GetOrbit(j).j2;  // this seems unnecessary
- 
-      // TODO: We can probably use some permutation symmetries to avoid recomputing things
-      // at the very least, we can treat the permutation of the first two indices
-      int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
-      int j2max = std::min( j2a+j2c, j2b+j2d )/2;
-      for (int j2=j2min; j2<=j2max; ++j2)
-      {
-        int Jmin = std::max( std::abs(2*j2-j2i), std::abs(2*j2-j2j) );
-        int Jmax = 2*j2 + std::min(j2i, j2j);
-        for (int J2=Jmin; J2<=Jmax; J2+=2)
-        {
+       int j2a = modelspace->GetOrbit(a).j2;
+       int j2c = modelspace->GetOrbit(c).j2;
+       int j2i = modelspace->GetOrbit(i).j2;
+       int j2b = modelspace->GetOrbit(b).j2;  // this seems unnecessary
+       int j2d = modelspace->GetOrbit(d).j2;  // this seems unnecessary
+       int j2j = modelspace->GetOrbit(j).j2;  // this seems unnecessary
+
+       // TODO: We can probably use some permutation symmetries to avoid recomputing things
+       // at the very least, we can treat the permutation of the first two indices
+       int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
+       int j2max = std::min( j2a+j2c, j2b+j2d )/2;
+       for (int j2=j2min; j2<=j2max; ++j2)
+       {
+         v += Hbare.ThreeBodyNO2B.GetThBME(a,c,i,b,d,j,j2);
+       }
+       v /= j2i+1.0;
+#pragma omp atomic write
+       Vmon3[ind] = v ;
+     }
+   }
+
+   else{
+   #pragma omp parallel for schedule(dynamic,1)
+     for (size_t ind=0; ind<Vmon3.size(); ++ind)
+     {
+       double v=0;
+       int a,b,c,d,i,j;
+       Vmon3UnHash( Vmon3_keys[ind], a,c,i,b,d,j);
+
+       int j2a = modelspace->GetOrbit(a).j2;
+       int j2c = modelspace->GetOrbit(c).j2;
+       int j2i = modelspace->GetOrbit(i).j2;
+       int j2b = modelspace->GetOrbit(b).j2;  // this seems unnecessary
+       int j2d = modelspace->GetOrbit(d).j2;  // this seems unnecessary
+       int j2j = modelspace->GetOrbit(j).j2;  // this seems unnecessary
+
+       // TODO: We can probably use some permutation symmetries to avoid recomputing things
+       // at the very least, we can treat the permutation of the first two indices
+       int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
+       int j2max = std::min( j2a+j2c, j2b+j2d )/2;
+       for (int j2=j2min; j2<=j2max; ++j2)
+       {
+         int Jmin = std::max( std::abs(2*j2-j2i), std::abs(2*j2-j2j) );
+         int Jmax = 2*j2 + std::min(j2i, j2j);
+         for (int J2=Jmin; J2<=Jmax; J2+=2)
+         {
            v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
         }
       }
       v /= j2i+1.0;
       #pragma omp atomic write
       Vmon3[ind] = v ;
+     }
    }
    std::cout << "HartreeFock::BuildMonopoleV3  storing " << Vmon3.size() << " doubles for Vmon3 and "
              << Vmon3_keys.size() << " uint64's for Vmon3_keys." << std::endl;
@@ -421,7 +453,7 @@ void HartreeFock::BuildMonopoleV3Jacobi()
 
          // Now we compute the relevalt T coefficients
          // These are only a small subset, and we discard them after use
-         // so that the storage doesn't kill us. 
+         // so that the storage doesn't kill us.
          // The T coefficents int this sub-block can be labeled by: na,nb,nc, Jab, twoJ, E12, alpha, Ncm, Lcm
          std::unordered_map<size_t,double> Ttable;
          // We'll need one loop to allocate (not thread-safe), one loop to compute the Tcoefficients (can be parallel), and one to compute V3mon (also parallel).
@@ -553,7 +585,7 @@ void HartreeFock::BuildMonopoleV3Jacobi()
                      Vmon3[ ptr- Vmon3_keys.begin() ] = vmon3;
                    }
                  }
-               }               
+               }
              }
            }
          }
@@ -630,7 +662,7 @@ void HartreeFock::Vmon3JacobiUnHash(uint64_t key, uint64_t& na, uint64_t& nb, ui
 
 
 //*********************************************************************
-/// one-body density matrix 
+/// one-body density matrix
 /// \f$ <i|\rho|j> = \sum\limits_{\beta} n_{\beta} <i|\beta> <\beta|j> \f$
 /// where \f$n_{\beta} \f$ ensures that beta runs over HF orbits in
 /// the core (i.e. below the fermi surface)
@@ -657,7 +689,7 @@ void HartreeFock::FillLowestOrbits()
   int targetN = modelspace->GetAref() - targetZ;
   int placedZ = 0;
   int placedN = 0;
-  std::vector<index_t> holeorbs_tmp; 
+  std::vector<index_t> holeorbs_tmp;
   std::vector<double> hole_occ_tmp;
 
   for (auto i : sorted_indices)
@@ -705,7 +737,7 @@ void HartreeFock::UpdateF()
    V3ij.zeros();
 
 
-   // This loop isn't thread safe for some reason. Regardless, parallelizing it makes it slower. 
+   // This loop isn't thread safe for some reason. Regardless, parallelizing it makes it slower.
 //   for (int i=0;i<norbits;i++)
    for (auto i : modelspace->all_orbits)
    {
@@ -736,7 +768,7 @@ void HartreeFock::UpdateF()
       Vij.col(i) /= (oi.j2+1);
    }
 
-   if (Hbare.GetParticleRank()>=3) 
+   if (Hbare.GetParticleRank()>=3)
    {
       // it's just a one-body matrix, so we can store different copy for each thread.
       std::vector<arma::mat> V3vec(omp_get_max_threads(),V3ij);
@@ -795,7 +827,7 @@ bool HartreeFock::CheckConvergence()
 ///    0.2 & 0.9 & -0.4 \\
 /// \end{array}\right)
 /// \rightarrow
-/// \left(\begin{array}{rrr} 
+/// \left(\begin{array}{rrr}
 ///    0.8 & -0.6 & 0.2  \\
 ///    0.3 &  0.9 & 0.3  \\
 ///   -0.2 & -0.4 & 0.9  \\
@@ -873,15 +905,15 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
       arma::mat Dbra(nbras,nbras);
       arma::mat Dket(nkets,nkets);
       // loop over all possible original basis configurations <pq| in this J,p,Tz channel.
-      // and all possible HF configurations |p'q'> in this J,p,Tz channel                                    
-      // bra is in the original basis, ket is in the HF basis                                              
-      // i and j are the indices of the matrix D for this channel                    
-      for (int i=0; i<nkets; ++i)    
+      // and all possible HF configurations |p'q'> in this J,p,Tz channel
+      // bra is in the original basis, ket is in the HF basis
+      // i and j are the indices of the matrix D for this channel
+      for (int i=0; i<nkets; ++i)
       {
-         Ket & ket_ho = tbc_ket.GetKet(i);   
-         for (int j=0; j<nkets; ++j)    
+         Ket & ket_ho = tbc_ket.GetKet(i);
+         for (int j=0; j<nkets; ++j)
          {
-            Ket & ket_hf = tbc_ket.GetKet(j); 
+            Ket & ket_hf = tbc_ket.GetKet(j);
             Dket(i,j) = C(ket_ho.p,ket_hf.p) * C(ket_ho.q,ket_hf.q);
             if (ket_ho.p!=ket_ho.q)
             {
@@ -897,12 +929,12 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
       }
       else
       {
-        for (int i=0; i<nbras; ++i)    
+        for (int i=0; i<nbras; ++i)
         {
-           Ket & bra_hf = tbc_bra.GetKet(i);   
-           for (int j=0; j<nbras; ++j)    
+           Ket & bra_hf = tbc_bra.GetKet(i);
+           for (int j=0; j<nbras; ++j)
            {
-              Ket & bra_ho = tbc_bra.GetKet(j); 
+              Ket & bra_ho = tbc_bra.GetKet(j);
               Dbra(i,j) = C(bra_ho.p,bra_hf.p) * C(bra_ho.q,bra_hf.q);
               if (bra_ho.p!=bra_ho.q)
               {
@@ -928,7 +960,7 @@ void HartreeFock::UpdateReference()
 
   bool changed_occupations = false;
   std::map<index_t,double> hole_map;
-  for (index_t i=0;i<holeorbs.size();++i)  
+  for (index_t i=0;i<holeorbs.size();++i)
   {
      hole_map[holeorbs[i]] = hole_occ[i];
      if ( std::abs(modelspace->GetOrbit( holeorbs[i] ).occ - hole_occ[i]) > 1e-3)
@@ -943,7 +975,7 @@ void HartreeFock::UpdateReference()
 }
 
 
-Operator HartreeFock::GetNormalOrderedH(arma::mat& Cin) 
+Operator HartreeFock::GetNormalOrderedH(arma::mat& Cin)
 {
   C=Cin;
 //  ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
@@ -961,7 +993,7 @@ Operator HartreeFock::GetNormalOrderedH(arma::mat& Cin)
 /// \f[ V^{(2\rightarrow 3)J}_{ijkl} \equiv \frac{1}{\sqrt{(1+\delta_{ij})(1+\delta_{kl})}}\sum_{ab}\sum_{J_3}(2J_{3}+1)\rho_{ab}V^{JJJ_{3}}_{ijaklb} \f]
 /// Where \f$ F\f$ is the Fock matrix obtained in UpdateF() and the matrix \f$ D\f$ is the same as the one defined in TransformToHFBasis().
 ///
-Operator HartreeFock::GetNormalOrderedH() 
+Operator HartreeFock::GetNormalOrderedH()
 {
    double start_time = omp_get_wtime();
    std::cout << "Getting normal-ordered H in HF basis" << std::endl;
@@ -979,69 +1011,127 @@ Operator HartreeFock::GetNormalOrderedH()
    int nchan = modelspace->GetNumberTwoBodyChannels();
 //   int norb = modelspace->GetNumberOrbits();
 //   #pragma omp parallel for schedule(dynamic,1) // have not yet confirmed that this improves performance ... no sign of significant improvement
-   for (int ch=0;ch<nchan;++ch)
-   {
-      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      int J = tbc.J;
-      int npq = tbc.GetNumberKets();
+   if(Hbare.ThreeBodyNO2B.initialized){
+     for (int ch=0;ch<nchan;++ch)
+     {
+       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+       int J = tbc.J;
+       int npq = tbc.GetNumberKets();
 
-      arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
-      arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+       arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+       arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
 
-      #pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
-      for (int i=0; i<npq; ++i)    
-      {
+#pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
+       for (int i=0; i<npq; ++i)
+       {
          Ket & bra = tbc.GetKet(i);
          int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
          for (int j=0; j<npq; ++j)
          {
-            Ket & ket = tbc.GetKet(j); 
-            int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
-            D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
-            if (bra.p!=bra.q)
-            {
-               D(i,j) += C(bra.q,ket.p) * C(bra.p,ket.q) * bra.Phase(J);
-            }
-            if (bra.p==bra.q)    D(i,j) *= PhysConst::SQRT2;
-            if (ket.p==ket.q)    D(i,j) /= PhysConst::SQRT2;
+           Ket & ket = tbc.GetKet(j);
+           int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
+           D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
+           if (bra.p!=bra.q)
+           {
+             D(i,j) += C(bra.q,ket.p) * C(bra.p,ket.q) * bra.Phase(J);
+           }
+           if (bra.p==bra.q)    D(i,j) *= PhysConst::SQRT2;
+           if (ket.p==ket.q)    D(i,j) /= PhysConst::SQRT2;
 
-            // Now generate the NO2B part of the 3N interaction
-            if (Hbare.GetParticleRank()<3) continue;
-            if (i>j) continue;
-//            for (int a=0; a<norb; ++a)
-            for ( auto a : modelspace->all_orbits )
-            {
-              Orbit & oa = modelspace->GetOrbit(a);
-              if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
-              for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
-              {
-                Orbit & ob = modelspace->GetOrbit(b);
-                if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
-                if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
-                int J3min = std::abs(2*J-oa.j2);
-                int J3max = 2*J + oa.j2;
-                for (int J3=J3min; J3<=J3max; J3+=2)
-                {
-                  V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
-                }
-              }
-            }
-            V3NO(i,j) /= (2*J+1);
-            if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2; 
-            if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2; 
-            V3NO(j,i) = V3NO(i,j);
+           // Now generate the NO2B part of the 3N interaction
+           if (Hbare.GetParticleRank()<3) continue;
+           if (i>j) continue;
+           //            for (int a=0; a<norb; ++a)
+           for ( auto a : modelspace->all_orbits )
+           {
+             Orbit & oa = modelspace->GetOrbit(a);
+             if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
+             for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+             {
+               Orbit & ob = modelspace->GetOrbit(b);
+               if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
+               if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
+               V3NO(i,j) += rho(a,b) * Hbare.ThreeBodyNO2B.GetThBME(bra.p, bra.q, a, ket.p, ket.q, b, J);
+             }
+           }
+           V3NO(i,j) /= (2*J+1);
+           if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2;
+           if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2;
+           V3NO(j,i) = V3NO(i,j);
          }
-      }
+       }
 
-     auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
-     auto& OUT =  HNO.TwoBody.GetMatrix(ch);
-     OUT  =    D.t() * (V2 + V3NO) * D;
+       auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
+       auto& OUT =  HNO.TwoBody.GetMatrix(ch);
+       OUT  =    D.t() * (V2 + V3NO) * D;
+     }
    }
-   
+
+   else{
+     for (int ch=0;ch<nchan;++ch)
+     {
+       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+       int J = tbc.J;
+       int npq = tbc.GetNumberKets();
+
+       arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+       arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+
+#pragma omp parallel for schedule(dynamic,1) // confirmed that this improves performance
+       for (int i=0; i<npq; ++i)
+       {
+         Ket & bra = tbc.GetKet(i);
+         int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
+         for (int j=0; j<npq; ++j)
+         {
+           Ket & ket = tbc.GetKet(j);
+           int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
+           D(i,j) = C(bra.p,ket.p) * C(bra.q,ket.q);
+           if (bra.p!=bra.q)
+           {
+             D(i,j) += C(bra.q,ket.p) * C(bra.p,ket.q) * bra.Phase(J);
+           }
+           if (bra.p==bra.q)    D(i,j) *= PhysConst::SQRT2;
+           if (ket.p==ket.q)    D(i,j) /= PhysConst::SQRT2;
+
+           // Now generate the NO2B part of the 3N interaction
+           if (Hbare.GetParticleRank()<3) continue;
+           if (i>j) continue;
+           //            for (int a=0; a<norb; ++a)
+           for ( auto a : modelspace->all_orbits )
+           {
+             Orbit & oa = modelspace->GetOrbit(a);
+             if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
+             for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+             {
+               Orbit & ob = modelspace->GetOrbit(b);
+               if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
+               if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
+               int J3min = std::abs(2*J-oa.j2);
+               int J3max = 2*J + oa.j2;
+               for (int J3=J3min; J3<=J3max; J3+=2)
+               {
+                 V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
+               }
+             }
+           }
+           V3NO(i,j) /= (2*J+1);
+           if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2;
+           if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2;
+           V3NO(j,i) = V3NO(i,j);
+         }
+       }
+
+       auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
+       auto& OUT =  HNO.TwoBody.GetMatrix(ch);
+       OUT  =    D.t() * (V2 + V3NO) * D;
+     }
+   }
+
 //   FreeVmon();
 
    profiler.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;
-   
+
    return HNO;
 
 }

@@ -24,7 +24,7 @@ ThreeBodyME::ThreeBodyME(const ThreeBodyME& tbme)
 {}
 
 //ThreeBodyME::ThreeBodyME(ThreeBodyME tbme)
-//: modelspace(tbme.modelspace),E3max(tbme.E3max), emax(tbme.emax), herm(1), MatEl( tbme.MatEl ), OrbitIndexHash( tbme.OrbitIndexHash ) 
+//: modelspace(tbme.modelspace),E3max(tbme.E3max), emax(tbme.emax), herm(1), MatEl( tbme.MatEl ), OrbitIndexHash( tbme.OrbitIndexHash )
 //{}
 
 
@@ -152,7 +152,7 @@ void ThreeBodyME::Allocate()
              Orbit& of = modelspace->GetOrbit(f);
              int ef = 2*of.n+of.l;
              if ((ed+ee+ef)>E3max) break;
-             if ((oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 or of.l > lmax) 
+             if ((oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 or of.l > lmax)
              {
                continue;
              }
@@ -287,7 +287,7 @@ void ThreeBodyME::AddToME(int Jab, int Jde, int J2, int tab, int tde, int T2, in
    for (auto elem : elements)  MatEl.at(elem.first) += V * elem.second;
 }
 
-void ThreeBodyME::AddToME_pn(int Jab, int Jde, int J2, int a, int b, int c, int d, int e, int f, ThreeBME_type Vpn) 
+void ThreeBodyME::AddToME_pn(int Jab, int Jde, int J2, int a, int b, int c, int d, int e, int f, ThreeBME_type Vpn)
 {
 
    double tza = modelspace->GetOrbit(a).tz2*0.5;
@@ -502,7 +502,7 @@ void ThreeBodyME::Erase()
 void ThreeBodyME::Deallocate()
 {
    std::vector<ThreeBME_type>().swap(MatEl);
-   OrbitIndexHash.clear(); 
+   OrbitIndexHash.clear();
 }
 
 
