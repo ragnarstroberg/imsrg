@@ -360,8 +360,12 @@ int main(int argc, char** argv)
       std::cout << "done reading 3N" << std::endl;
     }
     if(input3bme_type == "no2b"){
+      double t_start = omp_get_wtime();
       Hbare.ThreeBodyNO2B.Allocate(modelspace, file3e1max, file3e2max, file3e3max, file3e1max, input3bme);
+      Hbare.profiler.timer["ThreeBodyNO2B::Allocate"] += omp_get_wtime() - t_start;
+      t_start = omp_get_wtime();
       Hbare.ThreeBodyNO2B.ReadFile();
+      Hbare.profiler.timer["ThreeBodyNO2B::ReadFile"] += omp_get_wtime() - t_start;
       std::cout << "done reading 3N" << std::endl;
     }
   }
