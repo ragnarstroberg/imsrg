@@ -19,6 +19,7 @@
 
 
 class spop_scalar_times
+  : public traits_op_passthru
   {
   public:
   
@@ -28,7 +29,19 @@ class spop_scalar_times
 
 
 
+class spop_cx_scalar_times
+  : public traits_op_passthru
+  {
+  public:
+  
+  template<typename T1>
+  inline static void apply(SpMat< std::complex<typename T1::pod_type> >& out, const mtSpOp< std::complex<typename T1::pod_type>, T1, spop_cx_scalar_times>& in);
+  };
+
+
+
 class spop_square
+  : public traits_op_passthru
   {
   public:
   
@@ -39,6 +52,7 @@ class spop_square
 
 
 class spop_sqrt
+  : public traits_op_passthru
   {
   public:
   
@@ -49,6 +63,7 @@ class spop_sqrt
 
 
 class spop_abs
+  : public traits_op_passthru
   {
   public:
   
@@ -59,6 +74,7 @@ class spop_abs
 
 
 class spop_cx_abs
+  : public traits_op_passthru
   {
   public:
   
@@ -69,6 +85,7 @@ class spop_cx_abs
 
 
 class spop_arg
+  : public traits_op_passthru
   {
   public:
   
@@ -79,6 +96,7 @@ class spop_arg
 
 
 class spop_cx_arg
+  : public traits_op_passthru
   {
   public:
   
@@ -89,6 +107,7 @@ class spop_cx_arg
 
 
 class spop_real
+  : public traits_op_passthru
   {
   public:
   
@@ -99,6 +118,7 @@ class spop_real
 
 
 class spop_imag
+  : public traits_op_passthru
   {
   public:
   
@@ -109,6 +129,7 @@ class spop_imag
 
 
 class spop_conj
+  : public traits_op_passthru
   {
   public:
   
@@ -118,17 +139,19 @@ class spop_conj
 
 
 
-class spop_repmat
+class spop_repelem
+  : public traits_op_default
   {
   public:
   
   template<typename T1>
-  inline static void apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_repmat>& in);
+  inline static void apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_repelem>& in);
   };
 
 
 
 class spop_reshape
+  : public traits_op_default
   {
   public:
   
@@ -139,6 +162,7 @@ class spop_reshape
 
 
 class spop_resize
+  : public traits_op_default
   {
   public:
   
@@ -149,6 +173,7 @@ class spop_resize
 
 
 class spop_floor
+  : public traits_op_passthru
   {
   public:
   
@@ -159,6 +184,7 @@ class spop_floor
 
 
 class spop_ceil
+  : public traits_op_passthru
   {
   public:
   
@@ -169,6 +195,7 @@ class spop_ceil
 
 
 class spop_round
+  : public traits_op_passthru
   {
   public:
   
@@ -179,6 +206,7 @@ class spop_round
 
 
 class spop_trunc
+  : public traits_op_passthru
   {
   public:
   
@@ -189,11 +217,45 @@ class spop_trunc
 
 
 class spop_sign
+  : public traits_op_passthru
   {
   public:
   
   template<typename T1>
   inline static void apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_sign>& in);
+  };
+
+
+
+class spop_diagvec
+  : public traits_op_col
+  {
+  public:
+  
+  template<typename T1>
+  inline static void apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_diagvec>& in);
+  };
+
+
+
+class spop_flipud
+  : public traits_op_passthru
+  {
+  public:
+  
+  template<typename T1>
+  inline static void apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_flipud>& in);
+  };
+
+
+
+class spop_fliplr
+  : public traits_op_passthru
+  {
+  public:
+  
+  template<typename T1>
+  inline static void apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_fliplr>& in);
   };
 
 

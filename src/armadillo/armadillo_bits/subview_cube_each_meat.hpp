@@ -37,7 +37,7 @@ inline
 void
 subview_cube_each_common<eT>::check_size(const Mat<eT>& A) const
   {
-  if(arma_config::debug == true)
+  if(arma_config::debug)
     {
     if( (A.n_rows != P.n_rows) || (A.n_cols != P.n_cols) )
       {
@@ -54,7 +54,7 @@ inline
 const std::string
 subview_cube_each_common<eT>::incompat_size_string(const Mat<eT>& A) const
   {
-  std::stringstream tmp;
+  std::ostringstream tmp;
   
   tmp << "each_slice(): incompatible size; expected " << P.n_rows << 'x' << P.n_cols << ", got " << A.n_rows << 'x' << A.n_cols;
   
