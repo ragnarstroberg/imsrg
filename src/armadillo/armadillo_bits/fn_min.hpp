@@ -20,11 +20,57 @@
 
 template<typename T1>
 arma_warn_unused
-inline
-typename enable_if2< is_arma_type<T1>::value && resolves_to_vector<T1>::yes, typename T1::elem_type >::result
-min(const T1& X)
+arma_inline
+const Op<T1, op_min>
+min
+  (
+  const T1& X,
+  const uword dim = 0,
+  const typename enable_if< is_arma_type<T1>::value       == true  >::result* junk1 = 0,
+  const typename enable_if< resolves_to_vector<T1>::value == false >::result* junk2 = 0
+  )
   {
   arma_extra_debug_sigprint();
+  arma_ignore(junk1);
+  arma_ignore(junk2);
+  
+  return Op<T1, op_min>(X, dim, 0);
+  }
+
+
+template<typename T1>
+arma_warn_unused
+arma_inline
+const Op<T1, op_min>
+min
+  (
+  const T1& X,
+  const uword dim,
+  const typename enable_if<resolves_to_vector<T1>::value == true>::result* junk = 0
+  )
+  {
+  arma_extra_debug_sigprint();
+  arma_ignore(junk);
+  
+  return Op<T1, op_min>(X, dim, 0);
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+typename T1::elem_type
+min
+  (
+  const T1& X,
+  const arma_empty_class junk1 = arma_empty_class(),
+  const typename enable_if<resolves_to_vector<T1>::value == true>::result* junk2 = 0
+  )
+  {
+  arma_extra_debug_sigprint();
+  arma_ignore(junk1);
+  arma_ignore(junk2);
   
   return op_min::min(X);
   }
@@ -33,13 +79,14 @@ min(const T1& X)
 
 template<typename T1>
 arma_warn_unused
-arma_inline
-typename enable_if2< is_arma_type<T1>::value && resolves_to_vector<T1>::no, const Op<T1, op_min> >::result
-min(const T1& X)
+inline
+typename T1::elem_type
+min(const Op<T1, op_min>& in)
   {
   arma_extra_debug_sigprint();
+  arma_extra_debug_print("min(): two consecutive min() calls detected");
   
-  return Op<T1, op_min>(X, 0, 0);
+  return op_min::min(in.m);
   }
 
 
@@ -47,12 +94,12 @@ min(const T1& X)
 template<typename T1>
 arma_warn_unused
 arma_inline
-typename enable_if2< is_arma_type<T1>::value, const Op<T1, op_min> >::result
-min(const T1& X, const uword dim)
+const Op< Op<T1, op_min>, op_min>
+min(const Op<T1, op_min>& in, const uword dim)
   {
   arma_extra_debug_sigprint();
   
-  return Op<T1, op_min>(X, dim, 0);
+  return Op< Op<T1, op_min>, op_min>(in, dim, 0);
   }
 
 
@@ -60,7 +107,7 @@ min(const T1& X, const uword dim)
 template<typename T>
 arma_warn_unused
 arma_inline
-typename arma_scalar_only<T>::result
+const typename arma_scalar_only<T>::result &
 min(const T& x)
   {
   return x;
@@ -131,7 +178,7 @@ inline
 typename
 enable_if2
   <
-  is_arma_sparse_type<T1>::value && resolves_to_sparse_vector<T1>::yes,
+  (is_arma_sparse_type<T1>::value == true) && (resolves_to_sparse_vector<T1>::value == true),
   typename T1::elem_type
   >::result
 min(const T1& x)
@@ -149,28 +196,10 @@ inline
 typename
 enable_if2
   <
-  is_arma_sparse_type<T1>::value && resolves_to_sparse_vector<T1>::no,
+  (is_arma_sparse_type<T1>::value == true) && (resolves_to_sparse_vector<T1>::value == false),
   const SpOp<T1, spop_min>
   >::result
-min(const T1& X)
-  {
-  arma_extra_debug_sigprint();
-  
-  return SpOp<T1, spop_min>(X, 0, 0);
-  }
-
-
-
-template<typename T1>
-arma_warn_unused
-inline
-typename
-enable_if2
-  <
-  is_arma_sparse_type<T1>::value,
-  const SpOp<T1, spop_min>
-  >::result
-min(const T1& X, const uword dim)
+min(const T1& X, const uword dim = 0)
   {
   arma_extra_debug_sigprint();
   
@@ -179,75 +208,29 @@ min(const T1& X, const uword dim)
 
 
 
-// elementwise sparse min
-template<typename T1, typename T2>
+template<typename T1>
 arma_warn_unused
 inline
-typename
-enable_if2
-  <
-  (is_arma_sparse_type<T1>::value && is_arma_sparse_type<T2>::value && is_same_type<typename T1::elem_type, typename T2::elem_type>::value),
-  const SpGlue<T1, T2, spglue_min>
-  >::result
-min(const T1& x, const T2& y)
+typename T1::elem_type
+min(const SpOp<T1, spop_min>& X)
   {
   arma_extra_debug_sigprint();
-
-  return SpGlue<T1, T2, spglue_min>(x, y);
+  arma_extra_debug_print("min(): two consecutive min() calls detected");
+  
+  return spop_min::vector_min(X.m);
   }
 
 
 
-//! elementwise min of dense and sparse objects with the same element type
-template<typename T1, typename T2>
+template<typename T1>
+arma_warn_unused
 inline
-typename
-enable_if2
-  <
-  (is_arma_type<T1>::value && is_arma_sparse_type<T2>::value && is_same_type<typename T1::elem_type, typename T2::elem_type>::value),
-  Mat<typename T1::elem_type>
-  >::result
-min
-  (
-  const T1& x,
-  const T2& y
-  )
+const SpOp< SpOp<T1, spop_min>, spop_min>
+min(const SpOp<T1, spop_min>& in, const uword dim)
   {
   arma_extra_debug_sigprint();
   
-  Mat<typename T1::elem_type> out;
-  
-  spglue_min::dense_sparse_min(out, x, y);
-  
-  return out;
-  }
-
-
-
-//! elementwise min of sparse and dense objects with the same element type
-template<typename T1, typename T2>
-inline
-typename
-enable_if2
-  <
-  (is_arma_sparse_type<T1>::value && is_arma_type<T2>::value && is_same_type<typename T1::elem_type, typename T2::elem_type>::value),
-  Mat<typename T1::elem_type>
-  >::result
-min
-  (
-  const T1& x,
-  const T2& y
-  )
-  {
-  arma_extra_debug_sigprint();
-  
-  Mat<typename T1::elem_type> out;
-  
-  // Just call the other order (these operations are commutative)
-  // TODO: if there is a matrix size mismatch, the debug assert will print the matrix sizes in wrong order
-  spglue_min::dense_sparse_min(out, y, x);
-  
-  return out;
+  return SpOp< SpOp<T1, spop_min>, spop_min>(in, dim, 0);
   }
 
 

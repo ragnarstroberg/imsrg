@@ -19,33 +19,30 @@
 
 
 
-template<typename elem_type, typename derived>
-struct Base_extra_yes
+template<typename derived>
+struct Base_inv_yes
   {
   arma_inline const Op<derived,op_inv> i() const;   //!< matrix inverse
   
   arma_deprecated inline const Op<derived,op_inv> i(const bool ) const;   //!< kept only for compatibility with old user code
   arma_deprecated inline const Op<derived,op_inv> i(const char*) const;   //!< kept only for compatibility with old user code
-  
-  inline arma_warn_unused bool is_sympd() const;
-  inline arma_warn_unused bool is_sympd(typename get_pod_type<elem_type>::result tol) const;
   };
 
 
-template<typename elem_type, typename derived>
-struct Base_extra_no
+template<typename derived>
+struct Base_inv_no
   {
   };
 
 
-template<typename elem_type, typename derived, bool condition>
-struct Base_extra {};
+template<typename derived, bool condition>
+struct Base_inv {};
 
-template<typename elem_type, typename derived>
-struct Base_extra<elem_type, derived, true>  { typedef Base_extra_yes<elem_type, derived> result; };
+template<typename derived>
+struct Base_inv<derived, true>  { typedef Base_inv_yes<derived> result; };
 
-template<typename elem_type, typename derived>
-struct Base_extra<elem_type, derived, false> { typedef Base_extra_no<elem_type, derived>  result; };
+template<typename derived>
+struct Base_inv<derived, false> { typedef Base_inv_no<derived>  result; };
 
 
 
@@ -110,17 +107,17 @@ struct Base_trans<derived, false> { typedef Base_trans_default<derived> result; 
 
 template<typename elem_type, typename derived>
 struct Base
-  : public Base_extra<elem_type, derived, is_supported_blas_type<elem_type>::value>::result
+  : public Base_inv<derived, is_supported_blas_type<elem_type>::value>::result
   , public Base_eval<elem_type, derived, is_Mat<derived>::value>::result
   , public Base_trans<derived, is_cx<elem_type>::value>::result
   {
   arma_inline const derived& get_ref() const;
   
-  arma_cold inline void print(                           const std::string extra_text = "") const;
-  arma_cold inline void print(std::ostream& user_stream, const std::string extra_text = "") const;
+  inline void print(                           const std::string extra_text = "") const;
+  inline void print(std::ostream& user_stream, const std::string extra_text = "") const;
   
-  arma_cold inline void raw_print(                           const std::string extra_text = "") const;
-  arma_cold inline void raw_print(std::ostream& user_stream, const std::string extra_text = "") const;
+  inline void raw_print(                           const std::string extra_text = "") const;
+  inline void raw_print(std::ostream& user_stream, const std::string extra_text = "") const;
   
   inline arma_warn_unused elem_type min() const;
   inline arma_warn_unused elem_type max() const;
@@ -133,27 +130,6 @@ struct Base
   
   inline arma_warn_unused uword index_min() const;
   inline arma_warn_unused uword index_max() const;
-  
-  inline arma_warn_unused bool is_symmetric() const;
-  inline arma_warn_unused bool is_symmetric(const typename get_pod_type<elem_type>::result tol) const;
-  
-  inline arma_warn_unused bool is_hermitian() const;
-  inline arma_warn_unused bool is_hermitian(const typename get_pod_type<elem_type>::result tol) const;
-  
-  inline arma_warn_unused bool is_trimatu() const;
-  inline arma_warn_unused bool is_trimatl() const;
-  inline arma_warn_unused bool is_diagmat() const;
-  inline arma_warn_unused bool is_empty()   const;
-  inline arma_warn_unused bool is_square()  const;
-  inline arma_warn_unused bool is_vec()     const;
-  inline arma_warn_unused bool is_colvec()  const;
-  inline arma_warn_unused bool is_rowvec()  const;
-  inline arma_warn_unused bool is_finite()  const;
-  inline arma_warn_unused bool has_inf()    const;
-  inline arma_warn_unused bool has_nan()    const;
-  
-  arma_inline const Op<derived,op_vectorise_col> as_col() const;
-  arma_inline const Op<derived,op_vectorise_row> as_row() const;
   };
 
 

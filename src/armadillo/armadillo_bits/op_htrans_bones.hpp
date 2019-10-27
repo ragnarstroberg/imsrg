@@ -24,27 +24,11 @@ class op_htrans
   {
   public:
   
-  template<typename T1>
-  struct traits
-    {
-    static const bool is_row  = T1::is_col;  // deliberately swapped
-    static const bool is_col  = T1::is_row;
-    static const bool is_xvec = T1::is_xvec;
-    };
-  
   template<typename eT>
   arma_hot arma_inline static void apply_mat_noalias(Mat<eT>& out, const Mat<eT>& A, const typename arma_not_cx<eT>::result* junk = 0);
   
   template<typename eT>
   arma_hot      inline static void apply_mat_noalias(Mat<eT>& out, const Mat<eT>& A, const typename arma_cx_only<eT>::result* junk = 0);
-  
-  //
-  
-  template<typename T>
-  arma_hot inline static void block_worker(std::complex<T>* Y, const std::complex<T>* X, const uword X_n_rows, const uword Y_n_rows, const uword n_rows, const uword n_cols);
-  
-  template<typename T>
-  arma_hot inline static void apply_mat_noalias_large(Mat< std::complex<T> >& out, const Mat< std::complex<T> >& A);
   
   //
   
@@ -86,14 +70,6 @@ class op_htrans
 class op_htrans2
   {
   public:
-  
-  template<typename T1>
-  struct traits
-    {
-    static const bool is_row  = T1::is_col;  // deliberately swapped
-    static const bool is_col  = T1::is_row;
-    static const bool is_xvec = T1::is_xvec;
-    };
   
   template<typename eT>
   arma_hot inline static void apply_noalias(Mat<eT>& out, const Mat<eT>& A, const eT val);

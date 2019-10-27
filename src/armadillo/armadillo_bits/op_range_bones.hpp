@@ -19,7 +19,6 @@
 
 
 class op_range
-  : public traits_op_xvec
   {
   public:
   

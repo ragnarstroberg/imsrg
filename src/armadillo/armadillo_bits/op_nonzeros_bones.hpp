@@ -21,7 +21,6 @@
 
 
 class op_nonzeros
-  : public traits_op_col
   {
   public:
   
@@ -32,17 +31,12 @@ class op_nonzeros
   
   template<typename T1>
   static inline void apply(Mat<typename T1::elem_type>& out, const Op<T1, op_nonzeros>& X);
-  };
-
-
-
-class op_nonzeros_spmat
-  : public traits_op_col
-  {
-  public:
+  
+  
+  // for sparse matrices
   
   template<typename T1>
-  static inline void apply(Mat<typename T1::elem_type>& out, const SpToDOp<T1, op_nonzeros_spmat>& X);
+  static inline void apply_noalias(Mat<typename T1::elem_type>& out, const SpBase<typename T1::elem_type, T1>& X);
   };
 
 

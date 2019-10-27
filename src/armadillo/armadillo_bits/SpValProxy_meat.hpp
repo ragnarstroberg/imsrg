@@ -65,13 +65,12 @@ SpValProxy<T1>::operator=(const eT rhs)
       {
       // The value exists and merely needs to be updated.
       *val_ptr = rhs;
-      parent.invalidate_cache();
       }
 
     else
       {
-      // The value is nonzero and must be inserted.
-      val_ptr = &parent.insert_element(row, col, rhs);
+      // The value is nonzero and must be added.
+      val_ptr = &parent.add_element(row, col, rhs);
       }
 
     }
@@ -103,15 +102,14 @@ SpValProxy<T1>::operator+=(const eT rhs)
     {
     // The value already exists and merely needs to be updated.
     *val_ptr += rhs;
-    parent.invalidate_cache();
     check_zero();
     }
   else
     {
     if (rhs != eT(0))
       {
-      // The value does not exist and must be inserted.
-      val_ptr = &parent.insert_element(row, col, rhs);
+      // The value does not exist and must be added.
+      val_ptr = &parent.add_element(row, col, rhs);
       }
     }
   
@@ -129,15 +127,14 @@ SpValProxy<T1>::operator-=(const eT rhs)
     {
     // The value already exists and merely needs to be updated.
     *val_ptr -= rhs;
-    parent.invalidate_cache();
     check_zero();
     }
   else
     {
     if (rhs != eT(0))
       {
-      // The value does not exist and must be inserted.
-      val_ptr = &parent.insert_element(row, col, -rhs);
+      // The value does not exist and must be added.
+      val_ptr = &parent.add_element(row, col, -rhs);
       }
     }
 
@@ -158,7 +155,6 @@ SpValProxy<T1>::operator*=(const eT rhs)
       {
       // The value already exists and merely needs to be updated.
       *val_ptr *= rhs;
-      parent.invalidate_cache();
       check_zero();
       }
 
@@ -191,7 +187,6 @@ SpValProxy<T1>::operator/=(const eT rhs)
     if (val_ptr)
       {
       *val_ptr /= rhs;
-      parent.invalidate_cache();
       check_zero();
       }
 
@@ -216,8 +211,8 @@ SpValProxy<T1>::operator/=(const eT rhs)
 
       if (val != eT(0))
         {
-        // Ok, now we have to insert it.
-        val_ptr = &parent.insert_element(row, col, val);
+        // Ok, now we have to add it.
+        val_ptr = &parent.add_element(row, col, val);
         }
 
       }
@@ -236,13 +231,12 @@ SpValProxy<T1>::operator++()
   if (val_ptr)
     {
     (*val_ptr) += eT(1);
-    parent.invalidate_cache();
     check_zero();
     }
 
   else
     {
-    val_ptr = &parent.insert_element(row, col, eT(1));
+    val_ptr = &parent.add_element(row, col, eT(1));
     }
 
   return *this;
@@ -258,13 +252,12 @@ SpValProxy<T1>::operator--()
   if (val_ptr)
     {
     (*val_ptr) -= eT(1);
-    parent.invalidate_cache();
     check_zero();
     }
 
   else
     {
-    val_ptr = &parent.insert_element(row, col, eT(-1));
+    val_ptr = &parent.add_element(row, col, eT(-1));
     }
 
   return *this;
@@ -280,13 +273,12 @@ SpValProxy<T1>::operator++(const int)
   if (val_ptr)
     {
     (*val_ptr) += eT(1);
-    parent.invalidate_cache();
     check_zero();
     }
 
   else
     {
-    val_ptr = &parent.insert_element(row, col, eT(1));
+    val_ptr = &parent.add_element(row, col, eT(1));
     }
 
   if (val_ptr) // It may have changed to now be 0.
@@ -309,13 +301,12 @@ SpValProxy<T1>::operator--(const int)
   if (val_ptr)
     {
     (*val_ptr) -= eT(1);
-    parent.invalidate_cache();
     check_zero();
     }
 
   else
     {
-    val_ptr = &parent.insert_element(row, col, eT(-1));
+    val_ptr = &parent.add_element(row, col, eT(-1));
     }
 
   if (val_ptr) // It may have changed to now be 0.
@@ -334,37 +325,21 @@ template<typename T1>
 arma_inline
 SpValProxy<T1>::operator eT() const
   {
-  return (val_ptr) ? eT(*val_ptr) : eT(0);
+  if (val_ptr)
+    {
+    return *val_ptr;
+    }
+  else
+    {
+    return eT(0);
+    }
   }
 
 
 
 template<typename T1>
 arma_inline
-typename get_pod_type<typename SpValProxy<T1>::eT>::result
-SpValProxy<T1>::real() const
-  {
-  typedef typename get_pod_type<eT>::result T;
-  
-  return T( access::tmp_real( (val_ptr) ? eT(*val_ptr) : eT(0) ) );
-  }
-
-
-
-template<typename T1>
-arma_inline
-typename get_pod_type<typename SpValProxy<T1>::eT>::result
-SpValProxy<T1>::imag() const
-  {
-  typedef typename get_pod_type<eT>::result T;
-  
-  return T( access::tmp_imag( (val_ptr) ? eT(*val_ptr) : eT(0) ) );
-  }
-
-
-
-template<typename T1>
-arma_inline
+arma_hot
 void
 SpValProxy<T1>::check_zero()
   {

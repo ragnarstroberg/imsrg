@@ -19,7 +19,6 @@
 
 
 class op_norm
-  : public traits_op_default
   {
   public:
   

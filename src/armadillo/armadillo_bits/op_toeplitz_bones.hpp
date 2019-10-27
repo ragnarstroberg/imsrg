@@ -20,7 +20,6 @@
 
 
 class op_toeplitz
-  : public traits_op_default
   {
   public:
   
@@ -31,7 +30,6 @@ class op_toeplitz
 
 
 class op_toeplitz_c
-  : public traits_op_default
   {
   public:
   

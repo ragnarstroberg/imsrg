@@ -38,7 +38,7 @@ xtrans_mat<eT,do_conj>::extract(Mat<eT>& out) const
   {
   arma_extra_debug_sigprint();
   
-  really_do_conj ? op_htrans::apply_mat(out, X) : op_strans::apply_mat(out, X);
+  do_conj ? op_htrans::apply_mat(out, X) : op_strans::apply_mat(out, X);
   }
 
 
@@ -54,7 +54,7 @@ xtrans_mat<eT,do_conj>::operator[](const uword ii) const
     }
   else
     {
-    really_do_conj ? op_htrans::apply_mat(Y, X) : op_strans::apply_mat(Y, X);
+    do_conj ? op_htrans::apply_mat(Y, X) : op_strans::apply_mat(Y, X);
     return Y[ii];
     }
   }
@@ -76,8 +76,14 @@ arma_inline
 eT
 xtrans_mat<eT,do_conj>::at(const uword in_row, const uword in_col) const
   {
-  return really_do_conj ? eT(access::alt_conj(X.at(in_col, in_row))) : eT(X.at(in_col, in_row));
-  // in_row and in_col deliberately swapped above
+  if(do_conj)
+    {
+    return access::alt_conj( X.at(in_col, in_row) ); // deliberately swapped
+    }
+  else
+    {
+    return X.at(in_col, in_row); // deliberately swapped
+    }
   }
 
 

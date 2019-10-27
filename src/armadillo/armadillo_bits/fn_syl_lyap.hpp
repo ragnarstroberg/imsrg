@@ -48,7 +48,7 @@ syl
   
   if(status == false)
     {
-    out.soft_reset();
+    out.reset();
     arma_debug_warn("syl(): solution not found");
     }
   
@@ -88,7 +88,7 @@ syl
   
   if(status == false)
     {
-    out.soft_reset();
+    out.reset();
     arma_stop_runtime_error("syl(): solution not found");
     }
   

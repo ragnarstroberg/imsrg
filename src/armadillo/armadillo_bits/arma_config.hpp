@@ -28,17 +28,10 @@ struct arma_config
   #endif
   
   
-  #if defined(ARMA_OPENMP_THRESHOLD)
-    static const uword mp_threshold = (sword(ARMA_OPENMP_THRESHOLD) > 0) ? uword(ARMA_OPENMP_THRESHOLD) : 240;
+  #if defined(ARMA_SPMAT_CHUNKSIZE)
+    static const uword spmat_chunksize = (sword(ARMA_SPMAT_CHUNKSIZE) > 0) ? uword(ARMA_SPMAT_CHUNKSIZE) : 256;
   #else
-    static const uword mp_threshold = 240;
-  #endif
-  
-  
-  #if defined(ARMA_OPENMP_THREADS)
-    static const uword mp_threads = (sword(ARMA_OPENMP_THREADS) > 0) ? uword(ARMA_OPENMP_THREADS) : 10;
-  #else
-    static const uword mp_threads = 10;
+    static const uword spmat_chunksize = 256;
   #endif
   
   
@@ -129,37 +122,23 @@ struct arma_config
   
   
   #if defined(ARMA_USE_CXX11)
-    static const bool cxx11 = true;
+    static const bool use_cxx11 = true;
   #else
-    static const bool cxx11 = false;
-  #endif
-  
-  
-  #if (defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 200112L))
-    static const bool posix = true;
-  #else
-    static const bool posix = false;
+    static const bool use_cxx11 = false;
   #endif
   
   
   #if defined(ARMA_USE_WRAPPER)
-    static const bool wrapper = true;
+    static const bool use_wrapper = true;
   #else
-    static const bool wrapper = false;
+    static const bool use_wrapper = false;
   #endif
   
   
-  #if defined(ARMA_USE_OPENMP)
+  #if defined(_OPENMP)
     static const bool openmp = true;
   #else
     static const bool openmp = false;
-  #endif
-  
-  
-  #if defined(ARMA_USE_FORTRAN_HIDDEN_ARGS)
-    static const bool hidden_args = true;
-  #else
-    static const bool hidden_args = false;
   #endif
   };
 

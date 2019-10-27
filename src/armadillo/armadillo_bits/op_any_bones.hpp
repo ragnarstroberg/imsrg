@@ -21,7 +21,6 @@
 
 
 class op_any
-  : public traits_op_xvec
   {
   public:
   

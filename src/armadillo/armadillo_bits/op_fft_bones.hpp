@@ -21,7 +21,6 @@
 
 
 class op_fft_real
-  : public traits_op_passthru
   {
   public:
   
@@ -32,7 +31,6 @@ class op_fft_real
 
 
 class op_fft_cx
-  : public traits_op_passthru
   {
   public:
   
@@ -50,7 +48,6 @@ class op_fft_cx
 
 
 class op_ifft_cx
-  : public traits_op_passthru
   {
   public:
   

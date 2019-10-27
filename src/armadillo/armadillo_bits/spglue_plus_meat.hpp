@@ -41,7 +41,6 @@ spglue_plus::apply(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue
   else
     {
     SpMat<eT> tmp;
-    
     spglue_plus::apply_noalias(tmp, pa, pb);
     
     out.steal_mem(tmp);
@@ -60,233 +59,139 @@ spglue_plus::apply_noalias(SpMat<eT>& out, const SpProxy<T1>& pa, const SpProxy<
   
   arma_debug_assert_same_size(pa.get_n_rows(), pa.get_n_cols(), pb.get_n_rows(), pb.get_n_cols(), "addition");
   
-  if(pa.get_n_nonzero() == 0)  { out = pb.Q; return; }
-  if(pb.get_n_nonzero() == 0)  { out = pa.Q; return; }
-  
-  const uword max_n_nonzero = spglue_elem_helper::max_n_nonzero_plus(pa, pb);
-  
-  // Resize memory to upper bound
-  out.reserve(pa.get_n_rows(), pa.get_n_cols(), max_n_nonzero);
-  
-  // Now iterate across both matrices.
-  typename SpProxy<T1>::const_iterator_type x_it  = pa.begin();
-  typename SpProxy<T1>::const_iterator_type x_end = pa.end();
-  
-  typename SpProxy<T2>::const_iterator_type y_it  = pb.begin();
-  typename SpProxy<T2>::const_iterator_type y_end = pb.end();
-  
-  uword count = 0;
-  
-  while( (x_it != x_end) || (y_it != y_end) )
+  if( (pa.get_n_nonzero() != 0) && (pb.get_n_nonzero() != 0) )
     {
-    eT out_val;
+    out.zeros(pa.get_n_rows(), pa.get_n_cols());
     
-    const uword x_it_col = x_it.col();
-    const uword x_it_row = x_it.row();
+    // Resize memory to correct size.
+    out.mem_resize(n_unique(pa, pb, op_n_unique_add()));
     
-    const uword y_it_col = y_it.col();
-    const uword y_it_row = y_it.row();
+    // Now iterate across both matrices.
+    typename SpProxy<T1>::const_iterator_type x_it = pa.begin();
+    typename SpProxy<T2>::const_iterator_type y_it = pb.begin();
     
-    bool use_y_loc = false;
+    typename SpProxy<T1>::const_iterator_type x_end = pa.end();
+    typename SpProxy<T2>::const_iterator_type y_end = pb.end();
     
-    if(x_it == y_it)
+    uword cur_val = 0;
+    while( (x_it != x_end) || (y_it != y_end) )
       {
-      out_val = (*x_it) + (*y_it);
-      
-      ++x_it;
-      ++y_it;
-      }
-    else
-      {
-      if((x_it_col < y_it_col) || ((x_it_col == y_it_col) && (x_it_row < y_it_row))) // if y is closer to the end
+      if(x_it == y_it)
         {
-        out_val = (*x_it);
+        const eT val = (*x_it) + (*y_it);
+        
+        if(val != eT(0))
+          {
+          access::rw(out.values[cur_val]) = val;
+          access::rw(out.row_indices[cur_val]) = x_it.row();
+          ++access::rw(out.col_ptrs[x_it.col() + 1]);
+          ++cur_val;
+          }
         
         ++x_it;
+        ++y_it;
         }
       else
         {
-        out_val = (*y_it);
+        const uword x_it_row = x_it.row();
+        const uword x_it_col = x_it.col();
         
-        ++y_it;
+        const uword y_it_row = y_it.row();
+        const uword y_it_col = y_it.col();
         
-        use_y_loc = true;
+        if((x_it_col < y_it_col) || ((x_it_col == y_it_col) && (x_it_row < y_it_row))) // if y is closer to the end
+          {
+          const eT val = (*x_it);
+          
+          if(val != eT(0))
+            {
+            access::rw(out.values[cur_val]) = val;
+            access::rw(out.row_indices[cur_val]) = x_it_row;
+            ++access::rw(out.col_ptrs[x_it_col + 1]);
+            ++cur_val;
+            }
+          
+          ++x_it;
+          }
+        else
+          {
+          const eT val = (*y_it);
+          
+          if(val != eT(0))
+            {
+            access::rw(out.values[cur_val]) = val;
+            access::rw(out.row_indices[cur_val]) = y_it_row;
+            ++access::rw(out.col_ptrs[y_it_col + 1]);
+            ++cur_val;
+            }
+          
+          ++y_it;
+          }
         }
       }
     
-    if(out_val != eT(0))
+    const uword out_n_cols = out.n_cols;
+    
+    uword* col_ptrs = access::rwp(out.col_ptrs);
+    
+    // Fix column pointers to be cumulative.
+    for(uword c = 1; c <= out_n_cols; ++c)
       {
-      access::rw(out.values[count]) = out_val;
-      
-      const uword out_row = (use_y_loc == false) ? x_it_row : y_it_row;
-      const uword out_col = (use_y_loc == false) ? x_it_col : y_it_col;
-      
-      access::rw(out.row_indices[count]) = out_row;
-      access::rw(out.col_ptrs[out_col + 1])++;
-      ++count;
+      col_ptrs[c] += col_ptrs[c - 1];
       }
     }
-  
-  const uword out_n_cols = out.n_cols;
-  
-  uword* col_ptrs = access::rwp(out.col_ptrs);
-  
-  // Fix column pointers to be cumulative.
-  for(uword c = 1; c <= out_n_cols; ++c)
+  else
     {
-    col_ptrs[c] += col_ptrs[c - 1];
-    }
-  
-  if(count < max_n_nonzero)
-    {
-    if(count <= (max_n_nonzero/2))
+    if(pa.get_n_nonzero() == 0)
       {
-      out.mem_resize(count);
+      out = pb.Q;
+      return;
       }
-    else
+    
+    if(pb.get_n_nonzero() == 0)
       {
-      // quick resize without reallocating memory and copying data
-      access::rw(         out.n_nonzero) = count;
-      access::rw(     out.values[count]) = eT(0);
-      access::rw(out.row_indices[count]) = uword(0);
+      out = pa.Q;
+      return;
       }
     }
-  }
-
-
-
-template<typename eT>
-arma_hot
-inline
-void
-spglue_plus::apply_noalias(SpMat<eT>& out, const SpMat<eT>& A, const SpMat<eT>& B)
-  {
-  arma_extra_debug_sigprint();
-  
-  const SpProxy< SpMat<eT> > pa(A);
-  const SpProxy< SpMat<eT> > pb(B);
-  
-  spglue_plus::apply_noalias(out, pa, pb);
   }
 
 
 
 //
+//
+// spglue_plus2: scalar*(A + B)
 
 
 
 template<typename T1, typename T2>
+arma_hot
 inline
 void
-spglue_plus_mixed::apply(SpMat<typename eT_promoter<T1,T2>::eT>& out, const mtSpGlue<typename eT_promoter<T1,T2>::eT, T1, T2, spglue_plus_mixed>& expr)
+spglue_plus2::apply(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_plus2>& X)
   {
   arma_extra_debug_sigprint();
   
-  typedef typename T1::elem_type eT1;
-  typedef typename T2::elem_type eT2;
+  typedef typename T1::elem_type eT;
   
-  typedef typename promote_type<eT1,eT2>::result out_eT;
+  const SpProxy<T1> pa(X.A);
+  const SpProxy<T2> pb(X.B);
   
-  promote_type<eT1,eT2>::check();
+  const bool is_alias = pa.is_alias(out) || pb.is_alias(out);
   
-  if( (is_same_type<eT1,out_eT>::no) && (is_same_type<eT2,out_eT>::yes) )
+  if(is_alias == false)
     {
-    // upgrade T1
-    
-    const unwrap_spmat<T1> UA(expr.A);
-    const unwrap_spmat<T2> UB(expr.B);
-    
-    const SpMat<eT1>& A = UA.M;
-    const SpMat<eT2>& B = UB.M;
-    
-    SpMat<out_eT> AA(arma_layout_indicator(), A);
-    
-    for(uword i=0; i < A.n_nonzero; ++i)  { access::rw(AA.values[i]) = out_eT(A.values[i]); }
-    
-    const SpMat<out_eT>& BB = reinterpret_cast< const SpMat<out_eT>& >(B);
-    
-    out = AA + BB;
-    }
-  else
-  if( (is_same_type<eT1,out_eT>::yes) && (is_same_type<eT2,out_eT>::no) )
-    {
-    // upgrade T2 
-    
-    const unwrap_spmat<T1> UA(expr.A);
-    const unwrap_spmat<T2> UB(expr.B);
-    
-    const SpMat<eT1>& A = UA.M;
-    const SpMat<eT2>& B = UB.M;
-    
-    const SpMat<out_eT>& AA = reinterpret_cast< const SpMat<out_eT>& >(A);
-    
-    SpMat<out_eT> BB(arma_layout_indicator(), B);
-    
-    for(uword i=0; i < B.n_nonzero; ++i)  { access::rw(BB.values[i]) = out_eT(B.values[i]); }
-    
-    out = AA + BB;
+    spglue_plus::apply_noalias(out, pa, pb);
     }
   else
     {
-    // upgrade T1 and T2
+    SpMat<eT> tmp;
+    spglue_plus::apply_noalias(tmp, pa, pb);
     
-    const unwrap_spmat<T1> UA(expr.A);
-    const unwrap_spmat<T2> UB(expr.B);
-    
-    const SpMat<eT1>& A = UA.M;
-    const SpMat<eT2>& B = UB.M;
-    
-    SpMat<out_eT> AA(arma_layout_indicator(), A);
-    SpMat<out_eT> BB(arma_layout_indicator(), B);
-    
-    for(uword i=0; i < A.n_nonzero; ++i)  { access::rw(AA.values[i]) = out_eT(A.values[i]); }
-    for(uword i=0; i < B.n_nonzero; ++i)  { access::rw(BB.values[i]) = out_eT(B.values[i]); }
-    
-    out = AA + BB;
-    }
-  }
-
-
-
-template<typename T1, typename T2>
-inline
-void
-spglue_plus_mixed::dense_plus_sparse(Mat< typename promote_type<typename T1::elem_type, typename T2::elem_type >::result>& out, const T1& X, const T2& Y)
-  {
-  arma_extra_debug_sigprint();
-  
-  typedef typename T1::elem_type eT1;
-  typedef typename T2::elem_type eT2;
-  
-  typedef typename promote_type<eT1,eT2>::result out_eT;
-  
-  promote_type<eT1,eT2>::check();
-  
-  if(is_same_type<eT1,out_eT>::no)
-    {
-    out = conv_to< Mat<out_eT> >::from(X);
-    }
-  else
-    {
-    const quasi_unwrap<T1> UA(X);
-    
-    const Mat<eT1>& A = UA.M;
-    
-    out = reinterpret_cast< const Mat<out_eT>& >(A);
+    out.steal_mem(tmp);
     }
   
-  const SpProxy<T2> pb(Y);
-  
-  arma_debug_assert_same_size( out.n_rows, out.n_cols, pb.get_n_rows(), pb.get_n_cols(), "addition" );
-  
-  typename SpProxy<T2>::const_iterator_type it     = pb.begin();
-  typename SpProxy<T2>::const_iterator_type it_end = pb.end();
-  
-  while(it != it_end)
-    {
-    out.at(it.row(), it.col()) += out_eT(*it);
-    ++it;
-    }
+  out *= X.aux;
   }
 
 

@@ -35,7 +35,6 @@ inv
 
 
 
-//! NOTE: don't use this form: it will be removed
 template<typename T1>
 arma_deprecated
 inline
@@ -55,7 +54,6 @@ inv
 
 
 
-//! NOTE: don't use this form: it will be removed
 template<typename T1>
 arma_deprecated
 inline
@@ -91,7 +89,6 @@ inv
 
 
 
-//! NOTE: don't use this form: it will be removed
 template<typename T1>
 arma_deprecated
 inline
@@ -111,7 +108,6 @@ inv
 
 
 
-//! NOTE: don't use this form: it will be removed
 template<typename T1>
 arma_deprecated
 inline
@@ -156,7 +152,6 @@ inv
 
 
 
-//! NOTE: don't use this form: it will be removed
 template<typename T1>
 arma_deprecated
 inline
@@ -177,7 +172,6 @@ inv
 
 
 
-//! NOTE: don't use this form: it will be removed
 template<typename T1>
 arma_deprecated
 inline
@@ -214,7 +208,6 @@ inv_sympd
 
 
 
-//! NOTE: don't use this form: it will be removed
 template<typename T1>
 arma_deprecated
 inline
@@ -234,7 +227,6 @@ inv_sympd
 
 
 
-//! NOTE: don't use this form: it will be removed
 template<typename T1>
 arma_deprecated
 inline
@@ -279,7 +271,6 @@ inv_sympd
 
 
 
-//! NOTE: don't use this form: it will be removed
 template<typename T1>
 arma_deprecated
 inline
@@ -300,7 +291,6 @@ inv_sympd
 
 
 
-//! NOTE: don't use this form: it will be removed
 template<typename T1>
 arma_deprecated
 inline

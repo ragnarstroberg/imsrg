@@ -21,7 +21,6 @@
 
 
 class op_reshape
-  : public traits_op_default
   {
   public:
   
@@ -35,7 +34,6 @@ class op_reshape
 
 
 class op_reshape_ext
-  : public traits_op_default
   {
   public:
   

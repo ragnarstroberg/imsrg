@@ -21,7 +21,6 @@
 
 
 class glue_max
-  : public traits_glue_or
   {
   public:
   

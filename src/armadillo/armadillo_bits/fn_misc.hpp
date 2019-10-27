@@ -42,13 +42,6 @@ linspace
   
   out_type x;
   
-  if(num == 1)
-    {
-    x.set_size(1);
-    
-    x[0] = eT(end);
-    }
-  else
   if(num >= 2)
     {
     x.set_size(num);
@@ -79,6 +72,17 @@ linspace
       
       x_mem[num_m1] = eT(end);
       }
+    }
+  else
+    {
+    x.set_size(1);
+    
+    x[0] = eT(end);
+    
+    // NOTE: returning "end" for num <= 1 is kept for compatibility with Matlab & Octave,
+    // NOTE: but for num = 0 this probably causes more problems than it helps
+    
+    // TODO: in version 8.0, return an empty vector when num = 0
     }
   
   return x;
@@ -185,7 +189,6 @@ log_add(eT log_a, eT log_b)
   
 
 
-//! kept for compatibility with old user code
 template<typename eT>
 arma_warn_unused
 arma_inline
@@ -199,21 +202,71 @@ is_finite(const eT x, const typename arma_scalar_only<eT>::result* junk = 0)
 
 
 
-//! kept for compatibility with old user code
 template<typename T1>
 arma_warn_unused
 inline
-bool
-is_finite(const Base<typename T1::elem_type,T1>& X)
+typename
+enable_if2
+  <
+  is_arma_type<T1>::value,
+  bool
+  >::result
+is_finite(const T1& X)
   {
   arma_extra_debug_sigprint();
   
-  return X.is_finite();
+  typedef typename T1::elem_type eT;
+  
+  const Proxy<T1> P(X);
+  
+  const bool have_direct_mem = (is_Mat<typename Proxy<T1>::stored_type>::value) || (is_subview_col<typename Proxy<T1>::stored_type>::value);
+  
+  if(have_direct_mem)
+    {
+    const quasi_unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
+    
+    return tmp.M.is_finite();
+    }
+  
+  
+  if(Proxy<T1>::use_at == false)
+    {
+    const typename Proxy<T1>::ea_type Pea = P.get_ea();
+    
+    const uword n_elem = P.get_n_elem();
+    
+    uword i,j;
+    
+    for(i=0, j=1; j<n_elem; i+=2, j+=2)
+      {
+      const eT val_i = Pea[i];
+      const eT val_j = Pea[j];
+      
+      if( (arma_isfinite(val_i) == false) || (arma_isfinite(val_j) == false) )  { return false; }
+      }
+    
+    if(i < n_elem)
+      {
+      if(arma_isfinite(Pea[i]) == false)  { return false; }
+      }
+    }
+  else
+    {
+    const uword n_rows = P.get_n_rows();
+    const uword n_cols = P.get_n_cols();
+    
+    for(uword col=0; col<n_cols; ++col)
+    for(uword row=0; row<n_rows; ++row)
+      {
+      if(arma_isfinite(P.at(row,col)) == false)  { return false; }
+      }
+    }
+  
+  return true;
   }
 
 
 
-//! kept for compatibility with old user code
 template<typename T1>
 arma_warn_unused
 inline
@@ -222,12 +275,31 @@ is_finite(const SpBase<typename T1::elem_type,T1>& X)
   {
   arma_extra_debug_sigprint();
   
-  return X.is_finite();
+  const SpProxy<T1> P(X.get_ref());
+  
+  if(is_SpMat<typename SpProxy<T1>::stored_type>::value)
+    {
+    const unwrap_spmat<typename SpProxy<T1>::stored_type> tmp(P.Q);
+    
+    return tmp.M.is_finite();
+    }
+  else
+    {
+    typename SpProxy<T1>::const_iterator_type it     = P.begin();
+    typename SpProxy<T1>::const_iterator_type it_end = P.end();
+    
+    while(it != it_end)
+      {
+      if(arma_isfinite(*it) == false)  { return false; }
+      ++it;
+      }
+    }
+  
+  return true;
   }
 
 
 
-//! kept for compatibility with old user code
 template<typename T1>
 arma_warn_unused
 inline
@@ -236,12 +308,17 @@ is_finite(const BaseCube<typename T1::elem_type,T1>& X)
   {
   arma_extra_debug_sigprint();
   
-  return X.is_finite();
+  typedef typename T1::elem_type eT;
+  
+  const unwrap_cube<T1> tmp(X.get_ref());
+  const Cube<eT>& A =   tmp.M;
+  
+  return A.is_finite();
   }
 
 
 
-//! NOTE: don't use this function: it will be removed
+//! DO NOT USE IN NEW CODE; change instances of inv(sympd(X)) to inv_sympd(X)
 template<typename T1>
 arma_deprecated
 inline
@@ -495,7 +572,7 @@ sub2ind(const SizeMat& s, const Base<uword,T1>& subscripts)
   const uword s_n_rows = s.n_rows;
   const uword s_n_cols = s.n_cols;
   
-  const quasi_unwrap<T1> U(subscripts.get_ref());
+  const unwrap<T1> U(subscripts.get_ref());
   
   arma_debug_check( (U.M.n_rows != 2), "sub2ind(): matrix of subscripts must have 2 rows" );
   
@@ -552,7 +629,7 @@ sub2ind(const SizeCube& s, const Base<uword,T1>& subscripts)
   const uword s_n_cols   = s.n_cols;
   const uword s_n_slices = s.n_slices;
   
-  const quasi_unwrap<T1> U(subscripts.get_ref());
+  const unwrap<T1> U(subscripts.get_ref());
   
   arma_debug_check( (U.M.n_rows != 3), "sub2ind(): matrix of subscripts must have 3 rows" );
   
@@ -577,23 +654,6 @@ sub2ind(const SizeCube& s, const Base<uword,T1>& subscripts)
     }
   
   return out;
-  }
-
-
-
-template<typename T1, typename T2>
-arma_inline
-typename
-enable_if2
-  <
-  (is_arma_type<T1>::value && is_same_type<typename T1::elem_type, typename T2::elem_type>::value),
-  const Glue<T1, T2, glue_affmul>
-  >::result
-affmul(const T1& A, const T2& B)
-  {
-  arma_extra_debug_sigprint();
-  
-  return Glue<T1, T2, glue_affmul>(A,B);
   }
 
 

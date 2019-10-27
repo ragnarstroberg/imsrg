@@ -85,9 +85,9 @@ svds_helper
     
     if(status == false)
       {
-      U.soft_reset();
-      S.soft_reset();
-      V.soft_reset();
+      U.reset();
+      S.reset();
+      V.reset();
       
       return false;
       }
@@ -206,9 +206,9 @@ svds_helper
     
     if(status == false)
       {
-      U.soft_reset();
-      S.soft_reset();
-      V.soft_reset();
+      U.reset();
+      S.reset();
+      V.reset();
       
       return false;
       }

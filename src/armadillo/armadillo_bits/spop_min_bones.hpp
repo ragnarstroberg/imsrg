@@ -19,7 +19,6 @@
 
 
 class spop_min
-  : public traits_op_xvec
   {
   public:
   

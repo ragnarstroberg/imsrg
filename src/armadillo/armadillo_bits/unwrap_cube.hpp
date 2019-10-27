@@ -20,8 +20,10 @@
 
 
 template<typename T1>
-struct unwrap_cube
+class unwrap_cube
   {
+  public:
+  
   typedef typename T1::elem_type eT;
   
   inline
@@ -32,27 +34,23 @@ struct unwrap_cube
     }
   
   const Cube<eT> M;
-  
-  template<typename eT2>
-  arma_inline bool is_alias(const Cube<eT2>&) const { return false; }
   };
 
 
 
 template<typename eT>
-struct unwrap_cube< Cube<eT> >
+class unwrap_cube< Cube<eT> >
   {
+  public:
+
   inline
   unwrap_cube(const Cube<eT>& A)
     : M(A)
     {
     arma_extra_debug_sigprint();
     }
-  
+
   const Cube<eT>& M;
-  
-  template<typename eT2>
-  arma_inline bool is_alias(const Cube<eT2>& X) const { return (void_ptr(&M) == void_ptr(&X)); }
   };
 
 
@@ -64,8 +62,10 @@ struct unwrap_cube< Cube<eT> >
 
 
 template<typename T1>
-struct unwrap_cube_check
+class unwrap_cube_check
   {
+  public:
+  
   typedef typename T1::elem_type eT;
   
   inline
@@ -83,8 +83,10 @@ struct unwrap_cube_check
 
 
 template<typename eT>
-struct unwrap_cube_check< Cube<eT> >
+class unwrap_cube_check< Cube<eT> >
   {
+  public:
+
   inline
   unwrap_cube_check(const Cube<eT>& A, const Cube<eT>& B)
     : M_local( (&A == &B) ? new Cube<eT>(A) : 0 )
@@ -109,6 +111,7 @@ struct unwrap_cube_check< Cube<eT> >
   // the order below is important
   const Cube<eT>* M_local;
   const Cube<eT>& M;
+  
   };
 
 

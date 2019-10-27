@@ -19,7 +19,6 @@
 
 
 class spop_diagmat
-  : public traits_op_default
   {
   public:
   
@@ -27,26 +26,12 @@ class spop_diagmat
   inline static void apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_diagmat>& in);
   
   template<typename T1>
-  inline static void apply_noalias(SpMat<typename T1::elem_type>& out, const SpBase<typename T1::elem_type, T1>& expr);
-  
-  template<typename T1, typename T2>
-  inline static void apply_noalias(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_plus>& expr);
-  
-  template<typename T1, typename T2>
-  inline static void apply_noalias(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_minus>& expr);
-  
-  template<typename T1, typename T2>
-  inline static void apply_noalias(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_schur>& expr);
-  
-  template<typename T1, typename T2>
-  inline static void apply_noalias(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_times>& expr);
-  
+  inline static void apply_noalias(SpMat<typename T1::elem_type>& out, const SpProxy<T1>& p);
   };
 
 
 
 class spop_diagmat2
-  : public traits_op_default
   {
   public:
   

@@ -20,7 +20,6 @@
 
 
 class op_real
-  : public traits_op_passthru
   {
   public:
   
@@ -34,7 +33,6 @@ class op_real
 
 
 class op_imag
-  : public traits_op_passthru
   {
   public:
   
@@ -48,7 +46,6 @@ class op_imag
 
 
 class op_abs
-  : public traits_op_passthru
   {
   public:
   
@@ -62,7 +59,6 @@ class op_abs
 
 
 class op_arg
-  : public traits_op_passthru
   {
   public:
   

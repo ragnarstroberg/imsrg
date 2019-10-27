@@ -23,7 +23,7 @@
 template<typename eT>
 inline
 void
-op_hist::apply_noalias(Mat<uword>& out, const Mat<eT>& A, const uword n_bins, const uword dim)
+op_hist::apply_noalias(Mat<uword>& out, const Mat<eT>& A, const uword n_bins, const bool A_is_row)
   {
   arma_extra_debug_sigprint();
   
@@ -71,6 +71,8 @@ op_hist::apply_noalias(Mat<uword>& out, const Mat<eT>& A, const uword n_bins, co
   
   c = ((max_val - min_val) * c) + min_val;
   
+  const uword dim = (A_is_row) ? 1 : 0;
+  
   glue_hist::apply_noalias(out, A, c, dim);
   }
 
@@ -87,19 +89,17 @@ op_hist::apply(Mat<uword>& out, const mtOp<uword, T1, op_hist>& X)
   
   const quasi_unwrap<T1> U(X.m);
   
-  const uword dim = (T1::is_xvec) ? uword(U.M.is_rowvec() ? 1 : 0) : uword((T1::is_row) ? 1 : 0);
-  
   if(U.is_alias(out))
     {
     Mat<uword> tmp;
     
-    op_hist::apply_noalias(tmp, U.M, n_bins, dim);
+    op_hist::apply_noalias(tmp, U.M, n_bins, (T1::is_row));
     
     out.steal_mem(tmp);
     }
   else
     {
-    op_hist::apply_noalias(out, U.M, n_bins, dim);
+    op_hist::apply_noalias(out, U.M, n_bins, (T1::is_row));
     }
   }
 

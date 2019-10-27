@@ -36,7 +36,7 @@ op_logmat::apply(Mat< std::complex<typename T1::elem_type> >& out, const mtOp<st
   
   if(status == false)
     {
-    out.soft_reset();
+    out.reset();
     arma_stop_runtime_error("logmat(): transformation failed");
     }
   }
@@ -136,7 +136,7 @@ op_logmat_cx::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_logmat_cx>&
   
   if(status == false)
     {
-    out.soft_reset();
+    out.reset();
     arma_stop_runtime_error("logmat(): transformation failed");
     }
   }
@@ -320,7 +320,7 @@ op_logmat_cx::helper(Mat<eT>& A, const uword m)
   vec eigval;
   mat eigvec;
   
-  const bool eig_ok = eig_sym_helper(eigval, eigvec, tmp, 'd', "logmat()");
+  const bool eig_ok = eig_sym(eigval, eigvec, tmp);
   
   if(eig_ok == false)  { arma_extra_debug_print("logmat(): eig_sym() failed"); return false; }
   
@@ -363,7 +363,7 @@ op_logmat_sympd::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_logmat_s
   
   if(status == false)
     {
-    out.soft_reset();
+    out.reset();
     arma_stop_runtime_error("logmat_sympd(): transformation failed");
     }
   }
@@ -390,7 +390,7 @@ op_logmat_sympd::apply_direct(Mat<typename T1::elem_type>& out, const Base<typen
     Col< T> eigval;
     Mat<eT> eigvec;
     
-    const bool status = eig_sym_helper(eigval, eigvec, X, 'd', "logmat_sympd()");
+    const bool status = auxlib::eig_sym_dc(eigval, eigvec, X);
     
     if(status == false)  { return false; }
     

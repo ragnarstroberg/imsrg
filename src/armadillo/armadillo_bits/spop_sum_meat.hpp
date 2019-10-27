@@ -49,25 +49,18 @@ spop_sum::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_sum>& in)
     {
     Row<eT> acc(p_n_cols, fill::zeros);
     
-    eT* acc_mem = acc.memptr();
-    
     if(SpProxy<T1>::use_iterator)
       {
-      typename SpProxy<T1>::const_iterator_type it = p.begin();
+      typename SpProxy<T1>::const_iterator_type it     = p.begin();
+      typename SpProxy<T1>::const_iterator_type it_end = p.end();
       
-      const uword N = p.get_n_nonzero();
-
-      for(uword i=0; i < N; ++i)
-        {
-        acc_mem[it.col()] += (*it);
-        ++it;
-        }
+      while(it != it_end)  { acc[it.col()] += (*it);  ++it; }
       }
     else
       {
       for(uword col = 0; col < p_n_cols; ++col)
         {
-        acc_mem[col] = arrayops::accumulate
+        acc[col] = arrayops::accumulate
           (
           &p.get_values()[p.get_col_ptrs()[col]],
           p.get_col_ptrs()[col + 1] - p.get_col_ptrs()[col]
@@ -82,17 +75,10 @@ spop_sum::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_sum>& in)
     {
     Col<eT> acc(p_n_rows, fill::zeros);
     
-    eT* acc_mem = acc.memptr();
+    typename SpProxy<T1>::const_iterator_type it     = p.begin();
+    typename SpProxy<T1>::const_iterator_type it_end = p.end();
     
-    typename SpProxy<T1>::const_iterator_type it = p.begin();
-    
-    const uword N = p.get_n_nonzero();
-    
-    for(uword i=0; i < N; ++i)
-      {
-      acc_mem[it.row()] += (*it);
-      ++it;
-      }
+    while(it != it_end)  { acc[it.row()] += (*it);  ++it; }
     
     out = acc;
     }

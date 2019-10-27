@@ -21,7 +21,6 @@
 
 
 class glue_min
-  : public traits_glue_or
   {
   public:
   

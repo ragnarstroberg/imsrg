@@ -18,7 +18,6 @@
 //! @{
 
 
-
 arma_warn_unused
 inline
 double
@@ -28,11 +27,10 @@ randn()
   }
 
 
-
 template<typename eT>
 arma_warn_unused
 inline
-typename arma_real_or_cx_only<eT>::result
+typename arma_scalar_only<eT>::result
 randn()
   {
   return eT(arma_rng::randn<eT>());
@@ -63,7 +61,7 @@ randn(const uword n_elem, const arma_empty_class junk1 = arma_empty_class(), con
   arma_ignore(junk1);
   arma_ignore(junk2);
   
-  if(is_Row<obj_type>::value)
+  if(is_Row<obj_type>::value == true)
     {
     return Gen<obj_type, gen_randn>(1, n_elem);
     }
@@ -109,12 +107,12 @@ randn(const uword n_rows, const uword n_cols, const typename arma_Mat_Col_Row_on
   arma_extra_debug_sigprint();
   arma_ignore(junk);
   
-  if(is_Col<obj_type>::value)
+  if(is_Col<obj_type>::value == true)
     {
     arma_debug_check( (n_cols != 1), "randn(): incompatible size" );
     }
   else
-  if(is_Row<obj_type>::value)
+  if(is_Row<obj_type>::value == true)
     {
     arma_debug_check( (n_rows != 1), "randn(): incompatible size" );
     }
