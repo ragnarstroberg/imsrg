@@ -25,78 +25,51 @@ inline
 typename T1::elem_type
 accu_proxy_linear(const Proxy<T1>& P)
   {
-  arma_extra_debug_sigprint();
-  
   typedef typename T1::elem_type eT;
-  
-  eT val = eT(0);
-  
-  typename Proxy<T1>::ea_type Pea = P.get_ea();
   
   const uword n_elem = P.get_n_elem();
   
-  if( arma_config::openmp && Proxy<T1>::use_mp && mp_gate<eT>::eval(n_elem) )
+  #if defined(__FINITE_MATH_ONLY__) && (__FINITE_MATH_ONLY__ > 0)
     {
-    #if defined(ARMA_USE_OPENMP)
+    eT val = eT(0);
+    
+    if(P.is_aligned())
       {
-      // NOTE: using parallelisation with manual reduction workaround to take into account complex numbers;
-      // NOTE: OpenMP versions lower than 4.0 do not support user-defined reduction
+      typename Proxy<T1>::aligned_ea_type A = P.get_aligned_ea();
       
-      const int   n_threads_max = mp_thread_limit::get();
-      const uword n_threads_use = (std::min)(uword(podarray_prealloc_n_elem::val), uword(n_threads_max));
-      const uword chunk_size    = n_elem / n_threads_use;
-      
-      podarray<eT> partial_accs(n_threads_use);
-      
-      #pragma omp parallel for schedule(static) num_threads(int(n_threads_use))
-      for(uword thread_id=0; thread_id < n_threads_use; ++thread_id)
-        {
-        const uword start = (thread_id+0) * chunk_size;
-        const uword endp1 = (thread_id+1) * chunk_size;
-        
-        eT acc = eT(0);
-        for(uword i=start; i < endp1; ++i)  { acc += Pea[i]; }
-        
-        partial_accs[thread_id] = acc;
-        }
-      
-      for(uword thread_id=0; thread_id < n_threads_use; ++thread_id)  { val += partial_accs[thread_id]; }
-      
-      for(uword i=(n_threads_use*chunk_size); i < n_elem; ++i)  { val += Pea[i]; }
+      for(uword i=0; i<n_elem; ++i)  { val += A.at_alt(i); }
       }
-    #endif
+    else
+      {
+      typename Proxy<T1>::ea_type A = P.get_ea();
+      
+      for(uword i=0; i<n_elem; ++i)  { val += A[i]; }
+      }
+    
+    return val;
     }
-  else
+  #else
     {
-    #if defined(__FINITE_MATH_ONLY__) && (__FINITE_MATH_ONLY__ > 0)
+    eT val1 = eT(0);
+    eT val2 = eT(0);
+    
+    typename Proxy<T1>::ea_type A = P.get_ea();
+    
+    uword i,j;
+    for(i=0, j=1; j < n_elem; i+=2, j+=2)
       {
-      if(P.is_aligned())
-        {
-        typename Proxy<T1>::aligned_ea_type Pea_aligned = P.get_aligned_ea();
-        
-        for(uword i=0; i<n_elem; ++i)  { val += Pea_aligned.at_alt(i); }
-        }
-      else
-        {
-        for(uword i=0; i<n_elem; ++i)  { val += Pea[i]; }
-        }
+      val1 += A[i];
+      val2 += A[j];
       }
-    #else
+    
+    if(i < n_elem)
       {
-      eT val1 = eT(0);
-      eT val2 = eT(0);
-      
-      uword i,j;
-      for(i=0, j=1; j < n_elem; i+=2, j+=2)  { val1 += Pea[i]; val2 += Pea[j]; }
-      
-      if(i < n_elem)  { val1 += Pea[i]; }
-      
-      val = val1 + val2;
+      val1 += A[i];   // equivalent to: val1 += A[n_elem-1];
       }
-    #endif
+    
+    return (val1 + val2);
     }
-  
-  return val;
+  #endif
   }
 
 
@@ -105,98 +78,11 @@ template<typename T1>
 arma_hot
 inline
 typename T1::elem_type
-accu_proxy_at_mp(const Proxy<T1>& P)
+accu_proxy_mat(const Proxy<T1>& P)
   {
-  arma_extra_debug_sigprint();
+  const quasi_unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
   
-  typedef typename T1::elem_type eT;
-  
-  eT val = eT(0);
-  
-  #if defined(ARMA_USE_OPENMP)
-    {
-    const uword n_rows = P.get_n_rows();
-    const uword n_cols = P.get_n_cols();
-    
-    if(n_cols == 1)
-      {
-      const int   n_threads_max = mp_thread_limit::get();
-      const uword n_threads_use = (std::min)(uword(podarray_prealloc_n_elem::val), uword(n_threads_max));
-      const uword chunk_size    = n_rows / n_threads_use;
-      
-      podarray<eT> partial_accs(n_threads_use);
-      
-      #pragma omp parallel for schedule(static) num_threads(int(n_threads_use))
-      for(uword thread_id=0; thread_id < n_threads_use; ++thread_id)
-        {
-        const uword start = (thread_id+0) * chunk_size;
-        const uword endp1 = (thread_id+1) * chunk_size;
-        
-        eT acc = eT(0);
-        for(uword i=start; i < endp1; ++i)  { acc += P.at(i,0); }
-        
-        partial_accs[thread_id] = acc;
-        }
-      
-      for(uword thread_id=0; thread_id < n_threads_use; ++thread_id)  { val += partial_accs[thread_id]; }
-      
-      for(uword i=(n_threads_use*chunk_size); i < n_rows; ++i)  { val += P.at(i,0); }
-      }
-    else
-    if(n_rows == 1)
-      {
-      const int   n_threads_max = mp_thread_limit::get();
-      const uword n_threads_use = (std::min)(uword(podarray_prealloc_n_elem::val), uword(n_threads_max));
-      const uword chunk_size    = n_cols / n_threads_use;
-      
-      podarray<eT> partial_accs(n_threads_use);
-      
-      #pragma omp parallel for schedule(static) num_threads(int(n_threads_use))
-      for(uword thread_id=0; thread_id < n_threads_use; ++thread_id)
-        {
-        const uword start = (thread_id+0) * chunk_size;
-        const uword endp1 = (thread_id+1) * chunk_size;
-        
-        eT acc = eT(0);
-        for(uword i=start; i < endp1; ++i)  { acc += P.at(0,i); }
-        
-        partial_accs[thread_id] = acc;
-        }
-      
-      for(uword thread_id=0; thread_id < n_threads_use; ++thread_id)  { val += partial_accs[thread_id]; }
-      
-      for(uword i=(n_threads_use*chunk_size); i < n_cols; ++i)  { val += P.at(0,i); }
-      }
-    else
-      {
-      podarray<eT> col_accs(n_cols);
-      
-      const int n_threads = mp_thread_limit::get();
-      
-      #pragma omp parallel for schedule(static) num_threads(n_threads)
-      for(uword col=0; col < n_cols; ++col)
-        {
-        eT val1 = eT(0);
-        eT val2 = eT(0);
-        
-        uword i,j;
-        for(i=0, j=1; j < n_rows; i+=2, j+=2)  { val1 += P.at(i,col); val2 += P.at(j,col); }
-        
-        if(i < n_rows)  { val1 += P.at(i,col); }
-        
-        col_accs[col] = val1 + val2;
-        }
-      
-      val = arrayops::accumulate(col_accs.memptr(), n_cols);
-      }
-    }
-  #else
-    {
-    arma_ignore(P);
-    }
-  #endif
-  
-  return val;
+  return arrayops::accumulate(tmp.M.memptr(), tmp.M.n_elem);
   }
 
 
@@ -207,14 +93,7 @@ inline
 typename T1::elem_type
 accu_proxy_at(const Proxy<T1>& P)
   {
-  arma_extra_debug_sigprint();
-  
   typedef typename T1::elem_type eT;
-  
-  if(arma_config::openmp && Proxy<T1>::use_mp && mp_gate<eT>::eval(P.get_n_elem()))
-    {
-    return accu_proxy_at_mp(P);
-    }
   
   const uword n_rows = P.get_n_rows();
   const uword n_cols = P.get_n_cols();
@@ -229,16 +108,26 @@ accu_proxy_at(const Proxy<T1>& P)
     for(uword col=0; col < n_cols; ++col)
       {
       uword i,j;
-      for(i=0, j=1; j < n_rows; i+=2, j+=2)  { val1 += P.at(i,col); val2 += P.at(j,col); }
+      for(i=0, j=1; j < n_rows; i+=2, j+=2)
+        {
+        val1 += P.at(i,col);
+        val2 += P.at(j,col);
+        }
       
-      if(i < n_rows)  { val1 += P.at(i,col); }
+      if(i < n_rows)
+        {
+        val1 += P.at(i,col);
+        }
       }
     
     val = val1 + val2;
     }
   else
     {
-    for(uword col=0; col < n_cols; ++col)  { val += P.at(0,col); }
+    for(uword col=0; col < n_cols; ++col)
+      {
+      val += P.at(0,col);
+      }
     }
   
   return val;
@@ -258,14 +147,9 @@ accu(const T1& X)
   
   const Proxy<T1> P(X);
   
-  if(is_Mat<typename Proxy<T1>::stored_type>::value || is_subview_col<typename Proxy<T1>::stored_type>::value)
-    {
-    const quasi_unwrap<typename Proxy<T1>::stored_type> tmp(P.Q);
-    
-    return arrayops::accumulate(tmp.M.memptr(), tmp.M.n_elem);
-    }
+  const bool have_direct_mem = (is_Mat<typename Proxy<T1>::stored_type>::value) || (is_subview_col<typename Proxy<T1>::stored_type>::value);
   
-  return (Proxy<T1>::use_at) ? accu_proxy_at(P) : accu_proxy_linear(P);
+  return (Proxy<T1>::use_at) ? accu_proxy_at(P) : (have_direct_mem ? accu_proxy_mat(P) : accu_proxy_linear(P));
   }
 
 
@@ -470,176 +354,67 @@ accu(const subview_col<eT>& X)
 
 
 
-//
-
-
-
 template<typename T1>
 arma_hot
 inline
 typename T1::elem_type
-accu_cube_proxy_linear(const ProxyCube<T1>& P)
+accu_cube_proxy(const ProxyCube<T1>& P)
   {
   arma_extra_debug_sigprint();
   
-  typedef typename T1::elem_type eT;
+  typedef typename T1::elem_type          eT;
+  typedef typename ProxyCube<T1>::ea_type ea_type;
   
-  eT val = eT(0);
-    
-  typename ProxyCube<T1>::ea_type Pea = P.get_ea();
-  
-  const uword n_elem = P.get_n_elem();
-  
-  if( arma_config::openmp && ProxyCube<T1>::use_mp && mp_gate<eT>::eval(n_elem) )
+  if(ProxyCube<T1>::use_at == false)
     {
-    #if defined(ARMA_USE_OPENMP)
+          ea_type Pea    = P.get_ea();
+    const uword   n_elem = P.get_n_elem();
+    
+    eT val1 = eT(0);
+    eT val2 = eT(0);
+    
+    uword i,j;
+    
+    for(i=0, j=1; j<n_elem; i+=2, j+=2)
       {
-      // NOTE: using parallelisation with manual reduction workaround to take into account complex numbers;
-      // NOTE: OpenMP versions lower than 4.0 do not support user-defined reduction
-      
-      const int   n_threads_max = mp_thread_limit::get();
-      const uword n_threads_use = (std::min)(uword(podarray_prealloc_n_elem::val), uword(n_threads_max));
-      const uword chunk_size    = n_elem / n_threads_use;
-      
-      podarray<eT> partial_accs(n_threads_use);
-      
-      #pragma omp parallel for schedule(static) num_threads(int(n_threads_use))
-      for(uword thread_id=0; thread_id < n_threads_use; ++thread_id)
-        {
-        const uword start = (thread_id+0) * chunk_size;
-        const uword endp1 = (thread_id+1) * chunk_size;
-        
-        eT acc = eT(0);
-        for(uword i=start; i < endp1; ++i)  { acc += Pea[i]; }
-        
-        partial_accs[thread_id] = acc;
-        }
-      
-      for(uword thread_id=0; thread_id < n_threads_use; ++thread_id)  { val += partial_accs[thread_id]; }
-      
-      for(uword i=(n_threads_use*chunk_size); i < n_elem; ++i)  { val += Pea[i]; }
+      val1 += Pea[i];
+      val2 += Pea[j];
       }
-    #endif
+    
+    if(i < n_elem)
+      {
+      val1 += Pea[i];
+      }
+    
+    return val1 + val2;
     }
   else
-    {
-    #if defined(__FINITE_MATH_ONLY__) && (__FINITE_MATH_ONLY__ > 0)
-      {
-      if(P.is_aligned())
-        {
-        typename ProxyCube<T1>::aligned_ea_type Pea_aligned = P.get_aligned_ea();
-        
-        for(uword i=0; i<n_elem; ++i)  { val += Pea_aligned.at_alt(i); }
-        }
-      else
-        {
-        for(uword i=0; i<n_elem; ++i)  { val += Pea[i]; }
-        }
-      }
-    #else
-      {
-      eT val1 = eT(0);
-      eT val2 = eT(0);
-      
-      uword i,j;
-      for(i=0, j=1; j<n_elem; i+=2, j+=2)  { val1 += Pea[i]; val2 += Pea[j]; }
-      
-      if(i < n_elem) { val1 += Pea[i]; }
-      
-      val = val1 + val2;
-      }
-    #endif
-    }
-  
-  return val;
-  }
-
-
-
-template<typename T1>
-arma_hot
-inline
-typename T1::elem_type
-accu_cube_proxy_at_mp(const ProxyCube<T1>& P)
-  {
-  arma_extra_debug_sigprint();
-  
-  typedef typename T1::elem_type eT;
-  
-  eT val = eT(0);
-  
-  #if defined(ARMA_USE_OPENMP)
     {
     const uword n_rows   = P.get_n_rows();
     const uword n_cols   = P.get_n_cols();
     const uword n_slices = P.get_n_slices();
     
-    podarray<eT> slice_accs(n_slices);
+    eT val1 = eT(0);
+    eT val2 = eT(0);
     
-    const int n_threads = mp_thread_limit::get();
-    
-    #pragma omp parallel for schedule(static) num_threads(n_threads)
     for(uword slice = 0; slice < n_slices; ++slice)
+    for(uword col   = 0; col   < n_cols;   ++col  )
       {
-      eT val1 = eT(0);
-      eT val2 = eT(0);
-      
-      for(uword col = 0; col < n_cols; ++col)
+      uword i,j;
+      for(i=0, j=1; j<n_rows; i+=2, j+=2)
         {
-        uword i,j;
-        for(i=0, j=1; j<n_rows; i+=2, j+=2)  { val1 += P.at(i,col,slice);  val2 += P.at(j,col,slice); }
-        
-        if(i < n_rows)  { val1 += P.at(i,col,slice); }
+        val1 += P.at(i,col,slice);
+        val2 += P.at(j,col,slice);
         }
       
-      slice_accs[slice] = val1 + val2;
+      if(i < n_rows)
+        {
+        val1 += P.at(i,col,slice);
+        }
       }
     
-    val = arrayops::accumulate(slice_accs.memptr(), slice_accs.n_elem);
+    return val1 + val2;
     }
-  #else
-    {
-    arma_ignore(P);
-    }
-  #endif
-  
-  return val;
-  }
-
-
-
-template<typename T1>
-arma_hot
-inline
-typename T1::elem_type
-accu_cube_proxy_at(const ProxyCube<T1>& P)
-  {
-  arma_extra_debug_sigprint();
-  
-  typedef typename T1::elem_type eT;
-  
-  if(arma_config::openmp && ProxyCube<T1>::use_mp && mp_gate<eT>::eval(P.get_n_elem()))
-    {
-    return accu_cube_proxy_at_mp(P);
-    }
-  
-  const uword n_rows   = P.get_n_rows();
-  const uword n_cols   = P.get_n_cols();
-  const uword n_slices = P.get_n_slices();
-  
-  eT val1 = eT(0);
-  eT val2 = eT(0);
-  
-  for(uword slice = 0; slice < n_slices; ++slice)
-  for(uword col   = 0; col   < n_cols;   ++col  )
-    {
-    uword i,j;
-    for(i=0, j=1; j<n_rows; i+=2, j+=2)  { val1 += P.at(i,col,slice); val2 += P.at(j,col,slice); }
-    
-    if(i < n_rows)  { val1 += P.at(i,col,slice); }
-    }
-  
-  return (val1 + val2);
   }
 
 
@@ -663,7 +438,7 @@ accu(const BaseCube<typename T1::elem_type,T1>& X)
     return arrayops::accumulate(tmp.M.memptr(), tmp.M.n_elem);
     }
   
-  return (ProxyCube<T1>::use_at) ? accu_cube_proxy_at(P) : accu_cube_proxy_linear(P);
+  return accu_cube_proxy(P);
   }
 
 
@@ -692,19 +467,15 @@ accu(const eGlueCube<T1,T2,eglue_schur>& expr)
   
   const ProxyCube<expr_type> P(expr);
   
-  return (ProxyCube<expr_type>::use_at) ? accu_cube_proxy_at(P) : accu_cube_proxy_linear(P);
+  return accu_cube_proxy(P);
   }
-
-
-
-//
 
 
 
 template<typename T>
 arma_warn_unused
 inline
-typename arma_scalar_only<T>::result
+const typename arma_scalar_only<T>::result &
 accu(const T& x)
   {
   return x;
@@ -715,153 +486,37 @@ accu(const T& x)
 //! accumulate values in a sparse object
 template<typename T1>
 arma_warn_unused
+arma_hot
 inline
-typename T1::elem_type
-accu(const SpBase<typename T1::elem_type,T1>& expr)
+typename enable_if2<is_arma_sparse_type<T1>::value, typename T1::elem_type>::result
+accu(const T1& x)
   {
   arma_extra_debug_sigprint();
   
   typedef typename T1::elem_type eT;
   
-  const SpProxy<T1> P(expr.get_ref());
+  const SpProxy<T1> p(x);
   
   if(SpProxy<T1>::use_iterator == false)
     {
     // direct counting
-    return arrayops::accumulate(P.get_values(), P.get_n_nonzero());
+    return arrayops::accumulate(p.get_values(), p.get_n_nonzero());
     }
   else
     {
-    typename SpProxy<T1>::const_iterator_type it = P.begin();
+    typename SpProxy<T1>::const_iterator_type it     = p.begin();
+    typename SpProxy<T1>::const_iterator_type it_end = p.end();
     
-    const uword P_n_nz = P.get_n_nonzero();
+    eT result = eT(0);
     
-    eT val = eT(0);
-    
-    for(uword i=0; i < P_n_nz; ++i)  { val += (*it); ++it; }
-    
-    return val;
-    }
-  }
-
-
-
-//! explicit handling of accu(A + B), where A and B are sparse matrices
-template<typename T1, typename T2>
-arma_warn_unused
-inline
-typename T1::elem_type
-accu(const SpGlue<T1,T2,spglue_plus>& expr)
-  {
-  arma_extra_debug_sigprint();
-  
-  const unwrap_spmat<T1> UA(expr.A);
-  const unwrap_spmat<T2> UB(expr.B);
-  
-  arma_debug_assert_same_size(UA.M.n_rows, UA.M.n_cols, UB.M.n_rows, UB.M.n_cols, "addition");
-  
-  return (accu(UA.M) + accu(UB.M));
-  }
-
-
-
-//! explicit handling of accu(A - B), where A and B are sparse matrices
-template<typename T1, typename T2>
-arma_warn_unused
-inline
-typename T1::elem_type
-accu(const SpGlue<T1,T2,spglue_minus>& expr)
-  {
-  arma_extra_debug_sigprint();
-  
-  const unwrap_spmat<T1> UA(expr.A);
-  const unwrap_spmat<T2> UB(expr.B);
-  
-  arma_debug_assert_same_size(UA.M.n_rows, UA.M.n_cols, UB.M.n_rows, UB.M.n_cols, "subtraction");
-  
-  return (accu(UA.M) - accu(UB.M));
-  }
-
-
-
-//! explicit handling of accu(A % B), where A and B are sparse matrices
-template<typename T1, typename T2>
-arma_warn_unused
-inline
-typename T1::elem_type
-accu(const SpGlue<T1,T2,spglue_schur>& expr)
-  {
-  arma_extra_debug_sigprint();
-  
-  typedef typename T1::elem_type eT;
-  
-  const SpProxy<T1> px(expr.A);
-  const SpProxy<T2> py(expr.B);
-  
-  typename SpProxy<T1>::const_iterator_type x_it     = px.begin();
-  typename SpProxy<T1>::const_iterator_type x_it_end = px.end();
-  
-  typename SpProxy<T2>::const_iterator_type y_it     = py.begin();
-  typename SpProxy<T2>::const_iterator_type y_it_end = py.end();
-  
-  eT acc = eT(0);
-  
-  while( (x_it != x_it_end) || (y_it != y_it_end) )
-    {
-    if(x_it == y_it)
+    while(it != it_end)
       {
-      acc += ((*x_it) * (*y_it));
-      
-      ++x_it;
-      ++y_it;
+      result += (*it);
+      ++it;
       }
-    else
-      {
-      const uword x_it_col = x_it.col();
-      const uword x_it_row = x_it.row();
-      
-      const uword y_it_col = y_it.col();
-      const uword y_it_row = y_it.row();
-      
-      if((x_it_col < y_it_col) || ((x_it_col == y_it_col) && (x_it_row < y_it_row))) // if y is closer to the end
-        {
-        ++x_it;
-        }
-      else // x is closer to the end
-        {
-        ++y_it;
-        }
-      }
+    
+    return result;
     }
-  
-  return acc;
-  }
-
-
-
-template<typename T1, typename spop_type>
-arma_warn_unused
-inline
-typename T1::elem_type
-accu(const SpOp<T1, spop_type>& expr)
-  {
-  arma_extra_debug_sigprint();
-  
-  typedef typename T1::elem_type eT;
-  
-  const bool is_vectorise = \
-       (is_same_type<spop_type, spop_vectorise_row>::yes)
-    || (is_same_type<spop_type, spop_vectorise_col>::yes)
-    || (is_same_type<spop_type, spop_vectorise_all>::yes);
-  
-  if(is_vectorise)
-    {
-    return accu(expr.m);
-    }
-  
-  const SpMat<eT> tmp = expr;
-  
-  return accu(tmp);
   }
 
 

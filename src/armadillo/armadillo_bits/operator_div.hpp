@@ -199,6 +199,8 @@ operator/
   
   arma_debug_assert_same_size(n_rows, n_cols, pb.get_n_rows(), pb.get_n_cols(), "element-wise division");
   
+  SpMat<eT> result(n_rows, n_cols);
+  
   uword new_n_nonzero = 0;
   
   for(uword col=0; col < n_cols; ++col)
@@ -212,7 +214,7 @@ operator/
       }
     }
   
-  SpMat<eT> result(arma_reserve_indicator(), n_rows, n_cols, new_n_nonzero);
+  result.mem_resize(new_n_nonzero);
   
   uword cur_pos = 0;
   
@@ -237,38 +239,6 @@ operator/
     }
   
   return result;
-  }
-
-
-
-//! optimization: element-wise division of sparse / (sparse +/- scalar)
-template<typename T1, typename T2, typename op_type>
-inline
-typename
-enable_if2
-  <
-  (
-  is_arma_sparse_type<T1>::value && is_arma_sparse_type<T2>::value &&
-  is_same_type<typename T1::elem_type, typename T2::elem_type>::yes &&
-      (is_same_type<op_type, op_sp_plus>::value ||
-       is_same_type<op_type, op_sp_minus_pre>::value ||
-       is_same_type<op_type, op_sp_minus_post>::value)
-  ),
-  SpMat<typename T1::elem_type>
-  >::result
-operator/
-  (
-  const T1& x,
-  const SpToDOp<T2, op_type>& y
-  )
-  {
-  arma_extra_debug_sigprint();
-  
-  SpMat<typename T1::elem_type> out;
-  
-  op_type::apply_inside_div(out, x, y);
-  
-  return out;
   }
 
 

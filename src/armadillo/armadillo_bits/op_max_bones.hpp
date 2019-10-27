@@ -19,7 +19,6 @@
 
 
 class op_max
-  : public traits_op_xvec
   {
   public:
   

@@ -39,7 +39,7 @@ eig_pair
   
   if(status == false)
     {
-    eigvals.soft_reset();
+    eigvals.reset();
     arma_stop_runtime_error("eig_pair(): decomposition failed");
     }
   
@@ -68,7 +68,7 @@ eig_pair
   
   if(status == false)
     {
-    eigvals.soft_reset();
+    eigvals.reset();
     arma_debug_warn("eig_pair(): decomposition failed");
     }
   
@@ -96,8 +96,8 @@ eig_pair
   
   if(status == false)
     {
-    eigvals.soft_reset();
-    eigvecs.soft_reset();
+    eigvals.reset();
+    eigvecs.reset();
     arma_debug_warn("eig_pair(): decomposition failed");
     }
   

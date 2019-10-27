@@ -60,11 +60,6 @@ op_htrans::apply_mat_noalias(Mat<eT>& out, const Mat<eT>& A, const typename arma
       }
     }
   else
-  if( (A_n_rows >= 512) && (A_n_cols >= 512) )
-    {
-    op_htrans::apply_mat_noalias_large(out, A);
-    }
-  else
     {
     eT* outptr = out.memptr();
     
@@ -81,83 +76,6 @@ op_htrans::apply_mat_noalias(Mat<eT>& out, const Mat<eT>& A, const typename arma
         }
       }
     }
-  }
-
-
-
-template<typename T>
-arma_hot
-inline
-void
-op_htrans::block_worker(std::complex<T>* Y, const std::complex<T>* X, const uword X_n_rows, const uword Y_n_rows, const uword n_rows, const uword n_cols)
-  {
-  for(uword row = 0; row < n_rows; ++row)
-    {
-    const uword Y_offset = row * Y_n_rows;
-    
-    for(uword col = 0; col < n_cols; ++col)
-      {
-      const uword X_offset = col * X_n_rows;
-      
-      Y[col + Y_offset] = std::conj(X[row + X_offset]);
-      }
-    }
-  }
-
-
-
-template<typename T>
-arma_hot
-inline
-void
-op_htrans::apply_mat_noalias_large(Mat< std::complex<T> >& out, const Mat< std::complex<T> >& A)
-  {
-  arma_extra_debug_sigprint();
-  
-  const uword n_rows = A.n_rows;
-  const uword n_cols = A.n_cols;
-  
-  const uword block_size = 64;
-  
-  const uword n_rows_base = block_size * (n_rows / block_size);
-  const uword n_cols_base = block_size * (n_cols / block_size);
-  
-  const uword n_rows_extra = n_rows - n_rows_base;
-  const uword n_cols_extra = n_cols - n_cols_base;
-  
-  const std::complex<T>* X =   A.memptr();
-        std::complex<T>* Y = out.memptr();
-  
-  for(uword row = 0; row < n_rows_base; row += block_size)
-    {
-    const uword Y_offset = row * n_cols;
-    
-    for(uword col = 0; col < n_cols_base; col += block_size)
-      {
-      const uword X_offset = col * n_rows;
-      
-      op_htrans::block_worker(&Y[col + Y_offset], &X[row + X_offset], n_rows, n_cols, block_size, block_size);
-      }
-    
-    const uword X_offset = n_cols_base * n_rows;
-    
-    op_htrans::block_worker(&Y[n_cols_base + Y_offset], &X[row + X_offset], n_rows, n_cols, block_size, n_cols_extra);
-    }
-
-  if(n_rows_extra == 0)  { return; }
-  
-  const uword Y_offset = n_rows_base * n_cols;
-  
-  for(uword col = 0; col < n_cols_base; col += block_size)
-    {
-    const uword X_offset = col * n_rows;
-    
-    op_htrans::block_worker(&Y[col + Y_offset], &X[n_rows_base + X_offset], n_rows, n_cols, n_rows_extra, block_size);
-    }
-  
-  const uword X_offset = n_cols_base * n_rows;
-  
-  op_htrans::block_worker(&Y[n_cols_base + Y_offset], &X[n_rows_base + X_offset], n_rows, n_cols, n_rows_extra, n_cols_extra);
   }
 
 
@@ -281,7 +199,7 @@ op_htrans::apply_proxy(Mat<typename T1::elem_type>& out, const T1& X)
     
     const bool is_alias = P.is_alias(out);
     
-    if( (resolves_to_vector<T1>::yes) && (Proxy<T1>::use_at == false) )
+    if( (resolves_to_vector<T1>::value == true) && (Proxy<T1>::use_at == false) )
       {
       if(is_alias == false)
         {
@@ -437,12 +355,6 @@ op_htrans2::apply_noalias(Mat<eT>& out, const Mat<eT>& A, const eT val)
       }
     }
   else
-  if( (A_n_rows >= 512) && (A_n_cols >= 512) )
-    {
-    op_htrans::apply_mat_noalias_large(out, A);
-    arrayops::inplace_mul( out.memptr(), val, out.n_elem );
-    }
-  else
     {
     eT* outptr = out.memptr();
     
@@ -542,7 +454,7 @@ op_htrans2::apply_proxy(Mat<typename T1::elem_type>& out, const T1& X, const typ
     
     const bool is_alias = P.is_alias(out);
     
-    if( (resolves_to_vector<T1>::yes) && (Proxy<T1>::use_at == false) )
+    if( (resolves_to_vector<T1>::value == true) && (Proxy<T1>::use_at == false) )
       {
       if(is_alias == false)
         {

@@ -28,13 +28,13 @@ op_sort::direct_sort(eT* X, const uword n_elem, const uword sort_type)
   
   if(sort_type == 0)
     {
-    arma_lt_comparator<eT> comparator;
+    arma_ascend_sort_helper<eT> comparator;
     
     std::sort(&X[0], &X[n_elem], comparator);
     }
   else
     {
-    arma_gt_comparator<eT> comparator;
+    arma_descend_sort_helper<eT> comparator;
     
     std::sort(&X[0], &X[n_elem], comparator);
     }
@@ -49,7 +49,7 @@ op_sort::direct_sort_ascending(eT* X, const uword n_elem)
   {
   arma_extra_debug_sigprint();
   
-  arma_lt_comparator<eT> comparator;
+  arma_ascend_sort_helper<eT> comparator;
     
   std::sort(&X[0], &X[n_elem], comparator);
   }
@@ -202,7 +202,7 @@ op_sort::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sort>& in)
 template<typename T1>
 inline
 void
-op_sort_vec::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sort_vec>& in)
+op_sort_default::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sort_default>& in)
   {
   arma_extra_debug_sigprint();
   
@@ -213,7 +213,7 @@ op_sort_vec::apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sort_vec>& i
   const Mat<eT>& X = U.M;
   
   const uword sort_type = in.aux_uword_a;
-  const uword dim       = (T1::is_xvec) ? uword(U.M.is_rowvec() ? 1 : 0) : uword((T1::is_row) ? 1 : 0);
+  const uword dim       = (T1::is_row) ? 1 : 0;
   
   if(U.is_alias(out))
     {

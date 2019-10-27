@@ -34,56 +34,14 @@ size(const uword n_rows, const uword n_cols)
 template<typename T1>
 arma_warn_unused
 inline
-const SizeMat
-size(const Base<typename T1::elem_type,T1>& X)
+typename enable_if2< is_arma_type<T1>::value, const SizeMat >::result
+size(const T1& X)
   {
   arma_extra_debug_sigprint();
   
-  const Proxy<T1> P(X.get_ref());
+  const Proxy<T1> P(X);
   
   return SizeMat( P.get_n_rows(), P.get_n_cols() );
-  }
-
-
-
-// explicit overload to workround ADL issues with C++17 std::size()
-template<typename eT>
-arma_warn_unused
-inline
-const SizeMat
-size(const Mat<eT>& X)
-  {
-  arma_extra_debug_sigprint();
-  
-  return SizeMat( X.n_rows, X.n_cols );
-  }
-
-
-
-// explicit overload to workround ADL issues with C++17 std::size()
-template<typename eT>
-arma_warn_unused
-inline
-const SizeMat
-size(const Row<eT>& X)
-  {
-  arma_extra_debug_sigprint();
-  
-  return SizeMat( X.n_rows, X.n_cols );
-  }
-
-
-
-// explicit overload to workround ADL issues with C++17 std::size()
-template<typename eT>
-arma_warn_unused
-inline
-const SizeMat
-size(const Col<eT>& X)
-  {
-  arma_extra_debug_sigprint();
-  
-  return SizeMat( X.n_rows, X.n_cols );
   }
 
 
@@ -91,12 +49,12 @@ size(const Col<eT>& X)
 template<typename T1>
 arma_warn_unused
 inline
-uword
-size(const Base<typename T1::elem_type,T1>& X, const uword dim)
+typename enable_if2< is_arma_type<T1>::value, uword >::result
+size(const T1& X, const uword dim)
   {
   arma_extra_debug_sigprint();
   
-  const Proxy<T1> P(X.get_ref());
+  const Proxy<T1> P(X);
   
   return SizeMat( P.get_n_rows(), P.get_n_cols() )( dim );
   }
@@ -118,28 +76,14 @@ size(const uword n_rows, const uword n_cols, const uword n_slices)
 template<typename T1>
 arma_warn_unused
 inline
-const SizeCube
-size(const BaseCube<typename T1::elem_type, T1>& X)
+typename enable_if2< is_arma_cube_type<T1>::value, const SizeCube >::result
+size(const T1& X)
   {
   arma_extra_debug_sigprint();
   
-  const ProxyCube<T1> P(X.get_ref());
+  const ProxyCube<T1> P(X);
   
   return SizeCube( P.get_n_rows(), P.get_n_cols(), P.get_n_slices() );
-  }
-
-
-
-// explicit overload to workround ADL issues with C++17 std::size()
-template<typename eT>
-arma_warn_unused
-inline
-const SizeCube
-size(const Cube<eT>& X)
-  {
-  arma_extra_debug_sigprint();
-  
-  return SizeCube( X.n_rows, X.n_cols, X.n_slices );
   }
 
 
@@ -147,12 +91,12 @@ size(const Cube<eT>& X)
 template<typename T1>
 arma_warn_unused
 inline
-uword
-size(const BaseCube<typename T1::elem_type, T1>& X, const uword dim)
+typename enable_if2< is_arma_cube_type<T1>::value, uword >::result
+size(const T1& X, const uword dim)
   {
   arma_extra_debug_sigprint();
   
-  const ProxyCube<T1> P(X.get_ref());
+  const ProxyCube<T1> P(X);
   
   return SizeCube( P.get_n_rows(), P.get_n_cols(), P.get_n_slices() )( dim );
   }
@@ -162,28 +106,14 @@ size(const BaseCube<typename T1::elem_type, T1>& X, const uword dim)
 template<typename T1>
 arma_warn_unused
 inline
-const SizeMat
-size(const SpBase<typename T1::elem_type,T1>& X)
+typename enable_if2< is_arma_sparse_type<T1>::value, const SizeMat >::result
+size(const T1& X)
   {
   arma_extra_debug_sigprint();
   
-  const SpProxy<T1> P(X.get_ref());
+  const SpProxy<T1> P(X);
   
   return SizeMat( P.get_n_rows(), P.get_n_cols() );
-  }
-
-
-
-// explicit overload to workround ADL issues with C++17 std::size()
-template<typename eT>
-arma_warn_unused
-inline
-const SizeMat
-size(const SpMat<eT>& X)
-  {
-  arma_extra_debug_sigprint();
-  
-  return SizeMat( X.n_rows, X.n_cols );
   }
 
 
@@ -191,12 +121,12 @@ size(const SpMat<eT>& X)
 template<typename T1>
 arma_warn_unused
 inline
-uword
-size(const SpBase<typename T1::elem_type,T1>& X, const uword dim)
+typename enable_if2< is_arma_sparse_type<T1>::value, uword >::result
+size(const T1& X, const uword dim)
   {
   arma_extra_debug_sigprint();
   
-  const SpProxy<T1> P(X.get_ref());
+  const SpProxy<T1> P(X);
   
   return SizeMat( P.get_n_rows(), P.get_n_cols() )( dim );
   }

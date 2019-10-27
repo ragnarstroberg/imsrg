@@ -21,7 +21,6 @@
 
 
 class op_repmat
-  : public traits_op_default
   {
   public:
   

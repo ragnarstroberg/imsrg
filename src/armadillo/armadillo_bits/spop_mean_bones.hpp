@@ -20,7 +20,6 @@
 
 //! Class for finding mean values of a sparse matrix
 class spop_mean
-  : public traits_op_xvec
   {
   public:
 
@@ -43,9 +42,6 @@ class spop_mean
 
   template<typename T1>
   inline static typename T1::elem_type mean_all(const SpBase<typename T1::elem_type, T1>& X);
-
-  template<typename T1, typename spop_type>
-  inline static typename T1::elem_type mean_all(const SpOp<T1, spop_type>& expr);
 
   // Take the mean using an iterator.
   template<typename T1, typename eT>

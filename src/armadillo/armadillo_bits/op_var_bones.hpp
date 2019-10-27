@@ -21,7 +21,6 @@
 
 //! Class for finding variance values of a matrix
 class op_var
-  : public traits_op_xvec
   {
   public:
   

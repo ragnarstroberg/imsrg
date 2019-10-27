@@ -20,7 +20,6 @@
 
 
 class op_sqrtmat
-  : public traits_op_default
   {
   public:
   
@@ -37,7 +36,6 @@ class op_sqrtmat
 
 
 class op_sqrtmat_cx
-  : public traits_op_default
   {
   public:
   
@@ -60,7 +58,6 @@ class op_sqrtmat_cx
 
 
 class op_sqrtmat_sympd
-  : public traits_op_default
   {
   public:
   

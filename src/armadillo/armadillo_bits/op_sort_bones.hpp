@@ -20,7 +20,6 @@
 
 
 class op_sort
-  : public traits_op_default
   {
   public:
   
@@ -45,13 +44,68 @@ class op_sort
 
 
 
-class op_sort_vec
-  : public traits_op_passthru
+class op_sort_default
   {
   public:
   
   template<typename T1>
-  inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sort_vec>& in);
+  inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_sort_default>& in);
+  };
+
+
+
+template<typename eT>
+struct arma_ascend_sort_helper
+  {
+  arma_inline bool operator() (const eT a, const eT b) const { return (a < b); }
+  };
+
+
+
+template<typename eT>
+struct arma_descend_sort_helper
+  {
+  arma_inline bool operator() (const eT a, const eT b) const { return (a > b); }
+  };
+  
+
+
+template<typename T>
+struct arma_ascend_sort_helper< std::complex<T> >
+  {
+  typedef typename std::complex<T> eT;
+  
+  inline bool operator() (const eT& a, const eT& b) const { return (std::abs(a) < std::abs(b)); }
+  
+  // inline
+  // bool
+  // operator() (const eT& a, const eT& b) const
+  //   {
+  //   const T abs_a = std::abs(a);
+  //   const T abs_b = std::abs(b);
+  //   
+  //   return ( (abs_a != abs_b) ? (abs_a < abs_b) : (std::arg(a) < std::arg(b)) );
+  //   }
+  };
+
+
+
+template<typename T>
+struct arma_descend_sort_helper< std::complex<T> >
+  {
+  typedef typename std::complex<T> eT;
+  
+  inline bool operator() (const eT& a, const eT& b) const { return (std::abs(a) > std::abs(b)); }
+  
+  // inline
+  // bool
+  // operator() (const eT& a, const eT& b) const
+  //   {
+  //   const T abs_a = std::abs(a);
+  //   const T abs_b = std::abs(b);
+  //   
+  //   return ( (abs_a != abs_b) ? (abs_a > abs_b) : (std::arg(a) > std::arg(b)) );
+  //   }
   };
 
 

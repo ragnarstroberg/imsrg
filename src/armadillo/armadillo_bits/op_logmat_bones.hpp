@@ -20,7 +20,6 @@
 
 
 class op_logmat
-  : public traits_op_default
   {
   public:
   
@@ -37,7 +36,6 @@ class op_logmat
 
 
 class op_logmat_cx
-  : public traits_op_default
   {
   public:
   
@@ -64,7 +62,6 @@ class op_logmat_cx
 
 
 class op_logmat_sympd
-  : public traits_op_default
   {
   public:
   

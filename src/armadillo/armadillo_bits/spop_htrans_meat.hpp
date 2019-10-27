@@ -20,6 +20,7 @@
 
 
 template<typename T1>
+arma_hot
 inline
 void
 spop_htrans::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_htrans>& in, const typename arma_not_cx<typename T1::elem_type>::result* junk)
@@ -33,6 +34,7 @@ spop_htrans::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_htrans
 
 
 template<typename T1>
+arma_hot
 inline
 void
 spop_htrans::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_htrans>& in, const typename arma_cx_only<typename T1::elem_type>::result* junk)
@@ -40,18 +42,42 @@ spop_htrans::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_htrans
   arma_extra_debug_sigprint();
   arma_ignore(junk);
   
-  typedef typename T1::elem_type  eT;
+  typedef typename   T1::elem_type  eT;
+  typedef typename umat::elem_type ueT;
   
-  spop_strans::apply(out, in);
+  const SpProxy<T1> p(in.m);
   
-  const uword N = out.n_nonzero;
+  const uword N = p.get_n_nonzero();
   
-  for(uword i=0; i<N; ++i)
+  if(N == uword(0))
     {
-    eT& val = access::rw(out.values[i]);
-    
-    val = eop_aux::conj(val);
+    out.zeros(p.get_n_cols(), p.get_n_rows());
+    return;
     }
+  
+  umat locs(2, N);
+  
+  Col<eT> vals(N);
+  
+  eT* vals_ptr = vals.memptr();
+  
+  typename SpProxy<T1>::const_iterator_type it = p.begin();
+  
+  for(uword count = 0; count < N; ++count)
+    {
+    ueT* locs_ptr = locs.colptr(count);
+    
+    locs_ptr[0] = it.col();
+    locs_ptr[1] = it.row();
+    
+    vals_ptr[count] = std::conj(*it);
+    
+    ++it;
+    }
+  
+  SpMat<eT> tmp(locs, vals, p.get_n_cols(), p.get_n_rows());
+  
+  out.steal_mem(tmp);
   }
 
 

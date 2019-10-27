@@ -21,7 +21,6 @@
 //! dot product operation 
 
 class op_dot
-  : public traits_op_default
   {
   public:
   
@@ -67,7 +66,6 @@ class op_dot
 //! normalised dot product operation 
 
 class op_norm_dot
-  : public traits_op_default
   {
   public:
   
@@ -81,7 +79,6 @@ class op_norm_dot
 //! complex conjugate dot product operation
 
 class op_cdot
-  : public traits_op_default
   {
   public:
   
@@ -104,7 +101,6 @@ class op_cdot
 
 
 class op_dot_mixed
-  : public traits_op_default
   {
   public:
   

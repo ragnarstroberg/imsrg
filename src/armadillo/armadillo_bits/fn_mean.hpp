@@ -21,11 +21,58 @@
 
 template<typename T1>
 arma_warn_unused
-inline
-typename enable_if2< is_arma_type<T1>::value && resolves_to_vector<T1>::yes, typename T1::elem_type >::result
-mean(const T1& X)
+arma_inline
+const Op<T1, op_mean>
+mean
+  (
+  const T1& X,
+  const uword dim = 0,
+  const typename enable_if< is_arma_type<T1>::value       == true  >::result* junk1 = 0,
+  const typename enable_if< resolves_to_vector<T1>::value == false >::result* junk2 = 0
+  )
   {
   arma_extra_debug_sigprint();
+  arma_ignore(junk1);
+  arma_ignore(junk2);
+  
+  return Op<T1, op_mean>(X, dim, 0);
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+arma_inline
+const Op<T1, op_mean>
+mean
+  (
+  const T1& X,
+  const uword dim,
+  const typename enable_if<resolves_to_vector<T1>::value == true>::result* junk = 0
+  )
+  {
+  arma_extra_debug_sigprint();
+  arma_ignore(junk);
+  
+  return Op<T1, op_mean>(X, dim, 0);
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+typename T1::elem_type
+mean
+  (
+  const T1& X,
+  const arma_empty_class junk1 = arma_empty_class(),
+  const typename enable_if<resolves_to_vector<T1>::value == true>::result* junk2 = 0
+  )
+  {
+  arma_extra_debug_sigprint();
+  arma_ignore(junk1);
+  arma_ignore(junk2);
   
   return op_mean::mean_all(X);
   }
@@ -34,13 +81,14 @@ mean(const T1& X)
 
 template<typename T1>
 arma_warn_unused
-arma_inline
-typename enable_if2< is_arma_type<T1>::value && resolves_to_vector<T1>::no, const Op<T1, op_mean> >::result
-mean(const T1& X)
+inline
+typename T1::elem_type
+mean(const Op<T1, op_mean>& in)
   {
   arma_extra_debug_sigprint();
+  arma_extra_debug_print("mean(): two consecutive mean() calls detected");
   
-  return Op<T1, op_mean>(X, 0, 0);
+  return op_mean::mean_all(in.m);
   }
 
 
@@ -48,12 +96,12 @@ mean(const T1& X)
 template<typename T1>
 arma_warn_unused
 arma_inline
-typename enable_if2< is_arma_type<T1>::value, const Op<T1, op_mean> >::result
-mean(const T1& X, const uword dim)
+const Op< Op<T1, op_mean>, op_mean>
+mean(const Op<T1, op_mean>& in, const uword dim)
   {
   arma_extra_debug_sigprint();
   
-  return Op<T1, op_mean>(X, dim, 0);
+  return Op< Op<T1, op_mean>, op_mean>(in, dim, 0);
   }
 
 
@@ -61,7 +109,7 @@ mean(const T1& X, const uword dim)
 template<typename T>
 arma_warn_unused
 arma_inline
-typename arma_scalar_only<T>::result
+const typename arma_scalar_only<T>::result &
 mean(const T& x)
   {
   return x;
@@ -89,17 +137,21 @@ mean
 template<typename T1>
 arma_warn_unused
 inline
-typename
-enable_if2
-  <
-  is_arma_sparse_type<T1>::value && resolves_to_sparse_vector<T1>::yes,
-  typename T1::elem_type
-  >::result
-mean(const T1& x)
+const SpOp<T1, spop_mean>
+mean
+  (
+  const T1& X,
+  const uword dim = 0,
+  const typename enable_if< is_arma_sparse_type<T1>::value       == true  >::result* junk1 = 0,
+  const typename enable_if< resolves_to_sparse_vector<T1>::value == false >::result* junk2 = 0
+  )
   {
   arma_extra_debug_sigprint();
-  
-  return spop_mean::mean_all(x);
+
+  arma_ignore(junk1);
+  arma_ignore(junk2);
+
+  return SpOp<T1, spop_mean>(X, dim, 0);
   }
 
 
@@ -107,17 +159,18 @@ mean(const T1& x)
 template<typename T1>
 arma_warn_unused
 inline
-typename
-enable_if2
-  <
-  is_arma_sparse_type<T1>::value && resolves_to_sparse_vector<T1>::no,
-  const SpOp<T1,spop_mean>
-  >::result
-mean(const T1& x)
+const SpOp<T1, spop_mean>
+mean
+  (
+  const T1& X,
+  const uword dim,
+  const typename enable_if< resolves_to_sparse_vector<T1>::value == true >::result* junk1 = 0
+  )
   {
   arma_extra_debug_sigprint();
-  
-  return SpOp<T1,spop_mean>(x, 0, 0);
+  arma_ignore(junk1);
+
+  return SpOp<T1, spop_mean>(X, dim, 0);
   }
 
 
@@ -125,17 +178,34 @@ mean(const T1& x)
 template<typename T1>
 arma_warn_unused
 inline
-typename
-enable_if2
-  <
-  is_arma_sparse_type<T1>::value,
-  const SpOp<T1,spop_mean>
-  >::result
-mean(const T1& x, const uword dim)
+typename T1::elem_type
+mean
+  (
+  const T1& X,
+  const arma_empty_class junk1 = arma_empty_class(),
+  const typename enable_if< resolves_to_sparse_vector<T1>::value == true >::result* junk2 = 0
+  )
   {
   arma_extra_debug_sigprint();
-  
-  return SpOp<T1,spop_mean>(x, dim, 0);
+
+  arma_ignore(junk1);
+  arma_ignore(junk2);
+
+  return spop_mean::mean_all(X);
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+typename T1::elem_type
+mean(const SpOp<T1, spop_mean>& in)
+  {
+  arma_extra_debug_sigprint();
+  arma_extra_debug_print("mean(): two consecutive mean() calls detected");
+
+  return spop_mean::mean_all(in.m);
   }
 
 

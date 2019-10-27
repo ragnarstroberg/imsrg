@@ -24,14 +24,6 @@ class op_strans
   {
   public:
   
-  template<typename T1>
-  struct traits
-    {
-    static const bool is_row  = T1::is_col;  // deliberately swapped
-    static const bool is_col  = T1::is_row;
-    static const bool is_xvec = T1::is_xvec;
-    };
-  
   template<const bool do_flip, const uword row, const uword col>
   struct pos
     {
@@ -41,13 +33,7 @@ class op_strans
     };
   
   template<typename eT, typename TA>
-  arma_cold inline static void apply_mat_noalias_tinysq(Mat<eT>& out, const TA& A);
-  
-  template<typename eT>
-  arma_hot inline static void block_worker(eT* Y, const eT* X, const uword X_n_rows, const uword Y_n_rows, const uword n_rows, const uword n_cols);
-  
-  template<typename eT>
-  arma_hot inline static void apply_mat_noalias_large(Mat<eT>& out, const Mat<eT>& A);
+  arma_hot inline static void apply_mat_noalias_tinysq(Mat<eT>& out, const TA& A);
   
   template<typename eT, typename TA>
   arma_hot inline static void apply_mat_noalias(Mat<eT>& out, const TA& A);
@@ -71,14 +57,6 @@ class op_strans2
   {
   public:
   
-  template<typename T1>
-  struct traits
-    {
-    static const bool is_row  = T1::is_col;  // deliberately swapped
-    static const bool is_col  = T1::is_row;
-    static const bool is_xvec = T1::is_xvec;
-    };
-  
   template<const bool do_flip, const uword row, const uword col>
   struct pos
     {
@@ -88,7 +66,7 @@ class op_strans2
     };
   
   template<typename eT, typename TA>
-  arma_cold inline static void apply_noalias_tinysq(Mat<eT>& out, const TA& A, const eT val);
+  arma_hot inline static void apply_noalias_tinysq(Mat<eT>& out, const TA& A, const eT val);
   
   template<typename eT, typename TA>
   arma_hot inline static void apply_noalias(Mat<eT>& out, const TA& A, const eT val);

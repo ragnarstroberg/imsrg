@@ -32,7 +32,7 @@ glue_max::apply(Mat<typename T1::elem_type>& out, const Glue<T1, T2, glue_max>& 
   const Proxy<T1> PA(X.A);
   const Proxy<T2> PB(X.B);
   
-  if( (PA.is_alias(out) && PA.has_subview) || (PB.is_alias(out) && PB.has_subview) )
+  if(PA.is_alias(out) || PB.is_alias(out))
     {
     Mat<eT> tmp;
     
@@ -58,7 +58,7 @@ glue_max::apply(Mat<eT>& out, const Proxy<T1>& PA, const Proxy<T2>& PB)
   const uword n_rows = PA.get_n_rows();
   const uword n_cols = PA.get_n_cols();
   
-  arma_debug_assert_same_size(n_rows, n_cols, PB.get_n_rows(), PB.get_n_cols(), "element-wise maximum");
+  arma_debug_assert_same_size(n_rows, n_cols, PB.get_n_rows(), PB.get_n_cols(), "max(): given matrices must have the same size");
   
   out.set_size(n_rows, n_cols);
   
@@ -102,7 +102,7 @@ glue_max::apply(Mat< std::complex<T> >& out, const Proxy<T1>& PA, const Proxy<T2
   const uword n_rows = PA.get_n_rows();
   const uword n_cols = PA.get_n_cols();
   
-  arma_debug_assert_same_size(n_rows, n_cols, PB.get_n_rows(), PB.get_n_cols(), "element-wise maximum");
+  arma_debug_assert_same_size(n_rows, n_cols, PB.get_n_rows(), PB.get_n_cols(), "max(): given matrices must have the same size");
   
   out.set_size(n_rows, n_cols);
   
@@ -152,7 +152,7 @@ glue_max::apply(Cube<typename T1::elem_type>& out, const GlueCube<T1, T2, glue_m
   const ProxyCube<T1> PA(X.A);
   const ProxyCube<T2> PB(X.B);
   
-  if( (PA.is_alias(out) && PA.has_subview) || (PB.is_alias(out) && PB.has_subview) )
+  if(PA.is_alias(out) || PB.is_alias(out))
     {
     Cube<eT> tmp;
     
@@ -179,7 +179,7 @@ glue_max::apply(Cube<eT>& out, const ProxyCube<T1>& PA, const ProxyCube<T2>& PB)
   const uword n_cols   = PA.get_n_cols();
   const uword n_slices = PA.get_n_slices();
   
-  arma_debug_assert_same_size(n_rows, n_cols, n_slices, PB.get_n_rows(), PB.get_n_cols(), PB.get_n_slices(), "element-wise maximum");
+  arma_debug_assert_same_size(n_rows, n_cols, n_slices, PB.get_n_rows(), PB.get_n_cols(), PB.get_n_slices(), "max(): given cubes must have the same size");
   
   out.set_size(n_rows, n_cols, n_slices);
   
@@ -225,7 +225,7 @@ glue_max::apply(Cube< std::complex<T> >& out, const ProxyCube<T1>& PA, const Pro
   const uword n_cols   = PA.get_n_cols();
   const uword n_slices = PA.get_n_slices();
   
-  arma_debug_assert_same_size(n_rows, n_cols, n_slices, PB.get_n_rows(), PB.get_n_cols(), PB.get_n_slices(), "element-wise maximum");
+  arma_debug_assert_same_size(n_rows, n_cols, n_slices, PB.get_n_rows(), PB.get_n_cols(), PB.get_n_slices(), "max(): given cubes must have the same size");
   
   out.set_size(n_rows, n_cols, n_slices);
   

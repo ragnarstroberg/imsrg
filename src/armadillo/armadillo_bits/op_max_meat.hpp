@@ -164,16 +164,17 @@ op_max::apply(Cube<typename T1::elem_type>& out, const OpCube<T1,op_max>& in)
   arma_debug_check( (dim > 2), "max(): parameter 'dim' must be 0 or 1 or 2" );
   
   const unwrap_cube<T1> U(in.m);
+  const Cube<eT>& X =   U.M;
   
-  if(U.is_alias(out) == false)
+  if(&out != &X)
     {
-    op_max::apply_noalias(out, U.M, dim);
+    op_max::apply_noalias(out, X, dim);
     }
   else
     {
     Cube<eT> tmp;
     
-    op_max::apply_noalias(tmp, U.M, dim);
+    op_max::apply_noalias(tmp, X, dim);
     
     out.steal_mem(tmp);
     }

@@ -67,12 +67,12 @@ fft2(const T1& A, const uword n_rows, const uword n_cols)
   
   typedef typename T1::elem_type eT;
   
-  const quasi_unwrap<T1> tmp(A);
-  const Mat<eT>&     B = tmp.M;
+  const unwrap<T1>   tmp(A);
+  const Mat<eT>& B = tmp.M;
   
   const bool do_resize = (B.n_rows != n_rows) || (B.n_cols != n_cols);
   
-  return (do_resize) ? fft2(resize(B,n_rows,n_cols)) : fft2(B);
+  return fft2( do_resize ? resize(B,n_rows,n_cols) : B );
   }
 
 
@@ -83,7 +83,7 @@ inline
 typename
 enable_if2
   <
-  (is_arma_type<T1>::value && (is_cx_float<typename T1::elem_type>::yes || is_cx_double<typename T1::elem_type>::yes)),
+  (is_arma_type<T1>::value && is_complex_strict<typename T1::elem_type>::value),
   Mat< std::complex<typename T1::pod_type> >
   >::result
 ifft2(const T1& A)
@@ -112,7 +112,7 @@ inline
 typename
 enable_if2
   <
-  (is_arma_type<T1>::value && (is_cx_float<typename T1::elem_type>::yes || is_cx_double<typename T1::elem_type>::yes)),
+  (is_arma_type<T1>::value && is_complex_strict<typename T1::elem_type>::value),
   Mat< std::complex<typename T1::pod_type> >
   >::result
 ifft2(const T1& A, const uword n_rows, const uword n_cols)
@@ -121,12 +121,12 @@ ifft2(const T1& A, const uword n_rows, const uword n_cols)
   
   typedef typename T1::elem_type eT;
   
-  const quasi_unwrap<T1> tmp(A);
-  const Mat<eT>&     B = tmp.M;
+  const unwrap<T1>   tmp(A);
+  const Mat<eT>& B = tmp.M;
   
   const bool do_resize = (B.n_rows != n_rows) || (B.n_cols != n_cols);
   
-  return (do_resize) ? ifft2(resize(B,n_rows,n_cols)) : ifft2(B);
+  return ifft2( do_resize ? resize(B,n_rows,n_cols) : B );
   }
 
 
