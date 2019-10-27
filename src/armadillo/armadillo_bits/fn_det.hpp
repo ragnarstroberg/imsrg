@@ -137,6 +137,7 @@ det
 
 
 
+//! NOTE: don't use this form: it will be removed
 template<typename T1>
 arma_deprecated
 inline
@@ -156,6 +157,7 @@ det
 
 
 
+//! NOTE: don't use this form: it will be removed
 template<typename T1>
 arma_deprecated
 inline
@@ -178,7 +180,7 @@ det
 template<typename T>
 arma_warn_unused
 arma_inline
-const typename arma_scalar_only<T>::result &
+typename arma_scalar_only<T>::result
 det(const T& x)
   {
   return x;

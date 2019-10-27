@@ -20,111 +20,100 @@
 
 
 template<typename eT>
-arma_hot
 inline
 void
-spop_strans::apply_spmat(SpMat<eT>& out, const SpMat<eT>& X)
+spop_strans::apply_noalias(SpMat<eT>& B, const SpMat<eT>& A)
   {
   arma_extra_debug_sigprint();
   
-  typedef typename umat::elem_type ueT;
+  B.reserve(A.n_cols, A.n_rows, A.n_nonzero);  // deliberately swapped
   
-  const uword N = X.n_nonzero;
+  if(A.n_nonzero == 0)  { return; }
   
-  if(N == uword(0))
+  // This follows the TRANSP algorithm described in
+  // 'Sparse Matrix Multiplication Package (SMMP)'
+  // (R.E. Bank and C.C. Douglas, 2001)
+  
+  const uword m = A.n_rows;
+  const uword n = A.n_cols;
+
+  const eT* a = A.values;
+        eT* b = access::rwp(B.values);
+
+  const uword* ia = A.col_ptrs;     
+  const uword* ja = A.row_indices;
+  
+        uword* ib = access::rwp(B.col_ptrs);
+        uword* jb = access::rwp(B.row_indices);
+  
+  // // ib is already zeroed, as B is freshly constructed
+  // 
+  // for(uword i=0; i < (m+1); ++i)
+  //   {
+  //   ib[i] = 0;
+  //   }
+  
+  for(uword i=0; i < n; ++i)
     {
-    out.zeros(X.n_cols, X.n_rows);
-    return;
+    for(uword j = ia[i]; j < ia[i+1]; ++j)
+      {
+      ib[ ja[j] + 1 ]++;
+      }
     }
   
-  umat locs(2, N);
-  
-  typename SpMat<eT>::const_iterator it = X.begin();
-  
-  for(uword count = 0; count < N; ++count)
+  for(uword i=0; i < m; ++i)
     {
-    ueT* locs_ptr = locs.colptr(count);
-    
-    locs_ptr[0] = it.col();
-    locs_ptr[1] = it.row();
-    
-    ++it;
+    ib[i+1] += ib[i];
+    }
+ 
+  for(uword i=0; i < n; ++i)
+    {
+    for(uword j = ia[i]; j < ia[i+1]; ++j)
+      {
+      const uword jj = ja[j];
+      
+      const uword ib_jj = ib[jj];
+      
+      jb[ib_jj] = i;
+      
+      b[ib_jj] = a[j];
+      
+      ib[jj]++;
+      }
     }
   
-  const Col<eT> vals(const_cast<eT*>(X.values), N, false);
+  for(uword i = m-1; i >= 1; --i)
+    {
+    ib[i] = ib[i-1];
+    }
   
-  SpMat<eT> tmp(locs, vals, X.n_cols, X.n_rows);
-  
-  out.steal_mem(tmp);
+  ib[0] = 0;
   }
 
 
 
 template<typename T1>
-arma_hot
-inline
-void
-spop_strans::apply_proxy(SpMat<typename T1::elem_type>& out, const T1& X)
-  {
-  arma_extra_debug_sigprint();
-  
-  typedef typename   T1::elem_type  eT;
-  typedef typename umat::elem_type ueT;
-  
-  const SpProxy<T1> p(X);
-  
-  const uword N = p.get_n_nonzero();
-  
-  if(N == uword(0))
-    {
-    out.zeros(p.get_n_cols(), p.get_n_rows());
-    return;
-    }
-  
-  umat locs(2, N);
-  
-  Col<eT> vals(N);
-  
-  eT* vals_ptr = vals.memptr();
-  
-  typename SpProxy<T1>::const_iterator_type it = p.begin();
-  
-  for(uword count = 0; count < N; ++count)
-    {
-    ueT* locs_ptr = locs.colptr(count);
-    
-    locs_ptr[0] = it.col();
-    locs_ptr[1] = it.row();
-    
-    vals_ptr[count] = (*it);
-    
-    ++it;
-    }
-  
-  SpMat<eT> tmp(locs, vals, p.get_n_cols(), p.get_n_rows());
-  
-  out.steal_mem(tmp);
-  }
-
-
-
-template<typename T1>
-arma_hot
 inline
 void
 spop_strans::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_strans>& in)
   {
   arma_extra_debug_sigprint();
   
-  if(is_SpMat<T1>::value)
+  typedef typename T1::elem_type eT;
+  
+  const unwrap_spmat<T1> U(in.m);
+  
+  if(U.is_alias(out))
     {
-    const unwrap_spmat<T1> tmp(in.m);
+    SpMat<eT> tmp;
     
-    spop_strans::apply_spmat(out, tmp.M);
+    spop_strans::apply_noalias(tmp, U.M);
+    
+    out.steal_mem(tmp);
     }
   else
     {
-    spop_strans::apply_proxy(out, in.m);
+    spop_strans::apply_noalias(out, U.M);
     }
   }
 
@@ -132,22 +121,27 @@ spop_strans::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_strans
 
 //! for transpose of non-complex matrices, redirected from spop_htrans::apply()
 template<typename T1>
-arma_hot
 inline
 void
 spop_strans::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1,spop_htrans>& in)
   {
   arma_extra_debug_sigprint();
   
-  if(is_SpMat<T1>::value)
+  typedef typename T1::elem_type eT;
+  
+  const unwrap_spmat<T1> U(in.m);
+  
+  if(U.is_alias(out))
     {
-    const unwrap_spmat<T1> tmp(in.m);
+    SpMat<eT> tmp;
     
-    spop_strans::apply_spmat(out, tmp.M);
+    spop_strans::apply_noalias(tmp, U.M);
+    
+    out.steal_mem(tmp);
     }
   else
     {
-    spop_strans::apply_proxy(out, in.m);
+    spop_strans::apply_noalias(out, U.M);
     }
   }
 

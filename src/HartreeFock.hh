@@ -64,6 +64,9 @@ class HartreeFock
    IMSRGProfiler profiler;  ///< Profiler for timing, etc.
    std::deque<double> convergence_ediff; ///< Save last few convergence checks for diagnostics
    std::deque<double> convergence_EHF; ///< Save last few convergence checks for diagnostics
+   std::deque<arma::mat> DIIS_density_mats; ///< Save density matrix from past iterations for DIIS
+   std::deque<arma::mat> DIIS_error_mats; ///< Save error from past iterations for DIIS
+
    Jacobi3BME* jacobi3bme;  ///< pointer to 3-body matrix elements in jacobi basis, if we want to use that
    bool use_jacobi_3body;
    bool freeze_occupations;
@@ -77,6 +80,7 @@ class HartreeFock
    void Diagonalize();            ///< Diagonalize the Fock matrix
    void UpdateF();                ///< Update the Fock matrix with the new transformation coefficients C
    void UpdateDensityMatrix();    ///< Update the density matrix with the new coefficients C
+   void UpdateDensityMatrix_DIIS();    ///< Update the density matrix using Direct Inversion in Iterative Subspace
    void FillLowestOrbits();       ///< Get new occupations based on the current single-particle energies
    void UpdateReference();        ///< If we got new occupations in FillLowestOrbits, then we should update the hole states in the reference.
    bool CheckConvergence();       ///< Compare the current energies with those from the previous iteration

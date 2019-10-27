@@ -119,78 +119,66 @@ Col<eT>::Col(const SizeMat& s, const fill::fill_class<fill_type>& f)
 
 
 
-//! construct a column vector from specified text
 template<typename eT>
 inline
 Col<eT>::Col(const char* text)
+  : Mat<eT>(arma_vec_indicator(), 1)
   {
   arma_extra_debug_sigprint();
   
-  access::rw(Mat<eT>::vec_state) = 2;
-  
-  Mat<eT>::operator=(text);
-  
-  std::swap( access::rw(Mat<eT>::n_rows), access::rw(Mat<eT>::n_cols) );
-  
-  access::rw(Mat<eT>::vec_state) = 1;
+  (*this).operator=(text);
   }
 
 
 
-//! construct a column vector from specified text
 template<typename eT>
 inline
-const Col<eT>&
+Col<eT>&
 Col<eT>::operator=(const char* text)
   {
   arma_extra_debug_sigprint();
   
-  access::rw(Mat<eT>::vec_state) = 2;
+  Mat<eT> tmp(text);
   
-  Mat<eT>::operator=(text);
+  arma_debug_check( ((tmp.n_elem > 0) && (tmp.is_vec() == false)), "Mat::init(): requested size is not compatible with column vector layout" );
   
-  std::swap( access::rw(Mat<eT>::n_rows), access::rw(Mat<eT>::n_cols) );
+  access::rw(tmp.n_rows) = tmp.n_elem;
+  access::rw(tmp.n_cols) = 1;
   
-  access::rw(Mat<eT>::vec_state) = 1;
+  (*this).steal_mem(tmp);
   
   return *this;
   }
 
 
 
-//! construct a column vector from specified text
 template<typename eT>
 inline
 Col<eT>::Col(const std::string& text)
+  : Mat<eT>(arma_vec_indicator(), 1)
   {
   arma_extra_debug_sigprint();
   
-  access::rw(Mat<eT>::vec_state) = 2;
-  
-  Mat<eT>::operator=(text);
-  
-  std::swap( access::rw(Mat<eT>::n_rows), access::rw(Mat<eT>::n_cols) );
-  
-  access::rw(Mat<eT>::vec_state) = 1;
+  (*this).operator=(text);
   }
 
 
 
-//! construct a column vector from specified text
 template<typename eT>
 inline
-const Col<eT>&
+Col<eT>&
 Col<eT>::operator=(const std::string& text)
   {
   arma_extra_debug_sigprint();
   
-  access::rw(Mat<eT>::vec_state) = 2;
+  Mat<eT> tmp(text);
   
-  Mat<eT>::operator=(text);
+  arma_debug_check( ((tmp.n_elem > 0) && (tmp.is_vec() == false)), "Mat::init(): requested size is not compatible with column vector layout" );
   
-  std::swap( access::rw(Mat<eT>::n_rows), access::rw(Mat<eT>::n_cols) );
+  access::rw(tmp.n_rows) = tmp.n_elem;
+  access::rw(tmp.n_cols) = 1;
   
-  access::rw(Mat<eT>::vec_state) = 1;
+  (*this).steal_mem(tmp);
   
   return *this;
   }
@@ -216,7 +204,7 @@ Col<eT>::Col(const std::vector<eT>& x)
 //! create a column vector from std::vector
 template<typename eT>
 inline
-const Col<eT>&
+Col<eT>&
 Col<eT>::operator=(const std::vector<eT>& x)
   {
   arma_extra_debug_sigprint();
@@ -238,34 +226,30 @@ Col<eT>::operator=(const std::vector<eT>& x)
   template<typename eT>
   inline
   Col<eT>::Col(const std::initializer_list<eT>& list)
+    : Mat<eT>(arma_vec_indicator(), 1)
     {
     arma_extra_debug_sigprint();
     
-    access::rw(Mat<eT>::vec_state) = 2;
-    
-    Mat<eT>::operator=(list);
-    
-    std::swap( access::rw(Mat<eT>::n_rows), access::rw(Mat<eT>::n_cols) );
-    
-    access::rw(Mat<eT>::vec_state) = 1;
+    (*this).operator=(list);
     }
   
   
   
   template<typename eT>
   inline
-  const Col<eT>&
+  Col<eT>&
   Col<eT>::operator=(const std::initializer_list<eT>& list)
     {
     arma_extra_debug_sigprint();
     
-    access::rw(Mat<eT>::vec_state) = 2;
+    Mat<eT> tmp(list);
     
-    Mat<eT>::operator=(list);
+    arma_debug_check( ((tmp.n_elem > 0) && (tmp.is_vec() == false)), "Mat::init(): requested size is not compatible with column vector layout" );
     
-    std::swap( access::rw(Mat<eT>::n_rows), access::rw(Mat<eT>::n_cols) );
+    access::rw(tmp.n_rows) = tmp.n_elem;
+    access::rw(tmp.n_cols) = 1;
     
-    access::rw(Mat<eT>::vec_state) = 1;
+    (*this).steal_mem(tmp);
     
     return *this;
     }
@@ -314,7 +298,7 @@ Col<eT>::operator=(const std::vector<eT>& x)
   
   template<typename eT>
   inline
-  const Col<eT>&
+  Col<eT>&
   Col<eT>::operator=(Col<eT>&& X)
     {
     arma_extra_debug_sigprint(arma_str::format("this = %x   X = %x") % this % &X);
@@ -338,24 +322,7 @@ Col<eT>::operator=(const std::vector<eT>& x)
 
 template<typename eT>
 inline
-Col<eT>::Col(const SpCol<eT>& X)
-  : Mat<eT>(arma_vec_indicator(), X.n_elem, 1, 1)
-  {
-  arma_extra_debug_sigprint_this(this);
-
-  arrayops::inplace_set(Mat<eT>::memptr(), eT(0), X.n_elem);
-
-  for(typename SpCol<eT>::const_iterator it = X.begin(); it != X.end(); ++it)
-    {
-    at(it.row()) = (*it);
-    }
-  }
-
-
-
-template<typename eT>
-inline
-const Col<eT>&
+Col<eT>&
 Col<eT>::operator=(const eT val)
   {
   arma_extra_debug_sigprint();
@@ -369,7 +336,7 @@ Col<eT>::operator=(const eT val)
 
 template<typename eT>
 inline
-const Col<eT>&
+Col<eT>&
 Col<eT>::operator=(const Col<eT>& X)
   {
   arma_extra_debug_sigprint();
@@ -397,8 +364,36 @@ Col<eT>::Col(const Base<eT,T1>& X)
 template<typename eT>
 template<typename T1>
 inline
-const Col<eT>&
+Col<eT>&
 Col<eT>::operator=(const Base<eT,T1>& X)
+  {
+  arma_extra_debug_sigprint();
+  
+  Mat<eT>::operator=(X.get_ref());
+  
+  return *this;
+  }
+
+
+
+template<typename eT>
+template<typename T1>
+inline
+Col<eT>::Col(const SpBase<eT,T1>& X)
+  : Mat<eT>(arma_vec_indicator(), 1)
+  {
+  arma_extra_debug_sigprint_this(this);
+  
+  Mat<eT>::operator=(X.get_ref());
+  }
+
+
+
+template<typename eT>
+template<typename T1>
+inline
+Col<eT>&
+Col<eT>::operator=(const SpBase<eT,T1>& X)
   {
   arma_extra_debug_sigprint();
   
@@ -470,7 +465,7 @@ Col<eT>::Col(const BaseCube<eT,T1>& X)
 template<typename eT>
 template<typename T1>
 inline
-const Col<eT>&
+Col<eT>&
 Col<eT>::operator=(const BaseCube<eT,T1>& X)
   {
   arma_extra_debug_sigprint();
@@ -497,7 +492,7 @@ Col<eT>::Col(const subview_cube<eT>& X)
 
 template<typename eT>
 inline
-const Col<eT>&
+Col<eT>&
 Col<eT>::operator=(const subview_cube<eT>& X)
   {
   arma_extra_debug_sigprint();
@@ -543,6 +538,16 @@ template<typename eT>
 arma_inline
 const Op<Col<eT>,op_strans>
 Col<eT>::st() const
+  {
+  return Op<Col<eT>,op_strans>(*this);
+  }
+
+
+
+template<typename eT>
+arma_inline
+const Op<Col<eT>,op_strans>
+Col<eT>::as_row() const
   {
   return Op<Col<eT>,op_strans>(*this);
   }
@@ -925,6 +930,20 @@ Col<eT>::shed_rows(const uword in_row1, const uword in_row2)
 
 
 
+//! remove specified rows
+template<typename eT>
+template<typename T1>
+inline
+void
+Col<eT>::shed_rows(const Base<uword, T1>& indices)
+  {
+  arma_extra_debug_sigprint();
+  
+  Mat<eT>::shed_rows(indices);
+  }
+
+
+
 //! insert N rows at the specified row position,
 //! optionally setting the elements of the inserted rows to zero
 template<typename eT>
@@ -959,7 +978,7 @@ Col<eT>::insert_rows(const uword row_num, const uword N, const bool set_to_zero)
       arrayops::copy( &(out_mem[row_num + N]), &(t_mem[row_num]), B_n_rows );
       }
     
-    if(set_to_zero == true)
+    if(set_to_zero)
       {
       arrayops::inplace_set( &(out_mem[row_num]), eT(0), N );
       }
@@ -1088,20 +1107,6 @@ Col<eT>::end_row(const uword row_num) const
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-void
-Col<eT>::fixed<fixed_n_elem>::change_to_row()
-  {
-  arma_extra_debug_sigprint();
-  
-  access::rw(Mat<eT>::n_cols) = fixed_n_elem;
-  access::rw(Mat<eT>::n_rows) = 1;
-  }
-
-
-
-template<typename eT>
-template<uword fixed_n_elem>
-arma_inline
 Col<eT>::fixed<fixed_n_elem>::fixed()
   : Col<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
@@ -1128,7 +1133,7 @@ Col<eT>::fixed<fixed_n_elem>::fixed(const fixed<fixed_n_elem>& X)
 
 template<typename eT>
 template<uword fixed_n_elem>
-inline
+arma_inline
 Col<eT>::fixed<fixed_n_elem>::fixed(const subview_cube<eT>& X)
   : Col<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
@@ -1160,7 +1165,7 @@ Col<eT>::fixed<fixed_n_elem>::fixed(const fill::fill_class<fill_type>&)
 template<typename eT>
 template<uword fixed_n_elem>
 template<typename T1>
-inline
+arma_inline
 Col<eT>::fixed<fixed_n_elem>::fixed(const Base<eT,T1>& A)
   : Col<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
@@ -1174,7 +1179,7 @@ Col<eT>::fixed<fixed_n_elem>::fixed(const Base<eT,T1>& A)
 template<typename eT>
 template<uword fixed_n_elem>
 template<typename T1, typename T2>
-inline
+arma_inline
 Col<eT>::fixed<fixed_n_elem>::fixed(const Base<pod_type,T1>& A, const Base<pod_type,T2>& B)
   : Col<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
@@ -1200,9 +1205,6 @@ Col<eT>::fixed<fixed_n_elem>::fixed(const eT* aux_mem)
 
 
 
-//! NOTE: this function relies on
-//! Col::operator=(text), to change vec_state as well as swapping n_rows and n_cols,
-//! and Mat::init(), to check that the given vector will not have a different size than fixed_n_elem.
 template<typename eT>
 template<uword fixed_n_elem>
 inline
@@ -1211,16 +1213,11 @@ Col<eT>::fixed<fixed_n_elem>::fixed(const char* text)
   {
   arma_extra_debug_sigprint_this(this);
   
-  change_to_row();
-  
   Col<eT>::operator=(text);
   }
 
 
 
-//! NOTE: this function relies on
-//! Col::operator=(text), to change vec_state as well as swapping n_rows and n_cols,
-//! and Mat::init(), to check that the given vector will not have a different size than fixed_n_elem.
 template<typename eT>
 template<uword fixed_n_elem>
 inline
@@ -1228,8 +1225,6 @@ Col<eT>::fixed<fixed_n_elem>::fixed(const std::string& text)
   : Col<eT>( arma_fixed_indicator(), fixed_n_elem, ((use_extra) ? mem_local_extra : Mat<eT>::mem_local) )
   {
   arma_extra_debug_sigprint_this(this);
-  
-  change_to_row();
   
   Col<eT>::operator=(text);
   }
@@ -1239,7 +1234,7 @@ Col<eT>::fixed<fixed_n_elem>::fixed(const std::string& text)
 template<typename eT>
 template<uword fixed_n_elem>
 template<typename T1>
-const Col<eT>&
+Col<eT>&
 Col<eT>::fixed<fixed_n_elem>::operator=(const Base<eT,T1>& A)
   {
   arma_extra_debug_sigprint();
@@ -1253,7 +1248,7 @@ Col<eT>::fixed<fixed_n_elem>::operator=(const Base<eT,T1>& A)
 
 template<typename eT>
 template<uword fixed_n_elem>
-const Col<eT>&
+Col<eT>&
 Col<eT>::fixed<fixed_n_elem>::operator=(const eT val)
   {
   arma_extra_debug_sigprint();
@@ -1267,13 +1262,11 @@ Col<eT>::fixed<fixed_n_elem>::operator=(const eT val)
 
 template<typename eT>
 template<uword fixed_n_elem>
-const Col<eT>&
+Col<eT>&
 Col<eT>::fixed<fixed_n_elem>::operator=(const char* text)
   {
   arma_extra_debug_sigprint();
   
-  change_to_row();
-  
   Col<eT>::operator=(text);
   
   return *this; 
@@ -1283,13 +1276,11 @@ Col<eT>::fixed<fixed_n_elem>::operator=(const char* text)
 
 template<typename eT>
 template<uword fixed_n_elem>
-const Col<eT>&
+Col<eT>&
 Col<eT>::fixed<fixed_n_elem>::operator=(const std::string& text)
   {
   arma_extra_debug_sigprint();
   
-  change_to_row();
-  
   Col<eT>::operator=(text);
   
   return *this; 
@@ -1299,7 +1290,7 @@ Col<eT>::fixed<fixed_n_elem>::operator=(const std::string& text)
 
 template<typename eT>
 template<uword fixed_n_elem>
-const Col<eT>&
+Col<eT>&
 Col<eT>::fixed<fixed_n_elem>::operator=(const subview_cube<eT>& X)
   {
   arma_extra_debug_sigprint();
@@ -1329,7 +1320,7 @@ Col<eT>::fixed<fixed_n_elem>::operator=(const subview_cube<eT>& X)
   template<typename eT>
   template<uword fixed_n_elem>
   inline
-  const Col<eT>&
+  Col<eT>&
   Col<eT>::fixed<fixed_n_elem>::operator=(const std::initializer_list<eT>& list)
     {
     arma_extra_debug_sigprint();
@@ -1354,7 +1345,7 @@ Col<eT>::fixed<fixed_n_elem>::operator=(const subview_cube<eT>& X)
 template<typename eT>
 template<uword fixed_n_elem>
 arma_inline
-const Col<eT>&
+Col<eT>&
 Col<eT>::fixed<fixed_n_elem>::operator=(const fixed<fixed_n_elem>& X)
   {
   arma_extra_debug_sigprint();
@@ -1378,7 +1369,7 @@ Col<eT>::fixed<fixed_n_elem>::operator=(const fixed<fixed_n_elem>& X)
   template<uword fixed_n_elem>
   template<typename T1, typename eop_type>
   inline
-  const Col<eT>&
+  Col<eT>&
   Col<eT>::fixed<fixed_n_elem>::operator=(const eOp<T1, eop_type>& X)
     {
     arma_extra_debug_sigprint();
@@ -1411,7 +1402,7 @@ Col<eT>::fixed<fixed_n_elem>::operator=(const fixed<fixed_n_elem>& X)
   template<uword fixed_n_elem>
   template<typename T1, typename T2, typename eglue_type>
   inline
-  const Col<eT>&
+  Col<eT>&
   Col<eT>::fixed<fixed_n_elem>::operator=(const eGlue<T1, T2, eglue_type>& X)
     {
     arma_extra_debug_sigprint();

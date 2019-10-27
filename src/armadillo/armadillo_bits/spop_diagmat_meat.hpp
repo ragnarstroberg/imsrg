@@ -28,17 +28,15 @@ spop_diagmat::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_diag
   
   typedef typename T1::elem_type eT;
   
-  const SpProxy<T1> p(in.m);
-  
-  if(p.is_alias(out) == false)
+  if(in.is_alias(out) == false)
     {
-    spop_diagmat::apply_noalias(out, p);
+    spop_diagmat::apply_noalias(out, in.m);
     }
   else
     {
     SpMat<eT> tmp;
     
-    spop_diagmat::apply_noalias(tmp, p);
+    spop_diagmat::apply_noalias(tmp, in.m);
     
     out.steal_mem(tmp);
     }
@@ -49,29 +47,33 @@ spop_diagmat::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_diag
 template<typename T1>
 inline
 void
-spop_diagmat::apply_noalias(SpMat<typename T1::elem_type>& out, const SpProxy<T1>& p)
+spop_diagmat::apply_noalias(SpMat<typename T1::elem_type>& out, const SpBase<typename T1::elem_type, T1>& expr)
   {
   arma_extra_debug_sigprint();
   
-  const uword n_rows = p.get_n_rows();
-  const uword n_cols = p.get_n_cols();
+  typedef typename T1::elem_type eT;
   
-  const bool p_is_vec = (n_rows == 1) || (n_cols == 1);
+  const SpProxy<T1> P(expr.get_ref());
   
-  if(p_is_vec)    // generate a diagonal matrix out of a vector
+  const uword P_n_rows = P.get_n_rows();
+  const uword P_n_cols = P.get_n_cols();
+  const uword P_n_nz   = P.get_n_nonzero();
+  
+  const bool P_is_vec = (P_n_rows == 1) || (P_n_cols == 1);
+  
+  if(P_is_vec)    // generate a diagonal matrix out of a vector
     {
-    const uword N = (n_rows == 1) ? n_cols : n_rows;
+    const uword N = (P_n_rows == 1) ? P_n_cols : P_n_rows;
     
     out.zeros(N, N);
     
-    if(p.get_n_nonzero() == 0)  { return; }
+    if(P_n_nz == 0)  { return; }
     
-    typename SpProxy<T1>::const_iterator_type it     = p.begin();
-    typename SpProxy<T1>::const_iterator_type it_end = p.end();
-      
-    if(n_cols == 1)
+    typename SpProxy<T1>::const_iterator_type it = P.begin();
+    
+    if(P_n_cols == 1)
       {
-      while(it != it_end)
+      for(uword i=0; i < P_n_nz; ++i)
         {
         const uword row = it.row();
         
@@ -81,9 +83,9 @@ spop_diagmat::apply_noalias(SpMat<typename T1::elem_type>& out, const SpProxy<T1
         }
       }
     else
-    if(n_rows == 1)
+    if(P_n_rows == 1)
       {
-      while(it != it_end)
+      for(uword i=0; i < P_n_nz; ++i)
         {
         const uword col = it.col();
         
@@ -95,27 +97,248 @@ spop_diagmat::apply_noalias(SpMat<typename T1::elem_type>& out, const SpProxy<T1
     }
   else   // generate a diagonal matrix out of a matrix
     {
-    out.zeros(n_rows, n_cols);
+    out.zeros(P_n_rows, P_n_cols);
     
-    if(p.get_n_nonzero() == 0)  { return; }
+    const uword N = (std::min)(P_n_rows, P_n_cols);
     
-    typename SpProxy<T1>::const_iterator_type it     = p.begin();
-    typename SpProxy<T1>::const_iterator_type it_end = p.end();
-    
-    while(it != it_end)
+    if( (is_SpMat<typename SpProxy<T1>::stored_type>::value) && (P_n_nz >= 5*N) )
       {
-      const uword row = it.row();
-      const uword col = it.col();
+      const unwrap_spmat<typename SpProxy<T1>::stored_type> U(P.Q);
       
-      if(row == col)
+      const SpMat<eT>& X = U.M;
+      
+      for(uword i=0; i < N; ++i)
         {
-        out.at(row,row) = (*it);
+        const eT val = X.at(i,i);  // use binary search
+        
+        if(val != eT(0))  { out.at(i,i) = val; }
         }
+      }
+    else
+      {
+      if(P_n_nz == 0)  { return; }
       
-      ++it;
+      typename SpProxy<T1>::const_iterator_type it = P.begin();
+      
+      for(uword i=0; i < P_n_nz; ++i)
+        {
+        const uword row = it.row();
+        const uword col = it.col();
+        
+        if(row == col)  { out.at(row,row) = (*it); }
+        
+        ++it;
+        }
       }
     }
   }
+
+
+
+template<typename T1, typename T2>
+inline
+void
+spop_diagmat::apply_noalias(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_plus>& expr)
+  {
+  arma_extra_debug_sigprint();
+  
+  typedef typename T1::elem_type eT;
+  
+  const unwrap_spmat<T1> UA(expr.A);
+  const unwrap_spmat<T2> UB(expr.B);
+  
+  const SpMat<eT>& A = UA.M;
+  const SpMat<eT>& B = UB.M;
+  
+  arma_debug_assert_same_size(A.n_rows, A.n_cols, B.n_rows, B.n_cols, "addition");
+  
+  const bool is_vec = (A.n_rows == 1) || (A.n_cols == 1);
+  
+  if(is_vec)    // generate a diagonal matrix out of a vector
+    {
+    const uword N = (A.n_rows == 1) ? A.n_cols : A.n_rows;
+    
+    out.zeros(N,N);
+    
+    if(A.n_rows == 1)
+      {
+      for(uword i=0; i < N; ++i) { out.at(i,i) = A.at(0,i) + B.at(0,i); }
+      }
+    else
+      {
+      for(uword i=0; i < N; ++i) { out.at(i,i) = A.at(i,0) + B.at(i,0); }
+      }
+    }
+  else   // generate a diagonal matrix out of a matrix
+    {
+    SpMat<eT> AA;  spop_diagmat::apply_noalias(AA, A);
+    SpMat<eT> BB;  spop_diagmat::apply_noalias(BB, B);
+    
+    out = AA + BB;
+    }
+  }
+
+
+
+template<typename T1, typename T2>
+inline
+void
+spop_diagmat::apply_noalias(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_minus>& expr)
+  {
+  arma_extra_debug_sigprint();
+  
+  typedef typename T1::elem_type eT;
+  
+  const unwrap_spmat<T1> UA(expr.A);
+  const unwrap_spmat<T2> UB(expr.B);
+  
+  const SpMat<eT>& A = UA.M;
+  const SpMat<eT>& B = UB.M;
+  
+  arma_debug_assert_same_size(A.n_rows, A.n_cols, B.n_rows, B.n_cols, "subtraction");
+  
+  const bool is_vec = (A.n_rows == 1) || (A.n_cols == 1);
+  
+  if(is_vec)    // generate a diagonal matrix out of a vector
+    {
+    const uword N = (A.n_rows == 1) ? A.n_cols : A.n_rows;
+    
+    out.zeros(N,N);
+    
+    if(A.n_rows == 1)
+      {
+      for(uword i=0; i < N; ++i) { out.at(i,i) = A.at(0,i) - B.at(0,i); }
+      }
+    else
+      {
+      for(uword i=0; i < N; ++i) { out.at(i,i) = A.at(i,0) - B.at(i,0); }
+      }
+    }
+  else   // generate a diagonal matrix out of a matrix
+    {
+    SpMat<eT> AA;  spop_diagmat::apply_noalias(AA, A);
+    SpMat<eT> BB;  spop_diagmat::apply_noalias(BB, B);
+    
+    out = AA - BB;
+    }
+  }
+
+
+
+template<typename T1, typename T2>
+inline
+void
+spop_diagmat::apply_noalias(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_schur>& expr)
+  {
+  arma_extra_debug_sigprint();
+  
+  typedef typename T1::elem_type eT;
+  
+  const unwrap_spmat<T1> UA(expr.A);
+  const unwrap_spmat<T2> UB(expr.B);
+  
+  const SpMat<eT>& A = UA.M;
+  const SpMat<eT>& B = UB.M;
+  
+  arma_debug_assert_same_size(A.n_rows, A.n_cols, B.n_rows, B.n_cols, "element-wise multiplication");
+  
+  const bool is_vec = (A.n_rows == 1) || (A.n_cols == 1);
+  
+  if(is_vec)    // generate a diagonal matrix out of a vector
+    {
+    const uword N = (A.n_rows == 1) ? A.n_cols : A.n_rows;
+    
+    out.zeros(N,N);
+    
+    if(A.n_rows == 1)
+      {
+      for(uword i=0; i < N; ++i) { out.at(i,i) = A.at(0,i) * B.at(0,i); }
+      }
+    else
+      {
+      for(uword i=0; i < N; ++i) { out.at(i,i) = A.at(i,0) * B.at(i,0); }
+      }
+    }
+  else   // generate a diagonal matrix out of a matrix
+    {
+    SpMat<eT> AA;  spop_diagmat::apply_noalias(AA, A);
+    SpMat<eT> BB;  spop_diagmat::apply_noalias(BB, B);
+    
+    out = AA % BB;
+    }
+  }
+
+
+
+template<typename T1, typename T2>
+inline
+void
+spop_diagmat::apply_noalias(SpMat<typename T1::elem_type>& out, const SpGlue<T1,T2,spglue_times>& expr)
+  {
+  arma_extra_debug_sigprint();
+  
+  typedef typename T1::elem_type eT;
+  
+  const unwrap_spmat<T1> UA(expr.A);
+  const unwrap_spmat<T2> UB(expr.B);
+  
+  const SpMat<eT>& A = UA.M;
+  const SpMat<eT>& B = UB.M;
+  
+  arma_debug_assert_mul_size(A.n_rows, A.n_cols, B.n_rows, B.n_cols, "matrix multiplication");
+  
+  const uword C_n_rows = A.n_rows;
+  const uword C_n_cols = B.n_cols;
+  
+  const bool is_vec = (C_n_rows == 1) || (C_n_cols == 1);
+  
+  if(is_vec)    // generate a diagonal matrix out of a vector
+    {
+    const SpMat<eT> C = A*B;
+    
+    spop_diagmat::apply_noalias(out, C);
+    }
+  else   // generate a diagonal matrix out of a matrix
+    {
+    const uword N = (std::min)(C_n_rows, C_n_cols);
+    
+    if( (A.n_nonzero >= 5*N) || (B.n_nonzero >= 5*N) )
+      {
+      out.zeros(C_n_rows, C_n_cols);
+      
+      for(uword k=0; k < N; ++k)
+        {
+        typename SpMat<eT>::const_col_iterator B_it     = B.begin_col_no_sync(k);
+        typename SpMat<eT>::const_col_iterator B_it_end = B.end_col_no_sync(k);
+        
+        eT acc = eT(0);
+        
+        while(B_it != B_it_end)
+          {
+          const eT    B_val = (*B_it);
+          const uword i     = B_it.row();
+          
+          acc += A.at(k,i) * B_val;
+          
+          ++B_it;
+          }
+        
+        out(k,k) = acc;
+        }
+      }
+    else
+      {
+      const SpMat<eT> C = A*B;
+      
+      spop_diagmat::apply_noalias(out, C);
+      }
+    }
+  }
+
+
+
+//
+//
 
 
 
@@ -133,7 +356,7 @@ spop_diagmat2::apply(SpMat<typename T1::elem_type>& out, const SpOp<T1, spop_dia
   
   const unwrap_spmat<T1> U(in.m);
   
-  if(&(U.M) == &out)
+  if(U.is_alias(out))
     {
     SpMat<eT> tmp;
     
@@ -170,14 +393,15 @@ spop_diagmat2::apply_noalias(SpMat<eT>& out, const SpMat<eT>& X, const uword row
     
     out.zeros(n_elem + n_pad, n_elem + n_pad);
     
-    if(X.n_nonzero == 0)  { return; }
+    const uword X_n_nz = X.n_nonzero;
     
-    typename SpMat<eT>::const_iterator it     = X.begin();
-    typename SpMat<eT>::const_iterator it_end = X.end();
+    if(X_n_nz == 0)  { return; }
+    
+    typename SpMat<eT>::const_iterator it = X.begin();
       
     if(n_cols == 1)
       {
-      while(it != it_end)
+      for(uword i=0; i < X_n_nz; ++i)
         {
         const uword row = it.row();
         
@@ -189,7 +413,7 @@ spop_diagmat2::apply_noalias(SpMat<eT>& out, const SpMat<eT>& X, const uword row
     else
     if(n_rows == 1)
       {
-      while(it != it_end)
+      for(uword i=0; i < X_n_nz; ++i)
         {
         const uword col = it.col();
         
@@ -211,8 +435,6 @@ spop_diagmat2::apply_noalias(SpMat<eT>& out, const SpMat<eT>& X, const uword row
     
     if(X.n_nonzero == 0)  { return; }
     
-    // TODO: this is a rudimentary implementation; replace with a faster version using iterators
-    
     const uword N = (std::min)(n_rows - row_offset, n_cols - col_offset);
     
     for(uword i=0; i<N; ++i)
@@ -220,7 +442,9 @@ spop_diagmat2::apply_noalias(SpMat<eT>& out, const SpMat<eT>& X, const uword row
       const uword row = i + row_offset;
       const uword col = i + col_offset;
       
-      out.at(row,col) = X.at(row,col);
+      const eT val = X.at(row,col);
+      
+      if(val != eT(0))  { out.at(row,col) = val; }
       }
     }
   }

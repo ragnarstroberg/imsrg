@@ -75,7 +75,18 @@ void HartreeFock::Solve()
       Diagonalize();          // Diagonalize the Fock matrix
       ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
       if (not freeze_occupations) FillLowestOrbits(); // if we don't freeze the occupations, then calculate the new ones.
-      UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
+
+      // After 50 iterations, do the first 20 out of every 50 with DIIS, which hopefully helps us break out of any cycles
+      if (iterations > 50 and (iterations%50)<20)
+      {
+        UpdateDensityMatrix_DIIS();
+      }
+      else
+      {
+        DIIS_error_mats.resize(0);
+        DIIS_density_mats.resize(0);
+        UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
+      }
       UpdateF();              // Update the Fock matrix
 
       if ( CheckConvergence() ) break;
@@ -672,6 +683,65 @@ void HartreeFock::UpdateDensityMatrix()
   arma::mat tmp = C.cols(holeorbs);
   rho = (tmp.each_row() % hole_occ) * tmp.t();
 }
+
+
+// DIIS: Direct Inversion in the Iterative Subspace
+// an approach for accelerating the convergence of the HF iterations
+void HartreeFock::UpdateDensityMatrix_DIIS()
+{
+
+  size_t N_MATS_STORED = 4; // How many past density matrices and error matrices to store
+
+  // If we're at the solution, the Fock matrix F and rho will commute
+  arma::mat error_mat = F * rho - rho * F;
+
+//  std::cout << "error_mat norm = " << arma::norm(error_mat, "fro") << std::endl;
+  // Compute the new density matrix rho from the C matrix which diagonalizes F
+  arma::mat tmp = C.cols(holeorbs);
+  rho = (tmp.each_row() % hole_occ) * tmp.t();
+
+
+  // save this error matrix in a list
+  size_t nsave = DIIS_error_mats.size();
+  if (nsave>N_MATS_STORED) DIIS_error_mats.pop_front();    // out with the old
+  DIIS_error_mats.push_back(error_mat);                    // in with the new
+
+
+  // save the new rho in the list of rhos
+  if (DIIS_density_mats.size()>N_MATS_STORED)  DIIS_density_mats.pop_front();   // out with the old
+  DIIS_density_mats.push_back( rho );                                           // in with the new
+
+  // Now construct the B matrix which is inverted to find the combination of
+  // previous density matrices which will minimize the error
+
+  if (nsave<N_MATS_STORED) return; // check that have enough previous rhos and errors stored to do this
+
+  arma::mat Bij( nsave+1, nsave+1 );
+  Bij.row(nsave).ones();
+  Bij.col(nsave).ones();
+  Bij(nsave,nsave) = 0;
+
+  for (size_t i=0; i<nsave; i++)
+  {
+   for (size_t j=0; j<nsave; j++)
+   {
+    Bij(i,j) = arma::norm( DIIS_error_mats[i] * DIIS_error_mats[j].t(), "fro" );
+   }
+  }
+  arma::vec rhs(nsave+1, arma::fill::zeros);
+  rhs(nsave) = 1;
+  // Now invert that bad boy.
+  arma::vec cvec = arma::solve( Bij, rhs );
+  cvec = arma::abs(cvec);
+  cvec /= arma::accu(cvec.head_rows(nsave));
+
+
+  rho.zeros();
+  // our next guess for rho is a linear combination of the previous ones
+  for (size_t i=0; i<nsave; i++)   rho += cvec(i) * DIIS_density_mats[i];
+
+}
+
 
 
 

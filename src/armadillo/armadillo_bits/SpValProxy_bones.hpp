@@ -18,12 +18,10 @@
 //! @{
 
 
-/**
- * Sparse value proxy class, meant to prevent 0s from being added to sparse
- * matrices.  T1 should be either SpMat or SpSubview, and if it's not, bad news
- * is probably coming.  This class only uses T1::add_element() and
- * T1::delete_element().
- */
+// Sparse value proxy class, to prevent inserting 0s into sparse matrices.
+// T1 must be either SpMat or SpSubview.
+// This class uses T1::insert_element(), T1::delete_element(), T1::invalidate_cache()
+
 template<typename T1>
 class SpValProxy
   {
@@ -62,18 +60,21 @@ class SpValProxy
   //! This will work for any other operations that do not modify a value.
   arma_inline operator eT() const;
   
+  arma_inline typename get_pod_type<eT>::result real() const;
+  arma_inline typename get_pod_type<eT>::result imag() const;
+  
   
   private:
   
   // Deletes the element if it is zero.  Does not check if val_ptr == NULL!
-  arma_inline arma_hot void check_zero();
+  arma_inline void check_zero();
   
-  uword row;
-  uword col;
+  arma_aligned const uword row;
+  arma_aligned const uword col;
   
-  eT* val_ptr;
+  arma_aligned eT* val_ptr;
   
-  T1& parent; // We will call this object if we need to insert or delete an element.
+  arma_aligned T1& parent; // We will call this object if we need to insert or delete an element.
   };
 
 

@@ -41,6 +41,7 @@ solve
 
 
 
+//! NOTE: don't use this form: it will be removed
 template<typename T1, typename T2>
 arma_deprecated
 inline
@@ -61,6 +62,7 @@ solve
 
 
 
+//! NOTE: don't use this form: it will be removed
 template<typename T1, typename T2>
 arma_deprecated
 inline
@@ -99,6 +101,7 @@ solve
 
 
 
+//! NOTE: don't use this form: it will be removed
 template<typename T1, typename T2>
 arma_deprecated
 inline
@@ -120,6 +123,7 @@ solve
 
 
 
+//! NOTE: don't use this form: it will be removed
 template<typename T1, typename T2>
 arma_deprecated
 inline
@@ -148,30 +152,53 @@ solve
 template<typename T1, typename T2>
 arma_warn_unused
 inline
+typename enable_if2< is_supported_blas_type<typename T1::elem_type>::value, const Glue<T1, T2, glue_solve_tri_default> >::result
+solve
+  (
+  const Op<T1, op_trimat>&               A,
+  const Base<typename T1::elem_type,T2>& B
+  )
+  {
+  arma_extra_debug_sigprint();
+  
+  uword flags = uword(0);
+  
+  if(A.aux_uword_a == 0)  { flags |= solve_opts::flag_triu; }
+  if(A.aux_uword_a == 1)  { flags |= solve_opts::flag_tril; }
+  
+  return Glue<T1, T2, glue_solve_tri_default>(A.m, B.get_ref(), flags);
+  }
+
+
+
+template<typename T1, typename T2>
+arma_warn_unused
+inline
 typename enable_if2< is_supported_blas_type<typename T1::elem_type>::value, const Glue<T1, T2, glue_solve_tri> >::result
 solve
   (
   const Op<T1, op_trimat>&               A,
   const Base<typename T1::elem_type,T2>& B,
-  const solve_opts::opts&                opts = solve_opts::none
+  const solve_opts::opts&                opts
   )
   {
   arma_extra_debug_sigprint();
   
   uword flags = opts.flags;
   
-  if(A.aux_uword_a == 0)  {  flags |= solve_opts::flag_triu; }
-  if(A.aux_uword_a == 1)  {  flags |= solve_opts::flag_tril; }
+  if(A.aux_uword_a == 0)  { flags |= solve_opts::flag_triu; }
+  if(A.aux_uword_a == 1)  { flags |= solve_opts::flag_tril; }
   
   return Glue<T1, T2, glue_solve_tri>(A.m, B.get_ref(), flags);
   }
 
 
 
+//! NOTE: don't use this form: it will be removed
 template<typename T1, typename T2>
 arma_deprecated
 inline
-typename enable_if2< is_supported_blas_type<typename T1::elem_type>::value, const Glue<T1, T2, glue_solve_tri> >::result
+typename enable_if2< is_supported_blas_type<typename T1::elem_type>::value, const Glue<T1, T2, glue_solve_tri_default> >::result
 solve
   (
   const Op<T1, op_trimat>&               A,
@@ -183,20 +210,21 @@ solve
   
   // arma_debug_warn("solve(A,B,bool) is deprecated and will be removed; change to solve(A,B)");
   
-  uword flags = solve_opts::flag_none;
+  uword flags = uword(0);
   
-  if(A.aux_uword_a == 0)  {  flags |= solve_opts::flag_triu; }
-  if(A.aux_uword_a == 1)  {  flags |= solve_opts::flag_tril; }
+  if(A.aux_uword_a == 0)  { flags |= solve_opts::flag_triu; }
+  if(A.aux_uword_a == 1)  { flags |= solve_opts::flag_tril; }
   
-  return Glue<T1, T2, glue_solve_tri>(A.m, B.get_ref(), flags);
+  return Glue<T1, T2, glue_solve_tri_default>(A.m, B.get_ref(), flags);
   }
 
 
 
+//! NOTE: don't use this form: it will be removed
 template<typename T1, typename T2>
 arma_deprecated
 inline
-typename enable_if2< is_supported_blas_type<typename T1::elem_type>::value, const Glue<T1, T2, glue_solve_tri> >::result
+typename enable_if2< is_supported_blas_type<typename T1::elem_type>::value, const Glue<T1, T2, glue_solve_tri_default> >::result
 solve
   (
   const Op<T1, op_trimat>&               A,
@@ -208,12 +236,34 @@ solve
   
   // arma_debug_warn("solve(A,B,char*) is deprecated and will be removed; change to solve(A,B)");
   
-  uword flags = solve_opts::flag_none;
+  uword flags = uword(0);
   
-  if(A.aux_uword_a == 0)  {  flags |= solve_opts::flag_triu; }
-  if(A.aux_uword_a == 1)  {  flags |= solve_opts::flag_tril; }
+  if(A.aux_uword_a == 0)  { flags |= solve_opts::flag_triu; }
+  if(A.aux_uword_a == 1)  { flags |= solve_opts::flag_tril; }
   
-  return Glue<T1, T2, glue_solve_tri>(A.m, B.get_ref(), flags);
+  return Glue<T1, T2, glue_solve_tri_default>(A.m, B.get_ref(), flags);
+  }
+
+
+
+template<typename T1, typename T2>
+inline
+typename enable_if2< is_supported_blas_type<typename T1::elem_type>::value, bool >::result
+solve
+  (
+         Mat<typename T1::elem_type>&    out,
+  const   Op<T1, op_trimat>&             A,
+  const Base<typename T1::elem_type,T2>& B
+  )
+  {
+  arma_extra_debug_sigprint();
+  
+  uword flags = uword(0);
+  
+  if(A.aux_uword_a == 0)  { flags |= solve_opts::flag_triu; }
+  if(A.aux_uword_a == 1)  { flags |= solve_opts::flag_tril; }
+  
+  return glue_solve_tri_default::apply(out, A.m, B.get_ref(), flags);
   }
 
 
@@ -226,21 +276,22 @@ solve
          Mat<typename T1::elem_type>&    out,
   const   Op<T1, op_trimat>&             A,
   const Base<typename T1::elem_type,T2>& B,
-  const solve_opts::opts&                opts = solve_opts::none
+  const solve_opts::opts&                opts
   )
   {
   arma_extra_debug_sigprint();
   
   uword flags = opts.flags;
   
-  if(A.aux_uword_a == 0)  {  flags |= solve_opts::flag_triu; }
-  if(A.aux_uword_a == 1)  {  flags |= solve_opts::flag_tril; }
+  if(A.aux_uword_a == 0)  { flags |= solve_opts::flag_triu; }
+  if(A.aux_uword_a == 1)  { flags |= solve_opts::flag_tril; }
   
   return glue_solve_tri::apply(out, A.m, B.get_ref(), flags);
   }
 
 
 
+//! NOTE: don't use this form: it will be removed
 template<typename T1, typename T2>
 arma_deprecated
 inline
@@ -257,16 +308,17 @@ solve
   
   // arma_debug_warn("solve(X,A,B,bool) is deprecated and will be removed; change to solve(X,A,B)");
   
-  uword flags = solve_opts::flag_none;
+  uword flags = uword(0);
   
-  if(A.aux_uword_a == 0)  {  flags |= solve_opts::flag_triu; }
-  if(A.aux_uword_a == 1)  {  flags |= solve_opts::flag_tril; }
+  if(A.aux_uword_a == 0)  { flags |= solve_opts::flag_triu; }
+  if(A.aux_uword_a == 1)  { flags |= solve_opts::flag_tril; }
   
-  return glue_solve_tri::apply(out, A.m, B.get_ref(), flags);
+  return glue_solve_tri_default::apply(out, A.m, B.get_ref(), flags);
   }
 
 
 
+//! NOTE: don't use this form: it will be removed
 template<typename T1, typename T2>
 arma_deprecated
 inline
@@ -283,12 +335,12 @@ solve
   
   // arma_debug_warn("solve(X,A,B,char*) is deprecated and will be removed; change to solve(X,A,B)");
   
-  uword flags = solve_opts::flag_none;
+  uword flags = uword(0);
   
-  if(A.aux_uword_a == 0)  {  flags |= solve_opts::flag_triu; }
-  if(A.aux_uword_a == 1)  {  flags |= solve_opts::flag_tril; }
+  if(A.aux_uword_a == 0)  { flags |= solve_opts::flag_triu; }
+  if(A.aux_uword_a == 1)  { flags |= solve_opts::flag_tril; }
   
-  return glue_solve_tri::apply(out, A.m, B.get_ref(), flags);
+  return glue_solve_tri_default::apply(out, A.m, B.get_ref(), flags);
   }
 
 
