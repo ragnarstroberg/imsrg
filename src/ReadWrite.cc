@@ -709,6 +709,8 @@ void ReadWrite::Read_Darmstadt_3body( std::string filename, Operator& Hbare, int
   Aref = Hbare.GetModelSpace()->GetAref();
   Zref = Hbare.GetModelSpace()->GetZref();
 
+  if ( not Hbare.ThreeBody.IsAllocated() )  Hbare.ThreeBody.Allocate();
+
   if (extension == ".me3j")
   {
     std::ifstream infile(filename);

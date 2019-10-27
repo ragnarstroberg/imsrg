@@ -73,7 +73,7 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     nChannels(ms.GetNumberTwoBodyChannels()) , Q_space_orbit(-1)
 {
   SetUpOneBodyChannels();
-  if (particle_rank >=3) ThreeBody.Allocate();
+//  if (particle_rank >=3) ThreeBody.Allocate();   // Don't allocate automatically. Wait until we're sure we want it.
   IMSRGProfiler::counter["N_Operators"] ++;
 }
 

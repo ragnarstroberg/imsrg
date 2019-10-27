@@ -14,13 +14,11 @@ ThreeBodyMEpn::ThreeBodyMEpn()
 ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms)
  : modelspace(ms), isospin3BME(ms), PN_mode(false), herm(1)
 {
-//  Allocate();
 }
 
 ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms, int e3max)
 :  modelspace(ms), isospin3BME(ms,e3max), PN_mode(false), E3max(e3max)
 {
-//  Allocate();
 }
 
 
@@ -29,7 +27,6 @@ ThreeBodyMEpn::ThreeBodyMEpn(const ThreeBodyMEpn& tbme)
 // : modelspace(tbme.modelspace), MatEl(tbme.MatEl), isospin3BME(tbme.isospin3BME), emax(tbme.emax), E3max(tbme.E3max),
    herm(tbme.herm)
 {
-//  Allocate();
 }
 
 
@@ -62,6 +59,7 @@ void ThreeBodyMEpn::Allocate_PN()
   }
   matrix_data.resize(total_dimension,0.0);
   std::cout << "DONE ALLOCATING, size of matrix_data is " << matrix_data.size() << std::endl;
+  is_allocated = true;
 }
 
 

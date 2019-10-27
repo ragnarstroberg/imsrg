@@ -45,6 +45,8 @@ class ThreeBodyME
   int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
   int herm; // +1 for hermitian, -1 for anti-hermitian
   size_t total_dimension;
+  bool is_allocated = false;
+
   const static int ABC;
   const static int BCA;
   const static int CAB;
