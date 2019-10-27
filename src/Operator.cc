@@ -73,7 +73,7 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     nChannels(ms.GetNumberTwoBodyChannels()) , Q_space_orbit(-1)
 {
   SetUpOneBodyChannels();
-  if (particle_rank >=3) ThreeBody.Allocate();
+//  if (particle_rank >=3) ThreeBody.Allocate();   // Don't allocate automatically. Wait until we're sure we want it.
   IMSRGProfiler::counter["N_Operators"] ++;
 }
 
@@ -1111,7 +1111,8 @@ std::array<double,3> Operator::GetMP3_Energy()
       int J_max = ja+ji;
       for (int J_tot=J_min;J_tot<=J_max;++J_tot)
       {
-       double Jfactor = (2*J_tot + 1)*(2*J_tot + 1) ; // I don't yet understand why it's (2J+1)**2, but this is what came from Johannes.
+//       double Jfactor = (2*J_tot + 1)*(2*J_tot + 1) ; // I don't yet understand why it's (2J+1)**2, but this is what came from Johannes.
+       double Jfactor = (2*J_tot + 1) ; // I don't yet understand why it's (2J+1)**2, but this is what came from Johannes.
        for (auto b : modelspace->holes)
        {
         double jb = 0.5*modelspace->GetOrbit(b).j2;

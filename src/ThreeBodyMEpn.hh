@@ -28,6 +28,8 @@ class ThreeBodyMEpn
   int herm; // +1 for hermitian, -1 for anti-hermitian
   size_t total_dimension;
 
+  bool is_allocated = false;
+
 
 
 
@@ -102,6 +104,8 @@ class ThreeBodyMEpn
   void SetHermitian(){herm = 1;};
   void SetAntiHermitian(){herm = -1;};
   double Norm() const;
+
+  bool IsAllocated() {return is_allocated;};
 
   void Print(size_t ch_bra, size_t ch_ket);
   void PrintAll();
