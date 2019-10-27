@@ -8,6 +8,8 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <omp.h>
+#include "IMSRGProfiler.hh"
 
 OrbitIsospin::~OrbitIsospin()
 {}
@@ -368,10 +370,14 @@ void ThreeBodyMENO2B::ReadFile()
     n_elem -= infile.tellg();
     n_elem /= sizeof(ThreeBME_type);
     std::vector<float> v(n_elem);
+    double t_start = omp_get_wtime();
     infile.read((char*)&v[0], n_elem*sizeof(ThreeBME_type));
+    IMSRGProfiler::timer["ThreeBodyMENO2B_read_to_array"] += omp_get_wtime() - t_start;
     //for (int i = 0; i<50; i++){ std::cout<<v[i]<<std::endl;}
     VectorStream vecstream(v);
+    t_start = omp_get_wtime();
     ReadStream(vecstream, n_elem);
+    IMSRGProfiler::timer["ThreeBodyMENO2B_read_from_vecstream"] += omp_get_wtime() - t_start;
     return;
   }
   if(FileName.find(".me3j") != std::string::npos){
