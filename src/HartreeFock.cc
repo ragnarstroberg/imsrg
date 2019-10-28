@@ -69,6 +69,8 @@ void HartreeFock::Solve()
    double t_start = omp_get_wtime();
    iterations = 0; // counter so we don't go on forever
    int maxiter = 1000;
+   double mixing_factor = 0.1;
+//   double mixing_factor = 0.0;
 
    for (iterations=0; iterations<maxiter; ++iterations)
    {
@@ -77,15 +79,20 @@ void HartreeFock::Solve()
       if (not freeze_occupations) FillLowestOrbits(); // if we don't freeze the occupations, then calculate the new ones.
 
       // After 50 iterations, do the first 20 out of every 50 with DIIS, which hopefully helps us break out of any cycles
-      if (iterations > 50 and (iterations%50)<20)
+//      if (iterations > 50 and (iterations%50)<20 )
+//    Use DIIS for the first few iterations and then drop down to linear mixing.
+//      if (iterations < -20 and (DIIS_error_mats.size()<1 or arma::norm( DIIS_error_mats.back(),"fro")>0.1)  )
+      if (iterations < 20 and (DIIS_error_mats.size()<1 or arma::norm( DIIS_error_mats.back(),"fro")>0.1)  )
       {
         UpdateDensityMatrix_DIIS();
       }
       else
       {
-        DIIS_error_mats.resize(0);
-        DIIS_density_mats.resize(0);
+//        DIIS_error_mats.resize(0);
+//        DIIS_density_mats.resize(0);
+        arma::mat last_rho = rho;
         UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
+        rho = (1.0 - mixing_factor)*rho + mixing_factor*last_rho;
       }
       UpdateF();              // Update the Fock matrix
 
@@ -781,6 +788,7 @@ void HartreeFock::FillLowestOrbits()
 
     if((placedZ >= targetZ) and (placedN >= targetN) ) break;
   }
+
 
   holeorbs = arma::uvec( holeorbs_tmp );
   hole_occ = arma::rowvec( hole_occ_tmp );

@@ -362,6 +362,7 @@ void ThreeBodyMENO2B::ReadFile()
     infile.seekg(0, infile.beg);
     n_elem -= infile.tellg();
     n_elem /= sizeof(ThreeBME_type);
+    // maybe this is the problem?
     n_elem = std::min(n_elem, n_elms);
     IMSRGProfiler::timer["ThreeBodyMENO2B_calc_n_elem"] += omp_get_wtime() - t_start;
     std::vector<float> v(n_elem);
@@ -369,8 +370,8 @@ void ThreeBodyMENO2B::ReadFile()
     infile.read((char*)&v[0], n_elem*sizeof(ThreeBME_type));
     IMSRGProfiler::timer["ThreeBodyMENO2B_read_to_array"] += omp_get_wtime() - t_start;
     //for (int i = 0; i<50; i++){ std::cout<<v[i]<<std::endl;}
-//    VectorStream vecstream(v);
-    VectorStream<float> vecstream(v);
+    VectorStream vecstream(v);
+//    VectorStream<float> vecstream(v);
     t_start = omp_get_wtime();
     ReadStream(vecstream, n_elem);
     IMSRGProfiler::timer["ThreeBodyMENO2B_read_from_vecstream"] += omp_get_wtime() - t_start;
