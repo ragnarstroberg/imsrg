@@ -93,6 +93,7 @@ class ThreeBodyMENO2B
     ThreeBME_type GetThBME(int a, int b, int c, int d, int e, int f, int J2);
     void ReadFile();
     long long unsigned int CountME();
-    template<class T> void ReadStream(T & infile, long long unsigned int n_elms);
+//    template<class T> void ReadStream(T & infile, long long unsigned int n_elms);
+    template<class T> void ReadStream(T & infile, size_t n_elms);
 };
 #endif

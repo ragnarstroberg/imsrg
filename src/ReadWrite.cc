@@ -39,6 +39,9 @@
 //#endif
 
 //using namespace std;
+template class VectorStream<float>;
+template class VectorStream<double>;
+
 
 ReadWrite::~ReadWrite()
 {
@@ -684,7 +687,8 @@ void ReadWrite::ReadBareTBME_Darmstadt( std::string filename, Operator& Hbare, i
     std::vector<float> v(n_elem);
     infile.read((char*)&v[0], n_elem*sizeof(float));
     infile.close();
-    VectorStream vecstream(v);
+//    VectorStream vecstream(v);
+    VectorStream<float> vecstream(v);
     std::cout << "n_elem = " << n_elem << std::endl;
     ReadBareTBME_Darmstadt_from_stream(vecstream, Hbare,  emax, Emax, lmax);
   }
@@ -753,7 +757,8 @@ void ReadWrite::Read_Darmstadt_3body( std::string filename, Operator& Hbare, int
     std::vector<float> v(n_elem);
     infile.read((char*)&v[0], n_elem*sizeof(float));
     infile.close();
-    VectorStream vecstream(v);
+//    VectorStream vecstream(v);
+    VectorStream<float> vecstream(v);
     std::cout << "n_elem = " << n_elem <<  std::endl;
     Read_Darmstadt_3body_from_stream(vecstream, Hbare,  E1max, E2max, E3max);
   }

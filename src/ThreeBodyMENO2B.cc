@@ -351,7 +351,31 @@ ThreeBME_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int d, int e, int f
 
 void ThreeBodyMENO2B::ReadFile()
 {
-  long long unsigned int n_elms = CountME();
+  double t_start;
+//  long long unsigned int n_elms = CountME(); // this can be moved to after the stream.bin block
+  size_t n_elms = CountME(); // this can be moved to after the stream.bin block
+  if(FileName.find("stream.bin") != std::string::npos){
+    t_start = omp_get_wtime();
+    std::ifstream infile(FileName, std::ios::binary);
+    infile.seekg(0, infile.end);
+    size_t n_elem = infile.tellg();
+    infile.seekg(0, infile.beg);
+    n_elem -= infile.tellg();
+    n_elem /= sizeof(ThreeBME_type);
+    n_elem = std::min(n_elem, n_elms);
+    IMSRGProfiler::timer["ThreeBodyMENO2B_calc_n_elem"] += omp_get_wtime() - t_start;
+    std::vector<float> v(n_elem);
+    t_start = omp_get_wtime();
+    infile.read((char*)&v[0], n_elem*sizeof(ThreeBME_type));
+    IMSRGProfiler::timer["ThreeBodyMENO2B_read_to_array"] += omp_get_wtime() - t_start;
+    //for (int i = 0; i<50; i++){ std::cout<<v[i]<<std::endl;}
+//    VectorStream vecstream(v);
+    VectorStream<float> vecstream(v);
+    t_start = omp_get_wtime();
+    ReadStream(vecstream, n_elem);
+    IMSRGProfiler::timer["ThreeBodyMENO2B_read_from_vecstream"] += omp_get_wtime() - t_start;
+    return;
+  }
   if(FileName.find(".gz") != std::string::npos){
     std::ifstream infile(FileName, std::ios_base::in | std::ios_base::binary);
     boost::iostreams::filtering_istream zipstream;
@@ -362,24 +386,7 @@ void ThreeBodyMENO2B::ReadFile()
     ReadStream(zipstream, n_elms);
     return;
   }
-  if(FileName.find("stream.bin") != std::string::npos){
-    std::ifstream infile(FileName, std::ios::binary);
-    infile.seekg(0, infile.end);
-    size_t n_elem = infile.tellg();
-    infile.seekg(0, infile.beg);
-    n_elem -= infile.tellg();
-    n_elem /= sizeof(ThreeBME_type);
-    std::vector<float> v(n_elem);
-    double t_start = omp_get_wtime();
-    infile.read((char*)&v[0], n_elem*sizeof(ThreeBME_type));
-    IMSRGProfiler::timer["ThreeBodyMENO2B_read_to_array"] += omp_get_wtime() - t_start;
-    //for (int i = 0; i<50; i++){ std::cout<<v[i]<<std::endl;}
-    VectorStream vecstream(v);
-    t_start = omp_get_wtime();
-    ReadStream(vecstream, n_elem);
-    IMSRGProfiler::timer["ThreeBodyMENO2B_read_from_vecstream"] += omp_get_wtime() - t_start;
-    return;
-  }
+
   if(FileName.find(".me3j") != std::string::npos){
     std::ifstream infile(FileName);
     char line[512];
@@ -391,8 +398,10 @@ void ThreeBodyMENO2B::ReadFile()
 
 long long unsigned int ThreeBodyMENO2B::CountME()
 {
+  double t_start = omp_get_wtime();
   long long unsigned int counter=0;
   int Norbs = iOrbits.size();
+  #pragma omp parallel for schedule(dynamic,1) reduction (+:counter)
   for (int i1=0; i1 < Norbs; i1++) {
     OrbitIsospin & o1 = iOrbits[i1];
     int j1 = o1.j;
@@ -459,15 +468,20 @@ long long unsigned int ThreeBodyMENO2B::CountME()
       }
     }
   }
+  IMSRGProfiler::timer["ThreeBodyMENO2B_CountME"] += omp_get_wtime() - t_start;
   return counter;
 }
 
   template<class T>
-void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
+//void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
+void ThreeBodyMENO2B::ReadStream(T & infile, size_t n_elms)
 {
-  int buffer_size = 10000000;
-  int counter = 0;
-  long long unsigned int total_counter = 0;
+//  int buffer_size = 10000000;
+//  int counter = 0;
+  size_t buffer_size = 10000000;
+  size_t counter = 0;
+//  long long unsigned int total_counter = 0;
+  size_t total_counter = 0;
   int Emax = modelspace->GetEmax();
   int E2max = modelspace->GetE2max();
   int E3max = modelspace->GetE3max();
@@ -531,12 +545,17 @@ void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
                         T3 <= std::min( 2*T12+1, 2*T45+1 ); T3+=2) {
                       if(counter == buffer_size) counter = 0;
                       if(counter == 0){
-                        if( n_elms - total_counter >= buffer_size){
-                          for (int iread=0; iread<buffer_size; iread++) infile >> v[iread];
-                        }
-                        else{
-                          for (int iread=0; iread<n_elms-total_counter; iread++) infile >> v[iread];
-                        }
+                        size_t maxread = std::min(buffer_size, n_elms-total_counter);
+                        for (size_t iread=0; iread<maxread  ; iread++) infile >> v[iread];
+//                        infile.read( (char*)&v[0], maxread * sizeof(ThreeBME_type) / sizeof(char)  ) ;
+//                        if( n_elms - total_counter >= buffer_size){
+//                          for (size_t iread=0; iread<buffer_size; iread++) infile >> v[iread];
+////                          for (int iread=0; iread<buffer_size; iread++) infile >> v[iread];
+//                        }
+//                        else{
+//                          for (size_t iread=0; iread<n_elms-total_counter; iread++) infile >> v[iread];
+////                          for (int iread=0; iread<n_elms-total_counter; iread++) infile >> v[iread];
+//                        }
                       }
                       counter += 1;
                       total_counter += 1;

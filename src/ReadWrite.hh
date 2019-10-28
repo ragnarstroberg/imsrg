@@ -135,18 +135,22 @@ class ReadWrite
 
 /// Wrapper class so we can treat a std::vector of floats like a stream, using the extraction operator >>.
 /// This is used for the binary version of ReadWrite::Read_Darmstadt_3body_from_stream().
+template <typename T>
 class VectorStream
 {
  public:
-  VectorStream(std::vector<float>& v) : vec(v), i(0) {};
+  VectorStream(std::vector<T>& v) : vec(v), i(0) {};
+//  VectorStream(std::vector<float>& v) : vec(v), i(0) {};
 //  VectorStream(std::vector<double>& v) : vec(v), i(0) {};
-  VectorStream& operator>>(float& x) { x = vec[i++]; return (VectorStream&)(*this);}
+  VectorStream& operator>>(T& x) { x = vec[i++]; return (VectorStream&)(*this);}
+//  VectorStream& operator>>(float& x) { x = vec[i++]; return (VectorStream&)(*this);}
 //  VectorStream& operator>>(double& x) { x = vec[i++]; return (VectorStream&)(*this);}
   bool good(){ return i<vec.size(); };
   void getline(char[], int) {}; // Don't do nuthin'.
   void read(char* buf, size_t len) {memcpy((void*)buf, (const void*)&vec[i], len);}; // Totally untested...
  private:
-  std::vector<float>& vec;
+  std::vector<T>& vec;
+//  std::vector<float>& vec;
 //  std::vector<double>& vec;
   long long unsigned int i;
 };
