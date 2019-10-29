@@ -95,5 +95,6 @@ class ThreeBodyMENO2B
     long long unsigned int CountME();
 //    template<class T> void ReadStream(T & infile, long long unsigned int n_elms);
     template<class T> void ReadStream(T & infile, size_t n_elms);
+    void ReadBinaryStream( std::vector<ThreeBME_type>& v, size_t nelms);
 };
 #endif

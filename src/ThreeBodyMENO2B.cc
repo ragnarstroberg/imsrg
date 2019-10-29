@@ -353,7 +353,7 @@ void ThreeBodyMENO2B::ReadFile()
 {
   double t_start;
 //  long long unsigned int n_elms = CountME(); // this can be moved to after the stream.bin block
-  size_t n_elms = CountME(); // this can be moved to after the stream.bin block
+  size_t n_elms = CountME(); 
   if(FileName.find("stream.bin") != std::string::npos){
     t_start = omp_get_wtime();
     std::ifstream infile(FileName, std::ios::binary);
@@ -365,15 +365,17 @@ void ThreeBodyMENO2B::ReadFile()
     // maybe this is the problem?
     n_elem = std::min(n_elem, n_elms);
     IMSRGProfiler::timer["ThreeBodyMENO2B_calc_n_elem"] += omp_get_wtime() - t_start;
-    std::vector<float> v(n_elem);
+//    std::vector<float> v(n_elem);
+    std::vector<ThreeBME_type> v(n_elem);
     t_start = omp_get_wtime();
     infile.read((char*)&v[0], n_elem*sizeof(ThreeBME_type));
     IMSRGProfiler::timer["ThreeBodyMENO2B_read_to_array"] += omp_get_wtime() - t_start;
     //for (int i = 0; i<50; i++){ std::cout<<v[i]<<std::endl;}
-    VectorStream vecstream(v);
+//    VectorStream vecstream(v);
 //    VectorStream<float> vecstream(v);
     t_start = omp_get_wtime();
-    ReadStream(vecstream, n_elem);
+//    ReadStream(vecstream, n_elem);
+    ReadBinaryStream(  v, n_elem);
     IMSRGProfiler::timer["ThreeBodyMENO2B_read_from_vecstream"] += omp_get_wtime() - t_start;
     return;
   }
@@ -452,17 +454,24 @@ long long unsigned int ThreeBodyMENO2B::CountME()
               if(e4 + e5 + e6 > E3max_file) continue;
               if( (l1+l2+l3)%2 != (l4+l5+l6)%2 ) continue;
 
-              for (int J = std::max( std::abs(j1-j2), std::abs(j4-j5) )/2;
-                  J <= std::min( j1+j2, j4+j5 )/2; J++) {
-                for (int T12: {0,1}){
-                  for (int T45: {0,1}){
-                    for (int T = std::max( std::abs(2*T12-1), std::abs(2*T45-1) );
-                        T <= std::min( 2*T12+1, 2*T45+1 ); T+=2) {
-                      counter += 1;
-                    }
-                  }
-                }
-              }
+
+              int Jmin = std::max( std::abs(j1-j2), std::abs(j4-j5) )/2;
+              int Jmax =std::min( j1+j2, j4+j5 )/2;
+              size_t JT_block_size = (Jmax+1-Jmin) * 5; // 5 comes from the 5 possible isospin combinations 001 011 101 111 113
+
+              counter += JT_block_size;
+
+//              for (int J = std::max( std::abs(j1-j2), std::abs(j4-j5) )/2;
+//                  J <= std::min( j1+j2, j4+j5 )/2; J++) {
+//                for (int T12: {0,1}){
+//                  for (int T45: {0,1}){
+//                    for (int T = std::max( std::abs(2*T12-1), std::abs(2*T45-1) );
+//                        T <= std::min( 2*T12+1, 2*T45+1 ); T+=2) {
+//                      counter += 1;
+//                    }
+//                  }
+//                }
+//              }
             }
           }
         }
@@ -473,7 +482,184 @@ long long unsigned int ThreeBodyMENO2B::CountME()
   return counter;
 }
 
-  template<class T>
+
+// SRS-- I think this can be parallelized
+//void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
+void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBME_type> & v, size_t n_elms)
+{
+//  int buffer_size = 10000000;
+//  int counter = 0;
+//  size_t buffer_size = 10000000;
+//  long long unsigned int total_counter = 0;
+  int Emax = modelspace->GetEmax();
+  int E2max = modelspace->GetE2max();
+  int E3max = modelspace->GetE3max();
+  int Norbs = iOrbits.size();
+//  std::vector<ThreeBME_type> v(buffer_size,0.0);
+//
+//  std::cout << "Size of v is " << v.size() << std::endl;
+
+  #pragma omp parallel  // not a for block. all the threads go through each step of the for loops
+  {
+     int num_threads = omp_get_num_threads();
+     int this_thread = omp_get_thread_num();
+//     std::cout << "=> " << this_thread << std::endl;
+     size_t counter = 0;
+     size_t total_counter = 0;
+     size_t orbit_counter = 0;
+//     size_t mat_el_counter = 0;
+
+  for (int i1=0; i1 < Norbs; i1++) {
+    OrbitIsospin & o1 = iOrbits[i1];
+    int j1 = o1.j;
+    int l1 = o1.l;
+    int e1 = o1.e;
+    if(e1 > Emax) continue;
+    if(e1 > Emax_file) continue;
+    for (int i2=0; i2 <= i1; i2++) {
+      OrbitIsospin & o2 = iOrbits[i2];
+      int j2 = o2.j;
+      int l2 = o2.l;
+      int e2 = o2.e;
+      if(e2 > Emax_file) continue;
+      if(e1 + e2 > E2max_file) continue;
+      for (int i3=0; i3 < Norbs; i3++) {
+        OrbitIsospin & o3 = iOrbits[i3];
+        int j3 = o3.j;
+        int l3 = o3.l;
+        int e3 = o3.e;
+        if(e3 > Emax_file) continue;
+        if(e2 + e3 > E2max_file) continue;
+        if(e1 + e3 > E2max_file) continue;
+        if(e1 + e2 + e3 > E3max_file) continue;
+
+        for (int i4=0; i4 < Norbs; i4++) {
+          OrbitIsospin & o4 = iOrbits[i4];
+          int j4 = o4.j;
+          int l4 = o4.l;
+          int e4 = o4.e;
+          if(e4 > Emax_file) continue;
+          for (int i5=0; i5 <= i4; i5++) {
+            OrbitIsospin & o5 = iOrbits[i5];
+            int j5 = o5.j;
+            int l5 = o5.l;
+            int e5 = o5.e;
+            if(e5 > Emax_file) continue;
+            if(e4 + e5 > E2max_file) continue;
+            for (int i6=0; i6 < Norbs; i6++) {
+              OrbitIsospin & o6 = iOrbits[i6];
+              int j6 = o6.j;
+              int l6 = o6.l;
+              int e6 = o6.e;
+              if(j6 != j3) continue;
+              if(l6 != l3) continue;
+              if(e6 > Emax_file) continue;
+              if(e4 + e6 > E2max_file) continue;
+              if(e5 + e6 > E2max_file) continue;
+              if(e4 + e5 + e6 > E3max_file) continue;
+              if( (l1+l2+l3)%2 != (l4+l5+l6)%2 ) continue;
+
+              orbit_counter +=1;
+
+              int Jmin = std::max( std::abs(j1-j2), std::abs(j4-j5) )/2;
+              int Jmax =std::min( j1+j2, j4+j5 )/2;
+              int JT_block_size = (Jmax+1-Jmin) * 5; // 5 comes from the 5 possible isospin combinations 001 011 101 111 113
+              if (JT_block_size<=0) continue;
+
+//              std::cout << "   thread, orbit_counter:  " << this_thread << "  " << orbit_counter << std::endl;
+              
+//              if (orbit_counter % 2 != this_thread) 
+              if (orbit_counter % num_threads != this_thread) 
+             {
+               counter += JT_block_size;
+               continue;
+             }
+
+              for (int J = Jmin; J<= Jmax; J++) {
+                for (int T12: {0,1}){
+                  for (int T45: {0,1}){
+                    for (int T3 = std::max( std::abs(2*T12-1), std::abs(2*T45-1) );
+                        T3 <= std::min( 2*T12+1, 2*T45+1 ); T3+=2) {
+//                      if(counter == buffer_size) counter = 0;
+//                      if(counter == 0){
+//                        size_t maxread = std::min(buffer_size, n_elms-total_counter);
+//                        for (size_t iread=0; iread<maxread  ; iread++) infile >> v[iread];
+////                        infile.read( (char*)&v[0], maxread * sizeof(ThreeBME_type) / sizeof(char)  ) ;
+////                        if( n_elms - total_counter >= buffer_size){
+////                          for (size_t iread=0; iread<buffer_size; iread++) infile >> v[iread];
+//////                          for (int iread=0; iread<buffer_size; iread++) infile >> v[iread];
+////                        }
+////                        else{
+////                          for (size_t iread=0; iread<n_elms-total_counter; iread++) infile >> v[iread];
+//////                          for (int iread=0; iread<n_elms-total_counter; iread++) infile >> v[iread];
+////                        }
+//                      }
+                      counter += 1;
+//                      total_counter += 1;
+
+                      if( e1 > Emax) continue;
+                      if( e2 > Emax) continue;
+                      if( e3 > Emax) continue;
+                      if( e4 > Emax) continue;
+                      if( e5 > Emax) continue;
+                      if( e6 > Emax) continue;
+
+                      if( e1+e2 > E2max ) continue;
+                      if( e1+e3 > E2max ) continue;
+                      if( e2+e3 > E2max ) continue;
+                      if( e4+e5 > E2max ) continue;
+                      if( e4+e6 > E2max ) continue;
+                      if( e5+e6 > E2max ) continue;
+
+                      if( e1+e2+e3 > E3max ) continue;
+                      if( e4+e5+e6 > E3max ) continue;
+
+                      if( i1==i2 and (J+T12)%2 ==0 ) {
+                        if( abs(v[counter-1]) > 1.e-6 ){
+                          std::cout << "Warning: something wrong, this three-body matrix element has to be zero" << std::endl;
+                          std::cout <<
+                            std::setw(4) << i1 << std::setw(4) << i2 << std::setw(4) << i3 << std::setw(4) << T12 <<
+                            std::setw(4) << i4 << std::setw(4) << i5 << std::setw(4) << i6 << std::setw(4) << T45 <<
+                            std::setw(4) << J << std::setw(4) << T3 << std::setw(16) << counter <<
+                            std::setw(12) << std::setprecision(6) << v[counter-1] << std::endl;
+                        }
+                      }
+
+                      if( i4==i5 and (J+T45)%2 ==0 ) {
+                        if( abs(v[counter-1]) > 1.e-6 ){
+                          std::cout << "Warning: something wrong, this three-body matrix element has to be zero" << std::endl;
+                          std::cout <<
+                            std::setw(4) << i1 << std::setw(4) << i2 << std::setw(4) << i3 << std::setw(4) << T12 <<
+                            std::setw(4) << i4 << std::setw(4) << i5 << std::setw(4) << i6 << std::setw(4) << T45 <<
+                            std::setw(4) << J << std::setw(4) << T3 << std::setw(16) << counter <<
+                            std::setw(12) << std::setprecision(6) << v[counter-1] << std::endl;
+                        }
+                      }
+                      //std::cout <<
+                      //  std::setw(4) << i1 << std::setw(4) << i2 << std::setw(4) << i3 << std::setw(4) << T12 <<
+                      //  std::setw(4) << i4 << std::setw(4) << i5 << std::setw(4) << i6 << std::setw(4) << T45 <<
+                      //  std::setw(4) << J << std::setw(4) << T3 << std::setw(16) << counter <<
+                      //  std::setw(12) << std::setprecision(6) << v[counter-1] << std::endl;
+
+//                      if (this_thread !=0) continue;
+                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, v[counter-1]);
+
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  }// end of parallel block
+
+}
+
+
+   template<class T>
 //void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
 void ThreeBodyMENO2B::ReadStream(T & infile, size_t n_elms)
 {
@@ -618,3 +804,5 @@ void ThreeBodyMENO2B::ReadStream(T & infile, size_t n_elms)
   }
 
 }
+
+
