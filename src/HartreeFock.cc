@@ -69,7 +69,8 @@ void HartreeFock::Solve()
    double t_start = omp_get_wtime();
    iterations = 0; // counter so we don't go on forever
    int maxiter = 1000;
-   double mixing_factor = 0.1;
+   double density_mixing_factor = 0.2;
+   double field_mixing_factor = 0.0;
 //   double mixing_factor = 0.0;
 
    for (iterations=0; iterations<maxiter; ++iterations)
@@ -80,21 +81,38 @@ void HartreeFock::Solve()
 
       // After 50 iterations, do the first 20 out of every 50 with DIIS, which hopefully helps us break out of any cycles
 //      if (iterations > 50 and (iterations%50)<20 )
-//    Use DIIS for the first few iterations and then drop down to linear mixing.
 //      if (iterations < -20 and (DIIS_error_mats.size()<1 or arma::norm( DIIS_error_mats.back(),"fro")>0.1)  )
-      if (iterations < 20 and (DIIS_error_mats.size()<1 or arma::norm( DIIS_error_mats.back(),"fro")>0.1)  )
+//      if (iterations < 20 and (DIIS_error_mats.size()<1 or arma::norm( DIIS_error_mats.back(),"fro")>0.1)  )
+
+      if (iterations == 500)
       {
-        UpdateDensityMatrix_DIIS();
+        density_mixing_factor = 0.7;
+        field_mixing_factor = 0.5;
+        std::cout << "Still not converged after 500 iterations. Setting density_mixing_factor => " << density_mixing_factor
+                  << " field_mixing_factor => " << field_mixing_factor << std::endl;
+      }
+
+      if (iterations >100 and (DIIS_error_mats.size()<1 or arma::norm( DIIS_error_mats.back(),"fro")>0.1)  )
+      {
+         if (iterations==100)
+         {
+           std::cout << "Still not converged after 100 iterations. Switching to DIIS." << std::endl;
+         }
+         UpdateDensityMatrix_DIIS();
+         if ( arma::norm( DIIS_error_mats.back(),"fro")<0.1)
+         {
+           std::cout << "DIIS error matrix below 0.1, switching back to simpler SCF algorithm." << std::endl;
+         }
       }
       else
       {
-//        DIIS_error_mats.resize(0);
-//        DIIS_density_mats.resize(0);
         arma::mat last_rho = rho;
         UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
-        rho = (1.0 - mixing_factor)*rho + mixing_factor*last_rho;
+        rho = (1.0 - density_mixing_factor)*rho + density_mixing_factor*last_rho;
       }
+      arma::mat last_F = F;
       UpdateF();              // Update the Fock matrix
+      F = (1.0 - field_mixing_factor)*F + field_mixing_factor * last_F;
 
       if ( CheckConvergence() ) break;
    }
@@ -381,14 +399,16 @@ void HartreeFock::BuildMonopoleV3()
        int j2a = modelspace->GetOrbit(a).j2;
        int j2c = modelspace->GetOrbit(c).j2;
        int j2i = modelspace->GetOrbit(i).j2;
-       int j2b = modelspace->GetOrbit(b).j2;  // this seems unnecessary
-       int j2d = modelspace->GetOrbit(d).j2;  // this seems unnecessary
-       int j2j = modelspace->GetOrbit(j).j2;  // this seems unnecessary
+//       int j2b = modelspace->GetOrbit(b).j2;  // this seems unnecessary
+//       int j2d = modelspace->GetOrbit(d).j2;  // this seems unnecessary
+//       int j2j = modelspace->GetOrbit(j).j2;  // this seems unnecessary
 
        // TODO: We can probably use some permutation symmetries to avoid recomputing things
        // at the very least, we can treat the permutation of the first two indices
-       int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
-       int j2max = std::min( j2a+j2c, j2b+j2d )/2;
+       int j2min =  std::abs(j2a-j2c) /2;
+       int j2max = (j2a+j2c)/2;
+//       int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
+//       int j2max = std::min( j2a+j2c, j2b+j2d )/2;
        for (int j2=j2min; j2<=j2max; ++j2)
        {
          v += Hbare.ThreeBodyNO2B.GetThBME(a,c,i,b,d,j,j2);
@@ -410,18 +430,22 @@ void HartreeFock::BuildMonopoleV3()
        int j2a = modelspace->GetOrbit(a).j2;
        int j2c = modelspace->GetOrbit(c).j2;
        int j2i = modelspace->GetOrbit(i).j2;
-       int j2b = modelspace->GetOrbit(b).j2;  // this seems unnecessary
-       int j2d = modelspace->GetOrbit(d).j2;  // this seems unnecessary
-       int j2j = modelspace->GetOrbit(j).j2;  // this seems unnecessary
+//       int j2b = modelspace->GetOrbit(b).j2;  // this seems unnecessary
+//       int j2d = modelspace->GetOrbit(d).j2;  // this seems unnecessary
+//       int j2j = modelspace->GetOrbit(j).j2;  // this seems unnecessary
 
        // TODO: We can probably use some permutation symmetries to avoid recomputing things
        // at the very least, we can treat the permutation of the first two indices
-       int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
-       int j2max = std::min( j2a+j2c, j2b+j2d )/2;
+//       int j2min = std::max( std::abs(j2a-j2c), std::abs(j2b-j2d) )/2;
+//       int j2max = std::min( j2a+j2c, j2b+j2d )/2;
+       int j2min =  std::abs(j2a-j2c) /2;
+       int j2max = (j2a+j2c)/2;
        for (int j2=j2min; j2<=j2max; ++j2)
        {
-         int Jmin = std::max( std::abs(2*j2-j2i), std::abs(2*j2-j2j) );
-         int Jmax = 2*j2 + std::min(j2i, j2j);
+//         int Jmin = std::max( std::abs(2*j2-j2i), std::abs(2*j2-j2j) );
+//         int Jmax = 2*j2 + std::min(j2i, j2j);
+         int Jmin =  std::abs(2*j2-j2i) ;
+         int Jmax = 2*j2 + j2i;
          for (int J2=Jmin; J2<=Jmax; J2+=2)
          {
            v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);

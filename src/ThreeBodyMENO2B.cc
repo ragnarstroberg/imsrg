@@ -457,6 +457,7 @@ long long unsigned int ThreeBodyMENO2B::CountME()
 
               int Jmin = std::max( std::abs(j1-j2), std::abs(j4-j5) )/2;
               int Jmax =std::min( j1+j2, j4+j5 )/2;
+              if (Jmin>Jmax) continue;
               size_t JT_block_size = (Jmax+1-Jmin) * 5; // 5 comes from the 5 possible isospin combinations 001 011 101 111 113
 
               counter += JT_block_size;
@@ -563,8 +564,8 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBME_type> & v, size_t n
 
               int Jmin = std::max( std::abs(j1-j2), std::abs(j4-j5) )/2;
               int Jmax =std::min( j1+j2, j4+j5 )/2;
+              if (Jmin>Jmax) continue;
               int JT_block_size = (Jmax+1-Jmin) * 5; // 5 comes from the 5 possible isospin combinations 001 011 101 111 113
-              if (JT_block_size<=0) continue;
 
 //              std::cout << "   thread, orbit_counter:  " << this_thread << "  " << orbit_counter << std::endl;
               
