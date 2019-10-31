@@ -77,7 +77,7 @@ void HartreeFock::Solve()
    {
       Diagonalize();          // Diagonalize the Fock matrix
       ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
-      if (not freeze_occupations) FillLowestOrbits(); // if we don't freeze the occupations, then calculate the new ones.
+      if (iterations%2==0 and not freeze_occupations) FillLowestOrbits(); // if we don't freeze the occupations, then calculate the new ones.
 
       // After 50 iterations, do the first 20 out of every 50 with DIIS, which hopefully helps us break out of any cycles
 //      if (iterations > 50 and (iterations%50)<20 )
@@ -92,16 +92,16 @@ void HartreeFock::Solve()
                   << " field_mixing_factor => " << field_mixing_factor << std::endl;
       }
 
-      if (iterations >100 and (DIIS_error_mats.size()<1 or arma::norm( DIIS_error_mats.back(),"fro")>0.1)  )
+      if (iterations >100 and (DIIS_error_mats.size()<1 or arma::norm( DIIS_error_mats.back(),"fro")>0.01)  )
       {
          if (iterations==100)
          {
            std::cout << "Still not converged after 100 iterations. Switching to DIIS." << std::endl;
          }
          UpdateDensityMatrix_DIIS();
-         if ( arma::norm( DIIS_error_mats.back(),"fro")<0.1)
+         if ( arma::norm( DIIS_error_mats.back(),"fro")<0.01)
          {
-           std::cout << "DIIS error matrix below 0.1, switching back to simpler SCF algorithm." << std::endl;
+           std::cout << "DIIS error matrix below 0.01, switching back to simpler SCF algorithm." << std::endl;
          }
       }
       else
@@ -834,17 +834,29 @@ void HartreeFock::FillLowestOrbits()
 void HartreeFock::UpdateF()
 {
    double start_time = omp_get_wtime();
-//   int norbits = modelspace->GetNumberOrbits();
+   int norbits = modelspace->GetNumberOrbits();
    Vij.zeros();
    V3ij.zeros();
 
 
    // This loop isn't thread safe for some reason. Regardless, parallelizing it makes it slower.
-//   for (int i=0;i<norbits;i++)
-   for (auto i : modelspace->all_orbits)
+//   for (auto i : modelspace->all_orbits)
+//   std::vector<arma::mat> V2vec(omp_get_max_threads(),Vij);
+//   #pragma omp parallel for schedule(dynamic,1)
+   std::vector<std::array<int,3>> onebodychannels;
+   for (auto it : Hbare.OneBodyChannels ) onebodychannels.push_back(it.first);
+
+//   #pragma omp parallel for schedule(dynamic,1)
+   for (size_t obc=0; obc<onebodychannels.size(); obc++)
    {
+    auto& chvec = Hbare.OneBodyChannels.at(onebodychannels[obc]);
+//   for (index_t i=0;i<norbits;i++)
+   for (index_t i : chvec )
+   {
+//      arma::mat& v2ij = V2vec[omp_get_thread_num()];
       Orbit& oi = modelspace->GetOrbit(i);
-      for (auto j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//      for (auto j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+      for (auto j : chvec )
       {
          if (j<i) continue;
 //         for (int a=0;a<norbits;++a)
@@ -861,14 +873,19 @@ void HartreeFock::UpdateF()
                int local_ket = modelspace->MonopoleKets[Tz+1][parity][ket];
                // 2body term <ai|V|bj>
                if ((a>i) xor (b>j))  // code needed some obfuscation, so threw an xor in there...
+//                  v2ij(i,j) += rho(a,b)*Vmon_exch[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|jb>
                   Vij(i,j) += rho(a,b)*Vmon_exch[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|jb>
                else
+//                  v2ij(i,j) += rho(a,b)*Vmon[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|bj>
                   Vij(i,j) += rho(a,b)*Vmon[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|bj>
            }
          }
       }
       Vij.col(i) /= (oi.j2+1);
+//      v2ij.col(i) /= (oi.j2+1);
    }
+   }
+//   for (auto& v : V2vec) Vij += v;
 
    if (Hbare.GetParticleRank()>=3)
    {

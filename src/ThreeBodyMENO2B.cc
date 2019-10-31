@@ -499,6 +499,7 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBME_type> & v, size_t n
 //  std::vector<ThreeBME_type> v(buffer_size,0.0);
 //
 //  std::cout << "Size of v is " << v.size() << std::endl;
+  std::cout << "Reading " << n_elms << " elements from binary file" << std::endl;
 
   #pragma omp parallel  // not a for block. all the threads go through each step of the for loops
   {
@@ -515,8 +516,10 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBME_type> & v, size_t n
     int j1 = o1.j;
     int l1 = o1.l;
     int e1 = o1.e;
-    if(e1 > Emax) continue;
-    if(e1 > Emax_file) continue;
+    if(e1 > Emax) break;
+//    if(e1 > Emax) continue;
+    if(e1 > Emax_file) break;
+//    if(e1 > Emax_file) continue;
     for (int i2=0; i2 <= i1; i2++) {
       OrbitIsospin & o2 = iOrbits[i2];
       int j2 = o2.j;
