@@ -112,6 +112,7 @@ int main(int argc, char** argv)
   int file3e2max = parameters.i("file3e2max");
   int file3e3max = parameters.i("file3e3max");
   int atomicZ = parameters.i("atomicZ");
+  int emax_unocc = parameters.i("emax_unocc");
 
   double hw = parameters.d("hw");
   double smax = parameters.d("smax");
@@ -219,6 +220,10 @@ int main(int argc, char** argv)
 
   modelspace.SetLmax(lmax);
 
+  if (emax_unocc>0)
+  {
+    modelspace.SetEmaxUnocc(emax_unocc);
+  }
 
   if (physical_system == "atomic")
   {
@@ -820,9 +825,15 @@ int main(int argc, char** argv)
       rw.WriteAntoine_input(imsrgsolver.GetH_s(),intfile+".inp",modelspace.GetAref(),modelspace.GetZref());
     }
     std::cout << "Writing files: " << intfile << std::endl;
-    //rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
-    //rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
-    rw.WriteTokyo(imsrgsolver.GetH_s(),intfile+".snt", "");
+    if (valence_file_format == "tokyo")
+    {
+     rw.WriteTokyo(imsrgsolver.GetH_s(),intfile+".snt", "");
+    }
+    else
+    {
+      rw.WriteNuShellX_int(imsrgsolver.GetH_s(),intfile+".int");
+      rw.WriteNuShellX_sps(imsrgsolver.GetH_s(),intfile+".sp");
+    }
 
     if (method == "magnus" or method=="flow_RK4")
     {
@@ -830,8 +841,14 @@ int main(int argc, char** argv)
        {
           if ( ((ops[i].GetJRank()+ops[i].GetTRank()+ops[i].GetParity())<1) and (ops[i].GetNumberLegs()%2==0) )
           {
-            //rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
-            rw.WriteTokyo(ops[i],intfile+opnames[i]+".snt", "op");
+            if (valence_file_format == "tokyo")
+            {
+              rw.WriteTokyo(ops[i],intfile+opnames[i]+".snt", "op");
+            }
+            else
+            {
+              rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int");
+            }
           }
           else if ( ops[i].GetNumberLegs()%2==1) // odd number of legs -> this is a dagger operator
           {
@@ -840,9 +857,15 @@ int main(int argc, char** argv)
           }
           else
           {
-            //rw.WriteTensorOneBody(intfile+opnames[i]+"_1b.op",ops[i],opnames[i]);
-            //rw.WriteTensorTwoBody(intfile+opnames[i]+"_2b.op",ops[i],opnames[i]);
-            rw.WriteTensorTokyo(intfile+opnames[i]+"_2b.snt",ops[i]);
+            if (valence_file_format == "tokyo")
+            {
+              rw.WriteTensorTokyo(intfile+opnames[i]+"_2b.snt",ops[i]);
+            }
+            else
+            {
+              rw.WriteTensorOneBody(intfile+opnames[i]+"_1b.op",ops[i],opnames[i]);
+              rw.WriteTensorTwoBody(intfile+opnames[i]+"_2b.op",ops[i],opnames[i]);
+            }
           }
        }
     }

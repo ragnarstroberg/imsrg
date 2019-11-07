@@ -846,7 +846,7 @@ void HartreeFock::UpdateF()
    std::vector<std::array<int,3>> onebodychannels;
    for (auto it : Hbare.OneBodyChannels ) onebodychannels.push_back(it.first);
 
-//   #pragma omp parallel for schedule(dynamic,1)
+   #pragma omp parallel for schedule(dynamic,1)
    for (size_t obc=0; obc<onebodychannels.size(); obc++)
    {
     auto& chvec = Hbare.OneBodyChannels.at(onebodychannels[obc]);

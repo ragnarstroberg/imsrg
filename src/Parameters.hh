@@ -114,7 +114,8 @@ std::map<std::string,int> Parameters::int_par = {
   {"file3e1max",	12},
   {"file3e2max",	24},
   {"file3e3max",	12},
-  {"atomicZ",            -1}, // the Z of the nucleus for an atomic calculation. -1 means do a neutral atom
+  {"atomicZ",           -1}, // the Z of the nucleus for an atomic calculation. -1 means do a neutral atom
+  {"emax_unocc",        -1}, // separate emax cut for l,j values that will not be occupied in the reference
 };
 
 std::map<std::string,std::vector<std::string>> Parameters::vec_par = {
