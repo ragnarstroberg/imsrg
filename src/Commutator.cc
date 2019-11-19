@@ -2444,7 +2444,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Z3 = Z.ThreeBody;
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
-//  std::cout << "Begin the loop. Norm of X2 and Y2 " << X2.Norm() << " " << Y2.Norm() << std::endl;
+  std::cout << "Begin the loop. Norm of X2 and Y2 " << X2.Norm() << " " << Y2.Norm() << std::endl;
   if ( std::abs( X2.Norm() * Y2.Norm() ) < 1e-6) return;
   for (int i=0;i<norbs; i++)
   {
@@ -2475,7 +2475,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2>0 ) continue;
         if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
         if (  2*( ol.n+om.n+on.n)+ol.l+om.l+on.l >e3maxcut ) continue;
-//        std::cout << "ijklmn = " << i << " " << j << " " << k << " "<< l << " " << m << " " << n << std::endl;
+        std::cout << "ijklmn = " << i << " " << j << " " << k << " "<< l << " " << m << " " << n << std::endl;
         for (int Jij=Jij_min; Jij<=Jij_max; Jij++)
         {
          if (i==j and Jij%2>0) continue;
@@ -2489,9 +2489,10 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
           int twoJmax = std::min( ok.j2+Jij*2 , on.j2+Jlm*2 );
           for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
           {
+           // We should probably check that this channel can even exist...
            double zdirect = 0;
 
-//            std::cout << "    Jij Jlm twoJ = " << Jij << " " << Jlm << " " << twoJ << std::endl;
+            std::cout << "    Jij Jlm twoJ = " << Jij << " " << Jlm << " " << twoJ << std::endl;
             for (int a=0; a<norbs; a++)
             {
              Orbit& oa = Z.modelspace->GetOrbit(a);
@@ -2505,21 +2506,32 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
              if (std::abs(sixj)<1e-6) continue;
              zdirect += -sixj * phasefactor * hatfactor * ( X2.GetTBME_J(Jij, i,j,a,n) * Y2.GetTBME_J(Jlm, a,k,l,m )
                                                          -  Y2.GetTBME_J(Jij, i,j,a,n) * X2.GetTBME_J(Jlm, a,k,l,m ) );
-//             std:: cout << "a = " << a << "   sixj phase, hat = " << sixj << " " << phasefactor << " " << hatfactor
+             if (i==2 and j==0 and k==0 and l==2 and m==0 and n==0)
+             {
+             std:: cout << "a = " << a << "   sixj phase, hat = " << sixj << " " << phasefactor << " " << hatfactor
+                        << " ji,jj,jk,jl,jm,jn: " << oi.j2 << " " << oj.j2 << " " << ok.j2 << " " << ol.j2 << " " << om.j2 << " " << on.j2
+                        << "  Jij,Jlm,J:  " << Jij << " " << Jlm << " " << twoJ
 //                        << "   < " << oi.j2 << " " << oj.j2 << " " << Jij << " | " << oa.j2 << " " << on.j2 << "  ...  Jlm = " << Jlm 
-//                        << "    X2 Y2 = " << std::setprecision(7) << std::setw(12) << X2.GetTBME_J(Jij, i,j,a,n)  << " " <<  Y2.GetTBME_J(Jlm, a,k,l,m )
-//                        << "  Y2 X2 =  " <<  Y2.GetTBME_J(Jij, i,j,a,n)  << "  " <<  X2.GetTBME_J(Jlm, a,k,l,m )
-//                        << std::endl;
+                        << "    X2 Y2 = " << std::setprecision(7) << std::setw(12) << X2.GetTBME_J(Jij, i,j,a,n)  << " " <<  Y2.GetTBME_J(Jlm, a,k,l,m )
+                        << "  Y2 X2 =  " <<  Y2.GetTBME_J(Jij, i,j,a,n)  << "  " <<  X2.GetTBME_J(Jlm, a,k,l,m )
+                        << " twoJ = " << twoJ << "  zdirect = " << zdirect
+                        << std::endl;
+             }
 //             if ( std::abs( X2.GetTBME_J(Jlm, a,k,l,m ) )>1e-6 or std::abs( X2.GetTBME_J(Jij, i,j,a,n) ) )
 //             {
 //               std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    " << zdirect  << std::endl;
 //             }
             }
 
-//            std::cout << " ijklmn = " << i << " " << j << " " << k << " " << l << " " << m << " " << n << "   zdirect = " << zdirect << std::endl;
-            Z3.AddToME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n, zdirect );
+            std::cout << " ijklmn = " << i << " " << j << " " << k << " " << l << " " << m << " " << n << "   zdirect = " << zdirect << std::endl;
+            double tmp_me =Z3.GetME_pn(Jij, Jlm, twoJ, i,j,k,l,m,n);
+            std::cout << "before adding, it's " << tmp_me << std::endl;
+            if (std::abs(zdirect)>1e-6) Z3.AddToME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n, zdirect );
+            tmp_me = Z3.GetME_pn(Jij, Jlm, twoJ, i,j,k,l,m,n);
+            std::cout << "after adding, it's " << tmp_me << std::endl;
             // now all the permutations. Gulp.
-
+/// Turn off permutations
+/*
             int Jik_min = std::max( std::abs( oi.j2-ok.j2 ), std::abs( oj.j2 -twoJ))/2;
             int Jik_max = std::min( oi.j2+ok.j2  , oj.j2+twoJ )/2;
             int Jjk_min = std::max( std::abs( oj.j2-ok.j2 ), std::abs( oi.j2 -twoJ))/2;
@@ -2603,6 +2615,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                 Z3.AddToME_pn( Jjk_list[indx1], Jmn_list[indx2], twoJ, k,j,i,n,m,l, recouple_kji[indx1]*recouple_nml[indx2] * zdirect );
               }
             }
+*/
           }
          }
         }

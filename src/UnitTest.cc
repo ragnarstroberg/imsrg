@@ -1877,11 +1877,17 @@ bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
 {
-  Operator Z_J( *(Y.modelspace), 0,0,0,3 );
-//  Operator Z_J( Y );
+//  Operator Z_J( *(Y.modelspace), 0,0,0,3 );
+  Operator Z_J( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
+  Z_J.ThreeBody.Allocate();
 
+  std::cout << "BEFORE CALLING comm223ss, let's see what three body channels are in the lookup:" << std::endl;
+  for ( auto& it : Z_J.modelspace->ThreeBodyChannelLookup )
+  {
+    std::cout << it.first << " ->  " << it.second << std::endl;
+  }
 
   Commutator::comm223ss( X, Y, Z_J);
 
@@ -1890,6 +1896,14 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
   else if (Z_J.IsAntiHermitian() )
      Z_J.AntiSymmetrize();
 
+
+  double zcheckJ113 = Z_J.ThreeBody.GetME_pn(1,1,3,2,0,0,2,0,0);
+  double zcheckJ213 = Z_J.ThreeBody.GetME_pn(2,1,3,2,0,0,2,0,0);
+  double zcheckJ123 = Z_J.ThreeBody.GetME_pn(1,2,3,2,0,0,2,0,0);
+  double zcheckJ223 = Z_J.ThreeBody.GetME_pn(2,2,3,2,0,0,2,0,0);
+  std::cout << " Check: " << zcheckJ113 << " " << zcheckJ213 << " " << zcheckJ123 << " " << zcheckJ223
+            << "    with CG values: " << 3./4 * zcheckJ113 - sqrt(3./5)/4*(zcheckJ213+zcheckJ123) + 1./20 * zcheckJ223
+            << std::endl;
 
   double summed_error = 0;
   double sum_m = 0;
@@ -1901,28 +1915,30 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
     int mi = oi.j2;
     for (auto j : X.modelspace->all_orbits )
     {
-      if (j<i) continue;
+      if (j>i) continue;
       Orbit& oj = X.modelspace->GetOrbit(j);
       for (auto k : X.modelspace->all_orbits )
       {
         Orbit& ok = X.modelspace->GetOrbit(k);
-        if (k<j) continue;
+        if (k>j) continue;
 
 
         for (auto l : X.modelspace->all_orbits )
         {
-          if (l<i) continue;
+          if (l>i) continue;
           Orbit& ol = X.modelspace->GetOrbit(l);
           for ( auto m : X.modelspace->all_orbits )
           {
-            if (m<l) continue;
+            if (m>l) continue;
             Orbit& om = X.modelspace->GetOrbit(m);
             for (auto n : X.modelspace->all_orbits )
             {
-              if (n<m) continue;
+              if (n>m) continue;
               Orbit& on = X.modelspace->GetOrbit(n);
               if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
               if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
+
+//              if ( not (i==0 and j==0 and k==1 and l==0 and m==2 and n==3)) continue;
 
               // loop over projections
               for (int m_i=-oi.j2; m_i<=oi.j2; m_i+=2)
@@ -1939,10 +1955,15 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
                    {
                      if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
                      double z_ijklmn = 0;
+
+                         if (i==2 and j==0 and k==0 and l==2 and m==0 and n==0 )
+                         {
+                             std::cout << "    BEGIN. mvalues " << m_i << " " << m_j << " " << m_k << " " << m_l << " " << m_m << " " << m_n  << std::endl;
+                         }
                      for ( auto a : X.modelspace->all_orbits )
                      {
                        Orbit& oa = X.modelspace->GetOrbit(a);
-                       for ( int m_a=-oa.j2; m_a<=oa.j2; m_a++)
+                       for ( int m_a=-oa.j2; m_a<=oa.j2; m_a+=2)
                        {
                          // "direct" term
                          double x_ijla = GetMschemeMatrixElement_2b( X, i,m_i, j,m_j, l,m_l, a,m_a );
@@ -1989,15 +2010,21 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
                          double y_ajml = GetMschemeMatrixElement_2b( Y, a,m_a, j,m_j, m,m_m, l,m_l );
                          double y_ikna = GetMschemeMatrixElement_2b( Y, i,m_i, k,m_k, n,m_n, a,m_a );
                          double x_ajml = GetMschemeMatrixElement_2b( X, a,m_a, j,m_j, m,m_m, l,m_l );
-                         z_ijklmn += x_ijla * y_akmn - y_ijla * x_akmn;
-                         z_ijklmn -= x_kjla * y_aimn - y_kjla * x_aimn;
-                         z_ijklmn -= x_ikla * y_ajmn - y_ikla * x_ajmn;
-                         z_ijklmn -= x_ijma * y_akln - y_ijma * x_akln;
+//                         z_ijklmn += x_ijla * y_akmn - y_ijla * x_akmn;
+//                         z_ijklmn -= x_kjla * y_aimn - y_kjla * x_aimn;
+//                         z_ijklmn -= x_ikla * y_ajmn - y_ikla * x_ajmn;
+//                         z_ijklmn -= x_ijma * y_akln - y_ijma * x_akln;
                          z_ijklmn -= x_ijna * y_akml - y_ijna * x_akml;
-                         z_ijklmn += x_kjma * y_ailn - y_kjma * x_ailn;
-                         z_ijklmn += x_kjna * y_aiml - y_kjna * x_aiml;
-                         z_ijklmn += x_ikma * y_ajln - y_ikma * x_ajln;
-                         z_ijklmn += x_ikna * y_ajml - y_ikna * x_ajml;
+//                         z_ijklmn += x_kjma * y_ailn - y_kjma * x_ailn;
+//                         z_ijklmn += x_kjna * y_aiml - y_kjna * x_aiml;
+//                         z_ijklmn += x_ikma * y_ajln - y_ikma * x_ajln;
+//                         z_ijklmn += x_ikna * y_ajml - y_ikna * x_ajml;
+                         if (i==2 and j==0 and k==0 and l==2 and m==0 and n==0 )
+                         {
+                           std::cout << "$$$ a = " << a << "  xijna yakml   yijna xakml = " << x_ijna << " " << y_akml << " "  << y_ijna << " " << x_akml
+                                     << "  xy-yx = " << x_ijna * y_akml - y_ijna * x_akml 
+                                     << "  zijklmn = " << z_ijklmn << std::endl;
+                         }
                        }
                      }
                     
