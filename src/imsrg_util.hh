@@ -126,6 +126,7 @@ namespace imsrg_util
  }
 
  Operator Dagger_Op( ModelSpace& modelspace, index_t Q );
+ Operator DaggerAlln_Op( ModelSpace& modelspace, index_t Q );
 
  Operator Density_sog( double R_i, double gamma, std::string pn );
 
