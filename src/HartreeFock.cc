@@ -364,7 +364,9 @@ void HartreeFock::FillLowestOrbits()
 {
   // vector of indices such that they point to elements of F(i,i)
   // in ascending order of energy
-  arma::uvec sorted_indices = arma::stable_sort_index( F.diag() );
+  arma::mat F_trans = C.t() * F * C;
+//  arma::uvec sorted_indices = arma::stable_sort_index( F.diag() );
+  arma::uvec sorted_indices = arma::stable_sort_index( F_trans.diag() );
   int targetZ = modelspace->GetZref();
   int targetN = modelspace->GetAref() - targetZ;
   int placedZ = 0;
