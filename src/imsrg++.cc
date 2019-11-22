@@ -273,6 +273,17 @@ int main(int argc, char** argv)
     std::cout << std::endl;
   }
 
+  if ( std::find( opnames.begin(), opnames.end(), "DaggerAlln_valence") != opnames.end() )
+  {
+    opnames.erase( std::remove( opnames.begin(), opnames.end(), "DaggerAlln_valence"), std::end(opnames) );
+    for ( auto v : modelspace.valence )
+    {
+      opnames.push_back( "DaggerAlln_"+modelspace.Index2String(v) );
+    }
+    std::cout << "I found DaggerAlln_valence, so I'm changing the opnames list to :" << std::endl;
+    for ( auto opn : opnames ) std::cout << opn << " ,  ";
+    std::cout << std::endl;
+  }
 
 
 //  std::cout << "Making the Hamiltonian..." << std::endl;

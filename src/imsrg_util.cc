@@ -2263,7 +2263,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    dag.SetNonHermitian();
    for ( auto nQ : modelspace.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
    {
-     dag.OneBody(nQ,nQ) = 1.0;
+     dag.OneBody(Q,nQ) = 1.0;
    }
    return dag;
  }
