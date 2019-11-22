@@ -1293,12 +1293,14 @@ Operator HartreeFock::GetOmega()
 
 void HartreeFock::PrintSPE()
 {
+  arma::mat F_trans = C.t() * F * C;
 //  for (size_t i=0;i<modelspace->GetNumberOrbits();++i)
   for ( auto i : modelspace->all_orbits )
   {
     Orbit& oi = modelspace->GetOrbit(i);
     std::cout << std::fixed << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
-         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(10) << F(i,i) << std::endl;
+         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(10) << F_trans(i,i) << std::endl;
+//         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(10) << F(i,i) << std::endl;
   }
 
 }
@@ -1306,6 +1308,7 @@ void HartreeFock::PrintSPE()
 
 void HartreeFock::PrintSPEandWF()
 {
+  arma::mat F_trans = C.t() * F * C;
   std::cout << std::fixed << std::setw(3) << "i" << ": " << std::setw(3) << "n" << " " << std::setw(3) << "l" << " "
        << std::setw(3) << "2j" << " " << std::setw(3) << "2tz" << "   " << std::setw(12) << "SPE" << " " << std::setw(12) << "occ." << "   |   " << " overlaps" << std::endl;
 //  for (int i=0;i<modelspace->GetNumberOrbits();++i)
@@ -1313,7 +1316,8 @@ void HartreeFock::PrintSPEandWF()
   {
     Orbit& oi = modelspace->GetOrbit(i);
     std::cout << std::fixed << std::setw(3) << i << ": " << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
-         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F(i,i) << " " << std::setw(12) << oi.occ << "   | ";
+         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F_trans(i,i) << " " << std::setw(12) << oi.occ << "   | ";
+//         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F(i,i) << " " << std::setw(12) << oi.occ << "   | ";
     for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
       std::cout << std::setw(9) << C(i,j) << "  ";
