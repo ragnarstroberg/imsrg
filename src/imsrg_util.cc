@@ -215,6 +215,11 @@ namespace imsrg_util
         index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
         return Dagger_Op( modelspace, Q);
       }
+      else if (opnamesplit[0] == "DaggerAlln")
+      {
+        index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
+        return DaggerAlln_Op( modelspace, Q);
+      }
       else //need to remove from the list
       {
          std::cout << "Unknown operator: " << opname << std::endl;
@@ -2249,7 +2254,19 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    return dag;
  }
 
-
+ Operator DaggerAlln_Op( ModelSpace& modelspace, index_t Q )
+ {
+   Orbit& oQ = modelspace.GetOrbit(Q);
+   Operator dag(modelspace);
+   dag.SetNumberLegs(3);
+   dag.SetQSpaceOrbit(Q);
+   dag.SetNonHermitian();
+   for ( auto nQ : modelspace.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+   {
+     dag.OneBody(Q,nQ) = 1.0;
+   }
+   return dag;
+ }
 
  Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax ) // default lmax=99999
  {
