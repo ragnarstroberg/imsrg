@@ -312,6 +312,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("Isospin2_Op",      imsrg_util::Isospin2_Op);
    m.def("LdotS_Op",         imsrg_util::LdotS_Op);
    m.def("HO_density",       imsrg_util::HO_density);
+   m.def("HO_Radial_psi",    imsrg_util::HO_Radial_psi);
    m.def("GetOccupationsHF", imsrg_util::GetOccupationsHF);
    m.def("GetOccupations",   imsrg_util::GetOccupations);
    m.def("GetDensity",       imsrg_util::GetDensity);
