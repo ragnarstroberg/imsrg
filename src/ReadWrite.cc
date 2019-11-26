@@ -3996,7 +3996,8 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
    for ( auto a : modelspace->valence )
    {
       int a_ind = orb2nushell[a];
-      double me = Op.OneBody(a,Q) * EdmondsConventionFactor;
+//      double me = Op.OneBody(a,Q) * EdmondsConventionFactor;
+      double me = Op.OneBody(a,0) * EdmondsConventionFactor;
       if ( std::abs(me) < 1e-7 ) continue;
       outfile << std::setw(wint) << a_ind << " " << std::fixed << std::setw(wdouble) << std::setprecision(pdouble) <<  me << std::endl;
    }
