@@ -42,6 +42,7 @@ class UnitTest
   void TestCommutators3(Operator& X, Operator& Y); 
 
   void TestDaggerCommutators(index_t Q);
+  void TestDaggerCommutatorsAlln(index_t Q);
 
 
   bool Test_comm110ss( const Operator& X, const Operator& Y );

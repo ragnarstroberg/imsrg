@@ -4,6 +4,7 @@
 #include <armadillo>
 #include <random>
 #include <string>
+#include "imsrg_util.hh"
 
 
 uint64_t UnitTest::random_seed = 1;
@@ -205,7 +206,8 @@ Operator UnitTest::RandomDaggerOp(ModelSpace& modelspace, index_t Q)
    for (auto i : dag.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
    {
      double random_me = distribution(generator);
-     dag.OneBody(i,Q)= random_me;
+     dag.OneBody(i,0)= random_me;
+//     dag.OneBody(i,Q)= random_me;
    }
 
    size_t nch = modelspace.GetNumberTwoBodyChannels();
@@ -494,6 +496,67 @@ void UnitTest::TestDaggerCommutators(index_t Q)
 
 
 
+void UnitTest::TestDaggerCommutatorsAlln(index_t Q)
+{
+  double t_start = omp_get_wtime();
+  arma::arma_rng::set_seed( random_seed );
+  Operator X = RandomOp(*modelspace, 0, 0, 0, 2, -1);
+//  Operator Y = RandomDaggerOp(*modelspace, Q);
+
+  Operator Y = imsrg_util::DaggerAlln_Op(*modelspace, Q);
+  Operator Z = Commutator::Commutator(X, Commutator::Commutator(X,Y));
+  std::vector<Operator> Yn;
+  std::vector<Operator> Zn;
+  Orbit& oQ = X.modelspace->GetOrbit(Q);
+  for ( auto nQ : X.modelspace->OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+  {
+    Yn.push_back( imsrg_util::Dagger_Op(*modelspace, nQ) );
+//    Yn.back().OneBody(nQ,nQ) = 0;
+//    Yn.back().OneBody(nQ,Q) = 1.0;
+//    Yn.back().OneBody(nQ,0) = 0;
+    Yn.back().OneBody(nQ,0) = 1.0;
+    Zn.push_back( Commutator::Commutator( X, Commutator::Commutator(X,Yn.back()) ) );
+  }
+  std::cout << "Y one body: "<< std::endl << Y.OneBody << std::endl;
+  std::cout << "Z one body: "<< std::endl << Z.OneBody << std::endl;
+  for ( size_t n=0; n< Yn.size(); n++)
+  {
+    std::cout << " Y " << n << std::endl << Yn[n].OneBody << std::endl;
+    std::cout << " Z " << n << std::endl << Zn[n].OneBody << std::endl;
+  }
+  Operator Zsum = Zn.front();
+  for (size_t n=1; n<Zn.size(); n++)   Zsum += Zn[n];
+  Operator Zdiff = Z - Zsum;
+  double Znorm = Zdiff.Norm();
+  std::cout << "Norms: " << Z.Norm() << "   vs  ";
+  for (auto z : Zn) std::cout << z.Norm() << " ";
+  std::cout << std::endl << "Norm of Zdiff = " << Znorm << std::endl;
+
+  
+
+  bool all_good = true;
+
+  all_good &= Test_comm211sd( X, Y );
+  all_good &= Test_comm231sd( X, Y );
+  all_good &= Test_comm431sd( X, Y );
+  all_good &= Test_comm413sd( X, Y );
+  all_good &= Test_comm233sd( X, Y );
+  all_good &= Test_comm433_pp_hh_sd( X, Y );
+  all_good &= Test_comm433sd_ph( X, Y );
+
+  if ( all_good )
+  {
+    std::cout << " Done with " << __func__ << " and all is well" << std::endl;
+  }
+  else
+  {
+    std::cout << " Done with " << __func__ << " and at least one test failed" << std::endl;
+  }
+  X.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+
 
 double UnitTest::GetMschemeMatrixElement_1b( const Operator& Op, int a, int ma, int b, int mb )
 {
@@ -646,7 +709,8 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
 double UnitTest::GetMschemeMatrixElement_1leg( const Operator& Op, int a, int ma )
 {
   
-  return GetMschemeMatrixElement_1b( Op, a, ma, Op.GetQSpaceOrbit(), ma) ;
+  return Op.OneBody(a,0) ;
+//  return GetMschemeMatrixElement_1b( Op, a, ma, Op.GetQSpaceOrbit(), ma) ;
 }
 
 
