@@ -125,6 +125,7 @@ int main(int argc, char** argv)
   double BetaCM = parameters.d("BetaCM");
   double hwBetaCM = parameters.d("hwBetaCM");
   double eta_criterion = parameters.d("eta_criterion");
+  double hw_trap = parameters.d("hw_trap");
 
   std::vector<std::string> opnames = parameters.v("Operators");
   std::vector<std::string> opsfromfile = parameters.v("OperatorsFromFile");
@@ -351,7 +352,7 @@ int main(int argc, char** argv)
     Hbare /= PhysConst::HARTREE; // Convert to Hartree
   }
 
-  if (fmt2 != "nushellx" and physical_system != "atomic")  // Don't need to add kinetic energy if we read a shell model interaction
+  if (fmt2 != "nushellx" and physical_system != "atomic" and hw_trap < 0)  // Don't need to add kinetic energy if we read a shell model interaction
   {
     Hbare += imsrg_util::Trel_Op(modelspace);
     if (Hbare.OneBody.has_nan())
@@ -359,6 +360,13 @@ int main(int argc, char** argv)
        std::cout << "  Looks like the Trel op is hosed from the get go." << std::endl;
     }
   }
+
+  if ( hw_trap > 0 )
+  {
+    Hbare += 0.5 * (PhysConst::M_NUCLEON * hw_trap * hw_trap)/(PhysConst::HBARC*PhysConst::HBARC) * imsrg_util::RSquaredOp(modelspace); // add lab-frame harmonic trap
+    Hbare += imsrg_util::KineticEnergy_Op(modelspace); // use lab-frame kinetic energy
+  }
+
 
   if ( nucleon_mass_correction == "true" or nucleon_mass_correction == "True" )
   {  // correction to kinetic energy because M_proton != M_neutron

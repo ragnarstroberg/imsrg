@@ -65,6 +65,7 @@ namespace imsrg_util
       else if (opname == "Rp2")           return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rn2")           return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rm2")           return Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
+      else if (opname == "Rm2lab")        return RSquaredOp(modelspace) ;
       else if (opname == "E1")            return ElectricMultipoleOp(modelspace,1) ;
       else if (opname == "E2")            return ElectricMultipoleOp(modelspace,2) ;
       else if (opname == "E3")            return ElectricMultipoleOp(modelspace,3) ;
@@ -2263,7 +2264,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    dag.SetNonHermitian();
    for ( auto nQ : modelspace.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
    {
-     dag.OneBody(Q,nQ) = 1.0;
+     dag.OneBody(nQ,Q) = 1.0;
    }
    return dag;
  }
