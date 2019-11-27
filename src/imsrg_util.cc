@@ -160,6 +160,12 @@ namespace imsrg_util
          Orbit& oi = modelspace.GetOrbit(ind);
          return NumberOpAlln(modelspace,oi.l,oi.j2,oi.tz2) ;
       }
+      else if (opnamesplit[0] == "OBD")
+      {
+         index_t i = modelspace.String2Index( { opnamesplit[1] } )[0];
+         index_t j = modelspace.String2Index( { opnamesplit[2] } )[0];
+         return OneBodyDensity(modelspace,i,j);
+      }
       else if (opnamesplit[0] == "protonFBC") // Fourier bessel coefficient of order nu
       {
          int nu;
@@ -252,6 +258,14 @@ namespace imsrg_util
      NumOp.OneBody(indx,indx) = 1;
    }
    return NumOp;
+ }
+
+ Operator OneBodyDensity( ModelSpace& modelspace, index_t i, index_t j)
+ {
+   Operator OBD = Operator(modelspace,0,0,0,2);
+   OBD.OneBody(i,j) += 0.5;
+   OBD.OneBody(j,i) += 0.5;
+   return OBD;
  }
 
  double HO_density(int n, int l, double hw, double r)
