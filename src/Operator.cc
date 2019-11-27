@@ -562,7 +562,8 @@ Operator Operator::DoNormalOrderingDagger( int sign) const
         {
           Orbit& oh = modelspace->GetOrbit(h);
           // TODO: Confirm that this should be a minus sign rather than plus
-          opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * ThreeLeg.GetME(ch_bra,h,a,h);  // The GetTBME returns an unnormalized matrix element.
+          opNO.OneBody(a,0) -= hatfactor/(2*ja+1) * sign*oh.occ * ThreeLeg.GetME(ch_bra,h,a,h);  // The GetTBME returns an unnormalized matrix element.
+//          opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * ThreeLeg.GetME(ch_bra,h,a,h);  // The GetTBME returns an unnormalized matrix element.
 //          opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);  // The GetTBME returns an unnormalized matrix element.
 
         }

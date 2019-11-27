@@ -214,6 +214,7 @@ namespace imsrg_util
       else if (opnamesplit[0] == "Dagger" or opnamesplit[0] == "DaggerHF" )
       {
         index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
+        std::cout << "call Dagger_Op with Q = " << Q << std::endl;
         return Dagger_Op( modelspace, Q);
       }
       else if (opnamesplit[0] == "DaggerAlln")

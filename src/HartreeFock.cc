@@ -1087,6 +1087,7 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
      {
         int ch_bra = it.first;
         TwoBodyChannel& tbc_bra = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_bra);
+//        int nbras = it.second.n_rows;
         int nbras = it.second.n_rows;
         arma::mat Dbra(nbras,nbras);
         for (int i=0; i<nbras; ++i)
