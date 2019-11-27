@@ -64,6 +64,7 @@ namespace imsrg_util
 
  Operator NumberOp(ModelSpace& modelspace, int n, int l, int j2, int tz2);
  Operator NumberOpAlln(ModelSpace& modelspace, int l, int j2, int tz2);
+ Operator  OneBodyDensity(ModelSpace& modelspace,index_t i,index_t j);
  Operator PSquaredOp(ModelSpace& modelspace);
  Operator RSquaredOp(ModelSpace& modelspace);
  Operator E0Op(ModelSpace& modelspace);
