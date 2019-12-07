@@ -785,7 +785,9 @@ void HartreeFock::FillLowestOrbits()
 {
   // vector of indices such that they point to elements of F(i,i)
   // in ascending order of energy
-  arma::uvec sorted_indices = arma::stable_sort_index( F.diag() );
+  arma::mat F_hfbasis = C.t() * F * C;
+  arma::uvec sorted_indices = arma::stable_sort_index( F_hfbasis.diag() );
+//  arma::uvec sorted_indices = arma::stable_sort_index( F.diag() );
   int targetZ = modelspace->GetZref();
   int targetN = modelspace->GetAref() - targetZ;
   int placedZ = 0;
@@ -1006,48 +1008,87 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
    // Easy part:
    //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>
    // where |i> is the original basis and |a> is the HF basis
-   OpHF.OneBody = C.t() * OpHO.OneBody * C;
-
+   if ( OpHF.legs%2== 0)
+   {
+     OpHF.OneBody = C.t() * OpHO.OneBody * C;
+   }
+   else
+   {
+     OpHF.OneBody = C.t() * OpHO.OneBody ;
+   }
 
    // Moderately difficult part:
    // Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
    // for each channel J,p,Tz. Most of the effort here is in constructing D.
 
-   for ( auto& it : OpHO.TwoBody.MatEl )
+   if ( OpHF.legs%2== 0)
    {
-      int ch_bra = it.first[0];
-      int ch_ket = it.first[1];
-      TwoBodyChannel& tbc_bra = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_bra);
-      TwoBodyChannel& tbc_ket = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_ket);
-      int nbras = it.second.n_rows;
-      int nkets = it.second.n_cols;
-      arma::mat Dbra(nbras,nbras);
-      arma::mat Dket(nkets,nkets);
-      // loop over all possible original basis configurations <pq| in this J,p,Tz channel.
-      // and all possible HF configurations |p'q'> in this J,p,Tz channel
-      // bra is in the original basis, ket is in the HF basis
-      // i and j are the indices of the matrix D for this channel
-      for (int i=0; i<nkets; ++i)
-      {
-         Ket & ket_ho = tbc_ket.GetKet(i);
-         for (int j=0; j<nkets; ++j)
-         {
-            Ket & ket_hf = tbc_ket.GetKet(j);
-            Dket(i,j) = C(ket_ho.p,ket_hf.p) * C(ket_ho.q,ket_hf.q);
-            if (ket_ho.p!=ket_ho.q)
-            {
-               Dket(i,j) += C(ket_ho.q, ket_hf.p) * C(ket_ho.p, ket_hf.q) * ket_ho.Phase(tbc_ket.J);
-            }
-            if (ket_ho.p==ket_ho.q)    Dket(i,j) *= PhysConst::SQRT2;
-            if (ket_hf.p==ket_hf.q)    Dket(i,j) /= PhysConst::SQRT2;
-         }
-      }
-      if (ch_bra == ch_ket)
-      {
-        Dbra = Dket.t();
-      }
-      else
-      {
+     for ( auto& it : OpHO.TwoBody.MatEl )
+     {
+        int ch_bra = it.first[0];
+        int ch_ket = it.first[1];
+        TwoBodyChannel& tbc_bra = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_bra);
+        TwoBodyChannel& tbc_ket = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_ket);
+        int nbras = it.second.n_rows;
+        int nkets = it.second.n_cols;
+        arma::mat Dbra(nbras,nbras);
+        arma::mat Dket(nkets,nkets);
+        // loop over all possible original basis configurations <pq| in this J,p,Tz channel.
+        // and all possible HF configurations |p'q'> in this J,p,Tz channel
+        // bra is in the original basis, ket is in the HF basis
+        // i and j are the indices of the matrix D for this channel
+        for (int i=0; i<nkets; ++i)
+        {
+           Ket & ket_ho = tbc_ket.GetKet(i);
+           for (int j=0; j<nkets; ++j)
+           {
+              Ket & ket_hf = tbc_ket.GetKet(j);
+              Dket(i,j) = C(ket_ho.p,ket_hf.p) * C(ket_ho.q,ket_hf.q);
+              if (ket_ho.p!=ket_ho.q)
+              {
+                 Dket(i,j) += C(ket_ho.q, ket_hf.p) * C(ket_ho.p, ket_hf.q) * ket_ho.Phase(tbc_ket.J);
+              }
+              if (ket_ho.p==ket_ho.q)    Dket(i,j) *= PhysConst::SQRT2;
+              if (ket_hf.p==ket_hf.q)    Dket(i,j) /= PhysConst::SQRT2;
+           }
+        }
+        if (ch_bra == ch_ket)
+        {
+          Dbra = Dket.t();
+        }
+        else
+        {
+          for (int i=0; i<nbras; ++i)
+          {
+             Ket & bra_hf = tbc_bra.GetKet(i);
+             for (int j=0; j<nbras; ++j)
+             {
+                Ket & bra_ho = tbc_bra.GetKet(j);
+                Dbra(i,j) = C(bra_ho.p,bra_hf.p) * C(bra_ho.q,bra_hf.q);
+                if (bra_ho.p!=bra_ho.q)
+                {
+                   Dbra(i,j) += C(bra_ho.q, bra_hf.p) * C(bra_ho.p, bra_hf.q) * bra_ho.Phase(tbc_bra.J);
+                }
+                if (bra_ho.p==bra_ho.q)    Dbra(i,j) *= PhysConst::SQRT2;
+                if (bra_hf.p==bra_hf.q)    Dbra(i,j) /= PhysConst::SQRT2;
+             }
+          }
+        }
+        auto& IN  =  it.second;
+        auto& OUT =  OpHF.TwoBody.GetMatrix(ch_bra,ch_ket);
+        OUT  =    Dbra * IN * Dket;
+
+     }
+   }
+
+   else
+   {
+     for ( auto& it : OpHO.ThreeLeg.MatEl )
+     {
+        int ch_bra = it.first;
+        TwoBodyChannel& tbc_bra = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_bra);
+        int nbras = it.second.n_rows;
+        arma::mat Dbra(nbras,nbras);
         for (int i=0; i<nbras; ++i)
         {
            Ket & bra_hf = tbc_bra.GetKet(i);
@@ -1063,11 +1104,10 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
               if (bra_hf.p==bra_hf.q)    Dbra(i,j) /= PhysConst::SQRT2;
            }
         }
-      }
-      auto& IN  =  it.second;
-      auto& OUT =  OpHF.TwoBody.GetMatrix(ch_bra,ch_ket);
-      OUT  =    Dbra * IN * Dket;
-
+        auto& IN  =  it.second;
+        auto& OUT =  OpHF.ThreeLeg.GetMatrix(ch_bra);
+        OUT  =    Dbra * IN * C;
+     }
    }
 
    return OpHF;
@@ -1293,12 +1333,14 @@ Operator HartreeFock::GetOmega()
 
 void HartreeFock::PrintSPE()
 {
+  arma::mat F_hfbasis = C.t() * F * C;
 //  for (size_t i=0;i<modelspace->GetNumberOrbits();++i)
   for ( auto i : modelspace->all_orbits )
   {
     Orbit& oi = modelspace->GetOrbit(i);
     std::cout << std::fixed << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
-         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(10) << F(i,i) << std::endl;
+         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(10) << F_hfbasis(i,i) << std::endl;
+//         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(10) << F(i,i) << std::endl;
   }
 
 }
@@ -1306,6 +1348,7 @@ void HartreeFock::PrintSPE()
 
 void HartreeFock::PrintSPEandWF()
 {
+  arma::mat F_hfbasis = C.t() * F * C;
   std::cout << std::fixed << std::setw(3) << "i" << ": " << std::setw(3) << "n" << " " << std::setw(3) << "l" << " "
        << std::setw(3) << "2j" << " " << std::setw(3) << "2tz" << "   " << std::setw(12) << "SPE" << " " << std::setw(12) << "occ." << "   |   " << " overlaps" << std::endl;
 //  for (int i=0;i<modelspace->GetNumberOrbits();++i)
@@ -1313,7 +1356,8 @@ void HartreeFock::PrintSPEandWF()
   {
     Orbit& oi = modelspace->GetOrbit(i);
     std::cout << std::fixed << std::setw(3) << i << ": " << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
-         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F(i,i) << " " << std::setw(12) << oi.occ << "   | ";
+         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F_hfbasis(i,i) << " " << std::setw(12) << oi.occ << "   | ";
+//         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F(i,i) << " " << std::setw(12) << oi.occ << "   | ";
     for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
       std::cout << std::setw(9) << C(i,j) << "  ";

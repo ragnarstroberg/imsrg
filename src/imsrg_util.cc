@@ -65,6 +65,7 @@ namespace imsrg_util
       else if (opname == "Rp2")           return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rn2")           return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rm2")           return Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
+      else if (opname == "Rm2lab")        return RSquaredOp(modelspace) ;
       else if (opname == "E1")            return ElectricMultipoleOp(modelspace,1) ;
       else if (opname == "E2")            return ElectricMultipoleOp(modelspace,2) ;
       else if (opname == "E3")            return ElectricMultipoleOp(modelspace,3) ;
@@ -159,6 +160,12 @@ namespace imsrg_util
          Orbit& oi = modelspace.GetOrbit(ind);
          return NumberOpAlln(modelspace,oi.l,oi.j2,oi.tz2) ;
       }
+      else if (opnamesplit[0] == "OBD")
+      {
+         index_t i = modelspace.String2Index( { opnamesplit[1] } )[0];
+         index_t j = modelspace.String2Index( { opnamesplit[2] } )[0];
+         return OneBodyDensity(modelspace,i,j);
+      }
       else if (opnamesplit[0] == "protonFBC") // Fourier bessel coefficient of order nu
       {
          int nu;
@@ -215,6 +222,11 @@ namespace imsrg_util
         index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
         return Dagger_Op( modelspace, Q);
       }
+      else if (opnamesplit[0] == "DaggerAlln")
+      {
+        index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
+        return DaggerAlln_Op( modelspace, Q);
+      }
       else //need to remove from the list
       {
          std::cout << "Unknown operator: " << opname << std::endl;
@@ -245,6 +257,14 @@ namespace imsrg_util
      NumOp.OneBody(indx,indx) = 1;
    }
    return NumOp;
+ }
+
+ Operator OneBodyDensity( ModelSpace& modelspace, index_t i, index_t j)
+ {
+   Operator OBD = Operator(modelspace,0,0,0,2);
+   OBD.OneBody(i,j) += 0.5;
+   OBD.OneBody(j,i) += 0.5;
+   return OBD;
  }
 
  double HO_density(int n, int l, double hw, double r)
@@ -2243,13 +2263,27 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    Operator dag(modelspace);
    dag.SetNumberLegs(3);
    dag.SetQSpaceOrbit(Q);
-   dag.OneBody(Q,Q)= 1.0;
+   dag.OneBody(Q,0)= 1.0;
+//   dag.OneBody(Q,Q)= 1.0;
    dag.SetNonHermitian();
    std::cout << "Making a dagger operator. I think Q = " << Q << std::endl;
    return dag;
  }
 
-
+ Operator DaggerAlln_Op( ModelSpace& modelspace, index_t Q )
+ {
+   Orbit& oQ = modelspace.GetOrbit(Q);
+   Operator dag(modelspace);
+   dag.SetNumberLegs(3);
+   dag.SetQSpaceOrbit(Q);
+   dag.SetNonHermitian();
+   for ( auto nQ : modelspace.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+   {
+     dag.OneBody(nQ,0) = 1.0;
+//     dag.OneBody(nQ,Q) = 1.0;
+   }
+   return dag;
+ }
 
  Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax ) // default lmax=99999
  {

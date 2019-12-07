@@ -272,10 +272,20 @@ PYBIND11_MODULE(pyIMSRG, m)
  // Modifying arguments which were passed by reference causes trouble in python, so instead we bind a lambda function and return a tuple
       .def_static("Vmon3UnHash", [](uint64_t key) { int a,b,c,d,e,f; HartreeFock::Vmon3UnHash(key,a,b,c,d,e,f); return std::make_tuple(a,b,c,d,e,f);}  )
       .def_readonly("EHF",&HartreeFock::EHF)
-      .def_readonly("C",&HartreeFock::C)
+      .def_readonly("F",&HartreeFock::F) // Fock matrix
+      .def_readonly("C",&HartreeFock::C) // Unitary transformation
       .def_readwrite("Vmon3_keys",&HartreeFock::Vmon3_keys)
       .def_readwrite("Vmon3",&HartreeFock::Vmon3)
    ;
+
+   py::class_<HFMBPT,HartreeFock>(m,"HFMBPT")
+      .def(py::init<Operator&>())
+      .def("GetNaturalOrbitals",&HFMBPT::GetNaturalOrbitals)
+      .def("GetNormalOrderedHNAT",&HFMBPT::GetNormalOrderedHNAT)
+      .def("PrintSPEandWF",&HFMBPT::PrintSPEandWF)
+   ;
+
+
 
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
    Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
@@ -370,6 +380,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("TestCommutators",&UnitTest::TestCommutators)
       .def("TestCommutators3",&UnitTest::TestCommutators3)
       .def("TestDaggerCommutators",&UnitTest::TestDaggerCommutators)
+      .def("TestDaggerCommutatorsAlln",&UnitTest::TestDaggerCommutatorsAlln)
       .def("Test3BodyAntisymmetry",&UnitTest::Test3BodyAntisymmetry)
       .def("Test3BodyHermiticity",&UnitTest::Test3BodyHermiticity)
    ;
