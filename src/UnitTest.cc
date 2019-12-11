@@ -205,7 +205,8 @@ Operator UnitTest::RandomDaggerOp(ModelSpace& modelspace, index_t Q)
    for (auto i : dag.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
    {
      double random_me = distribution(generator);
-     dag.OneBody(i,Q)= random_me;
+     dag.OneBody(i,0)= random_me;
+//     dag.OneBody(i,Q)= random_me;
    }
 
    size_t nch = modelspace.GetNumberTwoBodyChannels();
@@ -471,6 +472,43 @@ void UnitTest::TestDaggerCommutators(index_t Q)
   Operator X = RandomOp(*modelspace, 0, 0, 0, 2, -1);
   Operator Y = RandomDaggerOp(*modelspace, Q);
 
+  Orbit& oQ = Y.modelspace->GetOrbit(Q);
+  
+  Y *= 0;
+  std::vector<Operator> Yn;
+  std::vector<Operator> Zn;
+  for (size_t n : Y.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+  {
+    Y.OneBody(n,0) = 1.0;
+    Yn.push_back( 0*Y );
+    Yn.back().OneBody(n,0) = 1.0;
+    Zn.push_back(  Commutator::Commutator( X, Yn.back() ) );
+    Zn.back() = Commutator::Commutator( X, Zn.back() );
+  }
+  
+  Operator Z = Commutator::Commutator( X, Y);
+  Z = Commutator::Commutator( X, Z);
+
+  std::cout << "Y 1b: " << std::endl << Y.OneBody << std::endl;
+  std::cout << "Yn 1b: " << std::endl;
+  for (auto y : Yn ) std::cout << y.OneBody << std::endl;
+  std::cout << std::endl;
+
+  std::cout << std::endl;
+  std::cout << "Z 1b: " << std::endl << Z.OneBody << std::endl;
+  std::cout << "Zn 1b: " << std::endl;
+  for (auto z : Zn ) std::cout << z.OneBody << std::endl;
+  std::cout << std::endl;
+
+
+  Operator Zdiff = Z;
+  std::cout << "legs for Z and Zdiff : " << Z.legs << " " << Zdiff.legs << std::endl;
+  for ( auto z : Zn ) Zdiff -= z;
+  std::cout << "norm of Zdiff = " << Zdiff.Norm() << "  norm Z = " << Z.Norm()
+            << "  norm of Zn = ";
+  for (auto z : Zn ) std::cout << z.Norm() << " ";
+  std::cout << std::endl;
+
   bool all_good = true;
 
   all_good &= Test_comm211sd( X, Y );
@@ -646,7 +684,8 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
 double UnitTest::GetMschemeMatrixElement_1leg( const Operator& Op, int a, int ma )
 {
   
-  return GetMschemeMatrixElement_1b( Op, a, ma, Op.GetQSpaceOrbit(), ma) ;
+  return Op.OneBody(a,0) ;
+//  return GetMschemeMatrixElement_1b( Op, a, ma, Op.GetQSpaceOrbit(), ma) ;
 }
 
 
@@ -2113,12 +2152,14 @@ bool UnitTest::Test_comm211sd( const Operator& X, const Operator& Y )
        Zm_i += Xia * Ya ;
      }
     }
-    double ZJ_i = Z_J.OneBody(i,Q);
+    double ZJ_i = Z_J.OneBody(i,0);
+//    double ZJ_i = Z_J.OneBody(i,Q);
     double err = Zm_i - ZJ_i;
     if (std::abs(err)>1e-6)
     {
       std::cout << "Trouble in " << __func__ << "  i = " << i <<  "   Zm_i = " << Zm_i
-                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
+                << "   ZJ_i = " << Z_J.OneBody(i,0) << "   err = " << err << std::endl; 
+//                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
     }
     summed_error += err*err;
     sum_m += Zm_i*Zm_i;
@@ -2188,12 +2229,14 @@ bool UnitTest::Test_comm231sd( const Operator& X, const Operator& Y )
        }
      }
     }
-    double ZJ_i = Z_J.OneBody(i,Q);
+    double ZJ_i = Z_J.OneBody(i,0);
+//    double ZJ_i = Z_J.OneBody(i,Q);
     double err = Zm_i - ZJ_i;
     if (std::abs(err)>1e-6)
     {
       std::cout << "Trouble in " << __func__ << "  i = " << i <<  "   Zm_i = " << Zm_i
-                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
+                << "   ZJ_i = " << Z_J.OneBody(i,0) << "   err = " << err << std::endl; 
+//                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
     }
     summed_error += err*err;
     sum_m += Zm_i*Zm_i;
@@ -2269,12 +2312,14 @@ bool UnitTest::Test_comm431sd( const Operator& X, const Operator& Y )
        }
      }
     }
-    double ZJ_i = Z_J.OneBody(i,Q);
+    double ZJ_i = Z_J.OneBody(i,0);
+//    double ZJ_i = Z_J.OneBody(i,Q);
     double err = Zm_i - ZJ_i;
     if (std::abs(err)>1e-6)
     {
       std::cout << "Trouble in " << __func__ << "  i = " << i <<  "   Zm_i = " << Zm_i
-                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
+                << "   ZJ_i = " << Z_J.OneBody(i,0) << "   err = " << err << std::endl; 
+//                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
     }
     summed_error += err*err;
     sum_m += Zm_i*Zm_i;

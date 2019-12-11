@@ -2248,7 +2248,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    Operator dag(modelspace);
    dag.SetNumberLegs(3);
    dag.SetQSpaceOrbit(Q);
-   dag.OneBody(Q,Q)= 1.0;
+   dag.OneBody(Q,0)= 1.0;
+//   dag.OneBody(Q,Q)= 1.0;
    dag.SetNonHermitian();
    std::cout << "Making a dagger operator. I think Q = " << Q << std::endl;
    return dag;
@@ -2263,7 +2264,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    dag.SetNonHermitian();
    for ( auto nQ : modelspace.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
    {
-     dag.OneBody(Q,nQ) = 1.0;
+     //dag.OneBody(nQ,Q) = 1.0;
+     dag.OneBody(nQ,0) = 1.0;
    }
    return dag;
  }

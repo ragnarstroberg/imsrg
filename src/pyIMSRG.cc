@@ -129,6 +129,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Norm", &Operator::Norm)
       .def("OneBodyNorm", &Operator::OneBodyNorm)
       .def("TwoBodyNorm", &Operator::TwoBodyNorm)
+      .def("ThreeBodyNorm", &Operator::ThreeBodyNorm)
       .def("SetHermitian", &Operator::SetHermitian)
       .def("SetAntiHermitian", &Operator::SetAntiHermitian)
       .def("SetNonHermitian", &Operator::SetNonHermitian)
@@ -151,6 +152,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("MakeUnNormalized", &Operator::MakeUnNormalized)
       .def("SetOneBodyME", &OpSetOneBodyME)
       .def("GetMP2_Energy", &Operator::GetMP2_Energy)
+      .def("GetMP3_Energy", &Operator::GetMP3_Energy)
       .def_readwrite("ThreeBody", &Operator::ThreeBody)
    ;
 
@@ -248,6 +250,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Set3NFormat",&ReadWrite::Set3NFormat)
       .def("WriteDaggerOperator",&ReadWrite::WriteDaggerOperator)
       .def("ReadJacobi3NFiles",&ReadWrite::ReadJacobi3NFiles)
+      .def("WriteValence3body",&ReadWrite::WriteValence3body)
    ;
 
 
@@ -433,6 +436,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("TalmiB",AngMom::TalmiB);
    m.def("TalmiI",imsrg_util::TalmiI);
    m.def("Tcoeff",AngMom::Tcoeff);
+   m.def("SetUseGooseTank",Commutator::SetUseGooseTank);
 
 
 //  return m.ptr();

@@ -192,6 +192,7 @@ class Operator
   double OneBodyNorm() const;
   double TwoBodyNorm() const;
   double ThreeBodyNorm() const;
+  double OneLegNorm() const;
   double ThreeLegNorm() const;
 
 

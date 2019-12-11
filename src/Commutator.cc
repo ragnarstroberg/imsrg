@@ -4597,7 +4597,8 @@ void comm231sd( const Operator& X, const Operator& Y, Operator& Z)
                   Ymon_bia += (2*J+1.0) / (oQ.j2+1.0) * Y.ThreeLeg.GetME_J(J,b,i,a);
                   Ymon_aib += (2*J+1.0) / (oQ.j2+1.0) * Y.ThreeLeg.GetME_J(J,a,i,b);
                 }
-                Z.OneBody(i,Q) += nanb * X.OneBody(a,b) * Ymon_bia - X.OneBody(b,a) * Ymon_aib;
+//                Z.OneBody(i,Q) += nanb * X.OneBody(a,b) * Ymon_bia - X.OneBody(b,a) * Ymon_aib;
+                Z.OneBody(i,0) += nanb * X.OneBody(a,b) * Ymon_bia - X.OneBody(b,a) * Ymon_aib;
 //                  Z.OneBody(i,Q) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,Q) ;  // Is this still the right way to do this? Do we need to worry about normalization? (It looks ok).
 //                  Z.OneBody(i,Q) -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,Q) ;  // GetTBMEmonopole returns unnormalized TBME summed over J times (2J+1)/((2ji+1)*(2jj+1))
                 
@@ -4691,7 +4692,8 @@ void comm413_233sd( const Operator& X, const Operator& Y, Operator& Z)
            for ( int a : Y.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
            {
 //             cijk += Y1(a,Qorbit) * X.TwoBody.GetTBME_norm(ch,ch,i,j,k,a);   // This determines the normalization for the (adagger adagger a) term.
-             cijk +=  X.TwoBody.GetTBME(ch,ch,i,j,k,a) * Y1(a,Qorbit) ;   // This determines the normalization for the (adagger adagger a) term.
+//             cijk +=  X.TwoBody.GetTBME(ch,ch,i,j,k,a) * Y1(a,Qorbit) ;   // This determines the normalization for the (adagger adagger a) term.
+             cijk +=  X.TwoBody.GetTBME(ch,ch,i,j,k,a) * Y1(a,0) ;   // This determines the normalization for the (adagger adagger a) term.
 //             if (i==0 and j==8 and k==0)
 //             {
 //                std::cout << "   " << __func__ << "  a = " << a << "  Xijka, Ya = " << X.TwoBody.GetTBME(ch,ch,i,j,k,a) << " , " << Y1(a,Qorbit) << "  cijk = " << cijk << std::endl;
@@ -4812,7 +4814,8 @@ void comm433_pp_hh_431sd( const Operator& X, const Operator& Y, Operator& Z )
             cijJ += Jfactor * Mhh.GetME(ch,c,i,c);
          }
       }
-      Z.OneBody(i,Q) += cijJ /(oi.j2+1.0);   // The factor of 1/2 in the formula is absorbed by the fact that the mat-mult only sums a<=b.
+      Z.OneBody(i,0) += cijJ /(oi.j2+1.0);   // The factor of 1/2 in the formula is absorbed by the fact that the mat-mult only sums a<=b.
+//      Z.OneBody(i,Q) += cijJ /(oi.j2+1.0);   // The factor of 1/2 in the formula is absorbed by the fact that the mat-mult only sums a<=b.
    } // for i
    Z.profiler.timer["pphh 413sd"] += omp_get_wtime() - t;
 }
