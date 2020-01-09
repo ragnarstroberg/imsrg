@@ -8,6 +8,9 @@
 #include <unordered_map>
 #include <array>
 
+// We store the 3-body matrix elements in un-normalized J-coupled form.
+// We can optionally use isospin or proton-neutron formalism.
+//
 class ThreeBodyMEpn
 {
 //  typedef float ME_type;
@@ -103,6 +106,10 @@ class ThreeBodyMEpn
   void Erase();
   void SetHermitian(){herm = 1;};
   void SetAntiHermitian(){herm = -1;};
+  void Setemax(int e){emax = e;};
+  void SetE3max(int e){E3max = e;};
+  ModelSpace* GetModelSpace(){return modelspace;};
+  bool IsPNmode(){return PN_mode;};
   double Norm() const;
 
   bool IsAllocated() {return is_allocated;};

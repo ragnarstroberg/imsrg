@@ -200,7 +200,8 @@ void ThreeBodyME::Allocate()
 ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b, int c, int d, int e, int f) const
 {
 
-//   std::cout << "ENTER " << __func__ << std::endl;
+//   std::cout << "ENTER " << __func__ << "  " << Jab_in << " " << Jde_in << " " << J2 << " "
+//             << a  << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
 //  IMSRGProfiler::counter[__func__] ++;
    if (a==b and a==c and modelspace->GetOrbit(a).j2<3) return 0;
    if (d==e and d==f and modelspace->GetOrbit(d).j2<3) return 0;
@@ -212,6 +213,7 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
    double tzd = modelspace->GetOrbit(d).tz2*0.5;
    double tze = modelspace->GetOrbit(e).tz2*0.5;
    double tzf = modelspace->GetOrbit(f).tz2*0.5;
+   if ( (tza+tzb+tzc) != (tzd+tze+tzf) ) return 0;
 
 //   std::cout << "  Jab_in Jde_in J2 a b c d e f: " << Jab_in << " " << Jde_in << " " << J2 << " " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
 //   std::cout << "  tz vals: " << tza << " " << tzb << " " << tzc << " " << tzd << " " << tze << " " << tzf << std::endl;

@@ -105,10 +105,9 @@ endif
 
 ifeq ($(THEHOST),cedar)
 #  NEWLIBS := $(filter-out -lopenblas,$(LIBS))
+  NEWLIBS := $(filter-out -lblas,$(LIBS))
+  LIBS = $(NEWLIBS) -lopenblas
 #  LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
-  NEWLIBS := $(filter-out -lopenblas -lblas,$(LIBS))
- LIBS = $(NEWLIBS) -lmkl -lmkl_gnu_thread -lmkl_core -lpthread -lgomp -liomp5
-# LIBS += -lmkl -lmkl_gnu_thread -lmkl_core -lpthread -lgomp -liomp5
  ifneq ($(PYTHON),off)
   ALL += pyIMSRG.so
   endif

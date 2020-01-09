@@ -861,6 +861,7 @@ void Operator::SetNumberLegs( int l)
     TwoBody.Deallocate();
     OneBody.zeros(modelspace->GetNumberOrbits(), 1);  // reduce it to a single column
     ThreeLeg.Allocate();
+    OneBody.zeros( modelspace->GetNumberOrbits(), 1);
   }
 
 
@@ -1248,7 +1249,6 @@ double Operator::OneBodyNorm() const
    }
    return sqrt(nrm);
 }
-
 
 
 double Operator::TwoBodyNorm() const

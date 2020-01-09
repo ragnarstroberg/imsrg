@@ -4,6 +4,7 @@
 #include <armadillo>
 #include <random>
 #include <string>
+#include "imsrg_util.hh"
 
 
 uint64_t UnitTest::random_seed = 1;
@@ -532,6 +533,67 @@ void UnitTest::TestDaggerCommutators(index_t Q)
 
 
 
+void UnitTest::TestDaggerCommutatorsAlln(index_t Q)
+{
+  double t_start = omp_get_wtime();
+  arma::arma_rng::set_seed( random_seed );
+  Operator X = RandomOp(*modelspace, 0, 0, 0, 2, -1);
+//  Operator Y = RandomDaggerOp(*modelspace, Q);
+
+  Operator Y = imsrg_util::DaggerAlln_Op(*modelspace, Q);
+  Operator Z = Commutator::Commutator(X, Commutator::Commutator(X,Y));
+  std::vector<Operator> Yn;
+  std::vector<Operator> Zn;
+  Orbit& oQ = X.modelspace->GetOrbit(Q);
+  for ( auto nQ : X.modelspace->OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+  {
+    Yn.push_back( imsrg_util::Dagger_Op(*modelspace, nQ) );
+//    Yn.back().OneBody(nQ,nQ) = 0;
+//    Yn.back().OneBody(nQ,Q) = 1.0;
+//    Yn.back().OneBody(nQ,0) = 0;
+    Yn.back().OneBody(nQ,0) = 1.0;
+    Zn.push_back( Commutator::Commutator( X, Commutator::Commutator(X,Yn.back()) ) );
+  }
+  std::cout << "Y one body: "<< std::endl << Y.OneBody << std::endl;
+  std::cout << "Z one body: "<< std::endl << Z.OneBody << std::endl;
+  for ( size_t n=0; n< Yn.size(); n++)
+  {
+    std::cout << " Y " << n << std::endl << Yn[n].OneBody << std::endl;
+    std::cout << " Z " << n << std::endl << Zn[n].OneBody << std::endl;
+  }
+  Operator Zsum = Zn.front();
+  for (size_t n=1; n<Zn.size(); n++)   Zsum += Zn[n];
+  Operator Zdiff = Z - Zsum;
+  double Znorm = Zdiff.Norm();
+  std::cout << "Norms: " << Z.Norm() << "   vs  ";
+  for (auto z : Zn) std::cout << z.Norm() << " ";
+  std::cout << std::endl << "Norm of Zdiff = " << Znorm << std::endl;
+
+  
+
+  bool all_good = true;
+
+  all_good &= Test_comm211sd( X, Y );
+  all_good &= Test_comm231sd( X, Y );
+  all_good &= Test_comm431sd( X, Y );
+  all_good &= Test_comm413sd( X, Y );
+  all_good &= Test_comm233sd( X, Y );
+  all_good &= Test_comm433_pp_hh_sd( X, Y );
+  all_good &= Test_comm433sd_ph( X, Y );
+
+  if ( all_good )
+  {
+    std::cout << " Done with " << __func__ << " and all is well" << std::endl;
+  }
+  else
+  {
+    std::cout << " Done with " << __func__ << " and at least one test failed" << std::endl;
+  }
+  X.profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+
 
 double UnitTest::GetMschemeMatrixElement_1b( const Operator& Op, int a, int ma, int b, int mb )
 {
@@ -654,7 +716,8 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
 //        if ((a==0 and b==0 and c==3 and d==2 and e==2 and f==5 and Jde==1) ) 
 //        if ((a==0 and b==0 and c==3 and d==2 and e==2 and f==5 ) or  (a==0 and b==3 and c==0 and d==2 and e==2 and f==5 ) or (a==3 and b==0 and c==0 and d==2 and e==2 and f==5 )) 
 //        if ((a==0 and b==0 and c==5 and d==0 and e==0 and f==5 ) or  (a==0 and b==5 and c==0 and d==0 and e==0 and f==5 ) or (a==5 and b==0 and c==0 and d==0 and e==0 and f==5 )) 
-        if ((a==0 and b==0 and c==10 and d==0 and e==10 and f==0 ) ) 
+//        if ((a==0 and b==0 and c==10 and d==0 and e==10 and f==0 ) ) 
+        if ((a==2 and b==0 and c==0 and d==2 and e==0 and f==0 ) ) 
         {
         std::cout << "$abc: " << a << " " << b << " " << c << " def: " << d << " " << e << " " << f << std::endl;
         std::cout << "$m vals: " << ma << " " << mb << " " << mc << "  " << md << " " << me << " " << mf << std::endl;
@@ -1986,6 +2049,7 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
                {
                 for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
                 {
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
                  for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
                  {
                   for (int m_m=-om.j2; m_m<=om.j2; m_m+=2)
@@ -1993,6 +2057,7 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
                    for (int m_n=-on.j2; m_n<=on.j2; m_n+=2)
                    {
                      if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
+                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or m==n and m_m==m_n) continue;
                      double z_ijklmn = 0;
 
                          if (i==2 and j==0 and k==0 and l==2 and m==0 and n==0 )

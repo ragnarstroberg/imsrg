@@ -1008,48 +1008,87 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
    // Easy part:
    //Update the one-body part by multiplying by the matrix C(i,a) = <i|a>
    // where |i> is the original basis and |a> is the HF basis
-   OpHF.OneBody = C.t() * OpHO.OneBody * C;
-
+   if ( OpHF.legs%2== 0)
+   {
+     OpHF.OneBody = C.t() * OpHO.OneBody * C;
+   }
+   else
+   {
+     OpHF.OneBody = C.t() * OpHO.OneBody ;
+   }
 
    // Moderately difficult part:
    // Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
    // for each channel J,p,Tz. Most of the effort here is in constructing D.
 
-   for ( auto& it : OpHO.TwoBody.MatEl )
+   if ( OpHF.legs%2== 0)
    {
-      int ch_bra = it.first[0];
-      int ch_ket = it.first[1];
-      TwoBodyChannel& tbc_bra = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_bra);
-      TwoBodyChannel& tbc_ket = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_ket);
-      int nbras = it.second.n_rows;
-      int nkets = it.second.n_cols;
-      arma::mat Dbra(nbras,nbras);
-      arma::mat Dket(nkets,nkets);
-      // loop over all possible original basis configurations <pq| in this J,p,Tz channel.
-      // and all possible HF configurations |p'q'> in this J,p,Tz channel
-      // bra is in the original basis, ket is in the HF basis
-      // i and j are the indices of the matrix D for this channel
-      for (int i=0; i<nkets; ++i)
-      {
-         Ket & ket_ho = tbc_ket.GetKet(i);
-         for (int j=0; j<nkets; ++j)
-         {
-            Ket & ket_hf = tbc_ket.GetKet(j);
-            Dket(i,j) = C(ket_ho.p,ket_hf.p) * C(ket_ho.q,ket_hf.q);
-            if (ket_ho.p!=ket_ho.q)
-            {
-               Dket(i,j) += C(ket_ho.q, ket_hf.p) * C(ket_ho.p, ket_hf.q) * ket_ho.Phase(tbc_ket.J);
-            }
-            if (ket_ho.p==ket_ho.q)    Dket(i,j) *= PhysConst::SQRT2;
-            if (ket_hf.p==ket_hf.q)    Dket(i,j) /= PhysConst::SQRT2;
-         }
-      }
-      if (ch_bra == ch_ket)
-      {
-        Dbra = Dket.t();
-      }
-      else
-      {
+     for ( auto& it : OpHO.TwoBody.MatEl )
+     {
+        int ch_bra = it.first[0];
+        int ch_ket = it.first[1];
+        TwoBodyChannel& tbc_bra = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_bra);
+        TwoBodyChannel& tbc_ket = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_ket);
+        int nbras = it.second.n_rows;
+        int nkets = it.second.n_cols;
+        arma::mat Dbra(nbras,nbras);
+        arma::mat Dket(nkets,nkets);
+        // loop over all possible original basis configurations <pq| in this J,p,Tz channel.
+        // and all possible HF configurations |p'q'> in this J,p,Tz channel
+        // bra is in the original basis, ket is in the HF basis
+        // i and j are the indices of the matrix D for this channel
+        for (int i=0; i<nkets; ++i)
+        {
+           Ket & ket_ho = tbc_ket.GetKet(i);
+           for (int j=0; j<nkets; ++j)
+           {
+              Ket & ket_hf = tbc_ket.GetKet(j);
+              Dket(i,j) = C(ket_ho.p,ket_hf.p) * C(ket_ho.q,ket_hf.q);
+              if (ket_ho.p!=ket_ho.q)
+              {
+                 Dket(i,j) += C(ket_ho.q, ket_hf.p) * C(ket_ho.p, ket_hf.q) * ket_ho.Phase(tbc_ket.J);
+              }
+              if (ket_ho.p==ket_ho.q)    Dket(i,j) *= PhysConst::SQRT2;
+              if (ket_hf.p==ket_hf.q)    Dket(i,j) /= PhysConst::SQRT2;
+           }
+        }
+        if (ch_bra == ch_ket)
+        {
+          Dbra = Dket.t();
+        }
+        else
+        {
+          for (int i=0; i<nbras; ++i)
+          {
+             Ket & bra_hf = tbc_bra.GetKet(i);
+             for (int j=0; j<nbras; ++j)
+             {
+                Ket & bra_ho = tbc_bra.GetKet(j);
+                Dbra(i,j) = C(bra_ho.p,bra_hf.p) * C(bra_ho.q,bra_hf.q);
+                if (bra_ho.p!=bra_ho.q)
+                {
+                   Dbra(i,j) += C(bra_ho.q, bra_hf.p) * C(bra_ho.p, bra_hf.q) * bra_ho.Phase(tbc_bra.J);
+                }
+                if (bra_ho.p==bra_ho.q)    Dbra(i,j) *= PhysConst::SQRT2;
+                if (bra_hf.p==bra_hf.q)    Dbra(i,j) /= PhysConst::SQRT2;
+             }
+          }
+        }
+        auto& IN  =  it.second;
+        auto& OUT =  OpHF.TwoBody.GetMatrix(ch_bra,ch_ket);
+        OUT  =    Dbra * IN * Dket;
+
+     }
+   }
+
+   else
+   {
+     for ( auto& it : OpHO.ThreeLeg.MatEl )
+     {
+        int ch_bra = it.first;
+        TwoBodyChannel& tbc_bra = OpHF.GetModelSpace()->GetTwoBodyChannel(ch_bra);
+        int nbras = it.second.n_rows;
+        arma::mat Dbra(nbras,nbras);
         for (int i=0; i<nbras; ++i)
         {
            Ket & bra_hf = tbc_bra.GetKet(i);
@@ -1065,11 +1104,10 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
               if (bra_hf.p==bra_hf.q)    Dbra(i,j) /= PhysConst::SQRT2;
            }
         }
-      }
-      auto& IN  =  it.second;
-      auto& OUT =  OpHF.TwoBody.GetMatrix(ch_bra,ch_ket);
-      OUT  =    Dbra * IN * Dket;
-
+        auto& IN  =  it.second;
+        auto& OUT =  OpHF.ThreeLeg.GetMatrix(ch_bra);
+        OUT  =    Dbra * IN * C;
+     }
    }
 
    return OpHF;
@@ -1403,44 +1441,59 @@ double HartreeFock::GetAverageHFPotential( double r, double rprime)
 // a 3-body interaction with good isospin, even though the HF basis breaks isospin.
 // Hopefully this isn't much of an approximation, but it shouldn't be too bad
 // to make a new structure in the future.
-ThreeBodyME HartreeFock::GetValence3B( int emax, int E3max )
+ThreeBodyMEpn HartreeFock::GetValence3B( int emax, int E3max )
 {
   double t_start = omp_get_wtime();
-  ThreeBodyME hf3bme(modelspace, E3max);
+  ThreeBodyMEpn hf3bme(modelspace, E3max);
   hf3bme.Setemax(emax);
-  hf3bme.Allocate();
+//  if (Hbare.ThreeBody.IsPNmode())
+//  {
+    hf3bme.SwitchToPN_and_discard();
+//    std::cout << "After Switching to PN and discarding, the size of ch_start and ch_dim are " << hf3bme.ch_start.size() << " " << hf3bme.ch_dim.size() << std::endl;
+//  }
+//  else
+//  {
+//    hf3bme.Allocate();
+//  }
   // big loop over elements of hf3bme...
   auto norbits = modelspace->GetNumberOrbits();
-  for (size_t a=0; a<norbits; a+=2)
+//  for (size_t a=0; a<norbits; a+=2)
+//  for (size_t a=0; a<norbits; a+=1)
+  for (size_t a : modelspace->valence )
   {
    Orbit& oa = modelspace->GetOrbit(a);
    int ea = 2*oa.n + oa.l;
    if ((ea > emax) or ea>E3max ) break;
-   for (size_t b=0; b<=a; b+=2)
+//   for (size_t b=0; b<=a; b+=2)
+   for (size_t b=0; b<=a; b+=1)
    {
     Orbit& ob = modelspace->GetOrbit(b);
     int eb = 2*ob.n + ob.l;
     if ((ea+eb)>E3max) break;
     int Jab_min = std::abs( oa.j2 - ob.j2 ) /2;
     int Jab_max =         ( oa.j2 + ob.j2 ) /2;
-    int tab_min = std::abs( oa.tz2 + ob.tz2)/2;
-    int tab_max = 1;
-    for (size_t c=0; c<=b; c+=2)
+//    int tab_min = std::abs( oa.tz2 + ob.tz2)/2;
+//    int tab_max = 1;
+//    for (size_t c=0; c<=b; c+=2)
+    for (size_t c=0; c<=b; c+=1)
     {
       Orbit& oc = modelspace->GetOrbit(c);
       int ec = 2*oc.n + oc.l;
       if ((ea+eb+ec)>E3max) break;
-      for (size_t d=0; d<=a; d+=2 )
+//      for (size_t d=0; d<=a; d+=2 )
+      for (size_t d=0; d<=a; d+=1 )
       {
        Orbit& od = modelspace->GetOrbit(d);
-       for (size_t e=0; e<=d; e+=2 )
+//       for (size_t e=0; e<=d; e+=2 )
+       for (size_t e=0; e<=d; e+=1 )
        {
         Orbit& oe = modelspace->GetOrbit(e);
         int Jde_min = std::abs( od.j2 - oe.j2 ) /2;
         int Jde_max =         ( od.j2 + oe.j2 ) /2;
-        int tde_min = std::abs( od.tz2 + oe.tz2)/2;
-        int tde_max = 1;
-        for (size_t f=0; f<=e; f+=2 )
+//        int tde_min = std::abs( od.tz2 + oe.tz2)/2;
+//        int tde_max = 1;
+//        for (size_t f=0; f<=e; f+=2 )
+        for (size_t f=0; f<=e; f+=1 )
         {
           Orbit& of = modelspace->GetOrbit(f);
 //          if ( (oa.tz2+ob.tz2+oc.tz2) != (od.tz2+oe.tz2+of.tz2) ) continue;
@@ -1452,21 +1505,39 @@ ThreeBodyME HartreeFock::GetValence3B( int emax, int E3max )
             int J2_max = std::min(         (Jab*2+oc.j2),         (Jde*2+of.j2) );
             for (int J2=J2_min; J2<=J2_max; J2++)
             {
-              for (int tab=tab_min; tab<=tab_max; tab++)
-              {
-               for (int tde=tde_min; tde<=tde_max; tde++)
-               {
-                int T2_min = 1;
-//                int T2_max = std::abs(oa.tz2+ob.tz2+oc.tz2);  // this will be either 1 or 3.
-                int T2_max = 3;  // this will be either 1 or 3.
-                for (int T2=T2_min; T2<=T2_max; T2++)
-                {
-                  double V = GetHF3bme( Jab, Jde, J2, tab, tde, T2, a, b, c, d, e, f );
-                  hf3bme.SetME(Jab, Jde, J2, tab, tde, T2, a, b, c, d, e, f, V);
-                } // for T2
-               } // for tde
-              } // for tab
-            }
+//              for (int tab=tab_min; tab<=tab_max; tab++)
+//              {
+//               for (int tde=tde_min; tde<=tde_max; tde++)
+//               {
+//                int T2_min = 1;
+////                int T2_max = std::abs(oa.tz2+ob.tz2+oc.tz2);  // this will be either 1 or 3.
+//                int T2_max = 3;  // this will be either 1 or 3.
+//                for (int T2=T2_min; T2<=T2_max; T2++)
+//                {
+//                  if (a==6 and b==6 and c==6 and d==6 and e==6 and f==6 and Jab==0 and Jde==0)
+//                  {
+//                    std::cout << "******* Calling GetHF3bme " << std::endl;
+//                  }
+//                  double V = GetHF3bme( Jab, Jde, J2, tab, tde, T2, a, b, c, d, e, f );
+//                  hf3bme.SetME(Jab, Jde, J2, tab, tde, T2, a, b, c, d, e, f, V);
+                  double V = GetHF3bme( Jab, Jde, J2, a, b, c, d, e, f );
+
+//                  if (a==6 and b==6 and c==6 and d==6 and e==6 and f==6 and Jab==0 and Jde==0)
+//                  {
+//                    std::cout << "******* Calling SetME_pn " << std::endl;
+//                  }
+
+                  hf3bme.SetME_pn(Jab, Jde, J2, a, b, c, d, e, f, V);
+//                  if (a==6 and b==6 and c==6 and d==6 and e==6 and f==6 and Jab==0 and Jde==0)
+//                  {
+//                    std::cout << "******* Calling GetME_pn " << std::endl;
+//                    double vread = hf3bme.GetME_pn(Jab,Jde,J2,a,b,c,d,e,f);
+//                    std::cout << "********    V = " << V << "   and after setting it, I read " << vread << "  emax= " << hf3bme.emax << " E3max = " << hf3bme.E3max << std::endl;
+//                  }
+//                } // for T2
+//               } // for tde
+//              } // for tab
+            } // for J2
            } // for Jde
           } // for Jab
         } // for f
@@ -1486,7 +1557,8 @@ ThreeBodyME HartreeFock::GetValence3B( int emax, int E3max )
 // Get a single 3-body matrix element in the HartreeFock basis.
 // Because we're using good isospin, right now we just use the proton orbits.
 // In principle we could figure out a more clever way by averaging depending on the isospin value.
-double HartreeFock::GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f)
+//double HartreeFock::GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f)
+double HartreeFock::GetHF3bme( int Jab, int Jde, int J2,  size_t a, size_t b, size_t c, size_t d, size_t e, size_t f)
 {
   double V_hf = 0.;
   Orbit& oa = modelspace->GetOrbit(a);
@@ -1513,7 +1585,8 @@ double HartreeFock::GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T
        if ( std::abs(C(epsilon,e)) < 1e-8 ) continue;
        for (auto phi : Hbare.OneBodyChannels.at({of.l,of.j2,of.tz2}) )
        {
-         double V_ho = Hbare.ThreeBody.GetME( Jab,  Jde,  J2,  tab,  tde,  T2,  alpha,  beta,  gamma,  delta,  epsilon,  phi);
+         double V_ho = Hbare.ThreeBody.GetME_pn( Jab,  Jde,  J2,  alpha,  beta,  gamma,  delta,  epsilon,  phi);
+//         double V_ho = Hbare.ThreeBody.GetME( Jab,  Jde,  J2,  tab,  tde,  T2,  alpha,  beta,  gamma,  delta,  epsilon,  phi);
          V_hf += V_ho * C(alpha,a) * C(beta,b) * C(gamma,c) * C(delta,d) * C(epsilon,e) * C(phi,f);
        } // for phi
       } // for epsilon
