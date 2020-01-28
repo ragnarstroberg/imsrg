@@ -78,6 +78,7 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn(int Jab_in, int Jde_in, int J2, i
 
 void ThreeBodyMEpn::SetME_pn(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ThreeBodyMEpn::ME_type V)
 {
+//  std::cout << " IN " << __func__ << "  and PN mode is " << PN_mode << std::endl;
   if (PN_mode)  SetME_pn_PN( Jab_in, Jde_in, J2, i,j,k,l,m,n,V);
   else   std::cout << __func__ << "  TROUBLE!!! I tried to set a pn matrix element while I'm in isospin mode" << std::endl;
 //  else isospin3BME.SetME_pn( Jab_in, Jde_in, J2, i,j,k,l,m,n,V);
@@ -120,6 +121,7 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
 /// be more convenient to call.
 ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket) const
 {
+//   std::cout << "In  " << __func__ << "  args: " << ch_bra << " " << ch_ket << " " << ibra << " " << iket << std::endl;
 //  std::cout << "IN " << __func__ << std::endl;
 //  if (ch_bra==16 and ibra==13)
 //  {
@@ -159,6 +161,7 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ke
 //  {
 //  std::cout << "ibra,iket = " << ibra << " " << iket << "   i,j = " << i << " " << j << "   h = " << h << "   matel = " << matrix_data.at(index) << std::endl;
 //   }
+//  std::cout << "   " << __func__ <<   "  accessing index " << index << "  and mutliplying by " << h << std::endl;
   return matrix_data.at(index) * h;
 
 }
@@ -169,7 +172,7 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ke
 // recoupling coefficients included (see below).
 void ThreeBodyMEpn::AddToME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel)
 {
-//  std::cout << __func__ << "lets see what happens here..." << std::endl;
+//  std::cout << std::endl << "IN " << __func__ << " args: " << ch_bra << " " << ch_ket << " " << ibra << " " << iket << " " << matel << std::endl;
   if (std::abs(matel)<1e-8) return;
   if (ibra==iket and herm==-1) return;
   int h = (ibra>iket) ? 1 : herm;
@@ -207,6 +210,7 @@ void ThreeBodyMEpn::AddToME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, 
 
 void ThreeBodyMEpn::SetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel)
 {
+//  std::cout << " In " << __func__ << " args: " << ch_bra << " " << ch_ket << " " << ibra << " " << iket << " " << matel << std::endl;
   if (ibra==iket and herm==-1) return;
   int h = (ibra>iket) ? 1 : herm;
   size_t i = std::max(ibra,iket);
@@ -229,6 +233,7 @@ void ThreeBodyMEpn::SetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, si
     throw std::domain_error( oss.str() );
   }
 
+//  std::cout << "    " << __func__ << " putting " << matel * h << "  at index  " << index << std::endl;
 //  matrix_data[index] = matel * h;
   matrix_data.at(index) = matel * h;
 
@@ -241,23 +246,26 @@ void ThreeBodyMEpn::SetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, si
 
 void ThreeBodyMEpn::AddToME_pn_PN(  int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, ThreeBodyMEpn::ME_type me_add )
 {
-//  std::cout << __func__ << " made it this far, and I was passed me_add = " << me_add << std::endl;
+//  std::cout << std::endl << __func__ << " made it this far, and I was passed me_add = " << me_add << std::endl;
   std::vector<double>  recouple_bra, recouple_ket;
   std::vector<size_t>  ibra, iket;
 
   if (a==b and Jab%2>0) return;
   if (d==e and Jde%2>0) return;
 
-//  std::cout << "passed the pauli test" << std::endl;
+//  std::cout << "     passed the pauli test. |bra> is " << a << " " << b << " " << c << "  " << Jab << " " << twoJ << std::endl;
 
+//  std::cout << "  line " << __LINE__ << " find ch_bra " << std::endl;
   size_t ch_bra = GetKetIndex_withRecoupling( Jab, twoJ, a,b,c, ibra, recouple_bra );
+//  std::cout << "  line " << __LINE__ << " find ch_ket " << std::endl;
   size_t ch_ket = GetKetIndex_withRecoupling( Jde, twoJ, d,e,f, iket, recouple_ket );
 
 //  std::cout << "size of ibra,iket =  " << ibra.size() << " " << iket.size() << std::endl;
 //  std::cout << "  for Jab, twoJ a,b,c = " << Jab << " " << twoJ << " " << a << " " << b << " " << c << std::endl;
+//  std::cout << "    ch_bra,ch_ket = " << ch_bra << " " << ch_ket << "   size of ibra,iket = " << ibra.size() << " " << iket.size() << std::endl;
 
   if ( ibra.size()<1 or iket.size()<1) return;
-//  std::cout << "IN " << __func__ << "  ch: " << ch_bra << " " << ch_ket << "   abcdef " << a << " " << b << " " << c << " " << d << " "<< e << " " << f << "    Jab Jde twoJ = " << Jab << " " << Jde << " " << twoJ << std::endl;
+//  std::cout << "IN " << __func__ << " line " << __LINE__ << "  ch: " << ch_bra << " " << ch_ket << "   abcdef " << a << " " << b << " " << c << " " << d << " "<< e << " " << f << "    Jab Jde twoJ = " << Jab << " " << Jde << " " << twoJ << std::endl;
   if ( ch_bra != ch_ket) return ;
 //  ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch_bra);
 
@@ -272,7 +280,7 @@ void ThreeBodyMEpn::AddToME_pn_PN(  int Jab, int Jde, int twoJ, int a, int b, in
   }
 
 
-//  std::cout << "IN " << __func__ << " " << a << " " << b<< " " << c << " " << d << " " << e << " " << f << "  adding " << me_add << std::endl;
+//  std::cout << "IN " << __func__ << " line " << __LINE__ << " " << a << " " << b<< " " << c << " " << d << " " << e << " " << f << "  adding " << me_add << std::endl;
 //  double me_out = 0;
 //  double symmetry_factor = 2;
 //  double symmetry_factor = 1;
@@ -332,6 +340,7 @@ void ThreeBodyMEpn::SetME_pn_PN(  int Jab_in, int Jde_in, int twoJ, int a, int b
 ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f) const
 {
 
+//  std::cout << " IN " << __func__ << "  args: " << Jab << " " << Jde << " " << twoJ << " " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
 //  if (a==6 and b==6 and c==6 and d==6 and e==6 and f==6 and twoJ==5)
 //  {
 //   std::cout << __func__ << " begin" << std::endl;
@@ -563,11 +572,21 @@ void ThreeBodyMEpn::TransformToPN()
 {
   double t_start = omp_get_wtime();
   std::cout << " " << __func__ << "   changing storage from isospin to proton/neutron" << std::endl;
+
+  double X001 = GetME_pn(0,0,1,10,0,0,10,0,0);
+  double X011 = GetME_pn(1,0,1,10,0,0,10,0,0);
+//  double X001 = GetME_pn(0,0,1,0,0,10,0,10,0);
+//  double X011 = GetME_pn(0,1,1,0,0,10,0,10,0);
+//  double X001 = GetME_pn(0,0,1,0,10,0,0,10,0);
+//  double X011 = GetME_pn(0,1,1,0,10,0,0,10,0);
+  std::cout << "BEFORE TRANSFORMING.  X001, X011, 1/sqrt(3) X011 = " << X001 << "   " << X011 << "  " << 1.0/sqrt(3) * X011 << std::endl;
+
+
   Allocate_PN();
 
   size_t nch = modelspace->GetNumberThreeBodyChannels();
 
-  #pragma omp parallel for schedule(dynamic,1)
+//  #pragma omp parallel for schedule(dynamic,1)
   for (size_t ch=0; ch<nch; ch++)
   {
 
@@ -579,9 +598,18 @@ void ThreeBodyMEpn::TransformToPN()
       Ket3& bra = Tbc.GetKet(ibra);
       for (size_t iket=0; iket<=ibra; iket++)
       {
+        if (ibra==iket and herm==-1) continue;
         Ket3& ket = Tbc.GetKet(iket);
         double me_pn = isospin3BME.GetME_pn( bra.Jpq, ket.Jpq,twoJ,  bra.p, bra.q, bra.r, ket.p, ket.q, ket.r );
         SetME_pn_PN_ch( ch, ch, ibra, iket, me_pn);
+        // check that this worked as expected
+        double me_check = GetME_pn_PN(bra.Jpq, ket.Jpq,twoJ,  bra.p, bra.q, bra.r, ket.p, ket.q, ket.r );
+        if (std::abs(me_pn-me_check)>1e-6)
+        {
+          std::cout << __func__ << "  TROUBLE!!!  J1,J2,J = " << bra.Jpq << " " << ket.Jpq << " " << twoJ
+                    << "   ijklmn = " << bra.p << " " << bra.q << " " << bra.r << "   " << ket.p << " " << ket.q << " " << ket.r
+                    << "  isospin-storage ME is " << me_pn << "   now I read " << me_check << std::endl;
+        }
       }
     }
   }
@@ -591,6 +619,15 @@ void ThreeBodyMEpn::TransformToPN()
   PN_mode = true;
 //  std::cout << "After the transformation, here are the 3bmes:" << std::endl;
 //  for (size_t i=0;i<matrix_data.size();i++)  std::cout << i << "  " << matrix_data[i] << std::endl;
+
+  X001 = GetME_pn(0,0,1,10,0,0,10,0,0);
+  X011 = GetME_pn(1,0,1,10,0,0,10,0,0);
+//  X001 = GetME_pn(0,0,1,0,0,10,0,10,0);
+//  X011 = GetME_pn(0,1,1,0,0,10,0,10,0);
+//  X001 = GetME_pn(0,0,1,0,10,0,0,10,0);
+//  X011 = GetME_pn(0,1,1,0,10,0,0,10,0);
+  std::cout << "DONE TRANSFORMING.  X001, X011, 1/sqrt(3) X011 = " << X001 << "   " << X011 << "  " << 1.0/sqrt(3) * X011 << std::endl;
+
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
 }
 
@@ -673,9 +710,9 @@ size_t ThreeBodyMEpn::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a
 //  std::cout << "Call modelspace->GetThreeBodyChannelIndex " << twoJ << " " << parity << " " << twoTz << std::endl;
   int ch = modelspace->GetThreeBodyChannelIndex( twoJ, parity, twoTz );
 
-//  std::cout << "Before staring the loop. ch = " << ch << std::endl;
+//  std::cout << "  " << __func__ << "Before staring the loop. ch = " << ch << std::endl;
   if (ch < 0 ) return ch;
-//  auto Tbc = modelspace->GetThreeBodyChannel(ch);
+  auto Tbc = modelspace->GetThreeBodyChannel(ch);
 //  std::cout << " this points to the channel with " << Tbc.twoJ << " " << Tbc.parity << " " << Tbc.twoTz << std::endl;
 //  std::cout << "  which should be channel " << modelspace->GetThreeBodyChannelIndex( Tbc.twoJ, Tbc.parity, Tbc.twoTz) << std::endl;
 //  std::cout << "    IN " << __func__ << "  recoupling_case = " << recoupling_case << std::endl;
@@ -688,7 +725,7 @@ size_t ThreeBodyMEpn::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a
 //     or ( a_in==b_in and a_in==c_in and oa.j2<3)
      or ( a_in==b_in and (Jab_in > (modelspace->GetOrbit(a_in).j2-1)) )
      or ( a_in==b_in and a_in==c_in and ( twoJ > (3*oa.j2-3)) )
-     or ( twoJ==(oa.j2+ob.j2+oc.j2) and (a==b or b==c) ) )
+     or ( twoJ==(oa.j2+ob.j2+oc.j2) and (a==b or a==c or b==c) ) )
   {
 //    std::cout << "Setting Jab_max to Jab_min-1 because  "
 //              << ( a_in==b_in and (Jab_in%2)>0 ) << " " << ( a_in==b_in and (Jab_in>oa.j2-1) ) << " "
@@ -708,7 +745,7 @@ size_t ThreeBodyMEpn::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a
   // Loop over possible values of Jab with the new ordering of a,b,c and
   // fill a vector of the index of where each of those |a,b,c,Jab> states lives
   // as well as the recouplng coefficient.
-//  std::cout << "Start loop Jab min,max = " << Jab_min << " " << Jab_max << std::endl;
+//  std::cout << "  " << __func__ << "  Start loop Jab min,max = " << Jab_min << " " << Jab_max << std::endl;
 //  std::cout << "================================================================" << std::endl;
   for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
   {
@@ -726,7 +763,15 @@ size_t ThreeBodyMEpn::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a
 //    ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch);
 //    std::cout << " This Tbc has " << Tbc.twoJ << " " << Tbc.parity << " " << Tbc.twoTz << std::endl;
     size_t index = modelspace->GetThreeBodyChannel(ch).GetLocalIndex( a,b,c,Jab );
-//    std::cout << "found index = " << index << std::endl;
+//    std::cout << " " << __func__ << " line " << __LINE__ <<  "  found index = " << index << "  for abcJ = " << a << " " << b << " " << c << " " << Jab << std::endl;
+//    auto Tbc = modelspace->GetThreeBodyChannel(ch);
+//    std::cout << "    channel " << ch << "  ket list:  ";
+//    for ( size_t local_index=0; local_index<Tbc.KetList.size() ; local_index++)
+//    {
+//       auto& ket3 = modelspace->GetKet3( Tbc.KetList[local_index]);
+//       std::cout << "  " << local_index << " -> " << Tbc.KetList[local_index] << " | " << ket3.p << " " << ket3.q << " " << ket3.r << "; " << ket3.Jpq << " > ";
+//    }
+//    std::cout << std::endl;
     if ( index == size_t(-1) ) continue;
 
 //    std::cout << "  computing coefficient" << std::endl;

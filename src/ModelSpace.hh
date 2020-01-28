@@ -324,6 +324,7 @@ class ModelSpace
    bool sixj_has_been_precalculated;
    bool moshinsky_has_been_precalculated;
    bool scalar_transform_first_pass;
+   bool scalar3b_transform_first_pass;
    std::vector<bool> tensor_transform_first_pass;
    bool single_species; // Is there only one kind of fermion?
    IMSRGProfiler profiler;

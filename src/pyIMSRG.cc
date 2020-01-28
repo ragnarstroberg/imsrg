@@ -116,6 +116,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def_readwrite("ZeroBody", &Operator::ZeroBody)
       .def_readwrite("OneBody", &Operator::OneBody)
       .def_readwrite("TwoBody", &Operator::TwoBody)
+      .def_readwrite("ThreeBody", &Operator::ThreeBody)
       .def("GetOneBody", &Operator::GetOneBody)
       .def("SetOneBody", &Operator::SetOneBody)
       .def("GetTwoBody", &Operator::GetTwoBody)
@@ -140,6 +141,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("MakeNormalized", &Operator::MakeNormalized)
       .def("MakeUnNormalized", &Operator::MakeUnNormalized)
       .def("GetParticleRank", &Operator::GetParticleRank)
+      .def("SetParticleRank", &Operator::SetParticleRank)
       .def("GetJRank", &Operator::GetJRank)
       .def("GetTRank", &Operator::GetTRank)
       .def("GetParity", &Operator::GetParity)
@@ -153,7 +155,6 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetOneBodyME", &OpSetOneBodyME)
       .def("GetMP2_Energy", &Operator::GetMP2_Energy)
       .def("GetMP3_Energy", &Operator::GetMP3_Energy)
-      .def_readwrite("ThreeBody", &Operator::ThreeBody)
    ;
 
    py::class_<arma::mat>(m,"ArmaMat")
@@ -386,6 +387,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("TestDaggerCommutatorsAlln",&UnitTest::TestDaggerCommutatorsAlln)
       .def("Test3BodyAntisymmetry",&UnitTest::Test3BodyAntisymmetry)
       .def("Test3BodyHermiticity",&UnitTest::Test3BodyHermiticity)
+      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
    ;
 
 
@@ -438,6 +440,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("TalmiI",imsrg_util::TalmiI);
    m.def("Tcoeff",AngMom::Tcoeff);
    m.def("SetUseGooseTank",Commutator::SetUseGooseTank);
+   m.def("SetUseIMSRG3",Commutator::SetUseIMSRG3);
 
 
 //  return m.ptr();

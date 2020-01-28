@@ -34,6 +34,8 @@ class UnitTest
   void Test3BodyAntisymmetry(Operator& Y);
   void Test3BodyHermiticity(Operator& Y);
 
+  void Test3BodySetGet(Operator& Y);
+
   // test strategy: Fill two random operators, calculate a specific commutator term
   // using the J-coupled expression, and in m-scheme (where the formula is simpler)
   // and make sure that they give the same answer
@@ -48,14 +50,10 @@ class UnitTest
   bool Test_comm110ss( const Operator& X, const Operator& Y );
   bool Test_comm220ss( const Operator& X, const Operator& Y );
   bool Test_comm111ss( const Operator& X, const Operator& Y );
-
   bool Test_comm121ss( const Operator& X, const Operator& Y ); 
   bool Test_comm221ss( const Operator& X, const Operator& Y ); 
-
   bool Test_comm122ss( const Operator& X, const Operator& Y );
-
   bool Test_comm222_pp_hhss( const Operator& X, const Operator& Y );
-
   bool Test_comm222_phss( const Operator& X, const Operator& Y ) ;
 
 
@@ -64,8 +62,16 @@ class UnitTest
   bool Test_comm231ss( const Operator& X, const Operator& Y );
 
   bool Test_comm132ss( const Operator& X, const Operator& Y );
+  bool Test_comm232ss( const Operator& X, const Operator& Y );
+  bool Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ); 
+  bool Test_comm332_pphhss( const Operator& X, const Operator& Y ); // test in progress
 
   bool Test_comm223ss( const Operator& X, const Operator& Y );
+  bool Test_comm133ss( const Operator& X, const Operator& Y );
+
+  bool Test_comm233_pp_hhss( const Operator& X, const Operator& Y ); // test not yet implemented
+  bool Test_comm233_ph_ss( const Operator& X, const Operator& Y ); // test not yet implemented
+  bool Test_comm333_ss( const Operator& X, const Operator& Y ); // test not yet implemented
 
 
   bool Test_comm211sd(        const Operator& X, const Operator& Y   );
@@ -76,13 +82,6 @@ class UnitTest
   bool Test_comm433_pp_hh_sd( const Operator& X, const Operator& Y   );
   bool Test_comm433sd_ph(     const Operator& X, const Operator& Y   );
 
-//  bool Test_comm211sd( const Operator& X, const Operator& Y );
-//  bool Test_comm231sd( const Operator& X, const Operator& Y );
-//  bool Test_comm431sd( const Operator& X, const Operator& Y );
-//  bool Test_comm233sd( const Operator& X, const Operator& Y );
-//  bool Test_comm413sd( const Operator& X, const Operator& Y );
-//  bool Test_comm433_pp_hh_sd( const Operator& X, const Operator& Y );
-//  bool Test_comm433sd_ph( const Operator& X, const Operator& Y );
 
 };
 

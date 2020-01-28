@@ -117,7 +117,7 @@ std::map< std::string, std::vector<std::string> > ModelSpace::ValenceSpaces  {
 ModelSpace::ModelSpace()
 :  Emax(0), E2max(0), E3max(0), Lmax(0), Lmax2(0), Lmax3(0), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(0), norbits(0),
   hbar_omega(20), target_mass(16), sixj_has_been_precalculated(false), moshinsky_has_been_precalculated(false),
-  scalar_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
+  scalar_transform_first_pass(true),scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
 {
    SetUpOrbits();
 //  std::cout << "In default constructor" << std::endl;
@@ -156,7 +156,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    SortedTwoBodyChannels_CC(ms.SortedTwoBodyChannels_CC),
    sixj_has_been_precalculated(ms.sixj_has_been_precalculated),
    moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated),
-   scalar_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(ms.single_species)
+   scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(ms.single_species)
 {
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
@@ -190,7 +190,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    SortedTwoBodyChannels_CC(std::move(ms.SortedTwoBodyChannels_CC)),
    sixj_has_been_precalculated(ms.sixj_has_been_precalculated),
    moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated),
-   scalar_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(ms.single_species)
+   scalar_transform_first_pass(true),scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(ms.single_species)
 {
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
@@ -203,7 +203,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 // Assumes that the core is hole states that aren't in the valence space.
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> valence_list)
 :  Emax(emax), E2max(2*emax), E3max(3*emax), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax),  norbits(0), hbar_omega(20), target_mass(16),
-     moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
+     moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
 {
    SetUpOrbits();
    Init(emax, hole_list, hole_list, valence_list); 
@@ -212,7 +212,7 @@ ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector
 // If we don't want the reference to be the core
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list)
 : Emax(emax), E2max(2*emax), E3max(3*emax), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), norbits(0), hbar_omega(20), target_mass(16),
-     sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), tensor_transform_first_pass(40,true),single_species(false)
+     sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false)
 {
    SetUpOrbits();
    Init(emax, hole_list, core_list, valence_list); 
@@ -221,7 +221,7 @@ ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector
 // Most conventient interface
 ModelSpace::ModelSpace(int emax, std::string reference, std::string valence)
 : Emax(emax), E2max(2*emax), E3max(3*emax), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), hbar_omega(20),
-     sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), tensor_transform_first_pass(40,true),single_species(false)
+     sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false)
 {
   SetUpOrbits();
   Init(emax,reference,valence);
@@ -229,7 +229,7 @@ ModelSpace::ModelSpace(int emax, std::string reference, std::string valence)
 
 ModelSpace::ModelSpace(int emax, std::string valence)
 : Emax(emax), E2max(2*emax), E3max(3*emax), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), hbar_omega(20),
-     sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), tensor_transform_first_pass(40,true),single_species(false)
+     sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true),single_species(false)
 {
   auto itval = ValenceSpaces.find(valence);
   if ( itval != ValenceSpaces.end() ) // we've got a valence space
@@ -1276,6 +1276,7 @@ void ModelSpace::ClearVectors()
 void ModelSpace::ResetFirstPass()
 {
   scalar_transform_first_pass = true;
+  scalar3b_transform_first_pass = true;
   for (size_t i=0;i<tensor_transform_first_pass.size();i++) tensor_transform_first_pass[i] = true;
 }
 

@@ -53,6 +53,11 @@ bool ThreeBodyChannel::CheckChannel_ket( Ket3& ket3)
   if ( (ket3.op->l + ket3.oq->l + ket3.oR->l)%2 != parity ) return false;  // need to match parity
   if ( (ket3.op->tz2 + ket3.oq->tz2 + ket3.oR->tz2) != twoTz ) return false;  // need to match Tz
   if ( std::abs( 2*ket3.Jpq - ket3.oR->j2)>twoJ or (2*ket3.Jpq+ket3.oR->j2)<twoJ ) return false; // triangle condition
+// TODO Put these back in. This is only for testing...
+  if ( twoJ == (ket3.op->j2 + ket3.oq->j2 + ket3.oR->j2) )
+  {
+    if ( ket3.p==ket3.q   or  ket3.p==ket3.r  or ket3.q==ket3.r ) return false;
+  }
   if ( twoJ==(ket3.op->j2+ket3.oq->j2+ket3.oR->j2)  and (ket3.p==ket3.q or ket3.q==ket3.r) ) return false; // fully stretched state can't have p==q
   if ( (ket3.p==ket3.q) and std::abs(twoJ-ket3.oR->j2)==2*ket3.op->j2 ) return false; // fully stretched state can't have p==q
   if ( (ket3.q==ket3.r) and std::abs(twoJ-ket3.op->j2)==2*ket3.oq->j2 ) return false; // fully stretched state can't have p==q

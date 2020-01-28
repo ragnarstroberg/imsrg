@@ -407,6 +407,7 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
 //             if (d==e and (tde+Jde)%2==0 ) continue; // added recently. test.  this breaks things
              double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
              if (std::abs(Ct_abc*Ct_def)<1e-8) continue;
+             if (herm==-1 and a==d and b==e and c==f and Jab==Jde and tab==tde) continue; // TODO: check this is ok
 
              int Tindex = 2*tab + tde + (T2-1)/2;
 
