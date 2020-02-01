@@ -302,9 +302,9 @@ void Generator::ConstructGenerator_Atan()
 
 
     // Three body piece
-    int E3cut = 9;
+//    int E3cut = 99;
     double t_start = omp_get_wtime();
-    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << "   Norms: " << Eta->ThreeBodyNorm() << "  " << H->ThreeBodyNorm()  << std::endl;
+//    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << "   Norms: " << Eta->ThreeBodyNorm() << "  " << H->ThreeBodyNorm()  << std::endl;
     if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
     {
 
@@ -542,7 +542,7 @@ void Generator::ConstructGenerator_ShellModel_Atan()
          auto& ket = tbc.GetKet(iket);
          for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
          {
-//            if ( bra.p == ket.p or bra.p==ket.q or bra.q==ket.p or bra.q==ket.q) continue;
+            auto& bra = tbc.GetKet(ibra);
             double denominator = Get2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator) ;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
@@ -564,7 +564,7 @@ void Generator::ConstructGenerator_ShellModel_Atan()
 void Generator::ConstructGenerator_ShellModel_Atan_3body()
 {
     // Three body piece
-    int E3cut = 99;
+//    int E3cut = 99;
     double t_start = omp_get_wtime();
 
      std::cout << "looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
@@ -612,8 +612,8 @@ void Generator::ConstructGenerator_ShellModel_Atan_3body()
               and  (std::find( modelspace->valence.begin(), modelspace->valence.end(), k) != modelspace->valence.end()) // k is valence
               ) continue;
 
-
             Orbit& ok = modelspace->GetOrbit(k);
+
 //            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > 2*E3cut ) continue;
             if ( (oa.l+ob.l+oc.l+oi.l+oj.l+ok.l)%2>0 ) continue;
             if ( (oa.tz2+ob.tz2+oc.tz2) != (oi.tz2+oj.tz2+ok.tz2) ) continue;

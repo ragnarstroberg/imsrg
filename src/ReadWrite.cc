@@ -778,9 +778,9 @@ void ReadWrite::Read_Darmstadt_3body( std::string filename, Operator& Hbare, int
     Read_Darmstadt_3body_from_stream(infile, Hbare,  E1max, E2max, E3max);
   }
 
-  double X001 = Hbare.ThreeBody.GetME_pn(0,0,1,0,0,10,0,10,0);
-  double X011 = Hbare.ThreeBody.GetME_pn(0,1,1,0,0,10,0,10,0);
-  std::cout << "DONE READING.  X001, X011, 1/sqrt(3) X011 = " << X001 << "   " << X011 << "  " << 1.0/sqrt(3) * X011 << std::endl;
+//  double X001 = Hbare.ThreeBody.GetME_pn(0,0,1,0,0,10,0,10,0);
+//  double X011 = Hbare.ThreeBody.GetME_pn(0,1,1,0,0,10,0,10,0);
+//  std::cout << "DONE READING.  X001, X011, 1/sqrt(3) X011 = " << X001 << "   " << X011 << "  " << 1.0/sqrt(3) * X011 << std::endl;
 
   Hbare.profiler.timer["Read_3body_file"] += omp_get_wtime() - start_time;
 }

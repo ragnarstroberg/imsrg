@@ -85,6 +85,7 @@ namespace Commutator{
                                         Orbit& ol, Orbit& om, int Jlm, Orbit& on,
                                         Orbit& oa, Orbit& ob, int Jab, Orbit& oc, int twoJ, const Operator& X, const Operator& Y );
 
+  void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
 
   Operator GooseTankUpdate( const Operator& Omega, const Operator& Nested);
 

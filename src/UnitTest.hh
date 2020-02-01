@@ -69,9 +69,10 @@ class UnitTest
   bool Test_comm223ss( const Operator& X, const Operator& Y );
   bool Test_comm133ss( const Operator& X, const Operator& Y );
 
-  bool Test_comm233_pp_hhss( const Operator& X, const Operator& Y ); // test not yet implemented
-  bool Test_comm233_ph_ss( const Operator& X, const Operator& Y ); // test not yet implemented
-  bool Test_comm333_ss( const Operator& X, const Operator& Y ); // test not yet implemented
+  bool Test_comm233_pp_hhss( const Operator& X, const Operator& Y );    
+  bool Test_comm233_ph_ss( const Operator& X, const Operator& Y );      
+  bool Test_comm333_ppp_hhh_ss( const Operator& X, const Operator& Y );  
+  bool Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y );  
 
 
   bool Test_comm211sd(        const Operator& X, const Operator& Y   );

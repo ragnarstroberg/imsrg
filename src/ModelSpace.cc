@@ -202,7 +202,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 // orbit std::string representation is e.g. p0f7
 // Assumes that the core is hole states that aren't in the valence space.
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> valence_list)
-:  Emax(emax), E2max(2*emax), E3max(3*emax), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax),  norbits(0), hbar_omega(20), target_mass(16),
+:  Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax),  norbits(0), hbar_omega(20), target_mass(16),
      moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
 {
    SetUpOrbits();
@@ -211,7 +211,7 @@ ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector
 
 // If we don't want the reference to be the core
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list)
-: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), norbits(0), hbar_omega(20), target_mass(16),
+: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), norbits(0), hbar_omega(20), target_mass(16),
      sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false)
 {
    SetUpOrbits();
@@ -220,7 +220,7 @@ ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector
 
 // Most conventient interface
 ModelSpace::ModelSpace(int emax, std::string reference, std::string valence)
-: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), hbar_omega(20),
+: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), hbar_omega(20),
      sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false)
 {
   SetUpOrbits();
@@ -228,7 +228,7 @@ ModelSpace::ModelSpace(int emax, std::string reference, std::string valence)
 }
 
 ModelSpace::ModelSpace(int emax, std::string valence)
-: Emax(emax), E2max(2*emax), E3max(3*emax), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), hbar_omega(20),
+: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), hbar_omega(20),
      sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true),single_species(false)
 {
   auto itval = ValenceSpaces.find(valence);
@@ -1075,12 +1075,22 @@ void ModelSpace::SetupKets()
 }
 
 
+void ModelSpace::SetE3max(int e3)
+{
+  E3max = e3;
+  Setup3bKets();
+}
 
 /// We keep things relatively simple (?) for now.
 /// Just make a vector of all the possible 3b kets
 void ModelSpace::Setup3bKets()
 {
-  Kets3.resize(0);
+//  Kets3.resize(0);
+  Kets3.clear();
+  Ket3IndexLookup.clear(); 
+  ThreeBodyChannels.clear();
+  ThreeBodyChannelLookup.clear();
+
   // I'm using a set here because it only stores unique
   // elements, so we don't need to worry about that
   // in the loop.
