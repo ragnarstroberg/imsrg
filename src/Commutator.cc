@@ -2296,8 +2296,8 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
             int b = ket_ab.q;
             int na = ket_ab.op->occ;
             int nb = ket_ab.oq->occ;
-            double ja = 0.5*ket_ab.op->j2;
-            double jb = 0.5*ket_ab.oq->j2;
+//            double ja = 0.5*ket_ab.op->j2;
+//            double jb = 0.5*ket_ab.oq->j2;
 //            if (na*nb<1e-6) continue;
             for (int ch_cd=0; ch_cd<nch; ch_cd++)
             {
@@ -2311,8 +2311,8 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                 int d = ket_cd.q;
                 int nc = ket_cd.op->occ;
                 int nd = ket_cd.oq->occ;
-                double jc = 0.5*ket_cd.op->j2;
-                double jd = 0.5*ket_cd.oq->j2;
+//                double jc = 0.5*ket_cd.op->j2;
+//                double jd = 0.5*ket_cd.oq->j2;
                 double occupation_factor = (1-na)*(1-nb)*nc*nd - na*nb*(1-nc)*(1-nd);
                 if (std::abs(occupation_factor)<1e-6) continue;
 
@@ -2513,11 +2513,11 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 //  l|  m|  n|     Z_{ijklmn}^{J1,J2,J}  = Z1 + Z2 + Z3 + Z4 + Z5 + Z6 + Z7 + Z8 + Z9
 //                 where each of those terms corresponds to a permutation from the uncoupled expression
 //
-//  checked with UnitTest, and it looks good. (At least, the other version was).
+//  checked with UnitTest, and it looks good. 
 //
 void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 {
-  int e3maxcut = 999;
+//  int e3maxcut = 999;
   int norbs = Z.modelspace->GetNumberOrbits();
   auto& Z3 = Z.ThreeBody;
   auto& X2 = X.TwoBody;
@@ -2867,7 +2867,6 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
              double sixj = Z.modelspace->GetSixJ(ji,jj,J1,jk,Jtot,Jab);
              if (std::abs(sixj)>1e-6) 
              {
-              double dz = 0;
               double hats = sqrt( (2*J1+1)*(2*Jab+1));
               for (size_t iket_ab=0; iket_ab<nkets_ab; iket_ab++)
               {
@@ -3430,10 +3429,10 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
     size_t nkets3 = Tbc.GetNumberKets();
     for (size_t ibra=0; ibra<nkets3; ibra++)
     {
-      auto& bra = Tbc.GetKet(ibra);
+//      auto& bra = Tbc.GetKet(ibra);
       for (size_t iket=ibra; iket<nkets3; iket++)
       {
-        auto& ket = Tbc.GetKet(iket);
+//        auto& ket = Tbc.GetKet(iket);
 
         double z_ijklmn = 0;
         for (size_t iket_abc=0; iket_abc<nkets3; iket_abc++)
@@ -3528,6 +3527,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
         for (size_t ch2=0; ch2<nch2; ch2++)
         {
           auto& tbc_ab = Z.modelspace->GetTwoBodyChannel(ch2);
+          if ( std::abs(Tbc.twoTz-2*tbc_ab.Tz)==5) continue; // TODO there are probably other checks at the channel level...
           size_t nkets_ab = tbc_ab.GetNumberKets();
           int Jab = tbc_ab.J;
 
@@ -3883,7 +3883,6 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   }// for twoJx
                 }// for J2p
               }// Z9 block
-
 
 
 
