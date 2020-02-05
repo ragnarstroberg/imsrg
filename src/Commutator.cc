@@ -1679,20 +1679,14 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
 //   
 void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
 {
-  std::cout << "start comm330" << std::endl;
   int E3cut = 999;
   double z0 = 0;
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
-  std::cout << "Norm X3 " << X3.Norm() << "  Norm Y3 " << Y3.Norm() << std::endl;
   if (X3.Norm()<1e-6 or Y3.Norm()<1e-6 ) return;
   std::vector<index_t> holevec( Z.modelspace->holes.begin(), Z.modelspace->holes.end());
-//  #pragma omp parallel for schedule(dynamic,1) reduction(+ : z0)
-//  for ( size_t indxa=0; indxa<Z.modelspace->holes.size(); indxa++ )
   for ( auto a : Z.modelspace->holes )
   {
-//   auto a = Z.modelspace->holes[indxa];
-//   auto a = holevec[indxa];
    Orbit& oa = Z.modelspace->GetOrbit(a);
    for( auto b : Z.modelspace->holes )
    {
@@ -1717,8 +1711,6 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2>0 ) continue;
         if ( (oa.tz2+ob.tz2+oc.tz2) != (od.tz2+oe.tz2+of.tz2) ) continue;
         if ( ( 2*(od.n+oe.n+of.n)+od.l+oe.l+of.l) > E3cut ) continue;
-
-//        double dz = 0;
 
         for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
         {
@@ -1773,7 +1765,6 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
     for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
       if (j>i) continue;
-      // TODO: At some point, use the hermiticity of Z and only do j<i. Done
       double zij=0;
       for (auto a : Z.modelspace->holes ) // TODO: We can probably speed this up by looping over 2-body channels
       {
@@ -1787,12 +1778,10 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
           int Jab_max = ( oa.j2+ob.j2)/2;
           for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
           {
-//            for (auto c : Z.modelspace->particles)
             for (auto c : Z.modelspace->all_orbits)
             {
               Orbit& oc = Z.modelspace->GetOrbit(c);
               if ((1-oc.occ)<1e-6) continue;
-//              for (auto d : Z.modelspace->particles)
               for (auto d : Z.modelspace->all_orbits)
               {
                 Orbit& od = Z.modelspace->GetOrbit(d);
@@ -1801,7 +1790,6 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
                 int Jcd_max = ( oc.j2+od.j2)/2;
                 for (int Jcd=Jcd_min; Jcd<=Jcd_max; Jcd++)
                 {
-//                  for (auto e : Z.modelspace->particles)
                   for (auto e : Z.modelspace->all_orbits)
                   {
                     Orbit& oe = Z.modelspace->GetOrbit(e);
@@ -1811,9 +1799,8 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
                     for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
                     {
                       double prefactor = 0.25 * (twoJ+1)/(oi.j2+1) * oa.occ*ob.occ*(1-oc.occ)*(1-od.occ)*(1-oe.occ);
-                      zij += prefactor * ( X3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * Y3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j)  
-                                         - Y3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * X3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j)  );
-//                      zij -= prefactor * Y3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * X3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j);
+                      zij += prefactor * (  X3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * Y3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j)  
+                                          - Y3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * X3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j)  );
                     }
                   }
                 }// for Jcd
@@ -1845,7 +1832,6 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
 {
-//  std::cout << "ENTER " << __func__ << std::endl;
   auto& X2 = X.TwoBody;
   auto& X3 = X.ThreeBody;
   auto& Y2 = Y.TwoBody;
@@ -1885,7 +1871,6 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
             double prefactor = na*nb*(1-nc)*(1-nd);
             if (a==b) prefactor /= 2;
             if (c==d) prefactor /= 2;
-//            double occfactor = (bra.op->occ)*(bra.oq->occ)*(1-ket.op->occ)*(1-ket.oq->occ);
             int twoJ_min = std::abs( 2*J - oi.j2);
             int twoJ_max = 2*J + oi.j2;
             for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
@@ -1917,7 +1902,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
 // k|  l|                                          
 //                           
 //                              
-//                 NB when we call Symmetrize, we copy the upper triangle <ibra|iket> with ibra<=iket onto the lower triangle.
+//                 When we call Symmetrize, we copy the upper triangle <ibra|iket> with ibra<=iket onto the lower triangle.
 //                 Of course, calling AddToTBME updates both according to the symmetry, so we don't need to worry so much... 
 //
 //  Verfied with UnitTest
@@ -1942,7 +1927,6 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
       Ket& bra = tbc.GetKet(ibra);
       int i = bra.p;
       int j = bra.q;
-//      for (int iket=0;iket<=ibra;iket++ ) // |kl> states
       for (int iket=ibra;iket<nkets;iket++ ) // |kl> states
       {
         Ket& ket = tbc.GetKet(iket);
@@ -1956,67 +1940,24 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
           {
             Orbit& ob = Z.modelspace->GetOrbit(b);
             double occfactor = oa.occ - ob.occ;
-//             if (not ( (a==0 and b==10) or (a==10 and b==0)) ) continue;
-//             if ( ( (a==0 and b==10) or (a==10 and b==0)) ) continue;
             if (std::abs(occfactor)<1e-6) continue;
             int twoJ_min = std::abs( oa.j2 - 2*J );
             int twoJ_max = oa.j2 + 2*J;
-//            std::cout << " ijkl = " << i << " " << j << " " << k << " " << l << std::endl;
             for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
             {
-//              zijkl += occfactor * (twoJ+1.)/(2*J+1) * ( X1(a,b) * Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) - Y1(a,b) * X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) );
-//              zijkl += occfactor * (twoJ+1.)/(2*J+1) * ( X1(a,b) * Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a)  );
               double xijbkla = X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
               double yijbkla = Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
 
               zijkl += occfactor * (twoJ+1.)/(2*J+1) * ( 1*X1(a,b) * yijbkla -  1*Y1(a,b) * xijbkla );
-//              zijkl += occfactor * (twoJ+1.)/(2*J+1) * ( 0*X1(a,b) * Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) -  1*Y1(a,b) * X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) );
 
-//              zijkl += occfactor * (twoJ+1.)/(2*J+1) * (  - Y1(a,b) * X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) );
-//              if ( i==0 and j==0 and k==0 and l==10 )
-//              {
-//
-//                std::vector<double> recouple_bra;
-//                std::vector<double> recouple_ket;
-//                std::vector<size_t> ibra_list;
-//                std::vector<size_t> iket_list;
-//                size_t ch_bra = Y.ThreeBody.GetKetIndex_withRecoupling( J, twoJ, i,j,b, ibra_list, recouple_bra );
-//                size_t ch_ket = Y.ThreeBody.GetKetIndex_withRecoupling( J, twoJ, k,l,a, iket_list, recouple_ket );
-//                std::cout << "ijkl " << i << " " << j << " " << k << " " << l << std::endl;
-//                std::cout << __func__ << " a,b, = " << a << " " << b << "  Jij = " << J << "  twoJ = " << twoJ
-//                          << "  occfactor = " << occfactor 
-//                          << " Xab = " << X1(a,b) << "  Yijbkla = " << yijbkla 
-//                          << " Yab = " << Y1(a,b) << "  Xijbkla = " << xijbkla 
-////                          << " Xab = " << X1(a,b) << "  Yijbkla = " << Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a)
-////                          << " Yab = " << Y1(a,b) << "  Xijbkla = " << X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a)
-//                          << "   zijkl = " << zijkl << std::endl;
-//                std::cout << "  ch_bra, ch_ket = " << ch_bra << " " << ch_ket << "   ibra_list: ";
-//                for (auto ib : ibra_list ) std::cout << ib << " ";
-//                std::cout << "   iket_list: ";
-//                for (auto ib : iket_list ) std::cout << ib << " ";
-//                std::cout << "  recouple_bra : ";
-//                for (auto ib : recouple_bra ) std::cout << ib << " ";
-//                std::cout << "  recouple_ket : ";
-//                for (auto ib : recouple_ket ) std::cout << ib << " ";
-//                std::cout << "   bras are : ";
-//                for (auto ib : ibra_list )
-//                {
-//                  auto& Thbc = Z.modelspace->GetThreeBodyChannel(ch_bra);
-//                  auto& bra3 = Thbc.GetKet(ib);
-//                  std::cout << "  |" << bra3.p << " " << bra3.q << " " << bra3.r << " ; " << bra3.Jpq << " >  ";
-//                } 
-//                std::cout << std::endl;
-//              }
             }
           }
         }
         // normalize the tbme
         zijkl /= sqrt((1.+bra.delta_pq())*(1.+ket.delta_pq()));
-//        Z2.AddToTBME(ch, ch, bra, ket, zijkl );
         Z2.AddToTBME(ch, ch, ibra, iket, zijkl );
       }
     }
-//    std::cout << "Z2 is " << std::endl << Z2.MatEl.at({ch,ch}) << std::endl;
   }
 
 }
@@ -2059,7 +2000,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   for (int ch=0; ch<nch; ch++)
   {
-//    std::cout << " ch = " << ch << " thread = " << omp_thread_num() << std::endl;
     auto& tbc = Z.modelspace->GetTwoBodyChannel(ch);
     int J = tbc.J;
     int nkets = tbc.GetNumberKets();
@@ -2460,8 +2400,6 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 {
-//  std::cout << "start comm133" << std::endl;
-//  int E3cut = 7;
   double normY = Y.ThreeBodyNorm();
   int e3maxcut = 96;
   auto& X3 = X.ThreeBody;
@@ -2579,15 +2517,11 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 {
-//  int emin = 0;
-//  int emax = 4;
   int e3maxcut = 999;
   int norbs = Z.modelspace->GetNumberOrbits();
   auto& Z3 = Z.ThreeBody;
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
-//  double running_z_sum = 0;
-//  std::cout << "Begin the loop. Norm of X2 and Y2 " << X2.Norm() << " " << Y2.Norm() << std::endl;
   if ( (std::abs( X2.Norm() * Y2.Norm() ) < 1e-6 ) and not Z.modelspace->scalar3b_transform_first_pass) return;
 
   // we loop over i, j<=i, k<=j    l<=i, m<=l, n<=m, and Jij, Jmn free unless  ijk == lmn, then we take Jmn <= Jij.
@@ -2839,300 +2773,6 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
 
 
-/*
-void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
-{
-//  int emin = 0;
-//  int emax = 4;
-  int e3maxcut = 999;
-  int norbs = Z.modelspace->GetNumberOrbits();
-  auto& Z3 = Z.ThreeBody;
-  auto& X2 = X.TwoBody;
-  auto& Y2 = Y.TwoBody;
-//  double running_z_sum = 0;
-//  std::cout << "Begin the loop. Norm of X2 and Y2 " << X2.Norm() << " " << Y2.Norm() << std::endl;
-  if ( (std::abs( X2.Norm() * Y2.Norm() ) < 1e-6 ) and not Z.modelspace->scalar3b_transform_first_pass) return;
-
-  // we loop over i, j<=i, k<=j    l<=i, m<=l, n<=m, and Jij, Jmn free unless  ijk == lmn, then we take Jmn <= Jij.
-
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
-  for (int i=0;i<norbs; i++)
-  {
-   Orbit& oi = Z.modelspace->GetOrbit(i);
-   for (int j=0; j<=i; j++)
-   {
-    Orbit& oj = Z.modelspace->GetOrbit(j);
-    int J1_min = std::abs(oi.j2-oj.j2)/2;
-    int J1_max = (oi.j2+oj.j2)/2;
-    for (int k=0; k<=j; k++)
-    {
-     Orbit& ok = Z.modelspace->GetOrbit(k);
-     if (  2*( oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l >e3maxcut ) continue;
-     for (int l=0; l<=i; l++)
-     {
-      Orbit& ol = Z.modelspace->GetOrbit(l);
-      for (int m=0; m<=l; m++)
-      {
-       if (l==i and m>j) continue;
-       Orbit& om = Z.modelspace->GetOrbit(m);
-       int J2_min=std::abs(ol.j2-om.j2)/2;
-       int J2_max=(ol.j2+om.j2)/2;
-       for (int n=0; n<=m; n++)
-       {
-        if (l==i and m==j and n>k) continue;
-        Orbit& on = Z.modelspace->GetOrbit(n);
-
-        // check isospin and parity
-        if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2>0 ) continue;
-        if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
-        if (  2*( ol.n+om.n+on.n)+ol.l+om.l+on.l >e3maxcut ) continue;
-        for (int J1=J1_min; J1<=J1_max; J1++)
-        {
-         if (i==j and J1%2>0) continue;
-         for (int J2=J2_min; J2<=J2_max; J2++)
-         {
-          if (l==m and J2%2>0) continue;
-          if (i==l and j==m and k==n and J2>J1) continue; // We don't want to add to the same matrix element twice.
-
-          int twoJmin = std::max( std::abs( ok.j2-J1*2), std::abs( on.j2-J2*2) );
-          int twoJmax = std::min( ok.j2+J1*2 , on.j2+J2*2 );
-          for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
-          {
-           // We should probably check that this channel can even exist...
-           double zijklmn = 0;
-
-            for (int a=0; a<norbs; a++) // TODO: this can maybe be made more efficient by first looping through ja and computing the 6js?
-            {
-             Orbit& oa = Z.modelspace->GetOrbit(a);
-             double ji = 0.5*oi.j2;
-             double jj = 0.5*oj.j2;
-             double jk = 0.5*ok.j2;
-             double jl = 0.5*ol.j2;
-             double jm = 0.5*om.j2;
-             double jn = 0.5*on.j2;
-             double ja = 0.5*oa.j2;
-             double Jtot = 0.5*twoJ;
-
-             int Jx_min,Jx_max,Jy_min,Jy_max;
-
-             //Z1
-             {
-               Jx_min = std::max(std::abs(oa.j2-ok.j2), std::abs(om.j2-on.j2) )/2;
-               Jx_max = std::min((oa.j2+ok.j2), (om.j2+on.j2) )/2;
-               double phase = -Z.modelspace->phase( (om.j2-on.j2-oa.j2-ok.j2)/2);
-               double xijla = X2.GetTBME_J(J1,i,j,l,a);
-               double yijla = Y2.GetTBME_J(J1,i,j,l,a);
-               for ( int Jx=Jx_min; Jx<=Jx_max; Jx++) // TODO: some stuff can be pulled out of the Jx loop
-               {
-                 double hats  =  (2*Jx+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-                 double sixj1 = Z.modelspace->GetSixJ(jl,jm,J2, jn,Jtot,Jx);
-                 double sixj2 = Z.modelspace->GetSixJ(jl,ja,J1, jk,Jtot,Jx);
-                 double xakmn = X2.GetTBME_J(Jx,a,k,m,n);
-                 double yakmn = Y2.GetTBME_J(Jx,a,k,m,n);
-                 zijklmn += hats * phase * sixj1*sixj2 * (xijla*yakmn-yijla*xakmn);
-               }
-             }
-
-
-             //Z2
-             {
-               Jx_min = std::max(std::abs(oa.j2-ol.j2), std::abs(ok.j2-oj.j2) )/2;
-               Jx_max = std::min((oa.j2+ol.j2), (ok.j2+oj.j2) )/2;
-               Jy_min = std::max(std::abs(oa.j2-oi.j2), std::abs(om.j2-on.j2) )/2;
-               Jy_max = std::min((oa.j2+oi.j2), (om.j2+on.j2) )/2;
-               double phase = Z.modelspace->phase( (om.j2+on.j2-oa.j2-oi.j2)/2);
-               for ( int Jx=Jx_min; Jx<=Jx_max; Jx++)
-               {
-                 double sixj1 = Z.modelspace->GetSixJ(ji,jj,J1, jk,Jtot,Jx);
-                 double xkjla = X2.GetTBME_J(Jx,k,j,l,a);
-                 double ykjla = Y2.GetTBME_J(Jx,k,j,l,a);
-                for ( int Jy=Jy_min; Jy<=Jy_max; Jy++)
-                {
-                 double hats  =  (2*Jx+1) * (2*Jy+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-                 double sixj2 = Z.modelspace->GetSixJ(jl,jm,J2, jn,Jtot,Jy);
-                 double sixj3 = Z.modelspace->GetSixJ(ji,ja,Jy, jl,Jtot,Jx);
-                 double xaimn = X2.GetTBME_J(Jy,a,i,m,n);
-                 double yaimn = Y2.GetTBME_J(Jy,a,i,m,n);
-                 zijklmn += hats * phase * sixj1*sixj2*sixj3 * (xkjla*yaimn -ykjla*xaimn);
-
-                }
-               }
-             }
-
-
-             //Z3
-             {
-               Jx_min = std::max(std::abs(oa.j2-ol.j2), std::abs(oi.j2-ok.j2) )/2;
-               Jx_max = std::min((oa.j2+ol.j2), (oi.j2+ok.j2) )/2;
-               Jy_min = std::max(std::abs(oa.j2-oj.j2), std::abs(om.j2-on.j2) )/2;
-               Jy_max = std::min((oa.j2+oj.j2), (om.j2+on.j2) )/2;
-               for ( int Jx=Jx_min; Jx<=Jx_max; Jx++)
-               {
-                 double phase =-Z.modelspace->phase( (ok.j2+om.j2+on.j2-oa.j2)/2-J1-Jx);
-                 double sixj1 = Z.modelspace->GetSixJ(jj,ji,J1, jk,Jtot,Jx);
-                 double xikla = X2.GetTBME_J(Jx,i,k,l,a);
-                 double yikla = Y2.GetTBME_J(Jx,i,k,l,a);
-                for ( int Jy=Jy_min; Jy<=Jy_max; Jy++)
-                {
-                 double hats  = (2*Jx+1) * (2*Jy+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-//                 double phase =-Z.modelspace->phase( (ok.j2+om.j2+on.j2-oa.j2)/2-J1-Jx);
-//                 double sixj1 = Z.modelspace->GetSixJ(jj,ji,J1, jk,Jtot,Jx);
-                 double sixj2 = Z.modelspace->GetSixJ(jl,jm,J2, jn,Jtot,Jy);
-                 double sixj3 = Z.modelspace->GetSixJ(jj,ja,Jy, jl,Jtot,Jx);
-//                 double xikla = X2.GetTBME_J(Jx,i,k,l,a);
-//                 double yikla = Y2.GetTBME_J(Jx,i,k,l,a);
-                 double xajmn = X2.GetTBME_J(Jy,a,j,m,n);
-                 double yajmn = Y2.GetTBME_J(Jy,a,j,m,n);
-                 zijklmn += hats * phase * sixj1*sixj2*sixj3 * (xikla*yajmn-yikla*xajmn);
-                }
-               }
-             }
-
-             //Z4
-             {
-               Jx_min = std::max(std::abs(oa.j2-ok.j2), std::abs(ol.j2-on.j2) )/2;
-               Jx_max = std::min((oa.j2+ok.j2), (ol.j2+on.j2) )/2;
-                 double phase = -Z.modelspace->phase( (om.j2-on.j2-oa.j2-ok.j2)/2-J2);
-                 double xijma = X2.GetTBME_J(J1,i,j,m,a);
-                 double yijma = Y2.GetTBME_J(J1,i,j,m,a);
-               for ( int Jx=Jx_min; Jx<=Jx_max; Jx++) // TODO: some stuff can be pulled out of the Jx loop
-               {
-                 double hats  =  (2*Jx+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-//                 double phase = -Z.modelspace->phase( (om.j2-on.j2-oa.j2-ok.j2)/2-J2);
-                 double sixj1 = Z.modelspace->GetSixJ(jm,jl,J2, jn,Jtot,Jx);
-                 double sixj2 = Z.modelspace->GetSixJ(jm,ja,J1, jk,Jtot,Jx);
-//                 double xijma = X2.GetTBME_J(J1,i,j,m,a);
-//                 double yijma = Y2.GetTBME_J(J1,i,j,m,a);
-                 double xakln = X2.GetTBME_J(Jx,a,k,l,n);
-                 double yakln = Y2.GetTBME_J(Jx,a,k,l,n);
-                 zijklmn += hats * phase * sixj1*sixj2 * (xijma*yakln-yijma*xakln);
-               }
-             }
-
-             //Z5
-             {
-               double hats  =  sqrt( (2*J1+1.)*(2*J2+1.) );
-               double phase =  Z.modelspace->phase( (oa.j2+ok.j2+ol.j2+om.j2)/2);
-               double sixj1 = Z.modelspace->GetSixJ(jn,ja,J1, jk,Jtot,J2);
-               double xijna = X2.GetTBME_J(J1,i,j,n,a);
-               double yijna = Y2.GetTBME_J(J1,i,j,n,a);
-               double xakml = X2.GetTBME_J(J2,a,k,m,l);
-               double yakml = Y2.GetTBME_J(J2,a,k,m,l);
-               zijklmn += hats * phase * sixj1 * (xijna*yakml-yijna*xakml);
-             }
-
-             //Z6
-             {
-               Jx_min = std::max(std::abs(oa.j2-om.j2), std::abs(oj.j2-ok.j2) )/2;
-               Jx_max = std::min((oa.j2+om.j2), (oj.j2+ok.j2) )/2;
-               Jy_min = std::max(std::abs(oa.j2-oi.j2), std::abs(ol.j2-on.j2) )/2;
-               Jy_max = std::min((oa.j2+oi.j2), (ol.j2+on.j2) )/2;
-                 double phase =-Z.modelspace->phase( (on.j2-om.j2-oi.j2-oa.j2)/2-J2);
-               for ( int Jx=Jx_min; Jx<=Jx_max; Jx++)
-               {
-                 double sixj1 = Z.modelspace->GetSixJ(ji,jj,J1, jk,Jtot,Jx);
-                 double xkjma = X2.GetTBME_J(Jx,k,j,m,a);
-                 double ykjma = Y2.GetTBME_J(Jx,k,j,m,a);
-                for ( int Jy=Jy_min; Jy<=Jy_max; Jy++)
-                {
-                 double hats  =  (2*Jx+1) * (2*Jy+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-//                 double phase =-Z.modelspace->phase( (on.j2-om.j2-oi.j2-oa.j2)/2-J2);
-//                 double sixj1 = Z.modelspace->GetSixJ(ji,jj,J1, jk,Jtot,Jx);
-                 double sixj2 = Z.modelspace->GetSixJ(jm,jl,J2, jn,Jtot,Jy);
-                 double sixj3 = Z.modelspace->GetSixJ(ji,ja,Jy, jm,Jtot,Jx);
-//                 double xkjma = X2.GetTBME_J(Jx,k,j,m,a);
-//                 double ykjma = Y2.GetTBME_J(Jx,k,j,m,a);
-                 double xailn = X2.GetTBME_J(Jy,a,i,l,n);
-                 double yailn = Y2.GetTBME_J(Jy,a,i,l,n);
-                 zijklmn += hats * phase * sixj1*sixj2*sixj3 * (xkjma*yailn-ykjma*xailn);
-                }
-               }
-             }
-
-
-             //Z7
-             {
-               Jx_min = std::max(std::abs(ok.j2-oj.j2), std::abs(oa.j2-on.j2) )/2;
-               Jx_max = std::min((ok.j2+oj.j2), (oa.j2+on.j2) )/2;
-                 double phase = Z.modelspace->phase( (ol.j2+om.j2+oi.j2+oa.j2)/2);
-                 double xaiml = X2.GetTBME_J(J2,a,i,m,l);
-                 double yaiml = Y2.GetTBME_J(J2,a,i,m,l);
-               for ( int Jx=Jx_min; Jx<=Jx_max; Jx++) // TODO: some stuff can be pulled out of the Jx loop
-               {
-                 double hats  =  (2*Jx+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-                 double sixj1 = Z.modelspace->GetSixJ(ji,jj,J1, jk,Jtot,Jx);
-                 double sixj2 = Z.modelspace->GetSixJ(ji,ja,J2, jn,Jtot,Jx);
-                 double xkjna = X2.GetTBME_J(Jx,k,j,n,a);
-                 double ykjna = Y2.GetTBME_J(Jx,k,j,n,a);
-                 zijklmn += hats * phase * sixj1*sixj2 * (xkjna*yaiml-ykjna*xaiml);
-               }
-             }
-
-
-
-             //Z8
-             {
-               Jx_min = std::max(std::abs(oa.j2-om.j2), std::abs(oi.j2-ok.j2) )/2;
-               Jx_max = std::min((oa.j2+om.j2), (oi.j2+ok.j2) )/2;
-               Jy_min = std::max(std::abs(oa.j2-oj.j2), std::abs(ol.j2-on.j2) )/2;
-               Jy_max = std::min((oa.j2+oj.j2), (ol.j2+on.j2) )/2;
-               for ( int Jx=Jx_min; Jx<=Jx_max; Jx++)
-               {
-                 double phase =-Z.modelspace->phase( (ok.j2+om.j2+on.j2-oa.j2)/2-J1-J2-Jx);
-                 double sixj1 = Z.modelspace->GetSixJ(jj,ji,J1, jk,Jtot,Jx);
-                 double xikma = X2.GetTBME_J(Jx,i,k,m,a);
-                 double yikma = Y2.GetTBME_J(Jx,i,k,m,a);
-                for ( int Jy=Jy_min; Jy<=Jy_max; Jy++)
-                {
-                 double hats  =  (2*Jx+1) * (2*Jy+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-                 double sixj2 = Z.modelspace->GetSixJ(jm,jl,J2, jn,Jtot,Jy);
-                 double sixj3 = Z.modelspace->GetSixJ(jj,ja,Jy, jm,Jtot,Jx);
-                 double xajln = X2.GetTBME_J(Jy,a,j,l,n);
-                 double yajln = Y2.GetTBME_J(Jy,a,j,l,n);
-                 zijklmn += hats * phase * sixj1*sixj2*sixj3 * (xikma*yajln-yikma*xajln);
-                }
-               }
-             }
-
-
-             //Z9
-             {
-               Jx_min = std::max(std::abs(ok.j2-oi.j2), std::abs(oa.j2-on.j2) )/2;
-               Jx_max = std::min((ok.j2+oi.j2), (oa.j2+on.j2) )/2;
-                 double xajml = X2.GetTBME_J(J2,a,j,m,l);
-                 double yajml = Y2.GetTBME_J(J2,a,j,m,l);
-               for ( int Jx=Jx_min; Jx<=Jx_max; Jx++) // TODO: some stuff can be pulled out of the Jx loop
-               {
-                 double phase = Z.modelspace->phase( (oa.j2+ok.j2+ol.j2+om.j2)/2 -J1-Jx);
-                 double hats  =  (2*Jx+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-                 double sixj1 = Z.modelspace->GetSixJ(jj,ji,J1, jk,Jtot,Jx);
-                 double sixj2 = Z.modelspace->GetSixJ(jj,ja,J2, jn,Jtot,Jx);
-                 double xikna = X2.GetTBME_J(Jx,i,k,n,a);
-                 double yikna = Y2.GetTBME_J(Jx,i,k,n,a);
-                 zijklmn += hats * phase * sixj1*sixj2 * (xikna*yajml-yikna*xajml);
-               }
-             }
-
-            }// for a
-
-            if (std::abs(zijklmn)>1e-6)
-            {
-                Z3.AddToME_pn( J1, J2, twoJ, i,j,k,l,m,n, zijklmn );
-            }
-          }// for twoJ
-         }// for J2
-        }// for J1
-       }// for n
-      }// for m
-     }// for l
-    }// for k
-   }// for j
-  }// for i
-  std::cout << "Done with comm223ss. Norm of Z3 is " << std::scientific << Z.ThreeBodyNorm() << std::endl;
-}
-*/
-
-
 //*****************************************************************************************
 //
 //  |     |    |     Uncoupled expression:
@@ -3151,7 +2791,6 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
-//  std::cout << "   -> Begin com233_pp_hh" << std::endl;
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
   auto& X3 = X.ThreeBody;
@@ -3345,7 +2984,6 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
             }// if sixj nonzero
           } // if  Tz and parity check for term 6
 
-
         }// for ch_ab
 
         // no normalization to be done. we store un-normalized 3body matrix elements.
@@ -3410,8 +3048,6 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
       double jj = 0.5 * oj.j2;
       double jk = 0.5 * ok.j2;
       int J1 = bra.Jpq;
-//      for (size_t iket=0; iket<=ibra; iket++)
-//      for (size_t iket=0; iket<nkets3; iket++)
       for (size_t iket=ibra; iket<nkets3; iket++)
       {
         auto& ket = Tbc.GetKet(iket);
@@ -3755,14 +3391,9 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
             }// for J1p
            }// Z9 block
 
-
-           
          }// for b
         }// for a
-
-//        if (ibra!=iket) z_ijklmn /=2; // because we're summing freely over ibra,iket. Change this later.
         Z3.AddToME_pn_PN_ch( ch3, ch3, ibra,iket, z_ijklmn);
-        
       }// for iket
     }// for ibra
   }//for ch3
@@ -3770,279 +3401,6 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 }
 
 
-
-
-
-//*****************************************************************************************
-//                               TODO: CHECK the pph/phh term and see if there's an overall minus sign missing
-//  |    |    |     Uncoupled expression:
-// i|   j|   k|       C_ijklmn = 1/6 sum_{abc} (nanbnc + n`an`bn`c) ( X_{ijkabc} Y_{abcklm} - Y_{ijkabc} X_{abcklm}
-//  *~~~[X]~~~*                   + 1/2 P(ij/k)P(lm/n) sum_{abc} (nanbn`c -na`n`bnc) ( X_{ijcabn} Y_{abklmc} - Y_{ijcabn} X_{abklmc} ) 
-// a|   b|   c| 
-//  *~~~[Y]~~~*     Coupled expression:
-// l|   m|   n|     C_{ijklmn}^{J1,J2,J} = 1/6 sum_{abc} sum_{J'} (nanbnc + n`an`bn`c) ( X_{ijkabc}^{J1,J',J} Y_{abcklm}^{J',J2,J} - X<->Y )
-//  |    |    |                             +1/2 P^{J1,J}(ij/k)P^{J2,j}_{lm/n) sum_{abc} (nanbn`c-n`an`bnc) sum_{J',J",J3} (2J'+1)(2J"+1)
-//                                             { k   J1  J  }
-//                                           * { J3  J'  n  } * ( X_{ijcabn}^{J1,J3,J'} Y_{abklmc}^{J3,J2,J"} - X<->Y )     
-//                                             { J"  c   J2 }                              
-//
-/*
-void comm333ss( const Operator& X, const Operator& Y, Operator& Z )
-{
-   auto& Z3 = Z.ThreeBody;
-
-   int nch = Z.modelspace->GetNumberTwoBodyChannels();
-   for ( int ch_ij=0; ch_ij<nch; ch_ij++)
-   {
-     TwoBodyChannel& tbc_ij = Z.modelspace->GetTwoBodyChannel(ch_ij);
-     int Jij = tbc_ij.J;
-     int nkets_ij = tbc_ij.GetNumberKets();
-     for (int iket_ij=0; iket_ij<nkets_ij; iket_ij++)
-     {
-       Ket& ket_ij = tbc_ij.GetKet(iket_ij);
-       int i = ket_ij.p;
-       int j = ket_ij.q;
-       Orbit& oi = *(ket_ij.op);
-       Orbit& oj = *(ket_ij.oq);
-       for ( auto k : Z.modelspace->all_orbits )
-       {
-         Orbit& ok = Z.modelspace->GetOrbit(k);
-
-         for ( int ch_lm=0; ch_lm<nch; ch_lm++)
-         {
-           TwoBodyChannel& tbc_lm = Z.modelspace->GetTwoBodyChannel(ch_lm);
-           int Jlm = tbc_lm.J;
-           int nkets_lm = tbc_lm.GetNumberKets();
-           for (int iket_lm=0; iket_lm<nkets_lm; iket_lm++)
-           {
-             Ket& ket_lm = tbc_lm.GetKet(iket_lm);
-             int l = ket_lm.p;
-             int m = ket_lm.q;
-             Orbit& ol = *(ket_lm.op);
-             Orbit& om = *(ket_lm.oq);
-             for ( auto n : Z.modelspace->all_orbits )
-             {
-               Orbit& on = Z.modelspace->GetOrbit(n);
-               if ( (tbc_ij.Tz*2 + ok.tz2) != (tbc_lm.Tz*2 + on.tz2) ) continue; // TODO: maybe relax this if we want to do Fermi decays?
-               if ( (tbc_ij.parity + tbc_lm.parity + ok.l + on.l)%2>0 ) continue;
-               int twoJ_min = std::max(  std::abs( Jij*2 -ok.j2), std::abs(Jlm*2 - on.j2) );
-               int twoJ_max = std::min(  Jij*2 + ok.j2 , Jlm*2 + on.j2 );
-               for ( int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2 )
-               {
-                 // Now, we work out all the recoupling stuff that we need for the pph and hhp terms.
-                 int Jik_min = std::max( std::abs(oi.j2-ok.j2), std::abs(oj.j2-twoJ) )/2;
-                 int Jjk_min = std::max( std::abs(oj.j2-ok.j2), std::abs(oi.j2-twoJ) )/2;
-                 int Jik_max = std::min( oi.j2+ok.j2, oj.j2-twoJ )/2;
-                 int Jjk_max = std::min( oj.j2+ok.j2, oi.j2-twoJ )/2;
-
-                 int Jln_min = std::max( std::abs(ol.j2-on.j2), std::abs(ol.j2-twoJ) )/2;
-                 int Jmn_min = std::max( std::abs(om.j2-on.j2), std::abs(ol.j2-twoJ) )/2;
-                 int Jln_max = std::min( ol.j2+on.j2, om.j2-twoJ )/2;
-                 int Jmn_max = std::min( om.j2+on.j2, ol.j2-twoJ )/2;
-
-                 std::map<int,double> Pik,Pjk,Pln,Pmn;
-
-                 for (int Jik=Jik_min; Jik<=Jik_max; Jik++)
-                 {
-                   Pjk[Jik] = Z3.RecouplingCoefficient(Z3.ACB, 0.5*oi.j2, 0.5*oj.j2, 0.5*ok.j2, Jij, Jik, twoJ  );
-                 }
-                 for (int Jjk=Jjk_min; Jjk<=Jjk_max; Jjk++)
-                 {
-                   Pik[Jjk] = Z3.RecouplingCoefficient(Z3.CAB, 0.5*oi.j2, 0.5*oj.j2, 0.5*ok.j2, Jij, Jjk, twoJ  );
-                 }
-                 for (int Jln=Jln_min; Jln<=Jln_max; Jln++)
-                 {
-                   Pmn[Jln] = Z3.RecouplingCoefficient(Z3.ACB, 0.5*ol.j2, 0.5*om.j2, 0.5*on.j2, Jlm, Jln, twoJ  );
-                 }
-                 for (int Jmn=Jmn_min; Jmn<=Jmn_max; Jmn++)
-                 {
-                   Pln[Jmn] = Z3.RecouplingCoefficient(Z3.CAB, 0.5*ol.j2, 0.5*om.j2, 0.5*on.j2, Jlm, Jmn, twoJ  );
-                 }
-                 // We've picked out a single term on the left hand side, and now we begin the loops over a,b,c on the right hand side.
-                 double zijklmn = 0;
-                 for (int ch_ab=0; ch_ab<nch; ch_ab++)
-                 {
-                   TwoBodyChannel& tbc_ab = Z.modelspace->GetTwoBodyChannel(ch_ab);
-                   int Jab = tbc_ab.J;
-                   int nkets_ab = tbc_ab.GetNumberKets();
-                   for (int iket_ab=0; iket_ab<nkets_ab; iket_ab++)
-                   {
-                     Ket& ket_ab = tbc_ab.GetKet(iket_ab);
-
-//                     int a = ket_ab.p;
-//                     int b = ket_ab.q;
-                     Orbit& oa = *(ket_ab.op);
-                     Orbit& ob = *(ket_ab.oq);
-                     double na = oa.occ;
-                     double nb = ob.occ;
-//                     // Cases:     na*nb==0 and (1-na)(1-nb)!=0    =>  c loops over all orbits with nc<1 (i.e. particles+fractionally-filled holes)
-//                     //            na*nb==0 and (1-na)(1-nb)==0    =>  c loops over nothing
-//                     //            na*nb!=0 and (1-na)(1-nb)!=0    =>  c loops over all orbits
-//                     //            na*nb!=0 and (1-na)(1-nb)==0    =>  c loops over all orbits with nc>0 (i.e. holes+fractionally-filled holes)
-                     auto& clist = (1-na)*(1-nb)<1e-6  ?  Z.modelspace->holes  :  Z.modelspace->all_orbits ;
-                     if ( (na*nb>1e-6) or ((1-na)*(1-nb)>1e-6) )
-                     {
-                       for ( auto c : clist )
-                       {
-                         Orbit& oc = Z.modelspace->GetOrbit(c);
-                         zijklmn += comm333_ppp_hhh_ss_inner_loop(oi,oj,Jij,ok, ol,om,Jlm,on, oa,ob,Jab,oc, twoJ, X,Y) ;
-                       }
-                     }
-                     // Now we do the pph / hhp loop, which has a different requirement on c.
-                     clist = na*nb<1e-6  ?  Z.modelspace->holes  :  Z.modelspace->all_orbits ;
-                     if ( (na*nb>1e-6) or ((1-na)*(1-nb)>1e-6) )
-                     {
-                       for ( auto c : clist )
-                       {
-                         Orbit& oc = Z.modelspace->GetOrbit(c);
-
-                         // Oh, god... all the permutations...
-                         zijklmn += comm333_pph_hhp_ss_inner_loop(oi,oj,Jij,ok, ol,om,Jlm,on, oa,ob,Jab,oc, twoJ, X,Y) ;
-                         for (int Jjk=Jjk_min; Jjk<=Jjk_max; Jjk++)
-                         {
-                           zijklmn -= Pik[Jjk] * comm333_pph_hhp_ss_inner_loop(ok,oj,Jjk,oi, ol,om,Jlm,on, oa,ob,Jab,oc, twoJ, X,Y) ;
-                           for (int Jmn=Jmn_min; Jmn<=Jmn_max; Jmn++)
-                           {
-                             zijklmn += Pik[Jjk]*Pln[Jmn] * comm333_pph_hhp_ss_inner_loop(ok,oj,Jjk,oi, on,om,Jmn,ol, oa,ob,Jab,oc, twoJ, X,Y) ;
-                           }
-                           for (int Jln=Jln_min; Jln<=Jln_max; Jln++)
-                           {
-                             zijklmn += Pik[Jjk]*Pmn[Jln] * comm333_pph_hhp_ss_inner_loop(ok,oj,Jjk,oi, ol,on,Jln,om, oa,ob,Jab,oc, twoJ, X,Y) ;
-                           }
-                         }
-                         for (int Jik=Jik_min; Jik<=Jik_max; Jik++)
-                         {
-                           zijklmn -= Pjk[Jik] * comm333_pph_hhp_ss_inner_loop(oi,ok,Jik,oj, ol,om,Jlm,on, oa,ob,Jab,oc, twoJ, X,Y) ;
-                           for (int Jmn=Jmn_min; Jmn<=Jmn_max; Jmn++)
-                           {
-                             zijklmn += Pjk[Jik]*Pln[Jmn] * comm333_pph_hhp_ss_inner_loop(oi,ok,Jik,oj, on,om,Jmn,ol, oa,ob,Jab,oc, twoJ, X,Y) ;
-                           }
-                           for (int Jln=Jln_min; Jln<=Jln_max; Jln++)
-                           {
-                             zijklmn += Pjk[Jik]*Pmn[Jln] * comm333_pph_hhp_ss_inner_loop(oi,ok,Jik,oj, ol,on,Jln,om, oa,ob,Jab,oc, twoJ, X,Y) ;
-                           }
-                         for (int Jmn=Jmn_min; Jmn<=Jmn_max; Jmn++)
-                         {
-                           zijklmn -= Pln[Jmn] * comm333_pph_hhp_ss_inner_loop(oi,oj,Jij,ok, on,om,Jmn,ol, oa,ob,Jab,oc, twoJ, X,Y) ;
-                         }
-                         for (int Jln=Jln_min; Jln<=Jln_max; Jln++)
-                         {
-                           zijklmn -= Pmn[Jln] * comm333_pph_hhp_ss_inner_loop(oi,oj,Jij,oj, ol,on,Jln,om, oa,ob,Jab,oc, twoJ, X,Y) ;
-                         }
-
-                         }
-                       }
-                     }
-                   }
-                 }
-                 Z3.AddToME_pn( Jij, Jlm, twoJ, i,j,k,l,m,n, zijklmn );
-               }
-             }
-           }
-         }
-       }
-     }
-   }
-
-}
-*/
-
-
-//*****************************************************************************************
-//
-//  |    |    |     Uncoupled expression:
-// i|   j|   k|       Z_ijklmn = 1/6 sum_{abc} (nanbnc + n`an`bn`c) ( X_{ijkabc} Y_{abcklm} - Y_{ijkabc} X_{abcklm}
-//  *~~~[X]~~~*                                                                                                                     
-// a|   b|   c| 
-//  *~~~[Y]~~~*     Coupled expression:
-// l|   m|   n|     Z_{ijklmn}^{J1,J2,J} = 1/6 sum_{abc} sum_{J'} (nanbnc + n`an`bn`c) ( X_{ijkabc}^{J1,J',J} Y_{abcklm}^{J',J2,J} - X<->Y )
-//  |    |    |                                                                                                                       
-//                                                           
-//
-// THIS IS OBSOLETE
-/*
-double comm333_ppp_hhh_ss_inner_loop( Orbit& oi, Orbit& oj, int Jij, Orbit& ok,
-                                      Orbit& ol, Orbit& om, int Jlm, Orbit& on,
-                                      Orbit& oa, Orbit& ob, int Jab, Orbit& oc, int twoJ, const Operator& X, const Operator& Y )
-{
-  auto& X3 = X.ThreeBody;
-  auto& Y3 = Y.ThreeBody;
-  double zijklmn = 0;
-  double na = oa.occ;
-  double nb = ob.occ;
-  double nc = oc.occ;
-  int i=oi.index;
-  int j=oj.index;
-  int k=ok.index;
-  int l=ol.index;
-  int m=om.index;
-  int n=on.index;
-  int a=oa.index;
-  int b=ob.index;
-  int c=oc.index;
-  if ( std::abs( Jab*2 - oc.j2)<twoJ or (Jab*2 + oc.j2)>twoJ ) return 0;  // check triangle condition
-  zijklmn = 1/6 *  ( na*nb*nc + (1-na)*(1-nb)*(1-nc) ) *
-              ( X3.GetME_pn(Jij, Jab, twoJ, i,j,k,a,b,c) * Y3.GetME_pn(Jab, Jlm, twoJ, a,b,c,l,m,n)
-              - Y3.GetME_pn(Jij, Jab, twoJ, i,j,k,a,b,c) * X3.GetME_pn(Jab, Jlm, twoJ, a,b,c,l,m,n) );
-
-  return  zijklmn;
-}
-*/
-
-//*****************************************************************************************
-//
-//  |i  |j      k/     Uncoupled expression:
-//  |   |       /      Z_ijklmn = 1/2 P(ij/k)P(lm/n) sum_{abc} (nanbn`c -na`n`bnc) ( X_{ijcabn} Y_{abklmc} - Y_{ijcabn} X_{abklmc} )
-//  *~~[X]~*   /                   
-//  |   |  |\ /        Coupled expression:
-// a|  b| c| /         Z_{ijklmn}^{J1,J2,J} = +1/2 P^{J1,J}(ij/k)P^{J2,j}_{lm/n) sum_{abc} (nanbn`c-n`an`bnc) sum_{J',J",J3} (2J'+1)(2J"+1)
-//  |   |  |/ \                                  { k   J1  J  }
-//  *~~[Y]~*   \                               * { J3  J'  n  } * ( X_{ijcabn}^{J1,J3,J'} Y_{abklmc}^{J3,J2,J"} - X<->Y )     
-//  |   |       \                                { J"  c   J2 }                                                                            
-//  |l  |m       \ n
-//                    
-//                    
-//                                            
-/*
-double comm333_pph_hhp_ss_inner_loop( Orbit& oi, Orbit& oj, int Jij, Orbit& ok,
-                                      Orbit& ol, Orbit& om, int Jlm, Orbit& on,
-                                      Orbit& oa, Orbit& ob, int Jab, Orbit& oc, int twoJ, const Operator& X, const Operator& Y )
-{
-  auto& X3 = X.ThreeBody;
-  auto& Y3 = Y.ThreeBody;
-  double zijklmn = 0;
- 
-  double na = oa.occ;
-  double nb = ob.occ;
-  double nc = oc.occ;
-  int i=oi.index;
-  int j=oj.index;
-  int k=ok.index;
-  int l=ol.index;
-  int m=om.index;
-  int n=on.index;
-  int a=oa.index;
-  int b=ob.index;
-  int c=oc.index;
-  int twoJp_min  = std::max( std::abs(Jab*2-on.j2), std::abs(Jij*2-oc.j2) );
-  int twoJp_max  = std::max( Jab*2+on.j2, Jij*2+oc.j2 );
-  int twoJpp_min = std::max( std::abs(Jab*2-ok.j2), std::abs(Jlm*2-oc.j2) );
-  int twoJpp_max = std::max( Jab*2+ok.j2, Jlm*2+oc.j2 );
-
-  // Oh, boy this will be expensive...
-  for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
-  {
-    for (int twoJpp=twoJpp_min; twoJpp<=twoJpp_max; twoJpp+=2)
-    {
-      double ninej = X.modelspace->GetNineJ( 0.5*ok.j2, Jij, 0.5*twoJ,  Jab, 0.5*twoJp, 0.5*on.j2,  0.5*twoJpp, 0.5*oc.j2, Jlm );
-      zijklmn += (twoJp+1)*(twoJpp+1) * ninej * ( X3.GetME_pn(Jij, Jab, twoJp, i,j,c,a,b,n) * Y3.GetME_pn(Jab, Jlm, twoJpp, a,b,k,l,m,c)
-                                                - Y3.GetME_pn(Jij, Jab, twoJp, i,j,c,a,b,n) * X3.GetME_pn(Jab, Jlm, twoJpp, a,b,k,l,m,c) );
-    }
-  }
- 
-  return  0.5 * ( na*nb*(1-nc) - (1-na)*(1-nb)*nc ) * zijklmn;
-}
-*/
 
 //*****************************************************************************************
 //
@@ -4119,6 +3477,7 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
 //  |l  |m       \ n
 //                    
 //                    
+//  Checked with UnitTest and passed
 // 
 void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z ) 
 {
@@ -4150,8 +3509,6 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
       double jj = 0.5 * oj.j2;
       double jk = 0.5 * ok.j2;
       int J1 = bra.Jpq;
-//      for (size_t iket=0; iket<nkets3; iket++)
-//      for (size_t iket=ibra; iket<nkets3; iket++)
       for (size_t iket=0; iket<=ibra; iket++)
       {
         auto& ket = Tbc.GetKet(iket);
@@ -4166,12 +3523,6 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
         double jn = 0.5 * on.j2;
         int J2 = ket.Jpq;
 
-//        if ( not (i==1 and j==0 and k==0 and l==1 and m==0 and n==0)) continue;
-//        if ( not (i==1 and j==1 and k==0 and l==1 and m==1 and n==0)) continue;
-//        if ( not (i==4 and j==2 and k==2 and l==4 and m==0 and n==0)) continue;
-//              if ( not (i==4 and j==1 and k==0 and l==2 and m==1 and n==0) ) continue;
-
-//        std::cout << "ijklmn  " << i << " " << j << " " << k << " " << l << " " << m << " " << n << "   J1 J2 twoJ " << J1 << " " << J2 << " " << twoJ << std::endl;
         double z_ijklmn = 0;
 
         for (size_t ch2=0; ch2<nch2; ch2++)
@@ -4185,9 +3536,6 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
             Ket& ket_ab = tbc_ab.GetKet(iket_ab);
             size_t a = ket_ab.p;
             size_t b = ket_ab.q;
-//                       if ( not ((a==4 and b==5) or (a==5 and b==4))) continue;
-//                       if ( not ((a==0 and b==0) or (a==0 and b==0))) continue;
-//                       if ( not ((a==0 and b==3) or (a==3 and b==0))) continue;
             Orbit& oa = Z.modelspace->GetOrbit(a);
             Orbit& ob = Z.modelspace->GetOrbit(b);
             if (std::abs(oa.occ * ob.occ)<1e-6 and std::abs( (1-oa.occ)*(1-ob.occ))<1e-6) continue;
@@ -4216,13 +3564,10 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   {
                      double JJy = 0.5 * twoJy;
                      double hats = (twoJx+1)*(twoJy+1);
-//                     double ninej = Z.modelspace->GetNineJ( jc,JJy,J1, JJx,Jab,jk, J2,jn,Jtot);
                      double ninej = Z.modelspace->GetNineJ( jk,Jab,JJx, J1,JJy,jc, Jtot,jn,J2);
                      double xijcabn = X3.GetME_pn(J1,Jab,twoJy, i,j,c,a,b,n);
                      double yijcabn = Y3.GetME_pn(J1,Jab,twoJy, i,j,c,a,b,n);
-//                     z_ijklmn +=  occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
-                     double dz = 1* occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
-                     z_ijklmn += dz;
+                     z_ijklmn +=  occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
                   }// for twoJy
                 }// for twoJx
               }// Z1 block
@@ -4256,9 +3601,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                        double ninej = Z.modelspace->GetNineJ( ji,Jab,JJx, J1p,JJy,jc, Jtot,jn,J2);
                        double xkjcabn = X3.GetME_pn(J1p,Jab,twoJy, k,j,c,a,b,n);
                        double ykjcabn = Y3.GetME_pn(J1p,Jab,twoJy, k,j,c,a,b,n);
-                       z_ijklmn -= 1* occ_factor * phase * hats * sixj * ninej * ( xabilmc*ykjcabn - yabilmc*xkjcabn );
-//                       double dz =  occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
-//                       z_ijklmn += dz;
+                       z_ijklmn -=  occ_factor * phase * hats * sixj * ninej * ( xabilmc*ykjcabn - yabilmc*xkjcabn );
                     }// for twoJy
                   }// for J1p
                 }// for twoJx
@@ -4293,9 +3636,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                        double ninej = Z.modelspace->GetNineJ( jj,Jab,JJx, J1p,JJy,jc, Jtot,jn,J2);
                        double xikcabn = X3.GetME_pn(J1p,Jab,twoJy, i,k,c,a,b,n);
                        double yikcabn = Y3.GetME_pn(J1p,Jab,twoJy, i,k,c,a,b,n);
-                       z_ijklmn -=  1*occ_factor * phase * hats * sixj * ninej * ( xabjlmc*yikcabn - yabjlmc*xikcabn );
-//                       double dz =  occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
-//                       z_ijklmn += dz;
+                       z_ijklmn -=  occ_factor * phase * hats * sixj * ninej * ( xabjlmc*yikcabn - yabjlmc*xikcabn );
                     }// for twoJy
                   }// for J1p
                 }// for twoJx
@@ -4329,9 +3670,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                       double yabknmc = Y3.GetME_pn(Jab,J2p,twoJx, a,b,k,n,m,c);
                       double hats = (twoJx+1)*(twoJy+1) * sqrt( (2*J2+1)*(2*J2p+1));
                       double ninej = Z.modelspace->GetNineJ( jk,Jab,JJx, J1,JJy,jc, Jtot,jl,J2p);
-                      z_ijklmn -=  1* occ_factor * phase * hats * sixj * ninej * ( xabknmc*yijcabl - yabknmc*xijcabl );
-//                       double dz =  occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
-//                       z_ijklmn += dz;
+                      z_ijklmn -=   occ_factor * phase * hats * sixj * ninej * ( xabknmc*yijcabl - yabknmc*xijcabl );
                     }// for twoJx
                   }// for J2p
                 }// for twoJy
@@ -4365,15 +3704,11 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                       double yabklnc = Y3.GetME_pn(Jab,J2p,twoJx, a,b,k,l,n,c);
                       double hats = (twoJx+1)*(twoJy+1) * sqrt( (2*J2+1)*(2*J2p+1));
                       double ninej = Z.modelspace->GetNineJ( jk,Jab,JJx, J1,JJy,jc, Jtot,jm,J2p);
-                      z_ijklmn -=  1*occ_factor * phase * hats * sixj * ninej * ( xabklnc*yijcabm - yabklnc*xijcabm );
-//                       double dz =  occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
-//                       z_ijklmn += dz;
+                      z_ijklmn -=  occ_factor * phase * hats * sixj * ninej * ( xabklnc*yijcabm - yabklnc*xijcabm );
                     }// for twoJx
                   }// for J2p
                 }// for twoJy
               }// Z5 block
-
-
 
 
               // Z6 term  Pik Pln    Xabinmc Ykjcabl
@@ -4410,19 +3745,12 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                          double ninej = Z.modelspace->GetNineJ( ji,Jab,JJx, J1p,JJy,jc, Jtot,jl,J2p);
                          double xkjcabl = X3.GetME_pn(J1p,Jab,twoJy, k,j,c,a,b,l);
                          double ykjcabl = Y3.GetME_pn(J1p,Jab,twoJy, k,j,c,a,b,l);
-                         z_ijklmn +=  1*occ_factor * phase * hats * sixj1 * sixj2 * ninej * ( xabinmc*ykjcabl - yabinmc*xkjcabl );
-//                         double dz =  occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
-//                         z_ijklmn += dz;
+                         z_ijklmn +=  occ_factor * phase * hats * sixj1 * sixj2 * ninej * ( xabinmc*ykjcabl - yabinmc*xkjcabl );
                       }// for twoJy
                     }// for J1p
                   }// for twoJx
                 }// for J2p
               }// Z6 block
-
-
-
-
-
 
 
               // Z7 term  Pjk Pln    Xabjnmc Yikcabl
@@ -4459,9 +3787,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                          double ninej = Z.modelspace->GetNineJ( jj,Jab,JJx, J1p,JJy,jc, Jtot,jl,J2p);
                          double xikcabl = X3.GetME_pn(J1p,Jab,twoJy, i,k,c,a,b,l);
                          double yikcabl = Y3.GetME_pn(J1p,Jab,twoJy, i,k,c,a,b,l);
-                         z_ijklmn +=  1*occ_factor * phase * hats * sixj1 * sixj2 * ninej * ( xabjnmc*yikcabl - yabjnmc*xikcabl );
-//                         double dz =  occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
-//                         z_ijklmn += dz;
+                         z_ijklmn +=  occ_factor * phase * hats * sixj1 * sixj2 * ninej * ( xabjnmc*yikcabl - yabjnmc*xikcabl );
                       }// for twoJy
                     }// for J1p
                   }// for twoJx
@@ -4506,9 +3832,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                          double ninej = Z.modelspace->GetNineJ( ji,Jab,JJx, J1p,JJy,jc, Jtot,jm,J2p);
                          double xkjcabm = X3.GetME_pn(J1p,Jab,twoJy, k,j,c,a,b,m);
                          double ykjcabm = Y3.GetME_pn(J1p,Jab,twoJy, k,j,c,a,b,m);
-                         z_ijklmn +=  1*occ_factor * phase * hats * sixj1 * sixj2 * ninej * ( xabilnc*ykjcabm - yabilnc*xkjcabm );
-//                         double dz =  occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
-//                         z_ijklmn += dz;
+                         z_ijklmn +=  occ_factor * phase * hats * sixj1 * sixj2 * ninej * ( xabilnc*ykjcabm - yabilnc*xkjcabm );
                       }// for twoJy
                     }// for J1p
                   }// for twoJx
@@ -4553,9 +3877,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                          double ninej = Z.modelspace->GetNineJ( jj,Jab,JJx, J1p,JJy,jc, Jtot,jm,J2p);
                          double xikcabm = X3.GetME_pn(J1p,Jab,twoJy, i,k,c,a,b,m);
                          double yikcabm = Y3.GetME_pn(J1p,Jab,twoJy, i,k,c,a,b,m);
-                         z_ijklmn +=  1*occ_factor * phase * hats * sixj1 * sixj2 * ninej * ( xabjlnc*yikcabm - yabjlnc*xikcabm );
-//                         double dz =  occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
-//                         z_ijklmn += dz;
+                         z_ijklmn +=  occ_factor * phase * hats * sixj1 * sixj2 * ninej * ( xabjlnc*yikcabm - yabjlnc*xikcabm );
                       }// for twoJy
                     }// for J1p
                   }// for twoJx
@@ -4568,9 +3890,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
             }// for c
           }// for iket_ab
         }// for ch2
-//        if (ibra!=iket) z_ijklmn *= 0.5;
         Z3.AddToME_pn_PN_ch( ch3, ch3, ibra,iket, z_ijklmn);
-        
       }// for iket
     }// for ibra
   }//for ch3
