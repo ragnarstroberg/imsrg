@@ -59,7 +59,7 @@ void ThreeBodyMEpn::Allocate_PN()
     total_dimension += nkets * (nkets+1)/2;
   }
   matrix_data.resize(total_dimension,0.0);
-  std::cout << "DONE ALLOCATING, size of matrix_data is " << matrix_data.size() << std::endl;
+//  std::cout << "DONE ALLOCATING, size of matrix_data is " << matrix_data.size() << std::endl;
   is_allocated = true;
 }
 
@@ -474,7 +474,7 @@ void ThreeBodyMEpn::TransformToPN()
 void ThreeBodyMEpn::SwitchToPN_and_discard()
 {
   double t_start = omp_get_wtime();
-  std::cout << " " << __func__ << "   changing storage from isospin to proton/neutron" << std::endl;
+//  std::cout << " " << __func__ << "   changing storage from isospin to proton/neutron" << std::endl;
   Allocate_PN();
 
   // hopefully free up memory?
