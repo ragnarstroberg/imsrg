@@ -246,6 +246,7 @@ namespace imsrg_util
    NumOp.EraseOneBody();
    NumOp.EraseTwoBody();
    NumOp.OneBody(indx,indx) = 1;
+   std::cout << "Number op indx = " << indx << " one body = " << NumOp.OneBody << std::endl;
    return NumOp;
  }
 
@@ -265,6 +266,7 @@ namespace imsrg_util
    Operator OBD = Operator(modelspace,0,0,0,2);
    OBD.OneBody(i,j) += 0.5;
    OBD.OneBody(j,i) += 0.5;
+   std::cout << "OBD ij = " << i << " " << j << "  One body = " << OBD.OneBody << std::endl;
    return OBD;
  }
 
