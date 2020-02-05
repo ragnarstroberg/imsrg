@@ -778,6 +778,10 @@ void ReadWrite::Read_Darmstadt_3body( std::string filename, Operator& Hbare, int
     Read_Darmstadt_3body_from_stream(infile, Hbare,  E1max, E2max, E3max);
   }
 
+//  double X001 = Hbare.ThreeBody.GetME_pn(0,0,1,0,0,10,0,10,0);
+//  double X011 = Hbare.ThreeBody.GetME_pn(0,1,1,0,0,10,0,10,0);
+//  std::cout << "DONE READING.  X001, X011, 1/sqrt(3) X011 = " << X001 << "   " << X011 << "  " << 1.0/sqrt(3) * X011 << std::endl;
+
   Hbare.profiler.timer["Read_3body_file"] += omp_get_wtime() - start_time;
 }
 
@@ -826,7 +830,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
       for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
       {
          orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
-         Orbit& oi = modelspace->GetOrbit( orbits_remap.back() );
+//         Orbit& oi = modelspace->GetOrbit( orbits_remap.back() );
          energy_vals.push_back( 2*n+l);
          l_vals.push_back(l);
          j_vals.push_back(twoj);
@@ -2125,6 +2129,184 @@ void ReadWrite::ReadTensorOperator_Nathan( std::string filename1b, std::string f
 
 }
 
+
+size_t ReadWrite::Jacobi2b_Channel_Hash(int S, int T, int Tz, int J)
+{
+   size_t key = S + 2*T + 4*(Tz+1) + 12*J;
+   return key;
+}
+void ReadWrite::Jacobi2b_Channel_UnHash(size_t key, int& S, int& T, int& Tz, int& J)
+{
+  S  = key%2;
+  T  = (key%4)/2;
+  Tz = (key%12)/4;
+  J  = key/12;
+}
+
+// Read in a two-body interaction in relative coordinates, and put
+// it into the lab-frame coordinates of the input operator.
+void ReadWrite::ReadDarmstadt_2bodyRel( std::string filename, Operator& Op )
+{
+  std::ifstream infile(filename);
+  if ( !infile.good() )
+  {
+     std::cerr << "************************************" << std::endl
+          << "**    Trouble opening  file  " << filename << "  !!!   **" << std::endl
+          << "************************************" << std::endl;
+     goodstate = false;
+     return;
+  }
+
+  int emax = Op.modelspace->Emax;
+  infile.ignore(1024,'\n'); // skip header
+  int n1,l1,n2,l2,S,J,T,Tz;
+  double v; 
+  // channels are labeled by S,J,T,Tz
+  std::unordered_map<size_t,arma::mat> Vrel;
+  // allocate that bad boy
+  // antisymmetry -> L+S+T is odd
+  for (int S=0; S<=1; S++)
+  {
+    for (int T=0; T<=1; T++)
+    {
+      for (int Tz=-T; Tz<=T; Tz++)
+      {
+        for (int J=0; J<=emax+1; J++)
+        {
+          if (S==0 and (J+T)%2==0) continue;
+          auto key = Jacobi2b_Channel_Hash( S, T, Tz, J);
+          int dim = (S==1)  ?  emax+1  :  emax/2+1;
+          Vrel[key].zeros(dim,dim);
+        }
+      }
+    }
+  }
+
+  while( infile >> n1 >> l1 >> n2 >> l2 >> S >> J >> T >> Tz >> v )
+  {
+    if ((2*n1)>emax) break;
+    if ((2*n1+l1)>emax) continue;
+    if ((2*n2+l2)>emax) continue;
+    // indexing: l is J or J+-1, and n runs from 0 to emax/2, so index = l/2 * nmax + n
+    auto key = Jacobi2b_Channel_Hash(S, T, Tz, J);
+    int index1 = (l1/2) *(emax/2+1) + n1;
+    int index2 = (l2/2) *(emax/2+1) + n2;
+    Vrel[key](index1,index2) = v;
+    Vrel[key](index2,index1) = v;
+  }
+
+  // now we transform to the lab basis
+  for (auto& iter_ch : Op.TwoBody.MatEl )
+  {
+    auto ch = iter_ch.first[0];
+    auto& mtx = iter_ch.second;
+    TwoBodyChannel& tbc = Op.modelspace->GetTwoBodyChannel(ch);
+    size_t nkets = tbc.GetNumberKets();
+    double sa=0.5,sb=0.5,sc=0.5,sd=0.5;
+    int J = tbc.J;
+    int Tz = tbc.Tz;
+    for (int ibra=0; ibra<nkets; ibra++)
+    {
+      Ket& bra = tbc.GetKet(ibra);
+      int na = bra.op->n;
+      int la = bra.op->l;
+      float ja = 0.5*bra.op->j2;
+      int tz2a = bra.op->tz2;
+      int nb = bra.oq->n;
+      int lb = bra.oq->l;
+      float jb = 0.5*bra.oq->j2;
+      int tz2b = bra.oq->tz2;
+      int fab = 2*na + 2*nb + la + lb;
+      for (int iket=ibra; iket<nkets; iket++)
+      {
+        Ket& ket = tbc.GetKet(ibra);
+        int nc = ket.op->n;
+        int lc = ket.op->l;
+        float jc = 0.5*ket.op->j2;
+        int tz2c = ket.op->tz2;
+        int nd = ket.oq->n;
+        int ld = ket.oq->l;
+        float jd =0.5* ket.oq->j2;
+        int tz2d = ket.oq->tz2;
+
+        int fcd = 2*nc + 2*nd + lc + ld;
+
+        double vlab = 0;
+
+        // First, transform to LS coupling using 9j coefficients
+        for (int Lab=std::abs(la-lb); Lab<= la+lb; ++Lab)
+        {
+          for (int Sab=0; Sab<=1; ++Sab)
+          {
+            if ( std::abs(Lab-Sab)>J or Lab+Sab<J) continue;
+     
+            double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
+            if (njab == 0) continue;
+            int Scd = Sab;
+            int Lcd = Lab;
+            double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
+            if (njcd == 0) continue;
+
+             // Next, transform to rel / com coordinates with Moshinsky tranformation
+             for (int N_ab=0; N_ab<=fab/2; ++N_ab)  // N_ab = CoM n for a,b
+             {
+               for (int Lam_ab=0; Lam_ab<= fab-2*N_ab; ++Lam_ab) // Lam_ab = CoM l for a,b
+               {
+                 int Lam_cd = Lam_ab; // tcm and trel conserve lam and Lam, ie relative and com orbital angular momentum
+                 for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
+                 {
+                    if (Lab<std::abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
+                    // factor to account for antisymmetrization
+
+                    int asymm_factor = (std::abs(bra.op->tz2+ket.op->tz2) + std::abs(bra.op->tz2+ket.oq->tz2)*Op.modelspace->phase( lam_ab + Sab ))/ 2;
+                    if ( asymm_factor ==0 ) continue;
+
+                    int n_ab = (fab - 2*N_ab-Lam_ab-lam_ab)/2; // n_ab is determined by energy conservation
+                    double mosh_ab = Op.modelspace->GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
+                    if (std::abs(mosh_ab)<1e-8) continue;
+
+                    for (int lam_cd=std::max(lam_ab%2,lam_ab-2); lam_cd<=lam_ab+2; lam_cd +=2)
+                    {
+
+                      for (int N_cd=std::max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
+                      {
+                        int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
+                        if (n_cd < 0) continue;
+//                        if  (n_ab != n_cd and N_ab != N_cd) continue;
+
+                        double mosh_cd = Op.modelspace->GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
+                        if (std::abs(mosh_cd)<1e-8) continue;
+
+                        // need to loop over isospin as well
+                        int indexab = (lam_ab/2) * (emax/2+1) + n_ab;
+                        int indexcd = (lam_cd/2) * (emax/2+1) + n_cd;
+
+                        for (int T=std::abs(Tz); T<=1; T++)
+                        {
+                          auto key = Jacobi2b_Channel_Hash(S, T, Tz, J);
+                          double iso_clebsch = AngMom::CG(0.5,0.5*tz2a,0.5,0.5*tz2b,T,Tz) * AngMom::CG(0.5,0.5*tz2c,0.5,0.5*tz2d,T,Tz);
+                          double vrel = Vrel[key](indexab,indexcd);
+                          vlab +=   njab * njcd * mosh_ab * mosh_cd * iso_clebsch * asymm_factor * vrel ;
+                        }
+                      }// for N_cd
+                    }// for lam_cd
+                  }// for lam_ab
+                }// for Lam_ab
+              }// for N_ab
+            }// for Sab
+          }// for Lab
+        mtx(ibra,iket) += vlab;
+        if (ibra != iket) mtx(iket,ibra) += vlab;
+      }// for iket
+    }// for ibra
+  }// for iter_ch
+
+
+}
+
+
+
+
 /*
 void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
 {
@@ -2267,7 +2449,6 @@ uint64_t Petr2BC_hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t j
 {
   return    a + (b <<8 ) + (c << 16) + (d << 24) + (jab << 32) + (jcd << 40) + (tab << 48) + (tcd << 56);
 }
-
 
 void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
 {
@@ -3996,8 +4177,8 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
    for ( auto a : modelspace->valence )
    {
       int a_ind = orb2nushell[a];
-//      double me = Op.OneBody(a,Q) * EdmondsConventionFactor;
       double me = Op.OneBody(a,0) * EdmondsConventionFactor;
+//      double me = Op.OneBody(a,Q) * EdmondsConventionFactor;
       if ( std::abs(me) < 1e-7 ) continue;
       outfile << std::setw(wint) << a_ind << " " << std::fixed << std::setw(wdouble) << std::setprecision(pdouble) <<  me << std::endl;
    }
@@ -4043,6 +4224,147 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
 
 
 
+
+void ReadWrite::WriteValence3body( ThreeBodyMEpn& threeBME, std::string filename )
+{
+
+   std::ofstream intfile;
+   intfile.open(filename, std::ofstream::out);
+   ModelSpace * modelspace = threeBME.GetModelSpace();
+
+   int wint = 4; // width for printing integers
+   int wdouble = 12; // width for printing doubles
+   int pdouble = 6; // precision for printing doubles
+
+   // valence protons are the intersection of valence orbits and protons orbits. Likewise for neutrons.
+   std::vector<int> valence_protons(modelspace->valence.size());
+   std::vector<int> valence_neutrons(modelspace->valence.size());
+   auto it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->proton_orbits.begin(), modelspace->proton_orbits.end(),valence_protons.begin());
+   valence_protons.resize(it-valence_protons.begin());
+   it = set_intersection(modelspace->valence.begin(), modelspace->valence.end(), modelspace->neutron_orbits.begin(), modelspace->neutron_orbits.end(),valence_neutrons.begin());
+   valence_neutrons.resize(it-valence_neutrons.begin());
+
+   // construct conversion maps from local orbit index to nushell index
+   std::map<int,int> orb2nushell;
+   std::map<int,int> nushell2orb;
+   int counter = 1;
+   // protons first
+   for ( auto i : valence_protons ) orb2nushell[i] = counter++;
+   // then neutrons
+   for ( auto i : valence_neutrons ) orb2nushell[i] = counter++;
+   for ( auto& it : orb2nushell) nushell2orb[it.second] = it.first;
+
+   // Get A of the core
+   int Acore=0;
+   for (auto& i : modelspace->core)
+   {
+      Orbit& oi = modelspace->GetOrbit(i);
+      Acore += oi.j2 + 1;
+   }
+#ifdef BUILDVERSION
+   intfile << "! valence 3-body interaction generated by IMSRG version " << BUILDVERSION << std::endl;
+#else
+   intfile << "! valence 3-body interaction generated by IMSRG" << std::endl;
+#endif
+
+
+   intfile << "! input 2N: " << File2N.substr( File2N.find_last_of("/\\")+1 ) << std::endl;
+   intfile << "! input 3N: " << File3N.substr( File3N.find_last_of("/\\")+1 ) << std::endl;
+   intfile << "! e1max: " << modelspace->GetEmax() << "  e2max: " << modelspace->GetE2max() << "   e3max: " << modelspace->GetE3max() << "   hw: " << modelspace->GetHbarOmega();
+   intfile << "   Aref: " << Aref << "  Zref: " << Zref << "  A_for_kinetic_energy: " << modelspace->GetTargetMass() << std::endl;
+//   intfile << "! Zero body term: " << op.ZeroBody << std::endl;
+   intfile << "! Note that V is given in un-normalized form; it given by a sum over m-scheme elements multiplied by 4 Clebsch-Gordan coefficients" << std::endl;
+   intfile << "! Index   n l j tz" << std::endl;
+
+   for ( auto& it : nushell2orb )
+   {
+      Orbit& oi = modelspace->GetOrbit(it.second);
+      intfile << "!  " << it.first << "   " << oi.n << " " << oi.l << " " << oi.j2 << "/2" << " " << oi.tz2 << "/2" << std::endl;
+   }
+   intfile << "!" << std::endl;
+   intfile << "!" << std::setw(wint-1) << "a" << " " << std::setw(wint) << "b" << " " << std::setw(wint) <<"c" 
+           << " " << std::setw(wint) << "d" << " " << std::setw(wint) << "e" << " " << std::setw(wint)
+           << "f" << "   " << std::setw(wint)  << "Jab" << " " << std::setw(wint) << "Jde"
+           << " " << std::setw(wint) << "2J" << "      "
+           << std::setw(wdouble) << "V" << std::endl;
+
+
+   for ( auto& ita : nushell2orb )
+   {
+    int a_nush   = ita.first;
+    int a_imsrg  = ita.second;
+    Orbit& oa = modelspace->GetOrbit(a_imsrg);
+    for ( auto& itb : nushell2orb )
+    {
+     int b_nush   = itb.first;
+     int b_imsrg  = itb.second;
+     Orbit& ob = modelspace->GetOrbit(b_imsrg);
+     if (b_nush>a_nush) continue;
+     int Jab_min = std::abs(oa.j2-ob.j2)/2;
+     int Jab_max = (oa.j2+ob.j2)/2;
+     for ( auto& itc : nushell2orb )
+     {
+      int c_nush   = itc.first;
+      int c_imsrg  = itc.second;
+      if (c_nush>b_nush) continue;
+      Orbit& oc = modelspace->GetOrbit(c_imsrg);
+      for ( auto& itd : nushell2orb )
+      {
+       int d_nush   = itd.first;
+       int d_imsrg  = itd.second;
+       Orbit& od = modelspace->GetOrbit(d_imsrg);
+       for ( auto& ite : nushell2orb )
+       {
+        int e_nush   = ite.first;
+        int e_imsrg  = ite.second;
+        Orbit& oe = modelspace->GetOrbit(e_imsrg);
+        if (e_nush>d_nush) continue;
+        int Jde_min = std::abs(od.j2-oe.j2)/2;
+        int Jde_max = (od.j2+oe.j2)/2;
+        for ( auto& itf : nushell2orb )
+        {
+         int f_nush   = itf.first;
+         int f_imsrg  = itf.second;
+         Orbit& of = modelspace->GetOrbit(f_imsrg);
+//         std::cout << "abcdef: " << a_nush << " " << b_nush << " " << c_nush << " " << d_nush << " " << e_nush << " " << f_nush << "  PN = " << threeBME.PN_mode << std::endl;
+         if (f_nush>e_nush) continue;
+         if ( (oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2 > 0) continue;
+         if ( (oa.tz2+ob.tz2+oc.tz2) != (od.tz2+oe.tz2+of.tz2) ) continue;
+         for (int Jab = Jab_min; Jab <= Jab_max; Jab++)
+         {
+           if ( a_nush==b_nush and Jab%2>0 ) continue;
+           for (int Jde = Jde_min; Jde <= Jde_max; Jde++)
+           {
+             if ( d_nush==e_nush and Jde%2>0 ) continue;
+             int twoJ_min = std::max( std::abs( 2*Jab-oc.j2), std::abs(2*Jde-of.j2));
+             int twoJ_max = std::min( ( 2*Jab+oc.j2), (2*Jde+of.j2));
+             for (int twoJ = twoJ_min; twoJ <= twoJ_max; twoJ+=2)
+             {
+//               std::cout << "Calling get ME_pn   abcdef: " << a_imsrg << " " << b_imsrg << " " << c_imsrg << " " << d_imsrg << " " << e_imsrg << " " << f_imsrg << "   Jab Jde twoJ = " << Jab << " " << Jde << " " << twoJ << "   PN is " << threeBME.PN_mode << std::endl;
+               double matel = threeBME.GetME_pn( Jab, Jde, twoJ, a_imsrg, b_imsrg, c_imsrg, d_imsrg, e_imsrg, f_imsrg);
+//               std::cout << "  matel = " << matel << std::endl;
+//               if (a_nush==1 and b_nush==1 and c_nush==1 and d_nush==1 and e_nush==1 and f_nush==1 and twoJ==5)
+//               {
+//                 std::cout << "abcdef: " << a_imsrg << " " << b_imsrg << " " << c_imsrg << " " << d_imsrg << " " << e_imsrg << " " << f_imsrg << "   Jab Jde twoJ = " << Jab << " " << Jde << " " << twoJ << "   matel = " << matel << "   PN is " << threeBME.PN_mode << std::endl;
+//               }
+               intfile << std::setw(wint) << a_nush << " " << std::setw(wint) << b_nush << " " << std::setw(wint) << c_nush
+                       << " " << std::setw(wint) << d_nush << " " << std::setw(wint) << e_nush << " " << std::setw(wint)
+                       << f_nush << "   " << std::setw(wint)  << Jab << " " << std::setw(wint) << Jde
+                       << " " << std::setw(wint) << twoJ << "      "
+                       << std::setw(wdouble) << std::fixed << std::setprecision(pdouble) << matel << std::endl;
+             }// for twoJ
+           }// for Jde
+         }// for Jab
+
+        }// for itf
+       }// for ite
+      }// for itd
+     }// for itc
+    }// for itb
+   }// for ita
+   std::cout << "that went well" << std::endl;
+
+}
 
 
 

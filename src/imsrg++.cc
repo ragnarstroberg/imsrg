@@ -219,7 +219,13 @@ int main(int argc, char** argv)
 
   ModelSpace modelspace = ( reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space) );
 
+  modelspace.SetE3max(E3max);
   modelspace.SetLmax(lmax);
+  if (lmax!= 99999)
+  {
+    modelspace.ClearVectors();
+    modelspace.Init(eMax, reference,valence_space);  
+  }
 
   if (emax_unocc>0)
   {
@@ -244,7 +250,6 @@ int main(int argc, char** argv)
   modelspace.SetHbarOmega(hw);
   if (targetMass>0)
      modelspace.SetTargetMass(targetMass);
-  modelspace.SetE3max(E3max);
   if (lmax3>0)
      modelspace.SetLmax3(lmax3);
 

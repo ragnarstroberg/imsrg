@@ -860,6 +860,7 @@ void Operator::SetNumberLegs( int l)
   else
   {
     TwoBody.Deallocate();
+    OneBody.zeros(modelspace->GetNumberOrbits(), 1);  // reduce it to a single column
     ThreeLeg.Allocate();
     OneBody.zeros( modelspace->GetNumberOrbits(), 1);
   }
@@ -1220,17 +1221,17 @@ double Operator::MP1_Eval(Operator& H)
 /// \f[ \|X_{(1)}\|^2 = \sum\limits_{ij} X_{ij}^2 \f]
 double Operator::Norm() const
 {
-   if (legs%2==0)
+   if ( legs%2 == 0)
    {
-     double n1 = OneBodyNorm();
-     double n2 = TwoBody.Norm();
-     return sqrt(n1*n1+n2*n2);
+      double n1 = OneBodyNorm();
+      double n2 = TwoBody.Norm();
+      return sqrt(n1*n1+n2*n2);
    }
    else
    {
-     double n1 = OneLegNorm();
-     double n2 = ThreeLeg.Norm();
-     return sqrt(n1*n1+n2*n2);
+      double n1 = OneLegNorm();
+      double n2 = ThreeLeg.Norm();
+      return sqrt(n1*n1+n2*n2);
    }
 }
 
@@ -1250,18 +1251,6 @@ double Operator::OneBodyNorm() const
    return sqrt(nrm);
 }
 
-double Operator::OneLegNorm() const
-{
-   double nrm = 0;
-   for ( size_t p=0; p<modelspace->GetNumberOrbits(); ++p)
-   {
-     Orbit& op = modelspace->GetOrbit(p);
-     int degeneracy_factor = (op.j2+1) ;
-     nrm += OneBody(p,0)*OneBody(p,0) * degeneracy_factor * degeneracy_factor;
-   }
-   return sqrt(nrm);
-}
-
 
 double Operator::TwoBodyNorm() const
 {
@@ -1274,6 +1263,17 @@ double Operator::ThreeBodyNorm() const
   return ThreeBody.Norm();
 }
 
+double Operator::OneLegNorm() const
+{
+   double nrm = 0;
+   for ( size_t p=0; p<modelspace->GetNumberOrbits(); ++p)
+   {
+     Orbit& op = modelspace->GetOrbit(p);
+     int degeneracy_factor = (op.j2+1) ;
+     nrm += OneBody(p,0)*OneBody(p,0) * degeneracy_factor * degeneracy_factor;
+   }
+  return sqrt(nrm);
+}
 
 double Operator::ThreeLegNorm() const
 {

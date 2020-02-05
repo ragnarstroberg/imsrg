@@ -190,9 +190,9 @@ class Operator
 
   double Norm() const;
   double OneBodyNorm() const;
-  double OneLegNorm() const;
   double TwoBodyNorm() const;
   double ThreeBodyNorm() const;
+  double OneLegNorm() const;
   double ThreeLegNorm() const;
 
 

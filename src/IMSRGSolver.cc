@@ -904,6 +904,7 @@ void IMSRGSolver::WriteFlowStatus(std::ostream& f)
 //        << std::setw(fwidth) << std::setprecision(fprecision) << Omega.Norm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().OneBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().TwoBodyNorm()
+        << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().ThreeBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Eta.OneBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Eta.TwoBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Eta.ThreeBodyNorm()
@@ -941,6 +942,7 @@ void IMSRGSolver::WriteFlowStatusHeader(std::ostream& f)
         << std::setw(fwidth) << std::setprecision(fprecision) << " estim. err"
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_1||"
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_2||"
+        << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_3||"
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_1||"
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_2||"
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_3||"

@@ -396,6 +396,26 @@ void UnitTest::Test3BodyAntisymmetry(Operator& Y)
 
 
 
+void UnitTest::Test3BodySetGet(Operator& Y)
+{
+  int i=2,j=0,k=0,l=2,m=0,n=0;
+  int Jij=1;
+  int Jlm=1;
+  int twoJ=1;
+
+  double meread = Y.ThreeBody.GetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n);
+  double setval = 10.0;
+  Y.ThreeBody.SetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n,setval);
+  double getval = Y.ThreeBody.GetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n);
+
+  std::cout << "Before setting, ME = " << meread << std::endl;
+  std::cout << "Set to " << setval << std::endl;
+  std::cout << "After setting, get " << getval << std::endl;
+
+}
+
+
+
 void UnitTest::TestCommutators()
 {
   double t_start = omp_get_wtime();
@@ -441,15 +461,33 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 //  Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, +1);
 //  random_seed --;
 
+  Operator Xherm = Y;
+  Xherm.TwoBody.Erase();
+  Xherm.ThreeBody.Erase();
   X += RandomOp(*modelspace, 0, 0, 0, 2, -1);
   Y += RandomOp(*modelspace, 0, 0, 0, 2, +1);
+  Xherm += RandomOp(*modelspace, 0, 0, 0, 2, +1);
+  X.ThreeBody.Erase();
+  Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
   bool all_good = true;
 
 //  all_good &= Test_comm330ss( X, Y );
 //  all_good &= Test_comm331ss( X, Y );
 //  all_good &= Test_comm231ss( X, Y );
 //  all_good &= Test_comm132ss( X, Y );
-  all_good &= Test_comm223ss( X, Y );
+//  all_good &= Test_comm232ss( X, Y );
+//  all_good &= Test_comm223ss( X, Y );
+//  all_good &= Test_comm133ss( X, Y );
+
+  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
+//  all_good &= Test_comm332_pphhss( X, Y );  
+
+//  all_good &= Test_comm233_pp_hhss( X, Y );   
+//  all_good &= Test_comm233_ph_ss( X, Y );  
+//  all_good &= Test_comm333_ppp_hhh_ss( X, Y );  
+//  all_good &= Test_comm333_pph_hhp_ss( X, Y );  
+
+
 
   if ( all_good )
   {
@@ -472,6 +510,43 @@ void UnitTest::TestDaggerCommutators(index_t Q)
   arma::arma_rng::set_seed( random_seed );
   Operator X = RandomOp(*modelspace, 0, 0, 0, 2, -1);
   Operator Y = RandomDaggerOp(*modelspace, Q);
+
+  Orbit& oQ = Y.modelspace->GetOrbit(Q);
+  
+  Y *= 0;
+  std::vector<Operator> Yn;
+  std::vector<Operator> Zn;
+  for (size_t n : Y.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+  {
+    Y.OneBody(n,0) = 1.0;
+    Yn.push_back( 0*Y );
+    Yn.back().OneBody(n,0) = 1.0;
+    Zn.push_back(  Commutator::Commutator( X, Yn.back() ) );
+    Zn.back() = Commutator::Commutator( X, Zn.back() );
+  }
+  
+  Operator Z = Commutator::Commutator( X, Y);
+  Z = Commutator::Commutator( X, Z);
+
+  std::cout << "Y 1b: " << std::endl << Y.OneBody << std::endl;
+  std::cout << "Yn 1b: " << std::endl;
+  for (auto y : Yn ) std::cout << y.OneBody << std::endl;
+  std::cout << std::endl;
+
+  std::cout << std::endl;
+  std::cout << "Z 1b: " << std::endl << Z.OneBody << std::endl;
+  std::cout << "Zn 1b: " << std::endl;
+  for (auto z : Zn ) std::cout << z.OneBody << std::endl;
+  std::cout << std::endl;
+
+
+  Operator Zdiff = Z;
+  std::cout << "legs for Z and Zdiff : " << Z.legs << " " << Zdiff.legs << std::endl;
+  for ( auto z : Zn ) Zdiff -= z;
+  std::cout << "norm of Zdiff = " << Zdiff.Norm() << "  norm Z = " << Z.Norm()
+            << "  norm of Zn = ";
+  for (auto z : Zn ) std::cout << z.Norm() << " ";
+  std::cout << std::endl;
 
   bool all_good = true;
 
@@ -674,20 +749,22 @@ double UnitTest::GetMschemeMatrixElement_3b( const Operator& Op, int a, int ma, 
         double meJ = Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f);
 //        matel += clebsch_ab * clebsch_abc * clebsch_de * clebsch_def * Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f);
         matel += clebsch_ab * clebsch_abc * clebsch_de * clebsch_def * meJ;
+//        std::cout << " line " << __LINE__ << "   J1,J2,J = " << Jab << " " << Jde << " " << twoJ << "  cgs: " << clebsch_ab << " " << clebsch_abc << " " << clebsch_de << " " << clebsch_def << "   =  " << clebsch_ab * clebsch_abc * clebsch_de * clebsch_def << " * " << meJ << std::endl;
 
 //        if ((a==0 and b==0 and c==3 and d==2 and e==5 and f==2) or (d==0 and e==0 and f==3 and a==2 and b==5 and c==2)) 
 //        if ((a==0 and b==0 and c==3 and d==2 and e==2 and f==5 and Jde==1) ) 
 //        if ((a==0 and b==0 and c==3 and d==2 and e==2 and f==5 ) or  (a==0 and b==3 and c==0 and d==2 and e==2 and f==5 ) or (a==3 and b==0 and c==0 and d==2 and e==2 and f==5 )) 
 //        if ((a==0 and b==0 and c==5 and d==0 and e==0 and f==5 ) or  (a==0 and b==5 and c==0 and d==0 and e==0 and f==5 ) or (a==5 and b==0 and c==0 and d==0 and e==0 and f==5 )) 
-        if ((a==0 and b==0 and c==10 and d==0 and e==10 and f==0 ) ) 
-        {
-        std::cout << "$abc: " << a << " " << b << " " << c << " def: " << d << " " << e << " " << f << std::endl;
-        std::cout << "$m vals: " << ma << " " << mb << " " << mc << "  " << md << " " << me << " " << mf << std::endl;
-        std::cout << "        Jab Jde twoJ " << Jab << " " << Jde << " " << twoJ
-                  << " clebsch: " << clebsch_ab << " " << clebsch_de << " " << clebsch_abc << " " << clebsch_def
-                  << "   matel_J " << meJ 
-                  << "  matel = " << matel << std::endl;
-        }
+//        if ((a==0 and b==0 and c==10 and d==0 and e==10 and f==0 ) ) 
+//        if ((a==2 and b==0 and c==0 and d==2 and e==0 and f==0 ) ) 
+//        {
+//        std::cout << "$abc: " << a << " " << b << " " << c << " def: " << d << " " << e << " " << f << std::endl;
+//        std::cout << "$m vals: " << ma << " " << mb << " " << mc << "  " << md << " " << me << " " << mf << std::endl;
+//        std::cout << "        Jab Jde twoJ " << Jab << " " << Jde << " " << twoJ
+//                  << " clebsch: " << clebsch_ab << " " << clebsch_de << " " << clebsch_abc << " " << clebsch_def
+//                  << "   matel_J " << meJ 
+//                  << "  matel = " << matel << std::endl;
+//        }
 //        if (a==0 and b==0 and c==3 and d==2 and e==5 and f==2) std::cout << "    003252: Jab,Jde,J " << Jab << " " << Jde << " " << twoJ << "   -> " << Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f) << " -> " << matel << std::endl;
 //        if (a==0 and b==0 and c==3 and d==2 and e==2 and f==5) std::cout << "    003225: Jab,Jde,J " << Jab << " " << Jde << " " << twoJ << "   -> " << Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f) << " -> " << matel << std::endl;
 //        if (a==2 and b==2 and c==5 and d==0 and e==0 and f==3) std::cout << "   225003: Jab,Jde,J " << Jab << " " << Jde << " " << twoJ << "   -> " << Op.ThreeBody.GetME_pn(Jab, Jde, twoJ, a,b,c,d,e,f) << " -> " << matel << std::endl;
@@ -1621,31 +1698,44 @@ bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y )
     for ( auto j : Z_J.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
 //      Orbit& oj = X.modelspace->GetOrbit(j);
+      if (j<i) continue;
       int mj = mi;
       double Zm_ij = 0;
       size_t norb = X.modelspace->GetNumberOrbits();
+//      std::cout << __func__ << "  ij = " << i << " " << j << std::endl;
 //      for ( auto a : X.modelspace->all_orbits )
       #pragma omp parallel for schedule(dynamic,1) reduction(+:Zm_ij)
       for (size_t a=0; a<norb; a++)
       {
         Orbit& oa = X.modelspace->GetOrbit(a);
         double na = oa.occ;
+        if ( na<1e-6 ) continue;
         for ( auto b : X.modelspace->all_orbits )
         {
           Orbit& ob = X.modelspace->GetOrbit(b);
           double nb = ob.occ;
+          if ( nb<1e-6 ) continue;
           for ( auto c : X.modelspace->all_orbits )
           {
             Orbit& oc = X.modelspace->GetOrbit(c);
             double nc = oc.occ;
+            if ( (1-nc)<1e-6 ) continue;
             for ( auto d : X.modelspace->all_orbits )
             {
               Orbit& od = X.modelspace->GetOrbit(d);
               double nd = od.occ;
+              if ( (1-nd)<1e-6 ) continue;
               for ( auto e : X.modelspace->all_orbits )
               {
                 Orbit& oe = X.modelspace->GetOrbit(e);
+                if ( (oa.l+ob.l+oi.l + oc.l+od.l+oe.l)%2 > 0) continue;
+                if ( (oa.tz2+ob.tz2+oi.tz2) != (oc.tz2+od.tz2+oe.tz2)) continue;
                 double ne = oe.occ;
+                if ( (1-ne)<1e-6 ) continue;
+                double occfactor = na*nb*(1-nc)*(1-nd)*(1-ne);
+                if (std::abs(occfactor)<1e-7) continue;
+//                std::cout << "abcde " << a << " " << b << " " << c << " " << d << " " << e << " " << e << std::endl;
+
                 for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
                 {
                  for (int mb=-ob.j2; mb<=ob.j2; mb+=2)
@@ -1655,12 +1745,13 @@ bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y )
                    for (int md=-od.j2; md<=od.j2; md+=2)
                    {
                     int me = ma+mb+mi - mc-md;
+                    if (std::abs(me) > oe.j2) continue;
 // Z_ij = 1/4 sum_abcde (nanb n`c n`dn`e) (X_abicde Y_cdeabj - Y_abicde X_cdeabj)
                     double xabicde = GetMschemeMatrixElement_3b( X, a,ma, b,mb, i,mi, c,mc, d,md, e,me );
                     double ycdeabj = GetMschemeMatrixElement_3b( Y, c,mc, d,md, e,me, a,ma, b,mb, j,mj );
                     double xcdeabj = GetMschemeMatrixElement_3b( X, c,mc, d,md, e,me, a,ma, b,mb, j,mj );
                     double yabicde = GetMschemeMatrixElement_3b( Y, a,ma, b,mb, i,mi, c,mc, d,md, e,me );
-                    Zm_ij += 1./4 * na*nb*(1-nc)*(1-nd)*(1-ne) * ( xabicde * ycdeabj - yabicde * xcdeabj );
+                    Zm_ij += 1./4 * occfactor * ( xabicde * ycdeabj - yabicde * xcdeabj );
                    }// for md
                   }// for mc
                  }// for mb
@@ -1730,22 +1821,31 @@ bool UnitTest::Test_comm231ss( const Operator& X, const Operator& Y )
       int mj = mi;
       double Zm_ij = 0;
 
-      for ( auto a : X.modelspace->all_orbits )
+      size_t norb = X.modelspace->GetNumberOrbits();
+//      for ( auto a : X.modelspace->all_orbits )
+      #pragma omp parallel for schedule(dynamic,1) reduction(+:Zm_ij)
+      for ( size_t a=0; a<norb; a++ )
       {
         Orbit& oa = X.modelspace->GetOrbit(a);
         double na = oa.occ;
+        if (na<1e-6) continue;
         for ( auto b : X.modelspace->all_orbits )
         {
           Orbit& ob = X.modelspace->GetOrbit(b);
           double nb = ob.occ;
+          if (nb<1e-6) continue;
           for ( auto c : X.modelspace->all_orbits )
           {
             Orbit& oc = X.modelspace->GetOrbit(c);
             double nc = oc.occ;
+            if ((1-nc)<1e-6) continue;
             for ( auto d : X.modelspace->all_orbits )
             {
               Orbit& od = X.modelspace->GetOrbit(d);
               double nd = od.occ;
+              if ((1-nd)<1e-6) continue;
+              if ( (oa.l+ob.l+oc.l+od.l)%2 > 0 ) continue;
+              if ( (oa.tz2+ob.tz2) !=(oc.tz2+od.tz2) ) continue;
               for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
               {
                for (int mb=-ob.j2; mb<=ob.j2; mb+=2)
@@ -1863,25 +1963,21 @@ bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y )
              int ml = mi + mj - mk;
              if ( std::abs(ml)>ol.j2) continue;
 
+//                  if ( mi != mk) continue;
+//             if (not (i==0 and j==0 and k==0 and l==10)) continue;
              double Zm_ijkl = 0;
              for (auto a : X.modelspace->all_orbits )
              {
               Orbit& oa = X.modelspace->GetOrbit(a);
               double na = oa.occ;
-//              for (auto b : X.modelspace->all_orbits )
               for (auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
               {
                 Orbit& ob = X.modelspace->GetOrbit(b);
                 double nb = ob.occ;
 
-                if ( (oi.l+oj.l+ob.l+ok.l+ol.l+oa.l)%2>0) continue;
-//                if ( (oi.l+oj.l+oa.l+ob.l)%2>0) continue;
-//                if ( (oi.tz2+oj.tz2) != (oa.tz2+ob.tz2) ) continue;
-                if ( (oi.tz2+oj.tz2+ob.tz2) != (ok.tz2+ol.tz2+oa.tz2) ) continue;
 
                 for (int ma=-oa.j2; ma<=oa.j2; ma+=2 )
                 {
-//                   int mb = mi + mj - ma;
                    int mb = ma;
                 
                   double xab = GetMschemeMatrixElement_1b( X, a,ma, b,mb );
@@ -1889,17 +1985,7 @@ bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y )
                   double xijbkla = GetMschemeMatrixElement_3b( X, i,mi, j,mj, b,mb, k,mk, l,ml, a,ma );
                   double yijbkla = GetMschemeMatrixElement_3b( Y, i,mi, j,mj, b,mb, k,mk, l,ml, a,ma );
 
-//                  Zm_ijkl +=  ( na*(1-nb) - nb*(1-na) ) * (xab * yijbkla - yab * xijbkla  );
-//                  Zm_ijkl +=  ( na - nb ) * (xab * yijbkla - yab * xijbkla  );
-//                 Zm_ijkl +=  ( na - nb ) * (xab * yijbkla   );
-                  Zm_ijkl +=  ( na - nb ) * (-yab * xijbkla   );
-                  if ( i==0 and j==0 and k==0 and l==10 and mi==mk and std::abs(na-nb)>1e-5 )
-                  {
-                   std::cout << " X  a,b = " << a << " " << b << " {m} = " << ma << " " << mb << "  yab = " << yab << " xijbkla = " << xijbkla << "   z= " << Zm_ijkl << std::endl;
-                   std::cout << " Y  a,b = " << a << " " << b << " {m} = " << ma << " " << mb << "  xab = " << xab << " yijbkla = " << yijbkla << "   z= " << Zm_ijkl << std::endl;
-                   std::cout << "    herm. conj. of X : " << GetMschemeMatrixElement_3b( X, k,mk, l,ml, a,ma, i,mi, j,mj, b,mb ) << std::endl;
-                   std::cout << "    herm. conj. of Y : " << GetMschemeMatrixElement_3b( Y, k,mk, l,ml, a,ma, i,mi, j,mj, b,mb ) << std::endl;
-                  }
+                  Zm_ijkl +=  ( na - nb ) * (1*xab * yijbkla - 1*yab * xijbkla   );
                 }// for ma
               }// for b
              }// for a
@@ -1934,20 +2020,176 @@ bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y )
 }
 
 
+
+/// M-Scheme Formula:
 //
-// M-scheme formula
+// Z_ijkl = -1/2 * sum_abc (n_a*n_b*nbar_c + nbar_a*nbar_b*n_c) * [  Xicab*Yabjklc - Xjcab*Yabiklc - Yijcabl*Xabkc + Yijcabk*Xablc 
+//                                                                 - Yicab*Xabjklc + Yjcab*Xabiklc + Xijcabl*Yabkc - Xijcabk*Yablc ]
 //
-// Z_ijklmn = (1-Pik-Pjk)(1-Plm-Pln) sum_a (X_ijla Y_akmn - Y_ijla X_akmn)
-//
-bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
+bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
 {
-  Operator Z_J( *(Y.modelspace), 0,0,0,3 );
-//  Operator Z_J( Y );
+
+  Operator Z_J( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
 
 
-  Commutator::comm223ss( X, Y, Z_J);
+  Commutator::comm232ss( X, Y, Z_J);
+
+  if ( Z_J.IsHermitian() )
+     Z_J.Symmetrize();
+  else if (Z_J.IsAntiHermitian() )
+     Z_J.AntiSymmetrize();
+
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+  std::cout << "Begin m-scheme loops" << std::endl;
+
+  for (auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+    for (auto j : X.modelspace->all_orbits )
+    {
+      if (j<i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits )
+      {
+        Orbit& ok = X.modelspace->GetOrbit(k);
+        if (k<i) continue;
+        for (auto l : X.modelspace->all_orbits )
+        {
+          if (l<k) continue;
+          Orbit& ol = X.modelspace->GetOrbit(l);
+          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue; // check parity
+          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue; // check isospin projection
+
+//          for (int mi=-oi.j2; mi<=oi.j2; mi+=2)
+          for (int mi= oi.j2; mi<=oi.j2; mi+=2)
+          {
+          for (int mj=-oj.j2; mj<=oj.j2; mj+=2)
+          {
+           for (int mk=-ok.j2; mk<=ok.j2; mk+=2)
+           {
+             if ( std::abs(mk)>ol.j2 ) continue; // this just eliminates some redundant matrix elements (I think?)
+             int ml = mi + mj - mk;
+             if ( std::abs(ml)>ol.j2) continue;
+
+//             if (i>0 or j>0 or k>0 or l>0) continue;
+//             if (not (i==0 and j==1 and k==0 and l==1)) continue;
+//             if (not (i==0 and j==1 and k==2 and l==5)) continue;
+//             if (not (i==0 and j==0 and k==2 and l==2)) continue;
+//             if (not (mi==-1 and mj==1 and mk==1 and ml==-1)) continue;
+//             if (not (i==2 and j==2 and k==0 and l==0)) continue;
+//             if (not (mi==1 and mj==-1 and mk==-1 and ml==1)) continue;
+
+             double Zm_ijkl = 0;
+             for (auto a : X.modelspace->all_orbits )
+             {
+              Orbit& oa = X.modelspace->GetOrbit(a);
+              double na = oa.occ;
+              for (auto b : X.modelspace->all_orbits )
+              {
+                Orbit& ob = X.modelspace->GetOrbit(b);
+                double nb = ob.occ;
+
+//                if ( (oi.l+oj.l+ob.l+ok.l+ol.l+oa.l)%2>0) continue;
+//                if ( (oi.tz2+oj.tz2+ob.tz2) != (ok.tz2+ol.tz2+oa.tz2) ) continue;
+
+//                     if (b>a) continue ;
+
+                for (auto c : X.modelspace->all_orbits )
+                {
+                  Orbit& oc = X.modelspace->GetOrbit(c);
+                  double nc = oc.occ;
+
+//                  if ( not ((a==0 and b==3) or  (a==3 and b==0)) ) continue;
+//                  if ( not ( (a==2 and b==2) or (a==0 and b==0) ) ) continue;
+//                  if ( not (a==5 and b==4 and c==1) ) continue;
+                  for (int ma=-oa.j2; ma<=oa.j2; ma+=2 )
+                  {
+                    for (int mb=-ob.j2; mb<=ob.j2; mb+=2 )
+                    {
+                      for (int mc=-oc.j2; mc<=oc.j2; mc+=2 )
+                      {
+                  
+                        double xicab = GetMschemeMatrixElement_2b( X, i,mi, c,mc, a,ma, b,mb );
+                        double yicab = GetMschemeMatrixElement_2b( Y, i,mi, c,mc, a,ma, b,mb );
+                        double xjcab = GetMschemeMatrixElement_2b( X, j,mj, c,mc, a,ma, b,mb );
+                        double yjcab = GetMschemeMatrixElement_2b( Y, j,mj, c,mc, a,ma, b,mb );
+                        double xabkc = GetMschemeMatrixElement_2b( X, a,ma, b,mb, k,mk, c,mc );
+                        double yabkc = GetMschemeMatrixElement_2b( Y, a,ma, b,mb, k,mk, c,mc );
+                        double xablc = GetMschemeMatrixElement_2b( X, a,ma, b,mb, l,ml, c,mc );
+                        double yablc = GetMschemeMatrixElement_2b( Y, a,ma, b,mb, l,ml, c,mc );
+
+                        double xabjklc = GetMschemeMatrixElement_3b( X, a,ma, b,mb, j,mj, k,mk, l,ml, c,mc );
+                        double yabjklc = GetMschemeMatrixElement_3b( Y, a,ma, b,mb, j,mj, k,mk, l,ml, c,mc );
+                        double xabiklc = GetMschemeMatrixElement_3b( X, a,ma, b,mb, i,mi, k,mk, l,ml, c,mc );
+                        double yabiklc = GetMschemeMatrixElement_3b( Y, a,ma, b,mb, i,mi, k,mk, l,ml, c,mc );
+                        double xijcabl = GetMschemeMatrixElement_3b( X, i,mi, j,mj, c,mc, a,ma, b,mb, l,ml );
+                        double yijcabl = GetMschemeMatrixElement_3b( Y, i,mi, j,mj, c,mc, a,ma, b,mb, l,ml );
+                        double xijcabk = GetMschemeMatrixElement_3b( X, i,mi, j,mj, c,mc, a,ma, b,mb, k,mk );
+                        double yijcabk = GetMschemeMatrixElement_3b( Y, i,mi, j,mj, c,mc, a,ma, b,mb, k,mk );
+
+                        double occfactor = na*nb*(1-nc) + (1-na)*(1-nb)*nc;
+
+                        Zm_ijkl += -0.5* occfactor * ( xicab*yabjklc - xjcab*yabiklc - yijcabl*xabkc + yijcabk*xablc
+                                                     - yicab*xabjklc + yjcab*xabiklc + xijcabl*yabkc - xijcabk*yablc );
+
+                      }// for mc
+                    }// for mb
+                  }// for ma
+                }// for c
+              }// for b
+             }// for a
+
+
+             double ZJ_ijkl = GetMschemeMatrixElement_2b( Z_J, i,mi, j,mj, k,mk, l,ml ) ;
+             double err = Zm_ijkl - ZJ_ijkl;
+             if (std::abs(err)>1e-6)
+             {
+               std::cout << "Trouble in " << __func__ << "  i,j,k,l = " << i << " " << j << " " << k << " " << l
+                         << " {m} = " << mi << " " << mj << " " << mk << " " << ml 
+                         << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << "   err = " << err << std::endl; 
+             }
+             summed_error += err*err;
+             sum_m += Zm_ijkl*Zm_ijkl;
+             sum_J += ZJ_ijkl*ZJ_ijkl;
+
+           }// for mk
+          }// for mj
+          }// for mi
+        }// for l
+      }// for k
+    }// for j
+  }// for i
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+}
+
+
+
+
+
+/// M-Scheme Formula:
+//
+// Z_ijkl = 1/6 * sum_abcd (n_a*n_b*n_c*nbar_d - nbar_a*nbar_b*nbar_c*n_d) * [  Xijdabc*Yabckld - Yijdabc*Xabckld  ]
+//
+bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ) // test not yet implemented
+{
+  Operator Z_J( Y );
+  Z_J.SetHermitian();
+  Z_J.Erase();
+
+
+  Commutator::comm332_ppph_hhhpss( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
      Z_J.Symmetrize();
@@ -1962,7 +2204,6 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
   for (auto i : X.modelspace->all_orbits )
   {
     Orbit& oi = X.modelspace->GetOrbit(i);
-    int mi = oi.j2;
     for (auto j : X.modelspace->all_orbits )
     {
       if (j<i) continue;
@@ -1970,20 +2211,352 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
       for (auto k : X.modelspace->all_orbits )
       {
         Orbit& ok = X.modelspace->GetOrbit(k);
-        if (k<j) continue;
+        if (k<i) continue;
+        for (auto l : X.modelspace->all_orbits )
+        {
+          if (l<k) continue;
+          Orbit& ol = X.modelspace->GetOrbit(l);
+          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue; // check parity
+          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue; // check isospin projection
+
+          for (int mi= oi.j2; mi<=oi.j2; mi+=2) // notice the lack of minus sign in the initial mi value
+          {
+          for (int mj=-oj.j2; mj<=oj.j2; mj+=2)
+          {
+           for (int mk=-ok.j2; mk<=ok.j2; mk+=2)
+           {
+             if ( std::abs(mk)>ol.j2 ) continue; // this just eliminates some redundant matrix elements (I think?)
+             int ml = mi + mj - mk;
+             if ( std::abs(ml)>ol.j2) continue;
+
+
+             double Zm_ijkl = 0;
+             size_t norb = X.modelspace->GetNumberOrbits();
+             #pragma omp parallel for schedule(dynamic,1)  reduction(+:Zm_ijkl)
+             for (size_t a=0; a<norb; a++ )
+             {
+              Orbit& oa = X.modelspace->GetOrbit(a);
+              double na = oa.occ;
+              for (auto b : X.modelspace->all_orbits )
+              {
+                Orbit& ob = X.modelspace->GetOrbit(b);
+                double nb = ob.occ;
+
+                for (auto c : X.modelspace->all_orbits )
+                {
+                  Orbit& oc = X.modelspace->GetOrbit(c);
+                  double nc = oc.occ;
+
+                  for (auto d : X.modelspace->all_orbits )
+                  {
+                    Orbit& od = X.modelspace->GetOrbit(d);
+                    double nd = od.occ;
+                    double occfactor = na*nb*nc*(1-nd) - (1-na)*(1-nb)*(1-nc)*nd;
+
+                    // These make the contribution trivially zero, so I skip them in the name of efficiently
+                    // testing the more complicated part. Commenting them out allows to check that the trivial stuff is right.
+                    if ( (oi.l+oj.l+od.l + oa.l+ob.l+oc.l)%2 >0 ) continue;
+                    if ( (oi.tz2+oj.tz2+od.tz2) != (oa.tz2+ob.tz2+oc.tz2)) continue;
+                    if (std::abs(occfactor)<1e-7) continue;
+
+                    for (int ma=-oa.j2; ma<=oa.j2; ma+=2 )
+                    {
+                      for (int mb=-ob.j2; mb<=ob.j2; mb+=2 )
+                      {
+                        for (int mc=-oc.j2; mc<=oc.j2; mc+=2 )
+                        {
+                          for (int md=-od.j2; md<=od.j2; md+=2 )
+                          {
+                            if ( (mi+mj+md) != (ma+mb+mc) ) continue;
+
+                            double xijdabc = GetMschemeMatrixElement_3b( X, i,mi, j,mj, d,md, a,ma, b,mb, c,mc );
+                            double yijdabc = GetMschemeMatrixElement_3b( Y, i,mi, j,mj, d,md, a,ma, b,mb, c,mc );
+                            double xabckld = GetMschemeMatrixElement_3b( X, a,ma, b,mb, c,mc, k,mk, l,ml, d,md );
+                            double yabckld = GetMschemeMatrixElement_3b( Y, a,ma, b,mb, c,mc, k,mk, l,ml, d,md );
+
+                           Zm_ijkl += 1./6 * occfactor * (xijdabc * yabckld - yijdabc * xabckld );
+
+                          }// for md
+                        }// for mc
+                      }// for mb
+                    }// for ma
+                  }// for d
+                }// for c
+              }// for b
+             }// for a
+
+
+             double ZJ_ijkl = GetMschemeMatrixElement_2b( Z_J, i,mi, j,mj, k,mk, l,ml ) ;
+             double err = Zm_ijkl - ZJ_ijkl;
+             if (std::abs(err)>1e-6)
+             {
+               std::cout << "Trouble in " << __func__ << "  i,j,k,l = " << i << " " << j << " " << k << " " << l
+                         << " {m} = " << mi << " " << mj << " " << mk << " " << ml 
+                         << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << "   err = " << err << std::endl; 
+             }
+             summed_error += err*err;
+             sum_m += Zm_ijkl*Zm_ijkl;
+             sum_J += ZJ_ijkl*ZJ_ijkl;
+
+           }// for mk
+          }// for mj
+          }// for mi
+        }// for l
+      }// for k
+    }// for j
+  }// for i
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+
+}
+
+/// M-Scheme Formula:
+//
+// Z_ijkl = 1/4 (1-Pij)(1-Pkl) sum_abcd (n_a*n_b*nbar_c*nbar_d) * (  Xabicdk*Ycdjabl - Yabicdk*Xcdjabl  )
+//
+// Z_ijkl = 1/4  sum_abcd (n_a*n_b*nbar_c*nbar_d) * (  Xabicdk*Ycdjabl - Yabicdk*Xcdjabl 
+//                                                   - Xabjcdk*Ycdiabl + Yabjcdk*Xcdiabl
+//                                                   - Xabicdl*Ycdjabk + Yabicdl*Xcdjabk
+//                                                   + Xabjcdl*Ycdiabk - Yabjcdl*Xcdiabk )
+//
+bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // test not yet implemented
+{
+  Operator Z_J( Y );
+  Z_J.SetHermitian();
+  Z_J.Erase();
+
+
+  Commutator::comm332_pphhss( X, Y, Z_J);
+
+  if ( Z_J.IsHermitian() )
+     Z_J.Symmetrize();
+  else if (Z_J.IsAntiHermitian() )
+     Z_J.AntiSymmetrize();
+
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  for (auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+    for (auto j : X.modelspace->all_orbits )
+    {
+      if (j<i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits )
+      {
+        Orbit& ok = X.modelspace->GetOrbit(k);
+        if (k<i) continue;
+        for (auto l : X.modelspace->all_orbits )
+        {
+          if (l<k) continue;
+          Orbit& ol = X.modelspace->GetOrbit(l);
+          if ( (oi.l+oj.l+ok.l+ol.l)%2>0) continue; // check parity
+          if ( (oi.tz2+oj.tz2) != (ok.tz2+ol.tz2) ) continue; // check isospin projection
+
+//          for (int mi=-oi.j2; mi<=oi.j2; mi+=2)
+          for (int mi= oi.j2; mi<=oi.j2; mi+=2)
+          {
+          for (int mj=-oj.j2; mj<=oj.j2; mj+=2)
+          {
+           for (int mk=-ok.j2; mk<=ok.j2; mk+=2)
+           {
+             if ( std::abs(mk)>ol.j2 ) continue; // this just eliminates some redundant matrix elements (I think?)
+             int ml = mi + mj - mk;
+             if ( std::abs(ml)>ol.j2) continue;
+
+//             if (i>0 or j>0 or k>0 or l>0) continue;
+//             if (not (i==0 and j==1 and k==0 and l==1)) continue;
+//             if (not (i==0 and j==1 and k==2 and l==5)) continue;
+//             if (not (i==0 and j==1 and k==2 and l==3)) continue;
+//             if (not (mi==-1 and mj==1 and mk==1 and ml==-1)) continue;
+//             if (not (i==2 and j==2 and k==0 and l==0)) continue;
+//             if (not (mi==1 and mj==-1 and mk==-1 and ml==1)) continue;
+//             if (not (mi==1 and mj==1 and mk==1 and ml==1)) continue;
+
+             double Zm_ijkl = 0;
+             size_t norb = X.modelspace->GetNumberOrbits();
+//             for (auto a : X.modelspace->all_orbits )
+             #pragma omp parallel for schedule(dynamic,1)  reduction(+:Zm_ijkl)
+             for ( size_t a=0; a<norb; a++ )
+             {
+              Orbit& oa = X.modelspace->GetOrbit(a);
+              double na = oa.occ;
+              for (auto b : X.modelspace->all_orbits )
+              {
+                Orbit& ob = X.modelspace->GetOrbit(b);
+                double nb = ob.occ;
+
+                for (auto c : X.modelspace->all_orbits )
+                {
+                  Orbit& oc = X.modelspace->GetOrbit(c);
+                  double nc = oc.occ;
+
+                  for (auto d : X.modelspace->all_orbits )
+                  {
+                    Orbit& od = X.modelspace->GetOrbit(d);
+                    double nd = od.occ;
+
+                    if (  (oa.l+ob.l+oi.l + oc.l+od.l+ok.l)%2>0
+                      and (oa.l+ob.l+oi.l + oc.l+od.l+ol.l)%2>0
+                      and (oa.l+ob.l+oj.l + oc.l+od.l+ol.l)%2>0
+                      and (oa.l+ob.l+oj.l + oc.l+od.l+ok.l)%2>0 ) continue; // check parity for X and Y
+
+                    if (  (oa.tz2+ob.tz2+oi.tz2) != (oc.tz2+od.tz2+ok.tz2)
+                      and (oa.tz2+ob.tz2+oi.tz2) != (oc.tz2+od.tz2+ol.tz2)
+                      and (oa.tz2+ob.tz2+oj.tz2) != (oc.tz2+od.tz2+ol.tz2)
+                      and (oa.tz2+ob.tz2+oj.tz2) != (oc.tz2+od.tz2+ok.tz2) ) continue; // check isospin projection
+
+
+                    for (int ma=-oa.j2; ma<=oa.j2; ma+=2 )
+                    {
+                      for (int mb=-ob.j2; mb<=ob.j2; mb+=2 )
+                      {
+                        for (int mc=-oc.j2; mc<=oc.j2; mc+=2 )
+                        {
+                          for (int md=-od.j2; md<=od.j2; md+=2 )
+                          {
+                    // Z_ijkl = 1/4  sum_abcd (n_a*n_b*nbar_c*nbar_d) * (  Xabicdk*Ycdjabl - Yabicdk*Xcdjabl 
+//                                                   - Xabjcdk*Ycdiabl + Yabjcdk*Xcdiabl
+//                                                   - Xabicdl*Ycdjabk + Yabicdl*Xcdjabk
+//                                                   + Xabjcdl*Ycdiabk - Yabjcdl*Xcdiabk )
+
+                          double xabicdk = GetMschemeMatrixElement_3b( X, a,ma, b,mb, i,mi, c,mc, d,md, k,mk );
+                          double xabicdl = GetMschemeMatrixElement_3b( X, a,ma, b,mb, i,mi, c,mc, d,md, l,ml );
+                          double xabjcdk = GetMschemeMatrixElement_3b( X, a,ma, b,mb, j,mj, c,mc, d,md, k,mk );
+                          double xabjcdl = GetMschemeMatrixElement_3b( X, a,ma, b,mb, j,mj, c,mc, d,md, l,ml );
+
+                          double ycdiabk = GetMschemeMatrixElement_3b( Y, c,mc, d,md, i,mi, a,ma, b,mb, k,mk );
+                          double ycdiabl = GetMschemeMatrixElement_3b( Y, c,mc, d,md, i,mi, a,ma, b,mb, l,ml );
+                          double ycdjabk = GetMschemeMatrixElement_3b( Y, c,mc, d,md, j,mj, a,ma, b,mb, k,mk );
+                          double ycdjabl = GetMschemeMatrixElement_3b( Y, c,mc, d,md, j,mj, a,ma, b,mb, l,ml );
+
+                          double occfactor = (1-na)*(1-nb)*nc*nd - na*nb*(1-nc)*(1-nd);
+
+//                          Zm_ijkl += 1./4 * occfactor * (xabicdl*ycdjabk 
+                          double dz = 1./4 * occfactor * (1*xabicdl*ycdjabk 
+                                                       -  1*xabjcdl*ycdiabk 
+                                                       -  1*xabicdk*ycdjabl 
+                                                       +  1*xabjcdk*ycdiabl   );
+                          Zm_ijkl += dz;
+
+//                          if (std::abs(dz)>1.0e-6 or (a==0 and b==1 and c==4 and d==5) )
+//                          if ( (a==0 and b==1 and c==4 and d==5) )
+//                          if (std::abs(dz)>1.0e-6  )
+//                          {
+//                          std::cout << "abcd " << a << " " << b << " " << c << " " << d << " {m} " << ma << " " << mb << " " << mc << " " << md
+//                                    << "    occfactor " << occfactor
+////                                    << "  xabjcdk " << xabjcdk << "  ycdiabk " << ycdiabk 
+//                                    << "  xabicdl " << xabicdl << "  ycdjabk " << ycdjabk 
+////                                    << "  xabicdk " << xabicdk << "  xabicdl " << xabicdl << "  xabjcdk  " << xabjcdk << "  xabjcdl " << xabjcdl
+////                                    << "  ycdiabk " << ycdiabk << "  ycdiabl " << ycdiabl << "  ycdjabk  " << ycdjabk << "  ycdjabl " << ycdjabl
+//                                    << "  dz = " << dz << "  => " << Zm_ijkl << std::endl;
+//                          }
+
+                          }// for md
+                        }// for mc
+                      }// for mb
+                    }// for ma
+                  }// for d
+                }// for c
+              }// for b
+             }// for a
+
+
+             double ZJ_ijkl = GetMschemeMatrixElement_2b( Z_J, i,mi, j,mj, k,mk, l,ml ) ;
+             double err = Zm_ijkl - ZJ_ijkl;
+             if (std::abs(err)>1e-6)
+             {
+               std::cout << "Trouble in " << __func__ << "  i,j,k,l = " << i << " " << j << " " << k << " " << l
+                         << " {m} = " << mi << " " << mj << " " << mk << " " << ml 
+                         << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << "   err = " << err << std::endl; 
+             }
+             summed_error += err*err;
+             sum_m += Zm_ijkl*Zm_ijkl;
+             sum_J += ZJ_ijkl*ZJ_ijkl;
+
+           }// for mk
+          }// for mj
+          }// for mi
+        }// for l
+      }// for k
+    }// for j
+  }// for i
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+}
+
+
+
+
+
+
+
+
+
+
+//
+// M-scheme formula
+//
+// Z_ijklmn = (1-Pik-Pjk)(1-Plm-Pln) sum_a (X_ijla Y_akmn - Y_ijla X_akmn)
+//
+bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
+{
+  Operator Z_J( Y );
+  Z_J.SetHermitian();
+  Z_J.Erase();
+  Z_J.ThreeBody.Allocate();
+
+
+  Commutator::comm223ss( X, Y, Z_J);
+
+  if ( Z_J.IsHermitian() )
+     Z_J.Symmetrize();
+  else if (Z_J.IsAntiHermitian() )
+     Z_J.AntiSymmetrize();
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  for (auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    for (auto j : X.modelspace->all_orbits )
+    {
+      if (j>i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits )
+      {
+        Orbit& ok = X.modelspace->GetOrbit(k);
+        if (k>j) continue;
 
 
         for (auto l : X.modelspace->all_orbits )
         {
-          if (l<i) continue;
+          if (l>i) continue;
           Orbit& ol = X.modelspace->GetOrbit(l);
           for ( auto m : X.modelspace->all_orbits )
           {
-            if (m<l) continue;
+            if (m>l) continue;
             Orbit& om = X.modelspace->GetOrbit(m);
             for (auto n : X.modelspace->all_orbits )
             {
-              if (n<m) continue;
+              if (n>m) continue;
               Orbit& on = X.modelspace->GetOrbit(n);
               if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
               if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
@@ -1995,6 +2568,8 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
                {
                 for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
                 {
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
+
                  for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
                  {
                   for (int m_m=-om.j2; m_m<=om.j2; m_m+=2)
@@ -2002,57 +2577,65 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
                    for (int m_n=-on.j2; m_n<=on.j2; m_n+=2)
                    {
                      if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
+                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or m==n and m_m==m_n) continue;
                      double z_ijklmn = 0;
-                     for ( auto a : X.modelspace->all_orbits )
+
+
+                     size_t norb = X.modelspace->GetNumberOrbits();
+//                     for ( auto a : X.modelspace->all_orbits )
+                     #pragma omp parallel for schedule(dynamic,1) reduction(+:z_ijklmn)
+                     for ( size_t a=0;a<norb; a++ )
                      {
                        Orbit& oa = X.modelspace->GetOrbit(a);
-                       for ( int m_a=-oa.j2; m_a<=oa.j2; m_a++)
+                       for ( int m_a=-oa.j2; m_a<=oa.j2; m_a+=2)
                        {
-                         // "direct" term
+                         // "direct" term  Z1
                          double x_ijla = GetMschemeMatrixElement_2b( X, i,m_i, j,m_j, l,m_l, a,m_a );
                          double y_akmn = GetMschemeMatrixElement_2b( Y, a,m_a, k,m_k, m,m_m, n,m_n );
                          double y_ijla = GetMschemeMatrixElement_2b( Y, i,m_i, j,m_j, l,m_l, a,m_a );
                          double x_akmn = GetMschemeMatrixElement_2b( X, a,m_a, k,m_k, m,m_m, n,m_n );
-                         // Pik
+                         // Pik  Z2
                          double x_kjla = GetMschemeMatrixElement_2b( X, k,m_k, j,m_j, l,m_l, a,m_a );
                          double y_aimn = GetMschemeMatrixElement_2b( Y, a,m_a, i,m_i, m,m_m, n,m_n );
                          double y_kjla = GetMschemeMatrixElement_2b( Y, k,m_k, j,m_j, l,m_l, a,m_a );
                          double x_aimn = GetMschemeMatrixElement_2b( X, a,m_a, i,m_i, m,m_m, n,m_n );
-                         // Pjk
+                         // Pjk   Z3
                          double x_ikla = GetMschemeMatrixElement_2b( X, i,m_i, k,m_k, l,m_l, a,m_a );
                          double y_ajmn = GetMschemeMatrixElement_2b( Y, a,m_a, j,m_j, m,m_m, n,m_n );
                          double y_ikla = GetMschemeMatrixElement_2b( Y, i,m_i, k,m_k, l,m_l, a,m_a );
                          double x_ajmn = GetMschemeMatrixElement_2b( X, a,m_a, j,m_j, m,m_m, n,m_n );
-                         // Plm
+                         // Plm   Z4
                          double x_ijma = GetMschemeMatrixElement_2b( X, i,m_i, j,m_j, m,m_m, a,m_a );
                          double y_akln = GetMschemeMatrixElement_2b( Y, a,m_a, k,m_k, l,m_l, n,m_n );
                          double y_ijma = GetMschemeMatrixElement_2b( Y, i,m_i, j,m_j, m,m_m, a,m_a );
                          double x_akln = GetMschemeMatrixElement_2b( X, a,m_a, k,m_k, l,m_l, n,m_n );
-                         // Pln
+                         // Pln   Z5
                          double x_ijna = GetMschemeMatrixElement_2b( X, i,m_i, j,m_j, n,m_n, a,m_a );
                          double y_akml = GetMschemeMatrixElement_2b( Y, a,m_a, k,m_k, m,m_m, l,m_l );
                          double y_ijna = GetMschemeMatrixElement_2b( Y, i,m_i, j,m_j, n,m_n, a,m_a );
                          double x_akml = GetMschemeMatrixElement_2b( X, a,m_a, k,m_k, m,m_m, l,m_l );
-                         // Pik Plm
+                         // Pik Plm    Z6
                          double x_kjma = GetMschemeMatrixElement_2b( X, k,m_k, j,m_j, m,m_m, a,m_a );
                          double y_ailn = GetMschemeMatrixElement_2b( Y, a,m_a, i,m_i, l,m_l, n,m_n );
                          double y_kjma = GetMschemeMatrixElement_2b( Y, k,m_k, j,m_j, m,m_m, a,m_a );
                          double x_ailn = GetMschemeMatrixElement_2b( X, a,m_a, i,m_i, l,m_l, n,m_n );
-                         // Pik Pln
+                         // Pik Pln    Z7
                          double x_kjna = GetMschemeMatrixElement_2b( X, k,m_k, j,m_j, n,m_n, a,m_a );
                          double y_aiml = GetMschemeMatrixElement_2b( Y, a,m_a, i,m_i, m,m_m, l,m_l );
                          double y_kjna = GetMschemeMatrixElement_2b( Y, k,m_k, j,m_j, n,m_n, a,m_a );
                          double x_aiml = GetMschemeMatrixElement_2b( X, a,m_a, i,m_i, m,m_m, l,m_l );
-                         // Pjk Plm
+                         // Pjk Plm    Z8
                          double x_ikma = GetMschemeMatrixElement_2b( X, i,m_i, k,m_k, m,m_m, a,m_a );
                          double y_ajln = GetMschemeMatrixElement_2b( Y, a,m_a, j,m_j, l,m_l, n,m_n );
                          double y_ikma = GetMschemeMatrixElement_2b( Y, i,m_i, k,m_k, m,m_m, a,m_a );
                          double x_ajln = GetMschemeMatrixElement_2b( X, a,m_a, j,m_j, l,m_l, n,m_n );
-                         // Pjk Pln
+                         // Pjk Pln    Z9
                          double x_ikna = GetMschemeMatrixElement_2b( X, i,m_i, k,m_k, n,m_n, a,m_a );
                          double y_ajml = GetMschemeMatrixElement_2b( Y, a,m_a, j,m_j, m,m_m, l,m_l );
                          double y_ikna = GetMschemeMatrixElement_2b( Y, i,m_i, k,m_k, n,m_n, a,m_a );
                          double x_ajml = GetMschemeMatrixElement_2b( X, a,m_a, j,m_j, m,m_m, l,m_l );
+//
+
                          z_ijklmn += x_ijla * y_akmn - y_ijla * x_akmn;
                          z_ijklmn -= x_kjla * y_aimn - y_kjla * x_aimn;
                          z_ijklmn -= x_ikla * y_ajmn - y_ikla * x_ajmn;
@@ -2062,12 +2645,13 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
                          z_ijklmn += x_kjna * y_aiml - y_kjna * x_aiml;
                          z_ijklmn += x_ikma * y_ajln - y_ikma * x_ajln;
                          z_ijklmn += x_ikna * y_ajml - y_ikna * x_ajml;
-                       }
-                     }
+
+                       }// for m_a
+                     }// for a
                     
                     double ZJ_ijklmn = GetMschemeMatrixElement_3b( Z_J, i,m_i, j,m_j, k,m_k, l,m_l, m,m_m, n,m_n );
                     double err = z_ijklmn - ZJ_ijklmn;
-                    if (std::abs(err)>1e-6)
+                    if (std::abs(err)>1e-6 )
                     {
                       std::cout << "Trouble in " << __func__ << "  i,j,k,l,m,n = " << i << " " << j << " " << k << " " << l << " " << m << " " << n
                                 << " {m} = " << m_i << " " << m_j << " " << m_k << " " << m_l << " " << m_m << " " << m_n
@@ -2101,6 +2685,944 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
 
  
 }
+
+
+
+bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y )
+{
+
+  Operator Z_J( Y );
+  Z_J.SetHermitian();
+  Z_J.Erase();
+  Z_J.ThreeBody.Allocate();
+
+  Commutator::comm133ss( X, Y, Z_J);
+
+  if ( Z_J.IsHermitian() )
+     Z_J.Symmetrize();
+  else if (Z_J.IsAntiHermitian() )
+     Z_J.AntiSymmetrize();
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  std::cout << __func__ << "    Start M loops" << std::endl;
+  for (auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    for (auto j : X.modelspace->all_orbits )
+    {
+      if (j<i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits )
+      {
+        Orbit& ok = X.modelspace->GetOrbit(k);
+        if (k<j) continue;
+
+
+        for (auto l : X.modelspace->all_orbits )
+        {
+          if (l<i) continue;
+          Orbit& ol = X.modelspace->GetOrbit(l);
+          for ( auto m : X.modelspace->all_orbits )
+          {
+            if (m<l) continue;
+            Orbit& om = X.modelspace->GetOrbit(m);
+            for (auto n : X.modelspace->all_orbits )
+            {
+              if (n<m) continue;
+              Orbit& on = X.modelspace->GetOrbit(n);
+              if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
+              if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
+
+//              if ( not (i==1 and j==0 and k==0 and l==1 and m==0 and n==0) ) continue;
+
+              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
+              // loop over projections
+              for (int m_i=-oi.j2; m_i<=oi.j2; m_i+=2)
+              {
+               for (int m_j=-oj.j2; m_j<=oj.j2; m_j+=2)
+               {
+                for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
+                {
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
+
+                 for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
+                 {
+                  for (int m_m=-om.j2; m_m<=om.j2; m_m+=2)
+                  {
+                   for (int m_n=-on.j2; m_n<=on.j2; m_n+=2)
+                   {
+                     if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
+                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or m==n and m_m==m_n) continue;
+
+//                     if (not (m_i==1 and m_j==1 and m_k==-1 and m_l==1 and m_m==-1 and m_n==1) ) continue;
+                     double z_ijklmn = 0;
+
+                     size_t norb = X.modelspace->GetNumberOrbits();
+//                     for ( auto a : X.modelspace->all_orbits )
+                     #pragma omp parallel for schedule(dynamic,1) reduction(+:z_ijklmn)
+                     for ( size_t a=0; a<norb; a++ )
+                     {
+//                       if (a!=11) continue;
+                       Orbit& oa = X.modelspace->GetOrbit(a);
+                       for ( int m_a=-oa.j2; m_a<=oa.j2; m_a+=2)
+                       {
+                         double xia = X.OneBody(i,a);
+                         double xja = X.OneBody(j,a);
+                         double xka = X.OneBody(k,a);
+                         double xal = X.OneBody(a,l);
+                         double xam = X.OneBody(a,m);
+                         double xan = X.OneBody(a,n);
+
+                         double yia = Y.OneBody(i,a);
+                         double yja = Y.OneBody(j,a);
+                         double yka = Y.OneBody(k,a);
+                         double yal = Y.OneBody(a,l);
+                         double yam = Y.OneBody(a,m);
+                         double yan = Y.OneBody(a,n);
+
+                         double xijalmn = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, a, m_a, l, m_l, m, m_m, n,m_n );
+                         double xiaklmn = GetMschemeMatrixElement_3b( X, i,m_i, a,m_a, k, m_k, l, m_l, m, m_m, n,m_n );
+                         double xajklmn = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, k, m_k, l, m_l, m, m_m, n,m_n );
+                         double xijkamn = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, k, m_k, a, m_a, m, m_m, n,m_n );
+                         double xijklan = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, k, m_k, l, m_l, a, m_a, n,m_n );
+                         double xijklma = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, k, m_k, l, m_l, m, m_m, a,m_a );
+
+                         double yijalmn = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, a, m_a, l, m_l, m, m_m, n,m_n );
+                         double yiaklmn = GetMschemeMatrixElement_3b( Y, i,m_i, a,m_a, k, m_k, l, m_l, m, m_m, n,m_n );
+                         double yajklmn = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, k, m_k, l, m_l, m, m_m, n,m_n );
+                         double yijkamn = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, k, m_k, a, m_a, m, m_m, n,m_n );
+                         double yijklan = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, k, m_k, l, m_l, a, m_a, n,m_n );
+                         double yijklma = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, k, m_k, l, m_l, m, m_m, a,m_a );
+
+                         z_ijklmn += xia * yajklmn  +  xja * yiaklmn  +  xka * yijalmn - yijkamn * xal  -  yijklan * xam  -  yijklma * xan;
+                         z_ijklmn -= yia * xajklmn  +  yja * xiaklmn  +  yka * xijalmn - xijkamn * yal  -  xijklan * yam  -  xijklma * yan;
+                       }// for m_a
+                     }// for a
+
+                    double ZJ_ijklmn = GetMschemeMatrixElement_3b( Z_J, i,m_i, j,m_j, k,m_k, l,m_l, m,m_m, n,m_n );
+                    double err = z_ijklmn - ZJ_ijklmn;
+                    if (std::abs(err)>1e-6 )
+                    {
+                      std::cout << "Trouble in " << __func__ << "  i,j,k,l,m,n = " << i << " " << j << " " << k << " " << l << " " << m << " " << n
+                                << " {m} = " << m_i << " " << m_j << " " << m_k << " " << m_l << " " << m_m << " " << m_n
+                                << "   Zm_ijklmn = " << z_ijklmn << "   ZJ_ijklmn = " << ZJ_ijklmn << "   err = " << err << std::endl; 
+                    }
+                    summed_error += err*err;
+                    sum_m += z_ijklmn*z_ijklmn;
+                    sum_J += ZJ_ijklmn*ZJ_ijklmn;
+                   } // for m_n
+                  } // for m_m
+                 } // for m_l
+                } // for m_k
+               } // for m_j
+              } // for m_i
+              
+            } // for n
+          } // for m
+        } // for l
+      } // for k
+    } // for j
+  } // for i
+
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+//  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+}
+
+
+
+// M-Scheme Formula:
+//
+// Z_ijkl = 1/2 sum_ab  (1-na-nb) [  P(ij/k) ( Xijab Yabklmn - Yijab Xabklmn )  -  P(lm/n) (Xablm Yijkabn - Yablm Xijkabn) ]
+//
+//       = 1/2 sum_ab (1-na-nb) [ Xijab*Yabklmn - Yijab*Xabklmn - Xkjab*Yabilmn + Ykjab*Xabilmn - Xikab*Yabjlmn + Yikab*Xabjlmn
+//                              - Yijkabn*Xablm + Xijkabn*Yablm + Yijkabl*Xabnm - Xijkabl*Yabnm + Yijkabm*Xabln - Xijkabm*Yabln ]
+//
+bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // test not yet implemented
+{
+
+  Operator Z_J( Y );
+  Z_J.SetHermitian();
+  Z_J.Erase();
+  Z_J.ThreeBody.Allocate();
+
+  Commutator::comm233_pp_hhss( X, Y, Z_J);
+
+  if ( Z_J.IsHermitian() )
+     Z_J.Symmetrize();
+  else if (Z_J.IsAntiHermitian() )
+     Z_J.AntiSymmetrize();
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  std::cout << __func__ << "    Start M loops" << std::endl;
+
+
+
+  size_t norb = X.modelspace->GetNumberOrbits();
+  for (auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    for (auto j : X.modelspace->all_orbits )
+    {
+      if (j<i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits )
+      {
+        Orbit& ok = X.modelspace->GetOrbit(k);
+        if (k<j) continue;
+
+
+        for (auto l : X.modelspace->all_orbits )
+        {
+          if (l<i) continue;
+          Orbit& ol = X.modelspace->GetOrbit(l);
+          for ( auto m : X.modelspace->all_orbits )
+          {
+            if (m<l) continue;
+            Orbit& om = X.modelspace->GetOrbit(m);
+            for (auto n : X.modelspace->all_orbits )
+            {
+              if (n<m) continue;
+              Orbit& on = X.modelspace->GetOrbit(n);
+              if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
+              if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
+
+//              if ( not (i==1 and j==0 and k==0 and l==1 and m==0 and n==0) ) continue;
+//              if ( not (i==0 and j==0 and k==2 and l==2 and m==2 and n==4) ) continue;
+//              if ( not (i==4 and j==2 and k==2 and l==2 and m==0 and n==0) ) continue;
+
+              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
+              // loop over projections
+              for (int m_i= oi.j2; m_i<=oi.j2; m_i+=2)
+              {
+               for (int m_j=-oj.j2; m_j<=oj.j2; m_j+=2)
+               {
+                for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
+                {
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
+
+                 for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
+                 {
+                  for (int m_m=-om.j2; m_m<=om.j2; m_m+=2)
+                  {
+                   for (int m_n=-on.j2; m_n<=on.j2; m_n+=2)
+                   {
+                     if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
+                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or m==n and m_m==m_n) continue;
+
+//                     if (not (m_i==1 and m_j==-1 and m_k==1 and m_l==1 and m_m==-1 and m_n==1) ) continue;
+                     double z_ijklmn = 0;
+
+//                     std::cout << " {m} " << m_i << " " << m_j << " " << m_k << " " << m_l << " " << m_m << " " << m_n << std::endl;
+//                     for ( auto a : X.modelspace->all_orbits )
+                     #pragma omp parallel for schedule(dynamic,1) reduction(+:z_ijklmn)
+                     for ( size_t a=0; a<norb; a++ )
+                     {
+                       Orbit& oa = X.modelspace->GetOrbit(a);
+                      for ( size_t b=0; b<norb; b++ )
+                      {
+//                        if (not (( a==4 and b==5) or (a==5 and b==4))  ) continue;
+//                        if (not (( a==2 and b==2) or (a==2 and b==2))  ) continue;
+                       Orbit& ob = X.modelspace->GetOrbit(b);
+                       double occfactor = 1 - oa.occ - ob.occ;
+//                       if (a!=11) continue;
+                       for ( int m_a=-oa.j2; m_a<=oa.j2; m_a+=2)
+                       {
+                        for ( int m_b=-ob.j2; m_b<=ob.j2; m_b+=2)
+                        {
+
+///       = 1/2 sum_ab (1-na-nb) [ Xijab*Yabklmn - Yijab*Xabklmn - Xkjab*Yabilmn + Ykjab*Xabilmn - Xikab*Yabjlmn + Yikab*Xabjlmn
+///                              - Yijkabn*Xablm + Xijkabn*Yablm + Yijkabl*Xabnm - Xijkabl*Yabnm + Yijkabm*Xabln - Xijkabm*Yabln ]
+                         double xabilmn = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, i,m_i, l,m_l, m,m_m, n,m_n );
+                         double xabjlmn = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, j,m_j, l,m_l, m,m_m, n,m_n );
+                         double xabklmn = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, k,m_k, l,m_l, m,m_m, n,m_n );
+                         double xijkabl = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, k,m_k, a,m_a, b,m_b, l,m_l );
+                         double xijkabm = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, k,m_k, a,m_a, b,m_b, m,m_m );
+                         double xijkabn = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, k,m_k, a,m_a, b,m_b, n,m_n );
+
+                         double yabilmn = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, i,m_i, l,m_l, m,m_m, n,m_n );
+                         double yabjlmn = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, j,m_j, l,m_l, m,m_m, n,m_n );
+                         double yabklmn = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, k,m_k, l,m_l, m,m_m, n,m_n );
+                         double yijkabl = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, k,m_k, a,m_a, b,m_b, l,m_l );
+                         double yijkabm = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, k,m_k, a,m_a, b,m_b, m,m_m );
+                         double yijkabn = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, k,m_k, a,m_a, b,m_b, n,m_n );
+
+                         double xijab = GetMschemeMatrixElement_2b( X, i,m_i, j,m_j, a,m_a, b,m_b  );
+                         double xkjab = GetMschemeMatrixElement_2b( X, k,m_k, j,m_j, a,m_a, b,m_b  );
+                         double xikab = GetMschemeMatrixElement_2b( X, i,m_i, k,m_k, a,m_a, b,m_b  );
+                         double xablm = GetMschemeMatrixElement_2b( X, a,m_a, b,m_b, l,m_l, m,m_m  );
+                         double xabnm = GetMschemeMatrixElement_2b( X, a,m_a, b,m_b, n,m_n, m,m_m  );
+                         double xabln = GetMschemeMatrixElement_2b( X, a,m_a, b,m_b, l,m_l, n,m_n  );
+
+                         double yijab = GetMschemeMatrixElement_2b( Y, i,m_i, j,m_j, a,m_a, b,m_b  );
+                         double ykjab = GetMschemeMatrixElement_2b( Y, k,m_k, j,m_j, a,m_a, b,m_b  );
+                         double yikab = GetMschemeMatrixElement_2b( Y, i,m_i, k,m_k, a,m_a, b,m_b  );
+                         double yablm = GetMschemeMatrixElement_2b( Y, a,m_a, b,m_b, l,m_l, m,m_m  );
+                         double yabnm = GetMschemeMatrixElement_2b( Y, a,m_a, b,m_b, n,m_n, m,m_m  );
+                         double yabln = GetMschemeMatrixElement_2b( Y, a,m_a, b,m_b, l,m_l, n,m_n  );
+
+
+//                         z_ijklmn += 0.5*occfactor*( (xijab*yabklmn - yijab*xabklmn) - (xkjab*yabilmn - ykjab*xabilmn) - (xikab*yabjlmn - yikab*xabjlmn)
+//                                                   - (yijkabn*xablm - xijkabn*yablm) + (yijkabl*xabnm - xijkabl*yabnm) + (yijkabm*xabln + xijkabm*yabln) );
+                         double dz = 0.5*occfactor*( (1*xijab*yabklmn - 1*yijab*xabklmn) - (1*xkjab*yabilmn - 1*ykjab*xabilmn) - (1*xikab*yabjlmn - 1*yikab*xabjlmn)
+                                                   - (1*yijkabn*xablm - 1*xijkabn*yablm) + (1*yijkabl*xabnm - 1*xijkabl*yabnm) + (1*yijkabm*xabln - 1*xijkabm*yabln) );
+                         z_ijklmn += dz;
+//                         if (std::abs(dz)>1e-6)
+//                         {
+//                           std::cout << "a,b = " << a << " " << b << "  ma mb = " << m_a << " " << m_b << "  dz = " << dz << "  => " << z_ijklmn << std::endl;
+//                           std::cout << "    " << xijab * yabklmn << "  " << yijab*xabklmn << " " << xkjab*yabilmn << " " << ykjab*xabilmn << " " << xikab*yabjlmn << " " << yikab*xabjlmn << std::endl;
+//                           std::cout << "    " << yijkabn*xablm << " " << xijkabn*yablm << " " << yijkabl*xabnm << " " << xijkabl*yabnm << " " << yijkabm*xabln << " " << xijkabm*yabln << std::endl;
+//                           std::cout << "   [[  " <<  xijab*yabklmn << " " << xkjab*yabilmn << " " <<  xikab*yabjlmn << " ]]  -->  "
+//                                     <<   xkjab << " " << yabilmn  << "   ... " << k << " " << j << " " << m_k << " " << m_j << "   " << a << " " << b << " " << j << "  " << m_a << " " << m_b << " " << m_j     << std::endl;
+//                         }
+                        }// for m_b
+                       }// for m_a
+                      }// for b
+                     }// for a
+
+//                    double zJ_111 = Z_J.ThreeBody.GetME_pn(1,1,1,1,0,0,1,0,0);
+//                    std::cout << " zJ_111 = " << zJ_111 << std::endl;
+                    double ZJ_ijklmn = GetMschemeMatrixElement_3b( Z_J, i,m_i, j,m_j, k,m_k, l,m_l, m,m_m, n,m_n );
+                    double err = z_ijklmn - ZJ_ijklmn;
+                    if (std::abs(err)>1e-6 )
+                    {
+                      std::cout << "Trouble in " << __func__ << "  i,j,k,l,m,n = " << i << " " << j << " " << k << " " << l << " " << m << " " << n
+                                << " {m} = " << m_i << " " << m_j << " " << m_k << " " << m_l << " " << m_m << " " << m_n
+                                << "   Zm_ijklmn = " << z_ijklmn << "   ZJ_ijklmn = " << ZJ_ijklmn << "   err = " << err << std::endl; 
+                    }
+                    summed_error += err*err;
+                    sum_m += z_ijklmn*z_ijklmn;
+                    sum_J += ZJ_ijklmn*ZJ_ijklmn;
+                   } // for m_n
+                  } // for m_m
+                 } // for m_l
+                } // for m_k
+               } // for m_j
+              } // for m_i
+              
+            } // for n
+          } // for m
+        } // for l
+      } // for k
+    } // for j
+  } // for i
+
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+//  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+
+
+
+}
+
+
+
+
+// M-Scheme Formula:
+//
+// Z_ijkl = - sum_ab (na-nb) [  P(i/jk)P(l/mn) ( Xbial Yajkbmn - Ybial Xajkbmn )   ]
+//
+//       =  - sum_ab (na-nb) [ Xbial Yajkbmn - Ybial Xajkbmn  -  Xbjal Yaikbmn + Ybjal Xaikbmn  -  Xbkal Yajibmn + Ybkal Xajibmn
+//                           - Xbiam Yajkbln + Ybiam Xajkbln  +  Xbjam Yaikbln - Ybjam Xaikbln  +  Xbkam Yajibln - Ybkam Xajibln
+//                           - Xbian Yajkbml + Ybian Xajkbml  +  Xbjan Yaikbml - Ybjan Xaikbml  +  Xbkan Yajibml - Ybkan Xajibml  ]
+//                              
+//
+bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // test not yet implemented
+{
+   Operator Z_J( Y );
+  Z_J.SetHermitian();
+  Z_J.Erase();
+  Z_J.ThreeBody.Allocate();
+
+  Commutator::comm233_phss( X, Y, Z_J);
+
+  if ( Z_J.IsHermitian() )
+     Z_J.Symmetrize();
+  else if (Z_J.IsAntiHermitian() )
+     Z_J.AntiSymmetrize();
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  std::cout << __func__ << "    Start M loops" << std::endl;
+  for (auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+    int mi = oi.j2;
+    for (auto j : X.modelspace->all_orbits )
+    {
+      if (j>i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits )
+      {
+        Orbit& ok = X.modelspace->GetOrbit(k);
+        if (k>j) continue;
+
+
+        for (auto l : X.modelspace->all_orbits )
+        {
+          if (l>i) continue;
+          Orbit& ol = X.modelspace->GetOrbit(l);
+          for ( auto m : X.modelspace->all_orbits )
+          {
+            if (m>l) continue;
+            Orbit& om = X.modelspace->GetOrbit(m);
+            for (auto n : X.modelspace->all_orbits )
+            {
+              if (n>m) continue;
+              Orbit& on = X.modelspace->GetOrbit(n);
+              if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
+              if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
+
+//              if ( not (i==5 and j==4 and k==0 and l==5 and m==4 and n==0) ) continue;
+//              if ( not (i==3 and j==2 and k==0 and l==3 and m==2 and n==0) ) continue;
+//              if ( not (i==4 and j==1 and k==0 and l==4 and m==3 and n==2) ) continue;
+
+              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
+              // loop over projections
+              for (int m_i=-oi.j2; m_i<=oi.j2; m_i+=2)
+              {
+               for (int m_j=-oj.j2; m_j<=oj.j2; m_j+=2)
+               {
+                for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
+                {
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
+
+                 for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
+                 {
+                  for (int m_m=-om.j2; m_m<=om.j2; m_m+=2)
+                  {
+                   for (int m_n=-on.j2; m_n<=on.j2; m_n+=2)
+                   {
+                     if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
+                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or m==n and m_m==m_n) continue;
+
+                     if (not (m_i==1 and m_j==-1 and m_k==1 and m_l==1 and m_m==-1 and m_n==1) ) continue;
+                     double z_ijklmn = 0;
+
+                     size_t norb = X.modelspace->GetNumberOrbits();
+//                     for ( auto a : X.modelspace->all_orbits )
+                     #pragma omp parallel for schedule(dynamic,1) reduction(+:z_ijklmn)
+                     for ( size_t a=0; a<norb; a++ )
+                     {
+                       Orbit& oa = X.modelspace->GetOrbit(a);
+                      for ( size_t b=0; b<norb; b++ )
+                      {
+                       Orbit& ob = X.modelspace->GetOrbit(b);
+                       double occfactor = oa.occ - ob.occ;
+//                       if (a!=11) continue;
+//                       if (a!=3 and a!=5) continue;
+                       for ( int m_a=-oa.j2; m_a<=oa.j2; m_a+=2)
+                       {
+                        for ( int m_b=-ob.j2; m_b<=ob.j2; m_b+=2)
+                        {
+
+                         double xajkbmn = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, k,m_k, b,m_b, m,m_m, n,m_n );
+                         double xaikbmn = GetMschemeMatrixElement_3b( X, a,m_a, i,m_i, k,m_k, b,m_b, m,m_m, n,m_n );
+                         double xajibmn = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, i,m_i, b,m_b, m,m_m, n,m_n );
+                         double xajkbln = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, k,m_k, b,m_b, l,m_l, n,m_n );
+                         double xaikbln = GetMschemeMatrixElement_3b( X, a,m_a, i,m_i, k,m_k, b,m_b, l,m_l, n,m_n );
+                         double xajibln = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, i,m_i, b,m_b, l,m_l, n,m_n );
+                         double xajkbml = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, k,m_k, b,m_b, m,m_m, l,m_l );
+                         double xaikbml = GetMschemeMatrixElement_3b( X, a,m_a, i,m_i, k,m_k, b,m_b, m,m_m, l,m_l );
+                         double xajibml = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, i,m_i, b,m_b, m,m_m, l,m_l );
+
+                         double xbial = GetMschemeMatrixElement_2b( X, b,m_b, i,m_i, a,m_a, l,m_l  );
+                         double xbjal = GetMschemeMatrixElement_2b( X, b,m_b, j,m_j, a,m_a, l,m_l  );
+                         double xbkal = GetMschemeMatrixElement_2b( X, b,m_b, k,m_k, a,m_a, l,m_l  );
+                         double xbiam = GetMschemeMatrixElement_2b( X, b,m_b, i,m_i, a,m_a, m,m_m  );
+                         double xbjam = GetMschemeMatrixElement_2b( X, b,m_b, j,m_j, a,m_a, m,m_m  );
+                         double xbkam = GetMschemeMatrixElement_2b( X, b,m_b, k,m_k, a,m_a, m,m_m  );
+                         double xbian = GetMschemeMatrixElement_2b( X, b,m_b, i,m_i, a,m_a, n,m_n  );
+                         double xbjan = GetMschemeMatrixElement_2b( X, b,m_b, j,m_j, a,m_a, n,m_n  );
+                         double xbkan = GetMschemeMatrixElement_2b( X, b,m_b, k,m_k, a,m_a, n,m_n  );
+
+                         double yajkbmn = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, k,m_k, b,m_b, m,m_m, n,m_n );
+                         double yaikbmn = GetMschemeMatrixElement_3b( Y, a,m_a, i,m_i, k,m_k, b,m_b, m,m_m, n,m_n );
+                         double yajibmn = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, i,m_i, b,m_b, m,m_m, n,m_n );
+                         double yajkbln = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, k,m_k, b,m_b, l,m_l, n,m_n );
+                         double yaikbln = GetMschemeMatrixElement_3b( Y, a,m_a, i,m_i, k,m_k, b,m_b, l,m_l, n,m_n );
+                         double yajibln = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, i,m_i, b,m_b, l,m_l, n,m_n );
+                         double yajkbml = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, k,m_k, b,m_b, m,m_m, l,m_l );
+                         double yaikbml = GetMschemeMatrixElement_3b( Y, a,m_a, i,m_i, k,m_k, b,m_b, m,m_m, l,m_l );
+                         double yajibml = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, i,m_i, b,m_b, m,m_m, l,m_l );
+
+                         double ybial = GetMschemeMatrixElement_2b( Y, b,m_b, i,m_i, a,m_a, l,m_l  );
+                         double ybjal = GetMschemeMatrixElement_2b( Y, b,m_b, j,m_j, a,m_a, l,m_l  );
+                         double ybkal = GetMschemeMatrixElement_2b( Y, b,m_b, k,m_k, a,m_a, l,m_l  );
+                         double ybiam = GetMschemeMatrixElement_2b( Y, b,m_b, i,m_i, a,m_a, m,m_m  );
+                         double ybjam = GetMschemeMatrixElement_2b( Y, b,m_b, j,m_j, a,m_a, m,m_m  );
+                         double ybkam = GetMschemeMatrixElement_2b( Y, b,m_b, k,m_k, a,m_a, m,m_m  );
+                         double ybian = GetMschemeMatrixElement_2b( Y, b,m_b, i,m_i, a,m_a, n,m_n  );
+                         double ybjan = GetMschemeMatrixElement_2b( Y, b,m_b, j,m_j, a,m_a, n,m_n  );
+                         double ybkan = GetMschemeMatrixElement_2b( Y, b,m_b, k,m_k, a,m_a, n,m_n  );
+//////////////////----------------------------------------------------
+                    
+                         double xijalmb = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, a,m_a, l,m_l, m,m_m, b,m_b );
+                         double yijalmb = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, a,m_a, l,m_l, m,m_m, b,m_b );
+                         double xkjalmb = GetMschemeMatrixElement_3b( X, k,m_k, j,m_j, a,m_a, l,m_l, m,m_m, b,m_b );
+                         double ykjalmb = GetMschemeMatrixElement_3b( Y, k,m_k, j,m_j, a,m_a, l,m_l, m,m_m, b,m_b );
+                         double xijanmb = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, a,m_a, n,m_n, m,m_m, b,m_b );
+                         double yijanmb = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, a,m_a, n,m_n, m,m_m, b,m_b );
+                         double xikalmb = GetMschemeMatrixElement_3b( X, i,m_i, k,m_k, a,m_a, l,m_l, m,m_m, b,m_b );
+                         double yikalmb = GetMschemeMatrixElement_3b( Y, i,m_i, k,m_k, a,m_a, l,m_l, m,m_m, b,m_b );
+                         double xijalnb = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, a,m_a, l,m_l, n,m_n, b,m_b );
+                         double yijalnb = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, a,m_a, l,m_l, n,m_n, b,m_b );
+                         double xkjanmb = GetMschemeMatrixElement_3b( X, k,m_k, j,m_j, a,m_a, n,m_n, m,m_m, b,m_b );
+                         double ykjanmb = GetMschemeMatrixElement_3b( Y, k,m_k, j,m_j, a,m_a, n,m_n, m,m_m, b,m_b );
+                         double xikanmb = GetMschemeMatrixElement_3b( X, i,m_i, k,m_k, a,m_a, n,m_n, m,m_m, b,m_b );
+                         double yikanmb = GetMschemeMatrixElement_3b( Y, i,m_i, k,m_k, a,m_a, n,m_n, m,m_m, b,m_b );
+                         double xkjalnb = GetMschemeMatrixElement_3b( X, k,m_k, j,m_j, a,m_a, l,m_l, n,m_n, b,m_b );
+                         double ykjalnb = GetMschemeMatrixElement_3b( Y, k,m_k, j,m_j, a,m_a, l,m_l, n,m_n, b,m_b );
+                         double xikalnb = GetMschemeMatrixElement_3b( X, i,m_i, k,m_k, a,m_a, l,m_l, n,m_n, b,m_b );
+                         double yikalnb = GetMschemeMatrixElement_3b( Y, i,m_i, k,m_k, a,m_a, l,m_l, n,m_n, b,m_b );
+
+//  Zijkl =  - sum_ab (na-nb) [ Xbial Yajkbmn - Ybial Xajkbmn  -  Xbjal Yaikbmn + Ybjal Xaikbmn  -  Xbkal Yajibmn + Ybkal Xajibmn
+//                            - Xbiam Yajkbln + Ybiam Xajkbln  +  Xbjam Yaikbln - Ybjam Xaikbln  +  Xbkam Yajibln - Ybkam Xajibln
+//                            - Xbian Yajkbml + Ybian Xajkbml  +  Xbjan Yaikbml - Ybjan Xaikbml  +  Xbkan Yajibml - Ybkan Xajibml  ]
+                          // xijalmn = xaijblm = xajibml
+//                          z_ijklmn -= occfactor * (xbkan * yajibml - ybkan * xajibml);
+//                           z_ijklmn -= occfactor * (xbkan * yijalmb - ybkan*xijalmb);
+                           double dz = -occfactor *1* (xbkan * yijalmb - ybkan * xijalmb);
+                                  dz += occfactor *1* (xbian * ykjalmb - ybian * xkjalmb);
+                                  dz += occfactor *1* (xbjan * yikalmb - ybjan * xikalmb);
+                                  dz += occfactor *1* (xbkal * yijanmb - ybkal * xijanmb);
+                                  dz += occfactor *1* (xbkam * yijalnb - ybkam * xijalnb);
+                                  dz -= occfactor *1* (xbial * ykjanmb - ybial * xkjanmb);
+                                  dz -= occfactor *1* (xbjal * yikanmb - ybjal * xikanmb);
+                                  dz -= occfactor *1* (xbiam * ykjalnb - ybiam * xkjalnb);
+                                  dz -= occfactor *1* (xbjam * yikalnb - ybjam * xikalnb);
+                           z_ijklmn += dz;
+
+                        }// for m_b
+                       }// for m_a
+                      }// for b
+                     }// for a
+
+                    double ZJ_ijklmn = GetMschemeMatrixElement_3b( Z_J, i,m_i, j,m_j, k,m_k, l,m_l, m,m_m, n,m_n );
+                    double err = z_ijklmn - ZJ_ijklmn;
+                    if (std::abs(err)>1e-6 )
+                    {
+                      std::cout << "Trouble in " << __func__ << "  i,j,k,l,m,n = " << i << " " << j << " " << k << " " << l << " " << m << " " << n
+                                << " {m} = " << m_i << " " << m_j << " " << m_k << " " << m_l << " " << m_m << " " << m_n
+                                << "   Zm_ijklmn = " << z_ijklmn << "   ZJ_ijklmn = " << ZJ_ijklmn << "   err = " << err << std::endl; 
+                    }
+                    summed_error += err*err;
+                    sum_m += z_ijklmn*z_ijklmn;
+                    sum_J += ZJ_ijklmn*ZJ_ijklmn;
+                   } // for m_n
+                  } // for m_m
+                 } // for m_l
+                } // for m_k
+               } // for m_j
+              } // for m_i
+              
+            } // for n
+          } // for m
+        } // for l
+      } // for k
+    } // for j
+  } // for i
+
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+//  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+
+ 
+}
+
+
+
+// M-Scheme Formula:
+//
+// Z_ijkl = 1/6 sum_abc [na*nb*nc + (1-na)*(1-nb)(1-nc) ] * [  Xijkabc*Yabclmn - Yijkabc*Xabclmn  ]
+//                              
+//
+bool UnitTest::Test_comm333_ppp_hhh_ss( const Operator& X, const Operator& Y ) // test not yet implemented
+{
+   Operator Z_J( Y );
+  Z_J.SetHermitian();
+  Z_J.Erase();
+  Z_J.ThreeBody.Allocate();
+
+  Commutator::comm333_ppp_hhhss( X, Y, Z_J);
+
+  if ( Z_J.IsHermitian() )
+     Z_J.Symmetrize();
+  else if (Z_J.IsAntiHermitian() )
+     Z_J.AntiSymmetrize();
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  std::cout << __func__ << "    Start M loops" << std::endl;
+  for (auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+//    int mi = oi.j2;
+    for (auto j : X.modelspace->all_orbits )
+    {
+      if (j<i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits )
+      {
+        Orbit& ok = X.modelspace->GetOrbit(k);
+        if (k<j) continue;
+
+
+        for (auto l : X.modelspace->all_orbits )
+        {
+          if (l<i) continue;
+          Orbit& ol = X.modelspace->GetOrbit(l);
+          for ( auto m : X.modelspace->all_orbits )
+          {
+            if (m<l) continue;
+            Orbit& om = X.modelspace->GetOrbit(m);
+            for (auto n : X.modelspace->all_orbits )
+            {
+              if (n<m) continue;
+              Orbit& on = X.modelspace->GetOrbit(n);
+              if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
+              if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
+
+//              if ( not (i==1 and j==0 and k==0 and l==1 and m==0 and n==0) ) continue;
+
+              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
+              // loop over projections
+              for (int m_i= oi.j2; m_i<=oi.j2; m_i+=2)
+              {
+               for (int m_j=-oj.j2; m_j<=oj.j2; m_j+=2)
+               {
+                for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
+                {
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
+
+                 for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
+                 {
+                  for (int m_m=-om.j2; m_m<=om.j2; m_m+=2)
+                  {
+                   for (int m_n=-on.j2; m_n<=on.j2; m_n+=2)
+                   {
+                     if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
+                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or m==n and m_m==m_n) continue;
+
+//                     if (not (m_i==1 and m_j==1 and m_k==-1 and m_l==1 and m_m==-1 and m_n==1) ) continue;
+                     double z_ijklmn = 0;
+
+                     size_t norb = X.modelspace->GetNumberOrbits();
+//                     for ( auto a : X.modelspace->all_orbits )
+                     #pragma omp parallel for schedule(dynamic,1) reduction(+:z_ijklmn)
+                     for ( size_t a=0; a<norb; a++ )
+                     {
+                       Orbit& oa = X.modelspace->GetOrbit(a);
+                      for ( size_t b=0; b<norb; b++ )
+                      {
+                       Orbit& ob = X.modelspace->GetOrbit(b);
+                      for ( size_t c=0; c<norb; c++ )
+                      {
+                       Orbit& oc = X.modelspace->GetOrbit(c);
+                       double occfactor = oa.occ*ob.occ*oc.occ - (1-oa.occ)*(1-ob.occ)*(1-oc.occ);
+//                       if (a!=11) continue;
+                       for ( int m_a=-oa.j2; m_a<=oa.j2; m_a+=2)
+                       {
+                        for ( int m_b=-ob.j2; m_b<=ob.j2; m_b+=2)
+                        {
+                         for ( int m_c=-oc.j2; m_c<=oc.j2; m_c+=2)
+                         {
+
+// Z_ijkl = 1/6 sum_abc [na*nb*nc + (1-na)*(1-nb)(1-nc) ] * [  Xijkabc*Yabclmn - Yijkabc*Xabclmn  ]
+                         double xijkabc = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, k,m_k, a,m_a, b,m_b, c,m_c );
+                         double xabclmn = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, c,m_c, l,m_l, m,m_m, n,m_n );
+                         double yijkabc = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, k,m_k, a,m_a, b,m_b, c,m_c );
+                         double yabclmn = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, c,m_c, l,m_l, m,m_m, n,m_n );
+
+                         z_ijklmn += 1./6 * occfactor * ( xijkabc*yabclmn - yijkabc*xabclmn);
+
+                         }// for m_c
+                        }// for m_b
+                       }// for m_a
+                       }// for c
+                      }// for b
+                     }// for a
+
+                    double ZJ_ijklmn = GetMschemeMatrixElement_3b( Z_J, i,m_i, j,m_j, k,m_k, l,m_l, m,m_m, n,m_n );
+                    double err = z_ijklmn - ZJ_ijklmn;
+                    if (std::abs(err)>1e-6 )
+                    {
+                      std::cout << "Trouble in " << __func__ << "  i,j,k,l,m,n = " << i << " " << j << " " << k << " " << l << " " << m << " " << n
+                                << " {m} = " << m_i << " " << m_j << " " << m_k << " " << m_l << " " << m_m << " " << m_n
+                                << "   Zm_ijklmn = " << z_ijklmn << "   ZJ_ijklmn = " << ZJ_ijklmn << "   err = " << err << std::endl; 
+                    }
+                    summed_error += err*err;
+                    sum_m += z_ijklmn*z_ijklmn;
+                    sum_J += ZJ_ijklmn*ZJ_ijklmn;
+                   } // for m_n
+                  } // for m_m
+                 } // for m_l
+                } // for m_k
+               } // for m_j
+              } // for m_i
+              
+            } // for n
+          } // for m
+        } // for l
+      } // for k
+    } // for j
+  } // for i
+
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+//  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+ 
+}
+
+
+// M-Scheme Formula:
+//
+// Z_ijkl = - 1/2 sum_abc [na*nb*(1-nc) + (1-na)*(1-nb)*nc ] * P(ij/k) P(l/mn) * [ Xabkcmn*Ycijabl - Yabkcmn*Xcijabl   ]
+//                              
+//        = - 1/2 sum_abc [na*nb*(1-nc) + (1-na)*(1-nb)*nc ] *
+//                [ (Xabkcmn*Ycijabl - Yabkcmn*Xcijabl) - (Xabicmn*Yckjabl - Yabicmn*Xckjabl)  - (Xabjcmn*Ycikabl - Yabjcmn*Xcikabl) 
+//                 -(Xabkcln*Ycijabm - Yabkcln*Xcijabm) + (Xabicln*Yckjabm - Yabicln*Xckjabm)  + (Xabjcln*Ycikabm - Yabjcln*Xcikabm) 
+//                 -(Xabkcml*Ycijabn - Yabkcml*Xcijabn) + (Xabicml*Yckjabn - Yabicml*Xckjabn)  + (Xabjcml*Ycikabn - Yabjcml*Xcikabn) ]
+//
+bool UnitTest::Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y ) // test not yet implemented
+{
+   Operator Z_J( Y );
+  Z_J.SetHermitian();
+  Z_J.Erase();
+  Z_J.ThreeBody.Allocate();
+
+//  Commutator::comm333ss( X, Y, Z_J); // TODO: make a sub-call to just the pph hhp part
+  Commutator::comm333_pph_hhpss( X, Y, Z_J); // TODO: make a sub-call to just the pph hhp part
+
+  if ( Z_J.IsHermitian() )
+     Z_J.Symmetrize();
+  else if (Z_J.IsAntiHermitian() )
+     Z_J.AntiSymmetrize();
+
+  double summed_error = 0;
+  double sum_m = 0;
+  double sum_J = 0;
+
+  std::cout << __func__ << "    Start M loops" << std::endl;
+  for (auto i : X.modelspace->all_orbits )
+  {
+    Orbit& oi = X.modelspace->GetOrbit(i);
+//    int mi = oi.j2;
+    for (auto j : X.modelspace->all_orbits )
+    {
+      if (j>i) continue;
+      Orbit& oj = X.modelspace->GetOrbit(j);
+      for (auto k : X.modelspace->all_orbits )
+      {
+        Orbit& ok = X.modelspace->GetOrbit(k);
+        if (k>j) continue;
+
+
+        for (auto l : X.modelspace->all_orbits )
+        {
+          if (l>i) continue;
+          Orbit& ol = X.modelspace->GetOrbit(l);
+          for ( auto m : X.modelspace->all_orbits )
+          {
+            if (m>l) continue;
+            Orbit& om = X.modelspace->GetOrbit(m);
+            for (auto n : X.modelspace->all_orbits )
+            {
+              if (n>m) continue;
+              Orbit& on = X.modelspace->GetOrbit(n);
+              if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
+              if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
+
+//              if ( not (i==4 and j==0 and k==0 and l==4 and m==2 and n==2) ) continue;
+
+              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
+              // loop over projections
+              for (int m_i= oi.j2; m_i<=oi.j2; m_i+=2)
+              {
+               for (int m_j=-oj.j2; m_j<=oj.j2; m_j+=2)
+               {
+                for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
+                {
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
+
+                 for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
+                 {
+                  for (int m_m=-om.j2; m_m<=om.j2; m_m+=2)
+                  {
+                   for (int m_n=-on.j2; m_n<=on.j2; m_n+=2)
+                   {
+                     if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
+                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or (m==n and m_m==m_n)) continue;
+
+                     if (not (m_i==1 and m_j==-1 and m_k==1 and m_l==1 and m_m==-1 and m_n==1) ) continue;
+                     double z_ijklmn = 0;
+
+                     size_t norb = X.modelspace->GetNumberOrbits();
+//                     for ( auto a : X.modelspace->all_orbits )
+                     #pragma omp parallel for schedule(dynamic,1) reduction(+:z_ijklmn)
+                     for ( size_t a=0; a<norb; a++ )
+                     {
+                       Orbit& oa = X.modelspace->GetOrbit(a);
+                      for ( size_t b=0; b<norb; b++ )
+                      {
+                       Orbit& ob = X.modelspace->GetOrbit(b);
+                      for ( size_t c=0; c<norb; c++ )
+                      {
+                       Orbit& oc = X.modelspace->GetOrbit(c);
+                       double occfactor = oa.occ * ob.occ * (1-oc.occ) + (1-oa.occ)*(1-ob.occ)*oc.occ ;
+                       for ( int m_a=-oa.j2; m_a<=oa.j2; m_a+=2)
+                       {
+                        for ( int m_b=-ob.j2; m_b<=ob.j2; m_b+=2)
+                        {
+                         for ( int m_c=-oc.j2; m_c<=oc.j2; m_c+=2)
+                         {
+
+
+                         double xabklmc = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, k,m_k, l,m_l, m,m_m, c,m_c );// direct
+                         double xijcabn = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, c,m_c, a,m_a, b,m_b, n,m_n );// direct
+
+                         double xabilmc = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, i,m_i, l,m_l, m,m_m, c,m_c );// Pik
+                         double xkjcabn = GetMschemeMatrixElement_3b( X, k,m_k, j,m_j, c,m_c, a,m_a, b,m_b, n,m_n );// Pik
+                         double xabjlmc = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, j,m_j, l,m_l, m,m_m, c,m_c );// Pjk
+                         double xikcabn = GetMschemeMatrixElement_3b( X, i,m_i, k,m_k, c,m_c, a,m_a, b,m_b, n,m_n );// Pjk
+                         double xabknmc = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, k,m_k, n,m_n, m,m_m, c,m_c );// Pln
+                         double xijcabl = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, c,m_c, a,m_a, b,m_b, l,m_l );// Pln
+                         double xabklnc = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, k,m_k, l,m_l, n,m_n, c,m_c );// Pmn
+                         double xijcabm = GetMschemeMatrixElement_3b( X, i,m_i, j,m_j, c,m_c, a,m_a, b,m_b, m,m_m );// Pmn
+
+                         double xabinmc = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, i,m_i, n,m_n, m,m_m, c,m_c );// Pik Pln
+                         double xkjcabl = GetMschemeMatrixElement_3b( X, k,m_k, j,m_j, c,m_c, a,m_a, b,m_b, l,m_l );// Pik Pln
+                         double xabjnmc = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, j,m_j, n,m_n, m,m_m, c,m_c );// Pjk Pln
+                         double xikcabl = GetMschemeMatrixElement_3b( X, i,m_i, k,m_k, c,m_c, a,m_a, b,m_b, l,m_l );// Pjk Pln
+                         double xabilnc = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, i,m_i, l,m_l, n,m_n, c,m_c );// Pik Pmn
+                         double xkjcabm = GetMschemeMatrixElement_3b( X, k,m_k, j,m_j, c,m_c, a,m_a, b,m_b, m,m_m );// Pik Pmn
+                         double xabjlnc = GetMschemeMatrixElement_3b( X, a,m_a, b,m_b, j,m_j, l,m_l, n,m_n, c,m_c );// Pjk Pmn
+                         double xikcabm = GetMschemeMatrixElement_3b( X, i,m_i, k,m_k, c,m_c, a,m_a, b,m_b, m,m_m );// Pjk Pmn
+
+                         double yabklmc = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, k,m_k, l,m_l, m,m_m, c,m_c );// direct
+                         double yijcabn = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, c,m_c, a,m_a, b,m_b, n,m_n );// direct
+
+                         double yabilmc = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, i,m_i, l,m_l, m,m_m, c,m_c );// Pik
+                         double ykjcabn = GetMschemeMatrixElement_3b( Y, k,m_k, j,m_j, c,m_c, a,m_a, b,m_b, n,m_n );// Pik
+                         double yabjlmc = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, j,m_j, l,m_l, m,m_m, c,m_c );// Pjk
+                         double yikcabn = GetMschemeMatrixElement_3b( Y, i,m_i, k,m_k, c,m_c, a,m_a, b,m_b, n,m_n );// Pjk
+                         double yabknmc = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, k,m_k, n,m_n, m,m_m, c,m_c );// Pln
+                         double yijcabl = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, c,m_c, a,m_a, b,m_b, l,m_l );// Pln
+                         double yabklnc = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, k,m_k, l,m_l, n,m_n, c,m_c );// Pmn
+                         double yijcabm = GetMschemeMatrixElement_3b( Y, i,m_i, j,m_j, c,m_c, a,m_a, b,m_b, m,m_m );// Pmn
+
+                         double yabinmc = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, i,m_i, n,m_n, m,m_m, c,m_c );// Pik Pln
+                         double ykjcabl = GetMschemeMatrixElement_3b( Y, k,m_k, j,m_j, c,m_c, a,m_a, b,m_b, l,m_l );// Pik Pln
+                         double yabjnmc = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, j,m_j, n,m_n, m,m_m, c,m_c );// Pjk Pln
+                         double yikcabl = GetMschemeMatrixElement_3b( Y, i,m_i, k,m_k, c,m_c, a,m_a, b,m_b, l,m_l );// Pjk Pln
+                         double yabilnc = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, i,m_i, l,m_l, n,m_n, c,m_c );// Pik Pmn
+                         double ykjcabm = GetMschemeMatrixElement_3b( Y, k,m_k, j,m_j, c,m_c, a,m_a, b,m_b, m,m_m );// Pik Pmn
+                         double yabjlnc = GetMschemeMatrixElement_3b( Y, a,m_a, b,m_b, j,m_j, l,m_l, n,m_n, c,m_c );// Pjk Pmn
+                         double yikcabm = GetMschemeMatrixElement_3b( Y, i,m_i, k,m_k, c,m_c, a,m_a, b,m_b, m,m_m );// Pjk Pmn
+
+
+//        = - 1/2 sum_abc [na*nb*(1-nc) + (1-na)*(1-nb)*nc ] *
+//                [ (Xabkcmn*Ycijabl - Yabkcmn*Xcijabl) - (Xabicmn*Yckjabl - Yabicmn*Xckjabl)  - (Xabjcmn*Ycikabl - Yabjcmn*Xcikabl) 
+//                 -(Xabkcln*Ycijabm - Yabkcln*Xcijabm) + (Xabicln*Yckjabm - Yabicln*Xckjabm)  + (Xabjcln*Ycikabm - Yabjcln*Xcikabm) 
+//                 -(Xabkcml*Ycijabn - Yabkcml*Xcijabn) + (Xabicml*Yckjabn - Yabicml*Xckjabn)  + (Xabjcml*Ycikabn - Yabjcml*Xcikabn) ]
+                           double dz = 0;
+                           dz += 0.5 * 1*occfactor * (xabklmc * yijcabn - yabklmc * xijcabn ); // Z1
+                           dz -= 0.5 * 1*occfactor * (xabilmc * ykjcabn - yabilmc * xkjcabn ); // Z2
+                           dz -= 0.5 * 1*occfactor * (xabjlmc * yikcabn - yabjlmc * xikcabn ); // Z3
+                           dz -= 0.5 * 1*occfactor * (xabknmc * yijcabl - yabknmc * xijcabl ); // Z4
+                           dz -= 0.5 * 1*occfactor * (xabklnc * yijcabm - yabklnc * xijcabm ); // Z5
+                           dz += 0.5 * 1*occfactor * (xabinmc * ykjcabl - yabinmc * xkjcabl ); // Z6
+                           dz += 0.5 * 1*occfactor * (xabjnmc * yikcabl - yabjnmc * xikcabl ); // Z7
+                           dz += 0.5 * 1*occfactor * (xabilnc * ykjcabm - yabilnc * xkjcabm ); // Z8
+                           dz += 0.5 * 1*occfactor * (xabjlnc * yikcabm - yabjlnc * xikcabm ); // Z9
+                           z_ijklmn += dz;
+//                           if (std::abs(dz)>1e-6)
+//                           {
+//                             std::cout << "  a b c  ma mb mc " << a << " " << b << " " << c << "  " << m_a << " " << m_b << " " << m_c << "   " << xabklmc << " " << yijcabn <<  "  =  " << dz << "  => " << z_ijklmn << std::endl;
+//
+//                           }
+//                         z_ijklmn -= 0.5*occfactor*( (xabkcmn*ycijabl - yabkcmn*xcijabl) - (xabicmn*yckjabl - yabicmn*xckjabl)  - (xabjcmn*ycikabl - yabjcmn*xcikabl));
+//                         z_ijklmn += 0.5*occfactor*( (xabkcln*ycijabm - yabkcln*xcijabm) - (xabicln*yckjabm - yabicln*xckjabm)  - (xabjcln*ycikabm - yabjcln*xcikabm));
+//                         z_ijklmn += 0.5*occfactor*( (xabkcml*ycijabn - yabkcml*xcijabn) - (xabicml*yckjabn - yabicml*xckjabn)  - (xabjcml*ycikabn - yabjcml*xcikabn));
+
+                          }// for m_c
+                         }// for m_b
+                        }// for m_a
+                       }// for c
+                      }// for b
+                     }// for a
+
+                    double ZJ_ijklmn = GetMschemeMatrixElement_3b( Z_J, i,m_i, j,m_j, k,m_k, l,m_l, m,m_m, n,m_n );
+                    double err = z_ijklmn - ZJ_ijklmn;
+//                    std::cout << z_ijklmn << std::endl;
+                    if (std::abs(err)>1e-6 )
+                    {
+                      std::cout << "Trouble in " << __func__ << "  i,j,k,l,m,n = " << i << " " << j << " " << k << " " << l << " " << m << " " << n
+                                << " {m} = " << m_i << " " << m_j << " " << m_k << " " << m_l << " " << m_m << " " << m_n
+                                << "   Zm_ijklmn = " << z_ijklmn << "   ZJ_ijklmn = " << ZJ_ijklmn << "   err = " << err << std::endl; 
+                    }
+                    summed_error += err*err;
+                    sum_m += z_ijklmn*z_ijklmn;
+                    sum_J += ZJ_ijklmn*ZJ_ijklmn;
+                   } // for m_n
+                  } // for m_m
+                 } // for m_l
+                } // for m_k
+               } // for m_j
+              } // for m_i
+              
+            } // for n
+          } // for m
+        } // for l
+      } // for k
+    } // for j
+  } // for i
+
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+//  if ( Z_J.TwoBodyNorm() < 1e-6 ) std::cout << "WARNING " << __func__ << "||Z_J 2b|| = 0. Trivial test?" << std::endl;
+  std::cout << "   " << __func__ <<   "  sum_m, sum_J = " << sum_m << " " << sum_J
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+
+
+ 
+}
+
+
 
 
 //***************************************************************
@@ -2150,12 +3672,14 @@ bool UnitTest::Test_comm211sd( const Operator& X, const Operator& Y )
        Zm_i += Xia * Ya ;
      }
     }
-    double ZJ_i = Z_J.OneBody(i,Q);
+    double ZJ_i = Z_J.OneBody(i,0);
+//    double ZJ_i = Z_J.OneBody(i,Q);
     double err = Zm_i - ZJ_i;
     if (std::abs(err)>1e-6)
     {
       std::cout << "Trouble in " << __func__ << "  i = " << i <<  "   Zm_i = " << Zm_i
-                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
+                << "   ZJ_i = " << Z_J.OneBody(i,0) << "   err = " << err << std::endl; 
+//                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
     }
     summed_error += err*err;
     sum_m += Zm_i*Zm_i;
@@ -2225,12 +3749,14 @@ bool UnitTest::Test_comm231sd( const Operator& X, const Operator& Y )
        }
      }
     }
-    double ZJ_i = Z_J.OneBody(i,Q);
+    double ZJ_i = Z_J.OneBody(i,0);
+//    double ZJ_i = Z_J.OneBody(i,Q);
     double err = Zm_i - ZJ_i;
     if (std::abs(err)>1e-6)
     {
       std::cout << "Trouble in " << __func__ << "  i = " << i <<  "   Zm_i = " << Zm_i
-                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
+                << "   ZJ_i = " << Z_J.OneBody(i,0) << "   err = " << err << std::endl; 
+//                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
     }
     summed_error += err*err;
     sum_m += Zm_i*Zm_i;
@@ -2306,12 +3832,14 @@ bool UnitTest::Test_comm431sd( const Operator& X, const Operator& Y )
        }
      }
     }
-    double ZJ_i = Z_J.OneBody(i,Q);
+    double ZJ_i = Z_J.OneBody(i,0);
+//    double ZJ_i = Z_J.OneBody(i,Q);
     double err = Zm_i - ZJ_i;
     if (std::abs(err)>1e-6)
     {
       std::cout << "Trouble in " << __func__ << "  i = " << i <<  "   Zm_i = " << Zm_i
-                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
+                << "   ZJ_i = " << Z_J.OneBody(i,0) << "   err = " << err << std::endl; 
+//                << "   ZJ_i = " << Z_J.OneBody(i,Q) << "   err = " << err << std::endl; 
     }
     summed_error += err*err;
     sum_m += Zm_i*Zm_i;

@@ -298,18 +298,23 @@ void Generator::ConstructGenerator_Atan()
          }
       }
     }
+
+
+
     // Three body piece
-    int E3cut = 4;
+//    int E3cut = 99;
     double t_start = omp_get_wtime();
 //    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << "   Norms: " << Eta->ThreeBodyNorm() << "  " << H->ThreeBodyNorm()  << std::endl;
     if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
     {
-     std::cout << "looping in generator 3-body part " << std::endl;
+
+     std::cout << "looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
     for (auto a : modelspace->core )
     {
      Orbit& oa = modelspace->GetOrbit(a);
      for (auto b : modelspace->core )
      {
+      if (b>a) continue;
       Orbit& ob = modelspace->GetOrbit(b);
       int Jab_min = std::abs(oa.j2-ob.j2)/2;
       int Jab_max = (oa.j2+ob.j2)/2;
@@ -317,14 +322,16 @@ void Generator::ConstructGenerator_Atan()
       {
        for (auto c : modelspace->core )
        {
+        if (c>b) continue;
         Orbit& oc = modelspace->GetOrbit(c);
-        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
+//        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
 
         for ( auto i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
         {
          Orbit& oi = modelspace->GetOrbit(i);
          for ( auto j : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
          {
+          if (j>i) continue;
           Orbit& oj = modelspace->GetOrbit(j);
           int Jij_min = std::abs(oi.j2-oj.j2)/2;
           int Jij_max = (oi.j2+oj.j2)/2;
@@ -332,23 +339,25 @@ void Generator::ConstructGenerator_Atan()
           {
            for ( auto k : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
            {
+            if (k>j) continue;
             Orbit& ok = modelspace->GetOrbit(k);
-            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > 2*E3cut ) continue;
+//            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > 2*E3cut ) continue;
             if ( (oa.l+ob.l+oc.l+oi.l+oj.l+ok.l)%2>0 ) continue;
             if ( (oa.tz2+ob.tz2+oc.tz2) != (oi.tz2+oj.tz2+ok.tz2) ) continue;
             double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
 
             int twoJ_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jij-ok.j2) );
             int twoJ_max = std::min( 2*Jab+oc.j2, 2*Jij+ok.j2 );
-            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ++)
+            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
             {
               double ME_od = H->ThreeBody.GetME_pn( Jab, Jij, twoJ, a,b,c,i,j,k);
               double eta = 0.5*atan(2*ME_od / denominator);
 //              double eta = (ME_od / denominator);
 //              if (std::abs(eta)>1e-6)
-//              {
-//                std::cout << "Nonzero eta !  <" << a << " " << b << " " << c << ", " << Jab << " | " << i << " " << j << " " << k << ", " << Jij << " > _ " << twoJ << "  => " << ME_od << " / " << denominator << " = " << eta << std::endl;
-//              }
+              if (std::abs(eta)>1e-3)
+              {
+                std::cout << "big eta !  <" << a << " " << b << " " << c << ", " << Jab << " | " << i << " " << j << " " << k << ", " << Jij << " > _ " << twoJ << "  => " << ME_od << " / " << denominator << " = " << eta << std::endl;
+              }
               Eta->ThreeBody.AddToME_pn( Jab, Jij, twoJ, a,b,c,i,j,k,  eta);
             }
            }
@@ -358,8 +367,9 @@ void Generator::ConstructGenerator_Atan()
        }
       } 
      } 
-    }
-    }
+    }// for a
+    std::cout << "Size of Eta3 = " << Eta->ThreeBodyNorm() << std::endl;
+    }// if particle rank >3
     H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
 }
 
@@ -529,8 +539,10 @@ void Generator::ConstructGenerator_ShellModel_Atan()
       // Decouple the valence space
       for ( auto& iket : tbc.GetKetIndex_vv() )
       {
+         auto& ket = tbc.GetKet(iket);
          for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
          {
+            auto& bra = tbc.GetKet(ibra);
             double denominator = Get2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator) ;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
@@ -538,8 +550,100 @@ void Generator::ConstructGenerator_ShellModel_Atan()
       }
 
     }
+
+    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
+    {
+       ConstructGenerator_ShellModel_Atan_3body();
+    }
+
 }
 
+
+
+// off diagonal pieces are  ppp|ccc  ppp|ccv ppp|cvv  qpp|vvv   where p is either v or q
+void Generator::ConstructGenerator_ShellModel_Atan_3body()
+{
+    // Three body piece
+//    int E3cut = 99;
+    double t_start = omp_get_wtime();
+
+     std::cout << "looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
+    for (auto a : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
+    {
+     Orbit& oa = modelspace->GetOrbit(a);
+     for (auto b : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace ) )
+     {
+      if (b>a) continue;
+      Orbit& ob = modelspace->GetOrbit(b);
+      int Jab_min = std::abs(oa.j2-ob.j2)/2;
+      int Jab_max = (oa.j2+ob.j2)/2;
+      for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+      {
+       for (auto c : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace ) )
+       {
+        if (c>b) continue;
+        Orbit& oc = modelspace->GetOrbit(c);
+//        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
+
+        for ( auto i : imsrg_util::VectorUnion(modelspace->core,modelspace->valence) )
+        {
+         Orbit& oi = modelspace->GetOrbit(i);
+//         // if any bra indices match any ket indices, then the normal ordering will take care of it
+//         if ( i==a or i==b or i==c) continue;
+         for ( auto j : imsrg_util::VectorUnion(modelspace->core,modelspace->valence) )
+         {
+          if (j>i) continue;
+//          if ( j==a or j==b or j==c) continue;
+          Orbit& oj = modelspace->GetOrbit(j);
+          int Jij_min = std::abs(oi.j2-oj.j2)/2;
+          int Jij_max = (oi.j2+oj.j2)/2;
+          for (int Jij=Jij_min; Jij<=Jij_max; Jij++)
+          {
+           for ( auto k : imsrg_util::VectorUnion(modelspace->core,modelspace->valence) )
+           {
+            if (k>j) continue;
+//            if ( k==a or k==b or k==c) continue;
+            // check if everything is valence, becase we don't want vvv|vvv to be off-diagonal
+            if (   (std::find( modelspace->valence.begin(), modelspace->valence.end(), a) != modelspace->valence.end()) // a is valence
+              and  (std::find( modelspace->valence.begin(), modelspace->valence.end(), b) != modelspace->valence.end()) // b is valence
+              and  (std::find( modelspace->valence.begin(), modelspace->valence.end(), c) != modelspace->valence.end()) // c is valence
+              and  (std::find( modelspace->valence.begin(), modelspace->valence.end(), i) != modelspace->valence.end()) // i is valence
+              and  (std::find( modelspace->valence.begin(), modelspace->valence.end(), j) != modelspace->valence.end()) // j is valence
+              and  (std::find( modelspace->valence.begin(), modelspace->valence.end(), k) != modelspace->valence.end()) // k is valence
+              ) continue;
+
+            Orbit& ok = modelspace->GetOrbit(k);
+
+//            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > 2*E3cut ) continue;
+            if ( (oa.l+ob.l+oc.l+oi.l+oj.l+ok.l)%2>0 ) continue;
+            if ( (oa.tz2+ob.tz2+oc.tz2) != (oi.tz2+oj.tz2+ok.tz2) ) continue;
+            double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
+
+            int twoJ_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jij-ok.j2) );
+            int twoJ_max = std::min( 2*Jab+oc.j2, 2*Jij+ok.j2 );
+            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+            {
+              double ME_od = H->ThreeBody.GetME_pn( Jab, Jij, twoJ, a,b,c,i,j,k);
+              double eta = 0.5*atan(2*ME_od / denominator);
+//              double eta = (ME_od / denominator);
+//              if (std::abs(eta)>1e-6)
+              if (std::abs(eta)>1e-3)
+              {
+                std::cout << "big eta !  <" << a << " " << b << " " << c << ", " << Jab << " | " << i << " " << j << " " << k << ", " << Jij << " > _ " << twoJ << "  => " << ME_od << " / " << denominator << " = " << eta << std::endl;
+              }
+              Eta->ThreeBody.AddToME_pn( Jab, Jij, twoJ, a,b,c,i,j,k,  eta);
+            }
+           }
+          }
+         }
+        }
+       }
+      } 
+     } 
+    }// for a
+
+
+}
 
 
 
