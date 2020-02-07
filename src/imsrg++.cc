@@ -469,7 +469,9 @@ int main(int argc, char** argv)
     H3.OneBody = HNO.OneBody;
     H3.TwoBody = HNO.TwoBody;
     std::cout << "Replacing HNO" << std::endl;
-    Hbare = H3;
+//    Hbare = H3;
+    HNO = H3;
+    HNO.ThreeBody.TransformToPN();
   }
 
 
@@ -810,6 +812,14 @@ int main(int argc, char** argv)
 
     int nOmega = imsrgsolver.GetOmegaSize() + imsrgsolver.GetNOmegaWritten();
     std::cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
+    std::cout << "Before doing so, the spes are " << std::endl;
+    for ( auto i : modelspace.all_orbits ) std::cout << "  " << i << " : " << HNO.OneBody(i,i) << std::endl;
+    if (IMSRG3=="true")
+    {
+      std::cout << "Re-normal-ordering wrt the core. For now, we just throw away the 3N at this step." << std::endl;
+      HNO.SetNumberLegs(4);
+      HNO.SetParticleRank(2);
+    }
     HNO = HNO.UndoNormalOrdering();
 
     ms2.SetReference(ms2.core); // change the reference
