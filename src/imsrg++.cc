@@ -469,7 +469,6 @@ int main(int argc, char** argv)
     H3.OneBody = HNO.OneBody;
     H3.TwoBody = HNO.TwoBody;
     std::cout << "Replacing HNO" << std::endl;
-//    Hbare = H3;
     HNO = H3;
     HNO.ThreeBody.TransformToPN();
   }

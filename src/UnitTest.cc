@@ -479,13 +479,13 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 //  all_good &= Test_comm223ss( X, Y );
 //  all_good &= Test_comm133ss( X, Y );
 
-  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
+//  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
 //  all_good &= Test_comm332_pphhss( X, Y );  
 
 //  all_good &= Test_comm233_pp_hhss( X, Y );   
 //  all_good &= Test_comm233_ph_ss( X, Y );  
 //  all_good &= Test_comm333_ppp_hhh_ss( X, Y );  
-//  all_good &= Test_comm333_pph_hhp_ss( X, Y );  
+  all_good &= Test_comm333_pph_hhp_ss( X, Y );  
 
 
 
@@ -1751,7 +1751,8 @@ bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y )
                     double ycdeabj = GetMschemeMatrixElement_3b( Y, c,mc, d,md, e,me, a,ma, b,mb, j,mj );
                     double xcdeabj = GetMschemeMatrixElement_3b( X, c,mc, d,md, e,me, a,ma, b,mb, j,mj );
                     double yabicde = GetMschemeMatrixElement_3b( Y, a,ma, b,mb, i,mi, c,mc, d,md, e,me );
-                    Zm_ij += 1./4 * occfactor * ( xabicde * ycdeabj - yabicde * xcdeabj );
+                    Zm_ij += 1./12 * occfactor * ( xabicde * ycdeabj - yabicde * xcdeabj );
+//                    Zm_ij += 1./4 * occfactor * ( xabicde * ycdeabj - yabicde * xcdeabj );
                    }// for md
                   }// for mc
                  }// for mb
@@ -2442,10 +2443,10 @@ bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // te
                           double occfactor = (1-na)*(1-nb)*nc*nd - na*nb*(1-nc)*(1-nd);
 
 //                          Zm_ijkl += 1./4 * occfactor * (xabicdl*ycdjabk 
-                          double dz = 1./4 * occfactor * (1*xabicdl*ycdjabk 
-                                                       -  1*xabjcdl*ycdiabk 
-                                                       -  1*xabicdk*ycdjabl 
-                                                       +  1*xabjcdk*ycdiabl   );
+                          double dz = 1./4 * occfactor * (xabicdl*ycdjabk 
+                                                       -  xabjcdl*ycdiabk 
+                                                       -  xabicdk*ycdjabl 
+                                                       +  xabjcdk*ycdiabl   );
                           Zm_ijkl += dz;
 
 //                          if (std::abs(dz)>1.0e-6 or (a==0 and b==1 and c==4 and d==5) )
@@ -3553,29 +3554,21 @@ bool UnitTest::Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y ) /
                          double yikcabm = GetMschemeMatrixElement_3b( Y, i,m_i, k,m_k, c,m_c, a,m_a, b,m_b, m,m_m );// Pjk Pmn
 
 
-//        = - 1/2 sum_abc [na*nb*(1-nc) + (1-na)*(1-nb)*nc ] *
+//        =   1/2 sum_abc [na*nb*(1-nc) + (1-na)*(1-nb)*nc ] *
 //                [ (Xabkcmn*Ycijabl - Yabkcmn*Xcijabl) - (Xabicmn*Yckjabl - Yabicmn*Xckjabl)  - (Xabjcmn*Ycikabl - Yabjcmn*Xcikabl) 
 //                 -(Xabkcln*Ycijabm - Yabkcln*Xcijabm) + (Xabicln*Yckjabm - Yabicln*Xckjabm)  + (Xabjcln*Ycikabm - Yabjcln*Xcikabm) 
 //                 -(Xabkcml*Ycijabn - Yabkcml*Xcijabn) + (Xabicml*Yckjabn - Yabicml*Xckjabn)  + (Xabjcml*Ycikabn - Yabjcml*Xcikabn) ]
                            double dz = 0;
-                           dz += 0.5 * 1*occfactor * (xabklmc * yijcabn - yabklmc * xijcabn ); // Z1
-                           dz -= 0.5 * 1*occfactor * (xabilmc * ykjcabn - yabilmc * xkjcabn ); // Z2
-                           dz -= 0.5 * 1*occfactor * (xabjlmc * yikcabn - yabjlmc * xikcabn ); // Z3
-                           dz -= 0.5 * 1*occfactor * (xabknmc * yijcabl - yabknmc * xijcabl ); // Z4
-                           dz -= 0.5 * 1*occfactor * (xabklnc * yijcabm - yabklnc * xijcabm ); // Z5
-                           dz += 0.5 * 1*occfactor * (xabinmc * ykjcabl - yabinmc * xkjcabl ); // Z6
-                           dz += 0.5 * 1*occfactor * (xabjnmc * yikcabl - yabjnmc * xikcabl ); // Z7
-                           dz += 0.5 * 1*occfactor * (xabilnc * ykjcabm - yabilnc * xkjcabm ); // Z8
-                           dz += 0.5 * 1*occfactor * (xabjlnc * yikcabm - yabjlnc * xikcabm ); // Z9
-                           z_ijklmn += dz;
-//                           if (std::abs(dz)>1e-6)
-//                           {
-//                             std::cout << "  a b c  ma mb mc " << a << " " << b << " " << c << "  " << m_a << " " << m_b << " " << m_c << "   " << xabklmc << " " << yijcabn <<  "  =  " << dz << "  => " << z_ijklmn << std::endl;
-//
-//                           }
-//                         z_ijklmn -= 0.5*occfactor*( (xabkcmn*ycijabl - yabkcmn*xcijabl) - (xabicmn*yckjabl - yabicmn*xckjabl)  - (xabjcmn*ycikabl - yabjcmn*xcikabl));
-//                         z_ijklmn += 0.5*occfactor*( (xabkcln*ycijabm - yabkcln*xcijabm) - (xabicln*yckjabm - yabicln*xckjabm)  - (xabjcln*ycikabm - yabjcln*xcikabm));
-//                         z_ijklmn += 0.5*occfactor*( (xabkcml*ycijabn - yabkcml*xcijabn) - (xabicml*yckjabn - yabicml*xckjabn)  - (xabjcml*ycikabn - yabjcml*xcikabn));
+                           dz += xabklmc * yijcabn - yabklmc * xijcabn ; // Z1
+                           dz -= xabilmc * ykjcabn - yabilmc * xkjcabn ; // Z2
+                           dz -= xabjlmc * yikcabn - yabjlmc * xikcabn ; // Z3
+                           dz -= xabknmc * yijcabl - yabknmc * xijcabl ; // Z4
+                           dz -= xabklnc * yijcabm - yabklnc * xijcabm ; // Z5
+                           dz += xabinmc * ykjcabl - yabinmc * xkjcabl ; // Z6
+                           dz += xabjnmc * yikcabl - yabjnmc * xikcabl ; // Z7
+                           dz += xabilnc * ykjcabm - yabilnc * xkjcabm ; // Z8
+                           dz += xabjlnc * yikcabm - yabjlnc * xikcabm ; // Z9
+                           z_ijklmn += 0.5 * occfactor * dz;
 
                           }// for m_c
                          }// for m_b

@@ -1802,7 +1802,8 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
                 else if (c==d or d==e) cde_symmetry_factor = 3;
                 int Jcd = ket_cde.Jpq;
                  
-                zij += 0.25 * ab_symmetry_factor * cde_symmetry_factor * occfactor * Jfactor
+//                zij += 0.25 * ab_symmetry_factor * cde_symmetry_factor * occfactor * Jfactor
+                zij += 1./12 * ab_symmetry_factor * cde_symmetry_factor * occfactor * Jfactor
                              * (  X3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * Y3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j)  
                                 - Y3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * X3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j)  ); 
              }// for iket_cde
@@ -2898,11 +2899,11 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 //*****************************************************************************************
 //
 //  |     |    |     Uncoupled expression:
-// i|    j|   k|       Z_ijklmn = 1/2 sum_{ab} (n`an`b - nanb) P(ij/k) X_{ijab} Y_{abjlmn} - P(lm/n) Y_{ijkabn} X_{ablm}
+// i|    j|   k|       Z_ijklmn = 1/2 sum_{ab} (n`an`b - nanb) P(ij/k) X_{ijab} Y_{abklmn} - P(lm/n) Y_{ijkabn} X_{ablm}
 //  *~~X~~*    |                   
 // a|    b|    | 
 //  *~~~~[Y]~~~*     Coupled expression:
-// l|    m|   n|     Z_{ijklmn}^{J1,J2,J} = 1/2 sum_{ab} (n`an`b - nanb) ( P(ij/k)^{J1,J} X_{ijab}^{J1} Y_{abjlmn}^{J1,J2,J} 
+// l|    m|   n|     Z_{ijklmn}^{J1,J2,J} = 1/2 sum_{ab} (n`an`b - nanb) ( P(ij/k)^{J1,J} X_{ijab}^{J1} Y_{abklmn}^{J1,J2,J} 
 //  |     |    |                                                         - P(lm/n)^{J2,J} Y_{ijkabn}^{J1,J2,J} X_{ablm}^{J2} )
 //  |     |    |                                                                                                                   
 //                                                                                          
@@ -3126,7 +3127,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 // i|   j|        k|  Uncoupled expression:
 //  |    |         |    C_ijklmn = sum_{ab} (n`anb -nan`b) P(ij/k)P(lm/n) Y_{ijalmb} X_{bkan}
 //  |    |   *~~X~~|                
-// a|   b|  / \    |
+//  |    | a/ \b   |
 //  |    |  \ /    |
 //  |~~~[Y]~~*     |  Coupled expression:
 //  |    |         |  C_{ijklmn}^{J1,J2,J} =  P^{J1,J}(ij/k)P^{J2,j}_{lm/n) sum_{ab} (n`anb -nan`b)  
@@ -3588,10 +3589,10 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
 //*****************************************************************************************
 //
 //  |i  |j      k/     Uncoupled expression:
-//  |   |       /      Z_ijklmn = 1/2 P(ij/k)P(lm/n) sum_{abc} (nanbn`c -na`n`bnc) ( X_{ijcabn} Y_{abklmc} - Y_{ijcabn} X_{abklmc} )
+//  |   |       /      Z_ijklmn =-1/2 P(ij/k)P(lm/n) sum_{abc} (nanbn`c + na`n`bnc) ( X_{ijcabn} Y_{abklmc} - Y_{ijcabn} X_{abklmc} )
 //  *~~[X]~*   /                   
 //  |   |  |\ /        Coupled expression:
-// a|  b| c| /         Z_{ijklmn}^{J1,J2,J} = +1/2 P^{J1,J}(ij/k)P^{J2,j}_{lm/n) sum_{abc} (nanbn`c-n`an`bnc) sum_{J',J",J3} (2J'+1)(2J"+1)
+// a|  b| c| /         Z_{ijklmn}^{J1,J2,J} = +1/2 P^{J1,J}(ij/k)P^{J2,j}_{lm/n) sum_{abc} (nanbn`c+n`an`bnc) sum_{J',J",J3} (2J'+1)(2J"+1)
 //  |   |  |/ \                                  { k   J1  J  }
 //  *~~[Y]~*   \                               * { J3  J'  n  } * ( X_{ijcabn}^{J1,J3,J'} Y_{abklmc}^{J3,J2,J"} - X<->Y )     
 //  |   |       \                                { J"  c   J2 }                                                                            
