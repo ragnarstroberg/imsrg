@@ -198,11 +198,11 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       comm233_phss(X, Y, Z);
 //       X.profiler.timer["comm223_phss"] += omp_get_wtime() - t_start;
 
-//       not too bad, though naively n^8
-       std::cout << " comm332_ppph_hhhp " << std::endl;
-       t_start = omp_get_wtime();
-       comm332_ppph_hhhpss(X, Y, Z);
-       X.profiler.timer["comm332_ppph_hhhpss"] += omp_get_wtime() - t_start;
+////       not too bad, though naively n^8
+//       std::cout << " comm332_ppph_hhhp " << std::endl;
+//       t_start = omp_get_wtime();
+//       comm332_ppph_hhhpss(X, Y, Z);
+//       X.profiler.timer["comm332_ppph_hhhpss"] += omp_get_wtime() - t_start;
 
 //      This one works, but it's slow, so it's commented out for now...
 //       std::cout << " comm332_pphh " << std::endl;
