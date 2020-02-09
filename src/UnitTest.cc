@@ -477,7 +477,7 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 //  all_good &= Test_comm132ss( X, Y );
 //  all_good &= Test_comm232ss( X, Y );
 //  all_good &= Test_comm223ss( X, Y );
-//  all_good &= Test_comm133ss( X, Y );
+  all_good &= Test_comm133ss( X, Y );
 
 //  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
 //  all_good &= Test_comm332_pphhss( X, Y );  
@@ -485,7 +485,7 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 //  all_good &= Test_comm233_pp_hhss( X, Y );   
 //  all_good &= Test_comm233_ph_ss( X, Y );  
 //  all_good &= Test_comm333_ppp_hhh_ss( X, Y );  
-  all_good &= Test_comm333_pph_hhp_ss( X, Y );  
+//  all_good &= Test_comm333_pph_hhp_ss( X, Y );  
 
 
 
@@ -2742,7 +2742,7 @@ bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y )
 
               std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
               // loop over projections
-              for (int m_i=-oi.j2; m_i<=oi.j2; m_i+=2)
+              for (int m_i= oi.j2; m_i<=oi.j2; m_i+=2)
               {
                for (int m_j=-oj.j2; m_j<=oj.j2; m_j+=2)
                {
