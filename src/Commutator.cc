@@ -1997,7 +1997,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 //  Verified with UnitTest
 //
-// This is the time hog of the n^7 scaling terms (not any longer...)
+// This is the time hog of the n^7 scaling terms 
 void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   auto& X2 = X.TwoBody;
@@ -2431,14 +2431,9 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 //                  the fact that the one-body scalar operator comes with a delta_jj.
 //
 //  Checked with UnitTest and passed
-//  this is slower than it should be...
 //
-///// THIS NEW WAY DOESN'T WORK YET...
-
 void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 {
-//  double normY = Y.ThreeBodyNorm();
-//  int e3maxcut = 96;
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z3 = Z.ThreeBody;
@@ -2453,12 +2448,9 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
   double Y3NORM = Y3.Norm();
   if (X3NORM<1e-6 and Y3NORM<1e-6 ) return;
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
-//  std::cout << "start ch3 loop  particle ranks are " << X.GetParticleRank() << " " << Y.GetParticleRank() << " " << Z.GetParticleRank() << " norms " << X3.Norm() << " " << Y3.Norm() << std::endl;
-//  #pragma omp parallel for schedule(dynamic,1)
-//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   for (size_t ch3=0; ch3<=nch3; ch3++)
   {
-//    std::cout << "    ch3 = " << ch3 << std::endl;
     auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
     int twoJ = Tbc.twoJ;
     size_t nkets = Tbc.GetNumberKets();
