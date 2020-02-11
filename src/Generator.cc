@@ -354,10 +354,10 @@ void Generator::ConstructGenerator_Atan()
               double eta = 0.5*atan(2*ME_od / denominator);
 //              double eta = (ME_od / denominator);
 //              if (std::abs(eta)>1e-6)
-              if (std::abs(eta)>1e-3)
-              {
-                std::cout << "big eta !  <" << a << " " << b << " " << c << ", " << Jab << " | " << i << " " << j << " " << k << ", " << Jij << " > _ " << twoJ << "  => " << ME_od << " / " << denominator << " = " << eta << std::endl;
-              }
+//              if (std::abs(eta)>1e-3)
+//              {
+//                std::cout << "big eta !  <" << a << " " << b << " " << c << ", " << Jab << " | " << i << " " << j << " " << k << ", " << Jij << " > _ " << twoJ << "  => " << ME_od << " / " << denominator << " = " << eta << std::endl;
+//              }
               Eta->ThreeBody.AddToME_pn( Jab, Jij, twoJ, a,b,c,i,j,k,  eta);
             }
            }
