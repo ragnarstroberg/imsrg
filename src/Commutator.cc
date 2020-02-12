@@ -1960,6 +1960,8 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
   
   int norb = Z.modelspace->GetNumberOrbits();
   size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
+
+  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   for (size_t ch=0; ch<nch; ch++)
   {
     auto& tbc = Z.modelspace->GetTwoBodyChannel(ch);
@@ -2726,7 +2728,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
   int norbs = Z.modelspace->GetNumberOrbits();
   double X3NORM = X3.Norm();
   double Y3NORM = Y3.Norm();
-  if (X3NORM<1e-6 and Y3NORM<1e-6 ) return;
+//  if (X3NORM<1e-6 and Y3NORM<1e-6 ) return;
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   for (size_t ch3=0; ch3<=nch3; ch3++)
