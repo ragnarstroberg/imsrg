@@ -125,25 +125,6 @@ namespace Commutator{
   void AddInversePandyaTransformation_Dagger(const std::deque<arma::mat>& Zbar, Operator& Z );
 
 
-/*
-
-  // commutator terms involving a dagger operator. 211 means [two legs, one leg] => one leg
-  // sd means scalar-dagger
-  void comm211sd( const Operator& X, const DaggerOperator& Y, DaggerOperator& Z) ; 
-  void comm231sd( const Operator& X, const DaggerOperator& Y, DaggerOperator& Z) ;
-  void comm431sd( const Operator& X, const DaggerOperator& Y, DaggerOperator& Z) ;
-  void comm413_233sd( const Operator& X, const DaggerOperator& Y, DaggerOperator& Z) ; 
-  void comm433sd_pphh( const Operator& X, const DaggerOperator& Y, DaggerOperator& Z) ; 
-  void comm433sd_ph( const Operator& X, const DaggerOperator& Y, DaggerOperator& Z) ; 
-  void comm433sd_ph_dumbway( const Operator& X, const DaggerOperator& Y, DaggerOperator& Z) ; // Do it with loops, not matmult. Easier to check, but much slower.
-
-  void comm433_pp_hh_431sd( const Operator& X, const DaggerOperator& Y, DaggerOperator& Z ) ; 
-//  void ConstructDaggerMpp_Mhh(const Operator& X, const DaggerOperator& Y, const DaggerOperator& Z, TwoBodyME& Mpp, TwoBodyME& Mhh);
-  void ConstructDaggerMpp_Mhh(const Operator& X, const DaggerOperator& Y, const DaggerOperator& Z, ThreeLegME& Mpp, ThreeLegME& Mhh);
-  void DoPandyaTransformation_SingleChannel_Dagger(const DaggerOperator& Z, arma::mat& X, int ch_cc) ;
-  void AddInversePandyaTransformation_Dagger(const std::deque<arma::mat>& Zbar, DaggerOperator& Z );
-
-*/
 
 
 

@@ -166,6 +166,12 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        X.profiler.timer["comm331ss"] += omp_get_wtime() - t_start;
 //     }
 
+//     This one is essential. If it's not here, then there are no induced 3 body terms
+       std::cout << " comm223 " << std::endl;
+       t_start = omp_get_wtime();
+       comm223ss(X, Y, Z); // scales as n^7
+       X.profiler.timer["comm223ss"] += omp_get_wtime() - t_start;
+
 //     if (X.GetParticleRank()>2 or Y.GetParticleRank()>2)
 //     {
        // Demonstrated that this can have some effect
@@ -198,11 +204,11 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       comm233_pp_hhss(X, Y, Z);
 //       X.profiler.timer["comm233_pp_hhss"] += omp_get_wtime() - t_start;
 
-//     This one is super slow too.
+//     This one is super slow too. It involves 9js
 //       std::cout << " comm233_ph " << std::endl;
 //       t_start = omp_get_wtime();
 //       comm233_phss(X, Y, Z);
-//       X.profiler.timer["comm223_phss"] += omp_get_wtime() - t_start;
+//       X.profiler.timer["comm233_phss"] += omp_get_wtime() - t_start;
 
 //       not too bad, though naively n^8
 //       std::cout << " comm332_ppph_hhhp " << std::endl;
@@ -210,7 +216,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       comm332_ppph_hhhpss(X, Y, Z);
 //       X.profiler.timer["comm332_ppph_hhhpss"] += omp_get_wtime() - t_start;
 
-//      This one works, but it's slow, so it's commented out for now...
+//      This one works, but it involves 9js so it's slow, so it's commented out for now...
 //       std::cout << " comm332_pphh " << std::endl;
 //       t_start = omp_get_wtime();
 //       comm332_pphhss(X, Y, Z);
@@ -229,11 +235,6 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       X.profiler.timer["comm333_pph_hhpss"] += omp_get_wtime() - t_start;
 //     }
 
-//   This one is essential. If it's not here, then there are no induced 3 body terms
-     std::cout << " comm223 " << std::endl;
-     t_start = omp_get_wtime();
-     comm223ss(X, Y, Z); // scales as n^7
-     X.profiler.timer["comm223ss"] += omp_get_wtime() - t_start;
 
 
      // after going through once, we've stored all the 6js and 9js, so we can run in OMP loops from now on
@@ -1959,7 +1960,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
               double xijbkla = X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
               double yijbkla = Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
 
-              zijkl += occfactor * (twoJ+1.)/(2*J+1) * ( 1*X1(a,b) * yijbkla -  1*Y1(a,b) * xijbkla );
+              zijkl += occfactor * (twoJ+1.)/(2*J+1) * ( X1(a,b) * yijbkla -  Y1(a,b) * xijbkla );
 
             }
           }
@@ -1997,7 +1998,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 //  Verified with UnitTest
 //
-// This is the time hog of the n^7 scaling terms 
+// This is the time hog of the n^7 scaling terms   (seems to be doing better...)
 void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   auto& X2 = X.TwoBody;
@@ -2011,6 +2012,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
   int hermX = X.IsHermitian() ? 1 : -1;
   int hermY = Y.IsHermitian() ? 1 : -1;
+
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
 
@@ -2062,11 +2065,15 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         int b=ket_ab.q;
         Orbit& oa = Z.modelspace->GetOrbit(a);
         Orbit& ob = Z.modelspace->GetOrbit(b);
+        int ea = 2*oa.n + oa.l;
+        int eb = 2*ob.n + ob.l;
 
         for (auto c : Z.modelspace->all_orbits )
         {
           Orbit& oc = Z.modelspace->GetOrbit(c);
           double jc = 0.5*oc.j2;
+          int ec = 2*oc.n + oc.l;
+          if ( (std::abs( ea-e_fermi[oa.tz2]) + std::abs(eb-e_fermi[ob.tz2]) + std::abs(ec-e_fermi[oc.tz2])) > Z.modelspace->GetdE3max() ) continue;
           double occfactor = oa.occ * ob.occ * (1-oc.occ) + (1-oa.occ) * (1-ob.occ) * oc.occ;
           if ( std::abs(occfactor) < 1e-6 ) continue;
           if (a==b) occfactor *=0.5;  // we sum a<=b, and drop the 1/2, but we still need the 1/2 for a==b
@@ -2121,8 +2128,12 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
         int twoJp_min = std::max( std::abs(2*Jab - oi.j2), std::abs(2*J-oc.j2));
         int twoJp_max = std::min( 2*Jab + oi.j2, 2*J+oc.j2);
-        if ( twoJp_min > twoJp_max ) continue;
 
+        // Why is this part structured like this?
+        // In tests, the time for this entire commutator routine was dominated by the time to access 3-body matrix elements.
+        // That's because I'm asking for them in an order different from the one in which they're stored.
+        // Fortunately, both the X and Y block need exactly the same recoupling, and we can pull the recoupling for the bra
+        // side a few loops out.
         for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
         {
            std::vector<size_t> ibra_list;
@@ -2888,6 +2899,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y2 = Y.TwoBody;
   if ( (std::abs( X2.Norm() * Y2.Norm() ) < 1e-6 ) and not Z.modelspace->scalar3b_transform_first_pass) return;
 
+  std::map<int,double> efermi = Z.modelspace->GetEFermi();
   // we loop over i, j<=i, k<=j    l<=i, m<=l, n<=m, and Jij, Jmn free unless  ijk == lmn, then we take Jmn <= Jij.
 
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
@@ -2907,6 +2919,10 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
       Orbit& ok = Z.modelspace->GetOrbit(k);
+      int ei = 2*oi.n + oi.l;
+      int ej = 2*oj.n + oj.l;
+      int ek = 2*ok.n + ok.l;
+      if ( (std::abs(ei-efermi[oi.tz2]) + std::abs(ej-efermi[oj.tz2]) + std::abs(ek-efermi[ok.tz2])) > Z.modelspace->GetdE3max() ) continue;
       double ji = 0.5*oi.j2;
       double jj = 0.5*oj.j2;
       double jk = 0.5*ok.j2;
@@ -2920,6 +2936,10 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         Orbit& ol = Z.modelspace->GetOrbit(l);
         Orbit& om = Z.modelspace->GetOrbit(m);
         Orbit& on = Z.modelspace->GetOrbit(n);
+        int el = 2*ol.n + ol.l;
+        int em = 2*om.n + om.l;
+        int en = 2*on.n + on.l;
+        if ( (std::abs(el-efermi[ol.tz2]) + std::abs(em-efermi[om.tz2]) + std::abs(en-efermi[on.tz2])) > Z.modelspace->GetdE3max() ) continue;
         double jl = 0.5*ol.j2;
         double jm = 0.5*om.j2;
         double jn = 0.5*on.j2;
@@ -3036,16 +3056,12 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
           and  ((oa.l+ok.l+om.l+ol.l)%2==0)  and ((oa.tz2+ok.tz2)==(om.tz2+ol.tz2)) )
           {
             double hats  =  sqrt( (2*J1+1.)*(2*J2+1.) );
-//            double phase =  Z.modelspace->phase( (oa.j2+ok.j2+ol.j2+om.j2)/2);
             double phase =  1;
             double sixj1 = Z.modelspace->GetSixJ(jn,ja,J1, jk,Jtot,J2);
             double xijna = X2.GetTBME_J(J1,i,j,n,a);
             double yijna = Y2.GetTBME_J(J1,i,j,n,a);
-//            double xakml = X2.GetTBME_J(J2,a,k,m,l);
-//            double yakml = Y2.GetTBME_J(J2,a,k,m,l);
             double xkalm = X2.GetTBME_J(J2,k,a,l,m);
             double ykalm = Y2.GetTBME_J(J2,k,a,l,m);
-//            zijklmn += hats * phase * sixj1 * (xijna*yakml-yijna*xakml);
             zijklmn += hats * phase * sixj1 * (xijna*ykalm-yijna*xkalm);
           }
 
@@ -3147,10 +3163,10 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
          }// for a
 
-         if (std::abs(zijklmn)>1e-6)
-         {
+//         if (std::abs(zijklmn)>1e-6)
+//         {
              Z3.AddToME_pn_PN_ch( ch3,ch3,ibra,iket, zijklmn );
-         }
+//         }
 
     }// for iket
    }// for ibra
@@ -3173,7 +3189,6 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 //                                                                                          
 //                                                           
 //      Checked with UnitTest and passed                                                                      
-//                                                                                         
 //
 void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 {
