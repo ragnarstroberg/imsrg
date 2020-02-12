@@ -63,20 +63,20 @@ namespace Commutator{
 
 
 // IMSRG(3) commutators. Still a work in progress...
-  void comm330ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
-  void comm331ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
-  void comm231ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+  void comm330ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm331ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm231ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
 
-  void comm132ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
-  void comm232ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
-  void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented. not tested.
-  void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z ) ;      // implemented. not tested.
+  void comm132ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm232ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented and tested.
+  void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z ) ;      // implemented and tested.
   
-  void comm133ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
-  void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
-  void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z ) ;     // implemented. not tested.
-  void comm233_phss( const Operator& X, const Operator& Y, Operator& Z ) ;        // implemented. not tested.
-  void comm333ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+  void comm133ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z ) ;     // implemented and tested.
+  void comm233_phss( const Operator& X, const Operator& Y, Operator& Z ) ;        // implemented and tested.
+  void comm333ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
 
   double comm333_ppp_hhh_ss_inner_loop( Orbit& oi, Orbit& oj, int Jij, Orbit& ok,   // helper function
                                         Orbit& ol, Orbit& om, int Jlm, Orbit& on,

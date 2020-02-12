@@ -1970,18 +1970,26 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
       Ket& bra = tbc.GetKet(ibra);
       int i = bra.p;
       int j = bra.q;
+      int ei = 2*bra.op->n + bra.op->l;
+      int ej = 2*bra.oq->n + bra.oq->l;
       for (int iket=ibra;iket<nkets;iket++ ) // |kl> states
       {
         Ket& ket = tbc.GetKet(iket);
         int k = ket.p;
         int l = ket.q;
+        int ek = 2*ket.op->n + ket.op->l;
+        int el = 2*ket.oq->n + ket.oq->l;
         double zijkl = 0;
         for (int a=0;a<norb;a++)
         {
           Orbit& oa = Z.modelspace->GetOrbit(a);
+          int ea = 2*oa.n + oa.l;
+          if ( (ek+el+ea)>Z.modelspace->E3max) continue;
           for ( auto b : Z.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // TODO: We can make this a<=b or a>=b, I think. Just need to mind some factors of 2
           {
             Orbit& ob = Z.modelspace->GetOrbit(b);
+            int eb = 2*ob.n + ob.l;
+            if ( (ei+ej+eb)>Z.modelspace->E3max) continue;
             double occfactor = oa.occ - ob.occ;
             if (std::abs(occfactor)<1e-6) continue;
             int twoJ_min = std::abs( oa.j2 - 2*J );
