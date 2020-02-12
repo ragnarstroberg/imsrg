@@ -475,9 +475,9 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 //  all_good &= Test_comm331ss( X, Y );
 //  all_good &= Test_comm231ss( X, Y );
 //  all_good &= Test_comm132ss( X, Y );
-//  all_good &= Test_comm232ss( X, Y );
+  all_good &= Test_comm232ss( X, Y );
 //  all_good &= Test_comm223ss( X, Y );
-  all_good &= Test_comm133ss( X, Y );
+//  all_good &= Test_comm133ss( X, Y );
 
 //  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
 //  all_good &= Test_comm332_pphhss( X, Y );  
@@ -2046,6 +2046,7 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
   double summed_error = 0;
   double sum_m = 0;
   double sum_J = 0;
+  size_t norb = X.modelspace->GetNumberOrbits();
   std::cout << "Begin m-scheme loops" << std::endl;
 
   for (auto i : X.modelspace->all_orbits )
@@ -2086,7 +2087,10 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
 //             if (not (mi==1 and mj==-1 and mk==-1 and ml==1)) continue;
 
              double Zm_ijkl = 0;
-             for (auto a : X.modelspace->all_orbits )
+
+//             for (auto a : X.modelspace->all_orbits )
+             #pragma omp parallel for schedule(dynamic,1) reduction(+:Zm_ijkl)
+             for (size_t a=0; a<norb; a++ )
              {
               Orbit& oa = X.modelspace->GetOrbit(a);
               double na = oa.occ;
@@ -2137,6 +2141,8 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
 
                         Zm_ijkl += -0.5* occfactor * ( xicab*yabjklc - xjcab*yabiklc - yijcabl*xabkc + yijcabk*xablc
                                                      - yicab*xabjklc + yjcab*xabiklc + xijcabl*yabkc - xijcabk*yablc );
+//                        Zm_ijkl += -0.5* occfactor * ( xicab*yabjklc - xjcab*yabiklc - yijcabl*xabkc + yijcabk*xablc
+//                                                     - yicab*xabjklc + yjcab*xabiklc + xijcabl*yabkc - xijcabk*yablc );
 
                       }// for mc
                     }// for mb
