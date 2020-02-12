@@ -250,7 +250,7 @@ class ModelSpace
    int ThreeBodyJmax; // maximum J for a 3-body state (not used)?
    int EmaxUnocc; // Separate emax cut for orbits with l,j,tz that aren't present in the HF reference
 
-   int dE3max; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
+   double dE3max; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
 //   double e_fermi;    // The fermi energy, probably in oscillator units
    std::map<int,double> e_fermi;    // The fermi energy, probably in oscillator units. It's different for protons and neutrons, so index by tz
 
@@ -440,8 +440,8 @@ class ModelSpace
    void SetLmax(int l);
    void SetLmax2(int l){Lmax2=l;};
    void SetLmax3(int l){Lmax3=l;};
-   void SetdE3max(int e){dE3max = e;};
-   int GetdE3max(){return dE3max;};
+   void SetdE3max(double e){dE3max = e;};
+   double GetdE3max(){return dE3max;};
    void SetEFermi(double ef){e_fermi[-1]=ef; e_fermi[+1]=ef;};
    std::map<int,double> GetEFermi(){ return e_fermi ;};
    void SetEFermi(double ef_proton, double ef_neutron){e_fermi[-1] = ef_proton; e_fermi[1]=ef_neutron;};
