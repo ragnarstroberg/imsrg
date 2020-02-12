@@ -2721,6 +2721,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
   int hermX = X.IsHermitian() ? 1 : -1;
   int hermY = Y.IsHermitian() ? 1 : -1;
 
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+
   int norbs = Z.modelspace->GetNumberOrbits();
   double X3NORM = X3.Norm();
   double Y3NORM = Y3.Norm();
@@ -2732,16 +2734,33 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
     int twoJ = Tbc.twoJ;
     size_t nkets = Tbc.GetNumberKets();
-
-
-    arma::mat X1MAT( nkets,nkets, arma::fill::zeros);
-    arma::mat Y1MAT( nkets,nkets, arma::fill::zeros);
-    arma::mat X3MAT( nkets,nkets, arma::fill::zeros);
-    arma::mat Y3MAT( nkets,nkets, arma::fill::zeros);
-    arma::mat Z3MAT( nkets,nkets, arma::fill::zeros);
-
-    for (size_t ibra=0; ibra<nkets; ibra++)
+    std::vector<size_t> kets_kept;
+    std::map<size_t,size_t> kept_lookup;
+    for (size_t iket=0; iket<nkets; iket++)
     {
+      Ket3& ket = Tbc.GetKet(iket);
+      int ei = 2*ket.op->n + ket.op->l;
+      int ej = 2*ket.oq->n + ket.oq->l;
+      int ek = 2*ket.oR->n + ket.oR->l;
+      int tz2i = ket.op->tz2;
+      int tz2j = ket.oq->tz2;
+      int tz2k = ket.oR->tz2;
+      if (  ( std::abs(ei - e_fermi[tz2i]) + std::abs(ej-e_fermi[tz2j]) + std::abs(ek-e_fermi[tz2k])) > Z.modelspace->GetdE3max() ) continue;
+      kets_kept.push_back( iket );
+      kept_lookup[iket] = kets_kept.size()-1;
+    }
+    size_t nkets_kept = kets_kept.size();
+
+
+    arma::mat X1MAT( nkets_kept,nkets_kept, arma::fill::zeros);
+    arma::mat Y1MAT( nkets_kept,nkets_kept, arma::fill::zeros);
+    arma::mat X3MAT( nkets_kept,nkets_kept, arma::fill::zeros);
+    arma::mat Y3MAT( nkets_kept,nkets_kept, arma::fill::zeros);
+    arma::mat Z3MAT( nkets_kept,nkets_kept, arma::fill::zeros);
+
+    for (size_t index_bra=0; index_bra<nkets_kept; index_bra++)
+    {
+      size_t ibra = kets_kept[index_bra];
       Ket3& bra = Tbc.GetKet(ibra);
       size_t i = bra.p;
       size_t j = bra.q;
@@ -2749,10 +2768,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
       Orbit& ok = Z.modelspace->GetOrbit(k);
-      int ei = 2*oi.n + oi.l;
-      int ej = 2*oj.n + oj.l;
-      int ek = 2*ok.n + ok.l; // We can maybe save some effort by checking E3max?
       int Jij = bra.Jpq;
+
 
       for (auto a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
@@ -2763,10 +2780,12 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, a, j, k,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
-          size_t iket = ket_list[ilist];
+          auto iter_find = kept_lookup.find( ket_list[ilist] );
+          if (iter_find == kept_lookup.end() ) continue;
+          size_t index_ket = iter_find->second;
           double recouple = recouple_list[ilist];
-          X1MAT(ibra,iket) += X1(i,a) * recouple;
-          Y1MAT(ibra,iket) += Y1(i,a) * recouple;
+          X1MAT(index_bra,index_ket) += X1(i,a) * recouple;
+          Y1MAT(index_bra,index_ket) += Y1(i,a) * recouple;
         }
       }
       for (auto a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
@@ -2776,10 +2795,12 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, a, k,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
-          size_t iket = ket_list[ilist];
+          auto iter_find = kept_lookup.find( ket_list[ilist] );
+          if (iter_find == kept_lookup.end() ) continue;
+          size_t index_ket = iter_find->second;
           double recouple = recouple_list[ilist];
-          X1MAT(ibra,iket) += X1(j,a) * recouple;
-          Y1MAT(ibra,iket) += Y1(j,a) * recouple;
+          X1MAT(index_bra,index_ket) += X1(j,a) * recouple;
+          Y1MAT(index_bra,index_ket) += Y1(j,a) * recouple;
         }
       }
       for (auto a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
@@ -2789,45 +2810,45 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, j, a,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
-          size_t iket = ket_list[ilist];
+          auto iter_find = kept_lookup.find( ket_list[ilist] );
+          if (iter_find == kept_lookup.end() ) continue;
+          size_t index_ket = iter_find->second;
           double recouple = recouple_list[ilist];
-          X1MAT(ibra,iket) += X1(k,a) * recouple;
-          Y1MAT(ibra,iket) += Y1(k,a) * recouple;
+          X1MAT(index_bra,index_ket) += X1(k,a) * recouple;
+          Y1MAT(index_bra,index_ket) += Y1(k,a) * recouple;
         }
       }
     }// for ibra
 
-    if ( X3NORM > 1e-6)
+    // kept_lookup is a map   Full index => Kept index, so iter_bra.first gives the full index, and iter_bra.second is the
+    // index for the 3-body state we keep in this commutator
+    for ( auto& iter_bra : kept_lookup )
     {
-      for (size_t ibra=0; ibra<nkets; ibra++)
+      for ( auto& iter_ket : kept_lookup )
       {
-        for (size_t iket=0; iket<nkets; iket++)
-        {
-          X3MAT(ibra,iket) = X3.GetME_pn_PN_ch(ch3,ch3,ibra,iket);
-        }
-      }
-    }
-    if ( Y3NORM > 1e-6)
-    {
-      for (size_t ibra=0; ibra<nkets; ibra++)
-      {
-        for (size_t iket=0; iket<nkets; iket++)
-        {
-          Y3MAT(ibra,iket) = Y3.GetME_pn_PN_ch(ch3,ch3,ibra,iket);
-        }
+        if ( X3NORM > 1e-6)
+           X3MAT( iter_bra.second, iter_ket.second) = X3.GetME_pn_PN_ch(ch3,ch3, iter_bra.first, iter_ket.first );
+        if ( Y3NORM > 1e-6)
+           Y3MAT( iter_bra.second, iter_ket.second) = Y3.GetME_pn_PN_ch(ch3,ch3, iter_bra.first, iter_ket.first );
       }
     }
 
+
+    // Do the matrix multiplication
     Z3MAT = X1MAT*Y3MAT - Y1MAT*X3MAT +  hermX*hermY * ( X3MAT.t()*Y1MAT.t() - Y3MAT.t()*X1MAT.t() );
 
- 
-    for (size_t ibra=0; ibra<nkets; ibra++)
+
+    // unpack the result
+    for ( auto& iter_bra : kept_lookup )
     {
-      for (size_t iket=ibra; iket<nkets; iket++)
+      for ( auto& iter_ket : kept_lookup )
       {
-         Z3.AddToME_pn_PN_ch(ch3,ch3, ibra, iket, Z3MAT(ibra,iket) );
+        if ( iter_ket.first < iter_bra.first ) continue;
+        Z3.AddToME_pn_PN_ch(ch3,ch3, iter_bra.first,iter_ket.first,  Z3MAT(iter_bra.second,iter_ket.second) );
       }
     }
+ 
+
   }// for ch3
 }
 

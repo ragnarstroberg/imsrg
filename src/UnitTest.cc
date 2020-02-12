@@ -471,12 +471,12 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
   Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
   bool all_good = true;
 
-  all_good &= Test_comm330ss( X, Y );
-  all_good &= Test_comm331ss( X, Y );
-  all_good &= Test_comm231ss( X, Y );
-  all_good &= Test_comm132ss( X, Y );
-  all_good &= Test_comm232ss( X, Y );
-  all_good &= Test_comm223ss( X, Y );
+//  all_good &= Test_comm330ss( X, Y );
+//  all_good &= Test_comm331ss( X, Y );
+//  all_good &= Test_comm231ss( X, Y );
+//  all_good &= Test_comm132ss( X, Y );
+//  all_good &= Test_comm232ss( X, Y );
+//  all_good &= Test_comm223ss( X, Y );
   all_good &= Test_comm133ss( X, Y );
 
 //  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
