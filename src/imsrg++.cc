@@ -113,6 +113,7 @@ int main(int argc, char** argv)
   int file3e3max = parameters.i("file3e3max");
   int atomicZ = parameters.i("atomicZ");
   int emax_unocc = parameters.i("emax_unocc");
+  int dE3max = parameters.i("dE3max");
 
   double hw = parameters.d("hw");
   double smax = parameters.d("smax");
@@ -462,6 +463,7 @@ int main(int argc, char** argv)
 
   if (IMSRG3 == "true")
   {
+    modelspace.SetdE3max(dE3max);
     std::cout << "You have chosen IMSRG3. good luck..." << std::endl;
     Operator H3(modelspace,0,0,0,3);
     std::cout << "Constructed H3" << std::endl;

@@ -250,12 +250,17 @@ class ModelSpace
    int ThreeBodyJmax; // maximum J for a 3-body state (not used)?
    int EmaxUnocc; // Separate emax cut for orbits with l,j,tz that aren't present in the HF reference
 
+   int dE3max; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
+//   double e_fermi;    // The fermi energy, probably in oscillator units
+   std::map<int,double> e_fermi;    // The fermi energy, probably in oscillator units. It's different for protons and neutrons, so index by tz
+
    int norbits;       // number of single-particle orbits (not counting the degenerate m-projections)
    double hbar_omega; // oscillator frequency in MeV
    int target_mass;   // Particle number of the system we're trying to compute
    int target_Z;      // Proton number of the system we're trying to compute
    int Aref;          // Particle number of the normal-ordering reference
    int Zref;          // Proton number of the normal-ordering reference
+
 
    std::vector<Orbit> Orbits; // vector of one-body Orbit structs
    std::vector<Ket> Kets;     // vector of two-body Ket structs
@@ -379,6 +384,7 @@ class ModelSpace
    void Setup3bKets();
    void AddOrbit(Orbit orb);
    void AddOrbit(int n, int l, int j2, int tz2, double occ, int io);
+   void FindEFermi();
    // Setter/Getters
 //   Orbit& GetOrbit(int i) {return (Orbit&) Orbits[i];}; 
    Orbit& GetOrbit(int i); 
@@ -433,6 +439,11 @@ class ModelSpace
    void SetLmax(int l){Lmax=l;};
    void SetLmax2(int l){Lmax2=l;};
    void SetLmax3(int l){Lmax3=l;};
+   void SetdE3max(int e){dE3max = e;};
+   int GetdE3max(){return dE3max;};
+   void SetEFermi(double ef){e_fermi[-1]=ef; e_fermi[+1]=ef;};
+   std::map<int,double> GetEFermi(){ return e_fermi ;};
+   void SetEFermi(double ef_proton, double ef_neutron){e_fermi[-1] = ef_proton; e_fermi[1]=ef_neutron;};
 
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
