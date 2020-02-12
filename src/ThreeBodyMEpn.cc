@@ -503,6 +503,7 @@ size_t ThreeBodyMEpn::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a
   int parity = ( oa.l + ob.l + oc.l )%2;
   int twoTz = ( oa.tz2 + ob.tz2 + oc.tz2 );
   int ch = modelspace->GetThreeBodyChannelIndex( twoJ, parity, twoTz );
+  if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > modelspace->E3max) return ch;
 
 //  std::cout << "    " << __func__ << "Before staring the loop. ch = " << ch << std::endl;
   if (ch < 0 ) return ch;

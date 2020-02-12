@@ -1436,6 +1436,85 @@ double HartreeFock::GetAverageHFPotential( double r, double rprime)
 }
 
 
+///
+ThreeBodyMEpn HartreeFock::GetTransformed3B( )
+{
+  double t_start = omp_get_wtime();
+  ThreeBodyMEpn hf3bme(modelspace);
+//  hf3bme.Setemax(emax);
+  hf3bme.SwitchToPN_and_discard();
+
+  size_t nch3 = modelspace->GetNumberThreeBodyChannels();
+  for ( size_t ch3=0; ch3<nch3; ch3++ )
+  {
+    ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch3);
+    size_t nkets = Tbc.GetNumberKets();
+    arma::mat Rhoijk( nkets, 6*nkets, arma::fill::zeros );
+    arma::mat Rholmn( nkets, 6*nkets, arma::fill::zeros );
+    arma::mat Full3N( 6*nkets, 6*nkets, arma::fill::zeros );
+    
+  }
+
+/*
+  // big loop over elements of hf3bme...
+  auto norbits = modelspace->GetNumberOrbits();
+  for (size_t a : modelspace->valence )
+  {
+   Orbit& oa = modelspace->GetOrbit(a);
+   int ea = 2*oa.n + oa.l;
+   if ((ea > emax) or ea>E3max ) break;
+   for (size_t b=0; b<=a; b+=1)
+   {
+    Orbit& ob = modelspace->GetOrbit(b);
+    int eb = 2*ob.n + ob.l;
+    if ((ea+eb)>E3max) break;
+    int Jab_min = std::abs( oa.j2 - ob.j2 ) /2;
+    int Jab_max =         ( oa.j2 + ob.j2 ) /2;
+    for (size_t c=0; c<=b; c+=1)
+    {
+      Orbit& oc = modelspace->GetOrbit(c);
+      int ec = 2*oc.n + oc.l;
+      if ((ea+eb+ec)>E3max) break;
+      for (size_t d=0; d<=a; d+=1 )
+      {
+       Orbit& od = modelspace->GetOrbit(d);
+       for (size_t e=0; e<=d; e+=1 )
+       {
+        Orbit& oe = modelspace->GetOrbit(e);
+        int Jde_min = std::abs( od.j2 - oe.j2 ) /2;
+        int Jde_max =         ( od.j2 + oe.j2 ) /2;
+        for (size_t f=0; f<=e; f+=1 )
+        {
+          Orbit& of = modelspace->GetOrbit(f);
+          for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+          {
+           for (int Jde=Jde_min; Jde<=Jde_max; Jde++)
+           {
+            int J2_min = std::max( std::abs(Jab*2-oc.j2), std::abs(Jde*2-of.j2) );
+            int J2_max = std::min(         (Jab*2+oc.j2),         (Jde*2+of.j2) );
+            for (int J2=J2_min; J2<=J2_max; J2++)
+            {
+              double V = GetHF3bme( Jab, Jde, J2, a, b, c, d, e, f );
+              hf3bme.SetME_pn(Jab, Jde, J2, a, b, c, d, e, f, V);
+
+            } // for J2
+           } // for Jde
+          } // for Jab
+        } // for f
+       } // for e
+      } // for d
+    }// for c
+   } // for b
+  } // for a
+*/
+
+  IMSRGProfiler::timer["HartreeFock::GetValence3B"] += omp_get_wtime() - t_start;
+  return hf3bme;
+
+}
+
+
+
 // Get the 3-body interaction in the Hartree-Fock basis.
 // Note that because the ThreeBody structure stores things in isospin format
 // and because I haven't bothered to write a new structure, we get
@@ -1447,25 +1526,15 @@ ThreeBodyMEpn HartreeFock::GetValence3B( int emax, int E3max )
   double t_start = omp_get_wtime();
   ThreeBodyMEpn hf3bme(modelspace, E3max);
   hf3bme.Setemax(emax);
-//  if (Hbare.ThreeBody.IsPNmode())
-//  {
     hf3bme.SwitchToPN_and_discard();
-//    std::cout << "After Switching to PN and discarding, the size of ch_start and ch_dim are " << hf3bme.ch_start.size() << " " << hf3bme.ch_dim.size() << std::endl;
-//  }
-//  else
-//  {
-//    hf3bme.Allocate();
-//  }
+
   // big loop over elements of hf3bme...
   auto norbits = modelspace->GetNumberOrbits();
-//  for (size_t a=0; a<norbits; a+=2)
-//  for (size_t a=0; a<norbits; a+=1)
   for (size_t a : modelspace->valence )
   {
    Orbit& oa = modelspace->GetOrbit(a);
    int ea = 2*oa.n + oa.l;
    if ((ea > emax) or ea>E3max ) break;
-//   for (size_t b=0; b<=a; b+=2)
    for (size_t b=0; b<=a; b+=1)
    {
     Orbit& ob = modelspace->GetOrbit(b);
@@ -1473,31 +1542,22 @@ ThreeBodyMEpn HartreeFock::GetValence3B( int emax, int E3max )
     if ((ea+eb)>E3max) break;
     int Jab_min = std::abs( oa.j2 - ob.j2 ) /2;
     int Jab_max =         ( oa.j2 + ob.j2 ) /2;
-//    int tab_min = std::abs( oa.tz2 + ob.tz2)/2;
-//    int tab_max = 1;
-//    for (size_t c=0; c<=b; c+=2)
     for (size_t c=0; c<=b; c+=1)
     {
       Orbit& oc = modelspace->GetOrbit(c);
       int ec = 2*oc.n + oc.l;
       if ((ea+eb+ec)>E3max) break;
-//      for (size_t d=0; d<=a; d+=2 )
       for (size_t d=0; d<=a; d+=1 )
       {
        Orbit& od = modelspace->GetOrbit(d);
-//       for (size_t e=0; e<=d; e+=2 )
        for (size_t e=0; e<=d; e+=1 )
        {
         Orbit& oe = modelspace->GetOrbit(e);
         int Jde_min = std::abs( od.j2 - oe.j2 ) /2;
         int Jde_max =         ( od.j2 + oe.j2 ) /2;
-//        int tde_min = std::abs( od.tz2 + oe.tz2)/2;
-//        int tde_max = 1;
-//        for (size_t f=0; f<=e; f+=2 )
         for (size_t f=0; f<=e; f+=1 )
         {
           Orbit& of = modelspace->GetOrbit(f);
-//          if ( (oa.tz2+ob.tz2+oc.tz2) != (od.tz2+oe.tz2+of.tz2) ) continue;
           for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
           {
            for (int Jde=Jde_min; Jde<=Jde_max; Jde++)
@@ -1506,38 +1566,9 @@ ThreeBodyMEpn HartreeFock::GetValence3B( int emax, int E3max )
             int J2_max = std::min(         (Jab*2+oc.j2),         (Jde*2+of.j2) );
             for (int J2=J2_min; J2<=J2_max; J2++)
             {
-//              for (int tab=tab_min; tab<=tab_max; tab++)
-//              {
-//               for (int tde=tde_min; tde<=tde_max; tde++)
-//               {
-//                int T2_min = 1;
-////                int T2_max = std::abs(oa.tz2+ob.tz2+oc.tz2);  // this will be either 1 or 3.
-//                int T2_max = 3;  // this will be either 1 or 3.
-//                for (int T2=T2_min; T2<=T2_max; T2++)
-//                {
-//                  if (a==6 and b==6 and c==6 and d==6 and e==6 and f==6 and Jab==0 and Jde==0)
-//                  {
-//                    std::cout << "******* Calling GetHF3bme " << std::endl;
-//                  }
-//                  double V = GetHF3bme( Jab, Jde, J2, tab, tde, T2, a, b, c, d, e, f );
-//                  hf3bme.SetME(Jab, Jde, J2, tab, tde, T2, a, b, c, d, e, f, V);
-                  double V = GetHF3bme( Jab, Jde, J2, a, b, c, d, e, f );
+              double V = GetHF3bme( Jab, Jde, J2, a, b, c, d, e, f );
+              hf3bme.SetME_pn(Jab, Jde, J2, a, b, c, d, e, f, V);
 
-//                  if (a==6 and b==6 and c==6 and d==6 and e==6 and f==6 and Jab==0 and Jde==0)
-//                  {
-//                    std::cout << "******* Calling SetME_pn " << std::endl;
-//                  }
-
-                  hf3bme.SetME_pn(Jab, Jde, J2, a, b, c, d, e, f, V);
-//                  if (a==6 and b==6 and c==6 and d==6 and e==6 and f==6 and Jab==0 and Jde==0)
-//                  {
-//                    std::cout << "******* Calling GetME_pn " << std::endl;
-//                    double vread = hf3bme.GetME_pn(Jab,Jde,J2,a,b,c,d,e,f);
-//                    std::cout << "********    V = " << V << "   and after setting it, I read " << vread << "  emax= " << hf3bme.emax << " E3max = " << hf3bme.E3max << std::endl;
-//                  }
-//                } // for T2
-//               } // for tde
-//              } // for tab
             } // for J2
            } // for Jde
           } // for Jab
@@ -1552,6 +1583,11 @@ ThreeBodyMEpn HartreeFock::GetValence3B( int emax, int E3max )
   return hf3bme;
 
 }
+
+
+
+
+
 
 
 

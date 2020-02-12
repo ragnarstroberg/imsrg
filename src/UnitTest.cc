@@ -471,13 +471,13 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
   Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
   bool all_good = true;
 
-//  all_good &= Test_comm330ss( X, Y );
-//  all_good &= Test_comm331ss( X, Y );
+  all_good &= Test_comm330ss( X, Y );
+  all_good &= Test_comm331ss( X, Y );
   all_good &= Test_comm231ss( X, Y );
-//  all_good &= Test_comm132ss( X, Y );
-//  all_good &= Test_comm232ss( X, Y );
-//  all_good &= Test_comm223ss( X, Y );
-//  all_good &= Test_comm133ss( X, Y );
+  all_good &= Test_comm132ss( X, Y );
+  all_good &= Test_comm232ss( X, Y );
+  all_good &= Test_comm223ss( X, Y );
+  all_good &= Test_comm133ss( X, Y );
 
 //  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
 //  all_good &= Test_comm332_pphhss( X, Y );  
@@ -1768,7 +1768,7 @@ bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y )
       if (std::abs(err)>1e-6)
       {
         std::cout << "Trouble in " << __func__ << "  i,j = " << i << " " << j 
-                  << "   zij = " << Zm_ij << "   ZJ_iij = " << ZJ_ij << "   err = " << err << std::endl; 
+                  << "   zij = " << Zm_ij << "   ZJ_ij = " << ZJ_ij << "   err = " << err << std::endl; 
       }
       summed_error += err*err;
       sum_m += Zm_ij*Zm_ij;
@@ -1885,7 +1885,7 @@ bool UnitTest::Test_comm231ss( const Operator& X, const Operator& Y )
       if (std::abs(err)>1e-6)
       {
         std::cout << "Trouble in " << __func__ << "  i,j = " << i << " " << j 
-                  << "   zij = " << Zm_ij << "   ZJ_iij = " << ZJ_ij << "   err = " << err << std::endl; 
+                  << "   zij = " << Zm_ij << "   ZJ_ij = " << ZJ_ij << "   err = " << err << std::endl; 
       }
       summed_error += err*err;
       sum_m += Zm_ij*Zm_ij;
@@ -2746,7 +2746,7 @@ bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y )
 
 //              if ( not (i==1 and j==0 and k==0 and l==1 and m==0 and n==0) ) continue;
 
-              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
+//              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
               // loop over projections
               for (int m_i= oi.j2; m_i<=oi.j2; m_i+=2)
               {
