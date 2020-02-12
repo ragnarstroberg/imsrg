@@ -1855,8 +1855,12 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
   for (int i=0; i<norb; i++)
   {
     Orbit& oi = Z.modelspace->GetOrbit(i);
+    int ei = 2*oi.n + oi.l;
     for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
+      if (j>i) continue;
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+      int ej = 2*oj.n + oj.l;
       double zij=0;
       for (int ch=0; ch<nch; ch++)
       {
@@ -1867,6 +1871,9 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
           Ket& bra = tbc.GetKet(ibra);
           int a = bra.p;
           int b = bra.q;
+          int ea = 2*bra.op->n + bra.op->l;
+          int eb = 2*bra.oq->n + bra.oq->l;
+          if (  (ea+eb+std::min(ei,ej))> Z.modelspace->E3max )  continue;
           double na = bra.op->occ;
           double nb = bra.oq->occ;
           for ( auto iket : tbc.KetIndex_pp )
@@ -1874,6 +1881,9 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
             Ket& ket = tbc.GetKet(iket);
             int c = ket.p;
             int d = ket.q;
+            int ec = 2*ket.op->n + ket.op->l;
+            int ed = 2*ket.oq->n + ket.oq->l;
+            if (  (ec+ed+std::min(ei,ej))> Z.modelspace->E3max )  continue;
             double nc = ket.op->occ;
             double nd = ket.oq->occ;
             double Xabcd = X2.GetTBME(ch,bra,ket);
@@ -1887,13 +1897,34 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
             int twoJ_max = 2*J + oi.j2;
             for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
             {
-              zij += prefactor* (twoJ+1)* ( Xabcd * Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j) - Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j) * Xcdab
-                                           -Yabcd * X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j) + X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j) * Ycdab );
+              double xabicdj = 0;
+              double yabicdj = 0;
+              double xcdiabj = 0;
+              double ycdiabj = 0;
+              if ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max)
+              {
+                xcdiabj = X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
+                ycdiabj = Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
+              }
+              if ( std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max)
+              {
+                xabicdj = X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
+                yabicdj = Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
+              }
+              zij += prefactor * (twoJ+1) * ( (Xabcd * ycdiabj - yabicdj * Xcdab)
+                                           -  (Yabcd * xcdiabj - xabicdj * Ycdab) );
+              
+//              zij += prefactor* (twoJ+1)* ( Xabcd * Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j) - Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j) * Xcdab
+//                                           -Yabcd * X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j) + X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j) * Ycdab );
             }
           }
         }
       }
       Z1(i,j) += zij / (oi.j2+1.0);
+      if (i!=j)
+      {
+         Z1(j,i) += zij / (oi.j2+1.0);
+      }
     }// for j
   }// for i
 
