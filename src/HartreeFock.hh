@@ -107,6 +107,7 @@ class HartreeFock
    void Vmon3JacobiUnHash(uint64_t key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& E12, uint64_t& alpha, uint64_t& Ncm, uint64_t& Lcm);
    static uint64_t Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f);
    static void Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f);
+   ThreeBodyMEpn GetTransformed3B(  );
    ThreeBodyMEpn GetValence3B( int emax, int E3max );
    double GetHF3bme( int Jab, int Jde, int J2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
 //   double GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);

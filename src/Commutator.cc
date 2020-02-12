@@ -2749,12 +2749,17 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
       Orbit& ok = Z.modelspace->GetOrbit(k);
+      int ei = 2*oi.n + oi.l;
+      int ej = 2*oj.n + oj.l;
+      int ek = 2*ok.n + ok.l; // We can maybe save some effort by checking E3max?
       int Jij = bra.Jpq;
 
       for (auto a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
         std::vector<size_t> ket_list;
         std::vector<double> recouple_list;
+        Orbit& oa = X.modelspace->GetOrbit(a);
+        
         size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, a, j, k,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
