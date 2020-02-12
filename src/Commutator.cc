@@ -3163,16 +3163,14 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
          }// for a
 
-//         if (std::abs(zijklmn)>1e-6)
-//         {
              Z3.AddToME_pn_PN_ch( ch3,ch3,ibra,iket, zijklmn );
-//         }
 
     }// for iket
    }// for ibra
   }// for ch3
-//  std::cout << "Done with comm223ss. Norm of Z3 is " << std::scientific << Z.ThreeBodyNorm() << std::endl;
 }
+
+
 
 
 

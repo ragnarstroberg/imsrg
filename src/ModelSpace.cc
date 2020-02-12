@@ -426,7 +426,48 @@ void ModelSpace::InitSingleSpecies(int emax, std::string reference, std::string 
 
 }
 
-
+void ModelSpace::SetLmax( int l)
+{
+  Lmax = l;
+  int e = Emax;
+  std::map<index_t,double> the_hole_list;
+  std::set<index_t> the_core_list;
+  std::set<index_t> the_valence_list;
+  for ( auto h : holes )
+  {
+    Orbit& oh = GetOrbit(h);
+    if ( oh.l > Lmax )
+    {
+      std::cout << "!!! NOT GOOD. Hole state " << h << " has l = " << oh.l
+                << "  which is bigger than Lmax = " << Lmax << " ... dying now. " << std::endl;
+      exit(0);
+    }
+    the_hole_list[h] = oh.occ;
+  }
+  for (auto c : core )
+  {
+    Orbit& oc = GetOrbit(c);
+    if ( oc.l > Lmax )
+    {
+      std::cout << "!!! NOT GOOD. Core state " << c << " has l = " << oc.l
+                << "  which is bigger than Lmax = " << Lmax << " ... dying now. " << std::endl;
+      exit(0);
+    }
+    the_core_list.insert(c);
+  }
+  for (auto v : valence )
+  {
+    Orbit& ov = GetOrbit(v);
+    if ( ov.l > Lmax )
+    {
+      std::cout << "!!! NOT GOOD. Valence state " << v << " has l = " << ov.l
+                << "  which is bigger than Lmax = " << Lmax << " ... dying now. " << std::endl;
+      exit(0);
+    }
+    the_valence_list.insert(v);
+  }
+  Init( e, the_hole_list, the_core_list, the_valence_list );
+}
 
 
 // Get std::vector of orbit indices from std::vector of std::strings

@@ -299,16 +299,27 @@ void Generator::ConstructGenerator_Atan()
       }
     }
 
-
-
-    // Three body piece
-//    int E3cut = 99;
-    double t_start = omp_get_wtime();
-//    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << "   Norms: " << Eta->ThreeBodyNorm() << "  " << H->ThreeBodyNorm()  << std::endl;
     if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
     {
+       double t_start = omp_get_wtime();
+       ConstructGenerator_Atan_3body();
+       H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
+    }// if particle rank >3
+}
 
-     std::cout << "looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
+
+
+
+
+void Generator::ConstructGenerator_Atan_3body()
+{
+    // Three body piece
+//    int E3cut = 99;
+//    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << "   Norms: " << Eta->ThreeBodyNorm() << "  " << H->ThreeBodyNorm()  << std::endl;
+//    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
+//    {
+
+     std::cout << __func__ << "  looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
     for (auto a : modelspace->core )
     {
      Orbit& oa = modelspace->GetOrbit(a);
@@ -325,6 +336,8 @@ void Generator::ConstructGenerator_Atan()
         if (c>b) continue;
         Orbit& oc = modelspace->GetOrbit(c);
 //        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
+        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > modelspace->E3max ) continue;
+//        std::cout << "  abc " << a << " " << b << " " << c << std::endl;
 
         for ( auto i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
         {
@@ -342,15 +355,20 @@ void Generator::ConstructGenerator_Atan()
             if (k>j) continue;
             Orbit& ok = modelspace->GetOrbit(k);
 //            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > 2*E3cut ) continue;
+            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > modelspace->E3max ) continue;
             if ( (oa.l+ob.l+oc.l+oi.l+oj.l+ok.l)%2>0 ) continue;
             if ( (oa.tz2+ob.tz2+oc.tz2) != (oi.tz2+oj.tz2+ok.tz2) ) continue;
             double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
+//            std::cout << "      ijk " << i << " " << j << " " << k << "   denom = " << denominator << std::endl;
+//            std::cout << "       ...  " << oi.l << " "<<  oi.j2 << std::endl;
 
             int twoJ_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jij-ok.j2) );
             int twoJ_max = std::min( 2*Jab+oc.j2, 2*Jij+ok.j2 );
             for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
             {
+//              std::cout << "            Jab Jij   twoJ = " << Jab << " " << Jij << " " << twoJ << std::endl;
               double ME_od = H->ThreeBody.GetME_pn( Jab, Jij, twoJ, a,b,c,i,j,k);
+//              std::cout << "      got ME_od = " << ME_od << std::endl;
               double eta = 0.5*atan(2*ME_od / denominator);
 //              double eta = (ME_od / denominator);
 //              if (std::abs(eta)>1e-6)
@@ -358,6 +376,7 @@ void Generator::ConstructGenerator_Atan()
 //              {
 //                std::cout << "big eta !  <" << a << " " << b << " " << c << ", " << Jab << " | " << i << " " << j << " " << k << ", " << Jij << " > _ " << twoJ << "  => " << ME_od << " / " << denominator << " = " << eta << std::endl;
 //              }
+//              std::cout << " Calling add  " << Jab << " " << Jij << " " << twoJ << "   " << a << " " << b << " " << c << "  " << i << " " << j << " " << k << "   =>  " << eta << std::endl;
               Eta->ThreeBody.AddToME_pn( Jab, Jij, twoJ, a,b,c,i,j,k,  eta);
             }
            }
@@ -369,8 +388,8 @@ void Generator::ConstructGenerator_Atan()
      } 
     }// for a
     std::cout << "Size of Eta3 = " << Eta->ThreeBodyNorm() << std::endl;
-    }// if particle rank >3
-    H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
+//    }// if particle rank >3
+//    H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
 }
 
 
@@ -565,6 +584,7 @@ void Generator::ConstructGenerator_ShellModel_Atan_3body()
 {
     // Three body piece
 //    int E3cut = 99;
+    int E3cut = modelspace->E3max;
     double t_start = omp_get_wtime();
 
      std::cout << "looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
@@ -584,6 +604,7 @@ void Generator::ConstructGenerator_ShellModel_Atan_3body()
         if (c>b) continue;
         Orbit& oc = modelspace->GetOrbit(c);
 //        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
+        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
 
         for ( auto i : imsrg_util::VectorUnion(modelspace->core,modelspace->valence) )
         {
@@ -615,6 +636,7 @@ void Generator::ConstructGenerator_ShellModel_Atan_3body()
             Orbit& ok = modelspace->GetOrbit(k);
 
 //            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > 2*E3cut ) continue;
+            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > E3cut ) continue;
             if ( (oa.l+ob.l+oc.l+oi.l+oj.l+ok.l)%2>0 ) continue;
             if ( (oa.tz2+ob.tz2+oc.tz2) != (oi.tz2+oj.tz2+ok.tz2) ) continue;
             double denominator = Get3bDenominator( a,b,c, i,j,k ) ;

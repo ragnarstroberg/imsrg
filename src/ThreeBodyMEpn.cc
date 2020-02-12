@@ -271,8 +271,10 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN(int Jab, int Jde, int twoJ, in
   std::vector<double> recouple_ket;
   std::vector<size_t> ibra;
   std::vector<size_t> iket;
+//  std::cout << __func__ << " begin" << std::endl;
   size_t ch_bra = GetKetIndex_withRecoupling( Jab, twoJ, a,b,c, ibra, recouple_bra );
   size_t ch_ket = GetKetIndex_withRecoupling( Jde, twoJ, d,e,f, iket, recouple_ket );
+//  std::cout << "    ch_bra ch_ket " << ch_bra << " " << ch_ket << std::endl;
   if ( ch_bra != ch_ket) return 0;
   //TODO: Should we also throw an exception if twoJ is even?
 
@@ -284,6 +286,7 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN(int Jab, int Jde, int twoJ, in
       me_out += recouple_bra[i] * recouple_ket[j] * GetME_pn_PN_ch( ch_bra, ch_ket, ibra[i], iket[j] );
     }
   }
+//  std::cout << __func__ << " end" << std::endl;
 
   return me_out;
 }
@@ -501,7 +504,7 @@ size_t ThreeBodyMEpn::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a
   int twoTz = ( oa.tz2 + ob.tz2 + oc.tz2 );
   int ch = modelspace->GetThreeBodyChannelIndex( twoJ, parity, twoTz );
 
-//  std::cout << "  " << __func__ << "Before staring the loop. ch = " << ch << std::endl;
+//  std::cout << "    " << __func__ << "Before staring the loop. ch = " << ch << std::endl;
   if (ch < 0 ) return ch;
   auto Tbc = modelspace->GetThreeBodyChannel(ch);
 
@@ -524,6 +527,7 @@ size_t ThreeBodyMEpn::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a
   // Loop over possible values of Jab with the new ordering of a,b,c and
   // fill a vector of the index of where each of those |a,b,c,Jab> states lives
   // as well as the recouplng coefficient.
+//  std::cout << "       " << __func__ << "   looping Jab " << Jab_min << " to " << Jab_max << std::endl;
   for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
   {
     if (a==b and (Jab%2)>0) continue;
