@@ -222,11 +222,11 @@ int main(int argc, char** argv)
 
   modelspace.SetE3max(E3max);
   modelspace.SetLmax(lmax);
-  if (lmax!= 99999)
-  {
-    modelspace.ClearVectors();
-    modelspace.Init(eMax, reference,valence_space);  
-  }
+//  if (lmax!= 99999)
+//  {
+//    modelspace.ClearVectors();
+//    modelspace.Init(eMax, reference,valence_space);  
+//  }
 
   if (emax_unocc>0)
   {

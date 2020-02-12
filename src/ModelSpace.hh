@@ -436,7 +436,8 @@ class ModelSpace
    void SetE2max(int e){E2max=e;};
 //   void SetE3max(int e){E3max=e;};
    void SetE3max(int e);
-   void SetLmax(int l){Lmax=l;};
+//   void SetLmax(int l){Lmax=l;};
+   void SetLmax(int l);
    void SetLmax2(int l){Lmax2=l;};
    void SetLmax3(int l){Lmax3=l;};
    void SetdE3max(int e){dE3max = e;};
