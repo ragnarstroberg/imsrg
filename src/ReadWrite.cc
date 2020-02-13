@@ -1417,6 +1417,7 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
 //  int e2max = modelspace->GetE2max(); // not used yet
   int e3max = modelspace->GetE3max();
   int lmax3 = modelspace->GetLmax3();
+  int lmax = modelspace->GetLmax();
 //  std::cout << "Reading 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << std::endl;
 
 //  std::vector<int> orbits_remap(0);
@@ -1571,6 +1572,7 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                     V = ThreeBME[nread + index_ab ];
                     bool autozero = false;
                     if (oa.l>lmax3 or ob.l>lmax3 or oc.l>lmax3 or od.l>lmax3 or oe.l>lmax3 or of.l>lmax3) V=0;
+                    if (oa.l>lmax or ob.l>lmax or oc.l>lmax or od.l>lmax or oe.l>lmax or of.l>lmax) V=0;
 
 
                     if ( ( a==b and (tab+Jab)%2==0 )

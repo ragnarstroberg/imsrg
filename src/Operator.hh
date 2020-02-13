@@ -184,6 +184,7 @@ class Operator
 //  double GetMP3_Energy();
   std::array<double,3> GetMP3_Energy();
   double MP1_Eval(Operator& );
+  double GetMP2_3BEnergy();
 
   void PrintTimes(){profiler.PrintAll();};
 

@@ -425,11 +425,14 @@ int main(int argc, char** argv)
 //  if (basis=="HF")
   hf.Solve();
 
+  int hno_particle_rank = 2;
+  if ((IMSRG3=="true") and (Hbare.ThreeBodyNorm() > 1e-5))  hno_particle_rank = 3;
 //  Operator HNO;
   Operator& HNO = Hbare;
   if (basis == "HF" and method !="HF")
   {
-    HNO = hf.GetNormalOrderedH();
+    ThreeBodyME hf3b;
+    HNO = hf.GetNormalOrderedH( hno_particle_rank );
   }
   else if (basis == "NAT") // we want to use the natural orbital basis
   {
@@ -465,14 +468,22 @@ int main(int argc, char** argv)
   {
     modelspace.SetdE3max(dE3max);
     std::cout << "You have chosen IMSRG3. good luck..." << std::endl;
-    Operator H3(modelspace,0,0,0,3);
-    std::cout << "Constructed H3" << std::endl;
-    H3.ZeroBody = HNO.ZeroBody;
-    H3.OneBody = HNO.OneBody;
-    H3.TwoBody = HNO.TwoBody;
-    std::cout << "Replacing HNO" << std::endl;
-    HNO = H3;
-    HNO.ThreeBody.TransformToPN();
+
+    if (hno_particle_rank<3 )
+    {
+      Operator H3(modelspace,0,0,0,3);
+      std::cout << "Constructed H3" << std::endl;
+      H3.ZeroBody = HNO.ZeroBody;
+      H3.OneBody = HNO.OneBody;
+      H3.TwoBody = HNO.TwoBody;
+      HNO = H3;
+      std::cout << "Replacing HNO" << std::endl;
+      std::cout << "Hbare Three Body Norm is " << Hbare.ThreeBodyNorm() << std::endl;
+      if ( Hbare.ThreeBodyNorm() <1e-6 )
+      {
+        HNO.ThreeBody.TransformToPN();
+      }
+    }
   }
 
 
@@ -491,13 +502,15 @@ int main(int argc, char** argv)
   {
     std::cout << "Perturbative estimates of gs energy:" << std::endl;
     double EMP2 = HNO.GetMP2_Energy();
+    double EMP2_3B = HNO.GetMP2_3BEnergy();
     std::cout << "EMP2 = " << EMP2 << std::endl;
+    std::cout << "EMP2_3B = " << EMP2_3B << std::endl;
 //    double EMP3 = HNO.GetMP3_Energy();
     std::array<double,3> Emp_3 = HNO.GetMP3_Energy();
     double EMP3 = Emp_3[0]+Emp_3[1]+Emp_3[2];
     std::cout << "E3_pp = " << Emp_3[0] << "  E3_hh = " << Emp_3[1] << " E3_ph = " << Emp_3[2] << "   EMP3 = " << EMP3 << std::endl;
 //    cout << "EMP3 = " << EMP3 << endl;
-    std::cout << "To 3rd order, E = " << HNO.ZeroBody+EMP2+EMP3 << std::endl;
+    std::cout << "To 3rd order, E = " << HNO.ZeroBody + EMP2 + EMP3 + EMP2_3B << std::endl;
   }
 
 

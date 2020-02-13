@@ -90,8 +90,9 @@ class HartreeFock
    void ReorderCoefficients();    ///< Reorder the coefficients in C to eliminate phases etc.
    void SetJacobi3BME( Jacobi3BME* jac ) {jacobi3bme = jac; use_jacobi_3body=true;}; ///< Setter.
    Operator TransformToHFBasis( Operator& OpIn); ///< Transform an operator from oscillator basis to HF basis
-   Operator GetNormalOrderedH();  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
-   Operator GetNormalOrderedH(arma::mat& Cin);  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
+//   Operator GetNormalOrderedH();  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
+   Operator GetNormalOrderedH(int particle_rank=2);  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
+   Operator GetNormalOrderedH(arma::mat& Cin, int particle_rank=2);  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
    Operator GetOmega();           ///< Return a generator of the Hartree Fock transformation
    Operator GetHbare(){return Hbare;}; ///< Getter function for Hbare
    void PrintSPE(); ///< Print out the single-particle energies

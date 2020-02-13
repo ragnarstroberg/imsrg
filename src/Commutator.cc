@@ -2731,7 +2731,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 //  if (X3NORM<1e-6 and Y3NORM<1e-6 ) return;
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
-  for (size_t ch3=0; ch3<=nch3; ch3++)
+  for (size_t ch3=0; ch3<nch3; ch3++)
   {
     auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
     int twoJ = Tbc.twoJ;
@@ -2754,11 +2754,11 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     size_t nkets_kept = kets_kept.size();
 
 
-    arma::mat X1MAT( nkets_kept,nkets_kept, arma::fill::zeros);
-    arma::mat Y1MAT( nkets_kept,nkets_kept, arma::fill::zeros);
-    arma::mat X3MAT( nkets_kept,nkets_kept, arma::fill::zeros);
-    arma::mat Y3MAT( nkets_kept,nkets_kept, arma::fill::zeros);
-    arma::mat Z3MAT( nkets_kept,nkets_kept, arma::fill::zeros);
+    arma::mat X1MAT( nkets_kept, nkets_kept, arma::fill::zeros);
+    arma::mat Y1MAT( nkets_kept, nkets_kept, arma::fill::zeros);
+    arma::mat X3MAT( nkets_kept, nkets_kept, arma::fill::zeros);
+    arma::mat Y3MAT( nkets_kept, nkets_kept, arma::fill::zeros);
+    arma::mat Z3MAT( nkets_kept, nkets_kept, arma::fill::zeros);
 
     for (size_t index_bra=0; index_bra<nkets_kept; index_bra++)
     {
@@ -2828,9 +2828,9 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     {
       for ( auto& iter_ket : kept_lookup )
       {
-        if ( X3NORM > 1e-6)
+//        if ( X3NORM > 1e-6)
            X3MAT( iter_bra.second, iter_ket.second) = X3.GetME_pn_PN_ch(ch3,ch3, iter_bra.first, iter_ket.first );
-        if ( Y3NORM > 1e-6)
+//        if ( Y3NORM > 1e-6)
            Y3MAT( iter_bra.second, iter_ket.second) = Y3.GetME_pn_PN_ch(ch3,ch3, iter_bra.first, iter_ket.first );
       }
     }

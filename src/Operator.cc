@@ -1177,6 +1177,57 @@ std::array<double,3> Operator::GetMP3_Energy()
 
 
 
+
+//*************************************************************
+/// The second order MBPT correction due to the 3B interaction
+/// using Moller-Plesset energy denominators
+//*************************************************************
+double Operator::GetMP2_3BEnergy()
+{
+   double t_start = omp_get_wtime();
+   double Emp2 = 0;
+   if ( legs < 6) return 0;
+   if ( not ThreeBody.is_allocated ) return 0;
+   int nch3 = modelspace->GetNumberThreeBodyChannels();
+   #pragma omp parallel for schedule(dynamic,1) reduction(+:Emp2)
+   for (size_t ch3=0; ch3<nch3; ch3++)
+   {
+     ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch3);
+     int twoJ = Tbc.twoJ;
+     size_t nkets = Tbc.GetNumberKets();
+     for (size_t ibra=0; ibra<nkets; ibra++)
+     {
+       Ket3& bra = Tbc.GetKet(ibra);
+       double occ_bra = (bra.op->occ) * (bra.oq->occ) * (bra.oR->occ);
+       if ( std::abs(occ_bra)<1e-3) continue;
+       size_t i = bra.p;
+       size_t j = bra.q;
+       size_t k = bra.r;
+       double Eijk = OneBody(i,i) + OneBody(j,j) + OneBody(k,k);
+       for (size_t iket=0; iket<nkets; iket++)
+       {
+         Ket3& ket = Tbc.GetKet(iket);
+         double unocc_ket = (1-ket.op->occ) * (1-ket.oq->occ) * (1-ket.oR->occ);
+         if ( std::abs(unocc_ket)<1e-3) continue;
+         size_t a = ket.p;
+         size_t b = ket.q;
+         size_t c = ket.r;
+         double Eabc = OneBody(a,a) + OneBody(b,b) + OneBody(c,c);
+         double V = ThreeBody.GetME_pn_PN_ch(ch3,ch3,ibra,iket);
+         Emp2 += (twoJ+1) * V*V / ( Eijk - Eabc);
+       }// for iket
+     }// for ibra
+   }// for ch3
+
+   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+   return Emp2;
+}
+
+
+
+
+
+
 //*************************************************************
 /// Evaluate first order perturbative correction to the operator's
 /// ground-state expectation value. A HF basis is assumed.
