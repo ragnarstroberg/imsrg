@@ -155,48 +155,48 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //     {
        // This gets the perturbative energy from the induced 3 body
        std::cout << " comm330 " << std::endl;
-       t_start = omp_get_wtime();
+//       t_start = omp_get_wtime();
        comm330ss(X, Y, Z); // scales as n^6
-       X.profiler.timer["comm330ss"] += omp_get_wtime() - t_start;
+//       X.profiler.timer["comm330ss"] += omp_get_wtime() - t_start;
 
 //     Maybe not so important, but I think relatively cheap
        std::cout << " comm331 " << std::endl;
-       t_start = omp_get_wtime();
+//       t_start = omp_get_wtime();
        comm331ss(X, Y, Z); // scales as n^7
-       X.profiler.timer["comm331ss"] += omp_get_wtime() - t_start;
+//       X.profiler.timer["comm331ss"] += omp_get_wtime() - t_start;
 //     }
 
 //     This one is essential. If it's not here, then there are no induced 3 body terms
        std::cout << " comm223 " << std::endl;
-       t_start = omp_get_wtime();
+//       t_start = omp_get_wtime();
        comm223ss(X, Y, Z); // scales as n^7
-       X.profiler.timer["comm223ss"] += omp_get_wtime() - t_start;
+//       X.profiler.timer["comm223ss"] += omp_get_wtime() - t_start;
 
 //     if (X.GetParticleRank()>2 or Y.GetParticleRank()>2)
 //     {
        // Demonstrated that this can have some effect
        std::cout << " comm231 " << std::endl;
-       t_start = omp_get_wtime();
+//       t_start = omp_get_wtime();
        comm231ss(X, Y, Z);  // scales as n^6
-       X.profiler.timer["comm231ss"] += omp_get_wtime() - t_start;
+//       X.profiler.timer["comm231ss"] += omp_get_wtime() - t_start;
 
 //     no demonstrated effect yet, but it's cheap
        std::cout << " comm132 " << std::endl;
-       t_start = omp_get_wtime();
+//       t_start = omp_get_wtime();
        comm132ss(X, Y, Z); // scales as n^6
-       X.profiler.timer["comm132ss"] += omp_get_wtime() - t_start;
+//       X.profiler.timer["comm132ss"] += omp_get_wtime() - t_start;
 
 //     one of the two most important IMSRG(3) terms
        std::cout << " comm232 " << std::endl;
-       t_start = omp_get_wtime();
+//       t_start = omp_get_wtime();
        comm232ss(X, Y, Z);   // this is the slowest n^7 term
-       X.profiler.timer["comm232ss"] += omp_get_wtime() - t_start;
+//       X.profiler.timer["comm232ss"] += omp_get_wtime() - t_start;
 
 //     important for suppressing off-diagonal H3
        std::cout << " comm133 " << std::endl;
-       t_start = omp_get_wtime();
+//       t_start = omp_get_wtime();
        comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
-       X.profiler.timer["comm133ss"] += omp_get_wtime() - t_start;
+//       X.profiler.timer["comm133ss"] += omp_get_wtime() - t_start;
 
 ////    Not too bad, though naively n^8
 //       std::cout << " comm233_pp_hh " << std::endl;
@@ -1691,6 +1691,7 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
 //   
 void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
 {
+  double tstart = omp_get_wtime();
   double z0 = 0;
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
@@ -1735,6 +1736,7 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
 
   std::cout << "Adding " << z0 << "  to Zero Body" << std::endl;
   Z.ZeroBody += z0;
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -1752,6 +1754,7 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
 {
+  double tstart = omp_get_wtime();
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z1 = Z.OneBody;
@@ -1824,6 +1827,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
     }// for j
   }// for i
 
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -1844,6 +1848,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
 {
+  double tstart = omp_get_wtime();
   auto& X2 = X.TwoBody;
   auto& X3 = X.ThreeBody;
   auto& Y2 = Y.TwoBody;
@@ -1928,6 +1933,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
     }// for j
   }// for i
 
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -1952,6 +1958,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
 {
+  double tstart = omp_get_wtime();
   auto& X1 = X.OneBody;
   auto& X3 = X.ThreeBody;
   auto& Y1 = Y.OneBody;
@@ -2013,6 +2020,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
     }
   }
 
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -2042,6 +2050,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
 // This is the time hog of the n^7 scaling terms   (seems to be doing better...)
 void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 {
+  double tstart = omp_get_wtime();
   auto& X2 = X.TwoBody;
   auto& X3 = X.ThreeBody;
   auto& Y2 = Y.TwoBody;
@@ -2066,7 +2075,17 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
     int nkets = tbc.GetNumberKets();
 
 //    double tstart = omp_get_wtime();
-
+    // The strategy used here is the following. We reorganize <ic|X|ab> as <i|X|abc'>  and  <abj|Y|klc> as <abc'|Y|klj'>
+    // where the prime indicates time reversal. Then we can cast things as a matrix multiplication
+    //  <i|Z|klj'> = <i|X|abc'><abc'|Y|klj'>   and then we need to transform Z back to <ij|Z|kl>
+    //
+    //   i|    c|      i|                 a| b| j|       a| b|    /c'
+    //    |__X__|  -->  |__X__             |  |  |  -->   |  |   /
+    //    |     |       |     |\           |__Y__|        |__Y__/
+    //   a|    b|      a|    b| \c'       k| l| c|       k|  |  \j'
+    //
+    // The matrices for X and Z will clearly not be square. The left side is just a single particle orbit, while the right has 3 orbits.
+    // Here, I determine which single orbits will be needed in this two-body channel.
     std::set<size_t> ij_orbits_set;
     std::set<int> j_jvals_set;
     for ( int ibra=0; ibra<nkets; ibra++)
@@ -2080,13 +2099,14 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
     std::vector<size_t> ij_orbits;
     std::vector<int> j_jvals;
     for ( auto i : ij_orbits_set ) ij_orbits.push_back(i); // list of all the indices an orbit (either i or j ) in bra could have
-    for ( auto j : j_jvals_set ) j_jvals.push_back(j);  // list of possible j values an orbit in bra could have
+    for ( auto j : j_jvals_set ) j_jvals.push_back(j);  // list of possible j values (angular momentum) an orbit in bra could have
     size_t nij = ij_orbits.size();
     size_t njvals = j_jvals.size();
 
 //    Z.profiler.timer["comm232_block1"] += omp_get_wtime() - tstart;
 //    tstart = omp_get_wtime();
 
+    // next, we make a list of the abc' combinations that will inter into the sum
     std::vector<size_t> ch_ab_list;
     std::vector<size_t> iket_ab_list;
     std::vector<size_t> a_list;
@@ -2134,6 +2154,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 //    Z.profiler.timer["comm232_block2"] += omp_get_wtime() - tstart;
 //    tstart = omp_get_wtime();
 
+    // allocate the matrices
     size_t n_abc = ch_ab_list.size();
 
     arma::mat X2MAT( nij,   n_abc,             arma::fill::zeros);
@@ -2172,7 +2193,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
         // Why is this part structured like this?
         // In tests, the time for this entire commutator routine was dominated by the time to access 3-body matrix elements.
-        // That's because I'm asking for them in an order different from the one in which they're stored.
+        // That's because I'm asking for them in an order different from the one in which they're stored, which means recoupling.
         // Fortunately, both the X and Y block need exactly the same recoupling, and we can pull the recoupling for the bra
         // side a few loops out.
         for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
@@ -2203,6 +2224,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
                {
                  for (size_t J=0; J<iket_list.size(); J++)
                  {
+                   // I explicitly check if x and y have 3-body components because the call GetME_pn_PN_ch goes straight to the data array
+                   // without a safety net. If the 3-body structure isn't allocated, then bad things will happen.
                    if (x_has_3) xabiklc += recouple_bra_list[I]*recouple_ket_list[J] * X3.GetME_pn_PN_ch(ch_check,ch_check, ibra_list[I], iket_list[J] );
                    if (y_has_3) yabiklc += recouple_bra_list[I]*recouple_ket_list[J] * Y3.GetME_pn_PN_ch(ch_check,ch_check, ibra_list[I], iket_list[J] );
                  }
@@ -2221,13 +2244,15 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 //    Z.profiler.timer["comm232_block3"] += omp_get_wtime() - tstart;
 //    tstart = omp_get_wtime();
  /// now we're back out to the ch loop level.
-       
+
+    // finally do the matrix multiplication
     arma::mat ZMat =  -sqrt(1./(2*J+1)) * (  X2MAT * Y3MAT - Y2MAT * X3MAT  ) ;
 
 
 //    Z.profiler.timer["comm232_block4"] += omp_get_wtime() - tstart;
 //    tstart = omp_get_wtime();
 
+    // now convert back from <i|Z|klj'> to <ij|Z|kl>
     for (int ibra=0; ibra<nkets; ibra++)
     {
       Ket& bra = tbc.GetKet(ibra);
@@ -2241,7 +2266,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       size_t ind_j=0;
       size_t ind_ji=0;
       size_t ind_jj=0;
-      while ( ij_orbits[ind_i] != i  and ind_i<nij ) ind_i++;
+      while ( ij_orbits[ind_i] != i  and ind_i<nij ) ind_i++; // this is janky. There must be a better way.
       while ( ij_orbits[ind_j] != j  and ind_j<nij ) ind_j++;
       while ( j_jvals[ind_ji] != oi.j2 and ind_ji<njvals ) ind_ji++;
       while ( j_jvals[ind_jj] != oj.j2 and ind_jj<njvals ) ind_jj++;
@@ -2285,13 +2310,14 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
   }// for ch
 
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
 
 
 
-// the old way that works.
+// the old way that also works, but is easier to read.
 /*
 void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 {
@@ -2472,6 +2498,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
 {
+  double tstart = omp_get_wtime();
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
@@ -2541,6 +2568,7 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket
     }// for ibra
   }// for ch
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -2566,6 +2594,7 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 {
+  double tstart = omp_get_wtime();
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
@@ -2692,7 +2721,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket
     }// for ibra
   }// for ch
-
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -2714,6 +2743,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 {
+  double tstart = omp_get_wtime();
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z3 = Z.ThreeBody;
@@ -2850,8 +2880,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
       }
     }
  
-
   }// for ch3
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -2959,6 +2989,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 {
+  double tstart = omp_get_wtime();
 //  int e3maxcut = 999;
   int norbs = Z.modelspace->GetNumberOrbits();
   auto& Z3 = Z.ThreeBody;
@@ -3235,6 +3266,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
     }// for iket
    }// for ibra
   }// for ch3
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -3258,6 +3290,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
+  double tstart = omp_get_wtime();
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
   auto& X3 = X.ThreeBody;
@@ -3462,6 +3495,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
     }// for ibra
   }// for ch
 
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -3486,6 +3520,8 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 {
+
+  double tstart = omp_get_wtime();
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
   auto& X3 = X.ThreeBody;
@@ -3864,6 +3900,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
     }// for ibra
   }//for ch3
 
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -3884,6 +3921,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z ) 
 {
 
+  double tstart = omp_get_wtime();
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z3 = Z.ThreeBody;
@@ -3928,6 +3966,7 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
     }// for ibra
   }//for ch3
 
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 //*****************************************************************************************
@@ -3947,6 +3986,8 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
 // 
 void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z ) 
 {
+
+  double tstart = omp_get_wtime();
 
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
@@ -3975,6 +4016,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
       double jj = 0.5 * oj.j2;
       double jk = 0.5 * ok.j2;
       int J1 = bra.Jpq;
+//      for (size_t iket=ibra; iket<nkets3; iket++)
       for (size_t iket=0; iket<=ibra; iket++)
       {
         auto& ket = Tbc.GetKet(iket);
@@ -3989,6 +4031,9 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
         double jn = 0.5 * on.j2;
         int J2 = ket.Jpq;
 
+//              if ( not ((i==2 and j==4 and k==5 and l==4 and m==4 and n==5) 
+//              if ( not ((i==4 and j==4 and k==5 and l==2 and m==4 and n==5) 
+//               or (i==5 and j==4 and k==2 and l==5 and m==4 and n==4)) ) continue;
         double z_ijklmn = 0;
 
         for (size_t ch2=0; ch2<nch2; ch2++)
@@ -4014,6 +4059,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
               if (a==b) occ_factor *=0.5; // because we only sum b<a
               double jc = 0.5 * oc.j2;
 
+
               // Direct Z1 term
               if ( ((oa.l+ob.l+ok.l+ol.l+om.l+oc.l)%2==0) and ((oi.l+oj.l+oc.l+oa.l+ob.l+on.l)%2==0)
                and  ( (oa.tz2+ob.tz2+ok.tz2)==(ol.tz2+om.tz2+oc.tz2) ) and ( (oi.tz2+oj.tz2+oc.tz2)==(oa.tz2+ob.tz2+on.tz2)) )
@@ -4022,22 +4068,46 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                 int twoJx_max = std::min( 2*Jab+ok.j2 , 2*J2 + oc.j2 );
                 int twoJy_min = std::max( std::abs(2*J1 - oc.j2), std::abs(2*Jab - on.j2) );
                 int twoJy_max = std::min( 2*J1+oc.j2 , 2*Jab + on.j2 );
-                for (int twoJx=twoJx_min; twoJx<=twoJx_max; twoJx+=2)
+                if (twoJx_min <= twoJx_max and twoJy_min<=twoJy_max) 
                 {
-                  double JJx = 0.5 * twoJx;
-                  double xabklmc = X3.GetME_pn(Jab,J2,twoJx, a,b,k,l,m,c);
-                  double yabklmc = Y3.GetME_pn(Jab,J2,twoJx, a,b,k,l,m,c);
+                  std::vector<double> xabklmc( (twoJx_max-twoJx_min)/2+1, 0);
+                  std::vector<double> yabklmc( (twoJx_max-twoJx_min)/2+1, 0);
+                  std::vector<double> xijcabn( (twoJy_max-twoJy_min)/2+1, 0);
+                  std::vector<double> yijcabn( (twoJy_max-twoJy_min)/2+1, 0);
+                  for (int twoJx=twoJx_min; twoJx<=twoJx_max; twoJx+=2)
+                  {
+  //                  double JJx = 0.5 * twoJx;
+                    size_t iJx = (twoJx-twoJx_min)/2;
+                    xabklmc[iJx] = X3.GetME_pn(Jab,J2,twoJx, a,b,k,l,m,c);
+                    yabklmc[iJx] = Y3.GetME_pn(Jab,J2,twoJx, a,b,k,l,m,c);
+  //                  double xabklmc = X3.GetME_pn(Jab,J2,twoJx, a,b,k,l,m,c);
+  //                  double yabklmc = Y3.GetME_pn(Jab,J2,twoJx, a,b,k,l,m,c);
+                  }
                   for (int twoJy=twoJy_min; twoJy<=twoJy_max; twoJy+=2)
                   {
-                     double JJy = 0.5 * twoJy;
-                     double hats = (twoJx+1)*(twoJy+1);
-                     double ninej = Z.modelspace->GetNineJ( jk,Jab,JJx, J1,JJy,jc, Jtot,jn,J2);
-                     double xijcabn = X3.GetME_pn(J1,Jab,twoJy, i,j,c,a,b,n);
-                     double yijcabn = Y3.GetME_pn(J1,Jab,twoJy, i,j,c,a,b,n);
-                     z_ijklmn +=  occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
-                  }// for twoJy
-                }// for twoJx
+                     size_t iJy = (twoJy-twoJy_min)/2;
+                     xijcabn[iJy] = X3.GetME_pn(J1,Jab,twoJy, i,j,c,a,b,n);
+                     yijcabn[iJy] = Y3.GetME_pn(J1,Jab,twoJy, i,j,c,a,b,n);
+                  }
+                  for (int twoJx=twoJx_min; twoJx<=twoJx_max; twoJx+=2)
+                  {
+                    double JJx = 0.5 * twoJx;
+                    size_t iJx = (twoJx-twoJx_min)/2;
+                    for (int twoJy=twoJy_min; twoJy<=twoJy_max; twoJy+=2)
+                    {
+                       double JJy = 0.5 * twoJy;
+                       size_t iJy = (twoJy-twoJy_min)/2;
+                       double hats = (twoJx+1)*(twoJy+1);
+                       double ninej = Z.modelspace->GetNineJ( jk,Jab,JJx, J1,JJy,jc, Jtot,jn,J2);
+  //                     double xijcabn = X3.GetME_pn(J1,Jab,twoJy, i,j,c,a,b,n);
+  //                     double yijcabn = Y3.GetME_pn(J1,Jab,twoJy, i,j,c,a,b,n);
+  //                     z_ijklmn +=  occ_factor * hats * ninej * ( xabklmc*yijcabn - yabklmc*xijcabn );
+                       z_ijklmn +=  occ_factor * hats * ninej * ( xabklmc[iJx]*yijcabn[iJy] - yabklmc[iJx]*xijcabn[iJy] );
+                    }// for twoJy
+                  }// for twoJx
+                }
               }// Z1 block
+//              std::cout << "  after Z1  " << z_ijklmn << std::endl;
 
 
               // Z2 term  Pik    Xabilmc Ykjcabn
@@ -4073,6 +4143,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   }// for J1p
                 }// for twoJx
               }// Z2 block
+//              std::cout << "  after Z2  " << z_ijklmn << std::endl;
 
 
               // Z3 term  Pjk    Xabjlmc Yikcabn
@@ -4108,6 +4179,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   }// for J1p
                 }// for twoJx
               }// Z3 block
+//              std::cout << "  after Z3  " << z_ijklmn << std::endl;
 
 
               // Z4 term  Pln    Xabknmc Yijcabl
@@ -4142,6 +4214,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   }// for J2p
                 }// for twoJy
               }// Z4 block
+//              std::cout << "  after Z4  " << z_ijklmn << std::endl;
 
 
               // Z5 term  Pmn    Xabklnc Yijcabm
@@ -4176,6 +4249,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   }// for J2p
                 }// for twoJy
               }// Z5 block
+//              std::cout << "  after Z5  " << z_ijklmn << std::endl;
 
 
               // Z6 term  Pik Pln    Xabinmc Ykjcabl
@@ -4207,6 +4281,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                       int phase = 1;
                       for (int twoJy=twoJy_min; twoJy<=twoJy_max; twoJy+=2)
                       {
+//                         if (twoJy==5) continue;
                          double JJy = 0.5 * twoJy;
                          double hats = (twoJx+1)*(twoJy+1) * sqrt( (2*J1+1)*(2*J1p+1)*(2*J2+1)*(2*J2p+1) );
                          double ninej = Z.modelspace->GetNineJ( ji,Jab,JJx, J1p,JJy,jc, Jtot,jl,J2p);
@@ -4218,6 +4293,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   }// for twoJx
                 }// for J2p
               }// Z6 block
+//              std::cout << "  after Z6  " << z_ijklmn << std::endl;
 
 
               // Z7 term  Pjk Pln    Xabjnmc Yikcabl
@@ -4260,6 +4336,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   }// for twoJx
                 }// for J2p
               }// Z7 block
+//              std::cout << "  after Z7  " << z_ijklmn << std::endl;
 
 
 
@@ -4305,6 +4382,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   }// for twoJx
                 }// for J2p
               }// Z8 block
+//              std::cout << "  after Z8  " << z_ijklmn << std::endl;
 
 
 
@@ -4350,17 +4428,20 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   }// for twoJx
                 }// for J2p
               }// Z9 block
+//              std::cout << "  after Z9  " << z_ijklmn << std::endl;
 
 
 
             }// for c
           }// for iket_ab
         }// for ch2
-        Z3.AddToME_pn_PN_ch( ch3, ch3, ibra,iket, z_ijklmn);
+//        std::cout << "  " << i << " " << j << " " << k << " " << l << " " << m << " " << n << "  J1 J2 two J " << J1 << " " << J2 << " " << twoJ << "   Z = " << z_ijklmn << std::endl;
+        Z3.AddToME_pn_PN_ch( ch3, ch3, ibra, iket, z_ijklmn);
       }// for iket
     }// for ibra
   }//for ch3
 
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 

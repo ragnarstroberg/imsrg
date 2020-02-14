@@ -471,17 +471,17 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
   Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
   bool all_good = true;
 
-//  all_good &= Test_comm330ss( X, Y );
-//  all_good &= Test_comm331ss( X, Y );
-//  all_good &= Test_comm231ss( X, Y );
+  all_good &= Test_comm330ss( X, Y );
+  all_good &= Test_comm331ss( X, Y );
+  all_good &= Test_comm231ss( X, Y );
   all_good &= Test_comm132ss( X, Y );
-//  all_good &= Test_comm232ss( X, Y );
-//  all_good &= Test_comm223ss( X, Y );
-//  all_good &= Test_comm133ss( X, Y );
+  all_good &= Test_comm232ss( X, Y );
+  all_good &= Test_comm223ss( X, Y );
+  all_good &= Test_comm133ss( X, Y );
 
 //  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
 //  all_good &= Test_comm332_pphhss( X, Y );  
-
+//
 //  all_good &= Test_comm233_pp_hhss( X, Y );   
 //  all_good &= Test_comm233_ph_ss( X, Y );  
 //  all_good &= Test_comm333_ppp_hhh_ss( X, Y );  
@@ -2884,25 +2884,25 @@ bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // t
     int mi = oi.j2;
     for (auto j : X.modelspace->all_orbits )
     {
-      if (j<i) continue;
+//      if (j<i) continue;
       Orbit& oj = X.modelspace->GetOrbit(j);
       for (auto k : X.modelspace->all_orbits )
       {
         Orbit& ok = X.modelspace->GetOrbit(k);
-        if (k<j) continue;
+//        if (k<j) continue;
 
 
         for (auto l : X.modelspace->all_orbits )
         {
-          if (l<i) continue;
+//          if (l<i) continue;
           Orbit& ol = X.modelspace->GetOrbit(l);
           for ( auto m : X.modelspace->all_orbits )
           {
-            if (m<l) continue;
+//            if (m<l) continue;
             Orbit& om = X.modelspace->GetOrbit(m);
             for (auto n : X.modelspace->all_orbits )
             {
-              if (n<m) continue;
+//              if (n<m) continue;
               Orbit& on = X.modelspace->GetOrbit(n);
               if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
               if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
@@ -2911,7 +2911,7 @@ bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // t
 //              if ( not (i==0 and j==0 and k==2 and l==2 and m==2 and n==4) ) continue;
 //              if ( not (i==4 and j==2 and k==2 and l==2 and m==0 and n==0) ) continue;
 
-              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
+//              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
               // loop over projections
               for (int m_i= oi.j2; m_i<=oi.j2; m_i+=2)
               {
@@ -3104,7 +3104,7 @@ bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // tes
 //              if ( not (i==3 and j==2 and k==0 and l==3 and m==2 and n==0) ) continue;
 //              if ( not (i==4 and j==1 and k==0 and l==4 and m==3 and n==2) ) continue;
 
-              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
+//              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
               // loop over projections
               for (int m_i=-oi.j2; m_i<=oi.j2; m_i+=2)
               {
@@ -3294,21 +3294,21 @@ bool UnitTest::Test_comm333_ppp_hhh_ss( const Operator& X, const Operator& Y ) /
 //    int mi = oi.j2;
     for (auto j : X.modelspace->all_orbits )
     {
-      if (j<i) continue;
+//      if (j<i) continue;
       Orbit& oj = X.modelspace->GetOrbit(j);
       for (auto k : X.modelspace->all_orbits )
       {
         Orbit& ok = X.modelspace->GetOrbit(k);
-        if (k<j) continue;
+//        if (k<j) continue;
 
 
         for (auto l : X.modelspace->all_orbits )
         {
-          if (l<i) continue;
+//          if (l<i) continue;
           Orbit& ol = X.modelspace->GetOrbit(l);
           for ( auto m : X.modelspace->all_orbits )
           {
-            if (m<l) continue;
+//            if (m<l) continue;
             Orbit& om = X.modelspace->GetOrbit(m);
             for (auto n : X.modelspace->all_orbits )
             {
@@ -3319,7 +3319,7 @@ bool UnitTest::Test_comm333_ppp_hhh_ss( const Operator& X, const Operator& Y ) /
 
 //              if ( not (i==1 and j==0 and k==0 and l==1 and m==0 and n==0) ) continue;
 
-              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
+//              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
               // loop over projections
               for (int m_i= oi.j2; m_i<=oi.j2; m_i+=2)
               {
@@ -3449,12 +3449,14 @@ bool UnitTest::Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y ) /
 //    int mi = oi.j2;
     for (auto j : X.modelspace->all_orbits )
     {
-      if (j>i) continue;
+      if (j<i) continue;
+//      if (j>i) continue;
       Orbit& oj = X.modelspace->GetOrbit(j);
       for (auto k : X.modelspace->all_orbits )
       {
         Orbit& ok = X.modelspace->GetOrbit(k);
-        if (k>j) continue;
+        if (k<j) continue;
+//        if (k>j) continue;
 
 
         for (auto l : X.modelspace->all_orbits )
@@ -3463,18 +3465,27 @@ bool UnitTest::Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y ) /
           Orbit& ol = X.modelspace->GetOrbit(l);
           for ( auto m : X.modelspace->all_orbits )
           {
-            if (m>l) continue;
+//            if (m<l) continue;
+//            if (m>l) continue;
             Orbit& om = X.modelspace->GetOrbit(m);
             for (auto n : X.modelspace->all_orbits )
             {
-              if (n>m) continue;
+//              if (n<m) continue; 
+//              if (n>m) continue;
               Orbit& on = X.modelspace->GetOrbit(n);
               if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
               if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
 
 //              if ( not (i==4 and j==0 and k==0 and l==4 and m==2 and n==2) ) continue;
+//              if ( not (i==4 and j==4 and k==5 and l==2 and m==4 and n==5) ) continue;
 
               std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
+//              double Z001 = Z_J.ThreeBody.GetME_pn(0,0,1,i,j,k,l,m,n);
+//              double Z011 = Z_J.ThreeBody.GetME_pn(0,1,1,i,j,k,l,m,n);
+//              double Z101 = Z_J.ThreeBody.GetME_pn(1,0,1,i,j,k,l,m,n);
+//              double Z111 = Z_J.ThreeBody.GetME_pn(1,1,1,i,j,k,l,m,n);
+//              double Z113 = Z_J.ThreeBody.GetME_pn(1,1,3,i,j,k,l,m,n);
+//              std::cout << "Z001 = " <<Z001 << " Z011 = " << Z011 << "  Z101 = " << Z101 << "  Z111 = " << Z111 << "  Z113 = " << Z113 << std::endl; 
               // loop over projections
               for (int m_i= oi.j2; m_i<=oi.j2; m_i+=2)
               {
@@ -3507,6 +3518,16 @@ bool UnitTest::Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y ) /
                        Orbit& ob = X.modelspace->GetOrbit(b);
                       for ( size_t c=0; c<norb; c++ )
                       {
+//                       if (not (a==0 and b==0 and c==2)) continue;
+//                       if (not (((a==0 and b==1) or (a==1 and b==0))and c==2 )) continue;
+//                       if (not (((a==0 and b==1))and c==2 )) continue;
+//                       if (not (((a==0 and b==1))and c==4 )) continue;
+//                       if (not (((a==0 and b==1) or a==1 and b==0)and c==2 )) continue;
+//                       if (not (((a==0 and b==1) or a==1 and b==0)and c<9992 )) continue;
+//                       if (not (((a==0 and b==1))and c<1002 )) continue;
+//                       if ( (((a==0 and b==1) or (a==1 and b==0))and c<1002 )) continue;
+//                       if ( (((a>1 or b>1) )and c<1002 )) continue;
+//              if (a!=b) continue;
                        Orbit& oc = X.modelspace->GetOrbit(c);
                        double occfactor = oa.occ * ob.occ * (1-oc.occ) + (1-oa.occ)*(1-ob.occ)*oc.occ ;
                        for ( int m_a=-oa.j2; m_a<=oa.j2; m_a+=2)
@@ -3575,6 +3596,9 @@ bool UnitTest::Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y ) /
                            dz += xabilnc * ykjcabm - yabilnc * xkjcabm ; // Z8
                            dz += xabjlnc * yikcabm - yabjlnc * xikcabm ; // Z9
                            z_ijklmn += 0.5 * occfactor * dz;
+//                           z_ijklmn += 0.5 * occfactor * dz; // extra for ab<=>ba
+//                           if (std::abs(dz)>1e-6) std::cout << "  abc  " << a << " " << b << " "  << c << "  {m}  " << m_a << " " << m_b << " " << m_c
+//                              << "    x " << xabinmc << "  y " << ykjcabl << "    " << dz << "   " << 0.5*occfactor*dz <<  "    =>  " << z_ijklmn << std::endl;
 
                           }// for m_c
                          }// for m_b
@@ -3583,14 +3607,66 @@ bool UnitTest::Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y ) /
                       }// for b
                      }// for a
 
+//                    double X011 = 1*X.ThreeBody.GetME_pn(0,1,1,0,1,4,5,4,2);
+//                    double X111 = 1*X.ThreeBody.GetME_pn(1,1,1,0,1,4,5,4,2);
+//                    double X113 = 1*X.ThreeBody.GetME_pn(1,1,3,0,1,4,5,4,2);
+//                    double X103 = 1*X.ThreeBody.GetME_pn(1,0,3,0,1,4,5,4,2);
+//
+//                    double Y003 = 1*Y.ThreeBody.GetME_pn(0,0,3,5,4,2,0,1,2);
+//                    double Y103 = 1*Y.ThreeBody.GetME_pn(1,0,3,5,4,2,0,1,2);
+//                    double Y013 = 1*Y.ThreeBody.GetME_pn(0,1,3,5,4,2,0,1,2);
+//                    double Y111 = 1*Y.ThreeBody.GetME_pn(1,1,1,5,4,2,0,1,2);
+//                    double Y113 = 1*Y.ThreeBody.GetME_pn(1,1,3,5,4,2,0,1,2);
+//                    double Y115 = 1*Y.ThreeBody.GetME_pn(1,1,5,5,4,2,0,1,2);
+//
+//                    double XA = -1/sqrt(12)*X011 + 1./6*X111 - 1./(3*sqrt(10))*X113 + sqrt(1./6)*X103;
+//                    double XB = +1/sqrt(12)*X011 + 1./6*X111 - 1./(3*sqrt(10))*X113 + sqrt(1./6)*X103;
+//                    double XC = +1/3.*X111 + 1./(3*sqrt(10))*X113 + 1./(sqrt(6))*X103;
+//                    double XD = -sqrt(3./10)*X113 + 1./sqrt(2)*X103;
+//
+//                    double YA =  1./2*Y003 -1./(2*sqrt(15))*Y103 - 1./(2*sqrt(15))*Y013 + 1./6*Y111 + 1./30*Y113 + 3./10*Y115;
+//                    double YB = -1./2*Y003 +1./(2*sqrt(15))*Y103 - 1./(2*sqrt(15))*Y013 + 1./6*Y111 + 1./30*Y113 + 3./10*Y115;
+//                    double YC =  -2./(sqrt(15))*Y013  -1./6*Y111  - 2./15*Y113 + 3./10*Y115;
+//                    double YD =  1./(sqrt(5))*Y013 - sqrt(3./25)*Y113 + sqrt(3./25)*Y115;
+//
+//                    double byhand = XA*YA + XB*YB + XC*YC + XD*YD;
+//                    std::cout << "A " << XA << " " << YA << "   " << XA*YA << std::endl;
+//                    std::cout << "B " << XB << " " << YB << "   " << XB*YB << std::endl;
+//                    std::cout << "C " << XC << " " << YC << "   " << XC*YC << std::endl;
+//                    std::cout << "D " << XD << " " << YD << "   " << XD*YD << std::endl;
+//                    std::cout << "I think by hand is " << byhand << std::endl;
+//
+//                    double Z0013 = 0.5 * X011*Y003;
+//                    double Z0113 = 0.5 * sqrt(5)/3*X111*Y013;
+//                    double Z0133 = 0.5 * sqrt(8.)/3 * X113 * Y013;
+//
+//                    double Z1013 = -sqrt(3)/2 * sqrt(5)/3 * X011 * Y103;
+//                    double Z1111 = -sqrt(3)/2 * -1./9 * X111 * Y111;
+//                    double Z1113 = -sqrt(3)/2 * +1./9 * X111 * Y113;
+//                    double Z1115 = -sqrt(3)/2 * X111 * Y115;
+//                    double Z1131 = -sqrt(3)/2 * -sqrt(10.)/9 * X113 * Y111;
+//                    double Z1133 = -sqrt(3)/2 * 7*4/(9*sqrt(10)) * X113 * Y113;
+//                    double Z1135 = -sqrt(3)/2 * -2/(sqrt(10)) * X113 * Y115;
+//                   
+//                    std::cout << "I think X113 = " << X113 << "  and  Y111 = " << Y111 << std::endl;
+//                    std::cout << "I think the J1p=0 piece should be " << Z0013 << " + " << Z0113 << " + " << Z0133 << "  = " << Z0013+Z0113+Z0133 << std::endl;
+//                    std::cout << "and I think the J1p=1 piece should be "
+//                    << Z1013 << " + " << Z1111 << " + " << Z1113 << " + " << Z1115 << " + " << Z1131 << " + " << Z1133 << " + " << Z1135 << " = "
+//                    << Z1013  +  Z1111  +  Z1113  + Z1115  +  Z1131  +  Z1133 +  Z1135 << std::endl;
+//                    std::cout << " so total Jscheme should be " 
+//                    << Z0013+Z0113+Z0133 + Z1013  +  Z1111  +  Z1113  + Z1115  +  Z1131  +  Z1133 +  Z1135
+//                    << "   =>  " << -2/sqrt(12) * (Z0013+Z0113+Z0133 + Z1013  +  Z1111  +  Z1113  + Z1115  +  Z1131  +  Z1133 +  Z1135) << std::endl;
+                    
+
                     double ZJ_ijklmn = GetMschemeMatrixElement_3b( Z_J, i,m_i, j,m_j, k,m_k, l,m_l, m,m_m, n,m_n );
+                    double ZJ_hermconj = GetMschemeMatrixElement_3b( Z_J, l,m_l, m,m_m, n,m_n , i,m_i, j,m_j, k,m_k); 
                     double err = z_ijklmn - ZJ_ijklmn;
 //                    std::cout << z_ijklmn << std::endl;
                     if (std::abs(err)>1e-6 )
                     {
                       std::cout << "Trouble in " << __func__ << "  i,j,k,l,m,n = " << i << " " << j << " " << k << " " << l << " " << m << " " << n
                                 << " {m} = " << m_i << " " << m_j << " " << m_k << " " << m_l << " " << m_m << " " << m_n
-                                << "   Zm_ijklmn = " << z_ijklmn << "   ZJ_ijklmn = " << ZJ_ijklmn << "   err = " << err << std::endl; 
+                                << "   Zm_ijklmn = " << z_ijklmn << "   ZJ_ijklmn = " << ZJ_ijklmn << "   err = " << err <<  "  hc = " << ZJ_hermconj << std::endl; 
                     }
                     summed_error += err*err;
                     sum_m += z_ijklmn*z_ijklmn;

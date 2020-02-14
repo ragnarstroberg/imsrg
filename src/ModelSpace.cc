@@ -460,9 +460,10 @@ void ModelSpace::SetLmax( int l)
     Orbit& ov = GetOrbit(v);
     if ( ov.l > Lmax )
     {
-      std::cout << "!!! NOT GOOD. Valence state " << v << " has l = " << ov.l
-                << "  which is bigger than Lmax = " << Lmax << " ... dying now. " << std::endl;
-      exit(0);
+      continue;
+//      std::cout << "!!! NOT GOOD. Valence state " << v << " has l = " << ov.l
+//                << "  which is bigger than Lmax = " << Lmax << " ... dying now. " << std::endl;
+//      exit(0);
     }
     the_valence_list.insert(v);
   }
@@ -1082,13 +1083,15 @@ void ModelSpace::Setup3bKets()
     Orbit& op = GetOrbit(p);
     for ( auto q : all_orbits )
     {
-      if (q>p) continue;
+//      if (q>p) continue;
+      if (q<p) continue; // this ordering matches the two body storage
       Orbit& oq = GetOrbit(q);
       int Jpq_min = std::abs(op.j2-oq.j2)/2;
       int Jpq_max = (op.j2+oq.j2)/2;
       for ( auto r : all_orbits )
       {
-        if (r>q) continue;
+//        if (r>q) continue;
+        if (r<q) continue;
         Orbit& oR = GetOrbit(r);
         if ( ( 2*(op.n+oq.n+oR.n)+op.l+oq.l+oR.l) > E3max ) continue;
 //        int parity = (op.l+oq.l+oR.l)%2;

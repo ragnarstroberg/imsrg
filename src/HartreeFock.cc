@@ -1498,8 +1498,12 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( )
       }
     }
 
+
+
 //    arma::mat RHO3( nkets_kept,   6*nkets_kept, arma::fill::zeros );
 //    arma::mat Full3N( 6*nkets_kept, 6*nkets_kept, arma::fill::zeros );
+
+
     
   }
 
