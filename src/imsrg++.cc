@@ -839,6 +839,7 @@ int main(int argc, char** argv)
     ms2.SetReference(ms2.core); // change the reference
     HNO.SetModelSpace(ms2);
 
+
     std::cout << "Doing NO wrt A=" << ms2.GetAref() << " Z=" << ms2.GetZref() << "  norbits = " << ms2.GetNumberOrbits() << std::endl;
     HNO = HNO.DoNormalOrdering();
 

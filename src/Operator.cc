@@ -853,9 +853,9 @@ void Operator::SetNumberLegs( int l)
   if ( l == old_legs ) return;
   if (legs%2==0)
   {
-    TwoBody.Allocate();
+    if ( TwoBody.MatEl.size()<1)    TwoBody.Allocate();
     ThreeLeg.Deallocate();
-    if (legs>5) ThreeBody.Allocate();
+    if (legs>5 and (not ThreeBody.is_allocated)) ThreeBody.Allocate();
   }
   else
   {
@@ -1188,7 +1188,7 @@ double Operator::GetMP2_3BEnergy()
    double Emp2 = 0;
    if ( legs < 6) return 0;
    if ( not ThreeBody.is_allocated ) return 0;
-   int nch3 = modelspace->GetNumberThreeBodyChannels();
+   size_t nch3 = modelspace->GetNumberThreeBodyChannels();
    #pragma omp parallel for schedule(dynamic,1) reduction(+:Emp2)
    for (size_t ch3=0; ch3<nch3; ch3++)
    {
