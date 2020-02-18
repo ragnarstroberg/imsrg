@@ -1493,7 +1493,8 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( )
         size_t m = ket.q;
         size_t n = ket.r;
         int Jlm = ket.Jpq;
-        double VHO = GetHF3bme(  Jij,  Jlm, twoJ,  i,j,k,l,m,n);
+//        double VHO = GetHF3bme(  Jij,  Jlm, twoJ,  i,j,k,l,m,n);
+        double VHO = GetTransformed3bme(  Jij,  Jlm, twoJ,  i,j,k,l,m,n);
         hf3bme.SetME_pn_PN_ch( ch3,ch3, ibra,iket, VHO);
       }
     }
@@ -1565,7 +1566,8 @@ ThreeBodyMEpn HartreeFock::GetValence3B( int emax, int E3max )
             int J2_max = std::min(         (Jab*2+oc.j2),         (Jde*2+of.j2) );
             for (int J2=J2_min; J2<=J2_max; J2++)
             {
-              double V = GetHF3bme( Jab, Jde, J2, a, b, c, d, e, f );
+//              double V = GetHF3bme( Jab, Jde, J2, a, b, c, d, e, f );
+              double V = GetTransformed3bme( Jab, Jde, J2, a, b, c, d, e, f );
               hf3bme.SetME_pn(Jab, Jde, J2, a, b, c, d, e, f, V);
 
             } // for J2
@@ -1591,10 +1593,9 @@ ThreeBodyMEpn HartreeFock::GetValence3B( int emax, int E3max )
 
 
 // Get a single 3-body matrix element in the HartreeFock basis.
-// Because we're using good isospin, right now we just use the proton orbits.
-// In principle we could figure out a more clever way by averaging depending on the isospin value.
-//double HartreeFock::GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f)
-double HartreeFock::GetHF3bme( int Jab, int Jde, int J2,  size_t a, size_t b, size_t c, size_t d, size_t e, size_t f)
+// This is the straightforward but inefficient way to do it.
+//double HartreeFock::GetHF3bme( int Jab, int Jde, int J2,  size_t a, size_t b, size_t c, size_t d, size_t e, size_t f)
+double HartreeFock::GetTransformed3bme( int Jab, int Jde, int J2,  size_t a, size_t b, size_t c, size_t d, size_t e, size_t f)
 {
   double V_hf = 0.;
   Orbit& oa = modelspace->GetOrbit(a);

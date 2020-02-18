@@ -442,7 +442,8 @@ int main(int argc, char** argv)
 // using the NO2B Hamiltonian in the HF basis, obtained with GetNormalOrderedH().
 // Then it calls DiagonalizeRho() which diagonalizes the density matrix, yielding the natural orbital basis.
     hf.GetNaturalOrbitals();
-    HNO = hf.GetNormalOrderedHNAT();
+    HNO = hf.GetNormalOrderedHNAT( hno_particle_rank );
+//    HNO = hf.GetNormalOrderedHNAT();
 
     // For now, even if we use the NAT occupations, we switch back to naive occupations after the normal ordering
     // This should be investigated in more detail.

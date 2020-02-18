@@ -325,7 +325,8 @@ void Generator::ConstructGenerator_Atan_3body()
      Orbit& oa = modelspace->GetOrbit(a);
      for (auto b : modelspace->core )
      {
-      if (b>a) continue;
+//      if (b>a) continue;
+      if (b<a) continue;
       Orbit& ob = modelspace->GetOrbit(b);
       int Jab_min = std::abs(oa.j2-ob.j2)/2;
       int Jab_max = (oa.j2+ob.j2)/2;
@@ -333,7 +334,8 @@ void Generator::ConstructGenerator_Atan_3body()
       {
        for (auto c : modelspace->core )
        {
-        if (c>b) continue;
+//        if (c>b) continue;
+        if (b<c) continue;
         Orbit& oc = modelspace->GetOrbit(c);
 //        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
         if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > modelspace->E3max ) continue;
@@ -344,7 +346,8 @@ void Generator::ConstructGenerator_Atan_3body()
          Orbit& oi = modelspace->GetOrbit(i);
          for ( auto j : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
          {
-          if (j>i) continue;
+//          if (j>i) continue;
+          if (j<i) continue;
           Orbit& oj = modelspace->GetOrbit(j);
           int Jij_min = std::abs(oi.j2-oj.j2)/2;
           int Jij_max = (oi.j2+oj.j2)/2;
@@ -352,7 +355,8 @@ void Generator::ConstructGenerator_Atan_3body()
           {
            for ( auto k : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
            {
-            if (k>j) continue;
+//            if (k>j) continue;
+            if (k<j) continue;
             Orbit& ok = modelspace->GetOrbit(k);
 //            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > 2*E3cut ) continue;
             if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > modelspace->E3max ) continue;
