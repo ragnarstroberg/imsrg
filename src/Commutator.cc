@@ -1794,7 +1794,10 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
 
            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
            {
+//             std::cout << "looking for ch_abi :  twoJ parity Tz = " << twoJ << " " << (tbc_ab.parity+oi.l)%2 << " " << tbc_ab.Tz*2 + oi.tz2
+//                       << " abi = " << a << " " << b << " " << i << "      Jab oi.j2 = " << Jab << " " << oi.j2 << std::endl;
              size_t ch_abi = Z.modelspace->GetThreeBodyChannelIndex( twoJ, (tbc_ab.parity +oi.l)%2, tbc_ab.Tz*2 + oi.tz2 );
+             if (ch_abi==-1) continue; // maybe that channel doesn't exist
 //             std::cout << "ch_abi = " << ch_abi << std::endl;
              auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch_abi);
 //             size_t index_abi = Tbc.GetLocalIndex(a,b,i,Jab);
@@ -1806,7 +1809,6 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
              size_t nkets3 = Tbc.GetNumberKets();
              for (size_t iket_cde=0; iket_cde<nkets3; iket_cde++)
              {
-//                std::cout << "iket_cde = " << iket_cde << std::endl;
                 Ket3& ket_cde = Tbc.GetKet(iket_cde);
                 double occfactor = (ket_ab.op->occ * ket_ab.oq->occ) * (1-ket_cde.op->occ)*(1-ket_cde.oq->occ)*(1-ket_cde.oR->occ);
                 if (std::abs(occfactor)<1e-6) continue;
@@ -1818,7 +1820,6 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
                 else if (c==d or d==e) cde_symmetry_factor = 3;
                 int Jcd = ket_cde.Jpq;
                  
-//                zij += 0.25 * ab_symmetry_factor * cde_symmetry_factor * occfactor * Jfactor
                 zij += 1./12 * ab_symmetry_factor * cde_symmetry_factor * occfactor * Jfactor
                              * (  X3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * Y3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j)  
                                 - Y3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * X3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j)  ); 
