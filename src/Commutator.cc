@@ -1778,7 +1778,6 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
 
       for (size_t ch_ab=0; ch_ab<nch2; ch_ab++)
       {
-//        std::cout << "ch_ab = " << ch_ab << std::endl;
         auto& tbc_ab = Z.modelspace->GetTwoBodyChannel(ch_ab);
         int Jab = tbc_ab.J;
         size_t nkets_ab = tbc_ab.GetNumberKets();
@@ -1794,11 +1793,8 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
 
            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
            {
-//             std::cout << "looking for ch_abi :  twoJ parity Tz = " << twoJ << " " << (tbc_ab.parity+oi.l)%2 << " " << tbc_ab.Tz*2 + oi.tz2
-//                       << " abi = " << a << " " << b << " " << i << "      Jab oi.j2 = " << Jab << " " << oi.j2 << std::endl;
              size_t ch_abi = Z.modelspace->GetThreeBodyChannelIndex( twoJ, (tbc_ab.parity +oi.l)%2, tbc_ab.Tz*2 + oi.tz2 );
              if (ch_abi==-1) continue; // maybe that channel doesn't exist
-//             std::cout << "ch_abi = " << ch_abi << std::endl;
              auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch_abi);
 //             size_t index_abi = Tbc.GetLocalIndex(a,b,i,Jab);
 //             size_t index_abj = Tbc.GetLocalIndex(a,b,j,Jab);

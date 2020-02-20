@@ -886,7 +886,8 @@ void ModelSpace::FindEFermi()
 //       std::cout << __func__ << " updating orbit i= " << i << " ei = " << ei << "  ->  e_fermi = " << e_fermi[-1] << " " << e_fermi[1] << std::endl;
     }
   }
-  std::map<int,double> particle_e_min = {{-1,1e6},{1,1e6}};
+//  std::map<int,double> particle_e_min = {{-1,1e6},{1,1e6}};
+  std::map<int,double> particle_e_min = e_fermi;
   for (auto i : particles )
   {
     Orbit& oi = GetOrbit(i);
