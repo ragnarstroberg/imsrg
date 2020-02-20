@@ -61,6 +61,7 @@ void ThreeBodyMEpn::Allocate_PN()
   matrix_data.resize(total_dimension,0.0);
 //  std::cout << "DONE ALLOCATING, size of matrix_data is " << matrix_data.size() << std::endl;
   is_allocated = true;
+  PN_mode = true;
 }
 
 
@@ -708,6 +709,11 @@ ThreeBodyMEpn& ThreeBodyMEpn::operator*=(const double rhs)
 ThreeBodyMEpn& ThreeBodyMEpn::operator+=(const ThreeBodyMEpn& rhs)
 {
 //  for (auto iter : MatEl ) iter.second += rhs.MatEl.at(iter.first);
+  if ( (not is_allocated) and (rhs.is_allocated))
+  {
+    PN_mode = rhs.PN_mode;
+    Allocate();
+  }
   for (size_t i=0;i<matrix_data.size();i++ ) matrix_data[i] += rhs.matrix_data[i];
   return *this;
 }

@@ -104,11 +104,19 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //   std::cout << "Calling CommutatorScalarScalar..." << std::endl;
    X.profiler.counter["N_ScalarCommutators"] += 1;
    double t_css = omp_get_wtime();
-   Operator Z( *(Y.GetModelSpace()), std::max(X.GetJRank(),Y.GetJRank()), std::max(X.GetTRank(),Y.GetTRank()), (X.GetParity()+Y.GetParity())%2, std::max(X.GetParticleRank(),Y.GetParticleRank()) );
+   int z_Jrank = std::max( X.GetJRank(),Y.GetJRank());
+   int z_Trank = std::max( X.GetTRank(),Y.GetTRank());
+   int z_parity = (X.GetParity()+Y.GetParity())%2;
+   int z_particlerank = std::max(X.GetParticleRank(),Y.GetParticleRank());
+   if ( use_imsrg3 )  z_particlerank = std::max(z_particlerank, 3);
+   ModelSpace& ms = *(Y.GetModelSpace());
+   Operator Z( ms, z_Jrank, z_Trank, z_parity, z_particlerank );
+//   Operator Z( *(Y.GetModelSpace()), std::max(X.GetJRank(),Y.GetJRank()), std::max(X.GetTRank(),Y.GetTRank()), (X.GetParity()+Y.GetParity())%2, std::max(X.GetParticleRank(),Y.GetParticleRank()) );
 
    if ( (X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()) ) Z.SetAntiHermitian();
    else if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Z.SetHermitian();
    else Z.SetNonHermitian();
+
 
    if ( Z.GetParticleRank() > 2 )
    {
@@ -354,6 +362,10 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
    double nx = OpIn.Norm();
    double ny = Omega.Norm();
    Operator OpOut = OpIn;
+   if (use_imsrg3 and not OpOut.ThreeBody.is_allocated )
+   {
+     OpOut.ThreeBody.Allocate_PN();
+   }
    double factorial_denom = 1.0;
    Operator goosetank_chi;  // auxiliary one-body operator used to recover 4th-order quadruples.
    if (use_goose_tank_correction)
@@ -2764,6 +2776,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
   int norbs = Z.modelspace->GetNumberOrbits();
   double X3NORM = X3.Norm();
   double Y3NORM = Y3.Norm();
+  bool x3_allocated = X3.is_allocated;
+  bool y3_allocated = Y3.is_allocated;
 //  if (X3NORM<1e-6 and Y3NORM<1e-6 ) return;
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -2865,8 +2879,10 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
       for ( auto& iter_ket : kept_lookup )
       {
 //        if ( X3NORM > 1e-6)
+        if ( x3_allocated )
            X3MAT( iter_bra.second, iter_ket.second) = X3.GetME_pn_PN_ch(ch3,ch3, iter_bra.first, iter_ket.first );
 //        if ( Y3NORM > 1e-6)
+        if ( y3_allocated )
            Y3MAT( iter_bra.second, iter_ket.second) = Y3.GetME_pn_PN_ch(ch3,ch3, iter_bra.first, iter_ket.first );
       }
     }
