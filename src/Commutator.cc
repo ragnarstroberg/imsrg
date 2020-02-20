@@ -1713,13 +1713,16 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
       double abc_symm = 6;
       if (bra.p==bra.q and bra.q==bra.r) abc_symm = 1;
       else if (bra.p==bra.q or bra.q==bra.r) abc_symm = 3;
-      for (size_t iket=ibra;iket<nkets; iket++)
+//      for (size_t iket=0;iket<nkets; iket++)
+//      for (size_t iket=ibra;iket<nkets; iket++)
+      for (size_t iket=0;iket<ibra; iket++)  // dont need iket=ibra because the commutator will be zero
       {
         Ket3& ket = Tbc.GetKet(iket);
         double nd = ket.op->occ;
         double ne = ket.oq->occ;
         double nf = ket.oR->occ;
-        double occfactor = na*nb*nc*(1-nd)*(1-ne)*(1-nf)  +  (1-na)*(1-nb)*(1-nc)*nd*ne*nf;
+        // account for the iket>ibra case, which we don't do explicitly
+        double occfactor = na*nb*nc*(1-nd)*(1-ne)*(1-nf) - (1-na)*(1-nb)*(1-nc)*nd*ne*nf  ;
         if (std::abs(occfactor)<1e-6) continue;
         double def_symm = 6;
         if (ket.p==ket.q and ket.q==ket.r) def_symm = 1;
@@ -1729,7 +1732,9 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
         double yabcdef = Y3.GetME_pn_PN_ch(ch3,ch3,ibra,iket);
         double xdefabc = X3.GetME_pn_PN_ch(ch3,ch3,iket,ibra);
         double ydefabc = Y3.GetME_pn_PN_ch(ch3,ch3,iket,ibra);
-        z0 += 1./36 * abc_symm * def_symm * (twoJ+1) * (xabcdef * ydefabc  -  yabcdef*xdefabc);
+
+        z0 += 1./36 * occfactor * abc_symm * def_symm * (twoJ+1) * (xabcdef * ydefabc  -  yabcdef*xdefabc);
+
       }// for iket
     }// for ibra
   }// for ch3
@@ -1871,6 +1876,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
       {
         auto tbc = Z.modelspace->GetTwoBodyChannel(ch);
         int J = tbc.J;
+        size_t nkets = tbc.GetNumberKets();
         for ( auto ibra : tbc.KetIndex_hh )
         {
           Ket& bra = tbc.GetKet(ibra);
@@ -1881,7 +1887,8 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
           if (  (ea+eb+std::min(ei,ej))> Z.modelspace->E3max )  continue;
           double na = bra.op->occ;
           double nb = bra.oq->occ;
-          for ( auto iket : tbc.KetIndex_pp )
+//          for ( auto iket : tbc.KetIndex_pp )
+          for ( size_t iket=0; iket<nkets; iket++ )
           {
             Ket& ket = tbc.GetKet(iket);
             int c = ket.p;
@@ -1891,11 +1898,12 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
             if (  (ec+ed+std::min(ei,ej))> Z.modelspace->E3max )  continue;
             double nc = ket.op->occ;
             double nd = ket.oq->occ;
+            double prefactor = na*nb*(1-nc)*(1-nd);
+            if ( std::abs(prefactor)<1e-8) continue;
             double Xabcd = X2.GetTBME(ch,bra,ket);
             double Yabcd = Y2.GetTBME(ch,bra,ket);
             double Xcdab = X2.GetTBME(ch,ket,bra);
             double Ycdab = Y2.GetTBME(ch,ket,bra);
-            double prefactor = na*nb*(1-nc)*(1-nd);
             if (a==b) prefactor /= 2;
             if (c==d) prefactor /= 2;
             int twoJ_min = std::abs( 2*J - oi.j2);
@@ -2185,7 +2193,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         Y2MAT(ind_i,ind_abc) = -sqrt( (2*Jab+1.)) * occ_abc_list[ind_abc] *  Y.TwoBody.GetTBME_J(Jab,c,i,a,b);
 
         
-        if ( (oa.l+ob.l+oi.l+tbc.parity+oc.l)%2 != Y.parity) continue;
+        if ( (oa.l+ob.l+oi.l+tbc.parity+oc.l)%2 != Y.parity) continue; //TODO: this will cause problems if we try something with Y.parity =1
         if ( std::abs((oa.tz2+ob.tz2+oi.tz2)-(tbc.Tz*2+oc.tz2)) > 2*Y.rank_T) continue;
 
         int twoJp_min = std::max( std::abs(2*Jab - oi.j2), std::abs(2*J-oc.j2));
@@ -2207,6 +2215,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
              int jj2 = j_jvals[ind_jj];
              double jj = 0.5*jj2;
              double sixj = X.modelspace->GetSixJ(J,ji,jj,  Jab, jc, 0.5*twoJp );
+             if (std::abs(sixj)<1e-7) continue;
           // now loop over |kl> states
              for (int iket=0; iket<nkets; iket++)
              {

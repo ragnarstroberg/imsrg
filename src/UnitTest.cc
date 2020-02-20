@@ -472,12 +472,12 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
   bool all_good = true;
 
   all_good &= Test_comm330ss( X, Y );
-  all_good &= Test_comm331ss( X, Y );
-  all_good &= Test_comm231ss( X, Y );
-  all_good &= Test_comm132ss( X, Y );
-  all_good &= Test_comm232ss( X, Y );
-  all_good &= Test_comm223ss( X, Y );
-  all_good &= Test_comm133ss( X, Y );
+//  all_good &= Test_comm331ss( X, Y );
+//  all_good &= Test_comm231ss( X, Y );
+//  all_good &= Test_comm132ss( X, Y );
+//  all_good &= Test_comm232ss( X, Y );
+//  all_good &= Test_comm223ss( X, Y );
+//  all_good &= Test_comm133ss( X, Y );
 
 //  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
 //  all_good &= Test_comm332_pphhss( X, Y );  
@@ -1514,7 +1514,8 @@ bool UnitTest::Test_comm222_phss( const Operator& X, const Operator& Y )
                    double Xajbl = GetMschemeMatrixElement_2b( X, a,ma, j,mj, b,mb, l,ml );
                    double Ybiak = GetMschemeMatrixElement_2b( Y, b,mb, i,mi, a,ma, k,mk );
     
-                   Zm_ijkl += ( na*(1-nb) - nb*(1-na) ) * ( Xaibk*Ybjal - Xajbk*Ybial - Xaibl*Ybjak + Xajbl*Ybiak );
+//                   Zm_ijkl += ( na*(1-nb) - nb*(1-na) ) * ( Xaibk*Ybjal - Xajbk*Ybial - Xaibl*Ybjak + Xajbl*Ybiak );
+                   Zm_ijkl += (na - nb) * ( Xaibk*Ybjal - Xajbk*Ybial - Xaibl*Ybjak + Xajbl*Ybiak );
 
 
                  }// for mb
