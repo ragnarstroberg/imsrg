@@ -19,8 +19,14 @@ class ThreeBodyMEpn
  public:
   ModelSpace * modelspace;
   std::vector<ME_type> matrix_data;
-  std::vector<size_t> ch_start;
+//  std::vector<size_t> ch_start;
+//  arma::umat ch_start;
+  std::map<std::array<size_t,2>,size_t> ch_start;
   std::vector<size_t> ch_dim;
+//  arma::umat ch_dim_bra;
+//  arma::umat ch_dim_ket;
+//  std::map<std::array<size_t,2>,size_t> ch_start;
+//  std::map<std::array<size_t,2>,size_t> ch_dim;
   ThreeBodyME isospin3BME; // store the matrix elements in isospin format. This makes reading in from file more straightforward
   bool PN_mode; // if pn_mode = false, then leave things stored in the isospin structure, if pn_mode=true, store the pn matrix elements.
 
@@ -30,6 +36,10 @@ class ThreeBodyMEpn
   int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
   int herm; // +1 for hermitian, -1 for anti-hermitian
   size_t total_dimension;
+
+  int rank_J;
+  int rank_T;
+  int parity;
 
   bool is_allocated = false;
 
@@ -64,9 +74,10 @@ class ThreeBodyMEpn
   void SetME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
   void AddToME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
 
+  void AccessME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, size_t& index, int& herm_flip) const;
+
   void AddToME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel);
   void SetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel);
-
 
   ME_type GetME_pn_PN_ch(size_t chbra, size_t chket, size_t ibra, size_t iket) const;
   ME_type GetME_pn_PN_ch(size_t chbra, size_t chket, Ket3& bra, Ket3& ket) const;
