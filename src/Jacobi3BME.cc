@@ -155,7 +155,7 @@ void Jacobi3BME::SetMatElAS(size_t ibra, size_t iket, int Nbra, int Nket, int tw
 
 double Jacobi3BME::GetMatElNAS(size_t ibra, size_t iket, int Nbra, int Nket, int twoT, int twoJ, int p)
 {
-   auto hash = HashTJNN(twoT,twoJ,Nbra,Nket);
+//   auto hash = HashTJNN(twoT,twoJ,Nbra,Nket);
    size_t dimket = GetDimensionNAS(twoT,twoJ,p,Nket); 
    size_t start_loc = GetStartLocNAS(twoT,twoJ,Nbra,Nket);
 //   std::cout << "start_loc = " << start_loc << "  elements: " << std::endl;
@@ -171,7 +171,7 @@ double Jacobi3BME::GetMatElNAS(size_t ibra, size_t iket, int Nbra, int Nket, int
 
 void Jacobi3BME::SetMatElNAS(size_t ibra, size_t iket, int Nbra, int Nket, int twoT, int twoJ, int p, double matel)
 {
-   auto hash = HashTJNN(twoT,twoJ,Nbra,Nket);
+//   auto hash = HashTJNN(twoT,twoJ,Nbra,Nket);
    size_t dimket = GetDimensionNAS(twoT,twoJ,p,Nket); 
    size_t start_loc = GetStartLocNAS(twoT,twoJ,Nbra,Nket);
    meNAS.at( start_loc + ibra*dimket + iket ) = matel;
@@ -379,7 +379,7 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
 {
   double me_lab = 0;
 //  int LabE3max = jacobi_basis.Nmax;
-  int LabE3max = 16;
+//  int LabE3max = 16;
 
   if (bra.p==bra.q and bra.p==bra.r and bra.op->j2<3 and twoT>1) return 0;
   if (ket.p==ket.q and ket.p==ket.r and ket.op->j2<3 and twoT>1) return 0;
@@ -387,8 +387,8 @@ double Jacobi3BME::GetLabMatEl( Ket3& bra, Ket3& ket, int Jab, int Jde, int twoJ
   int Ebra = 2*(bra.op->n+bra.oq->n+bra.oR->n ) + (bra.op->l+bra.oq->l+bra.oR->l);
   int Eket = 2*(ket.op->n+ket.oq->n+ket.oR->n ) + (ket.op->l+ket.oq->l+ket.oR->l);
 
-  int parity_bra = Ebra%2;
-  int parity_ket = Eket%2;
+//  int parity_bra = Ebra%2;
+//  int parity_ket = Eket%2;
 
 //  std::cout << "In GetLabMatEl. Ebra,Eket = " << Ebra << " " << Eket << std::endl;
   for (int Ecm=0; Ecm<=std::min(Ebra,Eket); Ecm++ )
@@ -1066,7 +1066,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
         int tzero=0;
         #pragma omp parallel  reduction(+ : tzero )
         {
-          size_t cnt = 0;
+          int cnt = 0;
           int ithread = omp_get_thread_num();
           int nthreads = omp_get_num_threads();
           for(auto element = T3bList.begin(); element !=T3bList.end(); ++element, cnt++)
@@ -1108,9 +1108,9 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
           Orbit& oa = hf.modelspace->GetOrbit(a);
           Orbit& ob = hf.modelspace->GetOrbit(b);
           Orbit& oc = hf.modelspace->GetOrbit(c);
-          Orbit& od = hf.modelspace->GetOrbit(d);
-          Orbit& oe = hf.modelspace->GetOrbit(e);
-          Orbit& of = hf.modelspace->GetOrbit(f);
+//          Orbit& od = hf.modelspace->GetOrbit(d);
+//          Orbit& oe = hf.modelspace->GetOrbit(e);
+//          Orbit& of = hf.modelspace->GetOrbit(f);
           if ( oc.l != lc or oc.j2 != j2c ) continue;
 
           if ( oa.l==la and oa.j2==j2a and ob.l==lb and ob.j2==j2b)
@@ -1231,7 +1231,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
           std::array<double,2> isospin2_Clebsch = {oa.tz2*sqrt(0.5), Tzab + std::abs(oa.tz2-ob.tz2)/2*sqrt(0.5) };
           std::array<double,4> isospin3_Clebsch = {   1.0,   0.0,  AngMom::CG(1,Tzab,0.5,0.5*oc.tz2, 0.5, 0.5*twoTz),  AngMom::CG(1,Tzab,0.5,0.5*oc.tz2, 1.5,0.5*twoTz) };
           double v_monopole = 0;
-          double v_monopole_swap_abde = 0;
+//          double v_monopole_swap_abde = 0;
 //          double v_monopole_swap_de = 0;
           int Jab_step = (a==b or d==e)? 2 : 1;
           for (int Jab=Jab_min; Jab<=Jab_max; Jab+=Jab_step)
@@ -1317,10 +1317,10 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
                    } // for Lcm
                   } // for Ecm
                   // v_sumJT is equal to <abc Jab Tab JT | V | def Jde Tde JT>  (and Jde=Jab)
-                  Ket3 bra = Ket3(oa,ob,oc);
-                  Ket3 ket = Ket3(od,oe,of);
-                  Ket3 bra_flip = Ket3(ob,oa,oc);
-                  Ket3 ket_flip = Ket3(oe,od,of);
+//                  Ket3 bra = Ket3(oa,ob,oc);
+//                  Ket3 ket = Ket3(od,oe,of);
+//                  Ket3 bra_flip = Ket3(ob,oa,oc);
+//                  Ket3 ket_flip = Ket3(oe,od,of);
                   if (verbose) std::cout << "Assigning" << std::endl;
 //                  double vcheck_JT =  GetLabMatEl( bra, ket, Jab, Jab, twoJ, Tab, Tde, twoT);
 //                  double vcheck_JT_flip =  GetLabMatEl( bra_flip, ket_flip, Jab, Jab, twoJ, Tab, Tde, twoT);
@@ -1349,7 +1349,7 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
           for ( auto& imon_sym : { imon_defabc, imon_bacedf, imon_edfbac, imon_isoflip, imon_defabc_isoflip, imon_bacedf_isoflip, imon_edfbac_isoflip} )
           {
 //            if ( hf.Vmon3_keys[imon_sym] == 1127000493261825L) std::cout << " in symmetry,  based on imon = " << imon << "   imon_sym = " << imon_sym <<  "    isymmm= " << isymmm << "   vmonopole = " << v_monopole << std::endl;
-            if ( imon_sym != -1 )  hf.Vmon3[imon_sym] = v_monopole;
+            if ( imon_sym != size_t(-1) )  hf.Vmon3[imon_sym] = v_monopole;
 //            isymmm++;
           }
 
@@ -1373,11 +1373,11 @@ void Jacobi3BME::GetV3mon_all( HartreeFock& hf )
           {
             std::cout << "abcdef = " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
             std::cout << "SETTING " << imon << " -> " << v_monopole << std::endl << std::endl;
-            if ( imon_defabc !=-1 and imon_defabc != imon )
+            if ( imon_defabc !=size_t(-1) and imon_defabc != imon )
             std::cout << "1Also SETTING " << imon_defabc << " -> " << v_monopole << std::endl;
-            if ( imon_bacedf !=-1 and imon_bacedf != imon )
+            if ( imon_bacedf !=size_t(-1) and imon_bacedf != imon )
             std::cout << "2Also SETTING " << imon_bacedf << " -> " << v_monopole << std::endl;
-            if ( imon_edfbac !=-1 and imon_edfbac != imon )
+            if ( imon_edfbac !=size_t(-1) and imon_edfbac != imon )
             std::cout << "3Also SETTING " << imon_edfbac << " -> " << v_monopole << std::endl;
 
           }
@@ -1974,11 +1974,11 @@ void Jacobi3BME::ReadTcoeffNavratil( std::string fname, std::vector<double>& tco
 
      std::cout << " ntot,jtot = " << ntot << " " << jtot << std::endl;
      auto& bk = bookkeeping.at( ntot*(Nmax+2)+(jtot/2) );
-     if (bk.matstart != start-1)
+     if ( size_t(bk.matstart) != start-1)
      {
        std::cout << __func__ << "  DANGER!! start != matstart : " << start << " != " << bk.matstart << std::endl;
      }
-     if (dim != (bk.nspnum * bk.nrelnum) )
+     if (dim != size_t(bk.nspnum * bk.nrelnum) )
      {
        std::cout << __func__ << "  DANGER!! dim != nspnum*nrelnum : " << dim << " != " << bk.nspnum << " * " << bk.nrelnum << " = " << bk.nspnum*bk.nrelnum << std::endl;
      }
@@ -1994,7 +1994,7 @@ void Jacobi3BME::ReadTcoeffNavratil( std::string fname, std::vector<double>& tco
      // now we read dim coefficients
      float dummy_t;
      t_file.read((char*)&delimiter,    sizeof(delimiter));
-     for (int i=0; i<dim; i++)
+     for (size_t i=0; i<dim; i++)
      {
        if (not t_file.good() ) break;
        t_file.read((char*)&(dummy_t),  sizeof(dummy_t));

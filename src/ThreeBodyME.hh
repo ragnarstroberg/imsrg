@@ -45,6 +45,8 @@ class ThreeBodyME
   int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
   int herm; // +1 for hermitian, -1 for anti-hermitian
   size_t total_dimension;
+  bool is_allocated = false;
+
   const static int ABC;
   const static int BCA;
   const static int CAB;
@@ -69,6 +71,7 @@ class ThreeBodyME
   void Allocate();
 
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};
+  ModelSpace* GetModelSpace(){return modelspace;};
 
 //// Three body setter getters
   std::vector<std::pair<size_t,double>> AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;

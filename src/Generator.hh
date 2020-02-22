@@ -57,10 +57,13 @@ class Generator
   void ConstructGenerator_Wegner();
   void ConstructGenerator_White();
   void ConstructGenerator_Atan();
+  void ConstructGenerator_Atan_3body();
   void ConstructGenerator_ImaginaryTime();
   void ConstructGenerator_QTransferAtan(int n);
   void ConstructGenerator_ShellModel();
   void ConstructGenerator_ShellModel_Atan();
+  void ConstructGenerator_ShellModel_Atan_3body();
+  void ConstructGenerator_ShellModel_Wegner();
   void ConstructGenerator_ShellModel_ImaginaryTime();
   void ConstructGenerator_ShellModel_Atan_NpNh();
   void ConstructGenerator_HartreeFock();

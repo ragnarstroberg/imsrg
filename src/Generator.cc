@@ -33,6 +33,7 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
    modelspace = H->GetModelSpace();
 
         if (generator_type == "wegner")                       ConstructGenerator_Wegner(); // never tested, probably doesn't work.
+   else if (generator_type == "shell-model-wegner")           ConstructGenerator_ShellModel_Wegner(); // never tested, probably doesn't work.
    else if (generator_type == "white")                        ConstructGenerator_White();
    else if (generator_type == "atan")                         ConstructGenerator_Atan();
    else if (generator_type == "imaginary-time")               ConstructGenerator_ImaginaryTime();
@@ -160,35 +161,73 @@ double Generator::Get2bDenominator_Jdep(int ch, int ibra, int iket)
 }
 
 
-// I haven't used this, so I don't know if it's right.
+//// I haven't used this, so I don't know if it's right.
+//void Generator::ConstructGenerator_Wegner()
+//{
+//   Operator H_diag = *H;
+//   H_diag.ZeroBody = 0;
+//   for (auto& a : modelspace->holes)
+//   {
+////      index_t a = it_a.first;
+//      for (auto& b : modelspace->valence)
+//      {
+//         H_diag.OneBody(a,b) =0;
+//         H_diag.OneBody(b,a) =0;
+//      }
+//   }
+//
+//   for (int ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
+//   {  // Note, should also decouple the v and q spaces
+//      // This is wrong. The projection operator should be different.
+//      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+//      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(), tbc.GetKetIndex_ph() ).zeros();
+//      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(), tbc.GetKetIndex_ph() ).zeros();
+//      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_ph(), tbc.GetKetIndex_pp() ).zeros();
+//      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_ph(), tbc.GetKetIndex_hh() ).zeros();
+//      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(), tbc.GetKetIndex_hh() ).zeros();
+//      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(), tbc.GetKetIndex_pp() ).zeros();
+//   }
+//   Eta->SetToCommutator(H_diag,*H);
+////   *Eta = Commutator(H_diag,*H);
+//}
+
+
+
+
 void Generator::ConstructGenerator_Wegner()
 {
-   Operator H_diag = *H;
-   H_diag.ZeroBody = 0;
-   for (auto& a : modelspace->holes)
+   Operator H_od = 0 * (*H);
+   // One body piece -- eliminate ph bits
+   for ( auto& a : modelspace->core)
    {
-//      index_t a = it_a.first;
-      for (auto& b : modelspace->valence)
+      for ( auto& i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
       {
-         H_diag.OneBody(a,b) =0;
-         H_diag.OneBody(b,a) =0;
+         H_od.OneBody(i,a) = H->OneBody(i,a);
+         H_od.OneBody(a,i) = H_od.OneBody(i,a);
       }
    }
 
-   for (size_t ch=0;ch<modelspace->GetNumberTwoBodyChannels();++ch)
-   {  // Note, should also decouple the v and q spaces
-      // This is wrong. The projection operator should be different.
+   // Two body piece -- eliminate pp'hh' bits
+   for (int ch=0;ch<H_od.nChannels;++ch)
+   {
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
-      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(), tbc.GetKetIndex_ph() ).zeros();
-      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(), tbc.GetKetIndex_ph() ).zeros();
-      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_ph(), tbc.GetKetIndex_pp() ).zeros();
-      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_ph(), tbc.GetKetIndex_hh() ).zeros();
-      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_pp(), tbc.GetKetIndex_hh() ).zeros();
-      H_diag.TwoBody.GetMatrix(ch).submat(tbc.GetKetIndex_hh(), tbc.GetKetIndex_pp() ).zeros();
-   }
-   *Eta = Commutator::Commutator(H_diag, *H);
-//   *Eta = Commutator(H_diag,*H);
+      arma::mat& HOD2 =  H_od.TwoBody.GetMatrix(ch);
+      arma::mat& H2   =    H->TwoBody.GetMatrix(ch);
+      for ( auto& iket : tbc.GetKetIndex_cc() )
+      {
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+         {
+            HOD2(ibra,iket) = H2(ibra,iket) ;
+            HOD2(iket,ibra) = HOD2(ibra,iket) ; 
+         }
+      }
+    }
+   *Eta = Commutator::Commutator(*H,H_od);
 }
+
+
+
+
 
 
 
@@ -259,18 +298,35 @@ void Generator::ConstructGenerator_Atan()
          }
       }
     }
-    // Three body piece
-    int E3cut = 4;
-    double t_start = omp_get_wtime();
-//    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << "   Norms: " << Eta->ThreeBodyNorm() << "  " << H->ThreeBodyNorm()  << std::endl;
+
     if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
     {
-     std::cout << "looping in generator 3-body part " << std::endl;
+       double t_start = omp_get_wtime();
+       ConstructGenerator_Atan_3body();
+       H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
+    }// if particle rank >3
+}
+
+
+
+
+
+void Generator::ConstructGenerator_Atan_3body()
+{
+    // Three body piece
+//    int E3cut = 99;
+//    std::cout << "checking ranks in generator. " << Eta->GetParticleRank() << "  and " << H->GetParticleRank() << "   Norms: " << Eta->ThreeBodyNorm() << "  " << H->ThreeBodyNorm()  << std::endl;
+//    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
+//    {
+
+     std::cout << __func__ << "  looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
     for (auto a : modelspace->core )
     {
      Orbit& oa = modelspace->GetOrbit(a);
      for (auto b : modelspace->core )
      {
+//      if (b>a) continue;
+      if (b<a) continue;
       Orbit& ob = modelspace->GetOrbit(b);
       int Jab_min = std::abs(oa.j2-ob.j2)/2;
       int Jab_max = (oa.j2+ob.j2)/2;
@@ -278,14 +334,20 @@ void Generator::ConstructGenerator_Atan()
       {
        for (auto c : modelspace->core )
        {
+//        if (c>b) continue;
+        if (b<c) continue;
         Orbit& oc = modelspace->GetOrbit(c);
-        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
+//        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
+        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > modelspace->E3max ) continue;
+//        std::cout << "  abc " << a << " " << b << " " << c << std::endl;
 
         for ( auto i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
         {
          Orbit& oi = modelspace->GetOrbit(i);
          for ( auto j : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
          {
+//          if (j>i) continue;
+          if (j<i) continue;
           Orbit& oj = modelspace->GetOrbit(j);
           int Jij_min = std::abs(oi.j2-oj.j2)/2;
           int Jij_max = (oi.j2+oj.j2)/2;
@@ -293,23 +355,32 @@ void Generator::ConstructGenerator_Atan()
           {
            for ( auto k : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
            {
+//            if (k>j) continue;
+            if (k<j) continue;
             Orbit& ok = modelspace->GetOrbit(k);
-            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > 2*E3cut ) continue;
+//            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > 2*E3cut ) continue;
+            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > modelspace->E3max ) continue;
             if ( (oa.l+ob.l+oc.l+oi.l+oj.l+ok.l)%2>0 ) continue;
             if ( (oa.tz2+ob.tz2+oc.tz2) != (oi.tz2+oj.tz2+ok.tz2) ) continue;
             double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
+//            std::cout << "      ijk " << i << " " << j << " " << k << "   denom = " << denominator << std::endl;
+//            std::cout << "       ...  " << oi.l << " "<<  oi.j2 << std::endl;
 
             int twoJ_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jij-ok.j2) );
             int twoJ_max = std::min( 2*Jab+oc.j2, 2*Jij+ok.j2 );
-            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ++)
+            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
             {
+//              std::cout << "            Jab Jij   twoJ = " << Jab << " " << Jij << " " << twoJ << std::endl;
               double ME_od = H->ThreeBody.GetME_pn( Jab, Jij, twoJ, a,b,c,i,j,k);
+//              std::cout << "      got ME_od = " << ME_od << std::endl;
               double eta = 0.5*atan(2*ME_od / denominator);
 //              double eta = (ME_od / denominator);
 //              if (std::abs(eta)>1e-6)
+//              if (std::abs(eta)>1e-3)
 //              {
-//                std::cout << "Nonzero eta !  <" << a << " " << b << " " << c << ", " << Jab << " | " << i << " " << j << " " << k << ", " << Jij << " > _ " << twoJ << "  => " << ME_od << " / " << denominator << " = " << eta << std::endl;
+//                std::cout << "big eta !  <" << a << " " << b << " " << c << ", " << Jab << " | " << i << " " << j << " " << k << ", " << Jij << " > _ " << twoJ << "  => " << ME_od << " / " << denominator << " = " << eta << std::endl;
 //              }
+//              std::cout << " Calling add  " << Jab << " " << Jij << " " << twoJ << "   " << a << " " << b << " " << c << "  " << i << " " << j << " " << k << "   =>  " << eta << std::endl;
               Eta->ThreeBody.AddToME_pn( Jab, Jij, twoJ, a,b,c,i,j,k,  eta);
             }
            }
@@ -319,9 +390,10 @@ void Generator::ConstructGenerator_Atan()
        }
       } 
      } 
-    }
-    }
-    H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
+    }// for a
+    std::cout << "Size of Eta3 = " << Eta->ThreeBodyNorm() << std::endl;
+//    }// if particle rank >3
+//    H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
 }
 
 
@@ -490,8 +562,10 @@ void Generator::ConstructGenerator_ShellModel_Atan()
       // Decouple the valence space
       for ( auto& iket : tbc.GetKetIndex_vv() )
       {
+         auto& ket = tbc.GetKet(iket);
          for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
          {
+            auto& bra = tbc.GetKet(ibra);
             double denominator = Get2bDenominator(ch,ibra,iket);
             ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator) ;
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
@@ -499,8 +573,154 @@ void Generator::ConstructGenerator_ShellModel_Atan()
       }
 
     }
+
+    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
+    {
+       ConstructGenerator_ShellModel_Atan_3body();
+    }
+
 }
 
+
+
+// off diagonal pieces are  ppp|ccc  ppp|ccv ppp|cvv  qpp|vvv   where p is either v or q
+void Generator::ConstructGenerator_ShellModel_Atan_3body()
+{
+    // Three body piece
+//    int E3cut = 99;
+    int E3cut = modelspace->E3max;
+    double t_start = omp_get_wtime();
+
+     std::cout << "looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
+    for (auto a : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
+    {
+     Orbit& oa = modelspace->GetOrbit(a);
+     for (auto b : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace ) )
+     {
+      if (b>a) continue;
+      Orbit& ob = modelspace->GetOrbit(b);
+      int Jab_min = std::abs(oa.j2-ob.j2)/2;
+      int Jab_max = (oa.j2+ob.j2)/2;
+      for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+      {
+       for (auto c : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace ) )
+       {
+        if (c>b) continue;
+        Orbit& oc = modelspace->GetOrbit(c);
+//        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
+        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
+
+        for ( auto i : imsrg_util::VectorUnion(modelspace->core,modelspace->valence) )
+        {
+         Orbit& oi = modelspace->GetOrbit(i);
+//         // if any bra indices match any ket indices, then the normal ordering will take care of it
+//         if ( i==a or i==b or i==c) continue;
+         for ( auto j : imsrg_util::VectorUnion(modelspace->core,modelspace->valence) )
+         {
+          if (j>i) continue;
+//          if ( j==a or j==b or j==c) continue;
+          Orbit& oj = modelspace->GetOrbit(j);
+          int Jij_min = std::abs(oi.j2-oj.j2)/2;
+          int Jij_max = (oi.j2+oj.j2)/2;
+          for (int Jij=Jij_min; Jij<=Jij_max; Jij++)
+          {
+           for ( auto k : imsrg_util::VectorUnion(modelspace->core,modelspace->valence) )
+           {
+            if (k>j) continue;
+//            if ( k==a or k==b or k==c) continue;
+            // check if everything is valence, becase we don't want vvv|vvv to be off-diagonal
+            if (   (std::find( modelspace->valence.begin(), modelspace->valence.end(), a) != modelspace->valence.end()) // a is valence
+              and  (std::find( modelspace->valence.begin(), modelspace->valence.end(), b) != modelspace->valence.end()) // b is valence
+              and  (std::find( modelspace->valence.begin(), modelspace->valence.end(), c) != modelspace->valence.end()) // c is valence
+              and  (std::find( modelspace->valence.begin(), modelspace->valence.end(), i) != modelspace->valence.end()) // i is valence
+              and  (std::find( modelspace->valence.begin(), modelspace->valence.end(), j) != modelspace->valence.end()) // j is valence
+              and  (std::find( modelspace->valence.begin(), modelspace->valence.end(), k) != modelspace->valence.end()) // k is valence
+              ) continue;
+
+            Orbit& ok = modelspace->GetOrbit(k);
+
+//            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > 2*E3cut ) continue;
+            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > E3cut ) continue;
+            if ( (oa.l+ob.l+oc.l+oi.l+oj.l+ok.l)%2>0 ) continue;
+            if ( (oa.tz2+ob.tz2+oc.tz2) != (oi.tz2+oj.tz2+ok.tz2) ) continue;
+            double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
+
+            int twoJ_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jij-ok.j2) );
+            int twoJ_max = std::min( 2*Jab+oc.j2, 2*Jij+ok.j2 );
+            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+            {
+              double ME_od = H->ThreeBody.GetME_pn( Jab, Jij, twoJ, a,b,c,i,j,k);
+              double eta = 0.5*atan(2*ME_od / denominator);
+//              double eta = (ME_od / denominator);
+//              if (std::abs(eta)>1e-6)
+//              if (std::abs(eta)>1e-3)
+//              {
+//                std::cout << "big eta !  <" << a << " " << b << " " << c << ", " << Jab << " | " << i << " " << j << " " << k << ", " << Jij << " > _ " << twoJ << "  => " << ME_od << " / " << denominator << " = " << eta << std::endl;
+//              }
+              Eta->ThreeBody.AddToME_pn( Jab, Jij, twoJ, a,b,c,i,j,k,  eta);
+            }
+           }
+          }
+         }
+        }
+       }
+      } 
+     } 
+    }// for a
+
+
+}
+
+
+
+void Generator::ConstructGenerator_ShellModel_Wegner()
+{
+   Operator H_od = 0 * (*H);
+   // One body piece -- make sure the valence one-body part is diagonal
+   for ( auto& a : imsrg_util::VectorUnion(modelspace->core, modelspace->valence))
+   {
+      for (auto& i : imsrg_util::VectorUnion( modelspace->valence, modelspace->qspace ) )
+      {
+         if (i==a) continue;
+         H_od.OneBody(i,a) = H->OneBody(i,a);
+         H_od.OneBody(a,i) = H_od.OneBody(i,a);
+      }
+   }
+
+
+   // Two body piece -- eliminate ppvh and pqvv  
+
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      arma::mat& HOD2 =  H_od.TwoBody.GetMatrix(ch);
+      arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
+
+      // Decouple the core
+      for ( auto& iket : imsrg_util::VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
+      {
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
+         {
+            HOD2(ibra,iket) = H2(ibra,iket) ;
+            HOD2(iket,ibra) = HOD2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
+      }
+
+      // Decouple the valence space
+      for ( auto& iket : tbc.GetKetIndex_vv() )
+      {
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
+         {
+            HOD2(ibra,iket) = H2(ibra,iket) ;
+            HOD2(iket,ibra) = HOD2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+      }
+
+    }
+    *Eta = Commutator::Commutator(*H,H_od);
+}
 
 
 

@@ -55,6 +55,7 @@ class Parameters
 std::map<std::string,std::string> Parameters::string_par = {
   {"2bme",			"none"},
   {"3bme",			"none"},
+  {"3bme_type",			"full"},
   {"core_generator",		"atan"},	// generator used for core part of 2-step decoupling
   {"valence_generator",		"shell-model-atan"},	// generator used for valence decoupling and 1-step (also single-ref)
   {"flowfile",			"default"},	// name of output flow file
@@ -97,12 +98,13 @@ std::map<std::string,double> Parameters::double_par = {
   {"BetaCM",               0},  // Prefactor for Lawson-Glockner term
   {"hwBetaCM",            -1},  // Oscillator frequency used in the Lawson-Glockner term. Negative value means use the frequency of the basis
   {"eta_criterion",     1e-6},  // Threshold on ||eta|| for convergence in the flow
+  {"hw_trap",             -1},  // Frequency for harmonic lab-frame trap V = 1/2 M omega**2 * r**2
 
 };
 
 std::map<std::string,int> Parameters::int_par = {
   {"A",	-1},	// Aeff for kinetic energy. -1 means take A of reference
-  {"e3max",		12},	
+  {"e3max",		12},
   {"emax",		6},
   {"lmax",              99999}, // lmax for the whole calculation
   {"lmax3",		-1}, // lmax for the 3body interaction
@@ -113,7 +115,9 @@ std::map<std::string,int> Parameters::int_par = {
   {"file3e1max",	12},
   {"file3e2max",	24},
   {"file3e3max",	12},
-  {"atomicZ",            -1}, // the Z of the nucleus for an atomic calculation. -1 means do a neutral atom
+  {"atomicZ",           -1}, // the Z of the nucleus for an atomic calculation. -1 means do a neutral atom
+  {"emax_unocc",        -1}, // separate emax cut for l,j values that will not be occupied in the reference
+  {"dE3max",		99}, // cut which limits the 3-body states considered in IMSRG(3) commutators
 };
 
 std::map<std::string,std::vector<std::string>> Parameters::vec_par = {
@@ -131,7 +135,7 @@ Parameters::Parameters(int argc, char** argv)
 {
   help_mode = false;
   ParseCommandLineArgs(argc, argv);
-} 
+}
 
 void Parameters::ParseCommandLineArgs(int argc, char** argv)
 {
@@ -184,7 +188,7 @@ void Parameters::ParseCommandLineArgs(int argc, char** argv)
     {
       std::cout << "Unkown parameter: " << var << " => " << val << std::endl;
     }
-    
+
   }
   if (string_par["flowfile"]=="default") string_par["flowfile"] = DefaultFlowFile();
   if (string_par["intfile"]=="default") string_par["intfile"] = DefaultIntFile();

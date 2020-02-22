@@ -65,6 +65,7 @@ namespace imsrg_util
       else if (opname == "Rp2")           return Rp2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rn2")           return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rm2")           return Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
+      else if (opname == "Rm2lab")        return RSquaredOp(modelspace) ;
       else if (opname == "E1")            return ElectricMultipoleOp(modelspace,1) ;
       else if (opname == "E2")            return ElectricMultipoleOp(modelspace,2) ;
       else if (opname == "E3")            return ElectricMultipoleOp(modelspace,3) ;
@@ -159,6 +160,12 @@ namespace imsrg_util
          Orbit& oi = modelspace.GetOrbit(ind);
          return NumberOpAlln(modelspace,oi.l,oi.j2,oi.tz2) ;
       }
+      else if (opnamesplit[0] == "OBD")
+      {
+         index_t i = modelspace.String2Index( { opnamesplit[1] } )[0];
+         index_t j = modelspace.String2Index( { opnamesplit[2] } )[0];
+         return OneBodyDensity(modelspace,i,j);
+      }
       else if (opnamesplit[0] == "protonFBC") // Fourier bessel coefficient of order nu
       {
          int nu;
@@ -213,7 +220,13 @@ namespace imsrg_util
       else if (opnamesplit[0] == "Dagger" or opnamesplit[0] == "DaggerHF" )
       {
         index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
+        std::cout << "call Dagger_Op with Q = " << Q << std::endl;
         return Dagger_Op( modelspace, Q);
+      }
+      else if (opnamesplit[0] == "DaggerAlln")
+      {
+        index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
+        return DaggerAlln_Op( modelspace, Q);
       }
       else //need to remove from the list
       {
@@ -233,6 +246,7 @@ namespace imsrg_util
    NumOp.EraseOneBody();
    NumOp.EraseTwoBody();
    NumOp.OneBody(indx,indx) = 1;
+   std::cout << "Number op indx = " << indx << " one body = " << NumOp.OneBody << std::endl;
    return NumOp;
  }
 
@@ -245,6 +259,15 @@ namespace imsrg_util
      NumOp.OneBody(indx,indx) = 1;
    }
    return NumOp;
+ }
+
+ Operator OneBodyDensity( ModelSpace& modelspace, index_t i, index_t j)
+ {
+   Operator OBD = Operator(modelspace,0,0,0,2);
+   OBD.OneBody(i,j) += 0.5;
+   OBD.OneBody(j,i) += 0.5;
+   std::cout << "OBD ij = " << i << " " << j << "  One body = " << OBD.OneBody << std::endl;
+   return OBD;
  }
 
  double HO_density(int n, int l, double hw, double r)
@@ -417,7 +440,7 @@ Operator KineticEnergy_Op(ModelSpace& modelspace)
    {
       Orbit & oa = modelspace.GetOrbit(a);
       T.OneBody(a,a) = 0.5 * hw * (2*oa.n + oa.l +3./2); 
-      for ( int b : T.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      for ( auto b : T.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
       {
          if (b<=a) continue;
          Orbit & ob = modelspace.GetOrbit(b);
@@ -1046,6 +1069,7 @@ Operator KineticEnergy_RelativisticCorr(ModelSpace& modelspace)
               int lam_cd = lam_ab; // tcm and trel conserve lam and Lam
               int n_ab = (fab - 2*N_ab-Lam_ab-lam_ab)/2; // n_ab is determined by energy conservation
 
+//              std::cout << __func__ << "na la nb lb " << na << " " << la << " " << nb << " " << lb << std::endl;
               double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
 
               if (std::abs(mosh_ab)<1e-8) continue;
@@ -1056,6 +1080,7 @@ Operator KineticEnergy_RelativisticCorr(ModelSpace& modelspace)
                 if (n_cd < 0) continue;
                 if  (n_ab != n_cd and N_ab != N_cd) continue;
 
+//              std::cout << __func__ << "nc lc nd ld " << nc << " " << lc << " " << nd << " " << ld << std::endl;
                 double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
                 if (std::abs(mosh_cd)<1e-8) continue;
 
@@ -1207,7 +1232,9 @@ Operator RSquaredOp(ModelSpace& modelspace)
    Operator Rp2Op(modelspace,0,0,0,2);
 //   double oscillator_b = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
 
+   std::cout << __func__ << " begin" << std::endl;
    int nchan = modelspace.GetNumberTwoBodyChannels();
+   if (option!="matter" and option!="proton" and option!="neutron") std::cout << "!!! WARNING. " << __func__ << "  BAD OPTION "  << option << std::endl;
    modelspace.PreCalculateMoshinsky();
    #pragma omp parallel for schedule(dynamic,1) 
    for (int ch=0; ch<nchan; ++ch)
@@ -1221,13 +1248,17 @@ Operator RSquaredOp(ModelSpace& modelspace)
       {
          Ket & bra = tbc.GetKet(ibra);
          double prefactor = 1; // factor to account for double counting in pn channel.
+           if ( (bra.op->l > modelspace.GetLmax()) or (bra.oq->l > modelspace.GetLmax()) )
+          {
+            std::cout << "ibra is " << ibra << " => " << bra.p << " " << bra.q << "  => " << bra.op->l << " " <<  bra.oq->l << std::endl;
+          }
          if (Tz==0 and (option=="proton" or option=="neutron")) prefactor = 0.5;
 //         if (option=="proton" and bra.op->tz2>0) continue;
 //         else if (option=="neutron" and bra.op->tz2<0) continue;
-         if (option!="matter" and option!="proton" and option!="neutron") std::cout << "!!! WARNING. " << __func__ << "  BAD OPTION "  << option << std::endl;
          for (int iket=ibra;iket<nkets;++iket)
          {
             Ket & ket = tbc.GetKet(iket);
+//            std::cout << "    ~~ " << bra.p << " " << bra.q << "  " << ket.p << " " << ket.q << "  " << tbc.J << std::endl;
 //            double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J) * oscillator_b ; 
             double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J) * prefactor; 
             Rp2Op.TwoBody.SetTBME(ch,ibra,iket,mat_el);
@@ -1235,6 +1266,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
          }
       }
    }
+   std::cout << "done. " << std::endl;
    return Rp2Op;
  }
 
@@ -2160,7 +2192,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
      for (auto j : QdotQ_op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
      {
        if (i>j) continue;
-       Orbit & oj = modelspace.GetOrbit(j);
+//       Orbit & oj = modelspace.GetOrbit(j);
 //       for (auto k : QdotQ_op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
        double Qij =0;
 //       for (size_t k=0;k<modelspace.GetNumberOrbits();k++)
@@ -2243,13 +2275,27 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    Operator dag(modelspace);
    dag.SetNumberLegs(3);
    dag.SetQSpaceOrbit(Q);
-   dag.OneBody(Q,Q)= 1.0;
+   dag.OneBody(Q,0)= 1.0;
+//   dag.OneBody(Q,Q)= 1.0;
    dag.SetNonHermitian();
    std::cout << "Making a dagger operator. I think Q = " << Q << std::endl;
    return dag;
  }
 
-
+ Operator DaggerAlln_Op( ModelSpace& modelspace, index_t Q )
+ {
+   Orbit& oQ = modelspace.GetOrbit(Q);
+   Operator dag(modelspace);
+   dag.SetNumberLegs(3);
+   dag.SetQSpaceOrbit(Q);
+   dag.SetNonHermitian();
+   for ( auto nQ : modelspace.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+   {
+     //dag.OneBody(nQ,Q) = 1.0;
+     dag.OneBody(nQ,0) = 1.0;
+   }
+   return dag;
+ }
 
  Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax ) // default lmax=99999
  {
@@ -2266,7 +2312,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
      Orbit& oa = modelspace.GetOrbit(a);
      if (oa.tz2>0) continue; // protons only
      if (oa.l>lmax) continue;
-     for (int b : VCoul.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+     for (auto b : VCoul.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
      {
        if (b<a) continue;
        Orbit& ob = modelspace.GetOrbit(b);

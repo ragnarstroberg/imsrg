@@ -90,10 +90,10 @@ struct Ket3 // | p q r >
   size_t p;
   size_t q;
   size_t r;
-  int Jpq;
   Orbit* op;
   Orbit* oq;
   Orbit* oR; // unfortunate that this convention collides with the "or" keyword.
+  int Jpq;
 
   // Methods
   Ket3(){};
@@ -234,6 +234,8 @@ class ModelSpace
  public:
 
    static double OCC_CUT;
+   static int NOT_AN_ORBIT;
+   static Orbit NULL_ORBIT;
 
    // Data members
 
@@ -246,6 +248,11 @@ class ModelSpace
    int OneBodyJmax; // maximum J for a single orbit
    int TwoBodyJmax; // maximum J for a 2-body state
    int ThreeBodyJmax; // maximum J for a 3-body state (not used)?
+   int EmaxUnocc; // Separate emax cut for orbits with l,j,tz that aren't present in the HF reference
+
+   double dE3max; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
+//   double e_fermi;    // The fermi energy, probably in oscillator units
+   std::map<int,double> e_fermi;    // The fermi energy, probably in oscillator units. It's different for protons and neutrons, so index by tz
 
    int norbits;       // number of single-particle orbits (not counting the degenerate m-projections)
    double hbar_omega; // oscillator frequency in MeV
@@ -253,6 +260,7 @@ class ModelSpace
    int target_Z;      // Proton number of the system we're trying to compute
    int Aref;          // Particle number of the normal-ordering reference
    int Zref;          // Proton number of the normal-ordering reference
+
 
    std::vector<Orbit> Orbits; // vector of one-body Orbit structs
    std::vector<Ket> Kets;     // vector of two-body Ket structs
@@ -292,6 +300,9 @@ class ModelSpace
 //   std::vector<index_t> neutron_orbits;
 //   std::vector<index_t> all_orbits;
 
+//   std::set<std::array<int,3>> hole_quantum_numbers; // For checking if an orbit could mix with the hole orbits
+   std::set<std::array<int,2>> hole_quantum_numbers; // For checking if an orbit could mix with the hole orbits
+
    std::vector<index_t> KetIndex_pp; 
    std::vector<index_t> KetIndex_ph;
    std::vector<index_t> KetIndex_hh;
@@ -318,6 +329,7 @@ class ModelSpace
    bool sixj_has_been_precalculated;
    bool moshinsky_has_been_precalculated;
    bool scalar_transform_first_pass;
+   bool scalar3b_transform_first_pass;
    std::vector<bool> tensor_transform_first_pass;
    bool single_species; // Is there only one kind of fermion?
    IMSRGProfiler profiler;
@@ -372,8 +384,10 @@ class ModelSpace
    void Setup3bKets();
    void AddOrbit(Orbit orb);
    void AddOrbit(int n, int l, int j2, int tz2, double occ, int io);
+   void FindEFermi();
    // Setter/Getters
-   Orbit& GetOrbit(int i) {return (Orbit&) Orbits[i];}; 
+//   Orbit& GetOrbit(int i) {return (Orbit&) Orbits[i];}; 
+   Orbit& GetOrbit(int i); 
    Ket& GetKet(int i) const {return (Ket&) Kets[i];};
    Ket& GetKet(int p, int q) const {return (Ket&) Kets[Index2(p,q)];};
    Ket3& GetKet3(int i) const {return (Ket3&) Kets3[i];};
@@ -383,6 +397,8 @@ class ModelSpace
    size_t GetKet3Index(int p, int q, int r, int Jpq){return Ket3IndexLookup.at(Ket3IndexHash(p,q,r,Jpq));};
    size_t Ket3IndexHash(size_t p, size_t q, size_t r, size_t Jpq);
    size_t ThreeBodyChannelHash( int twoJ, int parity, int twoTz);
+
+   void SetEmaxUnocc(int e);
 
    size_t GetNumberOrbits() const {return norbits;};
    size_t GetNumberKets() const {return Kets.size();};
@@ -418,10 +434,17 @@ class ModelSpace
    int GetLmax3(){return Lmax3;};
    void SetEmax(int e){Emax=e;};
    void SetE2max(int e){E2max=e;};
-   void SetE3max(int e){E3max=e;};
-   void SetLmax(int l){Lmax=l;};
+//   void SetE3max(int e){E3max=e;};
+   void SetE3max(int e);
+//   void SetLmax(int l){Lmax=l;};
+   void SetLmax(int l);
    void SetLmax2(int l){Lmax2=l;};
    void SetLmax3(int l){Lmax3=l;};
+   void SetdE3max(double e){dE3max = e;};
+   double GetdE3max(){return dE3max;};
+   void SetEFermi(double ef){e_fermi[-1]=ef; e_fermi[+1]=ef;};
+   std::map<int,double> GetEFermi(){ return e_fermi ;};
+   void SetEFermi(double ef_proton, double ef_neutron){e_fermi[-1] = ef_proton; e_fermi[1]=ef_neutron;};
 
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);

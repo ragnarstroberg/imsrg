@@ -26,7 +26,7 @@ IMSRGProfiler::IMSRGProfiler()
 std::map<std::string,size_t> IMSRGProfiler::CheckMem()
 {
 //  char commandstr[100],outbuf[500],buf[100];
-  char outbuf[500],buf[100];
+//  char outbuf[500],buf[100];
   std::map<std::string,size_t> s;
 //  sprintf(commandstr,"pmap -x %d | tail -1",getpid()); // TODO make this more portable. On OSX, use vmmap. no idea for Windows...
   std::ostringstream commandstr;

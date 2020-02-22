@@ -24,7 +24,7 @@ void TwoBodyChannel::Initialize(int ch, ModelSpace *ms)
 {
    modelspace = ms;
    modelspace->UnpackTwoBodyChannelIndex(ch,  J,parity,Tz);
-   int tbjmax = modelspace->TwoBodyJmax;
+//   int tbjmax = modelspace->TwoBodyJmax;
 
    NumberKets = 0;
    int nk = modelspace->GetNumberKets();

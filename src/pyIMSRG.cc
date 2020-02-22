@@ -73,6 +73,9 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetHbarOmega", &ModelSpace::SetHbarOmega)
       .def("SetTargetMass", &ModelSpace::SetTargetMass)
       .def("SetE3max", &ModelSpace::SetE3max)
+      .def("SetdE3max", &ModelSpace::SetdE3max)
+      .def("SetLmax", &ModelSpace::SetLmax)
+      .def("SetEmaxUnocc", &ModelSpace::SetEmaxUnocc)
       .def("GetHbarOmega", &ModelSpace::GetHbarOmega)
       .def("GetTargetMass", &ModelSpace::GetTargetMass)
       .def("GetNumberOrbits", &ModelSpace::GetNumberOrbits)
@@ -91,6 +94,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def_readwrite("core", &ModelSpace::core)
       .def_readwrite("valence",&ModelSpace::valence)
       .def_readwrite("qspace",&ModelSpace::qspace)
+      .def_readwrite("all_orbits",&ModelSpace::all_orbits)
    ;
 
 
@@ -114,6 +118,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def_readwrite("ZeroBody", &Operator::ZeroBody)
       .def_readwrite("OneBody", &Operator::OneBody)
       .def_readwrite("TwoBody", &Operator::TwoBody)
+      .def_readwrite("ThreeBody", &Operator::ThreeBody)
       .def("GetOneBody", &Operator::GetOneBody)
       .def("SetOneBody", &Operator::SetOneBody)
       .def("GetTwoBody", &Operator::GetTwoBody)
@@ -127,6 +132,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Norm", &Operator::Norm)
       .def("OneBodyNorm", &Operator::OneBodyNorm)
       .def("TwoBodyNorm", &Operator::TwoBodyNorm)
+      .def("ThreeBodyNorm", &Operator::ThreeBodyNorm)
       .def("SetHermitian", &Operator::SetHermitian)
       .def("SetAntiHermitian", &Operator::SetAntiHermitian)
       .def("SetNonHermitian", &Operator::SetNonHermitian)
@@ -137,6 +143,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("MakeNormalized", &Operator::MakeNormalized)
       .def("MakeUnNormalized", &Operator::MakeUnNormalized)
       .def("GetParticleRank", &Operator::GetParticleRank)
+      .def("SetParticleRank", &Operator::SetParticleRank)
       .def("GetJRank", &Operator::GetJRank)
       .def("GetTRank", &Operator::GetTRank)
       .def("GetParity", &Operator::GetParity)
@@ -148,7 +155,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("MakeNormalized", &Operator::MakeNormalized)
       .def("MakeUnNormalized", &Operator::MakeUnNormalized)
       .def("SetOneBodyME", &OpSetOneBodyME)
-      .def_readwrite("ThreeBody", &Operator::ThreeBody)
+      .def("GetMP2_Energy", &Operator::GetMP2_Energy)
+      .def("GetMP3_Energy", &Operator::GetMP3_Energy)
    ;
 
    py::class_<arma::mat>(m,"ArmaMat")
@@ -170,19 +178,19 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetTBME_J_norm", TB_GetTBME_J_norm)
    ;
 
-   py::class_<ThreeBodyME>(m,"ThreeBodyME")
-      .def(py::init<>())
-      .def("SetME", &ThreeBodyME::SetME)
-      .def("GetME", &ThreeBodyME::GetME)
-      .def("GetME_pn", &ThreeBodyME::GetME_pn)
-      .def("RecouplingCoefficient",&ThreeBodyME::RecouplingCoefficient)
-      .def_readonly_static("ABC",&ThreeBodyME::ABC)
-      .def_readonly_static("BCA",&ThreeBodyME::BCA)
-      .def_readonly_static("CAB",&ThreeBodyME::CAB)
-      .def_readonly_static("ACB",&ThreeBodyME::ACB)
-      .def_readonly_static("CBA",&ThreeBodyME::CBA)
-      .def_readonly_static("BAC",&ThreeBodyME::BAC)
-   ;
+//   py::class_<ThreeBodyME>(m,"ThreeBodyME")
+//      .def(py::init<>())
+//      .def("SetME", &ThreeBodyME::SetME)
+//      .def("GetME", &ThreeBodyME::GetME)
+//      .def("GetME_pn", &ThreeBodyME::GetME_pn)
+//      .def("RecouplingCoefficient",&ThreeBodyME::RecouplingCoefficient)
+//      .def_readonly_static("ABC",&ThreeBodyME::ABC)
+//      .def_readonly_static("BCA",&ThreeBodyME::BCA)
+//      .def_readonly_static("CAB",&ThreeBodyME::CAB)
+//      .def_readonly_static("ACB",&ThreeBodyME::ACB)
+//      .def_readonly_static("CBA",&ThreeBodyME::CBA)
+//      .def_readonly_static("BAC",&ThreeBodyME::BAC)
+//   ;
 
    py::class_<ThreeBodyMEpn>(m,"ThreeBodyMEpn")
       .def(py::init<>())
@@ -245,6 +253,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Set3NFormat",&ReadWrite::Set3NFormat)
       .def("WriteDaggerOperator",&ReadWrite::WriteDaggerOperator)
       .def("ReadJacobi3NFiles",&ReadWrite::ReadJacobi3NFiles)
+      .def("WriteValence3body",&ReadWrite::WriteValence3body)
    ;
 
 
@@ -259,6 +268,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetNormalOrderedH",&HF_GetNormalOrderedH)
       .def("GetOmega",&HartreeFock::GetOmega)
       .def("PrintSPE",&HartreeFock::PrintSPE)
+      .def("PrintSPEandWF",&HartreeFock::PrintSPEandWF)
       .def("GetRadialWF_r",&HartreeFock::GetRadialWF_r)
       .def("GetHFPotential",&HartreeFock::GetHFPotential)
       .def("GetAverageHFPotential",&HartreeFock::GetAverageHFPotential)
@@ -268,10 +278,20 @@ PYBIND11_MODULE(pyIMSRG, m)
  // Modifying arguments which were passed by reference causes trouble in python, so instead we bind a lambda function and return a tuple
       .def_static("Vmon3UnHash", [](uint64_t key) { int a,b,c,d,e,f; HartreeFock::Vmon3UnHash(key,a,b,c,d,e,f); return std::make_tuple(a,b,c,d,e,f);}  )
       .def_readonly("EHF",&HartreeFock::EHF)
-      .def_readonly("C",&HartreeFock::C)
+      .def_readonly("F",&HartreeFock::F) // Fock matrix
+      .def_readonly("C",&HartreeFock::C) // Unitary transformation
       .def_readwrite("Vmon3_keys",&HartreeFock::Vmon3_keys)
       .def_readwrite("Vmon3",&HartreeFock::Vmon3)
    ;
+
+   py::class_<HFMBPT,HartreeFock>(m,"HFMBPT")
+      .def(py::init<Operator&>())
+      .def("GetNaturalOrbitals",&HFMBPT::GetNaturalOrbitals)
+      .def("GetNormalOrderedHNAT",&HFMBPT::GetNormalOrderedHNAT)
+      .def("PrintSPEandWF",&HFMBPT::PrintSPEandWF)
+   ;
+
+
 
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
    Operator (IMSRGSolver::*Transform_ref)(Operator&) = &IMSRGSolver::Transform;
@@ -366,8 +386,10 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("TestCommutators",&UnitTest::TestCommutators)
       .def("TestCommutators3",&UnitTest::TestCommutators3)
       .def("TestDaggerCommutators",&UnitTest::TestDaggerCommutators)
+      .def("TestDaggerCommutatorsAlln",&UnitTest::TestDaggerCommutatorsAlln)
       .def("Test3BodyAntisymmetry",&UnitTest::Test3BodyAntisymmetry)
       .def("Test3BodyHermiticity",&UnitTest::Test3BodyHermiticity)
+      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
    ;
 
 
@@ -419,6 +441,8 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("TalmiB",AngMom::TalmiB);
    m.def("TalmiI",imsrg_util::TalmiI);
    m.def("Tcoeff",AngMom::Tcoeff);
+   m.def("SetUseGooseTank",Commutator::SetUseGooseTank);
+   m.def("SetUseIMSRG3",Commutator::SetUseIMSRG3);
 
 
 //  return m.ptr();

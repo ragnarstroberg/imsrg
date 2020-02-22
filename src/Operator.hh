@@ -23,6 +23,7 @@
 #include "ModelSpace.hh"
 #include "TwoBodyME.hh"
 #include "ThreeBodyME.hh"
+#include "ThreeBodyMENO2B.hh"
 #include "ThreeBodyMEpn.hh"
 #include "ThreeLegME.hh"
 #include "IMSRGProfiler.hh"
@@ -52,6 +53,7 @@ class Operator
 //  ThreeBodyME ThreeBody; ///< The three body piece of the operator.
   ThreeBodyMEpn ThreeBody; ///< The three body piece of the operator.
   ThreeLegME ThreeLeg;  ///< Three-legged operators, used if this is a particle-number-changing operator, i.e. if legs is odd
+  ThreeBodyMENO2B ThreeBodyNO2B; ///< The three body piece of the operator.
 
   int rank_J; ///< Spherical tensor rank of the operator
   int rank_T; ///< Isotensor rank of the operator
@@ -70,7 +72,7 @@ class Operator
 
   std::map<std::array<int,3>,std::set<index_t> > OneBodyChannels;  // a set makes more sense for this, because it only contains unique entries
 //  std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
-  index_t Q_space_orbit; // Orbit with the same quantum numbers as this dagger operator. -1 if it's not a dagger operator. 
+  index_t Q_space_orbit; // Orbit with the same quantum numbers as this dagger operator. -1 if it's not a dagger operator.
 
 //  static IMSRGProfiler profiler;
   IMSRGProfiler profiler;
@@ -182,6 +184,7 @@ class Operator
 //  double GetMP3_Energy();
   std::array<double,3> GetMP3_Energy();
   double MP1_Eval(Operator& );
+  double GetMP2_3BEnergy();
 
   void PrintTimes(){profiler.PrintAll();};
 
@@ -190,6 +193,7 @@ class Operator
   double OneBodyNorm() const;
   double TwoBodyNorm() const;
   double ThreeBodyNorm() const;
+  double OneLegNorm() const;
   double ThreeLegNorm() const;
 
 

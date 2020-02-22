@@ -64,6 +64,9 @@ class HartreeFock
    IMSRGProfiler profiler;  ///< Profiler for timing, etc.
    std::deque<double> convergence_ediff; ///< Save last few convergence checks for diagnostics
    std::deque<double> convergence_EHF; ///< Save last few convergence checks for diagnostics
+   std::deque<arma::mat> DIIS_density_mats; ///< Save density matrix from past iterations for DIIS
+   std::deque<arma::mat> DIIS_error_mats; ///< Save error from past iterations for DIIS
+
    Jacobi3BME* jacobi3bme;  ///< pointer to 3-body matrix elements in jacobi basis, if we want to use that
    bool use_jacobi_3body;
    bool freeze_occupations;
@@ -77,6 +80,7 @@ class HartreeFock
    void Diagonalize();            ///< Diagonalize the Fock matrix
    void UpdateF();                ///< Update the Fock matrix with the new transformation coefficients C
    void UpdateDensityMatrix();    ///< Update the density matrix with the new coefficients C
+   void UpdateDensityMatrix_DIIS();    ///< Update the density matrix using Direct Inversion in Iterative Subspace
    void FillLowestOrbits();       ///< Get new occupations based on the current single-particle energies
    void UpdateReference();        ///< If we got new occupations in FillLowestOrbits, then we should update the hole states in the reference.
    bool CheckConvergence();       ///< Compare the current energies with those from the previous iteration
@@ -86,8 +90,9 @@ class HartreeFock
    void ReorderCoefficients();    ///< Reorder the coefficients in C to eliminate phases etc.
    void SetJacobi3BME( Jacobi3BME* jac ) {jacobi3bme = jac; use_jacobi_3body=true;}; ///< Setter.
    Operator TransformToHFBasis( Operator& OpIn); ///< Transform an operator from oscillator basis to HF basis
-   Operator GetNormalOrderedH();  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
-   Operator GetNormalOrderedH(arma::mat& Cin);  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
+//   Operator GetNormalOrderedH();  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
+   Operator GetNormalOrderedH(int particle_rank=2);  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
+   Operator GetNormalOrderedH(arma::mat& Cin, int particle_rank=2);  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
    Operator GetOmega();           ///< Return a generator of the Hartree Fock transformation
    Operator GetHbare(){return Hbare;}; ///< Getter function for Hbare
    void PrintSPE(); ///< Print out the single-particle energies
@@ -103,8 +108,11 @@ class HartreeFock
    void Vmon3JacobiUnHash(uint64_t key, uint64_t& na, uint64_t& nb, uint64_t& nc, uint64_t& Jab, uint64_t& twoJ, uint64_t& E12, uint64_t& alpha, uint64_t& Ncm, uint64_t& Lcm);
    static uint64_t Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f);
    static void Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f);
-   ThreeBodyME GetValence3B( int emax, int E3max );
-   double GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
+   ThreeBodyMEpn GetTransformed3B(  );
+   ThreeBodyMEpn GetValence3B( int emax, int E3max );
+   double GetTransformed3bme( int Jab, int Jde, int J2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
+//   double GetHF3bme( int Jab, int Jde, int J2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
+//   double GetHF3bme( int Jab, int Jde, int J2, int tab, int tde, int T2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
 
 /*
    void GetSecondOrderRho();
