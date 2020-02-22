@@ -877,6 +877,19 @@ double IMSRGSolver::EstimateStepError()
 }
 
 
+double IMSRGSolver::EstimateBCHError( )
+{
+   double err = 0;
+   int counter=0;
+   for ( auto& omega : Omega )
+   {
+     err +=  Commutator::EstimateBCHError(omega, *H_0);
+     std::cout << counter++ << "  " << err << std::endl;
+   }
+   return err;
+}
+
+
 void IMSRGSolver::WriteFlowStatus(std::string fname)
 {
    if (fname !="")
