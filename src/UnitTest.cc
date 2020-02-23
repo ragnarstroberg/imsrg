@@ -476,11 +476,11 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 //  all_good &= Test_comm231ss( X, Y );
 //  all_good &= Test_comm132ss( X, Y );
 //  all_good &= Test_comm232ss( X, Y );
-//  all_good &= Test_comm223ss( X, Y );
+  all_good &= Test_comm223ss( X, Y );
 //  all_good &= Test_comm133ss( X, Y );
 
 //  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
-  all_good &= Test_comm332_pphhss( X, Y );  
+//  all_good &= Test_comm332_pphhss( X, Y );  
 
 //  all_good &= Test_comm233_pp_hhss( X, Y );   
 //  all_good &= Test_comm233_ph_ss( X, Y );  
