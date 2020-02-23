@@ -37,7 +37,7 @@ namespace Commutator{
   Operator Standard_BCH_Transform( const Operator& Op, const Operator& Omega ) ; 
   Operator Brueckner_BCH_Transform( const Operator& Op, const Operator& Omega ) ;
 
-
+  double EstimateBCHError( Operator& Omega, Operator H);
 
   std::deque<arma::mat> InitializePandya(Operator& Z, size_t nch, std::string orientation);
   void DoPandyaTransformation(const Operator& Z, std::deque<arma::mat>&, std::string orientation) ;
@@ -66,9 +66,11 @@ namespace Commutator{
   void comm330ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm331ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm231ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
 
   void comm132ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm232ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm232ss_slow( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented and tested.
   void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z ) ;      // implemented and tested.
   
@@ -76,17 +78,12 @@ namespace Commutator{
   void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z ) ;     // implemented and tested.
   void comm233_phss( const Operator& X, const Operator& Y, Operator& Z ) ;        // implemented and tested.
-  void comm333ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
-
-  double comm333_ppp_hhh_ss_inner_loop( Orbit& oi, Orbit& oj, int Jij, Orbit& ok,   // helper function
-                                        Orbit& ol, Orbit& om, int Jlm, Orbit& on,
-                                        Orbit& oa, Orbit& ob, int Jab, Orbit& oc, int twoJ, const Operator& X, const Operator& Y );
-  double comm333_pph_hhp_ss_inner_loop( Orbit& oi, Orbit& oj, int Jij, Orbit& ok,  // helper function
-                                        Orbit& ol, Orbit& om, int Jlm, Orbit& on,
-                                        Orbit& oa, Orbit& ob, int Jab, Orbit& oc, int twoJ, const Operator& X, const Operator& Y );
 
   void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
   void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+
+  bool check_2b_channel_Tz_parity( const Operator& Op, Orbit& o1, Orbit&o2, Orbit& o3, Orbit& o4 );
+
 
   Operator GooseTankUpdate( const Operator& Omega, const Operator& Nested);
 

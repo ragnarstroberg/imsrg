@@ -1574,6 +1574,10 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                     if (oa.l>lmax3 or ob.l>lmax3 or oc.l>lmax3 or od.l>lmax3 or oe.l>lmax3 or of.l>lmax3) V=0;
                     if (oa.l>lmax or ob.l>lmax or oc.l>lmax or od.l>lmax or oe.l>lmax or of.l>lmax) V=0;
 
+//                    if (a==99999 or b==99999 or c==99999 or d==99999 or e==99999 or f==99999) continue;
+                    if (a==ModelSpace::NOT_AN_ORBIT or b==ModelSpace::NOT_AN_ORBIT or c==ModelSpace::NOT_AN_ORBIT
+                     or d==ModelSpace::NOT_AN_ORBIT or e==ModelSpace::NOT_AN_ORBIT or f==ModelSpace::NOT_AN_ORBIT) continue;
+
 
                     if ( ( a==b and (tab+Jab)%2==0 )
                       or ( d==e and (ttab+JJab)%2==0 )
