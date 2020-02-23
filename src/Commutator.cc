@@ -2468,7 +2468,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
           Orbit& oc = Z.modelspace->GetOrbit(c);
           double jc = 0.5*oc.j2;
           int ec = 2*oc.n + oc.l;
-          if ( (std::abs( ea-e_fermi[oa.tz2]) + std::abs(eb-e_fermi[ob.tz2]) + std::abs(ec-e_fermi[oc.tz2])) > Z.modelspace->GetdE3max() ) continue;
+//          if ( (std::abs( ea-e_fermi[oa.tz2]) + std::abs(eb-e_fermi[ob.tz2]) + std::abs(ec-e_fermi[oc.tz2])) > Z.modelspace->GetdE3max() ) continue;
           double occfactor = oa.occ * ob.occ * (1-oc.occ) + (1-oa.occ) * (1-ob.occ) * oc.occ;
           if ( std::abs(occfactor) < 1e-6 ) continue;
           if (a==b) occfactor *=0.5;  // we sum a<=b, and drop the 1/2, but we still need the 1/2 for a==b
@@ -2504,6 +2504,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       size_t i = ij_orbits[ind_i];
       Orbit& oi = X.modelspace->GetOrbit(i);
       double ji = 0.5*oi.j2;
+      double d_ei = std::abs( 2*oi.n +oi.l - e_fermi[oi.tz2]);
       for (size_t ind_abc=0; ind_abc<n_abc; ind_abc++)
       {
         size_t a = a_list[ind_abc];
@@ -2515,10 +2516,15 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         Orbit& oc = X.modelspace->GetOrbit(c);
         
         double jc = 0.5 * oc.j2;
+        double d_ea = std::abs( 2*oa.n +oa.l - e_fermi[oa.tz2]);
+        double d_eb = std::abs( 2*ob.n +ob.l - e_fermi[ob.tz2]);
+        double d_ec = std::abs( 2*oc.n +oc.l - e_fermi[oc.tz2]);
+        if ( (d_ea+d_eb+d_ei) > Z.modelspace->GetdE3max() ) continue;
+
         X2MAT(ind_i,ind_abc) = -sqrt( (2*Jab+1.)) * occ_abc_list[ind_abc] *  X.TwoBody.GetTBME_J(Jab,c,i,a,b);
         Y2MAT(ind_i,ind_abc) = -sqrt( (2*Jab+1.)) * occ_abc_list[ind_abc] *  Y.TwoBody.GetTBME_J(Jab,c,i,a,b);
-
         
+
         if ( (oa.l+ob.l+oi.l+tbc.parity+oc.l)%2 != Y.parity) continue; //TODO: this will cause problems if we try something with Y.parity =1
         if ( std::abs((oa.tz2+ob.tz2+oi.tz2)-(tbc.Tz*2+oc.tz2)) > 2*Y.rank_T) continue;
 
@@ -2549,6 +2555,9 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
                Ket& ket = tbc.GetKet(iket);
                int k = ket.p;
                int l = ket.q;
+               double d_ek = std::abs( 2*ket.op->n +ket.op->l - e_fermi[ket.op->tz2]);
+               double d_el = std::abs( 2*ket.oq->n +ket.oq->l - e_fermi[ket.oq->tz2]);
+               if ( (d_ek+d_el+d_ec) > Z.modelspace->GetdE3max() ) continue;
                std::vector<size_t> iket_list;
                std::vector<double> recouple_ket_list;
                ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( J, twoJp, k, l, c, iket_list, recouple_ket_list) ;
