@@ -1766,6 +1766,8 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y3 = Y.ThreeBody;
   if (X3.Norm()<1e-6 or Y3.Norm()<1e-6 ) return;
 
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
   #pragma omp parallel for schedule(dynamic,1) reduction(+:z0)
   for ( size_t ch3=0; ch3<nch3; ch3++)
@@ -1776,12 +1778,19 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
     for (size_t ibra=0; ibra<nkets; ibra++)
     {
       Ket3& bra = Tbc.GetKet(ibra);
+      int ea = 2*bra.op->n+bra.op->l;
+      int eb = 2*bra.oq->n+bra.oq->l;
+      int ec = 2*bra.oR->n+bra.oR->l;
+      int tza = bra.op->tz2;
+      int tzb = bra.oq->tz2;
+      int tzc = bra.oR->tz2;
       double na = bra.op->occ;
       double nb = bra.oq->occ;
       double nc = bra.oR->occ;
       double abc_symm = 6;
       if (bra.p==bra.q and bra.q==bra.r) abc_symm = 1;
       else if (bra.p==bra.q or bra.q==bra.r) abc_symm = 3;
+      if ( (std::abs( ea-e_fermi[tza]) + std::abs(eb-e_fermi[tzb]) + std::abs(ec-e_fermi[tzc])) > Z.modelspace->GetdE3max() ) continue;
 //      for (size_t iket=0;iket<nkets; iket++)
 //      for (size_t iket=ibra;iket<nkets; iket++)
       for (size_t iket=0;iket<ibra; iket++)  // dont need iket=ibra because the commutator will be zero
@@ -1790,6 +1799,13 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
         double nd = ket.op->occ;
         double ne = ket.oq->occ;
         double nf = ket.oR->occ;
+        int ed = 2*ket.op->n+ket.op->l;
+        int ee = 2*ket.oq->n+ket.oq->l;
+        int ef = 2*ket.oR->n+ket.oR->l;
+        int tzd = ket.op->tz2;
+        int tze = ket.oq->tz2;
+        int tzf = ket.oR->tz2;
+        if ( (std::abs( ed-e_fermi[tzd]) + std::abs(ee-e_fermi[tze]) + std::abs(ef-e_fermi[tzf])) > Z.modelspace->GetdE3max() ) continue;
         // account for the iket>ibra case, which we don't do explicitly
         double occfactor = na*nb*nc*(1-nd)*(1-ne)*(1-nf) - (1-na)*(1-nb)*(1-nc)*nd*ne*nf  ;
         if (std::abs(occfactor)<1e-6) continue;
@@ -1833,6 +1849,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y3 = Y.ThreeBody;
   auto& Z1 = Z.OneBody;
   int herm = Z.IsAntiHermitian() ? -1 : 1 ;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
   size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
   size_t norb = Z.modelspace->GetNumberOrbits();
@@ -1840,10 +1857,15 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
   for (size_t i=0; i<norb; i++)
   {
     Orbit& oi = Z.modelspace->GetOrbit(i);
+    int ei = 2*oi.n + oi.l;
+    int tzi = oi.tz2;
     for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
       if (j>i) continue;
       double zij=0;
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+      int ej = 2*oj.n + oj.l;
+      int tzj = oj.tz2;
 
       for (size_t ch_ab=0; ch_ab<nch2; ch_ab++)
       {
@@ -1859,6 +1881,12 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
            size_t a = ket_ab.p;
            size_t b = ket_ab.q;
            if (std::abs( ket_ab.op->occ * ket_ab.oq->occ )<1e-6 ) continue;
+           int ea = 2*ket_ab.op->n + ket_ab.op->l;
+           int eb = 2*ket_ab.oq->n + ket_ab.oq->l;
+           int tza = ket_ab.op->tz2;
+           int tzb = ket_ab.oq->tz2;
+           if ( (std::abs( ea-e_fermi[tza]) + std::abs(eb-e_fermi[tzb]) + std::abs(ei-e_fermi[tzi])) > Z.modelspace->GetdE3max() ) continue;
+           if ( (std::abs( ea-e_fermi[tza]) + std::abs(eb-e_fermi[tzb]) + std::abs(ej-e_fermi[tzj])) > Z.modelspace->GetdE3max() ) continue;
 
            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
            {
@@ -1880,6 +1908,13 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
                 size_t c = ket_cde.p;
                 size_t d = ket_cde.q;
                 size_t e = ket_cde.r;
+                int ec = 2*ket_cde.op->n + ket_cde.op->l;
+                int ed = 2*ket_cde.oq->n + ket_cde.oq->l;
+                int ee = 2*ket_cde.oR->n + ket_cde.oR->l;
+                int tzc = ket_cde.op->tz2;
+                int tzd = ket_cde.oq->tz2;
+                int tze = ket_cde.oR->tz2;
+                if ( (std::abs( ec-e_fermi[tzc]) + std::abs(ed-e_fermi[tzd]) + std::abs(ee-e_fermi[tze])) > Z.modelspace->GetdE3max() ) continue;
                 double cde_symmetry_factor = 6;
                 if (c==d and d==e) cde_symmetry_factor = 1;
                 else if (c==d or d==e) cde_symmetry_factor = 3;
@@ -1925,6 +1960,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y2 = Y.TwoBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z1 = Z.OneBody;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
   int norb = Z.modelspace->GetNumberOrbits();
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
@@ -1932,11 +1968,13 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
   {
     Orbit& oi = Z.modelspace->GetOrbit(i);
     int ei = 2*oi.n + oi.l;
+    double d_ei = std::abs( ei - e_fermi[oi.tz2]);
     for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
       if (j>i) continue;
       Orbit& oj = Z.modelspace->GetOrbit(j);
       int ej = 2*oj.n + oj.l;
+      double d_ej = std::abs( ej - e_fermi[oj.tz2] );
       double zij=0;
       for (int ch=0; ch<nch; ch++)
       {
@@ -1950,7 +1988,10 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
           int b = bra.q;
           int ea = 2*bra.op->n + bra.op->l;
           int eb = 2*bra.oq->n + bra.oq->l;
+          double d_ea = std::abs( ea - e_fermi[bra.op->tz2]);
+          double d_eb = std::abs( eb - e_fermi[bra.oq->tz2]);
           if (  (ea+eb+std::min(ei,ej))> Z.modelspace->E3max )  continue;
+          if (  (d_ea+d_eb+std::min(d_ei,d_ej))> Z.modelspace->dE3max )  continue;
           double na = bra.op->occ;
           double nb = bra.oq->occ;
 //          for ( auto iket : tbc.KetIndex_pp )
@@ -1961,7 +2002,10 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
             int d = ket.q;
             int ec = 2*ket.op->n + ket.op->l;
             int ed = 2*ket.oq->n + ket.oq->l;
+            double d_ec = std::abs( ec - e_fermi[ket.op->tz2]);
+            double d_ed = std::abs( ec - e_fermi[ket.oq->tz2]);
             if (  (ec+ed+std::min(ei,ej))> Z.modelspace->E3max )  continue;
+            if (  (d_ec+d_ed+std::min(d_ei,d_ej))> Z.modelspace->dE3max )  continue;
             double nc = ket.op->occ;
             double nd = ket.oq->occ;
             double prefactor = na*nb*(1-nc)*(1-nd);
@@ -1980,12 +2024,14 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
               double yabicdj = 0;
               double xcdiabj = 0;
               double ycdiabj = 0;
-              if ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max)
+              if ( ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max )
+               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->E3max ) )
               {
                 xcdiabj = X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
                 ycdiabj = Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
               }
-              if ( std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max)
+              if ( (std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max )
+               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->E3max ) )
               {
                 xabicdj = X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
                 yabicdj = Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
@@ -1993,8 +2039,6 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
               zij += prefactor * (twoJ+1) * ( (Xabcd * ycdiabj - yabicdj * Xcdab)
                                            -  (Yabcd * xcdiabj - xabicdj * Ycdab) );
               
-//              zij += prefactor* (twoJ+1)* ( Xabcd * Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j) - Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j) * Xcdab
-//                                           -Yabcd * X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j) + X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j) * Ycdab );
             }
           }
         }
@@ -2023,6 +2067,7 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y2 = Y.TwoBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z1 = Z.OneBody;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
   int norb = Z.modelspace->GetNumberOrbits();
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
@@ -2030,11 +2075,13 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
   {
     Orbit& oi = Z.modelspace->GetOrbit(i);
     int ei = 2*oi.n + oi.l;
+    double d_ei = std::abs( ei - e_fermi[oi.tz2]);
     for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
       if (j>i) continue;
       Orbit& oj = Z.modelspace->GetOrbit(j);
       int ej = 2*oj.n + oj.l;
+      double d_ej = std::abs( ej - e_fermi[oj.tz2]);
       double zij=0;
 
       std::vector<std::array<size_t,2>> Xchannels;
@@ -2061,6 +2108,8 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
           int b = bra.q;
           int ea = 2*bra.op->n + bra.op->l;
           int eb = 2*bra.oq->n + bra.oq->l;
+          double d_ea = std::abs( ea - e_fermi[bra.op->tz2]);
+          double d_eb = std::abs( eb - e_fermi[bra.oq->tz2]);
           if (  (ea+eb+std::min(ei,ej))> Z.modelspace->E3max )  continue;
           double na = bra.op->occ;
           double nb = bra.oq->occ;
@@ -2072,6 +2121,8 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
             int d = ket.q;
             int ec = 2*ket.op->n + ket.op->l;
             int ed = 2*ket.oq->n + ket.oq->l;
+            double d_ec = std::abs( ec - e_fermi[ket.op->tz2]);
+            double d_ed = std::abs( ec - e_fermi[ket.oq->tz2]);
             if (  (ec+ed+std::min(ei,ej))> Z.modelspace->E3max )  continue;
             double nc = ket.op->occ;
             double nd = ket.oq->occ;
@@ -2091,12 +2142,14 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
               double yabicdj = 0;
               double xcdiabj = 0;
               double ycdiabj = 0;
-              if ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max)
+              if ( ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max )
+               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->E3max ) )
               {
 //                xcdiabj = X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
                 ycdiabj = Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
               }
-              if ( std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max)
+              if ( (std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max )
+               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->E3max ) )
               {
 //                xabicdj = X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
                 yabicdj = Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
@@ -2126,6 +2179,8 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
           int b = bra.q;
           int ea = 2*bra.op->n + bra.op->l;
           int eb = 2*bra.oq->n + bra.oq->l;
+          double d_ea = std::abs(ea - e_fermi[bra.op->tz2]);
+          double d_eb = std::abs(eb - e_fermi[bra.oq->tz2]);
           if (  (ea+eb+std::min(ei,ej))> Z.modelspace->E3max )  continue;
           double na = bra.op->occ;
           double nb = bra.oq->occ;
@@ -2137,6 +2192,8 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
             int d = ket.q;
             int ec = 2*ket.op->n + ket.op->l;
             int ed = 2*ket.oq->n + ket.oq->l;
+            double d_ec = std::abs(ec - e_fermi[ket.op->tz2]);
+            double d_ed = std::abs(ec - e_fermi[ket.oq->tz2]);
             if (  (ec+ed+std::min(ei,ej))> Z.modelspace->E3max )  continue;
             double nc = ket.op->occ;
             double nd = ket.oq->occ;
@@ -2156,12 +2213,14 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
               double yabicdj = 0;
               double xcdiabj = 0;
               double ycdiabj = 0;
-              if ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max)
+              if ( ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max )
+               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->E3max ) )
               {
                 xcdiabj = X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
 //                ycdiabj = Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
               }
-              if ( std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max)
+              if ( (std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max )
+               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->E3max ) )
               {
                 xabicdj = X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
 //                yabicdj = Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
@@ -2214,6 +2273,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y1 = Y.OneBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
   
   int norb = Z.modelspace->GetNumberOrbits();
   size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
@@ -2231,6 +2291,8 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
       int j = bra.q;
       int ei = 2*bra.op->n + bra.op->l;
       int ej = 2*bra.oq->n + bra.oq->l;
+      double d_ei = std::abs(ei - e_fermi[bra.op->tz2]);
+      double d_ej = std::abs(ej - e_fermi[bra.oq->tz2]);
       for (int iket=ibra;iket<nkets;iket++ ) // |kl> states
       {
         Ket& ket = tbc.GetKet(iket);
@@ -2238,12 +2300,16 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
         int l = ket.q;
         int ek = 2*ket.op->n + ket.op->l;
         int el = 2*ket.oq->n + ket.oq->l;
+        double d_ek = std::abs( ek - e_fermi[ket.op->tz2]);
+        double d_el = std::abs( el - e_fermi[ket.oq->tz2]);
         double zijkl = 0;
         for (int a=0;a<norb;a++)
         {
           Orbit& oa = Z.modelspace->GetOrbit(a);
           int ea = 2*oa.n + oa.l;
+          double d_ea = std::abs( ea - e_fermi[oa.tz2]);
           if ( (ek+el+ea)>Z.modelspace->E3max) continue;
+          if ( (d_ek+d_el+d_ea)>Z.modelspace->dE3max) continue;
           // this is less efficient than doing the loop twice, but less code
           // and easily lets us treat the case of Y having nonzero Tz or odd parity
           std::set<size_t> blist;
@@ -2254,7 +2320,9 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
           {
             Orbit& ob = Z.modelspace->GetOrbit(b);
             int eb = 2*ob.n + ob.l;
+            double d_eb = std::abs( eb - e_fermi[ob.tz2]);
             if ( (ei+ej+eb)>Z.modelspace->E3max) continue;
+            if ( (d_ei+d_ej+d_eb)>Z.modelspace->dE3max) continue;
             double occfactor = oa.occ - ob.occ;
             if (std::abs(occfactor)<1e-6) continue;
             int twoJ_min = std::abs( oa.j2 - 2*J );
@@ -2796,6 +2864,7 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
 
   int hX = X.IsHermitian() ? 1 : -1;
   int hY = Y.IsHermitian() ? 1 : -1;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
   
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
@@ -2826,6 +2895,10 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
         size_t c = ket_abc.r;
         double occ_abc = ket_abc.op->occ * ket_abc.oq->occ * ket_abc.oR->occ;
         double occ_abc_bar = (1-ket_abc.op->occ) * (1-ket_abc.oq->occ) * (1-ket_abc.oR->occ);
+        double d_ea = std::abs( 2*ket_abc.op->n + ket_abc.op->l - e_fermi[ ket_abc.op->tz2]);
+        double d_eb = std::abs( 2*ket_abc.oq->n + ket_abc.oq->l - e_fermi[ ket_abc.oq->tz2]);
+        double d_ec = std::abs( 2*ket_abc.oR->n + ket_abc.oR->l - e_fermi[ ket_abc.oR->tz2]);
+        if ( (d_ea+d_eb+d_ec)>Z.modelspace->dE3max) continue;
         if ( (std::abs(occ_abc)==0) and (std::abs(occ_abc_bar)==0) ) continue;
         int Jab = ket_abc.Jpq;
 
@@ -2839,6 +2912,7 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
         {
           Orbit& od = Z.modelspace->GetOrbit(d);
           double nd = od.occ;
+          double d_ed = std::abs( 2*od.n + od.l - e_fermi[od.tz2]);
           double occfactor = occ_abc*(1-nd) - occ_abc_bar*nd ;
           if (std::abs(occfactor)<1e-6) continue;
           if ( (std::abs( 2*J-od.j2) > twoJ) or (2*J+od.j2)<twoJ ) continue;
@@ -2875,12 +2949,17 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
       size_t b = ket_abc.q;
       size_t c = ket_abc.r;
       size_t d = d_list[index_abcd];
+      Orbit& od = Z.modelspace->GetOrbit(d);
+      double d_ed = std::abs(2*od.n + od.l - e_fermi[od.tz2]);
 
       for (int ibra=0; ibra<nkets; ibra++)
       {
         Ket& bra = tbc.GetKet(ibra);
         int i = bra.p;
         int j = bra.q;
+        double d_ei = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
+        double d_ej = std::abs( 2*bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
+        if ( (d_ei+d_ej+d_ed)>Z.modelspace->dE3max) continue;
         double norm2b = (i==j) ? 1./sqrt(2) : 1;
 
         XMAT(ibra,index_abcd) = norm2b * X3.GetME_pn(J,Jab,twoJ, i,j,d,a,b,c);
@@ -3006,7 +3085,7 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
 //
 //        Tested with UnitTest and passed.                                                               
 //        TODO: It may be worth writing the 9Js as sums over 6js to pull stuff out of the innermost loops
-//
+//               this will likely correspond to calculating the Pandya-transformed Z
 //
 void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 {
@@ -3014,6 +3093,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
   
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -3053,8 +3133,8 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
             Ket& ket_ab = tbc_ab.GetKet(iket_ab);
             int a = ket_ab.p;
             int b = ket_ab.q;
-            int na = ket_ab.op->occ;
-            int nb = ket_ab.oq->occ;
+            double na = ket_ab.op->occ;
+            double nb = ket_ab.oq->occ;
 //            double ja = 0.5*ket_ab.op->j2;
 //            double jb = 0.5*ket_ab.oq->j2;
 //            if (na*nb<1e-6) continue;
@@ -3068,12 +3148,13 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                 Ket& ket_cd = tbc_cd.GetKet(iket_cd);
                 int c = ket_cd.p;
                 int d = ket_cd.q;
-                int nc = ket_cd.op->occ;
-                int nd = ket_cd.oq->occ;
+                double nc = ket_cd.op->occ;
+                double nd = ket_cd.oq->occ;
 //                double jc = 0.5*ket_cd.op->j2;
 //                double jd = 0.5*ket_cd.oq->j2;
                 double occupation_factor = (1-na)*(1-nb)*nc*nd - na*nb*(1-nc)*(1-nd);
                 if (std::abs(occupation_factor)<1e-6) continue;
+
 
                 double symmetry_factor = 1;  // we only sum a<=b and c<=d, so we undercount by a factor of 4, canceling the 1/4 in the formula 
                 if (a==b) symmetry_factor *= 0.5; // if a==b or c==d, then the permutation doesn't give a new state, so there's less undercounting
@@ -3189,13 +3270,10 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     for (size_t iket=0; iket<nkets; iket++)
     {
       Ket3& ket = Tbc.GetKet(iket);
-      int ei = 2*ket.op->n + ket.op->l;
-      int ej = 2*ket.oq->n + ket.oq->l;
-      int ek = 2*ket.oR->n + ket.oR->l;
-      int tz2i = ket.op->tz2;
-      int tz2j = ket.oq->tz2;
-      int tz2k = ket.oR->tz2;
-      if (  ( std::abs(ei - e_fermi[tz2i]) + std::abs(ej-e_fermi[tz2j]) + std::abs(ek-e_fermi[tz2k])) > Z.modelspace->GetdE3max() ) continue;
+      double d_ei = std::abs(2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
+      double d_ej = std::abs(2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
+      double d_ek = std::abs(2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
+      if (  (d_ei+d_ej+d_ek ) > Z.modelspace->GetdE3max() ) continue;
       kets_kept.push_back( iket );
       kept_lookup[iket] = kets_kept.size()-1;
     }
@@ -3421,7 +3499,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y2 = Y.TwoBody;
   if ( (std::abs( X2.Norm() * Y2.Norm() ) < 1e-6 ) and not Z.modelspace->scalar3b_transform_first_pass) return;
 
-  std::map<int,double> efermi = Z.modelspace->GetEFermi();
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
   // we loop over i, j<=i, k<=j    l<=i, m<=l, n<=m, and Jij, Jmn free unless  ijk == lmn, then we take Jmn <= Jij.
 
 //  std::vector< std::map<std::array<size_t,2>,size_t>::iterator> channel_iterators;
@@ -3457,7 +3535,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       int ei = 2*oi.n + oi.l;
       int ej = 2*oj.n + oj.l;
       int ek = 2*ok.n + ok.l;
-      if ( (std::abs(ei-efermi[oi.tz2]) + std::abs(ej-efermi[oj.tz2]) + std::abs(ek-efermi[ok.tz2])) > Z.modelspace->GetdE3max() ) continue;
+      if ( (std::abs(ei-e_fermi[oi.tz2]) + std::abs(ej-e_fermi[oj.tz2]) + std::abs(ek-e_fermi[ok.tz2])) > Z.modelspace->GetdE3max() ) continue;
       double ji = 0.5*oi.j2;
       double jj = 0.5*oj.j2;
       double jk = 0.5*ok.j2;
@@ -3477,7 +3555,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         int el = 2*ol.n + ol.l;
         int em = 2*om.n + om.l;
         int en = 2*on.n + on.l;
-        if ( (std::abs(el-efermi[ol.tz2]) + std::abs(em-efermi[om.tz2]) + std::abs(en-efermi[on.tz2])) > Z.modelspace->GetdE3max() ) continue;
+        if ( (std::abs(el-e_fermi[ol.tz2]) + std::abs(em-e_fermi[om.tz2]) + std::abs(en-e_fermi[on.tz2])) > Z.modelspace->GetdE3max() ) continue;
         double jl = 0.5*ol.j2;
         double jm = 0.5*om.j2;
         double jn = 0.5*on.j2;
@@ -3727,7 +3805,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y2 = Y.TwoBody;
   if ( (std::abs( X2.Norm() * Y2.Norm() ) < 1e-6 ) and not Z.modelspace->scalar3b_transform_first_pass) return;
 
-  std::map<int,double> efermi = Z.modelspace->GetEFermi();
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
   // we loop over i, j<=i, k<=j    l<=i, m<=l, n<=m, and Jij, Jmn free unless  ijk == lmn, then we take Jmn <= Jij.
 
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
@@ -3750,7 +3828,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       int ei = 2*oi.n + oi.l;
       int ej = 2*oj.n + oj.l;
       int ek = 2*ok.n + ok.l;
-      if ( (std::abs(ei-efermi[oi.tz2]) + std::abs(ej-efermi[oj.tz2]) + std::abs(ek-efermi[ok.tz2])) > Z.modelspace->GetdE3max() ) continue;
+      if ( (std::abs(ei-e_fermi[oi.tz2]) + std::abs(ej-e_fermi[oj.tz2]) + std::abs(ek-e_fermi[ok.tz2])) > Z.modelspace->GetdE3max() ) continue;
       double ji = 0.5*oi.j2;
       double jj = 0.5*oj.j2;
       double jk = 0.5*ok.j2;
@@ -3767,7 +3845,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         int el = 2*ol.n + ol.l;
         int em = 2*om.n + om.l;
         int en = 2*on.n + on.l;
-        if ( (std::abs(el-efermi[ol.tz2]) + std::abs(em-efermi[om.tz2]) + std::abs(en-efermi[on.tz2])) > Z.modelspace->GetdE3max() ) continue;
+        if ( (std::abs(el-e_fermi[ol.tz2]) + std::abs(em-e_fermi[om.tz2]) + std::abs(en-e_fermi[on.tz2])) > Z.modelspace->GetdE3max() ) continue;
         double jl = 0.5*ol.j2;
         double jm = 0.5*om.j2;
         double jn = 0.5*on.j2;
@@ -4017,6 +4095,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 //                                                           
 //      Checked with UnitTest and passed                                                                      
 //
+// TODO This can be recast as a mat mult. Right now, it's very slow.
 void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
@@ -4026,6 +4105,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z3 = Z.ThreeBody;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
   size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
@@ -4049,6 +4129,10 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
       double ji = 0.5*oi.j2;
       double jj = 0.5*oj.j2;
       double jk = 0.5*ok.j2;
+      double d_ei = std::abs( 2*oi.n + oi.l - e_fermi[oi.tz2]);
+      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+      double d_ek = std::abs( 2*ok.n + ok.l - e_fermi[ok.tz2]);
+      if ( (d_ei + d_ej + d_ek) > Z.modelspace->dE3max ) continue;
       for (size_t iket=0; iket<=ibra; iket++)
       {
         auto& ket = Tbc.GetKet(iket);
@@ -4062,6 +4146,10 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
         double jl = 0.5*ol.j2;
         double jm = 0.5*om.j2;
         double jn = 0.5*on.j2;
+        double d_el = std::abs( 2*ol.n + ol.l - e_fermi[ol.tz2]);
+        double d_em = std::abs( 2*om.n + om.l - e_fermi[om.tz2]);
+        double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
+        if ( (d_el + d_em + d_en) > Z.modelspace->dE3max ) continue;
 
         double z_ijklmn = 0;
 
@@ -4078,6 +4166,9 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               auto& ket_ab = tbc_ab.GetKet(iket_ab);
               size_t a = ket_ab.p;
               size_t b = ket_ab.q;
+              double d_ea = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+              double d_eb = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+              if ( (d_ea + d_eb + d_ek) > Z.modelspace->dE3max ) continue;
               double occfactor = 1-ket_ab.op->occ-ket_ab.oq->occ;
               if (std::abs(occfactor)<1e-6) continue;
               double symm_factor =  (a==b) ? 1.0 : 2.0;
@@ -4103,6 +4194,9 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                 auto& ket_ab = tbc_ab.GetKet(iket_ab);
                 size_t a = ket_ab.p;
                 size_t b = ket_ab.q;
+                double d_ea = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+                double d_eb = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+                if ( (d_ea + d_eb + d_ei) > Z.modelspace->dE3max ) continue;
                 double occfactor = 1-ket_ab.op->occ-ket_ab.oq->occ;
                 if (std::abs(occfactor)<1e-6) continue;
                 double symm_factor =  (a==b) ? 1.0 : 2.0;
@@ -4129,6 +4223,9 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                  auto& ket_ab = tbc_ab.GetKet(iket_ab);
                  size_t a = ket_ab.p;
                  size_t b = ket_ab.q;
+                 double d_ea = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+                 double d_eb = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+                 if ( (d_ea + d_eb + d_ej) > Z.modelspace->dE3max ) continue;
                  double occfactor = 1-ket_ab.op->occ-ket_ab.oq->occ;
                  if (std::abs(occfactor)<1e-6) continue;
                  double symm_factor =  (a==b) ? 1.0 : 2.0;
@@ -4149,6 +4246,9 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               auto& ket_ab = tbc_ab.GetKet(iket_ab);
               size_t a = ket_ab.p;
               size_t b = ket_ab.q;
+              double d_ea = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+              double d_eb = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+              if ( (d_ea + d_eb + d_en) > Z.modelspace->dE3max ) continue;
               double occfactor = 1-ket_ab.op->occ-ket_ab.oq->occ;
               if (std::abs(occfactor)<1e-6) continue;
               double symm_factor =  (a==b) ? 1.0 : 2.0;
@@ -4174,6 +4274,9 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                  auto& ket_ab = tbc_ab.GetKet(iket_ab);
                  size_t a = ket_ab.p;
                  size_t b = ket_ab.q;
+                 double d_ea = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+                 double d_eb = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+                 if ( (d_ea + d_eb + d_el) > Z.modelspace->dE3max ) continue;
                  double occfactor = 1-ket_ab.op->occ-ket_ab.oq->occ;
                  if (std::abs(occfactor)<1e-6) continue;
                  double symm_factor =  (a==b) ? 1.0 : 2.0;
@@ -4201,6 +4304,9 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                 auto& ket_ab = tbc_ab.GetKet(iket_ab);
                 size_t a = ket_ab.p;
                 size_t b = ket_ab.q;
+                double d_ea = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+                double d_eb = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+                if ( (d_ea + d_eb + d_em) > Z.modelspace->dE3max ) continue;
                 double occfactor = 1-ket_ab.op->occ-ket_ab.oq->occ;
                 if (std::abs(occfactor)<1e-6) continue;
                 double symm_factor =  (a==b) ? 1.0 : 2.0;
@@ -4247,7 +4353,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 //      Checked with UnitTest and passed                                                                      
 //                                                                           
 //  This is very very slow. One way forward may be breaking the 9js into 6js, but it will still be painful.
-//
+//  TODO: Go through and implement the dE3max cut for the interal 3-body terms rather than just on Z
 void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
@@ -4257,6 +4363,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z3 = Z.ThreeBody;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
 
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
@@ -4279,6 +4386,10 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
       double ji = 0.5 * oi.j2;
       double jj = 0.5 * oj.j2;
       double jk = 0.5 * ok.j2;
+      double d_ei = std::abs( 2*oi.n + oi.l - e_fermi[oi.tz2]);
+      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+      double d_ek = std::abs( 2*ok.n + ok.l - e_fermi[ok.tz2]);
+      if ( (d_ei + d_ej + d_ek) > Z.modelspace->dE3max ) continue;
       int J1 = bra.Jpq;
       for (size_t iket=ibra; iket<nkets3; iket++)
       {
@@ -4292,6 +4403,10 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
         double jl = 0.5 * ol.j2;
         double jm = 0.5 * om.j2;
         double jn = 0.5 * on.j2;
+        double d_el = std::abs( 2*ol.n + ol.l - e_fermi[ol.tz2]);
+        double d_em = std::abs( 2*om.n + om.l - e_fermi[om.tz2]);
+        double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
+        if ( (d_el + d_em + d_en) > Z.modelspace->dE3max ) continue;
         int J2 = ket.Jpq;
 
         double z_ijklmn = 0;
@@ -4656,6 +4771,7 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Z3 = Z.ThreeBody;
   int hX = X.IsHermitian() ? 1 : -1;
   int hY = Y.IsHermitian() ? 1 : -1;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
   #pragma omp parallel for schedule(dynamic,1)
@@ -4674,6 +4790,10 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
        double nc = ket_abc.oR->occ;
        double occ_factor = na*nb*nc - (1-na)*(1-nb)*(1-nc);
        if (std::abs(occ_factor)<1e-6) continue;
+       double d_ea = std::abs( 2*ket_abc.op->n + ket_abc.op->l - e_fermi[ket_abc.op->tz2]);
+       double d_eb = std::abs( 2*ket_abc.oq->n + ket_abc.oq->l - e_fermi[ket_abc.oq->tz2]);
+       double d_ec = std::abs( 2*ket_abc.oR->n + ket_abc.oR->l - e_fermi[ket_abc.oR->tz2]);
+       if ( (d_ea + d_eb + d_ec) > Z.modelspace->GetdE3max() ) continue;
        double symm_factor = 1;
        if ( (ket_abc.p == ket_abc.q ) and (ket_abc.p == ket_abc.r) )
           symm_factor = 1./6;
@@ -4684,6 +4804,17 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
        abc_factors.push_back( occ_factor * symm_factor );
     }// for iket_abc
 
+    std::vector<size_t> bras_kept;
+    for (size_t ibra=0; ibra<nkets3; ibra++)
+    {
+      Ket3& bra = Tbc.GetKet(ibra);
+      double d_ei = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
+      double d_ej = std::abs( 2*bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
+      double d_ek = std::abs( 2*bra.oR->n + bra.oR->l - e_fermi[bra.oR->tz2]);
+      if ( (d_ei + d_ej + d_ek) > Z.modelspace->GetdE3max() ) continue;
+      bras_kept.push_back( ibra );
+    }
+
     size_t dim_abc = abc_kets.size();
     arma::mat XMAT(nkets3,dim_abc,arma::fill::zeros);
     arma::mat YMAT(nkets3,dim_abc,arma::fill::zeros);
@@ -4691,7 +4822,8 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
     {
       size_t iket_abc = abc_kets[index_abc];
       double factor = abc_factors[index_abc];
-      for (size_t ibra=0; ibra<nkets3; ibra++)
+//      for (size_t ibra=0; ibra<nkets3; ibra++)
+      for (size_t ibra : bras_kept )
       {
          double xijkabc = X3.GetME_pn_PN_ch( ch3,ch3, ibra, iket_abc);
          double yijkabc = Y3.GetME_pn_PN_ch( ch3,ch3, ibra, iket_abc);
@@ -4706,10 +4838,13 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
     arma::mat ZMAT = hY * XMAT * YMAT.t() - hX*(YMAT * XMAT.t());
 
     // Store the results
-    for (size_t ibra=0; ibra<nkets3; ibra++)
+//    for (size_t ibra=0; ibra<nkets3; ibra++)
+    for (size_t ibra : bras_kept )
     {
-      for (size_t iket=ibra; iket<nkets3; iket++)
+//      for (size_t iket=ibra; iket<nkets3; iket++)
+      for (size_t iket : bras_kept )
       {
+        if ( iket < ibra ) continue;
         Z3.AddToME_pn_PN_ch( ch3, ch3, ibra,iket, ZMAT(ibra,iket) );
         
       }// for iket
@@ -4791,6 +4926,7 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
 //                    
 //                    
 //  Checked with UnitTest and passed
+// TODO: Go back and implement the dE3max cut on the internal terms as well
 // 
 void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z ) 
 {
@@ -4800,6 +4936,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z3 = Z.ThreeBody;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
   size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
@@ -4823,6 +4960,10 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
       double ji = 0.5 * oi.j2;
       double jj = 0.5 * oj.j2;
       double jk = 0.5 * ok.j2;
+      double d_ei = std::abs( 2*oi.n + oi.l - e_fermi[oi.tz2]);
+      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+      double d_ek = std::abs( 2*ok.n + ok.l - e_fermi[ok.tz2]);
+      if ( (d_ei + d_ej + d_ek) > Z.modelspace->dE3max ) continue;
       int J1 = bra.Jpq;
 //      for (size_t iket=ibra; iket<nkets3; iket++)
       for (size_t iket=0; iket<=ibra; iket++)
@@ -4837,6 +4978,10 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
         double jl = 0.5 * ol.j2;
         double jm = 0.5 * om.j2;
         double jn = 0.5 * on.j2;
+        double d_el = std::abs( 2*ol.n + ol.l - e_fermi[ol.tz2]);
+        double d_em = std::abs( 2*om.n + om.l - e_fermi[om.tz2]);
+        double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
+        if ( (d_el + d_em + d_en) > Z.modelspace->dE3max ) continue;
         int J2 = ket.Jpq;
 
 //              if ( not ((i==2 and j==4 and k==5 and l==4 and m==4 and n==5) 
@@ -5251,6 +5396,9 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
+
+
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////////
