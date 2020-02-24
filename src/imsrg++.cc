@@ -85,17 +85,18 @@ int main(int argc, char** argv)
   std::string denominator_delta_orbit = parameters.s("denominator_delta_orbit");
   std::string LECs = parameters.s("LECs");
   std::string scratch = parameters.s("scratch");
-  std::string use_brueckner_bch = parameters.s("use_brueckner_bch");
   std::string valence_file_format = parameters.s("valence_file_format");
   std::string occ_file = parameters.s("occ_file");
-  std::string goose_tank = parameters.s("goose_tank");
-  std::string write_omega = parameters.s("write_omega");
-  std::string nucleon_mass_correction = parameters.s("nucleon_mass_correction");
-  std::string hunter_gatherer = parameters.s("hunter_gatherer");
-  std::string relativistic_correction = parameters.s("relativistic_correction");
-  std::string IMSRG3 = parameters.s("IMSRG3");
   std::string physical_system = parameters.s("physical_system");
-  std::string freeze_occupations = parameters.s("freeze_occupations");
+  bool use_brueckner_bch = parameters.s("use_brueckner_bch") == "true";
+  bool nucleon_mass_correction = parameters.s("nucleon_mass_correction") == "true";
+  bool relativistic_correction = parameters.s("relativistic_correction") == "true";
+  bool IMSRG3 = parameters.s("IMSRG3") == "true";
+  bool write_omega = parameters.s("write_omega") == "true";
+  bool freeze_occupations = parameters.s("freeze_occupations")=="true";
+  bool hunter_gatherer = parameters.s("hunter_gatherer") == "true";
+  bool goose_tank = parameters.s("goose_tank") == "true";
+  bool discard_residual_input3N = parameters.s("discard_residual_input3N")=="true";
   bool use_NAT_occupations = (parameters.s("use_NAT_occupations")=="true") ? true : false;
   bool store_3bme_pn = (parameters.s("store_3bme_pn")=="true");
 
@@ -299,7 +300,7 @@ int main(int argc, char** argv)
   Hbare.SetHermitian();
 
 
-  if ( goose_tank == "true" or goose_tank == "True")
+  if ( goose_tank )
   {
 //    Hbare.SetUseGooseTank(true);
     Commutator::SetUseGooseTank(true);
@@ -374,11 +375,11 @@ int main(int argc, char** argv)
   }
 
 
-  if ( nucleon_mass_correction == "true" or nucleon_mass_correction == "True" )
+  if ( nucleon_mass_correction)
   {  // correction to kinetic energy because M_proton != M_neutron
     Hbare += imsrg_util::Trel_Masscorrection_Op(modelspace);
   }
-  if ( relativistic_correction == "true" or relativistic_correction == "True" )
+  if ( relativistic_correction)
   {
     Hbare += imsrg_util::KineticEnergy_RelativisticCorr(modelspace);
   }
@@ -420,13 +421,14 @@ int main(int argc, char** argv)
 //  HartreeFock hf(Hbare);
   HFMBPT hf(Hbare); // HFMBPT inherits from HartreeFock, so no harm done here.
 
-  if (freeze_occupations == "false" )  hf.UnFreezeOccupations();
+  if (not freeze_occupations )  hf.UnFreezeOccupations();
   std::cout << "Solving" << std::endl;
 //  if (basis=="HF")
   hf.Solve();
 
   int hno_particle_rank = 2;
-  if ((IMSRG3=="true") and (Hbare.ThreeBodyNorm() > 1e-5))  hno_particle_rank = 3;
+  if ((IMSRG3) and (Hbare.ThreeBodyNorm() > 1e-5))  hno_particle_rank = 3;
+  if (discard_residual_input3N) hno_particle_rank = 2;
 //  Operator HNO;
   Operator& HNO = Hbare;
   if (basis == "HF" and method !="HF")
@@ -465,7 +467,7 @@ int main(int argc, char** argv)
   }
 
 
-  if (IMSRG3 == "true")
+  if (IMSRG3)
   {
     modelspace.SetdE3max(dE3max);
     std::cout << "You have chosen IMSRG3. good luck..." << std::endl;
@@ -653,7 +655,7 @@ int main(int argc, char** argv)
   imsrgsolver.SetEtaCriterion(eta_criterion);
   imsrgsolver.max_omega_written = 500;
   bool brueckner_restart = false;
-  if (hunter_gatherer=="true") imsrgsolver.SetHunterGatherer( true);
+  if (hunter_gatherer) imsrgsolver.SetHunterGatherer( true);
 
   if (method == "NSmagnus") // "No split" magnus
   {
@@ -668,19 +670,19 @@ int main(int argc, char** argv)
        nsteps = 1;
        core_generator = valence_generator;
     }
-    use_brueckner_bch = "true";
+    use_brueckner_bch = true;
     omega_norm_max=500;
     method = "magnus";
   }
 
-  if (use_brueckner_bch == "true" or use_brueckner_bch == "True")
+  if (use_brueckner_bch)
   {
 //    Hbare.SetUseBruecknerBCH(true);
 //    HNO.SetUseBruecknerBCH(true);
     Commutator::SetUseBruecknerBCH(true);
     std::cout << "Using Brueckner flavor of BCH" << std::endl;
   }
-  if (IMSRG3 == "true")
+  if (IMSRG3)
   {
     Commutator::SetUseIMSRG3(true);
     std::cout << "Using IMSRG(3) commutators. This will probably be slow..." << std::endl;
@@ -719,7 +721,7 @@ int main(int argc, char** argv)
 
   imsrgsolver.Solve();
 
-  if (IMSRG3 == "true")
+  if (IMSRG3)
   {
     std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
   }
@@ -829,7 +831,7 @@ int main(int argc, char** argv)
     std::cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
     std::cout << "Before doing so, the spes are " << std::endl;
     for ( auto i : modelspace.all_orbits ) std::cout << "  " << i << " : " << HNO.OneBody(i,i) << std::endl;
-    if (IMSRG3=="true")
+    if (IMSRG3)
     {
       std::cout << "Re-normal-ordering wrt the core. For now, we just throw away the 3N at this step." << std::endl;
       HNO.SetNumberLegs(4);
@@ -944,14 +946,14 @@ int main(int argc, char** argv)
 
 
 //  std::cout << "Made it here and write_omega is " << write_omega << std::endl;
-  if (write_omega == "true" or write_omega == "True")
+  if (write_omega)
   {
     std::cout << "writing Omega to " << intfile << "_omega.op" << std::endl;
     rw.WriteOperatorHuman(imsrgsolver.Omega.back(),intfile+"_omega.op");
   }
 
 
-  if (IMSRG3 == "true")
+  if (IMSRG3)
   {
     std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
   }
