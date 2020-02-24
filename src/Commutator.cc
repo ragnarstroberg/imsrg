@@ -2396,7 +2396,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
 
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   for (int ch=0; ch<nch; ch++)
   {
     auto& tbc = Z.modelspace->GetTwoBodyChannel(ch);
@@ -2442,8 +2442,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
     size_t nij = ij_orbits.size();
     size_t njvals = j_jvals.size();
 
-//    Z.profiler.timer["comm232_block1"] += omp_get_wtime() - tstart;
-//    tstart = omp_get_wtime();
+    Z.profiler.timer["comm232_block1"] += omp_get_wtime() - tstart;
+    tstart = omp_get_wtime();
 
     // next, we make a list of the abc' combinations that will inter into the sum
     std::vector<size_t> ch_ab_list;
@@ -2490,8 +2490,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket_ab
     } // for ch_ab
 
-//    Z.profiler.timer["comm232_block2"] += omp_get_wtime() - tstart;
-//    tstart = omp_get_wtime();
+    Z.profiler.timer["comm232_block2"] += omp_get_wtime() - tstart;
+    tstart = omp_get_wtime();
 
     // allocate the matrices
     size_t n_abc = ch_ab_list.size();
@@ -2504,6 +2504,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
 
     // Now fill the X2 mat and Y3 mat
+  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
     for ( size_t ind_i=0; ind_i<nij; ind_i++ )
     {
       size_t i = ij_orbits[ind_i];
@@ -2590,18 +2591,19 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
           
     } // for ind_i
 
-//    Z.profiler.timer["comm232_block3"] += omp_get_wtime() - tstart;
-//    tstart = omp_get_wtime();
+    Z.profiler.timer["comm232_block3"] += omp_get_wtime() - tstart;
+    tstart = omp_get_wtime();
  /// now we're back out to the ch loop level.
 
     // finally do the matrix multiplication
     arma::mat ZMat =  -sqrt(1./(2*J+1)) * (  X2MAT * Y3MAT - Y2MAT * X3MAT  ) ;
 
 
-//    Z.profiler.timer["comm232_block4"] += omp_get_wtime() - tstart;
-//    tstart = omp_get_wtime();
+    Z.profiler.timer["comm232_block4"] += omp_get_wtime() - tstart;
+    tstart = omp_get_wtime();
 
     // now convert back from <i|Z|klj'> to <ij|Z|kl>
+  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
     for (int ibra=0; ibra<nkets; ibra++)
     {
       Ket& bra = tbc.GetKet(ibra);
@@ -2615,7 +2617,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       size_t ind_j = ij_orbits_lookup[j];
       size_t ind_ji = jvals_lookup[oi.j2];
       size_t ind_jj = jvals_lookup[oj.j2];
-
 
       for (int iket=ibra; iket<nkets; iket++)
       {
@@ -2646,7 +2647,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       }//for iket
     }//for ibra
 
-//    Z.profiler.timer["comm232_block5"] += omp_get_wtime() - tstart;
+    Z.profiler.timer["comm232_block5"] += omp_get_wtime() - tstart;
 
 
   }// for ch
