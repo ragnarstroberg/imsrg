@@ -1962,9 +1962,9 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Z1 = Z.OneBody;
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
-  int norb = Z.modelspace->GetNumberOrbits();
+  size_t norb = Z.modelspace->GetNumberOrbits();
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
-  for (int i=0; i<norb; i++)
+  for (size_t i=0; i<norb; i++)
   {
     Orbit& oi = Z.modelspace->GetOrbit(i);
     int ei = 2*oi.n + oi.l;
@@ -1981,7 +1981,8 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
         auto tbc = Z.modelspace->GetTwoBodyChannel(ch);
         int J = tbc.J;
         size_t nkets = tbc.GetNumberKets();
-        for ( auto ibra : tbc.KetIndex_hh )
+//        for ( auto ibra : tbc.KetIndex_hh )
+        for ( size_t ibra=0; ibra<nkets; ibra++ )
         {
           Ket& bra = tbc.GetKet(ibra);
           int a = bra.p;
@@ -1994,8 +1995,10 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
           if (  (d_ea+d_eb+std::min(d_ei,d_ej))> Z.modelspace->dE3max )  continue;
           double na = bra.op->occ;
           double nb = bra.oq->occ;
+          if ( (std::abs(na*nb) + std::abs( (1-na)*(1-nb))) < 1e-6 ) continue;
 //          for ( auto iket : tbc.KetIndex_pp )
-          for ( size_t iket=0; iket<nkets; iket++ )
+//          for ( size_t iket=0; iket<nkets; iket++ )
+          for ( size_t iket=0; iket<ibra; iket++ )
           {
             Ket& ket = tbc.GetKet(iket);
             int c = ket.p;
@@ -2008,7 +2011,8 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
             if (  (d_ec+d_ed+std::min(d_ei,d_ej))> Z.modelspace->dE3max )  continue;
             double nc = ket.op->occ;
             double nd = ket.oq->occ;
-            double prefactor = na*nb*(1-nc)*(1-nd);
+//            double prefactor = na*nb*(1-nc)*(1-nd);
+            double prefactor =  na*nb*(1-nc)*(1-nd) - (1-na)*(1-nb)*nc*nd;
             if ( std::abs(prefactor)<1e-8) continue;
             double Xabcd = X2.GetTBME(ch,bra,ket);
             double Yabcd = Y2.GetTBME(ch,bra,ket);
@@ -2038,7 +2042,6 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
               }
               zij += prefactor * (twoJ+1) * ( (Xabcd * ycdiabj - yabicdj * Xcdab)
                                            -  (Yabcd * xcdiabj - xabicdj * Ycdab) );
-              
             }
           }
         }
@@ -2069,9 +2072,9 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
   auto& Z1 = Z.OneBody;
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
-  int norb = Z.modelspace->GetNumberOrbits();
+  size_t norb = Z.modelspace->GetNumberOrbits();
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
-  for (int i=0; i<norb; i++)
+  for (size_t i=0; i<norb; i++)
   {
     Orbit& oi = Z.modelspace->GetOrbit(i);
     int ei = 2*oi.n + oi.l;
@@ -2101,7 +2104,8 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
         int J = tbc_bra.J;
         size_t nbras = tbc_bra.GetNumberKets();
         size_t nkets = tbc_ket.GetNumberKets();
-        for ( auto ibra : tbc_bra.KetIndex_hh )
+//        for ( auto ibra : tbc_bra.KetIndex_hh )
+        for ( size_t ibra=0; ibra<nbras; ibra++ )
         {
           Ket& bra = tbc_bra.GetKet(ibra);
           int a = bra.p;
@@ -2113,6 +2117,7 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
           if (  (ea+eb+std::min(ei,ej))> Z.modelspace->E3max )  continue;
           double na = bra.op->occ;
           double nb = bra.oq->occ;
+          if ( std::abs(na*nb)<1e-6) continue;
 //          for ( auto iket : tbc.KetIndex_pp )
           for ( size_t iket=0; iket<nkets; iket++ )
           {
@@ -2138,9 +2143,9 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
             int twoJ_max = 2*J + oi.j2;
             for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
             {
-              double xabicdj = 0;
+//              double xabicdj = 0;
               double yabicdj = 0;
-              double xcdiabj = 0;
+//              double xcdiabj = 0;
               double ycdiabj = 0;
               if ( ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max )
                and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->E3max ) )
@@ -2210,9 +2215,9 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
             for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
             {
               double xabicdj = 0;
-              double yabicdj = 0;
+//              double yabicdj = 0;
               double xcdiabj = 0;
-              double ycdiabj = 0;
+//              double ycdiabj = 0;
               if ( ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max )
                and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->E3max ) )
               {
