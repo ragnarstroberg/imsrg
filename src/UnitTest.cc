@@ -2036,8 +2036,10 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
   Z_J.Erase();
 
 
-//  Commutator::comm232ss( X, Y, Z_J);
-  Commutator::comm232ss_slow( X, Y, Z_J);
+  Commutator::comm232ss( X, Y, Z_J);
+//  Z_J.Erase();
+//  Commutator::comm232ss_debug( X, Y, Z_J);
+//  Commutator::comm232ss_slow( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
      Z_J.Symmetrize();
