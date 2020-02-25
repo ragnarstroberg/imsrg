@@ -166,7 +166,8 @@ bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 //   else
    if (not modelspace->single_species)
    {
-     if (std::abs(op->tz2 + oq->tz2) != 2*Tz) return false;
+//     if (std::abs(op->tz2 + oq->tz2) != 2*Tz) return false;
+     if (std::abs(op->tz2 - oq->tz2) != 2*Tz) return false;
    }
 
    return true;
