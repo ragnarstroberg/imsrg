@@ -2401,6 +2401,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
+//  std::cout << __func__ << " begin" << std::endl;
 
   // first, enumerate the one-body channels |i> => ji,parityi,tzi
   std::map<std::array<int,3>,std::vector<size_t>> local_one_body_channels; //  maps {j,parity,tz} => vector of index_i 
@@ -2418,6 +2419,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
   // next, figure out which three-body states |klj`> and |abc`> exist and make a list.
 
+//  std::cout << __func__ << " check1" << std::endl;
 
   std::map<std::array<int,3>,std::vector<std::array<size_t,4>>> klj_list; //  maps {j,parity,tz} => {kljJ}
   std::map<std::array<int,3>,arma::mat> ZMAT_list; //  maps {j,parity,tz} => matrix <i|Z|klj`>
@@ -2471,7 +2473,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
           {
             Orbit& oj = Z.modelspace->GetOrbit(j);
             double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
-            if ( (de_k + de_l + de_j) > Z.modelspace->GetdE3max() ) continue;
+//            if ( (de_k + de_l + de_j) > Z.modelspace->GetdE3max() ) continue;
             double nj = oj.occ;
 
             klj_list_i.push_back( { ket_kl.p, ket_kl.q, j, tbc_kl.J } );
@@ -2486,6 +2488,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
     ZMAT_list[obc_key] =  arma::mat(dim_i,dim_klj) ;
   }// for ikey
 
+//  std::cout << __func__ << " check2" << std::endl;
     Z.profiler.timer["comm232_block2.5"] += omp_get_wtime() - tstart;
     tstart = omp_get_wtime();
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -2539,10 +2542,16 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       size_t b = abcJ[1];
       size_t c = abcJ[2];
       int Jab  = abcJ[3];
+      Orbit& oa = Z.modelspace->GetOrbit(a);
+      Orbit& ob = Z.modelspace->GetOrbit(b);
       Orbit& oc = Z.modelspace->GetOrbit(c);
       int j2c = oc.j2;
       double jc = 0.5 * j2c;
       double occ_abc = abc_occ_list[ind_abc]; // TODO: we can probably incorporate that hat factor with the occupation factor
+
+        double de_a = std::abs( 2*oa.n + oa.l - e_fermi[oa.tz2]);
+        double de_b = std::abs( 2*ob.n + ob.l - e_fermi[ob.tz2]);
+        double de_c = std::abs( 2*oc.n + oc.l - e_fermi[oc.tz2]);
 
       // fill the 2 body part
       for (size_t ind_i=0; ind_i<dim_i; ind_i++)// ind_i indexes the list of sp states in this one body channel. columns of X2MAT
@@ -2571,6 +2580,12 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         double jj = 0.5 * oj.j2;
         double jk = 0.5 * ok.j2;
         double jl = 0.5 * ol.j2;
+
+        double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+        double de_k = std::abs( 2*ok.n + ok.l - e_fermi[ok.tz2]);
+        double de_l = std::abs( 2*ol.n + ol.l - e_fermi[ol.tz2]);
+        if ( (de_a + de_b + de_j) > Z.modelspace->GetdE3max() ) continue;
+        if ( (de_k + de_l + de_c) > Z.modelspace->GetdE3max() ) continue;
         
         int twoJp_min = std::max( std::abs(2*Jab - oj.j2), std::abs(2*Jkl-j2c));
         int twoJp_max = std::min( 2*Jab + oj.j2, 2*Jkl+j2c);
@@ -2609,6 +2624,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
   }// for iter_i in local one body channels
 
+//  std::cout << __func__ << " check3" << std::endl;
 
     Z.profiler.timer["comm232_block3"] += omp_get_wtime() - tstart;
     tstart = omp_get_wtime();
@@ -2617,21 +2633,27 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   for ( size_t ch=0; ch<nch; ch++)
   {
+//    std::cout << "  ch = " << ch << std::endl;
     TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
     size_t nkets = tbc.GetNumberKets();
     size_t J = tbc.J;
     for (size_t ibra=0; ibra<nkets; ibra++)
     {
+//      std::cout << "    ibra = " << ibra << std::endl;
       Ket& bra = tbc.GetKet(ibra);
       size_t i=bra.p;
       size_t j=bra.q;
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
 
-      size_t ind_i=0;
-      size_t ind_j=0;
-      while ( local_one_body_channels.at({oi.j2,oi.l%2,oi.tz2})[ind_i]!=i) ind_i++; // TODO this can probably be done better with find
-      while ( local_one_body_channels.at({oj.j2,oj.l%2,oj.tz2})[ind_j]!=j) ind_j++;
+//      size_t ind_i=0;
+//      size_t ind_j=0;
+//      while ( local_one_body_channels.at({oi.j2,oi.l%2,oi.tz2})[ind_i]!=i) ind_i++; // TODO this can probably be done better with find
+//      while ( local_one_body_channels.at({oj.j2,oj.l%2,oj.tz2})[ind_j]!=j) ind_j++;
+      auto& lobc_i = local_one_body_channels.at({oi.j2,oi.l%2,oi.tz2});
+      auto& lobc_j = local_one_body_channels.at({oj.j2,oj.l%2,oj.tz2});
+      size_t ind_i = std::distance( lobc_i.begin(),  std::find( lobc_i.begin(),lobc_i.end(), i ) );
+      size_t ind_j = std::distance( lobc_j.begin(),  std::find( lobc_j.begin(),lobc_j.end(), j ) );
 
       auto& list_i = klj_list.at({oi.j2,oi.l%2,oi.tz2});
       auto& list_j = klj_list.at({oj.j2,oj.l%2,oj.tz2});
@@ -2640,6 +2662,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
       for (int iket=ibra; iket<nkets; iket++)
       {
+//      std::cout << "      iket = " << iket << std::endl;
         Ket& ket = tbc.GetKet(iket);
         size_t k = ket.p;
         size_t l = ket.q;
@@ -2648,11 +2671,15 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         int phase_ij = X.modelspace->phase( (oi.j2+oj.j2)/2-J);
         int phase_kl = X.modelspace->phase( (ok.j2+ol.j2)/2-J);
 
-        size_t ind_k=0;
-        size_t ind_l=0;
-
-        while ( local_one_body_channels.at({ok.j2,ok.l%2,ok.tz2})[ind_k]!=k) ind_k++; // TODO this can probably be done better with find
-        while ( local_one_body_channels.at({ol.j2,ol.l%2,ol.tz2})[ind_l]!=l) ind_l++;
+//        size_t ind_k=0;
+//        size_t ind_l=0;
+//
+//        while ( local_one_body_channels.at({ok.j2,ok.l%2,ok.tz2})[ind_k]!=k) ind_k++; // TODO this can probably be done better with find
+//        while ( local_one_body_channels.at({ol.j2,ol.l%2,ol.tz2})[ind_l]!=l) ind_l++;
+      auto& lobc_k = local_one_body_channels.at({ok.j2,ok.l%2,ok.tz2});
+      auto& lobc_l = local_one_body_channels.at({ol.j2,ol.l%2,ol.tz2});
+      size_t ind_k = std::distance( lobc_k.begin(),  std::find( lobc_k.begin(),lobc_k.end(), k ) );
+      size_t ind_l = std::distance( lobc_l.begin(),  std::find( lobc_l.begin(),lobc_l.end(), l ) );
 
         auto& list_k = klj_list.at({ok.j2,ok.l%2,ok.tz2});
         auto& list_l = klj_list.at({ol.j2,ol.l%2,ol.tz2});
@@ -2669,16 +2696,25 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         size_t ind_ijl = std::distance( list_k.begin(),  std::find( list_k.begin(),list_k.end(), key_ijl ) );
         size_t ind_ijk = std::distance( list_l.begin(),  std::find( list_l.begin(),list_l.end(), key_ijk ) );
 
+        if ( ind_klj == list_i.size()   or ind_kli==list_j.size() or ind_ijl==list_k.size() or ind_ijk==list_l.size() )   continue;
+
+//        std::cout << "    get zijkl " << ind_j << " " << ind_kli << "    " << ind_i << " " << ind_klj << "    " << ind_l << " " << ind_ijk << "    " << ind_k << " " << ind_ijl << std::endl;
+//        std::cout << " ijkl = " << i << " " << j << " " << k << " " << l << "    list_i is " << std::endl;
+//        for ( auto& ii : list_i ) std::cout << "(" << ii[0] << " " << ii[1] << " " << ii[2] << " " << ii[3] <<  ")  ";
+//        std::cout << std::endl;
+
         double zijkl =            ZMat_j(ind_j, ind_kli) - phase_ij * ZMat_i(ind_i, ind_klj) 
                 - hermX*hermY * ( ZMat_l(ind_l, ind_ijk) - phase_kl * ZMat_k(ind_k, ind_ijl) ) ;
 
         // normalize the tbme
         zijkl *= -1.0 / sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
+//        std::cout << "    set zijkl " << std::endl;
         Z2.AddToTBME(ch,ch,ibra,iket,zijkl);
       }//for iket
     }//for ibra
   }// for ch
 
+//  std::cout << __func__ << " check4" << std::endl;
     Z.profiler.timer["comm232_block4"] += omp_get_wtime() - tstart;
     tstart = omp_get_wtime();
 
