@@ -2564,6 +2564,29 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
       }// for ind_i
 
+//// This didnt seem to help much, which seems surprising
+//      size_t norb = Z.modelspace->GetNumberOrbits();
+//      std::map<std::array<int,2>, std::vector<size_t> > ibra_list_lookup;
+//      std::map<std::array<int,2>, std::vector<double> > recouple_bra_list_lookup;
+//      for ( size_t j=0; j<norb; j++)
+//      {
+//        Orbit& oj = Z.modelspace->GetOrbit(j);
+//        double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+//        if ( (de_a + de_b + de_j) > Z.modelspace->GetdE3max() ) continue;
+//        int twoJp_min = std::abs(2*Jab - oj.j2);
+//        int twoJp_max =  2*Jab + oj.j2;
+//        for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+//        {
+//            std::vector<size_t> ibra_list;
+//            std::vector<double> recouple_bra_list;
+//            Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJp, a, b, j, ibra_list, recouple_bra_list) ;
+//            ibra_list_lookup[{j,twoJp}] = ibra_list;
+//            recouple_bra_list_lookup[{j,twoJp}] = recouple_bra_list;
+//        }
+//        
+//      }
+
+
       // now the 3 body part
       for (size_t ind_klj=0; ind_klj<dim_klj; ind_klj++)
       {
@@ -2590,15 +2613,18 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         int twoJp_min = std::max( std::abs(2*Jab - oj.j2), std::abs(2*Jkl-j2c));
         int twoJp_max = std::min( 2*Jab + oj.j2, 2*Jkl+j2c);
 
+
         for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
         {
            double sixj = X.modelspace->GetSixJ(Jkl,jj,ji,  Jab, jc, 0.5*twoJp );
 
            std::vector<size_t> ibra_list;
            std::vector<double> recouple_bra_list;
+//           std::vector<size_t>& ibra_list = ibra_list_lookup.at({j,twoJp});;
+//           std::vector<double>& recouple_bra_list = recouple_bra_list_lookup.at({j,twoJp});
            std::vector<size_t> iket_list;
            std::vector<double> recouple_ket_list;
-           size_t ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJp, a, b, j, ibra_list, recouple_bra_list) ;
+          size_t ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJp, a, b, j, ibra_list, recouple_bra_list) ;
            ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jkl, twoJp, k, l, c, iket_list, recouple_ket_list) ;
     
            double xabjklc = 0;
@@ -2633,23 +2659,17 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   for ( size_t ch=0; ch<nch; ch++)
   {
-//    std::cout << "  ch = " << ch << std::endl;
     TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
     size_t nkets = tbc.GetNumberKets();
     size_t J = tbc.J;
     for (size_t ibra=0; ibra<nkets; ibra++)
     {
-//      std::cout << "    ibra = " << ibra << std::endl;
       Ket& bra = tbc.GetKet(ibra);
       size_t i=bra.p;
       size_t j=bra.q;
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
 
-//      size_t ind_i=0;
-//      size_t ind_j=0;
-//      while ( local_one_body_channels.at({oi.j2,oi.l%2,oi.tz2})[ind_i]!=i) ind_i++; // TODO this can probably be done better with find
-//      while ( local_one_body_channels.at({oj.j2,oj.l%2,oj.tz2})[ind_j]!=j) ind_j++;
       auto& lobc_i = local_one_body_channels.at({oi.j2,oi.l%2,oi.tz2});
       auto& lobc_j = local_one_body_channels.at({oj.j2,oj.l%2,oj.tz2});
       size_t ind_i = std::distance( lobc_i.begin(),  std::find( lobc_i.begin(),lobc_i.end(), i ) );
@@ -2662,7 +2682,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
       for (int iket=ibra; iket<nkets; iket++)
       {
-//      std::cout << "      iket = " << iket << std::endl;
         Ket& ket = tbc.GetKet(iket);
         size_t k = ket.p;
         size_t l = ket.q;
@@ -2671,15 +2690,10 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         int phase_ij = X.modelspace->phase( (oi.j2+oj.j2)/2-J);
         int phase_kl = X.modelspace->phase( (ok.j2+ol.j2)/2-J);
 
-//        size_t ind_k=0;
-//        size_t ind_l=0;
-//
-//        while ( local_one_body_channels.at({ok.j2,ok.l%2,ok.tz2})[ind_k]!=k) ind_k++; // TODO this can probably be done better with find
-//        while ( local_one_body_channels.at({ol.j2,ol.l%2,ol.tz2})[ind_l]!=l) ind_l++;
-      auto& lobc_k = local_one_body_channels.at({ok.j2,ok.l%2,ok.tz2});
-      auto& lobc_l = local_one_body_channels.at({ol.j2,ol.l%2,ol.tz2});
-      size_t ind_k = std::distance( lobc_k.begin(),  std::find( lobc_k.begin(),lobc_k.end(), k ) );
-      size_t ind_l = std::distance( lobc_l.begin(),  std::find( lobc_l.begin(),lobc_l.end(), l ) );
+        auto& lobc_k = local_one_body_channels.at({ok.j2,ok.l%2,ok.tz2});
+        auto& lobc_l = local_one_body_channels.at({ol.j2,ol.l%2,ol.tz2});
+        size_t ind_k = std::distance( lobc_k.begin(),  std::find( lobc_k.begin(),lobc_k.end(), k ) );
+        size_t ind_l = std::distance( lobc_l.begin(),  std::find( lobc_l.begin(),lobc_l.end(), l ) );
 
         auto& list_k = klj_list.at({ok.j2,ok.l%2,ok.tz2});
         auto& list_l = klj_list.at({ol.j2,ol.l%2,ol.tz2});
@@ -2698,10 +2712,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
         if ( ind_klj == list_i.size()   or ind_kli==list_j.size() or ind_ijl==list_k.size() or ind_ijk==list_l.size() )   continue;
 
-//        std::cout << "    get zijkl " << ind_j << " " << ind_kli << "    " << ind_i << " " << ind_klj << "    " << ind_l << " " << ind_ijk << "    " << ind_k << " " << ind_ijl << std::endl;
-//        std::cout << " ijkl = " << i << " " << j << " " << k << " " << l << "    list_i is " << std::endl;
-//        for ( auto& ii : list_i ) std::cout << "(" << ii[0] << " " << ii[1] << " " << ii[2] << " " << ii[3] <<  ")  ";
-//        std::cout << std::endl;
 
         double zijkl =            ZMat_j(ind_j, ind_kli) - phase_ij * ZMat_i(ind_i, ind_klj) 
                 - hermX*hermY * ( ZMat_l(ind_l, ind_ijk) - phase_kl * ZMat_k(ind_k, ind_ijl) ) ;
@@ -3896,6 +3906,427 @@ bool check_2b_channel_Tz_parity( const Operator& Op, Orbit& o1, Orbit&o2, Orbit&
 //  This can maybe be sped up by transforming the 2-body operators <ij|X|kl> => <i|X'|klj'> ?
 //  But then we'd need to make another transformation on the resulting 3-body  <ijn'|Z'|lmk'> => <ijk|Z|lmn>
 //
+
+void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
+{
+  double tstart = omp_get_wtime();
+//  int e3maxcut = 999;
+  int norbs = Z.modelspace->GetNumberOrbits();
+  auto& Z3 = Z.ThreeBody;
+  auto& X2 = X.TwoBody;
+  auto& Y2 = Y.TwoBody;
+  if ( (std::abs( X2.Norm() * Y2.Norm() ) < 1e-6 ) and not Z.modelspace->scalar3b_transform_first_pass) return;
+
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+  // we loop over i, j<=i, k<=j    l<=i, m<=l, n<=m, and Jij, Jmn free unless  ijk == lmn, then we take Jmn <= Jij.
+
+//  std::vector< std::map<std::array<size_t,2>,size_t>::iterator> channel_iterators;
+  std::vector< std::pair<const std::array<size_t,2>,size_t>> channel_iterators;
+  for (auto iter : Z.ThreeBody.ch_start ) channel_iterators.push_back(iter);
+  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+  size_t n_iter = channel_iterators.size();
+//  for (size_t ch3=0; ch3<nch3; ch3++ )
+  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  for (size_t iiter=0; iiter<n_iter; iiter++ )
+  {
+    size_t ch_bra = channel_iterators[iiter].first[0];
+    size_t ch_ket = channel_iterators[iiter].first[1];
+//    auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
+    auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch_bra);
+    auto& Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch_ket);
+//    size_t nkets3 = Tbc.GetNumberKets();
+    size_t nbras3 = Tbc_bra.GetNumberKets();
+    size_t nkets3 = Tbc_ket.GetNumberKets();
+//    int twoJ = Tbc.twoJ;
+    int twoJ = Tbc_bra.twoJ;
+    double Jtot = 0.5*twoJ;
+    for (size_t ibra=0; ibra<nbras3; ibra++)
+    {
+//      Ket3& bra = Tbc.GetKet(ibra);
+      Ket3& bra = Tbc_bra.GetKet(ibra);
+      size_t i = bra.p;
+      size_t j = bra.q;
+      size_t k = bra.r;
+      Orbit& oi = Z.modelspace->GetOrbit(i);
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+      Orbit& ok = Z.modelspace->GetOrbit(k);
+      int ei = 2*oi.n + oi.l;
+      int ej = 2*oj.n + oj.l;
+      int ek = 2*ok.n + ok.l;
+      if ( (std::abs(ei-e_fermi[oi.tz2]) + std::abs(ej-e_fermi[oj.tz2]) + std::abs(ek-e_fermi[ok.tz2])) > Z.modelspace->GetdE3max() ) continue;
+      double ji = 0.5*oi.j2;
+      double jj = 0.5*oj.j2;
+      double jk = 0.5*ok.j2;
+      int J1 = bra.Jpq;
+
+
+          int Jx_min,Jx_max,Jy_min,Jy_max;
+
+          std::vector<int> J_Pik;
+          std::vector<double> recouple_Pik;
+          Jx_min = std::max( std::abs(oi.j2-twoJ), std::abs(oj.j2-ok.j2) )/2;
+          Jx_max = std::min( oi.j2+twoJ, oj.j2+ok.j2)/2;
+          for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+          {
+             double recouple_coeff = (2*Jx+1) * Z.modelspace->GetSixJ(ji,jj,J1, jk,Jtot,Jx);
+             if (std::abs( recouple_coeff ) <1e-7) continue;
+             J_Pik.push_back( Jx );
+             recouple_Pik.push_back(recouple_coeff);
+          }
+
+
+          std::vector<int> J_Pjk;
+          std::vector<double> recouple_Pjk;
+          Jx_min = std::max( std::abs(oj.j2-twoJ), std::abs(oi.j2-ok.j2) )/2;
+          Jx_max = std::min( oj.j2+twoJ, oi.j2+ok.j2)/2;
+          for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+          {
+             double recouple_coeff = (2*Jx+1) * Z.modelspace->GetSixJ(jj,ji,J1, jk,Jtot,Jx);
+             if (std::abs( recouple_coeff ) <1e-7) continue;
+             J_Pjk.push_back( Jx );
+             recouple_Pjk.push_back(recouple_coeff);
+          }
+
+
+      size_t ket_min = (ch_bra==ch_ket) ? ibra : 0;
+//      for (size_t iket=ibra; iket<nkets3; iket++)
+
+      for (size_t iket=ket_min; iket<nkets3; iket++)
+      {
+//        Ket3& ket = Tbc.GetKet(iket);
+        Ket3& ket = Tbc_ket.GetKet(iket);
+        size_t l = ket.p;
+        size_t m = ket.q;
+        size_t n = ket.r;
+        Orbit& ol = Z.modelspace->GetOrbit(l);
+        Orbit& om = Z.modelspace->GetOrbit(m);
+        Orbit& on = Z.modelspace->GetOrbit(n);
+        int el = 2*ol.n + ol.l;
+        int em = 2*om.n + om.l;
+        int en = 2*on.n + on.l;
+        if ( (std::abs(el-e_fermi[ol.tz2]) + std::abs(em-e_fermi[om.tz2]) + std::abs(en-e_fermi[on.tz2])) > Z.modelspace->GetdE3max() ) continue;
+        double jl = 0.5*ol.j2;
+        double jm = 0.5*om.j2;
+        double jn = 0.5*on.j2;
+        int J2 = ket.Jpq;
+
+        double zijklmn = 0;
+
+
+
+
+          std::vector<int> J_Pln;
+          std::vector<double> recouple_Pln;
+          Jx_min = std::max( std::abs(ol.j2-twoJ), std::abs(om.j2-on.j2) )/2;
+          Jx_max = std::min( ol.j2+twoJ, om.j2+on.j2)/2;
+          for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+          {
+             double recouple_coeff = (2*Jx+1) * Z.modelspace->GetSixJ(jl,jm,J2, jn,Jtot,Jx);
+             if (std::abs( recouple_coeff ) <1e-7) continue;
+             J_Pln.push_back( Jx );
+             recouple_Pln.push_back(recouple_coeff);
+          }
+
+
+          std::vector<int> J_Pmn;
+          std::vector<double> recouple_Pmn;
+          Jx_min = std::max( std::abs(om.j2-twoJ), std::abs(ol.j2-on.j2) )/2;
+          Jx_max = std::min( om.j2+twoJ, ol.j2+on.j2)/2;
+          for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+          {
+             double recouple_coeff = (2*Jx+1) * Z.modelspace->GetSixJ(jm,jl,J2, jn,Jtot,Jx);
+             if (std::abs( recouple_coeff ) <1e-7) continue;
+             J_Pmn.push_back( Jx );
+             recouple_Pmn.push_back(recouple_coeff);
+          }
+
+
+//         for (int a=0; a<norbs; a++) // TODO: this can maybe be made more efficient by first looping through ja and computing the 6js?
+         for ( auto OBC_a : Z.OneBodyChannels ) 
+         {
+//          if ( OBC_a.second.size() < 1) continue;
+          Orbit& oa1 = Z.modelspace->GetOrbit(  *(OBC_a.second.begin()) );
+//          Orbit& oa = Z.modelspace->GetOrbit(a);
+
+//          double ja = 0.5*oa.j2;
+          double ja = 0.5*oa1.j2;
+
+
+
+          //Z5   remapped to ZZ1 
+          if (   (check_2b_channel_Tz_parity(X,oi,oj,on,oa1) and check_2b_channel_Tz_parity(Y,ok,oa1,om,ol))
+              or (check_2b_channel_Tz_parity(Y,oi,oj,on,oa1) and check_2b_channel_Tz_parity(X,ok,oa1,om,ol)) )
+          {
+            double sixj1 = Z.modelspace->GetSixJ(jn,ja,J1, jk,Jtot,J2);
+            if (std::abs(sixj1)>1e-7)
+            {
+              for ( auto a : OBC_a.second )
+              {
+                double xijna = X2.GetTBME_J(J1,i,j,n,a);
+                double yijna = Y2.GetTBME_J(J1,i,j,n,a);
+                double xkalm = X2.GetTBME_J(J2,k,a,l,m);
+                double ykalm = Y2.GetTBME_J(J2,k,a,l,m);
+                zijklmn +=  sixj1 * (xijna*ykalm-yijna*xkalm);
+              }
+            }
+          }
+
+
+
+          //Z7  remapped to Pik ZZ1
+          if (  ( (check_2b_channel_Tz_parity(X,ok,oj,on,oa1) and check_2b_channel_Tz_parity(Y,oa1,oi,om,ol))
+              or (check_2b_channel_Tz_parity(Y,ok,oj,on,oa1) and check_2b_channel_Tz_parity(X,oa1,oi,om,ol)) )
+              and ( (std::abs(oa1.j2-oi.j2)<=2*J2 ) and (oa1.j2+oi.j2>=2*J2)  )   )
+          {
+            Jx_min = std::max(std::abs(ok.j2-oj.j2), std::abs(oa1.j2-on.j2) )/2;
+            Jx_max = std::min((ok.j2+oj.j2), (oa1.j2+on.j2) )/2;
+            double phase = Z.modelspace->phase( (ol.j2+om.j2+oi.j2+oa1.j2)/2);
+            for (auto a : OBC_a.second )
+            {
+             double xaiml = X2.GetTBME_J(J2,a,i,m,l);
+             double yaiml = Y2.GetTBME_J(J2,a,i,m,l);
+             for ( size_t i_Pik=0; i_Pik<J_Pik.size(); i_Pik++)
+             {
+               int Jx = J_Pik[i_Pik];
+               double recouple_ik = recouple_Pik[i_Pik];
+               double sixj2 = Z.modelspace->GetSixJ(jn,ja,Jx, ji,Jtot,J2);
+               if (std::abs(sixj2)<1e-7) continue;
+               double xkjna = X2.GetTBME_J(Jx,k,j,n,a);
+               double ykjna = Y2.GetTBME_J(Jx,k,j,n,a);
+               zijklmn += recouple_ik * phase * sixj2 * (xkjna*yaiml-ykjna*xaiml);
+              }
+            }
+          }
+
+
+          //Z9  remapped to Pjk ZZ1
+          if ( (  (check_2b_channel_Tz_parity(X,oi,ok,on,oa1) and check_2b_channel_Tz_parity(Y,oa1,oj,om,ol))
+               or (check_2b_channel_Tz_parity(Y,oi,ok,on,oa1) and check_2b_channel_Tz_parity(X,oa1,oj,om,ol)) ) 
+              and ( (std::abs(oa1.j2-oj.j2)<=2*J2 ) and (oa1.j2+oj.j2>=2*J2)  )  )
+          {
+            Jx_min = std::max(std::abs(ok.j2-oi.j2), std::abs(oa1.j2-on.j2) )/2;
+            Jx_max = std::min((ok.j2+oi.j2), (oa1.j2+on.j2) )/2;
+            for (auto a : OBC_a.second )
+            {
+             double xajml = X2.GetTBME_J(J2,a,j,m,l);
+             double yajml = Y2.GetTBME_J(J2,a,j,m,l);
+             for ( size_t i_Pjk=0; i_Pjk<J_Pjk.size(); i_Pjk++)
+             {
+              int Jx = J_Pjk[i_Pjk];
+              double recouple_jk = recouple_Pjk[i_Pjk];
+              double phase = Z.modelspace->phase( (oa1.j2+ok.j2+ol.j2+om.j2)/2 -J1-Jx);
+              double sixj2 = Z.modelspace->GetSixJ(jj,ja,J2, jn,Jtot,Jx);
+              if (std::abs(sixj2)<1e-7) continue;
+              double xikna = X2.GetTBME_J(Jx,i,k,n,a);
+              double yikna = Y2.GetTBME_J(Jx,i,k,n,a);
+              zijklmn +=  phase * recouple_jk * sixj2 * (xikna*yajml-yikna*xajml);
+             }
+            }
+          }
+
+
+          //Z4 remapped to Pmn ZZ1
+          if (  ( (check_2b_channel_Tz_parity(X,oi,oj,om,oa1) and check_2b_channel_Tz_parity(Y,oa1,ok,ol,on))
+               or (check_2b_channel_Tz_parity(Y,oi,oj,om,oa1) and check_2b_channel_Tz_parity(X,oa1,ok,ol,on)) )
+              and ( (std::abs(om.j2-oa1.j2)<=2*J1 ) and (om.j2+oa1.j2>=2*J1)  ) )
+          {
+            Jx_min = std::max(std::abs(oa1.j2-ok.j2), std::abs(ol.j2-on.j2) )/2;
+            Jx_max = std::min((oa1.j2+ok.j2), (ol.j2+on.j2) )/2;
+            double phase = -Z.modelspace->phase( (om.j2-on.j2-oa1.j2-ok.j2)/2-J2);
+            for (auto a : OBC_a.second )
+            {
+              double xijma = X2.GetTBME_J(J1,i,j,m,a);
+              double yijma = Y2.GetTBME_J(J1,i,j,m,a);
+              for ( size_t i_Pmn=0; i_Pmn<J_Pmn.size(); i_Pmn++)
+              {
+                int Jx = J_Pmn[i_Pmn];
+                double recouple_mn = recouple_Pmn[i_Pmn];
+                double sixj2 = Z.modelspace->GetSixJ(jm,ja,J1, jk,Jtot,Jx);
+
+                if (std::abs(sixj2)<1e-7) continue;
+                double xakln = X2.GetTBME_J(Jx,a,k,l,n);
+                double yakln = Y2.GetTBME_J(Jx,a,k,l,n);
+                zijklmn +=  phase * recouple_mn * sixj2 * (xijma*yakln-yijma*xakln);
+              }
+            }
+          }
+
+
+
+          //Z1   remapped to Pln ZZ1
+          if (  (   (check_2b_channel_Tz_parity(X,oi,oj,ol,oa1) and check_2b_channel_Tz_parity(Y,oa1,ok,om,on))
+                 or (check_2b_channel_Tz_parity(Y,oi,oj,ol,oa1) and check_2b_channel_Tz_parity(X,oa1,ok,om,on)) )
+             and (std::abs(ol.j2-oa1.j2)<=2*J1) and ((ol.j2+oa1.j2)>=2*J1) )
+          {
+            Jx_min = std::max(std::abs(oa1.j2-ok.j2), std::abs(om.j2-on.j2) )/2;
+            Jx_max = std::min((oa1.j2+ok.j2), (om.j2+on.j2) )/2;
+            double phase = -Z.modelspace->phase( (om.j2-on.j2-oa1.j2-ok.j2)/2);
+            for (auto a : OBC_a.second )
+            {
+              double xijla = X2.GetTBME_J(J1,i,j,l,a);
+              double yijla = Y2.GetTBME_J(J1,i,j,l,a);
+              for ( size_t i_Pln=0; i_Pln<J_Pln.size(); i_Pln++)
+              {
+                int Jx = J_Pln[i_Pln];
+                double recouple_ln = recouple_Pln[i_Pln];
+                double sixj2 = Z.modelspace->GetSixJ(jl,ja,J1, jk,Jtot,Jx);
+                if (std::abs(sixj2)<1e-7) continue;
+                double xakmn = X2.GetTBME_J(Jx,a,k,m,n);
+                double yakmn = Y2.GetTBME_J(Jx,a,k,m,n);
+                zijklmn +=  phase * recouple_ln * sixj2 * (xijla*yakmn-yijla*xakmn);
+              }
+            }
+          }
+
+
+          //Z2  remapped to   Pik Pln  ZZ1
+          if (   (check_2b_channel_Tz_parity(X,ok,oj,ol,oa1) and check_2b_channel_Tz_parity(Y,oa1,oi,om,on))
+              or (check_2b_channel_Tz_parity(Y,ok,oj,ol,oa1) and check_2b_channel_Tz_parity(X,oa1,oi,om,on)) )
+          {
+            Jx_min = std::max(std::abs(oa1.j2-ol.j2), std::abs(ok.j2-oj.j2) )/2;
+            Jx_max = std::min((oa1.j2+ol.j2), (ok.j2+oj.j2) )/2;
+            Jy_min = std::max(std::abs(oa1.j2-oi.j2), std::abs(om.j2-on.j2) )/2;
+            Jy_max = std::min((oa1.j2+oi.j2), (om.j2+on.j2) )/2;
+            double phase = Z.modelspace->phase( (om.j2+on.j2-oa1.j2-oi.j2)/2);
+            for ( size_t i_Pik=0; i_Pik<J_Pik.size(); i_Pik++)
+            {
+              int Jx = J_Pik[i_Pik];
+              if ( Jx<Jx_min or Jx>Jx_max) continue;
+              double recouple_ik = recouple_Pik[i_Pik];
+              for (auto a : OBC_a.second )
+              {
+                double xkjla = X2.GetTBME_J(Jx,k,j,l,a);
+                double ykjla = Y2.GetTBME_J(Jx,k,j,l,a);
+                for ( size_t i_Pln=0; i_Pln<J_Pln.size(); i_Pln++)
+                {
+                 int Jy = J_Pln[i_Pln];
+                 double recouple_ln = recouple_Pln[i_Pln];
+                 double sixj3 = Z.modelspace->GetSixJ(ji,ja,Jy, jl,Jtot,Jx);
+                 if (std::abs(sixj3)<1e-7) continue;
+                 double xaimn = X2.GetTBME_J(Jy,a,i,m,n);
+                 double yaimn = Y2.GetTBME_J(Jy,a,i,m,n);
+                 zijklmn +=  phase * recouple_ik  * recouple_ln *sixj3 * (xkjla*yaimn -ykjla*xaimn);
+                }
+              }
+            }
+          }
+
+
+          //Z3  remapped to  Pjk Pln ZZ1
+          if (   (check_2b_channel_Tz_parity(X,oi,ok,ol,oa1) and check_2b_channel_Tz_parity(Y,oa1,oj,om,on))
+              or (check_2b_channel_Tz_parity(Y,oi,ok,ol,oa1) and check_2b_channel_Tz_parity(X,oa1,oj,om,on)) )
+          {
+            Jx_min = std::max(std::abs(oa1.j2-ol.j2), std::abs(oi.j2-ok.j2) )/2;
+            Jx_max = std::min((oa1.j2+ol.j2), (oi.j2+ok.j2) )/2;
+            Jy_min = std::max(std::abs(oa1.j2-oj.j2), std::abs(om.j2-on.j2) )/2;
+            Jy_max = std::min((oa1.j2+oj.j2), (om.j2+on.j2) )/2;
+            for ( size_t i_Pjk=0; i_Pjk<J_Pjk.size(); i_Pjk++)
+            {
+              int Jx = J_Pjk[i_Pjk];
+              if ( Jx<Jx_min or Jx>Jx_max) continue;
+              double recouple_jk = recouple_Pjk[i_Pjk];
+              double phase =-Z.modelspace->phase( (ok.j2+om.j2+on.j2-oa1.j2)/2-J1-Jx);
+               for (auto a : OBC_a.second )
+               {
+                 double xikla = X2.GetTBME_J(Jx,i,k,l,a);
+                 double yikla = Y2.GetTBME_J(Jx,i,k,l,a);
+                 for ( size_t i_Pln=0; i_Pln<J_Pln.size(); i_Pln++)
+                 {
+                  int Jy = J_Pln[i_Pln];
+                  double recouple_ln = recouple_Pln[i_Pln];
+                  double sixj3 = Z.modelspace->GetSixJ(jj,ja,Jy, jl,Jtot,Jx);
+                  if (std::abs(sixj3)<1e-7) continue;
+                  double xajmn = X2.GetTBME_J(Jy,a,j,m,n);
+                  double yajmn = Y2.GetTBME_J(Jy,a,j,m,n);
+                  zijklmn += phase * recouple_jk * recouple_ln *sixj3 * (xikla*yajmn-yikla*xajmn);
+                 }
+              }
+            }
+          }
+
+
+          //Z6  remapped to Pik Pmn ZZ1
+          if (   (check_2b_channel_Tz_parity(X,ok,oj,om,oa1) and check_2b_channel_Tz_parity(Y,oa1,oi,ol,on))
+              or (check_2b_channel_Tz_parity(Y,ok,oj,om,oa1) and check_2b_channel_Tz_parity(X,oa1,oi,ol,on)) )
+          {
+            Jx_min = std::max(std::abs(oa1.j2-om.j2), std::abs(oj.j2-ok.j2) )/2;
+            Jx_max = std::min((oa1.j2+om.j2), (oj.j2+ok.j2) )/2;
+            Jy_min = std::max(std::abs(oa1.j2-oi.j2), std::abs(ol.j2-on.j2) )/2;
+            Jy_max = std::min((oa1.j2+oi.j2), (ol.j2+on.j2) )/2;
+            double phase =-Z.modelspace->phase( (on.j2-om.j2-oi.j2-oa1.j2)/2-J2);
+            for ( size_t i_Pik=0; i_Pik<J_Pik.size(); i_Pik++)
+            {
+              int Jx = J_Pik[i_Pik];
+              if ( Jx<Jx_min or Jx>Jx_max) continue;
+              double recouple_ik = recouple_Pik[i_Pik];
+              for (auto a : OBC_a.second )
+              {
+                double xkjma = X2.GetTBME_J(Jx,k,j,m,a);
+                double ykjma = Y2.GetTBME_J(Jx,k,j,m,a);
+                for ( size_t i_Pmn=0; i_Pmn<J_Pmn.size(); i_Pmn++)
+                {
+                  int Jy = J_Pmn[i_Pmn];
+                  double recouple_mn = recouple_Pmn[i_Pmn];
+                  double sixj3 = Z.modelspace->GetSixJ(ji,ja,Jy, jm,Jtot,Jx);
+                  if (std::abs(sixj3)<1e-7) continue;
+                  double xailn = X2.GetTBME_J(Jy,a,i,l,n);
+                  double yailn = Y2.GetTBME_J(Jy,a,i,l,n);
+                  zijklmn +=  phase * recouple_ik * recouple_mn * sixj3 * (xkjma*yailn-ykjma*xailn);
+                }
+             }
+            }
+          }
+
+
+          //Z8  remapped to Pjk Pmn ZZ1
+          if (   (check_2b_channel_Tz_parity(X,oi,ok,om,oa1) and check_2b_channel_Tz_parity(Y,oa1,oj,ol,on))
+              or (check_2b_channel_Tz_parity(Y,oi,ok,om,oa1) and check_2b_channel_Tz_parity(X,oa1,oj,ol,on)) )
+          {
+            Jx_min = std::max(std::abs(oa1.j2-om.j2), std::abs(oi.j2-ok.j2) )/2;
+            Jx_max = std::min((oa1.j2+om.j2), (oi.j2+ok.j2) )/2;
+            Jy_min = std::max(std::abs(oa1.j2-oj.j2), std::abs(ol.j2-on.j2) )/2;
+            Jy_max = std::min((oa1.j2+oj.j2), (ol.j2+on.j2) )/2;
+            for ( size_t i_Pjk=0; i_Pjk<J_Pjk.size(); i_Pjk++)
+            {
+              int Jx = J_Pjk[i_Pjk];
+              if ( Jx<Jx_min or Jx>Jx_max) continue;
+              double recouple_jk = recouple_Pjk[i_Pjk];
+              double phase =-Z.modelspace->phase( (ok.j2+om.j2+on.j2-oa1.j2)/2-J1-J2-Jx);
+              for (auto a : OBC_a.second )
+              {
+                double xikma = X2.GetTBME_J(Jx,i,k,m,a);
+                double yikma = Y2.GetTBME_J(Jx,i,k,m,a);
+                for ( size_t i_Pmn=0; i_Pmn<J_Pmn.size(); i_Pmn++)
+                {
+                  int Jy = J_Pmn[i_Pmn];
+                  double recouple_mn = recouple_Pmn[i_Pmn];
+                  double sixj3 = Z.modelspace->GetSixJ(jj,ja,Jy, jm,Jtot,Jx);
+                  double xajln = X2.GetTBME_J(Jy,a,j,l,n);
+                  double yajln = Y2.GetTBME_J(Jy,a,j,l,n);
+                  zijklmn +=  phase * recouple_jk * recouple_mn * sixj3 * (xikma*yajln-yikma*xajln);
+                }
+              }
+            }
+          }
+
+
+
+         }// for OBC_a
+
+         zijklmn *=  sqrt( (2*J1+1.)*(2*J2+1.));
+         Z3.AddToME_pn_PN_ch( ch_bra,ch_ket,ibra,iket, zijklmn );
+
+    }// for iket
+   }// for ibra
+  }// for ch3
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+}
+
+
+
+
+
+/*
 void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
@@ -4198,293 +4629,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   }// for ch3
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
-
-
-
-/*
-void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
-{
-  double tstart = omp_get_wtime();
-//  int e3maxcut = 999;
-  int norbs = Z.modelspace->GetNumberOrbits();
-  auto& Z3 = Z.ThreeBody;
-  auto& X2 = X.TwoBody;
-  auto& Y2 = Y.TwoBody;
-  if ( (std::abs( X2.Norm() * Y2.Norm() ) < 1e-6 ) and not Z.modelspace->scalar3b_transform_first_pass) return;
-
-  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
-  // we loop over i, j<=i, k<=j    l<=i, m<=l, n<=m, and Jij, Jmn free unless  ijk == lmn, then we take Jmn <= Jij.
-
-  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
-  for (size_t ch3=0; ch3<nch3; ch3++ )
-  {
-    auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
-    size_t nkets3 = Tbc.GetNumberKets();
-    int twoJ = Tbc.twoJ;
-    double Jtot = 0.5*twoJ;
-    for (size_t ibra=0; ibra<nkets3; ibra++)
-    {
-      Ket3& bra = Tbc.GetKet(ibra);
-      size_t i = bra.p;
-      size_t j = bra.q;
-      size_t k = bra.r;
-      Orbit& oi = Z.modelspace->GetOrbit(i);
-      Orbit& oj = Z.modelspace->GetOrbit(j);
-      Orbit& ok = Z.modelspace->GetOrbit(k);
-      int ei = 2*oi.n + oi.l;
-      int ej = 2*oj.n + oj.l;
-      int ek = 2*ok.n + ok.l;
-      if ( (std::abs(ei-e_fermi[oi.tz2]) + std::abs(ej-e_fermi[oj.tz2]) + std::abs(ek-e_fermi[ok.tz2])) > Z.modelspace->GetdE3max() ) continue;
-      double ji = 0.5*oi.j2;
-      double jj = 0.5*oj.j2;
-      double jk = 0.5*ok.j2;
-      int J1 = bra.Jpq;
-      for (size_t iket=ibra; iket<nkets3; iket++)
-      {
-        Ket3& ket = Tbc.GetKet(iket);
-        size_t l = ket.p;
-        size_t m = ket.q;
-        size_t n = ket.r;
-        Orbit& ol = Z.modelspace->GetOrbit(l);
-        Orbit& om = Z.modelspace->GetOrbit(m);
-        Orbit& on = Z.modelspace->GetOrbit(n);
-        int el = 2*ol.n + ol.l;
-        int em = 2*om.n + om.l;
-        int en = 2*on.n + on.l;
-        if ( (std::abs(el-e_fermi[ol.tz2]) + std::abs(em-e_fermi[om.tz2]) + std::abs(en-e_fermi[on.tz2])) > Z.modelspace->GetdE3max() ) continue;
-        double jl = 0.5*ol.j2;
-        double jm = 0.5*om.j2;
-        double jn = 0.5*on.j2;
-        int J2 = ket.Jpq;
-
-        double zijklmn = 0;
-
-         for (int a=0; a<norbs; a++) // TODO: this can maybe be made more efficient by first looping through ja and computing the 6js?
-         {
-          Orbit& oa = Z.modelspace->GetOrbit(a);
-
-          double ja = 0.5*oa.j2;
-
-          int Jx_min,Jx_max,Jy_min,Jy_max;
-
-          //Z1
-          if ( ((oi.l+oj.l+ol.l+oa.l)%2==0)  and ((oi.tz2+oj.tz2)==(ol.tz2+oa.tz2))
-             and  ((oa.l+ok.l+om.l+on.l)%2==0)  and ((oa.tz2+ok.tz2)==(om.tz2+on.tz2)) 
-             and (std::abs(ol.j2-oa.j2)<=2*J1) and ((ol.j2+oa.j2)>=2*J1) )
-          {
-            Jx_min = std::max(std::abs(oa.j2-ok.j2), std::abs(om.j2-on.j2) )/2;
-            Jx_max = std::min((oa.j2+ok.j2), (om.j2+on.j2) )/2;
-            double phase = -Z.modelspace->phase( (om.j2-on.j2-oa.j2-ok.j2)/2);
-            double xijla = X2.GetTBME_J(J1,i,j,l,a);
-            double yijla = Y2.GetTBME_J(J1,i,j,l,a);
-            for ( int Jx=Jx_min; Jx<=Jx_max; Jx++) 
-            {
-              double hats  =  (2*Jx+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-              double sixj1 = Z.modelspace->GetSixJ(jl,jm,J2, jn,Jtot,Jx);
-              double sixj2 = Z.modelspace->GetSixJ(jl,ja,J1, jk,Jtot,Jx);
-              double xakmn = X2.GetTBME_J(Jx,a,k,m,n);
-              double yakmn = Y2.GetTBME_J(Jx,a,k,m,n);
-              zijklmn += hats * phase * sixj1*sixj2 * (xijla*yakmn-yijla*xakmn);
-            }
-          }
-
-
-          //Z2
-          if ( ((ok.l+oj.l+ol.l+oa.l)%2==0)  and ((ok.tz2+oj.tz2)==(ol.tz2+oa.tz2)) 
-          and  ((oa.l+oi.l+om.l+on.l)%2==0)  and ((oa.tz2+oi.tz2)==(om.tz2+on.tz2)) )
-          {
-            Jx_min = std::max(std::abs(oa.j2-ol.j2), std::abs(ok.j2-oj.j2) )/2;
-            Jx_max = std::min((oa.j2+ol.j2), (ok.j2+oj.j2) )/2;
-            Jy_min = std::max(std::abs(oa.j2-oi.j2), std::abs(om.j2-on.j2) )/2;
-            Jy_max = std::min((oa.j2+oi.j2), (om.j2+on.j2) )/2;
-            double phase = Z.modelspace->phase( (om.j2+on.j2-oa.j2-oi.j2)/2);
-            for ( int Jx=Jx_min; Jx<=Jx_max; Jx++)
-            {
-              double sixj1 = Z.modelspace->GetSixJ(ji,jj,J1, jk,Jtot,Jx);
-              double xkjla = X2.GetTBME_J(Jx,k,j,l,a);
-              double ykjla = Y2.GetTBME_J(Jx,k,j,l,a);
-             for ( int Jy=Jy_min; Jy<=Jy_max; Jy++)
-             {
-              double hats  =  (2*Jx+1) * (2*Jy+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-              double sixj2 = Z.modelspace->GetSixJ(jl,jm,J2, jn,Jtot,Jy);
-              double sixj3 = Z.modelspace->GetSixJ(ji,ja,Jy, jl,Jtot,Jx);
-              double xaimn = X2.GetTBME_J(Jy,a,i,m,n);
-              double yaimn = Y2.GetTBME_J(Jy,a,i,m,n);
-              zijklmn += hats * phase * sixj1*sixj2*sixj3 * (xkjla*yaimn -ykjla*xaimn);
-
-             }
-            }
-          }
-
-
-          //Z3
-          if ( ((oi.l+ok.l+ol.l+oa.l)%2==0)  and ((oi.tz2+ok.tz2)==(ol.tz2+oa.tz2)) 
-          and  ((oa.l+oj.l+om.l+on.l)%2==0)  and ((oa.tz2+oj.tz2)==(om.tz2+on.tz2)) )
-          {
-            Jx_min = std::max(std::abs(oa.j2-ol.j2), std::abs(oi.j2-ok.j2) )/2;
-            Jx_max = std::min((oa.j2+ol.j2), (oi.j2+ok.j2) )/2;
-            Jy_min = std::max(std::abs(oa.j2-oj.j2), std::abs(om.j2-on.j2) )/2;
-            Jy_max = std::min((oa.j2+oj.j2), (om.j2+on.j2) )/2;
-            for ( int Jx=Jx_min; Jx<=Jx_max; Jx++)
-            {
-              double phase =-Z.modelspace->phase( (ok.j2+om.j2+on.j2-oa.j2)/2-J1-Jx);
-              double sixj1 = Z.modelspace->GetSixJ(jj,ji,J1, jk,Jtot,Jx);
-              double xikla = X2.GetTBME_J(Jx,i,k,l,a);
-              double yikla = Y2.GetTBME_J(Jx,i,k,l,a);
-             for ( int Jy=Jy_min; Jy<=Jy_max; Jy++)
-             {
-              double hats  = (2*Jx+1) * (2*Jy+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-              double sixj2 = Z.modelspace->GetSixJ(jl,jm,J2, jn,Jtot,Jy);
-              double sixj3 = Z.modelspace->GetSixJ(jj,ja,Jy, jl,Jtot,Jx);
-              double xajmn = X2.GetTBME_J(Jy,a,j,m,n);
-              double yajmn = Y2.GetTBME_J(Jy,a,j,m,n);
-              zijklmn += hats * phase * sixj1*sixj2*sixj3 * (xikla*yajmn-yikla*xajmn);
-             }
-            }
-          }
-
-          //Z4
-          if ( ((oi.l+oj.l+om.l+oa.l)%2==0)  and ((oi.tz2+oj.tz2)==(om.tz2+oa.tz2)) 
-          and  ((oa.l+ok.l+ol.l+on.l)%2==0)  and ((oa.tz2+ok.tz2)==(ol.tz2+on.tz2)) )
-          {
-            Jx_min = std::max(std::abs(oa.j2-ok.j2), std::abs(ol.j2-on.j2) )/2;
-            Jx_max = std::min((oa.j2+ok.j2), (ol.j2+on.j2) )/2;
-              double phase = -Z.modelspace->phase( (om.j2-on.j2-oa.j2-ok.j2)/2-J2);
-              double xijma = X2.GetTBME_J(J1,i,j,m,a);
-              double yijma = Y2.GetTBME_J(J1,i,j,m,a);
-            for ( int Jx=Jx_min; Jx<=Jx_max; Jx++) 
-            {
-              double hats  =  (2*Jx+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-              double sixj1 = Z.modelspace->GetSixJ(jm,jl,J2, jn,Jtot,Jx);
-              double sixj2 = Z.modelspace->GetSixJ(jm,ja,J1, jk,Jtot,Jx);
-              double xakln = X2.GetTBME_J(Jx,a,k,l,n);
-              double yakln = Y2.GetTBME_J(Jx,a,k,l,n);
-              zijklmn += hats * phase * sixj1*sixj2 * (xijma*yakln-yijma*xakln);
-            }
-          }
-
-          //Z5
-          if ( ((oi.l+oj.l+on.l+oa.l)%2==0)  and ((oi.tz2+oj.tz2)==(on.tz2+oa.tz2)) 
-          and  ((oa.l+ok.l+om.l+ol.l)%2==0)  and ((oa.tz2+ok.tz2)==(om.tz2+ol.tz2)) )
-          {
-            double hats  =  sqrt( (2*J1+1.)*(2*J2+1.) );
-            double phase =  1;
-            double sixj1 = Z.modelspace->GetSixJ(jn,ja,J1, jk,Jtot,J2);
-            double xijna = X2.GetTBME_J(J1,i,j,n,a);
-            double yijna = Y2.GetTBME_J(J1,i,j,n,a);
-            double xkalm = X2.GetTBME_J(J2,k,a,l,m);
-            double ykalm = Y2.GetTBME_J(J2,k,a,l,m);
-            zijklmn += hats * phase * sixj1 * (xijna*ykalm-yijna*xkalm);
-          }
-
-          //Z6
-          if ( ((ok.l+oj.l+om.l+oa.l)%2==0)  and ((ok.tz2+oj.tz2)==(om.tz2+oa.tz2)) 
-          and  ((oa.l+oi.l+ol.l+on.l)%2==0)  and ((oa.tz2+oi.tz2)==(ol.tz2+on.tz2)) )
-          {
-            Jx_min = std::max(std::abs(oa.j2-om.j2), std::abs(oj.j2-ok.j2) )/2;
-            Jx_max = std::min((oa.j2+om.j2), (oj.j2+ok.j2) )/2;
-            Jy_min = std::max(std::abs(oa.j2-oi.j2), std::abs(ol.j2-on.j2) )/2;
-            Jy_max = std::min((oa.j2+oi.j2), (ol.j2+on.j2) )/2;
-              double phase =-Z.modelspace->phase( (on.j2-om.j2-oi.j2-oa.j2)/2-J2);
-            for ( int Jx=Jx_min; Jx<=Jx_max; Jx++)
-            {
-              double sixj1 = Z.modelspace->GetSixJ(ji,jj,J1, jk,Jtot,Jx);
-              double xkjma = X2.GetTBME_J(Jx,k,j,m,a);
-              double ykjma = Y2.GetTBME_J(Jx,k,j,m,a);
-             for ( int Jy=Jy_min; Jy<=Jy_max; Jy++)
-             {
-              double hats  =  (2*Jx+1) * (2*Jy+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-              double sixj2 = Z.modelspace->GetSixJ(jm,jl,J2, jn,Jtot,Jy);
-              double sixj3 = Z.modelspace->GetSixJ(ji,ja,Jy, jm,Jtot,Jx);
-              double xailn = X2.GetTBME_J(Jy,a,i,l,n);
-              double yailn = Y2.GetTBME_J(Jy,a,i,l,n);
-              zijklmn += hats * phase * sixj1*sixj2*sixj3 * (xkjma*yailn-ykjma*xailn);
-             }
-            }
-          }
-
-
-          //Z7
-          if ( ((ok.l+oj.l+on.l+oa.l)%2==0)  and ((ok.tz2+oj.tz2)==(on.tz2+oa.tz2)) 
-          and  ((oa.l+oi.l+om.l+ol.l)%2==0)  and ((oa.tz2+oi.tz2)==(om.tz2+ol.tz2)) )
-          {
-            Jx_min = std::max(std::abs(ok.j2-oj.j2), std::abs(oa.j2-on.j2) )/2;
-            Jx_max = std::min((ok.j2+oj.j2), (oa.j2+on.j2) )/2;
-              double phase = Z.modelspace->phase( (ol.j2+om.j2+oi.j2+oa.j2)/2);
-              double xaiml = X2.GetTBME_J(J2,a,i,m,l);
-              double yaiml = Y2.GetTBME_J(J2,a,i,m,l);
-            for ( int Jx=Jx_min; Jx<=Jx_max; Jx++) 
-            {
-              double hats  =  (2*Jx+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-              double sixj1 = Z.modelspace->GetSixJ(ji,jj,J1, jk,Jtot,Jx);
-              double sixj2 = Z.modelspace->GetSixJ(ji,ja,J2, jn,Jtot,Jx);
-              double xkjna = X2.GetTBME_J(Jx,k,j,n,a);
-              double ykjna = Y2.GetTBME_J(Jx,k,j,n,a);
-              zijklmn += hats * phase * sixj1*sixj2 * (xkjna*yaiml-ykjna*xaiml);
-            }
-          }
-
-
-
-          //Z8
-          if ( ((oi.l+ok.l+om.l+oa.l)%2==0)  and ((oi.tz2+ok.tz2)==(om.tz2+oa.tz2)) 
-          and  ((oa.l+oj.l+ol.l+on.l)%2==0)  and ((oa.tz2+oj.tz2)==(ol.tz2+on.tz2)) )
-          {
-            Jx_min = std::max(std::abs(oa.j2-om.j2), std::abs(oi.j2-ok.j2) )/2;
-            Jx_max = std::min((oa.j2+om.j2), (oi.j2+ok.j2) )/2;
-            Jy_min = std::max(std::abs(oa.j2-oj.j2), std::abs(ol.j2-on.j2) )/2;
-            Jy_max = std::min((oa.j2+oj.j2), (ol.j2+on.j2) )/2;
-            for ( int Jx=Jx_min; Jx<=Jx_max; Jx++)
-            {
-              double phase =-Z.modelspace->phase( (ok.j2+om.j2+on.j2-oa.j2)/2-J1-J2-Jx);
-              double sixj1 = Z.modelspace->GetSixJ(jj,ji,J1, jk,Jtot,Jx);
-              double xikma = X2.GetTBME_J(Jx,i,k,m,a);
-              double yikma = Y2.GetTBME_J(Jx,i,k,m,a);
-             for ( int Jy=Jy_min; Jy<=Jy_max; Jy++)
-             {
-              double hats  =  (2*Jx+1) * (2*Jy+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-              double sixj2 = Z.modelspace->GetSixJ(jm,jl,J2, jn,Jtot,Jy);
-              double sixj3 = Z.modelspace->GetSixJ(jj,ja,Jy, jm,Jtot,Jx);
-              double xajln = X2.GetTBME_J(Jy,a,j,l,n);
-              double yajln = Y2.GetTBME_J(Jy,a,j,l,n);
-              zijklmn += hats * phase * sixj1*sixj2*sixj3 * (xikma*yajln-yikma*xajln);
-             }
-            }
-          }
-
-
-          //Z9
-          if ( ((oi.l+ok.l+on.l+oa.l)%2==0)  and ((oi.tz2+ok.tz2)==(on.tz2+oa.tz2)) 
-          and  ((oa.l+oj.l+om.l+ol.l)%2==0)  and ((oa.tz2+oj.tz2)==(om.tz2+ol.tz2)) )
-          {
-            Jx_min = std::max(std::abs(ok.j2-oi.j2), std::abs(oa.j2-on.j2) )/2;
-            Jx_max = std::min((ok.j2+oi.j2), (oa.j2+on.j2) )/2;
-              double xajml = X2.GetTBME_J(J2,a,j,m,l);
-              double yajml = Y2.GetTBME_J(J2,a,j,m,l);
-            for ( int Jx=Jx_min; Jx<=Jx_max; Jx++) 
-            {
-              double phase = Z.modelspace->phase( (oa.j2+ok.j2+ol.j2+om.j2)/2 -J1-Jx);
-              double hats  =  (2*Jx+1) * sqrt( (2*J1+1.)*(2*J2+1.) );
-              double sixj1 = Z.modelspace->GetSixJ(jj,ji,J1, jk,Jtot,Jx);
-              double sixj2 = Z.modelspace->GetSixJ(jj,ja,J2, jn,Jtot,Jx);
-              double xikna = X2.GetTBME_J(Jx,i,k,n,a);
-              double yikna = Y2.GetTBME_J(Jx,i,k,n,a);
-              zijklmn += hats * phase * sixj1*sixj2 * (xikna*yajml-yikna*xajml);
-            }
-          }
-
-         }// for a
-
-             Z3.AddToME_pn_PN_ch( ch3,ch3,ibra,iket, zijklmn );
-
-    }// for iket
-   }// for ibra
-  }// for ch3
-  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
-}
 */
-
 
 
 
@@ -4731,7 +4876,8 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
         // no normalization to be done. we store un-normalized 3body matrix elements.
         if (std::abs(z_ijklmn)>1e-6)
         {
-            Z3.AddToME_pn( J1, J2, twoJ, i,j,k,l,m,n, z_ijklmn );
+//            Z3.AddToME_pn( J1, J2, twoJ, i,j,k,l,m,n, z_ijklmn );
+            Z3.AddToME_pn_PN_ch( ch,ch,ibra,iket, z_ijklmn );
         }
 
       }// for iket
