@@ -326,6 +326,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetHunterGatherer", &IMSRGSolver::SetHunterGatherer)
       .def("AddOperator", &IMSRGSolver::AddOperator)
       .def("GetOperator", &IMSRGSolver::GetOperator)
+      .def("EstimateBCHError", &IMSRGSolver::EstimateBCHError)
       .def_readwrite("Eta", &IMSRGSolver::Eta)
    ;
 
@@ -363,6 +364,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("Set_BCH_Product_Threshold", &Commutator::Set_BCH_Product_Threshold);
       Commutator.def("BCH_Transform", &Commutator::BCH_Transform);
       Commutator.def("BCH_Product", &Commutator::BCH_Product);
+      Commutator.def("EstimateBCHError", &Commutator::EstimateBCHError);
       Commutator.def("comm110ss", &Commutator::comm110ss);
       Commutator.def("comm220ss", &Commutator::comm220ss);
       Commutator.def("comm111ss", &Commutator::comm111ss);

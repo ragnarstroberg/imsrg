@@ -471,17 +471,17 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
   Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
   bool all_good = true;
 
-  all_good &= Test_comm330ss( X, Y );
+//  all_good &= Test_comm330ss( X, Y );
 //  all_good &= Test_comm331ss( X, Y );
 //  all_good &= Test_comm231ss( X, Y );
 //  all_good &= Test_comm132ss( X, Y );
 //  all_good &= Test_comm232ss( X, Y );
-//  all_good &= Test_comm223ss( X, Y );
+  all_good &= Test_comm223ss( X, Y );
 //  all_good &= Test_comm133ss( X, Y );
 
 //  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
 //  all_good &= Test_comm332_pphhss( X, Y );  
-//
+
 //  all_good &= Test_comm233_pp_hhss( X, Y );   
 //  all_good &= Test_comm233_ph_ss( X, Y );  
 //  all_good &= Test_comm333_ppp_hhh_ss( X, Y );  
@@ -2037,6 +2037,9 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
 
 
   Commutator::comm232ss( X, Y, Z_J);
+//  Z_J.Erase();
+//  Commutator::comm232ss_debug( X, Y, Z_J);
+//  Commutator::comm232ss_slow( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
      Z_J.Symmetrize();
@@ -2539,6 +2542,7 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
   double summed_error = 0;
   double sum_m = 0;
   double sum_J = 0;
+  std::cout << "start mscheme loops " << std::endl;
 
   for (auto i : X.modelspace->all_orbits )
   {

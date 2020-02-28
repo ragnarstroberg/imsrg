@@ -127,6 +127,7 @@ class IMSRGSolver
   void CleanupScratch();
 
   double EstimateStepError();
+  double EstimateBCHError( );
 
 
   // This is used to get flow info from odeint

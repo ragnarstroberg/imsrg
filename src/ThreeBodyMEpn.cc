@@ -9,15 +9,15 @@
 
 
 ThreeBodyMEpn::ThreeBodyMEpn()
-: PN_mode(false) , herm(1)  {}
+: PN_mode(false) , herm(1), rank_J(0), rank_T(0), parity(0)  {}
 
 ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms)
- : modelspace(ms), isospin3BME(ms), PN_mode(false), herm(1)
+ : modelspace(ms), isospin3BME(ms), PN_mode(false), herm(1), rank_J(0), rank_T(0), parity(0) 
 {
 }
 
 ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms, int e3max)
-:  modelspace(ms), isospin3BME(ms,e3max), PN_mode(false), E3max(e3max), herm(1)
+:  modelspace(ms), isospin3BME(ms,e3max), PN_mode(false), E3max(e3max), herm(1), rank_J(0), rank_T(0), parity(0) 
 {
 }
 
@@ -26,7 +26,7 @@ ThreeBodyMEpn::ThreeBodyMEpn(const ThreeBodyMEpn& tbme)
  : modelspace(tbme.modelspace), matrix_data(tbme.matrix_data),  ch_start(tbme.ch_start), ch_dim(tbme.ch_dim),  isospin3BME(tbme.isospin3BME), PN_mode(tbme.PN_mode), E3max(tbme.E3max), emax(tbme.emax),
    
 // : modelspace(tbme.modelspace), MatEl(tbme.MatEl), isospin3BME(tbme.isospin3BME), emax(tbme.emax), E3max(tbme.E3max),
-   herm(tbme.herm), total_dimension(tbme.total_dimension), is_allocated(tbme.is_allocated)
+   herm(tbme.herm), total_dimension(tbme.total_dimension), rank_J(tbme.rank_J), rank_T(tbme.rank_T), parity(tbme.parity), is_allocated(tbme.is_allocated)
 {
 }
 
@@ -49,6 +49,50 @@ void ThreeBodyMEpn::Allocate_PN()
 {
   total_dimension = 0;
   size_t nch = modelspace->GetNumberThreeBodyChannels();
+//  ch_start.zeros(nch,nch);
+//  ch_start.fill(-1);
+//  for (auto Tbc : modelspace->ThreeBodyChannels )
+  for (size_t ch_bra=0; ch_bra<nch; ch_bra++)
+  {
+    ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel( ch_bra );
+    size_t nkets_bra = Tbc_bra.GetNumber3bKets(); // Number of kets in this 3body J,p,Tz channel
+    ch_dim.push_back( nkets_bra );
+    for (size_t ch_ket=ch_bra; ch_ket<nch; ch_ket++)
+    {
+      ThreeBodyChannel& Tbc_ket = modelspace->GetThreeBodyChannel( ch_ket );
+      if (  ( std::abs(Tbc_bra.twoJ-Tbc_ket.twoJ)<=2*rank_J ) and ( (Tbc_bra.twoJ+Tbc_ket.twoJ)>=2*rank_J )
+          and ( (Tbc_bra.parity+Tbc_ket.parity)%2==parity ) and ( std::abs(Tbc_bra.twoTz-Tbc_ket.twoTz)==2*rank_T )  )
+      {
+//         ch_start(ch_bra,ch_ket) = total_dimension;
+         ch_start[{ch_bra,ch_ket}] = total_dimension;
+//         ch_start.push_back(total_dimension);
+//         size_t nkets = Tbc.GetNumber3bKets(); // Number of kets in this 3body J,p,Tz channel
+         size_t nkets_ket = Tbc_ket.GetNumber3bKets(); // Number of kets in this 3body J,p,Tz channel
+         if (ch_bra==ch_ket)
+         {
+           total_dimension += nkets_bra * (nkets_bra+1)/2; // only need to store half the matrix
+         }
+         else
+         {
+           total_dimension += nkets_bra * nkets_ket;
+         }
+      }
+    }
+  }
+  matrix_data.resize(total_dimension,0.0);
+//  std::cout << "DONE ALLOCATING, size of matrix_data is " << matrix_data.size() << std::endl;
+  is_allocated = true;
+  PN_mode = true;
+}
+
+
+/*
+
+// This will need to be more elaborate if we want to use tensor 3-body.
+void ThreeBodyMEpn::Allocate_PN()
+{
+  total_dimension = 0;
+  size_t nch = modelspace->GetNumberThreeBodyChannels();
 //  for (auto Tbc : modelspace->ThreeBodyChannels )
   for (size_t ch=0; ch<nch; ch++)
   {
@@ -63,6 +107,7 @@ void ThreeBodyMEpn::Allocate_PN()
   is_allocated = true;
   PN_mode = true;
 }
+*/
 
 
 
@@ -120,16 +165,29 @@ void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int td
 
 /// These are the ones that eventually get called, but typically the other methods will
 /// be more convenient to call.
-ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket) const
+
+void ThreeBodyMEpn::AccessME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, size_t& index, int& herm_flip) const
 {
-  if ( not is_allocated ) return 0;
-  if (ibra==iket and herm==-1) return 0;
-  int h = (ibra>=iket) ? 1 : herm;
-  size_t i = std::max(ibra,iket);
-  size_t j = std::min(ibra,iket);
+//  if ( not is_allocated ) return 0;
+// ch_ket >= ch_bra based on how we allocate
+//  if (ch_bra==ch_ket and ibra==iket and herm==-1) return 0;
+  herm_flip = (  (ch_ket > ch_bra) or ((ch_ket==ch_bra) and (ibra>=iket))) ? 1 : herm;
+  size_t ch_1 = std::min(ch_bra,ch_ket);
+  size_t ch_2 = std::max(ch_bra,ch_ket);
+  size_t iket_1 = (ch_bra==ch_ket) ? std::min(ibra,iket) : (  (ch_bra<ch_ket) ? ibra : iket   );
+  size_t iket_2 = (ch_bra==ch_ket) ? std::max(ibra,iket) : (  (ch_bra<ch_ket) ? iket : ibra   );
+  // so now ch_1,ch_2 and iket_1,iket_2 are ordered the way we store them
+
+//  int herm_flip = (ibra>=iket) ? 1 : herm;
+//  size_t index_small = std::min(ibra,iket);
+//  size_t index_big   = std::max(ibra,iket);
+//  size_t i = std::max(ibra,iket);
+//  size_t j = std::min(ibra,iket);
 
 
-  if (i>ch_dim[ch_bra] or ch_bra!=ch_ket)
+//  if (i>ch_dim[ch_bra] or ch_bra!=ch_ket)
+  if ( ( ch_start.find({ch_1,ch_2}) == ch_start.end() )
+      or    iket_1>ch_dim[ch_1] or iket_2>ch_dim[ch_2])
   {
     std::ostringstream oss;
     oss << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket;
@@ -137,24 +195,61 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ke
   }
   // ch_start points to where the matrix for this channel starts, and the rest
   // folds two indices into one, assuming we only store the half-triangular matrix.
-  size_t index = ch_start[ch_bra] +   (2*ch_dim[ch_bra] - j - 1)*j/2 + i ;
+//  size_t index = ch_start[ch_bra] +   (2*ch_dim[ch_bra] - j - 1)*j/2 + i ;
+//  size_t index;
+  if (ch_1==ch_2)
+  {
+//    index = ch_start(ch_1,ch_2) +   (2*ch_dim[ch_2] - iket_1 - 1)*iket_1/2 + iket_2 ;
+    index = ch_start.at({ch_1,ch_2}) +   (2*ch_dim[ch_2] - iket_1 - 1)*iket_1/2 + iket_2 ;
+  }
+  else
+  {
+//    index = ch_start(ch_1,ch_2) + ch_dim[ch_2]*iket_1 + iket_2;
+    index = ch_start.at({ch_1,ch_2}) + ch_dim[ch_2]*iket_1 + iket_2;
+  }
   if (index>=matrix_data.size())
   {
     std::ostringstream oss;
     oss << __func__ << " ch_bra,ch_ket " << ch_bra << " " << ch_ket << "  ibra,iket " << ibra << " " << iket << "  index= " << index << " > matrix_data.size() = " << matrix_data.size() ;
     throw std::domain_error( oss.str() );
   }
-  return matrix_data.at(index) * h;
-
 }
 
+
+ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket) const
+{
+  if ( not is_allocated ) return 0;
+  if (ch_bra==ch_ket and ibra==iket and herm==-1) return 0;
+  size_t index;
+  int herm_flip;
+  AccessME_pn_PN_ch(ch_bra,ch_ket,ibra,iket,index,herm_flip);
+  return matrix_data.at(index)*herm_flip;
+}
+
+void ThreeBodyMEpn::AddToME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel)
+{
+  if (std::abs(matel)<1e-9) return;
+  size_t index;
+  int herm_flip;
+  AccessME_pn_PN_ch(ch_bra,ch_ket,ibra,iket,index,herm_flip);
+  matrix_data.at(index) += herm_flip * matel;
+}
+
+void ThreeBodyMEpn::SetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel)
+{
+  size_t index;
+  int herm_flip;
+  AccessME_pn_PN_ch(ch_bra,ch_ket,ibra,iket,index,herm_flip);
+  matrix_data.at(index) = herm_flip * matel;
+}
 
 // We have this here in case we want to set a matrix element, but we store it in a different
 // coupling order. In that case, we need to add to multiple matrix elements with the appropriate
 // recoupling coefficients included (see below).
+/*
 void ThreeBodyMEpn::AddToME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel)
 {
-  if (std::abs(matel)<1e-8) return;
+  if (std::abs(matel)<1e-9) return;
   if (ibra==iket and herm==-1) return;
   int h = (ibra>iket) ? 1 : herm;
   size_t i = std::max(ibra,iket);
@@ -177,8 +272,9 @@ void ThreeBodyMEpn::AddToME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, 
 
 
 }
+*/
 
-
+/*
 void ThreeBodyMEpn::SetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ThreeBodyMEpn::ME_type matel)
 {
   if (ibra==iket and herm==-1) return;
@@ -206,7 +302,7 @@ void ThreeBodyMEpn::SetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, si
   matrix_data.at(index) = matel * h;
 
 }
-
+*/
 
 
 
@@ -243,7 +339,7 @@ void ThreeBodyMEpn::AddToME_pn_PN(  int Jab, int Jde, int twoJ, int a, int b, in
   {
     for (size_t j=0; j<iket.size(); j++)
     {
-     double symmetry_factor = ( ibra[i] == iket[j]) ? 1+herm : 1; // I dont think we need this either
+//     double symmetry_factor = ( ibra[i] == iket[j]) ? 1+herm : 1; // I dont think we need this either
 
        AddToME_pn_PN_ch( ch_bra, ch_ket, ibra[i], iket[j], recouple_bra[i] * recouple_ket[j] * me_add    );
 
@@ -662,23 +758,36 @@ double ThreeBodyMEpn::Norm() const
 void ThreeBodyMEpn::Print(size_t ch_bra, size_t ch_ket)
 {
   ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
-  std::cout << "Channel " << ch_bra << "  J p Tz = " << Tbc_bra.twoJ << " " << Tbc_bra.parity << " " << Tbc_bra.twoTz << std::endl;
-  std::cout << "Kets: ";
+  ThreeBodyChannel& Tbc_ket = modelspace->GetThreeBodyChannel(ch_ket);
+  std::cout << "Channel bra" << ch_bra << "  J p Tz = " << Tbc_bra.twoJ << " " << Tbc_bra.parity << " " << Tbc_bra.twoTz << std::endl;
+  std::cout << "Channel ket" << ch_ket << "  J p Tz = " << Tbc_ket.twoJ << " " << Tbc_ket.parity << " " << Tbc_ket.twoTz << std::endl;
+  std::cout << "Bras: ";
   for ( size_t iket : Tbc_bra.KetList )
   {
     Ket3& ket = modelspace->GetKet3(iket);
     std:: cout << "(" << ket.p << "," << ket.q << "," << ket.r << ";" << ket.Jpq << ")  ";
   }
   std::cout << std::endl;
-  size_t nkets = Tbc_bra.GetNumberKets();
-  for (size_t ibra=0; ibra<nkets; ibra++)
+  for ( size_t iket : Tbc_ket.KetList )
+  {
+    Ket3& ket = modelspace->GetKet3(iket);
+    std:: cout << "(" << ket.p << "," << ket.q << "," << ket.r << ";" << ket.Jpq << ")  ";
+  }
+  std::cout << std::endl;
+  size_t nbras = Tbc_bra.GetNumberKets();
+  size_t nkets = Tbc_ket.GetNumberKets();
+  for (size_t ibra=0; ibra<nbras; ibra++)
   {
     for (size_t iket=0; iket<=ibra; iket++)
     {
-      size_t index = ch_start[ch_bra] + (2*ch_dim[ch_bra] - iket - 1)*iket/2 + ibra  ;
-      std::cout << matrix_data[index] << " ";
-      if (iket==ibra) std::cout << std::endl;
+//      size_t index = ch_start[ch_bra] + (2*ch_dim[ch_bra] - iket - 1)*iket/2 + ibra  ;
+      size_t index;
+      int herm_flip;
+      AccessME_pn_PN_ch(ch_bra,ch_ket,ibra,iket,index,herm_flip);
+      std::cout << matrix_data[index]*herm_flip << " ";
+//      if (iket==ibra) std::cout << std::endl;
     }
+    std::cout << std::endl;
   }
 //  std::cout << MatEl.at({ch_bra,ch_ket}).FullMatrix() << std::endl << std::endl;
 }
