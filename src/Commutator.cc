@@ -162,15 +162,15 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //     if (X.GetParticleRank()>2 and Y.GetParticleRank()>2)
 //     {
        // This gets the perturbative energy from the induced 3 body
-       std::cout << " comm330 " << std::endl;
+//       std::cout << " comm330 " << std::endl;
 //       t_start = omp_get_wtime();
-       comm330ss(X, Y, Z); // scales as n^6
+//       comm330ss(X, Y, Z); // scales as n^6
 //       X.profiler.timer["comm330ss"] += omp_get_wtime() - t_start;
 
 //     Maybe not so important, but I think relatively cheap
-       std::cout << " comm331 " << std::endl;
+//       std::cout << " comm331 " << std::endl;
 //       t_start = omp_get_wtime();
-       comm331ss(X, Y, Z); // scales as n^7
+//       comm331ss(X, Y, Z); // scales as n^7
 //       X.profiler.timer["comm331ss"] += omp_get_wtime() - t_start;
 //     }
 
@@ -183,15 +183,15 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //     if (X.GetParticleRank()>2 or Y.GetParticleRank()>2)
 //     {
        // Demonstrated that this can have some effect
-       std::cout << " comm231 " << std::endl;
+//       std::cout << " comm231 " << std::endl;
 //       t_start = omp_get_wtime();
-       comm231ss(X, Y, Z);  // scales as n^6
+//       comm231ss(X, Y, Z);  // scales as n^6
 //       X.profiler.timer["comm231ss"] += omp_get_wtime() - t_start;
 
 //     no demonstrated effect yet, but it's cheap
-       std::cout << " comm132 " << std::endl;
+//       std::cout << " comm132 " << std::endl;
 //       t_start = omp_get_wtime();
-       comm132ss(X, Y, Z); // scales as n^6
+//       comm132ss(X, Y, Z); // scales as n^6
 //       X.profiler.timer["comm132ss"] += omp_get_wtime() - t_start;
 
 //     one of the two most important IMSRG(3) terms
@@ -202,9 +202,9 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       X.profiler.timer["comm232ss"] += omp_get_wtime() - t_start;
 
 //     important for suppressing off-diagonal H3
-       std::cout << " comm133 " << std::endl;
+//       std::cout << " comm133 " << std::endl;
 //       t_start = omp_get_wtime();
-       comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
+//       comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
 //       X.profiler.timer["comm133ss"] += omp_get_wtime() - t_start;
 
 ////    Not too bad, though naively n^8
@@ -220,9 +220,9 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       X.profiler.timer["comm233_phss"] += omp_get_wtime() - t_start;
 
 //       not too bad, though naively n^8
-       std::cout << " comm332_ppph_hhhp " << std::endl;
+//       std::cout << " comm332_ppph_hhhp " << std::endl;
 //       t_start = omp_get_wtime();
-       comm332_ppph_hhhpss(X, Y, Z);
+//       comm332_ppph_hhhpss(X, Y, Z);
 //       X.profiler.timer["comm332_ppph_hhhpss"] += omp_get_wtime() - t_start;
 
 //      This one works, but it involves 9js so it's slow, so it's commented out for now...
@@ -232,9 +232,9 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       X.profiler.timer["comm332_pphhss"] += omp_get_wtime() - t_start;
 
 //       not too bad though naively n^9
-       std::cout << " comm333_ppp_hhhss " << std::endl;
+//       std::cout << " comm333_ppp_hhhss " << std::endl;
 //       t_start = omp_get_wtime();
-       comm333_ppp_hhhss(X, Y, Z);
+//       comm333_ppp_hhhss(X, Y, Z);
 //       X.profiler.timer["comm333_ppp_hhhss"] += omp_get_wtime() - t_start;
 
 //     This one works, but it's incredibly slow.  naively n^9.
