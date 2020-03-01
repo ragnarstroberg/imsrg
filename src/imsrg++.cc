@@ -99,6 +99,7 @@ int main(int argc, char** argv)
   bool discard_residual_input3N = parameters.s("discard_residual_input3N")=="true";
   bool use_NAT_occupations = (parameters.s("use_NAT_occupations")=="true") ? true : false;
   bool store_3bme_pn = (parameters.s("store_3bme_pn")=="true");
+  bool only_2b_eta = (parameters.s("only_2b_eta")=="true");
 
   int eMax = parameters.i("emax");
   int lmax = parameters.i("lmax"); // so far I only use this with atomic systems.
@@ -653,6 +654,7 @@ int main(int argc, char** argv)
   IMSRGSolver imsrgsolver(HNO);
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetEtaCriterion(eta_criterion);
+  imsrgsolver.GetGenerator().SetOnly2bEta(only_2b_eta);
   imsrgsolver.max_omega_written = 500;
   bool brueckner_restart = false;
   if (hunter_gatherer) imsrgsolver.SetHunterGatherer( true);
