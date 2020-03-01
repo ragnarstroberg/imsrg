@@ -530,7 +530,7 @@ void ThreeBodyMEpn::TransformToPN()
 
   size_t nch = modelspace->GetNumberThreeBodyChannels();
 
-//  #pragma omp parallel for schedule(dynamic,1)
+  #pragma omp parallel for schedule(dynamic,1)
   for (size_t ch=0; ch<nch; ch++)
   {
 
@@ -547,13 +547,13 @@ void ThreeBodyMEpn::TransformToPN()
         double me_pn = isospin3BME.GetME_pn( bra.Jpq, ket.Jpq,twoJ,  bra.p, bra.q, bra.r, ket.p, ket.q, ket.r );
         SetME_pn_PN_ch( ch, ch, ibra, iket, me_pn);
         // check that this worked as expected
-        double me_check = GetME_pn_PN(bra.Jpq, ket.Jpq,twoJ,  bra.p, bra.q, bra.r, ket.p, ket.q, ket.r );
-        if (std::abs(me_pn-me_check)>1e-6)
-        {
-          std::cout << __func__ << "  TROUBLE!!!  J1,J2,J = " << bra.Jpq << " " << ket.Jpq << " " << twoJ
-                    << "   ijklmn = " << bra.p << " " << bra.q << " " << bra.r << "   " << ket.p << " " << ket.q << " " << ket.r
-                    << "  isospin-storage ME is " << me_pn << "   now I read " << me_check << std::endl;
-        }
+//        double me_check = GetME_pn_PN(bra.Jpq, ket.Jpq,twoJ,  bra.p, bra.q, bra.r, ket.p, ket.q, ket.r );
+//        if (std::abs(me_pn-me_check)>1e-6)
+//        {
+//          std::cout << __func__ << "  TROUBLE!!!  J1,J2,J = " << bra.Jpq << " " << ket.Jpq << " " << twoJ
+//                    << "   ijklmn = " << bra.p << " " << bra.q << " " << bra.r << "   " << ket.p << " " << ket.q << " " << ket.r
+//                    << "  isospin-storage ME is " << me_pn << "   now I read " << me_check << std::endl;
+//        }
       }
     }
   }

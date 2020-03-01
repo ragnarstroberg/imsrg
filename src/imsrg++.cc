@@ -483,10 +483,11 @@ int main(int argc, char** argv)
       HNO = H3;
       std::cout << "Replacing HNO" << std::endl;
       std::cout << "Hbare Three Body Norm is " << Hbare.ThreeBodyNorm() << std::endl;
-      if ( Hbare.ThreeBodyNorm() <1e-6 )
-      {
-        HNO.ThreeBody.TransformToPN();
-      }
+//      if ( Hbare.ThreeBodyNorm() <1e-6 )
+//      {
+//        HNO.ThreeBody.TransformToPN();
+        HNO.ThreeBody.SwitchToPN_and_discard();
+//      }
     }
   }
 
