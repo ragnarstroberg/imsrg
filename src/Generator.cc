@@ -335,7 +335,7 @@ void Generator::ConstructGenerator_Atan_3body()
        for (auto c : modelspace->core )
        {
 //        if (c>b) continue;
-        if (b<c) continue;
+        if (c<b) continue;
         Orbit& oc = modelspace->GetOrbit(c);
 //        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > E3cut ) continue;
         if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > modelspace->E3max ) continue;

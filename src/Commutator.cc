@@ -2465,6 +2465,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
           {
             Orbit& oj = Z.modelspace->GetOrbit(j);
             double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+            if ( (de_k + de_l) > Z.modelspace->GetdE3max() ) continue;
 //            if ( (de_k + de_l + de_j) > Z.modelspace->GetdE3max() ) continue;
             double nj = oj.occ;
 
@@ -2532,7 +2533,12 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       size_t b = abcJ[1];
       size_t c = abcJ[2];
       int Jab  = abcJ[3];
+      Orbit& oa = Z.modelspace->GetOrbit(a);
+      Orbit& ob = Z.modelspace->GetOrbit(b);
       Orbit& oc = Z.modelspace->GetOrbit(c);
+      double de_a = std::abs( 2*oa.n + oa.l - e_fermi[oa.tz2]);
+      double de_b = std::abs( 2*ob.n + ob.l - e_fermi[ob.tz2]);
+      double de_c = std::abs( 2*oc.n + oc.l - e_fermi[oc.tz2]);
       int j2c = oc.j2;
       for (size_t ind_klj=0; ind_klj<dim_klj; ind_klj++)
       {
@@ -2544,6 +2550,11 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         Orbit& oj = Z.modelspace->GetOrbit(j);
         Orbit& ok = Z.modelspace->GetOrbit(k);
         Orbit& ol = Z.modelspace->GetOrbit(l);
+        double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+        double de_k = std::abs( 2*ok.n + ok.l - e_fermi[ok.tz2]);
+        double de_l = std::abs( 2*ol.n + ol.l - e_fermi[ol.tz2]);
+        if ( (de_k + de_l + de_c) > Z.modelspace->GetdE3max() ) continue;
+        if ( (de_a + de_b + de_j) > Z.modelspace->GetdE3max() ) continue;
         int twoJp_min = std::max( std::abs(2*Jab - oj.j2), std::abs(2*Jkl-j2c));
         int twoJp_max = std::min( 2*Jab + oj.j2, 2*Jkl+j2c);
         for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
