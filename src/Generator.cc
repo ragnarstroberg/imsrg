@@ -319,9 +319,15 @@ void Generator::ConstructGenerator_Atan_3body()
 //    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
 //    {
 
+     size_t ncore = modelspace->core.size();
+     std::vector<size_t> corevec;
+     for (auto a : modelspace->core) corevec.push_back(a);
      std::cout << __func__ << "  looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
-    for (auto a : modelspace->core )
+//    for (auto a : modelspace->core )
+    #pragma omp parallel for schedule(dynamic,1)
+    for (size_t ind_a=0; ind_a<ncore; ind_a++ )
     {
+     auto a = corevec[ind_a];
      Orbit& oa = modelspace->GetOrbit(a);
      for (auto b : modelspace->core )
      {
@@ -435,9 +441,15 @@ void Generator::ConstructGenerator_ImaginaryTime()
 
 void Generator::ConstructGenerator_ImaginaryTime_3body()
 {
+     size_t ncore = modelspace->core.size();
+     std::vector<size_t> corevec;
+     for (auto a : modelspace->core) corevec.push_back(a);
      std::cout << __func__ << "  looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
-    for (auto a : modelspace->core )
+//    for (auto a : modelspace->core )
+    #pragma omp parallel for schedule(dynamic,1)
+    for (size_t ind_a=0; ind_a<ncore; ind_a++ )
     {
+     auto a = corevec[ind_a];
      Orbit& oa = modelspace->GetOrbit(a);
      for (auto b : modelspace->core )
      {
@@ -661,8 +673,14 @@ void Generator::ConstructGenerator_ShellModel_Atan_3body()
     double t_start = omp_get_wtime();
 
      std::cout << "looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
-    for (auto a : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
+    std::vector<size_t> alist;
+    for (auto a : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) ) alist.push_back(a);
+    size_t a_size = alist.size();
+
+//    for (auto a : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
+    for (size_t ind_a=0; ind_a<a_size; ind_a++ )
     {
+     auto a = alist[ind_a];
      Orbit& oa = modelspace->GetOrbit(a);
      for (auto b : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace ) )
      {
