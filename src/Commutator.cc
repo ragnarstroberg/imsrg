@@ -5359,6 +5359,240 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 //      Checked with UnitTest and passed                                                                      
 //
 // TODO This can be recast as a mat mult. Right now, it's very slow.
+/*
+void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
+{
+  double tstart = omp_get_wtime();
+  auto& X3 = X.ThreeBody;
+  auto& Y3 = Y.ThreeBody;
+  auto& Z3 = Z.ThreeBody;
+  auto& X2 = X.TwoBody;
+  auto& Y2 = Y.TwoBody;
+
+  int hermX = X.IsHermitian() ? 1 : -1;
+  int hermY = Y.IsHermitian() ? 1 : -1;
+
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+
+  int norbs = Z.modelspace->GetNumberOrbits();
+  double X3NORM = X3.Norm();
+  double Y3NORM = Y3.Norm();
+  bool x3_allocated = X3.is_allocated;
+  bool y3_allocated = Y3.is_allocated;
+//  if (X3NORM<1e-6 and Y3NORM<1e-6 ) return;
+  size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
+  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  for (size_t ch3=0; ch3<nch3; ch3++)
+  {
+    auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
+    int twoJ = Tbc.twoJ;
+    double Jtot = 0.5 * twoJ;
+    size_t nkets = Tbc.GetNumberKets();
+    std::vector<size_t> kets_kept;
+    std::map<size_t,size_t> kept_lookup;
+    for (size_t iket=0; iket<nkets; iket++)
+    {
+      Ket3& ket = Tbc.GetKet(iket);
+      double d_ei = std::abs(2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
+      double d_ej = std::abs(2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
+      double d_ek = std::abs(2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
+      if (  (d_ei+d_ej+d_ek ) > Z.modelspace->GetdE3max() ) continue;
+      kets_kept.push_back( iket );
+      kept_lookup[iket] = kets_kept.size()-1;
+    }
+    size_t nkets_kept = kets_kept.size();
+
+
+    arma::mat X2MAT( nkets_kept, nkets_kept, arma::fill::zeros);
+    arma::mat Y2MAT( nkets_kept, nkets_kept, arma::fill::zeros);
+    arma::mat X3MAT( nkets_kept, nkets_kept, arma::fill::zeros);
+    arma::mat Y3MAT( nkets_kept, nkets_kept, arma::fill::zeros);
+    arma::mat Z3MAT( nkets_kept, nkets_kept, arma::fill::zeros);
+
+    for (size_t index_bra=0; index_bra<nkets_kept; index_bra++)
+    {
+      size_t ibra = kets_kept[index_bra];
+      Ket3& bra = Tbc.GetKet(ibra);
+      size_t i = bra.p;
+      size_t j = bra.q;
+      size_t k = bra.r;
+      Orbit& oi = Z.modelspace->GetOrbit(i);
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+      Orbit& ok = Z.modelspace->GetOrbit(k);
+      double d_ei = std::abs(2*oi.n + oi.l - e_fermi[oi.tz2]);
+      double d_ej = std::abs(2*oj.n + oj.l - e_fermi[oj.tz2]);
+      double d_ek = std::abs(2*ok.n + ok.l - e_fermi[ok.tz2]);
+      int Jij = bra.Jpq;
+      double ji = 0.5 * oi.j2;
+      double jj = 0.5 * oj.j2;
+      double jk = 0.5 * ok.j2;
+
+
+      for (size_t ch_ab=0; ch_ab<nch2; ch_ab++)
+      {
+        auto& tbc_ab = Z.modelspace->GetTwoBodyChannel(ch_ab);
+        size_t nkets_ab = tbc_ab.GetNumberKets();
+        int Jab = tbc_ab.J;
+
+        if ( ((2*tbc_ab.Tz + ok.tz2) == Tbc.twoTz)  and ( (tbc_ab.parity + ok.l + Tbc.parity)%2==0) and Jab == Jij)
+        {
+          for (size_t iket_ab=0; iket_ab<nkets_ab; iket_ab++)
+          {
+              auto& ket_ab = tbc_ab.GetKet(iket_ab);
+              size_t a = ket_ab.p;
+              size_t b = ket_ab.q;
+              double d_ea = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+              double d_eb = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+              if ( (d_ea + d_eb + d_ek) > Z.modelspace->dE3max ) continue;
+              double occfactor = 1-ket_ab.op->occ-ket_ab.oq->occ;
+              if (std::abs(occfactor)<1e-6) continue;
+              double symm_factor =  (a==b) ? 1.0 : 2.0;
+              double xijab = X2.GetTBME_J(Jab,Jab,i,j,a,b);
+              double yijab = Y2.GetTBME_J(Jab,Jab,i,j,a,b);
+
+
+              std::vector<size_t> ket_list;
+              std::vector<double> recouple_list;
+              
+              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, k,  ket_list,  recouple_list );
+              for (size_t ilist=0; ilist<ket_list.size(); ilist++)
+              {
+                auto iter_find = kept_lookup.find( ket_list[ilist] );
+                if (iter_find == kept_lookup.end() ) continue;
+                size_t index_ket = iter_find->second;
+                double recouple = recouple_list[ilist];
+                X2MAT(index_bra,index_ket) += 0.5 * symm_factor * occfactor * recouple * xijab ;
+                Y2MAT(index_bra,index_ket) += 0.5 * symm_factor * occfactor * recouple * yijab ;
+              }// for ilist
+
+          }// for iket_ab
+        } // if J, Tz and parity check for term 1
+
+        // Permute  Pik
+        if ( ((2*tbc_ab.Tz + oi.tz2) == Tbc.twoTz)  and ( (tbc_ab.parity + oi.l + Tbc.parity)%2==0)
+                   and (std::abs(2*Jab-oi.j2)<=twoJ) and ((2*Jab+oi.j2)>=twoJ) )
+        {
+           double sixj = Z.modelspace->GetSixJ(ji,jj,Jij,jk,Jtot,Jab);
+           if (std::abs(sixj)>1e-6) 
+           {
+            double hats = sqrt( (2*Jij+1)*(2*Jab+1));
+            for (size_t iket_ab=0; iket_ab<nkets_ab; iket_ab++)
+            {
+              auto& ket_ab = tbc_ab.GetKet(iket_ab);
+              size_t a = ket_ab.p;
+              size_t b = ket_ab.q;
+              double d_ea = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+              double d_eb = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+              if ( (d_ea + d_eb + d_ei) > Z.modelspace->dE3max ) continue;
+              double occfactor = 1-ket_ab.op->occ-ket_ab.oq->occ;
+              if (std::abs(occfactor)<1e-6) continue;
+              double symm_factor =  (a==b) ? 1.0 : 2.0;
+              double xkjab = X2.GetTBME_J(Jab,Jab,k,j,a,b);
+              double ykjab = Y2.GetTBME_J(Jab,Jab,k,j,a,b);
+
+              std::vector<size_t> ket_list;
+              std::vector<double> recouple_list;
+              
+              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, i,  ket_list,  recouple_list );
+              for (size_t ilist=0; ilist<ket_list.size(); ilist++)
+              {
+                auto iter_find = kept_lookup.find( ket_list[ilist] );
+                if (iter_find == kept_lookup.end() ) continue;
+                size_t index_ket = iter_find->second;
+                double recouple = recouple_list[ilist];
+                X2MAT(index_bra,index_ket) -= 0.5 * hats * sixj * symm_factor * occfactor * recouple * xkjab ;
+                Y2MAT(index_bra,index_ket) -= 0.5 * hats * sixj * symm_factor * occfactor * recouple * ykjab ;
+              }// for ilist
+
+            }// for iket_ab
+           }// if sixj nonzero
+        } // if J, Tz and parity check for term 2
+
+
+        // Permute  Pjk
+        if ( ((2*tbc_ab.Tz + oj.tz2) == Tbc.twoTz)  and ( (tbc_ab.parity + oj.l + Tbc.parity)%2==0) 
+                   and (std::abs(2*Jab-oj.j2)<=twoJ) and ((2*Jab+oj.j2)>=twoJ) )
+        {
+           double sixj = Z.modelspace->GetSixJ(jj,ji,Jij,jk,Jtot,Jab);
+           if (std::abs(sixj)>1e-6)
+           {
+             double hats = sqrt( (2*Jij+1)*(2*Jab+1));
+             int phase = Z.modelspace->phase( (oj.j2+ok.j2)/2-Jij-Jab);
+             for (size_t iket_ab=0; iket_ab<nkets_ab; iket_ab++)
+             {
+               auto& ket_ab = tbc_ab.GetKet(iket_ab);
+               size_t a = ket_ab.p;
+               size_t b = ket_ab.q;
+               double d_ea = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+               double d_eb = std::abs( 2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2] );
+               if ( (d_ea + d_eb + d_ej) > Z.modelspace->dE3max ) continue;
+               double occfactor = 1-ket_ab.op->occ-ket_ab.oq->occ;
+               if (std::abs(occfactor)<1e-6) continue;
+               double symm_factor =  (a==b) ? 1.0 : 2.0;
+               double xikab = X2.GetTBME_J(Jab,Jab,i,k,a,b);
+               double yikab = Y2.GetTBME_J(Jab,Jab,i,k,a,b);
+
+              std::vector<size_t> ket_list;
+              std::vector<double> recouple_list;
+              
+              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, j,  ket_list,  recouple_list );
+              for (size_t ilist=0; ilist<ket_list.size(); ilist++)
+              {
+                auto iter_find = kept_lookup.find( ket_list[ilist] );
+                if (iter_find == kept_lookup.end() ) continue;
+                size_t index_ket = iter_find->second;
+                double recouple = recouple_list[ilist];
+                X2MAT(index_bra,index_ket) -= 0.5 * hats * sixj * symm_factor * occfactor * recouple * xikab ;
+                Y2MAT(index_bra,index_ket) -= 0.5 * hats * sixj * symm_factor * occfactor * recouple * yikab ;
+              }// for ilist
+
+             }// for iket_ab
+          }// if sixj nonzero
+        } // if  J, Tz and parity check for term 3
+
+      }// for ch_ab
+
+    }// for index_bra
+
+
+     // Fill X3 and Y3
+    // kept_lookup is a map   Full index => Kept index, so iter_bra.first gives the full index, and iter_bra.second is the
+    // index for the 3-body state we keep in this commutator
+    for ( auto& iter_bra : kept_lookup )
+    {
+      for ( auto& iter_ket : kept_lookup )
+      {
+//        if ( X3NORM > 1e-6)
+        if ( x3_allocated )
+           X3MAT( iter_bra.second, iter_ket.second) = X3.GetME_pn_PN_ch(ch3,ch3, iter_bra.first, iter_ket.first );
+//        if ( Y3NORM > 1e-6)
+        if ( y3_allocated )
+           Y3MAT( iter_bra.second, iter_ket.second) = Y3.GetME_pn_PN_ch(ch3,ch3, iter_bra.first, iter_ket.first );
+      }
+    }
+
+
+    // Do the matrix multiplication
+    Z3MAT = X2MAT*Y3MAT - Y2MAT*X3MAT +  hermX*hermY * ( X3MAT.t()*Y2MAT.t() - Y3MAT.t()*X2MAT.t() );
+
+
+    // unpack the result
+    for ( auto& iter_bra : kept_lookup )
+    {
+      for ( auto& iter_ket : kept_lookup )
+      {
+        if ( iter_ket.first < iter_bra.first ) continue;
+        Z3.AddToME_pn_PN_ch(ch3,ch3, iter_bra.first,iter_ket.first,  Z3MAT(iter_bra.second,iter_ket.second) );
+      }
+    }
+ 
+  }// for ch3
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+}
+*/
+
+
 void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
