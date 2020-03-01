@@ -13,7 +13,7 @@
 //using namespace imsrg_util;
 
 Generator::Generator()
-  : generator_type("white"), denominator_cutoff(1e-6)  , denominator_delta(0), denominator_delta_index(-1)
+  : generator_type("white"), denominator_cutoff(1e-6)  , denominator_delta(0), denominator_delta_index(-1), only_2b_eta(false)
 {}
 
 
@@ -299,7 +299,7 @@ void Generator::ConstructGenerator_Atan()
       }
     }
 
-    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
+    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 and not only_2b_eta )
     {
        double t_start = omp_get_wtime();
        ConstructGenerator_Atan_3body();
@@ -431,6 +431,75 @@ void Generator::ConstructGenerator_ImaginaryTime()
       }
     }
 }
+
+
+void Generator::ConstructGenerator_ImaginaryTime_3body()
+{
+     std::cout << __func__ << "  looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
+    for (auto a : modelspace->core )
+    {
+     Orbit& oa = modelspace->GetOrbit(a);
+     for (auto b : modelspace->core )
+     {
+//      if (b>a) continue;
+      if (b<a) continue;
+      Orbit& ob = modelspace->GetOrbit(b);
+      int Jab_min = std::abs(oa.j2-ob.j2)/2;
+      int Jab_max = (oa.j2+ob.j2)/2;
+      for (int Jab=Jab_min; Jab<=Jab_max; Jab++)
+      {
+       for (auto c : modelspace->core )
+       {
+//        if (c>b) continue;
+        if (b<c) continue;
+        Orbit& oc = modelspace->GetOrbit(c);
+        if ( (2*(oa.n+ob.n+oc.n)+oa.l+ob.l+oc.l) > modelspace->E3max ) continue;
+
+        for ( auto i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
+        {
+         Orbit& oi = modelspace->GetOrbit(i);
+         for ( auto j : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
+         {
+//          if (j>i) continue;
+          if (j<i) continue;
+          Orbit& oj = modelspace->GetOrbit(j);
+          int Jij_min = std::abs(oi.j2-oj.j2)/2;
+          int Jij_max = (oi.j2+oj.j2)/2;
+          for (int Jij=Jij_min; Jij<=Jij_max; Jij++)
+          {
+           for ( auto k : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
+           {
+//            if (k>j) continue;
+            if (k<j) continue;
+            Orbit& ok = modelspace->GetOrbit(k);
+            if ( (2*(oi.n+oj.n+ok.n)+oi.l+oj.l+ok.l) > modelspace->E3max ) continue;
+            if ( (oa.l+ob.l+oc.l+oi.l+oj.l+ok.l)%2>0 ) continue;
+            if ( (oa.tz2+ob.tz2+oc.tz2) != (oi.tz2+oj.tz2+ok.tz2) ) continue;
+            double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
+
+            int twoJ_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jij-ok.j2) );
+            int twoJ_max = std::min( 2*Jab+oc.j2, 2*Jij+ok.j2 );
+            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+            {
+              double ME_od = H->ThreeBody.GetME_pn( Jab, Jij, twoJ, a,b,c,i,j,k);
+//              double eta = 0.5*atan(2*ME_od / denominator);
+              double eta = ME_od  * denominator / std::abs(denominator);
+              Eta->ThreeBody.AddToME_pn( Jab, Jij, twoJ, a,b,c,i,j,k,  eta);
+            }
+           }
+          }
+         }
+        }
+       }
+      } 
+     } 
+    }// for a
+    std::cout << "Size of Eta3 = " << Eta->ThreeBodyNorm() << std::endl;
+//    }// if particle rank >3
+//    H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
+}
+
+
 
 
 
@@ -574,7 +643,7 @@ void Generator::ConstructGenerator_ShellModel_Atan()
 
     }
 
-    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 )
+    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 and not only_2b_eta )
     {
        ConstructGenerator_ShellModel_Atan_3body();
     }
