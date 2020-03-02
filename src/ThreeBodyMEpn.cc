@@ -530,7 +530,7 @@ void ThreeBodyMEpn::TransformToPN()
 
   size_t nch = modelspace->GetNumberThreeBodyChannels();
 
-//  #pragma omp parallel for schedule(dynamic,1)
+  #pragma omp parallel for schedule(dynamic,1)
   for (size_t ch=0; ch<nch; ch++)
   {
 

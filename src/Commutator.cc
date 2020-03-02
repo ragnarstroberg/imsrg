@@ -208,15 +208,15 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       X.profiler.timer["comm133ss"] += omp_get_wtime() - t_start;
 
 ////    Not too bad, though naively n^8
-//       std::cout << " comm233_pp_hh " << std::endl;
+       std::cout << " comm233_pp_hh " << std::endl;
 //       t_start = omp_get_wtime();
-//       comm233_pp_hhss(X, Y, Z);
+       comm233_pp_hhss(X, Y, Z);
 //       X.profiler.timer["comm233_pp_hhss"] += omp_get_wtime() - t_start;
 
 //     This one is super slow too. It involves 9js
-//       std::cout << " comm233_ph " << std::endl;
+       std::cout << " comm233_ph " << std::endl;
 //       t_start = omp_get_wtime();
-//       comm233_phss(X, Y, Z);
+       comm233_phss(X, Y, Z);
 //       X.profiler.timer["comm233_phss"] += omp_get_wtime() - t_start;
 
 //       not too bad, though naively n^8
@@ -226,15 +226,15 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       X.profiler.timer["comm332_ppph_hhhpss"] += omp_get_wtime() - t_start;
 
 //      This one works, but it involves 9js so it's slow, so it's commented out for now...
-//       std::cout << " comm332_pphh " << std::endl;
+       std::cout << " comm332_pphh " << std::endl;
 //       t_start = omp_get_wtime();
-//       comm332_pphhss(X, Y, Z);
+       comm332_pphhss(X, Y, Z);
 //       X.profiler.timer["comm332_pphhss"] += omp_get_wtime() - t_start;
 
 //       not too bad though naively n^9
-       std::cout << " comm333_ppp_hhhss " << std::endl;
+//       std::cout << " comm333_ppp_hhhss " << std::endl;
 //       t_start = omp_get_wtime();
-       comm333_ppp_hhhss(X, Y, Z);
+//       comm333_ppp_hhhss(X, Y, Z);
 //       X.profiler.timer["comm333_ppp_hhhss"] += omp_get_wtime() - t_start;
 
 //     This one works, but it's incredibly slow.  naively n^9.
@@ -2414,8 +2414,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   }
   
 
-    Z.profiler.timer["comm232_block1"] += omp_get_wtime() - tstart;
-    tstart = omp_get_wtime();
+//    Z.profiler.timer["comm232_block1"] += omp_get_wtime() - tstart;
+//    tstart = omp_get_wtime();
 
   // next, figure out which three-body states |klj`> and |abc`> exist and make a list.
 
@@ -2428,8 +2428,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   for ( auto& iter_i : local_one_body_channels) obc_keys.push_back(iter_i.first);
   size_t nkeys = obc_keys.size();
 
-    Z.profiler.timer["comm232_block2"] += omp_get_wtime() - tstart;
-    tstart = omp_get_wtime();
+//    Z.profiler.timer["comm232_block2"] += omp_get_wtime() - tstart;
+//    tstart = omp_get_wtime();
   
 //  for ( auto& iter_i : local_one_body_channels )
 //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -2489,8 +2489,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   }// for ikey
 
 //  std::cout << __func__ << " check2" << std::endl;
-    Z.profiler.timer["comm232_block2.5"] += omp_get_wtime() - tstart;
-    tstart = omp_get_wtime();
+//    Z.profiler.timer["comm232_block2.5"] += omp_get_wtime() - tstart;
+//    tstart = omp_get_wtime();
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   for ( size_t ikey=0; ikey<nkeys; ikey++ )
   {
@@ -2626,8 +2626,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
 //  std::cout << __func__ << " check3" << std::endl;
 
-    Z.profiler.timer["comm232_block3"] += omp_get_wtime() - tstart;
-    tstart = omp_get_wtime();
+//    Z.profiler.timer["comm232_block3"] += omp_get_wtime() - tstart;
+//    tstart = omp_get_wtime();
   // now we need to unpack all that mess.
 
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -2715,8 +2715,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   }// for ch
 
 //  std::cout << __func__ << " check4" << std::endl;
-    Z.profiler.timer["comm232_block4"] += omp_get_wtime() - tstart;
-    tstart = omp_get_wtime();
+//    Z.profiler.timer["comm232_block4"] += omp_get_wtime() - tstart;
+//    tstart = omp_get_wtime();
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }

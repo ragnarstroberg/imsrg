@@ -71,18 +71,34 @@ void HartreeFock::Solve()
    int maxiter = 1000;
    double density_mixing_factor = 0.2;
    double field_mixing_factor = 0.0;
+   int fill_modulus = 5;
 //   double mixing_factor = 0.0;
+
+//   double theta00 = 0.167325;
+//  double theta11 = 0.1747955;
+//           C.eye();
+//          C(0,0) = cos(theta00);
+//          C(10,10) = cos(theta00);
+//          C(10,0) = sin(theta00);
+//          C(0,10) = -sin(theta00);
+//          C(1,1) = cos(theta11);
+//          C(11,11) = cos(theta11);
+//          C(11,1) = sin(theta11);
+//          C(1,11) = -sin(theta11);
+//          UpdateDensityMatrix();
+//          UpdateF();
+
 
    for (iterations=0; iterations<maxiter; ++iterations)
    {
       Diagonalize();          // Diagonalize the Fock matrix
       ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
-      if (iterations%2==0 and not freeze_occupations) FillLowestOrbits(); // if we don't freeze the occupations, then calculate the new ones.
-
-      // After 50 iterations, do the first 20 out of every 50 with DIIS, which hopefully helps us break out of any cycles
-//      if (iterations > 50 and (iterations%50)<20 )
-//      if (iterations < -20 and (DIIS_error_mats.size()<1 or arma::norm( DIIS_error_mats.back(),"fro")>0.1)  )
-//      if (iterations < 20 and (DIIS_error_mats.size()<1 or arma::norm( DIIS_error_mats.back(),"fro")>0.1)  )
+      // This bit is occationally the source of non-convergence of the iterations
+      if (iterations > 10  and (iterations%fill_modulus)==0 and not freeze_occupations)
+      {
+         FillLowestOrbits();// if we don't freeze the occupations, then calculate the new ones.
+         fill_modulus*=2; // to avoid cycles, we keep increasing the interval between checking if we should change the occupations.
+      }
 
       if (iterations == 500)
       {
@@ -90,6 +106,12 @@ void HartreeFock::Solve()
         field_mixing_factor = 0.5;
         std::cout << "Still not converged after 500 iterations. Setting density_mixing_factor => " << density_mixing_factor
                   << " field_mixing_factor => " << field_mixing_factor << std::endl;
+
+      }
+      if (iterations>600 and iterations%10 == 3 ) // if we've made it to 600, really put on the brakes with a big mixing factor, with random noise
+      {
+        field_mixing_factor = 1 - 0.005 * (std::rand() % 100);
+        density_mixing_factor = 1- 0.005 * ( std::rand() % 100);
       }
 
       if (iterations >100 and (DIIS_error_mats.size()<1 or arma::norm( DIIS_error_mats.back(),"fro")>0.01)  )
@@ -97,6 +119,9 @@ void HartreeFock::Solve()
          if (iterations==100)
          {
            std::cout << "Still not converged after 100 iterations. Switching to DIIS." << std::endl;
+           C.eye(); // reset the density matrix to the starting point
+           UpdateDensityMatrix();
+           UpdateF();
          }
          UpdateDensityMatrix_DIIS();
          if ( arma::norm( DIIS_error_mats.back(),"fro")<0.01)
@@ -132,6 +157,35 @@ void HartreeFock::Solve()
       std::cout << "!!!! Last " << convergence_EHF.size() << "  EHF values: ";
       for (auto& x : convergence_EHF ) std::cout << x << " ";
       std::cout << std::endl;
+
+//      std::cout << "GRID SEARCH in THETA00 THETA11: " << std::endl;
+//      for (double theta00=0; theta00<3.14159/2; theta00+=0.05)
+//      {
+//        for (double theta11=0; theta11<3.14159/2; theta11+=0.05)
+//      for (double theta00=0.16731; theta00<0.16734; theta00+=0.000001)
+//      {
+//        for (double theta11=0.174785; theta11<0.174810; theta11+=0.000001)
+//        {
+//          C.eye();
+//          C(0,0) = cos(theta00);
+//          C(10,10) = cos(theta00);
+//          C(10,0) = sin(theta00);
+//          C(0,10) = -sin(theta00);
+//          C(1,1) = cos(theta11);
+//          C(11,11) = cos(theta11);
+//          C(11,1) = sin(theta11);
+//          C(1,11) = -sin(theta11);
+//          UpdateDensityMatrix();
+//          UpdateF();
+//          arma::mat Fhf = C.t() * F * C;
+//          double f010 = Fhf(0,10);
+//          double f111 = Fhf(1,11);
+//          std::cout << "  " << theta00 << " " << theta11 << "    " << f010 << "   " << f111 << std::endl;
+//        }
+//      }
+
+
+
    }
    UpdateReference();
    PrintEHF();
@@ -198,6 +252,7 @@ void HartreeFock::PrintEHF()
 //*********************************************************************
 void HartreeFock::Diagonalize()
 {
+//  std::cout << __func__ << " begin " << std::endl;
    prev_energies = energies;
    for ( auto& it : Hbare.OneBodyChannels )
    {
@@ -225,6 +280,7 @@ void HartreeFock::Diagonalize()
       C.submat(orbvec,orbvec) = C_ch;
 
    }
+//  std::cout << __func__ << " end " << std::endl;
 }
 
 
@@ -721,7 +777,8 @@ void HartreeFock::UpdateDensityMatrix()
 void HartreeFock::UpdateDensityMatrix_DIIS()
 {
 
-  size_t N_MATS_STORED = 4; // How many past density matrices and error matrices to store
+//  std::cout << __func__ << " begin " << std::endl;
+  size_t N_MATS_STORED = 5; // How many past density matrices and error matrices to store
 
   // If we're at the solution, the Fock matrix F and rho will commute
   arma::mat error_mat = F * rho - rho * F;
@@ -770,6 +827,10 @@ void HartreeFock::UpdateDensityMatrix_DIIS()
   rho.zeros();
   // our next guess for rho is a linear combination of the previous ones
   for (size_t i=0; i<nsave; i++)   rho += cvec(i) * DIIS_density_mats[i];
+//  std::cout << "cvec is " << cvec.t() << std::endl;
+//  std::cout << "Bij is " << std::endl << Bij << std::endl;
+//  std::cout << "det(B) = " << arma::det(Bij) << std::endl;
+//  std::cout << __func__ << " end " << std::endl;
 
 }
 
@@ -815,6 +876,17 @@ void HartreeFock::FillLowestOrbits()
     if((placedZ >= targetZ) and (placedN >= targetN) ) break;
   }
 
+  std::set<index_t> newholes;
+  std::set<index_t> oldholes;
+
+  for (auto i : holeorbs_tmp ) newholes.insert(i);
+  for (auto i : holeorbs ) oldholes.insert(i);
+  if ( oldholes != newholes )
+  {
+     std::cout << "Changing hole orbits. New holes:" << std::endl;
+     for (auto i : holeorbs_tmp ) std::cout << i << " ";
+     std::cout << std::endl;
+  }
 
   holeorbs = arma::uvec( holeorbs_tmp );
   hole_occ = arma::rowvec( hole_occ_tmp );
