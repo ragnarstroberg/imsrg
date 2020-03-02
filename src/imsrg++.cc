@@ -100,6 +100,7 @@ int main(int argc, char** argv)
   bool use_NAT_occupations = (parameters.s("use_NAT_occupations")=="true") ? true : false;
   bool store_3bme_pn = (parameters.s("store_3bme_pn")=="true");
   bool only_2b_eta = (parameters.s("only_2b_eta")=="true");
+  bool only_2b_omega = (parameters.s("only_2b_omega")=="true");
 
   int eMax = parameters.i("emax");
   int lmax = parameters.i("lmax"); // so far I only use this with atomic systems.
@@ -651,6 +652,11 @@ int main(int argc, char** argv)
     return 0;
   }
 
+  if (only_2b_omega)
+  {
+    std::cout << " Restricting the Magnus operator Omega to be 2b." << std::endl;
+    Commutator::SetOnly2bOmega(only_2b_omega);
+  }
 
   IMSRGSolver imsrgsolver(HNO);
   imsrgsolver.SetReadWrite(rw);

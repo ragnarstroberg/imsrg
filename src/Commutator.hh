@@ -16,6 +16,7 @@ namespace Commutator{
   extern bool use_goose_tank_correction;
   extern bool use_brueckner_bch;
   extern bool use_imsrg3;
+  extern bool only_2b_omega;
   extern double bch_transform_threshold;
   extern double bch_product_threshold;
 
@@ -24,6 +25,7 @@ namespace Commutator{
   void SetUseBruecknerBCH(bool tf);
   void SetUseGooseTank(bool tf);
   void SetUseIMSRG3(bool tf);
+  void SetOnly2bOmega(bool tf);
 
 
   Operator Commutator(const Operator& X, const Operator& Y) ; 
@@ -79,6 +81,7 @@ namespace Commutator{
   void comm133ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z ) ;     // implemented and tested.
+  void comm233_pp_hhss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;     // implemented and tested.
   void comm233_phss( const Operator& X, const Operator& Y, Operator& Z ) ;        // implemented and tested.
 
   void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
