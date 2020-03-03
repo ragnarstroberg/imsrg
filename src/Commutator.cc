@@ -22,6 +22,7 @@ namespace Commutator {
 bool use_goose_tank_correction = false;
 bool use_brueckner_bch = false;
 bool use_imsrg3 = false;
+bool only_2b_omega = false;
 double bch_transform_threshold = 1e-9;
 double bch_product_threshold = 1e-4;
 
@@ -41,6 +42,8 @@ void SetUseGooseTank(bool tf)
 void SetUseIMSRG3(bool tf)
 {use_imsrg3 = tf;}
 
+void SetOnly2bOmega(bool tf)
+{only_2b_omega = tf;}
 
 //Operator Operator::Commutator( Operator& opright)
 /// Returns \f$ Z = [X,Y] \f$
@@ -159,15 +162,16 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
    if (use_imsrg3)
    {
+       X.profiler.counter["N_ScalarCommutators_3b"] += 1;
 //     if (X.GetParticleRank()>2 and Y.GetParticleRank()>2)
 //     {
        // This gets the perturbative energy from the induced 3 body
-       std::cout << " comm330 " << std::endl;
-       comm330ss(X, Y, Z); // scales as n^6
+//       std::cout << " comm330 " << std::endl;
+//       comm330ss(X, Y, Z); // scales as n^6
 
 //     Maybe not so important, but I think relatively cheap
-       std::cout << " comm331 " << std::endl;
-       comm331ss(X, Y, Z); // scales as n^7
+//       std::cout << " comm331 " << std::endl;
+//       comm331ss(X, Y, Z); // scales as n^7
 //     }
 
 //     This one is essential. If it's not here, then there are no induced 3 body terms
@@ -177,12 +181,12 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //     if (X.GetParticleRank()>2 or Y.GetParticleRank()>2)
 //     {
        // Demonstrated that this can have some effect
-       std::cout << " comm231 " << std::endl;
-       comm231ss(X, Y, Z);  // scales as n^6
+//       std::cout << " comm231 " << std::endl;
+//       comm231ss(X, Y, Z);  // scales as n^6
 
 //     no demonstrated effect yet, but it's cheap
-       std::cout << " comm132 " << std::endl;
-       comm132ss(X, Y, Z); // scales as n^6
+//       std::cout << " comm132 " << std::endl;
+//       comm132ss(X, Y, Z); // scales as n^6
 
 //     one of the two most important IMSRG(3) terms
        std::cout << " comm232 " << std::endl;
@@ -190,24 +194,26 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       comm232ss_debug(X, Y, Z);   // this is the slowest n^7 term
 
 //     important for suppressing off-diagonal H3
-       std::cout << " comm133 " << std::endl;
-       comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
+//       std::cout << " comm133 " << std::endl;
+//       comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
 
 ////    Not too bad, though naively n^8
-       std::cout << " comm233_pp_hh " << std::endl;
-       comm233_pp_hhss(X, Y, Z);
+//       std::cout << " comm233_pp_hh " << std::endl;
+//       comm233_pp_hhss(X, Y, Z);
+//       comm233_pp_hhss_debug(X, Y, Z);
+//       X.profiler.timer["comm233_pp_hhss"] += omp_get_wtime() - t_start;
 
 //     This one is super slow too. It involves 9js
-       std::cout << " comm233_ph " << std::endl;
-       comm233_phss(X, Y, Z);
+//       std::cout << " comm233_ph " << std::endl;
+//       comm233_phss(X, Y, Z);
 
 //       not too bad, though naively n^8
-       std::cout << " comm332_ppph_hhhp " << std::endl;
-       comm332_ppph_hhhpss(X, Y, Z);
+//       std::cout << " comm332_ppph_hhhp " << std::endl;
+//       comm332_ppph_hhhpss(X, Y, Z);
 
 //      This one works, but it involves 9js so it's slow, so it's commented out for now...
-       std::cout << " comm332_pphh " << std::endl;
-       comm332_pphhss(X, Y, Z);
+//       std::cout << " comm332_pphh " << std::endl;
+//       comm332_pphhss(X, Y, Z);
 
 //       not too bad though naively n^9
 //       std::cout << " comm333_ppp_hhhss " << std::endl;
@@ -480,11 +486,15 @@ Operator BCH_Product(  Operator& X, Operator& Y)
 
    Operator Z = X + Y;
 
-//return Z; // TODO: Get rid of this!!!
+   // if we set the option only_2b_omega
+   // then temporarily switch to imsrg2 for updating Omega
+   bool _save_imsrg3 = use_imsrg3;
+   if (only_2b_omega)
+   {
+     Z.ThreeBody.Erase();
+     use_imsrg3 = false;
+   }
 
-//   if (use_goose_tank_correction) return Z; // Not sure why this is here
-//   Operator Nested = Y;
-//   Nested.SetToCommutator(Y,X)
    Operator Nested = Commutator(Y,X);  // [Y,X]
 
 
@@ -505,6 +515,8 @@ Operator BCH_Product(  Operator& X, Operator& Y)
      Nested = Commutator(Y,Nested);
      k++;
    }
+
+   use_imsrg3 = _save_imsrg3;// set it back to how it was.
 
    X.profiler.timer["BCH_Product"] += omp_get_wtime() - tstart;
    return Z;
@@ -4466,7 +4478,9 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 
 
     // Do the matrix multiplication
-    Z3MAT = X1MAT*Y3MAT - Y1MAT*X3MAT +  hermX*hermY * ( X3MAT.t()*Y1MAT.t() - Y3MAT.t()*X1MAT.t() );
+//    Z3MAT = X1MAT*Y3MAT - Y1MAT*X3MAT +  hermX*hermY * ( X3MAT.t()*Y1MAT.t() - Y3MAT.t()*X1MAT.t() );
+    Z3MAT = X1MAT*Y3MAT - Y1MAT*X3MAT;
+    Z3MAT -=  hermX*hermY * Z3MAT.t();
 
 
     // unpack the result
@@ -5331,8 +5345,6 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 //                                                           
 //      Checked with UnitTest and passed                                                                      
 //
-// TODO This can be recast as a mat mult. Right now, it's very slow.
-/*
 void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
@@ -5352,7 +5364,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
   double Y3NORM = Y3.Norm();
   bool x3_allocated = X3.is_allocated;
   bool y3_allocated = Y3.is_allocated;
-//  if (X3NORM<1e-6 and Y3NORM<1e-6 ) return;
+
   size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -5474,8 +5486,8 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                 if (iter_find == kept_lookup.end() ) continue;
                 size_t index_ket = iter_find->second;
                 double recouple = recouple_list[ilist];
-                X2MAT(index_bra,index_ket) -= 0.5 * hats * sixj * symm_factor * occfactor * recouple * xkjab ;
-                Y2MAT(index_bra,index_ket) -= 0.5 * hats * sixj * symm_factor * occfactor * recouple * ykjab ;
+                X2MAT(index_bra,index_ket) += 0.5 * hats * sixj * symm_factor * occfactor * recouple * xkjab ;
+                Y2MAT(index_bra,index_ket) += 0.5 * hats * sixj * symm_factor * occfactor * recouple * ykjab ;
               }// for ilist
 
             }// for iket_ab
@@ -5516,8 +5528,9 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                 if (iter_find == kept_lookup.end() ) continue;
                 size_t index_ket = iter_find->second;
                 double recouple = recouple_list[ilist];
-                X2MAT(index_bra,index_ket) -= 0.5 * hats * sixj * symm_factor * occfactor * recouple * xikab ;
-                Y2MAT(index_bra,index_ket) -= 0.5 * hats * sixj * symm_factor * occfactor * recouple * yikab ;
+                X2MAT(index_bra,index_ket) -= 0.5 * phase * hats * sixj * symm_factor * occfactor * recouple * xikab ;
+                Y2MAT(index_bra,index_ket) -= 0.5 * phase * hats * sixj * symm_factor * occfactor * recouple * yikab ;
+
               }// for ilist
 
              }// for iket_ab
@@ -5536,10 +5549,9 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
     {
       for ( auto& iter_ket : kept_lookup )
       {
-//        if ( X3NORM > 1e-6)
         if ( x3_allocated )
            X3MAT( iter_bra.second, iter_ket.second) = X3.GetME_pn_PN_ch(ch3,ch3, iter_bra.first, iter_ket.first );
-//        if ( Y3NORM > 1e-6)
+
         if ( y3_allocated )
            Y3MAT( iter_bra.second, iter_ket.second) = Y3.GetME_pn_PN_ch(ch3,ch3, iter_bra.first, iter_ket.first );
       }
@@ -5547,7 +5559,10 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 
 
     // Do the matrix multiplication
-    Z3MAT = X2MAT*Y3MAT - Y2MAT*X3MAT +  hermX*hermY * ( X3MAT.t()*Y2MAT.t() - Y3MAT.t()*X2MAT.t() );
+//    Z3MAT = X2MAT*Y3MAT - Y2MAT*X3MAT  +  hermX*hermY * ( X3MAT.t()*Y2MAT.t() - Y3MAT.t()*X2MAT.t() );
+    Z3MAT = X2MAT*Y3MAT - Y2MAT*X3MAT ;
+    Z3MAT -= hermX * hermY * Z3MAT.t(); 
+
 
 
     // unpack the result
@@ -5555,18 +5570,25 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
     {
       for ( auto& iter_ket : kept_lookup )
       {
-        if ( iter_ket.first < iter_bra.first ) continue;
+        if ( iter_ket.first > iter_bra.first ) continue;
         Z3.AddToME_pn_PN_ch(ch3,ch3, iter_bra.first,iter_ket.first,  Z3MAT(iter_bra.second,iter_ket.second) );
+        if (ch3==0 and iter_bra.first<5 and iter_ket.first<5)
+        {
+          Ket3& bra = Tbc.GetKet( iter_bra.first );
+          Ket3& ket = Tbc.GetKet( iter_ket.first );
+        }
       }
     }
  
   }// for ch3
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
-*/
 
 
-void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
+// old much slower way
+/*
+
+void comm233_pp_hhss_debug( const Operator& X, const Operator& Y, Operator& Z )
 {
 
   double tstart = omp_get_wtime();
@@ -5647,6 +5669,10 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               double xabklmn = X3.GetME_pn(J1,J2,twoJ,a,b,k,l,m,n);
               double yabklmn = Y3.GetME_pn(J1,J2,twoJ,a,b,k,l,m,n);
               z_ijklmn += 0.5 * symm_factor * occfactor * (xijab * yabklmn - yijab * xabklmn);
+//              if (ch==0 and ibra==4 and iket==4)
+//              {
+//                 std::cout << "  iket_ab = " << iket_ab << "   adding to z   0.5 * " << symm_factor << " * " << occfactor << " * " << xijab << " " << yabklmn << "  =>  " << z_ijklmn << std::endl;;
+//              }
             }// for iket_ab
           } // if J, Tz and parity check for term 1
 
@@ -5675,6 +5701,11 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                 double xabilmn = X3.GetME_pn(Jab,J2,twoJ,a,b,i,l,m,n);
                 double yabilmn = Y3.GetME_pn(Jab,J2,twoJ,a,b,i,l,m,n);
                 z_ijklmn += 0.5  * symm_factor * occfactor * hats * sixj * (xkjab * yabilmn - ykjab * xabilmn);
+//              if (ch==0 and ibra==4 and iket==4)
+//              {
+//                 std::cout << "Pik  iket_ab = " << iket_ab << "   adding to z   0.5 * " << symm_factor << " * " << occfactor << " * " << hats
+//                           << " * " << sixj << " * " << xkjab << " " << yabilmn << "  =>  " << z_ijklmn << std::endl;;
+//              }
               }// for iket_ab
             }// if sixj nonzero
           } // if J, Tz and parity check for term 2
@@ -5704,11 +5735,16 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                  double xabjlmn = X3.GetME_pn(Jab,J2,twoJ,a,b,j,l,m,n);
                  double yabjlmn = Y3.GetME_pn(Jab,J2,twoJ,a,b,j,l,m,n);
                  z_ijklmn -= 0.5 * symm_factor  * occfactor * phase * hats * sixj * (xikab * yabjlmn - yikab * xabjlmn);
+//              if (ch==0 and ibra==4 and iket==4)
+//              {
+//                 std::cout << "Pjk  iket_ab = " << iket_ab << "   adding to z   0.5 * " << symm_factor << " * " << occfactor << " * "
+//                           << phase << " * " << hats << " * " << sixj << " * " << xikab << " " << yabjlmn << "  =>  " << z_ijklmn << std::endl;
+//              }
                }// for iket_ab
             }// if sixj nonzero
           } // if  J, Tz and parity check for term 3
-          
-//          direct Y3 X2 term
+        
+          // direct Y3 X2 term
           if ( ((2*tbc_ab.Tz + on.tz2) == Tbc.twoTz)  and ( (tbc_ab.parity + on.l + Tbc.parity)%2==0) and Jab == J2 )
           {
             for (size_t iket_ab=0; iket_ab<nkets_ab; iket_ab++)
@@ -5791,6 +5827,13 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 
         }// for ch_ab
 
+//        if (ch==0 and ibra<5 and iket<5)
+//        {
+//          std::cout << __func__ << "   ch = " << ch << "  ibra =  " <<  ibra << "  iket = " << iket 
+//                    << "   ijklmn " << bra.p << " " << bra.q << " " << bra.r << " " << ket.p << " " << ket.q << " " << ket.r
+//                    << "  Jij Jlm twoJ " << bra.Jpq << " " << ket.Jpq << "  " << twoJ 
+//                    << "  zijklmn = " << z_ijklmn << std::endl;
+//        }
         // no normalization to be done. we store un-normalized 3body matrix elements.
         if (std::abs(z_ijklmn)>1e-6)
         {
@@ -5804,7 +5847,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
-
+*/
 
 
 //*****************************************************************************************
