@@ -1777,10 +1777,14 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
       double na = bra.op->occ;
       double nb = bra.oq->occ;
       double nc = bra.oR->occ;
+      double occnat_a = bra.op->occ_nat;
+      double occnat_b = bra.oq->occ_nat;
+      double occnat_c = bra.oR->occ_nat;
       double abc_symm = 6;
       if (bra.p==bra.q and bra.q==bra.r) abc_symm = 1;
       else if (bra.p==bra.q or bra.q==bra.r) abc_symm = 3;
       if ( (std::abs( ea-e_fermi[tza]) + std::abs(eb-e_fermi[tzb]) + std::abs(ec-e_fermi[tzc])) > Z.modelspace->GetdE3max() ) continue;
+      if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c)) < Z.modelspace->GetOccNat3Cut() ) continue;
 //      for (size_t iket=0;iket<nkets; iket++)
 //      for (size_t iket=ibra;iket<nkets; iket++)
       for (size_t iket=0;iket<ibra; iket++)  // dont need iket=ibra because the commutator will be zero
@@ -1789,6 +1793,9 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
         double nd = ket.op->occ;
         double ne = ket.oq->occ;
         double nf = ket.oR->occ;
+        double occnat_d = ket.op->occ_nat;
+        double occnat_e = ket.oq->occ_nat;
+        double occnat_f = ket.oR->occ_nat;
         int ed = 2*ket.op->n+ket.op->l;
         int ee = 2*ket.oq->n+ket.oq->l;
         int ef = 2*ket.oR->n+ket.oR->l;
@@ -1796,6 +1803,7 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
         int tze = ket.oq->tz2;
         int tzf = ket.oR->tz2;
         if ( (std::abs( ed-e_fermi[tzd]) + std::abs(ee-e_fermi[tze]) + std::abs(ef-e_fermi[tzf])) > Z.modelspace->GetdE3max() ) continue;
+        if ( (occnat_d*(1-occnat_d) * occnat_e*(1-occnat_e) * occnat_f*(1-occnat_f)) < Z.modelspace->GetOccNat3Cut() ) continue;
         // account for the iket>ibra case, which we don't do explicitly
         double occfactor = na*nb*nc*(1-nd)*(1-ne)*(1-nf) - (1-na)*(1-nb)*(1-nc)*nd*ne*nf  ;
         if (std::abs(occfactor)<1e-6) continue;

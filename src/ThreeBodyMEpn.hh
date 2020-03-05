@@ -109,6 +109,7 @@ class ThreeBodyMEpn
   ThreeBodyMEpn(ModelSpace*);
   ThreeBodyMEpn(ModelSpace* ms, int e3max);
   ThreeBodyMEpn(const ThreeBodyMEpn& tbme);
+  ThreeBodyMEpn(ModelSpace* ms, int rankJ, int rankT, int parity);
 
   void Allocate();
   void Allocate_PN();

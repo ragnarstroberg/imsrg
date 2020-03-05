@@ -30,6 +30,10 @@ ThreeBodyMEpn::ThreeBodyMEpn(const ThreeBodyMEpn& tbme)
 {
 }
 
+ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms, int rankJ, int rankT, int p)
+:  modelspace(ms), isospin3BME(ms,ms->GetE3max()), PN_mode(false), E3max(ms->GetE3max()), herm(1), rank_J(rankJ), rank_T(rankT), parity(p)
+{
+}
 
 void ThreeBodyMEpn::Allocate()
 {

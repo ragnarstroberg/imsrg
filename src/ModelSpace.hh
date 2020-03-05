@@ -48,14 +48,15 @@ struct Orbit
    int j2;
    int tz2;
    double occ; // particle=0, hole=1
+   double occ_nat; // occupation in the natural orbital basis (if we use natural orbitals) particle=0, hole=1
    int cvq; // core=0, valence=1, qspace=2
    int index;
 
    Orbit(){};
    Orbit(int n, int l, int j2, int tz2, double occ, int cvq, int index)
-           : n(n), l(l), j2(j2), tz2(tz2),occ(occ),cvq(cvq),index(index) {};
+           : n(n), l(l), j2(j2), tz2(tz2),occ(occ),occ_nat(occ),cvq(cvq),index(index) {};
 
-   Orbit(const Orbit& orb) : n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),occ(orb.occ),cvq(orb.cvq),index(orb.index) {}
+   Orbit(const Orbit& orb) : n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),occ(orb.occ),occ_nat(orb.occ),cvq(orb.cvq),index(orb.index) {}
    bool operator==( const Orbit& rhs ) const { return  ( n==rhs.n and l==rhs.l and j2==rhs.j2 and tz2==rhs.tz2 ); };
 };
 
@@ -251,6 +252,7 @@ class ModelSpace
    int EmaxUnocc; // Separate emax cut for orbits with l,j,tz that aren't present in the HF reference
 
    double dE3max; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
+   double occnat3cut; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
 //   double e_fermi;    // The fermi energy, probably in oscillator units
    std::map<int,double> e_fermi;    // The fermi energy, probably in oscillator units. It's different for protons and neutrons, so index by tz
 
@@ -442,6 +444,7 @@ class ModelSpace
    void SetLmax3(int l){Lmax3=l;};
    void SetdE3max(double e){dE3max = e;};
    double GetdE3max(){return dE3max;};
+   double GetOccNat3Cut(){return occnat3cut;}; // setting this to zero or less makes no cut, setting to 0.5 cuts out everything
    void SetEFermi(double ef){e_fermi[-1]=ef; e_fermi[+1]=ef;};
    std::map<int,double> GetEFermi(){ return e_fermi ;};
    void SetEFermi(double ef_proton, double ef_neutron){e_fermi[-1] = ef_proton; e_fermi[1]=ef_neutron;};

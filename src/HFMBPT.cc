@@ -51,6 +51,12 @@ void HFMBPT::GetNaturalOrbitals()
   }
   C_HO2NAT = C * C_HF2NAT;
 
+  // set the occ_nat values
+  for ( auto i : modelspace->all_orbits)
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    oi.occ_nat = Occ(i);
+  }
     
   if (use_NAT_occupations) // use fractional occupation
   {
