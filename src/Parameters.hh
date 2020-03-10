@@ -102,6 +102,8 @@ std::map<std::string,double> Parameters::double_par = {
   {"hwBetaCM",            -1},  // Oscillator frequency used in the Lawson-Glockner term. Negative value means use the frequency of the basis
   {"eta_criterion",     1e-6},  // Threshold on ||eta|| for convergence in the flow
   {"hw_trap",             -1},  // Frequency for harmonic lab-frame trap V = 1/2 M omega**2 * r**2
+  {"dE3max",		99}, // cut on energies which limits the 3-body states considered in IMSRG(3) commutators
+  {"OccNat3Cut",	-1}, // cut on natural orbital occupations which limits the 3-body states considered in IMSRG(3) commutators
 
 };
 
@@ -120,7 +122,6 @@ std::map<std::string,int> Parameters::int_par = {
   {"file3e3max",	12},
   {"atomicZ",           -1}, // the Z of the nucleus for an atomic calculation. -1 means do a neutral atom
   {"emax_unocc",        -1}, // separate emax cut for l,j values that will not be occupied in the reference
-  {"dE3max",		99}, // cut which limits the 3-body states considered in IMSRG(3) commutators
 };
 
 std::map<std::string,std::vector<std::string>> Parameters::vec_par = {

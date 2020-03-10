@@ -116,7 +116,6 @@ int main(int argc, char** argv)
   int file3e3max = parameters.i("file3e3max");
   int atomicZ = parameters.i("atomicZ");
   int emax_unocc = parameters.i("emax_unocc");
-  int dE3max = parameters.i("dE3max");
 
   double hw = parameters.d("hw");
   double smax = parameters.d("smax");
@@ -130,6 +129,8 @@ int main(int argc, char** argv)
   double hwBetaCM = parameters.d("hwBetaCM");
   double eta_criterion = parameters.d("eta_criterion");
   double hw_trap = parameters.d("hw_trap");
+  double dE3max = parameters.d("dE3max");
+  double OccNat3Cut = parameters.d("OccNat3Cut");
 
   std::vector<std::string> opnames = parameters.v("Operators");
   std::vector<std::string> opsfromfile = parameters.v("OperatorsFromFile");
@@ -445,6 +446,7 @@ int main(int argc, char** argv)
   {
 //    ThreeBodyME hf3b;
     HNO = hf.GetNormalOrderedH( hno_particle_rank );
+    if (IMSRG3 and OccNat3Cut>0 ) hf.GetNaturalOrbitals();
   }
   else if (basis == "NAT") // we want to use the natural orbital basis
   {
@@ -480,6 +482,7 @@ int main(int argc, char** argv)
   if (IMSRG3)
   {
     modelspace.SetdE3max(dE3max);
+    modelspace.SetOccNat3Cut(OccNat3Cut);
     std::cout << "You have chosen IMSRG3. good luck..." << std::endl;
 
     if (hno_particle_rank<3 )

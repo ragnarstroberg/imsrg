@@ -443,8 +443,9 @@ class ModelSpace
    void SetLmax2(int l){Lmax2=l;};
    void SetLmax3(int l){Lmax3=l;};
    void SetdE3max(double e){dE3max = e;};
+   void SetOccNat3Cut(double o){occnat3cut = o;};
    double GetdE3max(){return dE3max;};
-   double GetOccNat3Cut(){return occnat3cut;}; // setting this to zero or less makes no cut, setting to 0.5 cuts out everything
+   double GetOccNat3Cut(){return occnat3cut;}; // setting this to zero or less makes no cut, setting to 0.25 cuts out everything
    void SetEFermi(double ef){e_fermi[-1]=ef; e_fermi[+1]=ef;};
    std::map<int,double> GetEFermi(){ return e_fermi ;};
    void SetEFermi(double ef_proton, double ef_neutron){e_fermi[-1] = ef_proton; e_fermi[1]=ef_neutron;};

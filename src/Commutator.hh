@@ -76,7 +76,9 @@ namespace Commutator{
   void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm232ss_slow( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented and tested.
+//  void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z ) ;      // implemented and tested.
   void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z ) ;      // implemented and tested.
+  void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;      // implemented and tested.
   
   void comm133ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.

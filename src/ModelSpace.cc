@@ -873,7 +873,7 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
 
 void ModelSpace::FindEFermi()
 {
-  e_fermi = {{-1,0},{+1,0}};
+  e_fermi = {{-1,-1},{+1,-1}};
   std::map<int,double> occmax = {{-1,0},{+1,0}};
   for ( auto i : holes )
   {
@@ -888,6 +888,7 @@ void ModelSpace::FindEFermi()
   }
 //  std::map<int,double> particle_e_min = {{-1,1e6},{1,1e6}};
   std::map<int,double> particle_e_min = e_fermi;
+  particle_e_min = {{-1,1e6},{1,1e6}};
   for (auto i : particles )
   {
     Orbit& oi = GetOrbit(i);
@@ -897,8 +898,12 @@ void ModelSpace::FindEFermi()
        particle_e_min[oi.tz2] = ei;
     }
   }
+  if (particle_e_min[-1]==1e6) particle_e_min[-1]=e_fermi[-1];
+  if (particle_e_min[+1]==1e6) particle_e_min[+1]=e_fermi[+1];
   // If the last level is completely filled, then we defined the fermi surface to 
   // be half way between the highest filled orbit and the lowest unfilled orbit
+//  std::cout << "before adjusting, " << e_fermi[-1] << " " << particle_e_min[-1] << "    " << e_fermi[+1] << " " << particle_e_min[+1] << std::endl;
+//  std::cout << " and occmax = " << occmax[-1] << " " << occmax[+1] << std::endl;
   if ( occmax[-1] > 0.99)  e_fermi[-1] = 0.5 * ( e_fermi[-1] + particle_e_min[-1] );
   if ( occmax[+1] > 0.99)  e_fermi[+1] = 0.5 * ( e_fermi[+1] + particle_e_min[+1] );
 

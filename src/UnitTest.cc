@@ -477,10 +477,10 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 //  all_good &= Test_comm132ss( X, Y );
 //  all_good &= Test_comm232ss( X, Y );
 //  all_good &= Test_comm223ss( X, Y );
-  all_good &= Test_comm133ss( X, Y );
+//  all_good &= Test_comm133ss( X, Y );
 
 //  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
-//  all_good &= Test_comm332_pphhss( X, Y );  
+  all_good &= Test_comm332_pphhss( X, Y );  
 
 //  all_good &= Test_comm233_pp_hhss( X, Y );   
 //  all_good &= Test_comm233_ph_ss( X, Y );  
@@ -2202,6 +2202,7 @@ bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ) 
 
   Commutator::comm332_ppph_hhhpss( X, Y, Z_J);
 
+
   if ( Z_J.IsHermitian() )
      Z_J.Symmetrize();
   else if (Z_J.IsAntiHermitian() )
@@ -2339,10 +2340,16 @@ bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ) 
 bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
   Operator Z_J( Y );
+  Operator Z_J_old( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
+  Z_J_old.SetHermitian();
+  Z_J_old.Erase();
 
 
+//  Commutator::comm332_pphhss_debug( X, Y, Z_J);
+  Commutator::comm332_pphhss_debug( X, Y, Z_J_old);
+//  Z_J.Erase();
   Commutator::comm332_pphhss( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
@@ -2483,12 +2490,16 @@ bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // te
 
 
              double ZJ_ijkl = GetMschemeMatrixElement_2b( Z_J, i,mi, j,mj, k,mk, l,ml ) ;
+             double ZJ_old_ijkl = GetMschemeMatrixElement_2b( Z_J_old, i,mi, j,mj, k,mk, l,ml ) ;
              double err = Zm_ijkl - ZJ_ijkl;
+//             if (std::abs(ZJ_ijkl-ZJ_old_ijkl)>1e-6)
              if (std::abs(err)>1e-6)
              {
                std::cout << "Trouble in " << __func__ << "  i,j,k,l = " << i << " " << j << " " << k << " " << l
                          << " {m} = " << mi << " " << mj << " " << mk << " " << ml 
-                         << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << "   err = " << err << std::endl; 
+//                         << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << "   err = " << err << std::endl; 
+                         << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << " ZJ_old_ijkl " << ZJ_old_ijkl << "   err = " << err
+                         << "  J err = " << ZJ_ijkl - ZJ_old_ijkl << std::endl; 
              }
              summed_error += err*err;
              sum_m += Zm_ijkl*Zm_ijkl;
