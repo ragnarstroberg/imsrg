@@ -11,6 +11,16 @@
 #include <gsl/gsl_sf_gamma.h> // for gsl_sf_gamma_inc_P  used in the RspaceRegulator
 
 //using namespace imsrg_util;
+using PhysConst::M_NUCLEON;
+using PhysConst::HBARC;
+
+std::function<double(double,double)> Generator::wegner_func = [] (double Hod, double denom){ return Hod * denom;};
+std::function<double(double,double)> Generator::white_func = [] (double Hod, double denom){ return Hod / denom;};
+std::function<double(double,double)> Generator::atan_func = [] (double Hod, double denom){ return 0.5 * atan(2*Hod / denom);};
+//std::function<double(double,double)> Generator::imaginarytime_func = [] (double Hod, double denom){ return Hod *denom/std::abs(denom) ;};
+std::function<double(double,double)> Generator::imaginarytime_func = [] (double Hod, double denom){ return Hod * ((denom>0)-(denom<0)) ;};//signum function
+
+std::function<double(double,double)> Generator::qtransferatan1_func = [](double Hod, double denom){return pow(std::abs(denom)*M_NUCLEON/HBARC/HBARC, 0.5*1) * atan_func(Hod, denom);};
 
 Generator::Generator()
   : generator_type("white"), denominator_cutoff(1e-6)  , denominator_delta(0), denominator_delta_index(-1), only_2b_eta(false)
@@ -21,6 +31,7 @@ void Generator::Update(Operator * H_s, Operator * Eta_s)
 {
    Eta_s->EraseOneBody();
    Eta_s->EraseTwoBody();
+   Eta_s->EraseThreeBody();// do we need this? Maybe?
    AddToEta(H_s,Eta_s);
 }
 
@@ -32,23 +43,34 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
    Eta = Eta_s;
    modelspace = H->GetModelSpace();
 
-        if (generator_type == "wegner")                       ConstructGenerator_Wegner(); // never tested, probably doesn't work.
-   else if (generator_type == "shell-model-wegner")           ConstructGenerator_ShellModel_Wegner(); // never tested, probably doesn't work.
-   else if (generator_type == "white")                        ConstructGenerator_White();
-   else if (generator_type == "atan")                         ConstructGenerator_Atan();
-   else if (generator_type == "imaginary-time")               ConstructGenerator_ImaginaryTime();
-   else if (generator_type == "qtransfer-atan")               ConstructGenerator_QTransferAtan(1);
-   else if (generator_type == "shell-model")                  ConstructGenerator_ShellModel();
-   else if (generator_type == "shell-model-atan")             ConstructGenerator_ShellModel_Atan();
-   else if (generator_type == "shell-model-atan-npnh")        ConstructGenerator_ShellModel_Atan_NpNh();
-   else if (generator_type == "shell-model-imaginary-time")   ConstructGenerator_ShellModel_ImaginaryTime();
+//        if (generator_type == "wegner")                       ConstructGenerator_Wegner(); // never tested, probably doesn't work.
+        if (generator_type == "wegner")                       ConstructGenerator_SingleRef(wegner_func); // never tested, probably doesn't work.
+//   else if (generator_type == "white")                        ConstructGenerator_White();
+   else if (generator_type == "white")                        ConstructGenerator_SingleRef(white_func);
+//   else if (generator_type == "atan")                         ConstructGenerator_Atan();
+   else if (generator_type == "atan")                         ConstructGenerator_SingleRef(atan_func) ;
+//   else if (generator_type == "imaginary-time")               ConstructGenerator_ImaginaryTime();
+   else if (generator_type == "imaginary-time")               ConstructGenerator_SingleRef(imaginarytime_func);
+//   else if (generator_type == "qtransfer-atan")               ConstructGenerator_QTransferAtan(1);
+   else if (generator_type == "qtransfer-atan")               ConstructGenerator_SingleRef(qtransferatan1_func);
+//   else if (generator_type == "shell-model-wegner")           ConstructGenerator_ShellModel_Wegner(); // never tested, probably doesn't work.
+   else if (generator_type == "shell-model-wegner")           ConstructGenerator_ShellModel(wegner_func); // never tested, probably doesn't work.
+//   else if (generator_type == "shell-model")                  ConstructGenerator_ShellModel();
+   else if (generator_type == "shell-model")                  ConstructGenerator_ShellModel(white_func);
+//   else if (generator_type == "shell-model-atan")             ConstructGenerator_ShellModel_Atan();
+   else if (generator_type == "shell-model-atan")             ConstructGenerator_ShellModel(atan_func);
+   else if (generator_type == "shell-model-atan-npnh")        ConstructGenerator_ShellModel_NpNh(atan_func);
+//   else if (generator_type == "shell-model-imaginary-time")   ConstructGenerator_ShellModel_ImaginaryTime();
+   else if (generator_type == "shell-model-imaginary-time")   ConstructGenerator_ShellModel(imaginarytime_func);
    else if (generator_type == "hartree-fock")                 ConstructGenerator_HartreeFock();
-   else if (generator_type == "1PA")                          ConstructGenerator_1PA();
+   else if (generator_type == "1PA")                          ConstructGenerator_1PA(atan_func);
    else if (generator_type.find("qtransfer-atan") != std::string::npos )
    {
      int n;
      std::istringstream( generator_type.substr( generator_type.find("_")+1) ) >> n;
-     ConstructGenerator_QTransferAtan(n);
+     std::function<double(double,double)> qtransferatanN_func = [n](double Hod, double denom){return pow(std::abs(denom)*M_NUCLEON/HBARC/HBARC, 0.5*n) * atan_func(Hod, denom);};
+//     ConstructGenerator_QTransferAtan(n);
+     ConstructGenerator_SingleRef( qtransferatanN_func );
    }
    else if (generator_type == "rspace")                       ConstructGenerator_Rspace();
    else
@@ -193,7 +215,7 @@ double Generator::Get2bDenominator_Jdep(int ch, int ibra, int iket)
 
 
 
-
+/*
 void Generator::ConstructGenerator_Wegner()
 {
    Operator H_od = 0 * (*H);
@@ -224,14 +246,14 @@ void Generator::ConstructGenerator_Wegner()
     }
    *Eta = Commutator::Commutator(*H,H_od);
 }
+*/
 
 
 
 
 
 
-
-
+/*
 void Generator::ConstructGenerator_White()
 {
    // One body piece -- eliminate ph bits
@@ -263,12 +285,13 @@ void Generator::ConstructGenerator_White()
     }
 }
 
+*/
 
 
 
 
-
-void Generator::ConstructGenerator_Atan()
+//void Generator::ConstructGenerator_Atan()
+void Generator::ConstructGenerator_SingleRef(std::function<double (double,double)>& etafunc )
 {
    // One body piece -- eliminate ph bits
    for ( auto& a : modelspace->core)
@@ -276,7 +299,8 @@ void Generator::ConstructGenerator_Atan()
       for ( auto& i : imsrg_util::VectorUnion(modelspace->valence,modelspace->qspace) )
       {
          double denominator = Get1bDenominator(i,a);
-         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+//         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+         Eta->OneBody(i,a) = etafunc( H->OneBody(i,a), denominator);
          Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
    }
@@ -293,7 +317,8 @@ void Generator::ConstructGenerator_Atan()
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
 //            double denominator = Get2bDenominator_Jdep(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+//            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(ibra,iket) = etafunc( H2(ibra,iket), denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
@@ -302,7 +327,8 @@ void Generator::ConstructGenerator_Atan()
     if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 and not only_2b_eta )
     {
        double t_start = omp_get_wtime();
-       ConstructGenerator_Atan_3body();
+//       ConstructGenerator_Atan_3body();
+       ConstructGenerator_SingleRef_3body( etafunc );
        H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
     }// if particle rank >3
 }
@@ -311,7 +337,8 @@ void Generator::ConstructGenerator_Atan()
 
 
 
-void Generator::ConstructGenerator_Atan_3body()
+//void Generator::ConstructGenerator_Atan_3body()
+void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,double)>& etafunc )
 {
     // Three body piece
 //    int E3cut = 99;
@@ -378,7 +405,7 @@ void Generator::ConstructGenerator_Atan_3body()
             if ( (oa.l+ob.l+oc.l+oi.l+oj.l+ok.l)%2>0 ) continue;
             if ( (oa.tz2+ob.tz2+oc.tz2) != (oi.tz2+oj.tz2+ok.tz2) ) continue;
             double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
-//            std::cout << "      ijk " << i << " " << j << " " << k << "   denom = " << denominator << std::endl;
+//            std::cout << "  abc  " << a << " " << b << " " << c << "     ijk " << i << " " << j << " " << k << "   denom = " << denominator << std::endl;
 //            std::cout << "       ...  " << oi.l << " "<<  oi.j2 << std::endl;
 
             int twoJ_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jij-ok.j2) );
@@ -388,7 +415,8 @@ void Generator::ConstructGenerator_Atan_3body()
 //              std::cout << "            Jab Jij   twoJ = " << Jab << " " << Jij << " " << twoJ << std::endl;
               double ME_od = H->ThreeBody.GetME_pn( Jab, Jij, twoJ, a,b,c,i,j,k);
 //              std::cout << "      got ME_od = " << ME_od << std::endl;
-              double eta = 0.5*atan(2*ME_od / denominator);
+//              double eta = 0.5*atan(2*ME_od / denominator);
+              double eta =  etafunc( ME_od, denominator);  
 //              double eta = (ME_od / denominator);
 //              if (std::abs(eta)>1e-6)
 //              if (std::abs(eta)>1e-3)
@@ -412,7 +440,7 @@ void Generator::ConstructGenerator_Atan_3body()
 }
 
 
-
+/*
 /// Imaginary time generator \f[ \eta = sgn(\Delta) h_{od} \]
 void Generator::ConstructGenerator_ImaginaryTime()
 {
@@ -446,7 +474,9 @@ void Generator::ConstructGenerator_ImaginaryTime()
       }
     }
 }
+*/
 
+/*
 
 void Generator::ConstructGenerator_ImaginaryTime_3body()
 {
@@ -529,10 +559,10 @@ void Generator::ConstructGenerator_ImaginaryTime_3body()
 //    H->profiler.timer["Update Eta 3body"] += omp_get_wtime() - t_start;
 }
 
+*/
 
 
-
-
+/*
 void Generator::ConstructGenerator_QTransferAtan(int n)
 {
    using PhysConst::M_NUCLEON;
@@ -567,8 +597,10 @@ void Generator::ConstructGenerator_QTransferAtan(int n)
     }
 }
 
+*/
 
 
+/*
 void Generator::ConstructGenerator_ShellModel()
 {
    // One body piece -- make sure the valence one-body part is diagonal
@@ -618,11 +650,12 @@ void Generator::ConstructGenerator_ShellModel()
 
     }
 }
+*/
 
 
 
-
-void Generator::ConstructGenerator_ShellModel_Atan()
+//void Generator::ConstructGenerator_ShellModel_Atan()
+void Generator::ConstructGenerator_ShellModel(std::function<double (double,double)>& eta_func)
 {
    // One body piece -- make sure the valence one-body part is diagonal
    for ( auto& a : imsrg_util::VectorUnion(modelspace->core, modelspace->valence))
@@ -631,7 +664,8 @@ void Generator::ConstructGenerator_ShellModel_Atan()
       {
          if (i==a) continue;
          double denominator = Get1bDenominator(i,a);
-         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+//         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+         Eta->OneBody(i,a) = eta_func(H->OneBody(i,a), denominator);
          Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
    }
@@ -652,7 +686,8 @@ void Generator::ConstructGenerator_ShellModel_Atan()
          for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+//            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(ibra,iket) = eta_func(H2(ibra,iket) , denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
 
@@ -661,12 +696,13 @@ void Generator::ConstructGenerator_ShellModel_Atan()
       // Decouple the valence space
       for ( auto& iket : tbc.GetKetIndex_vv() )
       {
-         auto& ket = tbc.GetKet(iket);
+//         auto& ket = tbc.GetKet(iket);
          for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
          {
-            auto& bra = tbc.GetKet(ibra);
+//            auto& bra = tbc.GetKet(ibra);
             double denominator = Get2bDenominator(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator) ;
+//            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator) ;
+            ETA2(ibra,iket) = eta_func(H2(ibra,iket) , denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
       }
@@ -675,7 +711,8 @@ void Generator::ConstructGenerator_ShellModel_Atan()
 
     if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 and not only_2b_eta )
     {
-       ConstructGenerator_ShellModel_Atan_3body();
+//       ConstructGenerator_ShellModel_Atan_3body();
+       ConstructGenerator_ShellModel_3body(eta_func);
     }
 
 }
@@ -683,7 +720,8 @@ void Generator::ConstructGenerator_ShellModel_Atan()
 
 
 // off diagonal pieces are  ppp|ccc  ppp|ccv ppp|cvv  qpp|vvv   where p is either v or q
-void Generator::ConstructGenerator_ShellModel_Atan_3body()
+//void Generator::ConstructGenerator_ShellModel_Atan_3body()
+void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double,double)>& eta_func)
 {
     // Three body piece
 //    int E3cut = 99;
@@ -786,7 +824,7 @@ void Generator::ConstructGenerator_ShellModel_Atan_3body()
 }
 
 
-
+/*
 void Generator::ConstructGenerator_ShellModel_Wegner()
 {
    Operator H_od = 0 * (*H);
@@ -836,9 +874,9 @@ void Generator::ConstructGenerator_ShellModel_Wegner()
     *Eta = Commutator::Commutator(*H,H_od);
 }
 
+*/
 
-
-
+/*
 /// Imaginary time generator for a valence space
 void Generator::ConstructGenerator_ShellModel_ImaginaryTime()
 {
@@ -892,12 +930,14 @@ void Generator::ConstructGenerator_ShellModel_ImaginaryTime()
 
     }
 }
+*/
 
 
-
-void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
+//void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
+void Generator::ConstructGenerator_ShellModel_NpNh(std::function<double(double,double)>& eta_func)
 {
-  ConstructGenerator_ShellModel_Atan();
+//  ConstructGenerator_ShellModel_Atan();
+  ConstructGenerator_ShellModel(atan_func);
 
 //  std::cout << "In ShellModel_Atat_NpNh, adding to Eta" << std::endl;
   // decouple f_cc'
@@ -907,7 +947,8 @@ void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
    {
      if (cprime<=c) continue;
      double denominator = Get1bDenominator(c,cprime);
-     Eta->OneBody(c,cprime) = 0.5*atan(2*H->OneBody(c,cprime) / denominator );
+//     Eta->OneBody(c,cprime) = 0.5*atan(2*H->OneBody(c,cprime) / denominator );
+     Eta->OneBody(c,cprime) = eta_func(H->OneBody(c,cprime), denominator );
 //     std::cout << "c,cprime = " << c << " " << cprime << "  etacc' = " << Eta->OneBody(c,cprime) << std::endl;
      Eta->OneBody(cprime,c) = - Eta->OneBody(c,cprime);
    }
@@ -930,7 +971,8 @@ void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
 //         std::cout << bra.p << " " << bra.q << " " << ket.p << " " << ket.q << std::endl;
          if ((ket.p==bra.p) or (ket.p==bra.q) or (ket.q==bra.p) or (ket.q==bra.q) ) continue;
          double denominator = Get2bDenominator(ch,ibra,iket);
-         ETA2(ibra,iket) = 0.5*atan( 2*H2(ibra,iket) / denominator );
+//         ETA2(ibra,iket) = 0.5*atan( 2*H2(ibra,iket) / denominator );
+         ETA2(ibra,iket) = eta_func( H2(ibra,iket) , denominator );
          ETA2(iket,ibra) = -ETA2(ibra,iket);
 //         std::cout << "   qcvc': " << ket.p << " " << ket.q << " " << bra.p << " " << bra.q << "    " << ETA2(ibra,iket) << std::endl;
        }
@@ -944,7 +986,8 @@ void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
          Ket& bra = tbc.GetKet(ibra);
          if ((ket.p==bra.p) or (ket.p==bra.q) or (ket.q==bra.p) or (ket.q==bra.q) ) continue;
          double denominator = Get2bDenominator(ch,ibra,iket);
-         ETA2(ibra,iket) = 0.5*atan( 2*H2(ibra,iket) / denominator );
+//         ETA2(ibra,iket) = 0.5*atan( 2*H2(ibra,iket) / denominator );
+         ETA2(ibra,iket) = eta_func( H2(ibra,iket) , denominator );
          ETA2(iket,ibra) = -ETA2(ibra,iket);
        }
      }
@@ -976,7 +1019,8 @@ void Generator::ConstructGenerator_HartreeFock()
 
 
 // So far this is useless
-void Generator::ConstructGenerator_1PA()
+//void Generator::ConstructGenerator_1PA()
+void Generator::ConstructGenerator_1PA(std::function<double(double,double)>& eta_func)
 {
 
    // One body piece -- make sure the valence one-body part is diagonal
@@ -986,7 +1030,8 @@ void Generator::ConstructGenerator_1PA()
       {
          if (i==a) continue;
          double denominator = Get1bDenominator(i,a);
-         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+//         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+         Eta->OneBody(i,a) = eta_func(H->OneBody(i,a),denominator);
          Eta->OneBody(a,i) = - Eta->OneBody(i,a);
       }
    }
@@ -1007,7 +1052,8 @@ void Generator::ConstructGenerator_1PA()
          for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
          {
             double denominator = Get2bDenominator(ch,ibra,iket);
-            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+//            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(ibra,iket) = eta_func(H2(ibra,iket) , denominator);
             ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
          }
 

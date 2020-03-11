@@ -129,6 +129,8 @@ class IMSRGSolver
   double EstimateStepError();
   double EstimateBCHError( );
 
+  double GetPerturbativeTriples();
+
 
   // This is used to get flow info from odeint
   class ODE_Monitor

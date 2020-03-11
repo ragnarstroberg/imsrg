@@ -204,19 +204,19 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       X.profiler.timer["comm233_pp_hhss"] += omp_get_wtime() - t_start;
 
 //     This one is super slow too. It involves 9js
-//       std::cout << " comm233_ph " << std::endl;
-//       comm233_phss(X, Y, Z);
+       std::cout << " comm233_ph " << std::endl;
+       comm233_phss(X, Y, Z);
 
 //       not too bad, though naively n^8
        std::cout << " comm332_ppph_hhhp " << std::endl;
        comm332_ppph_hhhpss(X, Y, Z);
 
-//      This one works, but it involves 9js so it's slow, so it's commented out for now...
+//      naively n^8, but reasonably fast when implemented as a mat mult
        std::cout << " comm332_pphh " << std::endl;
        comm332_pphhss(X, Y, Z);
 //       comm332_pphhss_debug(X, Y, Z);
 
-//       not too bad though naively n^9
+//       naively n^9 but pretty fast as a mat mult
 //       std::cout << " comm333_ppp_hhhss " << std::endl;
 //       comm333_ppp_hhhss(X, Y, Z);
 
@@ -3604,18 +3604,29 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
 //                                    * { J1 J" s } ( X_{abicdk}^{J1 J2 J'} Y_{cdjabl}^{J2 J1 J"} - X<->Y )
 //                                      { J' J2 r }
 //
+//  We recouple the expression so that it factorizes and can be cast as matrix multiplication
+//
+//            i| /k`
+//             |/
+//    *~~~[X]~~*
+//   / \  / \
+//  (a c)(b d)
+//   \ /  \ /
+//    *~~~[Y]~~~*
+//              | \
+//             l|  \j'
+//              
 //        Tested with UnitTest and passed.                                                               
 //
-
-
-
 void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 {
+//  std::cout << "================== BEGIN " << __func__ << " ===================" << std::endl;
   double tstart = omp_get_wtime();
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+//  std::cout << "  fermi levels " << e_fermi[-1] << " " << e_fermi[+1] << std::endl;
  
 
    size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
@@ -3772,7 +3783,6 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
               keep_abi = keep_abi and (d_ea+d_eb+d_ei <= Z.modelspace->dE3max );
               keep_abj = keep_abj and (d_ea+d_eb+d_ej <= Z.modelspace->dE3max );
 
-              if ( not ( keep_abi or keep_abj) ) continue;
 
               std::vector<size_t> ch_abi_list;
               std::vector<size_t> ch_abj_list;
@@ -3781,28 +3791,31 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
               std::vector<std::vector<double>> recouple_abi_list;
               std::vector<std::vector<double>> recouple_abj_list;
 
-              for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+              if ( keep_abi or keep_abj )
               {
-                std::vector<size_t> ketlist;
-                std::vector<double> reclist;
-                size_t ch_check = -1;
-                if ( keep_abi  and abi_cdj_Tz_ok and (std::abs(2*Jab-oi.j2)<=twoJp) and (2*Jab+oi.j2 >=twoJp) )
+                for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
                 {
-                  ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJp, a, b, i, ketlist, reclist) ;
+                  std::vector<size_t> ketlist;
+                  std::vector<double> reclist;
+                  size_t ch_check = -1;
+//                  if ( keep_abi  and abi_cdj_Tz_ok and (std::abs(2*Jab-oi.j2)<=twoJp) and (2*Jab+oi.j2 >=twoJp) )
+//                  {
+                    ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJp, a, b, i, ketlist, reclist) ;
+//                  }
+                  ch_abi_list.push_back( ch_check );
+                  kets_abi_list.push_back( ketlist );
+                  recouple_abi_list.push_back( reclist );
+                  ketlist.clear();
+                  reclist.clear();
+                  ch_check = -1;
+//                  if ( keep_abj  and abj_cdi_Tz_ok  and (std::abs(2*Jab-oj.j2)<=twoJp) and (2*Jab+oj.j2 >=twoJp) )
+//                  {
+                    ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJp, a, b, j, ketlist, reclist) ;
+//                  }
+                  ch_abj_list.push_back( ch_check );
+                  kets_abj_list.push_back( ketlist );
+                  recouple_abj_list.push_back( reclist );
                 }
-                ch_abi_list.push_back( ch_check );
-                kets_abi_list.push_back( ketlist );
-                recouple_abi_list.push_back( reclist );
-                ketlist.clear();
-                reclist.clear();
-                ch_check = -1;
-                if ( keep_abj  and abj_cdi_Tz_ok  and (std::abs(2*Jab-oj.j2)<=twoJp) and (2*Jab+oj.j2 >=twoJp) )
-                {
-                  ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJp, a, b, j, ketlist, reclist) ;
-                }
-                ch_abj_list.push_back( ch_check );
-                kets_abj_list.push_back( ketlist );
-                recouple_abj_list.push_back( reclist );
               }
 
 
@@ -3818,7 +3831,17 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                 double occnat_c = ket_cd.op->occ_nat;
                 double occnat_d = ket_cd.oq->occ_nat;
                 double occupation_factor = (1-na)*(1-nb)*nc*nd - na*nb*(1-nc)*(1-nd);
+//                if (a==2 and b==2 and i==0)
+//                {
+//                  std::cout << "....  cdj =  " << c << " " << d << " " << j << "   occ  " << na << " " << nb << " " << nc << " " << nd << " -> " << occupation_factor << std::endl;
+//                }
                 if (std::abs(occupation_factor)<1e-6) continue;
+
+//                if (a==2 and b==2 and i==0)
+//                {
+//                  std::cout << ".......  cdj =  " << c << " " << d << " " << j << std::endl;
+//                }
+
 
 
                 double symmetry_factor = 1;  // we only sum a<=b and c<=d, so we undercount by a factor of 4, canceling the 1/4 in the formula 
@@ -3827,12 +3850,20 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 
                 ind_abcd++; // increment the matrix index.
 
+              if ( not ( keep_abi or keep_abj) ) continue; // need this after the ind_abcd++... maybe be more clever?
+
                 bool keep_cdi = ( (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) >= Z.modelspace->GetOccNat3Cut() ) ;
                 bool keep_cdj = ( (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) >= Z.modelspace->GetOccNat3Cut() ) ;
                 keep_cdi = keep_cdi and (d_ec+d_ed+d_ei <= Z.modelspace->dE3max );
                 keep_cdj = keep_cdj and (d_ec+d_ed+d_ej <= Z.modelspace->dE3max );
 
                 if ( not ( keep_cdi or keep_cdj) ) continue;
+
+//                if (a==2 and b==2 and i==0)
+//                {
+//                  std::cout << "..........  cdj =  " << c << " " << d << " " << j << std::endl;
+//                }
+
 
                 std::vector<size_t> ch_cdi_list;
                 std::vector<size_t> ch_cdj_list;
@@ -3846,20 +3877,20 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                   std::vector<size_t> ketlist;
                   std::vector<double> reclist;
                   size_t ch_check=-1;
-                  if ( keep_abj and keep_cdi and abj_cdi_Tz_ok  and (std::abs(2*Jcd-oi.j2)<=twoJp) and (2*Jcd+oi.j2 >=twoJp) )
-                  {
+//                  if ( keep_abj and keep_cdi and abj_cdi_Tz_ok  and (std::abs(2*Jcd-oi.j2)<=twoJp) and (2*Jcd+oi.j2 >=twoJp) )
+//                  {
                     ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jcd, twoJp, c, d, i, ketlist, reclist) ;
-                  }
+//                  }
                   ch_cdi_list.push_back( ch_check );
                   kets_cdi_list.push_back( ketlist );
                   recouple_cdi_list.push_back( reclist );
                   ketlist.clear();
                   reclist.clear();
                   ch_check = -1;
-                  if ( keep_abi and keep_cdj and abi_cdj_Tz_ok  and (std::abs(2*Jcd-oj.j2)<=twoJp) and (2*Jcd+oj.j2 >=twoJp) )
-                  {
+//                  if ( keep_abi and keep_cdj and abi_cdj_Tz_ok  and (std::abs(2*Jcd-oj.j2)<=twoJp) and (2*Jcd+oj.j2 >=twoJp) )
+//                  {
                     ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jcd, twoJp, c, d, j, ketlist, reclist) ;
-                  }
+//                  }
                   ch_cdj_list.push_back( ch_check );
                   kets_cdj_list.push_back( ketlist );
                   recouple_cdj_list.push_back( reclist );
@@ -3879,6 +3910,12 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                     auto& recouple_cdj = recouple_cdj_list[(twoJp-twoJp_min)/2];
                     double xabicdj = 0;
                     double ycdjabi = 0;
+//                    if ((i==0 and j==2) or (i==2 and j==0) )
+//                    if ((i==0 or i==1) and (j==1 or j==0) )
+//                    {
+////                      std::cout << "getting a contribution from Xabicdj = " << a << " " << b << " " << i << " " << c << " " << d << " " << j << std::endl;
+//                      std::cout << "getting a contribution from X = " << a << " " << b << " " << i << " " << c << " " << d << " " << j << "  de: " << d_ea << " " << d_eb << " " << d_ei << " " << d_ec << " " << d_ed << " " << d_ej << std::endl;
+//                    }
                     for ( size_t Iabi=0; Iabi<kets_abi.size(); Iabi++)
                     {
                       for ( size_t Icdj=0; Icdj<kets_cdj.size(); Icdj++)
@@ -3900,6 +3937,12 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                     auto& recouple_cdi = recouple_cdi_list[(twoJp-twoJp_min)/2];
                     double xabjcdi = 0;
                     double ycdiabj = 0;
+//                    if ((i==0 and j==2) or (i==2 and j==0) )
+//                    if ((i==0 or i==1) and (j==1 or j==0) )
+//                    {
+////                      std::cout << "getting a contribution from Xabjcdi = " << a << " " << b << " " << j << " " << c << " " << d << " " << i << std::endl;
+//                      std::cout << "getting a contribution from X = " << a << " " << b << " " << j << " " << c << " " << d << " " << i << "  de: " << d_ea << " " << d_eb << " " << d_ej << " " << d_ec << " " << d_ed << " " << d_ei << std::endl;
+//                    }
                     for ( size_t Iabj=0; Iabj<kets_abj.size(); Iabj++)
                     {
                       for ( size_t Icdi=0; Icdi<kets_cdi.size(); Icdi++)
@@ -3925,6 +3968,19 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
       Z_bar_flipbra[ch] = X3_ji * Y3_ij;
       Z_bar_flipket[ch] = X3_ij * Y3_ji;
       Z_bar_flipboth[ch] = X3_ji * Y3_ji;
+
+//      if (ch==2)
+//      {
+//        std::cout << "ch_cc = 2 -> " << tbc_CC.J << " " << tbc_CC.parity << " " << tbc_CC.Tz << " Z_bar = " << std::endl << Z_bar[ch] << std::endl << std::endl  << "from X3_ij " << std::endl << X3_ij << std::endl << " Y3_ij " << std::endl << Y3_ij << std::endl << std::endl << X3_ij * Y3_ij << std::endl;
+//        std::cout << "Here, the bras correspond to " << std::endl;
+//        for (size_t ibra_CC=0; ibra_CC<nKets_cc; ibra_CC++)
+//        {
+//          Ket& bra_CC = tbc_CC.GetKet(ibra_CC);
+//          int i = bra_CC.p;
+//          int j = bra_CC.q;
+//          std::cout << ibra_CC << "   " << i << " " << j << std::endl;
+//        }
+//      }
 
 
    }// for ch  (ph-coupled 2-body channels)
@@ -3997,7 +4053,10 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
            }
 
            zijkl += (2*J_ph+1)*sixj * ( zbar_ilkj + phase_ij*phase_kl * zbar_jkli);
-
+//        if ( i==0 and j==1 and k==0 and l==1)
+//        {
+//           std::cout << " zbar_ilkj " << zbar_ilkj << "   zbar_jkli " << zbar_jkli << "  ->  " << zijkl << std::endl;
+//        }
          }
 
          parity_cc = (oj.l+ol.l)%2;
@@ -4016,7 +4075,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 
            if ( j<=l and k<=i )
            {
-             zbar_jlki = Z_bar[ch_cc](indx_jl, indx_ki);
+             zbar_jlki = Z_bar[ch_cc](indx_jl, indx_ki); // <-- this one
              zbar_iklj = Z_bar_flipboth[ch_cc](indx_ki, indx_jl);
            }
            else if ( j<=l and k>i)
@@ -4037,6 +4096,14 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 
            zijkl -= (2*J_ph+1)*sixj * ( phase_ij * zbar_jlki + phase_kl * zbar_iklj);
 
+//        if ( i==0 and j==1 and k==0 and l==1)
+//        {
+//           std::cout << "   zbar_jlki " << zbar_jlki << "   zbar_iklj " << zbar_iklj << "  ->  " << zijkl
+//                     << "  I was looking at index  " << j << " " << l << " -> " << indx_jl << " , " << k << " " << i << " -> " << indx_ki 
+//                     << " Jph = " << J_ph << "   ch_cc = " << ch_cc << std::endl;
+//        }
+
+
          }       
 
         // make it a normalized TBME
@@ -4056,6 +4123,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z )
 //void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 {
+//  std::cout << "================== BEGIN " << __func__ << " ===================" << std::endl;
   double tstart = omp_get_wtime();
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
@@ -4204,6 +4272,11 @@ void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z )
                   {
                     int twoJp_min = std::max( std::abs(2*Jab-ji2), std::abs(2*Jcd-jl2));
                     int twoJp_max = std::min( (2*Jab+ji2), (2*Jcd+jl2));
+//                    if (i==0 and j==1 and k==0 and l==1)
+//                    {
+////                      std::cout << "Getting a contribution from Xabicdl = " << a << " " << b << " " << i << " " << c << " " << d << " " << l << std::endl;
+//                      std::cout << "Getting a contribution from X = " << a << " " << b << " " << i << " " << c << " " << d << " " << l << "   " << na << " " << nb << " " << nc << " " << nd << " -> " << occupation_factor << std::endl;
+//                    }
                     for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
                     {
                       double sixj_x = Z.modelspace->GetSixJ(ji,jl,J_ph, Jcd,Jab,0.5*twoJp);
@@ -4229,6 +4302,8 @@ void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z )
                   {
                     int twoJp_min = std::max( std::abs(2*Jab-jj2), std::abs(2*Jcd-jl2));
                     int twoJp_max = std::min( (2*Jab+jj2), (2*Jcd+jl2));
+
+
                     for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
                     {
                       double sixj_x = Z.modelspace->GetSixJ(jj,jl,J_ph, Jcd,Jab,0.5*twoJp);
@@ -4241,6 +4316,11 @@ void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z )
                       double sixj_x = Z.modelspace->GetSixJ(ji,jk,J_ph, Jab,Jcd,0.5*twoJp);
                       Y3_ik += (twoJp+1) * sixj_x * Z.modelspace->phase((jk2+twoJp)/2) * Y3.GetME_pn( Jcd, Jab, twoJp, c,d,i,a,b,k);
                     }
+//                    if (i==0 and j==1 and k==0 and l==1)
+//                    {
+////                      std::cout << "Getting a contribution from Xabjcdl = " << a << " " << b << " " << j << " " << c << " " << d << " " << l << std::endl;
+//                      std::cout << "Getting a contribution from X = " << a << " " << b << " " << j << " " << c << " " << d << " " << l  << "   "  << na << " " << nb << " " << nc << " " << nd << " -> "<< occupation_factor << " X3_jl = " << X3_jl << "  Y3_ik = " << Y3_ik << std::endl;
+//                    }
                   }
 
 
@@ -4252,6 +4332,11 @@ void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z )
                   {
                     int twoJp_min = std::max( std::abs(2*Jab-ji2), std::abs(2*Jcd-jk2));
                     int twoJp_max = std::min( (2*Jab+ji2), (2*Jcd+jk2));
+//                    if (i==0 and j==1 and k==0 and l==1)
+//                    {
+////                      std::cout << "Getting a contribution from Xabicdk = " << a << " " << b << " " << i << " " << c << " " << d << " " << k << std::endl;
+//                      std::cout << "Getting a contribution from X = " << a << " " << b << " " << i << " " << c << " " << d << " " << k  << "   "  << na << " " << nb << " " << nc << " " << nd << " -> "<< occupation_factor << std::endl;
+//                    }
                     for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
                     {
                       double sixj_x = Z.modelspace->GetSixJ(ji,jk,J_ph, Jcd,Jab,0.5*twoJp);
@@ -4275,6 +4360,11 @@ void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z )
                   {
                     int twoJp_min = std::max( std::abs(2*Jab-jj2), std::abs(2*Jcd-jk2));
                     int twoJp_max = std::min( (2*Jab+jj2), (2*Jcd+jk2));
+//                    if (i==0 and j==1 and k==0 and l==1)
+//                    {
+////                      std::cout << "Getting a contribution from Xabjcdk = " << a << " " << b << " " << j << " " << c << " " << d << " " << k << std::endl;
+//                      std::cout << "Getting a contribution from X = " << a << " " << b << " " << j << " " << c << " " << d << " " << k  << "   "  << na << " " << nb << " " << nc << " " << nd << " -> "<< occupation_factor << std::endl;
+//                    }
                     for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
                     {
                       double sixj_x = Z.modelspace->GetSixJ(jj,jk,J_ph, Jcd,Jab,0.5*twoJp);
@@ -4298,23 +4388,6 @@ void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z )
 //                  zbar_ilkj += occupation_factor * symmetry_factor * ( X3_il * Y3_jk + phase_ij*phase_kl*X3_jk * Y3_il);
 //                  zbar_jlki += occupation_factor * symmetry_factor * ( X3_jl * Y3_ik + phase_ij*phase_kl*X3_ik * Y3_jl);
 
-//                  if (i==0 and j==1 and k==2 and l==5 and J==1 and ( (std::abs(X3_il*Y3_jk)>1e-7) or (std::abs(X3_jk*Y3_il)>1e-7)
-//                         or ( std::abs(X3_jl*Y3_ik)>1e-7) or (std::abs(X3_ik*Y3_jl)>1e-7) ) )
-//                  {
-//                     std::cout << "    J_ph = " << J_ph << std::endl;
-////                     std::cout << " zbar_ilkj adding " << occupation_factor << " * " << symmetry_factor << " *  ( " << X3_il << " * " << Y3_jk
-////                               << "   + " << phase_ij << " * " << phase_kl << "  * " << X3_jk << " * " << Y3_il << " )  => " << zbar_ilkj << std::endl;
-////                     std::cout << " zbar_jlki adding " << occupation_factor << " * " << symmetry_factor << " *  ( " << X3_jl << " * " << Y3_ik
-////                               << "   + " << phase_ij << " * " << phase_kl << "  * " << X3_ik << " * " << Y3_jl << " )  => " << zbar_jlki << std::endl;
-//                     std::cout << " zbar_ilkj adding " << occupation_factor << " * " << symmetry_factor << " *  ( " << X3_il << " * " << Y3_jk
-//                               << " )  => " << zbar_ilkj << std::endl;
-//                     std::cout << " zbar_jlki adding " << occupation_factor << " * " << symmetry_factor << " *  ( " << X3_jl << " * " << Y3_ik
-//                               << "    )  => " << zbar_jlki << std::endl;
-//                     std::cout << " zbar_iklj adding " << occupation_factor << " * " << symmetry_factor << " *  ( " << X3_ik << " * " << Y3_jl
-//                               << " )  => " << zbar_iklj << std::endl;
-//                     std::cout << " zbar_jkli adding " << occupation_factor << " * " << symmetry_factor << " *  ( " << X3_jk << " * " << Y3_il
-//                               << "    )  => " << zbar_jkli << std::endl;
-//                  }
 
 
                 }// for iket_cd
@@ -4329,12 +4402,11 @@ void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z )
 //        int phase_kl = Z.modelspace->phase( (jk2+jl2)/2-J);
         zijkl += (2*J_ph+1) * (  sixj1 * (zbar_ilkj + phase_ij*phase_kl * zbar_jkli) - sixj1_flip*( phase_ij*zbar_jlki + phase_kl*zbar_iklj) );
 //        zijkl += (2*J_ph+1) * (  sixj1 * zbar_ilkj   - sixj1_flip* phase_ij*zbar_jlki );
-
-//        if (i==0 and j==1 and k==2 and l==5)
+//        if ( i==0 and j==1 and k==0 and l==1)
 //        {
-////          std::cout << " J = " << J << " J_ph = " << J_ph << "    zbar_ilkj = " << zbar_ilkj << "  zbar_jlki = " << zbar_jlki << "   sixjs = " << sixj1 << " " << sixj1_flip << "    zijkl = " << zijkl << std::endl;
-//          std::cout << " J = " << J << " J_ph = " << J_ph << "    zbar_ilkj = " << zbar_ilkj << "  zbar_jkli = " << zbar_jkli  << "  zbar_jlki " << zbar_jlki << "  zbar_iklj " << zbar_iklj << "   sixjs = " << sixj1 << " " << sixj1_flip <<  " phases  " << phase_ij << " " << phase_kl << "    zijkl = " << zijkl << std::endl;
+//           std::cout << " Jph = " << J_ph << " zbar_ilkj " << zbar_ilkj << "   zbar_jkli " << zbar_jkli << "   zbar_jlki " << zbar_jlki << "   zbar_iklj " << zbar_iklj << "  ->  " << zijkl << std::endl;
 //        }
+
 
         }// for J_ph
         // make it a normalized TBME
@@ -6080,7 +6152,6 @@ void comm233_pp_hhss_debug( const Operator& X, const Operator& Y, Operator& Z )
 //      Checked with UnitTest and passed                                                                      
 //                                                                           
 //  This is very very slow. One way forward may be breaking the 9js into 6js, but it will still be painful.
-//  TODO: Go through and implement the dE3max cut for the interal 3-body terms rather than just on Z
 void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 {
 

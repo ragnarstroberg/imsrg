@@ -2346,6 +2346,8 @@ bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // te
   Z_J_old.SetHermitian();
   Z_J_old.Erase();
 
+//  Z_J.modelspace->SetOccNat3Cut(1e-5);
+//  Z_J.modelspace->SetdE3max(1);
 
 //  Commutator::comm332_pphhss_debug( X, Y, Z_J);
   Commutator::comm332_pphhss_debug( X, Y, Z_J_old);
@@ -2395,6 +2397,7 @@ bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // te
 //             if (not (i==0 and j==1 and k==0 and l==1)) continue;
 //             if (not (i==0 and j==1 and k==2 and l==5)) continue;
 //             if (not (i==0 and j==1 and k==2 and l==3)) continue;
+//             if (not (i==0 and j==2 and k==0 and l==2)) continue;
 //             if (not (mi==-1 and mj==1 and mk==1 and ml==-1)) continue;
 //             if (not (i==2 and j==2 and k==0 and l==0)) continue;
 //             if (not (mi==1 and mj==-1 and mk==-1 and ml==1)) continue;

@@ -884,6 +884,26 @@ double IMSRGSolver::EstimateBCHError( )
 }
 
 
+
+double IMSRGSolver::GetPerturbativeTriples()
+{
+  std::cout << __func__ << std::endl;
+  Operator Wbar( (*modelspace), 0,0,0,3);
+  Wbar.ThreeBody.SwitchToPN_and_discard();
+  Operator& omega = Omega.back();
+  Operator& Hs = FlowingOps[0];
+  Commutator::comm223ss( omega, Hs, Wbar);
+  Wbar.OneBody = Hs.OneBody;
+  Wbar.TwoBody = Hs.TwoBody;
+
+  double E3pert = Wbar.GetMP2_3BEnergy();
+
+  return E3pert;
+
+}
+
+
+
 void IMSRGSolver::WriteFlowStatus(std::string fname)
 {
    if (fname !="")

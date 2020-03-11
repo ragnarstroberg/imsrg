@@ -758,6 +758,12 @@ int main(int argc, char** argv)
   {
     std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
   }
+  bool perturbative_triples = true;
+  if ( perturbative_triples and method=="magnus" )
+  {
+    double dE_triples = imsrgsolver.GetPerturbativeTriples();
+    std::cout << "Perturbative triples:  " << dE_triples << std::endl;
+  }
 
 //  HlowT = imsrgsolver.Transform(HlowT);
 //  std::cout << "After Solve, low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) << std::endl;
