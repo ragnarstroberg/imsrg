@@ -42,6 +42,7 @@ class ThreeBodyMEpn
   int parity;
 
   bool is_allocated = false;
+  static bool none_allocated;
 
 
 

@@ -206,6 +206,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //     This one is super slow too. It involves 9js
        std::cout << " comm233_ph " << std::endl;
        comm233_phss(X, Y, Z);
+//       comm233_phss_debug(X, Y, Z);
 
 //       not too bad, though naively n^8
        std::cout << " comm332_ppph_hhhp " << std::endl;
@@ -6152,7 +6153,1328 @@ void comm233_pp_hhss_debug( const Operator& X, const Operator& Y, Operator& Z )
 //      Checked with UnitTest and passed                                                                      
 //                                                                           
 //  This is very very slow. One way forward may be breaking the 9js into 6js, but it will still be painful.
+/*
 void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
+{
+
+  double tstart = omp_get_wtime();
+  auto& X2 = X.TwoBody;
+  auto& Y2 = Y.TwoBody;
+  auto& X3 = X.ThreeBody;
+  auto& Y3 = Y.ThreeBody;
+  auto& Z3 = Z.ThreeBody;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+  int hX = X.IsHermitian() ? 1 : -1;
+  int hY = Y.IsHermitian() ? 1 : -1;
+
+
+  size_t nch2_CC = Z.modelspace->TwoBodyChannels_CC.size();
+  std::deque<arma::mat> X2_ph(nch2_CC);
+  std::deque<arma::mat> Y2_ph(nch2_CC);
+  std::deque<std::vector<size_t>> ph_kets_cc(nch2_CC);
+  std::deque<std::map<size_t,size_t>> ph_kets_cc_lookup(nch2_CC);
+  std::deque<std::vector<double>> occfactors(nch2_CC);
+
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  for (size_t ch_cc=0; ch_cc<nch2_CC; ch_cc++)
+  {
+    TwoBodyChannel_CC& tbc_CC = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+    int Jph = tbc_CC.J;
+    size_t nkets_CC = tbc_CC.GetNumberKets();
+    for ( size_t iket=0; iket<nkets_CC; iket++)
+    {
+      Ket& ket = tbc_CC.GetKet(iket);
+      double occfactor = ket.op->occ - ket.oq->occ;
+      if (std::abs(occfactor) > 1e-7 )
+      {
+        ph_kets_cc[ch_cc].push_back( iket );
+        ph_kets_cc_lookup[ch_cc][ iket] =  ph_kets_cc[ch_cc].size()-1;
+        occfactors[ch_cc].push_back( occfactor );
+      }
+    }
+
+    size_t nkets_ph = ph_kets_cc[ch_cc].size();
+    // allocate the particle-hole 2body matrices
+    X2_ph[ch_cc].zeros( 2*nkets_CC, nkets_ph );
+    Y2_ph[ch_cc].zeros( 2*nkets_CC, nkets_ph );
+
+    std::cout << "Allocating 2b CC for channel " << ch_cc << "  dimensions " << 2*nkets_CC << " x " << nkets_ph << std::endl;
+
+    // now we can fill the matrices
+    for (size_t ibra_ij=0; ibra_ij<nkets_CC; ibra_ij++)
+    {
+      Ket& bra_ij = tbc_CC.GetKet(ibra_ij);
+      size_t i = bra_ij.p;
+      size_t j = bra_ij.q;
+      Orbit& oi = Z.modelspace->GetOrbit(i);
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+      double ji = 0.5 * oi.j2;
+      double jj = 0.5 * oj.j2;
+      for ( size_t iket_ab=0; iket_ab<nkets_ph; iket_ab++)
+      {
+//        size_t localketindex = ph_kets_cc[ch_cc].at(iket_ab);
+        Ket& ket_ab = tbc_CC.GetKet( ph_kets_cc[ch_cc].at(iket_ab));
+        size_t a = ket_ab.p;
+        size_t b = ket_ab.q;
+        Orbit& oa = Z.modelspace->GetOrbit(a);
+        Orbit& ob = Z.modelspace->GetOrbit(b);
+        double ja = 0.5 * oa.j2;
+        double jb = 0.5 * ob.j2;
+        // XJph_ij`ab` = -sum J'  (2J'+1) { i j J_ph } XJ'_ibaj
+        //                                { a b J'   }
+
+        double xijab = 0;
+        double xjiab = 0;
+        double yijab = 0;
+        double yjiab = 0;
+        int Jprime_min = std::max( std::abs(oi.j2-ob.j2), std::abs(oa.j2-oj.j2) )/2;
+        int Jprime_max = std::min( oi.j2+ob.j2, oa.j2+oj.j2 )/2;
+        for (int Jprime=Jprime_min; Jprime<=Jprime_max; Jprime++)
+        {
+          double sixj_ij = Z.modelspace->GetSixJ(ji, jj, Jph, ja,jb, Jprime);
+          xijab -= (2*Jprime+1) * sixj_ij * X2.GetTBME_J( Jprime, i,b,a,j );
+          yijab -= (2*Jprime+1) * sixj_ij * Y2.GetTBME_J( Jprime, i,b,a,j );
+        }
+        Jprime_min = std::max( std::abs(oj.j2-ob.j2), std::abs(oa.j2-oi.j2) )/2;
+        Jprime_max = std::min( oj.j2+ob.j2, oa.j2+oi.j2 )/2;
+        for (int Jprime=Jprime_min; Jprime<=Jprime_max; Jprime++)
+        {
+          double sixj_ji = Z.modelspace->GetSixJ(jj, ji, Jph, ja,jb, Jprime);
+          xjiab -= (2*Jprime+1) * sixj_ji * X2.GetTBME_J( Jprime, j,b,a,i );
+          yjiab -= (2*Jprime+1) * sixj_ji * Y2.GetTBME_J( Jprime, j,b,a,i );
+        }
+        X2_ph[ch_cc]( ibra_ij, iket_ab ) = xijab;
+        Y2_ph[ch_cc]( ibra_ij, iket_ab ) = yijab;
+        X2_ph[ch_cc]( ibra_ij+nkets_CC, iket_ab ) = xjiab;
+        Y2_ph[ch_cc]( ibra_ij+nkets_CC, iket_ab ) = yjiab;
+      }//for iket_ab
+    }// for iket
+  }// for ch_cc
+
+  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+  for (size_t ch3=0; ch3<nch3; ch3++)
+  {
+    auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
+    size_t nkets3 = Tbc.GetNumberKets();
+
+    std::set<std::array<int,3>> possible_pairs;
+    for (size_t iket=0; iket<nkets3; iket++)
+    {
+       Ket3& ket = Tbc.GetKet(iket);
+       int i = ket.p;
+       int j = ket.q;
+       int k = ket.r;
+       int j2i = ket.op->j2;
+       int j2j = ket.oq->j2;
+       int j2k = ket.oR->j2;
+       for (int Jij=std::abs(j2i-j2j)/2; Jij<=(j2i+j2j)/2; Jij++)
+       {
+          possible_pairs.insert( {i,j,Jij} );
+       }
+       for (int Jik=std::abs(j2i-j2k)/2; Jik<=(j2i+j2k)/2; Jik++)
+       {
+          possible_pairs.insert( {i,k,Jik} );
+       }
+       for (int Jkj=std::abs(j2k-j2j)/2; Jkj<=(j2k+j2j)/2; Jkj++)
+       {
+          possible_pairs.insert( {j,k,Jkj} );
+//          possible_pairs.insert( {k,j,Jkj} );
+       }
+    }
+    size_t Npairs = possible_pairs.size();
+    std::cout << "ch3 = " << ch3 << " ( " << Tbc.twoJ << " " << Tbc.parity << " " << Tbc.twoTz << " )   nkets = " << nkets3 << "  number of possible pairs = " << Npairs << "   squared is " << Npairs*Npairs << std::endl;
+  }
+
+
+
+//  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  for (size_t ch3=0; ch3<nch3; ch3++)
+  {
+    auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
+    size_t nkets3 = Tbc.GetNumberKets();
+    std::set<std::array<int,3>> unique_ijJ;
+
+//    std::set<std::array<int,3>> possible_pairs;
+//    for (size_t iket=0; iket<nkets3; iket++)
+//    {
+//       Ket3& ket = Tbc.GetKet(iket);
+//       int i = ket.p;
+//       int j = ket.q;
+//       int k = ket.r;
+//       int j2i = ket.op->j2;
+//       int j2j = ket.oq->j2;
+//       int j2k = ket.oR->j2;
+//       for (int Jij=std::abs(j2i-j2j)/2; Jij<=(j2i+j2j)/2; Jij++)
+//       {
+//          possible_pairs.insert( {i,j,Jij} );
+//       }
+//       for (int Jik=std::abs(j2i-j2k)/2; Jik<=(j2i+j2k)/2; Jik++)
+//       {
+//          possible_pairs.insert( {i,k,Jik} );
+//       }
+//       for (int Jkj=std::abs(j2k-j2j)/2; Jkj<=(j2k+j2j)/2; Jkj++)
+//       {
+//          possible_pairs.insert( {k,j,Jkj} );
+//       }
+//    }
+//    size_t Npairs = possible_pairs.size();
+//    std::cout << "ch3 = " << ch3 << "  number of possible pairs = " << Npairs << "   squared is " << Npairs*Npairs << std::endl;
+
+    int twoJ = Tbc.twoJ;
+    double Jtot = 0.5 * twoJ;
+    for (size_t ibra=0; ibra<nkets3; ibra++)
+    {
+      auto& bra = Tbc.GetKet(ibra);
+      size_t i = bra.p;
+      size_t j = bra.q;
+      size_t k = bra.r;
+      Orbit& oi = Z.modelspace->GetOrbit(i);
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+      Orbit& ok = Z.modelspace->GetOrbit(k);
+      double ji = 0.5 * oi.j2;
+      double jj = 0.5 * oj.j2;
+      double jk = 0.5 * ok.j2;
+      double d_ei = std::abs( 2*oi.n + oi.l - e_fermi[oi.tz2]);
+      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+      double d_ek = std::abs( 2*ok.n + ok.l - e_fermi[ok.tz2]);
+      double occnat_i = oi.occ_nat;
+      double occnat_j = oj.occ_nat;
+      double occnat_k = ok.occ_nat;
+      if ( (d_ei + d_ej + d_ek) > Z.modelspace->dE3max ) continue;
+      if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+      int J1 = bra.Jpq;
+
+
+      std::vector<std::array<size_t,3>> ijk = { {i,j,k}, {k,j,i}, {i,k,j} };
+      std::vector<int> J1p_min = {J1,  std::abs(ok.j2-oj.j2)/2,   std::abs(oi.j2-ok.j2)/2 };
+      std::vector<int> J1p_max = {J1,  (ok.j2+oj.j2)/2 , (oi.j2+ok.j2)/2 };
+      std::vector<std::vector<double>> recouple_ijk = {{1},{},{} };
+      for (int J1p=J1p_min[1]; J1p<=J1p_max[1]; J1p++)
+           recouple_ijk[1].push_back( sqrt( (2*J1+1)*(2*J1p+1)) * Z.modelspace->GetSixJ(ji,jj,J1,jk,Jtot,J1p) );
+
+      for (int J1p=J1p_min[2]; J1p<=J1p_max[2]; J1p++)
+           recouple_ijk[2].push_back( -Z.modelspace->phase((oj.j2+ok.j2)/2+J1+J1p)*sqrt( (2*J1+1)*(2*J1p+1)) * Z.modelspace->GetSixJ(jj,ji,J1,jk,Jtot,J1p) );
+
+
+      for (size_t iket=ibra; iket<nkets3; iket++)
+      {
+        auto& ket = Tbc.GetKet(iket);
+        size_t l = ket.p;
+        size_t m = ket.q;
+        size_t n = ket.r;
+        Orbit& ol = Z.modelspace->GetOrbit(l);
+        Orbit& om = Z.modelspace->GetOrbit(m);
+        Orbit& on = Z.modelspace->GetOrbit(n);
+        double jl = 0.5 * ol.j2;
+        double jm = 0.5 * om.j2;
+        double jn = 0.5 * on.j2;
+        double d_el = std::abs( 2*ol.n + ol.l - e_fermi[ol.tz2]);
+        double d_em = std::abs( 2*om.n + om.l - e_fermi[om.tz2]);
+        double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
+        double occnat_l = ol.occ_nat;
+        double occnat_m = om.occ_nat;
+        double occnat_n = on.occ_nat;
+        if ( (d_el + d_em + d_en) > Z.modelspace->dE3max ) continue;
+        if ( (occnat_l*(1-occnat_l) * occnat_m*(1-occnat_m) * occnat_n*(1-occnat_n) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+        int J2 = ket.Jpq;
+
+
+        std::vector<std::array<size_t,3>> lmn = { {l,m,n}, {n,m,l}, {l,n,m} };
+        std::vector<int> J2p_min = {J2,  std::abs(on.j2-om.j2)/2,   std::abs(ol.j2-on.j2)/2 };
+        std::vector<int> J2p_max = {J2,  (on.j2+om.j2)/2 , (ol.j2+on.j2)/2 };
+        std::vector<std::vector<double>> recouple_lmn = {{1},{},{} };
+            
+        for (int J2p=J2p_min[1]; J2p<=J2p_max[1]; J2p++)
+           recouple_lmn[1].push_back( sqrt( (2*J2+1)*(2*J2p+1)) * Z.modelspace->GetSixJ(jl,jm,J2,jn,Jtot,J2p) );
+
+        for (int J2p=J2p_min[2]; J2p<=J2p_max[2]; J2p++)
+             recouple_lmn[2].push_back( -Z.modelspace->phase((om.j2+on.j2)/2+J2+J2p)*sqrt( (2*J2+1)*(2*J2p+1)) * Z.modelspace->GetSixJ(jm,jl,J2,jn,Jtot,J2p) );
+
+
+        double z_ijklmn = 0;
+
+
+        for ( int perm_ijk=0; perm_ijk<3; perm_ijk++ )
+        {
+          size_t I1 = ijk[perm_ijk][0];
+          size_t I2 = ijk[perm_ijk][1];
+          size_t I3 = ijk[perm_ijk][2];
+          Orbit& o1 = Z.modelspace->GetOrbit( I1 );
+          Orbit& o2 = Z.modelspace->GetOrbit( I2 );
+          Orbit& o3 = Z.modelspace->GetOrbit( I3 );
+          double occnat_1 = o1.occ_nat;
+          double occnat_2 = o2.occ_nat;
+          double d_e1 = std::abs( 2*o1.n + o1.l - e_fermi[o1.tz2]);
+          double d_e2 = std::abs( 2*o2.n + o2.l - e_fermi[o2.tz2]);
+          double j3 = 0.5*o3.j2;
+          for (int J1p=J1p_min[perm_ijk]; J1p<=J1p_max[perm_ijk]; J1p++)
+          {
+            double rec_ijk = recouple_ijk[perm_ijk].at(J1p-J1p_min[perm_ijk]);
+//            unique_ijJ.insert({I1,I2,J1p});
+            unique_ijJ.insert({std::min(I1,I2),std::max(I1,I2),J1p});
+//            for ( int perm_lmn=0; perm_lmn<3; perm_lmn++ )
+//            {
+//              size_t I4 = lmn[perm_lmn][0];
+//              size_t I5 = lmn[perm_lmn][1];
+//              size_t I6 = lmn[perm_lmn][2];
+//              Orbit& o4 = Z.modelspace->GetOrbit( I4 );
+//              Orbit& o5 = Z.modelspace->GetOrbit( I5 );
+//              Orbit& o6 = Z.modelspace->GetOrbit( I6 );
+//              double occnat_4 = o4.occ_nat;
+//              double occnat_5 = o5.occ_nat;
+//              double d_e4 = std::abs( 2*o4.n + o4.l - e_fermi[o4.tz2]);
+//              double d_e5 = std::abs( 2*o5.n + o5.l - e_fermi[o5.tz2]);
+//              double j6 = 0.5*o6.j2;
+//              for (int J2p=J2p_min[perm_lmn]; J2p<=J2p_max[perm_lmn]; J2p++)
+//              {
+//                double rec_lmn = recouple_lmn[perm_lmn].at(J2p-J2p_min[perm_lmn]);
+//
+//                int Jph_min = std::max( std::abs(2*J1p-2*J2p), std::abs(o3.j2-o6.j2) )/2;
+//                int Jph_max = std::min( 2*J1p+2*J2p , o3.j2+o6.j2 )/2;
+//                std::vector<double> prefactor_ph_list;
+//                for ( int Jph=Jph_min; Jph<=Jph_max; Jph++)
+//                {
+//                   prefactor_ph_list.push_back( -Z.modelspace->phase( (twoJ +o3.j2)/2) * (2*Jph+1) * Z.modelspace->GetSixJ(J1p,j3,Jtot,  j6,J2p,Jph) );
+//                }
+//
+//                for ( auto& a : Z.modelspace->all_orbits )
+//                {
+//                 Orbit& oa = Z.modelspace->GetOrbit(a);
+//                 double ja = 0.5 * oa.j2;
+//                 double occnat_a = oa.occ_nat;
+//                 double d_ea = std::abs( 2*oa.n + oa.l - e_fermi[oa.tz2]);
+//                 bool keep_12a = ( (occnat_1*(1-occnat_1) * occnat_2*(1-occnat_2) * occnat_a*(1-occnat_a) ) >= Z.modelspace->GetOccNat3Cut() ) ;
+//                 keep_12a = keep_12a and (d_e1+d_e2+d_ea <= Z.modelspace->dE3max );
+//                 if (not ( keep_12a ) ) continue;
+//
+//                 for ( auto& b : Z.modelspace->all_orbits )
+//                 {
+////                   if (b<a) continue;
+//                   Orbit& ob = Z.modelspace->GetOrbit(b);
+//                   double jb = 0.5 * ob.j2;
+//                   double occnat_b = ob.occ_nat;
+//                   double d_eb = std::abs( 2*ob.n + ob.l - e_fermi[ob.tz2]);
+//                   double occ_factor = oa.occ-ob.occ;
+//                   if (std::abs(occ_factor)<1e-6) continue;
+//
+//                   bool keep_45b = ( (occnat_4*(1-occnat_4) * occnat_5*(1-occnat_5) * occnat_b*(1-occnat_b) ) >= Z.modelspace->GetOccNat3Cut() ) ;
+//                   keep_45b = keep_45b and (d_e4+d_e5+d_eb <= Z.modelspace->dE3max );
+//                   if (not ( keep_45b ) ) continue;
+//                  
+//                   if ( (ob.l+o3.l+oa.l+o6.l)%2>0 ) continue;
+//                   if ( (ob.tz2+o3.tz2) != (oa.tz2+o6.tz2) ) continue;
+//                   std::vector<double> X3bar_ab4512_list;
+//                   std::vector<double> Y3bar_ab4512_list;
+//
+//
+//                   int twoJp_min = std::max( std::abs( oa.j2-2*J1p), std::abs(ob.j2-2*J2p));
+//                   int twoJp_max = std::min( ( oa.j2+2*J1p), (ob.j2+2*J2p));
+//                   for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+//                   {
+//                     int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+//                     std::vector<size_t> ibra_list;
+//                     std::vector<size_t> iket_list;
+//                     std::vector<double> recouple_bra_list;
+//                     std::vector<double> recouple_ket_list;
+//                     size_t ch_check_bra = Y.ThreeBody.GetKetIndex_withRecoupling( J1p, twoJp, I1, I2, a, ibra_list, recouple_bra_list) ;
+//                     size_t ch_check_ket = Y.ThreeBody.GetKetIndex_withRecoupling( J2p, twoJp, I4, I5, b, iket_list, recouple_ket_list) ;
+//                     double xab4512 = 0;
+//                     double yab4512 = 0;
+//                     for ( size_t ind_bra=0; ind_bra<ibra_list.size(); ind_bra++)
+//                     {
+//                       double rec_bra = recouple_bra_list[ind_bra];
+//                       size_t Ibra = ibra_list[ind_bra];
+//                       for ( size_t ind_ket=0; ind_ket<iket_list.size(); ind_ket++)
+//                       {
+//                         double rec_ket = recouple_ket_list[ind_ket];
+//                         size_t Iket = iket_list[ind_ket];
+//                          xab4512 += rec_bra * rec_ket * X3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
+//                          yab4512 += rec_bra * rec_ket * Y3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
+//                       }
+//                     }
+//                     X3bar_ab4512_list.push_back( phase_y * (twoJp+1) * xab4512 );
+//                     Y3bar_ab4512_list.push_back( phase_y * (twoJp+1) * yab4512 );
+//                   }
+//
+//                   for ( int Jph=Jph_min; Jph<=Jph_max; Jph++)
+//                   {
+//                      double prefactor_ph = prefactor_ph_list[Jph-Jph_min];
+//                      if ( (Jph < std::abs(oa.j2-ob.j2)/2) or ( Jph > (oa.j2+ob.j2)/2 ) ) continue;
+//
+//                      int Tz_ph = std::abs(o3.tz2 - o6.tz2)/2;
+//                      int parity_ph = (o3.l + o6.l)%2;
+//                      size_t ch_ph = Z.modelspace->GetTwoBodyChannelIndex(Jph,parity_ph,Tz_ph);
+//                      TwoBodyChannel_CC& tbc_CC = Z.modelspace->GetTwoBodyChannel_CC(ch_ph);
+//                      size_t nkets_CC = tbc_CC.GetNumberKets();
+//
+//                      size_t ibra_36 = tbc_CC.GetLocalIndex(I3,I6);
+//                      size_t iket_ab_local = tbc_CC.GetLocalIndex(std::min(a,b), std::max(a,b));
+//                      size_t iket_ab_index = ph_kets_cc_lookup[ch_ph].at(iket_ab_local);
+//
+//                      int abphaseX = 1;
+//                      int abphaseY = 1;
+//                      if ( a > b )
+//                      {
+//                        ibra_36 = (ibra_36 + nkets_CC) %(2*nkets_CC); // if a > b, then we flip 3<->6 and pick up a phase
+//                        abphaseX = hX * Z.modelspace->phase( (o3.j2+o6.j2+oa.j2+ob.j2)/2);
+//                        abphaseY = hY * Z.modelspace->phase( (o3.j2+o6.j2+oa.j2+ob.j2)/2);
+//                      }
+//                      double X2bar_36ab = abphaseX * X2_ph[ch_ph]( ibra_36, iket_ab_index );
+//                      double Y2bar_36ab = abphaseY * Y2_ph[ch_ph]( ibra_36, iket_ab_index );
+//
+//                      double X3bar_ab4512 = 0;
+//                      double Y3bar_ab4512 = 0;
+//                      for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+//                      {
+////                        int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+//                        double sixjy = Z.modelspace->GetSixJ( J1p, J2p, Jph, jb, ja, 0.5*twoJp);
+//                        X3bar_ab4512 -= sixjy * X3bar_ab4512_list[(twoJp-twoJp_min)/2];
+//                        Y3bar_ab4512 -= sixjy * Y3bar_ab4512_list[(twoJp-twoJp_min)/2];
+//                      }
+//
+//                      z_ijklmn -= occ_factor * rec_ijk * rec_lmn * prefactor_ph * (X2bar_36ab * Y3bar_ab4512 - Y2bar_36ab * X3bar_ab4512);
+//                   }// for Jph
+//
+//                 }// for b
+//                }// for a
+//
+//              }// for J2p
+//            }// for perm_lmn
+          }// for J1p
+        }// for perm_ijk
+
+
+        Z3.AddToME_pn_PN_ch( ch3, ch3, ibra,iket, z_ijklmn);
+      }// for iket
+    }// for ibra
+    std::cout << "  ch3 = " << ch3 << "   number unique ijJ = " <<  unique_ijJ.size() << std::endl;
+  }//for ch3
+
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+}
+
+
+*/
+
+
+
+void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
+{
+
+  double tstart = omp_get_wtime();
+  auto& X2 = X.TwoBody;
+  auto& Y2 = Y.TwoBody;
+  auto& X3 = X.ThreeBody;
+  auto& Y3 = Y.ThreeBody;
+  auto& Z3 = Z.ThreeBody;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+  int hX = X.IsHermitian() ? 1 : -1;
+  int hY = Y.IsHermitian() ? 1 : -1;
+
+
+  size_t nch2_CC = Z.modelspace->TwoBodyChannels_CC.size();
+  std::deque<arma::mat> X2_ph(nch2_CC);
+  std::deque<arma::mat> Y2_ph(nch2_CC);
+  std::deque<std::vector<size_t>> ph_kets_cc(nch2_CC);
+  std::deque<std::map<size_t,size_t>> ph_kets_cc_lookup(nch2_CC);
+  std::deque<std::vector<double>> occfactors(nch2_CC);
+
+  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  for (size_t ch_cc=0; ch_cc<nch2_CC; ch_cc++)
+  {
+    TwoBodyChannel_CC& tbc_CC = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+    int Jph = tbc_CC.J;
+    size_t nkets_CC = tbc_CC.GetNumberKets();
+    for ( size_t iket=0; iket<nkets_CC; iket++)
+    {
+      Ket& ket = tbc_CC.GetKet(iket);
+      double occfactor = ket.op->occ - ket.oq->occ;
+      if (std::abs(occfactor) > 1e-7 )
+      {
+        ph_kets_cc[ch_cc].push_back( iket );
+        ph_kets_cc_lookup[ch_cc][ iket] =  ph_kets_cc[ch_cc].size()-1;
+        occfactors[ch_cc].push_back( occfactor );
+      }
+    }
+
+    size_t nkets_ph = ph_kets_cc[ch_cc].size();
+    // allocate the particle-hole 2body matrices
+    X2_ph[ch_cc].zeros( 2*nkets_CC, nkets_ph );
+    Y2_ph[ch_cc].zeros( 2*nkets_CC, nkets_ph );
+
+    // now we can fill the matrices
+    for (size_t ibra_ij=0; ibra_ij<nkets_CC; ibra_ij++)
+    {
+      Ket& bra_ij = tbc_CC.GetKet(ibra_ij);
+      size_t i = bra_ij.p;
+      size_t j = bra_ij.q;
+      Orbit& oi = Z.modelspace->GetOrbit(i);
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+      double ji = 0.5 * oi.j2;
+      double jj = 0.5 * oj.j2;
+      for ( size_t iket_ab=0; iket_ab<nkets_ph; iket_ab++)
+      {
+//        size_t localketindex = ph_kets_cc[ch_cc].at(iket_ab);
+        Ket& ket_ab = tbc_CC.GetKet( ph_kets_cc[ch_cc].at(iket_ab));
+        size_t a = ket_ab.p;
+        size_t b = ket_ab.q;
+        Orbit& oa = Z.modelspace->GetOrbit(a);
+        Orbit& ob = Z.modelspace->GetOrbit(b);
+        double ja = 0.5 * oa.j2;
+        double jb = 0.5 * ob.j2;
+        // XJph_ij`ab` = -sum J'  (2J'+1) { i j J_ph } XJ'_ibaj
+        //                                { a b J'   }
+
+        double xijab = 0;
+        double xjiab = 0;
+        double yijab = 0;
+        double yjiab = 0;
+        int Jprime_min = std::max( std::abs(oi.j2-ob.j2), std::abs(oa.j2-oj.j2) )/2;
+        int Jprime_max = std::min( oi.j2+ob.j2, oa.j2+oj.j2 )/2;
+        for (int Jprime=Jprime_min; Jprime<=Jprime_max; Jprime++)
+        {
+          double sixj_ij = Z.modelspace->GetSixJ(ji, jj, Jph, ja,jb, Jprime);
+          xijab -= (2*Jprime+1) * sixj_ij * X2.GetTBME_J( Jprime, i,b,a,j );
+          yijab -= (2*Jprime+1) * sixj_ij * Y2.GetTBME_J( Jprime, i,b,a,j );
+        }
+        Jprime_min = std::max( std::abs(oj.j2-ob.j2), std::abs(oa.j2-oi.j2) )/2;
+        Jprime_max = std::min( oj.j2+ob.j2, oa.j2+oi.j2 )/2;
+        for (int Jprime=Jprime_min; Jprime<=Jprime_max; Jprime++)
+        {
+          double sixj_ji = Z.modelspace->GetSixJ(jj, ji, Jph, ja,jb, Jprime);
+          xjiab -= (2*Jprime+1) * sixj_ji * X2.GetTBME_J( Jprime, j,b,a,i );
+          yjiab -= (2*Jprime+1) * sixj_ji * Y2.GetTBME_J( Jprime, j,b,a,i );
+        }
+        X2_ph[ch_cc]( ibra_ij, iket_ab ) = xijab;
+        Y2_ph[ch_cc]( ibra_ij, iket_ab ) = yijab;
+        X2_ph[ch_cc]( ibra_ij+nkets_CC, iket_ab ) = xjiab;
+        Y2_ph[ch_cc]( ibra_ij+nkets_CC, iket_ab ) = yjiab;
+      }//for iket_ab
+    }// for iket
+  }// for ch_cc
+
+
+
+  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  for (size_t ch3=0; ch3<nch3; ch3++)
+  {
+    auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
+    size_t nkets3 = Tbc.GetNumberKets();
+    int twoJ = Tbc.twoJ;
+    double Jtot = 0.5 * twoJ;
+    for (size_t ibra=0; ibra<nkets3; ibra++)
+    {
+      auto& bra = Tbc.GetKet(ibra);
+      size_t i = bra.p;
+      size_t j = bra.q;
+      size_t k = bra.r;
+      Orbit& oi = Z.modelspace->GetOrbit(i);
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+      Orbit& ok = Z.modelspace->GetOrbit(k);
+      double ji = 0.5 * oi.j2;
+      double jj = 0.5 * oj.j2;
+      double jk = 0.5 * ok.j2;
+      double d_ei = std::abs( 2*oi.n + oi.l - e_fermi[oi.tz2]);
+      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+      double d_ek = std::abs( 2*ok.n + ok.l - e_fermi[ok.tz2]);
+      double occnat_i = oi.occ_nat;
+      double occnat_j = oj.occ_nat;
+      double occnat_k = ok.occ_nat;
+      if ( (d_ei + d_ej + d_ek) > Z.modelspace->dE3max ) continue;
+      if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+      int J1 = bra.Jpq;
+
+
+      std::vector<std::array<size_t,3>> ijk = { {i,j,k}, {k,j,i}, {i,k,j} };
+      std::vector<int> J1p_min = {J1,  std::abs(ok.j2-oj.j2)/2,   std::abs(oi.j2-ok.j2)/2 };
+      std::vector<int> J1p_max = {J1,  (ok.j2+oj.j2)/2 , (oi.j2+ok.j2)/2 };
+      std::vector<std::vector<double>> recouple_ijk = {{1},{},{} };
+      for (int J1p=J1p_min[1]; J1p<=J1p_max[1]; J1p++)
+           recouple_ijk[1].push_back( sqrt( (2*J1+1)*(2*J1p+1)) * Z.modelspace->GetSixJ(ji,jj,J1,jk,Jtot,J1p) );
+
+      for (int J1p=J1p_min[2]; J1p<=J1p_max[2]; J1p++)
+           recouple_ijk[2].push_back( -Z.modelspace->phase((oj.j2+ok.j2)/2+J1+J1p)*sqrt( (2*J1+1)*(2*J1p+1)) * Z.modelspace->GetSixJ(jj,ji,J1,jk,Jtot,J1p) );
+
+
+      for (size_t iket=ibra; iket<nkets3; iket++)
+      {
+        auto& ket = Tbc.GetKet(iket);
+        size_t l = ket.p;
+        size_t m = ket.q;
+        size_t n = ket.r;
+        Orbit& ol = Z.modelspace->GetOrbit(l);
+        Orbit& om = Z.modelspace->GetOrbit(m);
+        Orbit& on = Z.modelspace->GetOrbit(n);
+        double jl = 0.5 * ol.j2;
+        double jm = 0.5 * om.j2;
+        double jn = 0.5 * on.j2;
+        double d_el = std::abs( 2*ol.n + ol.l - e_fermi[ol.tz2]);
+        double d_em = std::abs( 2*om.n + om.l - e_fermi[om.tz2]);
+        double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
+        double occnat_l = ol.occ_nat;
+        double occnat_m = om.occ_nat;
+        double occnat_n = on.occ_nat;
+        if ( (d_el + d_em + d_en) > Z.modelspace->dE3max ) continue;
+        if ( (occnat_l*(1-occnat_l) * occnat_m*(1-occnat_m) * occnat_n*(1-occnat_n) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+        int J2 = ket.Jpq;
+
+
+        std::vector<std::array<size_t,3>> lmn = { {l,m,n}, {n,m,l}, {l,n,m} };
+        std::vector<int> J2p_min = {J2,  std::abs(on.j2-om.j2)/2,   std::abs(ol.j2-on.j2)/2 };
+        std::vector<int> J2p_max = {J2,  (on.j2+om.j2)/2 , (ol.j2+on.j2)/2 };
+        std::vector<std::vector<double>> recouple_lmn = {{1},{},{} };
+            
+        for (int J2p=J2p_min[1]; J2p<=J2p_max[1]; J2p++)
+           recouple_lmn[1].push_back( sqrt( (2*J2+1)*(2*J2p+1)) * Z.modelspace->GetSixJ(jl,jm,J2,jn,Jtot,J2p) );
+
+        for (int J2p=J2p_min[2]; J2p<=J2p_max[2]; J2p++)
+             recouple_lmn[2].push_back( -Z.modelspace->phase((om.j2+on.j2)/2+J2+J2p)*sqrt( (2*J2+1)*(2*J2p+1)) * Z.modelspace->GetSixJ(jm,jl,J2,jn,Jtot,J2p) );
+
+
+        double z_ijklmn = 0;
+
+
+        for ( int perm_ijk=0; perm_ijk<3; perm_ijk++ )
+        {
+          size_t I1 = ijk[perm_ijk][0];
+          size_t I2 = ijk[perm_ijk][1];
+          size_t I3 = ijk[perm_ijk][2];
+          Orbit& o1 = Z.modelspace->GetOrbit( I1 );
+          Orbit& o2 = Z.modelspace->GetOrbit( I2 );
+          Orbit& o3 = Z.modelspace->GetOrbit( I3 );
+          double occnat_1 = o1.occ_nat;
+          double occnat_2 = o2.occ_nat;
+          double d_e1 = std::abs( 2*o1.n + o1.l - e_fermi[o1.tz2]);
+          double d_e2 = std::abs( 2*o2.n + o2.l - e_fermi[o2.tz2]);
+          double j3 = 0.5*o3.j2;
+          for (int J1p=J1p_min[perm_ijk]; J1p<=J1p_max[perm_ijk]; J1p++)
+          {
+            double rec_ijk = recouple_ijk[perm_ijk].at(J1p-J1p_min[perm_ijk]);
+            for ( int perm_lmn=0; perm_lmn<3; perm_lmn++ )
+            {
+              size_t I4 = lmn[perm_lmn][0];
+              size_t I5 = lmn[perm_lmn][1];
+              size_t I6 = lmn[perm_lmn][2];
+              Orbit& o4 = Z.modelspace->GetOrbit( I4 );
+              Orbit& o5 = Z.modelspace->GetOrbit( I5 );
+              Orbit& o6 = Z.modelspace->GetOrbit( I6 );
+              double occnat_4 = o4.occ_nat;
+              double occnat_5 = o5.occ_nat;
+              double d_e4 = std::abs( 2*o4.n + o4.l - e_fermi[o4.tz2]);
+              double d_e5 = std::abs( 2*o5.n + o5.l - e_fermi[o5.tz2]);
+              double j6 = 0.5*o6.j2;
+              for (int J2p=J2p_min[perm_lmn]; J2p<=J2p_max[perm_lmn]; J2p++)
+              {
+                double rec_lmn = recouple_lmn[perm_lmn].at(J2p-J2p_min[perm_lmn]);
+
+                int Jph_min = std::max( std::abs(2*J1p-2*J2p), std::abs(o3.j2-o6.j2) )/2;
+                int Jph_max = std::min( 2*J1p+2*J2p , o3.j2+o6.j2 )/2;
+                std::vector<double> prefactor_ph_list;
+                for ( int Jph=Jph_min; Jph<=Jph_max; Jph++)
+                {
+                   prefactor_ph_list.push_back( -Z.modelspace->phase( (twoJ +o3.j2)/2) * (2*Jph+1) * Z.modelspace->GetSixJ(J1p,j3,Jtot,  j6,J2p,Jph) );
+                }
+
+                for ( auto& a : Z.modelspace->all_orbits )
+                {
+                 Orbit& oa = Z.modelspace->GetOrbit(a);
+                 double ja = 0.5 * oa.j2;
+                 double occnat_a = oa.occ_nat;
+                 double d_ea = std::abs( 2*oa.n + oa.l - e_fermi[oa.tz2]);
+                 bool keep_12a = ( (occnat_1*(1-occnat_1) * occnat_2*(1-occnat_2) * occnat_a*(1-occnat_a) ) >= Z.modelspace->GetOccNat3Cut() ) ;
+                 keep_12a = keep_12a and (d_e1+d_e2+d_ea <= Z.modelspace->dE3max );
+                 if (not ( keep_12a ) ) continue;
+
+                 for ( auto& b : Z.modelspace->all_orbits )
+                 {
+//                   if (b<a) continue;
+                   Orbit& ob = Z.modelspace->GetOrbit(b);
+                   double jb = 0.5 * ob.j2;
+                   double occnat_b = ob.occ_nat;
+                   double d_eb = std::abs( 2*ob.n + ob.l - e_fermi[ob.tz2]);
+                   double occ_factor = oa.occ-ob.occ;
+                   if (std::abs(occ_factor)<1e-6) continue;
+
+                   bool keep_45b = ( (occnat_4*(1-occnat_4) * occnat_5*(1-occnat_5) * occnat_b*(1-occnat_b) ) >= Z.modelspace->GetOccNat3Cut() ) ;
+                   keep_45b = keep_45b and (d_e4+d_e5+d_eb <= Z.modelspace->dE3max );
+                   if (not ( keep_45b ) ) continue;
+                  
+                   if ( (ob.l+o3.l+oa.l+o6.l)%2>0 ) continue;
+                   if ( (ob.tz2+o3.tz2) != (oa.tz2+o6.tz2) ) continue;
+                   std::vector<double> X3bar_ab4512_list;
+                   std::vector<double> Y3bar_ab4512_list;
+
+
+                   int twoJp_min = std::max( std::abs( oa.j2-2*J1p), std::abs(ob.j2-2*J2p));
+                   int twoJp_max = std::min( ( oa.j2+2*J1p), (ob.j2+2*J2p));
+                   for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+                   {
+                     int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+                     std::vector<size_t> ibra_list;
+                     std::vector<size_t> iket_list;
+                     std::vector<double> recouple_bra_list;
+                     std::vector<double> recouple_ket_list;
+                     size_t ch_check_bra = Y.ThreeBody.GetKetIndex_withRecoupling( J1p, twoJp, I1, I2, a, ibra_list, recouple_bra_list) ;
+                     size_t ch_check_ket = Y.ThreeBody.GetKetIndex_withRecoupling( J2p, twoJp, I4, I5, b, iket_list, recouple_ket_list) ;
+                     double xab4512 = 0;
+                     double yab4512 = 0;
+                     for ( size_t ind_bra=0; ind_bra<ibra_list.size(); ind_bra++)
+                     {
+                       double rec_bra = recouple_bra_list[ind_bra];
+                       size_t Ibra = ibra_list[ind_bra];
+                       for ( size_t ind_ket=0; ind_ket<iket_list.size(); ind_ket++)
+                       {
+                         double rec_ket = recouple_ket_list[ind_ket];
+                         size_t Iket = iket_list[ind_ket];
+                          xab4512 += rec_bra * rec_ket * X3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
+                          yab4512 += rec_bra * rec_ket * Y3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
+                       }
+                     }
+                     X3bar_ab4512_list.push_back( phase_y * (twoJp+1) * xab4512 );
+                     Y3bar_ab4512_list.push_back( phase_y * (twoJp+1) * yab4512 );
+                   }
+
+                   for ( int Jph=Jph_min; Jph<=Jph_max; Jph++)
+                   {
+                      double prefactor_ph = prefactor_ph_list[Jph-Jph_min];
+                      if ( (Jph < std::abs(oa.j2-ob.j2)/2) or ( Jph > (oa.j2+ob.j2)/2 ) ) continue;
+
+                      int Tz_ph = std::abs(o3.tz2 - o6.tz2)/2;
+                      int parity_ph = (o3.l + o6.l)%2;
+                      size_t ch_ph = Z.modelspace->GetTwoBodyChannelIndex(Jph,parity_ph,Tz_ph);
+                      TwoBodyChannel_CC& tbc_CC = Z.modelspace->GetTwoBodyChannel_CC(ch_ph);
+                      size_t nkets_CC = tbc_CC.GetNumberKets();
+
+                      size_t ibra_36 = tbc_CC.GetLocalIndex(I3,I6);
+                      size_t iket_ab_local = tbc_CC.GetLocalIndex(std::min(a,b), std::max(a,b));
+                      size_t iket_ab_index = ph_kets_cc_lookup[ch_ph].at(iket_ab_local);
+
+                      int abphaseX = 1;
+                      int abphaseY = 1;
+                      if ( a > b )
+                      {
+                        ibra_36 = (ibra_36 + nkets_CC) %(2*nkets_CC); // if a > b, then we flip 3<->6 and pick up a phase
+                        abphaseX = hX * Z.modelspace->phase( (o3.j2+o6.j2+oa.j2+ob.j2)/2);
+                        abphaseY = hY * Z.modelspace->phase( (o3.j2+o6.j2+oa.j2+ob.j2)/2);
+                      }
+                      double X2bar_36ab = abphaseX * X2_ph[ch_ph]( ibra_36, iket_ab_index );
+                      double Y2bar_36ab = abphaseY * Y2_ph[ch_ph]( ibra_36, iket_ab_index );
+
+                      double X3bar_ab4512 = 0;
+                      double Y3bar_ab4512 = 0;
+                      for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+                      {
+//                        int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+                        double sixjy = Z.modelspace->GetSixJ( J1p, J2p, Jph, jb, ja, 0.5*twoJp);
+                        X3bar_ab4512 -= sixjy * X3bar_ab4512_list[(twoJp-twoJp_min)/2];
+                        Y3bar_ab4512 -= sixjy * Y3bar_ab4512_list[(twoJp-twoJp_min)/2];
+                      }
+
+                      z_ijklmn -= occ_factor * rec_ijk * rec_lmn * prefactor_ph * (X2bar_36ab * Y3bar_ab4512 - Y2bar_36ab * X3bar_ab4512);
+                   }// for Jph
+
+                 }// for b
+                }// for a
+
+              }// for J2p
+            }// for perm_lmn
+          }// for J1p
+        }// for perm_ijk
+
+
+        Z3.AddToME_pn_PN_ch( ch3, ch3, ibra,iket, z_ijklmn);
+      }// for iket
+    }// for ibra
+  }//for ch3
+
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+}
+
+
+
+/*
+void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
+{
+
+  double tstart = omp_get_wtime();
+  auto& X2 = X.TwoBody;
+  auto& Y2 = Y.TwoBody;
+  auto& X3 = X.ThreeBody;
+  auto& Y3 = Y.ThreeBody;
+  auto& Z3 = Z.ThreeBody;
+  std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+
+
+  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  for (size_t ch3=0; ch3<nch3; ch3++)
+  {
+    auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
+    size_t nkets3 = Tbc.GetNumberKets();
+    int twoJ = Tbc.twoJ;
+    double Jtot = 0.5 * twoJ;
+    for (size_t ibra=0; ibra<nkets3; ibra++)
+    {
+      auto& bra = Tbc.GetKet(ibra);
+      size_t i = bra.p;
+      size_t j = bra.q;
+      size_t k = bra.r;
+      Orbit& oi = Z.modelspace->GetOrbit(i);
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+      Orbit& ok = Z.modelspace->GetOrbit(k);
+      double ji = 0.5 * oi.j2;
+      double jj = 0.5 * oj.j2;
+      double jk = 0.5 * ok.j2;
+      double d_ei = std::abs( 2*oi.n + oi.l - e_fermi[oi.tz2]);
+      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+      double d_ek = std::abs( 2*ok.n + ok.l - e_fermi[ok.tz2]);
+      double occnat_i = oi.occ_nat;
+      double occnat_j = oj.occ_nat;
+      double occnat_k = ok.occ_nat;
+      if ( (d_ei + d_ej + d_ek) > Z.modelspace->dE3max ) continue;
+      if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+      int J1 = bra.Jpq;
+      for (size_t iket=ibra; iket<nkets3; iket++)
+      {
+        auto& ket = Tbc.GetKet(iket);
+        size_t l = ket.p;
+        size_t m = ket.q;
+        size_t n = ket.r;
+        Orbit& ol = Z.modelspace->GetOrbit(l);
+        Orbit& om = Z.modelspace->GetOrbit(m);
+        Orbit& on = Z.modelspace->GetOrbit(n);
+        double jl = 0.5 * ol.j2;
+        double jm = 0.5 * om.j2;
+        double jn = 0.5 * on.j2;
+        double d_el = std::abs( 2*ol.n + ol.l - e_fermi[ol.tz2]);
+        double d_em = std::abs( 2*om.n + om.l - e_fermi[om.tz2]);
+        double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
+        double occnat_l = ol.occ_nat;
+        double occnat_m = om.occ_nat;
+        double occnat_n = on.occ_nat;
+        if ( (d_el + d_em + d_en) > Z.modelspace->dE3max ) continue;
+        if ( (occnat_l*(1-occnat_l) * occnat_m*(1-occnat_m) * occnat_n*(1-occnat_n) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+        int J2 = ket.Jpq;
+
+        double z_ijklmn = 0;
+
+        for ( auto& a : Z.modelspace->all_orbits )
+        {
+         Orbit& oa = Z.modelspace->GetOrbit(a);
+         double ja = 0.5 * oa.j2;
+         double occnat_a = oa.occ_nat;
+         double d_ea = std::abs( 2*oa.n + oa.l - e_fermi[oa.tz2]);
+         bool keep_ija = ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_a*(1-occnat_a) ) >= Z.modelspace->GetOccNat3Cut() ) ;
+         bool keep_kja = ( (occnat_k*(1-occnat_k) * occnat_j*(1-occnat_j) * occnat_a*(1-occnat_a) ) >= Z.modelspace->GetOccNat3Cut() ) ;
+         bool keep_ika = ( (occnat_i*(1-occnat_i) * occnat_k*(1-occnat_k) * occnat_a*(1-occnat_a) ) >= Z.modelspace->GetOccNat3Cut() ) ;
+         keep_ija = keep_ija and (d_ei+d_ej+d_ea <= Z.modelspace->dE3max );
+         keep_kja = keep_kja and (d_ek+d_ej+d_ea <= Z.modelspace->dE3max );
+         keep_ika = keep_ika and (d_ei+d_ek+d_ea <= Z.modelspace->dE3max );
+         if (not ( keep_ija or keep_kja or keep_ika) ) continue;
+
+         for ( auto& b : Z.modelspace->all_orbits )
+         {
+//           if (b<a) continue;
+           Orbit& ob = Z.modelspace->GetOrbit(b);
+           double jb = 0.5 * ob.j2;
+           double occnat_b = ob.occ_nat;
+           double d_eb = std::abs( 2*ob.n + ob.l - e_fermi[ob.tz2]);
+           double occ_factor = oa.occ-ob.occ;
+           if (std::abs(occ_factor)<1e-6) continue;
+
+           bool keep_lmb = ( (occnat_l*(1-occnat_l) * occnat_m*(1-occnat_m) * occnat_b*(1-occnat_b) ) >= Z.modelspace->GetOccNat3Cut() ) ;
+           bool keep_lnb = ( (occnat_l*(1-occnat_l) * occnat_n*(1-occnat_n) * occnat_b*(1-occnat_b) ) >= Z.modelspace->GetOccNat3Cut() ) ;
+           bool keep_nmb = ( (occnat_n*(1-occnat_n) * occnat_m*(1-occnat_m) * occnat_b*(1-occnat_b) ) >= Z.modelspace->GetOccNat3Cut() ) ;
+           keep_lmb = keep_lmb and (d_el+d_em+d_eb <= Z.modelspace->dE3max );
+           keep_lnb = keep_lnb and (d_el+d_en+d_eb <= Z.modelspace->dE3max );
+           keep_nmb = keep_nmb and (d_en+d_em+d_eb <= Z.modelspace->dE3max );
+           if (not ( keep_lmb or keep_lnb or keep_nmb) ) continue;
+
+
+           // Direct term i.e. Z1
+           if ( (ob.l+ok.l+oa.l+on.l)%2==0   and (  (ob.tz2+ok.tz2)==(oa.tz2+on.tz2) ) and keep_ija and keep_lmb )
+           {
+             int Jph_min = std::max( std::abs(2*J1-2*J2), std::abs(ok.j2-on.j2) )/2;
+             int Jph_max = std::min( 2*J1+2*J2 , ok.j2+on.j2 )/2;
+
+             for (int Jph=Jph_min; Jph<=Jph_max; Jph++)
+             {
+               double sixj_ph = Z.modelspace->GetSixJ(J1,jk,Jtot,  jn,J2,Jph);
+               double hat_ph = (2*Jph+1);
+               int phase_ph = -Z.modelspace->phase( (twoJ +ok.j2)/2  ); 
+               double X2bar_knab = 0;
+               double Y2bar_knab = 0;
+               double X3bar_ablmij = 0;
+               double Y3bar_ablmij = 0;
+               int Jx_min = std::max( std::abs( oa.j2-on.j2), std::abs(ok.j2-ob.j2) )/2;
+               int Jx_max = std::min( ( oa.j2+on.j2), (ok.j2+ob.j2) )/2;
+               for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+               {
+                 double sixjx = Z.modelspace->GetSixJ(jk, jn, Jph, ja, jb, Jx);
+                 X2bar_knab -= (2*Jx+1) *  sixjx * X2.GetTBME_J(Jx, k,b,a,n); 
+                 Y2bar_knab -= (2*Jx+1) *  sixjx * Y2.GetTBME_J(Jx, k,b,a,n); 
+               }
+               int twoJp_min = std::max( std::abs( oa.j2-2*J1), std::abs(ob.j2-2*J2));
+               int twoJp_max = std::min( ( oa.j2+2*J1), (ob.j2+2*J2));
+               for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+               {
+                 int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+                 double sixjy = Z.modelspace->GetSixJ( J1, J2, Jph, jb, ja, 0.5*twoJp);
+                 X3bar_ablmij -= phase_y * (twoJp+1) * sixjy * X3.GetME_pn(J1,J2,twoJp, i,j,a,l,m,b);
+                 Y3bar_ablmij -= phase_y * (twoJp+1) * sixjy * Y3.GetME_pn(J1,J2,twoJp, i,j,a,l,m,b);
+               }
+
+               z_ijklmn -= occ_factor * phase_ph * hat_ph * sixj_ph * (X2bar_knab * Y3bar_ablmij - Y2bar_knab * X3bar_ablmij);
+             }// for Jph
+           }// Z1 block
+
+
+           // Z2  ~ Pik Z1     Xbian Ykjalmb
+           if ( (ob.l+oi.l+oa.l+on.l)%2==0   and (  (ob.tz2+oi.tz2)==(oa.tz2+on.tz2) ) and keep_kja and keep_lmb)
+           {
+            int J1p_min = std::abs(ok.j2-oj.j2)/2; // additional limit on ji and Jtot?
+            int J1p_max = ( ok.j2+oj.j2 )/2;
+            for (int J1p=J1p_min; J1p<=J1p_max; J1p++)
+            {
+              double sixj_ik = Z.modelspace->GetSixJ(ji,jj,J1,jk,Jtot,J1p);
+              double hats_ik = sqrt( (2*J1+1)*(2*J1p+1) );
+              int phase_ik = -1;
+              if (std::abs(sixj_ik)<1e-6) continue;
+
+             int Jph_min = std::max( std::abs(2*J1p-2*J2), std::abs(oi.j2-on.j2) )/2;
+             int Jph_max = std::min( 2*J1p+2*J2 , oi.j2+on.j2 )/2;
+
+             for (int Jph=Jph_min; Jph<=Jph_max; Jph++)
+             {
+               double sixj_ph = Z.modelspace->GetSixJ(J1p,ji,Jtot,  jn,J2,Jph);
+               double hat_ph = (2*Jph+1);
+               int phase_ph = -Z.modelspace->phase( (twoJ +oi.j2)/2  ); 
+               double X2bar_inab = 0;
+               double Y2bar_inab = 0;
+               double X3bar_ablmkj = 0;
+               double Y3bar_ablmkj = 0;
+               int Jx_min = std::max( std::abs( oa.j2-on.j2), std::abs(oi.j2-ob.j2) )/2;
+               int Jx_max = std::min( ( oa.j2+on.j2), (oi.j2+ob.j2) )/2;
+               for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+               {
+                 double sixjx = Z.modelspace->GetSixJ(ji, jn, Jph, ja, jb, Jx);
+                 X2bar_inab -= (2*Jx+1) *  sixjx * X2.GetTBME_J(Jx, i,b,a,n); 
+                 Y2bar_inab -= (2*Jx+1) *  sixjx * Y2.GetTBME_J(Jx, i,b,a,n); 
+               }
+               int twoJp_min = std::max( std::abs( oa.j2-2*J1p), std::abs(ob.j2-2*J2));
+               int twoJp_max = std::min( ( oa.j2+2*J1p), (ob.j2+2*J2));
+               for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+               {
+                 int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+                 double sixjy = Z.modelspace->GetSixJ( J1p, J2, Jph, jb, ja, 0.5*twoJp);
+                 X3bar_ablmkj -= phase_y * (twoJp+1) * sixjy * X3.GetME_pn(J1p,J2,twoJp, k,j,a,l,m,b);
+                 Y3bar_ablmkj -= phase_y * (twoJp+1) * sixjy * Y3.GetME_pn(J1p,J2,twoJp, k,j,a,l,m,b);
+
+               }
+
+               z_ijklmn += occ_factor * phase_ik * hats_ik * sixj_ik * phase_ph * hat_ph * sixj_ph * (X2bar_inab * Y3bar_ablmkj - Y2bar_inab * X3bar_ablmkj);
+             }// for Jph
+            }// for J1p
+           }// Z2 block
+
+
+           // Z3  ~ Pjk Z1      Xbjan Yikalmb
+           if ( (ob.l+oj.l+oa.l+on.l)%2==0   and (  (ob.tz2+oj.tz2)==(oa.tz2+on.tz2) ) and keep_ika and keep_lmb)
+           {
+            int J1p_min = std::abs(oi.j2-ok.j2)/2;
+            int J1p_max = ( oi.j2+ok.j2 )/2;
+            for (int J1p=J1p_min; J1p<=J1p_max; J1p++)
+            {
+              int phase_jk = Z.modelspace->phase( (oj.j2+ok.j2)/2 + J1+J1p);
+              double hats_jk = sqrt( (2*J1+1)*(2*J1p+1) );
+              double sixj_jk = Z.modelspace->GetSixJ(jj,ji,J1,jk,Jtot,J1p);
+              if (std::abs(sixj_jk)<1e-6) continue;
+
+              int Jph_min = std::max( std::abs(2*J1p-2*J2), std::abs(oj.j2-on.j2) )/2;
+              int Jph_max = std::min( 2*J1p+2*J2 , oj.j2+on.j2 )/2;
+              for (int Jph=Jph_min; Jph<=Jph_max; Jph++)
+              {
+                double sixj_ph = Z.modelspace->GetSixJ(J1p,jj,Jtot,  jn,J2,Jph);
+                double hat_ph = (2*Jph+1);
+                int phase_ph = -Z.modelspace->phase( (twoJ +oj.j2)/2  ); 
+                double X2bar_jnab = 0;
+                double Y2bar_jnab = 0;
+                double X3bar_ablmik = 0;
+                double Y3bar_ablmik = 0;
+                int Jx_min = std::max( std::abs( oa.j2-on.j2), std::abs(oj.j2-ob.j2) )/2;
+                int Jx_max = std::min( ( oa.j2+on.j2), (oj.j2+ob.j2) )/2;
+                for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+                {
+                  double sixjx = Z.modelspace->GetSixJ(jj, jn, Jph, ja, jb, Jx);
+                  X2bar_jnab -= (2*Jx+1) *  sixjx * X2.GetTBME_J(Jx, j,b,a,n); 
+                  Y2bar_jnab -= (2*Jx+1) *  sixjx * Y2.GetTBME_J(Jx, j,b,a,n); 
+                }
+                int twoJp_min = std::max( std::abs( oa.j2-2*J1p), std::abs(ob.j2-2*J2));
+                int twoJp_max = std::min( ( oa.j2+2*J1p), (ob.j2+2*J2));
+                for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+                {
+                  int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+                  double sixjy = Z.modelspace->GetSixJ( J1p, J2, Jph, jb, ja, 0.5*twoJp);
+                  X3bar_ablmik -= phase_y * (twoJp+1) * sixjy * X3.GetME_pn(J1p,J2,twoJp, i,k,a,l,m,b);
+                  Y3bar_ablmik -= phase_y * (twoJp+1) * sixjy * Y3.GetME_pn(J1p,J2,twoJp, i,k,a,l,m,b);
+                }
+ 
+               z_ijklmn += occ_factor * hats_jk *phase_jk * sixj_jk * phase_ph * hat_ph * sixj_ph * (X2bar_jnab * Y3bar_ablmik - Y2bar_jnab * X3bar_ablmik);
+              }// for Jph
+            }// for J1p
+           }// Z3 block
+
+
+
+           // Z4  ~ Pln Z1    Xbkal Y ijanmb
+           if ( (ob.l+ok.l+oa.l+ol.l)%2==0   and (  (ob.tz2+ok.tz2)==(oa.tz2+ol.tz2) ) and keep_ija and keep_nmb)
+           {
+            int J2p_min = std::abs(on.j2-om.j2)/2;
+            int J2p_max = ( on.j2+om.j2 )/2;
+            for (int J2p=J2p_min; J2p<=J2p_max; J2p++)
+            {
+              double phase_ln = -1;
+              double sixj_ln = Z.modelspace->GetSixJ(jl,jm,J2,jn,Jtot,J2p);
+              double hats_ln = sqrt( (2*J2+1)*(2*J2p+1) );
+              if (std::abs(sixj_ln)<1e-6) continue;
+
+              int Jph_min = std::max( std::abs(2*J1-2*J2p), std::abs(ok.j2-ol.j2) )/2;
+              int Jph_max = std::min( 2*J1+2*J2p , ok.j2+ol.j2 )/2;
+
+              for (int Jph=Jph_min; Jph<=Jph_max; Jph++)
+              {
+                double sixj_ph = Z.modelspace->GetSixJ(J1,jk,Jtot,  jl,J2p,Jph);
+                double hat_ph = (2*Jph+1);
+                int phase_ph = -Z.modelspace->phase( (twoJ +ok.j2)/2  ); 
+                double X2bar_klab = 0;
+                double Y2bar_klab = 0;
+                double X3bar_abnmij = 0;
+                double Y3bar_abnmij = 0;
+                int Jx_min = std::max( std::abs( oa.j2-ol.j2), std::abs(ok.j2-ob.j2) )/2;
+                int Jx_max = std::min( ( oa.j2+ol.j2), (ok.j2+ob.j2) )/2;
+                for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+                {
+                  double sixjx = Z.modelspace->GetSixJ(jk, jl, Jph, ja, jb, Jx);
+                  X2bar_klab -= (2*Jx+1) *  sixjx * X2.GetTBME_J(Jx, k,b,a,l); 
+                  Y2bar_klab -= (2*Jx+1) *  sixjx * Y2.GetTBME_J(Jx, k,b,a,l); 
+                }
+                int twoJp_min = std::max( std::abs( oa.j2-2*J1), std::abs(ob.j2-2*J2p));
+                int twoJp_max = std::min( ( oa.j2+2*J1), (ob.j2+2*J2p));
+                for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+                {
+                  int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+                  double sixjy = Z.modelspace->GetSixJ( J1, J2p, Jph, jb, ja, 0.5*twoJp);
+                  X3bar_abnmij -= phase_y * (twoJp+1) * sixjy * X3.GetME_pn(J1,J2p,twoJp, i,j,a,n,m,b);
+                  Y3bar_abnmij -= phase_y * (twoJp+1) * sixjy * Y3.GetME_pn(J1,J2p,twoJp, i,j,a,n,m,b);
+                }
+
+                z_ijklmn += occ_factor * phase_ln * hats_ln * sixj_ln * phase_ph * hat_ph * sixj_ph * (X2bar_klab * Y3bar_abnmij - Y2bar_klab * X3bar_abnmij);
+              }// for Jph
+            }// for J1p
+           }// Z4 block
+
+
+           // Z5  ~ Pmn Z1    Xbkam Yijalnb
+           if ( (ob.l+ok.l+oa.l+om.l)%2==0   and (  (ob.tz2+ok.tz2)==(oa.tz2+om.tz2) ) and keep_ija and keep_lnb)
+           {
+            int J2p_min = std::abs(ol.j2-on.j2)/2;
+            int J2p_max = ( ol.j2+on.j2 )/2;
+            for (int J2p=J2p_min; J2p<=J2p_max; J2p++)
+            {
+              double sixj_mn = Z.modelspace->GetSixJ(jm,jl,J2,jn,Jtot,J2p);
+              double hats_mn = sqrt( (2*J2+1)*(2*J2p+1) );
+              int phase_mn = Z.modelspace->phase( (om.j2+on.j2)/2 + J2+J2p);
+              if (std::abs(sixj_mn)<1e-6) continue;
+
+              int Jph_min = std::max( std::abs(2*J1-2*J2p), std::abs(ok.j2-om.j2) )/2;
+              int Jph_max = std::min( 2*J1+2*J2p , ok.j2+om.j2 )/2;
+ 
+              for (int Jph=Jph_min; Jph<=Jph_max; Jph++)
+              {
+                double sixj_ph = Z.modelspace->GetSixJ(J1,jk,Jtot,  jm,J2p,Jph);
+                double hat_ph = (2*Jph+1);
+                int phase_ph = -Z.modelspace->phase( (twoJ +ok.j2)/2  ); 
+                double X2bar_kmab = 0;
+                double Y2bar_kmab = 0;
+                double X3bar_ablnij = 0;
+                double Y3bar_ablnij = 0;
+                int Jx_min = std::max( std::abs( oa.j2-om.j2), std::abs(ok.j2-ob.j2) )/2;
+                int Jx_max = std::min( ( oa.j2+om.j2), (ok.j2+ob.j2) )/2;
+                for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+                {
+                  double sixjx = Z.modelspace->GetSixJ(jk, jm, Jph, ja, jb, Jx);
+                  X2bar_kmab -= (2*Jx+1) *  sixjx * X2.GetTBME_J(Jx, k,b,a,m); 
+                  Y2bar_kmab -= (2*Jx+1) *  sixjx * Y2.GetTBME_J(Jx, k,b,a,m); 
+                }
+                int twoJp_min = std::max( std::abs( oa.j2-2*J1), std::abs(ob.j2-2*J2p));
+                int twoJp_max = std::min( ( oa.j2+2*J1), (ob.j2+2*J2p));
+                for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+                {
+                  int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+                  double sixjy = Z.modelspace->GetSixJ( J1, J2p, Jph, jb, ja, 0.5*twoJp);
+                  X3bar_ablnij -= phase_y * (twoJp+1) * sixjy * X3.GetME_pn(J1,J2p,twoJp, i,j,a,l,n,b);
+                  Y3bar_ablnij -= phase_y * (twoJp+1) * sixjy * Y3.GetME_pn(J1,J2p,twoJp, i,j,a,l,n,b);
+                }
+ 
+                z_ijklmn += occ_factor * phase_mn * hats_mn * sixj_mn * phase_ph * hat_ph * sixj_ph * (X2bar_kmab * Y3bar_ablnij - Y2bar_kmab * X3bar_ablnij);
+              }// for Jph
+            }// for J1p
+           }// Z5 block
+
+
+
+           // Z6  ~ Pik Pln Z1     Xbial Ykjanmb
+           if ( (ob.l+oi.l+oa.l+ol.l)%2==0   and (  (ob.tz2+oi.tz2)==(oa.tz2+ol.tz2) ) and keep_kja and keep_nmb)
+           {
+            int J1p_min = std::abs(ok.j2-oj.j2)/2;
+            int J1p_max = ( ok.j2+oj.j2 )/2;
+            int J2p_min = std::abs(on.j2-om.j2)/2;
+            int J2p_max = ( on.j2+om.j2 )/2;
+            for (int J1p=J1p_min; J1p<=J1p_max; J1p++)
+            {
+              double sixj_ik = Z.modelspace->GetSixJ(ji,jj,J1,jk,Jtot,J1p);
+              double hats_ik = sqrt( (2*J1+1)*(2*J1p+1) );
+              double phase_ik = -1;
+              if (std::abs(sixj_ik)<1e-6) continue;
+              for (int J2p=J2p_min; J2p<=J2p_max; J2p++)
+              {
+                double sixj_ln = Z.modelspace->GetSixJ(jl,jm,J2,jn,Jtot,J2p);
+                double hats_ln = sqrt( (2*J2+1)*(2*J2p+1) );
+                double phase_ln = -1;
+                if (std::abs(sixj_ln)<1e-6) continue;
+
+                int Jph_min = std::max( std::abs(2*J1p-2*J2p), std::abs(oi.j2-ol.j2) )/2;
+                int Jph_max = std::min( 2*J1p+2*J2p , oi.j2+ol.j2 )/2;
+
+                for (int Jph=Jph_min; Jph<=Jph_max; Jph++)
+                {
+                  double sixj_ph = Z.modelspace->GetSixJ(J1p,ji,Jtot,  jl,J2p,Jph);
+                  double hat_ph = (2*Jph+1);
+                  int phase_ph = -Z.modelspace->phase( (twoJ +oi.j2)/2  ); 
+                  double X2bar_ilab = 0;
+                  double Y2bar_ilab = 0;
+                  double X3bar_abnmkj = 0;
+                  double Y3bar_abnmkj = 0;
+                  int Jx_min = std::max( std::abs( oa.j2-ol.j2), std::abs(oi.j2-ob.j2) )/2;
+                  int Jx_max = std::min( ( oa.j2+ol.j2), (oi.j2+ob.j2) )/2;
+                  for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+                  {
+                    double sixjx = Z.modelspace->GetSixJ(ji, jl, Jph, ja, jb, Jx);
+                    X2bar_ilab -= (2*Jx+1) *  sixjx * X2.GetTBME_J(Jx, i,b,a,l); 
+                    Y2bar_ilab -= (2*Jx+1) *  sixjx * Y2.GetTBME_J(Jx, i,b,a,l); 
+                  }
+                  int twoJp_min = std::max( std::abs( oa.j2-2*J1p), std::abs(ob.j2-2*J2p));
+                  int twoJp_max = std::min( ( oa.j2+2*J1p), (ob.j2+2*J2p));
+                  for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+                  {
+                    int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+                    double sixjy = Z.modelspace->GetSixJ( J1p, J2p, Jph, jb, ja, 0.5*twoJp);
+                    X3bar_abnmkj -= phase_y * (twoJp+1) * sixjy * X3.GetME_pn(J1p,J2p,twoJp, k,j,a,n,m,b);
+                    Y3bar_abnmkj -= phase_y * (twoJp+1) * sixjy * Y3.GetME_pn(J1p,J2p,twoJp, k,j,a,n,m,b);
+                  }
+
+                  z_ijklmn -= occ_factor * phase_ik * hats_ik * sixj_ik * phase_ln * hats_ln * sixj_ln * phase_ph * hat_ph * sixj_ph * (X2bar_ilab * Y3bar_abnmkj - Y2bar_ilab * X3bar_abnmkj);
+                }// for Jph
+
+              }// for J2p
+            }// for J1p
+           }// Z6 block
+
+
+
+           // Z7  ~ Pjk Pln Z1     Xbjal Yikanmb
+           if ( (ob.l+oj.l+oa.l+ol.l)%2==0   and (  (ob.tz2+oj.tz2)==(oa.tz2+ol.tz2) )  and keep_ika and keep_nmb)
+           {
+            int J1p_min = std::abs(oi.j2-ok.j2)/2;
+            int J1p_max = ( oi.j2+ok.j2 )/2;
+            int J2p_min = std::abs(on.j2-om.j2)/2;
+            int J2p_max = ( on.j2+om.j2 )/2;
+            for (int J1p=J1p_min; J1p<=J1p_max; J1p++)
+            {
+              double sixj_jk = Z.modelspace->GetSixJ(jj,ji,J1,jk,Jtot,J1p);
+              double hats_jk = sqrt( (2*J1+1)*(2*J1p+1) );
+              int phase_jk = Z.modelspace->phase( (oj.j2+ok.j2)/2+ J1+J1p);
+              if (std::abs(sixj_jk)<1e-6) continue;
+              for (int J2p=J2p_min; J2p<=J2p_max; J2p++)
+              {
+                double sixj_ln = Z.modelspace->GetSixJ(jl,jm,J2,jn,Jtot,J2p);
+                double hats_ln = sqrt( (2*J2+1)*(2*J2p+1) );
+                int phase_ln = -1;
+                if (std::abs(sixj_ln)<1e-6) continue;
+
+                int Jph_min = std::max( std::abs(2*J1p-2*J2p), std::abs(oj.j2-ol.j2) )/2;
+                int Jph_max = std::min( 2*J1p+2*J2p , oj.j2+ol.j2 )/2;
+
+                for (int Jph=Jph_min; Jph<=Jph_max; Jph++)
+                {
+                  double sixj_ph = Z.modelspace->GetSixJ(J1p,jj,Jtot,  jl,J2p,Jph);
+                  double hat_ph = (2*Jph+1);
+                  int phase_ph = -Z.modelspace->phase( (twoJ +oj.j2)/2  ); 
+                  double X2bar_jlab = 0;
+                  double Y2bar_jlab = 0;
+                  double X3bar_abnmik = 0;
+                  double Y3bar_abnmik = 0;
+                  int Jx_min = std::max( std::abs( oa.j2-ol.j2), std::abs(oj.j2-ob.j2) )/2;
+                  int Jx_max = std::min( ( oa.j2+ol.j2), (oj.j2+ob.j2) )/2;
+                  for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+                  {
+                    double sixjx = Z.modelspace->GetSixJ(jj, jl, Jph, ja, jb, Jx);
+                    X2bar_jlab -= (2*Jx+1) *  sixjx * X2.GetTBME_J(Jx, j,b,a,l); 
+                    Y2bar_jlab -= (2*Jx+1) *  sixjx * Y2.GetTBME_J(Jx, j,b,a,l); 
+                  }
+                  int twoJp_min = std::max( std::abs( oa.j2-2*J1p), std::abs(ob.j2-2*J2p));
+                  int twoJp_max = std::min( ( oa.j2+2*J1p), (ob.j2+2*J2p));
+                  for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+                  {
+                    int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+                    double sixjy = Z.modelspace->GetSixJ( J1p, J2p, Jph, jb, ja, 0.5*twoJp);
+                    X3bar_abnmik -= phase_y * (twoJp+1) * sixjy * X3.GetME_pn(J1p,J2p,twoJp, i,k,a,n,m,b);
+                    Y3bar_abnmik -= phase_y * (twoJp+1) * sixjy * Y3.GetME_pn(J1p,J2p,twoJp, i,k,a,n,m,b);
+                  }
+
+                  z_ijklmn -= occ_factor * phase_jk * hats_jk * sixj_jk * phase_ln * hats_ln * sixj_ln * phase_ph * hat_ph * sixj_ph * (X2bar_jlab * Y3bar_abnmik - Y2bar_jlab * X3bar_abnmik);
+                }// for Jph
+
+
+              }// for J2p
+            }// for J1p
+           }// Z7 block
+
+
+
+           // Z8  ~ Pik Pmn Z1     Xbiam Ykjalnb  
+           if ( (ob.l+oi.l+oa.l+om.l)%2==0   and (  (ob.tz2+oi.tz2)==(oa.tz2+om.tz2) )  and keep_kja and keep_lnb)
+           {
+            int J1p_min = std::abs(ok.j2-oj.j2)/2;
+            int J1p_max = ( ok.j2+oj.j2 )/2;
+            int J2p_min = std::abs(ol.j2-on.j2)/2;
+            int J2p_max = ( ol.j2+on.j2 )/2;
+            for (int J1p=J1p_min; J1p<=J1p_max; J1p++)
+            {
+              double sixj_ik = Z.modelspace->GetSixJ(ji,jj,J1,jk,Jtot,J1p);
+              double hats_ik = sqrt( (2*J1+1)*(2*J1p+1) );
+              double phase_ik = -1;
+              if (std::abs(sixj_ik)<1e-6) continue;
+              for (int J2p=J2p_min; J2p<=J2p_max; J2p++)
+              {
+                double sixj_mn = Z.modelspace->GetSixJ(jm,jl,J2,jn,Jtot,J2p);
+                double hats_mn = sqrt( (2*J2+1)*(2*J2p+1) );
+                int phase_mn = Z.modelspace->phase( (om.j2+on.j2)/2 + J2+J2p);
+                if (std::abs(sixj_mn)<1e-6) continue;
+
+                int Jph_min = std::max( std::abs(2*J1p-2*J2p), std::abs(oi.j2-om.j2) )/2;
+                int Jph_max = std::min( 2*J1p+2*J2p , oi.j2+om.j2 )/2;
+                for (int Jph=Jph_min; Jph<=Jph_max; Jph++)
+                {
+                  double sixj_ph = Z.modelspace->GetSixJ(J1p,ji,Jtot,  jm,J2p,Jph);
+                  double hat_ph = (2*Jph+1);
+                  int phase_ph = -Z.modelspace->phase( (twoJ +oi.j2)/2  ); 
+                  double X2bar_imab = 0;
+                  double Y2bar_imab = 0;
+                  double X3bar_ablnkj = 0;
+                  double Y3bar_ablnkj = 0;
+                  int Jx_min = std::max( std::abs( oa.j2-om.j2), std::abs(oi.j2-ob.j2) )/2;
+                  int Jx_max = std::min( ( oa.j2+om.j2), (oi.j2+ob.j2) )/2;
+                  for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+                  {
+                    double sixjx = Z.modelspace->GetSixJ(ji, jm, Jph, ja, jb, Jx);
+                    X2bar_imab -= (2*Jx+1) *  sixjx * X2.GetTBME_J(Jx, i,b,a,m); 
+                    Y2bar_imab -= (2*Jx+1) *  sixjx * Y2.GetTBME_J(Jx, i,b,a,m); 
+                  }
+                  int twoJp_min = std::max( std::abs( oa.j2-2*J1p), std::abs(ob.j2-2*J2p));
+                  int twoJp_max = std::min( ( oa.j2+2*J1p), (ob.j2+2*J2p));
+                  for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+                  {
+                    int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+                    double sixjy = Z.modelspace->GetSixJ( J1p, J2p, Jph, jb, ja, 0.5*twoJp);
+                    X3bar_ablnkj -= phase_y * (twoJp+1) * sixjy * X3.GetME_pn(J1p,J2p,twoJp, k,j,a,l,n,b);
+                    Y3bar_ablnkj -= phase_y * (twoJp+1) * sixjy * Y3.GetME_pn(J1p,J2p,twoJp, k,j,a,l,n,b);
+                  }
+                  z_ijklmn -= occ_factor * phase_ik * hats_ik * sixj_ik * phase_mn * hats_mn * sixj_mn * phase_ph * hat_ph * sixj_ph * (X2bar_imab * Y3bar_ablnkj - Y2bar_imab * X3bar_ablnkj);
+                }// for Jph
+              }// for J2p
+            }// for J1p
+           }// Z8 block
+
+
+
+           // Z9  ~ Pjk Pmn Z1     Xbjam Yikalnb
+           if ( (ob.l+oj.l+oa.l+om.l)%2==0   and (  (ob.tz2+oj.tz2)==(oa.tz2+om.tz2) )  and keep_ika and keep_lnb)
+           {
+            int J1p_min = std::abs(oi.j2-ok.j2)/2;
+            int J1p_max = ( oi.j2+ok.j2 )/2;
+            int J2p_min = std::abs(ol.j2-on.j2)/2;
+            int J2p_max = ( ol.j2+on.j2 )/2;
+            for (int J1p=J1p_min; J1p<=J1p_max; J1p++)
+            {
+              double sixj_jk = Z.modelspace->GetSixJ(jj,ji,J1,jk,Jtot,J1p);
+              double hats_jk = sqrt( (2*J1+1)*(2*J1p+1) );
+              double phase_jk = Z.modelspace->phase( (oj.j2+ok.j2)/2+J1+J1p);
+              if (std::abs(sixj_jk)<1e-6) continue;
+              for (int J2p=J2p_min; J2p<=J2p_max; J2p++)
+              {
+                double sixj_mn = Z.modelspace->GetSixJ(jm,jl,J2,jn,Jtot,J2p);
+                double hats_mn = sqrt( (2*J2+1)*(2*J2p+1) );
+                int phase_mn = Z.modelspace->phase( (om.j2+on.j2)/2 + J2+J2p);
+                if (std::abs(sixj_mn)<1e-6) continue;
+
+                int Jph_min = std::max( std::abs(2*J1p-2*J2p), std::abs(oj.j2-om.j2) )/2;
+                int Jph_max = std::min( 2*J1p+2*J2p , oj.j2+om.j2 )/2;
+                for (int Jph=Jph_min; Jph<=Jph_max; Jph++)
+                {
+                  double sixj_ph = Z.modelspace->GetSixJ(J1p,jj,Jtot,  jm,J2p,Jph);
+                  double hat_ph = (2*Jph+1);
+                  int phase_ph = -Z.modelspace->phase( (twoJ +oj.j2)/2  ); 
+                  double X2bar_jmab = 0;
+                  double Y2bar_jmab = 0;
+                  double X3bar_ablnik = 0;
+                  double Y3bar_ablnik = 0;
+                  int Jx_min = std::max( std::abs( oa.j2-om.j2), std::abs(oj.j2-ob.j2) )/2;
+                  int Jx_max = std::min( ( oa.j2+om.j2), (oj.j2+ob.j2) )/2;
+                  for (int Jx=Jx_min; Jx<=Jx_max; Jx++)
+                  {
+                    double sixjx = Z.modelspace->GetSixJ(jj, jm, Jph, ja, jb, Jx);
+                    X2bar_jmab -= (2*Jx+1) *  sixjx * X2.GetTBME_J(Jx, j,b,a,m); 
+                    Y2bar_jmab -= (2*Jx+1) *  sixjx * Y2.GetTBME_J(Jx, j,b,a,m); 
+                  }
+                  int twoJp_min = std::max( std::abs( oa.j2-2*J1p), std::abs(ob.j2-2*J2p));
+                  int twoJp_max = std::min( ( oa.j2+2*J1p), (ob.j2+2*J2p));
+                  for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
+                  {
+                    int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
+                    double sixjy = Z.modelspace->GetSixJ( J1p, J2p, Jph, jb, ja, 0.5*twoJp);
+                    X3bar_ablnik -= phase_y * (twoJp+1) * sixjy * X3.GetME_pn(J1p,J2p,twoJp, i,k,a,l,n,b);
+                    Y3bar_ablnik -= phase_y * (twoJp+1) * sixjy * Y3.GetME_pn(J1p,J2p,twoJp, i,k,a,l,n,b);
+                  }
+                  z_ijklmn -= occ_factor * phase_jk * hats_jk * sixj_jk * phase_mn * hats_mn * sixj_mn * phase_ph * hat_ph * sixj_ph * (X2bar_jmab * Y3bar_ablnik - Y2bar_jmab * X3bar_ablnik);
+                }// for Jph
+              }// for J2p
+            }// for J1p
+           }// Z9 block
+
+
+         }// for b
+        }// for a
+        Z3.AddToME_pn_PN_ch( ch3, ch3, ibra,iket, z_ijklmn);
+      }// for iket
+    }// for ibra
+  }//for ch3
+
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+}
+*/
+
+
+
+
+
+
+
+
+
+void comm233_phss_debug( const Operator& X, const Operator& Y, Operator& Z )
 {
 
   double tstart = omp_get_wtime();

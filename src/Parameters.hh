@@ -86,6 +86,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"discard_residual_input3N",  "false"},       // If we're doing IMSRG3, should we discard the residual input 3N (only keep induced)?
   {"only_2b_eta",               "false"},       // If we're doing IMSRG3, keep eta as 2b 
   {"only_2b_omega",             "false"},       // If we're doing IMSRG3, keep omega (the magnus operator) as 2b 
+  {"perturbative_triples",      "false"},       // Compute perturbative energy shift due to [2,2]->3 induced 3-body 
 };
 
 

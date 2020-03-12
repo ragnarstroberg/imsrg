@@ -101,6 +101,7 @@ int main(int argc, char** argv)
   bool store_3bme_pn = (parameters.s("store_3bme_pn")=="true");
   bool only_2b_eta = (parameters.s("only_2b_eta")=="true");
   bool only_2b_omega = (parameters.s("only_2b_omega")=="true");
+  bool perturbative_triples = (parameters.s("perturbative_triples")=="true");
 
   int eMax = parameters.i("emax");
   int lmax = parameters.i("lmax"); // so far I only use this with atomic systems.
@@ -758,7 +759,6 @@ int main(int argc, char** argv)
   {
     std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
   }
-  bool perturbative_triples = true;
   if ( perturbative_triples and method=="magnus" )
   {
     double dE_triples = imsrgsolver.GetPerturbativeTriples();

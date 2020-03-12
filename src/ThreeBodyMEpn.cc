@@ -7,6 +7,7 @@
 #include <sstream>
 
 
+bool ThreeBodyMEpn::none_allocated = true;
 
 ThreeBodyMEpn::ThreeBodyMEpn()
 : PN_mode(false) , herm(1), rank_J(0), rank_T(0), parity(0)  {}
@@ -51,6 +52,7 @@ void ThreeBodyMEpn::Allocate_Isospin()
 // This will need to be more elaborate if we want to use tensor 3-body.
 void ThreeBodyMEpn::Allocate_PN()
 {
+  std::cout << __func__ <<std::endl;
   total_dimension = 0;
   size_t nch = modelspace->GetNumberThreeBodyChannels();
 //  ch_start.zeros(nch,nch);
@@ -84,8 +86,13 @@ void ThreeBodyMEpn::Allocate_PN()
     }
   }
   matrix_data.resize(total_dimension,0.0);
-//  std::cout << "DONE ALLOCATING, size of matrix_data is " << matrix_data.size() << std::endl;
+  if (none_allocated)
+  {
+     std::cout << "DONE ALLOCATING PN 3-body, size of matrix_data is " << matrix_data.size()
+               << "  ->  " << matrix_data.size()*sizeof(ME_type) / (1024.*1024.*1024.) << " GB" << std::endl;
+  }
   is_allocated = true;
+  none_allocated = false;
   PN_mode = true;
 }
 
