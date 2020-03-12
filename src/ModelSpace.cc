@@ -1120,7 +1120,6 @@ void ModelSpace::Setup3bKets()
 
   int twoJ_min=1;
   int twoJ_max= 6*Emax + 1; // 2 * (3*(Emax+1/2)-1)
-//  int twoJ_max= std::min(6*Emax + 1, 2*E3max+3); // 2 * (3*(Emax+1/2)-1)
   for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
   {
    for (int parity=0; parity<=1; parity++)
