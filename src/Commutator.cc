@@ -227,11 +227,9 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        std::cout << " comm333_pph_hhpss " << std::endl;
        comm333_pph_hhpss(X, Y, Z);
 //       comm333_pph_hhpss_debug(X, Y, Z);
-//     }
 
 
-
-     // after going through once, we've stored all the 6js and 9js, so we can run in OMP loops from now on
+     // after going through once, we've stored all the 6js (and maybe 9js), so we can run in OMP loops from now on
      X.modelspace->scalar3b_transform_first_pass = false;
    }
 
@@ -3624,8 +3622,8 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 {
-//  std::cout << "================== BEGIN " << __func__ << " ===================" << std::endl;
   double tstart = omp_get_wtime();
+  double t_internal = omp_get_wtime();
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
@@ -3654,6 +3652,12 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
       Z_bar_flipboth[ch].zeros( nKets_cc, nKets_cc );
    }
 
+   double occnat_factor_max = 0;
+   for ( auto i : Z.modelspace->all_orbits)
+   {
+      double occnat_i = Z.modelspace->GetOrbit(i).occ_nat;
+      occnat_factor_max = std::max( occnat_factor_max, occnat_i*(1-occnat_i) );
+   }
 
   // Loop through Pandya-transformed channels and compute the matrix Zbar by mat mult
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -3690,7 +3694,13 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
             int b = ket_ab.q;
             double na = ket_ab.op->occ;
             double nb = ket_ab.oq->occ;
+            double occnat_a = ket_ab.op->occ_nat;
+            double occnat_b = ket_ab.oq->occ_nat;
+            double d_ea = std::abs(2*ket_ab.op->n + ket_ab.op->l - e_fermi[ket_ab.op->tz2]);
+            double d_eb = std::abs(2*ket_ab.oq->n + ket_ab.oq->l - e_fermi[ket_ab.oq->tz2]);
             if ( na*nb<1e-8 and (1-na)*(1-nb)<1e-8 ) continue;
+            if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue ;
+            if ( (d_ea + d_eb) > Z.modelspace->GetdE3max() ) continue;
 
             for (int iket_cd=0; iket_cd<nkets_cd; iket_cd++)
             {
@@ -3699,8 +3709,14 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
               int d = ket_cd.q;
               double nc = ket_cd.op->occ;
               double nd = ket_cd.oq->occ;
+              double occnat_c = ket_cd.op->occ_nat;
+              double occnat_d = ket_cd.oq->occ_nat;
+              double d_ec = std::abs(2*ket_cd.op->n + ket_cd.op->l - e_fermi[ket_cd.op->tz2]);
+              double d_ed = std::abs(2*ket_cd.oq->n + ket_cd.oq->l - e_fermi[ket_cd.oq->tz2]);
               double occupation_factor = (1-na)*(1-nb)*nc*nd - na*nb*(1-nc)*(1-nd);
               if (std::abs(occupation_factor)<1e-6) continue;
+              if ( (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue ;
+              if ( (d_ec + d_ed) > Z.modelspace->GetdE3max() ) continue;
 
               n_abcd_states++;
 
@@ -3787,6 +3803,8 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
               keep_abi = keep_abi and (d_ea+d_eb+d_ei <= Z.modelspace->dE3max );
               keep_abj = keep_abj and (d_ea+d_eb+d_ej <= Z.modelspace->dE3max );
 
+              if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue ;
+              if ( (d_ea + d_eb) > Z.modelspace->GetdE3max() ) continue;
 
               std::vector<size_t> ch_abi_list;
               std::vector<size_t> ch_abj_list;
@@ -3837,6 +3855,8 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                 double occupation_factor = (1-na)*(1-nb)*nc*nd - na*nb*(1-nc)*(1-nd);
                 if (std::abs(occupation_factor)<1e-6) continue;
 
+                if ( (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue ;
+                if ( (d_ec + d_ed) > Z.modelspace->GetdE3max() ) continue;
 
                 double symmetry_factor = 1;  // we only sum a<=b and c<=d, so we undercount by a factor of 4, canceling the 1/4 in the formula 
                 if (a==b) symmetry_factor *= 0.5; // if a==b or c==d, then the permutation doesn't give a new state, so there's less undercounting
@@ -3844,7 +3864,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 
                 ind_abcd++; // increment the matrix index.
 
-              if ( not ( keep_abi or keep_abj) ) continue; // need this after the ind_abcd++... maybe be more clever?
+                if ( not ( keep_abi or keep_abj) ) continue; // need this after the ind_abcd++... maybe be more clever?
 
                 bool keep_cdi = ( (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) >= Z.modelspace->GetOccNat3Cut() ) ;
                 bool keep_cdj = ( (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) >= Z.modelspace->GetOccNat3Cut() ) ;
@@ -3883,7 +3903,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                   ch_cdj_list.push_back( ch_check );
                   kets_cdj_list.push_back( ketlist );
                   recouple_cdj_list.push_back( reclist );
-                }
+                }// for twoJp
 
                 for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
                 {
@@ -3948,11 +3968,13 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 
    }// for ch  (ph-coupled 2-body channels)
 
+   
+  Z.profiler.timer["comm332_CC_loops"] += omp_get_wtime() - t_internal;
+  t_internal = omp_get_wtime();
 
    // Now transform Zbar to Z
 
-
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
    for (size_t ch=0; ch<nch; ch++)
    {
      TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
@@ -4065,6 +4087,8 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
        }// for iket
      }// for ibra
    }// for ch
+
+  Z.profiler.timer["comm332_main_loop"] += omp_get_wtime() - t_internal;
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
@@ -8404,7 +8428,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
-
+/*
 //
 // The old slow way, just to make sure we didn't screw anything up by going faster
 //
@@ -8642,12 +8666,13 @@ void comm333_pph_hhpss_debug( const Operator& X, const Operator& Y, Operator& Z 
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
+*/
 
 
 
 
-/*
-void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z ) 
+//void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z ) 
+void comm333_pph_hhpss_debug( const Operator& X, const Operator& Y, Operator& Z ) 
 {
 
   double tstart = omp_get_wtime();
@@ -9164,7 +9189,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
-*/
+
 
 
 
