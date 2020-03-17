@@ -3802,20 +3802,20 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                   std::vector<size_t> ketlist;
                   std::vector<double> reclist;
                   size_t ch_check = -1;
-//                  if ( keep_abi  and abi_cdj_Tz_ok and (std::abs(2*Jab-oi.j2)<=twoJp) and (2*Jab+oi.j2 >=twoJp) )
-//                  {
+                  if ( keep_abi  and abi_cdj_Tz_ok and (std::abs(2*Jab-oi.j2)<=twoJp) and (2*Jab+oi.j2 >=twoJp) )
+                  {
                     ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJp, a, b, i, ketlist, reclist) ;
-//                  }
+                  }
                   ch_abi_list.push_back( ch_check );
                   kets_abi_list.push_back( ketlist );
                   recouple_abi_list.push_back( reclist );
                   ketlist.clear();
                   reclist.clear();
                   ch_check = -1;
-//                  if ( keep_abj  and abj_cdi_Tz_ok  and (std::abs(2*Jab-oj.j2)<=twoJp) and (2*Jab+oj.j2 >=twoJp) )
-//                  {
+                  if ( keep_abj  and abj_cdi_Tz_ok  and (std::abs(2*Jab-oj.j2)<=twoJp) and (2*Jab+oj.j2 >=twoJp) )
+                  {
                     ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJp, a, b, j, ketlist, reclist) ;
-//                  }
+                  }
                   ch_abj_list.push_back( ch_check );
                   kets_abj_list.push_back( ketlist );
                   recouple_abj_list.push_back( reclist );
@@ -7479,7 +7479,6 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 */
-
 
 
 
