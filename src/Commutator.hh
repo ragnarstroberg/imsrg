@@ -89,6 +89,7 @@ namespace Commutator{
 
   void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
   void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+  void comm333_pph_hhpss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
 
   bool check_2b_channel_Tz_parity( const Operator& Op, Orbit& o1, Orbit&o2, Orbit& o3, Orbit& o4 );
 

@@ -222,10 +222,11 @@ void Generator::ConstructGenerator_SingleRef(std::function<double (double,double
 
 
 
+// Off-diagonal pieces are <abc|ijk> = <ppp|ccc> where c is core and p is either valence or q (that is, not core).
 //void Generator::ConstructGenerator_Atan_3body()
 void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,double)>& etafunc )
 {
-
+     double t_start = omp_get_wtime();
      size_t ncore = modelspace->core.size();
      std::vector<size_t> corevec;
      for (auto a : modelspace->core) corevec.push_back(a);
@@ -241,36 +242,39 @@ void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,
       for (size_t ibra=0; ibra<nkets3; ibra++)
       {
         Ket3& bra = Tbc.GetKet(ibra);
-        if ( not (  (bra.op->cvq==0) and (bra.oq->cvq==0) and (bra.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
-        double d_ei = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
-        double d_ej = std::abs( 2*bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
-        double d_ek = std::abs( 2*bra.oR->n + bra.oR->l - e_fermi[bra.oR->tz2]);
-        double occnat_i = bra.op->occ_nat;
-        double occnat_j = bra.oq->occ_nat;
-        double occnat_k = bra.oR->occ_nat;
-        if ( d_ei + d_ej + d_ek > modelspace->GetdE3max() ) continue;
-        if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < modelspace->GetOccNat3Cut() ) continue ;
-        size_t i = bra.p;
-        size_t j = bra.q;
-        size_t k = bra.r;
+         if ( (  (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+
+
+        double d_ea = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
+        double d_eb = std::abs( 2*bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
+        double d_ec = std::abs( 2*bra.oR->n + bra.oR->l - e_fermi[bra.oR->tz2]);
+        double occnat_a = bra.op->occ_nat;
+        double occnat_b = bra.oq->occ_nat;
+        double occnat_c = bra.oR->occ_nat;
+        if ( d_ea + d_eb + d_ec > modelspace->GetdE3max() ) continue;
+        if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c) ) < modelspace->GetOccNat3Cut() ) continue ;
+        size_t a = bra.p;
+        size_t b = bra.q;
+        size_t c = bra.r;
+
         
         for (size_t iket=0; iket<nkets3; iket++)
         {
            Ket3& ket = Tbc.GetKet(iket);
-           if ( (  (ket.op->cvq==0) or (ket.oq->cvq==0) or (ket.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
-           double d_ea = std::abs( 2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
-           double d_eb = std::abs( 2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
-           double d_ec = std::abs( 2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
-           double occnat_a = ket.op->occ_nat;
-           double occnat_b = ket.oq->occ_nat;
-           double occnat_c = ket.oR->occ_nat;
-           if ( d_ea + d_eb + d_ec > modelspace->GetdE3max() ) continue;
-           if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c) ) < modelspace->GetOccNat3Cut() ) continue ;
-           size_t a = ket.p;
-           size_t b = ket.q;
-           size_t c = ket.r;
+           if ( not (  (ket.op->cvq==0) and (ket.oq->cvq==0) and (ket.oR->cvq==0) ) ) continue; //cvq==0 means core orbit
+           double d_ei = std::abs( 2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
+           double d_ej = std::abs( 2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
+           double d_ek = std::abs( 2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
+           double occnat_i = ket.op->occ_nat;
+           double occnat_j = ket.oq->occ_nat;
+           double occnat_k = ket.oR->occ_nat;
+           if ( d_ei + d_ej + d_ek > modelspace->GetdE3max() ) continue;
+           if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < modelspace->GetOccNat3Cut() ) continue ;
+           size_t i = ket.p;
+           size_t j = ket.q;
+           size_t k = ket.r;
 
-           double denominator = Get3bDenominator( i,j,k, a,b,c ) ;
+           double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
 
            double ME_od = H->ThreeBody.GetME_pn_PN_ch(ch3,ch3,ibra,iket );
            double eta =  etafunc( ME_od, denominator);
@@ -283,6 +287,7 @@ void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,
     }// for ch3
 
     std::cout << "Norm of Eta3 = " << Eta->ThreeBodyNorm() << std::endl;
+    H->profiler.timer[__func__] += omp_get_wtime() - t_start;
 }
 
 
@@ -455,6 +460,81 @@ void Generator::ConstructGenerator_ShellModel(std::function<double (double,doubl
 
 
 
+
+// off diagonal pieces are  ppp|ccc  ppp|ccv ppp|cvv  qpp|vvv   where p is either v or q
+//void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,double)>& etafunc )
+void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double,double)>& etafunc )
+{
+     double t_start = omp_get_wtime();
+     size_t ncore = modelspace->core.size();
+     std::vector<size_t> corevec;
+     for (auto a : modelspace->core) corevec.push_back(a);
+     std::map<int,double> e_fermi = modelspace->GetEFermi();
+     std::cout << __func__ << "  looping in generator 3-body part .  Size of H3 = " << H->ThreeBodyNorm() << std::endl;
+//    for (auto a : modelspace->core )
+     size_t nch3 = modelspace->GetNumberThreeBodyChannels();
+    #pragma omp parallel for schedule(dynamic,1)
+    for (size_t ch3=0; ch3<nch3; ch3++)
+    {
+      ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch3);
+      size_t nkets3 = Tbc.GetNumberKets();
+      for (size_t ibra=0; ibra<nkets3; ibra++)
+      {
+        Ket3& bra = Tbc.GetKet(ibra);
+//        int cvq_i = bra.op->cvq;
+//        int cvq_j = bra.oq->cvq;
+//        int cvq_k = bra.oR->cvq;
+        if (   (bra.op->cvq==0) or (bra.oq->cvq==0) or (bra.oR->cvq==0)  ) continue; //cvq==0 means core, so we want all v or q in the bra. 
+        double d_ei = std::abs( 2*bra.op->n + bra.op->l - e_fermi[bra.op->tz2]);
+        double d_ej = std::abs( 2*bra.oq->n + bra.oq->l - e_fermi[bra.oq->tz2]);
+        double d_ek = std::abs( 2*bra.oR->n + bra.oR->l - e_fermi[bra.oR->tz2]);
+        double occnat_i = bra.op->occ_nat;
+        double occnat_j = bra.oq->occ_nat;
+        double occnat_k = bra.oR->occ_nat;
+        if ( d_ei + d_ej + d_ek > modelspace->GetdE3max() ) continue;
+        if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < modelspace->GetOccNat3Cut() ) continue ;
+        size_t i = bra.p;
+        size_t j = bra.q;
+        size_t k = bra.r;
+        
+        for (size_t iket=0; iket<nkets3; iket++)
+        {
+           Ket3& ket = Tbc.GetKet(iket);
+           if (   (ket.op->cvq==2) or (ket.oq->cvq==2) or (ket.oR->cvq==2)  ) continue; //cvq==2 means q, i.e. not core or valence. we want all c or v in ket. 
+           if (  (bra.op->cvq==1) and (bra.oq->cvq==1) and (bra.oR->cvq==1) and (ket.op->cvq==1) and (ket.oq->cvq==1) and (ket.oR->cvq==1) ) continue;// no vvvvvv
+           double d_ea = std::abs( 2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
+           double d_eb = std::abs( 2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
+           double d_ec = std::abs( 2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
+           double occnat_a = ket.op->occ_nat;
+           double occnat_b = ket.oq->occ_nat;
+           double occnat_c = ket.oR->occ_nat;
+           if ( d_ea + d_eb + d_ec > modelspace->GetdE3max() ) continue;
+           if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c) ) < modelspace->GetOccNat3Cut() ) continue ;
+           size_t a = ket.p;
+           size_t b = ket.q;
+           size_t c = ket.r;
+
+           double denominator = Get3bDenominator( i,j,k, a,b,c ) ;
+
+           double ME_od = H->ThreeBody.GetME_pn_PN_ch(ch3,ch3,ibra,iket );
+           double eta =  etafunc( ME_od, denominator);
+
+           Eta->ThreeBody.AddToME_pn_PN_ch( ch3,ch3,ibra,iket,  eta); // hermitian conjugate automatically gets added
+           
+        }// for iket
+      }// for ibra
+
+    }// for ch3
+
+    std::cout << "Norm of Eta3 = " << Eta->ThreeBodyNorm() << std::endl;
+    H->profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+
+
+/*
+
 // off diagonal pieces are  ppp|ccc  ppp|ccv ppp|cvv  qpp|vvv   where p is either v or q
 //void Generator::ConstructGenerator_ShellModel_Atan_3body()
 void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double,double)>& eta_func)
@@ -559,7 +639,7 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
 
 }
 
-
+*/
 
 //void Generator::ConstructGenerator_ShellModel_Atan_NpNh()
 void Generator::ConstructGenerator_ShellModel_NpNh(std::function<double(double,double)>& eta_func)
