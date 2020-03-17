@@ -83,6 +83,10 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"freeze_occupations",        "false"},       // Should we freeze the occupations, or fill according to HF energy
   {"use_NAT_occupations",       "false"},       // When using natural orbitals, should we use the corresponding occupations?
   {"store_3bme_pn",             "false"},       // should the 3-body matrix elements be stored in proton-neutron formalism? Default is isospin.
+  {"discard_residual_input3N",  "false"},       // If we're doing IMSRG3, should we discard the residual input 3N (only keep induced)?
+  {"only_2b_eta",               "false"},       // If we're doing IMSRG3, keep eta as 2b 
+  {"only_2b_omega",             "false"},       // If we're doing IMSRG3, keep omega (the magnus operator) as 2b 
+  {"perturbative_triples",      "false"},       // Compute perturbative energy shift due to [2,2]->3 induced 3-body 
 };
 
 
@@ -99,6 +103,8 @@ std::map<std::string,double> Parameters::double_par = {
   {"hwBetaCM",            -1},  // Oscillator frequency used in the Lawson-Glockner term. Negative value means use the frequency of the basis
   {"eta_criterion",     1e-6},  // Threshold on ||eta|| for convergence in the flow
   {"hw_trap",             -1},  // Frequency for harmonic lab-frame trap V = 1/2 M omega**2 * r**2
+  {"dE3max",		99}, // cut on energies which limits the 3-body states considered in IMSRG(3) commutators
+  {"OccNat3Cut",	-1}, // cut on natural orbital occupations which limits the 3-body states considered in IMSRG(3) commutators
 
 };
 

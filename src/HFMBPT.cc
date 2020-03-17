@@ -51,6 +51,12 @@ void HFMBPT::GetNaturalOrbitals()
   }
   C_HO2NAT = C * C_HF2NAT;
 
+  // set the occ_nat values
+  for ( auto i : modelspace->all_orbits)
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    oi.occ_nat = Occ(i);
+  }
     
   if (use_NAT_occupations) // use fractional occupation
   {
@@ -295,7 +301,8 @@ Operator HFMBPT::TransformHOToNATBasis( Operator& OpHO)
 // store rho in rho_swap and make rho correspond to the desired occupations
 // in the NAT basis.
 //*********************************************************************
-Operator HFMBPT::GetNormalOrderedHNAT()
+//Operator HFMBPT::GetNormalOrderedHNAT()
+Operator HFMBPT::GetNormalOrderedHNAT(int particle_rank)
 {
   double start_time = omp_get_wtime();
   std::cout << "Getting normal-ordered H in NAT basis" << std::endl;
@@ -316,7 +323,8 @@ Operator HFMBPT::GetNormalOrderedHNAT()
   std::cout << "e3Nat = " << e3hf << std::endl;
   std::cout << "E_Nat = "  << EHF  << std::endl;
 
-  Operator HNO = Operator(*HartreeFock::modelspace,0,0,0,2);
+//  Operator HNO = Operator(*HartreeFock::modelspace,0,0,0,2);
+  Operator HNO = Operator(*HartreeFock::modelspace,0,0,0,particle_rank);
   HNO.ZeroBody = EHF;
   HNO.OneBody = C_HO2NAT.t() * F * C_HO2NAT;
 
@@ -370,11 +378,16 @@ Operator HFMBPT::GetNormalOrderedHNAT()
         if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2;
         if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2;
         V3NO(j,i) = V3NO(i,j);
-      }
-    }
+      }// for j
+    }// for i
     auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
     auto& OUT =  HNO.TwoBody.GetMatrix(ch);
     OUT  =    D.t() * (V2 + V3NO) * D;
+  }// for ch
+
+  if (particle_rank>2)
+  {
+    HNO.ThreeBody = GetTransformed3B();
   }
 
   rho = rho_swap;
@@ -758,12 +771,13 @@ void HFMBPT::PrintSPEandWF()
   C_HO2NAT = C * C_HF2NAT;
   arma::mat F_natbasis = C_HO2NAT.t() * F * C_HO2NAT;
   std::cout << std::fixed << std::setw(3) << "i" << ": " << std::setw(3) << "n" << " " << std::setw(3) << "l" << " "
-       << std::setw(3) << "2j" << " " << std::setw(3) << "2tz" << "   " << std::setw(12) << "SPE" << " " << std::setw(12) << "occ." << "   |   " << " overlaps" << std::endl;
+       << std::setw(3) << "2j" << " " << std::setw(3) << "2tz" << "   " << std::setw(12) << "SPE" << " " << std::setw(12) << "occ."
+       << " " << std::setw(12) << "n(1-n)" << "   |   " << " overlaps" << std::endl;
   for ( auto i : modelspace->all_orbits )
   {
     Orbit& oi = modelspace->GetOrbit(i);
     std::cout << std::fixed << std::setw(3) << i << ": " << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
-         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F_natbasis(i,i) << " " << std::setw(12) << oi.occ << "   | ";
+         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F_natbasis(i,i) << " " << std::setw(12) << oi.occ << " " << std::setw(12) << oi.occ_nat*(1-oi.occ_nat) << "   | ";
 //         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F(i,i) << " " << std::setw(12) << oi.occ << "   | ";
     for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
@@ -813,6 +827,50 @@ void HFMBPT::ReorderHFMBPTCoefficients()
      }
    }
 
+}
+
+
+
+// Get a single 3-body matrix element in the HartreeFock basis.
+// This is the straightforward but inefficient way to do it.
+//double HartreeFock::GetHF3bme( int Jab, int Jde, int J2,  size_t a, size_t b, size_t c, size_t d, size_t e, size_t f)
+double HFMBPT::GetTransformed3bme( int Jab, int Jde, int J2,  size_t a, size_t b, size_t c, size_t d, size_t e, size_t f)
+{
+  double V_nat = 0.;
+  Orbit& oa = modelspace->GetOrbit(a);
+  Orbit& ob = modelspace->GetOrbit(b);
+  Orbit& oc = modelspace->GetOrbit(c);
+  Orbit& od = modelspace->GetOrbit(d);
+  Orbit& oe = modelspace->GetOrbit(e);
+  Orbit& of = modelspace->GetOrbit(f);
+
+  for (auto alpha : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+  {
+   if ( std::abs(C_HO2NAT(alpha,a)) < 1e-8 ) continue;
+   for (auto beta : Hbare.OneBodyChannels.at({ob.l,ob.j2,ob.tz2}) )
+   {
+    if ( std::abs(C_HO2NAT(beta,b)) < 1e-8 ) continue;
+    for (auto gamma : Hbare.OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) )
+    {
+     if ( std::abs(C_HO2NAT(gamma,c)) < 1e-8 ) continue;
+     for (auto delta : Hbare.OneBodyChannels.at({od.l,od.j2,od.tz2}) )
+     {
+      if ( std::abs(C_HO2NAT(delta,d)) < 1e-8 ) continue;
+      for (auto epsilon : Hbare.OneBodyChannels.at({oe.l,oe.j2,oe.tz2}) )
+      {
+       if ( std::abs(C_HO2NAT(epsilon,e)) < 1e-8 ) continue;
+       for (auto phi : Hbare.OneBodyChannels.at({of.l,of.j2,of.tz2}) )
+       {
+         double V_ho = Hbare.ThreeBody.GetME_pn( Jab,  Jde,  J2,  alpha,  beta,  gamma,  delta,  epsilon,  phi);
+//         double V_ho = Hbare.ThreeBody.GetME( Jab,  Jde,  J2,  tab,  tde,  T2,  alpha,  beta,  gamma,  delta,  epsilon,  phi);
+         V_nat += V_ho * C_HO2NAT(alpha,a) * C_HO2NAT(beta,b) * C_HO2NAT(gamma,c) * C_HO2NAT(delta,d) * C_HO2NAT(epsilon,e) * C_HO2NAT(phi,f);
+       } // for phi
+      } // for epsilon
+     } // for delta
+    } // for gamma
+   } // for beta
+  } // for alpha
+  return V_nat;
 }
 
 

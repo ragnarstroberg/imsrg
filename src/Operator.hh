@@ -51,9 +51,9 @@ class Operator
   arma::mat OneBody; ///< The one body piece of the operator, stored in a single NxN armadillo matrix, where N is the number of single-particle orbits.
   TwoBodyME TwoBody; ///< The two body piece of the operator.
 //  ThreeBodyME ThreeBody; ///< The three body piece of the operator.
-  ThreeBodyMENO2B ThreeBodyNO2B; ///< The three body piece of the operator.
   ThreeBodyMEpn ThreeBody; ///< The three body piece of the operator.
   ThreeLegME ThreeLeg;  ///< Three-legged operators, used if this is a particle-number-changing operator, i.e. if legs is odd
+  ThreeBodyMENO2B ThreeBodyNO2B; ///< The three body piece of the operator.
 
   int rank_J; ///< Spherical tensor rank of the operator
   int rank_T; ///< Isotensor rank of the operator
@@ -184,15 +184,16 @@ class Operator
 //  double GetMP3_Energy();
   std::array<double,3> GetMP3_Energy();
   double MP1_Eval(Operator& );
+  double GetMP2_3BEnergy();
 
   void PrintTimes(){profiler.PrintAll();};
 
 
   double Norm() const;
   double OneBodyNorm() const;
-  double OneLegNorm() const;
   double TwoBodyNorm() const;
   double ThreeBodyNorm() const;
+  double OneLegNorm() const;
   double ThreeLegNorm() const;
 
 

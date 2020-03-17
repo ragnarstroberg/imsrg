@@ -85,19 +85,23 @@ int main(int argc, char** argv)
   std::string denominator_delta_orbit = parameters.s("denominator_delta_orbit");
   std::string LECs = parameters.s("LECs");
   std::string scratch = parameters.s("scratch");
-  std::string use_brueckner_bch = parameters.s("use_brueckner_bch");
   std::string valence_file_format = parameters.s("valence_file_format");
   std::string occ_file = parameters.s("occ_file");
-  std::string goose_tank = parameters.s("goose_tank");
-  std::string write_omega = parameters.s("write_omega");
-  std::string nucleon_mass_correction = parameters.s("nucleon_mass_correction");
-  std::string hunter_gatherer = parameters.s("hunter_gatherer");
-  std::string relativistic_correction = parameters.s("relativistic_correction");
-  std::string IMSRG3 = parameters.s("IMSRG3");
   std::string physical_system = parameters.s("physical_system");
-  std::string freeze_occupations = parameters.s("freeze_occupations");
+  bool use_brueckner_bch = parameters.s("use_brueckner_bch") == "true";
+  bool nucleon_mass_correction = parameters.s("nucleon_mass_correction") == "true";
+  bool relativistic_correction = parameters.s("relativistic_correction") == "true";
+  bool IMSRG3 = parameters.s("IMSRG3") == "true";
+  bool write_omega = parameters.s("write_omega") == "true";
+  bool freeze_occupations = parameters.s("freeze_occupations")=="true";
+  bool hunter_gatherer = parameters.s("hunter_gatherer") == "true";
+  bool goose_tank = parameters.s("goose_tank") == "true";
+  bool discard_residual_input3N = parameters.s("discard_residual_input3N")=="true";
   bool use_NAT_occupations = (parameters.s("use_NAT_occupations")=="true") ? true : false;
   bool store_3bme_pn = (parameters.s("store_3bme_pn")=="true");
+  bool only_2b_eta = (parameters.s("only_2b_eta")=="true");
+  bool only_2b_omega = (parameters.s("only_2b_omega")=="true");
+  bool perturbative_triples = (parameters.s("perturbative_triples")=="true");
 
   int eMax = parameters.i("emax");
   int lmax = parameters.i("lmax"); // so far I only use this with atomic systems.
@@ -126,6 +130,8 @@ int main(int argc, char** argv)
   double hwBetaCM = parameters.d("hwBetaCM");
   double eta_criterion = parameters.d("eta_criterion");
   double hw_trap = parameters.d("hw_trap");
+  double dE3max = parameters.d("dE3max");
+  double OccNat3Cut = parameters.d("OccNat3Cut");
 
   std::vector<std::string> opnames = parameters.v("Operators");
   std::vector<std::string> opsfromfile = parameters.v("OperatorsFromFile");
@@ -219,7 +225,13 @@ int main(int argc, char** argv)
 
   ModelSpace modelspace = ( reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space) );
 
+  modelspace.SetE3max(E3max);
   modelspace.SetLmax(lmax);
+//  if (lmax!= 99999)
+//  {
+//    modelspace.ClearVectors();
+//    modelspace.Init(eMax, reference,valence_space);  
+//  }
 
   if (emax_unocc>0)
   {
@@ -244,7 +256,6 @@ int main(int argc, char** argv)
   modelspace.SetHbarOmega(hw);
   if (targetMass>0)
      modelspace.SetTargetMass(targetMass);
-  modelspace.SetE3max(E3max);
   if (lmax3>0)
      modelspace.SetLmax3(lmax3);
 
@@ -293,7 +304,7 @@ int main(int argc, char** argv)
   Hbare.SetHermitian();
 
 
-  if ( goose_tank == "true" or goose_tank == "True")
+  if ( goose_tank )
   {
 //    Hbare.SetUseGooseTank(true);
     Commutator::SetUseGooseTank(true);
@@ -368,11 +379,11 @@ int main(int argc, char** argv)
   }
 
 
-  if ( nucleon_mass_correction == "true" or nucleon_mass_correction == "True" )
+  if ( nucleon_mass_correction)
   {  // correction to kinetic energy because M_proton != M_neutron
     Hbare += imsrg_util::Trel_Masscorrection_Op(modelspace);
   }
-  if ( relativistic_correction == "true" or relativistic_correction == "True" )
+  if ( relativistic_correction)
   {
     Hbare += imsrg_util::KineticEnergy_RelativisticCorr(modelspace);
   }
@@ -410,20 +421,33 @@ int main(int argc, char** argv)
   }
 
 
+  // If we're doing FCI, we want things normal ordered wrt the vacuum
+  // and we want things diagonal when normal ordered wrt the vacuum.
+//  if ( method == "FCI" )
+//  {
+//    modelspace.SetReference("vacuum");
+//  }
+
+
   std::cout << "Creating HF" << std::endl;
 //  HartreeFock hf(Hbare);
   HFMBPT hf(Hbare); // HFMBPT inherits from HartreeFock, so no harm done here.
 
-  if (freeze_occupations == "false" )  hf.UnFreezeOccupations();
+  if (not freeze_occupations )  hf.UnFreezeOccupations();
   std::cout << "Solving" << std::endl;
 //  if (basis=="HF")
   hf.Solve();
 
+  int hno_particle_rank = 2;
+  if ((IMSRG3) and (Hbare.ThreeBodyNorm() > 1e-5))  hno_particle_rank = 3;
+  if (discard_residual_input3N) hno_particle_rank = 2;
 //  Operator HNO;
   Operator& HNO = Hbare;
   if (basis == "HF" and method !="HF")
   {
-    HNO = hf.GetNormalOrderedH();
+//    ThreeBodyME hf3b;
+    HNO = hf.GetNormalOrderedH( hno_particle_rank );
+    if (IMSRG3 and OccNat3Cut>0 ) hf.GetNaturalOrbitals();
   }
   else if (basis == "NAT") // we want to use the natural orbital basis
   {
@@ -433,7 +457,8 @@ int main(int argc, char** argv)
 // using the NO2B Hamiltonian in the HF basis, obtained with GetNormalOrderedH().
 // Then it calls DiagonalizeRho() which diagonalizes the density matrix, yielding the natural orbital basis.
     hf.GetNaturalOrbitals();
-    HNO = hf.GetNormalOrderedHNAT();
+    HNO = hf.GetNormalOrderedHNAT( hno_particle_rank );
+//    HNO = hf.GetNormalOrderedHNAT();
 
     // For now, even if we use the NAT occupations, we switch back to naive occupations after the normal ordering
     // This should be investigated in more detail.
@@ -455,16 +480,28 @@ int main(int argc, char** argv)
   }
 
 
-  if (IMSRG3 == "true")
+  if (IMSRG3)
   {
+    modelspace.SetdE3max(dE3max);
+    modelspace.SetOccNat3Cut(OccNat3Cut);
     std::cout << "You have chosen IMSRG3. good luck..." << std::endl;
-    Operator H3(modelspace,0,0,0,3);
-    std::cout << "Constructed H3" << std::endl;
-    H3.ZeroBody = HNO.ZeroBody;
-    H3.OneBody = HNO.OneBody;
-    H3.TwoBody = HNO.TwoBody;
-    std::cout << "Replacing HNO" << std::endl;
-    Hbare = H3;
+
+    if (hno_particle_rank<3 )
+    {
+      Operator H3(modelspace,0,0,0,3);
+      std::cout << "Constructed H3" << std::endl;
+      H3.ZeroBody = HNO.ZeroBody;
+      H3.OneBody = HNO.OneBody;
+      H3.TwoBody = HNO.TwoBody;
+      HNO = H3;
+      std::cout << "Replacing HNO" << std::endl;
+      std::cout << "Hbare Three Body Norm is " << Hbare.ThreeBodyNorm() << std::endl;
+//      if ( Hbare.ThreeBodyNorm() <1e-6 )
+//      {
+//        HNO.ThreeBody.TransformToPN();
+        HNO.ThreeBody.SwitchToPN_and_discard();
+//      }
+    }
   }
 
 
@@ -483,13 +520,15 @@ int main(int argc, char** argv)
   {
     std::cout << "Perturbative estimates of gs energy:" << std::endl;
     double EMP2 = HNO.GetMP2_Energy();
+    double EMP2_3B = HNO.GetMP2_3BEnergy();
     std::cout << "EMP2 = " << EMP2 << std::endl;
+    std::cout << "EMP2_3B = " << EMP2_3B << std::endl;
 //    double EMP3 = HNO.GetMP3_Energy();
     std::array<double,3> Emp_3 = HNO.GetMP3_Energy();
     double EMP3 = Emp_3[0]+Emp_3[1]+Emp_3[2];
     std::cout << "E3_pp = " << Emp_3[0] << "  E3_hh = " << Emp_3[1] << " E3_ph = " << Emp_3[2] << "   EMP3 = " << EMP3 << std::endl;
 //    cout << "EMP3 = " << EMP3 << endl;
-    std::cout << "To 3rd order, E = " << HNO.ZeroBody+EMP2+EMP3 << std::endl;
+    std::cout << "To 3rd order, E = " << HNO.ZeroBody + EMP2 + EMP3 + EMP2_3B << std::endl;
   }
 
 
@@ -604,9 +643,22 @@ int main(int argc, char** argv)
 
   if (method == "FCI")
   {
+   // we want the 1b piece to be diagonal in the vacuum NO representation
     HNO = HNO.UndoNormalOrdering();
+    double previous_zero_body = HNO.ZeroBody;
+    modelspace.SetReference("vacuum");
+    HartreeFock hfvac(HNO);
+    hfvac.Solve();
+
+//    Operator Hvac = hfvac.GetNormalOrderedH();
+    HNO = hfvac.GetNormalOrderedH();
+    std::cout << "HNO had zero body = " << HNO.ZeroBody << "  and I add " << previous_zero_body << " to it. " << std::endl;
+    HNO.ZeroBody += previous_zero_body;
+
     rw.WriteNuShellX_int(HNO,intfile+".int");
     rw.WriteNuShellX_sps(HNO,intfile+".sp");
+
+    std::cout << "NO wrt vacuum. One Body term is hopfully still diagonal?" << std::endl << HNO.OneBody << std::endl;
 
     for (index_t i=0;i<ops.size();++i)
     {
@@ -625,13 +677,19 @@ int main(int argc, char** argv)
     return 0;
   }
 
+  if (only_2b_omega)
+  {
+    std::cout << " Restricting the Magnus operator Omega to be 2b." << std::endl;
+    Commutator::SetOnly2bOmega(only_2b_omega);
+  }
 
   IMSRGSolver imsrgsolver(HNO);
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetEtaCriterion(eta_criterion);
+  imsrgsolver.GetGenerator().SetOnly2bEta(only_2b_eta);
   imsrgsolver.max_omega_written = 500;
   bool brueckner_restart = false;
-  if (hunter_gatherer=="true") imsrgsolver.SetHunterGatherer( true);
+  if (hunter_gatherer) imsrgsolver.SetHunterGatherer( true);
 
   if (method == "NSmagnus") // "No split" magnus
   {
@@ -646,19 +704,19 @@ int main(int argc, char** argv)
        nsteps = 1;
        core_generator = valence_generator;
     }
-    use_brueckner_bch = "true";
+    use_brueckner_bch = true;
     omega_norm_max=500;
     method = "magnus";
   }
 
-  if (use_brueckner_bch == "true" or use_brueckner_bch == "True")
+  if (use_brueckner_bch)
   {
 //    Hbare.SetUseBruecknerBCH(true);
 //    HNO.SetUseBruecknerBCH(true);
     Commutator::SetUseBruecknerBCH(true);
     std::cout << "Using Brueckner flavor of BCH" << std::endl;
   }
-  if (IMSRG3 == "true")
+  if (IMSRG3)
   {
     Commutator::SetUseIMSRG3(true);
     std::cout << "Using IMSRG(3) commutators. This will probably be slow..." << std::endl;
@@ -697,9 +755,14 @@ int main(int argc, char** argv)
 
   imsrgsolver.Solve();
 
-  if (IMSRG3 == "true")
+  if (IMSRG3)
   {
     std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
+  }
+  if ( perturbative_triples and method=="magnus" )
+  {
+    double dE_triples = imsrgsolver.GetPerturbativeTriples();
+    std::cout << "Perturbative triples:  " << dE_triples << std::endl;
   }
 
 //  HlowT = imsrgsolver.Transform(HlowT);
@@ -805,10 +868,19 @@ int main(int argc, char** argv)
 
     int nOmega = imsrgsolver.GetOmegaSize() + imsrgsolver.GetNOmegaWritten();
     std::cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
+    std::cout << "Before doing so, the spes are " << std::endl;
+    for ( auto i : modelspace.all_orbits ) std::cout << "  " << i << " : " << HNO.OneBody(i,i) << std::endl;
+    if (IMSRG3)
+    {
+      std::cout << "Re-normal-ordering wrt the core. For now, we just throw away the 3N at this step." << std::endl;
+      HNO.SetNumberLegs(4);
+      HNO.SetParticleRank(2);
+    }
     HNO = HNO.UndoNormalOrdering();
 
     ms2.SetReference(ms2.core); // change the reference
     HNO.SetModelSpace(ms2);
+
 
     std::cout << "Doing NO wrt A=" << ms2.GetAref() << " Z=" << ms2.GetZref() << "  norbits = " << ms2.GetNumberOrbits() << std::endl;
     HNO = HNO.DoNormalOrdering();
@@ -913,14 +985,14 @@ int main(int argc, char** argv)
 
 
 //  std::cout << "Made it here and write_omega is " << write_omega << std::endl;
-  if (write_omega == "true" or write_omega == "True")
+  if (write_omega)
   {
     std::cout << "writing Omega to " << intfile << "_omega.op" << std::endl;
     rw.WriteOperatorHuman(imsrgsolver.Omega.back(),intfile+"_omega.op");
   }
 
 
-  if (IMSRG3 == "true")
+  if (IMSRG3)
   {
     std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
   }

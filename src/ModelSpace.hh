@@ -48,14 +48,15 @@ struct Orbit
    int j2;
    int tz2;
    double occ; // particle=0, hole=1
+   double occ_nat; // occupation in the natural orbital basis (if we use natural orbitals) particle=0, hole=1
    int cvq; // core=0, valence=1, qspace=2
    int index;
 
    Orbit(){};
    Orbit(int n, int l, int j2, int tz2, double occ, int cvq, int index)
-           : n(n), l(l), j2(j2), tz2(tz2),occ(occ),cvq(cvq),index(index) {};
+           : n(n), l(l), j2(j2), tz2(tz2),occ(occ),occ_nat(occ),cvq(cvq),index(index) {};
 
-   Orbit(const Orbit& orb) : n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),occ(orb.occ),cvq(orb.cvq),index(orb.index) {}
+   Orbit(const Orbit& orb) : n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),occ(orb.occ),occ_nat(orb.occ),cvq(orb.cvq),index(orb.index) {}
    bool operator==( const Orbit& rhs ) const { return  ( n==rhs.n and l==rhs.l and j2==rhs.j2 and tz2==rhs.tz2 ); };
 };
 
@@ -250,12 +251,18 @@ class ModelSpace
    int ThreeBodyJmax; // maximum J for a 3-body state (not used)?
    int EmaxUnocc; // Separate emax cut for orbits with l,j,tz that aren't present in the HF reference
 
+   double dE3max; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
+   double occnat3cut; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
+//   double e_fermi;    // The fermi energy, probably in oscillator units
+   std::map<int,double> e_fermi;    // The fermi energy, probably in oscillator units. It's different for protons and neutrons, so index by tz
+
    int norbits;       // number of single-particle orbits (not counting the degenerate m-projections)
    double hbar_omega; // oscillator frequency in MeV
    int target_mass;   // Particle number of the system we're trying to compute
    int target_Z;      // Proton number of the system we're trying to compute
    int Aref;          // Particle number of the normal-ordering reference
    int Zref;          // Proton number of the normal-ordering reference
+
 
    std::vector<Orbit> Orbits; // vector of one-body Orbit structs
    std::vector<Ket> Kets;     // vector of two-body Ket structs
@@ -324,6 +331,7 @@ class ModelSpace
    bool sixj_has_been_precalculated;
    bool moshinsky_has_been_precalculated;
    bool scalar_transform_first_pass;
+   bool scalar3b_transform_first_pass;
    std::vector<bool> tensor_transform_first_pass;
    bool single_species; // Is there only one kind of fermion?
    IMSRGProfiler profiler;
@@ -378,6 +386,7 @@ class ModelSpace
    void Setup3bKets();
    void AddOrbit(Orbit orb);
    void AddOrbit(int n, int l, int j2, int tz2, double occ, int io);
+   void FindEFermi();
    // Setter/Getters
 //   Orbit& GetOrbit(int i) {return (Orbit&) Orbits[i];}; 
    Orbit& GetOrbit(int i); 
@@ -427,10 +436,19 @@ class ModelSpace
    int GetLmax3(){return Lmax3;};
    void SetEmax(int e){Emax=e;};
    void SetE2max(int e){E2max=e;};
-   void SetE3max(int e){E3max=e;};
-   void SetLmax(int l){Lmax=l;};
+//   void SetE3max(int e){E3max=e;};
+   void SetE3max(int e);
+//   void SetLmax(int l){Lmax=l;};
+   void SetLmax(int l);
    void SetLmax2(int l){Lmax2=l;};
    void SetLmax3(int l){Lmax3=l;};
+   void SetdE3max(double e){dE3max = e;};
+   void SetOccNat3Cut(double o){occnat3cut = o;};
+   double GetdE3max(){return dE3max;};
+   double GetOccNat3Cut(){return occnat3cut;}; // setting this to zero or less makes no cut, setting to 0.25 cuts out everything
+   void SetEFermi(double ef){e_fermi[-1]=ef; e_fermi[+1]=ef;};
+   std::map<int,double> GetEFermi(){ return e_fermi ;};
+   void SetEFermi(double ef_proton, double ef_neutron){e_fermi[-1] = ef_proton; e_fermi[1]=ef_neutron;};
 
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);

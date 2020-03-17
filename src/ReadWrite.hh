@@ -55,6 +55,9 @@ class ReadWrite
    void Read3bodyHDF5( std::string filename, Operator& op);
    void Read3bodyHDF5_new( std::string filename, Operator& op);
 #endif
+   size_t Jacobi2b_Channel_Hash(int S, int T, int Tz, int J);
+   void Jacobi2b_Channel_UnHash(size_t key, int& S, int& T, int& Tz, int& J);
+   void ReadDarmstadt_2bodyRel( std::string filename, Operator& Op );
    void Read2bCurrent_Navratil( std::string filename, Operator& Op);
    void Write_me2j( std::string filename, Operator& op, int emax, int e2max, int lmax);
    void Write_me3j( std::string filename, Operator& op, int E1max, int E2max, int E3max);
@@ -77,6 +80,7 @@ class ReadWrite
    void WriteTensorTwoBody(std::string filename, Operator& H, std::string opname);
    void WriteDaggerOperator( Operator& op, std::string filename, std::string opname="");
 
+   void WriteValence3body( ThreeBodyMEpn& threeBME, std::string filename );
 
    void ReadBareTBME_Jason( std::string filename, Operator& Hbare);
    void ReadTensorOperator_Nathan( std::string filename1b, std::string filename2b, Operator& op);

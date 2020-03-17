@@ -255,24 +255,20 @@ void IMSRGSolver::Solve_magnus_euler()
       if (magnus_adaptive)
          ds = std::min( std::min( std::min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), omega_norm_max/norm_eta), ds_max);
       ds = std::min(ds,smax-s);
-//      if (s+ds > smax) ds = smax-s;
+
       s += ds;
       Eta *= ds; // Here's the Euler step.
 
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
-//      Omega.back() = Eta.BCH_Product( Omega.back() );
       Omega.back() = Commutator::BCH_Product( Eta, Omega.back() );
-//      std::cout << "Norm Eta 3body = " << Eta.ThreeBodyNorm() << "   Norm Omega 3body " << Omega.back().ThreeBodyNorm() << std::endl;
 
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
       if ((Omega.size()+n_omega_written)<2)
       {
-//        FlowingOps[0] = H_0->BCH_Transform( Omega.back() );
         FlowingOps[0] = Commutator::BCH_Transform( *H_0, Omega.back() );
       }
       else
       {
-//        FlowingOps[0] = H_saved.BCH_Transform( Omega.back() );
         FlowingOps[0] = Commutator::BCH_Transform( H_saved, Omega.back() );
       }
 
@@ -283,13 +279,11 @@ void IMSRGSolver::Solve_magnus_euler()
 
 //      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
       generator.Update(&FlowingOps[0],&Eta);
-//      std::cout << "Updated Eta. ThreeBody nomr of FlowingOps[0] = " << FlowingOps[0].ThreeBodyNorm() << "  and Eta = " << Eta.ThreeBodyNorm() << std::endl;
       cumulative_error += EstimateStepError();
 
       // Write details of the flow
       WriteFlowStatus(flowfile);
       WriteFlowStatus(std::cout);
-//      profiler.PrintMemory();
       Elast = FlowingOps[0].ZeroBody;
 
    }
@@ -877,6 +871,39 @@ double IMSRGSolver::EstimateStepError()
 }
 
 
+double IMSRGSolver::EstimateBCHError( )
+{
+   double err = 0;
+   int counter=0;
+   for ( auto& omega : Omega )
+   {
+     err +=  Commutator::EstimateBCHError(omega, *H_0);
+     std::cout << counter++ << "  " << err << std::endl;
+   }
+   return err;
+}
+
+
+
+double IMSRGSolver::GetPerturbativeTriples()
+{
+  std::cout << __func__ << std::endl;
+  Operator Wbar( (*modelspace), 0,0,0,3);
+  Wbar.ThreeBody.SwitchToPN_and_discard();
+  Operator& omega = Omega.back();
+  Operator& Hs = FlowingOps[0];
+  Commutator::comm223ss( omega, Hs, Wbar);
+  Wbar.OneBody = Hs.OneBody;
+  Wbar.TwoBody = Hs.TwoBody;
+
+  double E3pert = Wbar.GetMP2_3BEnergy();
+
+  return E3pert;
+
+}
+
+
+
 void IMSRGSolver::WriteFlowStatus(std::string fname)
 {
    if (fname !="")
@@ -904,6 +931,7 @@ void IMSRGSolver::WriteFlowStatus(std::ostream& f)
 //        << std::setw(fwidth) << std::setprecision(fprecision) << Omega.Norm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().OneBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().TwoBodyNorm()
+        << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().ThreeBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Eta.OneBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Eta.TwoBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Eta.ThreeBodyNorm()
@@ -941,6 +969,7 @@ void IMSRGSolver::WriteFlowStatusHeader(std::ostream& f)
         << std::setw(fwidth) << std::setprecision(fprecision) << " estim. err"
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_1||"
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_2||"
+        << std::setw(fwidth) << std::setprecision(fprecision) << "||Omega_3||"
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_1||"
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_2||"
         << std::setw(fwidth) << std::setprecision(fprecision) << "||Eta_3||"

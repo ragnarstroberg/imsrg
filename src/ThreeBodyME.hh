@@ -71,6 +71,7 @@ class ThreeBodyME
   void Allocate();
 
   void SetModelSpace(ModelSpace *ms){modelspace = ms;};
+  ModelSpace* GetModelSpace(){return modelspace;};
 
 //// Three body setter getters
   std::vector<std::pair<size_t,double>> AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;

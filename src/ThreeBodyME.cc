@@ -200,7 +200,8 @@ void ThreeBodyME::Allocate()
 ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b, int c, int d, int e, int f) const
 {
 
-//   std::cout << "ENTER " << __func__ << std::endl;
+//   std::cout << "ENTER " << __func__ << "  " << Jab_in << " " << Jde_in << " " << J2 << " "
+//             << a  << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
 //  IMSRGProfiler::counter[__func__] ++;
    if (a==b and a==c and modelspace->GetOrbit(a).j2<3) return 0;
    if (d==e and d==f and modelspace->GetOrbit(d).j2<3) return 0;
@@ -212,6 +213,7 @@ ThreeBME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int J2, int a, int b
    double tzd = modelspace->GetOrbit(d).tz2*0.5;
    double tze = modelspace->GetOrbit(e).tz2*0.5;
    double tzf = modelspace->GetOrbit(f).tz2*0.5;
+   if ( (tza+tzb+tzc) != (tzd+tze+tzf) ) return 0;
 
 //   std::cout << "  Jab_in Jde_in J2 a b c d e f: " << Jab_in << " " << Jde_in << " " << J2 << " " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
 //   std::cout << "  tz vals: " << tza << " " << tzb << " " << tzc << " " << tzd << " " << tze << " " << tzf << std::endl;
@@ -405,6 +407,7 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
 //             if (d==e and (tde+Jde)%2==0 ) continue; // added recently. test.  this breaks things
              double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,T2);
              if (std::abs(Ct_abc*Ct_def)<1e-8) continue;
+             if (herm==-1 and a==d and b==e and c==f and Jab==Jde and tab==tde) continue; // TODO: check this is ok
 
              int Tindex = 2*tab + tde + (T2-1)/2;
 

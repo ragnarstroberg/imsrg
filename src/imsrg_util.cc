@@ -220,6 +220,7 @@ namespace imsrg_util
       else if (opnamesplit[0] == "Dagger" or opnamesplit[0] == "DaggerHF" )
       {
         index_t Q = modelspace.String2Index({opnamesplit[1]})[0];
+        std::cout << "call Dagger_Op with Q = " << Q << std::endl;
         return Dagger_Op( modelspace, Q);
       }
       else if (opnamesplit[0] == "DaggerAlln")
@@ -245,6 +246,7 @@ namespace imsrg_util
    NumOp.EraseOneBody();
    NumOp.EraseTwoBody();
    NumOp.OneBody(indx,indx) = 1;
+   std::cout << "Number op indx = " << indx << " one body = " << NumOp.OneBody << std::endl;
    return NumOp;
  }
 
@@ -264,6 +266,7 @@ namespace imsrg_util
    Operator OBD = Operator(modelspace,0,0,0,2);
    OBD.OneBody(i,j) += 0.5;
    OBD.OneBody(j,i) += 0.5;
+   std::cout << "OBD ij = " << i << " " << j << "  One body = " << OBD.OneBody << std::endl;
    return OBD;
  }
 
@@ -1066,6 +1069,7 @@ Operator KineticEnergy_RelativisticCorr(ModelSpace& modelspace)
               int lam_cd = lam_ab; // tcm and trel conserve lam and Lam
               int n_ab = (fab - 2*N_ab-Lam_ab-lam_ab)/2; // n_ab is determined by energy conservation
 
+//              std::cout << __func__ << "na la nb lb " << na << " " << la << " " << nb << " " << lb << std::endl;
               double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
 
               if (std::abs(mosh_ab)<1e-8) continue;
@@ -1076,6 +1080,7 @@ Operator KineticEnergy_RelativisticCorr(ModelSpace& modelspace)
                 if (n_cd < 0) continue;
                 if  (n_ab != n_cd and N_ab != N_cd) continue;
 
+//              std::cout << __func__ << "nc lc nd ld " << nc << " " << lc << " " << nd << " " << ld << std::endl;
                 double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
                 if (std::abs(mosh_cd)<1e-8) continue;
 
@@ -1227,7 +1232,9 @@ Operator RSquaredOp(ModelSpace& modelspace)
    Operator Rp2Op(modelspace,0,0,0,2);
 //   double oscillator_b = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
 
+   std::cout << __func__ << " begin" << std::endl;
    int nchan = modelspace.GetNumberTwoBodyChannels();
+   if (option!="matter" and option!="proton" and option!="neutron") std::cout << "!!! WARNING. " << __func__ << "  BAD OPTION "  << option << std::endl;
    modelspace.PreCalculateMoshinsky();
    #pragma omp parallel for schedule(dynamic,1) 
    for (int ch=0; ch<nchan; ++ch)
@@ -1241,13 +1248,17 @@ Operator RSquaredOp(ModelSpace& modelspace)
       {
          Ket & bra = tbc.GetKet(ibra);
          double prefactor = 1; // factor to account for double counting in pn channel.
+           if ( (bra.op->l > modelspace.GetLmax()) or (bra.oq->l > modelspace.GetLmax()) )
+          {
+            std::cout << "ibra is " << ibra << " => " << bra.p << " " << bra.q << "  => " << bra.op->l << " " <<  bra.oq->l << std::endl;
+          }
          if (Tz==0 and (option=="proton" or option=="neutron")) prefactor = 0.5;
 //         if (option=="proton" and bra.op->tz2>0) continue;
 //         else if (option=="neutron" and bra.op->tz2<0) continue;
-         if (option!="matter" and option!="proton" and option!="neutron") std::cout << "!!! WARNING. " << __func__ << "  BAD OPTION "  << option << std::endl;
          for (int iket=ibra;iket<nkets;++iket)
          {
             Ket & ket = tbc.GetKet(iket);
+//            std::cout << "    ~~ " << bra.p << " " << bra.q << "  " << ket.p << " " << ket.q << "  " << tbc.J << std::endl;
 //            double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J) * oscillator_b ; 
             double mat_el = Calculate_r1r2(modelspace,bra,ket,tbc.J) * prefactor; 
             Rp2Op.TwoBody.SetTBME(ch,ibra,iket,mat_el);
@@ -1255,6 +1266,7 @@ Operator RSquaredOp(ModelSpace& modelspace)
          }
       }
    }
+   std::cout << "done. " << std::endl;
    return Rp2Op;
  }
 
@@ -2279,8 +2291,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    dag.SetNonHermitian();
    for ( auto nQ : modelspace.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
    {
+     //dag.OneBody(nQ,Q) = 1.0;
      dag.OneBody(nQ,0) = 1.0;
-//     dag.OneBody(nQ,Q) = 1.0;
    }
    return dag;
  }

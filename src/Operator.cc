@@ -66,7 +66,7 @@ Operator::Operator()
 // Create a zero-valued operator in a given model space
 Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
-    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms), ThreeLeg(&ms), ThreeBodyNO2B(),
+    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms,Jrank,Trank,p), ThreeLeg(&ms), ThreeBodyNO2B(),
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank), legs(2*part_rank),
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),
@@ -562,7 +562,8 @@ Operator Operator::DoNormalOrderingDagger( int sign) const
         {
           Orbit& oh = modelspace->GetOrbit(h);
           // TODO: Confirm that this should be a minus sign rather than plus
-          opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * ThreeLeg.GetME(ch_bra,h,a,h);  // The GetTBME returns an unnormalized matrix element.
+          opNO.OneBody(a,0) -= hatfactor/(2*ja+1) * sign*oh.occ * ThreeLeg.GetME(ch_bra,h,a,h);  // The GetTBME returns an unnormalized matrix element.
+//          opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * ThreeLeg.GetME(ch_bra,h,a,h);  // The GetTBME returns an unnormalized matrix element.
 //          opNO.OneBody(a,Q) -= hatfactor/(2*ja+1) * sign*oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);  // The GetTBME returns an unnormalized matrix element.
 
         }
@@ -852,13 +853,14 @@ void Operator::SetNumberLegs( int l)
   if ( l == old_legs ) return;
   if (legs%2==0)
   {
-    TwoBody.Allocate();
+    if ( TwoBody.MatEl.size()<1)    TwoBody.Allocate();
     ThreeLeg.Deallocate();
-    if (legs>5) ThreeBody.Allocate();
+    if (legs>5 and (not ThreeBody.is_allocated)) ThreeBody.Allocate();
   }
   else
   {
     TwoBody.Deallocate();
+    OneBody.zeros(modelspace->GetNumberOrbits(), 1);  // reduce it to a single column
     ThreeLeg.Allocate();
     OneBody.zeros( modelspace->GetNumberOrbits(), 1);
   }
@@ -1188,6 +1190,66 @@ std::array<double,3> Operator::GetMP3_Energy()
 
 
 
+
+//*************************************************************
+/// The second order MBPT correction due to the 3B interaction
+/// using Moller-Plesset energy denominators
+//*************************************************************
+double Operator::GetMP2_3BEnergy()
+{
+   double t_start = omp_get_wtime();
+   double Emp2 = 0;
+   if ( legs < 6) return 0;
+   if ( not ThreeBody.is_allocated ) return 0;
+   size_t nch3 = modelspace->GetNumberThreeBodyChannels();
+//   #pragma omp parallel for schedule(dynamic,1) reduction(+:Emp2)
+   for (size_t ch3=0; ch3<nch3; ch3++)
+   {
+     ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch3);
+     int twoJ = Tbc.twoJ;
+     size_t nkets = Tbc.GetNumberKets();
+     for (size_t ibra=0; ibra<nkets; ibra++)
+     {
+       Ket3& bra = Tbc.GetKet(ibra);
+       double occ_bra = (bra.op->occ) * (bra.oq->occ) * (bra.oR->occ);
+       if ( std::abs(occ_bra)<1e-3) continue;
+       size_t i = bra.p;
+       size_t j = bra.q;
+       size_t k = bra.r;
+       double symm_ijk = 6;
+       if (i==j and i==k) symm_ijk = 1;
+       else if (i==j or i==k) symm_ijk = 3;
+       double Eijk = OneBody(i,i) + OneBody(j,j) + OneBody(k,k);
+       for (size_t iket=0; iket<nkets; iket++)
+       {
+         Ket3& ket = Tbc.GetKet(iket);
+         double unocc_ket = (1-ket.op->occ) * (1-ket.oq->occ) * (1-ket.oR->occ);
+         if ( std::abs(unocc_ket)<1e-3) continue;
+         size_t a = ket.p;
+         size_t b = ket.q;
+         size_t c = ket.r;
+         double symm_abc = 6;
+         if (a==b and a==c) symm_abc = 1;
+         else if (a==b or a==c) symm_abc = 3;
+         double Eabc = OneBody(a,a) + OneBody(b,b) + OneBody(c,c);
+         double V = ThreeBody.GetME_pn_PN_ch(ch3,ch3,ibra,iket);
+//         std::cout << "abcijk " << a << " " << b << " " << c << " " << i << " " << j << " " << k << "   Eabc Eijk " << Eabc << " " << Eijk
+//                   << " denom " << Eijk - Eabc << "  occs " << bra.op->occ << " "<< bra.oq->occ << " " << bra.oR->occ << "   "
+//                   << ket.op->occ << " " << ket.oq->occ << " "<< ket.oR->occ  << std::endl;
+         Emp2 += 1./36 * symm_ijk*symm_abc * (twoJ+1) * occ_bra * unocc_ket * V*V / ( Eijk - Eabc) ;
+       }// for iket
+     }// for ibra
+   }// for ch3
+
+   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+   return Emp2;
+}
+
+
+
+
+
+
 //*************************************************************
 /// Evaluate first order perturbative correction to the operator's
 /// ground-state expectation value. A HF basis is assumed.
@@ -1232,17 +1294,17 @@ double Operator::MP1_Eval(Operator& H)
 /// \f[ \|X_{(1)}\|^2 = \sum\limits_{ij} X_{ij}^2 \f]
 double Operator::Norm() const
 {
-   if (legs%2==0)
+   if ( legs%2 == 0)
    {
-     double n1 = OneBodyNorm();
-     double n2 = TwoBody.Norm();
-     return sqrt(n1*n1+n2*n2);
+      double n1 = OneBodyNorm();
+      double n2 = TwoBody.Norm();
+      return sqrt(n1*n1+n2*n2);
    }
    else
    {
-     double n1 = OneLegNorm();
-     double n2 = ThreeLeg.Norm();
-     return sqrt(n1*n1+n2*n2);
+      double n1 = OneLegNorm();
+      double n2 = ThreeLeg.Norm();
+      return sqrt(n1*n1+n2*n2);
    }
 }
 
@@ -1262,18 +1324,6 @@ double Operator::OneBodyNorm() const
    return sqrt(nrm);
 }
 
-double Operator::OneLegNorm() const
-{
-   double nrm = 0;
-   for ( size_t p=0; p<modelspace->GetNumberOrbits(); ++p)
-   {
-     Orbit& op = modelspace->GetOrbit(p);
-     int degeneracy_factor = (op.j2+1) ;
-     nrm += OneBody(p,0)*OneBody(p,0) * degeneracy_factor * degeneracy_factor;
-   }
-   return sqrt(nrm);
-}
-
 
 double Operator::TwoBodyNorm() const
 {
@@ -1286,6 +1336,17 @@ double Operator::ThreeBodyNorm() const
   return ThreeBody.Norm();
 }
 
+double Operator::OneLegNorm() const
+{
+   double nrm = 0;
+   for ( size_t p=0; p<modelspace->GetNumberOrbits(); ++p)
+   {
+     Orbit& op = modelspace->GetOrbit(p);
+     int degeneracy_factor = (op.j2+1) ;
+     nrm += OneBody(p,0)*OneBody(p,0) * degeneracy_factor * degeneracy_factor;
+   }
+  return sqrt(nrm);
+}
 
 double Operator::ThreeLegNorm() const
 {

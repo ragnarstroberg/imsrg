@@ -46,7 +46,9 @@ class HFMBPT : public HartreeFock
     void PrintOccupation();
     Operator TransformHFToNATBasis(Operator& OpIn);
     Operator TransformHOToNATBasis(Operator& OpIn);
-    Operator GetNormalOrderedHNAT();
+    Operator GetNormalOrderedHNAT(int particle_rank=2);
+//    Operator GetNormalOrderedHNAT();
+    double GetTransformed3bme( int Jab, int Jde, int J2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
 
     void PrintSPEandWF(); // Function override, since we want to express the SPWF in terms of HO states
     void ReorderHFMBPTCoefficients();
