@@ -177,6 +177,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //     This one is essential. If it's not here, then there are no induced 3 body terms
        std::cout << " comm223 " << std::endl;
        comm223ss(X, Y, Z); // scales as n^7
+//       comm223ss_debug(X, Y, Z); // scales as n^7
 
 //     if (X.GetParticleRank()>2 or Y.GetParticleRank()>2)
 //     {
@@ -4844,15 +4845,152 @@ bool check_2b_channel_Tz_parity( const Operator& Op, Orbit& o1, Orbit&o2, Orbit&
 void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
+  double tinternal = omp_get_wtime();
 //  int e3maxcut = 999;
   int norbs = Z.modelspace->GetNumberOrbits();
   auto& Z3 = Z.ThreeBody;
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
+  int hX = X.IsHermitian() ? 1 : -1;
+  int hY = Y.IsHermitian() ? 1 : -1;
   if ( (std::abs( X2.Norm() * Y2.Norm() ) < 1e-6 ) and not Z.modelspace->scalar3b_transform_first_pass) return;
 
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
-  // we loop over i, j<=i, k<=j    l<=i, m<=l, n<=m, and Jij, Jmn free unless  ijk == lmn, then we take Jmn <= Jij.
+
+  size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
+
+  std::map<std::array<int,3>,size_t> channels_pph; // map twoJ_ph, parity_ph, twoTz_ph  -> channel index
+  std::vector< std::array<int,3>> channel_list_pph; // vector  channel_index -> twoJ-ph, parity_ph, twoTz_ph.
+  std::vector< std::map<std::array<int,4>, size_t>> ket_lookup_pph; // in a given channel, map  i,j,n,Jij -> matrix index
+
+  std::vector< arma::mat > Zbar;
+
+  // we're looking at pph type states. We don't make a cut on the occupations in this channel
+  // but if the first two orbits ij can't possibly make it past the occnat cut later on, we don't bother including them
+  // To figure out if they'll make it, we want to know the biggest contribution that can possibly be made by a third orbit.
+  double occnat_factor_max = 0;
+  for ( auto i : Z.modelspace->all_orbits)
+  {
+     double occnat_i = Z.modelspace->GetOrbit(i).occ_nat;
+     occnat_factor_max = std::max( occnat_factor_max, occnat_i*(1-occnat_i) );
+  }
+
+  size_t nch_pph = 0;
+  // Generate all the pph type channels J,parity,Tz. Note that these will be
+  // not the same as the standard 3-body channels since we aren't enforcing antisymmetry with the 3rd particle
+  for ( auto& iter_obc : Z.modelspace->OneBodyChannels )
+  {
+    int parity_ph = iter_obc.first[0]%2;  // parity = l%2
+    int twoJph = iter_obc.first[1];
+    int twoTz_ph = iter_obc.first[2];
+
+    size_t ngood_ijn=0;
+    std::map<std::array<int,4>, size_t> good_kets_ijn;
+    for ( size_t chij=0; chij<nch2; chij++)
+    {
+      TwoBodyChannel& tbc_ij = Z.modelspace->GetTwoBodyChannel(chij);
+      int Jij = tbc_ij.J;
+      int parity_ij = tbc_ij.parity;
+      int Tz_ij = tbc_ij.Tz;
+      for (size_t n : Z.modelspace->all_orbits )
+      {
+        Orbit& on = Z.modelspace->GetOrbit(n);
+        if ( (on.l + parity_ij)%2 != parity_ph ) continue;
+        if ( (2*Tz_ij - on.tz2) != twoTz_ph ) continue;  // note the minus sign because n is a hole
+        if ( (std::abs(2*Jij-on.j2)> twoJph)  or  ((2*Jij+on.j2)<twoJph) ) continue;
+
+        size_t nkets_ij = tbc_ij.GetNumberKets();
+        for ( size_t iket_ij=0; iket_ij<nkets_ij; iket_ij++)
+        {
+          // check that we pass our cuts on E3max, occupations, etc.
+          Ket& ket_ij = tbc_ij.GetKet(iket_ij);
+          size_t i = ket_ij.p;
+          size_t j = ket_ij.q;
+          double occnat_i = ket_ij.op->occ_nat;
+          double occnat_j = ket_ij.oq->occ_nat;
+          double d_ei = std::abs( 2*ket_ij.op->n + ket_ij.op->l - e_fermi[ket_ij.op->tz2]);
+          double d_ej = std::abs( 2*ket_ij.oq->n + ket_ij.oq->l - e_fermi[ket_ij.oq->tz2]);
+          // if i and j cant make it past the OccNat and dE3max cuts, don't bother including it
+          if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue;
+          if ( (d_ei+d_ej) > Z.modelspace->dE3max ) continue;
+          
+          good_kets_ijn[ {i,j,n,Jij} ] = ngood_ijn;
+          ngood_ijn++;
+        }
+      }
+    }
+//    size_t ngood_abc = good_kets_abc.size();
+    if ( (ngood_ijn < 1) ) continue;
+
+    channels_pph[{twoJph, parity_ph,twoTz_ph}] = nch_pph;
+    channel_list_pph.push_back({twoJph, parity_ph,twoTz_ph});
+    ket_lookup_pph.push_back( good_kets_ijn );
+    Zbar.push_back( arma::mat( ngood_ijn, ngood_ijn, arma::fill::zeros )  );
+    nch_pph++;
+  }// for iter_obc
+//  std::cout << "Nominally " << nch_pph << "  pph channels " << std::endl;
+
+  
+  Z.profiler.timer["comm223_setup_loop"] += omp_get_wtime() - tinternal;
+  tinternal = omp_get_wtime();
+
+ // Now we should fill those Zbar matrices.
+  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+ for (size_t ch_pph=0; ch_pph<nch_pph; ch_pph++)
+ {
+
+   auto& ch_info = channel_list_pph[ch_pph];
+   int twoJph    = ch_info[0];
+   int parity_ph = ch_info[1];
+   int twoTz_ph  = ch_info[2];
+   int l_a = ((twoJph+1)/2)%2 == parity_ph ? (twoJph+1)/2  :  (twoJph-1)/2;
+
+
+   auto& a_set = Z.modelspace->OneBodyChannels.at({l_a,twoJph,twoTz_ph}); // list of one-body orbits in this channel
+   std::vector<size_t> a_list;
+   for (auto a : a_set ) a_list.push_back(a);
+   size_t number_a = a_list.size();
+
+   auto& good_kets_ijn = ket_lookup_pph[ch_pph];
+   size_t ngood_ijn = good_kets_ijn.size();
+   arma::mat Xph( ngood_ijn, number_a );
+   arma::mat Yph( number_a, ngood_ijn );
+   for (auto& iter_ijn : good_kets_ijn )
+   {
+      size_t Iijn = iter_ijn.second;
+      size_t i = iter_ijn.first[0];
+      size_t j = iter_ijn.first[1];
+      size_t n = iter_ijn.first[2];
+      Orbit& oi = Z.modelspace->GetOrbit(i);
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+      Orbit& on = Z.modelspace->GetOrbit(n);
+
+      double occnat_i = oi.occ_nat;
+      double occnat_j = oj.occ_nat;
+      double occnat_n = on.occ_nat;
+      double d_ei = std::abs( 2*oi.n + oi.l - e_fermi[oi.tz2]);
+      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+      double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
+      double jn = 0.5*on.j2;
+      int  Jij = iter_ijn.first[3];
+      for (size_t index_a=0; index_a<number_a; index_a++ )
+      {
+        size_t a = a_list[index_a];
+        Orbit& oa = Z.modelspace->GetOrbit(a);
+        Xph(Iijn, index_a) = X.TwoBody.GetTBME_J(Jij,i,j,n,a);
+        Yph(index_a, Iijn) = Y.TwoBody.GetTBME_J(Jij,n,a,i,j);
+
+      }// for index_a
+
+   }//for iter_ijn
+   Zbar[ch_pph] = Xph*Yph;
+   Zbar[ch_pph] -= hX*hY*Zbar[ch_pph].t();
+ }// for ch_pph
+
+
+  Z.profiler.timer["comm223_fill_loop"] += omp_get_wtime() - tinternal;
+  tinternal = omp_get_wtime();
+
 
 //  std::vector< std::map<std::array<size_t,2>,size_t>::iterator> channel_iterators;
   std::vector< std::pair<const std::array<size_t,2>,size_t>> channel_iterators;
@@ -4974,35 +5112,30 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                 if ((I4==I5) and J2p%2!=0 ) continue;
                 double rec_lmn = recouple_lmn[perm_lmn].at(J2p-J2p_min[perm_lmn]);
 
+                int phase_12 = I1>I2 ? -Z.modelspace->phase( (o1.j2+o2.j2)/2 - J1p) : 1;
+                int phase_45 = I4>I5 ? -Z.modelspace->phase( (o4.j2+o5.j2)/2 - J2p) : 1;
                 double hat_factor = sqrt( (2*J1p+1)*(2*J2p+1) );
                 double z_123456 = 0;
 
-                for ( auto OBC_a : Z.OneBodyChannels ) 
+                int parity_ph = (o1.l+o2.l+o6.l)%2;
+                int twoTz_ph = (o1.tz2+o2.tz2-o6.tz2);
+                int twoJph_min = std::max( std::abs(2*J1p-o6.j2), std::abs(2*J2p-o3.j2) );
+                int twoJph_max = std::min( 2*J1p+o6.j2 , 2*J2p+o3.j2 );
+                for ( int twoJph=twoJph_min; twoJph<=twoJph_max; twoJph++)
                 {
-                  Orbit& oa1 = Z.modelspace->GetOrbit(  *(OBC_a.second.begin()) );
-                  double ja = 0.5*oa1.j2;
+                   auto iter_ch = channels_pph.find({ twoJph, parity_ph, twoTz_ph});
+                   if ( iter_ch == channels_pph.end() )  continue;
+                   double ja = 0.5 * twoJph;
+                   size_t ch_pph = iter_ch->second;
+                   size_t index_126 = ket_lookup_pph[ch_pph].at({ std::min(I1,I2),std::max(I1,I2),I6,J1p} );
+                   size_t index_453 = ket_lookup_pph[ch_pph].at({ std::min(I4,I5),std::max(I4,I5),I3,J2p} );
+                   double zbar_126453 =  phase_12 * phase_45 * Zbar[ch_pph](index_126,index_453);
 
-                  if (   (check_2b_channel_Tz_parity(X,o1,o2,o6,oa1) and check_2b_channel_Tz_parity(Y,o3,oa1,o5,o4))
-                      or (check_2b_channel_Tz_parity(Y,oi,o2,o6,oa1) and check_2b_channel_Tz_parity(X,o3,oa1,o5,o4)) )
-                  {
-//                    double sixj1 = Z.modelspace->GetSixJ(j6,ja,J1p, j3,Jtot,J2p);
-                    double sixj1 = Z.modelspace->GetSixJ(J1p,j3,Jtot, J2p,j6,ja);
-                    if (std::abs(sixj1)>1e-7)
-                    {
-                      double zbar_126453 = 0;
-                      for ( auto a : OBC_a.second )
-                      {
-                        double x126a = X2.GetTBME_J(J1p,I1,I2,I6,a);
-                        double y126a = Y2.GetTBME_J(J1p,I1,I2,I6,a);
-                        double x3a45 = X2.GetTBME_J(J2p,I3,a,I4,I5);
-                        double y3a45 = Y2.GetTBME_J(J2p,I3,a,I4,I5);
-                        zbar_126453 +=   (x126a*y3a45-y126a*x3a45) ; 
-                      }
-                      z_123456 +=   sixj1 * zbar_126453  ; // maybe construct this from Zbar_126`453`
-                    }
-                  }
+                   double sixj1 = Z.modelspace->GetSixJ(J1p,j3,Jtot, J2p,j6,ja);
+                   z_123456 +=   sixj1 * zbar_126453  ; // maybe construct this from Zbar_126`453`
 
-                }// for OBC_a
+                }
+
                 zijklmn += hat_factor * rec_ijk * rec_lmn * z_123456;
 
               }//for J2p
@@ -5015,14 +5148,15 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket
     }// for ibra
   }// for ch3
-
+  Z.profiler.timer["comm223_compute_loop"] += omp_get_wtime() - tinternal;
+  tinternal = omp_get_wtime();
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
 
-/*
-void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
+
+void comm223ss_debug( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
 //  int e3maxcut = 999;
@@ -5445,7 +5579,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   }// for ch3
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
-*/
+
 
 
 
@@ -8576,7 +8710,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                 int twoJph_max = std::min( (2*J1p + o6.j2), (2*J2p+o3.j2) );
                 if ( twoJph_min > twoJph_max) continue;
 
-                std::vector<double> Zbar_126453 ( (twoJph_max-twoJph_min)/2+1, 0. );
+//                std::vector<double> Zbar_126453 ( (twoJph_max-twoJph_min)/2+1, 0. );
                 int phase_12 = I1>I2 ? -Z.modelspace->phase( (o1.j2+o2.j2)/2 - J1p) : 1;
                 int phase_45 = I4>I5 ? -Z.modelspace->phase( (o4.j2+o5.j2)/2 - J2p) : 1;
 
