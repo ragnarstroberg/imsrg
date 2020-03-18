@@ -4859,9 +4859,13 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
   size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
 
+  // create a function object for hashing 4 size_t (unsigned long int) to a single size_t for lookup in an unordered_map
   std::map<std::array<int,3>,size_t> channels_pph; // map twoJ_ph, parity_ph, twoTz_ph  -> channel index
   std::vector< std::array<int,3>> channel_list_pph; // vector  channel_index -> twoJ-ph, parity_ph, twoTz_ph.
-  std::vector< std::map<std::array<int,4>, size_t>> ket_lookup_pph; // in a given channel, map  i,j,n,Jij -> matrix index
+
+  auto hash_key_ijnJ = [](size_t i,size_t j, size_t n, size_t Jij){return ( i + (j<<12) + (n<<24) + (Jij<<36) );};
+  auto unhash_key_ijnJ = [](size_t& i,size_t& j, size_t& n, size_t& Jij, size_t key){ i=(key & 0xFFFL);j=((key>>12)&0xFFFL);n=((key>>24)&0xFFFL);Jij=((key>>36)&0xFFFL); }; //  0xF = 15 = 1111 (4bits), so 0xFFF is 12 bits of 1's. 0xFFFL makes it a long
+  std::vector< std::unordered_map<size_t, size_t>> ket_lookup_pph; // in a given channel, map  i,j,n,Jij -> matrix index
 
   std::vector< arma::mat > Zbar;
 
@@ -4885,7 +4889,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
     int twoTz_ph = iter_obc.first[2];
 
     size_t ngood_ijn=0;
-    std::map<std::array<int,4>, size_t> good_kets_ijn;
+    std::unordered_map<size_t, size_t> good_kets_ijn;
     for ( size_t chij=0; chij<nch2; chij++)
     {
       TwoBodyChannel& tbc_ij = Z.modelspace->GetTwoBodyChannel(chij);
@@ -4936,13 +4940,12 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       {
         for ( size_t n : good_n )
         {
-          good_kets_ijn[ {ij[0],ij[1],n,Jij} ] = ngood_ijn;
-//          good_kets_ijn[ {i,j,n,Jij} ] = ngood_ijn;
+          size_t key = hash_key_ijnJ( ij[0],ij[1],n,size_t(Jij));
+          good_kets_ijn[ key ] = ngood_ijn;
           ngood_ijn++;
         }
       }// for iket_ij
     }// for chij
-//    size_t ngood_abc = good_kets_abc.size();
     if ( (ngood_ijn < 1) ) continue;
 
     channels_pph[{twoJph, parity_ph,twoTz_ph}] = nch_pph;
@@ -4956,8 +4959,9 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   
   Z.profiler.timer["comm223_setup_loop"] += omp_get_wtime() - tinternal;
   tinternal = omp_get_wtime();
+//  std::cout << "done with setup" << std::endl;
 
- // Now we should fill those bar matrices.
+ // Now we should fill those Zbar matrices.
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
  for (size_t ch_pph=0; ch_pph<nch_pph; ch_pph++)
  {
@@ -4969,9 +4973,9 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
    int l_a = ((twoJph+1)/2)%2 == parity_ph ? (twoJph+1)/2  :  (twoJph-1)/2;
 
 
-   auto& a_set = Z.modelspace->OneBodyChannels.at({l_a,twoJph,twoTz_ph}); // list of one-body orbits in this channel
+//   auto& a_set = Z.modelspace->OneBodyChannels.at({l_a,twoJph,twoTz_ph}); // list of one-body orbits in this channel
    std::vector<size_t> a_list;
-   for (auto a : a_set ) a_list.push_back(a);
+   for (auto a : Z.modelspace->OneBodyChannels.at({l_a,twoJph,twoTz_ph}) ) a_list.push_back(a);
    size_t number_a = a_list.size();
 
    auto& good_kets_ijn = ket_lookup_pph[ch_pph];
@@ -4981,9 +4985,11 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
    for (auto& iter_ijn : good_kets_ijn )
    {
       size_t Iijn = iter_ijn.second;
-      size_t i = iter_ijn.first[0];
-      size_t j = iter_ijn.first[1];
-      size_t n = iter_ijn.first[2];
+
+      size_t key = iter_ijn.first;
+      size_t i,j,n,Jij_tmp;
+      unhash_key_ijnJ(i,j,n,Jij_tmp, key);
+      int Jij = (int)Jij_tmp;
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
       Orbit& on = Z.modelspace->GetOrbit(n);
@@ -4995,7 +5001,6 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
       double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
       double jn = 0.5*on.j2;
-      int  Jij = iter_ijn.first[3];
       for (size_t index_a=0; index_a<number_a; index_a++ )
       {
         size_t a = a_list[index_a];
@@ -5009,6 +5014,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
    Zbar[ch_pph] = Xph*Yph;
    Zbar[ch_pph] -= hX*hY*Zbar[ch_pph].t();
  }// for ch_pph
+
+// std::cout << "Done filling matrices " << std::endl;
 
 
   Z.profiler.timer["comm223_fill_loop"] += omp_get_wtime() - tinternal;
@@ -5052,8 +5059,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
       // Set up the permutation stuff for ijk
       std::vector<std::array<size_t,3>> ijk = { {i,j,k}, {k,j,i}, {i,k,j} };
-      std::vector<int> J1p_min = {J1,  std::abs(ok.j2-oj.j2)/2,   std::abs(oi.j2-ok.j2)/2 };
-      std::vector<int> J1p_max = {J1,  (ok.j2+oj.j2)/2 , (oi.j2+ok.j2)/2 };
+      std::vector<int> J1p_min = {J1,  std::max(std::abs(ok.j2-oj.j2),std::abs(twoJ-oi.j2) )/2,   std::max(std::abs(oi.j2-ok.j2), std::abs(twoJ-oj.j2) )/2 };
+      std::vector<int> J1p_max = {J1,  std::min(ok.j2+oj.j2, twoJ+oi.j2)/2 , std::min(oi.j2+ok.j2, twoJ+oj.j2)/2 };
       std::vector<std::vector<double>> recouple_ijk = {{1},{},{} };
       for (int J1p=J1p_min[1]; J1p<=J1p_max[1]; J1p++)
            recouple_ijk[1].push_back( sqrt( (2*J1+1)*(2*J1p+1)) * Z.modelspace->GetSixJ(ji,jj,J1,jk,Jtot,J1p) );
@@ -5086,8 +5093,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
         // Set up the permutation stuff for lmn
         std::vector<std::array<size_t,3>> lmn = { {l,m,n}, {n,m,l}, {l,n,m} };
-        std::vector<int> J2p_min = {J2,  std::abs(on.j2-om.j2)/2,   std::abs(ol.j2-on.j2)/2 };
-        std::vector<int> J2p_max = {J2,  (on.j2+om.j2)/2 , (ol.j2+on.j2)/2 };
+        std::vector<int> J2p_min = {J2,  std::max(std::abs(on.j2-om.j2), std::abs(twoJ-ol.j2) )/2,   std::max( std::abs(ol.j2-on.j2), std::abs(twoJ-om.j2) )/2 };
+        std::vector<int> J2p_max = {J2,  std::min(on.j2+om.j2, twoJ+ol.j2)/2 , std::min(ol.j2+on.j2,twoJ+om.j2)/2 };
         std::vector<std::vector<double>> recouple_lmn = {{1},{},{} };
             
         for (int J2p=J2p_min[1]; J2p<=J2p_max[1]; J2p++)
@@ -5107,15 +5114,13 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
           Orbit& o1 = Z.modelspace->GetOrbit( I1 );
           Orbit& o2 = Z.modelspace->GetOrbit( I2 );
           Orbit& o3 = Z.modelspace->GetOrbit( I3 );
-          double occnat_1 = o1.occ_nat;
-          double occnat_2 = o2.occ_nat;
-          double d_e1 = std::abs( 2*o1.n + o1.l - e_fermi[o1.tz2]);
-          double d_e2 = std::abs( 2*o2.n + o2.l - e_fermi[o2.tz2]);
+
           double j3 = 0.5*o3.j2;
           for (int J1p=J1p_min[perm_ijk]; J1p<=J1p_max[perm_ijk]; J1p++)
           {
             if ((I1==I2) and J1p%2!=0 ) continue;
             double rec_ijk = recouple_ijk[perm_ijk].at(J1p-J1p_min[perm_ijk]);
+
 
             for ( int perm_lmn=0; perm_lmn<3; perm_lmn++ )
             {
@@ -5125,10 +5130,9 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
               Orbit& o4 = Z.modelspace->GetOrbit( I4 );
               Orbit& o5 = Z.modelspace->GetOrbit( I5 );
               Orbit& o6 = Z.modelspace->GetOrbit( I6 );
-              double occnat_4 = o4.occ_nat;
-              double occnat_5 = o5.occ_nat;
-              double d_e4 = std::abs( 2*o4.n + o4.l - e_fermi[o4.tz2]);
-              double d_e5 = std::abs( 2*o5.n + o5.l - e_fermi[o5.tz2]);
+
+              size_t key_126 = hash_key_ijnJ(std::min(I1,I2),std::max(I1,I2),I6,J1p);
+
               double j6 = 0.5*o6.j2;
               for (int J2p=J2p_min[perm_lmn]; J2p<=J2p_max[perm_lmn]; J2p++)
               {
@@ -5140,6 +5144,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                 double hat_factor = sqrt( (2*J1p+1)*(2*J2p+1) );
                 double z_123456 = 0;
 
+                size_t key_453 = hash_key_ijnJ(std::min(I4,I5),std::max(I4,I5),I3,J2p);
+
                 int parity_ph = (o1.l+o2.l+o6.l)%2;
                 int twoTz_ph = (o1.tz2+o2.tz2-o6.tz2);
                 int twoJph_min = std::max( std::abs(2*J1p-o6.j2), std::abs(2*J2p-o3.j2) );
@@ -5148,14 +5154,15 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                 {
                    auto iter_ch = channels_pph.find({ twoJph, parity_ph, twoTz_ph});
                    if ( iter_ch == channels_pph.end() )  continue;
-                   double ja = 0.5 * twoJph;
                    size_t ch_pph = iter_ch->second;
-                   size_t index_126 = ket_lookup_pph[ch_pph].at({ std::min(I1,I2),std::max(I1,I2),I6,J1p} );
-                   size_t index_453 = ket_lookup_pph[ch_pph].at({ std::min(I4,I5),std::max(I4,I5),I3,J2p} );
+                   double Jph = 0.5 * twoJph;
+
+                   size_t index_126 = ket_lookup_pph[ch_pph].at(key_126 );
+                   size_t index_453 = ket_lookup_pph[ch_pph].at(key_453 );
                    double zbar_126453 =  phase_12 * phase_45 * Zbar[ch_pph](index_126,index_453);
 
-                   double sixj1 = Z.modelspace->GetSixJ(J1p,j3,Jtot, J2p,j6,ja);
-                   z_123456 +=   sixj1 * zbar_126453  ; // maybe construct this from Zbar_126`453`
+                   double sixj1 = Z.modelspace->GetSixJ(J1p,j3,Jtot, J2p,j6,Jph);
+                   z_123456 +=   sixj1 * zbar_126453  ; 
 
                 }
 
@@ -6469,6 +6476,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
   double tstart = omp_get_wtime();
+  double tinternal = omp_get_wtime();
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
   auto& X3 = X.ThreeBody;
@@ -6580,7 +6588,10 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
    Z3_ph[ch_cc].zeros( 2*nkets_CC, nkets3 ); // Zbar_knlmij
   }// for ch_cc
 
+  Z.profiler.timer["comm233_setup_lists"] += omp_get_wtime() - tinternal;
+  tinternal = omp_get_wtime();
 
+  // Compute the particle-hole recoupled matrix elements of Z
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   for (size_t ch_cc=0; ch_cc<nch2_CC; ch_cc++)
   {
@@ -6757,7 +6768,10 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
   }// for ch_cc
 //  std::cout << "DONE WITH THE CC BIT" << std::endl;
 
+  Z.profiler.timer["comm233_fll_matrices"] += omp_get_wtime() - tinternal;
+  tinternal = omp_get_wtime();
 
+  // Now transform it back into standard coupling
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   for (size_t ch3=0; ch3<nch3; ch3++)
@@ -6790,8 +6804,11 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 
 
       std::vector<std::array<size_t,3>> ijk = { {i,j,k}, {k,j,i}, {i,k,j} };
-      std::vector<int> J1p_min = {J1,  std::abs(ok.j2-oj.j2)/2,   std::abs(oi.j2-ok.j2)/2 };
-      std::vector<int> J1p_max = {J1,  (ok.j2+oj.j2)/2 , (oi.j2+ok.j2)/2 };
+
+      std::vector<int> J1p_min = {J1,  std::max(std::abs(ok.j2-oj.j2),std::abs(twoJ-oi.j2) )/2,   std::max(std::abs(oi.j2-ok.j2), std::abs(twoJ-oj.j2) )/2 };
+      std::vector<int> J1p_max = {J1,  std::min(ok.j2+oj.j2, twoJ+oi.j2)/2 , std::min(oi.j2+ok.j2, twoJ+oj.j2)/2 };
+//      std::vector<int> J1p_min = {J1,  std::abs(ok.j2-oj.j2)/2,   std::abs(oi.j2-ok.j2)/2 };
+//      std::vector<int> J1p_max = {J1,  (ok.j2+oj.j2)/2 , (oi.j2+ok.j2)/2 };
       std::vector<std::vector<double>> recouple_ijk = {{1},{},{} };
       for (int J1p=J1p_min[1]; J1p<=J1p_max[1]; J1p++)
            recouple_ijk[1].push_back( sqrt( (2*J1+1)*(2*J1p+1)) * Z.modelspace->GetSixJ(ji,jj,J1,jk,Jtot,J1p) );
@@ -6824,8 +6841,10 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 
 
         std::vector<std::array<size_t,3>> lmn = { {l,m,n}, {n,m,l}, {l,n,m} };
-        std::vector<int> J2p_min = {J2,  std::abs(on.j2-om.j2)/2,   std::abs(ol.j2-on.j2)/2 };
-        std::vector<int> J2p_max = {J2,  (on.j2+om.j2)/2 , (ol.j2+on.j2)/2 };
+        std::vector<int> J2p_min = {J2,  std::max(std::abs(on.j2-om.j2),std::abs(twoJ-ok.j2) )/2,   std::max(std::abs(ol.j2-on.j2), std::abs(twoJ-om.j2) )/2 };
+        std::vector<int> J2p_max = {J2,  std::min(on.j2+om.j2, twoJ+ok.j2)/2 , std::min(ol.j2+on.j2, twoJ+om.j2)/2 };
+//        std::vector<int> J2p_min = {J2,  std::abs(on.j2-om.j2)/2,   std::abs(ol.j2-on.j2)/2 };
+//        std::vector<int> J2p_max = {J2,  (on.j2+om.j2)/2 , (ol.j2+on.j2)/2 };
         std::vector<std::vector<double>> recouple_lmn = {{1},{},{} };
             
         for (int J2p=J2p_min[1]; J2p<=J2p_max[1]; J2p++)
@@ -6927,6 +6946,8 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket
     }// for ibra
   }//for ch3
+  Z.profiler.timer["comm233_pph_recouple"] += omp_get_wtime() - tinternal;
+  tinternal = omp_get_wtime();
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
@@ -8406,6 +8427,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
   double tstart = omp_get_wtime();
+  double tinternal = omp_get_wtime();
 
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
@@ -8420,7 +8442,13 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 
   std::map<std::array<int,3>,size_t> channels_pph; // map twoJ_ph, parity_ph, twoTz_ph  -> channel index
   std::vector< std::array<int,3>> channel_list_pph; // vector  channel_index -> twoJ-ph, parity_ph, twoTz_ph.
-  std::vector< std::map<std::array<int,4>, size_t>> ket_lookup_pph; // in a given channel, map  i,j,k,Jij -> matrix index
+
+//  std::vector< std::map<std::array<int,4>, size_t>> ket_lookup_pph; // in a given channel, map  i,j,k,Jij -> matrix index
+
+  auto hash_key_ijnJ = [](size_t i,size_t j, size_t n, size_t Jij){return ( i + (j<<12) + (n<<24) + (Jij<<36) );};
+  auto unhash_key_ijnJ = [](size_t& i,size_t& j, size_t& n, size_t& Jij, size_t key){ i=(key & 0xFFFL);j=((key>>12)&0xFFFL);n=((key>>24)&0xFFFL);Jij=((key>>36)&0xFFFL); }; //  0xF = 15 = 1111 (4bits), so 0xFFF is 12 bits of 1's. 0xFFFL makes it a long
+  std::vector< std::unordered_map<size_t, size_t>> ket_lookup_pph; // in a given channel, map  i,j,n,Jij -> matrix index
+
 
   std::vector<std::vector<std::array<int,4>>> ket_lookup_abc;
   std::vector<std::vector<double>> occs_abc_list;
@@ -8450,7 +8478,10 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
       {
 //        std::vector<std::array<int,4>> good_kets_ijn;
         size_t ngood_ijn=0;
-        std::map<std::array<int,4>, size_t> good_kets_ijn;
+
+        std::unordered_map<size_t, size_t> good_kets_ijn;
+//        std::map<std::array<int,4>, size_t> good_kets_ijn;
+
         std::vector<std::array<int,4>> good_kets_abc;
 //        std::vector<size_t> kets_abc;
         std::vector<double> occs_abc;
@@ -8483,7 +8514,9 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
               if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue;
               if ( (d_ei+d_ej) > Z.modelspace->dE3max ) continue;
               
-              good_kets_ijn[ {i,j,n,Jij} ] = ngood_ijn;
+              size_t key = hash_key_ijnJ( i,j,n,size_t(Jij));
+              good_kets_ijn[ key ] = ngood_ijn;
+//              good_kets_ijn[ {i,j,n,Jij} ] = ngood_ijn;
               ngood_ijn++;
               double occ_factor = ket_ij.op->occ * ket_ij.oq->occ * (1-on.occ) + (1-ket_ij.op->occ)*(1-ket_ij.oq->occ)*on.occ;
 
@@ -8512,6 +8545,10 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
   }// for twoJph
 //  std::cout << "Nominally " << nch_pph << "  pph channels " << std::endl;
 
+
+  Z.profiler.timer["comm333_pph_setup_lists"] += omp_get_wtime() - tinternal;
+  tinternal = omp_get_wtime();
+
  // Now that we've made our lists and allocated the matrices, we fill the matrices inside the parallel block.
  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
  for (size_t ch_pph=0; ch_pph<nch_pph; ch_pph++)
@@ -8530,9 +8567,16 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
    for (auto& iter_ijn : good_kets_ijn )
    {
      size_t Iijn = iter_ijn.second;
-     size_t i = iter_ijn.first[0];
-     size_t j = iter_ijn.first[1];
-     size_t n = iter_ijn.first[2];
+
+     size_t key = iter_ijn.first;
+     size_t i,j,n,Jij_tmp;
+     unhash_key_ijnJ(i,j,n,Jij_tmp, key);
+     int Jij = (int)Jij_tmp;
+//     size_t i = iter_ijn.first[0];
+//     size_t j = iter_ijn.first[1];
+//     size_t n = iter_ijn.first[2];
+//     int  Jij = iter_ijn.first[3];
+
      Orbit& oi = Z.modelspace->GetOrbit(i);
      Orbit& oj = Z.modelspace->GetOrbit(j);
      Orbit& on = Z.modelspace->GetOrbit(n);
@@ -8544,7 +8588,6 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
      double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
      double jn = 0.5*on.j2;
-     int  Jij = iter_ijn.first[3];
      for (size_t Iabc=0; Iabc<ngood_abc; Iabc++)
      {
        auto& abc_info = good_kets_abc[Iabc];
@@ -8583,6 +8626,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
          // xbar += (twoJprime+1) * sixj_ijn * X3.GetME_pn( Jij, Jab, twoJprime, i,j,c, a,b,n);
          // ybar += (twoJprime+1) * sixj_ijn * Y3.GetME_pn( Jij, Jab, twoJprime, i,j,c, a,b,n) * occ_factor;
          // but it avoids doing the recoupling twice (if i,j,c and a,b,n aren't in the storage order)
+         // TODO This comes up often enough that we should just make ThreeBodyMEpn do this.
          std::vector<size_t> ibra_list, iket_list;
          std::vector<double> recouple_bra_list, recouple_ket_list;
          size_t ch_check_bra = Y.ThreeBody.GetKetIndex_withRecoupling( Jij, twoJprime, i, j, c, ibra_list, recouple_bra_list) ;
@@ -8617,6 +8661,8 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 
   }// for ch_pph , end of parallel block
 
+  Z.profiler.timer["comm333_pph_fill_matrices"] += omp_get_wtime() - tinternal;
+  tinternal = omp_get_wtime();
 
   // Now that we've computed Zbar (i.e. the pph transformed commutator), we need to
   // transform that back to Z, and do all the permutations to ensure antisymmetry
@@ -8651,8 +8697,11 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 
       // Here are the permutations for ijk
       std::vector<std::array<size_t,3>> ijk = { {i,j,k}, {k,j,i}, {i,k,j} };
-      std::vector<int> J1p_min = {J1,  std::abs(ok.j2-oj.j2)/2,   std::abs(oi.j2-ok.j2)/2 };
-      std::vector<int> J1p_max = {J1,  (ok.j2+oj.j2)/2 , (oi.j2+ok.j2)/2 };
+
+      std::vector<int> J1p_min = {J1,  std::max(std::abs(ok.j2-oj.j2),std::abs(twoJ-oi.j2) )/2,   std::max(std::abs(oi.j2-ok.j2), std::abs(twoJ-oj.j2) )/2 };
+      std::vector<int> J1p_max = {J1,  std::min(ok.j2+oj.j2, twoJ+oi.j2)/2 , std::min(oi.j2+ok.j2, twoJ+oj.j2)/2 };
+//      std::vector<int> J1p_min = {J1,  std::abs(ok.j2-oj.j2)/2,   std::abs(oi.j2-ok.j2)/2 };
+//      std::vector<int> J1p_max = {J1,  (ok.j2+oj.j2)/2 , (oi.j2+ok.j2)/2 };
       std::vector<std::vector<double>> recouple_ijk = {{1},{},{} };
       for (int J1p=J1p_min[1]; J1p<=J1p_max[1]; J1p++)
            recouple_ijk[1].push_back( sqrt( (2*J1+1)*(2*J1p+1)) * Z.modelspace->GetSixJ(ji,jj,J1,jk,Jtot,J1p) );
@@ -8685,8 +8734,11 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 
         // permutations for lmn
         std::vector<std::array<size_t,3>> lmn = { {l,m,n}, {n,m,l}, {l,n,m} };
-        std::vector<int> J2p_min = {J2,  std::abs(on.j2-om.j2)/2,   std::abs(ol.j2-on.j2)/2 };
-        std::vector<int> J2p_max = {J2,  (on.j2+om.j2)/2 , (ol.j2+on.j2)/2 };
+
+        std::vector<int> J2p_min = {J2,  std::max(std::abs(on.j2-om.j2),std::abs(twoJ-ok.j2) )/2,   std::max(std::abs(ol.j2-on.j2), std::abs(twoJ-om.j2) )/2 };
+        std::vector<int> J2p_max = {J2,  std::min(on.j2+om.j2, twoJ+ok.j2)/2 , std::min(ol.j2+on.j2, twoJ+om.j2)/2 };
+//        std::vector<int> J2p_min = {J2,  std::abs(on.j2-om.j2)/2,   std::abs(ol.j2-on.j2)/2 };
+//        std::vector<int> J2p_max = {J2,  (on.j2+om.j2)/2 , (ol.j2+on.j2)/2 };
         std::vector<std::vector<double>> recouple_lmn = {{1},{},{} };
             
         for (int J2p=J2p_min[1]; J2p<=J2p_max[1]; J2p++)
@@ -8729,6 +8781,9 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                 double rec_lmn = recouple_lmn[perm_lmn].at(J2p-J2p_min[perm_lmn]);
                 if ( (I4==I5) and J2p%2>0) continue;
 
+                size_t key_126 = hash_key_ijnJ(std::min(I1,I2),std::max(I1,I2),I6,J1p);
+                size_t key_453 = hash_key_ijnJ(std::min(I4,I5),std::max(I4,I5),I3,J2p);
+
                 int twoJph_min = std::max( std::abs(2*J1p - o6.j2), std::abs(2*J2p-o3.j2) );
                 int twoJph_max = std::min( (2*J1p + o6.j2), (2*J2p+o3.j2) );
                 if ( twoJph_min > twoJph_max) continue;
@@ -8743,8 +8798,11 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   auto iter_ch = channels_pph.find({ twoJph, parity_ph, twoTz_ph});
                   if ( iter_ch == channels_pph.end() ) continue;
                   size_t ch_pph = iter_ch->second;
-                  size_t index_126 = ket_lookup_pph[ch_pph].at({ std::min(I1,I2),std::max(I1,I2),I6,J1p} );
-                  size_t index_453 = ket_lookup_pph[ch_pph].at({ std::min(I4,I5),std::max(I4,I5),I3,J2p} );
+
+                   size_t index_126 = ket_lookup_pph[ch_pph].at(key_126 );
+                   size_t index_453 = ket_lookup_pph[ch_pph].at(key_453 );
+//                  size_t index_126 = ket_lookup_pph[ch_pph].at({ std::min(I1,I2),std::max(I1,I2),I6,J1p} );
+//                  size_t index_453 = ket_lookup_pph[ch_pph].at({ std::min(I4,I5),std::max(I4,I5),I3,J2p} );
                   double zbar =  phase_12 * phase_45 * Zbar[ch_pph](index_126,index_453);
 
                   double Jph = 0.5 * twoJph;
@@ -8762,6 +8820,9 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket
     }// for ibra
   }//for ch3
+
+  Z.profiler.timer["comm333_pph_recouple"] += omp_get_wtime() - tinternal;
+  tinternal = omp_get_wtime();
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }

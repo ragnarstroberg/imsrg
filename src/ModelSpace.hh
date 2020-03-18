@@ -464,6 +464,7 @@ class ModelSpace
 
    
    size_t GetThreeBodyChannelIndex( int twoJ, int parity, int twoTz );
+   size_t CountThreeBodyStatesInsideCut();
 
 
 //   size_t Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};

@@ -1181,6 +1181,41 @@ size_t ModelSpace::ThreeBodyChannelHash( int twoJ, int parity, int twoTz)
 
 
 
+// Count up how many 3-body states will survive the
+// combined cuts to dE3max [energy relative to the fermi surface],
+// and OccNat3 [product of n(1-n) where n is the occupation in the natural orbitals basis]
+size_t ModelSpace::CountThreeBodyStatesInsideCut()
+{
+  size_t nstates = 0;
+  size_t nch3 = GetNumberThreeBodyChannels();
+  for (size_t ch3=0; ch3<nch3; ch3++)
+  {
+    ThreeBodyChannel& Tbc = GetThreeBodyChannel(ch3);
+    size_t nkets = Tbc.GetNumberKets();
+    for (size_t iket=0; iket<nkets; iket++)
+    {
+      Ket3& ket = Tbc.GetKet(iket);
+      size_t i = ket.p;
+      size_t j = ket.q;
+      size_t k = ket.r;
+      Orbit& oi = GetOrbit(i);
+      Orbit& oj = GetOrbit(j);
+      Orbit& ok = GetOrbit(k);
+      double d_ei = std::abs( 2*oi.n + oi.l - e_fermi[oi.tz2]);
+      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+      double d_ek = std::abs( 2*ok.n + ok.l - e_fermi[ok.tz2]);
+      double occnat_i = oi.occ_nat;
+      double occnat_j = oj.occ_nat;
+      double occnat_k = ok.occ_nat;
+      if ( (d_ei + d_ej + d_ek) > dE3max ) continue;
+      if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < GetOccNat3Cut() ) continue;
+      nstates++;
+    }// for iket
+  }// for ch3
+  return nstates;
+
+}
+
 
 void ModelSpace::SetEmaxUnocc(int e)
 {

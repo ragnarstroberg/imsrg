@@ -52,7 +52,8 @@ void ThreeBodyMEpn::Allocate_Isospin()
 // This will need to be more elaborate if we want to use tensor 3-body.
 void ThreeBodyMEpn::Allocate_PN()
 {
-  std::cout << __func__ <<std::endl;
+  double tstart = omp_get_wtime();
+//  std::cout << __func__ <<std::endl;
   total_dimension = 0;
   size_t nch = modelspace->GetNumberThreeBodyChannels();
 //  ch_start.zeros(nch,nch);
@@ -94,6 +95,7 @@ void ThreeBodyMEpn::Allocate_PN()
   is_allocated = true;
   none_allocated = false;
   PN_mode = true;
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
