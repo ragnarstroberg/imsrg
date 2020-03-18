@@ -82,6 +82,7 @@ namespace Commutator{
   
   void comm133ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm223ss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z ) ;     // implemented and tested.
   void comm233_pp_hhss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;     // implemented and tested.
   void comm233_phss( const Operator& X, const Operator& Y, Operator& Z ) ;        // implemented and tested.
