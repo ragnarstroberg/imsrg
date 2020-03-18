@@ -8442,7 +8442,13 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 
   std::map<std::array<int,3>,size_t> channels_pph; // map twoJ_ph, parity_ph, twoTz_ph  -> channel index
   std::vector< std::array<int,3>> channel_list_pph; // vector  channel_index -> twoJ-ph, parity_ph, twoTz_ph.
-  std::vector< std::map<std::array<int,4>, size_t>> ket_lookup_pph; // in a given channel, map  i,j,k,Jij -> matrix index
+
+//  std::vector< std::map<std::array<int,4>, size_t>> ket_lookup_pph; // in a given channel, map  i,j,k,Jij -> matrix index
+
+  auto hash_key_ijnJ = [](size_t i,size_t j, size_t n, size_t Jij){return ( i + (j<<12) + (n<<24) + (Jij<<36) );};
+  auto unhash_key_ijnJ = [](size_t& i,size_t& j, size_t& n, size_t& Jij, size_t key){ i=(key & 0xFFFL);j=((key>>12)&0xFFFL);n=((key>>24)&0xFFFL);Jij=((key>>36)&0xFFFL); }; //  0xF = 15 = 1111 (4bits), so 0xFFF is 12 bits of 1's. 0xFFFL makes it a long
+  std::vector< std::unordered_map<size_t, size_t>> ket_lookup_pph; // in a given channel, map  i,j,n,Jij -> matrix index
+
 
   std::vector<std::vector<std::array<int,4>>> ket_lookup_abc;
   std::vector<std::vector<double>> occs_abc_list;
@@ -8472,7 +8478,10 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
       {
 //        std::vector<std::array<int,4>> good_kets_ijn;
         size_t ngood_ijn=0;
-        std::map<std::array<int,4>, size_t> good_kets_ijn;
+
+        std::unordered_map<size_t, size_t> good_kets_ijn;
+//        std::map<std::array<int,4>, size_t> good_kets_ijn;
+
         std::vector<std::array<int,4>> good_kets_abc;
 //        std::vector<size_t> kets_abc;
         std::vector<double> occs_abc;
@@ -8505,7 +8514,9 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
               if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue;
               if ( (d_ei+d_ej) > Z.modelspace->dE3max ) continue;
               
-              good_kets_ijn[ {i,j,n,Jij} ] = ngood_ijn;
+              size_t key = hash_key_ijnJ( i,j,n,size_t(Jij));
+              good_kets_ijn[ key ] = ngood_ijn;
+//              good_kets_ijn[ {i,j,n,Jij} ] = ngood_ijn;
               ngood_ijn++;
               double occ_factor = ket_ij.op->occ * ket_ij.oq->occ * (1-on.occ) + (1-ket_ij.op->occ)*(1-ket_ij.oq->occ)*on.occ;
 
@@ -8556,9 +8567,16 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
    for (auto& iter_ijn : good_kets_ijn )
    {
      size_t Iijn = iter_ijn.second;
-     size_t i = iter_ijn.first[0];
-     size_t j = iter_ijn.first[1];
-     size_t n = iter_ijn.first[2];
+
+     size_t key = iter_ijn.first;
+     size_t i,j,n,Jij_tmp;
+     unhash_key_ijnJ(i,j,n,Jij_tmp, key);
+     int Jij = (int)Jij_tmp;
+//     size_t i = iter_ijn.first[0];
+//     size_t j = iter_ijn.first[1];
+//     size_t n = iter_ijn.first[2];
+//     int  Jij = iter_ijn.first[3];
+
      Orbit& oi = Z.modelspace->GetOrbit(i);
      Orbit& oj = Z.modelspace->GetOrbit(j);
      Orbit& on = Z.modelspace->GetOrbit(n);
@@ -8570,7 +8588,6 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
      double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
      double jn = 0.5*on.j2;
-     int  Jij = iter_ijn.first[3];
      for (size_t Iabc=0; Iabc<ngood_abc; Iabc++)
      {
        auto& abc_info = good_kets_abc[Iabc];
@@ -8609,6 +8626,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
          // xbar += (twoJprime+1) * sixj_ijn * X3.GetME_pn( Jij, Jab, twoJprime, i,j,c, a,b,n);
          // ybar += (twoJprime+1) * sixj_ijn * Y3.GetME_pn( Jij, Jab, twoJprime, i,j,c, a,b,n) * occ_factor;
          // but it avoids doing the recoupling twice (if i,j,c and a,b,n aren't in the storage order)
+         // TODO This comes up often enough that we should just make ThreeBodyMEpn do this.
          std::vector<size_t> ibra_list, iket_list;
          std::vector<double> recouple_bra_list, recouple_ket_list;
          size_t ch_check_bra = Y.ThreeBody.GetKetIndex_withRecoupling( Jij, twoJprime, i, j, c, ibra_list, recouple_bra_list) ;
@@ -8763,6 +8781,9 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                 double rec_lmn = recouple_lmn[perm_lmn].at(J2p-J2p_min[perm_lmn]);
                 if ( (I4==I5) and J2p%2>0) continue;
 
+                size_t key_126 = hash_key_ijnJ(std::min(I1,I2),std::max(I1,I2),I6,J1p);
+                size_t key_453 = hash_key_ijnJ(std::min(I4,I5),std::max(I4,I5),I3,J2p);
+
                 int twoJph_min = std::max( std::abs(2*J1p - o6.j2), std::abs(2*J2p-o3.j2) );
                 int twoJph_max = std::min( (2*J1p + o6.j2), (2*J2p+o3.j2) );
                 if ( twoJph_min > twoJph_max) continue;
@@ -8777,8 +8798,11 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   auto iter_ch = channels_pph.find({ twoJph, parity_ph, twoTz_ph});
                   if ( iter_ch == channels_pph.end() ) continue;
                   size_t ch_pph = iter_ch->second;
-                  size_t index_126 = ket_lookup_pph[ch_pph].at({ std::min(I1,I2),std::max(I1,I2),I6,J1p} );
-                  size_t index_453 = ket_lookup_pph[ch_pph].at({ std::min(I4,I5),std::max(I4,I5),I3,J2p} );
+
+                   size_t index_126 = ket_lookup_pph[ch_pph].at(key_126 );
+                   size_t index_453 = ket_lookup_pph[ch_pph].at(key_453 );
+//                  size_t index_126 = ket_lookup_pph[ch_pph].at({ std::min(I1,I2),std::max(I1,I2),I6,J1p} );
+//                  size_t index_453 = ket_lookup_pph[ch_pph].at({ std::min(I4,I5),std::max(I4,I5),I3,J2p} );
                   double zbar =  phase_12 * phase_45 * Zbar[ch_pph](index_126,index_453);
 
                   double Jph = 0.5 * twoJph;
