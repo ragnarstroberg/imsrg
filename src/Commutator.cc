@@ -4892,33 +4892,56 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       int Jij = tbc_ij.J;
       int parity_ij = tbc_ij.parity;
       int Tz_ij = tbc_ij.Tz;
-      for (size_t n : Z.modelspace->all_orbits )
+      size_t nkets_ij = tbc_ij.GetNumberKets();
+      int tz2n = 2*Tz_ij - twoTz_ph;
+      if ( std::abs(tz2n)>1 ) continue;
+      int j2n_min = std::abs(2*Jij-twoJph);
+      int j2n_max = (2*Jij+twoJph);
+      int parity_n = (parity_ij + parity_ph)%2;
+      
+      std::vector<size_t> good_n;
+      for ( int j2n=j2n_min; j2n<=j2n_max; j2n+=2)
       {
-        Orbit& on = Z.modelspace->GetOrbit(n);
-        if ( (on.l + parity_ij)%2 != parity_ph ) continue;
-        if ( (2*Tz_ij - on.tz2) != twoTz_ph ) continue;  // note the minus sign because n is a hole
-        if ( (std::abs(2*Jij-on.j2)> twoJph)  or  ((2*Jij+on.j2)<twoJph) ) continue;
-
-        size_t nkets_ij = tbc_ij.GetNumberKets();
-        for ( size_t iket_ij=0; iket_ij<nkets_ij; iket_ij++)
+        int l_n = ((j2n+1)/2)%2 == parity_n ? (j2n+1)/2  :  (j2n-1)/2;
+        if (l_n > Z.modelspace->GetEmax() or l_n > Z.modelspace->GetLmax() ) continue;
+        for ( size_t n : Z.OneBodyChannels.at({l_n,j2n,tz2n}) )
         {
-          // check that we pass our cuts on E3max, occupations, etc.
-          Ket& ket_ij = tbc_ij.GetKet(iket_ij);
-          size_t i = ket_ij.p;
-          size_t j = ket_ij.q;
-          double occnat_i = ket_ij.op->occ_nat;
-          double occnat_j = ket_ij.oq->occ_nat;
-          double d_ei = std::abs( 2*ket_ij.op->n + ket_ij.op->l - e_fermi[ket_ij.op->tz2]);
-          double d_ej = std::abs( 2*ket_ij.oq->n + ket_ij.oq->l - e_fermi[ket_ij.oq->tz2]);
-          // if i and j cant make it past the OccNat and dE3max cuts, don't bother including it
-          if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue;
-          if ( (d_ei+d_ej) > Z.modelspace->dE3max ) continue;
-          
-          good_kets_ijn[ {i,j,n,Jij} ] = ngood_ijn;
+          Orbit& on = Z.modelspace->GetOrbit(n);
+          double occnat_n = on.occ_nat;
+          double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
+          if ( (occnat_n*(1-occnat_n) * occnat_factor_max * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue;
+          if ( (d_en) > Z.modelspace->dE3max ) continue;
+          good_n.push_back(n);
+        }// for n
+      }// for j2n
+
+      std::vector<std::array<size_t,2>> good_ij;
+      for ( size_t iket_ij=0; iket_ij<nkets_ij; iket_ij++)
+      {
+        // check that we pass our cuts on E3max, occupations, etc.
+        Ket& ket_ij = tbc_ij.GetKet(iket_ij);
+        size_t i = ket_ij.p;
+        size_t j = ket_ij.q;
+        double occnat_i = ket_ij.op->occ_nat;
+        double occnat_j = ket_ij.oq->occ_nat;
+        double d_ei = std::abs( 2*ket_ij.op->n + ket_ij.op->l - e_fermi[ket_ij.op->tz2]);
+        double d_ej = std::abs( 2*ket_ij.oq->n + ket_ij.oq->l - e_fermi[ket_ij.oq->tz2]);
+        // if i and j cant make it past the OccNat and dE3max cuts, don't bother including it
+        if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue;
+        if ( (d_ei+d_ej) > Z.modelspace->dE3max ) continue;
+        good_ij.push_back({i,j}); 
+      }//for iket_ij
+
+      for ( auto& ij : good_ij )
+      {
+        for ( size_t n : good_n )
+        {
+          good_kets_ijn[ {ij[0],ij[1],n,Jij} ] = ngood_ijn;
+//          good_kets_ijn[ {i,j,n,Jij} ] = ngood_ijn;
           ngood_ijn++;
         }
-      }
-    }
+      }// for iket_ij
+    }// for chij
 //    size_t ngood_abc = good_kets_abc.size();
     if ( (ngood_ijn < 1) ) continue;
 
@@ -4934,7 +4957,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   Z.profiler.timer["comm223_setup_loop"] += omp_get_wtime() - tinternal;
   tinternal = omp_get_wtime();
 
- // Now we should fill those Zbar matrices.
+ // Now we should fill those bar matrices.
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
  for (size_t ch_pph=0; ch_pph<nch_pph; ch_pph++)
  {
