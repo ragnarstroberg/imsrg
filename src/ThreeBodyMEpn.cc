@@ -256,6 +256,49 @@ void ThreeBodyMEpn::SetME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, si
   matrix_data.at(index) = herm_flip * matel;
 }
 
+
+//std::vector<double> ThreeBodyMEpn::GetME_pn_PN_MultiOp(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, std::vector<const ThreeBodyMEpn*>& Ops) const
+//std::vector<double> ThreeBodyMEpn::GetME_pn_PN_MultiOp(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, const ThreeBodyMEpn&...Ops) const
+//std::vector<double> ThreeBodyMEpn::GetME_pn_PN_MultiOp(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, std::initializer_list<const ThreeBodyMEpn&> Ops) const
+std::vector<double> ThreeBodyMEpn::GetME_pn_PN_TwoOps(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, const ThreeBodyMEpn& X, const ThreeBodyMEpn& Y) const
+{
+
+  std::vector<double> recouple_bra;
+  std::vector<double> recouple_ket;
+  std::vector<size_t> ibra;
+  std::vector<size_t> iket;
+//  std::cout << __func__ << " begin" << std::endl;
+  size_t ch_bra = GetKetIndex_withRecoupling( Jab, twoJ, a,b,c, ibra, recouple_bra );
+  size_t ch_ket = GetKetIndex_withRecoupling( Jde, twoJ, d,e,f, iket, recouple_ket );
+//  std::cout << "    ch_bra ch_ket " << ch_bra << " " << ch_ket << std::endl;
+//  std::vector<ThreeBodyMEpn&> Oplist = { Ops...};
+//  size_t nops = Oplist.size();
+//  size_t nops = Ops.size();
+  std::vector<double> me_out( 2,0.0 );
+  if ( ch_bra != ch_ket) return me_out;
+  //TODO: Should we also throw an exception if twoJ is even?
+
+//  double me_out = 0;
+  for ( size_t i=0; i<ibra.size(); i++)
+  {
+    for (size_t j=0; j<iket.size(); j++)
+    {
+        me_out[0] += recouple_bra[i] * recouple_ket[j] * X.GetME_pn_PN_ch( ch_bra, ch_ket, ibra[i], iket[j] );
+        me_out[1] += recouple_bra[i] * recouple_ket[j] * Y.GetME_pn_PN_ch( ch_bra, ch_ket, ibra[i], iket[j] );
+//      for (size_t iop=0; iop<nops; iop++)
+//      {
+//        me_out[iop] += recouple_bra[i] * recouple_ket[j] * Oplist[i].GetME_pn_PN_ch( ch_bra, ch_ket, ibra[i], iket[j] );
+//        me_out[iop] += recouple_bra[i] * recouple_ket[j] * Ops[iop].GetME_pn_PN_ch( ch_bra, ch_ket, ibra[i], iket[j] );
+//        me_out[iop] += recouple_bra[i] * recouple_ket[j] * Ops[i]->GetME_pn_PN_ch( ch_bra, ch_ket, ibra[i], iket[j] );
+//      }
+    }
+  }
+//  std::cout << __func__ << " end" << std::endl;
+
+  return me_out;
+
+}
+
 // We have this here in case we want to set a matrix element, but we store it in a different
 // coupling order. In that case, we need to add to multiple matrix elements with the appropriate
 // recoupling coefficients included (see below).
