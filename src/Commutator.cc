@@ -6674,6 +6674,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
       }//for iket_ab
     }// for ibra_ij
 
+
     // now fill the 3-body matrices
     auto& ph_kets3 = ph_kets3_lookup[ch_cc];
     for (auto iter_lmij : ph_kets3 )
@@ -6686,12 +6687,6 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
       int Jlm = (int)Jlm_tmp;
       int Jij = (int)Jij_tmp;
 
-//      size_t l = iter_lmij.first[0];
-//      size_t m = iter_lmij.first[1];
-//      int Jlm  = iter_lmij.first[2];
-//      size_t i = iter_lmij.first[3];
-//      size_t j = iter_lmij.first[4];
-//      int Jij  = iter_lmij.first[5];
 
 //      size_t index_ijlm = ph_kets3.at({i,j,Jij,l,m,Jlm});
       Orbit& ol = Z.modelspace->GetOrbit(l);
@@ -6744,26 +6739,36 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
         for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
         {
           int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
-          std::vector<size_t> ibra_list;
-          std::vector<size_t> iket_list;
-          std::vector<double> recouple_bra_list;
-          std::vector<double> recouple_ket_list;
-          size_t ch_check_bra = Y.ThreeBody.GetKetIndex_withRecoupling( Jij, twoJp, i, j, a, ibra_list, recouple_bra_list) ;
-          size_t ch_check_ket = Y.ThreeBody.GetKetIndex_withRecoupling( Jlm, twoJp, l, m, b, iket_list, recouple_ket_list) ;
-          double xablmij = 0;
-          double yablmij = 0;
-          for ( size_t ind_bra=0; ind_bra<ibra_list.size(); ind_bra++)
-          {
-            double rec_bra = recouple_bra_list[ind_bra];
-            size_t Ibra = ibra_list[ind_bra];
-            for ( size_t ind_ket=0; ind_ket<iket_list.size(); ind_ket++)
-            {
-              double rec_ket = recouple_ket_list[ind_ket];
-              size_t Iket = iket_list[ind_ket];
-               xablmij += rec_bra * rec_ket * X3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
-               yablmij += rec_bra * rec_ket * Y3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
-            }
-          }
+
+//          std::vector<double> xandy = Y3.GetME_pn_PN_TwoOps( Jij,Jlm,twoJp, i,j,a, l,m,b, X3,Y3 );
+// TODO UNCOMMENT THESE 3 LINES
+//          auto xandy = Y3.GetME_pn_PN_TwoOps( Jij,Jlm,twoJp, i,j,a, l,m,b, X3,Y3 );
+          std::vector<double> xandy = {0,0};
+          double xablmij = xandy[0];
+          double yablmij = xandy[1];
+
+//          std::vector<size_t> ibra_list;
+//          std::vector<size_t> iket_list;
+//          std::vector<double> recouple_bra_list;
+//          std::vector<double> recouple_ket_list;
+//          size_t ch_check_bra = Y.ThreeBody.GetKetIndex_withRecoupling( Jij, twoJp, i, j, a, ibra_list, recouple_bra_list) ;
+//          size_t ch_check_ket = Y.ThreeBody.GetKetIndex_withRecoupling( Jlm, twoJp, l, m, b, iket_list, recouple_ket_list) ;
+//          double xablmij = 0;
+//          double yablmij = 0;
+//          for ( size_t ind_bra=0; ind_bra<ibra_list.size(); ind_bra++)
+//          {
+//            double rec_bra = recouple_bra_list[ind_bra];
+//            size_t Ibra = ibra_list[ind_bra];
+//            for ( size_t ind_ket=0; ind_ket<iket_list.size(); ind_ket++)
+//            {
+//              double rec_ket = recouple_ket_list[ind_ket];
+//              size_t Iket = iket_list[ind_ket];
+//               xablmij += rec_bra * rec_ket * X3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
+//               yablmij += rec_bra * rec_ket * Y3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
+//            }
+//          }
+
+
           double sixjy = Z.modelspace->GetSixJ( Jij, Jlm, Jph, jb, ja, 0.5*twoJp);
           X3bar_ablmij -= phase_y * (twoJp+1) * sixjy * xablmij;
           Y3bar_ablmij -= phase_y * (twoJp+1) * sixjy * yablmij;
@@ -7716,29 +7721,34 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
        {
          double sixj_ijn = Z.modelspace->GetSixJ( Jij, jn, Jph,  Jab, jc, 0.5*twoJprime);
         
+         // TODO This comes up often enough that we should just make ThreeBodyMEpn do this.
+         std::vector<double> xandy = Y3.GetME_pn_PN_TwoOps( Jij,Jab,twoJprime, i,j,c, a,b,n, X3,Y3 );
+         double xijcabn = xandy[0];
+         double yijcabn = xandy[1];
+
          // this slightly verbose block is equivalent to
          // xbar += (twoJprime+1) * sixj_ijn * X3.GetME_pn( Jij, Jab, twoJprime, i,j,c, a,b,n);
          // ybar += (twoJprime+1) * sixj_ijn * Y3.GetME_pn( Jij, Jab, twoJprime, i,j,c, a,b,n) * occ_factor;
          // but it avoids doing the recoupling twice (if i,j,c and a,b,n aren't in the storage order)
-         // TODO This comes up often enough that we should just make ThreeBodyMEpn do this.
-         std::vector<size_t> ibra_list, iket_list;
-         std::vector<double> recouple_bra_list, recouple_ket_list;
-         size_t ch_check_bra = Y.ThreeBody.GetKetIndex_withRecoupling( Jij, twoJprime, i, j, c, ibra_list, recouple_bra_list) ;
-         size_t ch_check_ket = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJprime, a, b, n, iket_list, recouple_ket_list) ;
-         double xijcabn = 0;
-         double yijcabn = 0;
-         for ( size_t ind_bra=0; ind_bra<ibra_list.size(); ind_bra++)
-         {
-           double rec_bra = recouple_bra_list[ind_bra];
-           size_t Ibra = ibra_list[ind_bra];
-           for ( size_t ind_ket=0; ind_ket<iket_list.size(); ind_ket++)
-           {
-             double rec_ket = recouple_ket_list[ind_ket];
-             size_t Iket = iket_list[ind_ket];
-              xijcabn += rec_bra * rec_ket * X3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
-              yijcabn += rec_bra * rec_ket * Y3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
-           }
-         }
+
+//         std::vector<size_t> ibra_list, iket_list;
+//         std::vector<double> recouple_bra_list, recouple_ket_list;
+//         size_t ch_check_bra = Y.ThreeBody.GetKetIndex_withRecoupling( Jij, twoJprime, i, j, c, ibra_list, recouple_bra_list) ;
+//         size_t ch_check_ket = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJprime, a, b, n, iket_list, recouple_ket_list) ;
+//         double xijcabn = 0;
+//         double yijcabn = 0;
+//         for ( size_t ind_bra=0; ind_bra<ibra_list.size(); ind_bra++)
+//         {
+//           double rec_bra = recouple_bra_list[ind_bra];
+//           size_t Ibra = ibra_list[ind_bra];
+//           for ( size_t ind_ket=0; ind_ket<iket_list.size(); ind_ket++)
+//           {
+//             double rec_ket = recouple_ket_list[ind_ket];
+//             size_t Iket = iket_list[ind_ket];
+//              xijcabn += rec_bra * rec_ket * X3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
+//              yijcabn += rec_bra * rec_ket * Y3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
+//           }
+//         }
          xbar += (twoJprime+1) * sixj_ijn * xijcabn;
          ybar += (twoJprime+1) * sixj_ijn * yijcabn ;
  

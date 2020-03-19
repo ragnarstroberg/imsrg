@@ -892,10 +892,12 @@ double IMSRGSolver::GetPerturbativeTriples()
   Wbar.ThreeBody.SwitchToPN_and_discard();
   Operator& omega = Omega.back();
   Operator& Hs = FlowingOps[0];
+  std::cout << "comm223ss ..." << std::endl;
   Commutator::comm223ss( omega, Hs, Wbar);
   Wbar.OneBody = Hs.OneBody;
   Wbar.TwoBody = Hs.TwoBody;
 
+  std::cout << "Compute E3pert ..." << std::endl;
   double E3pert = Wbar.GetMP2_3BEnergy();
 
   return E3pert;

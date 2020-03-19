@@ -67,6 +67,8 @@ class ThreeBodyMEpn
   // Under-the-hood implementation for providing setter/getter access if we are using the PN storage.
   // In the case of isospin storage, we just use the setter/getters provided by the ThreeBodyME class.
 
+
+
   ME_type GetME_pn_PN(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n) const;
   void SetME_pn_PN(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
   void AddToME_pn_PN(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
@@ -83,6 +85,12 @@ class ThreeBodyMEpn
   ME_type GetME_pn_PN_ch(size_t chbra, size_t chket, size_t ibra, size_t iket) const;
   ME_type GetME_pn_PN_ch(size_t chbra, size_t chket, Ket3& bra, Ket3& ket) const;
 
+
+  std::vector<double> GetME_pn_PN_TwoOps(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, const ThreeBodyMEpn& X, const ThreeBodyMEpn& Y) const;
+//  std::vector<double> GetME_pn_PN_MultiOp(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, std::initializer_list<const ThreeBodyMEpn&> Ops) const;
+//  std::vector<double> GetME_pn_PN_MultiOp(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, const ThreeBodyMEpn&...Ops) const;
+//  std::vector<double> GetME_pn_PN_MultiOp(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, std::vector<const ThreeBodyMEpn*>& Ops) const;
+//  std::vector<double> GetME_pn_PN_MultiOp(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, std::vector<const ThreeBodyMEpn*>& Ops) const;
 
 //  void SetME_isospin5(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, std::array<double,5>& isospin_5plet) ;
 
