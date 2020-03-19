@@ -6492,7 +6492,11 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
   std::deque<std::map<size_t,size_t>> ph_kets_cc_lookup(nch2_CC); // map i j1 to  matrix index
   std::deque<std::vector<double>> occfactors(nch2_CC);  // occupation factors for ab`
 
-  std::deque<std::map<std::array<int,6>,size_t>> ph_kets3_lookup(nch2_CC); // map  lm Jlm  (ij Jij)` to matrix index
+
+  auto hash_key_lmij = [](size_t l,size_t m, size_t Jlm, size_t i, size_t j, size_t Jij){return ( l + (m<<12) + (i<<24) + (j<<36) + (Jlm<<48) + (Jij<<56) );};
+  auto unhash_key_lmij = [](size_t& l, size_t& m, size_t& Jlm, size_t& i,size_t& j, size_t& Jij, size_t key){ l=(key & 0xFFFL);m=((key>>12)&0xFFFL);i=((key>>24)&0xFFFL);j=((key>>36)&0xFFFL); Jlm=((key>>48)&0xFFL); Jij=((key>>56)&0xFFL); }; //  0xF = 15 = 1111 (4bits), so 0xFFF is 12 bits of 1's. 0xFFFL makes it a long
+  std::deque<std::unordered_map<size_t,size_t>> ph_kets3_lookup(nch2_CC); // map  lm Jlm  (ij Jij)` to matrix index
+//  std::deque<std::map<std::array<int,6>,size_t>> ph_kets3_lookup(nch2_CC); // map  lm Jlm  (ij Jij)` to matrix index
 
   std::deque<arma::mat> Z3_ph(nch2_CC); // matrices for ph transformed Z3. This will be the big one.
 
@@ -6575,7 +6579,9 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
            if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue;
            if ( (d_ei + d_ej ) > Z.modelspace->dE3max ) continue;
 
-           ph_kets3[{l,m,Jlm,i,j,Jij}] = nkets3;
+           size_t key = hash_key_lmij( l,m,(size_t)Jlm,i,j,(size_t)Jij);
+           ph_kets3[ key ] = nkets3;
+//           ph_kets3[{l,m,Jlm,i,j,Jij}] = nkets3;
            nkets3++;
          }
        }
@@ -6673,12 +6679,20 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
     for (auto iter_lmij : ph_kets3 )
     {
       size_t index_lmij = iter_lmij.second;
-      size_t l = iter_lmij.first[0];
-      size_t m = iter_lmij.first[1];
-      int Jlm  = iter_lmij.first[2];
-      size_t i = iter_lmij.first[3];
-      size_t j = iter_lmij.first[4];
-      int Jij  = iter_lmij.first[5];
+
+      size_t key = iter_lmij.first;
+      size_t l,m,i,j,Jlm_tmp,Jij_tmp;
+      unhash_key_lmij(l,m,Jlm_tmp,i,j,Jij_tmp, key);
+      int Jlm = (int)Jlm_tmp;
+      int Jij = (int)Jij_tmp;
+
+//      size_t l = iter_lmij.first[0];
+//      size_t m = iter_lmij.first[1];
+//      int Jlm  = iter_lmij.first[2];
+//      size_t i = iter_lmij.first[3];
+//      size_t j = iter_lmij.first[4];
+//      int Jij  = iter_lmij.first[5];
+
 //      size_t index_ijlm = ph_kets3.at({i,j,Jij,l,m,Jlm});
       Orbit& ol = Z.modelspace->GetOrbit(l);
       Orbit& om = Z.modelspace->GetOrbit(m);
@@ -6807,8 +6821,6 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 
       std::vector<int> J1p_min = {J1,  std::max(std::abs(ok.j2-oj.j2),std::abs(twoJ-oi.j2) )/2,   std::max(std::abs(oi.j2-ok.j2), std::abs(twoJ-oj.j2) )/2 };
       std::vector<int> J1p_max = {J1,  std::min(ok.j2+oj.j2, twoJ+oi.j2)/2 , std::min(oi.j2+ok.j2, twoJ+oj.j2)/2 };
-//      std::vector<int> J1p_min = {J1,  std::abs(ok.j2-oj.j2)/2,   std::abs(oi.j2-ok.j2)/2 };
-//      std::vector<int> J1p_max = {J1,  (ok.j2+oj.j2)/2 , (oi.j2+ok.j2)/2 };
       std::vector<std::vector<double>> recouple_ijk = {{1},{},{} };
       for (int J1p=J1p_min[1]; J1p<=J1p_max[1]; J1p++)
            recouple_ijk[1].push_back( sqrt( (2*J1+1)*(2*J1p+1)) * Z.modelspace->GetSixJ(ji,jj,J1,jk,Jtot,J1p) );
@@ -6841,10 +6853,8 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 
 
         std::vector<std::array<size_t,3>> lmn = { {l,m,n}, {n,m,l}, {l,n,m} };
-        std::vector<int> J2p_min = {J2,  std::max(std::abs(on.j2-om.j2),std::abs(twoJ-ok.j2) )/2,   std::max(std::abs(ol.j2-on.j2), std::abs(twoJ-om.j2) )/2 };
-        std::vector<int> J2p_max = {J2,  std::min(on.j2+om.j2, twoJ+ok.j2)/2 , std::min(ol.j2+on.j2, twoJ+om.j2)/2 };
-//        std::vector<int> J2p_min = {J2,  std::abs(on.j2-om.j2)/2,   std::abs(ol.j2-on.j2)/2 };
-//        std::vector<int> J2p_max = {J2,  (on.j2+om.j2)/2 , (ol.j2+on.j2)/2 };
+        std::vector<int> J2p_min = {J2,  std::max(std::abs(on.j2-om.j2),std::abs(twoJ-ol.j2) )/2,   std::max(std::abs(ol.j2-on.j2), std::abs(twoJ-om.j2) )/2 };
+        std::vector<int> J2p_max = {J2,  std::min(on.j2+om.j2, twoJ+ol.j2)/2 , std::min(ol.j2+on.j2, twoJ+om.j2)/2 };
         std::vector<std::vector<double>> recouple_lmn = {{1},{},{} };
             
         for (int J2p=J2p_min[1]; J2p<=J2p_max[1]; J2p++)
@@ -6908,8 +6918,9 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
                    // we only compute one ordering of the right side of Zbar, but we can get the other ordering by symmetry
                    // so we check here which ordering we need, and pick up the corresponding phase factor if needed.
                    size_t index_36 = tbc_CC.GetLocalIndex(I3,I6);
-                   std::array<int,6> key_4512 = {std::min(I4,I5),std::max(I4,I5),J2p,std::min(I1,I2),std::max(I1,I2),J1p};
-//                   size_t index_4512 = ph_kets3_lookup[ch_ph].at({std::min(I4,I5),std::max(I4,I5),J2p,std::min(I1,I2),std::max(I1,I2),J1p});
+                   size_t key_4512 = hash_key_lmij(std::min(I4,I5),std::max(I4,I5),(size_t)J2p,std::min(I1,I2),std::max(I1,I2),(size_t)J1p);
+//                   std::array<int,6> key_4512 = {std::min(I4,I5),std::max(I4,I5),J2p,std::min(I1,I2),std::max(I1,I2),J1p};
+////                   size_t index_4512 = ph_kets3_lookup[ch_ph].at({std::min(I4,I5),std::max(I4,I5),J2p,std::min(I1,I2),std::max(I1,I2),J1p});
                    int phase_45 = (I4>I5) ? -Z.modelspace->phase( (o4.j2+o5.j2)/2 - J2p) : 1;
                    int phase_12 = (I1>I2) ? -Z.modelspace->phase( (o1.j2+o2.j2)/2 - J1p) : 1;
                    int flip_phase = 1;
@@ -6919,8 +6930,9 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
                         or ((std::min(I1,I2)==std::min(I4,I5)) and (std::max(I1,I2)==std::max(I4,I5)) and (J1p>J2p)) )
                    {
                      index_36 = tbc_CC.GetLocalIndex(I6,I3);
-                     key_4512 = {std::min(I1,I2),std::max(I1,I2),J1p,std::min(I4,I5),std::max(I4,I5),J2p};
-//                     index_4512 = ph_kets3_lookup[ch_ph].at({std::min(I1,I2),std::max(I1,I2),J1p,std::min(I4,I5),std::max(I4,I5),J2p});
+                     key_4512 = hash_key_lmij(std::min(I1,I2),std::max(I1,I2),(size_t)J1p,std::min(I4,I5),std::max(I4,I5),(size_t)J2p);
+//                     key_4512 = {std::min(I1,I2),std::max(I1,I2),J1p,std::min(I4,I5),std::max(I4,I5),J2p};
+////                     index_4512 = ph_kets3_lookup[ch_ph].at({std::min(I1,I2),std::max(I1,I2),J1p,std::min(I4,I5),std::max(I4,I5),J2p});
                      flip_phase = Z.modelspace->phase( (o3.j2-o6.j2)/2 );
                    }
                    size_t index_4512 = ph_kets3_lookup[ch_ph].at(key_4512);
@@ -8735,8 +8747,8 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
         // permutations for lmn
         std::vector<std::array<size_t,3>> lmn = { {l,m,n}, {n,m,l}, {l,n,m} };
 
-        std::vector<int> J2p_min = {J2,  std::max(std::abs(on.j2-om.j2),std::abs(twoJ-ok.j2) )/2,   std::max(std::abs(ol.j2-on.j2), std::abs(twoJ-om.j2) )/2 };
-        std::vector<int> J2p_max = {J2,  std::min(on.j2+om.j2, twoJ+ok.j2)/2 , std::min(ol.j2+on.j2, twoJ+om.j2)/2 };
+        std::vector<int> J2p_min = {J2,  std::max(std::abs(on.j2-om.j2),std::abs(twoJ-ol.j2) )/2,   std::max(std::abs(ol.j2-on.j2), std::abs(twoJ-om.j2) )/2 };
+        std::vector<int> J2p_max = {J2,  std::min(on.j2+om.j2, twoJ+ol.j2)/2 , std::min(ol.j2+on.j2, twoJ+om.j2)/2 };
 //        std::vector<int> J2p_min = {J2,  std::abs(on.j2-om.j2)/2,   std::abs(ol.j2-on.j2)/2 };
 //        std::vector<int> J2p_max = {J2,  (on.j2+om.j2)/2 , (ol.j2+on.j2)/2 };
         std::vector<std::vector<double>> recouple_lmn = {{1},{},{} };

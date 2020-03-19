@@ -978,7 +978,7 @@ void Operator::ScaleTwoBody(double x)
 ///
 double Operator::GetMP2_Energy()
 {
-   std::cout << "  a    b    i    j    J    na     nb    tbme    denom     dE" << std::endl;
+//   std::cout << "  a    b    i    j    J    na     nb    tbme    denom     dE" << std::endl;
    double t_start = omp_get_wtime();
    double Emp2 = 0;
    int nparticles = modelspace->particles.size();
@@ -1024,11 +1024,10 @@ double Operator::GetMP2_Energy()
              double tbme = TwoBody.GetTBME_J_norm(J,a,b,i,j);
              if (std::abs(tbme)>1e-6)
               Emp2 += (2*J+1)* oa.occ * ob.occ * tbme*tbme/denom; // no factor 1/4 because of the restricted sum
-//              std::cout << "abij J = " << a << " " << b << " " << i << " " << j << "    " << J << "   na nb" << oa.occ << " " << ob.occ << "  tbme,denom " << tbme << " " << denom << std::endl;
-              std::cout << " " << a << " " << b << " " << i << " " << j << "    " << J << "  " << oa.occ << " " << ob.occ << "  "
-                        << std::setw(12) << std::setprecision(6) << tbme << " "
-                        << std::setw(12) << std::setprecision(6) << denom << "   "
-                        << std::setw(12) << std::setprecision(6) << (2*J+1) * oa.occ*ob.occ*tbme*tbme/denom  << std::endl;
+//              std::cout << " " << a << " " << b << " " << i << " " << j << "    " << J << "  " << oa.occ << " " << ob.occ << "  "
+//                        << std::setw(12) << std::setprecision(6) << tbme << " "
+//                        << std::setw(12) << std::setprecision(6) << denom << "   "
+//                        << std::setw(12) << std::setprecision(6) << (2*J+1) * oa.occ*ob.occ*tbme*tbme/denom  << std::endl;
            }
          }
        }
