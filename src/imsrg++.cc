@@ -484,9 +484,10 @@ int main(int argc, char** argv)
   {
     modelspace.SetdE3max(dE3max);
     modelspace.SetOccNat3Cut(OccNat3Cut);
-    size_t nstates_kept = modelspace.CountThreeBodyStatesInsideCut();
+//    size_t nstates_kept = modelspace.CountThreeBodyStatesInsideCut();
+    std::array<size_t,2> nstates = modelspace.CountThreeBodyStatesInsideCut();
     std::cout << "You have chosen IMSRG3. good luck..." << std::endl;
-    std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states:  " << nstates_kept << std::endl;
+    std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states kept:  " << nstates[0] << " out of " << nstates[1] << std::endl;
 
     if (hno_particle_rank<3 )
     {

@@ -1184,9 +1184,11 @@ size_t ModelSpace::ThreeBodyChannelHash( int twoJ, int parity, int twoTz)
 // Count up how many 3-body states will survive the
 // combined cuts to dE3max [energy relative to the fermi surface],
 // and OccNat3 [product of n(1-n) where n is the occupation in the natural orbitals basis]
-size_t ModelSpace::CountThreeBodyStatesInsideCut()
+//size_t ModelSpace::CountThreeBodyStatesInsideCut()
+std::array<size_t,2> ModelSpace::CountThreeBodyStatesInsideCut()
 {
   size_t nstates = 0;
+  size_t ntotal = 0;
   size_t nch3 = GetNumberThreeBodyChannels();
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
@@ -1207,12 +1209,14 @@ size_t ModelSpace::CountThreeBodyStatesInsideCut()
       double occnat_i = oi.occ_nat;
       double occnat_j = oj.occ_nat;
       double occnat_k = ok.occ_nat;
+      ntotal++;
       if ( (d_ei + d_ej + d_ek) > dE3max ) continue;
       if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < GetOccNat3Cut() ) continue;
       nstates++;
     }// for iket
   }// for ch3
-  return nstates;
+//  return nstates;
+  return {nstates,ntotal};
 
 }
 
