@@ -6742,8 +6742,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 
 //          std::vector<double> xandy = Y3.GetME_pn_PN_TwoOps( Jij,Jlm,twoJp, i,j,a, l,m,b, X3,Y3 );
 // TODO UNCOMMENT THESE 3 LINES
-//          auto xandy = Y3.GetME_pn_PN_TwoOps( Jij,Jlm,twoJp, i,j,a, l,m,b, X3,Y3 );
-          std::vector<double> xandy = {0,0};
+          auto xandy = Y3.GetME_pn_PN_TwoOps( Jij,Jlm,twoJp, i,j,a, l,m,b, X3,Y3 );
           double xablmij = xandy[0];
           double yablmij = xandy[1];
 
