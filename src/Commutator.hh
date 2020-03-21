@@ -16,6 +16,7 @@ namespace Commutator{
   extern bool use_goose_tank_correction;
   extern bool use_brueckner_bch;
   extern bool use_imsrg3;
+  extern bool perturbative_triples;
   extern bool only_2b_omega;
   extern double bch_transform_threshold;
   extern double bch_product_threshold;

@@ -23,6 +23,7 @@ bool use_goose_tank_correction = false;
 bool use_brueckner_bch = false;
 bool use_imsrg3 = false;
 bool only_2b_omega = false;
+bool perturbative_triples = false;
 double bch_transform_threshold = 1e-9;
 double bch_product_threshold = 1e-4;
 
@@ -4931,6 +4932,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         // if i and j cant make it past the OccNat and dE3max cuts, don't bother including it
         if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue;
         if ( (d_ei+d_ej) > Z.modelspace->dE3max ) continue;
+        if ( perturbative_triples and  not ( (ket_ij.op->cvq + ket_ij.oq->cvq)==0 or (ket_ij.op->cvq+ket_ij.oq->cvq)>2) ) continue;
         good_ij.push_back({i,j}); 
       }//for iket_ij
 
@@ -4988,17 +4990,17 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       size_t i,j,n,Jij_tmp;
       unhash_key_ijnJ(i,j,n,Jij_tmp, key);
       int Jij = (int)Jij_tmp;
-      Orbit& oi = Z.modelspace->GetOrbit(i);
-      Orbit& oj = Z.modelspace->GetOrbit(j);
-      Orbit& on = Z.modelspace->GetOrbit(n);
+//      Orbit& oi = Z.modelspace->GetOrbit(i);
+//      Orbit& oj = Z.modelspace->GetOrbit(j);
+//      Orbit& on = Z.modelspace->GetOrbit(n);
 
-      double occnat_i = oi.occ_nat;
-      double occnat_j = oj.occ_nat;
-      double occnat_n = on.occ_nat;
-      double d_ei = std::abs( 2*oi.n + oi.l - e_fermi[oi.tz2]);
-      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
-      double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
-      double jn = 0.5*on.j2;
+//      double occnat_i = oi.occ_nat;
+//      double occnat_j = oj.occ_nat;
+//      double occnat_n = on.occ_nat;
+//      double d_ei = std::abs( 2*oi.n + oi.l - e_fermi[oi.tz2]);
+//      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+//      double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
+//      double jn = 0.5*on.j2;
       for (size_t index_a=0; index_a<number_a; index_a++ )
       {
         size_t a = a_list[index_a];
@@ -5053,6 +5055,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       double occnat_k = ok.occ_nat;
       if ( (d_ei + d_ej + d_ek) > Z.modelspace->dE3max ) continue;
       if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+      if ( perturbative_triples and  not ( (oi.cvq + oj.cvq + ok.cvq)==0 or (oi.cvq>0 and oj.cvq>0 and ok.cvq>0)) ) continue;
       int J1 = bra.Jpq;
 
       // Set up the permutation stuff for ijk
@@ -5087,6 +5090,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         double occnat_n = on.occ_nat;
         if ( (d_el + d_em + d_en) > Z.modelspace->dE3max ) continue;
         if ( (occnat_l*(1-occnat_l) * occnat_m*(1-occnat_m) * occnat_n*(1-occnat_n) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+        if ( perturbative_triples and  not ( (ol.cvq + om.cvq + on.cvq)==0 or (ol.cvq>0 and om.cvq>0 and on.cvq>0)) ) continue;
         int J2 = ket.Jpq;
 
         // Set up the permutation stuff for lmn

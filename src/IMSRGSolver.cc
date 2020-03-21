@@ -892,6 +892,7 @@ double IMSRGSolver::GetPerturbativeTriples()
   Wbar.ThreeBody.SwitchToPN_and_discard();
   Operator& omega = Omega.back();
   Operator& Hs = FlowingOps[0];
+  Commutator::perturbative_triples = true;
   std::cout << "comm223ss ..." << std::endl;
   Commutator::comm223ss( omega, Hs, Wbar);
   Wbar.OneBody = Hs.OneBody;
