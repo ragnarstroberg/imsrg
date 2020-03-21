@@ -447,7 +447,7 @@ int main(int argc, char** argv)
   {
 //    ThreeBodyME hf3b;
     HNO = hf.GetNormalOrderedH( hno_particle_rank );
-    if (IMSRG3 and OccNat3Cut>0 ) hf.GetNaturalOrbitals();
+    if ((IMSRG3 or perturbative_triples) and OccNat3Cut>0 ) hf.GetNaturalOrbitals();
   }
   else if (basis == "NAT") // we want to use the natural orbital basis
   {
@@ -764,25 +764,15 @@ int main(int argc, char** argv)
   }
   if ( perturbative_triples and method=="magnus" )
   {
+    modelspace.SetdE3max(dE3max);
+    modelspace.SetOccNat3Cut(OccNat3Cut);
+//    size_t nstates_kept = modelspace.CountThreeBodyStatesInsideCut();
+    std::array<size_t,2> nstates = modelspace.CountThreeBodyStatesInsideCut();
+    std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states kept:  " << nstates[0] << " out of " << nstates[1] << std::endl << std::fixed;
     double dE_triples = imsrgsolver.GetPerturbativeTriples();
-    std::cout << "Perturbative triples:  " << dE_triples << std::endl;
+    std::cout << "Perturbative triples:  " << std::setw(16) << std::setprecision(8) << dE_triples << " -> " << imsrgsolver.GetH_s().ZeroBody + dE_triples << std::endl;
   }
 
-//  HlowT = imsrgsolver.Transform(HlowT);
-//  std::cout << "After Solve, low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) << std::endl;
-
-//  if (method == "magnus")
-//  {
-////    for (size_t i=0;i<ops.size();++i)
-////    {
-////      Operator tmp = imsrgsolver.Transform(ops[i]);
-//////      rw.WriteOperatorHuman(tmp,intfile+opnames[i]+"_step1.op");
-////    }
-////    std::cout << std::endl;
-//    // increase smax in case we need to do additional steps
-//    smax *= 1.5;
-//    imsrgsolver.SetSmax(smax);
-//  }
 
 
   if (brueckner_restart)
