@@ -4878,6 +4878,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
      occnat_factor_max = std::max( occnat_factor_max, occnat_i*(1-occnat_i) );
   }
 
+//  std::cout << "BeginLoop over ph channels" << std::endl;
   size_t nch_pph = 0;
   // Generate all the pph type channels J,parity,Tz. Note that these will be
   // not the same as the standard 3-body channels since we aren't enforcing antisymmetry with the 3rd particle
@@ -4940,6 +4941,13 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       {
         for ( size_t n : good_n )
         {
+          if ( perturbative_triples ) // we just want <ppp|hhh> terms in the end, so for ijn we want pph or hhp.
+          {
+            Orbit& oi = Z.modelspace->GetOrbit(ij[0]);
+            Orbit& oj = Z.modelspace->GetOrbit(ij[1]);
+            Orbit& on = Z.modelspace->GetOrbit(n);
+            if ( (oi.cvq==0 and oj.cvq==0 and on.cvq==0) or ( oi.cvq!=0 and oj.cvq!=0 and on.cvq!=0) ) continue;
+          }
           size_t key = hash_key_ijnJ( ij[0],ij[1],n,size_t(Jij));
           good_kets_ijn[ key ] = ngood_ijn;
           ngood_ijn++;
@@ -4990,17 +4998,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       size_t i,j,n,Jij_tmp;
       unhash_key_ijnJ(i,j,n,Jij_tmp, key);
       int Jij = (int)Jij_tmp;
-//      Orbit& oi = Z.modelspace->GetOrbit(i);
-//      Orbit& oj = Z.modelspace->GetOrbit(j);
-//      Orbit& on = Z.modelspace->GetOrbit(n);
 
-//      double occnat_i = oi.occ_nat;
-//      double occnat_j = oj.occ_nat;
-//      double occnat_n = on.occ_nat;
-//      double d_ei = std::abs( 2*oi.n + oi.l - e_fermi[oi.tz2]);
-//      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
-//      double d_en = std::abs( 2*on.n + on.l - e_fermi[on.tz2]);
-//      double jn = 0.5*on.j2;
       for (size_t index_a=0; index_a<number_a; index_a++ )
       {
         size_t a = a_list[index_a];
@@ -5091,6 +5089,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (d_el + d_em + d_en) > Z.modelspace->dE3max ) continue;
         if ( (occnat_l*(1-occnat_l) * occnat_m*(1-occnat_m) * occnat_n*(1-occnat_n) ) < Z.modelspace->GetOccNat3Cut() ) continue;
         if ( perturbative_triples and  not ( (ol.cvq + om.cvq + on.cvq)==0 or (ol.cvq>0 and om.cvq>0 and on.cvq>0)) ) continue;
+        if ( perturbative_triples and (  (oi.cvq==0 and ol.cvq==0) or (oi.cvq!=0 and ol.cvq!=0) ) ) continue;
         int J2 = ket.Jpq;
 
         // Set up the permutation stuff for lmn
