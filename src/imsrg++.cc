@@ -479,8 +479,17 @@ int main(int argc, char** argv)
     HNO = Hbare.DoNormalOrdering();
   }
 
+  if (perturbative_triples)
+  {
+    modelspace.SetdE3max(dE3max);
+    modelspace.SetOccNat3Cut(OccNat3Cut);
+    std::array<size_t,2> nstates = modelspace.CountThreeBodyStatesInsideCut();
+    std::cout << "We will compute perturbative triples corrections" << std::endl;
+    std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states kept:  " << nstates[0] << " out of " << nstates[1] << std::endl << std::fixed;
 
-  if (IMSRG3)
+  }
+
+  if (IMSRG3 )
   {
     modelspace.SetdE3max(dE3max);
     modelspace.SetOccNat3Cut(OccNat3Cut);
@@ -679,7 +688,6 @@ int main(int argc, char** argv)
     HNO.PrintTimes();
     return 0;
   }
-
   if (only_2b_omega)
   {
     std::cout << " Restricting the Magnus operator Omega to be 2b." << std::endl;
@@ -692,7 +700,8 @@ int main(int argc, char** argv)
   imsrgsolver.GetGenerator().SetOnly2bEta(only_2b_eta);
   imsrgsolver.max_omega_written = 500;
   bool brueckner_restart = false;
-  if (hunter_gatherer) imsrgsolver.SetHunterGatherer( true);
+  imsrgsolver.SetHunterGatherer( hunter_gatherer );
+  imsrgsolver.SetPerturbativeTriples(perturbative_triples);
 
   if (method == "NSmagnus") // "No split" magnus
   {
@@ -764,11 +773,11 @@ int main(int argc, char** argv)
   }
   if ( perturbative_triples and method=="magnus" )
   {
-    modelspace.SetdE3max(dE3max);
-    modelspace.SetOccNat3Cut(OccNat3Cut);
+//    modelspace.SetdE3max(dE3max);
+//    modelspace.SetOccNat3Cut(OccNat3Cut);
 //    size_t nstates_kept = modelspace.CountThreeBodyStatesInsideCut();
-    std::array<size_t,2> nstates = modelspace.CountThreeBodyStatesInsideCut();
-    std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states kept:  " << nstates[0] << " out of " << nstates[1] << std::endl << std::fixed;
+//    std::array<size_t,2> nstates = modelspace.CountThreeBodyStatesInsideCut();
+//    std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states kept:  " << nstates[0] << " out of " << nstates[1] << std::endl << std::fixed;
     double dE_triples = imsrgsolver.GetPerturbativeTriples();
     std::cout << "Perturbative triples:  " << std::setw(16) << std::setprecision(8) << dE_triples << " -> " << imsrgsolver.GetH_s().ZeroBody + dE_triples << std::endl;
   }

@@ -1201,7 +1201,7 @@ double Operator::GetMP2_3BEnergy()
    if ( legs < 6) return 0;
    if ( not ThreeBody.is_allocated ) return 0;
    size_t nch3 = modelspace->GetNumberThreeBodyChannels();
-//   #pragma omp parallel for schedule(dynamic,1) reduction(+:Emp2)
+   #pragma omp parallel for schedule(dynamic,1) reduction(+:Emp2)
    for (size_t ch3=0; ch3<nch3; ch3++)
    {
      ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch3);
@@ -1232,9 +1232,6 @@ double Operator::GetMP2_3BEnergy()
          else if (a==b or a==c) symm_abc = 3;
          double Eabc = OneBody(a,a) + OneBody(b,b) + OneBody(c,c);
          double V = ThreeBody.GetME_pn_PN_ch(ch3,ch3,ibra,iket);
-//         std::cout << "abcijk " << a << " " << b << " " << c << " " << i << " " << j << " " << k << "   Eabc Eijk " << Eabc << " " << Eijk
-//                   << " denom " << Eijk - Eabc << "  occs " << bra.op->occ << " "<< bra.oq->occ << " " << bra.oR->occ << "   "
-//                   << ket.op->occ << " " << ket.oq->occ << " "<< ket.oR->occ  << std::endl;
          Emp2 += 1./36 * symm_ijk*symm_abc * (twoJ+1) * occ_bra * unocc_ket * V*V / ( Eijk - Eabc) ;
        }// for iket
      }// for ibra
