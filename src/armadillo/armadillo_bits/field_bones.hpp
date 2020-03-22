@@ -53,11 +53,11 @@ class field
   inline ~field();
   inline  field();
   
-  inline                  field(const field& x);
-  inline const field& operator=(const field& x);
+  inline            field(const field& x);
+  inline field& operator=(const field& x);
   
-  inline                  field(const subview_field<oT>& x);
-  inline const field& operator=(const subview_field<oT>& x);
+  inline            field(const subview_field<oT>& x);
+  inline field& operator=(const subview_field<oT>& x);
   
   inline explicit field(const uword n_elem_in);
   inline explicit field(const uword n_rows_in, const uword n_cols_in);
@@ -72,14 +72,14 @@ class field
   inline void  set_size(const SizeCube& s);
   
   #if defined(ARMA_USE_CXX11)
-  inline                  field(const std::initializer_list<oT>& list);
-  inline const field& operator=(const std::initializer_list<oT>& list);
+  inline            field(const std::initializer_list<oT>& list);
+  inline field& operator=(const std::initializer_list<oT>& list);
   
-  inline                  field(const std::initializer_list< std::initializer_list<oT> >& list);
-  inline const field& operator=(const std::initializer_list< std::initializer_list<oT> >& list);
+  inline            field(const std::initializer_list< std::initializer_list<oT> >& list);
+  inline field& operator=(const std::initializer_list< std::initializer_list<oT> >& list);
   
-  inline                  field(field&& X);
-  inline const field& operator=(field&& X);
+  inline            field(field&& X);
+  inline field& operator=(field&& X);
   #endif
   
   template<typename oT2>
@@ -159,8 +159,8 @@ class field
   inline const subview_field<oT> operator()(const uword in_row1, const uword in_col1, const uword in_slice1, const SizeCube& s) const;
   
   
-  inline void print(                           const std::string extra_text = "") const;
-  inline void print(std::ostream& user_stream, const std::string extra_text = "") const;
+  arma_cold inline void print(                           const std::string extra_text = "") const;
+  arma_cold inline void print(std::ostream& user_stream, const std::string extra_text = "") const;
   
   #if defined(ARMA_USE_CXX11)
   inline const field& for_each(const std::function< void(      oT&) >& F);
@@ -194,18 +194,18 @@ class field
   arma_inline arma_warn_unused bool in_range(const uword   in_row, const uword in_col, const uword in_slice, const SizeCube& s) const;
   
   
-  inline bool save(const std::string   name, const file_type type = arma_binary, const bool print_status = true) const;
-  inline bool save(      std::ostream& os,   const file_type type = arma_binary, const bool print_status = true) const;
+  inline arma_cold bool save(const std::string   name, const file_type type = arma_binary, const bool print_status = true) const;
+  inline arma_cold bool save(      std::ostream& os,   const file_type type = arma_binary, const bool print_status = true) const;
   
-  inline bool load(const std::string   name, const file_type type = auto_detect, const bool print_status = true);
-  inline bool load(      std::istream& is,   const file_type type = auto_detect, const bool print_status = true);
+  inline arma_cold bool load(const std::string   name, const file_type type = auto_detect, const bool print_status = true);
+  inline arma_cold bool load(      std::istream& is,   const file_type type = auto_detect, const bool print_status = true);
   
   
-  inline bool quiet_save(const std::string   name, const file_type type = arma_binary) const;
-  inline bool quiet_save(      std::ostream& os,   const file_type type = arma_binary) const;
+  inline arma_cold bool quiet_save(const std::string   name, const file_type type = arma_binary) const;
+  inline arma_cold bool quiet_save(      std::ostream& os,   const file_type type = arma_binary) const;
   
-  inline bool quiet_load(const std::string   name, const file_type type = auto_detect);
-  inline bool quiet_load(      std::istream& is,   const file_type type = auto_detect);
+  inline arma_cold bool quiet_load(const std::string   name, const file_type type = auto_detect);
+  inline arma_cold bool quiet_load(      std::istream& is,   const file_type type = auto_detect);
   
   
   // for container-like functionality

@@ -47,7 +47,7 @@ GenEigsSolver<eT, SelectionRule, OpType>::factorise_from(uword from_k, uword to_
       blas_int iseed[4] = {1, 3, 5, 7};
       iseed[0] = (i + 100) % 4095;
       blas_int n = dim_n;
-      lapack::larnv(&idist, iseed, &n, fac_f.memptr());
+      lapack::larnv(&idist, &iseed[0], &n, fac_f.memptr());
       // f <- f - V * V' * f, so that f is orthogonal to V
       Mat<eT> Vs(fac_V.memptr(), dim_n, i, false); // First i columns
       Col<eT> Vf = Vs.t() * fac_f;
@@ -119,7 +119,7 @@ GenEigsSolver<eT, SelectionRule, OpType>::restart(uword k)
 
   for(uword i = k; i < ncv; i++)
     {
-    if(cx_attrib::is_complex(ritz_val(i), eps) && cx_attrib::is_conj(ritz_val(i), ritz_val(i + 1), eps))
+    if(cx_attrib::is_complex(ritz_val(i), eT(0)) && (i < (ncv - 1)) && cx_attrib::is_conj(ritz_val(i), ritz_val(i + 1), eT(0)))
       {
       // H - mu * I = Q1 * R1
       // H <- R1 * Q1 + mu * I = Q1' * H * Q1
@@ -164,13 +164,14 @@ GenEigsSolver<eT, SelectionRule, OpType>::restart(uword k)
     Col<eT> v(Vs.colptr(i), dim_n, false);
     v = V * q;
     }
+  
   Vs.col(k) = fac_V * Q.col(k);
   fac_V.head_cols(k + 1) = Vs;
 
   Col<eT> fk = fac_f * Q(ncv - 1, k - 1) + fac_V.col(k) * fac_H(k, k - 1);
   factorise_from(k, ncv, fk);
   retrieve_ritzpair();
-}
+  }
 
 
 
@@ -362,7 +363,7 @@ GenEigsSolver<eT, SelectionRule, OpType>::init()
   blas_int idist = 2;                // Uniform(-1, 1)
   blas_int iseed[4] = {1, 3, 5, 7};  // Fixed random seed
   blas_int n = dim_n;
-  lapack::larnv(&idist, iseed, &n, init_resid.memptr());
+  lapack::larnv(&idist, &iseed[0], &n, init_resid.memptr());
   init(init_resid.memptr());
   }
 

@@ -74,11 +74,24 @@
 // #define ARMA_BLAS_LONG_LONG
 //// Uncomment the above line if your BLAS and LAPACK libraries use "long long" instead of "int"
 
+#define ARMA_USE_FORTRAN_HIDDEN_ARGS
+//// Comment out the above line to call BLAS and LAPACK functions without using so-called "hidden" arguments.
+//// Fortran functions (compiled without a BIND(C) declaration) that have char arguments
+//// (like many BLAS and LAPACK functions) also have associated "hidden" arguments.
+//// For each char argument, the corresponding "hidden" argument specifies the number of characters.
+//// These "hidden" arguments are typically tacked onto the end of function definitions.
+
 // #define ARMA_USE_TBB_ALLOC
 //// Uncomment the above line if you want to use Intel TBB scalable_malloc() and scalable_free() instead of standard malloc() and free()
 
 // #define ARMA_USE_MKL_ALLOC
 //// Uncomment the above line if you want to use Intel MKL mkl_malloc() and mkl_free() instead of standard malloc() and free()
+
+// #define ARMA_USE_MKL_TYPES
+//// Uncomment the above line if you want to use Intel MKL types for complex numbers.
+//// You will need to include appropriate MKL headers before the Armadillo header.
+//// You may also need to enable or disable the following options:
+//// ARMA_BLAS_LONG, ARMA_BLAS_LONG_LONG, ARMA_USE_FORTRAN_HIDDEN_ARGS
 
 // #define ARMA_USE_ATLAS
 // #define ARMA_ATLAS_INCLUDE_DIR /usr/include/
@@ -92,11 +105,17 @@
 //// Note that ARMA_USE_CXX11 is automatically enabled when a C++11 compiler is detected.
 #endif
 
+#if !defined(ARMA_USE_OPENMP)
+// #define ARMA_USE_OPENMP
+//// Uncomment the above line to forcefully enable use of OpenMP for parallelisation.
+//// Note that ARMA_USE_OPENMP is automatically enabled when a compiler supporting OpenMP 3.1 is detected.
+#endif
+
 #if !defined(ARMA_64BIT_WORD)
 // #define ARMA_64BIT_WORD
 //// Uncomment the above line if you require matrices/vectors capable of holding more than 4 billion elements.
 //// Your machine and compiler must have support for 64 bit integers (eg. via "long" or "long long").
-//// Note that ARMA_64BIT_WORD is automatically enabled when a C++11 compiler is detected.
+//// Note that ARMA_64BIT_WORD is automatically enabled when a C++11 compiler is detected and std::size_t has 64 bits.
 #endif
 
 #if !defined(ARMA_USE_HDF5)
@@ -104,6 +123,16 @@
 //// Uncomment the above line to allow the ability to save and load matrices stored in HDF5 format;
 //// the hdf5.h header file must be available on your system,
 //// and you will need to link with the hdf5 library (eg. -lhdf5)
+#endif
+
+#if !defined(ARMA_OPTIMISE_SOLVE_BAND)
+  #define ARMA_OPTIMISE_SOLVE_BAND
+  //// Comment out the above line if you don't want optimised handling of band matrices by solve()
+#endif
+
+#if !defined(ARMA_OPTIMISE_SOLVE_SYMPD)
+  #define ARMA_OPTIMISE_SOLVE_SYMPD
+  //// Comment out the above line if you don't want optimised handling of symmetric/hermitian positive definite matrices by solve()
 #endif
 
 // #define ARMA_USE_HDF5_ALT
@@ -122,12 +151,17 @@
 //// If you mainly use lots of very small vectors (eg. <= 4 elements),
 //// change the number to the size of your vectors.
 
-#if !defined(ARMA_SPMAT_CHUNKSIZE)
-  #define ARMA_SPMAT_CHUNKSIZE 256
+#if !defined(ARMA_OPENMP_THRESHOLD)
+  #define ARMA_OPENMP_THRESHOLD 240
 #endif
-//// This is the minimum increase in the amount of memory (in terms of elements) allocated by a sparse matrix;
+//// The minimum number of elements in a matrix to allow OpenMP based parallelisation;
 //// it must be an integer that is at least 1.
-//// The minimum recommended size is 16.
+
+#if !defined(ARMA_OPENMP_THREADS)
+  #define ARMA_OPENMP_THREADS 10
+#endif
+//// The maximum number of threads to use for OpenMP based parallelisation;
+//// it must be an integer that is at least 1.
 
 // #define ARMA_NO_DEBUG
 //// Uncomment the above line if you want to disable all run-time checks.
@@ -141,9 +175,30 @@
 //// This is mainly useful for debugging of the library.
 
 
-#if !defined(ARMA_DEFAULT_OSTREAM)
-  #define ARMA_DEFAULT_OSTREAM std::cout
+#if defined(ARMA_DEFAULT_OSTREAM)
+  #pragma message ("WARNING: support for ARMA_DEFAULT_OSTREAM is deprecated and will be removed;")
+  #pragma message ("WARNING: use ARMA_COUT_STREAM and ARMA_CERR_STREAM instead")
 #endif
+
+
+#if !defined(ARMA_COUT_STREAM)
+  #if defined(ARMA_DEFAULT_OSTREAM)
+    // for compatibility with earlier versions of Armadillo
+    #define ARMA_COUT_STREAM ARMA_DEFAULT_OSTREAM
+  #else
+    #define ARMA_COUT_STREAM std::cout
+  #endif
+#endif
+
+#if !defined(ARMA_CERR_STREAM)
+  #if defined(ARMA_DEFAULT_OSTREAM)
+    // for compatibility with earlier versions of Armadillo
+    #define ARMA_CERR_STREAM ARMA_DEFAULT_OSTREAM
+  #else
+    #define ARMA_CERR_STREAM std::cerr
+  #endif
+#endif
+
 
 #if !defined(ARMA_PRINT_ERRORS)
 #define ARMA_PRINT_ERRORS
@@ -185,9 +240,17 @@
   #undef ARMA_USE_HDF5_ALT
 #endif
 
+#if defined(ARMA_DONT_USE_FORTRAN_HIDDEN_ARGS)
+  #undef ARMA_USE_FORTRAN_HIDDEN_ARGS
+#endif
+
 #if defined(ARMA_DONT_USE_CXX11)
   #undef ARMA_USE_CXX11
   #undef ARMA_USE_EXTERN_CXX11_RNG
+#endif
+
+#if defined(ARMA_DONT_USE_OPENMP)
+  #undef ARMA_USE_OPENMP
 #endif
 
 #if defined(ARMA_USE_WRAPPER)
@@ -208,6 +271,15 @@
 
 #if defined(ARMA_DONT_USE_HDF5)
   #undef ARMA_USE_HDF5
+  #undef ARMA_USE_HDF5_ALT
+#endif
+
+#if defined(ARMA_DONT_OPTIMISE_SOLVE_BAND)
+  #undef ARMA_OPTIMISE_SOLVE_BAND
+#endif
+
+#if defined(ARMA_DONT_OPTIMISE_SOLVE_SYMPD)
+  #undef ARMA_OPTIMISE_SOLVE_SYMPD
 #endif
 
 #if defined(ARMA_DONT_PRINT_ERRORS)

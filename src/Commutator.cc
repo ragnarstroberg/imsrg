@@ -4866,7 +4866,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   auto unhash_key_ijnJ = [](size_t& i,size_t& j, size_t& n, size_t& Jij, size_t key){ i=(key & 0xFFFL);j=((key>>12)&0xFFFL);n=((key>>24)&0xFFFL);Jij=((key>>36)&0xFFFL); }; //  0xF = 15 = 1111 (4bits), so 0xFFF is 12 bits of 1's. 0xFFFL makes it a long
   std::vector< std::unordered_map<size_t, size_t>> ket_lookup_pph; // in a given channel, map  i,j,n,Jij -> matrix index
 
-  std::vector< arma::mat > Zbar;
+//  std::vector< arma::mat > Zbar;
+  std::vector< arma::sp_mat > Zbar; // make it a sparse matrix
 
   // we're looking at pph type states. We don't make a cut on the occupations in this channel
   // but if the first two orbits ij can't possibly make it past the occnat cut later on, we don't bother including them
@@ -4959,7 +4960,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
     channels_pph[{twoJph, parity_ph,twoTz_ph}] = nch_pph;
     channel_list_pph.push_back({twoJph, parity_ph,twoTz_ph});
     ket_lookup_pph.push_back( good_kets_ijn );
-    Zbar.push_back( arma::mat( ngood_ijn, ngood_ijn, arma::fill::zeros )  );
+//    Zbar.push_back( arma::mat( ngood_ijn, ngood_ijn, arma::fill::zeros )  );
+    Zbar.push_back( arma::sp_mat( ngood_ijn, ngood_ijn )  );
     nch_pph++;
   }// for iter_obc
 //  std::cout << "Nominally " << nch_pph << "  pph channels " << std::endl;
@@ -5009,7 +5011,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       }// for index_a
 
    }//for iter_ijn
-   Zbar[ch_pph] = Xph*Yph;
+//   Zbar[ch_pph] = Xph*Yph;
+   Zbar[ch_pph] = arma::sp_mat( Xph*Yph );
    Zbar[ch_pph] -= hX*hY*Zbar[ch_pph].t();
  }// for ch_pph
 

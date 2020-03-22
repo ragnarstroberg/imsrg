@@ -26,16 +26,10 @@ field<oT>::~field()
   
   delete_objects();
   
-  if(n_elem > field_prealloc_n_elem::val)
-    {
-    delete [] mem;
-    }
+  if(n_elem > field_prealloc_n_elem::val)  { delete [] mem; }
   
-  if(arma_config::debug == true)
-    {
-    // try to expose buggy user code that accesses deleted objects
-    mem = 0;
-    }
+  // try to expose buggy user code that accesses deleted objects
+  if(arma_config::debug)  { mem = 0; }
   }
 
 
@@ -74,7 +68,7 @@ field<oT>::field(const field& x)
 //! construct a field from a given field
 template<typename oT>
 inline
-const field<oT>&
+field<oT>&
 field<oT>::operator=(const field& x)
   {
   arma_extra_debug_sigprint();
@@ -105,7 +99,7 @@ field<oT>::field(const subview_field<oT>& X)
 //! construct a field from subview_field (e.g. construct a field from a delayed subfield operation)
 template<typename oT>
 inline
-const field<oT>&
+field<oT>&
 field<oT>::operator=(const subview_field<oT>& X)
   {
   arma_extra_debug_sigprint();
@@ -279,7 +273,7 @@ field<oT>::set_size(const SizeCube& s)
   
   template<typename oT>
   inline
-  const field<oT>&
+  field<oT>&
   field<oT>::operator=(const std::initializer_list<oT>& list)
     {
     arma_extra_debug_sigprint();
@@ -317,7 +311,7 @@ field<oT>::set_size(const SizeCube& s)
   
   template<typename oT>
   inline
-  const field<oT>&
+  field<oT>&
   field<oT>::operator=(const std::initializer_list< std::initializer_list<oT> >& list)
     {
     arma_extra_debug_sigprint();
@@ -404,7 +398,7 @@ field<oT>::set_size(const SizeCube& s)
   
   template<typename oT>
   inline
-  const field<oT>&
+  field<oT>&
   field<oT>::operator=(field<oT>&& X)
     {
     arma_extra_debug_sigprint(arma_str::format("this = %x   X = %x") % this % &X);
@@ -1337,6 +1331,7 @@ field<oT>::operator()(const uword in_row1, const uword in_col1, const uword in_s
 //! has been defined.
 
 template<typename oT>
+arma_cold
 inline
 void
 field<oT>::print(const std::string extra_text) const
@@ -1345,14 +1340,14 @@ field<oT>::print(const std::string extra_text) const
   
   if(extra_text.length() != 0)
     {
-    const std::streamsize orig_width = ARMA_DEFAULT_OSTREAM.width();
+    const std::streamsize orig_width = get_cout_stream().width();
     
-    ARMA_DEFAULT_OSTREAM << extra_text << '\n';
-  
-    ARMA_DEFAULT_OSTREAM.width(orig_width);
+    get_cout_stream() << extra_text << '\n';
+    
+    get_cout_stream().width(orig_width);
     }
   
-  arma_ostream::print(ARMA_DEFAULT_OSTREAM, *this);
+  arma_ostream::print(get_cout_stream(), *this);
   }
 
 
@@ -1367,6 +1362,7 @@ field<oT>::print(const std::string extra_text) const
 //! has been defined.
 
 template<typename oT>
+arma_cold
 inline
 void
 field<oT>::print(std::ostream& user_stream, const std::string extra_text) const
@@ -1718,6 +1714,7 @@ field<oT>::in_range(const uword in_row, const uword in_col, const uword in_slice
 
 template<typename oT>
 inline
+arma_cold
 bool
 field<oT>::save(const std::string name, const file_type type, const bool print_status) const
   {
@@ -1745,6 +1742,7 @@ field<oT>::save(const std::string name, const file_type type, const bool print_s
 
 template<typename oT>
 inline
+arma_cold
 bool
 field<oT>::save(std::ostream& os, const file_type type, const bool print_status) const
   {
@@ -1772,6 +1770,7 @@ field<oT>::save(std::ostream& os, const file_type type, const bool print_status)
 
 template<typename oT>
 inline
+arma_cold
 bool
 field<oT>::load(const std::string name, const file_type type, const bool print_status)
   {
@@ -1804,6 +1803,7 @@ field<oT>::load(const std::string name, const file_type type, const bool print_s
 
 template<typename oT>
 inline
+arma_cold
 bool
 field<oT>::load(std::istream& is, const file_type type, const bool print_status)
   {
@@ -1836,6 +1836,7 @@ field<oT>::load(std::istream& is, const file_type type, const bool print_status)
 
 template<typename oT>
 inline
+arma_cold
 bool
 field<oT>::quiet_save(const std::string name, const file_type type) const
   {
@@ -1848,6 +1849,7 @@ field<oT>::quiet_save(const std::string name, const file_type type) const
 
 template<typename oT>
 inline
+arma_cold
 bool
 field<oT>::quiet_save(std::ostream& os, const file_type type) const
   {
@@ -1860,6 +1862,7 @@ field<oT>::quiet_save(std::ostream& os, const file_type type) const
 
 template<typename oT>
 inline
+arma_cold
 bool
 field<oT>::quiet_load(const std::string name, const file_type type)
   {
@@ -1872,6 +1875,7 @@ field<oT>::quiet_load(const std::string name, const file_type type)
 
 template<typename oT>
 inline
+arma_cold
 bool
 field<oT>::quiet_load(std::istream& is, const file_type type)
   {

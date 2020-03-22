@@ -22,13 +22,13 @@
 template<typename T>
 inline
 std::ostream&
-arma_stream_err1(std::ostream* user_stream)
+arma_cout_stream(std::ostream* user_stream)
   {
-  static std::ostream* stream_err1 = &(ARMA_DEFAULT_OSTREAM);
+  static std::ostream* cout_stream = &(ARMA_COUT_STREAM);
   
-  if(user_stream != NULL)  { stream_err1 = user_stream; }
+  if(user_stream != NULL)  { cout_stream = user_stream; }
   
-  return *stream_err1;
+  return (*cout_stream);
   }
 
 
@@ -36,54 +36,98 @@ arma_stream_err1(std::ostream* user_stream)
 template<typename T>
 inline
 std::ostream&
-arma_stream_err2(std::ostream* user_stream)
+arma_cerr_stream(std::ostream* user_stream)
   {
-  static std::ostream* stream_err2 = &(ARMA_DEFAULT_OSTREAM);
+  static std::ostream* cerr_stream = &(ARMA_CERR_STREAM);
   
-  if(user_stream != NULL)  { stream_err2 = user_stream; }
+  if(user_stream != NULL)  { cerr_stream = user_stream; }
   
-  return *stream_err2;
+  return (*cerr_stream);
   }
 
 
 
 inline
+void
+set_cout_stream(std::ostream& user_stream)
+  {
+  arma_cout_stream<char>(&user_stream);
+  }
+
+
+
+inline
+void
+set_cerr_stream(std::ostream& user_stream)
+  {
+  arma_cerr_stream<char>(&user_stream);
+  }
+
+
+
+inline
+std::ostream&
+get_cout_stream()
+  {
+  return arma_cout_stream<char>(NULL);
+  }
+
+
+
+inline
+std::ostream&
+get_cerr_stream()
+  {
+  return arma_cerr_stream<char>(NULL);
+  }
+
+
+
+//! do not use this function - it's deprecated and will be removed
+inline
+arma_deprecated
 void
 set_stream_err1(std::ostream& user_stream)
   {
-  arma_stream_err1<char>(&user_stream);
+  set_cerr_stream(user_stream);
   }
 
 
 
+//! do not use this function - it's deprecated and will be removed
 inline
+arma_deprecated
 void
 set_stream_err2(std::ostream& user_stream)
   {
-  arma_stream_err2<char>(&user_stream);
+  set_cerr_stream(user_stream);
   }
 
 
 
+//! do not use this function - it's deprecated and will be removed
 inline
+arma_deprecated
 std::ostream&
 get_stream_err1()
   {
-  return arma_stream_err1<char>(NULL);
+  return get_cerr_stream();
   }
 
 
 
+//! do not use this function - it's deprecated and will be removed
 inline
+arma_deprecated
 std::ostream&
 get_stream_err2()
   {
-  return arma_stream_err2<char>(NULL);
+  return get_cerr_stream();
   }
 
 
 
-//! print a message to get_stream_err1() and throw logic_error exception
+//! print a message to get_cerr_stream() and throw logic_error exception
 template<typename T1>
 arma_cold
 arma_noinline
@@ -93,7 +137,7 @@ arma_stop_logic_error(const T1& x)
   {
   #if defined(ARMA_PRINT_ERRORS)
     {
-    get_stream_err1() << "\nerror: " << x << std::endl;
+    get_cerr_stream() << "\nerror: " << x << std::endl;
     }
   #endif
   
@@ -102,7 +146,7 @@ arma_stop_logic_error(const T1& x)
 
 
 
-//! print a message to get_stream_err2() and throw bad_alloc exception
+//! print a message to get_cerr_stream() and throw bad_alloc exception
 template<typename T1>
 arma_cold
 arma_noinline
@@ -112,7 +156,7 @@ arma_stop_bad_alloc(const T1& x)
   {
   #if defined(ARMA_PRINT_ERRORS)
     {
-    get_stream_err2() << "\nerror: " << x << std::endl;
+    get_cerr_stream() << "\nerror: " << x << std::endl;
     }
   #else
     {
@@ -125,7 +169,7 @@ arma_stop_bad_alloc(const T1& x)
 
 
 
-//! print a message to get_stream_err2() and throw runtime_error exception
+//! print a message to get_cerr_stream() and throw runtime_error exception
 template<typename T1>
 arma_cold
 arma_noinline
@@ -135,7 +179,7 @@ arma_stop_runtime_error(const T1& x)
   {
   #if defined(ARMA_PRINT_ERRORS)
     {
-    get_stream_err2() << "\nerror: " << x << std::endl;
+    get_cerr_stream() << "\nerror: " << x << std::endl;
     }
   #endif
   
@@ -153,7 +197,7 @@ inline
 void
 arma_print()
   {
-  get_stream_err1() << std::endl;
+  get_cerr_stream() << std::endl;
   }
 
 
@@ -164,7 +208,7 @@ static
 void
 arma_print(const T1& x)
   {
-  get_stream_err1() << x << std::endl;
+  get_cerr_stream() << x << std::endl;
   }
 
 
@@ -176,7 +220,7 @@ static
 void
 arma_print(const T1& x, const T2& y)
   {
-  get_stream_err1() << x << y << std::endl;
+  get_cerr_stream() << x << y << std::endl;
   }
 
 
@@ -188,7 +232,7 @@ static
 void
 arma_print(const T1& x, const T2& y, const T3& z)
   {
-  get_stream_err1() << x << y << z << std::endl;
+  get_cerr_stream() << x << y << z << std::endl;
   }
 
 
@@ -207,7 +251,7 @@ inline
 void
 arma_sigprint(const char* x)
   {
-  get_stream_err1() << "@ " << x;
+  get_cerr_stream() << "@ " << x;
   }
 
 
@@ -220,7 +264,7 @@ inline
 void
 arma_bktprint()
   {
-  get_stream_err1() << std::endl;
+  get_cerr_stream() << std::endl;
   }
 
 
@@ -229,7 +273,7 @@ inline
 void
 arma_bktprint(const T1& x)
   {
-  get_stream_err1() << " [" << x << ']' << std::endl;
+  get_cerr_stream() << " [" << x << ']' << std::endl;
   }
 
 
@@ -239,7 +283,7 @@ inline
 void
 arma_bktprint(const T1& x, const T2& y)
   {
-  get_stream_err1() << " [" << x << y << ']' << std::endl;
+  get_cerr_stream() << " [" << x << y << ']' << std::endl;
   }
 
 
@@ -254,7 +298,7 @@ inline
 void
 arma_thisprint(const void* this_ptr)
   {
-  get_stream_err1() << " [this = " << this_ptr << ']' << std::endl;
+  get_cerr_stream() << " [this = " << this_ptr << ']' << std::endl;
   }
 
 
@@ -273,7 +317,7 @@ arma_warn(const T1& x)
   {
   #if defined(ARMA_PRINT_ERRORS)
     {
-    get_stream_err2() << "\nwarning: " << x << '\n';
+    get_cerr_stream() << "\nwarning: " << x << '\n';
     }
   #else
     {
@@ -292,7 +336,7 @@ arma_warn(const T1& x, const T2& y)
   {
   #if defined(ARMA_PRINT_ERRORS)
     {
-    get_stream_err2() << "\nwarning: " << x << y << '\n';
+    get_cerr_stream() << "\nwarning: " << x << y << '\n';
     }
   #else
     {
@@ -312,7 +356,7 @@ arma_warn(const T1& x, const T2& y, const T3& z)
   {
   #if defined(ARMA_PRINT_ERRORS)
     {
-    get_stream_err2() << "\nwarning: " << x << y << z << '\n';
+    get_cerr_stream() << "\nwarning: " << x << y << z << '\n';
     }
   #else
     {
@@ -335,7 +379,7 @@ inline
 void
 arma_check(const bool state, const T1& x)
   {
-  if(state == true)  { arma_stop_logic_error(arma_str::str_wrapper(x)); }
+  if(state)  { arma_stop_logic_error(arma_str::str_wrapper(x)); }
   }
 
 
@@ -345,7 +389,7 @@ inline
 void
 arma_check(const bool state, const T1& x, const T2& y)
   {
-  if(state == true)  { arma_stop_logic_error( std::string(x) + std::string(y) ); }
+  if(state)  { arma_stop_logic_error( std::string(x) + std::string(y) ); }
   }
 
 
@@ -355,7 +399,7 @@ inline
 void
 arma_check_bad_alloc(const bool state, const T1& x)
   {
-  if(state == true)  { arma_stop_bad_alloc(x); }
+  if(state)  { arma_stop_bad_alloc(x); }
   }
 
 
@@ -369,7 +413,7 @@ arma_inline
 void
 arma_set_error(bool& err_state, char*& err_msg, const bool expression, const char* message)
   {
-  if(expression == true)
+  if(expression)
     {
     err_state = true;
     err_msg   = const_cast<char*>(message);
@@ -388,7 +432,7 @@ static
 std::string
 arma_incompat_size_string(const uword A_n_rows, const uword A_n_cols, const uword B_n_rows, const uword B_n_cols, const char* x)
   {
-  std::stringstream tmp;
+  std::ostringstream tmp;
   
   tmp << x << ": incompatible matrix dimensions: " << A_n_rows << 'x' << A_n_cols << " and " << B_n_rows << 'x' << B_n_cols;
   
@@ -403,7 +447,7 @@ static
 std::string
 arma_incompat_size_string(const uword A_n_rows, const uword A_n_cols, const uword A_n_slices, const uword B_n_rows, const uword B_n_cols, const uword B_n_slices, const char* x)
   {
-  std::stringstream tmp;
+  std::ostringstream tmp;
   
   tmp << x << ": incompatible cube dimensions: " << A_n_rows << 'x' << A_n_cols << 'x' << A_n_slices << " and " << B_n_rows << 'x' << B_n_cols << 'x' << B_n_slices;
   
@@ -419,7 +463,7 @@ static
 std::string
 arma_incompat_size_string(const subview_cube<eT>& Q, const Mat<eT>& A, const char* x)
   {
-  std::stringstream tmp;
+  std::ostringstream tmp;
   
   tmp << x
       << ": interpreting matrix as cube with dimensions: "
@@ -835,7 +879,7 @@ arma_assert_cube_as_mat(const Mat<eT>& M, const T1& Q, const char* x, const bool
     {
     if( ( (Q_n_rows == 1) || (Q_n_cols == 1) || (Q_n_slices == 1) ) == false )
       {
-      std::stringstream tmp;
+      std::ostringstream tmp;
         
       tmp << x
           << ": can't interpret cube with dimensions "
@@ -851,7 +895,7 @@ arma_assert_cube_as_mat(const Mat<eT>& M, const T1& Q, const char* x, const bool
       {
       if( (M_vec_state == 1) && (Q_n_cols != 1) )
         {
-        std::stringstream tmp;
+        std::ostringstream tmp;
         
         tmp << x
             << ": can't interpret cube with dimensions "
@@ -863,7 +907,7 @@ arma_assert_cube_as_mat(const Mat<eT>& M, const T1& Q, const char* x, const bool
       
       if( (M_vec_state == 2) && (Q_n_rows != 1) )
         {
-        std::stringstream tmp;
+        std::ostringstream tmp;
         
         tmp << x
             << ": can't interpret cube with dimensions "
@@ -877,7 +921,7 @@ arma_assert_cube_as_mat(const Mat<eT>& M, const T1& Q, const char* x, const bool
       {
       if( (Q_n_cols != 1) && (Q_n_rows != 1) )
         {
-        std::stringstream tmp;
+        std::ostringstream tmp;
         
         tmp << x
             << ": can't interpret cube with dimensions "
@@ -890,7 +934,7 @@ arma_assert_cube_as_mat(const Mat<eT>& M, const T1& Q, const char* x, const bool
     }
   
   
-  if(check_compat_size == true)
+  if(check_compat_size)
     {
     const uword M_n_rows = M.n_rows;
     const uword M_n_cols = M.n_cols;
@@ -908,7 +952,7 @@ arma_assert_cube_as_mat(const Mat<eT>& M, const T1& Q, const char* x, const bool
           == false
         )
         {
-        std::stringstream tmp;
+        std::ostringstream tmp;
         
         tmp << x
             << ": can't interpret cube with dimensions "
@@ -925,7 +969,7 @@ arma_assert_cube_as_mat(const Mat<eT>& M, const T1& Q, const char* x, const bool
         {
         if( (M_vec_state == 1) && (Q_n_rows != M_n_rows) )
           {
-          std::stringstream tmp;
+          std::ostringstream tmp;
           
           tmp << x
               << ": can't interpret cube with dimensions "
@@ -938,7 +982,7 @@ arma_assert_cube_as_mat(const Mat<eT>& M, const T1& Q, const char* x, const bool
         
         if( (M_vec_state == 2) && (Q_n_cols != M_n_cols) )
           {
-          std::stringstream tmp;
+          std::ostringstream tmp;
           
           tmp << x
               << ": can't interpret cube with dimensions "
@@ -953,7 +997,7 @@ arma_assert_cube_as_mat(const Mat<eT>& M, const T1& Q, const char* x, const bool
         {
         if( ( (M_n_cols == Q_n_slices) || (M_n_rows == Q_n_slices) ) == false )
           {
-          std::stringstream tmp;
+          std::ostringstream tmp;
           
           tmp << x
               << ": can't interpret cube with dimensions "
@@ -1265,15 +1309,16 @@ arma_assert_atlas_size(const T1& A, const T2& B)
         const bool  little_endian = (endian_test.b[0] == 1);
         const char* nickname      = ARMA_VERSION_NAME;
         
-        std::ostream& out = get_stream_err1();
+        std::ostream& out = get_cerr_stream();
         
         out << "@ ---" << '\n';
         out << "@ Armadillo "
             << arma_version::major << '.' << arma_version::minor << '.' << arma_version::patch
             << " (" << nickname << ")\n";
         
-        out << "@ arma_config::use_wrapper  = " << arma_config::use_wrapper  << '\n';
-        out << "@ arma_config::use_cxx11    = " << arma_config::use_cxx11    << '\n';
+        out << "@ arma_config::wrapper      = " << arma_config::wrapper      << '\n';
+        out << "@ arma_config::cxx11        = " << arma_config::cxx11        << '\n';
+        out << "@ arma_config::posix        = " << arma_config::posix        << '\n';
         out << "@ arma_config::openmp       = " << arma_config::openmp       << '\n';
         out << "@ arma_config::lapack       = " << arma_config::lapack       << '\n';
         out << "@ arma_config::blas         = " << arma_config::blas         << '\n';
@@ -1284,7 +1329,10 @@ arma_assert_atlas_size(const T1& A, const T2& B)
         out << "@ arma_config::hdf5         = " << arma_config::hdf5         << '\n';
         out << "@ arma_config::good_comp    = " << arma_config::good_comp    << '\n';
         out << "@ arma_config::extra_code   = " << arma_config::extra_code   << '\n';
+        out << "@ arma_config::hidden_args  = " << arma_config::hidden_args  << '\n';
         out << "@ arma_config::mat_prealloc = " << arma_config::mat_prealloc << '\n';
+        out << "@ arma_config::mp_threshold = " << arma_config::mp_threshold << '\n';
+        out << "@ arma_config::mp_threads   = " << arma_config::mp_threads   << '\n';
         out << "@ sizeof(void*)    = " << sizeof(void*)    << '\n';
         out << "@ sizeof(int)      = " << sizeof(int)      << '\n';
         out << "@ sizeof(long)     = " << sizeof(long)     << '\n';
