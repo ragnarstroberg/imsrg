@@ -4937,11 +4937,14 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         size_t j = ket_ij.q;
         double occnat_i = ket_ij.op->occ_nat;
         double occnat_j = ket_ij.oq->occ_nat;
-        double d_ei = std::abs( 2*ket_ij.op->n + ket_ij.op->l - e_fermi[ket_ij.op->tz2]);
-        double d_ej = std::abs( 2*ket_ij.oq->n + ket_ij.oq->l - e_fermi[ket_ij.oq->tz2]);
+        int ei = 2*ket_ij.op->n + ket_ij.op->l;
+        int ej = 2*ket_ij.oq->n + ket_ij.oq->l;
+        double d_ei = std::abs( ei - e_fermi[ket_ij.op->tz2]);
+        double d_ej = std::abs( ej - e_fermi[ket_ij.oq->tz2]);
         // if i and j cant make it past the OccNat and dE3max cuts, don't bother including it
         if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue;
-        if ( (d_ei+d_ej) > Z.modelspace->dE3max ) continue;
+        if ( (d_ei+d_ej) > Z.modelspace->GetdE3max() ) continue;
+        if ( (ei + ej) > Z.modelspace->GetE3max() ) continue;
         if ( perturbative_triples and  not ( (ket_ij.op->cvq + ket_ij.oq->cvq)==0 or (ket_ij.op->cvq+ket_ij.oq->cvq)>2) ) continue;
         good_ij.push_back({i,j}); 
       }//for iket_ij
