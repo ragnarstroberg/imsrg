@@ -51,13 +51,13 @@ class ThreeBodyMEpn
 /// we're storing the matrix elements in isospin or PN formalism.
 
   ME_type GetME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n) const;
-  void SetME_pn(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
-  void AddToME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void SetME_pn(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void AddToME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
 
 
   ME_type GetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n) ;
   void SetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
-  void AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
 
 
 
@@ -70,12 +70,12 @@ class ThreeBodyMEpn
 
 
   ME_type GetME_pn_PN(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n) const;
-  void SetME_pn_PN(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
-  void AddToME_pn_PN(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void SetME_pn_PN(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void AddToME_pn_PN(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
 
   ME_type GetME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n) ;
-  void SetME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
-  void AddToME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void SetME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void AddToME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
 
   void AccessME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, size_t& index, int& herm_flip) const;
 

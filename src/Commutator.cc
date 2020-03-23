@@ -4822,11 +4822,9 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 }
 */
 
+///// SOME HELPER FUNCTIONS FOR comm223ss
 
-bool check_2b_channel_Tz_parity( const Operator& Op, Orbit& o1, Orbit&o2, Orbit& o3, Orbit& o4 ) 
-{
-  return (    ((o1.l+o2.l+o3.l+o4.l)%2==Op.parity)  and (  std::abs(o1.tz2+o2.tz2-o3.tz2-o4.tz2)==2*Op.rank_T)  );
-}
+
 
 //*****************************************************************************************
 //
@@ -4837,14 +4835,19 @@ bool check_2b_channel_Tz_parity( const Operator& Op, Orbit& o1, Orbit&o2, Orbit&
 //  l|  m|  n|     Z_{ijklmn}^{J1,J2,J}  = Z1 + Z2 + Z3 + Z4 + Z5 + Z6 + Z7 + Z8 + Z9
 //                 where each of those terms corresponds to a permutation from the uncoupled expression
 //
+// We cast this as mat-mult by flipping things around and recoupling:
+// i|  j|  k|           l\ |i j|
+//  |~X~|   |             \|~X~|
+//  |   |a  |     -->          |a
+//  |   |~Y~|                  |~Y~|\
+// l|  m|  n|                 m|  n| \k
 //  checked with UnitTest, and it looks good. 
-//  This can maybe be sped up by transforming the 2-body operators <ij|X|kl> => <i|X'|klj'> ?
-//  But then we'd need to make another transformation on the resulting 3-body  <ijn'|Z'|lmk'> => <ijk|Z|lmn>
 //
 void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 {
+//  std::cout << " Enter " << __func__ << std::endl;
   double tstart = omp_get_wtime();
-  double tinternal = omp_get_wtime();
+  double t_internal = omp_get_wtime();
 //  int e3maxcut = 999;
   int norbs = Z.modelspace->GetNumberOrbits();
   auto& Z3 = Z.ThreeBody;
@@ -4852,6 +4855,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y2 = Y.TwoBody;
   int hX = X.IsHermitian() ? 1 : -1;
   int hY = Y.IsHermitian() ? 1 : -1;
+  int hZ = Z.IsHermitian() ? 1 : -1;
   if ( (std::abs( X2.Norm() * Y2.Norm() ) < 1e-6 ) and not Z.modelspace->scalar3b_transform_first_pass) return;
 
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
@@ -4867,7 +4871,10 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   std::vector< std::unordered_map<size_t, size_t>> ket_lookup_pph; // in a given channel, map  i,j,n,Jij -> matrix index
 
 //  std::vector< arma::mat > Zbar;
-  std::vector< arma::sp_mat > Zbar; // make it a sparse matrix
+//  std::vector< arma::sp_mat > Zbar; // make it a sparse matrix
+//  std::vector<double> Zbar;  // store the transformed Z in a 1D vector.
+  std::vector<float> Zbar;  // store the transformed Z in a 1D vector.
+  std::vector<size_t> Zbar_start_pointers;  // ch -> index in Zbar where that channel starts
 
   // we're looking at pph type states. We don't make a cut on the occupations in this channel
   // but if the first two orbits ij can't possibly make it past the occnat cut later on, we don't bother including them
@@ -4881,6 +4888,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
 //  std::cout << "BeginLoop over ph channels" << std::endl;
   size_t nch_pph = 0;
+  size_t Zbar_n_elements = 0; // total number of elements stored in Zbar
   // Generate all the pph type channels J,parity,Tz. Note that these will be
   // not the same as the standard 3-body channels since we aren't enforcing antisymmetry with the 3rd particle
   for ( auto& iter_obc : Z.modelspace->OneBodyChannels )
@@ -4961,14 +4969,18 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
     channel_list_pph.push_back({twoJph, parity_ph,twoTz_ph});
     ket_lookup_pph.push_back( good_kets_ijn );
 //    Zbar.push_back( arma::mat( ngood_ijn, ngood_ijn, arma::fill::zeros )  );
-    Zbar.push_back( arma::sp_mat( ngood_ijn, ngood_ijn )  );
+//    Zbar.push_back( arma::sp_mat( ngood_ijn, ngood_ijn )  );
+    Zbar_start_pointers.push_back( Zbar_n_elements ) ;     
+    Zbar_n_elements += ngood_ijn * (ngood_ijn+1) / 2 ;
     nch_pph++;
   }// for iter_obc
 //  std::cout << "Nominally " << nch_pph << "  pph channels " << std::endl;
 
+  Zbar.resize( Zbar_n_elements, 0. );
+  std::cout << __func__ << "  allocating Zbar   " << Zbar_n_elements << " elements  ~ " << Zbar_n_elements * sizeof(double) /(1024.*1024*1024) << " GB" << std::endl;
   
-  Z.profiler.timer["comm223_setup_loop"] += omp_get_wtime() - tinternal;
-  tinternal = omp_get_wtime();
+  Z.profiler.timer["comm223_setup_loop"] += omp_get_wtime() - t_internal;
+  t_internal = omp_get_wtime();
 //  std::cout << "done with setup" << std::endl;
 
  // Now we should fill those Zbar matrices.
@@ -5011,16 +5023,31 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       }// for index_a
 
    }//for iter_ijn
+   arma::mat z_tmp = Xph*Yph;
+   z_tmp -= hX*hY * z_tmp.t();
+   // Fold the full (anti-)symmetric matrix into a more compact storage
+   // we  use row-major ordering so that the inner loop runs over adjacent elements
+   size_t start_ptr = Zbar_start_pointers[ch_pph];
+   for (size_t II=0; II<ngood_ijn; II++)
+   {
+     size_t row_index = start_ptr + ( 2*ngood_ijn - II - 1) * II / 2 ;
+     for (size_t JJ=II; JJ<ngood_ijn; JJ++)
+     {
+//       size_t zbar_index =  row_index + JJ;
+       Zbar[ row_index+JJ ] = z_tmp(II,JJ);
+     }
+   }
+//   Zbar[ch_pph] = z_tmp;
 //   Zbar[ch_pph] = Xph*Yph;
-   Zbar[ch_pph] = arma::sp_mat( Xph*Yph );
-   Zbar[ch_pph] -= hX*hY*Zbar[ch_pph].t();
+//   Zbar[ch_pph] = arma::sp_mat( Xph*Yph );
+//   Zbar[ch_pph] -= hX*hY*Zbar[ch_pph].t();
  }// for ch_pph
 
 // std::cout << "Done filling matrices " << std::endl;
 
 
-  Z.profiler.timer["comm223_fill_loop"] += omp_get_wtime() - tinternal;
-  tinternal = omp_get_wtime();
+  Z.profiler.timer["comm223_fill_loop"] += omp_get_wtime() - t_internal;
+  t_internal = omp_get_wtime();
 
 
 //  std::vector< std::map<std::array<size_t,2>,size_t>::iterator> channel_iterators;
@@ -5163,7 +5190,24 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
                    size_t index_126 = ket_lookup_pph[ch_pph].at(key_126 );
                    size_t index_453 = ket_lookup_pph[ch_pph].at(key_453 );
-                   double zbar_126453 =  phase_12 * phase_45 * Zbar[ch_pph](index_126,index_453);
+
+                   double zbar_126453=0;
+                   size_t start_ptr = Zbar_start_pointers[ch_pph];
+                   size_t ngood_ijn = ket_lookup_pph[ch_pph].size();
+                   if ( index_126<= index_453 )
+                   {
+                     size_t zbar_index = start_ptr + ( 2*ngood_ijn - index_126 - 1) * index_126 / 2  + index_453 ;
+                     zbar_126453 = Zbar[ zbar_index ]  * phase_12 * phase_45;
+                   }
+                   else
+                   {
+                     size_t zbar_index = start_ptr + ( 2*ngood_ijn - index_453 - 1) * index_453 / 2  + index_126 ;
+                     zbar_126453 = hZ * Zbar[ zbar_index ]  * phase_12 * phase_45;
+                   }
+
+
+//                   double zbar_126453 =  phase_12 * phase_45 * Zbar[ch_pph](index_126,index_453);
+//                   std::cout <<  "  Zbar conjugates :  " << Zbar[ch_pph](index_126,index_453) << "  " << Zbar[ch_pph](index_453,index_126) << std::endl;
 
                    double sixj1 = Z.modelspace->GetSixJ(J1p,j3,Jtot, J2p,j6,Jph);
                    z_123456 +=   sixj1 * zbar_126453  ; 
@@ -5182,12 +5226,18 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket
     }// for ibra
   }// for ch3
-  Z.profiler.timer["comm223_compute_loop"] += omp_get_wtime() - tinternal;
-  tinternal = omp_get_wtime();
+  Z.profiler.timer["comm223_compute_loop"] += omp_get_wtime() - t_internal;
+  t_internal = omp_get_wtime();
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
+
+
+bool check_2b_channel_Tz_parity( const Operator& Op, Orbit& o1, Orbit&o2, Orbit& o3, Orbit& o4 ) 
+{
+  return (    ((o1.l+o2.l+o3.l+o4.l)%2==Op.parity)  and (  std::abs(o1.tz2+o2.tz2-o3.tz2-o4.tz2)==2*Op.rank_T)  );
+}
 
 
 void comm223ss_debug( const Operator& X, const Operator& Y, Operator& Z )
@@ -6480,7 +6530,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
   double tstart = omp_get_wtime();
-  double tinternal = omp_get_wtime();
+  double t_internal = omp_get_wtime();
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
   auto& X3 = X.ThreeBody;
@@ -6598,8 +6648,8 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
    Z3_ph[ch_cc].zeros( 2*nkets_CC, nkets3 ); // Zbar_knlmij
   }// for ch_cc
 
-  Z.profiler.timer["comm233_setup_lists"] += omp_get_wtime() - tinternal;
-  tinternal = omp_get_wtime();
+  Z.profiler.timer["comm233_setup_lists"] += omp_get_wtime() - t_internal;
+  t_internal = omp_get_wtime();
 
   // Compute the particle-hole recoupled matrix elements of Z
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -6790,8 +6840,8 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
   }// for ch_cc
 //  std::cout << "DONE WITH THE CC BIT" << std::endl;
 
-  Z.profiler.timer["comm233_fll_matrices"] += omp_get_wtime() - tinternal;
-  tinternal = omp_get_wtime();
+  Z.profiler.timer["comm233_fll_matrices"] += omp_get_wtime() - t_internal;
+  t_internal = omp_get_wtime();
 
   // Now transform it back into standard coupling
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
@@ -6962,8 +7012,8 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket
     }// for ibra
   }//for ch3
-  Z.profiler.timer["comm233_pph_recouple"] += omp_get_wtime() - tinternal;
-  tinternal = omp_get_wtime();
+  Z.profiler.timer["comm233_pph_recouple"] += omp_get_wtime() - t_internal;
+  t_internal = omp_get_wtime();
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
@@ -7529,7 +7579,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
   double tstart = omp_get_wtime();
-  double tinternal = omp_get_wtime();
+  double t_internal = omp_get_wtime();
 
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
@@ -7648,8 +7698,8 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 //  std::cout << "Nominally " << nch_pph << "  pph channels " << std::endl;
 
 
-  Z.profiler.timer["comm333_pph_setup_lists"] += omp_get_wtime() - tinternal;
-  tinternal = omp_get_wtime();
+  Z.profiler.timer["comm333_pph_setup_lists"] += omp_get_wtime() - t_internal;
+  t_internal = omp_get_wtime();
 
  // Now that we've made our lists and allocated the matrices, we fill the matrices inside the parallel block.
  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -7768,8 +7818,8 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 
   }// for ch_pph , end of parallel block
 
-  Z.profiler.timer["comm333_pph_fill_matrices"] += omp_get_wtime() - tinternal;
-  tinternal = omp_get_wtime();
+  Z.profiler.timer["comm333_pph_fill_matrices"] += omp_get_wtime() - t_internal;
+  t_internal = omp_get_wtime();
 
   // Now that we've computed Zbar (i.e. the pph transformed commutator), we need to
   // transform that back to Z, and do all the permutations to ensure antisymmetry
@@ -7928,8 +7978,8 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
     }// for ibra
   }//for ch3
 
-  Z.profiler.timer["comm333_pph_recouple"] += omp_get_wtime() - tinternal;
-  tinternal = omp_get_wtime();
+  Z.profiler.timer["comm333_pph_recouple"] += omp_get_wtime() - t_internal;
+  t_internal = omp_get_wtime();
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }

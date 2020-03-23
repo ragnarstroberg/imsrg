@@ -194,9 +194,9 @@ PYBIND11_MODULE(pyIMSRG, m)
 
    py::class_<ThreeBodyMEpn>(m,"ThreeBodyMEpn")
       .def(py::init<>())
-      .def("SetME", &ThreeBodyMEpn::SetME)
+//      .def("SetME", &ThreeBodyMEpn::SetME)
       .def("GetME", &ThreeBodyMEpn::GetME)
-      .def("SetME_pn", &ThreeBodyMEpn::SetME_pn)
+//      .def("SetME_pn", &ThreeBodyMEpn::SetME_pn)
       .def("GetME_pn", &ThreeBodyMEpn::GetME_pn)
       .def("RecouplingCoefficient",&ThreeBodyMEpn::RecouplingCoefficient)
       .def("TransformToPN",&ThreeBodyMEpn::TransformToPN)
@@ -391,7 +391,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("TestDaggerCommutatorsAlln",&UnitTest::TestDaggerCommutatorsAlln)
       .def("Test3BodyAntisymmetry",&UnitTest::Test3BodyAntisymmetry)
       .def("Test3BodyHermiticity",&UnitTest::Test3BodyHermiticity)
-      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
+//      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
    ;
 
 

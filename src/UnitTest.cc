@@ -396,23 +396,23 @@ void UnitTest::Test3BodyAntisymmetry(Operator& Y)
 
 
 
-void UnitTest::Test3BodySetGet(Operator& Y)
-{
-  int i=2,j=0,k=0,l=2,m=0,n=0;
-  int Jij=1;
-  int Jlm=1;
-  int twoJ=1;
-
-  double meread = Y.ThreeBody.GetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n);
-  double setval = 10.0;
-  Y.ThreeBody.SetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n,setval);
-  double getval = Y.ThreeBody.GetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n);
-
-  std::cout << "Before setting, ME = " << meread << std::endl;
-  std::cout << "Set to " << setval << std::endl;
-  std::cout << "After setting, get " << getval << std::endl;
-
-}
+//void UnitTest::Test3BodySetGet(Operator& Y)
+//{
+//  int i=2,j=0,k=0,l=2,m=0,n=0;
+//  int Jij=1;
+//  int Jlm=1;
+//  int twoJ=1;
+//
+//  double meread = Y.ThreeBody.GetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n);
+//  double setval = 10.0;
+//  Y.ThreeBody.SetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n,setval);
+//  double getval = Y.ThreeBody.GetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n);
+//
+//  std::cout << "Before setting, ME = " << meread << std::endl;
+//  std::cout << "Set to " << setval << std::endl;
+//  std::cout << "After setting, get " << getval << std::endl;
+//
+//}
 
 
 
