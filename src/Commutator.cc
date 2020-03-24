@@ -22,6 +22,7 @@ namespace Commutator {
 bool use_goose_tank_correction = false;
 bool use_brueckner_bch = false;
 bool use_imsrg3 = false;
+bool use_imsrg3_n7 = false;
 bool only_2b_omega = false;
 bool perturbative_triples = false;
 double bch_transform_threshold = 1e-9;
@@ -42,6 +43,9 @@ void SetUseGooseTank(bool tf)
 
 void SetUseIMSRG3(bool tf)
 {use_imsrg3 = tf;}
+
+void SetUseIMSRG3N7(bool tf)
+{use_imsrg3_n7 = tf;}
 
 void SetOnly2bOmega(bool tf)
 {only_2b_omega = tf;}
@@ -197,6 +201,8 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        std::cout << " comm133 " << std::endl;
        comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
 
+      if ( not use_imsrg3_n7 )
+      {
 ////    Not too bad, though naively n^8
        std::cout << " comm233_pp_hh " << std::endl;
        comm233_pp_hhss(X, Y, Z);
@@ -228,6 +234,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        comm333_pph_hhpss(X, Y, Z);
 //       comm333_pph_hhpss_debug(X, Y, Z);
 
+      } // if not use_imsrg3_n7
 
      // after going through once, we've stored all the 6js (and maybe 9js), so we can run in OMP loops from now on
      X.modelspace->scalar3b_transform_first_pass = false;
@@ -4945,7 +4952,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_factor_max ) < Z.modelspace->GetOccNat3Cut() ) continue;
         if ( (d_ei+d_ej) > Z.modelspace->GetdE3max() ) continue;
         if ( (ei + ej) > Z.modelspace->GetE3max() ) continue;
-        if ( perturbative_triples and  not ( (ket_ij.op->cvq + ket_ij.oq->cvq)==0 or (ket_ij.op->cvq+ket_ij.oq->cvq)>2) ) continue;
+//        if ( perturbative_triples and  not ( (ket_ij.op->cvq + ket_ij.oq->cvq)==0 or (ket_ij.op->cvq+ket_ij.oq->cvq)>2) ) continue;
+        if ( perturbative_triples and  (ket_ij.op->cvq==0 and ket_ij.oq->cvq!=0) or (ket_ij.op->cvq!=0 and ket_ij.oq->cvq==0) ) continue;
         good_ij.push_back({i,j}); 
       }//for iket_ij
 
@@ -6797,32 +6805,10 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
         {
           int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
 
-//          std::vector<double> xandy = Y3.GetME_pn_PN_TwoOps( Jij,Jlm,twoJp, i,j,a, l,m,b, X3,Y3 );
-// TODO UNCOMMENT THESE 3 LINES
+          // get the X3 and Y3 elements in one go (to avoid doing the recoupling twice)
           auto xandy = Y3.GetME_pn_PN_TwoOps( Jij,Jlm,twoJp, i,j,a, l,m,b, X3,Y3 );
           double xablmij = xandy[0];
           double yablmij = xandy[1];
-
-//          std::vector<size_t> ibra_list;
-//          std::vector<size_t> iket_list;
-//          std::vector<double> recouple_bra_list;
-//          std::vector<double> recouple_ket_list;
-//          size_t ch_check_bra = Y.ThreeBody.GetKetIndex_withRecoupling( Jij, twoJp, i, j, a, ibra_list, recouple_bra_list) ;
-//          size_t ch_check_ket = Y.ThreeBody.GetKetIndex_withRecoupling( Jlm, twoJp, l, m, b, iket_list, recouple_ket_list) ;
-//          double xablmij = 0;
-//          double yablmij = 0;
-//          for ( size_t ind_bra=0; ind_bra<ibra_list.size(); ind_bra++)
-//          {
-//            double rec_bra = recouple_bra_list[ind_bra];
-//            size_t Ibra = ibra_list[ind_bra];
-//            for ( size_t ind_ket=0; ind_ket<iket_list.size(); ind_ket++)
-//            {
-//              double rec_ket = recouple_ket_list[ind_ket];
-//              size_t Iket = iket_list[ind_ket];
-//               xablmij += rec_bra * rec_ket * X3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
-//               yablmij += rec_bra * rec_ket * Y3.GetME_pn_PN_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
-//            }
-//          }
 
 
           double sixjy = Z.modelspace->GetSixJ( Jij, Jlm, Jph, jb, ja, 0.5*twoJp);

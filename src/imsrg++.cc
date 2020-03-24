@@ -92,6 +92,7 @@ int main(int argc, char** argv)
   bool nucleon_mass_correction = parameters.s("nucleon_mass_correction") == "true";
   bool relativistic_correction = parameters.s("relativistic_correction") == "true";
   bool IMSRG3 = parameters.s("IMSRG3") == "true";
+  bool imsrg3_n7 = parameters.s("imsrg3_n7") == "true";
   bool write_omega = parameters.s("write_omega") == "true";
   bool freeze_occupations = parameters.s("freeze_occupations")=="true";
   bool hunter_gatherer = parameters.s("hunter_gatherer") == "true";
@@ -225,8 +226,10 @@ int main(int argc, char** argv)
 
   ModelSpace modelspace = ( reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space) );
 
+  std::cout << __LINE__ << "  constructed modelspace " << std::endl;
   modelspace.SetE3max(E3max);
   modelspace.SetLmax(lmax);
+  std::cout << __LINE__ << "  done setting E3max and lmax " << std::endl;
 //  if (lmax!= 99999)
 //  {
 //    modelspace.ClearVectors();
@@ -420,13 +423,6 @@ int main(int argc, char** argv)
     Hbare += BetaCM * imsrg_util::OperatorFromString( modelspace, hcm_opname.str());
   }
 
-
-  // If we're doing FCI, we want things normal ordered wrt the vacuum
-  // and we want things diagonal when normal ordered wrt the vacuum.
-//  if ( method == "FCI" )
-//  {
-//    modelspace.SetReference("vacuum");
-//  }
 
 
   std::cout << "Creating HF" << std::endl;
@@ -655,6 +651,7 @@ int main(int argc, char** argv)
 
   if (method == "FCI")
   {
+  std::cout << __func__ << "  line " << __LINE__ << std::endl;
    // we want the 1b piece to be diagonal in the vacuum NO representation
     HNO = HNO.UndoNormalOrdering();
     double previous_zero_body = HNO.ZeroBody;
@@ -732,6 +729,11 @@ int main(int argc, char** argv)
   {
     Commutator::SetUseIMSRG3(true);
     std::cout << "Using IMSRG(3) commutators. This will probably be slow..." << std::endl;
+  }
+  if (imsrg3_n7)
+  {
+    Commutator::SetUseIMSRG3N7(true);
+    std::cout << "  only including IMSRG3 commutator terms that scale up to n7" << std::endl;
   }
 
   imsrgsolver.SetMethod(method);

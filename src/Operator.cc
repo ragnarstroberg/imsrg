@@ -1211,7 +1211,7 @@ double Operator::GetMP2_3BEnergy()
      {
        Ket3& bra = Tbc.GetKet(ibra);
        double occ_bra = (bra.op->occ) * (bra.oq->occ) * (bra.oR->occ);
-       if ( std::abs(occ_bra)<1e-3) continue;
+       if ( std::abs(occ_bra)<1e-9) continue;
        size_t i = bra.p;
        size_t j = bra.q;
        size_t k = bra.r;
@@ -1223,7 +1223,7 @@ double Operator::GetMP2_3BEnergy()
        {
          Ket3& ket = Tbc.GetKet(iket);
          double unocc_ket = (1-ket.op->occ) * (1-ket.oq->occ) * (1-ket.oR->occ);
-         if ( std::abs(unocc_ket)<1e-3) continue;
+         if ( std::abs(unocc_ket)<1e-9) continue;
          size_t a = ket.p;
          size_t b = ket.q;
          size_t c = ket.r;

@@ -35,6 +35,7 @@ namespace Commutator{
   extern bool use_goose_tank_correction;
   extern bool use_brueckner_bch;
   extern bool use_imsrg3;
+  extern bool use_imsrg3_n7;
   extern bool perturbative_triples;
   extern bool only_2b_omega;
   extern double bch_transform_threshold;
@@ -45,6 +46,7 @@ namespace Commutator{
   void SetUseBruecknerBCH(bool tf);
   void SetUseGooseTank(bool tf);
   void SetUseIMSRG3(bool tf);
+  void SetUseIMSRG3N7(bool tf);
   void SetOnly2bOmega(bool tf);
 
 
