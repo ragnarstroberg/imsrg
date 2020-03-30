@@ -66,6 +66,7 @@ namespace Commutator{
   std::deque<arma::mat> InitializePandya(Operator& Z, size_t nch, std::string orientation);
   void DoPandyaTransformation(const Operator& Z, std::deque<arma::mat>&, std::string orientation) ;
   void DoPandyaTransformation_SingleChannel(const Operator& Z, arma::mat& X, int ch_cc, std::string orientation) ;
+  void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operator& Y, arma::mat& X2_CC_ph, arma::mat& Y2_CC_ph, int ch_cc);
 //  void AddInversePandyaTransformation(Operator& Z, const std::deque<arma::mat>&);
   void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator& Z);   // Changed from the above declaration. Not sure how this was compiling...
   void AddInversePandyaTransformation_SingleChannel(Operator& Z, arma::mat& Zbar, int ch_cc);

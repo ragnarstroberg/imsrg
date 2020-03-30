@@ -405,6 +405,7 @@ class ModelSpace
    int GetAref() const {return Aref;};
    int GetZref() const {return Zref;};
    size_t GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
+   size_t GetNumberTwoBodyChannels_CC() const {return TwoBodyChannels_CC.size();};
    size_t GetNumberThreeBodyChannels() const {return ThreeBodyChannels.size();};
 
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
