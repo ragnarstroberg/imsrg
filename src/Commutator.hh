@@ -35,6 +35,7 @@ namespace Commutator{
   extern bool use_goose_tank_correction;
   extern bool use_brueckner_bch;
   extern bool use_imsrg3;
+  extern bool use_imsrg3_n7;
   extern bool perturbative_triples;
   extern bool only_2b_omega;
   extern double bch_transform_threshold;
@@ -45,6 +46,7 @@ namespace Commutator{
   void SetUseBruecknerBCH(bool tf);
   void SetUseGooseTank(bool tf);
   void SetUseIMSRG3(bool tf);
+  void SetUseIMSRG3N7(bool tf);
   void SetOnly2bOmega(bool tf);
 
 
@@ -64,6 +66,7 @@ namespace Commutator{
   std::deque<arma::mat> InitializePandya(Operator& Z, size_t nch, std::string orientation);
   void DoPandyaTransformation(const Operator& Z, std::deque<arma::mat>&, std::string orientation) ;
   void DoPandyaTransformation_SingleChannel(const Operator& Z, arma::mat& X, int ch_cc, std::string orientation) ;
+  void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operator& Y, arma::mat& X2_CC_ph, arma::mat& Y2_CC_ph, int ch_cc);
 //  void AddInversePandyaTransformation(Operator& Z, const std::deque<arma::mat>&);
   void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator& Z);   // Changed from the above declaration. Not sure how this was compiling...
   void AddInversePandyaTransformation_SingleChannel(Operator& Z, arma::mat& Zbar, int ch_cc);
