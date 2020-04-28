@@ -428,7 +428,7 @@ long long unsigned int ThreeBodyMENO2B::CountME()
         if(e1 + e3 > E2max_file) continue;
         if(e1 + e2 + e3 > E3max_file) continue;
 
-        for (int i4=0; i4 < Norbs; i4++) {
+        for (int i4=0; i4 <= i1; i4++) {
           OrbitIsospin & o4 = iOrbits[i4];
           int j4 = o4.j;
           int l4 = o4.l;
@@ -537,7 +537,7 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBME_type> & v, size_t n
         if(e1 + e3 > E2max_file) continue;
         if(e1 + e2 + e3 > E3max_file) continue;
 
-        for (int i4=0; i4 < Norbs; i4++) {
+        for (int i4=0; i4 <= i1; i4++) {
           OrbitIsospin & o4 = iOrbits[i4];
           int j4 = o4.j;
           int l4 = o4.l;
@@ -703,7 +703,7 @@ void ThreeBodyMENO2B::ReadStream(T & infile, size_t n_elms)
         if(e1 + e3 > E2max_file) continue;
         if(e1 + e2 + e3 > E3max_file) continue;
 
-        for (int i4=0; i4 < Norbs; i4++) {
+        for (int i4=0; i4 <= i1; i4++) {
           OrbitIsospin & o4 = iOrbits[i4];
           int j4 = o4.j;
           int l4 = o4.l;
