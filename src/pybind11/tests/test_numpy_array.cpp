@@ -14,6 +14,67 @@
 
 #include <cstdint>
 
+// Size / dtype checks.
+struct DtypeCheck {
+    py::dtype numpy{};
+    py::dtype pybind11{};
+};
+
+template <typename T>
+DtypeCheck get_dtype_check(const char* name) {
+    py::module np = py::module::import("numpy");
+    DtypeCheck check{};
+    check.numpy = np.attr("dtype")(np.attr(name));
+    check.pybind11 = py::dtype::of<T>();
+    return check;
+}
+
+std::vector<DtypeCheck> get_concrete_dtype_checks() {
+    return {
+        // Normalization
+        get_dtype_check<std::int8_t>("int8"),
+        get_dtype_check<std::uint8_t>("uint8"),
+        get_dtype_check<std::int16_t>("int16"),
+        get_dtype_check<std::uint16_t>("uint16"),
+        get_dtype_check<std::int32_t>("int32"),
+        get_dtype_check<std::uint32_t>("uint32"),
+        get_dtype_check<std::int64_t>("int64"),
+        get_dtype_check<std::uint64_t>("uint64")
+    };
+}
+
+struct DtypeSizeCheck {
+    std::string name{};
+    int size_cpp{};
+    int size_numpy{};
+    // For debugging.
+    py::dtype dtype{};
+};
+
+template <typename T>
+DtypeSizeCheck get_dtype_size_check() {
+    DtypeSizeCheck check{};
+    check.name = py::type_id<T>();
+    check.size_cpp = sizeof(T);
+    check.dtype = py::dtype::of<T>();
+    check.size_numpy = check.dtype.attr("itemsize").template cast<int>();
+    return check;
+}
+
+std::vector<DtypeSizeCheck> get_platform_dtype_size_checks() {
+    return {
+        get_dtype_size_check<short>(),
+        get_dtype_size_check<unsigned short>(),
+        get_dtype_size_check<int>(),
+        get_dtype_size_check<unsigned int>(),
+        get_dtype_size_check<long>(),
+        get_dtype_size_check<unsigned long>(),
+        get_dtype_size_check<long long>(),
+        get_dtype_size_check<unsigned long long>(),
+    };
+}
+
+// Arrays.
 using arr = py::array;
 using arr_t = py::array_t<uint16_t, 0>;
 static_assert(std::is_same<arr_t::value_type, uint16_t>::value, "");
@@ -24,20 +85,6 @@ template<typename... Ix> arr data(const arr& a, Ix... index) {
 
 template<typename... Ix> arr data_t(const arr_t& a, Ix... index) {
     return arr(a.size() - a.index_at(index...), a.data(index...));
-}
-
-arr& mutate_data(arr& a) {
-    auto ptr = (uint8_t *) a.mutable_data();
-    for (ssize_t i = 0; i < a.nbytes(); i++)
-        ptr[i] = (uint8_t) (ptr[i] * 2);
-    return a;
-}
-
-arr_t& mutate_data_t(arr_t& a) {
-    auto ptr = a.mutable_data();
-    for (ssize_t i = 0; i < a.size(); i++)
-        ptr[i]++;
-    return a;
 }
 
 template<typename... Ix> arr& mutate_data(arr& a, Ix... index) {
@@ -82,9 +129,34 @@ template <typename T, typename T2> py::handle auxiliaries(T &&r, T2 &&r2) {
     return l.release();
 }
 
-test_initializer numpy_array([](py::module &m) {
-    auto sm = m.def_submodule("array");
+// note: declaration at local scope would create a dangling reference!
+static int data_i = 42;
 
+TEST_SUBMODULE(numpy_array, sm) {
+    try { py::module::import("numpy"); }
+    catch (...) { return; }
+
+    // test_dtypes
+    py::class_<DtypeCheck>(sm, "DtypeCheck")
+        .def_readonly("numpy", &DtypeCheck::numpy)
+        .def_readonly("pybind11", &DtypeCheck::pybind11)
+        .def("__repr__", [](const DtypeCheck& self) {
+            return py::str("<DtypeCheck numpy={} pybind11={}>").format(
+                self.numpy, self.pybind11);
+        });
+    sm.def("get_concrete_dtype_checks", &get_concrete_dtype_checks);
+
+    py::class_<DtypeSizeCheck>(sm, "DtypeSizeCheck")
+        .def_readonly("name", &DtypeSizeCheck::name)
+        .def_readonly("size_cpp", &DtypeSizeCheck::size_cpp)
+        .def_readonly("size_numpy", &DtypeSizeCheck::size_numpy)
+        .def("__repr__", [](const DtypeSizeCheck& self) {
+            return py::str("<DtypeSizeCheck name='{}' size_cpp={} size_numpy={} dtype={}>").format(
+                self.name, self.size_cpp, self.size_numpy, self.dtype);
+        });
+    sm.def("get_platform_dtype_size_checks", &get_platform_dtype_size_checks);
+
+    // test_array_attributes
     sm.def("ndim", [](const arr& a) { return a.ndim(); });
     sm.def("shape", [](const arr& a) { return arr(a.ndim(), a.shape()); });
     sm.def("shape", [](const arr& a, ssize_t dim) { return a.shape(dim); });
@@ -96,25 +168,30 @@ test_initializer numpy_array([](py::module &m) {
     sm.def("nbytes", [](const arr& a) { return a.nbytes(); });
     sm.def("owndata", [](const arr& a) { return a.owndata(); });
 
-    def_index_fn(data, const arr&);
-    def_index_fn(data_t, const arr_t&);
+    // test_index_offset
     def_index_fn(index_at, const arr&);
     def_index_fn(index_at_t, const arr_t&);
     def_index_fn(offset_at, const arr&);
     def_index_fn(offset_at_t, const arr_t&);
+    // test_data
+    def_index_fn(data, const arr&);
+    def_index_fn(data_t, const arr_t&);
+    // test_mutate_data, test_mutate_readonly
     def_index_fn(mutate_data, arr&);
     def_index_fn(mutate_data_t, arr_t&);
     def_index_fn(at_t, const arr_t&);
     def_index_fn(mutate_at_t, arr_t&);
 
-    sm.def("make_f_array", [] {
-        return py::array_t<float>({ 2, 2 }, { 4, 8 });
-    });
+    // test_make_c_f_array
+    sm.def("make_f_array", [] { return py::array_t<float>({ 2, 2 }, { 4, 8 }); });
+    sm.def("make_c_array", [] { return py::array_t<float>({ 2, 2 }, { 8, 4 }); });
 
-    sm.def("make_c_array", [] {
-        return py::array_t<float>({ 2, 2 }, { 8, 4 });
-    });
+    // test_empty_shaped_array
+    sm.def("make_empty_shaped_array", [] { return py::array(py::dtype("f"), {}, {}); });
+    // test numpy scalars (empty shape, ndim==0)
+    sm.def("scalar_int", []() { return py::array(py::dtype("i"), {}, {}, &data_i); });
 
+    // test_wrap
     sm.def("wrap", [](py::array a) {
         return py::array(
             a.dtype(),
@@ -125,12 +202,12 @@ test_initializer numpy_array([](py::module &m) {
         );
     });
 
+    // test_numpy_view
     struct ArrayClass {
         int data[2] = { 1, 2 };
         ArrayClass() { py::print("ArrayClass()"); }
         ~ArrayClass() { py::print("~ArrayClass()"); }
     };
-
     py::class_<ArrayClass>(sm, "ArrayClass")
         .def(py::init<>())
         .def("numpy_view", [](py::object &obj) {
@@ -140,16 +217,18 @@ test_initializer numpy_array([](py::module &m) {
         }
     );
 
+    // test_cast_numpy_int64_to_uint64
     sm.def("function_taking_uint64", [](uint64_t) { });
 
+    // test_isinstance
     sm.def("isinstance_untyped", [](py::object yes, py::object no) {
         return py::isinstance<py::array>(yes) && !py::isinstance<py::array>(no);
     });
-
     sm.def("isinstance_typed", [](py::object o) {
         return py::isinstance<py::array_t<double>>(o) && !py::isinstance<py::array_t<int>>(o);
     });
 
+    // test_constructors
     sm.def("default_constructors", []() {
         return py::dict(
             "array"_a=py::array(),
@@ -157,7 +236,6 @@ test_initializer numpy_array([](py::module &m) {
             "array_t<double>"_a=py::array_t<double>()
         );
     });
-
     sm.def("converting_constructors", [](py::object o) {
         return py::dict(
             "array"_a=py::array(o),
@@ -166,7 +244,7 @@ test_initializer numpy_array([](py::module &m) {
         );
     });
 
-    // Overload resolution tests:
+    // test_overload_resolution
     sm.def("overloaded", [](py::array_t<double>) { return "double"; });
     sm.def("overloaded", [](py::array_t<float>) { return "float"; });
     sm.def("overloaded", [](py::array_t<int>) { return "int"; });
@@ -194,11 +272,13 @@ test_initializer numpy_array([](py::module &m) {
     sm.def("overloaded5", [](py::array_t<unsigned int>) { return "unsigned int"; });
     sm.def("overloaded5", [](py::array_t<double>) { return "double"; });
 
+    // test_greedy_string_overload
     // Issue 685: ndarray shouldn't go to std::string overload
     sm.def("issue685", [](std::string) { return "string"; });
     sm.def("issue685", [](py::array) { return "array"; });
     sm.def("issue685", [](py::object) { return "other"; });
 
+    // test_array_unchecked_fixed_dims
     sm.def("proxy_add2", [](py::array_t<double> a, double v) {
         auto r = a.mutable_unchecked<2>();
         for (ssize_t i = 0; i < r.shape(0); i++)
@@ -238,6 +318,7 @@ test_initializer numpy_array([](py::module &m) {
         return auxiliaries(r, r2);
     });
 
+    // test_array_unchecked_dyn_dims
     // Same as the above, but without a compile-time dimensions specification:
     sm.def("proxy_add2_dyn", [](py::array_t<double> a, double v) {
         auto r = a.mutable_unchecked();
@@ -264,19 +345,21 @@ test_initializer numpy_array([](py::module &m) {
         return auxiliaries(a, a);
     });
 
+    // test_array_failures
     // Issue #785: Uninformative "Unknown internal error" exception when constructing array from empty object:
     sm.def("array_fail_test", []() { return py::array(py::object()); });
     sm.def("array_t_fail_test", []() { return py::array_t<double>(py::object()); });
-
     // Make sure the error from numpy is being passed through:
     sm.def("array_fail_test_negative_size", []() { int c = 0; return py::array(-1, &c); });
 
+    // test_initializer_list
     // Issue (unnumbered; reported in #788): regression: initializer lists can be ambiguous
-    sm.def("array_initializer_list", []() { return py::array_t<float>(1); }); // { 1 } also works, but clang warns about it
-    sm.def("array_initializer_list", []() { return py::array_t<float>({ 1, 2 }); });
-    sm.def("array_initializer_list", []() { return py::array_t<float>({ 1, 2, 3 }); });
-    sm.def("array_initializer_list", []() { return py::array_t<float>({ 1, 2, 3, 4 }); });
+    sm.def("array_initializer_list1", []() { return py::array_t<float>(1); }); // { 1 } also works, but clang warns about it
+    sm.def("array_initializer_list2", []() { return py::array_t<float>({ 1, 2 }); });
+    sm.def("array_initializer_list3", []() { return py::array_t<float>({ 1, 2, 3 }); });
+    sm.def("array_initializer_list4", []() { return py::array_t<float>({ 1, 2, 3, 4 }); });
 
+    // test_array_resize
     // reshape array to 2D without changing size
     sm.def("array_reshape2", [](py::array_t<double> a) {
         const ssize_t dim_sz = (ssize_t)std::sqrt(a.size());
@@ -290,6 +373,7 @@ test_initializer numpy_array([](py::module &m) {
         a.resize({N, N, N}, refcheck);
     });
 
+    // test_array_create_and_resize
     // return 2D array with Nrows = Ncols = N
     sm.def("create_and_resize", [](size_t N) {
         py::array_t<double> a;
@@ -297,4 +381,10 @@ test_initializer numpy_array([](py::module &m) {
         std::fill(a.mutable_data(), a.mutable_data() + a.size(), 42.);
         return a;
     });
-});
+
+#if PY_MAJOR_VERSION >= 3
+        sm.def("index_using_ellipsis", [](py::array a) {
+            return a[py::make_tuple(0, py::ellipsis(), 0)];
+        });
+#endif
+}
