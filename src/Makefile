@@ -39,7 +39,8 @@ FLAGS    += $(WARNFLAGS)
 
 SOFLAGS = $(FLAGS)
 
-PYTHONCONFIG = python3-config
+PYTHON_MAJOR_VERSION = $(shell python -c "import sys; sys.stdout.write('{}'.format(sys.version_info.major))")
+PYTHONCONFIG = python$(PYTHON_MAJOR_VERSION)-config
 
 #PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython
 #PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags ) -Wl,--no-as-needed
