@@ -419,6 +419,14 @@ int main(int argc, char** argv)
   }
 
 
+  // If we're doing FCI, we want things normal ordered wrt the vacuum
+  // and we want things diagonal when normal ordered wrt the vacuum.
+//  if ( method == "FCI" )
+//  {
+//    modelspace.SetReference("vacuum");
+//  }
+
+
   std::cout << "Creating HF" << std::endl;
 //  HartreeFock hf(Hbare);
   HFMBPT hf(Hbare); // HFMBPT inherits from HartreeFock, so no harm done here.
@@ -435,7 +443,7 @@ int main(int argc, char** argv)
   Operator& HNO = Hbare;
   if (basis == "HF" and method !="HF")
   {
-    ThreeBodyME hf3b;
+//    ThreeBodyME hf3b;
     HNO = hf.GetNormalOrderedH( hno_particle_rank );
   }
   else if (basis == "NAT") // we want to use the natural orbital basis
@@ -631,9 +639,22 @@ int main(int argc, char** argv)
 
   if (method == "FCI")
   {
+   // we want the 1b piece to be diagonal in the vacuum NO representation
     HNO = HNO.UndoNormalOrdering();
+    double previous_zero_body = HNO.ZeroBody;
+    modelspace.SetReference("vacuum");
+    HartreeFock hfvac(HNO);
+    hfvac.Solve();
+
+//    Operator Hvac = hfvac.GetNormalOrderedH();
+    HNO = hfvac.GetNormalOrderedH();
+    std::cout << "HNO had zero body = " << HNO.ZeroBody << "  and I add " << previous_zero_body << " to it. " << std::endl;
+    HNO.ZeroBody += previous_zero_body;
+
     rw.WriteNuShellX_int(HNO,intfile+".int");
     rw.WriteNuShellX_sps(HNO,intfile+".sp");
+
+    std::cout << "NO wrt vacuum. One Body term is hopfully still diagonal?" << std::endl << HNO.OneBody << std::endl;
 
     for (index_t i=0;i<ops.size();++i)
     {

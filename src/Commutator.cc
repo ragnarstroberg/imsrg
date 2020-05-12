@@ -167,87 +167,61 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //     {
        // This gets the perturbative energy from the induced 3 body
        std::cout << " comm330 " << std::endl;
-//       t_start = omp_get_wtime();
        comm330ss(X, Y, Z); // scales as n^6
-//       X.profiler.timer["comm330ss"] += omp_get_wtime() - t_start;
 
 //     Maybe not so important, but I think relatively cheap
        std::cout << " comm331 " << std::endl;
-//       t_start = omp_get_wtime();
        comm331ss(X, Y, Z); // scales as n^7
-//       X.profiler.timer["comm331ss"] += omp_get_wtime() - t_start;
 //     }
 
 //     This one is essential. If it's not here, then there are no induced 3 body terms
        std::cout << " comm223 " << std::endl;
-//       t_start = omp_get_wtime();
        comm223ss(X, Y, Z); // scales as n^7
-//       X.profiler.timer["comm223ss"] += omp_get_wtime() - t_start;
 
 //     if (X.GetParticleRank()>2 or Y.GetParticleRank()>2)
 //     {
-//  TURN THIS BACK ON!!!
        // Demonstrated that this can have some effect
        std::cout << " comm231 " << std::endl;
-//       t_start = omp_get_wtime();
        comm231ss(X, Y, Z);  // scales as n^6
-//       X.profiler.timer["comm231ss"] += omp_get_wtime() - t_start;
 
 //     no demonstrated effect yet, but it's cheap
        std::cout << " comm132 " << std::endl;
-//       t_start = omp_get_wtime();
        comm132ss(X, Y, Z); // scales as n^6
-//       X.profiler.timer["comm132ss"] += omp_get_wtime() - t_start;
 
 //     one of the two most important IMSRG(3) terms
        std::cout << " comm232 " << std::endl;
-//       t_start = omp_get_wtime();
        comm232ss(X, Y, Z);   // this is the slowest n^7 term
 //       comm232ss_debug(X, Y, Z);   // this is the slowest n^7 term
-//       X.profiler.timer["comm232ss"] += omp_get_wtime() - t_start;
 
 //     important for suppressing off-diagonal H3
        std::cout << " comm133 " << std::endl;
-//       t_start = omp_get_wtime();
        comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
-//       X.profiler.timer["comm133ss"] += omp_get_wtime() - t_start;
 
 ////    Not too bad, though naively n^8
        std::cout << " comm233_pp_hh " << std::endl;
-//       t_start = omp_get_wtime();
        comm233_pp_hhss(X, Y, Z);
 //       comm233_pp_hhss_debug(X, Y, Z);
 //       X.profiler.timer["comm233_pp_hhss"] += omp_get_wtime() - t_start;
 
 //     This one is super slow too. It involves 9js
        std::cout << " comm233_ph " << std::endl;
-//       t_start = omp_get_wtime();
        comm233_phss(X, Y, Z);
-//       X.profiler.timer["comm233_phss"] += omp_get_wtime() - t_start;
 
 //       not too bad, though naively n^8
        std::cout << " comm332_ppph_hhhp " << std::endl;
-//       t_start = omp_get_wtime();
        comm332_ppph_hhhpss(X, Y, Z);
-//       X.profiler.timer["comm332_ppph_hhhpss"] += omp_get_wtime() - t_start;
 
 //      This one works, but it involves 9js so it's slow, so it's commented out for now...
        std::cout << " comm332_pphh " << std::endl;
-//       t_start = omp_get_wtime();
        comm332_pphhss(X, Y, Z);
-//       X.profiler.timer["comm332_pphhss"] += omp_get_wtime() - t_start;
 
 //       not too bad though naively n^9
        std::cout << " comm333_ppp_hhhss " << std::endl;
-//       t_start = omp_get_wtime();
        comm333_ppp_hhhss(X, Y, Z);
-//       X.profiler.timer["comm333_ppp_hhhss"] += omp_get_wtime() - t_start;
 
 //     This one works, but it's incredibly slow.  naively n^9.
-       std::cout << " comm333_pph_hhpss " << std::endl;
-//       t_start = omp_get_wtime();
-       comm333_pph_hhpss(X, Y, Z);
-//       X.profiler.timer["comm333_pph_hhpss"] += omp_get_wtime() - t_start;
+//       std::cout << " comm333_pph_hhpss " << std::endl;
+//       comm333_pph_hhpss(X, Y, Z);
 //     }
 
 
