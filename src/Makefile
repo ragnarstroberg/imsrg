@@ -42,6 +42,9 @@ SOFLAGS = $(FLAGS)
 
 PYTHON_MAJOR_VERSION = $(shell python -c "import sys; sys.stdout.write('{}'.format(sys.version_info.major))")
 PYTHON_CONFIG = python$(PYTHON_MAJOR_VERSION)-config
+ifeq (,$(shell which $(PYTHON_CONFIG) 2> /dev/null))
+  PYTHON_CONFIG = python-config
+endif
 PYTHON_CFLAGS = $(shell $(PYTHON_CONFIG) --cflags )
 PYTHON_LDFLAGS = $(shell $(PYTHON_CONFIG) --ldflags )
 PYTHON_INCLUDE = -I./pybind11/include
