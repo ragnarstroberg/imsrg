@@ -1,5 +1,5 @@
-CC = g++
-#CC = clang++
+CXX = g++
+#CXX = clang++
 
 # Compiler flags:
 #  -DNO_ODE compiles without boost/ode package used for flow equation solver
@@ -28,11 +28,12 @@ ifneq (,$(findstring detached,$(BUILDVERSION)))
   BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "HEAD_%s",$$6}'  )
 endif
 
+FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
+
 ifeq ($(DEBUG),on)
  FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g
 endif
 
-FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
 
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations -Wno-missing-braces
 FLAGS    += $(WARNFLAGS)
@@ -40,33 +41,44 @@ FLAGS    += $(WARNFLAGS)
 SOFLAGS = $(FLAGS)
 
 PYTHON_MAJOR_VERSION = $(shell python -c "import sys; sys.stdout.write('{}'.format(sys.version_info.major))")
-PYTHONCONFIG = python$(PYTHON_MAJOR_VERSION)-config
-
-#PYTHONFLAGS = -I/usr/include/python2.7 -lboost_python #-lpython
-#PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags ) -Wl,--no-as-needed
-#PYTHONLIBS = -I./pybind11/include $(shell python-config  --ldflags)
-PYTHONFLAGS = -I./pybind11/include $(shell $(PYTHONCONFIG) --cflags ) -Wl,--no-as-needed
-PYTHONLIBS = -I./pybind11/include $(shell $(PYTHONCONFIG)  --ldflags)
+PYTHON_CONFIG = python$(PYTHON_MAJOR_VERSION)-config
+PYTHON_CFLAGS = $(shell $(PYTHON_CONFIG) --cflags )
+PYTHON_LDFLAGS = $(shell $(PYTHON_CONFIG) --ldflags )
+PYTHON_INCLUDE = -I./pybind11/include
+PYTHONFLAGS =  $(PYTHON_CFLAGS) -Wl,--no-as-needed
 
 THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; elif [ `hostname|grep cedar` ]; then echo cedar; else echo other; fi)
 
 
 
 ifeq ($(OS),MACOS)
-#  FLAGS     = -Xpreprocessor -fopenmp -O3 -march=native -std=c++11 -fPIC
   FLAGS     = -Xpreprocessor -fopenmp -O3  -std=c++11 -fPIC
   LIBS += -lomp
-  PYTHONFLAGS = -I./pybind11/include $(shell python-config --cflags | sed -e 's/-arch i386//')
+  PYTHONFLAGS =  $(shell python-config --cflags | sed -e 's/-arch i386//')
 endif
 
 
 ifeq ($(HDF5),on)
- LIBS += -lhdf5_cpp -lhdf5
+ LIBS += -lhdf5_cpp
+ NEWHDF5LOC = $(shell if [ -d /usr/include/hdf5/serial ]; then echo yes; else echo no; fi)
+ ifeq ($(NEWHDF5LOC),yes)
+   INCLUDE += -I/usr/include/hdf5/serial
+   LIBS += -lhdf5_serial
+ else
+  LIBS += -lhdf5
+ endif
 else
  FLAGS += -DNO_HDF5   # By default, don't bother building with HDF5, since it's not used very often and can make building a pain
 endif
 
 
+
+ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up nicely.
+ LIBS += -llapack
+# ifneq ($(PYTHON),off)
+#  ALL += pyIMSRG.so
+# endif
+endif
 
 ifeq ($(THEHOST),jureca) # specific options for jureca cluster
 # FLAGS += -DOPENBLAS_NOUSEOMP=1
@@ -77,60 +89,86 @@ ifeq ($(THEHOST),jureca) # specific options for jureca cluster
  PYTHONFLAGS := $(filter-out source,$(PYTHONFLAGS))
  PYTHONFLAGS := $(filter-out -xHost,$(PYTHONFLAGS))
 endif
+
 ifeq ($(THEHOST),cougar) # specific options for cougar cluster
  LIBS += -llapack
-# PYTHONFLAGS = -I/opt/anaconda/include/python2.7 -L/opt/boost/1.58.0/lib -lboost_python #-lpython
-  PYTHONFLAGS := -L/opt/anaconda/lib $(PYTHONFLAGS)
+ PYTHONFLAGS := -L/opt/anaconda/lib $(PYTHONFLAGS)
 endif
+
 ifeq ($(THEHOST),cronos)
- FLAGS += -DOLD_BOOST=1
+ FLAGS   += -DOLD_BOOST=1
  SOFLAGS += -DOLD_BOOST=1
  INCLUDE += -I$(HOME)/include
- LIBS += -L$(HOME)/lib
- ifneq ($(PYTHON),off)
-  ALL += pyIMSRG.so
-  endif
-endif
-ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up nicely.
- LIBS += -llapack
- ifneq ($(PYTHON),off)
-  ALL += pyIMSRG.so
- endif
+ LIBS    += -L$(HOME)/lib
+
 endif
 
 ifeq ($(THEHOST),oak)
-#  FLAGS += -DOLD_BOOST
-#  FLAGS += -DOPENBLAS_NOUSEOMP=1
   NEWLIBS := $(filter-out -lopenblas -lblas,$(LIBS))
   LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
- ifneq ($(PYTHON),off)
-  ALL += pyIMSRG.so
-  endif
+# ifneq ($(PYTHON),off)
+#  ALL += pyIMSRG.so
+#  endif
 endif
 
 ifeq ($(THEHOST),cedar)
 #  NEWLIBS := $(filter-out -lopenblas,$(LIBS))
-  NEWLIBS := $(filter-out -lblas,$(LIBS))
-  LIBS = $(NEWLIBS) -lopenblas
+#  NEWLIBS := $(filter-out -lblas,$(LIBS))
+#  LIBS = $(NEWLIBS) -lopenblas
 #  LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
- ifneq ($(PYTHON),off)
-  ALL += pyIMSRG.so
-  endif
+# ifneq ($(PYTHON),off)
+#  ALL += pyIMSRG.so
+#  endif
 endif
 
 
-ifeq ($(HDF5),on)
-# The new version of Ubuntu puts the hdf5 libraries in a different location
- NEWHDF5LOC = $(shell if [ -d /usr/include/hdf5/serial ]; then echo yes; else echo no; fi)
- ifeq ($(NEWHDF5LOC),yes)
-   INCLUDE += -I/usr/include/hdf5/serial
-   NEWLIBS := $(filter-out -lhdf5,$(LIBS))
-   LIBS = $(NEWLIBS) -lhdf5_serial
+
+
+ifneq ($(PYTHON),off)
+ ALL += pyIMSRG.so
  endif
-endif
+
 
 all: $(ALL)
 	@echo Building with build version $(BUILDVERSION)
+
+OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
+      HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\
+      IMSRGProfiler.o Commutator.o HFMBPT.o\
+      DarkMatterNREFT.o Jacobi3BME.o UnitTest.o \
+      TwoBodyChannel.o ThreeBodyChannel.o \
+      ThreeBodyMEpn.o ThreeLegME.o ThreeBodyMENO2B.o \
+      boost_src/gzip.o boost_src/zlib.o
+
+
+boost_src/%.o: boost_src/%.cpp
+	$(CXX) -c $^ -o $@ $(INCLUDE) $(FLAGS)
+
+
+%.o: %.cc %.hh
+	$(CXX) -c $*.cc -o $@ $(INCLUDE) $(FLAGS)
+
+%.o: %.cc
+	$(CXX) -c $*.cc -o $@ $(INCLUDE) $(FLAGS)
+
+
+libIMSRG.so: $(OBJ)
+	$(CXX) $^ -shared -o $@ $(SOFLAGS) $(LIBS)
+
+python: pyIMSRG.so
+
+pyIMSRG.so: $(OBJ)  pyIMSRG.o
+	$(CXX) $(FLAGS) $(INCLUDE) $(PYTHON_INCUDE) $(PYTHONFLAGS) $(PYTHONLDFLAGS) $(LIBS) -shared  $^ -o $@
+
+pyIMSRG.o: pyIMSRG.cc
+	$(CXX) -c  $(FLAGS) $(INCLUDE) $(PYTHON_INCLUDE) $(PYTHONFLAGS)  $^ -o $@
+
+imsrg++: imsrg++.cc libIMSRG.so Parameters.hh
+	$(CXX) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
+
+clean:
+	rm -f *.o *.so boost_src/*.o
+
 
 install: splashscreen
 	@if [ ! -d $(INSTDIR)/lib ] ; then \
@@ -159,53 +197,6 @@ install: splashscreen
 	@echo '*********************************************************************'
 	@echo '* Make sure libIMSRG.so is in your LIBRARY_PATH and LD_LIBRARY_PATH *'
 	@echo '*********************************************************************'
-
-
-OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
-      HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\
-      IMSRGProfiler.o Commutator.o HFMBPT.o\
-      DarkMatterNREFT.o Jacobi3BME.o UnitTest.o \
-      TwoBodyChannel.o ThreeBodyChannel.o \
-      ThreeBodyMEpn.o ThreeLegME.o ThreeBodyMENO2B.o \
-      boost_src/gzip.o boost_src/zlib.o
-
-mysrg: main.cc $(OBJ)
-	$(CC) $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS)
-
-boost_src/gzip.o: boost_src/gzip.cpp
-	$(CC) -c $^ -o $@ $(INCLUDE) $(FLAGS)
-#	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS)
-
-boost_src/zlib.o: boost_src/zlib.cpp
-	$(CC) -c $^ -o $@ $(INCLUDE) $(FLAGS)
-#	$(CC) -c $^ -o $@ $(INCLUDE) $(LIBS) $(FLAGS)
-
-
-%.o: %.cc %.hh
-	$(CC) -c $*.cc -o $@ $(INCLUDE) $(FLAGS)
-#	$(CC) -c $*.cc -o $@ $(INCLUDE) $(LIBS) $(FLAGS)
-
-%.o: %.cc
-	$(CC) -c $*.cc -o $@ $(INCLUDE) $(FLAGS)
-
-
-libIMSRG.so: $(OBJ)
-	$(CC) $^ -shared -o $@ $(SOFLAGS) $(LIBS)
-
-python: pyIMSRG.so
-
-pyIMSRG.so: $(OBJ)  pyIMSRG.o
-	$(CC) $(FLAGS) $(INCLUDE) $(PYTHONFLAGS) $(PYTHONLIBS) $(LIBS) -shared  $^ -o $@
-
-pyIMSRG.o: pyIMSRG.cc
-	$(CC) -c  $(FLAGS) $(INCLUDE) $(PYTHONFLAGS)  $^ -o $@
-#	$(CC) -c  $(FLAGS) $(INCLUDE) $(PYTHONFLAGS) $(LIBS)  $^ -o $@
-
-imsrg++: imsrg++.cc libIMSRG.so Parameters.hh
-	$(CC) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
-
-clean:
-	rm -f *.o *.so boost_src/*.o
 
 
 
