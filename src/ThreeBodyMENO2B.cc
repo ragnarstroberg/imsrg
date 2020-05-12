@@ -29,7 +29,8 @@ ThreeBodyChannelNO2B::ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T
   : J2(J2), P2(P2), J1(J1), P1(P1), T3(T3), thr(thr)
 {
   Ndim = 0;
-  int emax = std::max(thr->Emax, thr->Emax_file);
+//  int emax = std::max(thr->Emax, thr->Emax_file);
+  int emax = thr->Emax;
   int e2max = std::max(thr->E2max, thr->E2max_file);
   int e3max = std::max(thr->E3max, thr->E3max_file);
   int Norbs = thr->iOrbits.size();
@@ -410,6 +411,7 @@ long long unsigned int ThreeBodyMENO2B::CountME()
     int j1 = o1.j;
     int l1 = o1.l;
     int e1 = o1.e;
+    if(e1 > Emax) continue;
     if(e1 > Emax_file) continue;
     for (int i2=0; i2 <= i1; i2++) {
       OrbitIsospin & o2 = iOrbits[i2];

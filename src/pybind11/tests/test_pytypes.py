@@ -1,3 +1,4 @@
+from __future__ import division
 import pytest
 import sys
 
@@ -7,15 +8,17 @@ from pybind11_tests import debug_enabled
 
 def test_list(capture, doc):
     with capture:
-        l = m.get_list()
-        assert l == ["overwritten"]
+        lst = m.get_list()
+        assert lst == ["inserted-0", "overwritten", "inserted-2"]
 
-        l.append("value2")
-        m.print_list(l)
+        lst.append("value2")
+        m.print_list(lst)
     assert capture.unordered == """
         Entry at position 0: value
-        list item 0: overwritten
-        list item 1: value2
+        list item 0: inserted-0
+        list item 1: overwritten
+        list item 2: inserted-2
+        list item 3: value2
     """
 
     assert doc(m.get_list) == "get_list() -> list"
@@ -36,6 +39,10 @@ def test_set(capture, doc):
         key: key4
     """
 
+    assert not m.set_contains(set([]), 42)
+    assert m.set_contains({42}, 42)
+    assert m.set_contains({"foo"}, "foo")
+
     assert doc(m.get_list) == "get_list() -> list"
     assert doc(m.print_list) == "print_list(arg0: list) -> None"
 
@@ -51,6 +58,10 @@ def test_dict(capture, doc):
         key: key, value=value
         key: key2, value=value2
     """
+
+    assert not m.dict_contains({}, 42)
+    assert m.dict_contains({42: None}, 42)
+    assert m.dict_contains({"foo": None}, "foo")
 
     assert doc(m.get_dict) == "get_dict() -> dict"
     assert doc(m.print_dict) == "print_dict(arg0: dict) -> None"
@@ -144,6 +155,8 @@ def test_accessors():
     assert d["is_none"] is False
     assert d["operator()"] == 2
     assert d["operator*"] == 7
+    assert d["implicit_list"] == [1, 2, 3]
+    assert all(x in TestObject.__dict__ for x in d["implicit_dict"])
 
     assert m.tuple_accessor(tuple()) == (0, 1, 2)
 
@@ -174,8 +187,19 @@ def test_constructors():
     }
     inputs = {k.__name__: v for k, v in data.items()}
     expected = {k.__name__: k(v) for k, v in data.items()}
+
     assert m.converting_constructors(inputs) == expected
     assert m.cast_functions(inputs) == expected
+
+    # Converting constructors and cast functions should just reference rather
+    # than copy when no conversion is needed:
+    noconv1 = m.converting_constructors(expected)
+    for k in noconv1:
+        assert noconv1[k] is expected[k]
+
+    noconv2 = m.cast_functions(expected)
+    for k in noconv2:
+        assert noconv2[k] is expected[k]
 
 
 def test_implicit_casting():
@@ -209,3 +233,31 @@ def test_print(capture):
         if debug_enabled else
         "arguments to Python object (compile in debug mode for details)"
     )
+
+
+def test_hash():
+    class Hashable(object):
+        def __init__(self, value):
+            self.value = value
+
+        def __hash__(self):
+            return self.value
+
+    class Unhashable(object):
+        __hash__ = None
+
+    assert m.hash_function(Hashable(42)) == 42
+    with pytest.raises(TypeError):
+        m.hash_function(Unhashable())
+
+
+def test_number_protocol():
+    for a, b in [(1, 1), (3, 5)]:
+        li = [a == b, a != b, a < b, a <= b, a > b, a >= b, a + b,
+              a - b, a * b, a / b, a | b, a & b, a ^ b, a >> b, a << b]
+        assert m.test_number_protocol(a, b) == li
+
+
+def test_list_slicing():
+    li = list(range(100))
+    assert li[::2] == m.test_list_slicing(li)

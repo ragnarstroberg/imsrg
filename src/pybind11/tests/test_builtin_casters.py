@@ -15,6 +15,8 @@ def test_unicode_conversion():
     assert m.good_utf16_string() == u"b‽🎂𝐀z"
     assert m.good_utf32_string() == u"a𝐀🎂‽z"
     assert m.good_wchar_string() == u"a⸘𝐀z"
+    if hasattr(m, "has_u8string"):
+        assert m.good_utf8_u8string() == u"Say utf8‽ 🎂 𝐀"
 
     with pytest.raises(UnicodeDecodeError):
         m.bad_utf8_string()
@@ -29,12 +31,17 @@ def test_unicode_conversion():
     if hasattr(m, "bad_wchar_string"):
         with pytest.raises(UnicodeDecodeError):
             m.bad_wchar_string()
+    if hasattr(m, "has_u8string"):
+        with pytest.raises(UnicodeDecodeError):
+            m.bad_utf8_u8string()
 
     assert m.u8_Z() == 'Z'
     assert m.u8_eacute() == u'é'
     assert m.u16_ibang() == u'‽'
     assert m.u32_mathbfA() == u'𝐀'
     assert m.wchar_heart() == u'♥'
+    if hasattr(m, "has_u8string"):
+        assert m.u8_char8_Z() == 'Z'
 
 
 def test_single_char_arguments():
@@ -44,6 +51,7 @@ def test_single_char_arguments():
     toolong_message = "Expected a character, but multi-character string found"
 
     assert m.ord_char(u'a') == 0x61  # simple ASCII
+    assert m.ord_char_lv(u'b') == 0x62
     assert m.ord_char(u'é') == 0xE9  # requires 2 bytes in utf-8, but can be stuffed in a char
     with pytest.raises(ValueError) as excinfo:
         assert m.ord_char(u'Ā') == 0x100  # requires 2 bytes, doesn't fit in a char
@@ -54,9 +62,11 @@ def test_single_char_arguments():
 
     assert m.ord_char16(u'a') == 0x61
     assert m.ord_char16(u'é') == 0xE9
+    assert m.ord_char16_lv(u'ê') == 0xEA
     assert m.ord_char16(u'Ā') == 0x100
     assert m.ord_char16(u'‽') == 0x203d
     assert m.ord_char16(u'♥') == 0x2665
+    assert m.ord_char16_lv(u'♡') == 0x2661
     with pytest.raises(ValueError) as excinfo:
         assert m.ord_char16(u'🎂') == 0x1F382  # requires surrogate pair
     assert str(excinfo.value) == toobig_message(0x10000)
@@ -89,6 +99,17 @@ def test_single_char_arguments():
         assert m.ord_wchar(u'aa')
     assert str(excinfo.value) == toolong_message
 
+    if hasattr(m, "has_u8string"):
+        assert m.ord_char8(u'a') == 0x61  # simple ASCII
+        assert m.ord_char8_lv(u'b') == 0x62
+        assert m.ord_char8(u'é') == 0xE9  # requires 2 bytes in utf-8, but can be stuffed in a char
+        with pytest.raises(ValueError) as excinfo:
+            assert m.ord_char8(u'Ā') == 0x100  # requires 2 bytes, doesn't fit in a char
+        assert str(excinfo.value) == toobig_message(0x100)
+        with pytest.raises(ValueError) as excinfo:
+            assert m.ord_char8(u'ab')
+        assert str(excinfo.value) == toolong_message
+
 
 def test_bytes_to_string():
     """Tests the ability to pass bytes to C++ string-accepting functions.  Note that this is
@@ -113,10 +134,15 @@ def test_string_view(capture):
     assert m.string_view_chars("Hi 🎂") == [72, 105, 32, 0xf0, 0x9f, 0x8e, 0x82]
     assert m.string_view16_chars("Hi 🎂") == [72, 105, 32, 0xd83c, 0xdf82]
     assert m.string_view32_chars("Hi 🎂") == [72, 105, 32, 127874]
+    if hasattr(m, "has_u8string"):
+        assert m.string_view8_chars("Hi") == [72, 105]
+        assert m.string_view8_chars("Hi 🎂") == [72, 105, 32, 0xf0, 0x9f, 0x8e, 0x82]
 
     assert m.string_view_return() == "utf8 secret 🎂"
     assert m.string_view16_return() == "utf16 secret 🎂"
     assert m.string_view32_return() == "utf32 secret 🎂"
+    if hasattr(m, "has_u8string"):
+        assert m.string_view8_return() == "utf8 secret 🎂"
 
     with capture:
         m.string_view_print("Hi")
@@ -129,6 +155,14 @@ def test_string_view(capture):
         utf16 🎂 8
         utf32 🎂 7
     """
+    if hasattr(m, "has_u8string"):
+        with capture:
+            m.string_view8_print("Hi")
+            m.string_view8_print("utf8 🎂")
+        assert capture == """
+            Hi 2
+            utf8 🎂 9
+        """
 
     with capture:
         m.string_view_print("Hi, ascii")
@@ -141,6 +175,52 @@ def test_string_view(capture):
         Hi, utf16 🎂 12
         Hi, utf32 🎂 11
     """
+    if hasattr(m, "has_u8string"):
+        with capture:
+            m.string_view8_print("Hi, ascii")
+            m.string_view8_print("Hi, utf8 🎂")
+        assert capture == """
+            Hi, ascii 9
+            Hi, utf8 🎂 13
+        """
+
+
+def test_integer_casting():
+    """Issue #929 - out-of-range integer values shouldn't be accepted"""
+    import sys
+    assert m.i32_str(-1) == "-1"
+    assert m.i64_str(-1) == "-1"
+    assert m.i32_str(2000000000) == "2000000000"
+    assert m.u32_str(2000000000) == "2000000000"
+    if sys.version_info < (3,):
+        assert m.i32_str(long(-1)) == "-1"  # noqa: F821 undefined name 'long'
+        assert m.i64_str(long(-1)) == "-1"  # noqa: F821 undefined name 'long'
+        assert m.i64_str(long(-999999999999)) == "-999999999999"  # noqa: F821 undefined name
+        assert m.u64_str(long(999999999999)) == "999999999999"  # noqa: F821 undefined name 'long'
+    else:
+        assert m.i64_str(-999999999999) == "-999999999999"
+        assert m.u64_str(999999999999) == "999999999999"
+
+    with pytest.raises(TypeError) as excinfo:
+        m.u32_str(-1)
+    assert "incompatible function arguments" in str(excinfo.value)
+    with pytest.raises(TypeError) as excinfo:
+        m.u64_str(-1)
+    assert "incompatible function arguments" in str(excinfo.value)
+    with pytest.raises(TypeError) as excinfo:
+        m.i32_str(-3000000000)
+    assert "incompatible function arguments" in str(excinfo.value)
+    with pytest.raises(TypeError) as excinfo:
+        m.i32_str(3000000000)
+    assert "incompatible function arguments" in str(excinfo.value)
+
+    if sys.version_info < (3,):
+        with pytest.raises(TypeError) as excinfo:
+            m.u32_str(long(-1))  # noqa: F821 undefined name 'long'
+        assert "incompatible function arguments" in str(excinfo.value)
+        with pytest.raises(TypeError) as excinfo:
+            m.u64_str(long(-1))  # noqa: F821 undefined name 'long'
+        assert "incompatible function arguments" in str(excinfo.value)
 
 
 def test_tuple(doc):
@@ -150,6 +230,7 @@ def test_tuple(doc):
     # Any sequence can be cast to a std::pair or std::tuple
     assert m.pair_passthrough([True, "test"]) == ("test", True)
     assert m.tuple_passthrough([True, "test", 5]) == (5, "test", True)
+    assert m.empty_tuple() == ()
 
     assert doc(m.pair_passthrough) == """
         pair_passthrough(arg0: Tuple[bool, str]) -> Tuple[str, bool]
@@ -161,6 +242,13 @@ def test_tuple(doc):
 
         Return a triple in reversed order
     """
+
+    assert m.rvalue_pair() == ("rvalue", "rvalue")
+    assert m.lvalue_pair() == ("lvalue", "lvalue")
+    assert m.rvalue_tuple() == ("rvalue", "rvalue", "rvalue")
+    assert m.lvalue_tuple() == ("lvalue", "lvalue", "lvalue")
+    assert m.rvalue_nested() == ("rvalue", ("rvalue", ("rvalue", "rvalue")))
+    assert m.lvalue_nested() == ("lvalue", ("lvalue", ("lvalue", "lvalue")))
 
 
 def test_builtins_cast_return_none():
@@ -219,3 +307,79 @@ def test_complex_cast():
     """std::complex casts"""
     assert m.complex_cast(1) == "1.0"
     assert m.complex_cast(2j) == "(0.0, 2.0)"
+
+
+def test_bool_caster():
+    """Test bool caster implicit conversions."""
+    convert, noconvert = m.bool_passthrough, m.bool_passthrough_noconvert
+
+    def require_implicit(v):
+        pytest.raises(TypeError, noconvert, v)
+
+    def cant_convert(v):
+        pytest.raises(TypeError, convert, v)
+
+    # straight up bool
+    assert convert(True) is True
+    assert convert(False) is False
+    assert noconvert(True) is True
+    assert noconvert(False) is False
+
+    # None requires implicit conversion
+    require_implicit(None)
+    assert convert(None) is False
+
+    class A(object):
+        def __init__(self, x):
+            self.x = x
+
+        def __nonzero__(self):
+            return self.x
+
+        def __bool__(self):
+            return self.x
+
+    class B(object):
+        pass
+
+    # Arbitrary objects are not accepted
+    cant_convert(object())
+    cant_convert(B())
+
+    # Objects with __nonzero__ / __bool__ defined can be converted
+    require_implicit(A(True))
+    assert convert(A(True)) is True
+    assert convert(A(False)) is False
+
+
+@pytest.requires_numpy
+def test_numpy_bool():
+    import numpy as np
+    convert, noconvert = m.bool_passthrough, m.bool_passthrough_noconvert
+
+    def cant_convert(v):
+        pytest.raises(TypeError, convert, v)
+
+    # np.bool_ is not considered implicit
+    assert convert(np.bool_(True)) is True
+    assert convert(np.bool_(False)) is False
+    assert noconvert(np.bool_(True)) is True
+    assert noconvert(np.bool_(False)) is False
+    cant_convert(np.zeros(2, dtype='int'))
+
+
+def test_int_long():
+    """In Python 2, a C++ int should return a Python int rather than long
+    if possible: longs are not always accepted where ints are used (such
+    as the argument to sys.exit()). A C++ long long is always a Python
+    long."""
+
+    import sys
+    must_be_long = type(getattr(sys, 'maxint', 1) + 1)
+    assert isinstance(m.int_cast(), int)
+    assert isinstance(m.long_cast(), int)
+    assert isinstance(m.longlong_cast(), must_be_long)
+
+
+def test_void_caster_2():
+    assert m.test_void_caster()
