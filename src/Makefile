@@ -50,7 +50,7 @@ PYTHON_LDFLAGS = $(shell $(PYTHON_CONFIG) --ldflags )
 PYTHON_INCLUDE = -I./pybind11/include
 PYTHONFLAGS =  $(PYTHON_CFLAGS) -Wl,--no-as-needed
 
-THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; elif [ `hostname|grep cedar` ]; then echo cedar; else echo other; fi)
+THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; elif [ `hostname|grep cedar` ]; then echo cedar; elif [ `hostname|grep mox` ]; then echo mox;  else echo other; fi)
 
 
 
@@ -113,6 +113,13 @@ ifeq ($(THEHOST),oak)
 #  ALL += pyIMSRG.so
 #  endif
 endif
+
+ifeq ($(THEHOST),mox)
+  NEWLIBS := $(filter-out -lopenblas -lblas,$(LIBS))
+  LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+endif
+
+
 
 ifeq ($(THEHOST),cedar)
 #  NEWLIBS := $(filter-out -lopenblas,$(LIBS))
