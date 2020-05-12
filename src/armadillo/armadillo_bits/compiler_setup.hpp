@@ -37,34 +37,46 @@
 #define arma_noinline
 #define arma_ignore(variable)  ((void)(variable))
 
-#undef arma_fortran_noprefix
-#undef arma_fortran_prefix
-
-#undef arma_fortran2_noprefix
-#undef arma_fortran2_prefix
+#undef arma_fortran_sans_prefix_B
+#undef arma_fortran_with_prefix_B
  
 #if defined(ARMA_BLAS_UNDERSCORE)
-  #define arma_fortran2_noprefix(function) function##_
-  #define arma_fortran2_prefix(function)   wrapper_##function##_
+  #define arma_fortran_sans_prefix_B(function) function##_
+  
+  #if defined(ARMA_USE_FORTRAN_HIDDEN_ARGS)  
+    #define arma_fortran_with_prefix_B(function) wrapper2_##function##_
+  #else
+    #define arma_fortran_with_prefix_B(function) wrapper_##function##_
+  #endif
 #else
-  #define arma_fortran2_noprefix(function) function
-  #define arma_fortran2_prefix(function)   wrapper_##function
+  #define arma_fortran_sans_prefix_B(function) function
+  
+  #if defined(ARMA_USE_FORTRAN_HIDDEN_ARGS)  
+    #define arma_fortran_with_prefix_B(function) wrapper2_##function
+  #else
+    #define arma_fortran_with_prefix_B(function) wrapper_##function
+  #endif
 #endif
 
+#undef arma_fortran
+#undef arma_wrapper
+
 #if defined(ARMA_USE_WRAPPER)
-  #define arma_fortran(function) arma_fortran2_prefix(function)
+  #define arma_fortran(function) arma_fortran_with_prefix_B(function)
   #define arma_wrapper(function) wrapper_##function
 #else
-  #define arma_fortran(function) arma_fortran2_noprefix(function)
+  #define arma_fortran(function) arma_fortran_sans_prefix_B(function)
   #define arma_wrapper(function) function
 #endif
 
-#define arma_fortran_prefix(function)   arma_fortran2_prefix(function)
-#define arma_fortran_noprefix(function) arma_fortran2_noprefix(function)
+#undef arma_fortran_sans_prefix
+#undef arma_fortran_with_prefix
+
+#define arma_fortran_sans_prefix(function) arma_fortran_sans_prefix_B(function)
+#define arma_fortran_with_prefix(function) arma_fortran_with_prefix_B(function)
 
 #undef  ARMA_INCFILE_WRAP
 #define ARMA_INCFILE_WRAP(x) <x>
-
 
 #if defined(ARMA_USE_CXX11)
   
@@ -127,9 +139,12 @@
   #undef  ARMA_BLAS_SDOT_BUG
   #define ARMA_BLAS_SDOT_BUG
   
-  #undef  ARMA_HAVE_POSIX_MEMALIGN
-  #undef  ARMA_USE_EXTERN_CXX11_RNG
-  // TODO: thread local storage (TLS) (eg. "extern thread_local") appears currently broken on Mac OS X
+  // #undef  ARMA_HAVE_POSIX_MEMALIGN
+  // NOTE: posix_memalign() is available since macOS 10.6 (late 2009 onwards)
+  
+  // #undef  ARMA_USE_EXTERN_CXX11_RNG
+  // NOTE: thread_local seems to work in Apple clang since Xcode 8 (mid 2016 onwards)
+  // NOTE: https://stackoverflow.com/questions/28094794/why-does-apple-clang-disallow-c11-thread-local-when-official-clang-supports
 #endif
 
 
@@ -153,29 +168,27 @@
 #endif
 
 
-#if (defined(__GNUG__) || defined(__GNUC__)) && (defined(__clang__) || defined(__INTEL_COMPILER) || defined(__NVCC__) || defined(__CUDACC__) || defined(__PGI) || defined(__PATHSCALE__) || defined(__ARMCC_VERSION) || defined(__IBMCPP__))
-  #undef  ARMA_FAKE_GCC
-  #define ARMA_FAKE_GCC
+#if !defined(ARMA_ALLOW_FAKE_GCC)
+  #if (defined(__GNUG__) || defined(__GNUC__)) && (defined(__INTEL_COMPILER) || defined(__NVCC__) || defined(__CUDACC__) || defined(__PGI) || defined(__PATHSCALE__) || defined(__ARMCC_VERSION) || defined(__IBMCPP__))
+    #undef  ARMA_DETECTED_FAKE_GCC
+    #define ARMA_DETECTED_FAKE_GCC
+    
+    #pragma message ("WARNING: this compiler is pretending to be GCC but it may not be fully compatible;")
+    #pragma message ("WARNING: to allow this compiler to use GCC features such as data alignment attributes,")
+    #pragma message ("WARNING: #define ARMA_ALLOW_FAKE_GCC before #include <armadillo>")
+  #endif
 #endif
 
 
-#if defined(__GNUG__) && !defined(ARMA_FAKE_GCC)
+#if defined(__GNUG__) && (!defined(__clang__) && !defined(ARMA_DETECTED_FAKE_GCC))
+  
+  // #pragma message ("using GCC extensions")
   
   #undef  ARMA_GCC_VERSION
   #define ARMA_GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
   
-  #if (ARMA_GCC_VERSION < 40400)
-    #error "*** Need a newer compiler ***"
-  #endif
-  
-  #if (ARMA_GCC_VERSION < 40600)
-    #undef  ARMA_PRINT_CXX98_WARNING
-    #define ARMA_PRINT_CXX98_WARNING
-  #endif
-  
-  #if ( (ARMA_GCC_VERSION >= 40700) && (ARMA_GCC_VERSION <= 40701) )
-    #error "gcc versions 4.7.0 and 4.7.1 are unsupported; use 4.7.2 or later"
-    // due to http://gcc.gnu.org/bugzilla/show_bug.cgi?id=53549
+  #if (ARMA_GCC_VERSION < 40800)
+    #error "*** newer compiler required; need gcc 4.8 or later ***"
   #endif
   
   #define ARMA_GOOD_COMPILER
@@ -203,21 +216,13 @@
   #undef  ARMA_HAVE_ALIGNED_ATTRIBUTE
   #define ARMA_HAVE_ALIGNED_ATTRIBUTE
   
-  #if defined(ARMA_USE_CXX11)
-    #if (ARMA_GCC_VERSION < 40800)
-      #undef  ARMA_PRINT_CXX11_WARNING
-      #define ARMA_PRINT_CXX11_WARNING
-    #endif
-  #endif
+  #undef  ARMA_HAVE_GCC_ASSUME_ALIGNED
+  #define ARMA_HAVE_GCC_ASSUME_ALIGNED
   
-  #if !defined(ARMA_USE_CXX11) && !defined(__GXX_EXPERIMENTAL_CXX0X__) && (__cplusplus < 201103L) 
+  #if !defined(ARMA_USE_CXX11) && !defined(__GXX_EXPERIMENTAL_CXX0X__) && (__cplusplus < 201103L) && !defined(ARMA_DONT_USE_TR1)
     #if defined(_GLIBCXX_USE_C99_MATH_TR1) && defined(_GLIBCXX_USE_C99_COMPLEX_TR1)
       #define ARMA_HAVE_TR1
     #endif
-  #endif
-  
-  #if (ARMA_GCC_VERSION >= 40700)
-    #define ARMA_HAVE_GCC_ASSUME_ALIGNED
   #endif
   
   // gcc's vectoriser can handle elaborate loops
@@ -235,18 +240,24 @@
     #define ARMA_HAVE_ISNAN
   #endif
   
-  #undef ARMA_GCC_VERSION
+#endif
+
+
+#if !defined(ARMA_ALLOW_FAKE_CLANG)
+  #if defined(__clang__) && (defined(__INTEL_COMPILER) || defined(__NVCC__) || defined(__CUDACC__) || defined(__PGI) || defined(__PATHSCALE__) || defined(__ARMCC_VERSION) || defined(__IBMCPP__))
+    #undef  ARMA_DETECTED_FAKE_CLANG
+    #define ARMA_DETECTED_FAKE_CLANG
+    
+    #pragma message ("WARNING: this compiler is pretending to be Clang but it may not be fully compatible;")
+    #pragma message ("WARNING: to allow this compiler to use Clang features such as data alignment attributes,")
+    #pragma message ("WARNING: #define ARMA_ALLOW_FAKE_CLANG before #include <armadillo>")
+  #endif
+#endif
+
+
+#if defined(__clang__) && !defined(ARMA_DETECTED_FAKE_CLANG)
   
-#endif
-
-
-#if defined(__clang__) && (defined(__INTEL_COMPILER) || defined(__NVCC__) || defined(__CUDACC__) || defined(__PGI) || defined(__PATHSCALE__) || defined(__ARMCC_VERSION) || defined(__IBMCPP__))
-  #undef  ARMA_FAKE_CLANG
-  #define ARMA_FAKE_CLANG
-#endif
-
-
-#if defined(__clang__) && !defined(ARMA_FAKE_CLANG)
+  // #pragma message ("using Clang extensions")
   
   #define ARMA_GOOD_COMPILER
   
@@ -295,7 +306,10 @@
     #define arma_hot __attribute__((__hot__))
   #endif
   
-  #if __has_attribute(__cold__)
+  #if __has_attribute(__minsize__)
+    #undef  arma_cold
+    #define arma_cold __attribute__((__minsize__))
+  #elif __has_attribute(__cold__)
     #undef  arma_cold
     #define arma_cold __attribute__((__cold__))
   #endif
@@ -318,8 +332,12 @@
 
 #if defined(__INTEL_COMPILER)
   
-  #if (__INTEL_COMPILER < 1300)
-    #error "*** Need a newer compiler ***"
+  #if (__INTEL_COMPILER == 9999)
+    #error "*** newer compiler required ***"
+  #endif
+  
+  #if (__INTEL_COMPILER < 1400)
+    #error "*** newer compiler required ***"
   #endif
   
   #undef  ARMA_HAVE_GCC_ASSUME_ALIGNED
@@ -339,7 +357,7 @@
 #if defined(_MSC_VER)
   
   #if (_MSC_VER < 1700)
-    #error "*** Need a newer compiler ***"
+    #error "*** newer compiler required ***"
   #endif
   
   #if (_MSC_VER < 1800)
@@ -354,6 +372,8 @@
     #endif
   #endif
   
+  #undef  arma_deprecated
+  #define arma_deprecated __declspec(deprecated)
   // #undef  arma_inline
   // #define arma_inline inline __forceinline
   
@@ -361,7 +381,7 @@
   
   #pragma warning(disable: 4127)  // conditional expression is constant
   #pragma warning(disable: 4180)  // qualifier has no meaning
-  #pragma warning(disable: 4244)  // possible loss of data when converting types
+  #pragma warning(disable: 4244)  // possible loss of data when converting types (see also 4305)
   #pragma warning(disable: 4510)  // default constructor could not be generated
   #pragma warning(disable: 4511)  // copy constructor can't be generated
   #pragma warning(disable: 4512)  // assignment operator can't be generated
@@ -377,6 +397,11 @@
   #pragma warning(disable: 4711)  // call was inlined
   #pragma warning(disable: 4714)  // __forceinline can't be inlined
   #pragma warning(disable: 4800)  // value forced to bool
+  
+  #if defined(ARMA_USE_CXX11)
+    #pragma warning(disable: 4519)  // default template args are only allowed on a class template
+  #endif
+  
   
   // #if (_MANAGED == 1) || (_M_CEE == 1)
   //   
@@ -408,12 +433,12 @@
   // http://www.oracle.com/technetwork/server-storage/solarisstudio/training/index-jsp-141991.html
   // http://www.oracle.com/technetwork/server-storage/solarisstudio/documentation/cplusplus-faq-355066.html
   
-  #if (__SUNPRO_CC < 0x5100)
-    #error "*** Need a newer compiler ***"
+  #if (__SUNPRO_CC < 0x5130)
+    #error "*** newer compiler required ***"
   #endif
   
   #if defined(ARMA_USE_CXX11)
-    #if (__SUNPRO_CC < 0x5130)
+    #if (__SUNPRO_CC < 0x5140)
       #undef  ARMA_PRINT_CXX11_WARNING
       #define ARMA_PRINT_CXX11_WARNING
     #endif
@@ -448,8 +473,67 @@
 #endif
 
 
+#if ( defined(ARMA_USE_OPENMP) && (!defined(_OPENMP) || (defined(_OPENMP) && (_OPENMP < 201107))) )
+  // OpenMP 3.1 required for atomic read and atomic write
+  // OpenMP 3.0 required for parallelisation of loops with unsigned integers
+  #undef  ARMA_USE_OPENMP
+  #undef  ARMA_PRINT_OPENMP_WARNING
+  #define ARMA_PRINT_OPENMP_WARNING
+#endif
+
+
+#if defined(ARMA_PRINT_OPENMP_WARNING) && !defined(ARMA_DONT_PRINT_OPENMP_WARNING)
+  #pragma message ("WARNING: use of OpenMP disabled; compiler support for OpenMP 3.1+ not detected")
+  
+  #if (defined(_OPENMP) && (_OPENMP < 201107))
+    #pragma message ("NOTE: your compiler appears to have an ancient version of OpenMP")
+    #pragma message ("NOTE: consider upgrading to a better compiler")
+  #endif
+#endif
+
+
+#if defined(ARMA_USE_OPENMP) && !defined(ARMA_USE_CXX11)
+  #if (defined(ARMA_GCC_VERSION) && (ARMA_GCC_VERSION >= 50400)) || (defined(__clang__) && !defined(ARMA_DETECTED_FAKE_CLANG))
+    #undef  ARMA_PRINT_OPENMP_CXX11_WARNING
+    #define ARMA_PRINT_OPENMP_CXX11_WARNING
+  #endif
+#endif
+
+
+#if defined(ARMA_PRINT_OPENMP_CXX11_WARNING) && !defined(ARMA_DONT_PRINT_OPENMP_WARNING)
+  #pragma message ("WARNING: support for OpenMP requires C++11/C++14; add -std=c++11 or -std=c++14 to compiler flags")
+#endif
+
+
+#if defined(ARMA_USE_OPENMP) && defined(ARMA_USE_CXX11)
+  #if (defined(ARMA_GCC_VERSION) && (ARMA_GCC_VERSION < 50400))
+    // due to https://gcc.gnu.org/bugzilla/show_bug.cgi?id=57580
+    #undef ARMA_USE_OPENMP
+    #if !defined(ARMA_DONT_PRINT_OPENMP_WARNING)
+      #pragma message ("WARNING: use of OpenMP disabled due to compiler bug in gcc <= 5.3")
+    #endif
+  #endif
+#endif
+
+
+#if defined(ARMA_GCC_VERSION) && (ARMA_GCC_VERSION >= 50400) && !defined(ARMA_USE_CXX11)
+  #if !defined(ARMA_PRINT_CXX11_WARNING) && !defined(ARMA_PRINT_OPENMP_CXX11_WARNING) && !defined(ARMA_DONT_PRINT_CXX11_WARNING)
+    #pragma message ("NOTE: suggest to enable C++14 mode for faster code; add -std=c++14 to compiler flags")
+  #endif
+#endif
+
+
+
+// cleanup
+
+#undef ARMA_DETECTED_FAKE_GCC
+#undef ARMA_DETECTED_FAKE_CLANG
+#undef ARMA_GCC_VERSION
 #undef ARMA_PRINT_CXX98_WARNING
 #undef ARMA_PRINT_CXX11_WARNING
+#undef ARMA_PRINT_OPENMP_WARNING
+#undef ARMA_PRINT_OPENMP_CXX11_WARNING
+
 
 
 #if defined(log2)
@@ -468,3 +552,12 @@
   #pragma message ("WARNING: detected 'min' and/or 'max' macros and undefined them;")
   #pragma message ("WARNING: you may wish to define NOMINMAX before including any windows header")
 #endif
+
+
+
+//
+// handle more stupid macros
+// https://sourceware.org/bugzilla/show_bug.cgi?id=19239
+
+#undef minor
+#undef major

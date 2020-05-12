@@ -42,6 +42,7 @@ class ThreeBodyMEpn
   int parity;
 
   bool is_allocated = false;
+  static bool none_allocated;
 
 
 
@@ -50,13 +51,13 @@ class ThreeBodyMEpn
 /// we're storing the matrix elements in isospin or PN formalism.
 
   ME_type GetME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n) const;
-  void SetME_pn(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
-  void AddToME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void SetME_pn(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void AddToME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
 
 
   ME_type GetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n) ;
   void SetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
-  void AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
 
 
 
@@ -66,13 +67,15 @@ class ThreeBodyMEpn
   // Under-the-hood implementation for providing setter/getter access if we are using the PN storage.
   // In the case of isospin storage, we just use the setter/getters provided by the ThreeBodyME class.
 
+
+
   ME_type GetME_pn_PN(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n) const;
-  void SetME_pn_PN(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
-  void AddToME_pn_PN(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void SetME_pn_PN(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void AddToME_pn_PN(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
 
   ME_type GetME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n) ;
-  void SetME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
-  void AddToME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void SetME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
+//  void AddToME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
 
   void AccessME_pn_PN_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, size_t& index, int& herm_flip) const;
 
@@ -82,6 +85,12 @@ class ThreeBodyMEpn
   ME_type GetME_pn_PN_ch(size_t chbra, size_t chket, size_t ibra, size_t iket) const;
   ME_type GetME_pn_PN_ch(size_t chbra, size_t chket, Ket3& bra, Ket3& ket) const;
 
+
+  std::vector<double> GetME_pn_PN_TwoOps(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, const ThreeBodyMEpn& X, const ThreeBodyMEpn& Y) const;
+//  std::vector<double> GetME_pn_PN_MultiOp(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, std::initializer_list<const ThreeBodyMEpn&> Ops) const;
+//  std::vector<double> GetME_pn_PN_MultiOp(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, const ThreeBodyMEpn&...Ops) const;
+//  std::vector<double> GetME_pn_PN_MultiOp(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, std::vector<const ThreeBodyMEpn*>& Ops) const;
+//  std::vector<double> GetME_pn_PN_MultiOp(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, std::vector<const ThreeBodyMEpn*>& Ops) const;
 
 //  void SetME_isospin5(  int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, std::array<double,5>& isospin_5plet) ;
 
@@ -109,6 +118,7 @@ class ThreeBodyMEpn
   ThreeBodyMEpn(ModelSpace*);
   ThreeBodyMEpn(ModelSpace* ms, int e3max);
   ThreeBodyMEpn(const ThreeBodyMEpn& tbme);
+  ThreeBodyMEpn(ModelSpace* ms, int rankJ, int rankT, int parity);
 
   void Allocate();
   void Allocate_PN();

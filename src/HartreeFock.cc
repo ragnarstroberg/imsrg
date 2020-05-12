@@ -1598,6 +1598,48 @@ ThreeBodyMEpn HartreeFock::GetValence3B( int emax, int E3max )
   double t_start = omp_get_wtime();
   ThreeBodyMEpn hf3bme(modelspace, E3max);
   hf3bme.Setemax(emax);
+  hf3bme.SwitchToPN_and_discard();
+
+  // big loop over elements of hf3bme...
+  auto norbits = modelspace->GetNumberOrbits();
+  size_t nch3 = modelspace->GetNumberThreeBodyChannels();
+  for ( size_t ch3=0; ch3<nch3; ch3++)
+  {
+    ThreeBodyChannel& Tbc = modelspace->GetThreeBodyChannel(ch3);
+    int twoJ = Tbc.twoJ;
+    size_t nkets = Tbc.GetNumberKets();
+    for (size_t ibra=0; ibra<nkets; ibra++)
+    {
+      Ket3& bra = Tbc.GetKet(ibra);
+      if ( (bra.op->cvq != 1) or (bra.oq->cvq != 1) or (bra.oR->cvq!=1) ) continue;
+      size_t a = bra.p;
+      size_t b = bra.q;
+      size_t c = bra.r;
+      int Jab = bra.Jpq;
+      for (size_t iket=0; iket<nkets; iket++)
+      {
+        Ket3& ket = Tbc.GetKet(iket);
+        if ( (ket.op->cvq != 1) or (ket.oq->cvq != 1) or (ket.oR->cvq!=1) ) continue;
+        size_t d = ket.p;
+        size_t e = ket.q;
+        size_t f = ket.r;
+        int Jde = ket.Jpq;
+        double V = GetTransformed3bme( Jab, Jde, twoJ, a, b, c, d, e, f );
+        hf3bme.SetME_pn_PN_ch(ch3,ch3,ibra,iket, V);
+      }// for iket
+    }// for ibra
+  }// for ch3
+  IMSRGProfiler::timer["HartreeFock::GetValence3B"] += omp_get_wtime() - t_start;
+  return hf3bme;
+
+}
+
+/*
+ThreeBodyMEpn HartreeFock::GetValence3B( int emax, int E3max )
+{
+  double t_start = omp_get_wtime();
+  ThreeBodyMEpn hf3bme(modelspace, E3max);
+  hf3bme.Setemax(emax);
     hf3bme.SwitchToPN_and_discard();
 
   // big loop over elements of hf3bme...
@@ -1656,9 +1698,7 @@ ThreeBodyMEpn HartreeFock::GetValence3B( int emax, int E3max )
   return hf3bme;
 
 }
-
-
-
+*/
 
 
 

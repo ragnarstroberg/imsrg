@@ -41,6 +41,7 @@ typedef unsigned long long int index_t;
 
 class ModelSpace; //forward declaration so Ket can use ModelSpace
 
+/////////////////////////////////////////////
 struct Orbit
 {
    int n;
@@ -48,19 +49,21 @@ struct Orbit
    int j2;
    int tz2;
    double occ; // particle=0, hole=1
+   double occ_nat; // occupation in the natural orbital basis (if we use natural orbitals) particle=0, hole=1
    int cvq; // core=0, valence=1, qspace=2
    int index;
 
    Orbit(){};
    Orbit(int n, int l, int j2, int tz2, double occ, int cvq, int index)
-           : n(n), l(l), j2(j2), tz2(tz2),occ(occ),cvq(cvq),index(index) {};
+           : n(n), l(l), j2(j2), tz2(tz2),occ(occ),occ_nat(occ),cvq(cvq),index(index) {};
 
-   Orbit(const Orbit& orb) : n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),occ(orb.occ),cvq(orb.cvq),index(orb.index) {}
+   Orbit(const Orbit& orb) : n(orb.n), l(orb.l), j2(orb.j2), tz2(orb.tz2),occ(orb.occ),occ_nat(orb.occ),cvq(orb.cvq),index(orb.index) {}
    bool operator==( const Orbit& rhs ) const { return  ( n==rhs.n and l==rhs.l and j2==rhs.j2 and tz2==rhs.tz2 ); };
 };
 
 
 
+/////////////////////////////////////////////
 struct Ket  //  | pq >
 {
    // Fields
@@ -84,6 +87,7 @@ struct Ket  //  | pq >
 };
 
 
+/////////////////////////////////////////////
 struct Ket3 // | p q r >
 {
   // Fields
@@ -111,6 +115,7 @@ struct Ket3 // | p q r >
 
 
 
+/////////////////////////////////////////////
 // This is now given its own implementation file, TwoBodyChannel.cc
 // but the header info stays here, because of the inextricable dependencies
 // between TwoBodyChannel, ModelSpace, Orbit, and Ket. What a mess...
@@ -179,6 +184,7 @@ struct TwoBodyChannel
 
 
 
+/////////////////////////////////////////////
 class TwoBodyChannel_CC : public TwoBodyChannel
 {
   public:
@@ -194,7 +200,7 @@ class TwoBodyChannel_CC : public TwoBodyChannel
 
 
 
-
+/////////////////////////////////////////////
 struct ThreeBodyChannel
 {
 
@@ -220,11 +226,7 @@ struct ThreeBodyChannel
    Ket3& GetKet(size_t iket) ;
    size_t GetNumberKets();
 
-
-
 };
-
-
 
 
 
@@ -251,7 +253,7 @@ class ModelSpace
    int EmaxUnocc; // Separate emax cut for orbits with l,j,tz that aren't present in the HF reference
 
    double dE3max; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
-//   double e_fermi;    // The fermi energy, probably in oscillator units
+   double occnat3cut; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
    std::map<int,double> e_fermi;    // The fermi energy, probably in oscillator units. It's different for protons and neutrons, so index by tz
 
    int norbits;       // number of single-particle orbits (not counting the degenerate m-projections)
@@ -267,7 +269,6 @@ class ModelSpace
    std::vector<Ket3> Kets3;   // vector of three-body Ket3 structs
 
    std::map<std::array<int,3>,std::set<index_t> > OneBodyChannels;  // map that takes l,j,tz and gives a list of indicies of orbits with those quantum numbers
-//   std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
 
    int nTwoBodyChannels;  // number of two body channels J,parity,Tz
    std::vector<TwoBodyChannel> TwoBodyChannels;   // vector of TwoBodyChannel structs
@@ -291,16 +292,6 @@ class ModelSpace
    std::set<index_t> neutron_orbits;  // all the orbits with tz>0
    std::set<index_t> all_orbits;      // all of the orbits, for convenient looping
 
-//   std::vector<index_t> holes;           // in the reference Slater determinant
-//   std::vector<index_t> particles;       // above the reference Slater determinant
-//   std::vector<index_t> core;            // core for decoupling
-//   std::vector<index_t> valence;         // valence space for decoupling
-//   std::vector<index_t> qspace;          // above the valence space for decoupling
-//   std::vector<index_t> proton_orbits;
-//   std::vector<index_t> neutron_orbits;
-//   std::vector<index_t> all_orbits;
-
-//   std::set<std::array<int,3>> hole_quantum_numbers; // For checking if an orbit could mix with the hole orbits
    std::set<std::array<int,2>> hole_quantum_numbers; // For checking if an orbit could mix with the hole orbits
 
    std::vector<index_t> KetIndex_pp; 
@@ -343,7 +334,6 @@ class ModelSpace
 
 
    // Constructors
-//   ~ModelSpace();
    ModelSpace();
    ModelSpace(const ModelSpace&); // copy constructor
    ModelSpace( ModelSpace&&); // move constructor
@@ -359,34 +349,37 @@ class ModelSpace
 
    // Methods
 
-   void SetUpOrbits( );
+//   void SetUpOrbits( );
 
    void Init(int emax, std::string reference, std::string valence);
-   void Init(int emax, std::map<index_t,double> hole_list, std::string valence);
-   void Init(int emax, std::map<index_t,double> hole_list, std::vector<index_t> core_list, std::vector<index_t> valence_list);// keep this for backward-compatibility
-   void Init(int emax, std::map<index_t,double> hole_list, std::set<index_t> core_list, std::set<index_t> valence_list);
-   void Init(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list);
+//   void Init(int emax, std::map<index_t,double> hole_list, std::string valence);
+   void Init(int emax, std::map<std::array<int,4>,double> hole_list, std::string valence);
+//   void Init(int emax, std::map<index_t,double> hole_list, std::vector<index_t> core_list, std::vector<index_t> valence_list);// keep this for backward-compatibility
+//   void Init(int emax, std::map<index_t,double> hole_list, std::set<index_t> core_list, std::set<index_t> valence_list);
+   void Init( std::map<std::array<int,4>,double> hole_list, std::set<std::array<int,4>> core_list, std::set<std::array<int,4>> valence_list);
+   void Init(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list);// backward-compatibility
    void Init_occ_from_file(int emax, std::string valence, std::string occ_file);
    void InitSingleSpecies( int emax, std::string reference, std::string valence); // Work with just one type of fermion
-//   void InitSingleSpecies(int emax, std::string reference, std::string valence); // Work with just one type of fermion
 
-//   std::vector<index_t> GetOrbitsAZ(int A, int Z);
-   std::map<index_t,double> GetOrbitsAZ(int A, int Z);
+
+//   std::map<index_t,double> GetOrbitsAZ(int A, int Z);
+   std::map<std::array<int,4>,double> GetOrbitsAZ(int A, int Z);
    void GetAZfromString(std::string str, int& A, int& Z);
+   std::vector<std::array<int,4>> String2Qnumbers( std::vector<std::string> vs );
    std::vector<index_t> String2Index( std::vector<std::string> vs );
    std::string Index2String(index_t ind);
-   void Get0hwSpace(int Aref, int Zref, std::set<index_t>& core_list, std::set<index_t>& valence_list);
-//   void Get0hwSpace(int Aref, int Zref, std::vector<index_t>& core_list, std::vector<index_t>& valence_list);
-   void ParseCommaSeparatedValenceSpace(std::string valence, std::set<index_t>& core_list, std::set<index_t>& valence_list);
-//   void ParseCommaSeparatedValenceSpace(std::string valence, std::vector<index_t>& core_list, std::vector<index_t>& valence_list);
+   void Get0hwSpace(int Aref, int Zref, std::set<std::array<int,4>>& core_list, std::set<std::array<int,4>>& valence_list);
+//   void Get0hwSpace(int Aref, int Zref, std::set<index_t>& core_list, std::set<index_t>& valence_list);
+   void ParseCommaSeparatedValenceSpace(std::string valence, std::set<std::array<int,4>>& core_list, std::set<std::array<int,4>>& valence_list);
+//   void ParseCommaSeparatedValenceSpace(std::string valence, std::set<index_t>& core_list, std::set<index_t>& valence_list);
 
    void SetupKets();
    void Setup3bKets();
    void AddOrbit(Orbit orb);
-   void AddOrbit(int n, int l, int j2, int tz2, double occ, int io);
+   void AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq);  // cvq: 0=>core, 1=>valence, 2=>qspace
+//   void AddOrbit(int n, int l, int j2, int tz2, double occ, int io);
    void FindEFermi();
    // Setter/Getters
-//   Orbit& GetOrbit(int i) {return (Orbit&) Orbits[i];}; 
    Orbit& GetOrbit(int i); 
    Ket& GetKet(int i) const {return (Ket&) Kets[i];};
    Ket& GetKet(int p, int q) const {return (Ket&) Kets[Index2(p,q)];};
@@ -412,6 +405,7 @@ class ModelSpace
    int GetAref() const {return Aref;};
    int GetZref() const {return Zref;};
    size_t GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
+   size_t GetNumberTwoBodyChannels_CC() const {return TwoBodyChannels_CC.size();};
    size_t GetNumberThreeBodyChannels() const {return ThreeBodyChannels.size();};
 
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
@@ -434,14 +428,14 @@ class ModelSpace
    int GetLmax3(){return Lmax3;};
    void SetEmax(int e){Emax=e;};
    void SetE2max(int e){E2max=e;};
-//   void SetE3max(int e){E3max=e;};
    void SetE3max(int e);
-//   void SetLmax(int l){Lmax=l;};
    void SetLmax(int l);
    void SetLmax2(int l){Lmax2=l;};
    void SetLmax3(int l){Lmax3=l;};
    void SetdE3max(double e){dE3max = e;};
+   void SetOccNat3Cut(double o){occnat3cut = o;};
    double GetdE3max(){return dE3max;};
+   double GetOccNat3Cut(){return occnat3cut;}; // setting this to zero or less makes no cut, setting to 0.25 cuts out everything
    void SetEFermi(double ef){e_fermi[-1]=ef; e_fermi[+1]=ef;};
    std::map<int,double> GetEFermi(){ return e_fermi ;};
    void SetEFermi(double ef_proton, double ef_neutron){e_fermi[-1] = ef_proton; e_fermi[1]=ef_neutron;};
@@ -456,35 +450,25 @@ class ModelSpace
    size_t GetTwoBodyChannelIndex(int j, int p, int t);
    void UnpackTwoBodyChannelIndex( size_t ch, int& j, int& p, int& tz);
    int phase(int x) {return (x%2)==0 ? 1 : -1;};
-//   int phase(double x) {return phase(int(x));};
 
    
    size_t GetThreeBodyChannelIndex( int twoJ, int parity, int twoTz );
+   std::array<size_t,2> CountThreeBodyStatesInsideCut();
 
-
-//   size_t Index1(int n, int l, int j2, int tz2) const {return(2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2 ;};
    size_t Index1(int n, int l, int j2, int tz2) const ;
    size_t Index1_hash(int n, int l, int j2, int tz2) const ;
-//   size_t Index1(int n, int l, int j2, int tz2) const { size_t indx = (2*n+l)*(2*n+l+3) + 1-j2 + (tz2+1)/2; return (single_species ? indx/2 : indx) ;};
-//   inline int Index2(int p, int q) const {return q*(q+1)/2 + p;};
-//   size_t Index2(size_t p, size_t q) const {return p*(2*norbits-1-p)/2 + q;};
    size_t Index2(size_t p, size_t q) const ;
-//   size_t Index2(size_t p, size_t q) const {return p*(2*all_orbits.size()-1-p)/2 + q;};
 
    void PreCalculateMoshinsky();
    void PreCalculateSixJ();
    void ClearVectors();
    void ResetFirstPass();
    void CalculatePandyaLookup(int rank_J, int rank_T, int parity); // construct a lookup table for more efficient pandya transformation
-//   map<array<int,2>,vector<array<int,2>>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
-//   std::map<std::array<int,2>,std::array<std::vector<int>,2>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
    std::map<std::array<size_t,2>,std::array<std::vector<size_t>,2>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
    uint64_t SixJHash(double j1, double j2, double j3, double J1, double J2, double J3);
    void SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& j3, uint64_t& J1, uint64_t& J2, uint64_t& J3);
    uint64_t MoshinskyHash(uint64_t N,uint64_t Lam,uint64_t n,uint64_t lam,uint64_t n1,uint64_t l1,uint64_t n2,uint64_t l2,uint64_t L);
    void MoshinskyUnHash(uint64_t key,uint64_t& N,uint64_t& Lam,uint64_t& n,uint64_t& lam,uint64_t& n1,uint64_t& l1,uint64_t& n2,uint64_t& l2,uint64_t& L);
-
-
 
 
 };

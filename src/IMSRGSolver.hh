@@ -61,9 +61,12 @@ class IMSRGSolver
   int max_omega_written;
   bool magnus_adaptive;
   bool hunter_gatherer;
+  bool perturbative_triples;
 
   double Elast;
   double cumulative_error;
+  double pert_triples_this_omega;
+  double pert_triples_sum;
 
 
   ~IMSRGSolver();
@@ -105,6 +108,7 @@ class IMSRGSolver
   void SetEtaCriterion(float x){eta_criterion = x;};
   void SetMagnusAdaptive(bool b=true){magnus_adaptive = b;};
   void SetHunterGatherer(bool b=true){hunter_gatherer = b;};
+  void SetPerturbativeTriples(bool b=true){perturbative_triples = b;};
 
   int GetSystemDimension();
   Operator& GetH_s(){return FlowingOps[0];};
@@ -128,6 +132,8 @@ class IMSRGSolver
 
   double EstimateStepError();
   double EstimateBCHError( );
+
+  double GetPerturbativeTriples();
 
 
   // This is used to get flow info from odeint

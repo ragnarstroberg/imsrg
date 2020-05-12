@@ -92,6 +92,7 @@ int main(int argc, char** argv)
   bool nucleon_mass_correction = parameters.s("nucleon_mass_correction") == "true";
   bool relativistic_correction = parameters.s("relativistic_correction") == "true";
   bool IMSRG3 = parameters.s("IMSRG3") == "true";
+  bool imsrg3_n7 = parameters.s("imsrg3_n7") == "true";
   bool write_omega = parameters.s("write_omega") == "true";
   bool freeze_occupations = parameters.s("freeze_occupations")=="true";
   bool hunter_gatherer = parameters.s("hunter_gatherer") == "true";
@@ -101,6 +102,7 @@ int main(int argc, char** argv)
   bool store_3bme_pn = (parameters.s("store_3bme_pn")=="true");
   bool only_2b_eta = (parameters.s("only_2b_eta")=="true");
   bool only_2b_omega = (parameters.s("only_2b_omega")=="true");
+  bool perturbative_triples = (parameters.s("perturbative_triples")=="true");
 
   int eMax = parameters.i("emax");
   int lmax = parameters.i("lmax"); // so far I only use this with atomic systems.
@@ -116,7 +118,6 @@ int main(int argc, char** argv)
   int file3e3max = parameters.i("file3e3max");
   int atomicZ = parameters.i("atomicZ");
   int emax_unocc = parameters.i("emax_unocc");
-  int dE3max = parameters.i("dE3max");
 
   double hw = parameters.d("hw");
   double smax = parameters.d("smax");
@@ -130,6 +131,8 @@ int main(int argc, char** argv)
   double hwBetaCM = parameters.d("hwBetaCM");
   double eta_criterion = parameters.d("eta_criterion");
   double hw_trap = parameters.d("hw_trap");
+  double dE3max = parameters.d("dE3max");
+  double OccNat3Cut = parameters.d("OccNat3Cut");
 
   std::vector<std::string> opnames = parameters.v("Operators");
   std::vector<std::string> opsfromfile = parameters.v("OperatorsFromFile");
@@ -223,8 +226,10 @@ int main(int argc, char** argv)
 
   ModelSpace modelspace = ( reference=="default" ? ModelSpace(eMax,valence_space) : ModelSpace(eMax,reference,valence_space) );
 
+  std::cout << __LINE__ << "  constructed modelspace " << std::endl;
   modelspace.SetE3max(E3max);
   modelspace.SetLmax(lmax);
+  std::cout << __LINE__ << "  done setting E3max and lmax " << std::endl;
 //  if (lmax!= 99999)
 //  {
 //    modelspace.ClearVectors();
@@ -419,13 +424,6 @@ int main(int argc, char** argv)
   }
 
 
-  // If we're doing FCI, we want things normal ordered wrt the vacuum
-  // and we want things diagonal when normal ordered wrt the vacuum.
-//  if ( method == "FCI" )
-//  {
-//    modelspace.SetReference("vacuum");
-//  }
-
 
   std::cout << "Creating HF" << std::endl;
 //  HartreeFock hf(Hbare);
@@ -445,6 +443,7 @@ int main(int argc, char** argv)
   {
 //    ThreeBodyME hf3b;
     HNO = hf.GetNormalOrderedH( hno_particle_rank );
+    if ((IMSRG3 or perturbative_triples) and OccNat3Cut>0 ) hf.GetNaturalOrbitals();
   }
   else if (basis == "NAT") // we want to use the natural orbital basis
   {
@@ -476,11 +475,24 @@ int main(int argc, char** argv)
     HNO = Hbare.DoNormalOrdering();
   }
 
-
-  if (IMSRG3)
+  if (perturbative_triples)
   {
     modelspace.SetdE3max(dE3max);
+    modelspace.SetOccNat3Cut(OccNat3Cut);
+    std::array<size_t,2> nstates = modelspace.CountThreeBodyStatesInsideCut();
+    std::cout << "We will compute perturbative triples corrections" << std::endl;
+    std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states kept:  " << nstates[0] << " out of " << nstates[1] << std::endl << std::fixed;
+
+  }
+
+  if (IMSRG3 )
+  {
+    modelspace.SetdE3max(dE3max);
+    modelspace.SetOccNat3Cut(OccNat3Cut);
+//    size_t nstates_kept = modelspace.CountThreeBodyStatesInsideCut();
+    std::array<size_t,2> nstates = modelspace.CountThreeBodyStatesInsideCut();
     std::cout << "You have chosen IMSRG3. good luck..." << std::endl;
+    std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states kept:  " << nstates[0] << " out of " << nstates[1] << std::endl;
 
     if (hno_particle_rank<3 )
     {
@@ -639,6 +651,7 @@ int main(int argc, char** argv)
 
   if (method == "FCI")
   {
+  std::cout << __func__ << "  line " << __LINE__ << std::endl;
    // we want the 1b piece to be diagonal in the vacuum NO representation
     HNO = HNO.UndoNormalOrdering();
     double previous_zero_body = HNO.ZeroBody;
@@ -672,7 +685,6 @@ int main(int argc, char** argv)
     HNO.PrintTimes();
     return 0;
   }
-
   if (only_2b_omega)
   {
     std::cout << " Restricting the Magnus operator Omega to be 2b." << std::endl;
@@ -685,7 +697,8 @@ int main(int argc, char** argv)
   imsrgsolver.GetGenerator().SetOnly2bEta(only_2b_eta);
   imsrgsolver.max_omega_written = 500;
   bool brueckner_restart = false;
-  if (hunter_gatherer) imsrgsolver.SetHunterGatherer( true);
+  imsrgsolver.SetHunterGatherer( hunter_gatherer );
+  imsrgsolver.SetPerturbativeTriples(perturbative_triples);
 
   if (method == "NSmagnus") // "No split" magnus
   {
@@ -716,6 +729,11 @@ int main(int argc, char** argv)
   {
     Commutator::SetUseIMSRG3(true);
     std::cout << "Using IMSRG(3) commutators. This will probably be slow..." << std::endl;
+  }
+  if (imsrg3_n7)
+  {
+    Commutator::SetUseIMSRG3N7(true);
+    std::cout << "  only including IMSRG3 commutator terms that scale up to n7" << std::endl;
   }
 
   imsrgsolver.SetMethod(method);
@@ -755,22 +773,17 @@ int main(int argc, char** argv)
   {
     std::cout << "Norm of 3-body = " << imsrgsolver.GetH_s().ThreeBodyNorm() << std::endl;
   }
+  if ( perturbative_triples and method=="magnus" )
+  {
+//    modelspace.SetdE3max(dE3max);
+//    modelspace.SetOccNat3Cut(OccNat3Cut);
+//    size_t nstates_kept = modelspace.CountThreeBodyStatesInsideCut();
+//    std::array<size_t,2> nstates = modelspace.CountThreeBodyStatesInsideCut();
+//    std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states kept:  " << nstates[0] << " out of " << nstates[1] << std::endl << std::fixed;
+    double dE_triples = imsrgsolver.GetPerturbativeTriples();
+    std::cout << "Perturbative triples:  " << std::setw(16) << std::setprecision(8) << dE_triples << " -> " << imsrgsolver.GetH_s().ZeroBody + dE_triples << std::endl;
+  }
 
-//  HlowT = imsrgsolver.Transform(HlowT);
-//  std::cout << "After Solve, low temp trace with T = " << Temp << " and Ef = " << Efermi << ":   " << HlowT.Trace(modelspace.GetAref(),modelspace.GetZref()) << std::endl;
-
-//  if (method == "magnus")
-//  {
-////    for (size_t i=0;i<ops.size();++i)
-////    {
-////      Operator tmp = imsrgsolver.Transform(ops[i]);
-//////      rw.WriteOperatorHuman(tmp,intfile+opnames[i]+"_step1.op");
-////    }
-////    std::cout << std::endl;
-//    // increase smax in case we need to do additional steps
-//    smax *= 1.5;
-//    imsrgsolver.SetSmax(smax);
-//  }
 
 
   if (brueckner_restart)

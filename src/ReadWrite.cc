@@ -2941,6 +2941,9 @@ void ReadWrite::WriteNuShellX_intfile(Operator& op, std::string filename, std::s
    // then neutrons
    for ( auto i : valence_neutrons ) orb2nushell[i] = counter++;
    for ( auto& it : orb2nushell) nushell2orb[it.second] = it.first;
+   std::cout << "  Valence protons are :";
+   for ( auto i : valence_protons ) std::cout << i << " ";
+   std::cout << std::endl;
 
    // Get A of the core
    int Acore=0;

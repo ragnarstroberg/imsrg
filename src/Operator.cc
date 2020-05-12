@@ -66,7 +66,7 @@ Operator::Operator()
 // Create a zero-valued operator in a given model space
 Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
-    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms), ThreeLeg(&ms), ThreeBodyNO2B(),
+    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms,Jrank,Trank,p), ThreeLeg(&ms), ThreeBodyNO2B(),
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank), legs(2*part_rank),
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),
@@ -978,12 +978,13 @@ void Operator::ScaleTwoBody(double x)
 ///
 double Operator::GetMP2_Energy()
 {
+//   std::cout << "  a    b    i    j    J    na     nb    tbme    denom     dE" << std::endl;
    double t_start = omp_get_wtime();
    double Emp2 = 0;
    int nparticles = modelspace->particles.size();
    std::vector<index_t> particles_vec(modelspace->particles.begin(),modelspace->particles.end()); // convert set to vector for OMP looping
 //   for ( auto& i : modelspace->particles)
-   #pragma omp parallel for reduction(+:Emp2)
+//   #pragma omp parallel for reduction(+:Emp2)
    for ( int ii=0;ii<nparticles;++ii)
    {
 //     std::cout << " i = " << i << std::endl;
@@ -1006,16 +1007,27 @@ double Operator::GetMP2_Energy()
          {
            if (b<a) continue;
            Orbit& ob = modelspace->GetOrbit(b);
+           if ( (oi.l+oj.l+oa.l+ob.l)%2 >0) continue;
+           if ( (oi.tz2 + oj.tz2) != (oa.tz2 +ob.tz2) ) continue;
            double eb = OneBody(b,b);
            double denom = ea+eb-ei-ej;
            int Jmin = std::max(std::abs(oi.j2-oj.j2),std::abs(oa.j2-ob.j2))/2;
            int Jmax = std::min(oi.j2+oj.j2,oa.j2+ob.j2)/2;
-           for (int J=Jmin; J<=Jmax; ++J)
+           int dJ = 1;
+           if (a==b or i==j)
+           {
+             Jmin += Jmin%2;
+             dJ=2;
+           }
+           for (int J=Jmin; J<=Jmax; J+=dJ)
            {
              double tbme = TwoBody.GetTBME_J_norm(J,a,b,i,j);
              if (std::abs(tbme)>1e-6)
               Emp2 += (2*J+1)* oa.occ * ob.occ * tbme*tbme/denom; // no factor 1/4 because of the restricted sum
-//              std::cout << "abij J = " << a << " " << b << " " << i << " " << j << "    " << J << "   na nb" << oa.occ << " " << ob.occ << "  tbme,denom " << tbme << " " << denom << std::endl;
+//              std::cout << " " << a << " " << b << " " << i << " " << j << "    " << J << "  " << oa.occ << " " << ob.occ << "  "
+//                        << std::setw(12) << std::setprecision(6) << tbme << " "
+//                        << std::setw(12) << std::setprecision(6) << denom << "   "
+//                        << std::setw(12) << std::setprecision(6) << (2*J+1) * oa.occ*ob.occ*tbme*tbme/denom  << std::endl;
            }
          }
        }
@@ -1199,22 +1211,28 @@ double Operator::GetMP2_3BEnergy()
      {
        Ket3& bra = Tbc.GetKet(ibra);
        double occ_bra = (bra.op->occ) * (bra.oq->occ) * (bra.oR->occ);
-       if ( std::abs(occ_bra)<1e-3) continue;
+       if ( std::abs(occ_bra)<1e-9) continue;
        size_t i = bra.p;
        size_t j = bra.q;
        size_t k = bra.r;
+       double symm_ijk = 6;
+       if (i==j and i==k) symm_ijk = 1;
+       else if (i==j or i==k) symm_ijk = 3;
        double Eijk = OneBody(i,i) + OneBody(j,j) + OneBody(k,k);
        for (size_t iket=0; iket<nkets; iket++)
        {
          Ket3& ket = Tbc.GetKet(iket);
          double unocc_ket = (1-ket.op->occ) * (1-ket.oq->occ) * (1-ket.oR->occ);
-         if ( std::abs(unocc_ket)<1e-3) continue;
+         if ( std::abs(unocc_ket)<1e-9) continue;
          size_t a = ket.p;
          size_t b = ket.q;
          size_t c = ket.r;
+         double symm_abc = 6;
+         if (a==b and a==c) symm_abc = 1;
+         else if (a==b or a==c) symm_abc = 3;
          double Eabc = OneBody(a,a) + OneBody(b,b) + OneBody(c,c);
          double V = ThreeBody.GetME_pn_PN_ch(ch3,ch3,ibra,iket);
-         Emp2 += (twoJ+1) * V*V / ( Eijk - Eabc);
+         Emp2 += 1./36 * symm_ijk*symm_abc * (twoJ+1) * occ_bra * unocc_ket * V*V / ( Eijk - Eabc) ;
        }// for iket
      }// for ibra
    }// for ch3

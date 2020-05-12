@@ -396,23 +396,23 @@ void UnitTest::Test3BodyAntisymmetry(Operator& Y)
 
 
 
-void UnitTest::Test3BodySetGet(Operator& Y)
-{
-  int i=2,j=0,k=0,l=2,m=0,n=0;
-  int Jij=1;
-  int Jlm=1;
-  int twoJ=1;
-
-  double meread = Y.ThreeBody.GetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n);
-  double setval = 10.0;
-  Y.ThreeBody.SetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n,setval);
-  double getval = Y.ThreeBody.GetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n);
-
-  std::cout << "Before setting, ME = " << meread << std::endl;
-  std::cout << "Set to " << setval << std::endl;
-  std::cout << "After setting, get " << getval << std::endl;
-
-}
+//void UnitTest::Test3BodySetGet(Operator& Y)
+//{
+//  int i=2,j=0,k=0,l=2,m=0,n=0;
+//  int Jij=1;
+//  int Jlm=1;
+//  int twoJ=1;
+//
+//  double meread = Y.ThreeBody.GetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n);
+//  double setval = 10.0;
+//  Y.ThreeBody.SetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n,setval);
+//  double getval = Y.ThreeBody.GetME_pn(Jij,Jlm,twoJ,i,j,k,l,m,n);
+//
+//  std::cout << "Before setting, ME = " << meread << std::endl;
+//  std::cout << "Set to " << setval << std::endl;
+//  std::cout << "After setting, get " << getval << std::endl;
+//
+//}
 
 
 
@@ -477,12 +477,12 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 //  all_good &= Test_comm132ss( X, Y );
 //  all_good &= Test_comm232ss( X, Y );
 //  all_good &= Test_comm223ss( X, Y );
-  all_good &= Test_comm133ss( X, Y );
+//  all_good &= Test_comm133ss( X, Y );
 
 //  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
 //  all_good &= Test_comm332_pphhss( X, Y );  
 
-//  all_good &= Test_comm233_pp_hhss( X, Y );   
+  all_good &= Test_comm233_pp_hhss( X, Y );   
 //  all_good &= Test_comm233_ph_ss( X, Y );  
 //  all_good &= Test_comm333_ppp_hhh_ss( X, Y );  
 //  all_good &= Test_comm333_pph_hhp_ss( X, Y );  
@@ -2202,6 +2202,7 @@ bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ) 
 
   Commutator::comm332_ppph_hhhpss( X, Y, Z_J);
 
+
   if ( Z_J.IsHermitian() )
      Z_J.Symmetrize();
   else if (Z_J.IsAntiHermitian() )
@@ -2339,10 +2340,18 @@ bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ) 
 bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
   Operator Z_J( Y );
+  Operator Z_J_old( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
+  Z_J_old.SetHermitian();
+  Z_J_old.Erase();
 
+//  Z_J.modelspace->SetOccNat3Cut(1e-5);
+//  Z_J.modelspace->SetdE3max(1);
 
+//  Commutator::comm332_pphhss_debug( X, Y, Z_J);
+  Commutator::comm332_pphhss_debug( X, Y, Z_J_old);
+//  Z_J.Erase();
   Commutator::comm332_pphhss( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
@@ -2388,6 +2397,7 @@ bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // te
 //             if (not (i==0 and j==1 and k==0 and l==1)) continue;
 //             if (not (i==0 and j==1 and k==2 and l==5)) continue;
 //             if (not (i==0 and j==1 and k==2 and l==3)) continue;
+//             if (not (i==0 and j==2 and k==0 and l==2)) continue;
 //             if (not (mi==-1 and mj==1 and mk==1 and ml==-1)) continue;
 //             if (not (i==2 and j==2 and k==0 and l==0)) continue;
 //             if (not (mi==1 and mj==-1 and mk==-1 and ml==1)) continue;
@@ -2483,12 +2493,16 @@ bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // te
 
 
              double ZJ_ijkl = GetMschemeMatrixElement_2b( Z_J, i,mi, j,mj, k,mk, l,ml ) ;
+             double ZJ_old_ijkl = GetMschemeMatrixElement_2b( Z_J_old, i,mi, j,mj, k,mk, l,ml ) ;
              double err = Zm_ijkl - ZJ_ijkl;
+//             if (std::abs(ZJ_ijkl-ZJ_old_ijkl)>1e-6)
              if (std::abs(err)>1e-6)
              {
                std::cout << "Trouble in " << __func__ << "  i,j,k,l = " << i << " " << j << " " << k << " " << l
                          << " {m} = " << mi << " " << mj << " " << mk << " " << ml 
-                         << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << "   err = " << err << std::endl; 
+//                         << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << "   err = " << err << std::endl; 
+                         << "   Zm_ijkl = " << Zm_ijkl << "   ZJ_ijkl = " << ZJ_ijkl << " ZJ_old_ijkl " << ZJ_old_ijkl << "   err = " << err
+                         << "  J err = " << ZJ_ijkl - ZJ_old_ijkl << std::endl; 
              }
              summed_error += err*err;
              sum_m += Zm_ijkl*Zm_ijkl;

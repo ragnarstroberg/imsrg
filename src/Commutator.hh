@@ -1,3 +1,22 @@
+///////////////////////////////////////////////////////////////////////////////////
+//    Commutator.hh, part of  imsrg++
+//    Copyright (C) 2018  Ragnar Stroberg
+//
+//    This program is free software; you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation; either version 2 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License along
+//    with this program; if not, write to the Free Software Foundation, Inc.,
+//    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+///////////////////////////////////////////////////////////////////////////////////
+
 
 #include "Operator.hh"
 //#include "DaggerOperator.hh"
@@ -16,6 +35,8 @@ namespace Commutator{
   extern bool use_goose_tank_correction;
   extern bool use_brueckner_bch;
   extern bool use_imsrg3;
+  extern bool use_imsrg3_n7;
+  extern bool perturbative_triples;
   extern bool only_2b_omega;
   extern double bch_transform_threshold;
   extern double bch_product_threshold;
@@ -25,6 +46,7 @@ namespace Commutator{
   void SetUseBruecknerBCH(bool tf);
   void SetUseGooseTank(bool tf);
   void SetUseIMSRG3(bool tf);
+  void SetUseIMSRG3N7(bool tf);
   void SetOnly2bOmega(bool tf);
 
 
@@ -44,6 +66,7 @@ namespace Commutator{
   std::deque<arma::mat> InitializePandya(Operator& Z, size_t nch, std::string orientation);
   void DoPandyaTransformation(const Operator& Z, std::deque<arma::mat>&, std::string orientation) ;
   void DoPandyaTransformation_SingleChannel(const Operator& Z, arma::mat& X, int ch_cc, std::string orientation) ;
+  void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operator& Y, arma::mat& X2_CC_ph, arma::mat& Y2_CC_ph, int ch_cc);
 //  void AddInversePandyaTransformation(Operator& Z, const std::deque<arma::mat>&);
   void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator& Z);   // Changed from the above declaration. Not sure how this was compiling...
   void AddInversePandyaTransformation_SingleChannel(Operator& Z, arma::mat& Zbar, int ch_cc);
@@ -76,19 +99,23 @@ namespace Commutator{
   void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm232ss_slow( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z ) ; // implemented and tested.
+//  void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z ) ;      // implemented and tested.
   void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z ) ;      // implemented and tested.
+  void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;      // implemented and tested.
   
   void comm133ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm223ss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
+  void comm223ss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented and tested.
   void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z ) ;     // implemented and tested.
   void comm233_pp_hhss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;     // implemented and tested.
   void comm233_phss( const Operator& X, const Operator& Y, Operator& Z ) ;        // implemented and tested.
+  void comm233_phss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;        // implemented and tested.
 
   void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
   void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+  void comm333_pph_hhpss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
 
   bool check_2b_channel_Tz_parity( const Operator& Op, Orbit& o1, Orbit&o2, Orbit& o3, Orbit& o4 );
-
 
   Operator GooseTankUpdate( const Operator& Omega, const Operator& Nested);
 

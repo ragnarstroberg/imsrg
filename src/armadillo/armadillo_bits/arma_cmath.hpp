@@ -329,6 +329,52 @@ arma_log1p(const double x)
 
 
 
+//
+// implementation of arma_sign()
+
+
+template<typename eT>
+arma_inline
+typename arma_unsigned_integral_only<eT>::result
+arma_sign(const eT x)
+  {
+  return (x > eT(0)) ? eT(+1) : eT(0);
+  }
+
+
+
+template<typename eT>
+arma_inline
+typename arma_signed_integral_only<eT>::result
+arma_sign(const eT x)
+  {
+  return (x > eT(0)) ? eT(+1) : ( (x < eT(0)) ? eT(-1) : eT(0) );
+  }
+
+
+
+template<typename eT>
+arma_inline
+typename arma_real_only<eT>::result
+arma_sign(const eT x)
+  {
+  return (x > eT(0)) ? eT(+1) : ( (x < eT(0)) ? eT(-1) : eT(0) );
+  }
+
+
+
+template<typename eT>
+arma_inline
+typename arma_cx_only<eT>::result
+arma_sign(const eT& x)
+  {
+  typedef typename eT::value_type T;
+  
+  const T abs_x = std::abs(x);
+  
+  return (abs_x != T(0)) ? (x / abs_x) : x;
+  }
+
 
 
 //
@@ -373,7 +419,7 @@ arma_acos(const std::complex<T>& x)
   #else
     {
     arma_ignore(x);
-    arma_stop_logic_error("acos(): need C++11 compiler");
+    arma_stop_logic_error("acos(): C++11 compiler required");
     
     return std::complex<T>(0);
     }
@@ -398,7 +444,7 @@ arma_asin(const std::complex<T>& x)
   #else
     {
     arma_ignore(x);
-    arma_stop_logic_error("asin(): need C++11 compiler");
+    arma_stop_logic_error("asin(): C++11 compiler required");
     
     return std::complex<T>(0);
     }
@@ -423,7 +469,7 @@ arma_atan(const std::complex<T>& x)
   #else
     {
     arma_ignore(x);
-    arma_stop_logic_error("atan(): need C++11 compiler");
+    arma_stop_logic_error("atan(): C++11 compiler required");
     
     return std::complex<T>(0);
     }
@@ -545,7 +591,7 @@ arma_acosh(const std::complex<T>& x)
   #else
     {
     arma_ignore(x);
-    arma_stop_logic_error("acosh(): need C++11 compiler");
+    arma_stop_logic_error("acosh(): C++11 compiler required");
     
     return std::complex<T>(0);
     }
@@ -570,7 +616,7 @@ arma_asinh(const std::complex<T>& x)
   #else
     {
     arma_ignore(x);
-    arma_stop_logic_error("asinh(): need C++11 compiler");
+    arma_stop_logic_error("asinh(): C++11 compiler required");
     
     return std::complex<T>(0);
     }
@@ -595,7 +641,7 @@ arma_atanh(const std::complex<T>& x)
   #else
     {
     arma_ignore(x);
-    arma_stop_logic_error("atanh(): need C++11 compiler");
+    arma_stop_logic_error("atanh(): C++11 compiler required");
     
     return std::complex<T>(0);
     }
@@ -683,6 +729,64 @@ arma_hypot(const double x, const double y)
 
 
 //
+// implementation of arma_sinc()
+
+
+template<typename eT>
+arma_inline
+eT
+arma_sinc_generic(const eT x)
+  {
+  typedef typename get_pod_type<eT>::result T;
+  
+  const eT tmp = Datum<T>::pi * x;
+  
+  return (tmp == eT(0)) ? eT(1) : eT( std::sin(tmp) / tmp );
+  }
+
+
+
+template<typename eT>
+arma_inline
+eT
+arma_sinc(const eT x)
+  {
+  return eT( arma_sinc_generic( double(x) ) );
+  }
+
+
+
+template<>
+arma_inline
+float
+arma_sinc(const float x)
+  {
+  return arma_sinc_generic(x);
+  }
+
+
+
+template<>
+arma_inline
+double
+arma_sinc(const double x)
+  {
+  return arma_sinc_generic(x);
+  }
+
+
+
+template<typename T>
+arma_inline
+std::complex<T>
+arma_sinc(const std::complex<T>& x)
+  {
+  return arma_sinc_generic(x);
+  }
+
+
+
+//
 // wrappers for arg()
 
 
@@ -701,7 +805,7 @@ struct arma_arg
     #else
       {
       arma_ignore(x);
-      arma_stop_logic_error("arg(): need C++11 compiler");
+      arma_stop_logic_error("arg(): C++11 compiler required");
       
       return eT(0);
       }

@@ -18,8 +18,8 @@ IMSRGSolver::~IMSRGSolver()
 IMSRGSolver::IMSRGSolver()
     : rw(NULL),s(0),ds(0.1),ds_max(0.5),
      norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),
-     flowfile(""), n_omega_written(0),max_omega_written(500),magnus_adaptive(true),hunter_gatherer(false)
-     ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
+     flowfile(""), n_omega_written(0),max_omega_written(500),magnus_adaptive(true),hunter_gatherer(false),perturbative_triples(false),
+     ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6),pert_triples_this_omega(0),pert_triples_sum(0)
 {}
 
 // Constructor
@@ -27,8 +27,8 @@ IMSRGSolver::IMSRGSolver( Operator &H_in)
    : modelspace(H_in.GetModelSpace()),rw(NULL), H_0(&H_in), FlowingOps(1,H_in), Eta(H_in),
     istep(0), s(0),ds(0.1),ds_max(0.5),
     smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),
-    flowfile(""), n_omega_written(0),max_omega_written(500),magnus_adaptive(true),hunter_gatherer(false)
-    ,ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
+    flowfile(""), n_omega_written(0),max_omega_written(500),magnus_adaptive(true),hunter_gatherer(false),perturbative_triples(false),
+    ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6),pert_triples_this_omega(0),pert_triples_sum(0)
 {
    Eta.Erase();
    Eta.SetAntiHermitian();
@@ -42,8 +42,9 @@ void IMSRGSolver::NewOmega()
   H_saved = FlowingOps[0];
   std::cout << "pushing back another Omega. Omega.size = " << Omega.size()
             << " , operator size = " << Omega.front().Size()/1024./1024. << " MB"
-            << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB"
-            << std::endl;
+            << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB";
+  if ( perturbative_triples )  std::cout << "  pert. triples = " << pert_triples_this_omega << "   sum = " << pert_triples_sum;
+  std::cout << std::endl;
   if ((rw != NULL) and (rw->GetScratchDir() !=""))
   {
 
@@ -241,6 +242,12 @@ void IMSRGSolver::Solve_magnus_euler()
       double norm_omega = Omega.back().Norm();
       if (norm_omega > omega_norm_max)
       {
+        if ( perturbative_triples )
+        {
+          GetPerturbativeTriples();
+//          pert_triples_this_omega = GetPerturbativeTriples();
+//          pert_triples_sum += pert_triples_this_omega;
+        }
         if (hunter_gatherer)
         {
           GatherOmega();
@@ -882,6 +889,32 @@ double IMSRGSolver::EstimateBCHError( )
    }
    return err;
 }
+
+
+
+double IMSRGSolver::GetPerturbativeTriples()
+{
+  std::cout << __func__ << std::endl;
+  Operator Wbar( (*modelspace), 0,0,0,3);
+  Wbar.ThreeBody.SwitchToPN_and_discard();
+  Operator& omega = Omega.back();
+  Operator& Hs = FlowingOps[0];
+  Commutator::perturbative_triples = true;
+  std::cout << "comm223ss ..." << std::endl;
+  Commutator::comm223ss( omega, Hs, Wbar);
+  Wbar.OneBody = Hs.OneBody;
+  Wbar.TwoBody = Hs.TwoBody;
+
+  std::cout << "Compute E3pert ..." << std::endl;
+  //double E3pert = Wbar.GetMP2_3BEnergy();
+  pert_triples_this_omega = Wbar.GetMP2_3BEnergy();
+  pert_triples_sum += pert_triples_this_omega;
+
+//  return E3pert;
+  return pert_triples_sum;
+
+}
+
 
 
 void IMSRGSolver::WriteFlowStatus(std::string fname)

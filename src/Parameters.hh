@@ -53,9 +53,9 @@ class Parameters
 };
 
 std::map<std::string,std::string> Parameters::string_par = {
-  {"2bme",			"none"},
-  {"3bme",			"none"},
-  {"3bme_type",			"full"},
+  {"2bme",			"none"},        // name of file containing 2-body matrix elements
+  {"3bme",			"none"},        // name of file containing 3-body matrix elements
+  {"3bme_type",			"full"},        // are the 3-body matrix elements in NO2B format, or do we get all of them (full)?
   {"core_generator",		"atan"},	// generator used for core part of 2-step decoupling
   {"valence_generator",		"shell-model-atan"},	// generator used for valence decoupling and 1-step (also single-ref)
   {"flowfile",			"default"},	// name of output flow file
@@ -78,7 +78,8 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"nucleon_mass_correction",	"false"},	// include effect of proton-neutron mass splitting
   {"hunter_gatherer",	        "false"},	// use hunter-gatherer approach to splitting omega
   {"relativistic_correction",   "false"},       // include the p^4 relativistic correction to the kinetic energy
-  {"IMSRG3",                    "false"},       // include 3-body terms in commutators. this is under construction still...
+  {"IMSRG3",                    "false"},       // include 3-body terms in commutators. 
+  {"imsrg3_n7",                 "false"},       // include only n^7 scaling 3-body terms in commutators. Only does something if IMSRG3=true.
   {"physical_system",           "nuclear"},     // treat nucleus or atom. For atom, switch units from MeV,fm to eV,nm.
   {"freeze_occupations",        "false"},       // Should we freeze the occupations, or fill according to HF energy
   {"use_NAT_occupations",       "false"},       // When using natural orbitals, should we use the corresponding occupations?
@@ -86,6 +87,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"discard_residual_input3N",  "false"},       // If we're doing IMSRG3, should we discard the residual input 3N (only keep induced)?
   {"only_2b_eta",               "false"},       // If we're doing IMSRG3, keep eta as 2b 
   {"only_2b_omega",             "false"},       // If we're doing IMSRG3, keep omega (the magnus operator) as 2b 
+  {"perturbative_triples",      "false"},       // Compute perturbative energy shift due to [2,2]->3 induced 3-body 
 };
 
 
@@ -102,6 +104,8 @@ std::map<std::string,double> Parameters::double_par = {
   {"hwBetaCM",            -1},  // Oscillator frequency used in the Lawson-Glockner term. Negative value means use the frequency of the basis
   {"eta_criterion",     1e-6},  // Threshold on ||eta|| for convergence in the flow
   {"hw_trap",             -1},  // Frequency for harmonic lab-frame trap V = 1/2 M omega**2 * r**2
+  {"dE3max",		99}, // cut on energies which limits the 3-body states considered in IMSRG(3) commutators
+  {"OccNat3Cut",	-1}, // cut on natural orbital occupations which limits the 3-body states considered in IMSRG(3) commutators
 
 };
 
@@ -120,7 +124,6 @@ std::map<std::string,int> Parameters::int_par = {
   {"file3e3max",	12},
   {"atomicZ",           -1}, // the Z of the nucleus for an atomic calculation. -1 means do a neutral atom
   {"emax_unocc",        -1}, // separate emax cut for l,j values that will not be occupied in the reference
-  {"dE3max",		99}, // cut which limits the 3-body states considered in IMSRG(3) commutators
 };
 
 std::map<std::string,std::vector<std::string>> Parameters::vec_par = {

@@ -51,6 +51,15 @@ void HFMBPT::GetNaturalOrbitals()
   }
   C_HO2NAT = C * C_HF2NAT;
 
+  // set the occ_nat values
+//  double trr = 0;
+  for ( auto i : modelspace->all_orbits)
+  {
+    Orbit& oi = modelspace->GetOrbit(i);
+    oi.occ_nat = std::abs(Occ(i));  // it's possible that Occ(i) is negative, and for occ_nat, we don't want that.
+//    trr += (oi.j2+1) * Occ(i);
+//    std::cout << " Occ( " << i << " ) = " << Occ(i) << "   sum = " << trr << std::endl;
+  }
     
   if (use_NAT_occupations) // use fractional occupation
   {
@@ -765,12 +774,13 @@ void HFMBPT::PrintSPEandWF()
   C_HO2NAT = C * C_HF2NAT;
   arma::mat F_natbasis = C_HO2NAT.t() * F * C_HO2NAT;
   std::cout << std::fixed << std::setw(3) << "i" << ": " << std::setw(3) << "n" << " " << std::setw(3) << "l" << " "
-       << std::setw(3) << "2j" << " " << std::setw(3) << "2tz" << "   " << std::setw(12) << "SPE" << " " << std::setw(12) << "occ." << "   |   " << " overlaps" << std::endl;
+       << std::setw(3) << "2j" << " " << std::setw(3) << "2tz" << "   " << std::setw(12) << "SPE" << " " << std::setw(12) << "occ."
+       << " " << std::setw(12) << "n(1-n)" << "   |   " << " overlaps" << std::endl;
   for ( auto i : modelspace->all_orbits )
   {
     Orbit& oi = modelspace->GetOrbit(i);
     std::cout << std::fixed << std::setw(3) << i << ": " << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
-         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F_natbasis(i,i) << " " << std::setw(12) << oi.occ << "   | ";
+         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F_natbasis(i,i) << " " << std::setw(12) << oi.occ << " " << std::setw(12) << oi.occ_nat*(1-oi.occ_nat) << "   | ";
 //         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F(i,i) << " " << std::setw(12) << oi.occ << "   | ";
     for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {

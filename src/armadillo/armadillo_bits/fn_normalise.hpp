@@ -25,7 +25,7 @@ inline
 typename
 enable_if2
   <
-  (is_arma_type<T1>::value && (resolves_to_vector<T1>::value == true)),
+  is_arma_type<T1>::value && resolves_to_vector<T1>::yes,
   const Op<T1, op_normalise_vec>
   >::result
 normalise
@@ -51,7 +51,7 @@ inline
 typename
 enable_if2
   <
-  (is_arma_type<T1>::value && (resolves_to_vector<T1>::value == false)),
+  is_arma_type<T1>::value && resolves_to_vector<T1>::no,
   const Op<T1, op_normalise_mat>
   >::result
 normalise
@@ -66,6 +66,47 @@ normalise
   arma_ignore(junk);
   
   return Op<T1, op_normalise_mat>(X, p, dim);
+  }
+
+
+
+template<typename T1>
+arma_warn_unused
+inline
+const SpOp<T1, spop_normalise>
+normalise
+  (
+  const SpBase<typename T1::elem_type, T1>& expr,
+  const uword p = uword(2),
+  const uword dim = 0,
+  const typename arma_real_or_cx_only<typename T1::elem_type>::result* junk = 0
+  )
+  {
+  arma_extra_debug_sigprint();
+  arma_ignore(junk);
+  
+  return SpOp<T1, spop_normalise>(expr.get_ref(), p, dim);
+  }
+
+
+
+//! for compatibility purposes: allows compiling user code designed for earlier versions of Armadillo
+template<typename T>
+arma_warn_unused
+arma_inline
+typename
+enable_if2
+  <
+  is_supported_blas_type<T>::value,
+  Col<T>
+  >::result
+normalise(const T& val)
+  {
+  Col<T> out(1);
+  
+  out[0] = (val != T(0)) ? T(val / (std::abs)(val)) : T(val);
+  
+  return out;
   }
 
 

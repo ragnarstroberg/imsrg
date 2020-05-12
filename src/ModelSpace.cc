@@ -44,17 +44,12 @@ std::map< std::string, std::vector<std::string> > ModelSpace::ValenceSpaces  {
 
 
 
-//ModelSpace::~ModelSpace()
-//{
-////  std::cout << "In ModelSpace destructor. emax = " << Emax << std::endl;
-//}
-
 ModelSpace::ModelSpace()
-:  Emax(0), E2max(0), E3max(0), Lmax(0), Lmax2(0), Lmax3(0), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(0), dE3max(999), norbits(0),
+:  Emax(0), E2max(0), E3max(0), Lmax(0), Lmax2(0), Lmax3(0), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(0), dE3max(999), occnat3cut(-1.0), norbits(0),
   hbar_omega(20), target_mass(16), sixj_has_been_precalculated(false), moshinsky_has_been_precalculated(false),
   scalar_transform_first_pass(true),scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
 {
-   SetUpOrbits();
+//   SetUpOrbits();
 //  std::cout << "In default constructor" << std::endl;
 }
 
@@ -67,7 +62,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
  :
    Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax(ms.Lmax), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
    OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax), EmaxUnocc(ms.EmaxUnocc),
-   dE3max(ms.dE3max), e_fermi(ms.e_fermi), norbits(ms.norbits), hbar_omega(ms.hbar_omega),
+   dE3max(ms.dE3max), occnat3cut(ms.occnat3cut), e_fermi(ms.e_fermi), norbits(ms.norbits), hbar_omega(ms.hbar_omega),
    target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
    Orbits(ms.Orbits), Kets(ms.Kets), Kets3(ms.Kets3),
    OneBodyChannels(ms.OneBodyChannels), nTwoBodyChannels(ms.nTwoBodyChannels),
@@ -101,7 +96,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
  :
    Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax(ms.Lmax), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
    OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax), EmaxUnocc(ms.EmaxUnocc),
-   dE3max(ms.dE3max), e_fermi(ms.e_fermi), norbits(ms.norbits), hbar_omega(ms.hbar_omega),
+   dE3max(ms.dE3max), occnat3cut(ms.occnat3cut), e_fermi(ms.e_fermi), norbits(ms.norbits), hbar_omega(ms.hbar_omega),
    target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
    Orbits(std::move(ms.Orbits)), Kets(std::move(ms.Kets)),
    OneBodyChannels(std::move(ms.OneBodyChannels)), nTwoBodyChannels(std::move(ms.nTwoBodyChannels)),
@@ -137,96 +132,99 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 // orbit std::string representation is e.g. p0f7
 // Assumes that the core is hole states that aren't in the valence space.
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> valence_list)
-:  Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999), norbits(0), hbar_omega(20), target_mass(16),
+:  Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999), occnat3cut(-1.0), norbits(0), hbar_omega(20), target_mass(16),
      moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
 {
-   SetUpOrbits();
-   Init(emax, hole_list, hole_list, valence_list); 
+//   SetUpOrbits();
+   Init(emax, hole_list, hole_list, valence_list); // Init version 3  (int, vector<string>, vector<string>, vector<string> )
 }
 
 // If we don't want the reference to be the core
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list)
-: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999), norbits(0), hbar_omega(20), target_mass(16),
+: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), norbits(0), hbar_omega(20), target_mass(16),
      sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false)
 {
-   SetUpOrbits();
-   Init(emax, hole_list, core_list, valence_list); 
+//   SetUpOrbits();
+   Init(emax, hole_list, core_list, valence_list); // Init version 3  (int, vector<string>, vector<string>, vector<string> )
 }
 
 // Most conventient interface
 ModelSpace::ModelSpace(int emax, std::string reference, std::string valence)
-: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999), hbar_omega(20),
+: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
      sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false)
 {
-  SetUpOrbits();
-  Init(emax,reference,valence);
+//  SetUpOrbits();
+  Init(emax,reference,valence); // Init version 1  (int, string, string )
 }
 
 ModelSpace::ModelSpace(int emax, std::string valence)
-: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999), hbar_omega(20),
+: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
      sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true),single_species(false)
 {
   auto itval = ValenceSpaces.find(valence);
   if ( itval != ValenceSpaces.end() ) // we've got a valence space
-     Init(emax,itval->second[0],valence);
+     Init(emax,itval->second[0],valence); // Init version 1  ( int, string, string )
   else  // no valence space. we've got a single-reference.
-     Init(emax,valence,valence);
+     Init(emax,valence,valence); // Init version 1  ( int, string, string )
 }
 
 
 
-void ModelSpace::SetUpOrbits( )
-{
-   std::vector<int> IsospinList = {-1, 1};
-   if (single_species) IsospinList.pop_back(); // just use tz = -1 in this case
-
-   norbits = (Emax+1)*(Emax+2);
-   Orbits.resize(0);
-//   std::cout << "Starting loop in SetUpOrbits " << std::endl;
-   for (int N=0; N<=Emax; ++N)
-   {
-     for (int l=N; l>=0; l-=2)
-     {
-       if (l>Lmax) continue;
-       int n = (N-l)/2;
-       for (int j2=2*l+1; j2>=2*l-1 and j2>0; j2-=2)
-       {
-//         for (int tz : {-1, 1} )
-         for (int tz : IsospinList )
-         {
-            double occ = 0;
-            int cvq = 2;
-//            int indx = Index1(n,l,j2,tz);
-//            if (hole_list.find(indx) != hole_list.end()) occ = hole_list[indx];
-//            if ( find(core_list.begin(), core_list.end(), indx) != core_list.end() ) cvq=0; // core orbit
-//            if ( find(valence_list.begin(), valence_list.end(), indx) != valence_list.end() ) cvq=1; // valence orbit
-//            std::cout << "calling AddOrbit( " << n << " " << l << " " << tz << " " << occ << " " << cvq << " ) " << std::endl;
-            AddOrbit(n,l,j2,tz,occ,cvq);
-         }
-       }
-     }
-   }
-   norbits = all_orbits.size();
-//   Orbits.resize(norbits);
-//   std::cout << "done with SetUpOrbits" << std::endl;
-}
+//void ModelSpace::SetUpOrbits( )
+//{
+//  std::cout << __func__ << "  line " << __LINE__ << std::endl;
+//   std::vector<int> IsospinList = {-1, 1};
+//   if (single_species) IsospinList.pop_back(); // just use tz = -1 in this case
+//
+//   norbits = (Emax+1)*(Emax+2);
+//   Orbits.resize(0);
+////   std::cout << "Starting loop in SetUpOrbits " << std::endl;
+//   for (int N=0; N<=Emax; ++N)
+//   {
+//     for (int l=N; l>=0; l-=2)
+//     {
+//       if (l>Lmax) continue;
+//       int n = (N-l)/2;
+//       for (int j2=2*l+1; j2>=2*l-1 and j2>0; j2-=2)
+//       {
+////         for (int tz : {-1, 1} )
+//         for (int tz : IsospinList )
+//         {
+//            double occ = 0;
+//            int cvq = 2;
+//            AddOrbit(n,l,j2,tz,occ,cvq);
+//         }
+//       }
+//     }
+//   }
+//   norbits = all_orbits.size();
+////   Orbits.resize(norbits);
+////   std::cout << "done with SetUpOrbits" << std::endl;
+//}
 
 
 // Specify the reference and either the core or valence
 // This is the most convenient interface
+// Init version 1  (int, string, string)
 void ModelSpace::Init(int emax, std::string reference, std::string valence)
 {
+  std::cout << __func__ << "  line " << __LINE__ << std::endl;
 //  int Aref,Zref;
   GetAZfromString(reference,Aref,Zref);
-  std::map<index_t,double> hole_list = GetOrbitsAZ(Aref,Zref);
-  Init(emax,hole_list,valence);
+//  std::map<index_t,double> hole_list = GetOrbitsAZ(Aref,Zref);
+  auto hole_list = GetOrbitsAZ(Aref,Zref);
+  Init(emax,hole_list,valence);  // calls  Init version 2 (int, map, string)
 }
 
-void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::string valence)
+//void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::string valence)
+// Init version 2  (int, map<array,double>, string)
+void ModelSpace::Init(int emax, std::map<std::array<int,4>,double> hole_list, std::string valence)
 {
+  std::cout << __func__ << "  line " << __LINE__ << std::endl;
   int Ac,Zc;
 //  std::vector<index_t> valence_list, core_list;
-  std::set<index_t> valence_list, core_list;
+//  std::set<index_t> valence_list, core_list;
+  std::set<std::array<int,4>> valence_list, core_list;
 
   if (valence == "0hw-shell")
   {
@@ -238,8 +236,28 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::string 
   }
   else if ( valence.find("FCI")!=std::string::npos ) // FCI space, so no core, all orbits are valence.
   {
-    index_t num_orbits = (emax+1)*(emax+2);
-    for (index_t i=0;i<num_orbits;++i) valence_list.insert( i );
+
+      for (int N=0; N<=Emax; ++N)
+      {
+        for (int l=N; l>=0; l-=2)
+        {
+          if (l>Lmax) continue;
+          int n = (N-l)/2;
+          for (int j2=2*l+1; j2>=2*l-1 and j2>0; j2-=2)
+          {
+            int tz_max =  single_species ? -1  : +1;
+            for (int tz=-1; tz<=tz_max; tz+=2 )
+            {
+               // check if this is a non-hole-type orbit and if we're above the EmaxUnocc cut.
+               if ( ((2*n+l)>EmaxUnocc) and (hole_quantum_numbers.find({l,j2})==hole_quantum_numbers.end()) ) continue;
+               valence_list.insert( {n,l,j2,tz} );
+            }
+          }
+        }
+      }
+
+//    index_t num_orbits = (emax+1)*(emax+2);
+//    for (index_t i=0;i<num_orbits;++i) valence_list.insert( i );
 //    for (index_t i=0;i<num_orbits;++i) valence_list.push_back( i );
   }
   else // check if it's one of the pre-defined spaces
@@ -250,7 +268,10 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::string 
     if ( itval != ValenceSpaces.end() ) // we've got a valence space
     {
        core_str = itval->second[0];
-       std::vector<index_t> vvec = String2Index(std::vector<std::string>(itval->second.begin()+1,itval->second.end()));
+       std::vector<std::string> vstrings( itval->second.begin()+1,itval->second.end());
+//       std::vector<index_t> vvec = String2Index(vstrings);
+       std::vector<std::array<int,4>> vvec = String2Qnumbers(vstrings);
+//       std::vector<index_t> vvec = String2Index(std::vector<std::string>(itval->second.begin()+1,itval->second.end()));
        for (auto v : vvec ) valence_list.insert(v);
 //       valence_list = String2Index(std::vector<std::string>(itval->second.begin()+1,itval->second.end()));
     }
@@ -265,19 +286,22 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::string 
   }
 
   // This should be done in Init, but it doesn't hurt to do it here as well, I think.
-  SetTargetMass(Aref);
-  SetTargetZ(Zref);
+//  SetTargetMass(Aref);
+//  SetTargetZ(Zref);
 //  target_mass = Aref;
 //  target_Z = Zref;
-  Init(emax,hole_list,core_list,valence_list);
+//  Init(emax,hole_list,core_list,valence_list);
+  Init(hole_list,core_list,valence_list);  // call Init version 0  ( map, set, set )
   
 }
 
 
 // Specify the model space with std::strings of orbit lists.
 // Less convenient, but more flexible
+/// Init version 3 (int ,vector<string>, vector<string>, vector<string> )
 void ModelSpace::Init(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list)
 {
+  std::cout << __func__ << "  line " << __LINE__ << std::endl;
    std::cout << "Creating a model space with Emax = " << Emax << "  and hole orbits [";
    for (auto& h : hole_list)  std::cout << h << " ";
    std::cout << "]   and core orbits [";
@@ -285,17 +309,26 @@ void ModelSpace::Init(int emax, std::vector<std::string> hole_list, std::vector<
    std::cout << "]   and valence orbits [";
    for (auto& v : valence_list)   std::cout << v << " ";
    std::cout << "]" << std::endl;
-   std::map<index_t,double> hole_map;
-   for (auto& h : String2Index(hole_list)) hole_map[h] = 1.0;
-  Init(emax, hole_map, String2Index(core_list), String2Index(valence_list) );
+//   std::map<index_t,double> hole_map;
+//   for (auto& h : String2Index(hole_list)) hole_map[h] = 1.0;
+   std::map<std::array<int,4>,double> hole_map;
+   std::set<std::array<int,4>> core_set;
+   std::set<std::array<int,4>> valence_set;
+   for ( auto c : String2Qnumbers(core_list) )  core_set.insert(c);
+   for ( auto v : String2Qnumbers(valence_list) )  valence_set.insert(v);
+   for (auto& h : String2Qnumbers(hole_list)) hole_map[h] = 1.0;
+  Init( hole_map, core_set, valence_set ); // call Init version 0  (map, set, set )
+//  Init(emax, hole_map, String2Index(core_list), String2Index(valence_list) );
 }
 
 
 void ModelSpace::Init_occ_from_file(int emax, std::string valence, std::string occ_file)
 {
-  index_t orb;
+  std::cout << __func__ << "  line " << __LINE__ << std::endl;
+//  index_t orb;
   double occ;
-  std::map<index_t,double> hole_list;
+//  std::map<index_t,double> hole_list;
+  std::map<std::array<int,4>,double> hole_list;
 
   std::ifstream infile(occ_file);
   if (!infile.good())
@@ -304,33 +337,134 @@ void ModelSpace::Init_occ_from_file(int emax, std::string valence, std::string o
     std::cout << "Trouble reading file: " << occ_file << std::endl;
     std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl << std::endl;
   }
-
-  while( infile >> orb >> occ )
+  int n,l,j2,tz;
+//  while( infile >> orb >> occ )
+  while( infile >> n >> l >> j2 >> tz >> occ )
   {
-    if ( hole_list.find(orb) != hole_list.end() and  std::abs( hole_list[orb] -occ) > 1e-6) 
+//    if ( hole_list.find(orb) != hole_list.end() and  std::abs( hole_list[orb] -occ) > 1e-6) 
+    if ( hole_list.find({n,l,j2,tz}) != hole_list.end() and  std::abs( hole_list[{n,l,j2,tz}] -occ) > 1e-6) 
     {
         std::cout << "Warning: in file " << occ_file << ", redefinition of occupation of orbit "
-             << orb << "  " << hole_list[orb] << " => " << occ << std::endl;
+             << n << " " << l << " " << j2 << " " << tz << "  " << hole_list[{n,l,j2,tz}] << " => " << occ << std::endl;
+//             << orb << "  " << hole_list[orb] << " => " << occ << std::endl;
     }
 
     std::cout << "from occ file: " << std::endl;
-    hole_list[orb] = occ;
-    std::cout << orb << " " << occ << std::endl;
+//    hole_list[orb] = occ;
+    hole_list[{n,l,j2,tz}] = occ;
+    std::cout << n << " " << l << " " << j2 << " " << tz  << "    " << occ << std::endl;
+//    std::cout << orb << " " << occ << std::endl;
   }
 
-  Init(emax,hole_list,valence);
+  Init(emax,hole_list,valence); // call Init version  2 ( int, map, string )
+//  Init(emax,hole_list,valence);
 }
 
 // An attempt at backward compatibility
-void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::vector<index_t> core_list, std::vector<index_t> valence_list)
-{
-  std::set<index_t> clist(core_list.begin(),core_list.end());
-  std::set<index_t> vlist(valence_list.begin(),valence_list.end());
-  Init(emax,hole_list,clist,vlist);
-}
+// Init version 4 (int, map<index_t,double>, vector<index_t>, vector<index_t> )
+//void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::vector<index_t> core_list, std::vector<index_t> valence_list)
+//{
+//  std::cout << __func__ << "  line " << __LINE__ << std::endl;
+//  std::set<index_t> clist(core_list.begin(),core_list.end());
+//  std::set<index_t> vlist(valence_list.begin(),valence_list.end());
+//  Init(emax,hole_list,clist,vlist);  // call Init version -1  (int, map<index>, set<index>, set<index> )
+//}
 
 
 // This is the Init which should inevitably be called
+//void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::set<index_t> core_list, std::set<index_t> valence_list)
+// Init version 0 ( map<array,double>, set<array>, set<array> )
+void ModelSpace::Init( std::map<std::array<int,4>,double> hole_list, std::set<std::array<int,4>> core_list, std::set<std::array<int,4>> valence_list)
+{
+
+  std::cout << __func__ << "  line " << __LINE__ << std::endl;
+   ClearVectors();
+//   Emax = emax;
+//   std::cout << "core list: ";
+//   for (auto& c : core_list) std::cout << c << " ";
+//   std::cout << std::endl;
+//   std::cout << "valence list: ";
+//   for (auto& v : valence_list) std::cout << v << " ";
+//   std::cout << std::endl;
+//   std::cout << "hole list: ";
+//   for (auto& h : hole_list) std::cout << h.first << " ( " << h.second << " ) ";
+//   std::cout << std::endl;
+
+   // Make sure no orbits are both core and valence
+   for (auto& c : core_list)
+   {
+     if ( find(valence_list.begin(), valence_list.end(), c) != valence_list.end() )
+       std::cout << "!!!!!!!!!!!!! ModelSpace::Init : Conflicting definition. Orbit (" << c[0] << " " << c[1] << " " << c[2] << " " << c[3] << ") is in core and valence spaces." << std::endl;
+//       std::cout << "!!!!!!!!!!!!! ModelSpace::Init : Conflicting definition. Orbit " << c << " is in core and valence spaces." << std::endl;
+   }
+
+   std::vector<int> IsospinList = {-1, 1};
+   if (single_species) IsospinList.pop_back(); // just use tz = -1 in this case
+
+   Orbits.resize(0);
+   OrbitLookup.clear(); // if we've resized Orbits to zero, there's nothing to point to or look up...
+
+   for (int N=0; N<=Emax; ++N)
+   {
+     for (int l=N; l>=0; l-=2)
+     {
+       if (l>Lmax) continue;
+       int n = (N-l)/2;
+       for (int j2=2*l+1; j2>=2*l-1 and j2>0; j2-=2)
+       {
+         for (int tz : IsospinList )
+         {
+            // check if this is a non-hole-type orbit and if we're above the EmaxUnocc cut.
+
+            if ( ((2*n+l)>EmaxUnocc) and (hole_quantum_numbers.find({l,j2})==hole_quantum_numbers.end()) ) continue;
+
+//            double occ = 0;
+            double occ = ( hole_list.find({n,l,j2,tz}) != hole_list.end() )  ?  hole_list.at({n,l,j2,tz})  :  0;
+            int cvq = 2;
+            if ( core_list.find({n,l,j2,tz}) != core_list.end() )  cvq = 0;
+            else if ( valence_list.find({n,l,j2,tz}) != valence_list.end() )  cvq = 1;
+
+            AddOrbit(n,l,j2,tz,occ,cvq);  // First, add the orbit to make sure it's in the lookup tables
+//            int indx = Index1(n,l,j2,tz);
+//            if (hole_list.find(indx) != hole_list.end()) occ = hole_list[indx];
+//            if ( find(core_list.begin(), core_list.end(), indx) != core_list.end() ) cvq=0; // core orbit
+//            if ( find(valence_list.begin(), valence_list.end(), indx) != valence_list.end() ) cvq=1; // valence orbit
+//            AddOrbit(n,l,j2,tz,occ,cvq); // Add it again with the right occupation and classification. (There's probably a cleaner way to do this.)
+         }
+       }
+     }
+   }
+   norbits = all_orbits.size();
+   double atmp=0;
+   double ztmp=0;
+   for (auto& h : holes)
+   {
+     Orbit& oh = GetOrbit(h);
+     atmp += (oh.j2+1.)*oh.occ;
+     if (oh.tz2 < 0) ztmp += (oh.j2+1.)*oh.occ;
+   }
+   Aref = round(atmp);
+   Zref = round(ztmp);
+   if (std::abs(Aref-atmp)>1e-5 or std::abs(Zref-ztmp)>1e-5)
+   {
+     std::cout << std::endl << "!!!! WARNING  " << __func__ << " recomputed A,Z and got " << atmp << " " << ztmp << std::endl;
+   }
+//   Aref = round(atmp);
+//   Zref = round(ztmp);
+   FindEFermi();
+   SetTargetMass(Aref);
+   SetTargetZ(Zref);
+   SetupKets();
+   Setup3bKets();
+}
+
+//// DEPRECATED Init version -1  (int, map<index,double>, set<index>, set<index> )
+//void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::set<index_t> core_list, std::set<index_t> valence_list)
+//{
+//  std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Depricated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+//  std::cout << "line " << __LINE__ << "  " << __func__ << std::endl;
+//}
+/*
 void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::set<index_t> core_list, std::set<index_t> valence_list)
 {
    ClearVectors();
@@ -406,6 +540,10 @@ void ModelSpace::Init(int emax, std::map<index_t,double> hole_list, std::set<ind
    SetupKets();
    Setup3bKets();
 }
+*/
+
+
+
 
 
 void ModelSpace::InitSingleSpecies(int emax, std::string reference, std::string valence)
@@ -413,7 +551,8 @@ void ModelSpace::InitSingleSpecies(int emax, std::string reference, std::string 
   single_species = true;
   ClearVectors();
   GetAZfromString(reference,Aref,Zref);
-  std::map<index_t,double> hole_list = GetOrbitsAZ(Aref,Zref);
+//  std::map<index_t,double> hole_list = GetOrbitsAZ(Aref,Zref);
+  std::map<std::array<int,4>,double> hole_list = GetOrbitsAZ(Aref,Zref);
   Init(emax,hole_list,valence);
 
 
@@ -429,10 +568,13 @@ void ModelSpace::InitSingleSpecies(int emax, std::string reference, std::string 
 void ModelSpace::SetLmax( int l)
 {
   Lmax = l;
-  int e = Emax;
-  std::map<index_t,double> the_hole_list;
-  std::set<index_t> the_core_list;
-  std::set<index_t> the_valence_list;
+//  int e = Emax;
+//  std::map<index_t,double> the_hole_list;
+//  std::set<index_t> the_core_list;
+//  std::set<index_t> the_valence_list;
+  std::map<std::array<int,4>,double> the_hole_list;
+  std::set<std::array<int,4>> the_core_list;
+  std::set<std::array<int,4>> the_valence_list;
   for ( auto h : holes )
   {
     Orbit& oh = GetOrbit(h);
@@ -442,7 +584,8 @@ void ModelSpace::SetLmax( int l)
                 << "  which is bigger than Lmax = " << Lmax << " ... dying now. " << std::endl;
       exit(0);
     }
-    the_hole_list[h] = oh.occ;
+//    the_hole_list[h] = oh.occ;
+    the_hole_list[{oh.n,oh.l,oh.j2,oh.tz2}] = oh.occ;
   }
   for (auto c : core )
   {
@@ -453,7 +596,8 @@ void ModelSpace::SetLmax( int l)
                 << "  which is bigger than Lmax = " << Lmax << " ... dying now. " << std::endl;
       exit(0);
     }
-    the_core_list.insert(c);
+//    the_core_list.insert(c);
+    the_core_list.insert({oc.n,oc.l,oc.j2,oc.tz2});
   }
   for (auto v : valence )
   {
@@ -465,17 +609,19 @@ void ModelSpace::SetLmax( int l)
 //                << "  which is bigger than Lmax = " << Lmax << " ... dying now. " << std::endl;
 //      exit(0);
     }
-    the_valence_list.insert(v);
+//    the_valence_list.insert(v);
+    the_valence_list.insert({ov.n,ov.l,ov.j2,ov.tz2});
   }
-  Init( e, the_hole_list, the_core_list, the_valence_list );
+//  Init( e, the_hole_list, the_core_list, the_valence_list );
+  Init( the_hole_list, the_core_list, the_valence_list );
 }
 
 
 // Get std::vector of orbit indices from std::vector of std::strings
 // e.g. "p0f7" gives the index of the proton 0f7/2 orbit.
-std::vector<index_t> ModelSpace::String2Index( std::vector<std::string> vs )
+std::vector<std::array<int,4>> ModelSpace::String2Qnumbers( std::vector<std::string> vs )
 {
-  std::vector<index_t> vi;
+  std::vector<std::array<int,4>> vi;
   std::vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o'};
 
   for ( auto& s : vs )
@@ -485,9 +631,31 @@ std::vector<index_t> ModelSpace::String2Index( std::vector<std::string> vs )
     std::istringstream( s.substr(1,2) ) >> n;
     l = find(l_list.begin(),l_list.end(), s[2]) - l_list.begin();
     std::istringstream( s.substr(3,s.size()) ) >> j2;
-    vi.push_back( Index1(n,l,j2,tz2) );
+//    vi.push_back( Index1(n,l,j2,tz2) );
+    vi.push_back( {n,l,j2,tz2} );
   }
   return vi;
+}
+
+//std::vector<index_t> ModelSpace::String2Index( std::vector<std::string>& vs )
+std::vector<index_t> ModelSpace::String2Index( std::vector<std::string> vs )
+{
+  std::vector<std::array<int,4>> vquant = String2Qnumbers( vs );
+  std::vector<index_t> vi;
+  for ( auto qn : vquant ) vi.push_back( Index1( qn[0], qn[1], qn[2], qn[3] ) );
+  return vi;
+//  std::vector<char> l_list = {'s','p','d','f','g','h','i','j','k','l','m','n','o'};
+//
+//  for ( auto& s : vs )
+//  {
+//    int n,l,j2,tz2;
+//    tz2 = s[0]=='p' ? -1 : 1;
+//    std::istringstream( s.substr(1,2) ) >> n;
+//    l = find(l_list.begin(),l_list.end(), s[2]) - l_list.begin();
+//    std::istringstream( s.substr(3,s.size()) ) >> j2;
+//    vi.push_back( Index1(n,l,j2,tz2) );
+//  }
+//  return vi;
 }
 
 
@@ -530,13 +698,15 @@ void ModelSpace::GetAZfromString(std::string str,int& A, int& Z) // TODO: accept
 
 // Fill A orbits with Z protons and A-Z neutrons
 // assuming a standard shell-model level ordering
-std::map<index_t,double> ModelSpace::GetOrbitsAZ(int A, int Z)
+//std::map<index_t,double> ModelSpace::GetOrbitsAZ(int A, int Z)
+std::map<std::array<int,4>,double> ModelSpace::GetOrbitsAZ(int A, int Z)
 {
 //  std::cout << "In GetOrbitsAZ  " << A << " " <<Z << std::endl;
 //  std::cout << "Size of OrbitLookup = " << OrbitLookup.size() << std::endl;
   int zz = 0;
   int nn = 0; // unfortunate there are so many n's here...
-  std::map<index_t,double> holesAZ;
+//  std::map<index_t,double> holesAZ;
+  std::map<std::array<int,4>,double> holesAZ;
   for (int N=0; N<=Emax; ++N)
   {
     for (int g=2*N+1;g>=-2*N;g-=4)
@@ -548,13 +718,15 @@ std::map<index_t,double> ModelSpace::GetOrbitsAZ(int A, int Z)
       if (zz < Z)
       {
         int dz = std::min(Z-zz,j2+1);
-        holesAZ[Index1(n,l,j2,-1)] = dz/(j2+1.0);
+//        holesAZ[Index1(n,l,j2,-1)] = dz/(j2+1.0);
+        holesAZ[{n,l,j2,-1}] = dz/(j2+1.0);
         zz += dz;
       }
       if (nn < A-Z)
       {
         int dn = std::min(A-Z-nn,j2+1);
-        holesAZ[Index1(n,l,j2,1)] = dn/(j2+1.0);
+//        holesAZ[Index1(n,l,j2,1)] = dn/(j2+1.0);
+        holesAZ[{n,l,j2,1}] = dn/(j2+1.0);
         nn += dn;
       }
       if (zz==Z and nn==A-Z)
@@ -575,7 +747,8 @@ std::map<index_t,double> ModelSpace::GetOrbitsAZ(int A, int Z)
 /// For example, if we want to treat C20, with 6 protons and 14 neutrons, we take the 0p shell for protons
 /// and 1s0d shell for neutrons.
 //void ModelSpace::Get0hwSpace(int Aref, int Zref, std::vector<index_t>& core_list, std::vector<index_t>& valence_list)
-void ModelSpace::Get0hwSpace(int Aref, int Zref, std::set<index_t>& core_list, std::set<index_t>& valence_list)
+//void ModelSpace::Get0hwSpace(int Aref, int Zref, std::set<index_t>& core_list, std::set<index_t>& valence_list)
+void ModelSpace::Get0hwSpace(int Aref, int Zref, std::set<std::array<int,4>>& core_list, std::set<std::array<int,4>>& valence_list)
 {
   int Nref = Aref-Zref;
   int OSC_protons=0,OSC_neutrons=0;
@@ -595,7 +768,8 @@ void ModelSpace::Get0hwSpace(int Aref, int Zref, std::set<index_t>& core_list, s
       for (int j2=2*L+1;j2>std::max(2*L-2,0);j2-=2)
       {
 //        valence_list.push_back( GetOrbitIndex( (OSC_protons-L)/2, L, j2, -1) );
-        valence_list.insert( GetOrbitIndex( (OSC_protons-L)/2, L, j2, -1) );
+//        valence_list.insert( GetOrbitIndex( (OSC_protons-L)/2, L, j2, -1) );
+        valence_list.insert( { (OSC_protons-L)/2, L, j2, -1} );
       }
     }
   }
@@ -606,7 +780,8 @@ void ModelSpace::Get0hwSpace(int Aref, int Zref, std::set<index_t>& core_list, s
       for (int j2=2*L+1;j2>std::max(2*L-2,0);j2-=2)
       {
 //        valence_list.push_back( GetOrbitIndex( (OSC_neutrons-L)/2, L, j2, 1) );
-        valence_list.insert( GetOrbitIndex( (OSC_neutrons-L)/2, L, j2, 1) );
+//        valence_list.insert( GetOrbitIndex( (OSC_neutrons-L)/2, L, j2, 1) );
+        valence_list.insert( { (OSC_neutrons-L)/2, L, j2, 1} );
       }
     }
   }
@@ -618,7 +793,8 @@ void ModelSpace::Get0hwSpace(int Aref, int Zref, std::set<index_t>& core_list, s
 // eg, the usual sd shell would look like "O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1".
 // The number of ways to specify a model space is getting a bit out of hand...
 //void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::vector<index_t>& core_list, std::vector<index_t>& valence_list)
-void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::set<index_t>& core_list, std::set<index_t>& valence_list)
+//void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::set<index_t>& core_list, std::set<index_t>& valence_list)
+void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::set<std::array<int,4>>& core_list, std::set<std::array<int,4>>& valence_list)
 {
   std::istringstream ss(valence);
   std::string orbit_str,core_str;
@@ -634,7 +810,8 @@ void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::set<i
 
   while(getline(ss, orbit_str, ','))
   {
-    valence_list.insert( String2Index({orbit_str})[0]);
+//    valence_list.insert( String2Index({orbit_str})[0]);
+    valence_list.insert( String2Qnumbers({orbit_str})[0]);
 //    valence_list.push_back( String2Index({orbit_str})[0]);
   }
 }
@@ -642,50 +819,95 @@ void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::set<i
 // For backwards compatibility
 void ModelSpace::SetReference(std::vector<index_t> new_reference)
 {
+  std::cout << __func__ << "  line " << __LINE__ << std::endl;
   std::set<index_t> ref( new_reference.begin(),new_reference.end());
   SetReference( ref );
 }
 
 void ModelSpace::SetReference(std::set<index_t> new_reference)
 {
+  std::cout << __func__ << "  line " << __LINE__ << std::endl;
 //  std::cout << "I'm in this SetReference" << std::endl;
 //  std::vector<index_t> c = core;
 //  std::vector<index_t> v = valence;
-  std::set<index_t> c = core;
-  std::set<index_t> v = valence;
-  std::map<index_t,double> h;
-  for (auto r : new_reference) h[r] = 1.0;
+  std::map<std::array<int,4>,double> hlist ;
+  std::set<std::array<int,4>> clist ;
+  std::set<std::array<int,4>> vlist ;
+  for ( auto h : new_reference )
+  {
+    Orbit& oh = GetOrbit(h);
+    hlist[ {oh.n, oh.l, oh.j2, oh.tz2}]  = 1.0;
+  }
+  for ( auto c : core )
+  {
+    Orbit& oc = GetOrbit(c);
+    clist.insert( {oc.n, oc.l, oc.j2, oc.tz2} );
+  }
+  for ( auto v : valence )
+  {
+    Orbit& ov = GetOrbit(v);
+    vlist.insert( {ov.n, ov.l, ov.j2, ov.tz2} );
+  }
+
+
+//  std::set<index_t> c = core;
+//  std::set<index_t> v = valence;
+//  std::map<index_t,double> h;
+//  for (auto r : new_reference) h[r] = 1.0;
   ClearVectors();
-  Init(Emax, h,c,v);
+//  Init(Emax, h,c,v);
+  Init( hlist,clist,vlist);
 }
 
 void ModelSpace::SetReference(std::map<index_t,double> new_reference)
 {
-//  std::vector<index_t> c = core;
-//  std::vector<index_t> v = valence;
-  std::set<index_t> c = core;
-  std::set<index_t> v = valence;
-  if (valence.size()<1) // If we have no valece space, assume it's a single ref and core should equal the reference.
+  std::cout << __func__ << "  line " << __LINE__ << std::endl;
+  std::map<std::array<int,4>,double> hlist ;
+  std::set<std::array<int,4>> clist ;
+  std::set<std::array<int,4>> vlist ;
+  for ( auto& iterh : new_reference )
   {
-    c.clear();
-    for ( auto iter : new_reference )  c.insert(iter.first);
-//    c.resize(0);
-//    for ( auto iter : new_reference )  c.push_back(iter.first);
+    Orbit& oh = GetOrbit(iterh.first);
+    hlist[ {oh.n, oh.l, oh.j2, oh.tz2}]  = iterh.second;
+  }
+  for ( auto c : core )
+  {
+    Orbit& oc = GetOrbit(c);
+    clist.insert( {oc.n, oc.l, oc.j2, oc.tz2} );
+  }
+  for ( auto v : valence )
+  {
+    Orbit& ov = GetOrbit(v);
+    vlist.insert( {ov.n, ov.l, ov.j2, ov.tz2} );
   }
   ClearVectors();
-  Init(Emax, new_reference,c,v);
+  Init( hlist,clist,vlist);
+//  Init(Emax, new_reference,c,v);
 }
 
 void ModelSpace::SetReference(std::string new_reference)
 {
+  std::cout << __func__ << "  line " << __LINE__ << std::endl;
 //  std::vector<index_t> c = core;
 //  std::vector<index_t> v = valence;
-  std::set<index_t> c = core;
-  std::set<index_t> v = valence;
+  std::set<std::array<int,4>> clist ;
+  std::set<std::array<int,4>> vlist ;
+  for ( auto c : core )
+  {
+    Orbit& oc = GetOrbit(c);
+    clist.insert( {oc.n, oc.l, oc.j2, oc.tz2} );
+  }
+  for ( auto v : valence )
+  {
+    Orbit& ov = GetOrbit(v);
+    vlist.insert( {ov.n, ov.l, ov.j2, ov.tz2} );
+  }
   ClearVectors();
   GetAZfromString(new_reference,Aref,Zref);
-  std::map<index_t,double> h = GetOrbitsAZ(Aref,Zref);
-  Init(Emax, h,c,v);
+//  std::map<index_t,double> h = GetOrbitsAZ(Aref,Zref);
+  std::map<std::array<int,4>,double> hlist = GetOrbitsAZ(Aref,Zref);
+//  Init(Emax, h,c,v);
+  Init( hlist,clist,vlist);
 }
 
 ModelSpace ModelSpace::operator=(const ModelSpace& ms)
@@ -815,26 +1037,9 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
    else  // we already have that one, but we'll replace it with the new info.
    {
      ind = OrbitLookup[hash];
-//     std::cout << "WARNING!!!  Adding an orbit that we already had: " << ind << " :  " << n << " " << l << " " << j2 << " " << tz2 << "    this could cause trouble." << std::endl;
-//     std::cout << "size of Orbits = " << Orbits.size() << std::endl;
      Orbits[ind] = Orbit(n,l,j2,tz2,occ,cvq,ind);
-//     std::cout << "Orbits[" << ind << "]  now points to an orbit who's ind is " << Orbits[ind].index << std::endl;
-
-     // Since we probably sorted into lists last time we added it, we need to remove the index ind from
-     // the lists so we can sort it properly according to the new cvq info.
-//..     for ( auto& vec : {particles,holes,core,valence,qspace,proton_orbits,neutron_orbits,all_orbits}  )
-
-// now that we use a set for these, we don't need to worry about this.
-//     for ( auto vec : {&particles,&holes,&core,&valence,&qspace,&proton_orbits,&neutron_orbits,&all_orbits}  )
-//     {
-//       vec->erase( std::remove( vec->begin(), vec->end(), ind ), vec->end() );
-//     }
-
-
    }
 
-//   Orbit& o = Orbits[ind];
-//   std::cout << "Now Orbit " << hash << " -> " << ind << "   is " << o.n << " " << o.l << " " << o.j2 << " " << o.tz2 << "    " << o.occ << " " << o.cvq << std::endl;
 
    if (j2 > OneBodyJmax)
    {
@@ -856,16 +1061,6 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
    if (tz2 > 0 ) neutron_orbits.insert(ind);
    all_orbits.insert(ind);
 
-
-//   if ( occ < OCC_CUT) particles.push_back(ind);
-//   else holes.push_back(ind);
-//   if (cvq == 0) core.push_back(ind);
-//   if (cvq == 1) valence.push_back(ind);
-//   if (cvq == 2) qspace.push_back(ind);
-//   if (tz2 < 0 ) proton_orbits.push_back(ind);
-//   if (tz2 > 0 ) neutron_orbits.push_back(ind);
-//   all_orbits.push_back(ind);
-
 //   OneBodyChannels[{l, j2, tz2}].push_back(ind); // (Evidently, we mean one-body channels for an operator with the same symmetries as the Hamiltonian).
    OneBodyChannels[{l, j2, tz2}].insert(ind); // (Evidently, we mean one-body channels for an operator with the same symmetries as the Hamiltonian).
 }
@@ -873,7 +1068,7 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
 
 void ModelSpace::FindEFermi()
 {
-  e_fermi = {{-1,0},{+1,0}};
+  e_fermi = {{-1,-1},{+1,-1}};
   std::map<int,double> occmax = {{-1,0},{+1,0}};
   for ( auto i : holes )
   {
@@ -888,6 +1083,7 @@ void ModelSpace::FindEFermi()
   }
 //  std::map<int,double> particle_e_min = {{-1,1e6},{1,1e6}};
   std::map<int,double> particle_e_min = e_fermi;
+  particle_e_min = {{-1,1e6},{1,1e6}};
   for (auto i : particles )
   {
     Orbit& oi = GetOrbit(i);
@@ -897,8 +1093,12 @@ void ModelSpace::FindEFermi()
        particle_e_min[oi.tz2] = ei;
     }
   }
+  if (particle_e_min[-1]==1e6) particle_e_min[-1]=e_fermi[-1];
+  if (particle_e_min[+1]==1e6) particle_e_min[+1]=e_fermi[+1];
   // If the last level is completely filled, then we defined the fermi surface to 
   // be half way between the highest filled orbit and the lowest unfilled orbit
+//  std::cout << "before adjusting, " << e_fermi[-1] << " " << particle_e_min[-1] << "    " << e_fermi[+1] << " " << particle_e_min[+1] << std::endl;
+//  std::cout << " and occmax = " << occmax[-1] << " " << occmax[+1] << std::endl;
   if ( occmax[-1] > 0.99)  e_fermi[-1] = 0.5 * ( e_fermi[-1] + particle_e_min[-1] );
   if ( occmax[+1] > 0.99)  e_fermi[+1] = 0.5 * ( e_fermi[+1] + particle_e_min[+1] );
 
@@ -1176,6 +1376,45 @@ size_t ModelSpace::ThreeBodyChannelHash( int twoJ, int parity, int twoTz)
 
 
 
+// Count up how many 3-body states will survive the
+// combined cuts to dE3max [energy relative to the fermi surface],
+// and OccNat3 [product of n(1-n) where n is the occupation in the natural orbitals basis]
+//size_t ModelSpace::CountThreeBodyStatesInsideCut()
+std::array<size_t,2> ModelSpace::CountThreeBodyStatesInsideCut()
+{
+  size_t nstates = 0;
+  size_t ntotal = 0;
+  size_t nch3 = GetNumberThreeBodyChannels();
+  for (size_t ch3=0; ch3<nch3; ch3++)
+  {
+    ThreeBodyChannel& Tbc = GetThreeBodyChannel(ch3);
+    size_t nkets = Tbc.GetNumberKets();
+    for (size_t iket=0; iket<nkets; iket++)
+    {
+      Ket3& ket = Tbc.GetKet(iket);
+      size_t i = ket.p;
+      size_t j = ket.q;
+      size_t k = ket.r;
+      Orbit& oi = GetOrbit(i);
+      Orbit& oj = GetOrbit(j);
+      Orbit& ok = GetOrbit(k);
+      double d_ei = std::abs( 2*oi.n + oi.l - e_fermi[oi.tz2]);
+      double d_ej = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+      double d_ek = std::abs( 2*ok.n + ok.l - e_fermi[ok.tz2]);
+      double occnat_i = oi.occ_nat;
+      double occnat_j = oj.occ_nat;
+      double occnat_k = ok.occ_nat;
+      ntotal++;
+      if ( (d_ei + d_ej + d_ek) > dE3max ) continue;
+      if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < GetOccNat3Cut() ) continue;
+      nstates++;
+    }// for iket
+  }// for ch3
+//  return nstates;
+  return {nstates,ntotal};
+
+}
+
 
 void ModelSpace::SetEmaxUnocc(int e)
 {
@@ -1190,12 +1429,14 @@ void ModelSpace::SetEmaxUnocc(int e)
 //  std::set<std::array<int,3>> hole_quantum_numbers; // For checking if an orbit could mix with the hole orbits
 
   hole_quantum_numbers.clear();
-  std::map<index_t,double> holemap;
+//  std::map<index_t,double> holemap;
+  std::map<std::array<int,4>,double> holemap;
   int max_l = -1;
   for (auto h : holes )
   {
     Orbit& oh = GetOrbit(h);
-    holemap[h] = oh.occ;
+//    holemap[h] = oh.occ;
+    holemap[{oh.n,oh.l,oh.j2,oh.tz2}] = oh.occ;
 //    hole_quantum_numbers.insert( { oh.l, oh.j2, oh.tz2} );
 //    hole_quantum_numbers.insert( { oh.l, oh.j2} );
     max_l = std::max(max_l, oh.l);
@@ -1206,17 +1447,20 @@ void ModelSpace::SetEmaxUnocc(int e)
     hole_quantum_numbers.insert( {l,2*l+1});
     if (l>0) hole_quantum_numbers.insert( {l,2*l-1} );
   }
+  std::set<std::array<int,4>> corelist, valencelist;
+  for ( auto c : core )
+  {
+    Orbit& oc = GetOrbit(c);
+    corelist.insert({oc.n,oc.l,oc.j2,oc.tz2});
+  }
+  for ( auto v : valence )
+  {
+    Orbit& ov = GetOrbit(v);
+    valencelist.insert({ov.n,ov.l,ov.j2,ov.tz2});
+  }
 
-//  std::cout << "hole quantum numbers: " << std::endl;
-//  for (auto& hqn : hole_quantum_numbers )
-//  {
-//    std::cout << hqn[0] << " " << hqn[1] << " " << hqn[2] << std::endl;
-//    std::cout << hqn[0] << " " << hqn[1]  << std::endl;
-//  }
-
-//  for ( auto h : holes ) holemap[h] = GetOrbit(h).occ;
-//  Init(Emax, holemap,c,v);
-  Init(Emax, holemap,core,valence);
+//  Init(Emax, holemap,core,valence);
+  Init(holemap,corelist,valencelist);
 
 }
 

@@ -25,13 +25,15 @@ namespace py = pybind11;
 
   void MS_SetRef(ModelSpace& self, std::string str){ self.SetReference( str);};
 
-  Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
+//  Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
+  Operator HF_GetNormalOrderedH(HartreeFock& self, int particle_rank=2){ return self.GetNormalOrderedH(particle_rank);};
 
 //BOOST_PYTHON_MODULE(pyIMSRG)
 //PYBIND11_PLUGIN(pyIMSRG)
 PYBIND11_MODULE(pyIMSRG, m)
 {
   m.doc() = "python bindings for IMSRG code";
+
 
    py::class_<Orbit>(m,"Orbit")
       .def(py::init<>())
@@ -66,10 +68,10 @@ PYBIND11_MODULE(pyIMSRG, m)
    py::class_<ModelSpace>(m,"ModelSpace")
       .def(py::init<>())
       .def(py::init<const ModelSpace&>())
-      .def(py::init< int, const std::string&>())
-      .def(py::init< int, const std::string&, const std::string&>())
-      .def(py::init< int,std::vector<std::string>,std::vector<std::string> >())
-      .def(py::init< int,std::vector<std::string>,std::vector<std::string>,std::vector<std::string> >())
+      .def(py::init< int, const std::string&>(),  py::arg("emax"),py::arg("reference") )
+      .def(py::init< int, const std::string&, const std::string&>(),  py::arg("emax"),py::arg("reference"),py::arg("valence"))
+      .def(py::init< int,std::vector<std::string>,std::vector<std::string> >(), py::arg("emax"),py::arg("hole_list"),py::arg("valence_list"))
+      .def(py::init< int,std::vector<std::string>,std::vector<std::string>,std::vector<std::string> >(), py::arg("emax"),py::arg("hole_list"),py::arg("core_list"),py::arg("valence_list"))
       .def("SetHbarOmega", &ModelSpace::SetHbarOmega)
       .def("SetTargetMass", &ModelSpace::SetTargetMass)
       .def("SetE3max", &ModelSpace::SetE3max)
@@ -101,7 +103,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    py::class_<Operator>(m,"Operator")
       .def(py::init<>())
       .def(py::init< ModelSpace&>())
-      .def(py::init< ModelSpace&,int,int,int,int>())
+      .def(py::init< ModelSpace&,int,int,int,int>(), py::arg("modelspace"),py::arg("j_rank"),py::arg("parity"),py::arg("t_rank"),py::arg("particle_rank"))
       .def(py::self += py::self)
       .def(py::self + py::self)
       .def(py::self -= Operator())
@@ -194,9 +196,9 @@ PYBIND11_MODULE(pyIMSRG, m)
 
    py::class_<ThreeBodyMEpn>(m,"ThreeBodyMEpn")
       .def(py::init<>())
-      .def("SetME", &ThreeBodyMEpn::SetME)
+//      .def("SetME", &ThreeBodyMEpn::SetME)
       .def("GetME", &ThreeBodyMEpn::GetME)
-      .def("SetME_pn", &ThreeBodyMEpn::SetME_pn)
+//      .def("SetME_pn", &ThreeBodyMEpn::SetME_pn)
       .def("GetME_pn", &ThreeBodyMEpn::GetME_pn)
       .def("RecouplingCoefficient",&ThreeBodyMEpn::RecouplingCoefficient)
       .def("TransformToPN",&ThreeBodyMEpn::TransformToPN)
@@ -212,24 +214,25 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def_readonly_static("BAC",&ThreeBodyMEpn::BAC)
    ;
 
+
    py::class_<ReadWrite>(m,"ReadWrite")
       .def(py::init<>())
       .def("ReadTBME_Oslo", &ReadWrite::ReadTBME_Oslo)
       .def("ReadBareTBME_Jason", &ReadWrite::ReadBareTBME_Jason)
       .def("ReadBareTBME_Navratil", &ReadWrite::ReadBareTBME_Navratil)
-      .def("ReadBareTBME_Darmstadt", &ReadWrite::ReadBareTBME_Darmstadt)
-      .def("Read_Darmstadt_3body", &ReadWrite::Read_Darmstadt_3body)
+      .def("ReadBareTBME_Darmstadt", &ReadWrite::ReadBareTBME_Darmstadt, py::arg("filename"),py::arg("H"),py::arg("e1max"),py::arg("e2max"),py::arg("lmax") )
+      .def("Read_Darmstadt_3body", &ReadWrite::Read_Darmstadt_3body, py::arg("filename"),py::arg("H"),py::arg("e1max"),py::arg("e2max"),py::arg("e3max") )
 #ifndef NO_HDF5
       .def("Read3bodyHDF5", &ReadWrite::Read3bodyHDF5)
 #endif
       .def("Write_me2j", &ReadWrite::Write_me2j)
       .def("Write_me3j", &ReadWrite::Write_me3j)
       .def("WriteTBME_Navratil", &ReadWrite::WriteTBME_Navratil)
-      .def("WriteNuShellX_sps", &ReadWrite::WriteNuShellX_sps)
-      .def("WriteNuShellX_int", &ReadWrite::WriteNuShellX_int)
-      .def("WriteNuShellX_op", &ReadWrite::WriteNuShellX_op)
-      .def("ReadNuShellX_int", &ReadWrite::ReadNuShellX_int)
-      .def("ReadNuShellX_int_iso", &ReadWrite::ReadNuShellX_int_iso)
+      .def("WriteNuShellX_sps",  &ReadWrite::WriteNuShellX_sps, py::arg("op"), py::arg("filename") )
+      .def("WriteNuShellX_int",  &ReadWrite::WriteNuShellX_int, py::arg("op"), py::arg("filename") )
+      .def("WriteNuShellX_op",   &ReadWrite::WriteNuShellX_op,  py::arg("op"), py::arg("filename") )
+      .def("ReadNuShellX_int",   &ReadWrite::ReadNuShellX_int,  py::arg("op"), py::arg("filename") )
+      .def("ReadNuShellX_int_iso", &ReadWrite::ReadNuShellX_int_iso, py::arg("op"), py::arg("filename") )
       .def("WriteAntoine_int", &ReadWrite::WriteAntoine_int)
       .def("WriteAntoine_input", &ReadWrite::WriteAntoine_input)
       .def("WriteOperator", &ReadWrite::WriteOperator)
@@ -265,7 +268,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Solve",&HartreeFock::Solve)
       .def("TransformToHFBasis",&HartreeFock::TransformToHFBasis)
       .def("GetHbare",&HartreeFock::GetHbare)
-      .def("GetNormalOrderedH",&HF_GetNormalOrderedH)
+//      .def("GetNormalOrderedH",&HF_GetNormalOrderedH)
+      .def("GetNormalOrderedH",&HF_GetNormalOrderedH, py::arg("particle_rank")=2 )
       .def("GetOmega",&HartreeFock::GetOmega)
       .def("PrintSPE",&HartreeFock::PrintSPE)
       .def("PrintSPEandWF",&HartreeFock::PrintSPEandWF)
@@ -290,7 +294,6 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetNormalOrderedHNAT",&HFMBPT::GetNormalOrderedHNAT)
       .def("PrintSPEandWF",&HFMBPT::PrintSPEandWF)
    ;
-
 
 
    // Define which overloaded version of IMSRGSolver::Transform I want to expose
@@ -327,6 +330,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("AddOperator", &IMSRGSolver::AddOperator)
       .def("GetOperator", &IMSRGSolver::GetOperator)
       .def("EstimateBCHError", &IMSRGSolver::EstimateBCHError)
+      .def("UpdateEta", &IMSRGSolver::UpdateEta)
       .def_readwrite("Eta", &IMSRGSolver::Eta)
    ;
 
@@ -362,6 +366,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    py::module Commutator = m.def_submodule("Commutator", "Commutator namespace");
       Commutator.def("Set_BCH_Transform_Threshold", &Commutator::Set_BCH_Transform_Threshold);
       Commutator.def("Set_BCH_Product_Threshold", &Commutator::Set_BCH_Product_Threshold);
+      Commutator.def("Commutator",&Commutator::Commutator);
       Commutator.def("BCH_Transform", &Commutator::BCH_Transform);
       Commutator.def("BCH_Product", &Commutator::BCH_Product);
       Commutator.def("EstimateBCHError", &Commutator::EstimateBCHError);
@@ -391,7 +396,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("TestDaggerCommutatorsAlln",&UnitTest::TestDaggerCommutatorsAlln)
       .def("Test3BodyAntisymmetry",&UnitTest::Test3BodyAntisymmetry)
       .def("Test3BodyHermiticity",&UnitTest::Test3BodyHermiticity)
-      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
+//      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
    ;
 
 
@@ -446,7 +451,5 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("SetUseGooseTank",Commutator::SetUseGooseTank);
    m.def("SetUseIMSRG3",Commutator::SetUseIMSRG3);
 
-
-//  return m.ptr();
 
 }

@@ -19,10 +19,10 @@
 
 
 
-#define ARMA_VERSION_MAJOR 7
-#define ARMA_VERSION_MINOR 800
+#define ARMA_VERSION_MAJOR 9
+#define ARMA_VERSION_MINOR 850
 #define ARMA_VERSION_PATCH 1
-#define ARMA_VERSION_NAME  "Rogue State Redux"
+#define ARMA_VERSION_NAME  "Pyrocumulus Wrath"
 
 
 
@@ -39,7 +39,8 @@ struct arma_version
     {
     const char* nickname = ARMA_VERSION_NAME;
     
-    std::stringstream ss;
+    std::ostringstream ss;
+    
     ss << arma_version::major
        << '.'
        << arma_version::minor

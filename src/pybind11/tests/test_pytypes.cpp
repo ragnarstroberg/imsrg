@@ -17,6 +17,8 @@ TEST_SUBMODULE(pytypes, m) {
         list.append("value");
         py::print("Entry at position 0:", list[0]);
         list[0] = py::str("overwritten");
+        list.insert(0, "inserted-0");
+        list.insert(2, "inserted-2");
         return list;
     });
     m.def("print_list", [](py::list list) {
@@ -37,6 +39,12 @@ TEST_SUBMODULE(pytypes, m) {
         for (auto item : set)
             py::print("key:", item);
     });
+    m.def("set_contains", [](py::set set, py::object key) {
+        return set.contains(key);
+    });
+    m.def("set_contains", [](py::set set, const char* key) {
+        return set.contains(key);
+    });
 
     // test_dict
     m.def("get_dict", []() { return py::dict("key"_a="value"); });
@@ -48,6 +56,12 @@ TEST_SUBMODULE(pytypes, m) {
         auto d1 = py::dict("x"_a=1, "y"_a=2);
         auto d2 = py::dict("z"_a=3, **d1);
         return d2;
+    });
+    m.def("dict_contains", [](py::dict dict, py::object val) {
+        return dict.contains(val);
+    });
+    m.def("dict_contains", [](py::dict dict, const char* val) {
+        return dict.contains(val);
     });
 
     // test_str
@@ -127,6 +141,12 @@ TEST_SUBMODULE(pytypes, m) {
 
         d["operator()"] = o.attr("func")(1);
         d["operator*"] = o.attr("func")(*o.attr("begin_end"));
+
+        // Test implicit conversion
+        py::list implicit_list = o.attr("begin_end");
+        d["implicit_list"] = implicit_list;
+        py::dict implicit_dict = o.attr("__dict__");
+        d["implicit_dict"] = implicit_dict;
 
         return d;
     });
@@ -261,4 +281,30 @@ TEST_SUBMODULE(pytypes, m) {
     });
 
     m.def("print_failure", []() { py::print(42, UnregisteredType()); });
+
+    m.def("hash_function", [](py::object obj) { return py::hash(obj); });
+
+    m.def("test_number_protocol", [](py::object a, py::object b) {
+        py::list l;
+        l.append(a.equal(b));
+        l.append(a.not_equal(b));
+        l.append(a < b);
+        l.append(a <= b);
+        l.append(a > b);
+        l.append(a >= b);
+        l.append(a + b);
+        l.append(a - b);
+        l.append(a * b);
+        l.append(a / b);
+        l.append(a | b);
+        l.append(a & b);
+        l.append(a ^ b);
+        l.append(a >> b);
+        l.append(a << b);
+        return l;
+    });
+
+    m.def("test_list_slicing", [](py::list a) {
+        return a[py::slice(0, -1, 2)];
+    });
 }

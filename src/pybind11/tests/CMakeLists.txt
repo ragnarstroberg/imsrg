@@ -12,7 +12,7 @@ option(PYBIND11_WERROR  "Report all warnings as errors"  OFF)
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     # We're being loaded directly, i.e. not via add_subdirectory, so make this
     # work as its own project and load the pybind11Config to get the tools we need
-    project(pybind11_tests)
+    project(pybind11_tests CXX)
 
     find_package(pybind11 REQUIRED CONFIG)
 endif()
@@ -26,6 +26,7 @@ endif()
 
 # Full set of test files (you can override these; see below)
 set(PYBIND11_TEST_FILES
+  test_async.cpp
   test_buffers.cpp
   test_builtin_casters.cpp
   test_call_policies.cpp
@@ -39,7 +40,11 @@ set(PYBIND11_TEST_FILES
   test_enum.cpp
   test_eval.cpp
   test_exceptions.cpp
+  test_factory_constructors.cpp
+  test_gil_scoped.cpp
+  test_iostream.cpp
   test_kwargs_and_defaults.cpp
+  test_local_bindings.cpp
   test_methods_and_attributes.cpp
   test_modules.cpp
   test_multiple_inheritance.cpp
@@ -54,6 +59,8 @@ set(PYBIND11_TEST_FILES
   test_smart_ptr.cpp
   test_stl.cpp
   test_stl_binders.cpp
+  test_tagbased_polymorphic.cpp
+  test_union.cpp
   test_virtual_functions.cpp
 )
 
@@ -65,7 +72,28 @@ if (PYBIND11_TEST_OVERRIDE)
   set(PYBIND11_TEST_FILES ${PYBIND11_TEST_OVERRIDE})
 endif()
 
+# Skip test_async for Python < 3.5
+list(FIND PYBIND11_TEST_FILES test_async.cpp PYBIND11_TEST_FILES_ASYNC_I)
+if((PYBIND11_TEST_FILES_ASYNC_I GREATER -1) AND ("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS 3.5))
+  message(STATUS "Skipping test_async because Python version ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} < 3.5")
+  list(REMOVE_AT PYBIND11_TEST_FILES ${PYBIND11_TEST_FILES_ASYNC_I})
+endif()
+
 string(REPLACE ".cpp" ".py" PYBIND11_PYTEST_FILES "${PYBIND11_TEST_FILES}")
+
+# Contains the set of test files that require pybind11_cross_module_tests to be
+# built; if none of these are built (i.e. because TEST_OVERRIDE is used and
+# doesn't include them) the second module doesn't get built.
+set(PYBIND11_CROSS_MODULE_TESTS
+  test_exceptions.py
+  test_local_bindings.py
+  test_stl.py
+  test_stl_binders.py
+)
+
+set(PYBIND11_CROSS_MODULE_GIL_TESTS
+  test_gil_scoped.py
+)
 
 # Check if Eigen is available; if not, remove from PYBIND11_TEST_FILES (but
 # keep it in PYBIND11_PYTEST_FILES, so that we get the "eigen is not installed"
@@ -76,7 +104,7 @@ if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
   # Eigen 3.3.1+ exports a cmake 3.0+ target for handling dependency requirements, but also
   # produces a fatal error if loaded from a pre-3.0 cmake.
   if (NOT CMAKE_VERSION VERSION_LESS 3.0)
-    find_package(Eigen3 QUIET CONFIG)
+    find_package(Eigen3 3.2.7 QUIET CONFIG)
     if (EIGEN3_FOUND)
       if (EIGEN3_VERSION_STRING AND NOT EIGEN3_VERSION_STRING VERSION_LESS 3.3.1)
         set(PYBIND11_EIGEN_VIA_TARGET 1)
@@ -86,7 +114,7 @@ if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
   if (NOT EIGEN3_FOUND)
     # Couldn't load via target, so fall back to allowing module mode finding, which will pick up
     # tools/FindEigen3.cmake
-    find_package(Eigen3 QUIET)
+    find_package(Eigen3 3.2.7 QUIET)
   endif()
 
   if(EIGEN3_FOUND)
@@ -103,53 +131,83 @@ if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
   endif()
 endif()
 
+# Optional dependency for some tests (boost::variant is only supported with version >= 1.56)
+find_package(Boost 1.56)
+
 # Compile with compiler warnings turned on
 function(pybind11_enable_warnings target_name)
   if(MSVC)
     target_compile_options(${target_name} PRIVATE /W4)
-  else()
-      target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wconversion -Wcast-qual)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Intel|Clang)")
+      target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wconversion -Wcast-qual -Wdeprecated)
   endif()
 
   if(PYBIND11_WERROR)
     if(MSVC)
       target_compile_options(${target_name} PRIVATE /WX)
-    else()
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Intel|Clang)")
       target_compile_options(${target_name} PRIVATE -Werror)
     endif()
   endif()
 endfunction()
 
+set(test_targets pybind11_tests)
 
-# Create the binding library
-pybind11_add_module(pybind11_tests THIN_LTO pybind11_tests.cpp
-  ${PYBIND11_TEST_FILES} ${PYBIND11_HEADERS})
-
-pybind11_enable_warnings(pybind11_tests)
-
-if(MSVC)
-  target_compile_options(pybind11_tests PRIVATE /utf-8)
-endif()
-
-if(EIGEN3_FOUND)
-  if (PYBIND11_EIGEN_VIA_TARGET)
-    target_link_libraries(pybind11_tests PRIVATE Eigen3::Eigen)
-  else()
-    target_include_directories(pybind11_tests PRIVATE ${EIGEN3_INCLUDE_DIR})
+# Build pybind11_cross_module_tests if any test_whatever.py are being built that require it
+foreach(t ${PYBIND11_CROSS_MODULE_TESTS})
+  list(FIND PYBIND11_PYTEST_FILES ${t} i)
+  if (i GREATER -1)
+    list(APPEND test_targets pybind11_cross_module_tests)
+    break()
   endif()
-  target_compile_definitions(pybind11_tests PRIVATE -DPYBIND11_TEST_EIGEN)
-endif()
+endforeach()
+
+foreach(t ${PYBIND11_CROSS_MODULE_GIL_TESTS})
+  list(FIND PYBIND11_PYTEST_FILES ${t} i)
+  if (i GREATER -1)
+    list(APPEND test_targets cross_module_gil_utils)
+    break()
+  endif()
+endforeach()
 
 set(testdir ${CMAKE_CURRENT_SOURCE_DIR})
+foreach(target ${test_targets})
+  set(test_files ${PYBIND11_TEST_FILES})
+  if(NOT target STREQUAL "pybind11_tests")
+    set(test_files "")
+  endif()
 
-# Always write the output file directly into the 'tests' directory (even on MSVC)
-if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-  set_target_properties(pybind11_tests PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${testdir})
-  foreach(config ${CMAKE_CONFIGURATION_TYPES})
-    string(TOUPPER ${config} config)
-    set_target_properties(pybind11_tests PROPERTIES LIBRARY_OUTPUT_DIRECTORY_${config} ${testdir})
-  endforeach()
-endif()
+  # Create the binding library
+  pybind11_add_module(${target} THIN_LTO ${target}.cpp ${test_files} ${PYBIND11_HEADERS})
+  pybind11_enable_warnings(${target})
+
+  if(MSVC)
+    target_compile_options(${target} PRIVATE /utf-8)
+  endif()
+
+  if(EIGEN3_FOUND)
+    if (PYBIND11_EIGEN_VIA_TARGET)
+      target_link_libraries(${target} PRIVATE Eigen3::Eigen)
+    else()
+      target_include_directories(${target} PRIVATE ${EIGEN3_INCLUDE_DIR})
+    endif()
+    target_compile_definitions(${target} PRIVATE -DPYBIND11_TEST_EIGEN)
+  endif()
+
+  if(Boost_FOUND)
+    target_include_directories(${target} PRIVATE ${Boost_INCLUDE_DIRS})
+    target_compile_definitions(${target} PRIVATE -DPYBIND11_TEST_BOOST)
+  endif()
+
+  # Always write the output file directly into the 'tests' directory (even on MSVC)
+  if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+    set_target_properties(${target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${testdir})
+    foreach(config ${CMAKE_CONFIGURATION_TYPES})
+      string(TOUPPER ${config} config)
+      set_target_properties(${target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_${config} ${testdir})
+    endforeach()
+  endif()
+endforeach()
 
 # Make sure pytest is found or produce a fatal error
 if(NOT PYBIND11_PYTEST_FOUND)
@@ -173,7 +231,7 @@ endif()
 
 # A single command to compile and run the tests
 add_custom_target(pytest COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PYBIND11_PYTEST_FILES}
-                  DEPENDS pybind11_tests WORKING_DIRECTORY ${testdir} ${PYBIND11_USES_TERMINAL})
+                  DEPENDS ${test_targets} WORKING_DIRECTORY ${testdir} ${PYBIND11_USES_TERMINAL})
 
 if(PYBIND11_TEST_OVERRIDE)
   add_custom_command(TARGET pytest POST_BUILD
@@ -189,7 +247,7 @@ if (NOT PROJECT_NAME STREQUAL "pybind11")
   return()
 endif()
 
-# Add a post-build comment to show the .so size and, if a previous size, compare it:
+# Add a post-build comment to show the primary test suite .so size and, if a previous size, compare it:
 add_custom_command(TARGET pybind11_tests POST_BUILD
   COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/libsize.py
   $<TARGET_FILE:pybind11_tests> ${CMAKE_CURRENT_BINARY_DIR}/sosize-$<TARGET_FILE_NAME:pybind11_tests>.txt)

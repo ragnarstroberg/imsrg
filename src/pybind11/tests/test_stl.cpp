@@ -8,19 +8,35 @@
 */
 
 #include "pybind11_tests.h"
+#include "constructor_stats.h"
 #include <pybind11/stl.h>
 
-// Class that can be move- and copy-constructed, but not assigned
-struct NoAssign {
-    int value;
+#include <vector>
+#include <string>
 
-    explicit NoAssign(int value = 0) : value(value) { }
-    NoAssign(const NoAssign &) = default;
-    NoAssign(NoAssign &&) = default;
+// Test with `std::variant` in C++17 mode, or with `boost::variant` in C++11/14
+#if PYBIND11_HAS_VARIANT
+using std::variant;
+#elif defined(PYBIND11_TEST_BOOST) && (!defined(_MSC_VER) || _MSC_VER >= 1910)
+#  include <boost/variant.hpp>
+#  define PYBIND11_HAS_VARIANT 1
+using boost::variant;
 
-    NoAssign &operator=(const NoAssign &) = delete;
-    NoAssign &operator=(NoAssign &&) = delete;
+namespace pybind11 { namespace detail {
+template <typename... Ts>
+struct type_caster<boost::variant<Ts...>> : variant_caster<boost::variant<Ts...>> {};
+
+template <>
+struct visit_helper<boost::variant> {
+    template <typename... Args>
+    static auto call(Args &&...args) -> decltype(boost::apply_visitor(args...)) {
+        return boost::apply_visitor(args...);
+    }
 };
+}} // namespace pybind11::detail
+#endif
+
+PYBIND11_MAKE_OPAQUE(std::vector<std::string, std::allocator<std::string>>);
 
 /// Issue #528: templated constructor
 struct TplCtorClass {
@@ -38,6 +54,18 @@ TEST_SUBMODULE(stl, m) {
     // test_vector
     m.def("cast_vector", []() { return std::vector<int>{1}; });
     m.def("load_vector", [](const std::vector<int> &v) { return v.at(0) == 1 && v.at(1) == 2; });
+    // `std::vector<bool>` is special because it returns proxy objects instead of references
+    m.def("cast_bool_vector", []() { return std::vector<bool>{true, false}; });
+    m.def("load_bool_vector", [](const std::vector<bool> &v) {
+        return v.at(0) == true && v.at(1) == false;
+    });
+    // Unnumbered regression (caused by #936): pointers to stl containers aren't castable
+    static std::vector<RValueCaster> lvv{2};
+    m.def("cast_ptr_vector", []() { return &lvv; });
+
+    // test_deque
+    m.def("cast_deque", []() { return std::deque<int>{1}; });
+    m.def("load_deque", [](const std::deque<int> &v) { return v.at(0) == 1 && v.at(1) == 2; });
 
     // test_array
     m.def("cast_array", []() { return std::array<int, 2> {{1 , 2}}; });
@@ -61,24 +89,73 @@ TEST_SUBMODULE(stl, m) {
         return set.count("key1") && set.count("key2") && set.count("key3");
     });
 
+    // test_recursive_casting
+    m.def("cast_rv_vector", []() { return std::vector<RValueCaster>{2}; });
+    m.def("cast_rv_array", []() { return std::array<RValueCaster, 3>(); });
+    // NB: map and set keys are `const`, so while we technically do move them (as `const Type &&`),
+    // casters don't typically do anything with that, which means they fall to the `const Type &`
+    // caster.
+    m.def("cast_rv_map", []() { return std::unordered_map<std::string, RValueCaster>{{"a", RValueCaster{}}}; });
+    m.def("cast_rv_nested", []() {
+        std::vector<std::array<std::list<std::unordered_map<std::string, RValueCaster>>, 2>> v;
+        v.emplace_back(); // add an array
+        v.back()[0].emplace_back(); // add a map to the array
+        v.back()[0].back().emplace("b", RValueCaster{});
+        v.back()[0].back().emplace("c", RValueCaster{});
+        v.back()[1].emplace_back(); // add a map to the array
+        v.back()[1].back().emplace("a", RValueCaster{});
+        return v;
+    });
+    static std::array<RValueCaster, 2> lva;
+    static std::unordered_map<std::string, RValueCaster> lvm{{"a", RValueCaster{}}, {"b", RValueCaster{}}};
+    static std::unordered_map<std::string, std::vector<std::list<std::array<RValueCaster, 2>>>> lvn;
+    lvn["a"].emplace_back(); // add a list
+    lvn["a"].back().emplace_back(); // add an array
+    lvn["a"].emplace_back(); // another list
+    lvn["a"].back().emplace_back(); // add an array
+    lvn["b"].emplace_back(); // add a list
+    lvn["b"].back().emplace_back(); // add an array
+    lvn["b"].back().emplace_back(); // add another array
+    m.def("cast_lv_vector", []() -> const decltype(lvv) & { return lvv; });
+    m.def("cast_lv_array", []() -> const decltype(lva) & { return lva; });
+    m.def("cast_lv_map", []() -> const decltype(lvm) & { return lvm; });
+    m.def("cast_lv_nested", []() -> const decltype(lvn) & { return lvn; });
+    // #853:
+    m.def("cast_unique_ptr_vector", []() {
+        std::vector<std::unique_ptr<UserType>> v;
+        v.emplace_back(new UserType{7});
+        v.emplace_back(new UserType{42});
+        return v;
+    });
+
+    // test_move_out_container
     struct MoveOutContainer {
         struct Value { int value; };
-
         std::list<Value> move_list() const { return {{0}, {1}, {2}}; }
     };
-
     py::class_<MoveOutContainer::Value>(m, "MoveOutContainerValue")
         .def_readonly("value", &MoveOutContainer::Value::value);
-
     py::class_<MoveOutContainer>(m, "MoveOutContainer")
         .def(py::init<>())
         .def_property_readonly("move_list", &MoveOutContainer::move_list);
 
+    // Class that can be move- and copy-constructed, but not assigned
+    struct NoAssign {
+        int value;
+
+        explicit NoAssign(int value = 0) : value(value) { }
+        NoAssign(const NoAssign &) = default;
+        NoAssign(NoAssign &&) = default;
+
+        NoAssign &operator=(const NoAssign &) = delete;
+        NoAssign &operator=(NoAssign &&) = delete;
+    };
     py::class_<NoAssign>(m, "NoAssign", "Class with no C++ assignment operators")
         .def(py::init<>())
         .def(py::init<int>());
 
 #ifdef PYBIND11_HAS_OPTIONAL
+    // test_optional
     m.attr("has_optional") = true;
 
     using opt_int = std::optional<int>;
@@ -101,6 +178,7 @@ TEST_SUBMODULE(stl, m) {
 #endif
 
 #ifdef PYBIND11_HAS_EXP_OPTIONAL
+    // test_exp_optional
     m.attr("has_exp_optional") = true;
 
     using exp_opt_int = std::experimental::optional<int>;
@@ -120,28 +198,33 @@ TEST_SUBMODULE(stl, m) {
 #endif
 
 #ifdef PYBIND11_HAS_VARIANT
+    static_assert(std::is_same<py::detail::variant_caster_visitor::result_type, py::handle>::value,
+                  "visitor::result_type is required by boost::variant in C++11 mode");
+
     struct visitor {
-        const char *operator()(int) { return "int"; }
-        const char *operator()(std::string) { return "std::string"; }
-        const char *operator()(double) { return "double"; }
-        const char *operator()(std::nullptr_t) { return "std::nullptr_t"; }
+        using result_type = const char *;
+
+        result_type operator()(int) { return "int"; }
+        result_type operator()(std::string) { return "std::string"; }
+        result_type operator()(double) { return "double"; }
+        result_type operator()(std::nullptr_t) { return "std::nullptr_t"; }
     };
 
-    m.def("load_variant", [](std::variant<int, std::string, double, std::nullptr_t> v) {
-        return std::visit(visitor(), v);
+    // test_variant
+    m.def("load_variant", [](variant<int, std::string, double, std::nullptr_t> v) {
+        return py::detail::visit_helper<variant>::call(visitor(), v);
     });
-
-    m.def("load_variant_2pass", [](std::variant<double, int> v) {
-        return std::visit(visitor(), v);
+    m.def("load_variant_2pass", [](variant<double, int> v) {
+        return py::detail::visit_helper<variant>::call(visitor(), v);
     });
-
     m.def("cast_variant", []() {
-        using V = std::variant<int, std::string>;
+        using V = variant<int, std::string>;
         return py::make_tuple(V(5), V("Hello"));
     });
 #endif
 
-    /// #528: templated constructor
+    // #528: templated constructor
+    // (no python tests: the test here is that this compiles)
     m.def("tpl_ctor_vector", [](std::vector<TplCtorClass> &) {});
     m.def("tpl_ctor_map", [](std::unordered_map<TplCtorClass, TplCtorClass> &) {});
     m.def("tpl_ctor_set", [](std::unordered_set<TplCtorClass> &) {});
@@ -162,4 +245,40 @@ TEST_SUBMODULE(stl, m) {
 
     // test_stl_pass_by_pointer
     m.def("stl_pass_by_pointer", [](std::vector<int>* v) { return *v; }, "v"_a=nullptr);
+
+    // #1258: pybind11/stl.h converts string to vector<string>
+    m.def("func_with_string_or_vector_string_arg_overload", [](std::vector<std::string>) { return 1; });
+    m.def("func_with_string_or_vector_string_arg_overload", [](std::list<std::string>) { return 2; });
+    m.def("func_with_string_or_vector_string_arg_overload", [](std::string) { return 3; });
+
+    class Placeholder {
+    public:
+        Placeholder() { print_created(this); }
+        Placeholder(const Placeholder &) = delete;
+        ~Placeholder() { print_destroyed(this); }
+    };
+    py::class_<Placeholder>(m, "Placeholder");
+
+    /// test_stl_vector_ownership
+    m.def("test_stl_ownership",
+          []() {
+              std::vector<Placeholder *> result;
+              result.push_back(new Placeholder());
+              return result;
+          },
+          py::return_value_policy::take_ownership);
+
+    m.def("array_cast_sequence", [](std::array<int, 3> x) { return x; });
+
+    /// test_issue_1561
+    struct Issue1561Inner { std::string data; };
+    struct Issue1561Outer { std::vector<Issue1561Inner> list; };
+
+    py::class_<Issue1561Inner>(m, "Issue1561Inner")
+        .def(py::init<std::string>())
+        .def_readwrite("data", &Issue1561Inner::data);
+
+    py::class_<Issue1561Outer>(m, "Issue1561Outer")
+        .def(py::init<>())
+        .def_readwrite("list", &Issue1561Outer::list);
 }
