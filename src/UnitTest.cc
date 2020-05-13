@@ -4394,6 +4394,51 @@ bool UnitTest::Test_comm433sd_ph( const Operator& X, const Operator& Yin )
 
 
 
+bool UnitTest::SanityCheck()
+{
+ 
+  std::cout << "Test simple Clebsch-Gordan coeff..." << std::endl;
+  double cg1 = AngMom::CG(0.5,0.5,0.5,-0.5,0,0);
+  if ( std::abs( cg1 - sqrt(0.5)) > 1e-6 )
+  {
+    std::cout << __FILE__ << "  " << __func__ << " failed on line " << __LINE__ << std::endl;
+    return false;
+  }
+
+  std::cout << "Construct a model space..." << std::endl;
+  int emax = 2;
+  std::string ref = "He4";
+  auto ms = ModelSpace(2,ref,ref);
+  int A,Z;
+  ms.GetAZfromString("Pb208",A,Z);
+  if ( not (A==208 and Z==82) )
+  {
+    std::cout << __FILE__ << "  " << __func__ << " failed on line " << __LINE__ << std::endl;
+    return false;
+  }
+
+  std::cout << "Construct the kinetic energy operator..." << std::endl;
+  Operator trel = imsrg_util::Trel_Op(ms);
+  double normT = trel.Norm();
+  std::cout << "...it should have a non-zero norm...  norm = " << normT << std::endl;
+  if ( std::abs(normT) < 1e-8 )
+  {
+    std::cout << __FILE__ << "  " << __func__ << " failed on line " << __LINE__ << std::endl;
+    return false;
+  }
+  Operator comTT = Commutator::Commutator(trel,trel);
+  double normcomTT = comTT.Norm();
+  std::cout << "...and check that it commutes with itself...   || [T,T] || = " << normcomTT << std::endl;
+  if ( std::abs(normcomTT) > 1e-8 )
+  {
+    std::cout << __FILE__ << "  " << __func__ << " failed on line " << __LINE__ << std::endl;
+    return false;
+  }
+
+ std::cout << __func__ << " :  Things look ok! " << std::endl;
+ return true;
+
+}
 
 
 

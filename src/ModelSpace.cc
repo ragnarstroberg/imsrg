@@ -208,7 +208,7 @@ ModelSpace::ModelSpace(int emax, std::string valence)
 // Init version 1  (int, string, string)
 void ModelSpace::Init(int emax, std::string reference, std::string valence)
 {
-  std::cout << __func__ << "  line " << __LINE__ << std::endl;
+//  std::cout << __func__ << "  line " << __LINE__ << std::endl;
 //  int Aref,Zref;
   GetAZfromString(reference,Aref,Zref);
 //  std::map<index_t,double> hole_list = GetOrbitsAZ(Aref,Zref);
@@ -220,7 +220,7 @@ void ModelSpace::Init(int emax, std::string reference, std::string valence)
 // Init version 2  (int, map<array,double>, string)
 void ModelSpace::Init(int emax, std::map<std::array<int,4>,double> hole_list, std::string valence)
 {
-  std::cout << __func__ << "  line " << __LINE__ << std::endl;
+//  std::cout << __func__ << "  line " << __LINE__ << std::endl;
   int Ac,Zc;
 //  std::vector<index_t> valence_list, core_list;
 //  std::set<index_t> valence_list, core_list;
@@ -377,7 +377,7 @@ void ModelSpace::Init_occ_from_file(int emax, std::string valence, std::string o
 void ModelSpace::Init( std::map<std::array<int,4>,double> hole_list, std::set<std::array<int,4>> core_list, std::set<std::array<int,4>> valence_list)
 {
 
-  std::cout << __func__ << "  line " << __LINE__ << std::endl;
+//  std::cout << __func__ << "  line " << __LINE__ << std::endl;
    ClearVectors();
 //   Emax = emax;
 //   std::cout << "core list: ";
@@ -1102,7 +1102,7 @@ void ModelSpace::FindEFermi()
   if ( occmax[-1] > 0.99)  e_fermi[-1] = 0.5 * ( e_fermi[-1] + particle_e_min[-1] );
   if ( occmax[+1] > 0.99)  e_fermi[+1] = 0.5 * ( e_fermi[+1] + particle_e_min[+1] );
 
-  std::cout << "Fermi energies:  " << e_fermi[-1] << "   " << e_fermi[+1] << std::endl;
+//  std::cout << "Fermi energies:  " << e_fermi[-1] << "   " << e_fermi[+1] << std::endl;
 
 }
 

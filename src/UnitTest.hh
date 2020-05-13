@@ -84,6 +84,8 @@ class UnitTest
   bool Test_comm433sd_ph(     const Operator& X, const Operator& Y   );
 
 
+  bool SanityCheck();
+
 };
 
 

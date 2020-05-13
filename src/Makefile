@@ -179,6 +179,8 @@ imsrg++: imsrg++.cc libIMSRG.so Parameters.hh
 clean:
 	rm -f *.o *.so boost_src/*.o
 
+test:
+	python -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He4','He4'); ut=pyIMSRG.UnitTest(ms); passed=ut.SanityCheck()"
 
 install: splashscreen
 	@if [ ! -d $(INSTDIR)/lib ] ; then \

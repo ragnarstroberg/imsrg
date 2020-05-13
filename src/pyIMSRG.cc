@@ -396,6 +396,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("TestDaggerCommutatorsAlln",&UnitTest::TestDaggerCommutatorsAlln)
       .def("Test3BodyAntisymmetry",&UnitTest::Test3BodyAntisymmetry)
       .def("Test3BodyHermiticity",&UnitTest::Test3BodyHermiticity)
+      .def("SanityCheck",&UnitTest::SanityCheck)
 //      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
    ;
 
