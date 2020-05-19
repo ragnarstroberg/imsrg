@@ -60,7 +60,7 @@ void HFMBPT::GetNaturalOrbitals()
 //    trr += (oi.j2+1) * Occ(i);
 //    std::cout << " Occ( " << i << " ) = " << Occ(i) << "   sum = " << trr << std::endl;
   }
-    
+
   if (use_NAT_occupations) // use fractional occupation
   {
 
@@ -69,7 +69,7 @@ void HFMBPT::GetNaturalOrbitals()
     double NfromTr=0;
     double ZfromTr=0;
     std::cout << "Switching to occupation numbers obtained from 2nd order 1b density matrix." << std::endl;
-    std::vector<index_t> holeorbs_tmp; 
+    std::vector<index_t> holeorbs_tmp;
     std::vector<double> hole_occ_tmp;
     // Figure out how many particles are living in orbits with occupations above our threshold.
     // We do this separately for protons and neutrons.
@@ -132,7 +132,7 @@ void HFMBPT::GetNaturalOrbitals()
     UpdateReference();
 
   } // if use_NAT_occupations
-  
+
 }
 
 //*********************************************************************
@@ -163,7 +163,7 @@ void HFMBPT::DiagonalizeRho()
     C_HF2NAT.submat(orbvec, orbvec_d) = vec;
   }
  // Choose ordering and phases so that C_HF2NAT looks as close to the identity as possible
-  ReorderHFMBPTCoefficients(); 
+  ReorderHFMBPTCoefficients();
 }
 
 //*********************************************************************
@@ -312,7 +312,7 @@ Operator HFMBPT::GetNormalOrderedHNAT(int particle_rank)
   arma::mat rho_swap = rho;
   arma::mat tmp = C_HO2NAT.cols(holeorbs);
   rho = (tmp.each_row() % hole_occ) * tmp.t();
-  
+
 
   // fractional occupation
   // rho = C_HO2NAT * diagmat(Occ) * C_HO2NAT.t();
@@ -332,61 +332,147 @@ Operator HFMBPT::GetNormalOrderedHNAT(int particle_rank)
   HNO.OneBody = C_HO2NAT.t() * F * C_HO2NAT;
 
   int nchan = HartreeFock::modelspace->GetNumberTwoBodyChannels();
-  int norb = HartreeFock::modelspace->GetNumberOrbits();
-  for (int ch=0; ch<nchan; ++ch)
+//  int norb = HartreeFock::modelspace->GetNumberOrbits();
+
+//  if( Hbare.ThreeBodyNO2B.initialized ){
+
+
+  // The way we get the NO2B part of the interaction depends on whether we're using the full 3N or if we just
+  // read in the NO2B part of the 3N. Here we wrap the two options in a lambda function so that we only need
+  // to write the whole loop once, and so that we don't have unnecessary if statements at the deepest nested loop.
+  std::function<double (int,int,int,int,int,int,int)> GetVNO2B;
+  if ( Hbare.ThreeBodyNO2B.initialized)
   {
-    TwoBodyChannel& tbc = HartreeFock::modelspace->GetTwoBodyChannel(ch);
-    int J = tbc.J;
-    int npq = tbc.GetNumberKets();
+    GetVNO2B = [this] (int i,int j, int a, int k, int l, int b, int J){ 
+                 return this->Hbare.ThreeBodyNO2B.GetThBME(i,j,a,k,l,b,J);
+               };
+  }
+  else
+  {
+    GetVNO2B = [this] (int i,int j, int a, int k, int l, int b, int J){
+                 double vno2b = 0;
+                 double j2a = this->modelspace->GetOrbit(a).j2;
+                 for (int J3=std::abs(2*J-j2a); J3<=(2*J+j2a); J3+=2)  vno2b += (J3+1) * this->Hbare.ThreeBody.GetME_pn(J,J,J3,i,j,a,k,l,b);
+                 return vno2b;
+               };
+  }
 
-    arma::mat D(npq,npq,arma::fill::zeros);
-    arma::mat V3NO(npq,npq,arma::fill::zeros);
-    #pragma omp parallel for schedule(dynamic,1) // we've got the threads, may as well use them...
-    for (int i=0; i<npq; ++i)
+    for (int ch=0;ch<nchan;++ch)
     {
-      Ket & bra = tbc.GetKet(i);
-      int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
-      for (int j=0; j<npq; ++j)
-      {
-        Ket & ket = tbc.GetKet(j);
-        int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
-        D(i,j) = C_HO2NAT(bra.p,ket.p) * C_HO2NAT(bra.q,ket.q);
-        if (bra.p!=bra.q)
-        {
-          D(i,j) += C_HO2NAT(bra.q,ket.p) * C_HO2NAT(bra.p,ket.q) * bra.Phase(J);
-        }
-        if (bra.p==bra.q)    D(i,j) *= PhysConst::SQRT2;
-        if (ket.p==ket.q)    D(i,j) /= PhysConst::SQRT2;
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      int J = tbc.J;
+      int npq = tbc.GetNumberKets();
 
-        // Now generate the NO2B part of the 3N interaction
-        if (Hbare.GetParticleRank()<3) continue;
-        if (i>j) continue;
-        for (int a=0; a<norb; ++a)
+      arma::mat D(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+      arma::mat V3NO(npq,npq,arma::fill::zeros);  // <ij|ab> = <ji|ba>
+#pragma omp parallel for schedule(dynamic,1)
+      for (int i=0; i<npq; ++i)
+      {
+        Ket & bra = tbc.GetKet(i);
+        int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
+        for (int j=0; j<npq; ++j)
         {
-          Orbit & oa = HartreeFock::modelspace->GetOrbit(a);
-          if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
-          for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+          Ket & ket = tbc.GetKet(j);
+          int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
+          D(i,j) = C_HO2NAT(bra.p,ket.p) * C_HO2NAT(bra.q,ket.q);
+          if (bra.p!=bra.q)
           {
-            Orbit & ob = HartreeFock::modelspace->GetOrbit(b);
-            if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
-            int J3min = abs(2*J-oa.j2);
-            int J3max = 2*J + oa.j2;
-            for (int J3=J3min; J3<=J3max; J3+=2)
+            D(i,j) += C_HO2NAT(bra.q,ket.p) * C_HO2NAT(bra.p,ket.q) * bra.Phase(J);
+          }
+          if (bra.p==bra.q)    D(i,j) *= PhysConst::SQRT2;
+          if (ket.p==ket.q)    D(i,j) /= PhysConst::SQRT2;
+
+          // Now generate the NO2B part of the 3N interaction
+          if (Hbare.GetParticleRank()<3) continue;
+          if (i>j) continue;
+          for ( auto a : modelspace->all_orbits )
+          {
+            Orbit & oa = modelspace->GetOrbit(a);
+            if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
+            for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
             {
-              V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
+              Orbit & ob = HartreeFock::modelspace->GetOrbit(b);
+              if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
+//              V3NO(i,j) += rho(a,b) * Hbare.ThreeBodyNO2B.GetThBME(bra.p, bra.q, a, ket.p, ket.q, b, J);
+              V3NO(i,j) += rho(a,b) * GetVNO2B(bra.p, bra.q, a, ket.p, ket.q, b, J);
             }
           }
+          V3NO(i,j) /= (2*J+1);
+          if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2;
+          if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2;
+          V3NO(j,i) = V3NO(i,j);
         }
-        V3NO(i,j) /= (2*J+1);
-        if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2;
-        if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2;
-        V3NO(j,i) = V3NO(i,j);
-      }// for j
-    }// for i
-    auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
-    auto& OUT =  HNO.TwoBody.GetMatrix(ch);
-    OUT  =    D.t() * (V2 + V3NO) * D;
-  }// for ch
+      }
+
+      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
+      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
+      OUT  =    D.t() * (V2 + V3NO) * D;
+    }
+//  }
+//  else{
+//    auto GetVNO2B = [this](int i,int j, int a, int k, int l, int b, int J){
+//              double vno2b = 0;
+//              double j2a = this->modelspace->GetOrbit(a).j2;
+//              for (int J3=std::abs(2*J-j2a); J3<=(2*J+j2a); J3+=2)  vno2b += (J3+1) * this->Hbare.ThreeBody.GetME_pn(J,J,J3,i,j,a,k,l,b);
+//              return vno2b;
+//        };
+//    for (int ch=0; ch<nchan; ++ch)
+//    {
+//      TwoBodyChannel& tbc = HartreeFock::modelspace->GetTwoBodyChannel(ch);
+//      int J = tbc.J;
+//      int npq = tbc.GetNumberKets();
+//
+//      arma::mat D(npq,npq,arma::fill::zeros);
+//      arma::mat V3NO(npq,npq,arma::fill::zeros);
+//#pragma omp parallel for schedule(dynamic,1) // we've got the threads, may as well use them...
+//      for (int i=0; i<npq; ++i)
+//      {
+//        Ket & bra = tbc.GetKet(i);
+//        int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
+//        for (int j=0; j<npq; ++j)
+//        {
+//          Ket & ket = tbc.GetKet(j);
+//          int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
+//          D(i,j) = C_HO2NAT(bra.p,ket.p) * C_HO2NAT(bra.q,ket.q);
+//          if (bra.p!=bra.q)
+//          {
+//            D(i,j) += C_HO2NAT(bra.q,ket.p) * C_HO2NAT(bra.p,ket.q) * bra.Phase(J);
+//          }
+//          if (bra.p==bra.q)    D(i,j) *= PhysConst::SQRT2;
+//          if (ket.p==ket.q)    D(i,j) /= PhysConst::SQRT2;
+//
+//          // Now generate the NO2B part of the 3N interaction
+//          if (Hbare.GetParticleRank()<3) continue;
+//          if (i>j) continue;
+//          for (int a=0; a<norb; ++a)
+//          {
+//            Orbit & oa = HartreeFock::modelspace->GetOrbit(a);
+//            if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
+//            for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
+//            {
+//              Orbit & ob = HartreeFock::modelspace->GetOrbit(b);
+//              if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
+//
+//              V3NO(i,j) += rho(a,b) * GetVNO2B(bra.p,bra.q,a,ket.p,ket.q,b,J);
+////              int J3min = abs(2*J-oa.j2);
+////              int J3max = 2*J + oa.j2;
+////              for (int J3=J3min; J3<=J3max; J3+=2)
+////              {
+////                V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
+////              }
+//            }
+//          }
+//          V3NO(i,j) /= (2*J+1);
+//          if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2;
+//          if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2;
+//          V3NO(j,i) = V3NO(i,j);
+//        }// for j
+//      }// for i
+//      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
+//      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
+//      OUT  =    D.t() * (V2 + V3NO) * D;
+//    }// for ch
+//  }
 
   if (particle_rank>2)
   {
@@ -414,7 +500,7 @@ void HFMBPT::GetDensityMatrix()
 
 //*********************************************************************
 // Pretty self explanatory. Print the quantum numbers and occupations
-// of all orbits, except that the occupation is the eigenvalue of the 
+// of all orbits, except that the occupation is the eigenvalue of the
 // density matrix, not the value set in modelspace.
 //*********************************************************************
 void HFMBPT::PrintOccupation()
@@ -431,14 +517,14 @@ void HFMBPT::PrintOccupation()
 }
 
 //*********************************************************************
-// Compute the MBPT2 contribution to rho due to < 1| rho |1 > where 
+// Compute the MBPT2 contribution to rho due to < 1| rho |1 > where
 //  |1> is the 1st order correction to the HF ground state.
 // Here we treat the contribution to the particle-particle block.
 //
 //        *~~~~~~~*      <a|rho|b> = 1/2 sum_{cijJ} (2J+1)/(2j_a+1) <ac|V|ij><ij|V|bc> / Delta
-// R0--- / \     / \a           
+// R0--- / \     / \a
 //     c(  i)  j(  (RHO)      with Delta = (ea+ec -ei-ej)(eb+ec-ei-ej)
-// R0--- \ /     \ /b      
+// R0--- \ /     \ /b
 //        *~~~~~~~*        R0---  indicates the MBPT resolvent lines.
 //                         ijk are holes, abc are particles
 //
@@ -452,7 +538,7 @@ void HFMBPT::PrintOccupation()
 // where E*E = 1/4 (e_acij * e_bcij)
 // In the limit V*V << E*E, this coincides with the perturbative expression,
 // so we can make the replacement even if the levels aren't closely spaced.
-// 
+//
 // When using fraction occupations, including the factor (1-na)(1-nb) [ni nj(1-nc)]^2
 // and an equivalent one in the HH term produces a density matrix with the correct
 // particle number, encoded in the 2j+1 weighted trace of rho. However, including
@@ -506,14 +592,14 @@ void HFMBPT::DensityMatrixPP(Operator& H)
 
             double tbme = 0.0;
             for(int J = Jmin; J <= Jmax; ++J){
-              tbme +=  (2*J+1) * H.TwoBody.GetTBME_J(J,a,c,i,j) 
+              tbme +=  (2*J+1) * H.TwoBody.GetTBME_J(J,a,c,i,j)
                                * H.TwoBody.GetTBME_J(J,i,j,b,c);
             }
             tbme *=  (1-oa.occ) * (1-ob.occ) * pow( (1-oc.occ) * oi.occ * oj.occ,2) ;
             if (true)
             {
               double epsilon = 0.5*sqrt(std::abs(e_acij * e_bcij));
-              r += 0.5* ( sqrt(tbme + epsilon*epsilon) - epsilon ) / sqrt(tbme + epsilon*epsilon); 
+              r += 0.5* ( sqrt(tbme + epsilon*epsilon) - epsilon ) / sqrt(tbme + epsilon*epsilon);
             }
             else // the MBPT expression. We don't actually use this.
             {
@@ -530,14 +616,14 @@ void HFMBPT::DensityMatrixPP(Operator& H)
 
 
 //*********************************************************************
-// Compute the MBPT2 contribution to rho due to < 1| rho |1 > where 
+// Compute the MBPT2 contribution to rho due to < 1| rho |1 > where
 //  |1> is the 1st order correction to the HF ground state.
 // Here we treat the contribution to the hole-hole block.
 //
 //        *~~~~~~~*      <i|rho|j> = -1/2 sum_{abkJ} (2J+1)/(2j_i+1) <ab|V|ik><jk|V|ab> / Delta
-// R0--- / \     / \j           
+// R0--- / \     / \j
 //     a(  k)  b(  (RHO)      with Delta = (ea+eb -ei-ek)(ea+eb-ej-ek)
-// R0--- \ /     \ /i      
+// R0--- \ /     \ /i
 //        *~~~~~~~*        R0---  indicates the MBPT resolvent lines.
 //                         ijk are holes, abc are particles
 //
@@ -617,26 +703,26 @@ void HFMBPT::DensityMatrixHH(Operator& H)
 }
 
 //*********************************************************************
-// Compute the MBPT2 contribution to rho due to <0|rho|2> + <2|rho|0> 
+// Compute the MBPT2 contribution to rho due to <0|rho|2> + <2|rho|0>
 //  where |0> is the HF ground state and |2> is the 2nd order correction.
 //
 //      (RHO)           <i|rho|a> = 1/2 sum_{bcjJ} (2J+1)/(2j_i+1) <aj|V|bc><bc|V|ij> / Delta
-// R0--- / \a               
+// R0--- / \a
 //     i(   )~~~~*       with Delta = (ea-ei)(eb+ec-ei-ej)
-// R0--- \ /b  j( )c      
+// R0--- \ /b  j( )c
 //        *~~~~~~*        R0---  indicates the MBPT resolvent lines.
 //                         ijk are holes, abc are particles
 // and
 //
 
 //      (RHO)           <i|rho|a> = -1/2 sum_{bkjJ} (2J+1)/(2j_i+1) <kj|V|ib><ab|V|kj> / Delta
-// R0--- / \i               
+// R0--- / \i
 //     a(   )~~~~*       with Delta = (ea-ei)(ea+eb-ej-ek)
-// R0--- \ /j  b( )k      
-//        *~~~~~~*        
-//                         
+// R0--- \ /j  b( )k
+//        *~~~~~~*
+//
 // Equivalent diagrams can be drawn with rho on the bottom, corresponding to <2|rho|0>,
-// and the formulas are the same.                                                         
+// and the formulas are the same.
 // In (limited) tests, a small gap between particle and hole levels did not appear
 // to be a problem for these diagrams, so the MBPT2 expression is used directly.
 // This may need to be revisited.
@@ -686,7 +772,7 @@ void HFMBPT::DensityMatrixPH(Operator& H)
             double tbme = 0.0;
             for(int J = Jmin; J <= Jmax; ++J)
             {
-              tbme += (2*J+1) * H.TwoBody.GetTBME_J(J,a,j,b,c)  
+              tbme += (2*J+1) * H.TwoBody.GetTBME_J(J,a,j,b,c)
                               * H.TwoBody.GetTBME_J(J,b,c,i,j);
             }
 
@@ -695,7 +781,7 @@ void HFMBPT::DensityMatrixPH(Operator& H)
           }
         }
       }
-      rho(a,i) += r * 0.5 / (oa.j2+1); 
+      rho(a,i) += r * 0.5 / (oa.j2+1);
       rho(i,a) += r * 0.5 / (oa.j2+1);
 //      rho(a,i) += r * 0.5 / (2*oa.j2+1); // <-- typo in original version?
 //      rho(i,a) += r * 0.5 / (2*oa.j2+1);
@@ -745,7 +831,7 @@ void HFMBPT::DensityMatrixPH(Operator& H)
             double tbme = 0.0;
             for(int J = Jmin; J <= Jmax; ++J)
             {
-              tbme += (2*J+1) * H.TwoBody.GetTBME_J(J,k,j,i,b) 
+              tbme += (2*J+1) * H.TwoBody.GetTBME_J(J,k,j,i,b)
                               * H.TwoBody.GetTBME_J(J,a,b,k,j);
             }
             tbme *= (1-oa.occ) * oi.occ * oj.occ * ok.occ * (1-ob.occ);
