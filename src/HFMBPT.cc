@@ -393,7 +393,6 @@ Operator HFMBPT::GetNormalOrderedHNAT(int particle_rank)
             {
               Orbit & ob = HartreeFock::modelspace->GetOrbit(b);
               if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
-//              V3NO(i,j) += rho(a,b) * Hbare.ThreeBodyNO2B.GetThBME(bra.p, bra.q, a, ket.p, ket.q, b, J);
               V3NO(i,j) += rho(a,b) * GetVNO2B(bra.p, bra.q, a, ket.p, ket.q, b, J);
             }
           }
@@ -408,71 +407,7 @@ Operator HFMBPT::GetNormalOrderedHNAT(int particle_rank)
       auto& OUT =  HNO.TwoBody.GetMatrix(ch);
       OUT  =    D.t() * (V2 + V3NO) * D;
     }
-//  }
-//  else{
-//    auto GetVNO2B = [this](int i,int j, int a, int k, int l, int b, int J){
-//              double vno2b = 0;
-//              double j2a = this->modelspace->GetOrbit(a).j2;
-//              for (int J3=std::abs(2*J-j2a); J3<=(2*J+j2a); J3+=2)  vno2b += (J3+1) * this->Hbare.ThreeBody.GetME_pn(J,J,J3,i,j,a,k,l,b);
-//              return vno2b;
-//        };
-//    for (int ch=0; ch<nchan; ++ch)
-//    {
-//      TwoBodyChannel& tbc = HartreeFock::modelspace->GetTwoBodyChannel(ch);
-//      int J = tbc.J;
-//      int npq = tbc.GetNumberKets();
-//
-//      arma::mat D(npq,npq,arma::fill::zeros);
-//      arma::mat V3NO(npq,npq,arma::fill::zeros);
-//#pragma omp parallel for schedule(dynamic,1) // we've got the threads, may as well use them...
-//      for (int i=0; i<npq; ++i)
-//      {
-//        Ket & bra = tbc.GetKet(i);
-//        int e2bra = 2*bra.op->n + bra.op->l + 2*bra.oq->n + bra.oq->l;
-//        for (int j=0; j<npq; ++j)
-//        {
-//          Ket & ket = tbc.GetKet(j);
-//          int e2ket = 2*ket.op->n + ket.op->l + 2*ket.oq->n + ket.oq->l;
-//          D(i,j) = C_HO2NAT(bra.p,ket.p) * C_HO2NAT(bra.q,ket.q);
-//          if (bra.p!=bra.q)
-//          {
-//            D(i,j) += C_HO2NAT(bra.q,ket.p) * C_HO2NAT(bra.p,ket.q) * bra.Phase(J);
-//          }
-//          if (bra.p==bra.q)    D(i,j) *= PhysConst::SQRT2;
-//          if (ket.p==ket.q)    D(i,j) /= PhysConst::SQRT2;
-//
-//          // Now generate the NO2B part of the 3N interaction
-//          if (Hbare.GetParticleRank()<3) continue;
-//          if (i>j) continue;
-//          for (int a=0; a<norb; ++a)
-//          {
-//            Orbit & oa = HartreeFock::modelspace->GetOrbit(a);
-//            if ( 2*oa.n+oa.l+e2bra > Hbare.GetE3max() ) continue;
-//            for (int b : Hbare.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}))
-//            {
-//              Orbit & ob = HartreeFock::modelspace->GetOrbit(b);
-//              if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
-//
-//              V3NO(i,j) += rho(a,b) * GetVNO2B(bra.p,bra.q,a,ket.p,ket.q,b,J);
-////              int J3min = abs(2*J-oa.j2);
-////              int J3max = 2*J + oa.j2;
-////              for (int J3=J3min; J3<=J3max; J3+=2)
-////              {
-////                V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
-////              }
-//            }
-//          }
-//          V3NO(i,j) /= (2*J+1);
-//          if (bra.p==bra.q)  V3NO(i,j) /= PhysConst::SQRT2;
-//          if (ket.p==ket.q)  V3NO(i,j) /= PhysConst::SQRT2;
-//          V3NO(j,i) = V3NO(i,j);
-//        }// for j
-//      }// for i
-//      auto& V2  =  Hbare.TwoBody.GetMatrix(ch);
-//      auto& OUT =  HNO.TwoBody.GetMatrix(ch);
-//      OUT  =    D.t() * (V2 + V3NO) * D;
-//    }// for ch
-//  }
+
 
   if (particle_rank>2)
   {
