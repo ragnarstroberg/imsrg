@@ -2295,7 +2295,7 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
   size_t norb = Z.modelspace->GetNumberOrbits();
-  int nch = Z.modelspace->GetNumberTwoBodyChannels();
+//  int nch = Z.modelspace->GetNumberTwoBodyChannels();
   for (size_t i=0; i<norb; i++)
   {
     Orbit& oi = Z.modelspace->GetOrbit(i);
@@ -2409,7 +2409,7 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
         auto tbc_bra = Z.modelspace->GetTwoBodyChannel(ch_bra);
         auto tbc_ket = Z.modelspace->GetTwoBodyChannel(ch_ket);
         int J = tbc_bra.J;
-        size_t nbras = tbc_bra.GetNumberKets();
+//        size_t nbras = tbc_bra.GetNumberKets();
         size_t nkets = tbc_ket.GetNumberKets();
         for ( auto ibra : tbc_bra.KetIndex_hh )
         {
@@ -2707,20 +2707,20 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
           double de_k = std::abs( 2*ket_kl.op->n + ket_kl.op->l - e_fermi[ket_kl.op->tz2]);
           double de_l = std::abs( 2*ket_kl.oq->n + ket_kl.oq->l - e_fermi[ket_kl.oq->tz2]);
           double nk = ket_kl.op->occ;
-          double nl = ket_kl.oq->occ;
+//          double nl = ket_kl.oq->occ;
           double occnat_k = ket_kl.op->occ_nat;
           double occnat_l = ket_kl.oq->occ_nat;
           for ( size_t j : iter_j.second )
           {
             Orbit& oj = Z.modelspace->GetOrbit(j);
-            double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
+//            double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
             double occnat_j = oj.occ_nat;
             if ( (de_k + de_l) > Z.modelspace->GetdE3max() ) continue;
             if ( (occnat_k*(1-occnat_k) * occnat_l*(1-occnat_l) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() ) continue;
 //            if ( (de_k + de_l + de_j) > Z.modelspace->GetdE3max() ) continue;
-            double nj = oj.occ;
+//            double nj = oj.occ;
 
-            klj_list_i.push_back( { ket_kl.p, ket_kl.q, j, tbc_kl.J } );
+            klj_list_i.push_back( { ket_kl.p, ket_kl.q, j, (size_t)tbc_kl.J } );
 
           }// for j
         }// for iket_kl
@@ -2807,7 +2807,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
         double de_k = std::abs( 2*ok.n + ok.l - e_fermi[ok.tz2]);
         double de_l = std::abs( 2*ol.n + ol.l - e_fermi[ol.tz2]);
-        double occnat_j = oj.occ_nat;
+//        double occnat_j = oj.occ_nat;
         double occnat_k = ok.occ_nat;
         double occnat_l = ol.occ_nat;
         if ( (de_k + de_l + de_c) > Z.modelspace->GetdE3max() ) continue; 
@@ -5188,7 +5188,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (d_ei+d_ej) > Z.modelspace->GetdE3max() ) continue;
         if ( (ei + ej) > Z.modelspace->GetE3max() ) continue;
 //        if ( perturbative_triples and  not ( (ket_ij.op->cvq + ket_ij.oq->cvq)==0 or (ket_ij.op->cvq+ket_ij.oq->cvq)>2) ) continue;
-        if ( perturbative_triples and  (ket_ij.op->cvq==0 and ket_ij.oq->cvq!=0) or (ket_ij.op->cvq!=0 and ket_ij.oq->cvq==0) ) continue;
+        if ( perturbative_triples and ( (ket_ij.op->cvq==0 and ket_ij.oq->cvq!=0) or (ket_ij.op->cvq!=0 and ket_ij.oq->cvq==0)) ) continue;
         good_ij.push_back({i,j}); 
       }//for iket_ij
 
@@ -7869,7 +7869,8 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
           int Jij = tbc_ij.J;
           int parity_ij = tbc_ij.parity;
           int Tz_ij = tbc_ij.Tz;
-          for (size_t n : Z.modelspace->all_orbits )
+//          for (size_t n : Z.modelspace->all_orbits )
+          for (int n : Z.modelspace->all_orbits )
           {
             Orbit& on = Z.modelspace->GetOrbit(n);
             if ( (on.l + parity_ij)%2 != parity_ph ) continue;
@@ -7882,8 +7883,10 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 
               // check that we pass our cuts on E3max, occupations, etc.
               Ket& ket_ij = tbc_ij.GetKet(iket_ij);
-              size_t i = ket_ij.p;
-              size_t j = ket_ij.q;
+//              size_t i = ket_ij.p;
+//              size_t j = ket_ij.q;
+              int i = ket_ij.p;
+              int j = ket_ij.q;
               double occnat_i = ket_ij.op->occ_nat;
               double occnat_j = ket_ij.oq->occ_nat;
               double d_ei = std::abs( 2*ket_ij.op->n + ket_ij.op->l - e_fermi[ket_ij.op->tz2]);
