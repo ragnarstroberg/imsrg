@@ -12,12 +12,6 @@
 //#include <gsl/gsl_math.h> // for M_SQRTPI
 #include <omp.h>
 
-//#ifndef SQRT2
-//  #define SQRT2 1.4142135623730950488
-//#endif
-//#define HBARC 197.3269718 // hc in MeV * fm
-//#define M_NUCLEON 938.9185 // average nucleon mass in MeV
-
 
 //using namespace std;
 
@@ -37,8 +31,8 @@ HartreeFock::HartreeFock(Operator& hbare)
      for (int parity=0; parity<=1; ++parity)
      {
        int nKetsMon = modelspace->MonopoleKets[Tz+1][parity].size();
-       Vmon[Tz+1][parity] = arma::mat(nKetsMon,nKetsMon);
-       Vmon_exch[Tz+1][parity] = arma::mat(nKetsMon,nKetsMon);
+       Vmon[Tz+1][parity] = arma::mat(nKetsMon,nKetsMon,arma::fill::zeros);
+       Vmon_exch[Tz+1][parity] = arma::mat(nKetsMon,nKetsMon,arma::fill::zeros);
      }
    }
    prev_energies = arma::vec(norbits,arma::fill::zeros);
@@ -47,13 +41,14 @@ HartreeFock::HartreeFock(Operator& hbare)
 //   holeorbs = arma::uvec(modelspace->holes);
    holeorbs = arma::uvec( std::vector<index_t>(modelspace->holes.begin(),modelspace->holes.end()));
    hole_occ = arma::rowvec(occvec);
-   BuildMonopoleV();
-   if (hbare.GetParticleRank()>2)
-   {
-      BuildMonopoleV3();
-   }
-   UpdateDensityMatrix();
-   UpdateF();
+  // Move these to Solve, so that simply constructing isn't so expensive
+//   BuildMonopoleV();
+//   if (hbare.GetParticleRank()>2)
+//   {
+//      BuildMonopoleV3();
+//   }
+//   UpdateDensityMatrix();
+//   UpdateF();
 
 }
 
@@ -72,21 +67,14 @@ void HartreeFock::Solve()
    double density_mixing_factor = 0.2;
    double field_mixing_factor = 0.0;
    int fill_modulus = 5;
-//   double mixing_factor = 0.0;
 
-//   double theta00 = 0.167325;
-//  double theta11 = 0.1747955;
-//           C.eye();
-//          C(0,0) = cos(theta00);
-//          C(10,10) = cos(theta00);
-//          C(10,0) = sin(theta00);
-//          C(0,10) = -sin(theta00);
-//          C(1,1) = cos(theta11);
-//          C(11,11) = cos(theta11);
-//          C(11,1) = sin(theta11);
-//          C(1,11) = -sin(theta11);
-//          UpdateDensityMatrix();
-//          UpdateF();
+   BuildMonopoleV();
+   if (Hbare.GetParticleRank()>2)
+   {
+      BuildMonopoleV3();
+   }
+   UpdateDensityMatrix();
+   UpdateF();
 
 
    for (iterations=0; iterations<maxiter; ++iterations)
