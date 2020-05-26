@@ -34,6 +34,12 @@ ifeq ($(DEBUG),on)
  FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g
 endif
 
+WITHHALF = 1
+
+ifeq (1,$(WITHHALF))
+  INCLUDE += -I./half/include
+  FLAGS += -DWITHHALF=1
+endif
 
 WARNFLAGS = -Wall -Wno-comment -Wno-deprecated-declarations -Wno-missing-braces
 FLAGS    += $(WARNFLAGS)

@@ -235,13 +235,13 @@ void ThreeBodyMENO2B::Allocate(ModelSpace & ms,
   for (int ch=0; ch<threebodyspace.NChannels; ch++){
     ThreeBodyChannelNO2B ch_no2b=threebodyspace.ThreeBodyChannels[ch];
     size_t n = ch_no2b.Ndim;
-    std::vector<ThreeBME_type> vch(n*(n+1)/2, 0.0);
+    std::vector<ThreeBMENO2B_Store_type> vch(n*(n+1)/2, (ThreeBMENO2B_Store_type)0.0);
     MatEl[ch] = vch;
   }
 }
 
 void ThreeBodyMENO2B::SetThBME(int a, int b, int c, int Tab,
-    int d, int e, int f, int Tde, int J2, int T3, ThreeBME_type V)
+    int d, int e, int f, int Tde, int J2, int T3, ThreeBMENO2B_IO_type V)
 {
   OrbitIsospin & oa = iOrbits[a];
   OrbitIsospin & ob = iOrbits[b];
@@ -269,10 +269,10 @@ void ThreeBodyMENO2B::SetThBME(int a, int b, int c, int Tab,
   int bra = ch_no2b.abct2n[ibra];
   int ket = ch_no2b.abct2n[iket];
   auto& Vch = MatEl[ch];
-  Vch[idx1d(bra,ket)] = V * ph;
+  Vch[idx1d(bra,ket)] = ThreeBMENO2B_Store_type( V * ph);
 }
 
-ThreeBME_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int Tab,
+ThreeBMENO2B_IO_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int Tab,
     int d, int e, int f, int Tde, int J2, int T3)
 {
   OrbitIsospin & oa = iOrbits[a];
@@ -283,28 +283,29 @@ ThreeBME_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int Tab,
   OrbitIsospin & of = iOrbits[f];
 
   int P1 = oc.l%2;
-  if(P1 != of.l%2) return 0.0;
+  if(P1 != of.l%2) return ThreeBMENO2B_IO_type(0.0);
 
   int J1 = oc.j;
-  if(J1 != of.j) return 0.0;
+  if(J1 != of.j) return ThreeBMENO2B_IO_type(0.0);
 
   int P2 = (oa.l + ob.l)%2;
-  if(P2 != (od.l + oe.l)%2) return 0.0;
+  if(P2 != (od.l + oe.l)%2) return ThreeBMENO2B_IO_type(0.0);
 
   int ch = threebodyspace.idcs2ch[threebodyspace.GetChannelIndex(J2,P2,J1,P1,T3)];
   ThreeBodyChannelNO2B & ch_no2b = threebodyspace.ThreeBodyChannels[ch];
   int ibra = ch_no2b.GetIndex(a,b,c,Tab);
   int iket = ch_no2b.GetIndex(d,e,f,Tde);
-  if(ch_no2b.iphase.find(ibra) == ch_no2b.iphase.end()) return 0.0;
-  if(ch_no2b.iphase.find(iket) == ch_no2b.iphase.end()) return 0.0;
+  if(ch_no2b.iphase.find(ibra) == ch_no2b.iphase.end()) return ThreeBMENO2B_IO_type(0.0);
+  if(ch_no2b.iphase.find(iket) == ch_no2b.iphase.end()) return ThreeBMENO2B_IO_type(0.0);
   int ph = ch_no2b.iphase[ibra] * ch_no2b.iphase[iket];
   int bra = ch_no2b.abct2n[ibra];
   int ket = ch_no2b.abct2n[iket];
   auto& Vch = MatEl[ch];
-  return Vch[idx1d(bra,ket)] * ph;
+  return ThreeBMENO2B_IO_type( Vch[idx1d(bra,ket)] * ph);
+//  return Vch[idx1d(bra,ket)] * ph;
 }
 
-ThreeBME_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int d, int e, int f,  int J2)
+ThreeBMENO2B_IO_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int d, int e, int f,  int J2)
 {
   Orbit & oa = modelspace->GetOrbit(a);
   Orbit & ob = modelspace->GetOrbit(b);
@@ -314,16 +315,16 @@ ThreeBME_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int d, int e, int f
   Orbit & of = modelspace->GetOrbit(f);
 
   int P1 = oc.l%2;
-  if(P1 != of.l%2) return 0.0;
+  if(P1 != of.l%2) return ThreeBMENO2B_IO_type(0.0);
 
   int J1 = oc.j2;
-  if(J1 != of.j2) return 0.0;
+  if(J1 != of.j2) return ThreeBMENO2B_IO_type(0.0);
 
   int P2 = (oa.l + ob.l)%2;
-  if(P2 != (od.l + oe.l)%2) return 0.0;
+  if(P2 != (od.l + oe.l)%2) return ThreeBMENO2B_IO_type(0.0);
 
   int Z3 = oa.tz2 + ob.tz2 + oc.tz2;
-  if(Z3 != od.tz2 + oe.tz2 + of.tz2) return 0.0;
+  if(Z3 != od.tz2 + oe.tz2 + of.tz2) return ThreeBMENO2B_IO_type(0.0);
 
   int i1 = nlj2idx[{oa.n, oa.l, oa.j2}];
   int i2 = nlj2idx[{ob.n, ob.l, ob.j2}];
@@ -347,7 +348,7 @@ ThreeBME_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int d, int e, int f
       }
     }
   }
-  return v;
+  return ThreeBMENO2B_IO_type(v);
 }
 
 void ThreeBodyMENO2B::ReadFile()
@@ -362,14 +363,16 @@ void ThreeBodyMENO2B::ReadFile()
     size_t n_elem = infile.tellg();
     infile.seekg(0, infile.beg);
     n_elem -= infile.tellg();
-    n_elem /= sizeof(ThreeBME_type);
+//    n_elem /= sizeof(ThreeBMENO2B_type);
+    n_elem /= sizeof(ThreeBMENO2B_File_type);
     // maybe this is the problem?
     n_elem = std::min(n_elem, n_elms);
     IMSRGProfiler::timer["ThreeBodyMENO2B_calc_n_elem"] += omp_get_wtime() - t_start;
 //    std::vector<float> v(n_elem);
-    std::vector<ThreeBME_type> v(n_elem);
+//    std::vector<ThreeBMENO2B_type> v(n_elem);
+    std::vector<ThreeBMENO2B_File_type> v(n_elem);
     t_start = omp_get_wtime();
-    infile.read((char*)&v[0], n_elem*sizeof(ThreeBME_type));
+    infile.read((char*)&v[0], n_elem*sizeof(ThreeBMENO2B_File_type));
     IMSRGProfiler::timer["ThreeBodyMENO2B_read_to_array"] += omp_get_wtime() - t_start;
     //for (int i = 0; i<50; i++){ std::cout<<v[i]<<std::endl;}
 //    VectorStream vecstream(v);
@@ -464,17 +467,6 @@ long long unsigned int ThreeBodyMENO2B::CountME()
 
               counter += JT_block_size;
 
-//              for (int J = std::max( std::abs(j1-j2), std::abs(j4-j5) )/2;
-//                  J <= std::min( j1+j2, j4+j5 )/2; J++) {
-//                for (int T12: {0,1}){
-//                  for (int T45: {0,1}){
-//                    for (int T = std::max( std::abs(2*T12-1), std::abs(2*T45-1) );
-//                        T <= std::min( 2*T12+1, 2*T45+1 ); T+=2) {
-//                      counter += 1;
-//                    }
-//                  }
-//                }
-//              }
             }
           }
         }
@@ -488,7 +480,8 @@ long long unsigned int ThreeBodyMENO2B::CountME()
 
 // SRS-- I think this can be parallelized
 //void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
-void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBME_type> & v, size_t n_elms)
+//void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBMENO2B_type> & v, size_t n_elms)
+void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBMENO2B_File_type> & v, size_t n_elms)
 {
 //  int buffer_size = 10000000;
 //  int counter = 0;
@@ -498,7 +491,7 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBME_type> & v, size_t n
   int E2max = modelspace->GetE2max();
   int E3max = modelspace->GetE3max();
   int Norbs = iOrbits.size();
-//  std::vector<ThreeBME_type> v(buffer_size,0.0);
+//  std::vector<ThreeBMENO2B_type> v(buffer_size,0.0);
 //
 //  std::cout << "Size of v is " << v.size() << std::endl;
   std::cout << "Reading " << n_elms << " elements from binary file" << std::endl;
@@ -590,7 +583,7 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBME_type> & v, size_t n
 //                      if(counter == 0){
 //                        size_t maxread = std::min(buffer_size, n_elms-total_counter);
 //                        for (size_t iread=0; iread<maxread  ; iread++) infile >> v[iread];
-////                        infile.read( (char*)&v[0], maxread * sizeof(ThreeBME_type) / sizeof(char)  ) ;
+////                        infile.read( (char*)&v[0], maxread * sizeof(ThreeBMENO2B_type) / sizeof(char)  ) ;
 ////                        if( n_elms - total_counter >= buffer_size){
 ////                          for (size_t iread=0; iread<buffer_size; iread++) infile >> v[iread];
 //////                          for (int iread=0; iread<buffer_size; iread++) infile >> v[iread];
@@ -621,7 +614,7 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBME_type> & v, size_t n
                       if( e4+e5+e6 > E3max ) continue;
 
                       if( i1==i2 and (J+T12)%2 ==0 ) {
-                        if( abs(v[counter-1]) > 1.e-6 ){
+                        if( std::abs(v[counter-1]) > 1.e-6 ){
                           std::cout << "Warning: something wrong, this three-body matrix element has to be zero" << std::endl;
                           std::cout <<
                             std::setw(4) << i1 << std::setw(4) << i2 << std::setw(4) << i3 << std::setw(4) << T12 <<
@@ -632,7 +625,7 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBME_type> & v, size_t n
                       }
 
                       if( i4==i5 and (J+T45)%2 ==0 ) {
-                        if( abs(v[counter-1]) > 1.e-6 ){
+                        if( std::abs(v[counter-1]) > 1.e-6 ){
                           std::cout << "Warning: something wrong, this three-body matrix element has to be zero" << std::endl;
                           std::cout <<
                             std::setw(4) << i1 << std::setw(4) << i2 << std::setw(4) << i3 << std::setw(4) << T12 <<
@@ -648,7 +641,8 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBME_type> & v, size_t n
                       //  std::setw(12) << std::setprecision(6) << v[counter-1] << std::endl;
 
 //                      if (this_thread !=0) continue;
-                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, v[counter-1]);
+//                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, v[counter-1]);
+                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, ThreeBMENO2B_IO_type(v[counter-1]) );
 
                     }
                   }
@@ -665,7 +659,7 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBME_type> & v, size_t n
 }
 
 
-   template<class T>
+ template<class T>
 //void ThreeBodyMENO2B::ReadStream(T & infile, long long unsigned int n_elms)
 void ThreeBodyMENO2B::ReadStream(T & infile, size_t n_elms)
 {
@@ -679,7 +673,8 @@ void ThreeBodyMENO2B::ReadStream(T & infile, size_t n_elms)
   int E2max = modelspace->GetE2max();
   int E3max = modelspace->GetE3max();
   int Norbs = iOrbits.size();
-  std::vector<ThreeBME_type> v(buffer_size,0.0);
+//  std::vector<ThreeBMENO2B_type> v(buffer_size,0.0);
+  std::vector<ThreeBMENO2B_File_type> v(buffer_size, ThreeBMENO2B_File_type(0.0) );
 
   for (int i1=0; i1 < Norbs; i1++) {
     OrbitIsospin & o1 = iOrbits[i1];
@@ -740,7 +735,7 @@ void ThreeBodyMENO2B::ReadStream(T & infile, size_t n_elms)
                       if(counter == 0){
                         size_t maxread = std::min(buffer_size, n_elms-total_counter);
                         for (size_t iread=0; iread<maxread  ; iread++) infile >> v[iread];
-//                        infile.read( (char*)&v[0], maxread * sizeof(ThreeBME_type) / sizeof(char)  ) ;
+//                        infile.read( (char*)&v[0], maxread * sizeof(ThreeBMENO2B_type) / sizeof(char)  ) ;
 //                        if( n_elms - total_counter >= buffer_size){
 //                          for (size_t iread=0; iread<buffer_size; iread++) infile >> v[iread];
 ////                          for (int iread=0; iread<buffer_size; iread++) infile >> v[iread];
@@ -796,7 +791,8 @@ void ThreeBodyMENO2B::ReadStream(T & infile, size_t n_elms)
                       //  std::setw(4) << i4 << std::setw(4) << i5 << std::setw(4) << i6 << std::setw(4) << T45 <<
                       //  std::setw(4) << J << std::setw(4) << T3 << std::setw(16) << counter <<
                       //  std::setw(12) << std::setprecision(6) << v[counter-1] << std::endl;
-                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, v[counter-1]);
+//                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, v[counter-1]);
+                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, ThreeBMENO2B_IO_type(v[counter-1]) );
 
                     }
                   }

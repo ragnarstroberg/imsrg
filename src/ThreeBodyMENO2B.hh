@@ -8,7 +8,18 @@
 #include <unordered_map>
 #include "ModelSpace.hh"
 
-typedef float ThreeBME_type;
+#ifdef WITHHALF
+ #include <x86intrin.h>
+ #include "half.hpp"
+ typedef half_float::half ThreeBMENO2B_Store_type;
+ typedef half_float::half ThreeBMENO2B_File_type;
+ typedef double ThreeBMENO2B_IO_type;
+#else
+ typedef float ThreeBMENO2B_Store_type;
+ typedef float ThreeBMENO2B_File_type;
+ typedef double ThreeBMENO2B_IO_type;
+#endif
+
 class ThreeBodyMENO2B;
 
 class OrbitIsospin
@@ -63,7 +74,8 @@ class ThreeBodyMENO2B
   public:
     ModelSpace * modelspace;
     ThreeBodySpaceNO2B threebodyspace;
-    std::map<int, std::vector<ThreeBME_type>> MatEl;
+    std::map<int, std::vector<ThreeBMENO2B_Store_type>> MatEl;
+//    std::map<int, std::vector<ThreeBMENO2B_type>> MatEl;
     std::vector<OrbitIsospin> iOrbits;
     std::map<std::array<int,3>, int> nlj2idx;
     int Emax;
@@ -88,13 +100,14 @@ class ThreeBodyMENO2B
 
     void Allocate(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file, std::string filename);
     size_t idx1d(size_t bra, size_t ket) { return std::max(bra+1,ket+1) * (std::max(bra+1,ket+1)-1)/2 + std::min(bra+1,ket+1)-1;};
-    void SetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3, ThreeBME_type V);
-    ThreeBME_type GetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3);
-    ThreeBME_type GetThBME(int a, int b, int c, int d, int e, int f, int J2);
+    void SetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3, ThreeBMENO2B_IO_type V);
+    ThreeBMENO2B_IO_type GetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3);
+    ThreeBMENO2B_IO_type GetThBME(int a, int b, int c, int d, int e, int f, int J2);
     void ReadFile();
     long long unsigned int CountME();
 //    template<class T> void ReadStream(T & infile, long long unsigned int n_elms);
     template<class T> void ReadStream(T & infile, size_t n_elms);
-    void ReadBinaryStream( std::vector<ThreeBME_type>& v, size_t nelms);
+//    void ReadBinaryStream( std::vector<ThreeBMENO2B_Store_type>& v, size_t nelms);
+    void ReadBinaryStream( std::vector<ThreeBMENO2B_File_type>& v, size_t nelms);
 };
 #endif
