@@ -843,28 +843,30 @@ namespace M0nu
     std::cout<<"calculating M0nu TBMEs..."<<std::endl;
     t_start_tbme = omp_get_wtime(); // profiling (s)
     double Seval = 2.0*sqrt(5.0); // eigenvalue of S for "T", where the only non-zero one is for Sf = Si = 1
+//    for (auto& itmat : M0nuT_TBME.TwoBody.MatEl)
+    std::vector<int> chbralist,chketlist;
     for (auto& itmat : M0nuT_TBME.TwoBody.MatEl)
     {
-      int chbra = itmat.first[0]; // grab the channel count from auto
-      int chket = itmat.first[1]; // " " " " " "
+      chbralist.push_back( itmat.first[0] );
+      chketlist.push_back( itmat.first[1] );
+    }
+    size_t nch = chbralist.size();
+     #pragma omp parallel for schedule(dynamic,1) 
+    for (size_t ich=0; ich<nch; ich++)
+    {
+      int chbra = chbralist[ich];
+      int chket = chketlist[ich];
+//      int chbra = itmat.first[0]; // grab the channel count from auto
+//      int chket = itmat.first[1]; // " " " " " "
       TwoBodyChannel& tbc_bra = modelspace.GetTwoBodyChannel(chbra); // grab the two-body channel
       TwoBodyChannel& tbc_ket = modelspace.GetTwoBodyChannel(chket); // " " " " "
       int nbras = tbc_bra.GetNumberKets(); // get the number of bras
       int nkets = tbc_ket.GetNumberKets(); // get the number of kets
-//      double J = tbc_bra.J; // NOTE: by construction, J := J_ab == J_cd := J'
       int J = tbc_bra.J; // NOTE: by construction, J := J_ab == J_cd := J'
-      double Jhat; // set below based on "reduced" variable
-      if (reduced == false)
-      {
-        Jhat = 1.0; // for non-reduced elements, to compare with JE
-      }
-      else //if (reduced == "R")
-      {
-        Jhat = sqrt(2*J + 1); // the hat factor of J
-      }
+      double Jhat =  reduced  ?  sqrt(2*J+1.0)  :  1.0;
+
       t_start_omp = omp_get_wtime(); // profiling (s)
-//      #pragma omp parallel for schedule(dynamic,100) // need to do: PreCalculateMoshinsky(), PreCalcT6j, and PreCalcIntegrals() [above] and then "#pragma omp critical" [below]
-      #pragma omp parallel for schedule(dynamic,1) // need to do: PreCalculateMoshinsky(), PreCalcT6j, and PreCalcIntegrals() [above] and then "#pragma omp critical" [below]
+//      #pragma omp parallel for schedule(dynamic,1) // need to do: PreCalculateMoshinsky(), PreCalcT6j, and PreCalcIntegrals() [above] and then "#pragma omp critical" [below]
       for (int ibra=0; ibra<nbras; ibra++)
       {
         Ket& bra = tbc_bra.GetKet(ibra); // get the final state = <ab|
@@ -898,7 +900,6 @@ namespace M0nu
           double sumLSas = 0; // (anti-symmetric part)
           int Lf_min = std::max( std::abs(la-lb), std::abs(J-1));
           int Lf_max = std::min( la+lb, J+1);
-//          for (int Lf = abs(la-lb); Lf <= la+lb; Lf++) // sum over angular momentum coupled to l_a and l_b
           for (int Lf = Lf_min; Lf<=Lf_max; Lf++) // sum over angular momentum coupled to l_a and l_b
           {
             double tempLf = (2*Lf + 1); // just for the lines below
@@ -906,59 +907,53 @@ namespace M0nu
             double nNJab = normab*modelspace.GetNineJ(la,lb,Lf,0.5,0.5,1,ja,jb,J); // the normalized 9j-symbol out front
             int Li_min = std::max( std::abs(lc-ld), std::max( std::abs(J-1),std::abs(Lf-2)));
             int Li_max = std::min( lc+ld, std::min( J+1, Lf+2) );
-//            for (int Li = abs(lc-ld); Li <= lc+ld; Li++) // sum over angular momentum coupled to l_c and l_d
             for (int Li = Li_min; Li <= Li_max; Li++) // sum over angular momentum coupled to l_c and l_d
             {
-              double bulk = 0; // this is a bulk product which will only be worth calculating if the Moshinsky brackets are non-zero
-              double bulkas = 0; // (anti-symmetric part)
-              double sumMT = 0; // for the Moshinsky transformation
-              double sumMTas = 0; // (anti-symmetric part)
-
               double tempLi = (2*Li + 1); // " " " " "
               double factLS = modelspace.phase(1 + J + Li)*GetM0nuT6j(Lf,1,J,1,Li,T6jList); // factor from transforming from jj-coupling to ls-coupling
               double normcd = sqrt(tempLi*3*(2*jc + 1)*(2*jd + 1)); // normalization factor for the second 9j-symbol
               double nNJcd = normcd*modelspace.GetNineJ(lc,ld,Li,0.5,0.5,1,jc,jd,J); // the second normalized 9j-symbol
               double nNJdc = normcd*modelspace.GetNineJ(ld,lc,Li,0.5,0.5,1,jd,jc,J); // (anti-symmetric part)
               double tempMT = sqrt(tempLf*tempLi); // the hat factor of Lf and Li
-              bulk = Seval*factLS*nNJab*nNJcd*tempMT; // bulk product of the above
-              bulkas = Seval*factLS*nNJab*nNJdc*tempMT; // (anti-symmetric part)
+              double bulk = Seval*factLS*nNJab*nNJcd*tempMT; // bulk product of the above
+              double bulkas = Seval*factLS*nNJab*nNJdc*tempMT; // (anti-symmetric part)
+              if ( std::abs(bulk)<1e-9  and std::abs(bulkas)<1e-9) continue;
+
+              double sumMT = 0; // for the Moshinsky transformation
+              double sumMTas = 0; // (anti-symmetric part)
 
               for ( int lr=0; lr<=eps_ab; lr++)
               {
                 for (int nr=0; nr<=(eps_ab-lr)/2; nr++ )
                 {
-                  int tempmaxNcom = std::min( eps_ab-2*nr-lr, eps_cd );
-                  for (int Ncom=0; Ncom<=tempmaxNcom; Ncom++ )
+                  int Lam_min = std::abs( Lf-lr ); // triangle condition
+                  Lam_min += ( eps_ab+Lam_min+lr )%2; //  Moshinsky trans. conserves parity
+                  int Lam_max = std::min( Lf+lr, std::min( eps_ab-lr-2*nr, eps_cd) ); // triangle condition and energy conservation
+                  for (int Lam=Lam_min; Lam<=Lam_max; Lam+=2)
                   {
-                    int Lam = eps_ab - 2*nr - lr - 2*Ncom;
-                    if ( (Lam+2*Ncom) > eps_cd ) continue;
-                    if ( (std::abs(Lam-lr)>Lf)  or ( (Lam+lr)<Lf) ) continue;
-                    if ( (lr+Lam+eps_ab)%2>0 ) continue;
+                    int Ncom = (eps_ab - 2*nr - lr - Lam)/2;
+                    double Df = modelspace.GetMoshinsky(Ncom,Lam,nr,lr,na,la,nb,lb,Lf); // Ragnar has -- double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
                     
                     for (int npr=0; npr<=(eps_cd-2*Ncom-Lam); npr++)
                     {
-//                    for ( int lpr=(lr%2); lpr<=(eps_cd-2*Ncom-Lam); lpr+=2)
-//                    {
-//                      int npr = (eps_cd - 2*Ncom - Lam - lpr)/2;
-//                      if (npr<0) continue;
                         int lpr = eps_cd-2*Ncom-Lam-2*npr;
                         if (  (lpr+lr)%2 !=0 ) continue;
                         if ( (std::abs(Lam-lpr)>Li)  or ( (Lam+lpr)<Li) ) continue;
 
-                            double Df = modelspace.GetMoshinsky(Ncom,Lam,nr,lr,na,la,nb,lb,Lf); // Ragnar has -- double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
-                            double Di = modelspace.GetMoshinsky(Ncom,Lam,npr,lpr,nc,lc,nd,ld,Li); // " " " "
-                            double asDi = modelspace.GetMoshinsky(Ncom,Lam,npr,lpr,nd,ld,nc,lc,Li); // (anti-symmetric part)
-                            double integral = GetM0nuIntegral(e2max,nr,lr,npr,lpr,hw,transition,rho,Eclosure,src,IntList); // grab the pre-calculated integral wrt dq and dr from the IntList of the NDBD class
-                            double factMT = modelspace.phase(Li + lr + Lam)*GetM0nuT6j(Lf,lr,Lam,lpr,Li,T6jList); // factor from TMT
-//                            
-                            double tempfactMTSH = factMT*listSH[PairFN(lr,lpr)]; // just for the lines below, listSH from the spherical harmonics of order 2
-                            sumMT += Df*Di*tempfactMTSH*integral; // perform the Moshinsky transformation
-                            sumMTas += Df*asDi*tempfactMTSH*integral; // (anti-symmetric part)
+                        double Di = modelspace.GetMoshinsky(Ncom,Lam,npr,lpr,nc,lc,nd,ld,Li); // " " " "
+                        double asDi = modelspace.GetMoshinsky(Ncom,Lam,npr,lpr,nd,ld,nc,lc,Li); // (anti-symmetric part)
+                        double integral = GetM0nuIntegral(e2max,nr,lr,npr,lpr,hw,transition,rho,Eclosure,src,IntList); // grab the pre-calculated integral wrt dq and dr from the IntList of the NDBD class
+                        double factMT = modelspace.phase(Li + lr + Lam)*GetM0nuT6j(Lf,lr,Lam,lpr,Li,T6jList); // factor from TMT
+//                        
+                        double tempfactMTSH = factMT*listSH[PairFN(lr,lpr)]; // just for the lines below, listSH from the spherical harmonics of order 2
+                        sumMT += Df*Di*tempfactMTSH*integral; // perform the Moshinsky transformation
+                        sumMTas += Df*asDi*tempfactMTSH*integral; // (anti-symmetric part)
 
                       } // end of for-loop over: lpr
                     } // end of for-loop over: Ncom
                   } // end of for-loop over: nr
                 } // end of for-loop over: lr
+
               sumLS += bulk*sumMT; // perform the LS-coupling sum
               sumLSas += bulkas*sumMTas; // (anti-symmetric part)
             } // end of for-loop over: Li
