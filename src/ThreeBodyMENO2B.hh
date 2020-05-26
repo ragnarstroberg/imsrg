@@ -9,6 +9,7 @@
 #include "ModelSpace.hh"
 
 #ifdef WITHHALF
+/// Use half-precision floats. For documentation, see http://half.sourceforge.net
  #include <x86intrin.h>
  #include "half.hpp"
  typedef half_float::half ThreeBMENO2B_Store_type;

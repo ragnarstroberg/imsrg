@@ -355,6 +355,7 @@ void ThreeBodyMENO2B::ReadFile()
 {
   double t_start;
 //  long long unsigned int n_elms = CountME(); // this can be moved to after the stream.bin block
+  std::cout << __func__ << "  reading/storing with " << sizeof(ThreeBMENO2B_File_type) << " / "<<  sizeof(ThreeBMENO2B_Store_type) << "  bit floats" << std::endl;
   size_t n_elms = CountME(); 
   if(FileName.find("stream.bin") != std::string::npos){
     t_start = omp_get_wtime();
