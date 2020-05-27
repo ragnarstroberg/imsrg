@@ -82,6 +82,7 @@ int main(int argc, char** argv)
   std::string valence_generator = parameters.s("valence_generator");
   std::string fmt2 = parameters.s("fmt2");
   std::string fmt3 = parameters.s("fmt3");
+  std::string input_op_fmt = parameters.s("input_op_fmt");
   std::string denominator_delta_orbit = parameters.s("denominator_delta_orbit");
   std::string LECs = parameters.s("LECs");
   std::string scratch = parameters.s("scratch");
@@ -566,16 +567,18 @@ int main(int argc, char** argv)
   }
 
 
-  // the format should look like OpName^j_t_p_r^/path/to/file
+  // the format should look like OpName^j_t_p_r^/path/to/2bfile
+  // the format should look like OpName^j_t_p_r^/path/to/2bfile^/path/to/3bfile  if particle rank of Op is 2-body, then 3bfile is not needed.
   for (auto& tag : opsfromfile)
   {
     std::istringstream ss(tag);
-    std::string opname,qnumbers,fname;
+    std::string opname,qnumbers,f2name,f3name="";
     std::vector<int> qn(4);
 
     getline(ss,opname,'^');
     getline(ss,qnumbers,'^');
-    getline(ss,fname,'^');
+    getline(ss,f2name,'^');
+    if ( not ss.eof() )  getline(ss,f3name,'^');
     ss.str(qnumbers);
     ss.clear();
     for (int i=0;i<4;i++)
@@ -592,7 +595,16 @@ int main(int argc, char** argv)
     r = qn[3];
 //    std::cout << "Parsed tag. opname = " << opname << "  qnumbers = " << qnumbers << "  " << j << " " << t << " " << p << " " << r << "   file = " << fname << std::endl;
     Operator op(modelspace,j,t,p,r);
-    rw.Read2bCurrent_Navratil( fname, op );
+    std::cout << "Reading operator " << opname << "  in " << input_op_fmt << "  format from files " << f2name << "  ,  " << f3name << std::endl;
+    if ( input_op_fmt == "navratil" )
+    {
+      rw.Read2bCurrent_Navratil( f2name, op );
+    }
+    else if ( input_op_fmt == "miyagi" )
+    {
+      if (f2name != "")           op = rw.ReadOperator2b_Miyagi( f2name, modelspace );
+//      if ( r>2 and f3name != "")  rw.ReadOperator3b_Miyagi( f3name, op);
+    }
     ops.push_back( op );
     opnames.push_back( opname );
   }

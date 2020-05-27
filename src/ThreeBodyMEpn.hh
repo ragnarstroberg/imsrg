@@ -13,10 +13,9 @@
 //
 class ThreeBodyMEpn
 {
+ public:
 //  typedef float ME_type;
   typedef double ME_type;
-
- public:
   ModelSpace * modelspace;
   std::vector<ME_type> matrix_data;
 //  std::vector<size_t> ch_start;
@@ -56,7 +55,9 @@ class ThreeBodyMEpn
 
 
   ME_type GetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n) ;
+  ME_type GetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoTabc, int twoTdef, int i, int j, int k, int l, int m, int n) ;
   void SetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
+  void SetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoTabc, int twoTdef, int i, int j, int k, int l, int m, int n, ME_type) ;
 //  void AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
 
 
@@ -74,6 +75,7 @@ class ThreeBodyMEpn
 //  void AddToME_pn_PN(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ME_type) ;
 
   ME_type GetME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n) ;
+  ME_type GetME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoTabc, int twoTdef, int i, int j, int k, int l, int m, int n) ;
 //  void SetME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
 //  void AddToME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type) ;
 

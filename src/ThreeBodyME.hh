@@ -25,7 +25,7 @@
 #include <unordered_map>
 
 //typedef double ThreeBME_type;
-typedef float ThreeBME_type;
+//typedef float ThreeBME_type;
 
 /// The three-body piece of an operator, stored in nested vectors.
 /// The 3BMEs are stored in unnormalized JT coupled form
@@ -38,13 +38,20 @@ typedef float ThreeBME_type;
 class ThreeBodyME
 {
  public:
+  typedef float ME_type;
   ModelSpace * modelspace;
-  std::vector<ThreeBME_type> MatEl;
-  std::unordered_map<size_t, size_t> OrbitIndexHash; // TODO: reorganize so that we store the pn matrix elements, rather than isospin
+  std::vector<ME_type> MatEl;
+  std::unordered_map<size_t, size_t> OrbitIndexHash; 
   int E3max;
   int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
   int herm; // +1 for hermitian, -1 for anti-hermitian
   size_t total_dimension;
+
+  int rank_J=0;
+  int rank_T=0;
+  int parity=0;
+  int ISOSPIN_BLOCK_DIMENSION=5;
+
   bool is_allocated = false;
 
   const static int ABC;
@@ -57,9 +64,11 @@ class ThreeBodyME
   ~ThreeBodyME();
   ThreeBodyME();
   ThreeBodyME(ModelSpace*);
+  ThreeBodyME(ModelSpace*, int rank_J, int rank_T, int parity);
   ThreeBodyME(ModelSpace* ms, int e3max);
+  ThreeBodyME(ModelSpace* ms, int e3max, int rank_J, int rank_T, int parity);
 //  ThreeBodyME(ThreeBodyME tbme);
-  ThreeBodyME(const ThreeBodyME& tbme);
+  ThreeBodyME(const ThreeBodyME& Tbme);
 
 
   ThreeBodyME& operator*=(const double);
@@ -74,18 +83,24 @@ class ThreeBodyME
   ModelSpace* GetModelSpace(){return modelspace;};
 
 //// Three body setter getters
-  std::vector<std::pair<size_t,double>> AccessME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
-  void AddToME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
-  void   SetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
-  ThreeBME_type GetME(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n) const;
-  void AddToME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
-  void   SetME_pn(int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int T2, int i, int j, int k, int l, int m, int n, ThreeBME_type V);
-  ThreeBME_type GetME_pn(int Jab_in, int Jde_in, int J2, int i, int j, int k, int l, int m, int n) const;
+//  std::vector<std::pair<size_t,double>> AccessME(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n) const;
+  void AddToME(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type V);
+  void   SetME(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type V);
+  ME_type GetME(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n) const;
+//  void AddToME_pn(int Jab_in, int Jde_in, int twoJ, int i, int j, int k, int l, int m, int n, ME_type V);
+  void   SetME_pn(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ME_type V);
+  ME_type GetME_pn(int Jab_in, int Jde_in, int twoJ, int i, int j, int k, int l, int m, int n) const;
+
+
+  std::vector<std::pair<size_t,double>> AccessME(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f) const;
+  void AddToME(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f, ME_type V);
+  void   SetME(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f, ME_type V);
+  ME_type GetME(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f) const;
 
 ///// Some other three body methods
 
   int SortOrbits(int a_in, int b_in, int c_in, int& a,int& b,int& c) const;
-  double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int J) const;
+  double RecouplingCoefficient(int recoupling_case, double ja, double jb, double jc, int Jab_in, int Jab, int twoJ) const;
   void SetE3max(int e){E3max = e;};
   int GetE3max(){return E3max;};
   int Getemax(){return emax;};
@@ -97,7 +112,7 @@ class ThreeBodyME
 
   void Erase(); // set all three-body terms to zero
   void Deallocate();
-  size_t size(){return total_dimension * sizeof(ThreeBME_type);};
+  size_t size(){return total_dimension * sizeof(ME_type);};
 
 
   void WriteBinary(std::ofstream&);

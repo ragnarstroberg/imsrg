@@ -18,7 +18,7 @@ ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms)
 }
 
 ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms, int e3max)
-:  modelspace(ms), isospin3BME(ms,e3max), PN_mode(false), E3max(e3max), herm(1), rank_J(0), rank_T(0), parity(0) 
+:  modelspace(ms), isospin3BME(ms,e3max,0,0,0), PN_mode(false), E3max(e3max), herm(1), rank_J(0), rank_T(0), parity(0) 
 {
 }
 
@@ -32,7 +32,7 @@ ThreeBodyMEpn::ThreeBodyMEpn(const ThreeBodyMEpn& tbme)
 }
 
 ThreeBodyMEpn::ThreeBodyMEpn(ModelSpace* ms, int rankJ, int rankT, int p)
-:  modelspace(ms), isospin3BME(ms,ms->GetE3max()), PN_mode(false), E3max(ms->GetE3max()), herm(1), rank_J(rankJ), rank_T(rankT), parity(p)
+:  modelspace(ms), isospin3BME(ms,ms->GetE3max(),rankJ,rankT,p), PN_mode(false), E3max(ms->GetE3max()), herm(1), rank_J(rankJ), rank_T(rankT), parity(p)
 {
 }
 
@@ -151,22 +151,36 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn(int Jab_in, int Jde_in, int J2, i
 
 ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n)
 {
-  if (PN_mode) return GetME_PN( Jab_in, Jde_in, J2, tab_in,tde_in,twoT,i,j,k,l,m,n);
-  else return isospin3BME.GetME(Jab_in, Jde_in, J2, tab_in,tde_in,twoT,i,j,k,l,m,n);
+  if (PN_mode) return GetME_PN( Jab_in, Jde_in, J2, tab_in,tde_in,twoT,twoT,i,j,k,l,m,n);
+  else return isospin3BME.GetME(Jab_in, Jde_in, J2, tab_in,tde_in,twoT,twoT,i,j,k,l,m,n);
 }
 
+ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoTabc, int twoTdef, int i, int j, int k, int l, int m, int n)
+{
+  if (PN_mode) return GetME_PN( Jab_in, Jde_in, J2, tab_in,tde_in,twoTabc,twoTdef,i,j,k,l,m,n);
+  else return isospin3BME.GetME(Jab_in, Jde_in, J2, tab_in,tde_in,twoTabc,twoTdef,i,j,k,l,m,n);
+}
+
+
+
 void ThreeBodyMEpn::SetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ThreeBodyMEpn::ME_type V)
+{
+    SetME( Jab_in, Jde_in, J2, tab_in, tde_in, twoT, twoT, i, j, k, l, m, n, V);
+}
+
+void ThreeBodyMEpn::SetME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoTabc, int twoTdef, int i, int j, int k, int l, int m, int n, ThreeBodyMEpn::ME_type V)
 {
 //  if (PN_mode) SetME_PN( Jab_in, Jde_in, J2, tab_in,tde_in,twoT,i,j,k,l,m,n,V);
   if ( not PN_mode)
   {
-     isospin3BME.SetME(Jab_in, Jde_in, J2, tab_in,tde_in,twoT,i,j,k,l,m,n,V);
+     isospin3BME.SetME(Jab_in, Jde_in, J2, tab_in,tde_in,twoTabc,twoTdef,i,j,k,l,m,n,V);
   }
   else
   {
      std::cout << "!!!!!!!! WARNING:  CALLING " << __func__ << "  and PN_mode is " << PN_mode << "   this could cause trouble, so I refuse." << std::endl;
   }
 }
+
 
 //void ThreeBodyMEpn::AddToME(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n, ThreeBodyMEpn::ME_type V)
 //{
@@ -529,11 +543,18 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN(int Jab, int Jde, int twoJ, in
 //}
 
 // isospin version
+// backwards compatible wrapper for convenience
 ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoT, int i, int j, int k, int l, int m, int n ) 
+{
+  return GetME_PN( Jab_in, Jde_in, J2, tab_in, tde_in, twoT, twoT, i, j, k, l, m, n ); 
+}
+
+ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_PN(  int Jab_in, int Jde_in, int J2, int tab_in, int tde_in, int twoTabc, int twoTdef, int i, int j, int k, int l, int m, int n ) 
 {
 
   ThreeBodyMEpn::ME_type me_iso = 0;
-  int twoTz =  twoT; // it should be independent of Tz, so we just pick one
+//  int twoTz =  twoT; // it should be independent of Tz, so we just pick one
+  int twoTz =  1; // it should be independent of Tz, so we just pick one
   if (i==j and (Jab_in+tab_in)%2==0) return 0;
   if (l==m and (Jde_in+tde_in)%2==0) return 0;
   for (int tz2i : {-1,1} )
@@ -545,7 +566,8 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_PN(  int Jab_in, int Jde_in, int J2,
       for (int tz2k : {-1,1} )
       {
         if ( (tz2i + tz2j + tz2k) != twoTz) continue;
-        double clebsch_ijk = AngMom::CG(tab_in, 0.5*(tz2i+tz2j), 0.5, 0.5*tz2k, 0.5*twoT, 0.5*twoTz );
+//        double clebsch_ijk = AngMom::CG(tab_in, 0.5*(tz2i+tz2j), 0.5, 0.5*tz2k, 0.5*twoT, 0.5*twoTz );
+        double clebsch_ijk = AngMom::CG(tab_in, 0.5*(tz2i+tz2j), 0.5, 0.5*tz2k, 0.5*twoTabc, 0.5*twoTz );
         if ( std::abs(clebsch_ijk)<1e-7) continue;
         for (int tz2l : {-1,1} )
         {
@@ -555,7 +577,8 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_PN(  int Jab_in, int Jde_in, int J2,
             if (std::abs(tz2n)!=1) continue;
             double clebsch_lm = AngMom::CG(0.5,0.5*tz2l, 0.5,0.5*tz2m, tde_in, 0.5*(tz2l+tz2m) );
             if ( std::abs(clebsch_lm)<1e-7) continue;
-            double clebsch_lmn = AngMom::CG(tde_in, 0.5*(tz2l+tz2m), 0.5, 0.5*tz2n, 0.5*twoT, 0.5*twoTz );
+//            double clebsch_lmn = AngMom::CG(tde_in, 0.5*(tz2l+tz2m), 0.5, 0.5*tz2n, 0.5*twoT, 0.5*twoTz );
+            double clebsch_lmn = AngMom::CG(tde_in, 0.5*(tz2l+tz2m), 0.5, 0.5*tz2n, 0.5*twoTdef, 0.5*twoTz );
             if ( std::abs(clebsch_lmn)<1e-7) continue;
             size_t ipn = 2*(i/2) + (tz2i+1)/2;
             size_t jpn = 2*(j/2) + (tz2j+1)/2;
@@ -624,7 +647,8 @@ void ThreeBodyMEpn::TransformToPN()
     }
   }
   // hopefully free up memory?
-  std::vector<ThreeBME_type>().swap( isospin3BME.MatEl );
+//  std::vector<ThreeBME_type>().swap( isospin3BME.MatEl );
+  std::vector<ThreeBodyME::ME_type>().swap( isospin3BME.MatEl );
   std::unordered_map<size_t, size_t>().swap( isospin3BME.OrbitIndexHash );
   PN_mode = true;
 
@@ -645,7 +669,8 @@ void ThreeBodyMEpn::SwitchToPN_and_discard()
   Allocate_PN();
 
   // hopefully free up memory?
-  std::vector<ThreeBME_type>().swap( isospin3BME.MatEl );
+//  std::vector<ThreeBME_type>().swap( isospin3BME.MatEl );
+  std::vector<ThreeBodyME::ME_type>().swap( isospin3BME.MatEl );
   std::unordered_map<size_t, size_t>().swap( isospin3BME.OrbitIndexHash );
   PN_mode = true;
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
@@ -844,7 +869,8 @@ void ThreeBodyMEpn::Print(size_t ch_bra, size_t ch_ket)
   size_t nkets = Tbc_ket.GetNumberKets();
   for (size_t ibra=0; ibra<nbras; ibra++)
   {
-    for (size_t iket=0; iket<=ibra; iket++)
+    size_t max_ket =   (ch_bra==ch_ket) ? ibra : nkets-1;
+    for (size_t iket=0; iket<=max_ket; iket++)
     {
 //      size_t index = ch_start[ch_bra] + (2*ch_dim[ch_bra] - iket - 1)*iket/2 + ibra  ;
       size_t index;

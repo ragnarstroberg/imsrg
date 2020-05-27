@@ -1318,7 +1318,7 @@ size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int
 
                 // read all the ME for this range of J,T into block
                 if (twoJCMin>twoJCMax) continue;
-                size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*5;
+                size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*Hbare.ThreeBody.isospin3BME.ISOSPIN_BLOCK_DIMENSION;
                 nread += blocksize;
 
 
@@ -1418,25 +1418,9 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
   int e3max = modelspace->GetE3max();
   int lmax3 = modelspace->GetLmax3();
   int lmax = modelspace->GetLmax();
-//  std::cout << "Reading 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << std::endl;
+  int iso_dim = Hbare.ThreeBody.isospin3BME.ISOSPIN_BLOCK_DIMENSION;
 
-//  std::vector<int> orbits_remap(0);
-//  int lmax = E1max; // haven't yet implemented the lmax truncation for 3body. Should be easy.
-//
-//  for (int e=0; e<=std::min(E1max,e1max); ++e)
-//  {
-//    int lmin = e%2;
-//    for (int l=lmin; l<=std::min(e,lmax); l+=2)
-//    {
-//      int n = (e-l)/2;
-//      int twojMin = std::abs(2*l-1);
-//      int twojMax = 2*l+1;
-//      for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
-//      {
-//         orbits_remap.push_back( modelspace->GetOrbitIndex(n,l,twoj,-1) );
-//      }
-//    }
-//  }
+
   int nljmax = orbits_remap.size();
 
 
@@ -1444,23 +1428,13 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
   // begin giant nested loops
   size_t nkept = 0;
   modelspace->PreCalculateSixJ(); // Get all the sixJ so we don't have to worry about threading issues
-  // combine the first two loops into one to better utilize more threads
-//  #pragma omp parallel for schedule(dynamic,1) reduction(+ : nkept)
-//  for (int index12=0; index12< nljmax*(nljmax+1)/2; ++index12)
-//  {
   #pragma omp parallel for schedule(dynamic,1) reduction(+ : nkept)
   for(int nlj1=0; nlj1<nljmax; ++nlj1)
   {
-//    int nlj1 = int( (sqrt(8*index12+1)-1)/2);
-//    int nlj2 = index12 - nlj1*(nlj1+1)/2;
-//    size_t nread = nread_list[index12];
     size_t nread = nread_list[nlj1];
     int a =  orbits_remap[nlj1];
     Orbit & oa = modelspace->GetOrbit(a);
     int ea = 2*oa.n + oa.l;
-//    if (ea > E1max) break;
-//    if (ea > e1max) break;
-//    if (ea > e3max) break;
     if (ea > E1max) continue;
     if (ea > e1max) continue;
     if (ea > e3max) continue;
@@ -1484,13 +1458,14 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
         int JabMax  = (oa.j2 + ob.j2)/2;
         int JabMin  = std::abs(oa.j2 - ob.j2)/2;
 
-        int twoJCMindownbra;
-        if (std::abs(oa.j2 - ob.j2) >oc.j2)
-           twoJCMindownbra = std::abs(oa.j2 - ob.j2)-oc.j2;
-        else if (oc.j2 < (oa.j2+ob.j2) )
-           twoJCMindownbra = 1;
-        else
-           twoJCMindownbra = oc.j2 - oa.j2 - ob.j2;
+        int twoJCMindownbra = std::max( std::abs(oa.j2-ob.j2)-oc.j2,   std::max( oc.j2-oa.j2-ob.j2 , 1 ) );
+//        int twoJCMindownbra;
+//        if (std::abs(oa.j2 - ob.j2) >oc.j2)
+//           twoJCMindownbra = std::abs(oa.j2 - ob.j2)-oc.j2;
+//        else if (oc.j2 < (oa.j2+ob.j2) )
+//           twoJCMindownbra = 1;
+//        else
+//           twoJCMindownbra = oc.j2 - oa.j2 - ob.j2;
         int twoJCMaxupbra = oa.j2 + ob.j2 + oc.j2;
 
 
@@ -1521,13 +1496,15 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
               int JJabMax = (od.j2 + oe.j2)/2;
               int JJabMin = std::abs(od.j2 - oe.j2)/2;
 
-              int twoJCMindownket;
-              if ( std::abs(od.j2 - oe.j2) > of.j2 )
-                 twoJCMindownket = std::abs(od.j2 - oe.j2) - of.j2;
-              else if ( of.j2 < (od.j2+oe.j2) )
-                 twoJCMindownket = 1;
-              else
-                 twoJCMindownket = of.j2 - od.j2 - oe.j2;
+              int twoJCMindownket = std::max( std::abs(od.j2-oe.j2)-of.j2,   std::max( of.j2-od.j2-oe.j2 , 1 ) );
+//              int twoJCMindownket;
+//              if ( std::abs(od.j2 - oe.j2) > of.j2 )
+//                 twoJCMindownket = std::abs(od.j2 - oe.j2) - of.j2;
+//              else twoJCMindownket = std::max( of.j2-od.j2-oe.j2 ,  1);
+//              else if ( of.j2 < (od.j2+oe.j2) )
+//                 twoJCMindownket = 1;
+//              else
+//                 twoJCMindownket = of.j2 - od.j2 - oe.j2;
 
               int twoJCMaxupket = od.j2 + oe.j2 + of.j2;
 
@@ -1546,24 +1523,40 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
 
                 // read all the ME for this range of J,T into block
                 if (twoJCMin>twoJCMax) continue;
-                size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*5;
+//                size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*5;
+                size_t blocksize = ((twoJCMax-twoJCMin)/2+1) * iso_dim ;
 
 //                 std::array<double,5> isospin_5plet = {0,0,0,0,0};
-                for(int JTind = 0; JTind <= (twoJCMax-twoJCMin)+1; JTind++)
+                for ( int twoJC=twoJCMin; twoJC<=twoJCMax; twoJC+=2 )
+//                for(int JTind = 0; JTind <= (twoJCMax-twoJCMin)+1; JTind++)
                 {
-                 int twoJC = twoJCMin + (JTind/2)*2;
-                 int twoT = 1+(JTind%2)*2;
+//                 int twoJC = twoJCMin + (JTind/2)*2;
+//                 int twoT = 1+(JTind%2)*2;
+                 // now we loop through (tab,ttab,twoT) = (0,0,1), (0,1,1), (1,0,1), (1,1,1), (1,1,3)
 //                 if (twoT==1) isospin_5plet = {0,0,0,0,0};
+                 size_t Tcounter = 0;
                  for(int tab = 0; tab <= 1; tab++) // the total isospin loop can be replaced by i+=5
                  {
                   for(int ttab = 0; ttab <= 1; ttab++)
                   {
                    //summation bounds
-                   if ( twoT > std::min( 2*tab+1, 2*ttab+1) ) continue;
+//                   if ( twoT > std::min( 2*tab+1, 2*ttab+1) ) continue;
 //                   int twoTMin = 1; // twoTMin can just be used as 1
+//                   int twoTTMin = 1; // twoTMin can just be used as 1
 //                   int twoTMax = std::min( 2*tab +1, 2*ttab +1);
+//                   int twoTMax  = 2*tab +1;
+//                   int twoTTMax =  2*ttab +1;
+                   for (int twoT=1; twoT<=2*tab+1; twoT+=2)
+                   {
+                    for (int twoTT=1; twoTT<=2*ttab+1; twoTT+=2)
+                    {
+                      if ( ( std::abs(twoT-twoTT)>2*Hbare.GetTRank() ) or ( (twoT+twoTT) < 2*Hbare.GetTRank() ) ) continue;
 
-                    size_t index_ab = 5*(twoJC-twoJCMin)/2+2*tab+ttab+(twoT-1)/2;
+//                    size_t index_ab =  iso_dim*(twoJC-twoJCMin)/2+2*tab+ttab+(twoT-1)/2;
+                      size_t index_ab =  iso_dim*(twoJC-twoJCMin)/2 + Tcounter;
+                      Tcounter++;
+
+
                     if (nread+index_ab >=ThreeBME.size())
                     {
                       std::cout << "OH NO!!! trying to access element " << nread << "+" << index_ab << " = " << nread+index_ab << "  which is >= "<< ThreeBME.size() << std::endl;
@@ -1574,7 +1567,6 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                     if (oa.l>lmax3 or ob.l>lmax3 or oc.l>lmax3 or od.l>lmax3 or oe.l>lmax3 or of.l>lmax3) V=0;
                     if (oa.l>lmax or ob.l>lmax or oc.l>lmax or od.l>lmax or oe.l>lmax or of.l>lmax) V=0;
 
-//                    if (a==99999 or b==99999 or c==99999 or d==99999 or e==99999 or f==99999) continue;
                     if (a==ModelSpace::NOT_AN_ORBIT or b==ModelSpace::NOT_AN_ORBIT or c==ModelSpace::NOT_AN_ORBIT
                      or d==ModelSpace::NOT_AN_ORBIT or e==ModelSpace::NOT_AN_ORBIT or f==ModelSpace::NOT_AN_ORBIT) continue;
 
@@ -1592,39 +1584,21 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                       {
                         if (not autozero )
                         {
-//                            std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << std::endl;
-//                            if (a==4 and b==0 and c==0 and d==4 and e==0 and f==0)
-//                            {
-//                               std::cout << std::endl << __func__ << "  setting Jab,Jde,J " << Jab << " " <<JJab << " " << twoJC << "  tab tde T  " << tab << " " << ttab << " " << twoT << "    V = " << V << std::endl;
-//                            }
-//                               if ( a==2 and b==4 and c==4 and d==2 and e==0 and f==0 and tab==1 and ttab==1 and twoT==3 and JJab==1 and twoJC==3)
-//                               {
-////                                 std::cout << "t t T = " << tab << " " << ttab << " " << twoT << "   V = " << V << std::endl;
-//                                 std::cout << "found one Jab = " << Jab << "   V = " << V << std::endl;
-//                               }
-                            Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
-                         //     isospin_5plet[ 2*tab+ttab+(twoT-1)/2 ] = V;
-//                              std::cout << "5plet index " << 2*tab +ttab + (twoT-1)/2 << "  with " << tab << " " << ttab << " " << twoT << std::endl;
+//                            Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
+                            Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,twoTT,a,b,c,d,e,f, V);
                         }
                         else if (autozero)
                         {
                             printf(" <--------- AAAHHHH!!!!!! Reading 3body file. <%d %d %d  %d %d |V| %d %d %d  %d %d>_(%d %d) should be zero but its %f.  nread = %lu index_ab = %lu\n",a,b,c,Jab,tab,d,e,f,JJab,ttab,twoJC,twoT,V,nread,index_ab);
-//                              std::cout << " <-------- AAAAHHHH!!!!!!!! Reading 3body file and this should be zero, but it's " << V << std::endl;
-//                            std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << V << std::endl;
-//                            std::cout << "nread = " << nread << "  index_ab = " << index_ab << std::endl;
-                              goodstate = false;
+                            goodstate = false;
                         }
                       }
                     }
 
+                    }//twoTT
+                   }//twoT
                   }//ttab
                  }//tab
-//                 std::cout << "Calling SetME_isospin5" << std::endl;
-//                 if (twoT==3)
-//                 {
-//                   std::cout << "---------- ReadWrite  call SetME_isospin5, Jab Jde twoJ = " << Jab << " " << JJab << " " << twoJC << " -----------" << std::endl;
-//                   Hbare.ThreeBody.SetME_isospin5(Jab,JJab,twoJC,a,b,c,d,e,f,isospin_5plet);
-//                 }
                 }//twoJ
                 nread += blocksize;
                }//JJab
@@ -5322,6 +5296,134 @@ void ReadWrite::skip_comments(std::ifstream& in)
 
 
 
+
+/// Method added by Takayuki Miyagi.
+///
+Operator ReadWrite::ReadOperator2b_Miyagi(std::string filename, ModelSpace& modelspace)
+{
+  std::ifstream infile( filename, std::ios_base::in | std::ios_base::binary );
+  if ( !infile.good() )
+  {
+    std::cerr << "************************************" << std::endl
+      << "**    Trouble reading file  !!!   **" << filename << std::endl
+      << "************************************" << std::endl;
+    goodstate = false;
+    exit(0);
+  }
+  boost::iostreams::filtering_istream zipstream;
+  zipstream.push(boost::iostreams::gzip_decompressor());
+  zipstream.push(infile);
+
+  std::string line;
+  //std::cout << filename << std::endl;
+  getline(zipstream, line);
+  getline(zipstream, line);
+  int J=0, P=0, Z=0, emax=6, e2max=12;
+  std::istringstream tmp( line.c_str() );
+  tmp >> J >> P >> Z >> emax >> e2max;
+  //std::cout << J << " " << Z << " " << (1-P)/2 << " " << emax << " " << e2max << std::endl;
+  Operator op = Operator(modelspace, J, Z, (1-P)/2, 2);
+  zipstream >> op.ZeroBody;
+  std::vector<int> orbits_remap;
+
+  std::vector<int> energy_vals;
+  std::vector<int> n_vals;
+  std::vector<int> l_vals;
+  std::vector<int> j_vals;
+
+  for (int e=0; e<=emax; ++e)
+  {
+    int lmin = e%2;
+    for (int l=lmin; l<=e; l+=2)
+    {
+      int n = (e-l)/2;
+      int twojMin = std::abs(2*l-1);
+      int twojMax = 2*l+1;
+      for (int twoj=twojMin; twoj<=twojMax; twoj+=2)
+      {
+         orbits_remap.push_back( modelspace.GetOrbitIndex(n,l,twoj,-1) );
+         energy_vals.push_back( 2*n+l);
+         n_vals.push_back(n);
+         l_vals.push_back(l);
+         j_vals.push_back(twoj);
+      }
+    }
+  }
+  int nljmax = orbits_remap.size()-1;
+  float obme_pp,obme_nn,obme_np,obme_pn;
+  for(int nlj1=0; nlj1<=nljmax; ++nlj1) {
+    int ip = modelspace.GetOrbitIndex( n_vals[nlj1], l_vals[nlj1], j_vals[nlj1], -1 );
+    int in = modelspace.GetOrbitIndex( n_vals[nlj1], l_vals[nlj1], j_vals[nlj1],  1 );
+    for(int nlj2=0; nlj2<=nljmax; ++nlj2) {
+      int jp = modelspace.GetOrbitIndex( n_vals[nlj2], l_vals[nlj2], j_vals[nlj2], -1 );
+      int jn = modelspace.GetOrbitIndex( n_vals[nlj2], l_vals[nlj2], j_vals[nlj2],  1 );
+      if( (l_vals[nlj1]+l_vals[nlj2]+op.parity)%2 == 1 ) continue;
+      if( not AngMom::Triangle( j_vals[nlj1], j_vals[nlj2], 2*op.rank_J ) ) continue;
+      zipstream >> obme_pp >> obme_nn >> obme_np >> obme_pn;
+      //std::cout << nlj1 << " " << nlj2 << " " << obme_pp << " " << obme_nn << " " << obme_np << " " << obme_pn  << std::endl;
+      if( energy_vals[nlj1] > modelspace.GetEmax() ) continue;
+      if( energy_vals[nlj2] > modelspace.GetEmax() ) continue;
+      op.OneBody(ip,jp) = obme_pp;
+      op.OneBody(in,jn) = obme_nn;
+      op.OneBody(in,jp) = obme_np;
+      op.OneBody(ip,jn) = obme_pn;
+    }
+  }
+
+  float me_pppp, me_pppn, me_ppnp, me_ppnn, me_pnpn;
+  float me_pnnp, me_pnnn, me_npnp, me_npnn, me_nnnn;
+  for(int nlj1=0; nlj1<=nljmax; ++nlj1) {
+    if( energy_vals[nlj1] > modelspace.GetEmax() ) break;
+    int ip = modelspace.GetOrbitIndex( n_vals[nlj1], l_vals[nlj1], j_vals[nlj1], -1 );
+    int in = modelspace.GetOrbitIndex( n_vals[nlj1], l_vals[nlj1], j_vals[nlj1],  1 );
+    for(int nlj2=0; nlj2<=nlj1; ++nlj2) {
+      int jp = modelspace.GetOrbitIndex( n_vals[nlj2], l_vals[nlj2], j_vals[nlj2], -1 );
+      int jn = modelspace.GetOrbitIndex( n_vals[nlj2], l_vals[nlj2], j_vals[nlj2],  1 );
+      if( energy_vals[nlj1] + energy_vals[nlj2] > e2max ) continue;
+
+      for(int nlj3=0; nlj3<=nljmax; ++nlj3) {
+        int kp = modelspace.GetOrbitIndex( n_vals[nlj3], l_vals[nlj3], j_vals[nlj3], -1 );
+        int kn = modelspace.GetOrbitIndex( n_vals[nlj3], l_vals[nlj3], j_vals[nlj3],  1 );
+        for(int nlj4=0; nlj4<=nlj3; ++nlj4) {
+          int lp = modelspace.GetOrbitIndex( n_vals[nlj4], l_vals[nlj4], j_vals[nlj4], -1 );
+          int ln = modelspace.GetOrbitIndex( n_vals[nlj4], l_vals[nlj4], j_vals[nlj4],  1 );
+          if( energy_vals[nlj3] + energy_vals[nlj4] > e2max ) continue;
+          if( ( l_vals[nlj1]+l_vals[nlj2]+l_vals[nlj3]+l_vals[nlj4]+op.parity )%2 == 1) continue;
+          for(int Jij=std::abs(j_vals[nlj1]-j_vals[nlj2])/2; Jij<=(j_vals[nlj1]+j_vals[nlj2])/2; ++Jij){
+            for(int Jkl=std::abs(j_vals[nlj3]-j_vals[nlj4])/2; Jkl<=(j_vals[nlj3]+j_vals[nlj4])/2; ++Jkl){
+
+              if( not AngMom::Triangle( Jij, Jkl, op.rank_J ) ) continue;
+              zipstream >> me_pppp >> me_pppn >> me_ppnp >> me_ppnn >> me_pnpn;
+              zipstream >> me_pnnp >> me_pnnn >> me_npnp >> me_npnn >> me_nnnn;
+              //std::cout << nlj1 << " " << nlj2 << " " << nlj3 << " " << nlj4 << " " << Jij << " " << Jkl << " " <<
+              //  me_pppp << " " << me_pppn << " " << me_ppnp << " " << me_ppnn << " " << me_pnpn << " " <<
+              //  me_pnnp << " " << me_pnnn << " " << me_npnp << " " << me_npnn << " " << me_nnnn << std::endl;
+              if( energy_vals[nlj1] > modelspace.GetEmax() ) continue;
+              if( energy_vals[nlj2] > modelspace.GetEmax() ) continue;
+              if( energy_vals[nlj3] > modelspace.GetEmax() ) continue;
+              if( energy_vals[nlj4] > modelspace.GetEmax() ) continue;
+              if( std::abs(me_pppp) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jp, kp, lp, me_pppp);
+              if( std::abs(me_pppn) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jp, kp, ln, me_pppn);
+              if( std::abs(me_ppnp) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jp, kn, lp, me_ppnp);
+              if( std::abs(me_ppnn) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jp, kn, ln, me_ppnn);
+              if( std::abs(me_pnpn) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jn, kp, ln, me_pnpn);
+
+              if( std::abs(me_pnnp) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jn, kn, lp, me_pnnp);
+              if( std::abs(me_pnnn) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, ip, jn, kn, ln, me_pnnn);
+              if( std::abs(me_npnp) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, in, jp, kn, lp, me_npnp);
+              if( std::abs(me_npnn) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, in, jp, kn, ln, me_npnn);
+              if( std::abs(me_nnnn) > 1.e-10 ) op.TwoBody.SetTBME_J(Jij, Jkl, in, jn, kn, ln, me_nnnn);
+
+            }
+          }
+
+        }
+      }
+
+    }
+  }
+  return op;
+}
 
 
 

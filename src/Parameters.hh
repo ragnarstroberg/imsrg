@@ -62,6 +62,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"intfile",			"default"},	// name of output interaction fille
   {"fmt2",			"me2j"},	// can also be navratil or Navratil to read Petr's TBME format
   {"fmt3",			"me3j"},	// can also be navratil or Navratil to read Petr's TBME format
+  {"input_op_fmt",		"navratil"},	// navratil means read Petr Navratil's format for 2b currents. miyagi means Takayuki Miyagi's format.
   {"reference",			"default"},	// nucleus used for HF and normal ordering.
   {"valence_space",		""},		// either valence space or nucleus for single reference
   {"custom_valence_space",      ""},		// if the provided valence spaces just aren't good enough for you
