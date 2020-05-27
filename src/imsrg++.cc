@@ -593,7 +593,7 @@ int main(int argc, char** argv)
     t = qn[1];
     p = qn[2];
     r = qn[3];
-//    std::cout << "Parsed tag. opname = " << opname << "  qnumbers = " << qnumbers << "  " << j << " " << t << " " << p << " " << r << "   file = " << fname << std::endl;
+    std::cout << "Parsed tag. opname = " << opname << "  qnumbers = " << qnumbers << "  " << j << " " << t << " " << p << " " << r << "   file2 = " << f2name << "    file3 = " << f3name << std::endl;
     Operator op(modelspace,j,t,p,r);
     std::cout << "Reading operator " << opname << "  in " << input_op_fmt << "  format from files " << f2name << "  ,  " << f3name << std::endl;
     if ( input_op_fmt == "navratil" )

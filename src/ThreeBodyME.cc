@@ -18,7 +18,9 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms)
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int rJ, int rT, int p)
 : modelspace(ms), E3max(ms->E3max), emax(ms->Emax), herm(1), total_dimension(0), rank_J(rJ), rank_T(rT), parity(p)
 {
-  ISOSPIN_BLOCK_DIMENSION = rT>0 ?  9  :  5;
+  ISOSPIN_BLOCK_DIMENSION = 5;
+  if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
+  else if (rank_T==3) ISOSPIN_BLOCK_DIMENSION = 1; 
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
@@ -28,7 +30,9 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max, int rJ, int rT, int p)
 : modelspace(ms),E3max(e3max), emax(ms->Emax), herm(1), total_dimension(0), rank_J(rJ), rank_T(rT), parity(p)
 {
-  ISOSPIN_BLOCK_DIMENSION = rT>0 ?  9  :  5;
+  ISOSPIN_BLOCK_DIMENSION = 5;
+  if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
+  else if (rank_T==3) ISOSPIN_BLOCK_DIMENSION = 1; 
 }
 
 ThreeBodyME::ThreeBodyME(const ThreeBodyME& Tbme)
@@ -127,7 +131,10 @@ void ThreeBodyME::Allocate()
   int norbits = modelspace->GetNumberOrbits();
   std::cout << "Begin AllocateThreeBody() with E3max = " << E3max << " norbits = " << norbits << std::endl;
   int lmax = 50000; // maybe do something with this later...
-  ISOSPIN_BLOCK_DIMENSION = (rank_T==0) ? 5  : 9;  // 3N state can have t12,2T123 = {(0,1),(1,1),(1,3)}. If rankT>0 3x3=9 combos. If 2T conserved, only 5 combos. 
+//  ISOSPIN_BLOCK_DIMENSION = (rank_T==0) ? 5  : 9;  // 3N state can have t12,2T123 = {(0,1),(1,1),(1,3)}. If rankT>0 3x3=9 combos. If 2T conserved, only 5 combos. 
+  ISOSPIN_BLOCK_DIMENSION = 5;
+  if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
+  else if (rank_T==3) ISOSPIN_BLOCK_DIMENSION = 1; 
 
 
   for (int a=0; a<norbits; a+=2)
