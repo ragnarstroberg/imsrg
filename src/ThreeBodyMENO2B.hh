@@ -21,7 +21,7 @@
  typedef double ThreeBMENO2B_IO_type;
 #endif
 
-class ThreeBodyMENO2B;
+class ThreeBodyMENO2B; // forward declaration
 
 class OrbitIsospin
 {
@@ -31,6 +31,13 @@ class OrbitIsospin
     ~OrbitIsospin();
 };
 
+/// A Three body channel for use in the NO2B approximation.
+/// For a state |abc> we have ja,jb coupled to J2 with parity P2
+/// J1 = jc, and P1 = parity of orbit c.
+/// T3 is twice the total 3-body isospin.
+/// Orbit c is the one that will get summed over the reference
+/// to get the normal ordered 2-body contribution.
+///     --- SRS interpretation of Takayuki's code, so grain of salt.
 class ThreeBodyChannelNO2B
 {
   public:
@@ -45,7 +52,7 @@ class ThreeBodyChannelNO2B
     std::unordered_map<int, int> iphase;
 
     ThreeBodyChannelNO2B();
-    ThreeBodyChannelNO2B(int, int, int, int, int, ThreeBodyMENO2B*);
+    ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T3, ThreeBodyMENO2B*);
     ~ThreeBodyChannelNO2B();
     int GetIndex(int a, int b, int c, int Tab) {return Hash_abct(a, b, c, Tab);};
   private:
@@ -103,7 +110,7 @@ class ThreeBodyMENO2B
     size_t idx1d(size_t bra, size_t ket) { return std::max(bra+1,ket+1) * (std::max(bra+1,ket+1)-1)/2 + std::min(bra+1,ket+1)-1;};
     void SetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3, ThreeBMENO2B_IO_type V);
     ThreeBMENO2B_IO_type GetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3);
-    ThreeBMENO2B_IO_type GetThBME(int a, int b, int c, int d, int e, int f, int J2);
+    ThreeBMENO2B_IO_type GetThBME(int a, int b, int c, int d, int e, int f, int twoJ);
     void ReadFile();
     long long unsigned int CountME();
 //    template<class T> void ReadStream(T & infile, long long unsigned int n_elms);
