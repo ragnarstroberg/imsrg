@@ -709,7 +709,7 @@ void ReadWrite::Read_Darmstadt_3body( std::string filename, Operator& Hbare, int
 
   double start_time = omp_get_wtime();
   std::string extension = filename.substr( filename.find_last_of("."));
-  File3N = filename;
+//  File3N = filename;
   Aref = Hbare.GetModelSpace()->GetAref();
   Zref = Hbare.GetModelSpace()->GetZref();
 
@@ -788,7 +788,7 @@ void ReadWrite::Read_Darmstadt_3body( std::string filename, Operator& Hbare, int
 
 
 
-/// Read TBME's from a file formatted by the Darmstadt group.
+/// Read TBMEs from a file formatted by the Darmstadt group.
 /// The file contains just the matrix elements, and the corresponding quantum numbers
 /// are inferred. This means that the model space of the file must also be specified.
 /// emax refers to the maximum single-particle oscillator shell. Emax refers to the
@@ -1338,10 +1338,14 @@ size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int
 }
 
 template <class T>
-void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, int E1max, int E2max, int E3max)
+void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, int E1max_in, int E2max_in, int E3max_in)
 {
 
   double t_start = omp_get_wtime();
+  int E1max = E1max_in;
+  int E2max = E2max_in;
+  int E3max = E3max_in;
+
   if ( !infile.good() )
   {
      std::cerr << "************************************" << std::endl
@@ -1373,6 +1377,20 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   {
     char line[LINESIZE];
     infile.getline(line,LINESIZE);  // read the header
+    if ( Hbare.GetTRank() > 0 ) // It's not a Hamiltonian at all! It's a beta decay operator (probably).
+    {
+       float opJ,opP,opT,efil,e2fil,e3fil,lmaxfil;
+//       int opJ,opP,opT,efil,e2fil,e3fil,lmaxfil;
+       infile >> opJ >> opP >> opT >> efil >> e2fil >> e3fil >> lmaxfil; // There's an extra header line with useful information.
+       E1max = int(efil);
+       E2max = int(e2fil);
+       E3max = int(e3fil);
+       if ( (int(opJ) != Hbare.GetJRank())  or  (int(opT) != Hbare.GetTRank())  or  (int(opP) != Hbare.GetParity()) )
+       {
+         std::cout << "!!!!!!  DANGER!! The header for this 3-body file says JpT = " << opJ << " " << opP << " " << opT << "  and that doesn't match the operator" << std::endl;
+        std::exit(EXIT_FAILURE);
+       }
+    }
 //    char buff[BUFFSIZE3N];
 //    size_t read_so_far = 0;
 //    while (read_so_far < nread and infile.good())

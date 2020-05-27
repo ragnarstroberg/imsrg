@@ -603,7 +603,7 @@ int main(int argc, char** argv)
     else if ( input_op_fmt == "miyagi" )
     {
       if (f2name != "")           op = rw.ReadOperator2b_Miyagi( f2name, modelspace );
-//      if ( r>2 and f3name != "")  rw.ReadOperator3b_Miyagi( f3name, op);
+      if ( r>2 and f3name != "")  rw.Read_Darmstadt_3body( f3name, op,  file3e1max,file3e2max,file3e3max);
     }
     ops.push_back( op );
     opnames.push_back( opname );
