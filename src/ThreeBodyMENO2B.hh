@@ -8,18 +8,20 @@
 #include <unordered_map>
 #include "ModelSpace.hh"
 
-#ifdef WITHHALF
+//#ifdef WITHHALF
 /// Use half-precision floats. For documentation, see http://half.sourceforge.net
  #include <x86intrin.h>
  #include "half.hpp"
- typedef half_float::half ThreeBMENO2B_Store_type;
- typedef half_float::half ThreeBMENO2B_File_type;
+ typedef half_float::half ThreeBMENO2B_half_type;
+ typedef float ThreeBMENO2B_single_type;
+// typedef half_float::half ThreeBMENO2B_Store_type;
+// typedef half_float::half ThreeBMENO2B_File_type;
  typedef double ThreeBMENO2B_IO_type;
-#else
- typedef float ThreeBMENO2B_Store_type;
- typedef float ThreeBMENO2B_File_type;
- typedef double ThreeBMENO2B_IO_type;
-#endif
+//#else
+// typedef float ThreeBMENO2B_Store_type;
+// typedef float ThreeBMENO2B_File_type;
+// typedef double ThreeBMENO2B_IO_type;
+//#endif
 
 class ThreeBodyMENO2B; // forward declaration
 
@@ -79,10 +81,16 @@ class ThreeBodySpaceNO2B
 
 class ThreeBodyMENO2B
 {
+//    std::map<int, std::vector<ThreeBMENO2B_Store_type>> MatEl;
+    std::map<int, std::vector<ThreeBMENO2B_single_type>> MatEl_single;
+    std::map<int, std::vector<ThreeBMENO2B_half_type>> MatEl_half;
   public:
+    int precision_mode;
+    const static int DOUBLE_PRECISION;
+    const static int SINGLE_PRECISION;
+    const static int HALF_PRECISION;
     ModelSpace * modelspace;
     ThreeBodySpaceNO2B threebodyspace;
-    std::map<int, std::vector<ThreeBMENO2B_Store_type>> MatEl;
 //    std::map<int, std::vector<ThreeBMENO2B_type>> MatEl;
     std::vector<OrbitIsospin> iOrbits;
     std::map<std::array<int,3>, int> nlj2idx;
@@ -106,16 +114,21 @@ class ThreeBodyMENO2B
     ThreeBodyMENO2B& operator+=(const ThreeBodyMENO2B&);
     ThreeBodyMENO2B& operator-=(const ThreeBodyMENO2B&);
 
-    void Allocate(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file, std::string filename);
+    void SetHalfPrecision();
+    void SetSinglePrecision();
+
+//    void Allocate(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file, std::string filename);
+    void Allocate(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file);
     size_t idx1d(size_t bra, size_t ket) { return std::max(bra+1,ket+1) * (std::max(bra+1,ket+1)-1)/2 + std::min(bra+1,ket+1)-1;};
     void SetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3, ThreeBMENO2B_IO_type V);
     ThreeBMENO2B_IO_type GetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3);
     ThreeBMENO2B_IO_type GetThBME(int a, int b, int c, int d, int e, int f, int twoJ);
-    void ReadFile();
+//    void ReadFile();
+    void ReadFile( std::string filename );
     long long unsigned int CountME();
 //    template<class T> void ReadStream(T & infile, long long unsigned int n_elms);
     template<class T> void ReadStream(T & infile, size_t n_elms);
 //    void ReadBinaryStream( std::vector<ThreeBMENO2B_Store_type>& v, size_t nelms);
-    void ReadBinaryStream( std::vector<ThreeBMENO2B_File_type>& v, size_t nelms);
+    template <class Type> void ReadBinaryStream( std::vector<Type>& v, size_t nelms);
 };
 #endif

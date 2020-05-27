@@ -56,6 +56,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"2bme",			"none"},        // name of file containing 2-body matrix elements
   {"3bme",			"none"},        // name of file containing 3-body matrix elements
   {"3bme_type",			"full"},        // are the 3-body matrix elements in NO2B format, or do we get all of them (full)?
+  {"no2b_precision",		"single"},      // if we use the no2b file type, do we store with single precision, or half precision?
   {"core_generator",		"atan"},	// generator used for core part of 2-step decoupling
   {"valence_generator",		"shell-model-atan"},	// generator used for valence decoupling and 1-step (also single-ref)
   {"flowfile",			"default"},	// name of output flow file

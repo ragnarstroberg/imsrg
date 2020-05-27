@@ -11,6 +11,13 @@
 #include <omp.h>
 #include "IMSRGProfiler.hh"
 
+
+const int ThreeBodyMENO2B::HALF_PRECISION = 2;
+const int ThreeBodyMENO2B::SINGLE_PRECISION = 4;
+const int ThreeBodyMENO2B::DOUBLE_PRECISION = 8;
+
+
+
 OrbitIsospin::~OrbitIsospin()
 {}
 
@@ -142,13 +149,16 @@ ThreeBodyMENO2B::~ThreeBodyMENO2B()
 {}
 
 ThreeBodyMENO2B::ThreeBodyMENO2B()
-  : Emax(0), E2max(0), E3max(0), Lmax(0),
+  : precision_mode(SINGLE_PRECISION),
+  Emax(0), E2max(0), E3max(0), Lmax(0),
   Emax_file(0), E2max_file(0), E3max_file(0), Lmax_file(0)
 {}
 
 ThreeBodyMENO2B::ThreeBodyMENO2B(const ThreeBodyMENO2B& tbme)
-  : modelspace(tbme.modelspace), threebodyspace(tbme.threebodyspace),
-  MatEl( tbme.MatEl ), iOrbits( tbme.iOrbits ),  nlj2idx(tbme.nlj2idx),
+  : precision_mode(SINGLE_PRECISION),
+  modelspace(tbme.modelspace), threebodyspace(tbme.threebodyspace),
+  MatEl_single( tbme.MatEl_single ), MatEl_half( tbme.MatEl_half), iOrbits( tbme.iOrbits ),  nlj2idx(tbme.nlj2idx),
+//  MatEl( tbme.MatEl ), iOrbits( tbme.iOrbits ),  nlj2idx(tbme.nlj2idx),
   Emax(tbme.Emax), E2max(tbme.E2max),
   E3max(tbme.E3max), Lmax(tbme.Lmax),
   Emax_file(tbme.Emax_file), E2max_file(tbme.E2max_file),
@@ -158,7 +168,14 @@ ThreeBodyMENO2B::ThreeBodyMENO2B(const ThreeBodyMENO2B& tbme)
 
 ThreeBodyMENO2B& ThreeBodyMENO2B::operator*=(const double rhs)
 {
-  for ( auto& itmat : MatEl )
+  for ( auto& itmat : MatEl_single )
+  {
+    for ( auto& it : itmat.second )
+    {
+      it *= rhs;
+    }
+  }
+  for ( auto& itmat : MatEl_half )
   {
     for ( auto& it : itmat.second )
     {
@@ -170,12 +187,20 @@ ThreeBodyMENO2B& ThreeBodyMENO2B::operator*=(const double rhs)
 
 ThreeBodyMENO2B& ThreeBodyMENO2B::operator+=(const ThreeBodyMENO2B& rhs)
 {
-  for ( auto& itmat : rhs.MatEl )
+  for ( auto& itmat : rhs.MatEl_single )
   {
     auto ch = itmat.first;
     for ( size_t i=0; i<itmat.second.size(); i++)
     {
-      MatEl[ch][i] += itmat.second[i];
+      MatEl_single[ch][i] += itmat.second[i];
+    }
+  }
+  for ( auto& itmat : rhs.MatEl_half )
+  {
+    auto ch = itmat.first;
+    for ( size_t i=0; i<itmat.second.size(); i++)
+    {
+      MatEl_half[ch][i] += itmat.second[i];
     }
   }
   return *this;
@@ -183,18 +208,37 @@ ThreeBodyMENO2B& ThreeBodyMENO2B::operator+=(const ThreeBodyMENO2B& rhs)
 
 ThreeBodyMENO2B& ThreeBodyMENO2B::operator-=(const ThreeBodyMENO2B& rhs)
 {
-  for ( auto& itmat : rhs.MatEl )
+  for ( auto& itmat : rhs.MatEl_single )
   {
     auto ch = itmat.first;
     for ( size_t i=0; i<itmat.second.size(); i++)
     {
-      MatEl[ch][i] -= itmat.second[i];
+      MatEl_single[ch][i] -= itmat.second[i];
+    }
+  }
+  for ( auto& itmat : rhs.MatEl_half )
+  {
+    auto ch = itmat.first;
+    for ( size_t i=0; i<itmat.second.size(); i++)
+    {
+      MatEl_half[ch][i] -= itmat.second[i];
     }
   }
   return *this;
 }
 
-void ThreeBodyMENO2B::Allocate(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file,  std::string filename)
+
+void ThreeBodyMENO2B::SetHalfPrecision()
+{
+  precision_mode = HALF_PRECISION;
+}
+void ThreeBodyMENO2B::SetSinglePrecision()
+{
+  precision_mode = SINGLE_PRECISION;
+}
+
+//void ThreeBodyMENO2B::Allocate(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file,  std::string filename)
+void ThreeBodyMENO2B::Allocate(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file)
 {
   modelspace = &ms;
   Emax = modelspace->GetEmax();
@@ -205,7 +249,7 @@ void ThreeBodyMENO2B::Allocate(ModelSpace & ms, int emax_file, int e2max_file, i
   E2max_file = e2max_file;
   E3max_file = e3max_file;
   Lmax_file = lmax_file;
-  FileName = filename;
+//  FileName = filename;
   initialized = true;
   int idx = 0;
   for (int e=0; e<=std::max(modelspace->GetEmax(),Emax_file); ++e) {
@@ -226,8 +270,17 @@ void ThreeBodyMENO2B::Allocate(ModelSpace & ms, int emax_file, int e2max_file, i
   for (int ch=0; ch<threebodyspace.NChannels; ch++){
     ThreeBodyChannelNO2B ch_no2b=threebodyspace.ThreeBodyChannels[ch];
     size_t n = ch_no2b.Ndim;
-    std::vector<ThreeBMENO2B_Store_type> vch(n*(n+1)/2, (ThreeBMENO2B_Store_type)0.0);
-    MatEl[ch] = vch;
+    if (precision_mode == SINGLE_PRECISION)
+    {
+      MatEl_single[ch] = std::vector<ThreeBMENO2B_single_type>( n*(n+1)/2, ThreeBMENO2B_single_type(0.0));
+    }
+    if (precision_mode == HALF_PRECISION)
+    {
+      MatEl_half[ch] = std::vector<ThreeBMENO2B_half_type>( n*(n+1)/2, ThreeBMENO2B_half_type(0.0));
+    }
+
+//    std::vector<ThreeBMENO2B_Store_type> vch(n*(n+1)/2, (ThreeBMENO2B_Store_type)0.0);
+//    MatEl[ch] = vch;
   }
 }
 
@@ -259,8 +312,10 @@ void ThreeBodyMENO2B::SetThBME(int a, int b, int c, int Tab,
   int ph = ch_no2b.iphase[ibra] * ch_no2b.iphase[iket];
   int bra = ch_no2b.abct2n[ibra];
   int ket = ch_no2b.abct2n[iket];
-  auto& Vch = MatEl[ch];
-  Vch[idx1d(bra,ket)] = ThreeBMENO2B_Store_type( V * ph);
+  if ( precision_mode == SINGLE_PRECISION )  MatEl_single[ch][idx1d(bra,ket)] = ThreeBMENO2B_single_type(V*ph);
+  else if ( precision_mode == HALF_PRECISION )  MatEl_half[ch][idx1d(bra,ket)] = ThreeBMENO2B_half_type(V*ph);
+//  auto& Vch = MatEl[ch];
+//  Vch[idx1d(bra,ket)] = ThreeBMENO2B_Store_type( V * ph);
 }
 
 ThreeBMENO2B_IO_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int Tab,
@@ -291,8 +346,12 @@ ThreeBMENO2B_IO_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int Tab,
   int ph = ch_no2b.iphase[ibra] * ch_no2b.iphase[iket];
   int bra = ch_no2b.abct2n[ibra];
   int ket = ch_no2b.abct2n[iket];
-  auto& Vch = MatEl[ch];
-  return ThreeBMENO2B_IO_type( Vch[idx1d(bra,ket)] * ph);
+  ThreeBMENO2B_IO_type vout = 0;
+  if ( precision_mode == SINGLE_PRECISION )    vout = MatEl_single[ch][idx1d(bra,ket)] * ph;
+  else if ( precision_mode == HALF_PRECISION ) vout = MatEl_half[ch][idx1d(bra,ket)] * ph;
+  return vout;
+//  auto& Vch = MatEl[ch];
+//  return ThreeBMENO2B_IO_type( Vch[idx1d(bra,ket)] * ph);
 //  return Vch[idx1d(bra,ket)] * ph;
 }
 
@@ -342,11 +401,15 @@ ThreeBMENO2B_IO_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int d, int e
   return ThreeBMENO2B_IO_type(v);
 }
 
-void ThreeBodyMENO2B::ReadFile()
+//void ThreeBodyMENO2B::ReadFile()
+void ThreeBodyMENO2B::ReadFile(std::string filename)
 {
   double t_start;
-  std::cout << __func__ << "  reading/storing with " << 8*sizeof(ThreeBMENO2B_File_type) << " / "<<  8*sizeof(ThreeBMENO2B_Store_type) << "  bit floats" << std::endl;
+  size_t nwords = (precision_mode==HALF_PRECISION) ? sizeof(ThreeBMENO2B_half_type) : sizeof(ThreeBMENO2B_single_type);
+  std::cout << __func__ << "  reading/storing with " << 8*nwords << "  bit floats" << std::endl;
+
   size_t n_elms = CountME(); 
+  FileName = filename;
   if(FileName.find("stream.bin") != std::string::npos){
     t_start = omp_get_wtime();
     std::ifstream infile(FileName, std::ios::binary);
@@ -354,16 +417,29 @@ void ThreeBodyMENO2B::ReadFile()
     size_t n_elem = infile.tellg();
     infile.seekg(0, infile.beg);
     n_elem -= infile.tellg();
-    n_elem /= sizeof(ThreeBMENO2B_File_type);
+//    n_elem /= sizeof(ThreeBMENO2B_File_type);
+    n_elem /= nwords;
     n_elem = std::min(n_elem, n_elms);
     IMSRGProfiler::timer["ThreeBodyMENO2B_calc_n_elem"] += omp_get_wtime() - t_start;
-    std::vector<ThreeBMENO2B_File_type> v(n_elem);
-    t_start = omp_get_wtime();
-    infile.read((char*)&v[0], n_elem*sizeof(ThreeBMENO2B_File_type));
-    IMSRGProfiler::timer["ThreeBodyMENO2B_read_to_array"] += omp_get_wtime() - t_start;
-    t_start = omp_get_wtime();
-    ReadBinaryStream(  v, n_elem);
-    IMSRGProfiler::timer["ThreeBodyMENO2B_read_from_vecstream"] += omp_get_wtime() - t_start;
+
+    if ( precision_mode == SINGLE_PRECISION)
+    {
+      std::vector<ThreeBMENO2B_single_type> v(n_elem);
+//      infile.read((char*)&v[0], n_elem*sizeof(ThreeBMENO2B_File_type));
+      t_start = omp_get_wtime();
+      infile.read((char*)&v[0], n_elem*nwords);
+      IMSRGProfiler::timer["ThreeBodyMENO2B_read_to_array"] += omp_get_wtime() - t_start;
+      ReadBinaryStream(  v, n_elem);
+    }
+    else if ( precision_mode == HALF_PRECISION)
+    {
+      std::vector<ThreeBMENO2B_half_type> v(n_elem);
+      t_start = omp_get_wtime();
+      infile.read((char*)&v[0], n_elem*nwords);
+      IMSRGProfiler::timer["ThreeBodyMENO2B_read_to_array"] += omp_get_wtime() - t_start;
+      ReadBinaryStream(  v, n_elem);
+    }
+//    IMSRGProfiler::timer["ThreeBodyMENO2B_read_from_vecstream"] += omp_get_wtime() - t_start;
     return;
   }
   if(FileName.find(".gz") != std::string::npos){
@@ -461,8 +537,11 @@ long long unsigned int ThreeBodyMENO2B::CountME()
 }
 
 
-void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBMENO2B_File_type> & v, size_t n_elms)
+//void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBMENO2B_File_type> & v, size_t n_elms)
+template <class Type>
+void ThreeBodyMENO2B::ReadBinaryStream( std::vector<Type> & v, size_t n_elms)
 {
+  double t_start = omp_get_wtime();
   int Emax = modelspace->GetEmax();
   int E2max = modelspace->GetE2max();
   int E3max = modelspace->GetE3max();
@@ -603,6 +682,7 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<ThreeBMENO2B_File_type> & v,
   }// for i1
   }// end of parallel block
 
+  IMSRGProfiler::timer["ThreeBodyMENO2B_ReadBinaryStream"] += omp_get_wtime() - t_start;
 }
 
 
@@ -620,7 +700,13 @@ void ThreeBodyMENO2B::ReadStream(T & infile, size_t n_elms)
   int E3max = modelspace->GetE3max();
   int Norbs = iOrbits.size();
 //  std::vector<ThreeBMENO2B_type> v(buffer_size,0.0);
-  std::vector<ThreeBMENO2B_File_type> v(buffer_size, ThreeBMENO2B_File_type(0.0) );
+//  std::vector<ThreeBMENO2B_File_type> v(buffer_size, ThreeBMENO2B_File_type(0.0) );
+  // Make both kinds of vectors, but then we only allocate the one we'll use
+  std::vector<ThreeBMENO2B_single_type> v_single;
+  std::vector<ThreeBMENO2B_half_type> v_half;
+  if (precision_mode == SINGLE_PRECISION )  v_single.resize(buffer_size, ThreeBMENO2B_single_type(0.0));
+  else if (precision_mode == HALF_PRECISION )  v_half.resize(buffer_size, ThreeBMENO2B_half_type(0.0));
+//  std::vector<ThreeBMENO2B_File_type> v(buffer_size, ThreeBMENO2B_File_type(0.0) );
 
   for (int i1=0; i1 < Norbs; i1++) {
     OrbitIsospin & o1 = iOrbits[i1];
@@ -680,7 +766,11 @@ void ThreeBodyMENO2B::ReadStream(T & infile, size_t n_elms)
                       if(counter == buffer_size) counter = 0;
                       if(counter == 0){
                         size_t maxread = std::min(buffer_size, n_elms-total_counter);
-                        for (size_t iread=0; iread<maxread  ; iread++) infile >> v[iread]; // read from file into the buffer
+
+                        // read from file into the appropriate buffer
+                        if    ( precision_mode == SINGLE_PRECISION )  for (size_t iread=0; iread<maxread ; iread++) infile >> v_single[iread];
+                        else if ( precision_mode == HALF_PRECISION )  for (size_t iread=0; iread<maxread ; iread++) infile >> v_half[iread];
+//                        for (size_t iread=0; iread<maxread  ; iread++) infile >> v[iread]; // read from file into the buffer
                       }
                       counter += 1;
                       total_counter += 1;
@@ -702,29 +792,40 @@ void ThreeBodyMENO2B::ReadStream(T & infile, size_t n_elms)
                       if( e1+e2+e3 > E3max ) continue;
                       if( e4+e5+e6 > E3max ) continue;
 
-                      if( i1==i2 and (J+T12)%2 ==0 ) {
-                        if( abs(v[counter-1]) > 1.e-6 ){
+
+                      ThreeBMENO2B_IO_type vset = 0.0;
+                      if ( precision_mode == SINGLE_PRECISION ) vset = v_single[counter-1];
+                      else if ( precision_mode == HALF_PRECISION ) vset = v_half[counter-1];
+
+
+                      if( (i1==i2 and (J+T12)%2 ==0 ) or ( i4==i5 and (J+T45)%2 ==0 ) ) {
+//                        if( abs(v[counter-1]) > 1.e-6 ){
+                        if( abs(vset) > 1.e-6 ){
                           std::cout << "Warning: something wrong, this three-body matrix element has to be zero" << std::endl;
                           std::cout <<
                             std::setw(4) << i1 << std::setw(4) << i2 << std::setw(4) << i3 << std::setw(4) << T12 <<
                             std::setw(4) << i4 << std::setw(4) << i5 << std::setw(4) << i6 << std::setw(4) << T45 <<
                             std::setw(4) << J << std::setw(4) << T3 << std::setw(16) << counter <<
-                            std::setw(12) << std::setprecision(6) << v[counter-1] << std::endl;
+                            std::setw(12) << std::setprecision(6) << vset << std::endl;
+//                            std::setw(12) << std::setprecision(6) << v[counter-1] << std::endl;
                         }
                       }
 
-                      if( i4==i5 and (J+T45)%2 ==0 ) {
-                        if( abs(v[counter-1]) > 1.e-6 ){
-                          std::cout << "Warning: something wrong, this three-body matrix element has to be zero" << std::endl;
-                          std::cout <<
-                            std::setw(4) << i1 << std::setw(4) << i2 << std::setw(4) << i3 << std::setw(4) << T12 <<
-                            std::setw(4) << i4 << std::setw(4) << i5 << std::setw(4) << i6 << std::setw(4) << T45 <<
-                            std::setw(4) << J << std::setw(4) << T3 << std::setw(16) << counter <<
-                            std::setw(12) << std::setprecision(6) << v[counter-1] << std::endl;
-                        }
-                      }
+//                      if( i4==i5 and (J+T45)%2 ==0 ) {
+////                        if( abs(v[counter-1]) > 1.e-6 ){
+//                        if( abs(vset) > 1.e-6 ){
+//                          std::cout << "Warning: something wrong, this three-body matrix element has to be zero" << std::endl;
+//                          std::cout <<
+//                            std::setw(4) << i1 << std::setw(4) << i2 << std::setw(4) << i3 << std::setw(4) << T12 <<
+//                            std::setw(4) << i4 << std::setw(4) << i5 << std::setw(4) << i6 << std::setw(4) << T45 <<
+//                            std::setw(4) << J << std::setw(4) << T3 << std::setw(16) << counter <<
+//                            std::setw(12) << std::setprecision(6) << vset << std::endl;
+////                            std::setw(12) << std::setprecision(6) << v[counter-1] << std::endl;
+//                        }
+//                      }
 //                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, v[counter-1]);
-                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, ThreeBMENO2B_IO_type(v[counter-1]) );
+//                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, ThreeBMENO2B_IO_type(v[counter-1]) );
+                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, vset );
 
                     }// for T3
                   }// for T45

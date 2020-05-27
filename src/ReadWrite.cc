@@ -1168,7 +1168,8 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
 /// Read me3j format three-body matrix elements. Pass in E1max, E2max, E3max for the file, so that it can be properly interpreted.
 /// The modelspace truncation doesn't need to coincide with the file truncation. For example, you could have an emax=10 modelspace
 /// and read from an emax=14 file, and the matrix elements with emax>10 would be ignored.
-size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int E2max, int E3max, std::vector<int>& orbits_remap, std::vector<size_t>& nread_list)
+//size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int E2max, int E3max, std::vector<int>& orbits_remap, std::vector<size_t>& nread_list)
+size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max_in, int E2max_in, int E3max_in, std::vector<int>& orbits_remap, std::vector<size_t>& nread_list)
 {
   double t_start = omp_get_wtime();
 //  if ( !infile.good() )
@@ -1192,7 +1193,24 @@ size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int
   int e2max = modelspace->GetE2max(); // not used yet
   int e3max = modelspace->GetE3max();
 //  int lmax3 = modelspace->GetLmax3();
+  int E1max = E1max_in;
+  int E2max = E2max_in;
+  int E3max = E3max_in;
+//  if (Hbare.GetTRank()>0)
+//  {
+//    E1max = 2;
+//    E2max = 4;
+//    E3max = 2;
+//  }
   std::cout << "Reading 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << std::endl;
+
+//  int iso_dim = Hbare.ThreeBody.ISOSPIN_BLOCK_DIMENSION;
+  int iso_dim = Hbare.ThreeBody.isospin3BME.ISOSPIN_BLOCK_DIMENSION;
+//  int iso_dim = 5;
+//  if (Hbare.GetTRank()==1) iso_dim=9;
+//  else if (Hbare.GetTRank()==2) iso_dim==5;
+//  else if (Hbare.GetTRank()==3) iso_dim==1;
+//  std::cout << " Isospin block dimension = " << iso_dim << std::endl;
 
 //  std::vector<int> orbits_remap(0);
   orbits_remap.clear();
@@ -1318,7 +1336,7 @@ size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max, int
 
                 // read all the ME for this range of J,T into block
                 if (twoJCMin>twoJCMax) continue;
-                size_t blocksize = ((twoJCMax-twoJCMin)/2+1)*Hbare.ThreeBody.isospin3BME.ISOSPIN_BLOCK_DIMENSION;
+                size_t blocksize = ((twoJCMax-twoJCMin)/2+1) * iso_dim;
                 nread += blocksize;
 
 
@@ -1354,10 +1372,11 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
      goodstate = false;
      return;
   }
+//  std::cout << "input operator has particle rank = " << Hbare.GetParticleRank() << std::endl;
   if (Hbare.particle_rank < 3)
   {
     std::cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << std::endl;
-    std::cerr << " Oops. Looks like we're trying to read 3body matrix elements to a " << Hbare.particle_rank << "-body operator. For shame..." << std::endl;
+    std::cerr << " Line " << __LINE__ <<  " Oops. Looks like we're trying to read 3body matrix elements to a " << Hbare.particle_rank << "-body operator. For shame..." << std::endl;
     std::cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! << " << std::endl;
     goodstate = false;
     return;
@@ -1365,14 +1384,8 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
   ModelSpace * modelspace = Hbare.GetModelSpace();
   std::vector<int> orbits_remap;
   std::vector<size_t> nread_list;
-  size_t nread = Count_Darmstadt_3body_to_read( Hbare, E1max, E2max, E3max, orbits_remap, nread_list);
 
-
-
-
-  std::vector<float> ThreeBME(nread,0.);
-
-//  #define BUFFSIZE3N 1024*1000
+  // If it's me3j, read the header, and if it's Takayuki's format, read the other header to get Emax info
   if (format3N == "me3j")
   {
     char line[LINESIZE];
@@ -1385,18 +1398,42 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
        E1max = int(efil);
        E2max = int(e2fil);
        E3max = int(e3fil);
-       if ( (int(opJ) != Hbare.GetJRank())  or  (int(opT) != Hbare.GetTRank())  or  (int(opP) != Hbare.GetParity()) )
+       if ( (int(opJ) != Hbare.GetJRank())  or  (int(opT) != Hbare.GetTRank())  or  ((1-int(opP))/2 != Hbare.GetParity()) )
        {
-         std::cout << "!!!!!!  DANGER!! The header for this 3-body file says JpT = " << opJ << " " << opP << " " << opT << "  and that doesn't match the operator" << std::endl;
+         std::cout << "!!!!!!  DANGER!! The header for this 3-body file says JpT = " << opJ << " " << opP << " " << opT << "  and that doesn't match the operator, which has " << Hbare.GetJRank() << " " << Hbare.GetParity() << " " << Hbare.GetTRank()  << std::endl;
         std::exit(EXIT_FAILURE);
        }
     }
-//    char buff[BUFFSIZE3N];
-//    size_t read_so_far = 0;
-//    while (read_so_far < nread and infile.good())
+  }
+
+
+
+
+  size_t nread = Count_Darmstadt_3body_to_read( Hbare, E1max, E2max, E3max, orbits_remap, nread_list);
+
+
+
+
+  std::vector<float> ThreeBME(nread,0.);
+
+//  #define BUFFSIZE3N 1024*1000
+  if (format3N == "me3j")
+  {
+//    char line[LINESIZE];
+//    infile.getline(line,LINESIZE);  // read the header
+//    if ( Hbare.GetTRank() > 0 ) // It's not a Hamiltonian at all! It's a beta decay operator (probably).
 //    {
-//      infile.read(buff, BUFFSIZE3N);
-//   //.... other stuff...
+//       float opJ,opP,opT,efil,e2fil,e3fil,lmaxfil;
+////       int opJ,opP,opT,efil,e2fil,e3fil,lmaxfil;
+//       infile >> opJ >> opP >> opT >> efil >> e2fil >> e3fil >> lmaxfil; // There's an extra header line with useful information.
+//       E1max = int(efil);
+//       E2max = int(e2fil);
+//       E3max = int(e3fil);
+//       if ( (int(opJ) != Hbare.GetJRank())  or  (int(opT) != Hbare.GetTRank())  or  ((1-int(opP))/2 != Hbare.GetParity()) )
+//       {
+//         std::cout << "!!!!!!  DANGER!! The header for this 3-body file says JpT = " << opJ << " " << opP << " " << opT << "  and that doesn't match the operator, which has " << Hbare.GetJRank() << " " << Hbare.GetParity() << " " << Hbare.GetTRank()  << std::endl;
+//        std::exit(EXIT_FAILURE);
+//       }
 //    }
     for (size_t i=0;i<nread;++i) infile >> ThreeBME[i];
   }
@@ -1437,7 +1474,15 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
   int lmax3 = modelspace->GetLmax3();
   int lmax = modelspace->GetLmax();
   int iso_dim = Hbare.ThreeBody.isospin3BME.ISOSPIN_BLOCK_DIMENSION;
+  // if opT=0,  then we can have (tab Tabc, tde, Tdef) = (0,1,0,1), (0,1,1,1), (1,1,0,1), (1,1,1,1), (1,3,1,3) => 5
+  // if opT=1,  then we can have (tab Tabc, tde, Tdef) = (0,1,0,1), (0,1,1,1), (0,1,1,3), (1,1,0,1), (1,1,1,1), (1,1,1,3), (1,3,1,3), (1,3,1,1), (1,3,1,3) => 9
+  // if opT=2,  then we can have (tab Tabc, tde, Tdef) = (0,1,1,3),  (1,1,1,3), (1,3,1,3), (1,3,1,1), (1,3,1,3) => 5
+  // if opT=3,  then we can have (tab Tabc, tde, Tderf = (1,3,1,3) => 1
+//  if (Hbare.GetTRank()==1) iso_dim=9;
+//  else if (Hbare.GetTRank()==2) iso_dim=5;
+//  else if (Hbare.GetTRank()==3) iso_dim=1;
 
+  std::cout << __func__ << "  begin storing. file limits = " << E1max << " " << E2max << " " << E3max  << std::endl;
 
   int nljmax = orbits_remap.size();
 
@@ -1594,6 +1639,7 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                       or ( a==b and a==c and twoT==3 and oa.j2<3 )
                       or ( d==e and d==f and twoTT==3 and od.j2<3 )) autozero = true;
 
+
                     if(ea<=e1max and eb<=e1max and ec<=e1max and ed<=e1max and ee<=e1max and ef<=e1max
                           and (ea+eb+ec<=e3max) and (ed+ee+ef<=e3max) )
                     {
@@ -1607,8 +1653,8 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                         }
                         else if (autozero)
                         {
-//                            printf(" <--------- AAAHHHH!!!!!! Reading 3body file. <%d %d %d  %d %d |V| %d %d %d  %d %d>_(%d %d) should be zero but its %f.  nread = %lu index_ab = %lu\n",a,b,c,Jab,tab,d,e,f,JJab,ttab,twoJC,twoT,V,nread,index_ab);
                             printf(" <--------- AAAHHHH!!!!!! Reading 3body file. <%d %d %d  %d %d  %d |V| %d %d %d  %d %d  %d>_(%d) should be zero but its %f.  nread = %lu index_ab = %lu\n",a,b,c,Jab,tab,twoT,d,e,f,JJab,ttab,twoTT,twoJC,V,nread,index_ab);
+//                            printf(" <--------- AAAHHHH!!!!!! Reading 3body file. <%d %d %d  %d %d |V| %d %d %d  %d %d>_(%d %d) should be zero but its %f.  nread = %lu index_ab = %lu\n",a,b,c,Jab,tab,d,e,f,JJab,ttab,twoJC,twoT,V,nread,index_ab);
                             goodstate = false;
                         }
                       }

@@ -484,23 +484,38 @@ Operator Operator::DoNormalOrdering2(int sign) const
 //Operator Operator::DoNormalOrdering3()
 Operator Operator::DoNormalOrdering3(int sign) const
 {
-   Operator opNO3 = Operator(*modelspace);
+//   Operator opNO3 = Operator(*modelspace);
+   if (rank_J>0)
+   {
+     std::cout << " Uh oh. Trying to call " << __func__ << "  on an operator with rank_J = " << rank_J << "   you should probably implement that first..." << std::endl;
+     std::exit(EXIT_FAILURE);
+   }
+   Operator opNO3 = Operator(*modelspace, rank_J, rank_T, parity,2);
 //   #pragma omp parallel for
    for ( auto& itmat : opNO3.TwoBody.MatEl )
    {
-      int ch = itmat.first[0]; // assume ch_bra = ch_ket for 3body...
-      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+//      int ch = itmat.first[0]; // assume ch_bra = ch_ket for 3body...
+      int ch_bra = itmat.first[0]; // assume ch_bra = ch_ket for 3body...
+      int ch_ket = itmat.first[1]; // assume ch_bra = ch_ket for 3body...
+//      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
+      TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
       arma::mat& Gamma = (arma::mat&) itmat.second;
-      for (size_t ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
+//      for (size_t ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
+      for (size_t ibra=0; ibra<tbc_bra.GetNumberKets(); ++ibra)
       {
-         Ket & bra = tbc.GetKet(ibra);
+//         Ket & bra = tbc.GetKet(ibra);
+         Ket & bra = tbc_bra.GetKet(ibra);
          int i = bra.p;
          int j = bra.q;
          Orbit & oi = modelspace->GetOrbit(i);
          Orbit & oj = modelspace->GetOrbit(j);
-         for (size_t iket=ibra; iket<tbc.GetNumberKets(); ++iket)
+         size_t iket_min = ch_bra==ch_ket ? ibra  : 0;
+//         for (size_t iket=ibra; iket<tbc.GetNumberKets(); ++iket)
+         for (size_t iket=iket_min; iket<tbc_ket.GetNumberKets(); ++iket)
          {
-            Ket & ket = tbc.GetKet(iket);
+//            Ket & ket = tbc.GetKet(iket);
+            Ket & ket = tbc_ket.GetKet(iket);
             int k = ket.p;
             int l = ket.q;
             Orbit & ok = modelspace->GetOrbit(k);
@@ -510,14 +525,18 @@ Operator Operator::DoNormalOrdering3(int sign) const
                Orbit & oa = modelspace->GetOrbit(a);
                if ( (2*(oi.n+oj.n+oa.n)+oi.l+oj.l+oa.l)>E3max) continue;
                if ( (2*(ok.n+ol.n+oa.n)+ok.l+ol.l+oa.l)>E3max) continue;
-               int kmin2 = abs(2*tbc.J-oa.j2);
-               int kmax2 = 2*tbc.J+oa.j2;
+//               int kmin2 = abs(2*tbc.J-oa.j2);
+//               int kmax2 = 2*tbc.J+oa.j2;
+               int kmin2 = abs(2*tbc_bra.J-oa.j2);
+               int kmax2 = 2*tbc_bra.J+oa.j2;
                for (int K2=kmin2; K2<=kmax2; K2+=2)
                {
-                  Gamma(ibra,iket) += (K2+1) * sign*oa.occ * ThreeBody.GetME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a); // This is unnormalized, but it should be normalized!!!!
+//                  Gamma(ibra,iket) += (K2+1) * sign*oa.occ * ThreeBody.GetME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a); // This is unnormalized.
+                  Gamma(ibra,iket) += (K2+1) * sign*oa.occ * ThreeBody.GetME_pn(tbc_bra.J,tbc_ket.J,K2,i,j,a,k,l,a); // This is unnormalized.
                }
             }
-            Gamma(ibra,iket) /= (2*tbc.J+1)* sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
+//            Gamma(ibra,iket) /= (2*tbc.J+1)* sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
+            Gamma(ibra,iket) /= (2*tbc_bra.J+1)* sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
          }
       }
    }
