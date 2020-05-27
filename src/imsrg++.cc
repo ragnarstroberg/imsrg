@@ -593,16 +593,22 @@ int main(int argc, char** argv)
     t = qn[1];
     p = qn[2];
     r = qn[3];
-//    std::cout << "Parsed tag. opname = " << opname << "  qnumbers = " << qnumbers << "  " << j << " " << t << " " << p << " " << r << "   file = " << fname << std::endl;
+//    std::cout << "Parsed tag. opname = " << opname << "  qnumbers = " << qnumbers << "  " << j << " " << t << " " << p << " " << r << "   file2 = " << f2name
+//              << "    file3 = " << f3name << std::endl;
     Operator op(modelspace,j,t,p,r);
-    std::cout << "Reading operator " << opname << "  in " << input_op_fmt << "  format from files " << f2name << "  ,  " << f3name << std::endl;
+//    std::cout << "Reading operator " << opname << "  in " << input_op_fmt << "  format from files " << f2name << "  ,  " << f3name << std::endl;
+//    std::cout << "Operator has particle rank " << op.GetParticleRank() << std::endl;
     if ( input_op_fmt == "navratil" )
     {
       rw.Read2bCurrent_Navratil( f2name, op );
     }
     else if ( input_op_fmt == "miyagi" )
     {
-      if (f2name != "")           op = rw.ReadOperator2b_Miyagi( f2name, modelspace );
+      if (f2name != "")
+      {   
+          Operator optmp = rw.ReadOperator2b_Miyagi( f2name, modelspace );
+          op.TwoBody = optmp.TwoBody;
+      }
       if ( r>2 and f3name != "")  rw.Read_Darmstadt_3body( f3name, op,  file3e1max,file3e2max,file3e3max);
     }
     ops.push_back( op );

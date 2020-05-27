@@ -18,7 +18,9 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms)
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int rJ, int rT, int p)
 : modelspace(ms), E3max(ms->E3max), emax(ms->Emax), herm(1), total_dimension(0), rank_J(rJ), rank_T(rT), parity(p)
 {
-  ISOSPIN_BLOCK_DIMENSION = rT>0 ?  9  :  5;
+  ISOSPIN_BLOCK_DIMENSION = 5;
+  if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
+  else if (rank_T==3) ISOSPIN_BLOCK_DIMENSION = 1;
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
@@ -28,7 +30,9 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max, int rJ, int rT, int p)
 : modelspace(ms),E3max(e3max), emax(ms->Emax), herm(1), total_dimension(0), rank_J(rJ), rank_T(rT), parity(p)
 {
-  ISOSPIN_BLOCK_DIMENSION = rT>0 ?  9  :  5;
+  ISOSPIN_BLOCK_DIMENSION = 5;
+  if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
+  else if (rank_T==3) ISOSPIN_BLOCK_DIMENSION = 1;
 }
 
 ThreeBodyME::ThreeBodyME(const ThreeBodyME& Tbme)
@@ -127,7 +131,9 @@ void ThreeBodyME::Allocate()
   int norbits = modelspace->GetNumberOrbits();
   std::cout << "Begin AllocateThreeBody() with E3max = " << E3max << " norbits = " << norbits << std::endl;
   int lmax = 50000; // maybe do something with this later...
-  ISOSPIN_BLOCK_DIMENSION = (rank_T==0) ? 5  : 9;  // 3N state can have t12,2T123 = {(0,1),(1,1),(1,3)}. If rankT>0 3x3=9 combos. If 2T conserved, only 5 combos. 
+  ISOSPIN_BLOCK_DIMENSION = 5;
+  if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
+  else if (rank_T==3) ISOSPIN_BLOCK_DIMENSION = 1;
 
 
   for (int a=0; a<norbits; a+=2)
@@ -184,7 +190,7 @@ void ThreeBodyME::Allocate()
                 int twoJ_max = std::min( 2*Jab+oc.j2, 2*Jde+of.j2);
                 for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
                 {
-                  total_dimension += ISOSPIN_BLOCK_DIMENSION; // 5 different isospin combinations
+                  total_dimension += ISOSPIN_BLOCK_DIMENSION; // how many different isospin combinations
                 } //J2
               } //Jde
              } //Jab
@@ -230,7 +236,8 @@ ThreeBodyME::ME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int twoJ, int
    double tze = modelspace->GetOrbit(e).tz2*0.5;
    double tzf = modelspace->GetOrbit(f).tz2*0.5;
 //   if ( (tza+tzb+tzc) != (tzd+tze+tzf) ) return 0;
-   if ( std::abs((tza+tzb+tzc) - (tzd+tze+tzf)) > rank_T ) return 0;
+   double dTz =  (tza+tzb+tzc) - (tzd+tze+tzf);
+   if ( std::abs(dTz) > rank_T ) return 0;
 
 //   std::cout << "  Jab_in Jde_in J2 a b c d e f: " << Jab_in << " " << Jde_in << " " << J2 << " " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
 //   std::cout << "  tz vals: " << tza << " " << tzb << " " << tzc << " " << tzd << " " << tze << " " << tzf << std::endl;
@@ -256,7 +263,12 @@ ThreeBodyME::ME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int twoJ, int
              double CG4 = AngMom::CG(tde,tzd+tze, 0.5,tzf, twoTdef/2., tzd+tze+tzf);
              if (CG3*CG4==0) continue;
 //             Vpn += CG1*CG2*CG3*CG4*GetME(Jab_in,Jde_in,J2,tab,tde,T,a,b,c,d,e,f);
-             Vpn += CG1*CG2*CG3*CG4*GetME(Jab_in,Jde_in,twoJ,tab,tde,twoTabc,twoTdef,a,b,c,d,e,f);
+             double Viso = GetME(Jab_in,Jde_in,twoJ,tab,tde,twoTabc,twoTdef,a,b,c,d,e,f);
+             if (rank_T > 0 ) // the matrix elements are reduced in T, so apply Wigner-Eckart
+             {
+               Viso *= AngMom::CG(0.5*twoTdef,tzd+tze+tzf,  rank_T,dTz,  0.5*twoTabc,tza+tzb+tzc  ) / sqrt( twoTabc+1);
+             }
+             Vpn += CG1*CG2*CG3*CG4* Viso;
            }
          }
       }
