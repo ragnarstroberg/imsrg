@@ -455,6 +455,8 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("Tcoeff",AngMom::Tcoeff);
    m.def("SetUseGooseTank",Commutator::SetUseGooseTank);
    m.def("SetUseIMSRG3",Commutator::SetUseIMSRG3);
-
+   m.def("FillFactorialLists", AngMom::FillFactorialLists);
+   m.def("factorial", AngMom::factorial);
+   m.def("double_fact", AngMom::double_fact);
 
 }

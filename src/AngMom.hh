@@ -21,6 +21,7 @@
 #define AngMom_hh 1
 
 #include <cmath>
+#include <vector>
 
 #define MOSH_BETA_1 M_PI_4   // Moshinksy beta parameter for mass ratio 1:1
 #define MOSH_BETA_2 atan(sqrt(2)) // Moshinsky beta parameter for  mass ratio m1/m2 = 2
@@ -31,6 +32,13 @@
 //class AngMom
 namespace AngMom
 {
+
+   static std::vector<double> FactorialList;
+   static std::vector<double> DoubleFactorialList;
+   void FillFactorialLists(int nmax);
+   double factorial(int x);
+   double double_fact(int x);
+
    int phase(int x);
    double Tri(double j1, double j2, double j3);
    bool Triangle(double j1, double j2, double j3);

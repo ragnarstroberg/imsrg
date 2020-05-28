@@ -1,7 +1,7 @@
 
 #include "AngMom.hh"
 #include <cmath>
-#include <gsl/gsl_sf_gamma.h>
+//#include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_sf_coupling.h>
 #include <iostream>
 
@@ -16,11 +16,61 @@ namespace AngMom
     return x%2==0 ? 1 : -1;
  }
 
- 
+  // Precompute the factorials we'll likely need
+  void FillFactorialLists(int imax)
+  {
+     FactorialList.resize(imax+1);
+     DoubleFactorialList.resize(imax+1);
+     FactorialList[0] = 1.0;
+     FactorialList[1] = 1.0;
+     DoubleFactorialList[0] = 1.0;
+     DoubleFactorialList[1] = 1.0;
+     for (int i=2; i<=imax; i++)
+     {
+       FactorialList[i] = i*FactorialList[i-1];
+       DoubleFactorialList[i] = i*DoubleFactorialList[i-2];
+     }  
+  }
+
+  // Factorial   x! = x*[(x-1)!]  ,   0! = 1 ,   e.g.  6! = 6*5*4*3*2*1 = 720
+  // Note: we get overflow around x=171.
+  double  factorial(int x)
+  {
+    int xmax = FactorialList.size()-1;
+    if (x<=xmax) return FactorialList[x];
+    // otherwise, compute it directly
+    double f = xmax>0 ? FactorialList[xmax] : 1.0;
+    int imin = xmax>0 ? xmax+1 : 1;
+    for ( int i=imin;i<=x;i++)
+    {
+      f *= i;
+    }
+    return f;
+  }
+
+  // Double factorial  x!! = x*[(x-2)!!],  0!! = 1,  1!!=1,   e.g.  6!! = 6*4*2 = 48.
+  double  double_fact(int x)
+  {
+    int xmax = DoubleFactorialList.size()-1;
+    if (x<=xmax) return DoubleFactorialList[x];
+    // otherwise, compute it directly
+    int xlast = xmax - (x+xmax)%2;
+    double f = xlast>0 ? DoubleFactorialList[xlast] : 1.0 ;
+    int imin = xlast>0 ? xlast+2 : 2-(x%2);
+    for ( int i=imin;i<=x;i+=2)
+    {
+      f *= i;
+    }
+    return f;
+  }
+
  double Tri(double j1, double j2, double j3)
  {
-    return gsl_sf_fact(j1+j2-j3) * gsl_sf_fact(j1-j2+j3) * gsl_sf_fact(-j1+j2+j3)/gsl_sf_fact(j1+j2+j3+1);
+//    return gsl_sf_fact(j1+j2-j3) * gsl_sf_fact(j1-j2+j3) * gsl_sf_fact(-j1+j2+j3)/gsl_sf_fact(j1+j2+j3+1);
+    return factorial(j1+j2-j3) * factorial(j1-j2+j3) * factorial(-j1+j2+j3)/factorial(j1+j2+j3+1);
  }
+
+ // Check the triangle condition, i.e. can j1 and j2 be coupled to j3?
  bool Triangle(double j1, double j2, double j3)
  {
    if (round(2*(j1+j2))<round(2*j3)) return false;
@@ -109,11 +159,11 @@ double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int
    double sB = sin(B);
 
    double mosh1 = phase((l1+l2+L+l)/2) / pow(2.,(l1+l2+L+l)/4.0);
-   mosh1 *= sqrt( gsl_sf_fact(n1) * gsl_sf_fact(n2) * gsl_sf_fact(N) * gsl_sf_fact(n) );
-   mosh1 *= sqrt( gsl_sf_doublefact(2*(n1+l1)+1) );
-   mosh1 *= sqrt( gsl_sf_doublefact(2*(n2+l2)+1) );
-   mosh1 *= sqrt( gsl_sf_doublefact(2*(N+ L)+1)  );
-   mosh1 *= sqrt( gsl_sf_doublefact(2*(n+ l)+1)  );
+   mosh1 *= sqrt( factorial(n1) * factorial(n2) * factorial(N) * factorial(n) );
+   mosh1 *= sqrt( double_fact(2*(n1+l1)+1) );
+   mosh1 *= sqrt( double_fact(2*(n2+l2)+1) );
+   mosh1 *= sqrt( double_fact(2*(N+ L)+1)  );
+   mosh1 *= sqrt( double_fact(2*(n+ l)+1)  );
 
    double mosh2 = 0;
    for (int la=0;la<=std::min(f1,F);++la)
@@ -148,10 +198,10 @@ double Moshinsky(int N, int L, int n, int l, int n1, int l1, int n2, int l2, int
           if (b<0 or c<0 or d<0) continue;
 
            mosh3 += pow(sB,2*a+la+2*d+ld) * pow(cB,2*b+lb+2*c+lc)
-                  / ( gsl_sf_fact(a) * gsl_sf_doublefact(2.*(a+la)+1)
-                    * gsl_sf_fact(b) * gsl_sf_doublefact(2.*(b+lb)+1)
-                    * gsl_sf_fact(c) * gsl_sf_doublefact(2.*(c+lc)+1)
-                    * gsl_sf_fact(d) * gsl_sf_doublefact(2.*(d+ld)+1) );
+                  / ( factorial(a) * double_fact(2.*(a+la)+1)
+                    * factorial(b) * double_fact(2.*(b+lb)+1)
+                    * factorial(c) * double_fact(2.*(c+lc)+1)
+                    * factorial(d) * double_fact(2.*(d+ld)+1) );
 
        }
        mosh2 += mosh3 * mosh3_pre;
@@ -175,11 +225,11 @@ double TalmiB(int n, int l, int nn, int ll, int p)
   int beta  = std::min(n, p-(l+ll)/2);
   for (int k=alpha; k<=beta; k++)
   {
-    B  +=   gsl_sf_fact(l+k)*gsl_sf_fact(p-(l-ll)/2-k) /
-            ( gsl_sf_fact(k)*gsl_sf_fact(2*l+2*k+1)*gsl_sf_fact(n-k)*gsl_sf_fact(2*p-l+ll-2*k+1)*gsl_sf_fact(nn-p+(l+ll)/2+k)*gsl_sf_fact(p-(l+ll)/2-k)  ); 
+    B  +=   factorial(l+k)*factorial(p-(l-ll)/2-k) /
+            ( factorial(k)*factorial(2*l+2*k+1)*factorial(n-k)*factorial(2*p-l+ll-2*k+1)*factorial(nn-p+(l+ll)/2+k)*factorial(p-(l+ll)/2-k)  ); 
   }
-  B *= phase(p-(l+ll)/2) * gsl_sf_fact(2*p+1) / ( pow(2,n+nn)*gsl_sf_fact(p) )
-         * sqrt(gsl_sf_fact(n)*gsl_sf_fact(nn)*gsl_sf_fact(2*n+2*l+1)*gsl_sf_fact(2*nn+2*ll+1) / (gsl_sf_fact(n+l)*gsl_sf_fact(nn+ll))  );
+  B *= phase(p-(l+ll)/2) * factorial(2*p+1) / ( pow(2,n+nn)*factorial(p) )
+         * sqrt(factorial(n)*factorial(nn)*factorial(2*n+2*l+1)*factorial(2*nn+2*ll+1) / (factorial(n+l)*factorial(nn+ll))  );
 
   return B;
 }
