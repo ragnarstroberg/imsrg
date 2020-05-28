@@ -401,6 +401,7 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
       	std::swap(c,f);
       	std::swap(Jab_in,Jde_in);
       	std::swap(tab_in,tde_in);
+        std::swap(twoTabc,twoTdef);
       	std::swap(abc_recoupling_case, def_recoupling_case);
         herm_flip *= herm;
    }
