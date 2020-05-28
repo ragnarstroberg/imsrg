@@ -1392,6 +1392,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
     infile.getline(line,LINESIZE);  // read the header
     if ( Hbare.GetTRank() > 0 ) // It's not a Hamiltonian at all! It's a beta decay operator (probably).
     {
+ 
        float opJ,opP,opT,efil,e2fil,e3fil,lmaxfil;
 //       int opJ,opP,opT,efil,e2fil,e3fil,lmaxfil;
        infile >> opJ >> opP >> opT >> efil >> e2fil >> e3fil >> lmaxfil; // There's an extra header line with useful information.
@@ -1403,6 +1404,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
          std::cout << "!!!!!!  DANGER!! The header for this 3-body file says JpT = " << opJ << " " << opP << " " << opT << "  and that doesn't match the operator, which has " << Hbare.GetJRank() << " " << Hbare.GetParity() << " " << Hbare.GetTRank()  << std::endl;
         std::exit(EXIT_FAILURE);
        }
+
     }
   }
 
@@ -1419,22 +1421,7 @@ void ReadWrite::Read_Darmstadt_3body_from_stream( T& infile, Operator& Hbare, in
 //  #define BUFFSIZE3N 1024*1000
   if (format3N == "me3j")
   {
-//    char line[LINESIZE];
-//    infile.getline(line,LINESIZE);  // read the header
-//    if ( Hbare.GetTRank() > 0 ) // It's not a Hamiltonian at all! It's a beta decay operator (probably).
-//    {
-//       float opJ,opP,opT,efil,e2fil,e3fil,lmaxfil;
-////       int opJ,opP,opT,efil,e2fil,e3fil,lmaxfil;
-//       infile >> opJ >> opP >> opT >> efil >> e2fil >> e3fil >> lmaxfil; // There's an extra header line with useful information.
-//       E1max = int(efil);
-//       E2max = int(e2fil);
-//       E3max = int(e3fil);
-//       if ( (int(opJ) != Hbare.GetJRank())  or  (int(opT) != Hbare.GetTRank())  or  ((1-int(opP))/2 != Hbare.GetParity()) )
-//       {
-//         std::cout << "!!!!!!  DANGER!! The header for this 3-body file says JpT = " << opJ << " " << opP << " " << opT << "  and that doesn't match the operator, which has " << Hbare.GetJRank() << " " << Hbare.GetParity() << " " << Hbare.GetTRank()  << std::endl;
-//        std::exit(EXIT_FAILURE);
-//       }
-//    }
+
     for (size_t i=0;i<nread;++i) infile >> ThreeBME[i];
   }
   else if (format3N == "navratil" or format3N == "Navratil")
@@ -1649,6 +1636,11 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                         if (not autozero )
                         {
 //                            Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
+//                            if ( Hbare.GetTRank()>0)
+//                            {
+//                            std::cout << "Setting  " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << twoTT
+//                                      << "   " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "    ->  " << std::scientific << V << std::endl;
+//                            }
                             Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,twoTT,a,b,c,d,e,f, V);
                         }
                         else if (autozero)

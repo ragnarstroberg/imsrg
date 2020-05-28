@@ -222,8 +222,6 @@ void ThreeBodyME::Allocate()
 ThreeBodyME::ME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f) const
 {
 
-//   std::cout << "ENTER " << __func__ << "  " << Jab_in << " " << Jde_in << " " << J2 << " "
-//             << a  << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
 //  IMSRGProfiler::counter[__func__] ++;
    if (a==b and a==c and modelspace->GetOrbit(a).j2<3) return 0;
    if (d==e and d==f and modelspace->GetOrbit(d).j2<3) return 0;
@@ -239,8 +237,6 @@ ThreeBodyME::ME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int twoJ, int
    double dTz =  (tza+tzb+tzc) - (tzd+tze+tzf);
    if ( std::abs(dTz) > rank_T ) return 0;
 
-//   std::cout << "  Jab_in Jde_in J2 a b c d e f: " << Jab_in << " " << Jde_in << " " << J2 << " " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
-//   std::cout << "  tz vals: " << tza << " " << tzb << " " << tzc << " " << tzd << " " << tze << " " << tzf << std::endl;
 
    double Vpn=0;
    int twoTabc_min = std::abs(tza+tzb+tzc)*2;
@@ -252,7 +248,6 @@ ThreeBodyME::ME_type ThreeBodyME::GetME_pn(int Jab_in, int Jde_in, int twoJ, int
       {
          double CG2 = AngMom::CG(0.5,tzd, 0.5,tze, tde, tzd+tze);
          if (CG1*CG2==0) continue;
-//         for (int T=Tmin; T<=3; T+=2)
          for (int twoTabc=twoTabc_min; twoTabc<=3; twoTabc+=2)
          {
            double CG3 = AngMom::CG(tab,tza+tzb, 0.5,tzc, twoTabc/2., tza+tzb+tzc);
@@ -295,10 +290,6 @@ ThreeBodyME::ME_type ThreeBodyME::GetME(int Jab_in, int Jde_in, int twoJ, int ta
 //*******************************************************************
 ThreeBodyME::ME_type ThreeBodyME::GetME(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a_in, int b_in, int c_in, int d_in, int e_in, int f_in) const
 {
-//   std::cout << "     ENTER " << __func__ << std::endl;
-//   std::cout << "       Jab_in Jde_in J2 tab_in tde_in T2 a b c d e f: " << Jab_in << " " << Jde_in << " " << J2
-//             << "  " << tab_in << " " << tde_in << " " << T2
-//             << "  " << a_in << " " << b_in << " " << c_in << " " << d_in << " " << e_in << " " << f_in << std::endl;
    if ((a_in/2==b_in/2) and (Jab_in+tab_in)%2==0) return 0; // Make sure this is ok
    if ((d_in/2==e_in/2) and (Jde_in+tde_in)%2==0) return 0; // Make sure this is ok
    auto elements =  AccessME(Jab_in,Jde_in,twoJ,tab_in,tde_in,twoTabc,twoTdef,a_in,b_in,c_in,d_in,e_in,f_in);
@@ -461,35 +452,20 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
        {
          for (int tab=tab_min; tab<=tab_max; ++tab)
          {
-//           if (a==b and (tab+Jab)%2==0 ) continue; // added recently. test.  this breaks things
            double Ct_abc = RecouplingCoefficient(abc_recoupling_case,0.5,0.5,0.5,tab_in,tab,twoTabc);
            for (int tde=tde_min; tde<=tde_max; ++tde)
            {
-//             if (d==e and (tde+Jde)%2==0 ) continue; // added recently. test.  this breaks things
              double Ct_def = RecouplingCoefficient(def_recoupling_case,0.5,0.5,0.5,tde_in,tde,twoTdef);
              if (std::abs(Ct_abc*Ct_def)<1e-8) continue;
              if (herm==-1 and a==d and b==e and c==f and Jab==Jde and tab==tde) continue; // TODO: check this is ok
 
-//             int Tindex = 2*tab + tde + (T2-1)/2;
              int Tindex = 2*tab + tde + (twoTabc)/2;    // (0,1) (1,1) (1,3) => 0,1,2   twoTabc/2 +2*tab or   tab + (twoTabc)/2
              if ( rank_T>0 ) Tindex = ( 2*tab + twoTabc/2) + 3*( 2*tde + twoTdef/2);
-
-//             if ( a==4 and b==4 and c==2 and d==2 and e==0 and f==0 and J2==3 and T2==3)
-////             if ( a_in==4 and b_in==4 and c_in==2 and d_in==2 and e_in==0 and f_in==0 and J2==3 and T2==3)
-//             {
-//             std::cout << "            " << __func__ << " adding Jab,Jde,J2 = " << Jab << " " << Jde << " " << J2
-//                       << "  tab,tde,T2 " << tab << " " << tde << " " << T2 << "  recoupling case " << abc_recoupling_case << " " << def_recoupling_case
-//                        << "  with coeffs "
-//                       << Cj_abc << " " << Cj_def << " " << Ct_abc << " " << Ct_def << " , herm " << herm_flip << std::endl;
-//              std::cout << "   the MatEl is " << MatEl.at( indx+ J_index + Tindex) << std::endl;
-////  std::cout << "      indx ,J_index, Tindex  " << indx << " " << J_index << " " << Tindex  << "-> " << indx + J_index + Tindex << std::endl;
-//             }
 
              elements.emplace_back( std::make_pair(indx + J_index + Tindex, Cj_abc * Cj_def * Ct_abc * Ct_def * herm_flip )) ;
            }
          }
        }
-//       J_index += (J2_max-J2+2)/2*5;
        J_index += (twoJ_max-twoJ+2)/2 * ISOSPIN_BLOCK_DIMENSION;
      }
    }
