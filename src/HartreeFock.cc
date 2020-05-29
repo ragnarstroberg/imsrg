@@ -1545,7 +1545,7 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
     }
   }
 
-  IMSRGProfiler::timer["HartreeFock::GetTransformed3B"] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   return hf3bme;
 
 }
