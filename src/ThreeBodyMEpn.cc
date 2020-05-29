@@ -453,7 +453,8 @@ ThreeBodyMEpn::ME_type ThreeBodyMEpn::GetME_pn_PN(int Jab, int Jde, int twoJ, in
   size_t ch_bra = GetKetIndex_withRecoupling( Jab, twoJ, a,b,c, ibra, recouple_bra );
   size_t ch_ket = GetKetIndex_withRecoupling( Jde, twoJ, d,e,f, iket, recouple_ket );
 //  std::cout << "    ch_bra ch_ket " << ch_bra << " " << ch_ket << std::endl;
-  if ( ch_bra != ch_ket) return 0;
+//  if ( ch_bra != ch_ket) return 0;
+  if ( rank_J==0 and rank_T==0 and parity==0 and  (ch_bra != ch_ket) ) return 0;
   //TODO: Should we also throw an exception if twoJ is even?
 
   double me_out = 0;

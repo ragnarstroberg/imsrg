@@ -1636,12 +1636,15 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                         if (not autozero )
                         {
 //                            Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
-//                            if ( Hbare.GetTRank()>0)
-//                            {
-//                            std::cout << "Setting  " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << twoTT
-//                                      << "   " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "    ->  " << std::scientific << V << std::endl;
-//                            }
                             Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,twoTT,a,b,c,d,e,f, V);
+//                            if ( Hbare.GetTRank()>0 and a==10 and b==10 and Jab==0 and JJab==0 and twoJC==3)
+//                            {
+//                             double vread = Hbare.ThreeBody.GetME_pn(0,0,3,10,10,3,11,11,3);
+//                             double viso = Hbare.ThreeBody.GetME(0,0,1,10,10,3,11,11,3);
+//                            std::cout << "Setting  " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << twoTT
+//                                      << "   " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "    ->  " << std::scientific << V
+//                                      << "   " << vread << std::endl;
+//                            }
                         }
                         else if (autozero)
                         {
