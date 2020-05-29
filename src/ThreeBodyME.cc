@@ -459,8 +459,25 @@ std::vector<std::pair<size_t,double>> ThreeBodyME::AccessME(int Jab_in, int Jde_
              if (std::abs(Ct_abc*Ct_def)<1e-8) continue;
              if (herm==-1 and a==d and b==e and c==f and Jab==Jde and tab==tde) continue; // TODO: check this is ok
 
+             // Index mapping for the various isospin cases
+             // rank_T=0, 2*tab+tde+twoTabc/2:                 (0,1;0,1)=>0  (0,1;1,1)=>1  (1,1;0,1)=>2 (1,1;1,1)=>3  (1,3;1,3)=>4
+             //
+             // rank_T=1, tab+twoTabc/2 + 3(tde+twoTdef/2):    (0,1;0,1)=>0 (1,1;0,1)=>1 (1,3;0,1)=>2
+             //                                                (0,1;1,1)=>3 (1,1;1,1)=>4 (1,3;1,1)=>5
+             //                                                (0,1;1,3)=>6 (1,1;1,3)=>7 (1,3;1,3)=>8
+             //
+             // rank_T=2, (tab-tde) + (twoTabc-twoTdef)/2 + 2: (0,1;1,3)=>0  (1,1;1,3)=>1  (1,3;1,3)=>2  (1,3;1,1)=>3  (1,3,0,1)=>4
+             //
              int Tindex = 2*tab + tde + (twoTabc)/2;    // (0,1) (1,1) (1,3) => 0,1,2   twoTabc/2 +2*tab or   tab + (twoTabc)/2
-             if ( rank_T>0 ) Tindex = ( 2*tab + twoTabc/2) + 3*( 2*tde + twoTdef/2);
+//             if ( rank_T==1 ) Tindex = ( 2*tab + twoTabc/2) + 3*( 2*tde + twoTdef/2);
+             if ( rank_T==1 ) Tindex = ( tab + twoTabc/2) + 3*( tde + twoTdef/2);
+//             else if ( rank_T==2 ) Tindex = std::abs( tab+tde + twoTabc-twoTdef);
+             else if ( rank_T==2 ) Tindex = (tab-tde) + (twoTabc-twoTdef)/2 + 2;
+             else if ( rank_T==3 ) Tindex = 0;
+
+
+              if (indx+J_index+Tindex > MatEl.size()) std::cout << "ThreeBodyME::AccessME() " << __LINE__ <<  " --  AAAAHHH indx = " << indx  << " + " << J_index << " + " << Tindex << " = " << indx+J_index+Tindex << "  but MatEl.size() = " << MatEl.size() << "    t values: "
+                << tab << " " << tde << " " << twoTabc << " " << twoTdef << std::endl;
 
              elements.emplace_back( std::make_pair(indx + J_index + Tindex, Cj_abc * Cj_def * Ct_abc * Ct_def * herm_flip )) ;
            }

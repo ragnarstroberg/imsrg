@@ -115,6 +115,7 @@ endif
 ifeq ($(THEHOST),oak)
   NEWLIBS := $(filter-out -lopenblas -lblas,$(LIBS))
   LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+  LIBS +=  -lmkl_avx2  -lmkl_def
 # ifneq ($(PYTHON),off)
 #  ALL += pyIMSRG.so
 #  endif
