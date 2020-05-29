@@ -1525,9 +1525,6 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
 
 
 
-//   if (this_is_the_one) std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   THIS ONE   " << ch_bra << " " << ch_ket << " !!!!!!!!!!!!!!!!!!!!!!!!!!! " << std::endl;
-//   std::cout << "nbras_kept, nkets_kept = " << nbras_kept << " " << nkets_kept << std::endl;
-
    arma::mat Dbra(nbras_kept, nbras_kept, arma::fill::zeros );
    arma::mat Dket(nkets_kept, nkets_kept, arma::fill::zeros );
 
@@ -1535,34 +1532,59 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
 
 
 //    for ( size_t ibra : bras_kept )
-    for ( size_t indxHO=0; indxHO<nbras_kept; indxHO++ )
+    for ( size_t indxHF=0; indxHF<nbras_kept; indxHF++ )
     {
-      size_t ibra_HO = bras_kept[indxHO];
-      Ket3& bra_HO = Tbc_bra.GetKet(ibra_HO);
-      size_t iHO = bra_HO.p;
-      size_t jHO = bra_HO.q;
-      size_t kHO = bra_HO.r;
-//      Orbit& oiHO = modelspace->GetOrbit(iHO);
-//      Orbit& ojHO = modelspace->GetOrbit(jHO);
-//      Orbit& okHO = modelspace->GetOrbit(kHO);
-//      auto obc_i = modelspace->OneBodyChannels.at({oiHO.l, oiHO.j2, oiHO.tz2});
-//      auto obc_j = modelspace->OneBodyChannels.at({ojHO.l, ojHO.j2, ojHO.tz2});
-//      auto obc_k = modelspace->OneBodyChannels.at({okHO.l, okHO.j2, okHO.tz2});
-      int JijHO = bra_HO.Jpq;
-      
-      for ( size_t indxHF=0; indxHF<nbras_kept; indxHF++ )
-      {
-         size_t ibra_HF = bras_kept[indxHF];
-         Ket3& bra_HF = Tbc_bra.GetKet(ibra_HF);
-         size_t iHF = bra_HF.p;
-         size_t jHF = bra_HF.q;
-         size_t kHF = bra_HF.r;
-         int JijHF = bra_HF.Jpq;
-         if (JijHF != JijHO) continue;
-//         if ( obc_i.find(iHF)== obc_i.end() ) continue;
-//         if ( obc_j.find(iHF)== obc_j.end() ) continue;
-//         if ( obc_k.find(iHF)== obc_k.end() ) continue;
-         Dbra( indxHF, indxHO ) = C(iHO,iHF) * C(jHO,jHF) * C(kHO,kHF);
+       size_t ibra_HF = bras_kept[indxHF];
+       Ket3& bra_HF = Tbc_bra.GetKet(ibra_HF);
+       size_t iHF = bra_HF.p;
+       size_t jHF = bra_HF.q;
+       size_t kHF = bra_HF.r;
+       int JijHF = bra_HF.Jpq;
+       for ( size_t indxHO=0; indxHO<nbras_kept; indxHO++ )
+       {
+         size_t ibra_HO = bras_kept[indxHO];
+         Ket3& bra_HO = Tbc_bra.GetKet(ibra_HO);
+         size_t iHO = bra_HO.p;
+         size_t jHO = bra_HO.q;
+         size_t kHO = bra_HO.r;
+         Orbit& oiHO = modelspace->GetOrbit(iHO);
+         Orbit& ojHO = modelspace->GetOrbit(jHO);
+         Orbit& okHO = modelspace->GetOrbit(kHO);
+         double ji = oiHO.j2 *0.5;
+         double jj = ojHO.j2 *0.5;
+         double jk = okHO.j2 *0.5;
+         int JijHO = bra_HO.Jpq;
+         double dbra = 0;
+         // The straightforward non-permutation
+         dbra += OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.ABC,ji,jj,jk, JijHF, JijHO, twoJ) *   C(iHO,iHF) * C(jHO,jHF) * C(kHO,kHF) ;
+         // i <-> j permutation. Extra minus sign because fermi statistics
+         if ( (iHO !=jHO) and  std::abs(C(jHO,iHF)*C(iHO,jHF)*C(kHO,kHF))>1e-8 )
+         {
+             dbra -= OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.BAC, ji,jj,jk, JijHF, JijHO, twoJ) *   C(jHO,iHF) * C(iHO,jHF) * C(kHO,kHF) ;
+         }
+         // i <-> k permutation
+         if ( (iHO !=kHO) and  std::abs( C(kHO,iHF)*C(jHO,jHF)*C(iHO,kHF) )>1e-8 )
+         {
+             dbra -= OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.CBA, ji,jj,jk, JijHF, JijHO, twoJ) *   C(kHO,iHF) * C(jHO,jHF) * C(iHO,kHF) ;
+         }
+         // j <-> k permutation
+         if ( (jHO !=kHO) and std::abs(C(iHO,iHF)*C(kHO,jHF)*C(jHO,kHF))>1e-8 )
+         {
+             dbra -= OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.ACB, ji,jj,jk, JijHF, JijHO, twoJ) *   C(iHO,iHF) * C(kHO,jHF) * C(jHO,kHF) ;
+         }
+
+         // Now the double permutations
+         if (  (iHO !=jHO) and (iHO != kHO) and (jHO!=kHO)  and std::abs( C(jHO,iHF) * C(kHO,jHF) * C(iHO,kHF))>1e-8 )
+         {
+                dbra += OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.BCA, ji,jj,jk, JijHF, JijHO, twoJ) *   C(jHO,iHF) * C(kHO,jHF) * C(iHO,kHF) ;
+         }
+
+         if (  (iHO !=jHO) and (iHO != kHO) and (jHO!=kHO)   and std::abs( C(kHO,iHF) * C(iHO,jHF) * C(jHO,kHF) )>1e-8 )
+         {
+                dbra += OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.CAB, ji,jj,jk, JijHF, JijHO, twoJ) *   C(kHO,iHF) * C(iHO,jHF) * C(jHO,kHF) ;
+         }
+
+         Dbra( indxHF, indxHO ) = dbra ;
       }
     }
 
@@ -1574,6 +1596,13 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
       size_t jHO = ket_HO.q;
       size_t kHO = ket_HO.r;
       int JijHO = ket_HO.Jpq;
+      Orbit& oiHO = modelspace->GetOrbit(iHO);
+      Orbit& ojHO = modelspace->GetOrbit(jHO);
+      Orbit& okHO = modelspace->GetOrbit(kHO);
+      double ji = oiHO.j2 *0.5;
+      double jj = ojHO.j2 *0.5;
+      double jk = okHO.j2 *0.5;
+
       
       for ( size_t indxHF=0; indxHF<nkets_kept; indxHF++ )
       {
@@ -1583,8 +1612,39 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
          size_t jHF = ket_HF.q;
          size_t kHF = ket_HF.r;
          int JijHF = ket_HF.Jpq;
-         if (JijHF != JijHO) continue;
-         Dket( indxHO, indxHF ) = C(iHO,iHF) * C(jHO,jHF) * C(kHO,kHF);
+
+         double dket = 0;
+         // The straightforward non-permutation
+         dket += OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.ABC,ji,jj,jk, JijHF, JijHO, twoJ) *   C(iHO,iHF) * C(jHO,jHF) * C(kHO,kHF) ;
+         // i <-> j permutation. Extra minus sign because fermi statistics
+         if ( (iHO !=jHO) and  std::abs(C(jHO,iHF)*C(iHO,jHF)*C(kHO,kHF))>1e-8 )
+         {
+             dket -= OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.BAC, ji,jj,jk, JijHF, JijHO, twoJ) *   C(jHO,iHF) * C(iHO,jHF) * C(kHO,kHF) ;
+         }
+         // i <-> k permutation
+         if ( (iHO !=kHO) and  std::abs( C(kHO,iHF)*C(jHO,jHF)*C(iHO,kHF) )>1e-8 )
+         {
+             dket -= OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.CBA, ji,jj,jk, JijHF, JijHO, twoJ) *   C(kHO,iHF) * C(jHO,jHF) * C(iHO,kHF) ;
+         }
+         // j <-> k permutation
+         if ( (jHO !=kHO) and std::abs(C(iHO,iHF)*C(kHO,jHF)*C(jHO,kHF))>1e-8 )
+         {
+             dket -= OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.ACB, ji,jj,jk, JijHF, JijHO, twoJ) *   C(iHO,iHF) * C(kHO,jHF) * C(jHO,kHF) ;
+         }
+
+         // Now the double permutations
+         if (  (iHO !=jHO) and (iHO != kHO) and (jHO!=kHO)  and std::abs( C(jHO,iHF) * C(kHO,jHF) * C(iHO,kHF))>1e-8 )
+         {
+                dket += OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.BCA, ji,jj,jk, JijHF, JijHO, twoJ) *   C(jHO,iHF) * C(kHO,jHF) * C(iHO,kHF) ;
+         }
+
+         if (  (iHO !=jHO) and (iHO != kHO) and (jHO!=kHO)  and std::abs( C(kHO,iHF) * C(iHO,jHF) * C(jHO,kHF) )>1e-8 )
+         {
+                dket += OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.CAB, ji,jj,jk, JijHF, JijHO, twoJ) *   C(kHO,iHF) * C(iHO,jHF) * C(jHO,kHF) ;
+         }
+
+         Dket( indxHO, indxHF ) = dket ;
+
       }
     }
 
@@ -1612,74 +1672,65 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
     }
 
     arma::mat Vhf = Dbra * Vho * Dket;
-//    std::cout << " Norm of Vho Vhf = " << arma::norm(Vho,"fro") << " " << arma::norm(Vhf,"fro") << std::endl;
 
 
     for ( size_t indx_bra=0; indx_bra<nbras_kept; indx_bra++ )
     {
       size_t ibra_HF = bras_kept[indx_bra];
-//      Ket3& bra_HF = Tbc_bra.GetKet(ibra_HF);
-//      size_t iHF = bra_HF.p;
-//      size_t jHF = bra_HF.q;
-//      size_t kHF = bra_HF.r;
-//      int JijHF = bra_HF.Jpq;
+      Ket3& bra_HF = Tbc_bra.GetKet(ibra_HF);
+      size_t iHF = bra_HF.p;
+      size_t jHF = bra_HF.q;
+      size_t kHF = bra_HF.r;
+      int JijHF = bra_HF.Jpq;
 
       for ( size_t indx_ket=0; indx_ket<nkets_kept; indx_ket++ )
       {
         size_t iket_HF = kets_kept[indx_ket];
-//        Ket3& ket_HF = Tbc_ket.GetKet(iket_HF);
-//        size_t lHF = ket_HF.p;
-//        size_t mHF = ket_HF.q;
-//        size_t nHF = ket_HF.r;
-//        int JlmHF = ket_HF.Jpq;
+        Ket3& ket_HF = Tbc_ket.GetKet(iket_HF);
+        size_t lHF = ket_HF.p;
+        size_t mHF = ket_HF.q;
+        size_t nHF = ket_HF.r;
+        int JlmHF = ket_HF.Jpq;
         double VHF = Vhf(indx_bra, indx_ket);
-//        double VHF = Vho(indx_bra, indx_ket);
         if (std::abs(VHF)<1e-9) continue;
+
         hf3bme.SetME_pn_PN_ch( ch_bra,ch_ket, ibra_HF,iket_HF, VHF);
-//        double vget = hf3bme.GetME_pn_PN_ch( ch_bra,ch_ket, ibra_HF,iket_HF);
-//        if (this_is_the_one)
-//        {
-////           std::cout << "  Just set  " << JijHF << " " << JlmHF << " " << twoJ << "  " << iHF << " " << jHF << " " << kHF << "  " << lHF << " " << mHF << " " << nHF << "  should be " << VHF
-////                     << "  get -> " << hf3bme.GetME_pn( JijHF, JlmHF, twoJ, iHF, jHF, kHF, lHF, mHF, nHF ) << "  Get ch -> " << vget << std::endl;
-//        }
+
       }
     }
 
 
 
-
-
-
-
-
-//    // the slow and easy way...
-////    for ( size_t ibra : kets_kept )
-//    for ( size_t ibra : bras_kept )
-//    {
-//      Ket3& bra = Tbc_bra.GetKet(ibra);
-//      size_t i = bra.p;
-//      size_t j = bra.q;
-//      size_t k = bra.r;
-//      int Jij = bra.Jpq;
-//      for ( size_t iket : kets_kept )
-//      {
-////        if (iket<ibra) continue;
-//        if ((ch_bra==ch_ket) and (iket<ibra)) continue;
-//        Ket3& ket = Tbc_ket.GetKet(iket);
-//        size_t l = ket.p;
-//        size_t m = ket.q;
-//        size_t n = ket.r;
-//        int Jlm = ket.Jpq;
-////        double VHO = GetHF3bme(  Jij,  Jlm, twoJ,  i,j,k,l,m,n);
-////        double VHO = GetTransformed3bme(  Jij,  Jlm, twoJ,  i,j,k,l,m,n);
-//        double VHF = GetTransformed3bme( OpIn, Jij,  Jlm, twoJ,  i,j,k,l,m,n);
-////        double VHO = OpIn.ThreeBody.GetME_pn( Jij,  Jlm, twoJ,  i,j,k,l,m,n);
-////        std::cout << " ibra,iket " << ibra << " " << iket << "   VHO VHF = " << VHO << " " << VHF << std::endl;
-////        hf3bme.SetME_pn_PN_ch( ch3,ch3, ibra,iket, VHO);
-////        hf3bme.SetME_pn_PN_ch( ch_bra,ch_ket, ibra,iket, VHO);
-//        hf3bme.SetME_pn_PN_ch( ch_bra,ch_ket, ibra,iket, VHF);
-//      }
-//    }
+/*
+    // the slow and easy way...
+//    for ( size_t ibra : kets_kept )
+    for ( size_t ibra : bras_kept )
+    {
+      Ket3& bra = Tbc_bra.GetKet(ibra);
+      size_t i = bra.p;
+      size_t j = bra.q;
+      size_t k = bra.r;
+      int Jij = bra.Jpq;
+      for ( size_t iket : kets_kept )
+      {
+//        if (iket<ibra) continue;
+        if ((ch_bra==ch_ket) and (iket<ibra)) continue;
+        Ket3& ket = Tbc_ket.GetKet(iket);
+        size_t l = ket.p;
+        size_t m = ket.q;
+        size_t n = ket.r;
+        int Jlm = ket.Jpq;
+//        double VHO = GetHF3bme(  Jij,  Jlm, twoJ,  i,j,k,l,m,n);
+//        double VHO = GetTransformed3bme(  Jij,  Jlm, twoJ,  i,j,k,l,m,n);
+        double VHF = GetTransformed3bme( OpIn, Jij,  Jlm, twoJ,  i,j,k,l,m,n);
+//        double VHO = OpIn.ThreeBody.GetME_pn( Jij,  Jlm, twoJ,  i,j,k,l,m,n);
+//        std::cout << " ibra,iket " << ibra << " " << iket << "   VHO VHF = " << VHO << " " << VHF << std::endl;
+//        hf3bme.SetME_pn_PN_ch( ch3,ch3, ibra,iket, VHO);
+//        hf3bme.SetME_pn_PN_ch( ch_bra,ch_ket, ibra,iket, VHO);
+        hf3bme.SetME_pn_PN_ch( ch_bra,ch_ket, ibra,iket, VHF);
+      }
+    }
+*/
   }// for ich
 //  std::cout << "AT END OF " <<__func__ << " hf3bme norm is " << hf3bme.Norm() << std::endl;
 //   vread = hf3bme.GetME_pn(0,0,3,10,10,3,11,11,3);
@@ -1841,7 +1892,6 @@ double HartreeFock::GetTransformed3bme( Operator& OpIn, int Jab, int Jde, int J2
        for (auto phi : modelspace->OneBodyChannels.at({of.l,of.j2,of.tz2}) )
        {
          double V_ho = OpIn.ThreeBody.GetME_pn( Jab,  Jde,  J2,  alpha,  beta,  gamma,  delta,  epsilon,  phi);
-//         double V_ho = OpIn.ThreeBody.GetME( Jab,  Jde,  J2,  tab,  tde,  T2,  alpha,  beta,  gamma,  delta,  epsilon,  phi);
          V_hf += V_ho * C(alpha,a) * C(beta,b) * C(gamma,c) * C(delta,d) * C(epsilon,e) * C(phi,f);
        } // for phi
       } // for epsilon
