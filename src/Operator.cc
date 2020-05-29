@@ -490,6 +490,8 @@ Operator Operator::DoNormalOrdering3(int sign) const
      std::cout << " Uh oh. Trying to call " << __func__ << "  on an operator with rank_J = " << rank_J << "   you should probably implement that first..." << std::endl;
      std::exit(EXIT_FAILURE);
    }
+//    double vread = ThreeBody.GetME_pn(0,0,3,10,10,3,11,11,3);
+//    std::cout << " IN " << __func__ << "   vread =  " << vread << std::endl;
    Operator opNO3 = Operator(*modelspace, rank_J, rank_T, parity,2);
 //   #pragma omp parallel for
    for ( auto& itmat : opNO3.TwoBody.MatEl )
@@ -501,6 +503,7 @@ Operator Operator::DoNormalOrdering3(int sign) const
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
       arma::mat& Gamma = (arma::mat&) itmat.second;
+//      std::cout << "      line  " << __LINE__ << "  chbra,chket = " << ch_bra << " " << ch_ket << "   dimensions " << tbc_bra.GetNumberKets() << " x  "<< tbc_ket.GetNumberKets() << std::endl;
 //      for (size_t ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
       for (size_t ibra=0; ibra<tbc_bra.GetNumberKets(); ++ibra)
       {
@@ -533,6 +536,7 @@ Operator Operator::DoNormalOrdering3(int sign) const
                {
 //                  Gamma(ibra,iket) += (K2+1) * sign*oa.occ * ThreeBody.GetME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a); // This is unnormalized.
                   Gamma(ibra,iket) += (K2+1) * sign*oa.occ * ThreeBody.GetME_pn(tbc_bra.J,tbc_ket.J,K2,i,j,a,k,l,a); // This is unnormalized.
+//                  std::cout << " accessing 3bme   "<< tbc_bra.J << " " << tbc_ket.J << " " << K2 << "    " << i << " " << j << " " << a << "  " << k << " "  << l << " " << a << "       " << ThreeBody.GetME_pn(tbc_bra.J,tbc_ket.J,K2,i,j,a,k,l,a) << "  ->  " << Gamma(ibra,iket) << std::endl;
                }
             }
 //            Gamma(ibra,iket) /= (2*tbc.J+1)* sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
@@ -544,6 +548,7 @@ Operator Operator::DoNormalOrdering3(int sign) const
    Operator opNO2 = opNO3.DoNormalOrdering2(sign);
    opNO2.ScaleZeroBody(1./3.);
    opNO2.ScaleOneBody(1./2.);
+//   std::cout << "IN " << __func__ << "  line " << __LINE__ << "   norms of NO 3b pieces are " << opNO2.ZeroBody << "   " << opNO2.OneBodyNorm() << "   " << opNO2.TwoBodyNorm() << "  and thie original 3b norm was  " << ThreeBody.Norm() << "  which produced a no2b with norm " << opNO3.TwoBodyNorm() << std::endl;
 
    // Also normal order the 1 and 2 body pieces
    opNO2 += DoNormalOrdering2(sign);
