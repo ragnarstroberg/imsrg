@@ -1582,8 +1582,8 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
    else
    {
     sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
-//    if (omp_get_num_threads()<2)
-    if (not sixj_has_been_precalculated)
+//    if (not sixj_has_been_precalculated)
+    if (omp_get_num_threads()<2)
     {
       #pragma omp critical
       {
