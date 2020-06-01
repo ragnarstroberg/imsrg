@@ -1448,7 +1448,8 @@ double HartreeFock::GetAverageHFPotential( double r, double rprime)
 
 ///
 //ThreeBodyMEpn HartreeFock::GetTransformed3B( )
-ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
+//ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
+ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
 {
   double t_start = omp_get_wtime();
 //  ThreeBodyMEpn hf3bme(modelspace);
@@ -1456,7 +1457,8 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
 //   double vread = OpIn.ThreeBody.GetME_pn(0,0,3,10,10,3,11,11,3);
 //   std::cout << " IN " << __func__ << "  line " << __LINE__ << "  and vread = " << vread << std::endl;
 
-  ThreeBodyMEpn hf3bme(modelspace, OpIn.GetJRank(), OpIn.GetTRank(), OpIn.GetParity());
+//  ThreeBodyMEpn hf3bme(modelspace, OpIn.GetJRank(), OpIn.GetTRank(), OpIn.GetParity());
+  ThreeBodyME hf3bme(modelspace, OpIn.GetJRank(), OpIn.GetTRank(), OpIn.GetParity());
 //  hf3bme.Setemax(emax);
   hf3bme.SwitchToPN_and_discard();
 
@@ -1464,7 +1466,8 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
 
 //  size_t nch3 = modelspace->GetNumberThreeBodyChannels();
   std::vector<size_t> chbra_list,chket_list;
-  for ( auto& itmat : hf3bme.ch_start )
+//  for ( auto& itmat : hf3bme.ch_start )
+  for ( auto& itmat : hf3bme.Get_ch_start() )
   {
     chbra_list.push_back( itmat.first[0] );
     chket_list.push_back( itmat.first[1] );
@@ -1555,8 +1558,23 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
          double jk = okHO.j2 *0.5;
          int JijHO = bra_HO.Jpq;
          double dbra = 0;
+
+         for ( auto perm3b : OpIn.ThreeBody.UniquePermutations( iHO, jHO, kHO ) )
+         {
+           size_t iiHO,jjHO,kkHO;
+           OpIn.ThreeBody.Permute(perm3b, iHO,jHO,kHO, iiHO,jjHO,kkHO);
+           double overlap = C(iiHO,iHF) * C(jjHO,jHF) * C(kkHO,kHF);
+           if ( std::abs( overlap) > 1e-8 )
+           {
+             double phase = OpIn.ThreeBody.PermutationPhase(perm3b); // the fermionic sign from the permutation
+             double recouple = OpIn.ThreeBody.RecouplingCoefficient( perm3b, ji,jj,jk, JijHF, JijHO, twoJ); // the angular momentum recoupling coefficient
+             dbra += phase * recouple * overlap;
+           }
+         }
+/*
          // The straightforward non-permutation
          dbra += OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.ABC,ji,jj,jk, JijHF, JijHO, twoJ) *   C(iHO,iHF) * C(jHO,jHF) * C(kHO,kHF) ;
+
          // i <-> j permutation. Extra minus sign because fermi statistics
          if ( (iHO !=jHO) and  std::abs(C(jHO,iHF)*C(iHO,jHF)*C(kHO,kHF))>1e-8 )
          {
@@ -1583,7 +1601,7 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
          {
                 dbra += OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.CAB, ji,jj,jk, JijHF, JijHO, twoJ) *   C(kHO,iHF) * C(iHO,jHF) * C(jHO,kHF) ;
          }
-
+*/
          Dbra( indxHF, indxHO ) = dbra ;
       }
     }
@@ -1614,6 +1632,24 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
          int JijHF = ket_HF.Jpq;
 
          double dket = 0;
+
+         for ( auto perm3b : OpIn.ThreeBody.UniquePermutations( iHO, jHO, kHO ) )
+         {
+           size_t iiHO,jjHO,kkHO;
+           OpIn.ThreeBody.Permute(perm3b, iHO,jHO,kHO, iiHO,jjHO,kkHO);
+           double overlap = C(iiHO,iHF) * C(jjHO,jHF) * C(kkHO,kHF);
+           if ( std::abs( overlap) > 1e-8 )
+           {
+             double phase = OpIn.ThreeBody.PermutationPhase(perm3b); // the fermionic sign from the permutation
+             double recouple = OpIn.ThreeBody.RecouplingCoefficient( perm3b, ji,jj,jk, JijHF, JijHO, twoJ); // the angular momentum recoupling coefficient
+             dket += phase * recouple * overlap;
+           }
+         }
+
+
+
+/*
+
          // The straightforward non-permutation
          dket += OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.ABC,ji,jj,jk, JijHF, JijHO, twoJ) *   C(iHO,iHF) * C(jHO,jHF) * C(kHO,kHF) ;
          // i <-> j permutation. Extra minus sign because fermi statistics
@@ -1642,7 +1678,7 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
          {
                 dket += OpIn.ThreeBody.RecouplingCoefficient(OpIn.ThreeBody.CAB, ji,jj,jk, JijHF, JijHO, twoJ) *   C(kHO,iHF) * C(iHO,jHF) * C(jHO,kHF) ;
          }
-
+*/
          Dket( indxHO, indxHF ) = dket ;
 
       }
@@ -1694,7 +1730,7 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
         double VHF = Vhf(indx_bra, indx_ket);
         if (std::abs(VHF)<1e-9) continue;
 
-        hf3bme.SetME_pn_PN_ch( ch_bra,ch_ket, ibra_HF,iket_HF, VHF);
+        hf3bme.SetME_pn_ch( ch_bra,ch_ket, ibra_HF,iket_HF, VHF);
 
       }
     }
@@ -1749,10 +1785,12 @@ ThreeBodyMEpn HartreeFock::GetTransformed3B( Operator& OpIn )
 // a 3-body interaction with good isospin, even though the HF basis breaks isospin.
 // Hopefully this isn't much of an approximation, but it shouldn't be too bad
 // to make a new structure in the future.
-ThreeBodyMEpn HartreeFock::GetValence3B( Operator& OpIn, int emax, int E3max )
+//ThreeBodyMEpn HartreeFock::GetValence3B( Operator& OpIn, int emax, int E3max )
+ThreeBodyME HartreeFock::GetValence3B( Operator& OpIn, int emax, int E3max )
 {
   double t_start = omp_get_wtime();
-  ThreeBodyMEpn hf3bme(modelspace, E3max);
+//  ThreeBodyMEpn hf3bme(modelspace, E3max);
+  ThreeBodyME hf3bme(modelspace, E3max);
   hf3bme.Setemax(emax);
   hf3bme.SwitchToPN_and_discard();
 
@@ -1781,7 +1819,7 @@ ThreeBodyMEpn HartreeFock::GetValence3B( Operator& OpIn, int emax, int E3max )
         size_t f = ket.r;
         int Jde = ket.Jpq;
         double V = GetTransformed3bme(OpIn, Jab, Jde, twoJ, a, b, c, d, e, f );
-        hf3bme.SetME_pn_PN_ch(ch3,ch3,ibra,iket, V);
+        hf3bme.SetME_pn_ch(ch3,ch3,ibra,iket, V);
       }// for iket
     }// for ibra
   }// for ch3

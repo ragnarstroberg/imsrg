@@ -24,7 +24,7 @@
 #include "TwoBodyME.hh"
 #include "ThreeBodyME.hh"
 #include "ThreeBodyMENO2B.hh"
-#include "ThreeBodyMEpn.hh"
+//#include "ThreeBodyMEpn.hh"
 #include "ThreeLegME.hh"
 #include "IMSRGProfiler.hh"
 #include <armadillo>
@@ -50,8 +50,8 @@ class Operator
   double ZeroBody; ///< The zero body piece of the operator.
   arma::mat OneBody; ///< The one body piece of the operator, stored in a single NxN armadillo matrix, where N is the number of single-particle orbits.
   TwoBodyME TwoBody; ///< The two body piece of the operator.
-//  ThreeBodyME ThreeBody; ///< The three body piece of the operator.
-  ThreeBodyMEpn ThreeBody; ///< The three body piece of the operator.
+  ThreeBodyME ThreeBody; ///< The three body piece of the operator.
+//  ThreeBodyMEpn ThreeBody; ///< The three body piece of the operator.
   ThreeLegME ThreeLeg;  ///< Three-legged operators, used if this is a particle-number-changing operator, i.e. if legs is odd
   ThreeBodyMENO2B ThreeBodyNO2B; ///< The three body piece of the operator.
 

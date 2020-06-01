@@ -1284,15 +1284,15 @@ void ModelSpace::Setup3bKets()
     Orbit& op = GetOrbit(p);
     for ( auto q : all_orbits )
     {
-//      if (q>p) continue;
-      if (q<p) continue; // this ordering matches the two body storage
+      if (q>p) continue;
+//      if (q<p) continue; // this ordering matches the two body storage
       Orbit& oq = GetOrbit(q);
       int Jpq_min = std::abs(op.j2-oq.j2)/2;
       int Jpq_max = (op.j2+oq.j2)/2;
       for ( auto r : all_orbits )
       {
-//        if (r>q) continue;
-        if (r<q) continue;
+        if (r>q) continue;
+//        if (r<q) continue;
         Orbit& oR = GetOrbit(r);
         if ( ( 2*(op.n+oq.n+oR.n)+op.l+oq.l+oR.l) > E3max ) continue;
 //        int parity = (op.l+oq.l+oR.l)%2;
@@ -1582,8 +1582,8 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
    else
    {
     sixj = AngMom::SixJ(j1,j2,j3,J1,J2,J3);
-//    if (omp_get_num_threads()<2)
-    if (not sixj_has_been_precalculated)
+//    if (not sixj_has_been_precalculated)
+    if (omp_get_num_threads()<2)
     {
       #pragma omp critical
       {

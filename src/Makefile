@@ -154,8 +154,10 @@ OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       IMSRGProfiler.o Commutator.o HFMBPT.o\
       M0nu.o DarkMatterNREFT.o Jacobi3BME.o UnitTest.o \
       TwoBodyChannel.o ThreeBodyChannel.o \
-      ThreeBodyMEpn.o ThreeLegME.o ThreeBodyMENO2B.o \
+      ThreeBodyStorage.o ThreeBodyStorage_pn.o ThreeBodyStorage_iso.o \
+      ThreeLegME.o ThreeBodyMENO2B.o \
       boost_src/gzip.o boost_src/zlib.o
+#      ThreeBodyMEpn.o ThreeLegME.o ThreeBodyMENO2B.o \
 
 
 boost_src/%.o: boost_src/%.cpp

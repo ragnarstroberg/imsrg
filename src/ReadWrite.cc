@@ -1205,7 +1205,8 @@ size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max_in, 
   std::cout << "Reading 3body file. emax limits for file: " << E1max << " " << E2max << " " << E3max << "  for modelspace: " << e1max << " " << e2max << " " << e3max << std::endl;
 
 //  int iso_dim = Hbare.ThreeBody.ISOSPIN_BLOCK_DIMENSION;
-  int iso_dim = Hbare.ThreeBody.isospin3BME.ISOSPIN_BLOCK_DIMENSION;
+//  int iso_dim = Hbare.ThreeBody.isospin3BME.ISOSPIN_BLOCK_DIMENSION;
+  int iso_dim = Hbare.ThreeBody.ISOSPIN_BLOCK_DIMENSION;
 //  int iso_dim = 5;
 //  if (Hbare.GetTRank()==1) iso_dim=9;
 //  else if (Hbare.GetTRank()==2) iso_dim==5;
@@ -1460,7 +1461,8 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
   int e3max = modelspace->GetE3max();
   int lmax3 = modelspace->GetLmax3();
   int lmax = modelspace->GetLmax();
-  int iso_dim = Hbare.ThreeBody.isospin3BME.ISOSPIN_BLOCK_DIMENSION;
+//  int iso_dim = Hbare.ThreeBody.isospin3BME.ISOSPIN_BLOCK_DIMENSION;
+  int iso_dim = Hbare.ThreeBody.ISOSPIN_BLOCK_DIMENSION;
   // if opT=0,  then we can have (tab Tabc, tde, Tdef) = (0,1,0,1), (0,1,1,1), (1,1,0,1), (1,1,1,1), (1,3,1,3) => 5
   // if opT=1,  then we can have (tab Tabc, tde, Tdef) = (0,1,0,1), (0,1,1,1), (0,1,1,3), (1,1,0,1), (1,1,1,1), (1,1,1,3), (1,3,1,3), (1,3,1,1), (1,3,1,3) => 9
   // if opT=2,  then we can have (tab Tabc, tde, Tdef) = (0,1,1,3),  (1,1,1,3), (1,3,1,3), (1,3,1,1), (1,3,1,3) => 5
@@ -1636,7 +1638,8 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
                         if (not autozero )
                         {
 //                            Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f, V);
-                            Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,twoTT,a,b,c,d,e,f, V);
+//                            Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,twoTT,a,b,c,d,e,f, V);
+                            Hbare.ThreeBody.SetME_iso(Jab,JJab,twoJC,tab,ttab,twoT,twoTT,a,b,c,d,e,f, V);
 //                            if ( Hbare.GetTRank()>0 and a==10 and b==10 and Jab==0 and JJab==0 and twoJC==3)
 //                            {
 //                             double vread = Hbare.ThreeBody.GetME_pn(0,0,3,10,10,3,11,11,3);
@@ -2889,7 +2892,8 @@ void ReadWrite::Write_me3j( std::string ofilename, Operator& Hbare, int E1max, i
 
                    for(int twoT = twoTMin; twoT <= twoTMax; twoT += 2)
                    {
-                    double V = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
+//                    double V = Hbare.ThreeBody.GetME(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
+                    double V = Hbare.ThreeBody.GetME_iso(Jab,JJab,twoJC,tab,ttab,twoT,a,b,c,d,e,f);
                     if ((a==b and (Jab+tab)%2!=1) or (d==e and (JJab+ttab)%2!=1) )
                     {
                       if ( std::abs(V) > 1e-4 )  // There may be some numerical noise from using floats and 6Js at the level of 1e-6. Ignore that.
@@ -4268,7 +4272,8 @@ void ReadWrite::WriteDaggerOperator( Operator& Op, std::string filename, std::st
 
 
 
-void ReadWrite::WriteValence3body( ThreeBodyMEpn& threeBME, std::string filename )
+//void ReadWrite::WriteValence3body( ThreeBodyMEpn& threeBME, std::string filename )
+void ReadWrite::WriteValence3body( ThreeBodyME& threeBME, std::string filename )
 {
 
    std::ofstream intfile;

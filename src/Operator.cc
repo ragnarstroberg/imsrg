@@ -879,11 +879,13 @@ void Operator::SetNumberLegs( int l)
   {
     if ( TwoBody.MatEl.size()<1)    TwoBody.Allocate();
     ThreeLeg.Deallocate();
-    if (legs>5 and (not ThreeBody.is_allocated)) ThreeBody.Allocate();
+//    if (legs>5 and (not ThreeBody.is_allocated)) ThreeBody.Allocate();
+    if (legs>5 and (not ThreeBody.IsAllocated())) ThreeBody.Allocate();
   }
   else
   {
     TwoBody.Deallocate();
+    ThreeBody.Deallocate();
     OneBody.zeros(modelspace->GetNumberOrbits(), 1);  // reduce it to a single column
     ThreeLeg.Allocate();
     OneBody.zeros( modelspace->GetNumberOrbits(), 1);
@@ -1223,7 +1225,8 @@ double Operator::GetMP2_3BEnergy()
    double t_start = omp_get_wtime();
    double Emp2 = 0;
    if ( legs < 6) return 0;
-   if ( not ThreeBody.is_allocated ) return 0;
+//   if ( not ThreeBody.is_allocated ) return 0;
+   if ( not ThreeBody.IsAllocated() ) return 0;
    size_t nch3 = modelspace->GetNumberThreeBodyChannels();
    #pragma omp parallel for schedule(dynamic,1) reduction(+:Emp2)
    for (size_t ch3=0; ch3<nch3; ch3++)
@@ -1255,7 +1258,8 @@ double Operator::GetMP2_3BEnergy()
          if (a==b and a==c) symm_abc = 1;
          else if (a==b or a==c) symm_abc = 3;
          double Eabc = OneBody(a,a) + OneBody(b,b) + OneBody(c,c);
-         double V = ThreeBody.GetME_pn_PN_ch(ch3,ch3,ibra,iket);
+//         double V = ThreeBody.GetME_pn_PN_ch(ch3,ch3,ibra,iket);
+         double V = ThreeBody.GetME_pn_ch(ch3,ch3,ibra,iket);
          Emp2 += 1./36 * symm_ijk*symm_abc * (twoJ+1) * occ_bra * unocc_ket * V*V / ( Eijk - Eabc) ;
        }// for iket
      }// for ibra
