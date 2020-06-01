@@ -2928,11 +2928,12 @@ bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // t
               if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
               if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
 
+              if ( not (i==0 and j==0 and k==1 and l==0 and m==2 and n==3) ) continue;
 //              if ( not (i==1 and j==0 and k==0 and l==1 and m==0 and n==0) ) continue;
 //              if ( not (i==0 and j==0 and k==2 and l==2 and m==2 and n==4) ) continue;
 //              if ( not (i==4 and j==2 and k==2 and l==2 and m==0 and n==0) ) continue;
 
-//              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
+              std::cout << " ijklmn " << i << " " << j << " " << k << " " << l << " " << m << " " << n << std::endl;
               // loop over projections
               for (int m_i= oi.j2; m_i<=oi.j2; m_i+=2)
               {
