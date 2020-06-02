@@ -45,8 +45,8 @@ ThreeBodyME::ThreeBodyME(const ThreeBodyME& Tbme)
 //{}
 
 
-// Define some constants for the various permutations of three indices
-// for use in RecouplingCoefficient and SortOrbits
+//// Define some constants for the various permutations of three indices
+//// for use in RecouplingCoefficient and SortOrbits
 const int ThreeBodyME::ABC = 0;
 const int ThreeBodyME::BCA = 1;
 const int ThreeBodyME::CAB = 2;
