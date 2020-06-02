@@ -6480,14 +6480,14 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
       {
         if ( iter_ket.first > iter_bra.first ) continue;
         Z3.AddToME_pn_PN_ch(ch3,ch3, iter_bra.first,iter_ket.first,  Z3MAT(iter_bra.second,iter_ket.second) );
-         Ket3& bra = Tbc.GetKet(iter_bra.first);
-         Ket3& ket = Tbc.GetKet(iter_ket.first);
-         if ( ((bra.p==0) and (bra.q==0) and (bra.r==1) and (ket.p==0) and (ket.q==2) and (ket.r==3))
-          or ( (ket.p==0) and (ket.q==0) and (ket.r==1) and (bra.p==0) and (bra.q==2) and (bra.r==3)) )
-         {
-           std::cout << __FILE__ << " " << __LINE__ << "  " << bra.p << " " << bra.q << " " << bra.r << "  " << ket.p << " " << ket.q << " " << ket.r
-                     << "   " << bra.Jpq << " " << ket.Jpq << "  " << Tbc.twoJ << "    adding  " << Z3MAT(iter_bra.second,iter_ket.second) << std::endl;
-         }
+//         Ket3& bra = Tbc.GetKet(iter_bra.first);
+//         Ket3& ket = Tbc.GetKet(iter_ket.first);
+//         if ( ((bra.p==0) and (bra.q==0) and (bra.r==1) and (ket.p==0) and (ket.q==2) and (ket.r==3))
+//          or ( (ket.p==0) and (ket.q==0) and (ket.r==1) and (bra.p==0) and (bra.q==2) and (bra.r==3)) )
+//         {
+//           std::cout << __FILE__ << " " << __LINE__ << "  " << bra.p << " " << bra.q << " " << bra.r << "  " << ket.p << " " << ket.q << " " << ket.r
+//                     << "   " << bra.Jpq << " " << ket.Jpq << "  " << Tbc.twoJ << "    adding  " << Z3MAT(iter_bra.second,iter_ket.second) << std::endl;
+//         }
 //        if (ch3==0 and iter_bra.first<5 and iter_ket.first<5)
 //        {
 //          Ket3& bra = Tbc.GetKet( iter_bra.first );
