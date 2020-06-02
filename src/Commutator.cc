@@ -2228,8 +2228,8 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
             double occnat_c = bra.op->occ_nat;
             double occnat_d = bra.oq->occ_nat;
             if (  (ec+ed+std::min(ei,ej))> Z.modelspace->E3max )  continue;
-            if ( (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * std::max( occnat_i*(1-occnat_i), occnat_j*(1-occnat_j)) ) < Z.modelspace->GetOccNat3Cut() ) continue;
             if (  (d_ec+d_ed+std::min(d_ei,d_ej))> Z.modelspace->dE3max )  continue;
+            if ( (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * std::max( occnat_i*(1-occnat_i), occnat_j*(1-occnat_j)) ) < Z.modelspace->GetOccNat3Cut() ) continue;
             double nc = ket.op->occ;
             double nd = ket.oq->occ;
 //            double prefactor = na*nb*(1-nc)*(1-nd);
@@ -2250,24 +2250,23 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
               double xcdiabj = 0;
               double ycdiabj = 0;
               if ( ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max )
-               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->E3max )
-               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) < Z.modelspace->GetOccNat3Cut() )
-               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() )   )
+               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->dE3max )
+               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )
+               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
                 xcdiabj = X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
                 ycdiabj = Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
               }
               if ( (std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max )
-               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->E3max ) 
-               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() )
-               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) < Z.modelspace->GetOccNat3Cut() )   )
+               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->dE3max ) 
+               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )
+               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
                 xabicdj = X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
                 yabicdj = Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
               }
               zij += prefactor * (twoJ+1) * ( (Xabcd * ycdiabj - yabicdj * Xcdab)
                                            -  (Yabcd * xcdiabj - xabicdj * Ycdab) );
-              std::cout << "Im here and zij = " << zij << std::endl;
             }
           }
         }
@@ -2345,6 +2344,7 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
           double occnat_a = bra.op->occ_nat;
           double occnat_b = bra.oq->occ_nat;
           if (  (ea+eb+std::min(ei,ej))> Z.modelspace->E3max )  continue;
+          if (  (d_ea+d_eb+std::min(d_ei,d_ej))> Z.modelspace->dE3max )  continue;
           if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * std::max( occnat_i*(1-occnat_i), occnat_j*(1-occnat_j)) ) < Z.modelspace->GetOccNat3Cut() ) continue;
           double na = bra.op->occ;
           double nb = bra.oq->occ;
@@ -2362,6 +2362,7 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
             double occnat_c = bra.op->occ_nat;
             double occnat_d = bra.oq->occ_nat;
             if (  (ec+ed+std::min(ei,ej))> Z.modelspace->E3max )  continue;
+            if (  (d_ec+d_ed+std::min(d_ei,d_ej))> Z.modelspace->dE3max )  continue;
             if ( (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * std::max( occnat_i*(1-occnat_i), occnat_j*(1-occnat_j)) ) < Z.modelspace->GetOccNat3Cut() ) continue;
             double nc = ket.op->occ;
             double nd = ket.oq->occ;
@@ -2382,17 +2383,17 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
 //              double xcdiabj = 0;
               double ycdiabj = 0;
               if ( ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max )
-               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->E3max ) 
-               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) < Z.modelspace->GetOccNat3Cut() )
-               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() )   )
+               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->dE3max ) 
+               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )
+               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
 //                xcdiabj = X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
                 ycdiabj = Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
               }
               if ( (std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max )
-               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->E3max ) 
-               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() )
-               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) < Z.modelspace->GetOccNat3Cut() )   )
+               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->dE3max ) 
+               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )
+               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
 //                xabicdj = X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
                 yabicdj = Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
@@ -2463,17 +2464,17 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
               double xcdiabj = 0;
 //              double ycdiabj = 0;
               if ( ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max )
-               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->E3max ) 
-               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) < Z.modelspace->GetOccNat3Cut() )
-               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() )   )
+               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->dE3max ) 
+               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )
+               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
                 xcdiabj = X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
 //                ycdiabj = Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
               }
               if ( (std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max )
-               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->E3max ) 
-               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() )
-               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) < Z.modelspace->GetOccNat3Cut() )   )
+               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->dE3max ) 
+               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )
+               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
                 xabicdj = X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
 //                yabicdj = Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
@@ -5122,7 +5123,12 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   std::vector< std::array<int,3>> channel_list_pph; // vector  channel_index -> twoJ-ph, parity_ph, twoTz_ph.
 
   auto hash_key_ijnJ = [](size_t i,size_t j, size_t n, size_t Jij){return ( i + (j<<12) + (n<<24) + (Jij<<36) );};
-  auto unhash_key_ijnJ = [](size_t& i,size_t& j, size_t& n, size_t& Jij, size_t key){ i=(key & 0xFFFL);j=((key>>12)&0xFFFL);n=((key>>24)&0xFFFL);Jij=((key>>36)&0xFFFL); }; //  0xF = 15 = 1111 (4bits), so 0xFFF is 12 bits of 1's. 0xFFFL makes it a long
+
+   //  0xF = 15 = 1111 (4bits), so 0xFFF is 12 bits of 1's. 0xFFFL makes it a long int
+  auto unhash_key_ijnJ = [](size_t& i,size_t& j, size_t& n, size_t& Jij, size_t key){ i=( key     &0xFFFL);
+                                                                                      j=((key>>12)&0xFFFL);
+                                                                                      n=((key>>24)&0xFFFL);
+                                                                                    Jij=((key>>36)&0xFFFL); }; 
   std::vector< std::unordered_map<size_t, size_t>> ket_lookup_pph; // in a given channel, map  i,j,n,Jij -> matrix index
 
 //  std::vector< arma::mat > Zbar;
@@ -5242,7 +5248,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   t_internal = omp_get_wtime();
 //  std::cout << "done with setup" << std::endl;
 
-  std::cout << " line " << __LINE__ << "    Norms of XYZ are " << X.Norm() << " " << Y.Norm() << " " << Z.Norm() << std::endl;
+//  std::cout << " line " << __LINE__ << "    Norms of XYZ are " << X.Norm() << " " << Y.Norm() << " " << Z.Norm() << std::endl;
 
  // Now we should fill those Zbar matrices.
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -5310,9 +5316,9 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   Z.profiler.timer["comm223_fill_loop"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
-  std::cout << __func__ << " line " << __LINE__ << "  begin ch3 loop. firstpass is " << Z.modelspace->scalar3b_transform_first_pass << std::endl;
+//  std::cout << __func__ << " line " << __LINE__ << "  begin ch3 loop. firstpass is " << Z.modelspace->scalar3b_transform_first_pass << std::endl;
 
-  std::cout << " line " << __LINE__ << "    Norms of XYZ are " << X.Norm() << " " << Y.Norm() << " " << Z.Norm() << std::endl;
+//  std::cout << " line " << __LINE__ << "    Norms of XYZ are " << X.Norm() << " " << Y.Norm() << " " << Z.Norm() << std::endl;
 //  std::vector< std::map<std::array<size_t,2>,size_t>::iterator> channel_iterators;
 //  std::vector< std::pair<const std::array<size_t,2>,size_t>> channel_iterators;
 //  for (auto iter : Z.ThreeBody.ch_start ) channel_iterators.push_back(iter);

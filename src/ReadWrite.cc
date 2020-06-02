@@ -1679,9 +1679,9 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
 
   std::cout << "Stored " << nkept << " floating point numbers (" << nkept * sizeof(float)/1024./1024./1024. << " GB)" << std::endl;
 
-                             double vflip = Hbare.ThreeBody.GetME_iso(1,1,1,1,1,3,3,0,2,4,0,2,2);
-//                             double vflip = Hbare.ThreeBody.GetME_iso(1,1,1,1,1,3,0,2,4,0,2,2);
-                            std::cout << "  just checking again: vflip = "  << vflip << std::endl;
+//                             double vflip = Hbare.ThreeBody.GetME_iso(1,1,1,1,1,3,3,0,2,4,0,2,2);
+////                             double vflip = Hbare.ThreeBody.GetME_iso(1,1,1,1,1,3,0,2,4,0,2,2);
+//                            std::cout << "  just checking again: vflip = "  << vflip << std::endl;
 
 
   modelspace->profiler.timer["Store_3BME"] += omp_get_wtime() - t_start;

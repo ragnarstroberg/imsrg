@@ -416,7 +416,7 @@ ThreeBodyStorage::Permutation ThreeBodyStorage_iso::SortOrbits(int a_in, int b_i
 //   if (a>b)  std::swap(a,b); // the a <= b <= c ordering matches with the 2body storage, which have if (q<p) continue;
 //   if (b>c)  std::swap(b,c);
 //   if (a>b)  std::swap(a,b);
-  // we store matrix elements for a>=b>=c and d>=e>=f  so this is the correct check for the isospin matrix elements
+  // we store matrix elements for a>=b>=c and d>=e>=f  so this is the correct sorting for the isospin matrix elements
    if (a<b)  std::swap(a,b);
    if (b<c)  std::swap(b,c);
    if (a<b)  std::swap(a,b);

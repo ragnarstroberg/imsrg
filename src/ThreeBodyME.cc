@@ -233,7 +233,7 @@ void ThreeBodyME::TransformToPN()
   size_t nch = chbra_list.size();
 //  std::cout << "BEGIN LOOP" << std::endl;
 
-//  #pragma omp parallel for schedule(dynamic,1)
+  #pragma omp parallel for schedule(dynamic,1)
   for (size_t ich=0; ich<nch; ich++)
   {
     size_t ch_bra = chbra_list[ich];
@@ -349,14 +349,12 @@ std::vector<size_t>& ThreeBodyME::Get_ch_dim()
 
 void ThreeBodyME::SetHermitian()
 {
-  std::cout << " IN " << __FILE__ << " " << __func__ << std::endl;
   herm = +1;
   threebody_storage->SetHerm(herm);
 }
 
 void ThreeBodyME::SetAntiHermitian()
 {
-  std::cout << " IN " << __FILE__ << " " << __func__ << std::endl;
   herm = -1;
   threebody_storage->SetHerm(herm);
 }
