@@ -2247,17 +2247,17 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
               double xcdiabj = 0;
               double ycdiabj = 0;
               if ( ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max )
-               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->E3max )
-               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) < Z.modelspace->GetOccNat3Cut() )
-               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() )   )
+               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->dE3max )
+               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )
+               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
                 xcdiabj = X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
                 ycdiabj = Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
               }
               if ( (std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max )
-               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->E3max ) 
-               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() )
-               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) < Z.modelspace->GetOccNat3Cut() )   )
+               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->dE3max ) 
+               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )
+               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
                 xabicdj = X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
                 yabicdj = Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
@@ -2378,17 +2378,17 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
 //              double xcdiabj = 0;
               double ycdiabj = 0;
               if ( ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max )
-               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->E3max ) 
-               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) < Z.modelspace->GetOccNat3Cut() )
-               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() )   )
+               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->dE3max ) 
+               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )
+               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
 //                xcdiabj = X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
                 ycdiabj = Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
               }
               if ( (std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max )
-               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->E3max ) 
-               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() )
-               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) < Z.modelspace->GetOccNat3Cut() )   )
+               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->dE3max ) 
+               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )
+               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
 //                xabicdj = X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
                 yabicdj = Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
@@ -2459,17 +2459,17 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
               double xcdiabj = 0;
 //              double ycdiabj = 0;
               if ( ( std::max(ea+eb+ej,ec+ed+ei) <= Z.modelspace->E3max )
-               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->E3max ) 
-               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) < Z.modelspace->GetOccNat3Cut() )
-               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() )   )
+               and ( std::max(d_ea+d_eb+d_ej,d_ec+d_ed+d_ei) <= Z.modelspace->dE3max ) 
+               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )
+               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
                 xcdiabj = X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
 //                ycdiabj = Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
               }
               if ( (std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max )
-               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->E3max ) 
-               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() )
-               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) < Z.modelspace->GetOccNat3Cut() )   )
+               and ( std::max(d_ea+d_eb+d_ei,d_ec+d_ed+d_ej) <= Z.modelspace->dE3max ) 
+               and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )
+               and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
                 xabicdj = X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
 //                yabicdj = Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
