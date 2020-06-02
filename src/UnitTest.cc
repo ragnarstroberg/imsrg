@@ -473,18 +473,18 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
   Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
   bool all_good = true;
 
-//  all_good &= Test_comm330ss( X, Y );
-//  all_good &= Test_comm331ss( X, Y );
-//  all_good &= Test_comm231ss( X, Y );
-//  all_good &= Test_comm132ss( X, Y );
-//  all_good &= Test_comm232ss( X, Y );
-//  all_good &= Test_comm223ss( X, Y );
-//  all_good &= Test_comm133ss( X, Y );
+  all_good &= Test_comm330ss( X, Y );
+  all_good &= Test_comm331ss( X, Y );
+  all_good &= Test_comm231ss( X, Y );
+  all_good &= Test_comm132ss( X, Y );
+  all_good &= Test_comm232ss( X, Y );
+  all_good &= Test_comm223ss( X, Y );
+  all_good &= Test_comm133ss( X, Y );
 
-//  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
-//  all_good &= Test_comm332_pphhss( X, Y );  
+  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
+  all_good &= Test_comm332_pphhss( X, Y );  
 
-  all_good &= Test_comm233_pp_hhss( X, Y );   
+//  all_good &= Test_comm233_pp_hhss( X, Y );   
 //  all_good &= Test_comm233_ph_ss( X, Y );  
 //  all_good &= Test_comm333_ppp_hhh_ss( X, Y );  
 //  all_good &= Test_comm333_pph_hhp_ss( X, Y );  
@@ -2930,6 +2930,9 @@ bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // t
               if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
               if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;
 
+//              if ( not (i==3 and j==2 and k==2 and l==3 and m==2 and n==2) ) continue;
+//              if ( not (i==1 and j==0 and k==0 and l==3 and m==2 and n==0) ) continue;
+//              if ( not (i==0 and j==0 and k==1 and l==0 and m==2 and n==3) ) continue;
 //              if ( not (i==1 and j==0 and k==0 and l==1 and m==0 and n==0) ) continue;
 //              if ( not (i==0 and j==0 and k==2 and l==2 and m==2 and n==4) ) continue;
 //              if ( not (i==4 and j==2 and k==2 and l==2 and m==0 and n==0) ) continue;

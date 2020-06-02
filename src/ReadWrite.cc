@@ -1641,12 +1641,15 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
 //                            Hbare.ThreeBody.SetME(Jab,JJab,twoJC,tab,ttab,twoT,twoTT,a,b,c,d,e,f, V);
                             Hbare.ThreeBody.SetME_iso(Jab,JJab,twoJC,tab,ttab,twoT,twoTT,a,b,c,d,e,f, V);
 //                            if ( Hbare.GetTRank()>0 and a==10 and b==10 and Jab==0 and JJab==0 and twoJC==3)
+//                            if ( a==2 and b==2 and c==0 and d==2 and e==4 and f==0 )
 //                            {
-//                             double vread = Hbare.ThreeBody.GetME_pn(0,0,3,10,10,3,11,11,3);
-//                             double viso = Hbare.ThreeBody.GetME(0,0,1,10,10,3,11,11,3);
+////                             double vread = Hbare.ThreeBody.GetME_pn(0,0,3,10,10,3,11,11,3);
+////                             double vflip = Hbare.ThreeBody.GetME_iso(1,1,1,1,1,3,a,b,c,d,e,f);
+//                             double vflip = Hbare.ThreeBody.GetME_iso(1,1,1,1,1,3,0,2,4,0,2,2);
+//                             double viso = Hbare.ThreeBody.GetME_iso(Jab,JJab,twoJC,tab,ttab,twoT,twoTT,a,b,c,d,e,f);
 //                            std::cout << "Setting  " << Jab << " " << JJab << " " << twoJC << " " << tab << " " << ttab << " " << twoT << " " << twoTT
 //                                      << "   " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "    ->  " << std::scientific << V
-//                                      << "   " << vread << std::endl;
+//                                      << "  read:  " << viso << "  flip:  " << vflip << std::endl;
 //                            }
                         }
                         else if (autozero)
@@ -1675,6 +1678,11 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
   } //nlj1
 
   std::cout << "Stored " << nkept << " floating point numbers (" << nkept * sizeof(float)/1024./1024./1024. << " GB)" << std::endl;
+
+                             double vflip = Hbare.ThreeBody.GetME_iso(1,1,1,1,1,3,3,0,2,4,0,2,2);
+//                             double vflip = Hbare.ThreeBody.GetME_iso(1,1,1,1,1,3,0,2,4,0,2,2);
+                            std::cout << "  just checking again: vflip = "  << vflip << std::endl;
+
 
   modelspace->profiler.timer["Store_3BME"] += omp_get_wtime() - t_start;
 }

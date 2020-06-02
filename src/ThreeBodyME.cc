@@ -82,7 +82,7 @@ void ThreeBodyME::Allocate()
   {
     threebody_storage->Allocate();
   }
-  std::cout << "Done calling ThreeBodyME::Allocate() " << std::endl;
+//  std::cout << "Done calling ThreeBodyME::Allocate() " << std::endl;
 }
 
 // Interface setter-getters
@@ -216,13 +216,12 @@ std::vector<double> ThreeBodyME::GetME_pn_TwoOps(int Jab, int Jde, int twoJ, int
 void ThreeBodyME::TransformToPN()
 {
 //  ThreeBodyStorage_pn TBS_pn( modelspace, E3max, rank_J, rank_T, parity  );
-  std::cout << " IN " << __func__ << "  " << __FILE__ << "  line " << __LINE__ << std::endl;
   std::shared_ptr<ThreeBodyStorage> TBS_pn( new ThreeBodyStorage_pn( modelspace, E3max, rank_J, rank_T, parity)  );
   TBS_pn->SetHerm( this->herm );
 
 //  TBS_pn.Allocate();
   TBS_pn->Allocate();
-  std::cout << "DONE CALLING ALLOCATE" << std::endl;
+  
 
 //  size_t nch = modelspace->GetNumberThreeBodyChannels();
   std::vector<size_t> chbra_list,chket_list;
@@ -237,7 +236,6 @@ void ThreeBodyME::TransformToPN()
 //  #pragma omp parallel for schedule(dynamic,1)
   for (size_t ich=0; ich<nch; ich++)
   {
-    std::cout << "ich = " << ich << std::endl;
     size_t ch_bra = chbra_list[ich];
     size_t ch_ket = chket_list[ich];
     ThreeBodyChannel& Tbc_bra = modelspace->GetThreeBodyChannel(ch_bra);
@@ -257,15 +255,15 @@ void ThreeBodyME::TransformToPN()
 //        std::cout << "   iket = " << iket << std::endl;
         if ( (ch_bra==ch_ket) and (ibra==iket) and (herm==-1) ) continue;
         Ket3& ket = Tbc_ket.GetKet(iket);
-//        std::cout << "Call GetME_pn with isospin mode "
-//                  << bra.Jpq << " " << ket.Jpq << " " << twoJ << "  "
+//        std::cout << "Call GetME_pn with isospin mode  JJJ "
+//                  << bra.Jpq << " " << ket.Jpq << " " << twoJ << "    abc def "
 //                  << bra.p << " " << bra.q << " " << bra.r << "   "
 //                  << ket.p << " " << ket.q << " " << ket.r 
 //                  << std::endl;
         double me_pn = threebody_storage->GetME_pn( bra.Jpq, ket.Jpq, twoJ,  bra.p, bra.q, bra.r, ket.p, ket.q, ket.r );
 //        std::cout << "Call SetME_pn_ch with pn mode " << std::endl;
         TBS_pn->SetME_pn_ch( ch_bra, ch_ket, ibra, iket, me_pn);
-        std::cout << "Set " << TBS_pn->GetME_pn_ch( ch_bra, ch_ket, ibra, iket ) << "  and it should be " << me_pn << std::endl;
+//        std::cout << "Set " << TBS_pn->GetME_pn_ch( ch_bra, ch_ket, ibra, iket ) << "  and it should be " << me_pn << std::endl;
       }
     }
   }
@@ -275,7 +273,7 @@ void ThreeBodyME::TransformToPN()
   // The old data will be cleaned up automatically
 //  threebody_storage = std::shared_ptr<ThreeBodyStorage_pn>( TBS_pn );
   threebody_storage = TBS_pn;
-  std::cout << "DONE ASSIGNING" << std::endl;
+//  std::cout << "DONE ASSIGNING" << std::endl;
 
   storage_mode = pn;
 }

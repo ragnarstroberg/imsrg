@@ -46,12 +46,12 @@ ThreeBodyStorage::Permutation ThreeBodyStorage::SortOrbits(int a_in, int b_in, i
    a=a_in;
    b=b_in;
    c=c_in;
-//   if (a>b)  std::swap(a,b); // the a <= b <= c ordering matches with the 2body storage, which have if (q<p) continue;
-//   if (b>c)  std::swap(b,c);
-//   if (a>b)  std::swap(a,b);
-   if (a<b)  std::swap(a,b);
-   if (b<c)  std::swap(b,c);
-   if (a<b)  std::swap(a,b);
+   if (a>b)  std::swap(a,b); // the a <= b <= c ordering matches with the 2body storage, which have if (q<p) continue;
+   if (b>c)  std::swap(b,c);
+   if (a>b)  std::swap(a,b);
+//   if (a<b)  std::swap(a,b);
+//   if (b<c)  std::swap(b,c);
+//   if (a<b)  std::swap(a,b);
 
 //   int recoupling_case;
    Permutation recoupling_case;

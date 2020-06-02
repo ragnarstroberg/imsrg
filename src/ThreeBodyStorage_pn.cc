@@ -63,7 +63,7 @@ std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_pn::Clone() const { return st
 
 void ThreeBodyStorage_pn::Allocate()
 {
-  std::cout << "BEGIN " << __func__ << "  in  " << __FILE__ << std::endl;
+//  std::cout << "BEGIN " << __func__ << "  in  " << __FILE__ << std::endl;
   double tstart = omp_get_wtime();
   MatEl.clear();
   total_dimension = 0;
@@ -249,8 +249,8 @@ void ThreeBodyStorage_pn::AddToME_pn_ch(size_t ch_bra, size_t ch_ket, size_t ibr
   size_t index;
   int herm_flip;
   AccessME(ch_bra,ch_ket,ibra,iket,index,herm_flip);
-  std::cout << " IN " << __FILE__ << "  " << __func__ << "  index = " << index << "  size of MatEl = " << MatEl.size()
-            << "   adding " << herm_flip << " * " << V << "  to " << MatEl.at(index) << std::endl;
+//  std::cout << " IN " << __FILE__ << "  " << __func__ << "  index = " << index << "  size of MatEl = " << MatEl.size()
+//            << "   adding " << herm_flip << " * " << V << "  to " << MatEl.at(index) << std::endl;
   MatEl.at(index) += herm_flip * V;
 }
 

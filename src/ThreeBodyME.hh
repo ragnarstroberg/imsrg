@@ -64,8 +64,8 @@ class ThreeBodyME
 //  std::map<std::array<size_t,2>,size_t> ch_start; // relates {ch_bra,ch_ket} to location in MatEl_pn
 //  std::vector<size_t> ch_dim;  // number of 3-body kets in each 3-body channel
 
-  int E3max;
-  int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
+  int E3max=0;
+  int emax=0; // usually, this should be the emax of the modelspace, but we might want something smaller.
   int herm=1; // +1 for hermitian, -1 for anti-hermitian
   size_t total_dimension;
 

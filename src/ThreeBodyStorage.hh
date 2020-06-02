@@ -37,7 +37,7 @@ class ThreeBodyStorage
   ModelSpace * modelspace;
   int E3max;
   int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
-  int herm; // +1 for hermitian, -1 for anti-hermitian
+  int herm=1; // +1 for hermitian, -1 for anti-hermitian
 //  size_t total_dimension; // Maybe this should be private?
 
   int rank_J=0;

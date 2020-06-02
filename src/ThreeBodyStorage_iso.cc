@@ -73,7 +73,7 @@ void ThreeBodyStorage_iso::Allocate()
   OrbitIndexHash.clear();
   E3max = modelspace->GetE3max();
   int norbits = modelspace->GetNumberOrbits();
-  std::cout << "Begin AllocateThreeBody() in " << __FILE__ << " with E3max = " << E3max << " norbits = " << norbits << std::endl;
+//  std::cout << "Begin AllocateThreeBody() in " << __FILE__ << " with E3max = " << E3max << " norbits = " << norbits << std::endl;
   int lmax = 50000; // maybe do something with this later...
   total_dimension = 0;
 
@@ -82,6 +82,7 @@ void ThreeBodyStorage_iso::Allocate()
   else if (rank_T==3) ISOSPIN_BLOCK_DIMENSION = 1;
 
   // loop through even orbits, since odd ones are neutrons and we're doing isospin here.
+  // we store matrix elements for a>=b>=c and d>=e>=f
   for (int a=0; a<norbits; a+=2)
   {
    Orbit& oa = modelspace->GetOrbit(a);
@@ -122,7 +123,7 @@ void ThreeBodyStorage_iso::Allocate()
              if (((oa.l+ob.l+oc.l+od.l+oe.l+of.l)%2 !=parity) or (of.l > lmax)) continue;
 
              OrbitIndexHash[ KeyHash(a,b,c,d,e,f) ] = total_dimension;
-             std::cout << "  hashing " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "  : " << KeyHash(a,b,c,d,e,f) << "  -> " << total_dimension << "  check:  " << OrbitIndexHash.at( KeyHash(a,b,c,d,e,f) ) << std::endl;
+//             std::cout << "  hashing " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "  : " << KeyHash(a,b,c,d,e,f) << "  -> " << total_dimension << "  check:  " << OrbitIndexHash.at( KeyHash(a,b,c,d,e,f) ) << std::endl;
              int Jde_min = std::abs(od.j2-oe.j2)/2;
              int Jde_max = (od.j2+oe.j2)/2;
 
@@ -182,6 +183,11 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_iso::GetME_iso(int Jab_in, int Jde_in
    auto elements =  AccessME(Jab_in,Jde_in,twoJ,tab_in,tde_in,twoTabc,twoTdef,a_in,b_in,c_in,d_in,e_in,f_in);
    double me = 0;
    for (auto elem : elements) me += MatEl.at(elem.first) * elem.second;
+//   for (auto elem : elements)
+//   {
+//     me += MatEl.at(elem.first) * elem.second;
+//     std::cout << __FILE__ << " " << __func__ << "  ME[" << elem.first << "] * " << elem.second << "  = " << MatEl.at(elem.first) * elem.second << " -> " << me << std::endl;
+//   }
    return me;
 }
 
@@ -235,6 +241,7 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_iso::GetME_pn(int Jab_in, int Jde_in,
                Viso *= AngMom::CG(0.5*twoTdef,tzd+tze+tzf,  rank_T,dTz,  0.5*twoTabc,tza+tzb+tzc  ) / sqrt( twoTabc+1);
              }
              Vpn += CG1*CG2*CG3*CG4* Viso;
+//             std::cout << __FILE__ << " " << __LINE__ << "  " << Jab_in << " " << Jde_in << " " << twoJ << "  " << tab << " " << tde << " " << twoTabc << " " << twoTdef << "   " << a << " " << b << " " << c << " " << d << " "<< e << " " << f << "     " << CG1 << " " << CG2 << " " << CG3 << " " << CG4 << " " << Viso << "  -> " << Vpn << std::endl;
            }
          }
       }
@@ -409,9 +416,11 @@ ThreeBodyStorage::Permutation ThreeBodyStorage_iso::SortOrbits(int a_in, int b_i
 //   if (a>b)  std::swap(a,b); // the a <= b <= c ordering matches with the 2body storage, which have if (q<p) continue;
 //   if (b>c)  std::swap(b,c);
 //   if (a>b)  std::swap(a,b);
+  // we store matrix elements for a>=b>=c and d>=e>=f  so this is the correct check for the isospin matrix elements
    if (a<b)  std::swap(a,b);
    if (b<c)  std::swap(b,c);
    if (a<b)  std::swap(a,b);
+
 
 //   int recoupling_case;
    Permutation recoupling_case;
@@ -459,7 +468,14 @@ std::vector<std::pair<size_t,double>> ThreeBodyStorage_iso::AccessME(int Jab_in,
    }
 
    auto it_hash = OrbitIndexHash.find(KeyHash(a,b,c,d,e,f));
-   if ( it_hash == end(OrbitIndexHash) )   return elements;
+//   if ( it_hash == end(OrbitIndexHash) )   return elements;
+
+   if ( it_hash == end(OrbitIndexHash) )
+   {
+      std::cout << " IN " << __FILE__ << " " << __LINE__ << "  orbits not in hash for " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
+      return elements;
+   }
+
 
    Orbit& oa = modelspace->GetOrbit(a);
    Orbit& ob = modelspace->GetOrbit(b);
@@ -496,6 +512,9 @@ std::vector<std::pair<size_t,double>> ThreeBodyStorage_iso::AccessME(int Jab_in,
      oss << "ThreeBodyStorage_iso::AccessME() --  AAAAHHH indx = " << indx << "  but MatEl.size() = " << MatEl.size() << std::endl;
      throw std::domain_error( oss.str() );
    }
+
+
+//    std::cout << __FILE__ << " " << __func__ << "  ---------------------------------------"   << std::endl;
 
    int J_index = 0;
    for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
@@ -542,6 +561,8 @@ std::vector<std::pair<size_t,double>> ThreeBodyStorage_iso::AccessME(int Jab_in,
              else if ( rank_T==2 ) Tindex = (tab-tde) + (twoTabc-twoTdef)/2 + 2;
              else if ( rank_T==3 ) Tindex = 0;
 
+//              std::cout << __FILE__ << " " << __func__ << "   " << indx << " + " << J_index << " + " << Tindex << " * "
+//                        << "  " << Cj_abc << " " << Cj_def << " " << Ct_abc << " " << Ct_def << "  * " << herm_flip << std::endl;
 
               if (indx+J_index+Tindex > MatEl.size())
               {

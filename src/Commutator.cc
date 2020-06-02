@@ -2267,6 +2267,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
               }
               zij += prefactor * (twoJ+1) * ( (Xabcd * ycdiabj - yabicdj * Xcdab)
                                            -  (Yabcd * xcdiabj - xabicdj * Ycdab) );
+              std::cout << "Im here and zij = " << zij << std::endl;
             }
           }
         }
@@ -5096,8 +5097,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 {
-  std::cout << " Enter " << __func__ << std::endl;
-  std::cout << " line " << __LINE__ << "    Norms of XYZ are " << X.Norm() << " " << Y.Norm() << " " << Z.Norm() << std::endl;
+//  std::cout << " Enter " << __func__ << std::endl;
+//  std::cout << " line " << __LINE__ << "    Norms of XYZ are " << X.Norm() << " " << Y.Norm() << " " << Z.Norm() << std::endl;
   double tstart = omp_get_wtime();
   double t_internal = omp_get_wtime();
 //  int e3maxcut = 999;
@@ -5108,8 +5109,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   int hX = X.IsHermitian() ? 1 : -1;
   int hY = Y.IsHermitian() ? 1 : -1;
   int hZ = Z.IsHermitian() ? 1 : -1;
-  std::cout << " hermitian XYZ = " << hX << " " << hY << " " << hZ << "    directly at the 3b: "
-            << X.ThreeBody.herm << " " << Y.ThreeBody.herm << " " << Z.ThreeBody.herm << std::endl;
+//  std::cout << " hermitian XYZ = " << hX << " " << hY << " " << hZ << "    directly at the 3b: "
+//            << X.ThreeBody.herm << " " << Y.ThreeBody.herm << " " << Z.ThreeBody.herm << std::endl;
   if ( (std::abs( X2.Norm() * Y2.Norm() ) < 1e-6 ) and not Z.modelspace->scalar3b_transform_first_pass) return;
 
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
@@ -5484,13 +5485,13 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         }// for perm_ijk
 
 //        Z3.AddToME_pn_ch( ch_bra,ch_ket,ibra,iket, z_ijklmn );
-        std::cout << "  Z storage format = " << Z3.GetStorageMode() << ".  before adding,   read: " << Z3.GetME_pn_ch(ch3,ch3,ibra,iket) << std::endl;
+//        std::cout << "  Z storage format = " << Z3.GetStorageMode() << ".  before adding,   read: " << Z3.GetME_pn_ch(ch3,ch3,ibra,iket) << std::endl;
         Z3.AddToME_pn_ch( ch3,ch3,ibra,iket, zijklmn );
-        std::cout << "  just added " << zijklmn << "   read: " << Z3.GetME_pn_ch(ch3,ch3,ibra,iket) << std::endl;
+//        std::cout << "  just added " << zijklmn << "   read: " << Z3.GetME_pn_ch(ch3,ch3,ibra,iket) << std::endl;
       }// for iket
     }// for ibra
   }// for ch3
-  std::cout << " line " << __LINE__ << "    Norms of XYZ are " << X.Norm() << " " << Y.Norm() << " " << Z.Norm() << std::endl;
+//  std::cout << " line " << __LINE__ << "    Norms of XYZ are " << X.Norm() << " " << Y.Norm() << " " << Z.Norm() << std::endl;
   Z.profiler.timer["comm223_compute_loop"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
@@ -6513,6 +6514,14 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
       {
         if ( iter_ket.first > iter_bra.first ) continue;
         Z3.AddToME_pn_ch(ch3,ch3, iter_bra.first,iter_ket.first,  Z3MAT(iter_bra.second,iter_ket.second) );
+//         Ket3& bra = Tbc.GetKet(iter_bra.first);
+//         Ket3& ket = Tbc.GetKet(iter_ket.first);
+//         if ( ((bra.p==1) and (bra.q==0) and (bra.r==0) and (ket.p==3) and (ket.q==2) and (ket.r==0))
+//          or ( (ket.p==1) and (ket.q==0) and (ket.r==0) and (bra.p==3) and (bra.q==2) and (bra.r==0)) )
+//         {
+//           std::cout << __FILE__ << " " << __LINE__ << "  " << bra.p << " " << bra.q << " " << bra.r << "  " << ket.p << " " << ket.q << " " << ket.r
+//                     << "   " << bra.Jpq << " " << ket.Jpq << "  " << Tbc.twoJ << "    adding  " << Z3MAT(iter_bra.second,iter_ket.second) << std::endl;
+//         }
 //        if (ch3==0 and iter_bra.first<5 and iter_ket.first<5)
 //        {
 //          Ket3& bra = Tbc.GetKet( iter_bra.first );
