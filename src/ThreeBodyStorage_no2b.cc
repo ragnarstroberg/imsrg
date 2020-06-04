@@ -700,12 +700,12 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
                       }
                       counter += 1;
                       total_counter += 1;
-                      std::cout << " total_counter, nelem_to_read: " << total_counter << " " << n_elem_to_read << "  checks : " 
-                       << "  " << e1 << " " << e2 << " " << e3 << " " << e4 << " " << e5 << " " << e6 << "   "
-                       <<   (e1+e2 > E2max) << " " << (e1+e3 > E2max) << " " <<(e2+e3 > E2max) << " " <<(e4+e5 > E2max) << " " <<(e4+e6 > E2max) << " " <<(e5+e6 > E2max) 
-                       << "   E2max = " << E2max
-                                << std::endl;
-
+//                      std::cout << " total_counter, nelem_to_read: " << total_counter << " " << n_elem_to_read << "  checks : " 
+//                       << "  " << e1 << " " << e2 << " " << e3 << " " << e4 << " " << e5 << " " << e6 << "   "
+//                       <<   (e1+e2 > E2max) << " " << (e1+e3 > E2max) << " " <<(e2+e3 > E2max) << " " <<(e4+e5 > E2max) << " " <<(e4+e6 > E2max) << " " <<(e5+e6 > E2max) 
+//                       << "   E2max = " << E2max
+//                                << std::endl;
+//
 //                      if( (e1 > Emax) or (e2 > Emax) or (e3 > Emax) or (e4 > Emax) or (e5 > Emax) or (e6 > Emax)) continue;
                       if( std::max({e1,e2,e3,e4,e5,e6}) > emax) continue;
                       if( ((e1+e2) > E2max) or ((e1+e3) > E2max) or ((e2+e3) > E2max) or ((e4+e5) > E2max) or ((e4+e6) > E2max) or ((e5+e6) > E2max)) continue;
@@ -726,7 +726,7 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
                         }
                       }
 
-                      std::cout << "calling set " << i1 << " " << i2 << " " << i3 << ", " << T12 << " | "  << i4 << " " << i5 << " " << i6 << ", " << T45 << " , " << J << " " << T3 << " " << vset << std::endl;
+                      std::cout << " counte =  "<< counter << "  calling set " << i1 << " " << i2 << " " << i3 << ", " << T12 << " | "  << i4 << " " << i5 << " " << i6 << ", " << T45 << " , " << J << " " << T3 << " " << vset << std::endl;
                       if ( std::abs(vset)>1e-8)
                       {
                        SetME_iso_no2b(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, vset );
