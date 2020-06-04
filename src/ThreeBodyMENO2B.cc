@@ -667,7 +667,7 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<Type> & v, size_t n_elms)
                         }
                       }
 
-                      std::cout << "calling set " << i1 << " " << i2 << " " << i3 << ", " << T12 << " | " << i4 << " " << i5 << " " << i6 << ", " << T45 << " ,  " << J << " " << T3 << "  -> " << ThreeBMENO2B_IO_type(v[counter-1]) << std::endl;
+                      std::cout << " counter " << counter <<  "   calling set " << i1 << " " << i2 << " " << i3 << ", " << T12 << " | " << i4 << " " << i5 << " " << i6 << ", " << T45 << " ,  " << J << " " << T3 << "  -> " << ThreeBMENO2B_IO_type(v[counter-1]) << std::endl;
 //                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, v[counter-1]);
                       SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, ThreeBMENO2B_IO_type(v[counter-1]) );
 
