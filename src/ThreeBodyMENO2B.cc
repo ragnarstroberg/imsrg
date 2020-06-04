@@ -549,7 +549,7 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<Type> & v, size_t n_elms)
 
   std::cout << "Reading " << n_elms << " elements from binary file" << std::endl;
 
-  #pragma omp parallel  // not a for block. all the threads go through each step of the for loops
+//PUTTHISBACK  #pragma omp parallel  // not a for block. all the threads go through each step of the for loops
   {
      int num_threads = omp_get_num_threads();
      int this_thread = omp_get_thread_num();
@@ -667,6 +667,7 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<Type> & v, size_t n_elms)
                         }
                       }
 
+                      std::cout << "calling set " << i1 << " " << i2 << " " << i3 << ", " << T12 << " | " << i4 << " " << i5 << " " << i6 << ", " << T45 << " ,  " << J << " " << T3 << "  -> " << ThreeBMENO2B_IO_type(v[counter-1]) << std::endl;
 //                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, v[counter-1]);
                       SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, ThreeBMENO2B_IO_type(v[counter-1]) );
 
