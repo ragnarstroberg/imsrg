@@ -8,26 +8,43 @@ ThreeBodyStorage::ThreeBodyStorage()
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms)
- : modelspace(ms), E3max(ms->GetE3max()), emax(ms->GetEmax())
+ : modelspace(ms), E3max(ms->GetE3max()), emax(ms->GetEmax()), lmax(ms->GetLmax())
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int e3max)
- : modelspace(ms), E3max(e3max), emax(ms->GetEmax())
+ : modelspace(ms), E3max(e3max), emax(ms->GetEmax()), lmax(ms->GetLmax())
 {}
 
 ThreeBodyStorage::ThreeBodyStorage( const ThreeBodyStorage& TBS_in )
-: modelspace(TBS_in.modelspace), E3max(TBS_in.E3max), emax(TBS_in.emax), herm(TBS_in.herm), 
+: modelspace(TBS_in.modelspace), E3max(TBS_in.E3max), emax(TBS_in.emax), lmax(TBS_in.lmax), herm(TBS_in.herm), 
  rank_J(TBS_in.rank_J), rank_T(TBS_in.rank_T), parity(TBS_in.parity), ISOSPIN_BLOCK_DIMENSION(TBS_in.ISOSPIN_BLOCK_DIMENSION),
  is_allocated(TBS_in.is_allocated), ch_start(TBS_in.ch_start), ch_dim(TBS_in.ch_dim)
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int rJ, int rT, int p)
- : modelspace(ms), E3max(ms->GetE3max()), emax(ms->GetEmax()), rank_J(rJ), rank_T(rT), parity(p)
+ : modelspace(ms), E3max(ms->GetE3max()), emax(ms->GetEmax()), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int e3max , int rJ, int rT, int p)
- : modelspace(ms), E3max(e3max), emax(ms->GetEmax()), rank_J(rJ), rank_T(rT), parity(p)
+ : modelspace(ms), E3max(e3max), emax(ms->GetEmax()), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
 {}
+
+
+
+
+
+// In general, not all storage types can/must implement all ways of accessing 3-body matrix elments.
+// If we try to call a method that's not implemented, we make some noise and die.
+// This will presumably be due to a mistake in the code, but if we really want to access the matrix
+// element in that particular way using that particular storage mode, then we'd better go ahead and implement it.
+//
+ThreeBodyStorage::ME_type ThreeBodyStorage::NotImplemented() const
+{
+  std::cout << "ERROR: " << __func__ << " is not yet implemented for ThreeBodyStorage mode [" << GetStorageMode()  << "]. Dying now." << std::endl;
+  std::exit(EXIT_FAILURE);
+  return 0;
+}
+
 
 
 //*******************************************************************
@@ -201,4 +218,37 @@ std::vector<ThreeBodyStorage::ME_type> ThreeBodyStorage::GetME_pn_TwoOps(int Jab
     }
   }
   return me_out;
+}
+
+
+
+
+ThreeBodyStorage::ME_type ThreeBodyStorage::GetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2b, int twoT) const 
+{
+   Orbit& oc = modelspace->GetOrbit(c);
+   int twoJmin = std::abs( 2*J2b - oc.j2 );
+   int twoJmax = 2*J2b + oc.j2; 
+   ME_type me_no2b = 0;
+   for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
+   {
+     me_no2b += GetME_iso(J2b,J2b,twoJ, Tab,Tde,twoT,twoT, a,b,c,d,e,f) * (twoJ+1.);
+   }
+   return me_no2b;
+}
+
+
+// Get ME with Jab=Jde=J2b, summed over total J with weight 2J+1
+// For most storage modes which implement GetME_pn, this is all that's needed.
+// For the NO2B storage mode, this will be overloaded.
+ThreeBodyStorage::ME_type ThreeBodyStorage::GetME_pn_no2b(int a, int b, int c, int d, int e, int f,  int J2b) const
+{
+   Orbit& oc = modelspace->GetOrbit(c);
+   int twoJmin = std::abs( 2*J2b - oc.j2 );
+   int twoJmax = 2*J2b + oc.j2; 
+   ME_type me_no2b = 0;
+   for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
+   {
+     me_no2b += GetME_pn(J2b,J2b,twoJ, a,b,c,d,e,f) * (twoJ+1.);
+   }
+   return me_no2b;
 }

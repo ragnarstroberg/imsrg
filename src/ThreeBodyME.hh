@@ -24,6 +24,7 @@
 #include "ThreeBodyStorage.hh"
 #include "ThreeBodyStorage_iso.hh"
 #include "ThreeBodyStorage_pn.hh"
+#include "ThreeBodyStorage_no2b.hh"
 #include <fstream>
 #include <unordered_map>
 #include <memory> // for shared_ptr
@@ -104,6 +105,8 @@ class ThreeBodyME
   void TransformToPN();
   void TransformToIsospin(); // not implemented yet
   void SwitchToPN_and_discard();// Maybe just make this the default behavior when setting PN-mode ?
+//  void SetNO2B_mode();
+  void SetMode(std::string mode);
 
 
   // Various ways to access the matrix elements.
@@ -133,6 +136,7 @@ class ThreeBodyME
   // In commutator expressions it often comes up that we want the same matrix element from two operators. This saves an extra recoupling.
   std::vector<double> GetME_pn_TwoOps(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, const ThreeBodyME& X, const ThreeBodyME& Y) const;
 
+  ThreeBME_type GetME_pn_no2b(int a, int b, int c, int d, int e, int f,  int J2b) const;
 
 
 ///// Some other three body methods
@@ -176,6 +180,9 @@ class ThreeBodyME
 
   void WriteBinary(std::ofstream&);
   void ReadBinary(std::ifstream&);
+
+  void WriteFile(std::vector<std::string> StringInputs, std::vector<int> IntInputs ) const;
+  void ReadFile( std::vector<std::string> StringInputs, std::vector<int> IntInputs );
 
 };
 

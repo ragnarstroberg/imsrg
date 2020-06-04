@@ -79,6 +79,7 @@ class ThreeBodySpaceNO2B
 };
 
 
+
 class ThreeBodyMENO2B
 {
 //    std::map<int, std::vector<ThreeBMENO2B_Store_type>> MatEl;
@@ -122,7 +123,7 @@ class ThreeBodyMENO2B
     size_t idx1d(size_t bra, size_t ket) { return std::max(bra+1,ket+1) * (std::max(bra+1,ket+1)-1)/2 + std::min(bra+1,ket+1)-1;};
     void SetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3, ThreeBMENO2B_IO_type V);
     ThreeBMENO2B_IO_type GetThBME(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3);
-    ThreeBMENO2B_IO_type GetThBME(int a, int b, int c, int d, int e, int f, int twoJ);
+    ThreeBMENO2B_IO_type GetThBME(int a, int b, int c, int d, int e, int f, int J2);
 //    void ReadFile();
     void ReadFile( std::string filename );
     long long unsigned int CountME();

@@ -66,7 +66,8 @@ Operator::Operator()
 // Create a zero-valued operator in a given model space
 Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
-    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms,Jrank,Trank,p), ThreeLeg(&ms), ThreeBodyNO2B(),
+//    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms,Jrank,Trank,p), ThreeLeg(&ms), ThreeBodyNO2B(),
+    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms,Jrank,Trank,p), ThreeLeg(&ms),
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank), legs(2*part_rank),
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),
@@ -79,7 +80,8 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 
 Operator::Operator(ModelSpace& ms) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
-    TwoBody(&ms),  ThreeBody(&ms), ThreeLeg(&ms), ThreeBodyNO2B(),
+    TwoBody(&ms),  ThreeBody(&ms), ThreeLeg(&ms),
+//    TwoBody(&ms),  ThreeBody(&ms), ThreeLeg(&ms), ThreeBodyNO2B(),
     rank_J(0), rank_T(0), parity(0), particle_rank(2), legs(4),
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),
@@ -91,7 +93,8 @@ Operator::Operator(ModelSpace& ms) :
 
 Operator::Operator(const Operator& op)
 : modelspace(op.modelspace),  ZeroBody(op.ZeroBody),
-  OneBody(op.OneBody), TwoBody(op.TwoBody) ,ThreeBody(op.ThreeBody), ThreeLeg(op.ThreeLeg), ThreeBodyNO2B(op.ThreeBodyNO2B),
+  OneBody(op.OneBody), TwoBody(op.TwoBody) ,ThreeBody(op.ThreeBody), ThreeLeg(op.ThreeLeg),
+//  OneBody(op.OneBody), TwoBody(op.TwoBody) ,ThreeBody(op.ThreeBody), ThreeLeg(op.ThreeLeg), ThreeBodyNO2B(op.ThreeBodyNO2B),
   rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank), legs(op.legs),
   E2max(op.E2max), E3max(op.E3max),
   hermitian(op.hermitian), antihermitian(op.antihermitian),
@@ -103,7 +106,7 @@ Operator::Operator(const Operator& op)
 Operator::Operator(Operator&& op)
 : modelspace(op.modelspace), ZeroBody(op.ZeroBody),
   OneBody(std::move(op.OneBody)), TwoBody(std::move(op.TwoBody)) , ThreeBody(std::move(op.ThreeBody)), ThreeLeg(std::move(op.ThreeLeg)),
-  ThreeBodyNO2B(std::move(op.ThreeBodyNO2B)),
+//  ThreeBodyNO2B(std::move(op.ThreeBodyNO2B)),
   rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank), legs(op.legs),
   E2max(op.E2max), E3max(op.E3max),
   hermitian(op.hermitian), antihermitian(op.antihermitian),
@@ -127,7 +130,7 @@ Operator& Operator::operator*=(const double rhs)
    TwoBody *= rhs;
    ThreeLeg *= rhs;
    if (particle_rank > 2)  ThreeBody *= rhs;
-   if (particle_rank > 2)  ThreeBodyNO2B *= rhs;
+//   if (particle_rank > 2)  ThreeBodyNO2B *= rhs;
    return *this;
 }
 
@@ -172,8 +175,8 @@ Operator& Operator::operator+=(const Operator& rhs)
      TwoBody  += rhs.TwoBody;
    if (rhs.GetParticleRank() >2 )
      ThreeBody += rhs.ThreeBody;
-   if (rhs.GetParticleRank() >2 )
-     ThreeBodyNO2B += rhs.ThreeBodyNO2B;
+//   if (rhs.GetParticleRank() >2 )
+//     ThreeBodyNO2B += rhs.ThreeBodyNO2B;
    if (rhs.GetNumberLegs()%2==1)
      ThreeLeg += rhs.ThreeLeg;
    return *this;
@@ -207,8 +210,8 @@ Operator& Operator::operator-=(const Operator& rhs)
      TwoBody -= rhs.TwoBody;
    if (rhs.GetParticleRank() > 2)
      ThreeBody -= rhs.ThreeBody;
-   if (rhs.GetParticleRank() > 2)
-     ThreeBodyNO2B -= rhs.ThreeBodyNO2B;
+//   if (rhs.GetParticleRank() > 2)
+//     ThreeBodyNO2B -= rhs.ThreeBodyNO2B;
    if (rhs.GetNumberLegs()%2==1)
      ThreeLeg -= rhs.ThreeLeg;
    return *this;

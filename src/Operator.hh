@@ -23,7 +23,7 @@
 #include "ModelSpace.hh"
 #include "TwoBodyME.hh"
 #include "ThreeBodyME.hh"
-#include "ThreeBodyMENO2B.hh"
+//#include "ThreeBodyMENO2B.hh"
 //#include "ThreeBodyMEpn.hh"
 #include "ThreeLegME.hh"
 #include "IMSRGProfiler.hh"
@@ -53,7 +53,7 @@ class Operator
   ThreeBodyME ThreeBody; ///< The three body piece of the operator.
 //  ThreeBodyMEpn ThreeBody; ///< The three body piece of the operator.
   ThreeLegME ThreeLeg;  ///< Three-legged operators, used if this is a particle-number-changing operator, i.e. if legs is odd
-  ThreeBodyMENO2B ThreeBodyNO2B; ///< The three body piece of the operator.
+//  ThreeBodyMENO2B ThreeBodyNO2B; ///< The three body piece of the operator.
 
   int rank_J; ///< Spherical tensor rank of the operator
   int rank_T; ///< Isotensor rank of the operator

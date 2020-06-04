@@ -183,11 +183,6 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_iso::GetME_iso(int Jab_in, int Jde_in
    auto elements =  AccessME(Jab_in,Jde_in,twoJ,tab_in,tde_in,twoTabc,twoTdef,a_in,b_in,c_in,d_in,e_in,f_in);
    double me = 0;
    for (auto elem : elements) me += MatEl.at(elem.first) * elem.second;
-//   for (auto elem : elements)
-//   {
-//     me += MatEl.at(elem.first) * elem.second;
-//     std::cout << __FILE__ << " " << __func__ << "  ME[" << elem.first << "] * " << elem.second << "  = " << MatEl.at(elem.first) * elem.second << " -> " << me << std::endl;
-//   }
    return me;
 }
 
@@ -265,13 +260,13 @@ void ThreeBodyStorage_iso::SetME_iso(int Jab_in, int Jde_in, int twoJ, int tab_i
 
 
 
-
+/*
 void ThreeBodyStorage_iso::SetME_pn( int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f, ThreeBodyStorage::ME_type V)
 {
   std::cout << __func__ << "   on " << __FILE__ << "  line " << __LINE__ << "  is not yet implemented." << std::endl;
   std::exit(EXIT_FAILURE);
 }
-
+*/
 
 
 
@@ -282,7 +277,7 @@ void ThreeBodyStorage_iso::AddToME_iso(int Jab, int Jde, int twoJ, int tab, int 
 }
 
 
-
+/*
 void ThreeBodyStorage_iso::AddToME_pn( int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f, ThreeBodyStorage::ME_type V)
 {
   std::cout << __func__ << "   on " << __FILE__ << "  line " << __LINE__ << "  is not yet implemented." << std::endl;
@@ -309,7 +304,7 @@ void ThreeBodyStorage_iso::SetME_pn_ch(  size_t ch_bra, size_t ch_ket, size_t ib
   std::cout << __func__ << "   on " << __FILE__ << "  line " << __LINE__ << "  is not yet implemented." << std::endl;
   std::exit(EXIT_FAILURE);
 }
-
+*/
 
 double ThreeBodyStorage_iso::Norm() const
 {
@@ -330,7 +325,7 @@ void ThreeBodyStorage_iso::Deallocate()
    std::unordered_map<size_t, size_t>().swap( OrbitIndexHash  );
 }
 
-size_t ThreeBodyStorage_iso::size()
+size_t ThreeBodyStorage_iso::size() const
 {
   return total_dimension * sizeof(isoME_type);
 }

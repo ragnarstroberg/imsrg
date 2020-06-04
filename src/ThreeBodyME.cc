@@ -191,6 +191,10 @@ std::vector<double> ThreeBodyME::GetME_pn_TwoOps(int Jab, int Jde, int twoJ, int
 
 
 
+ThreeBME_type ThreeBodyME::GetME_pn_no2b(int a, int b, int c, int d, int e, int f,  int J2b) const
+{
+  return threebody_storage->GetME_pn_no2b(a,b,c,d,e,f,J2b);
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -298,7 +302,30 @@ void ThreeBodyME::SwitchToPN_and_discard()
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
 }
 
-
+void ThreeBodyME::SetMode(std::string mode)
+{
+  double t_start = omp_get_wtime();
+  if (mode == "isospin" )
+  {
+      threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_iso( modelspace, E3max, rank_J, rank_T, parity)  );
+  }
+  else if ( mode == "pn" )
+  {
+      threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_pn( modelspace, E3max, rank_J, rank_T, parity)  );
+  }
+  else if (mode == "no2b" )
+  {
+    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b( modelspace, E3max, rank_J, rank_T, parity)  );
+  }
+  else if (mode == "no2bhalf" )
+  {
+    std::cout << " ERROR ! mode " << mode << "  is not yet implemented" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  threebody_storage->Allocate();
+  storage_mode = pn;
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+}
 
 
 size_t ThreeBodyME::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a_in, size_t b_in, size_t c_in, std::vector<size_t>& iket , std::vector<double>& recouple) const
@@ -402,6 +429,18 @@ void ThreeBodyME::ReadBinary(std::ifstream& f)
 {
   threebody_storage->ReadBinary(f);
 }
+
+
+void ThreeBodyME::WriteFile(std::vector<std::string> StringInputs, std::vector<int> IntInputs ) const
+{
+  threebody_storage->WriteFile( StringInputs, IntInputs );
+}
+
+void ThreeBodyME::ReadFile( std::vector<std::string> StringInputs, std::vector<int> IntInputs )
+{
+  threebody_storage->ReadFile( StringInputs, IntInputs );
+}
+
 
 std::string ThreeBodyME::GetStorageMode()
 {

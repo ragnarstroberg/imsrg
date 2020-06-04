@@ -386,6 +386,7 @@ void HartreeFock::BuildMonopoleV3()
    Vmon3.resize( Vmon3_keys.size(), 0. );
    profiler.timer["HF_BuildMonopoleV3_allocate"] += omp_get_wtime() - start_time;
 
+/*
    if(Hbare.ThreeBodyNO2B.initialized)
    {
 #pragma omp parallel for schedule(dynamic,1)
@@ -412,8 +413,9 @@ void HartreeFock::BuildMonopoleV3()
        Vmon3[ind] = v ;
      }
    }
+*/
 
-   else{
+//   else{
    #pragma omp parallel for schedule(dynamic,1)
      for (size_t ind=0; ind<Vmon3.size(); ++ind)
      {
@@ -431,18 +433,19 @@ void HartreeFock::BuildMonopoleV3()
        int j2max = (j2a+j2c)/2;
        for (int j2=j2min; j2<=j2max; ++j2)
        {
-         int Jmin =  std::abs(2*j2-j2i) ;
-         int Jmax = 2*j2 + j2i;
-         for (int J2=Jmin; J2<=Jmax; J2+=2)
-         {
-           v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
-        }
+         v += Hbare.ThreeBody.GetME_pn_no2b(a,c,i,b,d,j,j2);
+//         int Jmin =  std::abs(2*j2-j2i) ;
+//         int Jmax = 2*j2 + j2i;
+//         for (int J2=Jmin; J2<=Jmax; J2+=2)
+//         {
+//           v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
+//         }
       }
       v /= j2i+1.0;
       #pragma omp atomic write
       Vmon3[ind] = v ;
      }
-   }
+//   }
    std::cout << "HartreeFock::BuildMonopoleV3  storing " << Vmon3.size() << " doubles for Vmon3 and "
              << Vmon3_keys.size() << " uint64's for Vmon3_keys." << std::endl;
 
@@ -1174,6 +1177,7 @@ Operator HartreeFock::GetNormalOrderedH(int particle_rank)
    HNO.OneBody = C.t() * F * C;
 
    int nchan = modelspace->GetNumberTwoBodyChannels();
+/*
    if(Hbare.ThreeBodyNO2B.initialized)
    {
      for (int ch=0;ch<nchan;++ch)
@@ -1230,9 +1234,9 @@ Operator HartreeFock::GetNormalOrderedH(int particle_rank)
        OUT  =    D.t() * (V2 + V3NO) * D;
      }
    }// if ThreeBodyNO2B.initialized
-
-   else // Otherwise, we're using the full 3-body operator, not the NO2B structure
-   {
+*/
+//   else // Otherwise, we're using the full 3-body operator, not the NO2B structure
+//   {
      for (int ch=0;ch<nchan;++ch)
      {
        TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
@@ -1272,12 +1276,13 @@ Operator HartreeFock::GetNormalOrderedH(int particle_rank)
                Orbit & ob = modelspace->GetOrbit(b);
                if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
                if ( std::abs(rho(a,b)) < 1e-8 ) continue; // Turns out this helps a bit (factor of 5 speed up in tests)
-               int J3min = std::abs(2*J-oa.j2);
-               int J3max = 2*J + oa.j2;
-               for (int J3=J3min; J3<=J3max; J3+=2)
-               {
-                 V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
-               }
+               V3NO(i,j) += rho(a,b) * Hbare.ThreeBody.GetME_pn_no2b(bra.p,bra.q,a, ket.p,ket.q,b, J);
+               //int J3min = std::abs(2*J-oa.j2);
+               //int J3max = 2*J + oa.j2;
+               //for (int J3=J3min; J3<=J3max; J3+=2)
+               //{
+               //  V3NO(i,j) += rho(a,b) * (J3+1) * Hbare.ThreeBody.GetME_pn(J,J,J3,bra.p,bra.q,a,ket.p,ket.q,b);
+               //}
              }
            }
            V3NO(i,j) /= (2*J+1);
@@ -1296,7 +1301,7 @@ Operator HartreeFock::GetNormalOrderedH(int particle_rank)
      {
        HNO.ThreeBody = GetTransformed3B( Hbare );
      }
-   }// else => not using NO2B 3b matrix elements
+//   }// else => not using NO2B 3b matrix elements
 
 
    profiler.timer["HF_GetNormalOrderedH"] += omp_get_wtime() - start_time;

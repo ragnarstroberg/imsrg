@@ -402,14 +402,20 @@ int main(int argc, char** argv)
     if(input3bme_type == "no2b"){
       double t_start = omp_get_wtime();
 //      Hbare.ThreeBodyNO2B.Allocate(modelspace, file3e1max, file3e2max, file3e3max, file3e1max, input3bme);
-      if ( no2b_precision == "half")  Hbare.ThreeBodyNO2B.SetHalfPrecision();
-      Hbare.ThreeBodyNO2B.Allocate(modelspace, file3e1max, file3e2max, file3e3max, file3e1max);
+
+//      if ( no2b_precision == "half")  Hbare.ThreeBodyNO2B.SetHalfPrecision(); // not re-implemented
+
+      Hbare.ThreeBody.SetMode("no2b");
+
+//      Hbare.ThreeBodyNO2B.Allocate(modelspace, file3e1max, file3e2max, file3e3max, file3e1max);
       Hbare.profiler.timer["ThreeBodyNO2B::Allocate"] += omp_get_wtime() - t_start;
       t_start = omp_get_wtime();
 //      Hbare.ThreeBodyNO2B.ReadFile();
-      Hbare.ThreeBodyNO2B.ReadFile( input3bme );
+//      Hbare.ThreeBodyNO2B.ReadFile( input3bme );
+      Hbare.ThreeBody.ReadFile( {input3bme}, {file3e1max, file3e3max, file3e2max, file3e1max} );
       Hbare.profiler.timer["ThreeBodyNO2B::ReadFile"] += omp_get_wtime() - t_start;
       std::cout << "done reading 3N" << std::endl;
+
     }
   }
 

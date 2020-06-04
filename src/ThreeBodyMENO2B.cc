@@ -318,6 +318,9 @@ void ThreeBodyMENO2B::SetThBME(int a, int b, int c, int Tab,
 //  Vch[idx1d(bra,ket)] = ThreeBMENO2B_Store_type( V * ph);
 }
 
+// Return a three-body matrix element where a,b are coupled to J2 and Tab, and d,e are coupled to J2 and Tde
+// Tab,c are coupled to T3, and Tde,c are coupled to T3
+// There is no total J quantum number, because it has been summed over with a weight 2J+1
 ThreeBMENO2B_IO_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int Tab,
     int d, int e, int f, int Tde, int J2, int T3)
 {
@@ -355,6 +358,8 @@ ThreeBMENO2B_IO_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int Tab,
 //  return Vch[idx1d(bra,ket)] * ph;
 }
 
+
+//
 ThreeBMENO2B_IO_type ThreeBodyMENO2B::GetThBME(int a, int b, int c, int d, int e, int f,  int J2)
 {
   Orbit & oa = modelspace->GetOrbit(a);

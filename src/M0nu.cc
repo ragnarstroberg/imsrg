@@ -387,7 +387,8 @@ namespace M0nu
 
 
   /// Get an integral from the IntList cache or calculate it (parallelization dependent)
-  double GetM0nuIntegral(int e2max, int n, int l, int np, int lp, double hw, std::string transition, int rho, double Eclosure, std::string src, std::unordered_map<uint64_t,double> IntList)
+//  double GetM0nuIntegral(int e2max, int n, int l, int np, int lp, double hw, std::string transition, int rho, double Eclosure, std::string src, std::unordered_map<uint64_t,double> IntList)
+  double GetM0nuIntegral(int e2max, int n, int l, int np, int lp, double hw, std::string transition, int rho, double Eclosure, std::string src, std::unordered_map<uint64_t,double>& IntList)
   {
 //    int maxn = e2max/2;  // SRS commented out. not used.
     int maxl = e2max;
@@ -493,7 +494,8 @@ namespace M0nu
   /// Get a 6j from the T6jList cache or calculate it (parallelization dependent)
   /// { l1 L1 R }
   /// { L2 l2 2 } NOTE: the "2" in the bottom-right entry
-  double GetM0nuT6j(int l1, int L1, int R, int L2, int l2, std::unordered_map<uint64_t,double> T6jList)
+//  double GetM0nuT6j(int l1, int L1, int R, int L2, int l2, std::unordered_map<uint64_t,double> T6jList)
+  double GetM0nuT6j(int l1, int L1, int R, int L2, int l2, std::unordered_map<uint64_t,double>& T6jList)
   {
     uint64_t key = T6jHash(l1,L1,R,L2,l2);
     auto it = T6jList.find(key);

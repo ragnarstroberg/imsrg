@@ -186,7 +186,7 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_iso( int Jab_in, int Jde_in
 }
 
 
-
+/*
 void ThreeBodyStorage_pn::SetME_pn( int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f, ThreeBodyStorage::ME_type V)
 {
   std::cout << __func__ << "   on " << __FILE__ << "  line " << __LINE__ << "  is not yet implemented." << std::endl;
@@ -213,14 +213,13 @@ void ThreeBodyStorage_pn::AddToME_iso(int Jab_in, int Jde_in, int twoJ, int tab_
   std::cout << __func__ << "   on " << __FILE__ << "  line " << __LINE__ << "  is not yet implemented." << std::endl;
   std::exit(EXIT_FAILURE);
 }
-
+*/
 
 
 
 
 ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket) const
 {
-//  std::cout << " IN " << __FILE__ << " " << __func__ << "  is_allocated = " << is_allocated << std::endl;
   if ( not is_allocated ) return 0;
   if (ch_bra==ch_ket and ibra==iket and herm==-1) return 0;
   size_t index;
@@ -274,7 +273,7 @@ void ThreeBodyStorage_pn::Deallocate()
     std::vector<ThreeBodyStorage_pn::pnME_type>().swap( MatEl);
 }
 
-size_t ThreeBodyStorage_pn::size()
+size_t ThreeBodyStorage_pn::size() const
 {
   return total_dimension * sizeof(pnME_type);
 }
