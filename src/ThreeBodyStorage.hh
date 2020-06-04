@@ -36,8 +36,9 @@ class ThreeBodyStorage
   enum Permutation {ABC,BCA,CAB,ACB,BAC,CBA};
 
   ModelSpace * modelspace;
-  int E3max;
   int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
+  int E2max;
+  int E3max;
   int lmax;
   int herm=1; // +1 for hermitian, -1 for anti-hermitian
 //  size_t total_dimension; // Maybe this should be private?
@@ -118,7 +119,7 @@ class ThreeBodyStorage
   virtual void WriteFile(std::vector<std::string>& StringInputs, std::vector<int>& IntInputs ){NotImplemented();};
   virtual void ReadFile( std::vector<std::string>& StringInputs, std::vector<int>& IntInputs ){NotImplemented();};
   virtual void Print() {NotImplemented();};
-  bool IsAllocated() {return is_allocated;};
+  bool IsAllocated() const {return is_allocated;};
   void SetHerm(int h) { herm = h; };
   void SetEmax(int e) { emax = e; };
   void SetE3max(int e) { E3max = e; };

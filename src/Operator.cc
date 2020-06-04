@@ -551,8 +551,9 @@ Operator Operator::DoNormalOrdering3(int sign) const
    Operator opNO2 = opNO3.DoNormalOrdering2(sign);
    opNO2.ScaleZeroBody(1./3.);
    opNO2.ScaleOneBody(1./2.);
-//   std::cout << "IN " << __func__ << "  line " << __LINE__ << "   norms of NO 3b pieces are " << opNO2.ZeroBody << "   " << opNO2.OneBodyNorm() << "   " << opNO2.TwoBodyNorm() << "  and thie original 3b norm was  " << ThreeBody.Norm() << "  which produced a no2b with norm " << opNO3.TwoBodyNorm() << std::endl;
-
+   std::cout << "IN " << __func__ << "  line " << __LINE__ << "   norms of NO 3b pieces are " << opNO2.ZeroBody << "   " << opNO2.OneBodyNorm() << "   " << opNO2.TwoBodyNorm() << "  and thie original 3b norm was  " << ThreeBody.Norm() << "  which produced a no2b with norm " << opNO3.TwoBodyNorm() << std::endl;
+   std::cout << " opNO2 has storage mode " << opNO2.ThreeBody.GetStorageMode() << "  and this has storage mode " << ThreeBody.GetStorageMode() << "  and opNO3 has " << opNO3.ThreeBody.GetStorageMode() << std::endl;
+   std::cout << "Are they allocated? " << opNO2.ThreeBody.IsAllocated() << "  " << ThreeBody.IsAllocated() << "  " << opNO3.ThreeBody.IsAllocated() << std::endl;
    // Also normal order the 1 and 2 body pieces
    opNO2 += DoNormalOrdering2(sign);
    return opNO2;

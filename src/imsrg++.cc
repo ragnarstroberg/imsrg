@@ -603,9 +603,10 @@ int main(int argc, char** argv)
     t = qn[1];
     p = qn[2];
     r = qn[3];
-//    std::cout << "Parsed tag. opname = " << opname << "  qnumbers = " << qnumbers << "  " << j << " " << t << " " << p << " " << r << "   file2 = " << f2name
-//              << "    file3 = " << f3name << std::endl;
+    std::cout << "Parsed tag. opname = " << opname << "  qnumbers = " << qnumbers << "  " << j << " " << t << " " << p << " " << r << "   file2 = " << f2name
+              << "    file3 = " << f3name << std::endl;
     Operator op(modelspace,j,t,p,r);
+    if (r>2) op.ThreeBody.Allocate();
 //    std::cout << "Reading operator " << opname << "  in " << input_op_fmt << "  format from files " << f2name << "  ,  " << f3name << std::endl;
 //    std::cout << "Operator has particle rank " << op.GetParticleRank() << std::endl;
     if ( input_op_fmt == "navratil" )
@@ -630,7 +631,7 @@ int main(int argc, char** argv)
 //  for (auto& op : ops)
   for (size_t i=0;i<ops.size();++i)
   {
-//    std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+    std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
      // We don't transform a DaggerHF, because we want the a^dagger to already refer to the HF basis.
     if ((basis == "HF") and (opnames[i].find("DaggerHF") == std::string::npos)  )
     {
@@ -640,9 +641,9 @@ int main(int argc, char** argv)
     {
       ops[i] = hf.TransformHOToNATBasis(ops[i]);
     }
-//    std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+    std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
     ops[i] = ops[i].DoNormalOrdering();
-//    std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+    std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
     if (method == "MP3")
     {
       double dop = ops[i].MP1_Eval( HNO );

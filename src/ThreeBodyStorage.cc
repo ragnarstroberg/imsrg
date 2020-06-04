@@ -8,25 +8,25 @@ ThreeBodyStorage::ThreeBodyStorage()
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms)
- : modelspace(ms), E3max(ms->GetE3max()), emax(ms->GetEmax()), lmax(ms->GetLmax())
+ : modelspace(ms), emax(ms->GetEmax()), E2max(ms->GetE3max()), E3max(ms->GetE3max()), lmax(ms->GetLmax())
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int e3max)
- : modelspace(ms), E3max(e3max), emax(ms->GetEmax()), lmax(ms->GetLmax())
+ : modelspace(ms),  emax(ms->GetEmax()), E2max(ms->GetE2max()), E3max(ms->GetE3max()), lmax(ms->GetLmax())
 {}
 
 ThreeBodyStorage::ThreeBodyStorage( const ThreeBodyStorage& TBS_in )
-: modelspace(TBS_in.modelspace), E3max(TBS_in.E3max), emax(TBS_in.emax), lmax(TBS_in.lmax), herm(TBS_in.herm), 
+: modelspace(TBS_in.modelspace), emax(TBS_in.emax), E2max(TBS_in.E2max), E3max(TBS_in.E3max), lmax(TBS_in.lmax), herm(TBS_in.herm), 
  rank_J(TBS_in.rank_J), rank_T(TBS_in.rank_T), parity(TBS_in.parity), ISOSPIN_BLOCK_DIMENSION(TBS_in.ISOSPIN_BLOCK_DIMENSION),
  is_allocated(TBS_in.is_allocated), ch_start(TBS_in.ch_start), ch_dim(TBS_in.ch_dim)
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int rJ, int rT, int p)
- : modelspace(ms), E3max(ms->GetE3max()), emax(ms->GetEmax()), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
+ : modelspace(ms),  emax(ms->GetEmax()), E2max(ms->GetE2max()), E3max(ms->GetE3max()), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int e3max , int rJ, int rT, int p)
- : modelspace(ms), E3max(e3max), emax(ms->GetEmax()), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
+ : modelspace(ms), emax(ms->GetEmax()), E2max(ms->GetE2max()), E3max(e3max), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
 {}
 
 

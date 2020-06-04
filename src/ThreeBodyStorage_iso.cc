@@ -8,7 +8,7 @@
 bool ThreeBodyStorage_iso::none_allocated = true;
 
 ThreeBodyStorage_iso::ThreeBodyStorage_iso( const ThreeBodyStorage_iso& TBS_in )
-: MatEl(TBS_in.MatEl), total_dimension(0), ThreeBodyStorage( TBS_in )
+: MatEl(TBS_in.MatEl), OrbitIndexHash(TBS_in.OrbitIndexHash), total_dimension(0), ThreeBodyStorage( TBS_in )
 {}
 
 
@@ -23,12 +23,14 @@ std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_iso::Clone() const { return s
 
   void ThreeBodyStorage_iso::Add(const ThreeBodyStorage& rhs) 
   {
+    if ( not rhs.IsAllocated() ) return;
+//    if ( not this->IsAllocated() ) 
     if (rhs.GetStorageMode() == this->GetStorageMode() )
     {
        auto& rhsMatEl = ((ThreeBodyStorage_iso*)(&rhs))->MatEl;
        for ( size_t i=0; i<MatEl.size();i++ )   MatEl[i] += rhsMatEl[i];
     }
-    else
+    else 
     {
       std::cout << "OOPS!!! Tried to " << __func__ << "  with incompatible storage modes  " << rhs.GetStorageMode() << " and " << this->GetStorageMode() << " dying." << std::endl;
       std::exit(EXIT_FAILURE);
@@ -37,6 +39,7 @@ std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_iso::Clone() const { return s
 
   void ThreeBodyStorage_iso::Subtract(const ThreeBodyStorage& rhs)
   {
+    if ( not rhs.IsAllocated() )return;
     if (rhs.GetStorageMode() == this->GetStorageMode() )
     {
        auto& rhsMatEl = ((ThreeBodyStorage_iso*)(&rhs))->MatEl;
@@ -73,7 +76,7 @@ void ThreeBodyStorage_iso::Allocate()
   OrbitIndexHash.clear();
   E3max = modelspace->GetE3max();
   int norbits = modelspace->GetNumberOrbits();
-//  std::cout << "Begin AllocateThreeBody() in " << __FILE__ << " with E3max = " << E3max << " norbits = " << norbits << std::endl;
+  std::cout << "Begin AllocateThreeBody() in " << __FILE__ << " with E3max = " << E3max << " norbits = " << norbits << std::endl;
   int lmax = 50000; // maybe do something with this later...
   total_dimension = 0;
 

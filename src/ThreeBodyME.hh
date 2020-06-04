@@ -175,7 +175,7 @@ class ThreeBodyME
   void Deallocate();
   size_t size();
   void Print();
-  std::string GetStorageMode();
+  std::string GetStorageMode() const ;
 
 
   void WriteBinary(std::ofstream&);

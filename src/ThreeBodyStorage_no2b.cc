@@ -161,6 +161,7 @@ std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_no2b::Clone() const { return 
 
 void ThreeBodyStorage_no2b::Allocate()
 {
+  std::cout << "Calling allocate " << __FILE__ << " " << __LINE__ << std::endl;
 //  Emax_file = emax_file;
 //  E2max_file = e2max_file;
 //  E3max_file = e3max_file;
@@ -184,16 +185,18 @@ void ThreeBodyStorage_no2b::Allocate()
     }
   }
   // Create the three body space
+  std::cout << "Creating ThreeBodySpaceNO2B" << std::endl;
   threebodyspace = ThreeBodySpaceNO2B(*this);
 
+  std::cout << "looping through channels, NChannels = " << threebodyspace.NChannels << std::endl;
   // Allocate the vectors for the matrix element storage
   for (int ch=0; ch<threebodyspace.NChannels; ch++)
   {
     ThreeBodyChannelNO2B& ch_no2b = threebodyspace.ThreeBodyChannels.at(ch);
     size_t n = ch_no2b.Ndim;
 
-    MatEl.at(ch).resize( n*(n+1)/2, ME_single_type(0.0));
-//    MatEl.at(ch) = std::vector<ThreeBMENO2B_single_type>( n*(n+1)/2, ThreeBMENO2B_single_type(0.0));
+//    MatEl.at(ch).resize( n*(n+1)/2, ME_single_type(0.0));
+    MatEl[ch] = std::vector<ME_single_type>( n*(n+1)/2, ME_single_type(0.0));
 
 
 //    std::vector<ThreeBMENO2B_Store_type> vch(n*(n+1)/2, (ThreeBMENO2B_Store_type)0.0);
@@ -201,6 +204,7 @@ void ThreeBodyStorage_no2b::Allocate()
   }
   is_allocated = true;
 //  initialized = true;
+  std::cout << "DONE" << std::endl;
 }
 
 
@@ -457,7 +461,8 @@ size_t ThreeBodyStorage_no2b::size() const
 /////////////////////////////////////////////////////////////////
 
 
-size_t ThreeBodyStorage_no2b::CountME() const
+//size_t ThreeBodyStorage_no2b::CountME() const
+size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_file, int Lmax_file) const
 {
   double t_start = omp_get_wtime();
   size_t counter=0;
@@ -527,6 +532,7 @@ size_t ThreeBodyStorage_no2b::CountME() const
               size_t JT_block_size = (Jmax+1-Jmin) * 5; // 5 comes from the 5 possible isospin combinations 001 011 101 111 113
 
               counter += JT_block_size;
+//              std::cout << __func__ << "   " << i1 << " " << i2 << " " << i3 << " " << i4 << " " << i5 << " " << i6 << "  adding blocksize " << JT_block_size << "  -> " << counter << std::endl;
 
             }
           }
@@ -544,10 +550,14 @@ size_t ThreeBodyStorage_no2b::CountME() const
 
 //void ThreeBodyMENO2B::ReadFile(std::string filename)
 //  The inputs should be  (  {filename} ,  {Emax_file, E3max_file, E2max_file, Lmax_file} )   // where the last two int arguments are optional
+//  The inputs should be  (  {filename} ,  {Emax_file, E2max_file, E3max_file, Lmax_file} )   // where the last int argument is optional
 void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, std::vector<int>& IntInputs )
 {
+  std::cout << "enter " << __FILE__ << " " << __func__ << std::endl;
   double t_start;
-  const size_t MAX_READ = 8* 1024*1024*1024; // Read in 8 GB chunks
+  const size_t MAX_READ = 8* 1024*1024*1024L; // Read in 8 GB chunks
+//  const size_t MAX_READ = 1* 1024*1024*1024L:; // Read in 8 GB chunks
+//  std::cout << "size of size_t = " << sizeof(size_t) << "  size of double is " << sizeof(double) << " and uint64 " << sizeof(uint64_t) << std::endl;
   const size_t HEADER_BUFFER_SIZE = 512; // Buffer size for reading header
 
   if ( ( StringInputs.size()<1 ) or ( IntInputs.size()<2) )
@@ -560,11 +570,13 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
 
   std::string FileName = StringInputs[0];
   int Emax_file = IntInputs[0] ;
-  int E3max_file = IntInputs[1] ;
-  int E2max_file = 2*Emax_file;
+  int E2max_file = IntInputs[1] ;
+  int E3max_file = IntInputs[2] ;
   int Lmax_file = Emax_file;
-  if ( IntInputs.size() > 2 ) E2max_file = IntInputs[2];
-  if ( IntInputs.size() > 3 ) E2max_file = IntInputs[3];
+  if ( IntInputs.size() > 3 ) Lmax_file = IntInputs[3];
+
+  std::cout << " from the input, I extracted " << FileName << "  " << Emax_file << " " << E2max_file << " " << E3max_file << " " << Lmax_file << std::endl;
+  std::cout << " from the model space, I have " << emax << " " << E2max << " " << E3max << " " << lmax << std::endl;
 
   std::ifstream infile;
   boost::iostreams::filtering_istream zipstream;
@@ -574,9 +586,11 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
 
   size_t nwords = sizeof(ME_single_type);
 //  size_t nwords = (precision_mode==HALF_PRECISION) ? sizeof(ThreeBMENO2B_half_type) : sizeof(ThreeBMENO2B_single_type);
-  std::cout << __func__ << "  reading/storing with " << 8*nwords << "  bit floats" << std::endl;
+  std::cout << __func__ << "  reading/storing with " << 8*nwords << "  bit floats. filemode is " << filemode << std::endl;
 
-  size_t n_elem_to_read = CountME(); // number of elements we want
+//  size_t n_elem_to_read = CountME(); // number of elements we want
+  size_t n_elem_to_read = CountME(Emax_file, E2max_file, E3max_file, Lmax_file); // number of elements we want
+  std::cout << "Done Counting. " << n_elem_to_read << " elements to be read in." << std::endl;
 
   if ( filemode == "bin" ) // check how big the file is.
   {
@@ -605,12 +619,14 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
   size_t total_counter = 0;
 
   size_t buffer_size = std::min( MAX_READ,  n_elem_to_read-total_counter );
+  std::cout << "buffer_size is the min of " << MAX_READ << " " << n_elem_to_read << " - " << total_counter << " -> " << buffer_size << std::endl;
 
   std::vector<ME_single_type> vbuf(buffer_size);
+  std::cout << "Allocated a vector of size " << buffer_size << std::endl;
 
-  if (filemode == "bin")        infile.read((char*)&vbuf[0], buffer_size*nwords);
-  else if (filemode == "gz")    for (size_t iread=0;iread<buffer_size;iread++) zipstream >> vbuf[iread];
-  else if (filemode == "me3j")  for (size_t iread=0;iread<buffer_size;iread++) infile >> vbuf[iread];
+//  if (filemode == "bin")        infile.read((char*)&vbuf[0], buffer_size*nwords);
+//  else if (filemode == "gz")    for (size_t iread=0;iread<buffer_size;iread++) zipstream >> vbuf[iread];
+//  else if (filemode == "me3j")  for (size_t iread=0;iread<buffer_size;iread++) infile >> vbuf[iread];
 
   int Norbs = GetNumberIsospinOrbits();
 
@@ -669,10 +685,11 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
                   for (int T45: {0,1}){
                     for (int T3 = std::max( std::abs(2*T12-1), std::abs(2*T45-1) );
                         T3 <= std::min( 2*T12+1, 2*T45+1 ); T3+=2) {
-//                      if(counter == buffer_size) counter = 0;
-//                      if(counter == 0){
-                      if(counter == buffer_size){
-                          counter = 0;
+                      if(counter == buffer_size) counter = 0;
+                      if(counter == 0){
+//                      if(counter == buffer_size){
+                          std::cout << "    refilling the buffer..." << std::endl;
+//                          counter = 0;
 
                           // fill the buffer
                           size_t n_this_pass = std::min( buffer_size, n_elem_to_read-total_counter );
@@ -683,11 +700,17 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
                       }
                       counter += 1;
                       total_counter += 1;
+                      std::cout << " total_counter, nelem_to_read: " << total_counter << " " << n_elem_to_read << "  checks : " 
+                       << "  " << e1 << " " << e2 << " " << e3 << " " << e4 << " " << e5 << " " << e6 << "   "
+                       <<   (e1+e2 > E2max) << " " << (e1+e3 > E2max) << " " <<(e2+e3 > E2max) << " " <<(e4+e5 > E2max) << " " <<(e4+e6 > E2max) << " " <<(e5+e6 > E2max) 
+                       << "   E2max = " << E2max
+                                << std::endl;
 
 //                      if( (e1 > Emax) or (e2 > Emax) or (e3 > Emax) or (e4 > Emax) or (e5 > Emax) or (e6 > Emax)) continue;
                       if( std::max({e1,e2,e3,e4,e5,e6}) > emax) continue;
-                      if( (e1+e2 > E2max) or (e1+e3 > E2max) or (e2+e3 > E2max) or (e4+e5 > E2max) or (e4+e6 > E2max) or (e5+e6 > E2max)) continue;
+                      if( ((e1+e2) > E2max) or ((e1+e3) > E2max) or ((e2+e3) > E2max) or ((e4+e5) > E2max) or ((e4+e6) > E2max) or ((e5+e6) > E2max)) continue;
                       if( (e1+e2+e3 > E3max) or ( e4+e5+e6 > E3max) ) continue;
+                      if( total_counter > n_elem_to_read) break;
 
 
                       ME_single_type vset = vbuf[counter-1];
@@ -703,7 +726,11 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
                         }
                       }
 
-                      SetME_iso_no2b(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, vset );
+                      std::cout << "calling set " << i1 << " " << i2 << " " << i3 << ", " << T12 << " | "  << i4 << " " << i5 << " " << i6 << ", " << T45 << " , " << J << " " << T3 << " " << vset << std::endl;
+                      if ( std::abs(vset)>1e-8)
+                      {
+                       SetME_iso_no2b(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, vset );
+                      }
 //                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, vset );
 
                     }// for T3
@@ -717,5 +744,5 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
     }// for i2
   }// for i1
 
-
+  std::cout << "Done reading" << std::endl;
 }

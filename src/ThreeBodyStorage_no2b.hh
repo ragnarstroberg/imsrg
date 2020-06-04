@@ -115,7 +115,7 @@ class ThreeBodyStorage_no2b : public ThreeBodyStorage
 
   public:
 
-    int E2max;
+//    int E2max;
 //    int E3max;
 //    int Lmax;
     int Emax_file;  // Don't think we need any of these _file variables
@@ -170,7 +170,8 @@ class ThreeBodyStorage_no2b : public ThreeBodyStorage
     void ReadFile( std::vector<std::string>& StringInputs, std::vector<int>& IntInputs );
 
 //    long long unsigned int CountME();
-    size_t CountME() const;
+//    size_t CountME() const;
+    size_t CountME(int Emax_file, int E2max_file, int E3max_file, int Lmax_file) const;
 //    template<class T> void ReadStream(T & infile, long long unsigned int n_elms);
     template<class T> void ReadStream(T & infile, size_t n_elms);
 //    void ReadBinaryStream( std::vector<ThreeBMENO2B_Store_type>& v, size_t nelms);

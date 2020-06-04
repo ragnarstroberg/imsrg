@@ -63,15 +63,28 @@ ThreeBodyME::ThreeBodyME(const ThreeBodyME& Tbme)
  ThreeBodyME& ThreeBodyME::operator+=(const ThreeBodyME& rhs)
  {
 //   (*threebody_storage) += (*(rhs.threebody_storage));
-   threebody_storage->Add(*rhs.threebody_storage);
+   if ( IsAllocated() )
+   {
+     threebody_storage->Add(*rhs.threebody_storage);
+   }
+   else if ( rhs.IsAllocated() )
+   {
+     *threebody_storage = *rhs.threebody_storage;
+   }
    return *this;
  }
 
  ThreeBodyME& ThreeBodyME::operator-=(const ThreeBodyME& rhs)
  {
-
-   threebody_storage->Subtract(*rhs.threebody_storage);
-//   (*threebody_storage) += (*(rhs.threebody_storage));
+   if ( IsAllocated() )
+   {
+     threebody_storage->Subtract(*rhs.threebody_storage);
+   }
+   else if ( rhs.IsAllocated() )
+   {
+     *threebody_storage = *rhs.threebody_storage;
+     threebody_storage->Multiply(-1);
+   }
    return *this;
  }
 
@@ -442,7 +455,7 @@ void ThreeBodyME::ReadFile( std::vector<std::string> StringInputs, std::vector<i
 }
 
 
-std::string ThreeBodyME::GetStorageMode()
+std::string ThreeBodyME::GetStorageMode() const
 {
   return threebody_storage->GetStorageMode();
 }
