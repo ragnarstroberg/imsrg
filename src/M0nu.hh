@@ -39,12 +39,12 @@ namespace M0nu
   uint64_t IntHash(uint64_t n, uint64_t l, uint64_t np, uint64_t lp);
   void IntUnHash(uint64_t key, uint64_t &n, uint64_t &l, uint64_t &np, uint64_t &lp);
   std::unordered_map<uint64_t,double> PreCalculateM0nuIntegrals(int e2max, double hw, std::string transition, int rho, double Eclosure, std::string src);
-  double GetM0nuIntegral(int e2max, int n, int l, int np, int lp, double hw, std::string transition, int rho, double Eclosure, std::string src, std::unordered_map<uint64_t,double> Intlist);
+  double GetM0nuIntegral(int e2max, int n, int l, int np, int lp, double hw, std::string transition, int rho, double Eclosure, std::string src, std::unordered_map<uint64_t,double>& Intlist);
 
   uint64_t T6jHash(uint64_t l1, uint64_t L1, uint64_t R, uint64_t L2, uint64_t l2);
   void T6jUnHash(uint64_t key, uint64_t &l1, uint64_t &L1, uint64_t &R, uint64_t &L2, uint64_t &l2);
   std::unordered_map<uint64_t,double> PreCalculateM0nuT6j(int e2max);
-  double GetM0nuT6j(int l1, int L1, int R, int L2, int l2, std::unordered_map<uint64_t,double> T6jList);
+  double GetM0nuT6j(int l1, int L1, int R, int L2, int l2, std::unordered_map<uint64_t,double>& T6jList);
 
   Operator GamowTeller(ModelSpace& modelspace, double Eclosure, std::string src);
   Operator Fermi(ModelSpace& modelspace, double Eclosure, std::string src);

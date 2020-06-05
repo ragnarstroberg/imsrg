@@ -400,16 +400,23 @@ int main(int argc, char** argv)
       std::cout << "done reading 3N" << std::endl;
     }
     if(input3bme_type == "no2b"){
-      double t_start = omp_get_wtime();
+//      double t_start = omp_get_wtime();
 //      Hbare.ThreeBodyNO2B.Allocate(modelspace, file3e1max, file3e2max, file3e3max, file3e1max, input3bme);
-      if ( no2b_precision == "half")  Hbare.ThreeBodyNO2B.SetHalfPrecision();
-      Hbare.ThreeBodyNO2B.Allocate(modelspace, file3e1max, file3e2max, file3e3max, file3e1max);
-      Hbare.profiler.timer["ThreeBodyNO2B::Allocate"] += omp_get_wtime() - t_start;
-      t_start = omp_get_wtime();
+
+//      if ( no2b_precision == "half")  Hbare.ThreeBodyNO2B.SetHalfPrecision(); // not re-implemented
+
+      Hbare.ThreeBody.SetMode("no2b");
+      if (no2b_precision == "half")  Hbare.ThreeBody.SetMode("no2bhalf");
+
+//      Hbare.ThreeBodyNO2B.Allocate(modelspace, file3e1max, file3e2max, file3e3max, file3e1max);
+//      Hbare.profiler.timer["ThreeBodyNO2B::Allocate"] += omp_get_wtime() - t_start;
+//      t_start = omp_get_wtime();
 //      Hbare.ThreeBodyNO2B.ReadFile();
-      Hbare.ThreeBodyNO2B.ReadFile( input3bme );
-      Hbare.profiler.timer["ThreeBodyNO2B::ReadFile"] += omp_get_wtime() - t_start;
+//      Hbare.ThreeBodyNO2B.ReadFile( input3bme );
+      Hbare.ThreeBody.ReadFile( {input3bme}, {file3e1max, file3e2max, file3e3max, file3e1max} );
+//      Hbare.profiler.timer["ThreeBodyNO2B::ReadFile"] += omp_get_wtime() - t_start;
       std::cout << "done reading 3N" << std::endl;
+
     }
   }
 
@@ -597,9 +604,10 @@ int main(int argc, char** argv)
     t = qn[1];
     p = qn[2];
     r = qn[3];
-//    std::cout << "Parsed tag. opname = " << opname << "  qnumbers = " << qnumbers << "  " << j << " " << t << " " << p << " " << r << "   file2 = " << f2name
-//              << "    file3 = " << f3name << std::endl;
+    std::cout << "Parsed tag. opname = " << opname << "  qnumbers = " << qnumbers << "  " << j << " " << t << " " << p << " " << r << "   file2 = " << f2name
+              << "    file3 = " << f3name << std::endl;
     Operator op(modelspace,j,t,p,r);
+    if (r>2) op.ThreeBody.Allocate();
 //    std::cout << "Reading operator " << opname << "  in " << input_op_fmt << "  format from files " << f2name << "  ,  " << f3name << std::endl;
 //    std::cout << "Operator has particle rank " << op.GetParticleRank() << std::endl;
     if ( input_op_fmt == "navratil" )
@@ -624,7 +632,7 @@ int main(int argc, char** argv)
 //  for (auto& op : ops)
   for (size_t i=0;i<ops.size();++i)
   {
-//    std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+    std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
      // We don't transform a DaggerHF, because we want the a^dagger to already refer to the HF basis.
     if ((basis == "HF") and (opnames[i].find("DaggerHF") == std::string::npos)  )
     {
@@ -634,9 +642,9 @@ int main(int argc, char** argv)
     {
       ops[i] = hf.TransformHOToNATBasis(ops[i]);
     }
-//    std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+    std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
     ops[i] = ops[i].DoNormalOrdering();
-//    std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+    std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
     if (method == "MP3")
     {
       double dop = ops[i].MP1_Eval( HNO );

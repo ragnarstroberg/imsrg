@@ -336,7 +336,7 @@ Operator HFMBPT::GetNormalOrderedHNAT(int particle_rank)
 
 //  if( Hbare.ThreeBodyNO2B.initialized ){
 
-
+/*
   // The way we get the NO2B part of the interaction depends on whether we're using the full 3N or if we just
   // read in the NO2B part of the 3N. Here we wrap the two options in a lambda function so that we only need
   // to write the whole loop once, and so that we don't have unnecessary if statements at the deepest nested loop.
@@ -356,6 +356,7 @@ Operator HFMBPT::GetNormalOrderedHNAT(int particle_rank)
                  return vno2b;
                };
   }
+*/
 
     for (int ch=0;ch<nchan;++ch)
     {
@@ -393,7 +394,8 @@ Operator HFMBPT::GetNormalOrderedHNAT(int particle_rank)
             {
               Orbit & ob = HartreeFock::modelspace->GetOrbit(b);
               if ( 2*ob.n+ob.l+e2ket > Hbare.GetE3max() ) continue;
-              V3NO(i,j) += rho(a,b) * GetVNO2B(bra.p, bra.q, a, ket.p, ket.q, b, J);
+//              V3NO(i,j) += rho(a,b) * GetVNO2B(bra.p, bra.q, a, ket.p, ket.q, b, J);
+              V3NO(i,j) += rho(a,b) * Hbare.ThreeBody.GetME_pn_no2b(bra.p,bra.q,a,ket.p,ket.q,b,J);
             }
           }
           V3NO(i,j) /= (2*J+1);

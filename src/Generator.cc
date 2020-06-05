@@ -276,10 +276,10 @@ void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,
 
            double denominator = Get3bDenominator( a,b,c, i,j,k ) ;
 
-           double ME_od = H->ThreeBody.GetME_pn_PN_ch(ch3,ch3,ibra,iket );
+           double ME_od = H->ThreeBody.GetME_pn_ch(ch3,ch3,ibra,iket );
            double eta =  etafunc( ME_od, denominator);
 
-           Eta->ThreeBody.AddToME_pn_PN_ch( ch3,ch3,ibra,iket,  eta); // hermitian conjugate automatically gets added
+           Eta->ThreeBody.AddToME_pn_ch( ch3,ch3,ibra,iket,  eta); // hermitian conjugate automatically gets added
            
         }// for iket
       }// for ibra
@@ -413,10 +413,10 @@ void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double
 
            double denominator = Get3bDenominator( i,j,k, a,b,c ) ;
 
-           double ME_od = H->ThreeBody.GetME_pn_PN_ch(ch3,ch3,ibra,iket );
+           double ME_od = H->ThreeBody.GetME_pn_ch(ch3,ch3,ibra,iket );
            double eta =  etafunc( ME_od, denominator);
 
-           Eta->ThreeBody.AddToME_pn_PN_ch( ch3,ch3,ibra,iket,  eta); // hermitian conjugate automatically gets added
+           Eta->ThreeBody.AddToME_pn_ch( ch3,ch3,ibra,iket,  eta); // hermitian conjugate automatically gets added
            
         }// for iket
       }// for ibra

@@ -66,7 +66,8 @@ Operator::Operator()
 // Create a zero-valued operator in a given model space
 Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
-    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms,Jrank,Trank,p), ThreeLeg(&ms), ThreeBodyNO2B(),
+//    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms,Jrank,Trank,p), ThreeLeg(&ms), ThreeBodyNO2B(),
+    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms,Jrank,Trank,p), ThreeLeg(&ms),
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank), legs(2*part_rank),
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),
@@ -79,7 +80,8 @@ Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
 
 Operator::Operator(ModelSpace& ms) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
-    TwoBody(&ms),  ThreeBody(&ms), ThreeLeg(&ms), ThreeBodyNO2B(),
+    TwoBody(&ms),  ThreeBody(&ms), ThreeLeg(&ms),
+//    TwoBody(&ms),  ThreeBody(&ms), ThreeLeg(&ms), ThreeBodyNO2B(),
     rank_J(0), rank_T(0), parity(0), particle_rank(2), legs(4),
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),
@@ -91,7 +93,8 @@ Operator::Operator(ModelSpace& ms) :
 
 Operator::Operator(const Operator& op)
 : modelspace(op.modelspace),  ZeroBody(op.ZeroBody),
-  OneBody(op.OneBody), TwoBody(op.TwoBody) ,ThreeBody(op.ThreeBody), ThreeLeg(op.ThreeLeg), ThreeBodyNO2B(op.ThreeBodyNO2B),
+  OneBody(op.OneBody), TwoBody(op.TwoBody) ,ThreeBody(op.ThreeBody), ThreeLeg(op.ThreeLeg),
+//  OneBody(op.OneBody), TwoBody(op.TwoBody) ,ThreeBody(op.ThreeBody), ThreeLeg(op.ThreeLeg), ThreeBodyNO2B(op.ThreeBodyNO2B),
   rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank), legs(op.legs),
   E2max(op.E2max), E3max(op.E3max),
   hermitian(op.hermitian), antihermitian(op.antihermitian),
@@ -103,7 +106,7 @@ Operator::Operator(const Operator& op)
 Operator::Operator(Operator&& op)
 : modelspace(op.modelspace), ZeroBody(op.ZeroBody),
   OneBody(std::move(op.OneBody)), TwoBody(std::move(op.TwoBody)) , ThreeBody(std::move(op.ThreeBody)), ThreeLeg(std::move(op.ThreeLeg)),
-  ThreeBodyNO2B(std::move(op.ThreeBodyNO2B)),
+//  ThreeBodyNO2B(std::move(op.ThreeBodyNO2B)),
   rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank), legs(op.legs),
   E2max(op.E2max), E3max(op.E3max),
   hermitian(op.hermitian), antihermitian(op.antihermitian),
@@ -127,7 +130,7 @@ Operator& Operator::operator*=(const double rhs)
    TwoBody *= rhs;
    ThreeLeg *= rhs;
    if (particle_rank > 2)  ThreeBody *= rhs;
-   if (particle_rank > 2)  ThreeBodyNO2B *= rhs;
+//   if (particle_rank > 2)  ThreeBodyNO2B *= rhs;
    return *this;
 }
 
@@ -172,8 +175,8 @@ Operator& Operator::operator+=(const Operator& rhs)
      TwoBody  += rhs.TwoBody;
    if (rhs.GetParticleRank() >2 )
      ThreeBody += rhs.ThreeBody;
-   if (rhs.GetParticleRank() >2 )
-     ThreeBodyNO2B += rhs.ThreeBodyNO2B;
+//   if (rhs.GetParticleRank() >2 )
+//     ThreeBodyNO2B += rhs.ThreeBodyNO2B;
    if (rhs.GetNumberLegs()%2==1)
      ThreeLeg += rhs.ThreeLeg;
    return *this;
@@ -207,8 +210,8 @@ Operator& Operator::operator-=(const Operator& rhs)
      TwoBody -= rhs.TwoBody;
    if (rhs.GetParticleRank() > 2)
      ThreeBody -= rhs.ThreeBody;
-   if (rhs.GetParticleRank() > 2)
-     ThreeBodyNO2B -= rhs.ThreeBodyNO2B;
+//   if (rhs.GetParticleRank() > 2)
+//     ThreeBodyNO2B -= rhs.ThreeBodyNO2B;
    if (rhs.GetNumberLegs()%2==1)
      ThreeLeg -= rhs.ThreeLeg;
    return *this;
@@ -548,8 +551,9 @@ Operator Operator::DoNormalOrdering3(int sign) const
    Operator opNO2 = opNO3.DoNormalOrdering2(sign);
    opNO2.ScaleZeroBody(1./3.);
    opNO2.ScaleOneBody(1./2.);
-//   std::cout << "IN " << __func__ << "  line " << __LINE__ << "   norms of NO 3b pieces are " << opNO2.ZeroBody << "   " << opNO2.OneBodyNorm() << "   " << opNO2.TwoBodyNorm() << "  and thie original 3b norm was  " << ThreeBody.Norm() << "  which produced a no2b with norm " << opNO3.TwoBodyNorm() << std::endl;
-
+   std::cout << "IN " << __func__ << "  line " << __LINE__ << "   norms of NO 3b pieces are " << opNO2.ZeroBody << "   " << opNO2.OneBodyNorm() << "   " << opNO2.TwoBodyNorm() << "  and thie original 3b norm was  " << ThreeBody.Norm() << "  which produced a no2b with norm " << opNO3.TwoBodyNorm() << std::endl;
+   std::cout << " opNO2 has storage mode " << opNO2.ThreeBody.GetStorageMode() << "  and this has storage mode " << ThreeBody.GetStorageMode() << "  and opNO3 has " << opNO3.ThreeBody.GetStorageMode() << std::endl;
+   std::cout << "Are they allocated? " << opNO2.ThreeBody.IsAllocated() << "  " << ThreeBody.IsAllocated() << "  " << opNO3.ThreeBody.IsAllocated() << std::endl;
    // Also normal order the 1 and 2 body pieces
    opNO2 += DoNormalOrdering2(sign);
    return opNO2;
@@ -879,11 +883,13 @@ void Operator::SetNumberLegs( int l)
   {
     if ( TwoBody.MatEl.size()<1)    TwoBody.Allocate();
     ThreeLeg.Deallocate();
-    if (legs>5 and (not ThreeBody.is_allocated)) ThreeBody.Allocate();
+//    if (legs>5 and (not ThreeBody.is_allocated)) ThreeBody.Allocate();
+    if (legs>5 and (not ThreeBody.IsAllocated())) ThreeBody.Allocate();
   }
   else
   {
     TwoBody.Deallocate();
+    ThreeBody.Deallocate();
     OneBody.zeros(modelspace->GetNumberOrbits(), 1);  // reduce it to a single column
     ThreeLeg.Allocate();
     OneBody.zeros( modelspace->GetNumberOrbits(), 1);
@@ -1223,7 +1229,8 @@ double Operator::GetMP2_3BEnergy()
    double t_start = omp_get_wtime();
    double Emp2 = 0;
    if ( legs < 6) return 0;
-   if ( not ThreeBody.is_allocated ) return 0;
+//   if ( not ThreeBody.is_allocated ) return 0;
+   if ( not ThreeBody.IsAllocated() ) return 0;
    size_t nch3 = modelspace->GetNumberThreeBodyChannels();
    #pragma omp parallel for schedule(dynamic,1) reduction(+:Emp2)
    for (size_t ch3=0; ch3<nch3; ch3++)
@@ -1255,7 +1262,8 @@ double Operator::GetMP2_3BEnergy()
          if (a==b and a==c) symm_abc = 1;
          else if (a==b or a==c) symm_abc = 3;
          double Eabc = OneBody(a,a) + OneBody(b,b) + OneBody(c,c);
-         double V = ThreeBody.GetME_pn_PN_ch(ch3,ch3,ibra,iket);
+//         double V = ThreeBody.GetME_pn_PN_ch(ch3,ch3,ibra,iket);
+         double V = ThreeBody.GetME_pn_ch(ch3,ch3,ibra,iket);
          Emp2 += 1./36 * symm_ijk*symm_abc * (twoJ+1) * occ_bra * unocc_ket * V*V / ( Eijk - Eabc) ;
        }// for iket
      }// for ibra

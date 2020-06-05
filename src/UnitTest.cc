@@ -67,7 +67,7 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
         for (size_t iket=0; iket<=ibra; iket++)
         {
           double random_me = distribution(generator);
-          Rando.ThreeBody.SetME_pn_PN_ch( ch,ch, ibra,iket, random_me );
+          Rando.ThreeBody.SetME_pn_ch( ch,ch, ibra,iket, random_me );
         }
       }
     }
@@ -460,6 +460,7 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
 //  random_seed ++;
 //  Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, +1);
 //  random_seed --;
+  std::cout << "BEGIN " << __func__ << std::endl;
 
   Operator Xherm = Y;
   Xherm.TwoBody.Erase();
@@ -468,6 +469,7 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
   Y += RandomOp(*modelspace, 0, 0, 0, 2, +1);
   Xherm += RandomOp(*modelspace, 0, 0, 0, 2, +1);
   X.ThreeBody.Erase();
+  std::cout << " " << __func__ << " line " << __LINE__ << std::endl;
   Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
   bool all_good = true;
 
@@ -482,7 +484,7 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
   all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
   all_good &= Test_comm332_pphhss( X, Y );  
 
-  all_good &= Test_comm233_pp_hhss( X, Y );   
+//  all_good &= Test_comm233_pp_hhss( X, Y );   
 //  all_good &= Test_comm233_ph_ss( X, Y );  
 //  all_good &= Test_comm333_ppp_hhh_ss( X, Y );  
 //  all_good &= Test_comm333_pph_hhp_ss( X, Y );  
@@ -2905,25 +2907,25 @@ bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // t
     int mi = oi.j2;
     for (auto j : X.modelspace->all_orbits )
     {
-//      if (j<i) continue;
+      if (j<i) continue;
       Orbit& oj = X.modelspace->GetOrbit(j);
       for (auto k : X.modelspace->all_orbits )
       {
         Orbit& ok = X.modelspace->GetOrbit(k);
-//        if (k<j) continue;
+        if (k<j) continue;
 
 
         for (auto l : X.modelspace->all_orbits )
         {
-//          if (l<i) continue;
+          if (l<i) continue;
           Orbit& ol = X.modelspace->GetOrbit(l);
           for ( auto m : X.modelspace->all_orbits )
           {
-//            if (m<l) continue;
+            if (m<l) continue;
             Orbit& om = X.modelspace->GetOrbit(m);
             for (auto n : X.modelspace->all_orbits )
             {
-//              if (n<m) continue;
+              if (n<m) continue;
               Orbit& on = X.modelspace->GetOrbit(n);
               if ( (oi.l+oj.l+ok.l+ol.l+om.l+on.l)%2 !=0 ) continue;
               if ( (oi.tz2+oj.tz2+ok.tz2) != (ol.tz2+om.tz2+on.tz2) ) continue;

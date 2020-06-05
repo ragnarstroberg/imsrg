@@ -25,6 +25,7 @@
 #include "Operator.hh"
 #include "IMSRGProfiler.hh"
 #include "Jacobi3BME.hh"
+#include "ThreeBodyME.hh"
 #include <armadillo>
 #include <vector>
 #include <array>
@@ -109,9 +110,11 @@ class HartreeFock
    static uint64_t Vmon3Hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f);
    static void Vmon3UnHash(uint64_t key, int& a, int& b, int& c, int& d, int& e, int& f);
 //   ThreeBodyMEpn GetTransformed3B(  );
-   ThreeBodyMEpn GetTransformed3B( Operator& OpIn );
+//   ThreeBodyMEpn GetTransformed3B( Operator& OpIn );
+   ThreeBodyME GetTransformed3B( Operator& OpIn );
 //   ThreeBodyMEpn GetValence3B( int emax, int E3max );
-   ThreeBodyMEpn GetValence3B( Operator& OpIn, int emax, int E3max );
+//   ThreeBodyMEpn GetValence3B( Operator& OpIn, int emax, int E3max );
+   ThreeBodyME GetValence3B( Operator& OpIn, int emax, int E3max );
 //   double GetTransformed3bme( int Jab, int Jde, int J2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
    double GetTransformed3bme( Operator& OpIn, int Jab, int Jde, int J2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
 //   double GetHF3bme( int Jab, int Jde, int J2, size_t a, size_t b, size_t c, size_t d, size_t e, size_t f);
