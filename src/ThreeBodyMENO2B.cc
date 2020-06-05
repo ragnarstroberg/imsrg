@@ -633,12 +633,30 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<Type> & v, size_t n_elms)
 
                       counter += 1;
 
+                      std::cout << " counter " << counter <<  "   " << i1 << " " << i2 << " " << i3 << ", " << T12 << " | " << i4 << " " << i5 << " " << i6 << ", " << T45 << " ,  " << J << " " << T3 << "   checks "
+                      << " " << ( e1 > Emax) 
+                      << " " << ( e2 > Emax) 
+                      << " " << ( e3 > Emax) 
+                      << " " << ( e4 > Emax) 
+                      << " " << ( e5 > Emax) 
+                      << " " << ( e6 > Emax)  << "    "
+                      << " " << ( e1+e2 > E2max ) 
+                      << " " << ( e1+e3 > E2max ) 
+                      << " " << ( e2+e3 > E2max ) 
+                      << " " << ( e4+e5 > E2max ) 
+                      << " " << ( e4+e6 > E2max ) 
+                      << " " << ( e5+e6 > E2max ) << "   "
+                      << " " << ( e1+e2+e3 > E3max ) 
+                      << " " << ( e4+e5+e6 > E3max ) 
+                       << std::endl;
+
                       if( e1 > Emax) continue;
                       if( e2 > Emax) continue;
                       if( e3 > Emax) continue;
                       if( e4 > Emax) continue;
                       if( e5 > Emax) continue;
                       if( e6 > Emax) continue;
+                      std::cout << "      line " << __LINE__ << std::endl;
 
                       if( e1+e2 > E2max ) continue;
                       if( e1+e3 > E2max ) continue;
@@ -646,9 +664,11 @@ void ThreeBodyMENO2B::ReadBinaryStream( std::vector<Type> & v, size_t n_elms)
                       if( e4+e5 > E2max ) continue;
                       if( e4+e6 > E2max ) continue;
                       if( e5+e6 > E2max ) continue;
+                      std::cout << "      line " << __LINE__ << std::endl;
 
                       if( e1+e2+e3 > E3max ) continue;
                       if( e4+e5+e6 > E3max ) continue;
+                      std::cout << "      line " << __LINE__ << std::endl;
 
                       if( i1==i2 and (J+T12)%2 ==0 ) {
                         if( std::abs(v[counter-1]) > 1.e-6 ){

@@ -77,7 +77,8 @@ class ThreeBodySpaceNO2B
     ThreeBodySpaceNO2B( ThreeBodyStorage_no2b& thr);
 //    ~ThreeBodySpaceNO2B();
 //    int GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T)const {return Hash_Channel(Jab, Pab, Jc, Pc, T);};
-    int GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T)const {return idcs2ch.at( Hash_Channel(Jab, Pab, Jc, Pc, T) ) ;};
+//    int GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T)const {return idcs2ch.at( Hash_Channel(Jab, Pab, Jc, Pc, T) ) ;};
+    int GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T)const ;
   private:
     int Hash_Channel(int, int, int, int, int) const;
     void UnHash_Channel(int, int&, int&, int&, int&, int&) const;
@@ -171,7 +172,8 @@ class ThreeBodyStorage_no2b : public ThreeBodyStorage
 
 //    long long unsigned int CountME();
 //    size_t CountME() const;
-    size_t CountME(int Emax_file, int E2max_file, int E3max_file, int Lmax_file) const;
+//    size_t CountME(int Emax_file, int E2max_file, int E3max_file, int Lmax_file) const;
+    size_t CountME(int Emax_file, int E2max_file, int E3max_file, int Lmax_file, std::vector<OrbitIsospin>& file_Orbits) const;
 //    template<class T> void ReadStream(T & infile, long long unsigned int n_elms);
     template<class T> void ReadStream(T & infile, size_t n_elms);
 //    void ReadBinaryStream( std::vector<ThreeBMENO2B_Store_type>& v, size_t nelms);

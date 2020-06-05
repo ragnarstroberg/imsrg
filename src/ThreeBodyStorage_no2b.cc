@@ -67,7 +67,7 @@ ThreeBodyChannelNO2B::ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T
       }
     }
   }
-
+//  std::cout << "ThreeBodyChannelNO2B  " << J2 << " " << P2 << " " << J1 << " " << P1 << " " << T3 << "   has " << Ndim << "  kets " << std::endl;
 }
 
 int ThreeBodyChannelNO2B::Hash_abct(int a, int b, int c, int Tab) const
@@ -98,10 +98,11 @@ ThreeBodySpaceNO2B::ThreeBodySpaceNO2B( ThreeBodyStorage_no2b& thr)
 //  int emax = std::max(thr->Emax, thr->Emax_file);
 //  int e2max = std::max(thr->E2max, thr->E2max_file);
 //  int lmax = std::max(thr->Lmax, thr->Lmax_file);
+  double t_start = omp_get_wtime();
   int emax  = thr.emax;
   int e2max = thr.E2max;
   int e3max = thr.E3max;
-  int lmax  = thr.modelspace->GetLmax();
+  int lmax  = std::min(emax,thr.modelspace->GetLmax());
   int J2max = std::min(2*lmax+1, e2max+1);
   int count = 0;
   for (int J2=0; J2<=J2max; ++J2){
@@ -115,18 +116,20 @@ ThreeBodySpaceNO2B::ThreeBodySpaceNO2B( ThreeBodyStorage_no2b& thr)
 
             ThreeBodyChannels.push_back(channel);
             int key = Hash_Channel(J2,P2,J1,P1,T3);
-            int j2, p2, j1, p1, t3;
-            UnHash_Channel(key,j2,p2,j1,p1,t3); // is this needed? I think not...
+//            int j2, p2, j1, p1, t3;
+//            UnHash_Channel(key,j2,p2,j1,p1,t3); // is this needed? I think not...
 //            idcs2ch[GetChannelIndex(J2,P2,J1,P1,T3)] = count; // structure which takes a key from Hash_Channel and returns a consecutive index for later lookup 
             idcs2ch[key] = count;
             // I think the above line is equivalent to idcs2ch[key] = count;
             count += 1;
+//            std::cout << "nchannels = " << count << std::endl;
           }
         }
       }
     }
   }
   NChannels = ThreeBodyChannels.size();
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
 }
 
 int ThreeBodySpaceNO2B::Hash_Channel(int J2, int P2, int J1, int P1, int T3) const
@@ -143,6 +146,15 @@ void ThreeBodySpaceNO2B::UnHash_Channel(int key, int& J2, int& P2, int& J1, int&
   T3 = ( (key>>18) & 255 );
 }
 
+int ThreeBodySpaceNO2B::GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T)const
+{
+  auto key = Hash_Channel(Jab, Pab, Jc, Pc, T);
+  auto iter = idcs2ch.find(key);
+  int ch =-1;
+  if ( iter!=idcs2ch.end() ) ch = iter->second;
+  return ch;
+//  return idcs2ch.at( Hash_Channel(Jab, Pab, Jc, Pc, T) ) ;
+}
 
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -161,7 +173,7 @@ std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_no2b::Clone() const { return 
 
 void ThreeBodyStorage_no2b::Allocate()
 {
-  std::cout << "Calling allocate " << __FILE__ << " " << __LINE__ << std::endl;
+//  std::cout << "Calling allocate " << __FILE__ << " " << __LINE__ << std::endl;
 //  Emax_file = emax_file;
 //  E2max_file = e2max_file;
 //  E3max_file = e3max_file;
@@ -179,6 +191,7 @@ void ThreeBodyStorage_no2b::Allocate()
       for (int twoj=twojMin; twoj<=twojMax; twoj+=2) {
         OrbitIsospin orb(idx,n,l,twoj);
         iOrbits.push_back(orb);
+//        std::cout << "  line " << __LINE__  << "  iorbit = " << iOrbits.size() << "  nlj = " << n << " " << l << " " << twoj << std::endl;
         nlj2idx[{n,l,twoj}]=idx;
         idx += 1;
       }
@@ -188,7 +201,7 @@ void ThreeBodyStorage_no2b::Allocate()
   std::cout << "Creating ThreeBodySpaceNO2B" << std::endl;
   threebodyspace = ThreeBodySpaceNO2B(*this);
 
-  std::cout << "looping through channels, NChannels = " << threebodyspace.NChannels << std::endl;
+//  std::cout << "looping through channels, NChannels = " << threebodyspace.NChannels << std::endl;
   // Allocate the vectors for the matrix element storage
   for (int ch=0; ch<threebodyspace.NChannels; ch++)
   {
@@ -293,6 +306,7 @@ void ThreeBodyStorage_no2b::SetME_iso_no2b(int a, int b, int c, int Tab, int d, 
 //  int ch = threebodyspace.idcs2ch[threebodyspace.GetChannelIndex(J2,P2,J1,P1,T3)];
 //  int ch = threebodyspace.idcs2ch[threebodyspace.GetChannelIndex(J2,P2,J1,P1,twoT)];
   int ch = threebodyspace.GetChannelIndex(J2,P2,J1,P1,twoT);
+  if (ch==-1) return;
   ThreeBodyChannelNO2B & ch_no2b = threebodyspace.ThreeBodyChannels[ch];
 //  int ibra = ch_no2b.GetIndex(a,b,c,Tab);
 //  int iket = ch_no2b.GetIndex(d,e,f,Tde);
@@ -314,6 +328,11 @@ void ThreeBodyStorage_no2b::SetME_iso_no2b(int a, int b, int c, int Tab, int d, 
 // There is no total J quantum number, because it has been summed over with a weight 2J+1
 ThreeBodyStorage::ME_type ThreeBodyStorage_no2b::GetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int twoT) const
 {
+
+  ThreeBodyStorage::ME_type vout = 0;
+//  if ( (a==b) and (Tab+J2)%2==0 ) return vout;
+//  if ( (d==e) and (Tde+J2)%2==0 ) return vout;
+
   const OrbitIsospin & oa = iOrbits[a];
   const OrbitIsospin & ob = iOrbits[b];
   const OrbitIsospin & oc = iOrbits[c];
@@ -321,7 +340,7 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_no2b::GetME_iso_no2b(int a, int b, in
   const OrbitIsospin & oe = iOrbits[e];
   const OrbitIsospin & of = iOrbits[f];
 
-  ThreeBodyStorage::ME_type vout = 0;
+//  std::cout << "  " << __func__ << "   " << a << " " << b << " " << c << " " << Tab << "  | " << d << " " << e << " " << f << " " << Tde << "    " << J2 << " " << twoT << std::endl;
 
   int P1 = oc.l%2;
   if(P1 != of.l%2) return vout;  // return 0.
@@ -332,23 +351,36 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_no2b::GetME_iso_no2b(int a, int b, in
   int P2 = (oa.l + ob.l)%2;
   if(P2 != (od.l + oe.l)%2) return vout;  // return 0.
 
+//  std::cout << "             ... line " << __LINE__ << std::endl;
 //  int ch = threebodyspace.idcs2ch[threebodyspace.GetChannelIndex(J2,P2,J1,P1,T3)];
 //  int ch = threebodyspace.idcs2ch[threebodyspace.GetChannelIndex(J2,P2,J1,P1,twoT)];
+//  std::cout << "  GetChannelIndex " << J2 << " " << P2 << " " << J1 << " " << P1 << " " << twoT << std::endl;
+//  auto hashkey = threebodyspace.Hash_Channel(J2, P2, J1, P1, twoT);
+//  std::cout << "  hashkey = " << hashkey << "  is it in the lookup? " << (threebodyspace.idcs2ch.find(hashkey) != threebodyspace.idcs2ch.end()) << std::endl;
+   
   int ch = threebodyspace.GetChannelIndex(J2,P2,J1,P1,twoT);
+  if (ch==-1) return vout;
+//  std::cout << "             ... line " << __LINE__ << std::endl;
   const ThreeBodyChannelNO2B & ch_no2b = threebodyspace.ThreeBodyChannels[ch];
+//  std::cout << "             ... line " << __LINE__ << std::endl;
 //  int ibra = ch_no2b.GetIndex(a,b,c,Tab);
 //  int iket = ch_no2b.GetIndex(d,e,f,Tde);
   int key_bra = ch_no2b.GetIndex(a,b,c,Tab);
   int key_ket = ch_no2b.GetIndex(d,e,f,Tde);
-//  if(ch_no2b.iphase.find(ibra) == ch_no2b.iphase.end()) return vout;  // return 0.
-//  if(ch_no2b.iphase.find(iket) == ch_no2b.iphase.end()) return vout; // return 0.
+//  std::cout << "             ... line " << __LINE__ << std::endl;
+  if(ch_no2b.iphase.find(key_bra) == ch_no2b.iphase.end()) return vout;  // return 0.
+  if(ch_no2b.iphase.find(key_ket) == ch_no2b.iphase.end()) return vout; // return 0.
 //  int ph = ch_no2b.iphase[ibra] * ch_no2b.iphase[iket];
 //  int ph = ch_no2b.GetPhase(ibra) * ch_no2b.GetPhase(iket);
+//  std::cout << "check keys exist : " << ( ch_no2b.iphase.find(key_bra) != ch_no2b.iphase.end()) << "   " << (ch_no2b.iphase.find(key_ket) != ch_no2b.iphase.end() ) << std::endl;
   int ph = ch_no2b.GetPhase(key_bra) * ch_no2b.GetPhase(key_ket);
+//  std::cout << "             ... line " << __LINE__ << std::endl;
   int ibra = ch_no2b.abct2n.at(key_bra);
   int iket = ch_no2b.abct2n.at(key_ket);
+//  std::cout << "  the index is  " << idx1d(ibra,iket) << "   and the length of vec is " << MatEl.at(ch).size() << std::endl;
   const double vread = MatEl.at(ch)[ idx1d(ibra,iket) ];
   vout = vread * ph;
+//  std::cout << "          returning " << vread << " * " << ph << std::endl;
 //  vout = MatEl[ch][idx1d(ibra,iket)] * ph;
 
   return vout;
@@ -462,16 +494,19 @@ size_t ThreeBodyStorage_no2b::size() const
 
 
 //size_t ThreeBodyStorage_no2b::CountME() const
-size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_file, int Lmax_file) const
+//size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_file, int Lmax_file) const
+size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_file, int Lmax_file, std::vector<OrbitIsospin>& file_Orbits) const
 {
   double t_start = omp_get_wtime();
   size_t counter=0;
 //  int Norbs = iOrbits.size();
-  int Norbs = GetNumberIsospinOrbits();
+//  int Norbs = GetNumberIsospinOrbits();
+  int Norbs = file_Orbits.size();
   #pragma omp parallel for schedule(dynamic,1) reduction (+:counter)
   for (int i1=0; i1 < Norbs; i1++) {
-    const OrbitIsospin & o1 = GetIsospinOrbit(i1);
+//    const OrbitIsospin & o1 = GetIsospinOrbit(i1);
 //    OrbitIsospin & o1 = iOrbits[i1];
+    OrbitIsospin & o1 = file_Orbits[i1];
     int j1 = o1.j;
     int l1 = o1.l;
     int e1 = o1.e;
@@ -479,7 +514,8 @@ size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_f
     if(e1 > Emax_file) continue;
     for (int i2=0; i2 <= i1; i2++) {
 //      OrbitIsospin & o2 = iOrbits[i2];
-      const OrbitIsospin & o2 = GetIsospinOrbit(i1);
+//      const OrbitIsospin & o2 = GetIsospinOrbit(i1);
+      OrbitIsospin & o2 = file_Orbits[i2];
       int j2 = o2.j;
       int l2 = o2.l;
       int e2 = o2.e;
@@ -487,7 +523,8 @@ size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_f
       if(e1 + e2 > E2max_file) continue;
       for (int i3=0; i3 < Norbs; i3++) {
 //        OrbitIsospin & o3 = iOrbits[i3];
-        const OrbitIsospin & o3 = GetIsospinOrbit(i3);
+//        const OrbitIsospin & o3 = GetIsospinOrbit(i3);
+        OrbitIsospin & o3 = file_Orbits[i3];
         int j3 = o3.j;
         int l3 = o3.l;
         int e3 = o3.e;
@@ -498,14 +535,16 @@ size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_f
 
         for (int i4=0; i4 <= i1; i4++) {
 //          OrbitIsospin & o4 = iOrbits[i4];
-          const OrbitIsospin & o4 = GetIsospinOrbit(i4);
+//          const OrbitIsospin & o4 = GetIsospinOrbit(i4);
+          OrbitIsospin & o4 = file_Orbits[i4];
           int j4 = o4.j;
           int l4 = o4.l;
           int e4 = o4.e;
           if(e4 > Emax_file) continue;
           for (int i5=0; i5 <= i4; i5++) {
 //            OrbitIsospin & o5 = iOrbits[i5];
-            const OrbitIsospin & o5 = GetIsospinOrbit(i5);
+//            const OrbitIsospin & o5 = GetIsospinOrbit(i5);
+            OrbitIsospin & o5 = file_Orbits[i5];
             int j5 = o5.j;
             int l5 = o5.l;
             int e5 = o5.e;
@@ -513,7 +552,8 @@ size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_f
             if(e4 + e5 > E2max_file) continue;
             for (int i6=0; i6 < Norbs; i6++) {
 //              OrbitIsospin & o6 = iOrbits[i6];
-              const OrbitIsospin & o6 = GetIsospinOrbit(i6);
+//              const OrbitIsospin & o6 = GetIsospinOrbit(i6);
+              OrbitIsospin & o6 = file_Orbits[i6];
               int j6 = o6.j;
               int l6 = o6.l;
               int e6 = o6.e;
@@ -540,7 +580,7 @@ size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_f
       }
     }
   }
-  IMSRGProfiler::timer["ThreeBodyMENO2B_CountME"] += omp_get_wtime() - t_start;
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   return counter;
 }
 
@@ -553,8 +593,8 @@ size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_f
 //  The inputs should be  (  {filename} ,  {Emax_file, E2max_file, E3max_file, Lmax_file} )   // where the last int argument is optional
 void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, std::vector<int>& IntInputs )
 {
-  std::cout << "enter " << __FILE__ << " " << __func__ << std::endl;
-  double t_start;
+//  std::cout << "enter " << __FILE__ << " " << __func__ << std::endl;
+  double t_start = omp_get_wtime();
   const size_t MAX_READ = 8* 1024*1024*1024L; // Read in 8 GB chunks
 //  const size_t MAX_READ = 1* 1024*1024*1024L:; // Read in 8 GB chunks
 //  std::cout << "size of size_t = " << sizeof(size_t) << "  size of double is " << sizeof(double) << " and uint64 " << sizeof(uint64_t) << std::endl;
@@ -575,8 +615,8 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
   int Lmax_file = Emax_file;
   if ( IntInputs.size() > 3 ) Lmax_file = IntInputs[3];
 
-  std::cout << " from the input, I extracted " << FileName << "  " << Emax_file << " " << E2max_file << " " << E3max_file << " " << Lmax_file << std::endl;
-  std::cout << " from the model space, I have " << emax << " " << E2max << " " << E3max << " " << lmax << std::endl;
+  std::cout << __func__ << ". from the input, I extracted " << FileName << "  " << Emax_file << " " << E2max_file << " " << E3max_file << " " << Lmax_file << std::endl;
+//  std::cout << " from the model space, I have " << emax << " " << E2max << " " << E3max << " " << lmax << std::endl;
 
   std::ifstream infile;
   boost::iostreams::filtering_istream zipstream;
@@ -588,8 +628,26 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
 //  size_t nwords = (precision_mode==HALF_PRECISION) ? sizeof(ThreeBMENO2B_half_type) : sizeof(ThreeBMENO2B_single_type);
   std::cout << __func__ << "  reading/storing with " << 8*nwords << "  bit floats. filemode is " << filemode << std::endl;
 
+
+
+  std::vector<OrbitIsospin> file_Orbits;
+  for (int e=0; e<=Emax_file; ++e) {
+    int lmin = e%2;
+    for (int l=lmin; l<=std::min(e,Lmax_file); l+=2) {
+      int n = (e-l)/2;
+      int twojMin = std::abs(2*l-1);
+      int twojMax = 2*l+1;
+      for (int twoj=twojMin; twoj<=twojMax; twoj+=2) {
+        int idx = file_Orbits.size();
+        file_Orbits.push_back( OrbitIsospin(idx,n,l,twoj));
+      }
+    }
+  }
+
+
 //  size_t n_elem_to_read = CountME(); // number of elements we want
-  size_t n_elem_to_read = CountME(Emax_file, E2max_file, E3max_file, Lmax_file); // number of elements we want
+//  size_t n_elem_to_read = CountME(Emax_file, E2max_file, E3max_file, Lmax_file); // number of elements we want
+  size_t n_elem_to_read = CountME(Emax_file, E2max_file, E3max_file, Lmax_file, file_Orbits); // number of elements we want
   std::cout << "Done Counting. " << n_elem_to_read << " elements to be read in." << std::endl;
 
   if ( filemode == "bin" ) // check how big the file is.
@@ -614,12 +672,8 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
   }
 
 
-  // fill the buffer
-  size_t counter = 0;
-  size_t total_counter = 0;
 
-  size_t buffer_size = std::min( MAX_READ,  n_elem_to_read-total_counter );
-  std::cout << "buffer_size is the min of " << MAX_READ << " " << n_elem_to_read << " - " << total_counter << " -> " << buffer_size << std::endl;
+  size_t buffer_size = std::min( MAX_READ,  n_elem_to_read);
 
   std::vector<ME_single_type> vbuf(buffer_size);
   std::cout << "Allocated a vector of size " << buffer_size << std::endl;
@@ -628,24 +682,32 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
 //  else if (filemode == "gz")    for (size_t iread=0;iread<buffer_size;iread++) zipstream >> vbuf[iread];
 //  else if (filemode == "me3j")  for (size_t iread=0;iread<buffer_size;iread++) infile >> vbuf[iread];
 
-  int Norbs = GetNumberIsospinOrbits();
+//  int Norbs = GetNumberIsospinOrbits();
+  int Norbs_file = file_Orbits.size();
 
-  for (int i1=0; i1 < Norbs; i1++) {
-    OrbitIsospin & o1 = iOrbits[i1];
+  #pragma omp parallel
+  {
+    size_t counter = 0;
+    size_t total_counter = 0;
+    size_t orbit_counter = 0;
+     int num_threads = omp_get_num_threads();
+     int this_thread = omp_get_thread_num();
+  for (int iF1=0; iF1 < Norbs_file; iF1++) {
+    OrbitIsospin & o1 = file_Orbits[iF1];
     int j1 = o1.j;
     int l1 = o1.l;
     int e1 = o1.e;
     if(e1 > emax) continue;
     if(e1 > Emax_file) continue;
-    for (int i2=0; i2 <= i1; i2++) {
-      OrbitIsospin & o2 = iOrbits[i2];
+    for (int iF2=0; iF2 <= iF1; iF2++) {
+      OrbitIsospin & o2 = file_Orbits[iF2];
       int j2 = o2.j;
       int l2 = o2.l;
       int e2 = o2.e;
       if(e2 > Emax_file) continue;
       if(e1 + e2 > E2max_file) continue;
-      for (int i3=0; i3 < Norbs; i3++) {
-        OrbitIsospin & o3 = iOrbits[i3];
+      for (int iF3=0; iF3 < Norbs_file; iF3++) {
+        OrbitIsospin & o3 = file_Orbits[iF3];
         int j3 = o3.j;
         int l3 = o3.l;
         int e3 = o3.e;
@@ -654,21 +716,21 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
         if(e1 + e3 > E2max_file) continue;
         if(e1 + e2 + e3 > E3max_file) continue;
 
-        for (int i4=0; i4 <= i1; i4++) {
-          OrbitIsospin & o4 = iOrbits[i4];
+        for (int iF4=0; iF4 <= iF1; iF4++) {
+          OrbitIsospin & o4 = file_Orbits[iF4];
           int j4 = o4.j;
           int l4 = o4.l;
           int e4 = o4.e;
           if(e4 > Emax_file) continue;
-          for (int i5=0; i5 <= i4; i5++) {
-            OrbitIsospin & o5 = iOrbits[i5];
+          for (int iF5=0; iF5 <= iF4; iF5++) {
+            OrbitIsospin & o5 = file_Orbits[iF5];
             int j5 = o5.j;
             int l5 = o5.l;
             int e5 = o5.e;
             if(e5 > Emax_file) continue;
             if(e4 + e5 > E2max_file) continue;
-            for (int i6=0; i6 < Norbs; i6++) {
-              OrbitIsospin & o6 = iOrbits[i6];
+            for (int iF6=0; iF6 < Norbs_file; iF6++) {
+              OrbitIsospin & o6 = file_Orbits[iF6];
               int j6 = o6.j;
               int l6 = o6.l;
               int e6 = o6.e;
@@ -679,6 +741,24 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
               if(e5 + e6 > E2max_file) continue;
               if(e4 + e5 + e6 > E3max_file) continue;
               if( (l1+l2+l3)%2 != (l4+l5+l6)%2 ) continue;
+
+
+              orbit_counter +=1;
+//              int Jmin = std::max( std::abs(j1-j2), std::abs(j4-j5) )/2;
+//              int Jmax =std::min( j1+j2, j4+j5 )/2;
+//              if (Jmin>Jmax) continue;
+//              int JT_block_size = (Jmax+1-Jmin) * 5; // 5 comes from the 5 possible isospin combinations 001 011 101 111 113
+//
+//              if (orbit_counter % num_threads != this_thread) // This is how we divide the jobs among the threads
+//              {
+//                 if ( (counter + JT_block_size) < buffer_size )
+//                 {
+//                   counter += JT_block_size;
+//                  continue;
+//                 }
+//              }
+
+
               for (int J = std::max( std::abs(j1-j2), std::abs(j4-j5) )/2;
                   J <= std::min( j1+j2, j4+j5 )/2; J++) {
                 for (int T12: {0,1}){
@@ -687,31 +767,36 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
                         T3 <= std::min( 2*T12+1, 2*T45+1 ); T3+=2) {
                       if(counter == buffer_size) counter = 0;
                       if(counter == 0){
-//                      if(counter == buffer_size){
-                          std::cout << "    refilling the buffer..." << std::endl;
-//                          counter = 0;
 
+                        #pragma omp barrier
+                          if ( this_thread==0 )
+                          {
                           // fill the buffer
                           size_t n_this_pass = std::min( buffer_size, n_elem_to_read-total_counter );
                           if (filemode == "bin")        infile.read((char*)&vbuf[0], n_this_pass*nwords);
                           else if (filemode == "gz")    for (size_t iread=0;iread<n_this_pass;iread++) zipstream >> vbuf[iread];
                           else if (filemode == "me3j")  for (size_t iread=0;iread<n_this_pass;iread++) infile >> vbuf[iread];
+                          }
+                        #pragma omp barrier
 
                       }
                       counter += 1;
                       total_counter += 1;
-//                      std::cout << " total_counter, nelem_to_read: " << total_counter << " " << n_elem_to_read << "  checks : " 
-//                       << "  " << e1 << " " << e2 << " " << e3 << " " << e4 << " " << e5 << " " << e6 << "   "
-//                       <<   (e1+e2 > E2max) << " " << (e1+e3 > E2max) << " " <<(e2+e3 > E2max) << " " <<(e4+e5 > E2max) << " " <<(e4+e6 > E2max) << " " <<(e5+e6 > E2max) 
-//                       << "   E2max = " << E2max
-//                                << std::endl;
-//
-//                      if( (e1 > Emax) or (e2 > Emax) or (e3 > Emax) or (e4 > Emax) or (e5 > Emax) or (e6 > Emax)) continue;
+
+                      if (orbit_counter % num_threads != this_thread) continue; // This is how we divide the jobs among the threads
+
+                      if( (e1 > emax) or (e2 > emax) or (e3 > emax) or (e4 > emax) or (e5 > emax) or (e6 > emax)) continue;
                       if( std::max({e1,e2,e3,e4,e5,e6}) > emax) continue;
                       if( ((e1+e2) > E2max) or ((e1+e3) > E2max) or ((e2+e3) > E2max) or ((e4+e5) > E2max) or ((e4+e6) > E2max) or ((e5+e6) > E2max)) continue;
                       if( (e1+e2+e3 > E3max) or ( e4+e5+e6 > E3max) ) continue;
                       if( total_counter > n_elem_to_read) break;
 
+                      int i1 = nlj2idx.at({o1.n,o1.l,o1.j});
+                      int i2 = nlj2idx.at({o2.n,o2.l,o2.j});
+                      int i3 = nlj2idx.at({o3.n,o3.l,o3.j});
+                      int i4 = nlj2idx.at({o4.n,o4.l,o4.j});
+                      int i5 = nlj2idx.at({o5.n,o5.l,o5.j});
+                      int i6 = nlj2idx.at({o6.n,o6.l,o6.j});
 
                       ME_single_type vset = vbuf[counter-1];
 
@@ -726,12 +811,10 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
                         }
                       }
 
-                      std::cout << " counte =  "<< counter << "  calling set " << i1 << " " << i2 << " " << i3 << ", " << T12 << " | "  << i4 << " " << i5 << " " << i6 << ", " << T45 << " , " << J << " " << T3 << " " << vset << std::endl;
                       if ( std::abs(vset)>1e-8)
                       {
                        SetME_iso_no2b(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, vset );
                       }
-//                      SetThBME(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, vset );
 
                     }// for T3
                   }// for T45
@@ -744,5 +827,11 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
     }// for i2
   }// for i1
 
+  }// end of parallel outer block
+
   std::cout << "Done reading" << std::endl;
+  IMSRGProfiler::timer["ThreeBodyStorage_no2b::ReadFile"] += omp_get_wtime() - t_start;
 }
+
+
+

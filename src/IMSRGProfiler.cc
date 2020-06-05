@@ -72,7 +72,7 @@ void IMSRGProfiler::PrintTimes()
    std::cout.setf(std::ios::fixed);
    for ( auto it : timer )
    {
-     int nfill = (int) (20 * it.second / time_tot["real"]);
+     int nfill = (int) (20 * std::min( 1.0, it.second / time_tot["real"]));
      std::cout << std::setw(40) << std::left << it.first + ":  " << std::setw(12) << std::setprecision(5) << std::right << it.second;
      std::cout << " (" << std::setw(4) << std::setprecision(1) << 100*it.second / time_tot["real"] << "%) |";
      for (int ifill=0; ifill<nfill; ifill++) std::cout << "*";
