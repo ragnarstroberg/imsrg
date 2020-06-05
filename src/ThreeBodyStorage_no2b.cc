@@ -218,18 +218,21 @@ int ThreeBodySpaceNO2B::GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T)
 //////  Begin implementation of ThreeBodyStorage_no2b methods. This is the main event.
 ////////////////////////////////////////////////////////////////////////////////////////
 
-
-ThreeBodyStorage_no2b::ThreeBodyStorage_no2b( const ThreeBodyStorage_no2b& TBS_in )
+template<class StoreType>
+ThreeBodyStorage_no2b<StoreType>::ThreeBodyStorage_no2b( const ThreeBodyStorage_no2b<StoreType>& TBS_in )
 //: MatEl(TBS_in.MatEl), threebodyspace(TBS_in.threebodyspace), iOrbits(TBS_in.iOrbits), nlj2idx(TBS_in.nlj2idx),
 : MatEl(TBS_in.MatEl), threebodyspace(TBS_in.threebodyspace),
    ThreeBodyStorage( TBS_in )
 {}
 
 
-std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_no2b::Clone() const { return std::shared_ptr<ThreeBodyStorage>( new ThreeBodyStorage_no2b( *this)); };
+template<class StoreType>
+std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_no2b<StoreType>::Clone() const { return std::shared_ptr<ThreeBodyStorage>( new ThreeBodyStorage_no2b<StoreType>( *this)); };
+//std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_no2b::Clone() const { return std::shared_ptr<ThreeBodyStorage>( new ThreeBodyStorage_no2b( *this)); };
 
 
-void ThreeBodyStorage_no2b::Allocate()
+template<class StoreType>
+void ThreeBodyStorage_no2b<StoreType>::Allocate()
 {
 //  std::cout << "Calling allocate " << __FILE__ << " " << __LINE__ << std::endl;
 //  Emax_file = emax_file;
@@ -268,7 +271,8 @@ void ThreeBodyStorage_no2b::Allocate()
     size_t n = ch_no2b.Ndim;
 
 //    MatEl.at(ch).resize( n*(n+1)/2, ME_single_type(0.0));
-    MatEl[ch] = std::vector<ME_single_type>( n*(n+1)/2, ME_single_type(0.0));
+//    MatEl[ch] = std::vector<ME_single_type>( n*(n+1)/2, ME_single_type(0.0));
+    MatEl[ch] = std::vector<StoreType>( n*(n+1)/2, StoreType(0.0));
 
 
 //    std::vector<ThreeBMENO2B_Store_type> vch(n*(n+1)/2, (ThreeBMENO2B_Store_type)0.0);
@@ -283,7 +287,8 @@ void ThreeBodyStorage_no2b::Allocate()
 
 
 
-void ThreeBodyStorage_no2b::Multiply(const double rhs) 
+template<class StoreType>
+void ThreeBodyStorage_no2b<StoreType>::Multiply(const double rhs) 
 {
   for ( auto& itmat : MatEl )
   {
@@ -295,7 +300,8 @@ void ThreeBodyStorage_no2b::Multiply(const double rhs)
 }
 
 
-void ThreeBodyStorage_no2b::Add(const ThreeBodyStorage& rhs) 
+template<class StoreType>
+void ThreeBodyStorage_no2b<StoreType>::Add(const ThreeBodyStorage& rhs) 
 {
     if (rhs.GetStorageMode() == this->GetStorageMode() )
     {
@@ -318,7 +324,8 @@ void ThreeBodyStorage_no2b::Add(const ThreeBodyStorage& rhs)
 }
 
 
-void ThreeBodyStorage_no2b::Subtract(const ThreeBodyStorage& rhs) 
+template<class StoreType>
+void ThreeBodyStorage_no2b<StoreType>::Subtract(const ThreeBodyStorage& rhs) 
 {
     if (rhs.GetStorageMode() == this->GetStorageMode() )
     {
@@ -344,7 +351,8 @@ void ThreeBodyStorage_no2b::Subtract(const ThreeBodyStorage& rhs)
 
 //void ThreeBodyMENO2B::SetThBME(int a, int b, int c, int Tab,
 //    int d, int e, int f, int Tde, int J2, int T3, ThreeBMENO2B_IO_type V)
-void ThreeBodyStorage_no2b::SetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int twoT, ThreeBodyStorage::ME_type V)
+template<class StoreType>
+void ThreeBodyStorage_no2b<StoreType>::SetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int twoT, ThreeBodyStorage::ME_type V)
 {
   OrbitIsospin & oa = threebodyspace.iOrbits[a];
   OrbitIsospin & ob = threebodyspace.iOrbits[b];
@@ -379,7 +387,8 @@ void ThreeBodyStorage_no2b::SetME_iso_no2b(int a, int b, int c, int Tab, int d, 
   int ibra = ch_no2b.abct2n.at(key_bra);
   int iket = ch_no2b.abct2n.at(key_ket);
   auto index = threebodyspace.idx1d(ibra,iket);
-  MatEl[ch][index] = ME_single_type(V*ph);
+//  MatEl[ch][index] = ME_single_type(V*ph);
+  MatEl[ch][index] = StoreType(V*ph);
 //  MatEl[ch][idx1d(ibra,iket)] = ME_single_type(V*ph);
 }
 
@@ -387,7 +396,8 @@ void ThreeBodyStorage_no2b::SetME_iso_no2b(int a, int b, int c, int Tab, int d, 
 // Return a three-body matrix element where a,b are coupled to J2 and Tab, and d,e are coupled to J2 and Tde
 // Tab,c are coupled to T3, and Tde,c are coupled to T3
 // There is no total J quantum number, because it has been summed over with a weight 2J+1
-ThreeBodyStorage::ME_type ThreeBodyStorage_no2b::GetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int twoT) const
+template<class StoreType>
+ThreeBodyStorage::ME_type ThreeBodyStorage_no2b<StoreType>::GetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int twoT) const
 {
 
   ThreeBodyStorage::ME_type vout = 0;
@@ -450,7 +460,8 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_no2b::GetME_iso_no2b(int a, int b, in
 }
 
 //
-ThreeBodyStorage::ME_type ThreeBodyStorage_no2b::GetME_pn_no2b(int a, int b, int c, int d, int e, int f, int J2) const
+template<class StoreType>
+ThreeBodyStorage::ME_type ThreeBodyStorage_no2b<StoreType>::GetME_pn_no2b(int a, int b, int c, int d, int e, int f, int J2) const
 {
   Orbit & oa = modelspace->GetOrbit(a);
   Orbit & ob = modelspace->GetOrbit(b);
@@ -510,7 +521,8 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_no2b::GetME_pn_no2b(int a, int b, int
 
 
 
-double ThreeBodyStorage_no2b::Norm() const 
+template<class StoreType>
+double ThreeBodyStorage_no2b<StoreType>::Norm() const 
 {
   double norm = 0;
   for ( auto& itmat : MatEl )
@@ -523,7 +535,8 @@ double ThreeBodyStorage_no2b::Norm() const
   return sqrt(norm);
 }
 
-void ThreeBodyStorage_no2b::Erase()  // Set all elements to zero
+template<class StoreType>
+void ThreeBodyStorage_no2b<StoreType>::Erase()  // Set all elements to zero
 {
   for ( auto& itmat : MatEl )
   {
@@ -534,12 +547,14 @@ void ThreeBodyStorage_no2b::Erase()  // Set all elements to zero
   }
 }
 
-void ThreeBodyStorage_no2b::Deallocate() 
+template<class StoreType>
+void ThreeBodyStorage_no2b<StoreType>::Deallocate() 
 {
-    std::map<int, std::vector<ME_single_type>>().swap( MatEl);
+    std::map<int, std::vector<StoreType>>().swap( MatEl);
 }
 
-size_t ThreeBodyStorage_no2b::size() const
+template<class StoreType>
+size_t ThreeBodyStorage_no2b<StoreType>::size() const
 {
    size_t thesize =0;
    for ( auto& itmat : MatEl )
@@ -558,7 +573,8 @@ size_t ThreeBodyStorage_no2b::size() const
 
 //size_t ThreeBodyStorage_no2b::CountME() const
 //size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_file, int Lmax_file) const
-size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_file, int Lmax_file, std::vector<OrbitIsospin>& file_Orbits) const
+template<class StoreType>
+size_t ThreeBodyStorage_no2b<StoreType>::CountME(int Emax_file, int E2max_file, int E3max_file, int Lmax_file, std::vector<OrbitIsospin>& file_Orbits) const
 {
   double t_start = omp_get_wtime();
   size_t counter=0;
@@ -654,7 +670,8 @@ size_t ThreeBodyStorage_no2b::CountME(int Emax_file, int E2max_file, int E3max_f
 //void ThreeBodyMENO2B::ReadFile(std::string filename)
 //  The inputs should be  (  {filename} ,  {Emax_file, E3max_file, E2max_file, Lmax_file} )   // where the last two int arguments are optional
 //  The inputs should be  (  {filename} ,  {Emax_file, E2max_file, E3max_file, Lmax_file} )   // where the last int argument is optional
-void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, std::vector<int>& IntInputs )
+template<class StoreType>
+void ThreeBodyStorage_no2b<StoreType>::ReadFile( std::vector<std::string>& StringInputs, std::vector<int>& IntInputs )
 {
 //  std::cout << "enter " << __FILE__ << " " << __func__ << std::endl;
   double t_start = omp_get_wtime();
@@ -687,7 +704,7 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
   if(FileName.find("stream.bin") != std::string::npos)  filemode = "bin";
   else if (FileName.find(".gz") != std::string::npos) filemode = "gz";
 
-  size_t nwords = sizeof(ME_single_type);
+  size_t nwords = sizeof(StoreType);
 //  size_t nwords = (precision_mode==HALF_PRECISION) ? sizeof(ThreeBMENO2B_half_type) : sizeof(ThreeBMENO2B_single_type);
   std::cout << __func__ << "  reading/storing with " << 8*nwords << "  bit floats. filemode is " << filemode << std::endl;
 
@@ -738,7 +755,7 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
 
   size_t buffer_size = std::min( MAX_READ,  n_elem_to_read);
 
-  std::vector<ME_single_type> vbuf(buffer_size);
+  std::vector<StoreType> vbuf(buffer_size);
   std::cout << "Allocated a vector of size " << buffer_size << std::endl;
 
 //  if (filemode == "bin")        infile.read((char*)&vbuf[0], buffer_size*nwords);
@@ -861,7 +878,7 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
                       int i5 = threebodyspace.nlj2idx.at({o5.n,o5.l,o5.j});
                       int i6 = threebodyspace.nlj2idx.at({o6.n,o6.l,o6.j});
 
-                      ME_single_type vset = vbuf[counter-1];
+                      StoreType vset = vbuf[counter-1];
 
 
                       if( (i1==i2 and (J+T12)%2 ==0 ) or ( i4==i5 and (J+T45)%2 ==0 ) ) {
@@ -895,6 +912,14 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
   std::cout << "Done reading" << std::endl;
   IMSRGProfiler::timer["ThreeBodyStorage_no2b::ReadFile"] += omp_get_wtime() - t_start;
 }
+
+
+
+
+
+template class ThreeBodyStorage_no2b<ME_single_type>;
+template class ThreeBodyStorage_no2b<ME_half_type>;
+
 
 
 

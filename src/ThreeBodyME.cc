@@ -328,13 +328,14 @@ void ThreeBodyME::SetMode(std::string mode)
   }
   else if (mode == "no2b" )
   {
-//    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2<ME_single_type>( modelspace, E3max, rank_J, rank_T, parity)  );
-    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b( modelspace, E3max, rank_J, rank_T, parity)  );
+    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b<ME_single_type>( modelspace, E3max, rank_J, rank_T, parity)  );
+//    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b( modelspace, E3max, rank_J, rank_T, parity)  );
   }
   else if (mode == "no2bhalf" )
   {
-    std::cout << " ERROR ! mode " << mode << "  is not yet implemented" << std::endl;
-    std::exit(EXIT_FAILURE);
+    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b<ME_half_type>( modelspace, E3max, rank_J, rank_T, parity)  );
+//    std::cout << " ERROR ! mode " << mode << "  is not yet implemented" << std::endl;
+//    std::exit(EXIT_FAILURE);
   }
   threebody_storage->Allocate();
   storage_mode = pn;

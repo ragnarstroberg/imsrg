@@ -24,7 +24,7 @@
 
 
 //class ThreeBodyMENO2B; // forward declaration
-class ThreeBodyStorage_no2b; // forward declaration
+//class ThreeBodyStorage_no2b; // forward declaration
 class ThreeBodySpaceNO2B; // forward declaration
 
 class OrbitIsospin
@@ -104,12 +104,13 @@ class ThreeBodySpaceNO2B
 
 
 //class ThreeBodyMENO2B
-//template <class Type>
+template <class StoreType>
 class ThreeBodyStorage_no2b : public ThreeBodyStorage
 {
   private: 
 //    std::map<int, std::vector<Type>> MatEl;
-    std::map<int, std::vector<ME_single_type>> MatEl;
+//    std::map<int, std::vector<ME_single_type>> MatEl;
+    std::map<int, std::vector<StoreType>> MatEl;
   protected:
     ThreeBodySpaceNO2B threebodyspace;
 //    std::vector<OrbitIsospin> iOrbits; // eventually these three can probably get moved to ThreeBodySpaceNO2B
@@ -186,6 +187,5 @@ class ThreeBodyStorage_no2b : public ThreeBodyStorage
 
 
 
-//template class ThreeBodyStorage_no2b<ME_single_type>;
 
 #endif
