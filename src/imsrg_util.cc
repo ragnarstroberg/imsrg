@@ -67,6 +67,9 @@ namespace imsrg_util
       else if (opname == "Rn2")           return Rn2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rm2")           return Rm2_corrected_Op(modelspace,modelspace.GetTargetMass(),modelspace.GetTargetZ()) ;
       else if (opname == "Rm2lab")        return RSquaredOp(modelspace) ;
+      else if (opname == "ISM")           return MultipoleResponseOp(modelspace,2,0) ; // Isoscalar monopole (see PRC97(2018)054306 ) --added by bhu
+      else if (opname == "ISQ")           return MultipoleResponseOp(modelspace,2,2) ; // Isoscalar quadrupole (see PRC97(2018)054306 ) --added by bhu
+      else if (opname == "IVD")           return IVDipoleOp(modelspace,1,1) ; // Isovector dipole (see PRC97(2018)054306 ) --added by bhu
       else if (opname == "E1")            return ElectricMultipoleOp(modelspace,1) ;
       else if (opname == "E2")            return ElectricMultipoleOp(modelspace,2) ;
       else if (opname == "E3")            return ElectricMultipoleOp(modelspace,3) ;
@@ -1529,6 +1532,53 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    return T2;
  }
 
+  /// Mutipole responses (except dipole) with units fm^{rL} (see PRC97(2018)054306 ) --added by bhu
+  Operator MultipoleResponseOp(ModelSpace& modelspace, int rL, int YL)
+  {
+    Operator EL(modelspace, YL,0,YL%2,2);
+    double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*rL); // b^L where b=sqrt(hbar/mw)
+    int norbits = modelspace.GetNumberOrbits();
+    for (int i=0; i<norbits; ++i)
+    {
+      Orbit& oi = modelspace.GetOrbit(i);
+      double ji = 0.5*oi.j2;
+      for ( int j : EL.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      {
+        if (j<i) continue;
+        Orbit& oj = modelspace.GetOrbit(j);
+        double jj = 0.5*oj.j2;
+        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,rL) * bL ;
+        EL.OneBody(i,j) = modelspace.phase(jj+YL-0.5) * sqrt( (2*ji+1)*(2*jj+1)*(2*YL+1)/4./3.1415926) * AngMom::ThreeJ(ji,jj,YL,0.5,-0.5,0) * r2int;
+	if( YL == 0 ) EL.OneBody(i,j) = EL.OneBody(i,j) * sqrt(4.*3.1415926);
+        EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
+      }
+    }
+    return EL;
+  }
+
+  /// Isovector dipole with units e * fm (see PRC97(2018)054306 ) --added by bhu
+  Operator IVDipoleOp(ModelSpace& modelspace, int rL, int YL)
+  {
+    Operator EL(modelspace, YL,0,YL%2,2);
+    double bL = pow( HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega(),0.5*rL); // b^L where b=sqrt(hbar/mw)
+    int norbits = modelspace.GetNumberOrbits();
+    for (int i=0; i<norbits; ++i)
+    {
+      Orbit& oi = modelspace.GetOrbit(i);
+      double ji = 0.5*oi.j2;
+      for ( int j : EL.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      {
+        if (j<i) continue;
+        Orbit& oj = modelspace.GetOrbit(j);
+        double jj = 0.5*oj.j2;
+        double r2int = RadialIntegral(oi.n,oi.l,oj.n,oj.l,rL) * bL ;
+        EL.OneBody(i,j) = modelspace.phase(jj+YL-0.5) * sqrt( (2*ji+1)*(2*jj+1)*(2*YL+1)/4./3.1415926) * AngMom::ThreeJ(ji,jj,YL,0.5,-0.5,0) * r2int;
+        EL.OneBody(i,j) = EL.OneBody(i,j) * (0.5 - oi.tz2*0.5 - modelspace.GetTargetZ()*1.0/modelspace.GetTargetMass() );
+	EL.OneBody(j,i) = modelspace.phase((oi.j2-oj.j2)/2) * EL.OneBody(i,j);
+      }
+    }
+    return EL;
+  }
 
 
   /// Returns a reduced electric multipole operator with units \f$ e\f$ fm\f$^{\lambda} \f$
