@@ -25,6 +25,7 @@
 
 //class ThreeBodyMENO2B; // forward declaration
 class ThreeBodyStorage_no2b; // forward declaration
+class ThreeBodySpaceNO2B; // forward declaration
 
 class OrbitIsospin
 {
@@ -57,7 +58,8 @@ class ThreeBodyChannelNO2B
 
     ThreeBodyChannelNO2B();
 //    ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T3, ThreeBodyMENO2B*);
-    ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T3, ThreeBodyStorage_no2b& thr);
+//    ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T3, ThreeBodyStorage_no2b& thr);
+    ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T3, ThreeBodySpaceNO2B& thr);
 //    ~ThreeBodyChannelNO2B();
     int GetIndex(int a, int b, int c, int Tab) const {return Hash_abct(a, b, c, Tab);};
     int GetPhase(int i) const {return iphase.at(i);};
@@ -70,49 +72,49 @@ class ThreeBodyChannelNO2B
 class ThreeBodySpaceNO2B
 {
   public:
+    int Emax;
+    int E2max;
+    int E3max;
+    int Lmax;
     std::vector<ThreeBodyChannelNO2B> ThreeBodyChannels;
     std::unordered_map<int, int> idcs2ch;
     int NChannels;
     ThreeBodySpaceNO2B();
-    ThreeBodySpaceNO2B( ThreeBodyStorage_no2b& thr);
+//    ThreeBodySpaceNO2B( ThreeBodyStorage_no2b& thr);
+    ThreeBodySpaceNO2B( int Emax, int E2max, int E3max, int Lmax);
 //    ~ThreeBodySpaceNO2B();
 //    int GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T)const {return Hash_Channel(Jab, Pab, Jc, Pc, T);};
 //    int GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T)const {return idcs2ch.at( Hash_Channel(Jab, Pab, Jc, Pc, T) ) ;};
     int GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T)const ;
+
+
+    OrbitIsospin& GetIsospinOrbit(size_t i ) { return iOrbits.at(i);}; // move  to ThreeBodySpaceNO2B
+    const OrbitIsospin& GetIsospinOrbit(size_t i ) const { return (OrbitIsospin&) iOrbits.at(i);}; // move  to ThreeBodySpaceNO2B
+    size_t GetNumberIsospinOrbits() const { return iOrbits.size();}; // move  to ThreeBodySpaceNO2B
+
+    std::vector<OrbitIsospin> iOrbits; // eventually these three can probably get moved to ThreeBodySpaceNO2B
+    std::map<std::array<int,3>, int> nlj2idx;
+    size_t idx1d(size_t bra, size_t ket) const { return std::max(bra+1,ket+1) * (std::max(bra+1,ket+1)-1)/2 + std::min(bra+1,ket+1)-1;};
+
   private:
     int Hash_Channel(int, int, int, int, int) const;
     void UnHash_Channel(int, int&, int&, int&, int&, int&) const;
 };
 
 
-/*
-class NO2BFileReader
-{
-  public:
-    std::string FileName;
-    int Emax_file;
-    int E3max_file;
-    int E2max_file;
-    int Lmax_file;
-    size_t n_elem_to_read;
-    std::ifstream infile;
-    boost::iostreams::filtering_istream zipstream;
-    std::string filemode;
-}
-*/
-
-
 
 //class ThreeBodyMENO2B
+//template <class Type>
 class ThreeBodyStorage_no2b : public ThreeBodyStorage
 {
   private: 
+//    std::map<int, std::vector<Type>> MatEl;
     std::map<int, std::vector<ME_single_type>> MatEl;
   protected:
     ThreeBodySpaceNO2B threebodyspace;
-    std::vector<OrbitIsospin> iOrbits; // eventually these three can probably get moved to ThreeBodySpaceNO2B
-    std::map<std::array<int,3>, int> nlj2idx;
-    size_t idx1d(size_t bra, size_t ket) const { return std::max(bra+1,ket+1) * (std::max(bra+1,ket+1)-1)/2 + std::min(bra+1,ket+1)-1;};
+//    std::vector<OrbitIsospin> iOrbits; // eventually these three can probably get moved to ThreeBodySpaceNO2B
+//    std::map<std::array<int,3>, int> nlj2idx;
+//    size_t idx1d(size_t bra, size_t ket) const { return std::max(bra+1,ket+1) * (std::max(bra+1,ket+1)-1)/2 + std::min(bra+1,ket+1)-1;};
 
   public:
 
@@ -141,9 +143,9 @@ class ThreeBodyStorage_no2b : public ThreeBodyStorage
     void Add(const ThreeBodyStorage&)  override;
     void Subtract(const ThreeBodyStorage&)  override;
 
-    OrbitIsospin& GetIsospinOrbit(size_t i ) { return iOrbits.at(i);}; // move  to ThreeBodySpaceNO2B
-    const OrbitIsospin& GetIsospinOrbit(size_t i ) const { return (OrbitIsospin&) iOrbits.at(i);}; // move  to ThreeBodySpaceNO2B
-    size_t GetNumberIsospinOrbits() const { return iOrbits.size();}; // move  to ThreeBodySpaceNO2B
+//    OrbitIsospin& GetIsospinOrbit(size_t i ) { return iOrbits.at(i);}; // move  to ThreeBodySpaceNO2B
+//    const OrbitIsospin& GetIsospinOrbit(size_t i ) const { return (OrbitIsospin&) iOrbits.at(i);}; // move  to ThreeBodySpaceNO2B
+//    size_t GetNumberIsospinOrbits() const { return iOrbits.size();}; // move  to ThreeBodySpaceNO2B
 
 //    void Allocate(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file, std::string filename);
     void Allocate() override;
@@ -177,12 +179,13 @@ class ThreeBodyStorage_no2b : public ThreeBodyStorage
 //    template<class T> void ReadStream(T & infile, long long unsigned int n_elms);
     template<class T> void ReadStream(T & infile, size_t n_elms);
 //    void ReadBinaryStream( std::vector<ThreeBMENO2B_Store_type>& v, size_t nelms);
-    template <class Type> void ReadBinaryStream( std::vector<Type>& v, size_t nelms);
+    template <class T> void ReadBinaryStream( std::vector<T>& v, size_t nelms);
 
 
 };
 
 
 
+//template class ThreeBodyStorage_no2b<ME_single_type>;
 
 #endif

@@ -18,12 +18,13 @@ ThreeBodyChannelNO2B::ThreeBodyChannelNO2B()
   : J2(-1), P2(-1), J1(-1), P1(-1), T3(-1), Ndim(-1)
 {}
 
-ThreeBodyChannelNO2B::ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T3,  ThreeBodyStorage_no2b& thr)
+//ThreeBodyChannelNO2B::ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T3,  ThreeBodyStorage_no2b& thr)
+ThreeBodyChannelNO2B::ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T3,  ThreeBodySpaceNO2B& thr)
 //  : J2(J2), P2(P2), J1(J1), P1(P1), T3(T3), thr(thr)
   : J2(J2), P2(P2), J1(J1), P1(P1), T3(T3)
 {
   Ndim = 0;
-  int emax  = thr.emax;
+  int emax  = thr.Emax;
   int e2max = thr.E2max;
   int e3max = thr.E3max;
 //  int e2max = std::max(thr->E2max, thr->E2max_file);
@@ -91,6 +92,61 @@ ThreeBodySpaceNO2B::ThreeBodySpaceNO2B()
   : NChannels(-1), ThreeBodyChannels()
 {}
 
+
+ThreeBodySpaceNO2B::ThreeBodySpaceNO2B( int emax, int e2max, int e3max, int lmax)
+ : Emax(emax), E2max(e2max), E3max(e3max), Lmax(lmax)
+{
+  
+  double t_start = omp_get_wtime();
+
+// Allocate all the 1b orbits
+  int idx = 0;
+  for (int e=0; e<=Emax; ++e) {
+    int lmin = e%2;
+    for (int l=lmin; l<=std::min(e,Lmax); l+=2) {
+      int n = (e-l)/2;
+      int twojMin = std::abs(2*l-1);
+      int twojMax = 2*l+1;
+      for (int twoj=twojMin; twoj<=twojMax; twoj+=2) {
+        OrbitIsospin orb(idx,n,l,twoj);
+        iOrbits.push_back(orb);
+        nlj2idx[{n,l,twoj}]=idx;
+        idx += 1;
+      }
+    }
+  }
+
+
+// Allocate the ThreeBody channels
+  int J2max = std::min(2*lmax+1, e2max+1);
+  int count = 0;
+  for (int J2=0; J2<=J2max; ++J2){
+    for (int P2: {0,1}){
+
+      for (int J1=1; J1<=2*lmax+1; J1+=2){
+        for (int P1: {0,1}){
+          for (int T3 : {1,3}){
+//            ThreeBodyChannelNO2B channel(J2, P2, J1, P1, T3, thr);
+            ThreeBodyChannelNO2B channel(J2, P2, J1, P1, T3, *this);
+            if(channel.Ndim < 1) continue;
+
+            ThreeBodyChannels.push_back(channel);
+            int key = Hash_Channel(J2,P2,J1,P1,T3);
+            idcs2ch[key] = count;
+            count += 1;
+          }
+        }
+      }
+    }
+  }
+  NChannels = ThreeBodyChannels.size();
+  IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
+
+
+/*
 //ThreeBodySpaceNO2B::ThreeBodySpaceNO2B(ThreeBodyStorage_no2b* thr)
 ThreeBodySpaceNO2B::ThreeBodySpaceNO2B( ThreeBodyStorage_no2b& thr)
 {
@@ -131,6 +187,7 @@ ThreeBodySpaceNO2B::ThreeBodySpaceNO2B( ThreeBodyStorage_no2b& thr)
   NChannels = ThreeBodyChannels.size();
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
 }
+*/
 
 int ThreeBodySpaceNO2B::Hash_Channel(int J2, int P2, int J1, int P1, int T3) const
 {
@@ -163,7 +220,8 @@ int ThreeBodySpaceNO2B::GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T)
 
 
 ThreeBodyStorage_no2b::ThreeBodyStorage_no2b( const ThreeBodyStorage_no2b& TBS_in )
-: MatEl(TBS_in.MatEl), threebodyspace(TBS_in.threebodyspace), iOrbits(TBS_in.iOrbits), nlj2idx(TBS_in.nlj2idx),
+//: MatEl(TBS_in.MatEl), threebodyspace(TBS_in.threebodyspace), iOrbits(TBS_in.iOrbits), nlj2idx(TBS_in.nlj2idx),
+: MatEl(TBS_in.MatEl), threebodyspace(TBS_in.threebodyspace),
    ThreeBodyStorage( TBS_in )
 {}
 
@@ -180,28 +238,29 @@ void ThreeBodyStorage_no2b::Allocate()
 //  Lmax_file = lmax_file;
 //  FileName = filename;
 
-  // Generate all the orbits needed and store them in iOrbits
-  int idx = 0;
-  for (int e=0; e<=emax; ++e) {
-    int lmin = e%2;
-    for (int l=lmin; l<=std::min(e,lmax); l+=2) {
-      int n = (e-l)/2;
-      int twojMin = std::abs(2*l-1);
-      int twojMax = 2*l+1;
-      for (int twoj=twojMin; twoj<=twojMax; twoj+=2) {
-        OrbitIsospin orb(idx,n,l,twoj);
-        iOrbits.push_back(orb);
-//        std::cout << "  line " << __LINE__  << "  iorbit = " << iOrbits.size() << "  nlj = " << n << " " << l << " " << twoj << std::endl;
-        nlj2idx[{n,l,twoj}]=idx;
-        idx += 1;
-      }
-    }
-  }
+//  // Generate all the orbits needed and store them in iOrbits
+//  int idx = 0;
+//  for (int e=0; e<=emax; ++e) {
+//    int lmin = e%2;
+//    for (int l=lmin; l<=std::min(e,lmax); l+=2) {
+//      int n = (e-l)/2;
+//      int twojMin = std::abs(2*l-1);
+//      int twojMax = 2*l+1;
+//      for (int twoj=twojMin; twoj<=twojMax; twoj+=2) {
+//        OrbitIsospin orb(idx,n,l,twoj);
+//        iOrbits.push_back(orb);
+////        std::cout << "  line " << __LINE__  << "  iorbit = " << iOrbits.size() << "  nlj = " << n << " " << l << " " << twoj << std::endl;
+//        nlj2idx[{n,l,twoj}]=idx;
+//        idx += 1;
+//      }
+//    }
+//  }
   // Create the three body space
   std::cout << "Creating ThreeBodySpaceNO2B" << std::endl;
-  threebodyspace = ThreeBodySpaceNO2B(*this);
+//  threebodyspace = ThreeBodySpaceNO2B(*this);
+//  threebodyspace = ThreeBodySpaceNO2B(emax,E2max,E3max,lmax);
+  threebodyspace = ThreeBodySpaceNO2B(emax,E2max,E3max, std::min(emax,lmax) );
 
-//  std::cout << "looping through channels, NChannels = " << threebodyspace.NChannels << std::endl;
   // Allocate the vectors for the matrix element storage
   for (int ch=0; ch<threebodyspace.NChannels; ch++)
   {
@@ -287,12 +346,12 @@ void ThreeBodyStorage_no2b::Subtract(const ThreeBodyStorage& rhs)
 //    int d, int e, int f, int Tde, int J2, int T3, ThreeBMENO2B_IO_type V)
 void ThreeBodyStorage_no2b::SetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int twoT, ThreeBodyStorage::ME_type V)
 {
-  OrbitIsospin & oa = iOrbits[a];
-  OrbitIsospin & ob = iOrbits[b];
-  OrbitIsospin & oc = iOrbits[c];
-  OrbitIsospin & od = iOrbits[d];
-  OrbitIsospin & oe = iOrbits[e];
-  OrbitIsospin & of = iOrbits[f];
+  OrbitIsospin & oa = threebodyspace.iOrbits[a];
+  OrbitIsospin & ob = threebodyspace.iOrbits[b];
+  OrbitIsospin & oc = threebodyspace.iOrbits[c];
+  OrbitIsospin & od = threebodyspace.iOrbits[d];
+  OrbitIsospin & oe = threebodyspace.iOrbits[e];
+  OrbitIsospin & of = threebodyspace.iOrbits[f];
 
   int P1 = oc.l%2;
   if(P1 != of.l%2) return;
@@ -319,7 +378,9 @@ void ThreeBodyStorage_no2b::SetME_iso_no2b(int a, int b, int c, int Tab, int d, 
   int ph = ch_no2b.GetPhase(key_bra) * ch_no2b.GetPhase(key_ket);
   int ibra = ch_no2b.abct2n.at(key_bra);
   int iket = ch_no2b.abct2n.at(key_ket);
-  MatEl[ch][idx1d(ibra,iket)] = ME_single_type(V*ph);
+  auto index = threebodyspace.idx1d(ibra,iket);
+  MatEl[ch][index] = ME_single_type(V*ph);
+//  MatEl[ch][idx1d(ibra,iket)] = ME_single_type(V*ph);
 }
 
 
@@ -333,12 +394,12 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_no2b::GetME_iso_no2b(int a, int b, in
 //  if ( (a==b) and (Tab+J2)%2==0 ) return vout;
 //  if ( (d==e) and (Tde+J2)%2==0 ) return vout;
 
-  const OrbitIsospin & oa = iOrbits[a];
-  const OrbitIsospin & ob = iOrbits[b];
-  const OrbitIsospin & oc = iOrbits[c];
-  const OrbitIsospin & od = iOrbits[d];
-  const OrbitIsospin & oe = iOrbits[e];
-  const OrbitIsospin & of = iOrbits[f];
+  const OrbitIsospin & oa = threebodyspace.iOrbits[a];
+  const OrbitIsospin & ob = threebodyspace.iOrbits[b];
+  const OrbitIsospin & oc = threebodyspace.iOrbits[c];
+  const OrbitIsospin & od = threebodyspace.iOrbits[d];
+  const OrbitIsospin & oe = threebodyspace.iOrbits[e];
+  const OrbitIsospin & of = threebodyspace.iOrbits[f];
 
 //  std::cout << "  " << __func__ << "   " << a << " " << b << " " << c << " " << Tab << "  | " << d << " " << e << " " << f << " " << Tde << "    " << J2 << " " << twoT << std::endl;
 
@@ -378,7 +439,9 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_no2b::GetME_iso_no2b(int a, int b, in
   int ibra = ch_no2b.abct2n.at(key_bra);
   int iket = ch_no2b.abct2n.at(key_ket);
 //  std::cout << "  the index is  " << idx1d(ibra,iket) << "   and the length of vec is " << MatEl.at(ch).size() << std::endl;
-  const double vread = MatEl.at(ch)[ idx1d(ibra,iket) ];
+  auto index = threebodyspace.idx1d(ibra,iket);
+  const double vread = MatEl.at(ch)[ index ];
+//  const double vread = MatEl.at(ch)[ idx1d(ibra,iket) ];
   vout = vread * ph;
 //  std::cout << "          returning " << vread << " * " << ph << std::endl;
 //  vout = MatEl[ch][idx1d(ibra,iket)] * ph;
@@ -411,12 +474,12 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_no2b::GetME_pn_no2b(int a, int b, int
   int Z3 = oa.tz2 + ob.tz2 + oc.tz2; // total isospin projection, times 2
   if(Z3 != od.tz2 + oe.tz2 + of.tz2) return   vout; // return 0.
 
-  int i1 = nlj2idx.at({oa.n, oa.l, oa.j2});
-  int i2 = nlj2idx.at({ob.n, ob.l, ob.j2});
-  int i3 = nlj2idx.at({oc.n, oc.l, oc.j2});
-  int i4 = nlj2idx.at({od.n, od.l, od.j2});
-  int i5 = nlj2idx.at({oe.n, oe.l, oe.j2});
-  int i6 = nlj2idx.at({of.n, of.l, of.j2});
+  int i1 = threebodyspace.nlj2idx.at({oa.n, oa.l, oa.j2});
+  int i2 = threebodyspace.nlj2idx.at({ob.n, ob.l, ob.j2});
+  int i3 = threebodyspace.nlj2idx.at({oc.n, oc.l, oc.j2});
+  int i4 = threebodyspace.nlj2idx.at({od.n, od.l, od.j2});
+  int i5 = threebodyspace.nlj2idx.at({oe.n, oe.l, oe.j2});
+  int i6 = threebodyspace.nlj2idx.at({of.n, of.l, of.j2});
 
 //  double v=0.0;
   for (int T12: {0,1}){
@@ -791,12 +854,12 @@ void ThreeBodyStorage_no2b::ReadFile( std::vector<std::string>& StringInputs, st
                       if( (e1+e2+e3 > E3max) or ( e4+e5+e6 > E3max) ) continue;
                       if( total_counter > n_elem_to_read) break;
 
-                      int i1 = nlj2idx.at({o1.n,o1.l,o1.j});
-                      int i2 = nlj2idx.at({o2.n,o2.l,o2.j});
-                      int i3 = nlj2idx.at({o3.n,o3.l,o3.j});
-                      int i4 = nlj2idx.at({o4.n,o4.l,o4.j});
-                      int i5 = nlj2idx.at({o5.n,o5.l,o5.j});
-                      int i6 = nlj2idx.at({o6.n,o6.l,o6.j});
+                      int i1 = threebodyspace.nlj2idx.at({o1.n,o1.l,o1.j});
+                      int i2 = threebodyspace.nlj2idx.at({o2.n,o2.l,o2.j});
+                      int i3 = threebodyspace.nlj2idx.at({o3.n,o3.l,o3.j});
+                      int i4 = threebodyspace.nlj2idx.at({o4.n,o4.l,o4.j});
+                      int i5 = threebodyspace.nlj2idx.at({o5.n,o5.l,o5.j});
+                      int i6 = threebodyspace.nlj2idx.at({o6.n,o6.l,o6.j});
 
                       ME_single_type vset = vbuf[counter-1];
 
