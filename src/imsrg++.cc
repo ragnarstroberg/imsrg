@@ -406,6 +406,7 @@ int main(int argc, char** argv)
 //      if ( no2b_precision == "half")  Hbare.ThreeBodyNO2B.SetHalfPrecision(); // not re-implemented
 
       Hbare.ThreeBody.SetMode("no2b");
+      if (no2b_precision == "half")  Hbare.ThreeBody.SetMode("no2bhalf");
 
 //      Hbare.ThreeBodyNO2B.Allocate(modelspace, file3e1max, file3e2max, file3e3max, file3e1max);
 //      Hbare.profiler.timer["ThreeBodyNO2B::Allocate"] += omp_get_wtime() - t_start;
