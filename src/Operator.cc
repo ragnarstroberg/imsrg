@@ -487,6 +487,8 @@ Operator Operator::DoNormalOrdering2(int sign) const
 //Operator Operator::DoNormalOrdering3()
 Operator Operator::DoNormalOrdering3(int sign) const
 {
+   double t_start = omp_get_wtime();
+   std::cout << "begin " << __func__ << "   norm of 3b is " << ThreeBodyNorm() << std::endl;
 //   Operator opNO3 = Operator(*modelspace);
    if (rank_J>0)
    {
@@ -496,31 +498,37 @@ Operator Operator::DoNormalOrdering3(int sign) const
 //    double vread = ThreeBody.GetME_pn(0,0,3,10,10,3,11,11,3);
 //    std::cout << " IN " << __func__ << "   vread =  " << vread << std::endl;
    Operator opNO3 = Operator(*modelspace, rank_J, rank_T, parity,2);
-//   #pragma omp parallel for
+   std::vector<int> ch_bra_list,ch_ket_list;
+//   std::vector<arma::mat *> mat_ptr_list;
    for ( auto& itmat : opNO3.TwoBody.MatEl )
    {
-//      int ch = itmat.first[0]; // assume ch_bra = ch_ket for 3body...
-      int ch_bra = itmat.first[0]; // assume ch_bra = ch_ket for 3body...
-      int ch_ket = itmat.first[1]; // assume ch_bra = ch_ket for 3body...
-//      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      ch_bra_list.push_back( itmat.first[0] );
+      ch_ket_list.push_back( itmat.first[0] );
+   }
+   int niter = ch_bra_list.size();
+//   for ( auto& itmat : opNO3.TwoBody.MatEl )
+   #pragma omp parallel for schedule(dynamic,1)
+   for ( int iter=0; iter<niter; iter++ )
+   {
+      int ch_bra = ch_bra_list[iter];
+      int ch_ket = ch_ket_list[iter];
+//      auto& Gamma = *(mat_ptr_list[iter]);
+      auto& Gamma = opNO3.TwoBody.GetMatrix(ch_bra,ch_ket);
+//      int ch_bra = itmat.first[0]; // assume ch_bra = ch_ket for 3body...
+//      int ch_ket = itmat.first[1]; // assume ch_bra = ch_ket for 3body...
       TwoBodyChannel& tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
       TwoBodyChannel& tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-      arma::mat& Gamma = (arma::mat&) itmat.second;
-//      std::cout << "      line  " << __LINE__ << "  chbra,chket = " << ch_bra << " " << ch_ket << "   dimensions " << tbc_bra.GetNumberKets() << " x  "<< tbc_ket.GetNumberKets() << std::endl;
-//      for (size_t ibra=0; ibra<tbc.GetNumberKets(); ++ibra)
+//      auto& Gamma =  itmat->second;
       for (size_t ibra=0; ibra<tbc_bra.GetNumberKets(); ++ibra)
       {
-//         Ket & bra = tbc.GetKet(ibra);
          Ket & bra = tbc_bra.GetKet(ibra);
          int i = bra.p;
          int j = bra.q;
          Orbit & oi = modelspace->GetOrbit(i);
          Orbit & oj = modelspace->GetOrbit(j);
          size_t iket_min = ch_bra==ch_ket ? ibra  : 0;
-//         for (size_t iket=ibra; iket<tbc.GetNumberKets(); ++iket)
          for (size_t iket=iket_min; iket<tbc_ket.GetNumberKets(); ++iket)
          {
-//            Ket & ket = tbc.GetKet(iket);
             Ket & ket = tbc_ket.GetKet(iket);
             int k = ket.p;
             int l = ket.q;
@@ -531,22 +539,10 @@ Operator Operator::DoNormalOrdering3(int sign) const
                Orbit & oa = modelspace->GetOrbit(a);
                if ( (2*(oi.n+oj.n+oa.n)+oi.l+oj.l+oa.l)>E3max) continue;
                if ( (2*(ok.n+ol.n+oa.n)+ok.l+ol.l+oa.l)>E3max) continue;
-//               int kmin2 = abs(2*tbc.J-oa.j2);
-//               int kmax2 = 2*tbc.J+oa.j2;
 
                Gamma(ibra,iket) += sign * oa.occ * ThreeBody.GetME_pn_no2b( i,j,a,k,l,a, tbc_bra.J );
-/*
-               int kmin2 = abs(2*tbc_bra.J-oa.j2);
-               int kmax2 = 2*tbc_bra.J+oa.j2;
-               for (int K2=kmin2; K2<=kmax2; K2+=2)
-               {
-//                  Gamma(ibra,iket) += (K2+1) * sign*oa.occ * ThreeBody.GetME_pn(tbc.J,tbc.J,K2,i,j,a,k,l,a); // This is unnormalized.
-                  Gamma(ibra,iket) += (K2+1) * sign*oa.occ * ThreeBody.GetME_pn(tbc_bra.J,tbc_ket.J,K2,i,j,a,k,l,a); // This is unnormalized.
-//                  std::cout << " accessing 3bme   "<< tbc_bra.J << " " << tbc_ket.J << " " << K2 << "    " << i << " " << j << " " << a << "  " << k << " "  << l << " " << a << "       " << ThreeBody.GetME_pn(tbc_bra.J,tbc_ket.J,K2,i,j,a,k,l,a) << "  ->  " << Gamma(ibra,iket) << std::endl;
-               }
-*/
+
             }
-//            Gamma(ibra,iket) /= (2*tbc.J+1)* sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
             Gamma(ibra,iket) /= (2*tbc_bra.J+1)* sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
          }
       }
@@ -558,8 +554,11 @@ Operator Operator::DoNormalOrdering3(int sign) const
 //   std::cout << "IN " << __func__ << "  line " << __LINE__ << "   norms of NO 3b pieces are " << opNO2.ZeroBody << "   " << opNO2.OneBodyNorm() << "   " << opNO2.TwoBodyNorm() << "  and thie original 3b norm was  " << ThreeBody.Norm() << "  which produced a no2b with norm " << opNO3.TwoBodyNorm() << std::endl;
 //   std::cout << " opNO2 has storage mode " << opNO2.ThreeBody.GetStorageMode() << "  and this has storage mode " << ThreeBody.GetStorageMode() << "  and opNO3 has " << opNO3.ThreeBody.GetStorageMode() << std::endl;
 //   std::cout << "Are they allocated? " << opNO2.ThreeBody.IsAllocated() << "  " << ThreeBody.IsAllocated() << "  " << opNO3.ThreeBody.IsAllocated() << std::endl;
+   std::cout << __func__ << "  contributed " << opNO2.ZeroBody << "  to the zero body part" << std::endl;
    // Also normal order the 1 and 2 body pieces
    opNO2 += DoNormalOrdering2(sign);
+
+   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
    return opNO2;
 
 }
