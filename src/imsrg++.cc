@@ -414,6 +414,7 @@ int main(int argc, char** argv)
 //      Hbare.ThreeBodyNO2B.ReadFile();
 //      Hbare.ThreeBodyNO2B.ReadFile( input3bme );
       Hbare.ThreeBody.ReadFile( {input3bme}, {file3e1max, file3e2max, file3e3max, file3e1max} );
+      rw.File3N = input3bme;
 //      Hbare.profiler.timer["ThreeBodyNO2B::ReadFile"] += omp_get_wtime() - t_start;
       std::cout << "done reading 3N" << std::endl;
 
@@ -444,7 +445,10 @@ int main(int argc, char** argv)
   if (not freeze_occupations )  hf.UnFreezeOccupations();
   std::cout << "Solving" << std::endl;
 //  if (basis=="HF")
-  hf.Solve();
+  if (basis!="oscillator")
+  {
+    hf.Solve();
+  }
 
   int hno_particle_rank = 2;
   if ((IMSRG3) and (Hbare.ThreeBodyNorm() > 1e-5))  hno_particle_rank = 3;
