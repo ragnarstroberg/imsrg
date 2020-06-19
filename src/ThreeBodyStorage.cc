@@ -38,9 +38,10 @@ ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int e3max , int rJ, int rT, i
 // This will presumably be due to a mistake in the code, but if we really want to access the matrix
 // element in that particular way using that particular storage mode, then we'd better go ahead and implement it.
 //
-ThreeBodyStorage::ME_type ThreeBodyStorage::NotImplemented() const
+//ThreeBodyStorage::ME_type ThreeBodyStorage::NotImplemented() const
+ThreeBodyStorage::ME_type ThreeBodyStorage::NotImplemented(std::string funcname) const
 {
-  std::cout << "ERROR: " << __func__ << " is not yet implemented for ThreeBodyStorage mode [" << GetStorageMode()  << "]. Dying now." << std::endl;
+  std::cout << "ERROR: " << funcname << " is not yet implemented for ThreeBodyStorage mode [" << GetStorageMode()  << "]. Dying now." << std::endl;
   std::exit(EXIT_FAILURE);
   return 0;
 }

@@ -77,27 +77,27 @@ class ThreeBodyStorage
 
   virtual void Allocate() =0;
 
-  ME_type NotImplemented() const;
+  ME_type NotImplemented(std::string funcname) const;
 
-  virtual ME_type GetME_pn(  int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f) const {return NotImplemented();};
-  virtual ME_type GetME_iso( int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f) const {return NotImplemented();};
+  virtual ME_type GetME_pn(  int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f) const {return NotImplemented(__func__);};
+  virtual ME_type GetME_iso( int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f) const {return NotImplemented(__func__);};
 //  virtual ME_type GetME_iso( int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoT, int a, int b, int c, int d, int e, int f) const =0;
 
   // The setters are only safe when setting in the appropriate formalism.
   // If we're storing in isospin and want to set a pn matrix element, things get messy. Likewise for adding.
-  virtual void SetME_iso(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f, ME_type V) {NotImplemented();};
+  virtual void SetME_iso(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f, ME_type V) {NotImplemented(__func__);};
 //  virtual void SetME_iso(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoT, int a, int b, int c, int d, int e, int f, ME_type V) =0;
-  virtual void SetME_pn( int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f, ME_type V) {NotImplemented();};
+  virtual void SetME_pn( int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f, ME_type V) {NotImplemented(__func__);};
 
-  virtual void AddToME_iso(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f, ME_type V) {NotImplemented();};
+  virtual void AddToME_iso(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoTabc, int twoTdef, int a, int b, int c, int d, int e, int f, ME_type V) {NotImplemented(__func__);};
 //  virtual void AddToME_iso(int Jab_in, int Jde_in, int twoJ, int tab_in, int tde_in, int twoT, int a, int b, int c, int d, int e, int f, ME_type V) =0;
-  virtual void AddToME_pn( int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f, ME_type V) {NotImplemented();};
+  virtual void AddToME_pn( int Jab_in, int Jde_in, int twoJ, int a, int b, int c, int d, int e, int f, ME_type V) {NotImplemented(__func__);};
 
   // In some cases, for efficiency we may want to set by channel and ket index number, rather than abcdef.
-  virtual void AddToME_pn_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ME_type V) {NotImplemented();};
-  virtual void SetME_pn_ch(  size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ME_type V) {NotImplemented();};
+  virtual void AddToME_pn_ch(size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ME_type V) {NotImplemented(__func__);};
+  virtual void SetME_pn_ch(  size_t ch_bra, size_t ch_ket, size_t ibra, size_t iket, ME_type V) {NotImplemented(__func__);};
 
-  virtual ME_type GetME_pn_ch(size_t chbra, size_t chket, size_t ibra, size_t iket) const {return NotImplemented();};
+  virtual ME_type GetME_pn_ch(size_t chbra, size_t chket, size_t ibra, size_t iket) const {return NotImplemented(__func__);};
 //  virtual ME_type GetME_pn_ch(size_t chbra, size_t chket, Ket3& bra, Ket3& ket) const =0; // do we use this??
 
   // In commutator expressions it often comes up that we want the same matrix element from two operators. This saves an extra recoupling.
@@ -105,7 +105,7 @@ class ThreeBodyStorage
   virtual std::vector<ME_type> GetME_pn_TwoOps(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, const ThreeBodyStorage& X, const ThreeBodyStorage& Y) const ;
 
 
-  virtual void SetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3, ME_type V){NotImplemented();};
+  virtual void SetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3, ME_type V){NotImplemented(__func__);};
   virtual ME_type GetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3) const ;
   virtual ME_type GetME_pn_no2b(int a, int b, int c, int d, int e, int f,  int J2b) const ; // Get ME with Jab=Jde=J2b, summed over total J with weight 2J+1
 
@@ -114,11 +114,11 @@ class ThreeBodyStorage
   virtual void Erase() =0; // set all three-body terms to zero
   virtual void Deallocate() =0;
   virtual size_t size() const =0;
-  virtual void WriteBinary(std::ofstream& f){NotImplemented();};
-  virtual void ReadBinary(std::ifstream& f){NotImplemented();};
-  virtual void WriteFile(std::vector<std::string>& StringInputs, std::vector<int>& IntInputs ){NotImplemented();};
-  virtual void ReadFile( std::vector<std::string>& StringInputs, std::vector<int>& IntInputs ){NotImplemented();};
-  virtual void Print() {NotImplemented();};
+  virtual void WriteBinary(std::ofstream& f){NotImplemented(__func__);};
+  virtual void ReadBinary(std::ifstream& f){NotImplemented(__func__);};
+  virtual void WriteFile(std::vector<std::string>& StringInputs, std::vector<int>& IntInputs ){NotImplemented(__func__);};
+  virtual void ReadFile( std::vector<std::string>& StringInputs, std::vector<int>& IntInputs ){NotImplemented(__func__);};
+  virtual void Print() {NotImplemented(__func__);};
   bool IsAllocated() const {return is_allocated;};
   void SetHerm(int h) { herm = h; };
   void SetEmax(int e) { emax = e; };

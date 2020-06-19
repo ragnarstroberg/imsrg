@@ -533,6 +533,9 @@ Operator Operator::DoNormalOrdering3(int sign) const
                if ( (2*(ok.n+ol.n+oa.n)+ok.l+ol.l+oa.l)>E3max) continue;
 //               int kmin2 = abs(2*tbc.J-oa.j2);
 //               int kmax2 = 2*tbc.J+oa.j2;
+
+               Gamma(ibra,iket) += sign * oa.occ * ThreeBody.GetME_pn_no2b( i,j,a,k,l,a, tbc_bra.J );
+/*
                int kmin2 = abs(2*tbc_bra.J-oa.j2);
                int kmax2 = 2*tbc_bra.J+oa.j2;
                for (int K2=kmin2; K2<=kmax2; K2+=2)
@@ -541,6 +544,7 @@ Operator Operator::DoNormalOrdering3(int sign) const
                   Gamma(ibra,iket) += (K2+1) * sign*oa.occ * ThreeBody.GetME_pn(tbc_bra.J,tbc_ket.J,K2,i,j,a,k,l,a); // This is unnormalized.
 //                  std::cout << " accessing 3bme   "<< tbc_bra.J << " " << tbc_ket.J << " " << K2 << "    " << i << " " << j << " " << a << "  " << k << " "  << l << " " << a << "       " << ThreeBody.GetME_pn(tbc_bra.J,tbc_ket.J,K2,i,j,a,k,l,a) << "  ->  " << Gamma(ibra,iket) << std::endl;
                }
+*/
             }
 //            Gamma(ibra,iket) /= (2*tbc.J+1)* sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
             Gamma(ibra,iket) /= (2*tbc_bra.J+1)* sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
@@ -551,9 +555,9 @@ Operator Operator::DoNormalOrdering3(int sign) const
    Operator opNO2 = opNO3.DoNormalOrdering2(sign);
    opNO2.ScaleZeroBody(1./3.);
    opNO2.ScaleOneBody(1./2.);
-   std::cout << "IN " << __func__ << "  line " << __LINE__ << "   norms of NO 3b pieces are " << opNO2.ZeroBody << "   " << opNO2.OneBodyNorm() << "   " << opNO2.TwoBodyNorm() << "  and thie original 3b norm was  " << ThreeBody.Norm() << "  which produced a no2b with norm " << opNO3.TwoBodyNorm() << std::endl;
-   std::cout << " opNO2 has storage mode " << opNO2.ThreeBody.GetStorageMode() << "  and this has storage mode " << ThreeBody.GetStorageMode() << "  and opNO3 has " << opNO3.ThreeBody.GetStorageMode() << std::endl;
-   std::cout << "Are they allocated? " << opNO2.ThreeBody.IsAllocated() << "  " << ThreeBody.IsAllocated() << "  " << opNO3.ThreeBody.IsAllocated() << std::endl;
+//   std::cout << "IN " << __func__ << "  line " << __LINE__ << "   norms of NO 3b pieces are " << opNO2.ZeroBody << "   " << opNO2.OneBodyNorm() << "   " << opNO2.TwoBodyNorm() << "  and thie original 3b norm was  " << ThreeBody.Norm() << "  which produced a no2b with norm " << opNO3.TwoBodyNorm() << std::endl;
+//   std::cout << " opNO2 has storage mode " << opNO2.ThreeBody.GetStorageMode() << "  and this has storage mode " << ThreeBody.GetStorageMode() << "  and opNO3 has " << opNO3.ThreeBody.GetStorageMode() << std::endl;
+//   std::cout << "Are they allocated? " << opNO2.ThreeBody.IsAllocated() << "  " << ThreeBody.IsAllocated() << "  " << opNO3.ThreeBody.IsAllocated() << std::endl;
    // Also normal order the 1 and 2 body pieces
    opNO2 += DoNormalOrdering2(sign);
    return opNO2;
