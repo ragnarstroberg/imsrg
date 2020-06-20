@@ -134,8 +134,12 @@ std::vector<ThreeBodyStorage::Permutation> ThreeBodyStorage::UniquePermutations(
   if ( a!=b ) unique_perms.push_back( BAC );
   if ( a!=c ) unique_perms.push_back( CBA );
   if ( b!=c ) unique_perms.push_back( ACB );
-  if ( a!=b and a!=c) unique_perms.push_back( BCA );
-  if ( a!=b and b!=c) unique_perms.push_back( CAB );
+  if ( a!=b and a!=c and b!=c)
+  {
+    unique_perms.push_back( BCA );
+    unique_perms.push_back( CAB );
+  }
+//  if ( a!=b and a!=c and b!=c) unique_perms.push_back( CAB );
   return unique_perms;
 }
 

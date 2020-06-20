@@ -9,6 +9,7 @@ class ThreeBodyStorage_iso : public ThreeBodyStorage
 {
  private:
   typedef float isoME_type;
+//  typedef double isoME_type;
   std::vector<isoME_type> MatEl; // vector for holding proton-neutron matrix elements
 
   std::unordered_map<size_t, size_t> OrbitIndexHash; // rolls {a,b,c,d,e,f} into a single index for isospin mat el access.
