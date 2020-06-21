@@ -507,7 +507,7 @@ Operator Operator::DoNormalOrdering3(int sign) const
    }
    int niter = ch_bra_list.size();
 //   for ( auto& itmat : opNO3.TwoBody.MatEl )
-//   #pragma omp parallel for schedule(dynamic,1)
+   #pragma omp parallel for schedule(dynamic,1)
    for ( int iter=0; iter<niter; iter++ )
    {
       int ch_bra = ch_bra_list[iter];
