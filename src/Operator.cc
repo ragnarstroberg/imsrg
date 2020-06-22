@@ -503,7 +503,7 @@ Operator Operator::DoNormalOrdering3(int sign) const
    for ( auto& itmat : opNO3.TwoBody.MatEl )
    {
       ch_bra_list.push_back( itmat.first[0] );
-      ch_ket_list.push_back( itmat.first[0] );
+      ch_ket_list.push_back( itmat.first[1] );
    }
    int niter = ch_bra_list.size();
 //   for ( auto& itmat : opNO3.TwoBody.MatEl )
