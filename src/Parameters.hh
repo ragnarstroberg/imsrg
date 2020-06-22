@@ -119,10 +119,10 @@ std::map<std::string,int> Parameters::int_par = {
   {"lmax3",		-1}, // lmax for the 3body interaction
   {"nsteps",		-1},	// do the decoupling in 1 step or core-then-valence. -1 means default
   {"file2e1max",	12},
-  {"file2e2max",	24},
-  {"file2lmax",		10},
+  {"file2e2max",	-1},// -1 means "default" which assumes e2max = 2 * emax
+  {"file2lmax",		-1},// by default assume that there's no lmax cut, so lmax = emax
   {"file3e1max",	12},
-  {"file3e2max",	24},
+  {"file3e2max",	-1},// by default assume no extra e2max cut
   {"file3e3max",	12},
   {"atomicZ",           -1}, // the Z of the nucleus for an atomic calculation. -1 means do a neutral atom
   {"emax_unocc",        -1}, // separate emax cut for l,j values that will not be occupied in the reference

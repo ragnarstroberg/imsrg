@@ -648,7 +648,7 @@ void ReadWrite::WriteTBME_Navratil( std::string filename, Operator& Hbare)
 
 
 /// Decide if the file is gzipped or ascii, create a stream, then call ReadBareTBME_Darmstadt_from_stream().
-void ReadWrite::ReadBareTBME_Darmstadt( std::string filename, Operator& Hbare, int emax, int Emax, int lmax)
+void ReadWrite::ReadBareTBME_Darmstadt( std::string filename, Operator& Hbare, int emax, int E2max, int lmax)
 {
   File2N = filename;
   Aref = Hbare.GetModelSpace()->GetAref();
@@ -659,7 +659,7 @@ void ReadWrite::ReadBareTBME_Darmstadt( std::string filename, Operator& Hbare, i
     boost::iostreams::filtering_istream zipstream;
     zipstream.push(boost::iostreams::gzip_decompressor());
     zipstream.push(infile);
-    ReadBareTBME_Darmstadt_from_stream(zipstream, Hbare,  emax, Emax, lmax);
+    ReadBareTBME_Darmstadt_from_stream(zipstream, Hbare,  emax, E2max, lmax);
   }
   else if (filename.substr( filename.find_last_of(".")) == ".bin")
   {
@@ -690,12 +690,12 @@ void ReadWrite::ReadBareTBME_Darmstadt( std::string filename, Operator& Hbare, i
     VectorStream vecstream(v);
 //    VectorStream<float> vecstream(v);
     std::cout << "n_elem = " << n_elem << std::endl;
-    ReadBareTBME_Darmstadt_from_stream(vecstream, Hbare,  emax, Emax, lmax);
+    ReadBareTBME_Darmstadt_from_stream(vecstream, Hbare,  emax, E2max, lmax);
   }
   else
   {
     std::ifstream infile(filename);
-    ReadBareTBME_Darmstadt_from_stream(infile, Hbare,  emax, Emax, lmax);
+    ReadBareTBME_Darmstadt_from_stream(infile, Hbare,  emax, E2max, lmax);
   }
 }
 
@@ -798,7 +798,7 @@ void ReadWrite::Read_Darmstadt_3body( std::string filename, Operator& Hbare, int
 /// the M scheme matrix elements multiplied by Clebsch-Gordan coefficients for JT coupling.
 //void ReadWrite::ReadBareTBME_Darmstadt_from_stream( std::istream& infile, Operator& Hbare, int emax, int Emax, int lmax)
 template<class T>
-void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, int emax, int Emax, int lmax)
+void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, int emax, int E2max_in, int lmax_in)
 {
   if ( !infile.good() )
   {
@@ -816,8 +816,12 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
   std::vector<int> l_vals;
   std::vector<int> j_vals;
 
+  // We use a number less than 1 to indicate "default" behavior.
   if (emax < 0)  emax = modelspace->Emax;
-  if (lmax < 0)  lmax = emax;
+  int lmax = (lmax_in > 0 ) ? lmax_in  :  emax;
+  int E2max = ( E2max_in > 0 ) ? E2max_in : 2*emax;
+//  if (lmax < 0)  lmax = emax;
+//  if (E2max < 0)  E2max = 2*emax;
 
   for (int e=0; e<=std::min(emax,modelspace->Emax); ++e)
   {
@@ -861,7 +865,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
       Orbit & o2 = modelspace->GetOrbit(b);
       int e2 = 2*o2.n + o2.l;
 //      if (e1+e2 > Emax) break;
-      if ( (energy_vals[nlj1] + energy_vals[nlj2]) > Emax) break;
+      if ( (energy_vals[nlj1] + energy_vals[nlj2]) > E2max) break;
       int parity = (o1.l + o2.l) % 2;
 
       for(int nlj3=0; nlj3<=nlj1; ++nlj3)
@@ -876,7 +880,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
           Orbit & o4 = modelspace->GetOrbit(d);
           int e4 = 2*o4.n + o4.l;
 //          if (e3+e4 > Emax) break;
-          if ( (energy_vals[nlj3] + energy_vals[nlj4]) > Emax) break;
+          if ( (energy_vals[nlj3] + energy_vals[nlj4]) > E2max) break;
 //          if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
           if ( (l_vals[nlj1]+l_vals[nlj2]+l_vals[nlj3]+l_vals[nlj4])%2 != 0) continue;
           int Jmin = std::max( std::abs(j_vals[nlj1] - j_vals[nlj2]), std::abs(j_vals[nlj3] - j_vals[nlj4]) )/2;
@@ -1194,7 +1198,7 @@ size_t ReadWrite::Count_Darmstadt_3body_to_read( Operator& Hbare, int E1max_in, 
   int e3max = modelspace->GetE3max();
 //  int lmax3 = modelspace->GetLmax3();
   int E1max = E1max_in;
-  int E2max = E2max_in;
+  int E2max = (E2max_in > 0) ? E2max_in  :  2 * E1max; // if we have a negative number for E2max_in, assume E2max = 2 * E1max
   int E3max = E3max_in;
 //  if (Hbare.GetTRank()>0)
 //  {

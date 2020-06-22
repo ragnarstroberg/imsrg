@@ -540,6 +540,14 @@ Operator Operator::DoNormalOrdering3(int sign) const
                if ( (2*(oi.n+oj.n+oa.n)+oi.l+oj.l+oa.l)>E3max) continue;
                if ( (2*(ok.n+ol.n+oa.n)+ok.l+ol.l+oa.l)>E3max) continue;
 
+//               int kmin2 = abs(2*tbc_bra.J-oa.j2);
+//               int kmax2 = 2*tbc_bra.J+oa.j2;
+//               for (int K2=kmin2; K2<=kmax2; K2+=2)
+//               {
+//                  Gamma(ibra,iket) += (K2+1) * sign*oa.occ * ThreeBody.GetME_pn(tbc_bra.J,tbc_ket.J,K2,i,j,a,k,l,a); // This is unnormalized.
+//                   std::cout << " accessing 3bme   "<< tbc_bra.J << " " << tbc_ket.J << " " << K2 << "    " << i << " " << j << " " << a << "  " << k << " "  << l << " " << a << "       " << ThreeBody.GetME_pn(tbc_bra.J,tbc_ket.J,K2,i,j,a,k,l,a) << "  ->  " << Gamma(ibra,iket) << std::endl;
+//                                                   }
+
                Gamma(ibra,iket) += sign * oa.occ * ThreeBody.GetME_pn_no2b( i,j,a,k,l,a, tbc_bra.J );
 
             }
