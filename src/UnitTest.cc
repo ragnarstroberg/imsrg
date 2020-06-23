@@ -471,18 +471,20 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
   X.ThreeBody.Erase();
   std::cout << " " << __func__ << " line " << __LINE__ << std::endl;
   Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
+  X.modelspace->scalar3b_transform_first_pass = false;
+//  Commutator::comm223ss( Xherm, Y, X);
   bool all_good = true;
 
-  all_good &= Test_comm330ss( X, Y );
-  all_good &= Test_comm331ss( X, Y );
-  all_good &= Test_comm231ss( X, Y );
-  all_good &= Test_comm132ss( X, Y );
-  all_good &= Test_comm232ss( X, Y );
+//  all_good &= Test_comm330ss( X, Y );
+//  all_good &= Test_comm331ss( X, Y );
+//  all_good &= Test_comm231ss( X, Y );
+//  all_good &= Test_comm132ss( X, Y );
+//  all_good &= Test_comm232ss( X, Y );
   all_good &= Test_comm223ss( X, Y );
-  all_good &= Test_comm133ss( X, Y );
-
-  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
-  all_good &= Test_comm332_pphhss( X, Y );  
+//  all_good &= Test_comm133ss( X, Y );
+//
+//  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
+//  all_good &= Test_comm332_pphhss( X, Y );  
 
 //  all_good &= Test_comm233_pp_hhss( X, Y );   
 //  all_good &= Test_comm233_ph_ss( X, Y );  
@@ -2548,7 +2550,9 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
   Z_J.ThreeBody.Allocate();
 
 
-  Commutator::comm223ss( X, Y, Z_J);
+//  Commutator::comm223ss( X, Y, Z_J);
+  Commutator::comm223ss_new( X, Y, Z_J);
+  if (X.modelspace->GetEmax() > 1) return true;
 
   if ( Z_J.IsHermitian() )
      Z_J.Symmetrize();
@@ -4412,13 +4416,26 @@ bool UnitTest::SanityCheck()
   int emax = 2;
   std::string ref = "He4";
   auto ms = ModelSpace(2,ref,ref);
-  int A,Z;
+//  int A,Z;
+  double A,Z;
   ms.GetAZfromString("Pb208",A,Z);
-  if ( not (A==208 and Z==82) )
+//  if ( not (A==208 and Z==82) )
+  if ( (std::abs(A-208.)>1e-10) or (std::abs(Z-82.)>1e-10) )
   {
     std::cout << __FILE__ << "  " << __func__ << " failed on line " << __LINE__ << std::endl;
     return false;
   }
+
+  // try making a mixed reference
+  double amix,zmix;
+  ms.GetAZfromString("mix_A4.5_Z2.5",amix,zmix);
+  if ( (std::abs(amix-4.5)>1e-10) or (std::abs(zmix-2.5)>1e-10) )
+  {
+    std::cout << __FILE__ << "  " << __func__ << " failed on line " << __LINE__ << std::endl;
+    std::cout << "amix = " << amix << " (should be 4.5)  zmix = " << zmix << " (should be 2.5) " << std::endl;
+    return false;
+  }
+  
 
   std::cout << "Construct the kinetic energy operator..." << std::endl;
   Operator trel = imsrg_util::Trel_Op(ms);

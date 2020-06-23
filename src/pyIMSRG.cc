@@ -51,6 +51,10 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetNumberKets",&TwoBodyChannel::GetNumberKets)
       .def("GetLocalIndex",&TBCGetLocalIndex)
       .def("GetKetIndex",&TwoBodyChannel::GetKetIndex)
+      .def("GetKet",[](TwoBodyChannel& self, int i){return self.GetKet(i);} )
+      .def_readwrite("J", &TwoBodyChannel::J)
+      .def_readwrite("parity", &TwoBodyChannel::parity)
+      .def_readwrite("Tz", &TwoBodyChannel::Tz)
    ;
 
    py::class_<Ket>(m,"Ket")
@@ -82,6 +86,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetTargetMass", &ModelSpace::GetTargetMass)
       .def("GetNumberOrbits", &ModelSpace::GetNumberOrbits)
       .def("GetNumberKets", &ModelSpace::GetNumberKets)
+      .def("GetNumberTwoBodyChannels", &ModelSpace::GetNumberTwoBodyChannels)
       .def("GetOrbit", &MS_GetOrbit)
       .def("GetTwoBodyChannelIndex", &ModelSpace::GetTwoBodyChannelIndex)
       .def("GetTwoBodyChannel", &MS_GetTwoBodyChannel)
@@ -443,7 +448,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("RadialIntegral_RpowK",     imsrg_util::RadialIntegral_RpowK);
    m.def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
    m.def("OperatorFromString", imsrg_util::OperatorFromString);
-   m.def("HO_Radial_psi",  imsrg_util::HO_Radial_psi);
+   m.def("HO_Radial_psi",  imsrg_util::HO_Radial_psi, py::arg("n"),py::arg("l"),py::arg("hw"),py::arg("r"));
    m.def("MBPT2_SpectroscopicFactor",  imsrg_util::MBPT2_SpectroscopicFactor);
    m.def("CG",AngMom::CG);
    m.def("ThreeJ",AngMom::ThreeJ);

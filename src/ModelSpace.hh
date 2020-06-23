@@ -260,8 +260,10 @@ class ModelSpace
    double hbar_omega; // oscillator frequency in MeV
    int target_mass;   // Particle number of the system we're trying to compute
    int target_Z;      // Proton number of the system we're trying to compute
-   int Aref;          // Particle number of the normal-ordering reference
-   int Zref;          // Proton number of the normal-ordering reference
+   double Aref;          // Average particle number of the normal-ordering reference
+   double Zref;          // Average proton number of the normal-ordering reference
+//   int Aref;          // Particle number of the normal-ordering reference
+//   int Zref;          // Proton number of the normal-ordering reference
 
 
    std::vector<Orbit> Orbits; // vector of one-body Orbit structs
@@ -363,8 +365,10 @@ class ModelSpace
 
 
 //   std::map<index_t,double> GetOrbitsAZ(int A, int Z);
-   std::map<std::array<int,4>,double> GetOrbitsAZ(int A, int Z);
-   void GetAZfromString(std::string str, int& A, int& Z);
+//   std::map<std::array<int,4>,double> GetOrbitsAZ(int A, int Z);
+   std::map<std::array<int,4>,double> GetOrbitsAZ(double A, double Z);
+   void GetAZfromString(std::string str, double& A, double& Z);
+//   void GetAZfromString(std::string str, int& A, int& Z);
    std::vector<std::array<int,4>> String2Qnumbers( std::vector<std::string> vs );
    std::vector<index_t> String2Index( std::vector<std::string> vs );
    std::string Index2String(index_t ind);
@@ -402,8 +406,10 @@ class ModelSpace
    double GetHbarOmega() const {return hbar_omega;};
    int GetTargetMass() const {return target_mass;};
    int GetTargetZ() const {return target_Z;};
-   int GetAref() const {return Aref;};
-   int GetZref() const {return Zref;};
+   double GetAref() const {return Aref;};
+   double GetZref() const {return Zref;};
+//   int GetAref() const {return Aref;};
+//   int GetZref() const {return Zref;};
    size_t GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
    size_t GetNumberTwoBodyChannels_CC() const {return TwoBodyChannels_CC.size();};
    size_t GetNumberThreeBodyChannels() const {return ThreeBodyChannels.size();};
