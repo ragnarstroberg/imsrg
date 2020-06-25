@@ -234,9 +234,19 @@ ThreeBodyStorage::ME_type ThreeBodyStorage::GetME_iso_no2b(int a, int b, int c, 
    int twoJmin = std::abs( 2*J2b - oc.j2 );
    int twoJmax = 2*J2b + oc.j2; 
    ME_type me_no2b = 0;
-   for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
+   if ( rank_J==0 and rank_T==0 and parity==0)
    {
-     me_no2b += GetME_iso(J2b,J2b,twoJ, Tab,Tde,twoT,twoT, a,b,c,d,e,f) * (twoJ+1.);
+     for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
+     {
+       me_no2b += GetME_iso(J2b,J2b,twoJ, Tab,Tde,twoT,twoT, a,b,c,d,e,f) * (twoJ+1.);
+     }
+   }
+   else
+   {
+     for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
+     {
+       me_no2b += GetME_iso(J2b,J2b,twoJ, Tab,Tde,twoT,twoT, a,b,c,d,e,f) * sqrt(twoJ+1.);
+     }
    }
    return me_no2b;
 }
@@ -251,9 +261,20 @@ ThreeBodyStorage::ME_type ThreeBodyStorage::GetME_pn_no2b(int a, int b, int c, i
    int twoJmin = std::abs( 2*J2b - oc.j2 );
    int twoJmax = 2*J2b + oc.j2; 
    ME_type me_no2b = 0;
-   for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
+
+   if ( rank_J==0 and rank_T==0 and parity==0)
    {
-     me_no2b += GetME_pn(J2b,J2b,twoJ, a,b,c,d,e,f) * (twoJ+1.);
+     for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
+     {
+       me_no2b += GetME_pn(J2b,J2b,twoJ, a,b,c,d,e,f) * (twoJ+1.);
+     }
+   }
+   else
+   {
+     for (int twoJ=twoJmin; twoJ<=twoJmax; twoJ+=2)
+     {
+       me_no2b += GetME_pn(J2b,J2b,twoJ, a,b,c,d,e,f) * sqrt(twoJ+1.);
+     }
    }
    return me_no2b;
 }
