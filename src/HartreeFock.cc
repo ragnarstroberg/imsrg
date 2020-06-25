@@ -1468,6 +1468,7 @@ ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
   ThreeBodyME hf3bme(modelspace, OpIn.GetJRank(), OpIn.GetTRank(), OpIn.GetParity());
 //  hf3bme.Setemax(emax);
   hf3bme.SwitchToPN_and_discard();
+  std::cout << __func__ << "  Norm of input 3bme in oscillator basis = " << OpIn.ThreeBodyNorm() << std::endl;
 
   std::map<int,double> e_fermi = modelspace->GetEFermi();
 
@@ -1736,6 +1737,7 @@ ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
 
 
   }// for ich
+  std::cout << __func__ << "   After transforming norm is " << hf3bme.Norm() << std::endl;
 
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
   return hf3bme;
