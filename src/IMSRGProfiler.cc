@@ -6,6 +6,7 @@
 #include <omp.h>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include <sstream>
 
 
@@ -25,14 +26,24 @@ IMSRGProfiler::IMSRGProfiler()
 ///
 std::map<std::string,size_t> IMSRGProfiler::CheckMem()
 {
-//  char commandstr[100],outbuf[500],buf[100];
-//  char outbuf[500],buf[100];
   std::map<std::string,size_t> s;
+  s["Kbytes"]=0;s["RSS"]=0;s["DIRTY"]=0;
+
+  std::ifstream ifs("/proc/self/statm"); // this is a pseudo file that provides information on the current process (linux only)
+  if ( ifs.good() )
+  {
+    size_t npages;
+    size_t page_size = sysconf(_SC_PAGESIZE);
+    ifs >> npages >> npages;
+    s["RSS"] = npages * page_size /1024; // divide by 1024 to convert to kilobytes
+  }
+
+/*
+//#if defined(CHECKMEM) && ! defined(__APPLE__)
 //  sprintf(commandstr,"pmap -x %d | tail -1",getpid()); // TODO make this more portable. On OSX, use vmmap. no idea for Windows...
   std::ostringstream commandstr;
   commandstr << "pmap -x " << getpid() << " | tail -1";
 //#ifndef __APPLE__
-#if defined(CHECKMEM) && ! defined(__APPLE__)
 //  FILE* output = popen(commandstr,"r");
   FILE* output = popen(commandstr.str().c_str(),"r");
   if (output==NULL or fgets(outbuf,500,output) == NULL)
@@ -40,9 +51,9 @@ std::map<std::string,size_t> IMSRGProfiler::CheckMem()
   else
     std::istringstream(outbuf) >> buf >> buf >> s["Kbytes"] >> s["RSS"] >> s["DIRTY"];
 //    std::istringstream(outbuf) >> commandstr >> buf >> s["Kbytes"] >> s["RSS"] >> s["DIRTY"];
-#else
-  s["Kbytes"]=0;s["RSS"]=0;s["DIRTY"]=0;
-#endif
+*/
+
+//#endif
   return s;
 }
 

@@ -210,9 +210,17 @@ void ModelSpace::Init(int emax, std::string reference, std::string valence)
 {
 //  std::cout << __func__ << "  line " << __LINE__ << std::endl;
 //  int Aref,Zref;
+
+  // to use a mixed reference for, e.g. an equal mixture of He4 and Li5, set reference = mix_A4.5_Z2.5
+
   GetAZfromString(reference,Aref,Zref);
 //  std::map<index_t,double> hole_list = GetOrbitsAZ(Aref,Zref);
   auto hole_list = GetOrbitsAZ(Aref,Zref);
+//  std::cout << "hole_list is" << std::endl;
+//  for (auto& hl : hole_list )
+//  {
+//    std::cout << hl.first[0] << " " << hl.first[1] << " " << hl.first[2] << " " << hl.first[3] << "   " << hl.second << std::endl;
+//  }
   Init(emax,hole_list,valence);  // calls  Init version 2 (int, map, string)
 }
 
@@ -221,7 +229,8 @@ void ModelSpace::Init(int emax, std::string reference, std::string valence)
 void ModelSpace::Init(int emax, std::map<std::array<int,4>,double> hole_list, std::string valence)
 {
 //  std::cout << __func__ << "  line " << __LINE__ << std::endl;
-  int Ac,Zc;
+//  int Ac,Zc;
+  double Ac,Zc;
 //  std::vector<index_t> valence_list, core_list;
 //  std::set<index_t> valence_list, core_list;
   std::set<std::array<int,4>> valence_list, core_list;
@@ -442,15 +451,18 @@ void ModelSpace::Init( std::map<std::array<int,4>,double> hole_list, std::set<st
      Orbit& oh = GetOrbit(h);
      atmp += (oh.j2+1.)*oh.occ;
      if (oh.tz2 < 0) ztmp += (oh.j2+1.)*oh.occ;
+//     std::cout << " line " << __LINE__ << " h = " << h << "  occ = " << oh.occ << "  atmp = " << atmp << "  ztmp = " << ztmp << std::endl;
    }
-   Aref = round(atmp);
-   Zref = round(ztmp);
-   if (std::abs(Aref-atmp)>1e-5 or std::abs(Zref-ztmp)>1e-5)
-   {
-     std::cout << std::endl << "!!!! WARNING  " << __func__ << " recomputed A,Z and got " << atmp << " " << ztmp << std::endl;
-   }
+   Aref = atmp;
+   Zref = ztmp;
 //   Aref = round(atmp);
 //   Zref = round(ztmp);
+//   if (std::abs(Aref-atmp)>1e-5 or std::abs(Zref-ztmp)>1e-5)
+//   {
+//     std::cout << std::endl << "!!!! WARNING  " << __func__ << " recomputed A,Z and got " << atmp << " " << ztmp << std::endl;
+//   }
+////   Aref = round(atmp);
+////   Zref = round(ztmp);
    FindEFermi();
    SetTargetMass(Aref);
    SetTargetZ(Zref);
@@ -671,7 +683,8 @@ std::string ModelSpace::Index2String( index_t ind)
 }
 
 
-void ModelSpace::GetAZfromString(std::string str,int& A, int& Z) // TODO: accept different formats, e.g. 22Na vs Na22
+//void ModelSpace::GetAZfromString(std::string str,int& A, int& Z) // TODO: accept different formats, e.g. 22Na vs Na22
+void ModelSpace::GetAZfromString(std::string str,double& A, double& Z) // TODO: accept different formats, e.g. 22Na vs Na22
 {
   std::vector<std::string> periodic_table = {"n","H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar",
                         "K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
@@ -680,31 +693,45 @@ void ModelSpace::GetAZfromString(std::string str,int& A, int& Z) // TODO: accept
                         "Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn",
                         "Fr","Ra","Ac","Th","Pa","U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md"};
   if (str == "vacuum") str="n0";
-  int i=0;
-  while (! isdigit(str[i])) i++;
-  std::string elem = str.substr(0,i);
-  std::stringstream( str.substr(i,str.size()-i)) >> A;
-  auto it_elem = find(periodic_table.begin(),periodic_table.end(),elem);
-  if (it_elem != periodic_table.end())
+
+  if ( str.find("mix") != std::string::npos )
   {
-    Z = it_elem - periodic_table.begin();
+     size_t Aloc = str.find("_A");
+     size_t Zloc = str.find("_Z");
+     std::istringstream( str.substr(Aloc+2,Zloc) ) >> A;
+     std::istringstream( str.substr(Zloc+2) ) >> Z;
   }
   else
   {
-    Z =-1;
-   std::cout << "ModelSpace::GetAZfromString :  Trouble parsing " << str << std::endl;
+    int i=0;
+    while (! isdigit(str[i])) i++;
+    std::string elem = str.substr(0,i);
+    std::stringstream( str.substr(i,str.size()-i)) >> A;
+    auto it_elem = find(periodic_table.begin(),periodic_table.end(),elem);
+    if (it_elem != periodic_table.end())
+    {
+      Z = it_elem - periodic_table.begin();
+    }
+    else
+    {
+      Z =-1;
+     std::cout << "ModelSpace::GetAZfromString :  Trouble parsing " << str << std::endl;
+    }
   }
 }
 
 // Fill A orbits with Z protons and A-Z neutrons
 // assuming a standard shell-model level ordering
 //std::map<index_t,double> ModelSpace::GetOrbitsAZ(int A, int Z)
-std::map<std::array<int,4>,double> ModelSpace::GetOrbitsAZ(int A, int Z)
+//std::map<std::array<int,4>,double> ModelSpace::GetOrbitsAZ(int A, int Z)
+std::map<std::array<int,4>,double> ModelSpace::GetOrbitsAZ(double A, double Z)
 {
 //  std::cout << "In GetOrbitsAZ  " << A << " " <<Z << std::endl;
 //  std::cout << "Size of OrbitLookup = " << OrbitLookup.size() << std::endl;
-  int zz = 0;
-  int nn = 0; // unfortunate there are so many n's here...
+  double zz = 0;
+  double nn = 0; // unfortunate there are so many n's here...
+//  int zz = 0;
+//  int nn = 0; // unfortunate there are so many n's here...
 //  std::map<index_t,double> holesAZ;
   std::map<std::array<int,4>,double> holesAZ;
   for (int N=0; N<=Emax; ++N)
@@ -717,14 +744,16 @@ std::map<std::array<int,4>,double> ModelSpace::GetOrbitsAZ(int A, int Z)
 
       if (zz < Z)
       {
-        int dz = std::min(Z-zz,j2+1);
+//        int dz = std::min(Z-zz,j2+1.);
+        double dz = std::min(Z-zz,j2+1.);
 //        holesAZ[Index1(n,l,j2,-1)] = dz/(j2+1.0);
         holesAZ[{n,l,j2,-1}] = dz/(j2+1.0);
         zz += dz;
       }
       if (nn < A-Z)
       {
-        int dn = std::min(A-Z-nn,j2+1);
+//        int dn = std::min(A-Z-nn,j2+1.);
+        double dn = std::min(A-Z-nn,j2+1.);
 //        holesAZ[Index1(n,l,j2,1)] = dn/(j2+1.0);
         holesAZ[{n,l,j2,1}] = dn/(j2+1.0);
         nn += dn;
@@ -800,7 +829,8 @@ void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::set<s
   std::string orbit_str,core_str;
   getline(ss, core_str, ',');
 
-  int Ac,Zc;
+//  int Ac,Zc;
+  double Ac,Zc;
   GetAZfromString(core_str,Ac,Zc);
   for (auto& it_core : GetOrbitsAZ(Ac,Zc) )
   {
@@ -861,7 +891,7 @@ void ModelSpace::SetReference(std::set<index_t> new_reference)
 
 void ModelSpace::SetReference(std::map<index_t,double> new_reference)
 {
-  std::cout << __func__ << "  line " << __LINE__ << std::endl;
+//  std::cout << __func__ << "  line " << __LINE__ << std::endl;
   std::map<std::array<int,4>,double> hlist ;
   std::set<std::array<int,4>> clist ;
   std::set<std::array<int,4>> vlist ;
@@ -887,7 +917,7 @@ void ModelSpace::SetReference(std::map<index_t,double> new_reference)
 
 void ModelSpace::SetReference(std::string new_reference)
 {
-  std::cout << __func__ << "  line " << __LINE__ << std::endl;
+//  std::cout << __func__ << "  line " << __LINE__ << std::endl;
 //  std::vector<index_t> c = core;
 //  std::vector<index_t> v = valence;
   std::set<std::array<int,4>> clist ;

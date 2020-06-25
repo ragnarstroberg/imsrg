@@ -779,10 +779,14 @@ void HartreeFock::FillLowestOrbits()
   arma::mat F_hfbasis = C.t() * F * C;
   arma::uvec sorted_indices = arma::stable_sort_index( F_hfbasis.diag() );
 //  arma::uvec sorted_indices = arma::stable_sort_index( F.diag() );
-  int targetZ = modelspace->GetZref();
-  int targetN = modelspace->GetAref() - targetZ;
-  int placedZ = 0;
-  int placedN = 0;
+  double refereceZ = modelspace->GetZref();
+  double refereceN = modelspace->GetAref() - refereceZ;
+  double placedZ = 0;
+  double placedN = 0;
+//  int refereceZ = modelspace->GetZref();
+//  int refereceN = modelspace->GetAref() - refereceZ;
+//  int placedZ = 0;
+//  int placedN = 0;
   std::vector<index_t> holeorbs_tmp;
   std::vector<double> hole_occ_tmp;
 
@@ -790,20 +794,20 @@ void HartreeFock::FillLowestOrbits()
   {
 
     Orbit& oi = modelspace->GetOrbit(i);
-    if (oi.tz2 < 0 and (placedZ<targetZ))
+    if (oi.tz2 < 0 and (placedZ<refereceZ))
     {
       holeorbs_tmp.push_back(i);
-      hole_occ_tmp.push_back( std::min(1.0,double(targetZ-placedZ)/(oi.j2+1) ) );
-      placedZ = std::min(placedZ+oi.j2+1,targetZ);
+      hole_occ_tmp.push_back( std::min(1.0,double(refereceZ-placedZ)/(oi.j2+1.) ) );
+      placedZ = std::min(placedZ+oi.j2+1.,refereceZ);
     }
-    else if (oi.tz2 > 0 and (placedN<targetN))
+    else if (oi.tz2 > 0 and (placedN<refereceN))
     {
       holeorbs_tmp.push_back(i);
-      hole_occ_tmp.push_back( std::min(1.0,double(targetN-placedN)/(oi.j2+1) ) );
-      placedN = std::min(placedN+oi.j2+1,targetN);
+      hole_occ_tmp.push_back( std::min(1.0,double(refereceN-placedN)/(oi.j2+1.) ) );
+      placedN = std::min(placedN+oi.j2+1.,refereceN);
     }
 
-    if((placedZ >= targetZ) and (placedN >= targetN) ) break;
+    if((placedZ >= refereceZ) and (placedN >= refereceN) ) break;
   }
 
   std::set<index_t> newholes;

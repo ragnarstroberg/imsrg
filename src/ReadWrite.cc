@@ -1514,7 +1514,8 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
         int JabMax  = (oa.j2 + ob.j2)/2;
         int JabMin  = std::abs(oa.j2 - ob.j2)/2;
 
-        int twoJCMindownbra = std::max( std::abs(oa.j2-ob.j2)-oc.j2,   std::max( oc.j2-oa.j2-ob.j2 , 1 ) );
+//        int twoJCMindownbra = std::max( std::abs(oa.j2-ob.j2)-oc.j2,   std::max( oc.j2-oa.j2-ob.j2 , 1 ) );
+        int twoJCMindownbra = std::max( { std::abs(oa.j2-ob.j2)-oc.j2,  oc.j2-oa.j2-ob.j2 ,  1} );
 //        int twoJCMindownbra;
 //        if (std::abs(oa.j2 - ob.j2) >oc.j2)
 //           twoJCMindownbra = std::abs(oa.j2 - ob.j2)-oc.j2;
