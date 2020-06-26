@@ -46,18 +46,9 @@ class ThreeBodyME
 
   std::shared_ptr<ThreeBodyStorage> threebody_storage;
 
-//  typedef float ThreeBME_type;
-//  typedef double ThreeBME_type;
   ModelSpace * modelspace;
-//  std::vector<ThreeBME_type> MatEl_iso; // vector for holding isospin matrix elements
-//  std::vector<ThreeBME_type> MatEl_pn; // vector for holding proton-neutron matrix elements
-
-  enum Storage_Mode {isospin,pn};
-  Storage_Mode storage_mode = isospin; // default to isospin
-
-
-//  std::unordered_map<size_t, size_t> OrbitIndexHash; // rolls {a,b,c,d,e,f} into a single index for isospin mat el access.
-
+//  enum Storage_Mode {isospin,pn};
+//  Storage_Mode storage_mode = isospin; // default to isospin
 
  public:
 
@@ -99,14 +90,12 @@ class ThreeBodyME
 
 
   void Allocate();
-//  void Allocate_Isospin(); // These should maybe be private
-//  void Allocate_PN(); // These should maybe be private
 
   void TransformToPN();
   void TransformToIsospin(); // not implemented yet
   void SwitchToPN_and_discard();// Maybe just make this the default behavior when setting PN-mode ?
-//  void SetNO2B_mode();
   void SetMode(std::string mode);
+//  std::string GetMode() const;
 
 
   // Various ways to access the matrix elements.
@@ -154,17 +143,15 @@ class ThreeBodyME
 
   int GetE3max(){return E3max;};
   int Getemax(){return emax;};
-//  void SetE3max(int e){E3max = e;};
-//  void Setemax(int e){emax=  e;};
   void SetE3max(int e);
   void Setemax(int e);
   void SetHermitian();
   void SetAntiHermitian();
-//  void SetHermitian(){herm = +1;};
-//  void SetAntiHermitian(){herm = -1;};
 
-  bool Is_PN_Mode() const {return (storage_mode == pn);};
-  bool Is_Isospin_Mode()const {return (storage_mode == isospin);};
+//  bool Is_PN_Mode() const {return (storage_mode == pn);};
+//  bool Is_Isospin_Mode()const {return (storage_mode == isospin);};
+  bool Is_PN_Mode() const {return (threebody_storage->GetStorageMode() == "pn");};
+  bool Is_Isospin_Mode() const {return (threebody_storage->GetStorageMode() == "isospin");};
   bool IsAllocated() const {return threebody_storage->IsAllocated();};
 
   std::map<std::array<size_t,2>,size_t>& Get_ch_start();
