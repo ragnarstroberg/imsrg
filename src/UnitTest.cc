@@ -2550,8 +2550,8 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
   Z_J.ThreeBody.Allocate();
 
 
-//  Commutator::comm223ss( X, Y, Z_J);
-  Commutator::comm223ss_new( X, Y, Z_J);
+  Commutator::comm223ss( X, Y, Z_J);
+//  Commutator::comm223ss_new( X, Y, Z_J);
   if (X.modelspace->GetEmax() > 1) return true;
 
   if ( Z_J.IsHermitian() )

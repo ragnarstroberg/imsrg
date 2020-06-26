@@ -261,14 +261,15 @@ void ThreeBodyME::TransformToPN()
     int twoJ = Tbc_bra.twoJ;
     size_t nbras = Tbc_bra.GetNumber3bKets();
     size_t nkets = Tbc_ket.GetNumber3bKets();
-//    std::cout << "  nbras,nkets = " << nbras << " " << nkets << std::endl;
     for (size_t ibra=0; ibra<nbras; ibra++)
     {
 //      std::cout << "   ibra = " << ibra << std::endl;
       Ket3& bra = Tbc_bra.GetKet(ibra);
-      size_t iketmax = (ch_bra==ch_ket) ? ibra : nkets-1;
+//      size_t iketmax = (ch_bra==ch_ket) ? ibra : nkets-1;
+      size_t iketmin = (ch_bra==ch_ket) ? ibra : 0;
+//      std::cout << "   ibra = " << ibra << "  iketmax = " << iketmax << std::endl;
 //      for (size_t iket=0; iket<=ibra; iket++)
-      for (size_t iket=0; iket<=iketmax; iket++)
+      for (size_t iket=iketmin; iket<nkets; iket++)
       {
 //        std::cout << "   iket = " << iket << std::endl;
         if ( (ch_bra==ch_ket) and (ibra==iket) and (herm==-1) ) continue;
