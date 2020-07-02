@@ -724,7 +724,14 @@ void ModelSpace::GetAZfromString(std::string str,double& A, double& Z) // TODO: 
 // assuming a standard shell-model level ordering
 //std::map<index_t,double> ModelSpace::GetOrbitsAZ(int A, int Z)
 //std::map<std::array<int,4>,double> ModelSpace::GetOrbitsAZ(int A, int Z)
-std::map<std::array<int,4>,double> ModelSpace::GetOrbitsAZ(double A, double Z)
+//std::map<std::array<int,4>,double> ModelSpace::GetOrbitsAZ(double A, double Z)
+std::map<std::array<int,4>,double> ModelSpace::GetOrbitsAZ(double A, double Z )
+{
+  std::set<std::array<int,4>> blank = {};
+  return GetOrbitsAZ( A, Z, blank );
+}
+
+std::map<std::array<int,4>,double> ModelSpace::GetOrbitsAZ(double A, double Z, std::set<std::array<int,4>>& valence_list )
 {
 //  std::cout << "In GetOrbitsAZ  " << A << " " <<Z << std::endl;
 //  std::cout << "Size of OrbitLookup = " << OrbitLookup.size() << std::endl;
@@ -741,8 +748,11 @@ std::map<std::array<int,4>,double> ModelSpace::GetOrbitsAZ(double A, double Z)
       int j2 = std::abs(g);
       int l = g<0 ? (j2+1)/2 : (j2-1)/2;
       int n = (N-l)/2;
+      std::array<int,4> proton_qnumbers = {n,l,j2,-1};
+      std::array<int,4> neutron_qnumbers = {n,l,j2,+1};
 
-      if (zz < Z)
+//      if (zz < Z)
+      if (zz < Z and ( std::find( valence_list.begin(), valence_list.end(), proton_qnumbers ) == valence_list.end() )  )
       {
 //        int dz = std::min(Z-zz,j2+1.);
         double dz = std::min(Z-zz,j2+1.);
@@ -750,7 +760,8 @@ std::map<std::array<int,4>,double> ModelSpace::GetOrbitsAZ(double A, double Z)
         holesAZ[{n,l,j2,-1}] = dz/(j2+1.0);
         zz += dz;
       }
-      if (nn < A-Z)
+//      if (nn < A-Z)
+      if (nn < A-Z and ( std::find( valence_list.begin(), valence_list.end(), neutron_qnumbers ) == valence_list.end() )  )
       {
 //        int dn = std::min(A-Z-nn,j2+1.);
         double dn = std::min(A-Z-nn,j2+1.);
@@ -820,6 +831,7 @@ void ModelSpace::Get0hwSpace(int Aref, int Zref, std::set<std::array<int,4>>& co
 
 // Parse a std::string containing a comma-separated list of core + valence orbits
 // eg, the usual sd shell would look like "O16,p0d5,n0d5,p0d3,n0d3,p1s1,n1s1".
+// or, since the order of the orbits does not matter,  "O16,p0d5,p0d3,p1s1,n0d5,n0d3,n1s1"
 // The number of ways to specify a model space is getting a bit out of hand...
 //void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::vector<index_t>& core_list, std::vector<index_t>& valence_list)
 //void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::set<index_t>& core_list, std::set<index_t>& valence_list)
@@ -828,22 +840,23 @@ void ModelSpace::ParseCommaSeparatedValenceSpace(std::string valence, std::set<s
   std::istringstream ss(valence);
   std::string orbit_str,core_str;
   getline(ss, core_str, ',');
-
-//  int Ac,Zc;
   double Ac,Zc;
   GetAZfromString(core_str,Ac,Zc);
-  for (auto& it_core : GetOrbitsAZ(Ac,Zc) )
+
+  while(getline(ss, orbit_str, ','))
+  {
+    valence_list.insert( String2Qnumbers({orbit_str})[0]);
+  }
+
+//  int Ac,Zc;
+//  for (auto& it_core : GetOrbitsAZ(Ac,Zc) )
+  for (auto& it_core : GetOrbitsAZ(Ac,Zc,valence_list) )
   {
     core_list.insert(it_core.first);
 //    core_list.push_back(it_core.first);
   }
 
-  while(getline(ss, orbit_str, ','))
-  {
-//    valence_list.insert( String2Index({orbit_str})[0]);
-    valence_list.insert( String2Qnumbers({orbit_str})[0]);
-//    valence_list.push_back( String2Index({orbit_str})[0]);
-  }
+
 }
 
 // For backwards compatibility

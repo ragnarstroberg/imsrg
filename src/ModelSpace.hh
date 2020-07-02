@@ -367,6 +367,7 @@ class ModelSpace
 //   std::map<index_t,double> GetOrbitsAZ(int A, int Z);
 //   std::map<std::array<int,4>,double> GetOrbitsAZ(int A, int Z);
    std::map<std::array<int,4>,double> GetOrbitsAZ(double A, double Z);
+   std::map<std::array<int,4>,double> GetOrbitsAZ(double A, double Z, std::set<std::array<int,4>>& valence_list);
    void GetAZfromString(std::string str, double& A, double& Z);
 //   void GetAZfromString(std::string str, int& A, int& Z);
    std::vector<std::array<int,4>> String2Qnumbers( std::vector<std::string> vs );
