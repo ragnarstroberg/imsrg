@@ -6,6 +6,7 @@
 #include "imsrg_util.hh"
 #include "omp.h"
 #include <gsl/gsl_math.h>
+#include <gsl/gsl_integration.h>
 #include "PhysicalConstants.hh"
 #include <iostream>
 
@@ -21,34 +22,42 @@ namespace M0nu
   const double CUTA = 1086.0; //axial cut off
   const double R0 = 1.2;
 
-  inline int intPhase(int i) {return (i%2)==0 ? 1 : -1;}; // calculates the phase of an integer
+
   inline double asNorm(int i, int j) {return i==j ? PhysConst::INVSQRT2 : 1.0;}; //for anti-symetrization
-  inline int PairFN(int a, int b) {return ((a + b)*(a + b + 1)/2) + b;}; // a Cantor pairing function used for cacheing CG in M0nuT
+  // inline double asNorm(int i, int j) {return i==j ? 0.5 : PhysConst::INVSQRT2;};
 
-  struct frparams{int n; int l; int np; int lp; double hw; int rho; double q;};
-  struct fqparams{int n; int l; int np; int lp; double hw; std::string transition; int rho; double Eclosure; std::string src;};
+  int decimalgen(int a, int b, int c, int d, int maxb, int maxc, int maxd);
+  int phase(int x);  
+  double HO_Radial_psi_mom(int n, int l, double hw, double p);
+
+  double gv_func(double qsq);
+  double ga_func(double qsq);
+  double gm_func(double qsq);
+  double gp_func(double qsq);
+  double GTFormFactor(double q);
+  double FermiFormFactor(double q);
+  double TensorFormFactor(double q);
+
+  double A(double p, double pp, int J, double Eclosure, std::string transition, gsl_integration_glfixed_table * t, int norm, int size);
+  uint64_t AHash(int i, int j, int J, int norm);
+  void AUnHash(uint64_t key, uint64_t& i, uint64_t& j, uint64_t& J, uint64_t& norm);
+  std::unordered_map<uint64_t,double> PrecalculateA(int e2max,double Eclosure, std::string transition, int npoints);
+  double GetA(int i, int j, int J, int norm,int l, std::unordered_map<uint64_t,double> &AList);
+  double W_fermi_gt(double p, double pp,int index_p,int index_pp, int l, int lp, int J, std::unordered_map<uint64_t,double>& AList);
+  double W_tensor(double p, double pp, int index_p, int index_pp, int l, int lp, int J, std::unordered_map<uint64_t,double>& AList);
   
-  //double HO_Radial_psi(int n, int l, double hw, double r);
-  double frRBME(double r, void *params);
-  void   GSLerror(std::string errstr, int status, size_t limit, double epsabs, double epsrel, double abserr, double result, int n, int l, int np, int lp, double q);
-  double rbme(int n, int l, int np, int lp, double hw, int rho, double q, std::string src);
-  double formfactor(double q, int transition);
-  double fq(double q, void *params);
-  double integrate_dq(int n, int l, int np, int lp, double hw, std::string transition, int rho, double Eclosure, std::string src);
+  double fq(double p, double pp,int i, int j, int n, int l, int np, int lp, int J, double hw, std::string transition, double Eclosure, std::string src, std::unordered_map<uint64_t,double>& AList);
+  double integrate_dq(int n, int l, int np, int lp, int J, double hw, std::string transition, double Eclosure, std::string src,int npoints, gsl_integration_glfixed_table * t, std::unordered_map<uint64_t,double>& AList);
 
-  uint64_t IntHash(uint64_t n, uint64_t l, uint64_t np, uint64_t lp);
-  void IntUnHash(uint64_t key, uint64_t &n, uint64_t &l, uint64_t &np, uint64_t &lp);
-  std::unordered_map<uint64_t,double> PreCalculateM0nuIntegrals(int e2max, double hw, std::string transition, int rho, double Eclosure, std::string src);
-  double GetM0nuIntegral(int e2max, int n, int l, int np, int lp, double hw, std::string transition, int rho, double Eclosure, std::string src, std::unordered_map<uint64_t,double>& Intlist);
-
-  uint64_t T6jHash(uint64_t l1, uint64_t L1, uint64_t R, uint64_t L2, uint64_t l2);
-  void T6jUnHash(uint64_t key, uint64_t &l1, uint64_t &L1, uint64_t &R, uint64_t &L2, uint64_t &l2);
-  std::unordered_map<uint64_t,double> PreCalculateM0nuT6j(int e2max);
-  double GetM0nuT6j(int l1, int L1, int R, int L2, int l2, std::unordered_map<uint64_t,double>& T6jList);
-
+  uint64_t IntHash(int n, int l, int np, int lp, int J);
+  void IntUnHash(uint64_t key, uint64_t& n, uint64_t& l, uint64_t& np, uint64_t& lp, uint64_t& J);
+  std::unordered_map<uint64_t,double> PreCalculateM0nuIntegrals(int e2max, double hw, std::string transition, double Eclosure, std::string src);
+  double GetM0nuIntegral(int e2max, int n, int l, int np, int lp,int J, double hw, std::string transition,  double Eclosure, std::string src, std::unordered_map<uint64_t,double> &IntList);
+  
   Operator GamowTeller(ModelSpace& modelspace, double Eclosure, std::string src);
   Operator Fermi(ModelSpace& modelspace, double Eclosure, std::string src);
   Operator Tensor(ModelSpace& modelspace, double Eclosure, std::string src);
+  Operator DGT_Op(ModelSpace& modelspace);
 
 }
 
