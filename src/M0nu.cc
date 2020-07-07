@@ -282,8 +282,8 @@ namespace M0nu
       double xi;
       double wi;
       gsl_integration_glfixed_point(0,25,i,&xi,&wi,t);
-      if (l!=lp)
-      {
+      // if (l!=lp)
+      // {
         for (int j = 0; j<npoints; j++)
         {
           double xj;
@@ -291,24 +291,24 @@ namespace M0nu
           gsl_integration_glfixed_point(0,25,j,&xj,&wj,t);
           I += wi*wj*fq(xi,xj,i,j,n,l,np,lp,J,hw,transition,Eclosure,src,AList); 
         }
-      }
-      else
-      {
-        for (int j = i; j<=i; j++)
-        {
-          double xj;
-          double wj;
-          gsl_integration_glfixed_point(0,25,j,&xj,&wj,t);
-          I += wi*wj*fq(xi,xj,i,j,n,l,np,lp,J,hw,transition,Eclosure,src,AList);
-        }
-        for (int j = i+1; j<npoints; j++)
-        {
-          double xj;
-          double wj;
-          gsl_integration_glfixed_point(0,25,j,&xj,&wj,t);
-          I += 2*wi*wj*fq(xi,xj,i,j,n,l,np,lp,J,hw,transition,Eclosure,src,AList); 
-        }
-      }
+      // }
+      // else
+      // {
+      //   for (int j = i; j<=i; j++)
+      //   {
+      //     double xj;
+      //     double wj;
+      //     gsl_integration_glfixed_point(0,25,j,&xj,&wj,t);
+      //     I += wi*wj*fq(xi,xj,i,j,n,l,np,lp,J,hw,transition,Eclosure,src,AList);
+      //   }
+      //   for (int j = i+1; j<npoints; j++)
+      //   {
+      //     double xj;
+      //     double wj;
+      //     gsl_integration_glfixed_point(0,25,j,&xj,&wj,t);
+      //     I += 2*wi*wj*fq(xi,xj,i,j,n,l,np,lp,J,hw,transition,Eclosure,src,AList); 
+      //   }
+      // }
       
     }
     return I;
@@ -578,7 +578,7 @@ namespace M0nu
                       int maxJrel = lr+S;
                       for (int Jrel = minJrel; Jrel<=maxJrel; Jrel++)
                       {
-                        normJrel = sqrt((2*Jrel+1)*(2*L+1))*phase(Lam+lr+S+J)*AngMom::SixJ(Lam,lr,L,S,J,Jrel);
+                        normJrel = sqrt((2*Jrel+1)*(2*L+1))*phase(L+lr+S+J)*AngMom::SixJ(Lam,lr,L,S,J,Jrel);
                         integral += normJrel*normJrel*GetM0nuIntegral(e2max,nr,lr,npr,lr,Jrel,hw,transition,Eclosure,src,IntList); // grab the pre-calculated integral wrt dq and dr from the IntList of the modelspace class
                       }//end of for-loop over Jrel
                       sumMT += Df*Di*integral; // perform the Moshinsky transformation
@@ -713,7 +713,7 @@ namespace M0nu
                       int maxJrel = lr+S;
                       for (int Jrel = minJrel; Jrel<=maxJrel; Jrel++)
                       {
-                        normJrel = sqrt((2*Jrel+1)*(2*L+1))*phase(Lam+lr+S+J)*AngMom::SixJ(Lam,lr,L,S,J,Jrel);
+                        normJrel = sqrt((2*Jrel+1)*(2*L+1))*phase(L+lr+S+J)*AngMom::SixJ(Lam,lr,L,S,J,Jrel);
                         integral += normJrel*normJrel*GetM0nuIntegral(e2max,nr,lr,npr,lr,Jrel,hw,transition,Eclosure,src,IntList); // grab the pre-calculated integral wrt dq and dr from the IntList of the modelspace class
                       }//end of for-loop over Jrel
                       sumMT += Df*Di*integral; // perform the Moshinsky transformation
