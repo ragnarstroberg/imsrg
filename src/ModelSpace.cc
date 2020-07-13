@@ -1953,13 +1953,162 @@ double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double 
 
 //std::map<std::array<int,2>,std::vector<std::array<int,2>>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
 //std::map<std::array<int,2>,std::array<std::vector<int>,2>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
-std::map<std::array<size_t,2>,std::array<std::vector<size_t>,2>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
+//std::map<std::array<size_t,2>,std::array<std::vector<size_t>,2>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
+std::vector<size_t>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
 {
    CalculatePandyaLookup(rank_J,rank_T,parity);
    return PandyaLookup[{rank_J,rank_T,parity}];
 
 }
 
+
+// Generate a lookup table of all the channels that depend on a given set of Pandya-transformed channels
+// this is used in the 222ph commutators to avoid calculating things that won't be used.
+void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
+{
+   if (PandyaLookup.find({rank_J, rank_T, parity})!=PandyaLookup.end()) return; 
+//   std::cout << "CalculatePandyaLookup( " << rank_J << ", " << rank_T << ", " << parity << ") " << std::endl;
+   double t_start = omp_get_wtime();
+//   PandyaLookup[{rank_J,rank_T,parity}] = std::map<std::array<int,2>,std::vector<std::array<int,2>>>();
+//   PandyaLookup[{rank_J,rank_T,parity}] = std::map<std::array<int,2>,std::array<std::vector<int>,2>>();
+//   PandyaLookup[{rank_J,rank_T,parity}] = std::map<std::array<size_t,2>,std::array<std::vector<size_t>,2>>();
+   PandyaLookup[{rank_J,rank_T,parity}] = std::vector<size_t>();
+   auto& lookup = PandyaLookup[{rank_J,rank_T,parity}];
+
+   for ( size_t ch_cc = 0; ch_cc < TwoBodyChannels_CC.size(); ch_cc++)
+   {
+     if (rank_T<2) lookup.push_back(ch_cc);
+     else if (rank_T==2)
+     {
+       TwoBodyChannel& tbc = GetTwoBodyChannel(ch_cc);
+       if ( tbc.Tz==0 ) lookup.push_back(ch_cc);
+     }
+   }
+/*
+   size_t ntbc    = TwoBodyChannels.size();
+   size_t ntbc_cc = TwoBodyChannels_CC.size();
+   for (size_t ch_bra_cc = 0; ch_bra_cc<ntbc_cc; ++ch_bra_cc)
+   {
+     for (size_t ch_ket_cc = ch_bra_cc; ch_ket_cc<ntbc_cc; ++ch_ket_cc)
+     {
+//       lookup[{ch_bra_cc,ch_ket_cc}] = std::vector<std::array<int,2>>();
+//       lookup[{ch_bra_cc,ch_ket_cc}] = std::array<std::vector<int>,2>(); 
+       lookup[{ch_bra_cc,ch_ket_cc}] = std::array<std::vector<size_t>,2>(); 
+//       lookup[{ch_bra_cc,ch_ket_cc}] = { <std::vector<int>(), std::vector<int>() }; 
+       lookup.at({ch_bra_cc,ch_ket_cc})[0].reserve(ntbc_cc)  ; 
+       lookup.at({ch_bra_cc,ch_ket_cc})[1].reserve(ntbc_cc)  ; 
+     }
+   }
+
+   #pragma omp parallel for schedule(dynamic,1)
+   for (size_t ch_bra_cc = 0; ch_bra_cc<ntbc_cc; ++ch_bra_cc)
+   {
+     TwoBodyChannel_CC& tbc_bra_cc = TwoBodyChannels_CC[ch_bra_cc];
+     int twoJ_bra_cc = 2*tbc_bra_cc.J;
+     for (size_t ch_ket_cc = ch_bra_cc; ch_ket_cc<ntbc_cc; ++ch_ket_cc)
+     {
+       TwoBodyChannel_CC& tbc_ket_cc = TwoBodyChannels_CC[ch_ket_cc];
+//       lookup[{ch_bra_cc,ch_ket_cc}] = std::vector<std::array<int,2>>();
+//       std::vector<int>& bra_list = lookup.at({ch_bra_cc,ch_ket_cc})[0];
+//       std::vector<int>& ket_list = lookup.at({ch_bra_cc,ch_ket_cc})[1];
+       std::vector<int> bra_list,ket_list;
+       int twoJ_ket_cc = 2*tbc_ket_cc.J;
+       for (size_t ch_bra=0; ch_bra<ntbc; ++ch_bra)
+       {
+         TwoBodyChannel& tbc_bra = TwoBodyChannels[ch_bra];
+         for (size_t ch_ket=ch_bra; ch_ket<ntbc; ++ch_ket)
+         {
+           TwoBodyChannel& tbc_ket = TwoBodyChannels[ch_ket];
+           if ( std::abs(tbc_bra.J-tbc_ket.J)>rank_J ) continue;
+           if ( (tbc_bra.J+tbc_ket.J)<rank_J ) continue;
+           if ( std::abs(tbc_bra.Tz-tbc_ket.Tz)>rank_T ) continue;
+           if ( (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
+
+           bool need_it = false;
+           for (size_t ibra=0; ibra<tbc_bra.GetNumberKets(); ++ibra)
+           {
+             if (need_it) break;
+             const Ket& bra = tbc_bra.GetKet(ibra);
+             Orbit& oi = *(bra.op);
+             Orbit& oj = *(bra.oq);
+             for (size_t iket=0; iket<tbc_ket.GetNumberKets(); ++iket)
+             {
+               const Ket& ket = tbc_ket.GetKet(iket);
+               Orbit& ok = *(ket.op);
+               Orbit& ol = *(ket.oq);
+               bool parity_good = ( (oi.l+ol.l)%2==tbc_bra_cc.parity      and (ok.l+oj.l)%2==tbc_ket_cc.parity );
+               bool Tz_good = ( std::abs(oi.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and std::abs(ok.tz2+oj.tz2)==2*tbc_ket_cc.Tz );
+               if (single_species) Tz_good = (  -std::abs(oi.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and -std::abs(ok.tz2+oj.tz2)==2*tbc_ket_cc.Tz );
+               int j3min = std::abs(oi.j2-ol.j2);
+               int j3max = oi.j2+ol.j2;
+               int j4min = std::abs(ok.j2-oj.j2);
+               int j4max = ok.j2+oj.j2;
+               if (  parity_good   and Tz_good
+//               if (   (oi.l+ol.l)%2==tbc_bra_cc.parity         and (ok.l+oj.l)%2==tbc_ket_cc.parity
+//                         and std::abs(oi.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and std::abs(ok.tz2+oj.tz2)==2*tbc_ket_cc.Tz
+                         and j3min<=twoJ_bra_cc and twoJ_bra_cc<=j3max           and j4min<=twoJ_ket_cc and twoJ_ket_cc<=j4max )
+               {
+                 need_it=true;
+                 break;
+               }
+               if (  parity_good  and Tz_good
+//               if (   (oi.l+ol.l)%2==tbc_ket_cc.parity         and (ok.l+oj.l)%2==tbc_bra_cc.parity
+//                         and std::abs(oi.tz2+ol.tz2)==2*tbc_ket_cc.Tz   and std::abs(ok.tz2+oj.tz2)==2*tbc_bra_cc.Tz
+                         and j3min<=twoJ_ket_cc and twoJ_ket_cc<=j3max           and j4min<=twoJ_bra_cc and twoJ_bra_cc<=j4max )
+               {
+                 need_it=true;
+                 break;
+               }
+
+
+               parity_good = ( (oj.l+ol.l)%2==tbc_bra_cc.parity         and (ok.l+oi.l)%2==tbc_ket_cc.parity );
+               Tz_good = ( std::abs(oj.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and std::abs(ok.tz2+oi.tz2)==2*tbc_ket_cc.Tz );
+               if (single_species) Tz_good = (  -std::abs(oj.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and -std::abs(ok.tz2+oi.tz2)==2*tbc_ket_cc.Tz );
+               j3min = std::abs(oj.j2-ol.j2);
+               j3max = oj.j2+ol.j2;
+               j4min = std::abs(ok.j2-oi.j2);
+               j4max = ok.j2+oi.j2;
+               if (  parity_good and Tz_good
+//               if (   (oj.l+ol.l)%2==tbc_bra_cc.parity         and (ok.l+oi.l)%2==tbc_ket_cc.parity
+//                         and std::abs(oj.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and std::abs(ok.tz2+oi.tz2)==2*tbc_ket_cc.Tz
+                         and j3min<=twoJ_bra_cc and twoJ_bra_cc<=j3max           and j4min<=twoJ_ket_cc and twoJ_ket_cc<=j4max )
+               {
+                 need_it=true;
+                 break;
+               }
+               if (  parity_good  and Tz_good
+//               if (   (oj.l+ol.l)%2==tbc_ket_cc.parity         and (ok.l+oi.l)%2==tbc_bra_cc.parity
+//                         and std::abs(oj.tz2+ol.tz2)==2*tbc_ket_cc.Tz   and std::abs(ok.tz2+oi.tz2)==2*tbc_bra_cc.Tz
+                         and j3min<=twoJ_ket_cc and twoJ_ket_cc<=j3max           and j4min<=twoJ_bra_cc and twoJ_bra_cc<=j4max )
+               {
+                 need_it=true;
+                 break;
+               }
+
+
+             }
+           }
+           if (need_it)
+           {
+//             lookup[{ch_bra_cc,ch_ket_cc}].push_back({ch_bra,ch_ket});
+             bra_list.push_back(ch_bra);
+             ket_list.push_back(ch_ket);
+           }
+         }
+       }
+       lookup.at({ch_bra_cc,ch_ket_cc})[0].assign( begin(bra_list),end(bra_list) );
+       lookup.at({ch_bra_cc,ch_ket_cc})[1].assign( begin(ket_list),end(ket_list) );
+     }
+   }
+*/
+   profiler.timer["CalculatePandyaLookup"] += omp_get_wtime() - t_start;
+//   std::cout << "done." << std::endl;
+}
+
+
+
+
+/*
 
 // Generate a lookup table of all the channels that depend on a given set of Pandya-transformed channels
 // this is used in the 222ph commutators to avoid calculating things that won't be used.
@@ -2092,5 +2241,8 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
 //   std::cout << "done." << std::endl;
 }
 
+
+
+*/
 
 

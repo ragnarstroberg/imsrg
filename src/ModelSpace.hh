@@ -281,7 +281,8 @@ class ModelSpace
    std::map<size_t,size_t> Ket3IndexLookup;
    std::map<size_t,size_t> ThreeBodyChannelLookup;
 
-   std::map< std::array<int,3>, std::map< std::array<size_t,2>,std::array<std::vector<size_t>,2> > > PandyaLookup; // I'm not sure how necessary this is...
+//   std::map< std::array<int,3>, std::map< std::array<size_t,2>,std::array<std::vector<size_t>,2> > > PandyaLookup; // I'm not sure how necessary this is...
+   std::map< std::array<int,3>, std::vector<size_t> > PandyaLookup; // I'm not sure how necessary this is...
    std::unordered_map<size_t,index_t> OrbitLookup; // Map to help look up the orbit index based on its quantum numbers
 
 
@@ -471,7 +472,8 @@ class ModelSpace
    void ClearVectors();
    void ResetFirstPass();
    void CalculatePandyaLookup(int rank_J, int rank_T, int parity); // construct a lookup table for more efficient pandya transformation
-   std::map<std::array<size_t,2>,std::array<std::vector<size_t>,2>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
+//   std::map<std::array<size_t,2>,std::array<std::vector<size_t>,2>>& GetPandyaLookup(int rank_J, int rank_T, int parity);
+   std::vector<size_t>& GetPandyaLookup(int rank_J, int rank_T, int parity);
    uint64_t SixJHash(double j1, double j2, double j3, double J1, double J2, double J3);
    void SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& j3, uint64_t& J1, uint64_t& J2, uint64_t& J3);
    uint64_t MoshinskyHash(uint64_t N,uint64_t Lam,uint64_t n,uint64_t lam,uint64_t n1,uint64_t l1,uint64_t n2,uint64_t l2,uint64_t L);
