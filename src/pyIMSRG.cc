@@ -23,7 +23,8 @@ namespace py = pybind11;
   void ArmaMatPrint( arma::mat& self){ self.print();};
   void OpSetOneBodyME( Operator& self, int i, int j, double v){self.OneBody(i,j) = v;};
 
-  void MS_SetRef(ModelSpace& self, std::string str){ self.SetReference( str);};
+//  void MS_SetRef(ModelSpace& self, std::string str){ self.SetReference( str);};
+  void MS_SetRef(ModelSpace& self, const std::set<index_t>& ref){ self.SetReference( ref);};
 
 //  Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
   Operator HF_GetNormalOrderedH(HartreeFock& self, int particle_rank=2){ return self.GetNormalOrderedH(particle_rank);};
@@ -92,6 +93,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetTwoBodyChannel", &MS_GetTwoBodyChannel)
       .def("Index2String", &ModelSpace::Index2String)
       .def("ResetFirstPass", &ModelSpace::ResetFirstPass)
+//      .def("SetReference", &MS_SetRef)
       .def("SetReference", &MS_SetRef)
       .def("Init_occ_from_file", &ModelSpace::Init_occ_from_file)
       .def("GetOrbitIndex_fromString", &MS_GetOrbitIndex_Str)
