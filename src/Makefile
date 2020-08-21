@@ -47,6 +47,9 @@ FLAGS    += $(WARNFLAGS)
 SOFLAGS = $(FLAGS)
 
 PYTHON_MAJOR_VERSION = $(shell python -c "import sys; sys.stdout.write('{}'.format(sys.version_info.major))")
+ifneq (,$(shell which python3)) # If it's there, default to python3
+  PYTHON_MAJOR_VERSION = 3
+endif
 PYTHON_CONFIG = python$(PYTHON_MAJOR_VERSION)-config
 ifeq (,$(shell which $(PYTHON_CONFIG) 2> /dev/null))
   PYTHON_CONFIG = python-config
@@ -84,6 +87,7 @@ endif
 
 ifeq ($(THEHOST),other)  # default options. assumes boost and python are set up nicely.
  LIBS += -llapack
+# FLAGS += -DOPENBLAS_NOUSEOMP=1
 # ifneq ($(PYTHON),off)
 #  ALL += pyIMSRG.so
 # endif

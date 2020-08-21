@@ -1119,11 +1119,11 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
 
    if ( OpHF.GetParticleRank() >= 3 )
    {
-      std::cout << __FILE__ << "  " << __LINE__ << "  about to GetTransformed3B " << std::endl;
+//      std::cout << __FILE__ << "  " << __LINE__ << "  about to GetTransformed3B " << std::endl;
 //       OpHF.ThreeBody = GetTransformed3B();
        OpHF.ThreeBody = GetTransformed3B( OpHO );
    }
-   std::cout << "all  done here" << std::endl;
+//   std::cout << "all  done here" << std::endl;
 
    return OpHF;
 }

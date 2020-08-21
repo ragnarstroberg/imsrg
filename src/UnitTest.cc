@@ -1124,7 +1124,6 @@ bool UnitTest::Test_comm121ss( const Operator& X, const Operator& Y)
 //
 // Zij = 1/2 sum_abc [ na*nb*(1-nc) +(1-na)*(1-nb)*nc ] * (Xciab * Yabcj - Yciab * Xabcj)
 //
-// THIS ONE DOESN'T WORK YET!!!!  (OK, it works now. All is well...)
 //
 bool UnitTest::Test_comm221ss( const Operator& X, const Operator& Y )
 {
@@ -1343,6 +1342,7 @@ bool UnitTest::Test_comm222_pp_hhss( const Operator& X, const Operator& Y )
 
 
   Commutator::comm222_pp_hhss( X, Y, Z_J);
+//  Commutator::comm222_pp_hh_221ss( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
      Z_J.Symmetrize();

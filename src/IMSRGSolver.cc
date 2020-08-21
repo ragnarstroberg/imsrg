@@ -203,6 +203,7 @@ void IMSRGSolver::Solve()
   }
   else
     std::cout << "IMSRGSolver: I don't know method " << method << std::endl;
+
 }
 
 void IMSRGSolver::UpdateEta()
