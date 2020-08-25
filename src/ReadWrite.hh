@@ -101,7 +101,7 @@ class ReadWrite
    std::array<double,5> GetLECs(){return LECs;};
    void SetLECs_preset(std::string);
    void SetCoMCorr(bool b){doCoM_corr = b;std::cout <<"Setting com_corr to "<< b << std::endl;};
-   void SetScratchDir( std::string d){scratch_dir = d;};
+   void SetScratchDir( std::string d){scratch_dir = d; std::cout << "Setting scratch dir to " << d << std::endl;};
    std::string GetScratchDir(){return scratch_dir;};
    int GetAref(){return Aref;};
    int GetZref(){return Zref;};
@@ -119,6 +119,12 @@ class ReadWrite
    void WriteTensorTokyo(std::string, Operator&);
    Operator ReadOperator2b_Miyagi(std::string, ModelSpace&); // general operator me2j-like format
    void skip_comments(std::ifstream&);
+
+
+
+   // added by A.Belley
+//   void WriteOmega(std::string filename, std::string scratch, int size);
+   void CopyFile(std::string file1, std::string file2);
 
    // Fields
 

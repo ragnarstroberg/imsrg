@@ -39,7 +39,7 @@ class IMSRGSolver
 
 //  private:
   ModelSpace* modelspace;
-  ReadWrite* rw;
+//  ReadWrite* rw;
   Operator* H_0; 
   std::deque<Operator> FlowingOps;
   Operator H_saved;
@@ -56,6 +56,7 @@ class IMSRGSolver
   double eta_criterion;
   std::string method;
   std::string flowfile;
+  std::string scratchdir;
   IMSRGProfiler profiler;
   int n_omega_written;
   int max_omega_written;
@@ -75,7 +76,10 @@ class IMSRGSolver
   void NewOmega();
   void GatherOmega(); // hunter-gatherer mode of updating omega
   void SetHin( Operator& H_in);
-  void SetReadWrite( ReadWrite& r){rw = &r;};
+//  void SetReadWrite( ReadWrite& r){rw = &r; scratchdir = rw->GetScratchDir();};
+  void SetScratchDir( std::string sdir) { scratchdir = sdir; };
+  std::string GetScratchDir( ) {return scratchdir; };
+  void SetReadWrite( ReadWrite& r){scratchdir = r.GetScratchDir();}; // for backwards compatibility
   void Reset();
   void AddOperator(Operator& Op){FlowingOps.push_back(Op);};
   Operator GetOperator(size_t i){return FlowingOps.at(i);};
@@ -128,6 +132,7 @@ class IMSRGSolver
   void SetDenominatorDeltaIndex(int i){generator.SetDenominatorDeltaIndex(i);};
   void SetDenominatorDeltaOrbit(std::string o){generator.SetDenominatorDeltaOrbit(o);};
 
+  void FlushOmegaToScratch();
   void CleanupScratch();
 
   double EstimateStepError();

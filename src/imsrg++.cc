@@ -1204,15 +1204,26 @@ int main(int argc, char** argv)
 
 
 
-
-
-
-
 //  std::cout << "Made it here and write_omega is " << write_omega << std::endl;
   if (write_omega)
   {
-    std::cout << "writing Omega to " << intfile << "_omega.op" << std::endl;
-    rw.WriteOperatorHuman(imsrgsolver.Omega.back(),intfile+"_omega.op");
+    std::string scratch = rw.GetScratchDir();
+    imsrgsolver.FlushOmegaToScratch();
+    for (size_t i=0; i < imsrgsolver.GetNOmegaWritten() ; i++)
+    {
+       std::ostringstream inputfile,outputfile;
+       inputfile << scratch << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
+       outputfile << intfile << "_Omega_" << i;
+       rw.CopyFile( inputfile.str(), outputfile.str() );
+    }
+//    rw.WriteOmega(intfile,scratch, imsrgsolver.n_omega_written);
+    bool filesucess = hf.C.save(intfile+"C.mat");
+    if (filesucess == false)
+    {
+      std::cout<<"Couldn't save HF coefficient matrix."<<std::endl;
+    }
+    // std::cout << "writing Omega to " << intfile << "_omega.op" << std::endl;
+    // rw.WriteOperatorHuman(imsrgsolver.Omega.back(),intfile+"_omega.op");
   }
 
 

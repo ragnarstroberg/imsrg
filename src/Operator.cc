@@ -370,28 +370,86 @@ void Operator::ReadBinary(std::ifstream& ifs)
 Operator Operator::DoNormalOrdering() const
 {
    if (legs%2>0)
-      return DoNormalOrderingDagger(+1);
+      return DoNormalOrderingDagger(+1, modelspace->holes);
    if (legs>5)
-      return DoNormalOrdering3(+1);
+      return DoNormalOrdering3(+1, modelspace->holes);
    else
-      return DoNormalOrdering2(+1);
+      return DoNormalOrdering2(+1, modelspace->holes);
 }
+
+
+Operator Operator::UndoNormalOrdering() const
+{
+  if (legs%2>0)
+    return DoNormalOrderingDagger(-1, modelspace->holes);
+//    return UndoNormalOrderingDagger();
+  else if (legs < 5)
+    return DoNormalOrdering2(-1, modelspace->holes);
+//    return UndoNormalOrdering2();
+  else
+  {
+    return DoNormalOrdering3(-1, modelspace->holes);
+//    return UndoNormalOrdering3();
+  }
+}
+
+//Operator Operator::UndoNormalOrdering2() const
+//{
+//   return this->DoNormalOrdering2(-1, modelspace->holes);
+//}
+
+//Operator Operator::UndoNormalOrdering3() const
+//{
+//   return this->DoNormalOrdering3(-1, modelspace->holes);
+//}
+//Operator Operator::UndoNormalOrderingDagger() const
+//{
+//   return this->DoNormalOrderingDagger(-1, modelspace->holes);
+//}
+
+Operator Operator::DoNormalOrderingCore() const
+{
+   if (legs%2>0)
+      return DoNormalOrderingDagger(+1, modelspace->core);
+   if (legs>5)
+      return DoNormalOrdering3(+1, modelspace->core);
+   else
+      return DoNormalOrdering2(+1, modelspace->core);
+}
+
 
 //*************************************************************
 ///  Normal ordering of a 2body operator
 ///  set up for scalar or tensor operators, but
 ///  the tensor part hasn't been tested
 //*************************************************************
-Operator Operator::DoNormalOrdering2(int sign) const
+//Operator Operator::DoNormalOrdering2(int sign) const
+Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied ) const
 {
+   for ( auto o : occupied ) std::cout << o << " ";
+   std::cout << std::endl;
+
    Operator opNO(*this);
    bool scalar = (opNO.rank_J==0 and opNO.rank_T==0 and opNO.parity==0);
    if (scalar)
    {
-     for (auto& k : modelspace->holes) // loop over hole orbits
+//     for (auto& k : modelspace->holes) // loop over hole orbits
+     for (auto& k : occupied) // loop over hole orbits
      {
         Orbit& ok = modelspace->GetOrbit(k);
         opNO.ZeroBody += (ok.j2+1) * sign*ok.occ * OneBody(k,k);
+
+        for (auto& l : occupied)
+        {
+          if (l<k) continue;
+          Orbit& ol = modelspace->GetOrbit(l);
+          int Jmin = std::abs( ok.j2 - ol.j2)/2;
+          int Jmax = (ok.j2 + ol.j2)/2;
+          for (int J=Jmin; J<=Jmax; J++)
+          {
+             opNO.ZeroBody +=  (2*J+1) * ok.occ * ol.occ * TwoBody.GetTBME_J_norm(J,J ,k,l,k,l);
+          }
+        }
      }
    }
 //   std::cout << "OneBody contribution: " << opNO.ZeroBody << std::endl;
@@ -411,15 +469,16 @@ Operator Operator::DoNormalOrdering2(int sign) const
         int J_ket = tbc_ket.J;
         double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
 
-        // Zero body part
-        if (scalar)
-        {
-          arma::vec diagonals = matrix.diag();
-          auto hh = tbc_ket.GetKetIndex_hh();
-          auto hocc = tbc_ket.Ket_occ_hh;
-          // We have two occupations (na*nb), so if we're undoing the normal ordering the signs cancel out and we get no minus sign here.
-          opNO.ZeroBody += arma::sum( hocc % diagonals.elem(hh) ) * hatfactor;
-        }
+//        // Zero body part
+//        if (scalar)
+//        {
+//          arma::vec diagonals = matrix.diag();
+//          auto hh = tbc_ket.GetKetIndex_hh(); // TODO THIS NEEDS TO BE FIXED
+//          auto hocc = tbc_ket.Ket_occ_hh;
+//          // We have two occupations (na*nb), so if we're undoing the normal ordering the signs cancel out and we get no minus sign here.
+////          opNO.ZeroBody += arma::sum( hocc % diagonals.elem(hh) ) * hatfactor;
+//          check_zero += arma::sum( hocc % diagonals.elem(hh) ) * hatfactor ;
+//        }
 
         // One body part
         for (index_t a=0;a<norbits;++a)
@@ -432,7 +491,8 @@ Operator Operator::DoNormalOrdering2(int sign) const
               if (b < bstart) continue;
               Orbit &ob = modelspace->GetOrbit(b);
               double jb = ob.j2/2.0;
-              for (auto& h : modelspace->holes)  // C++11 syntax
+//              for (auto& h : modelspace->holes)  // C++11 syntax
+              for (auto& h : occupied)  // C++11 syntax
               {
                 Orbit &oh = modelspace->GetOrbit(h);
                 if (opNO.rank_J==0)
@@ -485,7 +545,7 @@ Operator Operator::DoNormalOrdering2(int sign) const
 ///   handling 3body tensor operators in the near future.
 //*******************************************************************************
 //Operator Operator::DoNormalOrdering3()
-Operator Operator::DoNormalOrdering3(int sign) const
+Operator Operator::DoNormalOrdering3(int sign, std::set<index_t> occupied ) const
 {
    double t_start = omp_get_wtime();
    std::cout << "begin " << __func__ << "   norm of 3b is " << ThreeBodyNorm() << std::endl;
@@ -534,7 +594,8 @@ Operator Operator::DoNormalOrdering3(int sign) const
             int l = ket.q;
             Orbit & ok = modelspace->GetOrbit(k);
             Orbit & ol = modelspace->GetOrbit(l);
-            for (auto& a : modelspace->holes)
+//            for (auto& a : modelspace->holes)
+            for (auto& a : occupied)
             {
                Orbit & oa = modelspace->GetOrbit(a);
                if ( (2*(oi.n+oj.n+oa.n)+oi.l+oj.l+oa.l)>E3max) continue;
@@ -560,7 +621,7 @@ Operator Operator::DoNormalOrdering3(int sign) const
       }
    }
    opNO3.Symmetrize();
-   Operator opNO2 = opNO3.DoNormalOrdering2(sign);
+   Operator opNO2 = opNO3.DoNormalOrdering2(sign,occupied);
    opNO2.ScaleZeroBody(1./3.);
    opNO2.ScaleOneBody(1./2.);
 //   std::cout << "IN " << __func__ << "  line " << __LINE__ << "   norms of NO 3b pieces are " << opNO2.ZeroBody << "   " << opNO2.OneBodyNorm() << "   " << opNO2.TwoBodyNorm() << "  and thie original 3b norm was  " << ThreeBody.Norm() << "  which produced a no2b with norm " << opNO3.TwoBodyNorm() << std::endl;
@@ -568,7 +629,7 @@ Operator Operator::DoNormalOrdering3(int sign) const
 //   std::cout << "Are they allocated? " << opNO2.ThreeBody.IsAllocated() << "  " << ThreeBody.IsAllocated() << "  " << opNO3.ThreeBody.IsAllocated() << std::endl;
    std::cout << __func__ << "  contributed " << opNO2.ZeroBody << "  to the zero body part" << std::endl;
    // Also normal order the 1 and 2 body pieces
-   opNO2 += DoNormalOrdering2(sign);
+   opNO2 += DoNormalOrdering2(sign,occupied);
 
    IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
    return opNO2;
@@ -579,7 +640,7 @@ Operator Operator::DoNormalOrdering3(int sign) const
 ///  The normal ordering is slightly different if the operator is a
 ///  dagger operator.
 ///
-Operator Operator::DoNormalOrderingDagger( int sign) const
+Operator Operator::DoNormalOrderingDagger( int sign , std::set<index_t> occupied ) const
 {
   Operator opNO(*this);
 
@@ -601,7 +662,8 @@ Operator Operator::DoNormalOrderingDagger( int sign) const
      {
         Orbit &oa = modelspace->GetOrbit(a);
         double ja = oa.j2*0.5;
-        for (auto& h : modelspace->holes)  // C++11 syntax
+//        for (auto& h : modelspace->holes)  // C++11 syntax
+        for (auto& h : occupied)  // C++11 syntax
         {
           Orbit& oh = modelspace->GetOrbit(h);
           // TODO: Confirm that this should be a minus sign rather than plus
@@ -618,164 +680,6 @@ Operator Operator::DoNormalOrderingDagger( int sign) const
 }
 
 
-
-
-Operator Operator::UndoNormalOrdering() const
-{
-  if (legs%2>0)
-    return UndoNormalOrderingDagger();
-  else if (legs < 5)
-    return UndoNormalOrdering2();
-  else
-  {
-    return UndoNormalOrdering3();
-//    std::cout << "WARNING: calling Operator::UndoNormalOrdering on a 3-body operator. Not yet implemented." << std::endl;
-//    return UndoNormalOrdering2();
-  }
-}
-
-/// Convert to a basis normal ordered wrt the vacuum.
-/// This doesn't handle 3-body terms. In that case,
-/// the 2-body piece is unchanged.
-//Operator Operator::UndoNormalOrdering2() const
-//{
-//   Operator opNO = *this;
-////   std::cout << "Undoing Normal ordering. Initial ZeroBody = " << opNO.ZeroBody << std::endl;
-//
-//   if (opNO.GetJRank()==0 and opNO.GetTRank()==0 and opNO.GetParity()==0)
-//   {
-//     for (auto& k : modelspace->holes) // loop over hole orbits
-//     {
-//        Orbit& ok = modelspace->GetOrbit(k);
-//        opNO.ZeroBody -= (ok.j2+1) * ok.occ * OneBody(k,k);
-//     }
-//   }
-//
-//   index_t norbits = modelspace->GetNumberOrbits();
-//
-//   for ( auto& itmat : TwoBody.MatEl )
-//   {
-//      int ch_bra = itmat.first[0];
-//      int ch_ket = itmat.first[1];
-//      auto& matrix = itmat.second;
-//
-//      TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
-//      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-//      int J_bra = tbc_bra.J;
-//      int J_ket = tbc_ket.J;
-//      double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
-//
-//      // Zero body part
-//      if (opNO.GetJRank()==0 and opNO.GetTRank()==0 and opNO.GetParity()==0)
-//      {
-//        arma::vec diagonals = matrix.diag();
-//        auto hh = tbc_ket.GetKetIndex_hh();
-//        auto hocc = tbc_ket.Ket_occ_hh;
-//        opNO.ZeroBody +=  arma::sum( hocc % diagonals.elem(hh) ) *hatfactor;
-//      }
-//
-//
-//      // One body part
-//      for (index_t a=0;a<norbits;++a)
-//      {
-//         Orbit &oa = modelspace->GetOrbit(a);
-//         double ja = oa.j2*0.5;
-////         index_t bstart = IsNonHermitian() ? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-//           index_t bstart = (IsNonHermitian() or ch_bra!=ch_ket )? 0 : a; // If it's neither hermitian or anti, we need to do the full sum
-//         for ( auto& b : opNO.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
-//         {
-//            if (b < bstart) continue;
-//            Orbit &ob = modelspace->GetOrbit(b);
-//            double jb = ob.j2*0.5;
-//            for (auto& h : modelspace->holes)  // C++11 syntax
-//            {
-//              Orbit& oh = modelspace->GetOrbit(h);
-//
-//              if (opNO.rank_J==0)
-//              {
-//                 opNO.OneBody(a,b) -= hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
-//              }
-//              else
-//              {
-//                 double jh = oh.j2*0.5;
-//                 if ((ja+jh < J_bra) or (abs(ja-jh)>J_bra) or (jb+jh < J_ket) or (abs(jb-jh)>J_ket) ) continue;
-//
-//                 if ((oa.l + oh.l + tbc_bra.parity)%2 >0) continue;
-//                 if ((ob.l + oh.l + tbc_ket.parity)%2 >0) continue;
-//                 if ((oa.tz2 + oh.tz2) != tbc_bra.Tz*2) continue;
-//                 if ((ob.tz2 + oh.tz2) != tbc_ket.Tz*2) continue;
-//                 double ME = hatfactor  * oh.occ *modelspace->phase(ja+jh-J_ket-opNO.rank_J)
-//                                             * modelspace->GetSixJ(J_bra,J_ket,opNO.rank_J,jb,ja,jh) * TwoBody.GetTBME(ch_bra,ch_ket,a,h,b,h);
-//                 if (a>b)
-//                 {
-//                   int herm = IsHermitian() ? 1 : -1;
-//                   opNO.OneBody(b,a) -= herm * modelspace->phase(ja-jb) * ME;
-//                 }
-//                 else
-//                 {
-//                   opNO.OneBody(a,b) -= ME;
-//                 }
-//
-//              }
-//            }
-//
-//         }
-//      }
-//   } // loop over channels
-//
-//   if (hermitian) opNO.Symmetrize();
-//   if (antihermitian) opNO.AntiSymmetrize();
-//
-//   return opNO;
-//
-//}
-
-
-//Operator Operator::UndoNormalOrderingDagger() const
-//{
-//   Operator opNO(*this);
-//
-////   index_t norbits = modelspace->GetNumberOrbits();
-//
-//   index_t Q = opNO.GetQSpaceOrbit();
-//   Orbit &oQ = modelspace->GetOrbit(Q);
-////   double jQ = oQ.j2*0.5;
-//
-//   for ( auto& itmat : TwoBody.MatEl )
-//   {
-//      int ch_bra = itmat.first[0];
-//      int ch_ket = itmat.first[1];
-////      auto& matrix = itmat.second;
-//
-//      TwoBodyChannel &tbc = modelspace->GetTwoBodyChannel(ch_bra);
-////      TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
-////      int J_bra = tbc_bra.J;
-//      int J = tbc.J;
-//      double hatfactor = 2*J+1.0;
-//
-//      // One body part
-//
-////      for (index_t a=0;a<norbits;++a)
-//      for ( auto a : OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
-//      {
-//         Orbit &oa = modelspace->GetOrbit(a);
-//         double ja = oa.j2*0.5;
-//            for (auto& h : modelspace->holes)  // C++11 syntax
-//            {
-//              Orbit& oh = modelspace->GetOrbit(h);
-//
-//              if (opNO.rank_J==0)
-//              {
-//                 opNO.OneBody(a,Q) += hatfactor/(2*ja+1) * oh.occ * TwoBody.GetTBME(ch_bra,ch_ket,h,a,h,Q);
-//              }
-//            }
-//      }
-//   } // loop over channels
-//
-//
-//  return opNO;
-//
-//}
 
 
 
