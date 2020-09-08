@@ -538,7 +538,7 @@ int main(int argc, char** argv)
 
 
   HNO -= BetaCM * 1.5*hwBetaCM;
-  std::cout << "Hbare 0b = " << HNO.ZeroBody << std::endl;
+  std::cout << "Hbare 0b = " << std::setprecision(8) << HNO.ZeroBody << std::endl;
 
   if (method != "HF")
   {
@@ -648,7 +648,7 @@ int main(int argc, char** argv)
     }
     std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
     ops[i] = ops[i].DoNormalOrdering();
-    std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+//    std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
     if (method == "MP3")
     {
       double dop = ops[i].MP1_Eval( HNO );
