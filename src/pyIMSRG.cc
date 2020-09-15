@@ -182,12 +182,15 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def(py::self + double())
       .def(py::self -= double())
       .def(py::self - double())
+      .def("__call__", [](arma::mat& self,const int i, const int j) {return self(i,j);}, py::is_operator()  )
    ;
 
    py::class_<TwoBodyME>(m,"TwoBodyME")
       .def(py::init<>())
       .def("GetTBME_J", TB_GetTBME_J)
       .def("GetTBME_J_norm", TB_GetTBME_J_norm)
+      .def("GetTBMEmonopole",[](TwoBodyME& self, int a, int b, int c, int d){ return self.GetTBMEmonopole(a,b,c,d);}, py::arg("a"),py::arg("b"),py::arg("c"),py::arg("d"))
+      .def("GetTBMEmonopole_norm",[](TwoBodyME& self, int a, int b, int c, int d){ return self.GetTBMEmonopole_norm(a,b,c,d);}, py::arg("a"),py::arg("b"),py::arg("c"),py::arg("d"))
    ;
 
 //   py::class_<ThreeBodyME>(m,"ThreeBodyME")
