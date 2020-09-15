@@ -5504,7 +5504,29 @@ Operator ReadWrite::ReadOperator2b_Miyagi(std::string filename, ModelSpace& mode
 }
 
 
+///Method added by A.Belley to store omage to disk so that you can transform other operators later
 
+//void ReadWrite::WriteOmega(std::string filename, std::string scratch, int size)
+void ReadWrite::CopyFile(std::string filename1, std::string filename2)
+{
+//  for (int i = 0; i <= size; i++)
+
+  std::ifstream f1(filename1, std::fstream::binary);
+  std::ofstream f2(filename2, std::fstream::binary|std::fstream::trunc); // trunc means erase any pre-existing file
+  f2 << f1.rdbuf();
+
+
+//  for (int i = 0; i < size; i++)
+//  {
+//    std::ostringstream inputfile;
+//    inputfile << scratch.c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
+//    std::ostringstream outputfile;
+//    outputfile << filename<<"_Omega_"<<i;
+//    std::ifstream f1 (inputfile.str(), std::fstream::binary);
+//    std::ofstream f2 (outputfile.str(), std::fstream::trunc|std::fstream::binary);
+//    f2 << f1.rdbuf ();
+//  } 
+}
 
 
 

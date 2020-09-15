@@ -362,6 +362,7 @@ double HO_Radial_psi(int n, int l, double hw, double r)
 
  void WriteSPWaveFunctions( std::vector<std::string>& spwf, HartreeFock& hf, std::string intfile )
  {
+   if ( spwf.size() <1 ) return;
    int n_radial_points = 200;
    double Rmax = 20.0;
    std::vector<index_t> spwf_indices = hf.modelspace->String2Index(spwf);

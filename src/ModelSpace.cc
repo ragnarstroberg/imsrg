@@ -869,7 +869,7 @@ void ModelSpace::SetReference(std::vector<index_t> new_reference)
 
 void ModelSpace::SetReference(std::set<index_t> new_reference)
 {
-  std::cout << __func__ << "  line " << __LINE__ << std::endl;
+//  std::cout << __func__ << "  line " << __LINE__ << std::endl;
 //  std::cout << "I'm in this SetReference" << std::endl;
 //  std::vector<index_t> c = core;
 //  std::vector<index_t> v = valence;

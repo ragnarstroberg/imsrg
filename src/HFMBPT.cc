@@ -31,10 +31,11 @@ void HFMBPT::GetNaturalOrbitals()
   int norbits = HartreeFock::modelspace->GetNumberOrbits();
   int A = HartreeFock::modelspace->GetTargetMass();
 //  C_HF2NAT = arma::mat(norbits,norbits,arma::fill::eye); // we do this in the constructor, so it's already the right size.
-  rho      = arma::mat(norbits,norbits,arma::fill::zeros);
+//  rho      = arma::mat(norbits,norbits,arma::fill::zeros);
   Occ      = arma::vec(norbits,arma::fill::zeros);  // Occupations are the eigenvalues of the density matrix
-  GetDensityMatrix();
-  DiagonalizeRho();
+  UpdateDensityMatrix();  // Do the standard HF filling density matrix rho
+  GetDensityMatrix();  // Include 2nd order MBPT corrections to rho
+  DiagonalizeRho();  // Find the 1b transformation that diagonalizes rho, but don't apply it to anything yet.
 
   double AfromTr = 0.0;
   for(int i=0; i< norbits; ++i)
