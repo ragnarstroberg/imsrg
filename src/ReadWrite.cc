@@ -5129,7 +5129,7 @@ void ReadWrite::WriteTokyo(Operator& op, std::string filename, std::string mode)
            int bb = b - ob.tz2;
            int cc = c - oc.tz2;
            int dd = d - od.tz2;
-           tbme += op.TwoBody.GetTBME_norm(ch,aa,bb,cc,dd);
+           tbme += op.TwoBody.GetTBME_norm(ch,aa,bb,cc,dd); // looks like some isospin averaging for an operator file?
            tbme /= 2;
          }
          intfile << std::setw(wint) << a_ind << std::setw(wint) << b_ind
