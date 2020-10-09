@@ -10848,10 +10848,6 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
    // We reuse Xt_bar multiple times, so it makes sense to calculate them once and store them in a deque.
    std::deque<arma::mat> Xt_bar_ph = InitializePandya( Z, Z.nChannels, "transpose"); // We re-use the scalar part multiple times, so there's a significant speed gain for saving it
    std::map<std::array<index_t,2>,arma::mat> Y_bar_ph;
-
-
-
-
    DoPandyaTransformation(X, Xt_bar_ph, "transpose" );
    X.profiler.timer["DoTensorPandyaTransformationX"] += omp_get_wtime() - t_start;
 
@@ -10863,7 +10859,6 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
    std::map<std::array<index_t,2>,arma::mat> Z_bar;
 
    t_start = omp_get_wtime();
-//   const auto& pandya_lookup = Z.modelspace->GetPandyaLookup(Z.GetJRank(), Z.GetTRank(), Z.GetParity() );
    const auto& pandya_lookup = Z.modelspace->GetPandyaLookup(Z.GetJRank(), Z.GetTRank(), Z.GetParity() );
    X.profiler.timer["PandyaLookup"] += omp_get_wtime() - t_start;
 
@@ -10897,229 +10892,231 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
    t_start = omp_get_wtime();
 
 
-
-
-/*
-   #ifndef OPENBLAS_NOUSEOMP
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
-   #endif
-   for(int i=0;i<counter;++i)
+/// BEGIN OLD WAY
+   if ( Z.GetJRank()>0 )
    {
-      index_t ch_bra_cc = ybras[i];
-      index_t ch_ket_cc = ykets[i];
-////      const auto plookup = pandya_lookup.find({(int)ch_bra_cc,(int)ch_ket_cc});
-//      const auto plookup = pandya_lookup.find({ch_bra_cc,ch_ket_cc});
-//      if ( plookup == pandya_lookup.end() or plookup->second[0].size()<1 )
-//      {
-//       continue;
-//      }
-
-      const auto& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
-      const auto& tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
-      int Jbra = tbc_bra_cc.J;
-      int Jket = tbc_ket_cc.J;
-
-      arma::mat YJ1J2;
-      arma::mat YJ2J1;
-      const auto& XJ1 = Xt_bar_ph[ch_bra_cc];
-      const auto& XJ2 = Xt_bar_ph[ch_ket_cc];
-
-      arma::uvec kets_ph = arma::join_cols( tbc_ket_cc.GetKetIndex_hh(), tbc_ket_cc.GetKetIndex_ph() );
-      arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
-
-      DoTensorPandyaTransformation_SingleChannel(Y, YJ1J2, ch_bra_cc, ch_ket_cc);
-      if (ch_bra_cc==ch_ket_cc)
+      #ifndef OPENBLAS_NOUSEOMP
+      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
+      #endif
+      for(int i=0;i<counter;++i)
       {
-         YJ2J1 = YJ1J2;
+         index_t ch_bra_cc = ybras[i];
+         index_t ch_ket_cc = ykets[i];
+   ////      const auto plookup = pandya_lookup.find({(int)ch_bra_cc,(int)ch_ket_cc});
+   //      const auto plookup = pandya_lookup.find({ch_bra_cc,ch_ket_cc});
+   //      if ( plookup == pandya_lookup.end() or plookup->second[0].size()<1 )
+   //      {
+   //       continue;
+   //      }
+   
+         const auto& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
+         const auto& tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
+         int Jbra = tbc_bra_cc.J;
+         int Jket = tbc_ket_cc.J;
+   
+         arma::mat YJ1J2;
+         arma::mat YJ2J1;
+         const auto& XJ1 = Xt_bar_ph[ch_bra_cc];
+         const auto& XJ2 = Xt_bar_ph[ch_ket_cc];
+   
+         arma::uvec kets_ph = arma::join_cols( tbc_ket_cc.GetKetIndex_hh(), tbc_ket_cc.GetKetIndex_ph() );
+         arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
+   
+         DoTensorPandyaTransformation_SingleChannel(Y, YJ1J2, ch_bra_cc, ch_ket_cc);
+         if (ch_bra_cc==ch_ket_cc)
+         {
+            YJ2J1 = YJ1J2;
+         }
+         else
+         {
+            DoTensorPandyaTransformation_SingleChannel(Y, YJ2J1, ch_ket_cc, ch_bra_cc);
+         }
+   
+         int flipphaseY = hY * Z.modelspace->phase( Jbra - Jket ) ;
+         // construct a matrix of phases (-1)^{k+j+p+h} used below to generate X_phkj for k>j
+         arma::mat PhaseMatXJ2( tbc_ket_cc.GetNumberKets(), kets_ph.size(), arma::fill::ones) ;
+         arma::mat PhaseMatYJ1J2( bras_ph.size(), tbc_ket_cc.GetNumberKets(), arma::fill::ones) ;
+         for ( index_t iket=0;iket<(index_t)tbc_ket_cc.GetNumberKets();iket++)
+         {
+           const Ket& ket = tbc_ket_cc.GetKet(iket);
+           if ( Z.modelspace->phase((ket.op->j2+ket.oq->j2)/2)<0)
+           {
+              PhaseMatXJ2.row(iket) *=-1;
+              PhaseMatYJ1J2.col(iket) *=-1;
+           }
+         }
+         for (index_t iph=0;iph<kets_ph.size();iph++)
+         {
+           const Ket& ket_ph = tbc_ket_cc.GetKet( kets_ph[iph] );
+           if ( Z.modelspace->phase((ket_ph.op->j2+ket_ph.oq->j2)/2)<0)   PhaseMatXJ2.col(iph) *=-1;
+         }
+         for (index_t iph=0;iph<bras_ph.size();iph++)
+         {
+           const Ket& bra_ph = tbc_bra_cc.GetKet( bras_ph[iph] );
+           if ( Z.modelspace->phase((bra_ph.op->j2+bra_ph.oq->j2)/2)<0)   PhaseMatYJ1J2.row(iph) *=-1;
+         }
+         PhaseMatYJ1J2 *= flipphaseY;
+   
+   
+   
+   //                J2                       J1         J2                       J2          J2
+   //             k<=j     k>=j                hp  -ph    hp   ph                 k<=j       k<=j
+   //      J1   [       |       ]       J1   [           |          ]         [hp        |ph        ]
+   //     i<=j  [  Zbar | Zbar  ]  =   i<=j  [   Xbar    | -Ybar    ]   * J1  [   Ybar   |   Ybar'  ]
+   //           [       |       ]            [           |          ]         [ph        |hp        ]      where Ybar'_phkj = Ybar_hpkj * (-1)^{p+h+k+j}*(-1)^{J1-J2}*hY
+   //                                                                         [----------|----------]       and
+   //                                                                     J2  [hp        |ph        ]            Xbar'_phkj = Xbar_hpkj * (-1)^{p+h+k+j}*hX
+   //                                                                         [   Xbar   |   Xbar'  ]
+   //                                                                         [-ph       |-hp       ]
+   //    
+   //
+         int halfncx2 = XJ2.n_cols/2;
+         int halfnry12 = YJ1J2.n_rows/2;
+   
+         arma::mat Mleft = join_horiz( XJ1,  -flipphaseY * YJ2J1.t() );
+         arma::mat Mright = join_vert( join_horiz( YJ1J2 ,  join_vert( YJ1J2.tail_rows(halfnry12)%PhaseMatYJ1J2 ,
+                                                                       YJ1J2.head_rows(halfnry12)%PhaseMatYJ1J2  )   ), 
+                                     hX*join_vert( XJ2,    join_horiz(   XJ2.tail_cols(halfncx2)%PhaseMatXJ2 ,
+                                                                         XJ2.head_cols(halfncx2)%PhaseMatXJ2     )   ).t() );
+   
+         auto& Zmat = Z_bar.at({ch_bra_cc,ch_ket_cc});
+   
+         Zmat = Mleft * Mright;
+   
       }
-      else
-      {
-         DoTensorPandyaTransformation_SingleChannel(Y, YJ2J1, ch_ket_cc, ch_bra_cc);
-      }
 
-      int flipphaseY = hY * Z.modelspace->phase( Jbra - Jket ) ;
-      // construct a matrix of phases (-1)^{k+j+p+h} used below to generate X_phkj for k>j
-      arma::mat PhaseMatXJ2( tbc_ket_cc.GetNumberKets(), kets_ph.size(), arma::fill::ones) ;
-      arma::mat PhaseMatYJ1J2( bras_ph.size(), tbc_ket_cc.GetNumberKets(), arma::fill::ones) ;
-      for ( index_t iket=0;iket<(index_t)tbc_ket_cc.GetNumberKets();iket++)
-      {
-        const Ket& ket = tbc_ket_cc.GetKet(iket);
-        if ( Z.modelspace->phase((ket.op->j2+ket.oq->j2)/2)<0)
-        {
-           PhaseMatXJ2.row(iket) *=-1;
-           PhaseMatYJ1J2.col(iket) *=-1;
-        }
-      }
-      for (index_t iph=0;iph<kets_ph.size();iph++)
-      {
-        const Ket& ket_ph = tbc_ket_cc.GetKet( kets_ph[iph] );
-        if ( Z.modelspace->phase((ket_ph.op->j2+ket_ph.oq->j2)/2)<0)   PhaseMatXJ2.col(iph) *=-1;
-      }
-      for (index_t iph=0;iph<bras_ph.size();iph++)
-      {
-        const Ket& bra_ph = tbc_bra_cc.GetKet( bras_ph[iph] );
-        if ( Z.modelspace->phase((bra_ph.op->j2+bra_ph.oq->j2)/2)<0)   PhaseMatYJ1J2.row(iph) *=-1;
-      }
-      PhaseMatYJ1J2 *= flipphaseY;
-
-
-
-//                J2                       J1         J2                       J2          J2
-//             k<=j     k>=j                hp  -ph    hp   ph                 k<=j       k<=j
-//      J1   [       |       ]       J1   [           |          ]         [hp        |ph        ]
-//     i<=j  [  Zbar | Zbar  ]  =   i<=j  [   Xbar    | -Ybar    ]   * J1  [   Ybar   |   Ybar'  ]
-//           [       |       ]            [           |          ]         [ph        |hp        ]      where Ybar'_phkj = Ybar_hpkj * (-1)^{p+h+k+j}*(-1)^{J1-J2}*hY
-//                                                                         [----------|----------]       and
-//                                                                     J2  [hp        |ph        ]            Xbar'_phkj = Xbar_hpkj * (-1)^{p+h+k+j}*hX
-//                                                                         [   Xbar   |   Xbar'  ]
-//                                                                         [-ph       |-hp       ]
-//    
-//
-      int halfncx2 = XJ2.n_cols/2;
-      int halfnry12 = YJ1J2.n_rows/2;
-
-      arma::mat Mleft = join_horiz( XJ1,  -flipphaseY * YJ2J1.t() );
-      arma::mat Mright = join_vert( join_horiz( YJ1J2 ,  join_vert( YJ1J2.tail_rows(halfnry12)%PhaseMatYJ1J2 ,
-                                                                    YJ1J2.head_rows(halfnry12)%PhaseMatYJ1J2  )   ), 
-                                  hX*join_vert( XJ2,    join_horiz(   XJ2.tail_cols(halfncx2)%PhaseMatXJ2 ,
-                                                                      XJ2.head_cols(halfncx2)%PhaseMatXJ2     )   ).t() );
-
-      auto& Zmat = Z_bar.at({ch_bra_cc,ch_ket_cc});
-
-      Zmat = Mleft * Mright;
 
    }
-
-
-*/
-
-   std::deque<arma::mat> YJ1J2_list(counter);
-   std::deque<arma::mat> YJ2J1_list(counter);
-
-//   #ifndef OPENBLAS_NOUSEOMP
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
-//   #endif
-   for(int i=0;i<counter;++i)
+   else  // faster, more memory hungry way
    {
-      index_t ch_bra_cc = ybras[i];
-      index_t ch_ket_cc = ykets[i];
 
-      const auto& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
-      const auto& tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
-      int Jbra = tbc_bra_cc.J;
-      int Jket = tbc_ket_cc.J;
-
-//      arma::mat YJ1J2;
-//      arma::mat YJ2J1;
-      arma::mat& YJ1J2 = YJ1J2_list[i];
-      arma::mat& YJ2J1 = YJ2J1_list[i];
-      const auto& XJ1 = Xt_bar_ph[ch_bra_cc];
-      const auto& XJ2 = Xt_bar_ph[ch_ket_cc];
-
-      arma::uvec kets_ph = arma::join_cols( tbc_ket_cc.GetKetIndex_hh(), tbc_ket_cc.GetKetIndex_ph() );
-      arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
-
-      DoTensorPandyaTransformation_SingleChannel(Y, YJ1J2, ch_bra_cc, ch_ket_cc);
-      if (ch_bra_cc==ch_ket_cc)
+      std::deque<arma::mat> YJ1J2_list(counter);
+      std::deque<arma::mat> YJ2J1_list(counter);
+   
+   //   #ifndef OPENBLAS_NOUSEOMP
+      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
+   //   #endif
+      for(int i=0;i<counter;++i)
       {
-//         YJ2J1 = YJ1J2;
-          // Dont do nothing..
+         index_t ch_bra_cc = ybras[i];
+         index_t ch_ket_cc = ykets[i];
+   
+         const auto& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
+         const auto& tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
+//         int Jbra = tbc_bra_cc.J;
+//         int Jket = tbc_ket_cc.J;
+   
+   //      arma::mat YJ1J2;
+   //      arma::mat YJ2J1;
+         arma::mat& YJ1J2 = YJ1J2_list[i];
+         arma::mat& YJ2J1 = YJ2J1_list[i];
+//         const auto& XJ1 = Xt_bar_ph[ch_bra_cc];
+//         const auto& XJ2 = Xt_bar_ph[ch_ket_cc];
+   
+         arma::uvec kets_ph = arma::join_cols( tbc_ket_cc.GetKetIndex_hh(), tbc_ket_cc.GetKetIndex_ph() );
+         arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
+   
+         DoTensorPandyaTransformation_SingleChannel(Y, YJ1J2, ch_bra_cc, ch_ket_cc);
+         if (ch_bra_cc==ch_ket_cc)
+         {
+   //         YJ2J1 = YJ1J2;
+             // Dont do nothing..
+         }
+         else
+         {
+            DoTensorPandyaTransformation_SingleChannel(Y, YJ2J1, ch_ket_cc, ch_bra_cc);
+         }
       }
-      else
+   
+   
+      X.profiler.timer["DoTensorPandyaTransformationY"] += omp_get_wtime() - t_start;
+   
+   
+      t_start = omp_get_wtime();
+   
+      #ifndef OPENBLAS_NOUSEOMP
+      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
+      #endif
+      for(int i=0;i<counter;++i)
       {
-         DoTensorPandyaTransformation_SingleChannel(Y, YJ2J1, ch_ket_cc, ch_bra_cc);
+         index_t ch_bra_cc = ybras[i];
+         index_t ch_ket_cc = ykets[i];
+   
+         const auto& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
+         const auto& tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
+         int Jbra = tbc_bra_cc.J;
+         int Jket = tbc_ket_cc.J;
+   
+   //      arma::mat YJ1J2;
+   //      arma::mat YJ2J1;
+         arma::mat& YJ1J2 = YJ1J2_list[i];
+         arma::mat& YJ2J1 = ( ch_bra_cc==ch_ket_cc) ? YJ1J2_list[i]  : YJ2J1_list[i];
+   
+   //      arma::mat& YJ2J1 = YJ2J1_list[i];
+   
+         const auto& XJ1 = Xt_bar_ph[ch_bra_cc];
+         const auto& XJ2 = Xt_bar_ph[ch_ket_cc];
+   
+         arma::uvec kets_ph = arma::join_cols( tbc_ket_cc.GetKetIndex_hh(), tbc_ket_cc.GetKetIndex_ph() );
+         arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
+   
+   
+         int flipphaseY = hY * Z.modelspace->phase( Jbra - Jket ) ;
+         // construct a matrix of phases (-1)^{k+j+p+h} used below to generate X_phkj for k>j
+         arma::mat PhaseMatXJ2( tbc_ket_cc.GetNumberKets(), kets_ph.size(), arma::fill::ones) ;
+         arma::mat PhaseMatYJ1J2( bras_ph.size(), tbc_ket_cc.GetNumberKets(), arma::fill::ones) ;
+         for ( index_t iket=0;iket<(index_t)tbc_ket_cc.GetNumberKets();iket++)
+         {
+           const Ket& ket = tbc_ket_cc.GetKet(iket);
+           if ( Z.modelspace->phase((ket.op->j2+ket.oq->j2)/2)<0)
+           {
+              PhaseMatXJ2.row(iket) *=-1;
+              PhaseMatYJ1J2.col(iket) *=-1;
+           }
+         }
+         for (index_t iph=0;iph<kets_ph.size();iph++)
+         {
+           const Ket& ket_ph = tbc_ket_cc.GetKet( kets_ph[iph] );
+           if ( Z.modelspace->phase((ket_ph.op->j2+ket_ph.oq->j2)/2)<0)   PhaseMatXJ2.col(iph) *=-1;
+         }
+         for (index_t iph=0;iph<bras_ph.size();iph++)
+         {
+           const Ket& bra_ph = tbc_bra_cc.GetKet( bras_ph[iph] );
+           if ( Z.modelspace->phase((bra_ph.op->j2+bra_ph.oq->j2)/2)<0)   PhaseMatYJ1J2.row(iph) *=-1;
+         }
+         PhaseMatYJ1J2 *= flipphaseY;
+   
+   
+   
+   //                J2                       J1         J2                       J2          J2
+   //             k<=j     k>=j                hp  -ph    hp   ph                 k<=j       k<=j
+   //      J1   [       |       ]       J1   [           |          ]         [hp        |ph        ]
+   //     i<=j  [  Zbar | Zbar  ]  =   i<=j  [   Xbar    | -Ybar    ]   * J1  [   Ybar   |   Ybar'  ]
+   //           [       |       ]            [           |          ]         [ph        |hp        ]      where Ybar'_phkj = Ybar_hpkj * (-1)^{p+h+k+j}*(-1)^{J1-J2}*hY
+   //                                                                         [----------|----------]       and
+   //                                                                     J2  [hp        |ph        ]            Xbar'_phkj = Xbar_hpkj * (-1)^{p+h+k+j}*hX
+   //                                                                         [   Xbar   |   Xbar'  ]
+   //                                                                         [-ph       |-hp       ]
+   //    
+   //
+         int halfncx2 = XJ2.n_cols/2;
+         int halfnry12 = YJ1J2.n_rows/2;
+   
+         arma::mat Mleft = join_horiz( XJ1,  -flipphaseY * YJ2J1.t() );
+         arma::mat Mright = join_vert( join_horiz( YJ1J2 ,  join_vert( YJ1J2.tail_rows(halfnry12)%PhaseMatYJ1J2 ,
+                                                                       YJ1J2.head_rows(halfnry12)%PhaseMatYJ1J2  )   ), 
+                                     hX*join_vert( XJ2,    join_horiz(   XJ2.tail_cols(halfncx2)%PhaseMatXJ2 ,
+                                                                         XJ2.head_cols(halfncx2)%PhaseMatXJ2     )   ).t() );
+   
+   
+         Z_bar.at({ch_bra_cc,ch_ket_cc}) = Mleft * Mright;
+   
       }
-   }
-
-
-   X.profiler.timer["DoTensorPandyaTransformationY"] += omp_get_wtime() - t_start;
-
-
-   t_start = omp_get_wtime();
-
-   #ifndef OPENBLAS_NOUSEOMP
-   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
-   #endif
-   for(int i=0;i<counter;++i)
-   {
-      index_t ch_bra_cc = ybras[i];
-      index_t ch_ket_cc = ykets[i];
-
-      const auto& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
-      const auto& tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
-      int Jbra = tbc_bra_cc.J;
-      int Jket = tbc_ket_cc.J;
-
-//      arma::mat YJ1J2;
-//      arma::mat YJ2J1;
-      arma::mat& YJ1J2 = YJ1J2_list[i];
-      arma::mat& YJ2J1 = ( ch_bra_cc==ch_ket_cc) ? YJ1J2_list[i]  : YJ2J1_list[i];
-
-//      arma::mat& YJ2J1 = YJ2J1_list[i];
-
-      const auto& XJ1 = Xt_bar_ph[ch_bra_cc];
-      const auto& XJ2 = Xt_bar_ph[ch_ket_cc];
-
-      arma::uvec kets_ph = arma::join_cols( tbc_ket_cc.GetKetIndex_hh(), tbc_ket_cc.GetKetIndex_ph() );
-      arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
-
-
-      int flipphaseY = hY * Z.modelspace->phase( Jbra - Jket ) ;
-      // construct a matrix of phases (-1)^{k+j+p+h} used below to generate X_phkj for k>j
-      arma::mat PhaseMatXJ2( tbc_ket_cc.GetNumberKets(), kets_ph.size(), arma::fill::ones) ;
-      arma::mat PhaseMatYJ1J2( bras_ph.size(), tbc_ket_cc.GetNumberKets(), arma::fill::ones) ;
-      for ( index_t iket=0;iket<(index_t)tbc_ket_cc.GetNumberKets();iket++)
-      {
-        const Ket& ket = tbc_ket_cc.GetKet(iket);
-        if ( Z.modelspace->phase((ket.op->j2+ket.oq->j2)/2)<0)
-        {
-           PhaseMatXJ2.row(iket) *=-1;
-           PhaseMatYJ1J2.col(iket) *=-1;
-        }
-      }
-      for (index_t iph=0;iph<kets_ph.size();iph++)
-      {
-        const Ket& ket_ph = tbc_ket_cc.GetKet( kets_ph[iph] );
-        if ( Z.modelspace->phase((ket_ph.op->j2+ket_ph.oq->j2)/2)<0)   PhaseMatXJ2.col(iph) *=-1;
-      }
-      for (index_t iph=0;iph<bras_ph.size();iph++)
-      {
-        const Ket& bra_ph = tbc_bra_cc.GetKet( bras_ph[iph] );
-        if ( Z.modelspace->phase((bra_ph.op->j2+bra_ph.oq->j2)/2)<0)   PhaseMatYJ1J2.row(iph) *=-1;
-      }
-      PhaseMatYJ1J2 *= flipphaseY;
+      X.profiler.timer["Build Z_bar_tensor"] += omp_get_wtime() - t_start;
 
 
 
-//                J2                       J1         J2                       J2          J2
-//             k<=j     k>=j                hp  -ph    hp   ph                 k<=j       k<=j
-//      J1   [       |       ]       J1   [           |          ]         [hp        |ph        ]
-//     i<=j  [  Zbar | Zbar  ]  =   i<=j  [   Xbar    | -Ybar    ]   * J1  [   Ybar   |   Ybar'  ]
-//           [       |       ]            [           |          ]         [ph        |hp        ]      where Ybar'_phkj = Ybar_hpkj * (-1)^{p+h+k+j}*(-1)^{J1-J2}*hY
-//                                                                         [----------|----------]       and
-//                                                                     J2  [hp        |ph        ]            Xbar'_phkj = Xbar_hpkj * (-1)^{p+h+k+j}*hX
-//                                                                         [   Xbar   |   Xbar'  ]
-//                                                                         [-ph       |-hp       ]
-//    
-//
-      int halfncx2 = XJ2.n_cols/2;
-      int halfnry12 = YJ1J2.n_rows/2;
-
-      arma::mat Mleft = join_horiz( XJ1,  -flipphaseY * YJ2J1.t() );
-      arma::mat Mright = join_vert( join_horiz( YJ1J2 ,  join_vert( YJ1J2.tail_rows(halfnry12)%PhaseMatYJ1J2 ,
-                                                                    YJ1J2.head_rows(halfnry12)%PhaseMatYJ1J2  )   ), 
-                                  hX*join_vert( XJ2,    join_horiz(   XJ2.tail_cols(halfncx2)%PhaseMatXJ2 ,
-                                                                      XJ2.head_cols(halfncx2)%PhaseMatXJ2     )   ).t() );
-
-
-//      auto& Zmat = Z_bar.at({ch_bra_cc,ch_ket_cc});
-
-//      Zmat = Mleft * Mright;
-      Z_bar.at({ch_bra_cc,ch_ket_cc}) = Mleft * Mright;
-
-   }
-
-   X.profiler.timer["Build Z_bar_tensor"] += omp_get_wtime() - t_start;
+  } //else J=0
 
 
    t_start = omp_get_wtime();
