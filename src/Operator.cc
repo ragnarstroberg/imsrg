@@ -258,13 +258,12 @@ void Operator::SetUpOneBodyChannels()
       int j2max = std::min(oi.j2 + 2*rank_J, 2*l+1);
       for (int j2=j2min; j2<=j2max; j2+=2)
       {
-        int tz2min = std::max( oi.tz2 - 2*rank_T, -1);
-        int tz2max = std::min( oi.tz2 + 2*rank_T, 1);
-        for (int tz2=tz2min; tz2<=tz2max; tz2+=2)
+        for ( int tz2=-1; tz2<=1; tz2+=2)
         {
-          if (std::abs(tz2) != std::abs(oi.tz2 - 2*rank_T)) continue;
-          OneBodyChannels[ {l, j2, tz2} ].insert(i);
-//          OneBodyChannels[ {l, j2, tz2} ].push_back(i);
+          if (std::abs(oi.tz2-tz2) == 2*rank_T)
+          {
+             OneBodyChannels[ {l, j2, tz2} ].insert(i);
+          }
         }
       }
     }
