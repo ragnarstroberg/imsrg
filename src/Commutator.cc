@@ -257,6 +257,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 /// Should be called through Commutator()
 Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) 
 {
+   std::cout << "Enter " << __func__ << std::endl;
    X.profiler.counter["N_TensorCommutators"] += 1;
    double t_cst = omp_get_wtime();
    Operator Z = Y; // This ensures the commutator has the same tensor rank as Y
@@ -9671,6 +9672,7 @@ void comm333_pph_hhpss_debug( const Operator& X, const Operator& Y, Operator& Z 
 // This is no different from the scalar-scalar version
 void comm111st( const Operator & X, const Operator& Y, Operator& Z)
 {
+   std::cout << __func__ << std::endl;
    double tstart = omp_get_wtime();
    comm111ss(X,Y,Z);
    X.profiler.timer["comm111st"] += omp_get_wtime() - tstart;
@@ -9694,6 +9696,7 @@ void comm111st( const Operator & X, const Operator& Y, Operator& Z)
 void comm121st( const Operator& X, const Operator& Y, Operator& Z) 
 {
 
+   std::cout << __func__ << std::endl;
    double tstart = omp_get_wtime();
 //   int norbits = Z.modelspace->GetNumberOrbits();
    int norbits = Z.modelspace->all_orbits.size();
@@ -9789,6 +9792,7 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
 //void Operator::comm122st( const Operator& X, const Operator& Y ) 
 void comm122st( const Operator& X, const Operator& Y , Operator& Z) 
 {
+   std::cout << __func__ << std::endl;
    double tstart = omp_get_wtime();
    int Lambda = Z.rank_J;
 
@@ -9942,6 +9946,7 @@ void comm122st( const Operator& X, const Operator& Y , Operator& Z)
 void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )  
 {
 
+   std::cout << __func__ << std::endl;
    double tstart = omp_get_wtime();
    int Lambda = Z.GetJRank();
 
@@ -10102,6 +10107,7 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
 //void Operator::DoTensorPandyaTransformation(map<array<int,2>,arma::mat>& TwoBody_CC_hp, map<array<int,2>,arma::mat>& TwoBody_CC_ph) const
 void DoTensorPandyaTransformation( const Operator& Z, std::map<std::array<index_t,2>,arma::mat>& TwoBody_CC_ph)
 {
+   std::cout << __func__ << std::endl;
    int Lambda = Z.rank_J;
    // loop over cross-coupled channels
    index_t nch = Z.modelspace->SortedTwoBodyChannels_CC.size();
@@ -10240,6 +10246,7 @@ void DoTensorPandyaTransformation( const Operator& Z, std::map<std::array<index_
 //void Operator::DoTensorPandyaTransformation_SingleChannel( arma::mat& MatCC_ph, int ch_bra_cc, int ch_ket_cc) const
 void DoTensorPandyaTransformation_SingleChannel( const Operator& Z, arma::mat& MatCC_ph, int ch_bra_cc, int ch_ket_cc)
 {
+   std::cout << __func__ << std::endl;
    int Lambda = Z.rank_J;
 
    TwoBodyChannel& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
@@ -10573,6 +10580,7 @@ void DoTensorPandyaTransformation_SingleChannel( const Operator& Z, arma::mat& M
 //void Operator::AddInverseTensorPandyaTransformation( const std::map<std::array<index_t,2>,arma::mat>&  Zbar )
 void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::array<index_t,2>,arma::mat>&  Zbar )
 {
+   std::cout << __func__ << std::endl;
     // Do the inverse Pandya transform
    int Lambda = Z.rank_J;
 //   std::vector<std::map<std::array<int,2>,arma::mat>::iterator> iteratorlist;
@@ -10840,6 +10848,7 @@ void AddInverseTensorPandyaTransformation( Operator& Z, const std::map<std::arra
 //void Operator::comm222_phst( const Operator& X, const Operator& Y ) 
 void comm222_phst( const Operator& X, const Operator& Y, Operator& Z ) 
 {
+   std::cout << __func__ << std::endl;
 
    int hX = X.IsHermitian() ? 1 : -1;
    int hY = Y.IsHermitian() ? 1 : -1;
@@ -10867,21 +10876,35 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
 //   for (auto ich_bra : Z.modelspace->SortedTwoBodyChannels_CC)
    for (auto ich_bra : pandya_lookup )
    {
-     int n_rows = Z.modelspace->GetTwoBodyChannel_CC(ich_bra).GetNumberKets();
+     auto tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ich_bra);
+//     int n_rows = Z.modelspace->GetTwoBodyChannel_CC(ich_bra).GetNumberKets();
+     int n_rows = tbc_bra_cc.GetNumberKets();
+     if (n_rows<1) continue;
 //     for (auto ich_ket : Z.modelspace->SortedTwoBodyChannels_CC)
      for (auto ich_ket : pandya_lookup)
      {
        if (ich_bra>ich_ket) continue;
 //       if (pandya_lookup.at({(int)ich_bra,(int)ich_ket})[0].size()<1) continue;
 //       if (pandya_lookup.at({ich_bra,ich_ket})[0].size()<1) continue;
-         int n_cols = 2*Z.modelspace->GetTwoBodyChannel_CC(ich_ket).GetNumberKets();
+         auto tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ich_ket);
+         int n_cols = 2*tbc_ket_cc.GetNumberKets();
+//         int n_cols = 2*Z.modelspace->GetTwoBodyChannel_CC(ich_ket).GetNumberKets();
+         if (n_cols<1) continue;
+         if ( (tbc_bra_cc.parity + tbc_ket_cc.parity + Z.parity)%2>0 ) continue;
+         if ( (tbc_bra_cc.J + tbc_ket_cc.J < Z.GetJRank() ) or ( std::abs(tbc_bra_cc.J - tbc_ket_cc.J) > Z.GetJRank() ) ) continue;
+         if ( std::abs( tbc_bra_cc.Tz - tbc_ket_cc.Tz ) != Z.GetTRank() ) continue;
          ybras.push_back(ich_bra);
          ykets.push_back(ich_ket);
-         Z_bar[{ich_bra,ich_ket}] = arma::mat(n_rows,n_cols);
+//         Z_bar[{ich_bra,ich_ket}] = arma::mat(n_rows,n_cols);
+         Z_bar[{ich_bra,ich_ket}] = arma::mat();
+//         auto ch_bra = Z.modelspace->GetTwoBodyChannel_CC(ich_bra);
+//         auto ch_ket = Z.modelspace->GetTwoBodyChannel_CC(ich_ket);
+         std::cout << " |  allocated Zbar chbra,chket: " << ich_bra << " " << ich_ket <<  "   "
+                   << tbc_bra_cc.J << " " << tbc_bra_cc.parity << " " << tbc_bra_cc.Tz << "    " << tbc_ket_cc.J << " " << tbc_ket_cc.parity << " " << tbc_ket_cc.Tz << "   ,  " << n_rows << " x " << n_cols << std::endl;
      }
    }
    int counter = ybras.size();
-//  std::cout << "Done allocating" << std::endl;
+  std::cout << "--> Done allocating Zbar" << std::endl;
 
 
    X.profiler.timer["Allocate Z_bar_tensor"] += omp_get_wtime() - t_start;
@@ -10895,11 +10918,13 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
 /// BEGIN OLD WAY
    if ( Z.GetJRank()>0 )
    {
+      std::cout << "  in  " << __func__ << "  doing it the old way. Counter = " << counter << std::endl;
       #ifndef OPENBLAS_NOUSEOMP
       #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->tensor_transform_first_pass.at(Z.GetJRank()))
       #endif
       for(int i=0;i<counter;++i)
       {
+         std::cout << "      i = " << i << std::endl;
          index_t ch_bra_cc = ybras[i];
          index_t ch_ket_cc = ykets[i];
    ////      const auto plookup = pandya_lookup.find({(int)ch_bra_cc,(int)ch_ket_cc});
@@ -10982,6 +11007,7 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
          auto& Zmat = Z_bar.at({ch_bra_cc,ch_ket_cc});
    
          Zmat = Mleft * Mright;
+         std::cout << "   ... line " << __LINE__ << "  " << ch_bra_cc << " " << ch_ket_cc << "  |Z| = " << arma::norm(Zmat,"fro") << std::endl;
    
       }
 
@@ -10989,6 +11015,7 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
    }
    else  // faster, more memory hungry way
    {
+      std::cout << "  in  " << __func__ << "  doing it the new way" << std::endl;
 
       std::deque<arma::mat> YJ1J2_list(counter);
       std::deque<arma::mat> YJ2J1_list(counter);
