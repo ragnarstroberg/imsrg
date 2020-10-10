@@ -1174,7 +1174,7 @@ int main(int argc, char** argv)
         rw.WriteNuShellX_op(op,intfile+opnames[i]+".int");
       }
     }
-    else if ( ops[i].GetNumberLegs()%2==1) // odd number of legs -> this is a dagger operator
+    else if ( op.GetNumberLegs()%2==1) // odd number of legs -> this is a dagger operator
     {
 //      rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int"); // do this for now. later make a *.dag format.
       rw.WriteDaggerOperator( op, intfile+opnames[i]+".dag",opnames[i]);
@@ -1194,7 +1194,6 @@ int main(int argc, char** argv)
     }
 
     }// for opnames
-    std::cout << "Done with loop over opnames" << std::endl;
 
   }// if method == "magnus"
 
