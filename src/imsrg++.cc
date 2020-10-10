@@ -588,7 +588,7 @@ int main(int argc, char** argv)
 
 
   HNO -= BetaCM * 1.5*hwBetaCM; // This is just the zero-body piece. The other stuff was added earlier.
-  std::cout << "Hbare 0b = " << HNO.ZeroBody << std::endl;
+  std::cout << "Hbare 0b = " << std::setprecision(8) << HNO.ZeroBody << std::endl;
 
   if (method != "HF")
   {
@@ -721,7 +721,21 @@ int main(int argc, char** argv)
 
   for (index_t i=0;i<ops.size();++i)
   {
-    std::cout << opnames[i] << " = " << ops[i].ZeroBody << std::endl;
+    std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+     // We don't transform a DaggerHF, because we want the a^dagger to already refer to the HF basis.
+    if ((basis == "HF") and (opnames[i].find("DaggerHF") == std::string::npos)  )
+    {
+      ops[i] = hf.TransformToHFBasis(ops[i]);
+    }
+    else if ((basis == "NAT") and (opnames[i].find("DaggerHF") == std::string::npos)  )
+    {
+      ops[i] = hf.TransformHOToNATBasis(ops[i]);
+    }
+    std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+    ops[i] = ops[i].DoNormalOrdering();
+//    std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+    if (method == "MP3")
+      std::cout << opnames[i] << " = " << ops[i].ZeroBody << std::endl;
     if ( opnames[i] == "Rp2" )
     {
       double Rp2 = ops[i].ZeroBody;
@@ -1160,7 +1174,7 @@ int main(int argc, char** argv)
         rw.WriteNuShellX_op(op,intfile+opnames[i]+".int");
       }
     }
-    else if ( ops[i].GetNumberLegs()%2==1) // odd number of legs -> this is a dagger operator
+    else if ( op.GetNumberLegs()%2==1) // odd number of legs -> this is a dagger operator
     {
 //      rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int"); // do this for now. later make a *.dag format.
       rw.WriteDaggerOperator( op, intfile+opnames[i]+".dag",opnames[i]);
@@ -1180,7 +1194,6 @@ int main(int argc, char** argv)
     }
 
     }// for opnames
-    std::cout << "Done with loop over opnames" << std::endl;
 
   }// if method == "magnus"
 
