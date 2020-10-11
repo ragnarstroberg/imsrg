@@ -257,7 +257,6 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 /// Should be called through Commutator()
 Operator CommutatorScalarTensor( const Operator& X, const Operator& Y) 
 {
-   std::cout << "Enter " << __func__ << std::endl;
    X.profiler.counter["N_TensorCommutators"] += 1;
    double t_cst = omp_get_wtime();
    Operator Z = Y; // This ensures the commutator has the same tensor rank as Y
@@ -10884,19 +10883,19 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
          if (n_cols<1) continue;
          if ( (tbc_bra_cc.parity + tbc_ket_cc.parity + Z.parity)%2>0 ) continue;
          if ( (tbc_bra_cc.J + tbc_ket_cc.J < Z.GetJRank() ) or ( std::abs(tbc_bra_cc.J - tbc_ket_cc.J) > Z.GetJRank() ) ) continue;
-         if ( std::abs( tbc_bra_cc.Tz - tbc_ket_cc.Tz ) != Z.GetTRank() ) continue;
+         // Important to remember. For CC channels, Tz is the magnitude of the difference of the isospin | tz1 - tz2|
+         // For RankT=0, we can have <pn|pn>, <pp|nn>, <pp|pp>, <nn|nn>, (Tz_bra,Tz_ket) =>  (1,1) , (0,0)
+         // For RankT=1, we can have <pn|pp>, <pn|nn>  (Tz_bra,Tz_ket) => (0,1) , (1,0)
+         // For RankT=2, we can have <pn|pn>   (Tz_bra,Tz_ket) => (1,1)
+         if ( not ( (tbc_bra_cc.Tz+tbc_ket_cc.Tz==Z.GetTRank()) or (std::abs(tbc_bra_cc.Tz-tbc_ket_cc.Tz)==Z.GetTRank()) ) ) continue;
+
          ybras.push_back(ich_bra);
          ykets.push_back(ich_ket);
-//         Z_bar[{ich_bra,ich_ket}] = arma::mat(n_rows,n_cols);
-         Z_bar[{ich_bra,ich_ket}] = arma::mat();
-//         auto ch_bra = Z.modelspace->GetTwoBodyChannel_CC(ich_bra);
-//         auto ch_ket = Z.modelspace->GetTwoBodyChannel_CC(ich_ket);
-//         std::cout << " |  allocated Zbar chbra,chket: " << ich_bra << " " << ich_ket <<  "   "
-//                   << tbc_bra_cc.J << " " << tbc_bra_cc.parity << " " << tbc_bra_cc.Tz << "    " << tbc_ket_cc.J << " " << tbc_ket_cc.parity << " " << tbc_ket_cc.Tz << "   ,  " << n_rows << " x " << n_cols << std::endl;
+         Z_bar[{ich_bra,ich_ket}] = arma::mat(n_rows,n_cols);
+//         Z_bar[{ich_bra,ich_ket}] = arma::mat();
      }
    }
    int counter = ybras.size();
-//  std::cout << "--> Done allocating Zbar" << std::endl;
 
 
    X.profiler.timer["Allocate Z_bar_tensor"] += omp_get_wtime() - t_start;

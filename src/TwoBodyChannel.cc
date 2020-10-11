@@ -151,9 +151,10 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
 
 // Check if orbits pq participate in this cross-coupled two-body channel
 // Difference from regular channels:
-// no Pauli rule, <pp||nn> is allowed. But |Tz| is still conserved,
+// no Pauli rule, <pp||nn> is allowed. But |Tz| is still conserved, <-- only for rankT=0 operators.
 // i.e. <pp||pn> is not allowed. So we use |Tz| rather than Tz,
 // and don't use Tz=-1.
+// Another way of formulating it is that "isospin-parity", i.e. |Tz|%2, is conserved the same way parity is.
 bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
    if ((op->l + oq->l)%2 != parity)    return false;
