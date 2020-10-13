@@ -7,7 +7,7 @@ CXX = g++
 #  -DOPENBLAS_NOUSEOMP=1 removes parallel blocks which take threads away from OPENBLAS
 #                        to be used if OpenBlas was compiled without the USE_OMP flag
 
-ALL = libIMSRG.so imsrg++
+ALL = version.hh libIMSRG.so imsrg++
 INSTDIR = $(HOME)
 INCLUDE   = -I./armadillo
 FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC
@@ -28,7 +28,7 @@ ifneq (,$(findstring detached,$(BUILDVERSION)))
   BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "HEAD_%s",$$6}'  )
 endif
 
-FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
+#FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
 
 ifeq ($(DEBUG),on)
  FLAGS     = -march=native -std=c++11 -fopenmp -fPIC -g
@@ -58,6 +58,7 @@ PYTHON_CFLAGS = $(shell $(PYTHON_CONFIG) --cflags )
 PYTHON_LDFLAGS = $(shell $(PYTHON_CONFIG) --ldflags )
 PYTHON_INCLUDE = -I./pybind11/include
 PYTHONFLAGS =  $(PYTHON_CFLAGS) -Wl,--no-as-needed
+PYTHON_COMMAND = python$(PYTHON_MAJOR_VERSION)
 
 THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; elif [ `hostname|grep cedar` ]; then echo cedar; elif [ `hostname|grep mox` ]; then echo mox;  else echo other; fi)
 
@@ -190,11 +191,14 @@ pyIMSRG.o: pyIMSRG.cc
 imsrg++: imsrg++.cc libIMSRG.so Parameters.hh
 	$(CXX) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
 
+version.hh:
+	echo "#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
+
 clean:
 	rm -f *.o *.so boost_src/*.o
 
 test:
-	python -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He4','He4'); ut=pyIMSRG.UnitTest(ms); passed=ut.SanityCheck()"
+	$(PYTHON_COMMAND) -c "import pyIMSRG; ms=pyIMSRG.ModelSpace(2,'He4','He4'); ut=pyIMSRG.UnitTest(ms); passed=ut.SanityCheck()"
 
 install: splashscreen
 	@if [ ! -d $(INSTDIR)/lib ] ; then \
