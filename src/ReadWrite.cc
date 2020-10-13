@@ -2,6 +2,7 @@
 #include "ModelSpace.hh"
 #include "AngMom.hh"
 #include "PhysicalConstants.hh"
+#include "version.hh"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -1701,7 +1702,7 @@ void ReadWrite::Store_Darmstadt_3body( const std::vector<float>& ThreeBME, const
 //using namespace H5;
 /// Read three-body basis from HDF5 formatted file. This routine was ported to C++ from
 /// a C routine by Heiko Hergert, with as little modification as possible.
-void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, std::string filename, std::vector<array<int,5>>& Basis)
+void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, std::string filename, std::vector<std::array<int,5>>& Basis)
 {
   H5::H5File file(filename, H5F_ACC_RDONLY);
   // The parameter alpha enumerates the different 3body states |abc> coupled to J12 and J (no isospin)
@@ -1729,7 +1730,7 @@ void ReadWrite::GetHDF5Basis( ModelSpace* modelspace, std::string filename, std:
     dbuf[i] = dbuf[i-1] + iDim[1];
   }
 
-  basis.read(&dbuf[0][0], PredType::NATIVE_INT);
+  basis.read(&dbuf[0][0], H5::PredType::NATIVE_INT);
 
   Basis.resize(alpha_max+1);
 
@@ -1780,8 +1781,8 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
   Zref = op.GetModelSpace()->GetZref();
 
   ModelSpace* modelspace = op.GetModelSpace();
-  std::vector<array<int,5>> Basis;
-  H5::GetHDF5Basis(modelspace, filename, Basis);
+  std::vector<std::array<int,5>> Basis;
+  GetHDF5Basis(modelspace, filename, Basis);
 
 
   H5::H5File file(filename, H5F_ACC_RDONLY);
@@ -1841,30 +1842,30 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
   // Generate a 1d buffer in contiguous memory, also known as an array...
   double *value_buf = new double[value_curDim[0]];
 
-  // break the file into slstd::abs for reading
-  int nSlstd::abs = (int)((double)value_maxDim[0]/((double)SLABSIZE)) + 1;
+  // break the file into slabs for reading
+  int nSlabs = (int)((double)value_maxDim[0]/((double)SLABSIZE)) + 1;
 
   hsize_t stride[2] = {1,1};
   hsize_t count[2] = {1,1};
 
   // loop through the slstd::abs
-  for ( int n=0; n<nSlstd::abs; ++n)
+  for ( int n=0; n<nSlabs; ++n)
   {
     hsize_t start[2] = { n*value_curDim[0], 0};
     hsize_t label_block[2];
     hsize_t value_block[2];
-    if (n==nSlstd::abs-1)
+    if (n==nSlabs-1)
     {
-      label_block[0] = label_maxDim[0]-(nSlstd::abs-1)*SLABSIZE;
+      label_block[0] = label_maxDim[0]-(nSlabs-1)*SLABSIZE;
       label_block[1] = label_maxDim[1];
-      value_block[0] = value_maxDim[0]-(nSlstd::abs-1)*SLABSIZE;
+      value_block[0] = value_maxDim[0]-(nSlabs-1)*SLABSIZE;
       value_block[1] = value_maxDim[1];
 
       // Not clear exactly why this needs to be done.
       label_buf_dspace.close();
       value_buf_dspace.close();
-      label_buf_dspace = DataSpace(2,label_block);
-      value_buf_dspace = DataSpace(2,value_block);
+      label_buf_dspace = H5::DataSpace(2,label_block);
+      value_buf_dspace = H5::DataSpace(2,value_block);
 
     }
     else
@@ -1879,8 +1880,8 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
     value_dspace.selectHyperslab( H5S_SELECT_SET, count, start, stride, value_block);
 
     // Read the label data into label_buf, and matrix elements into value_buf
-    label.read( &label_buf[0][0], PredType::NATIVE_INT, label_buf_dspace, label_dspace );
-    value.read( &value_buf[0], PredType::NATIVE_DOUBLE, value_buf_dspace, value_dspace );
+    label.read( &label_buf[0][0], H5::PredType::NATIVE_INT, label_buf_dspace, label_dspace );
+    value.read( &value_buf[0], H5::PredType::NATIVE_DOUBLE, value_buf_dspace, value_dspace );
 
 
     for (hsize_t i=0; i<value_block[0]; ++i)
@@ -1934,9 +1935,10 @@ void ReadWrite::Read3bodyHDF5( std::string filename,Operator& op )
        me *= 0.5; // According to Heiko, this shouldn't be here. But comparing matrix elements with Petr's interaction suggests otherwise.
        me *= modelspace->phase(oa.n+ob.n+oc.n+od.n+oe.n+of.n); // shamelessly copying Heiko. Presumably a different HO convention is used.
 
-       op.ThreeBody.SetME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f, me);
+//       op.ThreeBody.SetME(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f, me);
+       op.ThreeBody.SetME_iso(J12,JJ12,twoJ,T12,TT12,twoT,a,b,c,d,e,f, me);
        if (a==d and b==e and c==f and ( J12!=JJ12 ) )
-          op.ThreeBody.SetME(JJ12,J12,twoJ,TT12,T12,twoT,a,b,c,d,e,f, me);
+          op.ThreeBody.SetME_iso(JJ12,J12,twoJ,TT12,T12,twoT,a,b,c,d,e,f, me);
 
     } //loop over matrix elements
   } // loop over slstd::abs
@@ -1987,7 +1989,7 @@ void ReadWrite::Read3bodyHDF5_new( std::string filename,Operator& op )
     dbuf[i] = dbuf[i-1] + iDim_basis[1];
   }
 
-  basis.read(&dbuf[0][0], PredType::NATIVE_INT);
+  basis.read(&dbuf[0][0], H5::PredType::NATIVE_INT);
 
 
   H5::DataSet value = file.openDataSet("vtnf");
@@ -2007,7 +2009,7 @@ void ReadWrite::Read3bodyHDF5_new( std::string filename,Operator& op )
     value_buf[i] = value_buf[i-1] + value_curDim[1];
   }
 
-  value.read(&value_buf[0][0], PredType::NATIVE_FLOAT);
+  value.read(&value_buf[0][0], H5::PredType::NATIVE_FLOAT);
 
   int alpha_max = iDim_basis[0];
 
@@ -2064,10 +2066,10 @@ void ReadWrite::Read3bodyHDF5_new( std::string filename,Operator& op )
        else
        {
 //        std::cout << "read <" << ap << " " << bp << " " << cp << " | V | " << a << " " << b << " " << c << "  (" << j12p << " " << j12 << " " << jtot << ")  ( " << T12 << " " << TT12 << " " << twoT << std::endl;
-        op.ThreeBody.SetME(j12p,j12,jtot,T12,TT12,twoT,ap,bp,cp,a,b,c, summed_me);
+        op.ThreeBody.SetME_iso(j12p,j12,jtot,T12,TT12,twoT,ap,bp,cp,a,b,c, summed_me);
         if (a==ap and b==bp and c==cp and j12 != j12p) // we're only looping through alphap > alphaspp, while I'm set up to read in all J,T possibilities for a given set of orbits
         {
-          op.ThreeBody.SetME(j12,j12p,jtot,TT12,T12,twoT,ap,bp,cp,a,b,c, summed_me);
+          op.ThreeBody.SetME_iso(j12,j12p,jtot,TT12,T12,twoT,ap,bp,cp,a,b,c, summed_me);
         }
        }
       }
