@@ -23,6 +23,7 @@ namespace M0nu
     return coeff3*a + coeff2*b + coeff1*c + d; // eg: (0,1,1,0) -> (2*2*2)*0 + (2*2)*1 + (2)*1 + 0 = 6
   }
 
+  //Return the phase due to a certain quantity, i.e. (-1)^x
   int phase(int x)
   {
     return x%2==0 ? 1 : -1;
@@ -149,6 +150,7 @@ namespace M0nu
      norm     = (key      ) & 0x3FFL;
   }
 
+  //Precomputes the values of the A functions  and caches them for efficiency
   std::unordered_map<uint64_t,double> PrecalculateA(int e2max,double Eclosure, std::string transition, int npoints)
   {
     std::unordered_map<uint64_t,double> AList;
@@ -193,6 +195,7 @@ namespace M0nu
     return AList;
   }
 
+  //Fetch the cached value of a specific A functions 
   double GetA(int index_p, int index_pp, int J,int norm, std::unordered_map<uint64_t,double> &AList)
   {
     double A;
@@ -261,7 +264,7 @@ namespace M0nu
   }
 
 
-  //Integrand of the integral of the neutrino potential over mometum space. 
+  //Integrand for the integral of the neutrino potential over mometum space. 
   double fq(double p, double pp,int index_p, int index_pp, int n, int l, int np, int lp, int J, double hw, std::string transition, double Eclosure, std::string src, std::unordered_map<uint64_t,double>& AList)
   { 
     
@@ -466,7 +469,16 @@ namespace M0nu
   }
 
 
-
+  /// Gamow Teller operator for neutrinoless double beta decay. Opertor is written in momentum space and takes the form
+  /// \f[ 
+  ///     \begin{equation*}
+  ///       O_{GT}(\bold{q'}) = \frac{R}{2\pi^2}\frac{h_{GT}(q')}{q'(q'+E_c)}(\boldsymbol{\sigma_1} \cdot \boldsymbol{\sigma_2}) \tau_{1,+}\tau_{2,+}
+  ///     \end{equation*}
+  /// \f]
+  /// Where \f[$h_{GT}$\f] is the neutrino potenital  impletmented above and \f[$E_c$]\f is the closure energy.
+  /// Operator is then evaluated in the lab frame oscialltor basis.
+  /// More detail on how to obatin the form of the operator can be found in https://drive.google.com/file/d/1QaMfuvQ7I3NM5h_ppjyIPsap3SWmCe2o/view?usp=sharing
+  /// and on how to evaluate in lab frame in https://drive.google.com/file/d/1C6E2HnzSJ1bzMoIKWfH1GaZKjqaAEluG/view?usp=sharing
   Operator GamowTeller(ModelSpace& modelspace, double Eclosure, std::string src)
   {
     bool reduced = true;
@@ -603,6 +615,16 @@ namespace M0nu
     return M0nuGT_TBME;
   }
 
+  /// Fermi operator for neutrinoless double beta decay. Opertor is written in momentum space and takes the form
+  /// \f[ 
+  ///     \begin{equation*}
+  ///       O_{F}(\bold{q'}) = \frac{R}{2\pi^2}\frac{h_{F}(q')}{q'(q'+E_c)} \tau_{1,+}\tau_{2,+}
+  ///     \end{equation*}
+  /// \f]
+  /// Where \f[$h_{F}$\f] is the neutrino potenital  impletmented above and \f[$E_c$]\f is the closure energy.
+   /// Operator is then evaluated in the lab frame oscialltor basis.
+  /// More detail on how to obatin the form of the operator can be found in https://drive.google.com/file/d/1QaMfuvQ7I3NM5h_ppjyIPsap3SWmCe2o/view?usp=sharing
+  /// and on how to evaluate in lab frame in https://drive.google.com/file/d/1C6E2HnzSJ1bzMoIKWfH1GaZKjqaAEluG/view?usp=sharing
   Operator Fermi(ModelSpace& modelspace, double Eclosure, std::string src)
   {
     bool reduced = true;
@@ -738,6 +760,19 @@ namespace M0nu
     return M0nuF_TBME;
   }
 
+
+
+
+  /// Tensor operator for neutrinoless double beta decay. Opertor is written in momentum space and takes the form
+  /// \f[ 
+  ///     \begin{equation*}
+  ///        O_{T}(\bold{q'}) = -\frac{R}{2\pi^2}\frac{h_{T}(q')}{q'(q'+E_c)}[3(\boldsymbol{\sigma_1}\cdot\boldsymbol{\hat{q'}})(\boldsymbol{\sigma_2}\cdot\boldsymbol{\hat{q'}})-(\boldsymbol{\sigma_1} \cdot \boldsymbol{\sigma_2})] \tau_{1,+}\tau_{2,+}
+  ///     \end{equation*}
+  /// \f]
+  /// Where \f[$h_{T}$\f] is the neutrino potenital  impletmented above and \f[$E_c$]\f is the closure energy. The minus factor up front as been included in the neutrino potential for simplicity.
+   /// Operator is then evaluated in the lab frame oscialltor basis.
+  /// More detail on how to obatin the form of the operator can be found in https://drive.google.com/file/d/1QaMfuvQ7I3NM5h_ppjyIPsap3SWmCe2o/view?usp=sharing
+  /// and on how to evaluate in lab frame in https://drive.google.com/file/d/1C6E2HnzSJ1bzMoIKWfH1GaZKjqaAEluG/view?usp=sharing
   Operator Tensor(ModelSpace& modelspace, double Eclosure, std::string src)
   {
     bool reduced = true;
