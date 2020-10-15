@@ -878,7 +878,7 @@ int main(int argc, char** argv)
 
 
   // Here's where we need to have the operators
-  std::cout << "MADE IT TO LINE " << __LINE__ << std::endl;
+//  std::cout << "MADE IT TO LINE " << __LINE__ << std::endl;
 
 
   if (method == "flow" or method == "flow_RK4" )
