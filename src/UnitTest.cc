@@ -5,6 +5,7 @@
 #include <random>
 #include <string>
 #include "imsrg_util.hh"
+#include "version.hh"
 
 
 uint64_t UnitTest::random_seed = 1;
@@ -4404,6 +4405,9 @@ bool UnitTest::Test_comm433sd_ph( const Operator& X, const Operator& Yin )
 bool UnitTest::SanityCheck()
 {
  
+  #ifdef BUILDVERSION
+  std::cout << "BUILD VERSION = " << BUILDVERSION << std::endl;
+  #endif
   std::cout << "Test simple Clebsch-Gordan coeff..." << std::endl;
   double cg1 = AngMom::CG(0.5,0.5,0.5,-0.5,0,0);
   if ( std::abs( cg1 - sqrt(0.5)) > 1e-6 )

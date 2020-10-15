@@ -476,7 +476,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("SixJ",AngMom::SixJ);
    m.def("NineJ",AngMom::NineJ);
    m.def("NormNineJ",AngMom::NormNineJ);
-   m.def("Moshinsky",AngMom::Moshinsky);
+   m.def("Moshinsky",AngMom::Moshinsky,py::arg("N"),py::arg("LAM"),py::arg("n"),py::arg("lam"),py::arg("n1"),py::arg("l1"),py::arg("n2"),py::arg("l2"),py::arg("L"),py::arg("BETA") );
    m.def("TalmiB",AngMom::TalmiB);
    m.def("TalmiI",imsrg_util::TalmiI);
    m.def("Tcoeff",AngMom::Tcoeff);

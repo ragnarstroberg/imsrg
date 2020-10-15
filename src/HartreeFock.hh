@@ -71,6 +71,7 @@ class HartreeFock
    Jacobi3BME* jacobi3bme;  ///< pointer to 3-body matrix elements in jacobi basis, if we want to use that
    bool use_jacobi_3body;
    bool freeze_occupations;
+   bool discard_NO2B_from_3N; // This should generally be false for any production runs.
 
 // Methods
    HartreeFock(Operator&  hbare); ///< Constructor
@@ -90,6 +91,7 @@ class HartreeFock
    void PrintEHF();               ///< Print out the Hartree Fock energy
    void ReorderCoefficients();    ///< Reorder the coefficients in C to eliminate phases etc.
    void SetJacobi3BME( Jacobi3BME* jac ) {jacobi3bme = jac; use_jacobi_3body=true;}; ///< Setter.
+   void DiscardNO2Bfrom3N() {discard_NO2B_from_3N = true;};
    Operator TransformToHFBasis( Operator& OpIn); ///< Transform an operator from oscillator basis to HF basis
 //   Operator GetNormalOrderedH();  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.
    Operator GetNormalOrderedH(int particle_rank=2);  ///< Return the Hamiltonian in the HF basis at the normal-ordered 2body level.

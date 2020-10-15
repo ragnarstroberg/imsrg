@@ -97,6 +97,7 @@ int main(int argc, char** argv)
   bool imsrg3_n7 = parameters.s("imsrg3_n7") == "true";
   bool write_omega = parameters.s("write_omega") == "true";
   bool freeze_occupations = parameters.s("freeze_occupations")=="true";
+  bool discard_no2b_from_3n = parameters.s("discard_no2b_from_3n")=="true";
   bool hunter_gatherer = parameters.s("hunter_gatherer") == "true";
   bool goose_tank = parameters.s("goose_tank") == "true";
   bool discard_residual_input3N = parameters.s("discard_residual_input3N")=="true";
@@ -499,6 +500,7 @@ int main(int argc, char** argv)
   HFMBPT hf(Hbare); // HFMBPT inherits from HartreeFock, so this works for HF and NAT bases.
 
   if (not freeze_occupations )  hf.UnFreezeOccupations();
+  if ( discard_no2b_from_3n) hf.DiscardNO2Bfrom3N();
   std::cout << "Solving" << std::endl;
 
   if (basis!="oscillator")
