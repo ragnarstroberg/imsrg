@@ -182,13 +182,13 @@ libIMSRG.so: $(OBJ)
 
 python: pyIMSRG.so
 
-pyIMSRG.so: $(OBJ)  pyIMSRG.o
+pyIMSRG.so: $(OBJ)  pyIMSRG.o version.hh
 	$(CXX) $(FLAGS) $(INCLUDE) $(PYTHON_INCUDE) $(PYTHONFLAGS) $(PYTHONLDFLAGS) $(LIBS) -shared  $^ -o $@
 
 pyIMSRG.o: pyIMSRG.cc
 	$(CXX) -c  $(FLAGS) $(INCLUDE) $(PYTHON_INCLUDE) $(PYTHONFLAGS)  $^ -o $@
 
-imsrg++: imsrg++.cc libIMSRG.so Parameters.hh
+imsrg++: imsrg++.cc libIMSRG.so Parameters.hh version.hh
 	$(CXX) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
 
 version.hh:

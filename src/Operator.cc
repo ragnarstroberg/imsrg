@@ -1247,21 +1247,25 @@ double Operator::MP1_Eval(Operator& H)
 {
   auto& Op = *this;
   double opval = 0;
-  int nch = modelspace->GetNumberTwoBodyChannels();
-  for (int ich=0;ich<nch;++ich)
+  if ( Op.GetJRank()==0 and Op.GetTRank()==0 and Op.GetParity()==0 )
   {
-    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ich);
-    int J = tbc.J;
-    auto& Hmat = H.TwoBody.GetMatrix(ich,ich);
-    auto& Opmat = Op.TwoBody.GetMatrix(ich,ich);
-    for (auto ibra : tbc.GetKetIndex_hh() )
+    int nch = modelspace->GetNumberTwoBodyChannels();
+    for (int ich=0;ich<nch;++ich)
     {
-      Ket& bra = tbc.GetKet(ibra);
-      for (auto iket : tbc.GetKetIndex_pp() )
+      std::cout << "     ich = " << ich << std::endl;
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ich);
+      int J = tbc.J;
+      auto& Hmat = H.TwoBody.GetMatrix(ich,ich);
+      auto& Opmat = Op.TwoBody.GetMatrix(ich,ich);
+      for (auto ibra : tbc.GetKetIndex_hh() )
       {
-        Ket& ket = tbc.GetKet(iket);
-        double Delta_abij = H.OneBody(bra.p,bra.p) + H.OneBody(bra.q,bra.q) -H.OneBody(ket.p,ket.p) - H.OneBody(ket.q,ket.q);
-        opval += 2*(2*J+1)*Hmat(ibra,iket) * Opmat(iket,ibra) / Delta_abij;
+        Ket& bra = tbc.GetKet(ibra);
+        for (auto iket : tbc.GetKetIndex_pp() )
+        {
+          Ket& ket = tbc.GetKet(iket);
+          double Delta_abij = H.OneBody(bra.p,bra.p) + H.OneBody(bra.q,bra.q) -H.OneBody(ket.p,ket.p) - H.OneBody(ket.q,ket.q);
+          opval += 2*(2*J+1)*Hmat(ibra,iket) * Opmat(iket,ibra) / Delta_abij;
+        }
       }
     }
   }
