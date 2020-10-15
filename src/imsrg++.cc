@@ -56,7 +56,7 @@
 #include "IMSRG.hh"
 #include "Parameters.hh"
 #include "PhysicalConstants.hh"
-
+#include "version.hh"
 
 int main(int argc, char** argv)
 {
