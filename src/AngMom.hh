@@ -27,7 +27,6 @@
 #define MOSH_BETA_2 atan(sqrt(2)) // Moshinsky beta parameter for  mass ratio m1/m2 = 2
 #define MOSH_BETA_half atan(sqrt(0.5)) // Moshinsky beta parameter for mass ration m1/m2 = 0.5
 
-//using namespace std;
 
 //class AngMom
 namespace AngMom

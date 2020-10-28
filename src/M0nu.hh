@@ -17,10 +17,10 @@
 //Date : 05/2020
 namespace M0nu
 {
-  const double MAGMOM = 4.706;  //Magnetic moment
-  const double CUTV = 850.0; //vector cut off
-  const double CUTA = 1086.0; //axial cut off
-  const double R0 = 1.2;
+  const double MAGMOM = 4.706;  ///< Magnetic moment
+  const double CUTV = 850.0; ///< vector cut off
+  const double CUTA = 1086.0; ///< axial cut off
+  const double R0 = 1.2; ///< Radius prefactor for R = R0A^1/3
 
 
   inline double asNorm(int i, int j) {return i==j ? PhysConst::INVSQRT2 : 1.0;}; //for anti-symetrization
@@ -34,9 +34,9 @@ namespace M0nu
   double ga_func(double qsq);
   double gm_func(double qsq);
   double gp_func(double qsq);
-  double GTFormFactor(double q);
-  double FermiFormFactor(double q);
-  double TensorFormFactor(double q);
+  double GTFormFactor(double q); ///< Gamow Teller Form Factor
+  double FermiFormFactor(double q); ///< Fermi Form Factor
+  double TensorFormFactor(double q); ///< Tensor Form Factor
 
   double A(double p, double pp, int J, double Eclosure, std::string transition, gsl_integration_glfixed_table * t, int norm, int size);
   uint64_t AHash(int i, int j, int J, int norm);
@@ -54,10 +54,10 @@ namespace M0nu
   std::unordered_map<uint64_t,double> PreCalculateM0nuIntegrals(int e2max, double hw, std::string transition, double Eclosure, std::string src);
   double GetM0nuIntegral(int e2max, int n, int l, int np, int lp,int J, double hw, std::string transition,  double Eclosure, std::string src, std::unordered_map<uint64_t,double> &IntList);
   
-  Operator GamowTeller(ModelSpace& modelspace, double Eclosure, std::string src);
-  Operator Fermi(ModelSpace& modelspace, double Eclosure, std::string src);
-  Operator Tensor(ModelSpace& modelspace, double Eclosure, std::string src);
-  Operator DGT_Op(ModelSpace& modelspace);
+  Operator GamowTeller(ModelSpace& modelspace, double Eclosure, std::string src); ///< Gamow-Teller part of M0nu operator
+  Operator Fermi(ModelSpace& modelspace, double Eclosure, std::string src); ///< Fermi part of M0nu operator
+  Operator Tensor(ModelSpace& modelspace, double Eclosure, std::string src); ///< Tensor part of M0nu operator
+  Operator DGT_Op(ModelSpace& modelspace); //< Double Gamow-Teller operator
 
 }
 

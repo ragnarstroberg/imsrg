@@ -324,13 +324,6 @@ double TalmiB(int n, int l, int nn, int ll, int p)
               tcoeff += hats_all * phase_123 * ninej1 *  sixj1 *  ninej2 *  ninej3 *  sixj2 * sixj3 * mosh2 * mosh1 * phasemosh1 * phasemosh2;
 
 
-
-//                std::cout << "      ##" << L12 << "## " <<phase_123 << " " << hats_all << " " << phasemosh1 << " " << mosh1 << " " << phasemosh2 << " " << mosh2 << " " << ninej1 << " " << ninej2 << " " << ninej3 << " " << sixj1 << " " << sixj2 << " " << sixj3 << "   :  "
-//                          << tcoeff << "  "
-//                          << std::endl;
-//                std::cout << "       hat-breakdown: sqrt( " <<  (j2a+1)<< " * " <<(j2b+1)<< " * " <<(j2c+1)<< " * " <<(2*Jab+1)<< " * " <<(twoJ+1)<< " * " <<(2*J1+1)<< " * " <<(twoJ2+1)<< " * " << (2*S1+1) << " )  * "
-//                          << (twoS12+1) << " * " << (2*Lab+1) << " * " << (2*L+1) << " * " << (2*curlyL+1) << " * " << (2*Lambda+1) << std::endl;
-//                }
               }
             }
           }

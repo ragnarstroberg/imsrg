@@ -12,7 +12,7 @@ namespace py = pybind11;
 
 
   Orbit MS_GetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
-  size_t MS_GetOrbitIndex_Str(ModelSpace& self, std::string s){ return self.GetOrbitIndex(s);};
+//  size_t MS_GetOrbitIndex_Str(ModelSpace& self, std::string s){ return self.GetOrbitIndex(s);};
   TwoBodyChannel MS_GetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
 
   double TB_GetTBME_J(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J(j_bra,j_ket,a,b,c,d);};
@@ -94,9 +94,12 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Index2String", &ModelSpace::Index2String)
       .def("ResetFirstPass", &ModelSpace::ResetFirstPass)
 //      .def("SetReference", &MS_SetRef)
-      .def("SetReference", &MS_SetRef)
+      .def("SetReference", [](ModelSpace& self, const std::set<index_t>& ref){ self.SetReference( ref);}    )
       .def("Init_occ_from_file", &ModelSpace::Init_occ_from_file)
-      .def("GetOrbitIndex_fromString", &MS_GetOrbitIndex_Str)
+      .def("GetOrbitIndex", [](ModelSpace& self, int n, int l, int j, int tz){ return self.GetOrbitIndex(n,l,j,tz) ;},py::arg("n"),py::arg("l"), py::arg("j2"), py::arg("tz2") )
+      .def("GetOrbitIndex_fromString", [](ModelSpace& self, std::string s){ return self.GetOrbitIndex(s); },py::arg("orbstring")  )
+      .def("GetOneBodyChannels", [](ModelSpace& self, int l, int j, int tz){ return self.OneBodyChannels.at({l,j,tz});}, py::arg("l"), py::arg("j2"), py::arg("tz2") )
+//      .def("GetOrbitIndex_fromString", &MS_GetOrbitIndex_Str)
       .def("PreCalculateSixJ", &ModelSpace::PreCalculateSixJ)
       .def_readwrite("holes",&ModelSpace::holes)
       .def_readwrite("particles",&ModelSpace::particles)
@@ -183,6 +186,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def(py::self -= double())
       .def(py::self - double())
       .def("__call__", [](arma::mat& self,const int i, const int j) {return self(i,j);}, py::is_operator()  )
+      .def("Getn_rows",[](arma::mat& self) {return self.n_rows;} )
+      .def("Getn_cols",[](arma::mat& self) {return self.n_cols;} )
    ;
 
    py::class_<TwoBodyME>(m,"TwoBodyME")
@@ -467,6 +472,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("Embed1BodyIn2Body",  imsrg_util::Embed1BodyIn2Body);
    m.def("RadialIntegral",     imsrg_util::RadialIntegral);
    m.def("RadialIntegral_RpowK",     imsrg_util::RadialIntegral_RpowK);
+   m.def("RadialIntegral_Gauss",     imsrg_util::RadialIntegral_Gauss, py::arg("na"),py::arg("la"),py::arg("nb"),py::arg("lb"),py::arg("sig"));
    m.def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
    m.def("OperatorFromString", imsrg_util::OperatorFromString);
    m.def("HO_Radial_psi",  imsrg_util::HO_Radial_psi, py::arg("n"),py::arg("l"),py::arg("hw"),py::arg("r"));

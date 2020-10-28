@@ -8,13 +8,16 @@
 #include <gsl/gsl_integration.h>
 
 using namespace PhysConst;
+
+/// Namespace for functions related to neutrinoless double beta decay
 namespace M0nu
 {
-  // Converts (a,b,c,d) in base (maxa+1,maxb+1,maxc+1,maxd+1) to an ordered decimal integer
-  // eg: for (maxa,maxb,maxc,maxd) = (1,1,1,1) decimalgen would convert (0,1,1,0) to 6, ie: a binary to decimal converter
-  // NOTE: to make comparisons between such decimals, keep (maxa,maxb,maxc,maxd) consistent
-  // PS: I tots made this thing up, did some testing and it seemed to work...
-  // ... hopefully it's good, but could be a source of weird bugs if anything comes up with missing integrals wrt dq, see GetIntegral(...)
+
+  /// Converts (a,b,c,d) in base (maxa+1,maxb+1,maxc+1,maxd+1) to an ordered decimal integer
+  /// eg: for (maxa,maxb,maxc,maxd) = (1,1,1,1) decimalgen would convert (0,1,1,0) to 6, ie: a binary to decimal converter
+  /// NOTE: to make comparisons between such decimals, keep (maxa,maxb,maxc,maxd) consistent
+  /// PS: I tots made this thing up, did some testing and it seemed to work...
+  /// ... hopefully it's good, but could be a source of weird bugs if anything comes up with missing integrals wrt dq, see GetIntegral(...)
   int decimalgen(int a, int b, int c, int d, int maxb, int maxc, int maxd)
   {
     int coeff1 = maxd + 1;
@@ -70,8 +73,8 @@ namespace M0nu
   }
 
 
-  //Form factors of the neutrino potential of Gamow-Teller transition
-  //Implemented from Equation (4.12) of Charlie Payne's thesis
+  /// Form factors of the neutrino potential of Gamow-Teller transition
+  /// Implemented from Equation (4.12) of Charlie Payne's thesis
   double GTFormFactor(double q)
   {
     double qsq     = q*q; // q squared [MeV^2]
@@ -83,8 +86,8 @@ namespace M0nu
     return ff;
   }
 
-  //Form factors of the neutrino potential of Gamow-Teller transition
-  //Implemented from Equation (4.11) of Charlie Payne's thesis
+  /// Form factors of the neutrino potential of Gamow-Teller transition
+  /// Implemented from Equation (4.11) of Charlie Payne's thesis
   double FermiFormFactor(double q)
   {
     double qsq     = q*q; // q squared [MeV^2]
@@ -93,8 +96,8 @@ namespace M0nu
     return ff;
   }
 
-  //Form factors of the neutrino potential of Gamow-Teller transition
-  //Implemented from Equation (4.13) of Charlie Payne's thesis
+  /// Form factors of the neutrino potential of Gamow-Teller transition
+  /// Implemented from Equation (4.13) of Charlie Payne's thesis
   double TensorFormFactor(double q)
   {
     double qsq     = q*q; // q squared [MeV^2]
@@ -470,12 +473,10 @@ namespace M0nu
 
 
   /// Gamow Teller operator for neutrinoless double beta decay. Opertor is written in momentum space and takes the form
-  /// \f[ 
-  ///     \begin{equation*}
+  /// \f{equation} 
   ///       O_{GT}(\bold{q'}) = \frac{R}{2\pi^2}\frac{h_{GT}(q')}{q'(q'+E_c)}(\boldsymbol{\sigma_1} \cdot \boldsymbol{\sigma_2}) \tau_{1,+}\tau_{2,+}
-  ///     \end{equation*}
-  /// \f]
-  /// Where \f[$h_{GT}$\f] is the neutrino potenital  impletmented above and \f[$E_c$]\f is the closure energy.
+  /// \f}
+  /// Where \f$ h_{GT} \f$ is the neutrino potenital  impletmented above and \f$ E_c \f$ is the closure energy.
   /// Operator is then evaluated in the lab frame oscialltor basis.
   /// More detail on how to obatin the form of the operator can be found in https://drive.google.com/file/d/1QaMfuvQ7I3NM5h_ppjyIPsap3SWmCe2o/view?usp=sharing
   /// and on how to evaluate in lab frame in https://drive.google.com/file/d/1C6E2HnzSJ1bzMoIKWfH1GaZKjqaAEluG/view?usp=sharing
@@ -617,11 +618,9 @@ namespace M0nu
 
   /// Fermi operator for neutrinoless double beta decay. Opertor is written in momentum space and takes the form
   /// \f[ 
-  ///     \begin{equation*}
   ///       O_{F}(\bold{q'}) = \frac{R}{2\pi^2}\frac{h_{F}(q')}{q'(q'+E_c)} \tau_{1,+}\tau_{2,+}
-  ///     \end{equation*}
   /// \f]
-  /// Where \f[$h_{F}$\f] is the neutrino potenital  impletmented above and \f[$E_c$]\f is the closure energy.
+  /// Where \f$ h_{F} \f$ is the neutrino potenital  impletmented above and \f$ E_c \f$ is the closure energy.
    /// Operator is then evaluated in the lab frame oscialltor basis.
   /// More detail on how to obatin the form of the operator can be found in https://drive.google.com/file/d/1QaMfuvQ7I3NM5h_ppjyIPsap3SWmCe2o/view?usp=sharing
   /// and on how to evaluate in lab frame in https://drive.google.com/file/d/1C6E2HnzSJ1bzMoIKWfH1GaZKjqaAEluG/view?usp=sharing
@@ -765,11 +764,9 @@ namespace M0nu
 
   /// Tensor operator for neutrinoless double beta decay. Opertor is written in momentum space and takes the form
   /// \f[ 
-  ///     \begin{equation*}
   ///        O_{T}(\bold{q'}) = -\frac{R}{2\pi^2}\frac{h_{T}(q')}{q'(q'+E_c)}[3(\boldsymbol{\sigma_1}\cdot\boldsymbol{\hat{q'}})(\boldsymbol{\sigma_2}\cdot\boldsymbol{\hat{q'}})-(\boldsymbol{\sigma_1} \cdot \boldsymbol{\sigma_2})] \tau_{1,+}\tau_{2,+}
-  ///     \end{equation*}
   /// \f]
-  /// Where \f[$h_{T}$\f] is the neutrino potenital  impletmented above and \f[$E_c$]\f is the closure energy. The minus factor up front as been included in the neutrino potential for simplicity.
+  /// Where \f$ h_{T} \f$ is the neutrino potenital  impletmented above and \f$ E_c \f$ is the closure energy. The minus factor up front as been included in the neutrino potential for simplicity.
    /// Operator is then evaluated in the lab frame oscialltor basis.
   /// More detail on how to obatin the form of the operator can be found in https://drive.google.com/file/d/1QaMfuvQ7I3NM5h_ppjyIPsap3SWmCe2o/view?usp=sharing
   /// and on how to evaluate in lab frame in https://drive.google.com/file/d/1C6E2HnzSJ1bzMoIKWfH1GaZKjqaAEluG/view?usp=sharing
@@ -1033,4 +1030,7 @@ namespace M0nu
     std::cout<<"...done calculating DGT TBMEs"<<std::endl;
     return DGT_TBME;
   }
-}
+
+}// end namespace M0nu
+
+

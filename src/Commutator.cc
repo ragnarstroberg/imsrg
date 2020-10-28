@@ -1903,6 +1903,12 @@ void comm222_phss_alternative( const Operator& X, const Operator& Y, Operator& Z
 //                                    (X^{J1J2J}_abcdef Y^{J1J2J}_defabc - Y^{J1J2J}_abcdef X^{J1J2J}_defabc)
 //    Verified with UnitTest
 //   
+/// Three body commutator expression
+/// \f{equation}{
+/// Z_0 = \frac{1}{36} \sum_{abcdef} \sum_{J_{1}J_{2}J} n_a n_b n_c \bar{n}_d\bar{n}_e\bar{n}_f (2J+1)
+///        ( X^{J_{1}J_{2}J}_{abcdef} Y^{J_1J_2J}_{defabc} - Y^{J_{1}J_{2}J}_{abcdef} X^{J_1J_2J}_{defabc})
+/// \f}
+///
 void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
@@ -10906,7 +10912,7 @@ void comm222_phst( const Operator& X, const Operator& Y, Operator& Z )
    t_start = omp_get_wtime();
 
 
-/// BEGIN OLD WAY
+// BEGIN OLD WAY
    if ( Z.GetJRank()>0 )
    {
 //      std::cout << "  in  " << __func__ << "  doing it the old way. Counter = " << counter << std::endl;
