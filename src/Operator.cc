@@ -425,8 +425,8 @@ Operator Operator::DoNormalOrderingCore() const
 //Operator Operator::DoNormalOrdering2(int sign) const
 Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied ) const
 {
-   for ( auto o : occupied ) std::cout << o << " ";
-   std::cout << std::endl;
+//   for ( auto o : occupied ) std::cout << o << " ";
+//   std::cout << std::endl;
 
    Operator opNO(*this);
    bool scalar = (opNO.rank_J==0 and opNO.rank_T==0 and opNO.parity==0);
