@@ -701,7 +701,7 @@ int main(int argc, char** argv)
 //  for (auto& op : ops)
    for (size_t i=0;i<ops.size();++i)
    {
-     std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+//     std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
       // We don't transform a DaggerHF, because we want the a^dagger to already refer to the HF basis.
      if ((basis == "HF") and (opnames[i].find("DaggerHF") == std::string::npos)  )
      {
@@ -711,9 +711,9 @@ int main(int argc, char** argv)
      {
        ops[i] = hf.TransformHOToNATBasis(ops[i]);
      }
-     std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+//     std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
      ops[i] = ops[i].DoNormalOrdering();
-     std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+//     std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
      if (method == "MP3")
      {
        double dop = ops[i].MP1_Eval( HNO );
@@ -723,7 +723,7 @@ int main(int argc, char** argv)
 
   for (index_t i=0;i<ops.size();++i)
   {
-    std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+//    std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
      // We don't transform a DaggerHF, because we want the a^dagger to already refer to the HF basis.
     if ((basis == "HF") and (opnames[i].find("DaggerHF") == std::string::npos)  )
     {
@@ -733,7 +733,7 @@ int main(int argc, char** argv)
     {
       ops[i] = hf.TransformHOToNATBasis(ops[i]);
     }
-    std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+//    std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
     ops[i] = ops[i].DoNormalOrdering();
 //    std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
     if (method == "MP3")
