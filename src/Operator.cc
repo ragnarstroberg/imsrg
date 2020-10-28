@@ -1252,7 +1252,7 @@ double Operator::MP1_Eval(Operator& H)
     int nch = modelspace->GetNumberTwoBodyChannels();
     for (int ich=0;ich<nch;++ich)
     {
-      std::cout << "     ich = " << ich << std::endl;
+//      std::cout << "     ich = " << ich << std::endl;
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ich);
       int J = tbc.J;
       auto& Hmat = H.TwoBody.GetMatrix(ich,ich);
