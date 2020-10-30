@@ -714,30 +714,12 @@ int main(int argc, char** argv)
 //     std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
      ops[i] = ops[i].DoNormalOrdering();
 //     std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+
      if (method == "MP3")
      {
        double dop = ops[i].MP1_Eval( HNO );
        std::cout << "Operator 1st order correction  " << dop << "  ->  " << ops[i].ZeroBody + dop << std::endl;
      }
-   }
-
-  for (index_t i=0;i<ops.size();++i)
-  {
-//    std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
-     // We don't transform a DaggerHF, because we want the a^dagger to already refer to the HF basis.
-    if ((basis == "HF") and (opnames[i].find("DaggerHF") == std::string::npos)  )
-    {
-      ops[i] = hf.TransformToHFBasis(ops[i]);
-    }
-    else if ((basis == "NAT") and (opnames[i].find("DaggerHF") == std::string::npos)  )
-    {
-      ops[i] = hf.TransformHOToNATBasis(ops[i]);
-    }
-//    std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
-    ops[i] = ops[i].DoNormalOrdering();
-//    std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
-    if (method == "MP3")
-      std::cout << opnames[i] << " = " << ops[i].ZeroBody << std::endl;
     if ( opnames[i] == "Rp2" )
     {
       double Rp2 = ops[i].ZeroBody;
@@ -746,7 +728,34 @@ int main(int argc, char** argv)
       std::cout << " HF point proton radius = " << sqrt( Rp2 ) << std::endl;
       std::cout << " HF charge radius = " << ( abs(Rp2)<1e-6 ? 0.0 : sqrt( Rp2 + r2p + r2n*(A-Z)/Z + DarwinFoldy) ) << std::endl;
     }
-  }
+   }
+
+//  for (index_t i=0;i<ops.size();++i)
+//  {
+////    std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+//     // We don't transform a DaggerHF, because we want the a^dagger to already refer to the HF basis.
+//    if ((basis == "HF") and (opnames[i].find("DaggerHF") == std::string::npos)  )
+//    {
+//      ops[i] = hf.TransformToHFBasis(ops[i]);
+//    }
+//    else if ((basis == "NAT") and (opnames[i].find("DaggerHF") == std::string::npos)  )
+//    {
+//      ops[i] = hf.TransformHOToNATBasis(ops[i]);
+//    }
+////    std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+//    ops[i] = ops[i].DoNormalOrdering();
+////    std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
+//    if (method == "MP3")
+//      std::cout << opnames[i] << " = " << ops[i].ZeroBody << std::endl;
+//    if ( opnames[i] == "Rp2" )
+//    {
+//      double Rp2 = ops[i].ZeroBody;
+//      int Z = modelspace.GetTargetZ();
+//      int A = modelspace.GetTargetMass();
+//      std::cout << " HF point proton radius = " << sqrt( Rp2 ) << std::endl;
+//      std::cout << " HF charge radius = " << ( abs(Rp2)<1e-6 ? 0.0 : sqrt( Rp2 + r2p + r2n*(A-Z)/Z + DarwinFoldy) ) << std::endl;
+//    }
+//  }
 
 //  for (index_t i=0;i<ops.size();++i)
 //  {
@@ -1003,7 +1012,7 @@ int main(int argc, char** argv)
 
     HNO = imsrgsolver.GetH_s();
 
-    int nOmega = imsrgsolver.GetOmegaSize() + imsrgsolver.GetNOmegaWritten();
+//    int nOmega = imsrgsolver.GetOmegaSize() + imsrgsolver.GetNOmegaWritten();
     std::cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
     std::cout << "Before doing so, the spes are " << std::endl;
     for ( auto i : modelspace.all_orbits ) std::cout << "  " << i << " : " << HNO.OneBody(i,i) << std::endl;
@@ -1224,7 +1233,7 @@ int main(int argc, char** argv)
   {
     std::string scratch = rw.GetScratchDir();
     imsrgsolver.FlushOmegaToScratch();
-    for (size_t i=0; i < imsrgsolver.GetNOmegaWritten() ; i++)
+    for (int i=0; i < imsrgsolver.GetNOmegaWritten() ; i++)
     {
        std::ostringstream inputfile,outputfile;
        inputfile << scratch << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << i;
