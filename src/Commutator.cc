@@ -2010,6 +2010,9 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
   int herm = Z.IsAntiHermitian() ? -1 : 1 ;
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
+  if (X.GetParticleRank() < 3) return;
+  if (Y.GetParticleRank() < 3) return;
+
   size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
   size_t norb = Z.modelspace->GetNumberOrbits();
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -2130,6 +2133,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y2 = Y.TwoBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z1 = Z.OneBody;
+  int x_particle_rank = X.GetParticleRank();
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
   size_t norb = Z.modelspace->GetNumberOrbits();
@@ -2211,7 +2215,8 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
                and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )
                and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
-                xcdiabj = X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
+//                xcdiabj = X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
+                xcdiabj = x_particle_rank>2 ? X3.GetME_pn(J,J,twoJ,c,d,i,a,b,j) :  0;
                 ycdiabj = Y3.GetME_pn(J,J,twoJ,c,d,i,a,b,j);
               }
               if ( (std::max(ea+eb+ei,ec+ed+ej) <= Z.modelspace->E3max )
@@ -2219,7 +2224,8 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
                and (  (occnat_c*(1-occnat_c) * occnat_d*(1-occnat_d) * occnat_j*(1-occnat_j) ) > Z.modelspace->GetOccNat3Cut() )
                and (  (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_i*(1-occnat_i) ) > Z.modelspace->GetOccNat3Cut() )   )
               {
-                xabicdj = X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
+//                xabicdj = X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
+                xabicdj = x_particle_rank>2 ? X3.GetME_pn(J,J,twoJ,a,b,i,c,d,j) : 0 ;
                 yabicdj = Y3.GetME_pn(J,J,twoJ,a,b,i,c,d,j);
               }
               zij += prefactor * (twoJ+1) * ( (Xabcd * ycdiabj - yabicdj * Xcdab)
@@ -2484,6 +2490,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y1 = Y.OneBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
+  int x_particle_rank = X.GetParticleRank();
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
   
   int norb = Z.modelspace->GetNumberOrbits();
@@ -2548,7 +2555,8 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
             int twoJ_max = oa.j2 + 2*J;
             for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
             {
-              double xijbkla = X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
+//              double xijbkla = X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
+              double xijbkla = x_particle_rank > 2 ? X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) : 0;
               double yijbkla = Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
 
               zijkl += occfactor * (twoJ+1.)/(2*J+1) * ( X1(a,b) * yijbkla -  Y1(a,b) * xijbkla );
@@ -2903,7 +2911,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
                size_t iket_klc = (size_t) recoupling_cache[pointer_klc+2+ilist_klc];
                double recouple_ket =      recoupling_cache[pointer_klc+2+listsize_klc+ilist_klc];
 
-               xabjklc += recouple_bra*recouple_ket * X3.GetME_pn_ch(ch_check,ch_check, ibra_abj, iket_klc );
+//               xabjklc += recouple_bra*recouple_ket * X3.GetME_pn_ch(ch_check,ch_check, ibra_abj, iket_klc );
+               if (x_has_3 ) xabjklc += recouple_bra*recouple_ket * X3.GetME_pn_ch(ch_check,ch_check, ibra_abj, iket_klc );
                yabjklc += recouple_bra*recouple_ket * Y3.GetME_pn_ch(ch_check,ch_check, ibra_abj, iket_klc );
              }
            }

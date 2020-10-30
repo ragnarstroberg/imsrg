@@ -95,6 +95,7 @@ int main(int argc, char** argv)
   bool relativistic_correction = parameters.s("relativistic_correction") == "true";
   bool IMSRG3 = parameters.s("IMSRG3") == "true";
   bool imsrg3_n7 = parameters.s("imsrg3_n7") == "true";
+  bool imsrg3_at_end = parameters.s("imsrg3_at_end") == "true";
   bool write_omega = parameters.s("write_omega") == "true";
   bool freeze_occupations = parameters.s("freeze_occupations")=="true";
   bool discard_no2b_from_3n = parameters.s("discard_no2b_from_3n")=="true";
@@ -557,7 +558,7 @@ int main(int argc, char** argv)
     std::cout << "Truncations: dE3max = " << dE3max << "   OccNat3Cut = " << std::scientific << OccNat3Cut << "  ->  number of 3-body states kept:  " << nstates[0] << " out of " << nstates[1] << std::endl << std::fixed;
   }
 
-  if (IMSRG3 )
+  if (IMSRG3  )
   {
     modelspace.SetdE3max(dE3max);
     modelspace.SetOccNat3Cut(OccNat3Cut);
@@ -955,6 +956,41 @@ int main(int argc, char** argv)
     }
     imsrgsolver.SetSmax(smax);
     imsrgsolver.Solve();
+  }
+
+
+  if ( imsrg3_at_end )
+  {
+    if ( method.find("magnus") != std::string::npos )
+    {
+      std::cout << "Performing final BCH transformation at the IMSRG(3) level" << std::endl;
+
+      Operator H3(modelspace,0,0,0,3);
+      std::cout << "Constructed H3" << std::endl;
+      H3.ZeroBody = HNO.ZeroBody;
+      H3.OneBody = HNO.OneBody;
+      H3.TwoBody = HNO.TwoBody;
+      HNO = H3;
+      std::cout << "Replacing HNO" << std::endl;
+      std::cout << "Hbare Three Body Norm is " << Hbare.ThreeBodyNorm() << std::endl;
+      HNO.ThreeBody.SwitchToPN_and_discard();
+
+
+      Commutator::use_imsrg3 = true;
+      Commutator::use_imsrg3_n7 = true;
+//      Operator H_with_3 = imsrgsolver.Transform(  *(imsrgsolver.H_0) );
+      Operator H_with_3 = imsrgsolver.Transform( HNO );
+
+      // Now throw away the residual 3-body so we don't need to keep it after re-normal ordering
+      H_with_3.SetNumberLegs(4);
+      H_with_3.SetParticleRank(2);
+      imsrgsolver.FlowingOps[0] = H_with_3;
+    }
+    else
+    {
+      std::cout << "selected imsrg3_at_end, but method != magnus, so I don't know what to do. Ignoring." << std::endl;
+    }
+
   }
 
 
