@@ -3572,6 +3572,10 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
 
+  bool x3_allocated = X3.IsAllocated();
+  bool y3_allocated = Y3.IsAllocated();
+  if ( not ( x3_allocated and y3_allocated) ) return;
+
   int hX = X.IsHermitian() ? 1 : -1;
   int hY = Y.IsHermitian() ? 1 : -1;
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
@@ -3826,6 +3830,9 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 //  std::cout << "  fermi levels " << e_fermi[-1] << " " << e_fermi[+1] << std::endl;
  
+  bool x3_allocated = X3.IsAllocated();
+  bool y3_allocated = Y3.IsAllocated();
+  if ( not ( x3_allocated and y3_allocated) ) return;
 
    size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
    size_t nch_CC = Z.modelspace->TwoBodyChannels_CC.size();
@@ -4300,6 +4307,11 @@ void comm332_pphhss_debug( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+
+
+  bool x3_allocated = X3.IsAllocated();
+  bool y3_allocated = Y3.IsAllocated();
+  if ( not ( x3_allocated and y3_allocated) ) return;
   
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
@@ -7479,6 +7491,9 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
   int hX = X.IsHermitian() ? 1 : -1;
   int hY = Y.IsHermitian() ? 1 : -1;
 
+  bool x3_allocated = X3.IsAllocated();
+  bool y3_allocated = Y3.IsAllocated();
+
   size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels(); // number of regular 2b channels
   size_t nch2_CC = Z.modelspace->TwoBodyChannels_CC.size(); // number of particle hole channels
   std::deque<std::vector<size_t>> ph_kets_cc(nch2_CC); // list of ph 2b kets for each CC channel
@@ -7733,11 +7748,23 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
         {
           int phase_y = Z.modelspace->phase( (oa.j2+twoJp)/2 );
 
+          double xablmij = 0;
+          double yablmij = 0;
           // get the X3 and Y3 elements in one go (to avoid doing the recoupling twice)
-          auto xandy = Y3.GetME_pn_TwoOps( Jij,Jlm,twoJp, i,j,a, l,m,b, X3,Y3 );
-          double xablmij = xandy[0];
-          double yablmij = xandy[1];
-
+          if ( x3_allocated and y3_allocated )
+          {
+            auto xandy = Y3.GetME_pn_TwoOps( Jij,Jlm,twoJp, i,j,a, l,m,b, X3,Y3 );
+            xablmij = xandy[0];
+            yablmij = xandy[1];
+          }
+          else if (y3_allocated)
+          {
+             yablmij = Y3.GetME_pn(Jij, Jlm, twoJp,i,j,a,l,m,b);
+          }
+          else if (x3_allocated)
+          {
+             xablmij = X3.GetME_pn(Jij, Jlm, twoJp,i,j,a,l,m,b);
+          }
 
           double sixjy = Z.modelspace->GetSixJ( Jij, Jlm, Jph, jb, ja, 0.5*twoJp);
           X3bar_ablmij -= phase_y * (twoJp+1) * sixjy * xablmij;
@@ -8386,6 +8413,11 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
   int hY = Y.IsHermitian() ? 1 : -1;
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
+
+  bool x3_allocated = X3.IsAllocated();
+  bool y3_allocated = Y3.IsAllocated();
+  if ( not ( x3_allocated and y3_allocated) ) return;
+
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
   #pragma omp parallel for schedule(dynamic,1)
   for (size_t ch3=0; ch3<nch3; ch3++)
@@ -8505,6 +8537,10 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 
   int hX = X.IsHermitian() ? 1 : -1;
   int hY = Y.IsHermitian() ? 1 : -1;
+
+  bool x3_allocated = X3.IsAllocated();
+  bool y3_allocated = Y3.IsAllocated();
+  if ( not ( x3_allocated and y3_allocated) ) return;
 
   size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();

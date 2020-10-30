@@ -965,6 +965,9 @@ int main(int argc, char** argv)
     {
       std::cout << "Performing final BCH transformation at the IMSRG(3) level" << std::endl;
 
+      modelspace.SetdE3max(dE3max);
+      modelspace.SetOccNat3Cut(OccNat3Cut);
+
       Operator H3(modelspace,0,0,0,3);
       std::cout << "Constructed H3" << std::endl;
       H3.ZeroBody = HNO.ZeroBody;
@@ -976,8 +979,8 @@ int main(int argc, char** argv)
       HNO.ThreeBody.SwitchToPN_and_discard();
 
 
-      Commutator::use_imsrg3 = true;
-      Commutator::use_imsrg3_n7 = true;
+      Commutator::SetUseIMSRG3(true);
+      Commutator::SetUseIMSRG3N7(imsrg3_n7);
 //      Operator H_with_3 = imsrgsolver.Transform(  *(imsrgsolver.H_0) );
       Operator H_with_3 = imsrgsolver.Transform( HNO );
 
