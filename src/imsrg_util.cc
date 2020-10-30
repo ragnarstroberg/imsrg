@@ -282,6 +282,10 @@ namespace imsrg_util
    return OBD;
  }
 
+ /// Gives \f$ rho_{n,l}(r)\f$ , the norm squared of the harmonic oscillator radial wave function evaluated at r.
+ /// This is normalized so that integrating \f$ rho(r) r^2 dr \f$ gives 1.
+ /// This means that it is related to the acutal density by a factor of $\f 4\pi \f$.
+ /// This is equivalent to squaring the return value of HO_Radial_psi().
  double HO_density(int n, int l, double hw, double r)
  {
     double v = M_NUCLEON * hw / (HBARC*HBARC);
@@ -291,15 +295,15 @@ namespace imsrg_util
     return rho;
  }
 
-double HO_Radial_psi(int n, int l, double hw, double r)
-{
+ double HO_Radial_psi(int n, int l, double hw, double r)
+ {
    double b = sqrt( (HBARC*HBARC) / (hw * M_NUCLEON) );
    double x = r/b;
    double Norm = 2*sqrt( gsl_sf_fact(n) * pow(2,n+l) / SQRTPI / gsl_sf_doublefact(2*n+2*l+1) / pow(b,3.0) );
    double L = gsl_sf_laguerre_n(n,l+0.5,x*x);
    double psi = Norm * pow(x,l) * exp(-x*x*0.5) * L;
    return psi;
-}
+ }
 
  // Just do the HF transformation
  std::vector<double> GetOccupationsHF(HartreeFock& hf)
