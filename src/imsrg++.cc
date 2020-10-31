@@ -967,6 +967,9 @@ int main(int argc, char** argv)
 
       modelspace.SetdE3max(dE3max);
       modelspace.SetOccNat3Cut(OccNat3Cut);
+      int new_E3max = std::min(modelspace.GetE3max(), int( std::ceil(std::max( modelspace.GetEFermi()[-1], modelspace.GetEFermi()[+1])+dE3max)));
+      std::cout << "Setting new E3max = " << new_E3max << std::endl;
+      modelspace.SetE3max(  new_E3max);
 
       Operator H3(modelspace,0,0,0,3);
       std::cout << "Constructed H3" << std::endl;
