@@ -807,9 +807,10 @@ void HFMBPT::PrintSPEandWF()
     std::cout << std::fixed << std::setw(3) << i << ": " << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
          << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F_natbasis(i,i) << " " << std::setw(12) << oi.occ << " " << std::setw(12) << oi.occ_nat*(1-oi.occ_nat) << "   | ";
 //         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F(i,i) << " " << std::setw(12) << oi.occ << "   | ";
-    for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) // j runs over HO states
     {
-      std::cout << std::setw(9) << C_HO2NAT(i,j) << "  ";
+//      std::cout << std::setw(9) << C_HO2NAT(i,j) << "  ";
+      std::cout << std::setw(9) << C_HO2NAT(j,i) << "  ";  // C is <HO|NAT>
     }
     std::cout << std::endl;
   }

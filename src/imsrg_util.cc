@@ -1225,7 +1225,7 @@ Operator ProtonDensityAtR(ModelSpace& modelspace, double R)
     for ( auto j : Rho.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
        Orbit& oj = modelspace.GetOrbit(j);
-       Rho.OneBody(i,j) = HO_density(oi.n,oi.l,hw,R) * HO_Radial_psi( oj.n, oj.l, hw, R);
+       Rho.OneBody(i,j) = HO_Radial_psi(oi.n,oi.l,hw,R) * HO_Radial_psi( oj.n, oj.l, hw, R);
     }
   }
   return Rho;
@@ -1242,7 +1242,7 @@ Operator NeutronDensityAtR(ModelSpace& modelspace, double R)
     for ( auto j : Rho.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
        Orbit& oj = modelspace.GetOrbit(j);
-       Rho.OneBody(i,j) = HO_density(oi.n,oi.l,hw,R) * HO_Radial_psi( oj.n, oj.l, hw, R);
+       Rho.OneBody(i,j) = HO_Radial_psi(oi.n,oi.l,hw,R) * HO_Radial_psi( oj.n, oj.l, hw, R);
     }
   }
   return Rho;

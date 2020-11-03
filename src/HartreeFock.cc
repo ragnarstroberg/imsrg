@@ -1319,9 +1319,10 @@ void HartreeFock::PrintSPEandWF()
     std::cout << std::fixed << std::setw(3) << i << ": " << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
          << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F_hfbasis(i,i) << " " << std::setw(12) << oi.occ << "   | ";
 //         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F(i,i) << " " << std::setw(12) << oi.occ << "   | ";
-    for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) // j loops over harmonic oscillator states
     {
-      std::cout << std::setw(9) << C(i,j) << "  ";
+      std::cout << std::setw(9) << C(j,i) << "  ";  // C is <HO|HF>
+//      std::cout << std::setw(9) << C(i,j) << "  ";
     }
     std::cout << std::endl;
   }
