@@ -718,7 +718,7 @@ int main(int argc, char** argv)
      if (method == "HF")
      {
        double dop = ops[i].MP1_Eval( HNO );
-       std::cout << "HF expectation value  " << ops[i].ZeroBody << std::endl;
+       std::cout << "HF expectation value  " << opnames[i] << "  " << ops[i].ZeroBody << std::endl;
      }
      else if (method == "MP3")
      {
