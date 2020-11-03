@@ -5214,8 +5214,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
     nch_pph++;
   }// for iter_obc
 
-  Zbar.resize( Zbar_n_elements, 0. );
   std::cout << __func__ << "  allocating Zbar   " << Zbar_n_elements << " elements  ~ " << Zbar_n_elements * sizeof(float) /(1024.*1024*1024) << " GB" << std::endl;
+  Zbar.resize( Zbar_n_elements, 0. );
   
   Z.profiler.timer["comm223_setup_loop"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
