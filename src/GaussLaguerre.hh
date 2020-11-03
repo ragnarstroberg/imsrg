@@ -4,7 +4,7 @@ namespace GaussLaguerre
 { 
 // Gauss-Laguerre quadrature points and weights for numerical integration   
 // gauss_laguerre_points[n][i] = {x_i,w_i} provides the ith root and weight 
-// for an n-point integration,  int_0^inf f(x) dx  = sum_i w_i exp(x_1) f(x_i),
+// for an n-point integration,  int_0^inf f(x) dx  = sum_i w_i exp(x_i) f(x_i),
 //                                                                          
  const std::vector<std::vector<std::vector<double>>> gauss_laguerre_points = { 
   {  // -------------- n = 0 ---------------

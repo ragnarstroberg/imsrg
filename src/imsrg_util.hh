@@ -90,8 +90,10 @@ namespace imsrg_util
  Operator R2_1body_Op(ModelSpace& modelspace, std::string option);
  Operator R2_p2_Op(ModelSpace& modelspace);
  Operator R2_2body_Op(ModelSpace& modelspace, std::string option);
- Operator ProtonDensityAtR(ModelSpace& modelspace, double R);
- Operator NeutronDensityAtR(ModelSpace& modelspace, double R);
+ Operator DensityAtR(ModelSpace& modelspace, double R, std::string pn);
+ Operator FormfactorAtQ(ModelSpace& modelspace, double q, std::string pn);
+// Operator ProtonDensityAtR(ModelSpace& modelspace, double R);
+// Operator NeutronDensityAtR(ModelSpace& modelspace, double R);
  Operator RpSpinOrbitCorrection(ModelSpace& modelspace);
  //Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::vector<index_t> index_list);
  Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<index_t> index_list);

@@ -10,7 +10,6 @@
 #include <gsl/gsl_sf_bessel.h> // to use bessel functions
 #include <gsl/gsl_sf_laguerre.h>
 #include <gsl/gsl_sf_gamma.h>
-#include <gsl/gsl_sf_bessel.h>
 #include <iostream>
 #include <iomanip>
 #include <math.h>
@@ -145,13 +144,25 @@ namespace imsrg_util
       {
         double rr;
         std::istringstream(opnamesplit[1]) >> rr;
-        theop =  ProtonDensityAtR(modelspace,rr);
+        theop =  DensityAtR(modelspace,rr,"proton");
       }
       else if (opnamesplit[0] == "rhon") // point neutron density at position r
       {
         double rr;
         std::istringstream(opnamesplit[1]) >> rr;
-        theop =  NeutronDensityAtR(modelspace,rr); // whoops... I'd forgotten the "theop = ". Thanks Johannes...
+        theop =  DensityAtR(modelspace,rr,"neutron"); // whoops... I'd forgotten the "theop = ". Thanks Johannes...
+      }
+      else if (opnamesplit[0] == "FFp") // point proton  form factor F(q), e.g. FFp_1.25, where q is in fm^-1
+      {
+        double q;
+        std::istringstream(opnamesplit[1]) >> q;
+        theop =  FormfactorAtQ(modelspace,q,"proton");
+      }
+      else if (opnamesplit[0] == "FFn") // point neutron  form factor F(q), e.g. FFp_1.25, where q is in fm^-1
+      {
+        double q;
+        std::istringstream(opnamesplit[1]) >> q;
+        theop =  FormfactorAtQ(modelspace,q,"neutron");
       }
       else if (opnamesplit[0] == "OneOcc") // Get occupation of specified orbit, e.g. OneOccp_1p3
       {
@@ -1214,38 +1225,92 @@ Operator RSquaredOp(ModelSpace& modelspace)
  }
 
 
-Operator ProtonDensityAtR(ModelSpace& modelspace, double R)
+/// Operator whose expectation value gives the proton density at radius R
+/// \f$ \hat{rho}(r) = \sum_{ij} \phi_i^{*}(r) \phi_j(r) a^{\dagger}_ia_j \f$
+/// Normalized such that \f$ 4\pi \int dr r^2 \rho(r) = Z$.
+//Operator ProtonDensityAtR(ModelSpace& modelspace, double R)
+Operator DensityAtR(ModelSpace& modelspace, double R, std::string pn)
 {
   Operator Rho(modelspace,0,0,0,2);
+  double fourpi = 4*PI;
   double hw = modelspace.GetHbarOmega();
-  for ( auto i : modelspace.proton_orbits)
+
+  auto pn_list = pn=="proton" ? modelspace.proton_orbits  : modelspace.neutron_orbits;
+  for ( auto i : pn_list)
   {
     Orbit& oi = modelspace.GetOrbit(i);
-//    Rho.OneBody(i,i) = HO_density(oi.n,oi.l,modelspace.GetHbarOmega(),R);
     for ( auto j : Rho.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     {
        Orbit& oj = modelspace.GetOrbit(j);
-       Rho.OneBody(i,j) = HO_Radial_psi(oi.n,oi.l,hw,R) * HO_Radial_psi( oj.n, oj.l, hw, R);
+       Rho.OneBody(i,j) = HO_Radial_psi(oi.n,oi.l,hw,R) * HO_Radial_psi( oj.n, oj.l, hw, R) / fourpi;
     }
   }
   return Rho;
 }
 
-Operator NeutronDensityAtR(ModelSpace& modelspace, double R)
+
+/// Get the point nucleon form factor at a given momentum transfer q.
+/// \f$ F(q) = 4\pi \int_0^{\infty} dr r^2 j_0(qr) \rho(r) \f$
+/// We absorb the \f$ 4pi \f$ by using radial wave functions which are normalized to 1.
+/// The form factor is normalized such that for protons \f$ F(q=0) = Z \f$ and likewise for neutrons.
+/// At low q, the form factor behaves as \f$ F(q\approx = 0) = Z(1 - r^2 q^2 / 6) \f$, where $r^2$ is the rms point proton radius.
+Operator FormfactorAtQ(ModelSpace& modelspace, double q, std::string pn)
 {
-  Operator Rho(modelspace,0,0,0,2);
+  Operator Fq(modelspace,0,0,0,2);
   double hw = modelspace.GetHbarOmega();
-  for ( auto i : modelspace.neutron_orbits)
+  double bosc = HBARC / sqrt( M_NUCLEON * hw );
+  double k = q * bosc; // put q in oscillator units
+
+  int npoints = 200;  // current options for npoints are 0-50, 100, and 200.
+  std::vector<double> xvals(npoints,0.);
+  std::vector<double> weights(npoints,0.);
+  std::vector<double> bessel_j0(npoints,0.);
+  for (int ix=0;ix<npoints;ix++)
+  {
+     xvals[ix]    = GaussLaguerre::gauss_laguerre_points_200[ix][0] ;
+     weights[ix]  =   GaussLaguerre::gauss_laguerre_points_200[ix][1] * xvals[ix] * xvals[ix]  ; // includes x^2 from jacobian
+     bessel_j0[ix] =   gsl_sf_bessel_j0( k * xvals[ix] ) ;
+   }
+ 
+ 
+  auto pn_list = pn=="proton" ? modelspace.proton_orbits  : modelspace.neutron_orbits;
+  for ( auto i : pn_list)
   {
     Orbit& oi = modelspace.GetOrbit(i);
-//    Rho.OneBody(i,i) = HO_density(oi.n,oi.l,modelspace.GetHbarOmega(),R);
-    for ( auto j : Rho.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    std::vector<double> phi_i(npoints,0.);
+
+    // compare with HO_Radial_psi: no factor sqrt(1/b^3) because we have a b^3 out front from changing variables from r to r/b.
+    double Norm_i = 2*sqrt( gsl_sf_fact(oi.n) * pow(2,oi.n+oi.l) / SQRTPI / gsl_sf_doublefact(2*oi.n+2*oi.l+1) );
+
+    for (int ix=0;ix<npoints;ix++)
     {
+       double x = xvals[ix];
+       // extra +x in exponent comes from Gauss-Laguerre weighting.
+       phi_i[ix] = Norm_i * pow(x,oi.l) * exp(-x*x*0.5 + x) * gsl_sf_laguerre_n(oi.n,oi.l+0.5,x*x) ;
+    }
+    for ( auto j : Fq.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    {
+       if (i<j) continue;
        Orbit& oj = modelspace.GetOrbit(j);
-       Rho.OneBody(i,j) = HO_Radial_psi(oi.n,oi.l,hw,R) * HO_Radial_psi( oj.n, oj.l, hw, R);
+
+       double Norm_j = 2*sqrt( gsl_sf_fact(oj.n) * pow(2,oj.n+oj.l) / SQRTPI / gsl_sf_doublefact(2*oj.n+2*oj.l+1) );
+       std::vector<double> phi_j(npoints,0.);
+       for (int ix=0;ix<npoints;ix++)
+       {
+          double x = xvals[ix];
+          // Notice no +x in the exponent here
+          phi_j[ix] = Norm_j * pow(x,oj.l) * exp(-x*x*0.5 ) * gsl_sf_laguerre_n(oj.n,oj.l+0.5,x*x) ;
+       }
+       double fq_ij = 0;
+       for (int ix=0;ix<npoints;ix++)
+       {
+          fq_ij += weights[ix] *  bessel_j0[ix] * phi_i[ix] * phi_j[ix];
+       }
+       Fq.OneBody(i,j) = fq_ij;
+       Fq.OneBody(j,i) = fq_ij;
     }
   }
-  return Rho;
+  return Fq;
 }
 
 
