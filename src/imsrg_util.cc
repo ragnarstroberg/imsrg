@@ -1217,10 +1217,16 @@ Operator RSquaredOp(ModelSpace& modelspace)
 Operator ProtonDensityAtR(ModelSpace& modelspace, double R)
 {
   Operator Rho(modelspace,0,0,0,2);
+  double hw = modelspace.GetHbarOmega();
   for ( auto i : modelspace.proton_orbits)
   {
     Orbit& oi = modelspace.GetOrbit(i);
-    Rho.OneBody(i,i) = HO_density(oi.n,oi.l,modelspace.GetHbarOmega(),R);
+//    Rho.OneBody(i,i) = HO_density(oi.n,oi.l,modelspace.GetHbarOmega(),R);
+    for ( auto j : Rho.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    {
+       Orbit& oj = modelspace.GetOrbit(j);
+       Rho.OneBody(i,j) = HO_density(oi.n,oi.l,hw,R) * HO_Radial_psi( oj.n, oj.l, hw, R);
+    }
   }
   return Rho;
 }
@@ -1228,10 +1234,16 @@ Operator ProtonDensityAtR(ModelSpace& modelspace, double R)
 Operator NeutronDensityAtR(ModelSpace& modelspace, double R)
 {
   Operator Rho(modelspace,0,0,0,2);
+  double hw = modelspace.GetHbarOmega();
   for ( auto i : modelspace.neutron_orbits)
   {
     Orbit& oi = modelspace.GetOrbit(i);
-    Rho.OneBody(i,i) = HO_density(oi.n,oi.l,modelspace.GetHbarOmega(),R);
+//    Rho.OneBody(i,i) = HO_density(oi.n,oi.l,modelspace.GetHbarOmega(),R);
+    for ( auto j : Rho.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    {
+       Orbit& oj = modelspace.GetOrbit(j);
+       Rho.OneBody(i,j) = HO_density(oi.n,oi.l,hw,R) * HO_Radial_psi( oj.n, oj.l, hw, R);
+    }
   }
   return Rho;
 }
