@@ -530,18 +530,19 @@ int main(int argc, char** argv)
     hf.GetNaturalOrbitals();
     HNO = hf.GetNormalOrderedHNAT( hno_particle_rank );
 
-    // For now, even if we use the NAT occupations, we switch back to naive occupations after the normal ordering
-    // This should be investigated in more detail.
-    if (use_NAT_occupations)
-    {
-      hf.FillLowestOrbits();
-      std::cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
-      HNO = HNO.UndoNormalOrdering();
-      hf.UpdateReference();
-      modelspace.SetReference(modelspace.core); // change the reference
-      std::cout << "Doing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
-      HNO = HNO.DoNormalOrdering();
-    }
+//  SRS: I'm commenting this out because this is not reasonably-expected default behavior
+//    // For now, even if we use the NAT occupations, we switch back to naive occupations after the normal ordering
+//    // This should be investigated in more detail.
+//    if (use_NAT_occupations)
+//    {
+//      hf.FillLowestOrbits();
+//      std::cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
+//      HNO = HNO.UndoNormalOrdering();
+//      hf.UpdateReference();
+//      modelspace.SetReference(modelspace.core); // change the reference
+//      std::cout << "Doing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
+//      HNO = HNO.DoNormalOrdering();
+//    }
 
   }
   else if (basis == "oscillator")
@@ -717,7 +718,6 @@ int main(int argc, char** argv)
 //     std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
      if (method == "HF")
      {
-       double dop = ops[i].MP1_Eval( HNO );
        std::cout << "HF expectation value  " << opnames[i] << "  " << ops[i].ZeroBody << std::endl;
      }
      else if (method == "MP3")

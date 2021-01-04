@@ -115,6 +115,7 @@ class IMSRGSolver
   void SetPerturbativeTriples(bool b=true){perturbative_triples = b;};
 
   int GetSystemDimension();
+  double GetS(){return s;};
   Operator& GetH_s(){return FlowingOps[0];};
   Operator& GetEta(){return Eta;};
   Generator& GetGenerator(){return generator;};

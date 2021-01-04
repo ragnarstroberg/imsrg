@@ -28,6 +28,7 @@
 #include "PhysicalConstants.hh"
 #include <gsl/gsl_math.h>
 #include <vector>
+#include <array>
 
 //#define HBARC 197.3269718 // hc in MeV * fm
 //#define M_NUCLEON 938.9185 // average nucleon mass in MeV
@@ -159,7 +160,9 @@ namespace imsrg_util
  Operator EKKShift( Operator& Hin, int Nlower, int Nupper);
 
  Operator MinnesotaPotential( ModelSpace& modelspace );
- double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J );
+ Operator GaussianPotential( ModelSpace& modelspace, double sigma );
+ double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J, const std::array<double,6>& params );
+// double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J );
 
 
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace); // This doesn't work

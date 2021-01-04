@@ -93,6 +93,7 @@ namespace imsrg_util
       else if (opname == "R2CM")          theop =  R2CM_Op(modelspace) ;
       else if (opname == "Trel")          theop =  Trel_Op(modelspace) ;
       else if (opname == "TCM")           theop =  TCM_Op(modelspace) ;
+      else if (opname == "Tlab")          theop =  KineticEnergy_Op(modelspace) ;
       else if (opname == "Rso")           theop =  RpSpinOrbitCorrection(modelspace) ;
       else if (opname == "RadialOverlap") theop =  RadialOverlap(modelspace); // Untested...
       else if (opname == "Sigma")         theop =  Sigma_Op(modelspace);
@@ -105,13 +106,26 @@ namespace imsrg_util
       else if (opname == "hfsSMS")        theop =  atomic_hfs::SpecificMassShift(modelspace, 1);
       else if (opname == "VCentralCoul")  theop =  VCentralCoulomb_Op(modelspace); 
       else if (opname == "AxialCharge")   theop =  AxialCharge_Op(modelspace); // Untested...
+      else if (opname == "VMinnesota")    theop =  MinnesotaPotential( modelspace );
+      else if (opnamesplit[0] =="VGaus")
+      {
+         double sigma = 1.0;
+         if ( opnamesplit.size() > 1 ) 
+         {
+           std::istringstream( opnamesplit[1] ) >> sigma;
+         }
+         theop =  GaussianPotential(modelspace,sigma);
+      }
       else if (opnamesplit[0] =="HCM")
       {
          if ( opnamesplit.size() == 1 ) theop =  HCM_Op(modelspace);
-         double hw_HCM; // frequency of trapping potential
-         std::istringstream( opnamesplit[1] ) >> hw_HCM;
-         int A = modelspace.GetTargetMass();
-         theop =  TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw_HCM*hw_HCM/HBARC/HBARC*R2CM_Op(modelspace);
+         else
+         {
+           double hw_HCM; // frequency of trapping potential
+           std::istringstream( opnamesplit[1] ) >> hw_HCM;
+           int A = modelspace.GetTargetMass();
+           theop =  TCM_Op(modelspace) + 0.5*A*M_NUCLEON*hw_HCM*hw_HCM/HBARC/HBARC*R2CM_Op(modelspace);
+         }
       }
       else if (opnamesplit[0] == "VCM") // GetHCM with a different frequency, ie HCM_24 for hw=24
       {
@@ -3413,37 +3427,6 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
  }
 
-
-// The Minnesota potential. See more details above MinnesotaMatEl
-// Note that the triplet channel strength VT is scaled by 0.2 to
-// give non-crazy results for finite nuclei.
- Operator MinnesotaPotential( ModelSpace& modelspace )
- {
-   Operator Vminnesota(modelspace, 0,0,0,2);
-
-   int nchan = modelspace.GetNumberTwoBodyChannels();
-   modelspace.PreCalculateMoshinsky();
-//   #pragma omp parallel for schedule(dynamic,1) 
-   for (int ch=0; ch<nchan; ++ch)
-   {
-    TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
-    int J = tbc.J;
-    int nkets = tbc.GetNumberKets();
-    for (int ibra=0;ibra<nkets;++ibra)
-    {
-     Ket& bra = tbc.GetKet(ibra);
-     for (int iket=ibra;iket<nkets;iket++)
-     {
-       Ket& ket = tbc.GetKet(iket);
-       double vminn = MinnesotaMatEl( modelspace, bra, ket, J);
-       Vminnesota.TwoBody.SetTBME(ch,ibra,iket,vminn);
-       Vminnesota.TwoBody.SetTBME(ch,iket,ibra,vminn);
-     }
-    }
-   }
-   return Vminnesota;
- }
-
 /// Minnesota potential of Thompson, Lemere and Tang,  Nuc. Phys.A 286 53 (1977)
 /// I have modified the triplet channel strength by multiplying by 0.2.
 /// Without this modification, it seems that the triplet channel does not have enough
@@ -3462,16 +3445,103 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 ///  EIMSRG = -10.047908             EIMSRG = -69.170313         EIMSRG =  -144.9899081
 ///  Rp2HF = 9.5591609               Rp2HF = 15.1991899          Rp2HF =  20.8748671
 ///  Rp2IMSRG = 9.362856             Rp2IMSRG = 14.399832        Rp2IMSRG = 21.353270
+// Note that the triplet channel strength VT is scaled by 0.2 to
+// give non-crazy results for finite nuclei.
+ Operator MinnesotaPotential( ModelSpace& modelspace )
+ {
+   double VR = 200 ; // MeV
+////   double VT = -178. ; // MeV
+   double VT = -178. * 0.2; // scaled to make things not crazy for finite nuclei
+   double VS = -91.85 ; // MeV
+   double kR = 1.487 ; // in fm^-2
+   double kT = 0.639 ; // in fm^-2
+   double kS = 0.465 ; // in fm^-2
+   std::array<double,6> params = {VR,VT,VS, kR,kT,kS};
+   Operator Vminnesota(modelspace, 0,0,0,2);
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   modelspace.PreCalculateMoshinsky();
+//   #pragma omp parallel for schedule(dynamic,1) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+    TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+    int J = tbc.J;
+    int nkets = tbc.GetNumberKets();
+    for (int ibra=0;ibra<nkets;++ibra)
+    {
+     Ket& bra = tbc.GetKet(ibra);
+     for (int iket=ibra;iket<nkets;iket++)
+     {
+       Ket& ket = tbc.GetKet(iket);
+//       double vminn = MinnesotaMatEl( modelspace, bra, ket, J);
+       double vminn = MinnesotaMatEl( modelspace, bra, ket, J, params);
+       Vminnesota.TwoBody.SetTBME(ch,ibra,iket,vminn);
+       Vminnesota.TwoBody.SetTBME(ch,iket,ibra,vminn);
+     }
+    }
+   }
+   return Vminnesota;
+ }
+
+ // A gaussian potential with strength 1.0
+ // We just reuse the Minnesota potential code and set the singlet and triplet strengths to zero
+ Operator GaussianPotential( ModelSpace& modelspace, double sigma )
+ {
+   double VR = 1.0 ;
+////   double VT = -178. ;
+//   double VT = -178. * 0.2; // scaled to make things not crazy for finite nuclei
+//   double VS = -91.85 ;
+   double kR = 1.0 / (2*sigma*sigma); // make things dimensionless
+//   double kR = 1.487 * oscillator_b2; // make things dimensionless
+//   double kT = 0.639 * oscillator_b2;
+//   double kS = 0.465 * oscillator_b2;
+   std::array<double,6> params = {VR,0.0,0.0, kR,1,1};
+   Operator Vminnesota(modelspace, 0,0,0,2);
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   modelspace.PreCalculateMoshinsky();
+//   #pragma omp parallel for schedule(dynamic,1) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+    TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+    int J = tbc.J;
+    int nkets = tbc.GetNumberKets();
+    for (int ibra=0;ibra<nkets;++ibra)
+    {
+     Ket& bra = tbc.GetKet(ibra);
+     for (int iket=ibra;iket<nkets;iket++)
+     {
+       Ket& ket = tbc.GetKet(iket);
+//       double vminn = MinnesotaMatEl( modelspace, bra, ket, J);
+       double vminn = MinnesotaMatEl( modelspace, bra, ket, J, params);
+       Vminnesota.TwoBody.SetTBME(ch,ibra,iket,vminn);
+       Vminnesota.TwoBody.SetTBME(ch,iket,ibra,vminn);
+     }
+    }
+   }
+   return Vminnesota;
+ }
+
+
+
 /// 
- double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J )
+/// A single matrix element of the Minnesota potential. See more details above MinnesotaPotential
+ double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J, const std::array<double,6>& params )
  {
    double oscillator_b2 = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
-   double VR = 200 ;
-   double VT = -178. * 0.2; // scaled to make things not crazy for finite nuclei
-   double VS = -91.85 ;
-   double kR = 1.487 * oscillator_b2; // make things dimensionless
-   double kT = 0.639 * oscillator_b2;
-   double kS = 0.465 * oscillator_b2;
+//   double VR = 200 ;
+////   double VT = -178. ;
+//   double VT = -178. * 0.2; // scaled to make things not crazy for finite nuclei
+//   double VS = -91.85 ;
+//   double kR = 1.487 * oscillator_b2; // make things dimensionless
+//   double kT = 0.639 * oscillator_b2;
+//   double kS = 0.465 * oscillator_b2;
+   double VR = params[0];
+   double VT = params[1];
+   double VS = params[2];
+   double kR = params[3]* oscillator_b2;
+   double kT = params[4]* oscillator_b2;
+   double kS = params[5]* oscillator_b2;
 
    Orbit & oa = modelspace.GetOrbit(bra.p);
    Orbit & ob = modelspace.GetOrbit(bra.q);
@@ -3581,13 +3651,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    return Vminn ;
 
 
-
  }
 
-
-
-
-
+ 
 
  Operator EKKShift( Operator& Hin, int Nlower, int Nupper)
  {

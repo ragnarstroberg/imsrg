@@ -820,6 +820,9 @@ void HartreeFock::FillLowestOrbits()
      std::cout << "Changing hole orbits. New holes:" << std::endl;
      for (auto i : holeorbs_tmp ) std::cout << i << " ";
      std::cout << std::endl;
+     std::cout << "                     Old holes:" << std::endl;
+     for (auto i : holeorbs ) std::cout << i << " ";
+     std::cout << std::endl;
   }
 
   holeorbs = arma::uvec( holeorbs_tmp );
@@ -881,11 +884,13 @@ void HartreeFock::UpdateF()
                int local_ket = modelspace->MonopoleKets[Tz+1][parity][ket];
                // 2body term <ai|V|bj>
                if ((a>i) xor (b>j))  // code needed some obfuscation, so threw an xor in there...
-//                  v2ij(i,j) += rho(a,b)*Vmon_exch[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|jb>
+               {
                   Vij(i,j) += rho(a,b)*Vmon_exch[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|jb>
+               }
                else
-//                  v2ij(i,j) += rho(a,b)*Vmon[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|bj>
+               {
                   Vij(i,j) += rho(a,b)*Vmon[Tz+1][parity](local_bra,local_ket); // <a|rho|b> * <ai|Vmon|bj>
+               }
            }
          }
       }
@@ -915,6 +920,7 @@ void HartreeFock::UpdateF()
    V3ij = arma::symmatu(V3ij);
 
    F = KE + Vij + 0.5*V3ij;
+
 
    profiler.timer["HF_UpdateF"] += omp_get_wtime() - start_time;
 }
