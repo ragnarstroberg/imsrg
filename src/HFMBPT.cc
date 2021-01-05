@@ -164,6 +164,8 @@ void HFMBPT::DiagonalizeRho()
     C_HF2NAT.submat(orbvec, orbvec_d) = vec;
   }
  // Choose ordering and phases so that C_HF2NAT looks as close to the identity as possible
+ // NB: Rather than C_HF2NAT being close to the identity, we really want the orbits for a given (l,j,tz) ordered
+ // according to decreasing occupation, so that a later emax_imsrg truncation is reasonable. -SRS Jan 2021.
   ReorderHFMBPTCoefficients();
 //  std::cout << " line " << __LINE__ << "   Occ = " << std::endl << Occ << std::endl;
 }
@@ -823,34 +825,48 @@ void HFMBPT::PrintSPEandWF()
 void HFMBPT::ReorderHFMBPTCoefficients()
 {
 
-   for ( auto& it : Hbare.OneBodyChannels )
-   {
-     // OneBodyChannels is a map (l,j,tz) => index, so it.second is a list of orbit indices in this one-body channel
-     arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end())); // convert from std::set to std::vector, and then to arma::uvec
-     int nswaps = 10; // keep track of the number of swaps we had to do, iterate until nswaps==0
-     while (nswaps>0) // loop until we don't have to make any more swaps
-     {
-       nswaps = 0;
-//       for (index_t i=0;i<orbvec.size()-1;i++)
-       for (index_t i : orbvec)
-       {
-//         for (index_t j=0;j<i;j++)
-         for (index_t j : orbvec)
-         {
-           if ( j>=i ) continue;
-           if ( std::abs( C_HF2NAT(i,j)) > std::abs( C_HF2NAT(i,i) ) )
-           {
-             C_HF2NAT.swap_cols(i,j);
-             Occ.swap_rows(i,j);
-             nswaps++;
-           }
-         }
-       }
-      }
+// As Baishan pointed out, this is a problematic way of reordering.
+// In the case where they are different, we prefer things in descending occupation, rather than in maximum overlap with HF.
+//
+//   for ( auto& it : Hbare.OneBodyChannels )
+//   {
+//     // OneBodyChannels is a map (l,j,tz) => index, so it.second is a list of orbit indices in this one-body channel
+//     arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end())); // convert from std::set to std::vector, and then to arma::uvec
+//     int nswaps = 10; // keep track of the number of swaps we had to do, iterate until nswaps==0
+//     while (nswaps>0) // loop until we don't have to make any more swaps
+//     {
+//       nswaps = 0;
+////       for (index_t i=0;i<orbvec.size()-1;i++)
+//       for (index_t i : orbvec)
+//       {
+////         for (index_t j=0;j<i;j++)
+//         for (index_t j : orbvec)
+//         {
+//           if ( j>=i ) continue;
+//           if ( std::abs( C_HF2NAT(i,j)) > std::abs( C_HF2NAT(i,i) ) )
+//           {
+//             C_HF2NAT.swap_cols(i,j);
+//             Occ.swap_rows(i,j);
+//             nswaps++;
+//           }
+//         }
+//       }
+//      }
+//
+//
+//   }
+
+//   // C_HF2NAT is the matrix |HF><NAT|, so that the column index runs over NAT states and the row index runs over HF states.
+//   // Make sure the diagonal terms are positive (to avoid confusion later).
+//   arma::rowvec minlist = arma::min( C_HF2NAT, 0 ); // the zero means "each column"
+//   arma::rowvec maxlist = arma::max( C_HF2NAT, 0 ); // the zero means "each column".  a 1 would mean "each row"
+//   for ( size_t i=0; i<C_HF2NAT.n_cols; i++)
+//   {
+//     // if the coefficient with the largest magnitude is negative, multiply by -1.
+//     if ( std::abs(minlist(i)) > std::abs(maxlist(i)) ) C_HF2NAT.col(i) *= -1;
+//   }
 
 
-   }
-   // Make sure the diagonal terms are positive (to avoid confusion later).
    for (index_t i=0;i<C_HF2NAT.n_rows;++i) // loop through original basis states
    {
       if (C_HF2NAT(i,i) < 0)  C_HF2NAT.col(i) *= -1;
