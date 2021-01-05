@@ -163,8 +163,6 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
      X.profiler.timer["comm222_phss"] += omp_get_wtime() - t_start;
    }
 
-//   std::cout << "Made it here. About to check if use_imsrg3 is true" << std::endl;
-//   std::cout << "  scalar3b_transform_first_pass = " << X.modelspace->scalar3b_transform_first_pass << std::endl;
 
    if (use_imsrg3)
    {
@@ -2529,7 +2527,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
         {
           Orbit& oa = Z.modelspace->GetOrbit(a);
           int ea = 2*oa.n + oa.l;
-          double d_ea = std::abs( ea - e_fermi[oa.tz2]);
+          double d_ea = std::abs( ea - e_fermi.at(oa.tz2));
           double occnat_a = oa.occ_nat;
           if ( (ek+el+ea)>Z.modelspace->E3max) continue;
           if ( (d_ek+d_el+d_ea)>Z.modelspace->dE3max) continue;
@@ -2537,6 +2535,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
           // this is less efficient than doing the loop twice, but less code
           // and easily lets us treat the case of Y having nonzero Tz or odd parity
           std::set<size_t> blist;
+//          std::cout << "HERE AT LINE " << __LINE__ <<  " and a is " << oa.l << " " << oa.j2 << " " << oa.tz2 << std::endl;
           for ( auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2})) blist.insert(b);
           for ( auto b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2})) blist.insert(b);
 //          for ( auto b : Z.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // TODO: We can make this a<=b or a>=b, I think. Just need to mind some factors of 2
@@ -4826,9 +4825,9 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     for (size_t iket=0; iket<nkets; iket++)
     {
       Ket3& ket = Tbc.GetKet(iket);
-      double d_ei = std::abs(2*ket.op->n + ket.op->l - e_fermi[ket.op->tz2]);
-      double d_ej = std::abs(2*ket.oq->n + ket.oq->l - e_fermi[ket.oq->tz2]);
-      double d_ek = std::abs(2*ket.oR->n + ket.oR->l - e_fermi[ket.oR->tz2]);
+      double d_ei = std::abs(2*ket.op->n + ket.op->l - e_fermi.at(ket.op->tz2));
+      double d_ej = std::abs(2*ket.oq->n + ket.oq->l - e_fermi.at(ket.oq->tz2));
+      double d_ek = std::abs(2*ket.oR->n + ket.oR->l - e_fermi.at(ket.oR->tz2));
       double occnat_i = ket.op->occ_nat;
       double occnat_j = ket.oq->occ_nat;
       double occnat_k = ket.oR->occ_nat;
@@ -4857,9 +4856,9 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
       Orbit& oj = Z.modelspace->GetOrbit(j);
       Orbit& ok = Z.modelspace->GetOrbit(k);
       int Jij = bra.Jpq;
-      double d_ei = std::abs(2*oi.n + oi.l - e_fermi[oi.tz2]);
-      double d_ej = std::abs(2*oj.n + oj.l - e_fermi[oj.tz2]);
-      double d_ek = std::abs(2*ok.n + ok.l - e_fermi[ok.tz2]);
+      double d_ei = std::abs(2*oi.n + oi.l - e_fermi.at(oi.tz2));
+      double d_ej = std::abs(2*oj.n + oj.l - e_fermi.at(oj.tz2));
+      double d_ek = std::abs(2*ok.n + ok.l - e_fermi.at(ok.tz2));
       double occnat_i = oi.occ_nat;
       double occnat_j = oj.occ_nat;
       double occnat_k = ok.occ_nat;
@@ -4868,7 +4867,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
       for (auto a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
       {
         Orbit& oa = X.modelspace->GetOrbit(a);
-        double d_ea = std::abs(2*oa.n+oa.l - e_fermi[oa.tz2]);
+        double d_ea = std::abs(2*oa.n+oa.l - e_fermi.at(oa.tz2));
         double occnat_a = oa.occ_nat;
         if (  (d_ea+d_ej+d_ek ) > Z.modelspace->GetdE3max() ) continue;
         if ( (occnat_a*(1-occnat_a) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) continue;
@@ -4890,7 +4889,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
       {
 
         Orbit& oa = Z.modelspace->GetOrbit(a);
-        double d_ea = std::abs(2*oa.n+oa.l - e_fermi[oa.tz2]);
+        double d_ea = std::abs(2*oa.n+oa.l - e_fermi.at(oa.tz2));
         double occnat_a = oa.occ_nat;
         if (  (d_ei+d_ea+d_ek ) > Z.modelspace->GetdE3max() ) continue;
         if ( (occnat_i*(1-occnat_i) * occnat_a*(1-occnat_a) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) continue;
@@ -4910,7 +4909,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
       for (auto a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
       {
         Orbit& oa = Z.modelspace->GetOrbit(a);
-        double d_ea = std::abs(2*oa.n+oa.l - e_fermi[oa.tz2]);
+        double d_ea = std::abs(2*oa.n+oa.l - e_fermi.at(oa.tz2));
         double occnat_a = oa.occ_nat;
         if (  (d_ei+d_ej+d_ea ) > Z.modelspace->GetdE3max() ) continue;
         if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_a*(1-occnat_a) ) < Z.modelspace->GetOccNat3Cut() ) continue;
@@ -5112,6 +5111,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   // In this case, we need a map {i,j,k,l,m,n} => size_t, where the size_t points to the start locating in Zbar
 
 
+//  std::cout << "Made it as far as line " << __LINE__ << std::endl;
 
   // we're looking at pph type states. We don't make a cut on the occupations in this channel
   // but if the first two orbits ij can't possibly make it past the occnat cut later on, we don't bother including them
@@ -5130,9 +5130,11 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   // not the same as the standard 3-body channels since we aren't enforcing antisymmetry with the 3rd particle
   for ( auto& iter_obc : Z.modelspace->OneBodyChannels )
   {
+
     int parity_ph = iter_obc.first[0]%2;  // parity = l%2
     int twoJph = iter_obc.first[1];
     int twoTz_ph = iter_obc.first[2];
+//     std::cout << "Made it as far as line " << __LINE__ << "   " << parity_ph << " " << twoJph << " " << twoTz_ph << std::endl;
 
     size_t ngood_ijn=0;
     std::unordered_map<size_t, size_t> good_kets_ijn;
@@ -5142,6 +5144,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       int Jij = tbc_ij.J;
       int parity_ij = tbc_ij.parity;
       int Tz_ij = tbc_ij.Tz;
+//     std::cout << "Made it as far as line " << __LINE__ << "   " << Jij << " " << parity_ij << " " << Tz_ij << std::endl;
       size_t nkets_ij = tbc_ij.GetNumberKets();
       int tz2n = 2*Tz_ij - twoTz_ph;
       if ( std::abs(tz2n)>1 ) continue;
@@ -5154,6 +5157,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       {
         int l_n = ((j2n+1)/2)%2 == parity_n ? (j2n+1)/2  :  (j2n-1)/2;
         if (l_n > Z.modelspace->GetEmax() or l_n > Z.modelspace->GetLmax() ) continue;
+        if ( Z.OneBodyChannels.find({l_n,j2n,tz2n}) == Z.OneBodyChannels.end()) continue;
         for ( size_t n : Z.OneBodyChannels.at({l_n,j2n,tz2n}) )
         {
           Orbit& on = Z.modelspace->GetOrbit(n);
@@ -5164,6 +5168,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
           good_n.push_back(n);
         }// for n
       }// for j2n
+//      std::cout << " done looping j2n" << std::endl;
 
       std::vector<std::array<size_t,2>> good_ij;
       for ( size_t iket_ij=0; iket_ij<nkets_ij; iket_ij++)
@@ -5203,6 +5208,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         }
       }// for iket_ij
     }// for chij
+   
+//    std::cout << "Made it as far as line " << __LINE__ << std::endl;
     if ( (ngood_ijn < 1) ) continue;
 
     channels_pph[ ch_pph_hash(twoJph,parity_ph,twoTz_ph) ] = nch_pph;
@@ -11383,11 +11390,8 @@ void comm413_233sd( const Operator& X, const Operator& Y, Operator& Z)
 
            }
 
-//           Z.TwoBody.SetTBME(ch,ch,i,j,k,Qorbit, cijk);   // SetTBME  directly sets the matrix element, i.e. it assumes a normalized matrix element.
 
            cijk *= (norm_ij * norm_kQ);  // We normalize like a scalar TBME so that the setter/getters make sense. We'll fix the wrong |kQ> normalization when writing to file.
-//           Z.TwoBody.SetTBME(ch,ch,i,j,k,Qorbit, cijk);   // SetTBME  directly sets the matrix element, i.e. it assumes a normalized matrix element.
-//           Z.TwoBody.AddToTBME(ch,ch,i,j,k,Qorbit, cijk);   // SetTBME  directly sets the matrix element, i.e. it assumes a normalized matrix element.
 
            Z.ThreeLeg.AddToME(ch,i,j,k, cijk);   // AddToME  assumes a normalized matrix element.
          }

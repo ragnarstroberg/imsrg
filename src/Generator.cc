@@ -123,14 +123,15 @@ double Generator::Get2bDenominator(int ch, int ibra, int iket)
 
    denominator       += ( 1-ni-nj ) * H->TwoBody.GetTBMEmonopole(i,j,i,j); // pp'pp'
    denominator       -= ( 1-nk-nl ) * H->TwoBody.GetTBMEmonopole(k,l,k,l); // hh'hh'
-   denominator       += ( ni-nk ) * H->TwoBody.GetTBMEmonopole(i,k,i,k); // phph
-   denominator       += ( ni-nl ) * H->TwoBody.GetTBMEmonopole(i,l,i,l); // ph'ph'
-   denominator       += ( nj-nk ) * H->TwoBody.GetTBMEmonopole(j,k,j,k); // p'hp'h
-   denominator       += ( nj-nl ) * H->TwoBody.GetTBMEmonopole(j,l,j,l); // p'h'p'h'
+   denominator       += ( ni-nk )   * H->TwoBody.GetTBMEmonopole(i,k,i,k); // phph
+   denominator       += ( ni-nl )   * H->TwoBody.GetTBMEmonopole(i,l,i,l); // ph'ph'
+   denominator       += ( nj-nk )   * H->TwoBody.GetTBMEmonopole(j,k,j,k); // p'hp'h
+   denominator       += ( nj-nl )   * H->TwoBody.GetTBMEmonopole(j,l,j,l); // p'h'p'h'
 
    if (std::abs(denominator)<denominator_cutoff)
      denominator = denominator_cutoff;
 //     denominator *= denominator_cutoff/(std::abs(denominator)+1e-6);
+
    return denominator;
 }
 

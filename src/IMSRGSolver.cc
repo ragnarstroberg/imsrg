@@ -293,12 +293,19 @@ void IMSRGSolver::Solve_magnus_euler()
 
 //      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
       generator.Update(&FlowingOps[0],&Eta);
-      cumulative_error += EstimateStepError();
+//      cumulative_error += EstimateStepError();
 
       // Write details of the flow
       WriteFlowStatus(flowfile);
       WriteFlowStatus(std::cout);
       Elast = FlowingOps[0].ZeroBody;
+
+      Operator DHDS = Commutator::Commutator( Eta, FlowingOps[0] );
+      size_t ch = FlowingOps[0].modelspace->GetTwoBodyChannelIndex(0,0,1);
+      auto MAT  = FlowingOps[0].TwoBody.GetMatrix(ch,ch);
+      auto dMAT  = DHDS.TwoBody.GetMatrix(ch,ch);
+//      std::cout << " ======>  " << MAT(0,0) << "     " << MAT(1,0) << "   " << MAT(2,0) << "  " << MAT(1,1) << " " << MAT(2,1) << "  " << MAT(2,2) << std::endl;
+//      std::cout << " ______>  " << dMAT(0,0) << "     " << dMAT(1,0) << "   " << dMAT(2,0) << "  " << dMAT(1,1) << " " << dMAT(2,1) << "  " << dMAT(2,2) << std::endl;
 
    }
 
