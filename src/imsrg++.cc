@@ -347,6 +347,28 @@ int main(int argc, char** argv)
     }
   }
 
+  if ( std::find( opnames.begin(), opnames.end(), "rhop_all") != opnames.end() )
+  {
+    opnames.erase( std::remove( opnames.begin(), opnames.end(), "rhop_all"), std::end(opnames) );
+    for ( double r=0.0; r<=10.0; r+=0.2 )
+    {
+       std::ostringstream opn;
+       opn << "rhop_" << r;
+       opnames.push_back( opn.str() );
+    }
+  }
+
+  if ( std::find( opnames.begin(), opnames.end(), "rhon_all") != opnames.end() )
+  {
+    opnames.erase( std::remove( opnames.begin(), opnames.end(), "rhon_all"), std::end(opnames) );
+    for ( double r=0.0; r<=10.0; r+=0.2 )
+    {
+       std::ostringstream opn;
+       opn << "rhon_" << r;
+       opnames.push_back( opn.str() );
+    }
+  }
+
   if ( std::find( opnames.begin(), opnames.end(), "DaggerHF_valence") != opnames.end() )
   {
     opnames.erase( std::remove( opnames.begin(), opnames.end(), "DaggerHF_valence"), std::end(opnames) );
@@ -612,11 +634,42 @@ int main(int argc, char** argv)
   // Calculate all the desired operators. If we're using magnus, we'll do this after the flow is over
   if ( method != "magnus" )
   {
+
     std::cout << "MAKING THE OPERATORS LINE " << __LINE__ << std::endl;
     for (auto& opname : opnames)
     {
-      ops.emplace_back( imsrg_util::OperatorFromString(modelspace,opname) );
+//        ops.emplace_back( imsrg_util::OperatorFromString(modelspace,opname) );
+        Operator optmp = imsrg_util::OperatorFromString(modelspace,opname);
+
+        if ((basis == "HF") and (opname.find("DaggerHF") == std::string::npos)  )
+        {
+          optmp = hf.TransformToHFBasis(optmp);
+        }
+        else if ((basis == "NAT") and (opname.find("DaggerHF") == std::string::npos)  )
+        {
+          optmp = hf.TransformHOToNATBasis(optmp);
+        }
+        optmp = optmp.DoNormalOrdering();
+        if (method == "HF" or method == "MP3")
+        {
+          std::cout << "HF expectation value  " << opname << "  " << optmp.ZeroBody << std::endl;
+        }
+        if (method == "MP3")
+        {
+          double dop = optmp.MP1_Eval( HNO );
+          std::cout << "Operator 1st order correction  " << dop << "  ->  " << optmp.ZeroBody + dop << std::endl;
+        }
+        if ( opname == "Rp2" )
+        {
+          double Rp2 = optmp.ZeroBody;
+          int Z = modelspace.GetTargetZ();
+          int A = modelspace.GetTargetMass();
+          std::cout << " HF point proton radius = " << sqrt( Rp2 ) << std::endl;
+          std::cout << " HF charge radius = " << ( abs(Rp2)<1e-6 ? 0.0 : sqrt( Rp2 + r2p + r2n*(A-Z)/Z + DarwinFoldy) ) << std::endl;
+        }
     }
+    opnames.resize(0); // we already dealt with all the operators in opnames, so clear it out.
+
     // Calculate first order perturbative correction to some operators, if that's what we asked for.
     // Strictly speaking, it doesn't make much sense to do this and then proceed with the IMSRG calculation,
     // but I'm not here to tell people what to do...
@@ -662,18 +715,6 @@ int main(int argc, char** argv)
       getline(ss,tmp,'_');
       std::istringstream(tmp) >> r;
       
-//      for (int i=0;i<4;i++)
-//      {
-//        std::string tmp;
-//        getline(ss,tmp,'_');
-//        std::istringstream(tmp) >> qn[i];
-//      }
-//  
-////      int j,t,p,r;
-//      j = qn[0];
-//      t = qn[1];
-//      p = qn[2];
-//      r = qn[3];
       std::cout << "Parsed tag. opname = " << opname << "  " << j << " " << t << " " << p << " " << r << "   file2 = " << f2name   << "    file3 = " << f3name << std::endl;
 
       Operator op(modelspace,j,t,p,r);
@@ -715,12 +756,11 @@ int main(int argc, char** argv)
 //     std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
      ops[i] = ops[i].DoNormalOrdering();
 //     std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
-     if (method == "HF")
+     if (method == "HF" or method == "MP3")
      {
-       double dop = ops[i].MP1_Eval( HNO );
        std::cout << "HF expectation value  " << opnames[i] << "  " << ops[i].ZeroBody << std::endl;
      }
-     else if (method == "MP3")
+     if (method == "MP3")
      {
        double dop = ops[i].MP1_Eval( HNO );
        std::cout << "Operator 1st order correction  " << dop << "  ->  " << ops[i].ZeroBody + dop << std::endl;
@@ -733,52 +773,13 @@ int main(int argc, char** argv)
       std::cout << " HF point proton radius = " << sqrt( Rp2 ) << std::endl;
       std::cout << " HF charge radius = " << ( abs(Rp2)<1e-6 ? 0.0 : sqrt( Rp2 + r2p + r2n*(A-Z)/Z + DarwinFoldy) ) << std::endl;
     }
-   }
+   }// for ops.size
 
-//  for (index_t i=0;i<ops.size();++i)
-//  {
-////    std::cout << "Before transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
-//     // We don't transform a DaggerHF, because we want the a^dagger to already refer to the HF basis.
-//    if ((basis == "HF") and (opnames[i].find("DaggerHF") == std::string::npos)  )
-//    {
-//      ops[i] = hf.TransformToHFBasis(ops[i]);
-//    }
-//    else if ((basis == "NAT") and (opnames[i].find("DaggerHF") == std::string::npos)  )
-//    {
-//      ops[i] = hf.TransformHOToNATBasis(ops[i]);
-//    }
-////    std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
-//    ops[i] = ops[i].DoNormalOrdering();
-////    std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
-//    if (method == "MP3")
-//      std::cout << opnames[i] << " = " << ops[i].ZeroBody << std::endl;
-//    if ( opnames[i] == "Rp2" )
-//    {
-//      double Rp2 = ops[i].ZeroBody;
-//      int Z = modelspace.GetTargetZ();
-//      int A = modelspace.GetTargetMass();
-//      std::cout << " HF point proton radius = " << sqrt( Rp2 ) << std::endl;
-//      std::cout << " HF charge radius = " << ( abs(Rp2)<1e-6 ? 0.0 : sqrt( Rp2 + r2p + r2n*(A-Z)/Z + DarwinFoldy) ) << std::endl;
-//    }
-//  }
 
-//  for (index_t i=0;i<ops.size();++i)
-//  {
-//    std::cout << opnames[i] << " = " << ops[i].ZeroBody << std::endl;
-//  }
-
-//  auto itR2p = find(opnames.begin(),opnames.end(),"Rp2");
-//  if (itR2p != opnames.end())
-//  {
-//    Operator& Rp2 = ops[itR2p-opnames.begin()];
-//    int Z = modelspace.GetTargetZ();
-//    int A = modelspace.GetTargetMass();
-//    std::cout << " HF point proton radius = " << sqrt( Rp2.ZeroBody ) << std::endl;
-//    std::cout << " HF charge radius = " << ( abs(Rp2.ZeroBody)<1e-6 ? 0.0 : sqrt( Rp2.ZeroBody + r2p + r2n*(A-Z)/Z + DarwinFoldy) ) << std::endl;
-//  }
 
 
   }// if method != "magnus"
+
 
   if (basis=="HF" or basis=="NAT")
   {
