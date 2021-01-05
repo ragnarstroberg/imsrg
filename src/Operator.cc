@@ -707,6 +707,7 @@ Operator Operator::Truncate(ModelSpace& ms_new)
   OpNew.antihermitian = antihermitian;
   int norb = ms_new.GetNumberOrbits();
   OpNew.OneBody = OneBody.submat(0,0,norb-1,norb-1);
+//  std::cout << "Done truncating one body " << std::endl << OneBody << std::endl << std::endl << OpNew.OneBody << std::endl;
   for (auto& itmat : OpNew.TwoBody.MatEl )
   {
     int ch = itmat.first[0];
@@ -719,7 +720,10 @@ Operator Operator::Truncate(ModelSpace& ms_new)
     arma::uvec ibra_old(nkets);
     for (int ibra=0;ibra<nkets;++ibra)
     {
-      ibra_old(ibra) = tbc.GetLocalIndex(tbc_new.GetKetIndex(ibra));
+      auto bra_old = tbc.GetKet(ibra);
+      ibra_old(ibra) = tbc.GetLocalIndex( bra_old.p, bra_old.q );
+//      std::cout << " ibra = " << ibra << "    " << tbc_new.GetKetIndex(ibra) << "    " << tbc.GetLocalIndex(tbc_new.GetKetIndex(ibra)) << std::endl; 
+//      ibra_old(ibra) = tbc.GetLocalIndex(tbc_new.GetKetIndex(ibra));
     }
     Mat_new = Mat.submat(ibra_old,ibra_old);
   }

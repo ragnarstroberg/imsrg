@@ -123,6 +123,11 @@ int main(int argc, char** argv)
   int file3e3max = parameters.i("file3e3max");
   int atomicZ = parameters.i("atomicZ");
   int emax_unocc = parameters.i("emax_unocc");
+  int eMax_imsrg = parameters.i("emax_imsrg");
+  int e2Max_imsrg = parameters.i("e2max_imsrg");
+  int e3Max_imsrg = parameters.i("e3max_imsrg");
+  if (e2Max_imsrg==-1 and eMax_imsrg != -1) e2Max_imsrg = 2*eMax_imsrg;
+  if (e3Max_imsrg==-1 and eMax_imsrg != -1) e3Max_imsrg = std::min(E3max, 3*eMax_imsrg);
 
   double hw = parameters.d("hw");
   double smax = parameters.d("smax");
@@ -835,6 +840,32 @@ int main(int argc, char** argv)
     std::cout << " Restricting the Magnus operator Omega to be 2b." << std::endl;
     Commutator::SetOnly2bOmega(only_2b_omega);
   }
+
+
+  // We may want to use a smaller model space for the IMSRG evolution than we used for the HF step.
+  // This is most effective when using natural orbitals.
+//  ModelSpace modelspace_imsrg = ( reference=="default" ? ModelSpace(eMax_imsrg,e2Max_imsrg,e3Max_imsrg,valence_space) : ModelSpace(eMax_imsrg,e2Max_imsrg,e3Max_imsrg,reference,valence_space) );
+  ModelSpace modelspace_imsrg = modelspace;
+  if ( (eMax_imsrg != -1) or (e2Max_imsrg != -1) or (e3Max_imsrg) != -1)
+  {
+//     ModelSpace modelspace_imsrg = modelspace;
+     std::cout << "Truncating modelspace for IMSRG calculation: emax e2max e3max  ->  " << eMax_imsrg << " " << e2Max_imsrg << " " << e3Max_imsrg << std::endl;
+     modelspace_imsrg.SetEmax( eMax_imsrg);
+     modelspace_imsrg.SetE2max( e2Max_imsrg);
+     modelspace_imsrg.SetE3max( e3Max_imsrg);
+     modelspace_imsrg.Init( eMax_imsrg, reference, valence_space);
+   //  if (emax_unocc>0) modelspace_imsrg.SetEmaxUnocc(emax_unocc);
+     if (physical_system == "atomic") modelspace_imsrg.InitSingleSpecies(eMax_imsrg, reference, valence_space);
+     if (occ_file != "none" and occ_file != "" ) modelspace_imsrg.Init_occ_from_file(eMax_imsrg,valence_space,occ_file);
+//     if (physical_system == "atomic") modelspace_imsrg.InitSingleSpecies(eMax_imsrg, eMax_imsrg, e3Max_imsrg, reference, valence_space);
+//     if (occ_file != "none" and occ_file != "" ) modelspace_imsrg.Init_occ_from_file(eMax_imsrg,e2Max_imsrg,e3Max_imsrg,valence_space,occ_file);
+     HNO = HNO.Truncate(modelspace_imsrg);
+
+     modelspace = modelspace_imsrg;  // this could cause some confusion later on...
+    hf.PrintSPEandWF();
+  }
+
+
 
   IMSRGSolver imsrgsolver(HNO);
   imsrgsolver.SetHin(HNO); // necessary?

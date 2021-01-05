@@ -208,7 +208,6 @@ ModelSpace::ModelSpace(int emax, std::string valence)
 // Init version 1  (int, string, string)
 void ModelSpace::Init(int emax, std::string reference, std::string valence)
 {
-//  std::cout << __func__ << "  line " << __LINE__ << std::endl;
 //  int Aref,Zref;
 
   // to use a mixed reference for, e.g. an equal mixture of He4 and Li5, set reference = mix_A4.5_Z2.5
