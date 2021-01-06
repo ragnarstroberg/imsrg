@@ -710,22 +710,31 @@ Operator Operator::Truncate(ModelSpace& ms_new)
 //  std::cout << "Done truncating one body " << std::endl << OneBody << std::endl << std::endl << OpNew.OneBody << std::endl;
   for (auto& itmat : OpNew.TwoBody.MatEl )
   {
-    int ch = itmat.first[0];
-    TwoBodyChannel& tbc_new = ms_new.GetTwoBodyChannel(ch);
-    int chold = modelspace->GetTwoBodyChannelIndex(tbc_new.J,tbc_new.parity,tbc_new.Tz);
-    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(chold);
+    int chbra = itmat.first[0];
+    int chket = itmat.first[1];
+    TwoBodyChannel& tbc_bra_new = ms_new.GetTwoBodyChannel(chbra);
+    TwoBodyChannel& tbc_ket_new = ms_new.GetTwoBodyChannel(chket);
+    int chbra_old = modelspace->GetTwoBodyChannelIndex(tbc_bra_new.J,tbc_bra_new.parity,tbc_bra_new.Tz);
+    int chket_old = modelspace->GetTwoBodyChannelIndex(tbc_ket_new.J,tbc_ket_new.parity,tbc_ket_new.Tz);
+    TwoBodyChannel& tbc_bra_old = modelspace->GetTwoBodyChannel(chbra_old);
+    TwoBodyChannel& tbc_ket_old = modelspace->GetTwoBodyChannel(chket_old);
     auto& Mat_new = itmat.second;
-    auto& Mat = TwoBody.GetMatrix(chold,chold);
-    int nkets = tbc_new.GetNumberKets();
-    arma::uvec ibra_old(nkets);
-    for (int ibra=0;ibra<nkets;++ibra)
+    auto& Mat = TwoBody.GetMatrix(chbra_old,chket_old);
+    int nbras = tbc_bra_new.GetNumberKets();
+    int nkets = tbc_ket_new.GetNumberKets();
+    arma::uvec ibra_old(nbras);
+    arma::uvec iket_old(nkets);
+    for (int ibra=0;ibra<nbras;++ibra)
     {
-      auto bra_old = tbc.GetKet(ibra);
-      ibra_old(ibra) = tbc.GetLocalIndex( bra_old.p, bra_old.q );
-//      std::cout << " ibra = " << ibra << "    " << tbc_new.GetKetIndex(ibra) << "    " << tbc.GetLocalIndex(tbc_new.GetKetIndex(ibra)) << std::endl; 
-//      ibra_old(ibra) = tbc.GetLocalIndex(tbc_new.GetKetIndex(ibra));
+      auto bra_old = tbc_bra_old.GetKet(ibra);
+      ibra_old(ibra) = tbc_bra_old.GetLocalIndex( bra_old.p, bra_old.q );
     }
-    Mat_new = Mat.submat(ibra_old,ibra_old);
+    for (int iket=0;iket<nkets;++iket)
+    {
+      auto ket_old = tbc_ket_old.GetKet(iket);
+      iket_old(iket) = tbc_ket_old.GetLocalIndex( ket_old.p, ket_old.q );
+    }
+    Mat_new = Mat.submat(ibra_old,iket_old);
   }
   return OpNew;
 }

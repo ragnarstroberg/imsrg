@@ -33,7 +33,7 @@ void HFMBPT::GetNaturalOrbitals()
 //  C_HF2NAT = arma::mat(norbits,norbits,arma::fill::eye); // we do this in the constructor, so it's already the right size.
 //  rho      = arma::mat(norbits,norbits,arma::fill::zeros);
   Occ      = arma::vec(norbits,arma::fill::zeros);  // Occupations are the eigenvalues of the density matrix
-  UpdateDensityMatrix();  // Do the standard HF filling density matrix rho
+//  UpdateDensityMatrix();  // Do the standard HF filling density matrix rho
   GetDensityMatrix();  // Include 2nd order MBPT corrections to rho
   DiagonalizeRho();  // Find the 1b transformation that diagonalizes rho, but don't apply it to anything yet.
 
@@ -474,7 +474,8 @@ void HFMBPT::PrintOccupation()
 void HFMBPT::DensityMatrixPP(Operator& H)
 {
   arma::mat rho_pp2 = arma::zeros( arma::size(rho) );
-  for (auto& a : HartreeFock::modelspace->all_orbits)
+//  for (auto& a : HartreeFock::modelspace->all_orbits)
+  for (auto& a : HartreeFock::modelspace->particles)
   {
     double ea = H.OneBody(a,a);
     Orbit& oa = HartreeFock::modelspace->GetOrbit(a);
@@ -491,22 +492,20 @@ void HFMBPT::DensityMatrixPP(Operator& H)
       if((1-ob.occ) <ModelSpace::OCC_CUT) continue;
 
       double r = 0.0;
-//      for(auto& c : HartreeFock::modelspace->particles)
-      for(auto& c : HartreeFock::modelspace->all_orbits)
+      for(auto& c : HartreeFock::modelspace->particles)
+//      for(auto& c : HartreeFock::modelspace->all_orbits)
       {
         double ec = H.OneBody(c,c);
         Orbit& oc = HartreeFock::modelspace->GetOrbit(c);
         if ( (1-oc.occ)<ModelSpace::OCC_CUT) continue;
 
-//        for(auto& i : HartreeFock::modelspace->holes)
-        for(auto& i : HartreeFock::modelspace->all_orbits)
+        for(auto& i : HartreeFock::modelspace->holes)
         {
           double ei = H.OneBody(i,i);
           Orbit& oi = HartreeFock::modelspace->GetOrbit(i);
           if ( oi.occ < ModelSpace::OCC_CUT ) continue;
 
-//          for(auto& j : HartreeFock::modelspace->holes){
-          for(auto& j : HartreeFock::modelspace->all_orbits){
+          for(auto& j : HartreeFock::modelspace->holes){
             double ej = H.OneBody(j,j);
             Orbit& oj = HartreeFock::modelspace->GetOrbit(j);
             if ( oj.occ < ModelSpace::OCC_CUT ) continue;
@@ -560,8 +559,7 @@ void HFMBPT::DensityMatrixPP(Operator& H)
 void HFMBPT::DensityMatrixHH(Operator& H)
 {
   arma::mat rho_hh2 = arma::zeros( arma::size(rho) );
-//  for (auto& i : HartreeFock::modelspace->holes)
-  for (auto& i : HartreeFock::modelspace->all_orbits)
+  for (auto& i : HartreeFock::modelspace->holes)
   {
     double ei = H.OneBody(i,i);
     Orbit& oi = HartreeFock::modelspace->GetOrbit(i);
@@ -575,22 +573,21 @@ void HFMBPT::DensityMatrixHH(Operator& H)
       if ( oj.occ<ModelSpace::OCC_CUT) continue;
 
       double r = 0.0;
-//      for(auto& a : HartreeFock::modelspace->particles)
-      for(auto& a : HartreeFock::modelspace->all_orbits)
+      for(auto& a : HartreeFock::modelspace->particles)
+//      for(auto& a : HartreeFock::modelspace->all_orbits)
       {
         double ea = H.OneBody(a,a);
         Orbit& oa = HartreeFock::modelspace->GetOrbit(a);
         if ( (1-oa.occ)<ModelSpace::OCC_CUT) continue;
 
-//        for(auto& b : HartreeFock::modelspace->particles)
-        for(auto& b : HartreeFock::modelspace->all_orbits)
+        for(auto& b : HartreeFock::modelspace->particles)
+//        for(auto& b : HartreeFock::modelspace->all_orbits)
         {
           double eb = H.OneBody(b,b);
           Orbit& ob = HartreeFock::modelspace->GetOrbit(b);
           if ( (1-ob.occ)<ModelSpace::OCC_CUT) continue;
 
-//          for(auto& k : HartreeFock::modelspace->holes)
-          for(auto& k : HartreeFock::modelspace->all_orbits)
+          for(auto& k : HartreeFock::modelspace->holes)
           {
             double ek = H.OneBody(k,k);
             Orbit& ok = HartreeFock::modelspace->GetOrbit(k);
@@ -661,8 +658,7 @@ void HFMBPT::DensityMatrixPH(Operator& H)
 {
 
   arma::mat rho_ph2 = arma::zeros( arma::size(rho) );
-//  for (auto& i : HartreeFock::modelspace->holes)
-  for (auto& i : HartreeFock::modelspace->all_orbits)
+  for (auto& i : HartreeFock::modelspace->holes)
   {
     double ei = H.OneBody(i,i);
     Orbit& oi = HartreeFock::modelspace->GetOrbit(i);
@@ -675,22 +671,21 @@ void HFMBPT::DensityMatrixPH(Operator& H)
       if ( (1-oa.occ)<ModelSpace::OCC_CUT) continue;
 
       double r = 0.0;
-//      for(auto& b : HartreeFock::modelspace->particles)
-      for(auto& b : HartreeFock::modelspace->all_orbits)
+      for(auto& b : HartreeFock::modelspace->particles)
+//      for(auto& b : HartreeFock::modelspace->all_orbits)
       {
         double eb = H.OneBody(b,b);
         Orbit& ob = HartreeFock::modelspace->GetOrbit(b);
         if ( (1-ob.occ)<ModelSpace::OCC_CUT) continue;
 
-//        for(auto& c : HartreeFock::modelspace->particles)
-        for(auto& c : HartreeFock::modelspace->all_orbits)
+        for(auto& c : HartreeFock::modelspace->particles)
+//        for(auto& c : HartreeFock::modelspace->all_orbits)
         {
           double ec = H.OneBody(c,c);
           Orbit& oc = HartreeFock::modelspace->GetOrbit(c);
           if ( (1-oc.occ)<ModelSpace::OCC_CUT) continue;
 
-          for(auto& j : HartreeFock::modelspace->all_orbits)
-//          for(auto& j : HartreeFock::modelspace->holes)
+          for(auto& j : HartreeFock::modelspace->holes)
           {
             double ej = H.OneBody(j,j);
             Orbit& oj = HartreeFock::modelspace->GetOrbit(j);
@@ -738,7 +733,7 @@ void HFMBPT::DensityMatrixPH(Operator& H)
 
 
       double r = 0.0;
-//      for(auto& b : HartreeFock::modelspace->all_orbits){
+//      for(auto& b : HartreeFock::modelspace->all_orbits)
       for(auto& b : HartreeFock::modelspace->particles)
       {
         double eb = H.OneBody(b,b);
@@ -855,6 +850,45 @@ void HFMBPT::ReorderHFMBPTCoefficients()
 //
 //
 //   }
+   arma::vec SPE =  arma::diagvec( C_HF2NAT.t() * C.t() * F * C * C_HF2NAT);
+   std::cout << "BEGIN LOOP OVER ONE BODY CHANNELS" << std::endl;
+   for ( auto& it : Hbare.OneBodyChannels )
+   {
+     // OneBodyChannels is a map (l,j,tz) => index, so it.second is a list of orbit indices in this one-body channel
+     arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end())); // convert from std::set to std::vector, and then to arma::uvec
+     int nswaps = 10; // keep track of the number of swaps we had to do, iterate until nswaps==0
+     while (nswaps>0) // loop until we don't have to make any more swaps
+     {
+       nswaps = 0;
+//       for (index_t i=0;i<orbvec.size()-1;i++)
+       for (index_t i : orbvec)
+       {
+//         for (index_t j=0;j<i;j++)
+         for (index_t j : orbvec)
+         {
+           if ( j>=i ) continue;
+//           if ( std::abs( C_HF2NAT(i,j)) > std::abs( C_HF2NAT(i,i) ) )
+           if ( SPE(i) < SPE(j) )
+           {
+             std::cout << "SWAPPING orbits " << i << "  and  " << j << "  with SPE " << SPE(i) << " " << SPE(j) << std::endl;
+             C_HF2NAT.swap_cols(i,j);
+             Occ.swap_rows(i,j);
+             SPE.swap_rows(i,j);
+             std::cout << "                   now " << i << " " << j << " => "  << SPE(i) << "  " << SPE(j) << std::endl;
+             nswaps++;
+           }
+         }
+       }
+      }
+
+
+   }
+
+
+
+
+
+
 
 //   // C_HF2NAT is the matrix |HF><NAT|, so that the column index runs over NAT states and the row index runs over HF states.
 //   // Make sure the diagonal terms are positive (to avoid confusion later).
@@ -872,7 +906,7 @@ void HFMBPT::ReorderHFMBPTCoefficients()
       if (C_HF2NAT(i,i) < 0)  C_HF2NAT.col(i) *= -1;
    }
 
-//  std::cout << " line " << __LINE__ << "   Occ = " << std::endl << Occ << std::endl;
+  std::cout << " line " << __LINE__ << "   Occ = " << std::endl << Occ << std::endl;
 }
 
 
