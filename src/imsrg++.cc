@@ -863,8 +863,12 @@ int main(int argc, char** argv)
 //     if (occ_file != "none" and occ_file != "" ) modelspace_imsrg.Init_occ_from_file(eMax_imsrg,e2Max_imsrg,e3Max_imsrg,valence_space,occ_file);
      HNO = HNO.Truncate(modelspace_imsrg);
 
-     modelspace = modelspace_imsrg;  // this could cause some confusion later on...
-    hf.PrintSPEandWF();
+//     modelspace = modelspace_imsrg;  // this could cause some confusion later on...
+//    hf.PrintSPEandWF();
+  }
+  else
+  {
+    HNO.SetModelSpace(modelspace_imsrg);
   }
 
 
@@ -980,7 +984,8 @@ int main(int argc, char** argv)
 
     imsrgsolver.SetGenerator(valence_generator);
     std::cout << "Setting generator to " << valence_generator << std::endl;
-    modelspace.ResetFirstPass();
+//    modelspace.ResetFirstPass();
+    modelspace_imsrg.ResetFirstPass();
     if (valence_generator.find("imaginary")!=std::string::npos or valence_generator.find("wegner")!=std::string::npos)
     {
      if (ds_0>1e-2)
@@ -1002,13 +1007,18 @@ int main(int argc, char** argv)
     {
       std::cout << "Performing final BCH transformation at the IMSRG(3) level" << std::endl;
 
-      modelspace.SetdE3max(dE3max);
-      modelspace.SetOccNat3Cut(OccNat3Cut);
-      int new_E3max = std::min(modelspace.GetE3max(), int( std::ceil(3*std::max( modelspace.GetEFermi()[-1], modelspace.GetEFermi()[+1])+dE3max)));
+//      modelspace.SetdE3max(dE3max);
+//      modelspace.SetOccNat3Cut(OccNat3Cut);
+//      int new_E3max = std::min(modelspace.GetE3max(), int( std::ceil(3*std::max( modelspace.GetEFermi()[-1], modelspace.GetEFermi()[+1])+dE3max)));
+      modelspace_imsrg.SetdE3max(dE3max);
+      modelspace_imsrg.SetOccNat3Cut(OccNat3Cut);
+      int new_E3max = std::min(modelspace_imsrg.GetE3max(), int( std::ceil(3*std::max( modelspace_imsrg.GetEFermi()[-1], modelspace_imsrg.GetEFermi()[+1])+dE3max)));
       std::cout << "Setting new E3max = " << new_E3max << std::endl;
-      modelspace.SetE3max(  new_E3max);
+//      modelspace.SetE3max(  new_E3max);
+      modelspace_imsrg.SetE3max(  new_E3max);
 
-      Operator H3(modelspace,0,0,0,3);
+//      Operator H3(modelspace,0,0,0,3);
+      Operator H3(modelspace_imsrg,0,0,0,3);
       std::cout << "Constructed H3" << std::endl;
       H3.ZeroBody = HNO.ZeroBody;
       H3.OneBody = HNO.OneBody;
@@ -1067,18 +1077,23 @@ int main(int argc, char** argv)
   // If we're doing targeted/ensemble normal ordering
   // we now re-normal order wrt to the core
   // and do any remaining flow.
-  ModelSpace ms2(modelspace);
+//  ModelSpace ms2(modelspace);
+  ModelSpace ms2(modelspace_imsrg);
   ms2.SetReference(ms2.core); // change the reference
   bool renormal_order = false;
-  if (modelspace.valence.size() > 0 )
+//  if (modelspace.valence.size() > 0 )
+  if (modelspace_imsrg.valence.size() > 0 )
 //  if (modelspace.valence.size() > 0 or basis=="NAT")
   {
-    renormal_order = modelspace.holes.size() != modelspace.core.size();
+//    renormal_order = modelspace.holes.size() != modelspace.core.size();
+    renormal_order = modelspace.holes.size() != modelspace_imsrg.core.size();
     if (not renormal_order)
     {
-      for (auto c : modelspace.core)
+//      for (auto c : modelspace.core)
+      for (auto c : modelspace_imsrg.core)
       {
-         if ( (find( modelspace.holes.begin(), modelspace.holes.end(), c) == modelspace.holes.end()) or (std::abs(1-modelspace.GetOrbit(c).occ)>1e-6))
+//         if ( (find( modelspace.holes.begin(), modelspace.holes.end(), c) == modelspace.holes.end()) or (std::abs(1-modelspace.GetOrbit(c).occ)>1e-6))
+         if ( (find( modelspace_imsrg.holes.begin(), modelspace_imsrg.holes.end(), c) == modelspace_imsrg.holes.end()) or (std::abs(1-modelspace_imsrg.GetOrbit(c).occ)>1e-6))
          {
            renormal_order = true;
            break;
@@ -1092,9 +1107,11 @@ int main(int argc, char** argv)
     HNO = imsrgsolver.GetH_s();
 
 //    int nOmega = imsrgsolver.GetOmegaSize() + imsrgsolver.GetNOmegaWritten();
-    std::cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
+//    std::cout << "Undoing NO wrt A=" << modelspace.GetAref() << " Z=" << modelspace.GetZref() << std::endl;
+    std::cout << "Undoing NO wrt A=" << modelspace_imsrg.GetAref() << " Z=" << modelspace_imsrg.GetZref() << std::endl;
     std::cout << "Before doing so, the spes are " << std::endl;
-    for ( auto i : modelspace.all_orbits ) std::cout << "  " << i << " : " << HNO.OneBody(i,i) << std::endl;
+//    for ( auto i : modelspace.all_orbits ) std::cout << "  " << i << " : " << HNO.OneBody(i,i) << std::endl;
+    for ( auto i : modelspace_imsrg.all_orbits ) std::cout << "  " << i << " : " << HNO.OneBody(i,i) << std::endl;
     if (IMSRG3)
     {
       std::cout << "Re-normal-ordering wrt the core. For now, we just throw away the 3N at this step." << std::endl;
@@ -1132,12 +1149,14 @@ int main(int argc, char** argv)
 
   // If we're doing a shell model interaction, write the
   // interaction files to disk.
-  if (modelspace.valence.size() > 0)
+//  if (modelspace.valence.size() > 0)
+  if (modelspace_imsrg.valence.size() > 0)
   {
     if (valence_file_format == "antoine") // this is still being tested...
     {
       rw.WriteAntoine_int(imsrgsolver.GetH_s(),intfile+".ant");
-      rw.WriteAntoine_input(imsrgsolver.GetH_s(),intfile+".inp",modelspace.GetAref(),modelspace.GetZref());
+//      rw.WriteAntoine_input(imsrgsolver.GetH_s(),intfile+".inp",modelspace.GetAref(),modelspace.GetZref());
+      rw.WriteAntoine_input(imsrgsolver.GetH_s(),intfile+".inp",modelspace_imsrg.GetAref(),modelspace_imsrg.GetZref());
     }
     std::cout << "Writing files: " << intfile << std::endl;
     if (valence_file_format == "tokyo")
@@ -1194,8 +1213,10 @@ int main(int argc, char** argv)
       std::cout << opnames[i] << " = " << ops[i].ZeroBody << std::endl;
       if ( opnames[i] == "Rp2" )
       {
-         int Z = modelspace.GetTargetZ();
-         int A = modelspace.GetTargetMass();
+//         int Z = modelspace.GetTargetZ();
+//         int A = modelspace.GetTargetMass();
+         int Z = modelspace_imsrg.GetTargetZ();
+         int A = modelspace_imsrg.GetTargetMass();
          std::cout << " IMSRG point proton radius = " << sqrt( op.ZeroBody ) << std::endl;
          std::cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + r2p + r2n*(A-Z)/Z + DarwinFoldy) << std::endl;
       }
@@ -1236,6 +1257,15 @@ int main(int argc, char** argv)
         op = hf.TransformHOToNATBasis(op).DoNormalOrdering();
       }
       std::cout << "   HF: " << op.ZeroBody << std::endl;
+
+      if ( (eMax_imsrg != -1) or (e2Max_imsrg != -1) or (e3Max_imsrg) != -1)
+      {
+//     ModelSpace modelspace_imsrg = modelspace;
+        std::cout << "Truncating modelspace for IMSRG calculation: emax e2max e3max  ->  " << eMax_imsrg << " " << e2Max_imsrg << " " << e3Max_imsrg << std::endl;
+        op = op.Truncate(modelspace_imsrg);
+      }
+
+
 
       op = imsrgsolver.Transform(op);
 
