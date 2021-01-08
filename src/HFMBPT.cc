@@ -485,9 +485,6 @@ void HFMBPT::DensityMatrixPP(Operator& H)
       if(b > a) continue;
       double eb = H.OneBody(b,b);
       Orbit& ob = HartreeFock::modelspace->GetOrbit(b);
-//      if(oa.j2 != ob.j2) continue;
-//      if(oa.l != ob.l) continue;
-//      if(oa.tz2 != ob.tz2) continue;
       if((1-ob.occ) <ModelSpace::OCC_CUT) continue;
 
       double r = 0.0;
@@ -522,7 +519,8 @@ void HFMBPT::DensityMatrixPP(Operator& H)
               tbme +=  (2*J+1) * H.TwoBody.GetTBME_J(J,a,c,i,j)
                                * H.TwoBody.GetTBME_J(J,i,j,b,c);
             }
-            tbme *=  (1-oa.occ) * (1-ob.occ) * pow( (1-oc.occ) * oi.occ * oj.occ,2) ;
+//            tbme *=  (1-oa.occ) * (1-ob.occ) * pow( (1-oc.occ) * oi.occ * oj.occ,2) ;
+            tbme *=  (1-oa.occ) * (1-ob.occ) *  (1-oc.occ)*(1-oc.occ) * oi.occ*oi.occ * oj.occ*oj.occ ;
 //            if (true)
 //            {
               double epsilon = 0.5*sqrt(std::abs(e_acij * e_bcij));
@@ -611,7 +609,8 @@ void HFMBPT::DensityMatrixHH(Operator& H)
                               * H.TwoBody.GetTBME_J(J,j,k,a,b);
             }
 
-            tbme *= pow( (1-oa.occ) * (1-ob.occ) * ok.occ , 2) *  oi.occ * oj.occ ;
+//            tbme *= pow( (1-oa.occ) * (1-ob.occ) * ok.occ , 2) *  oi.occ * oj.occ ;
+            tbme *=  (1-oa.occ)*(1-oa.occ) * (1-ob.occ)*(1-ob.occ) * ok.occ*ok.occ   *  oi.occ * oj.occ ;
             if (true)
             {
               double epsilon = 0.5*sqrt(std::abs(e_abik * e_abjk));

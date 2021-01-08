@@ -698,34 +698,56 @@ Operator Operator::Truncate(ModelSpace& ms_new)
     std::cout << "Error: Cannot truncate an operator with emax = " << modelspace->GetEmax() << " to one with emax = " << new_emax << std::endl;
     return OpNew;
   }
-//  OpNew.rank_J=rank_J;
-//  OpNew.rank_T=rank_T;
-//  OpNew.parity=parity;
-//  OpNew.particle_rank = particle_rank;
+
   OpNew.ZeroBody = ZeroBody;
   OpNew.hermitian = hermitian;
   OpNew.antihermitian = antihermitian;
-  int norb = ms_new.GetNumberOrbits();
-  OpNew.OneBody = OneBody.submat(0,0,norb-1,norb-1);
+  size_t norb = ms_new.GetNumberOrbits();
+  arma::uvec old_orbs(norb);
+  for (size_t i=0; i<norb; i++)
+  {
+    Orbit& oi = ms_new.GetOrbit(i);
+    size_t iold = modelspace->GetOrbitIndex( oi.n, oi.l, oi.j2, oi.tz2);
+    old_orbs(i) = iold;
+  }
+//  OpNew.OneBody = OneBody.submat(0,0,norb-1,norb-1);
+  OpNew.OneBody = OneBody.submat(old_orbs, old_orbs);
 //  std::cout << "Done truncating one body " << std::endl << OneBody << std::endl << std::endl << OpNew.OneBody << std::endl;
+
   for (auto& itmat : OpNew.TwoBody.MatEl )
   {
-    int ch = itmat.first[0];
-    TwoBodyChannel& tbc_new = ms_new.GetTwoBodyChannel(ch);
-    int chold = modelspace->GetTwoBodyChannelIndex(tbc_new.J,tbc_new.parity,tbc_new.Tz);
-    TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(chold);
+    int ch_bra_new = itmat.first[0];
+    int ch_ket_new = itmat.first[1];
+    TwoBodyChannel& tbc_bra_new = ms_new.GetTwoBodyChannel(ch_bra_new);
+    TwoBodyChannel& tbc_ket_new = ms_new.GetTwoBodyChannel(ch_ket_new);
     auto& Mat_new = itmat.second;
-    auto& Mat = TwoBody.GetMatrix(chold,chold);
-    int nkets = tbc_new.GetNumberKets();
-    arma::uvec ibra_old(nkets);
-    for (int ibra=0;ibra<nkets;++ibra)
+
+    int ch_bra_old = modelspace->GetTwoBodyChannelIndex(tbc_bra_new.J,tbc_bra_new.parity,tbc_bra_new.Tz);
+    int ch_ket_old = modelspace->GetTwoBodyChannelIndex(tbc_ket_new.J,tbc_ket_new.parity,tbc_ket_new.Tz);
+    TwoBodyChannel& tbc_bra_old = modelspace->GetTwoBodyChannel(ch_bra_old);
+    TwoBodyChannel& tbc_ket_old = modelspace->GetTwoBodyChannel(ch_ket_old);
+    auto& Mat_old = TwoBody.GetMatrix(ch_bra_old,ch_ket_old);
+
+    int nbras_new = tbc_bra_new.GetNumberKets();
+    int nkets_new = tbc_ket_new.GetNumberKets();
+    arma::uvec ibra_old(nbras_new);
+    arma::uvec iket_old(nkets_new);
+
+    for (int ibra=0;ibra<nkets_new;++ibra)
     {
-      auto bra_old = tbc.GetKet(ibra);
-      ibra_old(ibra) = tbc.GetLocalIndex( bra_old.p, bra_old.q );
-//      std::cout << " ibra = " << ibra << "    " << tbc_new.GetKetIndex(ibra) << "    " << tbc.GetLocalIndex(tbc_new.GetKetIndex(ibra)) << std::endl; 
-//      ibra_old(ibra) = tbc.GetLocalIndex(tbc_new.GetKetIndex(ibra));
+      auto& bra_new = tbc_bra_new.GetKet(ibra);
+      ibra_old(ibra) = tbc_bra_old.GetLocalIndex( old_orbs(bra_new.p), old_orbs(bra_new.q) );
     }
-    Mat_new = Mat.submat(ibra_old,ibra_old);
+
+    for (int iket=0;iket<nkets_new;++iket)
+    {
+      auto ket_new = tbc_ket_new.GetKet(iket);
+      iket_old(iket) = tbc_ket_old.GetLocalIndex( old_orbs(ket_new.p), old_orbs(ket_new.q) );
+    }
+
+    Mat_new = Mat_old.submat(ibra_old,iket_old);
+
+
   }
   return OpNew;
 }
@@ -975,11 +997,13 @@ double Operator::GetMP2_Energy()
            {
              double tbme = TwoBody.GetTBME_J_norm(J,a,b,i,j);
              if (std::abs(tbme)>1e-6)
+             {
               Emp2 += (2*J+1)* oa.occ * ob.occ * tbme*tbme/denom; // no factor 1/4 because of the restricted sum
-//              std::cout << " " << a << " " << b << " " << i << " " << j << "    " << J << "  " << oa.occ << " " << ob.occ << "  "
+//              std::cout << "MBPT2 " << a << " " << b << " " << i << " " << j << "    " << J << "  " << oa.occ << " " << ob.occ << "  "
 //                        << std::setw(12) << std::setprecision(6) << tbme << " "
 //                        << std::setw(12) << std::setprecision(6) << denom << "   "
 //                        << std::setw(12) << std::setprecision(6) << (2*J+1) * oa.occ*ob.occ*tbme*tbme/denom  << std::endl;
+              }
            }
          }
        }
