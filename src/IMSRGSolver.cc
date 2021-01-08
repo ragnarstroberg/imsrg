@@ -187,7 +187,6 @@ void IMSRGSolver::SetFlowFile(std::string str)
 void IMSRGSolver::Solve()
 {
 
-  std::cout << "BEGIN SOLVE. Number of SP states = " << FlowingOps[0].GetModelSpace()->GetNumberOrbits() << std::endl;
   if (s<1e-4)
    WriteFlowStatusHeader(std::cout);
 

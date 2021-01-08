@@ -486,9 +486,6 @@ void HFMBPT::DensityMatrixPP(Operator& H)
       if(b > a) continue;
       double eb = H.OneBody(b,b);
       Orbit& ob = HartreeFock::modelspace->GetOrbit(b);
-//      if(oa.j2 != ob.j2) continue;
-//      if(oa.l != ob.l) continue;
-//      if(oa.tz2 != ob.tz2) continue;
       if((1-ob.occ) <ModelSpace::OCC_CUT) continue;
 
       double r = 0.0;
@@ -521,7 +518,8 @@ void HFMBPT::DensityMatrixPP(Operator& H)
               tbme +=  (2*J+1) * H.TwoBody.GetTBME_J(J,a,c,i,j)
                                * H.TwoBody.GetTBME_J(J,i,j,b,c);
             }
-            tbme *=  (1-oa.occ) * (1-ob.occ) * pow( (1-oc.occ) * oi.occ * oj.occ,2) ;
+//            tbme *=  (1-oa.occ) * (1-ob.occ) * pow( (1-oc.occ) * oi.occ * oj.occ,2) ;
+            tbme *=  (1-oa.occ) * (1-ob.occ) *  (1-oc.occ)*(1-oc.occ) * oi.occ*oi.occ * oj.occ*oj.occ ;
 //            if (true)
 //            {
               double epsilon = 0.5*sqrt(std::abs(e_acij * e_bcij));
@@ -608,7 +606,8 @@ void HFMBPT::DensityMatrixHH(Operator& H)
                               * H.TwoBody.GetTBME_J(J,j,k,a,b);
             }
 
-            tbme *= pow( (1-oa.occ) * (1-ob.occ) * ok.occ , 2) *  oi.occ * oj.occ ;
+//            tbme *= pow( (1-oa.occ) * (1-ob.occ) * ok.occ , 2) *  oi.occ * oj.occ ;
+            tbme *=  (1-oa.occ)*(1-oa.occ) * (1-ob.occ)*(1-ob.occ) * ok.occ*ok.occ   *  oi.occ * oj.occ ;
             if (true)
             {
               double epsilon = 0.5*sqrt(std::abs(e_abik * e_abjk));
@@ -798,10 +797,8 @@ void HFMBPT::PrintSPEandWF()
     Orbit& oi = modelspace->GetOrbit(i);
     std::cout << std::fixed << std::setw(3) << i << ": " << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
          << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F_natbasis(i,i) << " " << std::setw(12) << oi.occ << " " << std::setw(12) << oi.occ_nat*(1-oi.occ_nat) << "   | ";
-//         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F(i,i) << " " << std::setw(12) << oi.occ << "   | ";
     for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) // j runs over HO states
     {
-//      std::cout << std::setw(9) << C_HO2NAT(i,j) << "  ";
       std::cout << std::setw(9) << C_HO2NAT(j,i) << "  ";  // C is <HO|NAT>
     }
     std::cout << std::endl;
@@ -820,93 +817,11 @@ void HFMBPT::PrintSPEandWF()
 void HFMBPT::ReorderHFMBPTCoefficients()
 {
 
-// As Baishan pointed out, this is a problematic way of reordering.
-// In the case where they are different, we prefer things in descending occupation, rather than in maximum overlap with HF.
-//
-//   for ( auto& it : Hbare.OneBodyChannels )
-//   {
-//     // OneBodyChannels is a map (l,j,tz) => index, so it.second is a list of orbit indices in this one-body channel
-//     arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end())); // convert from std::set to std::vector, and then to arma::uvec
-//     int nswaps = 10; // keep track of the number of swaps we had to do, iterate until nswaps==0
-//     while (nswaps>0) // loop until we don't have to make any more swaps
-//     {
-//       nswaps = 0;
-////       for (index_t i=0;i<orbvec.size()-1;i++)
-//       for (index_t i : orbvec)
-//       {
-////         for (index_t j=0;j<i;j++)
-//         for (index_t j : orbvec)
-//         {
-//           if ( j>=i ) continue;
-//           if ( std::abs( C_HF2NAT(i,j)) > std::abs( C_HF2NAT(i,i) ) )
-//           {
-//             C_HF2NAT.swap_cols(i,j);
-//             Occ.swap_rows(i,j);
-//             nswaps++;
-//           }
-//         }
-//       }
-//      }
-//
-//
-//   }
-   arma::vec SPE =  arma::diagvec( C_HF2NAT.t() * C.t() * F * C * C_HF2NAT);
-   std::cout << "BEGIN LOOP OVER ONE BODY CHANNELS" << std::endl;
-   for ( auto& it : Hbare.OneBodyChannels )
-   {
-     // OneBodyChannels is a map (l,j,tz) => index, so it.second is a list of orbit indices in this one-body channel
-     arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end())); // convert from std::set to std::vector, and then to arma::uvec
-     int nswaps = 10; // keep track of the number of swaps we had to do, iterate until nswaps==0
-     while (nswaps>0) // loop until we don't have to make any more swaps
-     {
-       nswaps = 0;
-//       for (index_t i=0;i<orbvec.size()-1;i++)
-       for (index_t i : orbvec)
-       {
-//         for (index_t j=0;j<i;j++)
-         for (index_t j : orbvec)
-         {
-           if ( j>=i ) continue;
-//           if ( std::abs( C_HF2NAT(i,j)) > std::abs( C_HF2NAT(i,i) ) )
-           if ( SPE(i) < SPE(j) )
-           {
-             std::cout << "SWAPPING orbits " << i << "  and  " << j << "  with SPE " << SPE(i) << " " << SPE(j) << std::endl;
-             C_HF2NAT.swap_cols(i,j);
-             Occ.swap_rows(i,j);
-             SPE.swap_rows(i,j);
-             std::cout << "                   now " << i << " " << j << " => "  << SPE(i) << "  " << SPE(j) << std::endl;
-             nswaps++;
-           }
-         }
-       }
-      }
-
-
-   }
-
-
-
-
-
-
-
-//   // C_HF2NAT is the matrix |HF><NAT|, so that the column index runs over NAT states and the row index runs over HF states.
-//   // Make sure the diagonal terms are positive (to avoid confusion later).
-//   arma::rowvec minlist = arma::min( C_HF2NAT, 0 ); // the zero means "each column"
-//   arma::rowvec maxlist = arma::max( C_HF2NAT, 0 ); // the zero means "each column".  a 1 would mean "each row"
-//   for ( size_t i=0; i<C_HF2NAT.n_cols; i++)
-//   {
-//     // if the coefficient with the largest magnitude is negative, multiply by -1.
-//     if ( std::abs(minlist(i)) > std::abs(maxlist(i)) ) C_HF2NAT.col(i) *= -1;
-//   }
-
-
    for (index_t i=0;i<C_HF2NAT.n_rows;++i) // loop through original basis states
    {
       if (C_HF2NAT(i,i) < 0)  C_HF2NAT.col(i) *= -1;
    }
 
-  std::cout << " line " << __LINE__ << "   Occ = " << std::endl << Occ << std::endl;
 }
 
 
