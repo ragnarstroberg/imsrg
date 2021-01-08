@@ -816,7 +816,7 @@ void HFMBPT::PrintSPEandWF()
 //*********************************************************************
 void HFMBPT::ReorderHFMBPTCoefficients()
 {
-
+   // Eigenvectors should be in order of decreasing occupation
    for (index_t i=0;i<C_HF2NAT.n_rows;++i) // loop through original basis states
    {
       if (C_HF2NAT(i,i) < 0)  C_HF2NAT.col(i) *= -1;
