@@ -73,7 +73,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"LECs",			"EM2.0_2.0"},	// low energy constants for the interaction, only used with Johannes' hdf5 file format
   {"scratch",			""},		// scratch directory for writing operators in binary format
   {"use_brueckner_bch",          "false"},	// switch to Brueckner version of BCH
-  {"valence_file_format",       "nushellx"},	// file format for valence space interaction
+  {"valence_file_format",       "tokyo"},	// file format for valence space interaction. Can be tokyo, nushellx, or antoine (antoine fmt is buggy)
   {"occ_file",			"none"},	// name of file containing orbit occupations
   {"goose_tank",		"false"},	// do goose_tank correction to commutators
   {"write_omega",		"false"},	// write omega to disk
