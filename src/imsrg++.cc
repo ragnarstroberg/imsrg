@@ -861,6 +861,20 @@ int main(int argc, char** argv)
      if (occ_file != "none" and occ_file != "" ) modelspace_imsrg.Init_occ_from_file(eMax_imsrg,valence_space,occ_file);
 //     if (physical_system == "atomic") modelspace_imsrg.InitSingleSpecies(eMax_imsrg, eMax_imsrg, e3Max_imsrg, reference, valence_space);
 //     if (occ_file != "none" and occ_file != "" ) modelspace_imsrg.Init_occ_from_file(eMax_imsrg,e2Max_imsrg,e3Max_imsrg,valence_space,occ_file);
+
+
+     // If the occupations in modelspace were different from the naive filling, we want to keep those.
+     std::map<index_t,double> hole_map;
+     for ( auto& i_new : modelspace_imsrg.all_orbits )
+     {
+        Orbit& oi_new = modelspace_imsrg.GetOrbit(i_new);
+        index_t i_old = modelspace.GetOrbitIndex( oi_new.n, oi_new.l, oi_new.j2, oi_new.tz2 );
+        Orbit& oi_old = modelspace.GetOrbit(i_old);
+        hole_map[i_new] = oi_old.occ;
+     }
+     modelspace_imsrg.SetReference( hole_map );
+
+
      HNO = HNO.Truncate(modelspace_imsrg);
 
 //     modelspace = modelspace_imsrg;  // this could cause some confusion later on...
