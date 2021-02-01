@@ -734,7 +734,7 @@ Operator Operator::Truncate(ModelSpace& ms_new)
     arma::uvec ibra_old(nbras_new);
     arma::uvec iket_old(nkets_new);
 
-    for (int ibra=0;ibra<nkets_new;++ibra)
+    for (int ibra=0;ibra<nbras_new;++ibra)
     {
       auto& bra_new = tbc_bra_new.GetKet(ibra);
       ibra_old(ibra) = tbc_bra_old.GetLocalIndex( old_orbs(bra_new.p), old_orbs(bra_new.q) );

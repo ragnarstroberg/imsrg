@@ -1157,11 +1157,16 @@ void HartreeFock::UpdateReference()
 
 Operator HartreeFock::GetNormalOrderedH(arma::mat& Cin, int particle_rank)
 {
+  std::cout << "LINE " << __LINE__ << std::endl;
   C=Cin;
+  std::cout << "LINE " << __LINE__ << std::endl;
 //  ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
   UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
+  std::cout << "LINE " << __LINE__ << std::endl;
   UpdateF();              // Update the Fock matrix
+  std::cout << "LINE " << __LINE__ << std::endl;
   CalcEHF();
+  std::cout << "LINE " << __LINE__ << std::endl;
   PrintEHF();
 
   return GetNormalOrderedH();
