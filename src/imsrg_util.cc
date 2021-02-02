@@ -166,6 +166,30 @@ namespace imsrg_util
         std::istringstream(opnamesplit[1]) >> rr;
         theop =  DensityAtR(modelspace,rr,"neutron"); // whoops... I'd forgotten the "theop = ". Thanks Johannes...
       }
+      else if (opnamesplit[0] == "rhocentralp") // central point proton density, averaged over a sphere of radius rmax
+      {
+        double rmax;
+        std::istringstream(opnamesplit[1]) >> rmax;
+        int npoints = 10;
+        double dr = rmax/npoints;
+        theop = 0.5*0.5*DensityAtR(modelspace,dr/2,"proton");
+        double norm = 0.5*0.5;
+        for ( int ipoint=1; ipoint<npoints; ipoint++)  theop += (ipoint+0.5)*(ipoint+0.5) * DensityAtR(modelspace,dr*(ipoint+0.5),"proton");
+        for ( int ipoint=1; ipoint<npoints; ipoint++)  norm  += (ipoint+0.5)*(ipoint+0.5) ;
+        theop /= norm;
+      }
+      else if (opnamesplit[0] == "rhocentraln")// central point neutron density, averaged over a sphere of radius rmax
+      {
+        double rmax;
+        std::istringstream(opnamesplit[1]) >> rmax;
+        int npoints = 10;
+        double dr = rmax/npoints;
+        theop = 0.5*0.5*DensityAtR(modelspace,dr/2,"neutron");
+        double norm = 0.5*0.5;
+        for ( int ipoint=1; ipoint<npoints; ipoint++)  theop += (ipoint+0.5)*(ipoint+0.5) * DensityAtR(modelspace,dr*(ipoint+0.5),"neutron");
+        for ( int ipoint=1; ipoint<npoints; ipoint++)  norm  += (ipoint+0.5)*(ipoint+0.5) ;
+        theop /= norm;
+      }
       else if (opnamesplit[0] == "FFp") // point proton  form factor F(q), e.g. FFp_1.25, where q is in fm^-1
       {
         double q;
