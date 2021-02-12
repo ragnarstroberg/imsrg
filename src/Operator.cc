@@ -1112,7 +1112,8 @@ std::array<double,3> Operator::GetMP3_Energy()
    int nch_CC = modelspace->GetNumberTwoBodyChannels_CC();
 
 //   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Emp3)
-   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Epp,Ehh)
+//   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Epp,Ehh)
+   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Eph)
    for (int ich_CC=0;ich_CC<nch_CC;++ich_CC)
    {
      TwoBodyChannel_CC& tbc_CC = modelspace->GetTwoBodyChannel_CC(ich_CC);
