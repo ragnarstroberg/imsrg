@@ -130,7 +130,8 @@ void IMSRGSolver::SetHin( Operator & H_in)
    H_0 = &H_in;
 //   H_s = H_in;
    FlowingOps[0] = H_in;
-   Eta = H_in;
+//   Eta = H_in;
+   Eta = Operator( H_in);
    Eta.Erase();
    Eta.SetAntiHermitian();
    if (Omega.back().Norm() > 1e-6)
@@ -165,6 +166,16 @@ void IMSRGSolver::Reset()
 void IMSRGSolver::SetGenerator(std::string gen)
 {
   generator.SetType(gen);
+  if (Omega.back().Norm() > 1e-6)
+  {
+    Eta.Erase();
+    NewOmega();
+  }
+}
+
+void IMSRGSolver::SetDenominatorPartitioning(std::string dp)
+{
+  generator.SetDenominatorPartitioning(dp);
   if (Omega.back().Norm() > 1e-6)
   {
     Eta.Erase();
