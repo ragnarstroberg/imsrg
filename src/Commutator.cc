@@ -176,9 +176,9 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        std::cout << " comm330 " << std::endl;
        comm330ss(X, Y, Z); // scales as n^6
 
-//       //Maybe not so important, but I think relatively cheap
-//       std::cout << " comm331 " << std::endl;
-//       comm331ss(X, Y, Z); // scales as n^7
+       //Maybe not so important, but I think relatively cheap
+       std::cout << " comm331 " << std::endl;
+       comm331ss(X, Y, Z); // scales as n^7
 
 //     This one is essential. If it's not here, then there are no induced 3 body terms
        std::cout << " comm223 " << std::endl;
@@ -191,9 +191,9 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        std::cout << " comm231 " << std::endl;
        comm231ss(X, Y, Z);  // scales as n^6
 
-//     //no demonstrated effect yet, but it's cheap
-//       std::cout << " comm132 " << std::endl;
-//       comm132ss(X, Y, Z); // scales as n^6
+     //no demonstrated effect yet, but it's cheap
+       std::cout << " comm132 " << std::endl;
+       comm132ss(X, Y, Z); // scales as n^6
 
        //one of the two most important IMSRG(3) terms
        std::cout << " comm232 " << std::endl;
