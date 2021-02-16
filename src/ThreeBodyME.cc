@@ -310,6 +310,8 @@ void ThreeBodyME::SwitchToPN_and_discard()
 {
   double t_start = omp_get_wtime();
   threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_pn( modelspace, E3max, rank_J, rank_T, parity)  );
+
+  threebody_storage->SetHerm( this->herm );
   threebody_storage->Allocate();
 //  threebody_storage = TBS_pn ;
 //  threebody_storage = std::shared_ptr<ThreeBodyStorage_pn>( TBS_pn );

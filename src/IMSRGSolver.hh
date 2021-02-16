@@ -107,6 +107,7 @@ class IMSRGSolver
   void SetdOmega(double d){norm_domega = d;};
   void SetSmax(double d){smax = d;};
   void SetGenerator(std::string g);
+  void SetDenominatorPartitioning(std::string dp);
   void SetOmegaNormMax(double x){omega_norm_max = x;};
   void SetODETolerance(float x){ode_e_abs=x;ode_e_rel=x;};
   void SetEtaCriterion(float x){eta_criterion = x;};

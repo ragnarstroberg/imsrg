@@ -90,6 +90,8 @@ int main(int argc, char** argv)
   std::string valence_file_format = parameters.s("valence_file_format");
   std::string occ_file = parameters.s("occ_file");
   std::string physical_system = parameters.s("physical_system");
+  std::string denominator_partitioning = parameters.s("denominator_partitioning");
+
   bool use_brueckner_bch = parameters.s("use_brueckner_bch") == "true";
   bool nucleon_mass_correction = parameters.s("nucleon_mass_correction") == "true";
   bool relativistic_correction = parameters.s("relativistic_correction") == "true";
@@ -891,6 +893,7 @@ int main(int argc, char** argv)
   imsrgsolver.SetHin(HNO); // necessary?
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetMethod(method);
+  imsrgsolver.SetDenominatorPartitioning(denominator_partitioning);
   imsrgsolver.SetEtaCriterion(eta_criterion);
   imsrgsolver.GetGenerator().SetOnly2bEta(only_2b_eta);
   imsrgsolver.max_omega_written = 500;

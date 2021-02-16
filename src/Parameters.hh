@@ -92,6 +92,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"only_2b_eta",               "false"},       // If we're doing IMSRG3, keep eta as 2b 
   {"only_2b_omega",             "false"},       // If we're doing IMSRG3, keep omega (the magnus operator) as 2b 
   {"perturbative_triples",      "false"},       // Compute perturbative energy shift due to [2,2]->3 induced 3-body 
+  {"denominator_partitioning",  "Epstein_Nesbet"}, // Denominators used in IMSRG generators. Can be Moller_Plesset or Epstein_Nesbet.
 };
 
 

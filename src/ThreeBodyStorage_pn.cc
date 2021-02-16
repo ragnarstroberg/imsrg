@@ -225,7 +225,7 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn_ch(size_t ch_bra, size_t
   size_t index;
   int herm_flip;
   AccessME(ch_bra,ch_ket,ibra,iket,index,herm_flip);
-//  std::cout << "   got index = " << index << "   MatEl size is " << MatEl.size() << std::endl;
+//  std::cout << "   got index = " << index << "   MatEl size is " << MatEl.size() << std::hex << "  address = " << &(MatEl[index]) << std::dec << "   ->  " << MatEl[index]  << "   herm_flip = " << herm_flip << "   because herm is " << herm << std::endl;
   return MatEl.at(index)*herm_flip;
 }
 

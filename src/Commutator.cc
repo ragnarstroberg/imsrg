@@ -139,6 +139,10 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
         comm220ss(X, Y, Z) ;
    }
 
+//   std::cout << "In " << __func__ << "                   X. Is the 3body hermitian " << X.ThreeBody.IsHermitian() << std::endl;
+//   std::cout << "In " << __func__ << "                   Y. Is the 3body hermitian " << Y.ThreeBody.IsHermitian() << std::endl;
+//   std::cout << "In " << __func__ << "  just constructed Z. Is the 3body hermitian " << Z.ThreeBody.IsHermitian() << std::endl;
+
    double t_start = omp_get_wtime();
    comm111ss(X, Y, Z);
    X.profiler.timer["comm111ss"] += omp_get_wtime() - t_start;
@@ -172,9 +176,9 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        std::cout << " comm330 " << std::endl;
        comm330ss(X, Y, Z); // scales as n^6
 
-//     Maybe not so important, but I think relatively cheap
-       std::cout << " comm331 " << std::endl;
-       comm331ss(X, Y, Z); // scales as n^7
+//       //Maybe not so important, but I think relatively cheap
+//       std::cout << " comm331 " << std::endl;
+//       comm331ss(X, Y, Z); // scales as n^7
 
 //     This one is essential. If it's not here, then there are no induced 3 body terms
        std::cout << " comm223 " << std::endl;
@@ -183,20 +187,20 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
 //     if (X.GetParticleRank()>2 or Y.GetParticleRank()>2)
 //     {
-       // Demonstrated that this can have some effect
+//       // Demonstrated that this can have some effect
        std::cout << " comm231 " << std::endl;
        comm231ss(X, Y, Z);  // scales as n^6
 
-//     no demonstrated effect yet, but it's cheap
-       std::cout << " comm132 " << std::endl;
-       comm132ss(X, Y, Z); // scales as n^6
+//     //no demonstrated effect yet, but it's cheap
+//       std::cout << " comm132 " << std::endl;
+//       comm132ss(X, Y, Z); // scales as n^6
 
-//     one of the two most important IMSRG(3) terms
+       //one of the two most important IMSRG(3) terms
        std::cout << " comm232 " << std::endl;
        comm232ss(X, Y, Z);   // this is the slowest n^7 term
 //       comm232ss_debug(X, Y, Z);   // this is the slowest n^7 term
 
-//     important for suppressing off-diagonal H3
+       //important for suppressing off-diagonal H3
        std::cout << " comm133 " << std::endl;
        comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
 
@@ -214,21 +218,21 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        comm233_phss(X, Y, Z);
 //       comm233_phss_debug(X, Y, Z);
 
-//       not too bad, though naively n^8
+       //not too bad, though naively n^8
        std::cout << " comm332_ppph_hhhp " << std::endl;
        comm332_ppph_hhhpss(X, Y, Z);
 
-//      naively n^8, but reasonably fast when implemented as a mat mult
+       //naively n^8, but reasonably fast when implemented as a mat mult
        std::cout << " comm332_pphh " << std::endl;
        comm332_pphhss(X, Y, Z);
 //       comm332_pphhss_debug(X, Y, Z);
 
-//       naively n^9 but pretty fast as a mat mult
+       //naively n^9 but pretty fast as a mat mult
        std::cout << " comm333_ppp_hhhss " << std::endl;
        comm333_ppp_hhhss(X, Y, Z);
 
-//     This one works, but it's incredibly slow.  naively n^9.
-//     Much improvement by going to mat mult
+     //This one works, but it's incredibly slow.  naively n^9.
+     //Much improvement by going to mat mult
        std::cout << " comm333_pph_hhpss " << std::endl;
        comm333_pph_hhpss(X, Y, Z);
 //       comm333_pph_hhpss_debug(X, Y, Z);
@@ -1914,6 +1918,10 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   if (X3.Norm()<1e-6 or Y3.Norm()<1e-6 ) return;
+//  std::cout << " in  " << __func__ << "  ||X3|| = " << X3.Norm() << "  ||Y3|| = " << Y3.Norm()
+//            << "   hermitian? " << X.IsHermitian() << "  " << Y.IsHermitian()
+//            << "   3body herm: " << X3.IsHermitian() << "  " << Y3.IsHermitian()
+//            << "  Storage mode " << X3.GetStorageMode() << "   " << Y3.GetStorageMode() << std::endl;
 
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
@@ -1976,12 +1984,15 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
         double ydefabc = Y3.GetME_pn_ch(ch3,ch3,iket,ibra);
 
         z0 += 1./36 * occfactor * abc_symm * def_symm * (twoJ+1) * (xabcdef * ydefabc  -  yabcdef*xdefabc);
+//        std::cout << "    abcdef " << bra.p << " " << bra.q << " " << bra.r << " " << ket.p << " " << ket.q << " " << ket.r << std::endl;
+//        std::cout << "     z0 += " << 1./36 << " * " << occfactor << " * " << abc_symm << " * " << def_symm << " * "
+//                  << (twoJ+1) << " *  ( " << xabcdef << " * " << ydefabc << " - " << yabcdef << " * " << xdefabc << " )  => " << z0 << std::endl;
 
       }// for iket
     }// for ibra
   }// for ch3
 
-  std::cout << "Adding " << z0 << "  to Zero Body" << std::endl;
+  std::cout << "Adding " << std::setprecision(9) << z0 << "  to Zero Body" << std::endl;
   Z.ZeroBody += z0;
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
@@ -5212,6 +5223,9 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 //    std::cout << "Made it as far as line " << __LINE__ << std::endl;
     if ( (ngood_ijn < 1) ) continue;
 
+
+    
+
     channels_pph[ ch_pph_hash(twoJph,parity_ph,twoTz_ph) ] = nch_pph;
 
     channel_list_pph.push_back({twoJph, parity_ph,twoTz_ph});
@@ -5425,16 +5439,21 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                    double Jph = 0.5 * twoJph;
 
 
-                   // This lookup is expensive. Replace map with vector makes things better
+                   // This lookup is expensive. Replace map with vector makes things better. Not the bottleneck anymore.
                    int ch_pph = channels_pph[ ch_pph_hash(twoJph,parity_ph,twoTz_ph)]; 
                    if ( ch_pph<0 ) continue;
  
-
+                   // These two index lookups are now the expensive part
+                   // ket_lookup_pph is a vector< unordered_map<size_t,size_t> >
+                   // Speeding this up may require coming up with a ~perfect hash, which will be tough.
                    size_t index_126 = ket_lookup_pph[ch_pph].at(key_126 );
                    size_t index_453 = ket_lookup_pph[ch_pph].at(key_453 );
 
-                   size_t start_ptr = Zbar_start_pointers[ch_pph];
                    size_t ngood_ijn = ket_lookup_pph[ch_pph].size();
+
+                   // This is already a vector so it's fast
+                   size_t start_ptr = Zbar_start_pointers[ch_pph];
+
                    if ( index_126<= index_453 )
                    {
                      size_t zbar_index = start_ptr + ( 2*ngood_ijn - index_126 - 1) * index_126 / 2  + index_453 ;

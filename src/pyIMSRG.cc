@@ -338,6 +338,7 @@ PYBIND11_MODULE(pyIMSRG, m)
 
    py::class_<HFMBPT,HartreeFock>(m,"HFMBPT")
       .def(py::init<Operator&>())
+      .def("UseNATOccupations",&HFMBPT::UseNATOccupations)
       .def("GetNaturalOrbitals",&HFMBPT::GetNaturalOrbitals)
       .def("GetNormalOrderedHNAT",&HFMBPT::GetNormalOrderedHNAT)
       .def("PrintSPEandWF",&HFMBPT::PrintSPEandWF)

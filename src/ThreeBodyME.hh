@@ -147,6 +147,7 @@ class ThreeBodyME
   void Setemax(int e);
   void SetHermitian();
   void SetAntiHermitian();
+  bool IsHermitian() const { std::cout << "xx " << threebody_storage->herm << " xx " << std::endl; return herm==1;};
 
 //  bool Is_PN_Mode() const {return (storage_mode == pn);};
 //  bool Is_Isospin_Mode()const {return (storage_mode == isospin);};

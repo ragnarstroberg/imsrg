@@ -38,6 +38,9 @@ class Generator
   double denominator_delta;
   int denominator_delta_index;
 
+  enum denominator_partitioning_t{Epstein_Nesbet,Moller_Plesset};
+  denominator_partitioning_t denominator_partitioning;
+
   Operator RspaceRegulator;
   double regulator_length;
 
@@ -53,6 +56,7 @@ class Generator
 
   Generator();
   void SetType(std::string g){generator_type = g;};
+  void SetDenominatorPartitioning(std::string dp){if (dp=="Moller_Plesset"){denominator_partitioning=Moller_Plesset;}else {denominator_partitioning=Epstein_Nesbet;};};
   std::string GetType(){return generator_type;};
   void Update(Operator* H, Operator* Eta);
   void AddToEta(Operator* H, Operator* Eta);

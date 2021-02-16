@@ -22,7 +22,7 @@ std::function<double(double,double)> Generator::imaginarytime_func = [] (double 
 std::function<double(double,double)> Generator::qtransferatan1_func = [](double Hod, double denom){return pow(std::abs(denom)*M_NUCLEON/HBARC/HBARC, 0.5*1) * atan_func(Hod, denom);};
 
 Generator::Generator()
-  : generator_type("white"), denominator_cutoff(1e-6)  , denominator_delta(0), denominator_delta_index(-1), only_2b_eta(false)
+  : generator_type("white"), denominator_cutoff(1e-6)  , denominator_delta(0), denominator_delta_index(-1), denominator_partitioning(Epstein_Nesbet),  only_2b_eta(false)
 {}
 
 
@@ -92,7 +92,10 @@ double Generator::Get1bDenominator(int i, int j)
    double nj = modelspace->GetOrbit(j).occ;
    
    double denominator = H->OneBody(i,i) - H->OneBody(j,j);
-   denominator += ( ni-nj ) * H->TwoBody.GetTBMEmonopole(i,j,i,j);
+   if ( denominator_partitioning == Epstein_Nesbet)
+   {
+      denominator += ( ni-nj ) * H->TwoBody.GetTBMEmonopole(i,j,i,j);
+   }
 
    if (denominator_delta_index==-12345 or i == denominator_delta_index or j==denominator_delta_index)
      denominator += denominator_delta;
@@ -121,12 +124,15 @@ double Generator::Get2bDenominator(int ch, int ibra, int iket)
    double nk = ket.op->occ;
    double nl = ket.oq->occ;
 
-   denominator       += ( 1-ni-nj ) * H->TwoBody.GetTBMEmonopole(i,j,i,j); // pp'pp'
-   denominator       -= ( 1-nk-nl ) * H->TwoBody.GetTBMEmonopole(k,l,k,l); // hh'hh'
-   denominator       += ( ni-nk )   * H->TwoBody.GetTBMEmonopole(i,k,i,k); // phph
-   denominator       += ( ni-nl )   * H->TwoBody.GetTBMEmonopole(i,l,i,l); // ph'ph'
-   denominator       += ( nj-nk )   * H->TwoBody.GetTBMEmonopole(j,k,j,k); // p'hp'h
-   denominator       += ( nj-nl )   * H->TwoBody.GetTBMEmonopole(j,l,j,l); // p'h'p'h'
+   if ( denominator_partitioning == Epstein_Nesbet)
+   {
+     denominator       += ( 1-ni-nj ) * H->TwoBody.GetTBMEmonopole(i,j,i,j); // pp'pp'
+     denominator       -= ( 1-nk-nl ) * H->TwoBody.GetTBMEmonopole(k,l,k,l); // hh'hh'
+     denominator       += ( ni-nk )   * H->TwoBody.GetTBMEmonopole(i,k,i,k); // phph
+     denominator       += ( ni-nl )   * H->TwoBody.GetTBMEmonopole(i,l,i,l); // ph'ph'
+     denominator       += ( nj-nk )   * H->TwoBody.GetTBMEmonopole(j,k,j,k); // p'hp'h
+     denominator       += ( nj-nl )   * H->TwoBody.GetTBMEmonopole(j,l,j,l); // p'h'p'h'
+   }
 
    if (std::abs(denominator)<denominator_cutoff)
      denominator = denominator_cutoff;
@@ -139,6 +145,9 @@ double Generator::Get3bDenominator( int i, int j, int k, int l, int m, int n )
 {
   auto h1 = H->OneBody;
   double denominator = h1(i,i) + h1(j,j) + h1(k,k) - h1(l,l) - h1(m,m) - h1(n,n);
+  if ( denominator_partitioning == Epstein_Nesbet)
+  { // This  is unpleasant and almost certainly not necessary, so not implementing it yet...
+  }
   return denominator;
 }
 
