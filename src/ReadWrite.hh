@@ -112,11 +112,11 @@ class ReadWrite
    void ReadJacobi3NFiles( Jacobi3BME& jacobi3bme, std::string poi_name, std::string eig_name, std::string v3int_name );
 
    // added by T.Miyagi
-   void ReadTokyo(std::string, Operator&, std::string);
-   void ReadTokyo(std::string, Operator&);
-   void WriteTokyo(Operator&, std::string, std::string);
-   void WriteTokyoFull(Operator&, std::string); // only for Hamiltonian
-   void WriteTensorTokyo(std::string, Operator&);
+   void ReadTokyo(std::string filename, Operator& op, std::string fmt);
+   void ReadTokyo(std::string filename, Operator& op);
+   void WriteTokyo(Operator& op, std::string filename, std::string mode);
+   void WriteTokyoFull(Operator& op, std::string filename); // only for Hamiltonian
+   void WriteTensorTokyo(std::string filename, Operator& op);
    Operator ReadOperator2b_Miyagi(std::string, ModelSpace&); // general operator me2j-like format
    void skip_comments(std::ifstream&);
 
