@@ -2,6 +2,7 @@
 
 #include "IMSRG.hh"
 #include <string>
+#include <sstream>
 #include <vector>
 
 #include <pybind11/pybind11.h>
@@ -20,7 +21,7 @@ namespace py = pybind11;
 
   size_t TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
 
-  void ArmaMatPrint( arma::mat& self){ self.print();};
+//  void ArmaMatPrint( arma::mat& self){ self.print();};
   void OpSetOneBodyME( Operator& self, int i, int j, double v){self.OneBody(i,j) = v;};
 
 //  void MS_SetRef(ModelSpace& self, std::string str){ self.SetReference( str);};
@@ -183,7 +184,8 @@ PYBIND11_MODULE(pyIMSRG, m)
    py::class_<arma::mat>(m,"ArmaMat")
       .def(py::init<>())
       .def("zeros",[](arma::mat& self, int nrows, int ncols){self.zeros(nrows,ncols);}, py::arg("nrows"),py::arg("ncols") )
-      .def("Print",&ArmaMatPrint)
+      .def("Print",[](arma::mat&self){self.print();} )//   &ArmaMatPrint)
+      .def("__str__",[](arma::mat&self){ std::ostringstream oss; oss << self; return oss.str();} )//   &ArmaMatPrint)
       .def("save", [](arma::mat& self,std::string fname) { self.save(fname);}, py::arg("filename") )
       .def("load", [](arma::mat& self,std::string fname) { self.load(fname);}, py::arg("filename") )
 //      .def("t", &arma::mat::t) // transpose
@@ -377,6 +379,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetMagnusAdaptive",&IMSRGSolver::SetMagnusAdaptive)
       .def("SetReadWrite", &IMSRGSolver::SetReadWrite)
       .def("SetHunterGatherer", &IMSRGSolver::SetHunterGatherer)
+      .def("SetPerturbativeTriples",&IMSRGSolver::SetPerturbativeTriples)
+      .def("GetPerturbativeTriples",&IMSRGSolver::GetPerturbativeTriples)
       .def("AddOperator", &IMSRGSolver::AddOperator)
       .def("GetOperator", &IMSRGSolver::GetOperator)
       .def("EstimateBCHError", &IMSRGSolver::EstimateBCHError)
