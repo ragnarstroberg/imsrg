@@ -542,6 +542,7 @@ int main(int argc, char** argv)
   int hno_particle_rank = 2;
   if ((IMSRG3) and (Hbare.ThreeBodyNorm() > 1e-5))  hno_particle_rank = 3;
   if (discard_residual_input3N) hno_particle_rank = 2;
+  if (input3bme_type=="no2b") hno_particle_rank = 2;
 
   Operator& HNO = Hbare; // The reference & means we overwrite Hbare and save some memory
   if (basis == "HF" and method !="HF")
