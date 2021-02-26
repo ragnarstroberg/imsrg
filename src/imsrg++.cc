@@ -644,40 +644,51 @@ int main(int argc, char** argv)
   if ( method != "magnus" )
   {
 
-    std::cout << "MAKING THE OPERATORS LINE " << __LINE__ << std::endl;
+//    std::cout << "MAKING THE OPERATORS LINE " << __LINE__ << std::endl;
     for (auto& opname : opnames)
     {
-//        ops.emplace_back( imsrg_util::OperatorFromString(modelspace,opname) );
-        Operator optmp = imsrg_util::OperatorFromString(modelspace,opname);
-
-        if ((basis == "HF") and (opname.find("DaggerHF") == std::string::npos)  )
-        {
-          optmp = hf.TransformToHFBasis(optmp);
-        }
-        else if ((basis == "NAT") and (opname.find("DaggerHF") == std::string::npos)  )
-        {
-          optmp = hf.TransformHOToNATBasis(optmp);
-        }
-        optmp = optmp.DoNormalOrdering();
-        if (method == "HF" or method == "MP3")
-        {
-          std::cout << "HF expectation value  " << opname << "  " << optmp.ZeroBody << std::endl;
-        }
-        if (method == "MP3")
-        {
-          double dop = optmp.MP1_Eval( HNO );
-          std::cout << "Operator 1st order correction  " << dop << "  ->  " << optmp.ZeroBody + dop << std::endl;
-        }
-        if ( opname == "Rp2" )
-        {
-          double Rp2 = optmp.ZeroBody;
-          int Z = modelspace.GetTargetZ();
-          int A = modelspace.GetTargetMass();
-          std::cout << " HF point proton radius = " << sqrt( Rp2 ) << std::endl;
-          std::cout << " HF charge radius = " << ( abs(Rp2)<1e-6 ? 0.0 : sqrt( Rp2 + r2p + r2n*(A-Z)/Z + DarwinFoldy) ) << std::endl;
-        }
+        ops.emplace_back( imsrg_util::OperatorFromString(modelspace, opname) );
     }
-    opnames.resize(0); // we already dealt with all the operators in opnames, so clear it out.
+//    for (auto& opname : opnames)
+//    {
+////        ops.emplace_back( imsrg_util::OperatorFromString(modelspace,opname) );
+//        Operator optmp = imsrg_util::OperatorFromString(modelspace,opname);
+//
+//        if ((basis == "HF") and (opname.find("DaggerHF") == std::string::npos)  )
+//        {
+//          optmp = hf.TransformToHFBasis(optmp);
+//        }
+//        else if ((basis == "NAT") and (opname.find("DaggerHF") == std::string::npos)  )
+//        {
+//          optmp = hf.TransformHOToNATBasis(optmp);
+//        }
+//        optmp = optmp.DoNormalOrdering();
+//        if (method == "HF" or method == "MP3")
+//        {
+//          std::cout << "HF expectation value  " << opname << "  " << optmp.ZeroBody << std::endl;
+//        }
+//        if (method == "MP3")
+//        {
+//          double dop = optmp.MP1_Eval( HNO );
+//          std::cout << "Operator 1st order correction  " << dop << "  ->  " << optmp.ZeroBody + dop << std::endl;
+//        }
+//        if (method == "flow" or method == "flow_RK4")
+//        {
+//          ops.push_back(optmp);
+//        }
+//        if ( opname == "Rp2" )
+//        {
+//          double Rp2 = optmp.ZeroBody;
+//          int Z = modelspace.GetTargetZ();
+//          int A = modelspace.GetTargetMass();
+//          std::cout << " HF point proton radius = " << sqrt( Rp2 ) << std::endl;
+//          std::cout << " HF charge radius = " << ( abs(Rp2)<1e-6 ? 0.0 : sqrt( Rp2 + r2p + r2n*(A-Z)/Z + DarwinFoldy) ) << std::endl;
+//        }
+//    }
+//    if ( method=="HF" or method=="MP3")
+//    {
+//       opnames.resize(0); // we already dealt with all the operators in opnames, so clear it out.
+//    }
 
     // Calculate first order perturbative correction to some operators, if that's what we asked for.
     // Strictly speaking, it doesn't make much sense to do this and then proceed with the IMSRG calculation,
@@ -748,6 +759,13 @@ int main(int argc, char** argv)
     }
 
 
+//   std::cout << "op size is " << ops.size() << std::endl;
+   if (ops.size()>0)
+   {
+     std::cout << "operators to transform: " << std::endl;
+     for ( auto& opn : opnames ) std::cout << opn << " ";
+     std::cout << std::endl;
+   }
 
 //  for (auto& op : ops)
    for (size_t i=0;i<ops.size();++i)
@@ -765,10 +783,10 @@ int main(int argc, char** argv)
 //     std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
      ops[i] = ops[i].DoNormalOrdering();
 //     std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
-     if (method == "HF" or method == "MP3")
-     {
-       std::cout << "HF expectation value  " << opnames[i] << "  " << ops[i].ZeroBody << std::endl;
-     }
+//     if (method == "HF" or method == "MP3")
+//     {
+       std::cout << basis << " expectation value  " << opnames[i] << "  " << ops[i].ZeroBody << std::endl;
+//     }
      if (method == "MP3")
      {
        double dop = ops[i].MP1_Eval( HNO );
@@ -806,12 +824,29 @@ int main(int argc, char** argv)
 
   if (method == "FCI")
   {
-  std::cout << __func__ << "  line " << __LINE__ << std::endl;
    if ( valence_file_format == "tokyo" )
    {
       HNO = HNO.UndoNormalOrdering();
+      for (size_t i=0; i<ops.size();i++)
+      {
+         ops[i] = ops[i].UndoNormalOrdering();
+      }
+
+
+      modelspace.SetReference("vacuum");
       rw.WriteTokyo(HNO,intfile+".snt", "");
       // Haven't yet implemented FCI operators for Tokyo format. I should do this...
+      for (size_t i=0; i<ops.size();i++)
+      {
+         if (ops[i].GetJRank()==0)
+         {
+           rw.WriteTokyo(ops[i], intfile + "_" + opnames[i] + ".snt","");
+         }
+         else
+         {
+          rw.WriteTensorTokyo(intfile+opnames[i]+".snt",ops[i]);
+         }
+      }
    }
    else // Write in NuShellX Format
    {
@@ -962,6 +997,7 @@ int main(int argc, char** argv)
   if (method == "flow" or method == "flow_RK4" )
   {
     for (auto& op : ops )  imsrgsolver.AddOperator( op );
+    std::cout << " Added ops. FlowingOps.size = " << imsrgsolver.FlowingOps.size() << std::endl;
   }
 
   imsrgsolver.SetGenerator(core_generator);
@@ -1234,23 +1270,27 @@ int main(int argc, char** argv)
   else // single ref. just print the zero body pieces out. (maybe check if its magnus?)
   {
     std::cout << "Core Energy = " << std::setprecision(6) << imsrgsolver.GetH_s().ZeroBody << std::endl;
-    for (index_t i=0;i<ops.size();++i)
+    if ( method != "magnus")
     {
-      Operator& op = ops[i];
-      std::cout << opnames[i] << " = " << ops[i].ZeroBody << std::endl;
-      if ( opnames[i] == "Rp2" )
+      for (index_t i=0;i<ops.size();++i)
       {
-//         int Z = modelspace.GetTargetZ();
-//         int A = modelspace.GetTargetMass();
-         int Z = modelspace_imsrg.GetTargetZ();
-         int A = modelspace_imsrg.GetTargetMass();
-         std::cout << " IMSRG point proton radius = " << sqrt( op.ZeroBody ) << std::endl;
-         std::cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + r2p + r2n*(A-Z)/Z + DarwinFoldy) << std::endl;
-      }
-      if ((op.GetJRank()>0) or (op.GetTRank()>0)) // if it's a tensor, you probably want the full operator
-      {
-        std::cout << "Writing operator to " << intfile+opnames[i]+".op" << std::endl;
-        rw.WriteOperatorHuman(op,intfile+opnames[i]+".op");
+//        Operator& op = ops[i];
+        Operator& op = imsrgsolver.FlowingOps[i+1]; // the first operator is the Hamiltonian
+        std::cout << opnames[i] << " = " << op.ZeroBody << std::endl;
+        if ( opnames[i] == "Rp2" )
+        {
+//           int Z = modelspace.GetTargetZ();
+//           int A = modelspace.GetTargetMass();
+           int Z = modelspace_imsrg.GetTargetZ();
+           int A = modelspace_imsrg.GetTargetMass();
+           std::cout << " IMSRG point proton radius = " << sqrt( op.ZeroBody ) << std::endl;
+           std::cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + r2p + r2n*(A-Z)/Z + DarwinFoldy) << std::endl;
+        }
+        if ((op.GetJRank()>0) or (op.GetTRank()>0)) // if it's a tensor, you probably want the full operator
+        {
+          std::cout << "Writing operator to " << intfile+opnames[i]+".op" << std::endl;
+          rw.WriteOperatorHuman(op,intfile+opnames[i]+".op");
+        }
       }
     }
   }
