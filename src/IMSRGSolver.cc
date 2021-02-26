@@ -813,9 +813,11 @@ Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
   for (size_t i=std::max(n-n_omega_written,0); i<Omega.size();++i)
   {
 //     if (OpIn.GetJRank()>0) std::cout << "step " << i << endl;
-     std::cout << "  line " << __LINE__ << "   i= " << i << std::endl;
-     std::cout << " Omega.size() = " << Omega.size() << std::endl;
-     std::cout << " norm of omega[i] = " << Omega[i].Norm() << std::endl;
+//     std::cout << "  line " << __LINE__ << "   i= " << i << std::endl;
+//     std::cout << " Omega.size() = " << Omega.size() << std::endl;
+//     std::cout << " norm of omega[i] = " << Omega[i].Norm() << std::endl;
+//     std::cout << " norm of op = " << OpOut.Norm() << std::endl;
+//     std::cout << " op zero body = " << OpOut.ZeroBody << std::endl;
 //    OpOut = OpOut.BCH_Transform( Omega[i] );
     OpOut = Commutator::BCH_Transform( OpOut, Omega[i] );
 //     if (OpIn.GetJRank()>0)cout << "done" << endl;
