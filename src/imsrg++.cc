@@ -783,10 +783,7 @@ int main(int argc, char** argv)
 //     std::cout << "After transforming  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
      ops[i] = ops[i].DoNormalOrdering();
 //     std::cout << "Before normal ordering  " << opnames[i] << " has 3b norm " << ops[i].ThreeBodyNorm() << std::endl;
-//     if (method == "HF" or method == "MP3")
-//     {
        std::cout << basis << " expectation value  " << opnames[i] << "  " << ops[i].ZeroBody << std::endl;
-//     }
      if (method == "MP3")
      {
        double dop = ops[i].MP1_Eval( HNO );
