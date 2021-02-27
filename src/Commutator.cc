@@ -374,8 +374,8 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
 //   if (use_imsrg3 and not OpOut.ThreeBody.is_allocated )
    if (use_imsrg3 and not OpOut.ThreeBody.IsAllocated() )
    {
-     OpOut.ThreeBody.Allocate();
-//     OpOut.ThreeBody.Allocate_PN();
+     OpOut.SetParticleRank(3);
+     OpOut.ThreeBody.SetMode("pn");
    }
    double factorial_denom = 1.0;
    Operator goosetank_chi;  // auxiliary one-body operator used to recover 4th-order quadruples.
@@ -388,6 +388,11 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
    if (nx>bch_transform_threshold)
    {
      Operator OpNested = OpIn;
+     if (use_imsrg3 and not OpNested.ThreeBody.IsAllocated() )
+     {
+        OpNested.SetParticleRank(2);
+        OpNested.ThreeBody.SetMode("pn");
+     }
      double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
      for (int i=1; i<=max_iter; ++i)
      {
@@ -399,7 +404,6 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
           OpNested.OneBody += chi_last;  // add the chi from the previous step to OpNested.
         }
         
-
         OpNested = Commutator(Omega,OpNested); // the ith nested commutator
         factorial_denom /= i;
         OpOut += factorial_denom * OpNested;
