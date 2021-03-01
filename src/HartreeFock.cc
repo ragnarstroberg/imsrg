@@ -67,7 +67,7 @@ void HartreeFock::Solve()
    int maxiter = 1000;
    double density_mixing_factor = 0.2;
    double field_mixing_factor = 0.0;
-   int fill_modulus = 5;
+   int fill_modulus = 3;
 
    BuildMonopoleV();
    if (Hbare.GetParticleRank()>2)
@@ -86,7 +86,8 @@ void HartreeFock::Solve()
       if (iterations > 10  and (iterations%fill_modulus)==0 and not freeze_occupations)
       {
          FillLowestOrbits();// if we don't freeze the occupations, then calculate the new ones.
-         fill_modulus*=2; // to avoid cycles, we keep increasing the interval between checking if we should change the occupations.
+         fill_modulus = fill_modulus %5;
+         fill_modulus+=1; // to avoid cycles, we keep increasing the interval between checking if we should change the occupations.
       }
 
       if (iterations == 500)
@@ -102,6 +103,11 @@ void HartreeFock::Solve()
         field_mixing_factor = 1 - 0.005 * (std::rand() % 100);
         density_mixing_factor = 1- 0.005 * ( std::rand() % 100);
       }
+     if (iterations==800) // Things are really not healthy at this point. Most likely we're stuck in a occupation changing circle.
+     {
+        std::cout << "Not converged after 800 iterations. That's it, I'm freezing the occupations." << std::endl;
+        freeze_occupations = true;
+     }
 
       if (iterations >100 and (DIIS_error_mats.size()<1 or arma::norm( DIIS_error_mats.back(),"fro")>0.01)  )
       {
@@ -1157,19 +1163,14 @@ void HartreeFock::UpdateReference()
 
 Operator HartreeFock::GetNormalOrderedH(arma::mat& Cin, int particle_rank)
 {
-  std::cout << "LINE " << __LINE__ << std::endl;
   C=Cin;
-  std::cout << "LINE " << __LINE__ << std::endl;
 //  ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
   UpdateDensityMatrix();  // Update the 1 body density matrix, used in UpdateF()
-  std::cout << "LINE " << __LINE__ << std::endl;
   UpdateF();              // Update the Fock matrix
-  std::cout << "LINE " << __LINE__ << std::endl;
   CalcEHF();
-  std::cout << "LINE " << __LINE__ << std::endl;
   PrintEHF();
 
-  return GetNormalOrderedH();
+  return GetNormalOrderedH(particle_rank);
 }
 /// Returns the normal-ordered Hamiltonian in the Hartree-Fock basis, neglecting the residual 3-body piece.
 /// \f[ E_0 = E_{HF} \f]
@@ -1181,13 +1182,14 @@ Operator HartreeFock::GetNormalOrderedH(arma::mat& Cin, int particle_rank)
 Operator HartreeFock::GetNormalOrderedH(int particle_rank)
 {
    double start_time = omp_get_wtime();
-   std::cout << "Getting normal-ordered H in HF basis" << std::endl;
 
    // First, check if we need to update the occupation numbers for the reference
+   
    if (not freeze_occupations)
    {
      UpdateReference();
    }
+
 
    Operator HNO = Operator(*modelspace,0,0,0,particle_rank);
    HNO.ZeroBody = EHF;
