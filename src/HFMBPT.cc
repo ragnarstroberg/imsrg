@@ -467,9 +467,7 @@ void HFMBPT::PrintOccupation()
 //
 // When using fraction occupations, including the factor (1-na)(1-nb) [ni nj(1-nc)]^2
 // and an equivalent one in the HH term produces a density matrix with the correct
-// particle number, encoded in the 2j+1 weighted trace of rho. However, including
-// fractionally filled orbits in the intermediate sum over particle orbits screws up
-// the trace. I don't fully understand this yet, but for now I omit those.
+// particle number, encoded in the 2j+1 weighted trace of rho.
 //*********************************************************************
 void HFMBPT::DensityMatrixPP(Operator& H)
 {
