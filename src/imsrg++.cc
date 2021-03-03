@@ -644,7 +644,6 @@ int main(int argc, char** argv)
   if ( method != "magnus" )
   {
 
-//    std::cout << "MAKING THE OPERATORS LINE " << __LINE__ << std::endl;
     for (auto& opname : opnames)
     {
         ops.emplace_back( imsrg_util::OperatorFromString(modelspace, opname) );
