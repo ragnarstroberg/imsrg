@@ -26,6 +26,7 @@ bool use_imsrg3 = false;
 bool use_imsrg3_n7 = false;
 bool only_2b_omega = false;
 bool perturbative_triples = false;
+bool bch_skip_ieq1 = false;
 double bch_transform_threshold = 1e-9;
 double bch_product_threshold = 1e-4;
 
@@ -50,6 +51,9 @@ void SetUseIMSRG3N7(bool tf)
 
 void SetOnly2bOmega(bool tf)
 {only_2b_omega = tf;}
+
+void SetBCHSkipiEq1(bool tf)
+{bch_skip_ieq1 = tf;}
 
 //Operator Operator::Commutator( Operator& opright)
 /// Returns \f$ Z = [X,Y] \f$
@@ -176,25 +180,25 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        std::cout << " comm330 " << std::endl;
        comm330ss(X, Y, Z); // scales as n^6
 
-       //Maybe not so important, but I think relatively cheap
-       std::cout << " comm331 " << std::endl;
-       comm331ss(X, Y, Z); // scales as n^7
+//       //Maybe not so important, but I think relatively cheap
+//       std::cout << " comm331 " << std::endl;
+//       comm331ss(X, Y, Z); // scales as n^7
 
-//     This one is essential. If it's not here, then there are no induced 3 body terms
+       // This one is essential. If it's not here, then there are no induced 3 body terms
        std::cout << " comm223 " << std::endl;
        comm223ss(X, Y, Z); // scales as n^7
 //       comm223ss_debug(X, Y, Z); // scales as n^7
 
 //     if (X.GetParticleRank()>2 or Y.GetParticleRank()>2)
 //     {
-//       // Demonstrated that this can have some effect
-       std::cout << " comm231 " << std::endl;
-       comm231ss(X, Y, Z);  // scales as n^6
-
-     //no demonstrated effect yet, but it's cheap
-       std::cout << " comm132 " << std::endl;
-       comm132ss(X, Y, Z); // scales as n^6
-
+////       // Demonstrated that this can have some effect
+//       std::cout << " comm231 " << std::endl;
+//       comm231ss(X, Y, Z);  // scales as n^6
+//
+//     //no demonstrated effect yet, but it's cheap
+//       std::cout << " comm132 " << std::endl;
+//       comm132ss(X, Y, Z); // scales as n^6
+//
        //one of the two most important IMSRG(3) terms
        std::cout << " comm232 " << std::endl;
        comm232ss(X, Y, Z);   // this is the slowest n^7 term
@@ -206,17 +210,17 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
       if ( not use_imsrg3_n7 )
       {
-////    Not too bad, though naively n^8
-       std::cout << " comm233_pp_hh " << std::endl;
-       comm233_pp_hhss(X, Y, Z);
-//       comm233_pp_hhss_debug(X, Y, Z);
-//       X.profiler.timer["comm233_pp_hhss"] += omp_get_wtime() - t_start;
+//      // Not too bad, though naively n^8
+//       std::cout << " comm233_pp_hh " << std::endl;
+//       comm233_pp_hhss(X, Y, Z);
+////       comm233_pp_hhss_debug(X, Y, Z);
+////       X.profiler.timer["comm233_pp_hhss"] += omp_get_wtime() - t_start;
 
-//     This one is super slow too. It involves 9js
-//     mat mult makes everything better!
-       std::cout << " comm233_ph " << std::endl;
-       comm233_phss(X, Y, Z);
-//       comm233_phss_debug(X, Y, Z);
+//       // This one is super slow too. It involves 9js
+//       // mat mult makes everything better!
+//       std::cout << " comm233_ph " << std::endl;
+//       comm233_phss(X, Y, Z);
+////       comm233_phss_debug(X, Y, Z);
 
        //not too bad, though naively n^8
        std::cout << " comm332_ppph_hhhp " << std::endl;
@@ -393,9 +397,14 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
         OpNested.SetParticleRank(2);
         OpNested.ThreeBody.SetMode("pn");
      }
-     double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny);
+     double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny); // this should probably be explained somewhere...
      for (int i=1; i<=max_iter; ++i)
      {
+
+        // Specifically for the perturbative triples, we need 1/(i+1)! rather than 1/i!
+        // This is because we have Wbar = [Omega,H]_3b + 1/2![Omega,[Omega,H]]_3b + 1/3![Omega,[Omega,[Omega,H]]]_3b + ...
+        //                              = [Omega, Htilde]_3b,  where Htilde = H + 1/2![Omega,H] + 1/3![Omega,[Omega,H]] + ...
+        if ( bch_skip_ieq1 and i==1) continue;
 
         if (use_goose_tank_correction  )
         {
@@ -405,7 +414,9 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
         }
         
         OpNested = Commutator(Omega,OpNested); // the ith nested commutator
+
         factorial_denom /= i;
+
         OpOut += factorial_denom * OpNested;
   
         if (OpOut.rank_J > 0)
@@ -1921,7 +1932,7 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
   double z0 = 0;
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
-  if (X3.Norm()<1e-6 or Y3.Norm()<1e-6 ) return;
+  if (X3.Norm()<1e-8 or Y3.Norm()<1e-8 ) return;
 //  std::cout << " in  " << __func__ << "  ||X3|| = " << X3.Norm() << "  ||Y3|| = " << Y3.Norm()
 //            << "   hermitian? " << X.IsHermitian() << "  " << Y.IsHermitian()
 //            << "   3body herm: " << X3.IsHermitian() << "  " << Y3.IsHermitian()
@@ -2598,8 +2609,8 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
 //  |         |
 // i|        j|     Uncoupled expression:
 //  *~~[X]~*  |         Z_ijkl = -1/2 sum_abc (nanbn`c+n`an`bnc) ( (1-Pij) X_icab * Y_abjklc - (1-Pkl) Yijcabl * Xabkc )
-// a|  b|  c\ |
-//  |   |    \|
+// a|    b/c\ |
+//  |    /   \|
 //  *~~[Y]~~~~*      Coupled expression:
 //  |   |              Z_{ijkl}^{J} = -1/2 sum_abc (nanbn`c+n`an`bnc) sum_J'J" (2J'+1)(2J"+1)/sqrt(2J+1) (-1)^{2J"+J'-J}
 // k|  l|                           *  [   (1 - (-1)^{i+j-J}Pij) (-1)^{j-c} { j  J" J' } X_icab^{J'} * Y_{abjklc}^{J'JJ"}    
