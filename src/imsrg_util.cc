@@ -129,8 +129,11 @@ namespace imsrg_util
       }
       else if (opnamesplit[0] == "VCM") // GetHCM with a different frequency, ie HCM_24 for hw=24
       {
-         double hw_VCM; // frequency of trapping potential
-         std::istringstream(opnamesplit[1]) >> hw_VCM;
+         double hw_VCM = modelspace.GetHbarOmega(); // frequency of trapping potential
+         if ( opnamesplit.size() > 1 )
+         {
+            std::istringstream(opnamesplit[1]) >> hw_VCM;
+         }
          int A = modelspace.GetTargetMass();
          theop =  0.5*A*M_NUCLEON*hw_VCM*hw_VCM/HBARC/HBARC*R2CM_Op(modelspace); 
       }
