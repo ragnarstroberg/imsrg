@@ -261,12 +261,12 @@ void IMSRGSolver::Solve_magnus_euler()
       double norm_omega = Omega.back().Norm();
       if (norm_omega > omega_norm_max)
       {
-        if ( perturbative_triples )
-        {
-          GetPerturbativeTriples();
-//          pert_triples_this_omega = GetPerturbativeTriples();
-//          pert_triples_sum += pert_triples_this_omega;
-        }
+//        if ( perturbative_triples )
+//        {
+//          GetPerturbativeTriples();
+////          pert_triples_this_omega = GetPerturbativeTriples();
+////          pert_triples_sum += pert_triples_this_omega;
+//        }
         if (hunter_gatherer)
         {
           GatherOmega();
@@ -952,7 +952,7 @@ double IMSRGSolver::EstimateBCHError( )
 }
 
 
-
+/*
 double IMSRGSolver::GetPerturbativeTriples()
 {
   std::cout << __func__ << std::endl;
@@ -960,21 +960,57 @@ double IMSRGSolver::GetPerturbativeTriples()
   Wbar.ThreeBody.SwitchToPN_and_discard();
   Operator& omega = Omega.back();
   Operator& Hs = FlowingOps[0];
+
+
   Commutator::perturbative_triples = true;
-  std::cout << "comm223ss ..." << std::endl;
   Commutator::comm223ss( omega, Hs, Wbar);
   Wbar.OneBody = Hs.OneBody;
   Wbar.TwoBody = Hs.TwoBody;
 
-  std::cout << "Compute E3pert ..." << std::endl;
-  //double E3pert = Wbar.GetMP2_3BEnergy();
   pert_triples_this_omega = Wbar.GetMP2_3BEnergy();
   pert_triples_sum += pert_triples_this_omega;
+  std::cout << "Adding " << pert_triples_this_omega << "  =>  " << pert_triples_sum << std::endl;
 
 //  return E3pert;
   return pert_triples_sum;
 
 }
+*/
+
+double IMSRGSolver::GetPerturbativeTriples()
+{
+  std::cout << __func__ << std::endl;
+  Operator Wbar( (*modelspace), 0,0,0,3);
+  Wbar.ThreeBody.SwitchToPN_and_discard();
+  Operator& omega = Omega.back();
+
+  Operator& Hs = FlowingOps[0];
+
+//  Operator Htilde = Hs;
+  Commutator::SetBCHSkipiEq1(true);
+  Operator Htilde = Transform(*H_0);
+  Commutator::SetBCHSkipiEq1(false);
+
+
+  Commutator::perturbative_triples = true;
+  Commutator::comm223ss( omega, Htilde, Wbar);
+  Wbar.OneBody = Hs.OneBody;
+  Wbar.TwoBody = Hs.TwoBody;
+
+  double pert_triples = Wbar.GetMP2_3BEnergy();
+  std::cout << "I GOT pert_triples = " << std::setw(14) << std::setprecision(8) << pert_triples
+            << "  size of omega is " << Omega.size() << std::endl;
+//  pert_triples_this_omega = Wbar.GetMP2_3BEnergy();
+//  pert_triples_sum += pert_triples_this_omega;
+//  std::cout << "Adding " << pert_triples_this_omega << "  =>  " << pert_triples_sum << std::endl;
+
+//  return E3pert;
+//  return pert_triples_sum;
+  return pert_triples;
+
+}
+
+
 
 
 
