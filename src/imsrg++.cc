@@ -145,6 +145,7 @@ int main(int argc, char** argv)
   double hw_trap = parameters.d("hw_trap");
   double dE3max = parameters.d("dE3max");
   double OccNat3Cut = parameters.d("OccNat3Cut");
+  double threebody_threshold = parameters.d("threebody_threshold");
 
   std::vector<std::string> opnames = parameters.v("Operators");
   std::vector<std::string> opsfromfile = parameters.v("OperatorsFromFile");
@@ -407,10 +408,8 @@ int main(int argc, char** argv)
   Hbare.SetHermitian();
 
 
-//  if ( goose_tank )
-//  {
   Commutator::SetUseGooseTank(goose_tank);
-//  }
+  Commutator::SetThreebodyThreshold(threebody_threshold);
 
   std::cout << "Reading interactions..." << std::endl;
 
@@ -983,6 +982,10 @@ int main(int argc, char** argv)
   if (imsrg3_n7)
   {
     std::cout << "  only including IMSRG3 commutator terms that scale up to n7" << std::endl;
+  }
+  if ( threebody_threshold > 1e-12 )
+  {
+    std::cout << "skipping IMSRG(3) commutator terms if norm of either operator is below " << threebody_threshold << std::endl;
   }
 
 

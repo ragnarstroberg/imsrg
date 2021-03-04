@@ -41,9 +41,11 @@ namespace Commutator{
   extern bool only_2b_omega;
   extern double bch_transform_threshold;
   extern double bch_product_threshold;
+  extern double threebody_threshold;
 
   void Set_BCH_Transform_Threshold(double x);
   void Set_BCH_Product_Threshold(double x);
+  void SetThreebodyThreshold(double x);
   void SetUseBruecknerBCH(bool tf);
   void SetUseGooseTank(bool tf);
   void SetUseIMSRG3(bool tf);

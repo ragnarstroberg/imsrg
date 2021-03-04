@@ -29,6 +29,7 @@ bool perturbative_triples = false;
 bool bch_skip_ieq1 = false;
 double bch_transform_threshold = 1e-9;
 double bch_product_threshold = 1e-4;
+double threebody_threshold = 0;
 
 
 void Set_BCH_Transform_Threshold(double x)
@@ -36,6 +37,9 @@ void Set_BCH_Transform_Threshold(double x)
 
 void Set_BCH_Product_Threshold(double x)
 {bch_product_threshold=x;}
+
+void SetThreebodyThreshold(double x)
+{threebody_threshold=x;}
 
 void SetUseBruecknerBCH(bool tf)
 {use_brueckner_bch = tf;}
@@ -172,7 +176,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
    }
 
 
-   if (use_imsrg3)
+   if (use_imsrg3 and (X.Norm() > threebody_threshold) and (Y.Norm() > threebody_threshold) )
    {
        X.profiler.counter["N_ScalarCommutators_3b"] += 1;
 
@@ -180,9 +184,9 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        std::cout << " comm330 " << std::endl;
        comm330ss(X, Y, Z); // scales as n^6
 
-//       //Maybe not so important, but I think relatively cheap
-//       std::cout << " comm331 " << std::endl;
-//       comm331ss(X, Y, Z); // scales as n^7
+       //Maybe not so important, but I think relatively cheap
+       std::cout << " comm331 " << std::endl;
+       comm331ss(X, Y, Z); // scales as n^7
 
        // This one is essential. If it's not here, then there are no induced 3 body terms
        std::cout << " comm223 " << std::endl;
@@ -191,14 +195,14 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
 //     if (X.GetParticleRank()>2 or Y.GetParticleRank()>2)
 //     {
-////       // Demonstrated that this can have some effect
-//       std::cout << " comm231 " << std::endl;
-//       comm231ss(X, Y, Z);  // scales as n^6
-//
-//     //no demonstrated effect yet, but it's cheap
-//       std::cout << " comm132 " << std::endl;
-//       comm132ss(X, Y, Z); // scales as n^6
-//
+//       // Demonstrated that this can have some effect
+       std::cout << " comm231 " << std::endl;
+       comm231ss(X, Y, Z);  // scales as n^6
+
+     //no demonstrated effect yet, but it's cheap
+       std::cout << " comm132 " << std::endl;
+       comm132ss(X, Y, Z); // scales as n^6
+
        //one of the two most important IMSRG(3) terms
        std::cout << " comm232 " << std::endl;
        comm232ss(X, Y, Z);   // this is the slowest n^7 term
@@ -210,17 +214,17 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
       if ( not use_imsrg3_n7 )
       {
-//      // Not too bad, though naively n^8
-//       std::cout << " comm233_pp_hh " << std::endl;
-//       comm233_pp_hhss(X, Y, Z);
-////       comm233_pp_hhss_debug(X, Y, Z);
-////       X.profiler.timer["comm233_pp_hhss"] += omp_get_wtime() - t_start;
+      // Not too bad, though naively n^8
+       std::cout << " comm233_pp_hh " << std::endl;
+       comm233_pp_hhss(X, Y, Z);
+//       comm233_pp_hhss_debug(X, Y, Z);
+//       X.profiler.timer["comm233_pp_hhss"] += omp_get_wtime() - t_start;
 
-//       // This one is super slow too. It involves 9js
-//       // mat mult makes everything better!
-//       std::cout << " comm233_ph " << std::endl;
-//       comm233_phss(X, Y, Z);
-////       comm233_phss_debug(X, Y, Z);
+       // This one is super slow too. It involves 9js
+       // mat mult makes everything better!
+       std::cout << " comm233_ph " << std::endl;
+       comm233_phss(X, Y, Z);
+//       comm233_phss_debug(X, Y, Z);
 
        //not too bad, though naively n^8
        std::cout << " comm332_ppph_hhhp " << std::endl;

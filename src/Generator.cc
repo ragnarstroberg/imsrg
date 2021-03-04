@@ -296,7 +296,7 @@ void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,
 
     }// for ch3
 
-    std::cout << "Norm of Eta3 = " << Eta->ThreeBodyNorm() << std::endl;
+    std::cout << "Norm of Eta3 = " << std::setprecision(8) <<  Eta->ThreeBodyNorm() << std::endl;
     H->profiler.timer[__func__] += omp_get_wtime() - t_start;
 }
 
