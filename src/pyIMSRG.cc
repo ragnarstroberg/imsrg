@@ -179,6 +179,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetOneBodyME", &OpSetOneBodyME)
       .def("GetMP2_Energy", &Operator::GetMP2_Energy)
       .def("GetMP3_Energy", &Operator::GetMP3_Energy)
+      .def("GetPPHH_Ladders", &Operator::GetPPHH_Ladders)
    ;
 
    py::class_<arma::mat>(m,"ArmaMat")

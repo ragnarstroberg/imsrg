@@ -190,6 +190,7 @@ class Operator
   std::array<double,3> GetMP3_Energy();
   double MP1_Eval(Operator& );
   double GetMP2_3BEnergy();
+  std::array<double,2> GetPPHH_Ladders();
 
   void PrintTimes(){profiler.PrintAll();};
 

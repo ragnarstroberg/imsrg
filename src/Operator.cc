@@ -1034,6 +1034,7 @@ std::array<double,3> Operator::GetMP3_Energy()
    // This can certainly be optimized, but I'll wait until this is the bottleneck.
    int nch = modelspace->GetNumberTwoBodyChannels();
 
+
 //   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Emp3)
    #pragma omp parallel for  schedule(dynamic,1) reduction(+:Epp,Ehh)
    for (int ich=0;ich<nch;++ich)
@@ -1261,6 +1262,204 @@ double Operator::GetMP2_3BEnergy()
 
 
 
+//////////////////////////////////////////////////////////
+///  All-order resummation of pp ladders and hh ladders
+////////////////////////////////////////////////////////////
+std::array<double,2> Operator::GetPPHH_Ladders()
+{
+   // So far, the pp and hh parts seem to work. No such luck for the ph.
+   double t_start = omp_get_wtime();
+//   double Emp3 = 0;
+   double Epp = 0;
+   double Ehh = 0;
+//   double Eph = 0;
+   // This can certainly be optimized, but I'll wait until this is the bottleneck.
+   int nch = modelspace->GetNumberTwoBodyChannels();
+
+
+
+   for (int ich=0;ich<nch;++ich)
+   {
+     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ich);
+     auto& Mat = TwoBody.GetMatrix(ich,ich);
+
+
+     size_t n_hh = tbc.GetKetIndex_hh().size();
+     size_t n_pp = tbc.GetKetIndex_pp().size();
+
+
+     for (auto iket_ij : tbc.GetKetIndex_hh() )
+     {
+       Ket& ket_ij = tbc.GetKet(iket_ij);
+       index_t i = ket_ij.p;
+       index_t j = ket_ij.q;
+
+       arma::mat ONE( n_pp, n_pp, arma::fill::eye );
+       arma::mat M_pppp( n_pp, n_pp, arma::fill::zeros );
+       arma::mat M_ijpp( 1, n_pp, arma::fill::zeros);
+       arma::mat M_ppij( n_pp, 1, arma::fill::zeros);
+
+       size_t I_pp = 0;
+       for (auto iket_ab : tbc.GetKetIndex_pp() )
+       {
+         Ket& ket_ab = tbc.GetKet(iket_ab);
+         index_t a = ket_ab.p;
+         index_t b = ket_ab.q;
+         double Delta_ijab = OneBody(i,i) + OneBody(j,j) - OneBody(a,a) - OneBody(b,b);
+         M_ijpp(0, I_pp) = Mat(iket_ij,iket_ab) ;
+         M_ppij( I_pp,0) = Mat(iket_ab,iket_ij) / Delta_ijab;
+         size_t II_pp = 0;
+         for (auto iket_cd : tbc.GetKetIndex_pp() )
+         {
+           Ket& ket_cd = tbc.GetKet(iket_cd);
+           index_t c = ket_cd.p;
+           index_t d = ket_cd.q;
+           M_pppp( I_pp, II_pp) += Mat(iket_ab,iket_cd) / Delta_ijab;
+           II_pp ++;
+         }
+         I_pp ++;
+       }
+       int J = tbc.J;
+       Epp += (2*J+1) * arma::trace( M_ijpp * (arma::inv(ONE - M_pppp)-ONE)  * M_ppij );
+
+     }// for iket_ij
+
+
+
+
+     for (auto iket_ab : tbc.GetKetIndex_pp() )
+     {
+       Ket& ket_ab = tbc.GetKet(iket_ab);
+       index_t a = ket_ab.p;
+       index_t b = ket_ab.q;
+
+       arma::mat ONE( n_hh, n_hh, arma::fill::eye );
+       arma::mat M_hhhh( n_hh, n_hh, arma::fill::zeros );
+       arma::mat M_abhh( 1, n_hh, arma::fill::zeros);
+       arma::mat M_hhab( n_hh, 1, arma::fill::zeros);
+
+       size_t I_hh = 0;
+       for (auto iket_ij : tbc.GetKetIndex_hh() )
+       {
+         Ket& ket_ij = tbc.GetKet(iket_ij);
+         index_t i = ket_ij.p;
+         index_t j = ket_ij.q;
+         double Delta_ijab = OneBody(i,i) + OneBody(j,j) - OneBody(a,a) - OneBody(b,b);
+         M_abhh(0, I_hh) = Mat(iket_ab,iket_ij) ;
+         M_hhab( I_hh,0) = Mat(iket_ij,iket_ab) / Delta_ijab;
+         size_t II_hh = 0;
+         for (auto iket_kl : tbc.GetKetIndex_hh() )
+         {
+           Ket& ket_kl = tbc.GetKet(iket_kl);
+           index_t k = ket_kl.p;
+           index_t l = ket_kl.q;
+           M_hhhh( I_hh, II_hh) += Mat(iket_ij,iket_kl) / Delta_ijab;
+           II_hh ++;
+         }
+         I_hh ++;
+       }
+       int J = tbc.J;
+       Ehh += (2*J+1) * arma::trace( M_abhh * (arma::inv(ONE - M_hhhh)-ONE)  * M_hhab );
+//       Ehh += (2*J+1) * arma::trace( M_abhh * M_hhhh  * M_hhab );
+
+     }// for iket_ij
+
+
+
+
+
+
+
+
+
+  }// for ich
+
+
+
+
+
+
+
+/*
+
+
+
+//   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Emp3)
+   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Epp,Ehh)
+   for (int ich=0;ich<nch;++ich)
+   {
+     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ich);
+     auto& Mat = TwoBody.GetMatrix(ich,ich);
+
+     double omega = modelspace->GetEFermi()[tbc.Tz] * modelspace->GetHbarOmega();
+     std::cout << "OMEGA IS "<< omega << std::endl;
+
+     size_t n_hh = tbc.GetKetIndex_hh().size();
+     size_t n_pp = tbc.GetKetIndex_pp().size();
+     arma::mat M_hhpp( n_hh, n_pp, arma::fill::zeros );
+     arma::mat M_hhhh( n_hh, n_hh, arma::fill::zeros );
+     arma::mat M_pppp( n_pp, n_pp, arma::fill::zeros );
+
+     size_t I_hh = 0;
+     for (auto iket_ij : tbc.GetKetIndex_hh() )
+     {
+       Ket& ket_ij = tbc.GetKet(iket_ij);
+       index_t i = ket_ij.p;
+       index_t j = ket_ij.q;
+
+       size_t II_pp = 0;
+       for (auto iket_ab : tbc.GetKetIndex_pp() )
+       {
+         Ket& ket_ab = tbc.GetKet(iket_ab);
+         index_t a = ket_ab.p;
+         index_t b = ket_ab.q;
+//         double Delta_ijab = OneBody(i,i) + OneBody(j,j) - OneBody(a,a) - OneBody(b,b);
+//         M_hhpp( I_hh, II_pp) = Mat(iket_ij,iket_ab) / Delta_ijab;
+         M_hhpp( I_hh, II_pp) = Mat(iket_ij,iket_ab) ;
+         II_pp ++;
+       }
+       size_t II_hh = 0;
+       for (auto iket_kl : tbc.GetKetIndex_hh() )
+       {
+         Ket& ket_kl = tbc.GetKet(iket_kl);
+         index_t k = ket_kl.p;
+         index_t l = ket_kl.q;
+         M_hhhh( I_hh, II_hh) = Mat(iket_ij,iket_kl) ;
+         II_hh ++;
+       }
+       I_hh ++;
+     }
+
+     size_t I_pp = 0;
+     for (auto iket_ab : tbc.GetKetIndex_pp() )
+     {
+       Ket& ket_ab = tbc.GetKet(iket_ab);
+       index_t a = ket_ab.p;
+       index_t b = ket_ab.q;
+       double denom = omega - OneBody(a,a) - OneBody(b,b);
+       size_t II_pp = 0;
+       for (auto iket_cd : tbc.GetKetIndex_pp() )
+       {
+         Ket& ket_cd = tbc.GetKet(iket_cd);
+         index_t c = ket_cd.p;
+         index_t d = ket_cd.q;
+         M_pppp( I_pp, II_pp) = Mat(iket_ab,iket_cd) / denom;
+         II_pp ++;
+       }
+       I_pp ++;
+     }
+     // sum_n  X^n  = 1/(1-X) where here X is M_pppp or M_hhhh
+     M_pppp -= arma::eye( arma::size(M_pppp));
+     M_hhhh -= arma::eye( arma::size(M_hhhh));
+
+     int J = tbc.J;
+     Ehh -= (2*J+1) * arma::trace( M_hhpp.t() * M_hhhh.i() * M_hhpp );
+     Epp -= (2*J+1) * arma::trace( M_hhpp * M_pppp.i() * M_hhpp.t() );
+
+   } // for ich
+*/
+  return {Epp,Ehh};
+}
 
 
 
