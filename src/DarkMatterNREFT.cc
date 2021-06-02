@@ -256,12 +256,13 @@ namespace DM_NREFT
 //  end function M
 
 
-  Operator M( ModelSpace& modelspace, int J, double q )
+  Operator M( ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
     double b2 =  1.0 / (modelspace.GetHbarOmega() * M_NUCLEON) ; // b^2 in MeV^-2
     double y = q*q*b2/4.0;
     int Tz = 0;
-    int parity = 0;
+    int parity = J%2; // normal parity operator
+    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
     Operator M_op( modelspace, J, Tz, parity, 2);
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
@@ -282,8 +283,9 @@ namespace DM_NREFT
                      * sqrt( (2*la+1.) * (2*lb+1.) * (j2a+1.) * (j2b+1.) * (2*J+1.) )
                      * gsl_sf_coupling_6j(2*la, j2a, 1, j2b, 2*lb, 2*J )
                      * gsl_sf_coupling_3j(2*la, 2*J, 2*lb, 0,0,0)
-                     * jho( na, la, nb, lb, 2*J, y );
-        M_op.OneBody(a,b) = mab;
+//bhu                     * jho( na, la, nb, lb, 2*J, y );
+                     * jho( na, la, nb, lb, J, y );
+        M_op.OneBody(a,b) = mab * pow( isofactor, (oa.tz2+1)/2 );
       }
     }
 
@@ -310,12 +312,13 @@ namespace DM_NREFT
 //
 //  end function Ms
 
-  Operator Ms( ModelSpace& modelspace, int J, int L, double q )
+  Operator Ms( ModelSpace& modelspace, std::string IsoSV, int J, int L, double q )
   {
     double b2 =  1.0 / (modelspace.GetHbarOmega() * M_NUCLEON) ;
     double y = q*q*b2/4.0;
     int Tz = 0;
-    int parity = 0;
+    int parity = L%2; // normal parity operator
+    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
     Operator Ms_op( modelspace, J, Tz, parity, 2);
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
@@ -337,7 +340,7 @@ namespace DM_NREFT
                      * gsl_sf_coupling_9j(2*la, 2*lb, 2*L, 1, 1, 2, j2a, j2b, 2*J )
                      * gsl_sf_coupling_3j(2*la, 2*L, 2*lb, 0,0,0)
                      * jho( na, la, nb, lb, L, y );
-        Ms_op.OneBody(a,b) = mab;
+        Ms_op.OneBody(a,b) = mab * pow( isofactor, (oa.tz2+1)/2 );
       }
     }
 
@@ -373,12 +376,13 @@ namespace DM_NREFT
 //  end function Mg
 
 
-  Operator Mg( ModelSpace& modelspace, int J, int L, double q )
+  Operator Mg( ModelSpace& modelspace, std::string IsoSV, int J, int L, double q )
   {
     double b2 =  1.0 / (modelspace.GetHbarOmega() * M_NUCLEON) ;
     double y = q*q*b2/4.0;
     int Tz = 0;
-    int parity = 0;
+    int parity = (L+1)%2; // abnormal parity operator
+    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
     Operator Mg_op(modelspace, J, Tz, parity, 2);
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
@@ -396,19 +400,19 @@ namespace DM_NREFT
         int j2b = ob.j2;
         if (lb==0) continue;
 
-        double mab = 1.0 / sqrt(4.0*M_PI) * modelspace.phase( (2*L+j2b+1.0)*0.5 )
+        double mab = 1.0 / sqrt(4.0*M_PI) * pow( -1, (2*L+j2b+1.0)*0.5 )
                      * sqrt( (2*la+1) * (j2a+1) * (j2b+1) * (2*L+1) * (2*J+1) )
                      * gsl_sf_coupling_6j( 2*la, j2a, 1, j2b, 2*lb, 2*J)
-                     * (- sqrt( lb+1.0) * (2*(lb+1)+1)
+                     * (- sqrt( lb+1.0) * sqrt( 2*(lb+1)+1 )
                          * gsl_sf_coupling_6j(2*L,2,2*J,2*lb,2*la,2*(lb+1))
                          * gsl_sf_coupling_3j(2*la,2*L,2*(lb+1),0,0,0)
                          * jdmho(na,la,nb,lb,L,y)
-                        + sqrt(lb) * (2*(lb-1)+1)
+                        + sqrt(lb) * sqrt( 2*(lb-1)+1 )
                          * gsl_sf_coupling_6j(2*L,2,2*J,2*lb,2*la,2*(lb-1))
                          * gsl_sf_coupling_3j(2*la,2*L,2*(lb-1),0,0,0)
                          * jdpho(na,la,nb,lb,L,y)
                         );
-        Mg_op.OneBody(a,b) = mab;
+        Mg_op.OneBody(a,b) = mab * pow( isofactor, (oa.tz2+1)/2 );
       }
     }
 
@@ -423,9 +427,9 @@ namespace DM_NREFT
 //    Sigma=Ms(na,la,ja2,nb,lb,jb2,J,J,y)
 //  end function Sigma
 
-  Operator Sigma( ModelSpace& modelspace, int J, double q )
+  Operator Sigma( ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
-    return Ms( modelspace, J, J, q);
+    return Ms( modelspace, IsoSV, J, J, q);
   }
 
 
@@ -439,10 +443,10 @@ namespace DM_NREFT
 //    Sigmap = Sigmap + sqrt(dble(J+1))/br(J) * Ms(na,la,ja2,nb,lb,jb2,J,J-1,y)
 //  end function Sigmap
 
-  Operator Sigmap( ModelSpace& modelspace, int J, double q )
+  Operator Sigmap( ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
-    Operator Sigmap_op = -sqrt(J/(2*J+1.)) * Ms( modelspace, J, J+1, q);
-    if ( J > 0 )  Sigmap_op += sqrt( J+1./(2*J+1.)) * Ms(modelspace, J, J-1, q);
+    Operator Sigmap_op = -sqrt(J/(2*J+1.)) * Ms( modelspace, IsoSV, J, J+1, q);
+    if ( J > 0 )  Sigmap_op += sqrt( (J+1.)/(2*J+1.) ) * Ms(modelspace, IsoSV, J, J-1, q);
     return Sigmap_op;
   }
 
@@ -460,10 +464,10 @@ namespace DM_NREFT
 //    end if
 //  end function Sigmapp
 
-  Operator Sigmapp( ModelSpace& modelspace, int J, double q )
+  Operator Sigmapp( ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
-    Operator Sigmapp_op = sqrt(J+1.0 / (2*J+1.)) * Ms( modelspace, J, J+1, q);
-    if ( J > 0 )  Sigmapp_op += sqrt(J/(2*J+1.)) * Ms( modelspace, J, J-1, q);
+    Operator Sigmapp_op = sqrt( (J+1.0)/(2*J+1.) ) * Ms( modelspace, IsoSV, J, J+1, q);
+    if ( J > 0 )  Sigmapp_op += sqrt(J/(2*J+1.)) * Ms( modelspace, IsoSV, J, J-1, q);
     return Sigmapp_op;
   }
 
@@ -477,9 +481,9 @@ namespace DM_NREFT
 //  end function Delta
 
 
-  Operator Delta( ModelSpace& modelspace, int J, double q )
+  Operator Delta( ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
-    return Mg(modelspace, J, J, q);
+    return Mg(modelspace, IsoSV, J, J, q);
   }
 
 
@@ -493,10 +497,10 @@ namespace DM_NREFT
 //  end function Deltap
 
 
-  Operator Deltap(  ModelSpace& modelspace, int J, double q )
+  Operator Deltap(  ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
-    Operator Deltap_op = -sqrt(J/(2*J+1.)) * Mg(modelspace, J, J+1, q);
-    Deltap_op        += sqrt(J+1./(2*J+1.)) * Mg(modelspace, J, J-1, q);
+    Operator Deltap_op = -sqrt(J/(2*J+1.)) * Mg(modelspace, IsoSV, J, J+1, q);
+    if ( J > 0 )  Deltap_op += sqrt( (J+1.)/(2*J+1.) ) * Mg(modelspace, IsoSV, J, J-1, q);
     return Deltap_op;
   }
 
@@ -723,13 +727,14 @@ namespace DM_NREFT
 //  end function Phip
 
 
-  Operator Phip( ModelSpace& modelspace, int J, double q )
+  Operator Phip( ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
 
     double b2 =  1.0 / (modelspace.GetHbarOmega() * M_NUCLEON) ;
     double y = q*q*b2/4.0;
     int Tz = 0;
-    int parity = 0;
+    int parity = J%2; // normal parity operator
+    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
     Operator Phip_op(modelspace, J, Tz, parity, 2);
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
@@ -752,7 +757,7 @@ namespace DM_NREFT
         if (J>0) phip_ab += PhiF(la,j2a,j2b) * ( sqrt(2*(J-1)+1) * sqrt(J+1)
                              * ( PhiS3(na,la,j2a,nb,lb,j2b,J,y) + PhiS4(na,la,j2a,nb,lb,j2b,J,y) ) );
 
-        Phip_op.OneBody(a,b) = phip_ab;
+        Phip_op.OneBody(a,b) = phip_ab * pow( isofactor, (oa.tz2+1)/2 );
       }
     }
     return Phip_op;
@@ -764,9 +769,9 @@ namespace DM_NREFT
 //           +Ms(na,la,ja2,nb,lb,jb2,J,J,y)/2.d0
 
 
-  Operator Phitp( ModelSpace& modelspace, int J, double q )
+  Operator Phitp( ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
-    Operator Phitp_op = Phip(modelspace,J,q) + 0.5 * Ms(modelspace, J, J, q);
+    Operator Phitp_op = Phip(modelspace,IsoSV,J,q) + 0.5 * Ms(modelspace, IsoSV, J, J, q);
     return Phitp_op;
   }
 
@@ -796,12 +801,13 @@ namespace DM_NREFT
 //  end function Phipp
 
 
-  Operator Phipp(   ModelSpace& modelspace, int J, double q )
+  Operator Phipp(   ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
     double b2 =  1.0 / (modelspace.GetHbarOmega() * M_NUCLEON) ;
     double y = q*q*b2/4.0;
     int Tz = 0;
-    int parity = 0;
+    int parity = J%2; // normal parity operator
+    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
     Operator Phipp_op(modelspace, J, Tz, parity, 2);
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
@@ -824,7 +830,7 @@ namespace DM_NREFT
         if (J>0) phipp_ab += PhiF(la,j2a,j2b) * ( sqrt(2*(J-1)+1) * sqrt(J)
                              * ( PhiS3(na,la,j2a,nb,lb,j2b,J,y) + PhiS4(na,la,j2a,nb,lb,j2b,J,y) ) );
 
-        Phipp_op.OneBody(a,b) = phipp_ab;
+        Phipp_op.OneBody(a,b) = phipp_ab * pow( isofactor, (oa.tz2+1)/2 );
       }
     }
     return Phipp_op;
@@ -860,12 +866,13 @@ namespace DM_NREFT
 //  end function Omega
 
 
-  Operator Omega(  ModelSpace& modelspace, int J, double q )
+  Operator Omega(  ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
     double b2 =  1.0 / (modelspace.GetHbarOmega() * M_NUCLEON) ;
     double y = q*q*b2/4.0;
     int Tz = 0;
-    int parity = 0;
+    int parity = (J+1)%2; // abnormal parity operator
+    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
     Operator Omega_op(modelspace, J, Tz, parity, 2);
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
@@ -890,7 +897,7 @@ namespace DM_NREFT
         }
         else if (j2b==2*lb-1)
         {
-          O2 = -jdmho(na,la,nb,lb,J,y);
+          O2 = jdpho(na,la,nb,lb,J,y);
         }
         else
         {
@@ -901,7 +908,7 @@ namespace DM_NREFT
                           * gsl_sf_coupling_6j(2*la,j2a,1,j2b,2*(j2b-lb),2*J)
                           * gsl_sf_coupling_3j(2*la,2*J,2*(j2b-lb),0,0,0)
                           * (O1+O2);
-        Omega_op.OneBody(a,b) = omega_ab;
+        Omega_op.OneBody(a,b) = omega_ab * pow( isofactor, (oa.tz2+1)/2 );
       }
     }
     return Omega_op;
@@ -914,7 +921,7 @@ namespace DM_NREFT
 
 
 
-  Operator Omegat(  ModelSpace& modelspace, int J, double q )
+  Operator Omegat(  ModelSpace& modelspace, std::string IsoSV, int J, double q )
   {
 //    double b2 =  1.0 / (modelspace.GetHbarOmega() * M_NUCLEON) ;
 //    double y = q*q*b2/4.0;

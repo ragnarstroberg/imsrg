@@ -25,21 +25,22 @@ namespace DM_NREFT
   double PhiS3( int na, int la, int j2a, int nb, int lb, int j2b, int J, double y );
   double PhiS4( int na, int la, int j2a, int nb, int lb, int j2b, int J, double y );
 
-  Operator Ms(      ModelSpace&, int J, int L, double q ); // helper function
-  Operator Mg(      ModelSpace&, int J, int L, double q ); // helper function
+  Operator Ms(      ModelSpace&, std::string IsoSV, int J, int L, double q ); // helper function
+  Operator Mg(      ModelSpace&, std::string IsoSV, int J, int L, double q ); // helper function
 
   // These are the operators
-  Operator M(       ModelSpace&, int J, double q );
-  Operator Sigma(   ModelSpace&, int J, double q );
-  Operator Sigmap(  ModelSpace&, int J, double q );
-  Operator Sigmapp( ModelSpace&, int J, double q );
-  Operator Delta(   ModelSpace&, int J, double q );
-  Operator Deltap(  ModelSpace&, int J, double q );
-  Operator Phip(    ModelSpace&, int J, double q );
-  Operator Phitp(   ModelSpace&, int J, double q );
-  Operator Phipp(   ModelSpace&, int J, double q );
-  Operator Omega(   ModelSpace&, int J, double q ); 
-  Operator Omegat(  ModelSpace&, int J, double q ); // Not implemented
+  Operator M(       ModelSpace&, std::string IsoSV, int J, double q );
+  Operator Sigma(   ModelSpace&, std::string IsoSV, int J, double q );
+  Operator Sigmap(  ModelSpace&, std::string IsoSV, int J, double q );
+  Operator Sigmapp( ModelSpace&, std::string IsoSV, int J, double q );
+  Operator Delta(   ModelSpace&, std::string IsoSV, int J, double q );
+  Operator Deltap(  ModelSpace&, std::string IsoSV, int J, double q );
+  Operator Phip(    ModelSpace&, std::string IsoSV, int J, double q );
+  Operator Phitp(   ModelSpace&, std::string IsoSV, int J, double q );
+  Operator Phipp(   ModelSpace&, std::string IsoSV, int J, double q );
+  Operator Omega(   ModelSpace&, std::string IsoSV, int J, double q ); 
+  Operator Omegat(  ModelSpace&, std::string IsoSV, int J, double q ); // Not implemented
+
 
 }
 

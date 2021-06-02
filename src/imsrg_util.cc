@@ -243,15 +243,17 @@ namespace imsrg_util
         theop =  M0nu_contact_Op(modelspace, R0);
       }
 
-      else if (opnamesplit[0] == "DMNREFT") // Dark matter non-relativistic EFT operators 
+      else if (opnamesplit[0] == "DMNREFT") // Dark matter non-relativistic EFT operators: M+, M-, ...
       {
+        std::string IsoSV; // "+" labels isoscalar and "-" is isovector
         double q;
         int J;
-        std::string dmopname = opnamesplit[1];
+        std::string dmopname = opnamesplit[1].substr(0, opnamesplit[1].length() - 1);
+        IsoSV = opnamesplit[1].back();
         std::istringstream(opnamesplit[2]) >> q;
         std::istringstream(opnamesplit[3]) >> J;
 
-        std::map<std::string, Operator (*)(ModelSpace&, int, double) > dmop = {
+        std::map<std::string, Operator (*)(ModelSpace&, std::string, int, double) > dmop = {
               {"M",       &DM_NREFT::M},
               {"Sigma",   &DM_NREFT::Sigma},
               {"Sigmap",  &DM_NREFT::Sigmap},
@@ -264,7 +266,7 @@ namespace imsrg_util
              };
         if ( dmop.find(dmopname) != dmop.end() )
         {
-        theop =  dmop[dmopname](modelspace, J, q );
+        theop =  dmop[dmopname](modelspace, IsoSV, J, q );
         }
       }
       else if (opnamesplit[0] == "Dagger" or opnamesplit[0] == "DaggerHF" )
