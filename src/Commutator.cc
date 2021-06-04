@@ -817,12 +817,13 @@ void comm221ss( const Operator& X, const Operator& Y, Operator& Z)
 //   static TwoBodyME Mpp = Y.TwoBody; // SRS: Is there a good reason to make these static?
 //   static TwoBodyME Mhh = Y.TwoBody;
 
-   TwoBodyME Mpp = Z.TwoBody;
-   TwoBodyME Mhh = Z.TwoBody;
-   Mpp.Erase();
-   Mhh.Erase();
+   TwoBodyME Mpp(Z.modelspace, Z.GetJRank(), Z.GetTRank(), Z.GetParity());
+   TwoBodyME Mhh(Z.modelspace, Z.GetJRank(), Z.GetTRank(), Z.GetParity());
+//   TwoBodyME Mpp = Z.TwoBody;
+//   TwoBodyME Mhh = Z.TwoBody;
+//   Mpp.Erase();
+//   Mhh.Erase();
    ConstructScalarMpp_Mhh( X, Y, Z, Mpp, Mhh);
-
 
 //   int norbits = Z.modelspace->GetNumberOrbits();
    int norbits = Z.modelspace->all_orbits.size();
@@ -1041,7 +1042,10 @@ void ConstructScalarMpp_Mhh(const Operator& X, const Operator& Y, const Operator
    double t_start = omp_get_wtime();
 
    std::vector<size_t> ch_bra_list,ch_ket_list;
-   for ( auto& iter : Z.TwoBody.MatEl )
+   auto ch_iter = Z.TwoBody.MatEl;
+   if ( Z.GetParticleRank() < 2 and Y.GetParticleRank()>1 ) ch_iter = Y.TwoBody.MatEl;
+//   for ( auto& iter : Z.TwoBody.MatEl )
+   for ( auto& iter : ch_iter )
    {
       ch_bra_list.push_back( iter.first[0] );
       ch_ket_list.push_back( iter.first[1] );

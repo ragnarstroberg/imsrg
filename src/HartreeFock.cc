@@ -1039,7 +1039,7 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
    // Update the two-body part by multiplying by the matrix D(ij,ab) = <ij|ab>
    // for each channel J,p,Tz. Most of the effort here is in constructing D.
 
-   if ( OpHF.legs%2== 0)
+   if ( OpHF.legs%2== 0 and OpHO.legs>3)
    {
      for ( auto& it : OpHO.TwoBody.MatEl )
      {

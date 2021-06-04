@@ -67,12 +67,17 @@ Operator::Operator()
 Operator::Operator(ModelSpace& ms, int Jrank, int Trank, int p, int part_rank) :
     modelspace(&ms), ZeroBody(0), OneBody(ms.GetNumberOrbits(), ms.GetNumberOrbits(),arma::fill::zeros),
 //    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms,Jrank,Trank,p), ThreeLeg(&ms), ThreeBodyNO2B(),
-    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms,Jrank,Trank,p), ThreeLeg(&ms),
+//    TwoBody(&ms,Jrank,Trank,p),  ThreeBody(&ms,Jrank,Trank,p), ThreeLeg(&ms),
+    TwoBody(),  ThreeBody(&ms,Jrank,Trank,p), ThreeLeg(&ms),
     rank_J(Jrank), rank_T(Trank), parity(p), particle_rank(part_rank), legs(2*part_rank),
     E3max(ms.GetE3max()),
     hermitian(true), antihermitian(false),
     nChannels(ms.GetNumberTwoBodyChannels()) , Q_space_orbit(-1)
 {
+  if (part_rank>=2)
+  {
+    TwoBody = TwoBodyME(&ms,Jrank,Trank,p);
+  }
   SetUpOneBodyChannels();
 //  if (particle_rank >=3) ThreeBody.Allocate();   // Don't allocate automatically. Wait until we're sure we want it.
   IMSRGProfiler::counter["N_Operators"] ++;
@@ -251,7 +256,7 @@ void Operator::SetUpOneBodyChannels()
     // The +-1 comes from the spin [LxS](J)
     int lmin = std::max( oi.l - rank_J-1, 0);
     int lmax = std::min( oi.l + rank_J+1, modelspace->GetEmax() );
-    for (int l=lmin; l<=lmax; l+=1)
+    for (int l=lmin; l<=lmax; l++)
     {
       if ((l + oi.l + parity)%2>0) continue;
       int j2min = std::max(std::max(oi.j2 - 2*rank_J, 2*l-1),1);
@@ -1528,14 +1533,16 @@ double Operator::Norm() const
 double Operator::OneBodyNorm() const
 {
    double nrm = 0;
-   for ( size_t p=0; p<modelspace->GetNumberOrbits(); ++p)
+//   for ( size_t p=0; p<modelspace->GetNumberOrbits(); ++p)
+   for ( auto p : modelspace->all_orbits )
    {
      Orbit& op = modelspace->GetOrbit(p);
      for ( auto q : OneBodyChannels.at({op.l, op.j2, op.tz2}) )
      {
        Orbit& oq = modelspace->GetOrbit(q);
        int degeneracy_factor = (op.j2+1) * ( (std::min(oq.j2,op.j2+rank_J)-std::max(-oq.j2,op.j2-rank_J))/2+1 );
-       nrm += OneBody(p,q)*OneBody(p,q) * degeneracy_factor * degeneracy_factor;
+//       nrm += OneBody(p,q)*OneBody(p,q) * degeneracy_factor * degeneracy_factor;
+       nrm += OneBody(p,q)*OneBody(p,q) * degeneracy_factor ;
      }
    }
    return sqrt(nrm);
@@ -1556,7 +1563,8 @@ double Operator::ThreeBodyNorm() const
 double Operator::OneLegNorm() const
 {
    double nrm = 0;
-   for ( size_t p=0; p<modelspace->GetNumberOrbits(); ++p)
+//   for ( size_t p=0; p<modelspace->GetNumberOrbits(); ++p)
+   for ( auto p : modelspace->all_orbits )
    {
      Orbit& op = modelspace->GetOrbit(p);
      int degeneracy_factor = (op.j2+1) ;
@@ -1657,7 +1665,8 @@ void Operator::ScaleFermiDirac(Operator& H, double T, double Efermi)
 {
   int norb = modelspace->GetNumberOrbits();
 
-  for (int i=0; i<norb; ++i)
+//  for (int i=0; i<norb; ++i)
+  for (auto i : modelspace->all_orbits )
   {
     Orbit& oi = modelspace->GetOrbit(i);
     double ei = OneBody(i,i);
@@ -1698,7 +1707,8 @@ void Operator::Symmetrize()
    else
    {
      int norb = modelspace->GetNumberOrbits();
-     for (int i=0;i<norb; ++i)
+//     for (int i=0;i<norb; ++i)
+     for ( auto i : modelspace->all_orbits )
      {
        Orbit& oi = modelspace->GetOrbit(i);
        for ( int j : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
@@ -1723,7 +1733,8 @@ void Operator::AntiSymmetrize()
    else
    {
      int norb = modelspace->GetNumberOrbits();
-     for (int i=0;i<norb; ++i)
+//     for (int i=0;i<norb; ++i)
+     for ( auto i : modelspace->all_orbits )
      {
        Orbit& oi = modelspace->GetOrbit(i);
        for ( int j : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )

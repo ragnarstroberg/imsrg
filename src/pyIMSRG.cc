@@ -200,12 +200,14 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def(py::self -= double())
       .def(py::self - double())
       .def("__mul__", [](const arma::mat& A, const arma::mat& B){arma::mat C = A * B; return C;} )
-//      .def(py::self =* py::self )
       .def("__call__", [](arma::mat& self,const int i, const int j) {return &self(i,j);}, py::is_operator()  )
       .def("Set",[](arma::mat& self, const int i, const int j, double x){ self(i,j) = x;}, py::arg("i"),py::arg("j"),py::arg("matel"))
       .def("Getn_rows",[](arma::mat& self) {return self.n_rows;} )
       .def("Getn_cols",[](arma::mat& self) {return self.n_cols;} )
+      .def("Schur_Prod",[](arma::mat& self, arma::mat& other) { arma::mat out = self % other;return out;})
       .def("Norm",[](arma::mat& self){return arma::norm(self,"fro");})
+      .def("trace", [](arma::mat& self){ double t =arma::trace(self); return t;})
+      .def("sum", [](arma::mat& self) {double s= arma::accu(self); return s;})
    ;
 
    py::class_<TwoBodyME>(m,"TwoBodyME")
@@ -215,6 +217,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetTBMEmonopole",[](TwoBodyME& self, int a, int b, int c, int d){ return self.GetTBMEmonopole(a,b,c,d);}, py::arg("a"),py::arg("b"),py::arg("c"),py::arg("d"))
       .def("GetTBMEmonopole_norm",[](TwoBodyME& self, int a, int b, int c, int d){ return self.GetTBMEmonopole_norm(a,b,c,d);}, py::arg("a"),py::arg("b"),py::arg("c"),py::arg("d"))
       .def("GetChannelMatrix",[](TwoBodyME& self, int J, int p, int Tz){ size_t ch = self.modelspace->GetTwoBodyChannelIndex(J,p,Tz); return self.GetMatrix(ch,ch);},py::arg("J"),py::arg("parity"),py::arg("Tz") )
+      .def("PrintAll", [](TwoBodyME& self ) { for (auto& it : self.MatEl){ if (it.second.n_rows>0) { std::cout << it.first[0] << " " << it.first[1] << std::endl << it.second << std::endl;};  } ;} )
    ;
 
 //   py::class_<ThreeBodyME>(m,"ThreeBodyME")
@@ -371,6 +374,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetDenominatorCutoff",&IMSRGSolver::SetDenominatorCutoff)
       .def("SetDenominatorDelta",&IMSRGSolver::SetDenominatorDelta)
       .def("SetDenominatorDeltaOrbit",&IMSRGSolver::SetDenominatorDeltaOrbit)
+      .def("SetDenominatorPartitioning",&IMSRGSolver::SetDenominatorPartitioning)
       .def("GetSystemDimension",&IMSRGSolver::GetSystemDimension)
       .def("GetOmega",&IMSRGSolver::GetOmega)
       .def("SetOmega",&IMSRGSolver::SetOmega)
@@ -498,6 +502,8 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("RadialIntegral",     imsrg_util::RadialIntegral);
    m.def("RadialIntegral_RpowK",     imsrg_util::RadialIntegral_RpowK);
    m.def("RadialIntegral_Gauss",     imsrg_util::RadialIntegral_Gauss, py::arg("na"),py::arg("la"),py::arg("nb"),py::arg("lb"),py::arg("sig"));
+   m.def("RPA_resummed_1b", imsrg_util::RPA_resummed_1b, py::arg("OpIn"), py::arg("H"), py::arg("mode") );
+   m.def("FirstOrderCorr_1b", imsrg_util::FirstOrderCorr_1b, py::arg("OpIn"), py::arg("H") );
    m.def("FrequencyConversionCoeff", imsrg_util::FrequencyConversionCoeff);
    m.def("OperatorFromString", imsrg_util::OperatorFromString);
    m.def("HO_Radial_psi",  imsrg_util::HO_Radial_psi, py::arg("n"),py::arg("l"),py::arg("hw"),py::arg("r"));
