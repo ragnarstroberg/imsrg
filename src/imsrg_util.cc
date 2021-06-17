@@ -2958,6 +2958,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
      Mphhp = GetPH_transformed_Gamma( ph_kets, hp_kets, H, Lambda );
      Mhpph = GetPH_transformed_Gamma( hp_kets, ph_kets, H, Lambda );
    }
+   if ( mode=="CP" ) // CP means first order core-polarization correction. M is zero because we don't want the iterations.
+   {
+     Mphph.zeros();
+     Mhphp.zeros();
+   }
 //   if (mode=="TDA")
 //   {
 //     Mphhp *=0;
@@ -3015,7 +3020,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
        arma::mat Minv = arma::inv(  arma::eye(arma::size(M))  - M/( Delta+del12) );
 
 //       arma::mat Mdel = M/(Delta+del12); // FOR DEBUGGING. REMOVE THIS
-//       Minv = arma::eye(arma::size(M)) + Mdel + Mdel*Mdel;   // FOR DEBUGGING. REMOVE THIS
+//       Minv = arma::eye(arma::size(M)) + Mdel;// + Mdel*Mdel;   // FOR DEBUGGING. REMOVE THIS
        arma::vec ORPA = Minv * Ovec;
 
 
