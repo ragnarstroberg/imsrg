@@ -300,35 +300,6 @@ int main(int argc, char** argv)
     }
   }
 
-//  if ( method=="magnus" and  scratch != "" and scratch!= "/dev/null" and scratch != "/dev/null/")
-//  {
-//    std::string testfilename = scratch + "/_this_is_a_test_delete_me";
-//    std::ofstream testout(testfilename);
-//    testout << "PASSED" << std::endl;
-//    testout.close();
-//    std::remove( testfilename.c_str() );
-//    if ( not testout.good() )
-//    {
-//      std::cout << "WARNING in " << __FILE__ <<  " failed test write to scratch directory " << scratch;
-//      if (opnames.size()>0 )
-//      {
-//      std::cout << "   dying now. " << std::endl;
-//      exit(EXIT_FAILURE);
-//      }
-//      else std::cout << std::endl;
-//    }
-//  }
-//  if ( (method=="magnus") and (scratch=="/dev/null" or scratch=="/dev/null/") )
-//  {
-//    if ( opnames.size() > 0 )
-//    {
-//      std::cout << "WARNING!!! using Magnus with scratch = " << scratch << " but you're also trying to transform some operators: ";
-//      for (auto opn : opnames ) std::cout << opn << " ";
-//      std::cout << "   dying now." << std::endl;
-//      exit(EXIT_FAILURE);
-//    }
-//  }
-
 
 //  ModelSpace modelspace;
 
@@ -768,57 +739,6 @@ int main(int argc, char** argv)
     }
 
 
-/*  
-    // the format should look like OpName^j_t_p_r^/path/to/2bfile^/path/to/3bfile  if particle rank of Op is 2-body, then 3bfile is not needed.
-    for (auto& tag : opsfromfile)
-    {
-      std::istringstream ss(tag);
-      std::string opname,qnumbers,f2name,f3name="";
-//      std::vector<int> qn(4);
-      int j,t,p,r;
-  
-      getline(ss,opname,'^');
-      getline(ss,qnumbers,'^');
-      getline(ss,f2name,'^');
-      if ( not ss.eof() )  getline(ss,f3name,'^');
-
-      ss.str(qnumbers);
-      ss.clear();
-      std::string tmp;
-      getline(ss,tmp,'_');
-      std::istringstream(tmp) >> j;
-      getline(ss,tmp,'_');
-      std::istringstream(tmp) >> t;
-      getline(ss,tmp,'_');
-      std::istringstream(tmp) >> p;
-      getline(ss,tmp,'_');
-      std::istringstream(tmp) >> r;
-      
-      std::cout << "Parsed tag. opname = " << opname << "  " << j << " " << t << " " << p << " " << r << "   file2 = " << f2name   << "    file3 = " << f3name << std::endl;
-
-      Operator op(modelspace,j,t,p,r);
-      if (r>2) op.ThreeBody.Allocate();
-  //    std::cout << "Reading operator " << opname << "  in " << input_op_fmt << "  format from files " << f2name << "  ,  " << f3name << std::endl;
-  //    std::cout << "Operator has particle rank " << op.GetParticleRank() << std::endl;
-      if ( input_op_fmt == "navratil" )
-      {
-        rw.Read2bCurrent_Navratil( f2name, op );
-      }
-      else if ( input_op_fmt == "miyagi" )
-      {
-        if (f2name != "")
-        {   
-            Operator optmp = rw.ReadOperator2b_Miyagi( f2name, modelspace );
-            op.TwoBody = optmp.TwoBody;
-        }
-        if ( r>2 and f3name != "")  rw.Read_Darmstadt_3body( f3name, op,  file3e1max,file3e2max,file3e3max);
-      }
-      ops.push_back( op );
-      opnames.push_back( opname );
-    }
-*/
-
-//   std::cout << "op size is " << ops.size() << std::endl;
    if (ops.size()>0)
    {
      std::cout << "operators to transform: " << std::endl;
@@ -871,7 +791,8 @@ int main(int argc, char** argv)
     std::cout << std::endl;
   }
 
-  if ( method == "HF" or method == "MP3")
+//  if ( method == "HF" or method == "MP3")
+  if ( method == "HF" )
   {
     HNO.PrintTimes();
     return 0;
@@ -1002,10 +923,14 @@ int main(int argc, char** argv)
     std::cout << "To 3rd order, E = " << HNO.ZeroBody + EMP2 + EMP3 + EMP2_3B << std::endl;
   }
 
-
+  if ( method == "MP3" )
+  {
+    HNO.PrintTimes();
+    return 0;
+  }
 
   IMSRGSolver imsrgsolver(HNO);
-  imsrgsolver.SetHin(HNO); // necessary?
+//  imsrgsolver.SetHin(HNO); // necessary?
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetMethod(method);
   imsrgsolver.SetDenominatorPartitioning(denominator_partitioning);
