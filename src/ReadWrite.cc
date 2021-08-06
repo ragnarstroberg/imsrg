@@ -2510,6 +2510,7 @@ uint64_t Petr2BC_hash(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t j
 
 void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
 {
+  double t_start = omp_get_wtime();
     std::ifstream infilegz(filename, std::ios_base::in | std::ios_base::binary);
     boost::iostreams::filtering_istream infile;
     infile.push(boost::iostreams::gzip_decompressor());
@@ -2632,6 +2633,7 @@ void ReadWrite::Read2bCurrent_Navratil( std::string filename, Operator& Op)
     }
 
   }
+  IMSRGProfiler::timer[std::string(__func__)] += omp_get_wtime() - t_start;
 
 }
 

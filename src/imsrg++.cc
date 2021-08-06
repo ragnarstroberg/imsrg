@@ -58,6 +58,11 @@
 #include "PhysicalConstants.hh"
 #include "version.hh"
 
+struct OpFromFile {
+   std::string file2name,file3name,opname;
+   int j,p,t,r; // J rank, parity, dTz, particle rank
+};
+
 int main(int argc, char** argv)
 {
   // Default parameters, and everything passed by command line args.
@@ -158,6 +163,7 @@ int main(int argc, char** argv)
   std::vector<std::string> spwf = parameters.v("SPWF");
 
 
+
   // test 2bme file
   if (inputtbme != "none" and fmt2.find("oakridge")==std::string::npos and fmt2 != "schematic" )
   {
@@ -177,31 +183,62 @@ int main(int argc, char** argv)
     }
   }
 
+  // unpack the awkward input format for reading an operator from file, and put it into a struct.
+  // the format should look like OpName^j_t_p_r^/path/to/2bfile^/path/to/3bfile  if particle rank of Op is 2-body, then 3bfile is not needed.
+  std::vector< OpFromFile> opsfromfile_unpacked;
   // If we're reading in other operators, make sure those are ok too
   for (auto& tag : opsfromfile)
   {
      std::istringstream ss(tag);
      std::string opname,qnumbers,f2name,f3name="";
+
+     OpFromFile opff;
   
      getline(ss,opname,'^');
      getline(ss,qnumbers,'^');
      getline(ss,f2name,'^');
+     if ( not ss.eof() )  getline(ss,f3name,'^');
+     opff.opname = opname;
+     opff.file2name = f2name;
+     opff.file3name = f3name;
 
-     if( not std::ifstream(f2name).good() )
+      ss.str(qnumbers);
+      ss.clear();
+      std::string tmp;
+      getline(ss,tmp,'_');
+      std::istringstream(tmp) >> opff.j;
+      getline(ss,tmp,'_');
+      std::istringstream(tmp) >> opff.t;
+      getline(ss,tmp,'_');
+      std::istringstream(tmp) >> opff.p;
+      getline(ss,tmp,'_');
+      std::istringstream(tmp) >> opff.r;
+      
+      std::cout << "Parsed tag. opname = " << opff.opname << "  " << opff.j << " " << opff.t << " " << opff.p << " " << opff.r << "   file2 = " << opff.file2name   << "    file3 = " << opff.file3name << std::endl;
+
+      // now make sure the files exist before we add them to the list.
+
+//     if( not std::ifstream(f2name).good() )
+     if( not std::ifstream(opff.file2name).good() )
      {
-       std::cout << "trouble reading " << f2name << " exiting. " << std::endl;
+//       std::cout << "trouble reading " << f2name << " exiting. " << std::endl;
+       std::cout << "trouble reading " << opff.file2name << " exiting. " << std::endl;
        return 1;
      }
 
-     if ( not ss.eof() ) // is there a 3-body file too?
+     if ( opff.file3name != "") // is there a 3-body file too?
      {
-       getline(ss,f3name,'^');
-       if( not std::ifstream(f3name).good() )
+//       getline(ss,f3name,'^');
+//       if( not std::ifstream(f3name).good() )
+       if( not std::ifstream(opff.file3name).good() )
        {
-         std::cout << "trouble reading " << f3name << " exiting. " << std::endl;
+         std::cout << "trouble reading " << opff.file3name << " exiting. " << std::endl;
+//         std::cout << "trouble reading " << f3name << " exiting. " << std::endl;
          return 1;
        }
      }
+     // if the files look good, then add it to the list
+     opsfromfile_unpacked.push_back( opff );
   }
 
 
@@ -263,35 +300,6 @@ int main(int argc, char** argv)
 
     }
   }
-
-//  if ( method=="magnus" and  scratch != "" and scratch!= "/dev/null" and scratch != "/dev/null/")
-//  {
-//    std::string testfilename = scratch + "/_this_is_a_test_delete_me";
-//    std::ofstream testout(testfilename);
-//    testout << "PASSED" << std::endl;
-//    testout.close();
-//    std::remove( testfilename.c_str() );
-//    if ( not testout.good() )
-//    {
-//      std::cout << "WARNING in " << __FILE__ <<  " failed test write to scratch directory " << scratch;
-//      if (opnames.size()>0 )
-//      {
-//      std::cout << "   dying now. " << std::endl;
-//      exit(EXIT_FAILURE);
-//      }
-//      else std::cout << std::endl;
-//    }
-//  }
-//  if ( (method=="magnus") and (scratch=="/dev/null" or scratch=="/dev/null/") )
-//  {
-//    if ( opnames.size() > 0 )
-//    {
-//      std::cout << "WARNING!!! using Magnus with scratch = " << scratch << " but you're also trying to transform some operators: ";
-//      for (auto opn : opnames ) std::cout << opn << " ";
-//      std::cout << "   dying now." << std::endl;
-//      exit(EXIT_FAILURE);
-//    }
-//  }
 
 
 //  ModelSpace modelspace;
@@ -709,57 +717,30 @@ int main(int argc, char** argv)
       opnames.push_back( opnamerpa+"RPA" );
     }
   
-  
-    // the format should look like OpName^j_t_p_r^/path/to/2bfile^/path/to/3bfile  if particle rank of Op is 2-body, then 3bfile is not needed.
-    for (auto& tag : opsfromfile)
+
+
+    for ( auto& opff : opsfromfile_unpacked)
     {
-      std::istringstream ss(tag);
-      std::string opname,qnumbers,f2name,f3name="";
-//      std::vector<int> qn(4);
-      int j,t,p,r;
-  
-      getline(ss,opname,'^');
-      getline(ss,qnumbers,'^');
-      getline(ss,f2name,'^');
-      if ( not ss.eof() )  getline(ss,f3name,'^');
-
-      ss.str(qnumbers);
-      ss.clear();
-      std::string tmp;
-      getline(ss,tmp,'_');
-      std::istringstream(tmp) >> j;
-      getline(ss,tmp,'_');
-      std::istringstream(tmp) >> t;
-      getline(ss,tmp,'_');
-      std::istringstream(tmp) >> p;
-      getline(ss,tmp,'_');
-      std::istringstream(tmp) >> r;
-      
-      std::cout << "Parsed tag. opname = " << opname << "  " << j << " " << t << " " << p << " " << r << "   file2 = " << f2name   << "    file3 = " << f3name << std::endl;
-
-      Operator op(modelspace,j,t,p,r);
-      if (r>2) op.ThreeBody.Allocate();
-  //    std::cout << "Reading operator " << opname << "  in " << input_op_fmt << "  format from files " << f2name << "  ,  " << f3name << std::endl;
-  //    std::cout << "Operator has particle rank " << op.GetParticleRank() << std::endl;
+      Operator op(modelspace, opff.j, opff.t, opff.p, opff.r );
+      if (opff.r>2) op.ThreeBody.Allocate();
       if ( input_op_fmt == "navratil" )
       {
-        rw.Read2bCurrent_Navratil( f2name, op );
+        rw.Read2bCurrent_Navratil( opff.file2name, op );
       }
       else if ( input_op_fmt == "miyagi" )
       {
-        if (f2name != "")
+        if (opff.file2name != "")
         {   
-            Operator optmp = rw.ReadOperator2b_Miyagi( f2name, modelspace );
+            Operator optmp = rw.ReadOperator2b_Miyagi( opff.file2name, modelspace );
             op.TwoBody = optmp.TwoBody;
         }
-        if ( r>2 and f3name != "")  rw.Read_Darmstadt_3body( f3name, op,  file3e1max,file3e2max,file3e3max);
+        if ( opff.r>2 and opff.file3name != "")  rw.Read_Darmstadt_3body( opff.file3name, op,  file3e1max,file3e2max,file3e3max);
       }
       ops.push_back( op );
-      opnames.push_back( opname );
+      opnames.push_back( opff.opname );
     }
 
 
-//   std::cout << "op size is " << ops.size() << std::endl;
    if (ops.size()>0)
    {
      std::cout << "operators to transform: " << std::endl;
@@ -812,7 +793,8 @@ int main(int argc, char** argv)
     std::cout << std::endl;
   }
 
-  if ( method == "HF" or method == "MP3")
+//  if ( method == "HF" or method == "MP3")
+  if ( method == "HF" )
   {
     HNO.PrintTimes();
     return 0;
@@ -929,10 +911,28 @@ int main(int argc, char** argv)
     HNO.SetModelSpace(modelspace_imsrg);
   }
 
+ // After truncating, get the perturbative energies again to see how much things changed.
+  if (eMax_imsrg != eMax)
+  {
+    std::cout << "Perturbative estimates of gs energy:" << std::endl;
+    double EMP2 = HNO.GetMP2_Energy();
+    double EMP2_3B = HNO.GetMP2_3BEnergy();
+    std::cout << "EMP2 = " << EMP2 << std::endl;
+    std::cout << "EMP2_3B = " << EMP2_3B << std::endl;
+    std::array<double,3> Emp_3 = HNO.GetMP3_Energy();
+    double EMP3 = Emp_3[0]+Emp_3[1]+Emp_3[2];
+    std::cout << "E3_pp = " << Emp_3[0] << "  E3_hh = " << Emp_3[1] << " E3_ph = " << Emp_3[2] << "   EMP3 = " << EMP3 << std::endl;
+    std::cout << "To 3rd order, E = " << HNO.ZeroBody + EMP2 + EMP3 + EMP2_3B << std::endl;
+  }
 
+  if ( method == "MP3" )
+  {
+    HNO.PrintTimes();
+    return 0;
+  }
 
   IMSRGSolver imsrgsolver(HNO);
-  imsrgsolver.SetHin(HNO); // necessary?
+//  imsrgsolver.SetHin(HNO); // necessary?
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetMethod(method);
   imsrgsolver.SetDenominatorPartitioning(denominator_partitioning);
@@ -1306,15 +1306,53 @@ int main(int argc, char** argv)
 
   if (method == "magnus")
   {
+
+    /// if method is magnus, we didn't do this already. So we need to unpack any operators from file.
+
+    for ( auto& opff : opsfromfile_unpacked)
+    {
+      opnames.push_back( opff.opname + "_FROMFILE");
+    }
+
+    int count_from_file =0;
+
+
     if (opnames.size()>0) std::cout << "transforming operators" << std::endl;
 
     for (size_t i=0;i<opnames.size();++i)
     {
-      std::cout << "i..." << i << std::endl;
       auto opname = opnames[i];
       std::cout << i << ": " << opname << " " << std::endl;
 
-      Operator op = imsrg_util::OperatorFromString( modelspace, opname );
+      Operator op;
+
+      if ( opname.find("_FROMFILE") != std::string::npos)
+      {
+        OpFromFile& opff = opsfromfile_unpacked[count_from_file];
+         std::cout << "reading " << opff.opname << " with " << opff.j << " " << opff.t << " " << opff.p << " " << opff.r << "  from file " << opff.file2name << std::endl;
+        op = Operator(modelspace, opff.j, opff.t, opff.p, opff.r );
+        if (opff.r>2) op.ThreeBody.Allocate();
+        if ( input_op_fmt == "navratil" )
+        {
+          rw.Read2bCurrent_Navratil( opff.file2name, op );
+        }
+        else if ( input_op_fmt == "miyagi" )
+        {
+          if (opff.file2name != "")
+          {   
+              Operator optmp = rw.ReadOperator2b_Miyagi( opff.file2name, modelspace );
+              op.TwoBody = optmp.TwoBody;
+          }
+          if ( opff.r>2 and opff.file3name != "")  rw.Read_Darmstadt_3body( opff.file3name, op,  file3e1max,file3e2max,file3e3max);
+        }
+        count_from_file++;
+        opname = opff.opname; // Get rid of the _FROMFILE bit.
+      }
+      else
+      {
+         op = imsrg_util::OperatorFromString( modelspace, opname );
+      }
+//      Operator op = imsrg_util::OperatorFromString( modelspace, opname );
 
       if ( basis == "HF")
       {
@@ -1355,29 +1393,29 @@ int main(int argc, char** argv)
        std::cout << "writing scalar files " << std::endl;
       if (valence_file_format == "tokyo")
       {
-        rw.WriteTokyo(op,intfile+opnames[i]+".snt", "op");
+        rw.WriteTokyo(op,intfile+opname+".snt", "op");
       }
       else
       {
-        rw.WriteNuShellX_op(op,intfile+opnames[i]+".int");
+        rw.WriteNuShellX_op(op,intfile+opname+".int");
       }
     }
     else if ( op.GetNumberLegs()%2==1) // odd number of legs -> this is a dagger operator
     {
 //      rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int"); // do this for now. later make a *.dag format.
-      rw.WriteDaggerOperator( op, intfile+opnames[i]+".dag",opnames[i]);
+      rw.WriteDaggerOperator( op, intfile+opname+".dag",opname);
     }
     else
     {
        std::cout << "writing tensor files " << std::endl;
       if (valence_file_format == "tokyo")
       {
-        rw.WriteTensorTokyo(intfile+opnames[i]+"_2b.snt",op);
+        rw.WriteTensorTokyo(intfile+opname+"_2b.snt",op);
       }
       else
       {
-        rw.WriteTensorOneBody(intfile+opnames[i]+"_1b.op",op,opnames[i]);
-        rw.WriteTensorTwoBody(intfile+opnames[i]+"_2b.op",op,opnames[i]);
+        rw.WriteTensorOneBody(intfile+opname+"_1b.op",op,opname);
+        rw.WriteTensorTwoBody(intfile+opname+"_2b.op",op,opname);
       }
     }
 
