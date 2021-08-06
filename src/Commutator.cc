@@ -12019,4 +12019,23 @@ void AddInversePandyaTransformation_Dagger( const std::deque<arma::mat>& Zbar, O
 
 
 
+/// Product of two operators. Similar to commutator, and hopefully useful for some debugging
+//
+//
+  void prod110ss( const Operator& X, const Operator& Y, Operator& Z )  
+  {
+//     if (X.IsHermitian() and Y.IsHermitian()) return ; // I think this is the case
+//     if (X.IsAntiHermitian() and Y.IsAntiHermitian()) return ; // I think this is the case
+     if (Z.GetJRank()>0 or Z.GetTRank()>0 or Z.GetParity()!=0) return;
+
+      arma::mat xyyx = X.OneBody*Y.OneBody - Y.OneBody*X.OneBody;
+      for ( auto& a : Z.modelspace->holes) 
+      {
+         Orbit& oa = Z.modelspace->GetOrbit(a);
+         Z.ZeroBody += (oa.j2+1) * oa.occ * xyyx(a,a);
+      }
+  }
+
+
+
 } // namespace Commutator

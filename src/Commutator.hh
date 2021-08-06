@@ -160,6 +160,9 @@ namespace Commutator{
 
 
 
+  void prod110ss( const Operator& X, const Operator& Y, Operator& Z ) ; 
+  void prod111ss( const Operator& X, const Operator& Y, Operator& Z ) ; 
+  void prod112ss( const Operator& X, const Operator& Y, Operator& Z ) ; 
 
 
 
