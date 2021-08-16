@@ -127,11 +127,13 @@ void HFMBPT::GetNaturalOrbitals()
 
   } // if use_NAT_occupations
 
+  // In principle, this could be iterated until self-consistency. But I don't do that for now. This would only have an impact
+  // if the energy ordering of occupied and unoccupied levels gets flipped, which would be a fairly pathological case.
   arma::mat tmp = C_HO2NAT.cols(holeorbs);
   rho = (tmp.each_row() % hole_occ) * tmp.t(); // now rho is in the HO basis, with our prescribed occupations in the NAT basis
   UpdateF();  // Now F is in the HO basis, but with rho from filling in the NAT basis.
   ReorderHFMBPTCoefficients();
-
+  C_HO2NAT = C * C_HF2NAT; // bug fix suggested by Emily Love
 
 }
 
@@ -768,7 +770,7 @@ void HFMBPT::DensityMatrixPH(Operator& H)
 //*********************************************************************
 void HFMBPT::PrintSPEandWF()
 {
-  C_HO2NAT = C * C_HF2NAT;
+//  C_HO2NAT = C * C_HF2NAT;
   arma::mat F_natbasis = C_HO2NAT.t() * F * C_HO2NAT;
 
 
