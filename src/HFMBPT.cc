@@ -770,7 +770,7 @@ void HFMBPT::DensityMatrixPH(Operator& H)
 //*********************************************************************
 void HFMBPT::PrintSPEandWF()
 {
-//  C_HO2NAT = C * C_HF2NAT;
+  C_HO2NAT = C * C_HF2NAT;
   arma::mat F_natbasis = C_HO2NAT.t() * F * C_HO2NAT;
 
 
