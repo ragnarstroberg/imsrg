@@ -10,7 +10,7 @@ HFMBPT::HFMBPT(Operator& hbare)
   : HartreeFock(hbare),
     C_HO2NAT(modelspace->GetNumberOrbits(),modelspace->GetNumberOrbits(),arma::fill::eye),
     C_HF2NAT(modelspace->GetNumberOrbits(),modelspace->GetNumberOrbits(),arma::fill::eye),
-    use_NAT_occupations(false)
+    use_NAT_occupations(false), order_NAT_by_energy(false)
 {}
 
 //*********************************************************************
@@ -30,10 +30,7 @@ void HFMBPT::GetNaturalOrbitals()
 
   int norbits = HartreeFock::modelspace->GetNumberOrbits();
   int A = HartreeFock::modelspace->GetTargetMass();
-//  C_HF2NAT = arma::mat(norbits,norbits,arma::fill::eye); // we do this in the constructor, so it's already the right size.
-//  rho      = arma::mat(norbits,norbits,arma::fill::zeros);
   Occ      = arma::vec(norbits,arma::fill::zeros);  // Occupations are the eigenvalues of the density matrix
-//  UpdateDensityMatrix();  // Do the standard HF filling density matrix rho
   GetDensityMatrix();  // Include 2nd order MBPT corrections to rho
   DiagonalizeRho();  // Find the 1b transformation that diagonalizes rho, but don't apply it to anything yet.
 
@@ -42,7 +39,6 @@ void HFMBPT::GetNaturalOrbitals()
   {
     Orbit& oi = HartreeFock::modelspace->GetOrbit(i);
     AfromTr += rho(i,i) * (oi.j2+1);
-//    std::cout << "i: " << i << "   " << rho(i,i) << "  " << rho(i,i)*(oi.j2+1) << "      " << AfromTr << std::endl;
   }
 
   if(std::abs(AfromTr - A) > 1e-8)
@@ -53,13 +49,10 @@ void HFMBPT::GetNaturalOrbitals()
   C_HO2NAT = C * C_HF2NAT;
 
   // set the occ_nat values
-//  double trr = 0;
   for ( auto i : modelspace->all_orbits)
   {
     Orbit& oi = modelspace->GetOrbit(i);
     oi.occ_nat = std::abs(Occ(i));  // it's possible that Occ(i) is negative, and for occ_nat, we don't want that.
-//    trr += (oi.j2+1) * Occ(i);
-//    std::cout << " Occ( " << i << " ) = " << Occ(i) << "   sum = " << trr << std::endl;
   }
 
   if (use_NAT_occupations) // use fractional occupation
@@ -134,6 +127,14 @@ void HFMBPT::GetNaturalOrbitals()
 
   } // if use_NAT_occupations
 
+  // In principle, this could be iterated until self-consistency. But I don't do that for now. This would only have an impact
+  // if the energy ordering of occupied and unoccupied levels gets flipped, which would be a fairly pathological case.
+  arma::mat tmp = C_HO2NAT.cols(holeorbs);
+  rho = (tmp.each_row() % hole_occ) * tmp.t(); // now rho is in the HO basis, with our prescribed occupations in the NAT basis
+  UpdateF();  // Now F is in the HO basis, but with rho from filling in the NAT basis.
+  ReorderHFMBPTCoefficients();
+  C_HO2NAT = C * C_HF2NAT; // bug fix suggested by Emily Love
+
 }
 
 //*********************************************************************
@@ -145,13 +146,13 @@ void HFMBPT::DiagonalizeRho()
   {
 //    arma::uvec orbvec(it.second);
     arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end()));
-    arma::uvec orbvec_d = arma::sort(orbvec, "descend");
+//    arma::uvec orbvec_d = arma::sort(orbvec, "descend");
 //    arma::uvec orbvec_d = sort(orbvec, "descend");
     arma::mat rho_ch = rho.submat(orbvec, orbvec);
     arma::mat vec;
     arma::vec eig;
     bool success = false;
-    success = arma::eig_sym(eig, vec, rho_ch); // eigenvalues are in ascending order
+    success = arma::eig_sym(eig, vec, rho_ch); // eigenvalues of rho (i.e. occupations) are in ascending order
     if(not success)
     {
       std::cout << "Error in diagonalization of density matrix" << std::endl;
@@ -159,14 +160,20 @@ void HFMBPT::DiagonalizeRho()
       rho_ch.print();
       exit(0);
     }
-    Occ(orbvec_d) = eig;
+//    Occ(orbvec_d) = eig; // assigning with descending indexes produces NAT orbits ordered by descending occupation.
+//    C_HF2NAT.submat(orbvec, orbvec_d) = vec; // NAT orbits ordered by descending occupation
 
-    C_HF2NAT.submat(orbvec, orbvec_d) = vec;
+    Occ(orbvec) = arma::reverse(eig); // reverse so NAT orbits ordered by descending occupation.
+    C_HF2NAT.submat(orbvec, orbvec) = arma::reverse(vec, 1); // "1" means reverse elements in each row
+//    std::cout << "1-body channel ";
+//    for ( auto x : it.first ) std::cout << x << " ";
+//    std::cout << "  : " << std::endl << Occ(orbvec) << std::endl;
+//    std::cout << " C submat: " << std::endl << C_HF2NAT.submat(orbvec, orbvec ) << std::endl;
   }
  // Choose ordering and phases so that C_HF2NAT looks as close to the identity as possible
  // NB: Rather than C_HF2NAT being close to the identity, we really want the orbits for a given (l,j,tz) ordered
  // according to decreasing occupation, so that a later emax_imsrg truncation is reasonable. -SRS Jan 2021.
-  ReorderHFMBPTCoefficients();
+//  ReorderHFMBPTCoefficients();
 //  std::cout << " line " << __LINE__ << "   Occ = " << std::endl << Occ << std::endl;
 }
 
@@ -313,12 +320,11 @@ Operator HFMBPT::GetNormalOrderedHNAT(int particle_rank)
 {
   double start_time = omp_get_wtime();
   std::cout << "Getting normal-ordered H in NAT basis" << std::endl;
-  arma::mat rho_swap = rho;
-  arma::mat tmp = C_HO2NAT.cols(holeorbs);
-  rho = (tmp.each_row() % hole_occ) * tmp.t();
+//  arma::mat rho_swap = rho;
+//  arma::mat tmp = C_HO2NAT.cols(holeorbs);
+//  rho = (tmp.each_row() % hole_occ) * tmp.t();
 
-
-  UpdateF();
+//  UpdateF();  // Now F is in the HO basis, but with rho from filling in the NAT basis.
   CalcEHF();
   std::cout << std::fixed <<  std::setprecision(7);
   std::cout << "e1Nat = " << e1hf << std::endl;
@@ -395,7 +401,7 @@ Operator HFMBPT::GetNormalOrderedHNAT(int particle_rank)
     HNO.ThreeBody = GetTransformed3B( Hbare );
   }
 
-  rho = rho_swap;
+//  rho = rho_swap;
   profiler.timer["HFMBT_GetNormalOrderedHNO"] += omp_get_wtime() - start_time;
   return HNO;
 }
@@ -516,17 +522,9 @@ void HFMBPT::DensityMatrixPP(Operator& H)
               tbme +=  (2*J+1) * H.TwoBody.GetTBME_J(J,a,c,i,j)
                                * H.TwoBody.GetTBME_J(J,i,j,b,c);
             }
-//            tbme *=  (1-oa.occ) * (1-ob.occ) * pow( (1-oc.occ) * oi.occ * oj.occ,2) ;
             tbme *=  (1-oa.occ) * (1-ob.occ) *  (1-oc.occ)*(1-oc.occ) * oi.occ*oi.occ * oj.occ*oj.occ ;
-//            if (true)
-//            {
-              double epsilon = 0.5*sqrt(std::abs(e_acij * e_bcij));
-              r += 0.5* ( sqrt(tbme + epsilon*epsilon) - epsilon ) / sqrt(tbme + epsilon*epsilon);
-//            }
-//            else // the MBPT expression. We don't actually use this.
-//            {
-//              r += tbme / (e_acij * e_bcij);
-//            }
+            double epsilon = 0.5*sqrt(std::abs(e_acij * e_bcij));
+            r += 0.5* ( sqrt(tbme + epsilon*epsilon) - epsilon ) / sqrt(tbme + epsilon*epsilon);
           }
         }
       }
@@ -592,8 +590,6 @@ void HFMBPT::DensityMatrixHH(Operator& H)
             double e_abik = ea + eb - ei - ek;
             double e_abjk = ea + eb - ek - ej;
             if( std::abs(e_abik*e_abjk) < 1.e-8) continue;
-//            if(e_abik < 1.e-8) continue;
-//            if(e_abjk < 1.e-8) continue;
             int Jmin = std::max(std::abs(oa.j2-ob.j2), std::max(std::abs(oi.j2-ok.j2), std::abs(oj.j2-ok.j2)))/2;
             int Jmax = std::min(         oa.j2+ob.j2,  std::min(         oi.j2+ok.j2,           oj.j2+ok.j2))/2;
 
@@ -604,7 +600,6 @@ void HFMBPT::DensityMatrixHH(Operator& H)
                               * H.TwoBody.GetTBME_J(J,j,k,a,b);
             }
 
-//            tbme *= pow( (1-oa.occ) * (1-ob.occ) * ok.occ , 2) *  oi.occ * oj.occ ;
             tbme *=  (1-oa.occ)*(1-oa.occ) * (1-ob.occ)*(1-ob.occ) * ok.occ*ok.occ   *  oi.occ * oj.occ ;
             if (true)
             {
@@ -621,7 +616,6 @@ void HFMBPT::DensityMatrixHH(Operator& H)
       rho_hh2(i,j) = - r * 0.5 / (oi.j2+1);
       rho_hh2(j,i) = - r * 0.5 / (oi.j2+1);
     }
-//    rho(i,i) += oi.occ;
   }
   rho += rho_hh2;
 }
@@ -669,14 +663,12 @@ void HFMBPT::DensityMatrixPH(Operator& H)
 
       double r = 0.0;
       for(auto& b : HartreeFock::modelspace->particles)
-//      for(auto& b : HartreeFock::modelspace->all_orbits)
       {
         double eb = H.OneBody(b,b);
         Orbit& ob = HartreeFock::modelspace->GetOrbit(b);
         if ( (1-ob.occ)<ModelSpace::OCC_CUT) continue;
 
         for(auto& c : HartreeFock::modelspace->particles)
-//        for(auto& c : HartreeFock::modelspace->all_orbits)
         {
           double ec = H.OneBody(c,c);
           Orbit& oc = HartreeFock::modelspace->GetOrbit(c);
@@ -691,8 +683,6 @@ void HFMBPT::DensityMatrixPH(Operator& H)
             double e_ai = ea - ei;
             double e_bcij = eb + ec - ei - ej;
             if(e_ai*e_bcij < 1.e-8) continue;
-//            if(e_ai < 1.e-8) continue;
-//            if(e_bcij < 1.e-8) continue;
             int Jmin = std::max(std::abs(oa.j2-oj.j2), std::max(std::abs(ob.j2-oc.j2), std::abs(oi.j2-oj.j2)))/2;
             int Jmax = std::min(         oa.j2+oj.j2,  std::min(         ob.j2+oc.j2,           oi.j2+oj.j2))/2;
 
@@ -710,8 +700,6 @@ void HFMBPT::DensityMatrixPH(Operator& H)
       }
       rho_ph2(a,i) += r * 0.5 / (oa.j2+1);
       rho_ph2(i,a) += r * 0.5 / (oa.j2+1);
-//      rho(a,i) += r * 0.5 / (2*oa.j2+1); // <-- typo in original version?
-//      rho(i,a) += r * 0.5 / (2*oa.j2+1);
     }
   }
 
@@ -730,7 +718,6 @@ void HFMBPT::DensityMatrixPH(Operator& H)
 
 
       double r = 0.0;
-//      for(auto& b : HartreeFock::modelspace->all_orbits)
       for(auto& b : HartreeFock::modelspace->particles)
       {
         double eb = H.OneBody(b,b);
@@ -750,8 +737,6 @@ void HFMBPT::DensityMatrixPH(Operator& H)
             double e_ai = ea - ei;
             double e_abkj = ea + eb - ek - ej;
             if(e_ai*e_abkj < 1.e-8) continue;
-//            if(e_ai < 1.e-8) continue;
-//            if(e_abkj < 1.e-8) continue;
             int Jmin = std::max(std::abs(ok.j2-oj.j2), std::max(std::abs(oi.j2-ob.j2), std::abs(oa.j2-ob.j2)))/2;
             int Jmax = std::min(         ok.j2+oj.j2,  std::min(         oi.j2+ob.j2,           oa.j2+ob.j2))/2;
 
@@ -787,14 +772,17 @@ void HFMBPT::PrintSPEandWF()
 {
   C_HO2NAT = C * C_HF2NAT;
   arma::mat F_natbasis = C_HO2NAT.t() * F * C_HO2NAT;
+
+
+   
   std::cout << std::fixed << std::setw(3) << "i" << ": " << std::setw(3) << "n" << " " << std::setw(3) << "l" << " "
        << std::setw(3) << "2j" << " " << std::setw(3) << "2tz" << "   " << std::setw(12) << "SPE" << " " << std::setw(12) << "occ."
-       << " " << std::setw(12) << "n(1-n)" << "   |   " << " overlaps" << std::endl;
+       << " " << std::setw(12) << "occNAT" << "   |   " << " overlaps" << std::endl;
   for ( auto i : modelspace->all_orbits )
   {
     Orbit& oi = modelspace->GetOrbit(i);
     std::cout << std::fixed << std::setw(3) << i << ": " << std::setw(3) << oi.n << " " << std::setw(3) << oi.l << " "
-         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F_natbasis(i,i) << " " << std::setw(12) << oi.occ << " " << std::setw(12) << oi.occ_nat*(1-oi.occ_nat) << "   | ";
+         << std::setw(3) << oi.j2 << " " << std::setw(3) << oi.tz2 << "   " << std::setw(12) << std::setprecision(6) << F_natbasis(i,i) << " " << std::setw(12) << oi.occ << " " << std::setw(12) << oi.occ_nat << "   | ";
     for (int j : Hbare.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) // j runs over HO states
     {
       std::cout << std::setw(9) << C_HO2NAT(j,i) << "  ";  // C is <HO|NAT>
@@ -814,11 +802,37 @@ void HFMBPT::PrintSPEandWF()
 //*********************************************************************
 void HFMBPT::ReorderHFMBPTCoefficients()
 {
-   // Eigenvectors should be in order of decreasing occupation
    for (index_t i=0;i<C_HF2NAT.n_rows;++i) // loop through original basis states
    {
       if (C_HF2NAT(i,i) < 0)  C_HF2NAT.col(i) *= -1;
    }
+
+  // note that we do this in just one pass, and that in the unlikely case that one of the occupied orbits
+  // gets swapped with an unoccupied orbit, we would in principle need to recompute the energies and orderings
+  // but let's just hope that this doesn't happen.
+  if ( order_NAT_by_energy )
+  {
+    std::cout << "Ordering NAT orbits according to increasing energy..." << std::endl;
+    for (auto& it : Hbare.OneBodyChannels)
+    {
+       arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end()));
+       arma::mat CNAT_chan = C_HF2NAT.submat(orbvec, orbvec);
+       arma::mat CHF_chan = C.submat(orbvec, orbvec);
+       arma::mat fHO_chan = F.submat(orbvec,orbvec);
+       arma::mat fNAT_chan = CNAT_chan.t() * CHF_chan.t() * fHO_chan * CHF_chan * CNAT_chan;
+       arma::vec spe_NAT = fNAT_chan.diag();
+       arma::uvec sorted_indices = arma::sort_index( spe_NAT, "ascend");
+       arma::uvec orbvec_sorted = orbvec(sorted_indices);
+       C_HF2NAT.submat(orbvec, orbvec) = C_HF2NAT( orbvec, orbvec_sorted); // sort the column indices, <row|col> = <HF|NAT>
+       Occ(orbvec) = Occ(orbvec_sorted); 
+    }
+    for ( auto i : HartreeFock::modelspace->all_orbits )
+    {
+      auto& oi = HartreeFock::modelspace->GetOrbit(i);
+      oi.occ_nat = std::abs(Occ(i));  // it's possible that Occ(i) is negative, and for occ_nat, we don't want that.
+    }
+  }
+
 
 }
 

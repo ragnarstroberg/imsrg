@@ -163,6 +163,9 @@ namespace imsrg_util
  Operator GaussianPotential( ModelSpace& modelspace, double sigma );
  double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J, const std::array<double,6>& params );
 // double MinnesotaMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J );
+ Operator SerberTypePotential( ModelSpace& modelspace, double V0, double mu, double A, double B, double C, double D); // not yet implemented
+ double SerberMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J, const std::array<double,6>& params );
+ Operator SurfaceDeltaInteraction( ModelSpace& modelspace, double V0, double R); // not yet implemented
 
 
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace); // This doesn't work

@@ -110,6 +110,7 @@ int main(int argc, char** argv)
   bool goose_tank = parameters.s("goose_tank") == "true";
   bool discard_residual_input3N = parameters.s("discard_residual_input3N")=="true";
   bool use_NAT_occupations = (parameters.s("use_NAT_occupations")=="true") ? true : false;
+  bool order_NAT_by_energy = (parameters.s("order_NAT_by_energy")=="true") ? true : false;
   bool store_3bme_pn = (parameters.s("store_3bme_pn")=="true");
   bool only_2b_eta = (parameters.s("only_2b_eta")=="true");
   bool only_2b_omega = (parameters.s("only_2b_omega")=="true");
@@ -560,6 +561,7 @@ int main(int argc, char** argv)
   else if (basis == "NAT") // we want to use the natural orbital basis
   {
     hf.UseNATOccupations( use_NAT_occupations );
+    hf.OrderNATByEnergy( order_NAT_by_energy );
 
 //  GetNaturalOrbitals() calls GetDensityMatrix(), which computes the 1b density matrix up to MBPT2
 //  using the NO2B Hamiltonian in the HF basis, obtained with GetNormalOrderedH().

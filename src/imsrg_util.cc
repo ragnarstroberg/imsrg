@@ -2813,12 +2813,12 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 /// The function returns a one-body operator, i.e. the two-body part is not computed.
 /// Formula is 
 /// \f{equation}{
-///  \langle p \| O^{\lambda} \| q \rangle = \sum_{ia} (1+P_{ia}) (n_i \bar{n}_a) \sum_{J}(2J+1)
+///  \langle p \| O^{\lambda} \| q \rangle = -\sum_{ia} (n_i -na) \sum_{J}(2J+1)
 ///  \begin{Bmatrix}
 ///    j_i & j_a & \lambda \\
 ///    j_p & j_q & J
 ///  \end{Bmatrix}
-///   \langle i \| O^{\lambda} \| a \rangle \frac{ \tilde{\Gamma}^{J}_{paij}}{\Delta_{paiq}}
+///   \langle i \| O^{\lambda} \| a \rangle \frac{ \tilde{\Gamma}^{J}_{paiq}}{\Delta_{paiq}}
 /// \f}
 //
 //So what you get should look like this:
@@ -2863,15 +2863,17 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
            if (std::abs(Oia)<1e-6) continue;
            int Jmin = std::max(  std::max( std::abs(jp-ja), std::abs(ji-jq) ) ,   std::max( std::abs(jp-ji), std::abs(ja-jq) )  );
            int Jmax = std::max(  std::min( jp+ja , ji+jq ) ,   std::min( jp+ji , ja+jq )  );
-           double Delta_paiq = H.OneBody(p,p) + H.OneBody(a,a) - H.OneBody(i,i) - H.OneBody(q,q);
-           double gbar = 0;
+//           double Delta_paiq = H.OneBody(p,p) + H.OneBody(a,a) - H.OneBody(i,i) - H.OneBody(q,q);
+           double Delta_qipa = H.OneBody(q,q) + H.OneBody(i,i) - H.OneBody(p,p) - H.OneBody(a,a);
+           double gbar = 0; // gbar_pq`ia`
            for (int J=Jmin; J<=Jmax; J++)
            {
              double sixj = OpIn.modelspace->GetSixJ( ji, ja, Lambda, jp, jq, J );
              double Gamma_paiq = H.TwoBody.GetTBME_J(J,p,a,i,q);
              gbar -= (2*J+1) * sixj * Gamma_paiq;
            }           
-           Opq += nanifactor * (-gbar) / (Delta_paiq) * Oia;
+//           Opq += nanifactor * (-gbar) / (Delta_paiq) * Oia;
+           Opq += nanifactor * gbar / (Delta_qipa) * Oia;
          }
        }
        OpOut.OneBody(p,q) = Opq;
@@ -2903,6 +2905,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
  //                                                         * [G_ia`jb` / Del_pjqb ] * ... *[G_kc`ld` / Del_plqd] * <d||O||l>
  //   G_ia`jb` is the Pandya-Transformed interaction,and Del is the energy denomonator Del_ijkl = ei + ej - ek -el
  //  
+////// I Think this way is wrong. It assumes some symmetries that don't seem to hold.
+/*
  Operator RPA_resummed_1b( const Operator& OpIn, const Operator& H, std::string mode )
  {
 
@@ -2910,6 +2914,124 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    int Lambda = OpIn.GetJRank();
    std::vector<std::pair<size_t,size_t>> ph_kets;
    std::vector<std::pair<size_t,size_t>> hp_kets;
+   std::vector<int> ph_phase;
+
+   // maybe we try the dumb way
+   for ( auto h : OpIn.modelspace->holes )
+   {
+     Orbit& oh = OpIn.modelspace->GetOrbit(h);
+     for (auto p : OpIn.modelspace->particles )
+     {
+       Orbit& op = OpIn.modelspace->GetOrbit(p);
+       if (op.occ>0.01) continue;
+       if ( (oh.j2 + op.j2)<2*Lambda or std::abs(oh.j2-op.j2)>2*Lambda) continue;
+       if ( (oh.l + op.l + OpIn.GetParity())%2 > 0 ) continue;
+       if ( std::abs( oh.tz2 - op.tz2) != 2*std::abs(OpIn.GetTRank())) continue;
+       ph_kets.push_back( std::make_pair(p,h) );
+       hp_kets.push_back( std::make_pair(h,p) );
+       ph_phase.push_back( AngMom::phase( (oh.j2-op.j2)/2) );
+     }
+   }
+   size_t nkets = ph_kets.size();
+   arma::vec Oph( nkets, arma::fill::zeros );
+   for (size_t i=0; i<nkets; i++)
+   {
+     auto p = ph_kets[i].first;
+     auto h = ph_kets[i].second;
+     Oph( i ) = OpIn.OneBody(p,h);
+   }
+
+   
+   // Next, construct the Mphph etc matrices
+   arma::mat Mphph = GetPH_transformed_Gamma( ph_kets, ph_kets, H, Lambda );
+
+   // The off-diagonal blocks are zero for TDA, but non-zero for RPA
+   arma::mat Mphhp( arma::size(Mphph), arma::fill::zeros);
+
+   if (mode=="RPA")
+   {
+     Mphhp = GetPH_transformed_Gamma( ph_kets, hp_kets, H, Lambda );
+
+      // we need a phase because we multiply this by Oph, which differs from Ohp by (-1)^{jp-jh}.
+      arma::Row<double> phases(nkets, arma::fill::ones);
+      for ( size_t i=0; i<nkets; i++) phases(i) = ph_phase[i];
+      Mphhp.each_row() %= phases;
+
+   }
+   if ( mode=="CP" ) // CP means first order core-polarization correction. M is zero because we don't want the iterations.
+   {
+     Mphph.zeros();
+   }
+
+
+   arma::mat Delta(arma::size(Mphph), arma::fill::ones );
+
+   for ( size_t i=0; i<nkets; i++)
+   {
+     size_t p = ph_kets[i].first;
+     size_t h = ph_kets[i].second;
+     double del_ph = H.OneBody(h,h) - H.OneBody(p,p);
+     Delta.col(i).fill(del_ph);  // denominator for the Oph bits
+   }
+
+
+
+
+  // At this point, we can't get around the fact that the denominators depend on the initial and final state of the
+  // entire operator, as in < p | Oeff | q >, and we need to add ep-eq to the denominator. So for every p,q pair
+  // we need to do the matrix inversion and evaluation in 1st order PT.
+
+   Operator OpOut = OpIn;
+   OpOut.OneBody.zeros();
+
+   for ( auto v1 : OpIn.modelspace->valence )
+   {
+     for ( auto v2 : OpIn.modelspace->valence )
+     {
+
+      arma::mat del12(  arma::size(Delta) );
+      del12.fill(  H.OneBody(v1,v1) - H.OneBody(v2,v2) );
+
+      arma::mat M = Mphph / (Delta + del12 ) + Mphhp/(Delta - del12);
+
+
+      // do the fancy resummation of the series by matrix inversion
+      // Minv  =  (I-M)^-1  where I is the identity matrix.
+       arma::mat ONE = arma::eye(arma::size(M));
+       arma::mat Minv = arma::inv(  ONE  - M );
+
+       arma::vec ORPA = Minv * Oph;
+
+       // now we need to unpack ORPA into a matrix again.
+       Operator OpRPA = OpIn;
+       OpRPA.OneBody.zeros();
+       for ( size_t i=0; i<nkets; i++ )
+       {
+         size_t p = ph_kets[i].first;
+         size_t h = ph_kets[i].second;
+         
+         OpRPA.SetOneBody(p,h,  ORPA(i) ) ;
+       }
+
+      // evaluate this in first order perturbation theory, and take the valence part that we're interested in
+       double op12 = FirstOrderCorr_1b( OpRPA, H).OneBody(v1,v2);
+       OpOut.OneBody(v1,v2) += op12;
+
+      }
+    }
+   return OpOut;
+
+ }
+*/
+
+ Operator RPA_resummed_1b( const Operator& OpIn, const Operator& H, std::string mode )
+ {
+
+   // construct hp and ph kets,  as well as Oph and Ohp
+   int Lambda = OpIn.GetJRank();
+   std::vector<std::pair<size_t,size_t>> ph_kets;
+   std::vector<std::pair<size_t,size_t>> hp_kets;
+   std::vector<int> ph_phase;
 
    // maybe we try the dumb way
    for ( auto h : OpIn.modelspace->holes )
@@ -2927,6 +3049,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
        if ( std::abs( oh.tz2 - op.tz2) != 2*std::abs(OpIn.GetTRank())) continue;
        ph_kets.push_back( std::make_pair(p,h) );
        hp_kets.push_back( std::make_pair(h,p) );
+       ph_phase.push_back( AngMom::phase( (oh.j2-op.j2)/2) );
      }
    }
    size_t nkets = ph_kets.size();
@@ -2997,12 +3120,18 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    // combine Oph and Ohp into a single column vector
    arma::vec Ovec = arma::join_vert(  Oph, Ohp );
 
+
+
   // At this point, we can't get around the fact that the denominators depend on the initial and final state of the
   // entire operator, as in < p | Oeff | q >, and we need to add ep-eq to the denominator. So for every p,q pair
   // we need to do the matrix inversion and evaluation in 1st order PT.
 
    Operator OpOut = OpIn;
    OpOut.OneBody.zeros();
+//   std::cout << "Mphph = " << std::endl << Mphph << std::endl;
+//   std::cout << "Mphhp = " << std::endl << Mphhp << std::endl;
+//   std::cout << "Mhpph = " << std::endl << Mhpph << std::endl;
+//   std::cout << "Mhphp = " << std::endl << Mhphp << std::endl;
 
    for ( auto v1 : OpIn.modelspace->valence )
    {
@@ -3023,7 +3152,26 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 //       Minv = arma::eye(arma::size(M)) + Mdel;// + Mdel*Mdel;   // FOR DEBUGGING. REMOVE THIS
        arma::vec ORPA = Minv * Ovec;
 
+       arma::mat mphph_tmp = Mphph/(Delta.submat(0,0,nkets-1,nkets-1) + del12.submat(0,0,nkets-1,nkets-1) );
+       arma::mat mhphp_tmp = Mhphp/(Delta.submat(nkets,nkets,2*nkets-1,2*nkets-1) + del12.submat(nkets,nkets,2*nkets-1,2*nkets-1) );
+       arma::mat mphhp_tmp = Mphhp/(Delta.submat(0,nkets,nkets-1,2*nkets-1) + del12.submat(0,nkets,nkets-1,2*nkets-1) );
+       arma::mat mphhp_alt = mphhp_tmp;
+       arma::Row<double> phases(nkets, arma::fill::ones);
+       for ( size_t i=0; i<nkets; i++) phases(i) = ph_phase[i];
+       mphhp_alt.each_row() %= phases;
 
+//       std::cout << "mphhp_tmp = " << std::endl << mphhp_tmp << std::endl << std::endl << " mphhp_alt = " << std::endl << mphhp_alt << std::endl;
+       arma::mat mhpph_tmp = Mhpph/(Delta.submat(nkets,0,2*nkets-1,nkets-1) + del12.submat(nkets,0,2*nkets-1,nkets-1) );
+       arma::vec Orpa_ph = mphph_tmp * Oph + mphhp_tmp * Ohp;
+       arma::vec Orpa_ph_alt = (mphph_tmp + mphhp_alt) * Oph;
+       arma::vec Orpa_hp = mhphp_tmp * Ohp + mhpph_tmp * Oph;
+    
+//       std::cout << "====================================  " << v1 << " " << v2 << " ===============================" << std::endl;
+//       for (size_t i=0; i<Oph.n_rows;i++)
+//       {
+//          std::cout << "i " << i << "    Oph, Ohp  " << Oph(i) << "   " << Ohp(i) << "    Orpa_ph,hp " << Orpa_ph(i) << " , " <<  Orpa_ph_alt(i) << "   " << Orpa_hp(i)
+//                      << "  phase " << ph_phase[i] << "       " << Orpa_ph(i) - ph_phase[i]*Orpa_hp(i) << std::endl;
+//       }
        // now we need to unpack ORPA into a matrix again.
        Operator OpRPA = OpIn;
        OpRPA.OneBody.zeros();
@@ -3031,11 +3179,16 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
        {
          size_t p = ph_kets[i].first;
          size_t h = ph_kets[i].second;
+        // This is risky business, if in the future we assume some symmetries about these matrix elements.
+        // We have symmetry for  v1 <-> v2, but we don't have a symmetry for p <-> h for a fixed v1,v2.
          OpRPA.OneBody(p,h) = ORPA(i);
          OpRPA.OneBody(h,p) = ORPA(i+nkets);
+//         OpRPA.SetOneBody(p,h,  ORPA(i) ) ;
 //         OpRPA.OneBody(p,h) = ORPA(i) + ORPA(i+nkets);
 //         OpRPA.OneBody(h,p) = OpRPA.OneBody(p,h);
 //          std::cout << "i " << i << "   ph " << p << "  " << h << "   Oph " << OpRPA.OneBody(p,h) << "   Ohp " << OpRPA.OneBody(h,p) << std::endl;
+//         OpRPA.SetOneBody(p,h,  ORPA(i) ) ;
+//          std::cout << "  " << i << "   ph " << p << "  " << h << "   Oph " << OpRPA.OneBody(p,h) << "   Ohp " << OpRPA.OneBody(h,p) << std::endl;
        }
 
 //       // BRUTE FORCE TDA2
@@ -3122,6 +3275,12 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    return OpOut;
 
  }
+
+
+
+
+
+
 
 
 // Return Pandya-transformed matrix elements. Input a list of bras <pq`| a list of kets |rs`> and an angular momentum Lambda (as well as the Hamiltonian H
@@ -3816,6 +3975,177 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    return Vminn ;
 
 
+ }
+
+
+
+ // Serber-type potential V = f(r) [ A + B sig*sig + C tau*tau + D (sig*sig)(tau*tau) ]
+ // with f(r) = V_0 exp[-r^2/mu^2]
+ // See Suhonen section 8.1.4
+ Operator SerberTypePotential( ModelSpace& modelspace, double V0, double mu, double A, double B, double C, double D)
+ {
+//   double VR = 1.0 ;
+   std::array<double,6> params = {V0,mu,A,B,C,D};
+   Operator Vserber(modelspace, 0,0,0,2);
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   modelspace.PreCalculateMoshinsky();
+//   #pragma omp parallel for schedule(dynamic,1) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+    TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+    int J = tbc.J;
+    int nkets = tbc.GetNumberKets();
+    for (int ibra=0;ibra<nkets;++ibra)
+    {
+     Ket& bra = tbc.GetKet(ibra);
+     for (int iket=ibra;iket<nkets;iket++)
+     {
+       Ket& ket = tbc.GetKet(iket);
+//       double vminn = MinnesotaMatEl( modelspace, bra, ket, J);
+       double vserber = SerberMatEl( modelspace, bra, ket, J, params);
+       Vserber.TwoBody.SetTBME(ch,ibra,iket,vserber);
+       Vserber.TwoBody.SetTBME(ch,iket,ibra,vserber);
+     }
+    }
+   }
+   return Vserber;
+ }
+
+
+
+/// A single matrix element of the Serber potential
+ double SerberMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J, const std::array<double,6>& params )
+ {
+   double oscillator_b2 = (HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
+   double V0 = params[0];
+   double mu = params[1];
+   double A = params[2];
+   double B = params[3];
+   double C = params[4];
+   double D = params[5];
+   double kR = oscillator_b2/(mu*mu);
+//   std::cout << "V0 " << V0 << " mu " << mu << "  A  " << A << "  B " << B << std::endl;
+
+   Orbit & oa = modelspace.GetOrbit(bra.p);
+   Orbit & ob = modelspace.GetOrbit(bra.q);
+   Orbit & oc = modelspace.GetOrbit(ket.p);
+   Orbit & od = modelspace.GetOrbit(ket.q);
+
+   int na = oa.n;
+   int nb = ob.n;
+   int nc = oc.n;
+   int nd = od.n;
+
+   int la = oa.l;
+   int lb = ob.l;
+   int lc = oc.l;
+   int ld = od.l;
+
+   double ja = oa.j2*0.5;
+   double jb = ob.j2*0.5;
+   double jc = oc.j2*0.5;
+   double jd = od.j2*0.5;
+
+   int fab = 2*na + 2*nb + la + lb;
+   int fcd = 2*nc + 2*nd + lc + ld;
+   if (std::abs(fab+fcd)%2 >0) return 0; // check parity conservation
+//   if (std::abs(fab-fcd)>2) return 0; // p1*p2 only connects kets with delta N = 0,1
+
+   double sa,sb,sc,sd;
+   sa=sb=sc=sd=0.5;
+
+   double Vserber=0;
+
+   // First, transform to LS coupling using 9j coefficients
+   for (int Lab=std::abs(la-lb); Lab<= la+lb; ++Lab)
+   {
+     for (int Sab=0; Sab<=1; ++Sab)
+     {
+//       double isospin_factor = 1.0;
+//       if ( (oa.tz2 == ob.tz2) and Sab==1 ) continue;
+//       if ( oa.tz2 != ob.tz2) isospin_factor = 0.5 * (oa.tz2 * oc.tz2);  // <pn|V|pn> = 1/2 (V(T=1) + V(T=0)).  <pn|V|np> = -<pn|V|pn>
+       if ( std::abs(Lab-Sab)>J or Lab+Sab<J) continue;
+
+       double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
+       if (std::abs(njab) <1e-7) continue;
+       int Scd = Sab;
+       int Lcd = Lab;
+       double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
+       if (std::abs(njcd) <1e-7) continue;
+
+       double sig_dot_sig = 4*Sab - 3;
+
+       // Next, transform to rel / com coordinates with Moshinsky tranformation
+       for (int N_ab=0; N_ab<=fab/2; ++N_ab)  // N_ab = CoM n for a,b
+       {
+         for (int Lam_ab=0; Lam_ab<= fab-2*N_ab; ++Lam_ab) // Lam_ab = CoM l for a,b
+         {
+           int Lam_cd = Lam_ab; // tcm and trel conserve lam and Lam, ie relative and com orbital angular momentum
+           for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
+           {
+              if (Lab<std::abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
+
+              // factor to account for antisymmetrization. I sure wish this were more transparent...
+              //  antisymmetrized matrix elements: V = <ab|V|cd> - <ab|V|dc>
+              //  here, we've gone to LS, coupling in CM/relative coordinates
+              //  so exchange gives us a phase factor and we have V = <ab|V|cd> + (-1)**(Lcd+Scd) <ab|V|dc>
+              //  case pp,nn -> 1 + (-1)**(L+S)
+              //  pnpn -> 1 + 0
+              //  pnnp -> 0 + (-1)**(L+S)
+              //  This is achieved in a one-liner (  |tza+tzc| + |tza+tzd|*(-1)**(lab +Sab)  ), which gives either 1 or 0. The /2 is because tz2 is 2*tz.
+              int asymm_factor = (std::abs(bra.op->tz2+ket.op->tz2) + std::abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
+              if ( asymm_factor ==0 ) continue;
+
+              int lam_cd = lam_ab; // V conserves lam and Lam
+              int n_ab = (fab - 2*N_ab-Lam_ab-lam_ab)/2; // n_ab is determined by energy conservation
+
+              double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
+
+              if (std::abs(mosh_ab)<1e-8) continue;
+
+              int tab = (Sab + lam_ab + 1)%2; // e.g. deuteron has S=1,L=0,T=0, S+L+T must be odd, so T = (L+S+1)%2
+              if ( tab*2 < std::abs( oa.tz2+ob.tz2) ) continue; // If T < Tz, then this can't contribute.
+              double tau_dot_tau = 4*tab - 3; // 1 if T=1, -3 if T=0.
+
+              for (int N_cd=std::max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
+              {
+                int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
+                if (n_cd < 0) continue;
+                if  (n_ab != n_cd and N_ab != N_cd) continue;
+
+                double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
+                if (std::abs(mosh_cd)<1e-8) continue;
+
+                double vrel = 0;
+                int pmin = lam_ab;
+                int pmax = lam_ab + n_ab + n_cd;
+                double RadialInt = 0;
+                for (int p=pmin; p<=pmax; p++)
+                {
+                   double Bp = TalmiB(n_ab,lam_ab,n_cd,lam_cd,p);  // It's probably inefficient doing this in the inner loop, but oh well...
+                   double Ip = 1.0 / pow(1.0+kR, p+1.5);  // Talmi integral of a Gaussian
+                   RadialInt += Bp * Ip;
+                }
+                vrel = RadialInt * V0 * ( A + B*sig_dot_sig + C* tau_dot_tau + D*sig_dot_sig*tau_dot_tau );
+                Vserber += vrel * njab * njcd * mosh_ab * mosh_cd * asymm_factor;
+
+
+              } // N_cd
+           } // lam_ab
+         } // Lam_ab
+       } // N_ab
+
+     } // Sab
+   } // Lab
+
+   return Vserber ;
+
+ }
+
+
+ Operator SurfaceDeltaInteraction( ModelSpace& modelspace, double V0, double R)
+ {
  }
 
  

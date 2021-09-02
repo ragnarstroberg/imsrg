@@ -195,11 +195,13 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def(py::self * double())
       .def(py::self /= double())
       .def(py::self / double())
-      .def(py::self += double())
-      .def(py::self + double())
-      .def(py::self -= double())
-      .def(py::self - double())
+//      .def(py::self += ArmaMat())
+//      .def(py::self + ArmaMat())
+//      .def(py::self -= ArmaMat())
+//      .def(py::self - ArmaMat())
       .def("__mul__", [](const arma::mat& A, const arma::mat& B){arma::mat C = A * B; return C;} )
+      .def("__add__", [](const arma::mat& A, const arma::mat& B){arma::mat C = A + B; return C;} )
+      .def("__sub__", [](const arma::mat& A, const arma::mat& B){arma::mat C = A - B; return C;} )
       .def("__call__", [](arma::mat& self,const int i, const int j) {return &self(i,j);}, py::is_operator()  )
       .def("Set",[](arma::mat& self, const int i, const int j, double x){ self(i,j) = x;}, py::arg("i"),py::arg("j"),py::arg("matel"))
       .def("Getn_rows",[](arma::mat& self) {return self.n_rows;} )
@@ -508,6 +510,8 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("OperatorFromString", imsrg_util::OperatorFromString);
    m.def("HO_Radial_psi",  imsrg_util::HO_Radial_psi, py::arg("n"),py::arg("l"),py::arg("hw"),py::arg("r"));
    m.def("MBPT2_SpectroscopicFactor",  imsrg_util::MBPT2_SpectroscopicFactor);
+   m.def("SerberTypePotential", imsrg_util::SerberTypePotential, py::arg("modelspace"),py::arg("V0"),py::arg("mu"), py::arg("A"), py::arg("B"), py::arg("C"), py::arg("D"));
+
    m.def("CG",AngMom::CG);
    m.def("ThreeJ",AngMom::ThreeJ);
    m.def("SixJ",AngMom::SixJ);
