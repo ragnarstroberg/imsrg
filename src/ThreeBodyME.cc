@@ -210,6 +210,11 @@ ThreeBME_type ThreeBodyME::GetME_pn_no2b(int a, int b, int c, int d, int e, int 
   return threebody_storage->GetME_pn_no2b(a,b,c,d,e,f,J2b);
 }
 
+ThreeBME_type ThreeBodyME::GetME_pn_mono(int a, int b, int c, int d, int e, int f) const
+{
+  return threebody_storage->GetME_pn_mono(a,b,c,d,e,f);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /// Begin under-the-hood implementation of the matrix-element setter-getter-adders
@@ -333,13 +338,14 @@ void ThreeBodyME::SetMode(std::string mode)
   else if (mode == "no2b" )
   {
     threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b<ME_single_type>( modelspace, E3max, rank_J, rank_T, parity)  );
-//    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b( modelspace, E3max, rank_J, rank_T, parity)  );
   }
   else if (mode == "no2bhalf" )
   {
     threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_no2b<ME_half_type>( modelspace, E3max, rank_J, rank_T, parity)  );
-//    std::cout << " ERROR ! mode " << mode << "  is not yet implemented" << std::endl;
-//    std::exit(EXIT_FAILURE);
+  }
+  else if (mode == "mono" )
+  {
+    threebody_storage = std::shared_ptr<ThreeBodyStorage>(new ThreeBodyStorage_mono<ME_single_type>( modelspace, E3max, rank_J, rank_T, parity)  );
   }
   threebody_storage->Allocate();
 //  storage_mode = pn;

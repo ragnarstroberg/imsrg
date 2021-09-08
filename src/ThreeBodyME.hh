@@ -25,6 +25,7 @@
 #include "ThreeBodyStorage_iso.hh"
 #include "ThreeBodyStorage_pn.hh"
 #include "ThreeBodyStorage_no2b.hh"
+#include "ThreeBodyStorage_mono.hh"
 #include <fstream>
 #include <unordered_map>
 #include <memory> // for shared_ptr
@@ -126,6 +127,7 @@ class ThreeBodyME
   std::vector<double> GetME_pn_TwoOps(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, const ThreeBodyME& X, const ThreeBodyME& Y) const;
 
   ThreeBME_type GetME_pn_no2b(int a, int b, int c, int d, int e, int f,  int J2b) const;
+  ThreeBME_type GetME_pn_mono(int a, int b, int c, int d, int e, int f) const;
 
 
 ///// Some other three body methods

@@ -27,6 +27,15 @@
 #include <vector>
 #include <memory> // for shared_ptr
 
+
+// This is used by mutliple implementations.
+class OrbitIsospin
+{
+  public:
+    int idx, n, l, j, e;
+    OrbitIsospin(int idx, int n, int l, int j) : idx(idx), n(n), l(l), j(j), e(2*n+l) {};
+};
+
 // Abstract base class. Concrete implementations inherit from this.
 class ThreeBodyStorage
 {
@@ -108,6 +117,10 @@ class ThreeBodyStorage
   virtual void SetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3, ME_type V){NotImplemented(__func__);};
   virtual ME_type GetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int T3) const ;
   virtual ME_type GetME_pn_no2b(int a, int b, int c, int d, int e, int f,  int J2b) const ; // Get ME with Jab=Jde=J2b, summed over total J with weight 2J+1
+
+  virtual void SetME_iso_mono(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int T3, ME_type V){NotImplemented(__func__);};
+  virtual ME_type GetME_iso_mono(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int T3) const ;
+  virtual ME_type GetME_pn_mono(int a, int b, int c, int d, int e, int f) const ; // Get ME with Jab=Jde=J2b, summed over total J with weight 2J+1
 
 
   virtual double Norm() const =0;

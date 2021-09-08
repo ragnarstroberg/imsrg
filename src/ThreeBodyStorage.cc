@@ -278,3 +278,40 @@ ThreeBodyStorage::ME_type ThreeBodyStorage::GetME_pn_no2b(int a, int b, int c, i
    }
    return me_no2b;
 }
+
+ThreeBodyStorage::ME_type ThreeBodyStorage::GetME_iso_mono(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int T3) const 
+{
+    int j2a = modelspace->GetOrbit(a).j2;
+    int j2b = modelspace->GetOrbit(b).j2;
+    int j2c = modelspace->GetOrbit(c).j2;
+    double v = 0;
+
+    int j2min =  std::abs(j2a-j2b) /2;
+    int j2max = (j2a+j2b)/2;
+    for (int j2=j2min; j2<=j2max; ++j2)
+    {
+      v += GetME_iso_no2b(a,b,c,Tab,d,e,f,Tde,j2,T3);
+   }
+   v /= j2c+1.0;
+   return v;
+}
+
+ThreeBodyStorage::ME_type ThreeBodyStorage::GetME_pn_mono(int a, int b, int c, int d, int e, int f) const
+{
+    int j2a = modelspace->GetOrbit(a).j2;
+    int j2b = modelspace->GetOrbit(b).j2;
+    int j2c = modelspace->GetOrbit(c).j2;
+    double v = 0;
+
+    int j2min =  std::abs(j2a-j2b) /2;
+    int j2max = (j2a+j2b)/2;
+    for (int j2=j2min; j2<=j2max; ++j2)
+    {
+      v += GetME_pn_no2b(a,b,c,d,e,f,j2);
+   }
+   v /= j2c+1.0;
+   return v;
+}
+
+
+

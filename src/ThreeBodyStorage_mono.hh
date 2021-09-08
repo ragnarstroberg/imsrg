@@ -1,5 +1,5 @@
-#ifndef ThreeBodyStorage_no2b_h
-#define ThreeBodyStorage_no2b_h 1
+#ifndef ThreeBodyStorage_mono_h
+#define ThreeBodyStorage_mono_h 1
 
 #include "ThreeBodyStorage.hh"
 #include "ModelSpace.hh"
@@ -23,37 +23,37 @@
  typedef double ME_double_type;
 
 
-class ThreeBodySpaceNO2B; // forward declaration
+class ThreeBodySpaceMono; // forward declaration
 
+/// This should probably be declared in ThreeBodyStorage.hh, not in a specialization.
 //class OrbitIsospin
 //{
 //  public:
 //    int idx, n, l, j, e;
+////    OrbitIsospin(int idx, int n, int l, int j);
 //    OrbitIsospin(int idx, int n, int l, int j) : idx(idx), n(n), l(l), j(j), e(2*n+l) {};
 //};
 
-/// A Three body channel for use in the NO2B approximation.
-/// For a state |abc> we have ja,jb coupled to J2 with parity P2
-/// J1 = jc, and P1 = parity of orbit c.
-/// T3 is twice the total 3-body isospin.
-/// Orbit c is the one that will get summed over the reference
-/// to get the normal ordered 2-body contribution.
-///     --- SRS interpretation of Takayuki's code, so grain of salt.
-class ThreeBodyChannelNO2B
+/// A Three body channel for use in the HF approximation.
+/// For HF, a matrix element <abc|V|def> enters only if (a,d) (b,e) and (c,f) all differ only in the radial quantum number
+class ThreeBodyChannelMono
 {
   public:
-    int J2;
-    int P2;
-    int J1;
-    int P1;
-    int T3;
+    int j1;
+    int j2;
+    int j3;
+    int l1;
+    int l2;
+    int l3;
+    int twoT;
     int Ndim;
     std::unordered_map<int, int> abct2n; // maps key hashed from (a,b,c,Tab)  to a single sequential index which is used to store matrix elements
     std::unordered_map<int, int> iphase;
 
 
-    ThreeBodyChannelNO2B();
-    ThreeBodyChannelNO2B(int J2, int P2, int J1, int P1, int T3, ThreeBodySpaceNO2B& thr);
+    ThreeBodyChannelMono();
+    ThreeBodyChannelMono(int j1, int j2, int j3, int l1, int l2, int l3, int twoT, ThreeBodySpaceMono& thr);
+//    ThreeBodyChannelMono(int J2, int P2, int J1, int P1, int T3, ThreeBodySpaceMono& thr);
     int GetIndex(int a, int b, int c, int Tab) const {return Hash_abct(a, b, c, Tab);};
     int GetPhase(int i) const {return iphase.at(i);};
   private:
@@ -62,19 +62,20 @@ class ThreeBodyChannelNO2B
 };
 
 
-class ThreeBodySpaceNO2B
+class ThreeBodySpaceMono
 {
   public:
     int Emax;
     int E2max;
     int E3max;
     int Lmax;
-    std::vector<ThreeBodyChannelNO2B> ThreeBodyChannels;
+    std::vector<ThreeBodyChannelMono> ThreeBodyChannels;
     std::unordered_map<int, int> idcs2ch;
     int NChannels;
-    ThreeBodySpaceNO2B();
-    ThreeBodySpaceNO2B( int Emax, int E2max, int E3max, int Lmax);
-    int GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T)const ;
+    ThreeBodySpaceMono();
+    ThreeBodySpaceMono( int Emax, int E2max, int E3max, int Lmax);
+//    int GetChannelIndex(int Jab, int Pab, int Jc, int Pc, int T)const ;
+    int GetChannelIndex(int j1, int j2, int j3, int l1, int l2, int l3, int twoT)const ;
 
 
     OrbitIsospin& GetIsospinOrbit(size_t i ) { return iOrbits.at(i);}; // move  to ThreeBodySpaceNO2B
@@ -86,39 +87,30 @@ class ThreeBodySpaceNO2B
     size_t idx1d(size_t bra, size_t ket) const { return std::max(bra+1,ket+1) * (std::max(bra+1,ket+1)-1)/2 + std::min(bra+1,ket+1)-1;};
 
   private:
-    int Hash_Channel(int, int, int, int, int) const;
-    void UnHash_Channel(int, int&, int&, int&, int&, int&) const;
+//    int Hash_Channel(int, int, int, int, int) const;
+//    void UnHash_Channel(int, int&, int&, int&, int&, int&) const;
+    int Hash_Channel(int j1, int j2, int j3, int l1, int l2, int l3, int twoT) const;
+    void UnHash_Channel(int key, int& j1, int& j2, int& j3, int& l1, int& l2, int& l3, int& twoT) const;
 };
 
 
 
 template <class StoreType>
-class ThreeBodyStorage_no2b : public ThreeBodyStorage
+class ThreeBodyStorage_mono : public ThreeBodyStorage
 {
   private: 
     std::map<int, std::vector<StoreType>> MatEl;
-//  protected:
-    ThreeBodySpaceNO2B threebodyspace;
+    ThreeBodySpaceMono threebodyspace;
 
   public:
 
-//    int Emax_file;  // Don't think we need any of these _file variables
-//    int E2max_file;
-//    int E3max_file;
-//    int Lmax_file;
-//    bool initialized=false;
-//    std::string FileName;
-
-//    ~ThreeBodyMENO2B();
-//    ThreeBodyMENO2B();
-    //ThreeBodyMENO2B(ModelSpace & ms, int emax_file, int e2max_file, int e3max_file, int lmax_file, std::string filename);
 
     using ThreeBodyStorage::ThreeBodyStorage;  // inherit constructors from the base class
-    ThreeBodyStorage_no2b( const ThreeBodyStorage_no2b& ); // also implement at copy constructor
+    ThreeBodyStorage_mono( const ThreeBodyStorage_mono& ); // also implement at copy constructor
 
     std::shared_ptr<ThreeBodyStorage> Clone() const override;
 
-    std::string GetStorageMode() const override {return "no2b";};
+    std::string GetStorageMode() const override {return "mono";};
 
     void Multiply(const double) override;
     void Add(const ThreeBodyStorage&)  override;
@@ -126,9 +118,9 @@ class ThreeBodyStorage_no2b : public ThreeBodyStorage
 
     void Allocate() override;
 
-    void SetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int twoT, ThreeBodyStorage::ME_type V) override;
-    ThreeBodyStorage::ME_type GetME_iso_no2b(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int J2, int twoT) const override;
-    ThreeBodyStorage::ME_type GetME_pn_no2b(int a, int b, int c, int d, int e, int f, int J2) const override ; 
+    void SetME_iso_mono(int a, int b, int c, int Tab, int d, int e, int f, int Tde, int twoT, ThreeBodyStorage::ME_type V) override;
+    ThreeBodyStorage::ME_type GetME_iso_mono(int a, int b, int c, int Tab, int d, int e, int f, int Tde,  int twoT) const override;
+    ThreeBodyStorage::ME_type GetME_pn_mono(int a, int b, int c, int d, int e, int f) const override ; 
 
 
 
