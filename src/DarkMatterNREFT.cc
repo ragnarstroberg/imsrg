@@ -262,7 +262,12 @@ namespace DM_NREFT
     double y = q*q*b2/4.0;
     int Tz = 0;
     int parity = J%2; // normal parity operator
-    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
+//    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
+    std::array<int,2> isofactor = {1,1};  // isoscalar, proton + neutron.
+    if (IsoSV =="-" ) isofactor[1] = -1;  // isovector, neutrons get a minus sign.
+    else if (IsoSV == "p") isofactor[1] = 0; // proton only,  neutrons don't contribute.
+    else if (IsoSV == "n") isofactor[0] = 0; // neutron only, protons don't contribute.
+    std::cout << "In " << __func__ << " and isofactor is " << isofactor[0] << " " << isofactor[1] << std::endl;
     Operator M_op( modelspace, J, Tz, parity, 2);
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
@@ -285,7 +290,8 @@ namespace DM_NREFT
                      * gsl_sf_coupling_3j(2*la, 2*J, 2*lb, 0,0,0)
 //bhu                     * jho( na, la, nb, lb, 2*J, y );
                      * jho( na, la, nb, lb, J, y );
-        M_op.OneBody(a,b) = mab * pow( isofactor, (oa.tz2+1)/2 );
+//        M_op.OneBody(a,b) = mab * pow( isofactor, (oa.tz2+1)/2 );
+        M_op.OneBody(a,b) = mab  * isofactor[(oa.tz2+1)/2];
       }
     }
 
@@ -318,7 +324,11 @@ namespace DM_NREFT
     double y = q*q*b2/4.0;
     int Tz = 0;
     int parity = L%2; // normal parity operator
-    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
+//    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
+    std::array<int,2> isofactor = {1,1};  // isoscalar, proton + neutron.
+    if (IsoSV =="-" ) isofactor[1] = -1;  // isovector, neutrons get a minus sign.
+    else if (IsoSV == "p") isofactor[1] = 0; // proton only,  neutrons don't contribute.
+    else if (IsoSV == "n") isofactor[0] = 0; // neutron only, protons don't contribute.
     Operator Ms_op( modelspace, J, Tz, parity, 2);
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
@@ -340,7 +350,8 @@ namespace DM_NREFT
                      * gsl_sf_coupling_9j(2*la, 2*lb, 2*L, 1, 1, 2, j2a, j2b, 2*J )
                      * gsl_sf_coupling_3j(2*la, 2*L, 2*lb, 0,0,0)
                      * jho( na, la, nb, lb, L, y );
-        Ms_op.OneBody(a,b) = mab * pow( isofactor, (oa.tz2+1)/2 );
+//        Ms_op.OneBody(a,b) = mab * pow( isofactor, (oa.tz2+1)/2 );
+        Ms_op.OneBody(a,b) = mab * isofactor[(oa.tz2+1)/2];
       }
     }
 
@@ -382,7 +393,11 @@ namespace DM_NREFT
     double y = q*q*b2/4.0;
     int Tz = 0;
     int parity = (L+1)%2; // abnormal parity operator
-    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
+//    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
+    std::array<int,2> isofactor = {1,1};  // isoscalar, proton + neutron.
+    if (IsoSV =="-" ) isofactor[1] = -1;  // isovector, neutrons get a minus sign.
+    else if (IsoSV == "p") isofactor[1] = 0; // proton only,  neutrons don't contribute.
+    else if (IsoSV == "n") isofactor[0] = 0; // neutron only, protons don't contribute.
     Operator Mg_op(modelspace, J, Tz, parity, 2);
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
@@ -412,7 +427,8 @@ namespace DM_NREFT
                          * gsl_sf_coupling_3j(2*la,2*L,2*(lb-1),0,0,0)
                          * jdpho(na,la,nb,lb,L,y)
                         );
-        Mg_op.OneBody(a,b) = mab * pow( isofactor, (oa.tz2+1)/2 );
+//        Mg_op.OneBody(a,b) = mab * pow( isofactor, (oa.tz2+1)/2 );
+        Mg_op.OneBody(a,b) = mab * isofactor[(oa.tz2+1)/2];
       }
     }
 
@@ -734,7 +750,11 @@ namespace DM_NREFT
     double y = q*q*b2/4.0;
     int Tz = 0;
     int parity = J%2; // normal parity operator
-    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
+//    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
+    std::array<int,2> isofactor = {1,1};  // isoscalar, proton + neutron.
+    if (IsoSV =="-" ) isofactor[1] = -1;  // isovector, neutrons get a minus sign.
+    else if (IsoSV == "p") isofactor[1] = 0; // proton only,  neutrons don't contribute.
+    else if (IsoSV == "n") isofactor[0] = 0; // neutron only, protons don't contribute.
     Operator Phip_op(modelspace, J, Tz, parity, 2);
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
@@ -757,7 +777,8 @@ namespace DM_NREFT
         if (J>0) phip_ab += PhiF(la,j2a,j2b) * ( sqrt(2*(J-1)+1) * sqrt(J+1)
                              * ( PhiS3(na,la,j2a,nb,lb,j2b,J,y) + PhiS4(na,la,j2a,nb,lb,j2b,J,y) ) );
 
-        Phip_op.OneBody(a,b) = phip_ab * pow( isofactor, (oa.tz2+1)/2 );
+//        Phip_op.OneBody(a,b) = phip_ab * pow( isofactor, (oa.tz2+1)/2 );
+        Phip_op.OneBody(a,b) = phip_ab * isofactor[(oa.tz2+1)/2];
       }
     }
     return Phip_op;
@@ -807,7 +828,11 @@ namespace DM_NREFT
     double y = q*q*b2/4.0;
     int Tz = 0;
     int parity = J%2; // normal parity operator
-    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
+//    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
+    std::array<int,2> isofactor = {1,1};  // isoscalar, proton + neutron.
+    if (IsoSV =="-" ) isofactor[1] = -1;  // isovector, neutrons get a minus sign.
+    else if (IsoSV == "p") isofactor[1] = 0; // proton only,  neutrons don't contribute.
+    else if (IsoSV == "n") isofactor[0] = 0; // neutron only, protons don't contribute.
     Operator Phipp_op(modelspace, J, Tz, parity, 2);
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
@@ -816,6 +841,7 @@ namespace DM_NREFT
       int na  = oa.n;
       int la  = oa.l;
       int j2a = oa.j2;
+      // IsoSV = "p" => proton, "n" => neutron, "+" => proton + neutron,   "-" => proton - neutron
 //      for (int b=0; b<norb; b++)
       for ( int b : Phipp_op.OneBodyChannels.at({la,j2a,oa.tz2}) )
       {
@@ -830,7 +856,8 @@ namespace DM_NREFT
         if (J>0) phipp_ab += PhiF(la,j2a,j2b) * ( sqrt(2*(J-1)+1) * sqrt(J)
                              * ( PhiS3(na,la,j2a,nb,lb,j2b,J,y) + PhiS4(na,la,j2a,nb,lb,j2b,J,y) ) );
 
-        Phipp_op.OneBody(a,b) = phipp_ab * pow( isofactor, (oa.tz2+1)/2 );
+//        Phipp_op.OneBody(a,b) = phipp_ab * pow( isofactor, (oa.tz2+1)/2 );
+        Phipp_op.OneBody(a,b) = phipp_ab *  isofactor[(oa.tz2+1)/2];
       }
     }
     return Phipp_op;
@@ -872,7 +899,11 @@ namespace DM_NREFT
     double y = q*q*b2/4.0;
     int Tz = 0;
     int parity = (J+1)%2; // abnormal parity operator
-    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
+//    int isofactor = IsoSV=="+" ? 1 : -1; // "+" labels isoscalar and "-" is isovector
+    std::array<int,2> isofactor = {1,1};  // isoscalar, proton + neutron.
+    if (IsoSV =="-" ) isofactor[1] = -1;  // isovector, neutrons get a minus sign.
+    else if (IsoSV == "p") isofactor[1] = 0; // proton only,  neutrons don't contribute.
+    else if (IsoSV == "n") isofactor[0] = 0; // neutron only, protons don't contribute.
     Operator Omega_op(modelspace, J, Tz, parity, 2);
     int norb = modelspace.GetNumberOrbits();
     for (int a=0; a<norb; a++)
@@ -908,7 +939,8 @@ namespace DM_NREFT
                           * gsl_sf_coupling_6j(2*la,j2a,1,j2b,2*(j2b-lb),2*J)
                           * gsl_sf_coupling_3j(2*la,2*J,2*(j2b-lb),0,0,0)
                           * (O1+O2);
-        Omega_op.OneBody(a,b) = omega_ab * pow( isofactor, (oa.tz2+1)/2 );
+//        Omega_op.OneBody(a,b) = omega_ab * pow( isofactor, (oa.tz2+1)/2 );
+        Omega_op.OneBody(a,b) = omega_ab * isofactor[(oa.tz2+1)/2];
       }
     }
     return Omega_op;

@@ -455,20 +455,27 @@ int main(int argc, char** argv)
   // Read in the 3-body file
   if (Hbare.particle_rank >=3)
   {
-    if(input3bme_type == "full"){
+    if(input3bme_type == "full")
+    {
       rw.Read_Darmstadt_3body(input3bme, Hbare, file3e1max,file3e2max,file3e3max);
-      std::cout << "done reading 3N" << std::endl;
     }
-    if(input3bme_type == "no2b"){
+    if(input3bme_type == "no2b")
+    {
 
       Hbare.ThreeBody.SetMode("no2b");
       if (no2b_precision == "half")  Hbare.ThreeBody.SetMode("no2bhalf");
 
       Hbare.ThreeBody.ReadFile( {input3bme}, {file3e1max, file3e2max, file3e3max, file3e1max} );
       rw.File3N = input3bme;
-      std::cout << "done reading 3N" << std::endl;
 
     }
+    else if(input3bme_type == "mono")
+    {
+      Hbare.ThreeBody.SetMode("mono");
+      Hbare.ThreeBody.ReadFile( {input3bme}, {file3e1max, file3e2max, file3e3max, file3e1max} );
+      rw.File3N = input3bme;
+    }
+    std::cout << "done reading 3N" << std::endl;
   }
 
   if (store_3bme_pn)

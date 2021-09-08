@@ -429,25 +429,28 @@ void HartreeFock::BuildMonopoleV3()
        int a,b,c,d,i,j;
        Vmon3UnHash( Vmon3_keys[ind], a,c,i,b,d,j);
 
-       int j2a = modelspace->GetOrbit(a).j2;
-       int j2c = modelspace->GetOrbit(c).j2;
-       int j2i = modelspace->GetOrbit(i).j2;
+       // TODO: The different ThreeBodyStorage implementations should take care of this internally.
+       v = Hbare.ThreeBody.GetME_pn_mono(a,c,i,b,d,j);
 
-       // TODO: We can probably use some permutation symmetries to avoid recomputing things
-       // at the very least, we can treat the permutation of the first two indices
-       int j2min =  std::abs(j2a-j2c) /2;
-       int j2max = (j2a+j2c)/2;
-       for (int j2=j2min; j2<=j2max; ++j2)
-       {
-         v += Hbare.ThreeBody.GetME_pn_no2b(a,c,i,b,d,j,j2);
-//         int Jmin =  std::abs(2*j2-j2i) ;
-//         int Jmax = 2*j2 + j2i;
-//         for (int J2=Jmin; J2<=Jmax; J2+=2)
-//         {
-//           v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
-//         }
-      }
-      v /= j2i+1.0;
+//       int j2a = modelspace->GetOrbit(a).j2;
+//       int j2c = modelspace->GetOrbit(c).j2;
+//       int j2i = modelspace->GetOrbit(i).j2;
+//
+//       // TODO: We can probably use some permutation symmetries to avoid recomputing things
+//       // at the very least, we can treat the permutation of the first two indices
+//       int j2min =  std::abs(j2a-j2c) /2;
+//       int j2max = (j2a+j2c)/2;
+//       for (int j2=j2min; j2<=j2max; ++j2)
+//       {
+//         v += Hbare.ThreeBody.GetME_pn_no2b(a,c,i,b,d,j,j2);
+////         int Jmin =  std::abs(2*j2-j2i) ;
+////         int Jmax = 2*j2 + j2i;
+////         for (int J2=Jmin; J2<=Jmax; J2+=2)
+////         {
+////           v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
+////         }
+//      }
+//      v /= j2i+1.0;
       #pragma omp atomic write
       Vmon3[ind] = v ;
      }
