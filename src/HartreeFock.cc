@@ -431,6 +431,8 @@ void HartreeFock::BuildMonopoleV3()
 
        // TODO: The different ThreeBodyStorage implementations should take care of this internally.
        v = Hbare.ThreeBody.GetME_pn_mono(a,c,i,b,d,j);
+//       std::cout << " xxxx  " << a << " " << c << " " << i << " " << b << " " << d << " " << j << "     " << v << std::endl;
+
 
 //       int j2a = modelspace->GetOrbit(a).j2;
 //       int j2c = modelspace->GetOrbit(c).j2;
@@ -458,7 +460,6 @@ void HartreeFock::BuildMonopoleV3()
    std::cout << "HartreeFock::BuildMonopoleV3  storing " << Vmon3.size() << " doubles for Vmon3 and "
              << Vmon3_keys.size() << " uint64's for Vmon3_keys." << std::endl;
 
-//   profiler.timer["HF_BuildMonopoleV3"] += omp_get_wtime() - start_time;
    profiler.timer[std::string(__func__)] += omp_get_wtime() - start_time;
 }
 

@@ -370,7 +370,7 @@ void ThreeBodyStorage_mono<StoreType>::SetME_iso_mono(int a, int b, int c, int T
    OrbitIsospin & oe = threebodyspace.iOrbits[e];
    OrbitIsospin & of = threebodyspace.iOrbits[f];
  
-   if (Tab != Tde) return;
+//   if (Tab != Tde) return;
 //   if ( oa.j2 != od.j2 ) return;
 //   if ( ob.j2 != oe.j2 ) return;
 //   if ( oc.j2 != of.j2 ) return;
@@ -437,21 +437,13 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_mono<StoreType>::GetME_iso_mono(int a
   const OrbitIsospin & of = threebodyspace.iOrbits[f];
 
 
-//  int P1 = oc.l%2;
-//  if(P1 != of.l%2) return vout;  // return 0.
-//
-//  int J1 = oc.j;
-//  if(J1 != of.j) return vout;  // return 0.
-//
-//  int P2 = (oa.l + ob.l)%2;
-//  if(P2 != (od.l + oe.l)%2) return vout;  // return 0.
-
 //  int ch = threebodyspace.GetChannelIndex(J2,P2,J1,P1,twoT);
   int ch = threebodyspace.GetChannelIndex(oa.j,ob.j,oc.j,oa.l,ob.l,oc.l,twoT);
   if (ch==-1) return vout;
   const ThreeBodyChannelMono & ch_mono = threebodyspace.ThreeBodyChannels[ch];
   int key_bra = ch_mono.GetIndex(oa.idx,ob.idx,oc.idx,Tab);
   int key_ket = ch_mono.GetIndex(od.idx,oe.idx,of.idx,Tde);
+  if ( oa.idx < od.idx ) { std::swap(key_bra,key_ket); };
   if(ch_mono.iphase.find(key_bra) == ch_mono.iphase.end()) return vout;  // return 0.
   if(ch_mono.iphase.find(key_ket) == ch_mono.iphase.end()) return vout; // return 0.
   int ph = ch_mono.GetPhase(key_bra) * ch_mono.GetPhase(key_ket);
@@ -469,12 +461,47 @@ template<class StoreType>
 //ThreeBodyStorage::ME_type ThreeBodyStorage_mono<StoreType>::GetME_pn_mono(int a, int b, int c, int d, int e, int f, int J2) const
 ThreeBodyStorage::ME_type ThreeBodyStorage_mono<StoreType>::GetME_pn_mono(int a, int b, int c, int d, int e, int f) const
 {
+
+
   Orbit & oa = modelspace->GetOrbit(a);
   Orbit & ob = modelspace->GetOrbit(b);
   Orbit & oc = modelspace->GetOrbit(c);
   Orbit & od = modelspace->GetOrbit(d);
   Orbit & oe = modelspace->GetOrbit(e);
   Orbit & of = modelspace->GetOrbit(f);
+
+  int i1 = threebodyspace.nlj2idx.at({oa.n, oa.l, oa.j2});
+  int i2 = threebodyspace.nlj2idx.at({ob.n, ob.l, ob.j2});
+  int i3 = threebodyspace.nlj2idx.at({oc.n, oc.l, oc.j2});
+  int i4 = threebodyspace.nlj2idx.at({od.n, od.l, od.j2});
+  int i5 = threebodyspace.nlj2idx.at({oe.n, oe.l, oe.j2});
+  int i6 = threebodyspace.nlj2idx.at({of.n, of.l, of.j2});
+
+
+//  int iA = i1;
+//  int iB = i2;
+//  int iC = i3;
+//  int iD = i4;
+//  int iE = i5;
+//  int iF = i6;
+
+//  std::cout << "      before resuffling, isospin ordering is " << iA << " " << iB << " " << iC << " " << iD << " " << iE << " " << iF << std::endl;
+//  std::cout << "    bra side: " << oa.n << " " << oa.l << " " << oa.j2 << " , " << ob.n << " " << ob.l << " " << ob.j2 << " , " << oc.n << " " << oc.l << " " << oc.j2 << std::endl;
+
+
+
+//  if ( iA > iB ) { std::swap(iA,iB); std::swap(iD,iE) ; std::swap(a,b);  std::swap(d,e); };
+//  if ( iB > iC ) { std::swap(iB,iC); std::swap(iE,iF) ; std::swap(b,c);  std::swap(e,f); };
+//  if ( iA > iB ) { std::swap(iA,iB); std::swap(iD,iE) ; std::swap(a,b);  std::swap(d,e); };
+
+
+
+//  oa = modelspace->GetOrbit(a);
+//  ob = modelspace->GetOrbit(b);
+//  oc = modelspace->GetOrbit(c);
+//  od = modelspace->GetOrbit(d);
+//  oe = modelspace->GetOrbit(e);
+//  of = modelspace->GetOrbit(f);
 
 
   ThreeBodyStorage::ME_type vout = 0;
@@ -487,32 +514,56 @@ ThreeBodyStorage::ME_type ThreeBodyStorage_mono<StoreType>::GetME_pn_mono(int a,
 //
 //  int P2 = (oa.l + ob.l)%2;
 //  if(P2 != (od.l + oe.l)%2) return   vout; // return 0.
+  int tza = oa.tz2;
+  int tzb = ob.tz2;
+  int tzc = oc.tz2;
+  int tzd = od.tz2;
+  int tze = oe.tz2;
+  int tzf = of.tz2;
 
-  int Z3 = oa.tz2 + ob.tz2 + oc.tz2; // total isospin projection, times 2
-  if(Z3 != od.tz2 + oe.tz2 + of.tz2) return   vout; // return 0.
+
+  if (  i1 > i4 ) { std::swap(i1,i4); std::swap(i2,i5); std::swap(i3,i6); std::swap(tza,tzd); std::swap(tzb,tze); std::swap(tzc,tzf);};
+//  std::cout << "abc " << a << " " << b <<  " " << c << "   tz's  " << tza << " " << tzb << " " << tzc << std::endl;
+
+
+  int Z3 = tza+tzb+tzc; // total isospin projection, times 2
+  if(Z3 != tzd+tze+tzf) return   vout; // return 0.
+//  int Z3 = oa.tz2 + ob.tz2 + oc.tz2; // total isospin projection, times 2
+//  if(Z3 != od.tz2 + oe.tz2 + of.tz2) return   vout; // return 0.
 
   // convert to the indices used interally
-  int i1 = threebodyspace.nlj2idx.at({oa.n, oa.l, oa.j2});
-  int i2 = threebodyspace.nlj2idx.at({ob.n, ob.l, ob.j2});
-  int i3 = threebodyspace.nlj2idx.at({oc.n, oc.l, oc.j2});
-  int i4 = threebodyspace.nlj2idx.at({od.n, od.l, od.j2});
-  int i5 = threebodyspace.nlj2idx.at({oe.n, oe.l, oe.j2});
-  int i6 = threebodyspace.nlj2idx.at({of.n, of.l, of.j2});
+//  i1 = threebodyspace.nlj2idx.at({oa.n, oa.l, oa.j2});
+//  i2 = threebodyspace.nlj2idx.at({ob.n, ob.l, ob.j2});
+//  i3 = threebodyspace.nlj2idx.at({oc.n, oc.l, oc.j2});
+//  i4 = threebodyspace.nlj2idx.at({od.n, od.l, od.j2});
+//  i5 = threebodyspace.nlj2idx.at({oe.n, oe.l, oe.j2});
+//  i6 = threebodyspace.nlj2idx.at({of.n, of.l, of.j2});
+
+
+
+
+//  std::cout << "  -----------------   " << i1 << " " << i2 << " " << i3 << " " << i4 << " " << i5 << " " << i6  << "  Z3 = " << Z3 << std::endl;
 
   for (int T12 : {0,1})
   {
-    if(std::abs(oa.tz2 + ob.tz2) > 2*T12) continue;
+    if(std::abs(tza + tzb) > 2*T12) continue;
     for (int T45 : {0,1})
     {
-      if(std::abs(od.tz2 + oe.tz2) > 2*T45) continue;
+      if(std::abs(tzd + tze) > 2*T45) continue;
 //      for (int twoT=std::max( std::abs(2*T12-1), std::abs(2*T45-1) );
-      for (int twoT=1;  twoT<= std::min( 2*T12+1, 2*T45+1 ); twoT+=2)
+      for (int twoT=std::abs(Z3);  twoT<= std::min( 2*T12+1, 2*T45+1 ); twoT+=2)
       {
         vout += GetME_iso_mono(i1, i2, i3, T12, i4, i5, i6, T45, twoT) *
-             AngMom::CG(0.5, oa.tz2*0.5, 0.5, ob.tz2*0.5, T12, (oa.tz2+ob.tz2)*0.5) *
-             AngMom::CG(0.5, od.tz2*0.5, 0.5, oe.tz2*0.5, T45, (od.tz2+oe.tz2)*0.5) *
-             AngMom::CG(T12, (oa.tz2+ob.tz2)*0.5, 0.5, oc.tz2*0.5, twoT*0.5, Z3*0.5) *
-             AngMom::CG(T45, (od.tz2+oe.tz2)*0.5, 0.5, of.tz2*0.5, twoT*0.5, Z3*0.5);
+             AngMom::CG(0.5, tza*0.5, 0.5, tzb*0.5, T12, (tza+tzb)*0.5) *
+             AngMom::CG(0.5, tzd*0.5, 0.5, tze*0.5, T45, (tzd+tze)*0.5) *
+             AngMom::CG(T12, (tza+tzb)*0.5, 0.5, tzc*0.5, twoT*0.5, Z3*0.5) *
+             AngMom::CG(T45, (tzd+tze)*0.5, 0.5, tzf*0.5, twoT*0.5, Z3*0.5);
+
+//             std::cout << "         " << T12 << " " << T45 << " " << twoT << "     " << GetME_iso_mono(i1, i2, i3, T12, i4, i5, i6, T45, twoT) << " * "
+//                       <<  AngMom::CG(0.5, tza*0.5, 0.5, tzb*0.5, T12, (tza+tzb)*0.5) *
+//             AngMom::CG(0.5, tzd*0.5, 0.5, tze*0.5, T45, (tzd+tze)*0.5) *
+//             AngMom::CG(T12, (tza+tzb)*0.5, 0.5, tzc*0.5, twoT*0.5, Z3*0.5) *
+//             AngMom::CG(T45, (tzd+tze)*0.5, 0.5, tzf*0.5, twoT*0.5, Z3*0.5) << std::endl;
       }
     }
   }
@@ -587,21 +638,22 @@ size_t ThreeBodyStorage_mono<StoreType>::CountME(int Emax_file, int E2max_file, 
     int j1 = o1.j;
     int l1 = o1.l;
     int e1 = o1.e;
-    if(e1 > emax) continue;
+//    if(e1 > emax) continue;
     if(e1 > Emax_file) continue;
-    for (int i2=0; i2 <= i1; i2++) {
+//    for (int i2=0; i2 <= i1; i2++) {
+    for (int i2=0; i2 < Norbs; i2++) {
       OrbitIsospin & o2 = file_Orbits[i2];
       int j2 = o2.j;
       int l2 = o2.l;
       int e2 = o2.e;
-      if(e2 > Emax_file) continue;
+//      if(e2 > Emax_file) continue;
       if(e1 + e2 > E2max_file) continue;
       for (int i3=0; i3 < Norbs; i3++) {
         OrbitIsospin & o3 = file_Orbits[i3];
         int j3 = o3.j;
         int l3 = o3.l;
         int e3 = o3.e;
-        if(e3 > Emax_file) continue;
+//        if(e3 > Emax_file) continue;
         if(e2 + e3 > E2max_file) continue;
         if(e1 + e3 > E2max_file) continue;
         if(e1 + e2 + e3 > E3max_file) continue;
@@ -613,15 +665,16 @@ size_t ThreeBodyStorage_mono<StoreType>::CountME(int Emax_file, int E2max_file, 
           int e4 = o4.e;
           if ( j1 != j4 ) continue;
           if ( l1 != l4 ) continue;
-          if(e4 > Emax_file) continue;
-          for (int i5=0; i5 <= i4; i5++) {
+//          if(e4 > Emax_file) continue;
+//          for (int i5=0; i5 <= i4; i5++) {
+          for (int i5=0; i5 < Norbs; i5++) {
             OrbitIsospin & o5 = file_Orbits[i5];
             int j5 = o5.j;
             int l5 = o5.l;
             int e5 = o5.e;
             if ( j2 != j5 ) continue;
             if ( l2 != l5 ) continue;
-            if(e5 > Emax_file) continue;
+//            if(e5 > Emax_file) continue;
             if(e4 + e5 > E2max_file) continue;
             for (int i6=0; i6 < Norbs; i6++) {
               OrbitIsospin & o6 = file_Orbits[i6];
@@ -630,7 +683,7 @@ size_t ThreeBodyStorage_mono<StoreType>::CountME(int Emax_file, int E2max_file, 
               int e6 = o6.e;
               if(j6 != j3) continue;
               if(l6 != l3) continue;
-              if(e6 > Emax_file) continue;
+//              if(e6 > Emax_file) continue;
               if(e4 + e6 > E2max_file) continue;
               if(e5 + e6 > E2max_file) continue;
               if(e4 + e5 + e6 > E3max_file) continue;
@@ -643,7 +696,8 @@ size_t ThreeBodyStorage_mono<StoreType>::CountME(int Emax_file, int E2max_file, 
 //              size_t JT_block_size = (Jmax+1-Jmin) * ISOSPIN_BLOCK_DIMENSION; // ISOSPIN_BLOCK_DIMENSION inherited form base class
 
 //              counter += JT_block_size;
-              counter += ISOSPIN_BLOCK_DIMENSION; // This should be 5, for  (t2_bra,t2_ket,2T) = { (0,0,1), (0,1,1), (1,0,1), (1,1,1), (1,1,3) } , in that order
+//              counter += ISOSPIN_BLOCK_DIMENSION; // This should be 5, for  (t2_bra,t2_ket,2T) = { (0,0,1), (0,1,1), (1,0,1), (1,1,1), (1,1,3) } , in that order
+              counter += 5;
 
             }
           }
@@ -779,21 +833,23 @@ void ThreeBodyStorage_mono<StoreType>::ReadFile( std::vector<std::string>& Strin
        int e1 = o1.e;
        if(e1 > emax) continue;
        if(e1 > Emax_file) continue;
-       for (int iF2=0; iF2 <= iF1; iF2++) 
+//       for (int iF2=0; iF2 <= iF1; iF2++) 
+       for (int iF2=0; iF2 < Norbs_file; iF2++) 
        {
          OrbitIsospin & o2 = file_Orbits[iF2];
          int j2 = o2.j;
          int l2 = o2.l;
          int e2 = o2.e;
-         if(e2 > Emax_file) continue;
+//         if(e2 > Emax_file) continue;
          if(e1 + e2 > E2max_file) continue;
+//         for (int iF3=0; iF3 < Norbs_file; iF3++)
          for (int iF3=0; iF3 < Norbs_file; iF3++)
          {
            OrbitIsospin & o3 = file_Orbits[iF3];
            int j3 = o3.j;
            int l3 = o3.l;
            int e3 = o3.e;
-           if(e3 > Emax_file) continue;
+//           if(e3 > Emax_file) continue;
            if(e2 + e3 > E2max_file) continue;
            if(e1 + e3 > E2max_file) continue;
            if(e1 + e2 + e3 > E3max_file) continue;
@@ -804,22 +860,24 @@ void ThreeBodyStorage_mono<StoreType>::ReadFile( std::vector<std::string>& Strin
              int j4 = o4.j;
              int l4 = o4.l;
              int e4 = o4.e;
-             if(e4 > Emax_file) continue;
+//             if(e4 > Emax_file) continue;
              if ( j4 != j1 ) continue;
              if ( l4 != l1 ) continue;
-             int i5max = (iF4==iF1) ? iF2 : iF4;
-             for (int iF5=0; iF5 <= i5max; iF5++)
+//             int i5max = (iF4==iF1) ? iF2 : iF4;
+//             for (int iF5=0; iF5 <= i5max; iF5++)
+             for (int iF5=0; iF5 < Norbs_file; iF5++)
              {
                OrbitIsospin & o5 = file_Orbits[iF5];
                int j5 = o5.j;
                int l5 = o5.l;
                int e5 = o5.e;
-               if ( e5 > Emax_file) continue;
+//               if ( e5 > Emax_file) continue;
                if ( j5 != j2 ) continue;
                if ( l5 != l2 ) continue;
                if(e4 + e5 > E2max_file) continue;
-               int i6max = (iF4==iF1 and iF5==iF2) ? iF3 : iF5;
-               for (int iF6=0; iF6 <= i6max; iF6++)
+//               int i6max = (iF4==iF1 and iF5==iF2) ? iF3 : iF5;
+//               for (int iF6=0; iF6 <= i6max; iF6++)
+               for (int iF6=0; iF6 <Norbs_file; iF6++)
                {
                  OrbitIsospin & o6 = file_Orbits[iF6];
 //                 std::cout << "        iF6 = " << iF6 << std::endl;
@@ -828,7 +886,7 @@ void ThreeBodyStorage_mono<StoreType>::ReadFile( std::vector<std::string>& Strin
                  int e6 = o6.e;
                  if(j6 != j3) continue;
                  if(l6 != l3) continue;
-                 if(e6 > Emax_file) continue;
+//                 if(e6 > Emax_file) continue;
                  if(e4 + e6 > E2max_file) continue;
                  if(e5 + e6 > E2max_file) continue;
                  if(e4 + e5 + e6 > E3max_file) continue;
@@ -900,11 +958,18 @@ void ThreeBodyStorage_mono<StoreType>::ReadFile( std::vector<std::string>& Strin
                          int i4 = threebodyspace.nlj2idx.at({o4.n,o4.l,o4.j});
                          int i5 = threebodyspace.nlj2idx.at({o5.n,o5.l,o5.j});
                          int i6 = threebodyspace.nlj2idx.at({o6.n,o6.l,o6.j});
+
    
                          StoreType vset = vbuf[counter-1];
 //                         std::cout << "         vset = " << vset << std::endl;
    
-   
+//                         if ( (i1==0) or (i2==0) or (i3==0) )//and (i2==2) and (i3==0) )
+//                         {
+//                             std::cout <<  std::setw(4) << i1 << std::setw(4) << i2 << std::setw(4) << i3 << std::setw(4) << T12 <<
+//                                           std::setw(4) << i4 << std::setw(4) << i5 << std::setw(4) << i6 << std::setw(4) << T45 <<
+//                                           std::setw(4) << T3 << std::setw(16) << counter <<
+//                                           std::setw(12) << std::setprecision(6) << vset << std::endl;
+//                         }
                          // For monopole matrix elements, we don't have automatic zeros in there
 //                         if( (i1==i2 and (J+T12)%2 ==0 ) or ( i4==i5 and (J+T45)%2 ==0 ) ) {
 //                           if( abs(vset) > 1.e-6 ){
@@ -921,6 +986,8 @@ void ThreeBodyStorage_mono<StoreType>::ReadFile( std::vector<std::string>& Strin
 //                          std::cout << "calling SetME_iso_mono with " << i1 << " " << i1 << " " <<i3 << " " << T12 << "  | " << i4 << " " << i5 << " " << i6 << " " << T45 << " ,  " << T3 << "   ->  " << vset << std::endl;
 //                          SetME_iso_mono(i1, i2, i3, T12, i4, i5, i6, T45, J, T3, vset );
                           SetME_iso_mono(i1, i2, i3, T12, i4, i5, i6, T45, T3, vset );
+//                          double vtest = GetME_iso_mono(i1,i2,i3,T12,i4,i5,i6,T45,T3);
+//                          std::cout <<  "   =======  check Get: " << vtest << std::endl;
                          }
    
                        }// for T3
