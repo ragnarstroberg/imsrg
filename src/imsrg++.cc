@@ -1375,6 +1375,7 @@ int main(int argc, char** argv)
 
       op = imsrgsolver.Transform(op);
 
+      std::cout << "Before renormal ordering Op(5,4) is " << std::setprecision(10) << op.OneBody(5,4) << std::endl;
       if (renormal_order) 
       {
         op = op.UndoNormalOrdering();
@@ -1384,6 +1385,7 @@ int main(int argc, char** argv)
 //      std::cout << " (" << ops[i].ZeroBody << " ) " << std::endl;
       std::cout << "   IMSRG: " << op.ZeroBody << std::endl;
 //      rw.WriteOperatorHuman(ops[i],intfile+opnames[i]+"_step2.op");
+//      std::cout << "After renormal ordering Op(5,4) is " << std::setprecision(10) << op.OneBody(5,4) << std::endl;
 
 
 
@@ -1429,7 +1431,52 @@ int main(int argc, char** argv)
   {
     for (size_t i=0;i<ops.size();++i)
     {
-      ops[i] = imsrgsolver.GetOperator(i+1);  // the zero-th operator is the Hamiltonian
+      auto op = imsrgsolver.GetOperator(i+1);  // the zero-th operator is the Hamiltonian
+      auto opname = opnames[i];
+
+      if (renormal_order) 
+      {
+        op = op.UndoNormalOrdering();
+        op.SetModelSpace(ms2);
+        op = op.DoNormalOrdering();
+      }
+//      std::cout << " (" << ops[i].ZeroBody << " ) " << std::endl;
+      std::cout << "   IMSRG: " << op.ZeroBody << std::endl;
+//      rw.WriteOperatorHuman(ops[i],intfile+opnames[i]+"_step2.op");
+
+
+
+      std::cout << "      " << op.GetJRank() << " " << op.GetTRank() << " " << op.GetParity() << "   " << op.GetNumberLegs() << std::endl;
+      if ( ((op.GetJRank()+op.GetTRank()+op.GetParity())<1) and (op.GetNumberLegs()%2==0) )
+      {
+         std::cout << "writing scalar files " << std::endl;
+        if (valence_file_format == "tokyo")
+        {
+          rw.WriteTokyo(op,intfile+opname+".snt", "op");
+        }
+        else
+        {
+          rw.WriteNuShellX_op(op,intfile+opname+".int");
+        }
+      }
+      else if ( op.GetNumberLegs()%2==1) // odd number of legs -> this is a dagger operator
+      {
+  //      rw.WriteNuShellX_op(ops[i],intfile+opnames[i]+".int"); // do this for now. later make a *.dag format.
+        rw.WriteDaggerOperator( op, intfile+opname+".dag",opname);
+      }
+      else
+      {
+         std::cout << "writing tensor files " << std::endl;
+        if (valence_file_format == "tokyo")
+        {
+          rw.WriteTensorTokyo(intfile+opname+"_2b.snt",op);
+        }
+        else
+        {
+          rw.WriteTensorOneBody(intfile+opname+"_1b.op",op,opname);
+          rw.WriteTensorTwoBody(intfile+opname+"_2b.op",op,opname);
+        }
+      }
     }
   }
 
