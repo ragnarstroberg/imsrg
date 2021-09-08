@@ -292,7 +292,7 @@ ThreeBodyStorage::ME_type ThreeBodyStorage::GetME_iso_mono(int a, int b, int c, 
     {
       v += GetME_iso_no2b(a,b,c,Tab,d,e,f,Tde,j2,T3);
    }
-   v /= j2c+1.0;
+//   v /= j2c+1.0;
    return v;
 }
 
@@ -309,7 +309,7 @@ ThreeBodyStorage::ME_type ThreeBodyStorage::GetME_pn_mono(int a, int b, int c, i
     {
       v += GetME_pn_no2b(a,b,c,d,e,f,j2);
    }
-   v /= j2c+1.0;
+//   v /= j2c+1.0;
    return v;
 }
 

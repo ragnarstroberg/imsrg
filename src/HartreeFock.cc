@@ -436,7 +436,7 @@ void HartreeFock::BuildMonopoleV3()
 
 //       int j2a = modelspace->GetOrbit(a).j2;
 //       int j2c = modelspace->GetOrbit(c).j2;
-//       int j2i = modelspace->GetOrbit(i).j2;
+       int j2i = modelspace->GetOrbit(i).j2;
 //
 //       // TODO: We can probably use some permutation symmetries to avoid recomputing things
 //       // at the very least, we can treat the permutation of the first two indices
@@ -452,7 +452,7 @@ void HartreeFock::BuildMonopoleV3()
 ////           v += Hbare.ThreeBody.GetME_pn(j2,j2,J2,a,c,i,b,d,j) * (J2+1);
 ////         }
 //      }
-//      v /= j2i+1.0;
+      v /= j2i+1.0;
       #pragma omp atomic write
       Vmon3[ind] = v ;
      }
