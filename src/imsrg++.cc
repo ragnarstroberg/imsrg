@@ -824,7 +824,7 @@ int main(int argc, char** argv)
       // Haven't yet implemented FCI operators for Tokyo format. I should do this...
       for (size_t i=0; i<ops.size();i++)
       {
-         if (ops[i].GetJRank()==0)
+         if (ops[i].GetJRank()==0 and ops[i].GetTRank()==0 )
          {
            rw.WriteTokyo(ops[i], intfile + "_" + opnames[i] + ".snt","");
          }
