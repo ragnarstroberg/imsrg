@@ -88,6 +88,7 @@ std::map<std::string,std::string> Parameters::string_par = {
   {"discard_no2b_from_3n",      "false"},       // For diagnostics. Use the 3N, but discard the 3N contribution to the NO 2-body after HF.
   {"use_NAT_occupations",       "false"},       // When using natural orbitals, should we use the corresponding occupations?
   {"order_NAT_by_energy",       "false"},       // When using natural orbitals, label orbits by increasing energy? Default is decreasing occ.
+  {"NAT_order",                 "occupation"},  // When using natural orbitals, select an ordering for labeling orbits. Default is decreasing occ.
   {"store_3bme_pn",             "false"},       // should the 3-body matrix elements be stored in proton-neutron formalism? Default is isospin.
   {"discard_residual_input3N",  "false"},       // If we're doing IMSRG3, should we discard the residual input 3N (only keep induced)?
   {"only_2b_eta",               "false"},       // If we're doing IMSRG3, keep eta as 2b 

@@ -10,7 +10,7 @@ HFMBPT::HFMBPT(Operator& hbare)
   : HartreeFock(hbare),
     C_HO2NAT(modelspace->GetNumberOrbits(),modelspace->GetNumberOrbits(),arma::fill::eye),
     C_HF2NAT(modelspace->GetNumberOrbits(),modelspace->GetNumberOrbits(),arma::fill::eye),
-    use_NAT_occupations(false), order_NAT_by_energy(false)
+    use_NAT_occupations(false), NAT_order("occupation")
 {}
 
 //*********************************************************************
@@ -132,9 +132,9 @@ void HFMBPT::GetNaturalOrbitals()
   arma::mat tmp = C_HO2NAT.cols(holeorbs);
   rho = (tmp.each_row() % hole_occ) * tmp.t(); // now rho is in the HO basis, with our prescribed occupations in the NAT basis
   UpdateF();  // Now F is in the HO basis, but with rho from filling in the NAT basis.
+
   ReorderHFMBPTCoefficients();
   C_HO2NAT = C * C_HF2NAT; // bug fix suggested by Emily Love
-
 }
 
 //*********************************************************************
@@ -807,24 +807,25 @@ void HFMBPT::ReorderHFMBPTCoefficients()
       if (C_HF2NAT(i,i) < 0)  C_HF2NAT.col(i) *= -1;
    }
 
-  // note that we do this in just one pass, and that in the unlikely case that one of the occupied orbits
-  // gets swapped with an unoccupied orbit, we would in principle need to recompute the energies and orderings
-  // but let's just hope that this doesn't happen.
-  if ( order_NAT_by_energy )
+  // would enums and switch/case be prettier here?
+  if (NAT_order == "energy")
   {
+    // note that we do this in just one pass, and that in the unlikely case that one of the occupied orbits
+    // gets swapped with an unoccupied orbit, we would in principle need to recompute the energies and orderings
+    // but let's just hope that this doesn't happen.
     std::cout << "Ordering NAT orbits according to increasing energy..." << std::endl;
     for (auto& it : Hbare.OneBodyChannels)
     {
-       arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end()));
-       arma::mat CNAT_chan = C_HF2NAT.submat(orbvec, orbvec);
-       arma::mat CHF_chan = C.submat(orbvec, orbvec);
-       arma::mat fHO_chan = F.submat(orbvec,orbvec);
-       arma::mat fNAT_chan = CNAT_chan.t() * CHF_chan.t() * fHO_chan * CHF_chan * CNAT_chan;
-       arma::vec spe_NAT = fNAT_chan.diag();
-       arma::uvec sorted_indices = arma::sort_index( spe_NAT, "ascend");
-       arma::uvec orbvec_sorted = orbvec(sorted_indices);
-       C_HF2NAT.submat(orbvec, orbvec) = C_HF2NAT( orbvec, orbvec_sorted); // sort the column indices, <row|col> = <HF|NAT>
-       Occ(orbvec) = Occ(orbvec_sorted); 
+      arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end()));
+      arma::mat CNAT_chan = C_HF2NAT.submat(orbvec, orbvec);
+      arma::mat CHF_chan = C.submat(orbvec, orbvec);
+      arma::mat fHO_chan = F.submat(orbvec,orbvec);
+      arma::mat fNAT_chan = CNAT_chan.t() * CHF_chan.t() * fHO_chan * CHF_chan * CNAT_chan;
+      arma::vec spe_NAT = fNAT_chan.diag();
+      arma::uvec sorted_indices = arma::sort_index( spe_NAT, "ascend");
+      arma::uvec orbvec_sorted = orbvec(sorted_indices);
+      C_HF2NAT.submat(orbvec, orbvec) = C_HF2NAT( orbvec, orbvec_sorted); // sort the column indices, <row|col> = <HF|NAT>
+      Occ(orbvec) = Occ(orbvec_sorted); 
     }
     for ( auto i : HartreeFock::modelspace->all_orbits )
     {
@@ -832,8 +833,27 @@ void HFMBPT::ReorderHFMBPTCoefficients()
       oi.occ_nat = std::abs(Occ(i));  // it's possible that Occ(i) is negative, and for occ_nat, we don't want that.
     }
   }
+  else if (NAT_order == "mp2")
+  {
+    std::cout << "Ordering NAT orbits according to second order energy impact..." << std::endl;
+    Operator H_temp = GetNormalOrderedHNAT(2); // particle rank 2 - we don't care about threebody here
+    arma::vec impacts = H_temp.GetMP2_Impacts();
 
-
+    for (auto& it : Hbare.OneBodyChannels)
+    {
+      arma::uvec orbvec(std::vector<index_t>(it.second.begin(),it.second.end()));
+      arma::vec impacts_chan = impacts(orbvec);
+      arma::uvec sorted_indices = arma::sort_index( impacts_chan, "ascend");
+      arma::uvec orbvec_sorted = orbvec(sorted_indices);
+      C_HF2NAT.submat(orbvec, orbvec) = C_HF2NAT( orbvec, orbvec_sorted); // sort the column indices, <row|col> = <HF|NAT>
+      Occ(orbvec) = Occ(orbvec_sorted); 
+    }
+    for ( auto i : HartreeFock::modelspace->all_orbits )
+    {
+      auto& oi = HartreeFock::modelspace->GetOrbit(i);
+      oi.occ_nat = std::abs(Occ(i));  // it's possible that Occ(i) is negative, and for occ_nat, we don't want that.
+    }
+  }
 }
 
 

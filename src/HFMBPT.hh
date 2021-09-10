@@ -34,7 +34,7 @@ class HFMBPT : public HartreeFock
     arma::vec Occ; // Occupation number
 
     bool use_NAT_occupations; // Option to use occupations from (if true) density matrix, or (if false) use naive filling.
-    bool order_NAT_by_energy; // The default is to order by occupation, so this is false
+    std::string NAT_order; // The default is to order by occupation
 
     ~HFMBPT();
     HFMBPT(Operator& hbare); // same as HartreeFock constructor
@@ -55,7 +55,7 @@ class HFMBPT : public HartreeFock
     void PrintSPEandWF(); // Function override, since we want to express the SPWF in terms of HO states
     void ReorderHFMBPTCoefficients();
     void UseNATOccupations( bool tf=true ){ use_NAT_occupations=tf;}; // Choose whether to use occupations from rho.
-    void OrderNATByEnergy( bool tf=true ){ order_NAT_by_energy=tf;}; // Label orbits by increasing energy, rather than decreasing occupation.
+    void OrderNATBy( std::string order ){ NAT_order = order;}; // Choose how to label orbits ("occupation", "energy", "mp2")
 
 };
 #endif

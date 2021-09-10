@@ -11,7 +11,7 @@ ALL = version.hh libIMSRG.so imsrg++
 INSTDIR = $(HOME)
 INCLUDE   = -I./armadillo
 FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC
-LIBS = -lopenblas -lgsl -lz
+LIBS = -lopenblas -lgsl -lz -larmadillo
 #LIBS = -lblas -lgsl -lz
 
 # I assume we're running on linux
