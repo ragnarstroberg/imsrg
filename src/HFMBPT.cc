@@ -833,7 +833,7 @@ void HFMBPT::ReorderHFMBPTCoefficients()
       oi.occ_nat = std::abs(Occ(i));  // it's possible that Occ(i) is negative, and for occ_nat, we don't want that.
     }
   }
-  else if (NAT_order == "mp2_impact")
+  else if (NAT_order == "mp2")
   {
     std::cout << "Ordering NAT orbits according to second order energy impact..." << std::endl;
     Operator H_temp = GetNormalOrderedHNAT(2); // particle rank 2 - we don't care about threebody here

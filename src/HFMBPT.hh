@@ -55,7 +55,7 @@ class HFMBPT : public HartreeFock
     void PrintSPEandWF(); // Function override, since we want to express the SPWF in terms of HO states
     void ReorderHFMBPTCoefficients();
     void UseNATOccupations( bool tf=true ){ use_NAT_occupations=tf;}; // Choose whether to use occupations from rho.
-    void OrderNATBy( std::string order ){ NAT_order = order;}; // Choose how to label orbits ("occupation", "energy", "mp2_impact")
+    void OrderNATBy( std::string order ){ NAT_order = order;}; // Choose how to label orbits ("occupation", "energy", "mp2")
 
 };
 #endif
