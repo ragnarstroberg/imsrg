@@ -96,6 +96,7 @@ int main(int argc, char** argv)
   std::string occ_file = parameters.s("occ_file");
   std::string physical_system = parameters.s("physical_system");
   std::string denominator_partitioning = parameters.s("denominator_partitioning");
+  std::string NAT_order = parameters.s("NAT_order");
 
   bool use_brueckner_bch = parameters.s("use_brueckner_bch") == "true";
   bool nucleon_mass_correction = parameters.s("nucleon_mass_correction") == "true";
@@ -567,8 +568,11 @@ int main(int argc, char** argv)
   }
   else if (basis == "NAT") // we want to use the natural orbital basis
   {
+    // for backwards compatibility: order_NAT_by_energy overrides NAT_order
+    if (order_NAT_by_energy) NAT_order = "energy";
+
     hf.UseNATOccupations( use_NAT_occupations );
-    hf.OrderNATByEnergy( order_NAT_by_energy );
+    hf.OrderNATBy( NAT_order );
 
 //  GetNaturalOrbitals() calls GetDensityMatrix(), which computes the 1b density matrix up to MBPT2
 //  using the NO2B Hamiltonian in the HF basis, obtained with GetNormalOrderedH().
