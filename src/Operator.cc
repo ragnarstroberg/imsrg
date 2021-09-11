@@ -1753,7 +1753,7 @@ void Operator::AntiSymmetrize()
    TwoBody.AntiSymmetrize();
 }
 
-
+/*
 // Modified version of GetMP2_Energy. Determines each orbital's impact on the total MP2 energy 
 // (i.e., by how much would EMP2 change if this single orbital were removed)
 arma::vec Operator::GetMP2_Impacts() const
@@ -1828,3 +1828,5 @@ arma::vec Operator::GetMP2_Impacts() const
    IMSRGProfiler::timer["GetMP2_Impacts"] += omp_get_wtime() - t_start;
    return orbit_impacts;
 }
+*/
+

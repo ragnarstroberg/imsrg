@@ -210,7 +210,7 @@ class Operator
   void PrintOneBody() const {OneBody.print();};
   void PrintTwoBody(int ch) const {TwoBody.PrintMatrix(ch,ch);};
 
-  arma::vec GetMP2_Impacts() const;
+//  arma::vec GetMP2_Impacts() const;
 };
 
 /// Non member function, multiply by scalar from left side

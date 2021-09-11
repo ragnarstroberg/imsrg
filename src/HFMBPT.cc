@@ -837,7 +837,8 @@ void HFMBPT::ReorderHFMBPTCoefficients()
   {
     std::cout << "Ordering NAT orbits according to second order energy impact..." << std::endl;
     Operator H_temp = GetNormalOrderedHNAT(2); // particle rank 2 - we don't care about threebody here
-    arma::vec impacts = H_temp.GetMP2_Impacts();
+//    arma::vec impacts = H_temp.GetMP2_Impacts();
+    arma::vec impacts = GetMP2_Impacts(H_temp);
 
     for (auto& it : Hbare.OneBodyChannels)
     {
@@ -901,5 +902,83 @@ double HFMBPT::GetTransformed3bme( Operator& OpIn, int Jab, int Jde, int J2,  si
   return V_nat;
 }
 
+
+
+
+// Modified version of GetMP2_Energy. Determines each orbital's impact on the total MP2 energy 
+// (i.e., by how much would EMP2 change if this single orbital were removed)
+arma::vec HFMBPT::GetMP2_Impacts(Operator& OpIn) const
+{
+//   std::cout << "  a    b    i    j    J    na     nb    tbme    denom     dE" << std::endl;
+   double t_start = omp_get_wtime();
+   double de = 0;
+
+   int nparticles = OpIn.modelspace->particles.size();
+   arma::vec orbit_impacts(OpIn.modelspace->all_orbits.size(), arma::fill::zeros);
+
+   std::vector<index_t> particles_vec(OpIn.modelspace->particles.begin(),OpIn.modelspace->particles.end()); // convert set to vector for OMP looping
+//   for ( auto& i : modelspace->particles)
+//   #pragma omp parallel for reduction(+:Emp2)
+   for ( int ii=0;ii<nparticles;++ii)
+   {
+//     index_t i = modelspace->particles[ii];
+     index_t i = particles_vec[ii];
+     //  std::cout << " i = " << i << std::endl;
+
+     double ei = OpIn.OneBody(i,i);
+     Orbit& oi = OpIn.modelspace->GetOrbit(i);
+     for (auto& a : OpIn.modelspace->holes)
+     {
+       Orbit& oa = OpIn.modelspace->GetOrbit(a);
+       double ea = OpIn.OneBody(a,a);
+       double fia = OpIn.OneBody(i,a);
+//       if (abs(fia)>1e-6)
+        de = (oa.j2+1) * oa.occ * fia*fia/(ea-ei);
+        orbit_impacts(a) += de;
+        orbit_impacts(i) += de;
+
+       for (index_t j : OpIn.modelspace->particles)
+       {
+         if (j<i) continue;
+         double ej = OpIn.OneBody(j,j);
+         Orbit& oj = OpIn.modelspace->GetOrbit(j);
+         for ( auto& b: OpIn.modelspace->holes)
+         {
+           if (b<a) continue;
+           Orbit& ob = OpIn.modelspace->GetOrbit(b);
+           if ( (oi.l+oj.l+oa.l+ob.l)%2 >0) continue;
+           if ( (oi.tz2 + oj.tz2) != (oa.tz2 +ob.tz2) ) continue;
+           double eb = OpIn.OneBody(b,b);
+           double denom = ea+eb-ei-ej;
+           int Jmin = std::max(std::abs(oi.j2-oj.j2),std::abs(oa.j2-ob.j2))/2;
+           int Jmax = std::min(oi.j2+oj.j2,oa.j2+ob.j2)/2;
+           int dJ = 1;
+           if (a==b or i==j)
+           {
+             Jmin += Jmin%2;
+             dJ=2;
+           }
+           for (int J=Jmin; J<=Jmax; J+=dJ)
+           {
+             double tbme = OpIn.TwoBody.GetTBME_J_norm(J,a,b,i,j);
+             if (std::abs(tbme)>1e-6)
+             {
+              de = (2*J+1)* oa.occ * ob.occ * tbme*tbme/denom; // no factor 1/4 because of the restricted sum
+
+              orbit_impacts(a) += de;
+              if (a!=b) orbit_impacts(b) += de;
+
+              orbit_impacts(i) += de;
+              if (i!=j) orbit_impacts(j) += de;
+
+              }
+           }
+         }
+       }
+     }
+   }
+   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
+   return orbit_impacts;
+}
 
 
