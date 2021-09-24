@@ -38,7 +38,7 @@ eig_sym
   if(status == false)
     {
     eigval.soft_reset();
-    arma_debug_warn("eig_sym(): decomposition failed");
+    arma_debug_warn_level(3, "eig_sym(): decomposition failed");
     }
   
   return status;
@@ -89,15 +89,15 @@ eig_sym_helper
   
   // if(auxlib::rudimentary_sym_check(X) == false)
   //   {
-  //   if(is_cx<eT>::no )  { arma_debug_warn(caller_sig, ": given matrix is not symmetric"); }
-  //   if(is_cx<eT>::yes)  { arma_debug_warn(caller_sig, ": given matrix is not hermitian"); }
+  //   if(is_cx<eT>::no )  { arma_debug_warn_level(1, caller_sig, ": given matrix is not symmetric"); }
+  //   if(is_cx<eT>::yes)  { arma_debug_warn_level(1, caller_sig, ": given matrix is not hermitian"); }
   //   return false;
   //   }
   
   if((arma_config::debug) && (auxlib::rudimentary_sym_check(X) == false))
     {
-    if(is_cx<eT>::no )  { arma_debug_warn(caller_sig, ": given matrix is not symmetric"); }
-    if(is_cx<eT>::yes)  { arma_debug_warn(caller_sig, ": given matrix is not hermitian"); }
+    if(is_cx<eT>::no )  { arma_debug_warn_level(1, caller_sig, ": given matrix is not symmetric"); }
+    if(is_cx<eT>::yes)  { arma_debug_warn_level(1, caller_sig, ": given matrix is not hermitian"); }
     }
   
   bool status = false;
@@ -127,7 +127,7 @@ eig_sym
   
   typedef typename T1::elem_type eT;
   
-  const char sig = (method != NULL) ? method[0] : char(0);
+  const char sig = (method != nullptr) ? method[0] : char(0);
   
   arma_debug_check( ((sig != 's') && (sig != 'd')),         "eig_sym(): unknown method specified"                             );
   arma_debug_check( void_ptr(&eigval) == void_ptr(&eigvec), "eig_sym(): parameter 'eigval' is an alias of parameter 'eigvec'" );
@@ -145,7 +145,7 @@ eig_sym
     {
     eigval.soft_reset();
     eigvec.soft_reset();
-    arma_debug_warn("eig_sym(): decomposition failed");
+    arma_debug_warn_level(3, "eig_sym(): decomposition failed");
     }
   else
     {

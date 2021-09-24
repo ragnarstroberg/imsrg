@@ -35,11 +35,11 @@ namespace sympd_helper
 template<typename eT>
 inline
 typename enable_if2<is_cx<eT>::no, bool>::result
-guess_sympd(const Mat<eT>& A)
+guess_sympd_worker(const Mat<eT>& A)
   {
   arma_extra_debug_sigprint();
   
-  if((A.n_rows != A.n_cols) || (A.n_rows < 16))  { return false; }
+  // NOTE: assuming A is square-sized
   
   const eT tol = eT(100) * std::numeric_limits<eT>::epsilon();  // allow some leeway
   
@@ -109,13 +109,13 @@ guess_sympd(const Mat<eT>& A)
 template<typename eT>
 inline
 typename enable_if2<is_cx<eT>::yes, bool>::result
-guess_sympd(const Mat<eT>& A)
+guess_sympd_worker(const Mat<eT>& A)
   {
   arma_extra_debug_sigprint();
   
-  typedef typename get_pod_type<eT>::result T;
+  // NOTE: assuming A is square-sized
   
-  if((A.n_rows != A.n_cols) || (A.n_rows < 16))  { return false; }
+  typedef typename get_pod_type<eT>::result T;
   
   const T tol = T(100) * std::numeric_limits<T>::epsilon();  // allow some leeway
   
@@ -204,6 +204,34 @@ guess_sympd(const Mat<eT>& A)
     }
   
   return true;
+  }
+
+
+
+template<typename eT>
+inline
+bool
+guess_sympd(const Mat<eT>& A)
+  {
+  // analyse matrices with size >= 16x16
+  
+  if((A.n_rows != A.n_cols) || (A.n_rows < uword(16)))  { return false; }
+  
+  return guess_sympd_worker(A);
+  }
+
+
+
+template<typename eT>
+inline
+bool
+guess_sympd_anysize(const Mat<eT>& A)
+  {
+  // analyse matrices with size >= 2x2
+  
+  if((A.n_rows != A.n_cols) || (A.n_rows < uword(2)))  { return false; }
+  
+  return guess_sympd_worker(A);
   }
 
 

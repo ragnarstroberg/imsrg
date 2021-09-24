@@ -45,7 +45,7 @@ find(const Base<typename T1::elem_type,T1>& X, const uword k, const char* direct
   {
   arma_extra_debug_sigprint();
   
-  const char sig = (direction != NULL) ? direction[0] : char(0);
+  const char sig = (direction != nullptr) ? direction[0] : char(0);
   
   arma_debug_check
     (
@@ -162,7 +162,7 @@ find(const SpBase<typename T1::elem_type,T1>& X, const uword k = 0)
   const uword n_rows = P.get_n_rows();
   const uword n_nz   = P.get_n_nonzero();
   
-  Mat<uword> tmp(n_nz,1);
+  Mat<uword> tmp(n_nz, 1, arma_nozeros_indicator());
   
   uword* tmp_mem = tmp.memptr();
   
@@ -195,6 +195,10 @@ Col<uword>
 find(const SpBase<typename T1::elem_type,T1>& X, const uword k, const char* direction)
   {
   arma_extra_debug_sigprint();
+  
+  arma_ignore(X);
+  arma_ignore(k);
+  arma_ignore(direction);
   
   arma_check(true, "find(SpBase,k,direction): not implemented yet");  // TODO
   
@@ -304,7 +308,7 @@ find_finite(const SpBase<typename T1::elem_type,T1>& X)
   const uword n_rows = P.get_n_rows();
   const uword n_nz   = P.get_n_nonzero();
   
-  Mat<uword> tmp(n_nz,1);
+  Mat<uword> tmp(n_nz, 1, arma_nozeros_indicator());
   
   uword* tmp_mem = tmp.memptr();
   
@@ -348,7 +352,7 @@ find_nonfinite(const SpBase<typename T1::elem_type,T1>& X)
   const uword n_rows = P.get_n_rows();
   const uword n_nz   = P.get_n_nonzero();
   
-  Mat<uword> tmp(n_nz,1);
+  Mat<uword> tmp(n_nz, 1, arma_nozeros_indicator());
   
   uword* tmp_mem = tmp.memptr();
   

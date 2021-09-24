@@ -316,7 +316,7 @@ class herk
   inline
   static
   void
-  apply_blas_type( Mat<std::complex<T> >& C, const TA& A, const T alpha = T(1), const T beta = T(0) )
+  apply_blas_type( Mat<std::complex<T>>& C, const TA& A, const T alpha = T(1), const T beta = T(0) )
     {
     arma_extra_debug_sigprint();
     
@@ -345,7 +345,7 @@ class herk
           typedef typename std::complex<T> eT;
           
           // use a temporary matrix, as we can't assume that matrix C is already symmetric
-          Mat<eT> D(C.n_rows, C.n_cols);
+          Mat<eT> D(C.n_rows, C.n_cols, arma_nozeros_indicator());
           
           herk<do_trans_A, use_alpha, false>::apply_blas_type(D,A,alpha);
           
@@ -379,7 +379,7 @@ class herk
           typedef typename std::complex<T> eT;
           
           // use a temporary matrix, as we can't assume that matrix C is already symmetric
-          Mat<eT> D(C.n_rows, C.n_cols);
+          Mat<eT> D(C.n_rows, C.n_cols, arma_nozeros_indicator());
           
           herk<do_trans_A, use_alpha, false>::apply_blas_type(D,A,alpha);
           
@@ -436,7 +436,7 @@ class herk
   inline
   static
   void
-  apply( Mat<eT>& C, const TA& A, const eT alpha = eT(1), const eT beta = eT(0), const typename arma_not_cx<eT>::result* junk = 0 )
+  apply( Mat<eT>& C, const TA& A, const eT alpha = eT(1), const eT beta = eT(0), const typename arma_not_cx<eT>::result* junk = nullptr )
     {
     arma_ignore(C);
     arma_ignore(A);

@@ -28,7 +28,7 @@ glue_polyfit::apply_noalias(Mat<eT>& out, const Col<eT>& X, const Col<eT>& Y, co
   
   // create Vandermonde matrix
   
-  Mat<eT> V(X.n_elem, N+1);
+  Mat<eT> V(X.n_elem, N+1, arma_nozeros_indicator());
   
   V.tail_cols(1).ones();
   
@@ -76,7 +76,7 @@ glue_polyfit::apply_direct(Mat<typename T1::elem_type>& out, const Base<typename
   arma_debug_check
     (
     ( ((X.is_vec() == false) && (X.is_empty() == false)) || ((Y.is_vec() == false) && (Y.is_empty() == false)) ),
-    "polyfit(): given object is not a vector"
+    "polyfit(): given object must be a vector"
     );
   
   arma_debug_check( (X.n_elem != Y.n_elem), "polyfit(): given vectors must have the same number of elements" );

@@ -14,23 +14,22 @@
 // ------------------------------------------------------------------------
 
 
-
-#if (__cplusplus >= 201103L)
-  #undef  ARMA_USE_CXX11
-  #define ARMA_USE_CXX11
-#endif
+//! \addtogroup spop_norm
+//! @{
 
 
-// MS really can't get its proverbial shit together
-#if (defined(_MSVC_LANG) && (_MSVC_LANG >= 201402L))
-  #undef  ARMA_USE_CXX11
-  #define ARMA_USE_CXX11
-  #undef  ARMA_DONT_PRINT_CXX11_WARNING
-  #define ARMA_DONT_PRINT_CXX11_WARNING
-#endif
+class spop_norm
+  : public traits_op_default
+  {
+  public:
+  
+  template<typename eT> inline static typename get_pod_type<eT>::result mat_norm_1(const SpMat<eT>& X);
+
+  template<typename eT> inline static typename get_pod_type<eT>::result mat_norm_2(const SpMat<eT>& X, const typename arma_real_only<eT>::result* junk = nullptr);
+  template<typename eT> inline static typename get_pod_type<eT>::result mat_norm_2(const SpMat<eT>& X, const typename   arma_cx_only<eT>::result* junk = nullptr);
+
+  template<typename eT> inline static typename get_pod_type<eT>::result mat_norm_inf(const SpMat<eT>& X);
+  };
 
 
-#if (defined(_OPENMP) && (_OPENMP >= 201107))
-  #undef  ARMA_USE_OPENMP
-  #define ARMA_USE_OPENMP
-#endif
+//! @}

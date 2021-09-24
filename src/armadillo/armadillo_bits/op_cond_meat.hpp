@@ -26,15 +26,18 @@ op_cond::cond(const Base<typename T1::elem_type, T1>& X)
   {
   arma_extra_debug_sigprint();
   
-  typedef typename T1::pod_type T;
+  typedef typename T1::elem_type eT;
+  typedef typename T1::pod_type   T;
+  
+  Mat<eT> A(X.get_ref());
   
   Col<T> S;
   
-  const bool status = auxlib::svd_dc(S, X);
+  const bool status = auxlib::svd_dc(S, A);
   
   if(status == false)
     {
-    arma_debug_warn("cond(): svd failed");
+    arma_debug_warn_level(3, "cond(): svd failed");
     
     return T(0);
     }
@@ -56,13 +59,15 @@ op_cond::rcond(const Base<typename T1::elem_type, T1>& X)
   
   if(strip_trimat<T1>::do_trimat)
     {
-    const strip_trimat<T1> T(X.get_ref());
+    const strip_trimat<T1> S(X.get_ref());
     
-    arma_debug_check( (T.M.is_square() == false), "rcond(): matrix must be square sized" );
+    const quasi_unwrap<typename strip_trimat<T1>::stored_type> U(S.M);
     
-    const uword layout = (T.do_triu) ? uword(0) : uword(1);
+    arma_debug_check( (U.M.is_square() == false), "rcond(): matrix must be square sized" );
     
-    return auxlib::rcond_trimat(T.M, layout);
+    const uword layout = (S.do_triu) ? uword(0) : uword(1);
+    
+    return auxlib::rcond_trimat(U.M, layout);
     }
   
   Mat<eT> A = X.get_ref();
@@ -81,7 +86,11 @@ op_cond::rcond(const Base<typename T1::elem_type, T1>& X)
     return auxlib::rcond_trimat(A, layout);
     }
   
-  const bool try_sympd = auxlib::crippled_lapack(A) ? false : sympd_helper::guess_sympd(A);
+  #if defined(ARMA_OPTIMISE_SYMPD)
+    const bool try_sympd = auxlib::crippled_lapack(A) ? false : sympd_helper::guess_sympd_anysize(A);
+  #else
+    const bool try_sympd = false;
+  #endif
   
   if(try_sympd)
     {

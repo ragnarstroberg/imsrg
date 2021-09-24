@@ -33,7 +33,7 @@ normalise
   const T1&   X,
   const uword p = uword(2),
   const arma_empty_class junk1 = arma_empty_class(),
-  const typename arma_real_or_cx_only<typename T1::elem_type>::result* junk2 = 0
+  const typename arma_real_or_cx_only<typename T1::elem_type>::result* junk2 = nullptr
   )
   {
   arma_extra_debug_sigprint();
@@ -59,7 +59,7 @@ normalise
   const T1&   X,
   const uword p = uword(2),
   const uword dim = 0,
-  const typename arma_real_or_cx_only<typename T1::elem_type>::result* junk = 0
+  const typename arma_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
   arma_extra_debug_sigprint();
@@ -79,7 +79,7 @@ normalise
   const SpBase<typename T1::elem_type, T1>& expr,
   const uword p = uword(2),
   const uword dim = 0,
-  const typename arma_real_or_cx_only<typename T1::elem_type>::result* junk = 0
+  const typename arma_real_or_cx_only<typename T1::elem_type>::result* junk = nullptr
   )
   {
   arma_extra_debug_sigprint();
@@ -102,7 +102,7 @@ enable_if2
   >::result
 normalise(const T& val)
   {
-  Col<T> out(1);
+  Col<T> out(1, arma_nozeros_indicator());
   
   out[0] = (val != T(0)) ? T(val / (std::abs)(val)) : T(val);
   

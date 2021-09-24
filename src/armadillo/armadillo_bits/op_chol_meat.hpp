@@ -54,20 +54,24 @@ op_chol::apply_direct(Mat<typename T1::elem_type>& out, const Base<typename T1::
   
   // if(auxlib::rudimentary_sym_check(out) == false)
   //   {
-  //   if(is_cx<eT>::no )  { arma_debug_warn("chol(): given matrix is not symmetric"); }
-  //   if(is_cx<eT>::yes)  { arma_debug_warn("chol(): given matrix is not hermitian"); }
+  //   if(is_cx<eT>::no )  { arma_debug_warn_level(1, "chol(): given matrix is not symmetric"); }
+  //   if(is_cx<eT>::yes)  { arma_debug_warn_level(1, "chol(): given matrix is not hermitian"); }
   //   return false;
   //   }
   
   if((arma_config::debug) && (auxlib::rudimentary_sym_check(out) == false))
     {
-    if(is_cx<eT>::no )  { arma_debug_warn("chol(): given matrix is not symmetric"); }
-    if(is_cx<eT>::yes)  { arma_debug_warn("chol(): given matrix is not hermitian"); }
+    if(is_cx<eT>::no )  { arma_debug_warn_level(1, "chol(): given matrix is not symmetric"); }
+    if(is_cx<eT>::yes)  { arma_debug_warn_level(1, "chol(): given matrix is not hermitian"); }
     }
   
   uword KD = 0;
   
-  const bool is_band = (auxlib::crippled_lapack(out)) ? false : ((layout == 0) ? band_helper::is_band_upper(KD, out, uword(32)) : band_helper::is_band_lower(KD, out, uword(32)));
+  #if defined(ARMA_OPTIMISE_BAND)
+    const bool is_band = (auxlib::crippled_lapack(out)) ? false : ((layout == 0) ? band_helper::is_band_upper(KD, out, uword(32)) : band_helper::is_band_lower(KD, out, uword(32)));
+  #else
+    const bool is_band = false;
+  #endif
   
   const bool status = (is_band) ? auxlib::chol_band(out, KD, layout) : auxlib::chol(out, layout);
   

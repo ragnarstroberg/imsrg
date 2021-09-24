@@ -57,20 +57,16 @@ template<typename obj_type>
 arma_warn_unused
 arma_inline
 const Gen<obj_type, gen_randn>
-randn(const uword n_elem, const arma_empty_class junk1 = arma_empty_class(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk2 = 0)
+randn(const uword n_elem, const arma_empty_class junk1 = arma_empty_class(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk2 = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk1);
   arma_ignore(junk2);
   
-  if(is_Row<obj_type>::value)
-    {
-    return Gen<obj_type, gen_randn>(1, n_elem);
-    }
-  else
-    {
-    return Gen<obj_type, gen_randn>(n_elem, 1);
-    }
+  const uword n_rows = (is_Row<obj_type>::value) ? uword(1) : n_elem;
+  const uword n_cols = (is_Row<obj_type>::value) ? n_elem   : uword(1);
+  
+  return Gen<obj_type, gen_randn>(n_rows, n_cols);
   }
 
 
@@ -104,7 +100,7 @@ template<typename obj_type>
 arma_warn_unused
 arma_inline
 const Gen<obj_type, gen_randn>
-randn(const uword n_rows, const uword n_cols, const typename arma_Mat_Col_Row_only<obj_type>::result* junk = 0)
+randn(const uword n_rows, const uword n_cols, const typename arma_Mat_Col_Row_only<obj_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);
@@ -128,7 +124,7 @@ template<typename obj_type>
 arma_warn_unused
 arma_inline
 const Gen<obj_type, gen_randn>
-randn(const SizeMat& s, const typename arma_Mat_Col_Row_only<obj_type>::result* junk = 0)
+randn(const SizeMat& s, const typename arma_Mat_Col_Row_only<obj_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);
@@ -166,7 +162,7 @@ template<typename cube_type>
 arma_warn_unused
 arma_inline
 const GenCube<typename cube_type::elem_type, gen_randn>
-randn(const uword n_rows, const uword n_cols, const uword n_slices, const typename arma_Cube_only<cube_type>::result* junk = 0)
+randn(const uword n_rows, const uword n_cols, const uword n_slices, const typename arma_Cube_only<cube_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();  
   arma_ignore(junk);
@@ -180,7 +176,7 @@ template<typename cube_type>
 arma_warn_unused
 arma_inline
 const GenCube<typename cube_type::elem_type, gen_randn>
-randn(const SizeCube& s, const typename arma_Cube_only<cube_type>::result* junk = 0)
+randn(const SizeCube& s, const typename arma_Cube_only<cube_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();  
   arma_ignore(junk);

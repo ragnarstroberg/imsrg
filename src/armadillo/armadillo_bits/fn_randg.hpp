@@ -23,76 +23,50 @@ template<typename obj_type>
 arma_warn_unused
 inline
 obj_type
-randg(const uword n_rows, const uword n_cols, const distr_param& param = distr_param(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk = 0)
+randg(const uword n_rows, const uword n_cols, const distr_param& param = distr_param(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);
   
-  #if defined(ARMA_USE_CXX11)
+  typedef typename obj_type::elem_type eT;
+  
+  if(is_Col<obj_type>::value)
     {
-    if(is_Col<obj_type>::value)
-      {
-      arma_debug_check( (n_cols != 1), "randg(): incompatible size" );
-      }
-    else
-    if(is_Row<obj_type>::value)
-      {
-      arma_debug_check( (n_rows != 1), "randg(): incompatible size" );
-      }
-    
-    obj_type out(n_rows, n_cols);
-    
-    double a;
-    double b;
-    
-    if(param.state == 0)
-      {
-      a = double(1);
-      b = double(1);
-      }
-    else
-    if(param.state == 1)
-      {
-      a = double(param.a_int);
-      b = double(param.b_int);
-      }
-    else
-      {
-      a = param.a_double;
-      b = param.b_double;
-      }
-    
-    arma_debug_check( ((a <= double(0)) || (b <= double(0))), "randg(): a and b must be greater than zero" );
-    
-    #if defined(ARMA_USE_EXTERN_CXX11_RNG)
-      {
-      arma_rng_cxx11_instance.randg_fill(out.memptr(), out.n_elem, a, b);
-      }
-    #else
-      {
-      arma_rng_cxx11 local_arma_rng_cxx11_instance;
-      
-      typedef typename arma_rng_cxx11::seed_type seed_type;
-      
-      local_arma_rng_cxx11_instance.set_seed( seed_type(arma_rng::randi<seed_type>()) );
-      
-      local_arma_rng_cxx11_instance.randg_fill(out.memptr(), out.n_elem, a, b);
-      }
-    #endif
-    
-    return out;
+    arma_debug_check( (n_cols != 1), "randg(): incompatible size" );
     }
-  #else
+  else
+  if(is_Row<obj_type>::value)
     {
-    arma_ignore(n_rows);
-    arma_ignore(n_cols);
-    arma_ignore(param);
-    
-    arma_stop_logic_error("randg(): C++11 compiler required");
-    
-    return obj_type();
+    arma_debug_check( (n_rows != 1), "randg(): incompatible size" );
     }
-  #endif
+  
+  obj_type out(n_rows, n_cols, arma_nozeros_indicator());
+  
+  double a;
+  double b;
+  
+  if(param.state == 0)
+    {
+    a = double(1);
+    b = double(1);
+    }
+  else
+  if(param.state == 1)
+    {
+    a = double(param.a_int);
+    b = double(param.b_int);
+    }
+  else
+    {
+    a = param.a_double;
+    b = param.b_double;
+    }
+  
+  arma_debug_check( ((a <= double(0)) || (b <= double(0))), "randg(): a and b must be greater than zero" );
+  
+  arma_rng::randg<eT>::fill(out.memptr(), out.n_elem, a, b);
+  
+  return out;
   }
 
 
@@ -101,7 +75,7 @@ template<typename obj_type>
 arma_warn_unused
 inline
 obj_type
-randg(const SizeMat& s, const distr_param& param = distr_param(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk = 0)
+randg(const SizeMat& s, const distr_param& param = distr_param(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);
@@ -115,20 +89,16 @@ template<typename obj_type>
 arma_warn_unused
 inline
 obj_type
-randg(const uword n_elem, const distr_param& param = distr_param(), const arma_empty_class junk1 = arma_empty_class(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk2 = 0)
+randg(const uword n_elem, const distr_param& param = distr_param(), const arma_empty_class junk1 = arma_empty_class(), const typename arma_Mat_Col_Row_only<obj_type>::result* junk2 = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk1);
   arma_ignore(junk2);
   
-  if(is_Row<obj_type>::value)
-    {
-    return randg<obj_type>(1, n_elem, param);
-    }
-  else
-    {
-    return randg<obj_type>(n_elem, 1, param);
-    }
+  const uword n_rows = (is_Row<obj_type>::value) ? uword(1) : n_elem;
+  const uword n_cols = (is_Row<obj_type>::value) ? n_elem   : uword(1);
+  
+  return randg<obj_type>(n_rows, n_cols, param);
   }
 
 
@@ -196,67 +166,40 @@ template<typename cube_type>
 arma_warn_unused
 inline
 cube_type
-randg(const uword n_rows, const uword n_cols, const uword n_slices, const distr_param& param = distr_param(), const typename arma_Cube_only<cube_type>::result* junk = 0)
+randg(const uword n_rows, const uword n_cols, const uword n_slices, const distr_param& param = distr_param(), const typename arma_Cube_only<cube_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);
   
-  #if defined(ARMA_USE_CXX11)
-    {
-    cube_type out(n_rows, n_cols, n_slices);
+  typedef typename cube_type::elem_type eT;
   
-    double a;
-    double b;
-    
-    if(param.state == 0)
-      {
-      a = double(1);
-      b = double(1);
-      }
-    else
-    if(param.state == 1)
-      {
-      a = double(param.a_int);
-      b = double(param.b_int);
-      }
-    else
-      {
-      a = param.a_double;
-      b = param.b_double;
-      }
-    
-    arma_debug_check( ((a <= double(0)) || (b <= double(0))), "randg(): a and b must be greater than zero" );
-    
-    #if defined(ARMA_USE_EXTERN_CXX11_RNG)
-      {
-      arma_rng_cxx11_instance.randg_fill(out.memptr(), out.n_elem, a, b);
-      }
-    #else
-      {
-      arma_rng_cxx11 local_arma_rng_cxx11_instance;
-      
-      typedef typename arma_rng_cxx11::seed_type seed_type;
-      
-      local_arma_rng_cxx11_instance.set_seed( seed_type(arma_rng::randi<seed_type>()) );
-      
-      local_arma_rng_cxx11_instance.randg_fill(out.memptr(), out.n_elem, a, b);
-      }
-    #endif
-    
-    return out;
-    }
-  #else
+  cube_type out(n_rows, n_cols, n_slices, arma_nozeros_indicator());
+  
+  double a;
+  double b;
+  
+  if(param.state == 0)
     {
-    arma_ignore(n_rows);
-    arma_ignore(n_cols);
-    arma_ignore(n_slices);
-    arma_ignore(param);
-    
-    arma_stop_logic_error("randg(): C++11 compiler required");
-    
-    return cube_type();
+    a = double(1);
+    b = double(1);
     }
-  #endif
+  else
+  if(param.state == 1)
+    {
+    a = double(param.a_int);
+    b = double(param.b_int);
+    }
+  else
+    {
+    a = param.a_double;
+    b = param.b_double;
+    }
+  
+  arma_debug_check( ((a <= double(0)) || (b <= double(0))), "randg(): a and b must be greater than zero" );
+  
+  arma_rng::randg<eT>::fill(out.memptr(), out.n_elem, a, b);
+  
+  return out;
   }
 
 
@@ -265,7 +208,7 @@ template<typename cube_type>
 arma_warn_unused
 inline
 cube_type
-randg(const SizeCube& s, const distr_param& param = distr_param(), const typename arma_Cube_only<cube_type>::result* junk = 0)
+randg(const SizeCube& s, const distr_param& param = distr_param(), const typename arma_Cube_only<cube_type>::result* junk = nullptr)
   {
   arma_extra_debug_sigprint();
   arma_ignore(junk);

@@ -14,24 +14,28 @@
 // ------------------------------------------------------------------------
 
 
-//! \addtogroup spglue_elem_helper
-//! @{
+namespace newarp
+{
 
 
-
-class spglue_elem_helper
-  : public traits_glue_default
+//! This class implements the eigen solver for real symmetric matrices in the shift-and-invert mode.
+template<typename eT, int SelectionRule, typename OpType>
+class SymEigsShiftSolver : public SymEigsSolver<eT, SelectionRule, OpType>
   {
+  private:
+
+  const eT sigma;
+
+  // Sort the first nev Ritz pairs in ascending algebraic order
+  // This is used to return the final results
+  void sort_ritzpair();
+
+
   public:
-  
-  template<typename T1, typename T2>
-  arma_hot inline static uword max_n_nonzero_plus(const SpProxy<T1>& pa, const SpProxy<T2>& pb);
-  
-  template<typename T1, typename T2>
-  arma_hot inline static uword max_n_nonzero_schur(const SpProxy<T1>& pa, const SpProxy<T2>& pb);
+
+  //! Constructor to create a solver object.
+  inline SymEigsShiftSolver(const OpType& op_, uword nev_, uword ncv_, const eT sigma_);
   };
 
 
-
-//! @}
-
+}  // namespace newarp

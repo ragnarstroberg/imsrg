@@ -19,6 +19,7 @@
 
 
 
+// TODO: split into seperate op_trimatu and op_trimatl classes ?
 class op_trimat
   : public traits_op_default
   {
@@ -31,17 +32,6 @@ class op_trimat
   
   template<typename T1>
   inline static void apply(Mat<typename T1::elem_type>& out, const Op<T1,op_trimat>& in);
-  
-  template<typename T1>
-  inline static void apply(Mat<typename T1::elem_type>& out, const Op<Op<T1,op_htrans>, op_trimat>& in);
-  
-  //
-  
-  template<typename eT>
-  inline static void apply_htrans(Mat<eT>& out, const Mat<eT>& A, const bool upper, const typename arma_not_cx<eT>::result* junk = 0);
-  
-  template<typename eT>
-  inline static void apply_htrans(Mat<eT>& out, const Mat<eT>& A, const bool upper, const typename arma_cx_only<eT>::result* junk = 0);
   };
 
 

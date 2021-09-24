@@ -20,7 +20,7 @@
 
 //! Class for storing data required to extract and set the diagonals of a sparse matrix
 template<typename eT>
-class spdiagview : public SpBase<eT, spdiagview<eT> >
+class spdiagview : public SpBase< eT, spdiagview<eT> >
   {
   public:
   
@@ -29,9 +29,9 @@ class spdiagview : public SpBase<eT, spdiagview<eT> >
   
   arma_aligned const SpMat<eT>& m;
   
-  static const bool is_row  = false;
-  static const bool is_col  = true;
-  static const bool is_xvec = false;
+  static constexpr bool is_row  = false;
+  static constexpr bool is_col  = true;
+  static constexpr bool is_xvec = false;
   
   const uword row_offset;
   const uword col_offset;
@@ -39,7 +39,7 @@ class spdiagview : public SpBase<eT, spdiagview<eT> >
   const uword n_rows;     // equal to n_elem
   const uword n_elem;
   
-  static const uword n_cols = 1;
+  static constexpr uword n_cols = 1;
   
   
   protected:
@@ -50,6 +50,7 @@ class spdiagview : public SpBase<eT, spdiagview<eT> >
   public:
   
   inline ~spdiagview();
+  inline  spdiagview() = delete;
   
   inline void operator=(const spdiagview& x);
   
@@ -86,6 +87,12 @@ class spdiagview : public SpBase<eT, spdiagview<eT> >
   inline eT                   operator()(const uword in_n_row, const uword in_n_col) const;
   
   
+  inline void replace(const eT old_val, const eT new_val);
+  
+  inline void clean(const pod_type threshold);
+  
+  inline void clamp(const eT min_val, const eT max_val);
+  
   inline void fill(const eT val);
   inline void zeros();
   inline void ones();
@@ -97,10 +104,7 @@ class spdiagview : public SpBase<eT, spdiagview<eT> >
   inline static void extract(  Mat<eT>& out, const spdiagview& in);
   
   
-  private:
-  
   friend class SpMat<eT>;
-  spdiagview();
   };
 
 

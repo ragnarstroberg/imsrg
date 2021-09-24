@@ -27,19 +27,28 @@ class Row : public Mat<eT>
   typedef eT                                elem_type;
   typedef typename get_pod_type<eT>::result pod_type;
   
-  static const bool is_col  = false;
-  static const bool is_row  = true;
-  static const bool is_xvec = false;
+  static constexpr bool is_col  = false;
+  static constexpr bool is_row  = true;
+  static constexpr bool is_xvec = false;
   
-  inline          Row();
-  inline          Row(const Row<eT>& X);
+  inline Row();
+  inline Row(const Row<eT>& X);
+  
   inline explicit Row(const uword N);
   inline explicit Row(const uword in_rows, const uword in_cols);
   inline explicit Row(const SizeMat& s);
   
+  template<bool do_zeros> inline explicit Row(const uword N,                            const arma_initmode_indicator<do_zeros>&);
+  template<bool do_zeros> inline explicit Row(const uword in_rows, const uword in_cols, const arma_initmode_indicator<do_zeros>&);
+  template<bool do_zeros> inline explicit Row(const SizeMat& s,                         const arma_initmode_indicator<do_zeros>&);
+  
   template<typename fill_type> inline Row(const uword n_elem,                       const fill::fill_class<fill_type>& f);
   template<typename fill_type> inline Row(const uword in_rows, const uword in_cols, const fill::fill_class<fill_type>& f);
   template<typename fill_type> inline Row(const SizeMat& s,                         const fill::fill_class<fill_type>& f);
+  
+  inline Row(const uword N,                            const fill::scalar_holder<eT> f);
+  inline Row(const uword in_rows, const uword in_cols, const fill::scalar_holder<eT> f);
+  inline Row(const SizeMat& s,                         const fill::scalar_holder<eT> f);
   
   inline            Row(const char*        text);
   inline Row& operator=(const char*        text);
@@ -50,13 +59,11 @@ class Row : public Mat<eT>
   inline            Row(const std::vector<eT>& x);
   inline Row& operator=(const std::vector<eT>& x);
   
-  #if defined(ARMA_USE_CXX11)
   inline            Row(const std::initializer_list<eT>& list);
   inline Row& operator=(const std::initializer_list<eT>& list);
   
   inline            Row(Row&& m);
   inline Row& operator=(Row&& m);
-  #endif
   
   inline Row& operator=(const eT val);
   inline Row& operator=(const Row& X);
@@ -79,7 +86,7 @@ class Row : public Mat<eT>
   inline            Row(const subview_cube<eT>& X);
   inline Row& operator=(const subview_cube<eT>& X);
   
-  inline mat_injector<Row> operator<<(const eT val);
+  arma_cold inline mat_injector<Row> operator<<(const eT val);
   
   arma_inline const Op<Row<eT>,op_htrans>  t() const;
   arma_inline const Op<Row<eT>,op_htrans> ht() const;
@@ -173,7 +180,7 @@ class Row<eT>::fixed : public Row<eT>
   {
   private:
   
-  static const bool use_extra = (fixed_n_elem > arma_config::mat_prealloc);
+  static constexpr bool use_extra = (fixed_n_elem > arma_config::mat_prealloc);
   
   arma_align_mem eT mem_local_extra[ (use_extra) ? fixed_n_elem : 1 ];
   
@@ -185,9 +192,9 @@ class Row<eT>::fixed : public Row<eT>
   typedef eT                                elem_type;
   typedef typename get_pod_type<eT>::result pod_type;
   
-  static const bool is_col  = false;
-  static const bool is_row  = true;
-  static const bool is_xvec = false;
+  static constexpr bool is_col  = false;
+  static constexpr bool is_row  = true;
+  static constexpr bool is_xvec = false;
   
   static const uword n_rows;  // value provided below the class definition
   static const uword n_cols;  // value provided below the class definition
@@ -197,6 +204,7 @@ class Row<eT>::fixed : public Row<eT>
   arma_inline fixed(const fixed<fixed_n_elem>& X);
        inline fixed(const subview_cube<eT>& X);
   
+                                     inline fixed(const fill::scalar_holder<eT> f);
   template<typename fill_type>       inline fixed(const fill::fill_class<fill_type>& f);
   template<typename T1>              inline fixed(const Base<eT,T1>& A);
   template<typename T1, typename T2> inline fixed(const Base<pod_type,T1>& A, const Base<pod_type,T2>& B);
@@ -215,10 +223,8 @@ class Row<eT>::fixed : public Row<eT>
   
   using Row<eT>::operator();
   
-  #if defined(ARMA_USE_CXX11)
-    inline          fixed(const std::initializer_list<eT>& list);
-    inline Row& operator=(const std::initializer_list<eT>& list);
-  #endif
+  inline          fixed(const std::initializer_list<eT>& list);
+  inline Row& operator=(const std::initializer_list<eT>& list);
   
   arma_inline Row& operator=(const fixed<fixed_n_elem>& X);
   

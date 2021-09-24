@@ -19,18 +19,18 @@
 
 
 
-#define ARMA_VERSION_MAJOR 9
-#define ARMA_VERSION_MINOR 850
-#define ARMA_VERSION_PATCH 1
-#define ARMA_VERSION_NAME  "Pyrocumulus Wrath"
+#define ARMA_VERSION_MAJOR 10
+#define ARMA_VERSION_MINOR 6
+#define ARMA_VERSION_PATCH 2
+#define ARMA_VERSION_NAME  "Keep Calm"
 
 
 
 struct arma_version
   {
-  static const unsigned int major = ARMA_VERSION_MAJOR;
-  static const unsigned int minor = ARMA_VERSION_MINOR;
-  static const unsigned int patch = ARMA_VERSION_PATCH;
+  static constexpr unsigned int major = ARMA_VERSION_MAJOR;
+  static constexpr unsigned int minor = ARMA_VERSION_MINOR;
+  static constexpr unsigned int patch = ARMA_VERSION_PATCH;
   
   static
   inline

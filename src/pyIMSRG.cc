@@ -334,12 +334,20 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetAverageHFPotential",&HartreeFock::GetAverageHFPotential)
       .def("GetValence3B",&HartreeFock::GetValence3B)
       .def("FreeVmon",&HartreeFock::FreeVmon)
+      .def("UpdateDensityMatrix",&HartreeFock::UpdateDensityMatrix)
+      .def("UpdateF",&HartreeFock::UpdateF)
+      .def("BuildMonopoleV",&HartreeFock::BuildMonopoleV)
+      .def("CalcEHF",&HartreeFock::CalcEHF)
+      .def("PrintEHF",&HartreeFock::PrintEHF)
+      .def("FillLowestOrbits",&HartreeFock::FillLowestOrbits)
       .def_static("Vmon3Hash",&HartreeFock::Vmon3Hash)
  // Modifying arguments which were passed by reference causes trouble in python, so instead we bind a lambda function and return a tuple
       .def_static("Vmon3UnHash", [](uint64_t key) { int a,b,c,d,e,f; HartreeFock::Vmon3UnHash(key,a,b,c,d,e,f); return std::make_tuple(a,b,c,d,e,f);}  )
       .def_readonly("EHF",&HartreeFock::EHF)
       .def_readonly("F",&HartreeFock::F) // Fock matrix
-      .def_readonly("C",&HartreeFock::C) // Unitary transformation
+      .def_readonly("rho",&HartreeFock::rho) // density matrix
+//      .def_readonly("C",&HartreeFock::C) // Unitary transformation
+      .def_readwrite("C",&HartreeFock::C) // Unitary transformation
       .def_readwrite("Vmon3_keys",&HartreeFock::Vmon3_keys)
       .def_readwrite("Vmon3",&HartreeFock::Vmon3)
    ;

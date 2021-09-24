@@ -21,7 +21,7 @@
 //! Class for storing data required to construct or apply operations to a submatrix
 //! (i.e. where the submatrix starts and ends as well as a reference/pointer to the original matrix),
 template<typename eT>
-class subview : public Base<eT, subview<eT> >
+class subview : public Base< eT, subview<eT> >
   {
   public:
   
@@ -30,9 +30,9 @@ class subview : public Base<eT, subview<eT> >
   
   arma_aligned const Mat<eT>& m;
   
-  static const bool is_row  = false;
-  static const bool is_col  = false;
-  static const bool is_xvec = false;
+  static constexpr bool is_row  = false;
+  static constexpr bool is_col  = false;
+  static constexpr bool is_xvec = false;
   
   const uword aux_row1;
   const uword aux_col1;
@@ -49,6 +49,10 @@ class subview : public Base<eT, subview<eT> >
   public:
   
   inline ~subview();
+  inline  subview() = delete;
+  
+  inline  subview(const subview&  in);
+  inline  subview(      subview&& in);
   
   template<typename op_type             > inline void inplace_op(const eT           val                        );
   template<typename op_type, typename T1> inline void inplace_op(const Base<eT,T1>& x,   const char* identifier);
@@ -83,6 +87,9 @@ class subview : public Base<eT, subview<eT> >
   template<typename T1, typename gen_type>
   inline typename enable_if2< is_same_type<typename T1::elem_type, eT>::value, void>::result operator=(const Gen<T1,gen_type>& x);
   
+  inline void operator=(const std::initializer_list<eT>& list);
+  inline void operator=(const std::initializer_list< std::initializer_list<eT> >& list);
+  
   
   inline static void extract(Mat<eT>& out, const subview& in);
   
@@ -101,6 +108,8 @@ class subview : public Base<eT, subview<eT> >
   
   inline void clean(const pod_type threshold);
   
+  inline void clamp(const eT min_val, const eT max_val);
+  
   inline void fill(const eT val);
   inline void zeros();
   inline void ones();
@@ -108,19 +117,25 @@ class subview : public Base<eT, subview<eT> >
   inline void randu();
   inline void randn();
   
-  inline eT  at_alt    (const uword ii) const;
+  inline arma_warn_unused eT  at_alt    (const uword ii) const;
   
-  inline eT& operator[](const uword ii);
-  inline eT  operator[](const uword ii) const;
+  inline arma_warn_unused eT& operator[](const uword ii);
+  inline arma_warn_unused eT  operator[](const uword ii) const;
   
-  inline eT& operator()(const uword ii);
-  inline eT  operator()(const uword ii) const;
+  inline arma_warn_unused eT& operator()(const uword ii);
+  inline arma_warn_unused eT  operator()(const uword ii) const;
   
-  inline eT& operator()(const uword in_row, const uword in_col);
-  inline eT  operator()(const uword in_row, const uword in_col) const;
+  inline arma_warn_unused eT& operator()(const uword in_row, const uword in_col);
+  inline arma_warn_unused eT  operator()(const uword in_row, const uword in_col) const;
   
-  inline eT&         at(const uword in_row, const uword in_col);
-  inline eT          at(const uword in_row, const uword in_col) const;
+  inline arma_warn_unused eT&         at(const uword in_row, const uword in_col);
+  inline arma_warn_unused eT          at(const uword in_row, const uword in_col) const;
+  
+  inline arma_warn_unused eT& front();
+  inline arma_warn_unused eT  front() const;
+  
+  inline arma_warn_unused eT& back();
+  inline arma_warn_unused eT  back() const;
   
   arma_inline       eT* colptr(const uword in_col);
   arma_inline const eT* colptr(const uword in_col) const;
@@ -171,13 +186,11 @@ class subview : public Base<eT, subview<eT> >
   template<typename T1> inline subview_each2< subview<eT>, 0, T1 > each_col(const Base<uword, T1>& indices);
   template<typename T1> inline subview_each2< subview<eT>, 1, T1 > each_row(const Base<uword, T1>& indices);
   
-  #if defined(ARMA_USE_CXX11)
   inline void each_col(const std::function< void(      Col<eT>&) >& F);
   inline void each_col(const std::function< void(const Col<eT>&) >& F) const;
   
   inline void each_row(const std::function< void(      Row<eT>&) >& F);
   inline void each_row(const std::function< void(const Row<eT>&) >& F) const;
-  #endif
   
   inline       diagview<eT> diag(const sword in_id = 0);
   inline const diagview<eT> diag(const sword in_id = 0) const;
@@ -337,10 +350,7 @@ class subview : public Base<eT, subview<eT> >
   inline const_iterator cend() const;
   
   
-  private:
-  
   friend class Mat<eT>;
-  subview();
   };
 
 
@@ -353,15 +363,16 @@ class subview_col : public subview<eT>
   typedef eT                                       elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   
-  static const bool is_row  = false;
-  static const bool is_col  = true;
-  static const bool is_xvec = false;
+  static constexpr bool is_row  = false;
+  static constexpr bool is_col  = true;
+  static constexpr bool is_xvec = false;
   
   const eT* colmem;
   
   inline void operator= (const subview<eT>& x);
   inline void operator= (const subview_col& x);
   inline void operator= (const eT val);
+  inline void operator= (const std::initializer_list<eT>& list);
   
   template<typename T1>
   inline void operator= (const Base<eT,T1>& x);
@@ -420,20 +431,20 @@ class subview_col : public subview<eT>
   inline arma_warn_unused uword index_min() const;
   inline arma_warn_unused uword index_max() const;
   
+  inline  subview_col(const subview_col&  in);
+  inline  subview_col(      subview_col&& in);
+  
   
   protected:
   
   inline subview_col(const Mat<eT>& in_m, const uword in_col);
   inline subview_col(const Mat<eT>& in_m, const uword in_col, const uword in_row1, const uword in_n_rows);
+  inline subview_col() = delete;
   
-  
-  private:
   
   friend class Mat<eT>;
   friend class Col<eT>;
   friend class subview<eT>;
-  
-  subview_col();
   };
 
 
@@ -446,13 +457,14 @@ class subview_row : public subview<eT>
   typedef eT                                       elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   
-  static const bool is_row  = true;
-  static const bool is_col  = false;
-  static const bool is_xvec = false;
+  static constexpr bool is_row  = true;
+  static constexpr bool is_col  = false;
+  static constexpr bool is_xvec = false;
   
   inline void operator= (const subview<eT>& x);
   inline void operator= (const subview_row& x);
   inline void operator= (const eT val);
+  inline void operator= (const std::initializer_list<eT>& list);
   
   template<typename T1>
   inline void operator= (const Base<eT,T1>& x);
@@ -506,40 +518,42 @@ class subview_row : public subview<eT>
   inline typename subview<eT>::const_row_iterator  end() const;
   inline typename subview<eT>::const_row_iterator cend() const;
   
+  inline  subview_row(const subview_row&  in);
+  inline  subview_row(      subview_row&& in);
+  
+  
   protected:
   
   inline subview_row(const Mat<eT>& in_m, const uword in_row);
   inline subview_row(const Mat<eT>& in_m, const uword in_row, const uword in_col1, const uword in_n_cols);
+  inline subview_row() = delete;
   
-  
-  private:
   
   friend class Mat<eT>;
   friend class Row<eT>;
   friend class subview<eT>;
-  
-  subview_row();
   };
 
 
 
 template<typename eT>
-class subview_row_strans : public Base<eT, subview_row_strans<eT> >
+class subview_row_strans : public Base< eT, subview_row_strans<eT> >
   {
   public:
   
   typedef eT                                       elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   
-  static const bool is_row  = false;
-  static const bool is_col  = true;
-  static const bool is_xvec = false;
+  static constexpr bool is_row  = false;
+  static constexpr bool is_col  = true;
+  static constexpr bool is_xvec = false;
   
   arma_aligned const subview_row<eT>& sv_row;
   
-         const uword n_rows;     // equal to n_elem
-         const uword n_elem;
-  static const uword n_cols = 1;
+  const uword n_rows;     // equal to n_elem
+  const uword n_elem;
+  
+  static constexpr uword n_cols = 1;
   
   
   inline explicit subview_row_strans(const subview_row<eT>& in_sv_row);
@@ -558,22 +572,23 @@ class subview_row_strans : public Base<eT, subview_row_strans<eT> >
 
 
 template<typename eT>
-class subview_row_htrans : public Base<eT, subview_row_htrans<eT> >
+class subview_row_htrans : public Base< eT, subview_row_htrans<eT> >
   {
   public:
   
   typedef eT                                       elem_type;
   typedef typename get_pod_type<elem_type>::result pod_type;
   
-  static const bool is_row  = false;
-  static const bool is_col  = true;
-  static const bool is_xvec = false;
+  static constexpr bool is_row  = false;
+  static constexpr bool is_col  = true;
+  static constexpr bool is_xvec = false;
   
   arma_aligned const subview_row<eT>& sv_row;
   
-         const uword n_rows;     // equal to n_elem
-         const uword n_elem;
-  static const uword n_cols = 1;
+  const uword n_rows;     // equal to n_elem
+  const uword n_elem;
+  
+  static constexpr uword n_cols = 1;
   
   
   inline explicit subview_row_htrans(const subview_row<eT>& in_sv_row);
