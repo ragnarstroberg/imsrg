@@ -24,10 +24,10 @@
 #include <iostream>
 #include <iomanip>
 
-// Is this a reasonable place to have this?
-double r2p = 0.770; // effective proton intrinsic charge radius squared
-double r2n = -0.1149; // effective neutron intrisic charge radius squared
-double DarwinFoldy = 0.033; // Darwin-Foldy correction to the charge radius
+//// Is this a reasonable place to have this? No, it isn't. Commented out.
+//double r2p = 0.770; // effective proton intrinsic charge radius squared
+//double r2n = -0.1149; // effective neutron intrisic charge radius squared
+//double DarwinFoldy = 0.033; // Darwin-Foldy correction to the charge radius
 
 
 //////////////////

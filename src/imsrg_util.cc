@@ -2666,8 +2666,6 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   
    Operator Darwin(ModelSpace& modelspace, int Z )
    {
-//     double alpha_FS = 1.0 / 137.035999;
-//     double constants = M_PI * Z * alpha_FS * HBARC*HBARC*HBARC / (2*M_ELECTRON*M_ELECTRON*1e6*1e6) ; // convert to eV. M_PI is 3.1415... not the pion mass
      double constants = PI * Z * ALPHA_FS * HBARC*HBARC*HBARC / (2*M_ELECTRON*M_ELECTRON*1e6*1e6) ; // convert to eV and nanometers.  
      Operator Hdarwin( modelspace,0,0,0,2);
      for (auto a : modelspace.all_orbits )
