@@ -139,7 +139,7 @@ class Operator
   int GetTRank()const {return rank_T;};
   int GetParity()const {return parity;};
   int GetNumberLegs()const {return legs;};
-  void SetParticleRank(int pr) {particle_rank = pr;};
+  void SetParticleRank(int pr) { SetNumberLegs(2*pr);};
 //  void SetNumberLegs( int l) {legs = l;};
   void SetNumberLegs( int l);
   void SetQSpaceOrbit( index_t q ) {Q_space_orbit = q;};

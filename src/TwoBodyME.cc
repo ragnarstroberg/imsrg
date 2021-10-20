@@ -11,7 +11,7 @@ TwoBodyME::~TwoBodyME()
 {}
 
 TwoBodyME::TwoBodyME()
-: modelspace(NULL), nChannels(0), hermitian(true),antihermitian(false),
+: modelspace(NULL), nChannels(0), hermitian(true),antihermitian(false),allocated(false),
   rank_J(0), rank_T(0), parity(0)
 {
 //  cout << "Default TwoBodyME constructor" << endl;
@@ -20,7 +20,7 @@ TwoBodyME::TwoBodyME()
 
 TwoBodyME::TwoBodyME(ModelSpace* ms)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
-  hermitian(true), antihermitian(false), rank_J(0), rank_T(0), parity(0)
+  hermitian(true), antihermitian(false),allocated(false), rank_J(0), rank_T(0), parity(0)
 {
   Allocate();
 }
@@ -28,7 +28,7 @@ TwoBodyME::TwoBodyME(ModelSpace* ms)
 
 TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 : modelspace(ms), nChannels(ms->GetNumberTwoBodyChannels()),
-  hermitian(true), antihermitian(false), rank_J(rJ), rank_T(rT), parity(p)
+  hermitian(true), antihermitian(false), allocated(false), rank_J(rJ), rank_T(rT), parity(p)
 {
   Allocate();
 }
@@ -69,6 +69,7 @@ TwoBodyME::TwoBodyME(ModelSpace* ms, int rJ, int rT, int p)
 
 void TwoBodyME::Allocate()
 {
+  nChannels = modelspace->GetNumberTwoBodyChannels();
   MatEl.clear();
   for (size_t ch_bra=0; ch_bra<nChannels;++ch_bra)
   {
@@ -83,6 +84,7 @@ void TwoBodyME::Allocate()
         MatEl[{ch_bra,ch_ket}] =  arma::mat(tbc_bra.GetNumberKets(), tbc_ket.GetNumberKets(), arma::fill::zeros);
      }
   }
+  allocated = true;
 }
 
 void TwoBodyME::Deallocate()
@@ -122,6 +124,7 @@ double TwoBodyME::GetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d) co
 /// This returns the normalized matrix element 
 double TwoBodyME::GetTBME_norm(int ch_bra, int ch_ket, int a, int b, int c, int d) const
 {
+   if (not allocated) return 0;
    TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
    TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
    auto bra_ind = tbc_bra.GetLocalIndex(std::min(a,b),std::max(a,b));
@@ -143,6 +146,7 @@ double TwoBodyME::GetTBME_norm(int ch_bra, int ch_ket, int a, int b, int c, int 
 
 void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, double tbme)
 {
+   if (not allocated)  return;
    TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
    TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
    int bra_ind = tbc_bra.GetLocalIndex(std::min(a,b),std::max(a,b));
@@ -570,6 +574,7 @@ void TwoBodyME::Erase()
 double TwoBodyME::Norm() const
 {
    double nrm = 0;
+   if (not allocated) return 0;
    for ( auto& itmat : MatEl )
    {
       const arma::mat& matrix = itmat.second;

@@ -128,6 +128,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
    if ( use_imsrg3 )  z_particlerank = std::max(z_particlerank, 3);
    ModelSpace& ms = *(Y.GetModelSpace());
    Operator Z( ms, z_Jrank, z_Trank, z_parity, z_particlerank );
+
 //   Operator Z( *(Y.GetModelSpace()), std::max(X.GetJRank(),Y.GetJRank()), std::max(X.GetTRank(),Y.GetTRank()), (X.GetParity()+Y.GetParity())%2, std::max(X.GetParticleRank(),Y.GetParticleRank()) );
 
    if ( (X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()) ) Z.SetAntiHermitian();
@@ -373,12 +374,17 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
 {
 //   std::cout << "!!! " << __func__ << " !!!   particles ranks are " << OpIn.GetParticleRank() << "  and  " << Omega.GetParticleRank() 
 //             << "  PN mode is " << OpIn.ThreeBody.PN_mode << "   and  " << Omega.ThreeBody.PN_mode  << std::endl;
+
    double t_start = omp_get_wtime();
    int max_iter = 40;
    int warn_iter = 12;
    double nx = OpIn.Norm();
    double ny = Omega.Norm();
    Operator OpOut = OpIn;
+   if ( (OpOut.GetNumberLegs()%2==0) and OpOut.GetParticleRank()<2 )
+   {
+     OpOut.SetParticleRank(2);
+   }
 //   if (use_imsrg3 and not OpOut.ThreeBody.is_allocated )
    if (use_imsrg3 and not OpOut.ThreeBody.IsAllocated() )
    {
@@ -395,12 +401,14 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
    }
    if (nx>bch_transform_threshold)
    {
-     Operator OpNested = OpIn;
-     if (use_imsrg3 and not OpNested.ThreeBody.IsAllocated() )
-     {
-        OpNested.SetParticleRank(2);
-        OpNested.ThreeBody.SetMode("pn");
-     }
+//     Operator OpNested = OpIn;
+     Operator OpNested = OpOut;
+//     if (use_imsrg3 and not OpNested.ThreeBody.IsAllocated() )
+//     {
+////        OpNested.SetParticleRank(2); // Why was this like this???
+//        OpNested.SetParticleRank(3);
+//        OpNested.ThreeBody.SetMode("pn");
+//     }
      double epsilon = nx * exp(-2*ny) * bch_transform_threshold / (2*ny); // this should probably be explained somewhere...
      for (int i=1; i<=max_iter; ++i)
      {
@@ -423,6 +431,7 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
 
         OpOut += factorial_denom * OpNested;
   
+
         if (OpOut.rank_J > 0)
         {
             std::cout << "Tensor BCH, i=" << i << "  Norm = " << std::setw(12) << std::setprecision(8) << std::fixed << OpNested.OneBodyNorm() << " " 
@@ -669,6 +678,7 @@ void comm220ss( const Operator& X, const Operator& Y, Operator& Z)
    if (X.IsHermitian() and Y.IsHermitian()) return; // I think this is the case
    if (X.IsAntiHermitian() and Y.IsAntiHermitian()) return; // I think this is the case
    if (Z.GetJRank()>0 or Z.GetTRank()>0 or Z.GetParity()!=0) return;
+
 
    for (int ch=0;ch<Y.nChannels;++ch)
    {

@@ -987,7 +987,6 @@ Operator HartreeFock::TransformToHFBasis( Operator& OpHO)
 
      }
    }
-
    else
    {
      for ( auto& it : OpHO.ThreeLeg.MatEl )

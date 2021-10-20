@@ -443,15 +443,18 @@ Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied ) cons
         Orbit& ok = modelspace->GetOrbit(k);
         opNO.ZeroBody += (ok.j2+1) * sign*ok.occ * OneBody(k,k);
 
-        for (auto& l : occupied)
+        if ( particle_rank>1)
         {
-          if (l<k) continue;
-          Orbit& ol = modelspace->GetOrbit(l);
-          int Jmin = std::abs( ok.j2 - ol.j2)/2;
-          int Jmax = (ok.j2 + ol.j2)/2;
-          for (int J=Jmin; J<=Jmax; J++)
+          for (auto& l : occupied)
           {
-             opNO.ZeroBody +=  (2*J+1) * ok.occ * ol.occ * TwoBody.GetTBME_J_norm(J,J ,k,l,k,l);
+            if (l<k) continue;
+            Orbit& ol = modelspace->GetOrbit(l);
+            int Jmin = std::abs( ok.j2 - ol.j2)/2;
+            int Jmax = (ok.j2 + ol.j2)/2;
+            for (int J=Jmin; J<=Jmax; J++)
+            {
+               opNO.ZeroBody +=  (2*J+1) * ok.occ * ol.occ * TwoBody.GetTBME_J_norm(J,J ,k,l,k,l);
+            }
           }
         }
      }
@@ -532,7 +535,6 @@ Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied ) cons
 
    if (hermitian) opNO.Symmetrize();
    if (antihermitian) opNO.AntiSymmetrize();
-
 
    return opNO;
 }
@@ -830,10 +832,12 @@ void Operator::SetNumberLegs( int l)
   if ( l == old_legs ) return;
   if (legs%2==0)
   {
+    if ( old_legs < 4) TwoBody = TwoBodyME(modelspace,rank_J,rank_T,parity);
     if ( TwoBody.MatEl.size()<1)    TwoBody.Allocate();
     ThreeLeg.Deallocate();
 //    if (legs>5 and (not ThreeBody.is_allocated)) ThreeBody.Allocate();
     if (legs>5 and (not ThreeBody.IsAllocated())) ThreeBody.Allocate();
+    particle_rank = 2*l;
   }
   else
   {

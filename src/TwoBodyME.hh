@@ -56,6 +56,7 @@ class TwoBodyME
   size_t nChannels;
   bool hermitian;
   bool antihermitian;
+  bool allocated;
   int rank_J;
   int rank_T;
   int parity;
