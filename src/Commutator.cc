@@ -2102,7 +2102,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
            for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
            {
              size_t ch_abi = Z.modelspace->GetThreeBodyChannelIndex( twoJ, (tbc_ab.parity +oi.l)%2, tbc_ab.Tz*2 + oi.tz2 );
-             if (ch_abi==-1) continue; // maybe that channel doesn't exist
+             if (ch_abi==size_t(-1)) continue; // maybe that channel doesn't exist
              auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch_abi);
 //             size_t index_abi = Tbc.GetLocalIndex(a,b,i,Jab);
 //             size_t index_abj = Tbc.GetLocalIndex(a,b,j,Jab);
@@ -2651,9 +2651,9 @@ size_t Hash_comm232_key( std::array<size_t,5>& kljJJ )
 void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
-  auto& X2 = X.TwoBody;
+//  auto& X2 = X.TwoBody;
   auto& X3 = X.ThreeBody;
-  auto& Y2 = Y.TwoBody;
+//  auto& Y2 = Y.TwoBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
 
@@ -2667,7 +2667,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
-  int nch = Z.modelspace->GetNumberTwoBodyChannels();
+  size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
 //  std::cout << __func__ << " begin" << std::endl;
 
   // first, enumerate the one-body channels |i> => ji,parityi,tzi
@@ -2721,7 +2721,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
           Ket& ket_kl = tbc_kl.GetKet(iket_kl);
           double de_k = std::abs( 2*ket_kl.op->n + ket_kl.op->l - e_fermi[ket_kl.op->tz2]);
           double de_l = std::abs( 2*ket_kl.oq->n + ket_kl.oq->l - e_fermi[ket_kl.oq->tz2]);
-          double nk = ket_kl.op->occ;
+//          double nk = ket_kl.op->occ;
 //          double nl = ket_kl.oq->occ;
           double occnat_k = ket_kl.op->occ_nat;
           double occnat_l = ket_kl.oq->occ_nat;
@@ -2805,8 +2805,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       double de_a = std::abs( 2*oa.n + oa.l - e_fermi[oa.tz2]);
       double de_b = std::abs( 2*ob.n + ob.l - e_fermi[ob.tz2]);
       double de_c = std::abs( 2*oc.n + oc.l - e_fermi[oc.tz2]);
-      double occnat_a = oa.occ_nat;
-      double occnat_b = ob.occ_nat;
+//      double occnat_a = oa.occ_nat;
+//      double occnat_b = ob.occ_nat;
       double occnat_c = oc.occ_nat;
       int j2c = oc.j2;
       for (size_t ind_klj=0; ind_klj<dim_klj; ind_klj++)
@@ -2910,8 +2910,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         Orbit& ol = Z.modelspace->GetOrbit(l);
         double ji = 0.5 * j2i;
         double jj = 0.5 * oj.j2;
-        double jk = 0.5 * ok.j2;
-        double jl = 0.5 * ol.j2;
+//        double jk = 0.5 * ok.j2;
+//        double jl = 0.5 * ol.j2;
 
         double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
         double de_k = std::abs( 2*ok.n + ok.l - e_fermi[ok.tz2]);
@@ -2956,7 +2956,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
 //               xabjklc += recouple_bra*recouple_ket * X3.GetME_pn_ch(ch_check,ch_check, ibra_abj, iket_klc );
                if (x_has_3 ) xabjklc += recouple_bra*recouple_ket * X3.GetME_pn_ch(ch_check,ch_check, ibra_abj, iket_klc );
-               yabjklc += recouple_bra*recouple_ket * Y3.GetME_pn_ch(ch_check,ch_check, ibra_abj, iket_klc );
+               if (y_has_3 ) yabjklc += recouple_bra*recouple_ket * Y3.GetME_pn_ch(ch_check,ch_check, ibra_abj, iket_klc );
              }
            }
 
@@ -2997,7 +2997,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       auto& ZMat_i = ZMAT_list.at({oi.j2,oi.l%2,oi.tz2});
       auto& ZMat_j = ZMAT_list.at({oj.j2,oj.l%2,oj.tz2});
 
-      for (int iket=ibra; iket<nkets; iket++)
+      for (size_t iket=ibra; iket<nkets; iket++)
       {
         Ket& ket = tbc.GetKet(iket);
         size_t k = ket.p;
@@ -3052,9 +3052,9 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
-  auto& X2 = X.TwoBody;
+//  auto& X2 = X.TwoBody;
   auto& X3 = X.ThreeBody;
-  auto& Y2 = Y.TwoBody;
+//  auto& Y2 = Y.TwoBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
 
@@ -3131,7 +3131,7 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
     for (int ch_ab=0; ch_ab<nch; ch_ab++)
     {
       auto& tbc_ab = X.modelspace->GetTwoBodyChannel(ch_ab);
-      int Jab = tbc_ab.J;
+//      int Jab = tbc_ab.J;
       size_t nkets_ab = tbc_ab.GetNumberKets();
       for ( size_t iket_ab=0; iket_ab<nkets_ab; iket_ab++ )
       {
@@ -3140,14 +3140,14 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
         int b=ket_ab.q;
         Orbit& oa = Z.modelspace->GetOrbit(a);
         Orbit& ob = Z.modelspace->GetOrbit(b);
-        int ea = 2*oa.n + oa.l;
-        int eb = 2*ob.n + ob.l;
+//        int ea = 2*oa.n + oa.l;
+//        int eb = 2*ob.n + ob.l;
 
         for (auto c : Z.modelspace->all_orbits )
         {
           Orbit& oc = Z.modelspace->GetOrbit(c);
-          double jc = 0.5*oc.j2;
-          int ec = 2*oc.n + oc.l;
+//          double jc = 0.5*oc.j2;
+//          int ec = 2*oc.n + oc.l;
 //          if ( (std::abs( ea-e_fermi[oa.tz2]) + std::abs(eb-e_fermi[ob.tz2]) + std::abs(ec-e_fermi[oc.tz2])) > Z.modelspace->GetdE3max() ) continue;
           double occfactor = oa.occ * ob.occ * (1-oc.occ) + (1-oa.occ) * (1-ob.occ) * oc.occ;
           if ( std::abs(occfactor) < 1e-6 ) continue;
@@ -3196,8 +3196,8 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
         double d_ea = std::abs( 2*oa.n +oa.l - e_fermi[oa.tz2]);
         double d_eb = std::abs( 2*ob.n +ob.l - e_fermi[ob.tz2]);
         double d_ec = std::abs( 2*oc.n +oc.l - e_fermi[oc.tz2]);
-        double occnat_a = oa.occ_nat;
-        double occnat_b = ob.occ_nat;
+//        double occnat_a = oa.occ_nat;
+//        double occnat_b = ob.occ_nat;
         double occnat_c = oc.occ_nat;
     for ( size_t ind_i=0; ind_i<nij; ind_i++ )
     {
@@ -3206,7 +3206,7 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
       Orbit& oi = X.modelspace->GetOrbit(i);
       double ji = 0.5*oi.j2;
       double d_ei = std::abs( 2*oi.n +oi.l - e_fermi[oi.tz2]);
-      double occnat_i = oi.occ_nat;
+//      double occnat_i = oi.occ_nat;
 
 
         if ( (d_ea+d_eb+d_ei) > Z.modelspace->GetdE3max() ) continue;
@@ -3323,8 +3323,8 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
       int j=bra.q;
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
-      double ji = 0.5*oi.j2;
-      double jj = 0.5*oj.j2;
+//      double ji = 0.5*oi.j2;
+//      double jj = 0.5*oj.j2;
       size_t ind_i = ij_orbits_lookup[i];
       size_t ind_j = ij_orbits_lookup[j];
       size_t ind_ji = jvals_lookup[oi.j2];
@@ -3337,8 +3337,8 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
         int l = ket.q;
         Orbit& ok = Z.modelspace->GetOrbit(k);
         Orbit& ol = Z.modelspace->GetOrbit(l);
-        double jk = 0.5*ok.j2;
-        double jl = 0.5*ol.j2;
+//        double jk = 0.5*ok.j2;
+//        double jl = 0.5*ol.j2;
         size_t ind_k = ij_orbits_lookup[k];
         size_t ind_l = ij_orbits_lookup[l];
         size_t ind_jk = jvals_lookup[ok.j2];
@@ -3661,7 +3661,7 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (d_ea+d_eb+d_ec)>Z.modelspace->dE3max) continue;
         if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c) ) < Z.modelspace->GetOccNat3Cut() ) continue;
         if ( (std::abs(occ_abc)==0) and (std::abs(occ_abc_bar)==0) ) continue;
-        int Jab = ket_abc.Jpq;
+//        int Jab = ket_abc.Jpq;
 
         double symm_factor = 6;  // 6 possible orderings of abc. If a==b, then only 3 orderings, and if a==b==c, then only 1 ordering.
         if ( a==b and b==c )
@@ -3913,19 +3913,19 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
       index_t nKets_cc = tbc_CC.GetNumberKets();
 
       int J_ph = tbc_CC.J;
-      int parity_ph = tbc_CC.parity;
-      int Tz_ph = tbc_CC.Tz;
+//      int parity_ph = tbc_CC.parity;
+//      int Tz_ph = tbc_CC.Tz;
 
       size_t n_abcd_states = 0;
 
       // count the abcd states that can act in this channel
-      for (int ch_ab=0; ch_ab<nch; ch_ab++)
+      for (size_t ch_ab=0; ch_ab<nch; ch_ab++)
       {
         TwoBodyChannel& tbc_ab = Z.modelspace->GetTwoBodyChannel(ch_ab);
         int Jab = tbc_ab.J;
         int nkets_ab = tbc_ab.GetNumberKets();
 
-        for (int ch_cd=0; ch_cd<nch; ch_cd++)
+        for (size_t ch_cd=0; ch_cd<nch; ch_cd++)
         {
           TwoBodyChannel& tbc_cd = Z.modelspace->GetTwoBodyChannel(ch_cd);
           int Jcd = tbc_cd.J;
@@ -3936,8 +3936,8 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
           for (int iket_ab=0; iket_ab<nkets_ab; iket_ab++)
           {
             Ket& ket_ab = tbc_ab.GetKet(iket_ab);
-            int a = ket_ab.p;
-            int b = ket_ab.q;
+//            int a = ket_ab.p;
+//            int b = ket_ab.q;
             double na = ket_ab.op->occ;
             double nb = ket_ab.oq->occ;
             double occnat_a = ket_ab.op->occ_nat;
@@ -3951,8 +3951,8 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
             for (int iket_cd=0; iket_cd<nkets_cd; iket_cd++)
             {
               Ket& ket_cd = tbc_cd.GetKet(iket_cd);
-              int c = ket_cd.p;
-              int d = ket_cd.q;
+//              int c = ket_cd.p;
+//              int d = ket_cd.q;
               double nc = ket_cd.op->occ;
               double nd = ket_cd.oq->occ;
               double occnat_c = ket_cd.op->occ_nat;
@@ -3993,7 +3993,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
         int j2j = oj.j2;
         double ji = 0.5*j2i;
         double jj = 0.5*j2j;
-        int phase_ij = Z.modelspace->phase( (j2i+j2j)/2);
+//        int phase_ij = Z.modelspace->phase( (j2i+j2j)/2);
 
         double d_ei = std::abs(2*oi.n + oi.l - e_fermi[oi.tz2]);
         double d_ej = std::abs(2*oj.n + oj.l - e_fermi[oj.tz2]);
@@ -4001,14 +4001,14 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
         double occnat_j = oj.occ_nat;
 
         size_t ind_abcd = -1;
-        for (int ch_ab=0; ch_ab<nch; ch_ab++)
+        for (size_t ch_ab=0; ch_ab<nch; ch_ab++)
         {
           TwoBodyChannel& tbc_ab = Z.modelspace->GetTwoBodyChannel(ch_ab);
           int Jab = tbc_ab.J;
           int nkets_ab = tbc_ab.GetNumberKets();
 
 
-          for (int ch_cd=0; ch_cd<nch; ch_cd++)
+          for (size_t ch_cd=0; ch_cd<nch; ch_cd++)
           {
             TwoBodyChannel& tbc_cd = Z.modelspace->GetTwoBodyChannel(ch_cd);
             int Jcd = tbc_cd.J;
@@ -4849,9 +4849,9 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
-  int norbs = Z.modelspace->GetNumberOrbits();
-  double X3NORM = X3.Norm();
-  double Y3NORM = Y3.Norm();
+//  int norbs = Z.modelspace->GetNumberOrbits();
+//  double X3NORM = X3.Norm();
+//  double Y3NORM = Y3.Norm();
   bool x3_allocated = X3.IsAllocated();
   bool y3_allocated = Y3.IsAllocated();
 //  bool x3_allocated = X3.is_allocated;
@@ -4862,7 +4862,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
     auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
-    int twoJ = Tbc.twoJ;
+//    int twoJ = Tbc.twoJ;
     size_t nkets = Tbc.GetNumberKets();
     std::vector<size_t> kets_kept;
     std::map<size_t,size_t> kept_lookup;
@@ -4899,7 +4899,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
       Orbit& ok = Z.modelspace->GetOrbit(k);
-      int Jij = bra.Jpq;
+//      int Jij = bra.Jpq;
       double d_ei = std::abs(2*oi.n + oi.l - e_fermi.at(oi.tz2));
       double d_ej = std::abs(2*oj.n + oj.l - e_fermi.at(oj.tz2));
       double d_ek = std::abs(2*ok.n + ok.l - e_fermi.at(ok.tz2));
@@ -4918,7 +4918,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         std::vector<size_t> ket_list;
         std::vector<double> recouple_list;
         
-        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, a, j, k,  ket_list,  recouple_list );
+//        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, a, j, k,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
           auto iter_find = kept_lookup.find( ket_list[ilist] );
@@ -4939,7 +4939,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (occnat_i*(1-occnat_i) * occnat_a*(1-occnat_a) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) continue;
         std::vector<size_t> ket_list;
         std::vector<double> recouple_list;
-        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, a, k,  ket_list,  recouple_list );
+//        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, a, k,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
           auto iter_find = kept_lookup.find( ket_list[ilist] );
@@ -4959,7 +4959,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_a*(1-occnat_a) ) < Z.modelspace->GetOccNat3Cut() ) continue;
         std::vector<size_t> ket_list;
         std::vector<double> recouple_list;
-        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, j, a,  ket_list,  recouple_list );
+//        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, j, a,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
           auto iter_find = kept_lookup.find( ket_list[ilist] );
@@ -5120,7 +5120,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
   double t_internal = omp_get_wtime();
-  int norbs = Z.modelspace->GetNumberOrbits();
+//  int norbs = Z.modelspace->GetNumberOrbits();
   auto& Z3 = Z.ThreeBody;
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
@@ -5309,7 +5309,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       for (size_t index_a=0; index_a<number_a; index_a++ )
       {
         size_t a = a_list[index_a];
-        Orbit& oa = Z.modelspace->GetOrbit(a);
+//        Orbit& oa = Z.modelspace->GetOrbit(a);
         Xph(Iijn, index_a) = X.TwoBody.GetTBME_J(Jij,i,j,n,a);
         Yph(index_a, Iijn) = Y.TwoBody.GetTBME_J(Jij,n,a,i,j);
 
@@ -5529,7 +5529,7 @@ void comm223ss_new( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
   double t_internal = omp_get_wtime();
-  int norbs = Z.modelspace->GetNumberOrbits();
+//  int norbs = Z.modelspace->GetNumberOrbits();
   auto& Z3 = Z.ThreeBody;
   auto& X2 = X.TwoBody;
   auto& Y2 = Y.TwoBody;
@@ -5772,13 +5772,13 @@ void comm223ss_new( const Operator& X, const Operator& Y, Operator& Z )
                 for (int Jij=Jij_min; Jij<=Jij_max; Jij++)
                 {
                   if ( i==j and Jij%2>0) continue;
-                    size_t key_ijk = hash_key_ijnJ(std::min(i,j),std::max(i,j),k,Jij);
+//                    size_t key_ijk = hash_key_ijnJ(std::min(i,j),std::max(i,j),k,Jij);
                      if ( ch_pph == -1 or ch_pph >= (int)ket_lookup_pph.size() )
                      {
                        std::cout << "TROUBLE line " << __LINE__ << " ijk = " << i << " " << j << " " << k << "   " << Jij
                                  << "   twoJ parity twoTz " << twoJ << " " << parity_ph << " " << twoTz_ph << "  ch = " << ch_pph << std::endl;
                      }
-                     size_t index_ijk = ket_lookup_pph[ch_pph].at(key_ijk );
+//                     size_t index_ijk = ket_lookup_pph[ch_pph].at(key_ijk );
 
 
                   for (int Jlm=Jlm_min; Jlm<=Jlm_max; Jlm++)
@@ -5787,8 +5787,8 @@ void comm223ss_new( const Operator& X, const Operator& Y, Operator& Z )
                     if ( i==l and j==m and k==n and Jlm<Jij) continue;
                     ngood_ijklmn++;
 
-                    size_t key_lmn = hash_key_ijnJ(std::min(l,m),std::max(l,m),n,Jlm);
-                     size_t index_lmn = ket_lookup_pph[ch_pph].at(key_lmn );
+//                    size_t key_lmn = hash_key_ijnJ(std::min(l,m),std::max(l,m),n,Jlm);
+//                     size_t index_lmn = ket_lookup_pph[ch_pph].at(key_lmn );
 
 
                   }// for Jlm
@@ -5846,7 +5846,7 @@ void comm223ss_new( const Operator& X, const Operator& Y, Operator& Z )
       for (size_t index_a=0; index_a<number_a; index_a++ )
       {
         size_t a = a_list[index_a];
-        Orbit& oa = Z.modelspace->GetOrbit(a);
+//        Orbit& oa = Z.modelspace->GetOrbit(a);
         Xph(Iijn, index_a) = X.TwoBody.GetTBME_J(Jij,i,j,n,a);
         Yph(index_a, Iijn) = Y.TwoBody.GetTBME_J(Jij,n,a,i,j);
 
@@ -7003,9 +7003,9 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
-  int norbs = Z.modelspace->GetNumberOrbits();
-  double X3NORM = X3.Norm();
-  double Y3NORM = Y3.Norm();
+//  int norbs = Z.modelspace->GetNumberOrbits();
+//  double X3NORM = X3.Norm();
+//  double Y3NORM = Y3.Norm();
 //  bool x3_allocated = X3.is_allocated;
 //  bool y3_allocated = Y3.is_allocated;
   bool x3_allocated = X3.IsAllocated();
@@ -7100,7 +7100,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               std::vector<size_t> ket_list;
               std::vector<double> recouple_list;
               
-              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, k,  ket_list,  recouple_list );
+//              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, k,  ket_list,  recouple_list );
               for (size_t ilist=0; ilist<ket_list.size(); ilist++)
               {
                 auto iter_find = kept_lookup.find( ket_list[ilist] );
@@ -7145,7 +7145,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               std::vector<double> recouple_list;
               
 //              std::cout << " line " << __LINE__ << "  calling GetKetIndex_withRecoupling " << Jab << " " << twoJ << " " << a << " " << b << " " << i << std::endl;
-              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, i,  ket_list,  recouple_list );
+//              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, i,  ket_list,  recouple_list );
 //              std::cout << "    size of lists " << ket_list.size() << " " << recouple_list.size() << std::endl;
               for (size_t ilist=0; ilist<ket_list.size(); ilist++)
               {
@@ -7194,7 +7194,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               std::vector<size_t> ket_list;
               std::vector<double> recouple_list;
               
-              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, j,  ket_list,  recouple_list );
+//              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, j,  ket_list,  recouple_list );
               for (size_t ilist=0; ilist<ket_list.size(); ilist++)
               {
                 auto iter_find = kept_lookup.find( ket_list[ilist] );
@@ -7579,7 +7579,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
   for (size_t ch_cc=0; ch_cc<nch2_CC; ch_cc++)
   {
     TwoBodyChannel_CC& tbc_CC = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
-    int Jph = tbc_CC.J;
+//    int Jph = tbc_CC.J;
     size_t nkets_CC = tbc_CC.GetNumberKets();
     // Figure out which 2b ph kets will contribute to ab`
     for ( size_t iket=0; iket<nkets_CC; iket++)
@@ -7831,7 +7831,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
         }// for twoJp
 
         size_t index_ab =  iket_ab;
-        size_t index_ba =  (iket_ab + nkets_ph) % (2*nkets_ph);
+//        size_t index_ba =  (iket_ab + nkets_ph) % (2*nkets_ph);
         X3_ph(index_ab, index_lmij) = X3bar_ablmij ;
         Y3_ph(index_ab, index_lmij) = Y3bar_ablmij ;
 
@@ -7936,10 +7936,10 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
           Orbit& o1 = Z.modelspace->GetOrbit( I1 );
           Orbit& o2 = Z.modelspace->GetOrbit( I2 );
           Orbit& o3 = Z.modelspace->GetOrbit( I3 );
-          double occnat_1 = o1.occ_nat;
-          double occnat_2 = o2.occ_nat;
-          double d_e1 = std::abs( 2*o1.n + o1.l - e_fermi[o1.tz2]);
-          double d_e2 = std::abs( 2*o2.n + o2.l - e_fermi[o2.tz2]);
+//          double occnat_1 = o1.occ_nat;
+//          double occnat_2 = o2.occ_nat;
+//          double d_e1 = std::abs( 2*o1.n + o1.l - e_fermi[o1.tz2]);
+//          double d_e2 = std::abs( 2*o2.n + o2.l - e_fermi[o2.tz2]);
           double j3 = 0.5*o3.j2;
           for (int J1p=J1p_min[perm_ijk]; J1p<=J1p_max[perm_ijk]; J1p++)
           {
@@ -7953,10 +7953,10 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
               Orbit& o4 = Z.modelspace->GetOrbit( I4 );
               Orbit& o5 = Z.modelspace->GetOrbit( I5 );
               Orbit& o6 = Z.modelspace->GetOrbit( I6 );
-              double occnat_4 = o4.occ_nat;
-              double occnat_5 = o5.occ_nat;
-              double d_e4 = std::abs( 2*o4.n + o4.l - e_fermi[o4.tz2]);
-              double d_e5 = std::abs( 2*o5.n + o5.l - e_fermi[o5.tz2]);
+//              double occnat_4 = o4.occ_nat;
+//              double occnat_5 = o5.occ_nat;
+//              double d_e4 = std::abs( 2*o4.n + o4.l - e_fermi[o4.tz2]);
+//              double d_e5 = std::abs( 2*o5.n + o5.l - e_fermi[o5.tz2]);
               double j6 = 0.5*o6.j2;
               for (int J2p=J2p_min[perm_lmn]; J2p<=J2p_max[perm_lmn]; J2p++)
               {
@@ -7973,7 +7973,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
                 {
                    size_t ch_ph = Z.modelspace->GetTwoBodyChannelIndex(Jph,parity_ph,Tz_ph);
                    TwoBodyChannel_CC& tbc_CC = Z.modelspace->GetTwoBodyChannel_CC(ch_ph);
-                   size_t nkets_CC = tbc_CC.GetNumberKets();
+//                   size_t nkets_CC = tbc_CC.GetNumberKets();
 
 
                    // we only compute one ordering of the right side of Zbar, but we can get the other ordering by symmetry
@@ -8633,7 +8633,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
   // not the same as the standard 3-body channels since we aren't enforcing antisymmetry with the 3rd particle
   int twoJph_min = 1;
   int twoJph_max = 6*Z.modelspace->GetEmax() + 3;
-  int nch_pph = 0;
+  size_t nch_pph = 0;
   for ( int twoJph=twoJph_min; twoJph<=twoJph_max; twoJph+=2)
   {
     for (int parity_ph=0; parity_ph<=1; parity_ph++)

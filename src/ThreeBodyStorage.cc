@@ -283,7 +283,7 @@ ThreeBodyStorage::ME_type ThreeBodyStorage::GetME_iso_mono(int a, int b, int c, 
 {
     int j2a = modelspace->GetOrbit(a).j2;
     int j2b = modelspace->GetOrbit(b).j2;
-    int j2c = modelspace->GetOrbit(c).j2;
+//    int j2c = modelspace->GetOrbit(c).j2;
     double v = 0;
 
     int j2min =  std::abs(j2a-j2b) /2;
@@ -300,7 +300,7 @@ ThreeBodyStorage::ME_type ThreeBodyStorage::GetME_pn_mono(int a, int b, int c, i
 {
     int j2a = modelspace->GetOrbit(a).j2;
     int j2b = modelspace->GetOrbit(b).j2;
-    int j2c = modelspace->GetOrbit(c).j2;
+//    int j2c = modelspace->GetOrbit(c).j2;
     double v = 0;
 
     int j2min =  std::abs(j2a-j2b) /2;

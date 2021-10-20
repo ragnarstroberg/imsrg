@@ -8,7 +8,7 @@
 bool ThreeBodyStorage_iso::none_allocated = true;
 
 ThreeBodyStorage_iso::ThreeBodyStorage_iso( const ThreeBodyStorage_iso& TBS_in )
-: MatEl(TBS_in.MatEl), OrbitIndexHash(TBS_in.OrbitIndexHash), total_dimension(0), ThreeBodyStorage( TBS_in )
+:  ThreeBodyStorage( TBS_in ), MatEl(TBS_in.MatEl), OrbitIndexHash(TBS_in.OrbitIndexHash), total_dimension(0)
 {}
 
 

@@ -4144,6 +4144,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
  Operator SurfaceDeltaInteraction( ModelSpace& modelspace, double V0, double R)
  {
+    Operator Vsdi(modelspace,0,0,0,2);
+    return Vsdi;
  }
 
  

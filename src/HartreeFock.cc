@@ -750,7 +750,7 @@ void HartreeFock::FillLowestOrbits()
 void HartreeFock::UpdateF()
 {
    double start_time = omp_get_wtime();
-   int norbits = modelspace->GetNumberOrbits();
+//   int norbits = modelspace->GetNumberOrbits();
    Vij.zeros();
    V3ij.zeros();
 
@@ -1522,20 +1522,20 @@ ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
     for ( size_t indx_bra=0; indx_bra<nbras_kept; indx_bra++ )
     {
       size_t ibra_HF = bras_kept[indx_bra];
-      Ket3& bra_HF = Tbc_bra.GetKet(ibra_HF);
-      size_t iHF = bra_HF.p;
-      size_t jHF = bra_HF.q;
-      size_t kHF = bra_HF.r;
-      int JijHF = bra_HF.Jpq;
+//      Ket3& bra_HF = Tbc_bra.GetKet(ibra_HF);
+//      size_t iHF = bra_HF.p;
+//      size_t jHF = bra_HF.q;
+//      size_t kHF = bra_HF.r;
+//      int JijHF = bra_HF.Jpq;
 
       for ( size_t indx_ket=0; indx_ket<nkets_kept; indx_ket++ )
       {
         size_t iket_HF = kets_kept[indx_ket];
-        Ket3& ket_HF = Tbc_ket.GetKet(iket_HF);
-        size_t lHF = ket_HF.p;
-        size_t mHF = ket_HF.q;
-        size_t nHF = ket_HF.r;
-        int JlmHF = ket_HF.Jpq;
+//        Ket3& ket_HF = Tbc_ket.GetKet(iket_HF);
+//        size_t lHF = ket_HF.p;
+//        size_t mHF = ket_HF.q;
+//        size_t nHF = ket_HF.r;
+//        int JlmHF = ket_HF.Jpq;
         double VHF = Vhf(indx_bra, indx_ket);
         if (std::abs(VHF)<1e-9) continue;
 
@@ -1604,7 +1604,7 @@ ThreeBodyME HartreeFock::GetValence3B( Operator& OpIn, int emax, int E3max )
   hf3bme.SwitchToPN_and_discard();
 
   // big loop over elements of hf3bme...
-  auto norbits = modelspace->GetNumberOrbits();
+//  auto norbits = modelspace->GetNumberOrbits();
   size_t nch3 = modelspace->GetNumberThreeBodyChannels();
   for ( size_t ch3=0; ch3<nch3; ch3++)
   {
@@ -1646,7 +1646,7 @@ ThreeBodyME HartreeFock::GetValence3B( Operator& OpIn, int emax, int E3max )
 double HartreeFock::GetTransformed3bme( Operator& OpIn, int Jab, int Jde, int J2,  size_t a, size_t b, size_t c, size_t d, size_t e, size_t f)
 {
   double V_hf = 0.;
-  double debugV = 0.;
+//  double debugV = 0.;
   Orbit& oa = modelspace->GetOrbit(a);
   Orbit& ob = modelspace->GetOrbit(b);
   Orbit& oc = modelspace->GetOrbit(c);

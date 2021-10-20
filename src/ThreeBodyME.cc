@@ -13,17 +13,17 @@
 //{}
 
 ThreeBodyME::ThreeBodyME()
-: modelspace(NULL),E3max(0),herm(1), threebody_storage(new ThreeBodyStorage_iso())
+: threebody_storage(new ThreeBodyStorage_iso()),   modelspace(NULL),E3max(0),herm(1)
 {
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: modelspace(ms), E3max(ms->E3max), emax(ms->Emax), herm(1), threebody_storage(new ThreeBodyStorage_iso())
+: threebody_storage(new ThreeBodyStorage_iso()), modelspace(ms), E3max(ms->E3max), emax(ms->Emax), herm(1)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int rJ, int rT, int p)
-: modelspace(ms), E3max(ms->E3max), emax(ms->Emax), herm(1),  rank_J(rJ), rank_T(rT), parity(p),
-  threebody_storage(new ThreeBodyStorage_iso(ms,rJ,rT,p))
+ : threebody_storage(new ThreeBodyStorage_iso(ms,rJ,rT,p)),
+ modelspace(ms), E3max(ms->E3max), emax(ms->Emax), herm(1),  rank_J(rJ), rank_T(rT), parity(p)
 {
   ISOSPIN_BLOCK_DIMENSION = 5;
   if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
@@ -31,12 +31,12 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int rJ, int rT, int p)
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
-: modelspace(ms),E3max(e3max), emax(ms->Emax), herm(1), threebody_storage(new ThreeBodyStorage_iso(ms,e3max))
+: threebody_storage(new ThreeBodyStorage_iso(ms,e3max)), modelspace(ms),E3max(e3max), emax(ms->Emax), herm(1)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max, int rJ, int rT, int p)
-: modelspace(ms),E3max(e3max), emax(ms->Emax), herm(1), rank_J(rJ), rank_T(rT), parity(p),
-  threebody_storage(new ThreeBodyStorage_iso(ms,e3max,rJ,rT,p))
+: threebody_storage(new ThreeBodyStorage_iso(ms,e3max,rJ,rT,p)), modelspace(ms),E3max(e3max), emax(ms->Emax),
+    herm(1), rank_J(rJ), rank_T(rT), parity(p)
 {
   ISOSPIN_BLOCK_DIMENSION = 5;
   if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
@@ -44,10 +44,10 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max, int rJ, int rT, int p)
 }
 
 ThreeBodyME::ThreeBodyME(const ThreeBodyME& Tbme)
-: modelspace(Tbme.modelspace),
+: threebody_storage( Tbme.threebody_storage->Clone()), modelspace(Tbme.modelspace), 
 //   storage_mode(Tbme.storage_mode), E3max(Tbme.E3max), emax(Tbme.emax), herm(Tbme.herm),
     E3max(Tbme.E3max), emax(Tbme.emax), herm(Tbme.herm),
-   rank_J(Tbme.rank_J), rank_T(Tbme.rank_T), parity(Tbme.parity), threebody_storage( Tbme.threebody_storage->Clone())
+   rank_J(Tbme.rank_J), rank_T(Tbme.rank_T), parity(Tbme.parity)
 {
 }
 

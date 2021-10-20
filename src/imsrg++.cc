@@ -163,9 +163,9 @@ int main(int argc, char** argv)
   std::vector<Operator> ops;
   std::vector<std::string> spwf = parameters.v("SPWF");
 
-  using PhysicalConstants::PROTON_RCH2;
-  using PhysicalConstants::NEUTRON_RCH2;
-  using PhysicalConstants::DARWIN_FOLDY;
+  using PhysConst::PROTON_RCH2;
+  using PhysConst::NEUTRON_RCH2;
+  using PhysConst::DARWIN_FOLDY;
 
 
   // test 2bme file

@@ -856,7 +856,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
   {
     int a =  orbits_remap[nlj1];
     Orbit & o1 = modelspace->GetOrbit(a);
-    int e1 = 2*o1.n + o1.l;
+//    int e1 = 2*o1.n + o1.l;
 //    if (e1 > modelspace->Emax) break;
     if (energy_vals[nlj1] > modelspace->Emax) break;
 
@@ -864,7 +864,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
     {
       int b =  orbits_remap[nlj2];
       Orbit & o2 = modelspace->GetOrbit(b);
-      int e2 = 2*o2.n + o2.l;
+//      int e2 = 2*o2.n + o2.l;
 //      if (e1+e2 > Emax) break;
       if ( (energy_vals[nlj1] + energy_vals[nlj2]) > E2max) break;
       int parity = (o1.l + o2.l) % 2;
@@ -872,14 +872,14 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
       for(int nlj3=0; nlj3<=nlj1; ++nlj3)
       {
         int c =  orbits_remap[nlj3];
-        Orbit & o3 = modelspace->GetOrbit(c);
-        int e3 = 2*o3.n + o3.l;
+//        Orbit & o3 = modelspace->GetOrbit(c);
+//        int e3 = 2*o3.n + o3.l;
 
         for(int nlj4=0; nlj4<=(nlj3==nlj1 ? nlj2 : nlj3); ++nlj4)
         {
           int d =  orbits_remap[nlj4];
-          Orbit & o4 = modelspace->GetOrbit(d);
-          int e4 = 2*o4.n + o4.l;
+//          Orbit & o4 = modelspace->GetOrbit(d);
+//          int e4 = 2*o4.n + o4.l;
 //          if (e3+e4 > Emax) break;
           if ( (energy_vals[nlj3] + energy_vals[nlj4]) > E2max) break;
 //          if ( (o1.l + o2.l + o3.l + o4.l)%2 != 0) continue;
@@ -2263,7 +2263,7 @@ void ReadWrite::ReadDarmstadt_2bodyRel( std::string filename, Operator& Op )
     double sa=0.5,sb=0.5,sc=0.5,sd=0.5;
     int J = tbc.J;
     int Tz = tbc.Tz;
-    for (int ibra=0; ibra<nkets; ibra++)
+    for (size_t ibra=0; ibra<nkets; ibra++)
     {
       Ket& bra = tbc.GetKet(ibra);
       int na = bra.op->n;
@@ -2275,7 +2275,7 @@ void ReadWrite::ReadDarmstadt_2bodyRel( std::string filename, Operator& Op )
       float jb = 0.5*bra.oq->j2;
       int tz2b = bra.oq->tz2;
       int fab = 2*na + 2*nb + la + lb;
-      for (int iket=ibra; iket<nkets; iket++)
+      for (size_t iket=ibra; iket<nkets; iket++)
       {
         Ket& ket = tbc.GetKet(ibra);
         int nc = ket.op->n;

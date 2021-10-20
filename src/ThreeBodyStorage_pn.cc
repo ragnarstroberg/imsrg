@@ -9,7 +9,7 @@ bool ThreeBodyStorage_pn::none_allocated = true;
 
 
 ThreeBodyStorage_pn::ThreeBodyStorage_pn( const ThreeBodyStorage_pn& TBS_in )
-: MatEl(TBS_in.MatEl), total_dimension(0), ThreeBodyStorage( TBS_in )
+: ThreeBodyStorage( TBS_in ), MatEl(TBS_in.MatEl), total_dimension(0)
 {}
 
 
