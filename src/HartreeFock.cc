@@ -73,9 +73,7 @@ void HartreeFock::Solve()
    for (iterations=0; iterations<maxiter; ++iterations)
    {
       Diagonalize();          // Diagonalize the Fock matrix
-      std::cout << "Before reorder, C is " << std::endl << C << std::endl;
       ReorderCoefficients();  // Reorder columns of C so we can properly identify the hole orbits.
-      std::cout << "After reorder, C is " << std::endl << C << std::endl;
 
       // This bit is occationally the source of non-convergence of the iterations
       if (iterations > 10  and (iterations%fill_modulus)==0 and not freeze_occupations)
@@ -127,9 +125,6 @@ void HartreeFock::Solve()
       }
       arma::mat last_F = F;
       UpdateF();              // Update the Fock matrix
-  std::cout << "C = " << C << std::endl << "rho = " << std::endl << rho << std::endl;
-   CalcEHF();
-  std::cout << "alpha, EHF = " << acos( C(0,0) ) << "  " << EHF << std::endl;
       F = (1.0 - field_mixing_factor)*F + field_mixing_factor * last_F;
 
       if ( CheckConvergence() ) break;
@@ -244,7 +239,6 @@ void HartreeFock::Diagonalize()
       // Update the full overlap matrix C and energy vector
       energies(orbvec) = E_ch;
       C.submat(orbvec,orbvec) = C_ch;
-      std::cout << "   ====== diagonalize F. F is" << std::endl << std::setprecision(6) << F  << std::endl << E_ch <<  std::endl << C_ch << std::endl;
 
    }
 }

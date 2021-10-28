@@ -46,7 +46,7 @@ std::map< std::string, std::vector<std::string> > ModelSpace::ValenceSpaces  {
 
 ModelSpace::ModelSpace()
 :  Emax(0), E2max(0), E3max(0), Lmax(9999), Lmax2(9999), Lmax3(9999), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(0), dE3max(999), occnat3cut(-1.0), norbits(0),
-  hbar_omega(20), target_mass(16), sixj_has_been_precalculated(false), moshinsky_has_been_precalculated(false),
+  hbar_omega(20), target_mass(16), sixj_has_been_precalculated(false), ninej_has_been_precalculated(false), moshinsky_has_been_precalculated(false),
   scalar_transform_first_pass(true),scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
 {
 //   SetUpOrbits();
@@ -85,6 +85,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    SortedTwoBodyChannels(ms.SortedTwoBodyChannels),
    SortedTwoBodyChannels_CC(ms.SortedTwoBodyChannels_CC),
    sixj_has_been_precalculated(ms.sixj_has_been_precalculated),
+   ninej_has_been_precalculated(ms.ninej_has_been_precalculated),
    moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated),
    scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(ms.single_species)
 {
@@ -119,6 +120,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    SortedTwoBodyChannels(std::move(ms.SortedTwoBodyChannels)),
    SortedTwoBodyChannels_CC(std::move(ms.SortedTwoBodyChannels_CC)),
    sixj_has_been_precalculated(ms.sixj_has_been_precalculated),
+   ninej_has_been_precalculated(ms.ninej_has_been_precalculated),
    moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated),
    scalar_transform_first_pass(true),scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(ms.single_species)
 {
@@ -133,7 +135,8 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 // Assumes that the core is hole states that aren't in the valence space.
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> valence_list)
 :  Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999), occnat3cut(-1.0), norbits(0), hbar_omega(20), target_mass(16),
-     moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
+    sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),    moshinsky_has_been_precalculated(false),
+      scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
 {
 //   SetUpOrbits();
    Init(emax, hole_list, hole_list, valence_list); // Init version 3  (int, vector<string>, vector<string>, vector<string> )
@@ -142,7 +145,7 @@ ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector
 // If we don't want the reference to be the core
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list)
 : Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), norbits(0), hbar_omega(20), target_mass(16),
-     sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false)
+     sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),  moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false)
 {
 //   SetUpOrbits();
    Init(emax, hole_list, core_list, valence_list); // Init version 3  (int, vector<string>, vector<string>, vector<string> )
@@ -151,7 +154,7 @@ ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector
 // Most conventient interface
 ModelSpace::ModelSpace(int emax, std::string reference, std::string valence)
 : Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
-     sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false)
+     sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),   moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false)
 {
 //  SetUpOrbits();
   Init(emax,reference,valence); // Init version 1  (int, string, string )
@@ -159,7 +162,7 @@ ModelSpace::ModelSpace(int emax, std::string reference, std::string valence)
 
 ModelSpace::ModelSpace(int emax, std::string valence)
 : Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
-     sixj_has_been_precalculated(false),moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true),single_species(false)
+     sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),   moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true),single_species(false)
 {
   auto itval = ValenceSpaces.find(valence);
   if ( itval != ValenceSpaces.end() ) // we've got a valence space
@@ -1584,6 +1587,76 @@ void ModelSpace::SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& 
    J3 = (key      ) & 0x3FFL;
 }
 
+
+uint64_t ModelSpace::NineJHash(double j1, double j2, double J12, double j3, double j4, double J34, double J13, double J24, double J)
+{
+   int k1 = 2*j1;
+   int k2 = 2*j2;
+   int K12 = 2*J12;
+   int k3 = 2*j3;
+   int k4 = 2*j4;
+   int K34 = 2*J34;
+   int K13 = 2*J13;
+   int K24 = 2*J24;
+   int K = 2*J;
+
+   std::array<int,9> klist = {k1,k2,K12,k3,k4,K34,K13,K24,K};
+   std::array<double,9> jlist = {j1,j2,J12,j3,j4,J34,J13,J24,J};
+   int imin = std::min_element(klist.begin(),klist.end()) - klist.begin();
+   switch (imin)
+   {
+      case 0:
+       klist = {k4,K34,k3,K24,K,K13,k2,K12,k1};
+       jlist = {j4,J34,j3,J24,J,J13,j2,J12,j1};
+       break;
+      case 1:
+       klist = {K13,K,K24,k3,K34,k4,k1,K12,k2};
+       jlist = {J13,J,J24,j3,J34,j4,j1,J12,j2};
+       break;
+      case 2:
+       klist = {k3,k4,K34,K13,K24,K,k1,k2,K12};
+       jlist = {j3,j4,J34,J13,J24,J,j1,j2,J12};
+       break;
+      case 3:
+       klist = {K12,k2,k1,K,K24,K13,K34,k4,k3};
+       jlist = {J12,j2,j1,J,J24,J13,J34,j4,j3};
+       break;
+      case 4:
+       klist = {k1,K12,k2,K13,K,K24,k3,K34,k4};
+       jlist = {j1,J12,j2,J13,J,J24,j3,J34,j4};
+       break;
+      case 5:
+       klist = {K13,K24,K,k1,k2,K12,k3,k4,K34};
+       jlist = {J13,J24,J,j1,j2,J12,j3,j4,J34};
+       break;
+      case 6:
+       klist = {k2,K12,k1,k4,K34,k3,K24,K,K13};
+       jlist = {j2,J12,j1,j4,J34,j3,J24,J,J13};
+       break;
+      case 7:
+       klist = {K12,k1,k2,K34,k3,k4,K,K13,K24};
+       jlist = {J12,j1,j2,J34,j3,j4,J,J13,J24};
+       break;
+      case 8:
+       break;
+   }
+
+//   unsigned long long int key =   klist[0];
+   uint64_t key =   klist[0];
+//   unsigned long long int factor = 100;
+//   unsigned long long int factor = 91;
+   uint64_t factor = 91;
+   for (int i=1; i<9; ++i)
+   {
+      key += klist[i]*factor;
+      factor *=91;
+//      factor *=100;
+   }
+   return key;
+}
+
+
+
 uint64_t ModelSpace::MoshinskyHash(uint64_t N, uint64_t Lam, uint64_t n, uint64_t lam, uint64_t n1, uint64_t l1, uint64_t n2, uint64_t l2, uint64_t L)
 {
    return   (N   << 54)
@@ -1744,6 +1817,63 @@ void ModelSpace::PreCalculateSixJ()
        << "  estimated storage ~ " << ((SixJList.bucket_count()+SixJList.size()) * (sizeof(size_t)+sizeof(void*))) / (1024.*1024.*1024.) << " GB" << std::endl;
   profiler.timer["PreCalculateSixJ"] += omp_get_wtime() - t_start;
 }
+
+
+
+void ModelSpace::PreCalculateNineJ()
+{
+  if (ninej_has_been_precalculated) return;
+  std::cout << "Precalculating NineJ's" << std::endl;
+  double t_start = omp_get_wtime();
+  std::vector<uint64_t> KEYS;
+  for (int la=0; la<=Emax; la++)
+  {
+    for (int lb=0; lb<=Emax; lb++)
+    {
+      int Lmin = std::abs(la-lb);
+      int Lmax = la+lb;
+      for (int j2a=std::min(1,2*la-1); j2a<=(2*la+1); j2a+=2)
+      {
+        for (int j2b=std::min(1,2*lb-1); j2b<=(2*lb+1); j2b+=2)
+        {
+          for (int L=Lmin; L<=Lmax; L++)
+          {
+             for (int S=0; S<=1; S++)
+             {
+               for (int J=std::min(L-S,0); J<=(L+S); J++)
+               {
+                  if (  ((j2a+j2b)<2*J) or ( std::abs(j2a-j2b)>2*J) ) continue;
+//                  uint64_t key = SixJHash(0.5*j2a,0.5*j2b,0.5*J1,0.5*j2c,0.5*j2d,0.5*J2);
+                  uint64_t key = NineJHash(la,lb,L,0.5,0.5,S,0.5*j2a,0.5*j2b,J);
+                  if ( NineJList.count(key) == 0 ) 
+                  {
+                    KEYS.push_back(key);
+                    NineJList[key] = 0.;
+                  }
+               }
+             }
+          }
+        }
+      }
+    }
+  }
+
+//  #pragma omp parallel for schedule(dynamic,1)
+//  for (size_t i=0;i< KEYS.size(); ++i)
+//  {
+//    uint64_t j1,j2,j3,J1,J2,J3;
+//    uint64_t key = KEYS[i];
+//    NineJUnHash(key, j1,j2,j3,J1,J2,J3);
+//    NineJList[key] = AngMom::NineJ(0.5*j1,0.5*j2,0.5*j3,0.5*J1,0.5*J2,0.5*J3);
+//  }
+//  sixj_has_been_precalculated = true;
+//  std::cout << "done calculating sixJs (" << KEYS.size() << " of them)" << std::endl;
+//  std::cout << "Hash table has " << SixJList.bucket_count() << " buckets and a load factor " << SixJList.load_factor() 
+//       << "  estimated storage ~ " << ((SixJList.bucket_count()+SixJList.size()) * (sizeof(size_t)+sizeof(void*))) / (1024.*1024.*1024.) << " GB" << std::endl;
+  profiler.timer[__func__] += omp_get_wtime() - t_start;
+}
+
+
 
 
 
@@ -1929,15 +2059,18 @@ double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double 
        break;
    }
 
-   unsigned long long int key =   klist[0];
-//   unsigned long long int factor = 100;
-   unsigned long long int factor = 91;
-   for (int i=1; i<9; ++i)
-   {
-      key += klist[i]*factor;
-      factor *=91;
-//      factor *=100;
-   }
+//   unsigned long long int key =   klist[0];
+////   unsigned long long int factor = 100;
+//   unsigned long long int factor = 91;
+//   for (int i=1; i<9; ++i)
+//   {
+//      key += klist[i]*factor;
+//      factor *=91;
+////      factor *=100;
+//   }
+
+//   uint64_t key= NineJHash(jlist[0],jlist[1],jlist[2],jlist[3],jlist[4],jlist[5],jlist[6],jlist[7],jlist[8]);
+   uint64_t key= NineJHash(j1,j2,J12,j3,j4,J34,J13,J24,J);
    auto it = NineJList.find(key);
    if (it != NineJList.end() )
    {

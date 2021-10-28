@@ -922,6 +922,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
       }
     }
   }
+  std::cout << "Read " << nreads*4 << " matrix elements " << std::endl;
 
 }
 

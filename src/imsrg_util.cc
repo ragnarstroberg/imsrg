@@ -705,10 +705,12 @@ Operator KineticEnergy_RelativisticCorr(ModelSpace& modelspace)
        if ( std::abs(Lab-Sab)>J or Lab+Sab<J) continue;
 
        double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
+              njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
        if (njab == 0) continue;
        int Scd = Sab;
        int Lcd = Lab;
        double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
+              njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
        if (njcd == 0) continue;
 
        // Next, transform to rel / com coordinates with Moshinsky tranformation
@@ -2403,7 +2405,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
  Operator VCoulomb_Op( ModelSpace& modelspace, int lmax ) //default lmax=99999
  {
-   std::cout << "Making VCoulomb_Op" << std::endl;
+//   std::cout << "Making VCoulomb_Op" << std::endl;
    double t_start = omp_get_wtime();
    Operator VCoul(modelspace, 0,0,0,2);
    double oscillator_b = sqrt(HBARC*HBARC/M_NUCLEON/modelspace.GetHbarOmega());
@@ -2428,12 +2430,12 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    }
    VCoul.profiler.timer["ComputeCoulombIntegrals"] += omp_get_wtime() - tt_start;
 
-   std::cout << "now the big loop... lrelmax = " << lrelmax << "  size of RadInt = " << RadialIntegrals.size()  << std::endl;
+//   std::cout << "now the big loop... lrelmax = " << lrelmax << "  size of RadInt = " << RadialIntegrals.size()  << std::endl;
 
 // Now the (antisymmetrized) two-body piece <ab| 1/r_rel |cd>
    int nchan = modelspace.GetNumberTwoBodyChannels();
    modelspace.PreCalculateMoshinsky();
-   std::cout << "Done Precalculating Moshinsky." << std::endl;
+//   std::cout << "Done Precalculating Moshinsky." << std::endl;
    double sa,sb,sc,sd;
    sa=sb=sc=sd=0.5;
 //   #pragma omp parallel for schedule(dynamic,1)  // It would appear that something's not thread-safe in this routine...
@@ -2546,8 +2548,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    }
    VCoul *= ALPHA_FS * HBARC / oscillator_b;  // convert to MeV.  V = e^2/r = alpha*hc / r
 
-   std::cout << "All done with VCoul." << std::endl;
-   VCoul.profiler.timer["VCoulomb_Op"] += omp_get_wtime() - t_start;
+//   std::cout << "All done with VCoul." << std::endl;
+//   std::cout << "0s pp,pn,nn: " << VCoul.TwoBody.GetTBME_J(0,0, 0,0, 0,0) << " " << VCoul.TwoBody.GetTBME_J(0,0, 1,0, 1,0) << " " << VCoul.TwoBody.GetTBME_J(0,0, 1,1, 1,1) << std::endl;
+   VCoul.profiler.timer[__func__] += omp_get_wtime() - t_start;
    return VCoul ;
 
  }
@@ -4146,6 +4149,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
  Operator SurfaceDeltaInteraction( ModelSpace& modelspace, double V0, double R)
  {
+   Operator Vsdi(modelspace,0,0,0,2);
+   return Vsdi;
  }
 
  
