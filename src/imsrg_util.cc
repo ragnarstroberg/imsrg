@@ -116,6 +116,18 @@ namespace imsrg_util
          }
          theop =  GaussianPotential(modelspace,sigma);
       }
+      else if (opnamesplit[0] =="VSDI")
+      {
+//        std::cout << "    " << opnamesplit[0] << " " << opnamesplit[1] << " " << opnamesplit[2] << std::endl;
+         double V0 = 1.0;
+         double R = 1.0;
+         if ( opnamesplit.size() > 2 ) 
+         {
+           std::istringstream( opnamesplit[1] ) >> V0;
+           std::istringstream( opnamesplit[2] ) >> R;
+         }
+         theop =  SurfaceDeltaInteraction(modelspace,V0,R);
+      }
       else if (opnamesplit[0] =="HCM")
       {
 //         if ( opnamesplit.size() == 1 ) theop =  HCM_Op(modelspace);
@@ -4142,9 +4154,91 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
  }
 
 
+/// Direct implementation of equations (8.55), (8.62) and (8.65) in Suhonen.
  Operator SurfaceDeltaInteraction( ModelSpace& modelspace, double V0, double R)
  {
     Operator Vsdi(modelspace,0,0,0,2);
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   double hw = modelspace.GetHbarOmega();
+
+//   modelspace.PreCalculateMoshinsky();
+//   #pragma omp parallel for schedule(dynamic,1) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+    TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+    int J = tbc.J;
+    int nkets = tbc.GetNumberKets();
+    for (int ibra=0;ibra<nkets;++ibra)
+    {
+     Ket& bra = tbc.GetKet(ibra);
+     int a = bra.p;
+     int b = bra.q;
+     int na = bra.op->n;
+     int la = bra.op->l;
+     int j2a = bra.op->j2;
+     int nb = bra.oq->n;
+     int lb = bra.oq->l;
+     int j2b = bra.oq->j2;
+     double psi_a = HO_Radial_psi(na,la,hw,R);
+     double psi_b = HO_Radial_psi(nb,lb,hw,R);
+     for (int iket=ibra;iket<nkets;iket++)
+     {
+       Ket& ket = tbc.GetKet(iket);
+       int c = ket.p;
+       int d = ket.q;
+       int nc = ket.op->n;
+       int lc = ket.op->l;
+       int j2c = ket.op->j2;
+       int nd = ket.oq->n;
+       int ld = ket.oq->l;
+       int j2d = ket.oq->j2;
+       double psi_c = HO_Radial_psi(nc,lc,hw,R);
+       double psi_d = HO_Radial_psi(nd,ld,hw,R);
+
+       double kappa_ac =  psi_a * psi_c * R;
+       double kappa_bd =  psi_b * psi_d * R;
+
+       double Kabcd = -V0 * kappa_ac * kappa_bd / (16*PI);
+//       std::cout << " abcd " << a << " " << b << " " << c << " " << d << "   Kabcd " << Kabcd << std::endl;
+       double AT = 1;
+       Kabcd = -1./4 * AT * AngMom::phase(na+nb+nc+nd);
+
+       double threej0ab = AngMom::ThreeJ(0.5*j2a, 0.5*j2b, J, 0.5,-0.5,0);
+       double threej1ab = AngMom::ThreeJ(0.5*j2a, 0.5*j2b, J, 0.5, 0.5,-1);
+       double threej0cd = AngMom::ThreeJ(0.5*j2c, 0.5*j2d, J, 0.5,-0.5,0);
+       double threej1cd = AngMom::ThreeJ(0.5*j2c, 0.5*j2d, J, 0.5, 0.5,-1);
+
+       double threej0dc = AngMom::ThreeJ(0.5*j2d, 0.5*j2c, J, 0.5,-0.5,0);
+       double threej1dc = AngMom::ThreeJ(0.5*j2d, 0.5*j2c, J, 0.5, 0.5,-1);
+
+       double hatfactor = sqrt((j2a+1)*(j2b+1)*(j2c+1)*(j2d+1));
+
+       // Factor of 2 relative to Suhonen (8.65) because we just enforce parity conservation
+       double Aabcd = 2*Kabcd *hatfactor* ( threej1ab*threej1cd  - AngMom::phase((2*la+2*lc+j2b+j2d)/2) * threej0ab*threej0cd);
+       double Aabdc = 2*Kabcd *hatfactor* ( threej1ab*threej1dc  - AngMom::phase((2*la+2*ld+j2b+j2c)/2) * threej0ab*threej0dc);
+
+
+       double vsdi = Aabcd;
+
+       if (tbc.Tz !=0) // like nucleons
+       {
+	  vsdi -= AngMom::phase((j2c+j2d+2*J)/2) * Aabdc; // Suhonen (8.55)
+       }
+       else if ( bra.op->tz2 != ket.op->tz2 ) // if we have pnnp or nppn
+       {
+	  vsdi = AngMom::phase( (j2c + j2d + 2*J)/2 +1 ) * Aabdc; // Suhonen (8.56
+       }
+
+       if (a==b) vsdi /= SQRT2;
+       if (c==d) vsdi /= SQRT2;
+
+       Vsdi.TwoBody.SetTBME(ch,ibra,iket,vsdi);
+       Vsdi.TwoBody.SetTBME(ch,iket,ibra,vsdi);
+     }
+    }
+   }
+
     return Vsdi;
  }
 

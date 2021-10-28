@@ -1977,16 +1977,17 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
 
 
 //    Important to remember. For CC channels, Tz is the magnitude of the difference of the isospin | tz1 - tz2|
+//    So for a proton-particle,neutron-hole we have dTz =|-1/2 - 1/2| =1
 //    For RankT=0, we can have <pn|pn>, <pp|nn>, <pp|pp>, <nn|nn>, (Tz_bra,Tz_ket) =>  (1,1) , (0,0)
 //    For RankT=1, we can have <pn|pp>, <pn|nn>  (Tz_bra,Tz_ket) => (0,1) , (1,0)
 //    For RankT=2, we can have <pn|pn>   (Tz_bra,Tz_ket) => (1,1)
 //   
 //    dTz = 0 (Hamiltonian-like)     :    dTz = 1 (Beta decay)            :   dTz = 2  (Double beta decay) 
 //                                   :                                    :
-//   p|     p|       p\  /n          :    p|     p|      p\  /n           :    p|     p|      p\  /n        
+//   p|     n|       p\  /n          :    p|     p|      p\  /n           :    p|     p|      p\  /n        
 //    |__OP__|   =>    \/___OP__     :     |__OP__|  =>    \/___OP__      :     |__OP__|  =>    \/___OP__   
 //    |      |                 /\    :     |      |                /\     :     |      |                /\  
-//   n|     n|               p/  \n  :    n|     p|              p/  \p   :    n|     n|              p/  \n
+//   n|     p|               p/  \n  :    n|     p|              p/  \p   :    n|     n|              p/  \n
 //
    for ( size_t ch_cc = 0; ch_cc < TwoBodyChannels_CC.size(); ch_cc++)
    {

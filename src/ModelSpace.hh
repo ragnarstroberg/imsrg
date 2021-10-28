@@ -28,11 +28,6 @@
 #include <set>
 #include <armadillo>
 #include "IMSRGProfiler.hh"
-//#include "TwoBodyChannel.hh"
-//#ifndef SQRT2
-//  #define SQRT2 1.4142135623730950488
-//#endif
-//#define OCC_CUT 1e-6
 
 
 //using namespace std;
