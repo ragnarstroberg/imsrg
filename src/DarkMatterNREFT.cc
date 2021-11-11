@@ -291,6 +291,11 @@ namespace DM_NREFT
 //bhu                     * jho( na, la, nb, lb, 2*J, y );
                      * jho( na, la, nb, lb, J, y );
 //        M_op.OneBody(a,b) = mab * pow( isofactor, (oa.tz2+1)/2 );
+	// This formula assumes we're storing things as reduced matrix elements. If J=0, then we aren't, so we get a factor sqrt(2j+1)
+	if (J==0 and parity==0)
+	{
+	   mab /= sqrt( j2a+1.0);
+        }
         M_op.OneBody(a,b) = mab  * isofactor[(oa.tz2+1)/2];
       }
     }
@@ -350,7 +355,11 @@ namespace DM_NREFT
                      * gsl_sf_coupling_9j(2*la, 2*lb, 2*L, 1, 1, 2, j2a, j2b, 2*J )
                      * gsl_sf_coupling_3j(2*la, 2*L, 2*lb, 0,0,0)
                      * jho( na, la, nb, lb, L, y );
-//        Ms_op.OneBody(a,b) = mab * pow( isofactor, (oa.tz2+1)/2 );
+	// This formula assumes we're storing things as reduced matrix elements. If J=0, then we aren't, so we get a factor sqrt(2j+1)
+	if (J==0 and parity==0)
+	{
+	   mab /= sqrt( j2a+1.0);
+        }
         Ms_op.OneBody(a,b) = mab * isofactor[(oa.tz2+1)/2];
       }
     }
@@ -427,7 +436,11 @@ namespace DM_NREFT
                          * gsl_sf_coupling_3j(2*la,2*L,2*(lb-1),0,0,0)
                          * jdpho(na,la,nb,lb,L,y)
                         );
-//        Mg_op.OneBody(a,b) = mab * pow( isofactor, (oa.tz2+1)/2 );
+	// This formula assumes we're storing things as reduced matrix elements. If J=0, then we aren't, so we get a factor sqrt(2j+1)
+	if (J==0 and parity==0)
+	{
+	   mab /= sqrt( j2a+1.0);
+        }
         Mg_op.OneBody(a,b) = mab * isofactor[(oa.tz2+1)/2];
       }
     }
@@ -777,6 +790,11 @@ namespace DM_NREFT
         if (J>0) phip_ab += PhiF(la,j2a,j2b) * ( sqrt(2*(J-1)+1) * sqrt(J+1)
                              * ( PhiS3(na,la,j2a,nb,lb,j2b,J,y) + PhiS4(na,la,j2a,nb,lb,j2b,J,y) ) );
 
+	// This formula assumes we're storing things as reduced matrix elements. If J=0, then we aren't, so we get a factor sqrt(2j+1)
+	if (J==0 and parity==0)
+	{
+	   phip_ab /= sqrt( j2a+1.0);
+        }
 //        Phip_op.OneBody(a,b) = phip_ab * pow( isofactor, (oa.tz2+1)/2 );
         Phip_op.OneBody(a,b) = phip_ab * isofactor[(oa.tz2+1)/2];
       }
@@ -856,7 +874,11 @@ namespace DM_NREFT
         if (J>0) phipp_ab += PhiF(la,j2a,j2b) * ( sqrt(2*(J-1)+1) * sqrt(J)
                              * ( PhiS3(na,la,j2a,nb,lb,j2b,J,y) + PhiS4(na,la,j2a,nb,lb,j2b,J,y) ) );
 
-//        Phipp_op.OneBody(a,b) = phipp_ab * pow( isofactor, (oa.tz2+1)/2 );
+        // This formula assumes we're storing things as reduced matrix elements. If J=0, then we aren't, so we get a factor sqrt(2j+1)
+	if (J==0 and parity==0)
+	{
+	   phipp_ab /= sqrt( j2a+1.0);
+	}
         Phipp_op.OneBody(a,b) = phipp_ab *  isofactor[(oa.tz2+1)/2];
       }
     }
@@ -940,6 +962,11 @@ namespace DM_NREFT
                           * gsl_sf_coupling_3j(2*la,2*J,2*(j2b-lb),0,0,0)
                           * (O1+O2);
 //        Omega_op.OneBody(a,b) = omega_ab * pow( isofactor, (oa.tz2+1)/2 );
+        // This formula assumes we're storing things as reduced matrix elements. If J=0, then we aren't, so we get a factor sqrt(2j+1)
+	if (J==0 and parity==0)
+	{
+	   omega_ab /= sqrt( j2a+1.0);
+	}
         Omega_op.OneBody(a,b) = omega_ab * isofactor[(oa.tz2+1)/2];
       }
     }
