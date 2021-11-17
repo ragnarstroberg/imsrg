@@ -206,7 +206,7 @@ void Generator::ConstructGenerator_SingleRef(std::function<double (double,double
       TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
       arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
       arma::mat& H2 = H->TwoBody.GetMatrix(ch);
-      for ( auto& iket : tbc.GetKetIndex_cc() )
+      for ( auto& iket : tbc.GetKetIndex_cc() ) // cc means core-core ('holes' refer to the reference state)
       {
          for ( auto& ibra : imsrg_util::VectorUnion(tbc.GetKetIndex_qq(), tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
          {
@@ -237,7 +237,7 @@ void Generator::ConstructGenerator_SingleRef(std::function<double (double,double
 void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,double)>& etafunc )
 {
      double t_start = omp_get_wtime();
-     size_t ncore = modelspace->core.size();
+//     size_t ncore = modelspace->core.size();
      std::vector<size_t> corevec;
      for (auto a : modelspace->core) corevec.push_back(a);
      std::map<int,double> e_fermi = modelspace->GetEFermi();
@@ -373,7 +373,7 @@ void Generator::ConstructGenerator_ShellModel(std::function<double (double,doubl
 void Generator::ConstructGenerator_ShellModel_3body(std::function<double (double,double)>& etafunc )
 {
      double t_start = omp_get_wtime();
-     size_t ncore = modelspace->core.size();
+//     size_t ncore = modelspace->core.size();
      std::vector<size_t> corevec;
      for (auto a : modelspace->core) corevec.push_back(a);
      std::map<int,double> e_fermi = modelspace->GetEFermi();

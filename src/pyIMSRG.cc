@@ -16,8 +16,8 @@ namespace py = pybind11;
 //  size_t MS_GetOrbitIndex_Str(ModelSpace& self, std::string s){ return self.GetOrbitIndex(s);};
   TwoBodyChannel MS_GetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
 
-  double TB_GetTBME_J(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J(j_bra,j_ket,a,b,c,d);};
-  double TB_GetTBME_J_norm(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J_norm(j_bra,j_ket,a,b,c,d);};
+//  double TB_GetTBME_J(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J(j_bra,j_ket,a,b,c,d);};
+//  double TB_GetTBME_J_norm(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J_norm(j_bra,j_ket,a,b,c,d);};
 
   size_t TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
 
@@ -214,8 +214,10 @@ PYBIND11_MODULE(pyIMSRG, m)
 
    py::class_<TwoBodyME>(m,"TwoBodyME")
       .def(py::init<>())
-      .def("GetTBME_J", TB_GetTBME_J)
-      .def("GetTBME_J_norm", TB_GetTBME_J_norm)
+//      .def("GetTBME_J", TB_GetTBME_J)
+//      .def("GetTBME_J_norm", TB_GetTBME_J_norm)
+      .def("GetTBME_J",[](TwoBodyME& self, int Jbra, int Jket, int a, int b, int c, int d){return self.GetTBME_J(Jbra,Jket,a,b,c,d);} )
+      .def("GetTBME_J_norm",[](TwoBodyME& self, int Jbra, int Jket, int a, int b, int c, int d){return self.GetTBME_J_norm(Jbra,Jket,a,b,c,d);} )
       .def("GetTBMEmonopole",[](TwoBodyME& self, int a, int b, int c, int d){ return self.GetTBMEmonopole(a,b,c,d);}, py::arg("a"),py::arg("b"),py::arg("c"),py::arg("d"))
       .def("GetTBMEmonopole_norm",[](TwoBodyME& self, int a, int b, int c, int d){ return self.GetTBMEmonopole_norm(a,b,c,d);}, py::arg("a"),py::arg("b"),py::arg("c"),py::arg("d"))
       .def("GetChannelMatrix",[](TwoBodyME& self, int J, int p, int Tz){ size_t ch = self.modelspace->GetTwoBodyChannelIndex(J,p,Tz); return self.GetMatrix(ch,ch);},py::arg("J"),py::arg("parity"),py::arg("Tz") )
@@ -462,6 +464,23 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
 
 
+
+   py::class_<RPA>(m,"RPA")
+      .def(py::init<Operator&>())
+      .def("ConstructAMatrix",&RPA::ConstructAMatrix, py::arg("J"),py::arg("parity"),py::arg("Tz") )
+      .def("ConstructBMatrix",&RPA::ConstructBMatrix, py::arg("J"),py::arg("parity"),py::arg("Tz") )
+      .def("SolveCP",&RPA::SolveCP)
+      .def("SolveTDA",&RPA::SolveTDA)
+      .def("SolveRPA",&RPA::SolveRPA)
+      .def("TransitionToGroundState",&RPA::TransitionToGroundState, py::arg("OpIn"),py::arg("mu"))
+      .def("PVCouplingEffectiveCharge", &RPA::PVCouplingEffectiveCharge, py::arg("OpIn"),py::arg("k"),py::arg("l"))
+      .def("GetEnergies",[](RPA& self){arma::vec vals = self.GetEnergies(); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec;} )
+      .def("GetX",[](RPA& self, size_t i){arma::vec vals = self.GetX(i); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec;} )
+      .def("GetY",[](RPA& self, size_t i){arma::vec vals = self.GetY(i); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec;} )
+      .def("PrintA",[](RPA& self){ std::cout << self.A << std::endl;} )
+      .def("PrintB",[](RPA& self){ std::cout << self.B << std::endl;} )
+   ;
+
    py::class_<UnitTest>(m,"UnitTest")
 //      .def(py::init<>())
       .def(py::init< ModelSpace&>())
@@ -473,6 +492,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("TestDaggerCommutatorsAlln",&UnitTest::TestDaggerCommutatorsAlln)
       .def("Test3BodyAntisymmetry",&UnitTest::Test3BodyAntisymmetry)
       .def("Test3BodyHermiticity",&UnitTest::Test3BodyHermiticity)
+      .def("TestRPAEffectiveCharge",&UnitTest::TestRPAEffectiveCharge, py::arg("H"),py::arg("OpIn"),py::arg("k"),py::arg("l"))
       .def("SanityCheck",&UnitTest::SanityCheck)
 //      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
    ;
@@ -538,6 +558,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("factorial", AngMom::factorial);
    m.def("double_fact", AngMom::double_fact);
 
+
    m.attr("HBARC") = py::float_( PhysConst::HBARC);
    m.attr("M_PROTON") = py::float_( PhysConst::M_PROTON);
    m.attr("M_NEUTRON") = py::float_( PhysConst::M_NEUTRON);
@@ -553,5 +574,6 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.attr("ALPHA_FS") = py::float_( PhysConst::ALPHA_FS);
    m.attr("F_PI") = py::float_( PhysConst::F_PI);
    m.attr("HARTREE") = py::float_( PhysConst::HARTREE);
+
 
 }

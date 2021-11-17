@@ -782,8 +782,9 @@ Operator IMSRGSolver::InverseTransform(Operator& OpIn)
 /// for the \f$\Omega_i\f$s with index greater than or equal to n.
 Operator IMSRGSolver::Transform_Partial(Operator& OpIn, int n)
 {
-  std::cout << "Begin " << __func__ << "   n, n_omega_written = " << n << " " << n_omega_written << std::endl;
   Operator OpOut = OpIn;
+  if ( OpOut.GetParticleRank() ==1) OpOut.SetParticleRank(2);
+
 //  if ((rw != NULL) and rw->GetScratchDir() != "")
   if ( scratchdir != "")
   {

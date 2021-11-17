@@ -2568,7 +2568,7 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
   for (auto i : X.modelspace->all_orbits )
   {
     Orbit& oi = X.modelspace->GetOrbit(i);
-    int mi = oi.j2;
+//    int mi = oi.j2;
     for (auto j : X.modelspace->all_orbits )
     {
       if (j>i) continue;
@@ -2601,7 +2601,7 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
                {
                 for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
                 {
-                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or (j==k and m_j==m_k)) continue;
 
                  for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
                  {
@@ -2610,7 +2610,7 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
                    for (int m_n=-on.j2; m_n<=on.j2; m_n+=2)
                    {
                      if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
-                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or m==n and m_m==m_n) continue;
+                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or (m==n and m_m==m_n)) continue;
                      double z_ijklmn = 0;
 
 
@@ -2744,7 +2744,7 @@ bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y )
   for (auto i : X.modelspace->all_orbits )
   {
     Orbit& oi = X.modelspace->GetOrbit(i);
-    int mi = oi.j2;
+//    int mi = oi.j2;
     for (auto j : X.modelspace->all_orbits )
     {
       if (j<i) continue;
@@ -2780,7 +2780,7 @@ bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y )
                {
                 for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
                 {
-                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or (j==k and m_j==m_k)) continue;
 
                  for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
                  {
@@ -2789,7 +2789,7 @@ bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y )
                    for (int m_n=-on.j2; m_n<=on.j2; m_n+=2)
                    {
                      if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
-                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or m==n and m_m==m_n) continue;
+                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or (m==n and m_m==m_n)) continue;
 
 //                     if (not (m_i==1 and m_j==1 and m_k==-1 and m_l==1 and m_m==-1 and m_n==1) ) continue;
                      double z_ijklmn = 0;
@@ -2909,7 +2909,7 @@ bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // t
   for (auto i : X.modelspace->all_orbits )
   {
     Orbit& oi = X.modelspace->GetOrbit(i);
-    int mi = oi.j2;
+//    int mi = oi.j2;
     for (auto j : X.modelspace->all_orbits )
     {
       if (j<i) continue;
@@ -2948,7 +2948,7 @@ bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // t
                {
                 for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
                 {
-                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or (j==k and m_j==m_k)) continue;
 
                  for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
                  {
@@ -2957,7 +2957,7 @@ bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // t
                    for (int m_n=-on.j2; m_n<=on.j2; m_n+=2)
                    {
                      if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
-                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or m==n and m_m==m_n) continue;
+                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or (m==n and m_m==m_n)) continue;
 
 //                     if (not (m_i==1 and m_j==-1 and m_k==1 and m_l==1 and m_m==-1 and m_n==1) ) continue;
                      double z_ijklmn = 0;
@@ -3103,7 +3103,7 @@ bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // tes
   for (auto i : X.modelspace->all_orbits )
   {
     Orbit& oi = X.modelspace->GetOrbit(i);
-    int mi = oi.j2;
+//    int mi = oi.j2;
     for (auto j : X.modelspace->all_orbits )
     {
       if (j>i) continue;
@@ -3141,7 +3141,7 @@ bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // tes
                {
                 for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
                 {
-                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or (j==k and m_j==m_k)) continue;
 
                  for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
                  {
@@ -3150,7 +3150,7 @@ bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // tes
                    for (int m_n=-on.j2; m_n<=on.j2; m_n+=2)
                    {
                      if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
-                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or m==n and m_m==m_n) continue;
+                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or (m==n and m_m==m_n)) continue;
 
                      if (not (m_i==1 and m_j==-1 and m_k==1 and m_l==1 and m_m==-1 and m_n==1) ) continue;
                      double z_ijklmn = 0;
@@ -3172,15 +3172,15 @@ bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // tes
                         for ( int m_b=-ob.j2; m_b<=ob.j2; m_b+=2)
                         {
 
-                         double xajkbmn = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, k,m_k, b,m_b, m,m_m, n,m_n );
-                         double xaikbmn = GetMschemeMatrixElement_3b( X, a,m_a, i,m_i, k,m_k, b,m_b, m,m_m, n,m_n );
-                         double xajibmn = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, i,m_i, b,m_b, m,m_m, n,m_n );
-                         double xajkbln = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, k,m_k, b,m_b, l,m_l, n,m_n );
-                         double xaikbln = GetMschemeMatrixElement_3b( X, a,m_a, i,m_i, k,m_k, b,m_b, l,m_l, n,m_n );
-                         double xajibln = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, i,m_i, b,m_b, l,m_l, n,m_n );
-                         double xajkbml = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, k,m_k, b,m_b, m,m_m, l,m_l );
-                         double xaikbml = GetMschemeMatrixElement_3b( X, a,m_a, i,m_i, k,m_k, b,m_b, m,m_m, l,m_l );
-                         double xajibml = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, i,m_i, b,m_b, m,m_m, l,m_l );
+//                         double xajkbmn = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, k,m_k, b,m_b, m,m_m, n,m_n );
+//                         double xaikbmn = GetMschemeMatrixElement_3b( X, a,m_a, i,m_i, k,m_k, b,m_b, m,m_m, n,m_n );
+//                         double xajibmn = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, i,m_i, b,m_b, m,m_m, n,m_n );
+//                         double xajkbln = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, k,m_k, b,m_b, l,m_l, n,m_n );
+//                         double xaikbln = GetMschemeMatrixElement_3b( X, a,m_a, i,m_i, k,m_k, b,m_b, l,m_l, n,m_n );
+//                         double xajibln = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, i,m_i, b,m_b, l,m_l, n,m_n );
+//                         double xajkbml = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, k,m_k, b,m_b, m,m_m, l,m_l );
+//                         double xaikbml = GetMschemeMatrixElement_3b( X, a,m_a, i,m_i, k,m_k, b,m_b, m,m_m, l,m_l );
+//                         double xajibml = GetMschemeMatrixElement_3b( X, a,m_a, j,m_j, i,m_i, b,m_b, m,m_m, l,m_l );
 
                          double xbial = GetMschemeMatrixElement_2b( X, b,m_b, i,m_i, a,m_a, l,m_l  );
                          double xbjal = GetMschemeMatrixElement_2b( X, b,m_b, j,m_j, a,m_a, l,m_l  );
@@ -3192,15 +3192,15 @@ bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // tes
                          double xbjan = GetMschemeMatrixElement_2b( X, b,m_b, j,m_j, a,m_a, n,m_n  );
                          double xbkan = GetMschemeMatrixElement_2b( X, b,m_b, k,m_k, a,m_a, n,m_n  );
 
-                         double yajkbmn = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, k,m_k, b,m_b, m,m_m, n,m_n );
-                         double yaikbmn = GetMschemeMatrixElement_3b( Y, a,m_a, i,m_i, k,m_k, b,m_b, m,m_m, n,m_n );
-                         double yajibmn = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, i,m_i, b,m_b, m,m_m, n,m_n );
-                         double yajkbln = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, k,m_k, b,m_b, l,m_l, n,m_n );
-                         double yaikbln = GetMschemeMatrixElement_3b( Y, a,m_a, i,m_i, k,m_k, b,m_b, l,m_l, n,m_n );
-                         double yajibln = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, i,m_i, b,m_b, l,m_l, n,m_n );
-                         double yajkbml = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, k,m_k, b,m_b, m,m_m, l,m_l );
-                         double yaikbml = GetMschemeMatrixElement_3b( Y, a,m_a, i,m_i, k,m_k, b,m_b, m,m_m, l,m_l );
-                         double yajibml = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, i,m_i, b,m_b, m,m_m, l,m_l );
+//                         double yajkbmn = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, k,m_k, b,m_b, m,m_m, n,m_n );
+//                         double yaikbmn = GetMschemeMatrixElement_3b( Y, a,m_a, i,m_i, k,m_k, b,m_b, m,m_m, n,m_n );
+//                         double yajibmn = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, i,m_i, b,m_b, m,m_m, n,m_n );
+//                         double yajkbln = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, k,m_k, b,m_b, l,m_l, n,m_n );
+//                         double yaikbln = GetMschemeMatrixElement_3b( Y, a,m_a, i,m_i, k,m_k, b,m_b, l,m_l, n,m_n );
+//                         double yajibln = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, i,m_i, b,m_b, l,m_l, n,m_n );
+//                         double yajkbml = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, k,m_k, b,m_b, m,m_m, l,m_l );
+//                         double yaikbml = GetMschemeMatrixElement_3b( Y, a,m_a, i,m_i, k,m_k, b,m_b, m,m_m, l,m_l );
+//                         double yajibml = GetMschemeMatrixElement_3b( Y, a,m_a, j,m_j, i,m_i, b,m_b, m,m_m, l,m_l );
 
                          double ybial = GetMschemeMatrixElement_2b( Y, b,m_b, i,m_i, a,m_a, l,m_l  );
                          double ybjal = GetMschemeMatrixElement_2b( Y, b,m_b, j,m_j, a,m_a, l,m_l  );
@@ -3356,7 +3356,7 @@ bool UnitTest::Test_comm333_ppp_hhh_ss( const Operator& X, const Operator& Y ) /
                {
                 for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
                 {
-                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or (j==k and m_j==m_k)) continue;
 
                  for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
                  {
@@ -3365,7 +3365,7 @@ bool UnitTest::Test_comm333_ppp_hhh_ss( const Operator& X, const Operator& Y ) /
                    for (int m_n=-on.j2; m_n<=on.j2; m_n+=2)
                    {
                      if ( (m_i+m_j+m_k) != (m_l+m_m+m_n) ) continue;
-                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or m==n and m_m==m_n) continue;
+                     if ( (l==m and m_l==m_m) or (l==n and m_l==m_n) or (m==n and m_m==m_n)) continue;
 
 //                     if (not (m_i==1 and m_j==1 and m_k==-1 and m_l==1 and m_m==-1 and m_n==1) ) continue;
                      double z_ijklmn = 0;
@@ -3522,7 +3522,7 @@ bool UnitTest::Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y ) /
                {
                 for (int m_k=-ok.j2; m_k<=ok.j2; m_k+=2)
                 {
-                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or j==k and m_j==m_k) continue;
+                 if ( (i==j and m_i==m_j) or (i==k and m_i==m_k) or (j==k and m_j==m_k)) continue;
 
                  for (int m_l=-ol.j2; m_l<=ol.j2; m_l+=2)
                  {
@@ -3756,7 +3756,7 @@ bool UnitTest::Test_comm211sd( const Operator& X, const Operator& Y )
   double sum_m = 0;
   double sum_J = 0;
 
-  size_t Q = Z_J.GetQSpaceOrbit();
+//  size_t Q = Z_J.GetQSpaceOrbit();
 //  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
 
 
@@ -3823,7 +3823,7 @@ bool UnitTest::Test_comm231sd( const Operator& X, const Operator& Y )
   double sum_m = 0;
   double sum_J = 0;
 
-  size_t Q = Z_J.GetQSpaceOrbit();
+//  size_t Q = Z_J.GetQSpaceOrbit();
 //  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
 
 
@@ -3899,7 +3899,7 @@ bool UnitTest::Test_comm431sd( const Operator& X, const Operator& Y )
   double sum_m = 0;
   double sum_J = 0;
 
-  size_t Q = Z_J.GetQSpaceOrbit();
+//  size_t Q = Z_J.GetQSpaceOrbit();
 //  Orbit& oQ = Z_J.modelspace->GetOrbit(Q);
 
 
@@ -4402,6 +4402,107 @@ bool UnitTest::Test_comm433sd_ph( const Operator& X, const Operator& Yin )
 
 
 
+
+bool UnitTest::TestRPAEffectiveCharge( const Operator& H, const Operator& OpIn, size_t a, size_t b)
+{
+  bool passed = true;
+
+  int L = OpIn.GetJRank();
+  int M = 0;
+  double omega = H.OneBody(a,a) - H.OneBody(b,b);
+
+  
+  // number of m-scheme orbits
+  int n_mscheme =0;
+  for (auto k : H.modelspace->all_orbits) n_mscheme += H.modelspace->GetOrbit(k).j2+1;
+
+  std::cout << "n_mscheme = " << n_mscheme << std::endl;
+  // Make column vector Tkl and Tkleff
+  // and Matrix Mklpq
+  arma::vec Tkl(n_mscheme*n_mscheme, arma::fill::zeros);
+  arma::vec Tkl_eff(n_mscheme*n_mscheme, arma::fill::zeros);
+  arma::mat Mklpq( n_mscheme*n_mscheme, n_mscheme*n_mscheme, arma::fill::zeros);
+
+  size_t index_ab=0;
+  size_t index_kl=0;
+  for ( auto k : H.modelspace->all_orbits)
+  {
+   Orbit& ok = H.modelspace->GetOrbit(k);
+   double jk = 0.5*ok.j2;
+//   std::cout << "  k = " << k << std::endl;
+   for ( auto l : H.modelspace->all_orbits)
+   {
+    Orbit& ol = H.modelspace->GetOrbit(l);
+    double jl = 0.5*ol.j2;
+
+//    std::cout << "   l = " << l << std::endl;
+    for (int twomk=-ok.j2;twomk<=ok.j2; twomk+=2)
+    {
+      for (int twoml=-ol.j2;twoml<=ol.j2; twoml+=2)
+      {
+//        std::cout << "index_kl = " << index_kl << std::endl;
+        double mk=0.5*twomk;
+        double ml=0.5*twoml;
+        // Operator OpIn stores reduced matrix elements, so use Wigner Eckart
+        Tkl(index_kl) = OpIn.OneBody(k,l) * AngMom::CG(jl,ml,L,M,jk,mk) / sqrt(2*jk+1.);
+//        std::cout << "Tkl is " << Tkl(index_kl) << std::endl;
+        if ( (k==a) and (l==b) and (twomk==1) and (twoml==1) ) index_ab=index_kl; // So we can go back and read what we want
+
+        size_t index_pq=0;
+        // construct the matrix Mklpq = vkqlp (nq-np)/(omega-ep+eq)
+        for (auto p : H.modelspace->all_orbits)
+        {
+          Orbit& op = H.modelspace->GetOrbit(p);
+          double ep = H.OneBody(p,p);
+          double np = op.occ;
+          for (auto q : H.modelspace->all_orbits)
+          {
+//             std::cout << "    p,q = " << p << " , " << q << std::endl;
+             Orbit& oq = H.modelspace->GetOrbit(q);
+             double eq = H.OneBody(q,q);
+             double nq = oq.occ;
+             for (int twomp=-op.j2; twomp<=op.j2; twomp+=2)
+             {
+               for (int twomq=-oq.j2; twomq<=oq.j2; twomq+=2)
+               {
+//                  double mp=0.5*twomp;
+//                  double mq=0.5*twomq;
+//                  double vkqlp = GetMschemeMatrixElement_2b( H, k,mk, q,mq, l,ml, p,mp );
+//                  std::cout << "      about to get vkqlp " << "   index_pq = " << index_pq << std::endl;
+                  if ( std::abs(np-nq)>1e-2)
+                  {
+                   double vkqlp = GetMschemeMatrixElement_2b( H, k,twomk, q,twomq, l,twoml, p,twomp );
+                   Mklpq(index_kl,index_pq) = vkqlp * (nq-np) / (omega-ep+eq);
+                  }
+//                  std::cout <<"  and set it." << std::endl;
+                  index_pq++;
+               }// for twomq
+             }// for twomp     
+          }// for q
+        }// for p
+
+        index_kl++;
+      }// for twoml
+    }//for twomk
+   }//for l
+  }// for k
+  
+  for (int iter=0; iter<12; iter++)
+  {
+     Tkl_eff = Tkl + Mklpq*Tkl_eff;
+     std::cout << "iter = " << iter << "   Tkl = " << Tkl(index_ab) << "   Tkleff = " << Tkl_eff(index_ab) << "  => e = " << std::setprecision(8)<< Tkl_eff(index_ab) / Tkl(index_ab) << std::endl;
+
+  }
+
+
+  return passed;
+}
+
+
+
+
+
+
 bool UnitTest::SanityCheck()
 {
  
@@ -4419,7 +4520,7 @@ bool UnitTest::SanityCheck()
   std::cout << "Construct a model space..." << std::endl;
   int emax = 2;
   std::string ref = "He4";
-  auto ms = ModelSpace(2,ref,ref);
+  auto ms = ModelSpace(emax,ref,ref);
 //  int A,Z;
   double A,Z;
   ms.GetAZfromString("Pb208",A,Z);

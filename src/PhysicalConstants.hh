@@ -16,13 +16,19 @@ const double M_NUCLEON          = (M_PROTON+M_NEUTRON) / 2.0 ;    // avarage nuc
 const double M_PION_CHARGED     = 139.57018 ;                     // charged pion mass in MeV/c^2
 const double M_PION_NEUTRAL     = 134.9766 ;                      // neutron pion mass in MeV/c^2
 const double NUCLEON_VECTOR_G   = 1.00 ;                          // nucleon vector g factor, which is 1 due to CVC
-const double NUCLEON_AXIAL_G    = 1.27 ;                          // nucleon axial g factor, aka gA
-const double PROTON_SPIN_G      =  5.586 ;                        // proton spin g factor for magnetic moment
-const double NEUTRON_SPIN_G     = -3.826 ;                        // neutron spin g factor for magnetic moment
+const double NUCLEON_AXIAL_G    = 1.27 ;                          // nucleon axial g factor, aka gA. PDG lists 1.2723(23). From Lattice 1.271(13)
+const double PROTON_SPIN_G      =  5.585690569;                   // proton spin g factor for magnetic moment from PDG 2020
+const double NEUTRON_SPIN_G     = -3.826085 ;                     // neutron spin g factor for magnetic moment from PDG 2020
 const double ELECTRON_SPIN_G    = 2.002319;                       // electron spin g factor
 const double ALPHA_FS           = 1.0 / 137.035999;               // fine structure constant
 const double F_PI               = 92.2 ;                          // pion decay constant
 const double HARTREE            = 27.21138602;                    // 1 Hartree in eV
+//const double PROTON_RCH2	= 0.770;			  // proton charge radius squared. This corresponds to Rp=0.8775 from CODATA 2010
+const double PROTON_RCH2	= 0.707;			  // proton charge radius squared. This corresponds to Rp=0.8409 from PDG 2020
+//const double NEUTRON_RCH2	= -0.1149;			  // neutron charge radius squared. From Angeli and Marinova (not sure how they got it)
+const double NEUTRON_RCH2	= -0.1161;			  // neutron charge radius squared. From PDG 2020
+//const double DARWIN_FOLDY	= 0.033;			  // Darwin-Foldy relativistic correction to charge radii  = 3hbar^2/4 mp^2 c^2
+const double DARWIN_FOLDY	= 0.033172;			  // Darwin-Foldy relativistic correction to charge radii  = 3hbar^2/4 mp^2 c^2
 
 // Math constants
 const double SQRT2    = sqrt(2.0);

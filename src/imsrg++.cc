@@ -163,6 +163,9 @@ int main(int argc, char** argv)
   std::vector<Operator> ops;
   std::vector<std::string> spwf = parameters.v("SPWF");
 
+  using PhysConst::PROTON_RCH2;
+  using PhysConst::NEUTRON_RCH2;
+  using PhysConst::DARWIN_FOLDY;
 
 
   // test 2bme file
@@ -668,46 +671,6 @@ int main(int argc, char** argv)
     {
         ops.emplace_back( imsrg_util::OperatorFromString(modelspace, opname) );
     }
-//    for (auto& opname : opnames)
-//    {
-////        ops.emplace_back( imsrg_util::OperatorFromString(modelspace,opname) );
-//        Operator optmp = imsrg_util::OperatorFromString(modelspace,opname);
-//
-//        if ((basis == "HF") and (opname.find("DaggerHF") == std::string::npos)  )
-//        {
-//          optmp = hf.TransformToHFBasis(optmp);
-//        }
-//        else if ((basis == "NAT") and (opname.find("DaggerHF") == std::string::npos)  )
-//        {
-//          optmp = hf.TransformHOToNATBasis(optmp);
-//        }
-//        optmp = optmp.DoNormalOrdering();
-//        if (method == "HF" or method == "MP3")
-//        {
-//          std::cout << "HF expectation value  " << opname << "  " << optmp.ZeroBody << std::endl;
-//        }
-//        if (method == "MP3")
-//        {
-//          double dop = optmp.MP1_Eval( HNO );
-//          std::cout << "Operator 1st order correction  " << dop << "  ->  " << optmp.ZeroBody + dop << std::endl;
-//        }
-//        if (method == "flow" or method == "flow_RK4")
-//        {
-//          ops.push_back(optmp);
-//        }
-//        if ( opname == "Rp2" )
-//        {
-//          double Rp2 = optmp.ZeroBody;
-//          int Z = modelspace.GetTargetZ();
-//          int A = modelspace.GetTargetMass();
-//          std::cout << " HF point proton radius = " << sqrt( Rp2 ) << std::endl;
-//          std::cout << " HF charge radius = " << ( abs(Rp2)<1e-6 ? 0.0 : sqrt( Rp2 + r2p + r2n*(A-Z)/Z + DarwinFoldy) ) << std::endl;
-//        }
-//    }
-//    if ( method=="HF" or method=="MP3")
-//    {
-//       opnames.resize(0); // we already dealt with all the operators in opnames, so clear it out.
-//    }
 
     // Calculate first order perturbative correction to some operators, if that's what we asked for.
     // Strictly speaking, it doesn't make much sense to do this and then proceed with the IMSRG calculation,
@@ -787,7 +750,7 @@ int main(int argc, char** argv)
       int Z = modelspace.GetTargetZ();
       int A = modelspace.GetTargetMass();
       std::cout << " HF point proton radius = " << sqrt( Rp2 ) << std::endl;
-      std::cout << " HF charge radius = " << ( abs(Rp2)<1e-6 ? 0.0 : sqrt( Rp2 + r2p + r2n*(A-Z)/Z + DarwinFoldy) ) << std::endl;
+      std::cout << " HF charge radius = " << ( abs(Rp2)<1e-6 ? 0.0 : sqrt( Rp2 + PROTON_RCH2 + NEUTRON_RCH2*(A-Z)/Z + DARWIN_FOLDY) ) << std::endl;
     }
    }// for ops.size
 
@@ -1296,7 +1259,7 @@ int main(int argc, char** argv)
            int Z = modelspace_imsrg.GetTargetZ();
            int A = modelspace_imsrg.GetTargetMass();
            std::cout << " IMSRG point proton radius = " << sqrt( op.ZeroBody ) << std::endl;
-           std::cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + r2p + r2n*(A-Z)/Z + DarwinFoldy) << std::endl;
+           std::cout << " IMSRG charge radius = " << sqrt( op.ZeroBody + PROTON_RCH2 + NEUTRON_RCH2*(A-Z)/Z + DARWIN_FOLDY) << std::endl;
         }
         if ((op.GetJRank()>0) or (op.GetTRank()>0)) // if it's a tensor, you probably want the full operator
         {

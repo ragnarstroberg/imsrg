@@ -83,6 +83,7 @@ class UnitTest
   bool Test_comm433_pp_hh_sd( const Operator& X, const Operator& Y   );
   bool Test_comm433sd_ph(     const Operator& X, const Operator& Y   );
 
+  bool TestRPAEffectiveCharge( const Operator& H, const Operator& OpIn, size_t k, size_t l);
 
   bool SanityCheck();
 

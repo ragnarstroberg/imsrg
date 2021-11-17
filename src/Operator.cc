@@ -443,15 +443,18 @@ Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied ) cons
         Orbit& ok = modelspace->GetOrbit(k);
         opNO.ZeroBody += (ok.j2+1) * sign*ok.occ * OneBody(k,k);
 
-        for (auto& l : occupied)
+        if ( particle_rank>1)
         {
-          if (l<k) continue;
-          Orbit& ol = modelspace->GetOrbit(l);
-          int Jmin = std::abs( ok.j2 - ol.j2)/2;
-          int Jmax = (ok.j2 + ol.j2)/2;
-          for (int J=Jmin; J<=Jmax; J++)
+          for (auto& l : occupied)
           {
-             opNO.ZeroBody +=  (2*J+1) * ok.occ * ol.occ * TwoBody.GetTBME_J_norm(J,J ,k,l,k,l);
+            if (l<k) continue;
+            Orbit& ol = modelspace->GetOrbit(l);
+            int Jmin = std::abs( ok.j2 - ol.j2)/2;
+            int Jmax = (ok.j2 + ol.j2)/2;
+            for (int J=Jmin; J<=Jmax; J++)
+            {
+               opNO.ZeroBody +=  (2*J+1) * ok.occ * ol.occ * TwoBody.GetTBME_J_norm(J,J ,k,l,k,l);
+            }
           }
         }
      }
@@ -465,7 +468,7 @@ Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied ) cons
      {
         int ch_bra = itmat.first[0];
         int ch_ket = itmat.first[1];
-        auto& matrix = itmat.second;
+//        auto& matrix = itmat.second;
 
         TwoBodyChannel &tbc_bra = modelspace->GetTwoBodyChannel(ch_bra);
         TwoBodyChannel &tbc_ket = modelspace->GetTwoBodyChannel(ch_ket);
@@ -473,16 +476,6 @@ Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied ) cons
         int J_ket = tbc_ket.J;
         double hatfactor = sqrt((2*J_bra+1.0)*(2*J_ket+1.0));
 
-//        // Zero body part
-//        if (scalar)
-//        {
-//          arma::vec diagonals = matrix.diag();
-//          auto hh = tbc_ket.GetKetIndex_hh(); // TODO THIS NEEDS TO BE FIXED
-//          auto hocc = tbc_ket.Ket_occ_hh;
-//          // We have two occupations (na*nb), so if we're undoing the normal ordering the signs cancel out and we get no minus sign here.
-////          opNO.ZeroBody += arma::sum( hocc % diagonals.elem(hh) ) * hatfactor;
-//          check_zero += arma::sum( hocc % diagonals.elem(hh) ) * hatfactor ;
-//        }
 
         // One body part
         for (index_t a=0;a<norbits;++a)
@@ -532,7 +525,6 @@ Operator Operator::DoNormalOrdering2(int sign, std::set<index_t> occupied ) cons
 
    if (hermitian) opNO.Symmetrize();
    if (antihermitian) opNO.AntiSymmetrize();
-
 
    return opNO;
 }
@@ -830,10 +822,12 @@ void Operator::SetNumberLegs( int l)
   if ( l == old_legs ) return;
   if (legs%2==0)
   {
+    if ( old_legs < 4) TwoBody = TwoBodyME(modelspace,rank_J,rank_T,parity);
     if ( TwoBody.MatEl.size()<1)    TwoBody.Allocate();
     ThreeLeg.Deallocate();
 //    if (legs>5 and (not ThreeBody.is_allocated)) ThreeBody.Allocate();
     if (legs>5 and (not ThreeBody.IsAllocated())) ThreeBody.Allocate();
+    particle_rank = l/2;
   }
   else
   {
@@ -1073,9 +1067,9 @@ std::array<double,3> Operator::GetMP3_Energy()
        size_t II_hh = 0;
        for (auto iket_kl : tbc.GetKetIndex_hh() )
        {
-         Ket& ket_kl = tbc.GetKet(iket_kl);
-         index_t k = ket_kl.p;
-         index_t l = ket_kl.q;
+//         Ket& ket_kl = tbc.GetKet(iket_kl);
+//         index_t k = ket_kl.p;
+//         index_t l = ket_kl.q;
          M_hhhh( I_hh, II_hh) = Mat(iket_ij,iket_kl) ;
          II_hh ++;
        }
@@ -1085,15 +1079,15 @@ std::array<double,3> Operator::GetMP3_Energy()
      size_t I_pp = 0;
      for (auto iket_ab : tbc.GetKetIndex_pp() )
      {
-       Ket& ket_ab = tbc.GetKet(iket_ab);
-       index_t a = ket_ab.p;
-       index_t b = ket_ab.q;
+//       Ket& ket_ab = tbc.GetKet(iket_ab);
+//       index_t a = ket_ab.p;
+//       index_t b = ket_ab.q;
        size_t II_pp = 0;
        for (auto iket_cd : tbc.GetKetIndex_pp() )
        {
-         Ket& ket_cd = tbc.GetKet(iket_cd);
-         index_t c = ket_cd.p;
-         index_t d = ket_cd.q;
+//         Ket& ket_cd = tbc.GetKet(iket_cd);
+//         index_t c = ket_cd.p;
+//         index_t d = ket_cd.q;
          M_pppp( I_pp, II_pp) = Mat(iket_ab,iket_cd);
          II_pp ++;
        }
@@ -1110,7 +1104,7 @@ std::array<double,3> Operator::GetMP3_Energy()
 
 
 
-   index_t nparticles = modelspace->particles.size();
+//   index_t nparticles = modelspace->particles.size();
    modelspace->PreCalculateSixJ();
 
    
@@ -1170,7 +1164,7 @@ std::array<double,3> Operator::GetMP3_Energy()
          int J1max = std::min(ja+jb,ji+jj);
          double tbme_iabj = 0;
          double tbme_bjck = 0;
-         double tbme_ckia = 0;
+//         double tbme_ckia = 0;
 
          if ( AngMom::Triangle(jj,jb,Jph) and AngMom::Triangle(ji,ja,Jph))
          {
@@ -1316,9 +1310,9 @@ std::array<double,2> Operator::GetPPHH_Ladders()
          size_t II_pp = 0;
          for (auto iket_cd : tbc.GetKetIndex_pp() )
          {
-           Ket& ket_cd = tbc.GetKet(iket_cd);
-           index_t c = ket_cd.p;
-           index_t d = ket_cd.q;
+//           Ket& ket_cd = tbc.GetKet(iket_cd);
+//           index_t c = ket_cd.p;
+//           index_t d = ket_cd.q;
            M_pppp( I_pp, II_pp) += Mat(iket_ab,iket_cd) / Delta_ijab;
            II_pp ++;
          }
@@ -1355,9 +1349,9 @@ std::array<double,2> Operator::GetPPHH_Ladders()
          size_t II_hh = 0;
          for (auto iket_kl : tbc.GetKetIndex_hh() )
          {
-           Ket& ket_kl = tbc.GetKet(iket_kl);
-           index_t k = ket_kl.p;
-           index_t l = ket_kl.q;
+//           Ket& ket_kl = tbc.GetKet(iket_kl);
+//           index_t k = ket_kl.p;
+//           index_t l = ket_kl.q;
            M_hhhh( I_hh, II_hh) += Mat(iket_ij,iket_kl) / Delta_ijab;
            II_hh ++;
          }
@@ -1370,99 +1364,12 @@ std::array<double,2> Operator::GetPPHH_Ladders()
      }// for iket_ij
 
 
-
-
-
-
-
-
-
   }// for ich
 
 
 
+   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
 
-
-
-
-/*
-
-
-
-//   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Emp3)
-   #pragma omp parallel for  schedule(dynamic,1) reduction(+:Epp,Ehh)
-   for (int ich=0;ich<nch;++ich)
-   {
-     TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ich);
-     auto& Mat = TwoBody.GetMatrix(ich,ich);
-
-     double omega = modelspace->GetEFermi()[tbc.Tz] * modelspace->GetHbarOmega();
-     std::cout << "OMEGA IS "<< omega << std::endl;
-
-     size_t n_hh = tbc.GetKetIndex_hh().size();
-     size_t n_pp = tbc.GetKetIndex_pp().size();
-     arma::mat M_hhpp( n_hh, n_pp, arma::fill::zeros );
-     arma::mat M_hhhh( n_hh, n_hh, arma::fill::zeros );
-     arma::mat M_pppp( n_pp, n_pp, arma::fill::zeros );
-
-     size_t I_hh = 0;
-     for (auto iket_ij : tbc.GetKetIndex_hh() )
-     {
-       Ket& ket_ij = tbc.GetKet(iket_ij);
-       index_t i = ket_ij.p;
-       index_t j = ket_ij.q;
-
-       size_t II_pp = 0;
-       for (auto iket_ab : tbc.GetKetIndex_pp() )
-       {
-         Ket& ket_ab = tbc.GetKet(iket_ab);
-         index_t a = ket_ab.p;
-         index_t b = ket_ab.q;
-//         double Delta_ijab = OneBody(i,i) + OneBody(j,j) - OneBody(a,a) - OneBody(b,b);
-//         M_hhpp( I_hh, II_pp) = Mat(iket_ij,iket_ab) / Delta_ijab;
-         M_hhpp( I_hh, II_pp) = Mat(iket_ij,iket_ab) ;
-         II_pp ++;
-       }
-       size_t II_hh = 0;
-       for (auto iket_kl : tbc.GetKetIndex_hh() )
-       {
-         Ket& ket_kl = tbc.GetKet(iket_kl);
-         index_t k = ket_kl.p;
-         index_t l = ket_kl.q;
-         M_hhhh( I_hh, II_hh) = Mat(iket_ij,iket_kl) ;
-         II_hh ++;
-       }
-       I_hh ++;
-     }
-
-     size_t I_pp = 0;
-     for (auto iket_ab : tbc.GetKetIndex_pp() )
-     {
-       Ket& ket_ab = tbc.GetKet(iket_ab);
-       index_t a = ket_ab.p;
-       index_t b = ket_ab.q;
-       double denom = omega - OneBody(a,a) - OneBody(b,b);
-       size_t II_pp = 0;
-       for (auto iket_cd : tbc.GetKetIndex_pp() )
-       {
-         Ket& ket_cd = tbc.GetKet(iket_cd);
-         index_t c = ket_cd.p;
-         index_t d = ket_cd.q;
-         M_pppp( I_pp, II_pp) = Mat(iket_ab,iket_cd) / denom;
-         II_pp ++;
-       }
-       I_pp ++;
-     }
-     // sum_n  X^n  = 1/(1-X) where here X is M_pppp or M_hhhh
-     M_pppp -= arma::eye( arma::size(M_pppp));
-     M_hhhh -= arma::eye( arma::size(M_hhhh));
-
-     int J = tbc.J;
-     Ehh -= (2*J+1) * arma::trace( M_hhpp.t() * M_hhhh.i() * M_hhpp );
-     Epp -= (2*J+1) * arma::trace( M_hhpp * M_pppp.i() * M_hhpp.t() );
-
-   } // for ich
-*/
   return {Epp,Ehh};
 }
 
@@ -1663,7 +1570,7 @@ double Operator::Trace(int Atrace, int Ztrace) const
 
 void Operator::ScaleFermiDirac(Operator& H, double T, double Efermi)
 {
-  int norb = modelspace->GetNumberOrbits();
+//  int norb = modelspace->GetNumberOrbits();
 
 //  for (int i=0; i<norb; ++i)
   for (auto i : modelspace->all_orbits )
@@ -1706,12 +1613,12 @@ void Operator::Symmetrize()
      OneBody = arma::symmatu(OneBody);
    else
    {
-     int norb = modelspace->GetNumberOrbits();
+//     int norb = modelspace->GetNumberOrbits();
 //     for (int i=0;i<norb; ++i)
      for ( auto i : modelspace->all_orbits )
      {
        Orbit& oi = modelspace->GetOrbit(i);
-       for ( int j : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+       for ( size_t j : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
        {
          if (j<= i) continue;
          Orbit& oj = modelspace->GetOrbit(j);
@@ -1732,12 +1639,12 @@ void Operator::AntiSymmetrize()
    }
    else
    {
-     int norb = modelspace->GetNumberOrbits();
+//     int norb = modelspace->GetNumberOrbits();
 //     for (int i=0;i<norb; ++i)
      for ( auto i : modelspace->all_orbits )
      {
        Orbit& oi = modelspace->GetOrbit(i);
-       for ( int j : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+       for ( size_t j : OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
        {
          if (j<= i) continue;
          if (rank_J==0)

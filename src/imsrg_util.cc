@@ -116,6 +116,18 @@ namespace imsrg_util
          }
          theop =  GaussianPotential(modelspace,sigma);
       }
+      else if (opnamesplit[0] =="VSDI")
+      {
+//        std::cout << "    " << opnamesplit[0] << " " << opnamesplit[1] << " " << opnamesplit[2] << std::endl;
+         double V0 = 1.0;
+         double R = 1.0;
+         if ( opnamesplit.size() > 2 ) 
+         {
+           std::istringstream( opnamesplit[1] ) >> V0;
+           std::istringstream( opnamesplit[2] ) >> R;
+         }
+         theop =  SurfaceDeltaInteraction(modelspace,V0,R);
+      }
       else if (opnamesplit[0] =="HCM")
       {
 //         if ( opnamesplit.size() == 1 ) theop =  HCM_Op(modelspace);
@@ -2319,19 +2331,34 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
             double jk = ok.j2*0.5;
             double jl = ol.j2*0.5 ;
 
-            // Formula just taken from Suhonen 8.55, 8.56  Note definitions in 5.21 and 4.28
-//            double QdQ = modelspace.phase( ji+jj+J)     * modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qki * Qjl
-//                       - modelspace.phase( ji+jj+jk+jl) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qli * Qjk;
-            double QdQ =  modelspace.phase( ji+jj+J)     * modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qmat(k,i) * Qmat(j,l)
-                        - modelspace.phase( ji+jj+jk+jl) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qmat(l,i) * Qmat(j,k) ;
-//            double QdQ = 2*( modelspace.phase( jj+jl-J)     * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qmat(i,l) * Qmat(j,k)
-//                           - modelspace.phase( jj+jk+jk+jl) * modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qmat(i,k) * Qmat(j,l) );
+            double Aijkl = modelspace.phase(ji+jj+J) *  modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qmat(k,i) * Qmat(j,l);
+            double Aijlk = modelspace.phase(jk+jl+J) * modelspace.phase(ji+jj+J) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qmat(l,i) * Qmat(j,k);
+            double QdQ;
+            if ( tbc.Tz==0 ) // proton-neutron channel
+            {
+              if ( oi.tz2 == ok.tz2)   QdQ = Aijkl;  // pnpn
+              else                     QdQ = -Aijlk;  // pnnp
+            }
+            else
+            {
+               QdQ = Aijkl - Aijlk;  // pppp or nnnn
+               if (i==j) QdQ /= sqrt(2.0);
+               if (k==l) QdQ /= sqrt(2.0);
+            }
 
-//            double QdQ = Qil * Qjk * (2*J+1)/sqrt(5.0) * modelspace.phase( jk-jj ) * modelspace.GetSixJ(ji,jj,J,jk,jl,2.0);
-//            double QdQ = 0.5 * Qil * Qjk * (2*J+1)/sqrt(5.0) * modelspace.phase( jk+jj ) * modelspace.GetSixJ(ji,jj,J,jk,jl,2.0)
-//                       - 0.5 * Qik * Qjl * (2*J+1)/sqrt(5.0) * modelspace.phase( jl+jj ) * modelspace.GetSixJ(ji,jj,J,jl,jk,2.0);
-            if (i==j) QdQ /= sqrt(2.0);
-            if (k==l) QdQ /= sqrt(2.0);
+//            // Formula just taken from Suhonen 8.55, 8.56  Note definitions in 5.21 and 4.28
+////            double QdQ = modelspace.phase( ji+jj+J)     * modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qki * Qjl
+////                       - modelspace.phase( ji+jj+jk+jl) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qli * Qjk;
+//            double QdQ =  modelspace.phase( ji+jj+J)     * modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qmat(k,i) * Qmat(j,l)
+//                        - modelspace.phase( ji+jj+jk+jl) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qmat(l,i) * Qmat(j,k) ;
+////            double QdQ = 2*( modelspace.phase( jj+jl-J)     * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qmat(i,l) * Qmat(j,k)
+////                           - modelspace.phase( jj+jk+jk+jl) * modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qmat(i,k) * Qmat(j,l) );
+//
+////            double QdQ = Qil * Qjk * (2*J+1)/sqrt(5.0) * modelspace.phase( jk-jj ) * modelspace.GetSixJ(ji,jj,J,jk,jl,2.0);
+////            double QdQ = 0.5 * Qil * Qjk * (2*J+1)/sqrt(5.0) * modelspace.phase( jk+jj ) * modelspace.GetSixJ(ji,jj,J,jk,jl,2.0)
+////                       - 0.5 * Qik * Qjl * (2*J+1)/sqrt(5.0) * modelspace.phase( jl+jj ) * modelspace.GetSixJ(ji,jj,J,jl,jk,2.0);
+//            if (i==j) QdQ /= sqrt(2.0);
+//            if (k==l) QdQ /= sqrt(2.0);
             QdotQ_op.TwoBody.SetTBME(ch,ibra,iket,QdQ);
          }
       }
@@ -2669,8 +2696,6 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
   
    Operator Darwin(ModelSpace& modelspace, int Z )
    {
-//     double alpha_FS = 1.0 / 137.035999;
-//     double constants = M_PI * Z * alpha_FS * HBARC*HBARC*HBARC / (2*M_ELECTRON*M_ELECTRON*1e6*1e6) ; // convert to eV. M_PI is 3.1415... not the pion mass
      double constants = PI * Z * ALPHA_FS * HBARC*HBARC*HBARC / (2*M_ELECTRON*M_ELECTRON*1e6*1e6) ; // convert to eV and nanometers.  
      Operator Hdarwin( modelspace,0,0,0,2);
      for (auto a : modelspace.all_orbits )
@@ -2835,6 +2860,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
  Operator FirstOrderCorr_1b( const Operator& OpIn, const Operator& H )
  {
 
+//   std::cout << "BEGIN " << __func__ << std::endl;
 //   Operator OpIn = OpInx;
    Operator OpOut = 0. * OpIn;
    int Lambda = OpOut.GetJRank();
@@ -2850,6 +2876,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
        Orbit& oq = OpIn.modelspace->GetOrbit(q);
        double jq = 0.5 * oq.j2;
        double Opq = 0;
+//       std::cout << "p,q = " << p << " " << q << std::endl;
        for ( size_t i=0; i<norb; i++)
        {
          Orbit& oi = OpIn.modelspace->GetOrbit(i);
@@ -2873,10 +2900,20 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
            {
              double sixj = OpIn.modelspace->GetSixJ( ji, ja, Lambda, jp, jq, J );
              double Gamma_paiq = H.TwoBody.GetTBME_J(J,p,a,i,q);
+//             double Gamma_paiq = H.TwoBody.GetTBME_J_norm(J,p,a,i,q);
              gbar -= (2*J+1) * sixj * Gamma_paiq;
-           }           
+//             if ( p==2 and q==2 and a==6 and i==0)
+//             {
+//                std::cout << " line " <<__LINE__ << "  J=" << J << "  :  " << (2*J+1) << " * " << sixj << " * " << Gamma_paiq << "  =>  " << gbar << std::endl;
+//             }
+         }           
 //           Opq += nanifactor * (-gbar) / (Delta_paiq) * Oia;
            Opq += nanifactor * gbar / (Delta_qipa) * Oia;
+//           if (p==2 and p==2)
+//           {
+//           std::cout << "  ai = " << a << " " << i << "  :  " << nanifactor << " * " <<gbar << " * " << Oia
+//                     << " / ( " << H.OneBody(q,q) << " + " << H.OneBody(i,i) << " - " << H.OneBody(p,p) << " - " << H.OneBody(a,a) << " )   => Opq = " << Opq << std::endl;
+//           }
          }
        }
        OpOut.OneBody(p,q) = Opq;
@@ -3155,19 +3192,19 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 //       Minv = arma::eye(arma::size(M)) + Mdel;// + Mdel*Mdel;   // FOR DEBUGGING. REMOVE THIS
        arma::vec ORPA = Minv * Ovec;
 
-       arma::mat mphph_tmp = Mphph/(Delta.submat(0,0,nkets-1,nkets-1) + del12.submat(0,0,nkets-1,nkets-1) );
-       arma::mat mhphp_tmp = Mhphp/(Delta.submat(nkets,nkets,2*nkets-1,2*nkets-1) + del12.submat(nkets,nkets,2*nkets-1,2*nkets-1) );
-       arma::mat mphhp_tmp = Mphhp/(Delta.submat(0,nkets,nkets-1,2*nkets-1) + del12.submat(0,nkets,nkets-1,2*nkets-1) );
-       arma::mat mphhp_alt = mphhp_tmp;
-       arma::Row<double> phases(nkets, arma::fill::ones);
-       for ( size_t i=0; i<nkets; i++) phases(i) = ph_phase[i];
-       mphhp_alt.each_row() %= phases;
-
-//       std::cout << "mphhp_tmp = " << std::endl << mphhp_tmp << std::endl << std::endl << " mphhp_alt = " << std::endl << mphhp_alt << std::endl;
-       arma::mat mhpph_tmp = Mhpph/(Delta.submat(nkets,0,2*nkets-1,nkets-1) + del12.submat(nkets,0,2*nkets-1,nkets-1) );
-       arma::vec Orpa_ph = mphph_tmp * Oph + mphhp_tmp * Ohp;
-       arma::vec Orpa_ph_alt = (mphph_tmp + mphhp_alt) * Oph;
-       arma::vec Orpa_hp = mhphp_tmp * Ohp + mhpph_tmp * Oph;
+//       arma::mat mphph_tmp = Mphph/(Delta.submat(0,0,nkets-1,nkets-1) + del12.submat(0,0,nkets-1,nkets-1) );
+//       arma::mat mhphp_tmp = Mhphp/(Delta.submat(nkets,nkets,2*nkets-1,2*nkets-1) + del12.submat(nkets,nkets,2*nkets-1,2*nkets-1) );
+//       arma::mat mphhp_tmp = Mphhp/(Delta.submat(0,nkets,nkets-1,2*nkets-1) + del12.submat(0,nkets,nkets-1,2*nkets-1) );
+//       arma::mat mphhp_alt = mphhp_tmp;
+//       arma::Row<double> phases(nkets, arma::fill::ones);
+//       for ( size_t i=0; i<nkets; i++) phases(i) = ph_phase[i];
+//       mphhp_alt.each_row() %= phases;
+//
+////       std::cout << "mphhp_tmp = " << std::endl << mphhp_tmp << std::endl << std::endl << " mphhp_alt = " << std::endl << mphhp_alt << std::endl;
+//       arma::mat mhpph_tmp = Mhpph/(Delta.submat(nkets,0,2*nkets-1,nkets-1) + del12.submat(nkets,0,2*nkets-1,nkets-1) );
+//       arma::vec Orpa_ph = mphph_tmp * Oph + mphhp_tmp * Ohp;
+//       arma::vec Orpa_ph_alt = (mphph_tmp + mphhp_alt) * Oph;
+//       arma::vec Orpa_hp = mhphp_tmp * Ohp + mhpph_tmp * Oph;
     
 //       std::cout << "====================================  " << v1 << " " << v2 << " ===============================" << std::endl;
 //       for (size_t i=0; i<Oph.n_rows;i++)
@@ -3269,6 +3306,10 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 //       }
 //       std::cout << " v1 v2 =  "<< v1 << " " << v2 << "   tda1, tda2 = " << tda1 << " " << tda2 << std::endl;
 
+//       if (v1==2 and v2==2)
+//       {
+//          std::cout << "========== THIS ONE: ===========" << std::endl;
+//       }
       // evaluate this in first order perturbation theory, and take the valence part that we're interested in
        double op12 = FirstOrderCorr_1b( OpRPA, H).OneBody(v1,v2);
        OpOut.OneBody(v1,v2) += op12;
@@ -4147,10 +4188,93 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
  }
 
 
+/// Direct implementation of equations (8.55), (8.62) and (8.65) in Suhonen.
  Operator SurfaceDeltaInteraction( ModelSpace& modelspace, double V0, double R)
  {
+
    Operator Vsdi(modelspace,0,0,0,2);
-   return Vsdi;
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   double hw = modelspace.GetHbarOmega();
+
+//   modelspace.PreCalculateMoshinsky();
+//   #pragma omp parallel for schedule(dynamic,1) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+    TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+    int J = tbc.J;
+    int nkets = tbc.GetNumberKets();
+    for (int ibra=0;ibra<nkets;++ibra)
+    {
+     Ket& bra = tbc.GetKet(ibra);
+     int a = bra.p;
+     int b = bra.q;
+     int na = bra.op->n;
+     int la = bra.op->l;
+     int j2a = bra.op->j2;
+     int nb = bra.oq->n;
+     int lb = bra.oq->l;
+     int j2b = bra.oq->j2;
+     double psi_a = HO_Radial_psi(na,la,hw,R);
+     double psi_b = HO_Radial_psi(nb,lb,hw,R);
+     for (int iket=ibra;iket<nkets;iket++)
+     {
+       Ket& ket = tbc.GetKet(iket);
+       int c = ket.p;
+       int d = ket.q;
+       int nc = ket.op->n;
+       int lc = ket.op->l;
+       int j2c = ket.op->j2;
+       int nd = ket.oq->n;
+       int ld = ket.oq->l;
+       int j2d = ket.oq->j2;
+       double psi_c = HO_Radial_psi(nc,lc,hw,R);
+       double psi_d = HO_Radial_psi(nd,ld,hw,R);
+
+       double kappa_ac =  psi_a * psi_c * R;
+       double kappa_bd =  psi_b * psi_d * R;
+
+       double Kabcd = -V0 * kappa_ac * kappa_bd / (16*PI);
+//       std::cout << " abcd " << a << " " << b << " " << c << " " << d << "   Kabcd " << Kabcd << std::endl;
+       double AT = 1;
+       Kabcd = -1./4 * AT * AngMom::phase(na+nb+nc+nd);
+
+       double threej0ab = AngMom::ThreeJ(0.5*j2a, 0.5*j2b, J, 0.5,-0.5,0);
+       double threej1ab = AngMom::ThreeJ(0.5*j2a, 0.5*j2b, J, 0.5, 0.5,-1);
+       double threej0cd = AngMom::ThreeJ(0.5*j2c, 0.5*j2d, J, 0.5,-0.5,0);
+       double threej1cd = AngMom::ThreeJ(0.5*j2c, 0.5*j2d, J, 0.5, 0.5,-1);
+
+       double threej0dc = AngMom::ThreeJ(0.5*j2d, 0.5*j2c, J, 0.5,-0.5,0);
+       double threej1dc = AngMom::ThreeJ(0.5*j2d, 0.5*j2c, J, 0.5, 0.5,-1);
+
+       double hatfactor = sqrt((j2a+1)*(j2b+1)*(j2c+1)*(j2d+1));
+
+       // Factor of 2 relative to Suhonen (8.65) because we just enforce parity conservation
+       double Aabcd = 2*Kabcd *hatfactor* ( threej1ab*threej1cd  - AngMom::phase((2*la+2*lc+j2b+j2d)/2) * threej0ab*threej0cd);
+       double Aabdc = 2*Kabcd *hatfactor* ( threej1ab*threej1dc  - AngMom::phase((2*la+2*ld+j2b+j2c)/2) * threej0ab*threej0dc);
+
+
+       double vsdi = Aabcd;
+
+       if (tbc.Tz !=0) // like nucleons
+       {
+	  vsdi -= AngMom::phase((j2c+j2d+2*J)/2) * Aabdc; // Suhonen (8.55)
+       }
+       else if ( bra.op->tz2 != ket.op->tz2 ) // if we have pnnp or nppn
+       {
+	  vsdi = AngMom::phase( (j2c + j2d + 2*J)/2 +1 ) * Aabdc; // Suhonen (8.56
+       }
+
+       if (a==b) vsdi /= SQRT2;
+       if (c==d) vsdi /= SQRT2;
+
+       Vsdi.TwoBody.SetTBME(ch,ibra,iket,vsdi);
+       Vsdi.TwoBody.SetTBME(ch,iket,ibra,vsdi);
+     }
+    }
+   }
+
+    return Vsdi;
  }
 
  
