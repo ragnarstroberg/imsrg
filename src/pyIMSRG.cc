@@ -458,6 +458,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm122st", &Commutator::comm122st);
       Commutator.def("comm222_pp_hh_221st", &Commutator::comm222_pp_hh_221st);
       Commutator.def("comm222_phst", &Commutator::comm222_phst);
+      Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
+      Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
 
 
    py::class_<UnitTest>(m,"UnitTest")
@@ -535,5 +537,21 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("FillFactorialLists", AngMom::FillFactorialLists);
    m.def("factorial", AngMom::factorial);
    m.def("double_fact", AngMom::double_fact);
+
+   m.attr("HBARC") = py::float_( PhysConst::HBARC);
+   m.attr("M_PROTON") = py::float_( PhysConst::M_PROTON);
+   m.attr("M_NEUTRON") = py::float_( PhysConst::M_NEUTRON);
+   m.attr("M_NUCLEON") = py::float_( PhysConst::M_NUCLEON);
+   m.attr("M_ELECTRON") = py::float_( PhysConst::M_ELECTRON);
+   m.attr("M_PION_CHARGED") = py::float_( PhysConst::M_PION_CHARGED);
+   m.attr("M_PION_NEUTRAL") = py::float_( PhysConst::M_PION_NEUTRAL);
+   m.attr("NUCLEON_VECTOR_G") = py::float_( PhysConst::NUCLEON_VECTOR_G);
+   m.attr("NUCLEON_AXIAL_G") = py::float_( PhysConst::NUCLEON_AXIAL_G);
+   m.attr("PROTON_SPIN_G") = py::float_( PhysConst::PROTON_SPIN_G);
+   m.attr("NEUTRON_SPIN_G") = py::float_( PhysConst::NEUTRON_SPIN_G);
+   m.attr("ELECTRON_SPIN_G") = py::float_( PhysConst::ELECTRON_SPIN_G);
+   m.attr("ALPHA_FS") = py::float_( PhysConst::ALPHA_FS);
+   m.attr("F_PI") = py::float_( PhysConst::F_PI);
+   m.attr("HARTREE") = py::float_( PhysConst::HARTREE);
 
 }

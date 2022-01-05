@@ -149,18 +149,17 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
    }
 
 //   std::cout << "In " << __func__ << "                   X. Is the 3body hermitian " << X.ThreeBody.IsHermitian() << std::endl;
-//   std::cout << "In " << __func__ << "                   Y. Is the 3body hermitian " << Y.ThreeBody.IsHermitian() << std::endl;
-//   std::cout << "In " << __func__ << "  just constructed Z. Is the 3body hermitian " << Z.ThreeBody.IsHermitian() << std::endl;
+
 
    double t_start = omp_get_wtime();
    comm111ss(X, Y, Z);
    X.profiler.timer["comm111ss"] += omp_get_wtime() - t_start;
 
-    t_start = omp_get_wtime();
+   t_start = omp_get_wtime();
    comm121ss(X, Y, Z);
    X.profiler.timer["comm121ss"] += omp_get_wtime() - t_start;
 
-    t_start = omp_get_wtime();
+   t_start = omp_get_wtime();
    comm122ss(X, Y, Z); 
    X.profiler.timer["comm122ss"] += omp_get_wtime() - t_start;
 
@@ -1197,6 +1196,7 @@ void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z )
          Z.OneBody(i,j) += cijJ /(oi.j2+1.0);
       } // for j
    } // for i
+
    X.profiler.timer["pphh One Body bit"] += omp_get_wtime() - t_start;
 }
 

@@ -186,6 +186,8 @@ double Generator::Get2bDenominator_Jdep(int ch, int ibra, int iket)
 
 
 
+
+
 void Generator::ConstructGenerator_SingleRef(std::function<double (double,double)>& etafunc )
 {
    // One body piece -- eliminate ph bits
@@ -229,7 +231,7 @@ void Generator::ConstructGenerator_SingleRef(std::function<double (double,double
 }
 
 
-
+ 
 
 
 // Off-diagonal pieces are <abc|ijk> = <ppp|ccc> where c is core and p is either valence or q (that is, not core).
@@ -302,7 +304,78 @@ void Generator::ConstructGenerator_SingleRef_3body(std::function<double (double,
 
 
 
+//// THIS ONE IS MESSED WITH vvvvv
+/*
+void Generator::ConstructGenerator_ShellModel(std::function<double (double,double)>& eta_func)
+{
 
+
+//   // One body piece -- make sure the valence one-body part is diagonal
+//   for ( auto& a : imsrg_util::VectorUnion(modelspace->core, modelspace->valence))
+//   {
+//      for (auto& i : imsrg_util::VectorUnion( modelspace->valence, modelspace->qspace ) )
+//      {
+//         if (i==a) continue;
+//         double denominator = Get1bDenominator(i,a);
+////         Eta->OneBody(i,a) = 0.5*atan(2*H->OneBody(i,a)/denominator);
+//         Eta->OneBody(i,a) = eta_func(H->OneBody(i,a), denominator);
+//         Eta->OneBody(a,i) = - Eta->OneBody(i,a);
+//      }
+//   }
+
+
+   // Two body piece -- eliminate ppvh and pqvv  
+
+   int nchan = modelspace->GetNumberTwoBodyChannels();
+   for (int ch=0;ch<nchan;++ch)
+   {
+      TwoBodyChannel& tbc = modelspace->GetTwoBodyChannel(ch);
+      arma::mat& ETA2 =  Eta->TwoBody.GetMatrix(ch);
+      arma::mat& H2 =  H->TwoBody.GetMatrix(ch);
+
+      // Decouple the core
+//      for ( auto& iket : imsrg_util::VectorUnion( tbc.GetKetIndex_cc(), tbc.GetKetIndex_vc() ) )
+      for ( auto& iket : imsrg_util::VectorUnion( tbc.GetKetIndex_vc() ) )
+      {
+         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) )
+//         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_vv(), tbc.GetKetIndex_qv() ) )
+         {
+            double denominator = Get2bDenominator(ch,ibra,iket);
+//            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator);
+            ETA2(ibra,iket) = eta_func(H2(ibra,iket) , denominator);
+            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+         }
+
+      }
+
+//      // Decouple the valence space
+//      for ( auto& iket : tbc.GetKetIndex_vv() )
+//      {
+////         auto& ket = tbc.GetKet(iket);
+//         for ( auto& ibra : imsrg_util::VectorUnion( tbc.GetKetIndex_qv(), tbc.GetKetIndex_qq() ) ) 
+//         {
+////            auto& bra = tbc.GetKet(ibra);
+//            double denominator = Get2bDenominator(ch,ibra,iket);
+////            ETA2(ibra,iket) = 0.5*atan(2*H2(ibra,iket) / denominator) ;
+//            ETA2(ibra,iket) = eta_func(H2(ibra,iket) , denominator);
+//            ETA2(iket,ibra) = - ETA2(ibra,iket) ; // Eta needs to be antisymmetric
+//         }
+//      }
+
+    }
+
+    if ( Eta->GetParticleRank()>2 and H->GetParticleRank()>2 and not only_2b_eta )
+    {
+//       ConstructGenerator_ShellModel_Atan_3body();
+       ConstructGenerator_ShellModel_3body(eta_func);
+    }
+
+}
+*/
+
+/// THIS IS THE GOOD ONE vvvv
+
+ 
 void Generator::ConstructGenerator_ShellModel(std::function<double (double,double)>& eta_func)
 {
    // One body piece -- make sure the valence one-body part is diagonal
@@ -364,6 +437,7 @@ void Generator::ConstructGenerator_ShellModel(std::function<double (double,doubl
     }
 
 }
+
 
 
 
