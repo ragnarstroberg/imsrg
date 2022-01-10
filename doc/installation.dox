@@ -1,0 +1,28 @@
+
+/*! \page installation Installation
+  \tableofcontents
+
+  \section obtain Obtaining the source code
+
+  Make sure you have git installed on your computer. Then type
+
+  \code
+       git clone https://www.github.com/ragnarstroberg/imsrg IMSRG
+  \endcode
+
+  This will clone the project into a directory called IMSRG.
+
+  \section build Building and installing
+  To build the code do
+
+  \code
+       cd IMSRG/src
+       make
+       make install
+  \endcode
+
+  The library \c libIMSRG.so should be generated.
+
+
+
+*/
