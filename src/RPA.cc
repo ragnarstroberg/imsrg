@@ -53,6 +53,7 @@ void RPA::ConstructAMatrix_byIndex(size_t ich_CC)
        Ket& ket_ai = tbc_CC.GetKet(iket_ai);
        index_t a = ket_ai.p;
        index_t i = ket_ai.q;
+       std::cout << " a i = " << a << " " << i << "   spe: " << H.OneBody(a,a) << "   " << H.OneBody(i,i) << std::endl;
        double ja = 0.5*modelspace->GetOrbit(a).j2;
        double ji = 0.5*modelspace->GetOrbit(i).j2;
 

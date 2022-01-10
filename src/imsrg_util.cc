@@ -2251,58 +2251,14 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
 
  // < ij J || Q * Q || kl J > where Q is the quadrupole operator (possibly up to overall factors like square roots of pi, etc...)
- // < ij J || Q*Q || kl J > = <i||Q||l> <j||Q||k> (2J+1)/sqrt(5) (-1)^(jk-jj) { i j J }
- //                                                                           { k l 2 }
- //
- //  Try again...  <ij J | Q*Q | kl J> = 4 <i||Q||l> <j||Q||k> { i j J } 
- //                                                            { k l 2 }
- //
- // <ij J || Q*Q || kl J > = <i||Q||k> <j||Q||l> (-1)^(j+k+J+lam) sqrt(2J+1)/sqrt(2*lam+1) { i j J   }  -  (k <-> l)
- //                                                                                        { l k lam }
- //  where lam=2 is the tensor rank of Q
  Operator QdotQ_Op(ModelSpace& modelspace)
  {
     
 //   // temporarily store <i||Q||j> in the one body part.
-//   Operator QdotQ_op = ElectricMultipoleOp(modelspace,2);
    Operator QdotQ_op(modelspace,0,0,0,2);
    Operator E2op = ElectricMultipoleOp(modelspace,2) + NeutronElectricMultipoleOp(modelspace,2);
    auto& Qmat = E2op.OneBody;
 
-////   for (size_t i=0;i<modelspace.GetNumberOrbits();i++)
-//   for (auto i : modelspace.all_orbits )
-//   {
-//     Orbit & oi = modelspace.GetOrbit(i);
-//     for (auto j : QdotQ_op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-//     {
-//       if (i>j) continue;
-////       Orbit & oj = modelspace.GetOrbit(j);
-////       for (auto k : QdotQ_op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-//       double Qij =0;
-////       for (size_t k=0;k<modelspace.GetNumberOrbits();k++)
-//       for (auto k : E2op.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-//       {
-//         Orbit & ok = modelspace.GetOrbit(k);
-////         QdotQ_op.OneBody(i,j) += modelspace.phase( (oj.j2-oj.j2)/2 ) * Qmat(i,k) * Qmat(k,j) / sqrt(oi.j2+1);
-////         Qij += modelspace.phase( (oi.j2-oj.j2)/2 ) * Qmat(i,k) * Qmat(k,j) *5.0/ sqrt(oi.j2+1);
-//         Qij += modelspace.phase( (oi.j2-ok.j2)/2 ) * Qmat(i,k) * Qmat(k,j) *5.0/ (oi.j2+1);
-////         Qij +=  Qmat(k,i) * Qmat(k,j) * (2*2+1)/(oi.j2+1.0);
-////         std::cout << "ijk " << i << " " << j << " " << k <<"   " << Qmat(i,k) << " " << Qmat(
-////         if (i==0)
-////         {
-////           std::cout << "i,j,k = " << i << " " << j << " " << k << "Qki = " << Qmat(i,k) << "  Qkj = " << Qmat(k,j) << "    Qij = " << Qij << std::endl;
-////         }
-//       }
-//       QdotQ_op.OneBody(i,j) = Qij;
-//       QdotQ_op.OneBody(j,i) = Qij;
-//     }
-//   }
-
-//   std::cout << "Calculated 1b piece: " << std::endl << QdotQ_op.OneBody << std::endl << std::endl; 
-//   std::cout << " matrix : " << std::endl << Qmat << std::endl << std::endl;
-//   std::cout << " matrix x matrix: " << std::endl << Qmat*Qmat << std::endl << std::endl;
-//   std::cout << " matrix x matrixT: " << std::endl << Qmat*arma::trans(Qmat) << std::endl << std::endl;
-//   std::cout << QdotQ_op.OneBody << std::endl << std::endl; 
    int nchan = modelspace.GetNumberTwoBodyChannels();
 
    for (int ch=0; ch<nchan; ++ch)
@@ -2331,34 +2287,24 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
             double jk = ok.j2*0.5;
             double jl = ol.j2*0.5 ;
 
-            double Aijkl = modelspace.phase(ji+jj+J) *  modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qmat(k,i) * Qmat(j,l);
-            double Aijlk = modelspace.phase(jk+jl+J) * modelspace.phase(ji+jj+J) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qmat(l,i) * Qmat(j,k);
+            // Suhonen (8.56)
+            double Aijkl = modelspace.phase(ji+jj+J) * modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qmat(k,i) * Qmat(j,l);
+            double Aijlk = modelspace.phase(ji+jj+J) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qmat(l,i) * Qmat(j,k);
+//            double Aijlk = modelspace.phase(jk+jl+J) * modelspace.phase(ji+jj+J) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qmat(l,i) * Qmat(j,k);
+            // Suhonen (8.55),(8.57),(8.58)
             double QdQ;
             if ( tbc.Tz==0 ) // proton-neutron channel
             {
               if ( oi.tz2 == ok.tz2)   QdQ = Aijkl;  // pnpn
-              else                     QdQ = -Aijlk;  // pnnp
+              else                     QdQ = -modelspace.phase(jk+jl+J) * Aijlk;  // pnnp
             }
             else
             {
-               QdQ = Aijkl - Aijlk;  // pppp or nnnn
+               QdQ = Aijkl - modelspace.phase(jk+jl+j)*Aijlk;  // pppp or nnnn
                if (i==j) QdQ /= sqrt(2.0);
                if (k==l) QdQ /= sqrt(2.0);
             }
 
-//            // Formula just taken from Suhonen 8.55, 8.56  Note definitions in 5.21 and 4.28
-////            double QdQ = modelspace.phase( ji+jj+J)     * modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qki * Qjl
-////                       - modelspace.phase( ji+jj+jk+jl) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qli * Qjk;
-//            double QdQ =  modelspace.phase( ji+jj+J)     * modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qmat(k,i) * Qmat(j,l)
-//                        - modelspace.phase( ji+jj+jk+jl) * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qmat(l,i) * Qmat(j,k) ;
-////            double QdQ = 2*( modelspace.phase( jj+jl-J)     * modelspace.GetSixJ(ji,jj,J,jk,jl,2) * Qmat(i,l) * Qmat(j,k)
-////                           - modelspace.phase( jj+jk+jk+jl) * modelspace.GetSixJ(ji,jj,J,jl,jk,2) * Qmat(i,k) * Qmat(j,l) );
-//
-////            double QdQ = Qil * Qjk * (2*J+1)/sqrt(5.0) * modelspace.phase( jk-jj ) * modelspace.GetSixJ(ji,jj,J,jk,jl,2.0);
-////            double QdQ = 0.5 * Qil * Qjk * (2*J+1)/sqrt(5.0) * modelspace.phase( jk+jj ) * modelspace.GetSixJ(ji,jj,J,jk,jl,2.0)
-////                       - 0.5 * Qik * Qjl * (2*J+1)/sqrt(5.0) * modelspace.phase( jl+jj ) * modelspace.GetSixJ(ji,jj,J,jl,jk,2.0);
-//            if (i==j) QdQ /= sqrt(2.0);
-//            if (k==l) QdQ /= sqrt(2.0);
             QdotQ_op.TwoBody.SetTBME(ch,ibra,iket,QdQ);
          }
       }
