@@ -117,6 +117,8 @@ int main(int argc, char** argv)
   bool only_2b_omega = (parameters.s("only_2b_omega")=="true");
   bool perturbative_triples = (parameters.s("perturbative_triples")=="true");
   bool brueckner_restart = false;
+  bool write_HO_ops = parameters.s("write_HO_ops") == "true";  // added by Antoine Belley
+  bool write_HF_ops = parameters.s("write_HF_ops") == "true";  // added by Antoine Belley
 
   int eMax = parameters.i("emax");
   int lmax = parameters.i("lmax"); // so far I only use this with atomic systems.
@@ -1328,6 +1330,26 @@ int main(int argc, char** argv)
       }
 //      Operator op = imsrg_util::OperatorFromString( modelspace, opname );
 
+
+      // Added by Antoine Belley
+      if (write_HO_ops)
+      {
+        std::cout << "writing HO tensor files " << std::endl;
+        if (valence_file_format == "tokyo")
+        {
+          rw.WriteTensorTokyo(intfile+opnames[i]+"_HO_2b.snt",op);
+        }
+        else
+        {
+          rw.WriteTensorOneBody(intfile+opnames[i]+"_HO_1b.op",op,opnames[i]);
+          rw.WriteTensorTwoBody(intfile+opnames[i]+"_HO_2b.op",op,opnames[i]);
+        }
+      }
+
+
+
+
+
       if ( basis == "HF")
       {
         op = hf.TransformToHFBasis(op).DoNormalOrdering();
@@ -1344,6 +1366,23 @@ int main(int argc, char** argv)
         std::cout << "Truncating modelspace for IMSRG calculation: emax e2max e3max  ->  " << eMax_imsrg << " " << e2Max_imsrg << " " << e3Max_imsrg << std::endl;
         op = op.Truncate(modelspace_imsrg);
       }
+
+
+      // Added by Antoine Belley
+      if (write_HF_ops)
+      {
+        std::cout << "writing HF tensor files " << std::endl;
+        if (valence_file_format == "tokyo")
+        {
+          rw.WriteTensorTokyo(intfile+opnames[i]+"_HF_2b.snt",op);
+        }
+        else
+        {
+          rw.WriteTensorOneBody(intfile+opnames[i]+"_HF_1b.op",op,opnames[i]);
+          rw.WriteTensorTwoBody(intfile+opnames[i]+"_HF_2b.op",op,opnames[i]);
+        }
+      }
+
 
 
 
