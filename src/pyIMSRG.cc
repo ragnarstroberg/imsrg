@@ -451,6 +451,9 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("BCH_Transform", &Commutator::BCH_Transform);
       Commutator.def("BCH_Product", &Commutator::BCH_Product);
       Commutator.def("EstimateBCHError", &Commutator::EstimateBCHError);
+      Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
+      Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
+      // IMSRG(2) commutators
       Commutator.def("comm110ss", &Commutator::comm110ss);
       Commutator.def("comm220ss", &Commutator::comm220ss);
       Commutator.def("comm111ss", &Commutator::comm111ss);
@@ -459,13 +462,15 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm122ss", &Commutator::comm122ss);
       Commutator.def("comm222_pp_hh_221ss", &Commutator::comm222_pp_hh_221ss);
       Commutator.def("comm222_phss", &Commutator::comm222_phss);
+      // IMSRG(3) commutators
+      Commutator.def("comm223ss", &Commutator::comm223ss);
+      Commutator.def("comm232ss", &Commutator::comm232ss);
+      // scalar-tensor commutators
       Commutator.def("comm111st", &Commutator::comm111st);
       Commutator.def("comm121st", &Commutator::comm121st);
       Commutator.def("comm122st", &Commutator::comm122st);
       Commutator.def("comm222_pp_hh_221st", &Commutator::comm222_pp_hh_221st);
       Commutator.def("comm222_phst", &Commutator::comm222_phst);
-      Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
-      Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
 
 
 

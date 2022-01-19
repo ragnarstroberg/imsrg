@@ -4866,7 +4866,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
     auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
-//    int twoJ = Tbc.twoJ;
+    int twoJ = Tbc.twoJ;
     size_t nkets = Tbc.GetNumberKets();
     std::vector<size_t> kets_kept;
     std::map<size_t,size_t> kept_lookup;
@@ -4903,7 +4903,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
       Orbit& ok = Z.modelspace->GetOrbit(k);
-//      int Jij = bra.Jpq;
+      int Jij = bra.Jpq;
       double d_ei = std::abs(2*oi.n + oi.l - e_fermi.at(oi.tz2));
       double d_ej = std::abs(2*oj.n + oj.l - e_fermi.at(oj.tz2));
       double d_ek = std::abs(2*ok.n + ok.l - e_fermi.at(ok.tz2));
@@ -4923,6 +4923,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         std::vector<double> recouple_list;
         
 //        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, a, j, k,  ket_list,  recouple_list );
+        Z3.GetKetIndex_withRecoupling( Jij, twoJ, a, j, k,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
           auto iter_find = kept_lookup.find( ket_list[ilist] );
@@ -4944,6 +4945,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         std::vector<size_t> ket_list;
         std::vector<double> recouple_list;
 //        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, a, k,  ket_list,  recouple_list );
+        Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, a, k,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
           auto iter_find = kept_lookup.find( ket_list[ilist] );
@@ -4964,6 +4966,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         std::vector<size_t> ket_list;
         std::vector<double> recouple_list;
 //        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, j, a,  ket_list,  recouple_list );
+        Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, j, a,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
           auto iter_find = kept_lookup.find( ket_list[ilist] );

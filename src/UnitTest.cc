@@ -451,7 +451,7 @@ void UnitTest::TestCommutators()
 
 
 //void UnitTest::TestCommutators3()
-void UnitTest::TestCommutators3(Operator& X, Operator& Y)
+void UnitTest::TestCommutators3(Operator& X, Operator& Y, std::vector<std::string>& skiplist)
 {
   double t_start = omp_get_wtime();
 //  std::cout << " random_seed = " << random_seed << std::endl;
@@ -472,21 +472,30 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
   X.ThreeBody.Erase();
   std::cout << " " << __func__ << " line " << __LINE__ << std::endl;
   Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
-  X.modelspace->scalar3b_transform_first_pass = false;
+//  X.modelspace->scalar3b_transform_first_pass = false;
 //  Commutator::comm223ss( Xherm, Y, X);
   bool all_good = true;
+
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm330ss") == skiplist.end())   all_good &= Test_comm330ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm331ss") == skiplist.end())   all_good &= Test_comm331ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm231ss") == skiplist.end())   all_good &= Test_comm231ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm132ss") == skiplist.end())   all_good &= Test_comm132ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm232ss") == skiplist.end())   all_good &= Test_comm232ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm223ss") == skiplist.end())   all_good &= Test_comm223ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm133ss") == skiplist.end())   all_good &= Test_comm133ss( X, Y );
+
 
 //  all_good &= Test_comm330ss( X, Y );
 //  all_good &= Test_comm331ss( X, Y );
 //  all_good &= Test_comm231ss( X, Y );
 //  all_good &= Test_comm132ss( X, Y );
 //  all_good &= Test_comm232ss( X, Y );
-  all_good &= Test_comm223ss( X, Y );
+//  all_good &= Test_comm223ss( X, Y );
 //  all_good &= Test_comm133ss( X, Y );
 //
 //  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
 //  all_good &= Test_comm332_pphhss( X, Y );  
-
+//
 //  all_good &= Test_comm233_pp_hhss( X, Y );   
 //  all_good &= Test_comm233_ph_ss( X, Y );  
 //  all_good &= Test_comm333_ppp_hhh_ss( X, Y );  
@@ -1568,7 +1577,7 @@ bool UnitTest::Test_comm222_phss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
 {
-
+  std::cout <<__func__ << std::endl;
   Operator Z_J( Y );
   Z_J.Erase();
 
@@ -1680,6 +1689,7 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
 // this is very slow...
 bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y )
 {
+  std::cout <<__func__ << std::endl;
 
   Operator Z_J( Y );
   Z_J.Erase();
@@ -1801,6 +1811,7 @@ bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm231ss( const Operator& X, const Operator& Y )
 {
+  std::cout <<__func__ << std::endl;
 
   Operator Z_J( Y );
   Z_J.Erase();
@@ -1922,6 +1933,7 @@ bool UnitTest::Test_comm231ss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y )
 {
+  std::cout <<__func__ << std::endl;
 
   Operator Z_J( Y );
   Z_J.SetHermitian();
@@ -2035,6 +2047,7 @@ bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
 {
+  std::cout <<__func__ << std::endl;
 
   Operator Z_J( Y );
   Z_J.SetHermitian();
@@ -2200,6 +2213,7 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
+  std::cout <<__func__ << std::endl;
   Operator Z_J( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
@@ -2344,6 +2358,7 @@ bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ) 
 //
 bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
+  std::cout <<__func__ << std::endl;
   Operator Z_J( Y );
   Operator Z_J_old( Y );
   Z_J.SetHermitian();
@@ -2545,6 +2560,7 @@ bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // te
 //
 bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
 {
+  std::cout <<__func__ << std::endl;
   Operator Z_J( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
@@ -2723,6 +2739,7 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
 
 bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y )
 {
+  std::cout <<__func__ << std::endl;
 
   Operator Z_J( Y );
   Z_J.SetHermitian();
@@ -2882,6 +2899,7 @@ bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
+  std::cout <<__func__ << std::endl;
 
   Operator Z_J( Y );
   Z_J.SetHermitian();
@@ -3083,6 +3101,7 @@ bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // t
 //
 bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
+  std::cout <<__func__ << std::endl;
    Operator Z_J( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
@@ -3300,6 +3319,7 @@ bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // tes
 //
 bool UnitTest::Test_comm333_ppp_hhh_ss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
+  std::cout <<__func__ << std::endl;
    Operator Z_J( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
@@ -3454,6 +3474,7 @@ bool UnitTest::Test_comm333_ppp_hhh_ss( const Operator& X, const Operator& Y ) /
 //
 bool UnitTest::Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
+  std::cout <<__func__ << std::endl;
    Operator Z_J( Y );
   Z_J.SetHermitian();
   Z_J.Erase();

@@ -1427,7 +1427,10 @@ double Operator::Norm() const
    {
       double n1 = OneBodyNorm();
       double n2 = TwoBody.Norm();
-      return sqrt(n1*n1+n2*n2);
+      double n3 = 0.;
+      if ( legs>5) n3 = ThreeBody.Norm();
+//      return sqrt(n1*n1+n2*n2);
+      return sqrt(n1*n1 + n2*n2 + n3*n3);
    }
    else
    {

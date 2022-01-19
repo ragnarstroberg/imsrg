@@ -41,7 +41,8 @@ class UnitTest
   // and make sure that they give the same answer
   void TestCommutators();
 //  void TestCommutators3();
-  void TestCommutators3(Operator& X, Operator& Y); 
+//  void TestCommutators3(Operator& X, Operator& Y); 
+  void TestCommutators3(Operator& X, Operator& Y, std::vector<std::string>& skiplist ); 
 
   void TestDaggerCommutators(index_t Q);
   void TestDaggerCommutatorsAlln(index_t Q);
