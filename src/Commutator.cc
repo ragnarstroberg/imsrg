@@ -2184,6 +2184,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
 
   size_t norb = Z.modelspace->GetNumberOrbits();
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
+  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   for (size_t i=0; i<norb; i++)
   {
     Orbit& oi = Z.modelspace->GetOrbit(i);
