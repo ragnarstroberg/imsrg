@@ -6,8 +6,8 @@ CXX = g++
 #  -DNO_HDF5 compiles without boost/ode package used for flow equation solver
 #  -DOPENBLAS_NOUSEOMP=1 removes parallel blocks which take threads away from OPENBLAS
 #                        to be used if OpenBlas was compiled without the USE_OMP flag
-
-ALL = version.hh libIMSRG.so imsrg++
+.PHONY: version
+ALL = version libIMSRG.so imsrg++
 INSTDIR = $(HOME)
 INCLUDE   = -I./armadillo
 FLAGS     = -O3 -march=native -std=c++11 -fopenmp -fPIC
@@ -23,9 +23,15 @@ endif
 
 
 # Tag the build with the current version from git, so we know where all the awesome answers came from.
+VERSIONCOMMAND = 
 BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "%s_%s",$$2,$$3}' )
 ifneq (,$(findstring detached,$(BUILDVERSION)))
   BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "HEAD_%s",$$6}'  )
+endif
+OLDBUILD = $(shell awk '{print $$3}' version.hh)
+
+ifneq ($(OLDBUILD),"$(BUILDVERSION)")
+  VERSIONCOMMAND = echo "\#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
 endif
 
 #FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
@@ -200,9 +206,11 @@ pyIMSRG.o: pyIMSRG.cc
 imsrg++: imsrg++.cc libIMSRG.so Parameters.hh version.hh
 	$(CXX) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
 
-version.hh:
-	echo "#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
 
+version:
+	$(VERSIONCOMMAND)
+#	echo "#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
+#
 clean:
 	rm -f *.o *.so boost_src/*.o
 
