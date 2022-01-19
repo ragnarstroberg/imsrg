@@ -7108,6 +7108,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               std::vector<double> recouple_list;
               
 //              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, k,  ket_list,  recouple_list );
+              Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, k,  ket_list,  recouple_list );
               for (size_t ilist=0; ilist<ket_list.size(); ilist++)
               {
                 auto iter_find = kept_lookup.find( ket_list[ilist] );
@@ -7153,6 +7154,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               
 //              std::cout << " line " << __LINE__ << "  calling GetKetIndex_withRecoupling " << Jab << " " << twoJ << " " << a << " " << b << " " << i << std::endl;
 //              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, i,  ket_list,  recouple_list );
+              Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, i,  ket_list,  recouple_list );
 //              std::cout << "    size of lists " << ket_list.size() << " " << recouple_list.size() << std::endl;
               for (size_t ilist=0; ilist<ket_list.size(); ilist++)
               {
@@ -7202,6 +7204,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               std::vector<double> recouple_list;
               
 //              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, j,  ket_list,  recouple_list );
+              Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, j,  ket_list,  recouple_list );
               for (size_t ilist=0; ilist<ket_list.size(); ilist++)
               {
                 auto iter_find = kept_lookup.find( ket_list[ilist] );
