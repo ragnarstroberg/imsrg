@@ -16,8 +16,8 @@ namespace py = pybind11;
 //  size_t MS_GetOrbitIndex_Str(ModelSpace& self, std::string s){ return self.GetOrbitIndex(s);};
   TwoBodyChannel MS_GetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
 
-  double TB_GetTBME_J(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J(j_bra,j_ket,a,b,c,d);};
-  double TB_GetTBME_J_norm(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J_norm(j_bra,j_ket,a,b,c,d);};
+//  double TB_GetTBME_J(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J(j_bra,j_ket,a,b,c,d);};
+//  double TB_GetTBME_J_norm(TwoBodyME& self,int j_bra, int j_ket, int a, int b, int c, int d){return self.GetTBME_J_norm(j_bra,j_ket,a,b,c,d);};
 
   size_t TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
 
@@ -92,6 +92,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("FindEFermi", &ModelSpace::FindEFermi)
       .def("GetHbarOmega", &ModelSpace::GetHbarOmega)
       .def("GetTargetMass", &ModelSpace::GetTargetMass)
+      .def("GetTargetZ", &ModelSpace::GetTargetZ)
       .def("GetNumberOrbits", &ModelSpace::GetNumberOrbits)
       .def("GetNumberKets", &ModelSpace::GetNumberKets)
       .def("GetNumberTwoBodyChannels", &ModelSpace::GetNumberTwoBodyChannels)
@@ -214,12 +215,15 @@ PYBIND11_MODULE(pyIMSRG, m)
 
    py::class_<TwoBodyME>(m,"TwoBodyME")
       .def(py::init<>())
-      .def("GetTBME_J", TB_GetTBME_J)
-      .def("GetTBME_J_norm", TB_GetTBME_J_norm)
+//      .def("GetTBME_J", TB_GetTBME_J)
+//      .def("GetTBME_J_norm", TB_GetTBME_J_norm)
+      .def("GetTBME_J",[](TwoBodyME& self, int Jbra, int Jket, int a, int b, int c, int d){return self.GetTBME_J(Jbra,Jket,a,b,c,d);} )
+      .def("GetTBME_J_norm",[](TwoBodyME& self, int Jbra, int Jket, int a, int b, int c, int d){return self.GetTBME_J_norm(Jbra,Jket,a,b,c,d);} )
       .def("GetTBMEmonopole",[](TwoBodyME& self, int a, int b, int c, int d){ return self.GetTBMEmonopole(a,b,c,d);}, py::arg("a"),py::arg("b"),py::arg("c"),py::arg("d"))
       .def("GetTBMEmonopole_norm",[](TwoBodyME& self, int a, int b, int c, int d){ return self.GetTBMEmonopole_norm(a,b,c,d);}, py::arg("a"),py::arg("b"),py::arg("c"),py::arg("d"))
       .def("GetChannelMatrix",[](TwoBodyME& self, int J, int p, int Tz){ size_t ch = self.modelspace->GetTwoBodyChannelIndex(J,p,Tz); return self.GetMatrix(ch,ch);},py::arg("J"),py::arg("parity"),py::arg("Tz") )
       .def("PrintAll", [](TwoBodyME& self ) { for (auto& it : self.MatEl){ if (it.second.n_rows>0) { std::cout << it.first[0] << " " << it.first[1] << std::endl << it.second << std::endl;};  } ;} )
+      .def("Erase", &TwoBodyME::Erase)
    ;
 
 //   py::class_<ThreeBodyME>(m,"ThreeBodyME")
@@ -356,6 +360,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def(py::init<Operator&>())
       .def("UseNATOccupations",&HFMBPT::UseNATOccupations)
       .def("GetNaturalOrbitals",&HFMBPT::GetNaturalOrbitals)
+      .def("TransformHOToNATBasis",&HFMBPT::TransformHOToNATBasis)
+      .def("TransformHFToNATBasis",&HFMBPT::TransformHFToNATBasis)
       .def("GetNormalOrderedHNAT",&HFMBPT::GetNormalOrderedHNAT)
       .def("PrintSPEandWF",&HFMBPT::PrintSPEandWF)
    ;
@@ -445,6 +451,9 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("BCH_Transform", &Commutator::BCH_Transform);
       Commutator.def("BCH_Product", &Commutator::BCH_Product);
       Commutator.def("EstimateBCHError", &Commutator::EstimateBCHError);
+      Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
+      Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
+      // IMSRG(2) commutators
       Commutator.def("comm110ss", &Commutator::comm110ss);
       Commutator.def("comm220ss", &Commutator::comm220ss);
       Commutator.def("comm111ss", &Commutator::comm111ss);
@@ -453,6 +462,10 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm122ss", &Commutator::comm122ss);
       Commutator.def("comm222_pp_hh_221ss", &Commutator::comm222_pp_hh_221ss);
       Commutator.def("comm222_phss", &Commutator::comm222_phss);
+      // IMSRG(3) commutators
+      Commutator.def("comm223ss", &Commutator::comm223ss);
+      Commutator.def("comm232ss", &Commutator::comm232ss);
+      // scalar-tensor commutators
       Commutator.def("comm111st", &Commutator::comm111st);
       Commutator.def("comm121st", &Commutator::comm121st);
       Commutator.def("comm122st", &Commutator::comm122st);
@@ -461,6 +474,23 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
       Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
 
+
+
+   py::class_<RPA>(m,"RPA")
+      .def(py::init<Operator&>())
+      .def("ConstructAMatrix",&RPA::ConstructAMatrix, py::arg("J"),py::arg("parity"),py::arg("Tz") )
+      .def("ConstructBMatrix",&RPA::ConstructBMatrix, py::arg("J"),py::arg("parity"),py::arg("Tz") )
+      .def("SolveCP",&RPA::SolveCP)
+      .def("SolveTDA",&RPA::SolveTDA)
+      .def("SolveRPA",&RPA::SolveRPA)
+      .def("TransitionToGroundState",&RPA::TransitionToGroundState, py::arg("OpIn"),py::arg("mu"))
+      .def("PVCouplingEffectiveCharge", &RPA::PVCouplingEffectiveCharge, py::arg("OpIn"),py::arg("k"),py::arg("l"))
+      .def("GetEnergies",[](RPA& self){arma::vec vals = self.GetEnergies(); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec;} )
+      .def("GetX",[](RPA& self, size_t i){arma::vec vals = self.GetX(i); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec;} )
+      .def("GetY",[](RPA& self, size_t i){arma::vec vals = self.GetY(i); std::vector<double> vvec; for (auto & v : vals) {vvec.push_back(v);};  return vvec;} )
+      .def("PrintA",[](RPA& self){ std::cout << self.A << std::endl;} )
+      .def("PrintB",[](RPA& self){ std::cout << self.B << std::endl;} )
+   ;
 
    py::class_<UnitTest>(m,"UnitTest")
 //      .def(py::init<>())
@@ -473,6 +503,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("TestDaggerCommutatorsAlln",&UnitTest::TestDaggerCommutatorsAlln)
       .def("Test3BodyAntisymmetry",&UnitTest::Test3BodyAntisymmetry)
       .def("Test3BodyHermiticity",&UnitTest::Test3BodyHermiticity)
+      .def("TestRPAEffectiveCharge",&UnitTest::TestRPAEffectiveCharge, py::arg("H"),py::arg("OpIn"),py::arg("k"),py::arg("l"))
       .def("SanityCheck",&UnitTest::SanityCheck)
 //      .def("Test3BodySetGet",&UnitTest::Test3BodySetGet)
    ;

@@ -922,6 +922,7 @@ void ReadWrite::ReadBareTBME_Darmstadt_from_stream( T& infile, Operator& Hbare, 
       }
     }
   }
+  std::cout << "Read " << nreads*4 << " matrix elements " << std::endl;
 
 }
 
@@ -4957,16 +4958,18 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
     orbits_remap[iorb] = io;
     //cout << io << " " << iorb << " " << n << " " << l << " " << j << " " << tz << endl;
   }
+  skip_comments(infile);
   getline(infile, line);
 
   skip_comments(infile);
-  double zerobody;
-  infile >> zerobody;
+//  double zerobody;
+//  infile >> zerobody;
   // op.ZeroBody = zerobody;
-  getline(infile, line);
-  skip_comments(infile);
+//  getline(infile, line);
+//  skip_comments(infile);
 
   infile >> num;
+//  std::cout << "num  = " << num << std::endl;
   getline(infile, line);
   skip_comments(infile);
   for(int n=0; n<num; n++)
@@ -4976,14 +4979,14 @@ void ReadWrite::ReadTokyo(std::string filename, Operator& op)
     infile >> i >> j >> h1;
     if( orbits_remap.find(i) == orbits_remap.end() ) continue;
     if( orbits_remap.find(j) == orbits_remap.end() ) continue;
-    //int io = orbits_remap.at(i);
-    //int jo = orbits_remap.at(j);
-    //op.OneBody(io,jo) = h1;
-    //if (op.IsHermitian())
-    //  op.OneBody(jo,io) = h1;
-    //else if (op.IsAntiHermitian())
-    //  op.OneBody(jo,io) = -h1;
-    //cout << io << " " << jo << " " << h1 << endl;
+    int io = orbits_remap.at(i);
+    int jo = orbits_remap.at(j);
+    op.OneBody(io,jo) = h1;
+    if (op.IsHermitian())
+      op.OneBody(jo,io) = h1;
+    else if (op.IsAntiHermitian())
+      op.OneBody(jo,io) = -h1;
+//    std::cout << io << " " << jo << " " << h1 << std::endl;
   }
   getline(infile, line);
 

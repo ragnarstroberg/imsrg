@@ -28,11 +28,6 @@
 #include <set>
 #include <armadillo>
 #include "IMSRGProfiler.hh"
-//#include "TwoBodyChannel.hh"
-//#ifndef SQRT2
-//  #define SQRT2 1.4142135623730950488
-//#endif
-//#define OCC_CUT 1e-6
 
 
 //using namespace std;
@@ -321,6 +316,7 @@ class ModelSpace
 
 
    bool sixj_has_been_precalculated;
+   bool ninej_has_been_precalculated;
    bool moshinsky_has_been_precalculated;
    bool scalar_transform_first_pass;
    bool scalar3b_transform_first_pass;
@@ -469,6 +465,7 @@ class ModelSpace
 
    void PreCalculateMoshinsky();
    void PreCalculateSixJ();
+   void PreCalculateNineJ();
    void ClearVectors();
    void ResetFirstPass();
    void CalculatePandyaLookup(int rank_J, int rank_T, int parity); // construct a lookup table for more efficient pandya transformation
@@ -476,6 +473,10 @@ class ModelSpace
    std::vector<size_t>& GetPandyaLookup(int rank_J, int rank_T, int parity);
    uint64_t SixJHash(double j1, double j2, double j3, double J1, double J2, double J3);
    void SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& j3, uint64_t& J1, uint64_t& J2, uint64_t& J3);
+
+   uint64_t NineJHash(double j1, double j2, double J12, double j3, double j4, double J34, double J13, double J24, double J);
+
+
    uint64_t MoshinskyHash(uint64_t N,uint64_t Lam,uint64_t n,uint64_t lam,uint64_t n1,uint64_t l1,uint64_t n2,uint64_t l2,uint64_t L);
    void MoshinskyUnHash(uint64_t key,uint64_t& N,uint64_t& Lam,uint64_t& n,uint64_t& lam,uint64_t& n1,uint64_t& l1,uint64_t& n2,uint64_t& l2,uint64_t& L);
 

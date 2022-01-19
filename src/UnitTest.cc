@@ -451,7 +451,7 @@ void UnitTest::TestCommutators()
 
 
 //void UnitTest::TestCommutators3()
-void UnitTest::TestCommutators3(Operator& X, Operator& Y)
+void UnitTest::TestCommutators3(Operator& X, Operator& Y, std::vector<std::string>& skiplist)
 {
   double t_start = omp_get_wtime();
 //  std::cout << " random_seed = " << random_seed << std::endl;
@@ -472,21 +472,30 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y)
   X.ThreeBody.Erase();
   std::cout << " " << __func__ << " line " << __LINE__ << std::endl;
   Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
-  X.modelspace->scalar3b_transform_first_pass = false;
+//  X.modelspace->scalar3b_transform_first_pass = false;
 //  Commutator::comm223ss( Xherm, Y, X);
   bool all_good = true;
+
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm330ss") == skiplist.end())   all_good &= Test_comm330ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm331ss") == skiplist.end())   all_good &= Test_comm331ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm231ss") == skiplist.end())   all_good &= Test_comm231ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm132ss") == skiplist.end())   all_good &= Test_comm132ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm232ss") == skiplist.end())   all_good &= Test_comm232ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm223ss") == skiplist.end())   all_good &= Test_comm223ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "comm133ss") == skiplist.end())   all_good &= Test_comm133ss( X, Y );
+
 
 //  all_good &= Test_comm330ss( X, Y );
 //  all_good &= Test_comm331ss( X, Y );
 //  all_good &= Test_comm231ss( X, Y );
 //  all_good &= Test_comm132ss( X, Y );
 //  all_good &= Test_comm232ss( X, Y );
-  all_good &= Test_comm223ss( X, Y );
+//  all_good &= Test_comm223ss( X, Y );
 //  all_good &= Test_comm133ss( X, Y );
 //
 //  all_good &= Test_comm332_ppph_hhhpss( X, Y ); 
 //  all_good &= Test_comm332_pphhss( X, Y );  
-
+//
 //  all_good &= Test_comm233_pp_hhss( X, Y );   
 //  all_good &= Test_comm233_ph_ss( X, Y );  
 //  all_good &= Test_comm333_ppp_hhh_ss( X, Y );  
@@ -1568,7 +1577,7 @@ bool UnitTest::Test_comm222_phss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
 {
-
+  std::cout <<__func__ << std::endl;
   Operator Z_J( Y );
   Z_J.Erase();
 
@@ -1680,6 +1689,7 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
 // this is very slow...
 bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y )
 {
+  std::cout <<__func__ << std::endl;
 
   Operator Z_J( Y );
   Z_J.Erase();
@@ -1801,6 +1811,7 @@ bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm231ss( const Operator& X, const Operator& Y )
 {
+  std::cout <<__func__ << std::endl;
 
   Operator Z_J( Y );
   Z_J.Erase();
@@ -1922,6 +1933,7 @@ bool UnitTest::Test_comm231ss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y )
 {
+  std::cout <<__func__ << std::endl;
 
   Operator Z_J( Y );
   Z_J.SetHermitian();
@@ -2035,6 +2047,7 @@ bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
 {
+  std::cout <<__func__ << std::endl;
 
   Operator Z_J( Y );
   Z_J.SetHermitian();
@@ -2200,6 +2213,7 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
+  std::cout <<__func__ << std::endl;
   Operator Z_J( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
@@ -2344,6 +2358,7 @@ bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ) 
 //
 bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
+  std::cout <<__func__ << std::endl;
   Operator Z_J( Y );
   Operator Z_J_old( Y );
   Z_J.SetHermitian();
@@ -2545,6 +2560,7 @@ bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // te
 //
 bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
 {
+  std::cout <<__func__ << std::endl;
   Operator Z_J( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
@@ -2723,6 +2739,7 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
 
 bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y )
 {
+  std::cout <<__func__ << std::endl;
 
   Operator Z_J( Y );
   Z_J.SetHermitian();
@@ -2882,6 +2899,7 @@ bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y )
 //
 bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
+  std::cout <<__func__ << std::endl;
 
   Operator Z_J( Y );
   Z_J.SetHermitian();
@@ -3083,6 +3101,7 @@ bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // t
 //
 bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
+  std::cout <<__func__ << std::endl;
    Operator Z_J( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
@@ -3300,6 +3319,7 @@ bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // tes
 //
 bool UnitTest::Test_comm333_ppp_hhh_ss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
+  std::cout <<__func__ << std::endl;
    Operator Z_J( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
@@ -3454,6 +3474,7 @@ bool UnitTest::Test_comm333_ppp_hhh_ss( const Operator& X, const Operator& Y ) /
 //
 bool UnitTest::Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
+  std::cout <<__func__ << std::endl;
    Operator Z_J( Y );
   Z_J.SetHermitian();
   Z_J.Erase();
@@ -4399,6 +4420,107 @@ bool UnitTest::Test_comm433sd_ph( const Operator& X, const Operator& Yin )
   return passed;
 
 }
+
+
+
+
+bool UnitTest::TestRPAEffectiveCharge( const Operator& H, const Operator& OpIn, size_t a, size_t b)
+{
+  bool passed = true;
+
+  int L = OpIn.GetJRank();
+  int M = 0;
+  double omega = H.OneBody(a,a) - H.OneBody(b,b);
+
+  
+  // number of m-scheme orbits
+  int n_mscheme =0;
+  for (auto k : H.modelspace->all_orbits) n_mscheme += H.modelspace->GetOrbit(k).j2+1;
+
+  std::cout << "n_mscheme = " << n_mscheme << std::endl;
+  // Make column vector Tkl and Tkleff
+  // and Matrix Mklpq
+  arma::vec Tkl(n_mscheme*n_mscheme, arma::fill::zeros);
+  arma::vec Tkl_eff(n_mscheme*n_mscheme, arma::fill::zeros);
+  arma::mat Mklpq( n_mscheme*n_mscheme, n_mscheme*n_mscheme, arma::fill::zeros);
+
+  size_t index_ab=0;
+  size_t index_kl=0;
+  for ( auto k : H.modelspace->all_orbits)
+  {
+   Orbit& ok = H.modelspace->GetOrbit(k);
+   double jk = 0.5*ok.j2;
+//   std::cout << "  k = " << k << std::endl;
+   for ( auto l : H.modelspace->all_orbits)
+   {
+    Orbit& ol = H.modelspace->GetOrbit(l);
+    double jl = 0.5*ol.j2;
+
+//    std::cout << "   l = " << l << std::endl;
+    for (int twomk=-ok.j2;twomk<=ok.j2; twomk+=2)
+    {
+      for (int twoml=-ol.j2;twoml<=ol.j2; twoml+=2)
+      {
+//        std::cout << "index_kl = " << index_kl << std::endl;
+        double mk=0.5*twomk;
+        double ml=0.5*twoml;
+        // Operator OpIn stores reduced matrix elements, so use Wigner Eckart
+        Tkl(index_kl) = OpIn.OneBody(k,l) * AngMom::CG(jl,ml,L,M,jk,mk) / sqrt(2*jk+1.);
+//        std::cout << "Tkl is " << Tkl(index_kl) << std::endl;
+        if ( (k==a) and (l==b) and (twomk==1) and (twoml==1) ) index_ab=index_kl; // So we can go back and read what we want
+
+        size_t index_pq=0;
+        // construct the matrix Mklpq = vkqlp (nq-np)/(omega-ep+eq)
+        for (auto p : H.modelspace->all_orbits)
+        {
+          Orbit& op = H.modelspace->GetOrbit(p);
+          double ep = H.OneBody(p,p);
+          double np = op.occ;
+          for (auto q : H.modelspace->all_orbits)
+          {
+//             std::cout << "    p,q = " << p << " , " << q << std::endl;
+             Orbit& oq = H.modelspace->GetOrbit(q);
+             double eq = H.OneBody(q,q);
+             double nq = oq.occ;
+             for (int twomp=-op.j2; twomp<=op.j2; twomp+=2)
+             {
+               for (int twomq=-oq.j2; twomq<=oq.j2; twomq+=2)
+               {
+//                  double mp=0.5*twomp;
+//                  double mq=0.5*twomq;
+//                  double vkqlp = GetMschemeMatrixElement_2b( H, k,mk, q,mq, l,ml, p,mp );
+//                  std::cout << "      about to get vkqlp " << "   index_pq = " << index_pq << std::endl;
+                  if ( std::abs(np-nq)>1e-2)
+                  {
+                   double vkqlp = GetMschemeMatrixElement_2b( H, k,twomk, q,twomq, l,twoml, p,twomp );
+                   Mklpq(index_kl,index_pq) = vkqlp * (nq-np) / (omega-ep+eq);
+                  }
+//                  std::cout <<"  and set it." << std::endl;
+                  index_pq++;
+               }// for twomq
+             }// for twomp     
+          }// for q
+        }// for p
+
+        index_kl++;
+      }// for twoml
+    }//for twomk
+   }//for l
+  }// for k
+  
+  for (int iter=0; iter<12; iter++)
+  {
+     Tkl_eff = Tkl + Mklpq*Tkl_eff;
+     std::cout << "iter = " << iter << "   Tkl = " << Tkl(index_ab) << "   Tkleff = " << Tkl_eff(index_ab) << "  => e = " << std::setprecision(8)<< Tkl_eff(index_ab) / Tkl(index_ab) << std::endl;
+
+  }
+
+
+  return passed;
+}
+
+
+
 
 
 

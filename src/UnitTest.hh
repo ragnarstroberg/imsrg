@@ -41,7 +41,8 @@ class UnitTest
   // and make sure that they give the same answer
   void TestCommutators();
 //  void TestCommutators3();
-  void TestCommutators3(Operator& X, Operator& Y); 
+//  void TestCommutators3(Operator& X, Operator& Y); 
+  void TestCommutators3(Operator& X, Operator& Y, std::vector<std::string>& skiplist ); 
 
   void TestDaggerCommutators(index_t Q);
   void TestDaggerCommutatorsAlln(index_t Q);
@@ -83,6 +84,7 @@ class UnitTest
   bool Test_comm433_pp_hh_sd( const Operator& X, const Operator& Y   );
   bool Test_comm433sd_ph(     const Operator& X, const Operator& Y   );
 
+  bool TestRPAEffectiveCharge( const Operator& H, const Operator& OpIn, size_t k, size_t l);
 
   bool SanityCheck();
 

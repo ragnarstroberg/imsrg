@@ -165,7 +165,7 @@ all: $(ALL)
 
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\
-      IMSRGProfiler.o Commutator.o HFMBPT.o\
+      IMSRGProfiler.o Commutator.o HFMBPT.o  RPA.o\
       M0nu.o DarkMatterNREFT.o Jacobi3BME.o UnitTest.o \
       TwoBodyChannel.o ThreeBodyChannel.o \
       ThreeBodyStorage.o ThreeBodyStorage_pn.o ThreeBodyStorage_iso.o \

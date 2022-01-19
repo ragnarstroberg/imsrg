@@ -151,6 +151,8 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //   std::cout << "In " << __func__ << "                   X. Is the 3body hermitian " << X.ThreeBody.IsHermitian() << std::endl;
 
 
+//   std::cout << __FILE__ << __LINE__ << "  DONT FORGET TO FIX THIS!" << std::endl;
+
    double t_start = omp_get_wtime();
    comm111ss(X, Y, Z);
    X.profiler.timer["comm111ss"] += omp_get_wtime() - t_start;
@@ -277,6 +279,8 @@ Operator CommutatorScalarTensor( const Operator& X, const Operator& Y)
    if ( (X.IsHermitian() and Y.IsHermitian()) or (X.IsAntiHermitian() and Y.IsAntiHermitian()) ) Z.SetAntiHermitian();
    else if ( (X.IsHermitian() and Y.IsAntiHermitian()) or (X.IsAntiHermitian() and Y.IsHermitian()) ) Z.SetHermitian();
    else Z.SetNonHermitian();
+
+//   std::cout << __FILE__ << __LINE__ << "  DONT FORGET TO FIX THIS!" << std::endl;
 
    double t_start = omp_get_wtime();
    comm111st(X, Y, Z);
@@ -2180,6 +2184,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
 
   size_t norb = Z.modelspace->GetNumberOrbits();
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
+  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   for (size_t i=0; i<norb; i++)
   {
     Orbit& oi = Z.modelspace->GetOrbit(i);
@@ -4862,7 +4867,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
     auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
-//    int twoJ = Tbc.twoJ;
+    int twoJ = Tbc.twoJ;
     size_t nkets = Tbc.GetNumberKets();
     std::vector<size_t> kets_kept;
     std::map<size_t,size_t> kept_lookup;
@@ -4899,7 +4904,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
       Orbit& ok = Z.modelspace->GetOrbit(k);
-//      int Jij = bra.Jpq;
+      int Jij = bra.Jpq;
       double d_ei = std::abs(2*oi.n + oi.l - e_fermi.at(oi.tz2));
       double d_ej = std::abs(2*oj.n + oj.l - e_fermi.at(oj.tz2));
       double d_ek = std::abs(2*ok.n + ok.l - e_fermi.at(ok.tz2));
@@ -4919,6 +4924,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         std::vector<double> recouple_list;
         
 //        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, a, j, k,  ket_list,  recouple_list );
+        Z3.GetKetIndex_withRecoupling( Jij, twoJ, a, j, k,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
           auto iter_find = kept_lookup.find( ket_list[ilist] );
@@ -4940,6 +4946,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         std::vector<size_t> ket_list;
         std::vector<double> recouple_list;
 //        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, a, k,  ket_list,  recouple_list );
+        Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, a, k,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
           auto iter_find = kept_lookup.find( ket_list[ilist] );
@@ -4960,6 +4967,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         std::vector<size_t> ket_list;
         std::vector<double> recouple_list;
 //        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, j, a,  ket_list,  recouple_list );
+        Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, j, a,  ket_list,  recouple_list );
         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
         {
           auto iter_find = kept_lookup.find( ket_list[ilist] );
@@ -7101,6 +7109,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               std::vector<double> recouple_list;
               
 //              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, k,  ket_list,  recouple_list );
+              Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, k,  ket_list,  recouple_list );
               for (size_t ilist=0; ilist<ket_list.size(); ilist++)
               {
                 auto iter_find = kept_lookup.find( ket_list[ilist] );
@@ -7146,6 +7155,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               
 //              std::cout << " line " << __LINE__ << "  calling GetKetIndex_withRecoupling " << Jab << " " << twoJ << " " << a << " " << b << " " << i << std::endl;
 //              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, i,  ket_list,  recouple_list );
+              Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, i,  ket_list,  recouple_list );
 //              std::cout << "    size of lists " << ket_list.size() << " " << recouple_list.size() << std::endl;
               for (size_t ilist=0; ilist<ket_list.size(); ilist++)
               {
@@ -7195,6 +7205,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               std::vector<double> recouple_list;
               
 //              size_t ch_check = Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, j,  ket_list,  recouple_list );
+              Z3.GetKetIndex_withRecoupling( Jab, twoJ, a, b, j,  ket_list,  recouple_list );
               for (size_t ilist=0; ilist<ket_list.size(); ilist++)
               {
                 auto iter_find = kept_lookup.find( ket_list[ilist] );
