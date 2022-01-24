@@ -27,10 +27,30 @@ bool use_imsrg3_n7 = false;
 bool only_2b_omega = false;
 bool perturbative_triples = false;
 bool bch_skip_ieq1 = false;
+bool imsrg3_no_qqq = false;
 double bch_transform_threshold = 1e-9;
 double bch_product_threshold = 1e-4;
 double threebody_threshold = 0;
 
+std::map<std::string,bool> comm_term_on = {
+     {"comm330ss"           , true},
+     {"comm331ss"           , true},
+     {"comm231ss"           , true},
+     {"comm132ss"           , true},
+     {"comm232ss"           , true},
+     {"comm332_ppph_hhhpss" , true},
+     {"comm332_pphhss"      , true},
+     {"comm133ss"           , true}, 
+     {"comm223ss"           , true},           
+     {"comm233_pp_hhss"     , true},     
+     {"comm233_phss"        , true},
+     {"comm333_ppp_hhhss"   , true},
+     {"comm333_pph_hhpss"   , true}
+};
+
+
+void TurnOffTerm( std::string term ) { comm_term_on[term] = false; }
+void TurnOnTerm( std::string term ) { comm_term_on[term] = true ;}
 
 void Set_BCH_Transform_Threshold(double x)
 {bch_transform_threshold=x;}
@@ -58,6 +78,9 @@ void SetOnly2bOmega(bool tf)
 
 void SetBCHSkipiEq1(bool tf)
 {bch_skip_ieq1 = tf;}
+
+void SetIMSRG3Noqqq(bool tf)
+{imsrg3_no_qqq = tf;}
 
 //Operator Operator::Commutator( Operator& opright)
 /// Returns \f$ Z = [X,Y] \f$
@@ -182,70 +205,110 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
    {
        X.profiler.counter["N_ScalarCommutators_3b"] += 1;
 
-       // This gets the perturbative energy from the induced 3 body
-       std::cout << " comm330 " << std::endl;
-       comm330ss(X, Y, Z); // scales as n^6
+       if ( comm_term_on["comm330ss"] )
+       {
+        // This gets the perturbative energy from the induced 3 body
+        std::cout << " comm330 " << std::endl;
+        comm330ss(X, Y, Z); // scales as n^6
+       }
 
-       //Maybe not so important, but I think relatively cheap
-       std::cout << " comm331 " << std::endl;
-       comm331ss(X, Y, Z); // scales as n^7
+       if ( comm_term_on["comm331ss"])
+       {
+        //Maybe not so important, but I think relatively cheap
+        std::cout << " comm331 " << std::endl;
+        comm331ss(X, Y, Z); // scales as n^7
+       }
 
-       // This one is essential. If it's not here, then there are no induced 3 body terms
-       std::cout << " comm223 " << std::endl;
-       comm223ss(X, Y, Z); // scales as n^7
+       if ( comm_term_on["comm223ss"])
+       {
+        // This one is essential. If it's not here, then there are no induced 3 body terms
+        std::cout << " comm223 " << std::endl;
+        comm223ss(X, Y, Z); // scales as n^7
 //       comm223ss_debug(X, Y, Z); // scales as n^7
+       }
 
 //     if (X.GetParticleRank()>2 or Y.GetParticleRank()>2)
 //     {
-//       // Demonstrated that this can have some effect
-       std::cout << " comm231 " << std::endl;
-       comm231ss(X, Y, Z);  // scales as n^6
 
-     //no demonstrated effect yet, but it's cheap
-       std::cout << " comm132 " << std::endl;
-       comm132ss(X, Y, Z); // scales as n^6
+       if ( comm_term_on["comm231ss"])
+       {
+        // Demonstrated that this can have some effect
+        std::cout << " comm231 " << std::endl;
+        comm231ss(X, Y, Z);  // scales as n^6
+       }
 
-       //one of the two most important IMSRG(3) terms
-       std::cout << " comm232 " << std::endl;
-       comm232ss(X, Y, Z);   // this is the slowest n^7 term
+       if ( comm_term_on["comm132ss"])
+       {
+        //no demonstrated effect yet, but it's cheap
+        std::cout << " comm132 " << std::endl;
+        comm132ss(X, Y, Z); // scales as n^6
+       }
+
+       if ( comm_term_on["comm232ss"])
+       {
+        //one of the two most important IMSRG(3) terms
+        std::cout << " comm232 " << std::endl;
+        comm232ss(X, Y, Z);   // this is the slowest n^7 term
 //       comm232ss_debug(X, Y, Z);   // this is the slowest n^7 term
+       }
 
-       //important for suppressing off-diagonal H3
-       std::cout << " comm133 " << std::endl;
-       comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
+       if ( comm_term_on["comm133ss"])
+       {
+        //important for suppressing off-diagonal H3
+        std::cout << " comm133 " << std::endl;
+        comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
+       }
 
       if ( not use_imsrg3_n7 )
       {
-      // Not too bad, though naively n^8
-       std::cout << " comm233_pp_hh " << std::endl;
-       comm233_pp_hhss(X, Y, Z);
+
+       if ( comm_term_on["comm233_pp_hhss"])
+       {
+        // Not too bad, though naively n^8
+        std::cout << " comm233_pp_hh " << std::endl;
+        comm233_pp_hhss(X, Y, Z);
 //       comm233_pp_hhss_debug(X, Y, Z);
-//       X.profiler.timer["comm233_pp_hhss"] += omp_get_wtime() - t_start;
+       }
 
-       // This one is super slow too. It involves 9js
-       // mat mult makes everything better!
-       std::cout << " comm233_ph " << std::endl;
-       comm233_phss(X, Y, Z);
+       if ( comm_term_on["comm233_phss"])
+       {
+        // This one is super slow too. It involves 9js
+        // mat mult makes everything better!
+        std::cout << " comm233_ph " << std::endl;
+        comm233_phss(X, Y, Z);
 //       comm233_phss_debug(X, Y, Z);
+       }
 
-       //not too bad, though naively n^8
-       std::cout << " comm332_ppph_hhhp " << std::endl;
-       comm332_ppph_hhhpss(X, Y, Z);
+       if ( comm_term_on["comm332_ppph_hhhpss"])
+       {
+        //not too bad, though naively n^8
+        std::cout << " comm332_ppph_hhhp " << std::endl;
+        comm332_ppph_hhhpss(X, Y, Z);
+       }
 
-       //naively n^8, but reasonably fast when implemented as a mat mult
-       std::cout << " comm332_pphh " << std::endl;
-       comm332_pphhss(X, Y, Z);
+       if ( comm_term_on["comm332_pphhss"])
+       {
+        //naively n^8, but reasonably fast when implemented as a mat mult
+        std::cout << " comm332_pphh " << std::endl;
+        comm332_pphhss(X, Y, Z);
 //       comm332_pphhss_debug(X, Y, Z);
+       }
 
-       //naively n^9 but pretty fast as a mat mult
-       std::cout << " comm333_ppp_hhhss " << std::endl;
-       comm333_ppp_hhhss(X, Y, Z);
+       if ( comm_term_on["comm333_ppp_hhhss"])
+       {
+        //naively n^9 but pretty fast as a mat mult
+        std::cout << " comm333_ppp_hhhss " << std::endl;
+        comm333_ppp_hhhss(X, Y, Z);
+       }
 
-     //This one works, but it's incredibly slow.  naively n^9.
-     //Much improvement by going to mat mult
-       std::cout << " comm333_pph_hhpss " << std::endl;
-       comm333_pph_hhpss(X, Y, Z);
+       if ( comm_term_on["comm333_pph_hhpss"])
+       {
+        //This one works, but it's incredibly slow.  naively n^9.
+       //Much improvement by going to mat mult
+        std::cout << " comm333_pph_hhpss " << std::endl;
+        comm333_pph_hhpss(X, Y, Z);
 //       comm333_pph_hhpss_debug(X, Y, Z);
+       }
 
       } // if not use_imsrg3_n7
 
@@ -2833,6 +2896,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (de_k + de_l + de_c) > Z.modelspace->GetdE3max() ) continue; 
         if ( (de_a + de_b + de_j) > Z.modelspace->GetdE3max() ) continue;
         if ( (occnat_k*(1-occnat_k) * occnat_l*(1-occnat_l) * occnat_c*(1-occnat_c) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+        if ( imsrg3_no_qqq and ( (ok.cvq+ol.cvq+oc.cvq)>5 or (oa.cvq+ob.cvq+oj.cvq)>5)) continue;
         int twoJp_min = std::max( std::abs(2*Jab - oj.j2), std::abs(2*Jkl-j2c));
         int twoJp_max = std::min( 2*Jab + oj.j2, 2*Jkl+j2c);
         for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
@@ -2929,6 +2993,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (de_k + de_l + de_c) > Z.modelspace->GetdE3max() ) continue;
         if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() ) continue;
         if ( (occnat_k*(1-occnat_k) * occnat_l*(1-occnat_l) * occnat_c*(1-occnat_c) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+        if ( imsrg3_no_qqq and ( (ok.cvq+ol.cvq+oc.cvq)>5 or (oa.cvq+ob.cvq+oj.cvq)>5)) continue;
         
         int twoJp_min = std::max( std::abs(2*Jab - oj.j2), std::abs(2*Jkl-j2c));
         int twoJp_max = std::min( 2*Jab + oj.j2, 2*Jkl+j2c);
@@ -5285,7 +5350,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
 
  // Now we should fill those Zbar matrices.
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+ // I don't think this specific loop has any thread safety issues, so we don't need to check if this is the first pass
+  #pragma omp parallel for schedule(dynamic,1)   //  if (not Z.modelspace->scalar3b_transform_first_pass)
  for (size_t ch_pph=0; ch_pph<nch_pph; ch_pph++)
  {
 
@@ -5342,11 +5408,15 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 // std::cout << "Done filling matrices " << std::endl;
 
 
+
+
+
+
   Z.profiler.timer["comm223_fill_loop"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1) // if (not Z.modelspace->scalar3b_transform_first_pass)
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
     auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
@@ -5374,6 +5444,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       if ( (d_ei + d_ej + d_ek) > Z.modelspace->dE3max ) continue;
       if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) continue;
       if ( perturbative_triples and  not ( (oi.cvq + oj.cvq + ok.cvq)==0 or (oi.cvq>0 and oj.cvq>0 and ok.cvq>0)) ) continue;
+      if ( imsrg3_no_qqq and (oi.cvq + oj.cvq + ok.cvq)>5 ) continue; // Need at least one core or valence particle
+
       int J1 = bra.Jpq;
 
       // Set up the permutation stuff for ijk
@@ -5382,6 +5454,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       std::vector<int> J1p_max = {J1,  std::min(ok.j2+oj.j2, twoJ+oi.j2)/2 , std::min(oi.j2+ok.j2, twoJ+oj.j2)/2 };
       std::vector<std::vector<double>> recouple_ijk = {{1},{},{} };
 
+      // the SixJs called here may not have already been precomputed, so this may cause thread issues on first pass
       for (int J1p=J1p_min[1]; J1p<=J1p_max[1]; J1p++)
            recouple_ijk[1].push_back( sqrt( (2*J1+1)*(2*J1p+1)) * Z.modelspace->GetSixJ(ji,jj,J1,jk,Jtot,J1p) );
 
@@ -5410,6 +5483,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (occnat_l*(1-occnat_l) * occnat_m*(1-occnat_m) * occnat_n*(1-occnat_n) ) < Z.modelspace->GetOccNat3Cut() ) continue;
         if ( perturbative_triples and  not ( (ol.cvq + om.cvq + on.cvq)==0 or (ol.cvq>0 and om.cvq>0 and on.cvq>0)) ) continue;
         if ( perturbative_triples and (  (oi.cvq==0 and ol.cvq==0) or (oi.cvq!=0 and ol.cvq!=0) ) ) continue;
+        if ( imsrg3_no_qqq and  (ol.cvq + om.cvq + on.cvq)>5 ) continue;
         int J2 = ket.Jpq;
 
         // Set up the permutation stuff for lmn
@@ -5417,7 +5491,10 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         std::vector<int> J2p_min = {J2,  std::max(std::abs(on.j2-om.j2), std::abs(twoJ-ol.j2) )/2,   std::max( std::abs(ol.j2-on.j2), std::abs(twoJ-om.j2) )/2 };
         std::vector<int> J2p_max = {J2,  std::min(on.j2+om.j2, twoJ+ol.j2)/2 , std::min(ol.j2+on.j2,twoJ+om.j2)/2 };
         std::vector<std::vector<double>> recouple_lmn = {{1},{},{} };
-            
+
+
+      // the SixJs called here may not have already been precomputed, so this may cause thread issues on first pass
+      // it looks like these SixJs get computed with PrecomputeSixJs
         for (int J2p=J2p_min[1]; J2p<=J2p_max[1]; J2p++)
            recouple_lmn[1].push_back( sqrt( (2*J2+1)*(2*J2p+1)) * Z.modelspace->GetSixJ(jl,jm,J2,jn,Jtot,J2p) );
 
@@ -5428,6 +5505,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         double zijklmn = 0;
 /// BEGIN THE SLOW BIT...
 
+//  #pragma omp parallel for schedule(dynamic,1) reduction( + : zijklmn)  if ( Z.modelspace->scalar3b_transform_first_pass)
         for ( int perm_ijk=0; perm_ijk<3; perm_ijk++ )
         {
           size_t I1 = ijk[perm_ijk][0];
@@ -5474,10 +5552,14 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                 int twoJph_max = std::min( 2*J1p+o6.j2 , 2*J2p+o3.j2 );
 
 // This inner loop is slow
-                for ( int twoJph=twoJph_min; twoJph<=twoJph_max; twoJph++)
+//                for ( int twoJph=twoJph_min; twoJph<=twoJph_max; twoJph++)  // <J1p,j6|Jph> and <J2p,j3|Jph>
+                for ( int twoJph=twoJph_min; twoJph<=twoJph_max; twoJph+=2)  // <J1p,j6|Jph> and <J2p,j3|Jph>
                 {
                    double zbar_126453=0;
                    double Jph = 0.5 * twoJph;
+////                   double sixj1 = Z.modelspace->GetSixJ(J1p,j3,Jtot, J2p,j6,Jph);
+                   double sixj1 =  Jtot<Jph ? Z.modelspace->GetSixJ(j3,Jtot,J1p, j6,Jph,J2p) :  Z.modelspace->GetSixJ(j6,Jph,J1p, j3,Jtot,J2p) ;
+                   if ( std::abs(sixj1)<1e-6 ) continue;
 
 
                    // This lookup is expensive. Replace map with vector makes things better. Not the bottleneck anymore.
@@ -5506,7 +5588,6 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                      zbar_126453 = hZ * Zbar[ zbar_index ]  * phase_12 * phase_45;
                    }
 
-                   double sixj1 = Z.modelspace->GetSixJ(J1p,j3,Jtot, J2p,j6,Jph);
                    z_123456 +=   sixj1 * zbar_126453  ; 
 
                 }

@@ -17,6 +17,10 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 ///////////////////////////////////////////////////////////////////////////////////
 
+
+#ifndef Parameters_h
+#define Parameters_h 1
+
 #include <map>
 #include <string>
 #include <vector>
@@ -270,3 +274,4 @@ void Parameters::PrintOptions()
 }
 
 
+#endif

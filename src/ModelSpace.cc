@@ -446,17 +446,30 @@ void ModelSpace::Init( std::map<std::array<int,4>,double> hole_list, std::set<st
      }
    }
    norbits = all_orbits.size();
-   double atmp=0;
-   double ztmp=0;
-   for (auto& h : holes)
-   {
-     Orbit& oh = GetOrbit(h);
-     atmp += (oh.j2+1.)*oh.occ;
-     if (oh.tz2 < 0) ztmp += (oh.j2+1.)*oh.occ;
-//     std::cout << " line " << __LINE__ << " h = " << h << "  occ = " << oh.occ << "  atmp = " << atmp << "  ztmp = " << ztmp << std::endl;
-   }
-   Aref = atmp;
-   Zref = ztmp;
+//   double atmp=0;
+//   double ztmp=0;
+//   double acore=0;
+//   double zcore=0;
+//   for (auto& h : holes)
+//   {
+//     Orbit& oh = GetOrbit(h);
+//     atmp += (oh.j2+1.)*oh.occ;
+//     if (oh.tz2 < 0) ztmp += (oh.j2+1.)*oh.occ;
+//   }
+//   for (auto& c : core)
+//   {
+//     Orbit& oc = GetOrbit(c);
+//     acore += (oc.j2+1.)*oc.occ;
+//     if (oc.tz2 < 0) zcore += (oc.j2+1.)*oc.occ;
+//   }
+//   Aref = atmp;
+//   Zref = ztmp;
+//   Acore = acore;
+//   Zcore = zcore;
+   Aref = GetAref();
+   Zref = GetZref();
+   Acore = GetAcore();
+   Zcore = GetZcore();
 //   Aref = round(atmp);
 //   Zref = round(ztmp);
 //   if (std::abs(Aref-atmp)>1e-5 or std::abs(Zref-ztmp)>1e-5)
@@ -578,6 +591,58 @@ void ModelSpace::InitSingleSpecies(int emax, std::string reference, std::string 
 //  Init(emax, h,c,v);
 
 }
+
+
+double ModelSpace::CountInSet( const std::set<index_t>& orbits ) const
+{
+  double count=0;
+  for ( auto& i : orbits )
+  {
+    const Orbit& oi = GetOrbit(i);
+    count += oi.j2+1;
+  }
+  return count;
+}
+
+std::set<index_t> ModelSpace::IntersectionOfSets( const std::set<index_t>& set1, const std::set<index_t>& set2) const
+{
+  std::set<index_t> set3;
+  std::set_intersection( set1.begin(), set1.end(), set2.begin(), set2.end(), std::inserter(set3,set3.end()));
+//  set3.resize(end3-set3.begin());
+  return set3;
+}
+
+double ModelSpace::GetAref() const 
+{
+  return CountInSet( holes );
+}
+
+double ModelSpace::GetZref() const 
+{
+  return CountInSet( IntersectionOfSets( holes, proton_orbits) );
+}
+double ModelSpace::GetNref() const 
+{
+  return CountInSet( IntersectionOfSets( holes, neutron_orbits) );
+}
+
+double ModelSpace::GetAcore() const 
+{
+  return CountInSet( core );
+}
+
+double ModelSpace::GetZcore() const 
+{
+  return CountInSet( IntersectionOfSets( core, proton_orbits) );
+}
+double ModelSpace::GetNcore() const 
+{
+  return CountInSet( IntersectionOfSets( core, neutron_orbits) );
+}
+
+
+
+
 
 void ModelSpace::SetLmax( int l)
 {
@@ -1061,6 +1126,12 @@ Orbit& ModelSpace::GetOrbit(int i)
   if (i==NOT_AN_ORBIT) return NULL_ORBIT;
   return (Orbit&) Orbits[i];
 } 
+
+const Orbit& ModelSpace::GetOrbit(int i) const
+{
+  if (i==NOT_AN_ORBIT) return NULL_ORBIT;
+  return (Orbit&) Orbits[i];
+}
 
 void ModelSpace::AddOrbit(Orbit orb)
 {
@@ -1750,13 +1821,15 @@ void ModelSpace::PreCalculateSixJ()
   std::vector<uint64_t> KEYS;
   for (int j2a=1; j2a<=(2*Emax+1); j2a+=2)
   {
-   for (int j2b=1; j2b<=(2*Emax+1); j2b+=2)
+//   for (int j2b=1; j2b<=(2*Emax+1); j2b+=2)
+   for (int j2b=1; j2b<=3*(2*Emax+1); j2b+=2)
    {
     for (int j2c=1; j2c<=(2*Emax+1); j2c+=2)
     {
      // four half-integer j's,  two integer J's
      for (int j2d=1; j2d<=3*(2*Emax+1); j2d+=2)
      {
+      if ( j2b > std::max(j2d,2*Emax+1) ) continue;
       // J1 couples a,b, and c,d;  J2 couples a,d and b,c
       int J1_min = std::max( std::abs(j2a-j2b), std::abs(j2c-j2d) );
       int J1_max = std::min( j2a+j2b, j2c+j2d );
@@ -1775,6 +1848,7 @@ void ModelSpace::PreCalculateSixJ()
        } // for J2
       } // for J1
      } // for j2d
+     if ( j2b > (2*Emax+1) ) continue;
 
      // three half-integer j's, three integer J's
      // J1 couples a,b, and c,d;  J2 couples a,d and b,c

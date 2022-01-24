@@ -259,6 +259,8 @@ class ModelSpace
    double Zref;          // Average proton number of the normal-ordering reference
 //   int Aref;          // Particle number of the normal-ordering reference
 //   int Zref;          // Proton number of the normal-ordering reference
+   double Acore;      // Average particle number of the core of the valnce space (this should probably always be an integer)
+   double Zcore;      // Averate proton number of the core
 
 
    std::vector<Orbit> Orbits; // vector of one-body Orbit structs
@@ -383,6 +385,7 @@ class ModelSpace
    void FindEFermi();
    // Setter/Getters
    Orbit& GetOrbit(int i); 
+   const Orbit& GetOrbit(int i) const; 
    Ket& GetKet(int i) const {return (Ket&) Kets[i];};
    Ket& GetKet(int p, int q) const {return (Ket&) Kets[Index2(p,q)];};
    Ket3& GetKet3(int i) const {return (Ket3&) Kets3[i];};
@@ -404,10 +407,21 @@ class ModelSpace
    double GetHbarOmega() const {return hbar_omega;};
    int GetTargetMass() const {return target_mass;};
    int GetTargetZ() const {return target_Z;};
-   double GetAref() const {return Aref;};
-   double GetZref() const {return Zref;};
+//   double GetAref() const {return Aref;};
+//   double GetZref() const {return Zref;};
 //   int GetAref() const {return Aref;};
 //   int GetZref() const {return Zref;};
+
+   // Two helper functions for counting the number of particles in various sets of orbits, e.g. protons in the core.
+   std::set<index_t> IntersectionOfSets( const std::set<index_t>& set1, const std::set<index_t>& set2) const ;
+   double CountInSet( const std::set<index_t>& orbits ) const ;
+   double GetAref() const ;
+   double GetZref() const ;
+   double GetNref() const ;
+   double GetAcore() const ;
+   double GetZcore() const ;
+   double GetNcore() const ;
+
    size_t GetNumberTwoBodyChannels() const {return TwoBodyChannels.size();};
    size_t GetNumberTwoBodyChannels_CC() const {return TwoBodyChannels_CC.size();};
    size_t GetNumberThreeBodyChannels() const {return ThreeBodyChannels.size();};
@@ -423,6 +437,9 @@ class ModelSpace
    void SetReference(std::set<index_t>);
    void SetReference(std::map<index_t,double>);
    void SetReference(std::string);
+
+   void SetScalarFirstPass( bool tf ) { scalar_transform_first_pass=tf;};
+   void SetScalar3bFirstPass( bool tf ) { scalar3b_transform_first_pass=tf;};
 
    int GetEmax(){return Emax;};
    int GetE2max(){return E2max;};

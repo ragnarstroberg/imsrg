@@ -17,6 +17,8 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 ///////////////////////////////////////////////////////////////////////////////////
 
+#ifndef Commutator_h
+#define Commutator_h 1
 
 #include "Operator.hh"
 //#include "DaggerOperator.hh"
@@ -39,9 +41,12 @@ namespace Commutator{
   extern bool perturbative_triples;
   extern bool bch_skip_ieq1;
   extern bool only_2b_omega;
+  extern bool imsrg3_no_qqq;
   extern double bch_transform_threshold;
   extern double bch_product_threshold;
   extern double threebody_threshold;
+
+  extern std::map<std::string,bool> comm_term_on; // This allows turning on/off individual IMSRG(3) commutator terms for testing.
 
   void Set_BCH_Transform_Threshold(double x);
   void Set_BCH_Product_Threshold(double x);
@@ -52,7 +57,10 @@ namespace Commutator{
   void SetUseIMSRG3N7(bool tf);
   void SetOnly2bOmega(bool tf);
   void SetBCHSkipiEq1(bool tf);
+  void SetIMSRG3Noqqq(bool tf);
 
+  void TurnOffTerm( std::string term ) ;
+  void TurnOnTerm( std::string term ) ;
 
   Operator Commutator(const Operator& X, const Operator& Y) ; 
   Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) ;
@@ -116,9 +124,9 @@ namespace Commutator{
   void comm233_phss( const Operator& X, const Operator& Y, Operator& Z ) ;        // implemented and tested.
   void comm233_phss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;        // implemented and tested.
 
-  void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
-  void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
-  void comm333_pph_hhpss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. not tested.
+  void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. andtested.
+  void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z ) ;           // implemented. and tested.
+  void comm333_pph_hhpss_debug( const Operator& X, const Operator& Y, Operator& Z ) ;     
 
   bool check_2b_channel_Tz_parity( const Operator& Op, Orbit& o1, Orbit&o2, Orbit& o3, Orbit& o4 );
 
@@ -167,3 +175,5 @@ namespace Commutator{
 
 
 }
+
+#endif

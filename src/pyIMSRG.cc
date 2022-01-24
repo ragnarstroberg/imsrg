@@ -110,6 +110,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetOneBodyChannels", [](ModelSpace& self, int l, int j, int tz){ return self.OneBodyChannels.at({l,j,tz});}, py::arg("l"), py::arg("j2"), py::arg("tz2") )
 //      .def("GetOrbitIndex_fromString", &MS_GetOrbitIndex_Str)
       .def("PreCalculateSixJ", &ModelSpace::PreCalculateSixJ)
+      .def("SetScalarFirstPass",&ModelSpace::SetScalarFirstPass)
+      .def("SetScalar3bFirstPass",&ModelSpace::SetScalar3bFirstPass)
       .def_readwrite("holes",&ModelSpace::holes)
       .def_readwrite("particles",&ModelSpace::particles)
       .def_readwrite("core", &ModelSpace::core)
@@ -453,6 +455,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("EstimateBCHError", &Commutator::EstimateBCHError);
       Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
       Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
+      Commutator.def("TurnOnTerm", &Commutator::TurnOnTerm);
+      Commutator.def("TurnOffTerm", &Commutator::TurnOffTerm);
       // IMSRG(2) commutators
       Commutator.def("comm110ss", &Commutator::comm110ss);
       Commutator.def("comm220ss", &Commutator::comm220ss);
@@ -463,6 +467,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm222_pp_hh_221ss", &Commutator::comm222_pp_hh_221ss);
       Commutator.def("comm222_phss", &Commutator::comm222_phss);
       // IMSRG(3) commutators
+      Commutator.def("comm330ss", &Commutator::comm330ss);
+      Commutator.def("comm231ss", &Commutator::comm231ss);
       Commutator.def("comm223ss", &Commutator::comm223ss);
       Commutator.def("comm232ss", &Commutator::comm232ss);
       // scalar-tensor commutators
@@ -473,6 +479,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm222_phst", &Commutator::comm222_phst);
       Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
       Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
+      Commutator.def("SetIMSRG3Noqqq", &Commutator::SetIMSRG3Noqqq);
 
 
 

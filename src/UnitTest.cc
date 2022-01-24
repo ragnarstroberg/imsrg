@@ -476,13 +476,33 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y, std::vector<std::strin
 //  Commutator::comm223ss( Xherm, Y, X);
   bool all_good = true;
 
-  if ( std::find(skiplist.begin(),skiplist.end(), "comm330ss") == skiplist.end())   all_good &= Test_comm330ss( X, Y );
-  if ( std::find(skiplist.begin(),skiplist.end(), "comm331ss") == skiplist.end())   all_good &= Test_comm331ss( X, Y );
-  if ( std::find(skiplist.begin(),skiplist.end(), "comm231ss") == skiplist.end())   all_good &= Test_comm231ss( X, Y );
-  if ( std::find(skiplist.begin(),skiplist.end(), "comm132ss") == skiplist.end())   all_good &= Test_comm132ss( X, Y );
-  if ( std::find(skiplist.begin(),skiplist.end(), "comm232ss") == skiplist.end())   all_good &= Test_comm232ss( X, Y );
-  if ( std::find(skiplist.begin(),skiplist.end(), "comm223ss") == skiplist.end())   all_good &= Test_comm223ss( X, Y );
-  if ( std::find(skiplist.begin(),skiplist.end(), "comm133ss") == skiplist.end())   all_good &= Test_comm133ss( X, Y );
+  if ( std::find(skiplist.begin(),skiplist.end(), "allN6") == skiplist.end() )
+  {
+     if ( std::find(skiplist.begin(),skiplist.end(), "comm330ss") == skiplist.end())   all_good &= Test_comm330ss( X, Y );
+     if ( std::find(skiplist.begin(),skiplist.end(), "comm231ss") == skiplist.end())   all_good &= Test_comm231ss( X, Y );
+     if ( std::find(skiplist.begin(),skiplist.end(), "comm132ss") == skiplist.end())   all_good &= Test_comm132ss( X, Y );
+  }
+
+  if ( std::find(skiplist.begin(),skiplist.end(), "allN7") == skiplist.end() )
+  {
+     if ( std::find(skiplist.begin(),skiplist.end(), "comm331ss") == skiplist.end())   all_good &= Test_comm331ss( X, Y );
+     if ( std::find(skiplist.begin(),skiplist.end(), "comm232ss") == skiplist.end())   all_good &= Test_comm232ss( X, Y );
+     if ( std::find(skiplist.begin(),skiplist.end(), "comm223ss") == skiplist.end())   all_good &= Test_comm223ss( X, Y );
+     if ( std::find(skiplist.begin(),skiplist.end(), "comm133ss") == skiplist.end())   all_good &= Test_comm133ss( X, Y );
+  }
+
+  if ( std::find(skiplist.begin(),skiplist.end(), "allN8") == skiplist.end() )
+  {
+    if ( std::find(skiplist.begin(),skiplist.end(), "comm332_ppph_hhhpss") == skiplist.end())   all_good &= Test_comm332_ppph_hhhpss( X, Y );
+    if ( std::find(skiplist.begin(),skiplist.end(), "comm332_pphhss") == skiplist.end())   all_good &= Test_comm332_pphhss( X, Y );
+    if ( std::find(skiplist.begin(),skiplist.end(), "comm233_pp_hhss") == skiplist.end())   all_good &= Test_comm233_pp_hhss( X, Y );
+    if ( std::find(skiplist.begin(),skiplist.end(), "comm233_ph_ss") == skiplist.end())   all_good &= Test_comm233_ph_ss( X, Y );
+  }
+  if ( std::find(skiplist.begin(),skiplist.end(), "allN9") == skiplist.end() )
+  {
+    if ( std::find(skiplist.begin(),skiplist.end(), "comm333_ppp_hhh_ss") == skiplist.end())   all_good &= Test_comm333_ppp_hhh_ss( X, Y );
+    if ( std::find(skiplist.begin(),skiplist.end(), "comm333_pph_hhp_ss") == skiplist.end())   all_good &= Test_comm333_pph_hhp_ss( X, Y );
+  }
 
 
 //  all_good &= Test_comm330ss( X, Y );
