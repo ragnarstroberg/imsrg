@@ -28,6 +28,7 @@ bool only_2b_omega = false;
 bool perturbative_triples = false;
 bool bch_skip_ieq1 = false;
 bool imsrg3_no_qqq = false;
+bool imsrg3_valence_2b = false;
 double bch_transform_threshold = 1e-9;
 double bch_product_threshold = 1e-4;
 double threebody_threshold = 0;
@@ -81,6 +82,9 @@ void SetBCHSkipiEq1(bool tf)
 
 void SetIMSRG3Noqqq(bool tf)
 {imsrg3_no_qqq = tf;}
+
+void SetIMSRG3valence2b(bool tf)
+{imsrg3_valence_2b = tf;}
 
 //Operator Operator::Commutator( Operator& opright)
 /// Returns \f$ Z = [X,Y] \f$
@@ -2729,6 +2733,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   bool y_has_3 = Y3.IsAllocated();
 //  bool x_has_3 = X3.is_allocated;
 //  bool y_has_3 = Y3.is_allocated;
+//  bool imsrg3_valence_2b = true;
+//  bool imsrg3_valence_2b = false;
 
   int hermX = X.IsHermitian() ? 1 : -1;
   int hermY = Y.IsHermitian() ? 1 : -1;
@@ -2739,14 +2745,26 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 //  std::cout << __func__ << " begin" << std::endl;
 
   // first, enumerate the one-body channels |i> => ji,parityi,tzi
-  std::map<std::array<int,3>,std::vector<size_t>> local_one_body_channels; //  maps {j,parity,tz} => vector of index_i 
-  for ( auto i : Z.modelspace->all_orbits )
+  std::map<std::array<int,3>,std::vector<size_t>> local_one_body_channels; //  maps {j,parity,tz} => vector of index_j 
+  std::map<std::array<int,3>,std::vector<size_t>> external_local_one_body_channels; //  maps {j,parity,tz} => vector of index_j 
+  for ( auto j : Z.modelspace->all_orbits )
   {
-    Orbit& oi = Z.modelspace->GetOrbit(i);
-    std::array<int,3> obc = {oi.j2,oi.l%2,oi.tz2};
-    if ( local_one_body_channels.find(obc) == local_one_body_channels.end() ) local_one_body_channels[obc] = {i};
-    else local_one_body_channels[obc].push_back(i);
+    Orbit& oj = Z.modelspace->GetOrbit(j);
+    std::array<int,3> obc = {oj.j2,oj.l%2,oj.tz2};
+    if ( local_one_body_channels.find(obc) == local_one_body_channels.end() ) local_one_body_channels[obc] = {j};
+    else local_one_body_channels[obc].push_back(j);
+    if ( imsrg3_valence_2b and ( oj.cvq!=1)   ) continue;
+    if ( external_local_one_body_channels.find(obc) == external_local_one_body_channels.end() ) external_local_one_body_channels[obc] = {j};
+    else external_local_one_body_channels[obc].push_back(j);
   }
+
+//  std::cout << __func__ << "  Local one body channels: " << std::endl;
+//  for ( auto& lobc : local_one_body_channels)
+//  {
+//    std::cout << lobc.first[0] << " " << lobc.first[1] << " " << lobc.first[2] << " : ";
+//    for ( auto& i : lobc.second )  std::cout << i << "  ";
+//    std::cout << std::endl;
+//  }
   
   // next, figure out which three-body states |klj`> and |abc`> exist, make a list, and give them an
   // index for where they'll sit in the matrix
@@ -2754,14 +2772,16 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   std::map<std::array<int,3>,arma::mat> ZMAT_list; //  maps {j,parity,tz} => matrix <i|Z|klj`>
 
   std::vector<std::array<int,3>> obc_keys;
-  for ( auto& iter_i : local_one_body_channels) obc_keys.push_back(iter_i.first);
+//  for ( auto& iter_i : local_one_body_channels) obc_keys.push_back(iter_i.first);
+  for ( auto& iter_i : external_local_one_body_channels) obc_keys.push_back(iter_i.first);
   size_t nkeys = obc_keys.size();
 
   
   for ( size_t ikey=0; ikey<nkeys; ikey++ )
   {
     auto& obc_key = obc_keys[ikey];
-    std::vector<size_t>& obc_orbits = local_one_body_channels[obc_key];
+//    std::vector<size_t>& obc_orbits = local_one_body_channels[obc_key];
+    std::vector<size_t>& obc_orbits = external_local_one_body_channels[obc_key];
     int j2i = obc_key[0];
     int parityi = obc_key[1];
     int tz2i = obc_key[2];
@@ -2804,6 +2824,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 //            double nj = oj.occ;
 
             klj_list_i.push_back( { ket_kl.p, ket_kl.q, j, (size_t)tbc_kl.J } );
+//            std::cout <<"   ikey = " << ikey << " : " << j2i << " " << parityi << " " << tz2i << "   "
+//                      << "  adding " << ket_kl.p << " " <<ket_kl.q << " " << j << "  J=" << tbc_kl.J << std::endl;
 
           }// for j
         }// for iket_kl
@@ -2824,7 +2846,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
     auto& obc_key = obc_keys[ikey]; // this is an array {j2,parity,tz2}
     int j2i = obc_key[0];
-    std::vector<size_t>& obc_orbits = local_one_body_channels[obc_key]; // the orbits that have quantum numbers {j2,parity,tz2}
+//    std::vector<size_t>& obc_orbits = local_one_body_channels[obc_key]; // the orbits that have quantum numbers {j2,parity,tz2}
+    std::vector<size_t>& obc_orbits = external_local_one_body_channels[obc_key]; // the orbits that have quantum numbers {j2,parity,tz2}
     auto& klj_list_i = klj_list[obc_key]; // list of 3-body pph stats |klj`> with quantum numbers {j2,parity,tz2}
 
     std::vector<size_t> abc_list; // keep track of which klj states should go in the abc loop
@@ -2846,11 +2869,13 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       if (a==b) occupation_factor *=0.5;  // we sum a<=b, and drop the 1/2, but we still need the 1/2 for a==b
       abc_list.push_back( i_kljJ );
       abc_occ_list.push_back( occupation_factor );
+//      std::cout << "   || ikey = " << ikey << "   keeping abc,J " << a << " " << b << " " << c << " " << kljJ[3] << "  with index " << i_kljJ << std::endl;
     }
 
     size_t dim_i   = obc_orbits.size(); // how many sp states are in this jpt channel
     size_t dim_klj = klj_list[obc_key].size(); // how many 3-body pph states in this jpt channel
     size_t dim_abc = abc_list.size(); // how many 3-body states which contribute to the |abc`> sum
+
 
     // Now allocate the matrices in this channel
     arma::mat X2MAT(dim_i,   dim_abc, arma::fill::zeros);
@@ -2897,6 +2922,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (de_a + de_b + de_j) > Z.modelspace->GetdE3max() ) continue;
         if ( (occnat_k*(1-occnat_k) * occnat_l*(1-occnat_l) * occnat_c*(1-occnat_c) ) < Z.modelspace->GetOccNat3Cut() ) continue;
         if ( imsrg3_no_qqq and ( (ok.cvq+ol.cvq+oc.cvq)>5 or (oa.cvq+ob.cvq+oj.cvq)>5)) continue;
+        if ( imsrg3_valence_2b and ( ok.cvq!=1  or ol.cvq!=1  or oj.cvq!=1) ) continue;
         int twoJp_min = std::max( std::abs(2*Jab - oj.j2), std::abs(2*Jkl-j2c));
         int twoJp_max = std::min( 2*Jab + oj.j2, 2*Jkl+j2c);
         for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
@@ -2994,6 +3020,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() ) continue;
         if ( (occnat_k*(1-occnat_k) * occnat_l*(1-occnat_l) * occnat_c*(1-occnat_c) ) < Z.modelspace->GetOccNat3Cut() ) continue;
         if ( imsrg3_no_qqq and ( (ok.cvq+ol.cvq+oc.cvq)>5 or (oa.cvq+ob.cvq+oj.cvq)>5)) continue;
+        if ( imsrg3_valence_2b and  (ok.cvq!=1 or ol.cvq!=1 or oj.cvq!=1) ) continue;
         
         int twoJp_min = std::max( std::abs(2*Jab - oj.j2), std::abs(2*Jkl-j2c));
         int twoJp_max = std::min( 2*Jab + oj.j2, 2*Jkl+j2c);
@@ -3037,6 +3064,21 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       }// for ind_klj
     }// for ind_abc
 
+//    std::cout << "ikey = " << ikey << "   " << obc_key[0] << " " << obc_key[1] << " " << obc_key[2] << std::endl;
+//    if  (  (obc_key[1] != 1)  or (obc_key[2]!=-1)  or (obc_key[0]>3 ) )
+//    {
+//       std::cout << "   .... setting to zero ...." << std::endl;
+//       X2MAT *=0;
+//       Y2MAT *=0;
+//    }
+//    else
+//    {
+//       std::cout << "X2 looks like this: " << std::endl << X2MAT << std::endl;
+//       std::cout << "In this channel, abclist is  ";
+//       for (auto& iabc : abc_list ) std::cout << iabc << " ";
+//       std::cout << std::endl;
+//    }
+
     // now we do the mat mult
     ZMAT_list[obc_key] =  (  X2MAT * Y3MAT - Y2MAT * X3MAT  ) ;
 
@@ -3056,9 +3098,12 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       size_t j=bra.q;
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
+      if ( imsrg3_valence_2b and  (oi.cvq!=1 or oj.cvq!=1 ) ) continue;
 
-      auto& lobc_i = local_one_body_channels.at({oi.j2,oi.l%2,oi.tz2});
-      auto& lobc_j = local_one_body_channels.at({oj.j2,oj.l%2,oj.tz2});
+//      auto& lobc_i = local_one_body_channels.at({oi.j2,oi.l%2,oi.tz2});
+//      auto& lobc_j = local_one_body_channels.at({oj.j2,oj.l%2,oj.tz2});
+      auto& lobc_i = external_local_one_body_channels.at({oi.j2,oi.l%2,oi.tz2});
+      auto& lobc_j = external_local_one_body_channels.at({oj.j2,oj.l%2,oj.tz2});
       size_t ind_i = std::distance( lobc_i.begin(),  std::find( lobc_i.begin(),lobc_i.end(), i ) );
       size_t ind_j = std::distance( lobc_j.begin(),  std::find( lobc_j.begin(),lobc_j.end(), j ) );
 
@@ -3077,8 +3122,12 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         int phase_ij = X.modelspace->phase( (oi.j2+oj.j2)/2-J);
         int phase_kl = X.modelspace->phase( (ok.j2+ol.j2)/2-J);
 
-        auto& lobc_k = local_one_body_channels.at({ok.j2,ok.l%2,ok.tz2});
-        auto& lobc_l = local_one_body_channels.at({ol.j2,ol.l%2,ol.tz2});
+        if ( imsrg3_valence_2b and  (ok.cvq!=1 or ol.cvq!=1 ) ) continue;
+
+//        auto& lobc_k = local_one_body_channels.at({ok.j2,ok.l%2,ok.tz2});
+//        auto& lobc_l = local_one_body_channels.at({ol.j2,ol.l%2,ol.tz2});
+        auto& lobc_k = external_local_one_body_channels.at({ok.j2,ok.l%2,ok.tz2});
+        auto& lobc_l = external_local_one_body_channels.at({ol.j2,ol.l%2,ol.tz2});
         size_t ind_k = std::distance( lobc_k.begin(),  std::find( lobc_k.begin(),lobc_k.end(), k ) );
         size_t ind_l = std::distance( lobc_l.begin(),  std::find( lobc_l.begin(),lobc_l.end(), l ) );
 
@@ -3098,6 +3147,16 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         size_t ind_ijk = std::distance( list_l.begin(),  std::find( list_l.begin(),list_l.end(), key_ijk ) );
 
         if ( ind_klj == list_i.size()   or ind_kli==list_j.size() or ind_ijl==list_k.size() or ind_ijk==list_l.size() )   continue;
+
+//        std::cout << "   made it. ijkl = " << i << " " << j << " " << k << " " << l << " J = " << J <<  "  with corresponding indices "
+//                  << ind_i << " , " << ind_klj << "  " << ind_j << " , " << ind_kli << "  "
+//                  << ind_k << " , " << ind_ijl << "  " << ind_l << " , " << ind_ijk << "   "
+//                  << ZMat_i(ind_i, ind_klj) << " " << ZMat_j(ind_j,ind_kli) << " " << ZMat_k(ind_k, ind_ijl) << " " << ZMat_l(ind_l,ind_ijk)
+//                  << " the obc keys we used are : (" << oi.j2<< " " << oi.l%2 << " " << oi.tz2 << ")"
+//                  << "  ("                           << oj.j2<< " " << oj.l%2 << " " << oj.tz2 << ")"
+//                  << "  ("                           << ok.j2<< " " << ok.l%2 << " " << ok.tz2 << ")"
+//                  << "  ("                           << ol.j2<< " " << ol.l%2 << " " << ol.tz2 << ")"
+//                  << std::endl;
 
 
         double zijkl =            ZMat_j(ind_j, ind_kli) - phase_ij * ZMat_i(ind_i, ind_klj) 

@@ -480,6 +480,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
       Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
       Commutator.def("SetIMSRG3Noqqq", &Commutator::SetIMSRG3Noqqq);
+      Commutator.def("SetIMSRG3valence2b", &Commutator::SetIMSRG3valence2b);
 
 
 

@@ -42,6 +42,7 @@ namespace Commutator{
   extern bool bch_skip_ieq1;
   extern bool only_2b_omega;
   extern bool imsrg3_no_qqq;
+  extern bool imsrg3_valence_2b;
   extern double bch_transform_threshold;
   extern double bch_product_threshold;
   extern double threebody_threshold;
@@ -58,6 +59,7 @@ namespace Commutator{
   void SetOnly2bOmega(bool tf);
   void SetBCHSkipiEq1(bool tf);
   void SetIMSRG3Noqqq(bool tf);
+  void SetIMSRG3valence2b(bool tf);
 
   void TurnOffTerm( std::string term ) ;
   void TurnOnTerm( std::string term ) ;
