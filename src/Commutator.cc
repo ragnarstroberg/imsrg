@@ -456,10 +456,11 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
      OpOut.SetParticleRank(2);
    }
 //   if (use_imsrg3 and not OpOut.ThreeBody.is_allocated )
-   if (use_imsrg3 and not OpOut.ThreeBody.IsAllocated() )
+//   if (use_imsrg3 and not OpOut.ThreeBody.IsAllocated() )
+   if (use_imsrg3  )
    {
-     OpOut.SetParticleRank(3);
      OpOut.ThreeBody.SetMode("pn");
+     OpOut.SetParticleRank(3);
    }
    double factorial_denom = 1.0;
    Operator goosetank_chi;  // auxiliary one-body operator used to recover 4th-order quadruples.

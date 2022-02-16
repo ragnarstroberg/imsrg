@@ -114,6 +114,9 @@ namespace imsrg_util
 
  Operator AxialCharge_Op( ModelSpace& modelspace );
 
+ Operator WoodsSaxon1b_Op( ModelSpace& modelspace, double V0, double R0, double a0);
+ Operator HOtrap_Op( ModelSpace& modelspace, double hw_trap);
+
  double MBPT2_SpectroscopicFactor( Operator H, index_t p);
 
  namespace atomic_fs

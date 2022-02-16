@@ -2093,6 +2093,7 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
 
   for (auto i : X.modelspace->all_orbits )
   {
+    std::cout << " orbit " << i << " of " << X.modelspace->all_orbits.size() << std::endl;
     Orbit& oi = X.modelspace->GetOrbit(i);
     for (auto j : X.modelspace->all_orbits )
     {

@@ -312,6 +312,20 @@ namespace imsrg_util
         theop =  M0nuop[M0nuopname](modelspace,Eclosure,src);
         }
       }
+      else if (opnamesplit[0] == "VWS")
+      {
+         double V0,R0,a0;
+         std::istringstream( opnamesplit[1] ) >> V0;
+         std::istringstream( opnamesplit[2] ) >> R0;
+         std::istringstream( opnamesplit[3] ) >> a0;
+         theop = WoodsSaxon1b_Op( modelspace, V0, R0, a0);
+      }
+      else if (opnamesplit[0] == "HOtrap")
+      {
+         double hw_trap;
+         std::istringstream( opnamesplit[1] ) >> hw_trap;
+         theop = HOtrap_Op( modelspace, hw_trap);
+      }
       else //need to remove from the list
       {
          std::cout << "Unknown operator: " << opname << std::endl;
@@ -2561,6 +2575,82 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
  }
 
+
+
+ Operator WoodsSaxon1b_Op( ModelSpace& modelspace, double V0, double R0, double a0)
+ {
+    Operator VWS_op( modelspace, 0,0,0,2 ); // This should just be a 1b operator...
+
+    double hw = modelspace.GetHbarOmega();
+    int ngrid = 500;
+    double rmax = 3 * R0;
+    double dr = rmax/ngrid;
+    std::vector<double> rgrid(ngrid,0.0);
+    std::vector<double> Vgrid(ngrid,0.0);
+    std::vector<double> psi_a(ngrid,0.0);
+    std::vector<double> psi_b(ngrid,0.0);
+    for (int igrid=0;igrid<ngrid;igrid++)  rgrid[igrid] = dr * igrid;
+    for (int igrid=0;igrid<ngrid;igrid++)  Vgrid[igrid] = V0 / (1.0 + exp( (rgrid[igrid]-R0)/a0 ) );
+
+    for (auto a : modelspace.all_orbits)
+    {
+      Orbit& oa = modelspace.GetOrbit(a);
+      for (int igrid=0;igrid<ngrid;igrid++) psi_a[igrid] =  HO_Radial_psi( oa.n, oa.l, hw, rgrid[igrid] );
+      for (auto b: VWS_op.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      {
+        if (b<a) continue;
+        Orbit& ob = modelspace.GetOrbit(b);
+        double Vab = 0;
+        for (int igrid=0;igrid<ngrid;igrid++)
+        {
+           double psi_b_r =  HO_Radial_psi( ob.n, ob.l, hw, rgrid[igrid] );
+           Vab += psi_a[igrid] * psi_b_r * Vgrid[igrid] * rgrid[igrid] * rgrid[igrid] * dr;
+        }
+        VWS_op.OneBody(a,b) = Vab;
+        VWS_op.OneBody(b,a) = Vab;
+      }
+    }
+    return VWS_op;
+ }
+
+
+
+ Operator HOtrap_Op( ModelSpace& modelspace, double hw_trap)
+ {
+    Operator VHO_op( modelspace, 0,0,0,2 ); // This should just be a 1b operator...
+
+    double hw = modelspace.GetHbarOmega();
+    double bosc2 = HBARC*HBARC/( M_NUCLEON * hw_trap );
+    int ngrid = 500;
+    double rmax = 4 * sqrt(bosc2);
+    double dr = rmax/ngrid;
+    std::vector<double> rgrid(ngrid,0.0);
+    std::vector<double> Vgrid(ngrid,0.0);
+    std::vector<double> psi_a(ngrid,0.0);
+    std::vector<double> psi_b(ngrid,0.0);
+    for (int igrid=0;igrid<ngrid;igrid++)  rgrid[igrid] = dr * igrid;
+    for (int igrid=0;igrid<ngrid;igrid++)  Vgrid[igrid] = 0.5 * rgrid[igrid]*rgrid[igrid]/bosc2  * hw_trap;
+
+    for (auto a : modelspace.all_orbits)
+    {
+      Orbit& oa = modelspace.GetOrbit(a);
+      for (int igrid=0;igrid<ngrid;igrid++) psi_a[igrid] =  HO_Radial_psi( oa.n, oa.l, hw, rgrid[igrid] );
+      for (auto b: VHO_op.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) )
+      {
+        if (b<a) continue;
+        Orbit& ob = modelspace.GetOrbit(b);
+        double Vab = 0;
+        for (int igrid=0;igrid<ngrid;igrid++)
+        {
+           double psi_b_r =  HO_Radial_psi( ob.n, ob.l, hw, rgrid[igrid] );
+           Vab += psi_a[igrid] * psi_b_r * Vgrid[igrid] * rgrid[igrid] * rgrid[igrid] * dr;
+        }
+        VHO_op.OneBody(a,b) = Vab;
+        VHO_op.OneBody(b,a) = Vab;
+      }
+    }
+    return VHO_op;
+ }
 
 
  // Second-order estimate of the spectroscopic factor

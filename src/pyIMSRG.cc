@@ -259,6 +259,8 @@ PYBIND11_MODULE(pyIMSRG, m)
 //      .def("Print",&ThreeBodyME::Print)
 //      .def("PrintAll",&ThreeBodyME::PrintAll)
       .def("Erase",&ThreeBodyME::Erase)
+      .def("SetMode",&ThreeBodyME::SetMode)
+      .def("ReadFile",&ThreeBodyME::ReadFile)
 //      .def_readonly_static("ABC",&ThreeBodyME::ABC)
 //      .def_readonly_static("BCA",&ThreeBodyME::BCA)
 //      .def_readonly_static("CAB",&ThreeBodyME::CAB)
@@ -477,8 +479,6 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm122st", &Commutator::comm122st);
       Commutator.def("comm222_pp_hh_221st", &Commutator::comm222_pp_hh_221st);
       Commutator.def("comm222_phst", &Commutator::comm222_phst);
-      Commutator.def("SetUseIMSRG3", &Commutator::SetUseIMSRG3);
-      Commutator.def("SetUseIMSRG3N7", &Commutator::SetUseIMSRG3N7);
       Commutator.def("SetIMSRG3Noqqq", &Commutator::SetIMSRG3Noqqq);
       Commutator.def("SetIMSRG3valence2b", &Commutator::SetIMSRG3valence2b);
 
