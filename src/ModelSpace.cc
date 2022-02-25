@@ -599,7 +599,7 @@ double ModelSpace::CountInSet( const std::set<index_t>& orbits ) const
   for ( auto& i : orbits )
   {
     const Orbit& oi = GetOrbit(i);
-    count += oi.j2+1;
+    count += (oi.j2+1)*oi.occ;
   }
   return count;
 }
