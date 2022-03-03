@@ -170,6 +170,8 @@ namespace imsrg_util
  double SerberMatEl( ModelSpace& modelspace, Ket& bra, Ket& ket, int J, const std::array<double,6>& params );
  Operator SurfaceDeltaInteraction( ModelSpace& modelspace, double V0, double R); // not yet implemented
 
+ Operator BareDelta( ModelSpace& modelspace );
+
 
  Operator Single_Ref_1B_Density_Matrix(ModelSpace& modelspace); // This doesn't work
  double Get_Charge_Density(Operator& DM, double r);  // This doesn't work

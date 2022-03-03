@@ -107,6 +107,7 @@ namespace imsrg_util
       else if (opname == "VCentralCoul")  theop =  VCentralCoulomb_Op(modelspace); 
       else if (opname == "AxialCharge")   theop =  AxialCharge_Op(modelspace); // Untested...
       else if (opname == "VMinnesota")    theop =  MinnesotaPotential( modelspace );
+      else if (opname == "VBareDelta")    theop =  BareDelta( modelspace );
       else if (opnamesplit[0] =="VGaus")
       {
          double sigma = 1.0;
@@ -3925,6 +3926,124 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    }
    return Vminnesota;
  }
+
+
+ // A bare delta function of the relative coordinate (effectively regulated by the finite oscillator basis
+ Operator BareDelta( ModelSpace& modelspace )
+ {
+   Operator Vdel = Operator(modelspace,0,0,0,2);
+
+   int nchan = modelspace.GetNumberTwoBodyChannels();
+   modelspace.PreCalculateMoshinsky();
+
+   double hw = modelspace.GetHbarOmega();
+   double b_osc = HBARC / sqrt( hw * M_NUCLEON);
+
+   // it's a delta, so we only need the wave function evaluated at r=0. pre-store those
+   int nmax = modelspace.GetEmax() /2;
+   std::vector<double> psi_at_zero(nmax, 0.) ;
+   for (int n=0; n<=nmax; n++) psi_at_zero[n] = HO_Radial_psi( n, 0, hw, 0.0);
+   
+   // the spins are always 1/2
+   double sa,sb,sc,sd;
+   sa=sb=sc=sd=0.5;
+
+   #pragma omp parallel for schedule(dynamic,1) 
+   for (int ch=0; ch<nchan; ++ch)
+   {
+    TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
+    int J = tbc.J;
+    int nkets = tbc.GetNumberKets();
+    for (int ibra=0;ibra<nkets;++ibra)
+    {
+     Ket& bra = tbc.GetKet(ibra);
+     Orbit & oa = modelspace.GetOrbit(bra.p);
+     Orbit & ob = modelspace.GetOrbit(bra.q);
+     int na = oa.n;
+     int nb = ob.n;
+     int la = oa.l;
+     int lb = ob.l;
+     double ja = oa.j2/2.0;
+     double jb = ob.j2/2.0;
+     int fab = 2*na + 2*nb + la + lb; // oscillator energy in |ab>
+
+
+     for (int iket=ibra;iket<nkets;iket++)
+     {
+       Ket& ket = tbc.GetKet(iket);
+
+       double vdelta =0;
+
+       Orbit & oc = modelspace.GetOrbit(ket.p);
+       Orbit & od = modelspace.GetOrbit(ket.q);
+       int nc = oc.n;
+       int nd = od.n;
+       int lc = oc.l;
+       int ld = od.l;
+       double jc = oc.j2/2.0;
+       double jd = od.j2/2.0;
+       int fcd = 2*nc + 2*nd + lc + ld;
+    
+
+       // First, transform to LS coupling using 9j coefficients
+       for (int Lab=std::abs(la-lb); Lab<= la+lb; ++Lab)
+       {
+         if ( Lab%2 != fab%2 )  continue; // lam=0, so parity needs to come from COM
+         for (int Sab=0; Sab<=1; ++Sab)
+         {
+           if ( std::abs(Lab-Sab)>J or Lab+Sab<J) continue;
+    
+           // the delta doesn't act on spin or angular components
+           int Scd = Sab;
+           int Lcd = Lab;
+           double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
+           if (std::abs(njab)<1e-8) continue;
+           double njcd = AngMom::NormNineJ(lc,sc,jc, ld,sd,jd, Lcd,Scd,J);
+           if (std::abs(njcd)<1e-8) continue;
+
+
+          int lam_ab = 0; // radial delta is nonzero only for s-waves
+          int lam_cd = lam_ab; // radial delta conserves orbital angular momentum
+          int Lam_ab = Lab; // so the total Lab needs to be all COM motion.
+          int Lam_cd = Lam_ab; // center of mass is untouched
+
+          // factor to account for antisymmetrization   
+          int asymm_factor = (std::abs(bra.op->tz2+ket.op->tz2) + std::abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
+          if ( asymm_factor ==0 ) continue;
+
+          // Next, transform to rel / com coordinates with Moshinsky tranformation
+          for (int N_ab=0; N_ab<=(fab-Lam_ab)/2; ++N_ab)  // N_ab = CoM n for a,b
+          {
+
+            int n_ab = (fab - 2*N_ab-Lam_ab-lam_ab)/2; // n_ab is determined by energy conservation
+
+            int N_cd = N_ab; // com is untouched by the delta
+            int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
+            if (n_cd < 0) continue;
+
+   
+            double mosh_ab = modelspace.GetMoshinsky(N_ab,Lam_ab,n_ab,lam_ab,na,la,nb,lb,Lab);
+            if (std::abs(mosh_ab)<1e-8) continue;
+
+            double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
+            if (std::abs(mosh_cd)<1e-8) continue;
+
+            double prefactor =  njab * njcd * mosh_ab * mosh_cd * asymm_factor;
+            vdelta += psi_at_zero[n_ab] * psi_at_zero[n_cd] * prefactor;
+
+          }// for N_ab
+         }// for Sab
+       }// for Lab
+
+       Vdel.TwoBody.SetTBME(ch,ibra,iket,vdelta);
+       Vdel.TwoBody.SetTBME(ch,iket,ibra,vdelta);
+     }// for iket
+    }// for ibra
+   }// for ch
+
+   return Vdel;
+ }
+
 
 
 
