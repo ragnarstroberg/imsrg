@@ -108,6 +108,7 @@ namespace imsrg_util
       else if (opname == "AxialCharge")   theop =  AxialCharge_Op(modelspace); // Untested...
       else if (opname == "VMinnesota")    theop =  MinnesotaPotential( modelspace );
       else if (opname == "VBareDelta")    theop =  BareDelta( modelspace );
+      else if (opname == "OccRef")        theop =  NumberOpRef( modelspace );
       else if (opnamesplit[0] =="VGaus")
       {
          double sigma = 1.0;
@@ -358,6 +359,19 @@ namespace imsrg_util
    {
      int indx = modelspace.Index1(n,l,j2,tz2);
      NumOp.OneBody(indx,indx) = 1;
+   }
+   return NumOp;
+ }
+
+ Operator NumberOpRef(ModelSpace& modelspace)
+ {
+   Operator NumOp = Operator(modelspace);
+   for (int h : modelspace.holes)
+   {
+     Orbit& oh = modelspace.GetOrbit(h);
+     //NumOp.OneBody(h,h) = (oh.j2+1) * oh.occ ;
+//     NumOp.OneBody(h,h) = 1 * oh.occ ;
+     NumOp.OneBody(h,h) = 1  ;
    }
    return NumOp;
  }

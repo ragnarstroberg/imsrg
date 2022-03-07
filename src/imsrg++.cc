@@ -1350,11 +1350,15 @@ int main(int argc, char** argv)
 
 
 
-      if ( basis == "HF")
+      if ( basis == "oscillator" or opname=="OccRef")
+      {
+        op = op.DoNormalOrdering();
+      }
+      else if ( basis == "HF")
       {
         op = hf.TransformToHFBasis(op).DoNormalOrdering();
       }
-      if ( basis == "NAT")
+      else if ( basis == "NAT")
       {
         op = hf.TransformHOToNATBasis(op).DoNormalOrdering();
       }
