@@ -5473,7 +5473,6 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   
   Z.profiler.timer["comm223_setup_loop"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
-//  std::cout << "done with setup" << std::endl;
 
 
  // Now we should fill those Zbar matrices.
