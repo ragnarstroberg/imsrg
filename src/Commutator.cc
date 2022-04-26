@@ -199,9 +199,9 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
      comm222_pp_hh_221ss(X, Y, Z);
      X.profiler.timer["comm222_pp_hh_221ss"] += omp_get_wtime() - t_start;
       
-     t_start = omp_get_wtime();
+//     t_start = omp_get_wtime();
      comm222_phss(X, Y, Z);
-     X.profiler.timer["comm222_phss"] += omp_get_wtime() - t_start;
+//     X.profiler.timer["comm222_phss"] += omp_get_wtime() - t_start;
    }
 
 
@@ -1361,6 +1361,7 @@ void DoPandyaTransformation_SingleChannel(const Operator& Z, arma::mat& TwoBody_
    }
 }
 
+/*
 void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operator& Y, arma::mat& X2_CC_ph, arma::mat& Y2_CC_ph, int ch_cc)
 {
 //   int hX = X.IsHermitian() ? 1 : -1;
@@ -1374,6 +1375,118 @@ void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operato
    X2_CC_ph.zeros( nKets_cc, 2*nph_kets );
    Y2_CC_ph.zeros( 2*nph_kets, nKets_cc);
 
+   // TODO: For a set of one-body channels a,b the J coupling stuff should all be the same, so
+   //       there is probably some gain to be had by looping over radial quantum numbers na,nb
+   //       and nc,nd  inside the Jph loop.
+
+   // loop over cross-coupled ph bras <ab| in this channel
+   // (this is the side that gets summed over in the matrix multiplication)
+   for (int ibra=0; ibra<nph_kets; ++ibra)
+   {
+      Ket & bra_cc = tbc_cc.GetKet( kets_ph[ibra] );
+      // we want to evaluate a<=b and a>=b, so to avoid code duplication, we turn this into a loop over the two orderings
+      std::vector<size_t> ab_switcheroo = { bra_cc.p, bra_cc.q };
+      for ( int ab_case=0; ab_case<=1; ab_case++)
+      {
+        int a = ab_switcheroo[ab_case];   // this little bit gives us a,b if ab_case=0 and b,a if ab_case=1
+        int b = ab_switcheroo[1-ab_case];
+        size_t bra_shift = ab_case*nph_kets;  // if we switch a<->b, we offset the bra index by nph_kets
+
+        Orbit & oa = X.modelspace->GetOrbit(a);
+        Orbit & ob = X.modelspace->GetOrbit(b);
+        double ja = oa.j2*0.5;
+        double jb = ob.j2*0.5;
+        double na_nb_factor = oa.occ - ob.occ;
+
+
+
+
+        // loop over cross-coupled kets |cd> in this channel
+        for (int iket_cc=0; iket_cc<nKets_cc; ++iket_cc)
+        {
+//           Ket & ket_cc = tbc_cc.GetKet(iket_cc%nKets_cc);
+//           int c = iket_cc < nKets_cc ? ket_cc.p : ket_cc.q;
+//           int d = iket_cc < nKets_cc ? ket_cc.q : ket_cc.p;
+
+           Ket & ket_cc = tbc_cc.GetKet(iket_cc);
+           int c = ket_cc.p ;
+           int d = ket_cc.q ;
+
+           Orbit & oc = X.modelspace->GetOrbit(c);
+           Orbit & od = X.modelspace->GetOrbit(d);
+
+
+
+           // Check the isospin projection. If this isn't conserved in the usual channel,
+           // then all the xcbad and yadcb will be zero and we don't need to bother computing SixJs.
+           if ( ( std::abs(oa.tz2+od.tz2  - ob.tz2-oc.tz2) != 2*X.GetTRank() )
+                and ( std::abs(oa.tz2+od.tz2  - ob.tz2-oc.tz2) != 2*Y.GetTRank() ) )    continue;
+
+           double jc = oc.j2*0.5;
+           double jd = od.j2*0.5;
+
+//           if (oc.n>0 or od.n>0) continue; // There is probably a more robust way to do this.
+
+           std::set<size_t> cvals;
+           std::set<size_t> dvals;
+           for ( auto cc : Y.OneBodyChannels.at({oc.l,oc.j2,oc.tz2}) ) cvals.insert(cc);
+           for ( auto dd : Y.OneBodyChannels.at({od.l,od.j2,od.tz2}) ) dvals.insert(dd);
+
+
+           int jmin = std::max(std::abs(ja-jd),std::abs(jc-jb));
+           int jmax = std::min(ja+jd,jc+jb);
+           double Xbar = 0;
+           double Ybar = 0;
+           for (int J_std=jmin; J_std<=jmax; ++J_std)
+           {
+              double sixj = X.modelspace->GetSixJ(ja,jb,J_cc,jc,jd,J_std);
+              if (std::abs(sixj) < 1e-8) continue;
+//              double tbme = Z.TwoBody.GetTBME_J(J_std,a,d,c,b);
+//              for (auto cn : cvals )
+//              {
+//               for (auto dn : dvals )
+//               {
+//                 if (dn<cn) continue;
+//                 double xcbad = X.TwoBody.GetTBME_J(J_std,cn,b,a,dn);
+//                 double yadcb = Y.TwoBody.GetTBME_J(J_std,a,dn,cn,b);
+                 double xcbad = X.TwoBody.GetTBME_J(J_std,c,b,a,d);
+                 double yadcb = Y.TwoBody.GetTBME_J(J_std,a,d,c,b);
+                 Xbar -= (2*J_std+1) * sixj * xcbad ;
+                 Ybar -= (2*J_std+1) * sixj * yadcb ;
+//               }
+//              }
+           }
+           X2_CC_ph( iket_cc, ibra+bra_shift ) = Xbar * na_nb_factor;
+           Y2_CC_ph( ibra+bra_shift, iket_cc ) = Ybar;
+
+//           if ( (oa.tz2+od.tz2) != (ob.tz2+oc.tz2))
+//           {
+//               std::cout << " oops " << __func__ << " " << __LINE__ << "   abcd << " << a << " " << b << " " << c << " " << d << "   Xbar,Ybar = " << Xbar << " " << Ybar << std::endl;
+//           }
+
+        }// for iket_cc
+      }// for ab_case
+   }// for ibra
+}
+
+*/
+
+void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operator& Y, arma::mat& X2_CC_ph, arma::mat& Y2_CC_ph, int ch_cc)
+{
+//   int hX = X.IsHermitian() ? 1 : -1;
+//   int hY = X.IsHermitian() ? 1 : -1;
+   TwoBodyChannel& tbc_cc = X.modelspace->GetTwoBodyChannel_CC(ch_cc);
+   int nKets_cc = tbc_cc.GetNumberKets();
+   arma::uvec kets_ph = arma::join_cols(tbc_cc.GetKetIndex_hh(), tbc_cc.GetKetIndex_ph() );
+   int nph_kets = kets_ph.n_rows;
+   int J_cc = tbc_cc.J;
+
+   X2_CC_ph.zeros( nKets_cc, 2*nph_kets );
+   Y2_CC_ph.zeros( 2*nph_kets, nKets_cc);
+
+   // TODO: For a set of one-body channels a,b the J coupling stuff should all be the same, so
+   //       there is probably some gain to be had by looping over radial quantum numbers na,nb
+   //       and nc,nd  inside the Jph loop.
 
    // loop over cross-coupled ph bras <ab| in this channel
    // (this is the side that gets summed over in the matrix multiplication)
@@ -1402,6 +1515,12 @@ void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operato
            int d = iket_cc < nKets_cc ? ket_cc.q : ket_cc.p;
            Orbit & oc = X.modelspace->GetOrbit(c);
            Orbit & od = X.modelspace->GetOrbit(d);
+
+//           // Check the isospin projection. If this isn't conserved in the usual channel,
+//           // then all the xcbad and yadcb will be zero and we don't need to bother computing SixJs.
+//           if ( ( std::abs(oa.tz2+od.tz2  - ob.tz2-oc.tz2) != 2*X.GetTRank() )
+//                and ( std::abs(oa.tz2+od.tz2  - ob.tz2-oc.tz2) != 2*Y.GetTRank() ) )    continue;
+
            double jc = oc.j2*0.5;
            double jd = od.j2*0.5;
 
@@ -1422,12 +1541,18 @@ void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operato
            X2_CC_ph( iket_cc, ibra+bra_shift ) = Xbar * na_nb_factor;
            Y2_CC_ph( ibra+bra_shift, iket_cc ) = Ybar;
 
+//           if ( (oa.tz2+od.tz2) != (ob.tz2+oc.tz2))
+//           {
+//               std::cout << " oops " << __func__ << " " << __LINE__ << "   abcd << " << a << " " << b << " " << c << " " << d << "   Xbar,Ybar = " << Xbar << " " << Ybar << std::endl;
+//           }
+
         }// for iket_cc
       }// for ab_case
    }// for ibra
 }
 
 
+ 
 
 
 
@@ -1446,7 +1571,7 @@ void DoPandyaTransformation(const Operator& Z, std::deque<arma::mat>& TwoBody_CC
 }
 
 
-
+// currently, this is not used anywhere...
 void AddInversePandyaTransformation_SingleChannel( Operator& Z,  arma::mat& Zbar, int ch_cc)
 {
     // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
@@ -1726,6 +1851,7 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
    int hy = Y.IsHermitian() ? 1 : -1;
    // Create Pandya-transformed hp and ph matrix elements
    double t_start = omp_get_wtime();
+   double t_start_full = t_start;
 
    // Construct the intermediate matrix Z_bar
 //   size_t nch = Z.modelspace->SortedTwoBodyChannels_CC.size();
@@ -1850,6 +1976,7 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
 
    Z.modelspace->scalar_transform_first_pass = false;
    X.profiler.timer["InversePandyaTransformation"] += omp_get_wtime() - t_start;
+   X.profiler.timer["comm222_phss"] += omp_get_wtime() - t_start_full;
 
 }
 
@@ -2607,11 +2734,15 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Z2 = Z.TwoBody;
   int x_particle_rank = X.GetParticleRank();
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+
+  Z.modelspace->PreCalculateSixJ(); // Presumably this has already been called. If so, this does nothing. But we want to make sure.
   
   int norb = Z.modelspace->GetNumberOrbits();
   size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
-
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+// The only potentially thread-unsafe part of this loop is the access to 3b matrix elements which might require
+// recoupling, leading to a 6j. If these are precomputed, there is no thread safety issue, so no need to check first_pass
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1)
   for (size_t ch=0; ch<nch; ch++)
   {
     auto& tbc = Z.modelspace->GetTwoBodyChannel(ch);
@@ -2640,15 +2771,21 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
         double occnat_k = ket.op->occ_nat;
         double occnat_l = ket.oq->occ_nat;
         double zijkl = 0;
+        // TODO loop over 1-body channels to do the 3-body recoupling in the outer loop
+        // Then loop over a and b within that channel.
         for (int a=0;a<norb;a++)
         {
           Orbit& oa = Z.modelspace->GetOrbit(a);
+
           int ea = 2*oa.n + oa.l;
           double d_ea = std::abs( ea - e_fermi.at(oa.tz2));
           double occnat_a = oa.occ_nat;
           if ( (ek+el+ea)>Z.modelspace->E3max) continue;
           if ( (d_ek+d_el+d_ea)>Z.modelspace->dE3max) continue;
           if ( (occnat_k*(1-occnat_k) * occnat_l*(1-occnat_l) * occnat_a*(1-occnat_a)) < Z.modelspace->GetOccNat3Cut() ) continue;
+
+           int twoJ_min = std::abs( oa.j2 - 2*J );
+           int twoJ_max = oa.j2 + 2*J;
           // this is less efficient than doing the loop twice, but less code
           // and easily lets us treat the case of Y having nonzero Tz or odd parity
           std::set<size_t> blist;
@@ -2667,13 +2804,15 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
             if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_b*(1-occnat_b) ) < Z.modelspace->GetOccNat3Cut() ) continue;
             double occfactor = oa.occ - ob.occ;
             if (std::abs(occfactor)<1e-6) continue;
-            int twoJ_min = std::abs( oa.j2 - 2*J );
-            int twoJ_max = oa.j2 + 2*J;
             for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
             {
 //              double xijbkla = X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
-              double xijbkla = x_particle_rank > 2 ? X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) : 0;
-              double yijbkla = Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
+//
+                auto xandy = Y3.GetME_pn_TwoOps(J,J, twoJ,i,j,b,k,l,a,X3,Y3);
+//              double xijbkla = x_particle_rank > 2 ? X3.GetME_pn(J,J,twoJ,i,j,b,k,l,a) : 0;
+//              double yijbkla = Y3.GetME_pn(J,J,twoJ,i,j,b,k,l,a);
+                double xijbkla = xandy[0];              
+                double yijbkla = xandy[1];              
 
               zijkl += occfactor * (twoJ+1.)/(2*J+1) * ( X1(a,b) * yijbkla -  Y1(a,b) * xijbkla );
 
@@ -2711,16 +2850,21 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
 //                                                                          { c  k  J  }
 //
 //   The factor 1/2 out front is absorbed by the fact that we only do the ordering a<=b  (need to deal carefully with a==b)
+//   
+//  For efficiency, we unfold this diagram to look like 
+//  |
+// i|
+//  *~~[X]~*
+//  |a  b / \c
+//  |    /   \
+//  *~~[Y]~~~*
+//  |   |    |
+//  |k  |l   |j
 //
 //  Verified with UnitTest
 //
 // This is the time hog of the n^7 scaling terms   (seems to be doing better...)
-
-size_t Hash_comm232_key( std::array<size_t,5>& kljJJ )
-{
-  return kljJJ[0] + (kljJJ[1] << 8) + (kljJJ[2] << 16) + (kljJJ[3] << 24) + (kljJJ[4]<<32);
-}
-
+// Now this is fine. The 223 commutator is taking all the time.
 void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
@@ -2741,6 +2885,9 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   int hermY = Y.IsHermitian() ? 1 : -1;
 
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
+
+ // Hash for lookup
+ auto Hash_comm232_key = [] ( std::array<size_t,5>& kljJJ ){  return kljJJ[0] + (kljJJ[1] << 8) + (kljJJ[2] << 16) + (kljJJ[3] << 24) + (kljJJ[4]<<32);};
 
   size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
 //  std::cout << __func__ << " begin" << std::endl;
@@ -2839,9 +2986,11 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   }// for ikey
 
 
+  Z.modelspace->PreCalculateSixJ(); // if this has already been done, this does nothing.
   // This loop is what takes all the time.
   // Outer loop over one-body quantum numbers, which also label the three-body pph states |klj`> and |abc`>
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1) 
   for ( size_t ikey=0; ikey<nkeys; ikey++ )
   {
 
@@ -3029,7 +3178,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
         for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
         {
-           double sixj = X.modelspace->GetSixJ(Jkl,jj,ji,  Jab, jc, 0.5*twoJp );
+//           double sixj = X.modelspace->GetSixJ(Jkl,jj,ji,  Jab, jc, 0.5*twoJp );
+           double sixj = X.modelspace->GetSixJ(jj,ji,Jkl,   jc, 0.5*twoJp, Jab );
 
            std::array<size_t,5> abjJJ = { a,b,j,(size_t)Jab,(size_t)twoJp} ;
            std::array<size_t,5> klcJJ = { k,l,c,(size_t)Jkl,(size_t)twoJp} ;
@@ -3086,7 +3236,9 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   }// for iter_i in local one body channels
 
   // now we need to unpack all that mess and store it in Z
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  // It looks like nothing dangerous happens inside the loop, so we don't need to check for first_pass
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1)
   for ( size_t ch=0; ch<nch; ch++)
   {
     TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
@@ -3169,7 +3321,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       }//for iket
     }//for ibra
   }// for ch
-
+//  if (Z.modelspace->scalar3b_transform_first_pass)   Z.profiler.timer["comm232_first_pass"] += omp_get_wtime() - tstart;
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
@@ -3247,7 +3399,7 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
     size_t njvals = j_jvals.size();
 //    std::cout << "   ch = " << ch << "   njvals = " << njvals << std::endl;
 
-    Z.profiler.timer["comm232_block1"] += omp_get_wtime() - tstart;
+    Z.profiler.timer["_comm232_block1"] += omp_get_wtime() - tstart;
     tstart = omp_get_wtime();
 
     // next, we make a list of the abc' combinations that will inter into the sum
@@ -3296,7 +3448,7 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket_ab
     } // for ch_ab
 
-    Z.profiler.timer["comm232_block2"] += omp_get_wtime() - tstart;
+    Z.profiler.timer["_comm232_block2"] += omp_get_wtime() - tstart;
     tstart = omp_get_wtime();
 
     // allocate the matrices
@@ -3310,8 +3462,7 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
 
 
     // Now fill the X2 mat and Y3 mat
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
-
+      #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
       for (size_t ind_abc=0; ind_abc<n_abc; ind_abc++)
       {
         size_t a = a_list[ind_abc];
@@ -3499,7 +3650,7 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
       }//for iket
     }//for ibra
 
-    Z.profiler.timer["comm232_block5"] += omp_get_wtime() - tstart;
+    Z.profiler.timer["_comm232_block5"] += omp_get_wtime() - tstart;
 
 
   }// for ch
@@ -3755,7 +3906,9 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
   
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  Z.modelspace->PreCalculateSixJ(); // if this is already done, then this does nothing.
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1)
   for (int ch=0; ch<nch; ch++)
   {
     TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
@@ -3767,7 +3920,7 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
     std::vector<size_t> d_list;
     std::vector<double> factor_list;
     
-    // figure out how bit the abcd side of the matrices should be, and store some stuff for later lookup
+    // figure out how big the abcd side of the matrices should be, and store some stuff for later lookup
     for (size_t ch_abc=0; ch_abc<nch3; ch_abc++)
     {
       ThreeBodyChannel& Tbc_abc = Z.modelspace->GetThreeBodyChannel(ch_abc);
@@ -4035,7 +4188,11 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
       occnat_factor_max = std::max( occnat_factor_max, occnat_i*(1-occnat_i) );
    }
 
+  Z.modelspace->PreCalculateSixJ(); // if it's been done, this won't do it again. But make sure for thread safety.
   // Loop through Pandya-transformed channels and compute the matrix Zbar by mat mult
+//  #pragma omp parallel for schedule(dynamic,1)
+//  There are some SixJs in this loop which are not automatically computed with PreCalculateSixJ, so 
+//  we need to be careful the first time we call this.
   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
    for (size_t ch=0;ch<nch_CC;++ch)
    {
@@ -4148,14 +4305,17 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
             if ( std::abs( tbc_cd.Tz - tbc_ab.Tz) != tbc_CC.Tz ) continue;
 
 
-            int twoJp_min = std::min( {std::abs(2*Jab-j2i), std::abs(2*Jcd-j2j), std::abs(2*Jab-j2j), std::abs(2*Jcd-j2i) });
-            int twoJp_max = std::max( {(2*Jab+j2i), (2*Jcd+j2j), (2*Jab+j2j), (2*Jcd+j2i) });
+            int twoJp_min = std::max( {std::abs(2*Jab-j2i), std::abs(2*Jcd-j2j), std::abs(2*Jab-j2j), std::abs(2*Jcd-j2i) });
+            int twoJp_max = std::min( {(2*Jab+j2i), (2*Jcd+j2j), (2*Jab+j2j), (2*Jcd+j2i) });
             std::vector<double> sixj_ij_list;
             std::vector<double> sixj_ji_list;
             for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
             {
-              sixj_ij_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(ji,jj,J_ph, Jcd,Jab,0.5*twoJp) * Z.modelspace->phase((j2i+twoJp)/2) );
-              sixj_ji_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(jj,ji,J_ph, Jcd,Jab,0.5*twoJp) * Z.modelspace->phase((j2j+twoJp)/2) );
+//              sixj_ij_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(ji,jj,J_ph, Jcd,Jab,0.5*twoJp) * Z.modelspace->phase((j2i+twoJp)/2) );
+//              sixj_ji_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(jj,ji,J_ph, Jcd,Jab,0.5*twoJp) * Z.modelspace->phase((j2j+twoJp)/2) );
+              sixj_ij_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(Jcd,Jab,J_ph, ji,jj,0.5*twoJp) * Z.modelspace->phase((j2i+twoJp)/2) );
+              sixj_ji_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(Jcd,Jab,J_ph, jj,ji,0.5*twoJp) * Z.modelspace->phase((j2j+twoJp)/2) );
+                
             }
 
             bool abi_cdj_Tz_ok = (  (2*tbc_ab.Tz + oi.tz2) == (2*tbc_cd.Tz + oj.tz2) );
@@ -4350,6 +4510,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
 
    // Now transform Zbar to Z
 
+//   #pragma omp parallel for schedule(dynamic,1)
    #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
    for (size_t ch=0; ch<nch; ch++)
    {
@@ -4987,8 +5148,10 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 //  bool x3_allocated = X3.is_allocated;
 //  bool y3_allocated = Y3.is_allocated;
 //  if (X3NORM<1e-6 and Y3NORM<1e-6 ) return;
+  Z.modelspace->PreCalculateSixJ(); // If this has already been done, this does nothing.
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1) 
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
     auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
@@ -5470,8 +5633,11 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
   std::cout << __func__ << "  allocating Zbar   " << Zbar_n_elements << " elements  ~ " << Zbar_n_elements * sizeof(float) /(1024.*1024*1024) << " GB" << std::endl;
   Zbar.resize( Zbar_n_elements, 0. );
+  ///// REMOVE THIS!!!!! vvvvv
+//  std::vector<int> used_Zbar ( Zbar_n_elements, 0); // REMOVE THIS!!!!
+  ///// REMOVE THIS!!!!! ^^^^^
   
-  Z.profiler.timer["comm223_setup_loop"] += omp_get_wtime() - t_internal;
+  Z.profiler.timer["_comm223_setup_loop"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
 
@@ -5497,6 +5663,9 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
    size_t ngood_ijn = good_kets_ijn.size();
    arma::mat Xph( ngood_ijn, number_a );
    arma::mat Yph( number_a, ngood_ijn );
+//   std::cout << "a: " ;
+//   for (size_t index_a=0; index_a<number_a; index_a++ ) std::cout << "  " << a_list[index_a];
+//   std::cout << std::endl;
    for (auto& iter_ijn : good_kets_ijn )
    {
       size_t Iijn = iter_ijn.second;
@@ -5515,9 +5684,14 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
       }// for index_a
 
+//      std::cout << " (" << i << " " << j << " " << Jij << "; " << n << ")  ";
    }//for iter_ijn
+//   std::cout << std::endl;
    arma::mat z_tmp = Xph*Yph;
    z_tmp -= hX*hY * z_tmp.t();
+//   std::cout << "X " << std::endl << Xph << std::endl;
+//   std::cout << "Y " << std::endl << Yph << std::endl;
+//   std::cout << "Z " << std::endl << z_tmp << std::endl;
    // Fold the full (anti-)symmetric matrix into a more compact storage
    // we  use row-major ordering so that the inner loop runs over adjacent elements
    size_t start_ptr = Zbar_start_pointers[ch_pph];
@@ -5532,7 +5706,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
  }// for ch_pph
 
 // std::cout << "Done filling matrices " << std::endl;
-  Z.profiler.timer["comm223_fill_loop"] += omp_get_wtime() - t_internal;
+  Z.profiler.timer["_comm223_fill_loop"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
 
@@ -5721,7 +5895,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                    if ( ch_pph<0 ) continue;
 
 ////                   double sixj1 = Z.modelspace->GetSixJ(J1p,j3,Jtot, J2p,j6,Jph);
-                   double sixj1 =  Jtot<Jph ? Z.modelspace->GetSixJ(j3,Jtot,J1p, j6,Jph,J2p) :  Z.modelspace->GetSixJ(j6,Jph,J1p, j3,Jtot,J2p) ;
+                   double sixj1 =  Jtot<Jph ? Z.modelspace->GetSixJ(j3,Jtot,J1p, j6,Jph,J2p)
+                                            : Z.modelspace->GetSixJ(j6,Jph,J1p, j3,Jtot,J2p) ;
                    if ( std::abs(sixj1)<1e-6 ) continue;
 
  
@@ -5756,11 +5931,13 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                    {
                      size_t zbar_index = start_ptr + ( 2*ngood_ijn - index_126 - 1) * index_126 / 2  + index_453 ;
                      zbar_126453 = Zbar[ zbar_index ]  * phase_12 * phase_45;
+//                     if ( std::abs(zbar_126453)>1e-7)  used_Zbar[zbar_index] = 1;
                    }
                    else
                    {
                      size_t zbar_index = start_ptr + ( 2*ngood_ijn - index_453 - 1) * index_453 / 2  + index_126 ;
                      zbar_126453 = hZ * Zbar[ zbar_index ]  * phase_12 * phase_45;
+//                     if ( std::abs(zbar_126453)>1e-7)  used_Zbar[zbar_index] = 1;
                    }
 
                    z_123456 +=   sixj1 * zbar_126453  ; 
@@ -5782,12 +5959,17 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket
     }// for ibra
   }// for ch3
-  Z.profiler.timer["comm223_compute_loop"] += omp_get_wtime() - t_internal;
+  Z.profiler.timer["_comm223_compute_loop"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
-  if (Z.modelspace->scalar3b_transform_first_pass)
-  Z.profiler.timer["comm223_firstpass"] += omp_get_wtime() - tstart;
-  else
-    Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+//  if (Z.modelspace->scalar3b_transform_first_pass)
+//  Z.profiler.timer["comm223_firstpass"] += omp_get_wtime() - tstart;
+//  else
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+
+//  int used_sum=0;
+//  for ( int used: used_Zbar) used_sum += used;
+//  std::cout << " Used " << used_sum << "  out of  " << Zbar.size() << " elements of Zbar " << std::endl;
+
 }
 
 
@@ -6075,7 +6257,7 @@ void comm223ss_new( const Operator& X, const Operator& Y, Operator& Z )
   Zbar.resize( Zbar_n_elements, 0. );
   std::cout << __func__ << "  allocating Zbar   " << Zbar_n_elements << " elements  ~ " << Zbar_n_elements * sizeof(float) /(1024.*1024*1024) << " GB" << std::endl;
   
-  Z.profiler.timer["comm223_setup_loop"] += omp_get_wtime() - t_internal;
+  Z.profiler.timer["_comm223_setup_loop"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 //  std::cout << "done with setup" << std::endl;
 
@@ -6229,7 +6411,7 @@ void comm223ss_new( const Operator& X, const Operator& Y, Operator& Z )
 // std::cout << "Done filling matrices " << std::endl;
 
 
-  Z.profiler.timer["comm223_fill_loop"] += omp_get_wtime() - t_internal;
+  Z.profiler.timer["_comm223_fill_loop"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
@@ -6486,12 +6668,12 @@ void comm223ss_new( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket
     }// for ibra
   }// for ch3
-  Z.profiler.timer["comm223_compute_loop"] += omp_get_wtime() - t_internal;
+  Z.profiler.timer["_comm223_compute_loop"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
-  if (Z.modelspace->scalar3b_transform_first_pass)
-  Z.profiler.timer["comm223_firstpass"] += omp_get_wtime() - tstart;
-  else
-    Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
+//  if (Z.modelspace->scalar3b_transform_first_pass)
+//     Z.profiler.timer["_comm223_firstpass"] += omp_get_wtime() - tstart;
+//  else
+  Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
 
@@ -7931,11 +8113,12 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
    Z3_ph[ch_cc].zeros( 2*nkets_CC, nkets3 ); // Zbar_knlmij
   }// for ch_cc
 
-  Z.profiler.timer["comm233_setup_lists"] += omp_get_wtime() - t_internal;
+  Z.profiler.timer["_comm233_setup_lists"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
   // Compute the particle-hole recoupled matrix elements of Z
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1) 
   for (size_t ch_cc=0; ch_cc<nch2_CC; ch_cc++)
   {
     TwoBodyChannel_CC& tbc_CC = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
@@ -8113,12 +8296,13 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
   }// for ch_cc
 //  std::cout << "DONE WITH THE CC BIT" << std::endl;
 
-  Z.profiler.timer["comm233_fll_matrices"] += omp_get_wtime() - t_internal;
+  Z.profiler.timer["_comm233_fill_matrices"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
   // Now transform it back into standard coupling
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1)
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
     auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
@@ -8267,7 +8451,9 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
                    // < 36` Jph | Z | 45 J2p  (12 J1p)` ; Jph >
                    double z_364512 =  flip_phase * phase_45*phase_12 * Z3_ph[ch_ph](index_36,index_4512);
 
-                   double sixj_ph = Z.modelspace->GetSixJ(J1p,j3,Jtot,  j6,J2p,Jph);
+                  // Swapped the ordering here to match with what's done in PreCalculateSixJ()
+//                   double sixj_ph = Z.modelspace->GetSixJ(J1p,j3,Jtot,  j6,J2p,Jph);
+                   double sixj_ph = Z.modelspace->GetSixJ(J1p,J2p,Jph,  j6, j3,Jtot);
                    int phase_ph = -Z.modelspace->phase( (twoJ +o3.j2)/2);
                    z_123456 -=  phase_ph * (2*Jph+1) * sixj_ph * z_364512;
                  }// for Jph
@@ -8285,7 +8471,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket
     }// for ibra
   }//for ch3
-  Z.profiler.timer["comm233_pph_recouple"] += omp_get_wtime() - t_internal;
+  Z.profiler.timer["_comm233_pph_recouple"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
@@ -8817,7 +9003,9 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
 
 
     // Now do the mat mult
-    arma::mat ZMAT = hY * XMAT * YMAT.t() - hX*(YMAT * XMAT.t());
+//    arma::mat ZMAT = hY * XMAT * YMAT.t() - hX*(YMAT * XMAT.t());
+    arma::mat ZMAT = hY * XMAT * YMAT.t();
+    ZMAT -= hX*hY * ZMAT.t(); 
 
     // Store the results
 //    for (size_t ibra=0; ibra<nkets3; ibra++)
@@ -8983,11 +9171,12 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 //  std::cout << "Nominally " << nch_pph << "  pph channels " << std::endl;
 
 
-  Z.profiler.timer["comm333_pph_setup_lists"] += omp_get_wtime() - t_internal;
+  Z.profiler.timer["_comm333_pph_setup_lists"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
  // Now that we've made our lists and allocated the matrices, we fill the matrices inside the parallel block.
- #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+// #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+ #pragma omp parallel for schedule(dynamic,1) 
  for (size_t ch_pph=0; ch_pph<nch_pph; ch_pph++)
  {
    int twoJph =  channel_list_pph[ch_pph][0];
@@ -9057,36 +9246,18 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
        int twoJprime_max = std::min( (2*Jij + oc.j2), (2*Jab + on.j2) );
        for (int twoJprime=twoJprime_min; twoJprime<=twoJprime_max; twoJprime+=2)
        {
-         double sixj_ijn = Z.modelspace->GetSixJ( Jij, jn, Jph,  Jab, jc, 0.5*twoJprime);
+          // We use this if/else construct because the precomputed SixJ symbols have
+          // the largest half-integer on the bottom row.
+//         double sixj_ijn = Z.modelspace->GetSixJ( Jij, jn, Jph,  Jab, jc, 0.5*twoJprime);
+         double sixj_ijn = (2*Jph<twoJprime) ? Z.modelspace->GetSixJ(  jn, Jph, Jij,  jc, 0.5*twoJprime,Jab)
+                                             : Z.modelspace->GetSixJ(  jn,  0.5*twoJprime,Jab,  jc, Jph, Jij );
         
          // TODO This comes up often enough that we should just make ThreeBodyMEpn do this.
          std::vector<double> xandy = Y3.GetME_pn_TwoOps( Jij,Jab,twoJprime, i,j,c, a,b,n, X3,Y3 );
          double xijcabn = xandy[0];
          double yijcabn = xandy[1];
 
-         // this slightly verbose block is equivalent to
-         // xbar += (twoJprime+1) * sixj_ijn * X3.GetME_pn( Jij, Jab, twoJprime, i,j,c, a,b,n);
-         // ybar += (twoJprime+1) * sixj_ijn * Y3.GetME_pn( Jij, Jab, twoJprime, i,j,c, a,b,n) * occ_factor;
-         // but it avoids doing the recoupling twice (if i,j,c and a,b,n aren't in the storage order)
 
-//         std::vector<size_t> ibra_list, iket_list;
-//         std::vector<double> recouple_bra_list, recouple_ket_list;
-//         size_t ch_check_bra = Y.ThreeBody.GetKetIndex_withRecoupling( Jij, twoJprime, i, j, c, ibra_list, recouple_bra_list) ;
-//         size_t ch_check_ket = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJprime, a, b, n, iket_list, recouple_ket_list) ;
-//         double xijcabn = 0;
-//         double yijcabn = 0;
-//         for ( size_t ind_bra=0; ind_bra<ibra_list.size(); ind_bra++)
-//         {
-//           double rec_bra = recouple_bra_list[ind_bra];
-//           size_t Ibra = ibra_list[ind_bra];
-//           for ( size_t ind_ket=0; ind_ket<iket_list.size(); ind_ket++)
-//           {
-//             double rec_ket = recouple_ket_list[ind_ket];
-//             size_t Iket = iket_list[ind_ket];
-//              xijcabn += rec_bra * rec_ket * X3.GetME_pn_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
-//              yijcabn += rec_bra * rec_ket * Y3.GetME_pn_ch(ch_check_bra,ch_check_ket,Ibra,Iket);
-//           }
-//         }
          xbar += (twoJprime+1) * sixj_ijn * xijcabn;
          ybar += (twoJprime+1) * sixj_ijn * yijcabn ;
  
@@ -9103,12 +9274,13 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 
   }// for ch_pph , end of parallel block
 
-  Z.profiler.timer["comm333_pph_fill_matrices"] += omp_get_wtime() - t_internal;
+  Z.profiler.timer["_comm333_pph_fill_matrices"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
   // Now that we've computed Zbar (i.e. the pph transformed commutator), we need to
   // transform that back to Z, and do all the permutations to ensure antisymmetry
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1) 
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
     auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
@@ -9248,7 +9420,12 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
                   double zbar =  phase_12 * phase_45 * Zbar[ch_pph](index_126,index_453);
 
                   double Jph = 0.5 * twoJph;
-                  double sixj_ph = Z.modelspace->GetSixJ( J1p, j3, Jtot,  J2p, j6, Jph );
+                  double sixj_ph = (Jph>Jtot) ?    Z.modelspace->GetSixJ(  j3, Jtot,J1p , j6, Jph,J2p )   : Z.modelspace->GetSixJ(  j3,Jph,J2p,  j6  , Jtot,J1p );
+//                  double sixj_ph = Z.modelspace->GetSixJ( J1p, j3, Jtot,  J2p, j6, Jph );
+//                  double sixj_ph;
+//                  if (Jph>Jtot)   sixj_ph =  Z.modelspace->GetSixJ(  j3, Jtot,J1p , j6, Jph,J2p );
+//                  else    sixj_ph = Z.modelspace->GetSixJ(  j3,Jph,J2p,  j6  , Jtot,J1p );
+//                  double sixj_ph = Z.modelspace->GetSixJ(  j3, Jtot,J1p , j6, Jph,J2p );
                   z_123456 += (twoJph+1) * sixj_ph  * zbar ;
                 }// for Jph 
                 z_ijklmn +=  rec_ijk * rec_lmn * z_123456;
@@ -9263,7 +9440,7 @@ void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
     }// for ibra
   }//for ch3
 
-  Z.profiler.timer["comm333_pph_recouple"] += omp_get_wtime() - t_internal;
+  Z.profiler.timer["_comm333_pph_recouple"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
