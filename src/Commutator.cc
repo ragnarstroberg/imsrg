@@ -1516,10 +1516,10 @@ void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operato
            Orbit & oc = X.modelspace->GetOrbit(c);
            Orbit & od = X.modelspace->GetOrbit(d);
 
-//           // Check the isospin projection. If this isn't conserved in the usual channel,
-//           // then all the xcbad and yadcb will be zero and we don't need to bother computing SixJs.
-//           if ( ( std::abs(oa.tz2+od.tz2  - ob.tz2-oc.tz2) != 2*X.GetTRank() )
-//                and ( std::abs(oa.tz2+od.tz2  - ob.tz2-oc.tz2) != 2*Y.GetTRank() ) )    continue;
+           // Check the isospin projection. If this isn't conserved in the usual channel,
+           // then all the xcbad and yadcb will be zero and we don't need to bother computing SixJs.
+           if ( ( std::abs(oa.tz2+od.tz2  - ob.tz2-oc.tz2) != 2*X.GetTRank() )
+                and ( std::abs(oa.tz2+od.tz2  - ob.tz2-oc.tz2) != 2*Y.GetTRank() ) )    continue;
 
            double jc = oc.j2*0.5;
            double jd = od.j2*0.5;
