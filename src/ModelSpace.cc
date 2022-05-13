@@ -1639,30 +1639,48 @@ void ModelSpace::ResetFirstPass()
 
 uint64_t ModelSpace::SixJHash(double j1, double j2, double j3, double J1, double J2, double J3)
 {
-   if (j3<j2) { std::swap(j3,j2); std::swap(J3,J2);}
-   if (j2<j1) { std::swap(j2,j1); std::swap(J2,J1);}
-   if (j3<j2) { std::swap(j3,j2); std::swap(J3,J2);}
-   if (std::abs(j3-j2)<1e-5 and J3<J2) { std::swap(j3,j2); std::swap(J3,J2);}
-   if (std::abs(j2-j1)<1e-5 and J2<J1) { std::swap(j2,j1); std::swap(J2,J1);}
-   if (std::abs(j3-j2)<1e-5 and J3<J2) { std::swap(j3,j2); std::swap(J3,J2);}
-   return   (((uint64_t)(2*j1)) << 50)
-          + (((uint64_t)(2*j2)) << 40)
-          + (((uint64_t)(2*j3)) << 30)
-          + (((uint64_t)(2*J1)) << 20)
-          + (((uint64_t)(2*J2)) << 10)
-          +  ((uint64_t)(2*J3));
+  // Use the 6J symmettry under permutation of columns. Combine each column into a single integer
+  // then sort the column indices so we only need to store one of the 6 equivalent permutations
+   uint64_t jJ1 = (uint64_t)(2*j1) + ( (uint64_t)(2*J1)<<10);
+   uint64_t jJ2 = (uint64_t)(2*j2) + ( (uint64_t)(2*J2)<<10);
+   uint64_t jJ3 = (uint64_t)(2*j3) + ( (uint64_t)(2*J3)<<10);
+ 
+   if (jJ3<jJ2)   std::swap(jJ3,jJ2);
+   if (jJ2<jJ1)   std::swap(jJ2,jJ1); 
+   if (jJ3<jJ2)   std::swap(jJ3,jJ2); 
+
+   return jJ1 + (jJ2<<20) + (jJ3<<40);
+
+//   if (j3<j2) { std::swap(j3,j2); std::swap(J3,J2);}
+//   if (j2<j1) { std::swap(j2,j1); std::swap(J2,J1);}
+//   if (j3<j2) { std::swap(j3,j2); std::swap(J3,J2);}
+//   if (std::abs(j3-j2)<1e-5 and J3<J2) { std::swap(j3,j2); std::swap(J3,J2);}
+//   if (std::abs(j2-j1)<1e-5 and J2<J1) { std::swap(j2,j1); std::swap(J2,J1);}
+//   if (std::abs(j3-j2)<1e-5 and J3<J2) { std::swap(j3,j2); std::swap(J3,J2);}
+//   return   (((uint64_t)(2*j1)) << 50)
+//          + (((uint64_t)(2*j2)) << 40)
+//          + (((uint64_t)(2*j3)) << 30)
+//          + (((uint64_t)(2*J1)) << 20)
+//          + (((uint64_t)(2*J2)) << 10)
+//          +  ((uint64_t)(2*J3));
 
 }
 
 
 void ModelSpace::SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& j3, uint64_t& J1, uint64_t& J2, uint64_t& J3)
 {
-   j1 = (key >> 50) & 0x3FFL;
-   j2 = (key >> 40) & 0x3FFL;
-   j3 = (key >> 30) & 0x3FFL;
-   J1 = (key >> 20) & 0x3FFL;
-   J2 = (key >> 10) & 0x3FFL;
-   J3 = (key      ) & 0x3FFL;
+//   j1 = (key >> 50) & 0x3FFL;
+//   j2 = (key >> 40) & 0x3FFL;
+//   j3 = (key >> 30) & 0x3FFL;
+//   J1 = (key >> 20) & 0x3FFL;
+//   J2 = (key >> 10) & 0x3FFL;
+//   J3 = (key      ) & 0x3FFL;
+   J3 = (key >> 50) & 0x3FFL;
+   j3 = (key >> 40) & 0x3FFL;
+   J2 = (key >> 30) & 0x3FFL;
+   j2 = (key >> 20) & 0x3FFL;
+   J1 = (key >> 10) & 0x3FFL;
+   j1 = (key      ) & 0x3FFL;
 }
 
 
