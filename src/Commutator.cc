@@ -456,8 +456,11 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
      OpOut.SetParticleRank(2);
    }
 //   if (use_imsrg3 and not OpOut.ThreeBody.is_allocated )
-//   if (use_imsrg3 and not OpOut.ThreeBody.IsAllocated() )
-   if (use_imsrg3  )
+//   This was a bug, intruduced Feb 2022, fixed May 2022.
+//   Only call SetMode if ThreeBody is not already allocated.
+//   Otherwise, we are erasing the 3N inherited from OpIn.
+//   if (use_imsrg3  )
+   if (use_imsrg3 and not OpOut.ThreeBody.IsAllocated() )
    {
      OpOut.ThreeBody.SetMode("pn");
      OpOut.SetParticleRank(3);
