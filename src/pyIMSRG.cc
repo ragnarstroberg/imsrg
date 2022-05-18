@@ -187,7 +187,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetMP2_3BEnergy", &Operator::GetMP2_Energy)
       .def("GetMP3_Energy", &Operator::GetMP3_Energy)
       .def("GetPPHH_Ladders", &Operator::GetPPHH_Ladders)
-      .def("IsospinProject", &Operator::IsospinProject)
+//      .def("IsospinProject", &Operator::IsospinProject)
    ;
 
    py::class_<arma::mat>(m,"ArmaMat")
