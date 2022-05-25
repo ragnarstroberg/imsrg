@@ -154,6 +154,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
    int z_particlerank = std::max(X.GetParticleRank(),Y.GetParticleRank());
    if ( use_imsrg3 )  z_particlerank = std::max(z_particlerank, 3);
    ModelSpace& ms = *(Y.GetModelSpace());
+   std::cout << " " << __FILE__ << "  line " << __LINE__ << "  constructing Z " << std::endl;
    Operator Z( ms, z_Jrank, z_Trank, z_parity, z_particlerank );
 
 //   Operator Z( *(Y.GetModelSpace()), std::max(X.GetJRank(),Y.GetJRank()), std::max(X.GetTRank(),Y.GetTRank()), (X.GetParity()+Y.GetParity())%2, std::max(X.GetParticleRank(),Y.GetParticleRank()) );
@@ -165,6 +166,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
    if ( Z.GetParticleRank() > 2 )
    {
+     std::cout << " " << __FILE__ << "  line " << __LINE__ << "  SwitchToPN " << std::endl;
      Z.ThreeBody.SwitchToPN_and_discard();
    }
 
@@ -179,6 +181,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
 
 //   std::cout << __FILE__ << __LINE__ << "  DONT FORGET TO FIX THIS!" << std::endl;
+     std::cout << " " << __FILE__ << "  line " << __LINE__ << "  start commutator terms " << std::endl;
 
    double t_start = omp_get_wtime();
    comm111ss(X, Y, Z);
@@ -457,11 +460,12 @@ Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
    }
 //   if (use_imsrg3 and not OpOut.ThreeBody.is_allocated )
 //   This was a bug, intruduced Feb 2022, fixed May 2022.
-//   Only call SetMode if ThreeBody is not already allocated.
+//   Only call SetMode and SetParticleRank if ThreeBody is not already allocated.
 //   Otherwise, we are erasing the 3N inherited from OpIn.
 //   if (use_imsrg3  )
    if (use_imsrg3 and not OpOut.ThreeBody.IsAllocated() )
    {
+     std::cout << __func__ << "  Allocating Three Body with pn mode" << std::endl;
      OpOut.ThreeBody.SetMode("pn");
      OpOut.SetParticleRank(3);
    }
@@ -597,6 +601,7 @@ Operator BCH_Product(  Operator& X, Operator& Y)
 //   std::cout << "!!! " << __func__ << " !!! " << std::endl;
    double tstart = omp_get_wtime();
    double nx = X.Norm();
+   double ny = Y.Norm();
    std::vector<double> bernoulli = {1.0, -0.5, 1./6, 0.0, -1./30,  0.0 ,  1./42,     0,  -1./30};
    std::vector<double> factorial = {1.0,  1.0,  2.0, 6.0,    24.,  120.,   720., 5040.,  40320.};
 
@@ -624,13 +629,18 @@ Operator BCH_Product(  Operator& X, Operator& Y)
    
    int k = 1;
    // k=1 adds 1/2[X,Y],  k=2 adds 1/12 [Y,[Y,X]], k=4 adds -1/720 [Y,[Y,[Y,[Y,X]]]], and so on.
-   while( Nested.Norm() > bch_product_threshold and k<9)
+//   while( Nested.Norm() > bch_product_threshold and k<9)
+   while( nxy > bch_product_threshold )
    {
      if ((k<2) or (k%2==0))
         Z += (bernoulli[k]/factorial[k]) * Nested;
 
-     Nested = Commutator(Y,Nested);
      k++;
+     if ( k >= bernoulli.size() ) break; // don't evaluate the commutator if we're not going to use it
+     if ( 2*ny*nxy < bch_product_threshold) break;
+     Nested = Commutator(Y,Nested);
+     nxy = Nested.Norm();
+//     k++;
    }
 
    use_imsrg3 = _save_imsrg3;// set it back to how it was.
@@ -2958,8 +2968,14 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
         for ( size_t iket_kl=0; iket_kl<nkets_kl; iket_kl++)
         {
           Ket& ket_kl = tbc_kl.GetKet(iket_kl);
-          double de_k = std::abs( 2*ket_kl.op->n + ket_kl.op->l - e_fermi[ket_kl.op->tz2]);
-          double de_l = std::abs( 2*ket_kl.oq->n + ket_kl.oq->l - e_fermi[ket_kl.oq->tz2]);
+          int e_k = 2*ket_kl.op->n + ket_kl.op->l;
+          int e_l = 2*ket_kl.oq->n + ket_kl.oq->l;
+//          double de_k = std::abs( 2*ket_kl.op->n + ket_kl.op->l - e_fermi[ket_kl.op->tz2]);
+//          double de_l = std::abs( 2*ket_kl.oq->n + ket_kl.oq->l - e_fermi[ket_kl.oq->tz2]);
+          if ( (e_k + e_l) > Z.modelspace->GetE3max()) continue;
+          double de_k = std::abs(e_k - e_fermi[ket_kl.op->tz2]);
+          double de_l = std::abs(e_l - e_fermi[ket_kl.oq->tz2]);
+          if ( (de_k + de_l) > Z.modelspace->GetdE3max() ) continue;
 //          double nk = ket_kl.op->occ;
 //          double nl = ket_kl.oq->occ;
           double occnat_k = ket_kl.op->occ_nat;
@@ -2969,7 +2985,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
             Orbit& oj = Z.modelspace->GetOrbit(j);
 //            double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
             double occnat_j = oj.occ_nat;
-            if ( (de_k + de_l) > Z.modelspace->GetdE3max() ) continue;
             if ( (occnat_k*(1-occnat_k) * occnat_l*(1-occnat_l) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() ) continue;
 //            if ( (de_k + de_l + de_j) > Z.modelspace->GetdE3max() ) continue;
 //            double nj = oj.occ;
@@ -5790,6 +5805,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( perturbative_triples and  not ( (ol.cvq + om.cvq + on.cvq)==0 or (ol.cvq>0 and om.cvq>0 and on.cvq>0)) ) continue;
         if ( perturbative_triples and (  (oi.cvq==0 and ol.cvq==0) or (oi.cvq!=0 and ol.cvq!=0) ) ) continue;
         if ( imsrg3_no_qqq and  (ol.cvq + om.cvq + on.cvq)>5 ) continue;
+//        if ( imsrg3_no_qqq and  (oi.cvq + oj.cvq + ok.cvq + ol.cvq + om.cvq + on.cvq)>11 ) continue;
         int J2 = ket.Jpq;
 
         // Set up the permutation stuff for lmn
@@ -5974,8 +5990,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
 }
 
-/*
 
+/*
 /////////////////////////////////////////////////
 //// Trying the more straighforward way again
 void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
@@ -6135,48 +6151,6 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                // then Jp1 and Jp2 don't need to be nested.
 
 
-////              for (int J1p=std::abs(o1.j2-o2.j2)/2; J1p<=J1p_max[perm_ijk]; J1p++)
-//              for (int J1p=J1p_min[perm_ijk]; J1p<=J1p_max[perm_ijk]; J1p++)
-//              {
-//
-//                double rec_ijk = recouple_ijk[perm_ijk].at(J1p-J1p_min[perm_ijk]);
-//                int ch1 = Z.modelspace->GetTwoBodyChannelIndex(J1p, (o1.l+o2.l)%2, (o1.tz2+o2.tz2)/2 );
-//                const arma::mat& XMAT1 = X.TwoBody.GetMatrix(ch1,ch1);
-//                const arma::mat& YMAT1 = Y.TwoBody.GetMatrix(ch1,ch1);
-//                TwoBodyChannel& tbc1 = Z.modelspace->GetTwoBodyChannel(ch1);
-//                size_t nkets_1 = tbc1.GetNumberKets();
-//                size_t ind_12 = tbc1.GetLocalIndex(std::min(I1,I2),std::max(I1,I2));
-//                if (ind_12>nkets_1) continue;
-//                double phase_12 = I1>I2 ?  -Z.modelspace->phase((o1.j2+o2.j2-2*J1p)/2)  : 1;
-//                if (I1==I2) phase_12 *= PhysConst::SQRT2;
-
-//                     int j2a_max_1 = o6.j2+2*J1p;
-//                     int j2a_min_1 = std::abs(o6.j2-2*J1p);
-//
-//                  int nsps = Z.modelspace->GetNumberOrbits();
-//                  std::vector<double> X_126a(nsps+1,0);
-//                  std::vector<double> Y_126a(nsps+1,0);
-////                  std::cout << "precompute:  " ;
-//                  std::set<index_t> precomputed_a;
-//                  for (int j2a=j2a_min_1;j2a<=j2a_max_1; j2a+=2)
-//                  {
-////                    double ja = 0.5 * j2a;
-//                    int la = (j2a-1)/2 + ((j2a-1)/2+parity_a)%2;
-//                    if (la > Z.modelspace->GetEmax()) continue;
-//                    for ( size_t a : Z.OneBodyChannels.at({la,j2a,tz2a})  )
-//                    {
-//                         size_t ind_6a = tbc1.GetLocalIndex(std::min(I6,a),std::max(I6,a));
-//                         if (ind_6a>nkets_1) continue;
-//                         double phase_6a = I6>a ?  -Z.modelspace->phase((o6.j2+j2a-2*J1p)/2)  : 1;
-//                         if (I6==a) phase_6a *= PhysConst::SQRT2;
-//                         X_126a[a] = phase_12 * phase_6a * XMAT1( ind_12,ind_6a);
-//                         Y_126a[a] = phase_12 * phase_6a * YMAT1( ind_12,ind_6a);
-//                         precomputed_a.insert(a);
-////                         std::cout << a << " ";
-//                    }
-//                  }
-// //                 std::cout << std::endl;
-////                std::set<size_t> used_a;
 
                 for (int J2p=J2p_min[perm_lmn]; J2p<=J2p_max[perm_lmn]; J2p++)
                 {
@@ -6276,8 +6250,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 //                for (auto a : used_a ) std::cout << a << " ";
 //                std::cout << std::endl;
                }// for J2p
-              }// for J1p
             }// for perm_lmn
+              }// for J1p
         }// for perm_ijk
 
 
@@ -6285,16 +6259,15 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket
     }// for ibra
   }// for ch3
-  Z.profiler.timer["comm223_compute_loop"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
-  if (Z.modelspace->scalar3b_transform_first_pass)
-  Z.profiler.timer["comm223_firstpass"] += omp_get_wtime() - tstart;
-  else
+//  if (Z.modelspace->scalar3b_transform_first_pass)
+//  Z.profiler.timer["comm223_firstpass"] += omp_get_wtime() - tstart;
+//  else
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 
 }
-
 */
+
 
 
 
