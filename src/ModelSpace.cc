@@ -1639,24 +1639,48 @@ void ModelSpace::ResetFirstPass()
 
 uint64_t ModelSpace::SixJHash(double j1, double j2, double j3, double J1, double J2, double J3)
 {
-   return   (((uint64_t)(2*j1)) << 50)
-          + (((uint64_t)(2*j2)) << 40)
-          + (((uint64_t)(2*j3)) << 30)
-          + (((uint64_t)(2*J1)) << 20)
-          + (((uint64_t)(2*J2)) << 10)
-          +  ((uint64_t)(2*J3));
+  // Use the 6J symmettry under permutation of columns. Combine each column into a single integer
+  // then sort the column indices so we only need to store one of the 6 equivalent permutations
+   uint64_t jJ1 = (uint64_t)(2*j1) + ( (uint64_t)(2*J1)<<10);
+   uint64_t jJ2 = (uint64_t)(2*j2) + ( (uint64_t)(2*J2)<<10);
+   uint64_t jJ3 = (uint64_t)(2*j3) + ( (uint64_t)(2*J3)<<10);
+ 
+   if (jJ3<jJ2)   std::swap(jJ3,jJ2);
+   if (jJ2<jJ1)   std::swap(jJ2,jJ1); 
+   if (jJ3<jJ2)   std::swap(jJ3,jJ2); 
+
+   return jJ1 + (jJ2<<20) + (jJ3<<40);
+
+//   if (j3<j2) { std::swap(j3,j2); std::swap(J3,J2);}
+//   if (j2<j1) { std::swap(j2,j1); std::swap(J2,J1);}
+//   if (j3<j2) { std::swap(j3,j2); std::swap(J3,J2);}
+//   if (std::abs(j3-j2)<1e-5 and J3<J2) { std::swap(j3,j2); std::swap(J3,J2);}
+//   if (std::abs(j2-j1)<1e-5 and J2<J1) { std::swap(j2,j1); std::swap(J2,J1);}
+//   if (std::abs(j3-j2)<1e-5 and J3<J2) { std::swap(j3,j2); std::swap(J3,J2);}
+//   return   (((uint64_t)(2*j1)) << 50)
+//          + (((uint64_t)(2*j2)) << 40)
+//          + (((uint64_t)(2*j3)) << 30)
+//          + (((uint64_t)(2*J1)) << 20)
+//          + (((uint64_t)(2*J2)) << 10)
+//          +  ((uint64_t)(2*J3));
 
 }
 
 
 void ModelSpace::SixJUnHash(uint64_t key, uint64_t& j1, uint64_t& j2, uint64_t& j3, uint64_t& J1, uint64_t& J2, uint64_t& J3)
 {
-   j1 = (key >> 50) & 0x3FFL;
-   j2 = (key >> 40) & 0x3FFL;
-   j3 = (key >> 30) & 0x3FFL;
-   J1 = (key >> 20) & 0x3FFL;
-   J2 = (key >> 10) & 0x3FFL;
-   J3 = (key      ) & 0x3FFL;
+//   j1 = (key >> 50) & 0x3FFL;
+//   j2 = (key >> 40) & 0x3FFL;
+//   j3 = (key >> 30) & 0x3FFL;
+//   J1 = (key >> 20) & 0x3FFL;
+//   J2 = (key >> 10) & 0x3FFL;
+//   J3 = (key      ) & 0x3FFL;
+   J3 = (key >> 50) & 0x3FFL;
+   j3 = (key >> 40) & 0x3FFL;
+   J2 = (key >> 30) & 0x3FFL;
+   j2 = (key >> 20) & 0x3FFL;
+   J1 = (key >> 10) & 0x3FFL;
+   j1 = (key      ) & 0x3FFL;
 }
 
 
@@ -1810,7 +1834,7 @@ double ModelSpace::GetSixJ(double j1, double j2, double j3, double J1, double J2
 /// \f]
 /// where ja,jb,jc are half-integer and J1,J2,J3 are integer.
 /// ja,jb,jc run from 1/2 to emax+1/2, while jd runs higher
-/// since the 3N recoupling requires it to go up to e(emax+1/2).
+/// since the 3N recoupling requires it to go up to 3(emax+1/2).
 /// I haven't yet bothered using the symmetry properties of the
 /// 6j symbol.
 ///
@@ -1849,14 +1873,18 @@ void ModelSpace::PreCalculateSixJ()
        } // for J2
       } // for J1
      } // for j2d
-     if ( j2b > (2*Emax+1) ) continue;
+//     if ( j2b > (2*Emax+1) ) continue;
 
      // three half-integer j's, three integer J's
-     // J1 couples a,b, and c,d;  J2 couples a,d and b,c
-     int J1_min = std::abs(j2a-j2c) ;
-     int J1_max = j2a+j2c;
-     int J2_min = std::abs(j2b-j2c) ;
-     int J2_max = j2b+j2c;
+     // <J1,J2|J3>  <a,b|J3>,  <J1,b|c>  <a,J2|c>
+//     int J1_min = std::abs(j2a-j2c) ;
+//     int J1_max = j2a+j2c;
+//     int J2_min = std::abs(j2b-j2c) ;
+//     int J2_max = j2b+j2c;
+     int J1_min = std::abs(j2b-j2c) ;
+     int J1_max = j2b+j2c;
+     int J2_min = std::abs(j2a-j2c) ;
+     int J2_max = j2a+j2c;
      for (int J1=J1_min; J1<=J1_max; J1+=2)
      {
       for (int J2=J2_min; J2<=J2_max; J2+=2)
@@ -1890,7 +1918,7 @@ void ModelSpace::PreCalculateSixJ()
   std::cout << "done calculating sixJs (" << KEYS.size() << " of them)" << std::endl;
   std::cout << "Hash table has " << SixJList.bucket_count() << " buckets and a load factor " << SixJList.load_factor() 
        << "  estimated storage ~ " << ((SixJList.bucket_count()+SixJList.size()) * (sizeof(size_t)+sizeof(void*))) / (1024.*1024.*1024.) << " GB" << std::endl;
-  profiler.timer["PreCalculateSixJ"] += omp_get_wtime() - t_start;
+  profiler.timer[__func__] += omp_get_wtime() - t_start;
 }
 
 
