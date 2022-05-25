@@ -132,6 +132,8 @@ class ThreeBodyStorage
   virtual void WriteFile(std::vector<std::string>& StringInputs, std::vector<int>& IntInputs ){NotImplemented(__func__);};
   virtual void ReadFile( std::vector<std::string>& StringInputs, std::vector<int>& IntInputs ){NotImplemented(__func__);};
   virtual void Print() {NotImplemented(__func__);};
+//  virtual int CountAllocations() const =0;
+  virtual int CountAllocations() const {NotImplemented(__func__); return 0;};
   bool IsAllocated() const {return is_allocated;};
   void SetHerm(int h) { herm = h; };
   void SetEmax(int e) { emax = e; };
