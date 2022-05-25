@@ -199,9 +199,9 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
      comm222_pp_hh_221ss(X, Y, Z);
      X.profiler.timer["comm222_pp_hh_221ss"] += omp_get_wtime() - t_start;
       
-     t_start = omp_get_wtime();
+//     t_start = omp_get_wtime();
      comm222_phss(X, Y, Z);
-     X.profiler.timer["comm222_phss"] += omp_get_wtime() - t_start;
+//     X.profiler.timer["comm222_phss"] += omp_get_wtime() - t_start;
    }
 
 
@@ -1725,6 +1725,7 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
 
    int hy = Y.IsHermitian() ? 1 : -1;
    // Create Pandya-transformed hp and ph matrix elements
+   double t_start_full = omp_get_wtime();
    double t_start = omp_get_wtime();
 
    // Construct the intermediate matrix Z_bar
@@ -1850,6 +1851,7 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
 
    Z.modelspace->scalar_transform_first_pass = false;
    X.profiler.timer["InversePandyaTransformation"] += omp_get_wtime() - t_start;
+   X.profiler.timer[__func__] += omp_get_wtime() - t_start_full;
 
 }
 
