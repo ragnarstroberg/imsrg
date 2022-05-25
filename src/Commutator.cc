@@ -1989,7 +1989,7 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
 
    Z.modelspace->scalar_transform_first_pass = false;
    X.profiler.timer["InversePandyaTransformation"] += omp_get_wtime() - t_start;
-   X.profiler.timer["comm222_phss"] += omp_get_wtime() - t_start_full;
+   X.profiler.timer[__func__] += omp_get_wtime() - t_start_full;
 
 }
 
