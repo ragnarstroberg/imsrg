@@ -489,6 +489,9 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm222_phst", &Commutator::comm222_phst);
       Commutator.def("SetIMSRG3Noqqq", &Commutator::SetIMSRG3Noqqq);
       Commutator.def("SetIMSRG3valence2b", &Commutator::SetIMSRG3valence2b);
+      Commutator.def("Discard0bFrom3b", &Commutator::Discard0bFrom3b);
+      Commutator.def("Discard1bFrom3b", &Commutator::Discard1bFrom3b);
+      Commutator.def("Discard2bFrom3b", &Commutator::Discard2bFrom3b);
 
 
 

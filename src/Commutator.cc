@@ -29,6 +29,9 @@ bool perturbative_triples = false;
 bool bch_skip_ieq1 = false;
 bool imsrg3_no_qqq = false;
 bool imsrg3_valence_2b = false;
+bool discard_0b_from_3b = false;
+bool discard_1b_from_3b = false;
+bool discard_2b_from_3b = false;
 double bch_transform_threshold = 1e-9;
 double bch_product_threshold = 1e-4;
 double threebody_threshold = 0;
@@ -52,6 +55,12 @@ std::map<std::string,bool> comm_term_on = {
 
 void TurnOffTerm( std::string term ) { comm_term_on[term] = false; }
 void TurnOnTerm( std::string term ) { comm_term_on[term] = true ;}
+
+
+void Discard0bFrom3b( bool tf) { discard_0b_from_3b = tf;};
+void Discard1bFrom3b( bool tf) { discard_1b_from_3b = tf;};
+void Discard2bFrom3b( bool tf) { discard_2b_from_3b = tf;};
+
 
 void Set_BCH_Transform_Threshold(double x)
 {bch_transform_threshold=x;}
@@ -231,8 +240,6 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       comm223ss_debug(X, Y, Z); // scales as n^7
        }
 
-//     if (X.GetParticleRank()>2 or Y.GetParticleRank()>2)
-//     {
 
        if ( comm_term_on["comm231ss"])
        {
@@ -316,6 +323,8 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
       } // if not use_imsrg3_n7
 
+
+
      // after going through once, we've stored all the 6js (and maybe 9js), so we can run in OMP loops from now on
      X.modelspace->scalar3b_transform_first_pass = false;
    }
@@ -325,6 +334,23 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
       Z.Symmetrize();
    else if (Z.IsAntiHermitian() )
       Z.AntiSymmetrize();
+
+
+     if ( discard_2b_from_3b  or discard_1b_from_3b or discard_0b_from_3b )
+     {
+        Operator Zcopy(Z);
+        Zcopy.EraseZeroBody();
+        Zcopy.EraseOneBody();
+        Zcopy.EraseTwoBody();
+        Zcopy = Zcopy.DoNormalOrdering(); // Now just have the NO 0,1,2b parts of the 3b piece
+        if (not discard_0b_from_3b) Zcopy.EraseZeroBody();
+        if (not discard_1b_from_3b) Zcopy.EraseOneBody();
+        if (not discard_2b_from_3b) Zcopy.EraseTwoBody();
+        Z.EraseThreeBody();
+        Zcopy.ThreeBody.SwitchToPN_and_discard();
+        Z -= Zcopy; // Remove the NOnB part of the 3b operator.
+     }
+
 
    X.profiler.timer["CommutatorScalarScalar"] += omp_get_wtime() - t_css;
    return Z;
@@ -443,7 +469,7 @@ Operator BCH_Transform(  const Operator& OpIn, const Operator& Omega)
 Operator Standard_BCH_Transform( const Operator& OpIn, const Operator &Omega)
 {
 //   std::cout << "!!! " << __func__ << " !!!   particles ranks are " << OpIn.GetParticleRank() << "  and  " << Omega.GetParticleRank() 
-//             << "  PN mode is " << OpIn.ThreeBody.PN_mode << "   and  " << Omega.ThreeBody.PN_mode  << std::endl;
+//             << "  PN mode is " << OpIn.ThreeBody.GetStorageMode() << "   and  " << Omega.ThreeBody.GetStorageMode()  << std::endl;
 
    double t_start = omp_get_wtime();
    int max_iter = 40;
@@ -615,6 +641,7 @@ Operator BCH_Product(  Operator& X, Operator& Y)
    Operator Nested = Commutator(Y,X);  // [Y,X]
 
 
+
    double nxy = Nested.Norm();
    // We assume X is small, but just in case, we check if we should include the [X,[X,Y]] term.
    if ( nxy*nx > bch_product_threshold)
@@ -627,7 +654,9 @@ Operator BCH_Product(  Operator& X, Operator& Y)
    while( Nested.Norm() > bch_product_threshold and k<9)
    {
      if ((k<2) or (k%2==0))
+     {
         Z += (bernoulli[k]/factorial[k]) * Nested;
+     }
 
      Nested = Commutator(Y,Nested);
      k++;
@@ -2735,7 +2764,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Y1 = Y.OneBody;
   auto& Y3 = Y.ThreeBody;
   auto& Z2 = Z.TwoBody;
-  int x_particle_rank = X.GetParticleRank();
+//  int x_particle_rank = X.GetParticleRank();
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
   Z.modelspace->PreCalculateSixJ(); // Presumably this has already been called. If so, this does nothing. But we want to make sure.
