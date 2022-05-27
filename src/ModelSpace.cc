@@ -1270,6 +1270,22 @@ void ModelSpace::UnpackTwoBodyChannelIndex( size_t ch, int& j, int& p, int& tz)
      }
 }
 
+void ModelSpace::UnpackTwoBodyChannelIndex_CC( size_t ch, int& j, int& p, int& tz)
+{
+     if (single_species)
+     {
+      j = ch/2;
+      p = ch%2;
+      tz = 0;
+     }
+     else
+     {
+      j = ch/6;
+      tz = (ch%6)/2 -1;
+      p = ch%2;
+     }
+}
+
 
 size_t ModelSpace::Index1(int n, int l, int j2, int tz2) const 
 {
@@ -1371,8 +1387,8 @@ void ModelSpace::SetupKets()
    // Hopefully this can help with load balancing.
    sort(SortedTwoBodyChannels.begin(),SortedTwoBodyChannels.end(),[this](int i, int j){ return TwoBodyChannels[i].GetNumberKets() > TwoBodyChannels[j].GetNumberKets(); }  );
    sort(SortedTwoBodyChannels_CC.begin(),SortedTwoBodyChannels_CC.end(),[this](int i, int j){ return TwoBodyChannels_CC[i].GetNumberKets() > TwoBodyChannels_CC[j].GetNumberKets(); }  );
-   while (  TwoBodyChannels[ SortedTwoBodyChannels.back() ].GetNumberKets() <1 ) SortedTwoBodyChannels.pop_back();
-   while (  TwoBodyChannels_CC[ SortedTwoBodyChannels_CC.back() ].GetNumberKets() <1 ) SortedTwoBodyChannels_CC.pop_back();
+   while (  SortedTwoBodyChannels.size()>0    and TwoBodyChannels[ SortedTwoBodyChannels.back() ].GetNumberKets() <1 ) SortedTwoBodyChannels.pop_back();
+   while (  SortedTwoBodyChannels_CC.size()>0 and TwoBodyChannels_CC[ SortedTwoBodyChannels_CC.back() ].GetNumberKets() <1 ) SortedTwoBodyChannels_CC.pop_back();
 }
 
 

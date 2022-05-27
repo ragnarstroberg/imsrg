@@ -147,7 +147,10 @@ struct TwoBodyChannel
    TwoBodyChannel();
    TwoBodyChannel(int j, int p, int t, ModelSpace* ms);
    TwoBodyChannel(int ch, ModelSpace* ms);
-   void Initialize(int ch, ModelSpace* ms);
+//   virtual void Initialize(int ch, ModelSpace* ms);
+//   virtual void Initialize(int J, int parity, int Tz, ModelSpace* ms);
+//   void Initialize(int J, int parity, int Tz, ModelSpace* ms);
+   void Initialize();
 
 
    //Methods
@@ -173,6 +176,7 @@ struct TwoBodyChannel
 
 
    virtual bool CheckChannel_ket(Orbit* op, Orbit* oq) const;  // check if |pq> participates in this channel
+//   bool CheckChannel_ket(Orbit* op, Orbit* oq) const;  // check if |pq> participates in this channel
    bool CheckChannel_ket(Ket &ket) const {return CheckChannel_ket(ket.op,ket.oq);};  // check if |pq> participates in this channel
    
 };
@@ -188,6 +192,7 @@ class TwoBodyChannel_CC : public TwoBodyChannel
    TwoBodyChannel_CC(int j, int p, int t, ModelSpace* ms);
    TwoBodyChannel_CC(int N, ModelSpace* ms);
    bool CheckChannel_ket(Orbit* op, Orbit* oq) const;  // check if |pq> participates in this channel
+//   void Initialize(int ch, ModelSpace* ms);
 };
 
 
@@ -470,6 +475,7 @@ class ModelSpace
    size_t GetOrbitIndex(std::string);
    size_t GetTwoBodyChannelIndex(int j, int p, int t);
    void UnpackTwoBodyChannelIndex( size_t ch, int& j, int& p, int& tz);
+   void UnpackTwoBodyChannelIndex_CC( size_t ch, int& j, int& p, int& tz);
    int phase(int x) {return (x%2)==0 ? 1 : -1;};
 
    
