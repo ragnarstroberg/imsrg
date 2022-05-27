@@ -9,7 +9,7 @@ bool ThreeBodyStorage_pn::none_allocated = true;
 
 
 ThreeBodyStorage_pn::ThreeBodyStorage_pn( const ThreeBodyStorage_pn& TBS_in )
-: ThreeBodyStorage( TBS_in ), MatEl(TBS_in.MatEl), total_dimension(0)
+: ThreeBodyStorage( TBS_in ), MatEl(TBS_in.MatEl), total_dimension(TBS_in.total_dimension)
 {}
 
 
@@ -31,7 +31,7 @@ std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_pn::Clone() const { return st
     }
     else
     {
-      std::cout << "OOPS!!! Tried to " << __func__ << "  with incompatible storage modes  " << rhs.GetStorageMode() << " and " << this->GetStorageMode() << " dying." << std::endl;
+      std::cout << "OOPS!!! Tried to " << __func__ << "  with incompatible storage modes  " << rhs.GetStorageMode() << " and " << this->GetStorageMode() << "  allocated?  " << this->IsAllocated() << "  " << rhs.IsAllocated()  << "  norms " << this->Norm() << "  " << rhs.Norm() << " dying." << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }

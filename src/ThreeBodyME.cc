@@ -64,22 +64,23 @@ ThreeBodyME::ThreeBodyME(const ThreeBodyME& Tbme)
  ThreeBodyME& ThreeBodyME::operator+=(const ThreeBodyME& rhs)
  {
 //   (*threebody_storage) += (*(rhs.threebody_storage));
-   if ( IsAllocated() )
+   if ( IsAllocated() and rhs.IsAllocated() )
    {
-     threebody_storage->Add(*rhs.threebody_storage);
+      threebody_storage->Add(*rhs.threebody_storage);
    }
    else if ( rhs.IsAllocated() )
    {
-     *threebody_storage = *rhs.threebody_storage;
+//     *threebody_storage = *rhs.threebody_storage;
+     threebody_storage = rhs.threebody_storage->Clone();
    }
    return *this;
  }
 
  ThreeBodyME& ThreeBodyME::operator-=(const ThreeBodyME& rhs)
  {
-   if ( IsAllocated() )
+   if ( IsAllocated()  and  rhs.IsAllocated())
    {
-     threebody_storage->Subtract(*rhs.threebody_storage);
+      threebody_storage->Subtract(*rhs.threebody_storage);
    }
    else if ( rhs.IsAllocated() )
    {
