@@ -11,19 +11,30 @@ TwoBodyChannel::TwoBodyChannel()
 {}
 
 TwoBodyChannel::TwoBodyChannel(int j, int p, int t, ModelSpace *ms)
+  :  J(j), parity(p), Tz(t) , modelspace(ms)
 {
-  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
+//  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
+//  Initialize(j,p,t, ms);
+  Initialize();
 }
 
 TwoBodyChannel::TwoBodyChannel(int ch, ModelSpace *ms)
+ : modelspace(ms)
 {
-   Initialize(ch,ms);
+//   Initialize(ch,ms);
+//   int j,p,t;
+   ms->UnpackTwoBodyChannelIndex(ch, J,parity,Tz);
+//   Initialize(J,parity,Tz, ms);
+   Initialize();
+//   Initialize(ch,ms);
 }
 
-void TwoBodyChannel::Initialize(int ch, ModelSpace *ms)
+//void TwoBodyChannel::Initialize(int ch, ModelSpace *ms)
+//void TwoBodyChannel::Initialize(int J, int parity, int Tz, ModelSpace *ms)
+void TwoBodyChannel::Initialize()
 {
-   modelspace = ms;
-   modelspace->UnpackTwoBodyChannelIndex(ch,  J,parity,Tz);
+//   modelspace = ms;
+//   modelspace->UnpackTwoBodyChannelIndex(ch,  J,parity,Tz);
 //   int tbjmax = modelspace->TwoBodyJmax;
 
    NumberKets = 0;
@@ -32,7 +43,7 @@ void TwoBodyChannel::Initialize(int ch, ModelSpace *ms)
    for (int i=0;i<nk;i++)
    {
       Ket &ket = modelspace->GetKet(i);
-//      std::cout << "ch = " << ch << "   checking ket " << i << " -> " << ket.p << " , " << ket.q << std::endl;
+//      std::cout << "J p Tz = " << J << " " << parity << " " << Tz << "   checking ket " << i << " -> " << ket.p << " , " << ket.q << std::endl;
       if ( CheckChannel_ket(ket) )
       {
 //         std::cout << "       yes " << std::endl;
@@ -140,14 +151,26 @@ TwoBodyChannel_CC::TwoBodyChannel_CC()
 {}
 
 TwoBodyChannel_CC::TwoBodyChannel_CC(int j, int p, int t, ModelSpace *ms)
+//  : J(j), parity(p) , Tz(t) , modelspace(ms)
+  : TwoBodyChannel(j,p,t,ms)
 {
-  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
+//  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
+  Initialize();
+//  Initialize(j,p,t, ms);
 }
 
 TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
+// : modelspace(ms)
+  : TwoBodyChannel(N,ms)
 {
-   Initialize(N,ms);
+//   int j,p,t;
+//   ms->UnpackTwoBodyChannelIndex_CC(N, j,p,t);
+   ms->UnpackTwoBodyChannelIndex_CC(N, J,parity,Tz);
+//   Initialize(j,p,t, ms);
+   Initialize();
+//   Initialize(N,ms);
 }
+
 
 // Check if orbits pq participate in this cross-coupled two-body channel
 // Difference from regular channels:

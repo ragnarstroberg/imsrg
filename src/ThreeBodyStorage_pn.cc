@@ -38,7 +38,7 @@ std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_pn::Clone() const { return st
     }
     else
     {
-      std::cout << "OOPS!!! Tried to " << __func__ << "  with incompatible storage modes  " << rhs.GetStorageMode() << " and " << this->GetStorageMode() << " dying." << std::endl;
+      std::cout << "OOPS!!! Tried to " << __func__ << "  with incompatible storage modes  " << rhs.GetStorageMode() << " and " << this->GetStorageMode() << "  allocated?  " << this->IsAllocated() << "  " << rhs.IsAllocated()  << "  norms " << this->Norm() << "  " << rhs.Norm() << " dying." << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
