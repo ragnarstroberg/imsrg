@@ -626,6 +626,7 @@ Operator Operator::DoNormalOrdering3(int sign, std::set<index_t> occupied ) cons
    std::cout << __func__ << "  contributed " << opNO2.ZeroBody << "  to the zero body part" << std::endl;
    // Also normal order the 1 and 2 body pieces
    opNO2 += DoNormalOrdering2(sign,occupied);
+   opNO2.ThreeBody.SetMode("pn");
 
    IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
    return opNO2;
