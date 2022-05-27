@@ -43,6 +43,9 @@ namespace Commutator{
   extern bool only_2b_omega;
   extern bool imsrg3_no_qqq;
   extern bool imsrg3_valence_2b;
+  extern bool discard_0b_from_3b;
+  extern bool discard_1b_from_3b;
+  extern bool discard_2b_from_3b;
   extern double bch_transform_threshold;
   extern double bch_product_threshold;
   extern double threebody_threshold;
@@ -63,6 +66,10 @@ namespace Commutator{
 
   void TurnOffTerm( std::string term ) ;
   void TurnOnTerm( std::string term ) ;
+
+  void Discard0bFrom3b( bool tf);
+  void Discard1bFrom3b( bool tf);
+  void Discard2bFrom3b( bool tf);
 
   Operator Commutator(const Operator& X, const Operator& Y) ; 
   Operator CommutatorScalarScalar( const Operator& X, const Operator& Y) ;

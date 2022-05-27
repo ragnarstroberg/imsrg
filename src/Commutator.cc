@@ -8344,6 +8344,17 @@ void comm233_pp_hhss_debug( const Operator& X, const Operator& Y, Operator& Z )
 //                                              
 //      Checked with UnitTest and passed                                                                      
 //                                                                           
+//  This gets flipped around to look like
+//
+//                     k|  /n
+//                      | /
+//                *~~X~~*
+//              a/ \b
+//               \ /
+//    ,*~~~~[Y]~~*
+//   / |   / |
+// i/ l|  /j |m
+//
 void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
