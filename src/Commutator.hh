@@ -46,6 +46,7 @@ namespace Commutator{
   extern double bch_transform_threshold;
   extern double bch_product_threshold;
   extern double threebody_threshold;
+  extern double imsrg3_dE6max;
 
   extern std::map<std::string,bool> comm_term_on; // This allows turning on/off individual IMSRG(3) commutator terms for testing.
 
