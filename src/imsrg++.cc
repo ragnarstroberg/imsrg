@@ -104,6 +104,7 @@ int main(int argc, char** argv)
   bool IMSRG3 = parameters.s("IMSRG3") == "true";
   bool imsrg3_n7 = parameters.s("imsrg3_n7") == "true";
   bool imsrg3_at_end = parameters.s("imsrg3_at_end") == "true";
+  bool imsrg3_no_qqq = parameters.s("imsrg3_no_qqq") == "true";
   bool write_omega = parameters.s("write_omega") == "true";
   bool freeze_occupations = parameters.s("freeze_occupations")=="true";
   bool discard_no2b_from_3n = parameters.s("discard_no2b_from_3n")=="true";
@@ -137,8 +138,14 @@ int main(int argc, char** argv)
   int eMax_imsrg = parameters.i("emax_imsrg");
   int e2Max_imsrg = parameters.i("e2max_imsrg");
   int e3Max_imsrg = parameters.i("e3max_imsrg");
-  if (e2Max_imsrg==-1 and eMax_imsrg != -1) e2Max_imsrg = 2*eMax_imsrg;
-  if (e3Max_imsrg==-1 and eMax_imsrg != -1) e3Max_imsrg = std::min(E3max, 3*eMax_imsrg);
+//  if ( not ( eMax_imsrg==-1 and e2Max_imsrg==-1 and e3Max_imsrg==-1 ) )
+//  {
+//    if ( eMax_imsrg==-1 ) eMax_imsrg = eMax;
+//    if ( e2Max_imsrg==-1 ) e2Max_imsrg = 2*eMax_imsrg;
+//    if ( e3Max_imsrg==-1 ) e3Max_imsrg = std::min( E3max, 3*eMax_imsrg);
+//  }
+////  if (e2Max_imsrg==-1 and eMax_imsrg != -1) e2Max_imsrg = 2*eMax_imsrg;
+////  if (e3Max_imsrg==-1 and eMax_imsrg != -1) e3Max_imsrg = std::min(E3max, 3*eMax_imsrg);
 
   double hw = parameters.d("hw");
   double smax = parameters.d("smax");
@@ -852,6 +859,11 @@ int main(int argc, char** argv)
   ModelSpace modelspace_imsrg = modelspace;
   if ( (eMax_imsrg != -1) or (e2Max_imsrg != -1) or (e3Max_imsrg) != -1)
   {
+    
+     if ( eMax_imsrg==-1 ) eMax_imsrg = eMax;
+     if ( e2Max_imsrg==-1 ) e2Max_imsrg = 2*eMax_imsrg;
+     if ( e3Max_imsrg==-1 ) e3Max_imsrg = std::min( E3max, 3*eMax_imsrg);
+
 //     ModelSpace modelspace_imsrg = modelspace;
      std::cout << "Truncating modelspace for IMSRG calculation: emax e2max e3max  ->  " << eMax_imsrg << " " << e2Max_imsrg << " " << e3Max_imsrg << std::endl;
      modelspace_imsrg.SetEmax( eMax_imsrg);
@@ -907,7 +919,10 @@ int main(int argc, char** argv)
     return 0;
   }
 
+  std::cout << " " << __FILE__ << " line " << __LINE__ << "noperators = " << HNO.profiler.counter["N_Operators"] << std::endl;
+
   IMSRGSolver imsrgsolver(HNO);
+  std::cout << " " << __FILE__ << " line " << __LINE__ << "noperators = " << HNO.profiler.counter["N_Operators"] << std::endl;
 //  imsrgsolver.SetHin(HNO); // necessary?
   imsrgsolver.SetReadWrite(rw);
   imsrgsolver.SetMethod(method);
@@ -949,6 +964,7 @@ int main(int argc, char** argv)
   Commutator::SetUseBruecknerBCH(use_brueckner_bch);
   Commutator::SetUseIMSRG3(IMSRG3);
   Commutator::SetUseIMSRG3N7(imsrg3_n7);
+  Commutator::SetIMSRG3Noqqq(imsrg3_no_qqq);
   if (use_brueckner_bch)
   {
     std::cout << "Using Brueckner flavor of BCH" << std::endl;

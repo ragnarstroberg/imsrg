@@ -41,7 +41,7 @@ class Generator
   enum denominator_partitioning_t{Epstein_Nesbet,Moller_Plesset};
   denominator_partitioning_t denominator_partitioning;
 
-  Operator RspaceRegulator;
+//  Operator RspaceRegulator;
   double regulator_length;
 
   bool only_2b_eta; // even if we're doing IMSRG(3), keep eta to 2b
@@ -65,7 +65,7 @@ class Generator
   void SetDenominatorDeltaIndex(int i){denominator_delta_index=i;};
   void SetDenominatorDeltaOrbit(std::string orb);
 
-  void SetRegulatorLength(double r);
+//  void SetRegulatorLength(double r);
 
 // private:
 //  void ConstructGenerator_Wegner();
@@ -91,7 +91,7 @@ class Generator
   void ConstructGenerator_HartreeFock();
 //  void ConstructGenerator_1PA();
   void ConstructGenerator_1PA(std::function<double(double,double)>& eta_func);
-  void ConstructGenerator_Rspace();
+//  void ConstructGenerator_Rspace();
   void SetOnly2bEta(bool tf){only_2b_eta = tf;};
   double Get1bDenominator(int i, int j);
   double Get2bDenominator(int ch, int ibra, int iket);

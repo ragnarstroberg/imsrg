@@ -12,6 +12,7 @@ class ThreeBodyStorage_pn : public ThreeBodyStorage
   std::vector<pnME_type> MatEl; // vector for holding proton-neutron matrix elements
 
   static bool none_allocated;
+  static int number_allocated;
   size_t total_dimension;
 
  public:
@@ -19,6 +20,7 @@ class ThreeBodyStorage_pn : public ThreeBodyStorage
 
   using ThreeBodyStorage::ThreeBodyStorage; // use the base class constructors
   ThreeBodyStorage_pn( const ThreeBodyStorage_pn& ); // copy constructor
+  ~ThreeBodyStorage_pn(); // explicit destructor to count 3 allocations
 
   std::shared_ptr<ThreeBodyStorage> Clone() const override ;
 
@@ -49,6 +51,8 @@ class ThreeBodyStorage_pn : public ThreeBodyStorage
   size_t size() const override;
   void WriteBinary(std::ofstream& f) override;
   void ReadBinary(std::ifstream& f) override;
+
+  int CountAllocations() const override {return number_allocated;};
 //  void Print() override {};
 
 //  void SetHerm(int h) { herm = h; std::cout << __FILE__ << "  setting herm to " << herm; };

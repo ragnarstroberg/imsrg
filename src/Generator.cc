@@ -62,7 +62,7 @@ void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
 //     ConstructGenerator_QTransferAtan(n);
      ConstructGenerator_SingleRef( qtransferatanN_func );
    }
-   else if (generator_type == "rspace")                       ConstructGenerator_Rspace();
+//   else if (generator_type == "rspace")                       ConstructGenerator_Rspace();
    else
    {
       std::cout << "Error. Unkown generator_type: " << generator_type << std::endl;
@@ -750,7 +750,7 @@ void Generator::ConstructGenerator_1PA(std::function<double(double,double)>& eta
 
 
 
-
+/*
 // Weight each matrix element in eta by the matrix element of the regulator
 // which in the current implementation is a step function in R
 void Generator::ConstructGenerator_Rspace()
@@ -787,10 +787,10 @@ void Generator::ConstructGenerator_Rspace()
     }
 
 }
+*/
 
 
-
-
+/*
 void Generator::SetRegulatorLength(double r0)
 {
   using PhysConst::M_NUCLEON;
@@ -949,6 +949,7 @@ void Generator::SetRegulatorLength(double r0)
 //  std::cout << "Done with the 2b part. Norm is " << RspaceRegulator.OneBodyNorm() << "  " << RspaceRegulator.TwoBodyNorm() <<  std::endl;
 
 }
+*/
 
 
 

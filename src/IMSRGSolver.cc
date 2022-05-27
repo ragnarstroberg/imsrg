@@ -32,10 +32,13 @@ IMSRGSolver::IMSRGSolver( Operator &H_in)
     flowfile(""), n_omega_written(0),max_omega_written(500),magnus_adaptive(true),hunter_gatherer(false),perturbative_triples(false),
     pert_triples_this_omega(0),pert_triples_sum(0),ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {
+   std::cout << "  " << __FILE__ << " line " << __LINE__ << "  nops = " << Eta.profiler.counter["N_Operators"] << std::endl;
+   std::cout << "   sizes of operator vectors:  FlowingOps " << FlowingOps.size() << " Omega " << Omega.size() << std::endl;
    Eta.Erase();
    Eta.SetAntiHermitian();
 //   Omega.push_back( Eta);
    Omega.emplace_back( Eta);
+   std::cout << "  " << __FILE__ << " line " << __LINE__ << "  nops = " << Eta.profiler.counter["N_Operators"] << std::endl;
 }
 
 
@@ -234,14 +237,14 @@ void IMSRGSolver::Solve_magnus_euler()
 {
    istep = 0;
 
-   if ( generator.GetType() == "rspace" ) { generator.modelspace = (Eta.modelspace); generator.SetRegulatorLength(800005.0); };
+//   if ( generator.GetType() == "rspace" ) { generator.modelspace = (Eta.modelspace); generator.SetRegulatorLength(800005.0); };
 
    generator.Update(&FlowingOps[0],&Eta);
 
-   if (generator.GetType() == "shell-model-atan")
-   {
-     generator.SetDenominatorCutoff(1.0); // do we need this?
-   }
+//   if (generator.GetType() == "shell-model-atan")
+//   {
+//     generator.SetDenominatorCutoff(1.0); // do we need this?
+//   }
 
    Elast = H_0->ZeroBody;
    cumulative_error = 0;
@@ -284,9 +287,11 @@ void IMSRGSolver::Solve_magnus_euler()
       s += ds;
       Eta *= ds; // Here's the Euler step.
 
+      std::cout << " " << __FILE__ << " line " << __LINE__ << "  calling Commutator::BCH_Product" << std::endl;
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
       Omega.back() = Commutator::BCH_Product( Eta, Omega.back() );
-
+ 
+      std::cout << " " << __FILE__ << " line " << __LINE__ << "  calling Commutator::BCH_Transform" << std::endl;
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
       if ((Omega.size()+n_omega_written)<2)
       {
@@ -302,6 +307,7 @@ void IMSRGSolver::Solve_magnus_euler()
         generator.SetDenominatorCutoff(1e-6);
       }
 
+      std::cout << " " << __FILE__ << " line " << __LINE__ << "  calling Generator::Update " << std::endl;
 //      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
       generator.Update(&FlowingOps[0],&Eta);
 //      cumulative_error += EstimateStepError();
@@ -383,7 +389,7 @@ void IMSRGSolver::Solve_flow_RK4()
 {
    istep = 0;
 
-   if ( generator.GetType() == "rspace" ) { generator.modelspace = (Eta.modelspace); generator.SetRegulatorLength(800005.0); };
+//   if ( generator.GetType() == "rspace" ) { generator.modelspace = (Eta.modelspace); generator.SetRegulatorLength(800005.0); };
 
    generator.Update(&FlowingOps[0],&Eta);
 

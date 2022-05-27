@@ -5835,7 +5835,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         if ( perturbative_triples and  not ( (ol.cvq + om.cvq + on.cvq)==0 or (ol.cvq>0 and om.cvq>0 and on.cvq>0)) ) continue;
         if ( perturbative_triples and (  (oi.cvq==0 and ol.cvq==0) or (oi.cvq!=0 and ol.cvq!=0) ) ) continue;
         if ( imsrg3_no_qqq and  (ol.cvq + om.cvq + on.cvq)>5 ) continue;
-        if ( (d_ei+de_j_de_k + de_l+de_m+de_n) > imsrg3_dE6max ) continue;
+        if ( (d_ei+d_ej+d_ek + d_el+d_em+d_en) > imsrg3_dE6max ) continue;
 //        if ( imsrg3_no_qqq and  (oi.cvq + oj.cvq + ok.cvq + ol.cvq + om.cvq + on.cvq)>11 ) continue;
         int J2 = ket.Jpq;
 
