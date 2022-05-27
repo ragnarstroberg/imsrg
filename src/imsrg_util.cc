@@ -3954,8 +3954,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    double b_osc = HBARC / sqrt( hw * M_NUCLEON);
 
    // it's a delta, so we only need the wave function evaluated at r=0. pre-store those
-   int nmax = modelspace.GetEmax() /2;
-   std::vector<double> psi_at_zero(nmax, 0.) ;
+//   int nmax = modelspace.GetEmax() /2;
+   int nmax = modelspace.GetEmax();
+   std::vector<double> psi_at_zero(nmax+1, 0.) ;
    for (int n=0; n<=nmax; n++) psi_at_zero[n] = HO_Radial_psi( n, 0, hw, 0.0);
    
    // the spins are always 1/2
