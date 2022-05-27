@@ -680,10 +680,9 @@ Operator Operator::DoNormalOrderingDagger( int sign , std::set<index_t> occupied
 
 
 //********************************************
-/// Truncate an operator to a smaller emax
+/// Truncate an operator to a smaller emax (and E3max)
 /// A corresponding ModelSpace object must be
-/// created at the appropriate scope. That's why
-/// the new operator is passed as a
+/// created at the appropriate scope.
 //********************************************
 Operator Operator::Truncate(ModelSpace& ms_new)
 {
@@ -746,6 +745,54 @@ Operator Operator::Truncate(ModelSpace& ms_new)
     Mat_new = Mat_old.submat(ibra_old,iket_old);
 
   }
+
+  // We may also want to truncate an operator with a 3N part
+  if (particle_rank>=3)
+  {
+    auto storage_mode = ThreeBody.GetStorageMode();
+    OpNew.ThreeBody.SetMode( storage_mode );
+    size_t nch = ms_new.GetNumberThreeBodyChannels();
+    for ( size_t ch3=0; ch3< nch; ch3++)
+    {
+      ThreeBodyChannel Tbc_new = ms_new.GetThreeBodyChannel(ch3);
+      size_t ch3_old = modelspace->GetThreeBodyChannelIndex(  Tbc_new.twoJ, Tbc_new.parity, Tbc_new.twoTz );
+      ThreeBodyChannel Tbc_old = modelspace->GetThreeBodyChannel(ch3_old);
+      size_t nkets = Tbc_new.GetNumberKets();
+      for (size_t ibra=0; ibra<nkets; ibra++)
+      {
+        auto& bra = Tbc_new.GetKet(ibra);
+        size_t ibra_old = Tbc_old.GetLocalIndex( bra.p, bra.q, bra.r, bra.Jpq );
+        // we store bra <= ket
+        for (size_t iket=ibra; iket<nkets; iket++)
+        {
+          auto& ket = Tbc_new.GetKet(iket);
+          size_t iket_old = Tbc_old.GetLocalIndex( ket.p, ket.q, ket.r, ket.Jpq );
+          if (storage_mode=="pn")
+          {
+            auto matel = ThreeBody.GetME_pn_ch( ch3_old, ch3_old, ibra_old, iket_old );
+            OpNew.ThreeBody.SetME_pn_ch( ch3, ch3, ibra,iket,  matel);
+          } 
+          else if ( storage_mode=="iso")
+          {
+            for ( int tab=0; tab<=1; tab++)
+            {
+              for ( int tde=0; tde<=1; tde++)
+              {
+               for (int twoT=std::abs( Tbc_new.twoTz); twoT<=3; twoT+=2)
+                {
+                  auto matel = ThreeBody.GetME_iso(bra.Jpq, ket.Jpq, Tbc_new.twoJ, tab, tde, twoT, bra.p,bra.q,bra.r,  ket.p,ket.q,ket.r );
+                  OpNew.ThreeBody.SetME_iso( bra.Jpq, ket.Jpq,  Tbc_new.twoJ,  tab,  tde,  twoT, bra.p,bra.q,bra.r,  ket.p,ket.q,ket.r , matel);
+                }
+              }
+            }
+          }
+
+        }// for iket
+      }// for ibra
+    }// for ch3
+
+  }// if particle_rank>=3
+
   return OpNew;
 }
 
