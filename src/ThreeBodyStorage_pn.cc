@@ -5,14 +5,21 @@
 
 
 bool ThreeBodyStorage_pn::none_allocated = true;
-
+int ThreeBodyStorage_pn::number_allocated = 0;
 
 
 ThreeBodyStorage_pn::ThreeBodyStorage_pn( const ThreeBodyStorage_pn& TBS_in )
-: ThreeBodyStorage( TBS_in ), MatEl(TBS_in.MatEl), total_dimension(0)
-{}
+//: ThreeBodyStorage( TBS_in ), MatEl(TBS_in.MatEl), total_dimension(0)
+: ThreeBodyStorage( TBS_in ), MatEl(TBS_in.MatEl), total_dimension(TBS_in.total_dimension)
+{
+  if (is_allocated)   number_allocated++;
+}
 
 
+ThreeBodyStorage_pn::~ThreeBodyStorage_pn( )
+{
+  if (is_allocated)  number_allocated--;
+}
 
 std::shared_ptr<ThreeBodyStorage> ThreeBodyStorage_pn::Clone() const { return std::shared_ptr<ThreeBodyStorage>( new ThreeBodyStorage_pn( *this)); };
 
@@ -92,14 +99,19 @@ void ThreeBodyStorage_pn::Allocate()
       }
     }
   }
+//  std::cout << "In ThreeBodyStorage_pn::Allocate()  total dimension = " << total_dimension 
+//            << "  -> " << total_dimension*sizeof(pnME_type) / (1024.*1024.*1024.) << " GB"  << std::endl;
+//  std::cout << "  number of ThreeBodyStorage_pn currently allocated: " << CountAllocations() << "  ->  " << CountAllocations() * total_dimension * sizeof(pnME_type) / (1024.*1024.*1024.) << " GB " <<  std::endl;
   MatEl.resize(total_dimension,0.0);
   if (none_allocated)
   {
      std::cout << "DONE ALLOCATING PN 3-body, size of MatEl is " << MatEl.size()
                << "  ->  " <<MatEl.size()*sizeof(pnME_type) / (1024.*1024.*1024.) << " GB" << std::endl;
   }
+//  std::cout << " ... allocation successful." << std::endl;
   is_allocated = true;
   none_allocated = false;
+  number_allocated ++;
 //  PN_mode = true;
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - tstart;
 }
