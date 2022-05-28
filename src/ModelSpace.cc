@@ -1379,8 +1379,13 @@ void ModelSpace::SetupKets()
    SortedTwoBodyChannels_CC.resize(nTwoBodyChannels);
    for (int ch=0;ch<nTwoBodyChannels;++ch)
    {
-      TwoBodyChannels.emplace_back(TwoBodyChannel(ch,this));
-      TwoBodyChannels_CC.emplace_back(TwoBodyChannel_CC(ch,this));
+      int j,p,t;
+      UnpackTwoBodyChannelIndex(ch, j,p,t);
+      TwoBodyChannels.emplace_back(TwoBodyChannel(j,p,t,this));
+//      TwoBodyChannels.emplace_back(TwoBodyChannel(ch,this));
+      UnpackTwoBodyChannelIndex_CC(ch, j,p,t);
+      TwoBodyChannels_CC.emplace_back(TwoBodyChannel_CC(j,p,t,this));
+//      TwoBodyChannels_CC.emplace_back(TwoBodyChannel_CC(ch,this));
       SortedTwoBodyChannels[ch] = ch;
       SortedTwoBodyChannels_CC[ch] = ch;
    }
