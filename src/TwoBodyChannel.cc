@@ -43,7 +43,7 @@ void TwoBodyChannel::Initialize()
    for (int i=0;i<nk;i++)
    {
       Ket &ket = modelspace->GetKet(i);
-//      std::cout << "J p Tz = " << J << " " << parity << " " << Tz << "   checking ket " << i << " -> " << ket.p << " , " << ket.q << std::endl;
+//      std::cout << "   " << __func__ << "J p Tz = " << J << " " << parity << " " << Tz << "   checking ket " << i << " -> " << ket.p << " , " << ket.q << std::endl;
       if ( CheckChannel_ket(ket) )
       {
 //         std::cout << "       yes " << std::endl;
@@ -114,6 +114,8 @@ bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
    return true;
 }
 
+
+
 const arma::uvec& TwoBodyChannel::GetKetIndex_pp() const { return KetIndex_pp;};
 const arma::uvec& TwoBodyChannel::GetKetIndex_hh() const { return KetIndex_hh;};
 const arma::uvec& TwoBodyChannel::GetKetIndex_ph() const { return KetIndex_ph;};
@@ -152,19 +154,21 @@ TwoBodyChannel_CC::TwoBodyChannel_CC()
 
 TwoBodyChannel_CC::TwoBodyChannel_CC(int j, int p, int t, ModelSpace *ms)
 //  : J(j), parity(p) , Tz(t) , modelspace(ms)
-  : TwoBodyChannel(j,p,t,ms)
+//  : TwoBodyChannel(j,p,t,ms)
 {
+   J=j; parity=p; Tz=t;  // this is janky and not really the way that inheritance is supposed to work...
 //  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
-  Initialize();
+   Initialize();
 //  Initialize(j,p,t, ms);
 }
 
 TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
 // : modelspace(ms)
-  : TwoBodyChannel(N,ms)
+//  : TwoBodyChannel(N,ms)
 {
 //   int j,p,t;
 //   ms->UnpackTwoBodyChannelIndex_CC(N, j,p,t);
+//   modelspace = ms;
    ms->UnpackTwoBodyChannelIndex_CC(N, J,parity,Tz);
 //   Initialize(j,p,t, ms);
    Initialize();
@@ -180,6 +184,7 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
 // Another way of formulating it is that "isospin-parity", i.e. |Tz|%2, is conserved the same way parity is.
 bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
+//   std::cout << "  TwoBodyChannel_CC::CheckChannel_ket  checking orbits " << op->index << " " << oq->index << "  for channel with jpt " << J << " " << parity << " " << Tz << std::endl;
    if ((op->l + oq->l)%2 != parity)    return false;
    if (op->j2 + oq->j2 < 2*J)          return false;
    if (std::abs(op->j2 - oq->j2) > 2*J)     return false;
@@ -188,11 +193,12 @@ bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 //     if (std::abs(op->tz2 + oq->tz2) != 2*std::abs(Tz)) return false;
 //   }
 //   else
-   if (not modelspace->single_species)
-   {
+//   if (not modelspace->single_species)  //TODO: I think this condition no longer applies...
+//   {
 //     if (std::abs(op->tz2 + oq->tz2) != 2*Tz) return false;
      if (std::abs(op->tz2 - oq->tz2) != 2*Tz) return false;
-   }
+//   }
+//   std::cout << " -- AOK! " << std::endl;
 
    return true;
 }
