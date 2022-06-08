@@ -291,7 +291,7 @@ void IMSRGSolver::Solve_magnus_euler()
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
       Omega.back() = Commutator::BCH_Product( Eta, Omega.back() );
  
-      std::cout << " " << __FILE__ << " line " << __LINE__ << "  calling Commutator::BCH_Transform" << std::endl;
+//      std::cout << " " << __FILE__ << " line " << __LINE__ << "  calling Commutator::BCH_Transform" << std::endl;
       // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
       if ((Omega.size()+n_omega_written)<2)
       {

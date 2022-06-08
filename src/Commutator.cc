@@ -164,7 +164,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
    int z_particlerank = std::max(X.GetParticleRank(),Y.GetParticleRank());
    if ( use_imsrg3 )  z_particlerank = std::max(z_particlerank, 3);
    ModelSpace& ms = *(Y.GetModelSpace());
-   std::cout << " " << __FILE__ << "  line " << __LINE__ << "  constructing Z " << std::endl;
+//   std::cout << " " << __FILE__ << "  line " << __LINE__ << "  constructing Z " << std::endl;
    Operator Z( ms, z_Jrank, z_Trank, z_parity, z_particlerank );
 
 //   Operator Z( *(Y.GetModelSpace()), std::max(X.GetJRank(),Y.GetJRank()), std::max(X.GetTRank(),Y.GetTRank()), (X.GetParity()+Y.GetParity())%2, std::max(X.GetParticleRank(),Y.GetParticleRank()) );
@@ -191,7 +191,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
 
 //   std::cout << __FILE__ << __LINE__ << "  DONT FORGET TO FIX THIS!" << std::endl;
-     std::cout << " " << __FILE__ << "  line " << __LINE__ << "  start commutator terms " << std::endl;
+//     std::cout << " " << __FILE__ << "  line " << __LINE__ << "  start commutator terms " << std::endl;
 
    double t_start = omp_get_wtime();
    comm111ss(X, Y, Z);
