@@ -4353,8 +4353,11 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
             if ( std::abs( tbc_cd.Tz - tbc_ab.Tz) != tbc_CC.Tz ) continue;
 
 
-            int twoJp_min = std::max( {std::abs(2*Jab-j2i), std::abs(2*Jcd-j2j), std::abs(2*Jab-j2j), std::abs(2*Jcd-j2i) });
-            int twoJp_max = std::min( {(2*Jab+j2i), (2*Jcd+j2j), (2*Jab+j2j), (2*Jcd+j2i) });
+            // I erroneously thought I'd fixed a bug here in commit 7ffbe... but it actually gave wrong answers. This seems to have corrected the oopsie. --SRS
+            int twoJp_min = std::min( std::max( std::abs(2*Jab-j2i), std::abs(2*Jcd-j2j)) , std::max( std::abs(2*Jab-j2j), std::abs(2*Jcd-j2i) ) );
+            int twoJp_max = std::max( std::min((2*Jab+j2i), (2*Jcd+j2j)) , std::min( (2*Jab+j2j), (2*Jcd+j2i) ));
+//            int twoJp_min = std::max( {std::abs(2*Jab-j2i), std::abs(2*Jcd-j2j), std::abs(2*Jab-j2j), std::abs(2*Jcd-j2i) });
+//            int twoJp_max = std::min( {(2*Jab+j2i), (2*Jcd+j2j), (2*Jab+j2j), (2*Jcd+j2i) });
             std::vector<double> sixj_ij_list;
             std::vector<double> sixj_ji_list;
             for ( int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
