@@ -412,6 +412,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("SetODETolerance",&IMSRGSolver::SetODETolerance)
       .def("Reset",&IMSRGSolver::Reset)
       .def("SetGenerator",&IMSRGSolver::SetGenerator)
+      .def("SetOnly2bEta",[](IMSRGSolver& self, bool tf){ self.GetGenerator().SetOnly2bEta(tf);})
       .def("SetDenominatorCutoff",&IMSRGSolver::SetDenominatorCutoff)
       .def("SetDenominatorDelta",&IMSRGSolver::SetDenominatorDelta)
       .def("SetDenominatorDeltaOrbit",&IMSRGSolver::SetDenominatorDeltaOrbit)
@@ -441,6 +442,11 @@ PYBIND11_MODULE(pyIMSRG, m)
    ;
 
 
+   py::class_<Generator>(m,"Generator")
+      .def(py::init<>())
+      .def("SetType", &Generator::SetType)
+      .def("Update", &Generator::Update)
+   ;
 
    py::class_<IMSRGProfiler>(m,"IMSRGProfiler")
       .def(py::init<>())
