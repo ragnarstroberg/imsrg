@@ -3942,7 +3942,11 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
  }
 
 
- // A bare delta function of the relative coordinate (effectively regulated by the finite oscillator basis
+ // A bare delta function of the relative coordinate (effectively regulated by the finite oscillator basis).
+ // The delta is a 1D delta of the relative coordinate, as defined by Moshinsky: r = 1/sqrt(2) |r1-r2|.
+ // To convert this to the usual definition, we have delta(|r1-r2|) = 1/sqrt(2) delta(r)
+ // Evaluating the diagonal matrix element between two 0s states, we get
+ // < 0s 0s | delta(r) | 0s 0s> = 4 / [sqrt(pi) b^3], where b is the oscillator length.
  Operator BareDelta( ModelSpace& modelspace )
  {
    Operator Vdel = Operator(modelspace,0,0,0,2);
@@ -3951,7 +3955,7 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
    modelspace.PreCalculateMoshinsky();
 
    double hw = modelspace.GetHbarOmega();
-   double b_osc = HBARC / sqrt( hw * M_NUCLEON);
+//   double b_osc = HBARC / sqrt( hw * M_NUCLEON);
 
    // it's a delta, so we only need the wave function evaluated at r=0. pre-store those
 //   int nmax = modelspace.GetEmax() /2;
@@ -4050,6 +4054,9 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
          }// for Sab
        }// for Lab
 
+       // This should be normalized.
+       if (bra.p==bra.q) vdelta /= SQRT2;
+       if (ket.p==ket.q) vdelta /= SQRT2;
        Vdel.TwoBody.SetTBME(ch,ibra,iket,vdelta);
        Vdel.TwoBody.SetTBME(ch,iket,ibra,vdelta);
      }// for iket
@@ -4103,7 +4110,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
    int fab = 2*na + 2*nb + la + lb;
    int fcd = 2*nc + 2*nd + lc + ld;
-   if (std::abs(fab+fcd)%2 >0) return 0; // check parity conservation
+   if ((la+lb+lc+ld)%2 !=0) return 0; // check parity conservation
+//   if (std::abs(fab+fcd)%2 >0) return 0; // check parity conservation
 //   if (std::abs(fab-fcd)>2) return 0; // p1*p2 only connects kets with delta N = 0,1
 
    double sa,sb,sc,sd;
@@ -4117,9 +4125,10 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
      for (int Sab=0; Sab<=1; ++Sab)
      {
 //       double isospin_factor = 1.0;
-       if ( (oa.tz2 == ob.tz2) and Sab==1 ) continue;
+//       if ( (oa.tz2 == ob.tz2) and Sab==1 ) continue; // WRONG!!!
 //       if ( oa.tz2 != ob.tz2) isospin_factor = 0.5 * (oa.tz2 * oc.tz2);  // <pn|V|pn> = 1/2 (V(T=1) + V(T=0)).  <pn|V|np> = -<pn|V|pn>
        if ( std::abs(Lab-Sab)>J or Lab+Sab<J) continue;
+
 
        double njab = AngMom::NormNineJ(la,sa,ja, lb,sb,jb, Lab,Sab,J);
        if (njab == 0) continue;
@@ -4136,7 +4145,10 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
            int Lam_cd = Lam_ab; // tcm and trel conserve lam and Lam, ie relative and com orbital angular momentum
            for (int lam_ab=(fab-2*N_ab-Lam_ab)%2; lam_ab<= (fab-2*N_ab-Lam_ab); lam_ab+=2) // lam_ab = relative l for a,b
            {
+              
               if (Lab<std::abs(Lam_ab-lam_ab) or Lab>(Lam_ab+lam_ab) ) continue;
+
+
 
               // factor to account for antisymmetrization. I sure wish this were more transparent...
               //  antisymmetrized matrix elements: V = <ab|V|cd> - <ab|V|dc>
@@ -4146,7 +4158,8 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
               //  pnpn -> 1 + 0
               //  pnnp -> 0 + (-1)**(L+S)
               int asymm_factor = (std::abs(bra.op->tz2+ket.op->tz2) + std::abs(bra.op->tz2+ket.oq->tz2)*modelspace.phase( lam_ab + Sab ))/ 2;
-              if ( asymm_factor ==0 ) continue;
+//PUT THIS BACK              if ( asymm_factor ==0 ) continue;
+
 
               int lam_cd = lam_ab; // V conserves lam and Lam
               int n_ab = (fab - 2*N_ab-Lam_ab-lam_ab)/2; // n_ab is determined by energy conservation
@@ -4155,16 +4168,19 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
               if (std::abs(mosh_ab)<1e-8) continue;
 
-              for (int N_cd=std::max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
+
+//              for (int N_cd=std::max(0,N_ab-1); N_cd<=N_ab+1; ++N_cd) // N_cd = CoM n for c,d
+              for (int N_cd=N_ab; N_cd<=N_ab; ++N_cd) // N_cd = CoM n for c,d
               {
                 int n_cd = (fcd - 2*N_cd-Lam_cd-lam_cd)/2; // n_cd is determined by energy conservation
                 if (n_cd < 0) continue;
-                if  (n_ab != n_cd and N_ab != N_cd) continue;
+//                if  (n_ab != n_cd and N_ab != N_cd) continue;
 
                 double mosh_cd = modelspace.GetMoshinsky(N_cd,Lam_cd,n_cd,lam_cd,nc,lc,nd,ld,Lcd);
                 if (std::abs(mosh_cd)<1e-8) continue;
 
                 double vrel = 0;
+
                 int pmin = lam_ab;
                 int pmax = lam_ab + n_ab + n_cd;
                 for (int p=pmin; p<=pmax; p++)
@@ -4175,7 +4191,22 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
                    else Ip += VS / pow(1.0+kS, p+1.5); // Singlet short-range potential
                    vrel += Bp * Ip;
                 }
+
+                // for debugging
+//                if ( (n_ab==n_cd)  and (lam_ab==lam_cd)  and (N_ab==N_cd)  and (Lam_ab==Lam_cd) and (Sab==Scd) and (Lab==Lcd) )  vrel =1;
+//                if ( (n_ab==n_cd) and  (N_ab==N_cd)  )  vrel =1;
+//                if ( true )  vrel =1;
                 Vminn += vrel * njab * njcd * mosh_ab * mosh_cd * asymm_factor;
+
+//                if ( (J==0) and ((bra.op->l+bra.oq->l)%2==0)  and ((bra.op->tz2+bra.oq->tz2)==-2) )
+//                {
+//                   std::cout << "  abcd << " << bra.p << " " << bra.q << " " << ket.p << " " << ket.q 
+//                             << "  nab lab  ncd lcd  " << n_ab << " " << lam_ab << " " << n_cd << " " << lam_cd
+//                             << "  Nab Lab  Ncd Lcd  " << N_ab << " " << Lam_ab << " " << N_cd << " " << Lam_cd
+//                             << " L S " << Lab << " " << Lcd << "  " << Sab << " " << Scd 
+//                             << "    adding " << vrel << " * " << njab << " * " << njcd << " * " << mosh_ab << " * " << mosh_cd
+//                             << " * " << asymm_factor << "  -> " << Vminn << std::endl;
+//                }
 
 
               } // N_cd
@@ -4185,6 +4216,10 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
      } // Sab
    } // Lab
+
+   // Dont forget to normalize!
+   if (bra.p==bra.q) Vminn /= SQRT2;
+   if (ket.p==ket.q) Vminn /= SQRT2;
 
    return Vminn ;
 
