@@ -28,11 +28,13 @@
 
 class Generator
 {
+ private:
+  Operator * H;
+  Operator * Eta;
+
  public:
 
   std::string generator_type;
-  Operator * H;
-  Operator * Eta;
   ModelSpace* modelspace;
   double denominator_cutoff;
   double denominator_delta;
@@ -58,8 +60,10 @@ class Generator
   void SetType(std::string g){generator_type = g;};
   void SetDenominatorPartitioning(std::string dp){if (dp=="Moller_Plesset"){denominator_partitioning=Moller_Plesset;}else {denominator_partitioning=Epstein_Nesbet;};};
   std::string GetType(){return generator_type;};
-  void Update(Operator* H, Operator* Eta);
-  void AddToEta(Operator* H, Operator* Eta);
+//  void Update(Operator* H, Operator* Eta);
+//  void AddToEta(Operator* H, Operator* Eta);
+  void Update(Operator& H_s, Operator& Eta_s);
+  void AddToEta(Operator& H_s, Operator& Eta_s);
   void SetDenominatorCutoff(double c){denominator_cutoff=c;};
   void SetDenominatorDelta(double d){denominator_delta=d;};
   void SetDenominatorDeltaIndex(int i){denominator_delta_index=i;};

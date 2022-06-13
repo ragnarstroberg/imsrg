@@ -32,13 +32,13 @@ IMSRGSolver::IMSRGSolver( Operator &H_in)
     flowfile(""), n_omega_written(0),max_omega_written(500),magnus_adaptive(true),hunter_gatherer(false),perturbative_triples(false),
     pert_triples_this_omega(0),pert_triples_sum(0),ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {
-   std::cout << "  " << __FILE__ << " line " << __LINE__ << "  nops = " << Eta.profiler.counter["N_Operators"] << std::endl;
-   std::cout << "   sizes of operator vectors:  FlowingOps " << FlowingOps.size() << " Omega " << Omega.size() << std::endl;
+//   std::cout << "  " << __FILE__ << " line " << __LINE__ << "  nops = " << Eta.profiler.counter["N_Operators"] << std::endl;
+//   std::cout << "   sizes of operator vectors:  FlowingOps " << FlowingOps.size() << " Omega " << Omega.size() << std::endl;
    Eta.Erase();
    Eta.SetAntiHermitian();
 //   Omega.push_back( Eta);
    Omega.emplace_back( Eta);
-   std::cout << "  " << __FILE__ << " line " << __LINE__ << "  nops = " << Eta.profiler.counter["N_Operators"] << std::endl;
+//   std::cout << "  " << __FILE__ << " line " << __LINE__ << "  nops = " << Eta.profiler.counter["N_Operators"] << std::endl;
 }
 
 
@@ -229,7 +229,8 @@ void IMSRGSolver::Solve()
 
 void IMSRGSolver::UpdateEta()
 {
-   generator.Update(&FlowingOps[0],&Eta);
+//   generator.Update(&FlowingOps[0],&Eta);
+   generator.Update(FlowingOps[0],Eta);
 }
 
 
@@ -239,7 +240,8 @@ void IMSRGSolver::Solve_magnus_euler()
 
 //   if ( generator.GetType() == "rspace" ) { generator.modelspace = (Eta.modelspace); generator.SetRegulatorLength(800005.0); };
 
-   generator.Update(&FlowingOps[0],&Eta);
+//   generator.Update(&FlowingOps[0],&Eta);
+   generator.Update(FlowingOps[0],Eta);
 
 //   if (generator.GetType() == "shell-model-atan")
 //   {
@@ -287,7 +289,6 @@ void IMSRGSolver::Solve_magnus_euler()
       s += ds;
       Eta *= ds; // Here's the Euler step.
 
-      std::cout << " " << __FILE__ << " line " << __LINE__ << "  calling Commutator::BCH_Product" << std::endl;
       // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
       Omega.back() = Commutator::BCH_Product( Eta, Omega.back() );
  
@@ -307,9 +308,9 @@ void IMSRGSolver::Solve_magnus_euler()
         generator.SetDenominatorCutoff(1e-6);
       }
 
-      std::cout << " " << __FILE__ << " line " << __LINE__ << "  calling Generator::Update " << std::endl;
 //      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
-      generator.Update(&FlowingOps[0],&Eta);
+//      generator.Update(&FlowingOps[0],&Eta);
+      generator.Update(FlowingOps[0],Eta);
 //      cumulative_error += EstimateStepError();
 
       // Write details of the flow
@@ -332,7 +333,8 @@ void IMSRGSolver::Solve_magnus_euler()
 void IMSRGSolver::Solve_magnus_modified_euler()
 {
    istep = 0;
-   generator.Update(&FlowingOps[0],&Eta);
+//   generator.Update(&FlowingOps[0],&Eta);
+   generator.Update(FlowingOps[0],Eta);
 
    Operator H_temp;
     // Write details of the flow
@@ -354,7 +356,8 @@ void IMSRGSolver::Solve_magnus_modified_euler()
       s += ds;
 
       H_temp = FlowingOps[0] + ds * Commutator::Commutator(Eta,FlowingOps[0]);
-      generator.AddToEta(&H_temp,&Eta);
+//      generator.AddToEta(&H_temp,&Eta);
+      generator.AddToEta(H_temp,Eta);
 
       Eta *= ds*0.5; // Here's the modified Euler step.
 
@@ -373,7 +376,8 @@ void IMSRGSolver::Solve_magnus_modified_euler()
         FlowingOps[0] = Commutator::BCH_Transform( H_saved, Omega.back() );
       }
 
-      generator.Update(&FlowingOps[0],&Eta);
+//      generator.Update(&FlowingOps[0],&Eta);
+      generator.Update(FlowingOps[0],Eta);
 
       // Write details of the flow
       WriteFlowStatus(flowfile);
@@ -391,7 +395,8 @@ void IMSRGSolver::Solve_flow_RK4()
 
 //   if ( generator.GetType() == "rspace" ) { generator.modelspace = (Eta.modelspace); generator.SetRegulatorLength(800005.0); };
 
-   generator.Update(&FlowingOps[0],&Eta);
+//   generator.Update(&FlowingOps[0],&Eta);
+   generator.Update(FlowingOps[0],Eta);
 
    if (generator.GetType() == "shell-model-atan")
    {
@@ -432,28 +437,34 @@ void IMSRGSolver::Solve_flow_RK4()
 //      Operator K1 = Commutator::Commutator( Eta, Hs );
 //      Operator Htmp = Hs + 0.5*ds*K1[0];
 //      generator.Update(&Htmp,&Eta);
-      generator.Update(&Ktmp[0],&Eta);
+//      generator.Update(&Ktmp[0],&Eta);
+      generator.Update(Ktmp[0],Eta);
       for (int i=0; i<nops; i++ )
       {
-        K2[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+//        K2[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+        K2[i] = Commutator::Commutator( Eta, Ktmp[i]);
         Ktmp[i] = FlowingOps[i] + 0.5*ds*K2[i];
       }
 //      Operator K2 = Commutator::Commutator( Eta, Hs+Htmp );
 //      Htmp = Hs + 0.5*ds*K2;
 //      generator.Update(&Htmp,&Eta);
-      generator.Update(&Ktmp[0],&Eta);
+//      generator.Update(&Ktmp[0],&Eta);
+      generator.Update(Ktmp[0],Eta);
       for (int i=0; i<nops; i++ )
       {
-        K3[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+//        K3[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+        K3[i] = Commutator::Commutator( Eta, Ktmp[i]);
         Ktmp[i] = FlowingOps[i] + 1.0*ds*K2[i];
       }
 //      Operator K3 = Commutator::Commutator( Eta, Hs+Htmp );
 //      Htmp = Hs + 1.0*ds*K3;
 //      generator.Update(&Htmp,&Eta);
-      generator.Update(&Ktmp[0],&Eta);
+//      generator.Update(&Ktmp[0],&Eta);
+      generator.Update(Ktmp[0],Eta);
       for (int i=0; i<nops; i++ )
       {
-        K4[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+//        K4[i] = Commutator::Commutator( Eta, FlowingOps[i]+Ktmp[i]);
+        K4[i] = Commutator::Commutator( Eta, Ktmp[i]);
 //        Ktmp[i] = FlowingOps[i] + 1.0*ds*K2[i];
         FlowingOps[i] += ds/6.0 * ( K1[i] + 2*K2[i] + 2*K3[i] + K4[i] );
       }
@@ -467,7 +478,8 @@ void IMSRGSolver::Solve_flow_RK4()
       }
 
 //      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
-      generator.Update(&FlowingOps[0],&Eta);
+//      generator.Update(&FlowingOps[0],&Eta);
+      generator.Update(FlowingOps[0],Eta);
       cumulative_error += EstimateStepError();
 
       // Write details of the flow
@@ -650,7 +662,8 @@ void IMSRGSolver::operator()( const std::deque<Operator>& x, std::deque<Operator
      FlowingOps[0] = x[0];
      if (dxdt.size() < x.size()) dxdt.resize(x.size());
      auto& H_s = FlowingOps[0];
-     generator.Update(&H_s,&Eta);
+//     generator.Update(&H_s,&Eta);
+     generator.Update(H_s,Eta);
      if (Eta.Norm() < eta_criterion)
      {
        for (size_t i=0;i<x.size();++i)
@@ -684,7 +697,8 @@ void IMSRGSolver::operator()( const std::deque<Operator>& x, std::deque<Operator
      else
        H_s = Commutator::BCH_Transform(*H_0, Omega_s);
 //       H_s = H_0->BCH_Transform(Omega_s);
-     generator.Update(&H_s,&Eta);
+//     generator.Update(&H_s,&Eta);
+     generator.Update(H_s,Eta);
      if (dxdt.size() < x.size()) dxdt.resize(x.size());
      dxdt.back() = Eta - 0.5*Commutator::Commutator(Omega_s,Eta);
    }
@@ -695,7 +709,8 @@ void IMSRGSolver::operator()( const std::deque<Operator>& x, std::deque<Operator
      if (dxdt.size() < x.size()) dxdt.resize(x.size());
      dxdt[1] = Operator(x[1]);
      auto& H_s = FlowingOps[0];
-     generator.Update(&H_s,&Eta);
+//     generator.Update(&H_s,&Eta);
+     generator.Update(H_s,Eta);
      if (Eta.Norm() < eta_criterion)
      {
        for (size_t i=0;i<x.size();++i)

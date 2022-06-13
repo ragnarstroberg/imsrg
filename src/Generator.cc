@@ -26,20 +26,23 @@ Generator::Generator()
 {}
 
 
-void Generator::Update(Operator * H_s, Operator * Eta_s)
+//void Generator::Update(Operator * H_s, Operator * Eta_s)
+void Generator::Update(Operator& H_s, Operator& Eta_s)
 {
-   Eta_s->EraseOneBody();
-   Eta_s->EraseTwoBody();
-   Eta_s->EraseThreeBody();// do we need this? Maybe?
+   Eta_s.Erase();
+//   Eta_s.EraseOneBody();
+//   Eta_s.EraseTwoBody();
+//   Eta_s.EraseThreeBody();// do we need this? Maybe?
    AddToEta(H_s,Eta_s);
 }
 
 
-void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
+//void Generator::AddToEta(Operator * H_s, Operator * Eta_s)
+void Generator::AddToEta(Operator& H_s, Operator& Eta_s)
 {
    double start_time = omp_get_wtime();
-   H = H_s;
-   Eta = Eta_s;
+   H = &H_s;
+   Eta = &Eta_s;
    modelspace = H->GetModelSpace();
 
         if (generator_type == "wegner")                       ConstructGenerator_SingleRef(wegner_func); // never tested, probably doesn't work.
