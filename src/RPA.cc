@@ -256,7 +256,7 @@ void RPA::SolveRPA()
       double xnorm = arma::norm( X.col(mu),"fro");
       double ynorm = arma::norm( Y.col(mu),"fro");
       double nxy = xnorm*xnorm - ynorm*ynorm ;
-      double wrongway = xnorm*xnorm + ynorm*ynorm;
+//      double wrongway = xnorm*xnorm + ynorm*ynorm;
       double xmax = X.col(mu).max();
       double xmin = X.col(mu).min();
       double ymax = Y.col(mu).max();
@@ -286,7 +286,7 @@ double RPA::TransitionToGroundState( Operator& OpIn, size_t mu )
    int lambda = OpIn.GetJRank();
    size_t ich_CC = modelspace->GetTwoBodyChannelIndex( lambda, OpIn.GetParity(), OpIn.GetTRank());
    TwoBodyChannel_CC& tbc_CC = modelspace->GetTwoBodyChannel_CC(ich_CC);
-   int Jph = tbc_CC.J;
+//   int Jph = tbc_CC.J;
 
    size_t I_mi=0;
    for (auto iket_mi : tbc_CC.GetKetIndex_ph() )
@@ -294,8 +294,8 @@ double RPA::TransitionToGroundState( Operator& OpIn, size_t mu )
       Ket& ket_mi = tbc_CC.GetKet(iket_mi);
       index_t m = ket_mi.p;
       index_t i = ket_mi.q;
-      double jm = 0.5*modelspace->GetOrbit(m).j2;
-      double ji = 0.5*modelspace->GetOrbit(i).j2;
+//      double jm = 0.5*modelspace->GetOrbit(m).j2;
+//      double ji = 0.5*modelspace->GetOrbit(i).j2;
 
       mat_el += OpIn.OneBody(m,i) * (  AngMom::phase(lambda) * X(I_mi,mu) + Y(I_mi,mu) );
 //      std::cout << __func__ << "mu = " << mu << "   mi " << m << " " << i << "  X,Y,M " << X(I_mi,mu) << " " << Y(I_mi,mu) << " " << OpIn.OneBody(m,i) << std::endl;
@@ -321,7 +321,7 @@ double RPA::PVCouplingEffectiveCharge( Operator& OpIn, size_t k, size_t l)
 //                << "X is a " << X.n_rows << "x" << X.n_cols << " matrix.   "
 //                << "E is a " << Energies.n_rows << "x" << Energies.n_cols << " matrix.   " << std::endl;
 
-  size_t mu_collective = Energies.index_min();
+//  size_t mu_collective = Energies.index_min();
 
   if ( nkets_ph != nbosons)
   {
@@ -344,7 +344,7 @@ double RPA::PVCouplingEffectiveCharge( Operator& OpIn, size_t k, size_t l)
      double gamma_mu_lk = 0;
      double T_mu = 0;
      size_t I_mi = 0;
-     double e_mu = 0;
+//     double e_mu = 0;
      for (auto iket_mi : tbc_CC.GetKetIndex_ph() )
      {
         Ket& ket_mi = tbc_CC.GetKet(iket_mi);
@@ -476,14 +476,14 @@ double RPA::PVCouplingEffectiveCharge( Operator& OpIn, size_t k, size_t l)
          T_mu += Omi * X(I_mi,mu) + Oim* Y(I_mi,mu);
 
 //         if ( X(I_mi,mu)== )
-         if ( I_mi == X.col(mu).index_max() )
-         {
-            e_mu = H.OneBody(m,m) - H.OneBody(i,i);
-//            std::cout << "mu=" << mu << " -> mi = " << m << " " << i << std::endl;
-//            std::cout << " Tmu = " << Omi << " * " << X(I_mi,mu) << "  flipped is " << Oim << std::endl;
-//            std::cout << " gamma_mu_kl = " << X(I_mi,mu) << " * " << VA_milk << std::endl;
-//            std::cout << " gamma_mu_lk = " << X(I_mi,mu) << " * " << VA_mikl << std::endl;
-         }
+//         if ( I_mi == X.col(mu).index_max() )
+//         {
+//            e_mu = H.OneBody(m,m) - H.OneBody(i,i);
+////            std::cout << "mu=" << mu << " -> mi = " << m << " " << i << std::endl;
+////            std::cout << " Tmu = " << Omi << " * " << X(I_mi,mu) << "  flipped is " << Oim << std::endl;
+////            std::cout << " gamma_mu_kl = " << X(I_mi,mu) << " * " << VA_milk << std::endl;
+////            std::cout << " gamma_mu_lk = " << X(I_mi,mu) << " * " << VA_mikl << std::endl;
+//         }
          I_mi++;
      }// for iket_mi
 
