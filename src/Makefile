@@ -1,4 +1,4 @@
-CXX = g++
+CXX = g++-11
 #CXX = clang++
 
 # Compiler flags:
@@ -170,7 +170,7 @@ all: $(ALL)
 	@echo Building with build version $(BUILDVERSION)
 
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
-      HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\
+      HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o AngMomCache.o\
       IMSRGProfiler.o Commutator.o HFMBPT.o  RPA.o\
       M0nu.o DarkMatterNREFT.o Jacobi3BME.o UnitTest.o \
       TwoBodyChannel.o ThreeBodyChannel.o \
@@ -204,7 +204,7 @@ pyIMSRG.o: pyIMSRG.cc
 	$(CXX) -c  $(FLAGS) $(INCLUDE) $(PYTHON_INCLUDE) $(PYTHONFLAGS)  $^ -o $@
 
 imsrg++: imsrg++.cc libIMSRG.so Parameters.hh version.hh
-	$(CXX) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
+	$(CXX) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -Wl,-rpath=$(PWD) -lIMSRG $(LIBS)
 
 
 version:
