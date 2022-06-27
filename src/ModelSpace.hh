@@ -28,6 +28,7 @@
 #include <set>
 #include <armadillo>
 #include "IMSRGProfiler.hh"
+#include "AngMomCache.hh"
 
 
 //using namespace std;
@@ -331,6 +332,8 @@ class ModelSpace
    bool single_species; // Is there only one kind of fermion?
    IMSRGProfiler profiler;
 
+   SixJCache_112112 six_j_cache_2b_;
+
    static std::unordered_map<uint64_t,double> SixJList;
    static std::unordered_map<uint64_t,double> NineJList;
    static std::unordered_map<uint64_t,double> MoshList;
@@ -466,6 +469,10 @@ class ModelSpace
    std::map<int,double> GetEFermi(){ return e_fermi ;};
    void SetEFermi(double ef_proton, double ef_neutron){e_fermi[-1] = ef_proton; e_fermi[1]=ef_neutron;};
 
+   double GetCachedSixJ(
+      int jj1, int jj2, int j_3, int jj4, int jj5, int j_6) {
+      return six_j_cache_2b_.SixJ(jj1, jj2, j_3, jj4, jj5, j_6);
+   }
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. Not ideal.
