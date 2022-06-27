@@ -1548,6 +1548,8 @@ void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operato
         Orbit & ob = X.modelspace->GetOrbit(b);
         double ja = oa.j2*0.5;
         double jb = ob.j2*0.5;
+        int jjai = oa.j2;
+        int jjbi = ob.j2;
         double na_nb_factor = oa.occ - ob.occ;
 
         // loop over cross-coupled kets |cd> in this channel
@@ -1566,6 +1568,8 @@ void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operato
 
            double jc = oc.j2*0.5;
            double jd = od.j2*0.5;
+           int jjci = oc.j2;
+           int jjdi = od.j2;
 
            int jmin = std::max(std::abs(ja-jd),std::abs(jc-jb));
            int jmax = std::min(ja+jd,jc+jb);
@@ -1573,7 +1577,8 @@ void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operato
            double Ybar = 0;
            for (int J_std=jmin; J_std<=jmax; ++J_std)
            {
-              double sixj = X.modelspace->GetSixJ(ja,jb,J_cc,jc,jd,J_std);
+              // double sixj = X.modelspace->GetSixJ(ja,jb,J_cc,jc,jd,J_std);
+              double sixj = X.modelspace->GetCachedSixJ(jjai, jjbi,J_cc,jjci,jjdi,J_std);
               if (std::abs(sixj) < 1e-8) continue;
 //              double tbme = Z.TwoBody.GetTBME_J(J_std,a,d,c,b);
               double xcbad = X.TwoBody.GetTBME_J(J_std,c,b,a,d);
@@ -1729,6 +1734,8 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
          Orbit & oj = Z.modelspace->GetOrbit(j);
          double ji = oi.j2/2.;
          double jj = oj.j2/2.;
+         int jji = oi.j2;
+         int jjj = oj.j2;
          int ketmin = Z.IsHermitian() ? ibra : ibra+1;
          for (int iket=ketmin; iket<nKets; ++iket)
          {
@@ -1739,6 +1746,8 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
             Orbit & ol = Z.modelspace->GetOrbit(l);
             double jk = ok.j2/2.;
             double jl = ol.j2/2.;
+            int jjk = ok.j2;
+            int jjl = ol.j2;
 
             double commij = 0;
             double commji = 0;
@@ -1750,7 +1759,8 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
             int Jpmax = std::min(int(ji+jl),int(jk+jj));
             for (int Jprime=Jpmin; Jprime<=Jpmax; ++Jprime)
             {
-               double sixj = Z.modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
+              //  double sixj = Z.modelspace->GetSixJ(ji,jj,J,jk,jl,Jprime);
+               double sixj = Z.modelspace->GetCachedSixJ(jji, jjj, J, jjk, jjl, Jprime);
                if (std::abs(sixj)<1e-8) continue;
                int ch_cc = Z.modelspace->GetTwoBodyChannelIndex(Jprime,parity_cc,Tz_cc);
                TwoBodyChannel_CC& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
