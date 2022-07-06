@@ -4,6 +4,8 @@
 
 
 
+#include <omp.h>
+
 bool ThreeBodyStorage_pn::none_allocated = true;
 int ThreeBodyStorage_pn::number_allocated = 0;
 

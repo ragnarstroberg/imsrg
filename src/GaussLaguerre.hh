@@ -1,5 +1,8 @@
 #ifndef GausLaguerre_hh
 #define GausLaguerre_hh
+
+#include <vector>
+
 namespace GaussLaguerre 
 { 
 // Gauss-Laguerre quadrature points and weights for numerical integration   

@@ -8,3 +8,6 @@ tmp*
 ../doc/*
 ../work/*
 ../old_armadillo/*
+build/
+.vscode/
+.cache/

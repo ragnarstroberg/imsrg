@@ -7,6 +7,8 @@
 #include "imsrg_util.hh"
 #include "version.hh"
 
+#include <omp.h>
+
 
 uint64_t UnitTest::random_seed = 1;
 

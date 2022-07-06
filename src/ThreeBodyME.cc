@@ -4,6 +4,8 @@
 #include "IMSRGProfiler.hh"
 #include "AngMom.hh"
 
+#include <omp.h>
+
 
 // Keeps track of whether any ThreeBodyME has been allocated
 // so that we can print out details just on the first time.

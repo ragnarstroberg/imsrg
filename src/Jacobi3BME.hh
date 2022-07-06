@@ -2,7 +2,6 @@
 #define Jacobi3BME_h 1
 
 #include "ModelSpace.hh"
-#include "HartreeFock.hh"
 #include <vector>
 #include <array>
 
