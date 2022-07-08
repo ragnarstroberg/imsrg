@@ -1,4 +1,4 @@
-CXX = g++-11
+CXX = g++
 #CXX = clang++
 
 # Compiler flags:
@@ -73,7 +73,9 @@ THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname
 ifeq ($(OS),MACOS)
   FLAGS     = -Xpreprocessor -fopenmp -O3  -std=c++11 -fPIC
   LIBS += -lomp
-  PYTHONFLAGS =  $(shell python-config --cflags | sed -e 's/-arch i386//')
+  FLAGS += -DNO_x86  # don't load x86intrin.h header. I don't pretent to fully understand why this breaks things.
+  PYTHONFLAGS =  $(shell $(PYTHON_CONFIG) --cflags | sed -e 's/-arch i386//')
+  PYTHONFLAGS += -undefined dynamic_lookup # This avoids trouble with missing symbols (see pybind11.readthedocs.io/en/stable/compiling.html )
 endif
 
 
@@ -198,13 +200,13 @@ libIMSRG.so: $(OBJ)
 python: pyIMSRG.so
 
 pyIMSRG.so: $(OBJ)  pyIMSRG.o version.hh
-	$(CXX) $(FLAGS) $(INCLUDE) $(PYTHON_INCUDE) $(PYTHONFLAGS) $(PYTHONLDFLAGS) $(LIBS) -shared  $^ -o $@
+	$(CXX) $(FLAGS) $(INCLUDE) $(PYTHON_INCUDE) $(PYTHONFLAGS) $(PYTHONLDFLAGS) $(LIBS) -shared  $(OBJ) pyIMSRG.o -o $@
 
 pyIMSRG.o: pyIMSRG.cc
 	$(CXX) -c  $(FLAGS) $(INCLUDE) $(PYTHON_INCLUDE) $(PYTHONFLAGS)  $^ -o $@
 
 imsrg++: imsrg++.cc libIMSRG.so Parameters.hh version.hh
-	$(CXX) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -Wl,-rpath=$(PWD) -lIMSRG $(LIBS)
+	$(CXX) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
 
 
 version:
