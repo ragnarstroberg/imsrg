@@ -1,4 +1,4 @@
-CXX = g++-11
+CXX = g++
 #CXX = clang++
 
 # Compiler flags:
