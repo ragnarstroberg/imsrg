@@ -4,7 +4,6 @@
 
 TwoBodyChannel::~TwoBodyChannel()
 {
-//  std::cout << "In TwoBodyChannel destructor" << std::endl;
 }
 
 TwoBodyChannel::TwoBodyChannel()
@@ -74,7 +73,6 @@ void TwoBodyChannel::Initialize()
 }
 
 
-//int TwoBodyChannel::GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];}; 
 size_t TwoBodyChannel::GetLocalIndex(int p, int q) const
 {
  if (p<=q)
@@ -88,7 +86,6 @@ const Ket & TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetL
 Ket & TwoBodyChannel::GetKet(int i) { return modelspace->GetKet(KetList[i]);}; 
 
 
-//bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
 bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
    if ((op->index==oq->index) and (J%2 != 0)) return false; // Pauli principle

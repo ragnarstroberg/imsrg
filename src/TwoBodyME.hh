@@ -108,6 +108,7 @@ class TwoBodyME
   void   SetTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, double tbme);
   void   AddToTBME_J(int j_bra, int j_ket, int a, int b, int c, int d, double tbme);
   double GetTBME_J_norm(int j_bra, int j_ket, int a, int b, int c, int d) const;
+  void GetTBME_J_norm_twoOps(const TwoBodyME& OtherTBME, int j_bra, int j_ket, int a, int b, int c, int d, double& tbme_this, double& tbme_other) const;
 
   // Scalar setters/getters for backwards compatibility
   double GetTBME(int ch, int a, int b, int c, int d) const;
