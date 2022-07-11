@@ -22,7 +22,7 @@ std::function<double(double,double)> Generator::imaginarytime_func = [] (double 
 std::function<double(double,double)> Generator::qtransferatan1_func = [](double Hod, double denom){return pow(std::abs(denom)*M_NUCLEON/HBARC/HBARC, 0.5*1) * atan_func(Hod, denom);};
 
 Generator::Generator()
-  : generator_type("white"), denominator_cutoff(1e-6)  , denominator_delta(0), denominator_delta_index(-1), denominator_partitioning(Epstein_Nesbet),  only_2b_eta(false)
+  : generator_type("white"), modelspace(NULL), denominator_cutoff(1e-6)  , denominator_delta(0), denominator_delta_index(-1), denominator_partitioning(Epstein_Nesbet),  only_2b_eta(false)
 {}
 
 

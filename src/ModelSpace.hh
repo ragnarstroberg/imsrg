@@ -123,7 +123,7 @@ struct TwoBodyChannel
    int parity;
    int Tz;
 
-   ModelSpace * modelspace;
+   ModelSpace * modelspace = NULL; // we really shouldn't leave pointers uninitialized... Fixed July 11 2022 (thanks Matthias)
    int NumberKets;  // Number of pq configs that participate in this channel
    std::vector<int> KetList; // eg [2, 4, 7, ...] Used for looping over all the kets in the channel
    std::vector<int> KetMap;  // eg [ -1, -1, 0, -1, 1, -1, -1, 2 ...] Used for asking what is the local index of this ket. -1 means the ket doesn't participate in this channel

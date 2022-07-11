@@ -13,40 +13,26 @@ TwoBodyChannel::TwoBodyChannel()
 TwoBodyChannel::TwoBodyChannel(int j, int p, int t, ModelSpace *ms)
   :  J(j), parity(p), Tz(t) , modelspace(ms)
 {
-//  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
-//  Initialize(j,p,t, ms);
   Initialize();
 }
 
 TwoBodyChannel::TwoBodyChannel(int ch, ModelSpace *ms)
  : modelspace(ms)
 {
-//   Initialize(ch,ms);
-//   int j,p,t;
    ms->UnpackTwoBodyChannelIndex(ch, J,parity,Tz);
-//   Initialize(J,parity,Tz, ms);
    Initialize();
-//   Initialize(ch,ms);
 }
 
-//void TwoBodyChannel::Initialize(int ch, ModelSpace *ms)
-//void TwoBodyChannel::Initialize(int J, int parity, int Tz, ModelSpace *ms)
 void TwoBodyChannel::Initialize()
 {
-//   modelspace = ms;
-//   modelspace->UnpackTwoBodyChannelIndex(ch,  J,parity,Tz);
-//   int tbjmax = modelspace->TwoBodyJmax;
-
    NumberKets = 0;
    int nk = modelspace->GetNumberKets();
    KetMap.resize(nk,-1); // set all values to -1
    for (int i=0;i<nk;i++)
    {
       Ket &ket = modelspace->GetKet(i);
-//      std::cout << "   " << __func__ << "J p Tz = " << J << " " << parity << " " << Tz << "   checking ket " << i << " -> " << ket.p << " , " << ket.q << std::endl;
       if ( CheckChannel_ket(ket) )
       {
-//         std::cout << "       yes " << std::endl;
          KetMap[i] = NumberKets;
          KetList.push_back(i);
          NumberKets++;
@@ -146,33 +132,29 @@ arma::uvec TwoBodyChannel::GetKetIndexFromList(std::vector<index_t>& vec_in)
 
 TwoBodyChannel_CC::~TwoBodyChannel_CC()
 {
-//   std::cout << "In TwoBodyChannel_CC destructor" << std::endl;
 }
 
 TwoBodyChannel_CC::TwoBodyChannel_CC()
 {}
 
 TwoBodyChannel_CC::TwoBodyChannel_CC(int j, int p, int t, ModelSpace *ms)
-//  : J(j), parity(p) , Tz(t) , modelspace(ms)
-//  : TwoBodyChannel(j,p,t,ms)
+//  : J(j), parity(p) , Tz(t) , modelspace(ms)  // <== This won't work.
+//  : TwoBodyChannel(j,p,t,ms)   // <== Don't do this. See below.
 {
-   J=j; parity=p; Tz=t;  // this is janky and not really the way that inheritance is supposed to work...
-//  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
+// TwoBodyChannel_CC inherits from TwoBodyChannel, and J,parity,Tz, modelspace are all members of TwoBodyChannel,
+// so we can't put those in the initializer list for TwoBodyChannel_CC. We would need to call the appropriate
+// constructor for TwoBodyChannel in the initializer list, but then this would call TwoBodyChannel::Initialize()
+// which calls TwoBodyChannel::CheckChannel_ket(), instead of TwoBodyChannel_CC::CheckChannel_ket(), which is the one we want.
+// My kludgey work-around is to just set J,parity,Tz,modelspace in the body of this constructor, then call Initialize().
+   J=j; parity=p; Tz=t;  
+   modelspace = ms;
    Initialize();
-//  Initialize(j,p,t, ms);
 }
 
 TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
-// : modelspace(ms)
-//  : TwoBodyChannel(N,ms)
 {
-//   int j,p,t;
-//   ms->UnpackTwoBodyChannelIndex_CC(N, j,p,t);
-//   modelspace = ms;
    ms->UnpackTwoBodyChannelIndex_CC(N, J,parity,Tz);
-//   Initialize(j,p,t, ms);
    Initialize();
-//   Initialize(N,ms);
 }
 
 
@@ -184,21 +166,10 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
 // Another way of formulating it is that "isospin-parity", i.e. |Tz|%2, is conserved the same way parity is.
 bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
-//   std::cout << "  TwoBodyChannel_CC::CheckChannel_ket  checking orbits " << op->index << " " << oq->index << "  for channel with jpt " << J << " " << parity << " " << Tz << std::endl;
    if ((op->l + oq->l)%2 != parity)    return false;
    if (op->j2 + oq->j2 < 2*J)          return false;
    if (std::abs(op->j2 - oq->j2) > 2*J)     return false;
-//   if (modelspace->single_species)
-//   {
-//     if (std::abs(op->tz2 + oq->tz2) != 2*std::abs(Tz)) return false;
-//   }
-//   else
-//   if (not modelspace->single_species)  //TODO: I think this condition no longer applies...
-//   {
-//     if (std::abs(op->tz2 + oq->tz2) != 2*Tz) return false;
-     if (std::abs(op->tz2 - oq->tz2) != 2*Tz) return false;
-//   }
-//   std::cout << " -- AOK! " << std::endl;
+   if (std::abs(op->tz2 - oq->tz2) != 2*Tz) return false;
 
    return true;
 }

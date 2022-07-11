@@ -11,7 +11,7 @@ struct ThreeLegME
   std::map<size_t, arma::mat> MatEl;
 
 
-  ThreeLegME() {};
+  ThreeLegME() : modelspace(NULL) {};
   ThreeLegME(ModelSpace* ms): modelspace(ms) {Allocate();};
 
   void Allocate();
