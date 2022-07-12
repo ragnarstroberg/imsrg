@@ -1365,12 +1365,10 @@ void ModelSpace::SetupKets()
       int j,p,t;
       UnpackTwoBodyChannelIndex(ch, j,p,t);
       TwoBodyChannels.emplace_back(TwoBodyChannel(j,p,t,this));
-      std::cout << "ch = " << ch << "  jpt = " << j << " " << p << " " << t << "   added TwoBodyChannel with nKets= " << TwoBodyChannels.back().GetNumberKets() << std::endl;
 //      TwoBodyChannels.emplace_back(TwoBodyChannel(ch,this));
       UnpackTwoBodyChannelIndex_CC(ch, j,p,t);
       TwoBodyChannels_CC.emplace_back(TwoBodyChannel_CC(j,p,t,this));
 //      TwoBodyChannels_CC.emplace_back(TwoBodyChannel_CC(ch,this));
-      std::cout << "ch = " << ch << "  jpt = " << j << " " << p << " " << t << "   added TwoBodyChannel_CC with nKets= " << TwoBodyChannels_CC.back().GetNumberKets() << std::endl;
       SortedTwoBodyChannels[ch] = ch;
       SortedTwoBodyChannels_CC[ch] = ch;
    }
