@@ -75,7 +75,9 @@ ifeq ($(OS),MACOS)
   LIBS += -lomp
   FLAGS += -DNO_x86  # don't load x86intrin.h header. I don't pretent to fully understand why this breaks things.
   PYTHONFLAGS =  $(shell $(PYTHON_CONFIG) --cflags | sed -e 's/-arch i386//')
-  PYTHONFLAGS += -undefined dynamic_lookup # This avoids trouble with missing symbols (see pybind11.readthedocs.io/en/stable/compiling.html )
+  PYTHON_LDFLAGS += -undefined dynamic_lookup # This avoids trouble with missing symbols (see pybind11.readthedocs.io/en/stable/compiling.html )
+  PYTHONFLAGS += -Wno-unused-value # suppress annoying warnings about stuff in the pybind11 library
+  PYTHONFLAGS += -Wno-deprecated-declarations
 endif
 
 
@@ -200,7 +202,7 @@ libIMSRG.so: $(OBJ)
 python: pyIMSRG.so
 
 pyIMSRG.so: $(OBJ)  pyIMSRG.o version.hh
-	$(CXX) $(FLAGS) $(INCLUDE) $(PYTHON_INCUDE) $(PYTHONFLAGS) $(PYTHONLDFLAGS) $(LIBS) -shared  $(OBJ) pyIMSRG.o -o $@
+	$(CXX) $(FLAGS) $(INCLUDE) $(PYTHON_INCUDE) $(PYTHONFLAGS) $(PYTHON_LDFLAGS) $(LIBS) -shared  $(OBJ) pyIMSRG.o -o $@
 
 pyIMSRG.o: pyIMSRG.cc
 	$(CXX) -c  $(FLAGS) $(INCLUDE) $(PYTHON_INCLUDE) $(PYTHONFLAGS)  $^ -o $@

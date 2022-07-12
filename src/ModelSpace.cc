@@ -1365,10 +1365,12 @@ void ModelSpace::SetupKets()
       int j,p,t;
       UnpackTwoBodyChannelIndex(ch, j,p,t);
       TwoBodyChannels.emplace_back(TwoBodyChannel(j,p,t,this));
+      std::cout << "ch = " << ch << "  jpt = " << j << " " << p << " " << t << "   added TwoBodyChannel with nKets= " << TwoBodyChannels.back().GetNumberKets() << std::endl;
 //      TwoBodyChannels.emplace_back(TwoBodyChannel(ch,this));
       UnpackTwoBodyChannelIndex_CC(ch, j,p,t);
       TwoBodyChannels_CC.emplace_back(TwoBodyChannel_CC(j,p,t,this));
 //      TwoBodyChannels_CC.emplace_back(TwoBodyChannel_CC(ch,this));
+      std::cout << "ch = " << ch << "  jpt = " << j << " " << p << " " << t << "   added TwoBodyChannel_CC with nKets= " << TwoBodyChannels_CC.back().GetNumberKets() << std::endl;
       SortedTwoBodyChannels[ch] = ch;
       SortedTwoBodyChannels_CC[ch] = ch;
    }
@@ -2215,12 +2217,12 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
 //    For RankT=1, we can have <pn|pp>, <pn|nn>  (Tz_bra,Tz_ket) => (0,1) , (1,0)
 //    For RankT=2, we can have <pn|pn>   (Tz_bra,Tz_ket) => (1,1)
 //   
-//    dTz = 0 (Hamiltonian-like)     :    dTz = 1 (Beta decay)            :   dTz = 2  (Double beta decay) 
-//                                   :                                    :
-//   p|     n|       p\  /n          :    p|     p|      p\  /n           :    p|     p|      p\  /n        
-//    |__OP__|   =>    \/___OP__     :     |__OP__|  =>    \/___OP__      :     |__OP__|  =>    \/___OP__   
-//    |      |                 /\    :     |      |                /\     :     |      |                /\  
-//   n|     p|               p/  \n  :    n|     p|              p/  \p   :    n|     n|              p/  \n
+//    dTz = 0 (Hamiltonian-like)     :    dTz = 1 (Beta decay)            :   dTz = 2  (Double beta decay)    :
+//                                   :                                    :                                   :
+//   p|     n|       p\  /n          :    p|     p|      p\  /n           :    p|     p|      p\  /n          :
+//    |__OP__|   =>    \/___OP__     :     |__OP__|  =>    \/___OP__      :     |__OP__|  =>    \/___OP__     :
+//    |      |                 /\    :     |      |                /\     :     |      |                /\    :
+//   n|     p|               p/  \n  :    n|     p|              p/  \p   :    n|     n|              p/  \n  :
 //
    for ( size_t ch_cc = 0; ch_cc < TwoBodyChannels_CC.size(); ch_cc++)
    {

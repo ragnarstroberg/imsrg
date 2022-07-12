@@ -212,7 +212,7 @@ namespace M0nu
     else // if we didn't find it, calculate it and add it to the list!
     {
         printf("DANGER!!!!!!!  Updating IntList inside a parellel loop breaks thread safety!\n");
-        printf("   I shouldn't be here in GetA(%d, %d, %d, %d):   key =%lx",index_p,index_pp,J,norm,key);
+        printf("   I shouldn't be here in GetA(%d, %d, %d, %d):   key =%llx",index_p,index_pp,J,norm,key);
         exit(EXIT_FAILURE);
     }
     return A; 
@@ -462,7 +462,7 @@ namespace M0nu
       if (omp_get_num_threads() >= 2)
       {
         printf("DANGER!!!!!!!  Updating IntList inside a parellel loop breaks thread safety!\n");
-        printf("   I shouldn't be here in GetIntegral(%d, %d, %d, %d, %d):   key =%lx   integral=%f\n",n,l,np,lp,J,key,integral);
+        printf("   I shouldn't be here in GetIntegral(%d, %d, %d, %d, %d):   key =%llx   integral=%f\n",n,l,np,lp,J,key,integral);
         exit(EXIT_FAILURE);
       }
       IntList[key] = integral;
