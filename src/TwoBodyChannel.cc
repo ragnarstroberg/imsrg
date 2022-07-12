@@ -2,27 +2,21 @@
 #include "ModelSpace.hh"
 
 
-TwoBodyChannel::~TwoBodyChannel()
-{
-}
-
-TwoBodyChannel::TwoBodyChannel()
+TwoBodyChannel_base::~TwoBodyChannel_base()
 {}
 
-TwoBodyChannel::TwoBodyChannel(int j, int p, int t, ModelSpace *ms)
+TwoBodyChannel_base::TwoBodyChannel_base()
+{}
+
+TwoBodyChannel_base::TwoBodyChannel_base(int j, int p, int t, ModelSpace *ms)
   :  J(j), parity(p), Tz(t) , modelspace(ms)
-{
-  Initialize();
-}
+{}
 
-TwoBodyChannel::TwoBodyChannel(int ch, ModelSpace *ms)
+TwoBodyChannel_base::TwoBodyChannel_base(int ch, ModelSpace *ms)
  : modelspace(ms)
-{
-   ms->UnpackTwoBodyChannelIndex(ch, J,parity,Tz);
-   Initialize();
-}
+{}
 
-void TwoBodyChannel::Initialize()
+void TwoBodyChannel_base::Initialize()
 {
    NumberKets = 0;
    int nk = modelspace->GetNumberKets();
@@ -73,7 +67,7 @@ void TwoBodyChannel::Initialize()
 }
 
 
-size_t TwoBodyChannel::GetLocalIndex(int p, int q) const
+size_t TwoBodyChannel_base::GetLocalIndex(int p, int q) const
 {
  if (p<=q)
    return KetMap[modelspace->GetKetIndex(p,q)];
@@ -82,10 +76,65 @@ size_t TwoBodyChannel::GetLocalIndex(int p, int q) const
 } 
 
 // get pointer to ket using local index
-const Ket & TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
-Ket & TwoBodyChannel::GetKet(int i) { return modelspace->GetKet(KetList[i]);}; 
+const Ket & TwoBodyChannel_base::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
+Ket & TwoBodyChannel_base::GetKet(int i) { return modelspace->GetKet(KetList[i]);}; 
 
 
+bool TwoBodyChannel_base::CheckChannel_ket(Orbit* op, Orbit* oq) const
+{
+   std::cout << "====////////========/////// SHOULDNT BE HERE LINE " <<__LINE__ << "=====///////=======" << std::endl;
+   return false;
+}
+
+
+
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_pp() const { return KetIndex_pp;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_hh() const { return KetIndex_hh;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_ph() const { return KetIndex_ph;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_cc() const { return KetIndex_cc;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_vc() const { return KetIndex_vc;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_qc() const { return KetIndex_qc;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_vv() const { return KetIndex_vv;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_qv() const { return KetIndex_qv;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_qq() const { return KetIndex_qq;};
+
+
+
+arma::uvec TwoBodyChannel_base::GetKetIndexFromList(std::vector<index_t>& vec_in)
+{
+   std::vector<index_t> index_list (std::min(vec_in.size(),KetList.size()));
+   auto it = set_intersection(KetList.begin(),KetList.end(),vec_in.begin(),vec_in.end(),index_list.begin());
+   index_list.resize(it-index_list.begin());
+   for (auto& x : index_list)
+   {
+     x = KetMap[x];
+   }
+   return arma::uvec(index_list);
+}
+
+
+//************************************************************************
+//****** Implementation of pp channels (i.e. not Pandya tansformed) ******
+//************************************************************************
+
+
+TwoBodyChannel::TwoBodyChannel()
+{}
+
+TwoBodyChannel::TwoBodyChannel(int j, int p, int t, ModelSpace *ms)
+ : TwoBodyChannel_base( j,p,t,ms )
+{
+   Initialize();
+}
+
+TwoBodyChannel::TwoBodyChannel(int N, ModelSpace *ms)
+{
+   ms->UnpackTwoBodyChannelIndex_CC(N, J,parity,Tz);
+   Initialize();
+}
+
+
+// Check if orbits pq participate in this two-body channel
 bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
    if ((op->index==oq->index) and (J%2 != 0)) return false; // Pauli principle
@@ -99,52 +148,18 @@ bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
 
 
 
-const arma::uvec& TwoBodyChannel::GetKetIndex_pp() const { return KetIndex_pp;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_hh() const { return KetIndex_hh;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_ph() const { return KetIndex_ph;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_cc() const { return KetIndex_cc;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_vc() const { return KetIndex_vc;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_qc() const { return KetIndex_qc;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_vv() const { return KetIndex_vv;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_qv() const { return KetIndex_qv;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_qq() const { return KetIndex_qq;};
-
-
-
-arma::uvec TwoBodyChannel::GetKetIndexFromList(std::vector<index_t>& vec_in)
-{
-   std::vector<index_t> index_list (std::min(vec_in.size(),KetList.size()));
-   auto it = set_intersection(KetList.begin(),KetList.end(),vec_in.begin(),vec_in.end(),index_list.begin());
-   index_list.resize(it-index_list.begin());
-   for (auto& x : index_list)
-   {
-     x = KetMap[x];
-   }
-   return arma::uvec(index_list);
-}
 
 //************************************************************************
-//************************************************************************
+//************ Implementation of Pandya tansformed  channels *************
 //************************************************************************
 
-TwoBodyChannel_CC::~TwoBodyChannel_CC()
-{
-}
 
 TwoBodyChannel_CC::TwoBodyChannel_CC()
 {}
 
 TwoBodyChannel_CC::TwoBodyChannel_CC(int j, int p, int t, ModelSpace *ms)
-//  : J(j), parity(p) , Tz(t) , modelspace(ms)  // <== This won't work.
-//  : TwoBodyChannel(j,p,t,ms)   // <== Don't do this. See below.
+ : TwoBodyChannel_base( j,p,t,ms )
 {
-// TwoBodyChannel_CC inherits from TwoBodyChannel, and J,parity,Tz, modelspace are all members of TwoBodyChannel,
-// so we can't put those in the initializer list for TwoBodyChannel_CC. We would need to call the appropriate
-// constructor for TwoBodyChannel in the initializer list, but then this would call TwoBodyChannel::Initialize()
-// which calls TwoBodyChannel::CheckChannel_ket(), instead of TwoBodyChannel_CC::CheckChannel_ket(), which is the one we want.
-// My kludgey work-around is to just set J,parity,Tz,modelspace in the body of this constructor, then call Initialize().
-   J=j; parity=p; Tz=t;  
-   modelspace = ms;
    Initialize();
 }
 
@@ -154,13 +169,10 @@ TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
    Initialize();
 }
 
-
 // Check if orbits pq participate in this cross-coupled two-body channel
 // Difference from regular channels:
-// no Pauli rule, <pp||nn> is allowed. But |Tz| is still conserved, <-- only for rankT=0 operators.
-// i.e. <pp||pn> is not allowed. So we use |Tz| rather than Tz,
-// and don't use Tz=-1.
-// Another way of formulating it is that "isospin-parity", i.e. |Tz|%2, is conserved the same way parity is.
+// no Pauli rule, and isospin difference isconserved, rather than isospin sum
+// Since we don't distinguish between orderings ab and ba, we just use |tza - tzb| and don't use Tz=-1.
 bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
    if ((op->l + oq->l)%2 != parity)    return false;
@@ -170,5 +182,6 @@ bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 
    return true;
 }
+
 
 

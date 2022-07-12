@@ -115,7 +115,8 @@ struct Ket3 // | p q r >
 // This is now given its own implementation file, TwoBodyChannel.cc
 // but the header info stays here, because of the inextricable dependencies
 // between TwoBodyChannel, ModelSpace, Orbit, and Ket. What a mess...
-struct TwoBodyChannel
+//struct TwoBodyChannel
+struct TwoBodyChannel_base
 {
 // public:
    //Fields
@@ -144,14 +145,12 @@ struct TwoBodyChannel
 
 
    // Constructors
-   virtual ~TwoBodyChannel();
-   TwoBodyChannel();
-   TwoBodyChannel(int j, int p, int t, ModelSpace* ms);
-   TwoBodyChannel(int ch, ModelSpace* ms);
-//   virtual void Initialize(int ch, ModelSpace* ms);
-//   virtual void Initialize(int J, int parity, int Tz, ModelSpace* ms);
-//   void Initialize(int J, int parity, int Tz, ModelSpace* ms);
+   virtual ~TwoBodyChannel_base();
+   TwoBodyChannel_base();
+   TwoBodyChannel_base(int j, int p, int t, ModelSpace* ms);
+   TwoBodyChannel_base(int ch, ModelSpace* ms);
    void Initialize();
+   void UnpackTwoBodyChannel_Index(int ch, int J,int parity, int Tz);
 
 
    //Methods
@@ -183,17 +182,27 @@ struct TwoBodyChannel
 };
 
 
-
 /////////////////////////////////////////////
-class TwoBodyChannel_CC : public TwoBodyChannel
+class TwoBodyChannel : public TwoBodyChannel_base
 {
   public:
-   ~TwoBodyChannel_CC();
+//   ~TwoBodyChannel();
+   TwoBodyChannel();
+   TwoBodyChannel(int j, int p, int t, ModelSpace* ms);
+   TwoBodyChannel(int N, ModelSpace* ms);
+   bool CheckChannel_ket(Orbit* op, Orbit* oq) const;  // check if |pq> participates in this channel
+};
+
+
+/////////////////////////////////////////////
+class TwoBodyChannel_CC : public TwoBodyChannel_base
+{
+  public:
+//   ~TwoBodyChannel_CC();
    TwoBodyChannel_CC();
    TwoBodyChannel_CC(int j, int p, int t, ModelSpace* ms);
    TwoBodyChannel_CC(int N, ModelSpace* ms);
    bool CheckChannel_ket(Orbit* op, Orbit* oq) const;  // check if |pq> participates in this channel
-//   void Initialize(int ch, ModelSpace* ms);
 };
 
 

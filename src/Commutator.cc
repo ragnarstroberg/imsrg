@@ -1320,7 +1320,7 @@ void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z )
 void DoPandyaTransformation_SingleChannel(const Operator& Z, arma::mat& TwoBody_CC_ph, int ch_cc, std::string orientation="normal")
 {
    int herm = Z.IsHermitian() ? 1 : -1;
-   TwoBodyChannel& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+   TwoBodyChannel_CC& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
    int nKets_cc = tbc_cc.GetNumberKets();
    arma::uvec kets_ph = arma::join_cols(tbc_cc.GetKetIndex_hh(), tbc_cc.GetKetIndex_ph() );
    int nph_kets = kets_ph.n_rows;
@@ -1502,7 +1502,7 @@ void DoPandyaTransformation_SingleChannel_XandY(const Operator& X, const Operato
 {
 //   int hX = X.IsHermitian() ? 1 : -1;
    int hY = Y.IsHermitian() ? 1 : -1;
-   TwoBodyChannel& tbc_cc = X.modelspace->GetTwoBodyChannel_CC(ch_cc);
+   TwoBodyChannel_CC& tbc_cc = X.modelspace->GetTwoBodyChannel_CC(ch_cc);
    int nKets_cc = tbc_cc.GetNumberKets();
    arma::uvec kets_ph = arma::join_cols(tbc_cc.GetKetIndex_hh(), tbc_cc.GetKetIndex_ph() );
    int nph_kets = kets_ph.n_rows;
@@ -1824,7 +1824,7 @@ std::deque<arma::mat> InitializePandya(Operator& Z, size_t nch, std::string orie
    for (int ich=0; ich<n_nonzero; ++ich)
    {
       int ch_cc = Z.modelspace->SortedTwoBodyChannels_CC[ich];
-      TwoBodyChannel& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+      TwoBodyChannel_CC& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
       int nKets_cc = tbc_cc.GetNumberKets();
       int nph_kets = tbc_cc.GetKetIndex_hh().size() + tbc_cc.GetKetIndex_ph().size();
       if (orientation=="normal")
@@ -1921,7 +1921,7 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z )
    #endif
    for (size_t ch=0; ch<nch; ++ch )
    {
-      const TwoBodyChannel& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch);
+      const TwoBodyChannel_CC& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch);
       index_t nKets_cc = tbc_cc.GetNumberKets();
       size_t nph_kets = tbc_cc.GetKetIndex_hh().size() + tbc_cc.GetKetIndex_ph().size();
 
@@ -3902,9 +3902,9 @@ void comm232ss_slow( const Operator& X, const Operator& Y, Operator& Z )
 // i|  j|      
 //  |   |           Uncoupled expression:
 //  *~~[X]~~~~*        Z_ijkl = 1/6 sum_abcd (nanbncn`d -n`an`bn`cnd)(X_ijdabc Y_abckld - Y_ijdabc Xabckld)
-//  |   |     /\                                                                                                    
-// a|  b|   c(  )d
-//  |   |     \/ 
+//  |   |     /\      .
+// a|  b|   c(  )d    .
+//  |   |     \/      .
 //  *~~[Y]~~~~*      Coupled expression:
 //  |   |              Z_{ijkl}^{J} = 1/6 sum_abcd (nanbncn`d-n`an`bn`cnd) 1/(2J+1) sum_J1J' (2J'+1)(X_{ijdabc}^{J J1 J'} Y_{abckld}^{J1 J J'} - X<->Y )
 // k|  l|                                                                                                                                        
@@ -10997,12 +10997,12 @@ void DoTensorPandyaTransformation( const Operator& Z, std::map<std::array<index_
    // Allocate map for matrices -- this needs to be serial.
    for ( index_t ch_bra_cc : Z.modelspace->SortedTwoBodyChannels_CC )
    {
-      TwoBodyChannel& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
+      TwoBodyChannel_CC& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
       arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
       index_t nph_bras = bras_ph.n_rows;
       for ( index_t ch_ket_cc : Z.modelspace->SortedTwoBodyChannels_CC )
       {
-        TwoBodyChannel& tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
+        TwoBodyChannel_CC& tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
         index_t nKets_cc = tbc_ket_cc.GetNumberKets();
 
          TwoBody_CC_ph[{ch_bra_cc,ch_ket_cc}] =  arma::mat(2*nph_bras,   nKets_cc, arma::fill::zeros);
@@ -11013,7 +11013,7 @@ void DoTensorPandyaTransformation( const Operator& Z, std::map<std::array<index_
    for (index_t ich=0;ich<nch;++ich)
    {
       index_t ch_bra_cc = Z.modelspace->SortedTwoBodyChannels_CC[ich];
-      TwoBodyChannel& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
+      TwoBodyChannel_CC& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
       int Jbra_cc = tbc_bra_cc.J;
       arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
 //      arma::uvec& bras_ph = tbc_bra_cc.GetKetIndex_ph();
@@ -11021,7 +11021,7 @@ void DoTensorPandyaTransformation( const Operator& Z, std::map<std::array<index_
 
       for ( index_t ch_ket_cc : Z.modelspace->SortedTwoBodyChannels_CC )
       {
-        TwoBodyChannel& tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
+        TwoBodyChannel_CC& tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
         int Jket_cc = tbc_ket_cc.J;
         if ( (Jbra_cc+Jket_cc < Z.GetJRank()) or std::abs(Jbra_cc-Jket_cc)>Z.GetJRank() ) continue;
         if ( (tbc_bra_cc.parity + tbc_ket_cc.parity + Z.GetParity())%2>0 ) continue;
@@ -11130,11 +11130,11 @@ void DoTensorPandyaTransformation_SingleChannel( const Operator& Z, arma::mat& M
 {
    int Lambda = Z.rank_J;
 
-   TwoBodyChannel& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
+   TwoBodyChannel_CC& tbc_bra_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_bra_cc);
    arma::uvec bras_ph = arma::join_cols( tbc_bra_cc.GetKetIndex_hh(), tbc_bra_cc.GetKetIndex_ph() );
    int nph_bras = bras_ph.n_rows;
 
-   TwoBodyChannel& tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
+   TwoBodyChannel_CC& tbc_ket_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_ket_cc);
    int nKets_cc = tbc_ket_cc.GetNumberKets();
 
    // The Pandya-transformed (formerly cross-coupled) particle-hole type matrix elements
@@ -12324,7 +12324,7 @@ void comm433sd_ph( const Operator& X, const Operator& Y, Operator& Z)
    {
       if (lookup_empty.at(ich)) continue;
       size_t ch = Z.modelspace->SortedTwoBodyChannels_CC.at(ich);
-      const TwoBodyChannel& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch);
+      const TwoBodyChannel_CC& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch);
       index_t nKets_cc = tbc_cc.GetNumberKets();
       size_t nph_kets = tbc_cc.GetKetIndex_hh().size() + tbc_cc.GetKetIndex_ph().size();
 
@@ -12428,7 +12428,7 @@ void comm433sd_ph( const Operator& X, const Operator& Y, Operator& Z)
 /// in the output matrix.
 void DoPandyaTransformation_SingleChannel_Dagger(const Operator& Z, arma::mat& TwoBody_CC_ph, int ch_cc)
 {
-   TwoBodyChannel& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
+   TwoBodyChannel_CC& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
 //   int nKets_cc = tbc_cc.GetNumberKets();
    size_t norb = Z.modelspace->GetNumberOrbits();
    arma::uvec kets_ph = arma::join_cols(tbc_cc.GetKetIndex_hh(), tbc_cc.GetKetIndex_ph() );
