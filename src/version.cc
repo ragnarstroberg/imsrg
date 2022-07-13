@@ -1,5 +1,7 @@
 #include "version.hh"
 
+#include <string>
+
 #ifndef BUILDVERSION
 #define BUILDVERSION "unversioned"
 #endif
