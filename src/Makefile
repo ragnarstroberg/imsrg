@@ -23,21 +23,16 @@ endif
 
 
 # Tag the build with the current version from git, so we know where all the awesome answers came from.
-VERSIONCOMMAND = 
+# VERSIONCOMMAND = 
 BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "%s_%s",$$2,$$3}' )
 ifneq (,$(findstring detached,$(BUILDVERSION)))
   BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "HEAD_%s",$$6}'  )
 endif
-OLDBUILD = $(shell grep -m 1 BUILDVERSION version.cc | awk '{print $$3}')
-#OLDBUILD = $(shell awk '{print $$3}' version.hh)
+# OLDBUILD = $(shell awk '{print $$3}' version.hh)
 
-#ifneq ($(OLDBUILD),"$(BUILDVERSION)")
-#  VERSIONCOMMAND = echo "\#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
-#endif
-
-ifneq ($(OLDBUILD),"$(BUILDVERSION)")
-  VERSIONCOMMAND = echo "\#include \"version.hh\"\n\#define BUILDVERSION \"$(BUILDVERSION)\"\n std::string version::BuildVersion() {return BUILDVERSION;};" > version.cc
-endif
+# ifneq ($(OLDBUILD),"$(BUILDVERSION)")
+#   VERSIONCOMMAND = echo "\#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
+# endif
 
 #FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
 
@@ -195,10 +190,10 @@ boost_src/%.o: boost_src/%.cpp
 
 
 %.o: %.cc %.hh
-	$(CXX) -c $*.cc -o $@ $(INCLUDE) $(FLAGS)
+	$(CXX) -c $*.cc -o $@ $(INCLUDE) $(FLAGS) -DBUILDVERSION=\"$(BUILDVERSION)\"
 
 %.o: %.cc
-	$(CXX) -c $*.cc -o $@ $(INCLUDE) $(FLAGS)
+	$(CXX) -c $*.cc -o $@ $(INCLUDE) $(FLAGS) -DBUILDVERSION=\"$(BUILDVERSION)\"
 
 
 libIMSRG.so: $(OBJ)
@@ -219,7 +214,8 @@ version.cc:
 	$(VERSIONCOMMAND)
 
 version:
-	$(VERSIONCOMMAND)
+	touch version.cc
+# $(VERSIONCOMMAND)
 #	echo "#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
 #
 clean:
