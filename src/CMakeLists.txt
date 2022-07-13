@@ -13,23 +13,26 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(IMSRGPLUSPLUS_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-# # Enable link-time optimization
-# include(CheckIPOSupported)
-# check_ipo_supported(RESULT HAVE_IPO)
-# if(HAVE_IPO)
-#     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-# endif()
-
-# # Enable link-time optimization
-# include(CheckIPOSupported)
-# check_ipo_supported(RESULT HAVE_IPO)
-# if(HAVE_IPO)
-#     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-# endif()
+# We only need this for the Python bindings.
+# In principle, everything should be faster if we could avoid this.
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 add_subdirectory(armadillo)
 add_subdirectory(half)
+add_subdirectory(pybind11)
 
+# Add a custom command that produces version.cpp, plus
+# a dummy output that's not actually produced, in order
+# to force version.cmake to always be re-run before the build
+ADD_CUSTOM_COMMAND(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.cc
+           ${CMAKE_CURRENT_BINARY_DIR}/_version.cc
+    COMMAND ${CMAKE_COMMAND} -P
+            ${CMAKE_CURRENT_SOURCE_DIR}/git_version.cmake)
+
+# At some point this should not be here because
+# this belongs in a CMake preset, not in the core CMake
+# build structure
 add_compile_options(
     "-Wall"
     "-Wextra"
@@ -226,10 +229,15 @@ target_link_libraries(
     AngMom
 )
 
-# TODO Make rule to generate this
 add_library(
     Version
-    INTERFACE
+    version.hh
+    ${CMAKE_CURRENT_BINARY_DIR}/version.cc
+)
+target_include_directories(
+    Version
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 add_library(
@@ -238,7 +246,7 @@ add_library(
 )
 target_compile_definitions(
     ReadWrite
-    PRIVATE
+    PUBLIC
     NO_HDF5="true"
 )
 target_link_libraries(
@@ -477,16 +485,22 @@ target_link_libraries(
 )
 
 add_executable(
-    imsrg
+    imsrg++
     imsrg++.cc
 )
 target_link_libraries(
-    imsrg
+    imsrg++
     PUBLIC
     IMSRG
     Parameters
     PhysicalConstants
     Version
-    profiler
     OpenMP::OpenMP_CXX
+)
+
+pybind11_add_module(pyIMSRG pyIMSRG.cc)
+target_link_libraries(
+    pyIMSRG
+    PRIVATE
+    IMSRG
 )
