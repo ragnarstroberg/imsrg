@@ -329,10 +329,53 @@ double TwoBodyME::GetTBME_J_norm(int j_bra, int j_ket, int a, int b, int c, int 
    int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,parity_bra,Tz_bra);
    int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,parity_ket,Tz_ket);
    return GetTBME_norm(ch_bra,ch_ket,a,b,c,d);
-//   if (ch_bra <= ch_ket)
-//     return GetTBME_norm(ch_bra,ch_ket,a,b,c,d);
-//   return modelspace->phase(j_bra - j_ket) * GetTBME_norm(ch_ket,ch_bra,c,d,a,b);
 }
+
+// This is intended for use in the Pandya transformation needed for the 222 ph commutator, but it might be useful in other cases.
+// The idea is that we want to access the same element from two different operators, so we do all the phases and index lookup only once.
+void TwoBodyME::GetTBME_J_norm_twoOps(const TwoBodyME& OtherTBME, int j_bra, int j_ket, int a, int b, int c, int d, double& tbme_this, double& tbme_other) const
+{
+   Orbit& oa = modelspace->GetOrbit(a);
+   Orbit& ob = modelspace->GetOrbit(b);
+   Orbit& oc = modelspace->GetOrbit(c);
+   Orbit& od = modelspace->GetOrbit(d);
+   int parity_bra = (oa.l+ob.l)%2;
+   int parity_ket = (oc.l+od.l)%2;
+   int Tz_bra = (oa.tz2+ob.tz2)/2;
+   int Tz_ket = (oc.tz2+od.tz2)/2;
+   tbme_this  =0;
+   tbme_other =0;
+   if ( (parity+parity_bra+parity_ket)%2 > 0) return;
+   if ( std::abs(Tz_bra-Tz_ket)!=rank_T) return;
+   if ( std::abs(j_bra-j_ket) > rank_J) return;
+   if ( j_bra + j_ket < rank_J) return;
+   int ch_bra = modelspace->GetTwoBodyChannelIndex(j_bra,parity_bra,Tz_bra);
+   int ch_ket = modelspace->GetTwoBodyChannelIndex(j_ket,parity_ket,Tz_ket);
+
+   TwoBodyChannel& tbc_bra =  modelspace->GetTwoBodyChannel(ch_bra);
+   TwoBodyChannel& tbc_ket =  modelspace->GetTwoBodyChannel(ch_ket);
+   auto bra_ind = tbc_bra.GetLocalIndex(std::min(a,b),std::max(a,b));
+   auto ket_ind = tbc_ket.GetLocalIndex(std::min(c,d),std::max(c,d));
+   if (bra_ind < 0 or ket_ind < 0 or bra_ind > tbc_bra.GetNumberKets() or ket_ind > tbc_ket.GetNumberKets() )
+   {
+     return;
+   }
+   Ket & bra = tbc_bra.GetKet(bra_ind);
+   Ket & ket = tbc_ket.GetKet(ket_ind);
+
+   double phase = 1;
+   if (a>b) phase *= bra.Phase(tbc_bra.J);
+   if (c>d) phase *= ket.Phase(tbc_ket.J);
+   if (ch_bra > ch_ket) // Phase for conjugating a reduced matrix element.
+   {
+     phase *=  modelspace->phase(tbc_bra.J-tbc_ket.J) ;
+     std::swap(ch_bra,ch_ket);
+     std::swap(bra_ind,ket_ind);
+   }
+   tbme_this =  phase * GetMatrix(ch_bra,ch_ket)(bra_ind, ket_ind);
+   tbme_other =  phase * OtherTBME.GetMatrix(ch_bra,ch_ket)(bra_ind, ket_ind);
+}
+
 
 // for backwards compatibility...
 double TwoBodyME::GetTBME(int ch, int a, int b, int c, int d) const

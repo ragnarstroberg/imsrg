@@ -7,6 +7,7 @@
 #include <string>
 #include <cmath>
 #include <sstream>
+#include "AngMomCache.hh"
 #include "omp.h"
 #include <cstdlib> // for EXIT_FAILURE
 
@@ -87,7 +88,8 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    sixj_has_been_precalculated(ms.sixj_has_been_precalculated),
    ninej_has_been_precalculated(ms.ninej_has_been_precalculated),
    moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated),
-   scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(ms.single_species)
+   scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(ms.single_species),
+   six_j_cache_2b_(ms.six_j_cache_2b_)
 {
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
@@ -103,7 +105,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    OneBodyChannels(std::move(ms.OneBodyChannels)), nTwoBodyChannels(std::move(ms.nTwoBodyChannels)),
    TwoBodyChannels(std::move(ms.TwoBodyChannels)), TwoBodyChannels_CC(std::move(ms.TwoBodyChannels_CC)),
    nThreeBodyChannels(std::move(ms.nThreeBodyChannels)), ThreeBodyChannels(std::move(ms.ThreeBodyChannels)),
-   Ket3IndexLookup(std::move(ms.Ket3IndexLookup)), ThreeBodyChannelLookup(std::move(ThreeBodyChannelLookup)),
+   Ket3IndexLookup(std::move(ms.Ket3IndexLookup)), ThreeBodyChannelLookup(std::move(ms.ThreeBodyChannelLookup)),
    PandyaLookup(std::move(ms.PandyaLookup)), OrbitLookup(ms.OrbitLookup),
    holes( std::move(ms.holes)), particles( std::move(ms.particles)),
    core(std::move(ms.core)), valence(std::move(ms.valence)),  qspace( std::move(ms.qspace)),  
@@ -122,7 +124,8 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    sixj_has_been_precalculated(ms.sixj_has_been_precalculated),
    ninej_has_been_precalculated(ms.ninej_has_been_precalculated),
    moshinsky_has_been_precalculated(ms.moshinsky_has_been_precalculated),
-   scalar_transform_first_pass(true),scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(ms.single_species)
+   scalar_transform_first_pass(true),scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(ms.single_species),
+   six_j_cache_2b_(std::move(ms.six_j_cache_2b_))
 {
    for (TwoBodyChannel& tbc : TwoBodyChannels)   tbc.modelspace = this;
    for (TwoBodyChannel_CC& tbc_cc : TwoBodyChannels_CC)   tbc_cc.modelspace = this;
@@ -136,7 +139,8 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> valence_list)
 :  Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999), occnat3cut(-1.0), norbits(0), hbar_omega(20), target_mass(16),
     sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),    moshinsky_has_been_precalculated(false),
-      scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
+      scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false),
+      six_j_cache_2b_(2 * emax + 1)
 {
 //   SetUpOrbits();
    Init(emax, hole_list, hole_list, valence_list); // Init version 3  (int, vector<string>, vector<string>, vector<string> )
@@ -145,7 +149,8 @@ ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector
 // If we don't want the reference to be the core
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list)
 : Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), norbits(0), hbar_omega(20), target_mass(16),
-     sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),  moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false)
+     sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),  moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false),
+     six_j_cache_2b_(2 * emax + 1)
 {
 //   SetUpOrbits();
    Init(emax, hole_list, core_list, valence_list); // Init version 3  (int, vector<string>, vector<string>, vector<string> )
@@ -154,7 +159,8 @@ ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector
 // Most conventient interface
 ModelSpace::ModelSpace(int emax, std::string reference, std::string valence)
 : Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
-     sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),   moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false)
+     sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),   moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false),
+     six_j_cache_2b_(2 * emax + 1)
 {
 //  SetUpOrbits();
   Init(emax,reference,valence); // Init version 1  (int, string, string )
@@ -162,7 +168,8 @@ ModelSpace::ModelSpace(int emax, std::string reference, std::string valence)
 
 ModelSpace::ModelSpace(int emax, std::string valence)
 : Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
-     sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),   moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true),single_species(false)
+     sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),   moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true),single_species(false),
+     six_j_cache_2b_(2 * emax + 1)
 {
   auto itval = ValenceSpaces.find(valence);
   if ( itval != ValenceSpaces.end() ) // we've got a valence space
@@ -216,13 +223,7 @@ void ModelSpace::Init(int emax, std::string reference, std::string valence)
   // to use a mixed reference for, e.g. an equal mixture of He4 and Li5, set reference = mix_A4.5_Z2.5
 
   GetAZfromString(reference,Aref,Zref);
-//  std::map<index_t,double> hole_list = GetOrbitsAZ(Aref,Zref);
   auto hole_list = GetOrbitsAZ(Aref,Zref);
-//  std::cout << "hole_list is" << std::endl;
-//  for (auto& hl : hole_list )
-//  {
-//    std::cout << hl.first[0] << " " << hl.first[1] << " " << hl.first[2] << " " << hl.first[3] << "   " << hl.second << std::endl;
-//  }
   Init(emax,hole_list,valence);  // calls  Init version 2 (int, map, string)
 }
 
@@ -230,11 +231,8 @@ void ModelSpace::Init(int emax, std::string reference, std::string valence)
 // Init version 2  (int, map<array,double>, string)
 void ModelSpace::Init(int emax, std::map<std::array<int,4>,double> hole_list, std::string valence)
 {
-//  std::cout << __func__ << "  line " << __LINE__ << std::endl;
 //  int Ac,Zc;
   double Ac,Zc;
-//  std::vector<index_t> valence_list, core_list;
-//  std::set<index_t> valence_list, core_list;
   std::set<std::array<int,4>> valence_list, core_list;
 
   if (valence == "0hw-shell")
@@ -267,9 +265,6 @@ void ModelSpace::Init(int emax, std::map<std::array<int,4>,double> hole_list, st
         }
       }
 
-//    index_t num_orbits = (emax+1)*(emax+2);
-//    for (index_t i=0;i<num_orbits;++i) valence_list.insert( i );
-//    for (index_t i=0;i<num_orbits;++i) valence_list.push_back( i );
   }
   else // check if it's one of the pre-defined spaces
   {
@@ -280,11 +275,8 @@ void ModelSpace::Init(int emax, std::map<std::array<int,4>,double> hole_list, st
     {
        core_str = itval->second[0];
        std::vector<std::string> vstrings( itval->second.begin()+1,itval->second.end());
-//       std::vector<index_t> vvec = String2Index(vstrings);
        std::vector<std::array<int,4>> vvec = String2Qnumbers(vstrings);
-//       std::vector<index_t> vvec = String2Index(std::vector<std::string>(itval->second.begin()+1,itval->second.end()));
        for (auto v : vvec ) valence_list.insert(v);
-//       valence_list = String2Index(std::vector<std::string>(itval->second.begin()+1,itval->second.end()));
     }
     else  // no valence space. we've got a single-reference.
     {
@@ -293,15 +285,8 @@ void ModelSpace::Init(int emax, std::map<std::array<int,4>,double> hole_list, st
   
     GetAZfromString(core_str,Ac,Zc);
     for (auto& it_core : GetOrbitsAZ(Ac,Zc) ) core_list.insert(it_core.first);
-//    for (auto& it_core : GetOrbitsAZ(Ac,Zc) ) core_list.push_back(it_core.first);
   }
 
-  // This should be done in Init, but it doesn't hurt to do it here as well, I think.
-//  SetTargetMass(Aref);
-//  SetTargetZ(Zref);
-//  target_mass = Aref;
-//  target_Z = Zref;
-//  Init(emax,hole_list,core_list,valence_list);
   Init(hole_list,core_list,valence_list);  // call Init version 0  ( map, set, set )
   
 }
@@ -312,7 +297,6 @@ void ModelSpace::Init(int emax, std::map<std::array<int,4>,double> hole_list, st
 /// Init version 3 (int ,vector<string>, vector<string>, vector<string> )
 void ModelSpace::Init(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list)
 {
-  std::cout << __func__ << "  line " << __LINE__ << std::endl;
    std::cout << "Creating a model space with Emax = " << Emax << "  and hole orbits [";
    for (auto& h : hole_list)  std::cout << h << " ";
    std::cout << "]   and core orbits [";
@@ -335,7 +319,6 @@ void ModelSpace::Init(int emax, std::vector<std::string> hole_list, std::vector<
 
 void ModelSpace::Init_occ_from_file(int emax, std::string valence, std::string occ_file)
 {
-  std::cout << __func__ << "  line " << __LINE__ << std::endl;
 //  index_t orb;
   double occ;
 //  std::map<index_t,double> hole_list;
@@ -2208,9 +2191,6 @@ double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double 
 }
 
 
-//std::map<std::array<int,2>,std::vector<std::array<int,2>>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
-//std::map<std::array<int,2>,std::array<std::vector<int>,2>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
-//std::map<std::array<size_t,2>,std::array<std::vector<size_t>,2>>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
 std::vector<size_t>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int parity)
 {
    CalculatePandyaLookup(rank_J,rank_T,parity);
@@ -2224,11 +2204,7 @@ std::vector<size_t>& ModelSpace::GetPandyaLookup(int rank_J, int rank_T, int par
 void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
 {
    if (PandyaLookup.find({rank_J, rank_T, parity})!=PandyaLookup.end()) return; 
-//   std::cout << "CalculatePandyaLookup( " << rank_J << ", " << rank_T << ", " << parity << ") " << std::endl;
    double t_start = omp_get_wtime();
-//   PandyaLookup[{rank_J,rank_T,parity}] = std::map<std::array<int,2>,std::vector<std::array<int,2>>>();
-//   PandyaLookup[{rank_J,rank_T,parity}] = std::map<std::array<int,2>,std::array<std::vector<int>,2>>();
-//   PandyaLookup[{rank_J,rank_T,parity}] = std::map<std::array<size_t,2>,std::array<std::vector<size_t>,2>>();
    PandyaLookup[{rank_J,rank_T,parity}] = std::vector<size_t>();
    auto& lookup = PandyaLookup[{rank_J,rank_T,parity}];
 
@@ -2239,12 +2215,12 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
 //    For RankT=1, we can have <pn|pp>, <pn|nn>  (Tz_bra,Tz_ket) => (0,1) , (1,0)
 //    For RankT=2, we can have <pn|pn>   (Tz_bra,Tz_ket) => (1,1)
 //   
-//    dTz = 0 (Hamiltonian-like)     :    dTz = 1 (Beta decay)            :   dTz = 2  (Double beta decay) 
-//                                   :                                    :
-//   p|     n|       p\  /n          :    p|     p|      p\  /n           :    p|     p|      p\  /n        
-//    |__OP__|   =>    \/___OP__     :     |__OP__|  =>    \/___OP__      :     |__OP__|  =>    \/___OP__   
-//    |      |                 /\    :     |      |                /\     :     |      |                /\  
-//   n|     p|               p/  \n  :    n|     p|              p/  \p   :    n|     n|              p/  \n
+//    dTz = 0 (Hamiltonian-like)     :    dTz = 1 (Beta decay)            :   dTz = 2  (Double beta decay)    :
+//                                   :                                    :                                   :
+//   p|     n|       p\  /n          :    p|     p|      p\  /n           :    p|     p|      p\  /n          :
+//    |__OP__|   =>    \/___OP__     :     |__OP__|  =>    \/___OP__      :     |__OP__|  =>    \/___OP__     :
+//    |      |                 /\    :     |      |                /\     :     |      |                /\    :
+//   n|     p|               p/  \n  :    n|     p|              p/  \p   :    n|     n|              p/  \n  :
 //
    for ( size_t ch_cc = 0; ch_cc < TwoBodyChannels_CC.size(); ch_cc++)
    {
@@ -2257,147 +2233,7 @@ void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
    }
 
    profiler.timer["CalculatePandyaLookup"] += omp_get_wtime() - t_start;
-//   std::cout << "done." << std::endl;
 }
 
-
-
-
-/*
-
-// Generate a lookup table of all the channels that depend on a given set of Pandya-transformed channels
-// this is used in the 222ph commutators to avoid calculating things that won't be used.
-void ModelSpace::CalculatePandyaLookup(int rank_J, int rank_T, int parity)
-{
-   if (PandyaLookup.find({rank_J, rank_T, parity})!=PandyaLookup.end()) return; 
-//   std::cout << "CalculatePandyaLookup( " << rank_J << ", " << rank_T << ", " << parity << ") " << std::endl;
-   double t_start = omp_get_wtime();
-//   PandyaLookup[{rank_J,rank_T,parity}] = std::map<std::array<int,2>,std::vector<std::array<int,2>>>();
-//   PandyaLookup[{rank_J,rank_T,parity}] = std::map<std::array<int,2>,std::array<std::vector<int>,2>>();
-   PandyaLookup[{rank_J,rank_T,parity}] = std::map<std::array<size_t,2>,std::array<std::vector<size_t>,2>>();
-   auto& lookup = PandyaLookup[{rank_J,rank_T,parity}];
-
-   size_t ntbc    = TwoBodyChannels.size();
-   size_t ntbc_cc = TwoBodyChannels_CC.size();
-   for (size_t ch_bra_cc = 0; ch_bra_cc<ntbc_cc; ++ch_bra_cc)
-   {
-     for (size_t ch_ket_cc = ch_bra_cc; ch_ket_cc<ntbc_cc; ++ch_ket_cc)
-     {
-//       lookup[{ch_bra_cc,ch_ket_cc}] = std::vector<std::array<int,2>>();
-//       lookup[{ch_bra_cc,ch_ket_cc}] = std::array<std::vector<int>,2>(); 
-       lookup[{ch_bra_cc,ch_ket_cc}] = std::array<std::vector<size_t>,2>(); 
-//       lookup[{ch_bra_cc,ch_ket_cc}] = { <std::vector<int>(), std::vector<int>() }; 
-       lookup.at({ch_bra_cc,ch_ket_cc})[0].reserve(ntbc_cc)  ; 
-       lookup.at({ch_bra_cc,ch_ket_cc})[1].reserve(ntbc_cc)  ; 
-     }
-   }
-
-   #pragma omp parallel for schedule(dynamic,1)
-   for (size_t ch_bra_cc = 0; ch_bra_cc<ntbc_cc; ++ch_bra_cc)
-   {
-     TwoBodyChannel_CC& tbc_bra_cc = TwoBodyChannels_CC[ch_bra_cc];
-     int twoJ_bra_cc = 2*tbc_bra_cc.J;
-     for (size_t ch_ket_cc = ch_bra_cc; ch_ket_cc<ntbc_cc; ++ch_ket_cc)
-     {
-       TwoBodyChannel_CC& tbc_ket_cc = TwoBodyChannels_CC[ch_ket_cc];
-//       lookup[{ch_bra_cc,ch_ket_cc}] = std::vector<std::array<int,2>>();
-//       std::vector<int>& bra_list = lookup.at({ch_bra_cc,ch_ket_cc})[0];
-//       std::vector<int>& ket_list = lookup.at({ch_bra_cc,ch_ket_cc})[1];
-       std::vector<int> bra_list,ket_list;
-       int twoJ_ket_cc = 2*tbc_ket_cc.J;
-       for (size_t ch_bra=0; ch_bra<ntbc; ++ch_bra)
-       {
-         TwoBodyChannel& tbc_bra = TwoBodyChannels[ch_bra];
-         for (size_t ch_ket=ch_bra; ch_ket<ntbc; ++ch_ket)
-         {
-           TwoBodyChannel& tbc_ket = TwoBodyChannels[ch_ket];
-           if ( std::abs(tbc_bra.J-tbc_ket.J)>rank_J ) continue;
-           if ( (tbc_bra.J+tbc_ket.J)<rank_J ) continue;
-           if ( std::abs(tbc_bra.Tz-tbc_ket.Tz)>rank_T ) continue;
-           if ( (tbc_bra.parity + tbc_ket.parity + parity)%2>0 ) continue;
-
-           bool need_it = false;
-           for (size_t ibra=0; ibra<tbc_bra.GetNumberKets(); ++ibra)
-           {
-             if (need_it) break;
-             const Ket& bra = tbc_bra.GetKet(ibra);
-             Orbit& oi = *(bra.op);
-             Orbit& oj = *(bra.oq);
-             for (size_t iket=0; iket<tbc_ket.GetNumberKets(); ++iket)
-             {
-               const Ket& ket = tbc_ket.GetKet(iket);
-               Orbit& ok = *(ket.op);
-               Orbit& ol = *(ket.oq);
-               bool parity_good = ( (oi.l+ol.l)%2==tbc_bra_cc.parity      and (ok.l+oj.l)%2==tbc_ket_cc.parity );
-               bool Tz_good = ( std::abs(oi.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and std::abs(ok.tz2+oj.tz2)==2*tbc_ket_cc.Tz );
-               if (single_species) Tz_good = (  -std::abs(oi.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and -std::abs(ok.tz2+oj.tz2)==2*tbc_ket_cc.Tz );
-               int j3min = std::abs(oi.j2-ol.j2);
-               int j3max = oi.j2+ol.j2;
-               int j4min = std::abs(ok.j2-oj.j2);
-               int j4max = ok.j2+oj.j2;
-               if (  parity_good   and Tz_good
-//               if (   (oi.l+ol.l)%2==tbc_bra_cc.parity         and (ok.l+oj.l)%2==tbc_ket_cc.parity
-//                         and std::abs(oi.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and std::abs(ok.tz2+oj.tz2)==2*tbc_ket_cc.Tz
-                         and j3min<=twoJ_bra_cc and twoJ_bra_cc<=j3max           and j4min<=twoJ_ket_cc and twoJ_ket_cc<=j4max )
-               {
-                 need_it=true;
-                 break;
-               }
-               if (  parity_good  and Tz_good
-//               if (   (oi.l+ol.l)%2==tbc_ket_cc.parity         and (ok.l+oj.l)%2==tbc_bra_cc.parity
-//                         and std::abs(oi.tz2+ol.tz2)==2*tbc_ket_cc.Tz   and std::abs(ok.tz2+oj.tz2)==2*tbc_bra_cc.Tz
-                         and j3min<=twoJ_ket_cc and twoJ_ket_cc<=j3max           and j4min<=twoJ_bra_cc and twoJ_bra_cc<=j4max )
-               {
-                 need_it=true;
-                 break;
-               }
-
-
-               parity_good = ( (oj.l+ol.l)%2==tbc_bra_cc.parity         and (ok.l+oi.l)%2==tbc_ket_cc.parity );
-               Tz_good = ( std::abs(oj.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and std::abs(ok.tz2+oi.tz2)==2*tbc_ket_cc.Tz );
-               if (single_species) Tz_good = (  -std::abs(oj.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and -std::abs(ok.tz2+oi.tz2)==2*tbc_ket_cc.Tz );
-               j3min = std::abs(oj.j2-ol.j2);
-               j3max = oj.j2+ol.j2;
-               j4min = std::abs(ok.j2-oi.j2);
-               j4max = ok.j2+oi.j2;
-               if (  parity_good and Tz_good
-//               if (   (oj.l+ol.l)%2==tbc_bra_cc.parity         and (ok.l+oi.l)%2==tbc_ket_cc.parity
-//                         and std::abs(oj.tz2+ol.tz2)==2*tbc_bra_cc.Tz   and std::abs(ok.tz2+oi.tz2)==2*tbc_ket_cc.Tz
-                         and j3min<=twoJ_bra_cc and twoJ_bra_cc<=j3max           and j4min<=twoJ_ket_cc and twoJ_ket_cc<=j4max )
-               {
-                 need_it=true;
-                 break;
-               }
-               if (  parity_good  and Tz_good
-//               if (   (oj.l+ol.l)%2==tbc_ket_cc.parity         and (ok.l+oi.l)%2==tbc_bra_cc.parity
-//                         and std::abs(oj.tz2+ol.tz2)==2*tbc_ket_cc.Tz   and std::abs(ok.tz2+oi.tz2)==2*tbc_bra_cc.Tz
-                         and j3min<=twoJ_ket_cc and twoJ_ket_cc<=j3max           and j4min<=twoJ_bra_cc and twoJ_bra_cc<=j4max )
-               {
-                 need_it=true;
-                 break;
-               }
-
-
-             }
-           }
-           if (need_it)
-           {
-//             lookup[{ch_bra_cc,ch_ket_cc}].push_back({ch_bra,ch_ket});
-             bra_list.push_back(ch_bra);
-             ket_list.push_back(ch_ket);
-           }
-         }
-       }
-       lookup.at({ch_bra_cc,ch_ket_cc})[0].assign( begin(bra_list),end(bra_list) );
-       lookup.at({ch_bra_cc,ch_ket_cc})[1].assign( begin(ket_list),end(ket_list) );
-     }
-   }
-   profiler.timer["CalculatePandyaLookup"] += omp_get_wtime() - t_start;
-//   std::cout << "done." << std::endl;
-}
-
-
-
-*/
 
 

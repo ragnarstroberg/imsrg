@@ -44,7 +44,7 @@ class ThreeBodyStorage
   typedef double ME_type;
   enum Permutation {ABC,BCA,CAB,ACB,BAC,CBA};
 
-  ModelSpace * modelspace;
+  ModelSpace * modelspace = NULL;
   int emax; // usually, this should be the emax of the modelspace, but we might want something smaller.
   int E2max;
   int E3max;

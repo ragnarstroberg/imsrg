@@ -2,51 +2,30 @@
 #include "ModelSpace.hh"
 
 
-TwoBodyChannel::~TwoBodyChannel()
-{
-//  std::cout << "In TwoBodyChannel destructor" << std::endl;
-}
-
-TwoBodyChannel::TwoBodyChannel()
+TwoBodyChannel_base::~TwoBodyChannel_base()
 {}
 
-TwoBodyChannel::TwoBodyChannel(int j, int p, int t, ModelSpace *ms)
+TwoBodyChannel_base::TwoBodyChannel_base()
+{}
+
+TwoBodyChannel_base::TwoBodyChannel_base(int j, int p, int t, ModelSpace *ms)
   :  J(j), parity(p), Tz(t) , modelspace(ms)
-{
-//  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
-//  Initialize(j,p,t, ms);
-  Initialize();
-}
+{}
 
-TwoBodyChannel::TwoBodyChannel(int ch, ModelSpace *ms)
+TwoBodyChannel_base::TwoBodyChannel_base(int ch, ModelSpace *ms)
  : modelspace(ms)
-{
-//   Initialize(ch,ms);
-//   int j,p,t;
-   ms->UnpackTwoBodyChannelIndex(ch, J,parity,Tz);
-//   Initialize(J,parity,Tz, ms);
-   Initialize();
-//   Initialize(ch,ms);
-}
+{}
 
-//void TwoBodyChannel::Initialize(int ch, ModelSpace *ms)
-//void TwoBodyChannel::Initialize(int J, int parity, int Tz, ModelSpace *ms)
-void TwoBodyChannel::Initialize()
+void TwoBodyChannel_base::Initialize()
 {
-//   modelspace = ms;
-//   modelspace->UnpackTwoBodyChannelIndex(ch,  J,parity,Tz);
-//   int tbjmax = modelspace->TwoBodyJmax;
-
    NumberKets = 0;
    int nk = modelspace->GetNumberKets();
    KetMap.resize(nk,-1); // set all values to -1
    for (int i=0;i<nk;i++)
    {
       Ket &ket = modelspace->GetKet(i);
-//      std::cout << "   " << __func__ << "J p Tz = " << J << " " << parity << " " << Tz << "   checking ket " << i << " -> " << ket.p << " , " << ket.q << std::endl;
       if ( CheckChannel_ket(ket) )
       {
-//         std::cout << "       yes " << std::endl;
          KetMap[i] = NumberKets;
          KetList.push_back(i);
          NumberKets++;
@@ -88,8 +67,7 @@ void TwoBodyChannel::Initialize()
 }
 
 
-//int TwoBodyChannel::GetLocalIndex(int p, int q) const { return KetMap[modelspace->GetKetIndex(p,q)];}; 
-size_t TwoBodyChannel::GetLocalIndex(int p, int q) const
+size_t TwoBodyChannel_base::GetLocalIndex(int p, int q) const
 {
  if (p<=q)
    return KetMap[modelspace->GetKetIndex(p,q)];
@@ -98,11 +76,65 @@ size_t TwoBodyChannel::GetLocalIndex(int p, int q) const
 } 
 
 // get pointer to ket using local index
-const Ket & TwoBodyChannel::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
-Ket & TwoBodyChannel::GetKet(int i) { return modelspace->GetKet(KetList[i]);}; 
+const Ket & TwoBodyChannel_base::GetKet(int i) const { return modelspace->GetKet(KetList[i]);}; 
+Ket & TwoBodyChannel_base::GetKet(int i) { return modelspace->GetKet(KetList[i]);}; 
 
 
-//bool TwoBodyChannel::CheckChannel_ket(int p, int q) const
+bool TwoBodyChannel_base::CheckChannel_ket(Orbit* op, Orbit* oq) const
+{
+   std::cout << "====////////========/////// SHOULDNT BE HERE LINE " <<__LINE__ << "=====///////=======" << std::endl;
+   return false;
+}
+
+
+
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_pp() const { return KetIndex_pp;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_hh() const { return KetIndex_hh;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_ph() const { return KetIndex_ph;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_cc() const { return KetIndex_cc;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_vc() const { return KetIndex_vc;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_qc() const { return KetIndex_qc;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_vv() const { return KetIndex_vv;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_qv() const { return KetIndex_qv;};
+const arma::uvec& TwoBodyChannel_base::GetKetIndex_qq() const { return KetIndex_qq;};
+
+
+
+arma::uvec TwoBodyChannel_base::GetKetIndexFromList(std::vector<index_t>& vec_in)
+{
+   std::vector<index_t> index_list (std::min(vec_in.size(),KetList.size()));
+   auto it = set_intersection(KetList.begin(),KetList.end(),vec_in.begin(),vec_in.end(),index_list.begin());
+   index_list.resize(it-index_list.begin());
+   for (auto& x : index_list)
+   {
+     x = KetMap[x];
+   }
+   return arma::uvec(index_list);
+}
+
+
+//************************************************************************
+//****** Implementation of pp channels (i.e. not Pandya tansformed) ******
+//************************************************************************
+
+
+TwoBodyChannel::TwoBodyChannel()
+{}
+
+TwoBodyChannel::TwoBodyChannel(int j, int p, int t, ModelSpace *ms)
+ : TwoBodyChannel_base( j,p,t,ms )
+{
+   Initialize();
+}
+
+TwoBodyChannel::TwoBodyChannel(int N, ModelSpace *ms)
+{
+   ms->UnpackTwoBodyChannelIndex_CC(N, J,parity,Tz);
+   Initialize();
+}
+
+
+// Check if orbits pq participate in this two-body channel
 bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
    if ((op->index==oq->index) and (J%2 != 0)) return false; // Pauli principle
@@ -116,91 +148,40 @@ bool TwoBodyChannel::CheckChannel_ket(Orbit* op, Orbit* oq) const
 
 
 
-const arma::uvec& TwoBodyChannel::GetKetIndex_pp() const { return KetIndex_pp;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_hh() const { return KetIndex_hh;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_ph() const { return KetIndex_ph;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_cc() const { return KetIndex_cc;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_vc() const { return KetIndex_vc;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_qc() const { return KetIndex_qc;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_vv() const { return KetIndex_vv;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_qv() const { return KetIndex_qv;};
-const arma::uvec& TwoBodyChannel::GetKetIndex_qq() const { return KetIndex_qq;};
-
-
-
-arma::uvec TwoBodyChannel::GetKetIndexFromList(std::vector<index_t>& vec_in)
-{
-   std::vector<index_t> index_list (std::min(vec_in.size(),KetList.size()));
-   auto it = set_intersection(KetList.begin(),KetList.end(),vec_in.begin(),vec_in.end(),index_list.begin());
-   index_list.resize(it-index_list.begin());
-   for (auto& x : index_list)
-   {
-     x = KetMap[x];
-   }
-   return arma::uvec(index_list);
-}
 
 //************************************************************************
-//************************************************************************
+//************ Implementation of Pandya tansformed  channels *************
 //************************************************************************
 
-TwoBodyChannel_CC::~TwoBodyChannel_CC()
-{
-//   std::cout << "In TwoBodyChannel_CC destructor" << std::endl;
-}
 
 TwoBodyChannel_CC::TwoBodyChannel_CC()
 {}
 
 TwoBodyChannel_CC::TwoBodyChannel_CC(int j, int p, int t, ModelSpace *ms)
-//  : J(j), parity(p) , Tz(t) , modelspace(ms)
-//  : TwoBodyChannel(j,p,t,ms)
+ : TwoBodyChannel_base( j,p,t,ms )
 {
-   J=j; parity=p; Tz=t;  // this is janky and not really the way that inheritance is supposed to work...
-//  Initialize(ms->GetTwoBodyChannelIndex(j,p,t), ms);
    Initialize();
-//  Initialize(j,p,t, ms);
 }
 
 TwoBodyChannel_CC::TwoBodyChannel_CC(int N, ModelSpace *ms)
-// : modelspace(ms)
-//  : TwoBodyChannel(N,ms)
 {
-//   int j,p,t;
-//   ms->UnpackTwoBodyChannelIndex_CC(N, j,p,t);
-//   modelspace = ms;
    ms->UnpackTwoBodyChannelIndex_CC(N, J,parity,Tz);
-//   Initialize(j,p,t, ms);
    Initialize();
-//   Initialize(N,ms);
 }
-
 
 // Check if orbits pq participate in this cross-coupled two-body channel
 // Difference from regular channels:
-// no Pauli rule, <pp||nn> is allowed. But |Tz| is still conserved, <-- only for rankT=0 operators.
-// i.e. <pp||pn> is not allowed. So we use |Tz| rather than Tz,
-// and don't use Tz=-1.
-// Another way of formulating it is that "isospin-parity", i.e. |Tz|%2, is conserved the same way parity is.
+// no Pauli rule, and isospin difference isconserved, rather than isospin sum
+// Since we don't distinguish between orderings ab and ba, we just use |tza - tzb| and don't use Tz=-1.
 bool TwoBodyChannel_CC::CheckChannel_ket(Orbit* op, Orbit* oq) const
 {
-//   std::cout << "  TwoBodyChannel_CC::CheckChannel_ket  checking orbits " << op->index << " " << oq->index << "  for channel with jpt " << J << " " << parity << " " << Tz << std::endl;
    if ((op->l + oq->l)%2 != parity)    return false;
    if (op->j2 + oq->j2 < 2*J)          return false;
    if (std::abs(op->j2 - oq->j2) > 2*J)     return false;
-//   if (modelspace->single_species)
-//   {
-//     if (std::abs(op->tz2 + oq->tz2) != 2*std::abs(Tz)) return false;
-//   }
-//   else
-//   if (not modelspace->single_species)  //TODO: I think this condition no longer applies...
-//   {
-//     if (std::abs(op->tz2 + oq->tz2) != 2*Tz) return false;
-     if (std::abs(op->tz2 - oq->tz2) != 2*Tz) return false;
-//   }
-//   std::cout << " -- AOK! " << std::endl;
+   if (std::abs(op->tz2 - oq->tz2) != 2*Tz) return false;
 
    return true;
 }
+
 
 

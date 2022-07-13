@@ -73,7 +73,11 @@ THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname
 ifeq ($(OS),MACOS)
   FLAGS     = -Xpreprocessor -fopenmp -O3  -std=c++11 -fPIC
   LIBS += -lomp
-  PYTHONFLAGS =  $(shell python-config --cflags | sed -e 's/-arch i386//')
+  FLAGS += -DNO_x86  # don't load x86intrin.h header. I don't pretent to fully understand why this breaks things.
+  PYTHONFLAGS =  $(shell $(PYTHON_CONFIG) --cflags | sed -e 's/-arch i386//')
+  PYTHON_LDFLAGS += -undefined dynamic_lookup # This avoids trouble with missing symbols (see pybind11.readthedocs.io/en/stable/compiling.html )
+  PYTHONFLAGS += -Wno-unused-value # suppress annoying warnings about stuff in the pybind11 library
+  PYTHONFLAGS += -Wno-deprecated-declarations
 endif
 
 
@@ -170,7 +174,7 @@ all: $(ALL)
 	@echo Building with build version $(BUILDVERSION)
 
 OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
-      HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o\
+      HartreeFock.o imsrg_util.o Generator.o IMSRGSolver.o AngMom.o AngMomCache.o\
       IMSRGProfiler.o Commutator.o HFMBPT.o  RPA.o\
       M0nu.o DarkMatterNREFT.o Jacobi3BME.o UnitTest.o \
       TwoBodyChannel.o ThreeBodyChannel.o \
@@ -198,7 +202,7 @@ libIMSRG.so: $(OBJ)
 python: pyIMSRG.so
 
 pyIMSRG.so: $(OBJ)  pyIMSRG.o version.hh
-	$(CXX) $(FLAGS) $(INCLUDE) $(PYTHON_INCUDE) $(PYTHONFLAGS) $(PYTHONLDFLAGS) $(LIBS) -shared  $^ -o $@
+	$(CXX) $(FLAGS) $(INCLUDE) $(PYTHON_INCUDE) $(PYTHONFLAGS) $(PYTHON_LDFLAGS) $(LIBS) -shared  $(OBJ) pyIMSRG.o -o $@
 
 pyIMSRG.o: pyIMSRG.cc
 	$(CXX) -c  $(FLAGS) $(INCLUDE) $(PYTHON_INCLUDE) $(PYTHONFLAGS)  $^ -o $@

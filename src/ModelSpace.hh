@@ -28,6 +28,7 @@
 #include <set>
 #include <armadillo>
 #include "IMSRGProfiler.hh"
+#include "AngMomCache.hh"
 
 
 //using namespace std;
@@ -114,7 +115,8 @@ struct Ket3 // | p q r >
 // This is now given its own implementation file, TwoBodyChannel.cc
 // but the header info stays here, because of the inextricable dependencies
 // between TwoBodyChannel, ModelSpace, Orbit, and Ket. What a mess...
-struct TwoBodyChannel
+//struct TwoBodyChannel
+struct TwoBodyChannel_base
 {
 // public:
    //Fields
@@ -122,7 +124,7 @@ struct TwoBodyChannel
    int parity;
    int Tz;
 
-   ModelSpace * modelspace;
+   ModelSpace * modelspace = NULL; // we really shouldn't leave pointers uninitialized... Fixed July 11 2022 (thanks Matthias)
    int NumberKets;  // Number of pq configs that participate in this channel
    std::vector<int> KetList; // eg [2, 4, 7, ...] Used for looping over all the kets in the channel
    std::vector<int> KetMap;  // eg [ -1, -1, 0, -1, 1, -1, -1, 2 ...] Used for asking what is the local index of this ket. -1 means the ket doesn't participate in this channel
@@ -143,14 +145,12 @@ struct TwoBodyChannel
 
 
    // Constructors
-   virtual ~TwoBodyChannel();
-   TwoBodyChannel();
-   TwoBodyChannel(int j, int p, int t, ModelSpace* ms);
-   TwoBodyChannel(int ch, ModelSpace* ms);
-//   virtual void Initialize(int ch, ModelSpace* ms);
-//   virtual void Initialize(int J, int parity, int Tz, ModelSpace* ms);
-//   void Initialize(int J, int parity, int Tz, ModelSpace* ms);
+   virtual ~TwoBodyChannel_base();
+   TwoBodyChannel_base();
+   TwoBodyChannel_base(int j, int p, int t, ModelSpace* ms);
+   TwoBodyChannel_base(int ch, ModelSpace* ms);
    void Initialize();
+   void UnpackTwoBodyChannel_Index(int ch, int J,int parity, int Tz);
 
 
    //Methods
@@ -182,17 +182,27 @@ struct TwoBodyChannel
 };
 
 
-
 /////////////////////////////////////////////
-class TwoBodyChannel_CC : public TwoBodyChannel
+class TwoBodyChannel : public TwoBodyChannel_base
 {
   public:
-   ~TwoBodyChannel_CC();
+//   ~TwoBodyChannel();
+   TwoBodyChannel();
+   TwoBodyChannel(int j, int p, int t, ModelSpace* ms);
+   TwoBodyChannel(int N, ModelSpace* ms);
+   bool CheckChannel_ket(Orbit* op, Orbit* oq) const;  // check if |pq> participates in this channel
+};
+
+
+/////////////////////////////////////////////
+class TwoBodyChannel_CC : public TwoBodyChannel_base
+{
+  public:
+//   ~TwoBodyChannel_CC();
    TwoBodyChannel_CC();
    TwoBodyChannel_CC(int j, int p, int t, ModelSpace* ms);
    TwoBodyChannel_CC(int N, ModelSpace* ms);
    bool CheckChannel_ket(Orbit* op, Orbit* oq) const;  // check if |pq> participates in this channel
-//   void Initialize(int ch, ModelSpace* ms);
 };
 
 
@@ -331,6 +341,8 @@ class ModelSpace
    bool single_species; // Is there only one kind of fermion?
    IMSRGProfiler profiler;
 
+   SixJCache_112112 six_j_cache_2b_;
+
    static std::unordered_map<uint64_t,double> SixJList;
    static std::unordered_map<uint64_t,double> NineJList;
    static std::unordered_map<uint64_t,double> MoshList;
@@ -466,6 +478,10 @@ class ModelSpace
    std::map<int,double> GetEFermi(){ return e_fermi ;};
    void SetEFermi(double ef_proton, double ef_neutron){e_fermi[-1] = ef_proton; e_fermi[1]=ef_neutron;};
 
+   double GetCachedSixJ(
+      int jj1, int jj2, int j_3, int jj4, int jj5, int j_6) {
+      return six_j_cache_2b_.SixJ(jj1, jj2, j_3, jj4, jj5, j_6);
+   }
    double GetSixJ(double j1, double j2, double j3, double J1, double J2, double J3);
    double GetNineJ(double j1, double j2, double j3, double j4, double j5, double j6, double j7, double j8, double j9);
    double GetMoshinsky( int N, int Lam, int n, int lam, int n1, int l1, int n2, int l2, int L); // Inconsistent notation. Not ideal.
