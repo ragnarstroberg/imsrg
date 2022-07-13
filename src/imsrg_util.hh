@@ -207,7 +207,7 @@ namespace imsrg_util
 
  void SplitUp(Operator& OpIn, Operator& OpLow, Operator& OpHi, int ecut);
 
-
+/*
 // Templated functions need to be defined in the header file (or else explicitly declared in the .cc file).
  template <typename T>
  T VectorUnion(const T& v1)
@@ -231,6 +231,8 @@ namespace imsrg_util
    s3.insert(s2.begin(),s2.end());
    return VectorUnion( s3, args...);
  }
+
+*/
 
 }
 

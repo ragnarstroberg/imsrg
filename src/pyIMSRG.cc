@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include "version.hh"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
@@ -12,7 +13,7 @@
 namespace py = pybind11;
 
 
-  Orbit MS_GetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
+//  Orbit MS_GetOrbit(ModelSpace& self, int i){ return self.GetOrbit(i);};
 //  size_t MS_GetOrbitIndex_Str(ModelSpace& self, std::string s){ return self.GetOrbitIndex(s);};
   TwoBodyChannel MS_GetTwoBodyChannel(ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);};
 
@@ -22,13 +23,13 @@ namespace py = pybind11;
   size_t TBCGetLocalIndex(TwoBodyChannel& self, int p, int q){ return self.GetLocalIndex( p, q);};
 
 //  void ArmaMatPrint( arma::mat& self){ self.print();};
-  void OpSetOneBodyME( Operator& self, int i, int j, double v){self.OneBody(i,j) = v;};
+//  void OpSetOneBodyME( Operator& self, int i, int j, double v){self.OneBody(i,j) = v;};
 
 //  void MS_SetRef(ModelSpace& self, std::string str){ self.SetReference( str);};
-  void MS_SetRef(ModelSpace& self, const std::set<index_t>& ref){ self.SetReference( ref);};
+//  void MS_SetRef(ModelSpace& self, const std::set<index_t>& ref){ self.SetReference( ref);};
 
 //  Operator HF_GetNormalOrderedH(HartreeFock& self){ return self.GetNormalOrderedH();};
-  Operator HF_GetNormalOrderedH(HartreeFock& self, int particle_rank=2){ return self.GetNormalOrderedH(particle_rank);};
+//  Operator HF_GetNormalOrderedH(HartreeFock& self, int particle_rank=2){ return self.GetNormalOrderedH(particle_rank);};
 
 //BOOST_PYTHON_MODULE(pyIMSRG)
 //PYBIND11_PLUGIN(pyIMSRG)
@@ -110,9 +111,10 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("GetNumberKets", &ModelSpace::GetNumberKets)
       .def("GetNumberTwoBodyChannels", &ModelSpace::GetNumberTwoBodyChannels)
       .def("GetNumberThreeBodyChannels", &ModelSpace::GetNumberThreeBodyChannels)
-      .def("GetOrbit", &MS_GetOrbit)
+//      .def("GetOrbit", &MS_GetOrbit)
+      .def("GetOrbit", [](ModelSpace& self, int i){return self.GetOrbit(i);} )
       .def("GetTwoBodyChannelIndex", &ModelSpace::GetTwoBodyChannelIndex)
-      .def("GetTwoBodyChannel", &MS_GetTwoBodyChannel)
+      .def("GetTwoBodyChannel", [](ModelSpace& self, int ch){return self.GetTwoBodyChannel(ch);})
       .def("GetThreeBodyChannel", &ModelSpace::GetThreeBodyChannel)
       .def("Index2String", &ModelSpace::Index2String)
       .def("ResetFirstPass", &ModelSpace::ResetFirstPass)
@@ -149,6 +151,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def( - py::self)
       .def(py::self *= double())
       .def(py::self * double())
+      .def( double() * py::self)
       .def(py::self /= double())
       .def(py::self / double())
       .def(py::self += double())
@@ -195,7 +198,8 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("Size", &Operator::Size)
       .def("MakeNormalized", &Operator::MakeNormalized)
       .def("MakeUnNormalized", &Operator::MakeUnNormalized)
-      .def("SetOneBodyME", &OpSetOneBodyME)
+//      .def("SetOneBodyME", &OpSetOneBodyME)
+      .def("SetOneBodyME", [](Operator& self,int i, int j, double v){self.OneBody(i,j)=v;})
       .def("GetMP2_Energy", &Operator::GetMP2_Energy)
       .def("GetMP2_3BEnergy", &Operator::GetMP2_Energy)
       .def("GetMP3_Energy", &Operator::GetMP3_Energy)
@@ -555,6 +559,7 @@ PYBIND11_MODULE(pyIMSRG, m)
 //     .def("FullMatrix",&SymmMatrix<double>::FullMatrix)
 //  ;
 
+   m.def("BuildVersion", version::BuildVersion);
 
    m.def("TCM_Op",           imsrg_util::TCM_Op);
    m.def("Trel_Op",           imsrg_util::Trel_Op);
@@ -606,6 +611,7 @@ PYBIND11_MODULE(pyIMSRG, m)
    m.def("FillFactorialLists", AngMom::FillFactorialLists);
    m.def("factorial", AngMom::factorial);
    m.def("double_fact", AngMom::double_fact);
+
 
    m.attr("HBARC") = py::float_( PhysConst::HBARC);
    m.attr("M_PROTON") = py::float_( PhysConst::M_PROTON);

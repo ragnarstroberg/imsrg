@@ -106,4 +106,35 @@ class Generator
 
 };
 
+
+/// Additional helper functions which allow us to conveniently combine sets of orbits.
+/// For example, if we want a list of orbits which are either valence or qspace, we do VectorUnion( valence, qspace )
+// Templated functions need to be defined in the header file (or else explicitly declared in the .cc file).
+
+/// Base case with one argument
+ template <typename T>
+ T VectorUnion(const T& v1)
+ {
+   return v1;
+ }
+ 
+// Variadic template to accept an arbitrary number of arguments
+ template <typename T, typename... Args>
+ T VectorUnion(const T& v1, const T& v2, Args... args)
+ {
+   T vec(v1.size()+v2.size());
+   std::copy(v1.begin(),v1.end(),vec.begin());
+   std::copy(v2.begin(),v2.end(),vec.begin()+v1.size());
+   return VectorUnion(vec, args...);
+ }
+
+// If we use a std::set as the containter, we need to use insert() rather than copy().
+ template <typename T, typename... Args>
+ std::set<T> VectorUnion(const std::set<T>& s1, const std::set<T>& s2, Args... args)
+ {
+   std::set<T> s3 = s1;
+   s3.insert(s2.begin(),s2.end());
+   return VectorUnion( s3, args...);
+ }
+
 #endif
