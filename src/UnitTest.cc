@@ -4587,7 +4587,7 @@ bool UnitTest::TestRPAEffectiveCharge( const Operator& H, const Operator& OpIn, 
 bool UnitTest::SanityCheck()
 {
  
-  std::cout << "BUILD VERSION = " << BuildVersion() << std::endl;
+  std::cout << "BUILD VERSION = " << version::BuildVersion() << std::endl;
   std::cout << "Test simple Clebsch-Gordan coeff..." << std::endl;
   double cg1 = AngMom::CG(0.5,0.5,0.5,-0.5,0,0);
   if ( std::abs( cg1 - sqrt(0.5)) > 1e-6 )

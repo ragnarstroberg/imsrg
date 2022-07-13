@@ -33,8 +33,10 @@ set(VERSION "#include \"version.hh\"
 
 #include <string>
 
+namespace version {
 std::string BuildVersion() {
     return \"${GIT_BRANCH}_${GIT_REV}${GIT_DIFF}\";
+}
 }")
 
 if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/version.cc)

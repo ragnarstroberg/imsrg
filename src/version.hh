@@ -1,3 +1,5 @@
 #include <string>
 
-std::string BuildVersion();
+namespace version{
+    std::string BuildVersion();
+}
