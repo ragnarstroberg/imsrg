@@ -176,7 +176,7 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
    if ( Z.GetParticleRank() > 2 )
    {
-     std::cout << " " << __FILE__ << "  line " << __LINE__ << "  SwitchToPN " << std::endl;
+//     std::cout << " " << __FILE__ << "  line " << __LINE__ << "  SwitchToPN " << std::endl;
      Z.ThreeBody.SwitchToPN_and_discard();
    }
 
