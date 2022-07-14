@@ -15,6 +15,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include <omp.h>
+
 
 
 /// Commutator expressions for second-quantized operators
