@@ -8,11 +8,11 @@ ThreeBodyStorage::ThreeBodyStorage()
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms)
- : modelspace(ms), emax(ms->GetEmax()), E2max(ms->GetE3max()), E3max(ms->GetE3max()), lmax(ms->GetLmax())
+ : modelspace(ms), emax(ms->GetEMax3Body()), E2max(ms->GetE3max()), E3max(ms->GetE3max()), lmax(ms->GetLmax())
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int e3max)
- : modelspace(ms),  emax(ms->GetEmax()), E2max(ms->GetE2max()), E3max(ms->GetE3max()), lmax(ms->GetLmax())
+ : modelspace(ms),  emax(ms->GetEMax3Body()), E2max(ms->GetE2max()), E3max(ms->GetE3max()), lmax(ms->GetLmax())
 {}
 
 ThreeBodyStorage::ThreeBodyStorage( const ThreeBodyStorage& TBS_in )
@@ -22,11 +22,11 @@ ThreeBodyStorage::ThreeBodyStorage( const ThreeBodyStorage& TBS_in )
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int rJ, int rT, int p)
- : modelspace(ms),  emax(ms->GetEmax()), E2max(ms->GetE2max()), E3max(ms->GetE3max()), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
+ : modelspace(ms),  emax(ms->GetEMax3Body()), E2max(ms->GetE2max()), E3max(ms->GetE3max()), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int e3max , int rJ, int rT, int p)
- : modelspace(ms), emax(ms->GetEmax()), E2max(ms->GetE2max()), E3max(e3max), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
+ : modelspace(ms), emax(ms->GetEMax3Body()), E2max(ms->GetE2max()), E3max(e3max), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
 {}
 
 

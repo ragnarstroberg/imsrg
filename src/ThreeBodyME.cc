@@ -20,12 +20,12 @@ ThreeBodyME::ThreeBodyME()
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms)
-: threebody_storage(new ThreeBodyStorage_iso()), modelspace(ms), E3max(ms->E3max), emax(ms->Emax), herm(1)
+: threebody_storage(new ThreeBodyStorage_iso()), modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int rJ, int rT, int p)
  : threebody_storage(new ThreeBodyStorage_iso(ms,rJ,rT,p)),
- modelspace(ms), E3max(ms->E3max), emax(ms->Emax), herm(1),  rank_J(rJ), rank_T(rT), parity(p)
+ modelspace(ms), E3max(ms->E3max), emax(ms->GetEMax3Body()), herm(1),  rank_J(rJ), rank_T(rT), parity(p)
 {
   ISOSPIN_BLOCK_DIMENSION = 5;
   if (rank_T==1) ISOSPIN_BLOCK_DIMENSION = 9; 
@@ -33,11 +33,11 @@ ThreeBodyME::ThreeBodyME(ModelSpace* ms, int rJ, int rT, int p)
 }
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max)
-: threebody_storage(new ThreeBodyStorage_iso(ms,e3max)), modelspace(ms),E3max(e3max), emax(ms->Emax), herm(1)
+: threebody_storage(new ThreeBodyStorage_iso(ms,e3max)), modelspace(ms),E3max(e3max), emax(ms->GetEMax3Body()), herm(1)
 {}
 
 ThreeBodyME::ThreeBodyME(ModelSpace* ms, int e3max, int rJ, int rT, int p)
-: threebody_storage(new ThreeBodyStorage_iso(ms,e3max,rJ,rT,p)), modelspace(ms),E3max(e3max), emax(ms->Emax),
+: threebody_storage(new ThreeBodyStorage_iso(ms,e3max,rJ,rT,p)), modelspace(ms),E3max(e3max), emax(ms->GetEMax3Body()),
     herm(1), rank_J(rJ), rank_T(rT), parity(p)
 {
   ISOSPIN_BLOCK_DIMENSION = 5;
