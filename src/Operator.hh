@@ -71,6 +71,8 @@ class Operator
 
 
   std::map<std::array<int,3>,std::set<index_t> > OneBodyChannels;  // a set makes more sense for this, because it only contains unique entries
+  std::vector< std::set<index_t> > OneBodyChannels_vec; // hopefully this will speed things up.
+  std::set<index_t>& GetOneBodyChannel(int l, int twoj, int twotz);
 //  std::map<std::array<int,3>,std::vector<index_t> > OneBodyChannels;
   index_t Q_space_orbit; // Orbit with the same quantum numbers as this dagger operator. -1 if it's not a dagger operator.
 

@@ -2240,7 +2240,7 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
     }// for ibra
   }// for ch3
 
-  std::cout << "Adding " << std::setprecision(9) << z0 << "  to Zero Body" << std::endl;
+//  std::cout << "Adding " << std::setprecision(9) << z0 << "  to Zero Body" << std::endl;
   Z.ZeroBody += z0;
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
@@ -6167,7 +6167,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
           for (int J1p=J1p_min[ibra*3+perm_ijk]; J1p<=J1p_max[ibra*3+perm_ijk]; J1p++)
           {
-            double rec_ijk = recouple_ijk[ibra*3+perm_ijk].at(J1p-J1p_min[ibra*3+perm_ijk]);
+//            double rec_ijk = recouple_ijk[ibra*3+perm_ijk].at(J1p-J1p_min[ibra*3+perm_ijk]);
+            double rec_ijk = recouple_ijk[ibra*3+perm_ijk][J1p-J1p_min[ibra*3+perm_ijk]];
             int ch1 = Z.modelspace->GetTwoBodyChannelIndex(J1p, (o1.l+o2.l)%2, (o1.tz2+o2.tz2)/2 );
 
             TwoBodyChannel& tbc1 = Z.modelspace->GetTwoBodyChannel(ch1);
@@ -6199,7 +6200,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                for (int J2p=J2p_min[perm_lmn]; J2p<=J2p_max[perm_lmn]; J2p++)
                {
 
-                 double rec_lmn = recouple_lmn[perm_lmn].at(J2p-J2p_min[perm_lmn]);
+//                 double rec_lmn = recouple_lmn[perm_lmn].at(J2p-J2p_min[perm_lmn]);
+                 double rec_lmn = recouple_lmn[perm_lmn][J2p-J2p_min[perm_lmn]];
                  int ch2 = Z.modelspace->GetTwoBodyChannelIndex(J2p, (o4.l+o5.l)%2, (o4.tz2+o5.tz2)/2 );
                  TwoBodyChannel& tbc2 = Z.modelspace->GetTwoBodyChannel(ch2);
                  size_t nkets_2 = tbc2.GetNumberKets();
@@ -6244,7 +6246,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                    
                    double prefactor = rec_ijk * rec_lmn * sixj * hat_factor * phase_12 * phase_45;
 //                   continue; // TODO REMOVE THIS!!!!!   ;  stopping here takes single emax=4 commutator from 19 s to 8 s.
-                   for ( size_t a : Z.OneBodyChannels.at({la,j2a,tz2a})  )
+//                   for ( size_t a : Z.OneBodyChannels.at({la,j2a,tz2a})  )
+                   for ( size_t a : Z.GetOneBodyChannel(la,j2a,tz2a)  )
                    {
 //                      continue; // TODO REMOVE THIS!!!!!   ;  stopping here takes single emax=5 commutator from 19 s to 11 s.
                       size_t ind_6a = tbc1.GetLocalIndex(std::min(I6,a),std::max(I6,a));

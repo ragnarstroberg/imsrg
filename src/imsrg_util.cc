@@ -368,7 +368,7 @@ namespace imsrg_util
    Operator NumOp = Operator(modelspace);
    for (int h : modelspace.holes)
    {
-     Orbit& oh = modelspace.GetOrbit(h);
+//     Orbit& oh = modelspace.GetOrbit(h);
      //NumOp.OneBody(h,h) = (oh.j2+1) * oh.occ ;
 //     NumOp.OneBody(h,h) = 1 * oh.occ ;
      NumOp.OneBody(h,h) = 1  ;

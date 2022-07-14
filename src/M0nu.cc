@@ -211,8 +211,11 @@ namespace M0nu
     }
     else // if we didn't find it, calculate it and add it to the list!
     {
-        printf("DANGER!!!!!!!  Updating IntList inside a parellel loop breaks thread safety!\n");
-        printf("   I shouldn't be here in GetA(%d, %d, %d, %d):   key =%llx",index_p,index_pp,J,norm,key);
+        std::cout << "DANGER!!!!!!!  Updating IntList inside a parellel loop breaks thread safety!" << std::endl
+                  << "   I shouldn't be here in GetA(" << index_p << ", " << index_pp << ", " << J << ", " << norm << "):    "
+                  << "key = " << std::hex << key << std::dec << std::endl;
+//        printf("DANGER!!!!!!!  Updating IntList inside a parellel loop breaks thread safety!\n");
+//        printf("   I shouldn't be here in GetA(%d, %d, %d, %d):   key =%llx",index_p,index_pp,J,norm,key);
         exit(EXIT_FAILURE);
     }
     return A; 
@@ -461,8 +464,13 @@ namespace M0nu
       gsl_integration_glfixed_table_free(t);
       if (omp_get_num_threads() >= 2)
       {
-        printf("DANGER!!!!!!!  Updating IntList inside a parellel loop breaks thread safety!\n");
-        printf("   I shouldn't be here in GetIntegral(%d, %d, %d, %d, %d):   key =%llx   integral=%f\n",n,l,np,lp,J,key,integral);
+
+        std::cout << "DANGER!!!!!!!  Updating IntList inside a parellel loop breaks thread safety!" << std::endl
+                  << "   I shouldn't be here in GetIntegral(" << n << ", " << l << ", " << np << ", " << lp << ", " <<J << "):    "
+                  << "key = " << std::hex << key << std::dec
+                  << "   integral = " << integral << std::endl;
+//        printf("DANGER!!!!!!!  Updating IntList inside a parellel loop breaks thread safety!\n");
+//        printf("   I shouldn't be here in GetIntegral(%d, %d, %d, %d, %d):   key =%llx   integral=%f\n",n,l,np,lp,J,key,integral);
         exit(EXIT_FAILURE);
       }
       IntList[key] = integral;

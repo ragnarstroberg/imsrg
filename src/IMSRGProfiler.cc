@@ -122,3 +122,10 @@ void IMSRGProfiler::PrintAll()
 }
 
 
+void IMSRGProfiler::Clear()
+{
+  timer.clear();
+  counter.clear();
+  start_time = omp_get_wtime();
+}
+

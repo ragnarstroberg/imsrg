@@ -103,7 +103,8 @@ Operator::Operator(const Operator& op)
   rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank), legs(op.legs),
   E2max(op.E2max), E3max(op.E3max),
   hermitian(op.hermitian), antihermitian(op.antihermitian),
-  nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels), Q_space_orbit(op.Q_space_orbit)
+  nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels), Q_space_orbit(op.Q_space_orbit),
+  OneBodyChannels_vec(op.OneBodyChannels_vec)
 {
   IMSRGProfiler::counter["N_Operators"] ++;
 }
@@ -115,7 +116,8 @@ Operator::Operator(Operator&& op)
   rank_J(op.rank_J), rank_T(op.rank_T), parity(op.parity), particle_rank(op.particle_rank), legs(op.legs),
   E2max(op.E2max), E3max(op.E3max),
   hermitian(op.hermitian), antihermitian(op.antihermitian),
-  nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels), Q_space_orbit(op.Q_space_orbit)
+  nChannels(op.nChannels), OneBodyChannels(op.OneBodyChannels), Q_space_orbit(op.Q_space_orbit),
+  OneBodyChannels_vec(op.OneBodyChannels_vec)
 {
   IMSRGProfiler::counter["N_Operators"] ++;
 }
@@ -273,9 +275,32 @@ void Operator::SetUpOneBodyChannels()
       }
     }
   }
-//  for (auto& it: OneBodyChannels)  it.second.shrink_to_fit();
+  OneBodyChannels_vec.resize( 4*(modelspace->Emax+1)+1, {} ) ;
+  for ( auto& it : OneBodyChannels)
+  {
+    int l = it.first[0];
+    int twoj = it.first[1];
+    int twotz = it.first[2];
+    size_t indx = l*4 + (twoj+1-2*l) + (twotz+1)/2;
+    OneBodyChannels_vec[ indx ] = it.second;
+  }
 }
 
+
+// l runs from 0 to emax, tz is -1,1, so (tz+1)/2 runs 0 to 1
+// twoj is 2l-1, 2l+1,  so we can use (twoj+1-2*l) 0,2
+// twoj runs from 1 to 2emax+1, so (twoj-1)/2 runs from 0 to emax
+std::set<index_t>& Operator::GetOneBodyChannel( int l, int twoj, int twotz )
+{
+  size_t indx = l*4 + (twoj+1-2*l) + (twotz+1)/2;
+//  if (indx >= OneBodyChannels_vec.size() )
+//  {
+//     std::cout << "AHH ljt = " << l << " " << twoj << " " << twotz << "   -> index = " << indx << "  but size of OneBodyChannels_vec = " << OneBodyChannels_vec.size() << std::endl;
+//  }
+
+  return OneBodyChannels_vec[ indx ];
+
+}
 
 size_t Operator::Size()
 {

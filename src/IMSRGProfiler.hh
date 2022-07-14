@@ -51,6 +51,7 @@ class IMSRGProfiler
   void PrintMemory();
   void PrintAll();
   size_t MaxMemUsage();
+  void Clear();
 };
 
 #endif
