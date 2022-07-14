@@ -156,14 +156,18 @@ ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector
    Init(emax, hole_list, core_list, valence_list); // Init version 3  (int, vector<string>, vector<string>, vector<string> )
 }
 
-// Most conventient interface
+// Most convenient interface
 ModelSpace::ModelSpace(int emax, std::string reference, std::string valence)
-: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
+  : ModelSpace(emax, emax, reference, valence)
+{}
+
+ModelSpace::ModelSpace(int emax, int emax_3body, std::string reference, std::string valence)
+: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), emax_3body_(emax_3body),
+     dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
      sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),   moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false),
      six_j_cache_2b_(2 * emax + 1)
 {
-//  SetUpOrbits();
-  Init(emax,reference,valence); // Init version 1  (int, string, string )
+  Init(emax, reference,valence); // Init version 1  (int, string, string )
 }
 
 ModelSpace::ModelSpace(int emax, std::string valence)
@@ -231,6 +235,7 @@ void ModelSpace::Init(int emax, std::string reference, std::string valence)
 // Init version 2  (int, map<array,double>, string)
 void ModelSpace::Init(int emax, std::map<std::array<int,4>,double> hole_list, std::string valence)
 {
+  // NOTE: emax is unused and Emax is used instead.
 //  int Ac,Zc;
   double Ac,Zc;
   std::set<std::array<int,4>> valence_list, core_list;
@@ -429,6 +434,7 @@ void ModelSpace::Init( std::map<std::array<int,4>,double> hole_list, std::set<st
      }
    }
    norbits = all_orbits.size();
+   norbits_3body_ = orbits_3body_space_.size();
 //   double atmp=0;
 //   double ztmp=0;
 //   double acore=0;
@@ -1160,6 +1166,9 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
    if (tz2 < 0 ) proton_orbits.insert(ind);
    if (tz2 > 0 ) neutron_orbits.insert(ind);
    all_orbits.insert(ind);
+   if (2 * n + l <= emax_3body_) {
+    orbits_3body_space_.insert(ind);
+   }
 
    norbits = all_orbits.size();
 //   OneBodyChannels[{l, j2, tz2}].push_back(ind); // (Evidently, we mean one-body channels for an operator with the same symmetries as the Hamiltonian).
@@ -1401,17 +1410,17 @@ void ModelSpace::Setup3bKets()
   // in the loop.
   std::set<std::array<int,3>> channels_found;
 
-  for ( auto p : all_orbits )
+  for ( auto p : orbits_3body_space_)
   {
     Orbit& op = GetOrbit(p);
-    for ( auto q : all_orbits )
+    for ( auto q : orbits_3body_space_)
     {
 //      if (q>p) continue;
       if (q<p) continue; // this ordering matches the two body storage
       Orbit& oq = GetOrbit(q);
       int Jpq_min = std::abs(op.j2-oq.j2)/2;
       int Jpq_max = (op.j2+oq.j2)/2;
-      for ( auto r : all_orbits )
+      for ( auto r : orbits_3body_space_)
       {
 //        if (r>q) continue;
         if (r<q) continue;

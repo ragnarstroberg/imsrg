@@ -261,12 +261,19 @@ class ModelSpace
    int TwoBodyJmax; // maximum J for a 2-body state
    int ThreeBodyJmax; // maximum J for a 3-body state (not used)?
    int EmaxUnocc; // Separate emax cut for orbits with l,j,tz that aren't present in the HF reference
+   // Different emax for the treatment of 3-body part. Setting this to Emax is a reasonable default.
+   int emax_3body_ = Emax;
 
    double dE3max; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
    double occnat3cut; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
    std::map<int,double> e_fermi;    // The fermi energy, probably in oscillator units. It's different for protons and neutrons, so index by tz
 
    int norbits;       // number of single-particle orbits (not counting the degenerate m-projections)
+   // Number of single-particle orbits used for the 3-body part.
+   //
+   // These are reduced orbits, so without m-projections.
+   // Initialized by Init version 0 (map, set, set).
+   int norbits_3body_;
    double hbar_omega; // oscillator frequency in MeV
    int target_mass;   // Particle number of the system we're trying to compute
    int target_Z;      // Proton number of the system we're trying to compute
@@ -306,6 +313,10 @@ class ModelSpace
    std::set<index_t> proton_orbits;   // all of the orbits with tz<0
    std::set<index_t> neutron_orbits;  // all the orbits with tz>0
    std::set<index_t> all_orbits;      // all of the orbits, for convenient looping
+   // All the orbits used to span the 3-body space.
+   //
+   // Initialized by Init version 0 (map, set, set).
+   std::set<index_t> orbits_3body_space_;
 
    std::set<std::array<int,2>> hole_quantum_numbers; // For checking if an orbit could mix with the hole orbits
 
@@ -359,6 +370,7 @@ class ModelSpace
    ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list);
    ModelSpace(int emax, std::string reference, std::string valence);
    ModelSpace(int emax, std::string reference);
+   ModelSpace(int emax, int emax_3body, std::string reference, std::string valence);
 
 
    // Overloaded operators
