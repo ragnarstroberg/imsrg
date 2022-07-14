@@ -261,8 +261,10 @@ class ModelSpace
    int TwoBodyJmax; // maximum J for a 2-body state
    int ThreeBodyJmax; // maximum J for a 3-body state (not used)?
    int EmaxUnocc; // Separate emax cut for orbits with l,j,tz that aren't present in the HF reference
+   private:
    // Different emax for the treatment of 3-body part. Setting this to Emax is a reasonable default.
    int emax_3body_ = Emax;
+   public:
 
    double dE3max; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
    double occnat3cut; //  cut on three-body configurations which are considered in the IMSRG(3) commutators, taken relative to the fermi energy.
@@ -471,6 +473,7 @@ class ModelSpace
    void SetScalar3bFirstPass( bool tf ) { scalar3b_transform_first_pass=tf;};
 
    int GetEmax(){return Emax;};
+   int GetEMax3Body(){return emax_3body_;};
    int GetE2max(){return E2max;};
    int GetE3max(){return E3max;};
    int GetLmax2(){return Lmax2;};
