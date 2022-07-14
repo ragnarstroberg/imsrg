@@ -23,16 +23,16 @@ endif
 
 
 # Tag the build with the current version from git, so we know where all the awesome answers came from.
-VERSIONCOMMAND = 
+# VERSIONCOMMAND = 
 BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "%s_%s",$$2,$$3}' )
 ifneq (,$(findstring detached,$(BUILDVERSION)))
   BUILDVERSION = $(shell git branch -v | grep '*' | awk '{printf "HEAD_%s",$$6}'  )
 endif
-OLDBUILD = $(shell awk '{print $$3}' version.hh)
+# OLDBUILD = $(shell awk '{print $$3}' version.hh)
 
-ifneq ($(OLDBUILD),"$(BUILDVERSION)")
-  VERSIONCOMMAND = echo "\#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
-endif
+# ifneq ($(OLDBUILD),"$(BUILDVERSION)")
+#   VERSIONCOMMAND = echo "\#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
+# endif
 
 #FLAGS += -DBUILDVERSION=\"$(BUILDVERSION)\"
 
@@ -180,7 +180,7 @@ OBJ = ModelSpace.o TwoBodyME.o ThreeBodyME.o Operator.o  ReadWrite.o\
       TwoBodyChannel.o ThreeBodyChannel.o \
       ThreeBodyStorage.o ThreeBodyStorage_pn.o ThreeBodyStorage_iso.o \
       ThreeBodyStorage_no2b.o ThreeBodyStorage_mono.o ThreeLegME.o  \
-      boost_src/gzip.o boost_src/zlib.o
+      boost_src/gzip.o boost_src/zlib.o   version.o
 #      ThreeBodyStorage_no2b.o ThreeLegME.o ThreeBodyMENO2B.o \
 #      ThreeBodyMEpn.o ThreeLegME.o ThreeBodyMENO2B.o \
 
@@ -190,10 +190,10 @@ boost_src/%.o: boost_src/%.cpp
 
 
 %.o: %.cc %.hh
-	$(CXX) -c $*.cc -o $@ $(INCLUDE) $(FLAGS)
+	$(CXX) -c $*.cc -o $@ $(INCLUDE) $(FLAGS) -DBUILDVERSION=\"$(BUILDVERSION)\"
 
 %.o: %.cc
-	$(CXX) -c $*.cc -o $@ $(INCLUDE) $(FLAGS)
+	$(CXX) -c $*.cc -o $@ $(INCLUDE) $(FLAGS) -DBUILDVERSION=\"$(BUILDVERSION)\"
 
 
 libIMSRG.so: $(OBJ)
@@ -210,9 +210,12 @@ pyIMSRG.o: pyIMSRG.cc
 imsrg++: imsrg++.cc libIMSRG.so Parameters.hh version.hh
 	$(CXX) $(INCLUDE) $< -o $@ $(FLAGS) -L$(PWD) -lIMSRG $(LIBS)
 
+version.cc:
+	$(VERSIONCOMMAND)
 
 version:
-	$(VERSIONCOMMAND)
+	touch version.cc
+# $(VERSIONCOMMAND)
 #	echo "#define BUILDVERSION \"$(BUILDVERSION)\"" > version.hh
 #
 clean:

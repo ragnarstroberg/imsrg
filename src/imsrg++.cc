@@ -66,9 +66,7 @@ struct OpFromFile {
 int main(int argc, char** argv)
 {
   // Default parameters, and everything passed by command line args.
-#ifdef BUILDVERSION
-  std::cout << "######  imsrg++ build version: " << BUILDVERSION << std::endl;
-#endif
+  std::cout << "######  imsrg++ build version: " << version::BuildVersion() << std::endl;
 
   Parameters parameters(argc,argv);
   if (parameters.help_mode) return 0;

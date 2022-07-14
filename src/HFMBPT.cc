@@ -3,6 +3,8 @@
 #include "HartreeFock.hh"
 #include "PhysicalConstants.hh"
 
+#include <omp.h>
+
 HFMBPT::~HFMBPT()
 {}
 
