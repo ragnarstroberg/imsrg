@@ -1,3 +1,13 @@
 #include "version.hh"
-#define BUILDVERSION "devel_b327e72"
- std::string version::BuildVersion() {return BUILDVERSION;};
+
+#include <string>
+
+#ifndef BUILDVERSION
+#define BUILDVERSION "unversioned"
+#endif
+
+namespace version {
+std::string BuildVersion() {
+    return BUILDVERSION;
+}
+}

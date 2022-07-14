@@ -2,6 +2,8 @@
 #ifndef PhysicalConstants_h
 #define PhysicalConstants_h
 
+#include <cmath>
+
 
 // This is where we define all the physical and mathematical constants that we will use
 

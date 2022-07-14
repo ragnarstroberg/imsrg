@@ -67,9 +67,6 @@ int main(int argc, char** argv)
 {
   // Default parameters, and everything passed by command line args.
   std::cout << "######  imsrg++ build version: " << version::BuildVersion() << std::endl;
-//#ifdef BUILDVERSION
-//  std::cout << "######  imsrg++ build version: " << BUILDVERSION << std::endl;
-//#endif
 
   Parameters parameters(argc,argv);
   if (parameters.help_mode) return 0;

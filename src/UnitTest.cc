@@ -7,6 +7,8 @@
 #include "imsrg_util.hh"
 #include "version.hh"
 
+#include <omp.h>
+
 
 uint64_t UnitTest::random_seed = 1;
 
@@ -4586,9 +4588,6 @@ bool UnitTest::SanityCheck()
 {
  
   std::cout << "BUILD VERSION = " << version::BuildVersion() << std::endl;
-//  #ifdef BUILDVERSION
-//  std::cout << "BUILD VERSION = " << BUILDVERSION << std::endl;
-//  #endif
   std::cout << "Test simple Clebsch-Gordan coeff..." << std::endl;
   double cg1 = AngMom::CG(0.5,0.5,0.5,-0.5,0,0);
   if ( std::abs( cg1 - sqrt(0.5)) > 1e-6 )

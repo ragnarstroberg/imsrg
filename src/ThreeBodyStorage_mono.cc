@@ -3,6 +3,8 @@
 #include "AngMom.hh"
 
 
+#include <omp.h>
+
 
 
 //OrbitIsospin::OrbitIsospin(int idx, int n, int l, int j)

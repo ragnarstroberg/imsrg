@@ -2,6 +2,8 @@
 #include "ThreeBodyStorage_no2b.hh"
 #include "AngMom.hh"
 
+#include <omp.h>
+
 
 
 
