@@ -454,6 +454,7 @@ PYBIND11_MODULE(pyIMSRG, m)
       .def("PrintCounters",&IMSRGProfiler::PrintCounters)
       .def("PrintAll",&IMSRGProfiler::PrintAll)
       .def("PrintMemory",&IMSRGProfiler::PrintMemory)
+      .def("Clear", &IMSRGProfiler::Clear)
    ;
 
 
@@ -497,9 +498,18 @@ PYBIND11_MODULE(pyIMSRG, m)
       Commutator.def("comm222_phss", &Commutator::comm222_phss);
       // IMSRG(3) commutators
       Commutator.def("comm330ss", &Commutator::comm330ss);
+      Commutator.def("comm331ss", &Commutator::comm331ss);
       Commutator.def("comm231ss", &Commutator::comm231ss);
-      Commutator.def("comm223ss", &Commutator::comm223ss);
+      Commutator.def("comm132ss", &Commutator::comm132ss);
       Commutator.def("comm232ss", &Commutator::comm232ss);
+      Commutator.def("comm332_ppph_hhhpss", &Commutator::comm332_ppph_hhhpss);
+      Commutator.def("comm332_pphhss", &Commutator::comm332_pphhss);
+      Commutator.def("comm223ss", &Commutator::comm223ss);
+      Commutator.def("comm133ss", &Commutator::comm133ss);
+      Commutator.def("comm233_pp_hhss", &Commutator::comm233_pp_hhss);
+      Commutator.def("comm233_phss", &Commutator::comm233_phss);
+      Commutator.def("comm333_ppp_hhhss", &Commutator::comm333_ppp_hhhss);
+      Commutator.def("comm333_pph_hhpss", &Commutator::comm333_pph_hhpss);
       // scalar-tensor commutators
       Commutator.def("comm111st", &Commutator::comm111st);
       Commutator.def("comm121st", &Commutator::comm121st);
