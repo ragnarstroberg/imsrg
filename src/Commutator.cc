@@ -844,7 +844,8 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
       auto i = indexi;
       Orbit &oi = Z.modelspace->GetOrbit(i);
       index_t jmin = Z.IsNonHermitian() ? 0 : i;
-      for (auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
+//      for (auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
+      for (auto j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) ) 
       {
           if (j<jmin) continue; // only calculate upper triangle
           for (auto& a : Z.modelspace->holes)  // C++11 syntax
@@ -854,7 +855,8 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
 //             for (auto b : Z.modelspace->all_orbits)
              if (Y.particle_rank>1)
              {
-               for (auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2} ))
+//               for (auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2} ))
+               for (auto b : X.GetOneBodyChannel(oa.l,oa.j2,oa.tz2 ))
                {
                   Orbit &ob = Z.modelspace->GetOrbit(b);
                   double nanb = oa.occ * (1-ob.occ);
@@ -868,6 +870,7 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
              if (X.particle_rank>1)
              {
                 for (auto b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2} ))
+//                for (auto b : Y.GetOneBodyChannel(oa.l,oa.j2,oa.tz2 ))
                 {
                   // comm211 part
                   Orbit &ob = Z.modelspace->GetOrbit(b);
@@ -942,7 +945,8 @@ void comm221ss( const Operator& X, const Operator& Y, Operator& Z)
       auto i = allorb_vec[indexi];
       Orbit &oi = Z.modelspace->GetOrbit(i);
       int jmin = Z.IsNonHermitian() ? 0 : i;
-      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+      for (int j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
       {
          if (j<jmin) continue;
          Orbit &oj = Z.modelspace->GetOrbit(j);
@@ -1034,7 +1038,8 @@ void comm122ss( const Operator& X, const Operator& Y, Operator& Z )
          // there may be a more efficient way to find these
          std::vector<index_t> ind1_ia, ind1_ja,ind2_aj,ind2_ai;
          std::vector<double> factor_ia,factor_ja;
-         for (int a : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//         for (int a : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+         for (int a : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
          {
             size_t ind2 = tbc.GetLocalIndex( std::min(a,j), std::max(a,j) );
             if (ind2<0 or ind2>=tbc.GetNumberKets()) continue;
@@ -1044,7 +1049,8 @@ void comm122ss( const Operator& X, const Operator& Y, Operator& Z )
          }
          if (i!=j)
          {
-           for (int a : Z.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+//           for (int a : Z.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+           for (int a : Z.GetOneBodyChannel(oj.l,oj.j2,oj.tz2) )
            {
               size_t ind2 = tbc.GetLocalIndex( std::min(a,i), std::max(a,i) );
               if (ind2<0 or ind2>=tbc.GetNumberKets()) continue;
@@ -1261,7 +1267,8 @@ void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z )
       auto i = allorb_vec[indexi];
       Orbit &oi = Z.modelspace->GetOrbit(i);
       int jmin = Z.IsNonHermitian() ? 0 : i;
-      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//      for (int j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+      for (int j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
       {
          if (j<jmin) continue;
 
@@ -2280,7 +2287,8 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
     int ei = 2*oi.n + oi.l;
     double occnat_i = oi.occ_nat;
     int tzi = oi.tz2;
-    for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//    for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    for ( auto j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
     {
       if (j>i) continue;
       double zij=0;
@@ -2404,7 +2412,8 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
     int ei = 2*oi.n + oi.l;
     double d_ei = std::abs( ei - e_fermi[oi.tz2]);
     double occnat_i = oi.occ_nat;
-    for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//    for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    for ( auto j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
     {
       if (j>i) continue;
       Orbit& oj = Z.modelspace->GetOrbit(j);
@@ -2528,7 +2537,8 @@ void comm231ss_slow( const Operator& X, const Operator& Y, Operator& Z )
     int ei = 2*oi.n + oi.l;
     double d_ei = std::abs( ei - e_fermi[oi.tz2]);
     double occnat_i = oi.occ_nat;
-    for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//    for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+    for ( auto j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
     {
       if (j>i) continue;
       Orbit& oj = Z.modelspace->GetOrbit(j);
@@ -2808,8 +2818,10 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
           // and easily lets us treat the case of Y having nonzero Tz or odd parity
           std::set<size_t> blist;
 //          std::cout << "HERE AT LINE " << __LINE__ <<  " and a is " << oa.l << " " << oa.j2 << " " << oa.tz2 << std::endl;
-          for ( auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2})) blist.insert(b);
-          for ( auto b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2})) blist.insert(b);
+//          for ( auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2})) blist.insert(b);
+          for ( auto b : X.GetOneBodyChannel(oa.l,oa.j2,oa.tz2)) blist.insert(b);
+//          for ( auto b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2})) blist.insert(b);
+          for ( auto b : Y.GetOneBodyChannel(oa.l,oa.j2,oa.tz2)) blist.insert(b);
 //          for ( auto b : Z.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) // TODO: We can make this a<=b or a>=b, I think. Just need to mind some factors of 2
           for ( auto b : blist ) 
           {
@@ -5227,7 +5239,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
       double occnat_k = ok.occ_nat;
 
 
-      for (auto a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//      for (auto a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+      for (auto a : X.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
       {
         Orbit& oa = X.modelspace->GetOrbit(a);
         double d_ea = std::abs(2*oa.n+oa.l - e_fermi.at(oa.tz2));
@@ -5249,7 +5262,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
           Y1MAT(index_bra,index_ket) += Y1(i,a) * recouple;
         }
       }
-      for (auto a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+//      for (auto a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+      for (auto a : X.GetOneBodyChannel(oj.l,oj.j2,oj.tz2) )
       {
 
         Orbit& oa = Z.modelspace->GetOrbit(a);
@@ -5271,7 +5285,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
           Y1MAT(index_bra,index_ket) += Y1(j,a) * recouple;
         }
       }
-      for (auto a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+//      for (auto a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+      for (auto a : X.GetOneBodyChannel(ok.l,ok.j2,ok.tz2) )
       {
         Orbit& oa = Z.modelspace->GetOrbit(a);
         double d_ea = std::abs(2*oa.n+oa.l - e_fermi.at(oa.tz2));
@@ -6382,7 +6397,8 @@ void comm223ss_new( const Operator& X, const Operator& Y, Operator& Z )
       {
         int l_n = ((j2n+1)/2)%2 == parity_n ? (j2n+1)/2  :  (j2n-1)/2;
         if (l_n > Z.modelspace->GetEmax() or l_n > Z.modelspace->GetLmax() ) continue;
-        for ( size_t n : Z.OneBodyChannels.at({l_n,j2n,tz2n}) )
+//        for ( size_t n : Z.OneBodyChannels.at({l_n,j2n,tz2n}) )
+        for ( size_t n : Z.GetOneBodyChannel(l_n,j2n,tz2n) )
         {
           Orbit& on = Z.modelspace->GetOrbit(n);
           double occnat_n = on.occ_nat;
@@ -6601,7 +6617,8 @@ void comm223ss_new( const Operator& X, const Operator& Y, Operator& Z )
 
 //   auto& a_set = Z.modelspace->OneBodyChannels.at({l_a,twoJph,twoTz_ph}); // list of one-body orbits in this channel
    std::vector<size_t> a_list;
-   for (auto a : Z.modelspace->OneBodyChannels.at({l_a,twoJph,twoTz_ph}) ) a_list.push_back(a);
+//   for (auto a : Z.modelspace->OneBodyChannels.at({l_a,twoJph,twoTz_ph}) ) a_list.push_back(a);
+   for (auto a : Z.GetOneBodyChannel(l_a,twoJph,twoTz_ph) ) a_list.push_back(a);
    size_t number_a = a_list.size();
 
    auto& good_kets_ijn = ket_lookup_pph[ch_pph];
@@ -10601,7 +10618,8 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
       auto i = allorb_vec[indexi];
       Orbit &oi = Z.modelspace->GetOrbit(i);
       double ji = 0.5*oi.j2;
-      for (auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
+//      for (auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) ) 
+      for (auto j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) ) 
       {
           Orbit &oj = Z.modelspace->GetOrbit(j);
           double jj = 0.5*oj.j2;
@@ -10611,7 +10629,8 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
           {
              Orbit &oa = Z.modelspace->GetOrbit(a);
              double ja = 0.5*oa.j2;
-             for (auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
+//             for (auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
+             for (auto b : X.GetOneBodyChannel(oa.l,oa.j2,oa.tz2) ) 
              {
                 Orbit &ob = Z.modelspace->GetOrbit(b);
                 double nanb = oa.occ * (1-ob.occ);
@@ -10631,7 +10650,8 @@ void comm121st( const Operator& X, const Operator& Y, Operator& Z)
                   }
              }
              // Now, X is scalar two-body and Y is tensor one-body
-             for (auto& b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
+//             for (auto& b : Y.OneBodyChannels.at({oa.l,oa.j2,oa.tz2}) ) 
+             for (auto& b : Y.GetOneBodyChannel(oa.l,oa.j2,oa.tz2) ) 
              {
 
                 Orbit &ob = Z.modelspace->GetOrbit(b);
@@ -10733,7 +10753,8 @@ void comm122st( const Operator& X, const Operator& Y , Operator& Z)
             double c3 = 0;
             double c4 = 0;
 
-            for ( int a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//            for ( int a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+            for ( int a : X.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
             {
               c1 += X.OneBody(i,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,a,j,k,l);
             }
@@ -10743,12 +10764,14 @@ void comm122st( const Operator& X, const Operator& Y , Operator& Z)
             }
             else
             {
-              for ( int a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+//              for ( int a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+              for ( int a : X.GetOneBodyChannel(oj.l,oj.j2,oj.tz2) )
               {
                  c2 += X.OneBody(j,a) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,a,k,l);
               }
             }
-            for ( int a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+//            for ( int a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+            for ( int a : X.GetOneBodyChannel(ok.l,ok.j2,ok.tz2) )
             {
                c3 += X.OneBody(a,k) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,a,l);
             }
@@ -10758,7 +10781,8 @@ void comm122st( const Operator& X, const Operator& Y , Operator& Z)
             }
             else
             {
-              for ( int a : X.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+//              for ( int a : X.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+              for ( int a : X.GetOneBodyChannel(ol.l,ol.j2,ol.tz2) )
               {
                  c4 += X.OneBody(a,l) * Y.TwoBody.GetTBME(ch_bra,ch_ket,i,j,k,a);
               }
@@ -10777,7 +10801,8 @@ void comm122st( const Operator& X, const Operator& Y , Operator& Z)
             int phase4 = Z.modelspace->phase(jk+jl-J1+Lambda);
 
 
-            for ( int a : Y.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//            for ( int a : Y.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+            for ( int a : Y.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
             {
                double ja = Z.modelspace->GetOrbit(a).j2*0.5;
                c1 -=   Z.modelspace->GetSixJ(J2,J1,Lambda,ji,ja,jj) * Y.OneBody(i,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,a,j,k,l) ;
@@ -10788,13 +10813,15 @@ void comm122st( const Operator& X, const Operator& Y , Operator& Z)
             }
             else
             {
-              for ( int a : Y.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+//              for ( int a : Y.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+              for ( int a : Y.GetOneBodyChannel(oj.l,oj.j2,oj.tz2) )
               {
                  double ja = Z.modelspace->GetOrbit(a).j2*0.5;
                  c2 +=  Z.modelspace->GetSixJ(J2,J1,Lambda,jj,ja,ji) * Y.OneBody(j,a) * X.TwoBody.GetTBME(ch_ket,ch_ket,a,i,k,l);
               }
             }
-            for ( int a : Y.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+//            for ( int a : Y.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+            for ( int a : Y.GetOneBodyChannel(ok.l,ok.j2,ok.tz2) )
             {
                double ja = Z.modelspace->GetOrbit(a).j2*0.5;
                c3 -=  Z.modelspace->GetSixJ(J1,J2,Lambda,jk,ja,jl) * Y.OneBody(a,k) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,l,a) ;
@@ -10805,7 +10832,8 @@ void comm122st( const Operator& X, const Operator& Y , Operator& Z)
             }
             else
             {
-              for ( int a : Y.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+//              for ( int a : Y.OneBodyChannels.at({ol.l,ol.j2,ol.tz2}) )
+              for ( int a : Y.GetOneBodyChannel(ol.l,ol.j2,ol.tz2) )
               {
                  double ja = Z.modelspace->GetOrbit(a).j2*0.5;
                  c4 +=  Z.modelspace->GetSixJ(J1,J2,Lambda,jl,ja,jk) * Y.OneBody(a,l) * X.TwoBody.GetTBME(ch_bra,ch_bra,i,j,k,a) ;
@@ -10917,7 +10945,8 @@ void comm222_pp_hh_221st( const Operator& X, const Operator& Y, Operator& Z )
       auto i = allorb_vec[indexi];
       Orbit &oi = Z.modelspace->GetOrbit(i);
       double ji = oi.j2/2.0;
-      for (auto j : Z.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+//      for (auto j : Z.OneBodyChannels.at({oi.l, oi.j2, oi.tz2}) )
+      for (auto j : Z.GetOneBodyChannel(oi.l, oi.j2, oi.tz2) )
       {
          if (j<i) continue;
          Orbit &oj = Z.modelspace->GetOrbit(j);
@@ -11878,13 +11907,15 @@ void comm231sd( const Operator& X, const Operator& Y, Operator& Z)
    Orbit& oQ = Z.modelspace->GetOrbit(Q);
 //   for (index_t i=0;i<norbits;++i)
 //   #pragma omp parallel for 
-   for (auto i : Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+//   for (auto i : Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+   for (auto i : Z.GetOneBodyChannel(oQ.l,oQ.j2,oQ.tz2) )
    {
           for (auto& a : Z.modelspace->holes)  // C++11 syntax
           {
              Orbit &oa = Z.modelspace->GetOrbit(a);
 //             for (index_t b=0; b<norbits; ++b)
-             for (auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2} ))
+//             for (auto b : X.OneBodyChannels.at({oa.l,oa.j2,oa.tz2} ))
+             for (auto b : X.GetOneBodyChannel(oa.l,oa.j2,oa.tz2 ))
              {
                 Orbit &ob = Z.modelspace->GetOrbit(b);
                 double nanb = oa.occ * (1-ob.occ); // despite what the name suggests, nanb is n_a * (1-n_b).
@@ -11967,21 +11998,24 @@ void comm413_233sd( const Operator& X, const Operator& Y, Operator& Z)
 
 //           std::cout << "INNER LOOPs ijk = " << i << " " << j << " " << k << " Z has " << Z.GetNumberLegs() << " legs " << " and there are " << Z.ThreeLeg.MatEl.size() << " 3 leg channels " << std::endl;
            // The first three loops are the [2,3]->3 bit
-           for ( int a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+//           for ( int a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
+           for ( int a : X.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
            {
 //             cijk += X1(i,a) * Y.TwoBody.GetTBME_norm(ch,ch,a,j,k,Qorbit);
 //             cijk += X1(i,a) * Y.TwoBody.GetTBME(ch,ch,a,j,k,Qorbit);
              cijk += X1(i,a) * Y.ThreeLeg.GetME(ch,a,j,k);
            }
 //           std::cout << "check 1. size of X.OneBodyChannels is " << X.OneBodyChannels.Size() << std::endl;
-           for ( int a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+//           for ( int a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
+           for ( int a : X.GetOneBodyChannel(oj.l,oj.j2,oj.tz2) )
            {
 //             cijk += X1(j,a) * Y.TwoBody.GetTBME_norm(ch,ch,i,a,k,Qorbit);
 //             cijk += X1(j,a) * Y.TwoBody.GetTBME(ch,ch,i,a,k,Qorbit);
              cijk += X1(j,a) * Y.ThreeLeg.GetME(ch,i,a,k);
            }
 //           std::cout << "check 2" << std::endl;
-           for ( int a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+//           for ( int a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
+           for ( int a : X.GetOneBodyChannel(ok.l,ok.j2,ok.tz2) )
            {
 //             cijk += X1(a,k) * Y.TwoBody.GetTBME_norm(ch,ch,i,j,a,Qorbit); // should this have a minus sign?
 //             cijk -= X1(a,k) * Y.TwoBody.GetTBME_norm(ch,ch,i,j,a,Qorbit); 
@@ -11991,7 +12025,8 @@ void comm413_233sd( const Operator& X, const Operator& Y, Operator& Z)
 
 //           std::cout << " DOING 413 bit "  << std::endl;
            // This here loop is the [4,1]->3 bit
-           for ( int a : Y.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+//           for ( int a : Y.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
+           for ( int a : Y.GetOneBodyChannel(oQ.l,oQ.j2,oQ.tz2) )
            {
 //             cijk += Y1(a,Qorbit) * X.TwoBody.GetTBME_norm(ch,ch,i,j,k,a);   // This determines the normalization for the (adagger adagger a) term.
 //             cijk +=  X.TwoBody.GetTBME(ch,ch,i,j,k,a) * Y1(a,Qorbit) ;   // This determines the normalization for the (adagger adagger a) term.
@@ -12085,7 +12120,8 @@ void comm433_pp_hh_431sd( const Operator& X, const Operator& Y, Operator& Z )
    int Q = Z.GetQSpaceOrbit();
    Orbit& oQ = Z.modelspace->GetOrbit(Q);
 //   auto ilist = Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2});
-   std::vector<index_t> ilist(Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}).begin(), Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}).end());
+//   std::vector<index_t> ilist(Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}).begin(), Z.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}).end());
+   std::vector<index_t> ilist(Z.GetOneBodyChannel(oQ.l,oQ.j2,oQ.tz2).begin(), Z.GetOneBodyChannel(oQ.l,oQ.j2,oQ.tz2).end());
    int ni = ilist.size();
    #pragma omp parallel for schedule(dynamic,1)
    for (int i_ind=0; i_ind<ni; ++i_ind)

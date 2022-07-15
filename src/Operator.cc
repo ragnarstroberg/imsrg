@@ -290,7 +290,8 @@ void Operator::SetUpOneBodyChannels()
 // l runs from 0 to emax, tz is -1,1, so (tz+1)/2 runs 0 to 1
 // twoj is 2l-1, 2l+1,  so we can use (twoj+1-2*l) 0,2
 // twoj runs from 1 to 2emax+1, so (twoj-1)/2 runs from 0 to emax
-std::set<index_t>& Operator::GetOneBodyChannel( int l, int twoj, int twotz )
+//std::set<index_t>& Operator::GetOneBodyChannel( int l, int twoj, int twotz )
+const std::set<index_t>&  Operator::GetOneBodyChannel( int l, int twoj, int twotz ) const
 {
   size_t indx = l*4 + (twoj+1-2*l) + (twotz+1)/2;
 //  if (indx >= OneBodyChannels_vec.size() )
