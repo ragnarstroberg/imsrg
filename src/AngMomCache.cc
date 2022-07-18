@@ -10,7 +10,7 @@ static inline std::size_t Dim1BFromJJ1BMax(int jj_1b_max) {
 }
 
 static inline std::size_t Dim2BFromJJ1BMax(int jj_1b_max) {
-    return J2BToIndex((jj_1b_max * jj_1b_max) / 2) + 1;
+    return J2BToIndex((jj_1b_max + jj_1b_max) / 2) + 1;
 }
 
 static std::vector<double> GenerateSixJCache(int jj_1b_max, std::size_t dim_1, std::size_t dim_2);
@@ -27,7 +27,7 @@ SixJCache_112112::SixJCache_112112(const int jj_1b_max)
 std::vector<double> GenerateSixJCache(const int jj_1b_max, const std::size_t dim_1, const std::size_t dim_2) {
     std::vector<double> six_js(dim_1 * dim_1 * dim_2 * dim_1 * dim_1 * dim_2, 0.0);
 
-    const int j_2b_max = (jj_1b_max * jj_1b_max) / 2;
+    const int j_2b_max = (jj_1b_max + jj_1b_max) / 2;
 
     for (int jj1 = 1; jj1 <= jj_1b_max; jj1 += 2) {
         double j1d = jj1 * 0.5;
