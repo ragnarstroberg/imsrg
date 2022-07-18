@@ -355,6 +355,11 @@ void ThreeBodyME::SetMode(std::string mode)
   IMSRGProfiler::timer[__func__] += omp_get_wtime() - t_start;
 }
 
+bool ThreeBodyME::IsKetValid( int Jab_in, int twoJ, size_t a_in, size_t b_in, size_t c_in) const
+{
+   return threebody_storage->IsKetValid(  Jab_in, twoJ, a_in, b_in, c_in);
+}
+
 size_t ThreeBodyME::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a_in, size_t b_in, size_t c_in, std::vector<size_t>& iket , std::vector<double>& recouple) const
 {
    return threebody_storage->GetKetIndex_withRecoupling(  Jab_in, twoJ, a_in, b_in, c_in, iket ,recouple);
