@@ -2931,6 +2931,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
           double occnat_l = ket_kl.oq->occ_nat;
           for ( size_t j : iter_j.second )
           {
+            if (!Z.ThreeBody.IsKetInEMaxTruncations(ket_kl.p, ket_kl.q, j)) continue;
             Orbit& oj = Z.modelspace->GetOrbit(j);
 //            double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
             double occnat_j = oj.occ_nat;

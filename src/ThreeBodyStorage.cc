@@ -146,31 +146,17 @@ std::vector<ThreeBodyStorage::Permutation> ThreeBodyStorage::UniquePermutations(
 
 bool ThreeBodyStorage::IsKetValid( int Jab, int twoJ, size_t a, size_t b, size_t c) const 
 {
+  if (!IsKetInEMaxTruncations(a, b, c)) {
+    return false;
+  }
+
   Orbit& oa = modelspace->GetOrbit(a);
   Orbit& ob = modelspace->GetOrbit(b);
   Orbit& oc = modelspace->GetOrbit(c);
 
-  int e_a = oa.n * 2 + oa.l;
-  int e_b = ob.n * 2 + ob.l;
-  int e_c = oc.n * 2 + oc.l;
-
   int jj_a = oa.j2;
   int jj_b = ob.j2;
   int jj_c = oc.j2;
-
-  int E3 = e_a + e_b + e_c;
-
-  // Check against emax 3-body cut.
-  if ((e_a > modelspace->GetEMax3Body()) 
-      || (e_b > modelspace->GetEMax3Body())
-      || (e_c > modelspace->GetEMax3Body())) {
-        return false;
-  }
-
-  // Check against E3max cut.
-  if (E3 > modelspace->GetE3max()) {
-    return false;
-  }
 
   int Jab_min = std::abs((jj_a - jj_b) / 2);
   int Jab_max = (jj_a + jj_b) / 2;
@@ -185,6 +171,33 @@ bool ThreeBodyStorage::IsKetValid( int Jab, int twoJ, size_t a, size_t b, size_t
 
   // Check against J_ab, j_c coupling range.
   if ((twoJ > twoJ_max) || (twoJ < twoJ_min)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool ThreeBodyStorage::IsKetInEMaxTruncations(size_t a, size_t b, size_t c) const 
+{
+  Orbit& oa = modelspace->GetOrbit(a);
+  Orbit& ob = modelspace->GetOrbit(b);
+  Orbit& oc = modelspace->GetOrbit(c);
+
+  int e_a = oa.n * 2 + oa.l;
+  int e_b = ob.n * 2 + ob.l;
+  int e_c = oc.n * 2 + oc.l;
+
+  int E3 = e_a + e_b + e_c;
+
+  // Check against emax 3-body cut.
+  if ((e_a > modelspace->GetEMax3Body()) 
+      || (e_b > modelspace->GetEMax3Body())
+      || (e_c > modelspace->GetEMax3Body())) {
+        return false;
+  }
+
+  // Check against E3max cut.
+  if (E3 > modelspace->GetE3max()) {
     return false;
   }
 
