@@ -148,6 +148,8 @@ class ThreeBodyStorage
   void Permute( Permutation perm, size_t a_in, size_t b_in, size_t c_in, size_t& a_out, size_t& b_out, size_t& c_out );
   std::vector<Permutation> UniquePermutations( size_t a, size_t b, size_t c ) const;
 
+  // Check that a, b, c fulfill certain truncations and restrictions.
+  bool IsKetValid(int Jab, int twoJ, size_t a, size_t b, size_t c) const;
   size_t GetKetIndex_withRecoupling( int Jab, int twoJ, size_t a, size_t b, size_t c, std::vector<size_t>& ibra, std::vector<double>& recouple) const ;
 
 
