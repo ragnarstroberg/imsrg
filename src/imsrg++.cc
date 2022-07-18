@@ -136,6 +136,7 @@ int main(int argc, char** argv)
   int eMax_imsrg = parameters.i("emax_imsrg");
   int e2Max_imsrg = parameters.i("e2max_imsrg");
   int e3Max_imsrg = parameters.i("e3max_imsrg");
+  int eMax_3body_imsrg = parameters.i("emax_3body_imsrg");
 //  if ( not ( eMax_imsrg==-1 and e2Max_imsrg==-1 and e3Max_imsrg==-1 ) )
 //  {
 //    if ( eMax_imsrg==-1 ) eMax_imsrg = eMax;
@@ -852,21 +853,23 @@ int main(int argc, char** argv)
 
 
   // We may want to use a smaller model space for the IMSRG evolution than we used for the HF step.
-  // This is most effective when using natural orbitals.
+  // This is most effective when using natural orbitals or when including 3-body operators.
 //  ModelSpace modelspace_imsrg = ( reference=="default" ? ModelSpace(eMax_imsrg,e2Max_imsrg,e3Max_imsrg,valence_space) : ModelSpace(eMax_imsrg,e2Max_imsrg,e3Max_imsrg,reference,valence_space) );
   ModelSpace modelspace_imsrg = modelspace;
-  if ( (eMax_imsrg != -1) or (e2Max_imsrg != -1) or (e3Max_imsrg) != -1)
+  if ( (eMax_imsrg != -1) or (e2Max_imsrg != -1) or (e3Max_imsrg != -1) or (eMax_3body_imsrg != -1))
   {
     
      if ( eMax_imsrg==-1 ) eMax_imsrg = eMax;
      if ( e2Max_imsrg==-1 ) e2Max_imsrg = 2*eMax_imsrg;
      if ( e3Max_imsrg==-1 ) e3Max_imsrg = std::min( E3max, 3*eMax_imsrg);
+     if ( eMax_3body_imsrg==-1) eMax_3body_imsrg = eMax_imsrg;
 
 //     ModelSpace modelspace_imsrg = modelspace;
      std::cout << "Truncating modelspace for IMSRG calculation: emax e2max e3max  ->  " << eMax_imsrg << " " << e2Max_imsrg << " " << e3Max_imsrg << std::endl;
      modelspace_imsrg.SetEmax( eMax_imsrg);
      modelspace_imsrg.SetE2max( e2Max_imsrg);
      modelspace_imsrg.SetE3max( e3Max_imsrg);
+     modelspace_imsrg.SetEmax3Body( eMax_3body_imsrg );
      modelspace_imsrg.Init( eMax_imsrg, reference, valence_space);
    //  if (emax_unocc>0) modelspace_imsrg.SetEmaxUnocc(emax_unocc);
      if (physical_system == "atomic") modelspace_imsrg.InitSingleSpecies(eMax_imsrg, reference, valence_space);
