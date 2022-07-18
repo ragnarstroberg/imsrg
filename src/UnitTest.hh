@@ -47,6 +47,18 @@ class UnitTest
   void TestDaggerCommutators(index_t Q);
   void TestDaggerCommutatorsAlln(index_t Q);
 
+  typedef void commutator_func (const Operator&,const Operator&,Operator&) ;
+//  bool Test_against_ref_impl(const Operator& X, const Operator& Y, void (*ComRef)(const Operator&,const Operator&), void (*ComOpt)(const Operator&,const Operator&), std::string output_tag="" );
+  bool Test_against_ref_impl(const Operator& X, const Operator& Y, commutator_func ComOpt, commutator_func ComRef, std::string output_tag="" );
+
+  bool Mscheme_Test_comm110ss( const Operator& X, const Operator& Y );
+  bool Mscheme_Test_comm220ss( const Operator& X, const Operator& Y );
+  bool Mscheme_Test_comm111ss( const Operator& X, const Operator& Y );
+  bool Mscheme_Test_comm121ss( const Operator& X, const Operator& Y ); 
+  bool Mscheme_Test_comm221ss( const Operator& X, const Operator& Y ); 
+  bool Mscheme_Test_comm122ss( const Operator& X, const Operator& Y );
+  bool Mscheme_Test_comm222_pp_hhss( const Operator& X, const Operator& Y );
+  bool Mscheme_Test_comm222_phss( const Operator& X, const Operator& Y ) ;
 
   bool Test_comm110ss( const Operator& X, const Operator& Y );
   bool Test_comm220ss( const Operator& X, const Operator& Y );
@@ -56,7 +68,12 @@ class UnitTest
   bool Test_comm122ss( const Operator& X, const Operator& Y );
   bool Test_comm222_pp_hhss( const Operator& X, const Operator& Y );
   bool Test_comm222_phss( const Operator& X, const Operator& Y ) ;
+  bool Test_comm222_pp_hh_221ss( const Operator& X, const Operator& Y );
 
+
+  bool Mscheme_Test_comm330ss( const Operator& X, const Operator& Y );
+  bool Mscheme_Test_comm331ss( const Operator& X, const Operator& Y );
+  bool Mscheme_Test_comm231ss( const Operator& X, const Operator& Y );
 
   bool Test_comm330ss( const Operator& X, const Operator& Y );
   bool Test_comm331ss( const Operator& X, const Operator& Y );

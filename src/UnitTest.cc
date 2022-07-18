@@ -6,6 +6,7 @@
 #include <string>
 #include "imsrg_util.hh"
 #include "version.hh"
+#include "ReferenceImplementations.hh" // for commutators
 
 #include <omp.h>
 
@@ -48,11 +49,48 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
     }
   }
 
+
+/// This is not yet fully fleshed out.
+  if ( particle_rank>2 )
+  {
+    Rando.ThreeBody.SwitchToPN_and_discard();
+    std::default_random_engine generator(random_seed);
+    double mean = 0;
+    double stddev = 1;
+    std::normal_distribution<double> distribution(mean,stddev);
+
+    size_t nch = modelspace.GetNumberThreeBodyChannels();
+    for (size_t ch=0; ch<nch; ch++)
+    {
+      ThreeBodyChannel& Tbc = modelspace.GetThreeBodyChannel(ch);
+
+      // Construct a list of triplets (pqr) that participate in this channel
+      std::set<std::array<size_t,3>> pqr_list;
+      
+      size_t nkets = Tbc.GetNumberKets();
+      for (size_t iket=0; iket<nkets; iket++)
+      {
+         Ket3& ket = Tbc.GetKet(iket);
+         pqr_list.insert( {ket.p,ket.q,ket.r});
+      }
+      size_t n_pqr = pqr_list.size();
+      std::vector<std::array<size_t,3>> pqr_vec;
+      for ( const auto& it : pqr_list ) pqr_vec.push_back( it );
+      
+
+    }//ch
+        
+  }
+
  // If needed, fill the 3-body piece. Since the storage scheme has
  // places for matrix elements that are zero by symmetry, we need
  // to actually loop through and make sure we don't give a finite value
  // to something that should be zero.
-  if ( particle_rank > 20 )
+ // In addition, because we use antisymmetrized matrix elements |abc Jab J>,
+ // if a=b, we require Jab is even. This requirement becomes more complicated
+ // when b=c. It's easier to randomly fill the matrix elements involving |bba Jbb J>
+ // and then obtain the |abb Jab J> by recoupling.
+  if ( particle_rank > 2 )
   {
     Rando.ThreeBody.SwitchToPN_and_discard();
     std::default_random_engine generator(random_seed);
@@ -67,10 +105,35 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
       size_t nkets = Tbc.GetNumberKets();
       for (size_t ibra=0; ibra<nkets; ibra++)
       {
+        Ket3& bra = Tbc.GetKet(ibra);
         for (size_t iket=0; iket<=ibra; iket++)
         {
-          double random_me = distribution(generator);
-          Rando.ThreeBody.SetME_pn_ch( ch,ch, ibra,iket, random_me );
+          Ket3& ket = Tbc.GetKet(iket);
+          if ( ((bra.q != bra.r) or (bra.p==bra.q)) and ((ket.q != ket.r) or (ket.p==ket.q)) ) // the easy case where we don't have b=c , b!=a.
+          {
+            double random_me = distribution(generator);
+            Rando.ThreeBody.SetME_pn_ch( ch,ch, ibra,iket, random_me );
+          }
+          else // otherwise, we need to fill the simpler ordering and then recouple
+          {
+             int Jab_min = std::abs(bra.op->j2-bra.oq->j2)/2;
+             int Jab_max = (bra.op->j2+bra.oq->j2)/2;
+             int Jde_min = std::abs(ket.op->j2-ket.oq->j2)/2;
+             int Jde_max = (ket.op->j2+ket.oq->j2)/2;
+             if ( (bra.q != bra.r) or (bra.p==bra.q) )  // if bra is not the troubling case
+             {
+                Jab_min = bra.Jpq;
+                Jab_max = bra.Jpq;
+             }
+             if ( (ket.q != ket.r) or (ket.p==ket.q)) // if ket is not the troubling case
+             {
+                Jde_min = ket.Jpq;
+                Jde_max = ket.Jpq;
+             }
+             if (bra.q==bra.r and bra.Jpq != Jab_min) continue;
+             if (ket.q==ket.r and ket.Jpq != Jde_min) continue;
+             
+          }
         }
       }
     }
@@ -423,8 +486,8 @@ void UnitTest::TestCommutators()
 {
   double t_start = omp_get_wtime();
   arma::arma_rng::set_seed( random_seed );
-  Operator X = RandomOp(*modelspace, 0, 0, 0, 2, -1);
-  Operator Y = RandomOp(*modelspace, 0, 0, 0, 2, +1);
+  Operator X = RandomOp(*modelspace, 0, 0, 0, 3, -1);
+  Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, +1);
 
   bool all_good = true;
 
@@ -436,8 +499,13 @@ void UnitTest::TestCommutators()
   all_good &= Test_comm221ss( X, Y );
 
   all_good &= Test_comm122ss( X, Y );
-  all_good &= Test_comm222_pp_hhss(  X, Y );
-  all_good &= Test_comm222_phss(  X, Y );
+  all_good &= Test_comm222_pp_hhss( X, Y );
+  all_good &= Test_comm222_phss( X, Y );
+  all_good &= Test_comm222_pp_hh_221ss( X, Y );
+
+  all_good &= Test_comm330ss(X,Y);
+  all_good &= Test_comm331ss(X,Y);
+  all_good &= Test_comm231ss(X,Y);
 
   if ( all_good )
   {
@@ -474,9 +542,14 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y, std::vector<std::strin
   X.ThreeBody.Erase();
   std::cout << " " << __func__ << " line " << __LINE__ << std::endl;
   Commutator::comm223ss( Xherm, Y, X); // Make the 3-body part of X equal to the commutator of 2 hermitian 2b operators
+  Commutator::comm133ss( Xherm, X, Y);
 //  X.modelspace->scalar3b_transform_first_pass = false;
 //  Commutator::comm223ss( Xherm, Y, X);
   bool all_good = true;
+
+  std::cout << "3body norms of X and Y: " << X.ThreeBodyNorm() << " " << Y.ThreeBodyNorm() << std::endl;
+
+  all_good &= Test_comm330ss(X,Y);
 
   if ( std::find(skiplist.begin(),skiplist.end(), "allN6") == skiplist.end() )
   {
@@ -876,7 +949,110 @@ double UnitTest::GetMschemeMatrixElement_3leg( const Operator& Op, int a, int ma
 
 }
 
+bool UnitTest::Test_against_ref_impl(const Operator& X, const Operator& Y, commutator_func ComOpt, commutator_func ComRef, std::string output_tag  )
+//                                                                           void (*ComOpt)(const Operator&,const Operator&,Operator&), std::string output_tag )
+{
+   
+  Operator Z( Y );
+  Z.Erase();
+  Operator Zref(Z);
 
+  ComOpt( X, Y, Z);
+  ComRef( X, Y, Zref);
+
+  double normOpt = Z.Norm() + Z.ZeroBody;
+  double normRef = Zref.Norm() + Zref.ZeroBody;
+  Z -= Zref;
+  double summed_error = Z.Norm();
+//  double summed_error = Z.ZeroBody - Zref.ZeroBody;
+
+//  if (output_tag == "comm222_phss" )
+//  {
+//    int nch = Z.modelspace->GetNumberTwoBodyChannels();
+//    for (int ch=0; ch<nch; ch++)
+//    {
+//       arma::mat DIFF = Z.TwoBody.GetMatrix(ch,ch) - Zref.TwoBody.GetMatrix(ch,ch);
+//       double diffnorm = arma::norm(DIFF);
+//       if ( diffnorm>1e-3)
+//       {
+//          std::cout << "disagreement in ch = " << ch << " diffnorm = " << diffnorm << std::endl << "OPT" << std::endl << Z.TwoBody.GetMatrix(ch,ch)
+//                    <<  std::endl << "REF" << std::endl << Zref.TwoBody.GetMatrix(ch,ch) << std::endl
+//                    <<  std::endl << "DIFF" << std::endl << DIFF << std::endl
+//                    <<  std::endl << " ===================================" << std::endl;
+//       }
+//    }
+//  }
+  
+
+  bool passed = std::abs( summed_error ) <1e-6 ;
+  std::string passfail = passed ? "PASS " : "FAIL";
+//  std::cout << "   " << __func__ <<   "  sum_ref, sum_opt = " << Zref.ZeroBody << " " << Z.ZeroBody
+  std::cout << "   " << output_tag <<   "  sum_ref, sum_opt = " << normRef << " " << normOpt
+            << "    summed error = " << summed_error << "  => " << passfail << std::endl;
+  return passed;
+}
+
+
+
+bool UnitTest::Test_comm110ss(const Operator& X, const Operator& Y )
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm110ss,  ReferenceImplementations::comm110ss,  "comm110ss");
+}
+
+bool UnitTest::Test_comm220ss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm220ss,  ReferenceImplementations::comm220ss,  "comm220ss");
+}
+
+bool UnitTest::Test_comm111ss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm111ss,  ReferenceImplementations::comm111ss,  "comm111ss");
+}
+
+bool UnitTest::Test_comm121ss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm121ss,  ReferenceImplementations::comm121ss,  "comm121ss");
+}
+
+bool UnitTest::Test_comm221ss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm221ss,  ReferenceImplementations::comm221ss,  "comm221ss");
+}
+
+bool UnitTest::Test_comm122ss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm122ss,  ReferenceImplementations::comm122ss,  "comm122ss");
+}
+
+bool UnitTest::Test_comm222_pp_hhss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm222_pp_hhss,  ReferenceImplementations::comm222_pp_hhss,  "comm222_pp_hhss");
+}
+
+bool UnitTest::Test_comm222_phss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm222_phss,  ReferenceImplementations::comm222_phss,  "comm222_phss");
+}
+bool UnitTest::Test_comm222_pp_hh_221ss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm222_pp_hh_221ss,  ReferenceImplementations::comm222_pp_hh_221ss,  "comm222_pp_hh_221ss");
+}
+
+/// IMSRG(3) commutators
+bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm330ss,  ReferenceImplementations::comm330ss,  "comm330ss");
+}
+
+bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm331ss,  ReferenceImplementations::comm331ss,  "comm331ss");
+}
+
+bool UnitTest::Test_comm231ss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm231ss,  ReferenceImplementations::comm231ss,  "comm231ss");
+}
 
 
 
@@ -884,7 +1060,7 @@ double UnitTest::GetMschemeMatrixElement_3leg( const Operator& Op, int a, int ma
 ///
 /// Z0 = 1/4 * sum_ab na(1-nb) (Xab * Yba - Yab * Xba)
 ///
-bool UnitTest::Test_comm110ss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm110ss( const Operator& X, const Operator& Y )
 {
    
   Operator Z_J( Y );
@@ -926,11 +1102,15 @@ bool UnitTest::Test_comm110ss( const Operator& X, const Operator& Y )
 }
 
 
+
+
+
+
 /// M-Scheme Formula:
 ///
 /// Z0 = 1/4 sum_abcd nanb (1-nc)(1-nd) ( Xabcd * Ycdab - Yabcd * Xcdab )
 ///
-bool UnitTest::Test_comm220ss( const Operator& X, const Operator& Y) 
+bool UnitTest::Mscheme_Test_comm220ss( const Operator& X, const Operator& Y) 
 {
   Operator Z_J( Y );
   Z_J.Erase();
@@ -996,7 +1176,8 @@ bool UnitTest::Test_comm220ss( const Operator& X, const Operator& Y)
 ///
 ///  Zij = sum_a (Xia * Yaj - Yia * Xaj)
 ///
-bool UnitTest::Test_comm111ss( const Operator& X, const Operator& Y )
+//bool UnitTest::Test_comm111ss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm111ss( const Operator& X, const Operator& Y )
 {
 
   Operator Z_J( Y );
@@ -1069,7 +1250,8 @@ bool UnitTest::Test_comm111ss( const Operator& X, const Operator& Y )
 /// Zij = sum_ab na*(1-nb) ( Xab * Ybiaj - Yaibj * Xba
 ///                        - Yab * Xbiaj + Xaibj * Yba )
 ///
-bool UnitTest::Test_comm121ss( const Operator& X, const Operator& Y)
+//bool UnitTest::Test_comm121ss( const Operator& X, const Operator& Y)
+bool UnitTest::Mscheme_Test_comm121ss( const Operator& X, const Operator& Y)
 {
 
   Operator Z_J( Y );
@@ -1157,7 +1339,7 @@ bool UnitTest::Test_comm121ss( const Operator& X, const Operator& Y)
 // Zij = 1/2 sum_abc [ na*nb*(1-nc) +(1-na)*(1-nb)*nc ] * (Xciab * Yabcj - Yciab * Xabcj)
 //
 //
-bool UnitTest::Test_comm221ss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm221ss( const Operator& X, const Operator& Y )
 {
 
   Operator Z_J( Y );
@@ -1166,6 +1348,7 @@ bool UnitTest::Test_comm221ss( const Operator& X, const Operator& Y )
 
 //  Commutator::comm222_pp_hh_221ss( X, Y, Z_J ) ; 
   Commutator::comm221ss( X, Y, Z_J);
+//  ReferenceImplementations::comm221ss( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
      Z_J.Symmetrize();
@@ -1254,7 +1437,7 @@ bool UnitTest::Test_comm221ss( const Operator& X, const Operator& Y )
 // Zijkl = sum_a   (Xia * Yajkl + Xja * Yiakl - Yijal * Xak - Yijka * Xal)
 //               - (Yia * Xajkl + Yja * Xiakl - Xijal * Yak - Xijka * Yal)
 //
-bool UnitTest::Test_comm122ss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm122ss( const Operator& X, const Operator& Y )
 {
 
   Operator Z_J( Y );
@@ -1366,7 +1549,7 @@ bool UnitTest::Test_comm122ss( const Operator& X, const Operator& Y )
 //
 // Zijkl = 1/2 sum_ab [(1-na)*(1-nb) - na*nb ] * ( Xijab * Yabkl - Yijab * Xabkl )
 //
-bool UnitTest::Test_comm222_pp_hhss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm222_pp_hhss( const Operator& X, const Operator& Y )
 {
 
   Operator Z_J( Y );
@@ -1474,13 +1657,14 @@ bool UnitTest::Test_comm222_pp_hhss( const Operator& X, const Operator& Y )
 //
 // Zijkl = sum_ab [na*(1-nb) - nb*(1-na)] * (1-Pij)(1-Pkl) ( Xaibk Ybjal  )
 //
-bool UnitTest::Test_comm222_phss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm222_phss( const Operator& X, const Operator& Y )
 {
 
   Operator Z_J( Y );
   Z_J.Erase();
 
-  Commutator::comm222_phss( X, Y, Z_J);
+//  Commutator::comm222_phss( X, Y, Z_J);
+  ReferenceImplementations::comm222_phss( X, Y, Z_J);
 
   if ( Z_J.IsHermitian() )
      Z_J.Symmetrize();
@@ -1528,6 +1712,7 @@ bool UnitTest::Test_comm222_phss( const Operator& X, const Operator& Y )
               {
                 Orbit& ob = X.modelspace->GetOrbit(b);
                 double nb = ob.occ;
+                double Zsave = Zm_ijkl;
                 if ( std::abs(  na*(1-nb) - nb*(1-na) ) < 1e-6) continue;
 
                 for (int ma=-oa.j2; ma<=oa.j2; ma+=2 )
@@ -1553,9 +1738,22 @@ bool UnitTest::Test_comm222_phss( const Operator& X, const Operator& Y )
 //                   Zm_ijkl += ( na*(1-nb) - nb*(1-na) ) * ( Xaibk*Ybjal - Xajbk*Ybial - Xaibl*Ybjak + Xajbl*Ybiak );
                    Zm_ijkl += (na - nb) * ( Xaibk*Ybjal - Xajbk*Ybial - Xaibl*Ybjak + Xajbl*Ybiak );
 
+                   if ( i==0 and j==0 and k==0 and l==0  and mi==1 and mj==-1 and mk==1 and ml==-1  and ( (a==2 and b==4) or (a==4 and b==2)) )
+                   {
+                      std::cout << "   ab " << a << " " << b << "  ma mb " << ma << " " << mb << "   : "
+                                << (na - nb) << " *  ( " << Xaibk << " * " << Ybjal << " - " << Xajbk << " * " << Ybial << "  -  " << Xaibl << " * " << Ybjak << " + " << Xajbl << " * " << Ybiak << ")"
+                                << "  = " << (na - nb) * ( Xaibk*Ybjal - Xajbk*Ybial - Xaibl*Ybjak + Xajbl*Ybiak )
+                                << " => " << Zm_ijkl
+                                << std::endl;
+                   }
 
                  }// for mb
                 }// for ma
+                if ( i==0 and j==0 and k==0 and l==0  and mi==1 and mj==-1 and mk==1 and ml==-1  and ( (a==2 and b==4) or (a==4 and b==2)) )
+                {
+                   std::cout << "Mscheme 000 Contribution from a,b = " << a << " , " << b << "   is " << Zm_ijkl-Zsave << std::endl;
+                   std::cout << "    projections " << mi << " " << mj << " " << mk << " " << ml << std::endl;
+                }
               }// for b
              }// for a
 
@@ -1597,7 +1795,8 @@ bool UnitTest::Test_comm222_phss( const Operator& X, const Operator& Y )
 //
 // Z0b = 1/36 sum_abcdef  na*nb*nc*(1-nd)(1-ne)(1-nf) ( X_abcdef * Y_defabc - Yabcdef * Xdefabc )
 //
-bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
+//bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm330ss( const Operator& X, const Operator& Y )
 {
   std::cout <<__func__ << std::endl;
   Operator Z_J( Y );
@@ -1709,7 +1908,7 @@ bool UnitTest::Test_comm330ss( const Operator& X, const Operator& Y )
 // Z_ij = 1/4 sum_abcde (nanb n`c n`dn`e) (X_abicde Y_cdeabj - Y_abicde X_cdeabj)
 //
 // this is very slow...
-bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm331ss( const Operator& X, const Operator& Y )
 {
   std::cout <<__func__ << std::endl;
 
@@ -1831,7 +2030,7 @@ bool UnitTest::Test_comm331ss( const Operator& X, const Operator& Y )
 //
 //  Z_ij = 1/4 sum_abcd (nanb n`cn`d) (X_abcd Y_cdiabj - Y_abicdj X_cdab)
 //
-bool UnitTest::Test_comm231ss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm231ss( const Operator& X, const Operator& Y )
 {
   std::cout <<__func__ << std::endl;
 

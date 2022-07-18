@@ -17,7 +17,7 @@
 
 /// Use half-precision floats. For documentation, see http://half.sourceforge.net
  #ifndef NO_x86
- #include <x86intrin.h>
+// #include <x86intrin.h>
  #endif
  #include "half.hpp"
  typedef half_float::half ME_half_type;

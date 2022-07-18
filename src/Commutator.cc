@@ -835,6 +835,7 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
 {
    double t_start = omp_get_wtime();
    index_t norbits = Z.modelspace->all_orbits.size();
+   int hZ = Z.IsHermitian() ? 1 : -1;
   
    #pragma omp parallel for 
    for (index_t indexi=0;indexi<norbits;++indexi)
@@ -848,6 +849,7 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
       for (auto j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) ) 
       {
           if (j<jmin) continue; // only calculate upper triangle
+          double zij =0;
           for (auto& a : Z.modelspace->holes)  // C++11 syntax
           {
              Orbit &oa = Z.modelspace->GetOrbit(a);
@@ -861,8 +863,10 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
                   Orbit &ob = Z.modelspace->GetOrbit(b);
                   double nanb = oa.occ * (1-ob.occ);
                   if (std::abs(nanb)<ModelSpace::OCC_CUT) continue;
-                  Z.OneBody(i,j) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
-                  Z.OneBody(i,j) -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,j) ;
+//                  Z.OneBody(i,j) += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
+//                  Z.OneBody(i,j) -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,j) ;
+                  zij += (ob.j2+1) * nanb *  X.OneBody(a,b) * Y.TwoBody.GetTBMEmonopole(b,i,a,j) ;
+                  zij -= (oa.j2+1) * nanb *  X.OneBody(b,a) * Y.TwoBody.GetTBMEmonopole(a,i,b,j) ;
                 }
              }
 //             for (index_t b=0; b<norbits; ++b)
@@ -876,13 +880,18 @@ void comm121ss( const Operator& X, const Operator& Y, Operator& Z)
                   Orbit &ob = Z.modelspace->GetOrbit(b);
                   double nanb = oa.occ * (1-ob.occ);
                   if (std::abs(nanb)<ModelSpace::OCC_CUT) continue;
-                  Z.OneBody(i,j) -= (ob.j2+1) * nanb * Y.OneBody(a,b) * X.TwoBody.GetTBMEmonopole(b,i,a,j) ;
-                  Z.OneBody(i,j) += (oa.j2+1) * nanb * Y.OneBody(b,a) * X.TwoBody.GetTBMEmonopole(a,i,b,j) ;
+//                  Z.OneBody(i,j) -= (ob.j2+1) * nanb * Y.OneBody(a,b) * X.TwoBody.GetTBMEmonopole(b,i,a,j) ;
+//                  Z.OneBody(i,j) += (oa.j2+1) * nanb * Y.OneBody(b,a) * X.TwoBody.GetTBMEmonopole(a,i,b,j) ;
+                  zij -= (ob.j2+1) * nanb * Y.OneBody(a,b) * X.TwoBody.GetTBMEmonopole(b,i,a,j) ;
+                  zij += (oa.j2+1) * nanb * Y.OneBody(b,a) * X.TwoBody.GetTBMEmonopole(a,i,b,j) ;
                 }
              }
           }
+          Z.OneBody(i,j) += zij;
+          if ( jmin==i and j!=i ) Z.OneBody(j,i) += hZ * zij;
       }
    }
+
    X.profiler.timer[__func__] += omp_get_wtime() - t_start;
 }
 
@@ -926,6 +935,8 @@ void comm221ss( const Operator& X, const Operator& Y, Operator& Z)
 //   static TwoBodyME Mpp = Y.TwoBody; // SRS: Is there a good reason to make these static?
 //   static TwoBodyME Mhh = Y.TwoBody;
 
+   int hZ = Z.IsHermitian() ? 1 : -1;
+
    TwoBodyME Mpp(Z.modelspace, Z.GetJRank(), Z.GetTRank(), Z.GetParity());
    TwoBodyME Mhh(Z.modelspace, Z.GetJRank(), Z.GetTRank(), Z.GetParity());
 //   TwoBodyME Mpp = Z.TwoBody;
@@ -950,7 +961,7 @@ void comm221ss( const Operator& X, const Operator& Y, Operator& Z)
       {
          if (j<jmin) continue;
          Orbit &oj = Z.modelspace->GetOrbit(j);
-         double cijJ = 0;
+         double zij = 0;
          for ( auto& c : Z.modelspace->all_orbits)
          {
            Orbit& oc = Z.modelspace->GetOrbit(c);
@@ -963,20 +974,20 @@ void comm221ss( const Operator& X, const Operator& Y, Operator& Z)
            {
              for (int J=Jmin; J<=Jmax; J++ )
              {
-               cijJ += (2*J+1) * nc   * Mpp.GetTBME_J(J,c,i,c,j) ;
+               zij += (2*J+1) * nc   * Mpp.GetTBME_J(J,c,i,c,j) ;
              }
            }
            if ( std::abs(nbarc)>1e-9 )
            {
              for (int J=Jmin; J<=Jmax; J++ )
              {
-               cijJ += (2*J+1) * nbarc  * Mhh.GetTBME_J(J,c,i,c,j);
+               zij += (2*J+1) * nbarc  * Mhh.GetTBME_J(J,c,i,c,j);
              }
            }
          }
 
-
-         Z.OneBody(i,j) += cijJ /(oi.j2+1.0);
+         Z.OneBody(i,j) += zij /(oi.j2+1.0);
+         if ( jmin==i and i!=j) Z.OneBody(j,i) += hZ * zij /(oi.j2+1.0);
       } // for j
    }
 
@@ -1236,7 +1247,7 @@ void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z )
 {
 
    double t_start = omp_get_wtime();
-//   int herm = Z.IsHermitian() ? 1 : -1;
+   int hZ = Z.IsHermitian() ? 1 : -1;
 //   Operator& Z = *this;
 
 //   static TwoBodyME Mpp = Z.TwoBody;
@@ -1273,7 +1284,7 @@ void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z )
          if (j<jmin) continue;
 
          Orbit &oj = Z.modelspace->GetOrbit(j);
-         double cijJ = 0;
+         double zij = 0;
          for ( auto& c : Z.modelspace->all_orbits)
          {
            Orbit& oc = Z.modelspace->GetOrbit(c);
@@ -1286,19 +1297,22 @@ void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z )
            {
              for (int J=Jmin; J<=Jmax; J++ )
              {
-               cijJ += (2*J+1) * nc   * Mpp.GetTBME_J(J,c,i,c,j) ;
+               zij += (2*J+1) * nc   * Mpp.GetTBME_J(J,c,i,c,j) ;
              }
            }
            if ( std::abs(nbarc)>1e-9 )
            {
              for (int J=Jmin; J<=Jmax; J++ )
              {
-               cijJ += (2*J+1) * nbarc  * Mhh.GetTBME_J(J,c,i,c,j);
+               zij += (2*J+1) * nbarc  * Mhh.GetTBME_J(J,c,i,c,j);
              }
            }
          }
 
-         Z.OneBody(i,j) += cijJ /(oi.j2+1.0);
+//         Z.OneBody(i,j) += cijJ /(oi.j2+1.0);
+
+         Z.OneBody(i,j) += zij /(oi.j2+1.0);
+         if ( jmin==i and i!=j) Z.OneBody(j,i) += hZ * zij /(oi.j2+1.0);
       } // for j
    } // for i
 
@@ -1626,103 +1640,13 @@ void DoPandyaTransformation(const Operator& Z, std::deque<arma::mat>& TwoBody_CC
 }
 
 
-// currently, this is not used anywhere...
-void AddInversePandyaTransformation_SingleChannel( Operator& Z,  arma::mat& Zbar, int ch_cc)
-{
-    // Only go parallel if we've previously calculated the SixJ's. Otherwise, it's not thread safe.
-   TwoBodyChannel_CC& tbc_cc = Z.modelspace->GetTwoBodyChannel_CC(ch_cc);
-   int Jcc = tbc_cc.J;
-   int Jhat2 = 2*Jcc+1;
-   int parity_cc = tbc_cc.parity;
-   int Tz_cc = tbc_cc.Tz;
-   int nkets_cc = tbc_cc.GetNumberKets();
-   int n_nonzeroChannels = Z.modelspace->SortedTwoBodyChannels.size();
-//   #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar_transform_first_pass)
-   for (int ich = 0; ich < n_nonzeroChannels; ++ich)
-   {
-      int ch = Z.modelspace->SortedTwoBodyChannels[ich];
-      TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
-      int J = tbc.J;
-      int nKets = tbc.GetNumberKets();
-      auto& Zmat = Z.TwoBody.GetMatrix(ch,ch);
-
-      for (int ibra=0; ibra<nKets; ++ibra)
-      {
-         Ket & bra = tbc.GetKet(ibra);
-         int i = bra.p;
-         int j = bra.q;
-         Orbit & oi = Z.modelspace->GetOrbit(i);
-         Orbit & oj = Z.modelspace->GetOrbit(j);
-         double ji = 0.5*oi.j2;
-         double jj = 0.5*oj.j2;
-         int ketmin = Z.IsHermitian() ? ibra : ibra+1;
-         for (int iket=ketmin; iket<nKets; ++iket)
-         {
-            Ket & ket = tbc.GetKet(iket);
-            int k = ket.p;
-            int l = ket.q;
-            Orbit & ok = Z.modelspace->GetOrbit(k);
-            Orbit & ol = Z.modelspace->GetOrbit(l);
-            double jk = 0.5*ok.j2;
-            double jl = 0.5*ol.j2;
-
-            double commij = 0;
-            double commji = 0;
-
-            int jmin = std::max(std::abs(int(ji-jl)),std::abs(int(jk-jj)));
-            int jmax = std::min(int(ji+jl),int(jk+jj));
-//            if ( ((oi.l+ol.l)%2==parity_cc)  and  (std::abs(oi.tz2+ol.tz2)==Tz_cc*2) and (Jcc>=jmin) and (Jcc<=jmax) )
-            if ( ((oi.l+ol.l)%2==parity_cc)  and  (std::abs(oi.tz2-ol.tz2)==Tz_cc*2) and (Jcc>=jmin) and (Jcc<=jmax) )
-            {
-               double sixj = Z.modelspace->GetSixJ(ji,jj,J,jk,jl,Jcc);
-               int indx_il = tbc_cc.GetLocalIndex(i,l) ;
-               int indx_kj = tbc_cc.GetLocalIndex( std::min(j,k), std::max(j,k) ) +(k>j?nkets_cc:0);
-               commij -= Jhat2 * sixj * Zbar(indx_il,indx_kj) ;
-
-            }
-
-            if (k==l)
-            {
-              commji = commij;
-            }
-            else if (i==j)
-            {
-              commji = Z.modelspace->phase(ji+jj+jk+jl) * commij;
-            }
-            else
-            {
-              // now loop over the cross coupled TBME's
-              jmin = std::max(std::abs(int(jj-jl)),std::abs(int(jk-ji)));
-              jmax = std::min(int(jj+jl),int(jk+ji));
-//              if ( (oi.l+ok.l)%2==parity_cc  and  std::abs(oi.tz2+ok.tz2)==Tz_cc*2 and Jcc>=jmin and Jcc<=jmax)
-              if ( (oi.l+ok.l)%2==parity_cc  and  std::abs(oi.tz2-ok.tz2)==Tz_cc*2 and Jcc>=jmin and Jcc<=jmax)
-              {
-                 double sixj = Z.modelspace->GetSixJ(jj,ji,J,jk,jl,Jcc);
-                 int indx_ik = tbc_cc.GetLocalIndex(i,k) ;
-                 int indx_lj = tbc_cc.GetLocalIndex(std::min(l,j),std::max(l,j)) +(l>j?nkets_cc:0);
-                 // we always have i<=k so we should always flip Z_jlki = (-1)^{i+j+k+l} Z_iklj
-                 // the phase we get from that flip combines with the phase from Pij, to give the phase included below
-                 commji -= Jhat2 *  sixj *  Zbar(indx_ik, indx_lj) ;
-
-
-              }
-            }
-            double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : PhysConst::SQRT2;
-            #pragma omp atomic
-            Zmat(ibra,iket) -= (commij - Z.modelspace->phase(jk+jl-J ) * commji) / norm;
-         }
-      }
-   }
-}
-
-
-
 // Take Zbar, and perform a Pandya transform on it and put the result in Z (technically there's a minus sign
 // missing in what is done here, but that's on purpose).
 void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator& Z)
 {
     // Do the inverse Pandya transform
    int nch = Z.modelspace->GetNumberTwoBodyChannels();
+   int hZ = Z.IsHermitian() ? 1 : -1;
 
    #pragma omp parallel for schedule(dynamic,1)
    for (int ch = 0; ch < nch; ++ch)
@@ -1814,7 +1738,13 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
 
             double norm = bra.delta_pq()==ket.delta_pq() ? 1+bra.delta_pq() : PhysConst::SQRT2;
 //            Z.TwoBody.GetMatrix(ch,ch)(ibra,iket) -= (commij - Z.modelspace->phase(jk+jl-J ) * commji) / norm;
-            ZMat(ibra,iket) -= (commij - Z.modelspace->phase(jk+jl-J ) * commji) / norm;
+            double zijkl = -(commij - Z.modelspace->phase(jk+jl-J ) * commji) / norm;
+
+
+
+
+            ZMat(ibra,iket) += zijkl;
+            if (ibra != iket) ZMat(iket,ibra) += hZ * zijkl;
          }// for iket
       }// for ibra
    }// for ch

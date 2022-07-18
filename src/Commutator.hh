@@ -149,7 +149,6 @@ namespace Commutator{
   void DoTensorPandyaTransformation(const Operator& Z, std::map<std::array<index_t,2>,arma::mat>&) ;
   void DoTensorPandyaTransformation_SingleChannel(const Operator& Z, arma::mat& X, int ch_bra_cc, int ch_ket_cc) ;
   void AddInverseTensorPandyaTransformation(Operator& Z, const std::map<std::array<index_t,2>,arma::mat>&);
-  void AddInverseTensorPandyaTransformation_SingleChannel(Operator& Z, arma::mat& Zbar, int ch_bra_cc, int ch_ket_cc);
 
   void comm111st( const Operator& X, const Operator& Y, Operator& Z) ;
   void comm121st( const Operator& X, const Operator& Y, Operator& Z) ;
