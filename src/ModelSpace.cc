@@ -46,7 +46,7 @@ std::map< std::string, std::vector<std::string> > ModelSpace::ValenceSpaces  {
 
 
 ModelSpace::ModelSpace()
-:  Emax(0), E2max(0), E3max(0), Lmax(9999), Lmax2(9999), Lmax3(9999), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(0), dE3max(999), occnat3cut(-1.0), norbits(0),
+:  Emax(0), E2max(0), E3max(0), Lmax(9999), Lmax2(9999), Lmax3(9999), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(0), emax_3body_(0), dE3max(999), occnat3cut(-1.0), norbits(0), norbits_3body_(0),
   hbar_omega(20), target_mass(16), sixj_has_been_precalculated(false), ninej_has_been_precalculated(false), moshinsky_has_been_precalculated(false),
   scalar_transform_first_pass(true),scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false)
 {
@@ -62,8 +62,8 @@ ModelSpace::ModelSpace()
 ModelSpace::ModelSpace(const ModelSpace& ms)
  :
    Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax(ms.Lmax), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
-   OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax), EmaxUnocc(ms.EmaxUnocc),
-   dE3max(ms.dE3max), occnat3cut(ms.occnat3cut), e_fermi(ms.e_fermi), norbits(ms.norbits), hbar_omega(ms.hbar_omega),
+   OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax), EmaxUnocc(ms.EmaxUnocc), emax_3body_(ms.emax_3body_),
+   dE3max(ms.dE3max), occnat3cut(ms.occnat3cut), e_fermi(ms.e_fermi), norbits(ms.norbits), norbits_3body_(ms.norbits_3body_), hbar_omega(ms.hbar_omega),
    target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
    Orbits(ms.Orbits), Kets(ms.Kets), Kets3(ms.Kets3),
    OneBodyChannels(ms.OneBodyChannels), nTwoBodyChannels(ms.nTwoBodyChannels),
@@ -74,6 +74,7 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
    holes( ms.holes), particles( ms.particles),
    core(ms.core), valence(ms.valence), qspace( ms.qspace), 
    proton_orbits( ms.proton_orbits),neutron_orbits( ms.neutron_orbits), all_orbits(ms.all_orbits),
+   orbits_3body_space_( ms.orbits_3body_space_),
    KetIndex_pp( ms.KetIndex_pp), KetIndex_ph( ms.KetIndex_ph), KetIndex_hh( ms.KetIndex_hh),
    KetIndex_cc( ms.KetIndex_cc),
    KetIndex_vc( ms.KetIndex_vc),
@@ -98,8 +99,8 @@ ModelSpace::ModelSpace(const ModelSpace& ms)
 ModelSpace::ModelSpace(ModelSpace&& ms)
  :
    Emax(ms.Emax), E2max(ms.E2max), E3max(ms.E3max), Lmax(ms.Lmax), Lmax2(ms.Lmax2), Lmax3(ms.Lmax3),
-   OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax), EmaxUnocc(ms.EmaxUnocc),
-   dE3max(ms.dE3max), occnat3cut(ms.occnat3cut), e_fermi(ms.e_fermi), norbits(ms.norbits), hbar_omega(ms.hbar_omega),
+   OneBodyJmax(ms.OneBodyJmax), TwoBodyJmax(ms.TwoBodyJmax), ThreeBodyJmax(ms.ThreeBodyJmax), EmaxUnocc(ms.EmaxUnocc), emax_3body_(ms.emax_3body_),
+   dE3max(ms.dE3max), occnat3cut(ms.occnat3cut), e_fermi(ms.e_fermi), norbits(ms.norbits), norbits_3body_(ms.norbits_3body_), hbar_omega(ms.hbar_omega),
    target_mass(ms.target_mass), target_Z(ms.target_Z), Aref(ms.Aref), Zref(ms.Zref),
    Orbits(std::move(ms.Orbits)), Kets(std::move(ms.Kets)),
    OneBodyChannels(std::move(ms.OneBodyChannels)), nTwoBodyChannels(std::move(ms.nTwoBodyChannels)),
@@ -110,6 +111,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
    holes( std::move(ms.holes)), particles( std::move(ms.particles)),
    core(std::move(ms.core)), valence(std::move(ms.valence)),  qspace( std::move(ms.qspace)),  
    proton_orbits( std::move(ms.proton_orbits)), neutron_orbits( std::move(ms.neutron_orbits)), all_orbits( std::move(ms.all_orbits)),
+   orbits_3body_space_(std::move(ms.orbits_3body_space_)),
    KetIndex_pp( std::move(ms.KetIndex_pp)), KetIndex_ph( std::move(ms.KetIndex_ph)), KetIndex_hh( std::move(ms.KetIndex_hh)),
    KetIndex_cc( ms.KetIndex_cc),
    KetIndex_vc( ms.KetIndex_vc),
@@ -137,7 +139,7 @@ ModelSpace::ModelSpace(ModelSpace&& ms)
 // orbit std::string representation is e.g. p0f7
 // Assumes that the core is hole states that aren't in the valence space.
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> valence_list)
-:  Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999), occnat3cut(-1.0), norbits(0), hbar_omega(20), target_mass(16),
+:  Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), emax_3body_(emax), dE3max(999), occnat3cut(-1.0), norbits(0), norbits_3body_(0), hbar_omega(20), target_mass(16),
     sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),    moshinsky_has_been_precalculated(false),
       scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true), single_species(false),
       six_j_cache_2b_(2 * emax + 1)
@@ -148,7 +150,7 @@ ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector
 
 // If we don't want the reference to be the core
 ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector<std::string> core_list, std::vector<std::string> valence_list)
-: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), norbits(0), hbar_omega(20), target_mass(16),
+: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), emax_3body_(emax), dE3max(999),  occnat3cut(-1.0), norbits(0), norbits_3body_(0), hbar_omega(20), target_mass(16),
      sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),  moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false),
      six_j_cache_2b_(2 * emax + 1)
 {
@@ -156,18 +158,22 @@ ModelSpace::ModelSpace(int emax, std::vector<std::string> hole_list, std::vector
    Init(emax, hole_list, core_list, valence_list); // Init version 3  (int, vector<string>, vector<string>, vector<string> )
 }
 
-// Most conventient interface
+// Most convenient interface
 ModelSpace::ModelSpace(int emax, std::string reference, std::string valence)
-: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
+  : ModelSpace(emax, emax, reference, valence)
+{}
+
+ModelSpace::ModelSpace(int emax, int emax_3body, std::string reference, std::string valence)
+: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), emax_3body_(emax_3body),
+     dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
      sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),   moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true),tensor_transform_first_pass(40,true),single_species(false),
      six_j_cache_2b_(2 * emax + 1)
 {
-//  SetUpOrbits();
-  Init(emax,reference,valence); // Init version 1  (int, string, string )
+  Init(emax, reference,valence); // Init version 1  (int, string, string )
 }
 
 ModelSpace::ModelSpace(int emax, std::string valence)
-: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
+: Emax(emax), E2max(2*emax), E3max(std::min(14,3*emax)), Lmax(emax), Lmax2(emax), Lmax3(emax), OneBodyJmax(0), TwoBodyJmax(0), ThreeBodyJmax(0), EmaxUnocc(emax), emax_3body_(emax), dE3max(999),  occnat3cut(-1.0), hbar_omega(20),
      sixj_has_been_precalculated(false),  ninej_has_been_precalculated(false),   moshinsky_has_been_precalculated(false), scalar_transform_first_pass(true), scalar3b_transform_first_pass(true), tensor_transform_first_pass(40,true),single_species(false),
      six_j_cache_2b_(2 * emax + 1)
 {
@@ -231,6 +237,7 @@ void ModelSpace::Init(int emax, std::string reference, std::string valence)
 // Init version 2  (int, map<array,double>, string)
 void ModelSpace::Init(int emax, std::map<std::array<int,4>,double> hole_list, std::string valence)
 {
+  // NOTE: emax is unused and Emax is used instead.
 //  int Ac,Zc;
   double Ac,Zc;
   std::set<std::array<int,4>> valence_list, core_list;
@@ -429,6 +436,7 @@ void ModelSpace::Init( std::map<std::array<int,4>,double> hole_list, std::set<st
      }
    }
    norbits = all_orbits.size();
+   norbits_3body_ = orbits_3body_space_.size();
 //   double atmp=0;
 //   double ztmp=0;
 //   double acore=0;
@@ -1014,6 +1022,7 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
    proton_orbits =  ms.proton_orbits;
    neutron_orbits =  ms.neutron_orbits;
    all_orbits  =  ms.all_orbits;
+   orbits_3body_space_ = ms.orbits_3body_space_;
    KetIndex_pp =  ms.KetIndex_pp;
    KetIndex_ph =  ms.KetIndex_ph;
    KetIndex_hh =  ms.KetIndex_hh;
@@ -1030,6 +1039,7 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
    E3max = ms.E3max;
    Lmax2 = ms.Lmax2;
    Lmax3 = ms.Lmax3;
+   emax_3body_ = ms.emax_3body_;
    OneBodyJmax = ms.OneBodyJmax;
    TwoBodyJmax = ms.TwoBodyJmax;
    ThreeBodyJmax = ms.ThreeBodyJmax;
@@ -1037,6 +1047,7 @@ ModelSpace ModelSpace::operator=(const ModelSpace& ms)
    SortedTwoBodyChannels = ms.SortedTwoBodyChannels;
    SortedTwoBodyChannels_CC = ms.SortedTwoBodyChannels_CC;
    norbits = ms.norbits;
+   norbits_3body_ = ms.norbits_3body_;
    hbar_omega = ms.hbar_omega;
    target_mass = ms.target_mass;
    target_Z = ms.target_Z;
@@ -1065,6 +1076,7 @@ ModelSpace ModelSpace::operator=(ModelSpace&& ms)
    proton_orbits =  std::move(ms.proton_orbits);
    neutron_orbits =  std::move(ms.neutron_orbits);
    all_orbits =  std::move(ms.all_orbits);
+   orbits_3body_space_ = std::move(ms.orbits_3body_space_);
    KetIndex_pp =  std::move(ms.KetIndex_pp);
    KetIndex_ph =  std::move(ms.KetIndex_ph);
    KetIndex_hh =  std::move(ms.KetIndex_hh);
@@ -1081,6 +1093,7 @@ ModelSpace ModelSpace::operator=(ModelSpace&& ms)
    E3max = std::move(ms.E3max);
    Lmax2 = std::move(ms.Lmax2);
    Lmax3 = std::move(ms.Lmax3);
+   emax_3body_ = std::move(ms.emax_3body_);
    OneBodyJmax = std::move(ms.OneBodyJmax);
    TwoBodyJmax = std::move(ms.TwoBodyJmax);
    ThreeBodyJmax = std::move(ms.ThreeBodyJmax);
@@ -1088,6 +1101,7 @@ ModelSpace ModelSpace::operator=(ModelSpace&& ms)
    SortedTwoBodyChannels = std::move(ms.SortedTwoBodyChannels);
    SortedTwoBodyChannels_CC = std::move(ms.SortedTwoBodyChannels_CC);
    norbits = std::move(ms.norbits);
+   norbits_3body_ = std::move(ms.norbits_3body_);
    hbar_omega = std::move(ms.hbar_omega);
    target_mass = std::move(ms.target_mass);
    target_Z = std::move(ms.target_Z);
@@ -1150,7 +1164,7 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
       if (single_species) nTwoBodyChannels = 2*(TwoBodyJmax+1);
    }
 
-   for ( auto orbitlist : {&particles,&holes,&core,&valence,&qspace,&proton_orbits,&neutron_orbits,&all_orbits}  ) orbitlist->erase(ind); // 
+   for ( auto orbitlist : {&particles,&holes,&core,&valence,&qspace,&proton_orbits,&neutron_orbits,&all_orbits,&orbits_3body_space_}  ) orbitlist->erase(ind); // 
 
    if ( occ < OCC_CUT) particles.insert(ind);
    else holes.insert(ind);
@@ -1160,8 +1174,12 @@ void ModelSpace::AddOrbit(int n, int l, int j2, int tz2, double occ, int cvq)
    if (tz2 < 0 ) proton_orbits.insert(ind);
    if (tz2 > 0 ) neutron_orbits.insert(ind);
    all_orbits.insert(ind);
+   if (2 * n + l <= emax_3body_) {
+    orbits_3body_space_.insert(ind);
+   }
 
    norbits = all_orbits.size();
+   norbits_3body_ = orbits_3body_space_.size();
 //   OneBodyChannels[{l, j2, tz2}].push_back(ind); // (Evidently, we mean one-body channels for an operator with the same symmetries as the Hamiltonian).
    OneBodyChannels[{l, j2, tz2}].insert(ind); // (Evidently, we mean one-body channels for an operator with the same symmetries as the Hamiltonian).
 }
@@ -1401,17 +1419,17 @@ void ModelSpace::Setup3bKets()
   // in the loop.
   std::set<std::array<int,3>> channels_found;
 
-  for ( auto p : all_orbits )
+  for ( auto p : orbits_3body_space_)
   {
     Orbit& op = GetOrbit(p);
-    for ( auto q : all_orbits )
+    for ( auto q : orbits_3body_space_)
     {
 //      if (q>p) continue;
       if (q<p) continue; // this ordering matches the two body storage
       Orbit& oq = GetOrbit(q);
       int Jpq_min = std::abs(op.j2-oq.j2)/2;
       int Jpq_max = (op.j2+oq.j2)/2;
-      for ( auto r : all_orbits )
+      for ( auto r : orbits_3body_space_)
       {
 //        if (r>q) continue;
         if (r<q) continue;
@@ -1436,7 +1454,7 @@ void ModelSpace::Setup3bKets()
 //  std::cout << "Done with loop over orbits. size of Kets3 = " << Kets3.size() << std::endl;
 
   int twoJ_min=1;
-  int twoJ_max= 6*Emax + 1; // 2 * (3*(Emax+1/2)-1)
+  int twoJ_max= 6*GetEMax3Body()+ 1; // 2 * (3*(Emax+1/2)-1)
   for (int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
   {
    for (int parity=0; parity<=1; parity++)
@@ -1598,6 +1616,7 @@ void ModelSpace::ClearVectors()
    proton_orbits.clear();  
    neutron_orbits.clear();
    all_orbits.clear();
+   orbits_3body_space_.clear();
    
    KetIndex_pp.clear();
    KetIndex_ph.clear();

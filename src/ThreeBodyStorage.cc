@@ -8,11 +8,11 @@ ThreeBodyStorage::ThreeBodyStorage()
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms)
- : modelspace(ms), emax(ms->GetEmax()), E2max(ms->GetE3max()), E3max(ms->GetE3max()), lmax(ms->GetLmax())
+ : modelspace(ms), emax(ms->GetEMax3Body()), E2max(ms->GetE3max()), E3max(ms->GetE3max()), lmax(ms->GetLmax())
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int e3max)
- : modelspace(ms),  emax(ms->GetEmax()), E2max(ms->GetE2max()), E3max(ms->GetE3max()), lmax(ms->GetLmax())
+ : modelspace(ms),  emax(ms->GetEMax3Body()), E2max(ms->GetE2max()), E3max(ms->GetE3max()), lmax(ms->GetLmax())
 {}
 
 ThreeBodyStorage::ThreeBodyStorage( const ThreeBodyStorage& TBS_in )
@@ -22,11 +22,11 @@ ThreeBodyStorage::ThreeBodyStorage( const ThreeBodyStorage& TBS_in )
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int rJ, int rT, int p)
- : modelspace(ms),  emax(ms->GetEmax()), E2max(ms->GetE2max()), E3max(ms->GetE3max()), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
+ : modelspace(ms),  emax(ms->GetEMax3Body()), E2max(ms->GetE2max()), E3max(ms->GetE3max()), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
 {}
 
 ThreeBodyStorage::ThreeBodyStorage(ModelSpace* ms, int e3max , int rJ, int rT, int p)
- : modelspace(ms), emax(ms->GetEmax()), E2max(ms->GetE2max()), E3max(e3max), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
+ : modelspace(ms), emax(ms->GetEMax3Body()), E2max(ms->GetE2max()), E3max(e3max), lmax(ms->GetLmax()), rank_J(rJ), rank_T(rT), parity(p)
 {}
 
 
@@ -144,6 +144,66 @@ std::vector<ThreeBodyStorage::Permutation> ThreeBodyStorage::UniquePermutations(
 }
 
 
+bool ThreeBodyStorage::IsKetValid( int Jab, int twoJ, size_t a, size_t b, size_t c) const 
+{
+  if (!IsKetInEMaxTruncations(a, b, c)) {
+    return false;
+  }
+
+  Orbit& oa = modelspace->GetOrbit(a);
+  Orbit& ob = modelspace->GetOrbit(b);
+  Orbit& oc = modelspace->GetOrbit(c);
+
+  int jj_a = oa.j2;
+  int jj_b = ob.j2;
+  int jj_c = oc.j2;
+
+  int Jab_min = std::abs((jj_a - jj_b) / 2);
+  int Jab_max = (jj_a + jj_b) / 2;
+
+  int twoJ_min = std::abs(2 * Jab - jj_c);
+  int twoJ_max = 2 * Jab + jj_c;
+
+  // Check against j_a, j_b coupling range.
+  if ((Jab > Jab_max) || (Jab < Jab_min)) {
+    return false;
+  }
+
+  // Check against J_ab, j_c coupling range.
+  if ((twoJ > twoJ_max) || (twoJ < twoJ_min)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool ThreeBodyStorage::IsKetInEMaxTruncations(size_t a, size_t b, size_t c) const 
+{
+  Orbit& oa = modelspace->GetOrbit(a);
+  Orbit& ob = modelspace->GetOrbit(b);
+  Orbit& oc = modelspace->GetOrbit(c);
+
+  int e_a = oa.n * 2 + oa.l;
+  int e_b = ob.n * 2 + ob.l;
+  int e_c = oc.n * 2 + oc.l;
+
+  int E3 = e_a + e_b + e_c;
+
+  // Check against emax 3-body cut.
+  if ((e_a > modelspace->GetEMax3Body()) 
+      || (e_b > modelspace->GetEMax3Body())
+      || (e_c > modelspace->GetEMax3Body())) {
+        return false;
+  }
+
+  // Check against E3max cut.
+  if (E3 > modelspace->GetE3max()) {
+    return false;
+  }
+
+  return true;
+}
+
 size_t ThreeBodyStorage::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a_in, size_t b_in, size_t c_in, std::vector<size_t>& iket , std::vector<double>& recouple) const
 {
   int a,b,c;
@@ -202,14 +262,14 @@ size_t ThreeBodyStorage::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_
 
 std::vector<ThreeBodyStorage::ME_type> ThreeBodyStorage::GetME_pn_TwoOps(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, const ThreeBodyStorage& X, const ThreeBodyStorage& Y) const
 {
-
+  std::vector<double> me_out( 2, 0.0 );
+  if (!IsKetValid(Jab, twoJ, a, b, c) || !IsKetValid(Jde, twoJ, d, e, f)) return me_out;
   std::vector<double> recouple_bra;
   std::vector<double> recouple_ket;
   std::vector<size_t> ibra;
   std::vector<size_t> iket;
   size_t ch_bra = GetKetIndex_withRecoupling( Jab, twoJ, a,b,c, ibra, recouple_bra );
   size_t ch_ket = GetKetIndex_withRecoupling( Jde, twoJ, d,e,f, iket, recouple_ket );
-  std::vector<double> me_out( 2, 0.0 );
   if ( ch_bra != ch_ket) return me_out;
   //TODO: Should we also throw an exception if twoJ is even?
 

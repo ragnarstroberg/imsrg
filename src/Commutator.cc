@@ -15,6 +15,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include <omp.h>
+
 
 
 /// Commutator expressions for second-quantized operators
@@ -2929,6 +2931,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
           double occnat_l = ket_kl.oq->occ_nat;
           for ( size_t j : iter_j.second )
           {
+            if (!Z.ThreeBody.IsKetInEMaxTruncations(ket_kl.p, ket_kl.q, j)) continue;
             Orbit& oj = Z.modelspace->GetOrbit(j);
 //            double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
             double occnat_j = oj.occ_nat;
@@ -3061,6 +3064,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
      size_t twoJp = kljJJ[4];
      size_t hash = Hash_comm232_key( kljJJ );
 
+     if (!Y.ThreeBody.IsKetValid(Jkl, twoJp, k, l, j)) continue;
      std::vector<size_t> iketlist;
      std::vector<double> recouplelist;
      size_t ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jkl, twoJp, k, l, j, iketlist, recouplelist) ;
@@ -3143,6 +3147,8 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
         for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
         {
+            if (!Y.ThreeBody.IsKetValid(Jkl, twoJp, k, l, c)) continue;
+            if (!Y.ThreeBody.IsKetValid(Jab, twoJp, a, b, j)) continue;
 //           double sixj = X.modelspace->GetSixJ(Jkl,jj,ji,  Jab, jc, 0.5*twoJp );
            double sixj = X.modelspace->GetSixJ(jj,ji,Jkl,   jc, 0.5*twoJp, Jab );
 
@@ -3474,6 +3480,7 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
         // side a few loops out.
         for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
         {
+           if (!Y.ThreeBody.IsKetValid(Jab, twoJp, a, b, i)) continue;
            std::vector<size_t> ibra_list;
            std::vector<double> recouple_bra_list;
            size_t ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJp, a, b, i, ibra_list, recouple_bra_list) ;
@@ -3498,6 +3505,7 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
                double occnat_l = ket.oq->occ_nat;
                if ( (d_ek+d_el+d_ec) > Z.modelspace->GetdE3max() ) continue;
                if ( (occnat_k*(1-occnat_k) * occnat_l*(1-occnat_l) * occnat_c*(1-occnat_c) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+               if (!Y.ThreeBody.IsKetValid(J, twoJp, k, l, c)) continue;
                std::vector<size_t> iket_list;
                std::vector<double> recouple_ket_list;
                ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( J, twoJp, k, l, c, iket_list, recouple_ket_list) ;
@@ -4324,7 +4332,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                   std::vector<size_t> ketlist;
                   std::vector<double> reclist;
                   size_t ch_check = -1;
-                  if ( keep_abi  and abi_cdj_Tz_ok and (std::abs(2*Jab-oi.j2)<=twoJp) and (2*Jab+oi.j2 >=twoJp) )
+                  if ( keep_abi  and abi_cdj_Tz_ok and (std::abs(2*Jab-oi.j2)<=twoJp) and (2*Jab+oi.j2 >=twoJp) and Y.ThreeBody.IsKetValid(Jab, twoJp, a, b, i))
                   {
                     ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJp, a, b, i, ketlist, reclist) ;
                   }
@@ -4334,7 +4342,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                   ketlist.clear();
                   reclist.clear();
                   ch_check = -1;
-                  if ( keep_abj  and abj_cdi_Tz_ok  and (std::abs(2*Jab-oj.j2)<=twoJp) and (2*Jab+oj.j2 >=twoJp) )
+                  if ( keep_abj  and abj_cdi_Tz_ok  and (std::abs(2*Jab-oj.j2)<=twoJp) and (2*Jab+oj.j2 >=twoJp) and Y.ThreeBody.IsKetValid(Jab, twoJp, a, b, j) )
                   {
                     ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jab, twoJp, a, b, j, ketlist, reclist) ;
                   }
@@ -4390,7 +4398,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                   std::vector<size_t> ketlist;
                   std::vector<double> reclist;
                   size_t ch_check=-1;
-                  if ( keep_abj and keep_cdi and abj_cdi_Tz_ok  and (std::abs(2*Jcd-oi.j2)<=twoJp) and (2*Jcd+oi.j2 >=twoJp) )
+                  if ( keep_abj and keep_cdi and abj_cdi_Tz_ok  and (std::abs(2*Jcd-oi.j2)<=twoJp) and (2*Jcd+oi.j2 >=twoJp) and Y.ThreeBody.IsKetValid(Jcd, twoJp, c, d, i) )
                   {
                     ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jcd, twoJp, c, d, i, ketlist, reclist) ;
                   }
@@ -4400,7 +4408,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
                   ketlist.clear();
                   reclist.clear();
                   ch_check = -1;
-                  if ( keep_abi and keep_cdj and abi_cdj_Tz_ok  and (std::abs(2*Jcd-oj.j2)<=twoJp) and (2*Jcd+oj.j2 >=twoJp) )
+                  if ( keep_abi and keep_cdj and abi_cdj_Tz_ok  and (std::abs(2*Jcd-oj.j2)<=twoJp) and (2*Jcd+oj.j2 >=twoJp) and Y.ThreeBody.IsKetValid(Jcd, twoJp, c, d, j) )
                   {
                     ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jcd, twoJp, c, d, j, ketlist, reclist) ;
                   }
@@ -5177,6 +5185,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         double occnat_a = oa.occ_nat;
         if (  (d_ea+d_ej+d_ek ) > Z.modelspace->GetdE3max() ) continue;
         if ( (occnat_a*(1-occnat_a) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+        if (!Z3.IsKetValid(Jij, twoJ, a, j, k)) continue;
+
         std::vector<size_t> ket_list;
         std::vector<double> recouple_list;
         
@@ -5201,6 +5211,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         double occnat_a = oa.occ_nat;
         if (  (d_ei+d_ea+d_ek ) > Z.modelspace->GetdE3max() ) continue;
         if ( (occnat_i*(1-occnat_i) * occnat_a*(1-occnat_a) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+        if (!Z3.IsKetValid(Jij, twoJ, i, a, k)) continue;
+
         std::vector<size_t> ket_list;
         std::vector<double> recouple_list;
 //        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, a, k,  ket_list,  recouple_list );
@@ -5223,6 +5235,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         double occnat_a = oa.occ_nat;
         if (  (d_ei+d_ej+d_ea ) > Z.modelspace->GetdE3max() ) continue;
         if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_a*(1-occnat_a) ) < Z.modelspace->GetOccNat3Cut() ) continue;
+        if ( !Z3.IsKetValid(Jij, twoJ, i, j, a)) continue;
+
         std::vector<size_t> ket_list;
         std::vector<double> recouple_list;
 //        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, j, a,  ket_list,  recouple_list );
@@ -7817,6 +7831,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               double xijab = X2.GetTBME_J(Jab,Jab,i,j,a,b);
               double yijab = Y2.GetTBME_J(Jab,Jab,i,j,a,b);
 
+              if ( !Z3.IsKetValid(Jab, twoJ, a, b, k)) continue;
 
               std::vector<size_t> ket_list;
               std::vector<double> recouple_list;
@@ -7863,6 +7878,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
               double xkjab = X2.GetTBME_J(Jab,Jab,k,j,a,b);
               double ykjab = Y2.GetTBME_J(Jab,Jab,k,j,a,b);
 
+              if ( !Z3.IsKetValid(Jab, twoJ, a, b, i)) continue;
               std::vector<size_t> ket_list;
               std::vector<double> recouple_list;
               
@@ -7913,6 +7929,8 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
                double symm_factor =  (a==b) ? 1.0 : 2.0;
                double xikab = X2.GetTBME_J(Jab,Jab,i,k,a,b);
                double yikab = Y2.GetTBME_J(Jab,Jab,i,k,a,b);
+
+               if (!Z3.IsKetValid(Jab, twoJ, a, b, j) ) continue;
 
               std::vector<size_t> ket_list;
               std::vector<double> recouple_list;

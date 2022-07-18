@@ -139,9 +139,10 @@ std::map<std::string,int> Parameters::int_par = {
   {"file3e3max",	12},
   {"atomicZ",           -1}, // the Z of the nucleus for an atomic calculation. -1 means do a neutral atom
   {"emax_unocc",        -1}, // separate emax cut for l,j values that will not be occupied in the reference
-  {"emax_imsrg",        -1}, // emax truncation for imsrg part
+  {"emax_imsrg",        -1}, // emax truncation for imsrg part (default: emax)
   {"e2max_imsrg",       -1}, // e2max for imsrg part. defaults to 2*emax_imsrg
   {"e3max_imsrg",       -1}, // e3max for imsrg part. defaults to min(e3max,3*emax_imsrg)
+  {"emax_3body_imsrg",        -1}, // emax truncation for the 3-body operators in the imsrg part (default: emax_imsrg)
 };
 
 std::map<std::string,std::vector<std::string>> Parameters::vec_par = {
