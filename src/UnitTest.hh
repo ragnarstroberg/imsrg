@@ -74,6 +74,10 @@ class UnitTest
   bool Mscheme_Test_comm330ss( const Operator& X, const Operator& Y );
   bool Mscheme_Test_comm331ss( const Operator& X, const Operator& Y );
   bool Mscheme_Test_comm231ss( const Operator& X, const Operator& Y );
+  bool Mscheme_Test_comm132ss( const Operator& X, const Operator& Y );
+//
+  bool Mscheme_Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ); 
+  bool Mscheme_Test_comm133ss( const Operator& X, const Operator& Y );
 
   bool Test_comm330ss( const Operator& X, const Operator& Y );
   bool Test_comm331ss( const Operator& X, const Operator& Y );

@@ -2143,6 +2143,7 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
       if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_c*(1-occnat_c)) < Z.modelspace->GetOccNat3Cut() ) continue;
 //      for (size_t iket=0;iket<nkets; iket++)
 //      for (size_t iket=ibra;iket<nkets; iket++)
+//      for (size_t iket=0;iket<=ibra; iket++)  
       for (size_t iket=0;iket<ibra; iket++)  // dont need iket=ibra because the commutator will be zero
       {
         Ket3& ket = Tbc.GetKet(iket);
@@ -2173,11 +2174,11 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
         double ydefabc = Y3.GetME_pn_ch(ch3,ch3,iket,ibra);
 
         z0 += 1./36 * occfactor * abc_symm * def_symm * (twoJ+1) * (xabcdef * ydefabc  -  yabcdef*xdefabc);
+
       }// for iket
     }// for ibra
   }// for ch3
 
-//  std::cout << "Adding " << std::setprecision(9) << z0 << "  to Zero Body" << std::endl;
   Z.ZeroBody += z0;
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
@@ -5272,6 +5273,9 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     }
  
   }// for ch3
+
+//   double zz = Z3.GetME_pn( 4,4,9, 3,6,7,3,6,9);
+//   std::cout << "OPT  Z 4,4,9 3,6,7,3,6,9  => " << zz << std::endl;
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
@@ -6233,6 +6237,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
       }// for iket
     }// for ibra
   }// for ch3
+
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 
 }

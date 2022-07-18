@@ -26,6 +26,8 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
   else if ( hermitian == +1 ) Rando.SetHermitian();
   else  Rando.SetNonHermitian();
 
+  random_seed ++;
+
 
   arma::mat symmetry_allowed = arma::zeros( arma::size( Rando.OneBody) );
   for ( auto i : modelspace.all_orbits)
@@ -51,36 +53,36 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
 
 
 /// This is not yet fully fleshed out.
-  if ( particle_rank>2 )
-  {
-    Rando.ThreeBody.SwitchToPN_and_discard();
-    std::default_random_engine generator(random_seed);
-    double mean = 0;
-    double stddev = 1;
-    std::normal_distribution<double> distribution(mean,stddev);
-
-    size_t nch = modelspace.GetNumberThreeBodyChannels();
-    for (size_t ch=0; ch<nch; ch++)
-    {
-      ThreeBodyChannel& Tbc = modelspace.GetThreeBodyChannel(ch);
-
-      // Construct a list of triplets (pqr) that participate in this channel
-      std::set<std::array<size_t,3>> pqr_list;
-      
-      size_t nkets = Tbc.GetNumberKets();
-      for (size_t iket=0; iket<nkets; iket++)
-      {
-         Ket3& ket = Tbc.GetKet(iket);
-         pqr_list.insert( {ket.p,ket.q,ket.r});
-      }
-      size_t n_pqr = pqr_list.size();
-      std::vector<std::array<size_t,3>> pqr_vec;
-      for ( const auto& it : pqr_list ) pqr_vec.push_back( it );
-      
-
-    }//ch
-        
-  }
+//  if ( particle_rank>2 )
+//  {
+//    Rando.ThreeBody.SwitchToPN_and_discard();
+//    std::default_random_engine generator(random_seed);
+//    double mean = 0;
+//    double stddev = 1;
+//    std::normal_distribution<double> distribution(mean,stddev);
+//
+//    size_t nch = modelspace.GetNumberThreeBodyChannels();
+//    for (size_t ch=0; ch<nch; ch++)
+//    {
+//      ThreeBodyChannel& Tbc = modelspace.GetThreeBodyChannel(ch);
+//
+//      // Construct a list of triplets (pqr) that participate in this channel
+//      std::set<std::array<size_t,3>> pqr_list;
+//      
+//      size_t nkets = Tbc.GetNumberKets();
+//      for (size_t iket=0; iket<nkets; iket++)
+//      {
+//         Ket3& ket = Tbc.GetKet(iket);
+//         pqr_list.insert( {ket.p,ket.q,ket.r});
+//      }
+//      size_t n_pqr = pqr_list.size();
+//      std::vector<std::array<size_t,3>> pqr_vec;
+//      for ( const auto& it : pqr_list ) pqr_vec.push_back( it );
+//      
+//
+//    }//ch
+//        
+//  }
 
  // If needed, fill the 3-body piece. Since the storage scheme has
  // places for matrix elements that are zero by symmetry, we need
@@ -506,6 +508,10 @@ void UnitTest::TestCommutators()
   all_good &= Test_comm330ss(X,Y);
   all_good &= Test_comm331ss(X,Y);
   all_good &= Test_comm231ss(X,Y);
+  all_good &= Test_comm132ss(X,Y);
+
+  all_good &= Test_comm332_ppph_hhhpss(X,Y);
+  all_good &= Test_comm133ss(X,Y);
 
   if ( all_good )
   {
@@ -950,7 +956,6 @@ double UnitTest::GetMschemeMatrixElement_3leg( const Operator& Op, int a, int ma
 }
 
 bool UnitTest::Test_against_ref_impl(const Operator& X, const Operator& Y, commutator_func ComOpt, commutator_func ComRef, std::string output_tag  )
-//                                                                           void (*ComOpt)(const Operator&,const Operator&,Operator&), std::string output_tag )
 {
    
   Operator Z( Y );
@@ -958,35 +963,17 @@ bool UnitTest::Test_against_ref_impl(const Operator& X, const Operator& Y, commu
   Operator Zref(Z);
 
   ComOpt( X, Y, Z);
+  double tstart = omp_get_wtime();
   ComRef( X, Y, Zref);
+  Z.profiler.timer["_ref_" + output_tag] += omp_get_wtime() - tstart;
 
   double normOpt = Z.Norm() + Z.ZeroBody;
   double normRef = Zref.Norm() + Zref.ZeroBody;
   Z -= Zref;
-  double summed_error = Z.Norm();
-//  double summed_error = Z.ZeroBody - Zref.ZeroBody;
-
-//  if (output_tag == "comm222_phss" )
-//  {
-//    int nch = Z.modelspace->GetNumberTwoBodyChannels();
-//    for (int ch=0; ch<nch; ch++)
-//    {
-//       arma::mat DIFF = Z.TwoBody.GetMatrix(ch,ch) - Zref.TwoBody.GetMatrix(ch,ch);
-//       double diffnorm = arma::norm(DIFF);
-//       if ( diffnorm>1e-3)
-//       {
-//          std::cout << "disagreement in ch = " << ch << " diffnorm = " << diffnorm << std::endl << "OPT" << std::endl << Z.TwoBody.GetMatrix(ch,ch)
-//                    <<  std::endl << "REF" << std::endl << Zref.TwoBody.GetMatrix(ch,ch) << std::endl
-//                    <<  std::endl << "DIFF" << std::endl << DIFF << std::endl
-//                    <<  std::endl << " ===================================" << std::endl;
-//       }
-//    }
-//  }
-  
+  double summed_error = Z.Norm() + Z.ZeroBody;
 
   bool passed = std::abs( summed_error ) <1e-6 ;
   std::string passfail = passed ? "PASS " : "FAIL";
-//  std::cout << "   " << __func__ <<   "  sum_ref, sum_opt = " << Zref.ZeroBody << " " << Z.ZeroBody
   std::cout << "   " << output_tag <<   "  sum_ref, sum_opt = " << normRef << " " << normOpt
             << "    summed error = " << summed_error << "  => " << passfail << std::endl;
   return passed;
@@ -1054,7 +1041,20 @@ bool UnitTest::Test_comm231ss( const Operator& X, const Operator& Y)
   return Test_against_ref_impl(X,Y,  Commutator::comm231ss,  ReferenceImplementations::comm231ss,  "comm231ss");
 }
 
+bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm132ss,  ReferenceImplementations::comm132ss,  "comm132ss");
+}
 
+bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm332_ppph_hhhpss,  ReferenceImplementations::comm332_ppph_hhhpss,  "comm332_ppph_hhhpss");
+}
+
+bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm133ss,  ReferenceImplementations::comm133ss,  "comm133ss");
+}
 
 /// M-Scheme Formula:
 ///
@@ -2152,7 +2152,7 @@ bool UnitTest::Mscheme_Test_comm231ss( const Operator& X, const Operator& Y )
 //
 // Z_ijkl = sum_ab (na-nb) (X_ab * Y_ijbkla)
 //
-bool UnitTest::Test_comm132ss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm132ss( const Operator& X, const Operator& Y )
 {
   std::cout <<__func__ << std::endl;
 
@@ -2433,7 +2433,7 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
 //
 // Z_ijkl = 1/6 * sum_abcd (n_a*n_b*n_c*nbar_d - nbar_a*nbar_b*nbar_c*n_d) * [  Xijdabc*Yabckld - Yijdabc*Xabckld  ]
 //
-bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ) // test not yet implemented
+bool UnitTest::Mscheme_Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
   std::cout <<__func__ << std::endl;
   Operator Z_J( Y );
@@ -2959,7 +2959,7 @@ bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
 
 
 
-bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm133ss( const Operator& X, const Operator& Y )
 {
   std::cout <<__func__ << std::endl;
 
