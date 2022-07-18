@@ -249,14 +249,14 @@ size_t ThreeBodyStorage::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_
 
 std::vector<ThreeBodyStorage::ME_type> ThreeBodyStorage::GetME_pn_TwoOps(int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f, const ThreeBodyStorage& X, const ThreeBodyStorage& Y) const
 {
-
+  std::vector<double> me_out( 2, 0.0 );
+  if (!IsKetValid(Jab, twoJ, a, b, c) || !IsKetValid(Jde, twoJ, d, e, f)) return me_out;
   std::vector<double> recouple_bra;
   std::vector<double> recouple_ket;
   std::vector<size_t> ibra;
   std::vector<size_t> iket;
   size_t ch_bra = GetKetIndex_withRecoupling( Jab, twoJ, a,b,c, ibra, recouple_bra );
   size_t ch_ket = GetKetIndex_withRecoupling( Jde, twoJ, d,e,f, iket, recouple_ket );
-  std::vector<double> me_out( 2, 0.0 );
   if ( ch_bra != ch_ket) return me_out;
   //TODO: Should we also throw an exception if twoJ is even?
 

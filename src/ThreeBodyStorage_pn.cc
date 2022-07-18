@@ -129,6 +129,7 @@ void ThreeBodyStorage_pn::Allocate()
 
 ThreeBodyStorage::ME_type ThreeBodyStorage_pn::GetME_pn(  int Jab, int Jde, int twoJ, int a, int b, int c, int d, int e, int f) const
 {
+  if (!IsKetValid(Jab, twoJ, a, b, c) || !IsKetValid(Jde, twoJ, d, e, f)) return 0.0;
   std::vector<double> recouple_bra;
   std::vector<double> recouple_ket;
   std::vector<size_t> index_bra;
