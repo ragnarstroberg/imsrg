@@ -2,6 +2,8 @@
 #include "IMSRGSolver.hh"
 #include "Commutator.hh"
 #include "Operator.hh"
+#include <algorithm>
+#include <cmath>
 #include <iomanip>
 #include <string>
 #include <sstream>
@@ -249,6 +251,8 @@ void IMSRGSolver::Solve_magnus_euler()
 //   }
 
    Elast = H_0->ZeroBody;
+  double saved_E = FlowingOps[0].ZeroBody;
+  double saved_MP2 = FlowingOps[0].GetMP2_Energy();
    cumulative_error = 0;
     // Write details of the flow
    WriteFlowStatus(flowfile);
@@ -282,8 +286,8 @@ void IMSRGSolver::Solve_magnus_euler()
         norm_omega = 0;
       }
       // ds should never be more than 1, as this is over-rotating
-      if (magnus_adaptive)
-         ds = std::min( std::min( std::min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), omega_norm_max/norm_eta), ds_max);
+      // if (magnus_adaptive)
+      //    ds = std::min( std::min( std::min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), omega_norm_max/norm_eta), ds_max);
       ds = std::min(ds,smax-s);
 
       s += ds;
@@ -312,6 +316,15 @@ void IMSRGSolver::Solve_magnus_euler()
 //      generator.Update(&FlowingOps[0],&Eta);
       generator.Update(FlowingOps[0],Eta);
 //      cumulative_error += EstimateStepError();
+
+      if (magnus_adaptive){
+      bool backoff = (std::abs(FlowingOps[0].ZeroBody - saved_E) > 3 * std::abs(saved_MP2));
+      if (backoff) {
+        ds *= ds_backoff_factor_;
+      } else {
+        ds = std::min(ds_max, ds * ds_max_growth_factor_);
+      }
+      }
 
       // Write details of the flow
       WriteFlowStatus(flowfile);
