@@ -9254,7 +9254,8 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
        double na = ket_abc.op->occ;
        double nb = ket_abc.oq->occ;
        double nc = ket_abc.oR->occ;
-       double occ_factor = na*nb*nc - (1-na)*(1-nb)*(1-nc);
+//       double occ_factor = na*nb*nc - (1-na)*(1-nb)*(1-nc); // typo??? Should be plus, not minus
+       double occ_factor = na*nb*nc + (1-na)*(1-nb)*(1-nc); // fixed by SRS July 19 2022
        if (std::abs(occ_factor)<1e-6) continue;
        double d_ea = std::abs( 2*ket_abc.op->n + ket_abc.op->l - e_fermi[ket_abc.op->tz2]);
        double d_eb = std::abs( 2*ket_abc.oq->n + ket_abc.oq->l - e_fermi[ket_abc.oq->tz2]);
@@ -9270,7 +9271,6 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
        else if ( (ket_abc.p == ket_abc.q) or ( ket_abc.q == ket_abc.r) )
           symm_factor = 3./6;
        abc_kets.push_back(iket_abc);
-//       abc_factors.push_back( sqrt( occ_factor * symm_factor) );
        abc_factors.push_back( occ_factor * symm_factor );
     }// for iket_abc
 
@@ -9296,33 +9296,28 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
     {
       size_t iket_abc = abc_kets[index_abc];
       double factor = abc_factors[index_abc];
-//      for (size_t ibra=0; ibra<nkets3; ibra++)
       for (size_t ibra : bras_kept )
       {
          double xijkabc = X3.GetME_pn_ch( ch3,ch3, ibra, iket_abc);
          double yijkabc = Y3.GetME_pn_ch( ch3,ch3, ibra, iket_abc);
          XMAT(ibra,index_abc) = factor * xijkabc ;
-//         YMAT(ibra,index_abc) = factor * yijkabc ;
          YMAT(ibra,index_abc) =  yijkabc ;
       }// for ibra
     }// for index_abc
 
 
     // Now do the mat mult
-//    arma::mat ZMAT = hY * XMAT * YMAT.t() - hX*(YMAT * XMAT.t());
     arma::mat ZMAT = hY * XMAT * YMAT.t();
     ZMAT -= hX*hY * ZMAT.t(); 
 
     // Store the results
-//    for (size_t ibra=0; ibra<nkets3; ibra++)
     for (size_t ibra : bras_kept )
     {
-//      for (size_t iket=ibra; iket<nkets3; iket++)
       for (size_t iket : bras_kept )
       {
         if ( iket < ibra ) continue;
         Z3.AddToME_pn_ch( ch3, ch3, ibra,iket, ZMAT(ibra,iket) );
-        
+
       }// for iket
     }// for ibra
   }//for ch3

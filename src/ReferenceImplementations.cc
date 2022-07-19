@@ -311,7 +311,7 @@ void comm222_pp_hhss( const Operator& X, const Operator& Y, Operator& Z)
        }// iket
      }// ibra
    }// ch
-}
+}//comm222_pp_hhss
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -461,7 +461,7 @@ void comm222_phss( const Operator& X, const Operator& Y, Operator& Z)
      }// ibra
    }// ch
 
-}
+}//comm222_phss
 
 
 
@@ -547,7 +547,7 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
     }//b
    }//a
    Z.ZeroBody += z0;
-}        
+}//comm330ss        
 
 
 
@@ -627,7 +627,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
        Z1(i,j) += zij;
      }//j
    }//i
-}
+}//comm331ss
 
 
 
@@ -706,7 +706,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
        Z1(i,j) += zij;
      }//j
    }//i
-}
+}//comm231ss
 
 
 
@@ -766,7 +766,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
      }//ibra
    }//ch2
 
-}
+}//comm132ss
 
 
 
@@ -858,11 +858,66 @@ void comm332_ppph_hhhpss( const Operator& X, const Operator& Y, Operator& Z )
      }//ibra
    }//ch2
 
+}//comm332_ppph_hhhpss
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///
+/// Expression:    ZJ_ijkn = (1-PJij)(1-PJkl) -sum_Jph (2Jph+1) { i j J   } ZbarJph_ilkj
+///                                                             { k l Jph }
+///
+///  where         ZbarJph_ilkj = 1/4 sum_abcd sum Jab Jcd  ( na nb(1-nc)(1-nd) -  (1-na)(1-nb)nc nd ) XJph_il;(abJab)(cdJcd) YJph_(cdJcd)(abJab);kj
+///
+///  and           XJph_il;(abJab)(cdJcd) = -sum_J (-1)^{i+J} {i   l   Jph } XJabJcdJ_abicdl
+///                                                           {Jcd Jab J   }
+///
+void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
+{
+   auto& X3 = X.ThreeBody;
+   auto& Y3 = Y.ThreeBody;
+   auto& Z2 = Z.TwoBody;
+
+   int nch2 = Z.modelspace->GetNumberTwoBodyChannels();
+   #pragma omp parallel for schedule(dynamic,1)
+   for (int ch2=0; ch2<nch2; ch2++)
+   {
+     TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch2);
+     int J1 = tbc.J;
+     int nkets = tbc.GetNumberKets();
+     for (int ibra=0; ibra<nkets; ibra++)
+     {
+       Ket& bra = tbc.GetKet(ibra);
+       size_t i=bra.p;
+       size_t j=bra.q;
+       Orbit& oi = Z.modelspace->GetOrbit(i);
+       Orbit& oj = Z.modelspace->GetOrbit(j);
+       for (int iket=ibra; iket<nkets; iket++)
+       {
+         Ket& ket = tbc.GetKet(iket);
+         size_t k=ket.p;
+         size_t l=ket.q;
+
+         double zbar_ilkj = 0;
+         double zbar_jlki = 0;
+         double zbar_iklj = 0;
+         double zbar_jkli = 0;
+
+
+
+         double zijkl = 0;
+         
+
+         zijkl /= sqrt((1.+bra.delta_pq())*(1.+ket.delta_pq()));
+         Z2.AddToTBME(ch2,ch2, ibra,iket, zijkl);
+       }//iket
+     }//ibra
+   }//ch2
+
 }
 
-/// This one is nasty.
-void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
-{}
+
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -949,10 +1004,417 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     }// for ibra
   }// for ch3
     
+}//comm133ss
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///
+/// Expression:    ZJ1J2J3_ijklmn =  sum_a  PJ1J3(ij/k) PJ1J2(lm/n) sqrt( (2J1+1)(2J2+1)) { n  a  J1 } ( XJ1_ijna YJ2_kalm - YJ1_ijna XJ2_kalm )
+///                                                                                       { k  J3 J2 }
+///  
+///  
+void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
+{
+  auto& Z3 = Z.ThreeBody;
+  auto& X2 = X.TwoBody;
+  auto& Y2 = Y.TwoBody;
+
+  // Permutations of indices which are needed to produce antisymmetrized matrix elements  P(ij/k) |ijk> = |ijk> - |kji> - |ikj>
+  const std::array< ThreeBodyStorage::Permutation,3> index_perms = { ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
+
+  std::vector< std::array<size_t,2> > bra_ket_channels;
+  for ( auto& it : Z.ThreeBody.Get_ch_start() )
+  {
+     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+  }
+
+
+  size_t n_bra_ket_ch = bra_ket_channels.size();
+//  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+//  for (size_t ch3=0; ch3<nch3; ch3++)
+  #pragma omp parallel for schedule(dynamic,1)
+  for (size_t ibra_ket=0; ibra_ket<n_bra_ket_ch;  ibra_ket++)
+  {
+    size_t ch3bra = bra_ket_channels[ibra_ket][0];
+    size_t ch3ket = bra_ket_channels[ibra_ket][1];
+    auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch3bra);
+    auto& Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch3ket);
+    size_t nbras3 = Tbc_bra.GetNumberKets();
+    size_t nkets3 = Tbc_ket.GetNumberKets();
+    int twoJ = Tbc_bra.twoJ; // Scalar commutator so J is the same in bra and ket channel
+    double Jtot = 0.5 * twoJ;
+
+    for (size_t ibra=0; ibra<nbras3; ibra++)
+    {
+      auto& bra = Tbc_bra.GetKet(ibra);
+      size_t i = bra.p;
+      size_t j = bra.q;
+      size_t k = bra.r;
+      Orbit& oi = Z.modelspace->GetOrbit(i);
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+      Orbit& ok = Z.modelspace->GetOrbit(k);
+      double ji = 0.5 * oi.j2;
+      double jj = 0.5 * oj.j2;
+      double jk = 0.5 * ok.j2;
+
+      int J1 = bra.Jpq;
+
+
+      size_t iket_max = nkets3;
+      if (ch3bra == ch3ket) iket_max = ibra;
+      for (size_t iket=0; iket<=iket_max; iket++)
+      {
+        auto& ket = Tbc_ket.GetKet(iket);
+        size_t l = ket.p;
+        size_t m = ket.q;
+        size_t n = ket.r;
+        Orbit& ol = Z.modelspace->GetOrbit(l);
+        Orbit& om = Z.modelspace->GetOrbit(m);
+        Orbit& on = Z.modelspace->GetOrbit(n);
+        double jl = 0.5 * ol.j2;
+        double jm = 0.5 * om.j2;
+        double jn = 0.5 * on.j2;
+        int J2 = ket.Jpq;
+
+        double zijklmn = 0;
+/// BEGIN THE SLOW BIT...
+
+        // Now we need to loop over the permutations in ijk and then lmn
+        for ( auto perm_ijk : index_perms )
+        {
+          size_t I1,I2,I3;
+          Z3.Permute( perm_ijk, i,j,k, I1,I2,I3);
+          Orbit& o1 = Z.modelspace->GetOrbit(I1);
+          Orbit& o2 = Z.modelspace->GetOrbit(I2);
+          Orbit& o3 = Z.modelspace->GetOrbit(I3);
+
+          int J1p_min = J1;
+          int J1p_max = J1;
+          if (perm_ijk != ThreeBodyStorage::ABC )
+          {
+            J1p_min = std::max( std::abs(o1.j2-o2.j2),std::abs( twoJ-o3.j2) )/2 ;
+            J1p_max = std::min( o1.j2+o2.j2, twoJ+o3.j2 )/2 ;
+          }
+
+          int parity_12 = (o1.l+o2.l)%2;
+          int Tz_12 = (o1.tz2 + o2.tz2)/2;
+
+          double j3 = 0.5*o3.j2;
+
+          for (int J1p=J1p_min; J1p<=J1p_max; J1p++)
+          {
+
+            double rec_ijk = Z3.RecouplingCoefficient( perm_ijk, ji,jj,jk, J1p, J1, twoJ) ;
+            rec_ijk *= Z3.PermutationPhase( perm_ijk ); // do we get a fermionic minus sign?
+
+            for ( auto perm_lmn : index_perms )
+            {
+              size_t I4,I5,I6;
+              Z3.Permute( perm_lmn, l,m,n, I4,I5,I6);
+              Orbit& o4 = Z.modelspace->GetOrbit(I4);
+              Orbit& o5 = Z.modelspace->GetOrbit(I5);
+              Orbit& o6 = Z.modelspace->GetOrbit(I6);
+
+              double j6 = 0.5*o6.j2;
+
+              int J2p_min = J2;
+              int J2p_max = J2;
+              if (perm_lmn != ThreeBodyStorage::ABC )
+              {
+                J2p_min = std::max( std::abs(o4.j2-o5.j2),std::abs( twoJ-o6.j2) )/2 ;
+                J2p_max = std::min( o4.j2+o5.j2, twoJ+o6.j2 )/2 ;
+              }
+
+              int parity_a = (o1.l+o2.l+o6.l)%2; // Need to fix this if we want to treat parity changing operators.
+              for ( int tz2a : {-1,1} )
+              {
+                int dTz = o1.tz2 + o2.tz2 - o6.tz2 -tz2a;
+                if (  std::abs(dTz) != X.GetTRank() and std::abs( dTz) != Y.GetTRank() ) continue;
+
+               for (int J2p=J2p_min; J2p<=J2p_max; J2p++)
+               {
+
+                 double rec_lmn = Z3.RecouplingCoefficient( perm_lmn, jl,jm,jn, J2p, J2, twoJ) ;
+                 rec_lmn *= Z3.PermutationPhase( perm_lmn ); // do we get a fermionic minus sign?
+
+
+                 int j2a_min = std::max( std::abs(o6.j2-2*J1p),  std::abs(o3.j2-2*J2p));
+                 int j2a_max = std::min( o6.j2+2*J1p,  o3.j2+2*J2p);
+
+                 for (int j2a=j2a_min;j2a<=j2a_max; j2a+=2)
+                 {
+                   double ja = 0.5 * j2a;
+                   int la = (j2a-1)/2 + ((j2a-1)/2+parity_a)%2;
+                   if (la > Z.modelspace->GetEmax()) continue;
+
+                   double sixj;
+                   if (twoJ <= 2*Z.modelspace->GetEmax()+1 )
+                   {
+                    sixj = Z.modelspace->GetCachedSixJ( o3.j2, twoJ, J1p,  o6.j2, j2a, J2p );
+                   }
+                   else
+                   {
+                    sixj = j2a<twoJ  ?  Z.modelspace->GetSixJ(j6,ja,J1p, j3, 0.5*twoJ, J2p)
+                                           :  Z.modelspace->GetSixJ(j6,0.5*twoJ,J2p, j3, ja, J1p) ;
+                   }
+
+                   for ( size_t a : Z.GetOneBodyChannel(la,j2a,tz2a)  )
+                   {
+                     double x_126a = X2.GetTBME_J(J1p,J1p, I1,I2,I6,a);
+                     double y_126a = Y2.GetTBME_J(J1p,J1p, I1,I2,I6,a);
+                     double x_3a45 = X2.GetTBME_J(J2p,J2p, I3,a,I4,I5);
+                     double y_3a45 = Y2.GetTBME_J(J2p,J2p, I3,a,I4,I5);
+
+                     zijklmn += rec_ijk * rec_lmn * sixj * sqrt( (2*J1p+1)*(2*J2p+1) )  * (x_126a * y_3a45 - y_126a * x_3a45);
+  
+                  }// for a
+                }// for j2a
+               }// for J2p
+              }// for tz2a
+            }// for perm_lmn
+          }// for J1p
+        }// for perm_ijk
+
+        Z3.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket, zijklmn );  // this needs to be modified for beta decay
+      }// for iket
+    }// for ibra
+  }// for ch3
+
+}//comm233ss
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///
+/// Expression:    ZJ1J2J3_ijklmn =  1/2 sum_ab ((1-na)(1-nb)-na nb) [ PJ1J3(ij/k) ( XJ1_ijab YJ1J2J3_abklmn - YJ1_ijab XJ1J2J3_abklmn )
+///                                                                   -PJ1J2(lm/n) ( YJ1J2J3_ijkabn XJ2_ablm - XJ1J2J3_ijkabn YJ2_ablm )                             
+///  
+///
+void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
+{
+  auto& X2 = X.TwoBody;
+  auto& Y2 = Y.TwoBody;
+  auto& X3 = X.ThreeBody;
+  auto& Y3 = Y.ThreeBody;
+  auto& Z3 = Z.ThreeBody;
+
+  // Permutations of indices which are needed to produce antisymmetrized matrix elements  P(ij/k) |ijk> = |ijk> - |kji> - |ikj>
+  const std::array< ThreeBodyStorage::Permutation,3> index_perms = { ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
+
+  std::vector< std::array<size_t,2> > bra_ket_channels;
+  for ( auto& it : Z.ThreeBody.Get_ch_start() )
+  {
+     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+  }
+
+
+  size_t n_bra_ket_ch = bra_ket_channels.size();
+//  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+//  for (size_t ch3=0; ch3<nch3; ch3++)
+  #pragma omp parallel for schedule(dynamic,1)
+  for (size_t ibra_ket=0; ibra_ket<n_bra_ket_ch;  ibra_ket++)
+  {
+    size_t ch3bra = bra_ket_channels[ibra_ket][0];
+    size_t ch3ket = bra_ket_channels[ibra_ket][1];
+    auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch3bra);
+    auto& Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch3ket);
+    size_t nbras3 = Tbc_bra.GetNumberKets();
+    size_t nkets3 = Tbc_ket.GetNumberKets();
+    int twoJ = Tbc_bra.twoJ; // Scalar commutator so J is the same in bra and ket channel
+    double Jtot = 0.5 * twoJ;
+
+    for (size_t ibra=0; ibra<nbras3; ibra++)
+    {
+      auto& bra = Tbc_bra.GetKet(ibra);
+      size_t i = bra.p;
+      size_t j = bra.q;
+      size_t k = bra.r;
+      Orbit& oi = Z.modelspace->GetOrbit(i);
+      Orbit& oj = Z.modelspace->GetOrbit(j);
+      Orbit& ok = Z.modelspace->GetOrbit(k);
+      double ji = 0.5 * oi.j2;
+      double jj = 0.5 * oj.j2;
+      double jk = 0.5 * ok.j2;
+
+      int J1 = bra.Jpq;
+
+
+      size_t iket_max = nkets3;
+      if (ch3bra == ch3ket) iket_max = ibra;
+      for (size_t iket=0; iket<=iket_max; iket++)
+      {
+        auto& ket = Tbc_ket.GetKet(iket);
+        size_t l = ket.p;
+        size_t m = ket.q;
+        size_t n = ket.r;
+        Orbit& ol = Z.modelspace->GetOrbit(l);
+        Orbit& om = Z.modelspace->GetOrbit(m);
+        Orbit& on = Z.modelspace->GetOrbit(n);
+        double jl = 0.5 * ol.j2;
+        double jm = 0.5 * om.j2;
+        double jn = 0.5 * on.j2;
+        int J2 = ket.Jpq;
+
+        double zijklmn = 0;
+
+        for (size_t a : Z.modelspace->all_orbits )
+        {
+          Orbit& oa = Z.modelspace->GetOrbit(a);
+          for (size_t b : Z.modelspace->all_orbits )
+          {
+            Orbit& ob = Z.modelspace->GetOrbit(b);
+            if ( std::abs( ((1-oa.occ)*(1-ob.occ)-oa.occ*ob.occ) )<1e-7 ) continue;
+
+           // Now we need to loop over the permutations in ijk and then lmn
+           for ( auto perm_ijk : index_perms ) // {ijk} -> {123}
+           {
+             size_t I1,I2,I3;
+             Z3.Permute( perm_ijk, i,j,k, I1,I2,I3);
+             Orbit& o1 = Z.modelspace->GetOrbit(I1);
+             Orbit& o2 = Z.modelspace->GetOrbit(I2);
+             Orbit& o3 = Z.modelspace->GetOrbit(I3);
+
+             if ( (o1.l+o2.l+oa.l+ob.l+X.parity)%2>0 and (o1.l+o2.l+oa.l+ob.l+Y.parity)%2>0 ) continue;
+             if ( (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*X.GetTRank()) and (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*Y.GetTRank()) ) continue;
+
+             int J1p_min = J1;
+             int J1p_max = J1;
+             if (perm_ijk != ThreeBodyStorage::ABC )
+             {
+               J1p_min = std::max( std::abs(o1.j2-o2.j2),std::abs( twoJ-o3.j2) )/2 ;
+               J1p_max = std::min( o1.j2+o2.j2, twoJ+o3.j2 )/2 ;
+             }
+
+             for (int J1p=J1p_min; J1p<=J1p_max; J1p++)
+             {
+                double Pijk = Z3.PermutationPhase(perm_ijk) *   Z3.RecouplingCoefficient( perm_ijk, ji,jj,jk, J1p, J1, twoJ) ;
+                double x12ab = X2.GetTBME_J(J1p,J1p, I1,I2,a,b);
+                double y12ab = Y2.GetTBME_J(J1p,J1p, I1,I2,a,b);
+                double xab3lmn = X3.GetME_pn( J1p, J2, twoJ, a,b,I3,l,m,n );
+                double yab3lmn = Y3.GetME_pn( J1p, J2, twoJ, a,b,I3,l,m,n );
+                zijklmn += 1./2 * ((1-oa.occ)*(1-ob.occ)-oa.occ*ob.occ) * Pijk * ( x12ab * yab3lmn - y12ab * xab3lmn) ;
+             }
+           }// for perm_ijk
+
+
+           for ( auto perm_lmn : index_perms ) // {lmn} -> {123}
+           {
+             size_t I1,I2,I3;
+             Z3.Permute( perm_lmn, l,m,n, I1,I2,I3);
+             Orbit& o1 = Z.modelspace->GetOrbit(I1);
+             Orbit& o2 = Z.modelspace->GetOrbit(I2);
+             Orbit& o3 = Z.modelspace->GetOrbit(I3);
+
+             if ( (o1.l+o2.l+oa.l+ob.l+X.parity)%2>0 and (o1.l+o2.l+oa.l+ob.l+Y.parity)%2>0 ) continue;
+             if ( (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*X.GetTRank()) and (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*Y.GetTRank()) ) continue;
+
+             int J2p_min = J2;
+             int J2p_max = J2;
+             if (perm_lmn != ThreeBodyStorage::ABC )
+             {
+               J2p_min = std::max( std::abs(o1.j2-o2.j2),std::abs( twoJ-o3.j2) )/2 ;
+               J2p_max = std::min( o1.j2+o2.j2, twoJ+o3.j2 )/2 ;
+             }
+             for (int J2p=J2p_min; J2p<=J2p_max; J2p++)
+             {
+                double Plmn = Z3.PermutationPhase(perm_lmn) *   Z3.RecouplingCoefficient( perm_lmn, jl,jm,jn, J2p, J2, twoJ) ;
+                double xab12 = X2.GetTBME_J(J2p,J2p, a,b,I1,I2);
+                double yab12 = Y2.GetTBME_J(J2p,J2p, a,b,I1,I2);
+                double xijkab3 = X3.GetME_pn( J1, J2p, twoJ, i,j,k, a,b,I3 );
+                double yijkab3 = Y3.GetME_pn( J1, J2p, twoJ, i,j,k, a,b,I3 );
+                zijklmn -= 1./2 * ((1-oa.occ)*(1-ob.occ)-oa.occ*ob.occ) * Plmn * (yijkab3 * xab12 - xijkab3 * yab12 ) ;
+             }
+           }// for perm_lmn
+
+          }//b
+        }//a
+
+        Z3.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket, zijklmn );  // this needs to be modified for beta decay
+      }// for iket
+    }// for ibra
+  }// for ch3
+
+}//comm233_pp_hhss
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///
+/// Expression:    ZJ1J2J3_ijklmn =  - sum_ab sum_J4J5 (na-nb) PJ1J3(ij/k) PJ2J3(lm/n) (-1)^{k+n+J1+J2} { b  J5 J2 } ( XJ4_bkan YJ1J2J5_ijalmb - YJ4_bkan XJ1J2J5_ijalmb )
+///                                                                                                     { k  J1 J3 }                                                    
+///                                                                                                     { J4 a  n  }
+///
+void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
+{
 }
 
 
-void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///
+/// Expression:    ZJ1J2J3_ijklmn =  1/6 sum_abc sum_J4 (na nb nc + (1-na)(1-nb)(1-nc)) ( XJ1J4J3_ijkabc YJ4J2J3_abclmn - YJ1J4J3_ijkabc XJ4J2J3_abclmn )
+///
+void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
+{
+  auto& X3 = X.ThreeBody;
+  auto& Y3 = Y.ThreeBody;
+  auto& Z3 = Z.ThreeBody;
+
+
+  std::vector< std::array<size_t,2> > bra_ket_channels;
+  for ( auto& it : Z.ThreeBody.Get_ch_start() )
+  {
+     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+  }
+
+
+  size_t n_bra_ket_ch = bra_ket_channels.size();
+//  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+//  for (size_t ch3=0; ch3<nch3; ch3++)
+  #pragma omp parallel for schedule(dynamic,1)
+  for (size_t ibra_ket=0; ibra_ket<n_bra_ket_ch;  ibra_ket++)
+  {
+    size_t ch3bra = bra_ket_channels[ibra_ket][0];
+    size_t ch3ket = bra_ket_channels[ibra_ket][1];
+    auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch3bra);
+    auto& Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch3ket);
+    size_t nbras3 = Tbc_bra.GetNumberKets();
+    size_t nkets3 = Tbc_ket.GetNumberKets();
+
+    for (size_t ibra=0; ibra<nbras3; ibra++)
+    {
+
+      size_t iket_max = nkets3;
+      if (ch3bra == ch3ket) iket_max = ibra;
+      for (size_t iket=0; iket<=iket_max; iket++)
+      {
+
+       double zijklmn = 0;
+
+       for (size_t iket_abc=0; iket_abc<nkets3; iket_abc++)
+       {
+          Ket3& ket_abc = Tbc_ket.GetKet(iket_abc);
+          double counting_factor = 6.0;                                             // in general, 6 different permutations of abc
+          if (ket_abc.p==ket_abc.r) counting_factor = 1.0;                          // if a=c, we must have a=b=c because we store a<=b<=c, and there is only one permutation
+          else if ( (ket_abc.p==ket_abc.q) or (ket_abc.q==ket_abc.r) ) counting_factor = 3; // if two orbits match, only 3 different permutations
+
+          double nanbnc = ket_abc.op->occ * ket_abc.oq->occ * ket_abc.oR->occ;
+          double nanbnc_bar = (1-ket_abc.op->occ) * (1-ket_abc.oq->occ) * (1-ket_abc.oR->occ);
+
+          double xijkabc = X3.GetME_pn_ch( ch3bra, ch3ket, ibra, iket_abc);
+          double yijkabc = Y3.GetME_pn_ch( ch3bra, ch3ket, ibra, iket_abc);
+          double xabclmn = X3.GetME_pn_ch( ch3ket, ch3ket, iket_abc, iket);
+          double yabclmn = Y3.GetME_pn_ch( ch3ket, ch3ket, iket_abc, iket);
+          zijklmn += 1./6 * counting_factor * (nanbnc + nanbnc_bar) * ( xijkabc * yabclmn - yijkabc * xabclmn );
+       }// for abc
+
+       Z3.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket, zijklmn );  // this needs to be modified for beta decay
+
+      }//iket : lmn
+    }//ibra : ijk
+  }// chbra, chket
+
+
+}//comm333_ppp_hhhss
+
+
+
+void comm333_pph_hhpss( const Operator& X, const Operator& Y, Operator& Z )
 {}
 
 

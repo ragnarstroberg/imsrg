@@ -512,6 +512,11 @@ void UnitTest::TestCommutators()
 
   all_good &= Test_comm332_ppph_hhhpss(X,Y);
   all_good &= Test_comm133ss(X,Y);
+  all_good &= Test_comm223ss(X,Y);
+
+  all_good &= Test_comm233_pp_hhss(X,Y);
+
+  all_good &= Test_comm333_ppp_hhhss(X,Y);
 
   if ( all_good )
   {
@@ -581,7 +586,7 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y, std::vector<std::strin
   }
   if ( std::find(skiplist.begin(),skiplist.end(), "allN9") == skiplist.end() )
   {
-    if ( std::find(skiplist.begin(),skiplist.end(), "comm333_ppp_hhh_ss") == skiplist.end())   all_good &= Test_comm333_ppp_hhh_ss( X, Y );
+    if ( std::find(skiplist.begin(),skiplist.end(), "comm333_ppp_hhhss") == skiplist.end())   all_good &= Test_comm333_ppp_hhhss( X, Y );
     if ( std::find(skiplist.begin(),skiplist.end(), "comm333_pph_hhp_ss") == skiplist.end())   all_good &= Test_comm333_pph_hhp_ss( X, Y );
   }
 
@@ -1053,7 +1058,23 @@ bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y)
 
 bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y) 
 {
+
   return Test_against_ref_impl(X,Y,  Commutator::comm133ss,  ReferenceImplementations::comm133ss,  "comm133ss");
+}
+
+bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm223ss,  ReferenceImplementations::comm223ss,  "comm223ss");
+}
+
+bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm233_pp_hhss,  ReferenceImplementations::comm233_pp_hhss,  "comm233_pp_hhss");
+}
+
+bool UnitTest::Test_comm333_ppp_hhhss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm333_ppp_hhhss,  ReferenceImplementations::comm333_ppp_hhhss,  "comm333_ppp_hhhss");
 }
 
 /// M-Scheme Formula:
@@ -2780,7 +2801,7 @@ bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // te
 //
 // Z_ijklmn = (1-Pik-Pjk)(1-Plm-Pln) sum_a (X_ijla Y_akmn - Y_ijla X_akmn)
 //
-bool UnitTest::Test_comm223ss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm223ss( const Operator& X, const Operator& Y )
 {
   std::cout <<__func__ << std::endl;
   Operator Z_J( Y );
@@ -3156,7 +3177,7 @@ bool UnitTest::Mscheme_Test_comm133ss( const Operator& X, const Operator& Y )
 //       = 1/2 sum_ab (1-na-nb) [ Xijab*Yabklmn - Yijab*Xabklmn - Xkjab*Yabilmn + Ykjab*Xabilmn - Xikab*Yabjlmn + Yikab*Xabjlmn
 //                              - Yijkabn*Xablm + Xijkabn*Yablm + Yijkabl*Xabnm - Xijkabl*Yabnm + Yijkabm*Xabln - Xijkabm*Yabln ]
 //
-bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // test not yet implemented
+bool UnitTest::Mscheme_Test_comm233_pp_hhss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
   std::cout <<__func__ << std::endl;
 
@@ -3576,7 +3597,7 @@ bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // tes
 // Z_ijkl = 1/6 sum_abc [na*nb*nc + (1-na)*(1-nb)(1-nc) ] * [  Xijkabc*Yabclmn - Yijkabc*Xabclmn  ]
 //                              
 //
-bool UnitTest::Test_comm333_ppp_hhh_ss( const Operator& X, const Operator& Y ) // test not yet implemented
+bool UnitTest::Mscheme_Test_comm333_ppp_hhhss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
   std::cout <<__func__ << std::endl;
    Operator Z_J( Y );
@@ -3661,7 +3682,8 @@ bool UnitTest::Test_comm333_ppp_hhh_ss( const Operator& X, const Operator& Y ) /
                       for ( size_t c=0; c<norb; c++ )
                       {
                        Orbit& oc = X.modelspace->GetOrbit(c);
-                       double occfactor = oa.occ*ob.occ*oc.occ - (1-oa.occ)*(1-ob.occ)*(1-oc.occ);
+//                       double occfactor = oa.occ*ob.occ*oc.occ - (1-oa.occ)*(1-ob.occ)*(1-oc.occ); // why a minus sign??? That's wrong.
+                       double occfactor = oa.occ*ob.occ*oc.occ + (1-oa.occ)*(1-ob.occ)*(1-oc.occ); // Fixed by SRS July 19 2022
 //                       if (a!=11) continue;
                        for ( int m_a=-oa.j2; m_a<=oa.j2; m_a+=2)
                        {
