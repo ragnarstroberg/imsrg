@@ -68,6 +68,11 @@ class IMSRGSolver
   double cumulative_error;
   double pert_triples_this_omega;
   double pert_triples_sum;
+  
+  // Per step, ds may not grow more than 1.2 times its previous value.
+  double ds_max_growth_factor_ = 1.2;
+  // When abs(H(s + ds) - H(s)) > abs(E_MP2(s)), ds will "back off" by this factor.
+  double ds_backoff_factor_ = 0.5;
 
 
   ~IMSRGSolver();
