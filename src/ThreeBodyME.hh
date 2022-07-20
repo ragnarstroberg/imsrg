@@ -141,6 +141,10 @@ class ThreeBodyME
   bool IsKetValid(int Jab, int twoJ, size_t a, size_t b, size_t c) const;
   // Check that a, b, c fulfill the emax truncations.
   bool IsKetInEMaxTruncations(size_t a, size_t b, size_t c) const;
+  // Check that orbit a fulfills the 3-body emax truncation.
+  bool IsOrbitIn3BodyEMaxTruncation(size_t a) const;
+  // Check that orbit a fulfills the 3-body emax truncation.
+  bool IsOrbitIn3BodyEMaxTruncation(const Orbit& oa) const;
   size_t GetKetIndex_withRecoupling( int Jab, int twoJ, size_t a, size_t b, size_t c, std::vector<size_t>& ibra, std::vector<double>& recouple) const ;
 
   // setter-getters
