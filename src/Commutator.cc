@@ -2386,6 +2386,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
   for (size_t i=0; i<norb; i++)
   {
     Orbit& oi = Z.modelspace->GetOrbit(i);
+    if (!Z.ThreeBody.IsOrbitIn3BodyEMaxTruncation(oi)) continue;
     int ei = 2*oi.n + oi.l;
     double d_ei = std::abs( ei - e_fermi[oi.tz2]);
     double occnat_i = oi.occ_nat;
@@ -2394,6 +2395,7 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
     {
       if (j>i) continue;
       Orbit& oj = Z.modelspace->GetOrbit(j);
+      if (!Z.ThreeBody.IsOrbitIn3BodyEMaxTruncation(oj)) continue;
       int ej = 2*oj.n + oj.l;
       double d_ej = std::abs( ej - e_fermi[oj.tz2] );
       double occnat_j = oj.occ_nat;
@@ -2409,6 +2411,8 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
           Ket& bra = tbc.GetKet(ibra);
           int a = bra.p;
           int b = bra.q;
+          if (!Z.ThreeBody.IsOrbitIn3BodyEMaxTruncation(a)) continue;
+          if (!Z.ThreeBody.IsOrbitIn3BodyEMaxTruncation(b)) continue;
           int ea = 2*bra.op->n + bra.op->l;
           int eb = 2*bra.oq->n + bra.oq->l;
           double occnat_a = bra.op->occ_nat;
@@ -2428,6 +2432,8 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
             Ket& ket = tbc.GetKet(iket);
             int c = ket.p;
             int d = ket.q;
+            if (!Z.ThreeBody.IsOrbitIn3BodyEMaxTruncation(c)) continue;
+            if (!Z.ThreeBody.IsOrbitIn3BodyEMaxTruncation(d)) continue;
             int ec = 2*ket.op->n + ket.op->l;
             int ed = 2*ket.oq->n + ket.oq->l;
             double d_ec = std::abs( ec - e_fermi[ket.op->tz2]);
