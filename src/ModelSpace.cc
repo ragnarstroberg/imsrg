@@ -1440,7 +1440,8 @@ void ModelSpace::Setup3bKets()
         for (int Jpq=Jpq_min; Jpq<=Jpq_max; Jpq++)
         {
           if (p==q and Jpq%2>0) continue;
-          if (p==q and p==r and  std::abs(op.tz2+oq.tz2+oR.tz2)==3 and op.j2==1) continue;
+//          if (p==q and p==r and  std::abs(op.tz2+oq.tz2+oR.tz2)==3 and op.j2==1) continue;
+          if (p==q and p==r  and op.j2==1) continue;
           Kets3.push_back( Ket3(op,oq,oR,Jpq) );
           Ket3IndexLookup[ Ket3IndexHash(p,q,r,Jpq)] = Kets3.size()-1; // for reverse lookup
 //          int twoJ_min = std::abs( 2*Jpq - oR.j2 );
@@ -2202,9 +2203,26 @@ double ModelSpace::GetNineJ(double j1, double j2, double J12, double j3, double 
    {
      return it->second;
    }
+
    double ninej = AngMom::NineJ(jlist[0],jlist[1],jlist[2],jlist[3],jlist[4],jlist[5],jlist[6],jlist[7],jlist[8]);
-   #pragma omp critical
-   NineJList[key] = ninej;
+
+   if (omp_get_num_threads()<2)
+   {
+     #pragma omp critical
+     NineJList[key] = ninej;
+   }
+   else
+   {
+      std::cout << "DANGER!!!!!!!  Updating NineJList inside a parellel loop breaks thread safety!" << std::endl;
+      std::cout << "  I shouldn't be here in GetNineJ(";
+      for (int i=0;i<9;i++)   std::cout << std::setprecision(1) << std::fixed << jlist[i] << " " ;
+
+      std::cout <<  "). key = " << std::hex << key << "   ninej = " << std::dec << ninej << std::endl;
+      profiler.counter["N_CalcSixJ_in_Parallel_loop"] +=1;
+      exit(EXIT_FAILURE);
+
+   }
+
    return ninej;
 
 }

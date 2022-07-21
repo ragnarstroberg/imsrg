@@ -52,37 +52,6 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
   }
 
 
-/// This is not yet fully fleshed out.
-//  if ( particle_rank>2 )
-//  {
-//    Rando.ThreeBody.SwitchToPN_and_discard();
-//    std::default_random_engine generator(random_seed);
-//    double mean = 0;
-//    double stddev = 1;
-//    std::normal_distribution<double> distribution(mean,stddev);
-//
-//    size_t nch = modelspace.GetNumberThreeBodyChannels();
-//    for (size_t ch=0; ch<nch; ch++)
-//    {
-//      ThreeBodyChannel& Tbc = modelspace.GetThreeBodyChannel(ch);
-//
-//      // Construct a list of triplets (pqr) that participate in this channel
-//      std::set<std::array<size_t,3>> pqr_list;
-//      
-//      size_t nkets = Tbc.GetNumberKets();
-//      for (size_t iket=0; iket<nkets; iket++)
-//      {
-//         Ket3& ket = Tbc.GetKet(iket);
-//         pqr_list.insert( {ket.p,ket.q,ket.r});
-//      }
-//      size_t n_pqr = pqr_list.size();
-//      std::vector<std::array<size_t,3>> pqr_vec;
-//      for ( const auto& it : pqr_list ) pqr_vec.push_back( it );
-//      
-//
-//    }//ch
-//        
-//  }
 
  // If needed, fill the 3-body piece. Since the storage scheme has
  // places for matrix elements that are zero by symmetry, we need
@@ -99,46 +68,78 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
     double mean = 0;
     double stddev = 1;
     std::normal_distribution<double> distribution(mean,stddev);
+    int herm = Rando.IsHermitian() ? 1 : -1;
+
+    size_t bufsize = 80;
+    std::vector<double> randbuf(bufsize);
+    for (size_t i=0; i<bufsize; i++)   randbuf[i] = distribution(generator);
+    
 
     size_t nch = modelspace.GetNumberThreeBodyChannels();
     for (size_t ch=0; ch<nch; ch++)
     {
       ThreeBodyChannel& Tbc = modelspace.GetThreeBodyChannel(ch);
+      int twoJ = Tbc.twoJ;
       size_t nkets = Tbc.GetNumberKets();
       for (size_t ibra=0; ibra<nkets; ibra++)
       {
         Ket3& bra = Tbc.GetKet(ibra);
         for (size_t iket=0; iket<=ibra; iket++)
         {
+          if (ibra==iket and herm==-1) continue;
           Ket3& ket = Tbc.GetKet(iket);
           if ( ((bra.q != bra.r) or (bra.p==bra.q)) and ((ket.q != ket.r) or (ket.p==ket.q)) ) // the easy case where we don't have b=c , b!=a.
           {
             double random_me = distribution(generator);
             Rando.ThreeBody.SetME_pn_ch( ch,ch, ibra,iket, random_me );
           }
-          else // otherwise, we need to fill the simpler ordering and then recouple
+          else // otherwise, we need to fill the simpler ordering |abb> -> |bba> and then recouple
           {
-             int Jab_min = std::abs(bra.op->j2-bra.oq->j2)/2;
-             int Jab_max = (bra.op->j2+bra.oq->j2)/2;
-             int Jde_min = std::abs(ket.op->j2-ket.oq->j2)/2;
-             int Jde_max = (ket.op->j2+ket.oq->j2)/2;
+             int Jbb_min = std::max( std::abs(bra.oq->j2-bra.oR->j2) , std::abs(bra.op->j2-twoJ)   )/2;
+             int Jbb_max = std::min(bra.oq->j2+bra.oR->j2  ,  bra.op->j2+twoJ)/2;
+             int Jee_min = std::max( std::abs(ket.oq->j2-ket.oR->j2) , std::abs(ket.op->j2-twoJ)   )/2;
+             int Jee_max = std::min(ket.oq->j2+ket.oR->j2  ,  ket.op->j2+twoJ)/2;
+             Jbb_min += Jbb_min%2; // Jab should be even
+             Jee_min += Jee_min%2;
+             ThreeBodyStorage::Permutation perm_abc = ThreeBodyStorage::CBA;
+             ThreeBodyStorage::Permutation perm_def = ThreeBodyStorage::CBA;
              if ( (bra.q != bra.r) or (bra.p==bra.q) )  // if bra is not the troubling case
              {
-                Jab_min = bra.Jpq;
-                Jab_max = bra.Jpq;
+                perm_abc = ThreeBodyStorage::ABC;
+                Jbb_min = bra.Jpq;
+                Jbb_max = bra.Jpq;
              }
              if ( (ket.q != ket.r) or (ket.p==ket.q)) // if ket is not the troubling case
              {
-                Jde_min = ket.Jpq;
-                Jde_max = ket.Jpq;
+                perm_def = ThreeBodyStorage::ABC;
+                Jee_min = ket.Jpq;
+                Jee_max = ket.Jpq;
              }
-             if (bra.q==bra.r and bra.Jpq != Jab_min) continue;
-             if (ket.q==ket.r and ket.Jpq != Jde_min) continue;
+             double ja = bra.op->j2*0.5;
+             double jb = bra.oq->j2*0.5;
+             double jc = bra.oR->j2*0.5;
+             double jd = ket.op->j2*0.5;
+             double je = ket.oq->j2*0.5;
+             double jf = ket.oR->j2*0.5;
+             double matel = 0;
+             for (int Jbb=Jbb_min; Jbb<=Jbb_max; Jbb+=2)
+             {
+               double recouple_bra = Rando.ThreeBody.PermutationPhase(perm_abc)  * Rando.ThreeBody.RecouplingCoefficient( perm_abc, ja, jb, jc, Jbb, bra.Jpq, twoJ);
+               for (int Jee=Jee_min; Jee<=Jee_max; Jee+=2)
+               {
+                  double recouple_ket = Rando.ThreeBody.PermutationPhase(perm_def) * Rando.ThreeBody.RecouplingCoefficient( perm_def, jd, je, jf, Jee, ket.Jpq, twoJ);
+                  double fakematel = randbuf[ Jbb + Jee ];
+                  if (ibra==iket and Jee>Jbb) fakematel *= herm;
+                  matel += recouple_bra * recouple_ket * fakematel;
+               }
+             }
+             Rando.ThreeBody.SetME_pn_ch( ch,ch, ibra,iket, matel );
              
           }
         }
       }
     }
+    std::cout << "Just to check. I think that <332|332>  twoJ=3  Jab=Jde=0 is " << Rando.ThreeBody.GetME_pn( 0,0,3, 3,3,2, 3,3,2) << std::endl;
 
 //    for ( auto& iter : Rando.ThreeBody.OrbitIndexHash )
 //    {
@@ -376,13 +377,27 @@ void UnitTest::Test3BodyAntisymmetry(Operator& Y)
 //  Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, 1);
 
 
+  bool all_good = true;
+
+  std::vector<  std::array<int,6>> indices ;
+//  indices.push_back(  {4,4,0,4,4,0} );
+//  indices.push_back(  {0,4,4,0,2,2} );
+  indices.push_back(  {3,3,2,3,3,2} );
+//  indices.push_back(  {2,0,2,0,2,4} );
+//  indices.push_back(  {3,3,3,1,3,3} );
 
 //  int a=0,b=0,c=3,d=2,e=2,f=5;
 //  int a=0,b=0,c=5,d=2,e=2,f=3;
 //  int a=4,b=4,c=0,d=4,e=4,f=0;
-  int a=5,b=0,c=0,d=5,e=0,f=0;
+//  int a=5,b=0,c=0,d=5,e=0,f=0;
 //  int a=5,b=4,c=0,d=5,e=4,f=0;
 
+  for ( auto ind : indices )
+  {
+     int a,b,c,d,e,f;
+     a=ind[0]; b=ind[1] ; c=ind[2] ; d=ind[3] ; e=ind[4] ; f=ind[5];
+
+     std::cout << " abcdef " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
   Orbit& oa = Y.modelspace->GetOrbit(a);
   Orbit& ob = Y.modelspace->GetOrbit(b);
   Orbit& oc = Y.modelspace->GetOrbit(c);
@@ -409,43 +424,49 @@ void UnitTest::Test3BodyAntisymmetry(Operator& Y)
 
   for (int ma=-oa.j2; ma<=oa.j2; ma+=2)
   {
-  for (int mb=-ob.j2; mb<=ob.j2; mb+=2)
-  {
-  for (int mc=-oc.j2; mc<=oc.j2; mc+=2)
-  {
-  for (int md=-od.j2; md<=od.j2; md+=2)
-  {
-  for (int me=-oe.j2; me<=oe.j2; me+=2)
-  {
+   for (int mb=-ob.j2; mb<=ob.j2; mb+=2)
+   {
+    for (int mc=-oc.j2; mc<=oc.j2; mc+=2)
+    {
+     for (int md=-od.j2; md<=od.j2; md+=2)
+     {
+      for (int me=-oe.j2; me<=oe.j2; me+=2)
+      {
    int mf=ma+mb+mc-md-me;
    if ( std::abs(mf)>of.j2 ) continue;
-  std::cout << "------------------------------------------------------------------------------------------------" << std::endl;
-  std::cout << " @mvals: " << ma << " " << mb << " " << mc << " " << md << " " << me << " " << mf << std::endl;
-  std::cout << std::endl << "@abc" << std::endl;
   double yabcdef = GetMschemeMatrixElement_3b(Y, a,ma, b,mb ,c,mc, d,md, e,me, f,mf);
   if (std::abs(yabcdef)<1e-8) continue;
-  std::cout << "@bca" << std::endl;
+//  if ( not (  ma==-3 and mb==-1 and mc==1 and md==-3 and me==3 and mf==-3) ) continue;
+//  std::cout << "------------------------------------------------------------------------------------------------" << std::endl;
+//  std::cout << " @mvals: " << ma << " " << mb << " " << mc << " " << md << " " << me << " " << mf << std::endl;
+//  std::cout << std::endl << "@abc" << std::endl;
+//  std::cout << "@bca" << std::endl;
   double ybcadef = GetMschemeMatrixElement_3b(Y, b,mb, c,mc, a,ma, d,md, e,me, f,mf);
-  std::cout << "@cab" << std::endl;
+//  std::cout << "@cab" << std::endl;
   double ycabdef = GetMschemeMatrixElement_3b(Y, c,mc, a,ma, b,mb, d,md, e,me, f,mf);
 
-  std::cout << "@acb" << std::endl;
+//  std::cout << "@acb" << std::endl;
   double yacbdef = GetMschemeMatrixElement_3b(Y, a,ma, c,mc, b,mb, d,md, e,me, f,mf);
-  std::cout << "@bac" << std::endl;
+//  std::cout << "@bac" << std::endl;
   double ybacdef = GetMschemeMatrixElement_3b(Y, b,mb, a,ma, c,mc, d,md, e,me, f,mf);
-  std::cout << std::endl << "@cba" << std::endl;
+//  std::cout << std::endl << "@cba" << std::endl;
   double ycbadef = GetMschemeMatrixElement_3b(Y, c,mc, b,mb, a,ma, d,md, e,me, f,mf);
 
   std::cout << " @@mvals: " << ma << " " << mb << " " << mc << " " << md << " " << me << " " << mf << std::endl;
   std::cout << "ANTISYMMETRY:  abc: " << yabcdef << " bca: " << ybcadef << " cab: " << ycabdef
             << "    acb: " << yacbdef << " bac: " << ybacdef << " cba: " << ycbadef << std::endl;
-//  std::cout << "ANTISYMMETRY:  abc: " << yabcdef  << " cba: " << ycbadef << std::endl;
-  return;
 
-  }
-  }
-  }
-  }
+  all_good &= (  std::abs(yabcdef-ybcadef)<1e-7  and std::abs(yabcdef-ycabdef)<1e-7
+             and std::abs(yabcdef+yacbdef)<1e-7  and std::abs(yabcdef+ybacdef)<1e-7 and std::abs(yabcdef+ycbadef)<1e-7 );
+//  std::cout << "ANTISYMMETRY:  abc: " << yabcdef  << " cba: " << ycbadef << std::endl;
+//  return;
+
+      }//me
+     }//md
+    }//mc
+   }//mb
+  }//ma
+
   }
 
 
@@ -459,6 +480,14 @@ void UnitTest::Test3BodyAntisymmetry(Operator& Y)
 //    }
 //  }
 
+  if (all_good)
+  {
+    std::cout << "PASSED ANTISYMMETRY TEST " << std::endl;
+  }
+  else
+  {
+    std::cout << "!!!! FAILED ANTISYMMETRY TEST!!!!!!!!!!!!!!!!!" << std::endl;
+  }
 
 }
 
@@ -491,6 +520,11 @@ void UnitTest::TestCommutators()
   Operator X = RandomOp(*modelspace, 0, 0, 0, 3, -1);
   Operator Y = RandomOp(*modelspace, 0, 0, 0, 3, +1);
 
+//  std::cout << "===========================  Test Antisymmetry X =========================" << std::endl;
+//  Test3BodyAntisymmetry(X);
+//  std::cout << "===========================  Test Antisymmetry Y =========================" << std::endl;
+//  Test3BodyAntisymmetry(Y);
+
   bool all_good = true;
 
   all_good &= Test_comm110ss( X, Y );
@@ -515,6 +549,7 @@ void UnitTest::TestCommutators()
   all_good &= Test_comm223ss(X,Y);
 
   all_good &= Test_comm233_pp_hhss(X,Y);
+  all_good &= Test_comm233_phss(X,Y);
 
   all_good &= Test_comm333_ppp_hhhss(X,Y);
 
@@ -582,7 +617,7 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y, std::vector<std::strin
     if ( std::find(skiplist.begin(),skiplist.end(), "comm332_ppph_hhhpss") == skiplist.end())   all_good &= Test_comm332_ppph_hhhpss( X, Y );
     if ( std::find(skiplist.begin(),skiplist.end(), "comm332_pphhss") == skiplist.end())   all_good &= Test_comm332_pphhss( X, Y );
     if ( std::find(skiplist.begin(),skiplist.end(), "comm233_pp_hhss") == skiplist.end())   all_good &= Test_comm233_pp_hhss( X, Y );
-    if ( std::find(skiplist.begin(),skiplist.end(), "comm233_ph_ss") == skiplist.end())   all_good &= Test_comm233_ph_ss( X, Y );
+    if ( std::find(skiplist.begin(),skiplist.end(), "comm233_phss") == skiplist.end())   all_good &= Test_comm233_phss( X, Y );
   }
   if ( std::find(skiplist.begin(),skiplist.end(), "allN9") == skiplist.end() )
   {
@@ -977,6 +1012,7 @@ bool UnitTest::Test_against_ref_impl(const Operator& X, const Operator& Y, commu
   Z -= Zref;
   double summed_error = Z.Norm() + Z.ZeroBody;
 
+
   bool passed = std::abs( summed_error ) <1e-6 ;
   std::string passfail = passed ? "PASS " : "FAIL";
   std::cout << "   " << output_tag <<   "  sum_ref, sum_opt = " << normRef << " " << normOpt
@@ -1075,6 +1111,13 @@ bool UnitTest::Test_comm233_pp_hhss( const Operator& X, const Operator& Y)
 bool UnitTest::Test_comm333_ppp_hhhss( const Operator& X, const Operator& Y) 
 {
   return Test_against_ref_impl(X,Y,  Commutator::comm333_ppp_hhhss,  ReferenceImplementations::comm333_ppp_hhhss,  "comm333_ppp_hhhss");
+}
+
+bool UnitTest::Test_comm233_phss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm233_phss,  ReferenceImplementations::comm233_phss,  "comm233_phss");
+//  return Test_against_ref_impl(X,Y,  Commutator::comm233_phss,  Commutator::comm233_phss_debug,  "comm233_phss");
+//  return Test_against_ref_impl(X,Y,  Commutator::comm233_phss_debug,  ReferenceImplementations::comm233_phss,  "comm233_phss");
 }
 
 /// M-Scheme Formula:
@@ -3379,7 +3422,7 @@ bool UnitTest::Mscheme_Test_comm233_pp_hhss( const Operator& X, const Operator& 
 //                           - Xbian Yajkbml + Ybian Xajkbml  +  Xbjan Yaikbml - Ybjan Xaikbml  +  Xbkan Yajibml - Ybkan Xajibml  ]
 //                              
 //
-bool UnitTest::Test_comm233_ph_ss( const Operator& X, const Operator& Y ) // test not yet implemented
+bool UnitTest::Mscheme_Test_comm233_phss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
   std::cout <<__func__ << std::endl;
    Operator Z_J( Y );
