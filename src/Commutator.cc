@@ -2764,6 +2764,8 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
       Ket& bra = tbc.GetKet(ibra);
       int i = bra.p;
       int j = bra.q;
+      if (!Y3.IsOrbitIn3BodyEMaxTruncation(i)) continue;
+      if (!Y3.IsOrbitIn3BodyEMaxTruncation(j)) continue;
       int ei = 2*bra.op->n + bra.op->l;
       int ej = 2*bra.oq->n + bra.oq->l;
       double d_ei = std::abs(ei - e_fermi[bra.op->tz2]);
@@ -2775,6 +2777,8 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
         Ket& ket = tbc.GetKet(iket);
         int k = ket.p;
         int l = ket.q;
+        if (!Y3.IsOrbitIn3BodyEMaxTruncation(k)) continue;
+        if (!Y3.IsOrbitIn3BodyEMaxTruncation(l)) continue;
         int ek = 2*ket.op->n + ket.op->l;
         int el = 2*ket.oq->n + ket.oq->l;
         double d_ek = std::abs( ek - e_fermi[ket.op->tz2]);
@@ -2787,6 +2791,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
         for (int a=0;a<norb;a++)
         {
           Orbit& oa = Z.modelspace->GetOrbit(a);
+          if (!Y3.IsOrbitIn3BodyEMaxTruncation(oa)) continue;
 
           int ea = 2*oa.n + oa.l;
           double d_ea = std::abs( ea - e_fermi.at(oa.tz2));
@@ -2809,6 +2814,8 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
           for ( auto b : blist ) 
           {
             Orbit& ob = Z.modelspace->GetOrbit(b);
+            if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
+
             int eb = 2*ob.n + ob.l;
             double d_eb = std::abs( eb - e_fermi[ob.tz2]);
             double occnat_b = ob.occ_nat;
