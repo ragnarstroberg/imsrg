@@ -405,11 +405,13 @@ void UnitTest::TestCommutators()
   if (not Commutator::use_imsrg3_n7 )
   {
    all_good &= Test_comm332_ppph_hhhpss(X,Y);
+   all_good &= Test_comm332_pphhss(X,Y);
 
    all_good &= Test_comm233_pp_hhss(X,Y);
    all_good &= Test_comm233_phss(X,Y);
 
    all_good &= Test_comm333_ppp_hhhss(X,Y);
+   all_good &= Test_comm333_pph_hhpss(X,Y);
   }
  }
 
@@ -482,7 +484,7 @@ void UnitTest::TestCommutators3(Operator& X, Operator& Y, std::vector<std::strin
   if ( std::find(skiplist.begin(),skiplist.end(), "allN9") == skiplist.end() )
   {
     if ( std::find(skiplist.begin(),skiplist.end(), "comm333_ppp_hhhss") == skiplist.end())   all_good &= Test_comm333_ppp_hhhss( X, Y );
-    if ( std::find(skiplist.begin(),skiplist.end(), "comm333_pph_hhp_ss") == skiplist.end())   all_good &= Test_comm333_pph_hhp_ss( X, Y );
+    if ( std::find(skiplist.begin(),skiplist.end(), "comm333_pph_hhpss") == skiplist.end())   all_good &= Test_comm333_pph_hhpss( X, Y );
   }
 
 
@@ -952,6 +954,11 @@ bool UnitTest::Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y)
   return Test_against_ref_impl(X,Y,  Commutator::comm332_ppph_hhhpss,  ReferenceImplementations::comm332_ppph_hhhpss,  "comm332_ppph_hhhpss");
 }
 
+bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm332_pphhss,  ReferenceImplementations::comm332_pphhss,  "comm332_pphhss");
+}
+
 bool UnitTest::Test_comm133ss( const Operator& X, const Operator& Y) 
 {
 
@@ -986,6 +993,14 @@ bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y)
 //  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  Commutator::comm232ss_debug,  "comm232ss");
   return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  ReferenceImplementations::comm232ss,  "comm232ss");
 }
+
+/// INCREDIBLY SLOW...
+bool UnitTest::Test_comm333_pph_hhpss( const Operator& X, const Operator& Y) 
+{
+  return Test_against_ref_impl(X,Y,  Commutator::comm333_pph_hhpss,  ReferenceImplementations::comm333_pph_hhpss,  "comm333_pph_hhpss");
+}
+
+
 
 /// M-Scheme Formula:
 ///
@@ -2509,7 +2524,7 @@ bool UnitTest::Mscheme_Test_comm332_ppph_hhhpss( const Operator& X, const Operat
 //                                                   - Xabicdl*Ycdjabk + Yabicdl*Xcdjabk
 //                                                   + Xabjcdl*Ycdiabk - Yabjcdl*Xcdiabk )
 //
-bool UnitTest::Test_comm332_pphhss( const Operator& X, const Operator& Y ) // test not yet implemented
+bool UnitTest::Mscheme_Test_comm332_pphhss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
   std::cout <<__func__ << std::endl;
   Operator Z_J( Y );
@@ -3663,7 +3678,7 @@ bool UnitTest::Mscheme_Test_comm333_ppp_hhhss( const Operator& X, const Operator
 //                 -(Xabkcln*Ycijabm - Yabkcln*Xcijabm) + (Xabicln*Yckjabm - Yabicln*Xckjabm)  + (Xabjcln*Ycikabm - Yabjcln*Xcikabm) 
 //                 -(Xabkcml*Ycijabn - Yabkcml*Xcijabn) + (Xabicml*Yckjabn - Yabicml*Xckjabn)  + (Xabjcml*Ycikabn - Yabjcml*Xcikabn) ]
 //
-bool UnitTest::Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y ) // test not yet implemented
+bool UnitTest::Mscheme_Test_comm333_pph_hhpss( const Operator& X, const Operator& Y ) // test not yet implemented
 {
   std::cout <<__func__ << std::endl;
    Operator Z_J( Y );

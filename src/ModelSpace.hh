@@ -460,7 +460,8 @@ class ModelSpace
    TwoBodyChannel& GetTwoBodyChannel(int ch) const {return (TwoBodyChannel&) TwoBodyChannels[ch];};
    TwoBodyChannel_CC& GetTwoBodyChannel_CC(int ch) const {return (TwoBodyChannel_CC&) TwoBodyChannels_CC[ch];};
 
-   ThreeBodyChannel& GetThreeBodyChannel(int ch) const {return (ThreeBodyChannel&) ThreeBodyChannels[ch];};
+//   ThreeBodyChannel& GetThreeBodyChannel(int ch) const {return (ThreeBodyChannel&) ThreeBodyChannels[ch];};
+   ThreeBodyChannel& GetThreeBodyChannel(int ch) const ;
 
    int GetTwoBodyJmax() const {return TwoBodyJmax;};
    int GetThreeBodyJmax() const {return ThreeBodyJmax;};

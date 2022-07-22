@@ -77,6 +77,7 @@ class UnitTest
   bool Mscheme_Test_comm132ss( const Operator& X, const Operator& Y );
 //
   bool Mscheme_Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ); 
+  bool Mscheme_Test_comm332_pphhss( const Operator& X, const Operator& Y ); 
   bool Mscheme_Test_comm133ss( const Operator& X, const Operator& Y );
   bool Mscheme_Test_comm223ss( const Operator& X, const Operator& Y );
   bool Mscheme_Test_comm233_pp_hhss( const Operator& X, const Operator& Y );    
@@ -84,6 +85,7 @@ class UnitTest
   bool Mscheme_Test_comm232ss( const Operator& X, const Operator& Y );
 
   bool Mscheme_Test_comm333_ppp_hhhss( const Operator& X, const Operator& Y );  
+  bool Mscheme_Test_comm333_pph_hhpss( const Operator& X, const Operator& Y );  
 
   bool Test_comm330ss( const Operator& X, const Operator& Y );
   bool Test_comm331ss( const Operator& X, const Operator& Y );
@@ -92,7 +94,7 @@ class UnitTest
   bool Test_comm132ss( const Operator& X, const Operator& Y );
   bool Test_comm232ss( const Operator& X, const Operator& Y );
   bool Test_comm332_ppph_hhhpss( const Operator& X, const Operator& Y ); 
-  bool Test_comm332_pphhss( const Operator& X, const Operator& Y ); // test in progress
+  bool Test_comm332_pphhss( const Operator& X, const Operator& Y ); 
 
   bool Test_comm223ss( const Operator& X, const Operator& Y );
   bool Test_comm133ss( const Operator& X, const Operator& Y );
@@ -100,7 +102,7 @@ class UnitTest
   bool Test_comm233_pp_hhss( const Operator& X, const Operator& Y );    
   bool Test_comm233_phss( const Operator& X, const Operator& Y );      
   bool Test_comm333_ppp_hhhss( const Operator& X, const Operator& Y );  
-  bool Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y );  
+  bool Test_comm333_pph_hhpss( const Operator& X, const Operator& Y );  
 
 
   bool Test_comm211sd(        const Operator& X, const Operator& Y   );
