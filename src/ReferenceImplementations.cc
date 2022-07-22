@@ -898,14 +898,14 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
          size_t k=ket.p;
          size_t l=ket.q;
 
-         double zbar_ilkj = 0;
-         double zbar_jlki = 0;
-         double zbar_iklj = 0;
-         double zbar_jkli = 0;
-
-
-
          double zijkl = 0;
+
+         // loop over permutations  ijkl -> 1234
+
+         double zbar_1432 = 0;
+
+
+
          
 
          zijkl /= sqrt((1.+bra.delta_pq())*(1.+ket.delta_pq()));
@@ -1187,6 +1187,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 ///                                                                   -PJ1J2(lm/n) ( YJ1J2J3_ijkabn XJ2_ablm - XJ1J2J3_ijkabn YJ2_ablm )                             
 ///  
 ///
+/// THIS IS STILL TOO SLOW TO BE USEFUL BEYOND EMAX=2
 void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 {
   auto& X2 = X.TwoBody;
@@ -1254,14 +1255,6 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 
         double zijklmn = 0;
 
-        for (size_t a : Z.modelspace->all_orbits )
-        {
-          Orbit& oa = Z.modelspace->GetOrbit(a);
-          for (size_t b : Z.modelspace->all_orbits )
-          {
-            Orbit& ob = Z.modelspace->GetOrbit(b);
-            if ( std::abs( ((1-oa.occ)*(1-ob.occ)-oa.occ*ob.occ) )<1e-7 ) continue;
-
            // Now we need to loop over the permutations in ijk and then lmn
            for ( auto perm_ijk : index_perms ) // {ijk} -> {123}
            {
@@ -1271,8 +1264,6 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
              Orbit& o2 = Z.modelspace->GetOrbit(I2);
              Orbit& o3 = Z.modelspace->GetOrbit(I3);
 
-             if ( (o1.l+o2.l+oa.l+ob.l+X.parity)%2>0 and (o1.l+o2.l+oa.l+ob.l+Y.parity)%2>0 ) continue;
-             if ( (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*X.GetTRank()) and (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*Y.GetTRank()) ) continue;
 
              int J1p_min = J1;
              int J1p_max = J1;
@@ -1285,11 +1276,29 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
              for (int J1p=J1p_min; J1p<=J1p_max; J1p++)
              {
                 double Pijk = Z3.PermutationPhase(perm_ijk) *   Z3.RecouplingCoefficient( perm_ijk, ji,jj,jk, J1p, J1, twoJ) ;
-                double x12ab = X2.GetTBME_J(J1p,J1p, I1,I2,a,b);
-                double y12ab = Y2.GetTBME_J(J1p,J1p, I1,I2,a,b);
-                double xab3lmn = X3.GetME_pn( J1p, J2, twoJ, a,b,I3,l,m,n );
-                double yab3lmn = Y3.GetME_pn( J1p, J2, twoJ, a,b,I3,l,m,n );
-                zijklmn += 1./2 * ((1-oa.occ)*(1-ob.occ)-oa.occ*ob.occ) * Pijk * ( x12ab * yab3lmn - y12ab * xab3lmn) ;
+
+                for (size_t a : Z.modelspace->all_orbits )
+                {
+                  Orbit& oa = Z.modelspace->GetOrbit(a);
+                  for (size_t b : Z.modelspace->all_orbits )
+                  {
+                    Orbit& ob = Z.modelspace->GetOrbit(b);
+                    if (  J1p < std::abs(oa.j2-ob.j2)/2  or J1p > (oa.j2+ob.j2)/2) continue;
+                    if ( (o1.l+o2.l+oa.l+ob.l+X.parity)%2>0 and (o1.l+o2.l+oa.l+ob.l+Y.parity)%2>0 ) continue;
+                    if ( (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*X.GetTRank()) and (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*Y.GetTRank()) ) continue;
+                    if ( std::abs( ((1-oa.occ)*(1-ob.occ)-oa.occ*ob.occ) )<1e-7 ) continue;
+
+                    double x12ab = X2.GetTBME_J(J1p,J1p, I1,I2,a,b);
+                    double y12ab = Y2.GetTBME_J(J1p,J1p, I1,I2,a,b);
+                    auto x_y = X3.GetME_pn_TwoOps( J1p, J2, twoJ, a,b,I3,l,m,n, X3, Y3) ;
+                    double xab3lmn = x_y[0];
+                    double yab3lmn = x_y[1];
+//                    double xab3lmn = X3.GetME_pn( J1p, J2, twoJ, a,b,I3,l,m,n );
+//                    double yab3lmn = Y3.GetME_pn( J1p, J2, twoJ, a,b,I3,l,m,n );
+
+                    zijklmn += 1./2 * ((1-oa.occ)*(1-ob.occ)-oa.occ*ob.occ) * Pijk * ( x12ab * yab3lmn - y12ab * xab3lmn) ;
+                  }//b
+                }//a
              }
            }// for perm_ijk
 
@@ -1302,8 +1311,6 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
              Orbit& o2 = Z.modelspace->GetOrbit(I2);
              Orbit& o3 = Z.modelspace->GetOrbit(I3);
 
-             if ( (o1.l+o2.l+oa.l+ob.l+X.parity)%2>0 and (o1.l+o2.l+oa.l+ob.l+Y.parity)%2>0 ) continue;
-             if ( (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*X.GetTRank()) and (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*Y.GetTRank()) ) continue;
 
              int J2p_min = J2;
              int J2p_max = J2;
@@ -1315,16 +1322,35 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
              for (int J2p=J2p_min; J2p<=J2p_max; J2p++)
              {
                 double Plmn = Z3.PermutationPhase(perm_lmn) *   Z3.RecouplingCoefficient( perm_lmn, jl,jm,jn, J2p, J2, twoJ) ;
-                double xab12 = X2.GetTBME_J(J2p,J2p, a,b,I1,I2);
-                double yab12 = Y2.GetTBME_J(J2p,J2p, a,b,I1,I2);
-                double xijkab3 = X3.GetME_pn( J1, J2p, twoJ, i,j,k, a,b,I3 );
-                double yijkab3 = Y3.GetME_pn( J1, J2p, twoJ, i,j,k, a,b,I3 );
-                zijklmn -= 1./2 * ((1-oa.occ)*(1-ob.occ)-oa.occ*ob.occ) * Plmn * (yijkab3 * xab12 - xijkab3 * yab12 ) ;
+
+                for (size_t a : Z.modelspace->all_orbits )
+                {
+                  Orbit& oa = Z.modelspace->GetOrbit(a);
+                  for (size_t b : Z.modelspace->all_orbits )
+                  {
+                    Orbit& ob = Z.modelspace->GetOrbit(b);
+
+                    if (  J2p < std::abs(oa.j2-ob.j2)/2  or J2p > (oa.j2+ob.j2)/2) continue;
+                    if ( (o1.l+o2.l+oa.l+ob.l+X.parity)%2>0 and (o1.l+o2.l+oa.l+ob.l+Y.parity)%2>0 ) continue;
+                    if ( (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*X.GetTRank()) and (std::abs(o1.tz2+o2.tz2-oa.tz2-ob.tz2)!=2*Y.GetTRank()) ) continue;
+                    if ( std::abs( ((1-oa.occ)*(1-ob.occ)-oa.occ*ob.occ) )<1e-7 ) continue;
+
+                    double xab12 = X2.GetTBME_J(J2p,J2p, a,b,I1,I2);
+                    double yab12 = Y2.GetTBME_J(J2p,J2p, a,b,I1,I2);
+
+                    auto x_y = X3.GetME_pn_TwoOps( J1, J2p, twoJ, i,j,k, a,b,I3 , X3,Y3) ;
+                    double xijkab3 = x_y[0];
+                    double yijkab3 = x_y[1];
+//                    double xijkab3 = X3.GetME_pn( J1, J2p, twoJ, i,j,k, a,b,I3 );
+//                    double yijkab3 = Y3.GetME_pn( J1, J2p, twoJ, i,j,k, a,b,I3 );
+                    zijklmn -= 1./2 * ((1-oa.occ)*(1-ob.occ)-oa.occ*ob.occ) * Plmn * (yijkab3 * xab12 - xijkab3 * yab12 ) ;
+                  }//b
+                }//a
              }
            }// for perm_lmn
 
-          }//b
-        }//a
+//          }//b
+//        }//a
 
         Z3.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket, zijklmn );  // this needs to be modified for beta decay
       }// for iket
