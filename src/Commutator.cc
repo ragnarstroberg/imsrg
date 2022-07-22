@@ -8777,8 +8777,6 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
   Z.profiler.timer["_comm233_pph_recouple"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
 
-  std::cout << "Opt " << __func__ << " Done" << std::endl;
-
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
