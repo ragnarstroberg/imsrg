@@ -2836,10 +2836,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
   bool x_has_3 = X3.IsAllocated();
   bool y_has_3 = Y3.IsAllocated();
-//  bool x_has_3 = X3.is_allocated;
-//  bool y_has_3 = Y3.is_allocated;
-//  bool imsrg3_valence_2b = true;
-//  bool imsrg3_valence_2b = false;
 
   int hermX = X.IsHermitian() ? 1 : -1;
   int hermY = Y.IsHermitian() ? 1 : -1;
@@ -2850,7 +2846,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
  auto Hash_comm232_key = [] ( std::array<size_t,5>& kljJJ ){  return kljJJ[0] + (kljJJ[1] << 8) + (kljJJ[2] << 16) + (kljJJ[3] << 24) + (kljJJ[4]<<32);};
 
   size_t nch = Z.modelspace->GetNumberTwoBodyChannels();
-//  std::cout << __func__ << " begin" << std::endl;
 
   // first, enumerate the one-body channels |i> => ji,parityi,tzi
   std::map<std::array<int,3>,std::vector<size_t>> local_one_body_channels; //  maps {j,parity,tz} => vector of index_j 
@@ -2866,13 +2861,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
     else external_local_one_body_channels[obc].push_back(j);
   }
 
-//  std::cout << __func__ << "  Local one body channels: " << std::endl;
-//  for ( auto& lobc : local_one_body_channels)
-//  {
-//    std::cout << lobc.first[0] << " " << lobc.first[1] << " " << lobc.first[2] << " : ";
-//    for ( auto& i : lobc.second )  std::cout << i << "  ";
-//    std::cout << std::endl;
-//  }
   
   // next, figure out which three-body states |klj`> and |abc`> exist, make a list, and give them an
   // index for where they'll sit in the matrix
@@ -2880,7 +2868,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   std::map<std::array<int,3>,arma::mat> ZMAT_list; //  maps {j,parity,tz} => matrix <i|Z|klj`>
 
   std::vector<std::array<int,3>> obc_keys;
-//  for ( auto& iter_i : local_one_body_channels) obc_keys.push_back(iter_i.first);
   for ( auto& iter_i : external_local_one_body_channels) obc_keys.push_back(iter_i.first);
   size_t nkeys = obc_keys.size();
 
@@ -2888,7 +2875,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
   for ( size_t ikey=0; ikey<nkeys; ikey++ )
   {
     auto& obc_key = obc_keys[ikey];
-//    std::vector<size_t>& obc_orbits = local_one_body_channels[obc_key];
     std::vector<size_t>& obc_orbits = external_local_one_body_channels[obc_key];
     int j2i = obc_key[0];
     int parityi = obc_key[1];
@@ -2917,29 +2903,20 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
           Ket& ket_kl = tbc_kl.GetKet(iket_kl);
           int e_k = 2*ket_kl.op->n + ket_kl.op->l;
           int e_l = 2*ket_kl.oq->n + ket_kl.oq->l;
-//          double de_k = std::abs( 2*ket_kl.op->n + ket_kl.op->l - e_fermi[ket_kl.op->tz2]);
-//          double de_l = std::abs( 2*ket_kl.oq->n + ket_kl.oq->l - e_fermi[ket_kl.oq->tz2]);
           if ( (e_k + e_l) > Z.modelspace->GetE3max()) continue;
           double de_k = std::abs(e_k - e_fermi[ket_kl.op->tz2]);
           double de_l = std::abs(e_l - e_fermi[ket_kl.oq->tz2]);
           if ( (de_k + de_l) > Z.modelspace->GetdE3max() ) continue;
-//          double nk = ket_kl.op->occ;
-//          double nl = ket_kl.oq->occ;
           double occnat_k = ket_kl.op->occ_nat;
           double occnat_l = ket_kl.oq->occ_nat;
           for ( size_t j : iter_j.second )
           {
             if (!Z.ThreeBody.IsKetInEMaxTruncations(ket_kl.p, ket_kl.q, j)) continue;
             Orbit& oj = Z.modelspace->GetOrbit(j);
-//            double de_j = std::abs( 2*oj.n + oj.l - e_fermi[oj.tz2]);
             double occnat_j = oj.occ_nat;
             if ( (occnat_k*(1-occnat_k) * occnat_l*(1-occnat_l) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() ) continue;
-//            if ( (de_k + de_l + de_j) > Z.modelspace->GetdE3max() ) continue;
-//            double nj = oj.occ;
 
             klj_list_i.push_back( { ket_kl.p, ket_kl.q, j, (size_t)tbc_kl.J } );
-//            std::cout <<"   ikey = " << ikey << " : " << j2i << " " << parityi << " " << tz2i << "   "
-//                      << "  adding " << ket_kl.p << " " <<ket_kl.q << " " << j << "  J=" << tbc_kl.J << std::endl;
 
           }// for j
         }// for iket_kl
@@ -2962,7 +2939,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 
     auto& obc_key = obc_keys[ikey]; // this is an array {j2,parity,tz2}
     int j2i = obc_key[0];
-//    std::vector<size_t>& obc_orbits = local_one_body_channels[obc_key]; // the orbits that have quantum numbers {j2,parity,tz2}
     std::vector<size_t>& obc_orbits = external_local_one_body_channels[obc_key]; // the orbits that have quantum numbers {j2,parity,tz2}
     auto& klj_list_i = klj_list[obc_key]; // list of 3-body pph stats |klj`> with quantum numbers {j2,parity,tz2}
 
@@ -2985,7 +2961,6 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
       if (a==b) occupation_factor *=0.5;  // we sum a<=b, and drop the 1/2, but we still need the 1/2 for a==b
       abc_list.push_back( i_kljJ );
       abc_occ_list.push_back( occupation_factor );
-//      std::cout << "   || ikey = " << ikey << "   keeping abc,J " << a << " " << b << " " << c << " " << kljJ[3] << "  with index " << i_kljJ << std::endl;
     }
 
     size_t dim_i   = obc_orbits.size(); // how many sp states are in this jpt channel
@@ -3432,6 +3407,7 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
 
     // Now fill the X2 mat and Y3 mat
       #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+//      #pragma omp parallel for schedule(dynamic,1) 
       for (size_t ind_abc=0; ind_abc<n_abc; ind_abc++)
       {
         size_t a = a_list[ind_abc];
@@ -3496,7 +3472,6 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
                Ket& ket = tbc.GetKet(iket);
                int k = ket.p;
                int l = ket.q;
-//               if (i==0 and k==2 and l==2) std::cout << "i==0,l==2,k==2 => index kli = " <<index_kli << std::endl;
                double d_ek = std::abs( 2*ket.op->n +ket.op->l - e_fermi[ket.op->tz2]);
                double d_el = std::abs( 2*ket.oq->n +ket.oq->l - e_fermi[ket.oq->tz2]);
                double occnat_k = ket.op->occ_nat;
@@ -3521,14 +3496,9 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
                  }
                }
 
-//               X3MAT(ind_abc, index_kli) -= (twoJp+1) * sixj * xabiklc;
-//               Y3MAT(ind_abc, index_kli) -= (twoJp+1) * sixj * yabiklc;
                X3MAT(ind_abc, index_kli) += (twoJp+1)/sqrt(2*J+1) * sixj * xabiklc;
                Y3MAT(ind_abc, index_kli) += (twoJp+1)/sqrt(2*J+1) * sixj * yabiklc;
-//               if (ch==8 and ind_abc ==9 and index_kli==20)
-//               {
-//          std::cout << "ind_abc = " << ind_abc << "   ind_kli = " << index_kli << "    abiklc = " << a << " " << b << " " << i << " " << k << " " << l << " " << c << "   Jkl Jab twoJp = " << J << " " << Jab << " " << twoJp << " read y " << Y3.GetME_pn(Jab,J,twoJp,a,b,i,k,l,c) << "   yabiklc = " << yabiklc << " , " << Y3MAT(ind_abc, index_kli)  << std::endl;
-//               }
+
 
              }// for iket
            }
@@ -3542,32 +3512,15 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
  /// now we're back out to the ch loop level.
 
     // finally do the matrix multiplication
-//    arma::mat ZMat =  -sqrt(1./(2*J+1)) * (  X2MAT * Y3MAT - Y2MAT * X3MAT  ) ;
-//    std::cout << "Y3MAT size : " << Y3MAT.n_cols << " x " << Y3MAT.n_rows << std::endl;
     arma::mat ZMat =  (  X2MAT * Y3MAT - Y2MAT * X3MAT  ) ;
 
-//    if (ch==8)
-//    {
-//      std::cout << "ch = " << ch << "   and X2MAT = " << std::endl << X2MAT.row(5) << std::endl;
-//      std::cout << "ch = " << ch << "   and Y3MAT = " << std::endl << Y3MAT.col(20) << std::endl;
-//      std::cout << "   product = " << X2MAT.row(5) * Y3MAT.col(20) << std::endl;
-//     double xysum =0;
-//     for (size_t ii=0; ii<X2MAT.n_cols; ii++)
-//     {
-//       double z = X2MAT(5,ii) * Y3MAT(ii,20);
-//       xysum += z;
-//       std::cout << X2MAT(5,ii) << " " << Y3MAT(ii,20) << "  " << z << "  " << xysum << std::endl;
-//     }
-//      std::cout << "ch = " << ch << "   and Y2MAT = " << std::endl << Y2MAT.row(5) << std::endl;
-//      std::cout << "ch = " << ch << "   and X3MAT = " << std::endl << X3MAT.col(20) << std::endl;
-//      std::cout << "   product = " << Y2MAT.row(5) * X3MAT.col(20) << std::endl;
-//    }
 
     Z.profiler.timer["comm232_block4"] += omp_get_wtime() - tstart;
     tstart = omp_get_wtime();
 
     // now convert back from <i|Z|klj'> to <ij|Z|kl>
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1) 
     for (int ibra=0; ibra<nkets; ibra++)
     {
       Ket& bra = tbc.GetKet(ibra);
@@ -3575,8 +3528,6 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
       int j=bra.q;
       Orbit& oi = Z.modelspace->GetOrbit(i);
       Orbit& oj = Z.modelspace->GetOrbit(j);
-//      double ji = 0.5*oi.j2;
-//      double jj = 0.5*oj.j2;
       size_t ind_i = ij_orbits_lookup[i];
       size_t ind_j = ij_orbits_lookup[j];
       size_t ind_ji = jvals_lookup[oi.j2];
@@ -3604,15 +3555,6 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
         zijkl -= hermX*hermY* ZMat(ind_l, (ind_jl+ind_k*njvals)*nkets + ibra);
         zijkl += hermX*hermY*phase_kl * ZMat(ind_k, (ind_jk+ind_l*njvals)*nkets + ibra);
 
-////       if (ch==0 and ibra<5 and iket<5)
-//       if (ch==8 and i==0 and j==1 and ( (k==2 and l==5) or (k==5 and l==2) ) )
-//       {
-//         std::cout << " ibra,iket " << ibra << " " << iket << "   ijkl " << i << " " << j << " " << k << " " << l << std::endl;
-//         std::cout << "    " << ZMat(ind_j,  (ind_jj+ind_i*njvals)*nkets + iket) << "  -  " <<  phase_ij * ZMat(ind_i,  (ind_ji+ind_j*njvals)*nkets + iket)
-//                   << "  -  " << hermX*hermY* ZMat(ind_l, (ind_jl+ind_k*njvals)*nkets + ibra) << "  +   " << hermX*hermY*phase_kl * ZMat(ind_k, (ind_jk+ind_l*njvals)*nkets + ibra)
-//                   << "  third term obtained from Z(" << ind_l << " , " << (ind_jl+ind_k*njvals)*nkets + ibra  << std::endl;
-//       }
-
 
         // normalize the tbme
         zijkl *= -1.0 / sqrt((1+bra.delta_pq())*(1+ket.delta_pq()));
@@ -3637,6 +3579,8 @@ void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
 
 
 // the old way that also works. It's slower but easier to read.
+// For now, this is used if we want to treat an operator that changes Tz or parity.
+//  The fast implementation should be updated to do that...
 void comm232ss_slow( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
@@ -3652,7 +3596,8 @@ void comm232ss_slow( const Operator& X, const Operator& Y, Operator& Z )
   for (auto& iter : Z.TwoBody.MatEl ) channels.push_back(iter.first);
   size_t nchans = channels.size();
 //  for (int ch=0; ch<nch; ch++)
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1) 
   for (size_t ich=0; ich<nchans; ich++)
   {
     size_t ch_bra = channels[ich][0];

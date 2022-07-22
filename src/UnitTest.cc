@@ -139,108 +139,7 @@ Operator UnitTest::RandomOp( ModelSpace& modelspace, int jrank, int tz, int pari
         }
       }
     }
-    std::cout << "Just to check. I think that <332|332>  twoJ=3  Jab=Jde=0 is " << Rando.ThreeBody.GetME_pn( 0,0,3, 3,3,2, 3,3,2) << std::endl;
 
-//    for ( auto& iter : Rando.ThreeBody.OrbitIndexHash )
-//    {
-//      size_t a,b,c,d,e,f;
-//      size_t key = iter.first;
-//      size_t lookup_abcdef = iter.second;
-//      Rando.ThreeBody.KeyUnhash(key,a,b,c,d,e,f);
-//
-//      size_t key_check = Rando.ThreeBody.KeyHash(a,b,c,d,e,f);
-//      // while we're unit testing, we may as well make sure the hash works in both directions
-//      if (key_check != key )
-//      {
-//       std::cout << "WARNING!!!!!!!!   key_check != key : " << key_check << " != " << key << std::endl;
-//      }
-//
-//      Orbit& oa = Rando.modelspace->GetOrbit(a);
-//      Orbit& ob = Rando.modelspace->GetOrbit(b);
-//      Orbit& oc = Rando.modelspace->GetOrbit(c);
-//      Orbit& od = Rando.modelspace->GetOrbit(d);
-//      Orbit& oe = Rando.modelspace->GetOrbit(e);
-//      Orbit& of = Rando.modelspace->GetOrbit(f);
-//
-//      int Jab_min = std::abs(oa.j2-ob.j2)/2;
-//      int Jab_max = (oa.j2+ob.j2)/2;
-//      int Jde_min = std::abs(od.j2-oe.j2)/2;
-//      int Jde_max = (od.j2+oe.j2)/2;
-//      int J_index=0;
-//
-//      for (int Jab=Jab_min; Jab<=Jab_max; ++Jab)
-//      {
-//       for (int Jde=Jde_min; Jde<=Jde_max; ++Jde)
-//       {
-//         int J2_min = std::max( std::abs(2*Jab-oc.j2), std::abs(2*Jde-of.j2));
-//         int J2_max = std::min( 2*Jab+oc.j2, 2*Jde+of.j2);
-//         for (int J2=J2_min; J2<=J2_max; J2+=2)
-//         {
-////           J_index += (J2-J2_min)/2*5;
-//           for (int tab=0; tab<=1; tab++)
-//           {
-//             for (int tde=0; tde<=1; tde++)
-//             {
-//               for (int twoT=1; twoT<=std::min(2*tab+1,2*tde+1); twoT+=2)
-//               {
-////                 int Tindex = 2*tab + tde + (twoT-1)/2;
-//                 int Tindex =   (J2-J2_min)/2*5 +  2*tab + tde + (twoT-1)/2;
-//                 size_t location = lookup_abcdef + J_index + Tindex;
-//
-//                 if ( ( a==b and (tab+Jab)%2==0 )
-//                   or ( d==e and (tde+Jde)%2==0 )
-//                   or ( a==b and a==c and twoT==3 and oa.j2<3 )
-//                   or ( d==e and d==f and twoT==3 and od.j2<3 ))
-//                 {
-//                    Rando.ThreeBody.MatEl[location] = 0.0; // zero by symmetry 
-////                    if (a==4 and b==4 and c==0 and d==4 and e==4 and f==0)
-////                    {
-////                       std::cout << "SKIPPING Jab,Jde,J2, tab,tde,twoT  " << Jab << " " << Jde << " " << J2 << "   " << tab << " " << tde << " " << twoT
-////                                 << " (location = " << location  << ")   to " << Rando.ThreeBody.MatEl[location] << std::endl;
-////                    }
-////                       std::cout << " skip.... location = " << lookup_abcdef << " + " << J_index << " + " << Tindex << " = " << location
-////                                 << " abcdef  " << a << " " << b << " " << c << " " << d << " " << e << " " << f
-////                                 << "  key is " << key   << "   element 874 is " << Rando.ThreeBody.MatEl[874] << std::endl;
-//                 }
-//                 else
-//                 {
-//                    Rando.ThreeBody.MatEl[location] = distribution(generator); // make it a random number
-//                       if (a==d and b==e and c==f) // if we're storing the hermitian conjugate, make sure they're compatible
-//                       {
-//                         if ( Jab>Jde or ( Jab==Jde and tab>tde ) )
-//                         {
-////                            std::cout << "match. location = " << location << "  abcdef = " << a << " " << b << " " << c << " " << d << " " << e << " " << f << std::endl;
-////                            std::cout << " before ... element 874 is " << Rando.ThreeBody.MatEl[874] << std::endl;
-//                            double me_flip = Rando.ThreeBody.GetME(Jde, Jab, J2, tde, tab, twoT, d,e,f,a,b,c);
-//                            Rando.ThreeBody.MatEl[location] = hermitian * me_flip;
-////                       std::cout << "  after ... element 874 is " << Rando.ThreeBody.MatEl[874] << std::endl;
-//                         }
-//                         
-//                       }
-////                    if (a==4 and b==4 and c==0 and d==4 and e==4 and f==0)
-////                    {
-////                       std::cout << "SETTING Jab,Jde,J2, tab,tde,twoT  " << Jab << " " << Jde << " " << J2 << "   " << tab << " " << tde << " " << twoT
-////                                 << " (location = " << lookup_abcdef << " + " << J_index << " + " << Tindex << " = " << location  << ")   to " << Rando.ThreeBody.MatEl[location] << std::endl;
-////                    }
-////                       std::cout << " set ... element 874 is " << Rando.ThreeBody.MatEl[874] << std::endl;
-//                 }
-//               } //T2
-//             } // tde
-//           } // tab
-//         } //J2
-//       J_index += (J2_max-J2_min+2)/2*5;
-//
-//       } //Jde
-//      } //Jab
-//      
-//    }
-//
-//
-////    for ( size_t i=0; i<Rando.ThreeBody.MatEl.size(); i++)
-////    {
-////      Rando.ThreeBody.MatEl[i] = distribution(generator);
-////    }
-//
   }
 
 
@@ -304,54 +203,6 @@ Operator UnitTest::RandomDaggerOp(ModelSpace& modelspace, index_t Q)
 
    return dag;
 }
-
-/*
-Operator UnitTest::RandomDaggerOp(ModelSpace& modelspace, index_t Q)
-{
-   Operator dag(modelspace);
-   dag.SetNumberLegs(3);
-   dag.SetQSpaceOrbit(Q);
-   dag.SetNonHermitian();
-
-   std::default_random_engine generator(random_seed);
-   double mean = 0;
-   double stddev = 1;
-   std::normal_distribution<double> distribution(mean,stddev);
-
-   // Only orbits with the same l,j,tz quantum numbers as the Q orbit
-   // can be non-zero, so we fill a single column of the one-body matrix.
-   Orbit& oQ = modelspace.GetOrbit(Q);
-   for (auto i : dag.OneBodyChannels.at({oQ.l,oQ.j2,oQ.tz2}) )
-   {
-     double random_me = distribution(generator);
-     dag.OneBody(i,Q)= random_me;
-   }
-
-   size_t nch = modelspace.GetNumberTwoBodyChannels();
-   for (size_t ch=0; ch<nch; ch++)
-   {
-     TwoBodyChannel& tbc = modelspace.GetTwoBodyChannel(ch);
-     size_t nkets = tbc.GetNumberKets();
-     for (size_t ibra=0; ibra<nkets; ibra++)
-     {
-       Ket& bra = tbc.GetKet(ibra);
-       for ( auto k : modelspace.all_orbits )
-       {
-         Orbit& ok = modelspace.GetOrbit(k);
-         // check whether |kQ> lives in this channel
-         if ( not tbc.CheckChannel_ket( &ok, &oQ) ) continue;
-         
-         double random_me = distribution(generator);
-         dag.TwoBody.SetTBME(ch,ch,bra.p,bra.q,k,Q, random_me);
-       }
-     }
-     std::cout << "ch = " << ch << "  matrix looks like " << std::endl << dag.TwoBody.GetMatrix(ch,ch) << std::endl << std::endl;
-   }
-
-   return dag;
-}
-
-*/
 
 
 
@@ -539,19 +390,28 @@ void UnitTest::TestCommutators()
   all_good &= Test_comm222_phss( X, Y );
   all_good &= Test_comm222_pp_hh_221ss( X, Y );
 
+ if ( Commutator::use_imsrg3 )
+ {
   all_good &= Test_comm330ss(X,Y);
   all_good &= Test_comm331ss(X,Y);
   all_good &= Test_comm231ss(X,Y);
   all_good &= Test_comm132ss(X,Y);
 
-  all_good &= Test_comm332_ppph_hhhpss(X,Y);
-  all_good &= Test_comm133ss(X,Y);
+  all_good &= Test_comm232ss(X,Y);
+
   all_good &= Test_comm223ss(X,Y);
+  all_good &= Test_comm133ss(X,Y);
 
-  all_good &= Test_comm233_pp_hhss(X,Y);
-  all_good &= Test_comm233_phss(X,Y);
+  if (not Commutator::use_imsrg3_n7 )
+  {
+   all_good &= Test_comm332_ppph_hhhpss(X,Y);
 
-  all_good &= Test_comm333_ppp_hhhss(X,Y);
+   all_good &= Test_comm233_pp_hhss(X,Y);
+   all_good &= Test_comm233_phss(X,Y);
+
+   all_good &= Test_comm333_ppp_hhhss(X,Y);
+  }
+ }
 
   if ( all_good )
   {
@@ -1113,11 +973,18 @@ bool UnitTest::Test_comm333_ppp_hhhss( const Operator& X, const Operator& Y)
   return Test_against_ref_impl(X,Y,  Commutator::comm333_ppp_hhhss,  ReferenceImplementations::comm333_ppp_hhhss,  "comm333_ppp_hhhss");
 }
 
+/// THIS IS SO SLOW....
 bool UnitTest::Test_comm233_phss( const Operator& X, const Operator& Y) 
 {
-  return Test_against_ref_impl(X,Y,  Commutator::comm233_phss,  ReferenceImplementations::comm233_phss,  "comm233_phss");
-//  return Test_against_ref_impl(X,Y,  Commutator::comm233_phss,  Commutator::comm233_phss_debug,  "comm233_phss");
-//  return Test_against_ref_impl(X,Y,  Commutator::comm233_phss_debug,  ReferenceImplementations::comm233_phss,  "comm233_phss");
+//  return Test_against_ref_impl(X,Y,  Commutator::comm233_phss,  ReferenceImplementations::comm233_phss,  "comm233_phss");
+  return Test_against_ref_impl(X,Y,  Commutator::comm233_phss,  Commutator::comm233_phss,  "comm233_phss");
+}
+
+bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y) 
+{
+//  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  Commutator::comm232ss_slow,  "comm232ss");
+//  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  Commutator::comm232ss_debug,  "comm232ss");
+  return Test_against_ref_impl(X,Y,  Commutator::comm232ss,  ReferenceImplementations::comm232ss,  "comm232ss");
 }
 
 /// M-Scheme Formula:
@@ -2330,7 +2197,7 @@ bool UnitTest::Mscheme_Test_comm132ss( const Operator& X, const Operator& Y )
 // Z_ijkl = -1/2 * sum_abc (n_a*n_b*nbar_c + nbar_a*nbar_b*n_c) * [  Xicab*Yabjklc - Xjcab*Yabiklc - Yijcabl*Xabkc + Yijcabk*Xablc 
 //                                                                 - Yicab*Xabjklc + Yjcab*Xabiklc + Xijcabl*Yabkc - Xijcabk*Yablc ]
 //
-bool UnitTest::Test_comm232ss( const Operator& X, const Operator& Y )
+bool UnitTest::Mscheme_Test_comm232ss( const Operator& X, const Operator& Y )
 {
   std::cout <<__func__ << std::endl;
 
