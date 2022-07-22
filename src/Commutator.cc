@@ -2212,7 +2212,6 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
 
   size_t nch2 = Z.modelspace->GetNumberTwoBodyChannels();
   size_t norb = Z.modelspace->GetNumberOrbits();
-//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
   #pragma omp parallel for schedule(dynamic,1)
   for (size_t i=0; i<norb; i++)
   {
@@ -2220,7 +2219,6 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
     int ei = 2*oi.n + oi.l;
     double occnat_i = oi.occ_nat;
     int tzi = oi.tz2;
-//    for ( auto j : Z.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
     for ( auto j : Z.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
     {
       if (j>i) continue;
@@ -2264,6 +2262,7 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
              double Jfactor = (twoJ+1.0)/(oi.j2+1);
              double ab_symmetry_factor = (a==b) ?  1.0 : 2.0;
              size_t nkets3 = Tbc.GetNumberKets();
+
              for (size_t iket_cde=0; iket_cde<nkets3; iket_cde++)
              {
                 Ket3& ket_cde = Tbc.GetKet(iket_cde);
@@ -2287,15 +2286,13 @@ void comm331ss( const Operator& X, const Operator& Y, Operator& Z )
                 if (c==d and d==e) cde_symmetry_factor = 1;
                 else if (c==d or d==e) cde_symmetry_factor = 3;
                 int Jcd = ket_cde.Jpq;
-                 
+ 
                // If needed we should use GetME_pn_TwoOps here.
                 auto xy_abicde = X3.GetME_pn_TwoOps(Jab, Jcd, twoJ, a,b,i,c,d,e, X3,Y3) ;
                 auto xy_cdeabj = X3.GetME_pn_TwoOps(Jcd, Jab, twoJ, c,d,e,a,b,j, X3,Y3) ;
                 zij += 1./12 *  ab_symmetry_factor * cde_symmetry_factor * occfactor * Jfactor
                              * ( xy_abicde[0] * xy_cdeabj[1] - xy_abicde[1] * xy_cdeabj[0] );
-//                zij += 1./12 * ab_symmetry_factor * cde_symmetry_factor * occfactor * Jfactor
-//                             * (  X3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * Y3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j)  
-//                                - Y3.GetME_pn( Jab, Jcd, twoJ, a,b,i,c,d,e) * X3.GetME_pn( Jcd, Jab, twoJ, c,d,e,a,b,j)  ); 
+
              }// for iket_cde
            }// for twoJ
         }// for iket_ab
@@ -8779,6 +8776,8 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
   }//for ch3
   Z.profiler.timer["_comm233_pph_recouple"] += omp_get_wtime() - t_internal;
   t_internal = omp_get_wtime();
+
+  std::cout << "Opt " << __func__ << " Done" << std::endl;
 
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }

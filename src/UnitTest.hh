@@ -80,6 +80,7 @@ class UnitTest
   bool Mscheme_Test_comm133ss( const Operator& X, const Operator& Y );
   bool Mscheme_Test_comm223ss( const Operator& X, const Operator& Y );
   bool Mscheme_Test_comm233_pp_hhss( const Operator& X, const Operator& Y );    
+  bool Mscheme_Test_comm233_phss( const Operator& X, const Operator& Y );    
 
   bool Mscheme_Test_comm333_ppp_hhhss( const Operator& X, const Operator& Y );  
 
@@ -96,7 +97,7 @@ class UnitTest
   bool Test_comm133ss( const Operator& X, const Operator& Y );
 
   bool Test_comm233_pp_hhss( const Operator& X, const Operator& Y );    
-  bool Test_comm233_ph_ss( const Operator& X, const Operator& Y );      
+  bool Test_comm233_phss( const Operator& X, const Operator& Y );      
   bool Test_comm333_ppp_hhhss( const Operator& X, const Operator& Y );  
   bool Test_comm333_pph_hhp_ss( const Operator& X, const Operator& Y );  
 
