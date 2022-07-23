@@ -5922,20 +5922,102 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
-  std::vector< std::array<size_t,2> > bra_ket_channels;
+//  std::vector< std::array<size_t,2> > bra_ket_channels;
+//  for ( auto& it : Z.ThreeBody.Get_ch_start() )
+//  {
+//     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+//  }
+
+  const std::array< ThreeBodyStorage::Permutation,3> index_perms = { ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
+
+
+  std::vector< std::array<size_t,3> > bra_ket_channels;
   for ( auto& it : Z.ThreeBody.Get_ch_start() )
   {
-     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+     ThreeBodyChannel& Tbc_bra = Z.modelspace->GetThreeBodyChannel( it.first[0]);
+     size_t nbras3 = Tbc_bra.GetNumberKets();
+     for (int ibra=0;ibra<nbras3; ibra++)
+     {
+       bra_ket_channels.push_back( { it.first[0],it.first[1], ibra } ); // (ch_bra, ch_ket,ibra)
+     }
+  }
+  size_t n_bra_ket_ch = bra_ket_channels.size();
+
+////  std::vector<std::array<size_t,3>> ijk(3*n_bra_ket_ch);
+//  std::vector<int> J1p_min(3*n_bra_ket_ch);
+//  std::vector<int> J1p_max(3*n_bra_ket_ch);
+//  std::vector<std::vector<double>> recouple_ijk(3*n_bra_ket_ch);
+//
+//  // precompute all the permutation recoupling stuff
+////  #pragma omp parallel for schedule(dynamic,1)
+//  for (size_t ibra_ket=0; ibra_ket<n_bra_ket_ch;  ibra_ket++)
+//  {
+//      size_t chbra = bra_ket_channels[ibra_ket][0];
+//      size_t ibra = bra_ket_channels[ibra_ket][2];
+//      ThreeBodyChannel& Tbc_bra = Z.modelspace->GetThreeBodyChannel( chbra);
+//      Ket3& bra = Tbc_bra.GetKet(ibra);
+//      size_t i = bra.p;
+//      size_t j = bra.q;
+//      size_t k = bra.r;
+//      int J1 = bra.Jpq;
+//      double ji = 0.5* bra.op->j2;
+//      double jj = 0.5* bra.oq->j2;
+//      double jk = 0.5* bra.oR->j2;
+//      int twoJ = Tbc_bra.twoJ;
+//
+//      for ( int iperm=0; iperm<3; iperm++ )
+//      {
+//        auto perm_ijk = index_perms[iperm];
+//        size_t I1,I2,I3;
+//        Z3.Permute( perm_ijk, i,j,k, I1,I2,I3);
+//        Orbit& o1 = Z.modelspace->GetOrbit(I1);
+//        Orbit& o2 = Z.modelspace->GetOrbit(I2);
+//        Orbit& o3 = Z.modelspace->GetOrbit(I3);
+//
+//        int j1pmin = J1;
+//        int j1pmax = J1;
+//        
+//        if (perm_ijk != ThreeBodyStorage::ABC )
+//        {
+//          j1pmin = std::max( std::abs(o1.j2-o2.j2),std::abs( twoJ-o3.j2) )/2 ;
+//          j1pmax = std::min( o1.j2+o2.j2, twoJ+o3.j2 )/2 ;
+//        }
+//        J1p_min[ibra_ket*3+iperm] = j1pmin;
+//        J1p_max[ibra_ket*3+iperm] = j1pmax;
+//
+//        for (int J1p=j1pmin; J1p<=j1pmax; J1p++)
+//        {
+//
+//          double rec_ijk = Z3.RecouplingCoefficient( perm_ijk, ji,jj,jk, J1p, J1, twoJ) ;
+//          rec_ijk *= Z3.PermutationPhase( perm_ijk ); // do we get a fermionic minus sign?
+//          recouple_ijk[ibra_ket*3 + iperm].push_back(rec_ijk);
+//        }
+//      }
+//  }
+//
+
+//  std::cout << "  finished setting up the recouple_ijk arrays. size is " << recouple_ijk.size() << std::endl;
+
+
+  for (int i=0; i<omp_get_max_threads(); i++)
+  {
+    std::ostringstream oss;
+    oss << "__" << __func__ << "_" << i;
+    if ( Z.profiler.timer.find( oss.str()) == Z.profiler.timer.end() )   Z.profiler.timer[ oss.str()] = 0;
+    if ( Z.profiler.counter.find( oss.str()) == Z.profiler.counter.end() )   Z.profiler.counter[ oss.str()] = 0;
   }
 
-  size_t n_bra_ket_ch = bra_ket_channels.size();
 //  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
 //  for (size_t ch3=0; ch3<nch3; ch3++)
   #pragma omp parallel for schedule(dynamic,1)
   for (size_t ibra_ket=0; ibra_ket<n_bra_ket_ch;  ibra_ket++)
   {
+    double tlocal = omp_get_wtime();
+    std::ostringstream oss_thread;
+    oss_thread << "__" << __func__ << "_" << omp_get_thread_num();
     size_t ch3bra = bra_ket_channels[ibra_ket][0];
     size_t ch3ket = bra_ket_channels[ibra_ket][1];
+    size_t ibra   = bra_ket_channels[ibra_ket][2];
     auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch3bra);
     auto& Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch3ket);
     size_t nbras3 = Tbc_bra.GetNumberKets();
@@ -5949,8 +6031,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
     std::vector<int> J1p_max;
     std::vector<std::vector<double>> recouple_ijk;
 
-    for (size_t ibra=0; ibra<nbras3; ibra++)
-    {
+//    for (size_t ibra=0; ibra<nbras3; ibra++)
+//    {
       auto& bra = Tbc_bra.GetKet(ibra);
       size_t i = bra.p;
       size_t j = bra.q;
@@ -5974,7 +6056,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
       int J1 = bra.Jpq;
 
-
+/*
       ijk.insert( ijk.end(),    { {i,j,k}, {k,j,i}, {i,k,j} }   ); // the three index permutations
       J1p_min.insert( J1p_min.end(), {J1,  std::max(std::abs(ok.j2-oj.j2),std::abs(twoJ-oi.j2) )/2,   std::max(std::abs(oi.j2-ok.j2), std::abs(twoJ-oj.j2) )/2 } );
       J1p_max.insert( J1p_max.end(), {J1,  std::min(ok.j2+oj.j2, twoJ+oi.j2)/2 , std::min(oi.j2+ok.j2, twoJ+oj.j2)/2 } );
@@ -5998,6 +6080,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
            recouple_this_ijk[2].push_back( rec );
       }
       recouple_ijk.insert( recouple_ijk.end(),  std::begin( recouple_this_ijk), std::end( recouple_this_ijk)  );
+*/
 
 //      for (size_t iket=ibra; iket<nkets3; iket++)
       size_t iket_max = nkets3;
@@ -6033,27 +6116,27 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
         std::vector<int> J2p_max ;
         std::vector<std::vector<double>> recouple_lmn ;
 
-        if ( ch3bra == ch3ket ) // we've already done the work for the permutations, so just copy it
-        {
-
-          lmn.assign( ijk.begin() + iket*3, ijk.begin() + iket*3+3 );
-          J2p_min.assign( J1p_min.begin() + iket*3, J1p_min.begin() + iket*3+3 );
-          J2p_max.assign( J1p_max.begin() + iket*3, J1p_max.begin() + iket*3+3 );
-          recouple_lmn.assign( recouple_ijk.begin() + iket*3,  recouple_ijk.begin() + iket*3+3);
-        }
-        else // otherwise we need to do the work here.
-        {
-          lmn = { {l,m,n}, {n,m,l}, {l,n,m} };
-          J2p_min = {J2,  std::max(std::abs(on.j2-om.j2), std::abs(twoJ-ol.j2) )/2,   std::max( std::abs(ol.j2-on.j2), std::abs(twoJ-om.j2) )/2 };
-          J2p_max = {J2,  std::min(on.j2+om.j2, twoJ+ol.j2)/2 , std::min(ol.j2+on.j2,twoJ+om.j2)/2 };
-          recouple_lmn = {{1},{},{} };
-
-          for (int J2p=J2p_min[1]; J2p<=J2p_max[1]; J2p++)
-               recouple_lmn[1].push_back( sqrt( (2*J2+1)*(2*J2p+1)) * Z.modelspace->GetSixJ(jl,jm,J2,jn,Jtot,J2p) );
-
-          for (int J2p=J2p_min[2]; J2p<=J2p_max[2]; J2p++)
-              recouple_lmn[2].push_back( -Z.modelspace->phase((om.j2+on.j2)/2+J2+J2p)*sqrt( (2*J2+1)*(2*J2p+1)) * Z.modelspace->GetSixJ(jm,jl,J2,jn,Jtot,J2p) );
-        }
+//        if (false and ch3bra == ch3ket ) // we've already done the work for the permutations, so just copy it
+//        {
+//
+//          lmn.assign( ijk.begin() + iket*3, ijk.begin() + iket*3+3 );
+//          J2p_min.assign( J1p_min.begin() + iket*3, J1p_min.begin() + iket*3+3 );
+//          J2p_max.assign( J1p_max.begin() + iket*3, J1p_max.begin() + iket*3+3 );
+//          recouple_lmn.assign( recouple_ijk.begin() + iket*3,  recouple_ijk.begin() + iket*3+3);
+//        }
+//        else // otherwise we need to do the work here.
+//        {
+//          lmn = { {l,m,n}, {n,m,l}, {l,n,m} };
+//          J2p_min = {J2,  std::max(std::abs(on.j2-om.j2), std::abs(twoJ-ol.j2) )/2,   std::max( std::abs(ol.j2-on.j2), std::abs(twoJ-om.j2) )/2 };
+//          J2p_max = {J2,  std::min(on.j2+om.j2, twoJ+ol.j2)/2 , std::min(ol.j2+on.j2,twoJ+om.j2)/2 };
+//          recouple_lmn = {{1},{},{} };
+//
+//          for (int J2p=J2p_min[1]; J2p<=J2p_max[1]; J2p++)
+//               recouple_lmn[1].push_back( sqrt( (2*J2+1)*(2*J2p+1)) * Z.modelspace->GetSixJ(jl,jm,J2,jn,Jtot,J2p) );
+//
+//          for (int J2p=J2p_min[2]; J2p<=J2p_max[2]; J2p++)
+//              recouple_lmn[2].push_back( -Z.modelspace->phase((om.j2+on.j2)/2+J2+J2p)*sqrt( (2*J2+1)*(2*J2p+1)) * Z.modelspace->GetSixJ(jm,jl,J2,jn,Jtot,J2p) );
+//        }
 
 
         double zijklmn = 0;
@@ -6061,19 +6144,39 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
         for ( int perm_ijk=0; perm_ijk<3; perm_ijk++ )
         {
-          size_t I1 = ijk[ibra*3+perm_ijk][0];
-          size_t I2 = ijk[ibra*3+perm_ijk][1];
-          size_t I3 = ijk[ibra*3+perm_ijk][2];
+
+//          size_t I1 = ijk[ibra*3+perm_ijk][0];
+//          size_t I2 = ijk[ibra*3+perm_ijk][1];
+//          size_t I3 = ijk[ibra*3+perm_ijk][2];
+          size_t I1,I2,I3;
+          Z3.Permute( index_perms[perm_ijk], i,j,k, I1,I2,I3);
+//          size_t I1 = ijk[ibra*3+perm_ijk][0];
+//          size_t I2 = ijk[ibra*3+perm_ijk][1];
+//          size_t I3 = ijk[ibra*3+perm_ijk][2];
           Orbit& o1 = Z.modelspace->GetOrbit( I1 );
           Orbit& o2 = Z.modelspace->GetOrbit( I2 );
           Orbit& o3 = Z.modelspace->GetOrbit( I3 );
+          int j1pmin = J1;
+          int j1pmax = J1;
+          if ( index_perms[perm_ijk] != ThreeBodyStorage::ABC )
+          {
+             j1pmin = std::max( std::abs(o1.j2-o2.j2),std::abs( twoJ-o3.j2) )/2 ;
+             j1pmax = std::min( o1.j2+o2.j2, twoJ+o3.j2 )/2 ;
+          }
+//          int j1pmin = J1p_min[ibra_ket*3+perm_ijk];
+//          int j1pmax = J1p_max[ibra_ket*3+perm_ijk];
 
           double j3 = 0.5*o3.j2;
 
-          for (int J1p=J1p_min[ibra*3+perm_ijk]; J1p<=J1p_max[ibra*3+perm_ijk]; J1p++)
+//          for (int J1p=J1p_min[ibra*3+perm_ijk]; J1p<=J1p_max[ibra*3+perm_ijk]; J1p++)
+          for (int J1p=j1pmin; J1p<=j1pmax; J1p++)
           {
-//            double rec_ijk = recouple_ijk[ibra*3+perm_ijk].at(J1p-J1p_min[ibra*3+perm_ijk]);
-            double rec_ijk = recouple_ijk[ibra*3+perm_ijk][J1p-J1p_min[ibra*3+perm_ijk]];
+//            double rec_ijk = recouple_ijk[ibra*3+perm_ijk][J1p-J1p_min[ibra*3+perm_ijk]];
+//            double rec_ijk = recouple_ijk[ibra_ket*3+perm_ijk][J1p-j1pmin];
+
+            double rec_ijk = Z3.RecouplingCoefficient( index_perms[perm_ijk], ji,jj,jk, J1p, J1, twoJ) ;
+            rec_ijk *= Z3.PermutationPhase( index_perms[perm_ijk] ); // do we get a fermionic minus sign?
+            if ( I1==I2) rec_ijk *= PhysConst::SQRT2;
             int ch1 = Z.modelspace->GetTwoBodyChannelIndex(J1p, (o1.l+o2.l)%2, (o1.tz2+o2.tz2)/2 );
 
             TwoBodyChannel& tbc1 = Z.modelspace->GetTwoBodyChannel(ch1);
@@ -6081,16 +6184,17 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
             size_t ind_12 = tbc1.GetLocalIndex(std::min(I1,I2),std::max(I1,I2));
             if (ind_12>nkets_1) continue;
             double phase_12 = I1>I2 ?  -Z.modelspace->phase((o1.j2+o2.j2-2*J1p)/2)  : 1;
-//            if (I1==I2) phase_12 *= PhysConst::SQRT2;
 
             const auto XMAT1 = X.TwoBody.GetMatrix(ch1,ch1).row(ind_12);
             const auto YMAT1 = Y.TwoBody.GetMatrix(ch1,ch1).row(ind_12);
 
             for ( int perm_lmn=0; perm_lmn<3; perm_lmn++ )
             {
-              size_t I4 = lmn[perm_lmn][0];
-              size_t I5 = lmn[perm_lmn][1];
-              size_t I6 = lmn[perm_lmn][2];
+              size_t I4,I5,I6;
+              Z3.Permute( index_perms[perm_lmn], l,m,n,I4,I5,I6);
+//              size_t I4 = lmn[perm_lmn][0];
+//              size_t I5 = lmn[perm_lmn][1];
+//              size_t I6 = lmn[perm_lmn][2];
               Orbit& o4 = Z.modelspace->GetOrbit( I4 );
               Orbit& o5 = Z.modelspace->GetOrbit( I5 );
               Orbit& o6 = Z.modelspace->GetOrbit( I6 );
@@ -6102,11 +6206,31 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
                 int dTz = o1.tz2 + o2.tz2 - o6.tz2 -tz2a;
                 if (  std::abs(dTz) != X.GetTRank() and std::abs( dTz) != Y.GetTRank() ) continue;
 
-               for (int J2p=J2p_min[perm_lmn]; J2p<=J2p_max[perm_lmn]; J2p++)
+
+                int j2pmin = J2;
+                int j2pmax = J2;
+                if ( index_perms[perm_lmn] != ThreeBodyStorage::ABC )
+                {
+                   j2pmin = std::max( std::abs(o4.j2-o5.j2),std::abs( twoJ-o6.j2) )/2 ;
+                   j2pmax = std::min( o4.j2+o5.j2, twoJ+o6.j2 )/2 ;
+                }
+
+//               size_t index_ket = ibra_ket + (iket-ibra);
+//               int j2pmin = J1p_min[index_ket*3+perm_lmn];
+//               int j2pmax = J1p_max[index_ket*3+perm_lmn];
+              
+//               for (int J2p=J2p_min[perm_lmn]; J2p<=J2p_max[perm_lmn]; J2p++)
+               for (int J2p=j2pmin; J2p<=j2pmax; J2p++)
                {
 
 //                 double rec_lmn = recouple_lmn[perm_lmn].at(J2p-J2p_min[perm_lmn]);
-                 double rec_lmn = recouple_lmn[perm_lmn][J2p-J2p_min[perm_lmn]];
+//                 double rec_lmn = recouple_lmn[perm_lmn][J2p-J2p_min[perm_lmn]];
+//
+                 double rec_lmn = Z3.RecouplingCoefficient( index_perms[perm_lmn], jl,jm,jn, J2p, J2, twoJ) ;
+                 rec_lmn *= Z3.PermutationPhase( index_perms[perm_lmn] ); // do we get a fermionic minus sign?
+                 if ( I4==I5) rec_lmn *= PhysConst::SQRT2;
+//                 double rec_lmn = recouple_ijk[index_ket*3+perm_lmn][J2p-j2pmin];
+
                  int ch2 = Z.modelspace->GetTwoBodyChannelIndex(J2p, (o4.l+o5.l)%2, (o4.tz2+o5.tz2)/2 );
                  TwoBodyChannel& tbc2 = Z.modelspace->GetTwoBodyChannel(ch2);
                  size_t nkets_2 = tbc2.GetNumberKets();
@@ -6190,8 +6314,10 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
 
         Z3.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket, zijklmn );  // this needs to be modified for beta decay
+        Z.profiler.counter[oss_thread.str()] ++;
       }// for iket
-    }// for ibra
+//    }// for ibra
+    Z.profiler.timer[oss_thread.str()] += omp_get_wtime() - tlocal;
   }// for ch3
 
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
