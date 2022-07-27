@@ -318,7 +318,7 @@ void IMSRGSolver::Solve_magnus_euler()
 //      cumulative_error += EstimateStepError();
 
       if (magnus_adaptive){
-      bool backoff = (std::abs(FlowingOps[0].ZeroBody - saved_E) > 3 * std::abs(saved_MP2));
+      bool backoff = ((std::abs(saved_MP2) < 1e-4) && (std::abs(FlowingOps[0].GetMP2_Energy()) > std::abs(saved_MP2)));
       if (backoff) {
         ds *= ds_backoff_factor_;
       } else {
