@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 
+option(IMSRG_BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
+
 # Determine if imsrg++ is built as a subproject (using add_subdirectory)
 # or if it is the main project.
 if(NOT DEFINED IMSRGPLUSPLUS_MAIN_PROJECT)
@@ -30,13 +32,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(IMSRGPLUSPLUS_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-# We only need this for the Python bindings.
-# In principle, everything should be faster if we could avoid this.
-set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+if(IMSRG_BUILD_PYTHON_BINDINGS)
+    # We only need this for the Python bindings.
+    # In principle, everything should be faster if we could avoid this.
+    set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+endif()
 
 add_subdirectory(armadillo)
 add_subdirectory(half)
-add_subdirectory(pybind11)
+
+if(IMSRG_BUILD_PYTHON_BINDINGS)
+    add_subdirectory(pybind11)
+endif()
 
 # Add a custom command that produces version.cpp, plus
 # a dummy output that's not actually produced, in order
@@ -46,17 +53,6 @@ ADD_CUSTOM_COMMAND(
            ${CMAKE_CURRENT_BINARY_DIR}/_version.cc
     COMMAND ${CMAKE_COMMAND} -P
             ${CMAKE_CURRENT_SOURCE_DIR}/git_version.cmake)
-
-# At some point this should not be here because
-# this belongs in a CMake preset, not in the core CMake
-# build structure
-add_compile_options(
-    "-Wall"
-    "-Wextra"
-    "-Wno-comment"
-    # "-Werror"
-    "$<$<CONFIG:RELEASE>:-O3>"
-)
 
 add_library(
     AngMom
@@ -515,9 +511,11 @@ target_link_libraries(
     OpenMP::OpenMP_CXX
 )
 
-pybind11_add_module(pyIMSRG pyIMSRG.cc)
-target_link_libraries(
-    pyIMSRG
-    PRIVATE
-    IMSRG
-)
+if(IMSRG_BUILD_PYTHON_BINDINGS)
+    pybind11_add_module(pyIMSRG pyIMSRG.cc)
+    target_link_libraries(
+        pyIMSRG
+        PRIVATE
+        IMSRG
+    )
+endif()
