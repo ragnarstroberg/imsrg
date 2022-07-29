@@ -6058,7 +6058,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
      size_t nbras3 = Tbc_bra.GetNumberKets();
      for (size_t ibra=0;ibra<nbras3; ibra++)
      {
-       bra_ket_channels.push_back( { it.first[0],it.first[1], ibra } ); // (ch_bra, ch_ket,ibra)
+       bra_ket_channels.push_back( { it.first[0],it.first[1], static_cast<size_t>(ibra) } ); // (ch_bra, ch_ket,ibra)
      }
   }
   size_t n_bra_ket_ch = bra_ket_channels.size();
