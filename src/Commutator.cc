@@ -196,7 +196,16 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
    }
 
 
-   if (use_imsrg3 and (X.Norm() > threebody_threshold) and (Y.Norm() > threebody_threshold) )
+   if (use_imsrg3)
+   {
+      // This one is so important we always include it
+       if ( comm_term_on["comm133ss"])
+       {
+        //important for suppressing off-diagonal H3
+        std::cout << " comm133 " << std::endl;
+        comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
+       }
+   if ((X.Norm() > threebody_threshold) || (Y.Norm() > threebody_threshold)) 
    {
        X.profiler.counter["N_ScalarCommutators_3b"] += 1;
 
@@ -245,12 +254,13 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 //       comm232ss_debug(X, Y, Z);   // this is the slowest n^7 term
        }
 
-       if ( comm_term_on["comm133ss"])
-       {
-        //important for suppressing off-diagonal H3
-        std::cout << " comm133 " << std::endl;
-        comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
-       }
+      // This one is so important we always include it
+      //  if ( comm_term_on["comm133ss"])
+      //  {
+      //   //important for suppressing off-diagonal H3
+      //   std::cout << " comm133 " << std::endl;
+      //   comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
+      //  }
 
       if ( not use_imsrg3_n7 )
       {
@@ -309,7 +319,8 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
 
      // after going through once, we've stored all the 6js (and maybe 9js), so we can run in OMP loops from now on
      X.modelspace->scalar3b_transform_first_pass = false;
-   }
+   } // if threshold
+   } // if use imsrg3
 
    // TODO: I don't like that this gets done here. It should be in the individual commutator expressions themselves
    // As it currently is, it invites a mistake of updating the wrong triangle of the matrix.
