@@ -6642,11 +6642,11 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   std::vector< std::array<size_t,3> > bra_ket_channels;
   for ( auto& it : Z.ThreeBody.Get_ch_start() )
   {
-     ThreeBodyChannel& Tbc_bra = Z.modelspace->GetThreeBodyChannel( it.first[0]);
+     ThreeBodyChannel& Tbc_bra = Z.modelspace->GetThreeBodyChannel( it.first.ch_bra);
      size_t nbras3 = Tbc_bra.GetNumberKets();
      for (size_t ibra=0;ibra<nbras3; ibra++)
      {
-       bra_ket_channels.push_back( { it.first[0],it.first[1], static_cast<size_t>(ibra) } ); // (ch_bra, ch_ket,ibra)
+       bra_ket_channels.push_back( { it.first.ch_bra,it.first.ch_ket, static_cast<size_t>(ibra) } ); // (ch_bra, ch_ket,ibra)
      }
   }
   size_t n_bra_ket_ch = bra_ket_channels.size();

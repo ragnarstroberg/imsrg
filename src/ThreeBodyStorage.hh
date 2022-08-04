@@ -27,6 +27,30 @@
 #include <vector>
 #include <memory> // for shared_ptr
 
+namespace {
+  inline size_t hash_combine( size_t lhs, size_t rhs ) {
+    lhs ^= rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2);
+    return lhs;
+  }
+}
+
+struct ThreeBodyStorageChannel {
+  size_t ch_bra = 0;
+  size_t ch_ket = 0;
+
+  ThreeBodyStorageChannel(size_t cbra, size_t cket) : ch_bra(cbra), ch_ket(cket) {}
+};
+
+inline bool operator==(const ThreeBodyStorageChannel& a, const ThreeBodyStorageChannel& b) {
+  return (a.ch_bra == b.ch_bra) && (a.ch_ket == b.ch_ket);
+}
+
+struct ThreeBodyStorageChannelHash {
+  size_t operator()(const ThreeBodyStorageChannel& ch) const {
+    return hash_combine(ch.ch_bra, ch.ch_ket);
+  }
+};
+
 
 // This is used by mutliple implementations.
 class OrbitIsospin
@@ -59,7 +83,7 @@ class ThreeBodyStorage
 
   bool is_allocated=false;
 
-  std::map<std::array<size_t,2>,size_t> ch_start;
+  std::unordered_map<ThreeBodyStorageChannel,size_t, ThreeBodyStorageChannelHash> ch_start;
   std::vector<size_t> ch_dim;
 
 

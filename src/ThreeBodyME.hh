@@ -165,7 +165,7 @@ class ThreeBodyME
   bool Is_Isospin_Mode() const {return (threebody_storage->GetStorageMode() == "isospin");};
   bool IsAllocated() const {return threebody_storage->IsAllocated();};
 
-  std::map<std::array<size_t,2>,size_t>& Get_ch_start();
+  std::unordered_map<ThreeBodyStorageChannel,size_t,ThreeBodyStorageChannelHash>& Get_ch_start();
   std::vector<size_t>& Get_ch_dim();
 
   double Norm() const;

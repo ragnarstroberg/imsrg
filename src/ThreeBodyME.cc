@@ -1,11 +1,13 @@
 #include "ThreeBodyME.hh"
 //#include "ThreeBodyStorage_pn.hh"
 #include "ModelSpace.hh"
+#include "ThreeBodyStorage.hh"
 #include "ThreeBodyStorage_iso.hh"
 #include "IMSRGProfiler.hh"
 #include "AngMom.hh"
 
 #include <omp.h>
+#include <unordered_map>
 
 
 // Keeps track of whether any ThreeBodyME has been allocated
@@ -254,8 +256,8 @@ void ThreeBodyME::TransformToPN()
   std::vector<size_t> chbra_list,chket_list;
   for (auto iter : TBS_pn->ch_start)
   {
-    chbra_list.push_back(iter.first[0]);
-    chket_list.push_back(iter.first[1]);
+    chbra_list.push_back(iter.first.ch_bra);
+    chket_list.push_back(iter.first.ch_ket);
   }
   size_t nch = chbra_list.size();
 //  std::cout << "BEGIN LOOP" << std::endl;
@@ -411,7 +413,7 @@ std::vector<ThreeBodyStorage::Permutation> ThreeBodyME::UniquePermutations( size
   return threebody_storage->UniquePermutations(a,b,c);
 }
 
-std::map<std::array<size_t,2>,size_t>& ThreeBodyME::Get_ch_start()
+std::unordered_map<ThreeBodyStorageChannel,size_t,ThreeBodyStorageChannelHash>& ThreeBodyME::Get_ch_start()
 {
   return threebody_storage->ch_start;
 }
