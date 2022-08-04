@@ -12,6 +12,7 @@
 #include <deque>
 #include <array>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -3465,7 +3466,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     arma::mat Y3MAT(dim_abc, dim_klj, arma::fill::zeros);
 
    //figure out which recouplings we'll need when filling the matrices
-    std::set<std::array<size_t,5>> kljJJ_needed; // we use a set to avoid repeats
+    std::unordered_set<size_t> kljJJ_needed; // we use a set to avoid repeats
     comm232_new_GenerateRequiredRecouplings(Z, Y, abc_list, klj_list_i, e_fermi, dim_abc, dim_klj, kljJJ_needed);
 
    // now compute the couplings once and store them in a hash table
@@ -3611,7 +3612,16 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
   }
 
 
-  void comm232_new_GenerateRequiredRecouplings(const Operator& Z, const Operator& Y, const std::vector<size_t>& abc_list, const std::vector<std::array<size_t, 4>>& klj_list_i, const std::map<int, double>& e_fermi, size_t dim_abc, size_t dim_klj, std::set<std::array<size_t, 5>>& kljJJ_needed) {
+  void comm232_new_GenerateRequiredRecouplings(
+    const Operator& Z,
+    const Operator& Y,
+    const std::vector<size_t>& abc_list,
+    const std::vector<std::array<size_t, 4>>& klj_list_i,
+    const std::map<int, double>& e_fermi, 
+    size_t dim_abc, 
+    size_t dim_klj,
+    std::unordered_set<size_t>& kljJJ_needed
+  ) {
     const auto& Y3 = Y.ThreeBody;
     for (size_t ind_abc=0; ind_abc<dim_abc; ind_abc++) 
     {
@@ -3661,23 +3671,28 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         int twoJp_max = std::min( 2*Jab + oj.j2, 2*Jkl+j2c);
         for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
         {
-           kljJJ_needed.insert({k,l,c,(size_t)Jkl,(size_t)twoJp});
-           kljJJ_needed.insert({a,b,j,(size_t)Jab,(size_t)twoJp});
+           kljJJ_needed.insert(Hash_comm232_key2({k,l,c,(size_t)Jkl,(size_t)twoJp}));
+           kljJJ_needed.insert(Hash_comm232_key2({a,b,j,(size_t)Jab,(size_t)twoJp}));
         }// for twoJp
       }// for ind_klj
     }// for ind_abc
   }
 
-  void comm232_new_ComputeRequiredRecouplings(const Operator& Y, const std::set<std::array<size_t, 5>>& kljJJ_needed, std::vector<double>& recoupling_cache, std::unordered_map<size_t, size_t>& recoupling_cache_lookup) {
+  void comm232_new_ComputeRequiredRecouplings(
+    const Operator& Y,
+    const std::unordered_set<size_t>& kljJJ_needed,
+    std::vector<double>& recoupling_cache,
+    std::unordered_map<size_t, size_t>& recoupling_cache_lookup
+  ) {
 
-   for ( auto kljJJ : kljJJ_needed )
+   for ( auto hash : kljJJ_needed )
    {
+    const auto kljJJ = Unhash_comm232_key2(hash);
      size_t k = kljJJ[0];
      size_t l = kljJJ[1];
      size_t j = kljJJ[2];
      size_t Jkl = kljJJ[3];
      size_t twoJp = kljJJ[4];
-     size_t hash = Hash_comm232_key2( kljJJ );
 
      if (!Y.ThreeBody.IsKetValid(Jkl, twoJp, k, l, j)) continue;
      std::vector<size_t> iketlist;

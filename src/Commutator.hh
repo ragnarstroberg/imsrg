@@ -26,6 +26,7 @@
 #include "ThreeLegME.hh"
 #include "armadillo"
 #include <map>
+#include <unordered_set>
 #include <deque>
 #include <array>
 #include <string>
@@ -217,11 +218,11 @@ namespace Commutator{
     const std::map<int, double>& e_fermi,
     size_t dim_abc,
     size_t dim_klj,
-    std::set<std::array<size_t, 5>>& kljJJ_needed);
+    std::unordered_set<size_t>& kljJJ_needed);
 
   void comm232_new_ComputeRequiredRecouplings(
     const Operator& Y,
-    const std::set<std::array<size_t, 5>>& kljJJ_needed,
+    const std::unordered_set<size_t>& kljJJ_needed,
     std::vector<double>& recoupling_cache,
     std::unordered_map<size_t, size_t>& recoupling_cache_lookup);
 
