@@ -5922,10 +5922,30 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
-  std::vector< std::array<size_t,2> > bra_ket_channels;
+
+//  std::vector< std::array<size_t,2> > bra_ket_channels;
+//  for ( auto& it : Z.ThreeBody.Get_ch_start() )
+//  {
+//     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+//  }
+
+  std::vector< std::array<size_t,3> > bra_ket_channels;
   for ( auto& it : Z.ThreeBody.Get_ch_start() )
   {
-     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+     size_t ch3bra = bra_ket_channels[ibra_ket][0];
+     size_t ch3ket = bra_ket_channels[ibra_ket][1];
+     auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch3bra);
+     size_t nbras3 = Tbc_bra.GetNumberKets();
+     for (size_t ibra=0; ibra<nbras3; ibra++)
+        bra_ket_channels.push_back( { it.first[0],it.first[1], ibra } ); // (ch_bra, ch_ket)
+  }
+
+  for (int i=0; i<omp_get_max_threads(); i++)
+  {
+    std::ostringstream oss;
+    oss << "__" << __func__ << "_" << i;
+    if ( Z.profiler.timer.find( oss.str()) == Z.profiler.timer.end() )   Z.profiler.timer[ oss.str()] = 0;
+    if ( Z.profiler.counter.find( oss.str()) == Z.profiler.counter.end() )   Z.profiler.counter[ oss.str()] = 0;
   }
 
   size_t n_bra_ket_ch = bra_ket_channels.size();
@@ -5934,8 +5954,13 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   #pragma omp parallel for schedule(dynamic,1)
   for (size_t ibra_ket=0; ibra_ket<n_bra_ket_ch;  ibra_ket++)
   {
+    double tlocal = omp_get_wtime();
+    std::ostringstream oss_thread;
+    oss_thread << "__" << __func__ << "_" << omp_get_thread_num();
+
     size_t ch3bra = bra_ket_channels[ibra_ket][0];
     size_t ch3ket = bra_ket_channels[ibra_ket][1];
+    size_t ibra   = bra_ket_channels[ibra_ket][2];
     auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch3bra);
     auto& Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch3ket);
     size_t nbras3 = Tbc_bra.GetNumberKets();
@@ -5949,8 +5974,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
     std::vector<int> J1p_max;
     std::vector<std::vector<double>> recouple_ijk;
 
-    for (size_t ibra=0; ibra<nbras3; ibra++)
-    {
+//    for (size_t ibra=0; ibra<nbras3; ibra++)
+//    {
       auto& bra = Tbc_bra.GetKet(ibra);
       size_t i = bra.p;
       size_t j = bra.q;
@@ -6190,8 +6215,10 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
 
         Z3.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket, zijklmn );  // this needs to be modified for beta decay
+        Z.profiler.counter[oss_thread.str()] ++;
       }// for iket
-    }// for ibra
+//    }// for ibra
+    Z.profiler.timer[oss_thread.str()] += omp_get_wtime() - tlocal;
   }// for ch3
 
     Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
