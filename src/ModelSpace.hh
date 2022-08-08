@@ -445,7 +445,8 @@ class ModelSpace
 
    // Two helper functions for counting the number of particles in various sets of orbits, e.g. protons in the core.
    std::set<index_t> IntersectionOfSets( const std::set<index_t>& set1, const std::set<index_t>& set2) const ;
-   double CountInSet( const std::set<index_t>& orbits ) const ;
+//   double CountInSet( const std::set<index_t>& orbits ) const ;
+   double CountInSet( const std::set<index_t>& orbits, bool occupation_weights=true ) const ;
    double GetAref() const ;
    double GetZref() const ;
    double GetNref() const ;

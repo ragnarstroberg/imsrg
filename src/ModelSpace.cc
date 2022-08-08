@@ -584,13 +584,20 @@ void ModelSpace::InitSingleSpecies(int emax, std::string reference, std::string 
 }
 
 
-double ModelSpace::CountInSet( const std::set<index_t>& orbits ) const
+double ModelSpace::CountInSet( const std::set<index_t>& orbits, bool occupation_weights ) const
 {
   double count=0;
   for ( auto& i : orbits )
   {
     const Orbit& oi = GetOrbit(i);
-    count += (oi.j2+1)*oi.occ;
+    if ( occupation_weights )
+    {
+        count += (oi.j2+1)*oi.occ;
+    }
+    else
+    {
+        count += (oi.j2+1);
+    }
   }
   return count;
 }
@@ -605,30 +612,30 @@ std::set<index_t> ModelSpace::IntersectionOfSets( const std::set<index_t>& set1,
 
 double ModelSpace::GetAref() const 
 {
-  return CountInSet( holes );
+  return CountInSet( holes, true );
 }
 
 double ModelSpace::GetZref() const 
 {
-  return CountInSet( IntersectionOfSets( holes, proton_orbits) );
+  return CountInSet( IntersectionOfSets( holes, proton_orbits), true );
 }
 double ModelSpace::GetNref() const 
 {
-  return CountInSet( IntersectionOfSets( holes, neutron_orbits) );
+  return CountInSet( IntersectionOfSets( holes, neutron_orbits), true );
 }
 
 double ModelSpace::GetAcore() const 
 {
-  return CountInSet( core );
+  return CountInSet( core, false );
 }
 
 double ModelSpace::GetZcore() const 
 {
-  return CountInSet( IntersectionOfSets( core, proton_orbits) );
+  return CountInSet( IntersectionOfSets( core, proton_orbits), false );
 }
 double ModelSpace::GetNcore() const 
 {
-  return CountInSet( IntersectionOfSets( core, neutron_orbits) );
+  return CountInSet( IntersectionOfSets( core, neutron_orbits), false );
 }
 
 
