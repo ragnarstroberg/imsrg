@@ -176,7 +176,6 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
      Z.ThreeBody.SwitchToPN_and_discard();
    }
 
-
    // Here is where we start calling the IMSRG(2) commutator expressions.
    if ( not Z.IsAntiHermitian() )
    {
@@ -736,6 +735,7 @@ double EstimateBCHError( Operator& Omega, Operator H)
 //void Operator::comm110ss( const Operator& X, const Operator& Y) 
 void comm110ss( const Operator& X, const Operator& Y, Operator& Z) 
 {
+   double t_start = omp_get_wtime();
   if (X.IsHermitian() and Y.IsHermitian()) return ; // I think this is the case
   if (X.IsAntiHermitian() and Y.IsAntiHermitian()) return ; // I think this is the case
   if (Z.GetJRank()>0 or Z.GetTRank()>0 or Z.GetParity()!=0) return;
@@ -746,6 +746,7 @@ void comm110ss( const Operator& X, const Operator& Y, Operator& Z)
       Orbit& oa = Z.modelspace->GetOrbit(a);
       Z.ZeroBody += (oa.j2+1) * oa.occ * xyyx(a,a);
    }
+   X.profiler.timer[__func__] += omp_get_wtime() - t_start;
 }
 
 
@@ -770,6 +771,7 @@ void comm110ss( const Operator& X, const Operator& Y, Operator& Z)
 //void Operator::comm220ss( const Operator& X, const Operator& Y) 
 void comm220ss( const Operator& X, const Operator& Y, Operator& Z) 
 {
+   double t_start = omp_get_wtime();
    if (X.IsHermitian() and Y.IsHermitian()) return; // I think this is the case
    if (X.IsAntiHermitian() and Y.IsAntiHermitian()) return; // I think this is the case
    if (Z.GetJRank()>0 or Z.GetTRank()>0 or Z.GetParity()!=0) return;
@@ -791,6 +793,7 @@ void comm220ss( const Operator& X, const Operator& Y, Operator& Z)
       Y2.head_rows(nbarnbar.size()).each_col() %= nbarnbar;
       Z.ZeroBody += 2 * (2*tbc.J+1) * arma::sum(arma::diagvec( X2 * Y2 ) % nn); // This could be made more efficient, but who cares?
    }
+   X.profiler.timer[__func__] += omp_get_wtime() - t_start;
 }
 
 //*****************************************************************************************
