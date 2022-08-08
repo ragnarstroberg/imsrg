@@ -1650,16 +1650,40 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
    int nch = Z.modelspace->GetNumberTwoBodyChannels();
    int hZ = Z.IsHermitian() ? 1 : -1;
 
-   #pragma omp parallel for schedule(dynamic,1)
+   // Collapse two outer loops into one for better load balancing
+   std::vector< std::array<int,2>> ch_and_ibra;
    for (int ch = 0; ch < nch; ++ch)
    {
+      int nKets = Z.modelspace->GetTwoBodyChannel(ch).GetNumberKets();
+      for (int ibra=0; ibra<nKets; ++ibra)
+      {
+        ch_and_ibra.push_back( {ch,ibra});
+      }
+   }
+   size_t nch_and_ibra = ch_and_ibra.size();
+
+//   #pragma omp parallel for schedule(dynamic,1)
+//   for (int ch = 0; ch < nch; ++ch)
+//   {
+//      TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
+//      int J = tbc.J;
+//      int nKets = tbc.GetNumberKets();
+//      auto& ZMat = Z.TwoBody.GetMatrix(ch,ch);
+//
+//      for (int ibra=0; ibra<nKets; ++ibra)
+//      { 
+
+   #pragma omp parallel for schedule(dynamic,1)
+   for ( size_t ichbra=0; ichbra<nch_and_ibra; ichbra++)
+   {
+      int ch   = ch_and_ibra[ichbra][0];
+      int ibra = ch_and_ibra[ichbra][1];
+
       TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
       int J = tbc.J;
       int nKets = tbc.GetNumberKets();
       auto& ZMat = Z.TwoBody.GetMatrix(ch,ch);
 
-      for (int ibra=0; ibra<nKets; ++ibra)
-      {
          Ket & bra = tbc.GetKet(ibra);
          int i = bra.p;
          int j = bra.q;
@@ -1748,8 +1772,9 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
             ZMat(ibra,iket) += zijkl;
             if (ibra != iket) ZMat(iket,ibra) += hZ * zijkl;
          }// for iket
-      }// for ibra
-   }// for ch
+//      }// for ibra
+//   }// for ch
+   }// for ichbra
 }
 
 ///*************************************
@@ -5926,7 +5951,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   {
      ThreeBodyChannel& Tbc_bra = Z.modelspace->GetThreeBodyChannel( it.first[0]);
      size_t nbras3 = Tbc_bra.GetNumberKets();
-     for (int ibra=0;ibra<nbras3; ibra++)
+     for (size_t ibra=0;ibra<nbras3; ibra++)
      {
        bra_ket_channels.push_back( { it.first[0],it.first[1], ibra } ); // (ch_bra, ch_ket,ibra)
      }
