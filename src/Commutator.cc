@@ -1261,16 +1261,17 @@ void comm222_pp_hh_221ss( const Operator& X, const Operator& Y, Operator& Z )
    TwoBodyME Mhh = Z.TwoBody;
    Mpp.Erase();
    Mhh.Erase();
+   double t_internal = omp_get_wtime();
 
    ConstructScalarMpp_Mhh( X, Y, Z, Mpp, Mhh);
 
-//   Z.TwoBody += (Mpp - Mhh);
+   X.profiler.timer["_ConstructScalarMpp_Mhh"] += omp_get_wtime() - t_internal;
+   t_internal = omp_get_wtime();
    Z.TwoBody += Mpp;
    Z.TwoBody -= Mhh;
-//   OUT += Matrixpp - Matrixhh;
-   X.profiler.timer["_pphh TwoBody bit"] += omp_get_wtime() - t_start;
+   X.profiler.timer["_pphh TwoBody bit"] += omp_get_wtime() - t_internal;
 
-   double t_internal = omp_get_wtime();
+   t_internal = omp_get_wtime();
 //   int norbits = Z.modelspace->GetNumberOrbits();
    int norbits = Z.modelspace->all_orbits.size();
    // The one body part
@@ -1654,16 +1655,20 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
    int hZ = Z.IsHermitian() ? 1 : -1;
 
    // Collapse two outer loops into one for better load balancing
-   std::vector< std::array<int,2>> ch_and_ibra;
+//   std::vector< std::array<int,2>> ch_and_ibra;
+   std::vector<int> ch_vec;
+   std::vector<int> ibra_vec;
    for (int ch = 0; ch < nch; ++ch)
    {
       int nKets = Z.modelspace->GetTwoBodyChannel(ch).GetNumberKets();
       for (int ibra=0; ibra<nKets; ++ibra)
       {
-        ch_and_ibra.push_back( {ch,ibra});
+        ch_vec.push_back( ch);
+        ibra_vec.push_back( ibra);
       }
    }
-   size_t nch_and_ibra = ch_and_ibra.size();
+//   size_t nch_and_ibra = ch_and_ibra.size();
+   size_t nch_and_ibra = ch_vec.size();
 
 //   #pragma omp parallel for schedule(dynamic,1)
 //   for (int ch = 0; ch < nch; ++ch)
@@ -1672,15 +1677,17 @@ void AddInversePandyaTransformation(const std::deque<arma::mat>& Zbar, Operator&
 //      int J = tbc.J;
 //      int nKets = tbc.GetNumberKets();
 //      auto& ZMat = Z.TwoBody.GetMatrix(ch,ch);
-//
+
 //      for (int ibra=0; ibra<nKets; ++ibra)
 //      { 
 
    #pragma omp parallel for schedule(dynamic,1)
    for ( size_t ichbra=0; ichbra<nch_and_ibra; ichbra++)
    {
-      int ch   = ch_and_ibra[ichbra][0];
-      int ibra = ch_and_ibra[ichbra][1];
+      int ch   = ch_vec[ichbra];
+      int ibra = ibra_vec[ichbra];
+//      int ch   = ch_and_ibra[ichbra][0];
+//      int ibra = ch_and_ibra[ichbra][1];
 
       TwoBodyChannel& tbc = Z.modelspace->GetTwoBodyChannel(ch);
       int J = tbc.J;
@@ -2363,7 +2370,8 @@ void comm231ss( const Operator& X, const Operator& Y, Operator& Z )
 
   size_t norb = Z.modelspace->GetNumberOrbits();
   int nch = Z.modelspace->GetNumberTwoBodyChannels();
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+//  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1) // if (not Z.modelspace->scalar3b_transform_first_pass)
   for (size_t i=0; i<norb; i++)
   {
     Orbit& oi = Z.modelspace->GetOrbit(i);
@@ -4133,11 +4141,45 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
    }
 
   Z.modelspace->PreCalculateSixJ(); // if it's been done, this won't do it again. But make sure for thread safety.
+  // But we still need some SixJs which aren't computed in the current implementation of PreCalculateSixJ().
+  // we need symbols of the form { J2b J2b J2b }
+  //                             { j1b j1b J3b }
+  if ( Z.modelspace->scalar3b_transform_first_pass )
+  {
+    double t_internal = omp_get_wtime();
+    int j_1b_max = Z.modelspace->OneBodyJmax;
+    int j_2b_max = Z.modelspace->TwoBodyJmax;
+    for ( int j2i=1; j2i<=j_1b_max; j2i+=2)
+    {
+      for ( int j2j=1; j2j<=j_1b_max; j2j+=2)
+      {
+        for ( int J1=0; J1<=j_2b_max; J1++)
+        {
+          for ( int J2=0; J2<=j_2b_max; J2++)
+          {
+            int J3min = std::max( std::abs(j2i-j2j)/2, std::abs(J1-J2));
+            int J3max = std::min( std::abs(j2i+j2j)/2, std::abs(J1+J2));
+            int twoJ_min = std::max( std::abs( 2*J1-j2j), std::abs( 2*J2-j2i) );
+            int twoJ_max = std::min( 2*J1+j2j , 2*J2+j2i );
+            for ( int J3=J3min; J3<=J3max; J3++)
+            {
+              for ( int twoJ=twoJ_min; twoJ<=twoJ_max; twoJ+=2)
+              {
+                 Z.modelspace->GetSixJ(J1,J2,J3,  0.5*j2i, 0.5*j2j, 0.5*twoJ);
+              }
+            }
+          }
+        }
+      }
+    }
+    Z.profiler.timer["__precalc6J_comm332_pphhss"] += omp_get_wtime() - t_internal;
+  }
+
   // Loop through Pandya-transformed channels and compute the matrix Zbar by mat mult
 //  #pragma omp parallel for schedule(dynamic,1)
 //  There are some SixJs in this loop which are not automatically computed with PreCalculateSixJ, so 
 //  we need to be careful the first time we call this.
-  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
+  #pragma omp parallel for schedule(dynamic,1) // if (not Z.modelspace->scalar3b_transform_first_pass)
    for (size_t ch=0;ch<nch_CC;++ch)
    {
       TwoBodyChannel_CC& tbc_CC = Z.modelspace->GetTwoBodyChannel_CC(ch);
@@ -4260,8 +4302,21 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
             {
 //              sixj_ij_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(ji,jj,J_ph, Jcd,Jab,0.5*twoJp) * Z.modelspace->phase((j2i+twoJp)/2) );
 //              sixj_ji_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(jj,ji,J_ph, Jcd,Jab,0.5*twoJp) * Z.modelspace->phase((j2j+twoJp)/2) );
-              sixj_ij_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(Jcd,Jab,J_ph, ji,jj,0.5*twoJp) * Z.modelspace->phase((j2i+twoJp)/2) );
-              sixj_ji_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(Jcd,Jab,J_ph, jj,ji,0.5*twoJp) * Z.modelspace->phase((j2j+twoJp)/2) );
+              double sixj_ij =0;
+              double sixj_ji =0;
+              if ( AngMom::Triangle( Jcd, jj, 0.5*twoJp) and AngMom::Triangle( Jab,ji,0.5*twoJp) )
+              {
+                 sixj_ij = Z.modelspace->GetSixJ(Jcd,Jab,J_ph, ji,jj,0.5*twoJp);
+              }
+              if ( AngMom::Triangle( Jcd, ji, 0.5*twoJp) and AngMom::Triangle( Jab,jj,0.5*twoJp) )
+              {
+                 sixj_ij = Z.modelspace->GetSixJ(Jcd,Jab,J_ph, jj,ji,0.5*twoJp);
+              }
+
+//              sixj_ij_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(Jcd,Jab,J_ph, ji,jj,0.5*twoJp) * Z.modelspace->phase((j2i+twoJp)/2) );
+//              sixj_ji_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(Jcd,Jab,J_ph, jj,ji,0.5*twoJp) * Z.modelspace->phase((j2j+twoJp)/2) );
+              sixj_ij_list.push_back( (twoJp+1) * sixj_ij * Z.modelspace->phase((j2i+twoJp)/2) );
+              sixj_ji_list.push_back( (twoJp+1) * sixj_ji * Z.modelspace->phase((j2j+twoJp)/2) );
                 
             }
 
