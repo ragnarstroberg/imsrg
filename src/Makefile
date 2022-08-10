@@ -66,7 +66,7 @@ PYTHON_INCLUDE = -I./pybind11/include
 PYTHONFLAGS =  $(PYTHON_CFLAGS) -Wl,--no-as-needed
 PYTHON_COMMAND = python$(PYTHON_MAJOR_VERSION)
 
-THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; elif [ `hostname|grep cedar` ]; then echo cedar; elif [ `hostname|grep mox` ]; then echo mox; elif [ `hostname|grep bebop` ]; then echo bebop; else echo other; fi)
+THEHOST = $(shell if [ `hostname|grep jrl` ]; then echo jureca; elif [ `hostname|grep cougar` ]; then echo cougar; elif [ `hostname|grep cronos` ]; then echo cronos; elif [ `hostname|grep oak` ]; then echo oak; elif [ `hostname|grep cedar` ]; then echo cedar; elif [ `hostname|grep mox` ]; then echo mox; elif [ `hostname|grep bebop` ]; then echo bebop; elif [ `hostname|grep crc` ]; then echo crc; else echo other; fi)
 
 
 
@@ -161,6 +161,13 @@ ifeq ($(THEHOST),bebop)
 #  ALL += pyIMSRG.so
 #  endif
 endif
+
+ifeq ($(THEHOST),crc)
+  NEWLIBS := $(filter-out -lopenblas -lblas,$(LIBS))
+  LIBS = $(NEWLIBS) -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+  LIBS +=  -lmkl_avx2  -lmkl_def
+endif
+
 
 
 
