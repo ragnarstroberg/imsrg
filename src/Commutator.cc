@@ -3623,28 +3623,40 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     std::unordered_set<size_t>& kljJJ_needed
   ) {
     const auto& Y3 = Y.ThreeBody;
+    // Set up one set per thread
+    int num_threads = omp_get_max_threads();
+    std::vector<std::unordered_set<size_t>> kljJJ_needed_threadsafe_vec(num_threads);
+
+    // Loop in parallel over many indices
+    #pragma omp parallel for collapse(2)
     for (size_t ind_abc=0; ind_abc<dim_abc; ind_abc++) 
     {
-      auto& abcJ = klj_list_i[ abc_list[ind_abc] ];
-      size_t a = abcJ[0];
-      size_t b = abcJ[1];
-      size_t c = abcJ[2];
-      int Jab  = abcJ[3];
-      Orbit& oa = Z.modelspace->GetOrbit(a);
-      Orbit& ob = Z.modelspace->GetOrbit(b);
-      Orbit& oc = Z.modelspace->GetOrbit(c);
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(oa)) continue;
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
-      if (!Y3.IsOrbitIn3BodyEMaxTruncation(oc)) continue;
-      double de_a = std::abs( 2*oa.n + oa.l - e_fermi.at(oa.tz2));
-      double de_b = std::abs( 2*ob.n + ob.l - e_fermi.at(ob.tz2));
-      double de_c = std::abs( 2*oc.n + oc.l - e_fermi.at(oc.tz2));
-//      double occnat_a = oa.occ_nat;
-//      double occnat_b = ob.occ_nat;
-      double occnat_c = oc.occ_nat;
-      int j2c = oc.j2;
       for (size_t ind_klj=0; ind_klj<dim_klj; ind_klj++)
       {
+        // Get thread id for current thread
+        int thread_id = omp_get_thread_num();
+
+        // for abc loop
+        auto& abcJ = klj_list_i[ abc_list[ind_abc] ];
+        size_t a = abcJ[0];
+        size_t b = abcJ[1];
+        size_t c = abcJ[2];
+        int Jab  = abcJ[3];
+        Orbit& oa = Z.modelspace->GetOrbit(a);
+        Orbit& ob = Z.modelspace->GetOrbit(b);
+        Orbit& oc = Z.modelspace->GetOrbit(c);
+        if (!Y3.IsOrbitIn3BodyEMaxTruncation(oa)) continue;
+        if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
+        if (!Y3.IsOrbitIn3BodyEMaxTruncation(oc)) continue;
+        double de_a = std::abs( 2*oa.n + oa.l - e_fermi.at(oa.tz2));
+        double de_b = std::abs( 2*ob.n + ob.l - e_fermi.at(ob.tz2));
+        double de_c = std::abs( 2*oc.n + oc.l - e_fermi.at(oc.tz2));
+  //      double occnat_a = oa.occ_nat;
+  //      double occnat_b = ob.occ_nat;
+        double occnat_c = oc.occ_nat;
+        int j2c = oc.j2;
+
+        // for klj loop
         auto& kljJ = klj_list_i[ ind_klj ];
         size_t k = kljJ[0];
         size_t l = kljJ[1];
@@ -3671,11 +3683,19 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         int twoJp_max = std::min( 2*Jab + oj.j2, 2*Jkl+j2c);
         for (int twoJp=twoJp_min; twoJp<=twoJp_max; twoJp+=2)
         {
-           kljJJ_needed.insert(Hash_comm232_key2({k,l,c,(size_t)Jkl,(size_t)twoJp}));
-           kljJJ_needed.insert(Hash_comm232_key2({a,b,j,(size_t)Jab,(size_t)twoJp}));
+          // Write to set corresponding to local thread
+           kljJJ_needed_threadsafe_vec[thread_id].insert(Hash_comm232_key2({k,l,c,(size_t)Jkl,(size_t)twoJp}));
+           kljJJ_needed_threadsafe_vec[thread_id].insert(Hash_comm232_key2({a,b,j,(size_t)Jab,(size_t)twoJp}));
         }// for twoJp
       }// for ind_klj
     }// for ind_abc
+
+    // Merge sets
+    for (const auto& thread_safe_kljJJ : kljJJ_needed_threadsafe_vec) {
+      for (const auto& el : thread_safe_kljJJ) {
+        kljJJ_needed.insert(el);
+      }
+    }
   }
 
   void comm232_new_ComputeRequiredRecouplings(
