@@ -13,6 +13,7 @@
 #include <array>
 #include <unordered_map>
 #include <unordered_set>
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -3704,9 +3705,27 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     std::vector<double>& recoupling_cache,
     std::unordered_map<size_t, size_t>& recoupling_cache_lookup
   ) {
+  const auto tstart_parallel = omp_get_wtime();
+  
+  // Read kljJJ_needed into vector so we can use OpenMP pragma on for loop
+  std::vector<size_t> kljJJ_needed_vec(kljJJ_needed.cbegin(), kljJJ_needed.cend());
 
-   for ( auto hash : kljJJ_needed )
+  // Create thread-safe recoupling_cache and recoupling_cache_lookup, which we need to reduce later
+  int num_threads = omp_get_max_threads();
+
+  // Define chunk_size for dynamic scheduling
+  // Giving each thread 0.1% of the problem per call to the OpenMP runtime seems reasonable.
+  // On most clusters, this means threads will make somewhere between 5 and 20 calls to the runtime.
+  int chunk_size = std::max(kljJJ_needed_vec.size() / 1000, 1UL);
+
+  std::vector<std::vector<double>> recoupling_cache_threadsafe(num_threads);
+  std::vector<std::unordered_map<size_t, size_t>> recoupling_cache_lookup_threadsafe(num_threads);
+
+  #pragma omp parallel for schedule(dynamic, chunk_size)
+   for ( size_t index = 0; index < kljJJ_needed_vec.size(); index += 1 )
    {
+    size_t hash = kljJJ_needed_vec[index];
+    int thread_id = omp_get_thread_num();
     const auto kljJJ = Unhash_comm232_key2(hash);
      size_t k = kljJJ[0];
      size_t l = kljJJ[1];
@@ -3719,12 +3738,49 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
      std::vector<double> recouplelist;
      size_t ch_check = Y.ThreeBody.GetKetIndex_withRecoupling( Jkl, twoJp, k, l, j, iketlist, recouplelist) ;
      size_t listsize = iketlist.size();
-     recoupling_cache_lookup[hash] = recoupling_cache.size();
-     recoupling_cache.push_back(ch_check);
-     recoupling_cache.push_back(listsize);
-     for (size_t ik : iketlist) recoupling_cache.push_back(ik); // Store the size_t (an unsigned int) as a double. I hope this doesn't cause problems...
-     for (double rec : recouplelist) recoupling_cache.push_back( rec);// Point to where this element lives in the vector
+     recoupling_cache_lookup_threadsafe[thread_id][hash] = recoupling_cache_threadsafe[thread_id].size();
+     recoupling_cache_threadsafe[thread_id].push_back(ch_check);
+     recoupling_cache_threadsafe[thread_id].push_back(listsize);
+     for (size_t ik : iketlist) recoupling_cache_threadsafe[thread_id].push_back(ik); // Store the size_t (an unsigned int) as a double. I hope this doesn't cause problems...
+     for (double rec : recouplelist) recoupling_cache_threadsafe[thread_id].push_back( rec);// Point to where this element lives in the vector
    }
+  Y.profiler.timer[std::string(__func__) + " parallel"] += omp_get_wtime() - tstart_parallel;
+
+  const auto tstart_merge = omp_get_wtime();
+  // Copying once we've reserved the right size should be cheap relative to recoupling logic,
+  // so this can be done in serial
+  size_t total_cache_size = 0;
+  size_t total_cache_lookup_size = 0;
+  for (int thread_id = 0; thread_id < num_threads; thread_id += 1) {
+    total_cache_size += recoupling_cache_threadsafe[thread_id].size();
+    total_cache_lookup_size += recoupling_cache_lookup_threadsafe[thread_id].size();
+  }
+
+  recoupling_cache.reserve(total_cache_size);
+  recoupling_cache_lookup.reserve(total_cache_lookup_size);
+  for (int thread_id = 0; thread_id < num_threads; thread_id += 1) {
+    for (const auto& kv_pair : recoupling_cache_lookup_threadsafe[thread_id]) {
+      const size_t hash = kv_pair.first;
+      const size_t index = kv_pair.second;
+
+      const auto ch_check = static_cast<size_t>(recoupling_cache_threadsafe[thread_id][index]);
+      const auto list_size = static_cast<size_t>(recoupling_cache_threadsafe[thread_id][index + 1]);
+      recoupling_cache_lookup[hash] = recoupling_cache.size();
+      recoupling_cache.push_back(ch_check);
+      recoupling_cache.push_back(list_size);
+
+      // Copy iketlist
+      for (size_t offset = 0; offset < list_size; offset += 1) {
+        recoupling_cache.push_back(recoupling_cache_threadsafe[thread_id][index + 2 + offset]);
+      }
+
+      // Copy recouple list
+      for (size_t offset = 0; offset < list_size; offset += 1) {
+        recoupling_cache.push_back(recoupling_cache_threadsafe[thread_id][index + 2 + offset + list_size]);
+      }
+    }
+  }
+  Y.profiler.timer[std::string(__func__) + " merge"] += omp_get_wtime() - tstart_merge;
   }
 
   void comm232_new_FillMatrices(const Operator& Z, const Operator& X, const Operator Y, size_t dim_abc, size_t dim_i, size_t dim_klj, 
