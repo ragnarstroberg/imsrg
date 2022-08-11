@@ -3725,6 +3725,9 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
   ) {
     const auto& Y3 = Y.ThreeBody;
     const auto& X3 = X.ThreeBody;
+
+    // With a bit more work, we can 2 loops for the 3-body part
+    #pragma omp parallel for
     for (size_t ind_abc=0; ind_abc<dim_abc; ind_abc++) // rows of X2MAT
     {
 
