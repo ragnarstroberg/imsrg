@@ -3494,6 +3494,8 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     std::map<std::array<int,3>,std::vector<size_t>>& local_one_body_channels,
     std::map<std::array<int,3>,std::vector<size_t>>& external_local_one_body_channels
   ) {
+    const auto tstart = omp_get_wtime();
+
     const auto& Y3 = Y.ThreeBody;
   for ( auto j : Z.modelspace->all_orbits )
   {
@@ -3506,6 +3508,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     if ( external_local_one_body_channels.find(obc) == external_local_one_body_channels.end() ) external_local_one_body_channels[obc] = {j};
     else external_local_one_body_channels[obc].push_back(j);
   }
+    Y.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
 
   void comm232_new_Populate1BChannel(
@@ -3518,6 +3521,8 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     std::map<std::array<int,3>,std::vector<std::array<size_t,4>>>& klj_list,
     std::map<std::array<int,3>,arma::mat>& ZMAT_list
   ) {
+    const auto tstart = omp_get_wtime();
+
     const auto& Y3 = Y.ThreeBody;
   size_t nkeys = obc_keys.size();
   for ( size_t ikey=0; ikey<nkeys; ikey++ )
@@ -3578,6 +3583,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     size_t dim_klj = klj_list[obc_key].size();
     ZMAT_list[obc_key] =  arma::mat(dim_i,dim_klj) ;
   }// for ikey
+    Y.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
 
   void comm232_new_Determine3BStatesIn1BChannel(
@@ -3588,6 +3594,8 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     std::vector<size_t>& abc_list,
     std::vector<double>& abc_occ_list
   ) {
+    const auto tstart = omp_get_wtime();
+
     const auto& Y3 = Y.ThreeBody;
     for (size_t i_kljJ=0; i_kljJ< klj_list.at(obc_key).size(); i_kljJ++ )
     {
@@ -3610,6 +3618,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
       abc_list.push_back( i_kljJ );
       abc_occ_list.push_back( occupation_factor );
     }
+    Y.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
 
 
@@ -3623,6 +3632,8 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     size_t dim_klj,
     std::unordered_set<size_t>& kljJJ_needed
   ) {
+    const auto tstart_parallel = omp_get_wtime();
+
     const auto& Y3 = Y.ThreeBody;
     // Set up one set per thread
     int num_threads = omp_get_max_threads();
@@ -3691,12 +3702,18 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
       }// for ind_klj
     }// for ind_abc
 
+    Y.profiler.timer[std::string(__func__) + " parallel"] += omp_get_wtime() - tstart_parallel;
+
+    const auto tstart_merge = omp_get_wtime();
+
     // Merge sets
     for (const auto& thread_safe_kljJJ : kljJJ_needed_threadsafe_vec) {
       for (const auto& el : thread_safe_kljJJ) {
         kljJJ_needed.insert(el);
       }
     }
+  
+    Y.profiler.timer[std::string(__func__) + " merge"] += omp_get_wtime() - tstart_merge;
   }
 
   void comm232_new_ComputeRequiredRecouplings(
@@ -3799,6 +3816,8 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     arma::mat& X3MAT,
     arma::mat& Y3MAT
   ) {
+    const auto tstart = omp_get_wtime();
+
     const auto& Y3 = Y.ThreeBody;
     const auto& X3 = X.ThreeBody;
 
@@ -3917,6 +3936,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         }// for twoJp
       }// for ind_klj
     }// for ind_abc
+    Y.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
 
   void comm232_new_Unpack2BResult(
@@ -3928,6 +3948,8 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     const std::map<std::array<int,3>,arma::mat>& ZMAT_list,
     Operator& Z
     ) {
+    const auto tstart = omp_get_wtime();
+
       const auto& Y3 = Y.ThreeBody;
   int hermX = X.IsHermitian() ? 1 : -1;
   int hermY = Y.IsHermitian() ? 1 : -1;
@@ -4019,6 +4041,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
       }//for iket
     }//for ibra
   }// for ch
+    Y.profiler.timer[__func__] += omp_get_wtime() - tstart;
   }
 
 
