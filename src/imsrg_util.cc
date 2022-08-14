@@ -328,6 +328,17 @@ namespace imsrg_util
          std::istringstream( opnamesplit[1] ) >> hw_trap;
          theop = HOtrap_Op( modelspace, hw_trap);
       }
+      else if (opnamesplit[0] == "VPT" )
+      {
+        std::vector<double> LECs;
+        for (size_t i=1; i<opnamesplit.size(); i++)
+        {
+          double tmp;
+          std::istringstream( opnamesplit[i] ) >> tmp;
+          LECs.push_back(tmp);
+        }
+        theop = TViolatingPotential_Op( modelspace, LECs );
+      }
       else //need to remove from the list
       {
          std::cout << "Unknown operator: " << opname << std::endl;
@@ -2589,6 +2600,194 @@ Operator FourierBesselCoeff(ModelSpace& modelspace, int nu, double R, std::set<i
 
 
  }
+
+
+
+
+ Operator TViolatingPotential_Op( ModelSpace& modelspace, std::vector<double> LECs )
+ {
+   double alpha0 = LECs[0];
+   double alpha1 = LECs[1];
+   double alpha2 = LECs[2];
+   Operator VPT(modelspace, 0,0,1,2 ); // J=0, dTz=0, parity=odd, particle-rank=2
+
+   // Isospin factors converted to proton-neutron basis
+     // ATT'Tz = alpha0[4T-3]+2*alpha1*Tz + 2*alpha2*delta_T,1*[delta_|Tz|,1 -2delta_|Tz|,0
+     // BTT' = 2 alpha1 delta_T+T',1
+     // A111 = alpha0 + 2 alpha1 + 2 alpha2
+     // A110 = alpha0 - 4 alpha2
+     // A000 = -3 alpha0 -4 alpha2
+     // B10 = B01 = 2 alpha1
+     // |np> = (|1,0> + |0,0>)/sqrt(2),  |pn> = (|1,0> - |0,0>)/sqrt(2)
+     // Apppp = A111  = alpha0 + 2 alpha1 + 2 alpha2
+     // Annnn = A11-1 = alpha0 - 2 alpha1 + 2 alpha2
+     // Apnpn = Anpnp = 1/2 (A110 + A000) = -alpha0 - 4 alpha2
+     // Anppn = Apnnp = 1/2 (A110 - A000) = 2 alpha0
+     // Bnpnp = -Bpnpn = 1/2 (B10 + B01) = 2 alpha1
+     // Bnppn = -Bpnnp = 1/2(B01 - B10) = 0
+   double Apppp = alpha0 + 2*alpha1 + 2*alpha2;
+   double Annnn = alpha0 - 2*alpha1 + 2*alpha2;
+   double Apnpn = -alpha0 - 4*alpha2;
+   double Anpnp = Apnpn;
+   double Anppn = 2 * alpha0;
+   double Apnnp = Anppn;
+   double Bnpnp = 2 * alpha1;
+   double Bpnpn = -Bnpnp;
+
+   double hw = modelspace.GetHbarOmega();
+   double bosc = HBARC/sqrt( hw * M_NUCLEON);
+   double mpi = (2*PhysConst::M_PION_CHARGED + PhysConst::M_PION_NEUTRAL)/3;
+   int emax = modelspace.Emax;
+
+   std::map< std::array<int,4>,double> IntegralLookup;
+   // Do the radial integral and cache it
+   for (int n=0; n <= emax; n++)
+   {
+     for (int np=0; np <= emax; np++)
+     {
+       for ( int l=0; 2*n+l <= 2*emax; l++)
+       {
+         for ( int lp=0; 2*np+lp <= 2*emax; lp++)
+         {
+           double the_integral=0;
+           double dr = 0.01;
+           double rmax = 5*bosc;
+           for ( double r=0.001; r<=rmax; r+=dr )
+           {
+             double psi_nl   = HO_Radial_psi(n,l,hw,r);
+             double psi_nplp = HO_Radial_psi(np,lp,hw,r);
+             double x = sqrt(2) * r;
+             double fprime = -exp(-mpi * x/HBARC) / x * ( 1 + 1/(mpi*x/HBARC)); // Should the minus sign be here?
+             the_integral += r*r * psi_nl * psi_nplp * fprime * dr;
+           }
+           IntegralLookup[{n,l,np,lp}] = the_integral;
+         }
+       }
+     }
+   }
+
+
+   double sa,sb,sc,sd;
+   sa=0.5; sb=0.5; sc=0.5; sd=0.5; // just for clarity...
+   for (auto& itmat : VPT.TwoBody.MatEl )
+   {
+     int ch_bra = itmat.first[0];
+     int ch_ket = itmat.first[1];
+     TwoBodyChannel& tbc_bra = modelspace.GetTwoBodyChannel(ch_bra);
+     TwoBodyChannel& tbc_ket = modelspace.GetTwoBodyChannel(ch_ket);
+     int J = tbc_bra.J;
+     int nbras = tbc_bra.GetNumberKets();
+     int nkets = tbc_ket.GetNumberKets();
+     for (int ibra=0; ibra<nbras; ibra++)
+     {
+       Ket& bra = tbc_bra.GetKet(ibra);
+       int la = bra.op->l;
+       int lb = bra.oq->l;
+       int na = bra.op->n;
+       int nb = bra.oq->n;
+       double ja = 0.5*bra.op->j2;
+       double jb = 0.5*bra.oq->j2;
+       int ebra = 2*na+la + 2*nb+lb;
+
+       for (int iket=0; iket<nkets; iket++)
+       {
+         Ket& ket = tbc_ket.GetKet(iket);
+         int lc = ket.op->l;
+         int ld = ket.oq->l;
+         int nc = ket.op->n;
+         int nd = ket.oq->n;
+         double jc = 0.5*ket.op->j2;
+         double jd = 0.5*ket.oq->j2;
+         int eket = 2*nc+lc + 2*nd+ld;
+
+         double vpt = 0;
+         for (int S=0; S<=1; S++)
+         {
+           for (int Sp=0; Sp<=1; Sp++)
+           {
+
+             double A_T = 0; 
+             double B_T = 0; 
+             if      ( tbc_bra.Tz ==  1) A_T = Annnn;
+             else if ( tbc_bra.Tz == -1) A_T = Apppp;
+             else if ( bra.op->tz2==-1 and ket.op->tz2==-1)
+             {
+                A_T = Anpnp;
+                B_T = Bnpnp;
+             }
+             else if ( bra.op->tz2==1  and ket.op->tz2==1)
+             {
+                A_T = Apnpn;
+                B_T = Bpnpn;
+             }
+             else if ( bra.op->tz2==1  and ket.op->tz2==-1) A_T = Apnnp;
+             else if ( bra.op->tz2==-1 and ket.op->tz2==1) A_T  = Anppn;
+      
+             if ( tbc_bra.Tz == 0 )
+             {
+                if      (bra.op->tz2 == 1 and ket.op->tz2 ==  1) B_T = Bnpnp;
+                else if (bra.op->tz2 == -1 and ket.op->tz2 == -1) B_T = Bpnpn;
+             }
+             double AplusB = 0;
+             if ( S+Sp == 1 ) AplusB += A_T;
+             if ( S==1 and Sp==1 ) AplusB += B_T;
+
+             int Lmin = std::max( J-S, 0);
+             int Lmax = J+S;
+             int Lpmin = std::max( J-Sp, 0);
+             int Lpmax = J+Sp;
+             for (int L=Lmin; L<=Lmax; L++)
+             {
+               double ninej1 = AngMom::NineJ( la,sa,ja,  lb,sb,jb, L,S,J);
+               for (int Lp=Lpmin; Lp<=Lpmax; Lp++)
+               {
+                 if ( std::abs(L-Lp)>1 ) continue;
+                 double sixj1 = AngMom::SixJ( L, S, J, Sp, Lp, 1);
+                 double ninej2 = AngMom::NineJ( lc,sc,jc, ld,sd,jd, Lp,Sp,J);
+                 // Now sum over relative/CM coordinates
+                 for (int Ncm=0; 2*Ncm<=std::min(ebra,eket); Ncm++ )
+                 {
+                   for (int Lcm=0; 2*Ncm+Lcm <= std::min(ebra,eket); Lcm++)
+                   {
+                     for (int nrel=0; 2*nrel <= ebra-(2*Ncm+Lcm); nrel++)
+                     {
+                       int lrel = ebra - (2*Ncm+Lcm+2*nrel);
+                       for (int nprel=0; 2*nprel <= eket-(2*Ncm+Lcm); nprel++)
+                       {
+                         int lprel = eket - (2*Ncm+Lcm+2*nprel);
+                         if ((lprel + Sp)%2==0) continue; // factor [1 - (-1)^(lprel+Sp) ]
+                         double threej = AngMom::ThreeJ( lrel,lprel,1, 0,0,0);
+                         double sixj2 = AngMom::SixJ( lrel,L,Lcm,  Lp,lprel,1);
+                         double mosh1 = AngMom::Moshinsky(Ncm,Lcm,nrel,lrel,na,la,nb,lb,L);
+                         double mosh2 = AngMom::Moshinsky(Ncm,Lcm,nprel,lprel,nc,lc,nd,ld,L);
+                         double integral = IntegralLookup[{nrel,lrel,nprel,lprel}]; // TODO Look up from cache.
+                         vpt += sqrt((2*S+1)*(2*Sp+1)) * AplusB * (2*L+1) * (2*Lp+1) * sixj1 * ninej1 * ninej2
+                               * AngMom::phase(Lcm) * 2 * sqrt((2*lrel+1)*(2*lprel+1)) * threej * sixj2 * mosh1*mosh2 * integral;
+                       }//nprel
+                     }//nrel
+                   }//Lcm
+                 }//Ncm
+               }//Lp
+             }//L
+           }//Sp
+         }//S
+         vpt *= AngMom::phase(J) * 2*sqrt(3) * sqrt((2*ja+1)*(2*jb+1)*(2*jc+1)*(2*jd+1)) * (2*J+1);
+         if (bra.p==bra.q) vpt /= SQRT2;
+         if (ket.p==ket.q) vpt /= SQRT2;
+//         std::cout << "Setting  channels " << ch_bra << " " << ch_ket << " " << ibra << " " << iket << "  = " << vpt << std::endl;
+//         std::cout << "The Matrix: " << std::endl << VPT.TwoBody.GetMatrix(ch_bra,ch_ket) << std::endl;
+         VPT.TwoBody.SetTBME(ch_bra,ch_ket,ibra,iket,vpt);
+//         std::cout << "   ok. " << std::endl;
+       }//iket
+     }//ibra
+     
+   }//itmat
+
+   return VPT;
+
+ }//TViolatingPotential_Op
+
+
 
 
 

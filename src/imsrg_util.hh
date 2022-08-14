@@ -30,34 +30,11 @@
 #include <vector>
 #include <array>
 
-//#define HBARC 197.3269718 // hc in MeV * fm
-//#define M_NUCLEON 938.9185 // average nucleon mass in MeV
-//#define PI 3.14159265359 // put in by CP for the BMEs
-//#define M_PROTON  938.2720813
-//#define M_NEUTRON 939.5654133
-//#define M_ELECTRON 0.5109989461 // I take all my physical constants from Wikipedia.
-//
-//#ifndef ISQRT2
-//  #define ISQRT2 0.70710678118654752440L
-//#endif
 
 namespace imsrg_util
 {
-// using PhysConst::HBARC;
-// using PhysConst::M_PROTON;
-// using PhysConst::M_NEUTRON;
-// using PhysConst::M_NUCLEON;
-// using PhysConst::M_ELECTRON;
-// using PhysConst::PROTON_SPIN_G;
-// using PhysConst::NEUTRON_SPIN_G;
-// using PhysConst::ELECTRON_SPIN_G;
-// using PhysConst::F_PI;
-// using PhysConst::ALPHA_FS;
-// using PhysConst::PI;
-// using PhysConst::SQRT2;
-// using PhysConst::SQRTPI;
+
  using PhysConst::INVSQRT2;
-// using PhysConst::LOG2;
 
  Operator OperatorFromString(ModelSpace& modelspace, std::string str);
 // DaggerOperator DaggerOperatorFromString(ModelSpace& modelspace, std::string str);
@@ -114,6 +91,8 @@ namespace imsrg_util
  Operator VCentralCoulomb_Op( ModelSpace& modelspace, int lmax=99999 );
 
  Operator AxialCharge_Op( ModelSpace& modelspace );
+
+ Operator TViolatingPotential_Op( ModelSpace& modelspace, std::vector<double> LECs );
 
  Operator WoodsSaxon1b_Op( ModelSpace& modelspace, double V0, double R0, double a0);
  Operator HOtrap_Op( ModelSpace& modelspace, double hw_trap);
