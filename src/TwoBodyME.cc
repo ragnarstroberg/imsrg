@@ -156,8 +156,8 @@ void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, doub
    if (c>d) phase *= tbc_ket.GetKet(ket_ind).Phase(tbc_ket.J);
    GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) = phase * tbme;
    if (ch_ket != ch_bra) return;
-   if (hermitian) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = phase * tbme;
-   if (antihermitian) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = - phase * tbme;
+   if (hermitian and ch_bra==ch_ket) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = phase * tbme;
+   if (antihermitian and ch_bra==ch_ket) GetMatrix(ch_ket,ch_bra)(ket_ind,bra_ind) = - phase * tbme;
 }
 
 
@@ -185,8 +185,8 @@ void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int a, int b, int c, int d, do
    GetMatrix(ch_bra,ch_ket)(bra_ind,ket_ind) += phase * tbme;
    if (ch_bra!=ch_ket or ket_ind==bra_ind) return;
 //   if (ch_ket != ch_bra) return;
-   if (hermitian) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) += phase * tbme;
-   if (antihermitian) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) -=  phase * tbme;
+   if (hermitian and ch_bra==ch_ket) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) += phase * tbme;
+   if (antihermitian and ch_bra==ch_ket) GetMatrix(ch_bra,ch_ket)(ket_ind,bra_ind) -=  phase * tbme;
 }
 
 double TwoBodyME::GetTBME(int ch_bra, int ch_ket, Ket &bra, Ket &ket) const
@@ -210,10 +210,10 @@ double TwoBodyME::GetTBME_norm(int ch_bra, int ch_ket, int ibra, int iket) const
 void TwoBodyME::SetTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme)
 {
    GetMatrix(ch_bra,ch_ket)(ibra,iket) = tbme;
-   if (IsHermitian())
-      GetMatrix(ch_bra,ch_ket)(iket,ibra) = tbme;
-   else if(IsAntiHermitian())
-      GetMatrix(ch_bra,ch_ket)(iket,ibra) = -tbme;
+   if (IsHermitian() and ch_bra==ch_ket)
+      GetMatrix(ch_ket,ch_bra)(iket,ibra) = tbme;
+   else if(IsAntiHermitian() and ch_bra==ch_ket)
+      GetMatrix(ch_ket,ch_bra)(iket,ibra) = -tbme;
 }
 void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbme)
 {
@@ -227,9 +227,9 @@ void TwoBodyME::AddToTBME(int ch_bra, int ch_ket, int ibra, int iket, double tbm
 
    if (ch_bra==ch_ket and ibra!=iket)
    {
-     if (IsHermitian())
+     if (IsHermitian() and ch_bra==ch_ket)
        GetMatrix(ch_bra,ch_ket)(iket,ibra) += tbme;
-     else if(IsAntiHermitian())
+     else if(IsAntiHermitian() and ch_bra==ch_ket)
        GetMatrix(ch_bra,ch_ket)(iket,ibra) -= tbme;
    }
 }
