@@ -11,3 +11,4 @@ tmp*
 build/
 .vscode/
 .cache/
+CMakeUserPresets.json
