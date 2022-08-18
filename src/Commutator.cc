@@ -3478,8 +3478,10 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     // Now fill the matrices
     comm232_new_FillMatrices(Z, X, Y, dim_abc, dim_i, dim_klj, j2i, x_has_3, y_has_3, abc_list, klj_list_i, e_fermi, abc_occ_list, obc_orbits, recoupling_cache, recoupling_cache_lookup, X2MAT, Y2MAT, X3MAT, Y3MAT);
 
+    double tmatmul_start= omp_get_wtime();
     // now we do the mat mult
     ZMAT_list[obc_key] =  (  X2MAT * Y3MAT - Y2MAT * X3MAT  ) ;
+    Z.profiler.timer[std::string(__func__)+", mat mul"] += omp_get_wtime() - tmatmul_start;
 
   }// for iter_i in local one body channels
 
