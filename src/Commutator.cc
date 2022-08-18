@@ -3369,6 +3369,35 @@ static inline std::array<size_t, 5> Unhash_comm232_key2(size_t hash) {
 };
 } // namespace
 
+template <typename V>
+size_t GetVectorSize(const std::vector<V>& v) {
+  return v.size() * sizeof(V);
+}
+
+template <typename K, typename V>
+size_t GetMapSize(const std::map<K, std::vector<V>>& m) {
+  size_t x = 0;
+  x += m.size() * (sizeof(K) + sizeof(std::vector<V>));
+  for (const auto& y : m) {
+    x += GetVectorSize(y.second);
+  }
+  return x;
+}
+
+template <typename K, typename V>
+size_t GetMapSizeFlat(const std::unordered_map<K, V>& m) {
+  size_t x = 0;
+  x += m.size() * (sizeof(K) + sizeof(V));
+  return x;
+}
+
+template <typename K>
+size_t GetSetSizeFlat(const std::unordered_set<K>& m) {
+  size_t x = 0;
+  x += m.size() * (sizeof(K));
+  return x;
+}
+
 //*****************************************************************************************
 //
 //  |         |
@@ -3402,6 +3431,7 @@ static inline std::array<size_t, 5> Unhash_comm232_key2(size_t hash) {
 // Now this is fine. The 223 commutator is taking all the time.
 void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
 {
+  size_t lookups_size = 0;
   double tstart = omp_get_wtime();
 //  auto& X2 = X.TwoBody;
   auto& X3 = X.ThreeBody;
@@ -3426,6 +3456,8 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
   std::map<std::array<int,3>,std::vector<size_t>> local_one_body_channels; //  maps {j,parity,tz} => vector of index_j 
   std::map<std::array<int,3>,std::vector<size_t>> external_local_one_body_channels; //  maps {j,parity,tz} => vector of index_j 
   comm232_new_Determine1BChannels(Z, Y, local_one_body_channels, external_local_one_body_channels);
+  lookups_size += GetMapSize(local_one_body_channels);
+  lookups_size += GetMapSize(external_local_one_body_channels);
   
   // next, figure out which three-body states |klj`> and |abc`> exist, make a list, and give them an
   // index for where they'll sit in the matrix
@@ -3435,8 +3467,11 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
   std::vector<std::array<int,3>> obc_keys;
   for ( auto& iter_i : external_local_one_body_channels) obc_keys.push_back(iter_i.first);
   size_t nkeys = obc_keys.size();
+  lookups_size += GetVectorSize(obc_keys);
 
   comm232_new_Populate1BChannel(Z, Y, e_fermi, local_one_body_channels, external_local_one_body_channels, obc_keys, klj_list, ZMAT_list);
+
+  lookups_size += GetMapSize(klj_list);
 
   Z.modelspace->PreCalculateSixJ(); // if this has already been done, this does nothing.
   // This loop is what takes all the time.
@@ -3455,6 +3490,8 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     std::vector<size_t> abc_list; // keep track of which klj states should go in the abc loop
     std::vector<double> abc_occ_list;
     comm232_new_Determine3BStatesIn1BChannel(Y, Z, klj_list, obc_key, abc_list, abc_occ_list);
+    lookups_size += GetVectorSize(abc_list);
+    lookups_size += GetVectorSize(abc_occ_list);
 
     size_t dim_i   = obc_orbits.size(); // how many sp states are in this jpt channel
     size_t dim_klj = klj_list[obc_key].size(); // how many 3-body pph states in this jpt channel
@@ -3472,11 +3509,14 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
    //figure out which recouplings we'll need when filling the matrices
     std::unordered_set<size_t> kljJJ_needed; // we use a set to avoid repeats
     comm232_new_GenerateRequiredRecouplings(Z, Y, abc_list, klj_list_i, e_fermi, dim_abc, dim_klj, kljJJ_needed);
+    lookups_size += GetSetSizeFlat(kljJJ_needed);
 
    // now compute the couplings once and store them in a hash table
    std::vector<double> recoupling_cache; // a vector storing all the relevant recoupling info
    std::unordered_map<size_t, size_t> recoupling_cache_lookup; // a lookup table so we can find the info easily
    comm232_new_ComputeRequiredRecouplings(Y, kljJJ_needed, recoupling_cache, recoupling_cache_lookup);
+   lookups_size += GetVectorSize(recoupling_cache);
+   lookups_size += GetMapSizeFlat(recoupling_cache_lookup);
 
     // Now fill the matrices
     comm232_new_FillMatrices(Z, X, Y, dim_abc, dim_i, dim_klj, j2i, x_has_3, y_has_3, abc_list, klj_list_i, e_fermi, abc_occ_list, obc_orbits, recoupling_cache, recoupling_cache_lookup, X2MAT, Y2MAT, X3MAT, Y3MAT);
@@ -3488,6 +3528,8 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     Z.profiler.timer[std::string(__func__)+", loop body"] += omp_get_wtime() - tloopbody_start;
 
   }// for iter_i in local one body channels
+
+  std::cout << "Prestoring all lookups would require " << lookups_size / (1024.0 * 1024.0) << " MB\n";
 
   // now we need to unpack all that mess and store it in Z
   comm232_new_Unpack2BResult(X, Y, nch, external_local_one_body_channels, klj_list, ZMAT_list, Z);
