@@ -3445,6 +3445,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
   // #pragma omp parallel for schedule(dynamic,1) 
   for ( size_t ikey=0; ikey<nkeys; ikey++ )
   {
+    double tloopbody_start= omp_get_wtime();
 
     const auto& obc_key = obc_keys[ikey]; // this is an array {j2,parity,tz2}
     int j2i = obc_key[0];
@@ -3460,11 +3461,13 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     size_t dim_abc = abc_list.size(); // how many 3-body states which contribute to the |abc`> sum
 
 
+    double tmatalloc_start= omp_get_wtime();
     // Now allocate the matrices in this channel
     arma::mat X2MAT(dim_i,   dim_abc, arma::fill::zeros);
     arma::mat Y2MAT(dim_i,   dim_abc, arma::fill::zeros);
     arma::mat X3MAT(dim_abc, dim_klj, arma::fill::zeros);
     arma::mat Y3MAT(dim_abc, dim_klj, arma::fill::zeros);
+    Z.profiler.timer[std::string(__func__)+", mat alloc"] += omp_get_wtime() - tmatalloc_start;
 
    //figure out which recouplings we'll need when filling the matrices
     std::unordered_set<size_t> kljJJ_needed; // we use a set to avoid repeats
@@ -3482,6 +3485,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     // now we do the mat mult
     ZMAT_list[obc_key] =  (  X2MAT * Y3MAT - Y2MAT * X3MAT  ) ;
     Z.profiler.timer[std::string(__func__)+", mat mul"] += omp_get_wtime() - tmatmul_start;
+    Z.profiler.timer[std::string(__func__)+", loop body"] += omp_get_wtime() - tloopbody_start;
 
   }// for iter_i in local one body channels
 
