@@ -92,7 +92,9 @@ int main(int argc, char** argv)
   op3.ThreeBody.SwitchToPN_and_discard();
 
   for (int i = 0; i < num_comms; i+=1){
+    std::cout << "Evaluating commutator " << i << "\n";
     Commutator::comm232ss_new(op1, op2, op3);
+    std::cout << "Evaluated commutator " << i << "\n";
   }
 
 
