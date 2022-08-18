@@ -43,6 +43,8 @@ add_subdirectory(armadillo)
 add_subdirectory(half)
 add_subdirectory(boost_src)
 
+add_subdirectory(profiling)
+
 if(IMSRG_BUILD_PYTHON_BINDINGS)
     add_subdirectory(pybind11)
 endif()
