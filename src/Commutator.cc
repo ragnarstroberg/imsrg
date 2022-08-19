@@ -3904,11 +3904,43 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         X2MAT(ind_i,ind_abc) = -sqrt( (2*Jab+1.)) * occ_abc*  X.TwoBody.GetTBME_J(Jab,c,i,a,b);
         Y2MAT(ind_i,ind_abc) = -sqrt( (2*Jab+1.)) * occ_abc*  Y.TwoBody.GetTBME_J(Jab,c,i,a,b);
       }// for ind_i
+    }
 
-
-      // now the 3 body part
+    size_t max_num_threads = omp_get_max_threads();
+    // Each thread makes on average 10 calls to the runtime per commutator.
+    // This is fairly low while allowing the guided scheduling to do its job.
+    size_t chunk_size = std::max((dim_abc * dim_klj) / max_num_threads / 10, 1UL);
+    // now the 3 body part
+    #pragma omp parallel for schedule(guided, chunk_size) collapse(2)
+    for (size_t ind_abc=0; ind_abc<dim_abc; ind_abc++) // rows of X2MAT
+    {
       for (size_t ind_klj=0; ind_klj<dim_klj; ind_klj++)
       {
+        // For abc
+        auto& abcJ = klj_list_i[ abc_list[ind_abc] ];
+        size_t a = abcJ[0];
+        size_t b = abcJ[1];
+        size_t c = abcJ[2];
+        int Jab  = abcJ[3];
+        Orbit& oa = Z.modelspace->GetOrbit(a);
+        Orbit& ob = Z.modelspace->GetOrbit(b);
+        Orbit& oc = Z.modelspace->GetOrbit(c);
+        // MH: Would be great if these checks were redundant.
+        if (!Y3.IsOrbitIn3BodyEMaxTruncation(oa)) continue;
+        if (!Y3.IsOrbitIn3BodyEMaxTruncation(ob)) continue;
+        if (!Y3.IsOrbitIn3BodyEMaxTruncation(oc)) continue;
+        int j2c = oc.j2;
+        double jc = 0.5 * j2c;
+        double occ_abc = abc_occ_list[ind_abc]; // TODO: we can probably incorporate that hat factor with the occupation factor
+
+        double de_a = std::abs( 2*oa.n + oa.l - e_fermi.at(oa.tz2));
+        double de_b = std::abs( 2*ob.n + ob.l - e_fermi.at(ob.tz2));
+        double de_c = std::abs( 2*oc.n + oc.l - e_fermi.at(oc.tz2));
+        double occnat_a = oa.occ_nat;
+        double occnat_b = ob.occ_nat;
+        double occnat_c = oc.occ_nat;
+
+        // For ilj
         // <abi Jab twoJ | X | klc Jkl twoJ >
         auto& kljJ = klj_list_i[ ind_klj ];
         size_t k = kljJ[0];
@@ -3918,6 +3950,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         Orbit& oj = Z.modelspace->GetOrbit(j);
         Orbit& ok = Z.modelspace->GetOrbit(k);
         Orbit& ol = Z.modelspace->GetOrbit(l);
+        // MH: Would be great if these checks were redundant.
         if (!Y3.IsOrbitIn3BodyEMaxTruncation(oj)) continue;
         if (!Y3.IsOrbitIn3BodyEMaxTruncation(ok)) continue;
         if (!Y3.IsOrbitIn3BodyEMaxTruncation(ol)) continue;
@@ -3933,6 +3966,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
         double occnat_k = ok.occ_nat;
         double occnat_l = ol.occ_nat;
         // Are these checks redundant?
+        // MH: Would be great if these checks were redundant.
         if ( (de_a + de_b + de_j) > Z.modelspace->GetdE3max() ) continue;
         if ( (de_k + de_l + de_c) > Z.modelspace->GetdE3max() ) continue;
         if ( (occnat_a*(1-occnat_a) * occnat_b*(1-occnat_b) * occnat_j*(1-occnat_j) ) < Z.modelspace->GetOccNat3Cut() ) continue;
