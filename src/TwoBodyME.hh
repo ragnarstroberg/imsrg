@@ -153,6 +153,7 @@ class TwoBodyME
   void Symmetrize();
   void AntiSymmetrize();
   void Eye();
+  void PrintAllMatrices() const;
   void PrintMatrix(size_t chbra,size_t chket) const { MatEl.at({chbra,chket}).print();};
   int Dimension();
   int size();

@@ -337,6 +337,11 @@ namespace imsrg_util
           std::istringstream( opnamesplit[i] ) >> tmp;
           LECs.push_back(tmp);
         }
+        if (LECs.size() < 3)
+        {
+          std::cout << "Uh oh. You didn't specify enough LECs. I'm giving you an empy operator instead." << std::endl;
+          return theop;
+        }
         theop = TViolatingPotential_Op( modelspace, LECs );
       }
       else //need to remove from the list

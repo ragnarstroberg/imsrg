@@ -685,6 +685,16 @@ void TwoBodyME::Eye()
 }
 
 
+void TwoBodyME::PrintAllMatrices() const
+{
+  for ( auto& itmat : MatEl )
+  {
+    std::cout << "ch_bra, ch_ket : " << itmat.first[0] << " " << itmat.first[1] << std::endl << itmat.second << std::endl << std::endl;
+  }
+}
+
+
+
 int TwoBodyME::Dimension()
 {
    int dim = 0;
