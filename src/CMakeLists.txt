@@ -24,7 +24,8 @@ project(imsrg++ VERSION 0.1.0)
 find_package(OpenMP REQUIRED)
 find_package(BLAS REQUIRED)
 find_package(GSL REQUIRED)
-find_package(Boost REQUIRED COMPONENTS iostreams)
+find_package(Boost REQUIRED)
+find_package(ZLIB REQUIRED)
 
 
 set(CMAKE_CXX_STANDARD 11)
@@ -40,6 +41,11 @@ endif()
 
 add_subdirectory(armadillo)
 add_subdirectory(half)
+
+add_subdirectory(boost_src)
+
+add_subdirectory(profiling)
+
 
 if(IMSRG_BUILD_PYTHON_BINDINGS)
     add_subdirectory(pybind11)
@@ -161,7 +167,7 @@ add_library(
 target_link_libraries(
     ThreeBodyStorage_no2b
     PUBLIC
-    Boost::iostreams
+    IMSRGBoostZip
     HalfPrecision
     ModelSpace
     ThreeBodyStorage
@@ -177,7 +183,7 @@ add_library(
 target_link_libraries(
     ThreeBodyStorage_mono
     PUBLIC
-    Boost::iostreams
+    IMSRGBoostZip
     HalfPrecision
     ModelSpace
     ThreeBodyStorage
@@ -271,7 +277,7 @@ target_link_libraries(
     ThreeBodyME
     PRIVATE
     OpenMP::OpenMP_CXX
-    Boost::iostreams
+    IMSRGBoostZip
     AngMom
     PhysicalConstants
     Version

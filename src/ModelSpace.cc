@@ -1502,6 +1502,16 @@ size_t ModelSpace::Ket3IndexHash(size_t p, size_t q, size_t r, size_t Jpq)
 }
 
 
+ThreeBodyChannel& ModelSpace::GetThreeBodyChannel(int ch) const
+{
+   if (ch >= ThreeBodyChannels.size() )
+   {
+    std::ostringstream oss;
+    oss << __func__ << " ch " << ch << "  >= ThreeBodyChannels.size() = " << ThreeBodyChannels.size();
+    throw std::domain_error( oss.str() );
+   } 
+   return (ThreeBodyChannel&) ThreeBodyChannels[ch];
+}
 
 size_t ModelSpace::GetThreeBodyChannelIndex(int twoJ, int parity, int twoTz )
 {

@@ -204,9 +204,29 @@ bool ThreeBodyStorage::IsKetInEMaxTruncations(size_t a, size_t b, size_t c) cons
   return true;
 }
 
+bool ThreeBodyStorage::IsOrbitIn3BodyEMaxTruncation(size_t a) const 
+{
+  const Orbit& oa = modelspace->GetOrbit(a);
+
+  return IsOrbitIn3BodyEMaxTruncation(oa);
+}
+
+bool ThreeBodyStorage::IsOrbitIn3BodyEMaxTruncation(const Orbit& oa) const 
+{
+
+  int e_a = oa.n * 2 + oa.l;
+
+  // Check against emax 3-body cut.
+  return e_a <= modelspace->GetEMax3Body();
+}
+
 size_t ThreeBodyStorage::GetKetIndex_withRecoupling( int Jab_in, int twoJ, size_t a_in, size_t b_in, size_t c_in, std::vector<size_t>& iket , std::vector<double>& recouple) const
 {
   int a,b,c;
+  if (!IsKetInEMaxTruncations(a_in, b_in, c_in)) {
+    std::cout << "Warning: Accessing matrix element that is 0 by truncations.\n";
+    std::cout << a_in << ", " << b_in << ", " << c_in << "\n";
+  }
   Permutation recoupling_case = SortOrbits(a_in,b_in,c_in,a,b,c);
 
   int permutation_phase = PermutationPhase( recoupling_case );

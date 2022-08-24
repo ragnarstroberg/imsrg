@@ -1332,8 +1332,8 @@ ThreeBodyME HartreeFock::GetTransformed3B( Operator& OpIn )
   std::vector<size_t> chbra_list,chket_list;
   for ( auto& itmat : hf3bme.Get_ch_start() )
   {
-    chbra_list.push_back( itmat.first[0] );
-    chket_list.push_back( itmat.first[1] );
+    chbra_list.push_back( itmat.first.ch_bra );
+    chket_list.push_back( itmat.first.ch_ket );
   }
   size_t nch3 = chbra_list.size();
   #pragma omp parallel for schedule(dynamic,1)

@@ -211,7 +211,9 @@ class Operator
   void ScaleFermiDirac(Operator& H, double T, double Efermi);
 
   void PrintOneBody() const {OneBody.print();};
+  void PrintTwoBody() const {TwoBody.PrintAllMatrices() ;};
   void PrintTwoBody(int ch) const {TwoBody.PrintMatrix(ch,ch);};
+  void PrintTwoBody(int ch_bra, int ch_ket) const {TwoBody.PrintMatrix(ch_bra,ch_ket);};
 
 //  arma::vec GetMP2_Impacts() const;
 };

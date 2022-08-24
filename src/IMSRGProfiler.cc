@@ -1,4 +1,5 @@
 #include "IMSRGProfiler.hh"
+#include <algorithm>
 #include <sys/time.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -81,10 +82,15 @@ void IMSRGProfiler::PrintTimes()
    
    std::cout << "====================== TIMES (s) ====================" << std::endl;
    std::cout.setf(std::ios::fixed);
+   size_t max_func_length = 40;
+   for ( auto it : timer ) {
+    max_func_length = std::max( it.first.size(), max_func_length);
+   }
+   max_func_length += 5;
    for ( auto it : timer )
    {
      int nfill = (int) (20 * std::min( 1.0, it.second / time_tot["real"]));
-     std::cout << std::setw(40) << std::left << it.first + ":  " << std::setw(12) << std::setprecision(5) << std::right << it.second;
+     std::cout << std::setw(max_func_length) << std::left << it.first + ":  " << std::setw(12) << std::setprecision(5) << std::right << it.second;
      std::cout << " (" << std::setw(4) << std::setprecision(1) << 100*it.second / time_tot["real"] << "%) |";
      for (int ifill=0; ifill<nfill; ifill++) std::cout << "*";
      for (int ifill=nfill; ifill<20; ifill++) std::cout << " ";
