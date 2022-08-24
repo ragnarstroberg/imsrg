@@ -1333,14 +1333,28 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   // Permutations of indices which are needed to produce antisymmetrized matrix elements  P(ij/k) |ijk> = |ijk> - |kji> - |ikj>
   const std::array< ThreeBodyStorage::Permutation,3> index_perms = { ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
 
-  std::vector< std::array<size_t,2> > bra_ket_channels;
+
+  std::vector< std::array<size_t,3> > bra_ket_channels;
   for ( auto& it : Z.ThreeBody.Get_ch_start() )
   {
-     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+     ThreeBodyChannel& Tbc_bra = Z.modelspace->GetThreeBodyChannel( it.first.ch_bra);
+     size_t nbras3 = Tbc_bra.GetNumberKets();
+     for (size_t ibra=0;ibra<nbras3; ibra++)
+     {
+       bra_ket_channels.push_back( { it.first.ch_bra,it.first.ch_ket, static_cast<size_t>(ibra) } ); // (ch_bra, ch_ket,ibra)
+     }
   }
-
-
   size_t n_bra_ket_ch = bra_ket_channels.size();
+
+
+//  std::vector< std::array<size_t,2> > bra_ket_channels;
+//  for ( auto& it : Z.ThreeBody.Get_ch_start() )
+//  {
+//     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+//  }
+
+
+//  size_t n_bra_ket_ch = bra_ket_channels.size();
 //  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
 //  for (size_t ch3=0; ch3<nch3; ch3++)
   #pragma omp parallel for schedule(dynamic,1)
@@ -1348,6 +1362,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
   {
     size_t ch3bra = bra_ket_channels[ibra_ket][0];
     size_t ch3ket = bra_ket_channels[ibra_ket][1];
+    size_t ibra   = bra_ket_channels[ibra_ket][2];
+
     auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch3bra);
     auto& Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch3ket);
     size_t nbras3 = Tbc_bra.GetNumberKets();
@@ -1355,8 +1371,8 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
     int twoJ = Tbc_bra.twoJ; // Scalar commutator so J is the same in bra and ket channel
     double Jtot = 0.5 * twoJ;
 
-    for (size_t ibra=0; ibra<nbras3; ibra++)
-    {
+//    for (size_t ibra=0; ibra<nbras3; ibra++)
+//    {
       auto& bra = Tbc_bra.GetKet(ibra);
       size_t i = bra.p;
       size_t j = bra.q;
@@ -1488,7 +1504,7 @@ void comm223ss( const Operator& X, const Operator& Y, Operator& Z )
 
         Z3.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket, zijklmn );  // this needs to be modified for beta decay
       }// for iket
-    }// for ibra
+//    }// for ibra
   }// for ch3
 
 }//comm233ss
@@ -1511,14 +1527,28 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
   // Permutations of indices which are needed to produce antisymmetrized matrix elements  P(ij/k) |ijk> = |ijk> - |kji> - |ikj>
   const std::array< ThreeBodyStorage::Permutation,3> index_perms = { ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
 
-  std::vector< std::array<size_t,2> > bra_ket_channels;
+
+  std::vector< std::array<size_t,3> > bra_ket_channels;
   for ( auto& it : Z.ThreeBody.Get_ch_start() )
   {
-     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+     ThreeBodyChannel& Tbc_bra = Z.modelspace->GetThreeBodyChannel( it.first.ch_bra);
+     size_t nbras3 = Tbc_bra.GetNumberKets();
+     for (size_t ibra=0;ibra<nbras3; ibra++)
+     {
+       bra_ket_channels.push_back( { it.first.ch_bra,it.first.ch_ket, static_cast<size_t>(ibra) } ); // (ch_bra, ch_ket,ibra)
+     }
   }
 
-
   size_t n_bra_ket_ch = bra_ket_channels.size();
+
+//  std::vector< std::array<size_t,2> > bra_ket_channels;
+//  for ( auto& it : Z.ThreeBody.Get_ch_start() )
+//  {
+//     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+//  }
+
+
+//  size_t n_bra_ket_ch = bra_ket_channels.size();
 //  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
 //  for (size_t ch3=0; ch3<nch3; ch3++)
   #pragma omp parallel for schedule(dynamic,1)
@@ -1526,6 +1556,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
   {
     size_t ch3bra = bra_ket_channels[ibra_ket][0];
     size_t ch3ket = bra_ket_channels[ibra_ket][1];
+    size_t ibra   = bra_ket_channels[ibra_ket][2];
     auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch3bra);
     auto& Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch3ket);
     size_t nbras3 = Tbc_bra.GetNumberKets();
@@ -1533,8 +1564,8 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
     int twoJ = Tbc_bra.twoJ; // Scalar commutator so J is the same in bra and ket channel
     double Jtot = 0.5 * twoJ;
 
-    for (size_t ibra=0; ibra<nbras3; ibra++)
-    {
+//    for (size_t ibra=0; ibra<nbras3; ibra++)
+//    {
       auto& bra = Tbc_bra.GetKet(ibra);
       size_t i = bra.p;
       size_t j = bra.q;
@@ -1666,7 +1697,7 @@ void comm233_pp_hhss( const Operator& X, const Operator& Y, Operator& Z )
 
         Z3.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket, zijklmn );  // this needs to be modified for beta decay
       }// for iket
-    }// for ibra
+//    }// for ibra
   }// for ch3
 
 }//comm233_pp_hhss
@@ -1689,15 +1720,31 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
   // Permutations of indices which are needed to produce antisymmetrized matrix elements  P(ij/k) |ijk> = |ijk> - |kji> - |ikj>
   const std::array< ThreeBodyStorage::Permutation,3> index_perms = { ThreeBodyStorage::ABC, ThreeBodyStorage::CBA, ThreeBodyStorage::ACB};
 
-  std::vector< std::array<size_t,2> > bra_ket_channels;
+
+
+  std::vector< std::array<size_t,3> > bra_ket_channels;
   for ( auto& it : Z.ThreeBody.Get_ch_start() )
   {
-     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+     ThreeBodyChannel& Tbc_bra = Z.modelspace->GetThreeBodyChannel( it.first.ch_bra);
+     size_t nbras3 = Tbc_bra.GetNumberKets();
+     for (size_t ibra=0;ibra<nbras3; ibra++)
+     {
+       bra_ket_channels.push_back( { it.first.ch_bra,it.first.ch_ket, static_cast<size_t>(ibra) } ); // (ch_bra, ch_ket,ibra)
+     }
   }
+  size_t n_bra_ket_ch = bra_ket_channels.size();
+
+
+
+//  std::vector< std::array<size_t,2> > bra_ket_channels;
+//  for ( auto& it : Z.ThreeBody.Get_ch_start() )
+//  {
+//     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+//  }
 
 //  Z.modelspace->PreCalculateNineJ();
 
-  size_t n_bra_ket_ch = bra_ket_channels.size();
+//  size_t n_bra_ket_ch = bra_ket_channels.size();
 //  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
 //  for (size_t ch3=0; ch3<nch3; ch3++)
 //  #pragma omp parallel for schedule(dynamic,1)  /// The 9js used here aren't generated by PreCalculateNineJ, so the parallel loop causes trouble.
@@ -1705,6 +1752,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
   {
     size_t ch3bra = bra_ket_channels[ibra_ket][0];
     size_t ch3ket = bra_ket_channels[ibra_ket][1];
+    size_t ibra   = bra_ket_channels[ibra_ket][2];
     auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch3bra);
     auto& Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch3ket);
     size_t nbras3 = Tbc_bra.GetNumberKets();
@@ -1712,8 +1760,8 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
     int twoJ = Tbc_bra.twoJ; // Scalar commutator so J is the same in bra and ket channel
     double Jtot = 0.5 * twoJ;
 
-    for (size_t ibra=0; ibra<nbras3; ibra++)
-    {
+//    for (size_t ibra=0; ibra<nbras3; ibra++)
+//    {
       auto& bra = Tbc_bra.GetKet(ibra);
       size_t i = bra.p;
       size_t j = bra.q;
@@ -1835,7 +1883,7 @@ void comm233_phss( const Operator& X, const Operator& Y, Operator& Z )
         }//perm_ijk
         Z3.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket, zijklmn );  // this needs to be modified for beta decay
       }// for iket
-    }//ibra
+//    }//ibra
   }//ch
   std::cout << "Ref " << __func__ << " Done" << std::endl;
 }//comm233_phss
@@ -1852,14 +1900,27 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
   auto& Z3 = Z.ThreeBody;
 
 
-  std::vector< std::array<size_t,2> > bra_ket_channels;
+  std::vector< std::array<size_t,3> > bra_ket_channels;
   for ( auto& it : Z.ThreeBody.Get_ch_start() )
   {
-     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+     ThreeBodyChannel& Tbc_bra = Z.modelspace->GetThreeBodyChannel( it.first.ch_bra);
+     size_t nbras3 = Tbc_bra.GetNumberKets();
+     for (size_t ibra=0;ibra<nbras3; ibra++)
+     {
+       bra_ket_channels.push_back( { it.first.ch_bra,it.first.ch_ket, static_cast<size_t>(ibra) } ); // (ch_bra, ch_ket,ibra)
+     }
   }
-
-
   size_t n_bra_ket_ch = bra_ket_channels.size();
+
+
+//  std::vector< std::array<size_t,2> > bra_ket_channels;
+//  for ( auto& it : Z.ThreeBody.Get_ch_start() )
+//  {
+//     bra_ket_channels.push_back( { it.first[0],it.first[1] } ); // (ch_bra, ch_ket)
+//  }
+//
+//
+//  size_t n_bra_ket_ch = bra_ket_channels.size();
 //  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
 //  for (size_t ch3=0; ch3<nch3; ch3++)
   #pragma omp parallel for schedule(dynamic,1)
@@ -1867,13 +1928,14 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
   {
     size_t ch3bra = bra_ket_channels[ibra_ket][0];
     size_t ch3ket = bra_ket_channels[ibra_ket][1];
+    size_t ibra   = bra_ket_channels[ibra_ket][2];
     auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch3bra);
     auto& Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch3ket);
     size_t nbras3 = Tbc_bra.GetNumberKets();
     size_t nkets3 = Tbc_ket.GetNumberKets();
 
-    for (size_t ibra=0; ibra<nbras3; ibra++)
-    {
+//    for (size_t ibra=0; ibra<nbras3; ibra++)
+//    {
 
       size_t iket_max = nkets3;
       if (ch3bra == ch3ket) iket_max = ibra;
@@ -1902,7 +1964,7 @@ void comm333_ppp_hhhss( const Operator& X, const Operator& Y, Operator& Z )
        Z3.AddToME_pn_ch( ch3bra,ch3ket,ibra,iket, zijklmn );  // this needs to be modified for beta decay
 
       }//iket : lmn
-    }//ibra : ijk
+//    }//ibra : ijk
   }// chbra, chket
 
 
