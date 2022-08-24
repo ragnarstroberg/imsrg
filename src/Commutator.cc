@@ -256,8 +256,8 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        {
         //one of the two most important IMSRG(3) terms
         std::cout << " comm232 " << std::endl;
-        // comm232ss(X, Y, Z);   // this is the slowest n^7 term
-        comm232ss_new(X, Y, Z);   // this is the slowest n^7 term
+         comm232ss(X, Y, Z);   // this is the slowest n^7 term
+        //comm232ss_new(X, Y, Z);   // this is the slowest n^7 term
 //       comm232ss_debug(X, Y, Z);   // this is the slowest n^7 term
        }
 
@@ -2888,6 +2888,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 // This is the time hog of the n^7 scaling terms   (seems to be doing better...)
 // Now this is fine. The 223 commutator is taking all the time.
+/*
 void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
@@ -3354,7 +3355,9 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 //  if (Z.modelspace->scalar3b_transform_first_pass)   Z.profiler.timer["comm232_first_pass"] += omp_get_wtime() - tstart;
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
+*/
 
+//// Begin modifications to comm232ss by Matthias.
 namespace {
 static inline size_t Hash_comm232_key2(const std::array<size_t, 5> &kljJJ) {
   return kljJJ[0] + (kljJJ[1] << 8) + (kljJJ[2] << 16) + (kljJJ[3] << 24) +
@@ -3371,6 +3374,7 @@ static inline std::array<size_t, 5> Unhash_comm232_key2(size_t hash) {
 };
 } // namespace
 
+/// These should probably be moved to some other place...
 template <typename V>
 size_t GetVectorSize(const std::vector<V>& v) {
   return v.size() * sizeof(V);
@@ -3431,7 +3435,8 @@ size_t GetSetSizeFlat(const std::unordered_set<K>& m) {
 //
 // This is the time hog of the n^7 scaling terms   (seems to be doing better...)
 // Now this is fine. The 223 commutator is taking all the time.
-void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
+//void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
+void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   size_t lookups_size = 0;
   double tstart = omp_get_wtime();
@@ -3506,7 +3511,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     arma::mat Y2MAT(dim_i,   dim_abc, arma::fill::zeros);
     arma::mat X3MAT(dim_abc, dim_klj, arma::fill::zeros);
     arma::mat Y3MAT(dim_abc, dim_klj, arma::fill::zeros);
-    Z.profiler.timer[std::string(__func__)+", mat alloc"] += omp_get_wtime() - tmatalloc_start;
+    Z.profiler.timer["_" + std::string(__func__)+", mat alloc"] += omp_get_wtime() - tmatalloc_start;
 
    //figure out which recouplings we'll need when filling the matrices
     std::unordered_set<size_t> kljJJ_needed; // we use a set to avoid repeats
@@ -3526,8 +3531,8 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
     double tmatmul_start= omp_get_wtime();
     // now we do the mat mult
     ZMAT_list[obc_key] =  (  X2MAT * Y3MAT - Y2MAT * X3MAT  ) ;
-    Z.profiler.timer[std::string(__func__)+", mat mul"] += omp_get_wtime() - tmatmul_start;
-    Z.profiler.timer[std::string(__func__)+", loop body"] += omp_get_wtime() - tloopbody_start;
+    Z.profiler.timer["_" + std::string(__func__)+", mat mul"] += omp_get_wtime() - tmatmul_start;
+    Z.profiler.timer["_" + std::string(__func__)+", loop body"] += omp_get_wtime() - tloopbody_start;
 
   }// for iter_i in local one body channels
 
@@ -4129,7 +4134,7 @@ void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
   }
 
 
-
+//// END additions to comm232ss by Matthias
 
 
 void comm232ss_debug( const Operator& X, const Operator& Y, Operator& Z )
