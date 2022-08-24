@@ -206,7 +206,9 @@ Operator CommutatorScalarScalar( const Operator& X, const Operator& Y)
        if ( comm_term_on["comm133ss"])
        {
         //important for suppressing off-diagonal H3
+
         // std::cout << " comm133 " << std::endl;
+        
         comm133ss(X, Y, Z);  // scales as n^7, but really more like n^6
        }
    if ((X.Norm() > threebody_threshold) || (Y.Norm() > threebody_threshold)) 
