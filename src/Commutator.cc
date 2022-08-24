@@ -5131,7 +5131,7 @@ void comm332_pphhss( const Operator& X, const Operator& Y, Operator& Z )
               }
               if ( AngMom::Triangle( Jcd, ji, 0.5*twoJp) and AngMom::Triangle( Jab,jj,0.5*twoJp) )
               {
-                 sixj_ij = Z.modelspace->GetSixJ(Jcd,Jab,J_ph, jj,ji,0.5*twoJp);
+                 sixj_ji = Z.modelspace->GetSixJ(Jcd,Jab,J_ph, jj,ji,0.5*twoJp);
               }
 
 //              sixj_ij_list.push_back( (twoJp+1) * Z.modelspace->GetSixJ(Jcd,Jab,J_ph, ji,jj,0.5*twoJp) * Z.modelspace->phase((j2i+twoJp)/2) );
