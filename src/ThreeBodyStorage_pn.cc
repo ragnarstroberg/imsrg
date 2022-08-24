@@ -1,5 +1,6 @@
 
 #include "AngMom.hh"
+#include "ThreeBodyStorage.hh"
 #include "ThreeBodyStorage_pn.hh"
 
 

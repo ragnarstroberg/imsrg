@@ -1,11 +1,31 @@
 cmake_minimum_required(VERSION 3.18)
 
+option(IMSRG_BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
+
+# Determine if imsrg++ is built as a subproject (using add_subdirectory)
+# or if it is the main project.
+if(NOT DEFINED IMSRGPLUSPLUS_MAIN_PROJECT)
+  set(IMSRGPLUSPLUS_MAIN_PROJECT OFF)
+  if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(IMSRGPLUSPLUS_MAIN_PROJECT ON)
+    message(STATUS "CMake version: ${CMAKE_VERSION}")
+  endif()
+endif()
+
+# Set the default CMAKE_BUILD_TYPE to Release.
+# This should be done before the project command since the latter can set
+# CMAKE_BUILD_TYPE itself (it does so for nmake).
+if(IMSRGPLUSPLUS_MAIN_PROJECT AND NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 project(imsrg++ VERSION 0.1.0)
 
 find_package(OpenMP REQUIRED)
 find_package(BLAS REQUIRED)
 find_package(GSL REQUIRED)
-find_package(Boost REQUIRED COMPONENTS iostreams)
+find_package(Boost REQUIRED)
+find_package(ZLIB REQUIRED)
 
 
 set(CMAKE_CXX_STANDARD 11)
@@ -13,13 +33,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(IMSRGPLUSPLUS_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-# We only need this for the Python bindings.
-# In principle, everything should be faster if we could avoid this.
-set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+if(IMSRG_BUILD_PYTHON_BINDINGS)
+    # We only need this for the Python bindings.
+    # In principle, everything should be faster if we could avoid this.
+    set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+endif()
 
 add_subdirectory(armadillo)
 add_subdirectory(half)
-add_subdirectory(pybind11)
+add_subdirectory(boost_src)
+
+add_subdirectory(profiling)
+
+if(IMSRG_BUILD_PYTHON_BINDINGS)
+    add_subdirectory(pybind11)
+endif()
 
 # Add a custom command that produces version.cpp, plus
 # a dummy output that's not actually produced, in order
@@ -29,17 +57,6 @@ ADD_CUSTOM_COMMAND(
            ${CMAKE_CURRENT_BINARY_DIR}/_version.cc
     COMMAND ${CMAKE_COMMAND} -P
             ${CMAKE_CURRENT_SOURCE_DIR}/git_version.cmake)
-
-# At some point this should not be here because
-# this belongs in a CMake preset, not in the core CMake
-# build structure
-add_compile_options(
-    "-Wall"
-    "-Wextra"
-    "-Wno-comment"
-    # "-Werror"
-    "$<$<CONFIG:RELEASE>:-O3>"
-)
 
 add_library(
     AngMom
@@ -148,7 +165,7 @@ add_library(
 target_link_libraries(
     ThreeBodyStorage_no2b
     PUBLIC
-    Boost::iostreams
+    IMSRGBoostZip
     HalfPrecision
     ModelSpace
     ThreeBodyStorage
@@ -164,7 +181,7 @@ add_library(
 target_link_libraries(
     ThreeBodyStorage_mono
     PUBLIC
-    Boost::iostreams
+    IMSRGBoostZip
     HalfPrecision
     ModelSpace
     ThreeBodyStorage
@@ -258,7 +275,7 @@ target_link_libraries(
     ThreeBodyME
     PRIVATE
     OpenMP::OpenMP_CXX
-    Boost::iostreams
+    IMSRGBoostZip
     AngMom
     PhysicalConstants
     Version
@@ -498,9 +515,11 @@ target_link_libraries(
     OpenMP::OpenMP_CXX
 )
 
-pybind11_add_module(pyIMSRG pyIMSRG.cc)
-target_link_libraries(
-    pyIMSRG
-    PRIVATE
-    IMSRG
-)
+if(IMSRG_BUILD_PYTHON_BINDINGS)
+    pybind11_add_module(pyIMSRG pyIMSRG.cc)
+    target_link_libraries(
+        pyIMSRG
+        PRIVATE
+        IMSRG
+    )
+endif()
