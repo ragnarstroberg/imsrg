@@ -19,7 +19,6 @@ IMSRGSolver::~IMSRGSolver()
 }
 
 IMSRGSolver::IMSRGSolver()
-//    : rw(NULL),s(0),ds(0.1),ds_max(0.5),
     : s(0),ds(0.1),ds_max(0.5),
      norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),
      flowfile(""), n_omega_written(0),max_omega_written(500),magnus_adaptive(true),hunter_gatherer(false),perturbative_triples(false),
@@ -28,20 +27,15 @@ IMSRGSolver::IMSRGSolver()
 
 // Constructor
 IMSRGSolver::IMSRGSolver( Operator &H_in)
-//   : modelspace(H_in.GetModelSpace()),rw(NULL), H_0(&H_in), FlowingOps(1,H_in), Eta(H_in),
    : modelspace(H_in.GetModelSpace()), H_0(&H_in), FlowingOps(1,H_in), Eta(H_in),
     istep(0), s(0),ds(0.1),ds_max(0.5),
     smax(2.0), norm_domega(0.1), omega_norm_max(2.0),eta_criterion(1e-6),method("magnus_euler"),
     flowfile(""), n_omega_written(0),max_omega_written(500),magnus_adaptive(true),hunter_gatherer(false),perturbative_triples(false),
     pert_triples_this_omega(0),pert_triples_sum(0),ode_monitor(*this),ode_mode("H"),ode_e_abs(1e-6),ode_e_rel(1e-6)
 {
-//   std::cout << "  " << __FILE__ << " line " << __LINE__ << "  nops = " << Eta.profiler.counter["N_Operators"] << std::endl;
-//   std::cout << "   sizes of operator vectors:  FlowingOps " << FlowingOps.size() << " Omega " << Omega.size() << std::endl;
    Eta.Erase();
    Eta.SetAntiHermitian();
-//   Omega.push_back( Eta);
    Omega.emplace_back( Eta);
-//   std::cout << "  " << __FILE__ << " line " << __LINE__ << "  nops = " << Eta.profiler.counter["N_Operators"] << std::endl;
 }
 
 
@@ -53,24 +47,15 @@ void IMSRGSolver::NewOmega()
             << ",  memory usage = " << profiler.CheckMem()["RSS"]/1024./1024. << " GB";
   if ( perturbative_triples )  std::cout << "  pert. triples = " << pert_triples_this_omega << "   sum = " << pert_triples_sum;
   std::cout << std::endl;
-//  scratchdir = rw->GetScratchDir();
-//  if ((rw != NULL) and (rw->GetScratchDir() !=""))
   if (scratchdir !="")
   {
 
-//    char tmp[512];
-//    sprintf(tmp,"%s/OMEGA_%06d_%03d",rw->GetScratchDir().c_str(), getpid(), n_omega_written);
-//    std::string fname(tmp);
-//    std::ofstream ofs(fname, std::ios::binary);
-//    if ( rw->GetScratchDir().find("/dev/null") == std::string::npos )
     if ( scratchdir.find("/dev/null") == std::string::npos )
     {
       std::ostringstream filename;
-//      filename << rw->GetScratchDir().c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << n_omega_written;
       filename << scratchdir.c_str() << "/OMEGA_" << std::setw(6) << std::setfill('0') << getpid() << std::setw(3) << std::setfill('0') << n_omega_written;
       std::ofstream ofs(filename.str(), std::ios::binary);
       Omega.back().WriteBinary(ofs);
-  //    std::cout << "Omega written to file " << fname << "  written " << n_omega_written << " so far." << std::endl;
       std::cout << "Omega written to file " << filename.str() << "  written " << n_omega_written << " so far." << std::endl;
       if (n_omega_written > max_omega_written)
       {
@@ -134,9 +119,7 @@ void IMSRGSolver::SetHin( Operator & H_in)
 {
    modelspace = H_in.GetModelSpace();
    H_0 = &H_in;
-//   H_s = H_in;
    FlowingOps[0] = H_in;
-//   Eta = H_in;
    Eta = Operator( H_in);
    Eta.Erase();
    Eta.SetAntiHermitian();
@@ -232,7 +215,6 @@ void IMSRGSolver::Solve()
 
 void IMSRGSolver::UpdateEta()
 {
-//   generator.Update(&FlowingOps[0],&Eta);
    generator.Update(FlowingOps[0],Eta);
 }
 
@@ -241,15 +223,9 @@ void IMSRGSolver::Solve_magnus_euler()
 {
    istep = 0;
 
-//   if ( generator.GetType() == "rspace" ) { generator.modelspace = (Eta.modelspace); generator.SetRegulatorLength(800005.0); };
 
-//   generator.Update(&FlowingOps[0],&Eta);
    generator.Update(FlowingOps[0],Eta);
 
-//   if (generator.GetType() == "shell-model-atan")
-//   {
-//     generator.SetDenominatorCutoff(1.0); // do we need this?
-//   }
 
    Elast = H_0->ZeroBody;
    cumulative_error = 0;
@@ -301,8 +277,6 @@ void IMSRGSolver::Solve_magnus_euler()
      // exp(Omega_last)
      Omega.back() = Commutator::BCH_Product(Eta, Omega.back());
 
-     //      std::cout << " " << __FILE__ << " line " << __LINE__ << "  calling
-     //      Commutator::BCH_Transform" << std::endl;
      // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
      if ((Omega.size() + n_omega_written) < 2) {
        FlowingOps[0] = Commutator::BCH_Transform(*H_0, Omega.back());
@@ -310,9 +284,9 @@ void IMSRGSolver::Solve_magnus_euler()
        FlowingOps[0] = Commutator::BCH_Transform(H_saved, Omega.back());
      }
 
-     if (norm_eta < 1.0 and generator.GetType() == "shell-model-atan") {
-       generator.SetDenominatorCutoff(1e-6);
-     }
+//     if (norm_eta < 1.0 and generator.GetType() == "shell-model-atan") {
+//       generator.SetDenominatorCutoff(1e-6);
+//     }
 
      //      if ( generator.GetType() == "rspace" ) {
      //      generator.SetRegulatorLength(s); };
@@ -508,7 +482,7 @@ void IMSRGSolver::Solve_flow_RK4()
 //      if ( generator.GetType() == "rspace" ) { generator.SetRegulatorLength(s); };
 //      generator.Update(&FlowingOps[0],&Eta);
       generator.Update(FlowingOps[0],Eta);
-      cumulative_error += EstimateStepError();
+//      cumulative_error += EstimateStepError();
 
       // Write details of the flow
       WriteFlowStatus(flowfile);
@@ -964,6 +938,7 @@ void IMSRGSolver::CleanupScratch()
   }
 }
 
+// This doesn't really work all that well. Probably shouldn't use it.
 double IMSRGSolver::EstimateStepError()
 {
   double err = 0;
@@ -1001,30 +976,6 @@ double IMSRGSolver::EstimateBCHError( )
 }
 
 
-/*
-double IMSRGSolver::GetPerturbativeTriples()
-{
-  std::cout << __func__ << std::endl;
-  Operator Wbar( (*modelspace), 0,0,0,3);
-  Wbar.ThreeBody.SwitchToPN_and_discard();
-  Operator& omega = Omega.back();
-  Operator& Hs = FlowingOps[0];
-
-
-  Commutator::perturbative_triples = true;
-  Commutator::comm223ss( omega, Hs, Wbar);
-  Wbar.OneBody = Hs.OneBody;
-  Wbar.TwoBody = Hs.TwoBody;
-
-  pert_triples_this_omega = Wbar.GetMP2_3BEnergy();
-  pert_triples_sum += pert_triples_this_omega;
-  std::cout << "Adding " << pert_triples_this_omega << "  =>  " << pert_triples_sum << std::endl;
-
-//  return E3pert;
-  return pert_triples_sum;
-
-}
-*/
 
 double IMSRGSolver::GetPerturbativeTriples()
 {
@@ -1035,7 +986,6 @@ double IMSRGSolver::GetPerturbativeTriples()
 
   Operator& Hs = FlowingOps[0];
 
-//  Operator Htilde = Hs;
   Commutator::SetBCHSkipiEq1(true);
   Operator Htilde = Transform(*H_0);
   Commutator::SetBCHSkipiEq1(false);
@@ -1049,12 +999,7 @@ double IMSRGSolver::GetPerturbativeTriples()
   double pert_triples = Wbar.GetMP2_3BEnergy();
   std::cout << "I GOT pert_triples = " << std::setw(14) << std::setprecision(8) << pert_triples
             << "  size of omega is " << Omega.size() << std::endl;
-//  pert_triples_this_omega = Wbar.GetMP2_3BEnergy();
-//  pert_triples_sum += pert_triples_this_omega;
-//  std::cout << "Adding " << pert_triples_this_omega << "  =>  " << pert_triples_sum << std::endl;
-
-//  return E3pert;
-//  return pert_triples_sum;
+  Commutator::perturbative_triples = false; // turn it back off in case we want to do any more transformations
   return pert_triples;
 
 }
@@ -1083,11 +1028,7 @@ void IMSRGSolver::WriteFlowStatus(std::ostream& f)
         << std::setw(12) << std::setprecision(5) << s
         << std::setw(fwidth) << std::setprecision(fprecision) << H_s.ZeroBody
         << std::setw(fwidth) << std::setprecision(fprecision) << H_s.Norm()
-//        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.Trace( modelspace->GetAref(), modelspace->GetZref() )
         << std::setw(fwidth) << std::setprecision(fprecision) << cumulative_error
-//        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.OneBodyNorm()
-//        << std::setw(fwidth) << std::setprecision(fprecision) << H_s.TwoBodyNorm()
-//        << std::setw(fwidth) << std::setprecision(fprecision) << Omega.Norm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().OneBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().TwoBodyNorm()
         << std::setw(fwidth) << std::setprecision(fprecision) << Omega.back().ThreeBodyNorm()

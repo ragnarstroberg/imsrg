@@ -5973,15 +5973,30 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 //  double Y3NORM = Y3.Norm();
   bool x3_allocated = X3.IsAllocated();
   bool y3_allocated = Y3.IsAllocated();
+
+//  int max_n_threads = omp_get_num_threads();
+//  for (int i=0;i<max_n_threads; i++)
+//  {
+//    std::ostringstream oss;
+//    oss << "_" << __func__ << "_" << i ;
+//    Z.profiler.timer[ oss.str() ] = 0;
+//    Z.profiler.counter[ oss.str() ] = 0;
+//  }
+
 //  bool x3_allocated = X3.is_allocated;
 //  bool y3_allocated = Y3.is_allocated;
 //  if (X3NORM<1e-6 and Y3NORM<1e-6 ) return;
   Z.modelspace->PreCalculateSixJ(); // If this has already been done, this does nothing.
   size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
 //  #pragma omp parallel for schedule(dynamic,1) if (not Z.modelspace->scalar3b_transform_first_pass)
-  #pragma omp parallel for schedule(dynamic,1) 
+
+// TODO Identify when it helps to parallelize in the outer loop, and when it's better to give the threads to the matmult step.
+// Memory-wise, it's better to let the threads do mat mult
+// On my MacBook with 8 threads, linking against OpenBLAS, letting the matmult have the threads is better.
+//  #pragma omp parallel for schedule(dynamic,1) 
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
+    double t_internal = omp_get_wtime();
     auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
     int twoJ = Tbc.twoJ;
     size_t nkets = Tbc.GetNumberKets();
@@ -6003,6 +6018,9 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     }
     size_t nkets_kept = kets_kept.size();
 
+//    Z.profiler.timer["_" + std::string(__func__) + "_count_kept"] += omp_get_wtime() - t_internal;
+//    t_internal = omp_get_wtime();
+
 
     arma::mat X1MAT( nkets_kept, nkets_kept, arma::fill::zeros);
     arma::mat Y1MAT( nkets_kept, nkets_kept, arma::fill::zeros);
@@ -6010,100 +6028,68 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     arma::mat Y3MAT( nkets_kept, nkets_kept, arma::fill::zeros);
     arma::mat Z3MAT( nkets_kept, nkets_kept, arma::fill::zeros);
 
+
+
+//    Z.profiler.timer["_" + std::string(__func__) + "_allocate_matrices"] += omp_get_wtime() - t_internal;
+//    t_internal = omp_get_wtime();
+
     for (size_t index_bra=0; index_bra<nkets_kept; index_bra++)
     {
       size_t ibra = kets_kept[index_bra];
       Ket3& bra = Tbc.GetKet(ibra);
-      size_t i = bra.p;
-      size_t j = bra.q;
-      size_t k = bra.r;
-      Orbit& oi = Z.modelspace->GetOrbit(i);
-      Orbit& oj = Z.modelspace->GetOrbit(j);
-      Orbit& ok = Z.modelspace->GetOrbit(k);
       int Jij = bra.Jpq;
-      double d_ei = std::abs(2*oi.n + oi.l - e_fermi.at(oi.tz2));
-      double d_ej = std::abs(2*oj.n + oj.l - e_fermi.at(oj.tz2));
-      double d_ek = std::abs(2*ok.n + ok.l - e_fermi.at(ok.tz2));
-      double occnat_i = oi.occ_nat;
-      double occnat_j = oj.occ_nat;
-      double occnat_k = ok.occ_nat;
 
-
-//      for (auto a : X.OneBodyChannels.at({oi.l,oi.j2,oi.tz2}) )
-      for (auto a : X.GetOneBodyChannel(oi.l,oi.j2,oi.tz2) )
-      {
-        Orbit& oa = X.modelspace->GetOrbit(a);
-        double d_ea = std::abs(2*oa.n+oa.l - e_fermi.at(oa.tz2));
-        double occnat_a = oa.occ_nat;
-        if (  (d_ea+d_ej+d_ek ) > Z.modelspace->GetdE3max() ) continue;
-        if ( (occnat_a*(1-occnat_a) * occnat_j*(1-occnat_j) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) continue;
-        if (!Z3.IsKetValid(Jij, twoJ, a, j, k)) continue;
-
-        std::vector<size_t> ket_list;
-        std::vector<double> recouple_list;
-        
-//        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, a, j, k,  ket_list,  recouple_list );
-        Z3.GetKetIndex_withRecoupling( Jij, twoJ, a, j, k,  ket_list,  recouple_list );
-        for (size_t ilist=0; ilist<ket_list.size(); ilist++)
-        {
-          auto iter_find = kept_lookup.find( ket_list[ilist] );
-          if (iter_find == kept_lookup.end() ) continue;
-          size_t index_ket = iter_find->second;
-          double recouple = recouple_list[ilist];
-          X1MAT(index_bra,index_ket) += X1(i,a) * recouple;
-          Y1MAT(index_bra,index_ket) += Y1(i,a) * recouple;
-        }
-      }
-//      for (auto a : X.OneBodyChannels.at({oj.l,oj.j2,oj.tz2}) )
-      for (auto a : X.GetOneBodyChannel(oj.l,oj.j2,oj.tz2) )
+     // Below, we do the same thing for 3 different permutations: ajk  iak  ija
+     // where a is summed over all states in the same one-body channel as the orbit it replaces.
+     // So 
+      std::vector<size_t> ijk = {bra.p, bra.q, bra.r};
+      for (size_t iperm=0; iperm<3; iperm++)
       {
 
-        Orbit& oa = Z.modelspace->GetOrbit(a);
-        double d_ea = std::abs(2*oa.n+oa.l - e_fermi.at(oa.tz2));
-        double occnat_a = oa.occ_nat;
-        if (  (d_ei+d_ea+d_ek ) > Z.modelspace->GetdE3max() ) continue;
-        if ( (occnat_i*(1-occnat_i) * occnat_a*(1-occnat_a) * occnat_k*(1-occnat_k) ) < Z.modelspace->GetOccNat3Cut() ) continue;
-        if (!Z3.IsKetValid(Jij, twoJ, i, a, k)) continue;
+       std::vector<size_t> IJK = ijk ;
+       Orbit& oreplace = Z.modelspace->GetOrbit( IJK[iperm] );
+       for (auto a : X.GetOneBodyChannel(oreplace.l,oreplace.j2,oreplace.tz2) )
+       {
+         IJK[iperm] = a;  // so now IJK is {a,j,k}  or {i,a,k} or {i,j,a}, depending on the permutation.
+         size_t I = IJK[0];
+         size_t J = IJK[1];
+         size_t K = IJK[2];
+         Orbit& oI = Z.modelspace->GetOrbit(I);
+         Orbit& oJ = Z.modelspace->GetOrbit(J);
+         Orbit& oK = Z.modelspace->GetOrbit(K);
 
-        std::vector<size_t> ket_list;
-        std::vector<double> recouple_list;
-//        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, a, k,  ket_list,  recouple_list );
-        Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, a, k,  ket_list,  recouple_list );
-        for (size_t ilist=0; ilist<ket_list.size(); ilist++)
-        {
-          auto iter_find = kept_lookup.find( ket_list[ilist] );
-          if (iter_find == kept_lookup.end() ) continue;
-          size_t index_ket = iter_find->second;
-          double recouple = recouple_list[ilist];
-          X1MAT(index_bra,index_ket) += X1(j,a) * recouple;
-          Y1MAT(index_bra,index_ket) += Y1(j,a) * recouple;
-        }
-      }
-//      for (auto a : X.OneBodyChannels.at({ok.l,ok.j2,ok.tz2}) )
-      for (auto a : X.GetOneBodyChannel(ok.l,ok.j2,ok.tz2) )
-      {
-        Orbit& oa = Z.modelspace->GetOrbit(a);
-        double d_ea = std::abs(2*oa.n+oa.l - e_fermi.at(oa.tz2));
-        double occnat_a = oa.occ_nat;
-        if (  (d_ei+d_ej+d_ea ) > Z.modelspace->GetdE3max() ) continue;
-        if ( (occnat_i*(1-occnat_i) * occnat_j*(1-occnat_j) * occnat_a*(1-occnat_a) ) < Z.modelspace->GetOccNat3Cut() ) continue;
-        if ( !Z3.IsKetValid(Jij, twoJ, i, j, a)) continue;
+         // Check that this passes various cuts on 3-body states
+         double d_eI = std::abs(2*oI.n + oI.l - e_fermi.at(oI.tz2));
+         double d_eJ = std::abs(2*oJ.n + oJ.l - e_fermi.at(oJ.tz2));
+         double d_eK = std::abs(2*oK.n + oK.l - e_fermi.at(oK.tz2));
+         double nnbar_I = oI.occ_nat * (1 - oI.occ_nat);
+         double nnbar_J = oJ.occ_nat * (1 - oJ.occ_nat);
+         double nnbar_K = oK.occ_nat * (1 - oK.occ_nat);
 
-        std::vector<size_t> ket_list;
-        std::vector<double> recouple_list;
-//        size_t ch_check = Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, j, a,  ket_list,  recouple_list );
-        Z3.GetKetIndex_withRecoupling( Jij, twoJ, i, j, a,  ket_list,  recouple_list );
-        for (size_t ilist=0; ilist<ket_list.size(); ilist++)
-        {
-          auto iter_find = kept_lookup.find( ket_list[ilist] );
-          if (iter_find == kept_lookup.end() ) continue;
-          size_t index_ket = iter_find->second;
-          double recouple = recouple_list[ilist];
-          X1MAT(index_bra,index_ket) += X1(k,a) * recouple;
-          Y1MAT(index_bra,index_ket) += Y1(k,a) * recouple;
-        }
-      }
+         if ( (d_eI + d_eJ + d_eK ) > Z.modelspace->GetdE3max() ) continue;
+         if ( (nnbar_I * nnbar_J * nnbar_K ) < Z.modelspace->GetOccNat3Cut() ) continue;
+         if (!Z3.IsKetValid(Jij, twoJ, I, J, K)) continue; // this checks triangle conditions and emax cuts.
+
+         /// If IJK is not in the ordering that we use to store the matrix elements, we need to do some recoupling.
+         std::vector<size_t> ket_list;
+         std::vector<double> recouple_list;
+         Z3.GetKetIndex_withRecoupling( Jij, twoJ, I, J, K,  ket_list,  recouple_list );
+
+         for (size_t ilist=0; ilist<ket_list.size(); ilist++)
+         {
+           auto iter_find = kept_lookup.find( ket_list[ilist] );
+           if (iter_find == kept_lookup.end() ) continue;
+           size_t index_ket = iter_find->second;
+           double recouple = recouple_list[ilist];
+           X1MAT(index_bra,index_ket) += X1(ijk[iperm],IJK[iperm]) * recouple;
+           Y1MAT(index_bra,index_ket) += Y1(ijk[iperm],IJK[iperm]) * recouple;
+         }
+       }//a
+      }//iperm
+
     }// for ibra
+//    Z.profiler.timer["_" + std::string(__func__) + "_fill_1Bmatrices"] += omp_get_wtime() - t_internal;
+//    t_internal = omp_get_wtime();
 
     // kept_lookup is a map   Full index => Kept index, so iter_bra.first gives the full index, and iter_bra.second is the
     // index for the 3-body state we keep in this commutator
@@ -6111,21 +6097,21 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     {
       for ( auto& iter_ket : kept_lookup )
       {
-//        if ( X3NORM > 1e-6)
-        if ( x3_allocated )
            X3MAT( iter_bra.second, iter_ket.second) = X3.GetME_pn_ch(ch3,ch3, iter_bra.first, iter_ket.first );
-//        if ( Y3NORM > 1e-6)
-        if ( y3_allocated )
            Y3MAT( iter_bra.second, iter_ket.second) = Y3.GetME_pn_ch(ch3,ch3, iter_bra.first, iter_ket.first );
       }
     }
 
+//    Z.profiler.timer["_" + std::string(__func__) + "_fill_3Bmatrices"] += omp_get_wtime() - t_internal;
+//    t_internal = omp_get_wtime();
+
 
     // Do the matrix multiplication
-//    Z3MAT = X1MAT*Y3MAT - Y1MAT*X3MAT +  hermX*hermY * ( X3MAT.t()*Y1MAT.t() - Y3MAT.t()*X1MAT.t() );
     Z3MAT = X1MAT*Y3MAT - Y1MAT*X3MAT;
     Z3MAT -=  hermX*hermY * Z3MAT.t();
 
+//    Z.profiler.timer["_" + std::string(__func__) + "_matmult"] += omp_get_wtime() - t_internal;
+//    t_internal = omp_get_wtime();
 
     // unpack the result
     for ( auto& iter_bra : kept_lookup )
@@ -6136,11 +6122,12 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
         Z3.AddToME_pn_ch(ch3,ch3, iter_bra.first,iter_ket.first,  Z3MAT(iter_bra.second,iter_ket.second) );
       }
     }
+
+//    Z.profiler.timer["_" + std::string(__func__) + "_unpack"] += omp_get_wtime() - t_internal;
+
  
   }// for ch3
 
-//   double zz = Z3.GetME_pn( 4,4,9, 3,6,7,3,6,9);
-//   std::cout << "OPT  Z 4,4,9 3,6,7,3,6,9  => " << zz << std::endl;
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
 
