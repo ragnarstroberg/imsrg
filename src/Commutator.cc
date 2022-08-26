@@ -2166,19 +2166,42 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
   auto& X3 = X.ThreeBody;
   auto& Y3 = Y.ThreeBody;
   if (X3.Norm()<1e-8 or Y3.Norm()<1e-8 ) return;
+  if ( (X.GetJRank() != Y.GetJRank()) or (X.GetParity() != Y.GetParity()) or (X.GetTRank() != Y.GetTRank()) ) return;
 
   std::map<int,double> e_fermi = Z.modelspace->GetEFermi();
 
-  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
-  #pragma omp parallel for schedule(dynamic,1) reduction(+:z0)
-  for ( size_t ch3=0; ch3<nch3; ch3++)
+  // roll ch3 and ibra into a single index to improve load balancing
+  std::vector< std::array<size_t,3> > bra_ket_channels;
+  for ( auto& it : X.ThreeBody.Get_ch_start() )
   {
-    auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
-    int twoJ = Tbc.twoJ;
-    size_t nkets = Tbc.GetNumberKets();
-    for (size_t ibra=0; ibra<nkets; ibra++)
-    {
-      Ket3& bra = Tbc.GetKet(ibra);
+     ThreeBodyChannel& Tbc_bra = X.modelspace->GetThreeBodyChannel( it.first.ch_bra);
+     size_t nbras3 = Tbc_bra.GetNumberKets();
+     for (size_t ibra=0;ibra<nbras3; ibra++)
+     {
+//       bra_ket_channels.push_back( { it.first.ch_bra,it.first.ch_ket, static_cast<size_t>(ibra) } ); // (ch_bra, ch_ket,ibra)
+       bra_ket_channels.push_back( { it.first.ch_bra, it.first.ch_ket, ibra } ); // (ch_bra, ch_ket,ibra)
+     }
+  }
+  size_t n_bra_ket_ch = bra_ket_channels.size();
+
+//  size_t nch3 = Z.modelspace->GetNumberThreeBodyChannels();
+//  for ( size_t ch3=0; ch3<nch3; ch3++)
+  #pragma omp parallel for schedule(dynamic,1) reduction(+:z0)
+  for ( size_t ibra_ket = 0; ibra_ket<n_bra_ket_ch; ibra_ket++)
+  {
+
+    size_t ch3bra = bra_ket_channels[ibra_ket][0];
+    size_t ch3ket = bra_ket_channels[ibra_ket][1];
+    size_t ibra   = bra_ket_channels[ibra_ket][2];
+
+//    auto& Tbc = Z.modelspace->GetThreeBodyChannel(ch3);
+    auto& Tbc_bra = Z.modelspace->GetThreeBodyChannel(ch3bra);
+    auto& Tbc_ket = Z.modelspace->GetThreeBodyChannel(ch3ket);
+    int twoJ = Tbc_bra.twoJ;
+    size_t nkets = Tbc_ket.GetNumberKets();
+//    for (size_t ibra=0; ibra<nkets; ibra++)
+//    {
+      Ket3& bra = Tbc_bra.GetKet(ibra);
       int ea = 2*bra.op->n+bra.op->l;
       int eb = 2*bra.oq->n+bra.oq->l;
       int ec = 2*bra.oR->n+bra.oR->l;
@@ -2199,9 +2222,13 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
 //      for (size_t iket=0;iket<nkets; iket++)
 //      for (size_t iket=ibra;iket<nkets; iket++)
 //      for (size_t iket=0;iket<=ibra; iket++)  
-      for (size_t iket=0;iket<ibra; iket++)  // dont need iket=ibra because the commutator will be zero
+      size_t iket_max = nkets;
+      if (ch3bra==ch3ket) iket_max = ibra;// dont need iket=ibra because the commutator will be zero
+
+      for (size_t iket=0;iket<iket_max; iket++)
       {
-        Ket3& ket = Tbc.GetKet(iket);
+//        Ket3& ket = Tbc.GetKet(iket);
+        Ket3& ket = Tbc_ket.GetKet(iket);
         double nd = ket.op->occ;
         double ne = ket.oq->occ;
         double nf = ket.oR->occ;
@@ -2223,16 +2250,16 @@ void comm330ss( const Operator& X, const Operator& Y, Operator& Z )
         if (ket.p==ket.q and ket.q==ket.r) def_symm = 1;
         else if (ket.p==ket.q or ket.q==ket.r) def_symm = 3;
 
-        double xabcdef = X3.GetME_pn_ch(ch3,ch3,ibra,iket);
-        double yabcdef = Y3.GetME_pn_ch(ch3,ch3,ibra,iket);
-        double xdefabc = X3.GetME_pn_ch(ch3,ch3,iket,ibra);
-        double ydefabc = Y3.GetME_pn_ch(ch3,ch3,iket,ibra);
+        double xabcdef = X3.GetME_pn_ch(ch3bra,ch3ket,ibra,iket);
+        double yabcdef = Y3.GetME_pn_ch(ch3bra,ch3ket,ibra,iket);
+        double xdefabc = X3.GetME_pn_ch(ch3ket,ch3bra,iket,ibra);
+        double ydefabc = Y3.GetME_pn_ch(ch3ket,ch3bra,iket,ibra);
 
         z0 += 1./36 * occfactor * abc_symm * def_symm * (twoJ+1) * (xabcdef * ydefabc  -  yabcdef*xdefabc);
 
       }// for iket
-    }// for ibra
-  }// for ch3
+//    }// for ibra
+  }// for ch3  ibra_ket
 
   Z.ZeroBody += z0;
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
