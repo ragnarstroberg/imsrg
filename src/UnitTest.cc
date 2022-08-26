@@ -364,7 +364,7 @@ void UnitTest::Test3BodyAntisymmetry(Operator& Y)
 
 
 
-void UnitTest::TestCommutators()
+bool UnitTest::TestCommutators()
 {
   double t_start = omp_get_wtime();
   arma::arma_rng::set_seed( random_seed );
@@ -425,6 +425,7 @@ void UnitTest::TestCommutators()
   }
 
   X.profiler.timer[__func__] += omp_get_wtime() - t_start;
+  return all_good;
 }
 
 
