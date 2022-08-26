@@ -193,6 +193,8 @@ void IMSRGSolver::Solve()
 
   if (method == "magnus_euler" or method =="magnus")
     Solve_magnus_euler();
+  else if (method == "magnus_backoff")
+    Solve_magnus_backoff();
   else if (method == "magnus_modified_euler")
     Solve_magnus_modified_euler();
   else if (method == "flow_adaptive" or method == "flow")
@@ -219,7 +221,85 @@ void IMSRGSolver::UpdateEta()
 }
 
 
+
+// This is the default solver
 void IMSRGSolver::Solve_magnus_euler()
+{
+   istep = 0;
+
+   generator.Update(FlowingOps[0],Eta);
+
+
+   Elast = H_0->ZeroBody;
+   cumulative_error = 0;
+    // Write details of the flow
+   WriteFlowStatus(flowfile);
+   WriteFlowStatus(std::cout);
+
+   for (istep=1;s<smax;++istep)
+   {
+
+      double norm_eta = Eta.Norm();
+      if (norm_eta < eta_criterion )
+      {
+        break;
+      }
+      double norm_omega = Omega.back().Norm();
+      if (norm_omega > omega_norm_max)
+      {
+        if (hunter_gatherer)
+        {
+          GatherOmega();
+        }
+        else
+        {
+          NewOmega();
+        }
+        norm_omega = 0;
+      }
+      // ds should never be more than 1, as this is over-rotating
+      if (magnus_adaptive)
+         ds = std::min( std::min( std::min(norm_domega/norm_eta, norm_domega / norm_eta / (norm_omega+1.0e-9)), omega_norm_max/norm_eta), ds_max);
+      ds = std::min(ds,smax-s);
+
+      s += ds;
+      Eta *= ds; // Here's the Euler step.
+
+      // accumulated generator (aka Magnus operator) exp(Omega) = exp(dOmega) * exp(Omega_last)
+      Omega.back() = Commutator::BCH_Product( Eta, Omega.back() );
+ 
+      // transformed Hamiltonian H_s = exp(Omega) H_0 exp(-Omega)
+      if ((Omega.size()+n_omega_written)<2)
+      {
+        FlowingOps[0] = Commutator::BCH_Transform( *H_0, Omega.back() );
+      }
+      else
+      {
+        FlowingOps[0] = Commutator::BCH_Transform( H_saved, Omega.back() );
+      }
+
+      if (norm_eta<1.0 and generator.GetType() == "shell-model-atan")
+      {
+        generator.SetDenominatorCutoff(1e-6);
+      }
+
+      generator.Update(FlowingOps[0],Eta);
+
+      // Write details of the flow
+      WriteFlowStatus(flowfile);
+      WriteFlowStatus(std::cout);
+      Elast = FlowingOps[0].ZeroBody;
+
+
+   }
+
+}
+
+
+
+
+/// Modification added by Matthias
+void IMSRGSolver::Solve_magnus_backoff()
 {
    istep = 0;
 
@@ -330,6 +410,10 @@ void IMSRGSolver::Solve_magnus_euler()
      //      dMAT(2,2) << std::endl;
    }
 }
+
+
+
+
 
 
 void IMSRGSolver::Solve_magnus_modified_euler()
