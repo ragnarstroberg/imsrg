@@ -95,6 +95,7 @@ class IMSRGSolver
   void SetMethod(std::string m){method=m;};
   void Solve();
   void Solve_magnus_euler();
+  void Solve_magnus_backoff();
   void Solve_magnus_modified_euler();
   void Solve_flow_RK4();
 

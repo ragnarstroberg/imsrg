@@ -413,7 +413,7 @@ std::vector<ThreeBodyStorage::Permutation> ThreeBodyME::UniquePermutations( size
   return threebody_storage->UniquePermutations(a,b,c);
 }
 
-std::unordered_map<ThreeBodyStorageChannel,size_t,ThreeBodyStorageChannelHash>& ThreeBodyME::Get_ch_start()
+std::unordered_map<ThreeBodyStorageChannel,size_t,ThreeBodyStorageChannelHash>& ThreeBodyME::Get_ch_start() const
 {
   return threebody_storage->ch_start;
 }

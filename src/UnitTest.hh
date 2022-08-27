@@ -39,7 +39,8 @@ class UnitTest
   // test strategy: Fill two random operators, calculate a specific commutator term
   // using the J-coupled expression, and in m-scheme (where the formula is simpler)
   // and make sure that they give the same answer
-  void TestCommutators();
+//  void TestCommutators();
+  bool TestCommutators();
 //  void TestCommutators3();
 //  void TestCommutators3(Operator& X, Operator& Y); 
   void TestCommutators3(Operator& X, Operator& Y, std::vector<std::string>& skiplist ); 
