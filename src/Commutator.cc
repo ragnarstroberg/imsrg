@@ -2888,7 +2888,7 @@ void comm132ss( const Operator& X, const Operator& Y, Operator& Z )
 //
 // This is the time hog of the n^7 scaling terms   (seems to be doing better...)
 // Now this is fine. The 223 commutator is taking all the time.
-/*
+
 void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   double tstart = omp_get_wtime();
@@ -3355,7 +3355,7 @@ void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 //  if (Z.modelspace->scalar3b_transform_first_pass)   Z.profiler.timer["comm232_first_pass"] += omp_get_wtime() - tstart;
   Z.profiler.timer[__func__] += omp_get_wtime() - tstart;
 }
-*/
+
 
 //// Begin modifications to comm232ss by Matthias.
 namespace {
@@ -3435,8 +3435,8 @@ size_t GetSetSizeFlat(const std::unordered_set<K>& m) {
 //
 // This is the time hog of the n^7 scaling terms   (seems to be doing better...)
 // Now this is fine. The 223 commutator is taking all the time.
-//void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
-void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
+void comm232ss_new( const Operator& X, const Operator& Y, Operator& Z )
+//void comm232ss( const Operator& X, const Operator& Y, Operator& Z )
 {
   size_t lookups_size = 0;
   double tstart = omp_get_wtime();
