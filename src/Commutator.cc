@@ -6020,6 +6020,7 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 // TODO Identify when it helps to parallelize in the outer loop, and when it's better to give the threads to the matmult step.
 // Memory-wise, it's better to let the threads do mat mult
 // On my MacBook with 8 threads, linking against OpenBLAS, letting the matmult have the threads is better.
+// On the CRC machines with up to 24 threads, linking agains MKL, parallelizing at the channel level is better by a factor 10.
 //  #pragma omp parallel for schedule(dynamic,1) 
   for (size_t ch3=0; ch3<nch3; ch3++)
   {
@@ -6045,8 +6046,8 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
     }
     size_t nkets_kept = kets_kept.size();
 
-//    Z.profiler.timer["_" + std::string(__func__) + "_count_kept"] += omp_get_wtime() - t_internal;
-//    t_internal = omp_get_wtime();
+    Z.profiler.timer["_" + std::string(__func__) + "_count_kept"] += omp_get_wtime() - t_internal;
+    t_internal = omp_get_wtime();
 
 
     arma::mat X1MAT( nkets_kept, nkets_kept, arma::fill::zeros);
@@ -6057,9 +6058,10 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
 
 
 
-//    Z.profiler.timer["_" + std::string(__func__) + "_allocate_matrices"] += omp_get_wtime() - t_internal;
-//    t_internal = omp_get_wtime();
+    Z.profiler.timer["_" + std::string(__func__) + "_allocate_matrices"] += omp_get_wtime() - t_internal;
+    t_internal = omp_get_wtime();
 
+    #pragma omp parallel for schedule(dynamic,1)
     for (size_t index_bra=0; index_bra<nkets_kept; index_bra++)
     {
       size_t ibra = kets_kept[index_bra];
@@ -6114,43 +6116,77 @@ void comm133ss( const Operator& X, const Operator& Y, Operator& Z )
        }//a
       }//iperm
 
-    }// for ibra
-//    Z.profiler.timer["_" + std::string(__func__) + "_fill_1Bmatrices"] += omp_get_wtime() - t_internal;
-//    t_internal = omp_get_wtime();
-
-    // kept_lookup is a map   Full index => Kept index, so iter_bra.first gives the full index, and iter_bra.second is the
-    // index for the 3-body state we keep in this commutator
-    for ( auto& iter_bra : kept_lookup )
-    {
-      for ( auto& iter_ket : kept_lookup )
+      for (size_t iket=ibra; iket<nkets_kept; iket++ )
       {
-           X3MAT( iter_bra.second, iter_ket.second) = X3.GetME_pn_ch(ch3,ch3, iter_bra.first, iter_ket.first );
-           Y3MAT( iter_bra.second, iter_ket.second) = Y3.GetME_pn_ch(ch3,ch3, iter_bra.first, iter_ket.first );
+         X3MAT( ibra,iket ) = X3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
+         Y3MAT( ibra,iket ) = Y3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
+         X3MAT( iket,ibra ) = X3MAT(ibra,iket) * hermX;
+         Y3MAT( iket,ibra ) = Y3MAT(ibra,iket) * hermY;
       }
-    }
 
-//    Z.profiler.timer["_" + std::string(__func__) + "_fill_3Bmatrices"] += omp_get_wtime() - t_internal;
-//    t_internal = omp_get_wtime();
+
+    }// for ibra
+    Z.profiler.timer["_" + std::string(__func__) + "_fill_1Bmatrices"] += omp_get_wtime() - t_internal;
+    t_internal = omp_get_wtime();
+
+
+//    // kept_lookup is a map   Full index => Kept index, so iter_bra.first gives the full index, and iter_bra.second is the
+//    // index for the 3-body state we keep in this commutator
+//    for ( auto& iter_bra : kept_lookup )
+//    {
+//      for ( auto& iter_ket : kept_lookup )
+//      {
+//           X3MAT( iter_bra.second, iter_ket.second) = X3.GetME_pn_ch(ch3,ch3, iter_bra.first, iter_ket.first );
+//           Y3MAT( iter_bra.second, iter_ket.second) = Y3.GetME_pn_ch(ch3,ch3, iter_bra.first, iter_ket.first );
+//      }
+//    }
+
+////    #pragma omp parallel for schedule(dynamic,1) collapse(2)
+//    #pragma omp parallel for schedule(dynamic,1)
+//    for (size_t ibra=0; ibra<nkets_kept; ibra++ )
+//    {
+////      for (size_t iket=0; iket<nkets_kept; iket++ )
+//      for (size_t iket=ibra; iket<nkets_kept; iket++ )
+//      {
+//         X3MAT( ibra,iket ) = X3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
+//         Y3MAT( ibra,iket ) = Y3.GetME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket] );
+//         X3MAT( iket,ibra ) = X3MAT(ibra,iket) * hermX;
+//         Y3MAT( iket,ibra ) = Y3MAT(ibra,iket) * hermY;
+//      }
+//    }
+
+    Z.profiler.timer["_" + std::string(__func__) + "_fill_3Bmatrices"] += omp_get_wtime() - t_internal;
+    t_internal = omp_get_wtime();
 
 
     // Do the matrix multiplication
     Z3MAT = X1MAT*Y3MAT - Y1MAT*X3MAT;
     Z3MAT -=  hermX*hermY * Z3MAT.t();
 
-//    Z.profiler.timer["_" + std::string(__func__) + "_matmult"] += omp_get_wtime() - t_internal;
-//    t_internal = omp_get_wtime();
+    Z.profiler.timer["_" + std::string(__func__) + "_matmult"] += omp_get_wtime() - t_internal;
+    t_internal = omp_get_wtime();
 
     // unpack the result
-    for ( auto& iter_bra : kept_lookup )
+    #pragma omp parallel for schedule(dynamic,1)
+    for (size_t ibra=0; ibra<nkets_kept; ibra++ )
     {
-      for ( auto& iter_ket : kept_lookup )
+      for (size_t iket=ibra; iket<nkets_kept; iket++ )
       {
-        if ( iter_ket.first < iter_bra.first ) continue;
-        Z3.AddToME_pn_ch(ch3,ch3, iter_bra.first,iter_ket.first,  Z3MAT(iter_bra.second,iter_ket.second) );
+        Z3.AddToME_pn_ch(ch3,ch3, kets_kept[ibra], kets_kept[iket],  Z3MAT(ibra,iket) );
       }
     }
 
-//    Z.profiler.timer["_" + std::string(__func__) + "_unpack"] += omp_get_wtime() - t_internal;
+//    // unpack the result
+//    for ( auto& iter_bra : kept_lookup )
+//    {
+//      for ( auto& iter_ket : kept_lookup )
+//      {
+//        if ( iter_ket.first < iter_bra.first ) continue;
+//        Z3.AddToME_pn_ch(ch3,ch3, iter_bra.first,iter_ket.first,  Z3MAT(iter_bra.second,iter_ket.second) );
+//      }
+//    }
+
+    Z.profiler.timer["_" + std::string(__func__) + "_unpack"] += omp_get_wtime() - t_internal;
 
  
   }// for ch3
